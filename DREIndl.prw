@@ -13,7 +13,6 @@
 
 // --------------------------------------------------------------------------
 user function DREindl ()
-//	local _nOpcao := 0
 	local _aHead       := {}
 	local _sArqTrb     := ""
 	local _sArqInd     := ""
