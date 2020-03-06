@@ -1,3 +1,3 @@
 # FontesProtheus
-Repositírio para armazenamento de programas de customizações do ERP Protheus da Totvs
+Repositório para armazenamento de customizações do ERP Protheus da Totvs
 
