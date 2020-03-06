@@ -9,6 +9,7 @@
 // 25/09/2019 - Robert - Criados browses de selecao de grandes redes / marcas proprias, quando for o caso.
 // 08/01/2020 - Robert - Liberado para grupo 096 (antes era apenas para Liane e Robert).
 // 04/03/2020 - Robert - Exporta tabela auxiliar de conferencia de quais produtos foram considerados em cada coluna (linha coml / linha envase).
+// 06/03/2020 - Robert - Exporta tabela aberta, para posterior uso em tabelas dinamicas.
 //
 
 // --------------------------------------------------------------------------
@@ -252,7 +253,7 @@ user function DREIndlC ()
 		aadd (_aOpcoes, "Lin.Tetra (todas)")
 		aadd (_aOpcoes, "Lin.Tetra (por marca de terceiro)")
 		aadd (_aOpcoes, "Grandes clientes")
-		aadd (_aOpcoes, "Aberto por cliente")
+		aadd (_aOpcoes, "Aberto (para gerar tabela dinamica)")
 		aadd (_aOpcoes, "Cancelar")
 		_nLayout = U_F3Array (_aOpcoes, "Selecione layout",, 400, 300)
 
@@ -386,7 +387,7 @@ static function _Cons2 (_sLayout)
 		_oSQL:_sQuery += " FROM BI_ALIANCA.dbo.DRE_INDL_ITENS"
 		_oSQL:_sQuery += " WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
 		_oSQL:_sQuery += "), TOTAIS1 AS"
-		_oSQL:_sQuery += "(SELECT CLIENTE, LOJA, CLIBASE, LOJABASE, LIN_COML"
+		_oSQL:_sQuery += "(SELECT CLIENTE, LOJA, CLIBASE, LOJABASE, LIN_COML, CC"
 		_oSQL:_sQuery +=       " ,SUM (CASE WHEN F4_MARGEM = '1' THEN VALORNF ELSE 0 END) AS FAT_BRUTO"
 		_oSQL:_sQuery +=       " ,SUM (CASE WHEN F4_MARGEM = '2' THEN VALORNF ELSE 0 END * -1) AS DEVOLUCOES"
 		_oSQL:_sQuery +=       " ,SUM ((PIS_NF + COFINS_NF + ICMS_NF + IPI_NF + ST_NF + IMPOSTOS_RATEIO) * CASE WHEN F4_MARGEM = '2' THEN 1 ELSE -1 END) AS IMPOSTOS"
@@ -397,15 +398,28 @@ static function _Cons2 (_sLayout)
 		_oSQL:_sQuery +=       " ,SUM ((COMISPREV + COMIS_RATEIO) * CASE F4_MARGEM WHEN '2' THEN -1 ELSE 1 END) AS COMISSAO"
 		_oSQL:_sQuery +=       " ,SUM (GASTOS_COML_OUTRAS) AS COML_OUTRAS"
 		_oSQL:_sQuery +=       " ,SUM (DESP_ADMIN) AS DESP_ADMIN"
+		_oSQL:_sQuery +=       " ,COUNT (DISTINCT DOC) AS CONTAGEM_NF"
 		_oSQL:_sQuery +=   " FROM DADOS"
-		_oSQL:_sQuery +=  " GROUP BY CLIENTE, LOJA, CLIBASE, LOJABASE, LIN_COML"
+		_oSQL:_sQuery +=  " GROUP BY CLIENTE, LOJA, CLIBASE, LOJABASE, LIN_COML, CC"
 		_oSQL:_sQuery += "), TOTAIS2 AS"
 		_oSQL:_sQuery += "(SELECT *"
 		_oSQL:_sQuery +=       " ,FAT_BRUTO + DEVOLUCOES + IMPOSTOS AS RECEITA_LIQUIDA"
 		_oSQL:_sQuery +=       " ,BONIFICACOES + RAPEL + FRETE + COMISSAO + COML_OUTRAS AS DESP_COML"
 		_oSQL:_sQuery +=   " FROM TOTAIS1"
 		_oSQL:_sQuery += ")"
-		_oSQL:_sQuery += " SELECT CLIENTE, LOJA, RTRIM (A1_NOME) AS NOME_CLIENTE, CLIBASE, LOJABASE, ZX5_39.ZX5_39DESC AS LINHA_COML"
+		_oSQL:_sQuery += " SELECT CLIENTE, LOJA, RTRIM (A1_NOME) AS NOME_CLIENTE, CLIBASE, LOJABASE"
+		_oSQL:_sQuery +=       ", ZX5_39.ZX5_39DESC AS LINHA_COML"
+		_oSQL:_sQuery +=       ", CASE CC WHEN '011401' THEN 'VIDRO'"
+		_oSQL:_sQuery +=                " WHEN '011402' THEN 'ISOBARICA'"
+		_oSQL:_sQuery +=                " WHEN 'EM_3OS' THEN 'EM_3OS'"
+		_oSQL:_sQuery +=                " WHEN '011403' THEN 'PET'"
+		_oSQL:_sQuery +=                " WHEN '011404' THEN 'TETRA_200'"
+		_oSQL:_sQuery +=                " WHEN '011405' THEN 'TETRA_1000'"
+		_oSQL:_sQuery +=                " WHEN '011406' THEN 'BAG'"
+		_oSQL:_sQuery +=                " WHEN 'F09'    THEN 'FILIAL_09'"
+		_oSQL:_sQuery +=                " WHEN 'GRANEL' THEN 'GRANEL'"
+		_oSQL:_sQuery +=                " WHEN 'OUTRAS' THEN 'OUTRAS'"
+		_oSQL:_sQuery +=                " ELSE '' END AS LINHA_ENVASE"
 		_oSQL:_sQuery +=       " ,SUM (FAT_BRUTO) AS FAT_BRUTO"
 		_oSQL:_sQuery +=       " ,SUM (RECEITA_LIQUIDA) AS RECEITA_LIQUIDA"
 		_oSQL:_sQuery +=       " ,SUM (BONIFICACOES) AS BONIFICACOES"
@@ -415,6 +429,7 @@ static function _Cons2 (_sLayout)
 		_oSQL:_sQuery +=       " ,SUM (DESP_COML) AS TOT_DESP_COML"
 		_oSQL:_sQuery +=       " ,SUM (DESP_ADMIN) AS DESP_ADMIN"
 		_oSQL:_sQuery +=       " ,SUM (RECEITA_LIQUIDA - CPV - DESP_COML - DESP_ADMIN) AS RESULT_OPERACIONAL"
+		_oSQL:_sQuery +=       " ,SUM (CONTAGEM_NF) AS CONTAGEM_NF"
 		_oSQL:_sQuery +=   " FROM TOTAIS2"
 		_oSQL:_sQuery +=       " ,protheus.dbo.SA1010 SA1"
 		_oSQL:_sQuery +=       " ,protheus.dbo.ZX5010 ZX5_39"
@@ -425,7 +440,7 @@ static function _Cons2 (_sLayout)
 		_oSQL:_sQuery +=    " AND ZX5_39.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=    " AND ZX5_39.ZX5_FILIAL = '  '"
 		_oSQL:_sQuery +=    " AND ZX5_39.ZX5_39COD  = LIN_COML"
-		_oSQL:_sQuery +=  " GROUP BY CLIENTE, LOJA, A1_NOME, CLIBASE, LOJABASE, ZX5_39.ZX5_39DESC"
+		_oSQL:_sQuery +=  " GROUP BY CLIENTE, LOJA, A1_NOME, CLIBASE, LOJABASE, ZX5_39.ZX5_39DESC, CC"
 		_oSQL:Log ()
 		_oSQL:Qry2XLS(.F.,.F.,.F.)
 	endcase
