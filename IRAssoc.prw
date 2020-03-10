@@ -13,6 +13,7 @@
 // 11/04/2017 - Robert - Passa a ler historico do plano de saudo direto do SZI e nao mais do metodo ExtratoCC().
 // 30/05/2017 - Robert - Criado movimento 29 (Unimed Jacinto), que precisa mesmo tratamento do 01 (plano saude).
 // 17/04/2019 - Robert - Tratamento para buscar somente as parcelas de pagto.safra com vcto.no ano base (GLPI 5727).
+// 10/03/2020 - Robert - Linha inserida apenas para testar branches no Git
 //
 
 #include "VA_Inclu.prw"
