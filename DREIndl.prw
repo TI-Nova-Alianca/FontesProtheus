@@ -10,6 +10,10 @@
 // 08/01/2020 - Robert - Liberado para grupo 096 (antes era apenas para Liane e Robert).
 // 04/03/2020 - Robert - Exporta tabela auxiliar de conferencia de quais produtos foram considerados em cada coluna (linha coml / linha envase).
 // 06/03/2020 - Robert - Exporta tabela aberta, para posterior uso em tabelas dinamicas.
+// 09/03/2020 - Robert - Exporta ID da analise no cabecalho do DRE por linha de envase.
+// 10/03/2020 - Robert - Grava usuario que gerou a analise
+//                     - Regua de processamento na rotina de exclusao.
+//                     - Rateios por litragem nao geravam, pois estava gravando Q em vez de L no campo FORMA_RATEIO.
 //
 
 // --------------------------------------------------------------------------
@@ -36,6 +40,7 @@ user function DREindl ()
 	_aHead = {}
 	AAdd( _aHead, { "Descricao"               ,{|| _trbDRE->descricao} ,"C", 40, 0, "" } )
 	AAdd( _aHead, { "ID_analise"              ,{|| _trbDRE->idanalise} ,"N",  4, 0, "" } )
+	AAdd( _aHead, { "Usuario"                 ,{|| _trbDRE->usuario}   ,"C", 15, 0, "" } )
 	AAdd( _aHead, { "Data_inicial_NF"         ,{|| _trbDRE->dtininf}   ,"D",  8, 0, "" } )
 	AAdd( _aHead, { "Data_final_NF"           ,{|| _trbDRE->dtfimnf}   ,"D",  8, 0, "" } )
 	AAdd( _aHead, { "Agrupamento_para_rateio" ,{|| _trbDRE->agrup}     ,"C", 20, 0, "" } )
@@ -73,6 +78,7 @@ static function _AtuTrb ()
 		AAdd( _aEstrut, { "dtfimnf"   , "D",  8, 0 } )
 		AAdd( _aEstrut, { "agrup"     , "C", 20, 0 } )
 		AAdd( _aEstrut, { "formarat"  , "C", 20, 0 } )
+		AAdd( _aEstrut, { "usuario"   , "C", 15, 0 } )
 			
 		// Cria arquivo de trabalho com as analises jah existentes
 		_sArqTrb := CriaTrab( _aEstrut, .T. )
@@ -93,7 +99,7 @@ static function _AtuTrb ()
 	endif
 
 	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := "SELECT ID_ANALISE, DESCRICAO, DATA_INI_NF, DATA_FIM_NF, AGRUPAMENTO_PARA_RATEIO, FORMA_RATEIO"
+	_oSQL:_sQuery := "SELECT ID_ANALISE, DESCRICAO, DATA_INI_NF, DATA_FIM_NF, AGRUPAMENTO_PARA_RATEIO, FORMA_RATEIO, USUARIO"
 	_oSQL:_sQuery +=  " FROM BI_ALIANCA.dbo.DRE_INDL"
 	_oSQL:_sQuery += " ORDER BY DESCRICAO"
 	_aConsAtu := _oSQL:Qry2Array ()
@@ -104,7 +110,8 @@ static function _AtuTrb ()
 		_trbDRE -> dtininf   = stod (_aConsAtu [_nConsAtu, 3])
 		_trbDRE -> dtfimnf   = stod (_aConsAtu [_nConsAtu, 4])
 		_trbDRE -> agrup     = _aConsAtu [_nConsAtu, 5] + ' - ' + iif (_aConsAtu [_nConsAtu, 5] = 'C', 'Consolidado', iif (_aConsAtu [_nConsAtu, 5] = 'F', 'Filial a filial', ''))
-		_trbDRE -> formarat  = iif (_aConsAtu [_nConsAtu, 6] = 'Q', 'Por quantidade', iif (_aConsAtu [_nConsAtu, 6] = 'V', 'Por valor', ''))
+		_trbDRE -> formarat  = iif (_aConsAtu [_nConsAtu, 6] = 'L', 'Por litragem', iif (_aConsAtu [_nConsAtu, 6] = 'V', 'Por valor', ''))
+		_trbDRE -> usuario   = _aConsAtu [_nConsAtu, 7]
 		MsUnLock()
 	next
 	
@@ -124,7 +131,7 @@ user function DREIndlN ()
 	private cPerg := "DRE_INDL"
 	_ValidPerg ()
 	if pergunte (cPerg, .T.)
-		processa ({|| _Gera (mv_par01, mv_par02, mv_par03, iif (mv_par04 == 1, 'C', 'F'), iif (mv_par05 == 1, 'V', 'Q'))})
+		processa ({|| _Gera (mv_par01, mv_par02, mv_par03, iif (mv_par04 == 1, 'C', 'F'), iif (mv_par05 == 1, 'V', 'L'))})
 	endif
 return
 
@@ -172,13 +179,14 @@ static function _Gera (_sDescri, _dDataIni, _dDataFim, _sAgrRat, _sFormaRat)
 		_oSQL:_sQuery := "SELECT MAX (ID_ANALISE) + 1 FROM BI_ALIANCA.dbo.DRE_INDL"
 		_nIdAnalis = _oSQL:RetQry ()
 		u_log ('Criando ID = ', _nIdAnalis)
-		_oSQL:_sQuery := "INSERT INTO BI_ALIANCA.dbo.DRE_INDL (ID_ANALISE, DESCRICAO, DATA_INI_NF, DATA_FIM_NF, AGRUPAMENTO_PARA_RATEIO, FORMA_RATEIO)
-		_oSQL:_sQuery += " VALUES (" + cvaltochar (_nIdAnalis) + ","
-		_oSQL:_sQuery +=          "'" + alltrim (_sDescri) + "',"
-		_oSQL:_sQuery +=          "'" + dtos (_dDataIni) + "',"
-		_oSQL:_sQuery +=          "'" + dtos (_dDataFim) + "',"
-		_oSQL:_sQuery +=          "'" + _sAgrRat + "',"
-		_oSQL:_sQuery +=          "'" + _sFormaRat + "')"
+		_oSQL:_sQuery := "INSERT INTO BI_ALIANCA.dbo.DRE_INDL (ID_ANALISE, DESCRICAO, DATA_INI_NF, DATA_FIM_NF, AGRUPAMENTO_PARA_RATEIO, FORMA_RATEIO, USUARIO)
+		_oSQL:_sQuery += " VALUES (" + cvaltochar (_nIdAnalis)
+		_oSQL:_sQuery +=          ",'" + alltrim (_sDescri) + "'"
+		_oSQL:_sQuery +=          ",'" + dtos (_dDataIni) + "'"
+		_oSQL:_sQuery +=          ",'" + dtos (_dDataFim) + "'"
+		_oSQL:_sQuery +=          ",'" + _sAgrRat + "'"
+		_oSQL:_sQuery +=          ",'" + _sFormaRat + "'"
+		_oSQL:_sQuery +=          ",'" + cUserName + "')"
 		_oSQL:Log ()
 		if ! _oSQL:Exec ()
 			u_help ("Nao foi possivel criar a analise. Erro no SQL: " + _oSQL:_sQuery)
@@ -299,11 +307,30 @@ static function _Cons2 (_sLayout)
 	local _sLojBFim := ''
 	local _sMarca3  := ''
 	local _nOpcao   := 0
+	local _sDescDRE := ''
+
+	// Busca descricao da analise, para usar como coluna de descritivo.
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "SELECT 'AN_' + RTRIM (CAST (ID_ANALISE AS VARCHAR (10)))"
+	_oSQL:_sQuery +=       " + '_' + RTRIM (DESCRICAO)"
+	_oSQL:_sQuery +=       " + CASE FORMA_RATEIO"
+	_oSQL:_sQuery +=              " WHEN 'V' THEN '_Rat_valor'"
+	_oSQL:_sQuery +=              " WHEN 'L' THEN '_Rat_litrag'"
+	_oSQL:_sQuery +=              " ELSE '' END"
+	_oSQL:_sQuery +=  " FROM BI_ALIANCA.dbo.DRE_INDL"
+	_oSQL:_sQuery += " WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
+	_oSQL:Log ()
+	_sDescDRE = strtran (strtran (strtran (alltrim (_oSQL:RetQry ()), ' ', '_'), '.', '_'), '-', '_')
+	u_log (_sDescDRE)
 
 	_oSQL := ClsSQL ():New ()
 	do case
 	case _sLayout == 'LE'  // por linha de envase
-		_oSQL:_sQuery := "SELECT * FROM BI_ALIANCA.dbo.FDRE_INDL_LINENV ('" + cvaltochar (_trbDRE -> idanalise) + "', '', 'zz') ORDER BY GRUPO"
+//		_oSQL:_sQuery := "SELECT DESCRITIVO AS [DESCRITIVOS_Analise_" + cvaltochar (_trbDRE -> idanalise) + ']'
+		_oSQL:_sQuery := "SELECT DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
+		_oSQL:_sQuery +=      " ,VIDRO,ISOBARICA,EM_3OS,PET,TETRA_200,TETRA_1000,BAG,FILIAL_09,GRANEL,OUTRAS"
+		_oSQL:_sQuery +=  " FROM BI_ALIANCA.dbo.FDRE_INDL_LINENV (" + cvaltochar (_trbDRE -> idanalise) + ", '', 'zz')"
+		_oSQL:_sQuery += " ORDER BY GRUPO"
 		_oSQL:Log ()
 		_oSQL:Qry2XLS(.F.,.F.,.F.)
 		if U_MsgNoYes ("Deseja exportar lista dos produtos considerados em cada linha de envase? Será exportada uma tabela adicional com uma coluna correspondendo a cada linha de envase.")
@@ -451,17 +478,27 @@ return
 // --------------------------------------------------------------------------
 // Menu para exclusao de uma analise
 user function DREIndlE ()
-	local _oSQL := NIL
 	if U_MsgNoYes ("Confirma a exclusao da analise " + cvaltochar (_trbDRE -> idanalise) + "?")
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := "DELETE BI_ALIANCA.dbo.DRE_INDL_ITENS WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
+		processa ({|| _Excl ()})
+	endif
+return
+
+
+
+// --------------------------------------------------------------------------
+// Gera regua de processamento e exclui a analise.
+static function _Excl ()
+	local _oSQL := NIL
+	procregua (10)
+	incproc ('Excluindo...')
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "DELETE BI_ALIANCA.dbo.DRE_INDL_ITENS WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
+	_oSQL:Log ()
+	if _oSQL:Exec ()
+		_oSQL:_sQuery := "DELETE BI_ALIANCA.dbo.DRE_INDL WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
 		_oSQL:Log ()
 		if _oSQL:Exec ()
-			_oSQL:_sQuery := "DELETE BI_ALIANCA.dbo.DRE_INDL WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
-			_oSQL:Log ()
-			if _oSQL:Exec ()
-				_AtuTrb ()
-			endif
+			_AtuTrb ()
 		endif
 	endif
 return
