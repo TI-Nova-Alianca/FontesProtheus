@@ -34,6 +34,8 @@
 // 28/03/2018 - Catia  - Criada opção de fatura
 // 08/04/2019 - Catia  - include TbiConn.ch 
 // 21/01/2020 - Robert - Reabilitada consulta de cota capital.
+// 12/03/2020 - Robert - Ajustados parametros de chamada do relatorio IRAssoc (dados para fins de IR) - GLPI 7614.
+//                     - Comentariadas declaracoes de variaveis nao usadas; removidas algumas linhas jah comentariadas.
 //
 
 // ------------------------------------------------------------------------------------
@@ -175,17 +177,17 @@ User Function SZIR (_nQual)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aAmbAnt   := U_SalvaAmb ()
 	local cPerg      := ""
-	local _aBkpSX1   := {}
+//	local _aBkpSX1   := {}
 	local _sQuery    := ""
 	local _aRetQry   := {}
 	local _aCols     := {}
 	local _aAuto     := {}
-	local _oAssoc    := NIL
-	local _sCRLF     := chr (13) + chr (10)
-	local _aSaldo    := {}
-	local _sMsg      := ""
+//	local _oAssoc    := NIL
+//	local _sCRLF     := chr (13) + chr (10)
+//	local _aSaldo    := {}
+//	local _sMsg      := ""
 	local _oCtaCorr  := NIL
-	local _oSQL      := NIL
+//	local _oSQL      := NIL
 	local _oAssocRel := NIL
 
 	do case
@@ -269,22 +271,16 @@ User Function SZIR (_nQual)
 			U_ShowMemo (_oAssocRel:SldQuotCap (dDataBase, .T.) [.QtCapRetTXT], "DADOS DE CAPITAL")
 		endif
 
-/*	case _nQual == 7
-		cPerg = "CADASSOC"
-		U_GravaSX1 (cPerg, "01", szi -> zi_assoc)
-		U_GravaSX1 (cPerg, "02", szi -> zi_lojasso)
-		U_GravaSX1 (cPerg, "03", szi -> zi_assoc)
-		U_GravaSX1 (cPerg, "04", szi -> zi_lojasso)
-		U_CadAssoc ()
-*/
-
 	case _nQual == 8
-		cPerg = "IRASSOC"
-		U_GravaSX1 (cPerg, "01", szi -> zi_assoc)
-		U_GravaSX1 (cPerg, "02", szi -> zi_lojasso)
-		U_GravaSX1 (cPerg, "03", szi -> zi_assoc)
-		U_GravaSX1 (cPerg, "04", szi -> zi_lojasso)
-		U_IRAssoc ()
+		_oAssocRel := ClsAssoc():New(szi -> zi_assoc, szi -> zi_lojasso)
+		if valtype (_oAssocRel) != "O"
+			u_help ("Nao foi possivel instanciar classe ClsAssoc.",, .t.)
+		else
+			cPerg = "IRASSOC"
+			U_GravaSX1 (cPerg, "01", _oAssocRel:CPF)
+			U_GravaSX1 (cPerg, "02", _oAssocRel:CPF)
+			U_IRAssoc ()
+		endif
 
 	case _nQual == 9
 		// Verifica se existe titulo correspondente no financeiro.
@@ -563,10 +559,9 @@ return _lRet
 // Exclusao de movimento da conta corrente.
 User Function SZIE ()
 	local _lContinua := .T.
-	local _sTipoMov  := szi -> zi_tm
-	local _sOQueGera := ""
-	local _sCodmemo  := szi -> zi_CodMemo
-//	local _sQuery    := ""
+//	local _sTipoMov  := szi -> zi_tm
+//	local _sOQueGera := ""
+//	local _sCodmemo  := szi -> zi_CodMemo
 	local _oCtaCorr  := NIL
 	private altera   := .F.
 	private inclui   := .F.
@@ -601,7 +596,7 @@ User Function SZIB ()
 	local cPerg      := ""
 	local _sOutrIni  := ""
 	local _sOutrFim  := ""
-	local _oCtaCorr  := NIL
+//	local _oCtaCorr  := NIL
 	local _lContinua := .T.
 
 	u_logIni ()
@@ -824,7 +819,6 @@ User Function SZIC ()
 					
 					// Recalcula o saldo do lancamento por que o P.E. generico FINA080 nao eh executado pela rot. de cancelamento.
 					_oCtaCorr := ClsCtaCorr ():New (szi -> (recno ()))
-//					_oCtaCorr:AtuSaldo (_oCtaCorr:SaldoEm (date ()))
 					_oCtaCorr:AtuSaldo ()
 				endif
 
@@ -842,7 +836,7 @@ return
 // Transferencia de saldo para outra filial.
 User Function SZIT (_sFilDest)
 	local _lContinua := .T.
-	local _oCtaCorr  := NIL
+	local _oCtaCorrT := NIL
 	local _nValor    := 0
 
 	//u_logIni ()
@@ -855,11 +849,11 @@ User Function SZIT (_sFilDest)
 
 	if _lContinua
 		CursorWait ()
-		_oCtaCorr := ClsCtaCorr():New (szi -> (recno ()))
-		_oCtaCorr:FilDest = _sFilDest
-		_oCtaCorr:Origem  = FunName ()
-		if ! _oCtaCorr:TransFil (_nValor)
-			u_help ("A transferencia para outra filial nao foi possivel:" + chr (13) + char (10) + _oCtaCorr:UltMsg)
+		_oCtaCorrT := ClsCtaCorr():New (szi -> (recno ()))
+		_oCtaCorrT:FilDest = _sFilDest
+		_oCtaCorrT:Origem  = FunName ()
+		if ! _oCtaCorrT:TransFil (_nValor)
+			u_help ("A transferencia para outra filial nao foi possivel:" + chr (13) + char (10) + _oCtaCorrT:UltMsg)
 		endif
 		CursorArrow ()
 	endif
@@ -872,7 +866,7 @@ return
 // --------------------------------------------------------------------------
 // Recalcula saldo atual do lancamento.
 User Function SZIRS (_nQual)
-	local _lContinua := .T.
+//	local _lContinua := .T.
 	local _oCtaCorr  := NIL
 	local _nSaldoAnt := 0
 	local _oAssoc    := ""

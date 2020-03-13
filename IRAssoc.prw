@@ -14,7 +14,8 @@
 // 30/05/2017 - Robert - Criado movimento 29 (Unimed Jacinto), que precisa mesmo tratamento do 01 (plano saude).
 // 17/04/2019 - Robert - Tratamento para buscar somente as parcelas de pagto.safra com vcto.no ano base (GLPI 5727).
 // 10/03/2020 - Robert - Linha inserida apenas para testar branches no Git
-//
+// 12/03/2020 - Robert - Ajustes / alinhamentos layout de impressao.
+//                     - Tratamento adto sobras pago em 2019 (GLPI 7614)
 
 #include "VA_Inclu.prw"
 
@@ -54,7 +55,6 @@ user function IRAssoc (_lAutomat)
 	if ! _lAuto
 
 		// Execucao com interface com o usuario.
-//		wnrel:=SetPrint(cString,wnrel,cPerg,Titulo,cDesc1,cDesc2,cDesc3,.F., aOrd, .T., NIL, tamanho, NIL, .F., NIL, NIL, .F., .T., NIL)
 		wnrel:=SetPrint(cString,wnrel,cPerg,titulo,cDesc1,cDesc2,cDesc3,.F., aOrd)
 	else
 		// Execucao sem interface com o usuario.
@@ -119,7 +119,7 @@ static function _Imprime ()
 	local _aExtrat   := {}
 	local _nExtrat   := 0
 	local _nTotDesp  := 0
-	local _nTotSafra := 0
+//	local _nTotSafra := 0
 	local _oCtaCOrr  := NIL //ClsCtaCorr():New ()
 	local _nVlrSaude := 0
 	local _nRendProd := 0
@@ -133,6 +133,7 @@ static function _Imprime ()
 		return
 	EndIf	
 
+	Titulo += " - ano base " + mv_par03
 	li = _nMaxLin + 1
 	procregua (3)
 
@@ -151,9 +152,8 @@ static function _Imprime ()
 	_oSQL:_sQuery +=                 " WHERE SZI.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=                   " AND SZI.ZI_ASSOC   = SA2.A2_COD"
 	_oSQL:_sQuery +=                   " AND SZI.ZI_LOJASSO = SA2.A2_LOJA)"
-//	_oSQL:_sQuery +=  " GROUP BY A2_COD, A2_LOJA"
-	_oSQL:_sQuery +=  " ORDER BY A2_COD, A2_LOJA"
-	//_oSQL:Log ()
+	_oSQL:_sQuery +=  " ORDER BY A2_NOME, A2_COD, A2_LOJA"
+	_oSQL:Log ()
 	_aAssoc = aclone (_oSQL:Qry2Array())
 
 	procregua (len (_aAssoc))
@@ -220,14 +220,14 @@ static function _Imprime ()
 				endif
 
 				@ li, 0  psay stod (_aExtrat [_nExtrat, 1])
-				@ li, 12 psay U_TamFixo (_aExtrat [_nExtrat, 2], 57)
-				@ li, 70 psay transform (_nVlrSaude, "@E 999,999.99")
+				@ li, 12 psay U_TamFixo (_aExtrat [_nExtrat, 2], 51)
+				@ li, 64 psay transform (_nVlrSaude, "@E 999,999.99")
 				li ++
 				_nTotDesp += _nVlrSaude //_aExtrat [_nExtrat, 3]
 			endif
 		next
 		if _nTotDesp != 0
-			@ li, 70 psay '----------'
+			@ li, 64 psay '----------'
 			li ++
 		endif
 		@ li, 25 psay 'TOTAL DE DESPESAS MEDICAS EM ' + MV_PAR03 + ': ' + transform (_nTotDesp, "@E 999,999,999.99")
@@ -269,15 +269,6 @@ static function _Imprime ()
 
 			_oSQL:_sQuery += " SELECT E2_FILIAL, E2_NUM, E2_PARCELA, E2_EMISSAO, E2_VENCREA, E2_VALOR "
 			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2 "
-
-//			_oSQL:_sQuery +=   " FROM (SELECT DISTINCT FILIAL, DOC, SERIE, ASSOCIADO, LOJA_ASSOC"  // Usa distinct por que pode ter mais de 1 variedade na mesma nota.
-//			_oSQL:_sQuery +=           " FROM VA_VNOTAS_SAFRA V "
-//			_oSQL:_sQuery +=          " WHERE V.SAFRA         between '" + Tira1 (MV_PAR03) + "' AND '" + mv_par03 + "'" // Para pegar possiveis parcelas do ano anterior que foram pagas esta ano.
-//			_oSQL:_sQuery +=            " AND V.CODBASEASSOC  = '" + _oAssoc:CodBase + "'"
-//			_oSQL:_sQuery +=            " AND V.LOJABASEASSOC = '" + _oAssoc:LojaBase + "'"
-//			_oSQL:_sQuery +=            " AND V.TIPO_NF IN ('C', 'V')) AS V,"
-//			_oSQL:_sQuery +=          RetSQLName ("SE2") + " SE2 "
-
 			_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '01'"  // Pagamento de safra sempre fica concentrado na matriz.
 			_oSQL:_sQuery +=    " AND SE2.E2_TIPO    = 'FAT'"  // Pagamentos ficam aglutinados em faturas
@@ -294,31 +285,51 @@ static function _Imprime ()
 			_oSQL:_sQuery +=                   " AND ZI_DATA    between '" + Tira1 (mv_par03) + "0101' AND '" + mv_par03 + "1231'" // Para pegar possiveis parcelas do ano anterior que foram pagas este ano.
 			_oSQL:_sQuery +=                   " AND ZI_TM      = '13')"
 			_oSQL:_sQuery +=    " AND SE2.E2_FORNECE + E2_LOJA IN " + FormatIn (_sCodLoja, '/')
+
+			if mv_par03 == '2019'  // Para este ano deve somar o adto.de distribuicao de sobras gerado em 28/02/2019
+				_oSQL:_sQuery += " UNION ALL"
+				_oSQL:_sQuery += " SELECT E2_FILIAL, E2_NUM, E2_PARCELA, E2_EMISSAO, E2_VENCREA, E2_VALOR "
+				_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2 "
+				_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '01'"  // Pagamento de safra sempre fica concentrado na matriz.
+				_oSQL:_sQuery +=    " AND SE2.E2_TIPO    = 'DP'"  // Pagamentos ficam aglutinados em faturas
+				_oSQL:_sQuery +=    " AND SE2.E2_VENCREA between '" + mv_par03 + "0101' AND '" + mv_par03 + "1231'"
+				_oSQL:_sQuery +=    " AND EXISTS (SELECT *"
+				_oSQL:_sQuery +=                  " FROM " + RetSQLName ("SZI") + " SZI "
+				_oSQL:_sQuery +=                 " WHERE ZI_FILIAL  = SE2.E2_FILIAL""
+				_oSQL:_sQuery +=                   " AND ZI_ASSOC   = SE2.E2_FORNECE"
+				_oSQL:_sQuery +=                   " AND ZI_LOJASSO = SE2.E2_LOJA"
+				_oSQL:_sQuery +=                   " AND ZI_DOC     = SE2.E2_NUM"
+				_oSQL:_sQuery +=                   " AND ZI_SERIE   = SE2.E2_PREFIXO"
+				_oSQL:_sQuery +=                   " AND ZI_PARCELA = SE2.E2_PARCELA"
+				_oSQL:_sQuery +=                   " AND ZI_DATA    between '" + Tira1 (mv_par03) + "0101' AND '" + mv_par03 + "1231'" // Para pegar possiveis parcelas do ano anterior que foram pagas este ano.
+				_oSQL:_sQuery +=                   " AND ZI_TM      = '30')"
+				_oSQL:_sQuery +=    " AND SE2.E2_FORNECE + E2_LOJA IN " + FormatIn (_sCodLoja, '/')
+			endif
 			//_oSQL:Log ()
 			_sAliasQ = _oSQL:Qry2Trb (.T.)
 			(_sAliasQ) -> (dbgotop ())
-			if mv_par05 == 1  // Detalhar rendimentos de producao
+//			if mv_par05 == 1  // Detalhar rendimentos de producao
 				@ li, 16 psay 'Filial   Titulo       Emissao     Vencto             Valor'
 				li ++
-			endif
+//			endif
 			do while ! (_sAliasQ) -> (eof ())
-				if mv_par05 == 1  // Detalhar rendimentos de producao
+//				if mv_par05 == 1  // Detalhar rendimentos de producao
 					if li > _nMaxLin - 1
 						cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
 					endif
 					@ li, 16 psay (_sAliasQ) -> e2_filial + '       ' + (_sAliasQ) -> e2_num + '-' + (_sAliasQ) -> e2_parcela + '  ' + dtoc ((_sAliasQ) -> e2_emissao) + '  ' + dtoc ((_sAliasQ) -> e2_vencrea) + transform ((_sAliasQ) -> e2_valor, "@E 999,999,999.99")
 					li ++
-				endif
+//				endif
 				_nRendProd += (_sAliasQ) -> e2_valor
 				(_sAliasQ) -> (dbskip ())
 			enddo
 		endif
 
-		if mv_par03 == '2019'
-			u_help ('Para este ano verificar se deve somar aos rendimentos de producao o adto.de distribuicao de sobras gerado em 28/02/2019')
-			_nRendProd = 0
+		if _nRendProd != 0
+			@ li, 64 psay '----------'
+			li ++
 		endif
-
 		@ li, 12 psay 'TOTAL RENDIMENTOS PRODUCAO RECEBIDOS EM ' + mv_par03 + ':   ' + transform (_nRendProd, "@E 999,999,999.99")
 		li += 2
 	next
@@ -355,8 +366,8 @@ static function _ValidPerg ()
 	aadd (_aRegsPerg, {01, "CPF inicial                   ", "C", 14, 0,  "",   "SA2_CP", {},   ""})
 	aadd (_aRegsPerg, {02, "CPF final                     ", "C", 14, 0,  "",   "SA2_CP", {},   ""})
 	aadd (_aRegsPerg, {03, "Ano base                      ", "C", 4,  0,  "",   "      ", {},   ""})
-	aadd (_aRegsPerg, {04, "Movtos.pl.saude(separ.por /)  ", "C", 60, 0,  "",   "      ", {},   ""})
-	aadd (_aRegsPerg, {05, "Detalhar rendim.producao?     ", "N", 1,  0,  "",   "      ", {'Sim', 'Nao'},   ""})
+//	aadd (_aRegsPerg, {04, "Movtos.pl.saude(separ.por /)  ", "C", 60, 0,  "",   "      ", {},   ""})
+//	aadd (_aRegsPerg, {05, "Detalhar rendim.producao?     ", "N", 1,  0,  "",   "      ", {'Sim', 'Nao'},   ""})
 
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 Return
