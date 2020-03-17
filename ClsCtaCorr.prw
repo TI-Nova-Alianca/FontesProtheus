@@ -69,6 +69,8 @@
 // 06/12/2019 - Robert - Grava E2_VENCREA (estava ficando vazio)
 // 21/01/2019 - Robert - Valida minimo de 15% do saldo de cota para transferir.
 //                       Gera lctos de resgate somente para o codigo/loja base.
+// 17/03/2020 - Robert - Passa a permitir inclusao de movtos que geram NDF (via solicitacao de confirmacao) - GLPI 7687
+//                     - Comentariadas declaracoes de variaveis em desuso.
 //
 
 // ------------------------------------------------------------------------------------
@@ -251,7 +253,7 @@ return _lContinua
 // Atualiza saldo do movimento.
 METHOD AtuSaldo () Class ClsCtaCorr
 	local _lContinua := .T.
-	local _oAssoc    := ""
+//	local _oAssoc    := ""
 	local _nSaldo    := 0
 	local _aAreaSE2  := {}
 
@@ -473,8 +475,8 @@ return _lContinua
 // Exclui movimento.
 METHOD Exclui () Class ClsCtaCorr
 	local _lContinua := .T.
-	local _sQuery    := ""
-	local _oAssoc    := ""
+//	local _sQuery    := ""
+//	local _oAssoc    := ""
 	local _aAutoSE2  := {}
 
 	//u_logIni (GetClassName (::Self) + '.' + procname ())
@@ -766,7 +768,7 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _lCtOnLine) class ClsCtaCorr
 	local _lContinua  := .T.
 	local _aAutoSE2   := {}
 	local _sParcela   := ""
-	local _sQuery     := ""
+//	local _sQuery     := ""
 	local _sSQL       := ""
 	local _aAreaAnt   := U_ML_SRArea ()
 	local _aAmbAnt    := U_SalvaAmb ()
@@ -1004,7 +1006,7 @@ return _lRet
 // Grava novo registro.
 METHOD Grava (_lSZIGrav, _lMemoGrav) Class ClsCtaCorr
 	local _lContinua := .T.
-	local _sQuery    := ""
+//	local _sQuery    := ""
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _oAssoc    := NIL
 	local _dEmiSE2   := ctod ('')
@@ -1709,8 +1711,12 @@ METHOD PodeIncl () Class ClsCtaCorr
 //			if ! ::TM $ '11/08/13'
 			if ! ::TM $ '11/08/13/19'
 				 if empty (::FilOrig)  // Aceita movto. de ex associados quando tratar-se de transferencia de outra filial.
-					::UltMsg += "Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data de " + dtoc (::DtMovto)
-					_lContinua = .F.
+					if alltrim (::OQueGera ()) $ "NDF/" .and. msgnoyes ("Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data de " + dtoc (::DtMovto) + ". Confirma a inclusao deste registro?")
+						// Pode passar
+					else
+						::UltMsg += "Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data de " + dtoc (::DtMovto)
+						_lContinua = .F.
+					endif
 				endif
 			endif
 		endif
