@@ -204,7 +204,7 @@ Static Function _Gera03 ()
 	if _lContinua .and. _sTipoNF == "N"  // Notas normais
 
 		// Soh para me obrigar a revisar anualmente...
-		if _sSafra > '2019'
+		if _sSafra > '2020'
 			u_help ("revisar rotina de geracao de NF compra para esta safra")
 			return
 		endif
