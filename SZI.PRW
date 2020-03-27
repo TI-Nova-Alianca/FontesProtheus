@@ -36,6 +36,7 @@
 // 21/01/2020 - Robert - Reabilitada consulta de cota capital.
 // 12/03/2020 - Robert - Ajustados parametros de chamada do relatorio IRAssoc (dados para fins de IR) - GLPI 7614.
 //                     - Comentariadas declaracoes de variaveis nao usadas; removidas algumas linhas jah comentariadas.
+// 27/03/2020 - Robert - Permite compensar titulos transferidos (em bordero) para atender adto.safra enviados via CNAB.
 //
 
 // ------------------------------------------------------------------------------------
@@ -738,7 +739,7 @@ User Function SZIB ()
 					endif
 					U_GravaSX1 (cPerg, "05", 2)  // Considera filiais abaixo: nao (talvez permita compensar entre filiais, mas, por enquanto, preferimos nao tentar).
 					U_GravaSX1 (cPerg, "10", 1)  // Compensa titulos: normais.
-					U_GravaSX1 (cPerg, "12", 2)  // Compensa transferidos: nao.
+					U_GravaSX1 (cPerg, "12", 1)  // Compensa transferidos [S/N]
 					if _lCtOnLine
 						U_GravaSX1 (cPerg, "08", 2)
 						U_GravaSX1 (cPerg, "09", 1)

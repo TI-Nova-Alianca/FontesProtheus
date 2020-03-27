@@ -30,6 +30,8 @@ User Function VA_GNF1 (_lAuto)
 	Private cPerg   := "VAGNF1"
 
 	u_help ('criar tratyamento para gravar o ZZ9_TES (campo novo). lembrar de gerar com TES 028 quando complemento de compra de livramento (001369). Podia testar tambem se eh associado.')
+	u_help ('buscar classificacao da uva nas cargas e nao nas notas de entrada.')
+	u_help ('GLPI 7714 - compra de Joao Fagherazi merlot -> mudar pra Isabel:  Na carga 1802, Filial 07, data 21/02/2020, NFProdutor 805880, Serie 185, Contranota 13409, PESO_LIQ 4100 kg, Grau Babo 15.4, a VARIEDADE: MERLOT está incorreto. A variedade real da carga é ISABEL.')
 	return
 
 

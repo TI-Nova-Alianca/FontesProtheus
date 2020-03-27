@@ -15,7 +15,7 @@
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
 		u_log ('Preparando ambiente')
-		prepare environment empresa '01' filial '03' modulo '05'
+		prepare environment empresa '01' filial '01' modulo '05'
 		private cModulo   := 'FAT'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -64,6 +64,21 @@ static function _AndaLogo ()
 	u_log ('Batch: [retorno:', _oBatch:Retorno, '] [Mensagens:', _oBatch:Mensagens, ']')
 return
 
+/*
+	Private cPerg   := "VA_ADSAF"
+	U_GravaSX1 (cPerg, '01', '012000')
+	U_GravaSX1 (cPerg, '02', '')
+	U_GravaSX1 (cPerg, '03', '012800')
+	U_GravaSX1 (cPerg, '04', 'z')
+	U_GravaSX1 (cPerg, '05', '2020')
+	U_GravaSX1 (cPerg, '06', 1)  // Simular / Gerar
+	U_GravaSX1 (cPerg, '07', stod ('20200331'))  // Data para pagto
+	U_GravaSX1 (cPerg, '08', '041')  // Banco
+	U_GravaSX1 (cPerg, '09', '0873')  // Agencia
+	U_GravaSX1 (cPerg, '10', '0685668204')  // Conta
+	u_va_adsaf (.T.)
+return
+*/
 /*
 	// Recalcula classificacao uvas para 2020 e compara com conteudo gravado no SZF.
 	if "TESTE" $ upper (GetEnvServer())
