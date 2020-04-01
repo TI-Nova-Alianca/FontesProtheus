@@ -36,6 +36,7 @@
 // 21/01/2020 - Robert - Reabilitada consulta de cota capital.
 // 12/03/2020 - Robert - Ajustados parametros de chamada do relatorio IRAssoc (dados para fins de IR) - GLPI 7614.
 //                     - Comentariadas declaracoes de variaveis nao usadas; removidas algumas linhas jah comentariadas.
+// 01/04/2020 - Robert - Ajustados parametros de chamada do IRASSOC.PRW
 //
 
 // ------------------------------------------------------------------------------------
@@ -279,6 +280,12 @@ User Function SZIR (_nQual)
 			cPerg = "IRASSOC"
 			U_GravaSX1 (cPerg, "01", _oAssocRel:CPF)
 			U_GravaSX1 (cPerg, "02", _oAssocRel:CPF)
+			U_GravaSX1 (cPerg, "04", _oAssocRel:Codigo)
+			U_GravaSX1 (cPerg, "05", _oAssocRel:Loja)
+			U_GravaSX1 (cPerg, "06", _oAssocRel:Codigo)
+			U_GravaSX1 (cPerg, "07", _oAssocRel:Loja)
+			U_GravaSX1 (cPerg, "08", _oAssocRel:Nucleo)
+
 			U_IRAssoc ()
 		endif
 
