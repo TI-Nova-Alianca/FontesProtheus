@@ -195,7 +195,7 @@ Static Function _Gera()
 
 		procregua (len (_aFornec))
 		for _nIdxAdto = 1 to len (_aAdtos)
-			incproc ('Gerando PA para ' + _aFornec [_nFornec, 1])
+			incproc ('Gerando PA para ' + _aAdtos [_nIdxAdto, 1])
 
 			// Pode ser que o fornecedor jah tenha adiantamentos acima do valor a pagar.
 			if _aAdtos [_nIdxAdto, 6] <= 0

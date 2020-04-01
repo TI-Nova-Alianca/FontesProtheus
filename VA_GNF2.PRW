@@ -61,6 +61,9 @@ User Function VA_GNF2 (_lAutomat)
 	private _sOrigSZI  := "VA_GNF2"
 	private _sErroAuto := ""  // Deixar private para ser vista pela funcao U_Help ()
 
+	u_help ("Verificar se precisa ajustar a linha AADD(_aLinha , {D1_ITEMORI, right.... depois que mudamos o tamanho dos campos _ITEM")
+	return
+
 	// Verifica se o usuario tem liberacao para uso desta rotina.
 	if _lContinua
 		_lContinua = U_ZZUVL ('045', __cUserID, .T., cEmpAnt, cFilAnt)
