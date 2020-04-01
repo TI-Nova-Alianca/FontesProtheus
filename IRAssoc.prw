@@ -4,23 +4,23 @@
 // Descricao:  Impressao de dados para declaracao de IR de associados
 // 
 // Historico de alteracoes:
-// 15/08/2012 - Robert - Passa a agrupar todos os codigos/lojas usando o codigo e loja base do associado.
-//                     - Passa a buscar historico de safra usando codigo e loja base do associado.
-//                     - Passa a buscar capital social usando codigo e loja base do associado.
-//                     - Passa a buscar CPF, RG, etc. usando codigo e loja base do associado.
-// 21/03/2016 - Robert - Valida se o usuario pertence ao grupo 059.
-// 01/04/2016 - Robert - Desabilitado metodo HistSafr da classe ClsAssoc. Passa a ler direto na query principal.
-// 11/04/2017 - Robert - Passa a ler historico do plano de saudo direto do SZI e nao mais do metodo ExtratoCC().
-// 30/05/2017 - Robert - Criado movimento 29 (Unimed Jacinto), que precisa mesmo tratamento do 01 (plano saude).
-// 17/04/2019 - Robert - Tratamento para buscar somente as parcelas de pagto.safra com vcto.no ano base (GLPI 5727).
-// 10/03/2020 - Robert - Linha inserida apenas para testar branches no Git
-// 12/03/2020 - Robert - Ajustes / alinhamentos layout de impressao.
-//                     - Tratamento adto sobras pago em 2019 (GLPI 7614)
-
+// 15/08/2012 - Robert  - Passa a agrupar todos os codigos/lojas usando o codigo e loja base do associado.
+//                      - Passa a buscar historico de safra usando codigo e loja base do associado.
+//                      - Passa a buscar capital social usando codigo e loja base do associado.
+//                      - Passa a buscar CPF, RG, etc. usando codigo e loja base do associado.
+// 21/03/2016 - Robert  - Valida se o usuario pertence ao grupo 059.
+// 01/04/2016 - Robert  - Desabilitado metodo HistSafr da classe ClsAssoc. Passa a ler direto na query principal.
+// 11/04/2017 - Robert  - Passa a ler historico do plano de saudo direto do SZI e nao mais do metodo ExtratoCC().
+// 30/05/2017 - Robert  - Criado movimento 29 (Unimed Jacinto), que precisa mesmo tratamento do 01 (plano saude).
+// 17/04/2019 - Robert  - Tratamento para buscar somente as parcelas de pagto.safra com vcto.no ano base (GLPI 5727).
+// 10/03/2020 - Robert  - Linha inserida apenas para testar branches no Git
+// 12/03/2020 - Robert  - Ajustes / alinhamentos layout de impressao.
+//                      - Tratamento adto sobras pago em 2019 (GLPI 7614)
+// 13/03/2020 - Claudia - Criado parametros de associado e nucleo. GLPI 7660
+// -----------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
 
-// --------------------------------------------------------------------------
-user function IRAssoc (_lAutomat)
+User function IRAssoc (_lAutomat)
 	local _aRet     := {}
 	private _lAuto  := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)  // Uso sem interface com o usuario.
 
@@ -150,6 +150,7 @@ static function _Imprime ()
 	_oSQL:_sQuery +=    " AND EXISTS (SELECT * "
 	_oSQL:_sQuery +=                  " FROM " + RetSQLName ("SZI") + " SZI "
 	_oSQL:_sQuery +=                 " WHERE SZI.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=                   " AND SZI.ZI_ASSOC + SZI.ZI_LOJASSO BETWEEN '" + mv_par04 + mv_par05 + "' AND '" + mv_par06 + mv_par07 + "'"
 	_oSQL:_sQuery +=                   " AND SZI.ZI_ASSOC   = SA2.A2_COD"
 	_oSQL:_sQuery +=                   " AND SZI.ZI_LOJASSO = SA2.A2_LOJA)"
 	_oSQL:_sQuery +=  " ORDER BY A2_NOME, A2_COD, A2_LOJA"
@@ -166,6 +167,15 @@ static function _Imprime ()
 		if valtype (_oAssoc) != "O"
 			sa2 -> (dbskip ())
 			loop
+		endif
+		
+		// se informou o Nucleo filtra por nucleo
+		if mv_par08 != '  '
+			_oAssoc := ClsAssoc ():New (sa2 -> a2_cod, sa2 -> a2_loja)
+			if valtype (_oAssoc) != 'O' .or. _oAssoc:Nucleo != mv_par08
+				sa2 -> (dbskip ())
+				loop
+			endif
 		endif
 		incproc (sa2 -> a2_nome)
 		
@@ -353,9 +363,6 @@ static function _Array2TXT (_aArray, _sSeparad)
 		_sRet += alltrim (_aArray [_i]) + iif (_i < len (_aArray), _sSeparad, '')
 	next
 return _sRet
-
-
-
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 static function _ValidPerg ()
@@ -366,8 +373,12 @@ static function _ValidPerg ()
 	aadd (_aRegsPerg, {01, "CPF inicial                   ", "C", 14, 0,  "",   "SA2_CP", {},   ""})
 	aadd (_aRegsPerg, {02, "CPF final                     ", "C", 14, 0,  "",   "SA2_CP", {},   ""})
 	aadd (_aRegsPerg, {03, "Ano base                      ", "C", 4,  0,  "",   "      ", {},   ""})
-//	aadd (_aRegsPerg, {04, "Movtos.pl.saude(separ.por /)  ", "C", 60, 0,  "",   "      ", {},   ""})
-//	aadd (_aRegsPerg, {05, "Detalhar rendim.producao?     ", "N", 1,  0,  "",   "      ", {'Sim', 'Nao'},   ""})
+	aadd (_aRegsPerg, {04, "Associado inicial             ", "C", 6,  0,  "",   "SA2_AS", {},   ""})
+	aadd (_aRegsPerg, {05, "Loja associado inicial        ", "C", 2,  0,  "",   "      ", {},   ""})
+	aadd (_aRegsPerg, {06, "Associado final               ", "C", 6,  0,  "",   "SA2_AS", {},   ""})
+	aadd (_aRegsPerg, {07, "Loja associado final          ", "C", 2,  0,  "",   "      ", {},   ""})
+	aadd (_aRegsPerg, {08, "Nucleo                        ", "C", 2,  0,  "",   "   "   , {},   ""})
+
 
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 Return
