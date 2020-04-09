@@ -1,0 +1,871 @@
+// Autor.....: Catia Cardoso
+// Data......: 25/04/2017
+// Nota......: Relatorio Fechamento de Safra
+
+// Historico de alteracoes:
+// 29/06/2017 - Catia  - Alteração para que as notas de complemento de compra listem por ultimo
+// 17/07/2017 - Catia  - Incluido parametro de Nucleo
+// 17/07/2017 - Catia  - Incluido parametro de saldo de conta corrente
+// 17/07/2017 - Catia  - Alteração para possibilitar que se imprima tds os associados de um nucleo - usar ZZZZZZ e ZZ - associado e loja
+// 18/07/2017 - Catia  - Listar em ordem alfabetica
+// 12/09/2017 - Catia  - parcela C da Safra
+// 25/03/2018 - Catia  - Parametros para safra 2018
+// 04/04/2018 - Catia  - Quebra de pagina nos registros da conta corrente nao estava fazendo corretamente
+// 24/05/2018 - Robert - Nao listava previsao de pagamento (safra 2018) a cada quebra de associado.
+// 10/04/2019 - Robert - Ajustes diversos para a safra 2019
+// 10/06/2019 - Robert - Considera tambem notas na previsao de pagamentos (antes pegava apenas tipo FAT)
+// 17/06/2019 - Robert - Aumentada mascara do valor unitario para 4 decimais.
+// 
+
+#include "rwmake.ch"
+#IFNDEF WINDOWS
+	#DEFINE PSAY SAY
+#ENDIF
+
+User Function ML_FECHASAFRA
+	cString := "SD2"
+    cDesc1  := "Fechamento Safra"
+    cDesc2  := " "
+    cDesc3  := " "
+    tamanho := "G"
+    aReturn := {"Zebrado", 1,"Administracao", 1, 2, 1, "",1}
+    aLinha  := {}
+    nLastKey:= 0
+    titulo  := "Fechamento Safra "
+    cPerg   := "ML_FECHASAFRA"
+    wnrel   := "ML_FECHASAFRA"
+    nTipo   := 0
+
+    _ValidPerg()
+    if Pergunte(cPerg,.T.)
+    	titulo := "Fechamento Safra " + mv_par01
+		wnrel  := SetPrint(cString,wnrel,cPerg,titulo,cDesc1,cDesc2,cDesc3,.F.)
+		
+		If nLastKey == 27
+		   Return
+	    Endif
+
+		// Deleta o arquivo do relatorio para evitar a pergunta se deseja sobrescrever.
+		delete file (__reldir + wnrel + ".##r")
+
+	    SetDefault(aReturn,cString)
+	    If nLastKey == 27
+		   Return
+	    Endif
+	
+	    RptStatus({|| RptDetail()})
+	endif
+		    
+Return
+
+Static Function RptDetail()
+	local _oAssoc := NIL
+	local _oSQL   := NIL
+	local FAT	  := 0
+	local i		  := 0
+	
+    SetRegua(LastRec())
+    nTipo := IIF(aReturn[4]==1,15,18)
+    li    := 80
+    m_pag := 1
+    
+    cabec1:="FILIAL  NF/SERIE  DT EMISSAO   PRODUTO (UVA)                          GRAU/CLAS           PESO    VLR UNIT         VLR TOTAL  OBSERVACOES"
+    cabec2:=""
+    
+    
+	// monta query
+    _sQuery := " "
+		_sQuery += "SELECT ASSOCIADO, LOJA_ASSOC, NOME_ASSOC"
+		_sQuery += "     , CASE WHEN TIPO_NF = 'V' THEN 'A' ELSE TIPO_NF END AS TIPO_NF"
+		_sQuery += "     , FILIAL, DATA, DOC, SERIE" 
+		_sQuery += "     , PRODUTO, DESCRICAO, GRAU, PESO_LIQ, VALOR_UNIT, VALOR_TOTAL"
+		_sQuery += "     , CLAS_FINAL, CLAS_ABD, SIST_CONDUCAO"
+		if mv_par01 = '2017'
+			_sQuery += "     , CASE WHEN DATA < '20170630' THEN	
+			_sQuery += "	  		   CASE WHEN PRODUTO IN ('9925', '9948', '9822', '9959') THEN 'A - 100%'" 
+		    _sQuery += "            	 	WHEN TIPO_ORGANICO = 'O' THEN 'A - 100%'"
+		    _sQuery += "	        	 	WHEN FINA_COMUM    = 'F' AND FORMA_CLAS_UVA_FINA = 'F' AND SIST_CONDUCAO = 'E' THEN 'A - 50%, B - 50%'"
+			_sQuery += "                    WHEN TINTOREA      = 'S' THEN 'A - 50%, B - 50%'"
+		    _sQuery += "                    ELSE 'A - 15%, B - 22%, C - 31,5%' END"
+		    // complemento - notas geradas em julho
+		    _sQuery += "       	    WHEN DATA > '20170630' AND DATA < '20170731' THEN"  
+			_sQuery += "			   CASE WHEN PRODUTO IN ('9925', '9948', '9822', '9959') THEN 'B - 100%'"            
+			_sQuery += " 					WHEN TIPO_ORGANICO = 'O' THEN 'B - 100%'"	        
+			_sQuery += " 					WHEN FINA_COMUM    = 'F' AND FORMA_CLAS_UVA_FINA = 'F' AND SIST_CONDUCAO = 'E' THEN 'B - 100%'"           
+			_sQuery += " 				    WHEN TINTOREA      = 'S' THEN 'B - 100%'"       
+			_sQuery += " 					ELSE 'B - 22%, C - 31,5%' END"
+			// complemento - notas geradas em agosto
+		    _sQuery += "       	    WHEN DATA > '20170731' THEN"  
+			_sQuery += "			   CASE WHEN PRODUTO IN ('9925', '9948', '9822', '9959') THEN 'C - 100%'"            
+			_sQuery += " 					WHEN TIPO_ORGANICO = 'O' THEN 'C - 100%'"	        
+			_sQuery += " 					WHEN FINA_COMUM    = 'F' AND FORMA_CLAS_UVA_FINA = 'F' AND SIST_CONDUCAO = 'E' THEN 'C - 100%'"           
+			_sQuery += " 				    WHEN TINTOREA      = 'S' THEN 'C - 100%'"       
+			_sQuery += " 					ELSE 'B - 22%, C - 31,5%' END"
+			_sQuery += "	   END AS REGR_PAG" 
+		endif
+ 		_sQuery += "  FROM VA_VNOTAS_SAFRA"
+
+// busca pelo objeto para manter consistencia com cadastro 		// se informou o Nucleo filtra por nucleo
+// 		if mv_par04 != '  '
+// 			_sQuery += "  	INNER JOIN SA2010 AS SA2"
+// 			_sQuery += "		ON (SA2.D_E_L_E_T_  = ''"
+// 			_sQuery += "			AND SA2.A2_COD  = ASSOCIADO" 
+// 			_sQuery += "			AND SA2.A2_VANUCL = '" + mv_par04 + "'"
+// 			_sQuery += "			AND SA2.A2_LOJA = LOJA_ASSOC )"
+// 		endif
+
+		_sQuery += " WHERE SAFRA      = '" + mv_par01 + "'"
+		// se informou o associado busca so o associado - senão le todos
+		if val(mv_par02) > 0
+			_sQuery += "   AND ASSOCIADO  = '" + mv_par02 + "'"
+			_sQuery += "   AND LOJA_ASSOC = '" + mv_par03 + "'"
+		endif			
+		_sQuery += " ORDER BY NOME_ASSOC, ASSOCIADO, LOJA_ASSOC, TIPO_NF DESC, DATA"
+	//u_showmemo(_sQuery)
+
+    // imprime relatorio
+    _sAliasQ = GetNextAlias ()
+    DbUseArea(.t., 'TOPCONN', TcGenQry (,, _sQuery), _sAliasQ, .f., .t.)
+    count to _nRecCount
+    procregua (_nRecCount)
+    
+    _aTot       = {0,0,0,0,0,0,0,0}
+    _aTotTp     = {0,0,0,0,0,0,0,0}
+    _wtotA      := 0
+    _wtotB      := 0
+    _wtotC      := 0
+    _wvlrA		:= 0
+    _wvlrB		:= 0
+    _wsaldo     := 0
+    _vAnt       := ""
+    _VAntLj     := ""
+    _vAntnome   := ""
+    _wtipoNFant := ""
+    _wfilial      := ""
+    _wcomplemento := ""
+    
+	// lista fechamento safra do associado      
+    (_sAliasQ) -> (DBGoTop ())
+     Do While ! (_sAliasQ) -> (Eof ())
+     	   
+		// se informou o Nucleo filtra por nucleo
+		if mv_par04 != '  '
+			_oAssoc := ClsAssoc ():New ((_sAliasQ) -> ASSOCIADO, (_sAliasQ) -> LOJA_ASSOC)
+			if valtype (_oAssoc) != 'O' .or. _oAssoc:Nucleo != mv_par04
+				//u_log ('nucleo', _oAssoc:Nucleo)
+				(_sAliasQ) -> (dbskip ())
+				loop
+			endif
+		endif
+
+		  IF _vAnt + _VAntLj  != (_sAliasQ) -> ASSOCIADO + (_sAliasQ) -> LOJA_ASSOC
+		  	 IF _aTotTp[2] = 0
+			 	 If li>63
+			 		cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+			 	 Endif
+			 	// li ++
+			 	 @ li, 00 PSAY "Associado: " + (_sAliasQ) -> ASSOCIADO + '-' + ALLTRIM((_sAliasQ) -> LOJA_ASSOC) + ' ' + ALLTRIM((_sAliasQ) -> NOME_ASSOC)
+			   	 li ++ 
+			   	 li ++
+			 endif			   	 
+			 if _aTotTp[2] > 0
+		        // imprime por tipo de nota
+		        If li>63
+		            cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+		        Endif        
+		        if _wtipoNFant = 'E'
+		   			@li, 09 PSAY "Total NF's de ENTREGA de Uva"
+		   		elseif _wtipoNFant = 'C'
+		   			@li, 09 PSAY "Total NF's de COMPRA de Uva"
+		   		elseif _wtipoNFant = 'A'
+		   			@li, 09 PSAY "Total NF's de Complemento Vlr"
+				elseif _wtipoNFant = 'P'
+					@li, 09 PSAY "Total NF's de Produção Própria"
+		   		endif
+		        @ li,  78 PSAY _aTotTp [1]  Picture "@E 9,999,999,999.99"
+		        @ li, 108 PSAY _aTotTp [2]  Picture "@E 9,999,999,999.99"
+				li++
+				li++
+		        
+			    // imprime totais do associado
+			    If li+6 > 63
+			        cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+			    Endif
+			    
+			    @ li, 00 PSAY "Totais do Associado: "
+				@ li, 39 PSAY "Entrega"
+			    @ li, 78 PSAY _aTot [1]  Picture "@E 9,999,999,999.99"
+			    @ li,108 PSAY _aTot [2]  Picture "@E 9,999,999,999.99"
+			    li++
+			    @ li, 39 PSAY "Compra"
+			    @ li, 78 PSAY _aTot [3]  Picture "@E 9,999,999,999.99"
+			    @ li,108 PSAY _aTot [4]  Picture "@E 9,999,999,999.99"
+			    li++
+			    @ li, 39 PSAY "Compl.Vlr"
+			    @ li, 78 PSAY _aTot [5]  Picture "@E 9,999,999,999.99"
+			    @ li,108 PSAY _aTot [6]  Picture "@E 9,999,999,999.99"
+			    li++
+			    @ li, 39 PSAY "Total a Receber"
+			    @ li,108 PSAY (_aTot [4] + _aTot [6])  Picture "@E 9,999,999,999.99"
+			    li++
+			    li++
+			    //li++
+			    
+			     // previsao de pagamento
+			     // le as variadades e monta valor das parcelas previstas
+			     If li+6 > 63
+			        cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+			     Endif        
+			     
+			     if mv_par01 = '2017'
+					 @ li, 00 PSAY "Previsão de Pagamento: "
+					 @ li, 39 PSAY "Parcela A - ABRIL"
+					 @ li,155 PSAY _wtotA  Picture "@E 9,999,999,999.99"
+					 li++ 
+					 @ li, 39 PSAY "Parcela B - JULHO"
+					 @ li,155 PSAY _wtotB  Picture "@E 9,999,999,999.99"
+					 li++
+					 @ li, 39 PSAY "Parcela C - SETEMBRO"
+					 @ li,155 PSAY _wtotC  Picture "@E 9,999,999,999.99"
+					 li++
+					 @ li, 39 PSAY "Saldo Restante"
+					 @ li,155 PSAY _wsaldo  Picture "@E 9,999,999,999.99"
+					 li++
+					 @ li, 39 PSAY "Total"
+					 @ li,155 PSAY (_wtotA + _wtotB + _wtotC + _wsaldo)  Picture "@E 9,999,999,999.99"
+					 li++
+					 li++
+					 li++
+
+				 elseif mv_par01 >= '2018'
+				 	_sQuery  = " "
+					_sQuery += "SELECT E2_NUM, E2_VENCTO, E2_VALOR, E2_SALDO"
+			  		_sQuery += "  FROM SE2010"
+			 		_sQuery += " WHERE D_E_L_E_T_ = ''"
+			   		_sQuery += "   AND E2_FILIAL  = '01'"
+			   		_sQuery += "   AND E2_FORNECE = '" + _vant + "'"
+			   		_sQuery += "   AND E2_LOJA    = '" + _vantlj + "'"
+			   		_sQuery += "   AND E2_PREFIXO = '30'"
+//			   		_sQuery += "   AND E2_TIPO    = 'FAT'"
+					_sQuery += "   AND ((E2_TIPO = 'FAT' AND E2_NUM like '" + mv_par01 + "%') OR (E2_TIPO IN ('NF', 'DP') AND E2_FATURA = ''))"
+			   		if mv_par01 == '2018'
+						_sQuery += "   AND E2_EMISSAO > '20180301'"
+					endif
+					_sQuery += "   AND E2_EMISSAO >= '" + mv_par01 + "0101'"
+					_sQuery += " ORDER BY E2_VENCTO, E2_NUM"
+					u_log (_sQuery)
+					
+					_aDados := U_Qry2Array(_sQuery)
+					if len(_aDados) > 0
+						@ li, 00 PSAY "Previsão de Pagamento: "
+						li++
+						@ li, 39 PSAY "FATURA"  
+						@ li, 60 PSAY "VENCIMENTO"
+						@ li, 89 PSAY "VALOR"
+						@ li,108 PSAY "SALDO"
+						li++
+						_wtotvlr = 0
+						_wtotsld = 0
+						for FAT=1 to len(_aDados)
+					    	@ li, 39 PSAY _aDados[FAT,1]   
+							@ li, 60 PSAY _aDados[FAT,2]
+							@ li, 80 PSAY _aDados[FAT,3] Picture "@E 999,999,999.99"
+							@ li,100 PSAY _aDados[FAT,4] Picture "@E 999,999,999.99"
+							li++
+							_wtotvlr = _wtotvlr + _aDados[FAT,3]
+							_wtotsld = _wtotsld + _aDados[FAT,4]
+						next
+						@ li, 39 PSAY "Totais: "
+						@ li, 80 PSAY _wtotvlr Picture "@E 999,999,999.99"
+						@ li,100 PSAY _wtotsld Picture "@E 999,999,999.99"
+						li++	
+						li++		 
+				    endif	
+
+				 endif
+				 
+				If li+3 > 63
+					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+				Endif
+				
+				if mv_par01 = '2017'
+					@ li, 00 PSAY "Regras Pagamento:"
+					@ li, 39 PSAY "Parcela A = 100% Bordô, 100% Orgânicas, 50% Tintóreas, 50% Viníferas em espaldeira, 15% das demais variedades"
+					li++
+					@ li, 39 PSAY "Parcela B = 50% Tintóreas, 50% Viníferas em espaldeira, 22% das demais variedades, 100% do complemento de julho Bordô, Orgânicas, Tintóreas"
+					li++
+					li++
+					@ li, 39 PSAY "Parcela C = 31,5% das demais variedades, 100% dos complementos de de julho Bordô, Orgânicas, Tintóreas"
+					li++
+					li++
+				elseif mv_par01 >= '2018'
+					@ li, 00 PSAY "Regras Pagamento:"
+					@ li, 39 PSAY "Grupo 1 -  5 vezes - Bordo e Organicas"
+					li++
+					@ li, 39 PSAY "Grupo 2 -  9 vezes - Tintorias e Vinifereas espaldeira"
+					li++
+					@ li, 39 PSAY "Grupo 3 - 11 vezes - Demais Variedades"
+					li++
+				else
+					@ li, 39 PSAY "Regras Pagamento ainda não definidas para esta safra."
+					li++
+				endif
+
+				if _wcomplemento = 'S'
+					_sQuery := " "
+					_sQuery += "SELECT DISTINCT PRODUTO, DESCRICAO, GRAU, PESO_LIQ"
+					_sQuery += "     ,   VUNIT_EFETIVO"
+					_sQuery += "     , VALOR_COMPRA + VALOR_COMPLEMENTO AS VALOR_TOTAL"
+					_sQuery += "  FROM VA_VPRECO_EFETIVO_SAFRA"
+					_sQuery += " WHERE SAFRA      = '" + mv_par01 + "'"
+					_sQuery += "   AND ASSOCIADO  = '" + _vAnt + "'"
+					_sQuery += "   AND LOJA_ASSOC = '" + _VAntLj + "'"
+					_sQuery += " ORDER BY DESCRICAO, GRAU"
+					_aDados := U_Qry2Array(_sQuery)
+					
+			    	// lista valor efetivo por variedade/grau
+			    	if len(_aDados)> 0
+			    		li ++
+			    		li++
+			    		@li,  00 PSAY "Valor Efetivo por Variedade/Grau:"
+			    		for i=1 to len(_aDados)
+				    		If li + len(_aDados) > 63
+				        		cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+				    		Endif        
+				    		
+				     		@li,  31 PSAY left (ALLTRIM( _aDados [i,1])  + ' - ' + ALLTRIM(_aDados [i,2]), 40)
+				     		@li,  89 PSAY _aDados [i,3] Picture "@E 99.99"
+				           	@li, 115 PSAY _aDados [i,4] Picture "@E 9,999,999,999.99"
+			           		@li, 135 PSAY _aDados [i,5] Picture "@E 9,999,999.99"
+							@li, 155 PSAY _aDados [i,6] Picture "@E 9,999,999,999.99"
+				     		li ++
+				     	next
+				     	li ++
+					endif
+				endif
+				// imprime saldo conta corrente
+				if mv_par05 == 1				 
+//					_oAssoc := ClsAssoc ():New (_vAnt , _VAntLj)
+//					_aSld := _oAssoc:LctComSald ('', 'zz', date(), '', 'zz', '10/17/18/19')
+					_oSQL := ClsSQL():New ()
+					_oSQL:_sQuery := ""
+					_oSQL:_sQuery += "SELECT SZI.ZI_DATA, ZI_TM, ZI_DOC, ZI_HISTOR, ZX5_10DC, ZI_SALDO"
+					_oSQL:_sQuery +=  " FROM " + RETSQLNAME ("SZI") + " SZI, "
+					_oSQL:_sQuery +=             RETSQLNAME ("ZX5") + " ZX5 "
+					_oSQL:_sQuery += " WHERE ZX5.D_E_L_E_T_ != '*'"
+					_oSQL:_sQuery +=   " AND ZX5.ZX5_FILIAL  = '" + xfilial ("ZX5")  + "'"
+					_oSQL:_sQuery +=   " AND ZX5.ZX5_TABELA  = '10'"
+					_oSQL:_sQuery +=   " AND ZX5.ZX5_10COD   = SZI.ZI_TM"
+					_oSQL:_sQuery +=   " AND SZI.D_E_L_E_T_ != '*'"
+					_oSQL:_sQuery +=   " AND SZI.ZI_FILIAL   BETWEEN '  ' and 'zz'"
+					_oSQL:_sQuery +=   " AND SZI.ZI_ASSOC    = '" + _vAnt + "'"
+					_oSQL:_sQuery +=   " AND SZI.ZI_LOJASSO  = '" + _vAntLj + "'"
+					_oSQL:_sQuery +=   " AND SZI.ZI_TM       NOT IN ('10/17/18/19')"
+					_oSQL:_sQuery +=   " AND SZI.ZI_DATA     like '" + mv_par01 + "%'"
+					_oSQL:_sQuery +=   " AND SZI.ZI_SALDO    > 0"
+					_oSQL:_sQuery += " ORDER BY ZI_DATA, ZI_TM, ZI_FILIAL, ZI_HISTOR, ZI_SERIE, ZI_DOC, ZI_PARCELA"
+					//u_log (_oSQL:_sQuery)
+					_aSld := aclone (_oSQL:Qry2Array (.F., .F.))
+					
+					if len (_aSld) > 0
+						li ++
+						_wsaldo := 0
+						@li,  00 PSAY "Lctos Aberto Conta Corrente:"
+						for i=1 to len (_aSld)
+//							_wdata  = _aSld [i,3]
+//							_wdoc   = _aSld [i,5]
+//							_wtpmov = _aSld [i,7]
+//							_whist  = substr(_aSld [i,9],1,80)
+//							_wdc    = _aSld [i,10]
+//							_wvalor = _aSld [i,11]			
+							_wdata  = stod (_aSld [i,1])
+							_wtpmov = _aSld [i,2]
+							_wdoc   = _aSld [i,3]
+							_whist  = substr(_aSld [i,4],1,80)
+							_wdc    = _aSld [i,5]
+							_wvalor = _aSld [i,6]
+				
+							If li>63
+		        			    cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+		        			Endif        
+		        				
+							@li,  39 PSAY _wdata
+							@li,  55 PSAY _wtpmov 
+							@li,  60 PSAY _wdoc + '-' + _whist 
+							@li, 155 PSAY _wvalor Picture "@E 9,999,999,999.99"
+							@li, 172 PSAY _wdc
+							li ++
+							if _wdc = "C"
+								_wsaldo += _wvalor
+							else
+								_wsaldo -= _wvalor
+							endif																																																		
+						next
+						@li,  60 PSAY "SALDO"
+						@li, 155 PSAY _wsaldo Picture "@E 9,999,999,999.99"
+						if _wsaldo > 0
+							@li, 172 PSAY "C"
+						else
+							@li, 172 PSAY "D"
+						endif
+						
+						li ++
+					endif
+				endif		
+				
+				// salta pagina
+				li := 80
+				If li>63
+                    cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+                    li ++
+			 	 	@ li, 00 PSAY "Associado: " + (_sAliasQ) -> ASSOCIADO + '-' + ALLTRIM((_sAliasQ) -> NOME_ASSOC)
+			   	 	li ++ 
+			   	 	li ++
+			   	 	
+            		_aTot       = {0,0,0,0,0,0,0,0}
+    				_aTotTp     = {0,0,0,0,0,0,0,0}
+    				_wtotA      := 0
+    				_wtotB      := 0
+    				_wtotC      := 0
+    				_wvlrA		:= 0
+    				_wvlrB		:= 0
+    				_wsaldo     := 0
+				    _wfilial      := ""
+    				_wcomplemento := ""
+            		
+                    
+                endif    
+			 endif				
+		   endif
+		   
+		   IF  _wtipoNFant != (_sAliasQ) -> TIPO_NF .and. _aTotTp[2] > 0
+                // imprime totais
+                If li>63
+                    cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+                Endif        
+                if _wtipoNFant = 'E'
+           			@li, 09 PSAY "Total NF's de ENTREGA de Uva"
+           		elseif _wtipoNFant = 'C'
+           			@li, 09 PSAY "Total NF's de COMPRA de Uva"
+				elseif _wtipoNFant = 'A'
+           			@li, 09 PSAY "Total NF's de Complemento Vlr"
+				elseif _wtipoNFant = 'P' 
+					@li, 09 PSAY "Total NF's de Produção Própria"
+				endif
+                @ li, 78  PSAY _aTotTp [1]  Picture "@E 9,999,999,999.99"
+        		@ li, 108 PSAY _aTotTp [2]  Picture "@E 9,999,999,999.99"
+		        _aTotTp [1] := 0 
+            	_aTotTp [2] := 0
+        		li++
+        		li++
+           Endif
+           
+           if  _wtipoNFant != (_sAliasQ) -> TIPO_NF 
+				If li>63
+		   			cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+				Endif
+				if (_sAliasQ) -> TIPO_NF = 'E'
+					@li, 09 PSAY "NF's de ENTREGA de Uva"
+					li ++
+				elseif (_sAliasQ) -> TIPO_NF = 'C'
+					@li, 09 PSAY "NF's de COMPRA de Uva"
+					li ++
+				elseif (_sAliasQ) -> TIPO_NF = 'A'
+					@li, 09 PSAY "NF's de Complemento Vlr"
+					li ++
+				elseif (_sAliasQ) -> TIPO_NF = 'P'
+					@li, 09 PSAY "NF's de Produção Própria"
+					li ++
+				endif
+			endif
+     	   
+     	           
+            If li>63
+               	cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+           	Endif
+
+			@li,  00 PSAY (_sAliasQ) -> FILIAL
+           	@li,  04 PSAY (_sAliasQ) -> DOC + '/' + SERIE
+           	@li,  18 PSAY stod ((_sAliasQ) -> DATA)
+			@li,  31 PSAY U_TamFixo (ALLTRIM((_sAliasQ) -> PRODUTO)  + ' - ' + ALLTRIM((_sAliasQ) -> DESCRICAO), 40, ' ')
+           	@li,  72 PSAY (_sAliasQ) -> GRAU Picture "@E 99.99"
+       		if mv_par01 <= '2018'
+				if (_sAliasQ) -> FILIAL  ='03'
+					@li, 79 PSAY (_sAliasQ) -> CLAS_FINAL
+				else
+					@li, 79 PSAY (_sAliasQ) -> CLAS_ABD
+				endif
+			else
+				@ li, 79 psay iif ((_sAliasQ) -> SIST_CONDUCAO == "E", (_sAliasQ) -> clas_final, (_sAliasQ) -> CLAS_ABD)
+			endif
+			@li, 81  PSAY (_sAliasQ) -> PESO_LIQ     Picture "@E 99,999,999.99"
+			@li, 95  PSAY (_sAliasQ) -> VALOR_UNIT   Picture "@E 99,999.9999"
+			@li, 108 PSAY (_sAliasQ) -> VALOR_TOTAL  Picture "@E 9,999,999,999.99"
+
+			// Observacoes conforme tipo de nota
+			if mv_par01 >= '2019'
+				if (_sAliasQ) -> TIPO_NF == 'E'
+					@ LI, 126 PSAY "(Nao serve como base para valor de compra)"
+				elseif mv_par01 >= '2019'  // Antes nao tinha comentarios sobre os precos.
+					_oSQL := ClsSQL():New ()
+					_oSQL:_sQuery := ""
+					_oSQL:_sQuery += " SELECT top 1 RTRIM (ZZ9_MSGNF) + CASE WHEN ZZ9_MSGNF = '' THEN '' ELSE ';' END + ZZ9_OBS"
+					_oSQL:_sQuery +=   " FROM " + RetSQLName ("ZZ9") + " ZZ9 "
+					_oSQL:_sQuery +=  " WHERE ZZ9.D_E_L_E_T_ = ''"
+					_oSQL:_sQuery +=    " AND ZZ9_FILIAL     = '" + (_sAliasQ) -> filial + "'"
+					_oSQL:_sQuery +=    " AND ZZ9_SAFRA      = '" + mv_par01 + "'"
+					_oSQL:_sQuery +=    " AND ZZ9_FORNEC     = '" + (_sAliasQ) -> ASSOCIADO + "'"
+					_oSQL:_sQuery +=    " AND ZZ9_LOJA       = '" + (_sAliasQ) -> LOJA_ASSOC + "'"
+					_oSQL:_sQuery +=    " AND ZZ9_NFCOMP     = '" + (_sAliasQ) -> doc + "'"
+					_oSQL:_sQuery +=    " AND ZZ9_SERCOM     = '" + (_sAliasQ) -> serie + "'"
+					_oSQL:_sQuery +=    " AND ZZ9_PRODUT     = '" + (_sAliasQ) -> PRODUTO + "'"
+					_oSQL:_sQuery +=    " AND ZZ9_GRAU       = '" + (_sAliasQ) -> grau + "'"
+					_oSQL:_sQuery +=    " AND ZZ9_CLASSE     = '" + (_sAliasQ) -> clas_final + "'"
+					_oSQL:_sQuery +=    " AND ZZ9_CLABD      = '" + (_sAliasQ) -> clas_abd + "'"
+					_oSQL:_sQuery +=    " AND ZZ9_VUNIT      = " + cvaltochar ((_sAliasQ) -> valor_unit)
+					//_oSQL:Log ()
+					@ li, 126 psay left (_oSQL:RetQry (), 93)
+				endif
+			endif
+
+			if (_sAliasQ) -> TIPO_NF != 'E'
+           		// acumula totais das parcelas
+           		if mv_par01 = '2017'
+           			@li, 126 PSAY (_sAliasQ) -> REGR_PAG
+	           		do case
+	           			case ALLTRIM((_sAliasQ) -> REGR_PAG) == "A - 100%"
+	           				_wtotA += (_sAliasQ) -> VALOR_TOTAL
+	           			case ALLTRIM((_sAliasQ) -> REGR_PAG) == "A - 50%, B - 50%"
+	           				_wvalor = ROUND( (_sAliasQ) -> VALOR_TOTAL /2 ,2)
+	           				_wtotA += _wvalor
+	           				_wtotB += ((_sAliasQ) -> VALOR_TOTAL - _wvalor)
+	           			case ALLTRIM((_sAliasQ) -> REGR_PAG) == "A - 15%, B - 22%, C - 31,5%"
+	           				_wvalor = ROUND( (_sAliasQ) -> VALOR_TOTAL*15/100 ,2)
+	           				_wtotA += _wvalor
+	           				_wvlrA  = _wvalor
+	           				_wvalor = ROUND( (_sAliasQ) -> VALOR_TOTAL*22/100 ,2)
+	           				_wtotB += _wvalor
+	           				_wvlrB  = _wvalor
+	           				_wvalor = ROUND( (_sAliasQ) -> VALOR_TOTAL*31.5/100 ,2)
+	           				_wtotC += _wvalor
+	           				_wvlrC  = _wvalor
+	           				_wsaldo += (_sAliasQ) -> VALOR_TOTAL - (_wvlrA + _wvlrB + _wvlrC)  
+	           			case ALLTRIM((_sAliasQ) -> REGR_PAG) == "B - 100%"
+	           				_wtotB += (_sAliasQ) -> VALOR_TOTAL
+						case ALLTRIM((_sAliasQ) -> REGR_PAG) == "B - 22%, C - 31,5%""
+	           				_wvalor = ROUND( (_sAliasQ) -> VALOR_TOTAL*22/100 ,2)
+	           				_wtotB += _wvalor
+	           				_wvlrB  = _wvalor
+	           				_wvalor = ROUND( (_sAliasQ) -> VALOR_TOTAL*31.5/100 ,2)
+	           				_wtotC += _wvalor
+	           				_wvlrC  = _wvalor
+	           				_wsaldo += (_sAliasQ) -> VALOR_TOTAL - (_wvlrB + _wvlrC)
+						case ALLTRIM((_sAliasQ) -> REGR_PAG) == "C - 100%"
+	           				_wtotC += (_sAliasQ) -> VALOR_TOTAL
+	           		endcase	
+				endif	           		
+//			endif           		
+           	elseif (_sAliasQ) -> TIPO_NF = 'C' .and. mv_par01 >= '2019'
+				//@li, 175 PSAY (_sAliasQ) -> REGR_PAG
+				do case
+					case ALLTRIM((_sAliasQ) -> REGR_PAG) == "A"
+						_wtotA += (_sAliasQ) -> VALOR_TOTAL
+					case ALLTRIM((_sAliasQ) -> REGR_PAG) == "B"
+						_wtotB += (_sAliasQ) -> VALOR_TOTAL
+					case ALLTRIM((_sAliasQ) -> REGR_PAG) == "C"
+						_wtotC += (_sAliasQ) -> VALOR_TOTAL
+				endcase	
+			endif
+           	li++
+            // acumula total
+            do case
+            	case (_sAliasQ) -> TIPO_NF = 'E'
+            		_aTot [1]   += (_sAliasQ) -> PESO_LIQ
+            		_aTot [2]   += (_sAliasQ) -> VALOR_TOTAL
+				case (_sAliasQ) -> TIPO_NF = 'C'          
+					_aTot [3]   += (_sAliasQ) -> PESO_LIQ
+            		_aTot [4]   += (_sAliasQ) -> VALOR_TOTAL
+				case (_sAliasQ) -> TIPO_NF = 'A'			
+					_aTot [5]   += (_sAliasQ) -> PESO_LIQ
+            		_aTot [6]   += (_sAliasQ) -> VALOR_TOTAL
+				case (_sAliasQ) -> TIPO_NF = 'P'			
+					_aTot [7]   += (_sAliasQ) -> PESO_LIQ
+            		_aTot [8]   += (_sAliasQ) -> VALOR_TOTAL            		
+			endcase            		
+		           
+            _aTotTp [1]   += (_sAliasQ) -> PESO_LIQ
+            _aTotTp [2]   += (_sAliasQ) -> VALOR_TOTAL
+            
+            _vAnt       := (_sAliasQ) -> ASSOCIADO
+            _VAntLj     := (_sAliasQ) -> LOJA_ASSOC
+           	_vAntnome   := (_sAliasQ) -> NOME_ASSOC
+			
+			_wtipoNFant := (_sAliasQ) -> TIPO_NF
+           	
+           	if (_sAliasQ) -> TIPO_NF != "E" .and. (_sAliasQ) -> FILIAL != '01'
+	         	_wfilial = 'S'
+	        endif
+           	
+           	if (_sAliasQ) -> TIPO_NF = "A"
+           		_wcomplemento = 'S'
+           	endif
+           	 
+           (_sAliasQ) -> (dbskip())
+           
+     enddo
+
+     IF _aTotTp[2] > 0
+        // imprime por tipo de nota
+        If li>63
+            cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+        Endif        
+        if _wtipoNFant = 'E'
+   			@li, 09 PSAY "Total NF's de ENTREGA de Uva"
+   		elseif _wtipoNFant = 'C'
+   			@li, 09 PSAY "Total NF's de COMPRA de Uva"
+   		elseif _wtipoNFant = 'A'
+   			@li, 09 PSAY "Total NF's de Complemento Vlr"
+		elseif _wtipoNFant = 'P'
+			@li, 09 PSAY "Total NF's de Produção Própria"
+   		endif
+        @ li,  78 PSAY _aTotTp [1]  Picture "@E 9,999,999,999.99"
+        @ li, 108 PSAY _aTotTp [2]  Picture "@E 9,999,999,999.99"
+		li++
+		li++
+     Endif
+    
+    // imprime totais do associado
+    If li+6 > 63
+        cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+    Endif
+    
+    @ li, 00 PSAY "Totais do Associado: "
+	@ li, 39 PSAY "Entrega"
+    @ li, 78  PSAY _aTot [1]  Picture "@E 9,999,999,999.99"
+    @ li,108 PSAY _aTot [2]  Picture "@E 9,999,999,999.99"
+    li++
+    @ li, 39 PSAY "Compra"
+    @ li, 78 PSAY _aTot [3]  Picture "@E 9,999,999,999.99"
+    @ li,108 PSAY _aTot [4]  Picture "@E 9,999,999,999.99"
+    li++
+    @ li, 39 PSAY "Compl.Vlr"
+    @ li, 78 PSAY _aTot [5]  Picture "@E 9,999,999,999.99"
+    @ li,108 PSAY _aTot [6]  Picture "@E 9,999,999,999.99"
+    li++
+    @ li, 39 PSAY "Total a Receber"
+    @ li,108 PSAY (_aTot [4] + _aTot [6])  Picture "@E 9,999,999,999.99"
+    li++
+    li++
+    li++
+    
+     // previsao de pagamento
+     // le as variadades e monta valor das parcelas previstas
+     If li+6 > 63
+        cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+     Endif        
+     
+     if mv_par01 = '2017'
+		 @ li, 00 PSAY "Previsão de Pagamento: "
+		 @ li, 39 PSAY "Parcela A - ABRIL"
+		 @ li,108 PSAY _wtotA  Picture "@E 9,999,999,999.99"
+		 li++ 
+		 @ li, 39 PSAY "Parcela B - JULHO"
+		 @ li,108 PSAY _wtotB  Picture "@E 9,999,999,999.99"
+		 li++
+		 @ li, 39 PSAY "Parcela C - SETEMBRO"
+		 @ li,108 PSAY _wtotC  Picture "@E 9,999,999,999.99"
+		 li++
+		 @ li, 39 PSAY "Saldo Restante"
+		 @ li,108 PSAY _wsaldo  Picture "@E 9,999,999,999.99"
+		 li++
+		 @ li, 39 PSAY "Total"
+		 @ li,108 PSAY (_wtotA + _wtotB + _wtotC + _wsaldo)  Picture "@E 9,999,999,999.99"
+		 li++
+		 li++
+		 li++
+	 elseif mv_par01 >= '2018'
+	 	_sQuery  = " "
+		_sQuery += "SELECT E2_NUM, E2_VENCTO, E2_VALOR, E2_SALDO"
+  		_sQuery += "  FROM SE2010"
+ 		_sQuery += " WHERE D_E_L_E_T_ = ''"
+   		_sQuery += "   AND E2_FILIAL  = '01'"
+   		_sQuery += "   AND E2_FORNECE = '" + _vant + "'"
+   		_sQuery += "   AND E2_LOJA    = '" + _vantlj + "'"
+   		_sQuery += "   AND E2_PREFIXO = '30'"
+//   		_sQuery += "   AND E2_TIPO    = 'FAT'"
+   		_sQuery += "   AND ((E2_TIPO = 'FAT' AND E2_NUM like '" + mv_par01 + "%') OR (E2_TIPO IN ('NF', 'DP') AND E2_FATURA = ''))"
+//   		_sQuery += "   AND E2_EMISSAO > '20180301'"
+   		_sQuery += "   AND E2_EMISSAO > '" + mv_par01 + "0301'"
+//   		_sQuery += "   AND E2_NUM     like '" + mv_par01 + "%'"
+   		_sQuery += " ORDER BY E2_VENCTO, E2_NUM"
+		u_log (_sQuery)
+   		
+   		_aDados := U_Qry2Array(_sQuery)
+	    if len(_aDados) > 0
+	    	@ li, 00 PSAY "Previsão de Pagamento: "
+			//li++
+			@ li, 39 PSAY "FATURA"  
+			@ li, 60 PSAY "VENCIMENTO"
+			@ li, 89 PSAY "VALOR"
+			@ li,109 PSAY "SALDO"
+			li++
+	 		_wtotvlr = 0
+			_wtotsld = 0
+	    	for FAT=1 to len(_aDados)
+		    	@ li, 39 PSAY _aDados[FAT,1]   
+				@ li, 60 PSAY _aDados[FAT,2]
+				@ li, 80 PSAY _aDados[FAT,3] Picture "@E 999,999,999.99"
+				@ li,100 PSAY _aDados[FAT,4] Picture "@E 999,999,999.99"
+				li++
+				_wtotvlr = _wtotvlr + _aDados[FAT,3]
+				_wtotsld = _wtotsld + _aDados[FAT,4]
+			next
+			@ li, 39 PSAY "Totais: "
+			@ li, 80 PSAY _wtotvlr Picture "@E 999,999,999.99"
+			@ li,100 PSAY _wtotsld Picture "@E 999,999,999.99"
+			li++	
+			li++		 
+	    endif	
+	 endif
+	 
+     If li+3 > 63
+        cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+     Endif        
+     
+     if mv_par01 = '2017'
+     	@ li, 00 PSAY "Regras Pagamento:"
+    	@ li, 39 PSAY "Parcela A = 100% Bordô, 100% Orgânicas, 50% Tintóreas, 50% Viníferas em espaldeira, 15% das demais variedades"
+    	li++
+    	@ li, 39 PSAY "Parcela B = 50% Tintóreas, 50% Viníferas em espaldeira, 22% das demais variedades, 100% do complemento de julho Bordô, Orgânicas, Tintóreas"
+    	li++
+    	@ li, 39 PSAY "Parcela C = 31,5% das demais variedades, 100% do complemento de julho Bordô, Orgânicas, Tintóreas"
+    	li++
+    	li++
+     elseif mv_par01 >= '2018'
+     	@ li, 00 PSAY "Regras Pagamento"
+    	li++
+    	@ li, 39 PSAY "Grupo 1 - Bordo e Organicas                -  5 vezes"
+    	li++
+    	@ li, 39 PSAY "Grupo 2 - Tintorias e Viniferas espaldeira -  9 vezes"
+    	li++
+    	@ li, 39 PSAY "Grupo 3 - Demais Variedades                - 11 vezes"
+    	li++
+     endif
+          
+     if _wcomplemento = 'S'
+		_sQuery := " "
+    	_sQuery += "SELECT DISTINCT PRODUTO, DESCRICAO, GRAU, PESO_LIQ"
+     	_sQuery += "     ,   VUNIT_EFETIVO"
+     	_sQuery += "     , VALOR_COMPRA + VALOR_COMPLEMENTO AS VALOR_TOTAL"
+  		_sQuery += "  FROM VA_VPRECO_EFETIVO_SAFRA"
+  		_sQuery += " WHERE SAFRA      = '" + mv_par01 + "'"
+		_sQuery += "   AND ASSOCIADO  = '" + _vAnt + "'"
+		_sQuery += "   AND LOJA_ASSOC = '" + _VAntLj + "'"
+		_sQuery += " ORDER BY DESCRICAO, GRAU"
+		_aDados := U_Qry2Array(_sQuery)
+		
+		// lista valor efetivo por variedade/grau
+		if len(_aDados)> 0
+			li ++
+			li++
+			@li,  00 PSAY "Valor Efetivo por Variedade/Grau:"
+			for i=1 to len(_aDados)
+				If li + len(_aDados) > 63
+					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+				Endif      
+				@li,  31 PSAY ALLTRIM( _aDados [i,1])  + ' - ' + ALLTRIM(_aDados [i,2])
+				@li,  72 PSAY _aDados [i,3] Picture "@E 99.99"
+				@li,  81 PSAY _aDados [i,4] Picture "@E 9,999,999,999.99"
+				@li,  98 PSAY _aDados [i,5] Picture "@E 9,999,999.99"
+				@li, 108 PSAY _aDados [i,6] Picture "@E 9,999,999,999.99"
+				li ++
+			next
+			li ++
+		endif
+	endif
+	
+	// imprime saldo conta corrente
+	if mv_par05 == 1
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT SZI.ZI_DATA, ZI_TM, ZI_DOC, ZI_HISTOR, ZX5_10DC, ZI_SALDO"
+		_oSQL:_sQuery +=  " FROM " + RETSQLNAME ("SZI") + " SZI, "
+		_oSQL:_sQuery +=             RETSQLNAME ("ZX5") + " ZX5 "
+		_oSQL:_sQuery += " WHERE ZX5.D_E_L_E_T_ != '*'"
+		_oSQL:_sQuery +=   " AND ZX5.ZX5_FILIAL  = '" + xfilial ("ZX5")  + "'"
+		_oSQL:_sQuery +=   " AND ZX5.ZX5_TABELA  = '10'"
+		_oSQL:_sQuery +=   " AND ZX5.ZX5_10COD   = SZI.ZI_TM"
+		_oSQL:_sQuery +=   " AND SZI.D_E_L_E_T_ != '*'"
+		_oSQL:_sQuery +=   " AND SZI.ZI_FILIAL   BETWEEN '  ' and 'zz'"
+		_oSQL:_sQuery +=   " AND SZI.ZI_ASSOC    = '" + _vAnt + "'"
+		_oSQL:_sQuery +=   " AND SZI.ZI_LOJASSO  = '" + _vAntLj + "'"
+		_oSQL:_sQuery +=   " AND SZI.ZI_TM       NOT IN ('10/17/18/19')"
+		_oSQL:_sQuery +=   " AND SZI.ZI_DATA     like '" + mv_par01 + "%'"
+		_oSQL:_sQuery +=   " AND SZI.ZI_SALDO    > 0"
+		_oSQL:_sQuery += " ORDER BY ZI_DATA, ZI_TM, ZI_FILIAL, ZI_HISTOR, ZI_SERIE, ZI_DOC, ZI_PARCELA"
+		//u_log (_oSQL:_sQuery)
+		_aSld := aclone (_oSQL:Qry2Array (.F., .F.))
+		if len (_aSld) > 0
+			_wsaldo := 0
+			li ++
+			@li,  00 PSAY "Lctos Conta Corrente:"
+			for i=1 to len (_aSld)
+				_wdata  = stod (_aSld [i,1])
+				_wtpmov = _aSld [i,2]
+				_wdoc   = _aSld [i,3]
+				_whist  = substr(_aSld [i,4],1,80)
+				_wdc    = _aSld [i,5]
+				_wvalor = _aSld [i,6]
+				
+				If li > 63
+        			cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+     			Endif  
+	    			
+				@li,  39 PSAY _wdata
+				@li,  55 PSAY _wtpmov 
+				@li,  60 PSAY _wdoc + '-' + _whist
+				@li, 155 PSAY _wvalor Picture "@E 9,999,999,999.99"
+				@li, 172 PSAY _wdc
+				li ++
+				if _wdc = "C"
+					_wsaldo += _wvalor
+				else
+					_wsaldo -= _wvalor
+				endif																																																		
+			next
+			@li,  60 PSAY "SALDO"
+			@li, 155 PSAY _wsaldo Picture "@E 9,999,999,999.99"
+			if _wsaldo > 0
+				@li, 172 PSAY "C"
+			else
+				@li, 172 PSAY "D"
+			endif
+			
+			li ++
+		endif
+	endif		
+    
+     Set Device To Screen
+
+     If aReturn[5]==1
+           Set Printer TO
+           dbcommitAll()
+           ourspool(wnrel)
+     Endif
+
+     MS_FLUSH() // Libera fila de relatorios em spool (Tipo Rede Netware)
+
+return
+// --------------------------------------------------------------------------
+// Cria Perguntas no SX1
+Static Function _ValidPerg ()
+	local _aRegsPerg := {}
+	//                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                      Help
+	aadd (_aRegsPerg, {01, "Safra           ?", "C", 4,  0,  "",   "   ", {},                         ""})
+	aadd (_aRegsPerg, {02, "Associado       ?", "C", 6,  0,  "",   "SA2", {},                         ""})
+	aadd (_aRegsPerg, {03, "Loja            ?", "C", 2,  0,  "",   "", 	  {},                         ""})
+	aadd (_aRegsPerg, {04, "Nucleo          ?", "C", 2,  0,  "",   "   ", {},   					  ""})
+	aadd (_aRegsPerg, {05, "Lista Saldo C/C ?", "N", 1,  0,  "",   "   ", {"Sim", "Não"}			, ""})	
+	
+	U_ValPerg (cPerg, _aRegsPerg)
+Return
