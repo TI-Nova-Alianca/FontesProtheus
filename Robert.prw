@@ -57,12 +57,59 @@ static function _AndaLogo ()
 	local _nDado     := 0
 	local _nCarga    := 0
 	local _i         := 0
+	local _sError    := _sWarning := ''
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
-	u_help ("Nada definido", procname ())
-	u_log ('Batch: [retorno:', _oBatch:Retorno, '] [Mensagens:', _oBatch:Mensagens, ']')
+//	u_help ("Nada definido", procname ())
+//	u_log ('Batch: [retorno:', _oBatch:Retorno, '] [Mensagens:', _oBatch:Mensagens, ']')
+//return
+
+/*
+//	_oAssoc := ClsAssoc ():New ('003577', '01')  // bastante movto
+//	_oAssoc := ClsAssoc ():New ('005128', '01')  // so 1 entra e 1 compra
+//	_oAssoc := ClsAssoc ():New ('001369', '01')  // so 14 complementos
+	_oAssoc := ClsAssoc ():New ('004826', '01')  // 9+6+0
+//	_oAssoc := ClsAssoc ():New ('003241', '01')  // 16+15+2
+	_sXmlFech = _oAssoc:FechSafra ('2019')
+	u_log (_sXmlFech)
+	_oXMLFech := XmlParser (_sXmlFech, "_", @_sError, @_sWarning )
+	if ! empty (_sError) .or. ! empty (_sWarning)
+		u_log ("Erro ao decodificar retorno: " + _sError + _sWarning)
+	else
+		u_log (type ('_oXMLFech'))
+		u_log (type ('_oXMLFech:_assocFechSafra'))
+		u_log (type ('_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem'))
+		if type ('_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem') == 'A'  // Array com mais de uma nota
+			u_log ('qt notas entrada:', len (_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem))
+			for _nNota = 1 to len (_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem)
+				u_log (procname (), 'e', _oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_doc:TEXT)
+			next
+		endif
+		if type ('_oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem') == 'A'  // Array com mais de uma nota
+			u_log ('qt notas entrada:', len (_oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem))
+			for _nNota = 1 to len (_oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem)
+				u_log (procname (), 'c', _oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_doc:TEXT)
+			next
+		endif
+			
+		if type ('_oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem') == 'A'  // Array com mais de uma nota
+			u_log ('qt notas entrada:', len (_oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem))
+			for _nNota = 1 to len (_oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem)
+				u_log (procname (), 'v', _oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_doc:TEXT)
+			next
+		endif
+	endif
+*/
+	U_GravaSX1 ("ML_FECHASAFRA", '01', '2020')
+	U_GravaSX1 ("ML_FECHASAFRA", '02', '003241')
+	U_GravaSX1 ("ML_FECHASAFRA", '03', '01')
+	U_GravaSX1 ("ML_FECHASAFRA", '04', '')
+	U_GravaSX1 ("ML_FECHASAFRA", '05', 2)
+	U_ml_fechasafra (.T.)
+
 return
+*/
 
 /*
 	Private cPerg   := "VA_ADSAF"
