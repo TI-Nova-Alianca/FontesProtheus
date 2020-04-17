@@ -85,6 +85,7 @@ User Function ML_FECHASAFRA (_lAutomat)
 		Return
 	Endif
 
+	u_logSX1 (cPerg)
 	if mv_par01 < '2020'  // Metodo original
 		processa ({|| RptDetail ()})
 	else  // Busca da classe ClsAssoc.
@@ -924,15 +925,17 @@ static function _Modelo2 ()
 	local _nNFVTot   := 0
 	local _sNFObs    := ''
 	private _aTAsEnt   := {}  // Totais (qt/valor) de notas de entrada (associado)
+	private _aTAsPro   := {}  // Totais (qt/valor) de notas de producao propria (associado)
 	private _aTAsCom   := {}  // Totais (qt/valor) de notas de compra (associado)
 	private _aTAsCpl   := {}  // Totais (qt/valor) de notas de complemento (associado)
 	private _aTGerEnt  := {}  // Totais (qt/valor) de notas de entrada (geral)
+	private _aTGerPro  := {}  // Totais (qt/valor) de notas de producao propria (geral)
 	private _aTGerCom  := {}  // Totais (qt/valor) de notas de compra (geral)
 	private _aTGerCpl  := {}  // Totais (qt/valor) de notas de complemento (geral)
 	private _sMascPeso := "@E 9,999,999,999"
 	private _sMascVUni := "@E 9,999.9999"
 	private _sMascVTot := "@E 9,999,999,999.99"
-	private _oXMLFech := NIL  // Precisa ser do tipo PRIVATE senao a funcao XmlParser() nao funciona... vai entender.
+	private _oXMLFech  := NIL  // Precisa ser do tipo PRIVATE senao a funcao XmlParser() nao funciona... vai entender.
 
 	// Variaveis padrao para relatorios.
 	private nTipo    := IIF(aReturn[4]==1,15,18)
@@ -946,6 +949,7 @@ static function _Modelo2 ()
 	//u_logsx1 (cPerg)
 
 	_aTGerEnt := {0, 0}
+	_aTGerPro := {0, 0}
 	_aTGerCom := {0, 0}
 	_aTGerCpl := {0, 0}
 
@@ -966,9 +970,9 @@ static function _Modelo2 ()
 
 	for _nAssoc = 1 to len (_aAssoc)
 		incproc (_aAssoc [_nAssoc, 3])
+		U_LOG (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
 
 		// Instancia objeto 'associado' para gerar seu fechamento de safra.
-		//U_LOG (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
 		_oAssoc := ClsAssoc ():New (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
 		if valtype (_oAssoc) != 'O'
 			u_help ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados: ", _aAssoc [_nAssoc, 1] + '/' + _aAssoc [_nAssoc, 2],, .t.)
@@ -983,7 +987,7 @@ static function _Modelo2 ()
 
 		// Busca dados do fechamento de safra. Usa mesmo o metodo do APP associados.
 		_sXmlFech = _oAssoc:FechSafra (mv_par01)
-		//u_log (_sXmlFech)
+//		u_log (_sXmlFech)
 		if empty (_sXmlFech)
 			u_help ("Associado ", _aAssoc [_nAssoc, 1] + '/' + _aAssoc [_nAssoc, 2] + ": Retorno vazio metodo FechSafra " + _oAssoc:UltMsg,, .t.)
 			loop
@@ -1001,6 +1005,7 @@ static function _Modelo2 ()
 		li += 2
 
 		_aTAsEnt := {0, 0}
+		_aTAsPro := {0, 0}
 		_aTAsCom := {0, 0}
 		_aTAsCpl := {0, 0}
 
@@ -1029,6 +1034,33 @@ static function _Modelo2 ()
 			li ++
 		endif
 		
+
+		// Verifica se tem este tipo de nota no XML
+		if type ('_oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem') == 'A'  // Array com mais de uma nota
+			If li > _nMaxLin - 4
+				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+			Endif
+			@li, 09 PSAY "NF's de PRODUCAO PROPRIA de Uva"
+			li ++
+			for _nNota = 1 to len (_oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem)
+				_sNFFilial = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_filial:TEXT
+				_sNFDoc    = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_doc:TEXT
+				_sNFEmis   = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_emissao:TEXT
+				_sNFProd   = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_varied:TEXT
+				_sNFDescr  = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_desc:TEXT
+				_sNFGrau   = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_grau:TEXT
+				_sNFClas   = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_clas:TEXT
+				_nNFPeso   = val (_oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_peso:TEXT)
+				_nNFVUnit  = val (_oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_valunit:TEXT)
+				_nNFVTot   = val (_oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_valtot:TEXT)
+				_sNFObs    = _oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem[_nNota]:_obs:TEXT
+				_ImprNota ('P', _sNFFilial, _sNFDoc, _sNFEmis, _sNFProd, _sNFDescr, _sNFGrau, _sNFClas, _nNFPeso, _nNFVUnit, _nNFVTot, _sNFObs)
+				li ++
+			next
+			li ++
+		endif
+
+
 		// Verifica se tem este tipo de nota no XML
 		if type ('_oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem') == 'A'  // Array com mais de uma nota
 			If li > _nMaxLin - 4
@@ -1083,12 +1115,14 @@ static function _Modelo2 ()
 
 		// Imprime totais do associado por tipo de nota.
 		li ++
-		_ImprTot ('Totais do associado', _aTAsEnt, _aTAsCom, _aTAsCpl)
+		_ImprTot ('Totais do associado', _aTAsEnt, _aTAsPro, _aTAsCom, _aTAsCpl)
 		li ++
 
 		// Acumula totais gerais
 		_aTGerEnt [1] += _aTAsEnt [1]
 		_aTGerEnt [2] += _aTAsEnt [2]
+		_aTGerPro [1] += _aTAsPro [1]
+		_aTGerPro [2] += _aTAsPro [2]
 		_aTGerCom [1] += _aTAsCom [1]
 		_aTGerCom [2] += _aTAsCom [2]
 		_aTGerCpl [1] += _aTAsCpl [1]
@@ -1206,7 +1240,7 @@ static function _Modelo2 ()
 	next
 
 	cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-	_ImprTot ('TOTAIS GERAIS', _aTGerEnt, _aTGerCom, _aTGerCpl)
+	_ImprTot ('TOTAIS GERAIS', _aTGerEnt, _aTGerPro, _aTGerCom, _aTGerCpl)
 	li ++
 return
 
@@ -1240,14 +1274,17 @@ static function _ImprNota (_sTipoNota, _sNFFilial, _sNFDoc, _sNFEmis, _sNFProd, 
 		_sLinImp += space (11)
 		_sLinImp += transform (_nNFVTot, _sMascVTot) + '  '
 		if _sTipoNota == 'E'
-			_aTAsEnt [1] += _nNFPeso //val (_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_peso:TEXT)
-			_aTAsEnt [2] += _nNFVTot //val (_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_valtot:TEXT)
+			_aTAsEnt [1] += _nNFPeso
+			_aTAsEnt [2] += _nNFVTot
+		elseif _sTipoNota == 'P'
+			_aTAsPro [1] += _nNFPeso
+			_aTAsPro [2] += _nNFVTot
 		elseif _sTipoNota == 'C'
-			_aTAsCom [1] += _nNFPeso // val (_oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_peso:TEXT)
-			_aTAsCom [2] += _nNFVTot // val (_oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_valtot:TEXT)
+			_aTAsCom [1] += _nNFPeso
+			_aTAsCom [2] += _nNFVTot
 		elseif _sTipoNota == 'V'
-			_aTAsCpl [1] += _nNFPeso //val (_oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_valtot:TEXT)
-			_aTAsCpl [2] += _nNFVTot //val (_oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_peso:TEXT)
+			_aTAsCpl [1] += _nNFPeso
+			_aTAsCpl [2] += _nNFVTot
 		endif
 	endif
 	@ li, 0 psay _sLinImp
@@ -1257,12 +1294,17 @@ return
 
 // --------------------------------------------------------------------------
 // Imprime totais (por associado ou gerais) formatados.
-static function _ImprTot (_sTitTot, _aEntradas, _aCompra, _aComplem)
+static function _ImprTot (_sTitTot, _aEntradas, _aPropria, _aCompra, _aComplem)
 	If li > _nMaxLin - 4
 		cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 	Endif
 	@ li, 0 psay U_TamFixo (_sTitTot, 72, ' ') + 'Entrega          ' + transform (_aEntradas [1], "@E 9,999,999,999.99") + '             ' + transform (_aEntradas [2], "@E 9,999,999,999.99")
 	li ++
+	// Lista somente se tiver dados, pois somente as filiais possuem producao propria (salvo alguma negociacao muito especifica com associado)
+	if _aPropria [1] != 0 .or. _aPropria [2] != 0
+		@ li, 0 psay space (72) + 'Producao propria ' + transform (_aPropria [1], "@E 9,999,999,999.99") + '             ' + transform (_aPropria [2], "@E 9,999,999,999.99")
+		li ++
+	endif
 	@ li, 0 psay space (72) + 'Compra           ' + transform (_aCompra [1], "@E 9,999,999,999.99") + '             ' + transform (_aCompra [2], "@E 9,999,999,999.99")
 	li ++
 	@ li, 0 psay space (72) + 'Compl.Vlr        ' + transform (_aComplem [1], "@E 9,999,999,999.99") + '             ' + transform (_aComplem [2], "@E 9,999,999,999.99")
