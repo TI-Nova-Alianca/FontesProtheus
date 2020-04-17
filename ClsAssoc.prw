@@ -1157,7 +1157,8 @@ METHOD FechSafra (_sSafra) Class ClsAssoc
 	local _sRet      := ''
 	local _oSQL      := NIL
 	local _sAliasQ   := ""
-	local _aTipoNF   := {{'E', 'nfEntrada'}, {'C', 'nfCompra'}, {'V', 'nfComplemento'}}
+//	local _aTipoNF   := {{'E', 'nfEntrada'}, {'C', 'nfCompra'}, {'V', 'nfComplemento'}}
+	local _aTipoNF   := {{'E', 'nfEntrada'}, {'P', 'nfProdPropria'}, {'C', 'nfCompra'}, {'V', 'nfComplemento'}}
 	local _nTipoNF   := 0
 	local _nTotPeso  := 0
 	local _nTotValor := 0
@@ -1258,6 +1259,7 @@ METHOD FechSafra (_sSafra) Class ClsAssoc
 		// Fecha este tipo de nota
 		_sRet += '</' + _aTipoNF [_nTipoNF, 2] + '>'
 	next
+	(_sAliasQ) -> (dbclosearea ())
 
 
 	// Busca previsoes de pagamento (faturas e notas em aberto no contas a pagar).
@@ -1290,6 +1292,7 @@ METHOD FechSafra (_sSafra) Class ClsAssoc
 			_sRet += '</faturaPagamentoItem>'
 			(_sAliasQ) -> (dbskip ())
 		enddo
+		(_sAliasQ) -> (dbclosearea ())
 
 		// Ultima linha contem os totais
 		_sRet += '<faturaPagamentoItem>'
@@ -1350,6 +1353,7 @@ METHOD FechSafra (_sSafra) Class ClsAssoc
 			_sRet += '</valorEfetivoItem>'
 			(_sAliasQ) -> (dbskip ())
 		enddo
+		(_sAliasQ) -> (dbclosearea ())
 	_sRet += '</valoresEfetivos>'
 
 
@@ -1386,6 +1390,7 @@ METHOD FechSafra (_sSafra) Class ClsAssoc
 			_nTotSaldo += (_sAliasQ) -> zi_saldo * iif ((_sAliasQ) -> zx5_10dc == 'D', -1, 1)
 			(_sAliasQ) -> (dbskip ())
 		enddo
+		(_sAliasQ) -> (dbclosearea ())
 		_sRet += '<lctoCCItem>'
 		_sRet += '<dtMovto/>'
 		_sRet += '<doc>TOTAIS</doc>'
