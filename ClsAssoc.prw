@@ -56,6 +56,8 @@
 // 18/06/2019 - Robert - Metodo FechSafr passa a retornar faturas, regras de pagamento, valor unitario efetivo e lctos CC.
 // 21/10/2019 - Robert - Consulta de capital social passa a retornar situacao e (opcionalmente) ano da ultima safra.
 // 20/01/2020 - Robert - Metodo GrpFam() habilitado novamente pois tinha uma consulta usando-o.
+// 09/04/2020 - Robert - Inserida tag <filial> da nota na consulta de fechamento de safra.
+//                     - Comentariadas variaveis declaradas e nao usadas.
 //
 
 #include "protheus.ch"
@@ -316,7 +318,7 @@ return _lRet
 // Atualiza saldos do associado no ZZM, a partir da data informada.
 METHOD AtuSaldo (_dDataRec) Class ClsAssoc
 	local _aAreaAnt  := U_ML_SRArea ()
-	local _sQuery    := ""
+//	local _sQuery    := ""
 	local _oSQL      := NIL
 	local _lContinua := .T.
 	local _dPrimSZI  := ctod ('')
@@ -325,7 +327,7 @@ METHOD AtuSaldo (_dDataRec) Class ClsAssoc
 	local _nAnoIni   := 0
 	local _nAnoFim   := 0
 	local _nAno      := 0
-	local _sWhereSZI := ""
+//	local _sWhereSZI := ""
 	local _dDataZZM  := ctod ('')
 	local _lTemZZM   := .F.
 	local _aSaldoZZM := {}
@@ -468,7 +470,7 @@ METHOD CalcCM (_sMesRef, _nTaxaVl1, _nTaxaVl2, _nLimVl1, _lGerarD, _lGerarC) Cla
 	local _nFilial   := 0
 	local _aSldFil   := {}
 	local _nPrevSafr := 0
-	local _sFilCalc  := ''
+//	local _sFilCalc  := ''
 	local _nBaseCorr := 0
 	local _nLimMin   := 500  // Limite minimo para gerar correcao. Definido em reuniao de diretoria em 17/05/2013.
 	local _nFaixa    := 0
@@ -1161,6 +1163,10 @@ METHOD FechSafra (_sSafra) Class ClsAssoc
 	local _nTotValor := 0
 	local _nTotSaldo := 0
 
+	if empty (_sSafra)
+		::UltMsg += "Safra nao informada"
+	endif
+
 	//u_logIni (GetClassName (::Self) + '.' + procname ())
 	_sRet += '<assocFechSafra>'
 	_sRet += '<associado>' + ::Codigo + '</associado>'
@@ -1211,6 +1217,7 @@ METHOD FechSafra (_sSafra) Class ClsAssoc
 		do while ! (_sAliasQ) -> (eof ())
 			if (_sAliasQ) -> tipo_nf == _aTipoNF [_nTipoNF, 1]
 				_sRet += '<' + _aTipoNF [_nTipoNF, 2] + 'Item>'
+				_sRet += '<filial>'  + (_sAliasQ) -> filial + '</filial>'
 				_sRet += '<doc>'     + (_sAliasQ) -> doc + '</doc>'
 				_sRet += '<emissao>' + dtoc (stod ((_sAliasQ) -> data)) + '</emissao>'
 				_sRet += '<varied>'  + alltrim ((_sAliasQ) -> produto) + '</varied>'
@@ -1235,6 +1242,7 @@ METHOD FechSafra (_sSafra) Class ClsAssoc
 
 		// Exporta totais no final de cada tipo de nota.
 		_sRet += '<' + _aTipoNF [_nTipoNF, 2] + 'Item>'
+		_sRet += '<filial/>'
 		_sRet += '<doc>TOTAIS</doc>'
 		_sRet += '<emissao/>'
 		_sRet += '<varied/>'
@@ -1307,6 +1315,11 @@ METHOD FechSafra (_sSafra) Class ClsAssoc
 			_sRet += '<regraPagamentoItem>'
 			_sRet += '<grupo>C</grupo>'
 			_sRet += '<descricao>Demais variedades                - 11 vezes</descricao>'
+			_sRet += '</regraPagamentoItem>'
+		else
+			_sRet += '<regraPagamentoItem>'
+			_sRet += '<grupo>A</grupo>'
+			_sRet += '<descricao>Sem definicao de regras de pagamento para esta safra</descricao>'
 			_sRet += '</regraPagamentoItem>'
 		endif
 	_sRet += '</regraPagamento>'
