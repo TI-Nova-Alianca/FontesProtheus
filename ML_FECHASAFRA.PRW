@@ -16,6 +16,7 @@
 // 10/06/2019 - Robert - Considera tambem notas na previsao de pagamentos (antes pegava apenas tipo FAT)
 // 17/06/2019 - Robert - Aumentada mascara do valor unitario para 4 decimais.
 // 15/04/2020 - Robert - Unificar com metodo FechSafr da classe ClsAssoc (GLPI 7794) para safras a partir de 2020.
+// 17/04/2020 - Robert - Criado tratamento para NF producao propria.
 //
 
 #include "protheus.ch"

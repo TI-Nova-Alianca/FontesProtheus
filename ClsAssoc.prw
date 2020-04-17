@@ -58,6 +58,7 @@
 // 20/01/2020 - Robert - Metodo GrpFam() habilitado novamente pois tinha uma consulta usando-o.
 // 09/04/2020 - Robert - Inserida tag <filial> da nota na consulta de fechamento de safra.
 //                     - Comentariadas variaveis declaradas e nao usadas.
+// 17/04/2020 - Robert - Adicionado tratamento para NF producao propria no metodo FechSafr (GLPI 7794)
 //
 
 #include "protheus.ch"
