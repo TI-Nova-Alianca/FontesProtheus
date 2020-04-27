@@ -16,6 +16,7 @@
 // 12/03/2016 - Robert - Criados filtros por grupo de variedades, coop.origem e tintoreas.
 // 21/03/2016 - Robert - Criado filtro por tipo (organica/em conversao/etc.)
 // 27/03/2018 - Robert - Criado tratamento para gravar campos de mistura de variedades e mensagens para NF.
+// 22/04/2020 - Robert - Criado tratamento para gravar campo ZZ9_TES
 //
 
 // --------------------------------------------------------------------------
@@ -28,12 +29,6 @@ User Function VA_GNF1 (_lAuto)
 
 	u_logID ()
 	Private cPerg   := "VAGNF1"
-
-	u_help ('criar tratyamento para gravar o ZZ9_TES (campo novo). lembrar de gerar com TES 028 quando complemento de compra de livramento (001369). Podia testar tambem se eh associado.')
-	u_help ('buscar classificacao da uva nas cargas e nao nas notas de entrada.')
-	u_help ('GLPI 7714 - compra de Joao Fagherazi merlot -> mudar pra Isabel:  Na carga 1802, Filial 07, data 21/02/2020, NFProdutor 805880, Serie 185, Contranota 13409, PESO_LIQ 4100 kg, Grau Babo 15.4, a VARIEDADE: MERLOT está incorreto. A variedade real da carga é ISABEL.')
-	return
-
 
 	// Verifica se o usuario tem liberacao para uso desta rotina.
 	if ! U_ZZUVL ('045', __cUserID, .T., cEmpAnt, cFilAnt)
@@ -84,13 +79,12 @@ Static Function _Gera()
 	local _sQuery    := ""
 	local _sAliasQ   := ""
 	local _sMsg      := ""
-	local _sQuery    := ""
 	local _aMistura  := {}
 	local _sObs      := ""
 	local _sMsgNF    := ""
-	local __sConduc  := ""
+	local _sConduc   := ""
 	private _sErros  := ""
-    
+
 	U_LogSX1 (cPerg)
 	
 	// Verifica se jah existem pre-notas e, se for o caso, confirma exclusao das mesmas.
@@ -122,8 +116,11 @@ Static Function _Gera()
 		_sQuery += " SELECT FILIAL, DOC, ASSOCIADO AS FORNECE, LOJA_ASSOC AS LOJA, PRODUTO, PESO_LIQ,"
 		_sQuery +=        " GRAU, CLAS_FINAL AS PRM99, FINA_COMUM AS VARUVA,"
 		_sQuery +=        " FORMA_CLAS_UVA_FINA AS FCUVA, V.CLAS_ABD, SIST_CONDUCAO AS SIST_COND"
+		_sQuery +=        ",dbo.VA_FTIPO_FORNECEDOR_UVA (V.ASSOCIADO, V.LOJA_ASSOC, FORMAT(getdate(), 'yyyyMMdd')) AS TP_FORNEC"
+//		_sQuery +=        ",dbo.VA_ASSOC_DT_ENTRADA (V.ASSOCIADO, V.LOJA_ASSOC, FORMAT(getdate(), 'yyyyMMdd')) AS DT_ASSOC"
+//		_sQuery +=        ",dbo.VA_ASSOC_DT_SAIDA (V.ASSOCIADO, V.LOJA_ASSOC, FORMAT(getdate(), 'yyyyMMdd')) AS DT_DESASSOC"
 		_sQuery +=   " FROM VA_VNOTAS_SAFRA V"
-		_sQuery +=  " WHERE (V.TIPO_NF      = 'E' OR (V.TIPO_NF = 'P' AND V.FILIAL = '07'))"
+		_sQuery +=  " WHERE V.TIPO_NF      = 'E'"  // Nao temos mais 'prod.propria' na F07 ---> OR (V.TIPO_NF = 'P' AND V.FILIAL = '07'))"
 		_sQuery +=    " AND V.SAFRA         = '" + mv_par05 + "'"
 		_sQuery +=    " AND V.ASSOCIADO + V.LOJA_ASSOC BETWEEN '" + mv_par01 + mv_par02 + "' AND '" + mv_par03 + mv_par04 + "'"
 		_sQuery +=    " AND V.DOC           BETWEEN '" + mv_par06 + "' AND '" + mv_par07 + "'"
@@ -159,14 +156,6 @@ Static Function _Gera()
 		elseif mv_par20 == 2
 			_sQuery +=    " AND V.SIST_CONDUCAO = 'E'"
 		endif
-
-
-//		// Na safra de 2019 geramos novas em duas etapas
-//		if mv_par05 == '2019'
-//		//	_sQuery += " AND DATA <= '20190321'"
-//			_sQuery += " AND DATA > '20190321'"
-//		endif
-
 
 		_sQuery +=    " ORDER BY V.ASSOCIADO, V.LOJA_ASSOC, V.PRODUTO, V.GRAU, V.CLAS_FINAL, SIST_CONDUCAO"
 		u_log (_sQuery)
@@ -238,7 +227,7 @@ Static Function _Gera()
 				_sClasse  = (_sAliasQ) -> prm99
 				_sClasABD = (_sAliasQ) -> clas_abd
 				_sConduc  = (_sAliasQ) -> sist_cond
-				u_log ("Iniciando forn/prod/grau/clas", _sfornece,_sloja,_sProduto,_sGrau,_sClasse, _sClasABD)
+				u_log ("Iniciando filial/forn/prod/grau/clas/tp forn", (_sAliasQ) -> filial, _sfornece,_sloja,_sProduto,_sGrau,_sClasse, _sClasABD, (_sAliasQ) -> tp_fornec)
 
 				do while _lContinua ;
 					.and. !(_sAliasQ) -> (eof ()) ;
@@ -273,7 +262,7 @@ Static Function _Gera()
 					_aMistura = aclone (_oSQL:Qry2Array ())
 					
 
-/*					// Tratamento especifico para cargas que foram feitas com produto errado. Vou simular a mistura
+					// Tratamento especifico para cargas que foram feitas com produto errado. Vou simular a mistura
 					// de variedades, pois nao posso mais alterar o produto na nota de entrada. Ajustar o preco manualmente no ZZ9 depois.
 					if mv_par05 == '2018' .and. _sFilial == '01' .and. (_sAliasQ) -> doc == '000011876' .and. alltrim ((_sAliasQ) -> produto) == '9901'
 						//aadd (_aMistura, {u_TamFixo ('9923', 15, ' ')})
@@ -287,7 +276,7 @@ Static Function _Gera()
 						//aadd (_aMistura, {u_TamFixo ('9923', 15, ' ')})
 						_sMsgNF += "Produto correto: 9923 (Seibel 2)"
 					endif
-*/
+
 					if len (_aMistura) > 3
 						u_help ("Este programa nao tem tratamento para cargas com mistura de mais de 3 variedades.")
 					else
@@ -313,9 +302,10 @@ Static Function _Gera()
 						zz9 -> zz9_msgNF  = _sMsgNF
 						zz9 -> zz9_conduc = _sConduc
 						zz9 -> zz9_grupo  = mv_par19
+						zz9 -> zz9_tes    = iif ((_sAliasQ) -> tp_fornec $ 'ASSOCIADO/EX ASSOCIADO', mv_par21, mv_par21)
 						msunlock ()
 					endif
-
+ 
 					(_sAliasQ) -> (dbskip ())
 				enddo
 				_nItem ++
@@ -358,6 +348,20 @@ Static Function _Gera()
 	)
 	SELECT * FROM C
 	WHERE QT_NOTAS != QT_ZZ9
+	*/
+
+	/* Sugestao de query para testar se gerou os agrupamentos para pagamento de acordo com as regras (ver metodo FechSafr da classe ClsAssoc):
+	;WITH C AS (
+	SELECT ZZ9_GRUPO AS GRUPO_PAGTO, SB1.B1_VAORGAN, SB1.B1_VATTR, SB1.B1_VARUVA, SB1.B1_VAFCUVA, ZZ9.ZZ9_CONDUC, ZZ9_PRODUT, SB1.B1_DESC
+	, SUM (ZZ9.ZZ9_QUANT) AS QUANT, SUM (ZZ9.ZZ9_QUANT * ZZ9.ZZ9_VUNIT) AS VALOR
+	FROM ZZ9010 ZZ9
+	INNER JOIN SB1010 SB1 ON (SB1.D_E_L_E_T_ = '' AND SB1.B1_FILIAL = '  ' AND SB1.B1_COD = ZZ9.ZZ9_PRODUT)
+	WHERE ZZ9.D_E_L_E_T_ = '' AND ZZ9.ZZ9_SAFRA = '2020'
+	GROUP BY ZZ9_GRUPO, SB1.B1_VAORGAN, SB1.B1_VATTR, SB1.B1_VARUVA, SB1.B1_VAFCUVA, ZZ9.ZZ9_CONDUC, ZZ9_PRODUT, SB1.B1_DESC
+	)
+	SELECT *, SUM (VALOR) OVER (PARTITION BY GRUPO_PAGTO) AS VLR_TOT_GRUPO
+	FROM C
+	ORDER BY GRUPO_PAGTO, B1_VAORGAN, B1_VATTR, B1_VARUVA, B1_VAFCUVA, ZZ9_CONDUC, B1_DESC
 	*/
 Return
 
@@ -408,6 +412,10 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {18, "[O]rg/[E]m con/[C]onven/[B]ord", "C", 4,             0,            "",   "   ",  {},                                            "Informar letra indicando qual(is) deve(m) ser considerada(s): [O]rganicas, [E]m conversao, [C]conencional, [B]ordadura"})
 	aadd (_aRegsPerg, {19, "Gerar qual grupo pagamento?   ", "C", 1,             0,            "",   "   ",  {},                                            ""})
 	aadd (_aRegsPerg, {20, "Forma de conducao             ", "C", 1,             0,            "",   "   ",  {"Latada", "Espaldeira", "Todas"},             ""})
+	aadd (_aRegsPerg, {21, "TES compra associados         ", "C", 3,             0,            "",   "SF4",  {},                                            ""})
+	aadd (_aRegsPerg, {22, "TES compra nao associados     ", "C", 3,             0,            "",   "SF4",  {},                                            ""})
+//	aadd (_aRegsPerg, {23, "TES complemento associados    ", "C", 3,             0,            "",   "SF4",  {},                                            ""})
+//	aadd (_aRegsPerg, {24, "TES complemento nao associados", "C", 3,             0,            "",   "SF4",  {},                                            ""})
 	U_ValPerg (cPerg, _aRegsPerg)
 
 return
