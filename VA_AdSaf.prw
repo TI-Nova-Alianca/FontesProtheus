@@ -4,6 +4,8 @@
 // Descricao: Gera adiantamento de safra para associados.
 //
 // Historico de alteracoes:
+// 29/04/2020 - Robert - Passa a gerar com base no ZZ9
+//                     - Melhorias para gerar parcelas posteriores a primeira.
 //
 
 // --------------------------------------------------------------------------
@@ -31,6 +33,7 @@ User Function VA_AdSaf (_lAuto)
 		AADD(aSays,"  Este programa tem como objetivo gerar titulos PA para adiantamento")
 		AADD(aSays,"  de pagamento de safra para associados. Usado para adiantar valores")
 		AADD(aSays,"  enquanto nao eh gerada nota de compra.")
+		AADD(aSays,"  Baseia-se nas pre-notas de compra (arquivo ZZ9).")
 		
 		AADD(aButtons, { 5,.T.,{|| lPerg := Pergunte(cPerg,.T. ) } } )
 		AADD(aButtons, { 1,.T.,{|| nOpca := If(( lPerg .Or. Pergunte(cPerg,.T.)) .And. _TudoOk() , 1, 2 ), If( nOpca == 1, FechaBatch(), Nil ) }})
@@ -89,9 +92,31 @@ Static Function _Gera()
 	local _aAutoSE2  := {}
 	local _sPrefSE2  := 'ADT'
 	local _sTitSE2   := ''
-	private aHeader  := {}
+	local _nRegraPag := 0
+	local _aPerGrpA  := {}
+	local _aPerGrpB  := {}
+	local _aPerGrpC  := {}
+	local _nPercParc := 0
+	local _nTotParc  := 0
+	local _sAliasQ   := ''
+	local _sFornec   := ''
+	local _sLojaFor  := ''
+	local _nVlrGrpA  := 0
+	local _nVlrGrpB  := 0
+	local _nVlrGrpC  := 0
+	local _nAj2020P1 := 0
+	local _sHistCalc := ''
+	local _sError    := ''
+	local _sWarning  := ''
+	local _sXmlFech  := ''
+	private _oXMLFech := NIL  // Precisa ser do tipo PRIVATE senao a funcao XmlParser() nao funciona... vai entender.
+	private aHeader   := {}
 
 	U_LogSX1 (cPerg)
+
+//	// Na primeira parcela de 2020 havia valores errados. Vou gerar aqui array de diferencas a acertar.
+//	if _lContinua .and. mv_par05 == '2020' .and. mv_par11 == 2
+//	endif
 
 	// Monta lista de tipos de movimento que nao devem ser considerados no momento de ler os saldos em aberto na conta corrente.
 	if _lContinua
@@ -108,9 +133,108 @@ Static Function _Gera()
 		u_log ('TM nao:', _sTMNao)
 	endif
 
-	// Leitura de notas de entrada de uva.
+	// Instancia um associado generico para buscar os percentuais de pagamento desta parcela.
 	if _lContinua
+		_oAssoc := ClsAssoc ():New ('000161', '01')
+
+		// Busca dados do fechamento de safra. Usa mesmo o metodo do APP associados.
+		_sXmlFech = _oAssoc:FechSafra (mv_par05)
+		u_log (_sXmlFech)
+		if empty (_sXmlFech)
+			u_help ("Erro ao ler formas de pagamento para esta safra.",, .t.)
+			_lContinua = .F.
+		else
+			// Converte de texto para XML
+			_oXMLFech := XmlParser (_sXmlFech, "_", @_sError, @_sWarning)
+			if ! empty (_sError) .or. ! empty (_sWarning)
+				u_help ("Erro ao decodificar retorno: " + _sError + _sWarning,, .t.)
+				_lContinua = .F.
+			else
+				// Extrai as diferentes composicoes de parcelamento. Vai precisar manutencao se tivermos mais grupos para pagamento, ou mais parcelas.
+				for _nRegraPag = 1 to len (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem)
+					if _oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_grupo:TEXT == 'A'
+						aadd (_aPerGrpA, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc01:TEXT))
+						aadd (_aPerGrpA, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc02:TEXT))
+						aadd (_aPerGrpA, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc03:TEXT))
+						aadd (_aPerGrpA, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc04:TEXT))
+						aadd (_aPerGrpA, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc05:TEXT))
+						aadd (_aPerGrpA, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc06:TEXT))
+						aadd (_aPerGrpA, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc07:TEXT))
+						aadd (_aPerGrpA, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc08:TEXT))
+						aadd (_aPerGrpA, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc09:TEXT))
+						aadd (_aPerGrpA, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc10:TEXT))
+						aadd (_aPerGrpA, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc11:TEXT))
+					endif
+					if _oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_grupo:TEXT == 'B'
+						aadd (_aPerGrpB, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc01:TEXT))
+						aadd (_aPerGrpB, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc02:TEXT))
+						aadd (_aPerGrpB, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc03:TEXT))
+						aadd (_aPerGrpB, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc04:TEXT))
+						aadd (_aPerGrpB, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc05:TEXT))
+						aadd (_aPerGrpB, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc06:TEXT))
+						aadd (_aPerGrpB, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc07:TEXT))
+						aadd (_aPerGrpB, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc08:TEXT))
+						aadd (_aPerGrpB, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc09:TEXT))
+						aadd (_aPerGrpB, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc10:TEXT))
+						aadd (_aPerGrpB, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc11:TEXT))
+					endif
+					if _oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_grupo:TEXT == 'C'
+						aadd (_aPerGrpC, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc01:TEXT))
+						aadd (_aPerGrpC, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc02:TEXT))
+						aadd (_aPerGrpC, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc03:TEXT))
+						aadd (_aPerGrpC, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc04:TEXT))
+						aadd (_aPerGrpC, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc05:TEXT))
+						aadd (_aPerGrpC, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc06:TEXT))
+						aadd (_aPerGrpC, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc07:TEXT))
+						aadd (_aPerGrpC, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc08:TEXT))
+						aadd (_aPerGrpC, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc09:TEXT))
+						aadd (_aPerGrpC, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc10:TEXT))
+						aadd (_aPerGrpC, val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc11:TEXT))
+					endif
+				next
+
+				u_log (_aPerGrpA)
+				u_log (_aPerGrpB)
+				u_log (_aPerGrpC)
+
+				// Conferencia basica dos percentuais das parcelas...
+				_nTotParc = 0
+				for _nPercParc = 1 to len (_aPerGrpA)
+					_nTotParc += _aPerGrpA [_nPercParc]
+				next
+				if _nTotParc != 100
+					u_help ("A soma dos percentuais das parcelas do grupo A deveria fechar em 100%, mas fechou em " + cValToChar (_nTotParc),, .t.)
+					_lContinua = .F.
+				endif
+
+				_nTotParc = 0
+				for _nPercParc = 1 to len (_aPerGrpB)
+					_nTotParc += _aPerGrpB [_nPercParc]
+				next
+				if _nTotParc != 100
+					u_help ("A soma dos percentuais das parcelas do grupo B deveria fechar em 100%, mas fechou em " + cValToChar (_nTotParc),, .t.)
+					_lContinua = .F.
+				endif
+
+				_nTotParc = 0
+				for _nPercParc = 1 to len (_aPerGrpC)
+					_nTotParc += _aPerGrpC [_nPercParc]
+				next
+				if _nTotParc != 100
+					u_help ("A soma dos percentuais das parcelas do grupo C deveria fechar em 100%, mas fechou em " + cValToChar (_nTotParc),, .t.)
+					_lContinua = .F.
+				endif
+			endif
+		endif
+	endif
+
+	// Leitura das pre-notas de compra e geracao de array de fornecedores, com valor bruto da parcela.
+	if _lContinua
+		procregua (10)
+		incproc ('Verificando pre-notas de compra...')
 		_oSQL := ClsSQL ():New ()
+		/* Em marco/2020 simplesmente gerei 10% das notas de entrada. Mas da proxima vez vou querer ter as pre-notas prontas, pois assim poderei
+		ter mais certeza dos dados, precos e grupos para pagamento, podendo assim aplicar o % de pagto. de cada variedade.
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " SELECT ASSOCIADO, LOJA_ASSOC, ROUND (SUM (VALOR_TOTAL) * 0.1, 2) "  // Adiantar 10% da safra.
 		_oSQL:_sQuery +=   " FROM VA_VNOTAS_SAFRA V"
@@ -120,14 +244,106 @@ Static Function _Gera()
 		_oSQL:_sQuery +=  " GROUP BY V.ASSOCIADO, V.LOJA_ASSOC"
 		_oSQL:_sQuery +=  " ORDER BY V.ASSOCIADO, V.LOJA_ASSOC"
 		_oSQL:Log ()
-		_aFornec = aclone (_oSQL:Qry2Array ())
+		*/
+
+		// A partir das pre-notas de compra da safra, onde as uvas jah encontram-se separadas por grupo de pagamento,
+		// aplica o percentual referente a esta parcela. Gera array com o fornecedor e o valor da parcela.
+		_aFornec = {}
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT ZZ9_FORNEC, ZZ9_LOJA, ZZ9_GRUPO,"
+		_oSQL:_sQuery +=        " SUM (ZZ9_QUANT * " + iif (mv_par12 == 1, 'ZZ9_VUNIT', iif (mv_par12 == 2, 'ZZ9_VUNIT2', '0')) + ") AS VALOR"
+		_oSQL:_sQuery +=   " FROM " + RetSQLName ("ZZ9") + " ZZ9 "
+		_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=    " AND ZZ9_SAFRA = '" + mv_par05 + "'"
+		_oSQL:_sQuery +=    " AND ZZ9_FORNEC + ZZ9_LOJA BETWEEN '" + mv_par01 + mv_par02 + "' AND '" + mv_par03 + mv_par04 + "'"
+		_oSQL:_sQuery +=  " GROUP BY ZZ9_FORNEC, ZZ9_LOJA, ZZ9_GRUPO"
+		_oSQL:_sQuery +=  " ORDER BY ZZ9_FORNEC, ZZ9_LOJA, ZZ9_GRUPO"
+		_oSQL:Log ()
+		_sAliasQ = _oSQL:Qry2Trb (.F.)
+		do while ! (_sAliasQ) -> (eof ())
+
+			// Controla quebra por fornecedor, por que posteriormente todos os 'grupos' devem ser pagos juntos.
+			_sFornec   = (_sAliasQ) -> zz9_fornec
+			_sLojaFor  = (_sAliasQ) -> zz9_loja
+			_sHistCalc = ''
+			U_LOG ('Calculando parcela bruta para forn.', _sFornec, _sLojaFor)
+			_nVlrGrpA = 0
+			_nVlrGrpB = 0
+			_nVlrGrpC = 0
+			do while ! (_sAliasQ) -> (eof ()) .and. (_sAliasQ) -> zz9_fornec == _sFornec .and. (_sAliasQ) -> zz9_loja == _sLojaFor
+				u_log ('grupo pagto:', (_sAliasQ) -> zz9_grupo)
+
+				// Prepara historico de calculo
+				_sHistCalc += 'Valor total para uvas do grupo ' + (_sAliasQ) -> zz9_grupo + ': ' + alltrim (transform ((_sAliasQ) -> valor, '@E 999,999,999.99')) + chr (13) + chr (10)
+
+				// Calcula o valor desta parcela para cada grupo de pagamento. Vai precisar manutencao se forem criados novos grupos.
+				if (_sAliasQ) -> zz9_grupo == 'A'
+					_nVlrGrpA = (_sAliasQ) -> valor * _aPerGrpA [mv_par11] / 100
+					_sHistCalc += 'Percent. deste grupo nesta parcela: ' + cvaltochar (_aPerGrpA [mv_par11]) + ' --> valor: ' + alltrim (transform (_nVlrGrpA, '@E 999,999,999.99')) + chr (13) + chr (10)
+				elseif (_sAliasQ) -> zz9_grupo == 'B'
+					_nVlrGrpB = (_sAliasQ) -> valor * _aPerGrpB [mv_par11] / 100
+					_sHistCalc += 'Percent. deste grupo nesta parcela: ' + cvaltochar (_aPerGrpB [mv_par11]) + ' --> valor: ' + alltrim (transform (_nVlrGrpB, '@E 999,999,999.99')) + chr (13) + chr (10)
+				elseif (_sAliasQ) -> zz9_grupo == 'C'
+					_nVlrGrpC = (_sAliasQ) -> valor * _aPerGrpC [mv_par11] / 100
+					_sHistCalc += 'Percent. deste grupo nesta parcela: ' + cvaltochar (_aPerGrpC [mv_par11]) + ' --> valor: ' + alltrim (transform (_nVlrGrpC, '@E 999,999,999.99')) + chr (13) + chr (10)
+				else
+					u_help ('Grupo de pagamento ' + (_sAliasQ) -> zz9_grupo + ' sem tratamento no calculo do valor da parcela bruta.',, .T.)
+					_lContinua = .F.
+				endif
+
+				(_sAliasQ) -> (dbskip ())
+			enddo
+
+			// Na primeira parcela de 2020, foram usados valores das notas de entrada, por que as pre-notas ainda nao
+			// estavam geradas, e nessas notas havia varios casos em que os precos nao estavam corretos. Por isso, alguns
+			// fornecedores receberam adiantamento a maior, outros a menor. Agora vou simular a primeira parcela com
+			// base nas pre-notas e acertar essa diferenca.
+			_nAj2020P1 = 0
+			if mv_par05 == '2020' .and. mv_par11 == 2
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := "WITH ZZ9 AS ("
+				_oSQL:_sQuery += " SELECT DISTINCT ZZ9.ZZ9_FILIAL, ZZ9.ZZ9_FORNEC, ZZ9.ZZ9_LOJA, ZZ9_PRODUT, ZZ9.ZZ9_GRAU, ZZ9.ZZ9_CLASSE, ZZ9.ZZ9_CLABD, ZZ9.ZZ9_VUNIT2, ZZ9.ZZ9_CONDUC"
+				_oSQL:_sQuery += " FROM " + RetSQLName ("ZZ9") + " ZZ9"
+				_oSQL:_sQuery += " WHERE ZZ9.D_E_L_E_T_ = '' AND ZZ9.ZZ9_SAFRA = '2020')"
+				_oSQL:_sQuery += " SELECT round (SUM ((V.PESO_LIQ * ZZ9_VUNIT2) - V.VALOR_TOTAL), 2) AS FALTANTE"
+				_oSQL:_sQuery += " FROM VA_VNOTAS_SAFRA V"
+				_oSQL:_sQuery += " LEFT JOIN ZZ9 ON (V.FILIAL = ZZ9.ZZ9_FILIAL AND V.ASSOCIADO = ZZ9.ZZ9_FORNEC"
+				_oSQL:_sQuery += " AND V.LOJA_ASSOC = ZZ9.ZZ9_LOJA AND V.PRODUTO = ZZ9.ZZ9_PRODUT AND V.GRAU = ZZ9.ZZ9_GRAU AND V.CLAS_FINAL = ZZ9.ZZ9_CLASSE"
+				_oSQL:_sQuery += " AND V.CLAS_ABD = ZZ9.ZZ9_CLABD AND V.SIST_CONDUCAO = ZZ9.ZZ9_CONDUC)"
+				_oSQL:_sQuery += " WHERE SAFRA = '2020' AND V.TIPO_NF = 'E'"
+				_oSQL:_sQuery +=   " AND ASSOCIADO = '" + _sFornec + "'"
+				_oSQL:_sQuery +=   " AND LOJA_ASSOC = '" + _sLojaFor + "'"
+				_oSQL:_sQuery +=   " AND ZZ9_VUNIT2 != VALOR_UNIT"
+				_oSQL:Log ()
+				_nAj2020P1 = _oSQL:RetQry ()  // Este eh o valor faltante no total da safra do associado.
+				_nAj2020P1 *= 0.1  // Primeira parcela eh 10%
+				if _nAj2020P1 > 0
+					_sHistCalc += "Vlr faltante 1a. parcela ref. precos indevidos nas notas de entrada: " + cvaltochar (abs (_nAj2020P1)) + chr (13) + chr (10)
+				elseif _nAj2020P1 < 0
+					_sHistCalc += "Vlr excedente 1a. parcela ref. precos indevidos nas notas de entrada: " + cvaltochar (abs (_nAj2020P1)) + chr (13) + chr (10)
+				endif
+			endif
+
+			u_log ('Valor grupo A:', _nVlrGrpA)
+			u_log ('Valor grupo B:', _nVlrGrpB)
+			u_log ('Valor grupo C:', _nVlrGrpC)
+			u_log ('Ajuste 1a.parc 2020:', _nAj2020P1)
+			u_log ('Historico de calculo:', _sHistCalc)
+
+			aadd (_aFornec, {_sFornec, _sLojaFor, _nVlrGrpA + _nVlrGrpB + _nVlrGrpC + _nAj2020P1, _nVlrGrpA, _nVlrGrpB, _nVlrGrpC, _nAj2020P1, _sHistCalc})
+		enddo
+		(_sAliasQ) -> (dbclosearea ())
+
 		if len (_aFornec) == 0
-			u_help ("Nao foi encontrada nenhuma NF de entrada de uva. Verifique parametros.")
+			u_help ("Nao foi encontrada nenhuma pre-nota de compra. Verifique parametros.")
 			_lContinua = .F.
 		endif
+	endif
 
+	if _lContinua
+		u_log (_aFornec)
 		procregua (len (_aFornec))
-		incproc ('Calculando valores ...')
+		incproc ('Verificando conta corrente...')
 		for _nFornec = 1 to len (_aFornec)
 			u_log (_aFornec [_nFornec, 1], _aFornec [_nFornec, 2])
 			incproc ('Fornec. ' + _aFornec [_nFornec, 1])
@@ -140,17 +356,21 @@ Static Function _Gera()
 				_sEhAssoc = 'S'
 
 				// Alguns associados nao devo ler adtos por que nos avisaram que 'vao pagar em seguida'
-				if _sSafra == '2020' .and. _aFornec [_nFornec, 1] $ '000245/000305/004935'  // Laurindo e Valmor Lisot, Adelia de Bortoli, 
+				if _sSafra == '2020' .and. mv_par11 == 1 .and. _aFornec [_nFornec, 1] $ '000245/000305/004935'  // Laurindo e Valmor Lisot, Adelia de Bortoli, 
 					_nSldDeb = 0
 				else
-					_aSaldos = aclone (_oAssoc:LctComSald ('', 'zz', date (), '', 'zz', _sTMNao))
+					
+					// Busca lancamentos com saldo em aberto na conta corrente.
+					_aSaldos = aclone (_oAssoc:LctComSald ('', 'zz', date (), '', 'zz', _sTMNao, mv_par13))
 					u_log (_aSaldos)
 					_nSldDeb = 0
 					for _nIdxSaldo = 1 to len (_aSaldos)
 						_nSldDeb += _aSaldos [_nIdxSaldo, 11]
 					next
-					if _sSafra == '2020' .and. _aFornec [_nFornec, 1] == '003621'  // Dejair Betlinski pediu para descontar o adto. em 3 vezes
+					u_log (alltrim (str (mv_par11)) $ '1/2/3')
+					if _sSafra == '2020' .and. alltrim (str (mv_par11)) $ '1/2/3' .and. _aFornec [_nFornec, 1] == '003621'  // Dejair Betlinski pediu para descontar o adto. em 3 vezes
 						u_log ('Dejair Betlinski pediu para descontar o adto. de 7.000,00 em 3 vezes')
+						_aFornec [_nFornec, 8] += 'obs: Descontar o adto. de 7.000,00 em 3 vezes'
 						_nSldDeb = 2335
 					endif
 				endif
@@ -164,7 +384,12 @@ Static Function _Gera()
 				_aFornec [_nFornec, 3],;
 				_nSldDeb,;
 				max (0, _aFornec [_nFornec, 3] - _nSldDeb),;
-				_sEhAssoc})
+				_sEhAssoc,;
+				_aFornec [_nFornec, 4],;
+				_aFornec [_nFornec, 5],;
+				_aFornec [_nFornec, 6],;
+				_aFornec [_nFornec, 7],;
+				_aFornec [_nFornec, 8]})
 		next
 		u_log (_aAdtos)
 	endif
@@ -172,13 +397,18 @@ Static Function _Gera()
 
 	if _lContinua .and. mv_par06 == 1  // Apenas simular
 		aHeader = {}
-		aadd (aHeader, {'Fornec'    , 'Fornec'   , ''                 , 6,  0, '', '', 'C', '', ''})
-		aadd (aHeader, {'Loja'      , 'Loja'     , ''                 , 2,  0, '', '', 'C', '', ''})
-		aadd (aHeader, {'Nome'      , 'Nome'     , ''                 , 60, 0, '', '', 'C', '', ''})
-		aadd (aHeader, {'VlrCheio'  , 'VlrCheio' , '@E 999,999,999.99', 18, 2, '', '', 'N', '', ''})
-		aadd (aHeader, {'Debitos'   , 'Debitos'  , '@E 999,999,999.99', 18, 2, '', '', 'N', '', ''})
-		aadd (aHeader, {'VlrAdiant' , 'VlrAdiant', '@E 999,999,999.99', 18, 2, '', '', 'N', '', ''})
-		aadd (aHeader, {'Associado' , 'Associado', ''                 , 1,  0, '', '', 'C', '', ''})
+		aadd (aHeader, {'Fornec'      , 'Fornec'        , ''                 , 6,  0, '', '', 'C', '', ''})
+		aadd (aHeader, {'Loja'        , 'Loja'          , ''                 , 2,  0, '', '', 'C', '', ''})
+		aadd (aHeader, {'Nome'        , 'Nome'          , ''                 , 60, 0, '', '', 'C', '', ''})
+		aadd (aHeader, {'VlrCheio'    , 'VlrCheio'      , '@E 999,999,999.99', 18, 2, '', '', 'N', '', ''})
+		aadd (aHeader, {'Debitos'     , 'Debitos'       , '@E 999,999,999.99', 18, 2, '', '', 'N', '', ''})
+		aadd (aHeader, {'Vlr_adiantar', 'Vlr_adiantar'  , '@E 999,999,999.99', 18, 2, '', '', 'N', '', ''})
+		aadd (aHeader, {'Associado'   , 'Assoc ou nao'  , ''                 , 1,  0, '', '', 'C', '', ''})
+		aadd (aHeader, {'GrupoA'      , 'Grupo pagto A' , '@E 999,999,999.99', 18, 2, '', '', 'N', '', ''})
+		aadd (aHeader, {'GrupoB'      , 'Grupo pagto B' , '@E 999,999,999.99', 18, 2, '', '', 'N', '', ''})
+		aadd (aHeader, {'GrupoC'      , 'Grupo pagto C' , '@E 999,999,999.99', 18, 2, '', '', 'N', '', ''})
+		aadd (aHeader, {'AJ2020P1'    , 'Ajuste P1 2020', '@E 999,999,999.99', 18, 2, '', '', 'N', '', ''})
+		aadd (aHeader, {'HistCalc'    , 'Hist calculo'  , ''                 , 200, 0, '', '', 'C', '', ''})
 		u_aColsXLS (_aAdtos)
 
 
@@ -213,8 +443,11 @@ Static Function _Gera()
 				_oCtaCorr:VctoSE2  = _dDtPagto
 				_oCtaCorr:Valor    = _aAdtos [_nIdxAdto, 6]
 				_oCtaCorr:SaldoAtu = _aAdtos [_nIdxAdto, 6]
+				if ! empty (_aAdtos [_nIdxAdto, 12])
+					_oCtaCorr:Obs      = _aAdtos [_nIdxAdto, 12]
+				endif
 				_oCtaCorr:Usuario  = cUserName
-				_oCtaCorr:Histor   = 'ADTO 1a PARC SAFRA ' + _sSafra
+				_oCtaCorr:Histor   = 'ADTO ' + cvaltochar (mv_par11) + 'a PARC SAFRA ' + _sSafra
 				_oCtaCorr:MesRef   = strzero(month(_oCtaCorr:DtMovto),2)+strzero(year(_oCtaCorr:DtMovto),4)
 				_oCtaCorr:Doc      = _sTitSE2
 				_oCtaCorr:Serie    = _sPrefSE2
@@ -338,5 +571,8 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {08, "Banco para pagamento?         ", "C", TamSX3 ('E5_BANCO')[1],   0,  "",   "SE6",  {},    ""})
 	aadd (_aRegsPerg, {09, "Agencia para pagamento?       ", "C", TamSX3 ('E5_AGENCIA')[1], 0,  "",   "   ",  {},    ""})
 	aadd (_aRegsPerg, {10, "Conta para pagamento?         ", "C", TamSX3 ('E5_CONTA')[1],   0,  "",   "   ",  {},    ""})
+	aadd (_aRegsPerg, {11, "Qual a parcela a gerar?       ", "N", 2,                        0,  "",   "   ",  {},    ""})
+	aadd (_aRegsPerg, {12, "Qual preco da pre-nota usar?  ", "N", 1,                        0,  "",   "   ",  {'Preco 1', 'Preco 2'},  ""})
+	aadd (_aRegsPerg, {13, "Abater debitos CC a partir de?", "D", 8,                        0,  "",   "   ",  {},    "Ex. ao gerar a 2a parcela, considerar apenas debitos posteriores a 1a."})
 	U_ValPerg (cPerg, _aRegsPerg)
 return
