@@ -59,6 +59,8 @@
 // 09/04/2020 - Robert - Inserida tag <filial> da nota na consulta de fechamento de safra.
 //                     - Comentariadas variaveis declaradas e nao usadas.
 // 17/04/2020 - Robert - Adicionado tratamento para NF producao propria no metodo FechSafr (GLPI 7794)
+// 29/04/2020 - Robert - Metodo FechSafr passa a retornar, tambem, tags com os percentuais de cada parcela para apagamento de safra.
+//                     - Criado novo parametro 'data inicial' no metodo LctComSald.
 //
 
 #include "protheus.ch"
@@ -1307,18 +1309,21 @@ METHOD FechSafra (_sSafra) Class ClsAssoc
 
 	// Regras de pagamento (informativo)
 	_sRet += '<regraPagamento>'
-		if _sSafra == '2019'
+		if _sSafra $ '2019/2020'
 			_sRet += '<regraPagamentoItem>'
 			_sRet += '<grupo>A</grupo>'
 			_sRet += '<descricao>Bordo e organicas                - 5 vezes</descricao>'
+			_sRet += '<perc01>10</perc01><perc02>22.5</perc02><perc03>22.5</perc03><perc04>22.5</perc04><perc05>22.5</perc05><perc06>0</perc06><perc07>0</perc07><perc08>0</perc08><perc09>0</perc09><perc10>0</perc10><perc11>0</perc11>'
 			_sRet += '</regraPagamentoItem>'
 			_sRet += '<regraPagamentoItem>'
 			_sRet += '<grupo>B</grupo>'
 			_sRet += '<descricao>Tintorias e viniferas espaldeira - 9 vezes</descricao>'
+			_sRet += '<perc01>10</perc01><perc02>11.25</perc02><perc03>11.25</perc03><perc04>11.25</perc04><perc05>11.25</perc05><perc06>11.25</perc06><perc07>11.25</perc07><perc08>11.25</perc08><perc09>11.25</perc09><perc10>0</perc10><perc11>0</perc11>'
 			_sRet += '</regraPagamentoItem>'
 			_sRet += '<regraPagamentoItem>'
 			_sRet += '<grupo>C</grupo>'
 			_sRet += '<descricao>Demais variedades                - 11 vezes</descricao>'
+			_sRet += '<perc01>10</perc01><perc02>4</perc02><perc03>4</perc03><perc04>4</perc04><perc05>4</perc05><perc06>11.4</perc06><perc07>11.4</perc07><perc08>11.4</perc08><perc09>11.4</perc09><perc10>14.2</perc10><perc11>14.2</perc11>'
 			_sRet += '</regraPagamentoItem>'
 		else
 			_sRet += '<regraPagamentoItem>'
@@ -1423,12 +1428,14 @@ return _nRet
 
 // --------------------------------------------------------------------------
 // Retorna array contendo lancamentos da conta corrente (SZI) com saldo na data. Usado inicialmente para gerar relatorios.
-METHOD LctComSald (_sFilIni, _sFilFim, _dDataRef, _sTMIni, _sTMFim, _sTMNao) Class ClsAssoc
+METHOD LctComSald (_sFilIni, _sFilFim, _dDataRef, _sTMIni, _sTMFim, _sTMNao, _dDataIni) Class ClsAssoc
 	local _aRet     := {}
 	local _oSQL     := NIL
 	local _sArqTrb  := ""
 	
 	u_logIni (GetClassName (::Self) + '.' + procname ())
+
+	_dDataIni = iif (_dDataIni == NIL, ctod (''), _dDataIni)
 
 	// Busca conta corrente
 	_oSQL := ClsSQL():New ()
@@ -1460,6 +1467,7 @@ METHOD LctComSald (_sFilIni, _sFilFim, _dDataRef, _sTMIni, _sTMFim, _sTMNao) Cla
 	_oSQL:_sQuery +=   " AND SZI.ZI_TM       BETWEEN '" + _sTMIni + "' AND '" + _sTMFim + "'"
 	_oSQL:_sQuery +=   " AND SZI.ZI_TM       NOT IN " + FormatIn (_sTMNao, '/')
 	_oSQL:_sQuery +=   " AND SZI.ZI_DATA     <= '" + dtos (_dDataRef) + "'"
+	_oSQL:_sQuery +=   " AND SZI.ZI_DATA     >= '" + dtos (_dDataIni) + "'"
 	_oSQL:_sQuery += " ORDER BY ZI_DATA, ZI_TM, ZI_FILIAL, ZI_HISTOR, ZI_SERIE, ZI_DOC, ZI_PARCELA"
 	u_log (_oSQL:_sQuery)
 	_sArqTrb = _oSQL:Qry2Trb ()
