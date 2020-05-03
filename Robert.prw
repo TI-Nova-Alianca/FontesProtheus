@@ -65,6 +65,17 @@ static function _AndaLogo ()
 //	u_log ('Batch: [retorno:', _oBatch:Retorno, '] [Mensagens:', _oBatch:Mensagens, ']')
 //return
 
+	cPerg := 'VA_CCR2'
+	U_GravaSX1 (cPerg, '01', '0345           ')  // prod pai ini
+	U_GravaSX1 (cPerg, '02', '0348           ')  // prod pai fim
+	U_GravaSX1 (cPerg, '03', 'PA')  // tipo pai ini
+	U_GravaSX1 (cPerg, '04', 'PA')  // tipo pai fim
+	U_GravaSX1 (cPerg, '05', 1)  // 1=apenas pais ativos; 2=todos
+	U_GravaSX1 (cPerg, '06', '')  // LINHA COML pai ini
+	U_GravaSX1 (cPerg, '07', 'Z')  // LINHA COML pai fim
+	u_va_ccr2 (.t.)
+return
+
 	// Teste rel. analise custo std
 	sb1 -> (dbsetorder (1))
 	if sb1 -> (dbseek (xfilial ("SB1") + '0345', .F.))
