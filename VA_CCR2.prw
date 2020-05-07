@@ -87,6 +87,8 @@ static function _GeraPlan ()
 	_aCampos = {}
 	aadd (_aCampos, {"CODIGO",     "C", 15, 0})
 	aadd (_aCampos, {"DESCRICAO",  "C", 60, 0})
+	aadd (_aCampos, {"CUSSTD_PAI", "N", 15, 8})
+	aadd (_aCampos, {"DTCUS_PAI",  "D", 8,  0})
 	aadd (_aCampos, {"seq_estrut", "C", 3,  0})
 	aadd (_aCampos, {"NIVEL",      "N", 2,  0})
 	aadd (_aCampos, {"Quant_estr", "N", 18, 4})
@@ -132,7 +134,11 @@ static function _GeraPlan ()
 			sb1 -> (dbskip ())
 			loop
 		endif
-		aadd (_aPais, {sb1 -> b1_cod, sb1 -> b1_desc, sb1 -> b1_revatu})
+		aadd (_aPais, {sb1 -> b1_cod,;
+			sb1 -> b1_desc,;
+			sb1 -> b1_revatu,;
+			sb1 -> b1_custd,;
+			sb1 -> b1_datref})
 		sb1 -> (dbskip ())
 	enddo
 	u_log ('pais:', _aPais)
@@ -172,6 +178,8 @@ static function _GeraPlan ()
 					reclock ('_estrut', .T.)
 					_estrut -> codigo     = _aPais [_nPai, 1]
 					_estrut -> descricao  = _aPais [_nPai, 2]
+					_estrut -> CusStd_pai = _aPais [_nPai, 4]
+					_estrut -> DtCus_pai  = _aPais [_nPai, 5]
 					_estrut -> seq_estrut = strzero (_nComp, 3)
 					_estrut -> nivel      = _aEstr [_nComp, 1] + 1
 					_estrut -> quant_estr = _aEstr [_nComp, 4]
