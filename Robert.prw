@@ -65,6 +65,24 @@ static function _AndaLogo ()
 //	u_log ('Batch: [retorno:', _oBatch:Retorno, '] [Mensagens:', _oBatch:Mensagens, ']')
 //return
 
+	Private cPerg   := "VAGNF2"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', '000156')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
+	U_GravaSX1 (cPerg, '06', 'A')     // Parcelas sep.barras (bco=todas)
+	U_GravaSX1 (cPerg, '07', 'A')    // Grupos
+	U_GravaSX1 (cPerg, '08', 3)      // Geracao por DCO: {"Com DCO", "Sem DCO", "Todos"}
+	U_GravaSX1 (cPerg, '09', 1)      // fina/comum: {"Comum", "Fina", "Todas"}
+	U_GravaSX1 (cPerg, '10', 1)      // tipo NF: {"Normais", "Compl.preco"}
+	U_GravaSX1 (cPerg, '11', '801')     // Cond pagto
+	U_GravaSX1 (cPerg, '12', '9925/9822')     // Apenas estas variedades
+	U_GravaSX1 (cPerg, '13', '')     // Exceto estas vriedades
+	u_va_gnf2 (.t.)
+return
+*/
+/*
 	U_GravaSX1 ("ML_FECHASAFRA", '01', '2020')
 	U_GravaSX1 ("ML_FECHASAFRA", '02', '003241')  // 003241
 	U_GravaSX1 ("ML_FECHASAFRA", '03', '01')
@@ -1456,22 +1474,6 @@ return
 		endif
 		sx3 -> (dbskip ())
 	enddo
-return
-*/
-/*
-	Private cPerg   := "VAGNF2"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2019') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Parcelas sep.barras (bco=todas)
-	U_GravaSX1 (cPerg, '07', 'C')    // Grupos
-	U_GravaSX1 (cPerg, '08', 3)      // Geracao por DCO: {"Com DCO", "Sem DCO", "Todos"}
-	U_GravaSX1 (cPerg, '09', 2)      // fina/comum: {"Comum", "Fina", "Todas"}
-	U_GravaSX1 (cPerg, '10', 1)      // tipo NF: {"Normais", "Compl.preco"}
-	U_GravaSX1 (cPerg, '11', '801')     // Cond pagto
-	u_va_gnf2 (.t.)
 return
 */
 /*
