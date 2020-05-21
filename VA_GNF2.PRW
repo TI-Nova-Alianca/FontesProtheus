@@ -332,7 +332,7 @@ Static Function _Gera03 ()
 //					u_logtrb ('zz9')
 
 					// Primeira leva de notas de 2020 a preco de CONAB para comprovacao em busca de financiamento: filtro especifico.
-					if _sSafra == '2020' .and. date () <= stod ('20200515')
+					if _sSafra == '2020' .and. date () <= stod ('20200520')
 						if ! alltrim (zz9 -> zz9_produt) $ '9925/9822'
 							u_log ('Primeira leva compra 2020: produto fora da faixa especificada.')
 							zz9 -> (dbskip ())
@@ -1101,7 +1101,7 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 		for _nPreNF = 1 to len (_aPreNF)
 			zz9 -> (dbgoto (_aPreNF [_nPreNF]))
 			if empty (zz9 -> zz9_nfcomp)
-				u_log ('Atualizando ZZ9 recno', zz9 -> (recno ()))
+			//	u_log ('Atualizando ZZ9 recno', zz9 -> (recno ()))
 				reclock ("ZZ9", .F.)
 				zz9 -> zz9_nfComp = sf1 -> f1_doc
 				zz9 -> zz9_serCom = sf1 -> f1_serie

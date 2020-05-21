@@ -283,7 +283,7 @@ Static Function _Gera()
 			if zz9 -> zz9_filial == '07' .and. ZZ9 -> ZZ9_FORNEC = '002495' .AND. ALLTRIM (ZZ9 -> ZZ9_PRODUT) == '9917' .AND. ZZ9 -> ZZ9_GRAU = '15.4'
 				U_LOG ('Merlot 4100 Kg de Joao Fagherazzi: precificando como isabel.')
 				_nPreco = _BuscaPrc (zz9 -> zz9_filial, '9901           ', zz9 -> zz9_grau, zz9 -> zz9_classe, zz9 -> zz9_clabd, zz9 -> zz9_conduc) [1]
-				_Obs += 'Varied.correta:isabel(GLPI 7714)'
+				_sObs += 'Varied.correta:isabel(GLPI 7714)'
 				_sMsgNF += 'Varied.correta:isabel'
 			endif
 		endif

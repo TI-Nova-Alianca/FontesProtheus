@@ -65,6 +65,27 @@ static function _AndaLogo ()
 //	u_log ('Batch: [retorno:', _oBatch:Retorno, '] [Mensagens:', _oBatch:Mensagens, ']')
 //return
 
+	// Gera precos para as pre-notas de compra de safra.
+	Private cPerg   := "VAZZ9P"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // produto ini
+	U_GravaSX1 (cPerg, '07', 'z')    // prod fim
+	U_GravaSX1 (cPerg, '08', 3)      // tipos uvas {"Comuns","Finas","Todas"}
+	U_GravaSX1 (cPerg, '09', 2)      // regrava com NF ja gerada {"Sim", "Nao"}
+	U_GravaSX1 (cPerg, '10', 1)      // regrava com obs {"Regrava","Nao altera"}
+	U_GravaSX1 (cPerg, '11', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
+	U_GravaSX1 (cPerg, '13', '')    // parcela ini
+	U_GravaSX1 (cPerg, '14', 'z')    // parcela final
+	U_GravaSX1 (cPerg, '15', 2)      // regrava se ja tiver preco {"Sim", "Nao"}
+	U_VA_ZZ9P (.t.)
+return
+*/
+/*
 	cPerg := 'VA_CCR2'
 	U_GravaSX1 (cPerg, '01', '0345           ')  // prod pai ini
 	U_GravaSX1 (cPerg, '02', '0348           ')  // prod pai fim
@@ -75,54 +96,7 @@ static function _AndaLogo ()
 	U_GravaSX1 (cPerg, '07', 'Z')  // LINHA COML pai fim
 	u_va_ccr2 (.t.)
 return
-
-	// Teste rel. analise custo std
-	sb1 -> (dbsetorder (1))
-	if sb1 -> (dbseek (xfilial ("SB1") + '0345', .F.))
-		_sPai = sb1 -> b1_cod
-		_aEstrAux := aclone (U_ML_Comp2 (sb1 -> b1_cod, 1, '.t.', dDataBase, .F., .F., .F., .F., .F., '', .F., '.f.', .T., .F., sb1 -> b1_revatu))
-		u_log (_aEstrAux)
-		_aEstr = {}
-		for _i = 1 to len (_aEstrAux)
-			aadd (_aEstr, {_sPai,;
-				fBuscaCpo ("SB1", 1, xfilial ("SB1") + _sPai, "B1_DESC"),;
-				_aEstrAux [_i, 1],;
-				_aEstrAux [_i, 2],;
-				_aEstrAux [_i, 4],;
-				fBuscaCpo ("SB1", 1, xfilial ("SB1") + _aEstrAux [_i, 4], "B1_DESC"),;
-				_aEstrAux [_i, 7],;
-				0,0,0})
-		next
-		aHeader = {}
-		aadd (aHeader, {'Produto'   , 'Produto'      , ''                   , 15,  0, '', '', 'C', '', ''})
-		aadd (aHeader, {'Descr_prod', 'Descr_prod'   , ''                   , 60,  0, '', '', 'C', '', ''})
-		aadd (aHeader, {'Nivel'     , 'Nivel'        , '@E 99'              , 2,   0, '', '', 'N', '', ''})
-		aadd (aHeader, {'Compon'    , 'Compon'       , ''                   , 15,  0, '', '', 'C', '', ''})
-		aadd (aHeader, {'Descr_comp', 'Descr_comp'   , ''                   , 60,  0, '', '', 'C', '', ''})
-		aadd (aHeader, {'Quant'     , 'Quant'        , '@E 999,999,999.9999', 14,  4, '', '', 'N', '', ''})
-		aadd (aHeader, {'Caminho'   , 'Caminho'      , ''                   , 100, 0, '', '', 'C', '', ''})
-		aadd (aHeader, {'Ult_Comp1' , 'Ult_Comp1'    , '@E 999,999,999.9999', 14,  4, '', '', 'N', '', ''})
-		aadd (aHeader, {'Ult_Comp2' , 'Ult_Comp2'    , '@E 999,999,999.9999', 14,  4, '', '', 'N', '', ''})
-		aadd (aHeader, {'Ult_Comp3' , 'Ult_Comp3'    , '@E 999,999,999.9999', 14,  4, '', '', 'N', '', ''})
-		u_acolsxls (_aEstr)
-	endif
-return
-
-// Retorno: array com a estrutura nivel a nivel, sendo que cada linha tem os seguintes dados:
-// 1 - Nivel
-// 2 - Codigo do componente
-// 3 - Quantidade do componente neste nivel
-// 4 - Quantidade acumulada do componente (depende da quantidade do pai, do campo G1_FIVAR e do estoque.)
-// 5 - Saldo em estoque
-// 6 - Saldo em poder de terceiros
-// 7 - Caminho de itens percorridos para chegar ateh o componente atual (codigos concatenados em uma string)
-// 8 - Numero de dias de producao, acumulado pela estrutura.
-// 8 - Saldo empenhado
-// 9 - Saldo em pedidos
-// 10 - Array com as operacoes
-//
-// -------------------------------------------------------------------------------------------------------------
-
+*/
 /*
 	U_GravaSX1 ("ML_FECHASAFRA", '01', '2020')
 	U_GravaSX1 ("ML_FECHASAFRA", '02', '003241')  // 003241
