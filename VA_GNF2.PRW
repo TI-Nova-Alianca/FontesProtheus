@@ -25,8 +25,10 @@
 // 25/05/2018 - Robert - Nao acumula mais de uma NF origem quando nota de complemento (SEFAZ nao autoriza mais).
 // 23/03/2019 - Robert - Ajustes para compra 2019. Filtro pelo ZZ9_GRUPO, melhora mensagens.
 // 18/04/2019 - Robert - Ajustes compl.preco uva propria Livramento 2019
-// 25/06/2019 - Robert - Array de itens passa a usar nomes (XTranslate) para identificar posicoes.
+// 25/04/2019 - Robert - Array de itens passa a usar nomes (XTranslate) para identificar posicoes.
 //                     - Tratamento para o campo ZZ9_TES.
+// 13/05/2020 - Robert - Ajustes para 2020: compra parcial (apenas bordo e bordo de bordadura). Refeito while principal (GLPI 7705)
+//                     - Melhorados logs e mensagens de erro.
 //
 
 #include "tbiconn.ch"
@@ -1041,7 +1043,7 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 			// Essa RONHA desse sistema nao aceita por que precisa 4 digitos, mas a mascara do campo tem 2... o jeito foi passar por cima da validacao padrao. -->  AADD(_aLinha , {"D1_ITEMORI", right (_aItens [_nItem, 9], tamsx3 ("D1_ITEMORI")[1]) , Nil } )
 			AADD(_aLinha , {"D1_ITEMORI", right (_aItens [_nItem, .ItensItemOri], tamsx3 ("D1_ITEMORI")[1]) , '.t.' } )
 		endif
-		U_LOG (aClone (U_OrdAuto (_aLinha)))
+//		U_LOG (aClone (U_OrdAuto (_aLinha)))
 		AADD(_aAutoSD1, aClone (U_OrdAuto (_aLinha)))
 	next
 
@@ -1211,8 +1213,7 @@ static function _ValCond ()
 			//u_log (year (_aTestCond [_nLinha, 1]), month (_aTestCond [_nLinha, 1]), year (_aTestCond [_nLinha - 1, 1]) , month (_aTestCond [_nLinha - 1, 1]))
 			if left (dtos (_aTestCond [_nLinha, 1]), 6) <= left (dtos (_aTestCond [_nLinha - 1, 1]), 6)
 				//u_log (_aTestCond)
-				u_help ("Condicao de pagamento vai gerar mais de um vencimento no mesmo mes.")
-				_lRet = .F.
+				_lRet = u_MsgNoYes ('Condicao de pagamento vai gerar mais de um vencimento no mesmo mes. Confirma?')
 			endif
 		next
 	endif
