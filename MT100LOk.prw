@@ -18,67 +18,67 @@
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
 /*/
 // Historico de alteracoes:
-// 13/10/2008 - Robert -  Nao exige mais pedido de compra quando tiver NF original informada.
-// 16/10/2008 - Robert -  Criada validacao de NF original/item/produto quando tipo NF = D.
-//                     -  Melhorado tratamento de retornos da funcao.
-//                     -  Validacoes ref. safra devem ser revistas.
-// 22/10/2008 - Robert -  Inconsistencias nas verificacoes da safra (causadas pela manutencao anterior).
-// 12/01/2009 - Robert -  Exigia pedido de compra para notas de recebimento de uva na safra.
-// 15/01/2009 - Robert -  Novas validacoes ref. campos obrigatorios para a safra.
-// 21/01/2009 - Robert -  Validava notas de associados sempre como safra (pode ser compra de lenha, etc.)
-// 20/02/2009 - Robert -  Exige preenchimento do D1_CLASFIS.
-// ??/03/2009 - Robert -  Pede confirmacao quando TES/valor/quantidade incoerente com NF original.
-// 06/05/2009 - Robert -  Nao exige mais pedido de compras quando TES de compra de uva da safra.
-// 03/09/2009 - Robert -  Validacao campo D1_vaForOr.
-//                     -  Compatibilizacao com base DBF para uso em Livramento.
-// 23/09/2009 - Robert -  Validacao NF tipo 'C' nao considerava especie 'CTR' corretamente.
-// 19/10/2009 - Robert -  Notas da filial de Livramento nao exigem mais pedido de compra.
-//                     -  Notas de retorno de deposito em armazem geral nao exigem mais pedido de compra.
-// 24/11/2009 - Robert -  Passa a pedir confirmacao quando nao encontra NF original (antes bloqueava).
-// 14/01/2010 - Robert -  Validacao NF orig. dava erro na versao DBF.
-// 19/01/2010 - Robert -  Passa a usar funcao U_Help para mensagens de erro.
-//                     -  Funcao _ClasseUva passada para arquivo proprio.
-// 03/08/2010 - Robert -  Testa se estah na opcao de 'retornar' antes de verificar volumes x expecies.
-// 26/05/2010 - Robert -  Nao exige pedido de compras para notas de importacao.
-// 04/10/2010 - Robert -  Nao exige pedido de compras para notas de compra de servicos (beneficiamento).
-// 22/10/2010 - Robert -  Nao verifica compAtibilidade com TES original quando chamado via rotina BatD04.
-// 12/01/2011 - Robert -  Desabilitado controle de area por variedade (safra 2011).
-// 03/06/2011 - Robert -  Permite entrada de outros produtos com TES de safra, mediante confirmacao.
-// 07/06/2011 - Robert -  Nao exige pedido de compra quando chamado via importacao de XML.
-// 09/06/2011 - Robert -  Nao exige pedido de compras para notas entre nossas filiais.
-// 04/07/2011 - Robert -  Nao pesquisava corretamente UF do fornecedor e exigia ped.compra em NF de importacao.
-// 04/07/2011 - Robert -  Desabilitados controles por patriarca (safra).
-// 26/12/2011 - Robert -  Amarracao associado X patriarca passa a considerar a safra.
-// 14/02/2012 - Robert -  Campo A2_ASSOC vai ser eliminado da base de dados.
-// 11/04/2012 - Robert -  Nao exige pedido de compra para especie CTE.
-// 11/05/2012 - Robert -  Passa a considerar especie CTE da mesma forma que CTR.
-// 04/09/2012 - Robert -  Validacao credito presumido ICMS passa a permitir NF orig. tanto de saida como entrada.
-// 21/11/2012 - Robert -  Soh exigia volumes e especies quando tipo N para formul.proprio. Agora exige em todos os tipos.
-// 12/02/2013 - Elaine -  Obriga informar D1_OP se Tipo do Produto for "BN" e TES estiver parametrizada para atualizar estoque
-// 06/08/2013 - Robert -  Nao exige mais especie e volume quando NF de importacao.
-// 11/12/2014 - Robert -  Verificacoes integracao Fullsoft.
-// 27/01/2015 - Robert -  Passa a validar parametros VA_ALMFULP, VA_ALMFULT, VA_ALMFULT
-// 30/04/2015 - Robert -  Produto deve ser do tipo BN quando CFOP de industrializacao.
-// 08/05/2015 - Robert -  Passa a bloquear entrada em almox. do FullWMS quando o produto nao eh controlado pelo FullWMS.
-// 12/05/2015 - Robert -  Exigencia de pedido de compra desabilitada (passamos a usar parametros MV_PCNF e MV_TESPCNF)
-// 29/01/2016 - Robert -  Somente ordens de producao do tipo 'externa' podem receber lancamentos de NF de entrada.
-// 04/03/2016 - Robert -  Desabilitadas validacoes de credito ICMS s/ativo.
-// 03/05/2016 - Catia  -  Validar campo F4_FRETE - so podem ser usados TES com F4_FRETE = 1(SIM) nas especies CTR e CTe
-// 05/01/2017 - Catia  -  Deletada funcao _ValPC - pq não eh mais usada
-// 25/02/2017 - Robert -  Verificacoes para quando houver controle de lote.
-// 01/03/2016 - Robert -  Verificacoes para quando houver controle de lote passa a considerar apenas nota tipo 'N'.
-// 07/07/2017 - Catia  -  possibilitar que digite o almox 93 nas devolucoes tambem
-// 14/08/2018 - Robert -  Nao exige c2_vaopesp = 'E' quando OS de manutencao.
-// 15/08/2018 - Robert -  Passa a usar a funcao U_AlmFull() para validar almox. de integracao com FullWMS.
-// 27/08/2018 - Robert -  Exige data de validadade quando controla lote.
-// 05/12/2018 - Robert -  Nao permite mudar data base quando TES movimenta estoque.
-// 01/03/2019 - Robert -  Bloqueio de movto.de TES que altera estoque com data retroativa estava retornando sempre .T.
-// 23/03/2019 - Robert -  ELiminada validacoes desnecessarias referentes a safra.
-// 06/06/2019 - Robert -  Permite mov.de estq.retroativo somente hoje e somente para Katia Nunes.
-// 14/06/2019 - Robert -  Nao valida lote fornecedor quando estiver usando opcao de 'retornar'.
-// 17/06/2019 - Catia  -  estava dando erro de tipo na rotina _VERLOTES (568) - Robert pediu para desabilitar o bloco todo
-// 06/08/2019 - Robert -  No bloueio de mov.estq. fora da data, nao verificava se o usuario pertence ao grupo 084.
-// 23/09/2019 - Andre  -  Adicionado tipo "F" na validação do campo C2_VAOPESP. 
+// 13/10/2008 - Robert - Nao exige mais pedido de compra quando tiver NF original informada.
+// 16/10/2008 - Robert - Criada validacao de NF original/item/produto quando tipo NF = D.
+//                     - Melhorado tratamento de retornos da funcao.
+//                     - Validacoes ref. safra devem ser revistas.
+// 22/10/2008 - Robert - Inconsistencias nas verificacoes da safra (causadas pela manutencao anterior).
+// 12/01/2009 - Robert - Exigia pedido de compra para notas de recebimento de uva na safra.
+// 15/01/2009 - Robert - Novas validacoes ref. campos obrigatorios para a safra.
+// 21/01/2009 - Robert - Validava notas de associados sempre como safra (pode ser compra de lenha, etc.)
+// 20/02/2009 - Robert - Exige preenchimento do D1_CLASFIS.
+// ??/03/2009 - Robert - Pede confirmacao quando TES/valor/quantidade incoerente com NF original.
+// 06/05/2009 - Robert - Nao exige mais pedido de compras quando TES de compra de uva da safra.
+// 03/09/2009 - Robert - Validacao campo D1_vaForOr.
+//                     - Compatibilizacao com base DBF para uso em Livramento.
+// 23/09/2009 - Robert - Validacao NF tipo 'C' nao considerava especie 'CTR' corretamente.
+// 19/10/2009 - Robert - Notas da filial de Livramento nao exigem mais pedido de compra.
+//                     - Notas de retorno de deposito em armazem geral nao exigem mais pedido de compra.
+// 24/11/2009 - Robert - Passa a pedir confirmacao quando nao encontra NF original (antes bloqueava).
+// 14/01/2010 - Robert - Validacao NF orig. dava erro na versao DBF.
+// 19/01/2010 - Robert - Passa a usar funcao U_Help para mensagens de erro.
+//                     - Funcao _ClasseUva passada para arquivo proprio.
+// 03/08/2010 - Robert - Testa se estah na opcao de 'retornar' antes de verificar volumes x expecies.
+// 26/05/2010 - Robert - Nao exige pedido de compras para notas de importacao.
+// 04/10/2010 - Robert - Nao exige pedido de compras para notas de compra de servicos (beneficiamento).
+// 22/10/2010 - Robert - Nao verifica compAtibilidade com TES original quando chamado via rotina BatD04.
+// 12/01/2011 - Robert - Desabilitado controle de area por variedade (safra 2011).
+// 03/06/2011 - Robert - Permite entrada de outros produtos com TES de safra, mediante confirmacao.
+// 07/06/2011 - Robert - Nao exige pedido de compra quando chamado via importacao de XML.
+// 09/06/2011 - Robert - Nao exige pedido de compras para notas entre nossas filiais.
+// 04/07/2011 - Robert - Nao pesquisava corretamente UF do fornecedor e exigia ped.compra em NF de importacao.
+// 04/07/2011 - Robert - Desabilitados controles por patriarca (safra).
+// 26/12/2011 - Robert - Amarracao associado X patriarca passa a considerar a safra.
+// 14/02/2012 - Robert - Campo A2_ASSOC vai ser eliminado da base de dados.
+// 11/04/2012 - Robert - Nao exige pedido de compra para especie CTE.
+// 11/05/2012 - Robert - Passa a considerar especie CTE da mesma forma que CTR.
+// 04/09/2012 - Robert - Validacao credito presumido ICMS passa a permitir NF orig. tanto de saida como entrada.
+// 21/11/2012 - Robert - Soh exigia volumes e especies quando tipo N para formul.proprio. Agora exige em todos os tipos.
+// 12/02/2013 - Elaine - Obriga informar D1_OP se Tipo do Produto for "BN" e TES estiver parametrizada para atualizar estoque
+// 06/08/2013 - Robert - Nao exige mais especie e volume quando NF de importacao.
+// 11/12/2014 - Robert - Verificacoes integracao Fullsoft.
+// 27/01/2015 - Robert - Passa a validar parametros VA_ALMFULP, VA_ALMFULT, VA_ALMFULT
+// 30/04/2015 - Robert - Produto deve ser do tipo BN quando CFOP de industrializacao.
+// 08/05/2015 - Robert - Passa a bloquear entrada em almox. do FullWMS quando o produto nao eh controlado pelo FullWMS.
+// 12/05/2015 - Robert - Exigencia de pedido de compra desabilitada (passamos a usar parametros MV_PCNF e MV_TESPCNF)
+// 29/01/2016 - Robert - Somente ordens de producao do tipo 'externa' podem receber lancamentos de NF de entrada.
+// 04/03/2016 - Robert - Desabilitadas validacoes de credito ICMS s/ativo.
+// 03/05/2016 - Catia  - Validar campo F4_FRETE - so podem ser usados TES com F4_FRETE = 1(SIM) nas especies CTR e CTe
+// 05/01/2017 - Catia  - Deletada funcao _ValPC - pq não eh mais usada
+// 25/02/2017 - Robert - Verificacoes para quando houver controle de lote.
+// 01/03/2016 - Robert - Verificacoes para quando houver controle de lote passa a considerar apenas nota tipo 'N'.
+// 07/07/2017 - Catia  - possibilitar que digite o almox 93 nas devolucoes tambem
+// 14/08/2018 - Robert - Nao exige c2_vaopesp = 'E' quando OS de manutencao.
+// 15/08/2018 - Robert - Passa a usar a funcao U_AlmFull() para validar almox. de integracao com FullWMS.
+// 27/08/2018 - Robert - Exige data de validadade quando controla lote.
+// 05/12/2018 - Robert - Nao permite mudar data base quando TES movimenta estoque.
+// 01/03/2019 - Robert - Bloqueio de movto.de TES que altera estoque com data retroativa estava retornando sempre .T.
+// 23/03/2019 - Robert - ELiminada validacoes desnecessarias referentes a safra.
+// 06/06/2019 - Robert - Permite mov.de estq.retroativo somente hoje e somente para Katia Nunes.
+// 14/06/2019 - Robert - Nao valida lote fornecedor quando estiver usando opcao de 'retornar'.
+// 17/06/2019 - Catia  - estava dando erro de tipo na rotina _VERLOTES (568) - Robert pediu para desabilitar o bloco todo
+// 06/08/2019 - Robert - No bloueio de mov.estq. fora da data, nao verificava se o usuario pertence ao grupo 084.
+// 23/09/2019 - Andre  - Adicionado tipo "F" na validação do campo C2_VAOPESP. 
 // 30/03/2020 - Claudia - Ajuste nos campos de ITEM, conforme GLPI: 7737
 // 02/04/2020 - Claudia - Voltada alteração GLPI: 7737
 // 13/05/2020 - Robert  - Habilitada novamente validacao de safra, pois passaram notas sem sist.conducao, classificacao, etc. nesta safra.
@@ -88,13 +88,8 @@
 User Function MT100LOK()
 	local _aAreaAnt    := U_ML_SRArea ()
 	Local _lRet        := ParamIxb[1]
-	Local _xFim        := chr(13)+chr(10)
-    Local _cTipo       := ""
-    Local _cEst        := ""
-    Local _lExiste     := ""
 	local _lVA_Retor   := .F.
 	local _lTransFil   := .F.
-	local _oSQL        := NIL
     Private _xLOJAPAT  := ""
 
 	u_logIni ()
@@ -145,7 +140,7 @@ User Function MT100LOK()
 	endif
 
 	// Validacoes para notas de entrada de safra
-	if _lRet
+	if _lRet //.and. !GDDeleted ()
 		_lRet = _ValSafra ()
 	endif
 
@@ -201,6 +196,9 @@ User Function MT100LOK()
 	U_ML_SRArea (_aAreaAnt)
 	u_logFim ()
 Return(_lRet)
+
+
+
 // ----------------------------------------------------------------------------------------
 // Validacoes ref. nota fiscal original.
 static function _ValNFOri ()
@@ -223,7 +221,7 @@ static function _ValNFOri ()
 		_sQuery +=    " and D2_LOJA    = '" + cLoja + "'"
 		_sQuery +=    " and D2_COD     = '" + GDFieldGet ("D1_COD") + "'"
 		_sQuery +=    " and D2_ITEM    = '" + GDFieldGet ("D1_ITEMORI") + "'"
-		u_log (_sQuery)
+//		u_log (_sQuery)
 		_aNfOri = aclone (U_Qry2Array (_sQuery))
 		
 		if len (_aNFOri) == 0

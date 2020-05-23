@@ -1,4 +1,4 @@
-// Programa...:  DREIndl
+// Programa...: DREIndl
 // Descricao..: Interface para gerar e consultar DREs industriais (parte de um estudo da diretoria em jul/2019)
 // Data.......: 18/08/2019
 // Autor......: Robert Koch
@@ -14,15 +14,18 @@
 // 10/03/2020 - Robert - Grava usuario que gerou a analise
 //                     - Regua de processamento na rotina de exclusao.
 //                     - Rateios por litragem nao geravam, pois estava gravando Q em vez de L no campo FORMA_RATEIO.
+// 19/03/2020 - Robert - Passa a oferecer selecao de filial para consultar (quando o rateio foi feito por filial) - GLPI 7689.
+//                     - Passa a enviar parametro de filial inicial... final em todas as consultas.
+//                     - Melhorado descritivo (nome coluna 2) para todas as consultas
 //
 
 // --------------------------------------------------------------------------
 user function DREindl ()
 	local _aHead       := {}
-	local _sArqTrb     := ""
-	local _sArqInd     := ""
-	local _aConsAtu    := {}
-	local _nConsAtu    := 0
+//	local _sArqTrb     := ""
+//	local _sArqInd     := ""
+//	local _aConsAtu    := {}
+//	local _nConsAtu    := 0
 	Private bFiltraBrw := {|| Nil}
 	Private aRotina    := {}
 	private cCadastro  := "DREs industriais"
@@ -254,6 +257,10 @@ return _lContinua
 user function DREIndlC ()
 	local _aOpcoes := {}
 	local _nLayout := 0
+	local _nOpcao  := {}
+	local _sFilial := ''
+	local _oSQL    := NIL
+
 	if left (_trbDRE->agrup, 1) == 'C'  // Rateio consolidado
 		_aOpcoes = {}
 		aadd (_aOpcoes, "Lin.envase")
@@ -267,31 +274,47 @@ user function DREIndlC ()
 
 		do case
 		case _nLayout == 1
-			processa ({|| _Cons2 ('LE')})
+			processa ({|| _Cons2 ('LE', '', 'zz')})
 		case _nLayout == 2
-			processa ({|| _Cons2 ('LC')})
+			processa ({|| _Cons2 ('LC', '', 'zz')})
 		case _nLayout == 3
-			processa ({|| _Cons2 ('TT')})
+			processa ({|| _Cons2 ('TT', '', 'zz')})
 		case _nLayout == 4
-			processa ({|| _Cons2 ('TT3')})
+			processa ({|| _Cons2 ('TT3', '', 'zz')})
 		case _nLayout == 5
-			processa ({|| _Cons2 ('GC')})
+			processa ({|| _Cons2 ('GC', '', 'zz')})
 		case _nLayout == 6
-			processa ({|| _Cons2 ('AC')})
+			processa ({|| _Cons2 ('AC', '', 'zz')})
 		endcase
 
 	elseif left (_trbDRE->agrup, 1) == 'F'  // Rateio filial a filial
-		_aOpcoes = {}
-		aadd (_aOpcoes, "Lin.coml.")
-		aadd (_aOpcoes, "Tabela preco lojas")
-		aadd (_aOpcoes, "Cancelar")
-		_nLayout = U_F3Array (_aOpcoes, "Selecione layout",, 400, 300)
-		do case
-		case _nLayout == 1
-			processa ({|| _Cons2 ('LC')})
-		case _nLayout == 2
-			processa ({|| _Cons2 ('TL')})
-		endcase
+
+		// Verifica cada filial movimentada para permitir ao usuario selecionar qual deseja exportar.
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "SELECT DISTINCT FILIAL, SM0.M0_FILIAL"
+		_oSQL:_sQuery +=  " FROM BI_ALIANCA.dbo.DRE_INDL_ITENS"
+		_oSQL:_sQuery +=       ",VA_SM0 SM0"
+		_oSQL:_sQuery += " WHERE ID_ANALISE = " + cvaltochar (_trbDRE->IdAnalise)
+		_oSQL:_sQuery +=   " AND SM0.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SM0.M0_CODIGO  = '" + cEmpAnt + "'"
+		_oSQL:_sQuery +=   " AND SM0.M0_CODFIL  = FILIAL"
+		_oSQL:_sQuery += " ORDER BY FILIAL"
+		_oSQL:Log ()
+		_nOpcao = _oSQL:F3Array ("Selecione a filial a consultar", .T.)
+		if _nOpcao > 0
+			_sFilial = _oSQL:_xRetQry [_nOpcao + 1, 1]
+			_aOpcoes = {}
+			aadd (_aOpcoes, "Lin.coml.")
+			aadd (_aOpcoes, "Tabela preco lojas")
+			aadd (_aOpcoes, "Cancelar")
+			_nLayout = U_F3Array (_aOpcoes, "Selecione layout",, 400, 300)
+			do case
+			case _nLayout == 1
+				processa ({|| _Cons2 ('LC', _sFilial, _sFilial)})
+			case _nLayout == 2
+				processa ({|| _Cons2 ('TL', _sFilial, _sFilial)})
+			endcase
+		endif
 	endif
 return
 
@@ -299,7 +322,7 @@ return
 
 // --------------------------------------------------------------------------
 // Consulta dados de determinada analise.
-static function _Cons2 (_sLayout)
+static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 	local _oSQL := NIL
 	local _sCliBIni := ''
 	local _sLojBIni := ''
@@ -313,6 +336,7 @@ static function _Cons2 (_sLayout)
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := "SELECT 'AN_' + RTRIM (CAST (ID_ANALISE AS VARCHAR (10)))"
 	_oSQL:_sQuery +=       " + '_' + RTRIM (DESCRICAO)"
+	_oSQL:_sQuery +=       " + '_F" + iif (empty (_sFilIni), '00', _sFilIni) + 'a' + _sFilFim + "'"
 	_oSQL:_sQuery +=       " + CASE FORMA_RATEIO"
 	_oSQL:_sQuery +=              " WHEN 'V' THEN '_Rat_valor'"
 	_oSQL:_sQuery +=              " WHEN 'L' THEN '_Rat_litrag'"
@@ -327,10 +351,12 @@ static function _Cons2 (_sLayout)
 	do case
 	case _sLayout == 'LE'  // por linha de envase
 //		_oSQL:_sQuery := "SELECT DESCRITIVO AS [DESCRITIVOS_Analise_" + cvaltochar (_trbDRE -> idanalise) + ']'
-		_oSQL:_sQuery := "SELECT DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
+		_oSQL:_sQuery := "SELECT GRUPO"
+		_oSQL:_sQuery +=      ", DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
 		_oSQL:_sQuery +=      " ,VIDRO,ISOBARICA,EM_3OS,PET,TETRA_200,TETRA_1000,BAG,FILIAL_09,GRANEL,OUTRAS"
-		_oSQL:_sQuery +=  " FROM BI_ALIANCA.dbo.FDRE_INDL_LINENV (" + cvaltochar (_trbDRE -> idanalise) + ", '', 'zz')"
-		_oSQL:_sQuery += " ORDER BY GRUPO"
+		_oSQL:_sQuery +=  " FROM BI_ALIANCA.dbo.FDRE_INDL_LINENV (" + cvaltochar (_trbDRE -> idanalise) + ","
+		_oSQL:_sQuery +=         "'" + _sFilIni + "', '" + _sFilFim + "'"
+		_oSQL:_sQuery += " ) ORDER BY GRUPO"
 		_oSQL:Log ()
 		_oSQL:Qry2XLS(.F.,.F.,.F.)
 		if U_MsgNoYes ("Deseja exportar lista dos produtos considerados em cada linha de envase? Será exportada uma tabela adicional com uma coluna correspondendo a cada linha de envase.")
@@ -338,7 +364,16 @@ static function _Cons2 (_sLayout)
 		endif
 
 	case _sLayout == 'LC'  // por linha comercial
-		_oSQL:_sQuery := "SELECT * FROM BI_ALIANCA.dbo.FDRE_INDL_LINCOM ('" + cvaltochar (_trbDRE -> idanalise) + "', '', 'zz', '', '', 'Z', 'Z') ORDER BY GRUPO"
+//		_oSQL:_sQuery := "SELECT *"
+		_oSQL:_sQuery := "SELECT GRUPO"
+		_oSQL:_sQuery +=      ", DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
+		_oSQL:_sQuery +=      ", SUCO_INTEGRAL,ORGANICO,SUCO_100,NECT_BEBID,PREPARADOS,VINHO_FINO,ESPUMANTE,VINHO_MESA,FILTRADO,SAGU_QUENTAO,INDUSTRIALIZ,REVENDA,GRANEL,OUTRAS"
+		_oSQL:_sQuery +=  " FROM BI_ALIANCA.dbo.FDRE_INDL_LINCOM ("
+		_oSQL:_sQuery +=         "'" + cvaltochar (_trbDRE -> idanalise) + "'"
+		_oSQL:_sQuery +=         ",'" + _sFilIni + "', '" + _sFilFim + "'"
+		_oSQL:_sQuery +=         ",'', ''"  // Cliente/loja base inical
+		_oSQL:_sQuery +=         ",'Z', 'Z'"  // Cliente/loja base final
+		_oSQL:_sQuery +=  ") ORDER BY GRUPO"
 		_oSQL:Log ()
 		_oSQL:Qry2XLS(.F.,.F.,.F.)
 		if U_MsgNoYes ("Deseja exportar lista dos produtos considerados em cada linha comercial? Será exportada uma tabela adicional com uma coluna correspondendo a cada linha comercial.")
@@ -367,7 +402,16 @@ static function _Cons2 (_sLayout)
 			_sLojBIni = _oSQL:_xRetQry [_nOpcao + 1, 3]
 			_sCliBFim = _sCliBIni
 			_sLojBFim = _sLojBIni
-			_oSQL:_sQuery := "SELECT * FROM BI_ALIANCA.dbo.FDRE_INDL_LINCOM ('" + cvaltochar (_trbDRE -> idanalise) + "', '', 'zz', '" + _sCliBIni + "', '" + _sLojBIni + "', '" + _sCliBFim + "', '" + _sLojBFim + "') ORDER BY GRUPO"
+//			_oSQL:_sQuery := "SELECT * FROM BI_ALIANCA.dbo.FDRE_INDL_LINCOM ('" + cvaltochar (_trbDRE -> idanalise) + "', '', 'zz', '" + _sCliBIni + "', '" + _sLojBIni + "', '" + _sCliBFim + "', '" + _sLojBFim + "') ORDER BY GRUPO"
+			_oSQL:_sQuery := "SELECT GRUPO"
+			_oSQL:_sQuery +=      ", DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
+			_oSQL:_sQuery +=      ", SUCO_INTEGRAL,ORGANICO,SUCO_100,NECT_BEBID,PREPARADOS,VINHO_FINO,ESPUMANTE,VINHO_MESA,FILTRADO,SAGU_QUENTAO,INDUSTRIALIZ,REVENDA,GRANEL,OUTRAS"
+			_oSQL:_sQuery +=  " FROM BI_ALIANCA.dbo.FDRE_INDL_LINCOM ("
+			_oSQL:_sQuery +=         "'" + cvaltochar (_trbDRE -> idanalise) + "'"
+			_oSQL:_sQuery +=         ",'" + _sFilIni  + "', '" + _sFilFim  + "'"
+			_oSQL:_sQuery +=         ",'" + _sCliBIni + "', '" + _sLojBIni + "'"  // Cliente/loja base inical
+			_oSQL:_sQuery +=         ",'" + _sCliBFim + "', '" + _sLojBFim + "'"  // Cliente/loja base final
+			_oSQL:_sQuery +=  ") ORDER BY GRUPO"
 			_oSQL:Log ()
 			_oSQL:Qry2XLS(.F.,.F.,.F.)
 			if U_MsgNoYes ("Deseja exportar lista dos produtos considerados em cada linha comercial? Será exportada uma tabela adicional com uma coluna correspondendo a cada linha comercial.")
@@ -376,7 +420,14 @@ static function _Cons2 (_sLayout)
 		endif
 
 	case _sLayout == 'TT'  // por linha de envase Tetrapak
-		_oSQL:_sQuery := "SELECT * FROM BI_ALIANCA.dbo.FDRE_INDL_TETRAS ('" + cvaltochar (_trbDRE -> idanalise) + "', '', 'zz', '', 'z') ORDER BY GRUPO"
+//		_oSQL:_sQuery := "SELECT * FROM BI_ALIANCA.dbo.FDRE_INDL_TETRAS ('" + cvaltochar (_trbDRE -> idanalise) + "', '', 'zz', '', 'z') ORDER BY GRUPO"
+		_oSQL:_sQuery := "SELECT GRUPO"
+		_oSQL:_sQuery +=      ", DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
+		_oSQL:_sQuery +=      ", TT200_UVA_NOSSO, TT200_UVA_3OS, TT200_OUTROS_NOSSO, TT200_OUTROS_3OS, TT1000_UVA_NOSSO, TT1000_UVA_3OS, TT1000_OUTROS_NOSSO, TT1000_OUTROS_3OS"
+		_oSQL:_sQuery +=  " FROM BI_ALIANCA.dbo.FDRE_INDL_TETRAS ('" + cvaltochar (_trbDRE -> idanalise) + "'"
+		_oSQL:_sQuery +=         ",'" + _sFilIni + "', '" + _sFilFim + "'"
+		_oSQL:_sQuery +=         ",'', 'ZZ'"
+		_oSQL:_sQuery +=  ") ORDER BY GRUPO"
 		_oSQL:Log ()
 		_oSQL:Qry2XLS(.F.,.F.,.F.)
 
@@ -392,21 +443,34 @@ static function _Cons2 (_sLayout)
 		u_log ('opcao selecionada:', _nOpcao)
 		if _nOpcao > 0
 			_sMarca3 = _oSQL:_xRetQry [_nOpcao + 1, 1]
-			_oSQL:_sQuery := "SELECT * FROM BI_ALIANCA.dbo.FDRE_INDL_TETRAS ('" + cvaltochar (_trbDRE -> idanalise) + "', '', 'zz', '" + _sMarca3 + "', '" + _sMarca3 + "') ORDER BY GRUPO"
+//			_oSQL:_sQuery := "SELECT * FROM BI_ALIANCA.dbo.FDRE_INDL_TETRAS ('" + cvaltochar (_trbDRE -> idanalise) + "', '', 'zz', '" + _sMarca3 + "', '" + _sMarca3 + "') ORDER BY GRUPO"
+			_oSQL:_sQuery := "SELECT GRUPO"
+			_oSQL:_sQuery +=      ", DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
+			_oSQL:_sQuery +=      ", TT200_UVA_NOSSO, TT200_UVA_3OS, TT200_OUTROS_NOSSO, TT200_OUTROS_3OS, TT1000_UVA_NOSSO, TT1000_UVA_3OS, TT1000_OUTROS_NOSSO, TT1000_OUTROS_3OS"
+			_oSQL:_sQuery +=  " FROM BI_ALIANCA.dbo.FDRE_INDL_TETRAS ('" + cvaltochar (_trbDRE -> idanalise) + "'"
+			_oSQL:_sQuery +=         ",'" + _sFilIni + "', '" + _sFilFim + "'"
+			_oSQL:_sQuery +=         ",'" + _sMarca3 + "', '" + _sMarca3 + "'"
+			_oSQL:_sQuery +=  ") ORDER BY GRUPO"
 			_oSQL:Log ()
 			_oSQL:Qry2XLS(.F.,.F.,.F.)
 		endif
 
 	case _sLayout == 'TL'  // por Tabela de precos das Lojas
-		_oSQL:_sQuery := "SELECT * FROM BI_ALIANCA.dbo.FDRE_INDL_TABLOJ ('" + cvaltochar (_trbDRE -> idanalise) + "', '08', '08') ORDER BY GRUPO"
+	//	_oSQL:_sQuery := "SELECT * FROM BI_ALIANCA.dbo.FDRE_INDL_TABLOJ ('" + cvaltochar (_trbDRE -> idanalise) + "', '08', '08') ORDER BY GRUPO"
+		_oSQL:_sQuery := "SELECT GRUPO"
+		_oSQL:_sQuery +=      ", DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
+		_oSQL:_sQuery +=      ", GONDOLA, CX_FECHADA, ASSOC_FUNC, PARCEIR_REVD, FEIRINH_COMUNID, COML_EXT, COML_EXT2, TUMELERO, PROMOCOES, OUTROS"
+		_oSQL:_sQuery +=  " FROM BI_ALIANCA.dbo.FDRE_INDL_TABLOJ ('" + cvaltochar (_trbDRE -> idanalise) + "'"
+		_oSQL:_sQuery +=         ",'" + _sFilIni + "', '" + _sFilFim + "'"
+		_oSQL:_sQuery +=  ") ORDER BY GRUPO"
 		_oSQL:Log ()
 		_oSQL:Qry2XLS(.F.,.F.,.F.)
-		_oSQL:_sQuery := "SELECT * FROM BI_ALIANCA.dbo.FDRE_INDL_TABLOJ ('" + cvaltochar (_trbDRE -> idanalise) + "', '10', '10') ORDER BY GRUPO"
-		_oSQL:Log ()
-		_oSQL:Qry2XLS(.F.,.F.,.F.)
-		_oSQL:_sQuery := "SELECT * FROM BI_ALIANCA.dbo.FDRE_INDL_TABLOJ ('" + cvaltochar (_trbDRE -> idanalise) + "', '13', '13') ORDER BY GRUPO"
-		_oSQL:Log ()
-		_oSQL:Qry2XLS(.F.,.F.,.F.)
+	//	_oSQL:_sQuery := "SELECT * FROM BI_ALIANCA.dbo.FDRE_INDL_TABLOJ ('" + cvaltochar (_trbDRE -> idanalise) + "', '10', '10') ORDER BY GRUPO"
+	//	_oSQL:Log ()
+	//	_oSQL:Qry2XLS(.F.,.F.,.F.)
+	//	_oSQL:_sQuery := "SELECT * FROM BI_ALIANCA.dbo.FDRE_INDL_TABLOJ ('" + cvaltochar (_trbDRE -> idanalise) + "', '13', '13') ORDER BY GRUPO"
+	//	_oSQL:Log ()
+	//	_oSQL:Qry2XLS(.F.,.F.,.F.)
 
 	case _sLayout == 'AC'  // Aberto por Cliente
 		_oSQL:_sQuery := " WITH DADOS AS "

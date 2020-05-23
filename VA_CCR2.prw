@@ -9,20 +9,20 @@
 //
 
 /*
-- A seleÃ§Ã£o de itens a listar se baseia na estrutura dos itens fabricados, por isso os parÃ¢metros citam 'estrutura'.
-- As colunas iniciais (CODIGO,DESCRICAO,SEQ_ESTRUT,NIVEL) sÃ£o geradas a partir da leitura da estrutura do item citado na coluna CODIGO, daÃ­ o motivo da repetiÃ§Ã£o do mesmo.
+- A seleção de itens a listar se baseia na estrutura dos itens fabricados, por isso os parâmetros citam 'estrutura'.
+- As colunas iniciais (CODIGO,DESCRICAO,SEQ_ESTRUT,NIVEL) são geradas a partir da leitura da estrutura do item citado na coluna CODIGO, daí o motivo da repetição do mesmo.
 
 - As demais colunas se referem sempre aos componentes encontrados na estrutura:
-- QUANT_ESTR busca a quantidade necessÃ¡ria para a fabricaÃ§Ã£o de uma unidade/caixa do produto final
-- CUSTO_STD e DT_CUS_STD: sÃ£o lidas do cadastro do componente e trazem, respectivamente, o seu custo de reposiÃ§Ã£o atual e a data em que teve a Ãºltima alteraÃ§Ã£o.
+- QUANT_ESTR busca a quantidade necessária para a fabricação de uma unidade/caixa do produto final
+- CUSTO_STD e DT_CUS_STD: são lidas do cadastro do componente e trazem, respectivamente, o seu custo de reposição atual e a data em que teve a última alteração.
 
-- Colunas com nome iniciado por UC trazem dados da Ãºltimas compras:
-- UC_CUS_01, UC_CUS_02, ... valores calculados de preÃ§o de reposiÃ§Ã£o para a Ãºltima compra, penÃºltima, ... com a seguinte fÃ³rmula:
-(vl.produtos + seguro + despesa - desconto - ICMS (quando houver crÃ©dito) + frete - PIS - COFINS) / quantidade
-- UC_DAT_01, UC_DAT_02, ... datas nas notas fiscais consideradas para o respectivo cÃ¡lculo
-- Para conferÃªncia sÃ£o listados os dados da Ãºltima nota de entrada, nas colunas UC_NF, UC_FORNEC, UC_VALMERC, UC_SEGURO, UC_DESPESA, UC_DESCONT,  UC_CREDICM, UC_FRETE, UC_PIS, UC_COFINS, UC_QUANT
+- Colunas com nome iniciado por UC trazem dados da últimas compras:
+- UC_CUS_01, UC_CUS_02, ... valores calculados de preço de reposição para a última compra, penúltima, ... com a seguinte fórmula:
+(vl.produtos + seguro + despesa - desconto - ICMS (quando houver crédito) + frete - PIS - COFINS) / quantidade
+- UC_DAT_01, UC_DAT_02, ... datas nas notas fiscais consideradas para o respectivo cálculo
+- Para conferência são listados os dados da última nota de entrada, nas colunas UC_NF, UC_FORNEC, UC_VALMERC, UC_SEGURO, UC_DESPESA, UC_DESCONT,  UC_CREDICM, UC_FRETE, UC_PIS, UC_COFINS, UC_QUANT
 
-- CM_ULT_01, CM_ULT_02, ... Ãºltimos custos mÃ©dios do componente nesta filial.
+- CM_ULT_01, CM_ULT_02, ... últimos custos médios do componente nesta filial.
 */
 // --------------------------------------------------------------------------
 user function VA_CCR2 (_lAutomat)
@@ -88,8 +88,6 @@ static function _GeraPlan ()
 	_aCampos = {}
 	aadd (_aCampos, {"CODIGO",     "C", 15, 0})
 	aadd (_aCampos, {"DESCRICAO",  "C", 60, 0})
-	aadd (_aCampos, {"CUSSTD_PAI", "N", 15, 8})
-	aadd (_aCampos, {"DTCUS_PAI",  "D", 8,  0})
 	aadd (_aCampos, {"seq_estrut", "C", 3,  0})
 	aadd (_aCampos, {"NIVEL",      "N", 2,  0})
 	aadd (_aCampos, {"Quant_estr", "N", 18, 4})
@@ -135,11 +133,7 @@ static function _GeraPlan ()
 			sb1 -> (dbskip ())
 			loop
 		endif
-		aadd (_aPais, {sb1 -> b1_cod,;
-			sb1 -> b1_desc,;
-			sb1 -> b1_revatu,;
-			sb1 -> b1_custd,;
-			sb1 -> b1_datref})
+		aadd (_aPais, {sb1 -> b1_cod, sb1 -> b1_desc, sb1 -> b1_revatu})
 		sb1 -> (dbskip ())
 	enddo
 	u_log ('pais:', _aPais)
@@ -179,8 +173,6 @@ static function _GeraPlan ()
 					reclock ('_estrut', .T.)
 					_estrut -> codigo     = _aPais [_nPai, 1]
 					_estrut -> descricao  = _aPais [_nPai, 2]
-					_estrut -> CusStd_pai = _aPais [_nPai, 4]
-					_estrut -> DtCus_pai  = _aPais [_nPai, 5]
 					_estrut -> seq_estrut = strzero (_nComp, 3)
 					_estrut -> nivel      = _aEstr [_nComp, 1] + 1
 					_estrut -> quant_estr = _aEstr [_nComp, 4]
