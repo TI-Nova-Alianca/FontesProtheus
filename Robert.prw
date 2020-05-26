@@ -66,10 +66,27 @@ static function _AndaLogo ()
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
-	u_help ("Nada definido", procname ())
-	u_log ('Batch: [retorno:', _oBatch:Retorno, '] [Mensagens:', _oBatch:Mensagens, ']')
-return
+//	u_help ("Nada definido", procname ())
+//	u_log ('Batch: [retorno:', _oBatch:Retorno, '] [Mensagens:', _oBatch:Mensagens, ']')
+//return
 
+	// Gera adiantamento 3a. parcela safra 2020
+	Private cPerg   := "VA_ADSAF"
+	U_GravaSX1 (cPerg, '01', '') //012000')
+	U_GravaSX1 (cPerg, '02', '')
+	U_GravaSX1 (cPerg, '03', 'z') //012800')
+	U_GravaSX1 (cPerg, '04', 'z')
+	U_GravaSX1 (cPerg, '05', '2020')
+	U_GravaSX1 (cPerg, '06', 1)  // Simular / Gerar
+	U_GravaSX1 (cPerg, '07', stod ('20200529'))  // Data para pagto
+	U_GravaSX1 (cPerg, '08', '041')  // Banco
+	U_GravaSX1 (cPerg, '09', '0873')  // Agencia
+	U_GravaSX1 (cPerg, '10', '0685668204')  // Conta
+	U_GravaSX1 (cPerg, '11', 3)  // Qual parcela vai ser adiantada (primeira, segunda, ...)
+	U_GravaSX1 (cPerg, '12', 2)  // Qual preco do ZZ9 deve ser usado
+	u_va_adsaf (.T.)
+return
+*/
 /*
 	Private cPerg   := "VAGNF2"
 	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
