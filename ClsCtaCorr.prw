@@ -55,7 +55,7 @@
 // 14/06/2017 - Robert - Metodo GeraSE2() lia dados do SZI, exigindo que o arquivo estivesse posicionado.
 // 06/09/2017 - Robert - Metodo PodeIncl() aceita movto.11 via confirmacao se for superusuario.
 // 07/12/2017 - Robert - Gera SU5 no final do metodo Associar().
-// 11/01/2018 - Catia  - Chamado 3350 - Nova valida��o no conta corrente - nao permite incluir movimentos com o mesmo doc/prefixo/parcela - dava erro na rotina automatica do SE2
+// 11/01/2018 - Catia  - Chamado 3350 - Nova validacao no conta corrente - nao permite incluir movimentos com o mesmo doc/prefixo/parcela - dava erro na rotina automatica do SE2
 // 05/04/2018 - Robert - Eliminado campo zi_pjurmes (nunca fora usado)
 // 15/05/2018 - Robert - Implementada gravacao da parcela no metodo Desassoc()
 // 06/07/2018 - Robert - Busca saldo atual no SE2 para movtos a partir de 2018
@@ -760,7 +760,7 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _lCtOnLine) class ClsCtaCorr
 	//u_logIni (GetClassName (::Self) + '.' + procname ())
 	
 	// A rotina FINA050 soh funciona dentro destes modulos.
-	If _lContinua .and. !(AmIIn(5,6,7,11,12,14,41,97,17))           // S� Fin,GPE, Vei, Loja , Ofi, Pecas e Esp, EIC
+	If _lContinua .and. !(AmIIn(5,6,7,11,12,14,41,97,17))           // Somente Fin,GPE, Vei, Loja , Ofi, Pecas e Esp, EIC
 		::UltMsg += "FINA050 funciona apenas nos seguintes modulos: Fin,GPE, Vei, Loja , Ofi, Pecas e Esp, EIC"
 		_lContinua = .F.
 	endif
@@ -1538,7 +1538,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 				_oDUtil := ClsDUtil():New()
 				_dAniver = _oDUtil:Aniver (_oAssoc:DtNascim, 65)
 				if ::DtMovto < _dAniver
-					::UltMsg += "Associado so' tera' direito a resgatar parte da quota capital ap�s 65 anos de idade, o que sera' em " + dtoc (_dAniver) + _sCRLF
+					::UltMsg += "Associado somente vai ter direito a resgatar parte da quota capital apos 65 anos de idade, o que serah em " + dtoc (_dAniver) + _sCRLF
 					_lContinua = .F.
 				endif
 			endif
@@ -1546,7 +1546,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 				_oDUtil := ClsDUtil():New()
 				_dAniver = _oDUtil:Aniver (_oAssoc:DtEntrada (::DtMovto), 10)
 				if ::DtMovto < _dAniver
-					::UltMsg += "Associado so' tera' direito a resgatar parte da quota capital ap�s 10 anos de associacao, o que sera' em " + dtoc (_dAniver) + _sCRLF
+					::UltMsg += "Associado so' tera' direito a resgatar parte da quota capital apos 10 anos de associacao, o que sera' em " + dtoc (_dAniver) + _sCRLF
 					_lContinua = .F.
 				endif
 			endif
@@ -1868,17 +1868,17 @@ METHOD TransFil () Class ClsCtaCorr
 	endif
 
 	// Documentacao cfe. TDN -->  http://tdn.totvs.com/pages/releaseview.action?pageId=6070725
-	// Deve ser passado um array (aTitulos), com oito posi��es, sendo que cada posi��o dever� conter a seguinte composi��o:
+	// Deve ser passado um array (aTitulos), com oito posicoes, sendo que cada posicao devera conter a seguinte composicao:
 	// aTitulos [1]:= aRecnos   (array contendo os Recnos dos registros a serem baixados)
 	// aTitulos [2]:= cBanco     (Banco da baixa)
-	// aTitulos [3]:= cAgencia   (Ag�ncia da baixa)
+	// aTitulos [3]:= cAgencia   (Agencia da baixa)
 	// aTitulos [4]:= cConta     (Conta da baixa)
 	// aTitulos [5]:= cCheque   (Cheque da Baixa)
 	// aTitulos [6]:= cLoteFin    (Lote Financeiro da baixa)
-	// aTitulos [7]:= cNatureza (Natureza do movimento banc�rio)
+	// aTitulos [7]:= cNatureza (Natureza do movimento bancario)
 	// aTitulos [8]:= dBaixa     (Data da baixa)
-	// Caso a contabiliza��o seja online e a tela de contabiliza��o possa ser mostrada em caso de erro no lan�amento (falta de conta, d�bito/cr�dito n�o batem, etc) a baixa autom�tica em lote n�o poder� ser utilizada.
-	// Somente ser� processada se: 
+	// Caso a contabilizacao seja online e a tela de contabilizacao possa ser mostrada em caso de erro no lancamento (falta de conta, debito/credito nao batem, etc) a baixa automatica em lote nao podera ser utilizada.
+	// Somente sera processada se: 
 	// MV_PRELAN = S
 	// MV_CT105MS = N
 	// MV_ALTLCTO = N

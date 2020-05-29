@@ -85,6 +85,7 @@ Static Function _Gera()
 	local _sAgePag   := mv_par09  // Guarda em variavel local por que a chamada de rotinas automaticas muda o conteudo da variavel.
 	local _sCtaPag   := mv_par10  // Guarda em variavel local por que a chamada de rotinas automaticas muda o conteudo da variavel.
 	local _nParcSaf  := mv_par11  // Guarda em variavel local por que a chamada de rotinas automaticas muda o conteudo da variavel.
+	local _nParcAnt  := 0
 	local _nIdxAdto  := 0
 	local _oCtaCorr  := NIL
 	local _sOrigSZI  := 'VA_ADSAF'
@@ -103,9 +104,14 @@ Static Function _Gera()
 	local _sAliasQ   := ''
 	local _sFornec   := ''
 	local _sLojaFor  := ''
+	local _nVlrAntA  := 0
+	local _nVlrAntB  := 0
+	local _nVlrAntC  := 0
 	local _nVlrGrpA  := 0
 	local _nVlrGrpB  := 0
 	local _nVlrGrpC  := 0
+	local _nAcumParc := 0
+	local _nAdtPAnt  := 0
 	local _nAj2020P1 := 0
 	local _sHistCalc := ''
 	local _nPagar    := 0
@@ -116,10 +122,6 @@ Static Function _Gera()
 	private aHeader   := {}
 
 	U_LogSX1 (cPerg)
-
-//	// Na primeira parcela de 2020 havia valores errados. Vou gerar aqui array de diferencas a acertar.
-//	if _lContinua .and. mv_par05 == '2020' .and. _nParcSaf == 2
-//	endif
 
 	// Monta lista de tipos de movimento que nao devem ser considerados no momento de ler
 	// os saldos em aberto na conta corrente:
@@ -284,29 +286,39 @@ Static Function _Gera()
 			_sHistCalc := ''
 			_sHistCalc += 'Percentuais de parcelamento para esta safra:' + chr (13) + chr (10)
 			_sHistCalc += _sDescParc
-			U_LOG ('Calculando parcela bruta para forn.', _sFornec, _sLojaFor)
+		//	U_LOG ('Calculando parcela bruta para forn.', _sFornec, _sLojaFor)
+			_nVlrAntA = 0
+			_nVlrAntB = 0
+			_nVlrAntC = 0
 			_nVlrGrpA = 0
 			_nVlrGrpB = 0
 			_nVlrGrpC = 0
 			do while ! (_sAliasQ) -> (eof ()) .and. (_sAliasQ) -> zz9_fornec == _sFornec .and. (_sAliasQ) -> zz9_loja == _sLojaFor
-				u_log ('grupo pagto:', (_sAliasQ) -> zz9_grupo)
+		//		u_log ('grupo pagto:', (_sAliasQ) -> zz9_grupo)
 
 				// Prepara historico de calculo
-				_sHistCalc += 'Grupo ' + (_sAliasQ) -> zz9_grupo + ' '
-				_sHistCalc += 'vlr.tot: ' + transform ((_sAliasQ) -> valor, '@E 999,999.99')
+//				_sHistCalc += 'Grupo ' + (_sAliasQ) -> zz9_grupo + ' '
+//				_sHistCalc += 'vlr.tot: ' + transform ((_sAliasQ) -> valor, '@E 999,999.99')
 
 				// Calcula o valor desta parcela para cada grupo de pagamento. Vai precisar manutencao se forem criados novos grupos.
 				if (_sAliasQ) -> zz9_grupo == 'A'
+					for _nParcAnt = 1 to _nParcSaf - 1
+						_nVlrAntA += (_sAliasQ) -> valor * _aPerGrpA [_nParcAnt] / 100
+					next
 					_nVlrGrpA = (_sAliasQ) -> valor * _aPerGrpA [_nParcSaf] / 100
-					_sHistCalc += ' x ' + transform (_aPerGrpA [_nParcSaf], '@E 99.99') + '% = ' + transform (_nVlrGrpA, '@E 999,999.99') + chr (13) + chr (10)
+					_sHistCalc += 'Valor ' + transform (_nParcSaf, "@E 9") + 'a.parc.grupo ' + (_sAliasQ) -> zz9_grupo + ': ' + transform ((_sAliasQ) -> valor, '@E 999,999.99') + ' x ' + transform (_aPerGrpA [_nParcSaf], '@E 99.99') + '% = ' + transform (_nVlrGrpA, '@E 999,999.99') + chr (13) + chr (10)
 				elseif (_sAliasQ) -> zz9_grupo == 'B'
+					for _nParcAnt = 1 to _nParcSaf - 1
+						_nVlrAntB += (_sAliasQ) -> valor * _aPerGrpB [_nParcAnt] / 100
+					next
 					_nVlrGrpB = (_sAliasQ) -> valor * _aPerGrpB [_nParcSaf] / 100
-//					_sHistCalc += 'Percent. deste grupo nesta parcela: ' + cvaltochar (_aPerGrpB [_nParcSaf]) + ' --> valor: ' + alltrim (transform (_nVlrGrpB, '@E 999,999,999.99')) + chr (13) + chr (10)
-					_sHistCalc += ' x ' + transform (_aPerGrpB [_nParcSaf], '@E 99.99') + '% = ' + transform (_nVlrGrpB, '@E 999,999.99') + chr (13) + chr (10)
+					_sHistCalc += 'Valor ' + transform (_nParcSaf, "@E 9") + 'a.parc.grupo ' + (_sAliasQ) -> zz9_grupo + ': ' + transform ((_sAliasQ) -> valor, '@E 999,999.99') + ' x ' + transform (_aPerGrpB [_nParcSaf], '@E 99.99') + '% = ' + transform (_nVlrGrpB, '@E 999,999.99') + chr (13) + chr (10)
 				elseif (_sAliasQ) -> zz9_grupo == 'C'
+					for _nParcAnt = 1 to _nParcSaf - 1
+						_nVlrAntC += (_sAliasQ) -> valor * _aPerGrpC [_nParcAnt] / 100
+					next
 					_nVlrGrpC = (_sAliasQ) -> valor * _aPerGrpC [_nParcSaf] / 100
-//					_sHistCalc += 'Percent. deste grupo nesta parcela: ' + cvaltochar (_aPerGrpC [_nParcSaf]) + ' --> valor: ' + alltrim (transform (_nVlrGrpC, '@E 999,999,999.99')) + chr (13) + chr (10)
-					_sHistCalc += ' x ' + transform (_aPerGrpC [_nParcSaf], '@E 99.99') + '% = ' + transform (_nVlrGrpC, '@E 999,999.99') + chr (13) + chr (10)
+					_sHistCalc += 'Valor ' + transform (_nParcSaf, "@E 9") + 'a.parc.grupo ' + (_sAliasQ) -> zz9_grupo + ': ' + transform ((_sAliasQ) -> valor, '@E 999,999.99') + ' x ' + transform (_aPerGrpC [_nParcSaf], '@E 99.99') + '% = ' + transform (_nVlrGrpC, '@E 999,999.99') + chr (13) + chr (10)
 				else
 					u_help ('Grupo de pagamento ' + (_sAliasQ) -> zz9_grupo + ' sem tratamento no calculo do valor da parcela bruta.',, .T.)
 					_lContinua = .F.
@@ -314,6 +326,16 @@ Static Function _Gera()
 
 				(_sAliasQ) -> (dbskip ())
 			enddo
+
+			if _nVlrAntA != 0
+				_sHistCalc += 'Valor acumulado parcelas anteriores grupo A: ' + transform (_nVlrAntA, '@E 999,999.99') + chr (13) + chr (10)
+			endif
+			if _nVlrAntB != 0
+				_sHistCalc += 'Valor acumulado parcelas anteriores grupo B: ' + transform (_nVlrAntB, '@E 999,999.99') + chr (13) + chr (10)
+			endif
+			if _nVlrAntC != 0
+				_sHistCalc += 'Valor acumulado parcelas anteriores grupo C: ' + transform (_nVlrAntC, '@E 999,999.99') + chr (13) + chr (10)
+			endif
 
 			// Na primeira parcela de 2020, foram usados valores das notas de entrada, por que as pre-notas ainda nao
 			// estavam geradas, e nessas notas havia varios casos em que os precos nao estavam corretos. Por isso, alguns
@@ -345,13 +367,18 @@ Static Function _Gera()
 				endif
 			endif
 
-			u_log ('Valor grupo A:', _nVlrGrpA)
-			u_log ('Valor grupo B:', _nVlrGrpB)
-			u_log ('Valor grupo C:', _nVlrGrpC)
-			u_log ('Ajuste 1a.parc 2020:', _nAj2020P1)
+		//	u_log ('Valor grupo A:', _nVlrGrpA)
+		//	u_log ('Valor grupo B:', _nVlrGrpB)
+		//	u_log ('Valor grupo C:', _nVlrGrpC)
+		//	u_log ('Ajuste 1a.parc 2020:', _nAj2020P1)
 
-//			aadd (_aFornec, {_sFornec, _sLojaFor, _nVlrGrpA + _nVlrGrpB + _nVlrGrpC + _nAj2020P1, _nVlrGrpA, _nVlrGrpB, _nVlrGrpC, _nAj2020P1, _sHistCalc})
-			aadd (_aFornec, {_sFornec, _sLojaFor, _nVlrGrpA + _nVlrGrpB + _nVlrGrpC + _nAj2020P1, _sHistCalc})
+			// Calcula o valor devido ate agora, somando todas as parcelas. Posteriormente vou descontar as jah adiantadas.
+			_nAcumParc = _nVlrGrpA + _nVlrGrpB + _nVlrGrpC + _nVlrAntA + _nVlrAntB + _nVlrAntC
+
+			_sHistCalc += 'Valor devido ate ' + dtoc (_dDtPagto) + ':                 ' + transform (_nAcumParc, '@E 999,999.99') + chr (13) + chr (10)
+
+//			aadd (_aFornec, {_sFornec, _sLojaFor, _nVlrGrpA + _nVlrGrpB + _nVlrGrpC + _nAj2020P1, _sHistCalc})
+			aadd (_aFornec, {_sFornec, _sLojaFor, _nAcumParc, _sHistCalc})
 		enddo
 		(_sAliasQ) -> (dbclosearea ())
 		dbselectarea ("SA2")
@@ -371,30 +398,82 @@ Static Function _Gera()
 		for _nFornec = 1 to len (_aFornec)
 			u_log ('Verificando valores de ', _aFornec [_nFornec, 1], _aFornec [_nFornec, 2], fBuscaCpo ("SA2", 1, xfilial ("SA2") + _aFornec [_nFornec, 1] + _aFornec [_nFornec, 2], "A2_NOME"))
 			incproc ('Fornec. ' + _aFornec [_nFornec, 1])
+			_nAdtPAnt = 0
 			_nSldDeb = 0
 			_sHistCalc = _aFornec [_nFornec, 4]  // Para concatenar com o historico anterior.
 			_oAssoc := ClsAssoc ():New (_aFornec [_nFornec, 1], _aFornec [_nFornec, 2])
 			if empty (_oAssoc:DtEntrada (dDataBase)) .and. empty (_oAssoc:DtSaida (dDataBase))
 				_sEhAssoc = 'N'
 				u_log ('Nao associado:', _aFornec [_nFornec, 1], _aFornec [_nFornec, 2])
+
+				// Busca pagamentos jah feitos para parcelas anteriores
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := "SELECT E2_HIST, E2_VALOR"
+				_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE2") + " SE2 "
+				_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=   " AND SE2.E2_FILIAL  = '" + xfilial ("SE2") + "'"
+				_oSQL:_sQuery +=   " AND SE2.E2_TIPO    = 'PA'"
+				_oSQL:_sQuery +=   " AND SE2.E2_PREFIXO = 'ADT'"
+				_oSQL:_sQuery +=   " AND SE2.E2_FORNECE = '" + _aFornec [_nFornec, 1] + "'"
+				_oSQL:_sQuery +=   " AND SE2.E2_LOJA    = '" + _aFornec [_nFornec, 2] + "'"
+				_oSQL:_sQuery +=   " AND SE2.E2_EMISSAO >= '" + mv_par05 + "0201'"  // Pagamentos de safra iniciam em fevereiro (ateh janeiro estamos pagando o ano anterior)
+				_oSQL:_sQuery += " ORDER BY SE2.E2_EMISSAO"
+				_oSQL:Log ()
+				_aSaldos = aclone (_oSQL:Qry2Array ())
+				for _nIdxSaldo = 1 to len (_aSaldos)
+					_nSldDeb += _aSaldos [_nIdxSaldo, 2]
+					_sHistCalc += U_TamFixo (_aSaldos [_nIdxSaldo, 1], 45, ' ') + transform (_aSaldos [_nIdxSaldo, 2], '@E 999,999.99') + '(-)' + chr (13) + chr (10)
+				next
 			else
 				_sEhAssoc = 'S'
 
+				/*
+				// Busca pagamentos jah feitos para parcelas anteriores
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := "SELECT SUM (ZI_VALOR)"
+				_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI "
+				_oSQL:_sQuery += " WHERE SZI.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=   " AND SZI.ZI_TM      = '31'"
+				_oSQL:_sQuery +=   " AND SZI.ZI_ASSOC   = '" + _aFornec [_nFornec, 1] + "'"
+				_oSQL:_sQuery +=   " AND SZI.ZI_LOJASSO = '" + _aFornec [_nFornec, 2] + "'"
+				_oSQL:_sQuery +=   " AND SZI.ZI_DATA   >= '" + mv_par05 + "0101'"
+				_oSQL:_sQuery +=   " AND SZI.ZI_DATA   <  '" + dtos (dDataBase) + "'"  // Para o caso de estar sendo usada data retroativa.
+			//	_oSQL:Log ()
+				_nAdtPAnt = _oSQL:RetQry ()
+				if _nAdtPAnt != 0
+					_sHistCalc += 'Parcelas anteriores ja adiantadas:           ' + transform (_nAdtPAnt, '@E 999,999.99') + '(-)' + chr (13) + chr (10)
+				endif
+				*/
+
 				// Busca lancamentos com saldo em aberto na conta corrente.
-				_aSaldos = aclone (_oAssoc:LctComSald ('', 'zz', date (), '', 'zz', _sTMNao))
-			//	u_log (_aSaldos)
-				_nSldDeb = 0
+//				_nSldDeb = 0
+//				_aSaldos = aclone (_oAssoc:LctComSald ('', 'zz', date (), '', 'zz', _sTMNao))
+//				for _nIdxSaldo = 1 to len (_aSaldos)
+//					_nSldDeb += _aSaldos [_nIdxSaldo, 11]
+//					_sHistCalc += U_TamFixo (_aSaldos [_nIdxSaldo, 9], 45, ' ') + transform (_aSaldos [_nIdxSaldo, 11], '@E 999,999.99') + '(-)' + chr (13) + chr (10)
+//				next
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := "SELECT ZI_HISTOR, ZI_VALOR"
+				_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI "
+				_oSQL:_sQuery += " WHERE SZI.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=   " AND SZI.ZI_TM      IN ('07', '31')"
+				_oSQL:_sQuery +=   " AND SZI.ZI_ASSOC   = '" + _aFornec [_nFornec, 1] + "'"
+				_oSQL:_sQuery +=   " AND SZI.ZI_LOJASSO = '" + _aFornec [_nFornec, 2] + "'"
+				_oSQL:_sQuery +=   " AND SZI.ZI_DATA   >= '" + mv_par05 + "0201'"  // Pagamentos de safra iniciam em fevereiro (ateh janeiro estamos pagando o ano anterior)
+				_oSQL:_sQuery += " ORDER BY SZI.ZI_DATA"
+			//	_oSQL:Log ()
+				_aSaldos = aclone (_oSQL:Qry2Array ())
 				for _nIdxSaldo = 1 to len (_aSaldos)
-					_nSldDeb += _aSaldos [_nIdxSaldo, 11]
-					_sHistCalc += U_TamFixo (_aSaldos [_nIdxSaldo, 9], 39, ' ') + transform (_aSaldos [_nIdxSaldo, 11], '@E 999,999.99') + '(-)' + chr (13) + chr (10)
+					_nSldDeb += _aSaldos [_nIdxSaldo, 2]
+					_sHistCalc += U_TamFixo (_aSaldos [_nIdxSaldo, 1], 45, ' ') + transform (_aSaldos [_nIdxSaldo, 2], '@E 999,999.99') + '(-)' + chr (13) + chr (10)
 				next
 
 				// Alguns associados nao devo ler adtos por que nos avisaram que 'vao pagar em seguida'
 				if _sSafra == '2020' .and. _nParcSaf == 1 .and. _aFornec [_nFornec, 1] $ '000245/000305/004935'  // Laurindo e Valmor Lisot, Adelia de Bortoli, 
-					_sHistCalc += 'Este associado pediu para nao abater UNIMED por que vai depositar esta semana.'
+					_sHistCalc += 'Este associado pediu para nao abater UNIMED por que vai depositar esta semana.' + chr (13) + chr (10)
 					_nSldDeb = 0
-				elseif _sSafra == '2020' .and. alltrim (str (_nParcSaf)) $ '1/2/3' .and. _aFornec [_nFornec, 1] == '003621'  // Dejair Betlinski pediu para descontar o adto. em 3 vezes
-					_sHistCalc += 'Dejair Betlinski pediu para descontar o adto. de 7.000,00 em 3 vezes'
+				elseif _sSafra == '2020' .and. alltrim (str (_nParcSaf)) $ '1/2' .and. _aFornec [_nFornec, 1] == '003621'  // Dejair Betlinski pediu para descontar o adto. em 3 vezes
+					_sHistCalc += 'Dejair Betlinski pediu para descontar o adto. de 7.000,00 em 3 vezes' + chr (13) + chr (10)
 					_nSldDeb = 2335
 				endif
 
@@ -402,8 +481,15 @@ Static Function _Gera()
 			endif
 
 			// Se tem mais debitos do que o valor a pagar, nao paga nada.
-			_nPagar = max (0, _aFornec [_nFornec, 3] - _nSldDeb)
-			_sHistCalc += U_TamFixo ('Valor a depositar', 39, ' ') + transform (_nPagar, '@E 999,999.99') + chr (13) + chr (10)
+//			_nPagar = max (0, _aFornec [_nFornec, 3] - _nSldDeb)
+			_nPagar = _aFornec [_nFornec, 3]
+			_nPagar -= _nAdtPAnt
+			_nPagar -= _nSldDeb
+			if _nPagar < 0
+				_nPagar = 0
+			endif
+
+			_sHistCalc += U_TamFixo ('Valor a depositar', 45, ' ') + transform (_nPagar, '@E 999,999.99') + chr (13) + chr (10)
 
 //			u_log ('Historico de calculo:')
 //			u_log ('')
