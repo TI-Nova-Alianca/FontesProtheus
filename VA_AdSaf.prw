@@ -6,6 +6,8 @@
 // Historico de alteracoes:
 // 29/04/2020 - Robert - Passa a gerar com base no ZZ9
 //                     - Melhorias para gerar parcelas posteriores a primeira.
+// 28/05/2020 - Robert - Geracao terceira parcela 2020
+// 03/06/2020 - Robert - Estava gravando TM=07. Alterado para 31.
 //
 
 // --------------------------------------------------------------------------
@@ -558,7 +560,7 @@ Static Function _Gera()
 				_oCtaCorr := ClsCtaCorr():New ()
 				_oCtaCorr:Assoc    = _aAdtos [_nIdxAdto, 1]
 				_oCtaCorr:Loja     = _aAdtos [_nIdxAdto, 2]
-				_oCtaCorr:TM       = '07'
+				_oCtaCorr:TM       = '31'  //'07'
 				_oCtaCorr:DtMovto  = dDataBase
 				_oCtaCorr:VctoSE2  = _dDtPagto
 				_oCtaCorr:Valor    = _aAdtos [_nIdxAdto, 6]
