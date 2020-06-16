@@ -352,6 +352,15 @@ Static Function _Gera03 ()
 						endif
 					endif
 
+					// Primeira leva de notas de 2020 a preco de CONAB para comprovacao em busca de financiamento: filtro especifico.
+					if _sSafra == '2020' .and. date () = stod ('20200602')
+						if ! alltrim (zz9 -> zz9_produt) $ '9901' .or. ! zz9 -> zz9_grau $ '16.0/15.0/14.0/13.0' .or. ! empty (zz9 -> zz9_msgNF)
+							u_log ('Segunda leva compra 2020: fora da faixa especificada - prod:', zz9 -> zz9_produt, zz9 -> zz9_grau, zz9 -> zz9_msgNF)
+							zz9 -> (dbskip ())
+							loop
+						endif
+					endif
+
 					if ! empty (zz9 -> zz9_nfcomp)  // Nota de compra jah gerada.
 						u_log ('Jah tem NF de compra')
 						zz9 -> (dbskip ())
@@ -875,7 +884,7 @@ Static Function _Gera03 ()
 		
 	// Notifica setor de RH (nao lembro agora para que precisam ficar sabendo, acho que tem a ver com FUNRURAL) e custos.
 	if _sNFIni != _sNFFim
-		U_ZZUNU ({'019', '023', '069'}, ;  // Fiscal, RH e custos.
+		U_ZZUNU ({'019', '023', '069', '052'}, ;  // Fiscal, RH e custos.
 		          "Geracao nota(s) de compra / complemento preco safra", ;
 		         "Aviso do sistema: foram geradas notas de compra / complemento de preco de safra na filial " + cFilAnt + chr (13) + chr (10) + ;
 		         "Notas geradas: de '" + _sNFIni + "' a '" + _sNFFim + "'")
@@ -1196,7 +1205,7 @@ static function _ValCond ()
 	local _aTestCond := condicao (100, mv_par11,, date ())
 
 	// Provavelmente precise ajustar isto para cada nova safra...
-	u_log (_aTestCond)
+	//u_log (_aTestCond)
 	if _lRet
 		if mv_par05 == '2019' .and. left (dtos (date ()), 6) == '201904'  // Em abril estamos gerando a 'safrinha' por que a compra inicial jah foi feita.
 			if (mv_par07 == 'A' .and. len (_aTestCond) != 4) .or. (mv_par07 == 'B' .and. len (_aTestCond) != 8) .or. (mv_par07 == 'C' .and. len (_aTestCond) != 10)
