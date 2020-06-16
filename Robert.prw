@@ -14,7 +14,6 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		u_log ('Preparando ambiente')
 		prepare environment empresa '01' filial '01' modulo '05'
 		private cModulo   := 'FAT'
 		private __cUserId := "000210"
@@ -22,13 +21,13 @@ user function robert ()
 		private __RelDir  := "c:\temp\spool_protheus\"
 		set century on
 	endif
-	if ! alltrim(upper(cusername)) $ 'ROBERT.KOCH/ADMINISTRADOR/ANDRE.ALVES'
+	if ! alltrim(upper(cusername)) $ 'ROBERT.KOCH/ADMINISTRADOR'
 		msgalert ('Nao te conheco, nao gosto de ti e nao vou te deixar continuar. Vai pra casa.', procname ())
 		return
 	endif
 	private _sArqLog := procname () + "_" + alltrim (cUserName) + cEmpAnt + ".log"
-	delete file (_sArqLog)
-	u_logId ()
+	delete file ('\logs\' + _sArqLog)
+	//u_logId ()
 	if ! empty (GetSrvProfString ("IXBLOG", ""))
 		u_help ("Parametro IXBLOG ativo no appserver.ini")
 	else
@@ -38,7 +37,8 @@ user function robert ()
 			PtInternal (1, 'U_Robert')
 			U_UsoRot ('I', procname (), '')
 			processa ({|| _AndaLogo ()})
-			u_logDH ('Processo finalizado')
+			//u_logDH ('Processo finalizado')
+			u_log2 ('info', 'Processo finalizado')
 			U_UsoRot ('F', procname (), '')
 		endif
 	endif
@@ -66,9 +66,133 @@ static function _AndaLogo ()
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
-	u_help ("Nada definido", procname ())
-	u_log ('Batch: [retorno:', _oBatch:Retorno, '] [Mensagens:', _oBatch:Mensagens, ']')
+
+//	u_help ("Nada definido", procname ())
+	u_log2 ('erro', 'teste de erro')
+	u_log2 ('info', 'Batch: [retorno: ' + cvaltochar (_oBatch:Retorno) + '] [Mensagens: ' + _oBatch:Mensagens + ']')
+
 return
+
+/*
+	// Gera precos para as pre-notas de compra de safra.
+	Private cPerg   := "VAZZ9P"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // produto ini
+	U_GravaSX1 (cPerg, '07', 'z')    // fim
+	U_GravaSX1 (cPerg, '08', 3)      // tipos uvas {"Comuns","Finas","Todas"}
+	U_GravaSX1 (cPerg, '09', 2)      // regrava com NF ja gerada {"Sim", "Nao"}
+	U_GravaSX1 (cPerg, '10', 1)      // regrava com obs {"Regrava","Nao altera"}
+	U_GravaSX1 (cPerg, '11', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
+	U_GravaSX1 (cPerg, '13', 'A')    // parcela ini
+	U_GravaSX1 (cPerg, '14', 'F')    // parcela final
+	U_GravaSX1 (cPerg, '15', 1)      // regrava se ja tiver preco {"Sim", "Nao"}
+	U_VA_ZZ9P (.t.)
+return
+*/
+/* Acho que vai dar 1 trabalhao e nao tenho tempo.
+	// Gera planilha com tabelas de precos de uvas em formato amigavel.
+	local _aTabFinal := {}
+	local _nQualTab := 0
+	local _aGrpUva := {}
+	local _nGrpUva := 0
+	_nQualTab = 1
+
+	// Define quais grupos de uvas devem ser lidos
+	if _nQualTab == 1  // Uvas comuns
+		
+		if _sSafra == '2020'
+			_aGrpUva = {'101','111','131','141','151','152'}
+
+			// Cria uma linha na tabela final que vai servir como titulos das colunas.
+			aadd (_aTabFinal, {'Grau', 'Conv/bordadura', 'Em conversao', 'Organica', 'Conv/bordadura', 'Em conversao', 'Organica', 'Conv/bordadura', 'Em conversao', 'Organica', 'Conv/bordadura', 'Em conversao', 'Organica', 'Conv/bordadura', 'Em conversao', 'Organica', 'Conv/bordadura', 'Em conversao', 'Organica'}
+		endif
+
+	elseif _nQualTab == 2  // Viniferas espaldeira
+		if _sSafra == '2020'
+			_aGrpUva = {'210','211','213','214'}
+		endif
+
+	elseif _nQualTab == 3  // Viniferas latadas
+		if _sSafra == '2020'
+			_aGrpUva = {'301','302','304','305'}
+		endif
+	endif
+
+	// Cria linhas com as variedades no inicio da tabela final.
+	for _nGrpUva = 1 to len (_aGrpUva)
+
+		// Verifica em qual coluna da tabela final esta variedades devem aparecer
+		local _nColTbFin := 0
+		_nColTbFin = _nGrpUva * (parei aqui) + 1
+		// Monta lista com as variedades do grupo
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "SELECT RTRIM (ZX5_14PROD) + '-' + RTRIM (B1_DESC)"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZX5") + " ZX5, "
+		_oSQL:_sQuery +=             RetSQLName ("ZB1") + " SB1 "
+		_oSQL:_sQuery += " WHERE ZX5.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND ZX5_FILIAL     = '" + xfilial ("ZX5") + "'"
+		_oSQL:_sQuery +=   " AND ZX5_TABELA     = '14'"
+		_oSQL:_sQuery +=   " AND ZX5_14SAFR     = '" + _sSafra + "'"
+		_oSQL:_sQuery +=   " AND ZX5.ZX5_14GRUP = '" + _aGrpUva [_nGrpUva] + "'"
+		_oSQL:_sQuery +=   " AND SB1.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+		_oSQL:_sQuery +=   " AND SB1.B1_COD     = ZX5.ZX5_14PROD"
+		_oSQL:_sQuery += " ORDER BY B1_DESC"
+		_oSQL:Log ()
+		local _aVaried := {}
+		local _nVaried := 0
+		_aVaried := aclone (_oSQL:Qry2Array ())
+		for _nVaried = 1 to len (_aVaried)
+
+			// Se nao tem linha disponivel para esta variedade na array final, cria uma linha nova.
+			_nLinDest = ascan (_aTabFinal, {|_aVal| empty (_aVal [_nGrpUva + 1])})
+		next
+return
+*/
+/*
+	// Conferencia geracao precos uvas
+	_aPrecos := {}
+	for _nGrau = 10 to 22
+	// Bordo
+		aadd (_aPrecos, {_nGrau, U_PrcUva20 ('01', '9925           ', _nGrau, 'B', 'L', .f.)[2], ;
+		                         U_PrcUva20 ('01', '9948           ', _nGrau, 'B', 'L', .f.)[2], ;
+		                         U_PrcUva20 ('01', '9959           ', _nGrau, 'B', 'L', .f.)[2]})
+
+	// Niagara
+	//	aadd (_aPrecos, {_nGrau, U_PrcUva20 ('01', '9904           ', _nGrau, 'B', 'L', .f.)[2], ;
+	//	                         U_PrcUva20 ('01', '9832           ', _nGrau, 'B', 'L', .f.)[2], ;
+	//	                         U_PrcUva20 ('01', '9831           ', _nGrau, 'B', 'L', .f.)[2]})
+
+	// Isabel
+	//	aadd (_aPrecos, {_nGrau, U_PrcUva20 ('01', '9901           ', _nGrau, 'B', 'L', .f.)[2], ;
+	//	                         U_PrcUva20 ('01', '9949           ', _nGrau, 'B', 'L', .f.)[2], ;
+	//	                         U_PrcUva20 ('01', '9960           ', _nGrau, 'B', 'L', .f.)[2]})
+
+	// Tintorias (seibel2)
+	//	aadd (_aPrecos, {_nGrau, U_PrcUva20 ('01', '9923           ', _nGrau, 'B', 'L', .f.)[2], ;
+	//	                         U_PrcUva20 ('01', '9801           ', _nGrau, 'B', 'L', .f.)[2], ;
+	//	                         U_PrcUva20 ('01', '9802           ', _nGrau, 'B', 'L', .f.)[2]})
+
+	// Moscato Embrapa
+	//	aadd (_aPrecos, {_nGrau, U_PrcUva20 ('01', '9918           ', _nGrau, 'B', 'L', .f.)[2], ;
+	//	                         U_PrcUva20 ('01', '9837           ', _nGrau, 'B', 'L', .f.)[2], ;
+	//	                         U_PrcUva20 ('01', '9836           ', _nGrau, 'B', 'L', .f.)[2]})
+
+	// Cora
+	//	aadd (_aPrecos, {_nGrau, U_PrcUva20 ('01', '9958           ', _nGrau, 'B', 'L', .f.)[2], ;
+	//	                         U_PrcUva20 ('01', '9809           ', _nGrau, 'B', 'L', .f.)[2], ;
+	//	                         U_PrcUva20 ('01', '9810           ', _nGrau, 'B', 'L', .f.)[2]})
+	next
+//	U_log2 ('info', 'Preco compra calculado: ' + cvaltochar (_aRetPrc [2]))
+//	U_log2 ('info', 'Grau ' + transform (_aRetPrc [4][_nGrau, .PrcUvaColGrau], '@E 99.9') + ' = ' + cvaltochar (_aRetPrc [4][_nGrau, .PrcUvaColPrcCompra]))
+	U_log2 ('info', _aPrecos)
+return
+*/
 /*
 	// Gera adiantamento 3a. parcela safra 2020
 	Private cPerg   := "VA_ADSAF"
@@ -103,27 +227,6 @@ return
 	U_GravaSX1 (cPerg, '12', '9925/9822')     // Apenas estas variedades
 	U_GravaSX1 (cPerg, '13', '')     // Exceto estas vriedades
 	u_va_gnf2 (.t.)
-return
-*/
-/*
-	// Gera precos para as pre-notas de compra de safra.
-	Private cPerg   := "VAZZ9P"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2019') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // produto ini
-	U_GravaSX1 (cPerg, '07', 'z')    // fim
-	U_GravaSX1 (cPerg, '08', 3)      // tipos uvas {"Comuns","Finas","Todas"}
-	U_GravaSX1 (cPerg, '09', 2)      // regrava com NF ja gerada {"Sim", "Nao"}
-	U_GravaSX1 (cPerg, '10', 1)      // regrava com obs {"Regrava","Nao altera"}
-	U_GravaSX1 (cPerg, '11', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '13', 'O')    // parcela ini
-	U_GravaSX1 (cPerg, '14', 'O')    // parcela final
-	U_GravaSX1 (cPerg, '15', 2)      // regrava se ja tiver preco {"Sim", "Nao"}
-	U_VA_ZZ9P (.t.)
 return
 */
 /*

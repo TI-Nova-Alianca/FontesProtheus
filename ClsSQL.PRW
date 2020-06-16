@@ -29,6 +29,9 @@
 // 06/11/2018 - Robert - Criado parametro para fixar decimais no metodo Copy2Trb.
 // 19/08/2019 - Robert - Melhoradas mensagens de erro no metodo Exec() para que verifique, tambem, a funcao TCSQLError().
 // 10/10/2019 - Robert - Gera aviso para TI em caso de erro na execucao do SQL.
+// 10/06/2020 - Robert - Comeca a usar a funcao U_Log2.
+//                     - Nao restaurava a area de trabalho no final do metodo Copy2Trb.
+//                     - Removidas declaracoes de variaveis nao usadas.
 //
 
 #include "protheus.ch"
@@ -163,6 +166,7 @@ METHOD Copy2Trb (_lSetField, _nDecFixo) Class ClsSQL
 		(::_sAliasQry) -> (dbskip ())
 	enddo
 	(::_sAliasQry) -> (dbclosearea ())
+	U_ML_SRArea (_aAreaAnt)
 return '_trb'
 
 
@@ -202,7 +206,7 @@ return _lRet
 METHOD F3Array (_sMsgTit, _lSempre) Class ClsSQL
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _nCampo    := 0
-	local _aEstrut   := {}
+//	local _aEstrut   := {}
 	//local _sAliasQ   := ""
 	local _aCols     := {}
 	local _sNomeCol  := ""
@@ -259,7 +263,7 @@ return FormatIn (::_xRetQry, '/')
 // Muda os tipos das colunas. Deve ser executado logo apos a execucao da query
 // e antes que o resultado da mesma seja usado para alguma coisa.
 METHOD MudaTipo () Class ClsSQL
-	local _aCampos   := {}
+//	local _aCampos   := {}
 	local _nCampo    := 0
 	local _aAreaQry  := GetArea ()
 	local _aAreaSX3  := {}
@@ -319,7 +323,8 @@ METHOD Log (_lQuebra) Class ClsSQL
 	if _lQuebra != NIL .and. _lQuebra
 		u_logQry ('[' + procname (1) + '] ' + ::_sQuery)
 	else
-		u_log ('[' + procname (1) + '] ' + ::_sQuery)
+	//	u_log ('[' + procname (1) + '] ' + ::_sQuery)
+		u_log2 ('info', ::_sQuery)
 	endif
 return
 
@@ -330,10 +335,10 @@ return
 METHOD Qry2Array (_lSetField, _lRetNomes) Class ClsSQL
 	local _aLinha    := {}
 	local _aArray    := {}
-	local _aCampos   := {}
+//	local _aCampos   := {}
 	local _nCampo    := 0
 	local _aAreaQry  := GetArea ()
-	local _aEstrut   := {}
+//	local _aEstrut   := {}
 
 	_lSetField = iif (_lSetField == NIL, .T., _lSetField)
 	_lRetNomes = iif (_lRetNomes == NIL, .F., _lRetNomes)

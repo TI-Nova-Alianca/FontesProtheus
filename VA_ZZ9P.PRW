@@ -29,7 +29,7 @@ User Function VA_ZZ9P (_lAuto)
 	Local nOpca     := 0
 	Local lPerg     := .F.
 
-	u_logID ()
+//	u_logID ()
 
 	Private cPerg   := "VAZZ9P"
 
@@ -144,7 +144,7 @@ Static Function _Gera()
 			loop
 		endif
 
-		u_log (zz9 -> zz9_pre_nf)
+		u_log2 ('info', 'Pre-NF: ' + zz9 -> zz9_pre_nf)
 		_sObs = ''
 		_sMsgNF = ''		
 
@@ -162,7 +162,7 @@ Static Function _Gera()
 
 		_nPreco = _aRetPreco [1]  //[2]
 		_sObs += alltrim (_aRetPreco [2])  //[3])
-		u_log (zz9 -> zz9_fornec, zz9 -> zz9_loja, zz9 -> zz9_Produt, zz9 -> zz9_grau, zz9 -> zz9_Safra, zz9 -> zz9_Classe, _nPreco)
+		u_log2 ('info', 'forn:' + zz9 -> zz9_fornec + zz9 -> zz9_loja + ' prod:' + alltrim (zz9 -> zz9_Produt) + 'gr:' + zz9 -> zz9_grau + ' safra:' + zz9 -> zz9_Safra + ' Cl:' + zz9 -> zz9_Classe + ' Prc:' + cvaltochar (_nPreco))
 		_nPrecoM1 = 0
 		_nPrecoM2 = 0
 		_nPrecoM3 = 0
@@ -176,7 +176,7 @@ Static Function _Gera()
 //			_nPrecoM1 = u_PrcUva19 (ZZ9 -> ZZ9_FILIAL, zz9 -> zz9_mistu1, val (zz9 -> zz9_grau), _sClasFina, zz9 -> zz9_conduc, .F.) [2]
 			_nPrecoM1 = _BuscaPrc (zz9 -> zz9_filial, zz9 -> zz9_mistu1, zz9 -> zz9_grau, zz9 -> zz9_classe, zz9 -> zz9_clabd, zz9 -> zz9_conduc) [1]
 			if _nPrecoM1 == 0
-				_Erro ('Sem preco para forn:' + zz9 -> zz9_fornec + '/' + zz9 -> zz9_loja + ' filial:' + zz9 -> zz9_filial + ' prod:' + zz9 -> zz9_mistu1 + '(mistura)' + ' grau:' + zz9 -> zz9_grau + ' clas:' + zz9 -> zz9_classe + ' clas.ABD:' + zz9 -> zz9_clABD)
+				_Erro ('Sem preco para forn:' + zz9 -> zz9_fornec + '/' + zz9 -> zz9_loja + ' filial:' + zz9 -> zz9_filial + ' prod:' + zz9 -> zz9_mistu1 + '(mistura)' + ' grau:' + zz9 -> zz9_grau + ' clas:' + zz9 -> zz9_classe + ' clas.ABD:' + zz9 -> zz9_clABD + ' conducao:' + zz9 -> zz9_conduc)
 			endif
 		endif
 		if ! empty (zz9 -> zz9_mistu2)
@@ -184,7 +184,7 @@ Static Function _Gera()
 //			_nPrecoM2 = u_PrcUva19 (ZZ9 -> ZZ9_FILIAL, zz9 -> zz9_mistu2, val (zz9 -> zz9_grau), _sClasFina, zz9 -> zz9_conduc, .F.) [2]
 			_nPrecoM2 = _BuscaPrc (zz9 -> zz9_filial, zz9 -> zz9_mistu2, zz9 -> zz9_grau, zz9 -> zz9_classe, zz9 -> zz9_clabd, zz9 -> zz9_conduc) [1]
 			if _nPrecoM2 == 0
-				_Erro ('Sem preco para forn:' + zz9 -> zz9_fornec + '/' + zz9 -> zz9_loja + ' filial:' + zz9 -> zz9_filial + ' prod:' + zz9 -> zz9_mistu2 + '(mistura)' + ' grau:' + zz9 -> zz9_grau + ' clas:' + zz9 -> zz9_classe + ' clas.ABD:' + zz9 -> zz9_clABD)
+				_Erro ('Sem preco para forn:' + zz9 -> zz9_fornec + '/' + zz9 -> zz9_loja + ' filial:' + zz9 -> zz9_filial + ' prod:' + zz9 -> zz9_mistu2 + '(mistura)' + ' grau:' + zz9 -> zz9_grau + ' clas:' + zz9 -> zz9_classe + ' clas.ABD:' + zz9 -> zz9_clABD + ' conducao:' + zz9 -> zz9_conduc)
 			endif
 		endif
 		if ! empty (zz9 -> zz9_mistu3)
@@ -192,7 +192,7 @@ Static Function _Gera()
 //			_nPrecoM3 = u_PrcUva19 (ZZ9 -> ZZ9_FILIAL, zz9 -> zz9_mistu3, val (zz9 -> zz9_grau), _sClasFina, zz9 -> zz9_conduc, .F.) [2]
 			_nPrecoM3 = _BuscaPrc (zz9 -> zz9_filial, zz9 -> zz9_mistu3, zz9 -> zz9_grau, zz9 -> zz9_classe, zz9 -> zz9_clabd, zz9 -> zz9_conduc) [1]
 			if _nPrecoM3 == 0
-				_Erro ('Sem preco para forn:' + zz9 -> zz9_fornec + '/' + zz9 -> zz9_loja + ' filial:' + zz9 -> zz9_filial + ' prod:' + zz9 -> zz9_mistu3 + '(mistura)' + ' grau:' + zz9 -> zz9_grau + ' clas:' + zz9 -> zz9_classe + ' clas.ABD:' + zz9 -> zz9_clABD)
+				_Erro ('Sem preco para forn:' + zz9 -> zz9_fornec + '/' + zz9 -> zz9_loja + ' filial:' + zz9 -> zz9_filial + ' prod:' + zz9 -> zz9_mistu3 + '(mistura)' + ' grau:' + zz9 -> zz9_grau + ' clas:' + zz9 -> zz9_classe + ' clas.ABD:' + zz9 -> zz9_clABD + ' conducao:' + zz9 -> zz9_conduc)
 			endif
 		endif
 		if _nPrecoM1 > 0 .and. _nPrecoM1 < _nPreco
@@ -231,48 +231,39 @@ Static Function _Gera()
 		// Tratamentos especificos para cargas em que o grau foi revisto - GPLI 5933
 		if zz9 -> zz9_safra == '2019'
 			if zz9 -> zz9_filial == '01' .and. zz9 -> zz9_fornece + zz9 -> zz9_loja == '00027401' .and. ZZ9 -> zz9_nfori + zz9 -> zz9_itemor == '0000177700005' .and. alltrim (zz9 -> zz9_produt) == '9918' .and. zz9 -> zz9_grau = '14.4'  // Moscato Embrapa de Oscar Crocoli
-				u_log ('Precificando com grau revisado')
-			//	_nPreco = U_PrcUva19 (zz9 -> zz9_filial, zz9 -> zz9_produt, 16.4, zz9 -> zz9_clabd, zz9 -> zz9_conduc, .F.) [2]
+				u_log2 ('info', 'Precificando com grau revisado')
 				_nPreco = _BuscaPrc (zz9 -> zz9_filial, zz9 -> zz9_produt, '16.4', zz9 -> zz9_classe, zz9 -> zz9_clabd, zz9 -> zz9_conduc) [1]
 			endif
 			if zz9 -> zz9_filial == '01' .and. zz9 -> zz9_fornece + zz9 -> zz9_loja == '00062401' .and. ZZ9 -> zz9_nfori + zz9 -> zz9_itemor == '0000178020003' .and. alltrim (zz9 -> zz9_produt) == '9901' .and. zz9 -> zz9_grau = '11.8'  // Isabel de Valderes Pagliosa
-				u_log ('Precificando com grau revisado')
-			//	_nPreco = U_PrcUva19 (zz9 -> zz9_filial, zz9 -> zz9_produt, 12.6, zz9 -> zz9_clabd, zz9 -> zz9_conduc, .F.) [2]
+				u_log2 ('info', 'Precificando com grau revisado')
 				_nPreco = _BuscaPrc (zz9 -> zz9_filial, zz9 -> zz9_produt, '12.6', zz9 -> zz9_classe, zz9 -> zz9_clabd, zz9 -> zz9_conduc) [1]
 			endif
 			if zz9 -> zz9_filial == '01' .and. zz9 -> zz9_fornece + zz9 -> zz9_loja == '00222901' .and. ZZ9 -> zz9_nfori + zz9 -> zz9_itemor == '0000175180001' .and. alltrim (zz9 -> zz9_produt) == '9909' .and. zz9 -> zz9_grau = '11.3'  // Couderc tta de Daniel / Cesar Boff
-				u_log ('Precificando com grau revisado')
-			//	_nPreco = U_PrcUva19 (zz9 -> zz9_filial, zz9 -> zz9_produt, 13.2, zz9 -> zz9_clabd, zz9 -> zz9_conduc, .F.) [2]
+				u_log2 ('info', 'Precificando com grau revisado')
 				_nPreco = _BuscaPrc (zz9 -> zz9_filial, zz9 -> zz9_produt, '13.2', zz9 -> zz9_classe, zz9 -> zz9_clabd, zz9 -> zz9_conduc) [1]
 			endif
 			if zz9 -> zz9_filial == '01' .and. zz9 -> zz9_fornece + zz9 -> zz9_loja == '00261201' .and. ZZ9 -> zz9_nfori + zz9 -> zz9_itemor == '0000179880001' .and. alltrim (zz9 -> zz9_produt) == '9901' .and. zz9 -> zz9_grau = '12.9'  // Isabel de Eliane / Wilham Canalli
-				u_log ('Precificando com grau revisado')
-			//	_nPreco = U_PrcUva19 (zz9 -> zz9_filial, zz9 -> zz9_produt, 13.8, zz9 -> zz9_clabd, zz9 -> zz9_conduc, .F.) [2]
+				u_log2 ('info', 'Precificando com grau revisado')
 				_nPreco = _BuscaPrc (zz9 -> zz9_filial, zz9 -> zz9_produt, '13.8', zz9 -> zz9_classe, zz9 -> zz9_clabd, zz9 -> zz9_conduc) [1]
 			endif
 			if zz9 -> zz9_filial == '01' .and. zz9 -> zz9_fornece + zz9 -> zz9_loja == '00278501' .and. ZZ9 -> zz9_nfori + zz9 -> zz9_itemor == '0000179630004' .and. alltrim (zz9 -> zz9_produt) == '9918' .and. zz9 -> zz9_grau = '12.6'  // Moscato Embrapa de Leonir Mascarello
-				u_log ('Precificando com grau revisado')
-			//	_nPreco = U_PrcUva19 (zz9 -> zz9_filial, zz9 -> zz9_produt, 15.0, zz9 -> zz9_clabd, zz9 -> zz9_conduc, .F.) [2]
+				u_log2 ('info', 'Precificando com grau revisado')
 				_nPreco = _BuscaPrc (zz9 -> zz9_filial, zz9 -> zz9_produt, '15.0', zz9 -> zz9_classe, zz9 -> zz9_clabd, zz9 -> zz9_conduc) [1]
 			endif
 			if zz9 -> zz9_filial == '01' .and. zz9 -> zz9_fornece + zz9 -> zz9_loja == '00318301' .and. ZZ9 -> zz9_nfori + zz9 -> zz9_itemor == '0000180170001' .and. alltrim (zz9 -> zz9_produt) == '9901' .and. zz9 -> zz9_grau = '12.6'  // Isabel de Eliane / Wilham Canalli
-				u_log ('Precificando com grau revisado')
-			//	_nPreco = U_PrcUva19 (zz9 -> zz9_filial, zz9 -> zz9_produt, 13.8, zz9 -> zz9_clabd, zz9 -> zz9_conduc, .F.) [2]
+				u_log2 ('info', 'Precificando com grau revisado')
 				_nPreco = _BuscaPrc (zz9 -> zz9_filial, zz9 -> zz9_produt, '13.8', zz9 -> zz9_classe, zz9 -> zz9_clabd, zz9 -> zz9_conduc) [1]
 			endif
 			if zz9 -> zz9_filial == '07' .and. zz9 -> zz9_fornece + zz9 -> zz9_loja == '00079301' .and. ZZ9 -> zz9_nfori + zz9 -> zz9_itemor == '0000114070001' .and. alltrim (zz9 -> zz9_produt) == '9908' .and. zz9 -> zz9_grau = '13.2'  // Cabernet de Osmar / Dulci Salton
-				u_log ('Precificando com grau revisado')
-			//	_nPreco = U_PrcUva19 (zz9 -> zz9_filial, zz9 -> zz9_produt, 14.0, zz9 -> zz9_clabd, zz9 -> zz9_conduc, .F.) [2]
+				u_log2 ('info', 'Precificando com grau revisado')
 				_nPreco = _BuscaPrc (zz9 -> zz9_filial, zz9 -> zz9_produt, '14.0', zz9 -> zz9_classe, zz9 -> zz9_clabd, zz9 -> zz9_conduc) [1]
 			endif
 			if zz9 -> zz9_filial == '09' .and. zz9 -> zz9_fornece + zz9 -> zz9_loja == '00324101' .and. ZZ9 -> zz9_nfori + zz9 -> zz9_itemor == '0000026810001' .and. alltrim (zz9 -> zz9_produt) == '9904' .and. zz9 -> zz9_grau = '12.1'  // Niagara bca de Idalino Pan
-				u_log ('Precificando com grau revisado')
-			//	_nPreco = U_PrcUva19 (zz9 -> zz9_filial, zz9 -> zz9_produt, 14.0, zz9 -> zz9_clabd, zz9 -> zz9_conduc, .F.) [2]
+				u_log2 ('info', 'Precificando com grau revisado')
 				_nPreco = _BuscaPrc (zz9 -> zz9_filial, zz9 -> zz9_produt, '14.0', zz9 -> zz9_classe, zz9 -> zz9_clabd, zz9 -> zz9_conduc) [1]
 			endif
 			if zz9 -> zz9_filial == '09' .and. zz9 -> zz9_fornece + zz9 -> zz9_loja == '00324101' .and. ZZ9 -> zz9_nfori + zz9 -> zz9_itemor == '0000026810002' .and. alltrim (zz9 -> zz9_produt) == '9905' .and. zz9 -> zz9_grau = '12.1'  // Niagara bca de Idalino Pan
-				u_log ('Precificando com grau revisado')
-			//	_nPreco = U_PrcUva19 (zz9 -> zz9_filial, zz9 -> zz9_produt, 14.0, zz9 -> zz9_clabd, zz9 -> zz9_conduc, .F.) [2]
+				u_log2 ('info', 'Precificando com grau revisado')
 				_nPreco = _BuscaPrc (zz9 -> zz9_filial, zz9 -> zz9_produt, '14.0', zz9 -> zz9_classe, zz9 -> zz9_clabd, zz9 -> zz9_conduc) [1]
 			endif
 		endif
@@ -281,7 +272,7 @@ Static Function _Gera()
 		if zz9 -> zz9_safra == '2020'
 			// GLPI 7714: manter A VARIEDADE merlot, mas pagar a preco de isabel
 			if zz9 -> zz9_filial == '07' .and. ZZ9 -> ZZ9_FORNEC = '002495' .AND. ALLTRIM (ZZ9 -> ZZ9_PRODUT) == '9917' .AND. ZZ9 -> ZZ9_GRAU = '15.4'
-				U_LOG ('Merlot 4100 Kg de Joao Fagherazzi: precificando como isabel.')
+				U_LOG2 ('info', 'Merlot 4100 Kg de Joao Fagherazzi: precificando como isabel.')
 				_nPreco = _BuscaPrc (zz9 -> zz9_filial, '9901           ', zz9 -> zz9_grau, zz9 -> zz9_classe, zz9 -> zz9_clabd, zz9 -> zz9_conduc) [1]
 				_sObs += 'Varied.correta:isabel(GLPI 7714)'
 				_sMsgNF += 'Varied.correta:isabel'
@@ -290,7 +281,7 @@ Static Function _Gera()
 
 
 		if _nPreco == 0
-			_Erro ('Sem preco para forn:' + zz9 -> zz9_fornec + '/' + zz9 -> zz9_loja + ' filial:' + zz9 -> zz9_filial + ' prod:' + zz9 -> zz9_Produt + sb1 -> b1_desc + ' grau:' + zz9 -> zz9_grau + ' clas:' + zz9 -> zz9_classe + ' clas.ABD:' + zz9 -> zz9_clABD)
+			_Erro ('Sem preco para forn:' + zz9 -> zz9_fornec + '/' + zz9 -> zz9_loja + ' filial:' + zz9 -> zz9_filial + ' prod:' + zz9 -> zz9_Produt + alltrim(sb1 -> b1_desc) + ' grau:' + zz9 -> zz9_grau + ' clas:' + zz9 -> zz9_classe + ' clas.ABD:' + zz9 -> zz9_clABD + ' conducao:' + zz9 -> zz9_conduc)
 		endif
 
 		// Se for nota de complemento, devo buscar o preco da nota de origem e pagar apenas a diferenca.
@@ -326,9 +317,9 @@ Static Function _Gera()
 		zz9 -> (dbskip ())
 	enddo
 
-	u_LOG (_sErros)
+	u_LOG2 ('erro', _sErros)
 	if ! empty (_sErros)
-		u_help (_sErros)
+		u_help (_sErros,, .t.)
 	endif
 
 	u_help ("Processo concluido.")
@@ -353,17 +344,11 @@ static function _BuscaPrc (_sFilial, _sVaried, _sGrau, _sClEspald, _sClLatada, _
 		_aRetPrc = aclone (U_PrcUva19 (_sFilial, _sVaried, val (_sGrau), _sClasFina, _sConduc, .F.))
 	elseif zz9 -> zz9_safra == '2020'
 		_aRetPrc = aclone (U_PrcUva20 (_sFilial, _sVaried, val (_sGrau), _sClasFina, _sConduc, .F.))
-		
-		
-		u_log ('to so simulando com preco MOC')
-		_aRetPrc [2] = _aRetPrc [5]
-
-
 	else
 		u_help ("Sem tratamento de precificacao para esta safra.",, .t.)
 	endif
 
-	// A funcao retorna diferentes valores, mas aqui quero apenas o valor de compra.
+	// A funcao retorna diferentes valores, mas aqui quero apenas o valor de compra e as observacoes.
 	_aRetPrc = {_aRetPrc[2], _aRetPrc [3]}
 
 return _aRetPrc
@@ -373,7 +358,7 @@ return _aRetPrc
 // --------------------------------------------------------------------------
 // Acumula mensagens de erro.
 static function _Erro (_sMsg)
-	u_log (_sMsg)
+	u_log2 ('erro', _sMsg)
 	if ! _sMsg $ _sErros
 		_sErros += _sMsg + chr (13) + chr (10)
 	endif
