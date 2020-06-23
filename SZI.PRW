@@ -38,6 +38,7 @@
 //                     - Comentariadas declaracoes de variaveis nao usadas; removidas algumas linhas jah comentariadas.
 // 27/03/2020 - Robert - Permite compensar titulos transferidos (em bordero) para atender adto.safra enviados via CNAB.
 // 01/04/2020 - Robert - Ajustados parametros de chamada do IRASSOC.PRW
+// 22/06/2020 - Robert - Criado parametro de filtro adicional para selecao de titulos a compensar.
 //
 
 // ------------------------------------------------------------------------------------
@@ -71,8 +72,7 @@ User Function szi()
 	private _sTMCorrD  := _oCtaCorr:TMCorrMonD
 	private _sTMCorrC  := _oCtaCorr:TMCorrMonC
 	private _lCtOnLine := .F.
-//	public  _sArqLog   := U_NomeLog ()
-	u_logId ()
+	private _sFilZI340 := ''  // Variavel private para ser vista pelo P.E. F340FCPTOP
 
 	// Verifica se o usuario tem acesso.
 	if ! U_ZZUVL ('059')
@@ -122,6 +122,7 @@ User Function szi()
 	endif
 
 	_lCtOnLine = (mv_par02 == 1)
+	_sFilZI340 = alltrim (mv_par03)  // Variavel private para ser vista pelo P.E. F340FCPTOP
 
 	// Filtra browse.
 	if mv_par01 == 1
@@ -356,7 +357,7 @@ User Function SZIR (_nQual)
 
 	case _nQual == 97  // Gera SE2 - Especifico para manutencoes e testes.
 		_oCtaCorr := ClsCtaCorr ():New (szi -> (recno ()))
-		u_logobj (_oCtaCorr)
+		u_log2 ('debug', _oCtaCorr)
 		if ! _oCtaCorr:GeraSE2 (_oCtaCorr:OQueGera (), _oCtaCorr:DtMovto, .F.)
 			u_help (_oCtaCorr:UltMsg)
 		endif
@@ -604,11 +605,8 @@ User Function SZIB ()
 	local cPerg      := ""
 	local _sOutrIni  := ""
 	local _sOutrFim  := ""
-//	local _oCtaCorr  := NIL
 	local _lContinua := .T.
 
-	u_logIni ()
-	
 	// Acho que o certo eh eliminar os titulos do SE2, mas agora nao tenho tempo para verificar. Robert, 05/09/2017
 	if _lContinua .and. szi -> zi_tm == '19'
 		u_help ('Este movimento so deve ser baixado ao resgatar cotas')
@@ -694,10 +692,6 @@ User Function SZIB ()
 					_SZI_Cred = '204010102001'
 
 				endcase
-				u_log ("Variaveis private preparadas para as outras rotinas:")
-				u_log ('   _SZI_Hist:', _SZI_Hist)
-				u_log ('   _SZI_Deb: ', _SZI_Deb)
-				u_log ('   _SZI_Cred:', _SZI_Cred)
 
 				// Se compensar com titulos de outros associados, o usuario deve confirmar estes parametros.
 				if _nForma == 3
@@ -722,9 +716,8 @@ User Function SZIB ()
 					else
 						U_GravaSX1 (cPerg, "03", 2)
 					endif
-					u_log ('Vou chamar FINA080')
+					u_log2 ('debug', 'Vou chamar FINA080')
 					FINA080 (NIL, 3, .T.)
-					u_log ('Retornou do FINA080')
 					U_SalvaSX1 (cPerg, _aBkpSX1)
 					
 					// O P.E. generico FINA080 nao eh executado quando contabiliza on-line=NAO
@@ -754,6 +747,7 @@ User Function SZIB ()
 					else
 						U_GravaSX1 (cPerg, "11", 2)
 					endif
+			//		u_log2 ('debug', 'Vou chamar FINA340')
 					fina340 (3)
 					U_SalvaSX1 (cPerg, _aBkpSX1)
 				endif
@@ -763,7 +757,6 @@ User Function SZIB ()
 			endif
 		endif
 	endif
-	u_logFim ()
 return
 
 
@@ -886,13 +879,13 @@ User Function SZIRS (_nQual)
 		_oCtaCorr:AtuSaldo ()
 
 		if _nSaldoAnt != szi -> zi_saldo
-			u_help ("Saldo alterado de " + cvaltochar (_nSaldoAnt) + " para " + cvaltochar (szi -> zi_saldo))
+			u_help ("Saldo deste lcto alterado de " + cvaltochar (_nSaldoAnt) + " para " + cvaltochar (szi -> zi_saldo))
 		endif
 
 	elseif _nQual == 2  // Atualiza saldo geral do associado.
 		_dDataIni = U_Get ('Data inicial para recalculo de saldos do associado', 'D', 8, '@D', '', date (), .F., '.T.')
 		if ! empty (_dDataIni)
-			u_log ('Recalculando saldo do associado')
+			u_log2 ('info', 'Recalculando saldo do associado ' + szi -> zi_assoc + '/' + szi -> zi_lojasso)
 			_oAssoc := ClsAssoc():New (szi -> zi_assoc, szi -> zi_lojasso)
 			if valtype (_oAssoc) == NIL .or. valtype (_oAssoc) != "O"
 			else
@@ -914,6 +907,7 @@ Static Function _ValidPerg ()
 	//                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                                 Help
 	aadd (_aRegsPerg, {01, "Tipo de contas a visualizar   ", "N", 1,  0,  "",   "",    {"Normal", "Capital social", "Todas"}, "Tipo de conta corrente a ser visualizada"})
 	aadd (_aRegsPerg, {02, "Contabiliza online            ", "N", 1,  0,  "",   "",    {"Sim", "Nao"},                        ""})
+	aadd (_aRegsPerg, {03, "Filtro(SQL) sel.tit.p/compens.", "C", 60, 0,  "",   "",    {},                                    "Expressao (sintaxe SQL) para adicionar ao filtro de selecao de titulos a compensar."})
 	aadd (_aDefaults, {"01", 1})
 	aadd (_aDefaults, {"02", 2})
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)

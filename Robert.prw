@@ -68,11 +68,71 @@ static function _AndaLogo ()
 	incproc ()
 
 //	u_help ("Nada definido", procname ())
-	u_log2 ('erro', 'teste de erro')
-	u_log2 ('info', 'Batch: [retorno: ' + cvaltochar (_oBatch:Retorno) + '] [Mensagens: ' + _oBatch:Mensagens + ']')
+//	u_log2 ('info', 'Batch: [retorno: ' + cvaltochar (_oBatch:Retorno) + '] [Mensagens: ' + _oBatch:Mensagens + ']')
+//return
+	
+	// Gera pre-notas complemento uva bordo safra 2020
+	cPerg = "VAGNF3"
+	U_GravaSX1 (cPerg, '01', '000198')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', '000198')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
+	U_GravaSX1 (cPerg, '06', 'G')    // Parcela
+	U_GravaSX1 (cPerg, '07', '')     // DCO inicial
+	U_GravaSX1 (cPerg, '08', 'z')    // DCO final
+	U_GravaSX1 (cPerg, '09', '9925') //'9822')     // Prod ini
+	U_GravaSX1 (cPerg, '10', '9925') //'9822')    // Prod final
+	U_GravaSX1 (cPerg, '11', 0)    // Preco 2016
+	U_VA_GNF3 (.T.)
+return
+*/
+/*
+	// aKeyValues:= {"USR_CODIGO","USR_NOME","USR_EMAIL","USR_MSBLQL"}
+	// Para obter as informações das empresas que o usuário tem acesso, deve-se usar a função FWUsrEmp
+	// FWSFallGrps
+	// http://sempreju.com.br/principais-funcoes-para-informacoes-de-usuarios/
+	// RETORNA O MESMO QUE PSWRET(), MAS PRA TODOS OS USUARIOS --> u_showarray (allusers ())
+	u_log2 ('debug', pswret ())
+//	u_showarray (pswret ())
+	PswOrder(1)
+	if PswSeek ('000653', .T.)
+		_aPswRet := PswRet ()
+		u_log2 ('debug', _apswret)
+	else
+		u_log2 ('erro', 'Nao localizei usuario')
+	endif
+
+	_aSup := FWSFUsrSup('000653')
+	For _i := 1 to Len(_aSup)
+		u_log2 ('info', 'Superior: ' + _aSup [_i])
+	next
+
+	// Retorna regras / politicas
+	_aUsers := FWSFAllRules()
+	U_LOG2 ('INFO', _aUsers)
+
+	_aRet := FWGetMnuAccess (__cUserID, 97 )
+	u_log2 ('info', _aRet)
+
+	// https://tdn.totvs.com/pages/viewpage.action?pageId=42796368
+	// https://tdn.totvs.com/display/tec/GetUserFromSID
+	//_aSID = GetUserFromSID ()
+	//u_log2 ('info', _aSID)
+
+	// http://microsigadvpl.blogspot.com/2010/09/pegando-senhas-dos-usuarios-do-protheus.html
+	
+	if "TESTE" $ upper (GetEnvServer())
+		cKey1 := cKey2 := cKey3 := cPswDet := ''
+		nRetUser := 2
+		u_log2 ('info', 'chamando getfields')
+		SPF_GETFIELDS('sigapss.spf',nRetUser,@cKey1,@cKey2,@cKey3,@cPswDet)
+		oXml:=XmlParser(cPswDet,"_",@cErro,@cWarn)
+		u_log2 ('debug', XMLSaveStr(oXml))
+	endif
 
 return
-
+*/
 /*
 	// Gera precos para as pre-notas de compra de safra.
 	Private cPerg   := "VAZZ9P"
@@ -92,6 +152,31 @@ return
 	U_GravaSX1 (cPerg, '14', 'F')    // parcela final
 	U_GravaSX1 (cPerg, '15', 1)      // regrava se ja tiver preco {"Sim", "Nao"}
 	U_VA_ZZ9P (.t.)
+return
+*/
+	/*
+	// Puxa ZZ9 da base quente para base teste, para simular geracao de notas.
+	if "TESTE" $ upper (GetEnvServer())
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "update ZZ9010 set D_E_L_E_T_ = '*' where ZZ9_SAFRA = '2020'"
+		if _oSQL:Exec ()
+			_oSQL:_sQuery := " SELECT * from LKSRV_PROTHEUS.protheus.dbo.ZZ9010 WHERE D_E_L_E_T_ = '' AND ZZ9_SAFRA = '2020'"
+			_sAliasQ = _oSQL:Qry2Trb ()
+			do while ! (_sAliasQ) -> (eof ())
+				if (_sAliasQ) -> (recno ()) % 10 == 0
+					u_log2 ('info', 'copiando ZZ9 reg. ' + cvaltochar ((_sAliasQ) -> (recno ())) + ' de ' + cvaltochar ((_sAliasQ) -> (reccount ())))
+				endif
+				reclock ("ZZ9", .T.)
+				for _nCampo = 1 to zz9 -> (fcount ())
+					_sCampo = alltrim (zz9 -> (fieldname (_nCampo)))
+					_xDado = (_sAliasQ) -> &(_sCampo)
+					zz9 -> &(_sCampo) = _xDado
+				next
+				msunlock ()
+				(_sAliasQ) -> (dbskip ())
+			enddo
+		endif
+	endif
 return
 */
 /* Acho que vai dar 1 trabalhao e nao tenho tempo.
@@ -227,18 +312,6 @@ return
 	U_GravaSX1 (cPerg, '12', '9925/9822')     // Apenas estas variedades
 	U_GravaSX1 (cPerg, '13', '')     // Exceto estas vriedades
 	u_va_gnf2 (.t.)
-return
-*/
-/*
-	_aUsers := aclone (FwSfAllUsers ())
-	u_log (_aUsers)
-	u_log (pswret ())
-	u_log ('########################################')
-	PswOrder(1)
-	if PswSeek ('000210', .T.)
-		_aPswRet := PswRet ()
-	endif
-	U_BatUsers ()
 return
 */
 /*
@@ -2399,22 +2472,6 @@ return
 		sd2_rk -> (dbskip ())
 	enddo
 	u_log ('feito')
-return
-*/
-/*
-	cPerg = "VAGNF3"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2018') // Safra referencia
-	U_GravaSX1 (cPerg, '06', 'H')    // Parcela
-	U_GravaSX1 (cPerg, '07', '')     // DCO inicial
-	U_GravaSX1 (cPerg, '08', 'z')    // DCO final
-	U_GravaSX1 (cPerg, '09', '')     // Prod ini
-	U_GravaSX1 (cPerg, '10', 'z')    // Prod final
-	U_GravaSX1 (cPerg, '11', 0)    // Preco 2016
-	U_VA_GNF3 (.T.)
 return
 */
 /* Compara SX6 com outra base de dados

@@ -19,6 +19,7 @@
 // 30/05/2019 - Robert - Tratamentos especificos para cargas em que o grau foi revisto - GPLI 5933
 // 18/06/2019 - Robert - Quando nota de complemento, busca o preco da nota de origem e paga apenas a diferenca.
 // 24/04/2020 - Robert - Melhorias para safra 2020
+// 17/06/2020 - Robert - Criado tratamento para gravar campo zz9_pcheio.
 //
 
 // --------------------------------------------------------------------------
@@ -77,6 +78,7 @@ Static Function _Gera()
 	local _nPrecoM1  := 0
 	local _nPrecoM2  := 0
 	local _nPrecoM3  := 0
+	local _nPrCheio  := 0
 //	local _sMsg      := ""
 //	local _nDecimais := TamSX3 ("ZZ9_VUNIT")[2]
 //	local _sProduto  := ""
@@ -106,14 +108,15 @@ Static Function _Gera()
 			zz9 -> (dbskip ())
 			loop
 		endif
-		if ! empty (zz9 -> zz9_nfcomp) .and. mv_par09 != 1
-			zz9 -> (dbskip ())
-			loop
-		endif
-		if zz9 -> zz9_vunit != 0 .and. mv_par15 != 1
-			zz9 -> (dbskip ())
-			loop
-		endif
+		// Valida na hora de gravar
+		//if ! empty (zz9 -> zz9_nfcomp) .and. mv_par09 != 1
+		//	zz9 -> (dbskip ())
+		//	loop
+		//endif
+		//if zz9 -> zz9_vunit != 0 .and. mv_par15 != 1
+		//	zz9 -> (dbskip ())
+		//	loop
+		//endif
 		if zz9 -> zz9_produt < mv_par06 .or. zz9 -> zz9_produt > mv_par07
 			zz9 -> (dbskip ())
 			loop
@@ -123,7 +126,7 @@ Static Function _Gera()
 			loop
 		endif
 		if ! sb1 -> (dbseek (xfilial ("SB1") + zz9 -> zz9_produt, .F.))
-			u_help ("Produto '" + zz9 -> zz9_produt + "' nao cadastrado!")
+			u_help ("Produto '" + zz9 -> zz9_produt + "' nao cadastrado!",, .t.)
 			zz9 -> (dbskip ())
 			loop
 		endif
@@ -160,7 +163,8 @@ Static Function _Gera()
 
 		_aRetPreco = _BuscaPrc (zz9 -> zz9_filial, zz9 -> zz9_produt, zz9 -> zz9_grau, zz9 -> zz9_classe, zz9 -> zz9_clabd, zz9 -> zz9_conduc)
 
-		_nPreco = _aRetPreco [1]  //[2]
+		_nPreco   = _aRetPreco [1]  //[2]
+		_nPrCheio = _aRetPreco [1]  //[2]
 		_sObs += alltrim (_aRetPreco [2])  //[3])
 		u_log2 ('info', 'forn:' + zz9 -> zz9_fornec + zz9 -> zz9_loja + ' prod:' + alltrim (zz9 -> zz9_Produt) + 'gr:' + zz9 -> zz9_grau + ' safra:' + zz9 -> zz9_Safra + ' Cl:' + zz9 -> zz9_Classe + ' Prc:' + cvaltochar (_nPreco))
 		_nPrecoM1 = 0
@@ -306,18 +310,34 @@ Static Function _Gera()
 
 		// u_log ("Safra " + zz9 -> zz9_safra, "Pre-NF:", zz9 -> zz9_pre_nf, "Forn.:",zz9 -> zz9_fornec + "/" + zz9 -> zz9_loja, "Produto/grau/classe:", zz9 -> zz9_Produt, zz9 -> zz9_Grau, zz9 -> zz9_Classe, "Preco anterior:", TRAnsform (zz9->zz9_vunit, "@E 999.9999"), " preco novo:",TRAnsform (_nPreco, "@E 999.9999"), "qt:",trans(zz9->zz9_quant, "@E 99999"))
 		reclock ("ZZ9", .F.)
-		zz9 -> zz9_vunit = _nPreco
-		if ! alltrim (_sObs) $ zz9 -> zz9_obs
-			zz9 -> zz9_obs = alltrim (zz9 -> zz9_obs) + ' ' + _sObs
+		
+		// O 'valor cheio' regrava sempre, pois ele serve justamente para recalcular e conferir com planilha de simulacoes do conselho,
+		// que sempre considera as quantidades e variedades originais das cargas, independente de ter misturas, etc.
+		zz9 -> zz9_vcheio = _nPrCheio
+		
+		// Verifica se pode (re)gravar o 'preco final para a nota'
+		_lRegrava = .T.
+		if ! empty (zz9 -> zz9_nfcomp) .and. mv_par09 != 1  // Nao regrava quando jah tem contranota gerada
+			u_log2 ('info', 'Nao vou regravar pois jah tem contranota')
+			_lRegrava = .F.
 		endif
-		if ! alltrim (_sMsgNF) $ zz9 -> zz9_msgNF
-			zz9 -> zz9_msgNF = alltrim (zz9 -> zz9_msgNF) + ' ' + _sMsgNF
+		if zz9 -> zz9_vunit != 0 .and. mv_par15 != 1  // Nao regrava quando jah tem preco definido
+			u_log2 ('info', 'Nao vou regravar pois jah tem preco definido')
+			_lRegrava = .F.
+		endif
+		if _lRegrava
+			zz9 -> zz9_vunit = _nPreco
+			if ! alltrim (_sObs) $ zz9 -> zz9_obs
+				zz9 -> zz9_obs = alltrim (zz9 -> zz9_obs) + ' ' + _sObs
+			endif
+			if ! alltrim (_sMsgNF) $ zz9 -> zz9_msgNF
+				zz9 -> zz9_msgNF = alltrim (zz9 -> zz9_msgNF) + ' ' + _sMsgNF
+			endif
 		endif
 		msunlock ()
 		zz9 -> (dbskip ())
 	enddo
 
-	u_LOG2 ('erro', _sErros)
 	if ! empty (_sErros)
 		u_help (_sErros,, .t.)
 	endif

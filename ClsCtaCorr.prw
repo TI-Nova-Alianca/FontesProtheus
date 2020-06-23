@@ -284,7 +284,7 @@ METHOD AtuSaldo () Class ClsCtaCorr
 		endif
 		
 		if szi -> zi_saldo != _nSaldo
-			u_log ('Alterando saldo do SZI de', szi -> zi_saldo, 'para', _nSaldo) 
+		//	u_log2 ('INFO', 'Alterando saldo do SZI de ' + CVALTOCHAR (szi -> zi_saldo) + ' para ' + cvaltochar (_nSaldo))
 			reclock ("SZI", .F.)
 			szi -> zi_saldo = _nSaldo
 			msunlock ()
@@ -835,7 +835,7 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _lCtOnLine) class ClsCtaCorr
 		aadd (_aAutoSE2, {"E2_VACHVEX", _sChvEx,           Nil})
 		aadd (_aAutoSE2, {"E2_ORIGEM" , "FINA050" ,        Nil})
 		_aAutoSE2 := aclone (U_OrdAuto (_aAutoSE2))
-		u_log (_aAutoSE2)
+//		u_log (_aAutoSE2)
 
 		// Ajusta parametros da rotina.
 		cPerg = 'FIN050    '
@@ -1007,7 +1007,7 @@ METHOD Grava (_lSZIGrav, _lMemoGrav) Class ClsCtaCorr
 		if ! _lSZIGrav
 			_cFilial := szi -> zi_filial
 			_dDtAtu := szi -> zi_data
-			u_log ('[' + GetClassName (::Self) + '.' + procname () + ']  Gravando ZI_DOC=', ::Doc)
+			u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + '] Gravando ZI_DOC = ' + ::Doc + '/' + ::Serie + '-' + ::Parcela)
 			reclock ("SZI", .T.)
 			szi -> zi_filial  = xfilial ("SZI")
 			szi -> zi_assoc   = ::Assoc
