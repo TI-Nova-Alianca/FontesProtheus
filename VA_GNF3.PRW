@@ -890,11 +890,11 @@ Static Function _Gera2020 ()
 
 		// A funcao retorna diferentes valores, mas aqui quero apenas o valor de compra e as observacoes.
 		_aRetPrc = {_aRetPrc[2], _aRetPrc [3]}
-		u_log2 ('info', 'Preco unit gerado           : ' + cvaltochar (_aRetPrc [1]) + '  ' + _aRetPrc [2])
-		u_log2 ('info', 'Preco total gerado          : ' + cvaltochar ((_sAliasQ) -> peso_liq * _aRetPrc [1]))
-		u_log2 ('info', 'Preco efetivo ateh o momento: ' + cvaltochar ((_sAliasQ) -> peso_liq * (_sAliasQ) -> VUnit_efetivo))
+	//	u_log2 ('info', 'Preco unit gerado           : ' + cvaltochar (_aRetPrc [1]) + '  ' + _aRetPrc [2])
+	//	u_log2 ('info', 'Preco total gerado          : ' + cvaltochar ((_sAliasQ) -> peso_liq * _aRetPrc [1]))
+	//	u_log2 ('info', 'Preco efetivo ateh o momento: ' + cvaltochar ((_sAliasQ) -> peso_liq * (_sAliasQ) -> VUnit_efetivo))
 		_nVCompl = ((_sAliasQ) -> peso_liq * _aRetPrc [1]) - ((_sAliasQ) -> peso_liq * (_sAliasQ) -> VUnit_efetivo)
-		u_log2 ('info', 'Valor total complemento     : ' + cvaltochar (_nVCompl))
+	//	u_log2 ('info', 'Valor total complemento     : ' + cvaltochar (_nVCompl))
 		if _nVCompl > 10  // Estabeleci, por minha conta, um valor minimo. Robert, 23/06/20
 
 			// Gera proxima pre-nf livre
