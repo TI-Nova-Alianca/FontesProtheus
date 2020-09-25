@@ -1,0 +1,876 @@
+#include "rwmake.ch"          // incluido pelo assistente de conversao do AP5 IDE em 13/09/00
+
+User Function Matriss()        // incluido pelo assistente de conversao do AP5 IDE em 13/09/00
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Declaracao de variaveis utilizadas no programa atraves da funcao    ³
+//³ SetPrvt, que criara somente as variaveis definidas pelo usuario,    ³
+//³ identificando as variaveis publicas do sistema utilizadas no codigo ³
+//³ Incluido pelo assistente de conversao do AP5 IDE                    ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+SetPrvt("CMUNICIPIO,TAMANHO,TITULO,CDESC1,CDESC2,CDESC3")
+SetPrvt("ARETURN,LIMITE,ALINHA,NOMEPROG,NLASTKEY,CPERG")
+SetPrvt("ADRIVER,NPAGINA,ASF3,CSTRING,CABEC1,CABEC2")
+SetPrvt("WNREL,LIMPLIVRO,LIMPTERMOS,_F3_FILIAL,_F3_REPROC,_F3_ENTRADA")
+SetPrvt("_F3_NFISCAL,_F3_SERIE,_F3_CLIEFOR,_F3_LOJA,_F3_CFO,_F3_CODISS")
+SetPrvt("_F3_ESTADO,_F3_EMISSAO,_F3_CONTA,_F3_ALIQICM,_F3_VALCONT,_F3_BASEICM")
+SetPrvt("_F3_VALICM,_F3_ISENICM,_F3_OUTRICM,_F3_BASEIPI,_F3_VALIPI,_F3_ISENIPI,_F3_ISSSUB")
+SetPrvt("_F3_OUTRIPI,_F3_OBSERV,_F3_VALOBSE,_F3_ICMSRET,_F3_TIPO,_F3_LANCAM")
+SetPrvt("_F3_DOCOR,_F3_ICMSCOM,_F3_IPIOBS,_F3_NRLIVRO,_F3_CAMPOS,LHOUVEMOV")
+SetPrvt("_F3_DTCANC,_F3_NFELETR")
+SetPrvt("LIN,NPOSALIQ,CCODISS,LFIMREL,ATRANSPORTE,AALIQ")
+SetPrvt("ATOTMENSAL,ALINDET,LIMPTOTAL,LIMPRESUMO,LFIRST,LTOTALIZA")
+SetPrvt("NINDEX,CARQIND,CCHAVE,CFILTRO,LLOOP,CCODIGO")
+SetPrvt("CLINDET,CMESINCID,CANO,CDRIVER,CPAGINA,LIMPCABEC")
+SetPrvt("NQTDLINHAS,CLINHATOT,I,")
+SetPrvt("cMod53")
+/*/
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Fun‡…o    ³MATRISS   ³ Autor ³ Juan Jose Pereira     ³ Data ³ 01.06.95 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡…o ³Emiss„o do Livro de Registro de ISS mod.53 do Mun. Sao Paulo³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Sintaxe   ³MATRISS(void)                                               ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Uso      ³ Generico                                                   ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+/*/
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Municipio em que o ISS e' Tributado                          ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+cMUNICIPIO:= upper(SuperGetMv("MV_CIDADE",.F.," "))
+cMod53    := SuperGetMv("MV_MOD53",.F.," ") 
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Define Variaveis                                             ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+tamanho:="G"
+titulo:="REGISTRO I.S.S. mod. 53"
+cDesc1:="Emissão dos Registros de ISS Mod. 53."
+cDesc2:="Irá imprimir os lançamentos fiscais referentes a Imposto Sobre "
+cDesc3:="Serviços, conforme o período informado."
+aReturn := { "Zebrado", 1,"Administração", 2, 2, 1, "",1 }
+Limite  := 220
+aLinha:= {}
+nomeprog:="MATRISS"
+nLastKey := 0
+cPerg   :="MTRISS"
+aDriver :=ReadDriver()
+nPagina:=1
+aSF3:={}
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Variaveis utilizadas para Impressao do Cabecalho e Rodape    ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+cString  :="SF3"
+cabec1   := ""
+cabec2   := ""
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Verifica as perguntas selecionadas                           ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+pergunte(cPerg,.F.)
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Variaveis utilizadas para parametros                         ³
+//³ mv_par01             // da Data                              ³
+//³ mv_par02             // ate a Data                           ³
+//³ mv_par03             // Pagina Inicial                       ³
+//³ mv_par04             // Nr do Livro                          ³
+//³ mv_par05             // Livro ou Livro+termos ou Termos      ³
+//³ mv_par06             // Imprime na Coluna Observacao         ³
+//³ mv_par07             // Livre Selecionado                    ³
+//³ mv_par08             // Nro do CCM                           ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Envia controle para a funcao SETPRINT                        ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+wnrel:="MATRISS"   // nome default do relatorio em disco
+wnrel:=SetPrint(cString,wnrel,cPerg,Titulo,cDesc1,cDesc2,cDesc3,.F.,"")
+
+nPagina:=mv_par03
+nPagina:=IIF(nPagina<2,2,nPagina)
+
+If nLastKey==27
+	Return
+Endif
+
+SetDefault(aReturn,cString)
+
+If nLastKey==27
+	Return
+Endif
+
+RptStatus({|| RptDetail()})// Substituido pelo assistente de conversao do AP5 IDE em 13/09/00 ==> RptStatus({|| Execute(RptDetail)})
+
+Static Function RptDetail()
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Variaveis utilizadas na regua de processamento               ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+SetRegua(RecCount())
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Impressao de Termo / Livro                                   ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+Do Case
+	Case mv_par05==1 ; lImpLivro:=.t. ; lImpTermos:=.f.
+	Case mv_par05==2 ; lImpLivro:=.t. ; lImpTermos:=.t.
+	Case mv_par05==3 ; lImpLivro:=.f. ; lImpTermos:=.t.
+EndCase
+
+If lImpLivro // Impressao do Livro
+	
+	dbSelectArea("SF3")		// COCACOLA
+	
+	_F3_FILIAL :=FieldPos("F3_FILIAL")
+	_F3_REPROC :=FieldPos("F3_REPROC")
+	_F3_ENTRADA:=FieldPos("F3_ENTRADA")
+	_F3_NFISCAL:=FieldPos("F3_NFISCAL")
+	_F3_SERIE  :=FieldPos(SerieNfId("SF3",3,"F3_SERIE"))
+	_F3_CLIEFOR:=FieldPos("F3_CLIEFOR")
+	_F3_LOJA   :=FieldPos("F3_LOJA")
+	_F3_CFO    :=FieldPos("F3_CFO")
+	_F3_CODISS :=FieldPos("F3_CODISS")
+	_F3_ESTADO :=FieldPos("F3_ESTADO")
+	_F3_EMISSAO:=FieldPos("F3_EMISSAO")
+	_F3_CONTA  :=FieldPos("F3_CONTA")
+	_F3_ALIQICM:=FieldPos("F3_ALIQICM")
+	_F3_VALCONT:=FieldPos("F3_VALCONT")
+	_F3_BASEICM:=FieldPos("F3_BASEICM")
+	_F3_VALICM :=FieldPos("F3_VALICM")
+	_F3_ISENICM:=FieldPos("F3_ISENICM")
+	_F3_OUTRICM:=FieldPos("F3_OUTRICM")
+	_F3_BASEIPI:=FieldPos("F3_BASEIPI")
+	_F3_VALIPI :=FieldPos("F3_VALIPI")
+	_F3_ISENIPI:=FieldPos("F3_ISENIPI")
+	_F3_OUTRIPI:=FieldPos("F3_OUTRIPI")
+	_F3_OBSERV :=FieldPos("F3_OBSERV")
+	_F3_VALOBSE:=FieldPos("F3_VALOBSE")
+	_F3_ICMSRET:=FieldPos("F3_ICMSRET")
+	_F3_TIPO   :=FieldPos("F3_TIPO")
+	_F3_LANCAM :=FieldPos("F3_LANCAM")
+	_F3_DOCOR  :=FieldPos("F3_DOCOR")
+	_F3_ICMSCOM:=FieldPos("F3_ICMSCOM")
+	_F3_IPIOBS :=FieldPos("F3_IPIOBS")
+	_F3_NRLIVRO:=FieldPos("F3_NRLIVRO")
+	_F3_DTCANC :=FieldPos("F3_DTCANC")
+	_F3_RECISS :=FieldPos("F3_RECISS")
+	_F3_ISSSUB :=FieldPos("F3_ISSSUB")
+	_F3_NFELETR:=FieldPos("F3_NFELETR")
+	_F3_CAMPOS :=FCount()  // Numero de Campos do SF3
+	
+	Livro()
+	
+Endif
+
+If lImpTermos // Impressao dos Termos
+	RIssTerm(cPerg)
+Endif
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Restaura Ambiente                                            ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+dbSelectArea("SF3")
+dbSetOrder(1)
+
+If aReturn[5] == 1
+	Set Printer TO
+	dbcommitAll()
+	ourspool(wnrel)
+Endif
+MS_FLUSH()
+Return
+/*/
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Fun‡…o    ³ Livro()  ³ Autor ³ Juan Jose Pereira     ³ Data ³01/06/95  ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡…o ³ Impressao do Livro de Registro de ISS                      ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Uso      ³ MATRISS                                                    ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+/*/
+// Substituido pelo assistente de conversao do AP5 IDE em 13/09/00 ==> Function Livro
+Static Function Livro()
+
+Local cAliasB := ""
+Local cMun    := ""
+Local cRecIss 	:= ""
+Local cAliasSf3	:=	"SF3"
+Local aStruSf3	:=	SF3->(DbStruct ())
+Local cCampos	:= " * "
+Local nSf3 		:= 0
+Local lQuery	:=	.F.
+Local lContemRec:= .F.
+Local cNomeCli 	:= ""
+Local lValDoc	:= SuperGetMv("MV_VALMD53",.F.)
+Local cCondSF3	:=	""
+Local nValMat	:=	0
+Local nValDoc	:=	0
+Local lMapResumo	:= IIF((SuperGetMV("MV_LJLVFIS",,1) == 2) .AND. mv_par10 == 1,.T.,.F.)
+Local aMapaResumo	:= 	{}
+Local aGravaMapRes	:= 	{}
+Local cArqBkpQry	:= 	""
+Local cArqTmpMP		:= 	""
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Definicao de Variaveis                                       ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+lHouveMov := .f.
+Lin:= 80
+nPosAliq:=0
+cCodISS:=" "
+lFimRel:=.f.
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Acumuladores Fiscais e variaveis auxiliares                  ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+aTransporte:= {0,0,0,0,0,0}
+aAliq      := {}
+aToTMensal := {}
+aLinDet	   := {}
+lImpTotal  := .f.
+lImpResumo := .f.
+lFirst	   := .t.
+lTotaliza  := .f.
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Cria Indice Condicional                                      ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+DbSelectArea (cAliasSf3)
+//
+#IFDEF TOP
+	If TcSrvType()<>"AS/400"
+		cAliasSf3	:=	"Livro"
+		lQuery		:=	.T.
+		//
+		cQuery		:=	"SELECT "
+		If lValDoc
+			cCampos	:=	" SF3.*, SF2.F2_VALBRUT "
+		Endif
+		cQuery		+=	cCampos+" FROM "+RetSqlName ("SF3")+" SF3 "
+		If lValDoc
+			cQuery	+=	", " +RetSqlName ("SF2")+ " SF2 "
+		Endif
+		cQuery		+=	"WHERE SF3.F3_FILIAL='"+xFilial ("SF3")+"' AND SF3.F3_ENTRADA>='"+DTOS (MV_PAR01)+"' AND SF3.F3_ENTRADA<='"+DTOS (MV_PAR02)+"' AND SF3.D_E_L_E_T_=' ' AND "
+		//
+		If mv_par07=="*"
+			cQuery	+=	" (SF3.F3_TIPO='S' OR SF3.F3_TIPO='L') AND SUBSTRING(SF3.F3_CFO, 1, 1)>='5' "
+		Else
+			cQuery	+=	" (SF3.F3_TIPO='S' OR SF3.F3_TIPO='L') AND SUBSTRING(SF3.F3_CFO, 1, 1)>='5' AND SF3.F3_NRLIVRO='"+mv_par07+"' "
+		Endif
+		cQuery	+=	" AND (SF3.F3_CODISS<>' ' AND SF3.F3_TIPO<>'L') "
+		//
+		If lValDoc
+			cQuery    += " AND SF2.F2_FILIAL = '" + xFilial("SF2") + "' AND SF2.F2_DOC = SF3.F3_NFISCAL AND "
+	   	cQuery    += "SF2.F2_SERIE = SF2.F2_SERIE AND SF2.F2_CLIENTE = SF3.F3_CLIEFOR AND SF2.F2_LOJA = SF3.F3_LOJA AND "
+	   	cQuery    += "SF2.D_E_L_E_T_ = ' ' "
+		Endif		
+		cQuery	+=	" ORDER BY SF3.F3_CODISS, SF3.F3_ENTRADA, SF3.F3_SERIE, SF3.F3_NFISCAL "
+		//
+		cQuery 	:= 	ChangeQuery (cQuery)
+	    	//
+		DbUseArea (.T., "TOPCONN", TcGenQry (,,cQuery), cAliasSf3, .T., .T.)
+		//
+		For nSF3 := 1 To (Len (aStruSF3))
+			If (aStruSF3[nSF3][2]<>"C") .And. (FieldPos (aStruSF3[nSF3][1])>0)
+				TcSetField (cAliasSf3, aStruSF3[nSF3][1], aStruSF3[nSF3][2], aStruSF3[nSF3][3], aStruSF3[nSF3][4])
+			EndIf
+		Next (nSF3)
+	Else
+#ENDIF
+		If mv_par07=="*"
+			cFiltro	:='(F3_TIPO == "S" .or. F3_TIPO=="L") .and. Substr(F3_CFO,1,1)>="5"'
+		Else
+			cFiltro  :='(F3_TIPO == "S" .or. F3_TIPO=="L") .and. Substr(F3_CFO,1,1)>="5" .and. F3_NRLIVRO=="'+mv_par07+'"'
+		EndIf
+		cFiltro +=	'.and. F3_FILIAL == "'+xFilial("SF3")+'" .And. !(F3_CODISS == "' + Space(Len(F3_CODISS)) + '" .And. F3_TIPO=="L") '
+		cFiltro +=	' .And. DToS (F3_ENTRADA)>="'+DToS (MV_PAR01)+'" .And. DToS (F3_ENTRADA)<="'+DToS (MV_PAR02)+'" '
+		//
+		cChave	:=	"F3_CODISS+DTOS(F3_ENTRADA)+F3_SERIE+F3_NFISCAL"
+		cArqInd	:=	CriaTrab(NIL,.F.)
+		IndRegua ("SF3", cArqInd, cChave,, cFiltro, "Filtrando registros...") //"Filtrando registros..."
+		//
+        #IFNDEF TOP
+			dbClearIndex ()
+			dbSetIndex (cArqInd+OrdBagExt ())
+		#ENDIF
+#IFDEF TOP
+	EndIf
+#ENDIF
+If lValDoc
+	If Select("__SF3")==0
+		ChkFile("SF3",.F.,"__SF3")
+	Endif	
+Endif
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Realiza processo para apresentar dados do Mapa Resumo³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+If lMapResumo
+
+	cArqBkpQry 		:= cAliasSf3
+
+	aMapaResumo		:= 	MaxRMapRes(mv_par01,mv_par02)
+	aGravaMapRes	:= 	MaXRAgrupF3(/*cFilAnt*/,aMapaResumo,"MATRISS")
+	cArqTmpMP		:= 	MaXRExecArq(1)
+	cAliasSf3		:=	MaXRAddArq(1,cArqTmpMP,cAliasSf3,/*aCposTemp*/,aGravaMapRes)
+
+EndIf
+
+DbSelectArea (cAliasSf3)
+While !eof()
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Filtro do Usuario                                            ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	If !Empty(aReturn[7]) .And. ! &(aReturn[7])
+        dbSkip()
+	    Loop
+    Endif
+	 
+	If lValDoc
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Se o param. MV_VALMD53 for .T. calcula o valor total dos servicos para calcular o valor total da nota conjugada.³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		__SF3->(dbSetOrder(1))
+		If __SF3->(dbSeek(xFilial("SF3")+DTOS((cAliasSF3)->F3_ENTRADA)+(cAliasSF3)->F3_NFISCAL+(cAliasSF3)->F3_SERIE+;
+								(cAliasSF3)->F3_CLIEFOR+(cAliasSF3)->F3_LOJA))
+			cCondSF3 := xFilial("SF3")+DTOS(__SF3->F3_ENTRADA)+__SF3->F3_NFISCAL+__SF3->F3_SERIE+__SF3->F3_CLIEFOR+__SF3->F3_LOJA 			
+			While cCondSF3 == xFilial("SF3")+DTOS(__SF3->F3_ENTRADA)+__SF3->F3_NFISCAL+__SF3->F3_SERIE+__SF3->F3_CLIEFOR+__SF3->F3_LOJA 
+				If __SF3->F3_TIPO=='N' .Or. Empty(__SF3->F3_TIPO)
+					nValmat	+=	__SF3->F3_VALCONT	
+				Endif 
+				__SF3->(dbSkip())
+			Enddo
+		Endif
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Se o param. MV_VALMD53 for .T. preenche o valor dos materiais.                 ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		If lValDoc
+			If !lQuery
+				SF2->(dbSetOrder(1))
+				SF2->(dbSeek(xFilial("SF2")+(cAliasSF3)->F3_NFISCAL+(cAliasSF3)->F3_SERIE+(cAliasSF3)->F3_CLIEFOR+(cAliasSF3)->F3_LOJA))
+				nValDoc	:=	SF2->F2_VALBRUT
+			Else
+				nValDoc	:=	(cAliasSF3)->F2_VALBRUT
+			Endif
+		Endif
+	Endif
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Cria vetor com nota a ser impressa com estrutura do SF3      ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	lLoop:=MontaSF3(mv_par07, lQuery)
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Interrupcao do Operador                                      ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	IF lAbortPrint
+		@ 00,01 PSAY "** CANCELADO PELO OPERADOR **"
+		Exit
+	Endif
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Movimenta a Regua de processamento                           ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	IncRegua()
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Filtra por Data                                              ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	If (lLoop) .And. !lQuery
+		dbSkip()
+		Loop
+	Endif
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Controle de Quebra de Pagina                                 ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	
+	If lFirst
+		cCodISS:=aSf3[_F3_CODISS]
+		lFirst:=.f.
+	Else
+		Totais(lQuery)   // Imprime Totais do Livro
+	Endif
+	
+	If Lin>55
+		CabLivro() // Imprime o Cabecalho do Livro
+	Endif
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Linhas de Detalhe                                            ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Estrutura do Array aLinDet                          ³
+	//ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+	//³ [01] = Numero da Nota                               ³
+	//³ [02] = Data Emissao                                 ³
+	//³ [03] = Valor da Nota == Base de Calculo             ³
+	//³ [04] = Valor dos Materiais = 0                      ³
+	//³ [05] = Valor das SubEmpreitadas = 0                 ³
+	//³ [06] = Base de Calculo                              ³
+	//³ [07] = Aliquota                                     ³
+	//³ [08] = Valor do Imposto                             ³
+	//³ [09] = Valor do N F fora Municipio                  ³
+	//³ [10] = Observacao                                   ³
+	//³ [13] = ICMS Retido                                  ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	
+	aLinDet:={"","",0,0,0,0,0,0,0,"","","",0}
+	aLinDet[01]:=Iif(!Empty(aSf3[_F3_NFELETR]),aSf3[_F3_NFELETR],aSf3[_F3_NFISCAL])
+	aLinDet[02]:=StrZero(Day(aSf3[_F3_ENTRADA]),2)
+   	aLindet[04]	:= nValMat 
+	nValMat		:=	0
+	aLinDet[11]:=Mtr990Cnpj(aSf3[_F3_CLIEFOR], aSf3[_F3_LOJA], aSf3[_F3_TIPO], aSf3[_F3_CFO])
+	
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³Busca nome, municipio e retencao do ISS do cliente conforme o tipo de documento³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	cAliasB := Iif(aSF3[_F3_TIPO] $ "DB","SA2","SA1")
+	(cAliasB)->(dbSetOrder(1))
+	If (cAliasB)->(MsSeek(xFilial(cAliasB)+aSF3[_F3_CLIEFOR]+aSF3[_F3_LOJA]))
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³Nome do Cliente³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		cNomeCli := Iif(aSF3[_F3_TIPO]$"DB",SubStr((cAliasB)->A2_NOME,1,36),SubStr((cAliasB)->A1_NOME,1,36))
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³Municipio do cliente³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		cMun := Iif(aSF3[_F3_TIPO]$"DB",SubStr((cAliasB)->A2_MUN,1,36),SubStr((cAliasB)->A1_MUN,1,36))
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³Retencao do ISS³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ		
+		cRecIss := Iif(aSF3[_F3_TIPO]$"DB",(cAliasB)->A2_RECISS,(cAliasB)->A1_RECISS)
+	EndIf 
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³Verifica a existencia do campo SF3->F3_RECISS que grava a posicao³
+	//³do RECISS no momento da emissao da Nota Fiscal.                  ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+    lContemRec := .F.
+	If !Empty (aSf3[_F3_RECISS])
+		lContemRec	:= .T.
+		cRecIss 	:= If(aSf3[_F3_RECISS]$"SN",If(aSf3[_F3_RECISS]=="S","1","2"),aSf3[_F3_RECISS])
+	EndIf
+
+	dbSelectArea(cAliasSf3)
+	
+	If Empty(aSF3[_F3_DTCANC]) //.OR. (aSF3[_F3_DTCANC] > MV_PAR02)
+		If cRecIss == "1" .And. !(Upper(Left(AllTrim(cMun),1)) == "S" .And. "PAULO" $ AllTrim(Upper(cMun)))
+			aLinDet[09]:=aSf3[_F3_VALCONT] 
+		Else
+			If lValDoc
+				aLindet[03] := nValDoc
+				nValDoc		:=	0
+			Else
+				aLinDet[03]:=aSf3[_F3_VALCONT]
+			Endif
+			aLinDet[05]:=If (_F3_ISSSUB==0, 0, aSf3[_F3_ISSSUB])
+			aLinDet[06]:=aSf3[_F3_BASEICM] 
+			aLinDet[07]:=aSf3[_F3_ALIQICM]
+			
+			If (AllTrim (aSF3[_F3_TIPO])$"DB") .And. !lContemRec
+				If (cRecIss<>"S")
+					aLinDet[08]:=aSf3[_F3_VALICM]
+					aLinDet[13]:=0
+				Else
+					aLinDet[08]:=0
+					aLinDet[13]:=aSf3[_F3_VALICM]
+				EndIf
+			Else
+				If (cRecIss<>"1")
+					aLinDet[08]:=aSf3[_F3_VALICM]
+					aLinDet[13]:=0
+				Else
+					aLinDet[08]:=0
+					aLinDet[13]:=aSf3[_F3_VALICM]				
+				EndIf
+			EndIf
+		Endif
+	EndIf
+
+	If mv_par06 == 1
+		aLinDet[10] := cNomeCli
+	Else                 
+		aLinDet[10] := cMun		
+	Endif              
+	aLinDet[12]:=Alltrim(aSf3[_F3_SERIE])	
+	
+	cCodigo:=StrZero(mv_par06,1)
+	
+	If cMod53 == "1" // Imprime layout Padrão Fiscal
+	
+		cLinDet:="|"
+		cLinDet+=aLinDet[02] + " |"
+		cLinDet+=PadR(aLinDet[12],3) + "  |"
+		cLinDet+=PadR(aLinDet[01],20) + "|"	
+		cLinDet+=Padr(aLinDet[11],14) + "| "		
+		cLinDet+=TransForm(aLinDet[03],"@E 9,999,999,999.99") + "| "  //deducoes
+		cLinDet+=TransForm(aLinDet[04],"@E 999,999,999.99")   + "| "  //materiais
+		cLinDet+=TransForm(aLinDet[05],"@E 999,999,999.99")   + "| "  //subempreitadas
+		cLinDet+=TransForm(aLinDet[06],"@E 999,999,999.99")   + "|"   // base
+		cLinDet+=TransForm(aLinDet[07],"@E 99.99")            + "| "  // aliquota
+		cLinDet+=TransForm(aLinDet[08],"@E 999,999,999.99")   + "| "  // devido
+		cLinDet+=TransForm(aLinDet[13],"@E 999,999,999.99")   + "|  " // retido
+		cLinDet+=cCodigo+"  | "
+		cLinDet+=TransForm(aLinDet[09],"@E 9,999,999,999.99") + "| " // valor total
+		cLinDet+=aLinDet[10]
+		
+		Lin:=Lin+1
+		@ Lin,00 PSAY cLinDet
+		@ Lin,219 PSAY "|"
+	
+	Else // Imprime Layout Gerencial
+		
+		cLinDet:="|"
+		cLinDet := cLinDet+PadR(aLinDet[01],20)                       + "|"
+		cLinDet := cLinDet+PadR(aLinDet[02],3)                        + "| "
+		cLinDet := cLinDet+TransForm(aLinDet[03],"@E 999,999,999,999.99") + "| "
+		cLinDet := cLinDet+TransForm(aLinDet[04],"@E 9,999,999,999.99") + "| "
+		cLinDet := cLinDet+TransForm(aLinDet[05],"@E 9,999,999,999.99") + "| "
+		cLinDet := cLinDet+TransForm(aLinDet[06],"@E 9,999,999,999.99") + "|"
+		cLinDet := cLinDet+TransForm(aLinDet[07],"@E 99.99")          + "| "
+		cLinDet := cLinDet+TransForm(aLinDet[08],"@E 9,999,999,999.99") + "|  "
+		cLinDet := cLinDet+cCodigo                                    + "  | "
+		cLinDet := cLinDet+TransForm(aLinDet[09],"@E 999,999,999,999.99") + "| "
+		cLinDet := cLinDet+aLinDet[10]
+		
+		Lin:=Lin+1
+		@ Lin,00 PSAY cLinDet
+		@ Lin,219 PSAY "|"	
+	
+	EndIf
+	
+	// Valores de Transporte
+	
+	aTransporte[01]:=aTransporte[01]+aLinDet[03] // Valor da Nota
+	aTransporte[02]:=aTransporte[02]+aLinDet[06] // Base de Calculo
+	aTransporte[03]:=aTransporte[03]+aLinDet[08] // Valor do Imposto
+	aTransporte[04]:=aTransporte[04]+aLinDet[09] // Nota fiscal para fora do Municipio
+	aTransporte[05]:=aTransporte[05]+aLinDet[13] // Valor do Imposto Retido
+	aTransporte[06]:=aTransporte[06]+aLinDet[04] // Valor dos Materiais
+	// Valores Mensais
+	
+	nPosAliq:=Ascan(aAliq,aLinDet[07])
+	If nPosAliq>0
+		aTotMensal[nPosAliq,1]:=aTotMensal[nPosAliq,1]+aLinDet[06] // Base
+		aTotMensal[nPosAliq,2]:=aTotMensal[nPosAliq,2]+aLinDet[08] // Tributado
+	Else
+		AADD(aAliq,aLinDet[07])
+		AADD(aTotMensal,{aLinDet[06],aLinDet[08]})
+	Endif
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Salto de Registro                                            ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	DbSelectArea (cAliasSf3)
+	If !lQuery
+		dbSkip()
+	EndIf
+	lTotaliza:=.t.
+	lHouveMov := .T.
+End
+lFimRel:=.t.
+
+if !lHouveMov
+	MontaSf3(mv_par07, lQuery)
+	CabLivro() // Imprime o Cabecalho do Livro
+	Lin:=Lin+1
+	@ Lin,00 PSAY "|   *** NAO HOUVE MOVIMENTO ***     |                    |                    |                    |     |                    |     |                    |                                                                 |"
+	lTotaliza:=.t.
+Endif
+
+
+If lTotaliza
+	Totais(.F.)   // Imprime Totais do Livro
+Endif                                           
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Exclui o arquivo temporario³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+If lMapResumo
+	MaXRExecArq(2,cArqTmpMP)
+	cAliasSf3 := cArqBkpQry
+	DbSelectArea(cAliasSF3)
+EndIf		
+		
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Imprime Resumo do Livro                                      ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+RetIndex("SF3")
+dbSetOrder(1)
+dbClearFilter()
+(cAliasSf3)->(DbCloseArea ())
+//
+#IFNDEF TOP
+	Ferase(cArqInd+OrdBagExt())
+#ENDIF
+If lValDoc
+	__SF3->(dbCloseArea())
+Endif
+Return
+
+/*/
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄ¿±±
+±±³Fun‡…o    ³ CabLivro() ³ Autor ³ Juan Jose Pereira     ³ Data ³01/06/95³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡…o ³ Impressao do Cabecalho do Livro                            ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Uso      ³ MATRISS                                                    ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+±±º                                     ATUALIZACOES                      º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºChamado    ³ Impressão do Imposto Retido ou Devido                     º±±
+±±ÇÄÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶±±
+±±ºSolicitante³ 21/03/15 ³Gustavo Rueda                                   º±±
+±±ÇÄÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶±±
+±±ºAutor      ³ 27/03/15 ³Antonio Domingos                                º±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+
+/*/
+
+// Substituido pelo assistente de conversao do AP5 IDE em 13/09/00 ==> Function CabLivro
+Static Function CabLivro()
+
+cInscMunicipal:=If(!Empty(SM0->M0_INSCM),SUBSTR(SM0->M0_INSCM,1,18),mv_par08) //Antonio Domingos alterou - 27/03/2015
+cMesIncid:=MesExtenso(Month(mv_par01))
+cAno:=Ltrim(Str(Year(mv_par01)))
+
+cPagina:=StrZero(nPagina,5)
+Lin:=0
+
+@ Lin,0 psay AvalImp(limite)
+Lin:=Lin+1
+                //^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789
+                //0         10        20        30        40        50        60        70        80        90        100       110       120       130       140       150       160       170       180       190       200       210       220
+@ Lin,00 	PSAY "+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+"
+Lin:=Lin+1
+@ Lin,00 	PSAY "| REGISTRO DE NOTAS FISCAIS - FATURAS DE SERVIÇOS PRESTADOS A TERCEIROS (mod.53)                                                                                                                               FOLHA "+cPagina+" |"
+Lin:=Lin+1
+@ Lin,00 	PSAY "|                                                                                                                                                                                                                          |"
+Lin:=Lin+1
+@ Lin,00 	PSAY "| IMPOSTO SOBRE SERVIÇOS                                                                                                                                                          | MÊS DE INCIDÊNCIA/ANO | CÓDIGO SERVIÇO |"
+Lin:=Lin+1
+@ Lin,00 	PSAY "|                                                                                                                                                                                 |"
+@ Lin,184   PSAY cMesIncid+" / "+cAno
+@ Lin,202   PSAY "|"
+@ Lin,209   PSAY cCodISS
+@ Lin,219   PSAY "|"
+Lin:=Lin+1
+                //^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789
+                //0         10        20        30        40        50        60        70        80        90        100       110       120       130       140       150       160       170       180       190       200       210       220
+@ Lin,00 	PSAY "|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|"
+Lin:=Lin+1
+@ Lin,000   PSAY "| "+SM0->M0_NOMECOM+" Endereço : "+SM0->M0_ENDENT+" CNPJ : "+Transform(SM0->M0_CGC,"@R 99.999.999/9999-99")+"      IE : "+SM0->M0_INSC+"      "+IIf(!Empty(cInscMunicipal),"C.C.M.: "+cInscMunicipal," ")
+@ Lin,219   PSAY "|"
+Lin:=Lin+1	
+@ Lin,00 	PSay "|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|"
+Lin:=Lin+1
+If cMod53 == "1" // Imprime Layout Padrão Fiscal
+	@ Lin,00 	PSAY "| NOTA FISCAL                  | OPERAÇÕES DEVIDAS AO MUNICÍPIO - "+cMUNICIPIO
+	@ Lin,150 	PSAY "| OPERAÇÕES SEM ISS DEVIDO AO MUNICÍPIO - "+cMUNICIPIO
+	@ Lin,219 	PSAY "|"
+	Lin:=Lin+1
+	@ Lin,00 	PSAY "| FATURA DE                    |----------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|"
+	Lin:=Lin+1
+	@ Lin,00 	PSAY "| SERVIÇO                      |              | DEDUÇÕES LEGAIS |               |               |               |     |               |               |INFORMAÇÕES COMPLEMENTARES (*)                                      |"
+	Lin:=Lin+1
+	@ Lin,00 	PSAY "|------------------------------|              | VALOR TOTAL DA  |  VALOR TOTAL  |   VALOR TOTAL |     BASE      | ALÍ |               |               |     |  VALOR TOTAL DA |                                            |"
+	Lin:=Lin+1
+	@ Lin,00 	PSAY "|DIA|SÉRIE| NÚMERO             |      CNPJ    | NOTA FISCAL FA- |      DOS      |       DAS     |      DE       | QUO |    IMPOSTO    |   IMPOSTO     | COD | NOTA FISCAL FA- | 1-NOME DO TOMADOR DO SERVIÇO               |"
+	Lin:=Lin+1
+	@ Lin,00 	PSAY "|   |SUBSE|                    |              | TURA DE SERVIÇOS|   MATERIAIS   | SUBEMPREITADAS|   CÁLCULO     | TA  |     DEVIDO    |    RETIDO     | (*) | TURA DE SERVICO | 2-MUNICÍPIO DE PRESTAÇÃO DE SERVIÇO        |"
+	Lin:=Lin+1
+	@ Lin,00 	PSAY "|===+=====+====================|==============|=================+===============+===============+===============+=====+===============+===============+=====+=================+============================================|"
+	//     	          "| 999999 | 99  | 999.999.999.999,99 | 999.999.999.999,99 | 999.999.999.999,99 | 999.999.999.999,99 | 99  | 999.999.999.999,99 |  9  | 999.999.999.999,99 | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX |"
+	// 		          ^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789
+	// 		          0         10        20        30        40        50        60        70        80        90        100       110       120       130       140       150       160       170       180       190       200       210       220
+Else // Imprime Layout Gerencial
+	@ Lin,00 	PSAY "| NOTA FISCAL            | OPERAÇÕES DEVIDAS AO MUNICÍPIO - "+cMUNICIPIO
+	@ Lin,149 	PSAY "| OPERAÇÕES SEM ISS DEVIDO AO MUNICÍPIO - "+cMUNICIPIO
+	@ Lin,219 	PSAY "|"
+	Lin:=Lin+1
+	@ Lin,00 	PSAY "| FATURA DE              |-------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|"
+	Lin:=Lin+1
+	@ Lin,00 	PSAY "| SERVICO                |                   | DEDUCOES LEGAIS                   |                 |     |                 |     |                   | INFORMACOES COMPLEMENTARES (*)                                      |"
+	Lin:=Lin+1
+	@ Lin,00 	PSAY "|------------------------| VALOR TOTAL DA    |-----------------------------------|                 | ALI |                 |     | VALOR TOTAL DA    |                                                                     |"
+	Lin:=Lin+1
+	@ Lin,00 	PSAY "|                        | NOTA FISCAL FATURA| VALOR TOTAL DOS | VALOR TOTAL DAS |                 | QUO |                 | COD | NOTA FISCAL FATURA| 1-NOME DO TOMADOR DO SERVICO                                        |"
+	Lin:=Lin+1
+	@ Lin,00 	PSAY "| NUMERO             |DIA| DE SERVICOS       |    MATERIAIS    | SUBEMPREITADAS  | BASE DE CALCULO | TA  | IMPOSTO DEVIDO  | (*) | DE SERVICO        | 2-MUNICIPIO DE PRESTACAO DE SERVICO                                 |"
+	Lin:=Lin+1
+	@ Lin,00 	PSAY "|====================+===|===================+=================+=================+=================+=====+=================+=====+===================+=====================================================================|"
+	//	            "|999999999| 99 | 999.999.999.999,99 | 999.999.999.999,99 | 999.999.999.999,99 | 999.999.999.999,99 | 99  | 999.999.999.999,99 |  9  | 999.999.999.999,99 | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX |"
+	//	 		        ^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789^123456789
+	//	 		        0         10        20        30        40        50        60        70        80        90        100       110       120       130       140       150       160       170       180       190       200       210       220
+EndIf
+
+nPagina:=nPagina+1
+Return
+/*/
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄ¿±±
+±±³Fun‡…o    ³ Totais()   ³ Autor ³ Juan Jose Pereira     ³ Data ³01/06/95³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡…o ³ Impressao dos Totais do Livro                              ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Uso      ³ MATRISS                                                    ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+/*/
+// Substituido pelo assistente de conversao do AP5 IDE em 13/09/00 ==> Function Totais
+Static Function Totais(lQuery)
+Local i:=0
+lImpCabec:=.f.
+
+
+If (EOF() .or. lFimRel) .And. !lQuery
+	lImpTotal:=.t.
+	lImpResumo:=.t.
+Endif
+If (cCodISS#aSf3[_F3_CODISS] .or. Lin>55)
+	lImptotal:=.t.
+Endif
+
+If (lImpTotal .or. lImpResumo)
+	
+	If lImpResumo
+		nQtdLinhas:=50-Len(aAliq)
+		If Lin>nQtdLinhas
+			lImpCabec:=.t.
+			nQtdLinhas:=55
+		Endif
+	Else
+		nQtdLinhas:=55
+	Endif
+	
+	While Lin<nQtdLinhas
+		Lin:=Lin+1
+		If cMod53 == "1" // Imprime Layout Padrão Fiscal
+			@ Lin,00 PSAY "|   |     |                    |              |                 |               |               |               |     |               |               |     |                 |                                            |"
+		Else // Imprime Layout Gerencial
+			@ Lin,00 PSAY "|                    |   |                   |                 |                 |                 |     |                 |     |                   |                                                                     |"
+		EndIf
+	End
+	
+	If lImpTotal
+		Lin:=Lin+1
+		@ Lin, 00 PSAY "|"+Replic("-",218)+"|"
+		If cMod53 == "1" // Imprime Layout Padrão Fiscal 
+			If cCodISS==aSf3[_F3_CODISS] .and. !EOF()
+				cLinhaTot:="| A TRANSPORTAR                |              |   " 
+			Else
+				cLinhaTot:="| TOTAL DO MÊS                 |              |   " 
+			Endif
+			cLinhaTot:=cLinhaTot+Transform(aTransporte[01],"@E 999,999,999.99")+"| "
+			cLinhaTot:=cLinhaTot+Transform(aTransporte[06],"@E 999,999,999.99")+"| "
+			cLinhaTot:=cLinhaTot+Transform(0.00,"@E 999,999,999.99")+"| "
+			cLinhaTot:=cLinhaTot+Transform(aTransporte[02],"@E 999,999,999.99")+"|     | "
+			cLinhaTot:=cLinhaTot+Transform(aTransporte[03],"@E 999,999,999.99")+"| "
+			cLinhaTot:=cLinhaTot+Transform(aTransporte[05],"@E 999,999,999.99")+"|     |   "
+			cLinhaTot:=cLinhaTot+Transform(aTransporte[04],"@E 999,999,999.99")+"| "
+			Lin:=Lin+1
+			@ Lin, 00 PSAY cLinhaTot
+			@ Lin, 219 PSAY "|"
+		Else // Imprime Layout Gerencial
+			If cCodISS==aSf3[_F3_CODISS] .and. !EOF()
+				cLinhaTot:="| A TRANSPORTAR          | "
+			Else
+				cLinhaTot:="| TOTAL DO MES           | "
+			Endif
+			cLinhaTot:=cLinhaTot+Transform(aTransporte[01],"@E 999,999,999,999.99")+"| "
+			cLinhaTot:=cLinhaTot+Transform(0.00,"@E 9,999,999,999.99")+"| "
+			cLinhaTot:=cLinhaTot+Transform(0.00,"@E 9,999,999,999.99")+"| "
+			cLinhaTot:=cLinhaTot+Transform(aTransporte[02],"@E 9,999,999,999.99")+"|     | "
+			cLinhaTot:=cLinhaTot+Transform(aTransporte[03],"@E 9,999,999,999.99")+"|     | "
+			cLinhaTot:=cLinhaTot+Transform(aTransporte[04],"@E 999,999,999,999.99")+"| "
+			Lin:=Lin+1
+			@ Lin, 00 PSAY cLinhaTot
+			@ Lin, 219 PSAY "|"
+		EndIf
+
+		lImpTotal:=.f.
+		If cCodIss#aSf3[_F3_CODISS]
+			aTransporte:= {0,0,0,0,0,0}
+			cCodISS:=aSf3[_F3_CODISS]
+		Endif
+	EndIf
+	If !lImpResumo
+		Lin:=Lin+1
+		@ Lin, 00 PSAY "+"+Replic("-",218)+"+"
+	Else
+		If lImpCabec
+			Lin:=Lin+1
+			@ Lin, 00 PSAY "+"+Replic("-",218)+"+"
+			cCodISS:="    "
+			nQtdLinhas:=50-Len(aAliq)
+			CabLivro()
+			While Lin<nQtdLinhas
+				Lin:=Lin+1
+				If cMod53 == "1" // Imprime Layout Padrão Fiscal
+					@ Lin,00 PSAY "|   |     |         |               |                 |                 |                 |                 |     |                 |                 |     |                 |                                            |"
+				Else // Imprime Layout Gerencial
+					@ Lin,00 PSAY "|         |    |                    |                    |                    |                    |     |                    |     |                    |                                                                 |"
+				EndIf
+			End
+		EndIf
+		Lin:=Lin+1
+		@ Lin, 00 PSAY "|"+Replic("-",218)+"|"
+		Lin:=Lin+1
+		@ Lin, 00 PSAY "| RESUMO DO MÊS POR ALÍQUOTA"
+		@ Lin,219 PSAY "|"
+		Lin:=Lin+1
+		@ Lin,00 PSAY "|"
+		@ Lin,219 PSAY "|"
+		Lin:=Lin+1
+		@ Lin, 00 PSAY "| BASE DE CÁLCULO  |ALÍQUOTA|  IMPOSTO DEVIDO  |"
+		//             |999,999,999,999.99|   99   |999,999,999,999.99|
+		@ Lin,219 PSAY "|"
+		Lin:=Lin+1
+		@ Lin, 00 PSAY "|==================+========+==================|"
+		@ Lin,219 PSAY "|"
+		For i:=1 to Len(aAliq)
+			cLinhaTot:="|"+Transform(aTotMensal[i,01],"@E 999,999,999,999.99")+"|   "
+			cLinhaTot:=cLinhaTot+TransForm(aAliq[i],"@E 99.99")+"|"
+			cLinhaTot:=cLinhaTot+Transform(aTotMensal[i,02],"@E 999,999,999,999.99")+"|"
+			Lin:=Lin+1
+			@ Lin, 00 PSAY cLinhaTot
+			@ Lin,219 PSAY "|"
+		Next
+		Lin:=Lin+1
+		@ Lin, 00 PSAY "+"+Replic("-",218)+"+"
+	Endif
+Endif
+
+Return
+/*/
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Funcao    ³RIssTerm  ³ Autor ³ Mary C. Hergert       ³ Data ³28/06/2007³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡…o ³Imprime os termos de abertura e encerramento do MatrISS     ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Retorno   ³Nenhum                                                      ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³   DATA   ³ Programador   ³Manutencao Efetuada                         ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³          ³               ³                                            ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+/*/
+Static Function RIssTerm(cPerg)
+
+Local cArqAbert	:=	GetNewPar("MV_MRISSAB","")
+Local cArqEncer	:=	GetNewPar("MV_MRISSEN","")
+Local aDriver 	:= 	ReadDriver()
+
+XFIS_IMPTERM(cArqAbert,cArqEncer,cPerg,aDriver[4])
+
+Return .T.
+
