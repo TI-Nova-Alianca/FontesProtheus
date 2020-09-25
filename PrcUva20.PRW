@@ -7,6 +7,7 @@
 // 22/01/2020 - Robert - Calculo para tabela MOC gerava os decimais errados; tambem gerava valores meiores abaixo do grau 10.
 // 23/01/2020 - Robert - Ajuste agio organicas (15% em conversao; 55% tintorias; 70% demais).
 // 14/05/2020 - Robert - Aplicava % de agio errados (5/15/20/25/30/50%); alterados para (5/15/30/50/55%) para tabela MOC nos graus abaixo do brau base.
+// 18/06/2020 - Robert - Ajustes agio (classif. C latadas nao tinha tratamento).
 //
 
 #include "VA_INCLU.prw"
@@ -38,7 +39,7 @@ user function PrcUva20 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	local _nPosGBase := 0
 	local _nPosGrau  := 0
 	local _nArredEnt := 4  // Arredondar o preco para no maximo X decimais.
-	local _nArredCom := 3  // Arredondar o preco para no maximo X decimais.
+	local _nArredCom := 4  // Arredondar o preco para no maximo X decimais.
 	local _nArredMOC := 4  // Arredondar o preco para no maximo X decimais.
 	local _aGrausInt := {}
 	local _nAgioOrg  := 0
@@ -49,8 +50,6 @@ user function PrcUva20 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	local _nVlrMenor := 0
 	local _nVlrMaior := 0
 	local _nContador := 0
-
-//	u_logIni ()
 
 	if _lContinua
 		_nGrau = round (_nGrau, 1)  // Por enquanto trabalhamos apenas com 1 decimal.
@@ -146,7 +145,7 @@ user function PrcUva20 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 					_lContinua = .F.
 				else
 					_sComent += 'Calculando prc.uva pelo prod.base (' + alltrim (_sProdBase) + ' ' + ALLTRIM (sb1 -> b1_desc) + ') + agio ' + cvaltochar (_nAgioOrg) + '%'
-					u_log2 ('info', _sComent)
+					//u_log2 ('info', _sComent)
 					_sProduto = _sProdBase
 				endif
 			endif
@@ -181,9 +180,9 @@ user function PrcUva20 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 				_oSQL:_sQuery += " AND ZX5_13.ZX5_13GRUP like '2%'"
 			endif
 		endif
-	//	_oSQL:Log ()
+		_oSQL:Log ()
 		_aGrupo := aclone (_oSQL:Qry2Array (.F., .F.))
-		//U_log (_aGrupo)
+	//	U_log2 ('debug', _aGrupo)
 		if len (_aGrupo) == 0
 			_sComent += "Produto '" + alltrim (sb1 -> b1_cod) + ' - ' + alltrim (sb1 -> b1_desc) + "' nao encontrado na tabela 14 (uvas X grupos) do arquivo ZX5, ou respectivo grupo nao cadastrado na tabela 13 para esta safra."
 			_lContinua = .F.
@@ -283,11 +282,11 @@ user function PrcUva20 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 				else //if _nAux - _nGBaseAli <= 3
 					_nPerAgAli = 15
 				endif
+			//	u_log2 ('debug', 'para grau ' + cvaltochar (_nAux) +  ' definiu _nPerAgAli=' + cvaltochar (_nPerAgAli))
 			endif
 
 
 			// Define o agio da MOC (costuma ser diferente da Alianca)
-			//u_log ('_nGBaseMOC:', _nGBaseMOC)
 			if _nAux == _nGBaseMOC
 				_nPerAgMOC = 0
 			elseif _nAux < _nGBaseMOC  // Verifica quantos graus encontra-se abaixo do grau base
@@ -473,7 +472,8 @@ user function PrcUva20 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 		endif
 	endif
 
-	//u_log ('Tabela de precos gerada:', _aGraus)
+//	u_log2 ('debug', 'Tabela de precos gerada:')
+//	u_log2 ('debug', _aGraus)
 
 	// Gera array de precos para uso em rotina externa (ex: consulta de tabelas de precos).
 	if _lRetArray != NIL .and. _lRetArray
@@ -489,31 +489,19 @@ user function PrcUva20 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	
 		// O preco varia conforme a sua classificacao final. Nao se aplica ao preco da tabela MOC.
 		if sb1 -> B1_VARUVA == "F" .and. sb1 -> B1_VAFCUVA == "F" .and. ! _lIsabel
-			u_log2 ('info', 'Forma de conducao....: ' + _sConducao)
-			u_log2 ('info', 'Classificacao........: ' + _sClassif)
+//			u_log2 ('info', 'Forma de conducao....: ' + _sConducao)
+//			u_log2 ('info', 'Classificacao........: ' + _sClassif)
 			if _sConducao == 'E'  // Espaldeira
 				do case
-				case alltrim (_sClassif) == "PR"
-					_nPrcRec *= 1.4  // Ainda nao tenho certeza deste percentual
-					_nPrcCom *= 1.4  // Ainda nao tenho certeza deste percentual
-				case alltrim (_sClassif) == "AA"
+				case alltrim (_sClassif) $ "PR/AA"
 					_nPrcRec *= 1.4
 					_nPrcCom *= 1.4
 				case alltrim (_sClassif) == "A"
 					_nPrcRec *= 1.2
 					_nPrcCom *= 1.2
-				case alltrim (_sClassif) == "B"
+				case alltrim (_sClassif) $ "B/C"
 					_nPrcRec *= 1
 					_nPrcCom *= 1
-				case alltrim (_sClassif) == "C"
-					_nPrcRec *= 0.8
-					_nPrcCom *= 0.8
-				case alltrim (_sClassif) == "D"
-					_nPrcRec *= 0.6
-					_nPrcCom *= 0.6
-				case alltrim (_sClassif) == "DS"
-					_nPrcRec *= 0.5
-					_nPrcCom *= 0.5
 				otherwise
 					_sComent += '[' + procname () + '] Sem calculo de agio para classificacao ' + _sClassif + ' e sistema de conducao ' + _sConducao
 					_lContinua = .F.
@@ -537,7 +525,7 @@ user function PrcUva20 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 					case alltrim (_sClassif) == "A"
 						_nPrcRec *= 1.05
 						_nPrcCom *= 1.05
-					case alltrim (_sClassif) $ "B/DS"  // B=jah era 0%; DS=jah caiu na regra de pagar como isabel
+					case alltrim (_sClassif) $ "B/C/DS"  // B=jah era 0%; DS=jah caiu na regra de pagar como isabel
 						_nPrcRec *= 1.0
 						_nPrcCom *= 1.0
 					otherwise
@@ -551,7 +539,7 @@ user function PrcUva20 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 					case alltrim (_sClassif) == "A"
 						_nPrcRec *= 1.1
 						_nPrcCom *= 1.1
-					case alltrim (_sClassif) $ "B/DS"  // B=jah era 0%; DS=jah caiu na regra de pagar como isabel
+					case alltrim (_sClassif) $ "B/C/DS"  // B=jah era 0%; DS=jah caiu na regra de pagar como isabel
 						_nPrcRec *= 1.0
 						_nPrcCom *= 1.0
 					otherwise
@@ -580,5 +568,4 @@ user function PrcUva20 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 //	u_log ('Preco MOC    :', _aRet [5])
 //	u_log ('Comentarios  :', _aRet [3])
 	U_ML_SRArea (_aAreaAnt)
-//	u_logFim ()
 return _aRet

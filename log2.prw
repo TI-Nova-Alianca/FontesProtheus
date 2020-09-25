@@ -4,6 +4,7 @@
 // Funcao..: Grava arquivo de log em texto para conferencia
 //
 // Historico de alteracoes:
+// 15/06/2020 - Robert - Verifica existencia da variavel cFilAnt antes de usa-la.
 //
 
 // --------------------------------------------------------------------------
@@ -14,13 +15,14 @@ user function Log2 (_sTipo, _xDado, _xExtra)
 	local _lUmaLinha := .T.
 	local _sDirLogs  := ''
 	local _nHdl      := ''
+	local _sDataLog  := dtos (date ())
 
 	if type ("_sArqLog") != "C"
 		_sArqLog = alltrim (funname (1)) + "_" + iif (type ("cUserName") == "C", alltrim (cUserName), "") + "_" + dtos (date ()) + ".log"
 	endif
 
 	if _xExtra != NIL
-		U_Log2 ('AVISO', 'Parametro extra ignorado na chamada da funcao ' + procname ())
+		U_Log2 ('AVISO', '[' + procname () + '] Parametro extra ignorado: ' + cvaltochar (_xExtra))
 	endif
 
 	_sPCham = procname (1)
@@ -35,23 +37,28 @@ user function Log2 (_sTipo, _xDado, _xExtra)
 		_sTipo = Capital (_sTipo)
 	endif
 	_sTextoLog += '[' + padc (_sTipo, 5, ' ') + '] '  // + ' ; '
-	_sTextoLog += dtoc (date ()) + ' ' + time () + ' '  // + ' ; '
-	_sTextoLog += 'F' + cFilAnt + ' '  // + ' ; '
+	//_sTextoLog += dtoc (date ()) + ' ' + time () + ' '  // + ' ; '
+	_sTextoLog += substr (_sDataLog, 1, 4) + '-' + substr (_sDataLog, 5, 2) + '-' + substr (_sDataLog, 7, 2) + ' '
+	_sTextoLog += strtran (TimeFull (), '.', ',') + ' '
+	_sTextoLog += '[' + GetEnvServer () + ']'
+	_sTextoLog += '[F' + iif (type ('cFilAnt') == 'C', cFilAnt, '  ') + ']'  // + ' ; '
 	_xTextoLog = padc (_sTextoLog, 30, ' ')
 
 	// Verifica se consegue gravar tudo em uma linha apenas
 	if ! valtype (_xDado) $ 'A/O'
 		_xDado = alltrim (cValToChar (_xDado))
-		_sTextoLog += padr (_xDado, max (len (_xDado), 100)) + ' ; '
+		_sTextoLog += padr (_xDado, max (len (_xDado), 100))
 	else
-		_sTextoLog += padr (' variavel tipo ' + valtype (_xDado), 100) + ' ; '
+		_sTextoLog += padr (' variavel tipo ' + valtype (_xDado), 100)
 		_lUmaLinha = .F.
 	endif
 
-	_sTextoLog += 'Usr:' + padr (cUserName, 10) + ' ; '
-	_sTextoLog += 'Amb:' + GetEnvServer () + ' ; '
-	_sTextoLog += 'Comp:' + GetComputerName () + ' ; '
-	_sTextoLog += 'Pilha:' + _sPCham + ' ; '
+	if _sTipo == 'DEBUG'
+		_sTextoLog += ' ; '
+		_sTextoLog += 'Usr:' + padr (iif (type ("cUserName") == "C", cUserName, ''), 10) + ' ; '
+		_sTextoLog += 'Comp:' + GetComputerName () + ' ; '
+		_sTextoLog += 'Pilha:' + _sPCham + ' ; '
+	endif
 
 	// Grava log em diretorio especifico. Se ainda nao existir, cria-o.
 	_sDirLogs = '\logs\'

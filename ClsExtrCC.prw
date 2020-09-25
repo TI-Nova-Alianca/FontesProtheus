@@ -12,7 +12,16 @@
 // 24/09/2019 - Robert - Criada funcionalidade de retornar dados em formato XML.
 // 03/10/2019 - Robert - Implementada tag <somarApp> para uso pelo APP de associados.
 // 08/11/2019 - Robert - Ajusta tag <somarApp> para TM=13 nao listar faturas e transf. entre filiais.
+// 12/08/2020 - Robert - Criado parametro TMIgnorar para atender calculo de correcao monetaria, onde precisa ignorar TM=31.
+// 13/08/2020 - Robert - Tratava campo ZX5_10CAPI como 'C' (quando o correto eh 'S') para movtos. de capital.
 //
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Classe
+// #Descricao         #Gera dados para extrato de movimentacao de conta corrente de associados
+// #PalavasChave      #extrato #conta_corrente #associados
+// #TabelasPrincipais #SZI #SA2 #SE2 #SE5 #FK7 #FKA #FK2 #ZZM #ZX5
+// #Modulos           #COOP
 
 #include "protheus.ch"
 #include "VA_Inclu.prw"
@@ -42,6 +51,7 @@ CLASS ClsExtrCC
 	data LinhaVazia
 	data Resultado
 	data FormaResult
+	data TMIgnorar
 
 	// Declaracao dos Metodos da classe
 	METHOD New ()
@@ -66,6 +76,7 @@ METHOD New () Class ClsExtrCC
 	::UltMsg      = ''
 	::Resultado   = {}
 	::FormaResult = 'A'  // Formato do resultado: [A]=Array (default) ou [X]=XML
+	::TMIgnorar   = ''
 
 	// Gera uma linha vazia para retorno. Serve como modelo para incluir novas linhas zeradas no extrato.
 	::LinhaVazia  = aclone (array (.ExtrCCQtColunas))
@@ -159,9 +170,9 @@ METHOD Gera () Class ClsExtrCC
 	// vai ser gerado em duas partes: a antiga, ateh a data de corte, lendo o SE5; e a nova, buscando das tabelas FK*.
 	if _lContinua
 
-		// Parte antiga (antes da data de corte)
+		// Parte antiga (antes da data de corte): leitura de movimentos pela tabela SE5
 		if _dDataIni < _dDtCorte
-			u_log ('Iniciando leitura pela tabela SE5')
+			//u_log ('Iniciando leitura pela tabela SE5')
 
 			// Busca dados usando uma CTE para facilitar a uniao das consultas de diferentes tabelas.
 			_oSQL := ClsSQL():New ()
@@ -179,13 +190,16 @@ METHOD Gera () Class ClsExtrCC
 			if ::TipoExtrato == 'N'
 				_oSQL:_sQuery += " AND ZX5.ZX5_10CAPI = 'N'"
 			elseif ::TipoExtrato == 'C'
-				_oSQL:_sQuery += " AND ZX5.ZX5_10CAPI = 'C'"
+				_oSQL:_sQuery += " AND ZX5.ZX5_10CAPI = 'S'"
 			endif
 			_oSQL:_sQuery +=   " AND SZI.D_E_L_E_T_ != '*'"
 			//_oSQL:_sQuery +=   " AND SZI.ZI_FILIAL   BETWEEN '" + ::FilialIni + "' AND '" + ::FilialFim + "'"
 			_oSQL:_sQuery +=   " AND SZI.ZI_ASSOC    = '" + ::Cod_assoc + "'"
 			_oSQL:_sQuery +=   " AND SZI.ZI_LOJASSO  = '" + ::Loja_assoc + "'"
 			_oSQL:_sQuery +=   " AND SZI.ZI_TM       BETWEEN '" + ::TMIni + "' AND '" + ::TMFim + "'"
+			if ! empty (::TMIgnorar)
+				_oSQL:_sQuery +=   " AND SZI.ZI_TM   NOT IN " + FormatIn (::TMIgnorar, '/')
+			endif
 			_oSQL:_sQuery +=   " AND SZI.ZI_DATA     BETWEEN '" + dtos (_dDataIni) + "' AND '" + dtos (::DataFim) + "'"
 			_oSQL:_sQuery +=   " AND SZI.ZI_DATA     < '" + dtos (_dDtCorte) + "'"
 			_oSQL:_sQuery +=   " AND NOT EXISTS (SELECT *"  // Nao quero lcto que gerou movto bancario por que vai ser buscado posteriormente do SE5.
@@ -210,7 +224,7 @@ METHOD Gera () Class ClsExtrCC
 			if ::TipoExtrato == 'N'
 				_oSQL:_sQuery += " AND ZX5.ZX5_10CAPI = 'N'"
 			elseif ::TipoExtrato == 'C'
-				_oSQL:_sQuery += " AND ZX5.ZX5_10CAPI = 'C'"
+				_oSQL:_sQuery += " AND ZX5.ZX5_10CAPI = 'S'"
 			endif
 			_oSQL:_sQuery +=   " AND SE5.D_E_L_E_T_ != '*'"
 			_oSQL:_sQuery +=   " AND SZI.D_E_L_E_T_ != '*'"
@@ -227,6 +241,9 @@ METHOD Gera () Class ClsExtrCC
 
 			_oSQL:_sQuery +=   " AND SE5.E5_VACHVEX  = 'SZI' + ZI_ASSOC + ZI_LOJASSO + ZI_SEQ"
 			_oSQL:_sQuery +=   " AND SZI.ZI_TM       BETWEEN '" + ::TMIni + "' AND '" + ::TMFim + "'"
+			if ! empty (::TMIgnorar)
+				_oSQL:_sQuery +=   " AND SZI.ZI_TM   NOT IN " + FormatIn (::TMIgnorar, '/')
+			endif
 			_oSQL:_sQuery +=   " AND dbo.VA_SE5_ESTORNO (SE5.R_E_C_N_O_) = 0"
 			_oSQL:_sQuery += " ) "
 			_oSQL:_sQuery += "SELECT _CTE.*, A2_NOME AS NOME, ZX5_10DESC AS DESC_TM, ZX5_10DC AS DEB_CRED, ZX5.ZX5_10CAPI"
@@ -243,7 +260,8 @@ METHOD Gera () Class ClsExtrCC
 			_oSQL:_sQuery +=   " AND ZX5.ZX5_10COD   = _CTE.TIPO_MOV"
 
 			// Ordenacao por varios campos por que, do contrario, a cada vez o relariorio traz uma nova ordenacao e fica dificil fazer comparativos...
-			_oSQL:_sQuery += " ORDER BY DATA, TIPO_MOV, ORIGEM DESC, E5_SEQ, FILIAL, HIST, PREFIXO, NUMERO, E5_PARCELA"
+		//	_oSQL:_sQuery += " ORDER BY DATA, TIPO_MOV, ORIGEM DESC, E5_SEQ, FILIAL, HIST, PREFIXO, NUMERO, E5_PARCELA"
+			_oSQL:_sQuery += " ORDER BY DATA, TIPO_MOV, ORIGEM DESC, E5_SEQ, FILIAL, PREFIXO, NUMERO, E5_PARCELA, HIST"
 			_oSQL:Log ()
 			_sAliasQ = _oSQL:Qry2Trb (.F.)
 			TCSetField (_sAliasQ, "DATA", "D")
@@ -313,10 +331,10 @@ METHOD Gera () Class ClsExtrCC
 		endif
 
 
-		// Parte nova (a partir da data de corte)
+		// Parte nova (a partir da data de corte): leitura pelas tabelas FK*
 		// Busca dados usando uma CTE para facilitar a uniao das consultas de diferentes tabelas.
 		if ::DataFim >= _dDtCorte
-			u_log ('Iniciando leitura pelas tabelas FK')
+		//	u_log ('Iniciando leitura pelas tabelas FK')
 			_oSQL := ClsSQL():New ()
 			_oSQL:_sQuery := ""
 			_oSQL:_sQuery += "WITH C AS ("
@@ -332,13 +350,16 @@ METHOD Gera () Class ClsExtrCC
 			if ::TipoExtrato == 'N'
 				_oSQL:_sQuery += " AND ZX5.ZX5_10CAPI = 'N'"
 			elseif ::TipoExtrato == 'C'
-				_oSQL:_sQuery += " AND ZX5.ZX5_10CAPI = 'C'"
+				_oSQL:_sQuery += " AND ZX5.ZX5_10CAPI = 'S'"
 			endif
 			_oSQL:_sQuery +=   " AND SZI.D_E_L_E_T_ != '*'"
 			//_oSQL:_sQuery +=   " AND SZI.ZI_FILIAL   BETWEEN '" + ::FilialIni + "' AND '" + ::FilialFim + "'"
 			_oSQL:_sQuery +=   " AND SZI.ZI_ASSOC    = '" + ::Cod_assoc + "'"
 			_oSQL:_sQuery +=   " AND SZI.ZI_LOJASSO  = '" + ::Loja_assoc + "'"
 			_oSQL:_sQuery +=   " AND SZI.ZI_TM       BETWEEN '" + ::TMIni + "' AND '" + ::TMFim + "'"
+			if ! empty (::TMIgnorar)
+				_oSQL:_sQuery +=   " AND SZI.ZI_TM   NOT IN " + FormatIn (::TMIgnorar, '/')
+			endif
 			_oSQL:_sQuery +=   " AND SZI.ZI_DATA     BETWEEN '" + dtos (_dDataIni) + "' AND '" + dtos (::DataFim) + "'"
 			_oSQL:_sQuery +=   " AND SZI.ZI_DATA     >= '" + dtos (_dDtCorte) + "'"
 
@@ -361,7 +382,7 @@ METHOD Gera () Class ClsExtrCC
 			if ::TipoExtrato == 'N'
 				_oSQL:_sQuery += " AND ZX5.ZX5_10CAPI = 'N'"
 			elseif ::TipoExtrato == 'C'
-				_oSQL:_sQuery += " AND ZX5.ZX5_10CAPI = 'C'"
+				_oSQL:_sQuery += " AND ZX5.ZX5_10CAPI = 'S'"
 			endif
 			_oSQL:_sQuery += " AND FK2.D_E_L_E_T_ = '' AND FK2.FK2_FILIAL = FK7.FK7_FILIAL AND FK2.FK2_IDDOC = FK7.FK7_IDDOC"
 
@@ -399,6 +420,9 @@ METHOD Gera () Class ClsExtrCC
 			_oSQL:_sQuery += " AND SE2.E2_FORNECE = '" + ::Cod_assoc + "'"
 			_oSQL:_sQuery += " AND SE2.E2_LOJA    = '" + ::Loja_assoc + "'"
 			_oSQL:_sQuery += " AND SZI.ZI_TM      BETWEEN '" + ::TMIni + "' AND '" + ::TMFim + "'"
+			if ! empty (::TMIgnorar)
+				_oSQL:_sQuery +=   " AND SZI.ZI_TM   NOT IN " + FormatIn (::TMIgnorar, '/')
+			endif
 			_oSQL:_sQuery += " AND FK2.FK2_TPDOC != 'ES'"  // Estornos
 			_oSQL:_sQuery += " AND FK2.FK2_DATA   BETWEEN '" + dtos (_dDataIni) + "' AND '" + dtos (::DataFim) + "'"
 			_oSQL:_sQuery += " AND FK2.FK2_DATA   >= '" + dtos (_dDtCorte) + "'"
@@ -461,7 +485,8 @@ METHOD Gera () Class ClsExtrCC
 				_oSQL:_sQuery +=     " AND FK7_COMP.FK7_CHAVE = C.FILIAL + '|' + SUBSTRING (C.FK2_DOC, 1, 3) + '|' + SUBSTRING (C.FK2_DOC, 4, 9) + '|' + SUBSTRING (C.FK2_DOC, 13, 1) + '|' + SUBSTRING (C.FK2_DOC, 14, 3) + '|' + SUBSTRING (C.FK2_DOC, 17, 6) + '|' + SUBSTRING (C.FK2_DOC, 23, 2)"
 				_oSQL:_sQuery +=     ")"
 			endif
-			_oSQL:_sQuery += " order by ASSOC, LOJASSO, DATA, TM, ORIGEM DESC, SEQ, FILIAL, HIST, PREFIXO, NUMERO, PARCELA"
+		//	_oSQL:_sQuery += " order by ASSOC, LOJASSO, DATA, TM, ORIGEM DESC, SEQ, FILIAL, HIST, PREFIXO, NUMERO, PARCELA"
+			_oSQL:_sQuery += " order by ASSOC, LOJASSO, DATA, TM, ORIGEM DESC, SEQ, FILIAL, PREFIXO, NUMERO, PARCELA, HIST"
 			_oSQL:Log ()
 			_sAliasQ = _oSQL:Qry2Trb (.F.)
 			TCSetField (_sAliasQ, "DATA", "D")

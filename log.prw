@@ -308,7 +308,8 @@ user function LogSX1 (_sPerg)
 	MsSeek(_sPerg)
 	While !EOF() .AND. X1_GRUPO = _sPerg
 		_sVar := "MV_PAR"+StrZero(Val(X1_ORDEM),2,0)
-		_sMsg := "parametro " + X1_ORDEM + ": "+ X1Pergunt() + " "
+//		_sMsg := "parametro " + X1_ORDEM + ": "+ X1Pergunt() + " "
+		_sMsg := "Grp.perg. " + _sPerg + " - param. " + X1_ORDEM + ": "+ X1Pergunt() + " "
 		If X1_GSC == "C"
 			_sMsg += cValToChar (&(_sVar)) + " (" 
 			If ( cvaltochar (&(_sVar))=="1" )
@@ -325,7 +326,6 @@ user function LogSX1 (_sPerg)
 			_sMsg += ")"
 		Else
 			_uVar := &(_sVar)
-			//If ValType(_uVar) == "N"
 			if sx1 -> x1_tipo == 'N'
 				cPicture:= "@E "+Replicate("9",X1_TAMANHO-X1_DECIMAL-1)
 				If( X1_DECIMAL>0 )
@@ -333,7 +333,6 @@ user function LogSX1 (_sPerg)
 				Else
 					cPicture+="9"
 				EndIf
-				//_sMsg += Transform(Alltrim(Str(_uVar)),cPicture)
 				_sMsg += Transform(_uVar, cPicture)
 			Elseif ValType(_uVar) == "D"
 				_sMsg += DTOC(_uVar)
@@ -341,7 +340,7 @@ user function LogSX1 (_sPerg)
 				_sMsg += _uVar
 			EndIf
 		EndIf
-		u_log (_sMsg)
+		u_log2 ('info', _sMsg)
 		_sRet += _sMsg + chr (10) + chr (13)
 		DbSkip()
 	Enddo

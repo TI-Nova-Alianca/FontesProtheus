@@ -17,15 +17,19 @@
 // 19/03/2020 - Robert - Passa a oferecer selecao de filial para consultar (quando o rateio foi feito por filial) - GLPI 7689.
 //                     - Passa a enviar parametro de filial inicial... final em todas as consultas.
 //                     - Melhorado descritivo (nome coluna 2) para todas as consultas
+// 13/07/2020 - Robert  - Inseridas tags para catalogacao de fontes
+//                      - Melhorias mensagens de log e de erros.
 //
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento #relatorio
+// #PalavasChave      #analise #DRE_industrial
+// #TabelasPrincipais #SD2 #SF2 #CT2
+// #Modulos           #CTB
 
 // --------------------------------------------------------------------------
 user function DREindl ()
 	local _aHead       := {}
-//	local _sArqTrb     := ""
-//	local _sArqInd     := ""
-//	local _aConsAtu    := {}
-//	local _nConsAtu    := 0
 	Private bFiltraBrw := {|| Nil}
 	Private aRotina    := {}
 	private cCadastro  := "DREs industriais"
@@ -33,8 +37,6 @@ user function DREindl ()
 	if ! U_ZZUVL ('096', __cUserID, .T., cEmpAnt, cFilAnt)
 		return
 	endif
-
-	u_logIni ()
 
 	// Monta arquivo temporario a ser apresentado no mBrowse.
 	_AtuTrb ()
@@ -157,7 +159,7 @@ static function _Gera (_sDescri, _dDataIni, _dDataFim, _sAgrRat, _sFormaRat)
 		_oSQL:_sQuery := "SELECT COUNT (*) FROM BI_ALIANCA.dbo.DRE_INDL WHERE DESCRICAO = '" + alltrim (_sDescri) + "'"
 		_oSQL:Log ()
 		if _oSQL:RetQry () > 0
-			u_help ("Ja existe analise com esse nome.")
+			u_help ("Ja existe analise com esse nome.",, .t.)
 			_lContinua := .F.
 		endif
 	endif
@@ -181,7 +183,7 @@ static function _Gera (_sDescri, _dDataIni, _dDataFim, _sAgrRat, _sFormaRat)
 	if _lContinua
 		_oSQL:_sQuery := "SELECT MAX (ID_ANALISE) + 1 FROM BI_ALIANCA.dbo.DRE_INDL"
 		_nIdAnalis = _oSQL:RetQry ()
-		u_log ('Criando ID = ', _nIdAnalis)
+		u_log2 ('info', 'Criando ID = ' + cvaltochar (_nIdAnalis))
 		_oSQL:_sQuery := "INSERT INTO BI_ALIANCA.dbo.DRE_INDL (ID_ANALISE, DESCRICAO, DATA_INI_NF, DATA_FIM_NF, AGRUPAMENTO_PARA_RATEIO, FORMA_RATEIO, USUARIO)
 		_oSQL:_sQuery += " VALUES (" + cvaltochar (_nIdAnalis)
 		_oSQL:_sQuery +=          ",'" + alltrim (_sDescri) + "'"
@@ -192,7 +194,7 @@ static function _Gera (_sDescri, _dDataIni, _dDataFim, _sAgrRat, _sFormaRat)
 		_oSQL:_sQuery +=          ",'" + cUserName + "')"
 		_oSQL:Log ()
 		if ! _oSQL:Exec ()
-			u_help ("Nao foi possivel criar a analise. Erro no SQL: " + _oSQL:_sQuery)
+			u_help ("Nao foi possivel criar a analise. Erro no SQL: " + _oSQL:_sQuery,, .t.)
 			_lContinua  = .F.
 		endif
 	endif
@@ -203,25 +205,25 @@ static function _Gera (_sDescri, _dDataIni, _dDataFim, _sAgrRat, _sFormaRat)
 		_oSQL:_sQuery := "EXEC BI_ALIANCA.dbo.SP_DRE_INDL_GERA_DADOS " + cvaltochar (_nIdAnalis)
 		_oSQL:Log ()
 		if ! _oSQL:Exec ()
-			u_help ("Erro ao buscar a movimentacao do periodo: " + _oSQL:UltMsg)
+			u_help ("Erro ao buscar a movimentacao do periodo: " + _oSQL:UltMsg,, .t.)
 			_lContinua = .F.
 		else
 			_oSQL:_sQuery := "SELECT COUNT (*) FROM BI_ALIANCA.dbo.DRE_INDL_ITENS WHERE ID_ANALISE = " + cvaltochar (_nIdAnalis)
 			_nQtItens = _oSQL:RetQry ()
-			u_log (cvaltochar (_nQtItens) + ' itens de NF lidos.')
+			u_log2 ('info', cvaltochar (_nQtItens) + ' itens de NF lidos.')
 		endif
 	endif
 	
 	// Gera rateios de valores contabeis
 	if _lContinua
 		incproc ('Gerando rateios dos valores contabeis')
-		u_log ('Vou gerar rateios')
+		u_log2 ('info', 'Vou gerar rateios')
 		// Agrupamento consolidado
 		if _sAgrRat $ 'C'
 			_oSQL:_sQuery := "EXEC BI_ALIANCA.dbo.SP_DRE_INDL_GERA_RATEIOS " + cvaltochar (_nIdAnalis) + ", '', 'zz'"
 			_oSQL:Log ()
 			if ! _oSQL:Exec ()
-				u_help ("Erro ao gerar rateios: " + _oSQL:UltMsg)
+				u_help ("Erro ao gerar rateios: " + _oSQL:UltMsg,, .t.)
 				_lContinua = .F.
 			endif
 		
@@ -231,13 +233,11 @@ static function _Gera (_sDescri, _dDataIni, _dDataFim, _sAgrRat, _sFormaRat)
 		elseif _sAgrRat == 'F'
 			_oSQL:_sQuery := "SELECT DISTINCT FILIAL FROM BI_ALIANCA.dbo.DRE_INDL_ITENS WHERE ID_ANALISE = " + cvaltochar (_nIdAnalis)
 			_oSQL:Log ()
-			_aFiliais = aclone (_oSQL:Qry2Array ())
-			u_log (_aFiliais)
 			for _nFilial = 1 to len (_aFiliais)
 				_oSQL:_sQuery := "EXEC BI_ALIANCA.dbo.SP_DRE_INDL_GERA_RATEIOS " + cvaltochar (_nIdAnalis) + ", '" + _aFiliais [_nFilial, 1] + "', '" + _aFiliais [_nFilial, 1] + "'"
 				_oSQL:Log ()
 				if ! _oSQL:Exec ()
-					u_help ("Erro ao gerar rateios: " + _oSQL:UltMsg)
+					u_help ("Erro ao gerar rateios: " + _oSQL:UltMsg,, .t.)
 					_lContinua = .F.
 					exit
 				endif
@@ -345,7 +345,6 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 	_oSQL:_sQuery += " WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
 	_oSQL:Log ()
 	_sDescDRE = strtran (strtran (strtran (alltrim (_oSQL:RetQry ()), ' ', '_'), '.', '_'), '-', '_')
-	u_log (_sDescDRE)
 
 	_oSQL := ClsSQL ():New ()
 	do case
@@ -440,7 +439,7 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 		_oSQL:_sQuery += " ORDER BY MARCA_TERCEIRO"
 		_oSQL:Log ()
 		_nOpcao = _oSQL:F3Array ("Selecione a marca a consultar", .T.)
-		u_log ('opcao selecionada:', _nOpcao)
+		u_log2 ('info', 'opcao selecionada: ' + cvaltochar (_nOpcao))
 		if _nOpcao > 0
 			_sMarca3 = _oSQL:_xRetQry [_nOpcao + 1, 1]
 //			_oSQL:_sQuery := "SELECT * FROM BI_ALIANCA.dbo.FDRE_INDL_TETRAS ('" + cvaltochar (_trbDRE -> idanalise) + "', '', 'zz', '" + _sMarca3 + "', '" + _sMarca3 + "') ORDER BY GRUPO"
@@ -656,7 +655,6 @@ Static Function _ListaPrd (_nIdAn, _sQualTipo)
 	// Instancia um objeto da classe de manipulacao de arrays, para poder reduzir suas linhas.
 	_oLstPrd := ClsAUtil ():New (_aLstPrd)
 	_oLstPrd:ReduzLin ()
-//	u_log (_oLstPrd:_aArray)
 	U_AcolsXLS (_oLstPrd:_aArray, .f.)
 return
 

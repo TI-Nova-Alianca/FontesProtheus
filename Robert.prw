@@ -4,6 +4,13 @@
 
 //http://www.universoadvpl.com/2015/03/21-advpl-i-x31updtable-sincronizar-base/
 
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Rotinas diversas de testes, ajustes e automacoes.
+// #PalavasChave      #auxiliar #uso_generico
+// #TabelasPrincipais 
+// #Modulos           #todos_modulos
+
 #include "protheus.ch"
 //#include "rwmake.ch"
 #include "VA_INCLU.prw"
@@ -14,7 +21,7 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '01' modulo '05'
+		prepare environment empresa '01' filial '07' modulo '06'
 		private cModulo   := 'FAT'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -26,18 +33,18 @@ user function robert ()
 		return
 	endif
 	private _sArqLog := procname () + "_" + alltrim (cUserName) + cEmpAnt + ".log"
+//	private _sArqLog := procname () + "_" + alltrim (cUserName) + '_' + ALLTRIM (upper (GetEnvServer())) + ".log"
 	delete file ('\logs\' + _sArqLog)
 	//u_logId ()
 	if ! empty (GetSrvProfString ("IXBLOG", ""))
 		u_help ("Parametro IXBLOG ativo no appserver.ini")
 	else
 		if U_Semaforo (procname ()) == 0
-			u_help ('Bloqueio de semaforo na funcao ' + procname ())
+			u_help ('Bloqueio de semaforo na funcao ' + procname (),, .t.)
 		else
 			PtInternal (1, 'U_Robert')
 			U_UsoRot ('I', procname (), '')
 			processa ({|| _AndaLogo ()})
-			//u_logDH ('Processo finalizado')
 			u_log2 ('info', 'Processo finalizado')
 			U_UsoRot ('F', procname (), '')
 		endif
@@ -48,31 +55,762 @@ return
 
 // --------------------------------------------------------------------------
 static function _AndaLogo ()
-	local _sQuery    := ""
-	local _sAliasQ   := ""
-	local _oEvento   := NIL
-	local _aArqTrb   := {}
-	local _aRetSQL   := {}
-	local _nRetSQL   := 0
-	local _sCRLF     := chr (13) + chr (10)
-	local _oSQL      := NIL
-	local _lContinua := .T.
-	local _aDados    := {}
-	local _nDado     := 0
-	local _nCarga    := 0
-	local _i         := 0
-	local _sError   := ''
-	local _sWarning := ''
+//	local _sQuery    := ""
+//	local _sAliasQ   := ""
+//	local _oEvento   := NIL
+//	local _aArqTrb   := {}
+//	local _aRetSQL   := {}
+//	local _nRetSQL   := 0
+//	local _sCRLF     := chr (13) + chr (10)
+//	local _oSQL      := NIL
+//	local _lContinua := .T.
+//	local _aDados    := {}
+//	local _nDado     := 0
+//	local _nCarga    := 0
+//	local _i         := 0
+//	local _sError    := ''
+//	local _sWarning  := ''
+//	local _oCtaCorr  := NIL
+//	local _nParc     := 0
+//	local _oAssoc    := NIL
+//	local _aAssoc := {}
+//	local _nAssoc := 0
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
 
-//	u_help ("Nada definido", procname ())
-	u_log2 ('erro', 'teste de erro')
-	u_log2 ('info', 'Batch: [retorno: ' + cvaltochar (_oBatch:Retorno) + '] [Mensagens: ' + _oBatch:Mensagens + ']')
-
+	u_help ("Nada definido", procname ())
+	//U_BATUSERS ()
+	//U_BatEXML("\XML_NFE\XML_ODONE\","4")
+	// u_log (FwGrpPrivDB ('000102'))
 return
 
+/*
+// ok	_sArqLog := 'u_batrevch_' + alltrim (cusername) + '_' + dtos (date ()) + ".log" ; U_BatRevCh ("SP", "CTE", 1, '35200402442313000559570000000421461100421462', .t.)
+//	_sArqLog := 'u_batrevch_' + alltrim (cusername) + '_' + dtos (date ()) + ".log" ; U_BatRevCh ("MG", "NFE", 1, '31200302363425000433550010000003021159871670', .t.)
+//	_sArqLog := 'u_batrevch_' + alltrim (cusername) + '_' + dtos (date ()) + ".log" ; U_BatRevCh ("PR", "CTE", 90, NIL, .t.)
+//	_sArqLog := 'u_batDocCanc_' + alltrim (cusername) + '_' + dtos (date ()) + ".log" ; U_BatDocCanc ("OC", 150)
+	//_sArqLog := 'u_batmetaf_' + alltrim (cusername) + '_' + dtos (date ()) + ".log" ; u_batmetaf ()
+	//u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
+return
+*/
+/* Aguarda atualizacao de build
+	// Linguagem TL++: https://tdn.totvs.com/pages/viewpage.action?pageId=334340072
+	// local varJson := { "teste" : { "var1" : "oioi", "var2": "oioi2", "var3": "oioi3" }}  https://tdn.totvs.com/display/tec/Json
+	_oUtil := ClsDUtil ():New ()
+	u_log (_oUtil:SubtrMes ('202009', 2))
+	u_log (_oUtil:SubtrMes ('202009', -2))
+	//u_log (ClsDUtil ():SubtrMes ('202009', -2))
+*/
+/*
+	cPerg := "ML_NFXCONH"
+	U_GravaSX1 (cPerg, "01", stod ('20020128')) // Data Emissao/Recebimento
+	U_GravaSX1 (cPerg, "02", stod ('20020225')) // Data Emissao/Recebimento
+	U_GravaSX1 (cPerg, "03", '')  // Cliente de
+	U_GravaSX1 (cPerg, "04", 'Z') // Cliente ate
+	U_GravaSX1 (cPerg, "05", '')  //	Doc de Saida
+	U_GravaSX1 (cPerg, "06", 'Z') // Doc de Saida
+	U_GravaSX1 (cPerg, "07", '')  // Fornecedor de
+	U_GravaSX1 (cPerg, "08", 'z') // Fornecedor atÈ
+	U_GravaSX1 (cPerg, "09", '')  // Doc de Entrada
+	U_GravaSX1 (cPerg, "10", 'Z') // Doc de Entrada
+	U_GravaSX1 (cPerg, "11", '')  // UF
+	U_GravaSX1 (cPerg, "12", '000068736') // Conhecimento de
+	U_GravaSX1 (cPerg, "13", '000070063') // Conhecimento ate
+	U_GravaSX1 (cPerg, "14", 2) // Ordenar por
+	U_GravaSX1 (cPerg, "15", 1) // Listar
+	U_ML_NFXCONH (.t.)
+RETURN
+*/
+/*
+	// tESTES METODO FechSafr
+	_aAssoc = {}
+	aadd (_aAssoc, '003577')  // bastante movimento
+	aadd (_aAssoc, '005128')  // apenas 1 entrada e 1 compra
+	//aadd (_aAssoc, '001369')  // so 14 complementos
+	//aadd (_aAssoc, '004826')  // 9+6+0
+	aadd (_aAssoc, '003241')  // 16+15+2 Idalino Pan - tem complemento
+	//aadd (_aAssoc, '000643')  // UM ASSOCIADO QUE TEVE REPARCELAMENTO em 2020
+	//aadd (_aAssoc, '012791')  // lUIS eSCOSTEGUY (nao associado de Livramento)
+	aadd (_aAssoc, '002380')  // Elmar Busetti
+	aadd (_aAssoc, '002859')  // Celso Chiarani
+	aadd (_aAssoc, '000184')  // Arside Piton - apenas uva isabel; UNIMED em aberto
+	aadd (_aAssoc, '000289')  // Rui Bertuol - UNIMED em aberto.
+	aadd (_aAssoc, '003024')  // Vilson Da Campo - NF de compra devolvida em 2020.
+	U_GravaSX1 ("ML_FECHASAFRA", '01', '2020')
+	U_GravaSX1 ("ML_FECHASAFRA", '03', '01')
+	U_GravaSX1 ("ML_FECHASAFRA", '04', '  ')
+	U_GravaSX1 ("ML_FECHASAFRA", '05', 1)
+	U_GravaSX1 ("ML_FECHASAFRA", '06', 2)
+	for _nAssoc = 1 to len (_aAssoc)
+		U_GravaSX1 ("ML_FECHASAFRA", '02', _aAssoc [_nAssoc])
+		U_ml_fechasafra (.T.)
+	next
+return
+/*
+	// Gera rel. extrato CC associados modelo II.
+	_sAssoc = '002606'
+	cPerg := "SZI_REL2"
+	U_GravaSX1 (cPerg, "01", _sAssoc)
+	U_GravaSX1 (cPerg, "02", '')
+	U_GravaSX1 (cPerg, "03", _sAssoc)
+	U_GravaSX1 (cPerg, "04", 'zz')
+	U_GravaSX1 (cPerg, "05", stod ("19000101"))
+	U_GravaSX1 (cPerg, "06", stod ("20201231"))
+	U_GravaSX1 (cPerg, "07", 1)
+	U_GravaSX1 (cPerg, "08", 2)
+//	U_szi_rel2 (.t.)
+
+	// Gera rel. extrato CC associados modelo antigo
+	cPerg := "SZI_REL"
+	U_GravaSX1 (cPerg, "01", _sAssoc)
+	U_GravaSX1 (cPerg, "02", '')
+	U_GravaSX1 (cPerg, "03", _sAssoc)
+	U_GravaSX1 (cPerg, "04", 'zz')
+	U_GravaSX1 (cPerg, "05", '')
+	U_GravaSX1 (cPerg, "06", 'zz')
+	U_GravaSX1 (cPerg, "07", stod ("19000101"))
+	U_GravaSX1 (cPerg, "08", stod ("20201231"))
+	U_GravaSX1 (cPerg, "09", 1)
+	U_GravaSX1 (cPerg, "10", '')
+	U_GravaSX1 (cPerg, "11", 2)
+	U_GravaSX1 (cPerg, "12", 1)
+	U_GravaSX1 (cPerg, "13", '')
+	U_GravaSX1 (cPerg, "14", 'zz')
+	U_GravaSX1 (cPerg, "15", 2)
+//	U_szi_rel (.t., 1)
+return
+*/
+
+//	_a := ALLGROUPS ()
+//	for _n = 1 to len (_a)
+//		u_log (_a [_n])
+//		u_log (FWGrpParam (_a [_n, 1, 1]))
+//	next
+
+/*
+	Private cPerg   := "VAXLS53"
+	U_GravaSX1 (cPerg, '01', '2020')
+	U_GravaSX1 (cPerg, '02', '2020')
+	u_va_xls53 (.T.)
+return
+*/
+/*
+	// Testes metodos associados.
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT DISTINCT ZI_ASSOC, ZI_LOJASSO"
+	_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
+	_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
+	_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC between '012351' and '012360'"
+	_oSQL:_sQuery +=  " ORDER BY ZI_ASSOC, ZI_LOJASSO"
+	_aDados = _oSQL:Qry2Array ()
+	_sResult = ''
+	for _nDado = 1 to len (_aDados)
+		_oAssoc := ClsAssoc():New (_aDados [_nDado, 1], _aDados [_nDado, 2])
+		_aSld1 := aclone (_oAssoc:SaldoEmOLD (stod ('20200331')))
+		_aSld2 := aclone (_oAssoc:SaldoEm (stod ('20200331')))
+		_sLinImp = _aDados [_nDado, 1] + _aDados [_nDado, 2] + ' ' + transform (_aSld1 [1], '@E 999,999,999.99') + ' ' + transform (_aSld2 [1], '@E 999,999,999.99') + ' ' + transform (_aSld1 [2], '@E 999,999,999.99') + ' ' + transform (_aSld2 [2], '@E 999,999,999.99');
+		                                                           + transform (_aSld1 [3], '@E 999,999,999.99') + ' ' + transform (_aSld2 [3], '@E 999,999,999.99') + ' ' + transform (_aSld1 [4], '@E 999,999,999.99') + ' ' + transform (_aSld2 [4], '@E 999,999,999.99')
+		u_log (_sLinImp)
+		_sResult += _sLinImp + chr (13) + chr (10)
+	//	if ! _oAssoc:CalcCM ('032020', 1.0, 1.0, 999.99, .T., .F.)
+	//		u_help (_oAssoc:Codigo + "/" + _oAssoc:Loja + ' - ' + alltrim (_oAssoc:Nome) + _oAssoc:UltMsg,, .t.)
+	//	endif
+	next
+	u_log (_sResult)
+return
+*/
+/*
+	// Cria registros na conta corrente para nota trocada entre associados (GLPI 8175)
+	if cFilAnt != '07'
+		u_help ("Filial errada",, .t.)
+		return
+	endif
+	_sQuery := ""
+	_sQuery += " SELECT E2_FILIAL, E2_FORNECE, E2_LOJA, E2_NOMFOR, E2_EMISSAO, E2_VENCREA, E2_NUM, E2_PREFIXO, E2_TIPO, E2_VALOR, E2_SALDO, E2_HIST, R_E_C_N_O_, E2_LA, E2_PARCELA,"
+	_sQuery +=        " ROW_NUMBER () OVER (ORDER BY E2_PARCELA) AS NUM_PARC"
+	_sQuery +=   " FROM " + RetSQLName ("SE2")
+	_sQuery +=  " WHERE D_E_L_E_T_ = ''"
+	_sQuery +=    " AND E2_TIPO    = 'NF'"
+	_sQuery +=    " AND E2_FORNECE = '002660'"
+	_sQuery +=    " AND E2_LOJA    = '01'"
+	_sQuery +=    " AND E2_PREFIXO = '30 '"
+	_sQuery +=    " AND E2_NUM     = '000015371'"
+	_sQuery +=    " AND E2_VACHVEX = ''"
+	_sQuery +=    " AND E2_FILIAL  = '" + xfilial ("SE2") + "'"
+	_sQuery +=  " ORDER BY E2_PARCELA"
+	//u_log (_sQuery)
+	_sAliasQ = GetNextAlias ()
+	DbUseArea(.t., 'TOPCONN', TcGenQry (,, _sQuery), _sAliasQ, .f., .t.)
+	U_TCSetFld (alias ())
+	do while ! (_sAliasQ) -> (eof ())
+		//u_log ('Filial:' + (_sAliasQ) -> e2_filial, 'Forn:' + (_sAliasQ) -> e2_fornece + '/' + (_sAliasQ) -> e2_loja + ' ' + (_sAliasQ) -> e2_nomfor, 'Emis:', (_sAliasQ) -> e2_emissao, 'Vcto:', (_sAliasQ) -> e2_vencrea, 'Doc:', (_sAliasQ) -> e2_num+'/'+(_sAliasQ) -> e2_prefixo, 'Tipo:', (_sAliasQ) -> e2_tipo, 'Valor: ' + transform ((_sAliasQ) -> e2_valor, "@E 999,999,999.99"), 'Saldo: ' + transform ((_sAliasQ) -> e2_saldo, "@E 999,999,999.99"), (_sAliasQ) -> e2_hist)
+
+		_oCtaCorr := ClsCtaCorr():New ()
+		_oCtaCorr:Assoc    = (_sAliasQ) -> e2_fornece
+		_oCtaCorr:Loja     = (_sAliasQ) -> e2_loja
+		_oCtaCorr:TM       = '13'
+		_oCtaCorr:DtMovto  = (_sAliasQ) -> e2_EMISSAO
+		_oCtaCorr:Valor    = (_sAliasQ) -> e2_valor
+		_oCtaCorr:SaldoAtu = (_sAliasQ) -> e2_saldo
+		_oCtaCorr:Usuario  = cUserName
+		_oCtaCorr:Histor   = 'COMPRA SAFRA 2020 GRP.C'
+		_oCtaCorr:MesRef   = strzero(month(_oCtaCorr:DtMovto),2)+strzero(year(_oCtaCorr:DtMovto),4)
+		_oCtaCorr:Doc      = (_sAliasQ) -> e2_num
+		_oCtaCorr:Serie    = (_sAliasQ) -> e2_prefixo
+		_oCtaCorr:Parcela  = (_sAliasQ) -> e2_parcela
+		_oCtaCorr:Origem   = 'GLPI8175'
+		if _oCtaCorr:PodeIncl ()
+			if ! _oCtaCorr:Grava (.F., .F.)
+				U_help ("Erro na atualizacao da conta corrente para o associado '" + (_sAliasQ) -> e2_fornece + '/' + (_sAliasQ) -> e2_loja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
+				_lContinua = .F.
+			else
+				se2 -> (dbgoto ((_sAliasQ) -> r_e_c_n_o_))
+				if empty (se2 -> e2_vachvex)  // Soh pra garantir...
+					reclock ("SE2", .F.)
+					se2 -> e2_vachvex = _oCtaCorr:ChaveExt ()
+					msunlock ()
+				endif
+			endif
+		else
+			U_help ("Gravacao do SZI nao permitida na atualizacao da conta corrente para o associado '" + (_sAliasQ) -> e2_fornece + '/' + (_sAliasQ) -> e2_loja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
+			_lContinua = .F.
+		endif
+
+		(_sAliasQ) -> (dbskip ())
+	enddo
+	(_sAliasQ) -> (dbclosearea ())
+return
+*/
+/*
+User Function AFTERLOGIN
+	Local cId     := ParamIXB[1]
+	Local cNome := ParamIXB[2]
+	IF OAPP:LMDI
+		ALERT("VOCE N√O TEM AUTORIZA«√O PARA FAZER ESTE ACESSO !!!")
+		FINAL()
+	ENDIF
+RETURN
+*/
+/*
+	// Gera lista de campos cuja numeracao automatica precisa ser ajustada manualmente.
+	use sxe exclusive new alias sxe
+	// parece que corrompe o arquivo --> index on xe_alias + xe_filial to (criatrab ({}, .F.))
+	sx3 -> (dbsetorder (2))
+	sxe -> (dbgotop ())
+	do while ! sxe -> (eof ())
+		if left (xe_filial, 2) $ '  /' + cFilAnt
+			u_log2 ('debug', sxe -> xe_alias + ': ' + sxe -> xe_numero)
+			if ! six -> (dbseek (sxe -> xe_alias + '1', .F.))
+				u_help ("Nao encontrei SIX para " + sxe -> xe_alias)
+			else
+				(sxe -> xe_alias) -> (dbsetorder (1))
+				if (sxe -> xe_alias) -> (dbseek (xfilial (sxe -> xe_alias) + left (sxe -> xe_numero, sxe -> xe_tamanho), .T.))
+					u_log2 ('info', sxe -> xe_alias + ' = ' + alltrim (fBuscaCpo ("SX2", 1, sxe -> xe_alias, 'X2_NOME')))
+					u_logTrb (sxe -> xe_alias)
+					(sxe -> xe_alias) -> (dbskip ())
+					if ! (sxe -> xe_alias) -> (eof ())
+						u_log2 ('info', sxe -> xe_alias + ' tem lacuna')
+					endif
+				endif
+			endif
+	//		if ! sx3 -> (dbseek (sxe -> xe_campo, .F.))
+	//			u_help ("Nao encontrei o campo no SX3",, .t.)
+	//		endif
+		endif
+		_sxe_ant = sxe -> xe_alias + sxe -> xe_filial
+		sxe -> (dbskip ())
+		if sxe -> xe_alias + sxe -> xe_filial == _sxe_ant
+			u_log2 ('aviso', 'Parece que temos duplicidade: ' + _sxe_ant)
+		endif
+	enddo
+	sxe -> (dbclosearea ())
+return
+*/
+/*
+	// Geramos faturas de pagamento de safra indevidamente...
+	dDataBase = stod ('20200720')
+	if cFilAnt != '01'
+		u_help ("Filial errada.",, .t.)
+		return
+	endif
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT R_E_C_N_O_"
+	_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
+	_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
+	_oSQL:_sQuery +=    " AND SZI.ZI_FILIAL = '01'"
+	_oSQL:_sQuery +=    " AND SZI.ZI_DATA   = '20200720'"
+	_oSQL:_sQuery +=    " AND SZI.ZI_SERIE  = '30'"
+	_oSQL:_sQuery +=    " AND SZI.ZI_HISTOR = 'FAT.PAG.SAFRA 2020'"
+	_oSQL:_sQuery +=    " AND SZI.ZI_SALDO  = ZI_VALOR"
+	_oSQL:_sQuery +=  " ORDER BY ZI_ASSOC, ZI_LOJASSO, ZI_SEQ"
+	_oSQL:Log ()
+	_aDados = _oSQL:Qry2Array ()
+	for _nDado = 1 to len (_aDados)
+		szi -> (dbgoto (_aDados [_nDado, 1]))
+		u_log2 ('info', '--------------------------------------------------------------------')
+		u_log2 ('info', szi -> zi_assoc + '/' + szi -> zi_lojasso + ' doc.' + szi -> zi_doc + ' ' + szi -> zi_histor)
+		if ! u_szicf (.T.)
+			exit
+		endif
+		exit  // por enquanto, apenas um...
+	next
+return
+*/
+
+/*
+	// Migra tabelas do SX5 para o ZX5
+	//_aDePara = {'88', '39'} // Linhas comerciais 
+	//_aDePara = {'Z7', '40'} // Marcas comerciais 
+	_aDePara = {'79', '54'} // Eventos do sistema
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT X5_CHAVE, X5_DESCRI, X5_DESCSPA"
+	_oSQL:_sQuery +=   " FROM " + RetSqlName ("SX5")
+	_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ != '*'"
+	_oSQL:_sQuery +=    " AND X5_FILIAL  = '" + xFilial ("SX5") + "'"
+	_oSQL:_sQuery +=    " AND X5_TABELA  = '" + _aDePara [1] + "'"
+	_oSQL:_sQuery +=  " ORDER BY X5_CHAVE"
+	u_log (_oSQL:_sQuery)
+	_aDados := _oSQL:Qry2Array ()
+	u_log (_aDados)
+	if U_RetSQL ("SELECT COUNT (*) FROM " + RetSqlName ("ZX5") + " WHERE D_E_L_E_T_ != '*' AND ZX5_FILIAL = '" + xFilial ("ZX5") + "' AND ZX5_TABELA  = '" + _aDePara [2] + "'") > 0
+		u_help ("Jah existe a tabela '" + _aDePara [2] + "' no ZX5")
+	else
+		begin transaction
+		for _nDado = 1 to len (_aDados)
+			reclock ("ZX5", .t.)
+			zx5 -> zx5_filial = xfilial ("ZX5")
+			zx5 -> zx5_tabela = _aDePara [2]
+			zx5 -> zx5_chave  = SOMA1 (U_RetSQL ("SELECT MAX (ZX5_CHAVE) FROM " + RetSqlName ("ZX5") + " WHERE D_E_L_E_T_ != '*' AND ZX5_FILIAL = '" + xFilial ("ZX5") + "' AND ZX5_TABELA  = '" + _aDePara [2] + "'"))
+			zx5 -> &('zx5_' + _aDePara [2] + 'cod')  = _aDados [_nDado, 1]
+			zx5 -> &('zx5_' + _aDePara [2] + 'desc') = _aDados [_nDado, 2]
+			u_log ('incluindo ', _aDados [_nDado, 1])
+			msunlock ()
+		next
+		end transaction
+	endif
+return
+*/
+/*
+	// Recalcula saldos conta corrente associados
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT R_E_C_N_O_"
+	_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
+	_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
+	_oSQL:_sQuery +=    " AND SZI.ZI_FILIAL = '" + xfilial ("SZI") + "'"
+	_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC = '002960'"
+	_oSQL:_sQuery +=    " AND SZI.ZI_DATA >= '20200301'"
+//	_oSQL:_sQuery +=    " AND EXISTS (SELECT *"
+//	_oSQL:_sQuery +=                  " FROM " + RetSQLName ("SA2") + " SA2 "
+//	_oSQL:_sQuery +=                 " WHERE SA2.D_E_L_E_T_ = ''"
+//	_oSQL:_sQuery +=                   " AND SA2.A2_FILIAL  = '" + xfilial ("SA2") + "'"
+//	_oSQL:_sQuery +=                   " AND SA2.A2_COD     = SZI.ZI_ASSOC"
+//	_oSQL:_sQuery +=                   " AND SA2.A2_LOJA    = SZI.ZI_LOJASSO"
+//	_oSQL:_sQuery +=                   " AND SA2.A2_VACBASE = SA2.A2_COD"
+//	_oSQL:_sQuery +=                   " AND SA2.A2_VALBASE = SA2.A2_LOJA)"  // Somente codigo/loja base
+//	_oSQL:_sQuery +=    " AND NOT EXISTS (SELECT * FROM ZZM010 WHERE D_E_L_E_T_ = '' AND ZZM_ASSOC = ZI_ASSOC AND ZZM_LOJA = ZI_LOJASSO AND ZZM_DATA = '20171231')"
+	//_oSQL:_sQuery +=    " AND EXISTS (SELECT * FROM SE5010 SE5 WHERE SE5.D_E_L_E_T_ = '' AND E5_FORNECE = ZI_ASSOC AND E5_DATA > '20180706')"
+	_oSQL:_sQuery +=  " ORDER BY ZI_ASSOC, ZI_LOJASSO, ZI_FILIAL, ZI_SEQ"
+	_aDados = _oSQL:Qry2Array ()
+	for _nDado = 1 to len (_aDados)
+		szi -> (dbgoto (_aDados [_nDado, 1]))
+		_nSaldoAnt = szi -> zi_saldo
+		u_log2 ('info', szi -> zi_assoc + '/' + szi -> zi_lojasso + ' seq.' + szi -> zi_seq + ' ' + szi -> zi_histor)
+		_oCtaCorr := ClsCtaCorr ():New (szi -> (recno ()))
+		_oCtaCorr:AtuSaldo ()
+		if szi -> zi_saldo != _nSaldoAnt
+			u_log2 ('aviso', szi -> zi_assoc + '/' + szi -> zi_lojasso + ' seq.' + szi -> zi_seq + ' sld ant:' + transform (_nSaldoAnt, "@E 999,999,999.99") + ' novo:' +  transform (szi -> zi_saldo, "@E 999,999,999.99") + ' ' + _oCtaCorr:UltMsg)
+		endif
+	next
+return
+*/
+	// teste de uso de memoria
+//	_a := FWSFallGrps ()
+//	for _i = 1 to 12  // mais que 17 trava o servico
+//		u_log2 ('debug', _i)
+//		aadd (_a, aclone (_a))
+//		sleep (1000)
+//	next
+/*
+	// Gera pre-notas complemento uva Rubea safra 2020
+	cPerg = "VAGNF3"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
+	U_GravaSX1 (cPerg, '06', 'H')    // Parcela
+	U_GravaSX1 (cPerg, '07', '')     // DCO inicial
+	U_GravaSX1 (cPerg, '08', 'z')    // DCO final
+	U_GravaSX1 (cPerg, '09', '') //'9822')     // Prod ini
+	U_GravaSX1 (cPerg, '10', 'z') //'9822')    // Prod final
+	U_GravaSX1 (cPerg, '11', 0)    // Preco 2016
+	U_GravaSX1 (cPerg, '12', '9936/9811/9812')  // Apenas estas variedades (Rubea, no caso)
+	U_GravaSX1 (cPerg, '13', '')  // Exceto estas variedades
+	U_VA_GNF3 (.T.)
+return
+*/
+/*
+	// Gera fatura para reagrupar vencimentos de titulos de compra de uva dos associados.
+	// Busca notas cujas parcelas precisa recalcular.
+	_sArqLog := 'Reparcelamento_notas_grupo_C_2020.log'
+	if cFilAnt != '01'
+		u_help ("Filial errada",, .t.)
+		return
+	endif
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT DISTINCT E2_FILIAL, E2_FORNECE, E2_LOJA, E2_PREFIXO, E2_NUM, E2_TIPO, E2_EMISSAO"
+	_oSQL:_sQuery +=   " FROM SE2010 SE2, SZI010 SZI
+	_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " AND SE2.E2_FILIAL = '01'"
+	_oSQL:_sQuery += " AND SE2.E2_PREFIXO = '30 '"
+	_oSQL:_sQuery += " AND SE2.E2_EMISSAO >= '20200501'"
+	_oSQL:_sQuery += " AND SE2.E2_SALDO > 0"
+	_oSQL:_sQuery += " AND SE2.E2_TIPO IN ('NF', 'DP')"
+	_oSQL:_sQuery += " AND SE2.E2_HIST NOT LIKE 'AJ%'"
+	_oSQL:_sQuery += " AND SZI.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " AND ZI_FILIAL = SE2.E2_FILIAL"
+	_oSQL:_sQuery += " AND ZI_ASSOC = SE2.E2_FORNECE"
+	_oSQL:_sQuery += " AND ZI_LOJASSO = SE2.E2_LOJA"
+	_oSQL:_sQuery += " AND ZI_DOC = SE2.E2_NUM"
+	_oSQL:_sQuery += " AND ZI_SERIE= SE2.E2_PREFIXO"
+	_oSQL:_sQuery += " AND ZI_PARCELA = SE2.E2_PARCELA"
+	_oSQL:_sQuery += " AND ZI_TM = '13'"
+	_oSQL:_sQuery += " AND ZI_HISTOR LIKE '%GRP.C%'"
+	
+	// quero uns problematicos para testar
+	// _oSQL:_sQuery += " AND exists (SELECT * FROM SE2010 PARCD WHERE PARCD.E2_FILIAL = SE2.E2_FILIAL AND PARCD.E2_FORNECE=SE2.E2_FORNECE AND PARCD.E2_NUM=SE2.E2_NUM AND PARCD.E2_PARCELA ='D' AND PARCD.E2_SALDO < PARCD.E2_VALOR)"
+	
+	_oSQL:_sQuery += " ORDER BY E2_FILIAL, E2_FORNECE, E2_LOJA, E2_PREFIXO, E2_NUM, E2_TIPO"
+	_oSQL:Log ()
+	_sAliasQ := _oSQL:Qry2Trb ()
+	do while ! (_sAliasQ) -> (eof ())
+		_nTotTit = 0
+		_nSldTit = 0
+		_aTitOri = {}
+		u_log2 ('info', '----------------------------------------------------------------------')
+		u_log2 ('info', 'forn.' + (_sAliasQ) -> e2_fornece + '/' + (_sAliasQ) -> e2_loja + ' tit:' + (_sAliasQ) -> e2_prefixo + (_sAliasQ) -> e2_num)
+		se2 -> (dbsetorder(6))  // E2_FILIAL, E2_FORNECE, E2_LOJA, E2_PREFIXO, E2_NUM, E2_PARCELA, E2_TIPO, R_E_C_N_O_, D_E_L_E_T_
+		se2 -> (dbseek ((_sAliasQ) -> e2_filial + (_sAliasQ) -> e2_fornece + (_sAliasQ) -> e2_loja + (_sAliasQ) -> e2_prefixo + (_sAliasQ) -> e2_num, .F.))
+		do while ! se2 -> (eof ());
+			.and. se2 -> e2_filial == (_sAliasQ) -> e2_filial;
+			.and. se2 -> e2_fornece == (_sAliasQ) -> e2_fornece;
+			.and. se2 -> e2_loja == (_sAliasQ) -> e2_loja;
+			.and. se2 -> e2_prefixo == (_sAliasQ) -> e2_prefixo;
+			.and. se2 -> e2_num == (_sAliasQ) -> e2_num
+			if se2 -> e2_tipo == (_sAliasQ) -> e2_tipo .and. se2 -> e2_emissao == stod ((_sAliasQ) -> e2_emissao)  // Pode ter sido feita alguma fatura e nao quero misturar
+				u_log2 ('debug', 'Tit.orig.: ' + se2 ->e2_tipo + ' parc.' + se2 -> e2_parcela + ' sld:' + cvaltochar (se2 -> e2_saldo) + ' vcto:' + dtoc (se2 -> e2_vencrea))
+				_nTotTit += se2 -> e2_valor
+				_nSldTit += se2 -> e2_saldo
+				if se2 -> e2_saldo > 0
+					aadd (_aTitOri, {se2 -> E2_PREFIXO, se2 -> E2_NUM, se2 -> E2_PARCELA, se2 -> E2_TIPO, .F.})
+				endif
+			endif
+			se2 -> (dbskip ())
+		enddo
+		u_log2 ('debug', 'total titulo: ' + cvaltochar (_nTotTit))
+		u_log2 ('debug', 'saldo titulo: ' + cvaltochar (_nSldTit))
+
+		// Agora tenho o valor total da nota. Vou distribuir esse valor original dentro dos percentuais corretos
+		// para saber o valor liquido que deve ser pago em cada mes.
+		_aNewParc = {}
+		aadd (_aNewParc, {0                          , 0, 0})
+		aadd (_aNewParc, {round (_nTotTit * 0.040, 2), 0, 0})
+		aadd (_aNewParc, {round (_nTotTit * 0.114, 2), 0, 0})
+		aadd (_aNewParc, {round (_nTotTit * 0.114, 2), 0, 0})
+		aadd (_aNewParc, {round (_nTotTit * 0.114, 2), 0, 0})
+		aadd (_aNewParc, {round (_nTotTit * 0.114, 2), 0, 0})
+		aadd (_aNewParc, {round (_nTotTit * 0.142, 2), 0, 0})
+		aadd (_aNewParc, {round (_nTotTit * 0.142, 2), 0, 0})
+		// Deixa a diferenca para a primeira parcela.
+		_nDistr =0
+		for _nParc = 2 to len (_aNewParc)
+			_nDistr += _aNewParc [_nParc, 1]
+		next
+		_aNewParc [1, 1] = _nTotTit - _nDistr  // Este seria o total que deveria ter sido pago ateh junho.
+//		u_log2 ('debug', 'Parcelas como era para terem ficado:')
+//		u_log2 ('debug', _aNewParc)
+
+		// Agora que tenho os valores como devem ficar, distribuo o saldo do titulo de tras para frente
+		// limitando ao valor de cada parcela.
+		_nDistr = 0
+		for _nParc = len (_aNewParc) to 1 step -1
+			_aNewParc [_nParc, 2] = min (_aNewParc [_nParc, 1], _nSldTit - _nDistr)
+			_nDistr += _aNewParc [_nParc, 2]
+		next
+//		u_log2 ('debug', 'Saldo distribuido:')
+//		u_log2 ('debug', _aNewParc)
+
+		// Se o saldo do titulo for menor que a distribuicao das parcelas restantes, eh por que ja foi
+		// mordido para compensar algum adto.
+		if _aNewParc [1, 1] <= 0
+			u_log2 ('erro', 'Ainda sem tratamento: Parcelas restantes jah foram parcialmente usadas.')
+		else
+
+			// Agora que tenho os valores das novas parcelas, calculo o % de representatividade de cada uma.
+			_nDistr = 0
+			for _nParc = len (_aNewParc) to 2 step -1
+				_aNewParc [_nParc, 3] = round (_aNewParc [_nParc, 2] * 100 / _nSldTit, 2)
+				_nDistr += _aNewParc [_nParc, 3]
+			next
+			// Deixa a diferenca (dos percentuais) para a primeira parcela.
+			_aNewParc [1, 3] = 100 - _nDistr
+			u_log2 ('debug', 'Percentuais das novas parcelas calculados:')
+			u_log2 ('debug', _aNewParc)
+
+			// Ajusta os % no cadastro da condicao de pagamento e confere se fechou 100% (agora ja estou meio apavorado)
+			SEC -> (DBSETORDER (1))  // EC_FILIAL, EC_CODIGO, EC_ITEM, R_E_C_N_O_, D_E_L_E_T_
+			_ndistr = 0
+			for _nParc = 1 to len (_aNewParc)
+				if ! sec -> (dbseek (xfilial ("SEC") + '801' + strzero (_nParc, 2), .F.))
+					u_help ("ERRO", 'Nao encontrei SEC')
+					exit
+				else
+					reclock ("SEC", .F.)
+					sec -> ec_rateio = _aNewParc [_nParc, 3]
+					msunlock ()
+				endif
+				_nDistr += _aNewParc [_nParc, 3]
+			next
+			if _ndistr != 100
+				u_log2 ('erro', 'Distribuicao nao fechou em 100%')
+			else
+
+				// Dados para a fatura a ser criada.
+				_aFatPag = {}
+				Aadd(_aFatPag, "31 ")                                //-- Prefixo
+				Aadd(_aFatPag, "FAT")                                //-- Tipo
+				Aadd(_aFatPag, (_sAliasQ) -> e2_num)                             //-- Numero da Fatura (se o numero estiver em branco obtem pelo FINA290)
+				Aadd(_aFatPag, "120201    ")                         //-- Natureza
+				Aadd(_aFatPag, stod ((_sAliasQ) -> e2_emissao))                            //-- Data emissao inicial
+				Aadd(_aFatPag, stod ((_sAliasQ) -> e2_emissao))                            //-- Data emissao final
+				Aadd(_aFatPag, (_sAliasQ) -> e2_fornece)                            //-- Fornecedor
+				Aadd(_aFatPag, (_sAliasQ) -> e2_loja)                               //-- Loja
+				Aadd(_aFatPag, (_sAliasQ) -> e2_fornece)                            //-- Fornecedor para geracao
+				Aadd(_aFatPag, (_sAliasQ) -> e2_loja)                               //-- Loja do fornecedor para geracao
+				Aadd(_aFatPag, '801')                            //-- Condicao de pagto
+				Aadd(_aFatPag, 01)                                   //-- Moeda
+				Aadd(_aFatPag, aclone(_aTitOri) )                    //-- ARRAY com os titulos da fatura (Prefixo,Numero,Parcela,Tipo,TÌtulo localizado na geracao de fatura (lÛgico). Iniciar com falso.)
+				Aadd(_aFatPag, 0)                                    //-- Valor de decrescimo
+				Aadd(_aFatPag, 0)                                    //-- Valor de acrescimo
+
+				u_log2 ('info', 'Gerando fatura ' + (_sAliasQ) -> e2_num + ' para o fornecedor ' + (_sAliasQ) -> e2_fornece + '/' + (_sAliasQ) -> e2_Loja + ' agrupando os seguintes titulos:')
+				u_log2 ('info', _aTitOri)
+
+				_sMsgErro = ''
+				dbselectarea("SE2")
+				dbsetorder(1)
+				set filter to
+		//		dbgotop ()
+				lMsErroAuto  := .F.
+				_sErroAuto := ''
+				MsExecAuto( { |x,y| FINA290(x,y)},3,_aFatPag,)
+				If lMsErroAuto
+					if ! empty (_sErroAuto)
+						_sMsgErro += _sErroAuto + '; '
+					endif
+					if ! empty (NomeAutoLog ())
+						_sMsgErro += U_LeErro (memoread (NomeAutoLog ())) + '; '
+					endif
+					u_help ('Rotina automatica retornou erro: ' + _sMsgErro,, .t.)
+				else
+					// Ajusta os saldos da conta corrente para os titulos aglutinados na fatura.
+					_oSQL := ClsSQL ():New ()
+					_oSQL:_sQuery := ""
+					_oSQL:_sQuery += " SELECT R_E_C_N_O_"
+					_oSQL:_sQuery +=   " FROM SZI010 SZI"
+					_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ = ''"
+					_oSQL:_sQuery +=    " AND SZI.ZI_FILIAL  = '" + xfilial ("SZI") + "'"
+					_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC   = '" + (_sAliasQ) -> e2_fornece + "'"
+					_oSQL:_sQuery +=    " AND SZI.ZI_LOJASSO = '" + (_sAliasQ) -> e2_loja + "'"
+					_oSQL:_sQuery +=    " AND SZI.ZI_SERIE   = '" + (_sAliasQ) -> e2_prefixo + "'"
+					_oSQL:_sQuery +=    " AND SZI.ZI_DOC     = '" + (_sAliasQ) -> e2_num + "'"
+					//_oSQL:Log ()
+					_aDados = _oSQL:Qry2Array ()
+					for _nDado = 1 to len (_aDados)
+						sZI -> (dbgoto (_aDados [_nDado, 1]))
+						_oCtaCorr := ClsCtaCorr ():New (szi -> (recno ()))
+						_oCtaCorr:AtuSaldo ()
+					next
+
+
+					// Localiza os titulos gerados pela fatura, atualiza-os e gera conta corrente.
+					_oSQL := ClsSQL ():New ()
+					_oSQL:_sQuery := ""
+					_oSQL:_sQuery += " SELECT R_E_C_N_O_"
+					_oSQL:_sQuery +=   " FROM SE2010 SE2"
+					_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
+					_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '" + xfilial ("SE2") + "'"
+					_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO = '" + dtos (ddatabase) + "'"
+					_oSQL:_sQuery +=    " AND SE2.E2_SALDO   > 0"
+					_oSQL:_sQuery +=    " AND SE2.E2_TIPO    = 'FAT'"
+					_oSQL:_sQuery +=    " AND SE2.E2_FORNECE = '" + (_sAliasQ) -> e2_fornece + "'"
+					_oSQL:_sQuery +=    " AND SE2.E2_LOJA    = '" + (_sAliasQ) -> e2_loja + "'"
+					_oSQL:_sQuery +=    " AND SE2.E2_PREFIXO = '31 '"
+					_oSQL:_sQuery +=    " AND SE2.E2_NUM     = '" + (_sAliasQ) -> e2_num + "'"
+					//_oSQL:Log ()
+					_aDados = _oSQL:Qry2Array ()
+					for _nDado = 1 to len (_aDados)
+						se2 -> (dbgoto (_aDados [_nDado, 1]))
+					//	u_log2 ('debug', 'fatura: ' + se2 ->e2_tipo + ' ' + se2 -> e2_parcela + ' sld:' + cvaltochar (se2 -> e2_saldo) + ' ' + dtoc (se2 -> e2_vencrea))
+
+						// altera o historio e deixa posicionado o E2 para criar conta corrente referente a este titulo.
+						reclock("SE2", .F.)
+						SE2->E2_HIST := 'REPARCELAMENTO COMPRA SAFRA 2020 GRP.C'
+						MsUnLock()
+
+						_oCtaCorr := ClsCtaCorr():New ()
+						_oCtaCorr:Assoc    = se2 -> e2_fornece
+						_oCtaCorr:Loja     = se2 -> e2_loja
+						_oCtaCorr:TM       = '13'
+						_oCtaCorr:DtMovto  = se2 -> e2_EMISSAO
+						_oCtaCorr:Valor    = se2 -> e2_valor
+						_oCtaCorr:SaldoAtu = se2 -> e2_saldo
+						_oCtaCorr:Usuario  = cUserName
+						_oCtaCorr:Histor   = SE2 -> E2_HIST
+						_oCtaCorr:MesRef   = strzero(month(_oCtaCorr:DtMovto),2)+strzero(year(_oCtaCorr:DtMovto),4)
+						_oCtaCorr:Doc      = se2 -> e2_num
+						_oCtaCorr:Serie    = se2 -> e2_prefixo
+						_oCtaCorr:Origem   = 'GLPI8138'
+						_oCtaCorr:Parcela  = se2 -> e2_parcela
+						if _oCtaCorr:PodeIncl ()
+							if ! _oCtaCorr:Grava (.F., .F.)
+								U_help ("Erro na atualizacao da conta corrente para o associado '" + se2 -> e2_fornece + '/' + se2 -> e2_loja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg,, .t.)
+							else
+								if empty (se2 -> e2_vachvex)
+									reclock ("SE2", .F.)
+									se2 -> e2_vachvex = _oCtaCorr:ChaveExt ()
+									msunlock ()
+								endif
+							endif
+						else
+							U_help ("Gravacao do SZI nao permitida na atualizacao da conta corrente para o associado '" + se2 -> e2_fornece + '/' + se2 -> e2_loja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg,, .t.)
+						endif
+					next
+				endif
+			endif
+		endif
+		(_sAliasQ) -> (dbskip ())
+		//exit  // teste
+	enddo
+return
+*/
+/*
+	// Recalcula frete safra 2020 e compara com conteudo jah gravado
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "SELECT FILIAL, SAFRA, CARGA "
+	_oSQL:_sQuery +=  " FROM VA_VCARGAS_SAFRA"
+	_oSQL:_sQuery += " WHERE SAFRA = '2020'"
+	// AND FILIAL = '" + xfilial ("SZE") + "'"
+	_oSQL:_sQuery +=   " and STATUS != 'C'"
+	_oSQL:_sQuery +=   " and CONTRANOTA != ''"
+	//_oSQL:_sQuery +=   " and ASSOCIADO = '000161'"
+	_oSQL:_sQuery += " ORDER BY ASSOCIADO, FILIAL, CARGA"
+	_oSQL:Log ()
+	_aCargas = _oSQL:Qry2Array ()
+	for _nCarga = 1 to len (_aCargas)
+		u_log2 ('info', replicate ('-', 80))
+		sze -> (dbsetorder (1))
+		if sze -> (dbseek (_aCargas [_nCarga, 1] + _aCargas [_nCarga, 2] + _aCargas [_nCarga, 3], .T.))
+			U_VA_RUSCF (.f.)
+		else
+			u_log2 ('erro', 'Carga nao encontrada com a seguinte chave: ' + _aCargas [_nCarga, 1] + _aCargas [_nCarga, 2] + _aCargas [_nCarga, 3])
+		endif
+	next
+return
+*/
+/*
+	// Teste geracao avisos
+	_oAviso := ClsAviso ():New ()
+	_oAviso:Tipo       = 'A'
+	_oAviso:Destinatar = 'robert'
+	_oAviso:Texto      = 'teste robert'
+	_oAviso:Origem     = procname ()
+	_oAviso:DiasDeVida = 3
+	_oAviso:CodAviso   = '010'
+	_oAviso:Grava ()
+	//
+	_oAviso := ClsAviso ():New ()
+	_oAviso:Tipo       = 'E'
+	_oAviso:Destinatar = 'robert'
+	_oAviso:Texto      = 'teste robert'
+	_oAviso:Origem     = procname ()
+	_oAviso:DiasDeVida = 3
+	_oAviso:CodAviso   = '010'
+	_oAviso:Grava ()
+return
+*/
+/*
+	// Simula integralizacao de cotas sobre a producao do associado
+	cPerg := "SZI_ICP"
+	U_GravaSX1 (cPerg, "01", '006417')
+	U_GravaSX1 (cPerg, "02", '')
+	U_GravaSX1 (cPerg, "03", '006418')
+	U_GravaSX1 (cPerg, "04", 'zz')
+	U_GravaSX1 (cPerg, "05", '2020')
+	U_GravaSX1 (cPerg, "06", 2)  // gerar/simular
+	U_szi_icp (.t.)
+return
+*/
+/*
+	// Simula contabilizacoes
+	cPerg := "SIMULCTB"
+	U_GravaSX1 (cPerg, '01', stod ('20200514'))
+	U_GravaSX1 (cPerg, '02', stod ('20200514'))
+	U_SimulCTB
+return
+*/
+/*
+	// aKeyValues:= {"USR_CODIGO","USR_NOME","USR_EMAIL","USR_MSBLQL"}
+	// Para obter as informaÁıes das empresas que o usu·rio tem acesso, deve-se usar a funÁ„o FWUsrEmp
+	// FWSFallGrps
+	// http://sempreju.com.br/principais-funcoes-para-informacoes-de-usuarios/
+	// RETORNA O MESMO QUE PSWRET(), MAS PRA TODOS OS USUARIOS --> u_showarray (allusers ())
+	u_log2 ('debug', pswret ())
+//	u_showarray (pswret ())
+	PswOrder(1)
+	if PswSeek ('000653', .T.)
+		_aPswRet := PswRet ()
+		u_log2 ('debug', _apswret)
+	else
+		u_log2 ('erro', 'Nao localizei usuario')
+	endif
+
+	_aSup := FWSFUsrSup('000653')
+	For _i := 1 to Len(_aSup)
+		u_log2 ('info', 'Superior: ' + _aSup [_i])
+	next
+
+	// Retorna regras / politicas
+	_aUsers := FWSFAllRules()
+	U_LOG2 ('INFO', _aUsers)
+
+	_aRet := FWGetMnuAccess (__cUserID, 97 )
+	u_log2 ('info', _aRet)
+
+	// https://tdn.totvs.com/pages/viewpage.action?pageId=42796368
+	// https://tdn.totvs.com/display/tec/GetUserFromSID
+	//_aSID = GetUserFromSID ()
+	//u_log2 ('info', _aSID)
+
+	// http://microsigadvpl.blogspot.com/2010/09/pegando-senhas-dos-usuarios-do-protheus.html
+	
+	if "TESTE" $ upper (GetEnvServer())
+		cKey1 := cKey2 := cKey3 := cPswDet := ''
+		nRetUser := 2
+		u_log2 ('info', 'chamando getfields')
+		SPF_GETFIELDS('sigapss.spf',nRetUser,@cKey1,@cKey2,@cKey3,@cPswDet)
+		oXml:=XmlParser(cPswDet,"_",@cErro,@cWarn)
+		u_log2 ('debug', XMLSaveStr(oXml))
+	endif
+
+return
+*/
 /*
 	// Gera precos para as pre-notas de compra de safra.
 	Private cPerg   := "VAZZ9P"
@@ -92,6 +830,31 @@ return
 	U_GravaSX1 (cPerg, '14', 'F')    // parcela final
 	U_GravaSX1 (cPerg, '15', 1)      // regrava se ja tiver preco {"Sim", "Nao"}
 	U_VA_ZZ9P (.t.)
+return
+*/
+	/*
+	// Puxa ZZ9 da base quente para base teste, para simular geracao de notas.
+	if "TESTE" $ upper (GetEnvServer())
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "update ZZ9010 set D_E_L_E_T_ = '*' where ZZ9_SAFRA = '2020'"
+		if _oSQL:Exec ()
+			_oSQL:_sQuery := " SELECT * from LKSRV_PROTHEUS.protheus.dbo.ZZ9010 WHERE D_E_L_E_T_ = '' AND ZZ9_SAFRA = '2020'"
+			_sAliasQ = _oSQL:Qry2Trb ()
+			do while ! (_sAliasQ) -> (eof ())
+				if (_sAliasQ) -> (recno ()) % 10 == 0
+					u_log2 ('info', 'copiando ZZ9 reg. ' + cvaltochar ((_sAliasQ) -> (recno ())) + ' de ' + cvaltochar ((_sAliasQ) -> (reccount ())))
+				endif
+				reclock ("ZZ9", .T.)
+				for _nCampo = 1 to zz9 -> (fcount ())
+					_sCampo = alltrim (zz9 -> (fieldname (_nCampo)))
+					_xDado = (_sAliasQ) -> &(_sCampo)
+					zz9 -> &(_sCampo) = _xDado
+				next
+				msunlock ()
+				(_sAliasQ) -> (dbskip ())
+			enddo
+		endif
+	endif
 return
 */
 /* Acho que vai dar 1 trabalhao e nao tenho tempo.
@@ -192,53 +955,56 @@ return
 //	U_log2 ('info', 'Grau ' + transform (_aRetPrc [4][_nGrau, .PrcUvaColGrau], '@E 99.9') + ' = ' + cvaltochar (_aRetPrc [4][_nGrau, .PrcUvaColPrcCompra]))
 	U_log2 ('info', _aPrecos)
 return
-*/
-/*
-	// Gera adiantamento 3a. parcela safra 2020
-	Private cPerg   := "VA_ADSAF"
-	U_GravaSX1 (cPerg, '01', '') //012000')
-	U_GravaSX1 (cPerg, '02', '')
-	U_GravaSX1 (cPerg, '03', 'z') //012800')
-	U_GravaSX1 (cPerg, '04', 'z')
-	U_GravaSX1 (cPerg, '05', '2020')
-	U_GravaSX1 (cPerg, '06', 2)  // Simular / Gerar
-	U_GravaSX1 (cPerg, '07', stod ('20200529'))  // Data para pagto
-	U_GravaSX1 (cPerg, '08', '041')  // Banco
-	U_GravaSX1 (cPerg, '09', '0873')  // Agencia
-	U_GravaSX1 (cPerg, '10', '0685668204')  // Conta
-	U_GravaSX1 (cPerg, '11', 3)  // Qual parcela vai ser adiantada (primeira, segunda, ...)
-	U_GravaSX1 (cPerg, '12', 2)  // Qual preco do ZZ9 deve ser usado
-	u_va_adsaf (.T.)
-return
-*/
+
 /*
 	Private cPerg   := "VAGNF2"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '01', '000235')     // Produtor inicial
 	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', '000156')    // Produtor final
+	U_GravaSX1 (cPerg, '03', '000235')    // Produtor final
 	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
 	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
-	U_GravaSX1 (cPerg, '06', 'A')     // Parcelas sep.barras (bco=todas)
-	U_GravaSX1 (cPerg, '07', 'A')    // Grupos
+	U_GravaSX1 (cPerg, '06', '')     // Parcelas sep.barras (bco=todas)
+	U_GravaSX1 (cPerg, '07', 'C')    // Grupos
 	U_GravaSX1 (cPerg, '08', 3)      // Geracao por DCO: {"Com DCO", "Sem DCO", "Todos"}
 	U_GravaSX1 (cPerg, '09', 1)      // fina/comum: {"Comum", "Fina", "Todas"}
 	U_GravaSX1 (cPerg, '10', 1)      // tipo NF: {"Normais", "Compl.preco"}
 	U_GravaSX1 (cPerg, '11', '801')     // Cond pagto
-	U_GravaSX1 (cPerg, '12', '9925/9822')     // Apenas estas variedades
+	U_GravaSX1 (cPerg, '12', '9901')     // Apenas estas variedades
 	U_GravaSX1 (cPerg, '13', '')     // Exceto estas vriedades
 	u_va_gnf2 (.t.)
 return
 */
 /*
-	_aUsers := aclone (FwSfAllUsers ())
-	u_log (_aUsers)
-	u_log (pswret ())
-	u_log ('########################################')
-	PswOrder(1)
-	if PswSeek ('000210', .T.)
-		_aPswRet := PswRet ()
-	endif
-	U_BatUsers ()
+	// Estoque com codigo de Sisdevin
+	Private cPerg   := "VAXLS15"
+	U_GravaSX1 (cPerg, '01', '2445')
+	U_GravaSX1 (cPerg, '02', '2445')
+	U_GravaSX1 (cPerg, '03', '')
+	U_GravaSX1 (cPerg, '04', 'z')
+	U_GravaSX1 (cPerg, '05', date ())
+	U_GravaSX1 (cPerg, '06', 1)
+	u_va_xls15 (.T.)
+return
+*/
+/*
+	// Gera precos para as pre-notas de compra de safra.
+	Private cPerg   := "VAZZ9P"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2019') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // produto ini
+	U_GravaSX1 (cPerg, '07', 'z')    // fim
+	U_GravaSX1 (cPerg, '08', 3)      // tipos uvas {"Comuns","Finas","Todas"}
+	U_GravaSX1 (cPerg, '09', 2)      // regrava com NF ja gerada {"Sim", "Nao"}
+	U_GravaSX1 (cPerg, '10', 1)      // regrava com obs {"Regrava","Nao altera"}
+	U_GravaSX1 (cPerg, '11', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
+	U_GravaSX1 (cPerg, '13', 'O')    // parcela ini
+	U_GravaSX1 (cPerg, '14', 'O')    // parcela final
+	U_GravaSX1 (cPerg, '15', 2)      // regrava se ja tiver preco {"Sim", "Nao"}
+	U_VA_ZZ9P (.t.)
 return
 */
 /*
@@ -540,52 +1306,6 @@ return
 return
 */
 /*
-	// tESTES METODO FechSafr
-	U_GravaSX1 ("ML_FECHASAFRA", '01', '2019')
-	U_GravaSX1 ("ML_FECHASAFRA", '02', '003577')
-	U_GravaSX1 ("ML_FECHASAFRA", '03', '01')
-	U_GravaSX1 ("ML_FECHASAFRA", '04', '  ')
-	U_GravaSX1 ("ML_FECHASAFRA", '05', 1)
-	U_ml_fechasafra (.T.)
-	return
-//	_oAssoc := ClsAssoc ():New ('003577', '01')  // bastante movto
-//	_oAssoc := ClsAssoc ():New ('005128', '01')  // so 1 entra e 1 compra
-//	_oAssoc := ClsAssoc ():New ('001369', '01')  // so 14 complementos
-	_oAssoc := ClsAssoc ():New ('004826', '01')  // 9+6+0
-//	_oAssoc := ClsAssoc ():New ('003241', '01')  // 16+15+2
-	mv_par01 = '2019'
-	_sXmlFech = _oAssoc:FechSafra (mv_par01)
-	u_log (_sXmlFech)
-	_oXMLFech := XmlParser (_sXmlFech, "_", @_sError, @_sWarning )
-	if ! empty (_sError) .or. ! empty (_sWarning)
-		u_log ("Erro ao decodificar retorno: " + _sError + _sWarning)
-	else
-		u_log (type ('_oXMLFech'))
-		u_log (type ('_oXMLFech:_assocFechSafra'))
-		u_log (type ('_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem'))
-		if type ('_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem') == 'A'  // Array com mais de uma nota
-			u_log ('qt notas entrada:', len (_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem))
-			for _nNota = 1 to len (_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem)
-				u_log ('e', _oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem[_nNota]:_doc:TEXT)
-			next
-		endif
-		if type ('_oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem') == 'A'  // Array com mais de uma nota
-			u_log ('qt notas entrada:', len (_oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem))
-			for _nNota = 1 to len (_oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem)
-				u_log ('c', _oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem[_nNota]:_doc:TEXT)
-			next
-		endif
-			
-		if type ('_oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem') == 'A'  // Array com mais de uma nota
-			u_log ('qt notas entrada:', len (_oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem))
-			for _nNota = 1 to len (_oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem)
-				u_log ('v', _oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem[_nNota]:_doc:TEXT)
-			next
-		endif
-	endif
-return
-*/
-/*
 	// Recalcula classificacao uvas para 2020 e compara com conteudo gravado no SZF.
 	if "TESTE" $ upper (GetEnvServer())
 		_sLinkSrv = "LKSRV_NAWEB_TESTE.naweb_teste.dbo"
@@ -854,72 +1574,6 @@ return
 return
 */
 /*
-	// Recalcula frete safra 2020 e compara com conteudo jah gravado
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := "SELECT FILIAL, SAFRA, CARGA "
-	_oSQL:_sQuery +=  " FROM VA_VCARGAS_SAFRA"
-	_oSQL:_sQuery += " WHERE SAFRA = '2020' AND FILIAL = '" + xfilial ("SZE") + "'"
-	_oSQL:_sQuery +=   " and STATUS != 'C'"
-	_oSQL:_sQuery +=   " and CONTRANOTA != ''"
-	_oSQL:_sQuery += " ORDER BY CARGA"
-	_oSQL:Log ()
-	_aCargas = _oSQL:Qry2Array ()
-	for _nCarga = 1 to len (_aCargas)
-		u_log (replicate ('-', 80))
-		sze -> (dbsetorder (1))
-		if sze -> (dbseek (_aCargas [_nCarga, 1] + _aCargas [_nCarga, 2] + _aCargas [_nCarga, 3], .T.))
-			sb1 -> (dbsetorder (1))
-			szf -> (dbsetorder (1))  // filial + safra + carga + item
-			szf -> (dbseek (xfilial ("SZF") + sze -> ze_safra + sze -> ze_carga, .T.))
-			do while ! szf -> (eof ()) .and. szf -> zf_filial == xfilial ("SZF") .and. szf -> zf_safra == sze -> ze_safra .and. szf -> zf_carga == sze -> ze_carga
-				if ! sb1 -> (dbseek (xfilial ("SB1") + szf -> zf_produto, .F.))
-					u_log ('Produto nao cadastrado:', szf -> zf_produto)
-				else
-					u_log ('Filial:', sze -> ze_filial, 'Safra:', sze -> ze_safra, 'Carga:', sze -> ze_carga, 'Item:', szf -> zf_item, 'Grau:', szf -> zf_grau)
-					_oAssoc := ClsAssoc():New (sze -> ze_assoc, sze -> ze_lojasso)
-					u_log (sze -> ze_assoc, sze -> ze_lojasso, _oAssoc:Nome)
-					_nFrtItem = U_FrtSaf20 (_oAssoc:Nucleo, szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor)
-					if _nFrtItem != szf -> zf_valfret
-						u_log ('no SZF consta', szf -> zf_valfret)
-						reclock ("SZF", .F.)
-						szf -> zf_valfret = _nFrtItem
-						msunlock
-					endif
-				endif
-				szf -> (dbskip ())
-			enddo
-		endif
-	next
-return
-*/
-
-
-/* nao ficou bom
-	// Recalcula frete safra 2020 e compara com conteudo gravado no SF1
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := "SELECT FILIAL, DOC, FRETE_TOTAL, ASSOCIADO, LOJA_ASSOC , CAD_VITIC, COR,  sum (PESO_LIQ) as PESO"
-	_oSQL:_sQuery +=  " FROM VA_VNOTAS_SAFRA"
-	_oSQL:_sQuery += " WHERE SAFRA = '2020' AND FILIAL = '" + xfilial ("SZE") + "'"
-	_oSQL:_sQuery +=   " and TIPO_NF = 'E'"
-	_oSQL:_sQuery += " group by FILIAL, DOC, FRETE_TOTAL, ASSOCIADO, LOJA_ASSOC , CAD_VITIC, COR"
-	_oSQL:_sQuery += " ORDER BY DOC"
-	_oSQL:Log ()
-	_sAliasQ = _oSQL:Qry2Trb ()
-	do while ! (_sAliasQ) -> (eof ())
-		u_log (replicate ('-', 80))
-		u_log ('Filial:', (_sAliasQ) -> filial, 'NF:', (_sAliasQ) -> doc)
-		_oAssoc := ClsAssoc():New ((_sAliasQ) -> associado, (_sAliasQ) -> loja_assoc)
-		u_log ((_sAliasQ) -> associado, (_sAliasQ) -> loja_assoc, _oAssoc:Nome)
-		_nFrtCalc = U_FrtSaf20 (_oAssoc:Nucleo, (_sAliasQ) -> CAD_VITIC, (_sAliasQ) -> filial, (_sAliasQ) -> Peso, (_sAliasQ) -> Cor)
-		if (_sAliasQ) -> frete_total != _nFrtCalc
-			u_log ('Na nota consta', (_sAliasQ) -> frete_total)
-		endif
-		(_sAliasQ) -> (dbskip ())
-	enddo
-	(_sAliasQ) -> (dbclosearea ())
-return
-*/
-/*
 	// Testes inclusao de carga safra via web service
 	private _sErros := ''
 	_oAssoc := ClsAssoc():New ('000161', '01')
@@ -1008,18 +1662,6 @@ return
 			u_log (_oSQL:Qry2Array ())
 		endif
 	next
-return
-*/
-
-/*
-	_oAviso := ClsAviso ():New ()
-	_oAviso:Tipo       = 'A'
-	_oAviso:Destinatar = 'robert'
-	_oAviso:Texto      = 'teste robert'
-	_oAviso:Origem     = procname ()
-	_oAviso:DiasDeVida = 3
-	_oAviso:CodAviso   = '010'
-	_oAviso:Grava ()
 return
 */
 /*
@@ -1520,25 +2162,6 @@ return
 	u_log ('Gravados:', _nGravado)
 	u_log ('vazios:', _nVazio)
 	u_log ('finalizado')
-return
-*/
-/*
-	// Teste metodos associados.
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT DISTINCT ZI_ASSOC, ZI_LOJASSO"
-	_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
-	_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
-	_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC in ('000161', '002025', '010515', '002885', '000793')"
-	_oSQL:_sQuery +=  " ORDER BY ZI_ASSOC, ZI_LOJASSO"
-	_aAssoc = _oSQL:Qry2Array ()
-	for _i = 1 to len (_aAssoc)
-		_oAssoc := ClsAssoc():New (_aAssoc [_i, 1], _aAssoc [_i, 2])
-		_sRet = _oAssoc:FechSafra ('2019')
-		u_log (_oAssoc:UltMsg)
-		u_log (_sRet)
-		u_log ('')
-	next
 return
 */
 /*
@@ -2130,8 +2753,8 @@ return
 	next
 return
 */
-//	U_ClUva19 ('9908           ', 15.0, 'L', 0, 0, 0, 0, 0, 'm?dio', 0)
-//	U_ClUva19 ('9963           ', 14.0, 'E', 0, 0, 0, 0, 0, 'm?dio', 0)  // cab.sauv.p/esp
+//	U_ClUva19 ('9908           ', 15.0, 'L', 0, 0, 0, 0, 0, 'mùdio', 0)
+//	U_ClUva19 ('9963           ', 14.0, 'E', 0, 0, 0, 0, 0, 'mùdio', 0)  // cab.sauv.p/esp
 //	U_ClUva19 ('9908           ', 24.0, 'E', 0, 0, 0, 0, 0, 'ausente', 0)
 
 //	u_log (U_PrcUva19 ('03', '9902', 15, 'B', 'E', .T.))  // chardonnay
@@ -2380,7 +3003,7 @@ return
 	_sSeq := 'x09A1H'  // PRIMEIRA SEQ DO DIA 23/11
 	_oSQL := ClsSQL ():New ()
 	do while ! sd2_rk -> (eof ())
-		// Encontra sequencial livre na base quente. Vai demorar... mas se demorar demais, ? por que nao achou...
+		// Encontra sequencial livre na base quente. Vai demorar... mas se demorar demais, ù por que nao achou...
 		do while .T.
 			_oSQL:_sQuery := " SELECT (SELECT COUNT (*) FROM LKSRV_PROTHEUS.protheus.dbo.SD1010 WHERE D_E_L_E_T_ = '' AND D1_NUMSEQ = '" + _sSeq + "')"
 			_oSQL:_sQuery +=      " + (SELECT COUNT (*) FROM LKSRV_PROTHEUS.protheus.dbo.SD2010 WHERE D_E_L_E_T_ = '' AND D2_NUMSEQ = '" + _sSeq + "')"
@@ -2631,38 +3254,6 @@ return
 	U_ZAFM (_aLaudos, '2203           ', 'op', 'novolote', '03')
 return
 */
-
-/*
-	// Processa conta corrente associados
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT R_E_C_N_O_"
-	_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
-	_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
-	_oSQL:_sQuery +=    " AND SZI.ZI_TM = '13'"
-	_oSQL:_sQuery +=    " AND SZI.ZI_DATA >= '20180301'"
-//	_oSQL:_sQuery +=    " AND EXISTS (SELECT *"
-//	_oSQL:_sQuery +=                  " FROM " + RetSQLName ("SA2") + " SA2 "
-//	_oSQL:_sQuery +=                 " WHERE SA2.D_E_L_E_T_ = ''"
-//	_oSQL:_sQuery +=                   " AND SA2.A2_FILIAL  = '" + xfilial ("SA2") + "'"
-//	_oSQL:_sQuery +=                   " AND SA2.A2_COD     = SZI.ZI_ASSOC"
-//	_oSQL:_sQuery +=                   " AND SA2.A2_LOJA    = SZI.ZI_LOJASSO"
-//	_oSQL:_sQuery +=                   " AND SA2.A2_VACBASE = SA2.A2_COD"
-//	_oSQL:_sQuery +=                   " AND SA2.A2_VALBASE = SA2.A2_LOJA)"  // Somente codigo/loja base
-//	_oSQL:_sQuery +=    " AND NOT EXISTS (SELECT * FROM ZZM010 WHERE D_E_L_E_T_ = '' AND ZZM_ASSOC = ZI_ASSOC AND ZZM_LOJA = ZI_LOJASSO AND ZZM_DATA = '20171231')"
-	_oSQL:_sQuery +=    " AND EXISTS (SELECT * FROM SE5010 SE5 WHERE SE5.D_E_L_E_T_ = '' AND E5_FORNECE = ZI_ASSOC AND E5_DATA > '20180706')"
-	_oSQL:_sQuery +=  " ORDER BY ZI_ASSOC, ZI_LOJASSO"
-	_aDados = _oSQL:Qry2Array ()
-	for _i = 1 to len (_aDados)
-		szi -> (dbgoto (_aDados [_i, 1]))
-		u_log (szi -> zi_assoc, szi -> zi_histor)
-		_oCtaCorr := ClsCtaCorr ():New (szi -> (recno ()))
-		_oCtaCorr:AtuSaldo ()
-		u_log (_oCtaCorr:UltMsg)
-	next
-return
-*/
-
 //	U_LibOpPr ('09632001001   ', '09632001001   ')
 //	U_LibOpPr ('09631301001   ', '09631301001   ')
 	//U_LibOpPr ('09631601001   ', '09631601001   ')
@@ -3431,13 +4022,13 @@ return
 			endif
 			
 			_sRefrig = ''  // 1=Nao tem;2=Nao isolado;3=Isolado;4=Cintas ext.isolado;5=Cintas ext.nao isolado;6=Placas internas
-			if 'CINTAS EXTERNAS - N?O ISOLADO' $ upper (tanques -> refrig)
+			if 'CINTAS EXTERNAS - NùO ISOLADO' $ upper (tanques -> refrig)
 				_sRefrig = '5'
 			elseif 'CINTAS EXTERNAS - ISOLADO' $ upper (tanques -> refrig)
 				_sRefrig = '4'
 			elseif 'PLACAS INTERNAS' $ upper (tanques -> refrig)
 				_sRefrig = '6'
-			elseif 'N?O TEM' $ upper (tanques -> refrig)
+			elseif 'NùO TEM' $ upper (tanques -> refrig)
 				_sRefrig = '1'
 			elseif 'NAO ISOLADO' $ upper (tanques -> refrig)
 				_sRefrig = '2'
@@ -3446,7 +4037,7 @@ return
 			endif
 
 			_sRevInt = ''
-			if 'N?O TEM' $ upper (tanques -> revint) .or. 'SEM REVESTIMENTO' $ upper (tanques -> revint) .or. empty (tanques -> revint)
+			if 'NùO TEM' $ upper (tanques -> revint) .or. 'SEM REVESTIMENTO' $ upper (tanques -> revint) .or. empty (tanques -> revint)
 				_sRevInt = '1'
 			elseif 'EPOXI' $ upper (tanques -> revint)
 				_sRevInt = '2'
@@ -3455,7 +4046,7 @@ return
 			endif
 
 			_sApoio = ''
-			if 'P?S' $ upper (tanques -> apoio)
+			if 'PùS' $ upper (tanques -> apoio)
 				_sApoio = '1'
 			elseif 'MURETAS' $ upper (tanques -> apoio)
 				_sApoio = '2'
@@ -3536,59 +4127,6 @@ return
 	enddo
 return
 */
-/*
-	// Migra tabelas do SX5 para o ZX5
-	//_aDePara = {'88', '39'} // Linhas comerciais 
-	//_aDePara = {'Z7', '40'} // Marcas comerciais 
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT X5_CHAVE, X5_DESCRI, X5_DESCSPA"
-	_oSQL:_sQuery +=   " FROM " + RetSqlName ("SX5")
-	_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ != '*'"
-	_oSQL:_sQuery +=    " AND X5_FILIAL  = '" + xFilial ("SX5") + "'"
-	_oSQL:_sQuery +=    " AND X5_TABELA  = '" + _aDePara [1] + "'"
-	_oSQL:_sQuery +=  " ORDER BY X5_CHAVE"
-	u_log (_oSQL:_sQuery)
-	_aDados := _oSQL:Qry2Array ()
-	u_log (_aDados)
-	if U_RetSQL ("SELECT COUNT (*) FROM " + RetSqlName ("ZX5") + " WHERE D_E_L_E_T_ != '*' AND ZX5_FILIAL = '" + xFilial ("ZX5") + "' AND ZX5_TABELA  = '" + _aDePara [2] + "'") > 0
-		u_help ("Jah existe a tabela '" + _aDePara [2] + "' no ZX5")
-	else
-		begin transaction
-		for _i = 1 to len (_aDados)
-			reclock ("ZX5", .t.)
-			zx5 -> zx5_filial = xfilial ("ZX5")
-			zx5 -> zx5_tabela = _aDePara [2]
-			zx5 -> zx5_chave  = SOMA1 (U_RetSQL ("SELECT MAX (ZX5_CHAVE) FROM " + RetSqlName ("ZX5") + " WHERE D_E_L_E_T_ != '*' AND ZX5_FILIAL = '" + xFilial ("ZX5") + "' AND ZX5_TABELA  = '" + _aDePara [2] + "'"))
-			zx5 -> &('zx5_' + _aDePara [2] + 'cod')  = _aDados [_i, 1]
-			zx5 -> &('zx5_' + _aDePara [2] + 'desc') = _aDados [_i, 2]
-			u_log ('incluindo ', _aDados [_i, 1])
-			msunlock ()
-		next
-		end transaction
-	endif
-return
-*/
-
-/*
-	// Gera rel. extrato CC associados modelo II.
-	cPerg := "SZI_REL2"
-	U_GravaSX1 (cPerg, "01", '000161')
-	U_GravaSX1 (cPerg, "02", '')
-	U_GravaSX1 (cPerg, "03", '000161')
-	U_GravaSX1 (cPerg, "04", 'zz')
-	U_GravaSX1 (cPerg, "05", stod ("20160320"))
-	U_GravaSX1 (cPerg, "06", stod ("20160731"))
-	U_GravaSX1 (cPerg, "07", 1)
-	U_GravaSX1 (cPerg, "08", "")
-	U_GravaSX1 (cPerg, "09", 1)
-	U_GravaSX1 (cPerg, "10", 1)
-	U_GravaSX1 (cPerg, "11", '')
-	U_GravaSX1 (cPerg, "12", 'zz')
-	U_szi_rel2 (.t., 1)
-return
-*/
-
 /*
 	// Testes com XML.
 	local _sXML      := ""
@@ -3882,7 +4420,7 @@ Return
 	U_GravaSX1 (cPerg, '20', 'O')    // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
 	U_VA_GNF1 (.T.)
 
-	// Demais uvas organicas parte 2 (exceto assoc. da Jacinto, pois j? entraram no lote anterior)
+	// Demais uvas organicas parte 2 (exceto assoc. da Jacinto, pois jù entraram no lote anterior)
 	cPerg = "VAGNF1"
 	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
 	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
@@ -3930,7 +4468,7 @@ Return
 	U_GravaSX1 (cPerg, '20', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
 	U_VA_GNF1 (.T.)
 
-	// Demais uvas tintoreas parte 2 (exceto assoc. da Jacinto, pois j? entraram no lote anterior)
+	// Demais uvas tintoreas parte 2 (exceto assoc. da Jacinto, pois jù entraram no lote anterior)
 	cPerg = "VAGNF1"
 	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
 	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
@@ -3979,7 +4517,7 @@ Return
 	U_GravaSX1 (cPerg, '20', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
 	U_VA_GNF1 (.T.)
 
-	// O que sobrou vai ateh chegar a 50% do valor total da safra: parte 2 - exceto o pessoal da Jacinto, pois j? entraram no lote anterior
+	// O que sobrou vai ateh chegar a 50% do valor total da safra: parte 2 - exceto o pessoal da Jacinto, pois jù entraram no lote anterior
 	// Por enquanto vou apenas separar numa parcela para conferir quantidades.
 	cPerg = "VAGNF1"
 	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
@@ -4205,7 +4743,7 @@ return
 	U_GravaSX1 (cPerg, '20', 'OCEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
 	U_VA_GNF1 (.T.)
 
-	// Demais uvas tintoreas: paga 50% + 50%: parte 2 (exceto assoc. da Jacinto, pois j? entraram no lote 3)
+	// Demais uvas tintoreas: paga 50% + 50%: parte 2 (exceto assoc. da Jacinto, pois jù entraram no lote 3)
 	cPerg = "VAGNF1"
 	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
 	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
@@ -4254,7 +4792,7 @@ return
 	U_GravaSX1 (cPerg, '20', 'OCEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
 	U_VA_GNF1 (.T.)
 
-	// O que sobrou vai ateh chegar a 50% do valor total da safra: parte 2 - exceto o pessoal da Jacinto, pois j? entraram no lote 5
+	// O que sobrou vai ateh chegar a 50% do valor total da safra: parte 2 - exceto o pessoal da Jacinto, pois jù entraram no lote 5
 	// Por enquanto vou apenas separar numa parcela para conferir quantidades.
 	cPerg = "VAGNF1"
 	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
@@ -4282,8 +4820,8 @@ return
 */	
 /*
 Beleza Robert, 
-tentei tamb?m com a SoftLock, mas me parece que ele bloqueava o registro tamb?m.
-Consegui fazer com a fun??o RLOCK( RECNO ).. essa ele retorna falso se n?o conseguir bloquear.
+tentei tambùm com a SoftLock, mas me parece que ele bloqueava o registro tambùm.
+Consegui fazer com a funùùo RLOCK( RECNO ).. essa ele retorna falso se nùo conseguir bloquear.
 Valeu!
 Att.
 Germano Possamai Neto

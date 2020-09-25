@@ -82,6 +82,7 @@
 // 30/03/2020 - Claudia - Ajuste nos campos de ITEM, conforme GLPI: 7737
 // 02/04/2020 - Claudia - Voltada alteração GLPI: 7737
 // 13/05/2020 - Robert  - Habilitada novamente validacao de safra, pois passaram notas sem sist.conducao, classificacao, etc. nesta safra.
+// 19/06/2020 - Robert  - Na validacao de safra, quando espaldeira, exigia D1_PRM99 e nao atendia caso especifico de uva bordo em espaldeira.
 //
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -92,7 +93,7 @@ User Function MT100LOK()
 	local _lTransFil   := .F.
     Private _xLOJAPAT  := ""
 
-	u_logIni ()
+//	u_logIni ()
 	
 	// Como este ponto de entrada eh executado tanto durante o 'retornar' como durante o preenchimento
 	// manual da nota, preciso verificar em qual dos momentos estah sendo executado.
@@ -194,7 +195,7 @@ User Function MT100LOK()
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
+//	u_logFim ()
 Return(_lRet)
 
 
@@ -207,7 +208,7 @@ static function _ValNFOri ()
 	local _aNfOri    := {}
 	local _nSaldoRet := 0
 
-	u_logIni ()
+//	u_logIni ()
 	
 	if _lRet .and. cTipo $ "ND" .and. ! empty (GDFieldGet ("D1_NFORI"))
 		_sQuery := ""
@@ -325,14 +326,14 @@ static function _ValNFOri ()
 				_aDados := U_Qry2Array(_sQuery)
 				if len(_aDados) = 0
 					u_help ("Nota/Serie Original não é desse cliente.")
-					_lRet = .F.				
+					_lRet = .F.
 				endif
-			endif									
+			endif
 		endif
 	 
 	endif
 	
-	u_logFim ()
+//	u_logFim ()
 return _lRet
 
 
@@ -344,6 +345,12 @@ Static Function _ValSafra ()
 
 	// Verifica se eh uma nota de entrada de uva.
 	if _lRetSafr .and. ! GDDeleted () .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_GRUPO") == "0400"
+
+	//	u_log ('debug', GDFieldGet ("D1_COD"))
+	//	u_log ('debug', GDFieldGet ("D1_VACONDU"))
+	//	u_log ('debug', fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_VARUVA"))
+	//	u_log ('debug', GDFieldGet ("D1_PRM99"))
+
 		if empty (GDFieldGet ("D1_GRAU"))
 			u_help ("Notas de uva: Grau deve ser informado no campo '" + alltrim (RetTitle ("D1_GRAU")) + "'.",, .t.)
 			_lRetSafr = .F.
@@ -362,25 +369,27 @@ Static Function _ValSafra ()
 					_lRetSafr = .F.
 				endif
 			elseif GDFieldGet ("D1_VACONDU") == 'E'
-				if empty (GDFieldGet ("D1_PRM99"))
-					u_help ("Notas de uva: Quando sistema 'espaldeira', a classificacao deve ser informada no campo '" + alltrim (RetTitle ("D1_PRM99")) + "'.",, .t.)
-					_lRetSafr = .F.
-				endif
-				if empty (GDFieldGet ("D1_PRM02")) .and. ! IsInCallStack ("U_VA_GNF2")  // Para notas de compra vai apenas a classificacao final.
-					u_help ("Notas de uva: Quando sistema 'espaldeira', a classificacao por acucar deve ser informada no campo '" + alltrim (RetTitle ("D1_PRM02")) + "'.",, .t.)
-					_lRetSafr = .F.
-				endif
-				if empty (GDFieldGet ("D1_PRM03")) .and. ! IsInCallStack ("U_VA_GNF2")  // Para notas de compra vai apenas a classificacao final.
-					u_help ("Notas de uva: Quando sistema 'espaldeira', a classificacao por sanidade deve ser informada no campo '" + alltrim (RetTitle ("D1_PRM03")) + "'.",, .t.)
-					_lRetSafr = .F.
-				endif
-				if empty (GDFieldGet ("D1_PRM04")) .and. ! IsInCallStack ("U_VA_GNF2")  // Para notas de compra vai apenas a classificacao final.
-					u_help ("Notas de uva: Quando sistema 'espaldeira', a classificacao por maturacao deve ser informada no campo '" + alltrim (RetTitle ("D1_PRM04")) + "'.",, .t.)
-					_lRetSafr = .F.
-				endif
-				if empty (GDFieldGet ("D1_PRM05")) .and. ! IsInCallStack ("U_VA_GNF2")  // Para notas de compra vai apenas a classificacao final.
-					u_help ("Notas de uva: Quando sistema 'espaldeira', a classificacao por materiais estranhos deve ser informada no campo '" + alltrim (RetTitle ("D1_PRM05")) + "'.",, .t.)
-					_lRetSafr = .F.
+				if fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_VARUVA") == 'F'
+					if empty (GDFieldGet ("D1_PRM99"))
+						u_help ("Notas de uva: Quando sistema 'espaldeira', a classificacao deve ser informada no campo '" + alltrim (RetTitle ("D1_PRM99")) + "'.",, .t.)
+						_lRetSafr = .F.
+					endif
+					if empty (GDFieldGet ("D1_PRM02")) .and. ! IsInCallStack ("U_VA_GNF2")  // Para notas de compra vai apenas a classificacao final.
+						u_help ("Notas de uva: Quando sistema 'espaldeira', a classificacao por acucar deve ser informada no campo '" + alltrim (RetTitle ("D1_PRM02")) + "'.",, .t.)
+						_lRetSafr = .F.
+					endif
+					if empty (GDFieldGet ("D1_PRM03")) .and. ! IsInCallStack ("U_VA_GNF2")  // Para notas de compra vai apenas a classificacao final.
+						u_help ("Notas de uva: Quando sistema 'espaldeira', a classificacao por sanidade deve ser informada no campo '" + alltrim (RetTitle ("D1_PRM03")) + "'.",, .t.)
+						_lRetSafr = .F.
+					endif
+					if empty (GDFieldGet ("D1_PRM04")) .and. ! IsInCallStack ("U_VA_GNF2")  // Para notas de compra vai apenas a classificacao final.
+						u_help ("Notas de uva: Quando sistema 'espaldeira', a classificacao por maturacao deve ser informada no campo '" + alltrim (RetTitle ("D1_PRM04")) + "'.",, .t.)
+						_lRetSafr = .F.
+					endif
+					if empty (GDFieldGet ("D1_PRM05")) .and. ! IsInCallStack ("U_VA_GNF2")  // Para notas de compra vai apenas a classificacao final.
+						u_help ("Notas de uva: Quando sistema 'espaldeira', a classificacao por materiais estranhos deve ser informada no campo '" + alltrim (RetTitle ("D1_PRM05")) + "'.",, .t.)
+						_lRetSafr = .F.
+					endif
 				endif
 			else
 				u_help ("Notas de uva: Programa sem tratamento para sistema de conducao '" + GDFieldGet ("D1_VACONDU") + "'.",, .t.)
@@ -506,8 +515,8 @@ return _lRet
 // Verificacoes para quando houver controle de lote.
 static function _VerLotes (_lTransFil, _lVA_Retor)
 	local _lRet    := .T.
-	local _oSQL    := NIL
-	local _aRetQry := {}
+//	local _oSQL    := NIL
+//	local _aRetQry := {}
 
 //	// Nao deve validar lote na pre-nota.
 //	if ! IsInCallStack ("MATA140")

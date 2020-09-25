@@ -284,7 +284,7 @@ METHOD AtuSaldo () Class ClsCtaCorr
 		endif
 		
 		if szi -> zi_saldo != _nSaldo
-			u_log ('Alterando saldo do SZI de', szi -> zi_saldo, 'para', _nSaldo) 
+			u_log2 ('INFO', '[' + GetClassName (::Self) + '.' + procname () + '] Alterando saldo SZI doc ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela + ' de ' + CVALTOCHAR (szi -> zi_saldo) + ' para ' + cvaltochar (_nSaldo))
 			reclock ("SZI", .F.)
 			szi -> zi_saldo = _nSaldo
 			msunlock ()
@@ -305,17 +305,17 @@ return _lContinua
 METHOD AtuSldAsso () Class ClsCtaCorr
 	local _lContinua := .T.
 	local _oAssoc    := ""
-//	u_logIni (GetClassName (::Self) + '.' + procname ())
+
 	if _lContinua
 		_oAssoc := ClsAssoc():New (::Assoc, ::Loja)
-	    if valtype (_oAssoc) == "O"
-           _oAssoc:AtuSaldo (::DtMovto)                                              
-	    else                           
+		if valtype (_oAssoc) == "O"
+//			_oAssoc:AtuSaldo (::DtMovto)
+			processa ({ || _oAssoc:AtuSaldo (::DtMovto)})
+		else
 			::UltMsg += " Nao foi possivel instanciar associado "
 			_lContinua = .F.
 		endif
 	endif
-//	u_logFim (GetClassName (::Self) + '.' + procname ())
 return _lContinua
 
 
@@ -475,13 +475,15 @@ METHOD Exclui () Class ClsCtaCorr
 	//u_logIni (GetClassName (::Self) + '.' + procname ())
 	::UltMsg = ""
 
+	u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + '] Excluindo ZI_DOC = ' + ::Doc + '/' + ::Serie + '-' + ::Parcela + ' $ ' + transform (::Valor, "@E 999,999,999.99"))
+	
 	if _lContinua
 		szi -> (dbgoto (::RegSZI))
 		if szi -> (recno ()) != ::RegSZI
 			::UltMsg += "Nao foi possivel localizar o registro correspondente no arquivo SZI. Exclusao nao sera' efetuada."
 			u_help (::UltMsg,, .t.)
 			_lContinua = .F.
-		endif                   
+		endif
 	endif
 
 	if _lContinua
@@ -492,7 +494,7 @@ METHOD Exclui () Class ClsCtaCorr
 			//u_log ('excluindo szi')
 			reclock ("SZI", .F.)
 			szi -> (dbdelete ())
-			msunlock ()          
+			msunlock ()
 			
 		endif
 		//u_log ('cod memo:', szi -> zi_CodMemo)
@@ -835,7 +837,7 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _lCtOnLine) class ClsCtaCorr
 		aadd (_aAutoSE2, {"E2_VACHVEX", _sChvEx,           Nil})
 		aadd (_aAutoSE2, {"E2_ORIGEM" , "FINA050" ,        Nil})
 		_aAutoSE2 := aclone (U_OrdAuto (_aAutoSE2))
-		u_log (_aAutoSE2)
+//		u_log (_aAutoSE2)
 
 		// Ajusta parametros da rotina.
 		cPerg = 'FIN050    '
@@ -1007,7 +1009,7 @@ METHOD Grava (_lSZIGrav, _lMemoGrav) Class ClsCtaCorr
 		if ! _lSZIGrav
 			_cFilial := szi -> zi_filial
 			_dDtAtu := szi -> zi_data
-			u_log ('[' + GetClassName (::Self) + '.' + procname () + ']  Gravando ZI_DOC=', ::Doc)
+			u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + '] Gravando ZI_DOC = ' + ::Doc + '/' + ::Serie + '-' + ::Parcela + ' $ ' + transform (::Valor, "@E 999,999,999.99"))
 			reclock ("SZI", .T.)
 			szi -> zi_filial  = xfilial ("SZI")
 			szi -> zi_assoc   = ::Assoc
@@ -1297,9 +1299,14 @@ METHOD PodeExcl () Class ClsCtaCorr
 		_lContinua = .F.
 	endif
 
+	// Compra de safra
 	if _lContinua .and. ::TM == '13' .and. empty (::FilOrig)
-		::UltMsg += "Movimento de compra de safra: so' pode ser excluido excluindo-se a NF de compra que o gerou."
-		_lContinua = .F.
+		// Se for uma fatura gerada pelo financeiro, a mesma pode ser cancelada.
+		se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
+		if ! se2 -> (dbseek (::Filial + ::Assoc + ::Loja + ::Serie + ::Doc + ::Parcela, .F.)) .or. se2 -> e2_tipo != 'FAT'
+			::UltMsg += "Movimento de compra de safra: so' pode ser excluido excluindo-se a NF de compra que o gerou."
+			_lContinua = .F.
+		endif
 	endif
 
 

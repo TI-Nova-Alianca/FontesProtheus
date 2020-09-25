@@ -24,6 +24,11 @@
 // 20/04/2018 - Robert - Melhora performance: substituido [SZI.ZI_SEQ = SUBSTRING (SE5.E5_VACHVEX, 12, 6)] por [SE5.E5_VACHVEX  = 'SZI' + ZI_ASSOC + ZI_LOJASSO + ZI_SEQ] na query.
 //
 
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Relatorio
+// #PalavasChave      #extrato #conta_corrente #associado
+// #TabelasPrincipais #SZI #SA2 #SE2 #SE5 #FK7 #FKA #FK2 #ZZM #ZX5
+
 //
 // MINHA INTENCAO EH PASSAR A GERAR ESTE RELATORIO A PARTIR DA CLASSE CLSEXTRCC, DA MESMA FORMA QUE O SZI_REL2.
 // ESTOU APENAS AGUARDANDO MAIS ALGUM TEMPO ATEH QUE ESSA CLASSE ESTEJA CONSOLIDADA. ROBERT, 20/09/2019
@@ -32,8 +37,6 @@
 // --------------------------------------------------------------------------
 user function SZI_Rel (_lAutomat, _nOrdem)
 	private _lAuto   := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
-//	private _sArqLog := U_NomeLog ()
-//	u_logId ()
 
 	// Verifica se o usuario tem acesso.
 	if ! U_ZZUVL ('059')
@@ -111,10 +114,7 @@ user function SZI_Rel (_lAutomat, _nOrdem)
 
 	// Se era execucao via rotina automatica, converte o relatorio para TXT.
 	if _lAuto
-		_sErroConv = U_ML_R2T (__reldir + wnrel + ".##r", __reldir + wnrel + ".txt")
-		if ! empty (_sErroConv)
-			u_help (_sErroConv)
-		endif
+		U_ML_R2T (__reldir + wnrel + ".##r", __reldir + wnrel + ".txt")
 	else
 		If aReturn [5] == 1
 			ourspool(wnrel)
@@ -134,7 +134,7 @@ static function _Imprime ()
 	local _aTotGer   := {}
 	local _aSubTot   := {}
 	//local _aObs      := {}
-	local _nObs      := 0
+	//local _nObs      := 0
 	local _sHist     := ""
 	local _aHist     := {}
 	local _nHist     := 0
@@ -143,7 +143,7 @@ static function _Imprime ()
 	li = _nMaxLin + 1
 
 	IF MV_PAR11 == 1	
-		U_LOG ('Opcao RESUMIDO desabilitada por trazer total inconsistente.')
+		U_help ('Opcao RESUMIDO desabilitada por trazer total inconsistente.',, .t.)
 		return
 	endif
 
@@ -250,7 +250,8 @@ static function _Imprime ()
 	do case
 	case aReturn [8] == 1
 		// Ordenacao por varios campos por que, do contrario, a cada vez o relariorio traz uma nova ordenacao e fica dificil fazer comparativos...
-		_sQuery += " ORDER BY ASSOC, LOJASSO, DATA, TIPO_MOV, ORIGEM DESC, E5_SEQ, FILIAL, HIST, PREFIXO, NUMERO, E5_PARCELA"
+//		_sQuery += " ORDER BY ASSOC, LOJASSO, DATA, TIPO_MOV, ORIGEM DESC, E5_SEQ, FILIAL, HIST, PREFIXO, NUMERO, E5_PARCELA"
+		_sQuery += " ORDER BY ASSOC, LOJASSO, DATA, TIPO_MOV, ORIGEM DESC, E5_SEQ, FILIAL, PREFIXO, NUMERO, E5_PARCELA, HIST"
 	case aReturn [8] == 2
 		_sQuery += " ORDER BY TIPO_MOV, ASSOC, LOJASSO, ORIGEM DESC, E5_SEQ"
 	case aReturn [8] == 3
@@ -262,7 +263,7 @@ static function _Imprime ()
 	
 //	u_showmemo(_squery)
 	
-	u_log (_squery)
+	u_log2 ('debug', _squery)
 	_sAliasQ = GetNextAlias ()
 	DbUseArea(.t.,'TOPCONN',TcGenQry(,,_sQuery), _sAliasQ,.F.,.F.)
 	TCSetField (alias (), "DATA", "D")
@@ -301,32 +302,24 @@ static function _Imprime ()
 		_aSubTot = {0, 0, 0}
 		do while ! (_sAliasQ) -> (eof ()) .and. (_sAliasQ) -> &(_sQuebra) == _xQuebra
 			incproc ()
-			//u_log ('')
-			//u_log ('')
-			//u_logtrb (_sAliasQ)
 
 			// Verifica se o movimento deve ser tratado como debito ou como credito.
 			_sDC = (_sAliasQ) -> deb_cred
 			if (_sAliasQ) -> origem == 'SE5'
 				_lInverte = .F.
 				if _sDC == "D" .and. (_sAliasQ) -> e5_recpag == "R"
-					//u_log ('no primeiro IF')
 					_lInverte = ! _lInverte
 				elseif _sDC == "C" .and. (_sAliasQ) -> e5_recpag == "P"
-					//u_log ('no segundo IF')
 					_lInverte = ! _lInverte
 				endif
 				if (_sAliasQ) -> e5_motbx == "CMP" .and. (_sAliasQ) -> e5_tipodoc != 'CP'
-					//u_log ('no terceiro IF')
 					_lInverte = ! _lInverte
 				endif
 				if (_sAliasQ) -> e5_motbx == "NOR" .and. (_sAliasQ) -> tipo_mov == '15' .and. (_sAliasQ) -> e5_origem = 'SZI_TSF' 
-					//u_log ('no quarto IF')
 					_lInverte = ! _lInverte
 				endif
 
 				if _lInverte
-					//u_log ('invertendo')
 					if _sDC == "D"
 						_sDC = "C"
 					elseif _sDC == "C"
@@ -395,7 +388,6 @@ static function _Imprime ()
 			endif
 			@ li, 0 psay _sLinImp
 			li ++
-			//u_log (_sLinImp)
 
 			// Imprime as linhas restantes do historico.
 			for _nHist = 2 to len (_aHist)
@@ -404,7 +396,7 @@ static function _Imprime ()
 				endif
 				@ li, 71 psay _aHist [_nHist]
 				li ++
-				u_log (_aHist [_nHist])
+		//		u_log (_aHist [_nHist])
 			next
 
 			(_sAliasQ) -> (dbskip ())
@@ -493,7 +485,6 @@ Static Function _HistComp (_sFilial, _sDocumen, _sCliFor, _sLoja, _sFornAdt, _sL
 	_oSQL:_sQuery +=   " AND SZI.ZI_SEQ      = SUBSTRING (SE5_ORIG.E5_VACHVEX, 12, 6)"
 //	u_log (_oSQL:_sQuery)
 	_aRetQry = aclone (_oSQL:Qry2Array (.F., .F.))
-//	u_log (_aRetQry)
 	
 	// Se conseguir os dados pela query, eu prefiro.
 	if len (_aRetQry) > 0
@@ -557,10 +548,4 @@ Static Function _ValidPerg ()
 	aadd (_aDefaults, {"15", 2})
 
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
-
-// nada parece funcionar no P12...
-	// Gera helps das perguntas
-//	PutSX1Help ("P" + alltrim (cPerg) + '10', {"Informe os codigos das cooperativas de origem serarados por barras, ou deixe em branco para listar todas"}, {}, {}, .T.)
-//	PutSX1Help ("P" + cPerg + '11',           {"Teste de help de parametro"}, {}, {}, .T.)
-//	PutSX1Help ("S" + cPerg + '12',           {"Teste de help de parametro"}, {}, {}, .T.)
 return

@@ -3,6 +3,12 @@
 // Data.......: 25/02/2011
 // Descricao..: Tela de manutencao de conta corrente de associados.
 //
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Atualizacao
+// #PalavasChave      #associados #conta_corrente_associados
+// #TabelasPrincipais #SZI
+// #Modulos           #COOP
+//
 // Historico de alteracoes:
 // 28/03/2011 - Robert - Grava sequencial em funcao separada, com bloqueio via semaforo.
 // 30/03/2011 - Robert - Tratamento para ZI_TM passa a ser lido do SX5_10Gera.
@@ -38,8 +44,15 @@
 //                     - Comentariadas declaracoes de variaveis nao usadas; removidas algumas linhas jah comentariadas.
 // 27/03/2020 - Robert - Permite compensar titulos transferidos (em bordero) para atender adto.safra enviados via CNAB.
 // 01/04/2020 - Robert - Ajustados parametros de chamada do IRASSOC.PRW
+// 22/06/2020 - Robert - Criado parametro de filtro adicional para selecao de titulos a compensar.
+// 25/06/2020 - Robert - Para localizar o titulo no SE2 (baixar/canc.baixa), usa pref+num+parcela e nao nais o E2_VACHVEX.
+// 17/07/2020 - Robert - Inseridas tags para catalogacao de fontes
+//                     - Criada funcionalidade de alterar a data de vencimento (no finalceiro) do titulo correspondente (GLPI 8165).
+// 21/07/2020 - Robert - Filtro do browse inicial migrado para TOP (permite ao usuario criar filtros adicionais dentro da tela).
+// 23/07/2020 - Robert - Criada funcionalidade de cancelamento de fatura a pagar (GLPI 8221).
+// 29/07/2020 - Robert - Criado atalho para relatorio de fechamento de safra.
+// 13/08/2020 - Cláudia - Ajustado o valor das consultas de faturas. GLPI: 8255
 //
-
 // ------------------------------------------------------------------------------------
 #include "colors.ch"
 #Include "Protheus.ch"
@@ -52,9 +65,7 @@ User Function szi()
 	local _aRotSald    := {}
 	local _aRotAdic    := {}
 	local _oCtaCorr    := ClsCtaCorr():New ()
-	local _aIndBrw     := {}  // Para filtragem no browse
-	local _bFilBrw     := {|| Nil}  // Para filtragem no browse
-	local _cCondicao   := ""  // Para filtragem no browse
+	local _sFilTop     := ''
 	private cString    := "SZI"
 	private cCadastro  := "Conta corrente associados"
 	private cPerg      := 'U_SZI'
@@ -71,8 +82,7 @@ User Function szi()
 	private _sTMCorrD  := _oCtaCorr:TMCorrMonD
 	private _sTMCorrC  := _oCtaCorr:TMCorrMonC
 	private _lCtOnLine := .F.
-//	public  _sArqLog   := U_NomeLog ()
-	u_logId ()
+	private _sFilZI340 := ''  // Variavel private para ser vista pelo P.E. F340FCPTOP
 
 	// Verifica se o usuario tem acesso.
 	if ! U_ZZUVL ('059')
@@ -83,7 +93,8 @@ User Function szi()
 	aadd (_aRotSald, {"Transf.saldo p/outra filial", "U_SZIT()",0,2})
 	aadd (_aRotSald, {"Recalcular saldo deste lcto", "U_SZIRS(1)",0,2})
 	if U_ZZUVL ('051', __cUserID, .F.)
-		aadd (_aRotSald, {"Recalc.saldo geral associado", "U_SZIRS(2)",0,2})
+		aadd (_aRotSald, {"Recalc.saldos acum.(anuais) associado", "U_SZIRS(2)",0,2})
+		aadd (_aRotSald, {"Recalc.saldo diversos lctos.do associado", "U_SZIRS(3)",0,2})
 	endif
 
 	// Submenu de rotinas adicionais
@@ -99,6 +110,7 @@ User Function szi()
 	aadd (_aRotAdic, {"Saldo na data base",       "U_SZIR(10)",0,2})
 	aadd (_aRotAdic, {"Rel.saldos c.corr.",       "U_SZIR(11)",0,2})
 	aadd (_aRotAdic, {"Consulta Fatura",          "U_SZIR(12)",0,2})
+	aadd (_aRotAdic, {"Rel.fechamento safra",     "U_SZIR(13)",0,2})
 	if alltrim (upper (cUserName)) $ "ROBERT.KOCH"
 		aadd (_aRotAdic, {"Robert-teste compensacoes", "U_SZIR(98)",0,2})
 		aadd (_aRotAdic, {"Robert-gera SE2",           "U_SZIR(97)",0,2})
@@ -112,6 +124,8 @@ User Function szi()
 	aadd (aRotina, {"&Excluir"          , "U_SZIE",   0,4})
 	aadd (aRotina, {"&Baixar"           , "U_SZIB",   0,4})
 	aadd (aRotina, {"&Canc.baixa"       , "U_SZIC",   0,4})
+	aadd (aRotina, {"Al&terar dt.vencto", "U_SZIADV", 0,4})
+	aadd (aRotina, {"Cancelar &fatura"  , "U_SZICF (.F.)",  0,4})
 	aadd (aRotina, {"&Saldos"           , _aRotSald,  0,4})
 	aadd (aRotina, {"&Outras consultas" , _aRotAdic,  0,4})
 	aadd (aRotina, {"&Legenda"          , "U_SZILG (.F.)", 0,5})
@@ -122,28 +136,17 @@ User Function szi()
 	endif
 
 	_lCtOnLine = (mv_par02 == 1)
+	_sFilZI340 = alltrim (mv_par03)  // Variavel private para ser vista pelo P.E. F340FCPTOP
 
-	// Filtra browse.
-	if mv_par01 == 1
-		_cCondicao := '!szi->zi_tm$"' + _oCtaCorr:TMCapital + '"'
-	elseif mv_par01 == 2
-		_cCondicao := 'szi->zi_tm$"' + _oCtaCorr:TMCapital + '"'
-	elseif mv_par01 == 2
-		_cCondicao := '.t.'
+	// Monta filtro conforme se]]parametrizacao do usuario.
+	if mv_par01 == 1  // Movimentos normais
+		_sFilTop = ' ZI_TM NOT IN ' + FormatIn (_oCtaCorr:TMCapital, '/')
+	elseif mv_par01 == 2  // Movimentos de capital social
+		_sFilTop = ' ZI_TM IN ' + FormatIn (_oCtaCorr:TMCapital, '/')
 	endif
-	_bFilBrw := {|| FilBrowse(cString,@_aIndBrw,@_cCondicao) }
-	Eval(_bFilBrw)
-	DbSelectArea(cString)
-	mBrowse(,,,,cString,,,,,2, _aCores)
-	EndFilBrw(cString,_aIndBrw)
-	DbSelectArea(cString)
-	DbSetOrder(1)	// Reaplica filtro no mbrowse.
-	Eval(_bFilBrw)
-	DbClearFilter()
+	mBrowse(,,,,cString,,,,,2, _aCores,,,,,,,,_sFilTop)
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Mostra legenda ou retorna array de cores, cfe. o caso.
 user function SZILG (_lRetCores)
@@ -153,10 +156,6 @@ user function SZILG (_lRetCores)
 	aadd (_aCores, {"zi_saldo==0",        'BR_VERMELHO', 'Baixado'})
 	aadd (_aCores, {"zi_saldo==zi_valor", 'BR_VERDE',    'Aberto'})
 	aadd (_aCores, {"zi_saldo< zi_valor", 'BR_AMARELO',  'Baix.parcial'})
-	//aadd (_aCores, {"zi_saldo==zi_valor.and.zi_tm!='14'", 'BR_VERDE',    'Aberto'})
-	//aadd (_aCores, {"zi_saldo< zi_valor.and.zi_tm!='14'", 'BR_AMARELO',  'Baix.parcial'})
-	//aadd (_aCores, {"zi_saldo==zi_valor.and.zi_tm=='14'", 'BR_LARANJA',  'Corr.mon.cred.aberto'})
-	//aadd (_aCores, {"zi_saldo< zi_valor.and.zi_tm=='14'", 'BR_BRANCO',   'Corr.mon.cred.baix.parcial'})
 	
 	if ! _lRetCores
 		for _i = 1 to len (_aCores)
@@ -170,36 +169,28 @@ user function SZILG (_lRetCores)
 		return _aCores
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Chama execucao de relatorios (devem estar preparados para isto).
 User Function SZIR (_nQual)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aAmbAnt   := U_SalvaAmb ()
 	local cPerg      := ""
-//	local _aBkpSX1   := {}
 	local _sQuery    := ""
 	local _aRetQry   := {}
 	local _aCols     := {}
 	local _aAuto     := {}
-//	local _oAssoc    := NIL
-//	local _sCRLF     := chr (13) + chr (10)
-//	local _aSaldo    := {}
-//	local _sMsg      := ""
 	local _oCtaCorr  := NIL
-//	local _oSQL      := NIL
 	local _oAssocRel := NIL
 
 	do case
 	case _nQual == 1
-		cPerg = "SZI_REL"
+		cPerg = "SZI_REL2"
 		U_GravaSX1 (cPerg, "01", szi -> zi_assoc)
 		U_GravaSX1 (cPerg, "02", szi -> zi_lojasso)
 		U_GravaSX1 (cPerg, "03", szi -> zi_assoc)
 		U_GravaSX1 (cPerg, "04", szi -> zi_lojasso)
-		U_SZI_Rel ()
+		U_SZI_Rel2 ()
 	case _nQual == 2
 		cPerg = "MLXPAS"
 		U_GravaSX1 (cPerg, "03", szi -> zi_assoc)  // Associado inicial
@@ -266,7 +257,6 @@ User Function SZIR (_nQual)
 
 	case _nQual == 6
 		_oAssocRel := ClsAssoc():New(szi -> zi_assoc, szi -> zi_lojasso)
-		u_log (valtype (_oAssocRel))
 		if valtype (_oAssocRel) != "O"
 			u_help ("Nao foi possivel instanciar classe ClsAssoc.",, .t.)
 		else
@@ -292,17 +282,23 @@ User Function SZIR (_nQual)
 
 	case _nQual == 9
 		// Verifica se existe titulo correspondente no financeiro.
-		if ! U_TemNick ("SE2", "E2_VACHVEX")
-			u_help ("Problema nos indices de arquivos. Acione suporte.")
-			U_AvisaTI ("Falta indice para pesquisa de movto da conta corrente de associados na rotina " + procname ())
+//		if ! U_TemNick ("SE2", "E2_VACHVEX")
+//			u_help ("Problema nos indices de arquivos. Acione suporte.")
+//			U_AvisaTI ("Falta indice para pesquisa de movto da conta corrente de associados na rotina " + procname ())
+//		else
+//			se2 -> (dbOrderNickName ("E2_VACHVEX"))  // E2_FILIAL+E2_VACHVEX
+//			if se2 -> (dbseek (xfilial ("SE2") + &(_sChave), .F.))
+
+		se2 -> (dbsetorder (6))  // E2_FILIAL, E2_FORNECE, E2_LOJA, E2_PREFIXO, E2_NUM, E2_PARCELA, E2_TIPO, R_E_C_N_O_, D_E_L_E_T_
+		u_log2 ('debug', 'pesquisando SE2 com >>' + xfilial ("SE2") + szi -> zi_assoc + szi -> zi_lojasso + szi -> zi_serie + szi -> zi_doc + szi -> zi_parcela + '<<')
+		if ! se2 -> (dbseek (xfilial ("SE2") + szi -> zi_assoc + szi -> zi_lojasso + szi -> zi_serie + szi -> zi_doc + szi -> zi_parcela, .F.))
+			u_help ("Nao localizar nenhum titulo no contas a pagar com este prefixo / numero / parcela.",, .t.)
 		else
-			se2 -> (dbOrderNickName ("E2_VACHVEX"))  // E2_FILIAL+E2_VACHVEX
-			if se2 -> (dbseek (xfilial ("SE2") + &(_sChave), .F.))
 				FC050Con ()
-			else
-				u_help ("Nao foi encontrado titulo correspondente no contas a pagar.")
-			endif
+//			else
+//				u_help ("Nao foi encontrado titulo correspondente no contas a pagar.",, .t.)
 		endif
+//		endif
 
 	case _nQual == 10
 		CursorWait ()
@@ -320,45 +316,76 @@ User Function SZIR (_nQual)
 		
 	case _nQual == 12 // CONSULTA FATURAS
 		// VERIFICA SE O REGISTRO POSICIONADO É UMA FATURA
-		_wfatura = fBuscaCpo ('SE2', 6, xfilial('SE2') + szi -> zi_assoc + szi -> zi_lojasso + szi -> zi_serie + szi -> zi_doc + szi -> zi_parcela, "E2_TIPO")
-		if _wfatura = 'FAT'
+		if fBuscaCpo ('SE2', 6, xfilial('SE2') + szi -> zi_assoc + szi -> zi_lojasso + szi -> zi_serie + szi -> zi_doc + szi -> zi_parcela, "E2_TIPO") = 'FAT'
 			// MOSTRA NOTAS CONSTANTES NA FATURA
+
 			_sQuery  = " "
-			_sQuery += " SELECT E2_PREFIXO, E2_NUM, E2_PARCELA, E2_TIPO, E2_EMIS1, E2_VENCREA, E2_VALOR"
-	    	_sQuery += "      , E2_FATURA"
-			_sQuery += "   FROM SE2010"
-	 		_sQuery += "  WHERE E2_FILIAL  = '" + xfilial ("SE2")  + "'"
-	 		_sQuery += "    AND D_E_L_E_T_ = ''"
-	 		_sQuery += "    AND E2_FORNECE = '" + szi -> zi_assoc  + "'"
-	 		_sQuery += "    AND E2_LOJA    = '" + szi -> zi_lojasso  + "'"
-	   		_sQuery += "    AND E2_FATURA  = '" + szi -> zi_doc  + "'"
-	   		
-	   		_aDados := U_Qry2Array(_sQuery)
-	    	if len(_aDados) > 0 
-	    		_aCols = {}
-	    	
-		    	aadd (_aCols, {1, "PREFIXO"       	   ,  30,  "@!"})
-		    	aadd (_aCols, {2, "NUMERO"         	   ,  50,  "@!"})
-		    	aadd (_aCols, {3, "PARCELA"            ,  20,  "@!"})
-		    	aadd (_aCols, {4, "TIPO"               ,  20,  "@!"})
-		    	aadd (_aCols, {5, "EMISSAO"        	   ,  30,  "@D"})
+			_sQuery += " SELECT "
+			_sQuery += " 	E2_PREFIXO"
+			_sQuery += "    ,E2_NUM"
+			_sQuery += "    ,E2_PARCELA"
+			_sQuery += "    ,E2_TIPO"
+			_sQuery += "    ,E2_EMIS1"
+			_sQuery += "    ,E2_VENCREA"
+			//_sQuery += " 	,E2_VALOR "
+			_sQuery += "    ,ISNULL((SELECT"
+			_sQuery += " 			SUM(FK2_VALOR)"
+			_sQuery += " 		FROM " + RetSQLName ("FK7") + " AS FK7 "
+			_sQuery += " 			," + RetSQLName ("FK2") + " AS FK2 "
+			_sQuery += " 		WHERE FK7.D_E_L_E_T_ = ''"
+			_sQuery += " 		AND FK7.FK7_FILIAL = SE2.E2_FILIAL"
+			_sQuery += " 		AND FK7.FK7_ALIAS  = 'SE2'"
+			_sQuery += " 		AND FK7.FK7_CHAVE  = SE2.E2_FILIAL + '|' + SE2.E2_PREFIXO + '|' + SE2.E2_NUM + '|' + SE2.E2_PARCELA + '|' + SE2.E2_TIPO + '|' + SE2.E2_FORNECE + '|' + SE2.E2_LOJA"
+			_sQuery += " 		AND FK2.D_E_L_E_T_ = ''"
+			_sQuery += " 		AND FK2.FK2_FILIAL = FK7.FK7_FILIAL"
+			_sQuery += " 		AND FK2.FK2_IDDOC  = FK7.FK7_IDDOC"
+			_sQuery += " 		AND FK2.FK2_MOTBX  = 'FAT'"
+			_sQuery += " 		AND FK2.FK2_TPDOC != 'ES'" 
+			_sQuery += " 		AND dbo.VA_FESTORNADO_FK2(FK2.FK2_FILIAL, FK2.FK2_IDFK2) = 0)"
+			_sQuery += " 	, 0) AS E2_VALOR"
+			_sQuery += "    ,E2_SALDO"
+			_sQuery += "    ,E2_FATURA"
+			_sQuery += " FROM " + RetSQLName ("SE2") + " AS SE2 "
+			_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
+			_sQuery += " AND SE2.E2_FILIAL   = '" + szi -> zi_filial  + "'" 
+			_sQuery += " AND SE2.E2_FORNECE  = '" + szi -> zi_assoc   + "'"
+			_sQuery += " AND SE2.E2_LOJA     = '" + szi -> zi_lojasso + "'"
+			_sQuery += " AND SE2.E2_FATURA   = '" + szi -> zi_doc     + "'"
+			_aDados := U_Qry2Array(_sQuery)
+			
+			if len(_aDados) > 0 
+				_aCols = {}
+				aadd (_aCols, {1, "PREFIXO"       	   ,  30,  "@!"})
+				aadd (_aCols, {2, "NUMERO"         	   ,  50,  "@!"})
+				aadd (_aCols, {3, "PARCELA"            ,  20,  "@!"})
+				aadd (_aCols, {4, "TIPO"               ,  20,  "@!"})
+				aadd (_aCols, {5, "EMISSAO"        	   ,  30,  "@D"})
 				aadd (_aCols, {6, "VENCIMENTO"         ,  30,  "@D"})
-		    	aadd (_aCols, {7, "VALOR"              ,  50,  "@E 999,999.99"})
-		        
-	    		U_F3Array (_aDados, "Consulta Notas Referentes a Fatura " + szi -> zi_doc , _aCols, oMainWnd:nClientWidth - 50, NIL, "" )
-	    		
+				aadd (_aCols, {7, "VALOR"              ,  50,  "@E 999,999.99"})
+				aadd (_aCols, {8, "SALDO"              ,  50,  "@E 999,999.99"})
+				U_F3Array (_aDados, "Titulos agrupados na fatura " + szi -> zi_doc , _aCols, oMainWnd:nClientWidth - 50, NIL, "" )
 			else
-				msgalert("Não foram encontratdos pra essa consulta")
+				u_help ("Nao foram encontrados titulos relacionados a essa fatura.")
 			endif
 		else
-			msgalert("Documento selecionado não eh uma fatura.")								
+			u_help ("Documento selecionado nao eh uma fatura.")
 		endif
 
+	case _nQual == 13
+		cPerg = "ML_FECHASA"
+		U_GravaSX1 (cPerg, "02", szi -> zi_assoc)
+		U_GravaSX1 (cPerg, "03", szi -> zi_lojasso)
+		U_ML_FechaSafra ()
+
 	case _nQual == 97  // Gera SE2 - Especifico para manutencoes e testes.
-		_oCtaCorr := ClsCtaCorr ():New (szi -> (recno ()))
-		u_logobj (_oCtaCorr)
-		if ! _oCtaCorr:GeraSE2 (_oCtaCorr:OQueGera (), _oCtaCorr:DtMovto, .F.)
-			u_help (_oCtaCorr:UltMsg)
+		if U_MsgNoYes ("Esta rotina vai gerar SE2 para o registro atual do SZI. Usar quando deu algum problema na gravacao do SE2. Deseja continuar?")
+			_oCtaCorr := ClsCtaCorr ():New (szi -> (recno ()))
+			//u_log2 ('debug', _oCtaCorr)
+			if ! _oCtaCorr:GeraSE2 (_oCtaCorr:OQueGera (), _oCtaCorr:DtMovto, .F.)
+				u_help (_oCtaCorr:UltMsg,, .t.)
+			else
+				u_help ('SE2 gerado.' + _oCtaCorr:UltMsg)
+			endif
 		endif
 
 	case _nQual == 98  // Especifico para manutencoes e testes.
@@ -393,9 +420,7 @@ User Function SZIR (_nQual)
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Alteracao.
 User Function SZIA ()
@@ -403,25 +428,272 @@ User Function SZIA ()
 	private inclui   := .F.
 	private aGets    := {}
 	private aTela    := {}
-	u_logIni ()
 
 	// Cria variaveis 'M->' aqui para serem vistas depois da inclusao (gravacao do campo memo)
 	RegToMemory ("SZI", inclui, .T.)
 
 	// Apos a alteracao do registro, faz os tratamentos necessarios.
 	if axaltera ("SZI", szi -> (recno ()), 4) == 1//, NIL, NIL, NIL, "U_SZI1 ()") == 1
-		u_log ('usuario confirmou alt.')
-		u_log (m->zi_obs)
+//		u_log ('usuario confirmou alt.')
+//		u_log (m->zi_obs)
 
 		// Grava campo memo.
 		msmm (,,, m->zi_obs, 1,,, "SZI", "ZI_CODMEMO")
 
 	endif
-	u_logFim ()
 return
+//
+// --------------------------------------------------------------------------
+// Alteracao da data de vencimento do titulo no financeiro.
+User Function SZIADV ()
+	local _aAreaAnt := U_ML_SRArea ()
+	local _dNovoVcto := ctod ('')
 
+	se2 -> (dbsetorder (1))
+	if se2 -> (dbseek (SZI->ZI_FILIAL + SZI->ZI_SERIE + SZI->ZI_DOC + SZI->ZI_PARCELA, .F.))
+		if se2 -> e2_valor != szi -> zi_valor
+			u_help ("Valor encontrado no financeiro (" + cvaltochar (se2 -> e2_valor) + ") nao corresponde ao valor da conta corrente. Verifique se o titulo correto existe no financeiro.",, .t.)
+		else
+			_dNovoVcto = se2 -> e2_vencto
+			do while .T.
+				_dNovoVcto = U_Get ("Informe nova data de vencto", 'D', 8, '@D', '', _dNovoVcto, .F., '.t.')
+				if ! empty (_dNovoVcto)
+					if _dNovoVcto < date ()
+						// No momento estou criando esta funcionalidade para permitir ao usuario 'empurrar' o vencimento dos titulos das notas
+						// de compra de safra, como forma de reservar dinheiro para compensar Unimed da linha Jacinto, que é compensada em setembro. GLPI 8165.
+						u_help ("Data de vencimento nao pode ser retroativa.",, .t.)
+						loop
+					else
+						_oEvento := ClsEvent():new ()
+						_oEvento:CodEven   = "SE2001"
+						_oEvento:Texto     = "Alterando vcto. de " + dtoc (se2 -> e2_vencto) + " para " + dtoc (_dNovoVcto)
+						_oEvento:NFEntrada = se2 -> e2_num
+						_oEvento:SerieEntr = se2 -> e2_prefixo
+						_oEvento:ParcTit   = se2 -> e2_parcela
+						_oEvento:Fornece   = se2 -> e2_fornece
+						_oEvento:LojaFor   = se2 -> e2_loja
+						_oEvento:Grava ()
+						reclock ("SE2", .F.)
+						se2 -> e2_vencto  = _dNovoVcto
+						se2 -> e2_vencrea = DataValida (_dNovoVcto)
+						msunlock ()
+						exit
+					endif
+				else
+					u_help ("Processo cancelado.")
+					exit
+				endif
+			enddo
+		endif
+	else
+		u_help ("Nao encontrei, no financeiro, o titulo correspondente.",, .t.)
+	endif
+	U_ML_SRArea (_aAreaAnt)
+return
+//
+// --------------------------------------------------------------------------
+// Cancela a fatura relacionada a este titulo.
+User Function SZICF (_lBatch)
+	local _lContinua := .T.
+	local _aAreaAnt  := U_ML_SRArea ()
+	local _aTitOriF  := {}
+	local _nTitOriF  := 0
+	local _sMsgCanF  := ''
+	local _aFatCanc  := {}
+	local _nTotVlFat := 0
+	local _oSQL      := NIL
+	local _oCtaCorr  := NIL
+	local _oEvento   := NIL
+	local _aRegFat   := {}
+	local _nRegFat   := 0
+	local _aRegSZI   := {}
+	local _nRegSZI   := 0
+	local _sWhere    := ''
+	private lMsHelpAuto := .F.
+	private lMsErroAuto := .F.
+	private _sErroAuto  := ""  // Deixar private para que a funcao U_Help possa gravar possiveis mensagens durante as rotinas automaticas.
 
+	if _lContinua
+		_oCtaCorr := ClsCtaCorr ():New (szi -> (recno ()))
+		_lContinua = _oCtaCorr:PodeExcl ()
+	endif
 
+	// A tabela SE2 deve estar posicionada em um dos titulos gerados pela fatura para a rotina automatica.
+	if _lContinua
+		se2 -> (dbsetorder (1))  // E2_FILIAL, E2_PREFIXO, E2_NUM, E2_PARCELA, E2_TIPO, E2_FORNECE, E2_LOJA, R_E_C_N_O_, D_E_L_E_T_
+//		u_log2 ('debug', '>>' + szi -> zi_filial + szi -> zi_serie + szi -> zi_doc + szi -> zi_parcela + 'FAT' + szi -> zi_assoc + szi -> zi_lojasso + '<<')
+		if ! se2 -> (dbseek (szi -> zi_filial + szi -> zi_serie + szi -> zi_doc + szi -> zi_parcela + 'FAT' + szi -> zi_assoc + szi -> zi_lojasso, .F.))
+			u_help ("Titulo correspondente nao encontrado no financeiro, ou nao se trata de uma fatura.",, .t.)
+			_lContinua = .F.
+		endif
+		if se2 -> e2_saldo != se2 -> e2_valor
+			u_help ("Titulo ja sofreu baixas.")
+			_lContinua = .F.
+		endif
+	endif
+
+	// Sendo uma fatura, a mesma pode ter gerado mais de um titulo, conforme a condicao de pagamento usada.
+	// Preciso verificar se todos podem ser excluidos.
+	if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT SE2.R_E_C_N_O_, isnull (SZI.R_E_C_N_O_, 0), SE2.E2_SALDO"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE2") + " SE2 "
+		_oSQL:_sQuery +=  " LEFT JOIN " + RetSQLName ("SZI") + " SZI "
+		_oSQL:_sQuery +=  " ON (SZI.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=      " AND ZI_FILIAL  = E2_FILIAL"
+		_oSQL:_sQuery +=      " AND ZI_ASSOC   = E2_FORNECE"
+		_oSQL:_sQuery +=      " AND ZI_LOJASSO = E2_LOJA"
+		_oSQL:_sQuery +=      " AND ZI_DOC     = E2_NUM"
+		_oSQL:_sQuery +=      " AND ZI_SERIE   = E2_PREFIXO"
+		_oSQL:_sQuery +=      " AND ZI_PARCELA = E2_PARCELA)"
+		_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND E2_FILIAL  = '" + se2 -> e2_filial + "'"
+		_oSQL:_sQuery +=   " AND E2_FORNECE = '" + se2 -> e2_fornece + "'"
+		_oSQL:_sQuery +=   " AND E2_LOJA    = '" + se2 -> e2_loja + "'"
+		_oSQL:_sQuery +=   " AND E2_NUM     = '" + se2 -> e2_num + "'"
+		_oSQL:_sQuery +=   " AND E2_PREFIXO = '" + se2 -> e2_prefixo + "'"
+		_oSQL:_sQuery +=   " AND E2_TIPO    = '" + se2 -> e2_tipo + "'"
+		_oSQL:Log ()
+		_aRegFAT := aclone (_oSQL:Qry2Array ())
+		u_log2 ('debug', 'recnos dos titulos da fatura:')
+		u_log2 ('debug', _aRegFat)
+		_nTotVlFat = 0
+		for _nRegFAT = 1 to len (_aRegFAT)
+			_nTotVlFat += _aRegFat [_nRegFAT, 3]
+			if _aRegFat [_nRegFAT, 2] != 0
+				_oCtaCorr := ClsCtaCorr ():New (_aRegFat [_nRegFAT, 2])
+				if ! _oCtaCorr:PodeExcl ()
+					_lContinua = .F.
+					exit
+				endif
+			endif
+		next
+	endif
+
+	// Gera array com os titulos originais agrupados na fatura.
+	// Aproveita para guardar os recnos do SZI relacionados a eles.
+	if _lContinua
+		_sWhere += "  WHERE SE2.D_E_L_E_T_ = ''"
+		_sWhere += "    AND E2_FILIAL  = '" + se2 -> e2_filial + "'"
+		_sWhere += "    AND E2_FORNECE = '" + se2 -> e2_fornece + "'"
+		_sWhere += "    AND E2_LOJA    = '" + se2 -> e2_loja + "'"
+		_sWhere += "    AND E2_FATURA  = '" + se2 -> e2_num + "'"
+		_sWhere += "    AND E2_FATPREF = '" + se2 -> e2_prefixo + "'"
+
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := " SELECT E2_PREFIXO, E2_NUM, E2_PARCELA, E2_TIPO, '' "
+		_oSQL:_sQuery += "   FROM " + RetSQLName ("SE2") + " SE2 "
+		_oSQL:_sQuery += _sWhere
+		_oSQL:Log ()
+		_aTitOriF := aclone (_oSQL:Qry2Array ())
+		u_log2 ('debug', _aTitOriF)
+		if len (_aTitOriF) == 0
+			u_help ("Nao encontrei os titulos originais que teriam sido agrupados nesta fatura.",, .t.)
+			_lContinua = .F.
+		else
+			_oSQL:_sQuery := " SELECT isnull (SZI.R_E_C_N_O_, 0)"
+			_oSQL:_sQuery += "   FROM " + RetSQLName ("SE2") + " SE2 "
+			_oSQL:_sQuery +=  " LEFT JOIN " + RetSQLName ("SZI") + " SZI "
+			_oSQL:_sQuery +=  " ON (SZI.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=      " AND ZI_FILIAL  = E2_FILIAL"
+			_oSQL:_sQuery +=      " AND ZI_ASSOC   = E2_FORNECE"
+			_oSQL:_sQuery +=      " AND ZI_LOJASSO = E2_LOJA"
+			_oSQL:_sQuery +=      " AND ZI_DOC     = E2_NUM"
+			_oSQL:_sQuery +=      " AND ZI_SERIE   = E2_PREFIXO"
+			_oSQL:_sQuery +=      " AND ZI_PARCELA = E2_PARCELA)"
+			_oSQL:_sQuery += _sWhere
+			_aRegSZI := aclone (_oSQL:Qry2Array ())
+//			u_log2 ('debug', 'recnos do SZI dos titulos aglutinados na fatura:')
+//			u_log2 ('debug', _aRegSZI)
+		endif
+	endif
+	
+	if _lContinua .and. ! _lBatch
+		_lContinua = U_MsgNoYes ("Esta fatura contem " + cvaltochar (len (_aRegFat)) + " parcelas somando R$ " + alltrim (transform (_nTotVlFat, "@E 999,999,999.99")) + " (todas serao excluidas tambem da conta corrente). A fatura foi gerada a partir de " + cvaltochar (len (_aTitOriF)) + " titulos, cujo saldo vai retornar para a conta corrente. Confirma o cancelamento da fatura?")
+	endif
+
+	// Deixa dados prontos para gravacao do evento.
+	if _lContinua
+		_oEvento := ClsEvent():new ()
+		_oEvento:CodEven   = "SE2002"
+		_oEvento:Texto     = "Cancelamento fatura '" + se2 -> e2_num + '/' + se2 -> e2_prefixo + '-' + se2 -> e2_parcela
+		_oEvento:NFEntrada = se2 -> e2_num
+		_oEvento:SerieEntr = se2 -> e2_prefixo
+		_oEvento:Fornece   = se2 -> e2_fornece
+		_oEvento:LojaFor   = se2 -> e2_loja
+	endif
+
+	// Monta uma array com os dados da fatura a cancelar.
+	if _lContinua
+		_aFatCanc = {}
+		// seta campos do array da fatura
+		Aadd(_aFatCanc, se2 -> e2_prefixo)        //-- Prefixo
+		Aadd(_aFatCanc, se2 -> e2_tipo)           //-- Tipo
+		Aadd(_aFatCanc, se2 -> e2_num)            //-- Numero da Fatura (se o numero estiver em branco obtem pelo FINA290)
+		Aadd(_aFatCanc, se2 -> e2_naturez)        //-- Natureza
+		Aadd(_aFatCanc, se2 -> e2_emissao)        //-- Data emissao inicial
+		Aadd(_aFatCanc, se2 -> e2_emissao)        //-- Data emissao final
+		Aadd(_aFatCanc, se2 -> e2_fornece)        //-- Fornecedor
+		Aadd(_aFatCanc, se2 -> e2_Loja)           //-- Loja
+		Aadd(_aFatCanc, se2 -> e2_fornece)        //-- Fornecedor para geracao
+		Aadd(_aFatCanc, se2 -> e2_loja)           //-- Loja do fornecedor para geracao
+		Aadd(_aFatCanc, '')                       //-- Condicao de pagto
+		Aadd(_aFatCanc, 01)                       //-- Moeda
+		Aadd(_aFatCanc, aclone(_aTitOriF))        //-- ARRAY com os titulos da fatura (Prefixo,Numero,Parcela,Tipo,Título localizado na geracao de fatura (lógico). Iniciar com falso.)
+		Aadd(_aFatCanc, 0)                        //-- Valor de decrescimo
+		Aadd(_aFatCanc, 0)                        //-- Valor de acrescimo
+		//u_log2 ('debug', _aFatCanc)
+		dbselectarea("SE2")
+		lMsErroAuto  := .F.
+		MsExecAuto( { |x,y| FINA290(x,y)},4,_aFatCanc,)
+		
+		// Em meus testes a variavel lMsErroAuto permanece sempre .F., entao vou procurar a fatura,
+		// para ver se foi excluida.
+		_nRegFAT = 1
+		do while _lContinua .and. _nRegFAT <= len (_aRegFat)
+			u_log2 ('debug', 'Verificando se a fatura recno ' + cvaltochar (_aRegFAT [_nRegFAT, 1]) + ' foi excluida.')
+			se2 -> (dbgoto (_aRegFAT [_nRegFAT, 1]))
+			u_log2 ('debug', se2 -> (deleted ()))
+			
+			// Se excluiu a fatura e esta tinha lancamento correspondente no SZI, o SZI deve ser excluido tambem.
+			if se2 -> (deleted ())
+				if _aRegFat [_nRegFAT, 2] != 0
+					szi -> (dbgoto (_aRegFAT [_nRegFAT, 2]))
+					_oCtaCorr := ClsCtaCorr ():New (szi -> (recno ()))
+					_lContinua = _oCtaCorr:Exclui ()
+				endif
+			else
+				u_help ('Fatura ' + se2 -> e2_num + '/' + se2 -> e2_prefixo + '-' + se2 -> e2_parcela + ' nao foi cancelada.',, .t.)
+				_lContinua = .F.
+				exit
+			endif
+			_nRegFAT ++
+		enddo
+	endif
+
+	// Atualiza no SZI os saldos dos registros relacionados aos titulos que estavam agrupados na fatura.
+	if _lContinua
+		_oEvento:Grava ()
+	
+		for _nRegSZI = 1 to len (_aRegSZI)
+			szi -> (dbgoto (_aRegSZI [_nRegSZI, 1]))
+			_oCtaCorr := ClsCtaCorr():New (szi -> (recno ()))
+			_oCtaCorr:AtuSaldo ()
+		next
+
+		// Monta mensagem para retorno.
+		_sMsgCanF := "Fatura " + _aFatCanc [3] + " cancelada." + chr (13) + chr (10)
+		_sMsgCanF += "Saldos retornados para os seguintes titulos:" + chr (13) + chr (10)
+		for _nTitOriF = 1 to len (_aTitOriF)
+			_sMsgCanF += _aTitOriF [_nTitOriF, 2] + '/' + _aTitOriF [_nTitOriF, 1] + '-' + _aTitOriF [_nTitOriF, 3] + chr (13) + chr (10)
+		next
+		u_help (_sMsgCanF)
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
+return _lContinua
+//
 // --------------------------------------------------------------------------
 // Inclusao
 User Function SZII ()
@@ -446,9 +718,7 @@ User Function SZII ()
 	endif
 	u_logFim ()
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Gera sequencial para novo registro do SZI. Faz bloqueio de semaforo para garantir sequencia exclusiva.
 User Function SZISeq ()
@@ -457,9 +727,7 @@ User Function SZISeq ()
 	_oCtaCorr := ClsCtaCorr():New (szi -> (recno ()))
 	_lRet = _oCtaCorr:GeraSeq ()
 return _lRet
-
-
-
+//
 // --------------------------------------------------------------------------
 // Valida inclusao.
 User Function SZI1 ()
@@ -537,9 +805,7 @@ User Function SZI1 ()
 		_lRet = _VerCpos (_aBcos, _aNaoBcos)
 	endif
 return _lRet
-
-
-
+//
 // --------------------------------------------------------------------------
 // Verifica preenchimento dos campos, conforme tipo de movimentacao.
 static function _VerCpos (_aBcos, _aNaoBcos)
@@ -560,9 +826,7 @@ static function _VerCpos (_aBcos, _aNaoBcos)
 		endif
 	next
 return _lRet
-
-
-
+//
 // --------------------------------------------------------------------------
 // Exclusao de movimento da conta corrente.
 User Function SZIE ()
@@ -593,9 +857,7 @@ User Function SZIE ()
 	endif                                                                                                          
 	u_logFim ()
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Baixa do movimento. Gera movimentacao financeira caso necessario.
 User Function SZIB ()
@@ -604,11 +866,8 @@ User Function SZIB ()
 	local cPerg      := ""
 	local _sOutrIni  := ""
 	local _sOutrFim  := ""
-//	local _oCtaCorr  := NIL
 	local _lContinua := .T.
 
-	u_logIni ()
-	
 	// Acho que o certo eh eliminar os titulos do SE2, mas agora nao tenho tempo para verificar. Robert, 05/09/2017
 	if _lContinua .and. szi -> zi_tm == '19'
 		u_help ('Este movimento so deve ser baixado ao resgatar cotas')
@@ -620,15 +879,24 @@ User Function SZIB ()
 		_lContinua = .F.
 	endif
 
+	// Para fazer uma baixa, o título precisa existir no financeiro.
 	if _lContinua
+		se2 -> (dbsetorder (6))  // E2_FILIAL, E2_FORNECE, E2_LOJA, E2_PREFIXO, E2_NUM, E2_PARCELA, E2_TIPO, R_E_C_N_O_, D_E_L_E_T_
+		u_log2 ('debug', 'pesquisando SE2 com >>' + xfilial ("SE2") + szi -> zi_assoc + szi -> zi_lojasso + szi -> zi_serie + szi -> zi_doc + szi -> zi_parcela + '<<')
+		if ! se2 -> (dbseek (xfilial ("SE2") + szi -> zi_assoc + szi -> zi_lojasso + szi -> zi_serie + szi -> zi_doc + szi -> zi_parcela, .F.))
+			u_help ("Nao localizar nenhum titulo no contas a pagar com este prefixo / numero / parcela.",, .t.)
+			_lContinua = .F.
+		endif
+	endif
 
-		// Verifica se existe titulo correspondente no financeiro.
-		if ! U_TemNick ("SE2", "E2_VACHVEX")
-			u_help ("Problema nos indices de arquivos. Acione suporte.")
-			U_AvisaTI ("Falta indice para exclusao de movto da conta corrente de associados na rotina " + procname ())
-		else
-			se2 -> (dbOrderNickName ("E2_VACHVEX"))  // E2_FILIAL+E2_VACHVEX
-			if se2 -> (dbseek (xfilial ("SE2") + &(_sChave), .F.))
+	if _lContinua
+//		// Verifica se existe titulo correspondente no financeiro.
+//		if ! U_TemNick ("SE2", "E2_VACHVEX")
+//			u_help ("Problema nos indices de arquivos. Acione suporte.",, .t.)
+//			U_AvisaTI ("Falta indice para exclusao de movto da conta corrente de associados na rotina " + procname ())
+//		else
+//			se2 -> (dbOrderNickName ("E2_VACHVEX"))  // E2_FILIAL+E2_VACHVEX
+//			if se2 -> (dbseek (xfilial ("SE2") + &(_sChave), .F.))
 
 				_nForma = aviso ("Forma de baixa", ;
 				                 "Selecione a forma de baixa deste lançamento:" + chr (13) + chr (10) +;
@@ -694,10 +962,6 @@ User Function SZIB ()
 					_SZI_Cred = '204010102001'
 
 				endcase
-				u_log ("Variaveis private preparadas para as outras rotinas:")
-				u_log ('   _SZI_Hist:', _SZI_Hist)
-				u_log ('   _SZI_Deb: ', _SZI_Deb)
-				u_log ('   _SZI_Cred:', _SZI_Cred)
 
 				// Se compensar com titulos de outros associados, o usuario deve confirmar estes parametros.
 				if _nForma == 3
@@ -722,9 +986,8 @@ User Function SZIB ()
 					else
 						U_GravaSX1 (cPerg, "03", 2)
 					endif
-					u_log ('Vou chamar FINA080')
+					u_log2 ('debug', 'Vou chamar FINA080')
 					FINA080 (NIL, 3, .T.)
-					u_log ('Retornou do FINA080')
 					U_SalvaSX1 (cPerg, _aBkpSX1)
 					
 					// O P.E. generico FINA080 nao eh executado quando contabiliza on-line=NAO
@@ -740,7 +1003,7 @@ User Function SZIB ()
 					if _nForma == 2
 						U_GravaSX1 (cPerg, "02", 1)  // Considera fornecedor: original.
 					elseif _nForma == 3
-						U_GravaSX1 (cPerg, "02", 2)  // Considera fornecedor: original.
+						U_GravaSX1 (cPerg, "02", 2)  // Considera fornecedor: outros
 						U_GravaSX1 (cPerg, "03", _sOutrIni)  // Fornecedor nao original inicial.
 						U_GravaSX1 (cPerg, "04", _sOutrFim)  // Fornecedor nao original final.
 					endif
@@ -754,26 +1017,25 @@ User Function SZIB ()
 					else
 						U_GravaSX1 (cPerg, "11", 2)
 					endif
+			//		u_log2 ('debug', 'Vou chamar FINA340')
 					fina340 (3)
 					U_SalvaSX1 (cPerg, _aBkpSX1)
 				endif
 				CursorArrow ()
-			else
-				u_help ("Nao encontrei titulo correspondente no financeiro.")
-			endif
-		endif
+//			else
+//				u_help ("Nao encontrei titulo correspondente no financeiro.",, .t.)
+//			endif
+//		endif
 	endif
-	u_logFim ()
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Cancelar baixas
 User Function SZIC ()
-	local _nQueTipo := 0
-	local _aBaixas  := {}
-	local _oCtaCorr := NIL
+	local _nQueTipo  := 0
+	local _aBaixas   := {}
+	local _oCtaCorr  := NIL
+	local _lContinua := .T.
 
 	u_logIni ()
 	if szi -> zi_saldo == szi -> zi_valor
@@ -781,21 +1043,32 @@ User Function SZIC ()
 		return
 	endif
 
-	// Verifica se existe registro relacionado no financeiro.
-	if ! U_TemNick ("SE2", "E2_VACHVEX")
-		u_help ("Problema nos indices de arquivos. Acione suporte.")
-		U_AvisaTI ("Falta indice para exclusao de movto da conta corrente de associados na rotina " + procname ())
-	else
-		// Verifica se existe titulo correspondente no financeiro.
-		se2 -> (dbOrderNickName ("E2_VACHVEX"))  // E2_FILIAL+E2_VACHVEX
-		if se2 -> (dbseek (xfilial ("SE2") + &(_sChave), .F.))
-			u_log ("Achei SE2")
+	// Para cancelar uma baixa, o título precisa existir no financeiro.
+	if _lContinua
+		se2 -> (dbsetorder (6))  // E2_FILIAL, E2_FORNECE, E2_LOJA, E2_PREFIXO, E2_NUM, E2_PARCELA, E2_TIPO, R_E_C_N_O_, D_E_L_E_T_
+		u_log2 ('debug', 'pesquisando SE2 com >>' + xfilial ("SE2") + szi -> zi_assoc + szi -> zi_lojasso + szi -> zi_serie + szi -> zi_doc + szi -> zi_parcela + '<<')
+		if ! se2 -> (dbseek (xfilial ("SE2") + szi -> zi_assoc + szi -> zi_lojasso + szi -> zi_serie + szi -> zi_doc + szi -> zi_parcela, .F.))
+			u_help ("Nao localizar nenhum titulo no contas a pagar com este prefixo / numero / parcela.",, .t.)
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
+//	// Verifica se existe registro relacionado no financeiro.
+//	if ! U_TemNick ("SE2", "E2_VACHVEX")
+//		u_help ("Problema nos indices de arquivos. Acione suporte.")
+//		U_AvisaTI ("Falta indice para exclusao de movto da conta corrente de associados na rotina " + procname ())
+//	else
+//		// Verifica se existe titulo correspondente no financeiro.
+//		se2 -> (dbOrderNickName ("E2_VACHVEX"))  // E2_FILIAL+E2_VACHVEX
+//		if se2 -> (dbseek (xfilial ("SE2") + &(_sChave), .F.))
+			u_log2 ('debug', "Achei SE2 para cancelar baixa")
 			_nQueTipo = aviso ("Forma de baixa", ;
 			                   "Selecione o tipo de de baixa a ser cancelado", ;
 			                   {"Normal", "Compensacao", "Cancelar"}, ;
 			                   3, ;
 			                   "Forma de baixa")
-			u_log ("Usar tipo:", _nQueTipo)
+
 			if _nQueTipo == 1
 
 				// Verifica se o titulo tem baixas.
@@ -833,13 +1106,11 @@ User Function SZIC ()
 			elseif _nQueTipo == 2
 				fina340 (4)
 			endif
-		endif
+//		endif
 	endif
 	u_logFim ()
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Transferencia de saldo para outra filial.
 User Function SZIT (_sFilDest)
@@ -868,17 +1139,23 @@ User Function SZIT (_sFilDest)
 
 	//u_logFim ()
 return
-
-
-
+//
 // --------------------------------------------------------------------------
-// Recalcula saldo atual do lancamento.
+// Recalcula alguns saldos.
 User Function SZIRS (_nQual)
-//	local _lContinua := .T.
+	// Apenas para ter regua de processamento, pois alguns recalculos podem demorar.
+	processa ({ || _SZIRS2 (_nQual)})
+return
+//
+// --------------------------------------------------------------------------
+static function _SZIRS2 (_nQual)
 	local _oCtaCorr  := NIL
 	local _nSaldoAnt := 0
 	local _oAssoc    := ""
 	local _dDataIni  := ctod ('')
+	local _oSQL      := NIL
+	local _aDados    := {}
+	local _nDado     := 0
 
 	if _nQual == 1  // Atualiza sando deste lcto.
 		_oCtaCorr := ClsCtaCorr():New (szi -> (recno ()))
@@ -886,24 +1163,51 @@ User Function SZIRS (_nQual)
 		_oCtaCorr:AtuSaldo ()
 
 		if _nSaldoAnt != szi -> zi_saldo
-			u_help ("Saldo alterado de " + cvaltochar (_nSaldoAnt) + " para " + cvaltochar (szi -> zi_saldo))
+			u_help ("Saldo deste lcto alterado de " + cvaltochar (_nSaldoAnt) + " para " + cvaltochar (szi -> zi_saldo))
 		endif
 
 	elseif _nQual == 2  // Atualiza saldo geral do associado.
-		_dDataIni = U_Get ('Data inicial para recalculo de saldos do associado', 'D', 8, '@D', '', date (), .F., '.T.')
+		_dDataIni = U_Get ('Data inicial (cada ano pode demorar bastante)', 'D', 8, '@D', '', date (), .F., '.T.')
 		if ! empty (_dDataIni)
-			u_log ('Recalculando saldo do associado')
+			procregua (10)
+			u_log2 ('info', 'Recalculando saldo acum.associado ' + szi -> zi_assoc + '/' + szi -> zi_lojasso)
 			_oAssoc := ClsAssoc():New (szi -> zi_assoc, szi -> zi_lojasso)
 			if valtype (_oAssoc) == NIL .or. valtype (_oAssoc) != "O"
 			else
-				MsgRun ("Aguarde...", "Processando...", {|| _oAssoc:AtuSaldo (_dDataIni)})
+				processa ({ || _oAssoc:AtuSaldo (_dDataIni)})
 			endif
+		endif
+	elseif _nQual == 3  // Atualiza saldo de cada lcto deste associado
+		_dDataIni = U_Get ('Data inicial para recalculo', 'D', 8, '@D', '', date (), .F., '.T.')
+		if ! empty (_dDataIni)
+			u_log2 ('info', 'Recalculando saldo de cada lcto.do associado ' + szi -> zi_assoc + '/' + szi -> zi_lojasso)
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " SELECT R_E_C_N_O_"
+			_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
+			_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
+			_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC    = '" + szi -> zi_assoc   + "'"
+			_oSQL:_sQuery +=    " AND SZI.ZI_LOJASSO  = '" + szi -> zi_lojasso + "'"
+			_oSQL:_sQuery +=    " AND SZI.ZI_DATA    >= '" + dtos (_dDataIni)  + "'"
+			_oSQL:_sQuery +=  " ORDER BY ZI_FILIAL, ZI_SEQ"
+			_oSQL:Log ()
+			_aDados = _oSQL:Qry2Array ()
+			procregua (len (_aDados))
+			for _nDado = 1 to len (_aDados)
+				szi -> (dbgoto (_aDados [_nDado, 1]))
+				u_log2 ('info', 'Verificando saldo ' + szi -> zi_assoc + '/' + szi -> zi_lojasso + ' seq.' + szi -> zi_seq + ' ' + szi -> zi_histor)
+				incproc ('Verificando saldo docto: ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela)
+				_nSaldoAnt = szi -> zi_saldo
+				_oCtaCorr := ClsCtaCorr ():New (szi -> (recno ()))
+				_oCtaCorr:AtuSaldo ()
+				if szi -> zi_saldo != _nSaldoAnt
+					u_help ("Saldo do lcto alterado de " + cvaltochar (_nSaldoAnt) + " para " + cvaltochar (szi -> zi_saldo))
+				endif
+			next
 		endif
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
@@ -914,6 +1218,7 @@ Static Function _ValidPerg ()
 	//                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                                 Help
 	aadd (_aRegsPerg, {01, "Tipo de contas a visualizar   ", "N", 1,  0,  "",   "",    {"Normal", "Capital social", "Todas"}, "Tipo de conta corrente a ser visualizada"})
 	aadd (_aRegsPerg, {02, "Contabiliza online            ", "N", 1,  0,  "",   "",    {"Sim", "Nao"},                        ""})
+	aadd (_aRegsPerg, {03, "Filtro(SQL) sel.tit.p/compens.", "C", 60, 0,  "",   "",    {},                                    "Expressao (sintaxe SQL) para adicionar ao filtro de selecao de titulos a compensar."})
 	aadd (_aDefaults, {"01", 1})
 	aadd (_aDefaults, {"02", 2})
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)

@@ -10,11 +10,18 @@
 // 24/09/2019 - Robert - ClsExtrCC passa a ter novo atributo :FormaResult.
 //
 
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Relatorio
+// #Descricao         #Impressao de relatorio extrato de conta corrente de associados modelo II
+// #PalavasChave      #extrato #conta_corrente #associado #modelo #novo
+// #TabelasPrincipais #SZI #SA2 #SE2 #SE5 #FK7 #FKA #FK2 #ZZM #ZX5
+// #Modulos           #COOP
+
 #Include "va_inclu.prw"
 
 // --------------------------------------------------------------------------
-user function SZI_Rel2 ()
-	u_logId ()
+user function SZI_Rel2 (_lAutomat)
+	private _lAuto   := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
 
 	// Verifica se o usuario tem acesso.
 	if ! U_ZZUVL ('059')
@@ -44,8 +51,38 @@ user function SZI_Rel2 ()
 	_ValidPerg ()
 	pergunte (cPerg, .F.)
 
-	// Execucao com interface com o usuario.
-	wnrel:=SetPrint(cString,wnrel,cPerg,titulo,cDesc1,cDesc2,cDesc3,.F., aOrd)
+	if ! _lAuto
+
+		// Execucao com interface com o usuario.
+		wnrel:=SetPrint(cString,wnrel,cPerg,titulo,cDesc1,cDesc2,cDesc3,.F., aOrd)
+	else
+		// Execucao sem interface com o usuario.
+		//
+		// Deleta o arquivo do relatorio para evitar a pergunta se deseja sobrescrever.
+		delete file (__reldir + wnrel + ".##r")
+		//
+		// Chama funcao setprint sem interface... essa deu trabalho!
+		__AIMPRESS[1]:=1  // Obriga a impressao a ser "em disco" na funcao SetPrint
+		wnrel := SetPrint (cString, ;  // Alias
+		wnrel, ;  // Sugestao de nome de arquivo para gerar em disco
+		cPerg, ;  // Parametros
+		@titulo, ;  // Titulo do relatorio
+		cDesc1, ;  // Descricao 1
+		cDesc2, ;  // Descricao 2
+		cDesc3, ;  // Descricao 3
+		.F., ;  // .T. = usa dicionario
+		aOrd, ;  // Array de ordenacoes para o usuario selecionar
+		.T., ;  // .T. = comprimido
+		tamanho, ;  // P/M/G
+		NIL, ;  // Nao pude descobrir para que serve.
+		.F., ;  // .T. = usa filtro
+		NIL, ;  // lCrystal
+		NIL, ;  // Nome driver. Ex.: "EPSON.DRV"
+		.T., ;  // .T. = NAO mostra interface para usuario
+		.T., ;  // lServer
+		NIL)    // cPortToPrint
+		aReturn [8] = 1
+	endif
 	If nLastKey == 27
 		Return
 	Endif
@@ -59,8 +96,13 @@ user function SZI_Rel2 ()
 	MS_FLUSH ()
 	DbCommitAll ()
 
-	if aReturn [5] == 1
-		ourspool(wnrel)
+	// Se era execucao via rotina automatica, converte o relatorio para TXT.
+	if _lAuto
+		U_ML_R2T (__reldir + wnrel + ".##r", __reldir + wnrel + ".txt")
+	else
+		If aReturn [5] == 1
+			ourspool(wnrel)
+		Endif
 	endif
 return
 
@@ -85,9 +127,11 @@ static function _Imprime ()
 	private _nMaxLin := 68
 	li = _nMaxLin + 1
 
+	u_logSX1 (cPerg)
+
 	// Nao aceita filtro por que precisaria inserir na query.
 	If _lContinua .and. !Empty(aReturn[7])
-		u_help ("Este relatorio nao aceita filtro do usuario.")
+		u_help ("Este relatorio nao aceita filtro do usuario.",, .t.)
 		_lContinua = .F.
 	EndIf	
 

@@ -10,6 +10,8 @@
 // 18/06/2015 - Robert - View VA_NOTAS_SAFRA renomeada para VA_VNOTAS_SAFRA
 // 22/04/2017 - Robert - Tratamento para 2017
 // 10/07/2017 - Robert - Novo complemento geral 2017
+// 23/06/2020 - Robert - Implementacoes para safra 2020
+// 06/07/2020 - Robert - Criados parametros de variedades a considerar e a desconsiderar.
 //
 
 // --------------------------------------------------------------------------
@@ -21,10 +23,6 @@ User Function VA_GNF3 (_lAuto)
 	Local lPerg     := .F.
 	u_logID ()
 
-	U_HELP ("CRIAR TRATAMENTO PARA GRAVAR ZZ9_GRUPO E TB PRA ENVIAR ISSO PARA O F1_VAGPSAF")
-	U_HELP ("PARA 2019: COPIAR DO VA_ZZ9P O TRATAMENTO DE AJUSTE DE GRAU DE 7 ASSOCIADOS (GLPI 5933)")
-	return
-	
 	Private cPerg   := "VAGNF3"
 
 	// Verifica se o usuario tem liberacao para uso desta rotina.
@@ -58,15 +56,21 @@ User Function VA_GNF3 (_lAuto)
 		elseif mv_par05 == '2014'
 			Processa( { |lEnd| _Gera ()})
 		elseif mv_par05 == '2015'
-//				Processa( { |lEnd| _Gera2015 ()})
+			if .f.
+				Processa( { |lEnd| _Gera2015 ()})
+			endif
 			Processa( { |lEnd| _Gera2015A ()})
 		elseif mv_par05 == '2016'
 			Processa( { |lEnd| _Gera2016 ()})
 		elseif mv_par05 == '2017'
-//				Processa( { |lEnd| _Gera2017 ()})
+			if .f.
+				Processa( { |lEnd| _Gera2017 ()})
+			endif
 			Processa( { |lEnd| _Gera2017B ()})
 		elseif mv_par05 == '2018'
 			Processa( { |lEnd| _Gera2018 ()})
+		elseif mv_par05 == '2020'
+			Processa( { |lEnd| _Gera2020 ()})
 		else
 			u_help ('Sem tratamento para esta safra')
 		endif
@@ -85,7 +89,7 @@ Return _lRet
 	
 // --------------------------------------------------------------------------
 Static Function _Gera()
-	local _lContinua := .T.
+//	local _lContinua := .T.
 	local _sQuery    := ""
 	local _aNovas    := {}
 	local _nPreco    := 0
@@ -171,9 +175,9 @@ return soma1 (soma1 (soma1 (soma1 (soma1 (_sPreNF)))))
 
 // --------------------------------------------------------------------------
 Static Function _Gera2012 ()
-	local _lContinua := .T.
-	local _sQuery    := ""
-	local _aNovas    := {}
+//	local _lContinua := .T.
+//	local _sQuery    := ""
+//	local _aNovas    := {}
 	local _nPreco    := 0
 
 	// Gera complemento de preco para uvas finas que deveriam ter desconsiderado classificacao.
@@ -221,7 +225,7 @@ return
 
 // --------------------------------------------------------------------------
 Static Function _Gera2013 ()
-	local _lContinua := .T.
+//	local _lContinua := .T.
 	local _sQuery    := ""
 	local _aNovas    := {}
 	local _nPreco    := 0
@@ -284,7 +288,7 @@ return
 
 // --------------------------------------------------------------------------
 Static Function _Gera2015 ()
-	local _lContinua := .T.
+//	local _lContinua := .T.
 	local _sQuery    := ""
 	local _aNovas    := {}
 	local _nPreco    := 0
@@ -383,7 +387,7 @@ return
 
 // --------------------------------------------------------------------------
 Static Function _Gera2015A ()
-	local _lContinua := .T.
+//	local _lContinua := .T.
 	local _sQuery    := ""
 	local _aNovas    := {}
 	local _nPreco    := 0
@@ -469,10 +473,10 @@ return
 // Algumas entradas de uvas viniferas em Livramento ficaram com classificacao
 // abaixo por que foi usada tabela de faixas de grau errada.
 Static Function _Gera2016 ()
-	local _lContinua := .T.
+//	local _lContinua := .T.
 	local _sQuery    := ""
 	local _aNovas    := {}
-	local _nPreco    := 0
+//	local _nPreco    := 0
 	local _nNova	 := 0
 
 	procregua (zz9 -> (reccount ()))
@@ -542,10 +546,10 @@ return
 // --------------------------------------------------------------------------
 // Notas de compra foram geradas mais cedo a preco de tabela MOC da CONAB para uso em comprovacoes de preco para emprestimos bancarios.
 Static Function _Gera2017 ()
-	local _lContinua := .T.
+//	local _lContinua := .T.
 	local _sQuery    := ""
 	local _aNovas    := {}
-	local _nPreco    := 0
+//	local _nPreco    := 0
 	local _nNova	 := 0
 
 	procregua (zz9 -> (reccount ()))
@@ -618,8 +622,8 @@ return
 // --------------------------------------------------------------------------
 // Complemento geral de valores 2017.
 Static Function _Gera2017B ()
-	local _lContinua := .T.
-	local _aNovas    := {}
+//	local _lContinua := .T.
+//	local _aNovas    := {}
 	local _nPreco    := 0
 	local _oSQL      := NIL
 	local _sAliasQ   := ""
@@ -690,8 +694,8 @@ return
 // --------------------------------------------------------------------------
 // Simulacao complemento comuns 2018, provavelmente vai cair como distribuicao de sobras.
 Static Function _Gera2018 ()  // faz para TODAS AS FILIAIS
-	local _lContinua := .T.
-	local _aNovas    := {}
+//	local _lContinua := .T.
+//	local _aNovas    := {}
 	local _nPreco    := 0
 	local _oSQL      := NIL
 	local _sAliasQ   := ""
@@ -730,6 +734,12 @@ Static Function _Gera2018 ()  // faz para TODAS AS FILIAIS
 	_oSQL:_sQuery +=   " AND P.ASSOCIADO + P.LOJA_ASSOC BETWEEN '" + mv_par01 + mv_par02 + "' AND '" + mv_par03 + mv_par04 + "'"
 	_oSQL:_sQuery +=   " AND P.PRODUTO BETWEEN '" + mv_par09 + "' AND '" + mv_par10 + "'"
 	_oSQL:_sQuery +=   " AND P.PRODUTO = SB1.B1_COD"
+	if ! empty (mv_par12)
+		_oSQL:_sQuery +=    " AND P.PRODUTO IN " + FormatIn (alltrim (mv_par12), "/")
+	endif
+	if ! empty (mv_par13)
+		_oSQL:_sQuery +=    " AND P.PRODUTO NOT IN " + FormatIn (alltrim (mv_par13), "/")
+	endif
 	_oSQL:_sQuery +=   " AND SB1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=   " AND SB1.B1_FILIAL = '" + xfilial ("SB1") + "'"
 	_oSQL:_sQuery +=   " AND (SB1.B1_VARUVA = 'C' OR (SB1.B1_VARUVA = 'F' AND SB1.B1_VAFCUVA = 'F' AND P.FILIAL != '03'))"
@@ -846,6 +856,109 @@ return
 
 
 // --------------------------------------------------------------------------
+Static Function _Gera2020 ()
+	local _oSQL      := NIL
+	local _sAliasQ   := ""
+	local _nVCompl   := 0
+	local _sClasFina := ''
+	local _aRetPrc   := 0
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "SELECT *"
+	_oSQL:_sQuery +=  " FROM VA_VPRECO_EFETIVO_SAFRA P"
+	_oSQL:_sQuery += " WHERE P.SAFRA  = '" + mv_par05 + "'"
+	_oSQL:_sQuery +=   " AND P.ASSOCIADO + P.LOJA_ASSOC BETWEEN '" + mv_par01 + mv_par02 + "' AND '" + mv_par03 + mv_par04 + "'"
+	_oSQL:_sQuery +=   " AND P.PRODUTO BETWEEN '" + mv_par09 + "' AND '" + mv_par10 + "'"
+	if ! empty (mv_par12)
+		_oSQL:_sQuery +=    " AND P.PRODUTO IN " + FormatIn (alltrim (mv_par12), "/")
+	endif
+	if ! empty (mv_par13)
+		_oSQL:_sQuery +=    " AND P.PRODUTO NOT IN " + FormatIn (alltrim (mv_par13), "/")
+	endif
+	_oSQL:_sQuery += " ORDER BY ASSOCIADO, LOJA_ASSOC, FILIAL, PRODUTO, GRAU, CLAS_FINAL, CLAS_ABD"
+	_oSQL:Log ()
+	_sAliasQ = _oSQL:Qry2Trb ()
+	procregua ((_sAliasQ) -> (reccount ()))
+	do while ! (_sAliasQ) -> (eof ())
+		incproc ()
+		
+		// Fizemos apenas uma compra das notas 'limpas' (preco cheio) em maio.
+		// Se for para complamentar mais alguma, criar tratamento para casos de mistura, etc.
+		if ! alltrim ((_sAliasQ) -> produto) $ '9925/9822/9936/9811/9812'
+			u_help ("Sem previsao de complemento pra esta variedade nesta safra",, .t.)
+			(_sAliasQ) -> (dbskip ())
+		endif
+
+		// Assume a classificacao da uva vinifera conforme o sistema de conducao.
+		if (_sAliasQ) -> sist_conducao == 'L'
+			_sClasFina = (_sAliasQ) -> clas_abd
+		elseif (_sAliasQ) -> sist_conducao == 'E'
+			_sClasFina = (_sAliasQ) -> clas_final
+		else
+			u_help ("Sistema de conducao '" + (_sAliasQ) -> sist_conducao + "' sem tratamento (NF compra " + (_sAliasQ) -> doc + ")",, .t.)
+		endif
+		u_log2 ('info', 'NF orig: ' + (_sAliasQ) -> doc + ' Produto ' + alltrim ((_sAliasQ) -> produto) + '-' + alltrim ((_sAliasQ) -> descricao) + ' gr.' + (_sAliasQ) -> grau + ' ' + _sClasFina)
+
+		_aRetPrc = aclone (U_PrcUva20 ((_sAliasQ) -> filial, (_sAliasQ) -> produto, val ((_sAliasQ) -> grau), _sClasFina, (_sAliasQ) -> sist_conducao, .F.))
+
+		// A funcao retorna diferentes valores, mas aqui quero apenas o valor de compra e as observacoes.
+		_aRetPrc = {_aRetPrc[2], _aRetPrc [3]}
+	//	u_log2 ('info', 'Preco unit gerado           : ' + cvaltochar (_aRetPrc [1]) + '  ' + _aRetPrc [2])
+	//	u_log2 ('info', 'Preco total gerado          : ' + cvaltochar ((_sAliasQ) -> peso_liq * _aRetPrc [1]))
+	//	u_log2 ('info', 'Preco efetivo ateh o momento: ' + cvaltochar ((_sAliasQ) -> peso_liq * (_sAliasQ) -> VUnit_efetivo))
+		_nVCompl = ((_sAliasQ) -> peso_liq * _aRetPrc [1]) - ((_sAliasQ) -> peso_liq * (_sAliasQ) -> VUnit_efetivo)
+	//	u_log2 ('info', 'Valor total complemento     : ' + cvaltochar (_nVCompl))
+		if _nVCompl > 10  // Estabeleci, por minha conta, um valor minimo. Robert, 23/06/20
+
+			// Gera proxima pre-nf livre
+			_sQuery := " select max (ZZ9_PRE_NF)"
+			_sQuery +=  " from " + RETSQLNAME ("ZZ9") + " ZZ9  "
+			_sQuery += " where ZZ9.D_E_L_E_T_ != '*'"
+			_sQuery +=   " and ZZ9.ZZ9_FILIAL = '" + xfilial ("ZZ9")  + "'"
+			_sQuery +=   " and ZZ9.ZZ9_SAFRA  = '" + mv_par05 + "'"
+			_sPreNF = _IncPreNF (U_RetSQL (_sQuery))
+
+			reclock ("ZZ9", .T.)
+			zz9 -> zz9_filial = (_sAliasQ) -> FILIAL
+			zz9 -> zz9_safra  = mv_par05
+			zz9 -> zz9_grupo  = (_sAliasQ) -> grupo_PAGTO
+			zz9 -> zz9_parcel = mv_par06
+			zz9 -> zz9_fornec = (_sAliasQ) -> associado
+			zz9 -> zz9_loja   = (_sAliasQ) -> loja_assoc
+			zz9 -> zz9_pre_nf = _sPreNF
+			zz9 -> zz9_tiponf = "C"
+			zz9 -> zz9_produt = (_sAliasQ) -> produto
+			zz9 -> zz9_grau   = (_sAliasQ) -> grau
+			zz9 -> zz9_classe = (_sAliasQ) -> clas_final
+			zz9 -> zz9_clabd  = (_sAliasQ) -> clas_abd
+			zz9 -> zz9_conduc = (_sAliasQ) -> sist_conducao
+			zz9 -> zz9_vunOld = (_sAliasQ) -> VUnit_efetivo
+			zz9 -> zz9_quant  = 0
+			zz9 -> zz9_vunit  = _nVCompl
+			zz9 -> zz9_obs    = _aRetPrc [2]
+			zz9 -> zz9_nfori  = (_sAliasQ) -> doc
+			zz9 -> zz9_serior = (_sAliasQ) -> serie
+			zz9 -> zz9_itemor = (_sAliasQ) -> item_nota
+		// NAO CRIEI TRATAMENTO PARA ESTA SAFRA	zz9 -> zz9_mistu1 = (_sAliasQ) -> ?
+		// NAO CRIEI TRATAMENTO PARA ESTA SAFRA	zz9 -> zz9_mistu2 = (_sAliasQ) -> ?
+		// NAO CRIEI TRATAMENTO PARA ESTA SAFRA	zz9 -> zz9_mistu3 = (_sAliasQ) -> ?
+			zz9 -> zz9_msgNF  = 'COMPL PRECO'
+			zz9 -> zz9_TES    = '107'
+			msunlock ()
+
+		else
+			u_log2 ('info', 'Complemento negativo!')
+		endif
+
+		(_sAliasQ) -> (dbskip ())
+	enddo
+
+	u_help ("Processo concluido.")
+return
+
+
+
+// --------------------------------------------------------------------------
 static function _Clona (_nValor)
 	local _nRegZZ9 := zz9 -> (recno ())
 	local _nCampo  := 0
@@ -903,5 +1016,7 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {09, "Produto inicial               ", "C", 15, 0,  "",   "SB1", {},             ""})
 	aadd (_aRegsPerg, {10, "Produto final                 ", "C", 15, 0,  "",   "SB1", {},             ""})
 	aadd (_aRegsPerg, {11, "Preco total (safra 2016)      ", "N", 10, 4,  "",   "",    {},             ""})
+	aadd (_aRegsPerg, {12, "Apenas varied (separ.por /)   ", "C", 60, 0,  "",   "   ", {},             ""})
+	aadd (_aRegsPerg, {13, "Exceto varied (separ.por /)   ", "C", 60, 0,  "",   "   ", {},             ""})
 	U_ValPerg (cPerg, _aRegsPerg)
 return

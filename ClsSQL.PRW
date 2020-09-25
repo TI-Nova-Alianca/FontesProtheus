@@ -32,7 +32,17 @@
 // 10/06/2020 - Robert - Comeca a usar a funcao U_Log2.
 //                     - Nao restaurava a area de trabalho no final do metodo Copy2Trb.
 //                     - Removidas declaracoes de variaveis nao usadas.
+// 23/07/2020 - Robert - No metodo Exec(), quando o TOP retornava valor negativo (erro), somente setava _lRet para .F. se o SQL tambem tivesse retornado algum erro.
+//                     - Inseridas tags para catalogacao de fontes.
+// 11/09/2020 - Robert - Testes para uso de metodos estaticos (aguarda atualizar build)
 //
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #classe
+// #Descricao         #Classe com funcionalidades diversas para o banco de dados.
+// #PalavasChave      #SQL
+// #TabelasPrincipais 
+// #Modulos           
 
 #include "protheus.ch"
 
@@ -52,23 +62,23 @@ CLASS ClsSQL
 
 
 	// Declaracao dos Metodos da Classe
-	METHOD New ()
-	METHOD Array2In ()
-	METHOD CaseX3CBox ()
-	METHOD Copy2Trb ()
-	METHOD Exec ()
-	METHOD F3Array ()
-	METHOD FormatIn ()
-	METHOD InsValues ()
-	METHOD Log ()
-	METHOD MudaTipo ()  // Para uso interno.
-	METHOD Qry2Array ()
-	METHOD Qry2HTM ()
-	METHOD Qry2Str ()
-	METHOD Qry2Trb ()
-	METHOD Qry2XLS ()
-	METHOD RetQry ()
-	METHOD SetField ()  // Para uso externo: informar campo e para qual tipo deve ser convertido.
+	/*public */ METHOD New ()
+	/*public */ METHOD Array2In ()
+	/*public */ METHOD CaseX3CBox ()
+	/*public */ METHOD Copy2Trb ()
+	/*public */ METHOD Exec ()
+	/*public */ METHOD F3Array ()
+	/*public */ METHOD FormatIn ()
+	/*public */ METHOD InsValues ()
+	/*public */ METHOD Log ()
+	/*private*/ METHOD MudaTipo ()  // Para uso interno.
+	/*public */ METHOD Qry2Array ()
+	/*public */ METHOD Qry2HTM ()
+	/*public */ METHOD Qry2Str ()
+	/*public */ METHOD Qry2Trb ()
+	/*public */ METHOD Qry2XLS ()
+	/*public */ METHOD RetQry ()
+	/*public */ METHOD SetField ()  // Para uso externo: informar campo e para qual tipo deve ser convertido.
 ENDCLASS
 
 
@@ -176,25 +186,29 @@ return '_trb'
 METHOD Exec () Class ClsSQL
 	local _lRet     := .T.
 	local _nRetTOP  := 0
+	local _sErroTOP := ''
 	local _sErroSQL := ''
 
+	u_log2 ('debug', ::_sQuery)
 	_nRetTOP = TCSQLExec (::_sQuery)
+//	u_log2 ('debug', 'Codigo de retorno do TOP: ' + cvaltochar (_nRetTOP))
 	if _nRetTOP < 0
 		_sErroSQL = alltrim (TCSQLError ())
 		if ! empty (_sErroSQL)
 			_lRet = .F.
-			::UltMsg = _sErroSQL
-			u_help ("Erro DbAccess '" + cvaltochar (_nRetTOP) + "' durante a atualizacao dos dados!" + chr (13) + chr (10) + chr (13) + chr (10) + _sErroSQL)
-			if type ('_oBatch') == 'O'
-				_oBatch:Mensagens += "Erro DbAcces: " + cvaltochar (_nRetTOP)
-			endif
-			
+			// logs e batches jah sao alimentados pela funcao U_HELP ---> u_log2 ('erro', 'DBAccess retornou ' + cvaltochar (_nRetTOP) + ' para o comando ' + ::_sQuery)
+			_sErroTOP = "Erro DbAccess '" + cvaltochar (_nRetTOP) + "' durante a atualizacao dos dados!"
+			// logs e batches jah sao alimentados pela funcao U_HELP ---> u_log2 ('erro', 'Erro retornado pelo SQL: ' + strtran (_sErroSQL, chr (10), chr (13) + chr (10) + space (32)))
+			::UltMsg = _sErroTOP + chr (13) + chr (10) + _sErroSQL
+			// logs e batches jah sao alimentados pela funcao U_HELP ---> if type ('_oBatch') == 'O'
+			// logs e batches jah sao alimentados pela funcao U_HELP ---> 	_oBatch:Mensagens += ::UltMsg
+			// logs e batches jah sao alimentados pela funcao U_HELP ---> endif
+			u_help (::UltMsg,, .t.)
+				
 			// Grava aviso. A gravacao do aviso, se executada direto via SQL, gera erro de estouro de pilha. Nao descobri o motivo. Robert, 10/10/2019.
-			if existblock ("GRVAVISO")
-				U_GrvAviso ('E', 'grpTI', _sErroSQL, procname (1) + '==>' + procname (2) + '==>' + procname (3), 0)
-			endif
-		else
-			::UltMsg = "Erro DbAccess '" + cvaltochar (_nRetTOP) + "' ao executar: " + ::_sQuery
+			// por enquanto nao temos monitoramento de avisos ---> if existblock ("GRVAVISO")
+			// por enquanto nao temos monitoramento de avisos ---> 	U_GrvAviso ('E', 'grpTI', ::UltMsg, procname (1) + '==>' + procname (2) + '==>' + procname (3), 0)
+			// por enquanto nao temos monitoramento de avisos ---> endif
 		endif
 	endif
 return _lRet
@@ -324,7 +338,7 @@ METHOD Log (_lQuebra) Class ClsSQL
 		u_logQry ('[' + procname (1) + '] ' + ::_sQuery)
 	else
 	//	u_log ('[' + procname (1) + '] ' + ::_sQuery)
-		u_log2 ('info', ::_sQuery)
+		u_log2 ('debug', ::_sQuery)
 	endif
 return
 
