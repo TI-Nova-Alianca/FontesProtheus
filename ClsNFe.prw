@@ -1,0 +1,752 @@
+// Programa:  ClsNFe
+// Autor:     Robert Koch
+// Data:      09/07/2014
+// Descricao: Declaracao de classe de representacao de uma unica nota fiscal eletronica.
+//            Poderia trabalhar como uma include, mas prefiro declarar uma funcao de usuario
+//            apenas para poder incluir no projeto e manter na pasta dos fontes.
+//
+// Historico de alteracoes:
+// 02/02/2015 - Robert - Passa a aceitar CPF no emitente.
+// 16/06/2015 - Robert - Melhorias tratamento layouts de notas de servicos.
+// 21/09/2015 - Robert - Classe renomeada de ClsXmlNF para ClsNFe por que foram criadas classes especificas para eventos, CTe, etc. 
+// 21/06/2016 - Robert - Metodo ConsAutFP passa a verificar direto na tabela SPED054.
+// 21/12/2016 - Catia  - Leitura de outras tags para poder gerar documento de entrada a partir do XML
+// 04/01/2016 - Robert - Erro na leitura da tag de dados adicionais - alguns XML nao tem - estava testando o tipo errado
+// 13/04/2017 - Catia  - Tratamento na TAG de produtos - buscando a unidade
+// 08/04/2019 - Catia  - include TbiConn.ch
+// 16/05/2019 - Catia  - tratamento para que leia os pesos das nfe  
+// ------------------------------------------------------------------------------------
+#include "colors.ch"
+#Include "Protheus.ch"
+#Include "RwMake.ch"
+#Include "TbiConn.ch"
+ 
+// --------------------------------------------------------------------------
+// Funcao declarada apenas para poder compilar este arquivo fonte.
+user function ClsNFe ()
+return
+
+
+
+// ==========================================================================
+CLASS ClsNFe
+
+	// Declaracao das propriedades da Classe
+	data Ambiente
+	data Avisos
+	data CNPJDestin
+	data CNPJEmiten
+	data Chave
+	data CliFor
+	data Doc
+	data DtEmissao
+	data Empresa
+	data Erros
+	data Filial
+	data IDNFe050
+	data ItCFOP
+	data ItCodFor
+	data ItDescri
+	data ItQuant
+	data ItVlICM
+	data ItVlIPI
+	data ItVlTot
+	data ItNCM
+	data ItCprod
+	data ItuCom
+	data ItVunCom
+	data ItxPed
+	data ItnItemPed
+	data Loja
+	data NomeCliFor
+	data NomeDestin
+	data NomeEmiten
+	data Serie
+	data StatusZZX
+	data TipoDoc
+	data TipoNF
+	data URL
+	data XML
+	data XMLLayout
+	data Transfer
+	data PesoL
+	data PesoB
+	data ContraNF
+	data DadosAdic
+
+	// Declaracao dos Metodos da classe
+	METHOD New ()
+	METHOD ConsAutori ()
+	METHOD ConsAutFP ()
+	//METHOD ConsChSEF ()
+	METHOD Chave050 ()
+	METHOD GeraNF ()
+	METHOD GetEntid ()
+	METHOD GetXML ()
+	METHOD LeXML ()
+ENDCLASS
+
+
+
+// --------------------------------------------------------------------------
+// Construtor.
+METHOD New () Class ClsNFe
+	::Ambiente   = ''
+	::Avisos     = {}
+	::CNPJDestin = ''  //_sCNPJDst
+	::CNPJEmiten = ''
+	::Chave      = ''
+	::CliFor     = ''
+	::Doc        = ""
+	::DtEmissao  = ctod ('')
+	::Empresa    = cEmpAnt
+	::Erros      = {}
+	::Filial     = cFilAnt
+	::ItCFOP     = {}
+	::ItCodFor   = {}
+	::ItDescri   = {}
+	::ItQuant    = {}
+	::ItVlICM    = {}
+	::ItVlIPI    = {}
+	::ItVlTot    = {}
+	::ItNCM      = {}
+	::ItCprod    = {}
+	::ItuCom     = {}
+	::ItVunCom   = {}
+	::ItXped     = {}
+	::ItnItemPed = {}
+	::Loja       = ''
+	::NomeCliFor = ''
+	::NomeDestin = ''
+	::NomeEmiten = ''
+	::Serie      = ""
+	::StatusZZX  = ''
+	::TipoDoc    = ''
+	::TipoNF     = ''
+	::URL        = PadR(GetNewPar("MV_SPEDURL","http://localhost:8080/sped"),250)
+	::XML        = NIL
+	::XMLLayout  = ''
+	::Transfer   = ''
+	::ContraNF   = ''
+	::DadosAdic  = ''
+	::PesoL      = ''
+	::PesoB      = ''
+Return ::self
+
+
+
+// --------------------------------------------------------------------------
+// Busca a chave da nota nas tabelas do SPED, para casos em que a nota ainda
+// nao foi impressa e, portanto, o campo ainda nao estah preenchido no SF1/SF2.
+METHOD Chave050 (_sSerie, _sNF) Class ClsNFe
+	local _sRet := ""
+	local _oSQL     := NIL
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT DOC_CHV"
+	_oSQL:_sQuery +=   " FROM SPED050"
+	_oSQL:_sQuery +=  " WHERE ID_ENT = '" + ::GetEntid () + "'"
+	_oSQL:_sQuery +=    " AND NFE_ID = '" + _sSerie + _sNF + "'"
+	_sRet = _oSQL:RetQry ()
+return _sRet
+
+
+
+// --------------------------------------------------------------------------
+// Consulta ultimo retorno de autorizacao da nota na SEFAZ.
+METHOD ConsAutori () Class ClsNFe
+	local _aRet := {'', '', ''}
+	//u_logIni (GetClassName (::Self) + '.' + procname ())
+	if !empty (::GetEntid ()) .and. ! empty (::Chave)
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT TOP 1 CSTAT_SEFR, RTRIM (XMOT_SEFR), NFE_PROT, DTREC_SEFR, HRREC_SEFR"
+		_oSQL:_sQuery +=   " FROM SPED054"
+		_oSQL:_sQuery +=  " WHERE ID_ENT    = '" + ::GetEntid () + "'"
+		_oSQL:_sQuery +=    " AND NFE_CHV   = '" + ::Chave + "'"
+		_oSQL:_sQuery +=    " AND NFE_PROT != ''"
+		_oSQL:_sQuery +=  " ORDER BY DTREC_SEFR desc, HRREC_SEFR desc"
+		_aRet := _oSQL:Qry2Array (.F., .F.)
+		
+		// Converte para vetor simples.
+		if len (_aRet) == 1
+			_aRet = aclone (_aRet [1])
+		endif
+	endif
+	//u_logFim (GetClassName (::Self) + '.' + procname ())
+return _aRet
+
+
+
+// --------------------------------------------------------------------------
+// Consulta autorizacao de notas NFe emitidas usando formulario proprio (atraves da ID_NFE).
+METHOD ConsAutFP () Class ClsNFe
+	local _oWS  := NIL
+	local _sRet := ''
+
+	//u_logIni (GetClassName (::Self) + '.' + procname ())
+	if !empty (::GetEntid ())
+	
+		// Jah tive um caso de passar o atributo ::IdNFe050 incompleto e ter retorno positivo...
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "SELECT TOP 1 CSTAT_SEFR"
+		_oSQL:_sQuery +=  " FROM SPED054"
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND ID_ENT = '" + ::GetEntid () + "'"
+		_oSQL:_sQuery +=   " AND NFE_ID = '" + ::IdNFe050 + "'"
+		_oSQL:_sQuery += " ORDER BY DTREC_SEFR desc, HRREC_SEFR desc"
+		//_oSQL:Log ()
+		_sRet = _oSQL:RetQry (1, .F.)
+	endif
+
+	//u_logFim (GetClassName (::Self) + '.' + procname ())
+return _sRet
+
+
+
+/* nao consegui fazer funcionar. Robert, 08/09/18
+// --------------------------------------------------------------------------
+// Consulta status da chave no SEFAZ.
+// a intencao eh migrar para ca a verificacao de chaves feita pelo scriptr do powershell
+METHOD ConsChSEF (_sChave) Class ClsNFe
+	local _oWS  := NIL
+	local _sRet := ''
+	u_logIni (GetClassName (::Self) + '.' + procname ())
+
+	if !empty (::GetEntid ())
+		_oWS := WSNFeSBRA():New()
+		_oWS:cUSERTOKEN = "TOTVS"
+		_oWS:cID_ENT    = ::GetEntid ()
+		_oWS:_URL       = ::URL + "/NFeSBRA.apw"
+		u_log ('_oWS:')
+		u_logobj (_oWS)
+
+		u_log ('##########################')
+		u_log ('')
+		private _oResult := NFESBRA_NFEPROTOCOLOCONSULTA():New
+
+		_oWS:CCHVNFE    = _sChave
+		_oWS:cIdInicial = '000146428'
+		//          CONSULTACHAVENFE (CUSERTOKEN, CID_ENT, CCHVNFE, OWSCONSULTACHAVENFERESULT)
+   		u_log (_oWS:CONSULTACHAVENFE (_oWS:cUSERTOKEN, _oWS:cID_ENT, _sChave, _oWS:OWSCONSULTACHAVENFERESULT))
+
+		u_logObj (_oWS:OWSCONSULTACHAVENFERESULT)
+		u_log ('&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
+		u_logObj (_oResult)
+
+		
+//		oWS:oWSCONSULTACONTRIBUINTERESULT:= NFESBRA_ARRAYOFNFECONSULTACONTRIBUINTE():New()
+		
+		
+		
+		_oWS:nDIASPARAEXCLUSAO := 0
+		_oWS:cIdInicial = ::IDNFe050
+		_oWS:cIdFinal   = ::IDNFe050
+		_oWS:dDataDe    = ::DtEmissao
+		_oWS:dDataAte   = ::DtEmissao
+		_oWS:cCNPJDESTInicial = ::CNPJDestin
+		_oWS:cCNPJDESTFinal   = ::CNPJDestin
+		if _oWS:RETORNAFX ()
+			_oRetorno := _oWS:oWsRetornaFxResult
+			_oXml := _oRetorno:OWSNOTAS:OWSNFES3[1]
+			If !Empty(_oXml:oWSNFe:cProtocolo)
+				_sRet := '<?xml version="1.0" encoding="UTF-8"?><nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.portalfiscal.inf.br/nfe procNFe_v1.00.xsd" versao="1.10">'
+				_sRet += AllTrim(_oXml:oWSNFe:cXML)
+				_sRet += AllTrim(_oXml:oWSNFe:cXMLPROT)
+				_sRet += '</nfeProc>'
+			else
+				aadd (::Erros, 'NF-e sem protocolo de autorizacao')					
+			endif
+		else
+			aadd (::Erros, "Sem retorno para esta NF-e")
+		endif
+	else
+		aadd (::Erros, "Nao foi possivel identificar a entidade")
+	endif
+
+
+	u_logFim (GetClassName (::Self) + '.' + procname ())
+return _sRet
+*/
+
+
+// --------------------------------------------------------------------------
+// Gera nota fiscal no sistema a partir do XML.
+METHOD GeraNF (_lPreNota, _sCondPag) Class ClsNFe
+	local _lContinua := .T.
+	local _aLinha    := {}
+	local _aAutoSF1  := {}
+	local _aAutoSD1  := {}
+	local _sProduto  := ""
+	local _sUF       := ""
+	local _nTamDoc   := TamSX3 ('ZZX_DOC')[1]
+	local _nVlTot    := 0
+	local _nQuant    := 0
+	local _vNCM      := ""
+	local _vXped     := ""
+	local _vItemPed  := ""
+	local _vCprod    := ""
+	local _sEspecie  := ""
+	local _nItem     := 0
+	local _sTES      := ""
+	local _oSQL      := NIL
+	local _nPesoL     := 0
+	local _nPesoB     := 0
+	private lMsHelpAuto := .F.  // se .t. direciona as mensagens de help
+	private lMsErroAuto := .F.  // necessario a criacao
+	private altera   := .F.     // Requerido por rotinas automaticas.
+	private inclui   := .T.     // Requerido por rotinas automaticas.
+	private aGets    := {}      // Requerido por rotinas automaticas.
+	private aTela    := {}      // Requerido por rotinas automaticas.
+	private _F1CHVNFE := ""     // Deixar private para ser vista por outros programas.
+
+	u_logIni (GetClassName (::Self) + '.' + procname ())
+
+//	u_log (ClassDataArr (::self))
+
+	if _lContinua
+		if "CTE" $ upper (::XMLLayout)
+			_sEspecie = 'CTR'
+		else
+			_sEspecie = 'SPED'
+		endif
+	endif
+
+	// Posiciona cliente ou fornecedor, conforme o tipo de nota.
+	if _lContinua
+		if ::TipoNF == 'N'
+			sa2 -> (dbsetorder (1))
+			if ! sa2 -> (dbseek (xfilial ("SA2") + ::CliFor + ::Loja, .F.))
+				u_help ("Fornecedor/loja '" + ::CliFor + '/' + ::Loja + "' nao encontrado.")
+				_lContinua = .F.
+			else
+				_sUF = sa2 -> a2_est
+			endif
+		else
+			sa1 -> (dbsetorder (1))
+			if ! sa1 -> (dbseek (xfilial ("SA1") + ::CliFor + ::Loja, .F.))
+				u_help ("Cliente/loja '" + ::CliFor + '/' + ::Loja + "' nao encontrado.")
+				_lContinua = .F.
+			else
+				_sUF = sa1 -> a1_est
+			endif
+		endif
+	endif
+
+	if _lContinua
+		_aAutoSF1 = {}
+		_aAutoSD1 = {}
+		
+	  AADD( _aAutoSF1, { ""   , ::DtEmissao,        Nil})  // aAutoCab[1,2] // DTINI
+      AADD( _aAutoSF1, { ""   , ::DtEmissao,        Nil})  // aAutoCab[2,2] // DTFIM
+      AADD( _aAutoSF1, { ""   , 1 ,                 Nil})  // aAutoCab[3,2] // ROTINA
+	  AADD( _aAutoSF1, { ""   , ::CliFor,            Nil})  // aAutoCab[4,2] //CFORNORI
+      AADD( _aAutoSF1, { ""   , ::Loja,             Nil}) // aAutoCab[5,2] // CLOJAORI
+      AADD( _aAutoSF1, { ""   , ::TipoNF ,          Nil}) // aAutoCab[6,2] // NTIPOORI
+      AADD( _aAutoSF1, { ""   , .F.,                Nil}) // aAutoCab[7,2] // LAGLUTPROD
+      AADD( _aAutoSF1, { ""   , _sUF,               Nil}) // aAutoCab[8,2]  // CUFORI
+      AADD( _aAutoSF1, { ""   , 1 ,          Nil}) // aAutoCab[9,2]  //VALOR
+      AADD( _aAutoSF1, { "F1_FORMUL" , "N",         Nil}) // aAutoCab[10,2]
+      AADD( _aAutoSF1, { "F1_DOC"    , ::Doc,       Nil}) // aAutoCab[11,2]
+      AADD( _aAutoSF1, { "F1_SERIE"  , ::Serie,     Nil}) // aAutoCab[12,2]
+      AADD( _aAutoSF1, { "F1_FORNECE", ::CliFor,    Nil}) // aAutoCab[13,2]
+      AADD( _aAutoSF1, { "F1_LOJA"   , ::Loja,      Nil}) // aAutoCab[14,2]
+      AADD( _aAutoSF1, { ""   , 1 ,          Nil}) // aAutoCab[15,2] // TES
+      AADD( _aAutoSF1, { ""   , 0 ,          Nil}) // aAutoCab[16,2] // BSICMRET
+      AADD( _aAutoSF1, { ""   , 0 ,          Nil}) // aAutoCab[17,2] // VLRITMRET
+      AADD( _aAutoSF1, { "F1_ESPECIE", _sEspecie,   Nil}) // aAutoCab[18,2] //  
+      AADD( _aAutoSF1, { ""   , 1 ,          Nil}) // aAutoCab[19,2] // 
+      AADD( _aAutoSF1, { ""   , 0 ,          Nil}) // aAutoCab[20,2] // 
+      AADD( _aAutoSF1, { ""   , 0 ,          Nil}) // aAutoCab[21,2] // 
+      AADD( _aAutoSF1, { ""   , 0 ,          Nil}) // aAutoCab[22,2] //
+      AADD( _aAutoSF1, { "F1_PLIQUI"   , ::_pesoL ,          Nil}) // aAutoCab[22,2] //
+      AADD( _aAutoSF1, { "F1_PBRUTO"   , ::_pesoB ,          Nil}) // aAutoCab[22,2] //
+       _F1CHVNFE := zzx -> zzx_chave  // Usado por inicializador padrao de campo.
+		u_log (_aAutoSF1)
+
+		for _nItem = 1 to len (::ItCodfor)
+
+			// Tenta buscar o codigo do produto pelo cadastro de produto X fornecedor ou produto X cliente
+			_sProduto = ""
+			if ::TipoNF == 'N'
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += " SELECT A5_PRODUTO, A5_NOMPROD"
+				_oSQL:_sQuery +=   " FROM " + RetSQLName ("SA5") + " SA5 "
+				_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=    " AND A5_FILIAL  = '" + xfilial ("SA5") + "'"
+				_oSQL:_sQuery +=    " AND A5_FORNECE = '" + ::CliFor + "'"
+				_oSQL:_sQuery +=    " AND A5_LOJA    = '" + ::Loja + "'"
+				_oSQL:_sQuery +=    " AND A5_CODPRF  = '" + ::ItCodFor [_nItem] + "'"
+				_sProduto = _oSQL:RetQry ()
+			else
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += " SELECT A7_PRODUTO, A7_DESCCLI"
+				_oSQL:_sQuery +=   " FROM " + RetSQLName ("SA7") + " SA7 "
+				_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=    " AND A7_FILIAL  = '" + xfilial ("SA7") + "'"
+				_oSQL:_sQuery +=    " AND A7_CLIENTE = '" + ::CliFor + "'"
+				_oSQL:_sQuery +=    " AND A7_LOJA    = '" + ::Loja + "'"
+				_oSQL:_sQuery +=    " AND A7_CODCLI  = '" + ::ItCodFor [_nItem] + "'"
+				_sProduto = _oSQL:RetQry ()
+			endif
+
+			// Se nao encontrou o codigo do produto, deixa-o como generico.
+			if empty (_sProduto)
+				_sProduto = '9999'
+			endif
+
+			// Posiciona SB1 no produto para leitura de dados adicionais.
+			sb1 -> (dbsetorder (1))
+			if ! sb1 -> (dbseek (xfilial ("SB1") + _sProduto, .F.))
+				u_help ("Produto '" + _sProduto + "' nao cadastrado.")
+				_lContinua = .F.
+				exit
+			endif
+
+			// Define a descricao do produto
+			_sDescri  = sb1 -> b1_desc
+
+			_sTES = '001'
+
+			// Arredonda valor total p/ 2 casas p/ compatibilizar com SFT, SF3, SE2, CD2, contabilizacao, SPED, etc, coisa e tal...
+			_nVlTot  = ::ItVlTot [_nItem]
+			_nQuant  = ::ItQuant [_nItem]
+			_nQuant  = round (_nQuant, TamSX3 ("D1_QUANT")[2])
+			_nVlUni  = _nVlTot / _nQuant
+			_nVlTot  = round (_nQuant * _nVlUni, 2)
+			_nNCM    = ::ItNCM [_nItem]
+			_nCprod  = ::ItCprod [_nItem]
+			_nVunCom = ::ItVunCom [_nItem]
+			_nVuCom  = ::ItUCom [_nItem]
+			_nXped   = ::ItXped [_nItem]
+			_nItemPed = ::ItnItemPed [_nItem]
+			
+			_aLinha  = {}
+			AADD(_aLinha , {"D1_COD"     , sb1 -> b1_cod   , Nil } )
+			AADD(_aLinha , {"D1_DESCRI"  , _sDescri        , Nil } )
+			AADD(_aLinha , {"D1_TOTAL"   , _nVlTot         , Nil } )
+			AADD(_aLinha , {"D1_UM"      , sb1 -> B1_UM    , Nil } )
+			AADD(_aLinha , {"D1_TP"      , sb1 -> B1_TIPO  , Nil } )
+			AADD(_aLinha , {"D1_LOCAL"   , sb1 -> B1_LOCPAD, Nil } )
+			AADD(_aLinha , {"D1_QUANT"   , _nQuant         , Nil } )
+			AADD(_aLinha , {"D1_VUNIT"   , _nVlUni         , Nil } )
+			AADD(_aLinha , {"D1_TES"     , _sTES           , Nil } )
+			AADD(_aLinha , {"D1_PEDIDO"  , _nXped          , Nil } )
+			u_log (_aLinha)
+			AADD(_aAutoSD1, aClone (U_OrdAuto (_aLinha)))
+		next
+	endif
+
+	// Gera a NF ou pre-NF de entrada.
+	if _lContinua
+		lMsHelpAuto := .F.  // se .t. direciona as mensagens de help
+		lMsErroAuto := .F.  // necessario a criacao
+		DbSelectArea("SF1")
+		if _lPreNota
+			MsExecAuto({|x,y,z|MATA140(x,y,z)},_aAutoSF1,_aAutoSD1,3)
+//			A140NFiscal ("SF1", sf1 -> (recno ()), 3)
+		else
+			MATA116 (_aAutoSF1, _aAutoSD1)  // Abre tela do doc. entrada (parametro .T.) para possibilitar conferencia e manutencao do usuario.
+//			Pergunte("MTA103",.F.)
+			//MsExecAuto({|x,y,z|MATA103(x,y,z)},_aAutoSF1,_aAutoSD1,3)
+			//MATA116 (_aAutoSF1, _aAutoSD1, 3, .T.)  // Abre tela do doc. entrada (parametro .T.) para possibilitar conferencia e manutencao do usuario.
+		endif
+		If lMsErroAuto
+			MostraErro()
+		else
+			_lContinua = .F.
+			if empty (NomeAutoLog ())
+				_sMsg = "Nao foi possivel ler o arquivo de log de erros."
+			else
+				_sMsg = memoread (NomeAutoLog ())
+			endif
+			u_help (_sMsg)
+		endif
+	endif
+	u_logFim (GetClassName (::Self) + '.' + procname ())
+return _lContinua
+
+
+
+// --------------------------------------------------------------------------
+METHOD GetEntid () Class ClsNFe
+	local _sCNPJ := ""
+	local _sInsc := ""
+	local _oSQL  := ""
+	local _sRet  := ""
+
+	if ::Empresa != cEmpAnt .or. ::Filial != cFilAnt
+		_sCNPJ = fBuscaCpo ("SM0", 1, ::Empresa + ::Filial, "M0_CGC")
+		_sInsc = fBuscaCpo ("SM0", 1, ::Empresa + ::Filial, "M0_INSC")
+	else 
+		_sCNPJ = sm0 -> m0_cgc
+		_sInsc = sm0 -> m0_insc
+	endif
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT ID_ENT"
+	_oSQL:_sQuery +=   " FROM SPED001"
+	_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=    " AND CNPJ = '" + _sCNPJ + "'"
+	_oSQL:_sQuery +=    " AND IE = '" + _sInsc + "'"
+
+	_sRet = _oSQL:RetQry ()
+	if empty (_sRet)
+		aadd (::Erros, "Nao foi possivel definir a ID no SPED para o CNPJ/IE atual. Operacoes com NF-e nao serao possiveis.")
+		u_help ("Nao foi possivel definir a ID no SPED para o CNPJ/IE atual. Operacoes com NF-e nao serao possiveis.")
+	endif
+return _sRet
+
+
+
+// --------------------------------------------------------------------------
+// Busca o XML de NF emitidas (que deve se enviado para o cliente).
+METHOD GetXML () Class ClsNFe
+	local _oWS      := NIL
+	local _sRet     := ''
+	local _oRetorno := NIL
+	local _oXML     := NIL
+
+//	u_logIni (GetClassName (::Self) + '.' + procname ())
+	if !empty (::GetEntid ())
+	
+		// Jah tive um caso de passar o atributo ::IdNFe050 incompleto e ter retorno positivo...
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "SELECT COUNT (*)"
+		_oSQL:_sQuery +=  " FROM SPED050"
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND ID_ENT = '" + ::GetEntid () + "'"
+		_oSQL:_sQuery +=   " AND NFE_ID = '" + ::IdNFe050 + "'"
+//		u_log (_oSQL:_sQuery)
+		if _oSQL:RetQry () > 0
+			_oWS := WSNFeSBRA():New()
+			_oWS:cUSERTOKEN = "TOTVS"
+			_oWS:cID_ENT    = ::GetEntid ()
+			_oWS:_URL       = ::URL + "/NFeSBRA.apw"
+			_oWS:nDIASPARAEXCLUSAO := 0
+			_oWS:cIdInicial = ::IDNFe050
+			_oWS:cIdFinal   = ::IDNFe050
+			_oWS:dDataDe    = ::DtEmissao
+			_oWS:dDataAte   = ::DtEmissao
+			_oWS:cCNPJDESTInicial = ::CNPJDestin
+			_oWS:cCNPJDESTFinal   = ::CNPJDestin
+			if _oWS:RETORNAFX ()
+				_oRetorno := _oWS:oWsRetornaFxResult
+				_oXml := _oRetorno:OWSNOTAS:OWSNFES3[1]
+				If !Empty(_oXml:oWSNFe:cProtocolo)
+					_sRet := '<?xml version="1.0" encoding="UTF-8"?><nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.portalfiscal.inf.br/nfe procNFe_v1.00.xsd" versao="1.10">'
+					_sRet += AllTrim(_oXml:oWSNFe:cXML)
+					_sRet += AllTrim(_oXml:oWSNFe:cXMLPROT)
+					_sRet += '</nfeProc>'
+				else
+					aadd (::Erros, 'NF-e sem protocolo de autorizacao')					
+				endif
+			else
+				aadd (::Erros, "Sem retorno para esta NF-e")
+			endif
+		else
+			aadd (::Erros, "NF nao encontrada na tabela SPED050 com ID '" + ::IDNFe050 + "'")
+		endif
+	else
+		aadd (::Erros, "Nao foi possivel identificar a entidade")
+	endif
+//	u_log ('Retornando:', _sRet)
+//	u_logFim (GetClassName (::Self) + '.' + procname ())
+return _sRet
+
+
+
+// --------------------------------------------------------------------------
+// Leitura do 'XML interno' de uma nota.
+METHOD LeXML (_oObjPai) Class ClsNFe
+	local _nDet     := 0
+	local _nTamDoc  := TamSX3 ('ZZX_DOC')[1]
+	local _aAreaSM0 := {}
+
+	u_logIni (GetClassName (::Self) + '.' + procname ())
+
+	if len (::Erros) == 0
+		if ! ::XMLLayout $ 'procNFe/NFe/enviNFe'
+			aadd (::Erros, "Layout '" + ::XMLLayout + "' desconhecido na classe " + GetClassName (::Self))
+		endif
+	endif
+
+	if len (::Erros) == 0
+		if substr (::XML:_Id:TEXT, 1, 3) == "NFe"
+			::Chave  = substr (::XML:_Id:TEXT, 4)
+		else
+			::Chave  = ::XML:_Id:TEXT
+		endif
+		if empty (::Chave)
+			aadd (::Erros, "Layout '" + ::XMLLayout + "' desconhecido na identificacao da chave durante a leitura do 'XML interno' na classe " + GetClassName (::Self))
+		endif
+	endif
+
+	if len (::Erros) == 0
+		::Serie      = ::XML:_ide:_serie:TEXT
+		if valtype (XmlChildEx (::XML:_emit, '_CNPJ')) == "O"
+			::CNPJEmiten = ::XML:_emit:_CNPJ:TEXT
+		elseif valtype (XmlChildEx (::XML:_emit, '_CPF')) == "O"
+			::CNPJEmiten = ::XML:_emit:_CPF:TEXT
+		endif
+		::NomeEmiten = ::XML:_emit:_xNome:TEXT
+		::TipoDoc    = "NF"
+		::Doc        = padl (alltrim (::XML:_ide:_nNF:TEXT), _nTamDoc, '0')
+		::Ambiente   = ::XML:_ide:_tpAmb:TEXT
+		if valtype (XmlChildEx (::XML:_ide, '_DEMI')) == "O"
+			::DtEmissao = stod (strtran (::XML:_ide:_dEmi:TEXT, '-', ''))
+		elseif valtype (XmlChildEx (::XML:_ide, '_DHEMI')) == "O"
+			::DtEmissao = stod (strtran (left (::XML:_ide:_dhEmi:TEXT, 10), '-', ''))
+		endif
+
+//		::CNPJDestin = iif (valtype (XmlChildEx (::XML:_dest, '_CNPJ')) == "O", ::XML:_dest:_CNPJ:TEXT, ::XML:_dest:_CPF:TEXT)
+		// Notas de importacao (nota de entrada com formulario proprio) nao tem CNPJ, por exemplo.
+		if XmlChildEx (::XML:_dest, '_CNPJ') != NIL
+			::CNPJDestin = ::XML:_dest:_CNPJ:TEXT
+		else
+			if XmlChildEx (::XML:_dest, '_CPF') != NIL
+				::CNPJDestin = ::XML:_dest:_CPF:TEXT
+			endif
+		endif
+		::NomeDestin = ::XML:_dest:_xNome:TEXT
+
+		// Transforma os nodos de detalhes em array (caso a nota tenha apenas um item o mesmo vai estar como tipo 'NOD') para poder processar todos da mesma forma.
+		if valtype (::XML:_det) != "A"
+			XmlNode2Arr (::XML:_det, "_det")
+		endif
+
+		// Leitura dos itens da nota.
+		for _nDet = 1 to len (::XML:_det)
+			aadd (::ItCFOP  ,            ::XML:_det [_nDet]:_prod:_CFOP:TEXT)
+			aadd (::ItDescri, alltrim (::XML:_det [_nDet]:_prod:_xProd:TEXT))
+			aadd (::ItQuant ,      val (::XML:_det [_nDet]:_prod:_qCom:TEXT))
+			aadd (::ItVlTot ,     val (::XML:_det [_nDet]:_prod:_vProd:TEXT))
+			aadd (::ItCodFor, alltrim (::XML:_det [_nDet]:_prod:_cProd:TEXT))
+			aadd (::ItVlICM ,                                              0)
+			aadd (::ItVlIPI ,                                              0)
+			aadd (::ItNCM   ,           (::XML:_det [_nDet]:_prod:_NCM:TEXT))
+			aadd (::ItCprod ,         (::XML:_det [_nDet]:_prod:_Cprod:TEXT))
+			aadd (::ItVunCom,    val (::XML:_det [_nDet]:_prod:_vUnCom:TEXT))
+			aadd (::ItuCom,           (::XML:_det [_nDet]:_prod:_UCom:TEXT))
+			
+			if XMLChildEx (::XML:_det [_nDet]:_prod, "_XPED") != NIL
+				aadd (::ItXped  ,      (::XML:_det [_nDet]:_prod:_xPed:TEXT))
+			else
+				aadd (::ItXped  , '')								
+			endif
+			
+			if XMLChildEx (::XML:_det [_nDet]:_prod, "_NITEMPED") != NIL
+				aadd (::Itnitemped  ,      (::XML:_det [_nDet]:_prod:_nitemped:TEXT))
+			else
+				aadd (::Itnitemped  , '')								
+			endif
+			
+			if XMLChildEx (::XML:_det [_nDet], "_IMPOSTO") != NIL
+				if XMLChildEx (::XML:_det [_nDet]:_imposto, "_ICMS") != NIL
+					if XMLChildEx (::XML:_det [_nDet]:_imposto:_ICMS, '_ICMS00') != NIL
+						::ItVlICM [_nDet] = val (::XML:_det [_nDet]:_imposto:_ICMS:_ICMS00:_vICMS:TEXT)
+					endif
+				endif
+				if XMLChildEx (::XML:_det [_nDet]:_imposto, "_IPI") != NIL
+					if XMLChildEx (::XML:_det [_nDet]:_imposto:_IPI, '_IPITRIB') != NIL
+						::ItVlIPI [_nDet] = val (::XML:_det [_nDet]:_imposto:_IPI:_IPITrib:_vIPI:TEXT)
+					endif
+				endif
+			endif
+		next
+		
+		::PesoL = 0
+		::PesoB = 0
+		// le peso liquido e bruto - na tag dos dados do tranportador
+		/*
+		if valtype (XmlChildEx (::XML, '_TRANSP')) == "O"
+		    u_help("primeiro IF - se existe a tag TRANSP")
+			if valtype (XmlChildEx (::XML:_transp, '_VOL')) == "O"
+			    u_help("segundo IF - testa se existe TAG PESO dentro da TAG transporadora")
+				::PesoL = val(::XML:_transp:_vol:_pesoL:TEXT)
+				::PesoB = val(::XML:_transp:_vol:_pesoB:TEXT)
+			endif				
+		endif
+		*/
+				
+		// le dados adicionais
+		if valtype (XmlChildEx (::XML, '_INFADIC')) == "O"
+			if valtype (XmlChildEx (::XML:_infAdic, '_INFCPL')) == "O"
+				::DadosAdic = ::XML:_infAdic:_infCpl:TEXT
+			endif				
+		endif
+
+		
+	endif
+
+	// Especifico para notas de retorno do deposito - Coop. Nova Alianca.
+	if len (::Erros) == 0 .and. sm0 -> m0_cgc == '88612486000160' .and. ::CNPJEmiten $ '88612486000402/88612486001484/88612486001565'
+		//u_log ('Retorno de deposito Alianca')
+		::TipoNF = "B"
+	else
+		// Verifica tipo de documento atraves dos CFOP's da nota.
+		::TipoNF = "N"  // A maioria eh normal.
+		if ::TipoDoc == "NF"
+			for _nDet = 1 to len (::ItCFOP)
+
+				// Verifica se trata-se de CFOP de devolucao de clientes
+				if substr (::ItCFOP [_nDet], 2, 3) $ "201/202/210/410/411/412/413/503/553/555/556/603/660/661/909/913/918/919"
+					::TipoNF = "D"
+					exit
+				elseif substr (::ItCFOP [_nDet], 2, 3) $ "901/915"
+					::TipoNF = "B"
+					exit
+				elseif substr (::ItCFOP [_nDet], 2, 3) $ "208/209/662/664/665/902/903/906/907/916/921/925"
+					::TipoNF = "N"
+					exit
+				endif
+			next
+		endif
+	endif
+
+	// identifica se nota de transferencia entre as filiais
+	if '88612486' $ ::CNPJEmiten
+		if '20' $ ::Serie // nossas notas de transferencia serie 20 - sao notas de credito de imposto
+			::Transfer = 'N'
+		else
+			::Transfer = 'S'
+		endif			
+	endif
+	
+	// identifica se é contra nota 
+	
+	//u_log ('CFOPs encontrados:', ::ItCFOP)
+
+	// Verifica cadastro do fornecedor ou cliente, conforme o caso.
+	if len (::Erros) == 0
+		if ::TipoNF == "N"
+			sa2 -> (dbsetorder (3))  // A2_FILIAL+A2_CGC
+			if ! sa2 -> (dbseek (xfilial ("SA2") + ::CNPJEmiten, .F.))
+				aadd (::Avisos, "Fornecedor com CNPJ '" + ::CNPJEmiten + "' nao encontrado no cadastro.")
+			else
+				::CliFor     = sa2 -> a2_cod
+				::Loja       = sa2 -> a2_loja
+				::NomeCliFor = sa2 -> a2_nome
+			endif
+		else
+			sa1 -> (dbsetorder (3))  // A1_FILIAL+A1_CGC
+			if ! sa1 -> (dbseek (xfilial ("SA1") + ::CNPJEmiten, .F.))
+				aadd (::Avisos, "Cliente com CNPJ '" + ::CNPJEmiten + "' nao encontrado no cadastro.")
+			else
+				::CliFor     = sa1 -> a1_cod
+				::Loja       = sa1 -> a1_loja
+				::NomeCliFor = sa1 -> a1_nome
+			endif
+		endif
+	endif
+
+	// Habilitar as linhas abaixo para verificar os atributos da classe:
+	//u_log ('Objeto ' + GetClassName (::Self) + ':')
+	//u_log (ClassDataArr (::self))
+
+	u_logFim (GetClassName (::Self) + '.' + procname ())
+return (len (::Erros) == 0)

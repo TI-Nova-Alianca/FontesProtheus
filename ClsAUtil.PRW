@@ -1,0 +1,1009 @@
+// Programa:  ClsAUtil
+// Autor:     Robert Koch
+// Data:      24/07/2009
+// Descricao: Declaracao de classe de utilitarios para arrays, para uso em outros programas.
+//            Poderia trabalhar como uma include, mas prefiro declarar uma funcao de usuario
+//            apenas para poder incluir no projeto e manter na pasta dos fontes.
+//
+// Historico de alteracoes:
+// 19/08/2009 - Robert - Criado(s) metodo(s) Del() e Dist().
+// 25/08/2009 - Robert - Criado(s) metodo(s) Reset(), Acumula(), SetArray() e TotCol().
+// 14/10/2009 - Robert - Ajustes metodo 'LinMaiorVl'
+//                     - Metodos 'Dist' e 'Dist3' passam a atuar somente sobre a array
+//                       interna e nao retornam mais array com o resultado.
+// 16/01/2010 - Robert - Criado(s) metodo(s) TotLin().
+// 21/01/2010 - Robert - No metodo Dist3, quando a coluna base estiver zerada, zera tambem a de destino.
+// 17/05/2010 - Robert - Criado metodo MedPonder.
+// 02/06/2011 - Robert - Criado metodo ConvHTM.
+// 21/07/2011 - Robert - Criado metodo QuebraCol.
+// 22/11/2011 - Robert - Criaca opcao de destacar a ultima linha no metodo ConvHTM.
+// 13/12/2011 - Robert - Criado metodo CombinaVlr.
+// 01/03/2012 - Robert - Criado metodo ConvTXT.
+// 29/04/2013 - Robert - Criado metodo MediaCol.
+// 23/06/2015 - Robert - Criado metodo ConvXML.
+// 24/06/2015 - Robert - Criado metodo Distinct.
+// 12/11/2016 - Robert - Metodo ConvHTM passa a ter defaults para parametros de formatacao.
+// 20/10/2017 - Robert - Verifica se vai exceder o tamanho maximo de uma string no metodo ConvHTM.
+// 17/11/2017 - Robert - Metodo Conv2THM passa a receber parametro de numero maximo de linhas.
+// 26/06/2019 - Robert - Metodo 'Distinct' renomeado para 'Distinto' (passou a ser palavra reservada da linguagem).
+// 04/03/2020 - Robert - Criado metodo ReduzLin.
+//
+
+#include "protheus.ch"
+
+// --------------------------------------------------------------------------
+// Funcao declarada apenas para poder compilar este arquivo fonte.
+user function ClsAUtil ()
+return
+
+
+// ==========================================================================
+// Classe usada para operacoes genericas com arrays.
+CLASS ClsAUtil
+
+	// Declaracao das propriedades da Classe
+	DATA _aArray
+	DATA _aChave
+
+	// Declaracao dos Metodos da Classe
+	METHOD New ()
+	METHOD Acumula ()
+	METHOD CombinaVlr ()
+	METHOD Compara ()
+	METHOD ConvHTM ()
+	METHOD ConvTXT ()
+	METHOD ConvXML ()
+	METHOD Del ()
+	METHOD Dist ()
+	METHOD Dist3 ()
+	METHOD Distinto ()
+	METHOD LinMaiorVl ()
+	METHOD MediaCol ()
+	METHOD MedPonder ()
+	METHOD QuebraCol ()
+	METHOD ReduzLin ()
+	METHOD Reset ()
+	METHOD SetArray ()
+	METHOD SetChave ()
+	METHOD TotCol ()
+	METHOD TotLin ()
+ENDCLASS
+
+
+
+// --------------------------------------------------------------------------
+METHOD New (_a) Class ClsAUtil
+	::_aArray := iif (valtype (_a) == "A", aclone (_a), {})
+	::_aChave := {}
+Return Self
+
+
+
+// --------------------------------------------------------------------------
+// Acumula totais de acordo com as colunas chave.
+METHOD Acumula (_aDados) Class ClsAUtil
+	local _nChave := 0
+	local _nLinha := 0
+	local _sBloco := ""
+	local _bBloco := NIL
+	local _nCol   := 0
+	
+	// Se nao ha chave especificada, acumula geral em uma soh linha.
+	if len (::_aChave) == 0
+ 		if len (::_aArray) == 0
+			aadd (::_aArray, aclone (_aDados))
+		endif
+
+		// Varre todas as colunas de dados recebidos, mas somente acumula as colunas numericas.
+		for _nCol = 1 to len (_aDados)
+			if valtype (_aDados [_nCol]) == "N"
+				::_aArray [1, _nCol] += _aDados [_nCol]
+			endif
+		next
+
+	else
+	
+		// Monta bloco de codigo para verificacao de chave
+		_sBloco = "{|_aVal|"
+		for _nChave = 1 to len (::_aChave)
+			if _nChave > 1
+				_sBloco += ".and."
+			endif
+			_sBloco += "_aVal[" + cvaltochar (::_aChave [_nChave]) + "]==_aDados[" + cvaltochar (::_aChave [_nChave]) + "]"
+		next
+		_sBloco += "}"
+		_bBloco = &(_sBloco)
+		
+		// Se a chave jah existe na array, apenas acumula os valores. Senao, cria nova linha na array.
+		_nLinha = ascan (::_aArray, _bBloco)
+		if _nLinha == 0
+			aadd (::_aArray, aclone (_aDados))
+		else
+			// Varre todas as colunas de dados recebidos, mas somente acumula as colunas numericas e que nao fazem parte da chave.
+			for _nCol = 1 to len (_aDados)
+				if valtype (_aDados [_nCol]) == "N" .and. ascan (::_aChave, _nCol) == 0
+					::_aArray [_nLinha, _nCol] += _aDados [_nCol]
+				endif
+			next
+		endif
+	endif
+return
+
+
+
+// --------------------------------------------------------------------------
+// Compara array atual com outra passada por parametro e gera uma nova com as linhas combinadas. 
+METHOD Compara (_aCompara, _aColChave) Class ClsAUtil
+	local _nLin1     := 0
+	local _nLin2     := 0
+	local _nColChave := 0
+	local _aRet      := {}
+	local _sChave1   := ""
+	local _sChave2   := ""
+	//local _aUsadas1  := {}
+	//local _aUsadas2  := {}
+
+	u_logIni (GetClassName (::Self) + '.' + procname ())
+	//u_log ('Comparando', ::_aArray, 'com', _aCompara)
+	
+	if len (::_aArray) == 0
+		u_help (GetClassName (::Self) + '.' + procname () + ": array vazia. Comparacao nao serah possivel.")
+	else
+	
+		// Se nao recebeu array com a lista de colunas chave, assume que sejam todas.
+		if _aColChave == NIL .or. len (_aColChave) == 0
+			_aColChave = {}
+			for _nColChave = 1 to len (::_aArray [1])
+				aadd (_aColChave, _nColChave)
+			next
+		endif
+	
+		// Por enquanto vou assumir que as duas arrays contem o mesmo numero de colunas.
+	
+		_nLin1 = 1
+		_nLin2 = 1
+		do while _nLin1 <= len (::_aArray) .or. _nLin2 <= len (_aCompara)
+	
+			// Se uma das arrays jah foi totalmente percorrida, simplesmente adiciona o restante da outra.
+			if _nLin1 > len (::_aArray)
+				_AdicA2 (@_aRet, _aCompara, _nLin2++) //, @_aUsadas2)
+				loop
+			endif 
+			if _nLin2 > len (_aCompara)
+				_AdicA1 (@_aRet, ::_aArray, _nLin1++) //, @_aUsadas1)
+				loop
+			endif 
+			
+			// Monta 'chave' concatenando as colunas a verificar
+			_sChave1 = ""
+			_sChave2 = ""
+			_sBloco1 = "{| _aVal | "
+			_sBloco2 = "{| _aVal | "
+			for _nColChave = 1 to len (_aColChave)
+				_sChave1 += cvaltochar (::_aArray [_nLin1, _aColChave [_nColChave]])
+				_sChave2 += cvaltochar (_aCompara [_nLin2, _aColChave [_nColChave]])
+	
+				// Monta bloco de codigo para testar as colunas chave
+				_sBloco1 += "cvaltochar (_aVal [" + cvaltochar (_aColChave [_nColChave]) + "])" + iif (_nColChave < len (_aColChave), " + ", "")
+				_sBloco2 += "cvaltochar (_aVal [" + cvaltochar (_aColChave [_nColChave]) + "])" + iif (_nColChave < len (_aColChave), " + ", "")
+			next
+	
+			// Usa por base a menor linha (caso iguais, opta pela array 1)
+			if _nLin1 <= _nLin2
+				_sBloco1 += " == '" + _sChave1 + "'}"
+				_bBloco1 = &(_sBloco1)
+				_nPos2 = ascan (_aCompara, _bBloco1, _nLin2)
+				//u_log ('Procurei em A2 com:', _sBloco1, 'e encontrei na posicao', _nPos2)
+	
+				// Adiciona todas as linhas faltantes de a2
+				if _nPos2 > 0
+					do while _nLin2 < _nPos2
+						_AdicA2 (@_aRet, _aCompara, _nLin2++) //, @_aUsadas2)
+					enddo
+		
+					// Adiciona a linha atual de a1 e a linha correspondente de a2.
+					_AdicA1A2 (@_aRet, ::_aArray, _aCompara, _nLin1++, _nLin2++) //, @_aUsadas1, @_aUsadas2)
+				else
+					_AdicA1 (@_aRet, ::_aArray, _nLin1++) //, @_aUsadas1)
+				endif
+	
+			else
+	
+				_sBloco2 += " == '" + _sChave2 + "'}"
+				_bBloco2 = &(_sBloco2)
+				_nPos1 = ascan (::_aArray, _bBloco2, _nLin1)
+				//u_log ('Procurei em A1 com:', _sBloco2, 'e encontrei na posicao', _nPos1)
+	
+				// Adiciona todas as linhas faltantes de a1
+				if _nPos1 > 0
+					do while _nLin1 < _nPos1
+						_AdicA1 (@_aRet, ::_aArray, _nLin1++) //, @_aUsadas1)
+					enddo
+					_AdicA1A2 (@_aRet, ::_aArray, _aCompara, _nLin1++, _nLin2++) //, @_aUsadas1, @_aUsadas2)
+				else
+					_AdicA2 (@_aRet, _aCompara, _nLin2++) //, @_aUsadas2)
+				endif
+			endif
+		enddo
+	endif
+	u_logFim (GetClassName (::Self) + '.' + procname ())
+return _aRet
+
+
+// --------------------------------------------------------------------------
+// Funcao auxiliar do metodo de comparacao. Adiciona uma linha da array 1 ao resultado.
+static function _AdicA1 (_aRet, _aOrig, _nLinha) //, _aUsadas)
+	local _nCol := 0
+	local _aAux := {}
+	for _nCol = 1 to len (_aOrig [_nLinha])
+		aadd (_aAux, _aOrig [_nLinha, _nCol])
+	next
+	aadd (_aAux, '###')
+	for _nCol = 1 to len (_aOrig [_nLinha])
+		aadd (_aAux, '-')
+	next
+//	aadd (_aUsadas, _nLinha)
+	//u_log (procname () + ' retornando:', _aAux)
+	aadd (_aRet, aclone (_aAux))
+return _aRet
+
+
+// --------------------------------------------------------------------------
+// Funcao auxiliar do metodo de comparacao. Adiciona uma linha da array 2 ao resultado.
+static function _AdicA2 (_aRet, _aOrig, _nLinha) //, _aUsadas)
+	local _nCol := 0
+	local _aAux := {}
+	for _nCol = 1 to len (_aOrig [_nLinha])
+		aadd (_aAux, '-')
+	next
+	aadd (_aAux, '###')
+	for _nCol = 1 to len (_aOrig [_nLinha])
+		aadd (_aAux, _aOrig [_nLinha, _nCol])
+	next
+//	aadd (_aUsadas, _nLinha)
+	//u_log (procname () + ' retornando:', _aAux)
+	aadd (_aRet, aclone (_aAux))
+return _aRet
+
+
+// --------------------------------------------------------------------------
+// Funcao auxiliar do metodo de comparacao. Adiciona uma linha de cada array ao resultado.
+static function _AdicA1A2 (_aRet, _aOrig1, _aOrig2, _nLinha1, _nLinha2) //, _aUsadas1, _aUsadas2)
+	local _nCol := 0
+	local _aAux := {}
+	for _nCol = 1 to len (_aOrig1 [_nLinha1])
+		aadd (_aAux, _aOrig1 [_nLinha1, _nCol])
+	next
+	aadd (_aAux, '###')
+	for _nCol = 1 to len (_aOrig2 [_nLinha2])
+		aadd (_aAux, _aOrig2 [_nLinha2, _nCol])
+	next
+//	aadd (_aUsadas1, _nLinha1)
+//	aadd (_aUsadas2, _nLinha2)
+	//u_log (procname () + ' retornando:', _aAux)
+	aadd (_aRet, aclone (_aAux))
+return _aRet
+
+
+
+// --------------------------------------------------------------------------
+// Combina valores presentes na array para tentar chegar ao valor desejado.
+// Seria uma ideia inicial de maquina para encontrar diferencas...
+METHOD CombinaVlr (_nCol, _nDesejado, _nTolerAc, _nTolerAb, _nNivel) Class ClsAUtil
+	local _aRet     := {}
+	local _nPos     := 0
+	local _nPosBase := 0
+	local _nAcum    := 0
+	local _a        := {}
+	local _lAchou   := .F.
+	local _aRecurs  := {}
+	local _oRecurs  := NIL
+	local _nLimInf  := _nDesejado - _nTolerAb
+	local _nLimSup  := _nDesejado + _nTolerAc
+
+	_nNivel = iif (_nNivel == NIL, 1, _nNivel)
+
+	// Tenta buscar com o valor exato.
+	_nPos = ascan (::_aArray, {|_aVal| _aVal [_nCol] == _nDesejado})
+	if _nPos != 0
+		u_log ('Achei valor exato na posicao', _nPos)
+		aadd (_aRet, _nPos)
+		_lAchou = .T.
+	endif
+
+	if ! _lAchou
+		// Gera uma nova array somente com a coluna de valores (ordenada) e um referencial para a posicao original.
+		_a = {}
+		for _nPos = 1 to len (::_aArray)
+			aadd (_a, {::_aArray [_nPos, _nCol], _nPos})
+		next
+		_a = asort (_a,,, {|_x, _y| _x [1] < _y [1]})
+	
+		u_log ('Procurando valores entre ' + cvaltochar (_nLimInf) + ' e ' + cvaltochar (_nLimSup) + ' em:', _a)
+	
+		// Procura pela posicao da array com o valor mais proximo do desejado.
+		// Como pode receber valores de tolerancia, se pegar o primeiro valor disponivel talvez
+		// nao seja o melhor.
+		_nPos = len (_a)
+		do while _nPos >= 1
+			if _nAcum + _a [_nPos, 1] >= _nLimInf .and. _nAcum + _a [_nPos, 1] <= _nLimSup
+				u_log ('O valor', _a [_nPos, 1], 'me serve')
+				aadd (_aRet, _a [_nPos, 2])
+				_nAcum += _a [_nPos, 1]
+				_nPos = len (_a)
+				loop
+			endif
+			if _nAcum >= _nLimInf .and. _nAcum <= _nLimSup
+				_lAchou = .T.
+				exit
+			endif
+			_nPos --
+		enddo
+	endif
+
+	// Tenta busca recursiva usando mais de uma posicao da array.
+	if ! _lAchou .and. len (_a) > 1 .and. _nNivel <= 5
+		u_log ('Tentando com mais de 1 posicao')
+		_aRet = {}
+		for _nPosBase = 1 to len (_a)
+
+			// A principio, apenas valores positivos. Ateh a data de imprementacao desta rotina, ainda nao havia necessidade de negativos.
+			if _nLimSup >= _a [_nPosBase, 1]
+				_oRecurs := ClsAUtil ():New ()
+				for _nPos = 1 to len (_a)
+					if _nPos != _nPosBase
+						aadd (_oRecurs:_aArray, aclone (_a [_nPos]))
+					endif
+				next
+				_aRecurs = aclone (_oRecurs:CombinaVlr (1, _nDesejado - _a [_nPosBase, 1], _nTolerAc, _nTolerAb, _nNivel + 1))
+				if len (_aRecurs) > 0
+					_lAchou = .T.
+					aadd (_aRet, _a [_nPosBase, 2])
+					for _nPos = 1 to len (_aRecurs)
+						aadd (_aRet, _oRecurs:_aArray [_aRecurs [_nPos], 2])
+					next
+					exit
+				endif
+			endif
+		next
+	endif
+return iif (_lAchou, _aRet, {})
+
+
+
+// --------------------------------------------------------------------------
+// Converte array para tabela em formato HTML.
+// Recebe titulo para a tabela e array de formatacao de cada coluna no formato {descricao, alinhamento, mascara}
+// Args: _sTitTab:  Texto a ser usado como titulo (primeira linha) da tabela
+//       _aCols:    Definicao de colunas para geracao do HTML: {nome, left/right, mascara}
+//       _sArgsTbl: Argumentos para a montagem de tabela em HTML. Ex.:  'width="90%" border="1" cellspacing="0" cellpadding="3" align="center"'
+//       _lDestUlt: Destacar em negrito (.T.) ou nao (.F.) e ultima linha da tabela.
+//       _nMaxLin:  Maximo de linhas a exportar para HTM. Se nao informado, exporta todas.
+METHOD ConvHTM (_sTitTab, _aCols, _sArgsTbl, _lDestUlt, _nMaxLin) Class ClsAUtil
+	local _nLin    := 0
+	local _nCol    := 0
+	local _sRet    := ""
+	local _nQtCols := 0
+	local _sFormat := ""
+
+	_sTitTab := iif (_sTitTab == NIL, "", _sTitTab) 
+	_lDestUlt := iif (_lDestUlt == NIL, .F., _lDestUlt)
+
+	// Define formatacao padrao.
+	if _sArgsTbl == NIL .or. _sArgsTbl == ""
+		_sArgsTbl = 'width="90%" border="1" cellspacing="0" cellpadding="3" align="center"'
+	endif
+
+	// Verifica o total de colunas da tabela
+	for _nLin = 1 to len (::_aArray)
+		_nQtCols = max (_nQtCols, len (::_aArray [_nLin]))
+	next
+	
+	// Se nao recebeu definicao das colunas, monta uma generica.
+	if _aCols == NIL .or. len (_aCols) == 0
+		_aCols = {}
+		for _nCol = 1 to _nQtCols
+			aadd (_aCols, {"",  "left",  ""})
+		next
+	endif
+
+	// Cabecalho da tabela
+	_sRet := '<table ' + _sArgsTbl + '>'
+	_sRet += '<tr>'
+	_sRet +=    '<th colspan=' + cvaltochar (_nQtCols) + '>' + _sTitTab + '</th>'
+	_sRet += '</tr>'
+	_sRet += '<tr>'
+	for _nCol = 1 to len (_aCols)
+		_sRet += '<th align=' + _aCols [_nCol, 2] + '>' + cvaltochar (_aCols [_nCol, 1]) + '</th>'
+	next
+	_sRet += '</tr>'
+	
+	// Linhas da tabela
+	for _nLin = 1 to len (::_aArray)
+	
+		if _nMaxLin != NIL .and. _nLin > _nMaxLin
+			_sRet += 'A T E N C A O : Estao sendo mostradas aqui apenas as primeiras ' + cvaltochar (_nMaxLin) + ' linhas de um total de ' + cvaltochar (len (::_aArray)) + '.'
+			exit
+		endif
+
+		// Verifica se deve destacar a ultima linha
+		if _nLin == len (::_aArray) .and. _lDestUlt != NIL .and. _lDestUlt
+			_sFormat = 'th'
+		else
+			_sFormat = 'td'
+		endif
+
+		_sRet += '<tr>'
+		for _nCol = 1 to _nQtCols
+			_sRet += '<' + _sFormat + ' align=' + _aCols [_nCol, 2] + '>' + alltrim (transform (::_aArray [_nLin, _nCol], _aCols [_nCol, 3])) + '</' + _sFormat + '>'
+		next
+		_sRet += '</tr>' + chr (13) + chr (10)
+		
+		// Para evitar erro de 'string size overflow'
+		if len (_sRet) > 1048000
+			_sRet += 'Excedeu tamanho maximo para uma string' + chr (13) + chr (10)
+			exit
+		endif
+	next
+	_sRet += '</table>'
+return _sRet
+
+
+
+// --------------------------------------------------------------------------
+// Converte array para texto
+METHOD ConvTXT () Class ClsAUtil
+	local _sEspacos  := ""  // Caso precise inserir espacos no inicio das linhas.
+	local _nLin      := 0
+	local _nCol      := 0
+	local _sDado     := ""
+	local _sMensagem := ""
+	local _aNovaLin  := {}
+	local _aNovaMat  := {}
+	local _lPerfeita := .F.
+	local _nQtCol    := 0
+	local _nLargCol  := 0
+	local _lUniDim   := .T.
+	
+	if len (::_aArray) == 0
+		_sMensagem += _sEspacos + "*MATRIZ VAZIA*"
+	else
+
+		// Se recebi uma matriz unidimensional, 'converto-a' para uma bidimensional de uma
+		// unica linha, para melhorar a visualizacao no arquivo de log.
+		_lUniDim = .T.
+		for _nLin = 1 to len (::_aArray)
+			if valtype (::_aArray[_nLin]) == "A"
+				_lUniDim = .F.
+				exit
+			endif
+		next
+		if _lUniDim
+			_aNovaMat = {}
+			for _nLin = 1 to len (::_aArray)
+				aadd (_aNovaMat, ::_aArray[_nLin])
+			next
+			::_aArray := {aclone (_aNovaMat)}
+		endif
+
+		// Se recebi uma matriz "quadradinha" faco com que todas as linhas tenham a mesma largura.
+		if valtype (::_aArray) == "A" .and. len (::_aArray) > 0
+			_lPerfeita = .T.
+			for _nLin = 1 to len (::_aArray)
+				if valtype (::_aArray[_nLin]) != "A"
+					_lPerfeita = .F.
+					exit
+				endif
+			next
+		endif
+		if _lPerfeita
+			_nQtCol = len (::_aArray [1])
+			for _nLin = 1 to len (::_aArray)
+				if len (::_aArray [_nLin]) != _nQtCol
+					_lPerfeita = .F.
+					exit
+				endif
+			next
+		endif
+		if _lPerfeita
+			_aNovaMat = {}
+			for _nLin = 1 to len (::_aArray)
+				// Passa dados para nova matriz, jah convertidos para caracter, para poder,
+				// depois, deixar todas as colunas com a mesma largura.
+				_aNovaLin = {}
+				for _nCol = 1 to len (::_aArray [_nLin])
+					_sDado = _Arr2Char (::_aArray [_nLin, _nCol])
+					aadd (_aNovaLin, _sDado)
+				next
+				aadd (_aNovaMat, aclone (_aNovaLin))
+			next
+			for _nCol = 1 to _nQtCol
+				_nLargCol = len (_aNovaMat [1, _nCol])
+				for _nLin = 1 to len (_aNovaMat)
+					_nLargCol = max (_nLargCol, len (_aNovaMat [_nLin, _nCol]))
+				next
+				for _nLin = 1 to len (_aNovaMat)
+					_aNovaMat [_nLin, _nCol] = padr (_aNovaMat [_nLin, _nCol], _nLargCol, " ")
+				next
+			next
+			
+			// Clona a nova matriz para a matriz a ser mostrada.
+			::_aArray = aclone (_aNovaMat)
+		endif
+		
+		if valtype (::_aArray) != "A"
+			_sMensagem += _sEspacos + procname () + ": nao recebi uma array"
+		else
+			
+			// Se for uma matriz perfeita, posso gerar uma linha acima com os numeros das colunas.
+			if _lPerfeita
+				_nLargTot = 0
+				_sMensagem += space (7)
+				for _nCol = 1 to len (::_aArray [1])
+					_nLargCol = len (_Arr2Char (::_aArray [1, _nCol])) + 3
+					_sMensagem += padr (cvaltochar (_nCol), _nLargCol, " ")
+					_nLargTot += _nLargCol
+				next
+				_sMensagem += chr (13) + chr (10)
+				_sMensagem += _sEspacos + space (6) + replicate ("-", _nLargTot - 1) + chr (13) + chr (10)
+			endif
+			
+			// Tratamento original
+			for _nLin = 1 to len (::_aArray)
+				if len (_sMensagem) > 64000  // Antes que alcance o tamanho maximo de uma string, vou jogar para o log.
+					u_log (_sMensagem)
+					_sMensagem = "************ Exportando matriz por que alcancou tamanho maximo para uma string"
+					_sMensagem = ""
+				endif
+				_sMensagem += _sEspacos
+				if valtype (::_aArray [_nLin]) != "A"
+					_sMensagem += _sEspacos + "Linha " + cValToChar (_nLin) + " nao eh array. Contem o seguinte dado: " + cValToChar (::_aArray [_nLin])
+				else
+					if len (::_aArray [_nLin]) == 0
+						_sMensagem += _sEspacos + "Linha " + cValToChar (_nLin) + " eh array, mas nao tem nenhum elemento."
+					else
+						if _lPerfeita
+							_sMensagem += padr (cvaltochar (_nLin), 5, " ")
+						endif
+						_sMensagem += "| "
+						for _nCol = 1 to len (::_aArray [_nLin])
+							_sDado = _Arr2Char (::_aArray [_nLin, _nCol]) + " | "
+							_sMensagem += _sDado
+						next
+					endif
+				endif
+				_sMensagem += _sEspacos + chr (13) + chr (10) // + _sEspacos
+			next
+			
+			// 'Fecha' a matriz com uma linha na parte de baixo.
+			if _lPerfeita
+				_sMensagem += _sEspacos + space (6) + replicate ("-", _nLargTot - 1) + chr (13) + chr (10)
+			endif
+		endif
+	endif
+return _sMensagem
+
+
+
+// --------------------------------------------------------------------------
+// Converte array para texto com tags XML. O proposito inicial eh apenas para visualizacao
+// dos dados da array quando esta tiver diferentes dados e subarrays.
+METHOD ConvXML (_aArray, _sNivel) Class ClsAUtil
+	local _nPos := 0
+	local _sRet := ""
+	local _sTag := ""
+	local _lRaiz := (_sNivel == NIL)
+	local _sNivel := iif (_sNivel == NIL, 'A', soma1 (_sNivel))
+
+	if _lRaiz
+		_sRet = '<?xml version="1.0" encoding="utf-8"?><RAIZ>' + chr (13) + chr (10)
+	endif
+	if valtype (_aArray) == "A"
+		for _nPos = 1 to len (_aArray)
+			_sTag = _sNivel + strzero (_nPos, len (_aArray))
+			_sRet += '<' + _sTag + '>'
+			_sRet += ::ConvXML (_aArray [_nPos], _sNivel)
+			_sRet += '</' + _sTag + '>' + chr (13) + chr (10)
+		next
+	else
+		_sRet = cvaltochar (_aArray)
+	endif
+	if _lRaiz
+		_sRet += '</RAIZ>' + chr (13) + chr (10)
+	endif
+return _sRet
+
+
+
+// --------------------------------------------------------------------------
+// Deleta a posicao informada. Este metodo foi implementado por que a funcao
+// aDel deixa a array com o mesmo tamanho e coloca NIL na ultima posicao.
+METHOD Del (_nPosIni, _nPosFim) Class ClsAUtil
+	local _aMatAux := {}
+	local _nPos    := 0
+
+	_nPosFim := iif (_nPosFim == NIL, _nPosIni, _nPosFim)
+	if _nPosFim >= _nPosIni
+		for _nPos = 1 to len (::_aArray)
+			if _nPos < _nPosIni .or. _nPos > _nPosFim
+				if valtype (::_aArray [_nPos]) == "A"
+					aadd (_aMatAux, aclone (::_aArray [_nPos]))
+				else
+					aadd (_aMatAux, ::_aArray [_nPos])
+				endif
+			endif
+		next
+		::_aArray := aclone (_aMatAux)
+	endif
+return
+
+
+
+// --------------------------------------------------------------------------
+// Distribui valores na coluna especificada.
+// Recebe: - numero da coluna onde devem ser gravados os valores distribuidos
+//         - valor total a ser distribuido
+//         - numero de decimais a serem usados na coluna destino
+//         - linha para ajuste de arredondamentos: 'P'=Primeira, 'U'=Ultima, 'M'=Maior valor
+METHOD Dist (_nColDest, _nVlADist, _nDec, _sAjuste) Class ClsAUtil
+	local _aRet      := aclone (::_aArray)
+	local _nLinha    := 0
+	local _nTotBase  := 0
+	local _nTotDist  := 0
+	local _nMaiorLin := 0
+
+	for _nLinha = 1 to len (_aRet)
+		_aRet [_nLinha, _nColDest] = round (_nVlADist / len (_aRet), _nDec)
+	next
+
+	// Verifica se restou alguma diferenca devido ao arredondamento.
+	_nTotDist = 0
+	for _nLinha = 1 to len (_aRet)
+		_nTotDist += _aRet [_nLinha, _nColDest]
+	next
+	if _nTotDist != _nVlADist
+		if _sAjuste == "P"
+			_nLinAjust = 1
+		elseif _sAjuste == "U"
+			_nLinAjust = len (_aRet)
+		elseif _sAjuste == "M"
+			_nLinAjust = ::LinMaiorVl (_nColDest)
+		endif
+
+		_aRet [_nLinAjust, _nColDest] += _nVlADist - _nTotDist
+	endif
+
+	::_aArray := aclone (_aRet)
+return
+
+
+
+// --------------------------------------------------------------------------
+// Distribui valores por 'regra de 3' a partir de coluna com valores base.
+// Recebe: - numero da coluna de valores base
+//         - numero da coluna onde devem ser gravados os valores distribuidos
+//         - valor total a ser distribuido
+//         - numero de decimais a serem usados na coluna destino
+METHOD Dist3 (_nColBase, _nColDest, _nVlADist, _nDec) Class ClsAUtil
+	local _aRet      := aclone (::_aArray)
+	local _nLinha    := 0
+	local _nTotBase  := 0
+	local _nTotDist  := 0
+	local _nMaiorLin := 0
+
+	if len (::_aArray) == 0 .or. _nColDest > len (::_aArray [1])
+		u_help ("Classe/metodo " + GetClassName (::Self) + ":" + procname () + " --> array vazia ou parametros invalidos.")
+	else
+		for _nLinha = 1 to len (_aRet)
+			_nTotBase += _aRet [_nLinha, _nColBase]
+		next
+		for _nLinha = 1 to len (_aRet)
+			if _aRet [_nLinha, _nColBase] == 0  // Para evitar pequenos arredondamentos
+				_aRet [_nLinha, _nColDest] = 0
+			else
+				_aRet [_nLinha, _nColDest] = round (((_nVlADist * _aRet [_nLinha, _nColBase]) / _nTotBase), _nDec)
+			endif
+		next
+	
+		// Se restou alguma diferenca devido ao arredondamento, joga essa diferenca na linha de maior valor.
+		_nTotDist = 0
+		for _nLinha = 1 to len (_aRet)
+			_nTotDist += _aRet [_nLinha, _nColDest]
+		next
+		if _nTotDist != _nVlADist
+			// Verifica qual a linha com maior valor
+			_nMaiorLin = ::LinMaiorVl (_nColDest)
+	
+			_aRet [_nMaiorLin, _nColDest] += _nVlADist - _nTotDist
+			_aRet [_nMaiorLin, _nColDest] = round (_aRet [_nMaiorLin, _nColDest], _nDec)
+		endif
+	
+		::_aArray := aclone (_aRet)
+	endif
+return
+
+
+
+// --------------------------------------------------------------------------
+// Deixa somente uma ocorrencia de cada elemento (semelhante ao DISTINCT do SQL).
+METHOD Distinto (_aOrig) Class ClsAUtil
+	local _nLin    := 0
+	local _lRet    := .T.
+	local _aAux    := {}
+	local _nQtCol  := 0
+	local _nCol    := 0
+	local _sTeste  := ""
+	local _bTeste  := NIL
+
+	if _aOrig == NIL
+		_aOrig := aclone (::_aArray)
+	endif
+
+	if len (_aOrig) > 0
+		_nQtCol = len (_aOrig [1])
+		
+		// Monta bloco de codigo para fazer o teste de todas as colunas.
+		_sTeste = ""
+		for _nCol = 1 to _nQtCol
+			_sTeste += "_aVal[" + cvaltochar (_nCol) + "]==_aOrig[_nLin," + cvaltochar (_nCol) + "]"
+			_sTEste += iif (_nCol < _nQtCol, ".and.", "")
+		next
+		_bTeste := &('{|_aVal|' + _sTeste + '}')
+
+		for _nLin = 1 to len (_aOrig)
+			if len (_aOrig [_nLin]) != _nQtCol
+				u_help ("Classe " + GetClassName (::Self) + ": array tem elementos de tamanhos diferentes. Metodo " + procname () + " nao pode ser aplicado.")
+				_lRet = .F.
+				exit
+			endif
+			if ascan (_aAux, _bTeste) == 0
+				aadd (_aAux, aclone (_aOrig [_nLin]))
+			endif
+		next
+	endif
+	if ! _lRet
+		_aAux = {}
+	endif
+return _aAux
+
+
+
+// --------------------------------------------------------------------------
+// Encontra a linha com o maior valor (numerico) na coluna informada.
+METHOD LinMaiorVl (_nCol) Class ClsAUtil
+	local _nLinha := 0
+	local _nRet   := 0
+	local _nMaior := 0
+	if valtype (::_aArray) == "A" .and. len (::_aArray) > 0
+		_nRet = 1
+		_nMaior = ::_aArray [_nRet, _nCol]
+		for _nLinha = 1 to len (::_aArray)
+			if ::_aArray [_nLinha, _nCol] > _nMaior
+				_nMaior = ::_aArray [_nLinha, _nCol]
+				_nRet = _nLinha
+			endif
+		next
+	endif
+return _nRet
+
+
+
+// --------------------------------------------------------------------------
+// Calcula a media de uma coluna da array.
+// Recebe: - numero da coluna a calcular.
+//         - posicao (linha) inicial. Dafault = primeira.
+//         - posicao (linha) final. Default = ultima.
+METHOD MediaCol (_nCol, _nLinIni, _nLinFim) Class ClsAUtil
+	local _nRet      := 0
+	local _nLinha    := 0
+	local _nSoma     := 0
+	_nLinIni = iif (_nLinIni == NIL, 1, _nLinIni)
+	_nLinFim = iif (_nLinFim == NIL, len (::_aArray), _nLinFim)
+	for _nLinha = _nLinIni to _nLinFim
+		_nSoma += ::_aArray [_nLinha, _nCol]
+	next
+return _nSoma / (_nLinFim - _nLinIni + 1)
+
+
+
+// --------------------------------------------------------------------------
+// Calcula a media ponderada de uma array de duas colunas [Valor, Peso]
+// Recebe: - numero da coluna dos valores
+//         - numero da coluna dos pesos
+METHOD MedPonder (_nColValor, _nColPeso) Class ClsAUtil
+	local _nRet      := 0
+	local _nLinha    := 0
+	local _nTotMult  := 0
+	local _nTotPeso  := 0
+	for _nLinha = 1 to len (::_aArray)
+		_nTotMult += ::_aArray [_nLinha, _nColValor] * ::_aArray [_nLinha, _nColPeso]
+		_nTotPeso += ::_aArray [_nLinha, _nColPeso]
+	next
+return iif (_nTotPeso == 0, 0, _nTotMult / _nTotPeso)
+
+
+
+// --------------------------------------------------------------------------
+// Reduz a quantidade de linhas em matrizes que servem como 'listas de itens'
+// Ex. matriz original:
+// prod1   prod2   prod3   prod4
+// 0345    0082
+//         0328    0150    8010
+// 0005            0151    8011
+// 0348                    8012
+//
+// Matriz resultante:
+// prod1   prod2   prod3   prod4
+// 0345    0082    0150    8010
+// 0005    0328    0151    8011
+// 0348                    8012
+METHOD ReduzLin () Class ClsAUtil
+	local _nCol := 0
+	local _nLin := 0
+	local _nLinDest := 0
+	local _aReduzida := {}
+
+	// Varre todas as linhas da matriz original
+	for _nLin = 1 to len (::_aArray)
+//		u_logIni ('Linha ' + cvaltochar (_nLin))
+
+		// Verifica cada coluna desta linha
+		for _nCol = 1 to len (::_aArray [_nLin])
+//			u_logIni ('Coluna ' + cvaltochar (_nCol))
+
+			// Se tiver algum dado (para ser considerado 'vazio' precisa conter NIL).
+			if valtype (::_aArray [_nLin, _nCol]) != 'U' 
+
+				// Encontra a proxima linha da array destino onde esta coluna estiver livre
+				_nLinDest = ascan (_aReduzida, {|_aVal| valtype (_aVal [_nCol]) == 'U'})
+//				u_log ('Encontrei linha vazia:', _nLinDest)
+				if _nLinDest == 0
+					aadd (_aReduzida, array (len (::_aArray [_nLin])))
+					_nLinDest = len (_aReduzida)
+//					u_log ('Inseri nova linha na array destino. Linha para gravacao:', _nLinDest)
+				endif
+				_aReduzida [_nLinDest, _nCol] = ::_aArray [_nLin, _nCol]
+//				u_log (_aReduzida)
+			endif
+//			u_logFim ('Coluna ' + cvaltochar (_nCol))
+		next
+//		u_logFim ('Linha ' + cvaltochar (_nLin))
+	next
+	::_aArray := aclone (_aReduzida)
+Return
+
+
+
+// --------------------------------------------------------------------------
+// Inicializa o objeto com uma array vazia
+METHOD Reset () Class ClsAUtil
+	::_aArray := {}
+Return
+
+
+
+// --------------------------------------------------------------------------
+// 'Quebra' a array atual (unidimensional), transformando-a em uma array multidimenional
+// com varias colunas. Util, por exemplo, para casos em que se tem diversos dados
+// pequenos e deseja-se imprimir em diversas colunas, aproveitando melhor o papel.
+METHOD QuebraCol (_nLargMax, _nFolgaCol) Class ClsAUtil
+	local _aRet      := {}
+	local _nMaiorLin := 0
+	local _nLinOri   := 0
+	local _nLin      := 0
+	local _nCol      := 0
+	local _nQtCol    := 0
+	local _nTamCol   := 0
+
+	// Verifica o tamanho da maior linha
+	_nMaiorLin = 0
+	for _nLinOri = 1 to len (::_aArray)
+		_nMaiorLin = max (_nMaiorLin, len (::_aArray [_nLinOri]))
+	next
+        
+	// Verifica em quantas colunas eh possivel mostrar.
+	_nQtCol = int (_nLargMax / (_nMaiorLin + _nFolgaCol))
+	
+	// Calcula o tamanho (numero de linhas) de cada coluna.
+	_nTamCol = len (::_aArray) / _nQtCol
+	if _nTamCol != int (_nTamCol)
+		_nTamCol = int (_nTamCol) + 1
+	endif
+
+	// Cria a matriz para receber o conteudo em colunas.
+	_aRet = array (_nTamCol, _nQtCol)
+	for _nLin = 1 to len (_aRet)
+		for _nCol = 1 to len (_aRet [_nLin])
+			_aRet [_nLin, _nCol] = space (_nMaiorLin)
+		next
+	next
+
+	// Passa os dados da array original para a nova.
+	_nCol = 1
+	_nLin = 1
+	for _nLinOri = 1 to len (::_aArray)
+
+			// Grava dados com tamanho fixo pensando em posterior impressao.
+			_aRet [_nLin, _nCol] = U_TamFixo (::_aArray [_nLinOri], _nMaiorLin)
+		_nLin ++
+
+		// Muda para proxima coluna quando atingir um multiplo do tamanho da coluna.
+		if _nLinOri % _nTamCol == 0
+			_nCol ++
+			_nLin = 1
+		endif
+	next
+Return _aRet
+
+
+
+// --------------------------------------------------------------------------
+// Seta nova array para o objeto
+METHOD SetArray (_a) Class ClsAUtil
+	::_aArray := aclone (_a)
+Return
+
+
+
+// --------------------------------------------------------------------------
+// Define uma array com os numeros das colunas que serao chaves para totalizacoes.
+METHOD SetChave (_a) Class ClsAUtil
+	::_aChave = aclone (_a)
+Return
+
+
+
+// --------------------------------------------------------------------------
+// Totaliza a coluna informada.
+METHOD TotCol (_nCol) Class ClsAUtil
+	local _nLinha := 0
+	local _nRet   := 0
+	for _nLinha = 1 to len (::_aArray)
+		_nRet += ::_aArray [_nLinha, _nCol]
+	next
+return _nRet
+
+
+
+// --------------------------------------------------------------------------
+// Totaliza a linha informada.
+METHOD TotLin (_nLin) Class ClsAUtil
+	local _nCol := 0
+	local _nRet := 0
+	for _nCol = 1 to len (::_aArray [_nLin])
+		_nRet += ::_aArray [_nLin, _nCol]
+	next
+return _nRet
+
+
+
+// --------------------------------------------------------------------------
+// Converte campos de array para caracter, para exportacao para log.
+static function _Arr2Char (_xDado)
+	local _sDado := ""
+	do case
+		case valtype (_xDado) == "N"
+			_sDado = alltrim (str (_xDado, 18, 6))
+		case valtype (_xDado) == "D"
+			_sDado = dtoc (_xDado)
+		case valtype (_xDado) == "L"
+			_sDado = iif (_xDado, ".T.", ".F.")
+		case valtype (_xDado) == "M"
+			_sDado = "*MEMO*"
+		case valtype (_xDado) == "A"
+			_sDado = "*ARRAY [" + alltrim (str (len (_xDado))) + "]*"
+		case _xDado == NIL
+			_sDado = "*NIL*"
+		case valtype (_xDado) == "U"
+			_sDado = "*INDEF*"
+		case valtype (_xDado) == "O"
+			_sDado = "*OBJETO*"
+		case valtype (_xDado) == "C"
+			_sDado = _xDado
+			if empty (_sDado)
+			_sDado = "*STR.VAZIA*"
+			endif
+		otherwise
+			_sDado = "*ERRO*"
+	endcase
+return _sDado
