@@ -1,0 +1,473 @@
+// Programa: sf1100e
+// Data:     29/08/06
+// Funcao:   PE antes da exclusao da nota fiscal de entrada
+//
+// Historico de alteracoes:
+// 12/05/2008 - Robert - Incluida chamada para funcao de tratamento de controle de fretes.
+// 20/08/2008 - Robert - Limpeza do S Z H passa a ser feita pelo FrtNFE.
+// 04/09/2008 - Robert - Limpeza do ZZ4.
+// 10/03/2009 - Robert - Criado tratamento para controle de transferencias para depositos externos.
+// 11/08/2011 - Robert - Tratamento para exclusao do SZI.
+// 13/10/2011 - Robert - Passa a usar a funcao VA_ZZ4E para limpeza do ZZ4.
+// 11/05/2012 - Robert - Passa a considerar especie CTE da mesma forma que CTR.
+// 14/09/2012 - Robert - Nao considerava o D3_COD na busca do registro de transf. entre depositos a ser estornado.
+// 30/09/2012 - Robert - Criados campos D3_VANFRD, D3_VASERRD e D3_VAITNRD para substituir o D3_VACHVEX no controle de armazens externos.
+// 24/06/2013 - Robert - Tratamento de armazem passa a usar a classe ClsAmzGer.
+//                     - Cancelamento remessa para armazem geral passa a ser via batch. 
+// 15/01/2014 - Leandro DWT - grava evento para histórico de NF
+// 11/05/2015 - Robert - Tratamento para devolucoes/cancelamentos (arquivo ZAB).
+// 21/10/2015 - Robert - Atualiza status na tabela ZZX.
+// 28/10/2015 - Robert - Limpa memos do f1_vacmemc e f1_vacmemf.
+// 20/04/2016 - Robert - Limpava apenas um registro do SZI. Agora faz loop nos registros (NF pode ter gerado mais de uma parcela).
+//                     - Valida parametro VA_AMZGER.
+// 14/06/2016 - Catia  - excluir os lançamentos contabeis quando excluir o documento de entrada
+// 23/01/2018 - Catia  - excluir titulo de indenizacao de comissoes
+// 14/02/2018 - Catia  - passar a solicitar o motivo da exclusao do documento de entrada
+// 17/04/2018 - Robert - Deixa de chamar o VA_ZZ4E pois os dados adicionais foram migrados para campos memo no SF1.
+// 02/05/2018 - Robert - Desabilitada rotina de armazem externo (nunca chegamos a usar)
+// 03/05/2018 - Robert - Desabilitados tratamentos do ZAB (devolucoes de clientes).
+// 08/04/2019 - Catia  - Include "TbiConn.ch"
+// 10/05/2019 - Catia  - tira include protheus #Include "Protheus.ch" pq dava conflito com a "rwmake.ch" - e nao permitia digitar a justificativa
+// 14/05/2019 - Catia  - Algumas notas nao estavam excluindo na contabilidade
+// 03/06/2020 - Robert - Criado tratamento para exclusao de contranotas de comprea de uva (atualiza ZZ9 e SZI).
+//
+
+// -----------------------------------------------------------------------------------------------------------------------------------------------
+#include "rwmake.ch"  
+#Include "TbiConn.ch"          
+
+User Function sf1100e()
+	local _aAreaAnt := U_ML_SRArea ()
+//	local _oBatch   := NIL
+
+	// solicita motivo de exclusao do documento - obrigatorio
+	_sMotExc = "  "
+	do while empty (_sMotExc)
+		_sMotExc = U_Get ("Motivo Exclusao Documento Entrada", "C", 2, "@!", "ZX548" , _sMotExc, .F., '.T.')
+		_sQuery  = ""
+		_sQuery += " SELECT ZX5_48DESC"
+		_sQuery += "   FROM ZX5010"
+		_sQuery += "  WHERE ZX5_TABELA  = '48'"
+		_sQuery += "    AND ZX5_48ATIV != 'N'"
+		_sQuery += "    AND ZX5_48MOT   = '" + _sMotExc + "'" 
+		
+		_aDados := U_Qry2Array(_sQuery)
+		
+		if len (_aDados) = 0
+			u_help ("Motivo de Exclusao de documento de entrada não cadastrado ou inativo")
+			_sMotExc = ""
+		else
+			_sJustif = ""
+			do while empty (_sJustif)
+				_sJustif := space (250)
+				define MSDialog _oDlgJust from 0, 0 to 150, 500 of oMainWnd pixel title "Justificativa"
+				@ 10, 10 say "Justifique a exclusao da nota " + sf1 -> f1_doc
+				@ 30, 10 get _sJustif size 200, 11
+				@ 45, 10 bmpbutton type 1 action (_oDlgJust:End ())
+				activate MSDialog _oDlgJust centered
+			enddo
+		endif
+	enddo
+	
+	// grava tabela de documentos excluidos
+	DbSelectArea("ZBA")
+	DbSetOrder(1)
+	RecLock("ZBA", .T.)
+		ZBA->ZBA_FILIAL  = SF1 -> F1_FILIAL
+		ZBA->ZBA_DATA    = date()
+        ZBA->ZBA_HORA    = time()
+        ZBA->ZBA_USER    = cusername
+        ZBA->ZBA_MOT     = _sMotExc 
+        ZBA->ZBA_JUSTIF  = alltrim(_sJustif)
+		ZBA->ZBA_CHAVE   = SF1 -> F1_CHVNFE
+		ZBA->ZBA_DOC     = SF1 -> F1_DOC
+		ZBA->ZBA_SERIE   = SF1 -> F1_SERIE
+		ZBA->ZBA_ESPEC   = SF1 -> F1_ESPECIE
+		ZBA->ZBA_FORNECE = SF1 -> F1_FORNECE
+		ZBA->ZBA_LOJA    = SF1 -> F1_LOJA
+	MsUnLock()
+
+	// Tratamento de controle de fretes.
+	if alltrim (sf1 -> f1_especie) $ "CTR/CTE/NF"
+		U_FrtNFE ("E")
+	endif
+
+	// Elimina dados adicionais da nota.
+	if ! empty (sf1 -> f1_vacmemc)
+		msmm (sf1 -> f1_vacmemc,,,, 2,,, "SF1", "F1_VACMEMC")
+	endif
+	if ! empty (sf1 -> f1_vacmemf)
+		msmm (sf1 -> f1_vacmemf,,,, 2,,, "SF1", "F1_VACMEMF")
+	endif
+
+	// Tratamento para NF de entrada de safra.
+	_NFSafra ()
+
+	// Tratamento para conta corrente de associados.
+	_AtuSZI ()
+	
+	// grava evento para histórico de NF, caso seja devolução
+	if sf1 -> f1_tipo $ "D/B"
+		_HistNf ()
+	endif
+
+	// Atualiza status na tabela ZZX (XML de NF de entrada).
+	_AtuZZX ()
+	
+	// verifica titulos de indenização
+	if sf1 -> f1_tipo = "N" .and. sf1 -> f1_especie != 'SPED' .and. sf1 -> f1_especie != 'CTE' .and. sf1 -> f1_especie != 'CTR'
+		_VerInd()
+	endif		
+	
+	// Exclui lcto contabil
+	_ExcCTB ()
+
+	U_ML_SRArea (_aAreaAnt)
+	
+Return()
+
+
+
+// --------------------------------------------------------------------------
+// Controles referentes a NF de entrada de safra.
+static function _NFSafra ()
+	local _oSQL     := NIL
+	local _aRegSZI  := {}
+	local _nRegSZI  := 0
+	local _oCtaCorr := NIL
+
+	if sf1 -> f1_formul == "S" .and. sf1 -> f1_serie == '30 ' .and. sf1 -> f1_vasafra != ''
+
+		// Se encontrar este docto como uma contranota de entrada...
+		sze -> (dbsetorder (3))  // ZE_FILIAL+ZE_NFGER+ZE_SERIE
+		if sze -> (dbseek (xfilial ("SZE") + sf1 -> f1_doc + sf1 -> f1_serie, .F.))
+			// ... limpa o numero da contranota do arquivo de recebimentos de safra.
+			reclock ("SZE", .F.)
+			sze -> ze_nfger = ""
+			sze -> ze_serie = ""
+			sze -> ze_status = "2"
+			msunlock ()
+		endif
+
+		// Se encontrar este docto como uma contranota de compra, limpa o numero da contranota do arquivo de pre-notas
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "UPDATE " + RetSQLName ("ZZ9")
+		_oSQL:_sQuery +=   " SET ZZ9_NFCOMP   = '', ZZ9_SERCOM = ''"
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND ZZ9_FILIAL   = '" + sf1 -> f1_filial  + "'"
+		_oSQL:_sQuery +=   " AND ZZ9_SAFRA    = '" + sf1 -> f1_vasafra + "'"
+		_oSQL:_sQuery +=   " AND ZZ9_NFCOMP   = '" + sf1 -> f1_doc     + "'"
+		_oSQL:_sQuery +=   " AND ZZ9_SERCOM   = '" + sf1 -> f1_serie   + "'"
+		_oSQL:_sQuery +=   " AND ZZ9_FORNEC   = '" + sf1 -> f1_fornece + "'"
+		_oSQL:_sQuery +=   " AND ZZ9_LOJA     = '" + sf1 -> f1_loja    + "'"
+	//	u_log2 ('info', _oSQL:_sQuery)
+		if ! _oSQL:Exec ()
+			u_help ("Erro ao atualizar a tabela ZZ9 (pre-notas de compra de safra). Verifique!", _oSQL:_sQuery, .t.)
+		endif
+/* ainda nao pronto
+		// Se encontrar este docto como uma contranota de compra, limpa a conta corrente.
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT R_E_C_N_O_"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI "
+		_oSQL:_sQuery += " WHERE SZI.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SZI.ZI_FILIAL  = '" + sf1 -> f1_filial + "'"
+		_oSQL:_sQuery +=   " AND SZI.ZI_DOC     = '" + sf1 -> f1_doc + "'"
+		_oSQL:_sQuery +=   " AND SZI.ZI_SERIE   = '" + sf1 -> f1_serie + "'"
+		_oSQL:_sQuery +=   " AND SZI.ZI_ASSOC   = '" + sf1 -> f1_fornece + "'"
+		_oSQL:_sQuery +=   " AND SZI.ZI_LOJASSO = '" + sf1 -> f1_loja + "'"
+		u_log2 ('info', _oSQL:_sQuery)
+		_aRegSZI := aclone (_oSQL:Qry2Array ())
+		for _nRegSZI = 1 to len (_aRegSZI)
+			_oCtaCorr := ClsCtaCorr ():New (_aRegSZI [_nRegSZI, 1])
+			if ! _oCtaCorr:PodeExcl ()
+				u_help ("Esta NF gerou movimento(s) na conta corrente de associados (parcela " + _oCtaCorr:Parcela + ") que nao pode(m) ser excluido(s) neste momento. Verifique! " + _oCtaCorr:UltMsg,, .t.)
+			endif
+		next
+		*/
+	endif
+return
+
+
+
+// --------------------------------------------------------------------------
+// Atualiza arquivo de conta corrente de associados, quando for o caso.
+static function _AtuSZI ()
+	local _oCtaCorr   := NIL
+	local _oSQL       := NIL
+	local _aRecnos    := {}
+	local _nRecno     := 0
+
+	// Se for nota de compra de safra, gerou movimento na conta corrente de associados.
+	if sf1 -> f1_formul == 'S'
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT R_E_C_N_O_"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI"
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND ZI_FILIAL  = '" + xfilial ("SZI") + "'"
+		_oSQL:_sQuery +=   " AND ZI_TM      = '13'"
+		_oSQL:_sQuery +=   " AND ZI_DATA    = '" + dtos (sf1 -> f1_emissao) + "'"
+		_oSQL:_sQuery +=   " AND ZI_ASSOC   = '" + sf1 -> f1_fornece + "'"
+		_oSQL:_sQuery +=   " AND ZI_LOJASSO = '" + sf1 -> f1_loja + "'"
+		_oSQL:_sQuery +=   " AND ZI_DOC     = '" + sf1 -> f1_doc + "'"
+		_oSQL:_sQuery +=   " AND ZI_SERIE   = '" + sf1 -> f1_serie + "'"
+		_aRecnos := aclone (_oSQL:Qry2Array ())
+		for _nRecno = 1 to len (_aRecnos)
+			_oCtaCorr = ClsCtaCorr():New (_aRecnos [_nRecno, 1])
+			if ! _oCtaCorr:Exclui ()
+				u_help ("Nao foi possivel excluir da conta corrente de associados a movimentacao gerada por esta nota fiscal. Revise a conta corrente do associado '" + sf1 -> f1_fornece + "'.")
+			endif
+		next
+	endif
+return
+
+// Verifica se existem titulos de indenizacao
+Static Function _Verind()
+	_sSQL := ""
+	_sSQL += " SELECT A3_COD"
+	_sSQL += " from " + RetSQLName ("SA3") + " SA3"
+	_sSQL += " where SA3.D_E_L_E_T_ != '*'"
+	_sSQL +=   " AND SA3.A3_FILIAL   = '" + xfilial ("SA3") + "'"
+	_sSQL +=   " AND SA3.A3_FORNECE  = '" + sf1 -> f1_fornece + "'"
+	_sSQL +=   " AND SA3.A3_LOJA     = '" + sf1 -> f1_loja + "'"
+	_sSQL +=   " AND SA3.A3_MSBLQL != '1'"
+	_sSQL +=   " AND SA3.A3_ATIVO  != 'N'"
+	_sVend = U_Qry2Array(_sSQL)
+	
+	if len (_sVend) > 0
+		// Encontra titulo ref a indenizacao
+		_sSQL := ""
+		_sSQL +=    "  SELECT R_E_C_N_O_"
+		_sSQL +=    "    FROM SE2010"
+		_sSQL +=    "   WHERE D_E_L_E_T_ = ''"
+		_sSQL +=    "     AND E2_FILIAL  = '" + xfilial ("SE2")   + "'"
+		_sSQL +=    "     AND E2_FORNECE = '" + sf1 -> f1_fornece + "'"
+		_sSQL +=    "     AND E2_LOJA    = '" + sf1 -> f1_loja    + "'"
+		_sSQL +=    "     AND E2_NUM     = '" + sf1 -> f1_doc     + "'"
+		_sSQL +=    "     AND E2_PREFIXO = 'IND'"
+		_sSQL +=    "     AND E2_ORIGEM  = 'CUST'"
+		_sSQL +=    "     AND E2_NATUREZ = '120312'"
+		_sSQL +=    "     AND E2_CODRET  = '9385'"
+		_sTitInd = U_Qry2Array(_sSQL)
+		
+		if len (_sTitInd) > 0
+			_sSQL := ""
+			_sSQL +=   " UPDATE SE2010"
+			_sSQL +=   "    SET D_E_L_E_T_ = '*'
+			_sSQL +=   "      , R_E_C_D_E_L_ = R_E_C_N_O_" 
+			_sSQL +=   "  WHERE D_E_L_E_T_ = ''"
+			_sSQL +=    "   AND E2_FILIAL  = '" + xfilial ("SE2")   + "'"
+			_sSQL +=    "   AND E2_FORNECE = '" + sf1 -> f1_fornece + "'"
+			_sSQL +=    "   AND E2_LOJA    = '" + sf1 -> f1_loja    + "'"
+			_sSQL +=    "   AND E2_NUM     = '" + sf1 -> f1_doc     + "'"
+			_sSQL +=    "   AND E2_PREFIXO = 'IND'"
+			_sSQL +=    "   AND E2_ORIGEM  = 'CUST'"
+			_sSQL +=    "   AND E2_NATUREZ = '120312'"
+			_sSQL +=    "   AND E2_CODRET  = '9385'"
+			if TCSQLExec (_sSQL) < 0
+	            u_showmemo(_sSQL)
+	            return
+	        endif
+		endif
+		
+		// busca titulo filho referente ao IR no fornecedor 00796
+		_sSQL := ""
+		_sSQL +=    "  SELECT R_E_C_N_O_"
+		_sSQL +=    "    FROM SE2010"
+		_sSQL +=    "   WHERE D_E_L_E_T_ = ''"
+		_sSQL +=    "     AND E2_FILIAL  = '" + xfilial ("SE2")   + "'"
+		_sSQL +=    "     AND E2_FORNECE = '000796'
+		_sSQL +=    "     AND E2_LOJA    = '00'
+		_sSQL +=    "     AND E2_NUM     = '" + sf1 -> f1_doc     + "'"
+		_sSQL +=    "     AND E2_PREFIXO = 'IND'"
+		_sSQL +=    "     AND E2_TIPO    = 'TX'"
+		_sSQL +=    "     AND E2_ORIGEM  = 'CUST'"
+		_sSQL +=    "     AND E2_NATUREZ = 'IRF'"
+		_sSQL +=    "     AND E2_CODRET  = '9385'"
+		_sTitIRInd = U_Qry2Array(_sSQL)
+		
+		if len (_sTitIRInd) > 0
+			_sSQL := ""
+			_sSQL +=   " UPDATE SE2010"
+			_sSQL +=   "    SET D_E_L_E_T_ = '*'
+			_sSQL +=   "      , R_E_C_D_E_L_ = R_E_C_N_O_" 
+			_sSQL +=  "   WHERE D_E_L_E_T_ = ''"
+			_sSQL +=    "   AND E2_FILIAL  = '" + xfilial ("SE2")   + "'"
+			_sSQL +=    "     AND E2_FORNECE = '000796'
+			_sSQL +=    "     AND E2_LOJA    = '00'
+			_sSQL +=    "     AND E2_NUM     = '" + sf1 -> f1_doc     + "'"
+			_sSQL +=    "     AND E2_PREFIXO = 'IND'"
+			_sSQL +=    "     AND E2_TIPO    = 'TX'"
+			_sSQL +=    "     AND E2_ORIGEM  = 'CUST'"
+			_sSQL +=    "     AND E2_NATUREZ = 'IRF'"
+			_sSQL +=    "     AND E2_CODRET  = '9385'"
+		
+			if TCSQLExec (_sSQL) < 0
+	            u_showmemo(_sSQL)
+	            return
+	        endif
+		endif	
+			        		
+	endif	
+
+return
+
+// --------------------------------------------------------------------------
+Static Function _HistNf()
+	_oEvento := ClsEvent():new ()
+	_oEvento:CodEven   = "SZN001"
+	_oEvento:Texto	  = "Exclusão de Devolucao de Nota Fiscal"
+	_oEvento:NFSaida	  = sd1 -> d1_nfori
+	_oEvento:SerieSaid = sd1 -> d1_seriori
+	_oEvento:NFEntrada = sf1 -> f1_doc
+	_oEvento:SerieEntr = sf1 -> f1_serie
+	_oEvento:PedVenda  = ""
+	_oEvento:Cliente   = sf1 -> f1_fornece
+	_oEvento:LojaCli   = sf1 -> f1_loja
+	_oEvento:Hist	  = "1"
+	_oEvento:Status	  = "9"
+	_oEvento:Sub	  	  = ""
+	_oEvento:Prazo	  = 0
+	_oEvento:Flag	  = .T.
+	_oEvento:Grava ()
+Return
+
+
+
+// --------------------------------------------------------------------------
+// Atualiza status na tabela ZZX.
+static function _AtuZZX ()
+	local _oSQL      := NIL
+
+	u_logIni ()
+
+	if ! empty (sf1 -> f1_chvnfe)
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " UPDATE " + RetSQLName ("ZZX")
+		_oSQL:_sQuery +=    " SET ZZX_STATUS = '3'"  // 1=NF gerada no SF1;2=Pre-NF gerada no SF1;3=NF excluida no SF1
+		_oSQL:_sQuery +=  " WHERE ZZX_CHAVE  = '" + sf1 -> f1_chvnfe + "'"
+		_oSQL:_sQuery +=    " AND D_E_L_E_T_ = ''"
+		_oSQL:Log ()
+		_oSQL:Exec ()
+	endif
+
+	u_logFim ()
+return
+
+// -----------------------------------------------------
+// Exclui Lançamento contabil referente a contabilização
+static function _ExcCTB ()
+	local i := 0
+	
+	_wkey = '%' + xfilial ("SF1") + sf1 -> f1_doc + sf1 -> f1_serie +  sf1 -> f1_fornece + sf1 -> f1_loja + '%'
+	// busca lactos contabeis referentes a NF
+	_sSQL := ""
+    _sSQL += " SELECT CT2_LOTE, CT2_SBLOTE, CT2_DOC, CT2_KEY, CT2_LINHA, CT2_DC, CT2_DEBITO, CT2_CREDIT, CT2_VALOR, CT2_CCD, CT2_CCC, CT2_ORIGEM, CT2_DATA"
+	_sSQL += "   FROM CT2010"
+ 	_sSQL += "  WHERE D_E_L_E_T_ = ''" 
+ 	_sSQL += "    AND CT2_FILIAL = '" + xfilial ("SF1") + "'"
+   	_sSQL += "    AND CT2_DATA   = '" + dtos (sf1 -> f1_dtdigit) + "'"
+   	_sSQL += "    AND CT2_ROTINA = 'MATA103'"
+   	_sSQL += "    AND CT2_KEY  LIKE '" + _wkey + "'"
+    //u_showmemo (_sSQL)
+    _aExcluir := U_Qry2Array(_sSQL)
+	// le cada um dos lctos e monta _aAutoCT2
+	if len(_aExcluir) > 0
+		_aAutoCT2C := {}
+		_aAutoCT2I := {}
+	    aAdd (_aAutoCT2C,  {'DDATALANC'     ,  _aExcluir[1,13]   ,NIL} )
+	    aAdd (_aAutoCT2C,  {'CLOTE'         ,  _aExcluir[1,1]    ,NIL} )
+	    aAdd (_aAutoCT2C,  {'CSUBLOTE'      ,  _aExcluir[1,2]    ,NIL} )
+	    aAdd (_aAutoCT2C,  {'CDOC'          ,  _aExcluir[1,3]    ,NIL} )
+	    // le cada um dos lctos e monta _aAutoCT2
+	    for i=1 to len(_aExcluir)
+			_aLinhaCT2 := {}
+		    aAdd (_aLinhaCT2,  {'CT2_LINHA'     , _aExcluir[1,5]    , NIL})
+		    aAdd (_aLinhaCT2,  {'CT2_DC'        , _aExcluir[1,6]	, NIL})
+		    aAdd (_aLinhaCT2,  {'CT2_DEBITO'    , _aExcluir[1,7]	, NIL})
+		    aAdd (_aLinhaCT2,  {'CT2_CREDIT'    , _aExcluir[1,8]	, NIL})
+		    aAdd (_aLinhaCT2,  {'CT2_VALOR'     , _aExcluir[1,9]	, NIL})
+		    aAdd (_aLinhaCT2,  {'CT2_CCD'       , _aExcluir[1,10]	, NIL})
+		    aAdd (_aLinhaCT2,  {'CT2_CCC'       , _aExcluir[1,11]  	, NIL})
+		    aAdd (_aLinhaCT2,  {'CT2_ORIGEM'    , _aExcluir[1,12]  	, NIL})
+		    aAdd (_aAutoCT2I, aclone (_aLinhaCT2))
+		next
+		_sErroAuto  := ""
+		lMSErroAuto := .F.
+		MSExecAuto({|x, y,z| CTBA102(x,y,z)}, _aAutoCT2C ,_aAutoCT2I, 5)
+		
+		if lMSErroAuto
+			_sErro := memoread (NomeAutoLog ()) + chr (13) + chr (10) + _sErroAuto
+			u_help (_sErro)
+		endif
+	endif
+	_wkey = '%' + xfilial ("SF1") + "IND"+ sf1 -> f1_doc+ '%'
+	// busca lactos contabeis referentes a 1/12 - titulos de indenizacao comissoes
+	_sSQL := ""
+    _sSQL += " SELECT CT2_LOTE, CT2_SBLOTE, CT2_DOC, CT2_KEY, CT2_LINHA, CT2_DC, CT2_DEBITO, CT2_CREDIT, CT2_VALOR, CT2_CCD, CT2_CCC, CT2_ORIGEM, CT2_DATA"
+	_sSQL += "   FROM CT2010"
+ 	_sSQL += "  WHERE D_E_L_E_T_ = ''" 
+ 	_sSQL += "    AND CT2_FILIAL = '" + xfilial ("SF1") + "'"
+   	_sSQL += "    AND CT2_DATA   = '" + dtos (sf1 -> f1_dtdigit) + "'"
+   	_sSQL += "    AND CT2_ROTINA = 'FINA050'"
+   	_sSQL += "    AND CT2_KEY  LIKE '" + _wkey + "'"
+    //u_showmemo (_sSQL)
+    _aExcluir := U_Qry2Array(_sSQL)
+	// le cada um dos lctos e monta _aAutoCT2
+	if len(_aExcluir) > 0
+		_aAutoCT2C := {}
+		_aAutoCT2I := {}
+	    aAdd (_aAutoCT2C,  {'DDATALANC'     ,  _aExcluir[1,13]    ,NIL} )
+	    aAdd (_aAutoCT2C,  {'CLOTE'         ,  _aExcluir[1,1]     ,NIL} )
+	    aAdd (_aAutoCT2C,  {'CSUBLOTE'      ,  _aExcluir[1,2]     ,NIL} )
+	    aAdd (_aAutoCT2C,  {'CDOC'          ,  _aExcluir[1,3]     ,NIL} )
+	    // le cada um dos lctos e monta _aAutoCT2
+	    for i=1 to len(_aExcluir)
+			_aLinhaCT2 := {}
+		    aAdd (_aLinhaCT2,  {'CT2_LINHA'     , _aExcluir[1,5]    , NIL})
+		    aAdd (_aLinhaCT2,  {'CT2_DC'        , _aExcluir[1,6]	, NIL})
+		    aAdd (_aLinhaCT2,  {'CT2_DEBITO'    , _aExcluir[1,7]	, NIL})
+		    aAdd (_aLinhaCT2,  {'CT2_CREDIT'    , _aExcluir[1,8]	, NIL})
+		    aAdd (_aLinhaCT2,  {'CT2_VALOR'     , _aExcluir[1,9]	, NIL})
+		    aAdd (_aLinhaCT2,  {'CT2_CCD'       , _aExcluir[1,10]	, NIL})
+		    aAdd (_aLinhaCT2,  {'CT2_CCC'       , _aExcluir[1,11]  	, NIL})
+		    aAdd (_aLinhaCT2,  {'CT2_ORIGEM'    , _aExcluir[1,12]  	, NIL})
+		    aAdd (_aAutoCT2I, aclone (_aLinhaCT2))
+		next
+		_sErroAuto  := ""
+		lMSErroAuto := .F.
+		MSExecAuto({|x, y,z| CTBA102(x,y,z)}, _aAutoCT2C ,_aAutoCT2I, 5)
+		
+		if lMSErroAuto
+			_sErro := memoread (NomeAutoLog ()) + chr (13) + chr (10) + _sErroAuto
+			u_help (_sErro)
+		endif
+	endif		
+	
+return
+
+// -----------------------------------------------------
+// Exclui Notas canceladas no Protheus que devem ser excluidas no Mercanet
+if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT SF1.R_E_C_N_O_"
+		_oSQL:_sQuery += " FROM " + RetSQLName ("SF1") + " SF1, "
+		_oSQL:_sQuery +=            RetSQLName ("SA1") + " SA1 "								
+		// QUERO as deletadas tambem, pois o Mercanet precisa cancelar elas --> _oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery += " WHERE SF1.F1_FILIAL = '" + xfilial ("SF1") + "'"
+		_oSQL:_sQuery +=   " AND SF1.F1_TIPO     = 'D'"
+//		_oSQL:_sQuery +=   " AND F1_DTDIGIT >= '" + dtos (date () - _nQtDias) + "'"
+		_oSQL:_sQuery +=   " AND SF1.F1_DTDIGIT >= '20150101'"  // DATA INICIAL EXPORT P/ MERCANET
+		_oSQL:_sQuery +=   " AND SA1.A1_COD  = SF1.F1_FORNECE "
+	    _oSQL:_sQuery +=   " AND SA1.A1_LOJA = SF1.F1_LOJA "
+		_oSQL:_sQuery +=   " AND (NOT EXISTS (SELECT * FROM LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_NOTA_FISCAL WHERE DB_NOTA_NRO = CAST (SF1.F1_DOC AS INT))"
+        _oSQL:_sQuery +=   " OR EXISTS (SELECT * FROM LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_NOTA_FISCAL" 
+		_oSQL:_sQuery +=   "	WHERE DB_NOTA_NRO = CAST (SF1.F1_DOC AS INT) AND DB_NOTA_REPRES != SA1.A1_VEND)
+		_oSQL:_sQuery +=   " )"
+		_oSQL:_sQuery += " ORDER BY SF1.R_E_C_N_O_"
+endif
+
