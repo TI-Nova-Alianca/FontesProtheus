@@ -281,7 +281,9 @@ user function VA_040BRAP()
 			_oSQL:Log ()
 
 			_aTitulo := aclone (_oSQL:Qry2Array ())
-
+			if len(_aTitulo) <= 0
+				u_help("Não existe titulos com rapel para baixar")
+			endif
 			if len(_aTitulo) > 0
 				_cMens := "Existem " + alltrim(str(len(_aTitulo))) + " registros para realizar a baixa de rapel. Deseja continuar?"
 				if MsgYesNo(_cMens,"Baixa de rapel de titulos")
@@ -299,12 +301,12 @@ user function VA_040BRAP()
 						aAdd(_aAutoSE1, {"E1_LOJA"    	, _aTitulo[x,6] 					, Nil})
 						aAdd(_aAutoSE1, {"E1_TIPO"    	, _aTitulo[x,7] 					, Nil})
 						AAdd(_aAutoSE1, {"AUTMOTBX"		, 'NORMAL'  						, Nil})
-						AAdd(_aAutoSE1, {"CBANCO"  		, 'CX1'			    	    		, Nil})  	
-						AAdd(_aAutoSE1, {"CAGENCIA"   	, 'CX1'						    	, Nil})  
-						AAdd(_aAutoSE1, {"CCONTA"  		, 'CX1'								, Nil})
+						AAdd(_aAutoSE1, {"AUTBANCO"  	, 'CX1'		    					, Nil})
+						AAdd(_aAutoSE1, {"AUTAGENCIA"  	, 'CX1  '		    				, Nil})
+						AAdd(_aAutoSE1, {"AUTCONTA"  	, 'CX1       '		    			, Nil})				
 						AAdd(_aAutoSE1, {"AUTDTBAIXA"	, mv_par04		 					, Nil})
 						AAdd(_aAutoSE1, {"AUTDTCREDITO"	, mv_par04		 					, Nil})
-						AAdd(_aAutoSE1, {"AUTHIST"   	, 'Desconto s/Receb.Titulo'			, Nil})
+						AAdd(_aAutoSE1, {"AUTHIST"   	, 'DESC RAPEL'					    , Nil})
 						AAdd(_aAutoSE1, {"AUTDESCONT"	, _aTitulo[x,8]          		    , Nil})
 						AAdd(_aAutoSE1, {"AUTMULTA"  	, 0         						, Nil})
 						AAdd(_aAutoSE1, {"AUTJUROS"  	, 0         						, Nil})
@@ -321,6 +323,23 @@ user function VA_040BRAP()
 						If lMsErroAuto
 							u_help("Erro na baixa do titulo:" + alltrim(_aTitulo[x,2]) +"/"+ alltrim(_aTitulo[x,3]))
 							u_help(memoread (NomeAutoLog ()))
+						else
+							// // Se gravado, inclui campos n SE5 finaliza o registro da ZA1
+							// // Atualiza banco e administradora
+							// _oSQL:= ClsSQL ():New ()
+							// _oSQL:_sQuery := ""
+							// _oSQL:_sQuery += " UPDATE " + RetSQLName ("SE5") + " SET E5_BANCO = 'CX1', E5_AGENCIA = 'CX1', E5_CONTA = 'CX1'"
+							// _oSQL:_sQuery += " WHERE D_E_L_E_T_=''"
+							// _oSQL:_sQuery += " AND E5_FILIAL  ='" + _aTitulo[x,1] + "'"
+							// _oSQL:_sQuery += " AND E5_PREFIXO ='" + _aTitulo[x,2] + "'"
+							// _oSQL:_sQuery += " AND E5_NUMERO  ='" + _aTitulo[x,3] + "'"
+							// _oSQL:_sQuery += " AND E5_PARCELA ='" + _aTitulo[x,4] + "'"
+							// _oSQL:_sQuery += " AND E5_CLIFOR  ='" + _aTitulo[x,5] + "'"
+							// _oSQL:_sQuery += " AND E5_LOJA    ='" + _aTitulo[x,6] + "'"
+							// _oSQL:_sQuery += " AND E5_TIPO    ='" + _aTitulo[x,7] + "'"
+							// _oSQL:_sQuery += " AND E5_HIST 
+							// _oSQL:Log ()
+							// _oSQL:Exec ()
 						EndIf
 					next
 				endif
@@ -334,7 +353,7 @@ return
 static function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT                TIPO TAM DEC VALID F3     Opcoes                      			Help
-    aadd (_aRegsPerg, {01, "Banco       ", "C",  3 , 0,  "",  "   ", {},                         				""})
+    aadd (_aRegsPerg, {01, "Banco       ", "C",  3 , 0,  "",  "SEE", {},                         				""})
     aadd (_aRegsPerg, {02, "Agencia     ", "C",  5 , 0,  "",  "   ", {},                         				""})
 	aadd (_aRegsPerg, {03, "Conta    	", "C",  10, 0,  "",  "   ", {},                         				""})
 	aadd (_aRegsPerg, {04, "Dt.Baixa    ", "D",  8 , 0,  "",  "   ", {},                         				""})
