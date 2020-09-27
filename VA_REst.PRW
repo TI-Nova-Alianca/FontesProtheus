@@ -28,14 +28,7 @@ User Function VA_REst ()
 //	local nOpca        := 0
 //	local lPerg        := .F.
 	local _nLock       := 0
-<<<<<<< HEAD
 //	u_logId ()
-=======
-
-
-
-	u_logId ()
->>>>>>> 3c1b614480315bca9c0acb9ff2267947921ff667
 
 	// Somente uma estacao por vez.
 	_nLock := U_Semaforo (procname (), .T.)
