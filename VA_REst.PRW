@@ -28,7 +28,7 @@ User Function VA_REst ()
 //	local nOpca        := 0
 //	local lPerg        := .F.
 	local _nLock       := 0
-	u_logId ()
+//	u_logId ()
 
 	// Somente uma estacao por vez.
 	_nLock := U_Semaforo (procname (), .F.)
@@ -80,6 +80,9 @@ Static Function _AiQueMedo ()
 	local _sWhereSB9  := ""
 	local _sWhereSBJ  := ""
 	local _sWhereSBK  := ""
+	local _aOP2Meses  := {}
+	local _nOP2Meses  := 0
+	local _sOP2Meses  := ''
 
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
@@ -200,9 +203,9 @@ Static Function _AiQueMedo ()
 		_oSQLSB9:_sQuery := " UPDATE " + RetSQLName ("SB9") + " SET R_E_C_D_E_L_ = R_E_C_N_O_, D_E_L_E_T_ = '*' " + _sWhereSB9
 		_oSQLSBJ:_sQuery := " UPDATE " + RetSQLName ("SBJ") + " SET R_E_C_D_E_L_ = R_E_C_N_O_, D_E_L_E_T_ = '*' " + _sWhereSBJ
 		_oSQLSBK:_sQuery := " UPDATE " + RetSQLName ("SBK") + " SET R_E_C_D_E_L_ = R_E_C_N_O_, D_E_L_E_T_ = '*' " + _sWhereSBK
-		U_LOG (_oSQLSB9:_sQuery)
-		U_LOG (_oSQLSBJ:_sQuery)
-		U_LOG (_oSQLSBK:_sQuery)
+		U_LOG2 (_oSQLSB9:_sQuery)
+		U_LOG2 (_oSQLSBJ:_sQuery)
+		U_LOG2 (_oSQLSBK:_sQuery)
 
 		if GetMV ("MV_RASTRO") == "S"
 			_lContinua = _oSQLSBK:Exec () .and. _oSQLSBJ:Exec () .and. _oSQLSB9:Exec ()
@@ -226,15 +229,14 @@ Static Function _AiQueMedo ()
 		end transaction
 
 		// Verifica existencia de OPs com apontamento dentro do mes reaberto e em meses posteriores.
-		// Seria possivel ajustar o SC2 jah no nomento da reabertura? Campos C2_APRATU, C2_APRINI, C2_APRFIM ?
 		_oSQLSC2 := ClsSQL ():New ()
-		_oSQLSC2:_sQuery := "SELECT rtrim (STRING_AGG (rtrim (D3_OP), ','))"
+		_oSQLSC2:_sQuery := "SELECT DISTINCT D3_OP" // rtrim (STRING_AGG (rtrim (D3_OP), ','))"
 		_oSQLSC2:_sQuery +=  " FROM " + RetSQLName ("SD3") + " SD3 "
 		_oSQLSC2:_sQuery += " WHERE SD3.D_E_L_E_T_ = ''"
 		_oSQLSC2:_sQuery +=   " AND SD3.D3_FILIAL = '" + xfilial ("SD3") + "'"
 		_oSQLSC2:_sQuery +=   " AND SD3.D3_ESTORNO != 'S'"
 		_oSQLSC2:_sQuery +=   " AND SD3.D3_EMISSAO <= '" + DTOS (_dDataSB9) + "'"
-		_oSQLSC2:_sQuery +=   " AND SD3.D3_EMISSAO >= '" + DTOS (_dDataSB9 - 180) + "'"  // Por questao de performance, vou assumir que nao temos OP com muito tempo em aberto
+	//	_oSQLSC2:_sQuery +=   " AND SD3.D3_EMISSAO >= '" + DTOS (_dDataSB9 - 180) + "'"  // Por questao de performance, vou assumir que nao temos OP com muito tempo em aberto
 		_oSQLSC2:_sQuery +=   " AND SD3.D3_OP      != ''"
 		_oSQLSC2:_sQuery +=   " AND EXISTS (SELECT *"
 		_oSQLSC2:_sQuery +=                 " FROM " + RetSQLName ("SD3") + " PROXIMO "
@@ -245,11 +247,46 @@ Static Function _AiQueMedo ()
 		_oSQLSC2:_sQuery +=                  " AND PROXIMO.D3_EMISSAO  > '" + DTOS (_dDataSB9) + "'"
 		_oSQLSC2:_sQuery +=               ")"
 		_oSQLSC2:Log ()
-		_sOP2Meses := alltrim (_oSQLSC2:RetQry ())
+		_aOP2Meses := aclone (_oSQLSC2:Qry2Array (.F., .F.))
+		for _nOP2Meses = 1 to len (_aOP2Meses)
+			_sOP2Meses += _aOP2Meses [_nOP2Meses] + ' '
+			_ReabreOP (_aOP2Meses [_nOP2Meses], _dDataSB9)
+		next
 		if ! empty (_sOP2Meses)
 			u_help ("A T E N C A O: As OPs a seguir tem movimentacao no mes reaberto e posteriores. A rotina de virada de saldos (ponto de entrada A280OK) ja deve ter deixado pronto um backup dessas OPs. Verifique necessidade de voltar backup da tabela SC2 para estes casos: " + _sOP2Meses)
 		endif
 
 		u_help ("Processo concluido. Nova data de fechamento: " + dtoc (_dMesAnt))
 	endif
+return
+
+
+
+// --------------------------------------------------------------------------
+static function _ReabreOP (_sOPReab, _dDataSB9)
+	local _oSQLOP := NIL
+
+	u_log2 ('debug', 'Verificando tratamento para reabrir OP ' + _sOPReab)
+
+/* Ainda nao pronto
+	_oSQLOP := ClsSQL ():New ()
+	_oSQLOP:_sQuery := "SELECT DISTINCT D3_OP" // rtrim (STRING_AGG (rtrim (D3_OP), ','))"
+	_oSQLOP:_sQuery +=  " FROM " + RetSQLName ("SD3") + " SD3 "
+	_oSQLOP:_sQuery += " WHERE SD3.D_E_L_E_T_ = ''"
+	_oSQLOP:_sQuery +=   " AND SD3.D3_FILIAL = '" + xfilial ("SD3") + "'"
+	_oSQLOP:_sQuery +=   " AND SD3.D3_ESTORNO != 'S'"
+	_oSQLOP:_sQuery +=   " AND SD3.D3_EMISSAO <= '" + DTOS (_dDataSB9) + "'"
+//	_oSQLOP:_sQuery +=   " AND SD3.D3_EMISSAO >= '" + DTOS (_dDataSB9 - 180) + "'"  // Por questao de performance, vou assumir que nao temos OP com muito tempo em aberto
+	_oSQLOP:_sQuery +=   " AND SD3.D3_OP      != ''"
+	_oSQLOP:_sQuery +=   " AND EXISTS (SELECT *"
+	_oSQLOP:_sQuery +=                 " FROM " + RetSQLName ("SD3") + " PROXIMO "
+	_oSQLOP:_sQuery +=                " WHERE PROXIMO.D_E_L_E_T_  = ''"
+	_oSQLOP:_sQuery +=                  " AND PROXIMO.D3_FILIAL   = SD3.D3_FILIAL"
+	_oSQLOP:_sQuery +=                  " AND PROXIMO.D3_OP       = SD3.D3_OP"
+	_oSQLOP:_sQuery +=                  " AND PROXIMO.D3_ESTORNO != 'S'"
+	_oSQLOP:_sQuery +=                  " AND PROXIMO.D3_EMISSAO  > '" + DTOS (_dDataSB9) + "'"
+	_oSQLOP:_sQuery +=               ")"
+	_oSQLOP:Log ()
+*/
+
 return

@@ -80,6 +80,7 @@ static function _AndaLogo ()
 	incproc ()
 
 	u_help ("Nada definido", procname ())
+
 	//U_BATUSERS ()
 	//U_BatEXML("\XML_NFE\XML_ODONE\","4")
 	// u_log (FwGrpPrivDB ('000102'))
