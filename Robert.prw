@@ -21,7 +21,7 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '07' modulo '06'
+		prepare environment empresa '01' filial '01' modulo '05'
 		private cModulo   := 'FAT'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -79,22 +79,21 @@ static function _AndaLogo ()
 	procregua (100)
 	incproc ()
 
-	u_help ("Nada definido", procname ())
-
+	//u_help ("Nada definido", procname ())
 	//U_BATUSERS ()
 	//U_BatEXML("\XML_NFE\XML_ODONE\","4")
 	// u_log (FwGrpPrivDB ('000102'))
-return
-
-/*
 // ok	_sArqLog := 'u_batrevch_' + alltrim (cusername) + '_' + dtos (date ()) + ".log" ; U_BatRevCh ("SP", "CTE", 1, '35200402442313000559570000000421461100421462', .t.)
 //	_sArqLog := 'u_batrevch_' + alltrim (cusername) + '_' + dtos (date ()) + ".log" ; U_BatRevCh ("MG", "NFE", 1, '31200302363425000433550010000003021159871670', .t.)
 //	_sArqLog := 'u_batrevch_' + alltrim (cusername) + '_' + dtos (date ()) + ".log" ; U_BatRevCh ("PR", "CTE", 90, NIL, .t.)
 //	_sArqLog := 'u_batDocCanc_' + alltrim (cusername) + '_' + dtos (date ()) + ".log" ; U_BatDocCanc ("OC", 150)
 	//_sArqLog := 'u_batmetaf_' + alltrim (cusername) + '_' + dtos (date ()) + ".log" ; u_batmetaf ()
-	//u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
+
+//	_sArqLog := 'u_batediconh_' + alltrim (cusername) + '_' + dtos (date ()) + ".log" ; u_batEDIConh ('I')
+	_sArqLog := 'u_batXML_' + alltrim (cusername) + '_' + dtos (date ()) + ".log" ; U_BatXML("\\192.168.1.3\Siga\Protheus12\protheus_data_fiscal\xml_NFe\CT-e\", 100)
+	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
 return
-*/
+
 /* Aguarda atualizacao de build
 	// Linguagem TL++: https://tdn.totvs.com/pages/viewpage.action?pageId=334340072
 	// local varJson := { "teste" : { "var1" : "oioi", "var2": "oioi2", "var3": "oioi3" }}  https://tdn.totvs.com/display/tec/Json

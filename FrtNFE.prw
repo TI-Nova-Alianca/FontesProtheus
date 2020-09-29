@@ -2,7 +2,14 @@
 // Autor......: Robert Koch
 // Data.......: 17/04/2008
 // Descricao..: Rotina de atualizacao dos fretes referente NF de entrada (conhecimento de frete)
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Tratamentos diversos para conhecimentos de frete na nota de entrada
+// #PalavasChave      #conhecimentos_de_frete #importacao #CTe
+// #TabelasPrincipais #SZH #SD1
+// #Modulos           #EST #COM
+
 // Historico de alteracoes:
 // 22/07/2008 - Robert - Leitura de novos campos do ZZ1.
 // 19/08/2008 - Robert - Gravacao de NFs de venda previstas e nao previstas.
@@ -15,6 +22,10 @@
 // 01/03/2015 - Catia  - Alterado a gravação da SZH para que grave a data e o tipo do frete
 // 21/03/2017 - Robert - Eliminada gravacao de logs.
 // 06/06/2019 - Catia  - passar a gravar o ICMS creditado na tabela SZH campo ZH_CREDICM
+// 28/09/2020 - Robert - Inseridas tags para catalogo de fontes.
+//                     - Inseridos alguns logs para validar quanto deste programa ainda eh usado.
+//
+
 #include "VA_Inclu.prw"
 
 // --------------------------------------------------------------------------
@@ -36,7 +47,17 @@ User Function FrtNFE (_sIncExc)
 	local _n		 := 1
 
 	if _sIncExc == "I"  // Inclusao de nota
+		U_LOG2 ('debug', '[' + procname () + '] Inclusao')
 		if type ("_oClsFrtFr") == "O"
+
+			U_LOG2 ('debug', '')
+			U_LOG2 ('debug', 'U_ImpConh na pilha: ' + cvaltochar (isincallstack ("U_IMPCONH")))
+			U_LOG2 ('debug', 'U_EDIConh na pilha: ' + cvaltochar (isincallstack ("U_EDICONH")))
+			U_LOG2 ('debug', 'U_ZZXG na pilha: ' + cvaltochar (isincallstack ("U_ZZXG")))
+			U_LOG2 ('debug', '[' + procname () + '] Notas previstas:')
+			U_LOG2 ('debug', _oClsFrtFr:_aRegsZZ1)
+			U_LOG2 ('debug', '[' + procname () + '] Notas nao previstas:')
+			U_LOG2 ('debug', _oClsFrtFr:_aNaoPrev)
 
 			// Busca o valor do frete para posterior rateio sobre os itens da venda (por peso)
 			_sQuery := ""
@@ -66,7 +87,7 @@ User Function FrtNFE (_sIncExc)
 			endif	
 		
 			// Busca o peso total das notas de venda para posterior rateio.
-			// Busca tanTo as que estavam previstas neste frete como as nao previstas.
+			// Busca tanto as que estavam previstas neste frete como as nao previstas.
 			for _nRegZZ1 = 1 to len (_oClsFrtFr:_aRegsZZ1)
 				zz1 -> (dbgoto (_oClsFrtFr:_aRegsZZ1 [_nRegZZ1]))
 				_sQuery := ""
@@ -76,9 +97,8 @@ User Function FrtNFE (_sIncExc)
 				_sQuery += "    and D2_FILIAL   = '" + xfilial ("SD2") + "'"
 				_sQuery += "    and D2_DOC      = '" + zz1 -> zz1_docs + "'"
 				_sQuery += "    and D2_SERIE    = '" + zz1 -> zz1_series + "'"
-				//u_log ('prev.:', _sQuery)
-				//u_showmemo(_sQuery)
 				_nTotPeso += U_RetSQL (_sQuery)
+				U_LOG2 ('debug', '[' + procname () + '] qt*peso das notas previstas neste frete: ' + cvaltochar (_nTotPeso))
 			next
 			for _nNaoPrev = 1 to len (_oClsFrtFr:_aNaoPrev)
 				_sQuery := ""
@@ -88,9 +108,8 @@ User Function FrtNFE (_sIncExc)
 				_sQuery += "    and D2_FILIAL   = '" + xfilial ("SD2") + "'"
 				_sQuery += "    and D2_DOC      = '" + _oClsFrtFr:_aNaoPrev [_nNaoPrev, .FrtNaoPrevDoc] + "'"
 				_sQuery += "    and D2_SERIE    = '" + _oClsFrtFr:_aNaoPrev [_nNaoPrev, .FrtNaoPrevSerie] + "'"
-				//u_log ('nao prev.:', _sQuery)
-				//u_showmemo(_sQuery)
 				_nTotPeso += U_RetSQL (_sQuery)
+				U_LOG2 ('debug', '[' + procname () + '] adicionada qt*peso das notas NAO previstas neste frete: ' + cvaltochar (_nTotPeso))
 			next
 
 			// Grava no SZH as entregas que tinham previsao, fazendo um rateio do frete por peso.
@@ -244,6 +263,7 @@ User Function FrtNFE (_sIncExc)
 
 
 	elseif _sIncExc == "E"  // Exclusao de nota de conhecimento de frete.
+		U_LOG2 ('debug', '[' + procname () + '] Exclusao')
 
 		// Reduz do SD2 o valor do frete CIF e jah deleta a amarracao.
 		sd2 -> (dbsetorder (3))  // D2_FILIAL+D2_DOC+D2_SERIE+D2_CLIENTE+D2_LOJA+D2_COD+D2_ITEM
@@ -275,10 +295,11 @@ User Function FrtNFE (_sIncExc)
 
 
 	elseif _sIncExc == "V"  // Validacao (Tudo OK) da nota de entrada
+		U_LOG2 ('debug', '[' + procname () + '] Validacao')
 
 		if alltrim (GDFieldGet ("D1_COD")) $ GetMv('VA_PRODCIF')  // Item especifico para frete sobre vendas.
 			if type ("_oClsFrtFr") != "O"
-				msgalert ("Funcao " + procname () + ": Nao foi feita a selecao de frete. Verifique!")
+				u_help ("Funcao " + procname () + ": Nao foi feita a selecao de frete. Verifique!",, .t.)
 				_lRet = .F.
 			endif
 		
@@ -286,11 +307,11 @@ User Function FrtNFE (_sIncExc)
 	
 				// Verifica se o usuario alterou algo depois de informar o frete.
 				if _oClsFrtFr:_sFornece != CA100For .or. _oClsFrtFr:_sLoja != cLoja
-				   	msgalert('CA100For = ' + Ca100For)
-                 	msgalert('CLoja    = ' + cLoja)
-                 	msgalert('_oClsFrtFr:_sFornece = ' + _oClsFrtFr:_sFornece)
-                 	msgalert('_oClsFrtFr:_sLoja    = ' + _oClsFrtFr:_sLoja)
-                 	msgalert ("Dados de frete incompletos, nao informados ou foi feita alguma alteracao na nota. A selecao de frete deve ser refeita.")
+				   	u_help ('CA100For = ' + Ca100For)
+                 	u_help ('CLoja    = ' + cLoja)
+                 	u_help ('_oClsFrtFr:_sFornece = ' + _oClsFrtFr:_sFornece)
+                 	u_help ('_oClsFrtFr:_sLoja    = ' + _oClsFrtFr:_sLoja)
+                 	u_help ("Dados de frete incompletos, nao informados ou foi feita alguma alteracao na nota. A selecao de frete deve ser refeita.",, .t.)
 					_lRet = .F.
 				endif
 			endif
@@ -302,6 +323,7 @@ User Function FrtNFE (_sIncExc)
 				for _nRegZZ1 = 1 to len (_oClsFrtFr:_aRegsZZ1)
 					zz1 -> (dbgoto (_oClsFrtFr:_aRegsZZ1 [_nRegZZ1]))
 					if sf2 -> (dbseek (xfilial ("SF2") + zz1 -> zz1_docs + zz1 -> zz1_series, .F.))
+						U_LOG2 ('debug', '[' + procname () + '] encontrei F2_DOC ' + sf2 -> f2_doc)
 
 						aadd (_aDadosZZ1, array (.FreteQtColunas))
 						_aDadosZZ1 [len (_aDadosZZ1), .FreteDocS]            = zz1 -> zz1_docs

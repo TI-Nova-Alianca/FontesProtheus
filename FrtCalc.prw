@@ -10,6 +10,8 @@
 // 06/10/2014 - Catia  - Alterada a mensagem do "Valor do frete maior que o previsto", para que não de a mensagem quando usado pelo IMPCONH
 // 18/10/2014 - Catia  - Alterada a mensagem do "Valor do frete maior que o previsto", para que não de a mensagem quando usado pelo EDICONH
 // 18/07/2016 - Catia  - Alterada a mensagem do "Valor do frete maior que o previsto", para que não de a mensagem quando usado pelo ZZXG
+// 28/09/2020 - Robert - Inseridor logs para verificar se, e ateh que ponto, este programa ainda eh usado.
+//
 #include "VA_Inclu.prw"
 
 // --------------------------------------------------------------------------
@@ -32,6 +34,7 @@ User Function FrtCalc (_aRegs, _lReentreg, _lValida, _nValReal)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _nQtPedag  := 0
 
+	U_LOG2 ('debug', 'Iniciando ' + procname ())
 	_nTotZZ1 = 0
 	_aFretes = {}
 	for _nReg = 1 to len (_aRegs)
@@ -94,7 +97,7 @@ User Function FrtCalc (_aRegs, _lReentreg, _lValida, _nValReal)
 			elseif _aRegs [_nReg, .FreteUMPeso] == "T"
 				_nPeso = _aRegs [_nReg, .FretePesoBruto] / 1000
 			else
-				msgalert ("Unidade de medida de peso sem tratamento: " + _aRegs [_nReg, .FreteUMPeso])
+				u_help ("Unidade de medida de peso sem tratamento: " + _aRegs [_nReg, .FreteUMPeso],, .t.)
 				_lRet = .F.
 			endif
 
@@ -240,9 +243,11 @@ User Function FrtCalc (_aRegs, _lReentreg, _lValida, _nValReal)
 				aadd (_aCampos, {13, "GRIS",         35, "@E 999,999.99"})
 				aadd (_aCampos, {14, "Vl.negociado", 35, "@E 999,999.99"})
 				aadd (_aCampos, {15, "Valor total",  35, "@E 999,999.99"})
+				U_LOG2 ('debug', '[' + procname () + '] valor frete acima do previsto')
 				U_F3Array (_aFretes, "Valor frete acima do previsto", _aCampos, NIL, nil, "Valor frete acima do previsto. Confira abaixo os valores previstos para este frete" + iif (_lReentreg, " (REENTREGA):", ":"), "Valor total previsto: " + cValToChar (_nTotZZ1) + "       valor digitado: " + cValToChar (_nValReal), .F.)
 			endif
 			if ! isincallstack ("U_IMPCONH") .and. ! isincallstack ("U_EDICONH") .and. ! isincallstack ("U_ZZXG")
+				U_LOG2 ('debug', '[' + procname () + '] validando com o usuario')
 			     _lRet = u_msgyesno ("Valor do frete maior que o previsto. Confirma assim mesmo?", .T.)
 			endif
 		endif

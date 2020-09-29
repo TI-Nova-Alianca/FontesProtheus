@@ -2,6 +2,14 @@
 // Autor......: Robert Koch
 // Data.......: 29/05/2011
 // Descricao..: Manutencao de arquivos XML de NF-e recebidos de fornecedores.
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #atualizacao
+// #Descricao         #Manutencao de arquivos XML de notas de entrada
+// #PalavasChave      #XML NF_eletronica #chaves
+// #TabelasPrincipais #ZZX
+// #Modulos           #COM #FAT
+
 // Historico de alteracoes:
 // 19/08/2011 - Robert  - Tratamento para importacao de XML destinado a outras filiais.
 //                      - Tratamento para NF de retorno deposito (especifico filial 04 Coop.Alianca).
@@ -97,26 +105,21 @@
 // 22/07/2020 - Robert  - Verificacao de acesso dados devol.logistica: passa a validar acesso 112 e nao mais 030.
 //                      - Inseridas tags para catalogacao de fontes
 // 24/08/2020 - Cláudia - Ajuste na validação de quantidades. GLPI: 8358
-
-// Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #atualizacao
-// #Descricao         #Manutencao de arquivos XML de notas de entrada
-// #PalavasChave      #XML NF_eletronica #chaves
-// #TabelasPrincipais #ZZX
-// #Modulos           #COM #FAT
+// 28/09/2020 - Robert  - Nao localizava NF de venda pela chave pois o sistema padrao mudou a ordem dos indices.
+//
 
 // ----------------------------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
 #Include "RwMake.ch"
 #Include "TbiConn.ch"
-
+#include "VA_INCLU.prw"
 User Function ZZX ()
 	local _aCores     := U_ZZXLEG(.T.)
 	local _aIndBrw    := {}
 	Private aRotina   := {}
 	private cCadastro := "Manutenção XML's"
 	Private cString   := "ZZX"
-	private _sArqLog  := iif (type ("_sArqLog") == "C", _sArqLog, U_Nomelog ())
+//	private _sArqLog  := iif (type ("_sArqLog") == "C", _sArqLog, U_Nomelog ())
 	
 	// verifica parametros usados no programa para geracao de CTE's
 	_xTES_c_ICMS := GetMv("ML_CTRTCIC")   // TES c/ ICMS para CTE's
@@ -1529,16 +1532,11 @@ return
 // ------------------------------------------------------------------------------------------------------
 // Importacao de arquivo XML
 user function ZZXI (_sArqImp, _sXML)
-	//local _sFilDest    := ""
-	//local _sFilAnt     := ""
 	local _lAutoZZXI   := (_sArqImp != NIL .or. _sXML != NIL)
 	local _oXMLSEF     := NIL
 	local _sArqOrig    := ""
-	//local _lIncluiu    := .F.
 	local _sDrvRmt     := ""
 	local _sDirRmt     := ""
-	//local _sArqRmt     := ""
-	//local _sExtRmt     := ""
 	local _ZZXXML      := ""
 	local _sFldImpor   := "Importados"  // Pasta para arquivos ignorados.
 	local _sFldIgnor   := "Ignorados"  // Pasta para arquivos ignorados.
@@ -1638,7 +1636,10 @@ user function ZZXI (_sArqImp, _sXML)
 			_Move (_sArqOrig, _sFldIgnor)
 		endif
 	endif
-return
+return _lContinua
+
+
+
 // ------------------------------------------------------------------------------------------------------
 // Grava dados no arquivo ZZX.
 static function _GravaZZX (_sQueFazer, _oXMLSEF, _sXML, _worigem)
@@ -1862,6 +1863,9 @@ user function ZZXG (_wprenota)
 	local _nItem		:= 0
 	local i				:= 0
 	local _n			:= 0
+	local _nChvRel      := 0
+	local _oSQLNfOri    := NIL
+	local _aNfOri       := {}
 	private lMsHelpAuto := .F. 											//SE .T. DIRECIONA AS MENSAGENS DO HELP
 	private lMsErroAuto := .F.
 
@@ -1894,8 +1898,8 @@ user function ZZXG (_wprenota)
 					ZZX->ZZX_STATUS = ''
 				MsUnLock()
 				return
-			endif						
-		endif				 
+			endif
+		endif
 	endif
 
 	if _lContinua 	
@@ -2101,17 +2105,17 @@ user function ZZXG (_wprenota)
 						
 						if _aRetQry[1,10] != _aItens [i, 8] // NCM
 						//	MSGALERT ("NCM do iten que cosnta no XML difere da NCM do cadastro do item. Verificar item: " + alltrim(_aRetQry[1,1]) )
-							u_help ("NCM do item que consta no XML (" + _aItens [i, 8] + ") difere da NCM do cadastro do item (" + _aRetQry[1,10] + "). Verifique cadastro do produto " + alltrim(_aRetQry[1,1]))
+							u_help ("NCM do item que consta no XML (" + _aItens [i, 8] + ") difere da NCM do cadastro do item (" + _aRetQry[1,10] + "). Verifique cadastro do produto " + alltrim(_aRetQry[1,1]),, .t.)
 							_lContinua := .F.
 						endif
 						
 						if val(_aRetQry[1,6]) = 0 // TES PADRAO ITEM
-							MSGALERT ("TES Padrão de entrada, não informado para o item " + alltrim(_aRetQry[1,1]) + ". O documento não será gerado!","AVISO")
+							u_help ("TES Padrão de entrada, não informado para o item " + alltrim(_aRetQry[1,1]) + ". O documento não será gerado!",, .t.)
 							_lContinua := .F.	
 						endif
 						if _aRetQry[1,3] != _aItens [i, 7] // UNIDADES DIFERENTES
 							if  _aRetQry[1,8] = 0    //  FATOR DE CONVERSAO NA CADASTRADO
-								MSGALERT ("Fator de conversão, não informado para o item " + alltrim(_aRetQry[1,1]) + ". O documento não será gerado!","AVISO")
+								u_help ("Fator de conversão, não informado para o item " + alltrim(_aRetQry[1,1]) + ". O documento não será gerado!",, .t.)
 								_lContinua := .F.
 							endif	
 						endif
@@ -2157,15 +2161,8 @@ user function ZZXG (_wprenota)
 						_wquant = _aItens [i, 3]
 						_wtotal = _aItens [i, 2]
 						_wvalor = _aItens [i, 4] 	
-						//msgalert("quantidade")
-						//msgalert( str(_aItens [i, 3]) )
-						//msgalert("total")
-						//msgalert( str(_aItens [i, 2]) )
-						//msgalert("unitario")
-						//msgalert( str(_aItens [i, 4]) )			
 						endif
 						if _lContinua
-							//if _aRetQry[1,3] != _aRetQry[1,7] //  UNIDADES DIFERENTES
 							if _aRetQry[1,3] != _aItens [i, 7] // UNIDADES DIFERENTES
 								if _aRetQry[1,9] = 'D' // PARECE ERRADO MAS EH A LOGICA DO SISTEMA
 									_wquant = _wquant * _aRetQry[1,8]   // fator de conversação
@@ -2176,13 +2173,6 @@ user function ZZXG (_wprenota)
 								endif
 							_wtotal = round(_wquant * _wvalor,2)							
 							endif
-							
-							//msgalert("quantidade")
-							//msgalert( str(_wquant ))
-							//msgalert("total")
-							//msgalert( str(_wtotal ))
-							//msgalert("unitario")
-							//msgalert( str(_wvalor ))
 							
 							// -- SE NF DE TRANSFERENCIA - SETA O TES CORRETO PARA TRANSFENCIA - conforme o produto
 							_wtes = _aRetQry[1,6]
@@ -2205,7 +2195,7 @@ user function ZZXG (_wprenota)
 						endif							
 	
 					else // problemas com a amarração produto x fornecedor
-						MSGALERT ("Problema com a amarração produto x fornecedor. O codigo '" + _aItens [i, 1] + "' (de uso do fornecedor '" + _sCodCF + '/' + _sLojaCF + "') nao foi encontrado amarrado a nenhum codigo nosso.","AVISO")
+						u_help ("Problema com a amarração produto x fornecedor. O codigo '" + _aItens [i, 1] + "' (de uso do fornecedor '" + _sCodCF + '/' + _sLojaCF + "') nao foi encontrado amarrado a nenhum codigo nosso.",, .t.)
 						_lContinua := .F.				
 					Endif
 				next
@@ -2372,6 +2362,7 @@ user function ZZXG (_wprenota)
 		_aLinhas := aclone (U_OrdAuto (_aLinhas))
 		AADD( _aAutoSD1, aClone( _aLinhas ) )
 		
+		u_log2 ('debug', 'Criando objeto para fretes')
 		public _oClsFrtFr := ClsFrtFr():New ()
 		public _CA100For := _sCodCF
 	    public _cLoja    := _sLojaCF
@@ -2391,19 +2382,50 @@ user function ZZXG (_wprenota)
 		next
 		
 		// busca notas refenciadas e ve se existem no sistema
-		//u_showarray(_oXMLSEF:CTe:ChaveRel)
-		for i = 1 to len (_oXMLSEF:CTe:ChaveRel)
-			_wchave   = _oXMLSEF:CTe:ChaveRel [i]
-			_wnumnota = fbuscacpo ("SF2", 19, _wchave,  "F2_DOC")
-			_wserie   = fbuscacpo ("SF2", 19, _wchave,  "F2_SERIE")
-			if val(_wnumnota) > 0 
+		u_log2 ('debug', 'Chaves relacionadas a este CTe:')
+		u_log2 ('debug', _oXMLSEF:CTe:ChaveRel)
+		_oSQLNfOri := CLSSQL ():New ()
+		for _nChvRel = 1 to len (_oXMLSEF:CTe:ChaveRel)
+			_wchave   = _oXMLSEF:CTe:ChaveRel [_nChvRel]
+			u_log2 ('debug', 'chave relacionada ' + cvaltochar (_nChvRel) + ': ' + _wchave)
+//			_wnumnota = fbuscacpo ("SF2", 19, _wchave,  "F2_DOC")
+//			_wserie   = fbuscacpo ("SF2", 19, _wchave,  "F2_SERIE")
+//			u_log2 ('debug', 'nota e serie pelo indice 19: ' + _wnumnota + ' ' + _wserie)
+//			_wnumnota = fbuscacpo ("SF2", 20, _wchave,  "F2_DOC")
+//			_wserie   = fbuscacpo ("SF2", 20, _wchave,  "F2_SERIE")
+//			u_log2 ('debug', 'nota e serie pelo indice 20: ' + _wnumnota + ' ' + _wserie)
+			_oSQLNfOri:_sQuery := "SELECT F2_DOC, F2_SERIE"
+			_oSQLNfOri:_sQuery +=  " FROM " + RetSQLName ("SF2") + " SF2 "
+			_oSQLNfOri:_sQuery += " WHERE SF2.D_E_L_E_T_ != '*'"
+			_oSQLNfOri:_sQuery +=   " AND SF2.F2_FILIAL   = '" + xfilial ("SF2") + "'"
+			_oSQLNfOri:_sQuery +=   " AND SF2.F2_CHVNFE   = '" + _wchave + "'"
+			_oSQLNfOri:_sQuery +=   " AND SF2.F2_TIPO     = 'N'"
+			_oSQLNfOri:_sQuery +=   " AND EXISTS (SELECT *"  // Nao quero notas de transferencia entre filiais.
+			_oSQLNfOri:_sQuery +=                 " FROM " + RetSQLName ("SA1") + " SA1 "
+			_oSQLNfOri:_sQuery +=                " WHERE SA1.D_E_L_E_T_ != '*'"
+			_oSQLNfOri:_sQuery +=                  " AND SA1.A1_FILIAL   = '" + xfilial ("SA1") + "'"
+			_oSQLNfOri:_sQuery +=                  " AND SA1.A1_COD      = SF2.F2_CLIENTE"
+			_oSQLNfOri:_sQuery +=                  " AND SA1.A1_LOJA     = SF2.F2_LOJA"
+			_oSQLNfOri:_sQuery +=                  " AND SA1.A1_FILTRF   = '')"
+			_oSQLNfOri:Log ()
+			_aNfOri = aclone (_oSQLNfOri:Qry2Array (.F., .F.))
+			if len (_aNfOri) == 0
+				u_log2 ('info', 'Chave ' + _wchave + ' referenciada no CTe ' + _sDoc + '/' + _sSerie + ' do fornecedor/loja ' + _sCodCF + '/' + _sLojaCF + ' nao consta como uma de nossas notas de venda.')
+			elseif len (_aNfOri) == 1  // Deve encontrar somente uma nota
+				_wnumnota = _aNfOri [1, 1]
+				_wserie   = _aNfOri [1, 2]
 				aadd (_oClsFrtFr:_aNaoPrev, array (3))
-				_oClsFrtFr:_aNaoPrev [ i, 1] = _wnumnota
-				_oClsFrtFr:_aNaoPrev [ i, 2] = _wserie 
-				_oClsFrtFr:_aNaoPrev [ i, 3] = '1'
-			endif			
-		next				
-											
+//				_oClsFrtFr:_aNaoPrev [ _nChvRel, 1] = _wnumnota
+//				_oClsFrtFr:_aNaoPrev [ _nChvRel, 2] = _wserie 
+//				_oClsFrtFr:_aNaoPrev [ _nChvRel, 3] = '1'
+				_oClsFrtFr:_aNaoPrev [len (_oClsFrtFr:_aNaoPrev), .FrtNaoPrevDoc]         = _wnumnota
+				_oClsFrtFr:_aNaoPrev [len (_oClsFrtFr:_aNaoPrev), .FrtNaoPrevSerie]       = _wserie
+				_oClsFrtFr:_aNaoPrev [len (_oClsFrtFr:_aNaoPrev), .FrtNaoPrevTipoServico] = '1'  // Aqui estou assumindo sempre como 'frete' por que nao tenho (ainda) como saber se eh reentrega, paletizacao, etc...
+			elseif len (_aNfOri) > 1
+				u_help ('Chave ' + _wchave + ' referenciada no CTe ' + _sDoc + '/' + _sSerie + ' do fornecedor/loja ' + _sCodCF + '/' + _sLojaCF + ' nao poderia ter sido encontrada em mais de uma de nossas notas de saida. Verifique!',, .t.)
+			endif
+		next
+
 	Endif
 	//-------------------------------- FIM TRATAMENTOS PARA NOTAS CTE	_tpDoc := 2
 	

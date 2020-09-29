@@ -93,13 +93,13 @@ Return ::self
 // --------------------------------------------------------------------------
 // Leitura do 'XML interno' de um arquivo XML recebido de fornecedor.
 METHOD LeXML (_oObjPai) Class ClsCTe
-	local _nDet     := 0
+//	local _nDet     := 0
 	local _nTamDoc  := TamSX3 ('ZZX_DOC')[1]
-	local _aAreaSM0 := {}
+//	local _aAreaSM0 := {}
 	local _sTomador := ""
 	local i			:= 0
 
-	u_logIni (GetClassName (::Self) + '.' + procname ())
+//	u_logIni (GetClassName (::Self) + '.' + procname ())
 
 	if len (::Erros) == 0
 		if ! ::XMLLayout $ 'procCTe/CTe'
@@ -249,5 +249,5 @@ METHOD LeXML (_oObjPai) Class ClsCTe
 
 	// Habilitar as linhas abaixo para verificar os atributos da classe:
 	
-	u_logFim (GetClassName (::Self) + '.' + procname ())
+//	u_logFim (GetClassName (::Self) + '.' + procname ())
 return (len (::Erros) == 0)

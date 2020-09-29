@@ -1,7 +1,15 @@
-// Programa: sf1100e
-// Data:     29/08/06
-// Funcao:   PE antes da exclusao da nota fiscal de entrada
-//
+// Programa....: sf1100e
+// Autor.......: ?
+// Data........: 29/08/06
+// Descricao...: PE antes da exclusao da nota fiscal de entrada
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #Ponto de entrada antes da exclusao de nota fiscal de entrada. Permite gravacoes adicionais.
+// #PalavasChave      #ponto_de_entrada
+// #TabelasPrincipais #SF1 #SD1
+// #Modulos           #EST #COM
+
 // Historico de alteracoes:
 // 12/05/2008 - Robert - Incluida chamada para funcao de tratamento de controle de fretes.
 // 20/08/2008 - Robert - Limpeza do S Z H passa a ser feita pelo FrtNFE.
@@ -30,6 +38,8 @@
 // 10/05/2019 - Catia  - tira include protheus #Include "Protheus.ch" pq dava conflito com a "rwmake.ch" - e nao permitia digitar a justificativa
 // 14/05/2019 - Catia  - Algumas notas nao estavam excluindo na contabilidade
 // 03/06/2020 - Robert - Criado tratamento para exclusao de contranotas de comprea de uva (atualiza ZZ9 e SZI).
+// 28/09/2020 - Robert - Quando nao informado motivo de exclusao na primeira vez, a variavel ficava com tamanho zero e nao permitia mais digitar.
+//                     - Inseridas tags para catalogo de programas.
 //
 
 // -----------------------------------------------------------------------------------------------------------------------------------------------
@@ -39,11 +49,16 @@
 User Function sf1100e()
 	local _aAreaAnt := U_ML_SRArea ()
 //	local _oBatch   := NIL
+	local _sMotExc  := ''
 
 	// solicita motivo de exclusao do documento - obrigatorio
 	_sMotExc = "  "
 	do while empty (_sMotExc)
+		_sMotExc = "  "
 		_sMotExc = U_Get ("Motivo Exclusao Documento Entrada", "C", 2, "@!", "ZX548" , _sMotExc, .F., '.T.')
+		if empty (_sMotExc)
+			loop
+		endif
 		_sQuery  = ""
 		_sQuery += " SELECT ZX5_48DESC"
 		_sQuery += "   FROM ZX5010"
@@ -54,8 +69,8 @@ User Function sf1100e()
 		_aDados := U_Qry2Array(_sQuery)
 		
 		if len (_aDados) = 0
-			u_help ("Motivo de Exclusao de documento de entrada não cadastrado ou inativo")
-			_sMotExc = ""
+			u_help ("Motivo de Exclusao de documento de entrada não cadastrado ou inativo",, .t.)
+			loop
 		else
 			_sJustif = ""
 			do while empty (_sJustif)
@@ -132,9 +147,6 @@ Return()
 // Controles referentes a NF de entrada de safra.
 static function _NFSafra ()
 	local _oSQL     := NIL
-	local _aRegSZI  := {}
-	local _nRegSZI  := 0
-	local _oCtaCorr := NIL
 
 	if sf1 -> f1_formul == "S" .and. sf1 -> f1_serie == '30 ' .and. sf1 -> f1_vasafra != ''
 
@@ -165,8 +177,12 @@ static function _NFSafra ()
 		if ! _oSQL:Exec ()
 			u_help ("Erro ao atualizar a tabela ZZ9 (pre-notas de compra de safra). Verifique!", _oSQL:_sQuery, .t.)
 		endif
+
 /* ainda nao pronto
 		// Se encontrar este docto como uma contranota de compra, limpa a conta corrente.
+		local _aRegSZI  := {}
+		local _nRegSZI  := 0
+		local _oCtaCorr := NIL
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += "SELECT R_E_C_N_O_"
