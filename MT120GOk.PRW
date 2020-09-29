@@ -23,7 +23,7 @@
 //
 // --------------------------------------------------------------------------
 user function MT120GOk ()  
-	local _sAutEnt  := ParamIXB [1]
+	//local _sAutEnt  := ParamIXB [1]
 	local _lInclui  := ParamIXB [2]
 	local _lAltera  := ParamIXB [3]
 	local _lDeleta  := ParamIXB [4]
@@ -31,10 +31,10 @@ user function MT120GOk ()
 	local _aAmbAnt  := U_SalvaAmb ()
 	local _oSQL     := NIL
 	local _nOpcao   := 0
-    Static oDlg
-	Static oButton1
-	Static oButton2
-	Static oSay1
+    //Static oDlg
+	//Static oButton1
+	//Static oButton2
+	//Static oSay1
 	
 	u_logini()
 	

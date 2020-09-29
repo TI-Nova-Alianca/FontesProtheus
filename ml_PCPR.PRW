@@ -3,6 +3,12 @@
 // Data:      10/08/2014
 // Descricao: Impressao pedido compra em PDF
 //
+// #TipoDePrograma    #relatorio
+// #Descricao         #Impressao pedido compra em PDF
+// #PalavasChave      #pedido_de_compra #pedido #compras 
+// #TabelasPrincipais #SC7 
+// #Modulos 		  #COM
+//
 // Historico de alteracoes:
 // 15/05/2015 - Robert  - Ajustes minimos de layout.
 // 22/09/2016 - Catia   - Alterada horario de entrega de mercadorias
@@ -21,6 +27,8 @@
 // 25/11/2019 - Sandra  - Retirado observação do relatório que vai para os fornecedores. 
 // 02/12/2019 - Robert  - Declaradas variaveis locais para for...next - tratamento para mensagem [For variable is not Local]
 // 09/03/2020 - Claudia - Comentado include faltante conforme solicitação da release 12.1.25
+// 28/09/2020 - Cláudia - Liberada a impressão dos dados adicionais para todos os tipos de produtos/serviços. GLPI: 8539
+//
 // ------------------------------------------------------------------------------------------------------------------------
 //#include 'fivewin.ch'
 #include 'topconn.ch'
@@ -47,11 +55,11 @@ User Function ML_PCPR()
 	caminho := ""
 
    	Private	cNumPed  	:= sc7->c7_num		// Numero do Pedido de Compras
-	Private	lImpPrc		:= .T. 	// Imprime os Precos ?
-	Private	nTitulo 	:= "" 			// Titulo do Relatorio ?
-	Private	cObserv2	:= ""		  	   // 1a Linha de Observacoes
+	Private	lImpPrc		:= .T. 				// Imprime os Precos ?
+	Private	nTitulo 	:= "" 				// Titulo do Relatorio ?
+	Private	cObserv2	:= ""		  	    // 1a Linha de Observacoes
 	Private	cObserv3	:= ""		    	// 1a Linha de Observacoes
-	Private	cObserv4	:= ""			   // 1a Linha de Observacoes
+	Private	cObserv4	:= ""			    // 1a Linha de Observacoes
 	Private _oSQL       := ClsSQL():New ()
 	
 	DbSelectArea('SC7')
@@ -65,7 +73,8 @@ User Function ML_PCPR()
 	Processa({ |lEnd| xPrintRel(),OemToAnsi('Gerando o relatório.')}, OemToAnsi('Aguarde...'))
 
 	//Restaura a area anterior ao processamento. 
-    dbclosearea('TRA')
+    //dbclosearea('TRA')
+	dbclosearea()
 	RestArea(aAreaSC7)
 	RestArea(aAreaSA2)
 	RestArea(aAreaSA5)
@@ -108,7 +117,7 @@ Static Function xPrintRel()
 	Private oFont15      := TFont():New('Tahoma',15,15,,.T.,,,,.T.,.F.)
 	Private oFont16      := TFont():New('Tahoma',16,16,,.T.,,,,.T.,.F.)
 	Private oFont18      := TFont():New('Tahoma',18,18,,.T.,,,,.T.,.F.)
-	Private oFont16      := TFont():New('Arial',16,16,,.T.,,,,.T.,.F.)
+	//Private oFont16      := TFont():New('Arial',16,16,,.T.,,,,.T.,.F.)
 	Private oFont20      := TFont():New('Arial',20,20,,.F.,,,,.T.,.F.)
 	Private oFont22      := TFont():New('Arial',22,22,,.T.,,,,.T.,.F.)
 	Private oFont23      := TFont():New('Tahoma',14,14,,.T.,,,,.T.,.F.,.T.)
@@ -195,13 +204,15 @@ Static Function xPrintRel()
 
 		oPrint:Say(nLinha,0045,TRA->C7_ITEM,oFont10n)
 		oPrint:Say(nLinha,0140,SubStr(TRA->C7_PRODUTO,1,15),oFont10n)
-		aadd(_dCorPrf,U_QuebraTxt(fbuscacpo("SA5",1,XFILIAL("SA5")+TRA->C7_FORNECE+TRA->C7_LOJA+TRA->C7_PRODUTO,"A5_CODPRF"),18),oFont10n)
-		
+		//aadd(_dCorPrf,U_QuebraTxt(fbuscacpo("SA5",1,XFILIAL("SA5")+TRA->C7_FORNECE+TRA->C7_LOJA+TRA->C7_PRODUTO,"A5_CODPRF"),18),oFont10n)
+		aadd(_dCorPrf,U_QuebraTxt(fbuscacpo("SA5",1,XFILIAL("SA5")+TRA->C7_FORNECE+TRA->C7_LOJA+TRA->C7_PRODUTO,"A5_CODPRF"),18))
+
 		if len(_dCorPrf[1]) > 0
 			oPrint:Say(nLinha,0270,_dCorPrf[1][1],oFont10n)
 		endif
 		
-		aadd(_aDescIt,U_QuebraTxt(alltrim(TRA->C7_DESCRI),45),oFont10n)
+		//aadd(_aDescIt,U_QuebraTxt(alltrim(TRA->C7_DESCRI),45),oFont10n)
+		aadd(_aDescIt,U_QuebraTxt(alltrim(TRA->C7_DESCRI),45))
 		
 		if len(_aDescIt[1]) > 0
 			oPrint:Say(nLinha,0580,_aDescIt[1][1],oFont10n)
@@ -381,29 +392,38 @@ Static Function xPrintRel()
 	_initxt := 1
 	_tamtxt := 120
 	_obsfull := {}
-	_obsTerceiros := {'TESTE TESTE TESTE TESTE'}
+	//_obsTerceiros := {'TESTE TESTE TESTE TESTE'}
 	
-	If SC7->C7_VAPROSE == 'S'
-		aadd(_obsfull,U_QuebraTxt(alltrim(_obsTerceiros),120))
-		if len(_obsfull) > 0
-			for i=1 to len(_obsfull[1])
-				xVerPag()
-				oPrint:Say(nLinha,0380,_obsfull[1][i],oFont10)
-				nLinha += 40
-				xPulaPag()
-			next
-		endif
-	else 
-		aadd(_obsfull,U_QuebraTxt(alltrim(_sDadAdic),120))
-		if len(_obsfull) > 0
-			for i=1 to len(_obsfull[1])
-				xVerPag()
-				oPrint:Say(nLinha,0380,_obsfull[1][i],oFont10)
-				nLinha += 40
-				xPulaPag()
-			next
-		endif
+	aadd(_obsfull,U_QuebraTxt(alltrim(_sDadAdic),120))
+	if len(_obsfull) > 0
+		for i=1 to len(_obsfull[1])
+			xVerPag()
+			oPrint:Say(nLinha,0380,_obsfull[1][i],oFont10)
+			nLinha += 40
+			xPulaPag()
+		next
 	endif
+	// If SC7->C7_VAPROSE == 'S'
+	// 	aadd(_obsfull,U_QuebraTxt(alltrim(_obsTerceiros),120))
+	// 	if len(_obsfull) > 0
+	// 		for i=1 to len(_obsfull[1])
+	// 			xVerPag()
+	// 			oPrint:Say(nLinha,0380,_obsfull[1][i],oFont10)
+	// 			nLinha += 40
+	// 			xPulaPag()
+	// 		next
+	// 	endif
+	// else 
+	// 	aadd(_obsfull,U_QuebraTxt(alltrim(_sDadAdic),120))
+	// 	if len(_obsfull) > 0
+	// 		for i=1 to len(_obsfull[1])
+	// 			xVerPag()
+	// 			oPrint:Say(nLinha,0380,_obsfull[1][i],oFont10)
+	// 			nLinha += 40
+	// 			xPulaPag()
+	// 		next
+	// 	endif
+	// endif
 	nLinha += 30
 	xPulaPag()
 
@@ -544,7 +564,8 @@ Static Function xPrintRel()
 
 	oPrint:Preview() //abre o PDF na tela
 	dbSelectArea("TRA")
-	dbCloseArea("TRA")
+	//dbCloseArea("TRA")
+	dbCloseArea()
   	CpyT2S(_cPathPDF +_cFile+".PDF",cDestino)
 	caminho := cDestino +_cFile+".pdf"
 
@@ -643,9 +664,9 @@ Static Function xCabec()
 Return
 //-------------------------------------------------------------
 // Rodapé
-Static Function xRodape()
+//Static Function xRodape()
 
-return
+//return
 //-------------------------------------------------------------
 // Verifica página
 Static Function xVerPag()
@@ -664,11 +685,11 @@ Static Function xPulaPag()
 		xCabec()
 	EndIf
 Return
-//-------------------------------------------------------------
-// Perguntas
-Static Function _ValidPerg ()
-	local _aRegsPerg := {}
-	//                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                        Help
-  	aadd (_aRegsPerg, {01, "Nro do Pedido                ?", "C", 06, 0,  "",   "SC7", {},                           ""})
-	U_ValPerg (cPerg, _aRegsPerg)
-Return
+// //-------------------------------------------------------------
+// // Perguntas
+// Static Function _ValidPerg ()
+// 	local _aRegsPerg := {}
+// 	//                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                        Help
+//   	aadd (_aRegsPerg, {01, "Nro do Pedido                ?", "C", 06, 0,  "",   "SC7", {},                           ""})
+// 	U_ValPerg (cPerg, _aRegsPerg)
+// Return
