@@ -94,7 +94,7 @@ user function BolAuto (_sSerie, _sNotaIni, _sNotaFim)
 		do while ! (_sAliasQ2) -> (eof ())
 			
 			do case 
-			   case (_sAliasQ2) -> A6_COD = '748' // força subconta 1
+			   case p
 			    	_wsubconta = '1'
 			   case (_sAliasQ2) -> A6_COD = '001' .and. (cfilant = '01' .or. cfilant = '03' .or. cfilant = '07' .or. cfilant = '09' .or. cfilant = '16')  ///força subconta 1 convenio NOVO a partir de 05/2019 
 			   		_wsubconta = '1'
