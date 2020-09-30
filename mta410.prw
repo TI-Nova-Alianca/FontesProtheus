@@ -121,7 +121,7 @@ User Function MTA410 ()
 	
 	if _lRet
 		// se condicao de pagamento A VISTA - deve ser sempre CX1
-		if m->c5_condpag = '097' .and. m->c5_banco != 'CX1' 
+		if m->c5_condpag = '097' .and. m->c5_banco != 'CX1'
 			u_help ("Para condicao A VISTA, informar banco CX1 (caixa).",, .t.)
 			_lRet = .F.
 		endif

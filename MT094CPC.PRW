@@ -14,6 +14,6 @@
 
 User Function MT094CPC()
 
-Local cCampos := "C7_OBS" //  A separação dos campos devem ser feitos com uma barra vertical ( | ), igual é demonstrado no exemplo. 
+Local cCampos := "C7_OBS|C7_COMNOM" //  A separação dos campos devem ser feitos com uma barra vertical ( | ), igual é demonstrado no exemplo. 
 
 Return (cCampos)

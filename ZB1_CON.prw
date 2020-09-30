@@ -90,9 +90,9 @@ User Function ZB1_CON(_sConciliar)
 		
 		_cMens := "Existem " + alltrim(str(len(_aZB1))) + " registros para realizar a baixa de títulos. Deseja continuar?"
 		If MsgYesNo(_cMens,"Baixa de titulos")
-
+			_nImpReg := 0
+			_nTotReg := Len(_aZB1)
 			For i:=1 to Len(_aZB1)
-				IncProc("Baixando títulos...")
 				
 				_sParc := ''
 				If alltrim(_aZB1[i, 21]) <> '00' .or. alltrim(_aZB1[i, 21]) <> '' 
@@ -134,7 +134,7 @@ User Function ZB1_CON(_sConciliar)
 				_aTitulo := aclone (_oSQL:Qry2Array ())
 				
 				If len(_aTitulo) <= 0
-					u_log("TÍTULO NÃO ENCONTRAD: Registro NSU+AUT:" + _aZB1[i,18] + _aZB1[i,17])
+					u_log("TÍTULO NÃO ENCONTRADO: Registro NSU+AUT:" + _aZB1[i,18] + _aZB1[i,17])
 				Else
 					
 					For x:=1 to len(_aTitulo)	
@@ -228,6 +228,7 @@ User Function ZB1_CON(_sConciliar)
 										ZB1 -> ZB1_DTABAI := date()
 									ZB1->(MsUnlock())
 								EndIf
+								_nImpReg += 1
 								u_log("IMPORTAÇÃO FINALIZADA COM SUCESSO: Registro NSU+AUT:" + _sNSUCod + _sAutCod)
 							Endif
 
@@ -236,6 +237,7 @@ User Function ZB1_CON(_sConciliar)
 					Next
 				Endif		
 			Next
+			u_help("Processo finalizado! Baixados "+ alltrim(str(_nImpReg)) +" de " + alltrim(str(_nTotReg)) )
 		Else
 			u_help("Processo não realizado!")
 			u_log("IMPORTAÇÃO ABORTADA PELO USUÁRIO")

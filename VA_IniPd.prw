@@ -42,20 +42,20 @@
 // 19/09/2019 - Robert - Sugere CC cfe.grupo do usuario no campo D3_CC
 // 25/09/2019 - Andre  - Adicionado codigos do Joel e Marcus no inicializador padrão.
 // 10/12/2019 - Robert - Desabilitado tratamento para o D3_CC
+// 29/09/2020 - Cláudia - Incluido o novo usuário do alexandre na validação de liberação de doc. GLPI: 8369
 //
-
-// --------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------
 user function VA_IniPd (_sCampo, _lBrowse)
 	local _xRet     := NIL
 	local _sQuery   := ""
 	local _aAreaSX3 := {}
 	local _nLinha   := 0
-	local _n        := 0
+	//local _n        := 0
 	local _sUser    := ""
 	local _oSQL     := NIL
-	local _aRetSQL  := {}
-	local _nPercSep := 0
-	local _aGrupos  := {}
+	//local _aRetSQL  := {}
+	//local _nPercSep := 0
+	//local _aGrupos  := {}
 
 	do case
 	case _sCampo == "C5_NOMECLI"
@@ -207,7 +207,7 @@ user function VA_IniPd (_sCampo, _lBrowse)
 				// Desisti de usar a funcao PswSeek por que estava muito demorada.
 				_sUser = fBuscaCpo ("SC7", 1, scr -> cr_filial + left (scr -> cr_num, 6), "C7_USER")
 				do case
-					case _sUser == '000129'
+					case _sUser == '000671'
 						_xRet = 'Alexandre'
 					case _sUser == '000118'
 						_xRet = 'Gilmar'
