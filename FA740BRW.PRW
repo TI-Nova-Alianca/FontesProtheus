@@ -261,22 +261,23 @@ user function VA_040BRAP()
 			_oSQL:_sQuery += "  	,E1_LOJA"
 			_oSQL:_sQuery += " 		,E1_TIPO"
 			_oSQL:_sQuery += " 		,E1_VARAPEL"
+			_oSQL:_sQuery += " 		,E1_BAIXA"
 			_oSQL:_sQuery += " FROM " + RetSQLName ("SE1") + " AS SE1 "
 			_oSQL:_sQuery += " WHERE SE1.D_E_L_E_T_ = ''"
-			_oSQL:_sQuery += " AND E1_FILIAL   = '" + cFilAnt + "'"
-			_oSQL:_sQuery += " AND E1_PORT2    = '" + mv_par01 + "'"
-			_oSQL:_sQuery += " AND E1_AGEDEP   = '" + mv_par02 + "'"
+			_oSQL:_sQuery += " AND E1_FILIAL   = '" + cFilAnt  + "'"
+			_oSQL:_sQuery += " AND E1_PORT2    = '" + mv_par01  + "'"
+			_oSQL:_sQuery += " AND E1_AGEDEP   = '" + mv_par02  + "'"
 			_oSQL:_sQuery += " AND E1_CONTA    = '" + mv_par03 + "'"
 			_oSQL:_sQuery += " AND E1_NUMBCO  <> ''"
 			_oSQL:_sQuery += " AND E1_BAIXA    = '" + DTOS(mv_par04) + "'"
 			_oSQL:_sQuery += " AND E1_VARAPEL <> 0"
 			if !empty(mv_par05) .and. !empty(mv_par06)
-				_oSQL:_sQuery += " AND E1_NUM     = '" + mv_par05 + "'" 
+				_oSQL:_sQuery += " AND E1_NUM     = '" + mv_par05  + "'" 
 				_oSQL:_sQuery += " AND E1_PREFIXO = '" + mv_par06 + "'" 
 			endif
 			if !empty(mv_par07) .and. !empty(mv_par08)
 				_oSQL:_sQuery += " AND E1_CLIENTE = '" + mv_par07 + "'" 
-				_oSQL:_sQuery += " AND E1_LOJA    = '" + mv_par08 + "'" 
+				_oSQL:_sQuery += " AND E1_LOJA    = '" + mv_par08    + "'" 
 			endif
 			_oSQL:Log ()
 
@@ -304,8 +305,8 @@ user function VA_040BRAP()
 						AAdd(_aAutoSE1, {"AUTBANCO"  	, 'CX1'		    					, Nil})
 						AAdd(_aAutoSE1, {"AUTAGENCIA"  	, 'CX1  '		    				, Nil})
 						AAdd(_aAutoSE1, {"AUTCONTA"  	, 'CX1       '		    			, Nil})				
-						AAdd(_aAutoSE1, {"AUTDTBAIXA"	, mv_par04		 					, Nil})
-						AAdd(_aAutoSE1, {"AUTDTCREDITO"	, mv_par04		 					, Nil})
+						AAdd(_aAutoSE1, {"AUTDTBAIXA"	, _aTitulo[x,9]		 				, Nil})
+						AAdd(_aAutoSE1, {"AUTDTCREDITO"	, _aTitulo[x,9]		 				, Nil})
 						AAdd(_aAutoSE1, {"AUTHIST"   	, 'DESC RAPEL'					    , Nil})
 						AAdd(_aAutoSE1, {"AUTDESCONT"	, _aTitulo[x,8]          		    , Nil})
 						AAdd(_aAutoSE1, {"AUTMULTA"  	, 0         						, Nil})
@@ -316,8 +317,8 @@ user function VA_040BRAP()
 
 						cPerg = 'FIN070'
 						_aBkpSX1 = U_SalvaSX1 (cPerg)  // Salva parametros da rotina.
-						U_GravaSX1 (cPerg, "01", 2)    // testar mostrando o lcto contabil depois pode passar para nao
-						U_GravaSX1 (cPerg, "04", 2)    // esse movimento tem que contabilizar
+						U_GravaSX1 (cPerg, "01", 1)    // testar mostrando o lcto contabil depois pode passar para nao
+						U_GravaSX1 (cPerg, "04", 1)    // esse movimento tem que contabilizar
 
 						MSExecAuto({|x,y| Fina070(x,y)},_aAutoSE1,3,.F.,5) // rotina automática para baixa de títulos
 						If lMsErroAuto
