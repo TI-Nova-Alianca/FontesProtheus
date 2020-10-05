@@ -23,6 +23,7 @@ User Function ZB1_IMP()
 	Local cExt 		:= ""
 	Local cLinha 	:= ""
 	Local lContinue := .F.
+	Private _aRel   := {}
 	Private aErro 	:= {}
 
 	u_logIni ("Inicio Importação Cielo " + DTOS(date()) )
@@ -91,7 +92,7 @@ User Function ZB1_IMP()
 					_aCV := BuscaCV(_aCV, cLinha)
 					
 					// No registro 2 gravo os valores num registro do ZB1
-					GravaZB1(_aHeader, _aRO, _aCV )
+					GravaZB1(_aHeader, _aRO, _aCV, _aRel )
 					
 			EndCase
 			
@@ -100,6 +101,10 @@ User Function ZB1_IMP()
 		
 		FT_FUSE()
 	
+		// imprime relatório
+		If len(_aRel) > 0
+			RelImportacao(_aRel)
+		EndIf
 		ApMsgInfo("Importação dos registros concluída com sucesso!","[ZB1_IMP] - SUCESSO")
 	EndIf
 	u_logFim ("Inicio Importação Cielo " + DTOS(date()) )
@@ -205,7 +210,7 @@ Return _aCV
 //
 // --------------------------------------------------------------------------
 // Grava ZB1
-Static Function GravaZB1(_aHeader, _aRO, _aCV )
+Static Function GravaZB1(_aHeader, _aRO, _aCV, _aRel )
 	Begin Transaction
 		
 		sAut	 := alltrim(_aCV[1,8])
@@ -259,6 +264,17 @@ Static Function GravaZB1(_aHeader, _aRO, _aCV )
 				ZB1->ZB1_ARQUIV := alltrim(mv_par02)	
 			ZB1->(MsUnlock())
 
+			aadd(_aRel,{ 	_aRO[1,1],; 	// filial
+							_aRO[1,6],; 	// valor bruto
+							_aRO[1,7],; 	// valor taxa
+							_aRO[1,9],; 	// valor liquido
+							_aCV[1,3],; 	// valor da parcela
+							_aCV[1,2],; 	// data de venda
+							_aHeader[1,1],; // data do processamento
+							_aCV[1,8] ,; 	// autorização
+							_aCV[1,10],; 	// NSU
+							'INCLUIDO'  })
+
 			u_log("Registro Importado! NSU:" + sNSU +" Autorização:"+ sAut)
 		Else
 			_Status := Posicione('ZB1',1,sNSU + sAut,'ZB1_STAIMP')
@@ -297,12 +313,23 @@ Static Function GravaZB1(_aHeader, _aRO, _aCV )
 					ZB1->ZB1_NUMNFE := _aCV[1,11]  
 					ZB1->ZB1_IDTRAN := _aCV[1,12]  		
 				ZB1->(MsUnlock())
+				aadd(_aRel,{ 	_aRO[1,1],; 	// filial
+								_aRO[1,6],; 	// valor bruto
+								_aRO[1,7],; 	// valor taxa
+								_aRO[1,9],; 	// valor liquido
+								_aCV[1,3],; 	// valor da parcela
+								_aCV[1,2],; 	// data de venda
+								_aHeader[1,1],; // data do processamento
+								_aCV[1,8] ,; 	// autorização
+								_aCV[1,10],; 	// NSU
+								'ALTERADO'  })
+
 				u_log("Registro Alterado! NSU:" + sNSU +" Autorização:"+ sAut)
 			EndIf
 		EndIf
 
 	End Transaction
-Return
+Return _aRel
 //
 // --------------------------------------------------------------------------
 // Busca filial pela empresa do arquivo
@@ -462,6 +489,110 @@ Static Function BuscaRejeicao(_sMotRej)
 	EndCase
 
 Return _sDesRej
+//
+// --------------------------------------------------------------------------
+// Relatorio de registros importados
+Static Function RelImportacao(_aRel)
+	Private oReport
+	//Private cPerg   := "VA_RELPORT"
+	
+	oReport := ReportDef()
+	oReport:PrintDialog()
+Return
+//
+// ---------------------------------------------------------------------------
+// Cabeçalho da rotina
+Static Function ReportDef()
+	Local oReport  := Nil
+	Local oSection1:= Nil
+	//Local oBreak1
+
+	oReport := TReport():New("ZB1_IMP","Importação de pagamentos Cielo",cPerg,{|oReport| PrintReport(oReport)},"Importação de pagamentos Cielo")
+	
+	oReport:SetTotalInLine(.F.)
+	oReport:SetPortrait()
+	oReport:ShowHeader()
+	
+	oSection1 := TRSection():New(oReport,,{}, , , , , ,.T.,.F.,.F.) 
+	
+	TRCell():New(oSection1,"COLUNA1", 	"" ,"Filial"		,	    					, 8,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA2", 	"" ,"Título"		,       					,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA3", 	"" ,"Cliente"		,       					,35,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA4", 	"" ,"Vlr.Bruto"		, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA5", 	"" ,"Vlr.Líquido"	, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA6", 	"" ,"Vlr.Taxa"		, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA7", 	"" ,"Vlr.Parcela"	, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA8", 	"" ,"Dt.Venda"		,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA9", 	"" ,"Dt.Proces."	,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA10", 	"" ,"Autoriz."		,							,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA11", 	"" ,"NSU"			,	    					,10,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA12", 	"" ,"Status"		,	    					,20,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
+	
+	TRFunction():New(oSection1:Cell("COLUNA4")	,,"SUM"	, , "Total bruto "  , "@E 999,999,999.99", NIL, .F., .T.)
+	TRFunction():New(oSection1:Cell("COLUNA5")	,,"SUM"	, , "Total liquido ", "@E 999,999,999.99", NIL, .F., .T.)
+	TRFunction():New(oSection1:Cell("COLUNA6")	,,"SUM"	, , "Total taxa "   , "@E 999,999,999.99", NIL, .F., .T.)
+	TRFunction():New(oSection1:Cell("COLUNA7")	,,"SUM"	, , "Total parcela ", "@E 999,999,999.99", NIL, .F., .T.)
+Return(oReport)
+//
+// -------------------------------------------------------------------------
+// Impressão
+Static Function PrintReport(oReport)
+	Local oSection1 := oReport:Section(1)
+	Local i         := 0
+
+	oSection1:Init()
+	oSection1:SetHeaderSection(.T.)
+
+	For i:=1 to Len(_aRel)
+
+// Busca dados do título para fazer a baixa
+		_oSQL:= ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT "
+		_oSQL:_sQuery += "     SE1.E1_PREFIXO"	// 01
+		_oSQL:_sQuery += "    ,SE1.E1_NUM"		// 02
+		_oSQL:_sQuery += "    ,SE1.E1_PARCELA"	// 03
+		_oSQL:_sQuery += "    ,SE1.E1_CLIENTE"	// 04
+		_oSQL:_sQuery += "    ,SE1.E1_LOJA"		// 05
+		_oSQL:_sQuery += " FROM " + RetSQLName ("SE1") + " AS SE1 "
+		_oSQL:_sQuery += " WHERE SE1.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery += " AND SE1.E1_FILIAL  = '" + _aRel[i, 1] + "'"
+		_oSQL:_sQuery += " AND SE1.E1_EMISSAO = '" + DTOS(_aRel[i,6]) + "'"
+		If alltrim(_aRel[i, 1]) <> '01'
+			_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aRel[i,8] + "'" // Loja salva cod.aut no campo NSU
+		Else
+			_oSQL:_sQuery += " AND SE1.E1_CARTAUT = '" + _aRel[i,8] + "'"
+			_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aRel[i,9] + "'"
+		EndIf
+		_aTitulo := aclone (_oSQL:Qry2Array ())
+
+		If len(_aTitulo) > 0
+			_sTitulo  := alltrim(_aTitulo[1,2]) +"/" + alltrim(_aTitulo[1,1] +"/"+_aTitulo[1,2])
+			_sNome    := Posicione("SA1",1,xFilial("SA1")+_aTitulo[1,4] + _aTitulo[1,5],"A1_NOME")
+			_sCliente := alltrim(_aTitulo[1,4]) +"/" + alltrim(_sNome)
+		Else
+			_sTitulo  := "-"
+			_sNome    := "-"
+			_sCliente := "-"
+		EndIf
+
+		oSection1:Cell("COLUNA1")	:SetBlock   ({|| _aRel[i,1] })
+		oSection1:Cell("COLUNA2")	:SetBlock   ({|| _sTitulo   })
+		oSection1:Cell("COLUNA3")	:SetBlock   ({|| _sCliente  })
+		oSection1:Cell("COLUNA4")	:SetBlock   ({|| _aRel[i,2] })
+		oSection1:Cell("COLUNA5")	:SetBlock   ({|| _aRel[i,3] })
+		oSection1:Cell("COLUNA6")	:SetBlock   ({|| _aRel[i,4] })
+		oSection1:Cell("COLUNA7")	:SetBlock   ({|| _aRel[i,5] })
+		oSection1:Cell("COLUNA8")	:SetBlock   ({|| _aRel[i,6] })
+		oSection1:Cell("COLUNA9")	:SetBlock   ({|| _aRel[i,7] })
+		oSection1:Cell("COLUNA10")	:SetBlock   ({|| _aRel[i,8] })
+		oSection1:Cell("COLUNA11")	:SetBlock   ({|| _aRel[i,9] })
+		oSection1:Cell("COLUNA12")	:SetBlock   ({|| _aRel[i,10]})
+			
+		oSection1:PrintLine()
+	Next
+	oSection1:Finish()
+Return
 //
 // --------------------------------------------------------------------------
 // Perguntas

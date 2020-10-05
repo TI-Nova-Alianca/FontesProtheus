@@ -3,34 +3,35 @@
 // Data.......: 10/10/2013
 // Descricao..: Tela de manutencao de rotinas x usuarios.
 //
-// Historico de alteracoes:
-// 23/10/2013 - Robert - Criado tratamento para campos ZZU_EMP e ZZU_FIL.
-// 30/10/2013 - Robert - Funcao ZZUNU passa a aceitar array de rotinas.
-// 28/11/2013 - Robert - Criada função ZZULD.
-// 25/06/2014 - Robert - Envia grupo/rotina para a funcao Sendmail.
-// 10/03/2015 - Catia  - incluido usuario CATIA.CARDOSO para poder usar este programa
-// 02/07/2015 - Robert - Funcao ZZUVL passa a aceitar parametro com tipos de acessos.
-// 30/09/2015 - Robert - Selecionada ordem 1 (PswOrder) na funcao ZZULD.
-// 05/11/2015 - Robert - Notifica usuarios somente se estiverem com tipo 2 ou 3 (antes notificava mesmo estando com tipo 1=libera).
-// 04/10/2017 - Robert - Funcao ZZUNU retorna numero de e-mails enviados.
-// 19/10/2017 - Robert - Funcao ZZULD passa a retornar tambem uma array com os IDs dos usuarios.
-// 11/12/2017 - Robert - Passa a validar usuario atual pelos grupos do configurador.
-// 30/07/2019 - Robert - Grava evento de incl/alt/excl; de cadastro.
-// 04/11/2019 - Robert - Passa a validar campo ZZU_VALID.
-// 15/06/2020 - Robert - Campos ZZU_NOME e ZZU_EMAIL passam a ser 'reais'.
-// 19/07/2020 - Robert - Inseridas tags para catalogacao de fontes
-//                     - Campo ZZU_ROTINA migrado para ZZU_GRUPO
-//                     - Tratamento para novos campos ZZU_ROTIN e ZZU_MODUL
-//                     - Removido tratamento por empresa (campo ZZU_EMP).
-//
-
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Atualizacao
 // #PalavasChave      #usuarios #grupos_de_usuarios #ZZU #acessos
 // #TabelasPrincipais #ZZU
-// #Modulos           
-
-// --------------------------------------------------------------------------
+// #Modulos    
+//
+// Historico de alteracoes:
+// 23/10/2013 - Robert  - Criado tratamento para campos ZZU_EMP e ZZU_FIL.
+// 30/10/2013 - Robert  - Funcao ZZUNU passa a aceitar array de rotinas.
+// 28/11/2013 - Robert  - Criada função ZZULD.
+// 25/06/2014 - Robert  - Envia grupo/rotina para a funcao Sendmail.
+// 10/03/2015 - Catia   - incluido usuario CATIA.CARDOSO para poder usar este programa
+// 02/07/2015 - Robert  - Funcao ZZUVL passa a aceitar parametro com tipos de acessos.
+// 30/09/2015 - Robert  - Selecionada ordem 1 (PswOrder) na funcao ZZULD.
+// 05/11/2015 - Robert  - Notifica usuarios somente se estiverem com tipo 2 ou 3 
+//						  (antes notificava mesmo estando com tipo 1=libera).
+// 04/10/2017 - Robert  - Funcao ZZUNU retorna numero de e-mails enviados.
+// 19/10/2017 - Robert  - Funcao ZZULD passa a retornar tambem uma array com os IDs dos usuarios.
+// 11/12/2017 - Robert  - Passa a validar usuario atual pelos grupos do configurador.
+// 30/07/2019 - Robert  - Grava evento de incl/alt/excl; de cadastro.
+// 04/11/2019 - Robert  - Passa a validar campo ZZU_VALID.
+// 15/06/2020 - Robert  - Campos ZZU_NOME e ZZU_EMAIL passam a ser 'reais'.
+// 19/07/2020 - Robert  - Inseridas tags para catalogacao de fontes
+//                      - Campo ZZU_ROTINA migrado para ZZU_GRUPO
+//                      - Tratamento para novos campos ZZU_ROTIN e ZZU_MODUL
+//                      - Removido tratamento por empresa (campo ZZU_EMP).
+// 05/10/2020 - Cláudia - Incluida variavel na função zzuvl para emitir/não emitir a mensagem de aviso.
+//
+// -------------------------------------------------------------------------------------------------------
 User Function ZZU ()
 	local _sFiltrTop := ""
 	private aRotina   := {}  // Opcoes do menu
@@ -272,7 +273,7 @@ return _lRet
 
 // --------------------------------------------------------------------------
 // Verifica se o usuario pertence ao grupo solicitado.
-user function ZZUVL (_sGrupoZZU, _sUser, _lComTela)  //, _sEmp, _sFil, _sTipos)
+user function ZZUVL (_sGrupoZZU, _sUser, _lComTela, _lMsg)  //, _sEmp, _sFil, _sTipos)
 	local _lRet     := .F.
 	local _aAreaAnt := U_ML_SRArea ()
 	local _sMsg     := ""
@@ -282,6 +283,7 @@ user function ZZUVL (_sGrupoZZU, _sUser, _lComTela)  //, _sEmp, _sFil, _sTipos)
 //	_sEmp     := iif (_sEmp     == NIL, cEmpAnt,   _sEmp)
 //	_sFil     := iif (_sFil     == NIL, cFilAnt,   _sFil)
 	_sTipos   := iif (_sTipos   == NIL, '13',      _sTipos)
+	_lMsg     := iif (_lMsg     == NIL, .T.,       _lMsg)
 
 	zzu -> (dbsetorder (1))  // ZZU_FILIAL+ZZU_GRUPO+ZZU_FIL+ZZU_USER
 	if ! zzu -> (dbseek (xfilial ("ZZU") + _sGrupoZZU, .T.))
@@ -307,7 +309,7 @@ user function ZZUVL (_sGrupoZZU, _sUser, _lComTela)  //, _sEmp, _sFil, _sTipos)
 			endif
 			zzu -> (dbskip ())
 		enddo
-		if ! _lRet
+		if ! _lRet .and. _lMsg == .T.
 			_sMsg += "Usuario '" + _sUser + "' sem liberacao (ou nao cadastrado) no grupo '" + _sGrupoZZU + "'."
 		endif
 	endif

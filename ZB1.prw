@@ -41,7 +41,7 @@ User Function ZB1()
                       
 		dbSelectArea ("ZB1")
 		dbSetOrder (1)
-		
+		_sFiltrTop := "ZB1_FILIAL ='" + cFilAnt +"'"
 		mBrowse(,,,,"ZB1",,,,,,aCores,,,,,,,,_sFiltrTop)
 	EndIf
 Return

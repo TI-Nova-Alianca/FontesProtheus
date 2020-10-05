@@ -59,14 +59,15 @@ Return
 // Gera PDF
 Static Function _GeraPDF_Email()	
 	Local _y 			 := 0
-	Local _x 			 := 0
-	Local _aVend 		 := {}
+	//Local _x 			 := 0
+	//Local _aVend 		 := {}
 	Local _aItens   	 := {}
-	Local _aVerbVend	 := {}
-	Local _aVerbOut 	 := {}
-	Local _aVerbTit		 := {}
-	Local _aBonif		 := {}
-	Local _aVerbaBol	 := {}
+	//Local _aVerbVend	 := {}
+	//Local _aVerbOut 	 := {}
+	//Local _aVerbTit		 := {}
+	//Local _aBonif		 := {}
+	//Local _aVerbaBol	 := {}
+	Local _aDev          := {}
 	Private _oSQL        := ClsSQL():New ()
 	Private oPrint       := TMSPrinter():New(OemToAnsi('Relatorio de Comissoes'))
 	Private oBrush       := TBrush():New(,4)
@@ -307,7 +308,7 @@ Static Function _GeraPDF_Email()
 					Case alltrim(_aDescVerb[_y,1]) == '6'
 						_sTipoZb0 := '6 - VERBA EM TITULO SEM COMISSÃO'
 				EndCase
-				
+			EndIf	
 				Do Case
 				
 					Case mv_par11 == 2 .and. ( empty(_dDtaPt) .or. _dDtaPt =='19000101')  // pagas
@@ -315,25 +316,26 @@ Static Function _GeraPDF_Email()
 					Case mv_par11 == 3 	.and.  _dDtaPt != '19000101'  // em aberto
 						// registro com data de pagamento n entra nos registros em aberto
 					Otherwise
-						oPrint:Say(nLinha,0100, alltrim(_sTipoZb0 )  	 									,oFont12n)
-						oPrint:Say(nLinha,0600, alltrim(_aDescVerb[_y,2])									,oFont12n)
-						oPrint:Say(nLinha,0800, alltrim(_aDescVerb[_y,3])	 								,oFont12n)
-						oPrint:Say(nLinha,1000, alltrim(_aDescVerb[_y,4])	 								,oFont12n)
-						oPrint:Say(nLinha,1300, alltrim(_aDescVerb[_y,5]) +"/"+ alltrim(_aDescVerb[_y,6])	,oFont12n)
-						oPrint:Say(nLinha,1600, alltrim(_aDescVerb[_y,7]) +"/"+ alltrim(_aDescVerb[_y,8])	,oFont12n)
-						oPrint:Say(nLinha,1900, TransForm(_aDescVerb[_y, 9] , '@E 9,999,999.99') 	 		,oFont12n)
-						oPrint:Say(nLinha,2200, TransForm(_aDescVerb[_y,10] , '@E 9,999,999.99') 		 	,oFont12n)
-						oPrint:Say(nLinha,2500, TransForm(_aDescVerb[_y,11] , '@E 9,999,999.99') 		 	,oFont12n)
-						oPrint:Say(nLinha,2800,   alltrim(_aDescVerb[_y,12])  	 							,oFont12n)
-						
-						nLinha += 50
+						If mv_par10 == 2
+							oPrint:Say(nLinha,0100, alltrim(_sTipoZb0 )  	 									,oFont12n)
+							oPrint:Say(nLinha,0600, alltrim(_aDescVerb[_y,2])									,oFont12n)
+							oPrint:Say(nLinha,0800, alltrim(_aDescVerb[_y,3])	 								,oFont12n)
+							oPrint:Say(nLinha,1000, alltrim(_aDescVerb[_y,4])	 								,oFont12n)
+							oPrint:Say(nLinha,1300, alltrim(_aDescVerb[_y,5]) +"/"+ alltrim(_aDescVerb[_y,6])	,oFont12n)
+							oPrint:Say(nLinha,1600, alltrim(_aDescVerb[_y,7]) +"/"+ alltrim(_aDescVerb[_y,8])	,oFont12n)
+							oPrint:Say(nLinha,1900, TransForm(_aDescVerb[_y, 9] , '@E 9,999,999.99') 	 		,oFont12n)
+							oPrint:Say(nLinha,2200, TransForm(_aDescVerb[_y,10] , '@E 9,999,999.99') 		 	,oFont12n)
+							oPrint:Say(nLinha,2500, TransForm(_aDescVerb[_y,11] , '@E 9,999,999.99') 		 	,oFont12n)
+							oPrint:Say(nLinha,2800,   alltrim(_aDescVerb[_y,12])  	 							,oFont12n)
+							
+							nLinha += 50
+						EndIf
 						If alltrim(_aDescVerb[_y,1]) == '3 - BONIFICAÇÕES'
 							_nVlrBon += _aDescVerb[_y,11]
 						Else
 							_nVlrVer += _aDescVerb[_y,11]
 						EndIf
 				EndCase	
-			EndIf
 		Next
 		nLinha += 50
 		
@@ -348,6 +350,58 @@ Static Function _GeraPDF_Email()
 				nLinha += 50
 			EndIf
 		EndIf
+		//
+		// ----------------------------------------------------------------------------------------------------------
+		// DEVOLUÇÕES
+
+		_aDev = U_VA_COMDEV(mv_par01, mv_par02, _sVend)
+
+		If mv_par10 == 2
+			nLinha += 50
+			nLinha += 50
+			If len(_aDev)> 0 
+				oPrint:Say(nLinha,0100, " *** DESCONTOS DE DEVOLUÇÃO:"	 	,oFont12n)
+				nLinha += 50
+				
+				oPrint:Say(nLinha,0100, "Título" 	 			  	 ,oFont12n)
+				oPrint:Say(nLinha,0600, "Prefixo" 	 			     ,oFont12n)
+				oPrint:Say(nLinha,0800, "Parcela" 	 			  	 ,oFont12n)
+				oPrint:Say(nLinha,1000, "Cliente/Loja" 	 			 ,oFont12n)
+				oPrint:Say(nLinha,1300, "Nome" 	 			 		 ,oFont12n)
+				oPrint:Say(nLinha,1900, "Valor" 	 			 	 ,oFont12n)
+				nLinha += 50
+			EndIf
+		EndIf
+
+		_nTotDev := 0
+		For _y := 1 to len(_aDev)
+			If mv_par10 == 2
+				_ImprimeCabec(_sVend, _sNomeVend, @_wpag, @nlinha) // Imprime cabeçalho
+			
+				oPrint:Say(nLinha,0100, alltrim(_aDev[_y,2]) 	 			  	 			,oFont12n)
+				oPrint:Say(nLinha,0600, alltrim(_aDev[_y,3]) 	 			  	 			,oFont12n)
+				oPrint:Say(nLinha,0800, alltrim(_aDev[_y,4]) 	 			  	 			,oFont12n)
+				oPrint:Say(nLinha,1000, alltrim(_aDev[_y,5] +"/" + _aDev[_y,6]) 			,oFont12n)
+				oPrint:Say(nLinha,1300, alltrim(_aDev[_y,7]) 	 			  	 			,oFont12n)
+				oPrint:Say(nLinha,1900, TransForm( _aDev[_y,8] , '@E 9,999,999.99') 		,oFont12n)
+
+				nLinha += 50
+			EndIf
+			_nTotDev += _aDev[_y,8]
+					
+		Next
+		nLinha += 50
+
+		If len(_aDev)
+			_nTotDev:= ROUND(_nTotDev,2)
+			
+			If mv_par10 == 2
+				nLinha += 50
+				oPrint:Say(nLinha,0150,  "TOTAIS DE DEVOLUÇÕES PARA DESCONTO " +  TransForm(_nTotDev, '@E 9,999,999.99') 	,oFont12n)
+				nLinha += 50
+			EndIf
+		EndIf
+		nLinha += 50
 		//
 		// ----------------------------------------------------------------------------------------------------------
 		// TOTALIZADORES
@@ -365,6 +419,9 @@ Static Function _GeraPDF_Email()
 		oPrint:Say(nLinha,0150,  "OUTROS DESCONTOS/BONIFICAÇÕES:"									,oFont12n)
 		oPrint:Say(nLinha,0900,  PADL('R$' + Transform(_nVlrBon, "@E 999,999,999.99"),20,' ')   	,oFont12n)
 		nLinha += 50
+		oPrint:Say(nLinha,0150,  "DEVOLUÇÕES:"									,oFont12n)
+		oPrint:Say(nLinha,0900,  PADL('R$' + Transform(_nTotDev, "@E 999,999,999.99"),20,' ')   	,oFont12n)
+		nLinha += 50
 		
 		If _nVlrTVerbas < 0
 			_nVlrTVerbas = _nVlrTVerbas * -1
@@ -373,6 +430,9 @@ Static Function _GeraPDF_Email()
 			_nVlrCom:= _nTotComis + _nVlrTVerbas
 		EndIf
 		
+		// Descontas as devoluções
+		_nVlrCom := _nVlrCom - _nTotDev
+
 		oPrint:Say(nLinha,0150,  "COMISSÃO TOTAL:"													,oFont12n)
 		oPrint:Say(nLinha,0900,  PADL('R$' + Transform(_nVlrCom, "@E 999,999,999.99"),20,' ')   	,oFont12n)
 		nLinha += 50	

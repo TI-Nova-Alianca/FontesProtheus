@@ -3,6 +3,11 @@
 // Data.......: 16/12/2009
 // Descricao..: Exportacao geral de dados de faturamento para planilha.
 //
+// #TipoDePrograma    #Relatorio
+// #PalavasChave      #exportacao_dados #planilha #faturamento #exporta_dados #dados_gerais_faturamento
+// #TabelasPrincipais #SD2 #SF2 #SD1 #SF4 #SF4 #SC5 #SC6
+// #Modulos           #FAT
+//
 // Historico de alteracoes:
 // 09/06/2010 - Robert  - Criados parametros de exportar ou nao frete previsto e redespacho.
 // 14/07/2010 - Robert  - Criada rotina de selecao de colunas a exportar.
@@ -51,11 +56,13 @@
 // 23/12/2016 - Júlio   - Alterada a leitura da tabela SX5_88 para a tabela ZX5_39.  
 // 23/12/2016 - Júlio   - Alterada a leitura da tabela SX5_Z7 para a tabela ZX5_40.  
 // 06/02/2017 - Robert  - Ajuste descricao colunas LINHA e MARCA.
-// 27/02/2017 - Catia   - Desabilitado da seleção o campo C5_PEDCLI, na maioria dos registros esta em branco, normalmente não eh usado e estava dando erro pq nem sempre faz o join no SC5 e SC6
+// 27/02/2017 - Catia   - Desabilitado da seleção o campo C5_PEDCLI, na maioria dos registros esta em branco, normalmente não eh usado 
+//						  e estava dando erro pq nem sempre faz o join no SC5 e SC6
 // 23/10/2017 - Robert  - Testa se alguns campos serao usados na query, do contrario nem inclui os joins das respectivas tabelas.
 // 02/03/2018 - Catia   - Incluida coluna codigo do supervidor - A3_VAGEREN
 // 04/06/2018 - Robert  - Adicionadas colunas de codigo e nome do promotor.
-// 20/09/2018 - Catia   - Valores de FRETE de devolucoes nao pode ser considerado como negativo, é um custo nosso entao tem que aparecer positivo
+// 20/09/2018 - Catia   - Valores de FRETE de devolucoes nao pode ser considerado como negativo, é um custo 
+//					      nosso entao tem que aparecer positivo
 // 20/09/2018 - Catia   - Colocada a opcao de aparecer a base de rapel do cliente 
 // 07/11/2018 - Robert  - Incluida coluna CUSTOMEDIO
 // 11/04/2019 - Robert  - Alterada a leitura da tabela SX5_98 para a tabela ZX5_50
@@ -65,28 +72,33 @@
 // 25/02/2020 - Claudia - Alterado o uso da view VA_VFAT para a tabela BI_ALIANCA.dbo.VA_FATDADOS
 // 25/06/2020 - Robert  - Coluna CUSTO_REPOS renomeada para CUSTO_STD e criada nova coluna VALOR_NET (GLPI 8104).
 // 13/07/2020 - Robert  - Coluna VALOR_NET nao estava sendo mudada para negativa quando origem = 'SD1'.
-//                      - Coluna FAT_BONIF considerava devolucao apenas quando origem=SD1 e nao considerava todas as opcoes do campo F4_MARGEM.
+//                      - Coluna FAT_BONIF considerava devolucao apenas quando origem=SD1 e nao considerava todas 
+//						  as opcoes do campo F4_MARGEM.
 //                      - Inseridas tags para catalogacao de fontes
-
-// #TipoDePrograma    #Relatorio
-// #PalavasChave      #exportacao_dados #planilha #faturamento #exporta_dados #dados_gerais_faturamento
-// #TabelasPrincipais #SD2 #SF2 #SD1 #SF4 #SF4 #SC5 #SC6
-// #Modulos           #FAT
-
-// --------------------------------------------------------------------------
+// 05/10/2020 - Claudia - Incluido grupo para impressão simplificado. GLPI:8588 
+//
+// ---------------------------------------------------------------------------------------------------------------
 User Function VA_XLS5 (_lAutomat)
-	Local cCadastro := "Exportacao geral de dados de faturamento para planilha"
-	Local aSays     := {}
-	Local aButtons  := {}
-	Local nOpca     := 0
-	Local lPerg     := .F.
-	local _nLock       := 0
+	Local cCadastro  := "Exportacao geral de dados de faturamento para planilha"
+	Local aSays      := {}
+	Local aButtons   := {}
+	Local nOpca      := 0
+	Local lPerg      := .F.
+	local _nLock     := 0
+	local _sTipo     := 'T'
 	private _lSelCol := .F.  // Para controlar se jah chamou as opcoes.
 	private _sOpcoes := ""   // Opcoes (colunas) selecionadas pelo usuario, em formato string para guardar nos parametros do SX1.
 	private _aOpcoes := {}   // Opcoes (colunas) selecionadas pelo usuario.
 	private _lAuto   := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
 
-	if ! u_zzuvl ('038', __cUserId, .T.)
+	if u_zzuvl ('120', __cUserId, .T.,.F.) .or. u_zzuvl ('038', __cUserId, .T.,.F.) 
+		if u_zzuvl ('120', __cUserId, .T.,.F.) 
+			_sTipo := 'P'
+		else
+			_sTipo := 'T'
+		endif
+	else
+		u_help("Usuario '" + __cUserId + "' sem liberacao (ou nao cadastrado) no grupo.")
 		return
 	endif
 
@@ -110,8 +122,8 @@ User Function VA_XLS5 (_lAutomat)
 		AADD(aSays,"")
 		
 		AADD(aButtons, { 5, .T.,{|| lPerg := Pergunte(cPerg,.T. ) } } )
-		AADD(aButtons, { 1, .T.,{|| nOpca := If(( lPerg .Or. Pergunte(cPerg,.T.)) .And. _TudoOk() , 1, 2 ), If( nOpca == 1, FechaBatch(), Nil ) }})
-		AADD(aButtons, { 11,.T.,{|| _Opcoes ()}})
+		AADD(aButtons, { 1, .T.,{|| nOpca := If(( lPerg .Or. Pergunte(cPerg,.T.)) .And. _TudoOk(_sTipo) , 1, 2 ), If( nOpca == 1, FechaBatch(), Nil ) }})
+		AADD(aButtons, { 11,.T.,{|| _Opcoes (_sTipo)}})
 		AADD(aButtons, { 2, .T.,{|| FechaBatch() }} )
 		
 		FormBatch( cCadastro, aSays, aButtons )
@@ -128,7 +140,7 @@ User Function VA_XLS5 (_lAutomat)
 return
 // --------------------------------------------------------------------------
 // 'Tudo OK' do FormBatch.
-Static Function _TudoOk()
+Static Function _TudoOk(_sTipo)
 	Local _lRet     := .T.
 	local _oDUtil   := NIL
 	
@@ -141,15 +153,13 @@ Static Function _TudoOk()
 	endif
 
 	if _lRet .and. ! _lSelCol
-		_Opcoes ()
+		_Opcoes (_sTipo)
 	endif
 Return _lRet
 // --------------------------------------------------------------------------
 // Seleciona opcoes especificas do relatorio.
-Static Function _Opcoes ()
+Static Function _Opcoes (_sTipo)
 	local _aCols     := {}
-//	local _sSelRed   := ""
-//	local _sSelMarg  := ""
 	local _sSelVlMer := "(V.TOTAL + V.PVCOND)"
 	local _sSelComi1 := "(" + _sSelVlMer + ") * V.COMIS1 / 100"
 	local _sSelComi2 := "(" + _sSelVlMer + ") * V.COMIS2 / 100"
@@ -157,98 +167,107 @@ Static Function _Opcoes ()
 	local _sSelComi4 := "(" + _sSelVlMer + ") * V.COMIS4 / 100"
 	local _sSelComi5 := "(" + _sSelVlMer + ") * V.COMIS5 / 100"
 	local _sSelCusto := "V.CUSTOREPOS*V.QUANTIDADE"
-//	local _sCaseEmp  := ""
-//	local _sCaseFil  := ""
 	local _nOpcao    := 0
 
 	// Monta array de opcoes de campos, jah com o respectivo trecho para uso na query.
 	_aOpcoes = {}
-	aadd (_aOpcoes, {.F., "Empresa",                  "SM0.M0_NOME AS EMPRESA"})
-	aadd (_aOpcoes, {.F., "Filial",                   "SM0.M0_FILIAL AS FILIAL"})
-	aadd (_aOpcoes, {.F., "NF",                       "V.DOC AS NF"})
-	aadd (_aOpcoes, {.F., "Emissao",                  "SUBSTRING (V.EMISSAO, 7, 2) + '/' + SUBSTRING (V.EMISSAO, 5, 2) + '/' + SUBSTRING (V.EMISSAO, 1, 4) AS EMISSAO"})
-	aadd (_aOpcoes, {.F., "Mes/ano emissao",          "SUBSTRING (V.EMISSAO, 5, 2) + '/' + SUBSTRING (V.EMISSAO, 1, 4) AS MES_EMIS"})
-	aadd (_aOpcoes, {.F., "Serie",                    "SERIE"})
-	aadd (_aOpcoes, {.F., "Pedido",                   "PEDVENDA"})
-//	aadd (_aOpcoes, {.F., "Fat/bonif",                "CASE WHEN V.ORIGEM='SD1' THEN 'DEVOLUCAO' WHEN V.F4_MARGEM='1' THEN 'FATURADO' WHEN V.F4_MARGEM='3' THEN 'BONIFICADO' WHEN V.F4_MARGEM='4' THEN 'COMODATO' WHEN V.F4_MARGEM='5' THEN 'RET.COMODATO' WHEN V.F4_MARGEM='9' THEN 'NAO SE APLICA' ELSE V.F4_MARGEM END AS FAT_BONIF"})
-	aadd (_aOpcoes, {.F., "Fat/bonif",                "CASE WHEN V.F4_MARGEM='1' THEN 'FATURADO' WHEN V.F4_MARGEM='2' THEN 'DEVOLUCAO' WHEN V.F4_MARGEM='3' THEN 'BONIFICADO' WHEN V.F4_MARGEM='4' THEN 'COMODATO' WHEN V.F4_MARGEM='5' THEN 'RET.COMODATO' WHEN V.F4_MARGEM='6' THEN 'FRETE' WHEN V.F4_MARGEM='7' THEN 'SERVICOS' WHEN V.F4_MARGEM='8' THEN 'USO E CONSUMO' WHEN V.F4_MARGEM='9' THEN 'NAO SE APLICA' ELSE V.F4_MARGEM END AS FAT_BONIF"})
-	aadd (_aOpcoes, {.F., "Cod.cliente",              "V.CLIENTE AS CODCLI"})
-	aadd (_aOpcoes, {.F., "Nome cliente",             "RTRIM (SA1.A1_NOME) AS CLIENTE"})
-	aadd (_aOpcoes, {.F., "Segmento cliente",         "RTRIM(DESCRIATIV) AS SEGMENTO"})
-	aadd (_aOpcoes, {.F., "Nome linha produtos",      "RTRIM(ISNULL(ZX5_39.ZX5_39DESC,'')) AS LINHA"})
-	aadd (_aOpcoes, {.F., "Codigo produto",           "V.PRODUTO AS CODIGO"})
-	aadd (_aOpcoes, {.F., "Descricao produto",        "RTRIM (SB1.B1_DESC) AS DESCRICAO"})
-	aadd (_aOpcoes, {.F., "Embalagem",                "RTRIM (ISNULL (ZX5_50.ZX5_50DESC, '')) AS EMBALAGEM"})
-	aadd (_aOpcoes, {.F., "Litragem",                 "V.QTLITROS * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS LITRAGEM"})
-	aadd (_aOpcoes, {.F., "Unid.medida produto",      "V.UMPROD AS UN_MEDIDA"})
-	aadd (_aOpcoes, {.F., "Quant. em caixas",         "V.QTCAIXAS * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS QT_CAIXAS"})
-	aadd (_aOpcoes, {.F., "Peso bruto",               "V.PESOBRUTO * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS PESOBRUTO"})
-	aadd (_aOpcoes, {.F., "Estado (UF)",              "SA1.A1_EST AS ESTADO"})
-	aadd (_aOpcoes, {.F., "Regiao",                   "RTRIM (SA1.A1_REGIAO) AS REGIAO"})
-	aadd (_aOpcoes, {.F., "Mesoregiao",               "RTRIM (ZB_MESO) AS MESOREGIAO"})
-	aadd (_aOpcoes, {.F., "Municipio",                "RTRIM (SA1.A1_MUN) MUNICIPIO"})
-	aadd (_aOpcoes, {.F., "Nome Representante 1",     "RTRIM (A3_NOME) AS REPRES"})
-	aadd (_aOpcoes, {.F., "Valor mercadoria",         _sSelVlMer + " * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALMERC"})
-	aadd (_aOpcoes, {.F., "Valor bruto",              "(V.TOTAL + V.VALIPI + V.SEGURO + V.DESPESA + V.PVCOND + V.ICMSRET) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALBRUT"})
-	aadd (_aOpcoes, {.F., "Valor ICMS",               "V.VALICM * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS ICMS"})
-	aadd (_aOpcoes, {.F., "Valor IPI",                "V.VALIPI * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS IPI"})
-	aadd (_aOpcoes, {.F., "Valor PIS",                "V.VALPIS * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS PIS"})
-	aadd (_aOpcoes, {.F., "Valor COFINS",             "V.VALCOFINS * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS COFINS"})
-	aadd (_aOpcoes, {.F., "Valor comissao 1",         _sSelComi1 + " * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS COMISSAO1"})
-	aadd (_aOpcoes, {.F., "Valor comissao 2",         _sSelComi2 + " * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS COMISSAO2"})
-	aadd (_aOpcoes, {.F., "Valor comissao 3",         _sSelComi3 + " * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS COMISSAO3"})
-	aadd (_aOpcoes, {.F., "Valor comissao 4",         _sSelComi4 + " * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS COMISSAO4"})
-	aadd (_aOpcoes, {.F., "Valor comissao 5",         _sSelComi5 + " * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS COMISSAO5"})
-	aadd (_aOpcoes, {.F., "Valor rapel padrao",       "V.RAPELPREV * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS RAPELPADR"})
-	aadd (_aOpcoes, {.F., "Base Rapel",               "V.BASERAPEL AS BASERAPEL"})
-	aadd (_aOpcoes, {.F., "Valor custo standard",     _sSelCusto + " * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS CUSTO_STD"})
-	aadd (_aOpcoes, {.F., "Tipo frete (CIF/FOB)",     "V.TIPOFRETE AS TIPOFRETE"})
-	aadd (_aOpcoes, {.F., "Valor previsto frete",     "FRETEPREV AS FRETEPREV"})
-	aadd (_aOpcoes, {.F., "Valor real frete",         "V.VALORFRETE AS FRETEREAL"})
-	aadd (_aOpcoes, {.F., "Valor frete redespacho",   "V.FRETEREDSP AS REDESP"})
-	aadd (_aOpcoes, {.F., "Margem contribuicao",      "V.MARGEMCONT * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS MARGEM"})
-	aadd (_aOpcoes, {.F., "Nome transportadora",      "RTRIM (A4_NOME) AS TRANSP"})
-	aadd (_aOpcoes, {.F., "Valor ST (subst.trib.)",   "V.ICMSRET * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS VALOR_ST"})
-	aadd (_aOpcoes, {.F., "Desc.fin.rapel",           "V.DFRAPEL * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS DF_RAPEL"})
-	aadd (_aOpcoes, {.F., "Desc.fin.encartes",        "V.DFENCART * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS DF_ENCART"})
-	aadd (_aOpcoes, {.F., "Desc.fin.feiras",          "V.DFFEIRAS * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS DF_FEIRAS"})
-	aadd (_aOpcoes, {.F., "Desc.fin.fretes",          "V.DFFRETES * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS DF_FRETES"})
-	aadd (_aOpcoes, {.F., "Desc.fin.normais",         "V.DFDESCONT * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS DF_NORMAIS"})
-	aadd (_aOpcoes, {.F., "Desc.fin.devolucoes",      "V.DFDEVOL * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS DF_DEVOL"})
-	aadd (_aOpcoes, {.F., "Desc.fin.campanhas",       "V.DFCAMPANH * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS DF_CAMPANH"})
-	aadd (_aOpcoes, {.F., "Desc.fin.abert.loja",      "V.DFABLOJA * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS DF_ABLOJA"})
-	aadd (_aOpcoes, {.F., "Desc.fin.multas contrat",  "V.DFCONTRAT * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS DF_CONTRAT"})
-	aadd (_aOpcoes, {.F., "Desc.fin.outros",          "V.DFOUTROS * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS DF_OUTROS"})
-	aadd (_aOpcoes, {.F., "Marca comercial",          "RTRIM (ISNULL (ZX5_40.ZX5_40DESC, '')) AS MARCA"})
-	aadd (_aOpcoes, {.F., "Prazo medio venda (dias)", "V.PRAZOMEDIO AS PRAZOMEDIO"})
-	aadd (_aOpcoes, {.F., "Tipo pessoa (fis/jurid)",  "CASE SA1.A1_PESSOA WHEN 'F' THEN 'FISICA' WHEN 'J' THEN 'JURIDICA' WHEN 'X' THEN 'EXTERIOR' ELSE '?' END AS PESSOA"})
-	aadd (_aOpcoes, {.F., "CNPJ cliente",             "dbo.VA_FORMATA_CGC (SA1.A1_CGC) AS CNPJ_CLI"})
-	aadd (_aOpcoes, {.F., "Valor frete paletizacao",  "V.FRETEPALET * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS FRTPALETIZ"})
-	aadd (_aOpcoes, {.F., "PVCond",                   "V.PVCOND * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END as PVCOND"})
-	aadd (_aOpcoes, {.F., "Valor total NF",           "(" + _sSelVlMer + " - V.PVCOND + V.VALIPI + V.ICMSRET) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VL_TOT_NF"})
-	aadd (_aOpcoes, {.F., "Msg Adicionais",           "RTRIM(C5_MENNOTA) AS MSGADIC"})
-	aadd (_aOpcoes, {.F., "Numero de Serie",          "RTRIM(C6_VANSER) AS NUMSER"})
-	aadd (_aOpcoes, {.F., "Obs do Pedido",            "REPLACE(ISNULL(REPLACE (REPLACE ( REPLACE ( CAST(RTRIM (CAST (C5_OBS AS VARBINARY (8000))) AS VARCHAR (8000)) , char(13), ''), char(10), ''), char(14), ''),''),char(34),' ') AS OBSPED"})
-	aadd (_aOpcoes, {.F., "Mix comercial do produto", "CASE SB1.B1_VAMIX WHEN 'F' THEN 'FOCO' WHEN 'T' THEN 'TRANSICAO' WHEN 'A' THEN 'EM ANALISE' ELSE SB1.B1_VAMIX END AS MIX_COML"})
-	aadd (_aOpcoes, {.F., "Ano emissao",              "SUBSTRING (V.EMISSAO, 1, 4) AS ANO_EMIS"})
-	aadd (_aOpcoes, {.F., "Origem dos dados",         "CASE V.ORIGEM WHEN 'SD2' THEN 'NF SAIDA' WHEN 'SD1' THEN 'NF ENTRADA' ELSE V.ORIGEM END AS ORIGEM"})
-	aadd (_aOpcoes, {.F., "Canal de vendas",          "RTRIM (DESCRICANAL) AS CANAL"})
-	aadd (_aOpcoes, {.F., "Codigo matriz cliente",    "SA1.A1_VACBASE AS COD_MAT_CLI"})
-	aadd (_aOpcoes, {.F., "Loja matriz cliente",      "SA1.A1_VALBASE AS LOJ_MAT_CLI"})
-	aadd (_aOpcoes, {.F., "Nome matriz cliente",      "RTRIM (ISNULL (SA1BASE.A1_NOME, '')) AS MATRIZ_CLIENTE"})
-	aadd (_aOpcoes, {.F., "Descricao do TES",         "RTRIM (ISNULL (SF4.F4_TEXTO, '')) AS DESCRICAO_TES"})
-	aadd (_aOpcoes, {.F., "Cod.representante 1",      "V.VEND1"})
-	aadd (_aOpcoes, {.F., "Motivo de DEVOLUÇÃO",      "V.MOTDEV"})
-	aadd (_aOpcoes, {.F., "Cod.Supervisor",           "A3_VAGEREN"})
-	aadd (_aOpcoes, {.F., "Cod.promotor",             "SA1.A1_VAPROMO AS PROMOTOR"})
-	aadd (_aOpcoes, {.F., "Nome promotor",            "RTRIM (ISNULL ((SELECT ZX5_46DESC FROM " + RetSQLName ("ZX5") + " WHERE D_E_L_E_T_ = '' AND ZX5_FILIAL = '  ' AND ZX5_TABELA = '46' AND ZX5_46COD = SA1.A1_VAPROMO), '')) AS NOME_PROMOTOR"})
-	aadd (_aOpcoes, {.F., "Custo medio do movto",     "CUSTOMEDIO"})
-	aadd (_aOpcoes, {.F., "Tipo embalagem",           "RTRIM (ISNULL ((SELECT ZAZ_NLINF FROM " + RetSQLName ("ZAZ") + " WHERE D_E_L_E_T_ = '' AND ZAZ_FILIAL = '" + xfilial ("ZAZ") + "' AND ZAZ_CLINF = SB1.B1_CLINF), '')) AS TIPO_EMBALAGEM"})
-	aadd (_aOpcoes, {.F., "Agrupador unitário",       "CASE WHEN (SB1.B1_CODPAI <> '')  THEN  SB1.B1_CODPAI ELSE SB1.B1_COD END AS AGRUPADOR_UNITARIO"})
-	aadd (_aOpcoes, {.F., "Ato cooperativo/não coop.","CASE WHEN (B1_VAATO = 'S')  THEN  'Cooperativo' ELSE 'Nao Cooperativo' END AS ATO"})
-	aadd (_aOpcoes, {.F., "Linha de envase",          "RTRIM (ISNULL ((SELECT H1_DESCRI FROM " + RetSqlName ("SH1") + " WHERE D_E_L_E_T_ <> '*' AND H1_FILIAL = '" + xfilial ("sh1") + "' AND H1_CODIGO = B1_VALINEN), '')) AS LINHA_ENVASE"})
-	aadd (_aOpcoes, {.F., "Valor NET",                "VALOR_NET * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALOR_NET"})
-
+	If _sTipo == 'P'
+		aadd (_aOpcoes, {.F., "Mes/ano emissao",          "SUBSTRING (V.EMISSAO, 5, 2) + '/' + SUBSTRING (V.EMISSAO, 1, 4) AS MES_EMIS"})
+		aadd (_aOpcoes, {.F., "Nome linha produtos",      "RTRIM(ISNULL(ZX5_39.ZX5_39DESC,'')) AS LINHA"})
+		aadd (_aOpcoes, {.F., "Codigo produto",           "V.PRODUTO AS CODIGO"})
+		aadd (_aOpcoes, {.F., "Descricao produto",        "RTRIM (SB1.B1_DESC) AS DESCRICAO"})
+		aadd (_aOpcoes, {.F., "Embalagem",                "RTRIM (ISNULL (ZX5_50.ZX5_50DESC, '')) AS EMBALAGEM"})
+		aadd (_aOpcoes, {.F., "Litragem",                 "V.QTLITROS * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS LITRAGEM"})
+		aadd (_aOpcoes, {.F., "Unid.medida produto",      "V.UMPROD AS UN_MEDIDA"})
+		aadd (_aOpcoes, {.F., "Quant. em caixas",         "V.QTCAIXAS * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS QT_CAIXAS"})
+		aadd (_aOpcoes, {.F., "Marca comercial",          "RTRIM (ISNULL (ZX5_40.ZX5_40DESC, '')) AS MARCA"})
+	else
+		aadd (_aOpcoes, {.F., "Empresa",                  "SM0.M0_NOME AS EMPRESA"})
+		aadd (_aOpcoes, {.F., "Filial",                   "SM0.M0_FILIAL AS FILIAL"})
+		aadd (_aOpcoes, {.F., "NF",                       "V.DOC AS NF"})
+		aadd (_aOpcoes, {.F., "Emissao",                  "SUBSTRING (V.EMISSAO, 7, 2) + '/' + SUBSTRING (V.EMISSAO, 5, 2) + '/' + SUBSTRING (V.EMISSAO, 1, 4) AS EMISSAO"})
+		aadd (_aOpcoes, {.F., "Mes/ano emissao",          "SUBSTRING (V.EMISSAO, 5, 2) + '/' + SUBSTRING (V.EMISSAO, 1, 4) AS MES_EMIS"})
+		aadd (_aOpcoes, {.F., "Serie",                    "SERIE"})
+		aadd (_aOpcoes, {.F., "Pedido",                   "PEDVENDA"})
+	//	aadd (_aOpcoes, {.F., "Fat/bonif",                "CASE WHEN V.ORIGEM='SD1' THEN 'DEVOLUCAO' WHEN V.F4_MARGEM='1' THEN 'FATURADO' WHEN V.F4_MARGEM='3' THEN 'BONIFICADO' WHEN V.F4_MARGEM='4' THEN 'COMODATO' WHEN V.F4_MARGEM='5' THEN 'RET.COMODATO' WHEN V.F4_MARGEM='9' THEN 'NAO SE APLICA' ELSE V.F4_MARGEM END AS FAT_BONIF"})
+		aadd (_aOpcoes, {.F., "Fat/bonif",                "CASE WHEN V.F4_MARGEM='1' THEN 'FATURADO' WHEN V.F4_MARGEM='2' THEN 'DEVOLUCAO' WHEN V.F4_MARGEM='3' THEN 'BONIFICADO' WHEN V.F4_MARGEM='4' THEN 'COMODATO' WHEN V.F4_MARGEM='5' THEN 'RET.COMODATO' WHEN V.F4_MARGEM='6' THEN 'FRETE' WHEN V.F4_MARGEM='7' THEN 'SERVICOS' WHEN V.F4_MARGEM='8' THEN 'USO E CONSUMO' WHEN V.F4_MARGEM='9' THEN 'NAO SE APLICA' ELSE V.F4_MARGEM END AS FAT_BONIF"})
+		aadd (_aOpcoes, {.F., "Cod.cliente",              "V.CLIENTE AS CODCLI"})
+		aadd (_aOpcoes, {.F., "Nome cliente",             "RTRIM (SA1.A1_NOME) AS CLIENTE"})
+		aadd (_aOpcoes, {.F., "Segmento cliente",         "RTRIM(DESCRIATIV) AS SEGMENTO"})
+		aadd (_aOpcoes, {.F., "Nome linha produtos",      "RTRIM(ISNULL(ZX5_39.ZX5_39DESC,'')) AS LINHA"})
+		aadd (_aOpcoes, {.F., "Codigo produto",           "V.PRODUTO AS CODIGO"})
+		aadd (_aOpcoes, {.F., "Descricao produto",        "RTRIM (SB1.B1_DESC) AS DESCRICAO"})
+		aadd (_aOpcoes, {.F., "Embalagem",                "RTRIM (ISNULL (ZX5_50.ZX5_50DESC, '')) AS EMBALAGEM"})
+		aadd (_aOpcoes, {.F., "Litragem",                 "V.QTLITROS * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS LITRAGEM"})
+		aadd (_aOpcoes, {.F., "Unid.medida produto",      "V.UMPROD AS UN_MEDIDA"})
+		aadd (_aOpcoes, {.F., "Quant. em caixas",         "V.QTCAIXAS * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS QT_CAIXAS"})
+		aadd (_aOpcoes, {.F., "Peso bruto",               "V.PESOBRUTO * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS PESOBRUTO"})
+		aadd (_aOpcoes, {.F., "Estado (UF)",              "SA1.A1_EST AS ESTADO"})
+		aadd (_aOpcoes, {.F., "Regiao",                   "RTRIM (SA1.A1_REGIAO) AS REGIAO"})
+		aadd (_aOpcoes, {.F., "Mesoregiao",               "RTRIM (ZB_MESO) AS MESOREGIAO"})
+		aadd (_aOpcoes, {.F., "Municipio",                "RTRIM (SA1.A1_MUN) MUNICIPIO"})
+		aadd (_aOpcoes, {.F., "Nome Representante 1",     "RTRIM (A3_NOME) AS REPRES"})
+		aadd (_aOpcoes, {.F., "Valor mercadoria",         _sSelVlMer + " * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALMERC"})
+		aadd (_aOpcoes, {.F., "Valor bruto",              "(V.TOTAL + V.VALIPI + V.SEGURO + V.DESPESA + V.PVCOND + V.ICMSRET) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALBRUT"})
+		aadd (_aOpcoes, {.F., "Valor ICMS",               "V.VALICM * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS ICMS"})
+		aadd (_aOpcoes, {.F., "Valor IPI",                "V.VALIPI * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS IPI"})
+		aadd (_aOpcoes, {.F., "Valor PIS",                "V.VALPIS * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS PIS"})
+		aadd (_aOpcoes, {.F., "Valor COFINS",             "V.VALCOFINS * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS COFINS"})
+		aadd (_aOpcoes, {.F., "Valor comissao 1",         _sSelComi1 + " * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS COMISSAO1"})
+		aadd (_aOpcoes, {.F., "Valor comissao 2",         _sSelComi2 + " * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS COMISSAO2"})
+		aadd (_aOpcoes, {.F., "Valor comissao 3",         _sSelComi3 + " * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS COMISSAO3"})
+		aadd (_aOpcoes, {.F., "Valor comissao 4",         _sSelComi4 + " * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS COMISSAO4"})
+		aadd (_aOpcoes, {.F., "Valor comissao 5",         _sSelComi5 + " * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS COMISSAO5"})
+		aadd (_aOpcoes, {.F., "Valor rapel padrao",       "V.RAPELPREV * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS RAPELPADR"})
+		aadd (_aOpcoes, {.F., "Base Rapel",               "V.BASERAPEL AS BASERAPEL"})
+		aadd (_aOpcoes, {.F., "Valor custo standard",     _sSelCusto + " * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS CUSTO_STD"})
+		aadd (_aOpcoes, {.F., "Tipo frete (CIF/FOB)",     "V.TIPOFRETE AS TIPOFRETE"})
+		aadd (_aOpcoes, {.F., "Valor previsto frete",     "FRETEPREV AS FRETEPREV"})
+		aadd (_aOpcoes, {.F., "Valor real frete",         "V.VALORFRETE AS FRETEREAL"})
+		aadd (_aOpcoes, {.F., "Valor frete redespacho",   "V.FRETEREDSP AS REDESP"})
+		aadd (_aOpcoes, {.F., "Margem contribuicao",      "V.MARGEMCONT * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS MARGEM"})
+		aadd (_aOpcoes, {.F., "Nome transportadora",      "RTRIM (A4_NOME) AS TRANSP"})
+		aadd (_aOpcoes, {.F., "Valor ST (subst.trib.)",   "V.ICMSRET * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS VALOR_ST"})
+		aadd (_aOpcoes, {.F., "Desc.fin.rapel",           "V.DFRAPEL * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS DF_RAPEL"})
+		aadd (_aOpcoes, {.F., "Desc.fin.encartes",        "V.DFENCART * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS DF_ENCART"})
+		aadd (_aOpcoes, {.F., "Desc.fin.feiras",          "V.DFFEIRAS * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS DF_FEIRAS"})
+		aadd (_aOpcoes, {.F., "Desc.fin.fretes",          "V.DFFRETES * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS DF_FRETES"})
+		aadd (_aOpcoes, {.F., "Desc.fin.normais",         "V.DFDESCONT * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS DF_NORMAIS"})
+		aadd (_aOpcoes, {.F., "Desc.fin.devolucoes",      "V.DFDEVOL * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS DF_DEVOL"})
+		aadd (_aOpcoes, {.F., "Desc.fin.campanhas",       "V.DFCAMPANH * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS DF_CAMPANH"})
+		aadd (_aOpcoes, {.F., "Desc.fin.abert.loja",      "V.DFABLOJA * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS DF_ABLOJA"})
+		aadd (_aOpcoes, {.F., "Desc.fin.multas contrat",  "V.DFCONTRAT * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS DF_CONTRAT"})
+		aadd (_aOpcoes, {.F., "Desc.fin.outros",          "V.DFOUTROS * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS DF_OUTROS"})
+		aadd (_aOpcoes, {.F., "Marca comercial",          "RTRIM (ISNULL (ZX5_40.ZX5_40DESC, '')) AS MARCA"})
+		aadd (_aOpcoes, {.F., "Prazo medio venda (dias)", "V.PRAZOMEDIO AS PRAZOMEDIO"})
+		aadd (_aOpcoes, {.F., "Tipo pessoa (fis/jurid)",  "CASE SA1.A1_PESSOA WHEN 'F' THEN 'FISICA' WHEN 'J' THEN 'JURIDICA' WHEN 'X' THEN 'EXTERIOR' ELSE '?' END AS PESSOA"})
+		aadd (_aOpcoes, {.F., "CNPJ cliente",             "dbo.VA_FORMATA_CGC (SA1.A1_CGC) AS CNPJ_CLI"})
+		aadd (_aOpcoes, {.F., "Valor frete paletizacao",  "V.FRETEPALET * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS FRTPALETIZ"})
+		aadd (_aOpcoes, {.F., "PVCond",                   "V.PVCOND * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END as PVCOND"})
+		aadd (_aOpcoes, {.F., "Valor total NF",           "(" + _sSelVlMer + " - V.PVCOND + V.VALIPI + V.ICMSRET) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VL_TOT_NF"})
+		aadd (_aOpcoes, {.F., "Msg Adicionais",           "RTRIM(C5_MENNOTA) AS MSGADIC"})
+		aadd (_aOpcoes, {.F., "Numero de Serie",          "RTRIM(C6_VANSER) AS NUMSER"})
+		aadd (_aOpcoes, {.F., "Obs do Pedido",            "REPLACE(ISNULL(REPLACE (REPLACE ( REPLACE ( CAST(RTRIM (CAST (C5_OBS AS VARBINARY (8000))) AS VARCHAR (8000)) , char(13), ''), char(10), ''), char(14), ''),''),char(34),' ') AS OBSPED"})
+		aadd (_aOpcoes, {.F., "Mix comercial do produto", "CASE SB1.B1_VAMIX WHEN 'F' THEN 'FOCO' WHEN 'T' THEN 'TRANSICAO' WHEN 'A' THEN 'EM ANALISE' ELSE SB1.B1_VAMIX END AS MIX_COML"})
+		aadd (_aOpcoes, {.F., "Ano emissao",              "SUBSTRING (V.EMISSAO, 1, 4) AS ANO_EMIS"})
+		aadd (_aOpcoes, {.F., "Origem dos dados",         "CASE V.ORIGEM WHEN 'SD2' THEN 'NF SAIDA' WHEN 'SD1' THEN 'NF ENTRADA' ELSE V.ORIGEM END AS ORIGEM"})
+		aadd (_aOpcoes, {.F., "Canal de vendas",          "RTRIM (DESCRICANAL) AS CANAL"})
+		aadd (_aOpcoes, {.F., "Codigo matriz cliente",    "SA1.A1_VACBASE AS COD_MAT_CLI"})
+		aadd (_aOpcoes, {.F., "Loja matriz cliente",      "SA1.A1_VALBASE AS LOJ_MAT_CLI"})
+		aadd (_aOpcoes, {.F., "Nome matriz cliente",      "RTRIM (ISNULL (SA1BASE.A1_NOME, '')) AS MATRIZ_CLIENTE"})
+		aadd (_aOpcoes, {.F., "Descricao do TES",         "RTRIM (ISNULL (SF4.F4_TEXTO, '')) AS DESCRICAO_TES"})
+		aadd (_aOpcoes, {.F., "Cod.representante 1",      "V.VEND1"})
+		aadd (_aOpcoes, {.F., "Motivo de DEVOLUÇÃO",      "V.MOTDEV"})
+		aadd (_aOpcoes, {.F., "Cod.Supervisor",           "A3_VAGEREN"})
+		aadd (_aOpcoes, {.F., "Cod.promotor",             "SA1.A1_VAPROMO AS PROMOTOR"})
+		aadd (_aOpcoes, {.F., "Nome promotor",            "RTRIM (ISNULL ((SELECT ZX5_46DESC FROM " + RetSQLName ("ZX5") + " WHERE D_E_L_E_T_ = '' AND ZX5_FILIAL = '  ' AND ZX5_TABELA = '46' AND ZX5_46COD = SA1.A1_VAPROMO), '')) AS NOME_PROMOTOR"})
+		aadd (_aOpcoes, {.F., "Custo medio do movto",     "CUSTOMEDIO"})
+		aadd (_aOpcoes, {.F., "Tipo embalagem",           "RTRIM (ISNULL ((SELECT ZAZ_NLINF FROM " + RetSQLName ("ZAZ") + " WHERE D_E_L_E_T_ = '' AND ZAZ_FILIAL = '" + xfilial ("ZAZ") + "' AND ZAZ_CLINF = SB1.B1_CLINF), '')) AS TIPO_EMBALAGEM"})
+		aadd (_aOpcoes, {.F., "Agrupador unitário",       "CASE WHEN (SB1.B1_CODPAI <> '')  THEN  SB1.B1_CODPAI ELSE SB1.B1_COD END AS AGRUPADOR_UNITARIO"})
+		aadd (_aOpcoes, {.F., "Ato cooperativo/não coop.","CASE WHEN (B1_VAATO = 'S')  THEN  'Cooperativo' ELSE 'Nao Cooperativo' END AS ATO"})
+		aadd (_aOpcoes, {.F., "Linha de envase",          "RTRIM (ISNULL ((SELECT H1_DESCRI FROM " + RetSqlName ("SH1") + " WHERE D_E_L_E_T_ <> '*' AND H1_FILIAL = '" + xfilial ("sh1") + "' AND H1_CODIGO = B1_VALINEN), '')) AS LINHA_ENVASE"})
+		aadd (_aOpcoes, {.F., "Valor NET",                "VALOR_NET * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALOR_NET"})
+	endif
 	// Pre-seleciona opcoes cfe. conteudo anterior.
 	for _nOpcao = 1 to len (_aOpcoes)
 		_aOpcoes [_nOpcao, 1] = (substr (_sOpcoes, _nOpcao, 1) ==  "S")

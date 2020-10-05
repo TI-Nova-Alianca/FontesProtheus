@@ -32,6 +32,7 @@ Static Function ReportDef()
 	Local oSection1 := Nil
 	Local oSection2 := Nil
 	Local oSection3 := Nil
+	Local oSection4 := Nil
 	
 	oReport := TReport():New("VA_COMREL","Relatório de Comissões",cPerg,{|oReport| PrintReport(oReport)},"Relatório de Comissões")
 	TReport():ShowParamPage()
@@ -85,6 +86,16 @@ Static Function ReportDef()
 	TRCell():New(oSection3,"COLUNA9", 	"" ,"Comissao"		, "@E 999,999,999.99"   ,30,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection3,"COLUNA10", 	"" ,"Valor  "		, 					    ,30,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	
+		// VERBAS/BONIFIFICAÇÕES
+	oSection4 := TRSection():New(oReport,,{}, , , , , ,.F.,.F.,.F.,,15) 
+	
+	TRCell():New(oSection4,"COLUNA1", 	"" ,"Título"		,       				,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection4,"COLUNA2", 	"" ,"Prefixo"		,					    ,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection4,"COLUNA3", 	"" ,"Parcela"		,						,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection4,"COLUNA4", 	"" ,"Cliente/Loja"	,						,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection4,"COLUNA5", 	"" ,"Nome"			,						,40,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection4,"COLUNA6", 	"" ,"Valor"			, "@E 999,999,999.99"   ,30,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+
 Return(oReport)
 //
 // -------------------------------------------------------------------------
@@ -92,10 +103,13 @@ Static Function PrintReport(oReport)
 	Local oSection1 := oReport:Section(1)
 	Local oSection2 := oReport:Section(2)
 	Local oSection3 := oReport:Section(3)
+	Local oSection4 := oReport:Section(4)
 	Local _aVend 	:= {}
 	Local _aItens   := {}
+	Local _aDev     := {}
 	Local _x		:= 0
 	Local _y        := 0
+	Local _i        := 0
 	Local _sAliasQ  := ""
 	
 	If mv_par07 = 1 // IMPRIME RELATÓRIO
@@ -331,6 +345,43 @@ Static Function PrintReport(oReport)
 			oReport:PrintText(" ",,100)
 			oSection3:Finish()
 			//
+			//--------------------------------------------------------------------------------------------------
+			// DEVOLUÇÕES
+			_aDev = U_VA_COMDEV(mv_par01, mv_par02, _sVend)
+					
+			oSection4:Init()
+
+			If len(_aDev)> 0
+				oReport:PrintText(" *** DESCONTOS DE DEVOLUÇÕES:",,100)
+				oSection4:SetHeaderSection(.T.)
+			EndIf
+
+			_nTotDev := 0
+			For _i := 1 to len(_aDev)
+				oSection4:Cell("COLUNA1")	:SetBlock   ({|| _aDev[_i,2] })
+				oSection4:Cell("COLUNA2")	:SetBlock   ({|| _aDev[_i,3] })
+				oSection4:Cell("COLUNA3")	:SetBlock   ({|| _aDev[_i,4] })
+				oSection4:Cell("COLUNA4")	:SetBlock   ({|| _aDev[_i,5] +"/"+ _aDev[_i,6] })
+				oSection4:Cell("COLUNA5")	:SetBlock   ({|| _aDev[_i,7] })
+				oSection4:Cell("COLUNA6")	:SetBlock   ({|| _aDev[_i,8] })
+				
+				oSection4:PrintLine()
+
+				_nTotDev += _aDev[_i,8] 
+			Next
+
+			If Len(_aDev) > 0
+				_nLinha :=  oReport:Row()
+				oReport:PrintText(" ",,100)
+				oReport:PrintText("TOTAL DAS DEVOLUÇÕES DESCONTADAS: " + PADL('R$' + Transform(_nTotDev, "@E 999,999,999.99"),20,' ') ,_nLinha, 100)
+				oReport:SkipLine(1) 
+
+				oSection4:Finish()
+			EndIf
+			
+			oReport:PrintText(" ",,100)
+			
+			//
 			// ----------------------------------------------------------------------------------------------------------
 			// TOTALIZADORES
 			oReport:ThinLine()
@@ -352,6 +403,11 @@ Static Function PrintReport(oReport)
 			oReport:PrintText("OUTROS DESCONTOS/BONIFICAÇÕES:" ,_nLinha, 100)
 			oReport:PrintText(PADL('R$' + Transform(_nVlrBon, "@E 999,999,999.99"),20,' '),_nLinha, 900)
 			oReport:SkipLine(1) 
+
+			_nLinha :=  oReport:Row()
+			oReport:PrintText("DEVOLUÇÕES:" ,_nLinha, 100)
+			oReport:PrintText(PADL('R$' + Transform(_nTotDev, "@E 999,999,999.99"),20,' '),_nLinha, 900)
+			oReport:SkipLine(1) 
 			
 			_nLinha :=  oReport:Row()
 			If _nVlrTVerbas < 0
@@ -360,6 +416,9 @@ Static Function PrintReport(oReport)
 			Else
 				_nVlrCom:= _nTotComis + _nVlrTVerbas
 			EndIf
+
+			// DESCONTA AS DEVOLUÇÕES
+			_nVlrCom := _nVlrCom - _nTotDev
 			
 			oReport:PrintText("COMISSÃO TOTAL:" ,_nLinha, 100)
 			oReport:PrintText(PADL('R$' + Transform(_nVlrCom, "@E 999,999,999.99"),20,' '),_nLinha, 900)
