@@ -105,7 +105,7 @@
 // 22/07/2020 - Robert  - Verificacao de acesso dados devol.logistica: passa a validar acesso 112 e nao mais 030.
 //                      - Inseridas tags para catalogacao de fontes
 // 24/08/2020 - Cláudia - Ajuste na validação de quantidades. GLPI: 8358
-// 28/09/2020 - Robert  - Nao localizava NF de venda pela chave pois o sistema padrao mudou a ordem dos indices.
+// 28/09/2020 - Robert  - Nao localizava NF de venda pela chave pois o sistema padrao mudou a ordem dos indices (GLPI 8569).
 //
 
 // ----------------------------------------------------------------------------------------------------------------------------------

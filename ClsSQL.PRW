@@ -189,7 +189,7 @@ METHOD Exec () Class ClsSQL
 	local _sErroTOP := ''
 	local _sErroSQL := ''
 
-	u_log2 ('debug', ::_sQuery)
+//	u_log2 ('debug', ::_sQuery)
 	_nRetTOP = TCSQLExec (::_sQuery)
 //	u_log2 ('debug', 'Codigo de retorno do TOP: ' + cvaltochar (_nRetTOP))
 	if _nRetTOP < 0
