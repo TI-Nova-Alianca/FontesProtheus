@@ -83,7 +83,7 @@ Static Function RptDetail()
 
 	// Verifica se o usuario tem liberacao para ver valores.
 	if mv_par09 == 1
-		if ! U_ZZUVL ('051', __cUserID, .F., cEmpAnt, cFilAnt)
+		if ! U_ZZUVL ('051', __cUserID, .F.)//, cEmpAnt, cFilAnt)
 			u_help ("Usuario nao pertence ao grupo 051. Opcao SIM nao permitida no parametro 'lista valores'.")
 			return
 		endif

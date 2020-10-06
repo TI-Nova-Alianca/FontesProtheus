@@ -31,7 +31,8 @@ User Function SX5NOTA ()
 	Local _lRet     := .T.
 	Local _xSERIE   := SX5->X5_CHAVE
 	local _aAreaAnt := U_ML_SRArea ()
-	local _lVeTodas := U_ZZUVL ('040', __cUserId, .F., cEmpAnt, cFilAnt)
+	local _lVeTodas := U_ZZUVL ('040', __cUserId, .F.)
+	//local _lVeTodas := U_ZZUVL ('040', __cUserId, .F., cEmpAnt, cFilAnt)
 
 	if IsInCallStack ("SPEDMDFE")
 		if left (_xSERIE, 3) != "100"  // Serie especifica para os MDF-e

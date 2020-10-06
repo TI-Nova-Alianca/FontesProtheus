@@ -26,7 +26,7 @@ User Function VA_GNF3 (_lAuto)
 	Private cPerg   := "VAGNF3"
 
 	// Verifica se o usuario tem liberacao para uso desta rotina.
-	if ! U_ZZUVL ('045', __cUserID, .T., cEmpAnt, cFilAnt)
+	if ! U_ZZUVL ('045', __cUserID, .T.)//, cEmpAnt, cFilAnt)
 		return
 	endif
 

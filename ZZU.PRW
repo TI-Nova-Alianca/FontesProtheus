@@ -273,7 +273,7 @@ return _lRet
 
 // --------------------------------------------------------------------------
 // Verifica se o usuario pertence ao grupo solicitado.
-user function ZZUVL (_sGrupoZZU, _sUser, _lComTela, _lMsg)  //, _sEmp, _sFil, _sTipos)
+user function ZZUVL (_sGrupoZZU, _sUser, _lComTela)  //, _sEmp, _sFil, _sTipos)
 	local _lRet     := .F.
 	local _aAreaAnt := U_ML_SRArea ()
 	local _sMsg     := ""
@@ -283,7 +283,7 @@ user function ZZUVL (_sGrupoZZU, _sUser, _lComTela, _lMsg)  //, _sEmp, _sFil, _s
 //	_sEmp     := iif (_sEmp     == NIL, cEmpAnt,   _sEmp)
 //	_sFil     := iif (_sFil     == NIL, cFilAnt,   _sFil)
 	_sTipos   := iif (_sTipos   == NIL, '13',      _sTipos)
-	_lMsg     := iif (_lMsg     == NIL, .T.,       _lMsg)
+	//_lMsg     := iif (_lMsg     == NIL, .T.,       _lMsg)
 
 	zzu -> (dbsetorder (1))  // ZZU_FILIAL+ZZU_GRUPO+ZZU_FIL+ZZU_USER
 	if ! zzu -> (dbseek (xfilial ("ZZU") + _sGrupoZZU, .T.))
@@ -309,7 +309,7 @@ user function ZZUVL (_sGrupoZZU, _sUser, _lComTela, _lMsg)  //, _sEmp, _sFil, _s
 			endif
 			zzu -> (dbskip ())
 		enddo
-		if ! _lRet .and. _lMsg == .T.
+		if ! _lRet 
 			_sMsg += "Usuario '" + _sUser + "' sem liberacao (ou nao cadastrado) no grupo '" + _sGrupoZZU + "'."
 		endif
 	endif

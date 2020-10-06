@@ -126,7 +126,7 @@ return
 // --------------------------------------------------------------------------
 // Libera saida com diferenca de peso.
 user function ZT_LPS ()
-	if U_ZZUVL ('054', __cUserId, .T., cEmpAnt, cFilAnt)
+	if U_ZZUVL ('054', __cUserId, .T.)//, cEmpAnt, cFilAnt)
 		reclock ("ZZT", .F.)
 		zzt -> zzt_blqpes = 'L'
 		zzt -> zzt_usrldp = cUserName

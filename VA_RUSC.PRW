@@ -31,7 +31,7 @@ User Function va_rusC ()
 	private _lTickPeso := .F. // Deixar private para ser vista por outras rotinas.
 
 	// Verifica se o usuario tem liberacao para uso desta rotina.
-	if ! U_ZZUVL ('056', __cUserID, .T., cEmpAnt, cFilAnt)
+	if ! U_ZZUVL ('056', __cUserID, .T.)//, cEmpAnt, cFilAnt)
 		return
 	endif
 

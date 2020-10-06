@@ -16,7 +16,7 @@ User Function VA_XLS33 (_lAutomat)
 	private _lAuto  := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
 
 	// Verifica se o usuario tem liberacao para uso desta rotina.
-	if ! U_ZZUVL ('051', __cUserID, .T., cEmpAnt, cFilAnt)
+	if ! U_ZZUVL ('051', __cUserID, .T.)//, cEmpAnt, cFilAnt)
 		return
 	endif
 

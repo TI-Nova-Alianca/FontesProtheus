@@ -35,7 +35,7 @@ User Function VA_ZZ9P (_lAuto)
 	Private cPerg   := "VAZZ9P"
 
 	// Verifica se o usuario tem liberacao para uso desta rotina.
-	if ! U_ZZUVL ('045', __cUserID, .T., cEmpAnt, cFilAnt)
+	if ! U_ZZUVL ('045', __cUserID, .T.)//, cEmpAnt, cFilAnt)
 		return
 	endif
 

@@ -34,7 +34,7 @@ user function DREindl ()
 	Private aRotina    := {}
 	private cCadastro  := "DREs industriais"
 
-	if ! U_ZZUVL ('096', __cUserID, .T., cEmpAnt, cFilAnt)
+	if ! U_ZZUVL ('096', __cUserID, .T.)//, cEmpAnt, cFilAnt)
 		return
 	endif
 

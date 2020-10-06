@@ -13,7 +13,7 @@ user function VA_ZZJ ()
    private cCadastro := "Manutencao de contas bancarias associados."
 
 	// Verifica se o usuario tem liberacao para uso desta rotina.
-	if ! U_ZZUVL ('051', __cUserID, .T., cEmpAnt, cFilAnt)
+	if ! U_ZZUVL ('051', __cUserID, .T.)//, cEmpAnt, cFilAnt)
 		return
 	endif
 

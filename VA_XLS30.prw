@@ -20,7 +20,7 @@ User Function VA_XLS30 (_lAutomat)
 	private _lAuto   := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
 
 	// Verifica se o usuario tem liberacao para uso desta rotina.
-	if ! U_ZZUVL ('045', __cUserID, .T., cEmpAnt, cFilAnt)
+	if ! U_ZZUVL ('045', __cUserID, .T.)//, cEmpAnt, cFilAnt)
 		return
 	endif
 
@@ -105,7 +105,7 @@ Static Function _Gera()
 	_oSQL:_sQuery += " ,NOTAS.CAD_VITIC"
 	_oSQL:_sQuery += " ,SUM(NOTAS.PESO_LIQ) AS PESO_LIQ"
 	_oSQL:_sQuery += " ,NOTAS.VALOR_UNIT AS VALOR_UNIT
-	if U_ZZUVL ('051', __cUserID, .F., cEmpAnt, cFilAnt)
+	if U_ZZUVL ('051', __cUserID, .F.)//, cEmpAnt, cFilAnt)
 		_oSQL:_sQuery += " ,NOTAS.VALOR_TOTAL"
 	else
 		_oSQL:_sQuery += " ,0 AS VALOR_TOTAL"
