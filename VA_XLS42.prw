@@ -18,7 +18,7 @@ user function VA_XLS42 (_lAutomat)
 	private _lAuto   := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
 
 	// Verifica se o usuario tem liberacao para ver valores.
-	if ! U_ZZUVL ('051', __cUserID, .F., cEmpAnt, cFilAnt)
+	if ! U_ZZUVL ('051', __cUserID, .F.)//, cEmpAnt, cFilAnt)
 		u_help ("Usuario sem liberacao para esta rotina (grupo 051).")
 		return
 	endif

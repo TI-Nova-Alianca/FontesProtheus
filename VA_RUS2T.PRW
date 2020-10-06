@@ -145,7 +145,7 @@ user function VA_RUS2T (_nOpc)
 
 			if left (_aRusInsp [.InspecoesSafraMisturaNoTombador], 1) == 'S'
 				u_help ("Inspecao de tombador indica que tem mistura de variedades (" + alltrim (_aRusInsp [.InspecoesSafraMisturaNoTombador]) + "), mas consta apenas uma linha na carga.")
-				if U_ZZUVL ('045', __cUserID, .F., cEmpAnt, cFilAnt)
+				if U_ZZUVL ('045', __cUserID, .F.)//, cEmpAnt, cFilAnt)
 					_lRet = U_MsgNoYes ("A T E N C A O: Confirma a finalizacao da segunda pesagem mesmo com a inspecao e tombador indicando falta de alguma variedade?")
 					_oEvento := ClsEvent ():New ()
 					_oEvento:Alias   = 'SZE'

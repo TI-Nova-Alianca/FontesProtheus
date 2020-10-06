@@ -209,10 +209,10 @@ Static Function RptDetail()
 	 ::_nLinAtual += ::_nAltLin * 1					
 	
 //     _sLinhaImp := "        ADMINISTRAÇÃO          " + "     " + "         CONTADOR"
-       _sLinhaImp := "      ALCEU DALLE MOLLE                CARLOS EDUARDO VERÇOSA"
+       _sLinhaImp := "      ALCEU DALLE MOLLE                      LIANE RITA LENZI"
 	 ::_oPrn:Say (::_nMargsup + ::_nLinAtual, ::_nMargEsq + 400, _sLinhaImp, _oCour10N, 100)
 	 ::_nLinAtual += ::_nAltLin * 1					
-       _sLinhaImp := "     CPF: 431.760.700-04                CRC: CRC-RS 0-55.322"
+       _sLinhaImp := "     CPF: 431.760.700-04                CRC: CRC-RS 0-96.279 - O"
 	 ::_oPrn:Say (::_nMargsup + ::_nLinAtual, ::_nMargEsq + 400, _sLinhaImp, _oCour10N, 100)
 	 ::_nLinAtual += ::_nAltLin * 1					
 			

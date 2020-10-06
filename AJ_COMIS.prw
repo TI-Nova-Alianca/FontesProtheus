@@ -22,7 +22,9 @@ User Function AJ_Comis ()
 	Private cPerg2  := "AJ_COMIS2"
 
 	// Verifica se o usuario tem liberacao para uso desta rotina.
-	if ! U_ZZUVL ('048', __cUserID, .T., cEmpAnt, cFilAnt)
+
+	//if ! U_ZZUVL ('048', __cUserID, .T., cEmpAnt, cFilAnt)
+	if ! U_ZZUVL ('048', __cUserID, .T.)
 		return
 	endif
 

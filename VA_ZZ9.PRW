@@ -16,7 +16,7 @@ user function VA_ZZ9 ()
    private cCadastro := "Manutencao de previsoes de notas de compra de uva"
 
 	// Verifica se o usuario tem liberacao para uso desta rotina.
-	if ! U_ZZUVL ('045', __cUserID, .T., cEmpAnt, cFilAnt)
+	if ! U_ZZUVL ('045', __cUserID, .T.)//, cEmpAnt, cFilAnt)
 		return
 	endif
 

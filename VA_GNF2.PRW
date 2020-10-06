@@ -68,7 +68,7 @@ User Function VA_GNF2 (_lAutomat)
 
 	// Verifica se o usuario tem liberacao para uso desta rotina.
 	if _lContinua
-		_lContinua = U_ZZUVL ('045', __cUserID, .T., cEmpAnt, cFilAnt)
+		_lContinua = U_ZZUVL ('045', __cUserID, .T.)//, cEmpAnt, cFilAnt)
 	endif
 
 	// Controle de semaforo.

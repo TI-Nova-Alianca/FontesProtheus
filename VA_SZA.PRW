@@ -21,7 +21,7 @@ User Function va_sza()
 	private aRotina := {}
 
 	// Verifica se o usuario tem liberacao para uso desta rotina.
-	if ! U_ZZUVL ('051', __cUserID, .T., cEmpAnt, cFilAnt)
+	if ! U_ZZUVL ('051', __cUserID, .T.)//, cEmpAnt, cFilAnt)
 		return
 	endif
 

@@ -127,7 +127,7 @@ user function va_rusLI (_nPesagem)
 //			if ! _aRusInsp [.InspecoesSafraSituacao] $ "LIB/SEG/CON"
 			if ! _aRusInsp [.InspecoesSafraSituacao] $ "LIB/SEG/CON/INS"
 				u_help ("Carga nao localizada ou com status '" + _aRusInsp [.InspecoesSafraSituacao] + "' no sistema de agendamento / inspecao. Somente cargas com status LIB (liberadas), SEG (segregadas), CON (concluidas), INS (inspecionadas) na inspecao de patio poderao ser recebidas.")
-				if U_ZZUVL ('045', __cUserID, .F., cEmpAnt, cFilAnt)
+				if U_ZZUVL ('045', __cUserID, .F.)//, cEmpAnt, cFilAnt)
 					_lContinua = U_MsgNoYes ("A T E N C A O: Se voce continuar o recebimento, nao vai ser possivel ler as inspecoes a partir do sistema de agenda/inspecao. Confirma assim mesmo?")
 					_oEvento := ClsEvent ():New ()
 					_oEvento:Alias   = 'SZE'

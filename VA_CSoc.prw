@@ -14,7 +14,7 @@ User Function VA_CSoc ()
 	private cPerg    := "VA_CSOC"
 	private _sArqLog := U_NomeLog ()
 
-	if ! U_ZZUVL ('059', __cUserID, .T., cEmpAnt, cFilAnt)
+	if ! U_ZZUVL ('059', __cUserID, .T.)//, cEmpAnt, cFilAnt)
 		return
 	endif
 

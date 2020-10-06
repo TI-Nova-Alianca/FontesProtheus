@@ -28,7 +28,7 @@ User Function Ml_sz1 ()
 	private cCadastro  := "Precos para safra da uva"
 	
 	// Verifica se o usuario tem liberacao para uso desta rotina.
-	if ! U_ZZUVL ('045', __cUserID, .T., cEmpAnt, cFilAnt)
+	if ! U_ZZUVL ('045', __cUserID, .T.)//, cEmpAnt, cFilAnt)
 		return
 	endif
 

@@ -36,6 +36,11 @@ User Function F070Desc ()
 	If !IsInCallStack("U_ZB1_CON") .and. !IsInCallStack("U_VA_040BRAP") // Não chama tela de descontos qndo realizada a baixa de titulos cielo e baixa do rapel
 	    _lRet = _Compos ()
 	EndIf
+
+	If IsInCallStack("U_VA_040BRAP")
+		_lRet = _RapelAut ()
+	EndIf
+
 	U_ML_SRArea (_aAreaAnt)
 Return _lRet
 //
@@ -500,5 +505,65 @@ Static Function VerifIpiSt(_nDesconto)
 		_lRet := .F.
 
 	EndIf
+
+Return _lRet
+//
+// -------------------------------------------------------------------------------------------------
+// Incluir rapel para baixa automatica
+Static Function _RapelAut ()
+	private _lRet    := .T.
+
+	// Cria variaveis 'public' para serem vistas em outro ponto de entrada.
+	if type ("_E5VARapel") == "U"
+		public _E5VARapel := 0
+	endif
+	if type ("_E5VAEncar") == "U"
+		public _E5VAEncar  := 0
+	endif
+	if 	type ("_E5VerEncar") == "U"	
+		public _E5VerEncar := "      "
+	endif
+	if type ("_E5VAFeira") == "U"
+		public _E5VAFeira  := 0
+	endif
+	if type ("_E5VerFeira") == "U"		
+		public _E5VerFeira := "      "
+	endif
+	if type ("_E5VADOutr") == "U"
+		public _E5VADOutr  := 0
+	endif
+	if type ("_E5VADFret") == "U"
+		public _E5VADFret := 0
+	endif
+	if type ("_E5VerFret") == "U"		
+		public _E5VerFret := "      "
+	endif
+	if type ("_E5VADDesc") == "U"
+		public _E5VADDesc := 0
+	endif
+	if type ("_E5VADDevo") == "U"
+		public _E5VADDevo := 0
+	endif
+	if type ("_E5VADCmpV") == "U"
+		public _E5VADCmpV := 0
+	endif
+	if type ("_E5VerCmpV") == "U"		
+		public _E5VerCmpV := "      "
+	endif
+	if type ("_E5VADARei") == "U"
+		public _E5VADARei := 0
+	endif
+	if type ("_E5VerARei") == "U"		
+		public _E5VerARei := "      "
+	endif
+	if type ("_E5VADMulC") == "U"
+		public _E5VADMulC  := 0
+	endif
+	if type ("_E5VerMulC") == "U"			
+		public _E5VerMulC  := "      "
+	endif
+
+	// grava rapel
+	 _E5VARapel := se1->e1_varapel
 
 Return _lRet

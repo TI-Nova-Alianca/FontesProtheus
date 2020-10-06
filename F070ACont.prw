@@ -48,7 +48,7 @@ User Function F070ACont ()
 	if se1 -> e1_tipo = "NCC" .and. se1 -> e1_naturez = "VERBAS" .and. se1 -> e1_prefixo = "CV"  
 		_AtuZA5 ()
 	endif
-		   
+
 	U_ML_SRArea (_aAreaAnt)
 	u_logFim ()
 Return

@@ -301,6 +301,7 @@ user function VA_040BRAP()
 						aAdd(_aAutoSE1, {"E1_CLIENTE" 	, _aTitulo[x,5] 					, Nil})
 						aAdd(_aAutoSE1, {"E1_LOJA"    	, _aTitulo[x,6] 					, Nil})
 						aAdd(_aAutoSE1, {"E1_TIPO"    	, _aTitulo[x,7] 					, Nil})
+						aAdd(_aAutoSE1, {"E1_VARAPEL"   , _aTitulo[x,8] 					, Nil})
 						AAdd(_aAutoSE1, {"AUTMOTBX"		, 'NORMAL'  						, Nil})
 						AAdd(_aAutoSE1, {"AUTBANCO"  	, 'CX1'		    					, Nil})
 						AAdd(_aAutoSE1, {"AUTAGENCIA"  	, 'CX1  '		    				, Nil})
@@ -321,26 +322,10 @@ user function VA_040BRAP()
 						U_GravaSX1 (cPerg, "04", 1)    // esse movimento tem que contabilizar
 
 						MSExecAuto({|x,y| Fina070(x,y)},_aAutoSE1,3,.F.,5) // rotina automática para baixa de títulos
+
 						If lMsErroAuto
 							u_help("Erro na baixa do titulo:" + alltrim(_aTitulo[x,2]) +"/"+ alltrim(_aTitulo[x,3]))
 							u_help(memoread (NomeAutoLog ()))
-						else
-							// // Se gravado, inclui campos n SE5 finaliza o registro da ZA1
-							// // Atualiza banco e administradora
-							// _oSQL:= ClsSQL ():New ()
-							// _oSQL:_sQuery := ""
-							// _oSQL:_sQuery += " UPDATE " + RetSQLName ("SE5") + " SET E5_BANCO = 'CX1', E5_AGENCIA = 'CX1', E5_CONTA = 'CX1'"
-							// _oSQL:_sQuery += " WHERE D_E_L_E_T_=''"
-							// _oSQL:_sQuery += " AND E5_FILIAL  ='" + _aTitulo[x,1] + "'"
-							// _oSQL:_sQuery += " AND E5_PREFIXO ='" + _aTitulo[x,2] + "'"
-							// _oSQL:_sQuery += " AND E5_NUMERO  ='" + _aTitulo[x,3] + "'"
-							// _oSQL:_sQuery += " AND E5_PARCELA ='" + _aTitulo[x,4] + "'"
-							// _oSQL:_sQuery += " AND E5_CLIFOR  ='" + _aTitulo[x,5] + "'"
-							// _oSQL:_sQuery += " AND E5_LOJA    ='" + _aTitulo[x,6] + "'"
-							// _oSQL:_sQuery += " AND E5_TIPO    ='" + _aTitulo[x,7] + "'"
-							// _oSQL:_sQuery += " AND E5_HIST 
-							// _oSQL:Log ()
-							// _oSQL:Exec ()
 						EndIf
 					next
 				endif

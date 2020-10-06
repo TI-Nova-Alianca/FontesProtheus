@@ -319,6 +319,6 @@ Return _lRet
 static function _Libera ()
 	local _lRet := .F.
 	
-	_lRet = U_ZZUVL ('050', __cUserId, .T., cEmpAnt, cFilAnt)
+	_lRet = U_ZZUVL ('050', __cUserId, .T.)//, cEmpAnt, cFilAnt)
 	
 return _lRet //_aLiber [1]

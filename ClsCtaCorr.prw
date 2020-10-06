@@ -1579,7 +1579,8 @@ METHOD PodeIncl () Class ClsCtaCorr
 		endif
 		
 		// Se, apesar de todos os testes anteriores, for um usuario bonito, simpatico e poderoso, posso abrir uma excecao...
-		if ! _lContinua .and. U_ZZUVL ('051', __cUserID, .F., cEmpAnt, cFilAnt)
+		//if ! _lContinua .and. U_ZZUVL ('051', __cUserID, .F., cEmpAnt, cFilAnt)
+		if ! _lContinua .and. U_ZZUVL ('051', __cUserID, .F.)
 			_lContinua = U_MsgNoYes (::UltMsg + _sCRLF + "Deseja incluir a movimentacao, apesar dos avisos anteriores?")
 		endif
 	endif

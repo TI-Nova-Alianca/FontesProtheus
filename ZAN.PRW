@@ -18,7 +18,7 @@ user function ZAN ()
 	private cCadastro := "Manutencao de grupos familiares"
 
 	// Verifica se o usuario tem liberacao para uso desta rotina.
-	if ! U_ZZUVL ('045', __cUserID, .T., cEmpAnt, cFilAnt)
+	if ! U_ZZUVL ('045', __cUserID, .T.)//, cEmpAnt, cFilAnt)
 		return
 	endif
 

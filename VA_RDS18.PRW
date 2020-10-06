@@ -37,7 +37,7 @@ User Function VA_RDS18 ()
 	Private cCabec2  := ""
 	Private aOrd     := {}
 
-	if ! U_ZZUVL ('051', __cUserID, .T., cEmpAnt, cFilAnt)
+	if ! U_ZZUVL ('051', __cUserID, .T.)//, cEmpAnt, cFilAnt)
 		return
 	endif
 

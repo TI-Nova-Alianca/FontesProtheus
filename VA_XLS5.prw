@@ -91,7 +91,7 @@ User Function VA_XLS5 (_lAutomat)
 	private _aOpcoes := {}   // Opcoes (colunas) selecionadas pelo usuario.
 	private _lAuto   := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
 
-	if u_zzuvl ('120', __cUserId, .T.,.F.) .or. u_zzuvl ('038', __cUserId, .T.,.F.) 
+	if u_zzuvl ('120', __cUserId, .F.) .or. u_zzuvl ('038', __cUserId, .F.) 
 		if u_zzuvl ('120', __cUserId, .T.,.F.) 
 			_sTipo := 'P'
 		else
@@ -172,11 +172,13 @@ Static Function _Opcoes (_sTipo)
 	// Monta array de opcoes de campos, jah com o respectivo trecho para uso na query.
 	_aOpcoes = {}
 	If _sTipo == 'P'
+		aadd (_aOpcoes, {.F., "Fat/bonif",                "CASE WHEN V.F4_MARGEM='1' THEN 'FATURADO' WHEN V.F4_MARGEM='2' THEN 'DEVOLUCAO' WHEN V.F4_MARGEM='3' THEN 'BONIFICADO' WHEN V.F4_MARGEM='4' THEN 'COMODATO' WHEN V.F4_MARGEM='5' THEN 'RET.COMODATO' WHEN V.F4_MARGEM='6' THEN 'FRETE' WHEN V.F4_MARGEM='7' THEN 'SERVICOS' WHEN V.F4_MARGEM='8' THEN 'USO E CONSUMO' WHEN V.F4_MARGEM='9' THEN 'NAO SE APLICA' ELSE V.F4_MARGEM END AS FAT_BONIF"})
 		aadd (_aOpcoes, {.F., "Mes/ano emissao",          "SUBSTRING (V.EMISSAO, 5, 2) + '/' + SUBSTRING (V.EMISSAO, 1, 4) AS MES_EMIS"})
 		aadd (_aOpcoes, {.F., "Nome linha produtos",      "RTRIM(ISNULL(ZX5_39.ZX5_39DESC,'')) AS LINHA"})
 		aadd (_aOpcoes, {.F., "Codigo produto",           "V.PRODUTO AS CODIGO"})
 		aadd (_aOpcoes, {.F., "Descricao produto",        "RTRIM (SB1.B1_DESC) AS DESCRICAO"})
 		aadd (_aOpcoes, {.F., "Embalagem",                "RTRIM (ISNULL (ZX5_50.ZX5_50DESC, '')) AS EMBALAGEM"})
+		aadd (_aOpcoes, {.F., "Litros",                   "SB1.B1_LITROS AS LITROS"})
 		aadd (_aOpcoes, {.F., "Litragem",                 "V.QTLITROS * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS LITRAGEM"})
 		aadd (_aOpcoes, {.F., "Unid.medida produto",      "V.UMPROD AS UN_MEDIDA"})
 		aadd (_aOpcoes, {.F., "Quant. em caixas",         "V.QTCAIXAS * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS QT_CAIXAS"})
