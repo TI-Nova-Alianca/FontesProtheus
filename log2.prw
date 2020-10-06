@@ -72,13 +72,14 @@ user function Log2 (_sTipo, _xDado, _xExtra)
 	fwrite (_nHdl, _sTextoLog + chr (13) + chr (10))
 	_sTextoLog = ''
 
+	// Continua na linha seguinte, se precisar.
 	if ! _lUmaLinha
 		if valtype (_xDado) == "A"
-			_sTextoLog = _DumpArray (aclone (_xDado), space (31))
+			_sTextoLog = _DumpArray (aclone (_xDado), space (8))
 		elseif valtype (_xDado) == "O"
 			_sTextoLog = _DumpObj (_xDado)
 		else
-			_sTextoLog = space (31) + cvaltochar (_xDado)
+			_sTextoLog = space (46) + cvaltochar (_xDado)
 		endif
 		fwrite (_nHdl, _sTextoLog + chr (13) + chr (10))
 	endif

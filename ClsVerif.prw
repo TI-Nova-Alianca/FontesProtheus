@@ -3,7 +3,14 @@
 // Data:      12/11/2016
 // Descricao: Declaracao de classe de verificacoes diversas, geralmente para execucao em batch.
 //            Criada com base nos programas VerCMed e VerIndl.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Classe
+// #Descricao         #Classe com tratamento para verificacoes diversas de inconsistencias no sistema.
+// #PalavasChave      #verificacoes
+// #TabelasPrincipais 
+// #Modulos           #todos_modulos
+
 // Historico de alteracoes:
 // 24/11/2016 - Robert - Criada possibilidade de parametrizacao das consultas (ValidPerg, SetParam, ...)
 //                     - Criada consulta 4 (compara SB9 anterior + kardex com SB9 atual).
@@ -34,6 +41,8 @@
 // 31/03/2020 - Claudia - Desativada a rotina 59, conforme GLPI: 7736
 // 06/04/2020 - Cláudia - Alterada verificação 55 conforme GLPI: 7409
 // 14/05/2020 - Robert  - Ajustes consulta totais safras e verificacoes de lctos padrao.
+// 06/10/2020 - Robert  - Criadas verificacoes 69 a 72
+//                      - Inseridas tags para catalogo de fontes.
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -118,7 +127,7 @@ METHOD ConvHTM (_nMaxLin) Class ClsVerif
 	local _oUtil := NIL
 
 	if ::ExecutouOK
-		u_log ('result:', len (::Result))
+		u_log2 ('debug', 'result: ' + cvaltochar (len (::Result)))
 		_oUtil := ClsAUtil ():New (::Result)
 		_sRet = _oUtil:ConvHtm (::Descricao, NIL, NIL, NIL, _nMaxLin)
 	endif
@@ -1418,7 +1427,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query += " ORDER BY DA_FILIAL, DA_PRODUTO, DA_DATA "
 
 		case ::Numero == 34
-			::Setores    = 'TI'
+			::Setores    = 'INF'
 			::Descricao  = "Inconsistencia entre tabelas SD3 (mov.internos) e SD5 (mov.lotes)"
 			::Sugestao   = "Verifique movimentacao."
 			::GrupoPerg  = "U_VALID002"
@@ -2875,7 +2884,62 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query += " WHERE ROUND((QT_MES_ANT + ENTR - SAID), 2) <> ROUND(QT_PREV_FECHTO, 2)"
 			::Query += " ORDER BY FILIAL, PRODUTO, ALMOX"	
 		
+		case ::Numero == 69
+			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+			::Setores    = 'INF'
+			::Descricao  = 'Grupos: Acesso repetido (deveria estar apenas no grupo GERAL)'
+			::Query := " SELECT GR.TIPO_GRUPO, GR.ID_GRUPO, RTRIM (GR.DESCRICAO) AS DESCR_GRUPO"
+			::Query +=      " , AG.TIPO_ACESSO, AG.ACESSO, RTRIM (LA.DESCRICAO) AS DESCR_ACESSO"
+			::Query +=   " FROM VA_USR_GRUPOS GR,"
+			::Query +=        " VA_USR_ACESSOS_POR_GRUPO AG"
+			::Query +=        " LEFT JOIN VA_USR_ACESSOS LA"
+			::Query +=           " ON (LA.TIPO = AG.TIPO_ACESSO"
+			::Query +=          " AND LA.ACESSO = AG.ACESSO)"
+			::Query += " WHERE GR.TIPO_GRUPO = AG.TIPO_ACESSO"
+			::Query +=   " AND GR.ID_GRUPO = AG.ID_GRUPO"
+			::Query +=   " AND UPPER (GR.GRUPO) like 'FUNCAO%'"
+			::Query +=   " AND EXISTS (SELECT * FROM VA_USR_ACESSOS_POR_GRUPO GRUPO_GERAL"
+			::Query +=                " WHERE GRUPO_GERAL.ID_GRUPO = '000102'"
+			::Query +=                  " AND GRUPO_GERAL.TIPO_ACESSO = LA.TIPO"
+			::Query +=                  " AND GRUPO_GERAL.ACESSO = LA.ACESSO)"
+			::Query += " ORDER BY AG.ACESSO"
 		
+		case ::Numero == 70
+			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+			::Setores    = 'INF'
+			::Descricao  = 'Usuarios: Diretorio impressao errado, ou ambiente nao estah como cliente'
+			::Query := " SELECT TIPO_GRUPO, ID_GRUPO, RTRIM (DESCRICAO) AS DESCR_GRUPO,"
+			::Query +=        " DIRETORIO_IMPRESSAO, TIPO_IMPRESSAO, AMBIENTE_IMPRESSAO"
+			::Query +=  " FROM VA_USR_GRUPOS"
+			::Query +=  " WHERE TIPO_GRUPO = 'CFG'"
+			::Query +=    " AND (DIRETORIO_IMPRESSAO != 'C:\TEMP\SPOOL_PROTHEUS\' OR AMBIENTE_IMPRESSAO != 'CLIENTE')"
+
+		case ::Numero == 71
+			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+			::Setores    = 'INF'
+			::Descricao  = 'Grupos: Grupo deve fornecer apenas acesso a modulos e nao a funcionalidades'
+			::Query := "SELECT TIPO_ACESSO, G.ID_GRUPO, RTRIM (G.DESCRICAO) AS DESCR_GRUPO, ACESSO"
+			::Query +=  " FROM VA_USR_ACESSOS_POR_GRUPO AG"
+			::Query +=      " JOIN VA_USR_GRUPOS G"
+			::Query +=        " ON (G.ID_GRUPO = AG.ID_GRUPO"
+			::Query +=        " AND G.TIPO_GRUPO = AG.TIPO_ACESSO)"
+			::Query += " WHERE AG.TIPO_ACESSO = 'CFG'"
+			::Query +=   " AND G.GRUPO LIKE 'Modulos%'"
+
+		case ::Numero == 72
+			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+			::Setores    = 'INF'
+			::Descricao  = 'Grupos: Nenhum grupo deveria ter este acesso'
+			::Query := "SELECT AG.TIPO_ACESSO, AG.ID_GRUPO, rtrim (G.DESCRICAO) AS DESCR_GRUPO, AG.ACESSO, RTRIM (A.DESCRICAO) AS DESCR_ACESSO"
+			::Query +=  " FROM VA_USR_ACESSOS_POR_GRUPO AG"
+			::Query +=     " JOIN VA_USR_ACESSOS A"
+			::Query +=       " ON (A.TIPO = AG.TIPO_ACESSO"
+			::Query +=       " AND A.ACESSO = AG.ACESSO)"
+			::Query +=     " JOIN VA_USR_GRUPOS G"
+			::Query +=       " ON (G.TIPO_GRUPO = AG.TIPO_ACESSO"
+			::Query +=       " AND G.ID_GRUPO = AG.ID_GRUPO)"
+			::Query +=  " WHERE AG.TIPO_ACESSO = 'CFG' AND AG.ACESSO IN ('121')"
+
 		otherwise 
 			::UltMsg = "Verificacao numero " + cvaltochar (::Numero) + " nao definida."
 	endcase

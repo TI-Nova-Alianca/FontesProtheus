@@ -538,7 +538,7 @@ METHOD CalcCM (_sMesRef, _nTaxaVl1, _nTaxaVl2, _nLimVl1, _lGerarD, _lGerarC) Cla
 
 	if _lContinua .and. ! ::EhSocio (_dDtGrvCor)
 		::UltMsg += "Nao consta como associado na data prevista para gravacao da correcao (" + dtoc (_dDtGrvCor) + ")."
-		_lRet = .F.
+		//_lRet = .F.
 		_lContinua = .F.
 	endif
 

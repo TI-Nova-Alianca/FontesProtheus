@@ -21,7 +21,7 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '03' modulo '04'
+		prepare environment empresa '01' filial '01' modulo '04'
 		private cModulo   := 'FAT'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -75,25 +75,51 @@ static function _AndaLogo ()
 //	local _oAssoc    := NIL
 //	local _aAssoc := {}
 //	local _nAssoc := 0
+
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
 
 	//u_help ("Nada definido", procname ())
-	//U_BATUSERS ()
-	//U_BatEXML("\XML_NFE\XML_ODONE\","4")
-	// u_log (FwGrpPrivDB ('000102'))
-	// _sArqLog := 'u_batrevch_' + alltrim (cusername) + '_' + dtos (date ()) + ".log" ; U_BatRevCh ("SP", "CTE", 1, '35200402442313000559570000000421461100421462', .t.)
-	// _sArqLog := 'u_batrevch_' + alltrim (cusername) + '_' + dtos (date ()) + ".log" ; U_BatRevCh ("MG", "NFE", 1, '31200302363425000433550010000003021159871670', .t.)
-	// _sArqLog := 'u_batrevch_' + alltrim (cusername) + '_' + dtos (date ()) + ".log" ; U_BatRevCh ("PR", "CTE", 90, NIL, .t.)
-	// _sArqLog := 'u_batDocCanc_' + alltrim (cusername) + '_' + dtos (date ()) + ".log" ; U_BatDocCanc ("OC", 150)
-	// _sArqLog := 'u_batmetaf_' + alltrim (cusername) + '_' + dtos (date ()) + ".log" ; u_batmetaf ()
-	// _sArqLog := 'u_batediconh_' + alltrim (cusername) + '_' + dtos (date ()) + ".log" ; u_batEDIConh ('I')
-	// _sArqLog := 'u_batXML_' + alltrim (cusername) + '_' + dtos (date ()) + ".log" ; U_BatXML("\\192.168.1.3\Siga\Protheus12\protheus_data_fiscal\xml_NFe\CT-e\", 100)
-	_sArqLog := 'u_VA_REST_' + alltrim (cusername) + '_' + dtos (date ()) + ".log" ; u_va_rest ()
-	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
-return
+//	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
+//return
 
+	// Testes verificacoes genericas.
+	// _oVerif := ClsVerif():New (25)
+	// _oVerif:SetParam ('01', '2017')
+	// _oVerif:SetParam ('02', '')
+	// _oVerif:SetParam ('03', 'zz')
+	// _oVerif:SetParam ('04', '30 ')
+	// _oVerif:SetParam ('05', '028')
+	// _oVerif:SetParam ('06', '077')
+	// _oVerif:SetParam ('07', '000017')
+	// _oVerif := ClsVerif():New (24)
+	// _oVerif:SetParam ('01', '09189201001  ')
+	// _oVerif:SetParam ('02', '09189201001  ')
+	// _oVerif:SetParam ('03', '')
+	// _oVerif:SetParam ('04', 'z')
+	_oVerif := ClsVerif():New (72)
+	if _oVerif:Executa ()
+		u_log2 ('debug', _oVerif:Query)
+		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
+		u_log2 ('debug', _oVerif:Result)
+	else
+		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
+	endif
+return
+*/
+/*
+	cPerg := "VA_RTSAF"
+	U_GravaSX1 (cPerg, "01", stod ('20200131'))
+	U_GravaSX1 (cPerg, "02", 1)
+	if cFilAnt == '01' ; U_GravaSX1 (cPerg, "03", 1314513.17) ; endif // provisao compra safra
+	if cFilAnt == '03' ; U_GravaSX1 (cPerg, "03",  417707.26) ; endif // provisao compra safra
+	if cFilAnt == '07' ; U_GravaSX1 (cPerg, "03", 1260996.28) ; endif // provisao compra safra
+	if cFilAnt == '09' ; U_GravaSX1 (cPerg, "03",   45004.61) ; endif // provisao compra safra
+	_sArqLog := 'VA_RTSAF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+	U_VA_RTSAF (.t.)
+RETURN
+*/
 /* Aguarda atualizacao de build
 	// Linguagem TL++: https://tdn.totvs.com/pages/viewpage.action?pageId=334340072
 	// local varJson := { "teste" : { "var1" : "oioi", "var2": "oioi2", "var3": "oioi3" }}  https://tdn.totvs.com/display/tec/Json
@@ -3127,29 +3153,6 @@ RETURN
 			enddo
 		endif
 	endif
-*/
-/*
-	// Testes verificacoes genericas.
-	// _oVerif := ClsVerif():New (25)
-	// _oVerif:SetParam ('01', '2017')
-	// _oVerif:SetParam ('02', '')
-	// _oVerif:SetParam ('03', 'zz')
-	// _oVerif:SetParam ('04', '30 ')
-	// _oVerif:SetParam ('05', '028')
-	// _oVerif:SetParam ('06', '077')
-	// _oVerif:SetParam ('07', '000017')
-	// _oVerif := ClsVerif():New (24)
-	// _oVerif:SetParam ('01', '09189201001  ')
-	// _oVerif:SetParam ('02', '09189201001  ')
-	// _oVerif:SetParam ('03', '')
-	// _oVerif:SetParam ('04', 'z')
-	_oVerif := ClsVerif():New (37)
-	if _oVerif:Executa ()
-		u_log (_oVerif:Query, "Pendencias do tipo " + _oVerif:Descricao, _oVerif:Result)
-	else
-		u_log ('Erro na verificacao:', _oVerif:UltMsg)
-	endif
-return
 */
 /*
 // Envia atualizacoes para o Mercanet

@@ -270,7 +270,7 @@ Static Function _Calc ()
 			incproc (_oAssoc:Codigo + "/" + _oAssoc:Loja + ' - ' + _oAssoc:Nome)
 			u_log2 ('info', 'Iniciando assoc: ' + _oAssoc:Codigo + "/" + _oAssoc:Loja + ' - ' + _oAssoc:Nome)
 			if ! _oAssoc:CalcCM (_sMesRef, _nTaxa1, _nTaxa2, _nLimVl, _lGeraD, _lGeraC)
-				u_help (_oAssoc:Codigo + "/" + _oAssoc:Loja + ' - ' + alltrim (_oAssoc:Nome) + _oAssoc:UltMsg,, .t.)
+				u_help (_oAssoc:Codigo + "/" + _oAssoc:Loja + ' - ' + alltrim (_oAssoc:Nome) + ' ' + _oAssoc:UltMsg,, .t.)
 			endif
 			u_log2 ('info', _oAssoc:UltMsg)
 		next                    
