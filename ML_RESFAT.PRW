@@ -3,8 +3,18 @@
 // Data......: 02/07/2015
 // Nota......: Resumo Faturamento BRUTO
 
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Relatorio
+// #Descricao         #Relatorio de resumo de faturamento, formatado para apresentacao em reunioes de conselho.
+// #PalavasChave      #resumo #faturamento #formatado #formato_grafico
+// #TabelasPrincipais #SD2 #SF3 #SF4
+// #Modulos           #FAT #CTB
+
 // Historico de alteracoes:
 // 12/11/2019 - Robert - Alterados cargos (administrador / contador) para os nomes das pessoas (Alceu/Carlos)
+// 06/10/2020 - Sandra - Alterado nome do contador de Carlos para Liane
+// 07/10/2020 - Robert - Chamadas da funcao msgalert() trocadas para u_help ()
+//                     - Adicionadas tags para catalogo de fontes.
 //
  
 #include "rwmake.ch"
@@ -39,12 +49,12 @@ User Function ML_RESFAT()
 		_nMeses = 30
 		// falta terminar de testar a quantidade de meses
    		if _nMeses > 30
-			msgalert("Intervalo informado maior que o maximo permitido. Informar máximo de 30 meses.")
+			u_help ("Intervalo informado maior que o maximo permitido. Informar máximo de 30 meses.",, .t.)
 			return
 		endif
 	else // maximo de 31 dias
 		if mv_par02 - mv_par01 > 31
-			msgalert("Intervalo informado maior que o maximo permitido. Informar máximo de 31 dias.")
+			u_help ("Intervalo informado maior que o maximo permitido. Informar máximo de 31 dias.",, .t.)
 			return
 		endif
 	endif
