@@ -80,10 +80,112 @@ static function _AndaLogo ()
 	procregua (100)
 	incproc ()
 
-	//u_help ("Nada definido", procname ())
-//	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
-//return
+	u_help ("[" + procname () + "] Nada definido.")
+	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
+return
 
+
+// Envia atualizacoes diversas para o Mercanet
+//	_oSQL := ClsSQL ():New ()
+//	_oSQL:_sQuery := ""
+//   	_oSQL:_sQuery += " SELECT R_E_C_N_O_ "
+//	_oSQL:_sQuery += " FROM " + RetSQLName ("SB1")
+//	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+//	_oSQL:_sQuery += " AND B1_FILIAL = '" + xfilial ("SB1") + "'"  // Deixar esta opcao para poder ler os campos memo.
+//	_oSQL:_sQuery += " AND B1_COD IN ('0345', '0215')"
+//	_oSQL:Log ()
+//	_aDados = aclone (_oSQL:Qry2Array ())
+//	For _nLinha := 1 To Len(_aDados)
+//		sb1 -> (dbgoto (_aDados [_nLinha, 1]))
+//		U_AtuMerc ("SB1", sb1 -> (recno ()))
+//	next
+//
+//	da0 -> (dbgotop ())
+//	do while ! da0 -> (eof ())
+//		if alltrim (da0 -> da0_codtab) $ '722'
+//			U_AtuMerc ("DA0", da0 -> (recno ()))
+//		endif
+//		da0 -> (dbskip ())
+//	enddo
+//
+//	_oSQL := ClsSQL ():New ()
+//	_oSQL:_sQuery := ""
+//	_oSQL:_sQuery += " SELECT R_E_C_N_O_ "
+//	_oSQL:_sQuery += " FROM " + RetSQLName ("SA3")
+//	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+//	_oSQL:_sQuery += " AND A3_FILIAL = '" + xfilial ("SA3") + "'"  // Deixar esta opcao para poder ler os campos memo.
+//	_oSQL:_sQuery += " AND A3_COD BETWEEN '291' and '298'"
+//	_oSQL:Log ()
+//	_aDados = aclone (_oSQL:Qry2Array ())
+//	For _nLinha := 1 To Len(_aDados)
+//		sa3 -> (dbgoto (_aDados [_nLinha, 1]))
+//		U_LOG (SA3 -> A3_COD)
+//		U_AtuMerc ("SA3", sa3 -> (recno ()))
+//	next
+//
+//	_oSQL := ClsSQL ():New ()
+//	_oSQL:_sQuery := ""
+//	_oSQL:_sQuery += " SELECT R_E_C_N_O_ "
+//	_oSQL:_sQuery += " FROM " + RetSQLName ("SF1")
+//	_oSQL:_sQuery += " WHERE F1_FILIAL = '" + xfilial ("SF1") + "'"  // Deixar esta opcao para poder ler os campos memo.
+//	_oSQL:_sQuery += " AND F1_EMISSAO >= '20150101'"  // DATA INICIA EXPORT P/ MERCANET
+//	_oSQL:_sQuery += " AND (F1_DOC like '%28305%')"
+//	_oSQL:_sQuery += " AND F1_SERIE = '1  '"
+//	//_oSQL:_sQuery += " AND NOT EXISTS (SELECT * FROM LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_NOTA_FISCAL WHERE DB_NOTA_NRO = CAST (F2_DOC AS INT))"
+//	_oSQL:Log ()
+//	_aDados = aclone (_oSQL:Qry2Array ())
+//	For _nLinha := 1 To Len(_aDados)
+//		sf1 -> (dbgoto (_aDados [_nLinha, 1]))
+//		U_AtuMerc ("SF1", sf1 -> (recno ()))
+//	next
+//
+//	_oSQL := ClsSQL ():New ()
+//	_oSQL:_sQuery := ""
+//	_oSQL:_sQuery += " SELECT R_E_C_N_O_ "
+//	_oSQL:_sQuery += " FROM " + RetSQLName ("SF2")
+//	_oSQL:_sQuery += " WHERE F2_FILIAL = '" + xfilial ("SF2") + "'"  // Deixar esta opcao para poder ler os campos memo.
+//	_oSQL:_sQuery += " AND F2_EMISSAO >= '20150101'"  // DATA INICIA EXPORT P/ MERCANET
+////	_oSQL:_sQuery += " AND (F2_DOC like '%28305%' or F2_DOC like '%139308%' or F2_DOC like '%139289%')"
+//	_oSQL:_sQuery += " AND (F2_DOC like '%139289%')"
+//	//_oSQL:_sQuery += " AND NOT EXISTS (SELECT * FROM LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_NOTA_FISCAL WHERE DB_NOTA_NRO = CAST (F2_DOC AS INT))"
+//	_oSQL:Log ()
+//	_aDados = aclone (_oSQL:Qry2Array ())
+//	For _nLinha := 1 To Len(_aDados)
+//		sf2 -> (dbgoto (_aDados [_nLinha, 1]))
+//		U_AtuMerc ("SF2", sf2 -> (recno ()))
+//	next
+//
+//	_oSQL := ClsSQL ():New ()
+//	_oSQL:_sQuery := ""
+//	_oSQL:_sQuery += " SELECT R_E_C_N_O_ "
+//	_oSQL:_sQuery += " FROM " + RetSQLName ("SA1")
+//	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+//	_oSQL:_sQuery += " AND A1_FILIAL = '" + xfilial ("SA1") + "'"  // Deixar esta opcao para poder ler os campos memo.
+//	_oSQL:_sQuery += " AND EXISTS (SELECT *"
+//	_oSQL:_sQuery += "			   FROM " + RetSQLName ("SZN")	
+//	_oSQL:_sQuery += "			   WHERE SZN.ZN_CODEVEN = 'ALT001'"
+//	_oSQL:_sQuery += "			   AND SZN.ZN_ALIAS = 'SA1'"
+//	_oSQL:_sQuery += "			   AND SZN.ZN_DATA >= '20190801'"
+//	_oSQL:_sQuery += "			   AND SZN.ZN_USUARIO IN ('ADMINISTRADOR', 'robert.koch')"
+//	_oSQL:_sQuery += "			   AND SZN.ZN_PILHA LIKE '%BATLIMCR%'"
+//	_oSQL:_sQuery += "			   AND SZN.ZN_CLIENTE = SA1.A1_COD"
+//	_oSQL:_sQuery += "			   AND SZN.ZN_LOJACLI = SA1.A1_LOJA)
+//	_oSQL:Log ()
+//	_aDados = aclone (_oSQL:Qry2Array ())
+//	For _nLinha := 1 To Len(_aDados)
+//		sa1 -> (dbgoto (_aDados [_nLinha, 1]))
+//		U_LOG (SA1 -> A1_COD)
+//		U_AtuMerc ("SA1", sa1 -> (recno ()))
+//	next
+//
+//	se4 -> (dbgotop ())
+//	do while ! se4 -> (eof ())
+//		U_AtuMerc ("SE4", se4 -> (recno ()))
+//		se4 -> (dbskip ())
+//	enddo
+return
+*/
+/*
 	// Testes verificacoes genericas.
 	// _oVerif := ClsVerif():New (25)
 	// _oVerif:SetParam ('01', '2017')
@@ -3155,100 +3257,6 @@ RETURN
 	endif
 */
 /*
-// Envia atualizacoes para o Mercanet
-//	_oSQL := ClsSQL ():New ()
-//	_oSQL:_sQuery := ""
-//   	_oSQL:_sQuery += " SELECT R_E_C_N_O_ "
-//	_oSQL:_sQuery += " FROM " + RetSQLName ("SB1")
-//	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-//	_oSQL:_sQuery += " AND B1_FILIAL = '" + xfilial ("SB1") + "'"  // Deixar esta opcao para poder ler os campos memo.
-//	_oSQL:_sQuery += " AND B1_COD IN ('0345', '0215')"
-//	_oSQL:Log ()
-//	_aDados = aclone (_oSQL:Qry2Array ())
-//	For _nLinha := 1 To Len(_aDados)
-//		sb1 -> (dbgoto (_aDados [_nLinha, 1]))
-//		U_AtuMerc ("SB1", sb1 -> (recno ()))
-//	next
-//	da0 -> (dbgotop ())
-//	do while ! da0 -> (eof ())
-//		if alltrim (da0 -> da0_codtab) $ '722'
-//			U_AtuMerc ("DA0", da0 -> (recno ()))
-//		endif
-//		da0 -> (dbskip ())
-//	enddo
-//	_oSQL := ClsSQL ():New ()
-//	_oSQL:_sQuery := ""
-//   	_oSQL:_sQuery += " SELECT R_E_C_N_O_ "
-//	_oSQL:_sQuery += " FROM " + RetSQLName ("SA3")
-//	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-//	_oSQL:_sQuery += " AND A3_FILIAL = '" + xfilial ("SA3") + "'"  // Deixar esta opcao para poder ler os campos memo.
-//	_oSQL:_sQuery += " AND A3_COD BETWEEN '291' and '298'"
-//	_oSQL:Log ()
-//	_aDados = aclone (_oSQL:Qry2Array ())
-//	For _nLinha := 1 To Len(_aDados)
-//		sa3 -> (dbgoto (_aDados [_nLinha, 1]))
-//		U_LOG (SA3 -> A3_COD)
-//		U_AtuMerc ("SA3", sa3 -> (recno ()))
-//	next
-
-//	_oSQL := ClsSQL ():New ()
-//	_oSQL:_sQuery := ""
-//	_oSQL:_sQuery += " SELECT R_E_C_N_O_ "
-//	_oSQL:_sQuery += " FROM " + RetSQLName ("SF1")
-//	_oSQL:_sQuery += " WHERE F1_FILIAL = '" + xfilial ("SF1") + "'"  // Deixar esta opcao para poder ler os campos memo.
-//	_oSQL:_sQuery += " AND F1_EMISSAO >= '20150101'"  // DATA INICIA EXPORT P/ MERCANET
-//	_oSQL:_sQuery += " AND (F1_DOC like '%28305%')"
-//	_oSQL:_sQuery += " AND F1_SERIE = '1  '"
-//	//_oSQL:_sQuery += " AND NOT EXISTS (SELECT * FROM LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_NOTA_FISCAL WHERE DB_NOTA_NRO = CAST (F2_DOC AS INT))"
-//	_oSQL:Log ()
-//	_aDados = aclone (_oSQL:Qry2Array ())
-//	For _nLinha := 1 To Len(_aDados)
-//		sf1 -> (dbgoto (_aDados [_nLinha, 1]))
-//		U_AtuMerc ("SF1", sf1 -> (recno ()))
-//	next
-
-//	_oSQL := ClsSQL ():New ()
-//	_oSQL:_sQuery := ""
-//	_oSQL:_sQuery += " SELECT R_E_C_N_O_ "
-//	_oSQL:_sQuery += " FROM " + RetSQLName ("SF2")
-//	_oSQL:_sQuery += " WHERE F2_FILIAL = '" + xfilial ("SF2") + "'"  // Deixar esta opcao para poder ler os campos memo.
-//	_oSQL:_sQuery += " AND F2_EMISSAO >= '20150101'"  // DATA INICIA EXPORT P/ MERCANET
-////	_oSQL:_sQuery += " AND (F2_DOC like '%28305%' or F2_DOC like '%139308%' or F2_DOC like '%139289%')"
-//	_oSQL:_sQuery += " AND (F2_DOC like '%139289%')"
-//	//_oSQL:_sQuery += " AND NOT EXISTS (SELECT * FROM LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_NOTA_FISCAL WHERE DB_NOTA_NRO = CAST (F2_DOC AS INT))"
-//	_oSQL:Log ()
-//	_aDados = aclone (_oSQL:Qry2Array ())
-//	For _nLinha := 1 To Len(_aDados)
-//		sf2 -> (dbgoto (_aDados [_nLinha, 1]))
-//		U_AtuMerc ("SF2", sf2 -> (recno ()))
-//	next
-
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT R_E_C_N_O_ "
-	_oSQL:_sQuery += " FROM " + RetSQLName ("SA1")
-	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-	_oSQL:_sQuery += " AND A1_FILIAL = '" + xfilial ("SA1") + "'"  // Deixar esta opcao para poder ler os campos memo.
-	_oSQL:_sQuery += " AND EXISTS (SELECT *"
-	_oSQL:_sQuery += "			   FROM " + RetSQLName ("SZN")	
-	_oSQL:_sQuery += "			   WHERE SZN.ZN_CODEVEN = 'ALT001'"
-	_oSQL:_sQuery += "			   AND SZN.ZN_ALIAS = 'SA1'"
-	_oSQL:_sQuery += "			   AND SZN.ZN_DATA >= '20190801'"
-	_oSQL:_sQuery += "			   AND SZN.ZN_USUARIO IN ('ADMINISTRADOR', 'robert.koch')"
-	_oSQL:_sQuery += "			   AND SZN.ZN_PILHA LIKE '%BATLIMCR%'"
-	_oSQL:_sQuery += "			   AND SZN.ZN_CLIENTE = SA1.A1_COD"
-	_oSQL:_sQuery += "			   AND SZN.ZN_LOJACLI = SA1.A1_LOJA)
-	_oSQL:Log ()
-	_aDados = aclone (_oSQL:Qry2Array ())
-	For _nLinha := 1 To Len(_aDados)
-		sa1 -> (dbgoto (_aDados [_nLinha, 1]))
-		U_LOG (SA1 -> A1_COD)
-		U_AtuMerc ("SA1", sa1 -> (recno ()))
-	next
-return
-*/
-
-/*
 	_aLaudos := {}
 	aadd (_aLaudos, {'000002424', 50})
 	aadd (_aLaudos, {'000002420', 100})
@@ -3257,13 +3265,6 @@ return
 	U_ZAFM (_aLaudos, '2203           ', 'op', 'novolote', '03')
 return
 */
-//	U_LibOpPr ('09632001001   ', '09632001001   ')
-//	U_LibOpPr ('09631301001   ', '09631301001   ')
-	//U_LibOpPr ('09631601001   ', '09631601001   ')
-	//U_LibOpPr ('09631701001   ', '09631701001   ')
-
-
-
 /*
 	// Gera entrada na conta corrente do associado, com base nos titulos gerados no financeiro para as notas de compra de safra.
 	_sSafra = '2018'

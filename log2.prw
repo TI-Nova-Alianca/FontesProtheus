@@ -36,9 +36,9 @@ user function Log2 (_sTipo, _xDado, _xExtra)
 	if ! 'ERRO' $ _sTipo
 		_sTipo = Capital (_sTipo)
 	endif
-	_sTextoLog += '[' + padc (_sTipo, 5, ' ') + '] '  // + ' ; '
+	_sTextoLog += '[' + padc (_sTipo, 5, ' ') + ']'  // + ' ; '
 	//_sTextoLog += dtoc (date ()) + ' ' + time () + ' '  // + ' ; '
-	_sTextoLog += substr (_sDataLog, 1, 4) + '-' + substr (_sDataLog, 5, 2) + '-' + substr (_sDataLog, 7, 2) + ' '
+	_sTextoLog += substr (_sDataLog, 1, 4) + '-' + substr (_sDataLog, 5, 2) + '-' + substr (_sDataLog, 7, 2)// + ' '
 	_sTextoLog += strtran (TimeFull (), '.', ',') + ' '
 	_sTextoLog += '[' + GetEnvServer () + ']'
 	_sTextoLog += '[F' + iif (type ('cFilAnt') == 'C', cFilAnt, '  ') + ']'  // + ' ; '

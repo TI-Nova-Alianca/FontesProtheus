@@ -26,20 +26,19 @@
 //                     - Geracao de logs mais resumidos.
 // 10/09/2020 - Robert - Ignora notas especie 'ND' no teste de notas de devolucao que nao deveriam estar no Mercanet.
 //                     - Inseridas tags para catalogo de fontes.
+// 07/10/2020 - Robert - Exportacao de titulos limitada de 365 para 180 dias retroativos.
+//                     - Melhorados logs.
 //
 
 // --------------------------------------------------------------------------
 user function BatMercN (_nQtDias)
-//	local _sArqLog2  := iif (type ("_sArqLog") == "C", _sArqLog, "")
 	local _oSQL      := NIL
 	local _nLock     := 0
 	local _lContinua := .T.
 	local _aDados    := {}
 	local _nLinha    := 0
 	
-//	_sArqLog := procname () + "_" + dtos (date ()) + ".log"
-	u_logIni ()
-	u_logDH ()
+	u_log2 ('info', 'Iniciando ' + procname ())
 
 	_oBatch:Retorno = 'N'
 
@@ -47,7 +46,7 @@ user function BatMercN (_nQtDias)
 	if _lContinua
 		_nLock := U_Semaforo (procname (1) + procname ())
 		if _nLock == 0
-			u_log ("Bloqueio de semaforo.")
+			u_log2 ('aviso', "Bloqueio de semaforo.")
 			_oBatch:Mensagens += "Bloqueio de semaforo."
 			_lContinua = .F.
 		endif
@@ -62,7 +61,7 @@ user function BatMercN (_nQtDias)
 		_oSQL:_sQuery += " AND F4_FILIAL = '" + xfilial ("SF4") + "'"  // Deixar esta opcao para poder ler os campos memo.
 		_oSQL:Log ()
 		_aDados = aclone (_oSQL:Qry2Array ())
-		u_log ('TES: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
+		u_log2 ('info', 'TES: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
 		For _nLinha := 1 To Len(_aDados)
 			sf4 -> (dbgoto (_aDados [_nLinha, 1]))
 			U_AtuMerc ("SF4", sf4 -> (recno ()))
@@ -87,10 +86,9 @@ user function BatMercN (_nQtDias)
 		_oSQL:_sQuery += " ORDER BY R_E_C_N_O_"
 		_oSQL:Log ()
 		_aDados = aclone (_oSQL:Qry2Array ())
-		u_log ('NF faturamento: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
+		u_log2 ('info', 'NF faturamento: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
 		For _nLinha := 1 To Len(_aDados)
 			SF2 -> (dbgoto (_aDados [_nLinha, 1]))
-//			u_log (sf2 -> f2_doc, sf2 -> f2_emissao)
 			U_AtuMerc ("SF2", sf2 -> (recno ()))
 		next
 	endif
@@ -116,10 +114,9 @@ user function BatMercN (_nQtDias)
 		_oSQL:_sQuery +=  " ORDER BY R_E_C_N_O_"
 		_oSQL:Log ()
 		_aDados = aclone (_oSQL:Qry2Array ())
-		u_log ('NF fatur. que NAO deveriam estar no Mercanet: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
+		u_log2 ('info', 'NF fatur. que NAO deveriam estar no Mercanet: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
 		For _nLinha := 1 To Len(_aDados)
 			SF2 -> (dbgoto (_aDados [_nLinha, 1]))
-		//	u_log (sf2 -> f2_doc, sf2 -> f2_emissao)
 			U_AtuMerc ("SF2", sf2 -> (recno ()))
 		next
 	endif
@@ -160,10 +157,9 @@ user function BatMercN (_nQtDias)
 		_oSQL:Log ()
 		
 		_aDados = aclone (_oSQL:Qry2Array ())
-		u_log ('NF devol.: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
+		u_log2 ('info', 'NF devol.: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
 		For _nLinha := 1 To Len(_aDados)
 			SF1 -> (dbgoto (_aDados [_nLinha, 1]))
-//			u_log (sf1 -> f1_doc, sf1 -> f1_dtdigit)
 			U_AtuMerc ("SF1", sf1 -> (recno ()))
 		next
 	endif
@@ -200,10 +196,9 @@ user function BatMercN (_nQtDias)
 		_oSQL:_sQuery +=  " ORDER BY R_E_C_N_O_"
 		_oSQL:Log ()
 		_aDados = aclone (_oSQL:Qry2Array ())
-		u_log ('NF devol. que NAO deveriam estar no Mercanet: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
+		u_log2 ('info', 'NF devol. que NAO deveriam estar no Mercanet: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
 		For _nLinha := 1 To Len(_aDados)
 			SF1 -> (dbgoto (_aDados [_nLinha, 1]))
-//			u_log (sf1 -> f1_doc, sf1 -> f1_dtdigit)
 			U_AtuMerc ("SF1", sf1 -> (recno ()))
 		next
 	endif
@@ -257,15 +252,15 @@ user function BatMercN (_nQtDias)
 		_oSQL:_sQuery += "	AND  SE5A.E5_RECPAG = 'R'"
 		_oSQL:_sQuery += "	AND  SE5A.E5_DATA  >= '20180101'"
 		
-		_oSQL:_sQuery += "	AND  SE5A.E5_DATA  >= '" + dtos (date () - 365) + "'"  // Robert 08/06/2020
+	//	_oSQL:_sQuery += "	AND  SE5A.E5_DATA  >= '" + dtos (date () - 365) + "'"  // Robert 08/06/2020
+		_oSQL:_sQuery += "	AND  SE5A.E5_DATA  >= '" + dtos (date () - 180) + "'"
 		
 		_oSQL:Log ()
 		
 		_aDados = aclone (_oSQL:Qry2Array ())
-		u_log ('Baixas titulos a receber: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
+		u_log2 ('info', 'Baixas titulos a receber: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
 		For _nLinha := 1 To Len(_aDados)
 			SE5 -> (dbgoto (_aDados [_nLinha, 1]))
-//			u_log (se5 -> e5_numero, se5 -> e5_prefixo, se5 -> e5_parcela)
 			U_AtuMerc ("SE5", se5 -> (recno ()))
 		next
 		
@@ -299,10 +294,9 @@ user function BatMercN (_nQtDias)
 		_oSQL:Log ()
 		
 		_aDados = aclone (_oSQL:Qry2Array ())
-		u_log ('Titulos a receber: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
+		u_log2 ('info', 'Titulos a receber: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
 		For _nLinha := 1 To Len(_aDados)
 			SE1 -> (dbgoto (_aDados [_nLinha, 1]))
-//			u_log (se1 -> e1_num, se1 -> e1_prefixo, se1 -> e1_parcela)
 			U_AtuMerc ("SE1", se1 -> (recno ()))
 		next
 		
@@ -324,14 +318,12 @@ user function BatMercN (_nQtDias)
 		_oSQL:_sQuery += "			AND SE1.E1_TIPO COLLATE database_default = CR01_TIPODOC"
 		_oSQL:_sQuery += "			   )"
 		_oSQL:_sQuery += "  WHERE CR01_EMPRESA = '01'"
-		
 		_oSQL:Log ()
 		
 		_aDados = aclone (_oSQL:Qry2Array ())
-		u_log ('Titulos a receber que NAO deveriam estar no Mercanet: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
+		u_log2 ('info', 'Titulos a receber que NAO deveriam estar no Mercanet: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
 		For _nLinha := 1 To Len(_aDados)
 			SE1 -> (dbgoto (_aDados [_nLinha, 1]))
-//			u_log (se1 -> (recno()))
 			U_AtuMerc ("SE1", se1 -> (recno ()))
 		next
 		
@@ -346,6 +338,5 @@ user function BatMercN (_nQtDias)
 		U_Semaforo (_nLock)
 	endif
 
-	u_logFim ()
-	_sArqLog = _sArqLog2
+	u_log2 ('info', 'Finalizando ' + procname ())
 return .T.

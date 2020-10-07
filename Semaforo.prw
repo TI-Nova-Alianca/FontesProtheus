@@ -6,18 +6,27 @@
 //            (gerado pela propria funcao) para ser desbloqueado. Cuidado com a string
 //            de identificacao, pois serah usada no nome do arquivo de lock.
 //
-//            Ex.:
+//            Exemplo de uso:
 //            user function teste ()
 //               local _nLock := U_Semaforo ("TESTE_DE_LOCK")
 //               // ... procedimentos ...
 //               U_Semaforo (_nLock)
 //            return
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Gera arquivo de semaforo para controle de acesso concorrente a rotinas especificas.
+// #PalavasChave      #controle_semaforo
+// #TabelasPrincipais 
+// #Modulos           #todos_modulos
+
 // Historico de alteracoes:
 // 12/11/2008 - Robert - Criada opcao de trabalhar sem interface com o usuario.
 // 24/10/2010 - Robert - Passa a usar a funcao u_help para mostrar mensagens.
 // 18/11/2016 - Robert - Incluidos ambiente e porta do servico no arquivo de lock e na mensagem para usuario.
 //                     - Passa a usar a funcao U_MsgYesNo em lugar da MsgYesNo, de forma que sempre poderia ser chamado com _lComTela=.T.
+// 07/10/2020 - Robert - Inseridas tags para catalogo de fontes
+//                     - Melhorados logs.
 //
 
 #include "fileio.ch"
@@ -45,7 +54,7 @@ User Function Semaforo (_xParam, _lComTela)
 		FClose (_xParam)
 		return 0
 	else
-		u_help ("Programa " + procname () + " recebeu parametro incorreto da funcao " + procname (1))
+		u_help ("Programa " + procname () + " recebeu parametro incorreto da funcao " + procname (1),, .t.)
 		return 0
 	endif
 	
@@ -53,7 +62,7 @@ User Function Semaforo (_xParam, _lComTela)
 	if ! file (_sArq)
 		_nHdl = FCreate (_sArq)
 		if _nHdl == -1
-			u_help ("Erro na criacao do arquivo de semaforo " + _sArq)
+			u_help ("Erro na criacao do arquivo de semaforo " + _sArq,, .t.)
 			return 0
 		else
 			FClose (_nHdl)
@@ -68,7 +77,7 @@ User Function Semaforo (_xParam, _lComTela)
 		if _nHdl == -1  // Nao consegui abrir para gravacao.
 			_nHdl = FOpen (_sArq, FO_READ + FO_SHARED)
 			if _nHdl == -1
-				u_help ("Processo '" + _sProcesso + "' bloqueado. Nao foi possivel abrir o arquivo de bloqueio para saber qual o usuario que esta' bloqueando. Nome do arquivo: " + _sArq)
+				u_help ("Processo '" + _sProcesso + "' bloqueado. Nao foi possivel abrir o arquivo de bloqueio para saber qual o usuario que esta' bloqueando. Nome do arquivo: " + _sArq,, .t.)
 				return 0
 			else
 				_sMsg := "Processo '" + _sProcesso + "' bloqueado." + chr (13) + chr (10) + chr (13) + chr (10)
@@ -82,7 +91,7 @@ User Function Semaforo (_xParam, _lComTela)
 				if _lComTela
 					_lTenta = U_MsgYesNo (_sMsg + "Deseja tentar novamente?")
 				else
-					u_log (_sMsg)
+					u_log2 ('aviso', _sMsg)
 					_lTenta = .F.
 				endif
 				FClose (_nHdl)
