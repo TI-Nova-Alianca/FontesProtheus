@@ -92,6 +92,7 @@ Static Function _Gera()
     _oSQL:_sQuery += "	    WHERE ST8.T8_FILIAL = STN.TN_FILIAL "
     _oSQL:_sQuery += "       AND ST8.T8_CODOCOR = STN.TN_SOLUCAO) AS SOLUCAO "*/
  	_oSQL:_sQuery += " ,SB1.B1_DESC AS RECURSO "
+	_oSQL:_sQuery += " ,T9_CCUSTO CENTRO_DE_CUSTO"
 	_oSQL:_sQuery += " ,REPLACE (REPLACE(REPLACE(REPLACE(CAST(RTRIM(CAST(STJ.TJ_OBSERVA AS VARBINARY (8000))) AS VARCHAR (8000)) , char(13), ''), char(10), ''), char(14), ''),',','') AS OBSERVACAO "
 	_oSQL:_sQuery +=  " FROM " + RetSQLName ("STJ") + " STJ "
 	_oSQL:_sQuery +=  " left join " + RetSQLName ("STL") + " STL "
