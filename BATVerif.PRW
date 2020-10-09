@@ -44,7 +44,7 @@ user function BatVerif ()
 
 						// Prepara mensagem em formato HTM para envio por e-mail.
 						_sMsg := _oVerif:ConvHTM (50)  // Converte poucas linhas para os e-mails nao ficarem pesados demais.
-						
+						/*
 						// Envia aos setores interessados.
 						if 'ENG' $ _oVerif:Setores
 							_Envia (_oVerif, {'070'}, _sMsg)
@@ -64,6 +64,7 @@ user function BatVerif ()
 						if 'CML' $ _oVerif:Setores
 							_Envia (_oVerif, {'003'}, _sMsg)
 						endif
+						*/
 						if 'INF' $ _oVerif:Setores
 							_Envia (_oVerif, {'122'}, _sMsg)
 						endif

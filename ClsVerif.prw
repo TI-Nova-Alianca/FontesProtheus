@@ -43,6 +43,8 @@
 // 14/05/2020 - Robert  - Ajustes consulta totais safras e verificacoes de lctos padrao.
 // 06/10/2020 - Robert  - Criadas verificacoes 69 a 72
 //                      - Inseridas tags para catalogo de fontes.
+// 08/10/2020 - Robert  - Verificacao SD5 x SD3 nao considerava D5_LOTECTL = D3_LOTECTL.
+//                      - Passa a enviar a query junto no e-mail, para ajudar em testes posteriores.
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -134,6 +136,9 @@ METHOD ConvHTM (_nMaxLin) Class ClsVerif
 
 	if ! empty (::Sugestao)
 		_sRet += chr (13) + chr (10) + alltrim (::Sugestao) + chr (13) + chr (10)
+	endif
+	if ! empty (::Query)
+		_sRet += chr (13) + chr (10) + 'Query para verificacao: ' + alltrim (::Query) + chr (13) + chr (10)
 	endif
 
 Return _sRet
@@ -1456,6 +1461,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=   " AND D5_PRODUTO = D3_COD"
 			::Query +=   " AND D5_DATA    = D3_EMISSAO"
 			::Query +=   " AND D5_ORIGLAN = D3_TM"
+			::Query +=   " AND D5_LOTECTL = D3_LOTECTL"
 			::Query +=   " AND D5_DOC     = D3_DOC"
 			::Query +=   " AND D5_NUMSEQ  = D3_NUMSEQ)"
 			::Query += " WHERE QT_SD3 != QT_SD5"
@@ -2913,6 +2919,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=  " FROM VA_USR_GRUPOS"
 			::Query +=  " WHERE TIPO_GRUPO = 'CFG'"
 			::Query +=    " AND (DIRETORIO_IMPRESSAO != 'C:\TEMP\SPOOL_PROTHEUS\' OR AMBIENTE_IMPRESSAO != 'CLIENTE')"
+			::Query +=  " ORDER BY ID_GRUPO"
 
 		case ::Numero == 71
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
@@ -2925,6 +2932,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=        " AND G.TIPO_GRUPO = AG.TIPO_ACESSO)"
 			::Query += " WHERE AG.TIPO_ACESSO = 'CFG'"
 			::Query +=   " AND G.GRUPO LIKE 'Modulos%'"
+			::Query += " ORDER BY G.ID_GRUPO"
 
 		case ::Numero == 72
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
@@ -2939,8 +2947,44 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=       " ON (G.TIPO_GRUPO = AG.TIPO_ACESSO"
 			::Query +=       " AND G.ID_GRUPO = AG.ID_GRUPO)"
 			::Query +=  " WHERE AG.TIPO_ACESSO = 'CFG' AND AG.ACESSO IN ('121')"
+			::Query +=  " ORDER BY AG.ID_GRUPO, AG.ACESSO"
 
-		otherwise 
+		case ::Numero == 73
+			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+			::Setores    = 'INF'
+			::Descricao  = 'Usuarios: Usuario nao deveria ter acesso a configurar data base. Deve ser um acesso dos grupos.'
+			::Query := "SELECT ID_USR, NOME"
+			::Query +=  " FROM VA_USR_USUARIOS"
+			::Query += " WHERE CONFIGURA_DATA_BASE = 'S'"
+			::Query +=   " AND BLOQUEADO != 'S'"
+			::Query += " ORDER BY ID_USR"
+
+		case ::Numero == 74
+			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+			::Setores    = 'INF'
+			::Descricao  = 'Usuarios: Usuario nao deveria ter ACESSOS ligados a ele. Os ACESSOS deveriam ser dados aos grupos.'
+			::Query := "SELECT ID_USR, NOME, ORIGEM_ACESSO"
+			::Query +=  " FROM VA_VUSR_ACESSOS_USUARIO"
+			::Query += " WHERE REGRA_GRUPO = 'S'"
+			::Query +=   " AND UPPER (ORIGEM_ACESSO) LIKE '%ACESSOS DO USUARIO%'"
+			::Query += " ORDER BY ID_USR"
+
+		case ::Numero == 75
+			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+			::Setores    = 'INF'
+			::Descricao  = 'Grupos: Todos os grupos genericos deveriam ter estes acessos.'
+			::Query := "SELECT G.TIPO_GRUPO, G.ID_GRUPO, G.GRUPO, G.DESCRICAO"
+			::Query +=  " FROM VA_USR_GRUPOS G"
+			::Query += " WHERE G.TIPO_GRUPO = 'CFG'"
+			::Query +=   " AND G.ID_GRUPO = '000102'"  // Por enquanto este eh o unico grupo geral, ao qual todos pertencem.
+			::Query +=   " AND NOT EXISTS (SELECT *"
+			::Query +=                     " FROM VA_USR_ACESSOS_POR_GRUPO AG"
+			::Query +=                    " WHERE AG.TIPO_ACESSO = 'CFG'"
+			::Query +=                      " AND AG.ID_GRUPO = G.ID_GRUPO"
+			::Query +=                      " AND AG.ACESSO = '108')"  // Por enquanto este eh o unico acesso que entendo que todos precisariam ter.
+			::Query += " ORDER BY G.ID_GRUPO"
+
+		otherwise
 			::UltMsg = "Verificacao numero " + cvaltochar (::Numero) + " nao definida."
 	endcase
 	//u_logFim (GetClassName (::Self) + '.' + procname ())
