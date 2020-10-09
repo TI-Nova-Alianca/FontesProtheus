@@ -36,9 +36,9 @@ Static Function ReportDef()
 	Local oSection3:= Nil
 	Local oSection4:= Nil
 	Local oSection5:= Nil
-	Local oBreak
-	Local oFunction
-	Local oBreak1
+	//Local oBreak
+	//Local oFunction
+	//Local oBreak1
 
 	oReport := TReport():New("ML_LOJPGT","Movimentos diários",cPerg,{|oReport| PrintReport(oReport)},"Movimentos diários")
 	

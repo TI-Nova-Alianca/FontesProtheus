@@ -41,6 +41,8 @@ user function ZAXVAL()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _oEvento := NIL
 
+// TESTER AQUI SE O CLIENTE NÃO TEM RAPEL
+
 	// verifica cliente bloqueado
 	if _lRet
 		if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->ZAX_CLIENT + m->ZAX_LOJA, "A1_MSBLQL") != "2"
@@ -83,3 +85,4 @@ user function ZAXVAL()
 	
 	U_ML_SRArea (_aAreaAnt)
 return _lRet
+
