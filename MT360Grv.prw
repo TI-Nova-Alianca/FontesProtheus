@@ -2,7 +2,7 @@
 // Autor:     Robert Koch
 // Data:      10/11/2016
 // Descricao: P.E. apos a confirmacao da inclusao e alteracao de cadastro de cond.pagto.
-//            Criado inicialmente para enviar atualizacao para sistema Mercador.
+//            Criado inicialmente para enviar atualizacao para sistema Mercanet.
 
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Ponto_de_entrada
@@ -18,7 +18,7 @@
 
 // --------------------------------------------------------------------------
 user function MT360Grv ()
-	if se4 -> e4_vaexmer == 'S'
-		U_AtuMerc ('SE4', se4 -> (recno ()))
-	endif
+// deve enviar independente do conteudo --->	if se4 -> e4_vaexmer == 'S'
+	U_AtuMerc ('SE4', se4 -> (recno ()))
+//	endif
 return
