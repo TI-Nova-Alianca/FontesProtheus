@@ -3,12 +3,21 @@
 // Data.......: 09/12/2014
 // Descricao..: P.E. para validar o estorno do apontamento de producao.
 //              Criado inicialmente para integracao com Fullsoft.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #Valida se vai permitir o estorno de apontamento de OP.
+// #PalavasChave      #estorno_apontamento_OP #FULLWMS # ordem_de_producao
+// #TabelasPrincipais #SD3
+// #Modulos           #PCP #EST
+
 // Historico de alteracoes:
-// 17/08/2018 - Robert - Grava evento quando envolver FullWMS.
-// 28/05/2019 - Andre  - Adicionado validacao que não permite exclusao do apontamento sem antes excluir movimento de guarda.
-// 13/06/2019 - Robert - Verificava movimento de 'guarda' da etiqueta mesmo quando etiqueta vazia.
+// 17/08/2018 - Robert  - Grava evento quando envolver FullWMS.
+// 28/05/2019 - Andre   - Adicionado validacao que não permite exclusao do apontamento sem antes excluir movimento de guarda.
+// 13/06/2019 - Robert  - Verificava movimento de 'guarda' da etiqueta mesmo quando etiqueta vazia.
 // 27/08/2019 - Cláudia - Incluida rotina _LibEst(liberar estorno) para verificar se usuário tem permissão para executar o processo.
+// 15/10/2020 - Robert  - Validacao de acesso do usuario passa a ser feita antes de verificar o FullWMS (mais demorado).
+//                      - Incluidas tags para catalogo de fontes.
 //
 
 // ----------------------------------------------------------------
@@ -17,13 +26,17 @@ user function MT250Est ()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _aAmbAnt  := U_SalvaAmb ()
 
+	if ! U_ZZUVL ('090', __cUserId, .T.)
+		_lRet = .F.
+	endif
+
 	if _lRet
 		_lRet = _VerFull ()
 	endif
 	
-	if _lRet
-		_lRet = _LibEst ()
-	endif
+//	if _lRet
+//		_lRet = _LibEst ()
+//	endif
 
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
@@ -104,11 +117,11 @@ static function _VerFull ()
 	u_logFim ()
 return _lRet
 //
-static function _LibEst ()
-	local _lRet      := .T.
-	
-	if ! U_ZZUVL ('090', __cUserId, .F.) 
-		u_help ("Usuário sem permissão para estorno de estoque")
-		_lRet = .F.
-	endif
-return _lRet
+//static function _LibEst ()
+//	local _lRet      := .T.
+//	
+//	if ! U_ZZUVL ('090', __cUserId, .F.)
+//		u_help ("Usuário sem permissão para estorno de estoque")
+//		_lRet = .F.
+//	endif
+//return _lRet
