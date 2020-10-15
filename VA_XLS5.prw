@@ -76,7 +76,7 @@
 //						  as opcoes do campo F4_MARGEM.
 //                      - Inseridas tags para catalogacao de fontes
 // 05/10/2020 - Claudia - Incluido grupo para impressão simplificado. GLPI:8588 
-//
+// 13/10/2020 - Cláudia - Incluidas colunas na versao resumida, conforme GLPI: 8642
 // ---------------------------------------------------------------------------------------------------------------
 User Function VA_XLS5 (_lAutomat)
 	Local cCadastro  := "Exportacao geral de dados de faturamento para planilha"
@@ -173,6 +173,8 @@ Static Function _Opcoes (_sTipo)
 	_aOpcoes = {}
 	If _sTipo == 'P'
 		aadd (_aOpcoes, {.F., "Fat/bonif",                "CASE WHEN V.F4_MARGEM='1' THEN 'FATURADO' WHEN V.F4_MARGEM='2' THEN 'DEVOLUCAO' WHEN V.F4_MARGEM='3' THEN 'BONIFICADO' WHEN V.F4_MARGEM='4' THEN 'COMODATO' WHEN V.F4_MARGEM='5' THEN 'RET.COMODATO' WHEN V.F4_MARGEM='6' THEN 'FRETE' WHEN V.F4_MARGEM='7' THEN 'SERVICOS' WHEN V.F4_MARGEM='8' THEN 'USO E CONSUMO' WHEN V.F4_MARGEM='9' THEN 'NAO SE APLICA' ELSE V.F4_MARGEM END AS FAT_BONIF"})
+		aadd (_aOpcoes, {.F., "Filial",                   "SM0.M0_FILIAL AS FILIAL"})
+		aadd (_aOpcoes, {.F., "Emissao",                  "SUBSTRING (V.EMISSAO, 7, 2) + '/' + SUBSTRING (V.EMISSAO, 5, 2) + '/' + SUBSTRING (V.EMISSAO, 1, 4) AS EMISSAO"})
 		aadd (_aOpcoes, {.F., "Mes/ano emissao",          "SUBSTRING (V.EMISSAO, 5, 2) + '/' + SUBSTRING (V.EMISSAO, 1, 4) AS MES_EMIS"})
 		aadd (_aOpcoes, {.F., "Nome linha produtos",      "RTRIM(ISNULL(ZX5_39.ZX5_39DESC,'')) AS LINHA"})
 		aadd (_aOpcoes, {.F., "Codigo produto",           "V.PRODUTO AS CODIGO"})

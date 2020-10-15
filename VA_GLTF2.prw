@@ -14,6 +14,7 @@
 // 23/01/2019 - Andre   - Ajustado para botão visualizar levar notas de saída.
 // 19/09/2019 - Cláudia - Alterada tela para ler itens da nota e colunas conforme solicitação. GLPI: 6639
 // 01/10/2019 - Cláudia - Alterado campo F2_VAGUIA de 6 para 11 caracteres e ajustada a tela correspondente. 
+// 13/10/2020 - Claudia - Ajuste nas consultas para somarquantidade para mesmo produto e mesma nota. GLPI: 8640
 // 
 // -------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
@@ -75,12 +76,13 @@ User Function VA_GLTF2()
 
 		// gera arquivo dados - carrega arquivo de trabalho
 		_sSQL := " " 
-		_sSQL += " SELECT DISTINCT"
+		//_sSQL += " SELECT DISTINCT"
+		_sSQL += " SELECT "
 		_sSQL += " 	dbo.VA_DTOC(SD2.D2_EMISSAO) AS DT_EMISSAO"
 		_sSQL += "    ,SF2.F2_VAGUIA AS GUIA"
 		_sSQL += "    ,SD2.D2_COD AS PRODUTO"
 		_sSQL += "    ,SB1.B1_DESC AS DESCRICAO"
-		_sSQL += "    ,SD2.D2_QUANT AS QUANTIDADE"
+		_sSQL += "    ,SUM(SD2.D2_QUANT) AS QUANTIDADE"
 		_sSQL += "    ,SD2.D2_CLIENTE AS CLIENTE"
 		_sSQL += "    ,SF2.F2_LOJA AS LOJA"
 		_sSQL += "    ,IIF(SD2.D2_TIPO = 'N', SA1.A1_NOME, SA2.A2_NOME) AS NOME"
@@ -128,7 +130,19 @@ User Function VA_GLTF2()
 		else // acucar e borra seca
 			_sSQL += "     AND SD2.D2_GRUPO IN ('4001', '0603')"
 		endif	
-		
+		_sSQL += " 	GROUP BY SD2.D2_EMISSAO"
+		_sSQL += "    ,SF2.F2_VAGUIA" 
+		_sSQL += "    ,SD2.D2_COD" 
+		_sSQL += "    ,SB1.B1_DESC "
+		_sSQL += "    ,SD2.D2_CLIENTE "
+		_sSQL += "    ,SF2.F2_LOJA "
+		_sSQL += "    ,SD2.D2_DOC" 
+		_sSQL += "    ,SD2.D2_TIPO"
+		_sSQL += "    ,SA1.A1_NOME"
+		_sSQL += "    ,SA2.A2_NOME"
+		_sSQL += "    ,SD2.D2_SERIE "
+		_sSQL += "    ,SD2.D2_DTDIGIT"
+		u_log (_sSQL)  
 		aDados := U_Qry2Array(_sSQL)
 	
 		if len (aDados) > 0

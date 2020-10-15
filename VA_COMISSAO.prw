@@ -1,6 +1,6 @@
 //  Programa...: VA_COMISSAO
 //  Autor......: Cláudia Lionço
-//  Data.......: 07/11/2014
+//  Data.......: 25/06/2020
 //  Cliente....: Alianca
 //  Descricao..: Relatório de Comissoes - Reescrito para novo modelo TREPORT 
 //			     e alterações de verbas/comissões.

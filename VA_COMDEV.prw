@@ -20,6 +20,8 @@ User Function VA_COMDEV(_dtaIni, _dtaFin, _sVend)
     Local _oSQL    := ClsSQL ():New ()
 	Local _aRet    := {}
 
+    _dtaAnt := DaySub(_dtaFin,180) // diminui 6 meses
+
     _oSQL:_sQuery := ""
     _oSQL:_sQuery += " SELECT
     _oSQL:_sQuery += " 	   E5_DATA"
@@ -32,6 +34,34 @@ User Function VA_COMDEV(_dtaIni, _dtaFin, _sVend)
     _oSQL:_sQuery += "    ,A1_NOME"
     _oSQL:_sQuery += "    ,E5_VALOR"
     _oSQL:_sQuery += "    ,A1_VEND"
+    _oSQL:_sQuery += "    ,(SELECT"
+	_oSQL:_sQuery += " 			SUM(E1_COMIS1) / COUNT(*)"
+	_oSQL:_sQuery += " 		FROM " + RetSQLName ("SE1") + " SE1 "
+	_oSQL:_sQuery += " 		WHERE SE1.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " 		AND SE1.E1_CLIENTE = SE5.E5_CLIFOR"
+	_oSQL:_sQuery += " 		AND SE1.E1_LOJA = SE5.E5_LOJA"
+	_oSQL:_sQuery += " 		AND SE1.E1_COMIS1 <> 0"
+	_oSQL:_sQuery += " 		AND SE1.E1_VEND1 = '"+alltrim(_sVend)+"'"
+	_oSQL:_sQuery += " 		AND SE1.E1_EMISSAO BETWEEN '" + dtos(_dtaAnt) + "' AND '" + dtos(_dtaFin) + "'"
+	_oSQL:_sQuery += " 	)"
+	_oSQL:_sQuery += " 	AS PERCENTUAL"
+    _oSQL:_sQuery += "    ,E5_VALOR * (SELECT"
+	_oSQL:_sQuery += " 			SUM(E1_COMIS1) / COUNT(*)"
+	_oSQL:_sQuery += " 		FROM " + RetSQLName ("SE1") + " SE1 "
+	_oSQL:_sQuery += " 		WHERE SE1.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " 		AND SE1.E1_CLIENTE IN (SELECT"
+	_oSQL:_sQuery += " 				SA1.A1_COD"
+	_oSQL:_sQuery += " 			FROM " + RetSQLName ("SA1") + " SA1 "
+	_oSQL:_sQuery += " 			WHERE SA1. D_E_L_E_T_ = '' AND SA1.A1_VACBASE = (SELECT "
+	_oSQL:_sQuery += " 					SA11.A1_VACBASE "
+	_oSQL:_sQuery += " 				FROM " + RetSQLName ("SA1") + " SA11 "
+	_oSQL:_sQuery += " 				WHERE SA11. D_E_L_E_T_ = '' AND SA11.A1_COD = SE5.E5_CLIFOR "
+	_oSQL:_sQuery += " 				AND SA11.A1_LOJA = SE5.E5_LOJA))"
+	_oSQL:_sQuery += " 		AND SE1.E1_LOJA = SE5.E5_LOJA"
+	_oSQL:_sQuery += " 		AND SE1.E1_COMIS1 <> 0 "
+	_oSQL:_sQuery += " 		AND SE1.E1_VEND1 = '" + alltrim(_sVend) + "'"
+	_oSQL:_sQuery += " 		AND SE1.E1_EMISSAO BETWEEN '" + dtos(_dtaAnt) + "' AND '" + dtos(_dtaFin) + "')"
+	_oSQL:_sQuery += " 	/ 100 * -1 AS COMISSAO"
     _oSQL:_sQuery += " FROM " + RetSQLName ("SE5") + " SE5 "
     _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA1") + " SA1 "
     _oSQL:_sQuery += " 	ON (SA1.D_E_L_E_T_ = ''"

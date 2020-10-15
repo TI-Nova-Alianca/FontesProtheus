@@ -94,8 +94,9 @@ Static Function ReportDef()
 	TRCell():New(oSection4,"COLUNA3", 	"" ,"Parcela"		,						,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection4,"COLUNA4", 	"" ,"Cliente/Loja"	,						,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection4,"COLUNA5", 	"" ,"Nome"			,						,40,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection4,"COLUNA6", 	"" ,"Valor"			, "@E 999,999,999.99"   ,30,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-
+	TRCell():New(oSection4,"COLUNA6", 	"" ,"Valor Mov."	, "@E 999,999,999.99"   ,30,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection4,"COLUNA7", 	"" ,"% Comis.Médio"	, "@E 999.99"   		,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection4,"COLUNA8", 	"" ,"Comissão"		, "@E 999,999,999.99"   ,30,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 Return(oReport)
 //
 // -------------------------------------------------------------------------
@@ -364,10 +365,12 @@ Static Function PrintReport(oReport)
 				oSection4:Cell("COLUNA4")	:SetBlock   ({|| _aDev[_i,5] +"/"+ _aDev[_i,6] })
 				oSection4:Cell("COLUNA5")	:SetBlock   ({|| _aDev[_i,7] })
 				oSection4:Cell("COLUNA6")	:SetBlock   ({|| _aDev[_i,8] })
+				oSection4:Cell("COLUNA7")	:SetBlock   ({|| _aDev[_i,10] })
+				oSection4:Cell("COLUNA8")	:SetBlock   ({|| _aDev[_i,11] })
 				
 				oSection4:PrintLine()
 
-				_nTotDev += _aDev[_i,8] 
+				_nTotDev += _aDev[_i,11] 
 			Next
 
 			If Len(_aDev) > 0
@@ -410,6 +413,8 @@ Static Function PrintReport(oReport)
 			oReport:SkipLine(1) 
 			
 			_nLinha :=  oReport:Row()
+
+			// DESCONTA AS VERBAS
 			If _nVlrTVerbas < 0
 				_nVlrTVerbas = _nVlrTVerbas * -1
 				_nVlrCom:= _nTotComis - _nVlrTVerbas
@@ -418,7 +423,13 @@ Static Function PrintReport(oReport)
 			EndIf
 
 			// DESCONTA AS DEVOLUÇÕES
-			_nVlrCom := _nVlrCom - _nTotDev
+			If _nTotDev < 0
+				_nTotDev = _nTotDev * -1
+				_nVlrCom:= _nVlrCom - _nTotDev
+			Else
+				_nVlrCom:= _nVlrCom + _nTotDev
+			EndIf
+
 			
 			oReport:PrintText("COMISSÃO TOTAL:" ,_nLinha, 100)
 			oReport:PrintText(PADL('R$' + Transform(_nVlrCom, "@E 999,999,999.99"),20,' '),_nLinha, 900)

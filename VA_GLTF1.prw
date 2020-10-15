@@ -13,13 +13,13 @@
 // 19/09/2019 - Claudia - Incluido filtro e ajustada a ordem de colunas cforme solicitação do usuário. GLPI 6638
 // 01/10/2019 - Cláudia - Alterado campo F1_VAGUIA de 6 para 11 caracteres e ajustada a tela correspondente.      
 // 09/06/2020 - Robert  - Aumentados decimais gravacao F1_VADENS.
+// 13/10/2020 - Claudia - Ajuste nas consultas para somarquantidade para mesmo produto e mesma nota. GLPI: 8640
 //
-
 // ----------------------------------------------------------------------------------------------------------------
 User Function VA_GLTF1()  
 
 	Local _aCores     := U_GLTF1LG (.T.)
-	Local cArqTRB     := ""
+	//Local cArqTRB     := ""
 	Local aStruct     := {}
 	Local aHead       := {}
 	Local _aArqTrb    := {}
@@ -63,12 +63,13 @@ User Function VA_GLTF1()
 
 		// gera arquivo dados - carrega arquivo de trabalho
 		_sSQL := "" 
-		_sSQL += " SELECT DISTINCT "
+		//_sSQL += " SELECT DISTINCT "
+		_sSQL += " SELECT "
 		_sSQL += " 		 dbo.VA_DTOC(SD1.D1_EMISSAO) AS DT_EMISSAO"
 		_sSQL += "		,SF1.F1_VAGUIA AS GUIA"
 		_sSQL += "		,SD1.D1_COD AS PRODUTO"
 		_sSQL += "		,SB1.B1_DESC AS DESCRICAO"
-		_sSQL += "		,SD1.D1_QUANT AS QUANTIDADE"
+		_sSQL += "		,SUM(SD1.D1_QUANT) AS QUANTIDADE"
 		_sSQL += "		,SD1.D1_FORNECE AS FORNECEDOR"
 		_sSQL += "		,IIF(SD1.D1_TIPO = 'N', SA2.A2_NOME, SA1.A1_NOME) AS NOME"
 		_sSQL += "		,SD1.D1_DOC AS NOTA"
@@ -117,7 +118,20 @@ User Function VA_GLTF1()
 	    else // acucar e borra seca
 	    	_sSQL += "     AND SD1.D1_GRUPO IN ('4001','0603')"
 	    endif	
-		
+		_sSQL += " GROUP BY SD1.D1_EMISSAO"
+		_sSQL += " ,SF1.F1_VAGUIA"
+		_sSQL += " ,SD1.D1_COD"
+		_sSQL += " ,SB1.B1_DESC"
+		_sSQL += " ,SD1.D1_FORNECE"
+		_sSQL += " ,SD1.D1_TIPO"
+		_sSQL += " ,SA2.A2_NOME"
+		_sSQL += " ,SA1.A1_NOME"
+		_sSQL += " ,SD1.D1_DOC"
+		_sSQL += " ,SD1.D1_SERIE"
+		_sSQL += " ,SD1.D1_DTDIGIT"
+		_sSQL += " ,SF1.F1_VADENS"
+
+		u_log (_sSQL)  
 		aDados := U_Qry2Array(_sSQL)
 	
 		if len (aDados) > 0

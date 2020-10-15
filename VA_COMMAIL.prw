@@ -368,7 +368,9 @@ Static Function _GeraPDF_Email()
 				oPrint:Say(nLinha,0800, "Parcela" 	 			  	 ,oFont12n)
 				oPrint:Say(nLinha,1000, "Cliente/Loja" 	 			 ,oFont12n)
 				oPrint:Say(nLinha,1300, "Nome" 	 			 		 ,oFont12n)
-				oPrint:Say(nLinha,1900, "Valor" 	 			 	 ,oFont12n)
+				oPrint:Say(nLinha,1900, "Valor Mov." 	 			 ,oFont12n)
+				oPrint:Say(nLinha,2200, "% Comis.Médio" 	 		 ,oFont12n)
+				oPrint:Say(nLinha,2500, "Comissão" 	 		   		 ,oFont12n)
 				nLinha += 50
 			EndIf
 		EndIf
@@ -384,10 +386,12 @@ Static Function _GeraPDF_Email()
 				oPrint:Say(nLinha,1000, alltrim(_aDev[_y,5] +"/" + _aDev[_y,6]) 			,oFont12n)
 				oPrint:Say(nLinha,1300, alltrim(_aDev[_y,7]) 	 			  	 			,oFont12n)
 				oPrint:Say(nLinha,1900, TransForm( _aDev[_y,8] , '@E 9,999,999.99') 		,oFont12n)
+				oPrint:Say(nLinha,1900, TransForm( _aDev[_y,10] , '@E 999.99') 				,oFont12n)
+				oPrint:Say(nLinha,1900, TransForm( _aDev[_y,11] , '@E 9,999,999.99') 		,oFont12n)
 
 				nLinha += 50
 			EndIf
-			_nTotDev += _aDev[_y,8]
+			_nTotDev += _aDev[_y,11]
 					
 		Next
 		nLinha += 50
@@ -423,6 +427,7 @@ Static Function _GeraPDF_Email()
 		oPrint:Say(nLinha,0900,  PADL('R$' + Transform(_nTotDev, "@E 999,999,999.99"),20,' ')   	,oFont12n)
 		nLinha += 50
 		
+		// Desconta verbas
 		If _nVlrTVerbas < 0
 			_nVlrTVerbas = _nVlrTVerbas * -1
 			_nVlrCom:= _nTotComis - _nVlrTVerbas
@@ -431,7 +436,12 @@ Static Function _GeraPDF_Email()
 		EndIf
 		
 		// Descontas as devoluções
-		_nVlrCom := _nVlrCom - _nTotDev
+		If _nTotDev < 0
+			_nTotDev = _nTotDev * -1
+			_nVlrCom:= _nVlrCom - _nTotDev
+		Else
+			_nVlrCom:= _nVlrCom + _nTotDev
+		EndIf
 
 		oPrint:Say(nLinha,0150,  "COMISSÃO TOTAL:"													,oFont12n)
 		oPrint:Say(nLinha,0900,  PADL('R$' + Transform(_nVlrCom, "@E 999,999,999.99"),20,' ')   	,oFont12n)
