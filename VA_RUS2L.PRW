@@ -149,10 +149,11 @@ user function VA_RUS2L ()
 
 			// Cadastros viticolas recebidos antes de outubro do ano anterior nao sao considerados para a safra atual.
 //			u_log ('Data receb. fisico cad.vit:', _aCadVitic [_nVitic, .CadVitRecebFisico])
-			if _aCadVitic [_nVitic, .CadVitRecebFisico] < stod (tira1 (m->ze_safra) + '1001')
-				u_help ("O cadastro viticola '" + _aCadVitic [_nVitic, .CadVitCodigo] + "' foi recebido fisicamente pela ultima vez em " + dtoc (_aCadVitic [_nVitic, .CadVitRecebFisico]) + ". Solicite reapresentacao do mesmo.",, .t.)
-				_lRet = .F.
-			endif
+u_log2 ('aviso', 'Ver com Daiana onde validar se foi feito remapeamento (isso resolve a questao da entrega')
+//			if _aCadVitic [_nVitic, .CadVitRecebFisico] < stod (tira1 (m->ze_safra) + '1001')
+//				u_help ("O cadastro viticola '" + _aCadVitic [_nVitic, .CadVitCodigo] + "' foi recebido fisicamente pela ultima vez em " + dtoc (_aCadVitic [_nVitic, .CadVitRecebFisico]) + ". Solicite reapresentacao do mesmo.",, .t.)
+//				_lRet = .F.
+//			endif
 
 			if _aCadVitic [_nVitic, .CadVitOrganico] == "O" .and. _zx509orga != 'S'
 				u_help ("Nao ha previsao de recebimento de uvas organicas nesta balanca.",, .t.)

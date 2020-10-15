@@ -33,7 +33,7 @@ user function LePerg (_sUserID, _sGrupo)
 	local _nPerg     := 0
 	local _lContinua := .T.
 
-	u_logIni ()
+//	u_logIni ()
 	
 	if empty (_sUserID) .and. _lComTela
 		_sUserID = U_Get ("Codigo do usuario", 'C', 6, '', 'US1', space(6), .F., '.T.')
@@ -116,5 +116,5 @@ user function LePerg (_sUserID, _sGrupo)
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
+//	u_logFim ()
 return _aRet

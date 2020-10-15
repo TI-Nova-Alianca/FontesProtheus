@@ -12,6 +12,7 @@
 // #Modulos           #EST
 
 // Historico de alteracoes:
+// 15/10/2020 - Robert - Melhorados logs.
 //
 
 #XTranslate .CCCodigo        => 1
@@ -87,6 +88,7 @@ Static Function _MoveTe ()
 	local _aOP       := {}
 	local _nTotLitr  := 0
 	local _sUltReqD3 := ''
+	local _nCusto1   := 0
 
 	u_logSX1 ()
 
@@ -134,8 +136,8 @@ Static Function _MoveTe ()
 		// de custo, a maioria dos tratamentos neste programa eh igual.
 		if mv_par03 > 0
 			aadd (_aCC, afill (array (.CCQtColunas), 0))
-			_aCC [len (_aCC), .CCCodigo]        = 'COMPRAUVA'
-			_aCC [len (_aCC), .CCDescricao]     = 'Complemento compra uva'
+			_aCC [len (_aCC), .CCCodigo]        = 'PROVISAOUVA'
+			_aCC [len (_aCC), .CCDescricao]     = 'PROVISAO COMPRA UVA'
 			_aCC [len (_aCC), .CCTipoMovimento] = '304'
 			_aCC [len (_aCC), .CCSaldoSemGrupo] = mv_par03 * -1  // Como os CC tem saldo a debito, posteriormente o sinal vai ser invertido.
 		endif
@@ -202,7 +204,7 @@ Static Function _MoveTe ()
 		for _nCC = 1 to len (_aCC)
 
 			// Nao eh um CC, mas fica na array por ter outros tratamentos semelhantes.
-			if _aCC [_nCC, .CCCodigo] == 'COMPRAUVA'
+			if _aCC [_nCC, .CCCodigo] == 'PROVISAOUVA'
 				loop
 			endif
 
@@ -334,6 +336,7 @@ Static Function _MoveTe ()
 			_nSldGGF *= -1
 			_nSldSGru *= -1
 
+			U_LOG2 ('INFO', 'Valor a distribuir: ' + cvaltochar (_nADistr))
 			if _nADistr > 0
 
 				for _nOP = 1 to len (_aOP)
@@ -367,29 +370,34 @@ Static Function _MoveTe ()
 						endif
 					endif
 
-					// Temos um codigo de item especifico para este tipo de movimentacao.
-					u_log2 ('info', 'gravando ' + sb1 -> b1_cod + ' na OP ' + (_sAliasQ)->d3_op + ' TM ' + _aCC [_nCC, .CCTipoMovimento])
-					reclock ("SD3", .T.)
-					sd3 -> d3_filial  := xFilial("SD3")
-					sd3 -> d3_tm      := _aCC [_nCC, .CCTipoMovimento]
-					sd3 -> d3_cod     := sb1 -> b1_cod
-					sd3 -> d3_um      := sb1 -> b1_um
-					sd3 -> d3_quant   := 0
-					sd3 -> d3_custo1  := _aOP [_nOP, 3] * _nADistr / _nTotLitr
-					sd3 -> d3_cf      := (_sAliasQ)->d3_cf
-					sd3 -> d3_op      := (_sAliasQ)->d3_op
-					sd3 -> d3_local   := (_sAliasQ)->d3_local
-					sd3 -> d3_doc     := (_sAliasQ)->d3_doc
-					sd3 -> d3_emissao := (_sAliasQ)->d3_emissao
-					sd3 -> d3_grupo   := sb1 -> b1_grupo
-					sd3 -> d3_numseq  := (_sAliasQ)->d3_numseq
-					sd3 -> d3_tipo    := sb1 -> b1_tipo
-					sd3 -> d3_usuario := CUSERNAME
-					sd3 -> d3_chave   := (_sAliasQ)->d3_chave
-					sd3 -> d3_ident   := (_sAliasQ)->d3_ident
-					sd3 -> d3_vamotiv := "RATEIO CUSTOS " + alltrim (_aCC [_nCC, 2])
-					sd3 -> d3_vachvex := _sChaveSD3
-					msunlock ()
+					_nCusto1 = _aOP [_nOP, 3] * _nADistr / _nTotLitr
+
+					if _nCusto1 > 0
+						u_log2 ('info', 'gravando ' + sb1 -> b1_cod + ' na OP ' + (_sAliasQ)->d3_op + ' TM ' + _aCC [_nCC, .CCTipoMovimento] + ' $' + transform (_nCusto1, "@E 999,999,999,999.99999"))
+						reclock ("SD3", .T.)
+						sd3 -> d3_filial  := xFilial("SD3")
+						sd3 -> d3_tm      := _aCC [_nCC, .CCTipoMovimento]
+						sd3 -> d3_cod     := sb1 -> b1_cod
+						sd3 -> d3_um      := sb1 -> b1_um
+						sd3 -> d3_quant   := 0
+						sd3 -> d3_custo1  := _nCusto1
+						sd3 -> d3_cf      := (_sAliasQ)->d3_cf
+						sd3 -> d3_op      := (_sAliasQ)->d3_op
+						sd3 -> d3_local   := (_sAliasQ)->d3_local
+						sd3 -> d3_doc     := (_sAliasQ)->d3_doc
+						sd3 -> d3_emissao := (_sAliasQ)->d3_emissao
+						sd3 -> d3_grupo   := sb1 -> b1_grupo
+						sd3 -> d3_numseq  := (_sAliasQ)->d3_numseq
+						sd3 -> d3_tipo    := sb1 -> b1_tipo
+						sd3 -> d3_usuario := CUSERNAME
+						sd3 -> d3_chave   := (_sAliasQ)->d3_chave
+						sd3 -> d3_ident   := (_sAliasQ)->d3_ident
+						sd3 -> d3_vamotiv := "RATEIO CUSTOS " + alltrim (_aCC [_nCC, 2])
+						sd3 -> d3_vachvex := _sChaveSD3
+						msunlock ()
+					else
+						u_log2 ('aviso', 'Valor ficaria zerado: ' + sb1 -> b1_cod + ' na OP ' + (_sAliasQ)->d3_op + ' TM ' + _aCC [_nCC, .CCTipoMovimento] + ' $' + transform (_nCusto1, "@E 999,999,999,999.99999"))
+					endif
 
 					(_sAliasQ)->(dbclosearea())
 					dbselectarea ("SD3")

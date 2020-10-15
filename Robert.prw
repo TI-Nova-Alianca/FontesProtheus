@@ -17,11 +17,10 @@
 #include "tbiconn.ch"
 //#INCLUDE "XMLXFUN.CH"
 
-
 // --------------------------------------------------------------------------
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '01' modulo '04'
+		prepare environment empresa '01' filial '01' modulo '05'
 		private cModulo   := 'FAT'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -79,34 +78,70 @@ static function _AndaLogo ()
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
-
 //	u_help ("[" + procname () + "] Nada definido.")
-//	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
-//RETURN
 
-	// Testes verificacoes genericas.
-	// _oVerif := ClsVerif():New (25)
-	// _oVerif:SetParam ('01', '2017')
-	// _oVerif:SetParam ('02', '')
-	// _oVerif:SetParam ('03', 'zz')
-	// _oVerif:SetParam ('04', '30 ')
-	// _oVerif:SetParam ('05', '028')
-	// _oVerif:SetParam ('06', '077')
-	// _oVerif:SetParam ('07', '000017')
-	// _oVerif := ClsVerif():New (24)
-	// _oVerif:SetParam ('01', '09189201001  ')
-	// _oVerif:SetParam ('02', '09189201001  ')
-	// _oVerif:SetParam ('03', '')
-	// _oVerif:SetParam ('04', 'z')
-	_oVerif := ClsVerif():New (34)
-	if _oVerif:Executa ()
-		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
-		u_log2 ('debug', _oVerif:Result)
-	else
-		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
-	endif
+	u_log2 ('info', NIL)
+	_sArqLog := 'U_BatRevCH_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+	U_BatRevCh ("MG", "CTE", 1, '31201002442313000710570000000000631100000633', .T.)
 return
-*/
+
+U_BatRevCh ("AC", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("AC", "NFE", 90)
+U_BatRevCh ("AL", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("AL", "NFE", 90)
+U_BatRevCh ("AM", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("AM", "NFE", 90)
+U_BatRevCh ("AP", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("AP", "NFE", 90)
+U_BatRevCh ("BA", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("BA", "NFE", 90)
+U_BatRevCh ("CE", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("CE", "NFE", 90)
+U_BatRevCh ("DF", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("DF", "NFE", 90)
+U_BatRevCh ("ES", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("ES", "NFE", 90)
+U_BatRevCh ("GO", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("GO", "NFE", 90)
+U_BatRevCh ("MA", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("MA", "NFE", 90)
+// AINDA CoM PROBLEMA --> U_BatRevCh ("MG", "CTE", 90)
+//U_BatRevCh ("MG", "NFE", 90)
+U_BatRevCh ("MS", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("MS", "NFE", 90)
+U_BatRevCh ("MT", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("MT", "NFE", 90)
+U_BatRevCh ("PA", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("PA", "NFE", 90)
+U_BatRevCh ("PB", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("PB", "NFE", 90)
+U_BatRevCh ("PE", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("PE", "NFE", 90)
+U_BatRevCh ("PI", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("PI", "NFE", 90)
+U_BatRevCh ("PR", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("PR", "NFE", 90)
+U_BatRevCh ("RJ", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("RJ", "NFE", 90)
+U_BatRevCh ("RN", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("RN", "NFE", 90)
+U_BatRevCh ("RO", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("RO", "NFE", 90)
+U_BatRevCh ("RR", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("RR", "NFE", 90)
+U_BatRevCh ("RS", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("RS", "NFE", 90)
+U_BatRevCh ("SC", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("SC", "NFE", 90)
+U_BatRevCh ("SE", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("SE", "NFE", 90)
+U_BatRevCh ("SP", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("SP", "NFE", 90)
+U_BatRevCh ("TO", "CTE", 90, NIL, .T.)
+//U_BatRevCh ("TO", "NFE", 90)
+u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
+RETURN
+
 /*
 // Envia atualizacoes diversas para o Mercanet
 //	_oSQL := ClsSQL ():New ()
@@ -206,6 +241,30 @@ return
 //		U_AtuMerc ("SE4", se4 -> (recno ()))
 //		se4 -> (dbskip ())
 //	enddo
+return
+*/
+/*
+	// Testes verificacoes genericas.
+	// _oVerif := ClsVerif():New (25)
+	// _oVerif:SetParam ('01', '2017')
+	// _oVerif:SetParam ('02', '')
+	// _oVerif:SetParam ('03', 'zz')
+	// _oVerif:SetParam ('04', '30 ')
+	// _oVerif:SetParam ('05', '028')
+	// _oVerif:SetParam ('06', '077')
+	// _oVerif:SetParam ('07', '000017')
+	// _oVerif := ClsVerif():New (24)
+	// _oVerif:SetParam ('01', '09189201001  ')
+	// _oVerif:SetParam ('02', '09189201001  ')
+	// _oVerif:SetParam ('03', '')
+	// _oVerif:SetParam ('04', 'z')
+	_oVerif := ClsVerif():New (34)
+	if _oVerif:Executa ()
+		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
+		u_log2 ('debug', _oVerif:Result)
+	else
+		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
+	endif
 return
 */
 /*
@@ -3197,32 +3256,6 @@ return
 	u_log (_adados)
 	u_acolsxls (_aDados)
 return
-*/
-/*
-//	U_BatRevCh (,,, '31180710303789000103550010025706681726115852')  // MG NF-e 4.00
-//	U_BatRevCh (,,, '43180911384755000153550010000047321390873176')  // RS NF-e 4.00
-//	U_BatRevCh (,,, '43180891173120000146550010000502761002783010')  // RS NF-e 3.10
-//	U_BatRevCh (,,, '43151188612486000160550200000000581009699997')  // RS NF-e 3.10
-//	U_BatRevCh (,,, '43180988612486000836550100000006661001188118')  // rs 1.10
-//	U_BatRevCh (,,, '43181025532561000162550010000012151335565681')  // RS NF-e 4.00
-
-//	U_BatRevCh (,,, '35180702442313000559570000000349811000349811')  // SP CT-e 3.00 autorizada
-//	U_BatRevCh (,,, '35180912855910000135570000000073161000075892')  // SP CT-e 3.00 cancelada
-//	U_BatRevCh (,,, '35180912877765000193550010000009051104979659')  // SP NF-e 4.00 autorizada
-//	U_BatRevCh (,,, '35180808824334000191550020000007491088000275')  // SP NF-e 4.00 cancelada
-//	U_BatRevCh (,,, '43180660853942000730550000001448331138941212')  // RS NF-e 4.00 autorizada
-//	U_BatRevCh (,,, '43180725532561000162550010000009091772683915')  // RS NF-e 4.00 cancelada
-//	U_BatRevCh (,,, '43181092016757000191552000004395721666799176')  // RS NF-e 4.00 cancelada
-//	U_BatRevCh (,,, '43180793651958000123551010000600121846350910')  // RS NF-e 4.00 cancelada (primeiro evento=carta correcao; segundo=cancelemento)
-
-	U_BatRevCh (,,, '35180808824334000191550020000007491088000275')
-	u_log ('######################')
-	U_BatRevCh ('RS', 'NFE', 180, NIL)
-	U_BatRevCh ('SP', 'CTE', 180, NIL)
-	U_BatRevCh ('SP', 'NFE', 180, NIL)
-	U_BatRevCh ('MG', 'NFE', 180, NIL)
-	u_log (_oBatch:Mensagens)
-RETURN
 */
 /*
 	_sAlmox = '02'

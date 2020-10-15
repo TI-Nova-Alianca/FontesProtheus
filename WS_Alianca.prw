@@ -1236,8 +1236,8 @@ static function _IncCarSaf ()
 	local _sSenhaOrd := ''
 //	local _sCargaGer := ''
 
-	u_logIni ()
-	u_log ('cFilAnt:', cFilAnt)
+	u_log2 ('info', 'Iniciando web service de geracao de carga.')
+	u_log2 ('debug', 'cFilAnt:' + cFilAnt)
 	if empty (_sErros) ; _sSafra    = _ExtraiTag ("_oXML:_WSAlianca:_Safra",             .T., .F.) ; endif
 	if empty (_sErros) ; _sBalanca  = _ExtraiTag ("_oXML:_WSAlianca:_Balanca",           .T., .F.) ; endif
 	if empty (_sErros) ; _sAssoc    = _ExtraiTag ("_oXML:_WSAlianca:_Associado",         .T., .F.) ; endif
@@ -1251,7 +1251,7 @@ static function _IncCarSaf ()
 	if empty (_sErros) ; _sObs      = _ExtraiTag ("_oXML:_WSAlianca:_Obs",               .F., .F.) ; endif
 	if empty (_sErros) ; _sSenhaOrd = _ExtraiTag ("_oXML:_WSAlianca:_Senha",             .F., .F.) ; endif
 	if empty (_sErros)
-		if _sAssoc $ '012373/012791/012792'
+		if _sAssoc $ '012373/012791/012792'  // Nao associados que vou instanciar para que a carga seja aceita.
 			_oAssoc := ClsAssoc ():New ()
 			_oAssoc:Codigo = _sAssoc
 			_oAssoc:Loja   = _sLoja
@@ -1290,7 +1290,7 @@ static function _IncCarSaf ()
 	if empty (_sErros) .and. ! empty (_sCadVit)  // Pode nao ter 3 itens na carga
 		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote})
 	endif
-	u_log (_aItensCar)
+	u_log2 ('info', _aItensCar)
 	if empty (_sErros)
 		if len (_aItensCar) == 0
 			_sErros += "Nenhum item informado para gerar carga."
@@ -1299,7 +1299,7 @@ static function _IncCarSaf ()
 		endif
 	endif
 
-	u_logFim ()
+	u_log2 ('info', 'Finalizando web service de geracao de carga.')
 Return
 
 

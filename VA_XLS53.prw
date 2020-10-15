@@ -12,6 +12,7 @@
 
 // Historico de alteracoes:
 // 15/10/2020 - Robert - Passa a considerar TM=304 (ainda em testes de novo metodo de rateios).
+//                     - Mostra movimentos, mesmo que com custo zerado.
 //
 
 // --------------------------------------------------------------------------
@@ -89,7 +90,6 @@ Static Function _Gera()
 	// Quero listar todas as filiais  --> _oSQL:_sQuery +=   " AND SD3.D3_FILIAL = '" + xfilial ("SD3") + "'"
 	_oSQL:_sQuery +=   " AND SD3.D3_EMISSAO BETWEEN '" + mv_par01 + "0101' AND '" + mv_par02 + "1231'"
 	_oSQL:_sQuery +=   " AND SD3.D3_TM      IN ('300', '301', '302', '303', '304', '413', '513')"
-	_oSQL:_sQuery +=   " AND SD3.D3_CUSTO1  != 0"
 	_oSQL:_sQuery += ")"
 	_oSQL:_sQuery += "SELECT FILIAL, ANO_MES, TIPO_MOVTO, CC, RTRIM (ISNULL (CTT_DESC01, '')) AS DESCR_CC"
 	_oSQL:_sQuery +=      ", CUSTO, B1_TIPO AS TIPO_PROD_DESTINO"
