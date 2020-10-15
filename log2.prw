@@ -5,6 +5,7 @@
 //
 // Historico de alteracoes:
 // 15/06/2020 - Robert - Verifica existencia da variavel cFilAnt antes de usa-la.
+// 15/10/2020 - Robert - TRatamento para dado tipo NIL.
 //
 
 // --------------------------------------------------------------------------
@@ -38,19 +39,30 @@ user function Log2 (_sTipo, _xDado, _xExtra)
 	endif
 	_sTextoLog += '[' + padc (_sTipo, 5, ' ') + ']'  // + ' ; '
 	//_sTextoLog += dtoc (date ()) + ' ' + time () + ' '  // + ' ; '
-	_sTextoLog += substr (_sDataLog, 1, 4) + '-' + substr (_sDataLog, 5, 2) + '-' + substr (_sDataLog, 7, 2)// + ' '
-	_sTextoLog += strtran (TimeFull (), '.', ',') + ' '
+	_sTextoLog += '[' + substr (_sDataLog, 1, 4) + '' + substr (_sDataLog, 5, 2) + '' + substr (_sDataLog, 7, 2) + ' ' + strtran (TimeFull (), '.', ',') + ']'
 	_sTextoLog += '[' + GetEnvServer () + ']'
 	_sTextoLog += '[F' + iif (type ('cFilAnt') == 'C', cFilAnt, '  ') + ']'  // + ' ; '
 	_xTextoLog = padc (_sTextoLog, 30, ' ')
 
 	// Verifica se consegue gravar tudo em uma linha apenas
-	if ! valtype (_xDado) $ 'A/O'
+/*	if ! valtype (_xDado) $ 'A/O'
 		_xDado = alltrim (cValToChar (_xDado))
 		_sTextoLog += padr (_xDado, max (len (_xDado), 100))
 	else
 		_sTextoLog += padr (' variavel tipo ' + valtype (_xDado), 100)
 		_lUmaLinha = .F.
+	endif
+*/
+	if valtype (_xDado) $ 'A/O'
+		_sTextoLog += padr (' variavel tipo ' + valtype (_xDado), 100)
+		_lUmaLinha = .F.
+	else
+		if valtype (_xDado) == 'U'
+			_xDado = '*NIL*'
+		else
+			_xDado = alltrim (cValToChar (_xDado))
+		endif
+		_sTextoLog += padr (_xDado, max (len (_xDado), 100))
 	endif
 
 	if _sTipo == 'DEBUG'
