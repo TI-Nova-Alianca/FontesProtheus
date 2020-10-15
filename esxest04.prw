@@ -13,6 +13,7 @@
 //                     - Grava evento
 // 20/07/2020 - Robert - Permissao para executar passa a validar acesso 102 e nao mais 069.
 //                     - Inseridas tags para catalogacao de fontes
+// 14/10/2020 - Robert - Desconsidera item 'MMMSAFRA' usado em simulacoes de rateio de safra (por enquanto apenas na base teste).
 //
 
 // Tags para automatizar catalogo de customizacoes:
@@ -102,6 +103,7 @@ Static function _Roda()
 		_oSQL:_sQuery +=   " AND D3_OP      != ''"
 		_oSQL:_sQuery +=   " AND D3_EMISSAO BETWEEN '" + DtoS(MV_PAR01) + "' AND '" + DtoS(MV_PAR02) + "'"
 		_oSQL:_sQuery +=   " AND LEFT(D3_COD,3) = 'MMM'"
+		_oSQL:_sQuery +=   " AND D3_COD != 'MMMSAFRA'"  // Item usado em simulacoes de rateio de safra (por enquanto apenas na base teste)
 		_oSQL:Log ()
 		_sAliasQ = _oSQL:Qry2Trb (.T.)
 

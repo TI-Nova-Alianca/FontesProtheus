@@ -11,7 +11,8 @@
 // #Modulos 		  #CTB #EST
 
 // Historico de alteracoes:
-// 
+// 15/10/2020 - Robert - Passa a considerar TM=304 (ainda em testes de novo metodo de rateios).
+//
 
 // --------------------------------------------------------------------------
 User Function VA_XLS53 (_lAutomat)
@@ -64,12 +65,14 @@ Static Function _Gera()
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += "WITH C AS ("
-	_oSQL:_sQuery += " SELECT SD3.D3_FILIAL AS FILIAL, SUBSTRING (SD3.D3_EMISSAO, 1, 6) AS ANO_MES"
+	_oSQL:_sQuery += " SELECT SD3.D3_FILIAL AS FILIAL"
+	_oSQL:_sQuery +=       ", SUBSTRING (SD3.D3_EMISSAO, 1, 6) AS ANO_MES"
 	_oSQL:_sQuery +=       ", SD3.D3_TM AS TIPO_MOVTO"
 	_oSQL:_sQuery +=       ", CASE SD3.D3_TM WHEN '300' THEN '011101'"
 	_oSQL:_sQuery +=                       " WHEN '301' THEN '011102'"
 	_oSQL:_sQuery +=                       " WHEN '302' THEN '011201'"
 	_oSQL:_sQuery +=                       " WHEN '303' THEN '011202'"
+	_oSQL:_sQuery +=                       " WHEN '304' THEN 'PROVISAO UVA'"
 	_oSQL:_sQuery +=                       " WHEN '413' THEN 'COMPLEMENTO UVA'"
 	_oSQL:_sQuery +=                       " WHEN '513' THEN 'ESTORNO UVA'"
 	_oSQL:_sQuery +=                       " ELSE 'TM ' + SD3.D3_TM END AS CC"
@@ -85,7 +88,7 @@ Static Function _Gera()
 	_oSQL:_sQuery += " WHERE SD3.D_E_L_E_T_ = ''"
 	// Quero listar todas as filiais  --> _oSQL:_sQuery +=   " AND SD3.D3_FILIAL = '" + xfilial ("SD3") + "'"
 	_oSQL:_sQuery +=   " AND SD3.D3_EMISSAO BETWEEN '" + mv_par01 + "0101' AND '" + mv_par02 + "1231'"
-	_oSQL:_sQuery +=   " AND SD3.D3_TM      IN ('300', '301', '302', '303', '413', '513')"
+	_oSQL:_sQuery +=   " AND SD3.D3_TM      IN ('300', '301', '302', '303', '304', '413', '513')"
 	_oSQL:_sQuery +=   " AND SD3.D3_CUSTO1  != 0"
 	_oSQL:_sQuery += ")"
 	_oSQL:_sQuery += "SELECT FILIAL, ANO_MES, TIPO_MOVTO, CC, RTRIM (ISNULL (CTT_DESC01, '')) AS DESCR_CC"
