@@ -1234,7 +1234,11 @@ static function _IncCarSaf ()
 	local _aItensCar := {}
 	local _sLote     := ''
 	local _sSenhaOrd := ''
-//	local _sCargaGer := ''
+	local _sCPFCarg  := ''
+	local _sInscCarg := ''
+	local _sImpTkCar := ''
+	local _oSQL      := NIL
+	local _aRegSA2   := {}
 
 	u_log2 ('info', 'Iniciando web service de geracao de carga.')
 	u_log2 ('debug', 'cFilAnt:' + cFilAnt)
@@ -1242,6 +1246,9 @@ static function _IncCarSaf ()
 	if empty (_sErros) ; _sBalanca  = _ExtraiTag ("_oXML:_WSAlianca:_Balanca",           .T., .F.) ; endif
 	if empty (_sErros) ; _sAssoc    = _ExtraiTag ("_oXML:_WSAlianca:_Associado",         .T., .F.) ; endif
 	if empty (_sErros) ; _sLoja     = _ExtraiTag ("_oXML:_WSAlianca:_Loja",              .T., .F.) ; endif
+	if empty (_sErros) ; _sCPFCarg  = _ExtraiTag ("_oXML:_WSAlianca:_CPF",               .F., .F.) ; endif
+	if empty (_sErros) ; _sInscCarg = _ExtraiTag ("_oXML:_WSAlianca:_IE",                .F., .F.) ; endif
+	if empty (_sErros) ; _sImpTkCar = _ExtraiTag ("_oXML:_WSAlianca:_ImprTk",            .F., .F.) ; endif
 	if empty (_sErros) ; _sSerieNF  = _ExtraiTag ("_oXML:_WSAlianca:_SerieNFProdutor",   .T., .F.) ; endif
 	if empty (_sErros) ; _sNumNF    = _ExtraiTag ("_oXML:_WSAlianca:_NumeroNFProdutor",  .T., .F.) ; endif
 	if empty (_sErros) ; _sChvNFPe  = _ExtraiTag ("_oXML:_WSAlianca:_ChaveNFPe",         .T., .F.) ; endif
@@ -1251,19 +1258,47 @@ static function _IncCarSaf ()
 	if empty (_sErros) ; _sObs      = _ExtraiTag ("_oXML:_WSAlianca:_Obs",               .F., .F.) ; endif
 	if empty (_sErros) ; _sSenhaOrd = _ExtraiTag ("_oXML:_WSAlianca:_Senha",             .F., .F.) ; endif
 	if empty (_sErros)
-		if _sAssoc $ '012373/012791/012792'  // Nao associados que vou instanciar para que a carga seja aceita.
-			_oAssoc := ClsAssoc ():New ()
-			_oAssoc:Codigo = _sAssoc
-			_oAssoc:Loja   = _sLoja
-			_oAssoc:Nome   = fBuscaCpo ("SA2", 1, xfilial ("SA2") + _sAssoc + _sLoja, "A2_NOME")
-			u_log (_oAssoc:Codigo)
-			u_log (_oAssoc:Loja)
-		else
-			_oAssoc := ClsAssoc ():New (_sAssoc, _sLoja)
-			if valtype (_oAssoc) != 'O'
-				_sErros += "Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto
+//		if _sAssoc $ '012373/012791/012792'  // Nao associados que vou instanciar para que a carga seja aceita.
+//			_oAssoc := ClsAssoc ():New ()
+//			_oAssoc:Codigo = _sAssoc
+//			_oAssoc:Loja   = _sLoja
+//			_oAssoc:Nome   = fBuscaCpo ("SA2", 1, xfilial ("SA2") + _sAssoc + _sLoja, "A2_NOME")
+//			u_log2 ('aviso', 'Instanciando nao associado: ' + _oAssoc:Codigo + '/' + _oAssoc:Loja)
+//		else
+			// A partir de 2021 o app de safra manda tambem CPF e inscricao, para os casos em que foi gerado 'lote de entrega'
+			// pelo caderno de campo, e lah identifica apenas o grupo familiar. A inscricao e o CPF serao conhecidos somente
+			// no momento em que o associado chegar aqui com o talao de produtor.
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " SELECT A2_COD, A2_LOJA"
+			_oSQL:_sQuery += " FROM " + RetSQLName ("SA2") + " SA2 "
+			_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+			_oSQL:_sQuery += " AND A2_FILIAL = '" + xfilial ("SA2") + "'"
+			if ! empty (_sAssoc)
+				_oSQL:_sQuery += " AND A2_COD    = '" + _sAssoc + "'"
 			endif
-		endif
+			if ! empty (_sLoja)
+				_oSQL:_sQuery += " AND A2_LOJA   = '" + _sLoja + "'"
+			endif
+			if ! empty (_sCPFCarg)
+				_oSQL:_sQuery += " AND A2_CGC   = '" + _sCPFCarg + "'"
+			endif
+			if ! empty (_sInscCarg)
+				_oSQL:_sQuery += " AND A2_INSCR = '" + _sInscCarg + "'"
+			endif
+			_oSQL:Log ()
+			_aRegSA2 = aclone (_oSQL:Qry2Array (.F., .F.))
+			if len (_aRegSA2) == 0
+				_sErros += "Nao foi localizado nenhum fornecedor pelos parametros informados (cod/loja/CPF/IE)"
+			elseif len (_aRegSA2) > 1
+				_sErros += "Foi localizado MAIS DE UM fornecedor pelos parametros informados (cod/loja/CPF/IE)"
+			else
+				_oAssoc := ClsAssoc ():New (_aRegSA2 [1, 1], _aRegSA2 [1, 2])
+				if valtype (_oAssoc) != 'O'
+					_sErros += "Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto
+				endif
+			endif
+//		endif
 	endif
 
 	// Leitura dos itens de forma repetitiva (tentei ler em array mas nao funcionou e tenho pouco tempo pra ficar testando...)
@@ -1290,12 +1325,13 @@ static function _IncCarSaf ()
 	if empty (_sErros) .and. ! empty (_sCadVit)  // Pode nao ter 3 itens na carga
 		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote})
 	endif
+	u_log2 ('info', 'Itens da carga:')
 	u_log2 ('info', _aItensCar)
 	if empty (_sErros)
 		if len (_aItensCar) == 0
 			_sErros += "Nenhum item informado para gerar carga."
 		else
-			_sMsgRetWS = U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd)
+			_sMsgRetWS = U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sImpTkCar)
 		endif
 	endif
 

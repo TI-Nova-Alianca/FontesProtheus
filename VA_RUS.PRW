@@ -27,15 +27,15 @@ User Function va_rus ()
 	local _nCoop       := 0
 	local _sCoop       := ""
 	local _aCores      := U_VA_RUSLG (.T.)
-	local _aSemNota    := {}
+//	local _aSemNota    := {}
 	local _aMenuOut    := {}
 	local _aMenuNFe    := {}
-	local _aIndBrw     := {}
-	local _nOpcao      := 0
+//	local _aIndBrw     := {}
+//	local _nOpcao      := 0
 	local _lContinua   := .T.
-	local _oAssoc      := NIL
-	local _oSQL        := NIL
-	local _sAliasQ     := ''
+//	local _oAssoc      := NIL
+//	local _oSQL        := NIL
+//	local _sAliasQ     := ''
 	local _nPCham      := 0
 	private _ZFEMBALAG := ""  // Deixar private para ser vista por outras rotinas.
 	private _sBalanca  := ""  // Deixar private para ser vista por outras rotinas.
@@ -448,8 +448,8 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {07, "Embalagem padrao              ", "N", 1,  0,  "",   "",      {'GRANEL', 'CAIXAS'},              ""})
 	aadd (_aRegsPerg, {08, "Peso padrao embalagem (caixa) ", "N", 2,  0,  "",   "",      {},                                ""})
 	aadd (_aRegsPerg, {09, "Usa impressora de ticket      ", "N", 1,  0,  "",   "",      {"Sim", "Nao"},                    ""})
-	aadd (_aRegsPerg, {10, "Porta impressora de ticket    ", "C", 60, 0,  "",   "",      {},                                "Ex.: lpt1: ou LPT2:"})
-//	aadd (_aRegsPerg, {10, "Impressora de ticket          ", "C", 2,  0,  "",   "ZX549", {},                                "Ex.: lpt1: ou LPT2:"})
+//	aadd (_aRegsPerg, {10, "Porta impressora de ticket    ", "C", 60, 0,  "",   "",      {},                                "Ex.: lpt1: ou LPT2:"})
+	aadd (_aRegsPerg, {10, "Impressora de ticket          ", "C", 2,  0,  "",   "ZX549", {},                                "Ex.: lpt1: ou LPT2:"})
 	aadd (_aRegsPerg, {11, "Comunicacao c/ medidor de brix", "N", 1,  0,  "",   "",      {"Sim", "Nao"},                    ""})
 	aadd (_aRegsPerg, {12, "Qt. de vias ticket 1a.pesagem ", "N", 1,  0,  "",   "",      {},                                ""})
 	aadd (_aRegsPerg, {13, "Qt. de vias ticket 2a.pesagem ", "N", 1,  0,  "",   "",      {},                                ""})

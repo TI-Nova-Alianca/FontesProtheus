@@ -11,19 +11,19 @@
 #include "VA_INCLU.prw"
 
 // --------------------------------------------------------------------------
-user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd)
+user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sIdImpr)
 	local _sCargaGer := ''
 	local _nItemCar  := 0
 //	local _nItemVit  := 0
 	local _nLock     := 0
-	local _sIdImpr   := ''
+//	local _sIdImpr   := ''
 	local _oSQL      := NIL
-	local _aRetQry   := {}
+//	local _aRetQry   := {}
 
-	u_logIni ()
+	u_log2 ('info', 'Iniciando ' + procname ())
 //	u_log ('param:', _oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd)
 
-	// Esta programa foi criado para ser chamado via web service, que jah deve
+	// Este programa foi criado para ser chamado via web service, que jah deve
 	// deixar a variavel _sErros criada, mas, para garantir...
 	if type ("_sErros") != 'C'
 		private _sErros := ""
@@ -36,6 +36,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 	endif
 
 
+/*
 	// Define qual a impressora a usar para imprimir os tickets
 	if empty (_sErros)
 		do case
@@ -50,7 +51,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 			u_log ("Impressora de ticket nao definida para a balanca '" + _sBalanca + "'. Nao vou solicitar impressao.")
 		endcase
 	endif
-
+*/
 	if empty (_sErros)
 
 		// Algumas variaveis que devem estar prontas para as validacoes dos programas originais.
@@ -61,7 +62,12 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		private _nMultBal  := 10
 		private _nPesoEmb  := 20
 		private _lImpTick  := ! empty (_sIdImpr)
-		private _sPortTick := iif (! empty (_sIdImpr), U_RetZX5 ('49', _sIdImpr, 'ZX5_49CAM'), '')
+		private _sPortTick := iif (_lImpTick, U_RetZX5 ('49', _sIdImpr, 'ZX5_49CAM'), '')
+		if _lImpTick .and. empty (_sPortTick)
+			_sErros += "Impressora de tickets informada (" + _sIdImpr + ") nao cadastrada ou sem caminho definido na tabela 49 do ZX5."
+		endif
+		u_log2 ('debug', '_sIdImpr:' + _sIdImpr)
+		u_log2 ('debug', '_sPortTick:' + _sPortTick)
 		private _lLeBrix   := .T.
 		private _nQViasTk1 := 1
 		private _nQViasTk2 := 2
@@ -109,7 +115,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		_oSQL:_sQuery += " WHERE ASSOCIADO    = '" + _oAssoc:Codigo + "'"
 		_oSQL:_sQuery +=   " AND LOJA_ASSOC   = '" + _oAssoc:Loja   + "'"
 		_oSQL:_sQuery +=   " AND RESTRICAO   != ''"
-		u_log (_oSQL:_squery)
+		_oSQL:Log ()
 		_sRestri = _oSQL:RetQry ()
 		if ! empty (_sRestri)
 			_sErros += "Associado com restricoes: " + _sRestri
@@ -122,44 +128,9 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		if len (_aCadVitic) == 0
 			_sErros += "Nao ha nenhuma variedade de uva ligada ao associado."
 		endif
-/*
-		_oSQL := ClsSQL():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "SELECT CAD_VITIC, GRPFAM, DESCR_GRPFAM, PRODUTO, DESCRICAO, TIPO_ORGANICO, RECADAST_VITIC, FINA_COMUM,"
-		_oSQL:_sQuery +=       " A2_MUN AS DESCR_MUN, AMOSTRA, RECEB_FISICO_VITIC, SIST_CONDUCAO"
-		_oSQL:_sQuery +=  " FROM VA_VAGENDA_SAFRA"
-		_oSQL:_sQuery +=  "," + RetSQLName ("SA2") + " SA2"
-		_oSQL:_sQuery += " WHERE V.ASSOCIADO    = '" + ::Codigo + "'"
-		_oSQL:_sQuery +=   " AND V.LOJA_ASSOC   = '" + ::Loja   + "'"
-		_oSQL:_sQuery +=   " AND SA2.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND SA2.A2_FILIAL  = '" + xfilial ("SA2") + "'"
-		_oSQL:_sQuery +=   " AND SA2.A2_COD     = V.ASSOCIADO"
-		_oSQL:_sQuery +=   " AND SA2.A2_LOJA    = V.LOJA_ASSOC"
-		_oSQL:_sQuery += " ORDER BY CAD_VITIC, GRPFAM, PRODUTO"
-		u_log (_oSQL:_squery)
-	
-		// Poderia simplesmente pegar o retorno da query, mas usando os includes facilito
-		// futuras pesquisas em fontes para saber onde estes dados sao usados.
-		_aRetQry = _oSQL:Qry2Array ()
-		_aCadVitic = {}
-		for _nLinha = 1 to len (_aRetQry)
-			aadd (_aCadVitic, array (.CadVitQtColunas))
-			_aRet [_nLinha, .CadVitCodigo]      = _aRetQry [_nLinha, 1]
-			_aRet [_nLinha, .CadVitCodGrpFam]   = _aRetQry [_nLinha, 2]
-			_aRet [_nLinha, .CadVitNomeGrpFam]  = _aRetQry [_nLinha, 3]
-			_aRet [_nLinha, .CadVitProduto]     = _aRetQry [_nLinha, 4]
-			_aRet [_nLinha, .CadVitDescPro]     = _aRetQry [_nLinha, 5]
-			_aRet [_nLinha, .CadVitOrganico]    = _aRetQry [_nLinha, 6]
-			_aRet [_nLinha, .CadVitSafrVit]     = _aRetQry [_nLinha, 7]
-			_aRet [_nLinha, .CadVitVarUva]      = _aRetQry [_nLinha, 8]
-			_aRet [_nLinha, .CadVitDescMun]     = _aRetQry [_nLinha, 9]
-			_aRet [_nLinha, .CadVitAmostra]     = _aRetQry [_nLinha, 10]
-			_aRet [_nLinha, .CadVitRecebFisico] = stod (_aRetQry [_nLinha, 11])
-			_aRet [_nLinha, .CadVitSistCond]    = _aRetQry [_nLinha, 12]
-		next
-*/
 	endif
-//	u_log ('_aCadVitic ficou assim:', _aCadVitic)
+	u_log2 ('info', '_aCadVitic ficou assim:')
+	u_log2 ('info', _aCadVitic)
 
 	// Cria aHeader e aCols para poder usar as validacoes do VA_RUS2.PRW
 	if empty (_sErros)  // Variavel private do web service
@@ -233,5 +204,5 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		U_Semaforo (_nLock)
 	endif
 
-	u_logFim ()
+	u_log2 ('info', 'Finalizando ' + procname ())
 return _sCargaGer

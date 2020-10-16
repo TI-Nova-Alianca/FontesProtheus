@@ -82,7 +82,9 @@ static function _AndaLogo ()
 
 	u_log2 ('info', NIL)
 	_sArqLog := 'U_BatRevCH_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-	U_BatRevCh ("MG", "CTE", 1, '31201002442313000710570000000000631100000633', .T.)
+//	U_BatRevCh ("MG", "CTE", 1, '31201002442313000710570000000000631100000633', .T.)
+	U_BatRevCh ("RS", "NFE", 90, NIL, .T.)
+	U_BatRevCh ("RS", "CTE", 90, NIL, .T.)
 return
 
 U_BatRevCh ("AC", "CTE", 90, NIL, .T.)
