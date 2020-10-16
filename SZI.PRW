@@ -2,13 +2,13 @@
 // Autor......: Robert Koch
 // Data.......: 25/02/2011
 // Descricao..: Tela de manutencao de conta corrente de associados.
-//
+
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Atualizacao
 // #PalavasChave      #associados #conta_corrente_associados
 // #TabelasPrincipais #SZI
 // #Modulos           #COOP
-//
+
 // Historico de alteracoes:
 // 28/03/2011 - Robert - Grava sequencial em funcao separada, com bloqueio via semaforo.
 // 30/03/2011 - Robert - Tratamento para ZI_TM passa a ser lido do SX5_10Gera.
@@ -52,7 +52,9 @@
 // 23/07/2020 - Robert - Criada funcionalidade de cancelamento de fatura a pagar (GLPI 8221).
 // 29/07/2020 - Robert - Criado atalho para relatorio de fechamento de safra.
 // 13/08/2020 - Cláudia - Ajustado o valor das consultas de faturas. GLPI: 8255
+// 16/10/2020 - Robert  - Baixa de titulos: Busca contas contabeis parra TM=29 iguais as do TM=01.
 //
+
 // ------------------------------------------------------------------------------------
 #include "colors.ch"
 #Include "Protheus.ch"
@@ -916,7 +918,7 @@ User Function SZIB ()
 				_SZI_Cred = NIL
 				_SZI_Hist = NIL
 				do case
-				case szi -> zi_tm == '01'
+				case szi -> zi_tm $ '01/29'  // == '01'
 					_SZI_Hist = "REEMB.UNIMED " +  transform (szi -> zi_MesRef, "@R 99/9999")
 					_SZI_Deb  = iif (_nForma == 1, NIL, '201030101001')
 					_SZI_Cred = iif (cFilAnt $ '07/08/12', '201030103001', '101020101003')
