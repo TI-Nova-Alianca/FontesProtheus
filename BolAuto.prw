@@ -6,6 +6,12 @@
 //              ou apos a transmissao de notas para a SEFAZ, por exemplo.
 //              Criado com base no _SPEDNFE de 15/12/2009.
 //
+// #TipoDePrograma    #Processamento
+// #Descricao         #Impressao automatica de boletos
+// #PalavasChave      #boletos #geracao_NF #SEFAZ 
+// #TabelasPrincipais #SF2 #SF3 #SE1 #SC5 
+// #Modulos 		  #FAT
+//
 // Historico de alteracoes:
 // 19/01/2016 - SICREDI - alterar para que busque a subconta 1 - nova
 // 23/06/2017 - Catia   - ao buscar o banco/agencia/conta esta não bloqueado
@@ -21,11 +27,9 @@ user function BolAuto (_sSerie, _sNotaIni, _sNotaFim)
 	local _aAmbAnt  := U_SalvaAmb ()
 	local _sNFIni     := iif (_sNotaIni == NIL, "", _sNotaIni)
 	local _sNFFim     := iif (_sNotaFim == NIL, "", _sNotaFim)
-	local _sSerie     := iif (_sSerie   == NIL, "10 ", _sSerie)
 	local _aColunas   := {}
 	local _aBoletos2  := {}
 	local _nBoleto    := 0
-	local _nSegIni    := 0
 	local _sAliasQ2   := ""
 	local _aRetQry    := {}
 	private _aBoletos := {}
@@ -94,7 +98,7 @@ user function BolAuto (_sSerie, _sNotaIni, _sNotaFim)
 		do while ! (_sAliasQ2) -> (eof ())
 			
 			do case 
-			   case p
+			   case (_sAliasQ2) -> A6_COD = '748' // força subconta 1
 			    	_wsubconta = '1'
 			   case (_sAliasQ2) -> A6_COD = '001' .and. (cfilant = '01' .or. cfilant = '03' .or. cfilant = '07' .or. cfilant = '09' .or. cfilant = '16')  ///força subconta 1 convenio NOVO a partir de 05/2019 
 			   		_wsubconta = '1'

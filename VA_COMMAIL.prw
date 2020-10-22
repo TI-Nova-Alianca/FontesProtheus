@@ -5,6 +5,7 @@
 //			     e alterações de verbas/comissões.
 //
 // #TipoDePrograma    #relatorio
+// #Descricao         #Relatório de Comissoes para envio em PDF
 // #PalavasChave      #comissoes #verbas #bonificação #comissões #representante #comissão 
 // #TabelasPrincipais #SE3 #SE1 #SF2 #SD2 #SE5 #SA3
 // #Modulos 		  #FIN 
@@ -59,14 +60,8 @@ Return
 // Gera PDF
 Static Function _GeraPDF_Email()	
 	Local _y 			 := 0
-	//Local _x 			 := 0
-	//Local _aVend 		 := {}
 	Local _aItens   	 := {}
-	//Local _aVerbVend	 := {}
-	//Local _aVerbOut 	 := {}
-	//Local _aVerbTit		 := {}
-	//Local _aBonif		 := {}
-	//Local _aVerbaBol	 := {}
+	Local _dDtaPt        := ""
 	Local _aDev          := {}
 	Private _oSQL        := ClsSQL():New ()
 	Private oPrint       := TMSPrinter():New(OemToAnsi('Relatorio de Comissoes'))
@@ -282,10 +277,9 @@ Static Function _GeraPDF_Email()
 		EndIf
 			
 		For _y := 1 to len(_aDescVerb)
+			_dDtaPt := DTOS(_aDescVerb[_y,13])
 			If mv_par10 == 2
 				_ImprimeCabec(_sVend, _sNomeVend, @_wpag, @nlinha) // Imprime cabeçalho
-				
-				_dDtaPt := DTOS(_aDescVerb[_y,13])
 				
 				// Descrição de tipo
 				_sTipoZb0 := ""
@@ -309,33 +303,34 @@ Static Function _GeraPDF_Email()
 						_sTipoZb0 := '6 - VERBA EM TITULO SEM COMISSÃO'
 				EndCase
 			EndIf	
-				Do Case
-				
-					Case mv_par11 == 2 .and. ( empty(_dDtaPt) .or. _dDtaPt =='19000101')  // pagas
-						// registro sem data de pgto nao entra nas pagas
-					Case mv_par11 == 3 	.and.  _dDtaPt != '19000101'  // em aberto
-						// registro com data de pagamento n entra nos registros em aberto
-					Otherwise
-						If mv_par10 == 2
-							oPrint:Say(nLinha,0100, alltrim(_sTipoZb0 )  	 									,oFont12n)
-							oPrint:Say(nLinha,0600, alltrim(_aDescVerb[_y,2])									,oFont12n)
-							oPrint:Say(nLinha,0800, alltrim(_aDescVerb[_y,3])	 								,oFont12n)
-							oPrint:Say(nLinha,1000, alltrim(_aDescVerb[_y,4])	 								,oFont12n)
-							oPrint:Say(nLinha,1300, alltrim(_aDescVerb[_y,5]) +"/"+ alltrim(_aDescVerb[_y,6])	,oFont12n)
-							oPrint:Say(nLinha,1600, alltrim(_aDescVerb[_y,7]) +"/"+ alltrim(_aDescVerb[_y,8])	,oFont12n)
-							oPrint:Say(nLinha,1900, TransForm(_aDescVerb[_y, 9] , '@E 9,999,999.99') 	 		,oFont12n)
-							oPrint:Say(nLinha,2200, TransForm(_aDescVerb[_y,10] , '@E 9,999,999.99') 		 	,oFont12n)
-							oPrint:Say(nLinha,2500, TransForm(_aDescVerb[_y,11] , '@E 9,999,999.99') 		 	,oFont12n)
-							oPrint:Say(nLinha,2800,   alltrim(_aDescVerb[_y,12])  	 							,oFont12n)
-							
-							nLinha += 50
-						EndIf
-						If alltrim(_aDescVerb[_y,1]) == '3 - BONIFICAÇÕES'
-							_nVlrBon += _aDescVerb[_y,11]
-						Else
-							_nVlrVer += _aDescVerb[_y,11]
-						EndIf
-				EndCase	
+			Do Case
+			
+				Case mv_par11 == 2 .and. ( empty(_dDtaPt) .or. _dDtaPt =='19000101')  // pagas
+					// registro sem data de pgto nao entra nas pagas
+				Case mv_par11 == 3 	.and.  _dDtaPt != '19000101'  // em aberto
+					// registro com data de pagamento n entra nos registros em aberto
+				Otherwise
+					If mv_par10 == 2
+						oPrint:Say(nLinha,0100, alltrim(_sTipoZb0 )  	 									,oFont12n)
+						oPrint:Say(nLinha,0600, alltrim(_aDescVerb[_y,2])									,oFont12n)
+						oPrint:Say(nLinha,0800, alltrim(_aDescVerb[_y,3])	 								,oFont12n)
+						oPrint:Say(nLinha,1000, alltrim(_aDescVerb[_y,4])	 								,oFont12n)
+						oPrint:Say(nLinha,1300, alltrim(_aDescVerb[_y,5]) +"/"+ alltrim(_aDescVerb[_y,6])	,oFont12n)
+						oPrint:Say(nLinha,1600, alltrim(_aDescVerb[_y,7]) +"/"+ alltrim(_aDescVerb[_y,8])	,oFont12n)
+						oPrint:Say(nLinha,1900, TransForm(_aDescVerb[_y, 9] , '@E 9,999,999.99') 	 		,oFont12n)
+						oPrint:Say(nLinha,2200, TransForm(_aDescVerb[_y,10] , '@E 9,999,999.99') 		 	,oFont12n)
+						oPrint:Say(nLinha,2500, TransForm(_aDescVerb[_y,11] , '@E 9,999,999.99') 		 	,oFont12n)
+						oPrint:Say(nLinha,2800,   alltrim(_aDescVerb[_y,12])  	 							,oFont12n)
+						
+						nLinha += 50
+					EndIf
+					//If alltrim(_aDescVerb[_y,1]) == '3 - BONIFICAÇÕES'
+					If alltrim(_aDescVerb[_y,1]) == '3'
+						_nVlrBon += _aDescVerb[_y,11]
+					Else
+						_nVlrVer += _aDescVerb[_y,11]
+					EndIf
+			EndCase	
 		Next
 		nLinha += 50
 		

@@ -3,12 +3,18 @@
 // Data.......: 04/11/2009
 // Descricao..: Exportacao de dados de producao para o Excel.
 //
-// Historico de alteracoes:
-// 04/07/2018 - Robert - Incluidos campos de linha de envase, perda, data/hora digitacao e usuario.
-// 01/04/2019 - Andre  - Alterado busca da linha de envase do B1_CLINF pelo B1_VALINEN, descrição também passa a ser buscada na tabela SH1 e não mais ZAZ.
-// 07/06/2019 - Andre  - Adicionado campos D3_VATURNO e D3_VADTPRD.
+// #TipoDePrograma    #Consulta
+// #Descricao         #Exportacao de dados de producao para o Excel
+// #PalavasChave      #boletos #geracao_NF #SEFAZ 
+// #TabelasPrincipais #SD3 #SB1 #SH1 
+// #Modulos 		  #PCP #EST
 //
-
+// Historico de alteracoes:
+// 04/07/2018 - Robert  - Incluidos campos de linha de envase, perda, data/hora digitacao e usuario.
+// 01/04/2019 - Andre   - Alterado busca da linha de envase do B1_CLINF pelo B1_VALINEN, descrição também passa a ser buscada na tabela SH1 e não mais ZAZ.
+// 07/06/2019 - Andre   - Adicionado campos D3_VATURNO e D3_VADTPRD.
+// 22/10/2020 - Cláudia - Ajuste de formatação de data. GLPI: 8694
+//
 // --------------------------------------------------------------------------
 User Function VA_XLS4 (_lAutomat)
 	Local cCadastro := "Exportacao de saldos em estoque para o Excel"
@@ -42,29 +48,24 @@ User Function VA_XLS4 (_lAutomat)
 		Endif
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
+// Tudo OK
 Static Function _TudoOk()
 	Local _lRet     := .T.
-Return _lRet
-	
-	
-	
+Return _lRet	
+//
 // --------------------------------------------------------------------------
+// Gera os dados
 Static Function _Gera()
 	local _sQuery    := ""
 	local _sAliasQ   := ""
 	local _nRecCount := 0
-	local _aAlmox    := {}
-	local _nAlmox    := 0
 	local _lContinua := .T.
 
 	procregua (10)
 	incproc ("Buscando dados")
 	
-
 	// Monta clausula 'where' em separado para poder usar em duas queries diferentes.
 	if _lContinua
 		_sQuery := ""
@@ -95,11 +96,12 @@ Static Function _Gera()
 		u_log (_sQuery)
 		_sAliasQ = GetNextAlias ()
 		DbUseArea(.t., 'TOPCONN', TcGenQry (,, _sQuery), _sAliasQ, .f., .t.)
+		TCSetField (alias (), "Dt_Prd", "D")
 		TCSetField (alias (), "Dt_Movto", "D")
 		TCSetField (alias (), "Dt_digitacao", "D")
 		count to _nRecCount
 		if _nRecCount == 0
-			msgalert ("Nao ha dados gerados. Verifique parametros!")
+			u_help ("Nao ha dados gerados. Verifique parametros!")
 		else
 			procregua (_nRecCount)
 			incproc ("Gerando arquivo de exportacao")
@@ -110,9 +112,7 @@ Static Function _Gera()
 		dbselectarea ("SD2")
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()

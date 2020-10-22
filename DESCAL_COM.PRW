@@ -1,10 +1,18 @@
 //  Programa...: DESCAL_COM	
 //  Autor......: Catia Cardoso
 //  Data.......: 03/02/2016
-//  Descricao..: Descalcula Comissão
+//  Descricao..: Descalcula comissão e verbas
+//
+// #TipoDePrograma    #processo
+// #Descricao         #Descalcula comissão e verbas
+// #PalavasChave      #comissoes #verbas #bonificação #comissões #representante #comissão 
+// #TabelasPrincipais #SE3 #SE1 #SF2 #SD2 #SE5 #SA3
+// #Modulos 		  #FIN 
 //
 //  Alterações:
-
+// 16/10/2020 - Cláudia - Incluida a abertura de verbas. GLPI:  8669
+//
+// ---------------------------------------------------------------------------
 #include "rwmake.ch"
 #include "VA_INCLU.prw"
 
@@ -13,12 +21,14 @@ User function DESCAL_COM()
 	cPerg   := "DESCAL_COM"
 	
 	if ! u_zzuvl ('048', __cUserId, .T.)
-//		msgalert ("Usuário sem permissão para usar estar rotina.")
 		return
 	endif
 		
 	_ValidPerg()
     if Pergunte(cPerg,.T.)
+
+		// Abre comissões
+
     	// gera array com os dados dos vendedores selecionados 
     	_sQuery := " "
     	_sQuery += " SELECT A3_COD, A3_FORNECE" 
@@ -73,7 +83,22 @@ User function DESCAL_COM()
        			endif
        			
         	next
-		endif     	
+		endif   
+
+		// Abre Verbas
+
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " UPDATE ZB0010 SET ZB0_DTAPGT='19000101'"
+        _oSQL:_sQuery += " WHERE D_E_L_E_T_=''"
+        _oSQL:_sQuery += " AND ZB0_DTAPGT = '" + DTOS(mv_par01) + "'"
+        _oSQL:_sQuery += " AND ZB0_VENDCH BETWEEN '" + mv_par02 + "' AND '" + mv_par03 +"'"
+        _oSQL:Log ()
+        If _oSQL:Exec ()
+            u_help(" Registros de verbas atualizado com sucesso!")
+        Else
+            u_help(" Registros de verbas não atualizados!")
+        Endif
 	endif
 return
 // --------------------------------------------------------------------------

@@ -100,15 +100,15 @@ User Function ML_BOLLSR (_aBoletos)
 		// Farei uma chamada do programa para cada titulo.
 		if type ("_aBoletos") == "A"
 			for _nBoleto = 1 to len (_aBoletos)
-				U_GravaSX1 (cPerg, "01", _aBoletos [_nBoleto, 1])
-				U_GravaSX1 (cPerg, "02", _aBoletos [_nBoleto, 1])
-				U_GravaSX1 (cPerg, "03", _aBoletos [_nBoleto, 2])
-				U_GravaSX1 (cPerg, "04", _aBoletos [_nBoleto, 2])
-				U_GravaSX1 (cPerg, "05", _aBoletos [_nBoleto, 3])
-				U_GravaSX1 (cPerg, "06", _aBoletos [_nBoleto, 4])
-				U_GravaSX1 (cPerg, "07", _aBoletos [_nBoleto, 5])
-				U_GravaSX1 (cPerg, "08", _aBoletos [_nBoleto, 6])
-				U_GravaSX1 (cPerg, "11", 1)  // Visualizar
+				mv_par01 := _aBoletos [_nBoleto, 1]
+				mv_par02 := _aBoletos [_nBoleto, 1]
+				mv_par03 := _aBoletos [_nBoleto, 2]
+				mv_par04 := _aBoletos [_nBoleto, 2]
+				mv_par05 := _aBoletos [_nBoleto, 3]
+				mv_par06 := _aBoletos [_nBoleto, 4]
+				mv_par07 := _aBoletos [_nBoleto, 5]
+				mv_par08 := _aBoletos [_nBoleto, 6]
+				mv_par11 :=  1                     // Visualizar
 				Pergunte (cPerg,.F.)
 				if _aBoletos [_nBoleto, 7] = "FA740BRW"
 					_Gera (.f.)
@@ -122,6 +122,30 @@ User Function ML_BOLLSR (_aBoletos)
 				processa ({|| _Gera (.F.)})
 			endif
 		endif
+		// if type ("_aBoletos") == "A"
+		// 	for _nBoleto = 1 to len (_aBoletos)
+		// 		U_GravaSX1 (cPerg, "01", _aBoletos [_nBoleto, 1])
+		// 		U_GravaSX1 (cPerg, "02", _aBoletos [_nBoleto, 1])
+		// 		U_GravaSX1 (cPerg, "03", _aBoletos [_nBoleto, 2])
+		// 		U_GravaSX1 (cPerg, "04", _aBoletos [_nBoleto, 2])
+		// 		U_GravaSX1 (cPerg, "05", _aBoletos [_nBoleto, 3])
+		// 		U_GravaSX1 (cPerg, "06", _aBoletos [_nBoleto, 4])
+		// 		U_GravaSX1 (cPerg, "07", _aBoletos [_nBoleto, 5])
+		// 		U_GravaSX1 (cPerg, "08", _aBoletos [_nBoleto, 6])
+		// 		U_GravaSX1 (cPerg, "11", 1)  // Visualizar
+		// 		Pergunte (cPerg,.F.)
+		// 		if _aBoletos [_nBoleto, 7] = "FA740BRW"
+		// 			_Gera (.f.)
+		// 		else
+		// 			_Gera (.t.)
+		// 		endif
+		// 	next
+		// else
+		// 	U_GravaSX1 (cPerg, "11", 1)  // Visualizar
+		// 	If Pergunte (cPerg,.T.)
+		// 		processa ({|| _Gera (.F.)})
+		// 	endif
+		// endif
 		
 		// --- verifica se o banco/conta esta bloqueada - se estiver nao deixa imprimir boletos
 		if fbuscacpo ("SA6", 1, xfilial ("SA6") + mv_par05 + mv_par06 + mv_par07,  "A6_BLOCKED") == '1'

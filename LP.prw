@@ -135,15 +135,15 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 		case _sLPad == '520' .and. _sSeq='002'
 			if _sQueRet == 'CRED'
 				
-				if alltrim(SE5->E5_ORIGEM)='ZB1'
+				if alltrim(SE5->E5_ORIGEM)=='ZB1'
 					do case
-						case SE5->E5_ADM = "100" .or. SE5->E5_ADM ="101"
+						case SE5->E5_ADM == "100" .or. SE5->E5_ADM =="101"
 							_xRet:= "101021101002"
-						case SE5->E5_ADM = "200" .or. SE5->E5_ADM ="201"
+						case SE5->E5_ADM == "200" .or. SE5->E5_ADM =="201"
 							_xRet:= "101021101001"
-						case SE5->E5_ADM = "300" .or. SE5->E5_ADM ="301"
+						case SE5->E5_ADM == "300" .or. SE5->E5_ADM =="301"
 							_xRet:= "101021101003"
-						case SE5->E5_ADM = "400" .or. SE5->E5_ADM ="401"
+						case SE5->E5_ADM == "400" .or. SE5->E5_ADM =="401"
 							_xRet:= "101021101004"
 						otherwise
 							_xRet:= "101021101005"

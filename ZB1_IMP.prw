@@ -224,7 +224,7 @@ Static Function GravaZB1(_aHeader, _aRO, _aCV, _aRel )
 		dbSetOrder(1) // ZB1_NUMNSU + ZB1_CODAUT
 		dbGoTop()
 		
-		If !dbSeek(sNSU + sAut)
+		If !dbSeek(PADR(sNSU ,8,' ') +sAut)
 		
 			Reclock("ZB1",.T.)
 				ZB1->ZB1_FILIAL := _aRO[1,1]
@@ -279,57 +279,56 @@ Static Function GravaZB1(_aHeader, _aRO, _aCV, _aRel )
 
 			u_log("Registro Importado! NSU:" + sNSU +" Autorização:"+ sAut)
 		Else
-			_Status := Posicione('ZB1',1,sNSU + sAut,'ZB1_STAIMP')
-			If _Status == 'I' // DEIXA ATUALIZAR O REGISTRO APENAS SE NAO TIVER CONCILIADO
-				Reclock("ZB1",.F.)
-					ZB1->ZB1_DTAPRO := _aHeader[1,1] 
-					ZB1->ZB1_DTAINI := _aHeader[1,2] 
-					ZB1->ZB1_DTAFIN := _aHeader[1,3] 
-					ZB1->ZB1_NUMSEQ := _aHeader[1,4] 
-					ZB1->ZB1_TPTRAN := _aRO[1,3]
-					ZB1->ZB1_DTAAPR := _aRO[1,4]
-					ZB1->ZB1_DTAENV := _aRO[1,5]
-					ZB1->ZB1_VLRBRT := _aRO[1,6] 
-					ZB1->ZB1_VLRTAX := _aRO[1,7]
-					ZB1->ZB1_VLRREJ := _aRO[1,8]
-					ZB1->ZB1_VLRLIQ := _aRO[1,9]
-					ZB1->ZB1_BANCO  := sBanco	//_aRO[1,10] 
-					ZB1->ZB1_AGENCI := sAgencia //_aRO[1,11] 
-					ZB1->ZB1_CONTA  := sConta   //_aRO[1,12]
-					ZB1->ZB1_STAPGT := _aRO[1,13]
-					ZB1->ZB1_ADM	:= _aRO[1,14]
-					ZB1->ZB1_ADMDES := _aRO[1,15] 
-					ZB1->ZB1_NUMRO  := _aRO[1,16]  
-					ZB1->ZB1_PERTAX := _aRO[1,17]  
-					ZB1->ZB1_VLRTAR := _aRO[1,18]  
-					ZB1->ZB1_CARTAO := _aCV[1,1] 
-					ZB1->ZB1_DTAVEN := _aCV[1,2]  
-					ZB1->ZB1_VLRPAR := _aCV[1,3]  
-					ZB1->ZB1_PARNUM := _aCV[1,4]  
-					ZB1->ZB1_PARTOT := _aCV[1,5]  
-					ZB1->ZB1_MOTREJ := _aCV[1,6]  
-					ZB1->ZB1_DESREJ := _aCV[1,7] 
-					ZB1->ZB1_AUTCOD := _aCV[1,8]  
-					ZB1->ZB1_TID	:= _aCV[1,9]  
-					ZB1->ZB1_NSUCOD := _aCV[1,10]  
-					ZB1->ZB1_NUMNFE := _aCV[1,11]  
-					ZB1->ZB1_IDTRAN := _aCV[1,12]  		
-				ZB1->(MsUnlock())
+			// _Status := Posicione('ZB1',1,sNSU + sAut,'ZB1_STAIMP')
+			// If _Status == 'I' // DEIXA ATUALIZAR O REGISTRO APENAS SE NAO TIVER CONCILIADO
+			// 	Reclock("ZB1",.F.)
+			// 		ZB1->ZB1_DTAPRO := _aHeader[1,1] 
+			// 		ZB1->ZB1_DTAINI := _aHeader[1,2] 
+			// 		ZB1->ZB1_DTAFIN := _aHeader[1,3] 
+			// 		ZB1->ZB1_NUMSEQ := _aHeader[1,4] 
+			// 		ZB1->ZB1_TPTRAN := _aRO[1,3]
+			// 		ZB1->ZB1_DTAAPR := _aRO[1,4]
+			// 		ZB1->ZB1_DTAENV := _aRO[1,5]
+			// 		ZB1->ZB1_VLRBRT := _aRO[1,6] 
+			// 		ZB1->ZB1_VLRTAX := _aRO[1,7]
+			// 		ZB1->ZB1_VLRREJ := _aRO[1,8]
+			// 		ZB1->ZB1_VLRLIQ := _aRO[1,9]
+			// 		ZB1->ZB1_BANCO  := sBanco	//_aRO[1,10] 
+			// 		ZB1->ZB1_AGENCI := sAgencia //_aRO[1,11] 
+			// 		ZB1->ZB1_CONTA  := sConta   //_aRO[1,12]
+			// 		ZB1->ZB1_STAPGT := _aRO[1,13]
+			// 		ZB1->ZB1_ADM	:= _aRO[1,14]
+			// 		ZB1->ZB1_ADMDES := _aRO[1,15] 
+			// 		ZB1->ZB1_NUMRO  := _aRO[1,16]  
+			// 		ZB1->ZB1_PERTAX := _aRO[1,17]  
+			// 		ZB1->ZB1_VLRTAR := _aRO[1,18]  
+			// 		ZB1->ZB1_CARTAO := _aCV[1,1] 
+			// 		ZB1->ZB1_DTAVEN := _aCV[1,2]  
+			// 		ZB1->ZB1_VLRPAR := _aCV[1,3]  
+			// 		ZB1->ZB1_PARNUM := _aCV[1,4]  
+			// 		ZB1->ZB1_PARTOT := _aCV[1,5]  
+			// 		ZB1->ZB1_MOTREJ := _aCV[1,6]  
+			// 		ZB1->ZB1_DESREJ := _aCV[1,7] 
+			// 		ZB1->ZB1_AUTCOD := _aCV[1,8]  
+			// 		ZB1->ZB1_TID	:= _aCV[1,9]  
+			// 		ZB1->ZB1_NSUCOD := _aCV[1,10]  
+			// 		ZB1->ZB1_NUMNFE := _aCV[1,11]  
+			// 		ZB1->ZB1_IDTRAN := _aCV[1,12]  		
+			// 	ZB1->(MsUnlock())
+			// EndIf
+			_vlrTaxa := ROUND((_aCV[1,3] * _aRO[1,17])/100,2)
+			aadd(_aRel,{ 	_aRO[1,1],; 	// filial
+							_aRO[1,9],; 	// valor liquido da venda
+							_aCV[1,3],; 	// valor da parcela
+							_aRO[1,17],; 	// % taxa
+							_vlrTaxa ,;     // valor da taxa
+							_aCV[1,2],; 	// data de venda
+							_aHeader[1,1],; // data do processamento
+							_aCV[1,8] ,; 	// autorização
+							_aCV[1,10],; 	// NSU
+							'JÁ IMPORTADO'  })
 
-				_vlrTaxa := ROUND((_aCV[1,3] * _aRO[1,17])/100,2)
-				aadd(_aRel,{ 	_aRO[1,1],; 	// filial
-								_aRO[1,9],; 	// valor liquido da venda
-								_aCV[1,3],; 	// valor da parcela
-								_aRO[1,17],; 	// % taxa
-								_vlrTaxa ,;     // valor da taxa
-								_aCV[1,2],; 	// data de venda
-								_aHeader[1,1],; // data do processamento
-								_aCV[1,8] ,; 	// autorização
-								_aCV[1,10],; 	// NSU
-								'ALTERADO'  })
-
-				u_log("Registro Alterado! NSU:" + sNSU +" Autorização:"+ sAut)
-			EndIf
+			u_log("Registro já importado! NSU:" + sNSU +" Autorização:"+ sAut)
 		EndIf
 
 	End Transaction
@@ -562,9 +561,9 @@ Static Function PrintReport(oReport)
 		_oSQL:_sQuery += " FROM " + RetSQLName ("SE1") + " AS SE1 "
 		_oSQL:_sQuery += " WHERE SE1.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery += " AND SE1.E1_FILIAL  = '" + _aRel[i, 1] + "'"
-		_oSQL:_sQuery += " AND SE1.E1_EMISSAO = '" + DTOS(_aRel[i,6]) + "'"
 		If alltrim(_aRel[i, 1]) <> '01'
 			_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aRel[i,8] + "'" // Loja salva cod.aut no campo NSU
+			_oSQL:_sQuery += " AND SE1.E1_EMISSAO = '" + DTOS(_aRel[i,6]) + "'"
 		Else
 			_oSQL:_sQuery += " AND SE1.E1_CARTAUT = '" + _aRel[i,8] + "'"
 			_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aRel[i,9] + "'"

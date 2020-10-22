@@ -72,11 +72,11 @@ User Function ZB1_CON(_sConciliar)
 		_oSQL:_sQuery += "    ,ZB1_NSUCOD" // 18
 		_oSQL:_sQuery += "    ,ZB1_NUMNFE" // 19
 		_oSQL:_sQuery += "    ,ZB1_STAIMP" // 20
-		_oSQL:_sQuery += "    ,ZB1_PARNUM" // 21
-		_oSQL:_sQuery += "    ,ZB1_DTAAPR" // 22 - DATA DE EMISSAO
+		_oSQL:_sQuery += "    ,ZB1_DTAAPR" // 21 - DATA DE EMISSAO
 		_oSQL:_sQuery += " FROM " + RetSQLName ("ZB1") 
 		//_oSQL:_sQuery += " WHERE ZB1_FILIAL = '" +xFilial("ZB1")+ "'"
 		_oSQL:_sQuery += " WHERE ZB1_FILIAL = '" + cFilAnt + "'"
+		_oSQL:_sQuery += " AND D_E_L_E_T_ = ''" 
 		_oSQL:_sQuery += " AND ZB1_STAPGT = '01'" 		 //-- PAGO
 		_oSQL:_sQuery += " AND ZB1_STAIMP = 'I' "        //-- APENAS OS IMPORTADOS
 		_oSQL:_sQuery += " AND ZB1_ARQUIV LIKE'%CIELO%'" //-- APENAS ARQUIVOS DA CIELO
@@ -97,8 +97,8 @@ User Function ZB1_CON(_sConciliar)
 			For i:=1 to Len(_aZB1)
 				
 				_sParc := ''
-				If alltrim(_aZB1[i, 21]) <> '00' .or. alltrim(_aZB1[i, 21]) <> '' 
-					_sParc := BuscaParcela(_aZB1[i, 21])
+				If alltrim(_aZB1[i, 9]) <> '00' .or. alltrim(_aZB1[i, 9]) <> '' 
+					_sParc := BuscaParcela(_aZB1[i, 9])
 				EndIf
 
 				// Busca dados do título para fazer a baixa
@@ -117,12 +117,13 @@ User Function ZB1_CON(_sConciliar)
 				_oSQL:_sQuery += "    ,SE1.E1_BAIXA"	// 10
 				_oSQL:_sQuery += "    ,SE1.E1_SALDO"	// 11
 				_oSQL:_sQuery += "    ,SE1.E1_STATUS "	// 12
+				_oSQL:_sQuery += "    ,SE1.E1_ADM "	    // 13
 				_oSQL:_sQuery += " FROM " + RetSQLName ("SE1") + " AS SE1 "
 				_oSQL:_sQuery += " WHERE SE1.D_E_L_E_T_ = ''"
 				_oSQL:_sQuery += " AND SE1.E1_FILIAL  = '" + _aZB1[i, 1] + "'"
-				_oSQL:_sQuery += " AND SE1.E1_EMISSAO = '" + DTOS(_aZB1[i,16]) + "'"
 				If _sConciliar == '1'
 					_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aZB1[i,17] + "'" // Loja salva cod.aut no campo NSU
+					_oSQL:_sQuery += " AND SE1.E1_EMISSAO = '" + DTOS(_aZB1[i,16]) + "'"
 				Else
 					_oSQL:_sQuery += " AND SE1.E1_CARTAUT = '" + _aZB1[i,17] + "'"
 					_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aZB1[i,18] + "'"
@@ -196,10 +197,10 @@ User Function ZB1_CON(_sConciliar)
 						
 							_aAutoSE1 := aclone (U_OrdAuto (_aAutoSE1))  // orderna conforme dicionário de dados
 
-							cPerg = 'FIN070'
-							_aBkpSX1 = U_SalvaSX1 (cPerg)  // Salva parametros da rotina.
-							U_GravaSX1 (cPerg, "01", 2)    // testar mostrando o lcto contabil depois pode passar para nao
-							U_GravaSX1 (cPerg, "04", 2)    // esse movimento tem que contabilizar
+							//cPerg = 'FIN070'
+							//_aBkpSX1 = U_SalvaSX1 (cPerg)  // Salva parametros da rotina.
+							//U_GravaSX1 (cPerg, "01", 2)    // testar mostrando o lcto contabil depois pode passar para nao
+							//U_GravaSX1 (cPerg, "04", 2)    // esse movimento tem que contabilizar
 
 							MSExecAuto({|x,y| Fina070(x,y)},_aAutoSE1,3,.F.,5) // rotina automática para baixa de títulos
 
@@ -223,10 +224,16 @@ User Function ZB1_CON(_sConciliar)
 
 							Else// Se gravado, inclui campos n SE5 finaliza o registro da ZA1
 								// Atualiza banco e administradora
+								if alltrim(_aTitulo[x,1]) == '01' // matriz - link
+									_sAdm := alltrim(_aTitulo[x,13]) 
+								else
+									_sAdm := alltrim(_aTitulo[x,6]) 
+								endif
+
 								_oSQL:= ClsSQL ():New ()
 								_oSQL:_sQuery := ""
 								_oSQL:_sQuery += " UPDATE " + RetSQLName ("SE5") + " SET E5_BANCO = '"+ alltrim(_aZB1[i,11]) + "', E5_AGENCIA = '"+ alltrim(_aZB1[i,12]) +"',"
-								_oSQL:_sQuery += " E5_CONTA = '" + alltrim(_aZB1[i,13]) + "', E5_ADM = '" + alltrim(_aTitulo[x,6]) + "'"
+								_oSQL:_sQuery += " E5_CONTA = '" + alltrim(_aZB1[i,13]) + "', E5_ADM = '" + _sAdm + "'"
 								_oSQL:_sQuery += " WHERE D_E_L_E_T_=''"
 								_oSQL:_sQuery += " AND E5_FILIAL  ='" + _aTitulo[x,1] + "'"
 								_oSQL:_sQuery += " AND E5_PREFIXO ='" + _aTitulo[x,2] + "'"

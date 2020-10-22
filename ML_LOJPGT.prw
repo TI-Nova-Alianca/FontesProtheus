@@ -561,6 +561,7 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " AND SF2.F2_FILIAL = '" + xFilial("SF2") +"'"
 	_oSQL:_sQuery += " AND SF2.F2_EMISSAO BETWEEN '"+ dtos(mv_par01) +"' AND '"+ dtos(mv_par02) +"'"
 	_oSQL:_sQuery += " GROUP BY SC5.C5_VATIPO"
+	_oSQL:Log ()
 
 	aTNFs := aclone (_oSQL:Qry2Array ())
 
@@ -643,6 +644,8 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " 	  ,SUM(TVALOR)"
 	_oSQL:_sQuery += " 	FROM C"
 	_oSQL:_sQuery += " 	GROUP BY TFORMA"
+	_oSQL:Log ()
+
 	aTotaisG := aclone (_oSQL:Qry2Array ())
 		
 	If Len(aTotaisG)

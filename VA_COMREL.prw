@@ -86,7 +86,7 @@ Static Function ReportDef()
 	TRCell():New(oSection3,"COLUNA9", 	"" ,"Comissao"		, "@E 999,999,999.99"   ,30,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection3,"COLUNA10", 	"" ,"Valor  "		, 					    ,30,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	
-		// VERBAS/BONIFIFICAÇÕES
+	// DEVOLUÇÕES
 	oSection4 := TRSection():New(oReport,,{}, , , , , ,.F.,.F.,.F.,,15) 
 	
 	TRCell():New(oSection4,"COLUNA1", 	"" ,"Título"		,       				,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)

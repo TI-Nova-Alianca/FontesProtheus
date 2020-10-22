@@ -56,7 +56,7 @@ User Function MSE3440 ()
 	local _wrecebido := 0
 	local _wparcST   := 0
 	
-	if upper (getenvserver ()) $ 'TESTE\TESTETI'  // N LIBERADO NA BASE QUENTE
+	if upper (getenvserver ()) $ 'TESTE\TESTETI\TESTEFISCAL'  // N LIBERADO NA BASE QUENTE
 	//if upper (getenvserver ()) $ 'TESTE'  // N LIBERADO NA BASE QUENTE
 		u_logIni ()
 		
