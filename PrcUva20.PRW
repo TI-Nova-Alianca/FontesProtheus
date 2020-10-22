@@ -180,7 +180,7 @@ user function PrcUva20 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 				_oSQL:_sQuery += " AND ZX5_13.ZX5_13GRUP like '2%'"
 			endif
 		endif
-		_oSQL:Log ()
+		//_oSQL:Log ()
 		_aGrupo := aclone (_oSQL:Qry2Array (.F., .F.))
 	//	U_log2 ('debug', _aGrupo)
 		if len (_aGrupo) == 0
@@ -493,7 +493,10 @@ user function PrcUva20 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 //			u_log2 ('info', 'Classificacao........: ' + _sClassif)
 			if _sConducao == 'E'  // Espaldeira
 				do case
-				case alltrim (_sClassif) $ "PR/AA"
+//				case alltrim (_sClassif) $ "PR/AA"
+//					_nPrcRec *= 1.4
+//					_nPrcCom *= 1.4
+				case alltrim (_sClassif) == "PR" .or. alltrim (_sClassif) == "AA"
 					_nPrcRec *= 1.4
 					_nPrcCom *= 1.4
 				case alltrim (_sClassif) == "A"

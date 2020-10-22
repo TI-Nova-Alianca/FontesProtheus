@@ -364,6 +364,8 @@ static function _BuscaPrc (_sFilial, _sVaried, _sGrau, _sClEspald, _sClLatada, _
 		_aRetPrc = aclone (U_PrcUva19 (_sFilial, _sVaried, val (_sGrau), _sClasFina, _sConduc, .F.))
 	elseif zz9 -> zz9_safra == '2020'
 		_aRetPrc = aclone (U_PrcUva20 (_sFilial, _sVaried, val (_sGrau), _sClasFina, _sConduc, .F.))
+	elseif zz9 -> zz9_safra == '2021'
+		_aRetPrc = aclone (U_PrcUva21 (_sFilial, _sVaried, val (_sGrau), _sClasFina, _sConduc, .F.))
 	else
 		u_help ("Sem tratamento de precificacao para esta safra.",, .t.)
 	endif
