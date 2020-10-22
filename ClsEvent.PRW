@@ -179,14 +179,14 @@ Return Self
 METHOD Grava () Class ClsEvent
 	local _aArea    := U_ML_SRArea ()
 	local _sTextoZN := ""
-	local _sMemo    := ""
+//	local _sMemo    := ""
 
 	//u_logIni (GetClassName (::Self) + '.' + procname ())
 
 	// Se tem quebras de linha no texto ou se o texto eh grande demais, gera memo.
-	if chr (13) $ ::Texto .or. len (alltrim (::Texto)) > tamsx3 ("ZN_TEXTO")[1]
-		_sMemo = ::Texto
-	endif
+//	if chr (13) $ ::Texto .or. len (alltrim (::Texto)) > tamsx3 ("ZN_TEXTO")[1]
+//		_sMemo = ::Texto
+//	endif
 	
 	// Se tem quebras de linha no texto, gravo soh a primeira linha no SZN e deixo o restante para o campo memo.
 	if chr (13) $ ::Texto
@@ -283,15 +283,9 @@ METHOD AltCadast (_sAlias, _sCodAlias, _nRecno, _sDadAdic, _lNotif) Class ClsEve
 			::Texto += " Produto " + alltrim (sb1 -> b1_cod) + "-" + alltrim (sb1 -> b1_desc) + chr (13) + chr (10)
 		case _sAlias == 'SF4'
 			::Texto += " TES " + sf4 -> f4_codigo + '-' + alltrim (sf4 -> f4_texto) + chr (13) + chr (10)
-//		case _sAlias == 'SRV'
-//			::Texto += " Verba folha " + srv -> rv_cod + '-' + alltrim (srv -> rv_desc) 
-//		case _sAlias == 'ZAX'
-//			::Texto += " Cliente " + alltrim (zax -> zax_client) + chr (13) + chr (10)
 		otherwise
 			::Texto += " (" + alltrim (fBuscaCpo ("SX2", 1, _sAlias, "X2_NOME")) +")" + chr (13) + chr (10)
 	endcase
-//	::Texto += chr (13) + chr (10) + _sMsgLog
-
 
 	// Monta uma linha para cada campo alterado.
 	for _nCampo = 1 to (_sAlias) -> (fcount ())
@@ -299,17 +293,13 @@ METHOD AltCadast (_sAlias, _sCodAlias, _nRecno, _sDadAdic, _lNotif) Class ClsEve
 		if type ("M->" + _sCampo) != "U"
 			_sContAtu = alltrim (cvaltochar (&("M->" + _sCampo)))
 			_sContAnt = alltrim (cvaltochar ((_sAlias) -> &_sCampo))
-			//u_log ('verificando ', "M->" + _sCampo, 'que contem:', _sContAtu, 'contra o anterior, que contem', _sContAnt)
-			//if alltrim (cvaltochar (&("M->" + _sCampo))) != alltrim (cvaltochar ((_sAlias) -> &_sCampo))
 			if _sContAtu != _sContAnt
-				//_sMsgLog += alltrim (_sCampo) + " (" + alltrim (RetTitle (upper (_sCampo))) + "): alterado de '" + alltrim (cValToChar ((_sAlias) -> &_sCampo)) + "' para '" + alltrim (cValToChar (&("M->" + _sCampo))) + "'" + chr (13) + chr (10)
 				_sMsgLog += '<cpo>' + alltrim (_sCampo) + '</cpo>' + chr (13) + chr (10)  //<titulo>' + alltrim (RetTitle (upper (_sCampo))) + '</titulo>' + chr (13) + chr (10)
 				_sMsgLog += '<de>' + _sContAnt + '</de>' + chr (13) + chr (10)
 				_sMsgLog += '<para>' + _sContAtu + '</para>' + chr (13) + chr (10)
 			endif
 		endif
 	next
-	//u_log ('_sMsgLog apos ler campos do ALIAS:', _sMsgLog)
 
 	// Se for alteracao de produtos, verifica tambem o SB5. Provavelmente no futuro precise verificar tambem outras tabelas que vao aparecer na mesma tela.
 	if _sAlias == 'SB1'
@@ -318,10 +308,7 @@ METHOD AltCadast (_sAlias, _sCodAlias, _nRecno, _sDadAdic, _lNotif) Class ClsEve
 			if type ("M->" + _sCampo) != "U"
 				_sContAtu = alltrim (cvaltochar (&("M->" + _sCampo)))
 				_sContAnt = alltrim (cvaltochar (sb5 -> &_sCampo))
-				//u_log ('verificando ', "M->" + _sCampo, 'que contem:', _sContAtu, 'contra o anterior, que contem', _sContAnt)
-//				if alltrim (cvaltochar (&("M->" + _sCampo))) != alltrim (cvaltochar (sb5 -> &_sCampo))
 				if _sContAtu != _sContAnt
-//					_sMsgLog += alltrim (_sCampo) + " (" + alltrim (RetTitle (upper (_sCampo))) + "): alterado de '" + alltrim (cValToChar (sb5 -> &_sCampo)) + "' para '" + alltrim (cValToChar (&("M->" + _sCampo))) + "'" + chr (13) + chr (10)
 					_sMsgLog += '<cpo>' + alltrim (_sCampo) + '</cpo>' + chr (13) + chr (10)  //<titulo>' + alltrim (RetTitle (upper (_sCampo))) + '</titulo>' + chr (13) + chr (10)
 					_sMsgLog += '<de>' + _sContAnt + '</de>' + chr (13) + chr (10)
 					_sMsgLog += '<para>' + _sContAtu + '</para>' + chr (13) + chr (10)
@@ -329,10 +316,8 @@ METHOD AltCadast (_sAlias, _sCodAlias, _nRecno, _sDadAdic, _lNotif) Class ClsEve
 			endif
 		next
 	endif
-	//u_log ('_sMsgLog apos ler campos do SB5:', _sMsgLog)
 
 	if ! empty (_sMsgLog) .or. ! empty (_sDadAdic)
-		//u_log ('_sMsgLog: ' , _sMsgLog)
 		::Alias     = _sAlias
 		::CodEven   = "ALT001"
 		::Texto    += _sMsgLog
@@ -379,24 +364,13 @@ return
 // Exclusao do evento posicionado no SZN
 METHOD Exclui () Class ClsEvent
 	local _aArea    := U_ML_SRArea ()
-//	local _sMemo    := ""
-
-//	u_logIni (GetClassName (::Self) + '.' + procname ())
 
 	szn -> (dbgoto (::RecnoSZN))
-
-	// Migrado para campo ZN_TXT (memo real). Robert, 07/07/2019
-	//// Apaga memo relacionado.
-	//if ! empty (szn -> zn_codmemo)
-	//	msmm (szn -> zn_codmemo,,,, 2,,, "SZN", "ZN_CODMEMO")
-	//endif
-	
 	reclock ("SZN", .F.)
 	szn -> (dbdelete ())
 	msunlock ()
 
 	U_ML_SRArea (_aArea)
-//	u_logFim (GetClassName (::Self) + '.' + procname ())
 return
 
 
