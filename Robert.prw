@@ -74,76 +74,204 @@ static function _AndaLogo ()
 //	local _oAssoc    := NIL
 //	local _aAssoc := {}
 //	local _nAssoc := 0
-
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
+
 //	u_help ("[" + procname () + "] Nada definido.")
 
-	u_log2 ('info', NIL)
-	_sArqLog := 'U_BatRevCH_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	U_BatRevCh ("MG", "CTE", 1, '31201002442313000710570000000000631100000633', .T.)
-	U_BatRevCh ("RS", "NFE", 90, NIL, .T.)
-	U_BatRevCh ("RS", "CTE", 90, NIL, .T.)
-return
-
-U_BatRevCh ("AC", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("AC", "NFE", 90)
-U_BatRevCh ("AL", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("AL", "NFE", 90)
-U_BatRevCh ("AM", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("AM", "NFE", 90)
-U_BatRevCh ("AP", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("AP", "NFE", 90)
-U_BatRevCh ("BA", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("BA", "NFE", 90)
-U_BatRevCh ("CE", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("CE", "NFE", 90)
-U_BatRevCh ("DF", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("DF", "NFE", 90)
-U_BatRevCh ("ES", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("ES", "NFE", 90)
-U_BatRevCh ("GO", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("GO", "NFE", 90)
-U_BatRevCh ("MA", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("MA", "NFE", 90)
-// AINDA CoM PROBLEMA --> U_BatRevCh ("MG", "CTE", 90)
-//U_BatRevCh ("MG", "NFE", 90)
-U_BatRevCh ("MS", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("MS", "NFE", 90)
-U_BatRevCh ("MT", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("MT", "NFE", 90)
-U_BatRevCh ("PA", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("PA", "NFE", 90)
-U_BatRevCh ("PB", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("PB", "NFE", 90)
-U_BatRevCh ("PE", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("PE", "NFE", 90)
-U_BatRevCh ("PI", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("PI", "NFE", 90)
-U_BatRevCh ("PR", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("PR", "NFE", 90)
-U_BatRevCh ("RJ", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("RJ", "NFE", 90)
-U_BatRevCh ("RN", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("RN", "NFE", 90)
-U_BatRevCh ("RO", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("RO", "NFE", 90)
-U_BatRevCh ("RR", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("RR", "NFE", 90)
-U_BatRevCh ("RS", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("RS", "NFE", 90)
-U_BatRevCh ("SC", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("SC", "NFE", 90)
-U_BatRevCh ("SE", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("SE", "NFE", 90)
-U_BatRevCh ("SP", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("SP", "NFE", 90)
-U_BatRevCh ("TO", "CTE", 90, NIL, .T.)
-//U_BatRevCh ("TO", "NFE", 90)
-u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
+	cPerg := "ROBERT"
+	_Validperg ()
+//	pergunte (cperg, .T.)
+//	u_log2 ('debug', 'perguntei com .t.')
+//	u_logsx1 (cperg)
+	U_GravaSX1 (cPerg, '01', '000156')
+	pergunte (cperg, .F.)
+	u_log2 ('debug', 'perguntei com .f.')
+	u_logsx1 (cperg)
+//	pergunte (cperg, .t.)
+//	u_log2 ('debug', 'perguntei com .t.')
+//	u_logsx1 (cperg)
+	U_GravaSX1 (cPerg, '01', '000161')
+	pergunte (cperg, .F.)
+	u_log2 ('debug', 'perguntei com .f.')
+	u_logsx1 (cperg)
+//	pergunte (cperg, .t.)
+//	u_log2 ('debug', 'perguntei com .t.')
+//	u_logsx1 (cperg)
+//	U_GravaSX1 (cPerg, '01', '000167')
+//	Pergunte (cPerg, .F.,nil,.F.,NIL,.T.)
+//	Pergunte (cPerg, .t.,nil,.F.,NIL,.T.)
+	FINAL ()
+	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
 RETURN
 
+// --------------------------------------------------------------------------
+// Cria Perguntas no SX1
+Static Function _ValidPerg ()
+	local _aRegsPerg := {}
+	local _aDefaults := {}
+	
+	//                     PERGUNT                           TIPO TAM DEC VALID F3        Opcoes                               Help
+	aadd (_aRegsPerg, {01, "TESTE ROBERT", "C", 6,  0,  "",   "SA2_AS", {},                                  ""})
+
+	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
+return
+
+/*
+	// Gera precos para as pre-notas de compra de safra.
+	Private cPerg   := "VAZZ9P"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'Z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // produto ini
+	U_GravaSX1 (cPerg, '07', 'z')    // fim
+	U_GravaSX1 (cPerg, '08', 2)      // tipos uvas {"Comuns","Finas","Todas"}
+	U_GravaSX1 (cPerg, '09', 2)      // regrava com NF ja gerada {"Sim", "Nao"}
+	U_GravaSX1 (cPerg, '10', 1)      // regrava com obs {"Regrava","Nao altera"}
+	U_GravaSX1 (cPerg, '11', '03')   // Filial inicial
+	U_GravaSX1 (cPerg, '12', '03')   // Filial final
+	U_GravaSX1 (cPerg, '13', 'Z')    // parcela ini
+	U_GravaSX1 (cPerg, '14', 'Z')    // parcela final
+	U_GravaSX1 (cPerg, '15', 1)      // regrava se ja tiver preco {"Sim", "Nao"}
+	U_VA_ZZ9P (.t.)
+return
+*/
+/*
+	// Simulacoes precos para 2021
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '012373')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', '012373')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', '03')     // Filial inicial
+	U_GravaSX1 (cPerg, '10', '03')   // Filial final
+	U_GravaSX1 (cPerg, '11', 'Z')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '14', '') // Apenas estas variedades (bordo, bordo de bordadura/em conversao/organico)
+	U_GravaSX1 (cPerg, '15', '')     // Exceto estas variedades.
+	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
+	U_GravaSX1 (cPerg, '17', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '18', 'OCEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_GravaSX1 (cPerg, '19', 'Z')    // Grupo para pagamento
+	U_GravaSX1 (cPerg, '20', '3')    // 1=Latadas; 2=Espaldeira; 3=Todas
+	U_GravaSX1 (cPerg, '21', '107')  // TES compra de associados
+	U_GravaSX1 (cPerg, '22', '077')  // TES compra de nao associados
+	U_VA_GNF1 (.T.)
+RETURN
+*/
+/*
+	U_HELP ('VOU GRAVAR')
+	_oEvento := ClsEvent ():New ()
+	_oEvento:Texto   = "Teste inclusao evento" + CHR (13) + CHR(10)+"para ver como grava campo memo"
+	_oEvento:CodEven = "000001"
+	_oEvento:Grava ()
+return
+*/
+/*
+	// Ajusta profiles apos migracao dos SX para o banco de dados
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "SELECT ID_USR, NOME FROM VA_USR_USUARIOS"
+	_oSQL:_sQuery += " WHERE BLOQUEADO = 'N'"
+	_oSQL:_sQuery +=   " AND NOME LIKE '%.%'"
+	_oSQL:_sQuery +=   " AND NOME NOT LIKE 'RET_%'"
+	_oSQL:_sQuery +=   " AND NOT EXISTS (SELECT * FROM MP_SYSTEM_PROFILE WHERE P_NAME = ID_USR + '_OLD')"
+	_oSQL:_sQuery += " ORDER BY ID_USR"
+	_oSQL:Log ()
+	_aDados := _oSQL:Qry2Array ()
+	for _nDado = 1 to len (_aDados)
+		_sUsr = _aDados [_nDado, 1]
+		_sNomeUsr = '01' + upper (left (_aDados [_nDado, 2], 13))
+		u_log2 ('info', _sUsr + ' ' + _sNomeUsr)
+		begin transaction
+		_oSQL:_sQuery := "UPDATE MP_SYSTEM_PROFILE SET P_NAME = '" + _sUsr + "_OLD'
+		_oSQL:_sQuery += " WHERE upper (P_NAME)   = '" + _sUsr + "'"
+		_oSQL:_sQuery +=   " AND P_EMPANT = ''"
+		_oSQL:_sQuery +=   " AND MP_SYSTEM_PROFILE.P_TASK IN ('PERGUNTE')"
+		_oSQL:Log ()
+		_oSQL:Exec ()
+		_oSQL:_sQuery := "UPDATE MP_SYSTEM_PROFILE SET P_NAME = '" + _sUsr + "', P_EMPANT = '01'"
+		_oSQL:_sQuery += " WHERE upper (P_NAME) = '" + _sNomeUsr + "'"
+		_oSQL:_sQuery +=   " AND MP_SYSTEM_PROFILE.P_TASK IN ('PERGUNTE')"
+		_oSQL:_sQuery +=   " AND NOT EXISTS (SELECT * FROM MP_SYSTEM_PROFILE NOVO"
+		_oSQL:_sQuery +=                    " WHERE NOVO.P_NAME = '" + _sUsr + "'"
+		_oSQL:_sQuery +=                      " AND NOVO.P_PROG = MP_SYSTEM_PROFILE.P_PROG"
+		_oSQL:_sQuery +=                      " AND NOVO.P_TASK = MP_SYSTEM_PROFILE.P_TASK"
+		_oSQL:_sQuery +=                      " AND NOVO.P_TYPE = MP_SYSTEM_PROFILE.P_TYPE"
+		_oSQL:_sQuery +=                      " AND NOVO.P_EMPANT = '01'"
+		_oSQL:_sQuery +=                      " AND NOVO.P_FILANT = MP_SYSTEM_PROFILE.P_FILANT)"
+		_oSQL:Log ()
+		_oSQL:Exec ()
+		end transaction
+		//exit
+	next
+RETURN
+*/
+/*
+	_sArqLog := 'U_BatRevCH_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+	U_BatRevCh ("AC", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("AC", "NFE", 90)
+	U_BatRevCh ("AL", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("AL", "NFE", 90)
+	U_BatRevCh ("AM", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("AM", "NFE", 90)
+	U_BatRevCh ("AP", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("AP", "NFE", 90)
+	U_BatRevCh ("BA", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("BA", "NFE", 90)
+	U_BatRevCh ("CE", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("CE", "NFE", 90)
+	U_BatRevCh ("DF", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("DF", "NFE", 90)
+	U_BatRevCh ("ES", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("ES", "NFE", 90)
+	U_BatRevCh ("GO", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("GO", "NFE", 90)
+	U_BatRevCh ("MA", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("MA", "NFE", 90)
+	// AINDA CoM PROBLEMA --> U_BatRevCh ("MG", "CTE", 90)
+	//U_BatRevCh ("MG", "NFE", 90)
+	U_BatRevCh ("MS", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("MS", "NFE", 90)
+	U_BatRevCh ("MT", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("MT", "NFE", 90)
+	U_BatRevCh ("PA", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("PA", "NFE", 90)
+	U_BatRevCh ("PB", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("PB", "NFE", 90)
+	U_BatRevCh ("PE", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("PE", "NFE", 90)
+	U_BatRevCh ("PI", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("PI", "NFE", 90)
+	U_BatRevCh ("PR", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("PR", "NFE", 90)
+	U_BatRevCh ("RJ", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("RJ", "NFE", 90)
+	U_BatRevCh ("RN", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("RN", "NFE", 90)
+	U_BatRevCh ("RO", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("RO", "NFE", 90)
+	U_BatRevCh ("RR", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("RR", "NFE", 90)
+	U_BatRevCh ("RS", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("RS", "NFE", 90)
+	U_BatRevCh ("SC", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("SC", "NFE", 90)
+	U_BatRevCh ("SE", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("SE", "NFE", 90)
+	U_BatRevCh ("SP", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("SP", "NFE", 90)
+	U_BatRevCh ("TO", "CTE", 90, NIL, .T.)
+	//U_BatRevCh ("TO", "NFE", 90)
+RETURN
+*/
 /*
 // Envia atualizacoes diversas para o Mercanet
 //	_oSQL := ClsSQL ():New ()
@@ -996,27 +1124,6 @@ return
 		u_log2 ('debug', XMLSaveStr(oXml))
 	endif
 
-return
-*/
-/*
-	// Gera precos para as pre-notas de compra de safra.
-	Private cPerg   := "VAZZ9P"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // produto ini
-	U_GravaSX1 (cPerg, '07', 'z')    // fim
-	U_GravaSX1 (cPerg, '08', 3)      // tipos uvas {"Comuns","Finas","Todas"}
-	U_GravaSX1 (cPerg, '09', 2)      // regrava com NF ja gerada {"Sim", "Nao"}
-	U_GravaSX1 (cPerg, '10', 1)      // regrava com obs {"Regrava","Nao altera"}
-	U_GravaSX1 (cPerg, '11', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '13', 'A')    // parcela ini
-	U_GravaSX1 (cPerg, '14', 'F')    // parcela final
-	U_GravaSX1 (cPerg, '15', 1)      // regrava se ja tiver preco {"Sim", "Nao"}
-	U_VA_ZZ9P (.t.)
 return
 */
 	/*
@@ -2072,13 +2179,6 @@ return
 			endif
 		endif
 	endif
-return
-*/
-/*
-	_oEvento := ClsEvent ():New ()
-	_oEvento:Texto   = "Teste inclusao evento"
-	_oEvento:CodEven = "000001"
-	_oEvento:Grava ()
 return
 */
 /*
