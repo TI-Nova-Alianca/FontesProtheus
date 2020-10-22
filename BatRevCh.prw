@@ -138,7 +138,7 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 		// Ordena por UF (chave) + layout + versao para fazer um unico acesso a cada servico.
 		// Dentro disso, inicia pelas chaves nunca validadas e depois pelas emitidas ha mais tempo.
 		if empty (_sChave)
-			_oSQL:_sQuery := "SELECT TOP 500 R_E_C_N_O_ AS RECNO, ZZX_CHAVE AS CHAVE, ZZX_VERSAO AS VERSAO"
+			_oSQL:_sQuery := "SELECT R_E_C_N_O_ AS RECNO, ZZX_CHAVE AS CHAVE, ZZX_VERSAO AS VERSAO"
 			_oSQL:_sQuery +=      ", SUBSTRING (ZZX_CHAVE, 1, 2) AS UF"
 			_oSQL:_sQuery +=      ", CASE WHEN UPPER(ZZX_LAYOUT) LIKE '%NFE%' THEN 'NFE' ELSE CASE WHEN UPPER(ZZX_LAYOUT) LIKE '%CTE%' THEN 'CTE' ELSE '' END END AS LAYOUT"
 			_oSQL:_sQuery += " FROM VA_VDFES_A_REVALIDAR"
@@ -200,11 +200,12 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 					_lWSDL_OK = .F.
 					_oBatch:Retorno = 'N'
 				else
-	
+					U_LOG2 ('INFO', 'Conectando ' + zz4 -> zz4_wsdl)
+
 					// Cria o objeto para acesso ao web service
 					_oWSDL := TWsdlManager():New()
 					if _lDebug
-						// Ao liga o verbose da classe, é exibido no console do Application Server, mas não gravados no arquivo console.log, algumas informações sobre headers que são enviados.
+						// Ao ligar o verbose da classe, é exibido no console do Application Server, mas não gravados no arquivo console.log, algumas informações sobre headers que são enviados.
 						// Dessa maneira, será criado na mesma pasta em que se encontra o TOTVS Application Server o arquivo request.log, que contém as mensagens que são enviadas ao servidor, e o arquivo response.log, que contém as mensagens que são recebidas do servidor.
 						// https://tdn.totvs.com/pages/viewpage.action?pageId=189313583
 						// nao fez diferenca --> _oWsdl:lVerbose := .F.
