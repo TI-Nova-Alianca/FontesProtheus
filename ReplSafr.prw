@@ -13,6 +13,7 @@
 //                     - Replicacao das tabelas 13 e 14 do ZX5.
 // 20/11/2019 - Robert - Ajustes para safra 2020 (novos campos tabela 17 do ZX5)
 // 03/01/2020 - Robert - Campo ZX5_17COND vai ser excluido (a tabela 17 serve somente para espaldeira, entao nao ha motivo para manter o campo).
+// 16/10/2020 - Robert - Nao levava valores junto quando copia a tabela 13 (grp.prc.safra)
 //
 
 // --------------------------------------------------------------------------
@@ -38,7 +39,7 @@ User Function ReplSafr ()
 	if _lContinua
 		_nLock := U_Semaforo (procname () + cEmpAnt + cFilAnt)
 		if _nLock == 0
-			msgalert ("Nao foi possivel obter acesso exclusivo a esta rotina nesta empresa/filial.")
+			u_help ("Nao foi possivel obter acesso exclusivo a esta rotina nesta empresa/filial.",, .t.)
 			_lContinua = .F.
 		endif
 	endif
@@ -87,7 +88,7 @@ Static Function _Opcoes ()
 
 	// Monta array de opcoes.
 	_aOpcoes = {}
-	aadd (_aOpcoes, {.F., "Tabela de nao conformidades uvas",    "ZX5_11"})
+//	aadd (_aOpcoes, {.F., "Tabela de nao conformidades uvas",    "ZX5_11"})
 	aadd (_aOpcoes, {.F., "Grupos de uvas p/tabela precos",      "ZX5_13"})
 	aadd (_aOpcoes, {.F., "Faixas calculo grau uvas viniferas",  "ZX5_17"})
 
@@ -114,8 +115,8 @@ Static Function _AndaLogo ()
 	for _nOpcao = 1 to len (_aOpcoes)
 		if _aOpcoes [_nOpcao, 1]
 			do case
-				case _aOpcoes [_nOpcao, 3] == "ZX5_11"
-					u_help ("Rotina ainda nao desenvolvida. Use rotina de 'tabelas especificas' (tabela 11)")
+//				case _aOpcoes [_nOpcao, 3] == "ZX5_11"
+//					u_help ("Rotina ainda nao desenvolvida. Use rotina de 'tabelas especificas' (tabela 11)")
 				case _aOpcoes [_nOpcao, 3] == "ZX5_13"
 					processa ({|| _ReplZX513 ()})
 				case _aOpcoes [_nOpcao, 3] == "ZX5_17"
@@ -138,7 +139,7 @@ static function _ReplZX513 ()
 	local _lContinua := .T.
 	private cPerg    := "REPLSAFR"
 
-	if ! msgyesno ("Esta rotina permite copiar varios registros de determinada safra para uma nova safra (grupos de uvas para tabela de preco). Deseja continuar?")
+	if ! u_msgyesno ("Esta rotina permite copiar varios registros de determinada safra para uma nova safra (grupos de uvas para tabela de preco). Deseja continuar?")
 		_lContinua = .F.
 	endif
 
@@ -179,7 +180,8 @@ static function _ReplZX513 ()
 		CursorWait ()
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT ZX5_13.ZX5_13GRUP, ZX5_13.ZX5_13DESC, ISNULL (ZX5_14.ZX5_14SAFR, '') ZX5_14SAFR,"
+		_oSQL:_sQuery += " SELECT ZX5_13.ZX5_13GRUP, ZX5_13.ZX5_13DESC, ZX5_13.ZX5_13GBAS, ZX5_13.ZX5_13PBEN, ZX5_13.ZX5_13BAGE, ZX5_13.ZX5_13PBCO, ZX5_13.ZX5_13BAGC, ZX5_13.ZX5_13PBAG,"
+		_oSQL:_sQuery +=        " ISNULL (ZX5_14.ZX5_14SAFR, '') ZX5_14SAFR,"
 		_oSQL:_sQuery +=        " ISNULL (ZX5_14.ZX5_14PROD, '') ZX5_14PROD, ISNULL (ZX5_14.ZX5_14GRUP, '') ZX5_14GRUP,"
 		_oSQL:_sQuery +=        " ISNULL (ZX5_14.ZX5_14GRMO, '') ZX5_14GRMO, ISNULL (ZX5_14.ZX5_14EXPL, '') ZX5_14EXPL, ISNULL (SB1.B1_DESC, '') B1_DESC"
 		_oSQL:_sQuery +=   " FROM " + RetSqlName ("ZX5") + " ZX5_13 "
@@ -203,7 +205,8 @@ static function _ReplZX513 ()
 		do while ! (_sAliasQ) -> (eof ())
 			_sGrupo = (_sAliasQ) -> zx5_13grup
 			u_log ((_sAliasQ) -> zx5_13grup, (_sAliasQ) -> zx5_13desc, (_sAliasQ) -> zx5_14GRUP, (_sAliasQ) -> zx5_14prod, (_sAliasQ) -> b1_desc)
-			
+
+
 			// Insere o grupo, se ainda nao existir.
 			_oSQL := ClsSQL ():New ()
 			_oSQL:_sQuery := ""
@@ -221,6 +224,12 @@ static function _ReplZX513 ()
 				aadd (_aDados, {'ZX5_13SAFR', mv_par02})
 				aadd (_aDados, {'ZX5_13GRUP', (_sAliasQ) -> zx5_13grup})
 				aadd (_aDados, {'ZX5_13DESC', (_sAliasQ) -> zx5_13desc})
+				aadd (_aDados, {'ZX5_13GBAS', (_sAliasQ) -> zx5_13gbas})
+				aadd (_aDados, {'ZX5_13PBEN', (_sAliasQ) -> zx5_13pben})
+				aadd (_aDados, {'ZX5_13BAGE', (_sAliasQ) -> zx5_13bage})
+				aadd (_aDados, {'ZX5_13PBCO', (_sAliasQ) -> zx5_13pbco})
+				aadd (_aDados, {'ZX5_13BAGC', (_sAliasQ) -> zx5_13bagc})
+				aadd (_aDados, {'ZX5_13PBAG', (_sAliasQ) -> zx5_13pbag})
 				//u_log (_aDados)
 				_oTab := ClsTabGen ():New ('13')
 				if ! _oTab:Insere (_aDados)
@@ -270,7 +279,7 @@ static function _ReplZX513 ()
 		enddo
 	
 		CursorArrow ()
-		msginfo ("Processo concluido. " + cvaltochar (_nCopiado) + " registro(s) copiado(s).")
+		u_help ("Processo concluido. " + cvaltochar (_nCopiado) + " registro(s) copiado(s).")
 		dbselectarea ("SB1")
 	endif
 return
@@ -287,7 +296,7 @@ static function _ReplZX517 ()
 	local _lContinua := .T.
 	private cPerg    := "REPLSAFR"
 	
-	if ! msgyesno ("Esta rotina permite copiar varios registros de determinada safra para uma nova safra (faixas de grau para determinar classificacao de uvas viniferas). Registros ja existentes nao serao copiados. Deseja continuar?")
+	if ! u_msgyesno ("Esta rotina permite copiar varios registros de determinada safra para uma nova safra (faixas de grau para determinar classificacao de uvas viniferas). Registros ja existentes nao serao copiados. Deseja continuar?")
 		_lContinua = .F.
 	endif
 
@@ -371,7 +380,7 @@ static function _ReplZX517 ()
 			(_sAliasQ) -> (dbskip ())
 		enddo
 		CursorArrow ()
-		msginfo ("Processo concluido. " + cvaltochar (_nCopiado) + " registro(s) copiado(s).")
+		u_help ("Processo concluido. " + cvaltochar (_nCopiado) + " registro(s) copiado(s).")
 		dbselectarea ("SB1")
 	endif
 return

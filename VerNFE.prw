@@ -3,7 +3,14 @@
 // Data:       18/06/2008
 // Descricao:  Verificacoes para envio de NF eletronica.
 //             A intencao eh detectar alguns problemas antes do envio para a SEFAZ.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Validacao
+// #Descricao         #Validacoes diversas de campos de cadastro que costumar dar problema para autorizar notas na SEFAZ.
+// #PalavasChave      #auxiliar #validacao
+// #TabelasPrincipais #SA1 #SA2 #SB1 #SF4
+// #Modulos           #FAT
+
 // Historico de alteracoes:
 // 15/07/2008 - Robert - Criada verificacao do SA2.
 // 22/07/2009 - Robert - Passa a usar a funcao U_Help para as mensagens.
@@ -24,18 +31,21 @@
 // 27/11/2018 - Catia  - Tiradas as validacoes da inscricao estadual do cliente - Katia vai passar nova regra
 // 26/07/2019 - Robert - Desabilitadas verificacoes de codigo EAN (vamos usar campos padrao do sistema) - GLPI 6335.
 // 06/05/2020 - Robert - Desabilitado envio de e-mail para liane.lenzi
+// 19/10/2020 - Robert - Desabilitada validacao de endereco quando cliente do exterior.
+//                     - Incluidas tags para catalogo de fontes.
 //
 
 // --------------------------------------------------------------------------
 user function VerNFe (_sOnde)
 	local _lRet      := .T.
-	local _lContinua := .T.
+//	local _lContinua := .T.
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aAmbAnt   := U_SalvaAmb ()
-	local _sCliente  := ""
-	local _sLoja     := ""
-	local _sProduto  := ""
-	local _sTES      := ""
+//	local _sCliente  := ""
+//	local _sLoja     := ""
+//	local _sProduto  := ""
+//	local _sTES      := ""
+	local _nLinCols  := 0
 	private _sMsg    := ""
 	
 	do case
@@ -45,10 +55,10 @@ user function VerNFe (_sOnde)
 		else
 			_VerSA1 (m->c5_cliente, m->c5_lojacli)
 		endif
-		for N = 1 to len (aCols)
-			if ! GDDeleted ()
-				_VerSB1 (GDFieldGet ("C6_PRODUTO"))
-				_VerSF4 (GDFieldGet ("C6_TES"))
+		for _nLinCols = 1 to len (aCols)
+			if ! GDDeleted (_nLinCols)
+				_VerSB1 (GDFieldGet ("C6_PRODUTO", _nLinCols))
+				_VerSF4 (GDFieldGet ("C6_TES", _nLinCols))
 			endif
 		next
 		if ! empty (m->c5_transp)
@@ -110,8 +120,10 @@ static function _VerSA1 (_sCliente, _sLoja)
 		if empty (sa1 -> a1_cod_mun)
 			_sMsg += "Codigo de municipio nao informado ou invalido no cliente. (CNPJ: " + sa1 -> a1_cgc + ")" + chr (13) + chr (10)
 		endif
-		if empty (sa1 -> a1_end) .or. alltrim (sa1 -> a1_end) == "." .or. len (StrTokArr (alltrim (sa1 -> a1_end), ' ')) <= 1 .or. IsDigit (left (sa1 -> a1_end, 1))
-			_sMsg += "Endereco nao informado ou invalido no cliente. (CNPJ: " + sa1 -> a1_cgc + "). Estaria faltando um espaco entre o nome da rua e o numero da casa?" + chr (13) + chr (10)
+		if sa1 -> a1_est != "EX"
+			if empty (sa1 -> a1_end) .or. alltrim (sa1 -> a1_end) == "." .or. len (StrTokArr (alltrim (sa1 -> a1_end), ' ')) <= 1 .or. IsDigit (left (sa1 -> a1_end, 1))
+				_sMsg += "Endereco nao informado ou invalido no cliente. (CNPJ: " + sa1 -> a1_cgc + "). Estaria faltando um espaco entre o nome da rua e o numero da casa?" + chr (13) + chr (10)
+			endif
 		endif
 		if empty (sa1 -> a1_est)
 			_sMsg += "Estado (UF) nao informado ou invalido no cliente. (CNPJ: " + sa1 -> a1_cgc + ")" + chr (13) + chr (10)
@@ -199,7 +211,7 @@ return
 // --------------------------------------------------------------------------
 // Verifica cadastro da transportadora.
 static function _VerSA4 (_sTransp)
-	local _sEMail := ""
+//	local _sEMail := ""
 	sa4 -> (dbsetorder (1))
 	if sa4 -> (dbseek (xfilial ("SA4") + _sTransp, .F.))
 		//_sEMail = iif (empty (sa4 -> a4_vamdanf), SA4->A4_EMAIL, sa4 -> a4_vamdanf)
@@ -216,7 +228,7 @@ return
 
 // --------------------------------------------------------------------------
 static function _VerTel (_sTel)
-	local _lErroTel := .F.
+//	local _lErroTel := .F.
 	local _i := 0
 	_sTel = rtrim (_sTel)
 	if len (_sTel) < 6 .or. len (_sTel) > 14

@@ -2,7 +2,14 @@
 // Autor:     Robert Koch
 // Data:      01/12/2018
 // Descricao: Retorna os diferentes precos da uva para safra 2019.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Calcula precos de uvas para a safra 2019
+// #PalavasChave      #preco_uva_safra
+// #TabelasPrincipais #ZX5 #SB1
+// #Modulos           #COOP
+
 // Historico de alteracoes:
 // 01/12/2018 - Robert - Criado com base no PrecoUva.prw pois vamos comecar a ter precos com decimais e fica
 //                       inviavel cadastrar grau a grau na tabela SZ1.

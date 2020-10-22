@@ -1,27 +1,23 @@
-// Programa:  PrcUva20
+// Programa:  PrcUva21
 // Autor:     Robert Koch
-// Data:      07/01/2020
-// Descricao: Retorna os diferentes precos da uva para safra 2020.
+// Data:      16/10/2020
+// Descricao: Retorna os diferentes precos da uva para safra 2021.
 
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Processamento
-// #Descricao         #Calcula precos de uvas para a safra 2020
+// #Descricao         #Calcula precos de uvas para a safra 2021
 // #PalavasChave      #preco_uva_safra
 // #TabelasPrincipais #ZX5 #SB1
 // #Modulos           #COOP
 
 // Historico de alteracoes:
-// 22/01/2020 - Robert - Calculo para tabela MOC gerava os decimais errados; tambem gerava valores meiores abaixo do grau 10.
-// 23/01/2020 - Robert - Ajuste agio organicas (15% em conversao; 55% tintorias; 70% demais).
-// 14/05/2020 - Robert - Aplicava % de agio errados (5/15/20/25/30/50%); alterados para (5/15/30/50/55%) para tabela MOC nos graus abaixo do brau base.
-// 18/06/2020 - Robert - Ajustes agio (classif. C latadas nao tinha tratamento).
-// 22/10/2020 - Robert - Teste de classificacao de viniferas espaldeira considerava A como AA (usava operador $)
+// 16/10/2020 - Robert - Copiado do PrcUva20 para uma simulacao inicial como se fosse 2021.
 //
 
 #include "VA_INCLU.prw"
 
 // --------------------------------------------------------------------------
-user function PrcUva20 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRetArray)
+user function PrcUva21 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRetArray)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aRet      := {}
 	local _nPrcRec   := 0
@@ -172,7 +168,7 @@ user function PrcUva20 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 		_oSQL:_sQuery +=   " AND ZX5_13.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
 		_oSQL:_sQuery +=   " AND ZX5_13.ZX5_TABELA = '13'"
 		_oSQL:_sQuery +=   " AND ZX5_13.ZX5_13GRUP NOT LIKE 'M%'"  // Ignorar tabela 'MOC'
-		_oSQL:_sQuery +=   " AND ZX5_13.ZX5_13SAFR = '2020'"
+		_oSQL:_sQuery +=   " AND ZX5_13.ZX5_13SAFR = '2021'"
 		_oSQL:_sQuery +=   " AND ZX5_14.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND ZX5_14.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
 		_oSQL:_sQuery +=   " AND ZX5_14.ZX5_TABELA = '14'"
@@ -188,7 +184,7 @@ user function PrcUva20 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 				_oSQL:_sQuery += " AND ZX5_13.ZX5_13GRUP like '2%'"
 			endif
 		endif
-		//_oSQL:Log ()
+		_oSQL:Log ()
 		_aGrupo := aclone (_oSQL:Qry2Array (.F., .F.))
 	//	U_log2 ('debug', _aGrupo)
 		if len (_aGrupo) == 0
@@ -228,7 +224,7 @@ user function PrcUva20 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 		_oSQL:_sQuery +=   " AND ZX5_13.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
 		_oSQL:_sQuery +=   " AND ZX5_13.ZX5_TABELA = '13'"
 		_oSQL:_sQuery +=   " AND ZX5_13.ZX5_13GRUP LIKE 'M%'"  // Indica tabela 'MOC'
-		_oSQL:_sQuery +=   " AND ZX5_13.ZX5_13SAFR = '2020'"
+		_oSQL:_sQuery +=   " AND ZX5_13.ZX5_13SAFR = '2021'"
 		_oSQL:_sQuery +=   " AND ZX5_14.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND ZX5_14.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
 		_oSQL:_sQuery +=   " AND ZX5_14.ZX5_TABELA = '14'"
@@ -501,10 +497,7 @@ user function PrcUva20 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 //			u_log2 ('info', 'Classificacao........: ' + _sClassif)
 			if _sConducao == 'E'  // Espaldeira
 				do case
-//				case alltrim (_sClassif) $ "PR/AA"
-//					_nPrcRec *= 1.4
-//					_nPrcCom *= 1.4
-				case alltrim (_sClassif) == "PR" .or. alltrim (_sClassif) == "AA"
+				case alltrim (_sClassif) == "PR" .or. alltrim (_sClassif) == "AA"// Nao testar alltrim (_sClassif) $ "PR/AA" por que vai abocanhar a classe 'A' junto!
 					_nPrcRec *= 1.4
 					_nPrcCom *= 1.4
 				case alltrim (_sClassif) == "A"
