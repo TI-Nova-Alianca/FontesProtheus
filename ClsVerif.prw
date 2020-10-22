@@ -45,6 +45,7 @@
 //                      - Inseridas tags para catalogo de fontes.
 // 08/10/2020 - Robert  - Verificacao SD5 x SD3 nao considerava D5_LOTECTL = D3_LOTECTL.
 //                      - Passa a enviar a query junto no e-mail, para ajudar em testes posteriores.
+// 22/10/2020 - Robert  - Adicionados acessos que deveriam e que nao deveriam existir, nas verif. de acessos do sigacfg.
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -2946,7 +2947,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=     " JOIN VA_USR_GRUPOS G"
 			::Query +=       " ON (G.TIPO_GRUPO = AG.TIPO_ACESSO"
 			::Query +=       " AND G.ID_GRUPO = AG.ID_GRUPO)"
-			::Query +=  " WHERE AG.TIPO_ACESSO = 'CFG' AND AG.ACESSO IN ('121')"
+			::Query +=  " WHERE AG.TIPO_ACESSO = 'CFG' AND AG.ACESSO IN ('121', '169', '190')"
 			::Query +=  " ORDER BY AG.ID_GRUPO, AG.ACESSO"
 
 		case ::Numero == 73
@@ -2981,7 +2982,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=                     " FROM VA_USR_ACESSOS_POR_GRUPO AG"
 			::Query +=                    " WHERE AG.TIPO_ACESSO = 'CFG'"
 			::Query +=                      " AND AG.ID_GRUPO = G.ID_GRUPO"
-			::Query +=                      " AND AG.ACESSO = '108')"  // Por enquanto este eh o unico acesso que entendo que todos precisariam ter.
+			::Query +=                      " AND AG.ACESSO in ('108', '150')"  // Por enquanto estes sao os unicos acessos que entendo que todos precisariam ter.
 			::Query += " ORDER BY G.ID_GRUPO"
 
 		otherwise
