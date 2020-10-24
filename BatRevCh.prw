@@ -57,7 +57,8 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 	_oBatch:Retorno   = ''
 	
 	if _lContinua .and. empty (_sEstado) .and. empty (_sTipo) .and. empty (_sChave)
-		u_help ("Informe estado (UF) + tipo (NFE/CTE) ou chave.",, .t.)
+		_oBatch:Mensagens += "Informe estado (UF) + tipo (NFE/CTE) ou chave."
+		u_help (_oBatch:Mensagens,, .t.)
 	endif
 	if _lContinua .and. empty (_sChave) .and. ! empty (_sEstado)
 		do case
@@ -90,7 +91,8 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 			case _sEstado == 'DF' ; _sCodUF = '53'
 			
 			otherwise
-				u_help ("UF '" + _sEstado + "' desconhecida.",, .t.)
+				_oBatch:Mensagens += "UF '" + _sEstado + "' desconhecida."
+				u_help (_oBatch:Mensagens,, .t.)
 				_lContinua = .F.
 		endcase
 	endif
@@ -186,17 +188,20 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 			_oSQL:Log ()
 			_aRegZZ4 = aclone (_oSQL:Qry2Array ())
 			if len (_aRegZZ4) == 0
-				u_help ("Sem tratamento (ou inativo) na tabela ZZ4 para UF/layout/versao " + _sUF + "/" + _sLayout + "/" + _sVersao + ". Query para verificacao: " + _oSQL:_sQuery,, .t.)
+				_oBatch:Mensagens += "Sem tratamento (ou inativo) na tabela ZZ4 para UF/layout/versao " + _sUF + "/" + _sLayout + "/" + _sVersao + ". Query para verificacao: " + _oSQL:_sQuery
+				u_help (_oBatch:Mensagens,, .t.)
 				_lWSDL_OK = .F.
 				_oBatch:Retorno = 'N'
 			elseif len (_aRegZZ4) > 1
-				u_help ("Existe mais de um tratamento na tabela ZZ4 para UF/layout/versao " + _sUF + "/" + _sLayout + "/" + _sVersao + ". Elimine a duplicidade. Query para verificacao: " + _oSQL:_sQuery,, .t.)
+				_oBatch:Mensagens += "Existe mais de um tratamento na tabela ZZ4 para UF/layout/versao " + _sUF + "/" + _sLayout + "/" + _sVersao + ". Elimine a duplicidade. Query para verificacao: " + _oSQL:_sQuery
+				u_help (_oBatch:Mensagens,, .t.)
 				_lWSDL_OK = .F.
 				_oBatch:Retorno = 'N'
 			else
 				zz4 -> (dbgoto (_aRegZZ4 [1, 1]))
 				if empty (zz4 -> zz4_wsdl)
-					u_help ("Caminho WSDL nao informado para UF/layout/versao " + _sUF + "/" + _sLayout + "/" + _sVersao,, .t.)
+					_oBatch:Mensagens += "Caminho WSDL nao informado para UF/layout/versao " + _sUF + "/" + _sLayout + "/" + _sVersao
+					u_help (_oBatch:Mensagens,, .t.)
 					_lWSDL_OK = .F.
 					_oBatch:Retorno = 'N'
 				else
@@ -228,19 +233,22 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 
 					_oWSDL:ParseURL (alltrim (zz4 -> zz4_wsdl))
 					if len (_oWSDL:ListOperations()) == 0
-						u_help ("Erro na consulta WSDL. Confira o certificado digital e/ou tente novamente mais tarde. " + _oWSDL:cError,, .t.)
+						_oBatch:Mensagens += "Erro na consulta WSDL. Confira o certificado digital e/ou tente novamente mais tarde. " + _oWSDL:cError
+						u_help (_oBatch:Mensagens,, .t.)
 						u_log2 ('debug', 'URL: ' + alltrim (zz4 -> zz4_wsdl))
 //						u_log2 ('debug', _oWSDL:ListOperations())
 						_lWSDL_OK = .F.
 						_oBatch:Retorno = 'N'
 					else
 						if empty (zz4 -> zz4_SOper)
-							u_help ("Sem definicao de operacao SOAP na tabela ZZ4.",, .t.)
+							_oBatch:Mensagens += "Sem definicao de operacao SOAP na tabela ZZ4."
+							u_help (_oBatch:Mensagens,, .t.)
 							_lWSDL_OK = .F.
 							_oBatch:Retorno = 'N'
 						else
 							if ! _oWSDL:SetOperation (alltrim (zz4 -> zz4_SOper))
-								u_help ("Erro definicao operacao do WSDL para layout " + zz4 -> zz4_layout + ":" + _oWSDL:cError,, .t.)
+								_oBatch:Mensagens += "Erro definicao operacao do WSDL para layout " + zz4 -> zz4_layout + ":" + _oWSDL:cError
+								u_help (_oBatch:Mensagens,, .t.)
 								u_log2 ('debug', 'Operacao: ' + alltrim (zz4 -> zz4_SOper))
 								_lWSDL_OK = .F.
 								_oBatch:Retorno = 'N'
@@ -330,7 +338,8 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 					 
 					// Leitura da mensagem de retorno.
 					if empty (_sSoapResp)
-						u_help ("Retorno vazio para o pacote SOAP",, .t.)
+						_oBatch:Mensagens += "Retorno vazio para o pacote SOAP"
+						u_help (_oBatch:Mensagens,, .t.)
 						_lWSDL_OK = .F.
 						loop
 						_oBatch:Retorno = 'N'
@@ -341,7 +350,8 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 						_sSoapResp = strtran (_sSoapResp, 'soap:', '')
 						_oXMLRet := XmlParser(_sSoapResp, "_", @_sError, @_sWarning )
 						if ! empty (_sError) .or. ! empty (_sWarning)
-							u_help ("Erro ao decodificar retorno: " + _sError + _sWarning + '    SOAP response: ', _sSoapResp, .t.)
+							_oBatch:Mensagens += "Erro ao decodificar retorno: " + _sError + _sWarning + '    SOAP response: ' + _sSoapResp
+							u_help (_oBatch:Mensagens,, .t.)
 							_lWSDL_OK = .F.
 							loop
 							_oBatch:Retorno = 'N'
@@ -394,7 +404,8 @@ static function _TrataRet (_lDebug)
 
 	if _sRetStat $ '656/678'         // Uso indevido
 		u_log2 ('aviso', 'Servico retornou mensagem de uso indevido. Tente esta UF mais tarde.')
-		u_help ('Servico retornou mensagem de uso indevido. Tente esta UF mais tarde.')
+		_oBatch:Mensagens += 'Servico retornou mensagem de uso indevido. Tente esta UF mais tarde.'
+		u_help (_oBatch:Mensagens)
 		_lWSDL_OK = .F.
 		_lAtuZZX = .F.
 	elseif _sRetStat $ '587/731/526'  // Tags erradas, chave muito antiga, etc.
@@ -454,24 +465,28 @@ static function _TrataRet (_lDebug)
 	// Se pretento atualizar o ZZX, confiro consistencia entre chave, protocolos, etc.
 	if _lAtuZZX
 		if _sRetChv != zzx -> zzx_chave
-			u_help ("Retorno veio para outra chave (" + _sRetChv + ")",, .t.)
+			_oBatch:Mensagens += "Retorno veio para outra chave (" + _sRetChv + ")"
+			u_help (_oBatch:Mensagens,, .t.)
 			_lAtuZZX = .F.
 			_oBatch:Retorno = 'N'
 		endif
 		if _sRetStat $ '100/150'
 			if empty (_sRetPrAut)
-				u_help ("Retornou status '" + _sRetStat + "' (autorizado), mas nao consegui ler protocolo de autorizacao.",, .t.)
+				_oBatch:Mensagens += "Retornou status '" + _sRetStat + "' (autorizado), mas nao consegui ler protocolo de autorizacao."
+				u_help (_oBatch:Mensagens,, .t.)
 				_lAtuZZX = .F.
 				_oBatch:Retorno = 'N'
 			endif
 		elseif _sRetStat == '101'
 			if empty (_sRetPrCan)
-				u_help ("Retornou status '" + _sRetStat + "' (cancelado), mas nao consegui ler protocolo de cancelamento.",, .t.)
+				_oBatch:Mensagens += "Retornou status '" + _sRetStat + "' (cancelado), mas nao consegui ler protocolo de cancelamento."
+				u_help (_oBatch:Mensagens,, .t.)
 				_lAtuZZX = .F.
 				_oBatch:Retorno = 'N'
 			endif
 		else
-			u_help ("Retornou status '" + _sRetStat + "' (nao sei como tratar esse retorno e nao vou gravar no ZZX).",, .t.)
+			_oBatch:Mensagens += "Retornou status '" + _sRetStat + "' (nao sei como tratar esse retorno e nao vou gravar no ZZX)."
+			u_help (_oBatch:Mensagens,, .t.)
 			_lAtuZZX = .F.
 			_oBatch:Retorno = 'N'
 		endif

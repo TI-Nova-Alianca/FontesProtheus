@@ -2,7 +2,14 @@
 // Autor:     Robert Koch - TCX021
 // Data:      10/03/2011
 // Descricao: Execblock generico para lancamentos padronizados.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Execblock auxiliar para uso em lancamentos padronizados da contabilidade.
+// #PalavasChave      #lancamento_padrao
+// #TabelasPrincipais 
+// #Modulos           #CTB
+
 // Historico de alteracoes:
 // 28/03/2011 - Robert - Tratamento para ZI_TM = '03'.
 // 24/05/2011 - Robert - tratamento para LPad 678.
@@ -48,6 +55,8 @@
 // 18/10/2018 - Catia  - LP 631/000 - cupons fiscais
 // 30/10/2019 - Robert - diferenciava CC coml/adm/indl usando LEFT em vez de SUBSTR (posicao 3) no LPAD 666/008
 // 21/07/2020 - Cláudia -  Ajustada as contas para o LPAD: 500. Conform GLPI: 8094
+// 23/10/2020 - Robert  - Tratamento para tipo IA no lpad 666/008
+//
 
 // --------------------------------------------------------------------------------------------------------------------------------
 // Informar numero e sequencia do lancamento padrao, seguido do campo a ser retornado.
@@ -402,6 +411,7 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 			case SD3->D3_TIPO == 'EP' .and. substr (sd3 -> d3_cc, 3,1) $ '3/4' ; _xRet = '403010101007'
 			case SD3->D3_TIPO == 'MM' ; _xRet = '701010301011'
 			case SD3->D3_TIPO == 'MR' ; _xRet = '403010401010'
+			case SD3->D3_TIPO == 'IA' ; _xRet = '701010301017'
 			otherwise
 				U_AvisaTI ("Sem tratamento no LPad/seq '" + _sLPad + _sSeq + "' para produto='" + alltrim (sd3 -> d3_cod) + "' tipo='" + sd3 -> d3_tipo + "' grupo='" + sd3 -> d3_grupo + "' CC='" + sd3 -> d3_cc + "' recnoSD3=" + cvaltochar (sd3 -> (recno ())) + ")")
 			endcase
