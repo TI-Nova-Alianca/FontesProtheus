@@ -2,16 +2,6 @@
 // Autor......: ?
 // Data.......: ?
 // Descricao..: P.E. apos a gravacao do pedido de vendas.
-//
-// Historico de alteracoes:
-// 17/04/2008 - Robert  - Chamada rotina U_FrtGrZZ1.
-// 14/06/2013 - Leandro - Grava reservas automaticamente, quando solicitado
-// 21/06/2013 - Leandro - Quando altera pedido, excluir reservas e faz todas novamente - mensagem para usuário
-// 18/10/2013 - Robert  - Grava evento apos inclusao/alteracao do pedido.
-// 18/11/2016 - Robert  - Envia atualizacao para o sistema Mercanet.
-// 28/04/2017 - Robert  - Passa tambem o lote do produto e o pedido para a funcao VerEstq().
-// 21/07/2020 - Robert  - Inseridas tags para catalogacao de fontes
-//
 
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #ponto_de_entrada
@@ -20,13 +10,24 @@
 // #TabelasPrincipais #SC5 SC6
 // #Modulos           #FAT
 
+// Historico de alteracoes:
+// 17/04/2008 - Robert  - Chamada rotina U_FrtGrZZ1.
+// 14/06/2013 - Leandro - Grava reservas automaticamente, quando solicitado
+// 21/06/2013 - Leandro - Quando altera pedido, excluir reservas e faz todas novamente - mensagem para usuário
+// 18/10/2013 - Robert  - Grava evento apos inclusao/alteracao do pedido.
+// 18/11/2016 - Robert  - Envia atualizacao para o sistema Mercanet.
+// 28/04/2017 - Robert  - Passa tambem o lote do produto e o pedido para a funcao VerEstq().
+// 21/07/2020 - Robert  - Inseridas tags para catalogacao de fontes
+// 24/10/2020 - Robert  - Desabilitada gravacao SC0 (reservas) cfe. campo C5_VARESER (nao usamos mais desde 2014).
+//
+
 // --------------------------------------------------------------------------
 User Function MTA410T()
 	local _aAreaAnt := U_ML_SRArea ()
 	
 	_VerTransp ()
 	
-	_VerReserv ()
+// Nao usamos mais desde 2014	_VerReserv ()
 
 	_EvtAlter ()
 
@@ -42,7 +43,7 @@ return
 static function _VerTransp ()
 	local _oSQL := NIL
 	local _lDeixaTr := .F.
-	local _x := 0
+//	local _x := 0
 	// Verifica se deixa ou nao a transportadora selecionada. Isso por que apenas o pessoal de logistica
 	// pode selecionar a transportadora, exceto casos de filial, nao mov.estoque, FOB, etc.
 	_lDeixaTr = .F.
@@ -83,6 +84,7 @@ static function _VerTransp ()
 	endif
 return
 
+/* Nao usamos mais desde 2014
 // --------------------------------------------------------------------------
 // Verifica se deve criar reserva de estoque para o pedido.
 static function _VerReserv ()
@@ -245,7 +247,7 @@ static function _VerReserv ()
 	endif
 	RestArea( _aArea )
 Return(.t.)
-
+*/
 
 
 // --------------------------------------------------------------------------

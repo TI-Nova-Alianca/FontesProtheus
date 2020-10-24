@@ -2,12 +2,20 @@
 // Autor:     Robert Koch
 // Data:      17/04/2008
 // Descricao: P.E. apos a exclusao do SC6 e antes da exclusao do SC5 na tela de pedidos de venda.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #Ponto de entrada apos a exclusao do pedido de vendas
+// #PalavasChave      #pedido_de_venda
+// #TabelasPrincipais #SC5 SC6
+// #Modulos           #FAT
+
 // Historico de alteracoes:
 // 21/06/2013 - Leandro - exclui reservas quando exclui o pedido
 // 23/03/2014 - Robert  - Limpa campo C5_VAPEMB correspondente na filial 01.
 // 09/03/2017 - Robert  - Limpeza campo C5_VAPEMB desabilitada, pois nao temos mais deposito fechado.
-//
+// 24/10/2020 - Robert  - Desabilitada exclusao SC0 (reservas) cfe. campo C0_VAPEDID (nao usamos mais desde 2014).
+//                      - Oncluidas tags para catalogo de programas.
 
 // --------------------------------------------------------------------------
 User Function MTA410E ()
@@ -17,7 +25,7 @@ User Function MTA410E ()
 	U_FrtPV ("E")
 
 	// Exclui reservas feitas para este pedido, quando o mesmo tiver 'flag' de 'reservar produtos'.
-	_DelSC0 ()
+	// Nao usamos mais desde 2014  --> _DelSC0 ()
 
 	// Desvincula pedidos originais quando este for um pedido de embarque orginado por outra filial.
 	// desabilitar depois que a filial 13 virar 01.
@@ -28,6 +36,7 @@ return
 
 
 
+/* Nao usamos mais desde 2014
 // -------------------------------------------------------------------------
 // Exclui reservas feitas para este pedido, quando o mesmo tiver 'flag' de 'reservar produtos'.
 static function _DelSC0 ()
@@ -53,7 +62,7 @@ static function _DelSC0 ()
 		enddo
 	endif
 Return
-
+*/
 
 /*
 // -------------------------------------------------------------------------

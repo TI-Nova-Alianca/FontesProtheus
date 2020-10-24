@@ -2,13 +2,13 @@
 // Autor.....: Jeferson Rech
 // Data......: Maio/2004
 // Descricao.: P.E. no final da geracao da NF de saida, mas ainda dentro da transacao.
-//
+
 // Tags de localização
 // #TipoDePrograma    #ponto_de_entrada
 // #PalavasChave      #PE #NF #notadesaida 
 // #TabelasPrincipais #SF2 #SD2 
 // #Modulos 		  #faturamento #FAT
-//
+
 // Historico de alteracoes:
 // 15/02/2008 - Robert - Ajustes calculo subst.trib. estado de MG
 // 18/02/2008 - Robert - Criado tratamento generico para subst.trib. (independente da UF)
@@ -133,7 +133,9 @@
 // 11/08/2020 - Robert  - Gravacao campos e1_nsutef, e1_adm, e1_tipo (venda c/ cartao credito) GLPI 8295
 // 27/08/2020 - Cláudia - Gravação do campo e1_cartaut com c5 -> c5_vaaut. 
 //						  Incluida verificação se campos do SC5 estao preenchidos para gravar na SE1
+// 24/10/2020 - Robert  - Desabilitada gravacao SC0 (reservas) cfe. campo C5_VARESER (nao usamos mais desde 2014).
 //
+
 // -------------------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -302,7 +304,7 @@ User Function sf2460i ()
 	// _TransFil () --- desabilitado agora faz pela importacao do XML
 	
 	// Retira reserva (SC0) dos produtos faturados
-	_ExcResrv()
+// Nao usamos mais desde 2014 -->	_ExcResrv()
 	
 	// grava evento para histórico de NF
 	if !sf2 -> f2_TIPO $ "B/D"
@@ -883,6 +885,8 @@ return
 //		endif
 //	endif
 //return
+
+/* Nao usamos mais desde 2014
 // --------------------------------------------------------------------------
 // 20130621 - Retira reserva (SC0) dos produtos faturados
 Static Function _ExcResrv()
@@ -906,6 +910,7 @@ Static Function _ExcResrv()
 		enddo
 	endif
 return
+*/
 // --------------------------------------------------------------------------
 Static Function _HistNf()
 	_oEvento := ClsEvent():new ()
