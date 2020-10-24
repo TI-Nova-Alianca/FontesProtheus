@@ -53,9 +53,9 @@
 // 29/07/2020 - Robert - Criado atalho para relatorio de fechamento de safra.
 // 13/08/2020 - Cláudia - Ajustado o valor das consultas de faturas. GLPI: 8255
 // 16/10/2020 - Robert  - Baixa de titulos: Busca contas contabeis parra TM=29 iguais as do TM=01.
+// 23/10/2020 - Claudia - Ajuste de visualização do cadastro de fornecedores. GLPI: 8683
 //
-
-// ------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 #include "colors.ch"
 #Include "Protheus.ch"
 #Include "RwMake.ch"
@@ -181,7 +181,6 @@ User Function SZIR (_nQual)
 	local _sQuery    := ""
 	local _aRetQry   := {}
 	local _aCols     := {}
-	local _aAuto     := {}
 	local _oCtaCorr  := NIL
 	local _oAssocRel := NIL
 
@@ -247,15 +246,25 @@ User Function SZIR (_nQual)
 		endif
 
 	case _nQual == 5
+
+		dbSelectArea("SA2")
 		sa2 -> (dbsetorder (1))
-		if ! sa2 -> (dbseek (xfilial ("SA2") + szi -> zi_assoc + szi -> zi_lojasso, .F.))
-			u_help ("Fornecedor nao encontrado!")
+
+		if sa2 -> (dbseek (xfilial ("SA2") + szi -> zi_assoc + szi -> zi_lojasso, .F.))
+			A020Visual("SA2", , 2)
 		else
-			_aAuto := {}
-			aadd (_aAuto, {"A2_COD",  szi -> zi_assoc,   nil})
-			aadd (_aAuto, {"A2_NOME", szi -> zi_lojasso, nil})
-			MSExecAuto ({|_x, _y| MATA020 (_x, _y)}, _aAuto, 2)
+			u_help ("Fornecedor nao encontrado!")
 		endif
+	
+		// sa2 -> (dbsetorder (1))
+		// if ! sa2 -> (dbseek (xfilial ("SA2") + szi -> zi_assoc + szi -> zi_lojasso, .F.))
+		// 	u_help ("Fornecedor nao encontrado!")
+		// else
+		// 	_aAuto := {}
+		// 	aadd (_aAuto, {"A2_COD",  szi -> zi_assoc,   nil})
+		// 	aadd (_aAuto, {"A2_NOME", szi -> zi_lojasso, nil})
+		// 	MSExecAuto ({|_x, _y| MATA020 (_x, _y)}, _aAuto, 2)
+		// endif
 
 	case _nQual == 6
 		_oAssocRel := ClsAssoc():New(szi -> zi_assoc, szi -> zi_lojasso)
@@ -1235,3 +1244,4 @@ Static Function _ValidPerg ()
 	aadd (_aDefaults, {"02", 'zzzzzz'})
 	U_ValPerg (cPerg2, _aRegsPerg, {}, _aDefaults)
 Return
+

@@ -15,6 +15,7 @@
 // 07/06/2019 - Andre   - Adicionado campos D3_VATURNO e D3_VADTPRD.
 // 22/10/2020 - Cláudia - Ajuste de formatação de data. GLPI: 8694
 //
+//
 // --------------------------------------------------------------------------
 User Function VA_XLS4 (_lAutomat)
 	Local cCadastro := "Exportacao de saldos em estoque para o Excel"

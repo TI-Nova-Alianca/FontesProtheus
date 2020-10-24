@@ -197,10 +197,10 @@ User Function ZB1_CON(_sConciliar)
 						
 							_aAutoSE1 := aclone (U_OrdAuto (_aAutoSE1))  // orderna conforme dicionário de dados
 
-							//cPerg = 'FIN070'
-							//_aBkpSX1 = U_SalvaSX1 (cPerg)  // Salva parametros da rotina.
-							//U_GravaSX1 (cPerg, "01", 2)    // testar mostrando o lcto contabil depois pode passar para nao
-							//U_GravaSX1 (cPerg, "04", 2)    // esse movimento tem que contabilizar
+							cPerg = 'FIN070'
+							_aBkpSX1 = U_SalvaSX1 (cPerg)  // Salva parametros da rotina.
+							U_GravaSX1 (cPerg, "01", 2)    // testar mostrando o lcto contabil depois pode passar para nao
+							U_GravaSX1 (cPerg, "04", 2)    // esse movimento tem que contabilizar
 
 							MSExecAuto({|x,y| Fina070(x,y)},_aAutoSE1,3,.F.,5) // rotina automática para baixa de títulos
 

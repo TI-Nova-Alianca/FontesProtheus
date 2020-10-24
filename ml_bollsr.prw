@@ -99,6 +99,7 @@ User Function ML_BOLLSR (_aBoletos)
 		// Se recebi array com os titulos, nao preciso abrir markbrowse para selecao.
 		// Farei uma chamada do programa para cada titulo.
 		if type ("_aBoletos") == "A"
+		//u_help("tem array de titulos")
 			for _nBoleto = 1 to len (_aBoletos)
 				mv_par01 := _aBoletos [_nBoleto, 1]
 				mv_par02 := _aBoletos [_nBoleto, 1]
@@ -109,7 +110,8 @@ User Function ML_BOLLSR (_aBoletos)
 				mv_par07 := _aBoletos [_nBoleto, 5]
 				mv_par08 := _aBoletos [_nBoleto, 6]
 				mv_par11 :=  1                     // Visualizar
-				Pergunte (cPerg,.F.)
+				//Pergunte (cPerg,.F.)
+				//u_help("titulos de" +mv_par03+" ate " + mv_par04)
 				if _aBoletos [_nBoleto, 7] = "FA740BRW"
 					_Gera (.f.)
 				else
@@ -117,6 +119,7 @@ User Function ML_BOLLSR (_aBoletos)
 				endif
 			next
 		else
+			//u_help("NAO tem array te titulos.")
 			U_GravaSX1 (cPerg, "11", 1)  // Visualizar
 			If Pergunte (cPerg,.T.)
 				processa ({|| _Gera (.F.)})
