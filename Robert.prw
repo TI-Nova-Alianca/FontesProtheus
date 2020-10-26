@@ -79,33 +79,41 @@ static function _AndaLogo ()
 	incproc ()
 
 //	u_help ("[" + procname () + "] Nada definido.")
+//	cPerg := "ROBERT"
+//	_Validperg ()
 
-	cPerg := "ROBERT"
-	_Validperg ()
-//	pergunte (cperg, .T.)
-//	u_log2 ('debug', 'perguntei com .t.')
-//	u_logsx1 (cperg)
-	U_GravaSX1 (cPerg, '01', '000156')
-	pergunte (cperg, .F.)
-	u_log2 ('debug', 'perguntei com .f.')
-	u_logsx1 (cperg)
-//	pergunte (cperg, .t.)
-//	u_log2 ('debug', 'perguntei com .t.')
-//	u_logsx1 (cperg)
-	U_GravaSX1 (cPerg, '01', '000161')
-	pergunte (cperg, .F.)
-	u_log2 ('debug', 'perguntei com .f.')
-	u_logsx1 (cperg)
-//	pergunte (cperg, .t.)
-//	u_log2 ('debug', 'perguntei com .t.')
-//	u_logsx1 (cperg)
-//	U_GravaSX1 (cPerg, '01', '000167')
-//	Pergunte (cPerg, .F.,nil,.F.,NIL,.T.)
-//	Pergunte (cPerg, .t.,nil,.F.,NIL,.T.)
-	FINAL ()
+//	cperg = 'SZI_RCB'
+//	cperg = 'SZI_REL'
+
+/* Este trecho funciona bem
+	U_GravaSX1 ('SZI_REL2', '01', '000004')
+	pergunte ('SZI_REL2', .T.)
+	U_GravaSX1 ('SZI_REL', '01', '000004')
+	pergunte ('SZI_REL', .T.)
+	U_GravaSX1 ('SZI_RCB', '01', '000004')
+	pergunte ('SZI_RCB', .T.)
+*/
+	cPerg := 'SZI_REL2'
+	pergunte ('SZI_REL2', .T.)
+	U_GravaSX1 ('SZI_REL2', '01', '000007')
+	aPergunta [1, 8] = '000007'
+//	cPerg := 'ROBERT'
+//	pergunte (cPerg, .F.)
+//	u_log (apergunta)
+
+	pergunte ('SZI_REL2', .T.)
+	U_GravaSX1 ('SZI_REL2', '01', '000008')
+	aPergunta [1, 8] = '000008'
+//	cPerg := 'ROBERT'
+//	pergunte (cPerg, .F.)
+//	u_log (apergunta)
+
+	pergunte ('SZI_REL2', .t.)
+	u_log (apergunta)
+
 	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
 RETURN
-
+/*
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
@@ -117,7 +125,65 @@ Static Function _ValidPerg ()
 
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 return
-
+*/
+/*
+	_sArqLog := 'U_BatRevCH_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+	U_BatRevCh ("AC", "CTE", 90)
+	U_BatRevCh ("AC", "NFE", 90)
+	U_BatRevCh ("AL", "CTE", 90)
+	U_BatRevCh ("AL", "NFE", 90)
+	U_BatRevCh ("AM", "CTE", 90)
+	U_BatRevCh ("AM", "NFE", 90)
+	U_BatRevCh ("AP", "CTE", 90)
+	U_BatRevCh ("AP", "NFE", 90)
+	U_BatRevCh ("BA", "CTE", 90)
+	U_BatRevCh ("BA", "NFE", 90)
+	U_BatRevCh ("CE", "CTE", 90)
+	U_BatRevCh ("CE", "NFE", 90)
+	U_BatRevCh ("DF", "CTE", 90)
+	U_BatRevCh ("DF", "NFE", 90)
+	U_BatRevCh ("ES", "CTE", 90)
+	U_BatRevCh ("ES", "NFE", 90)
+	U_BatRevCh ("GO", "CTE", 90)
+	U_BatRevCh ("GO", "NFE", 90)
+	U_BatRevCh ("MA", "CTE", 90)
+	U_BatRevCh ("MA", "NFE", 90)
+	U_BatRevCh ("MG", "CTE", 90)
+	U_BatRevCh ("MG", "NFE", 90)
+	U_BatRevCh ("MS", "CTE", 90)
+	U_BatRevCh ("MS", "NFE", 90)
+	U_BatRevCh ("MT", "CTE", 90)
+	U_BatRevCh ("MT", "NFE", 90)
+	U_BatRevCh ("PA", "CTE", 90)
+	U_BatRevCh ("PA", "NFE", 90)
+	U_BatRevCh ("PB", "CTE", 90)
+	U_BatRevCh ("PB", "NFE", 90)
+	U_BatRevCh ("PE", "CTE", 90)
+	U_BatRevCh ("PE", "NFE", 90)
+	U_BatRevCh ("PI", "CTE", 90)
+	U_BatRevCh ("PI", "NFE", 90)
+	U_BatRevCh ("PR", "CTE", 90)
+	U_BatRevCh ("PR", "NFE", 90)
+	U_BatRevCh ("RJ", "CTE", 90)
+	U_BatRevCh ("RJ", "NFE", 90)
+	U_BatRevCh ("RN", "CTE", 90)
+	U_BatRevCh ("RN", "NFE", 90)
+	U_BatRevCh ("RO", "CTE", 90)
+	U_BatRevCh ("RO", "NFE", 90)
+	U_BatRevCh ("RR", "CTE", 90)
+	U_BatRevCh ("RR", "NFE", 90)
+	U_BatRevCh ("RS", "CTE", 90)
+	U_BatRevCh ("RS", "NFE", 90)
+	U_BatRevCh ("SC", "CTE", 90)
+	U_BatRevCh ("SC", "NFE", 90)
+	U_BatRevCh ("SE", "CTE", 90)
+	U_BatRevCh ("SE", "NFE", 90)
+	U_BatRevCh ("SP", "CTE", 90)
+	U_BatRevCh ("SP", "NFE", 90)
+	U_BatRevCh ("TO", "CTE", 90)
+	U_BatRevCh ("TO", "NFE", 90)
+RETURN
+*/
 /*
 	// Gera precos para as pre-notas de compra de safra.
 	Private cPerg   := "VAZZ9P"
@@ -212,64 +278,6 @@ return
 		end transaction
 		//exit
 	next
-RETURN
-*/
-/*
-	_sArqLog := 'U_BatRevCH_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-	U_BatRevCh ("AC", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("AC", "NFE", 90)
-	U_BatRevCh ("AL", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("AL", "NFE", 90)
-	U_BatRevCh ("AM", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("AM", "NFE", 90)
-	U_BatRevCh ("AP", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("AP", "NFE", 90)
-	U_BatRevCh ("BA", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("BA", "NFE", 90)
-	U_BatRevCh ("CE", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("CE", "NFE", 90)
-	U_BatRevCh ("DF", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("DF", "NFE", 90)
-	U_BatRevCh ("ES", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("ES", "NFE", 90)
-	U_BatRevCh ("GO", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("GO", "NFE", 90)
-	U_BatRevCh ("MA", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("MA", "NFE", 90)
-	// AINDA CoM PROBLEMA --> U_BatRevCh ("MG", "CTE", 90)
-	//U_BatRevCh ("MG", "NFE", 90)
-	U_BatRevCh ("MS", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("MS", "NFE", 90)
-	U_BatRevCh ("MT", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("MT", "NFE", 90)
-	U_BatRevCh ("PA", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("PA", "NFE", 90)
-	U_BatRevCh ("PB", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("PB", "NFE", 90)
-	U_BatRevCh ("PE", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("PE", "NFE", 90)
-	U_BatRevCh ("PI", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("PI", "NFE", 90)
-	U_BatRevCh ("PR", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("PR", "NFE", 90)
-	U_BatRevCh ("RJ", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("RJ", "NFE", 90)
-	U_BatRevCh ("RN", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("RN", "NFE", 90)
-	U_BatRevCh ("RO", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("RO", "NFE", 90)
-	U_BatRevCh ("RR", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("RR", "NFE", 90)
-	U_BatRevCh ("RS", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("RS", "NFE", 90)
-	U_BatRevCh ("SC", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("SC", "NFE", 90)
-	U_BatRevCh ("SE", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("SE", "NFE", 90)
-	U_BatRevCh ("SP", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("SP", "NFE", 90)
-	U_BatRevCh ("TO", "CTE", 90, NIL, .T.)
-	//U_BatRevCh ("TO", "NFE", 90)
 RETURN
 */
 /*

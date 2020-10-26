@@ -3,11 +3,20 @@
 // Data.......: 09/04/2015
 // Descricao..: Limpeza de arquivos do Protheus.
 //              Programa criado para ser executado em batch.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Batch
+// #Descricao         #Elimina registros deletados ou obsoletos de algumas tabelas do Protheus.
+// #PalavasChave      #pack #limpeza
+// #TabelasPrincipais 
+// #Modulos           #
+
 // Historico de alteracoes:
 // 27/05/2017 - Robert - Nao executa para DROP de tabelas vazias por que jah tivemos caso de procedure padrao referenciando essas tabelas.
 // 11/11/2019 - Robert - Desabilitado pack tabelas CV3 e CTK cfe. GLPI 6772 e chamado Totvs 7124121.
-// 
+// 24/10/2020 - Robert - Adicionada tabela SC0
+//                     - Inseridas tags para catalogo de programas.
+//
 
 // ----------------------------------------------------------------
 user function BatLimp ()
@@ -27,15 +36,9 @@ return
 
 // --------------------------------------------------------------------------
 static function _Pack ()
-	local _sQuery  := ""
-	local _sAliasQ := ""
-	local _oEvento := NIL
 	local _oSQL    := NIL
 	local _aPack   := {}
 	local _nPack   := 0
-	local _aCols   := {}
-	local _aDrop   := {}
-	local _nDrop   := 0
 	local _lContinua := .T.
 
 	// Elimina registros deletados
@@ -60,7 +63,8 @@ static function _Pack ()
 		aadd (_aPack, {"SC6", "C6_ENTREG  < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
 		aadd (_aPack, {"SC9", "C9_DATALIB < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
 		aadd (_aPack, {"ZAB", "ZAB_DTEMIS < '" + dtos (date () -  60 * 1) + "'"})
-	
+		aadd (_aPack, {"SC0", "C0_VALIDA  < '" + dtos (date () - 180 * 1) + "'", '', 0, 0, 0, 0, ''})
+
 		procregua (len (_aPack))
 	endif
 	

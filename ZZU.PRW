@@ -35,7 +35,7 @@
 User Function ZZU ()
 	local _sFiltrTop := ""
 	private aRotina   := {}  // Opcoes do menu
-	private cCadastro := "Rotinas x usuarios"
+	private cCadastro := "Grupos x usuarios"
 
 	if ascan (UsrRetGrp (__cUserId), '000000') == 0
 		u_help ("Acesso somente ao grupo 'Administradores'.",, .t.)
