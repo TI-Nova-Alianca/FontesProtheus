@@ -2,7 +2,14 @@
 // Autor......: Robert Koch
 // Data.......: 10/09/2014
 // Descricao..: P.E. 'Linha OK' na tela MATA261 (transferencias de estoque mod.II)
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #Ponto de entrada para validar transferencias de estoque.
+// #PalavasChave      #validacao #transferencias_estoque
+// #TabelasPrincipais #SD3
+// #Modulos           #EST
+
 // Historico de alteracoes:
 // 12/12/2014 - Robert - Verificacoes integracao Fullsoft.
 // 15/01/2015 - Robert - Passa a chamar a funcao U_PodeMov () para validar troca de produtos.
@@ -25,14 +32,8 @@
 // 20/07/2020 - Robert - Acesso a transferir lote de estoque para outro lote jah existente passa a validar acesso 107 e nao mais 069.
 //                     - Inseridas tags para catalogacao de fontes
 // 07/08/2020 - Robert - Bloqueio transf. AX 66 e itens '4191/9998' (pallets) no AX 02
+// 26/10/2020 - Robert - Passa a bloquear almoxarifados com base no parametro VA_ALMZAG.
 //
-
-// Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #ponto_de_entrada
-// #Descricao         #Ponto de entrada para validar transferencias de estoque.
-// #PalavasChave      #validacao #transferencias_estoque
-// #TabelasPrincipais #SD3
-// #Modulos           #EST
 
 // ------------------------------------------------------------------------------------
 user function ma261Lin ()
@@ -53,7 +54,7 @@ user function ma261Lin ()
 	local _sAlmFull  := ""
 	local _sMsg      := ""
 	local _sChvEx    := ""
-//	local _sAlmBlq   := ''//'66/'  // Lista de almox bloqueados para digitacao direta no Protheus.
+	local _sAlmZAG   := alltrim (supergetmv ("VA_ALMZAG", .t., '', NIL)) //'66/'  // Lista de almox bloqueados para digitacao direta no Protheus.
 	local _lExigeZAG := .F.
 
 	// Como os campos constam duas vezes no aCols, `as vezes preciso procurar a segunda ocorrencia.
@@ -74,12 +75,13 @@ user function ma261Lin ()
 
 			// Se nao estiver gerando pela rotina de solic.transf.estoque, verifica necessidade de bloquear.
 			if ! 'ZAG' $ _sChvEx
-				if ! _lExigeZAG .and. _sAlmOrig $ '66'
-					u_help ("Almoxarifado '" + _sAlmOrig + "' nao pode mais ser movimentado diretamente por esta tela. Utilize NaWeb para solicitacoes de transferencia.",, .t.)
+				U_LOG2 ('DEBUG', 'Amox. que devem ser movimentados atraves da tabela ZAG: ' + _sAlmZAG)
+				if ! _lExigeZAG .and. _sAlmOrig $ _sAlmZAG // '66'
+					u_help ("Almoxarifado '" + _sAlmOrig + "' nao pode ser movimentado diretamente por esta tela, conforme parametro VA_ALMZAG. Utilize NaWeb para solicitacoes de transferencia.",, .t.)
 					_lExigeZAG = .T.
 				endif
-				if ! _lExigeZAG .and. _sAlmDest $ '66'
-					u_help ("Almoxarifado '" + _sAlmDest + "' nao pode mais ser movimentado diretamente por esta tela. Utilize NaWeb para solicitacoes de transferencia.",, .t.)
+				if ! _lExigeZAG .and. _sAlmDest $ _sAlmZAG // '66'
+					u_help ("Almoxarifado '" + _sAlmDest + "' nao pode ser movimentado diretamente por esta tela, conforme parametro VA_ALMZAG. Utilize NaWeb para solicitacoes de transferencia.",, .t.)
 					_lExigeZAG = .T.
 				endif
 				if ! _lExigeZAG .and. '02' $ _sAlmOrig + _sAlmDest .and. (alltrim (_sProdOrig) $ '4191/9998' .or. alltrim (_sProdDest) $ '4191/9998')
