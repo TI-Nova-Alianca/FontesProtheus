@@ -73,6 +73,7 @@
 //                     - Comentariadas declaracoes de variaveis em desuso.
 // 23/05/2020 - Robert - Criados tratamentos para :TM=31
 //                     - Melhoradas algumas mensagens de erro e removidas linhas comentariadas
+// 26/10/2020 - Robert - Na exclusao, exigia ZI_DATA = dDataBase. Agora exige E2_EMISSAO = dDataBase, que eh o que realmente importa.
 //
 
 // ------------------------------------------------------------------------------------
@@ -741,6 +742,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCtaCorr
 	next
 
 	U_ML_SRArea (_aAreaAnt)
+	u_log2 ('debug', 'Gerei DtMovto com ' + cvaltochar (::DtMovto))
 return
 
 
@@ -1260,6 +1262,8 @@ METHOD PodeExcl () Class ClsCtaCorr
 	local _lContinua := .T.
 	local _sQuery    := ""
 	local _oAssoc    := NIL
+	local _nRegSE2Ex := 0
+
 	//u_logIni (GetClassName (::Self) + '.' + procname ())
 
 	::UltMsg = ""
@@ -1334,9 +1338,17 @@ METHOD PodeExcl () Class ClsCtaCorr
 	endif
 	
 	// Usuarios excluiam movto em datas posteriores a sua criacao, e ficava um saldo no extrato da CC durante esse periodo.
-	if _lContinua .and. dDataBase != ::DtMovto
-		::UltMsg += "Para exclusao deve ser usada data base igual `a data da inclusao (" + dtoc (::DtMovto) + ")"
-		_lContinua = .F.
+//	if _lContinua .and. dDataBase != ::DtMovto
+	if _lContinua // .and. dDataBase != ::DtMovto
+		_nRegSE2Ex = ::RecnoSE2 ()
+		if _nRegSE2Ex > 0
+			se2 -> (dbgoto (_nRegSE2Ex))
+			if se2 -> e2_emissao != dDataBase
+	//	::UltMsg += "Para exclusao deve ser usada data base igual `a data da inclusao (" + dtoc (::DtMovto) + ")"
+				::UltMsg += "Este registro gerou titulo no financeiro, com data de emissao " + dtoc (se2 -> e2_emissao) + ". Para exclusao deve ser usada a mesma data base."
+				_lContinua = .F.
+			endif
+		endif
 	endif
 
 	if _lContinua .and. ::TM == '08'
