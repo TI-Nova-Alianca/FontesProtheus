@@ -2,11 +2,22 @@
 // Autor......: Cláudia Lionço
 // Data.......: 08/10/2019
 // Descricao..: Tela de manutencao do TES Inteligente
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Cadastro
+// #Descricao         #Manutencao do arquivo de TES inteligente (SFM) em formato de grid
+// #PalavasChave      #TES_inteligente #manutencao_em_grid
+// #TabelasPrincipais #SFM
+// #Modulos           #FIS
+
 // Historico de alteracoes:
 // 17/10/2019 - Cláudia - Incluida rotina AxCadastro para inclusão de um unico registro
 // 14/01/2020 - Cláudia - Alteração de leitura e gravação da SX5 devido as validações da R25
 // 15/05/2020 - Claudia - Incluida validações de mensagens, conforme GPLI: 7920
+// 29/10/2020 - Robert  - Invertido teste de grupo de produtos na carastrado para evitar msg REGNOIS
+//                      - Inseridas tags para catalogo de programas.
+//
+
 //-------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
@@ -80,7 +91,6 @@ User Function MT89A (_nOpcao, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr)
 	private altera    := (_nOpcao == 4)
 	private nOpc      := _nOpcao
 	
-	u_logIni ()
 	SFM -> (dbsetorder (1))
 	
 	If _lContinua
@@ -205,15 +215,18 @@ User Function MT89A (_nOpcao, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr)
 	Endif
 
 	SFM -> (dbgotop ())
-	u_logFim ()
 Return
 // --------------------------------------------------------------------------
 // Valida 'Linha OK' da getdados
 User Function MT89LOK ()
 	local _lRet := .T.
+//	u_log2 ('debug', 'iniciando ' + procname ())
 
 	If _lRet .and. ! GDDeleted ()
-		_lRet = GDCheckKey ({"FM_FILIAL","FM_TIPOCLI","FM_GRTRIB","FM_GRPROD","FM_EST","FM_TIPO"}, 4, {}, "Registro duplicado", .t.)
+//		u_log2 ('debug', 'vou chamar GDCheckKey')
+//		_lRet = GDCheckKey ({"FM_FILIAL","FM_TIPOCLI","FM_GRTRIB","FM_GRPROD","FM_EST","FM_TIPO"}, 4, {}, "Registro duplicado", .t.)
+		_lRet = GDCheckKey ({"FM_GRTRIB","FM_GRPROD","FM_EST","FM_TIPOCLI","FM_TIPO"}, 4)
+//		u_log2 ('debug', 'voltou do GDCheckKey com ' + cvaltochar (_lRet))
 	Endif
 	
 	If _lRet .and. ! GDDeleted ()
@@ -237,59 +250,67 @@ User Function MT89LOK ()
 //			_lRet := .F.
 //		EndIf
 		
+//		u_log2 ('debug', 'testando campos 1')
 		If empty(GDFieldGet("FM_TIPO"))
-			u_help("Campo Tipo de operação é obrigatório")
+			u_help("Campo Tipo de operação é obrigatório",, .t.)
 			_lRet := .F.
 		Else
 			If GDFieldGet("FM_TIPO") <> mv_par01
-				u_help("Tipo de operação diferente do parâmetro selecionado! Não será possível incluir o registro.")
+				u_help("Tipo de operação diferente do parâmetro selecionado! Não será possível incluir o registro.",, .t.)
 				_lRet := .F.
 			EndIf
 		EndIf
 		
+		//u_log2 ('debug', 'testando campos 2')
 		If empty(GDFieldGet("FM_TE")) .and. empty(GDFieldGet("FM_TS"))
-			u_help("Campos Tes de entrada e Tes de saída vazios! Obrigatório o preenchimento de um dos campos.")
+			u_help("Campos Tes de entrada e Tes de saída vazios! Obrigatório o preenchimento de um dos campos.",, .t.)
 			_lRet := .F.
 		EndIf
 	EndIf
 	
 	If _lRet .and. ! GDDeleted ()
-		If (ExistCpo ("SX5", "ZF" + (GDFieldGet("FM_GRTRIB"))) == .F.) .and. !empty(GDFieldGet("FM_GRTRIB"))
-			u_help("Valor digitado no campo <Grupo de tributação> não existe no cadastro!")	
+		//u_log2 ('debug', 'testando campos 3')
+//		If (ExistCpo ("SX5", "ZF" + (GDFieldGet("FM_GRTRIB"))) == .F.) .and. !empty(GDFieldGet("FM_GRTRIB"))
+		If !empty(GDFieldGet("FM_GRTRIB")) .and. ! ExistCpo ("SX5", "ZF" + GDFieldGet("FM_GRTRIB"))
+			u_help("Valor digitado no campo <Grupo de tributação> não existe no cadastro!",, .t.)
 			_lRet := .F.
 		EndIf
-		
+
+		//u_log2 ('debug', 'testando campos 4')
 		If alltrim(GDFieldGet("FM_GRPROD")) <> ''
-			If (ExistCpo ("SX5", "21" + (GDFieldGet("FM_GRPROD"))) == .F.) .and. (!empty(GDFieldGet("FM_GRPROD")))
-				u_help("Valor digitado no campo <Grupo de tributação do produto> não existe no cadastro!")	
+//			If (ExistCpo ("SX5", "21" + (GDFieldGet("FM_GRPROD"))) == .F.) .and. (!empty(GDFieldGet("FM_GRPROD")))
+			If !empty(GDFieldGet("FM_GRPROD")) .and. ! ExistCpo ("SX5", "21" + GDFieldGet("FM_GRPROD"))
+				u_help("Valor digitado no campo <Grupo de tributação do produto> não existe no cadastro!",, .t.)
 				_lRet := .F.
 			EndIf
 		EndIf
-		
+
 		If alltrim(GDFieldGet("FM_EST")) <> ''
-			If (ExistCpo ("SX5", "12" + (GDFieldGet("FM_EST"))) == .F.) .and. (!empty(GDFieldGet("FM_EST")))
-				u_help("Valor digitado no campo <Estado> não existe no cadastro!")	
+//			If (ExistCpo ("SX5", "12" + (GDFieldGet("FM_EST"))) == .F.) .and. (!empty(GDFieldGet("FM_EST")))
+			If !empty(GDFieldGet("FM_EST")) .and. ! ExistCpo ("SX5", "12" + GDFieldGet("FM_EST"))
+				u_help("Valor digitado no campo <Estado> não existe no cadastro!",, .t.)
 				_lRet := .F.
 			EndIf
 		EndIf
 		  
 		If alltrim(GDFieldGet("FM_TIPO")) <> ''
 			If (ExistCpo ("SX5","DJ" + (GDFieldGet("FM_TIPO"))) == .F.) .and. (!empty(GDFieldGet("FM_TIPO")))
-				u_help("Valor digitado no campo <Tipo de Operação> não existe no cadastro!")	
+				u_help("Valor digitado no campo <Tipo de Operação> não existe no cadastro!",, .t.)
 				_lRet := .F.
 			EndIf
 		EndIf
 		   
-		If !empty(GDFieldGet("FM_TE")) .and. ExistCpo ("SF4",(GDFieldGet("FM_TE"))) == .F.    
-			u_help("Valor digitado no campo <Tes de entrada> não existe no cadastro!")	
+		If !empty(GDFieldGet("FM_TE")) .and. ExistCpo ("SF4",(GDFieldGet("FM_TE"))) == .F.
+			u_help("Valor digitado no campo <Tes de entrada> não existe no cadastro!",, .t.)
 			_lRet := .F.
 		EndIf	
 		
-		If !empty(GDFieldGet("FM_TS")) .and. ExistCpo ("SF4",(GDFieldGet("FM_TS")))  == .F.    
-			u_help("Valor digitado no campo <Tes de saída> não existe no cadastro!")	
+		If !empty(GDFieldGet("FM_TS")) .and. ExistCpo ("SF4",(GDFieldGet("FM_TS")))  == .F.
+			u_help("Valor digitado no campo <Tes de saída> não existe no cadastro!",, .t.)
 			_lRet := .F.
 		EndIf
 	EndIf
+	//u_log2 ('debug', 'finalizando ' + procname ())
 Return _lRet
 // --------------------------------------------------------------------------
 // Valida 'Linha OK' da getdados
@@ -525,7 +546,7 @@ Return
 //Perguntas
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
-    Local _aEst      := {} 
+//    Local _aEst      := {}
     //                     PERGUNT            TIPO TAM DEC VALID F3       Opcoes                      					Help
     aadd (_aRegsPerg, {01, "Tipo de operação", "C", 2, 0,  "",  "DJ", {},                         					""})
     aadd (_aRegsPerg, {02, "Estado          ", "C", 2, 0,  "",  "12", {},                         					""})
@@ -550,7 +571,7 @@ Return
 Static Function ReportDef()
 	Local oReport  := Nil
 	Local oSection1:= Nil
-	Local oFunction
+//	Local oFunction
 	
 	oReport := TReport():New("MT89R","TES Inteligente",cPerg,{|oReport| PrintReport(oReport)},"TES Inteligente")
 	

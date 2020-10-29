@@ -78,13 +78,26 @@ static function _AndaLogo ()
 	procregua (100)
 	incproc ()
 
-//	u_help ("[" + procname () + "] Nada definido.")
-//	cPerg := "ROBERT"
-//	_Validperg ()
-
-//	cperg = 'SZI_RCB'
-//	cperg = 'SZI_REL'
-
+	u_help ('Nada definido.')
+	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
+return
+/*
+	// Importa TES inteligente (executar apenas 1 vez) - GLPI 8727
+	_aDados = U_LeCSV ('\sfm_import.csv', ';')
+	u_log (len(_aDados))
+	for _nDado = 1 to len (_aDados)
+		reclock ("SFM", .T.)
+		sfm -> fm_filial  = xfilial ("SFM")
+		sfm -> fm_tipo    = _aDados [_nDado, 1]
+		sfm -> fm_grprod  = _aDados [_nDado, 2]
+		sfm -> fm_est     = _aDados [_nDado, 3]
+		sfm -> fm_tipocli = _aDados [_nDado, 4]
+		sfm -> fm_ts      = _aDados [_nDado, 5]
+		msunlock ()
+		u_log (_nDado)
+	next
+return
+*/
 /* Este trecho funciona bem
 	U_GravaSX1 ('SZI_REL2', '01', '000004')
 	pergunte ('SZI_REL2', .T.)
@@ -93,26 +106,6 @@ static function _AndaLogo ()
 	U_GravaSX1 ('SZI_RCB', '01', '000004')
 	pergunte ('SZI_RCB', .T.)
 */
-	cPerg := 'SZI_REL2'
-	pergunte ('SZI_REL2', .T.)
-	U_GravaSX1 ('SZI_REL2', '01', '000007')
-	aPergunta [1, 8] = '000007'
-//	cPerg := 'ROBERT'
-//	pergunte (cPerg, .F.)
-//	u_log (apergunta)
-
-	pergunte ('SZI_REL2', .T.)
-	U_GravaSX1 ('SZI_REL2', '01', '000008')
-	aPergunta [1, 8] = '000008'
-//	cPerg := 'ROBERT'
-//	pergunte (cPerg, .F.)
-//	u_log (apergunta)
-
-	pergunte ('SZI_REL2', .t.)
-	u_log (apergunta)
-
-	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
-RETURN
 /*
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
