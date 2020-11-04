@@ -285,7 +285,7 @@ Static Function _GeraPDF_Email()
 				_sTipoZb0 := ""
 				Do Case
 					Case alltrim(_aDescVerb[_y,1]) == '1'
-						_sTipoZb0 := '1 - VERBAS DO MÊS'
+						_sTipoZb0 := '1 - VERBAS S/ MOV. NO TITULO'
 						
 					Case alltrim(_aDescVerb[_y,1]) == '2'
 						_sTipoZb0 := '2 - VERBA DE OUTROS NO TITULO'
@@ -412,13 +412,13 @@ Static Function _GeraPDF_Email()
 		oPrint:Say(nLinha,0150,  "BASE COMISSÃO LIBERADA:" 											,oFont12n)
 		oPrint:Say(nLinha,0900,  PADL('R$' + Transform(_nTotBaseLib, "@E 999,999,999.99"),20,' ')	,oFont12n)
 		nLinha += 50		
-		oPrint:Say(nLinha,0150,  "OUTRAS VERBAS:" 													,oFont12n)
+		oPrint:Say(nLinha,0150,  "COMISSÕES OUTRAS VERBAS:" 													,oFont12n)
 		oPrint:Say(nLinha,0900,  PADL('R$' + Transform(_nVlrVer, "@E 999,999,999.99"),20,' ') 		,oFont12n)
 		nLinha += 50
-		oPrint:Say(nLinha,0150,  "OUTROS DESCONTOS/BONIFICAÇÕES:"									,oFont12n)
+		oPrint:Say(nLinha,0150,  "COMISSÕES OUTROS DESCONTOS/BONIFICAÇÕES:"									,oFont12n)
 		oPrint:Say(nLinha,0900,  PADL('R$' + Transform(_nVlrBon, "@E 999,999,999.99"),20,' ')   	,oFont12n)
 		nLinha += 50
-		oPrint:Say(nLinha,0150,  "DEVOLUÇÕES:"									,oFont12n)
+		oPrint:Say(nLinha,0150,  "COMISSÕES DEVOLUÇÕES:"									,oFont12n)
 		oPrint:Say(nLinha,0900,  PADL('R$' + Transform(_nTotDev, "@E 999,999,999.99"),20,' ')   	,oFont12n)
 		nLinha += 50
 		
@@ -656,17 +656,16 @@ Static Function _GeraPDF_Email()
 		CpyT2S(_cPathPDF +_cFile+ ".PDF", cDestino)
 		_sCtaMail  := "envio.comissoes"
 		
-		//_sMailDest := 'andressa.brugnera@novaalianca.coop.br'
-		//U_SendMail (_sMailDest, "Relatorio de Comissões - Envio automatico", "", {cDestino + _cFile + ".PDF"}, _sCtaMail)
-			// copia
-//		    _sMailDest := 'envio.comissoes@novaalianca.coop.br'
-//		    U_SendMail (_sMailDest, "Relatorio de Comissões - Envio automatico", "", {cDestino + _cFile + ".PDF"}, _sCtaMail)
-//
-//		    // envia email para o represenante
-//		    _sMailDest := (_sAliasVend) -> EMAIL
-//		    U_SendMail (_sMailDest, "Relatorio de Comissões - Envio automatico", "", {cDestino + _cFile + ".PDF"}, _sCtaMail)
-//		    // le o proximo vendedor
-	
+		_sMailDest := 'andressa.brugnera@novaalianca.coop.br'
+		U_SendMail (_sMailDest, "Relatorio de Comissões - Envio automatico", "", {cDestino + _cFile + ".PDF"}, _sCtaMail)
+		// copia
+		_sMailDest := 'envio.comissoes@novaalianca.coop.br'
+		U_SendMail (_sMailDest, "Relatorio de Comissões - Envio automatico", "", {cDestino + _cFile + ".PDF"}, _sCtaMail)
+
+		// envia email para o represenante
+		_sMailDest := (_sAliasVend) -> EMAIL
+		U_SendMail (_sMailDest, "Relatorio de Comissões - Envio automatico", "", {cDestino + _cFile + ".PDF"}, _sCtaMail)
+		// le o proximo vendedor
 	
 		(_sAliasVend) -> (dbskip())
 	Enddo

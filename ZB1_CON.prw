@@ -16,6 +16,7 @@
 // '2' = CIELO LINK
 //
 // Historico de alteracoes:
+// 03/11/2020 - Claudia - Incluida a gravação do SXK
 //
 // --------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -201,6 +202,8 @@ User Function ZB1_CON(_sConciliar)
 							_aBkpSX1 = U_SalvaSX1 (cPerg)  // Salva parametros da rotina.
 							U_GravaSX1 (cPerg, "01", 2)    // testar mostrando o lcto contabil depois pode passar para nao
 							U_GravaSX1 (cPerg, "04", 2)    // esse movimento tem que contabilizar
+							U_GravaSXK (cPerg, "01", "2", 'G' )
+							U_GravaSXK (cPerg, "04", "2", 'G' )
 
 							MSExecAuto({|x,y| Fina070(x,y)},_aAutoSE1,3,.F.,5) // rotina automática para baixa de títulos
 
@@ -272,7 +275,12 @@ User Function ZB1_CON(_sConciliar)
 								u_log("IMPORTAÇÃO FINALIZADA COM SUCESSO: Registro NSU+AUT:" + _sNSUCod + _sAutCod)
 							Endif
 
+							
+							U_GravaSXK (cPerg, "01", "2", 'D' )
+							U_GravaSXK (cPerg, "04", "2", 'D' )
+
 							U_SalvaSX1 (cPerg, _aBkpSX1)  // Restaura parametros da rotina  
+						
 						EndIf
 					Next
 				Endif		

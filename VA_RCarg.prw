@@ -11,6 +11,7 @@
 // 18/11/2015 - Catia     - Observacoes de Clientes
 // 29/08/2019 - Cláudia   - Alterado o campo de peso bruto de B1_P_BRT para B1_PESBRU  
 //							Na montagem de carga o valor do DAK_PESO ficava diferenciado do relatório.
+//
 // --------------------------------------------------------------------------
 user function VA_RCarg (_lAutomat, _sCarga, _dEmissao, _sTipo, _nSintet)
 	local _aRet     := {}
@@ -36,24 +37,34 @@ user function VA_RCarg (_lAutomat, _sCarga, _dEmissao, _sTipo, _nSintet)
 	cCabec1  := "Produto         Descricao                                                    Quantidade UM      Peso unit     Peso total Kg"
  	cCabec2  := ""
 	aOrd     := {}
-	
+
 	_ValidPerg ()
-	if valtype (_sCarga) != "U"
-		U_GravaSX1 (cPerg, '01', _sCarga)
-		U_GravaSX1 (cPerg, '02', _sCarga)
-	endif
-	if valtype (_dEmissao) != "U"
-		U_GravaSX1 (cPerg, '03', _dEmissao)
-		U_GravaSX1 (cPerg, '04', _dEmissao)
-	endif
-	if valtype (_sTipo) != "U"
-		U_GravaSX1 (cPerg, '05', _sTipo)
-	endif
-	if valtype (_nSintet) != "U"
-		U_GravaSX1 (cPerg, '06', _nSintet)
-	endif
+
+	// if valtype (_sCarga) != "U"
+	// 	U_GravaSX1 (cPerg, '01', _sCarga)
+	// 	U_GravaSX1 (cPerg, '02', _sCarga)
+	// endif
+	// if valtype (_dEmissao) != "U"
+	// 	U_GravaSX1 (cPerg, '03', _dEmissao)
+	// 	U_GravaSX1 (cPerg, '04', _dEmissao)
+	// endif
+	// if valtype (_sTipo) != "U"
+	// 	U_GravaSX1 (cPerg, '05', _sTipo)
+	// endif
+	// if valtype (_nSintet) != "U"
+	// 	U_GravaSX1 (cPerg, '06', _nSintet)
+	// endif
 
 	pergunte (cPerg, .F.)
+
+	If IsInCallStack("OMSA200") 
+		mv_par01 := _sCarga
+		mv_par02 := _sCarga
+		mv_par03 := _dEmissao
+		mv_par04 := _dEmissao
+		mv_par05 := _sTipo
+		mv_par06 := _nSintet
+	EndIf
 	
 	if ! _lAuto
 		// Execucao com interface com o usuario.
@@ -119,7 +130,7 @@ static function _Imprime ()
 	local _sAliasQ   := ""
 	local _nQtCarg   := 0
 	local _aNotas    := {}
-	local _sNotas    := ""
+	//local _sNotas    := ""
 	local _nNota     := 0
 	local _sMensNota := ""
 	local _aMensNota := {}

@@ -12,7 +12,7 @@
 // 17/11/2015 - Robert - Eliminado botao que chamava U_LibCarg() em duplicidade.
 //                     - Criado botao para alteracao de transportadora.
 //
-
+//
 // ----------------------------------------------------------------
 User Function OM200US()
 	private _sArqLog := iif (type ("_sArqLog") == "C", _sArqLog, U_Nomelog ()) 
