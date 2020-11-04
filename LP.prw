@@ -368,6 +368,26 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
      		endif
      	endif
      	
+	case _sLPad + _sSeq == '631002'
+		_xRet   = ""
+		do case
+			case _sQueRet = "CDEB"
+				do case
+					case SE1->E1_ADM == "100" .or. SE1->E1_ADM =="101"
+						_xRet:= "101021101002"
+					case SE1->E1_ADM == "200" .or. SE1->E1_ADM =="201"
+						_xRet:= "101021101001"
+					case SE1->E1_ADM == "300" .or. SE1->E1_ADM =="301"
+						_xRet:= "101021101003"
+					case SE1->E1_ADM == "400" .or. SE1->E1_ADM =="401"
+						_xRet:= "101021101004"
+					otherwise
+						_xRet:= "101021101005"
+				endcase  
+			//case _sQueRet = "CCD" 
+
+		endcase
+
 	case _sLPad + _sSeq == '666005'  // Custeio MO + GGF + apoio.
 		_xRet   = ""
 		do case

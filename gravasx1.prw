@@ -30,8 +30,9 @@
 // 1 - Grupo de perguntas a atualizar
 // 2 - Codigo (ordem) da pergunta
 // 3 - Dado a ser gravado
-//
-user function GravaSX1 (_sGrupo, _sPerg, _xValor)
+// 4 - Se desativa ou ativa o profile - Criado para os casos de contabilização off line
+
+user function GravaSX1 (_sGrupo, _sPerg, _xValor, _sDelProf)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _sUserName := ""
 	local _lContinua := .T.
@@ -76,21 +77,14 @@ user function GravaSX1 (_sGrupo, _sPerg, _xValor)
 		endcase
 	endif
 	
-	// Atualiza parametros no profile do usuario.
 	if _lContinua
 
 		if type ("__cUserId") == "C" .and. ! empty (__cUserId)
 			psworder (1)  // Ordena arquivo de senhas por ID do usuario
 			PswSeek(__cUserID)  // Pesquisa usuario corrente
 			_sUserName := PswRet(1) [1, 1]
-			
-			// Como alguns usuarios tem o acesso '150 - Grava respostas parametros por empresa' (administradores, por exemplo),
-			// faz duas chamadas da rotina, uma com a empresa e uma sem.
-			// A chamada de funcao "ChkPsw (150)" retorna se o usuario tem esse acesso, mas nao pode ser usada aqui por que
-			// o sistema mostra msg ao usuario dizendo que 'apenas o Administrador tem acesso'...
-			_AtuProf (_sUserName, _sGrupo, _sPerg)
-			//_AtuProf (cEmpAnt + _sUserName, _sGrupo, _sPerg)
 
+			_AtuProf (_sUserName, _sGrupo, _sPerg)
 		endif
 	endif
 	
@@ -174,8 +168,6 @@ static function _AtuProf (_sUserName, _sGrupo, _sPerg)
 	EndIf
 
 return
-
-
 // // --------------------------------------------------------------------------
 // // Encontra e atualiza profile deste usuario para a rotina / pergunta atual.
 // // Enquanto o usuario nao alterar nenhuma pergunta, ficarah usando do SX1 e

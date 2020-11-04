@@ -9,15 +9,12 @@
 // 21/08/2013 - Leandro - Inclusão de função para não permitir excluir a nota caso a guia de livre trânsito não tenha sido excluída
 // 21/08/2019 - Robert  - Nao verifica mais deposito fechado (nao utilizamos mais ha anos).
 //
-
 // --------------------------------------------------------------------------
 User Function MS520Vld () 
 	local _aAreaAnt := U_ML_SRArea ()
 	local _lRet     := .T.
+	
 	u_logIni ()
-//	if _lRet
-//		_lRet = _VerRetDep ()
-//	endif
 
 	if _lRet
 		_lRet = _VerGuia ()

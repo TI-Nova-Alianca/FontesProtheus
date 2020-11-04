@@ -16,10 +16,11 @@ User Function Ml_lvda()
 SetPrvt("_WVAL,")
 
 IF  SF4->F4_DUPLIC<>"S" .OR. SD2->D2_TIPO=="D" .OR. SD2->D2_TES$"518/510/603" .OR. SD2->D2_SERIE $ GetMV ("VA_SERIECF") .OR.;
-	SF4->F4_TOCON$('15/16')
+    SF4->F4_TOCON$('15/16')
     _wVAL:=0
 ELSE
 //   _wVAL:=SD2->D2_TOTAL+SD2->D2_VALIPI
-   _wVAL:=SD2->D2_TOTAL+SD2->D2_VALIPI+sd2->d2_icmsret
+_wVAL:=SD2->D2_TOTAL+SD2->D2_VALIPI+sd2->d2_icmsret
 ENDIF
+
 Return(_wVAL)

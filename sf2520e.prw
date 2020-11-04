@@ -44,10 +44,9 @@
 // 02/05/2018 - Robert  - Desabilitado tratamento para armazem geral (nao usamos mais ha tempo)
 // 03/05/2018 - Robert  - Desabilitados tratamentos do ZAB (devolucoes de clientes).
 //
-
+// ---------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
-// --------------------------------------------------------------------------
 User Function sf2520e() 
 	local _sSQL      := ""
 	local _sJustif   := ""
