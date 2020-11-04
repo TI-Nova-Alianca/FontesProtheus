@@ -72,15 +72,87 @@ static function _AndaLogo ()
 //	local _oCtaCorr  := NIL
 //	local _nParc     := 0
 //	local _oAssoc    := NIL
-//	local _aAssoc := {}
-//	local _nAssoc := 0
+	local _aAssoc := {}
+	local _nAssoc := 0
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
 
-	u_help ('Nada definido.')
-	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
+//	u_help ('Nada definido.')
+//	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
+//return
+
+	// Compara relatorios associados
+	_aAssoc = {}
+//	aadd (_aAssoc, '003577')  // bastante movimento
+//	aadd (_aAssoc, '005128')  // apenas 1 entrada e 1 compra
+	//aadd (_aAssoc, '001369')  // so 14 complementos
+	//aadd (_aAssoc, '004826')  // 9+6+0
+//	aadd (_aAssoc, '003241')  // 16+15+2 Idalino Pan - tem complemento
+	//aadd (_aAssoc, '000643')  // UM ASSOCIADO QUE TEVE REPARCELAMENTO em 2020
+	//aadd (_aAssoc, '012791')  // lUIS eSCOSTEGUY (nao associado de Livramento)
+//	aadd (_aAssoc, '002380')  // Elmar Busetti
+//	aadd (_aAssoc, '002859')  // Celso Chiarani
+//	aadd (_aAssoc, '000184')  // Arside Piton - apenas uva isabel; UNIMED em aberto
+//	aadd (_aAssoc, '000289')  // Rui Bertuol - UNIMED em aberto.
+//	aadd (_aAssoc, '003024')  // Vilson Da Campo - NF de compra devolvida em 2020.
+	aadd (_aAssoc, '002660')  // Cledinei Da Campo - NF trocada com Vilson em 2020.
+	for _nAssoc = 1 to len (_aAssoc)
+		U_GravaSX1 ("ML_FECHASAFRA", '01', '2020')  // safra
+		U_GravaSX1 ("ML_FECHASAFRA", '02', _aAssoc [_nAssoc])
+		U_GravaSX1 ("ML_FECHASAFRA", '03', '01')  // loja
+		U_GravaSX1 ("ML_FECHASAFRA", '04', '  ')  // nucleo
+		U_GravaSX1 ("ML_FECHASAFRA", '05', 1)  // lista saldo CC 1=sim;2=nao
+		U_GravaSX1 ("ML_FECHASAFRA", '06', 1)  // 1=detalhado;2=resumido
+	//	U_ml_fechasafra (.T.)
+		//U_GravaSX1 ("SZI_REL2", "01", _aAssoc [_nAssoc])
+		//U_GravaSX1 ('SZI_REL2', "02", '')
+		//U_GravaSX1 ("SZI_REL2", "03", _aAssoc [_nAssoc])
+		//U_GravaSX1 ('SZI_REL2', "04", 'zz')
+		//U_GravaSX1 ('SZI_REL2', "05", stod ("19000101"))
+		//U_GravaSX1 ('SZI_REL2', "06", stod ("20201231"))
+		//U_GravaSX1 ('SZI_REL2', "07", 1)  // tipo normal/capital
+		//U_GravaSX1 ('SZI_REL2', "08", 2)  //listar OBS S/N
+		//U_szi_rel2 (.t.)
+		//U_GravaSX1 ('SZI_REL', "01", _aAssoc [_nAssoc])
+		//U_GravaSX1 ('SZI_REL', "02", '')
+		//U_GravaSX1 ('SZI_REL', "03", _aAssoc [_nAssoc])
+		//U_GravaSX1 ('SZI_REL', "04", 'zz')
+		//U_GravaSX1 ('SZI_REL', "05", '')
+		//U_GravaSX1 ('SZI_REL', "06", 'zz')
+		//U_GravaSX1 ('SZI_REL', "07", stod ("19000101"))
+		//U_GravaSX1 ('SZI_REL', "08", stod ("20201231"))
+		//U_GravaSX1 ('SZI_REL', "09", 1)
+		//U_GravaSX1 ('SZI_REL', "10", '')
+		//U_GravaSX1 ('SZI_REL', "11", 2)
+		//U_GravaSX1 ('SZI_REL', "12", 1)
+		//U_GravaSX1 ('SZI_REL', "13", '')
+		//U_GravaSX1 ('SZI_REL', "14", 'zz')
+		//U_GravaSX1 ('SZI_REL', "15", 2)
+		//U_szi_rel (.t., 1)
+		u_gravasx1 ('SZI_LCS', '01', _aAssoc [_nAssoc])  // Associado inicial
+		u_gravasx1 ('SZI_LCS', '02', '')  // Loja associado inicial
+		u_gravasx1 ('SZI_LCS', '03', _aAssoc [_nAssoc])  // Associado final
+		u_gravasx1 ('SZI_LCS', '04', 'z')  // Loja associado final          
+		u_gravasx1 ('SZI_LCS', '05', '')  // Tipo de movimento inicial     
+		u_gravasx1 ('SZI_LCS', '06', 'z')  // Tipo de movimento final       
+		u_gravasx1 ('SZI_LCS', '07', date ())  // Posicao em                    
+		u_gravasx1 ('SZI_LCS', '08', '')  // Coop.orig(AL/SV/...) bco=todas
+		u_gravasx1 ('SZI_LCS', '09', '')  // Filial inicial                
+		u_gravasx1 ('SZI_LCS', '10', 'z')  // Filial final                  
+		u_gravasx1 ('SZI_LCS', '11', '')  // Forma pagamento (bco=todas)
+		u_gravasx1 ('SZI_LCS', '12', 3)   // Movtos a: debito /credito /Todos
+		u_gravasx1 ('SZI_LCS', '13', '')  // T.M. desconsiderar (separ. /)
+		u_gravasx1 ('SZI_LCS', '14', '')  // Parcelas (separ. /) bco=todas
+		u_gravasx1 ('SZI_LCS', '15', 2)  // Gerar recibos apos o relatorio: Sim/Nao
+		u_gravasx1 ('SZI_LCS', '16', '')  // P/recibo: Correspondente a... 
+		u_gravasx1 ('SZI_LCS', '17', '')  // P/recibo: Local               
+		u_gravasx1 ('SZI_LCS', '18', date ())  // P/recibo: Data                
+		u_gravasx1 ('SZI_LCS', '19', '')  // Nucleos(SG/FC/...) bco=todos
+		u_szi_lcs (.t., 2)
+	next
 return
+*/
 /*
 	// Importa TES inteligente (executar apenas 1 vez) - GLPI 8727
 	_aDados = U_LeCSV ('\sfm_import.csv', ';')
@@ -437,65 +509,6 @@ RETURN
 	U_GravaSX1 (cPerg, "15", 1) // Listar
 	U_ML_NFXCONH (.t.)
 RETURN
-*/
-/*
-	// tESTES METODO FechSafr
-	_aAssoc = {}
-	aadd (_aAssoc, '003577')  // bastante movimento
-	aadd (_aAssoc, '005128')  // apenas 1 entrada e 1 compra
-	//aadd (_aAssoc, '001369')  // so 14 complementos
-	//aadd (_aAssoc, '004826')  // 9+6+0
-	aadd (_aAssoc, '003241')  // 16+15+2 Idalino Pan - tem complemento
-	//aadd (_aAssoc, '000643')  // UM ASSOCIADO QUE TEVE REPARCELAMENTO em 2020
-	//aadd (_aAssoc, '012791')  // lUIS eSCOSTEGUY (nao associado de Livramento)
-	aadd (_aAssoc, '002380')  // Elmar Busetti
-	aadd (_aAssoc, '002859')  // Celso Chiarani
-	aadd (_aAssoc, '000184')  // Arside Piton - apenas uva isabel; UNIMED em aberto
-	aadd (_aAssoc, '000289')  // Rui Bertuol - UNIMED em aberto.
-	aadd (_aAssoc, '003024')  // Vilson Da Campo - NF de compra devolvida em 2020.
-	U_GravaSX1 ("ML_FECHASAFRA", '01', '2020')
-	U_GravaSX1 ("ML_FECHASAFRA", '03', '01')
-	U_GravaSX1 ("ML_FECHASAFRA", '04', '  ')
-	U_GravaSX1 ("ML_FECHASAFRA", '05', 1)
-	U_GravaSX1 ("ML_FECHASAFRA", '06', 2)
-	for _nAssoc = 1 to len (_aAssoc)
-		U_GravaSX1 ("ML_FECHASAFRA", '02', _aAssoc [_nAssoc])
-		U_ml_fechasafra (.T.)
-	next
-return
-/*
-	// Gera rel. extrato CC associados modelo II.
-	_sAssoc = '002606'
-	cPerg := "SZI_REL2"
-	U_GravaSX1 (cPerg, "01", _sAssoc)
-	U_GravaSX1 (cPerg, "02", '')
-	U_GravaSX1 (cPerg, "03", _sAssoc)
-	U_GravaSX1 (cPerg, "04", 'zz')
-	U_GravaSX1 (cPerg, "05", stod ("19000101"))
-	U_GravaSX1 (cPerg, "06", stod ("20201231"))
-	U_GravaSX1 (cPerg, "07", 1)
-	U_GravaSX1 (cPerg, "08", 2)
-//	U_szi_rel2 (.t.)
-
-	// Gera rel. extrato CC associados modelo antigo
-	cPerg := "SZI_REL"
-	U_GravaSX1 (cPerg, "01", _sAssoc)
-	U_GravaSX1 (cPerg, "02", '')
-	U_GravaSX1 (cPerg, "03", _sAssoc)
-	U_GravaSX1 (cPerg, "04", 'zz')
-	U_GravaSX1 (cPerg, "05", '')
-	U_GravaSX1 (cPerg, "06", 'zz')
-	U_GravaSX1 (cPerg, "07", stod ("19000101"))
-	U_GravaSX1 (cPerg, "08", stod ("20201231"))
-	U_GravaSX1 (cPerg, "09", 1)
-	U_GravaSX1 (cPerg, "10", '')
-	U_GravaSX1 (cPerg, "11", 2)
-	U_GravaSX1 (cPerg, "12", 1)
-	U_GravaSX1 (cPerg, "13", '')
-	U_GravaSX1 (cPerg, "14", 'zz')
-	U_GravaSX1 (cPerg, "15", 2)
-//	U_szi_rel (.t., 1)
-return
 */
 
 //	_a := ALLGROUPS ()

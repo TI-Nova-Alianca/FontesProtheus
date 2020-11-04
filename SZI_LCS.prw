@@ -2,7 +2,14 @@
 // Autor:      Robert Koch
 // Data:       12/09/2012
 // Descricao:  Relatorio de lancamentos com saldo na conta corrente de associados.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Relatorio
+// #Descricao         #Relatorio de lancamentos na conta corrente de associados com saldo em aberto na data informada.
+// #PalavasChave      #conta_corrente_associados #lancamentos_com_saldo
+// #TabelasPrincipais #SZI #SE2
+// #Modulos           #COOP
+
 // Historico de alteracoes:
 // 08/10/2012 - Robert - Incluido parametro de forma de pagamento.
 //                     - Incluido parametro de listar debitos / creditos / ambos.
@@ -100,7 +107,7 @@ user function SZI_LCS (_lAutomat, _nOrdem)
 	if _lAuto
 		_sErroConv = U_ML_R2T (__reldir + wnrel + ".##r", __reldir + wnrel + ".txt")
 		if ! empty (_sErroConv)
-			u_help (_sErroConv)
+			u_help (cvaltochar (_sErroConv),, .t.)
 		endif
 	else
 		If aReturn [5] == 1
@@ -125,13 +132,13 @@ return
 
 // --------------------------------------------------------------------------
 static function _Imprime ()
-	local _sQuery    := ""
+//	local _sQuery    := ""
 	local _sArqTrb   := ""
 	local _sQuebra   := ""
 	local _xQuebra   := ""
 	local _sNomeQbr  := ""
-	local _aObs      := {}
-	local _nObs      := 0
+//	local _aObs      := {}
+//	local _nObs      := 0
 	local _sHist     := ""
 	local _aHist     := {}
 	local _nHist     := 0
