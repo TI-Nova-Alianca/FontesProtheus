@@ -9,7 +9,7 @@
 // #Modulos 		  #FIN 
 //
 // TIPOS DE VERBAS
-// 1 - VERBAS DO MES'
+// 1 - VERBAS S/ MOV. NO TITULO'
 // 2 - VERBA DE OUTROS NO TITULO
 // 3 - BONIFICAÇÕES' 
 // 4 - VERBAS BOLETO/DEP' 
@@ -29,7 +29,7 @@ User Function VA_COMVERB(_dtaIni, _dtaFin, _sVend, _nLibPg)
 	
 	_dtaAnt := DaySub(_dtaFin,180) // diminui 6 meses
 	
-	//-- VERBA DO VENDEDOR NO MES
+	//-- VERBAS S/ MOV. NO TITULO
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT"
 	_oSQL:_sQuery += " 	  '1 - VERBAS DO MES' AS TIPO"
@@ -324,7 +324,7 @@ User Function VA_COMVERB(_dtaIni, _dtaFin, _sVend, _nLibPg)
 	_oSQL:_sQuery += " 			AND E3_PARCELA = ZA5_PARC"
 	_oSQL:_sQuery += " 			AND E3_CODCLI = ZA5_CLI"
 	_oSQL:_sQuery += " 			AND E3_LOJA = ZA5_LOJA"
-	_oSQL:_sQuery += " 			AND E3_EMISSAO < '" + dtos(_dtaFin) + "'"
+	_oSQL:_sQuery += " 			AND E3_EMISSAO <= '" + dtos(_dtaFin) + "'"
 	_oSQL:_sQuery += " 		)"
 	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SE1") + " SE1 "
 	_oSQL:_sQuery += " 	ON (SE1.D_E_L_E_T_ = ''"

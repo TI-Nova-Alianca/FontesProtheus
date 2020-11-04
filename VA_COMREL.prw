@@ -283,7 +283,7 @@ Static Function PrintReport(oReport)
 				_sTipoZb0 := ""
 				Do Case
 					Case alltrim(_aDescVerb[_y,1]) == '1'
-						_sTipoZb0 := '1 - VERBAS DO MÊS'
+						_sTipoZb0 := '1 - VERBAS S/ MOV. NO TITULO'
 						
 					Case alltrim(_aDescVerb[_y,1]) == '2'
 						_sTipoZb0 := '2 - VERBA DE OUTROS NO TITULO'
@@ -321,8 +321,8 @@ Static Function PrintReport(oReport)
 						oSection3:Cell("COLUNA10")	:SetBlock   ({|| alltrim(_aDescVerb[_y,12]) 								})
 				
 						oSection3:PrintLine()
-				
-						If alltrim(_aDescVerb[_y,1]) == '3 - BONIFICAÇÕES'
+						 
+						If alltrim(_aDescVerb[_y,1]) == '3'
 							_nVlrBon += _aDescVerb[_y,11]
 						Else
 							_nVlrVer += _aDescVerb[_y,11]
@@ -431,7 +431,7 @@ Static Function PrintReport(oReport)
 			EndIf
 
 			
-			oReport:PrintText("COMISSÃO TOTAL:" ,_nLinha, 100)
+			oReport:PrintText("COMISSÃO TOTAL: ",_nLinha, 100)
 			oReport:PrintText(PADL('R$' + Transform(_nVlrCom, "@E 999,999,999.99"),20,' '),_nLinha, 900)
 			oReport:SkipLine(1) 
 

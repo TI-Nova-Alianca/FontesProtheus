@@ -12,6 +12,7 @@
 //
 //  Historico de alteracoes:
 //
+//
 // ------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'

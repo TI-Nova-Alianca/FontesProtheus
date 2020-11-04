@@ -89,8 +89,8 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "	AND E5_FILIAL = '" + xFilial('SE5') + "' "
     _oSQL:_sQuery += "	AND E5_TIPO = 'NCC'"
     _oSQL:_sQuery += "	AND E5_DATA BETWEEN '" + DTOS(mv_par01) + "' and '" + dtos(mv_par02) + "'"
-    _oSQL:_sQuery += "	AND E5_MOTBX = 'CMP'"
-    _oSQL:_sQuery += "	AND E5_NATUREZ <> '"+ _sMot +"'"
+    _oSQL:_sQuery += "	AND E5_MOTBX = '" + _sMot + "'"
+    _oSQL:_sQuery += "	AND E5_NATUREZ <> 'VERBAS'"
     _oSQL:_sQuery += "	ORDER BY E5_DATA"
     _aDev := _oSQL:Qry2Array ()
 
