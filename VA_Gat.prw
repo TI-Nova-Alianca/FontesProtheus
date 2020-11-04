@@ -2,7 +2,14 @@
 // Autor:     Robert Koch
 // Data:      29/09/2008
 // Descricao: Gatilhos genericos (para campos diversos do sistema).
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Gatilhos de campos diversos (para nao abrir um fonte para cada um).
+// #PalavasChave      #auxiliar #gatilhos
+// #TabelasPrincipais 
+// #Modulos           #todos_modulos
+
 // Historico de alteracoes:
 // 30/10/2008 - Robert - Busca custo repos. no C6_PRCVEN quando remessa para deposito.
 // 17/01/2009 - Robert - Criado gatilho para buscar preco da uva pelo campo D1_GRAU.
@@ -110,6 +117,8 @@
 // 22/01/2020 - Robert - Ajustes gatilhos SZF.
 // 20/02/2020 - Robert - Desabilitados gatilhos do ZF_IDSZ9 (cadastros estao desatualizados, nao ajuda em nada. Vai ser passado para NaWeb).
 // 15/05/2020 - Robert - Nao verifica estoque do C6_PRODUTO quando executando via importacao do Mercanet.
+// 03/11/2020 - Robert - Gatilho C6_VAOPER acionando triggers do C6_OPER
+//                     - Tags para catalogo de fontes.
 //
 
 #include "VA_Inclu.prw"
@@ -119,30 +128,31 @@ user function VA_Gat (_sParCpo, _sParSeq)
 local _xRet     := NIL
 local _sCampo   := alltrim (ReadVar ())
 local _sCDomin  := ""
-local _sSeqGat  := ""
+//local _sSeqGat  := ""
 local _aAreaAnt := U_ML_SRArea ()
 local _aAmbAnt  := U_SalvaAmb ()
 local _sQuery   := ""
-local _sAliasQ  := ""
+//local _sAliasQ  := ""
 local _aCampos  := {}
-local _aAlmox   := {}
+//local _aAlmox   := {}
 local _nF3      := 0
-local _sCpo     := ""
-local _nCpo     := 0
-local _aDadosST := {}
-local _aRetQry  := 0
+//local _sCpo     := ""
+//local _nCpo     := 0
+//local _aDadosST := {}
+//local _aRetQry  := 0
 local _sMsg     := ""
 local _oEvento  := NIL
-local _oAssoc   := NIL
+//local _oAssoc   := NIL
 local _oSQL     := NIL
-local _sUvaF    := ""
-local _oLivram  := NIL
-local _lRecolST := .F.
+//local _sUvaF    := ""
+//local _oLivram  := NIL
+//local _lRecolST := .F.
 local _sMsgErr  := ""
 local _nLin     := 0
 local _sProduto := ""
 local _sAlmox   := ""
 local _sEnderec := ""
+local _aColsAlt := {}
 
 if valtype (_sParCpo) != "C" .or. valtype (_sParSeq) != "C"
 	_sMsgErr = "Funcao " + procname () + " nao recebeu parametros de campo/sequencia. Gatilho nao vai ser executado. Caso ajude, o retorno da funcao READVAR eh '" + alltrim (ReadVar ()) + "'"
@@ -456,6 +466,20 @@ do case
 			endif
 		endif
 		
+
+	// Como o campo original C6_OPER nao pode ser mudado de lugar e, tambem, eh virtual e queremos
+	// guardar seu conteudo, foi criado um campo customizado que alimenta-o e dispara seus gatilhos.
+	case _sCampo == "M->C6_VAOPER" .and. _sCDomin == "C6_VAOPER"
+		_xRet = GDFieldGet ("C6_VAOPER")
+		if ExistTrigger('C6_OPER')
+			u_log2 ('debug','existe gat.c6_oper')
+			RunTrigger (2, N,,, 'C6_OPER')
+//			GetDRefresh ()  // Atualiza tela dos itens do pedido.
+//			Sysrefresh ()  // Atualiza a tela inteira.
+
+			// Marca variavel que indica que o aCols deve ser mantido assim,pois foi alterado.
+			_aColsAlt = aclone (aCols)
+		endif
 
 	case _sCampo == "M->D1_COD" .and. _sCDomin == "D1_CLASFIS"
 		// Se nao encontrar nada, deixa o valor pronto para retorno.
@@ -1055,6 +1079,12 @@ endcase
 //CursorArrow ()
 
 U_SalvaAmb (_aAmbAnt)
+
+// Se foi alterado o aCols, baixa novamente o seu conteudo, pois a funcao SalvaAmb retornou o original.
+if len (_aColsAlt) > 0
+	aCols := aclone (_aColsAlt)
+endif
+
 U_ML_SRArea (_aAreaAnt)
 
 return _xRet
