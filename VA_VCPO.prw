@@ -136,6 +136,7 @@
 // 21/07/2020 - Robert  - Removidas validacoes campos tabela ZZ3 (composicao fretes - em desuso).
 // 26/08/2020 - Robert  - Liberacao temporaria validacao C6_QTDVEN cfe. GLPI 8375
 // 03/09/2020 - Robert  - Liberado movimentar retroativo quando tipo MO (para quando nao havia MO em alguma OP)
+// 06/11/2020 - Robert  - Nao valida mais D3_TM '550/560/561/562/563/564/565/566/567/568/569' x grupo 069 do ZZU (agora temos cadastro de usuarios x TM)
 //
 
 // --------------------------------------------------------------------------
@@ -998,10 +999,10 @@ user function VA_VCpo (_sCampo)
 				_lRet = .F.
 			endif
 
-			if ! &(ReadVar ()) $ '550/560/561/562/563/564/565/566/567/568/569' .and. ! U_ZZUVL ('069', __cUserId, .F.)
-				u_help ("Usuario nao tem permissao para este movimento.")
-				_lRet = .F.
-			endif
+//			if ! &(ReadVar ()) $ '550/560/561/562/563/564/565/566/567/568/569' .and. ! U_ZZUVL ('069', __cUserId, .F.)
+//				u_help ("Usuario nao tem permissao para este movimento.")
+//				_lRet = .F.
+//			endif
 
 
 		case _sCampo == "M->D3_VAETIQ"
