@@ -15,6 +15,7 @@
 // 06/10/2020 - Sandra - Alterado nome do contador de Carlos para Liane
 // 07/10/2020 - Robert - Chamadas da funcao msgalert() trocadas para u_help ()
 //                     - Adicionadas tags para catalogo de fontes.
+// 09/11/2020 - Robert - Alterado nome do contador de Liane para Sara
 //
  
 #include "rwmake.ch"
@@ -219,7 +220,8 @@ Static Function RptDetail()
 	 ::_nLinAtual += ::_nAltLin * 1					
 	
 //     _sLinhaImp := "        ADMINISTRAÇÃO          " + "     " + "         CONTADOR"
-       _sLinhaImp := "      ALCEU DALLE MOLLE                      LIANE RITA LENZI"
+//     _sLinhaImp := "      ALCEU DALLE MOLLE                      LIANE RITA LENZI"
+       _sLinhaImp := "      ALCEU DALLE MOLLE                        SARA CETOLIN"
 	 ::_oPrn:Say (::_nMargsup + ::_nLinAtual, ::_nMargEsq + 400, _sLinhaImp, _oCour10N, 100)
 	 ::_nLinAtual += ::_nAltLin * 1					
        _sLinhaImp := "     CPF: 431.760.700-04                CRC: CRC-RS 0-96.279 - O"
