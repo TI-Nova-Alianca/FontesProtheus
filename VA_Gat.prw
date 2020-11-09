@@ -119,6 +119,7 @@
 // 15/05/2020 - Robert - Nao verifica estoque do C6_PRODUTO quando executando via importacao do Mercanet.
 // 03/11/2020 - Robert - Gatilho C6_VAOPER acionando triggers do C6_OPER
 //                     - Tags para catalogo de fontes.
+// 06/11/2020 - Robert - Ajuste gatilho C6_TES para consumidor final RS
 //
 
 #include "VA_Inclu.prw"
@@ -389,22 +390,21 @@ do case
 			case m->c5_tipocli == "F"  // CONSUMIDOR FINAL
 				if _wNAOalcool = "N"
 					if _wRS == "RS"
-						//_xRet = IIF(_lBonif,"705","716")
-						_xRet = IIF(_lBonif,"752","716")
+					//	_xRet = IIF(_lBonif,"752","716")
+						_xRet = IIF(_lBonif,"752","715")
 					else
 						_xRet = IIF(_lBonif,"528","790")
 					endif
 				elseif _wNAOalcool= "Q"
 					if _wRS == "RS"
-						//_xRet = IIF(_lBonif,"709","722")
 						_xRet = IIF(_lBonif,"752","722")
 					else 
 						_xRet = IIF(_lBonif,"528","790")
 					endif	
 				else
 					if _wRS == "RS"
-						//_xRet = IIF(_lBonif,"706","715")
-						_xRet = IIF(_lBonif,"753","715")
+					//	_xRet = IIF(_lBonif,"753","715")
+						_xRet = IIF(_lBonif,"753","716")
 					else
 						_xRet = IIF(_lBonif,"530","791")
 					endif
@@ -472,7 +472,7 @@ do case
 	case _sCampo == "M->C6_VAOPER" .and. _sCDomin == "C6_VAOPER"
 		_xRet = GDFieldGet ("C6_VAOPER")
 		if ExistTrigger('C6_OPER')
-			u_log2 ('debug','existe gat.c6_oper')
+			u_log2 ('debug','existe gat.c6_VAoper')
 			RunTrigger (2, N,,, 'C6_OPER')
 //			GetDRefresh ()  // Atualiza tela dos itens do pedido.
 //			Sysrefresh ()  // Atualiza a tela inteira.

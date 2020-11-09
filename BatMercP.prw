@@ -42,7 +42,9 @@
 //                     - Campo ZC5_ERRO aumentado de 250 para 1000 caracteres.
 // 14/05/2020 - Robert - Desmembrado do BatMerc (tinha varias funcionalidades no mesmo programa e ficava confuso).
 // 22/06/2020 - Robert - Funcao U_LkSrvMer() renomeada para U_LsServer().
+// 06/11/2020 - Robert - Quando nao tiver o TES no Mercanet, usa do zc5_TipVen para alimentar o TES inteligente.
 //
+
 // -----------------------------------------------------------------------------------------------------------------
 user function BatMercP ()
 	local _lContinua := .T.
@@ -314,7 +316,13 @@ static function _LePed ()
 					aadd (_aLinhaSC6, {"C6_ENTREG",  stod ((_sAliasQ) -> zc6_entreg), NIL})
 					aadd (_aLinhaSC6, {"C6_PRODUTO", (_sAliasQ) -> zc6_produt, NIL})
 					aadd (_aLinhaSC6, {"C6_QTDVEN",  (_sAliasQ) -> zc6_qtdven, NIL})
-					aadd (_aLinhaSC6, {"C6_TES",     (_sAliasQ) -> zc6_tes, NIL})
+				//	aadd (_aLinhaSC6, {"C6_TES",     (_sAliasQ) -> zc6_tes, NIL})
+					if len (alltrim ((_sAliasQ) -> zc6_tes)) == 3  // Se estiver incompleto, presumo que o Mercanet nao tenha encontrado o TES correto
+						aadd (_aLinhaSC6, {"C6_TES",     (_sAliasQ) -> zc6_tes, NIL})
+					else
+						aadd (_aLinhaSC6, {"C6_VAOPER",  iif ((_sAliasQ) -> zc5_TipVen == 'V', '01', iif ((_sAliasQ) -> zc5_TipVen == 'B', '04', '')), NIL})
+						u_log2 ('aviso', 'TES nao definido no Mercanet. Vou deixar em branco para que os gatilhos do Protheus resolvam por TES inteligente.')
+					endif
 					aadd (_aLinhaSC6, {"C6_PRCVEN",  (_sAliasQ) -> zc6_vlr_liq, NIL})
 					if ! empty ((_sAliasQ) -> zc5_pedcli)
 						aadd (_aLinhaSC6, {"C6_NUMPCOM", alltrim ((_sAliasQ) -> zc5_pedcli), NIL})
