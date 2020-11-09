@@ -408,18 +408,28 @@ Static Function _GeraPDF_Email()
 
 		nLinha += 50
 		oPrint:Say(nLinha,0150,  "RESUMO DO CÁLCULO DE COMISSÕES "  + AllTrim(_sVend) + " - " + AllTrim(_sNomeVend)			,oFont12n)
+		_ImprimeCabec(_sVend, _sNomeVend, @_wpag, @nlinha) // Imprime cabeçalho
+
 		nLinha += 50
 		oPrint:Say(nLinha,0150,  "BASE COMISSÃO LIBERADA:" 											,oFont12n)
 		oPrint:Say(nLinha,0900,  PADL('R$' + Transform(_nTotBaseLib, "@E 999,999,999.99"),20,' ')	,oFont12n)
+
+		_ImprimeCabec(_sVend, _sNomeVend, @_wpag, @nlinha) // Imprime cabeçalho
 		nLinha += 50		
 		oPrint:Say(nLinha,0150,  "COMISSÕES OUTRAS VERBAS:" 													,oFont12n)
 		oPrint:Say(nLinha,0900,  PADL('R$' + Transform(_nVlrVer, "@E 999,999,999.99"),20,' ') 		,oFont12n)
+
+		_ImprimeCabec(_sVend, _sNomeVend, @_wpag, @nlinha) // Imprime cabeçalho
 		nLinha += 50
 		oPrint:Say(nLinha,0150,  "COMISSÕES OUTROS DESCONTOS/BONIFICAÇÕES:"									,oFont12n)
 		oPrint:Say(nLinha,0900,  PADL('R$' + Transform(_nVlrBon, "@E 999,999,999.99"),20,' ')   	,oFont12n)
+
+		_ImprimeCabec(_sVend, _sNomeVend, @_wpag, @nlinha) // Imprime cabeçalho
 		nLinha += 50
 		oPrint:Say(nLinha,0150,  "COMISSÕES DEVOLUÇÕES:"									,oFont12n)
 		oPrint:Say(nLinha,0900,  PADL('R$' + Transform(_nTotDev, "@E 999,999,999.99"),20,' ')   	,oFont12n)
+
+		_ImprimeCabec(_sVend, _sNomeVend, @_wpag, @nlinha) // Imprime cabeçalho
 		nLinha += 50
 		
 		// Desconta verbas
@@ -438,6 +448,7 @@ Static Function _GeraPDF_Email()
 			_nVlrCom:= _nVlrCom + _nTotDev
 		EndIf
 
+		_ImprimeCabec(_sVend, _sNomeVend, @_wpag, @nlinha) // Imprime cabeçalho
 		oPrint:Say(nLinha,0150,  "COMISSÃO TOTAL:"													,oFont12n)
 		oPrint:Say(nLinha,0900,  PADL('R$' + Transform(_nVlrCom, "@E 999,999,999.99"),20,' ')   	,oFont12n)
 		nLinha += 50	
@@ -447,6 +458,7 @@ Static Function _GeraPDF_Email()
 		If _nSimples != '1' // 1=SIM
 			_nVlrIR = ROUND(_nVlrCom * 1.5 /100 , 2)
 			If _nVlrIR > 10
+				_ImprimeCabec(_sVend, _sNomeVend, @_wpag, @nlinha) // Imprime cabeçalho
 				oPrint:Say(nLinha,0150,  "TOTAL DO IR:"														,oFont12n)
 				oPrint:Say(nLinha,0900,  PADL('R$' + Transform(_nVlrIR, "@E 999,999,999.99"),20,' ')		,oFont12n)
 				nLinha += 50	
@@ -455,6 +467,7 @@ Static Function _GeraPDF_Email()
 			Endif            	
 		EndIf	
 		
+		_ImprimeCabec(_sVend, _sNomeVend, @_wpag, @nlinha) // Imprime cabeçalho
 		oPrint:Say(nLinha,0150,  "TOTAL COMISSÃO A RECEBER:"												,oFont12n)
 		oPrint:Say(nLinha,0900,  PADL('R$' + Transform(_nVlrCom - _nVlrIR, "@E 999,999,999.99"),20,' ')   	,oFont12n)
 		nLinha += 100
@@ -655,10 +668,15 @@ Static Function _GeraPDF_Email()
 		// gera o arquivo em PDF
 		CpyT2S(_cPathPDF +_cFile+ ".PDF", cDestino)
 		_sCtaMail  := "envio.comissoes"
-		
+
+		u_log(cDestino + _cFile + ".PDF")
+
+		//_sMailDest := 'claudia.lionco@novaalianca.coop.br'
+		//U_SendMail (_sMailDest, "Relatorio de Comissões - Envio automatico", "", {cDestino + _cFile + ".PDF"}, _sCtaMail)
+
 		_sMailDest := 'andressa.brugnera@novaalianca.coop.br'
 		U_SendMail (_sMailDest, "Relatorio de Comissões - Envio automatico", "", {cDestino + _cFile + ".PDF"}, _sCtaMail)
-		// copia
+		// // copia
 		_sMailDest := 'envio.comissoes@novaalianca.coop.br'
 		U_SendMail (_sMailDest, "Relatorio de Comissões - Envio automatico", "", {cDestino + _cFile + ".PDF"}, _sCtaMail)
 

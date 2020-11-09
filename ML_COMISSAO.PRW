@@ -1174,7 +1174,7 @@ Static Function _GeraPDF_Email()
 			// gera o arquivo em PDF
 			CpyT2S(_cPathPDF +_cFile+ ".PDF", cDestino)
 			_sCtaMail  := "envio.comissoes"
-			
+			//
 			//_sMailDest := 'andressa.brugnera@novaalianca.coop.br'
 			//U_SendMail (_sMailDest, "Relatorio de Comissões - Envio automatico", "", {cDestino + _cFile + ".PDF"}, _sCtaMail)
 		    // copia

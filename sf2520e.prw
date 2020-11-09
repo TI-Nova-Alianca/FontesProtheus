@@ -3,6 +3,12 @@
 // Data.......: ?
 // Descricao..: Ponto de entrada antes da exclusao de notas fiscais.
 //
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #Ponto de entrada antes da exclusao de notas fiscais.
+// #PalavasChave      #ponto_de_entrada #exclusao_de_nota #nota_de_saida 
+// #TabelasPrincipais #SD2 #SF2
+// #Modulos 		  #FAT 
+//
 // Historico de alteracoes:
 // 07/03/2008 - Robert  - Empresa 02 foi desativada. Nao precisa mais movimentar.
 // 30/05/2008 - Robert  - Reabilitado tratamento empresa 02.
@@ -43,17 +49,19 @@
 // 19/02/2018 - Robert  - Desabilitado tratamento para deposito fechado (nao usamos mais ha tempo)
 // 02/05/2018 - Robert  - Desabilitado tratamento para armazem geral (nao usamos mais ha tempo)
 // 03/05/2018 - Robert  - Desabilitados tratamentos do ZAB (devolucoes de clientes).
+// 06/11/2020 - Claudia - Incluida a exclusão de titulos de NF's de cartões. GLPI: 8749
 //
 // ---------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
-User Function sf2520e() 
-	local _sSQL      := ""
+User Function SF2520E() 
 	local _sJustif   := ""
 	local _oEvento   := NIL
-	local _aAreaAnt  := U_ML_SRArea ()
-	local _oBatch    := NIL
 	local _sEmbarque := ""
+	local _aAreaAnt  := U_ML_SRArea ()
+	//local _oBatch    := NIL
+	//local _sSQL      := ""
+	
 	//private _sArqLog := iif (type ("_sArqLog") == "C", _sArqLog, U_NomeLog ())
 	u_logIni ()
 
@@ -64,8 +72,6 @@ User Function sf2520e()
 	if ! empty (sf2 -> f2_vacmemf)
 		msmm (sf2 -> f2_vacmemf,,,, 2,,, "SF2", "F2_VACMEMF")
 	endif
-
-
 
 	// Verifica se a nota pertence a alguma ordem de embarque
 	if ! empty (sf2 -> f2_ordemb)
@@ -119,6 +125,9 @@ User Function sf2520e()
 	// Envia e-mail de aviso especifico para o pessoal de logistica.
 	_MailLog ()
 
+	// Verifica se é NF de cartão CC/CD e exclui seus títulos 
+	_ExcTitCartao()
+
 	// Alimenta lista de notas excluidas.
 	if type ("_aNfExcl") == "A"
 		aadd (_aNfExcl, {sf2 -> f2_doc, sf2 -> f2_serie})
@@ -127,9 +136,7 @@ User Function sf2520e()
 	U_ML_SRArea (_aAreaAnt)
 	u_logFim ()
 Return()
-
-
-
+//
 // --------------------------------------------------------------------------
 // Envia e-mail de aviso ao financeiro.
 static function _MailFin ()
@@ -137,6 +144,7 @@ static function _MailFin ()
 	local _aTit    := {}
 	local _nTit    := 0
 	local _sMsg    := ""
+
 	_sMsg := "Exclusao NF '" + sf2 -> f2_doc + "' serie '" + sf2 -> f2_serie + chr (13) + chr (10)
 	_sMsg += "Cliente: '" + sf2 -> f2_cliente + "' loja: '" + sf2 -> f2_loja + chr (13) + chr (10) + chr (13) + chr (10)
 	_sMsg += "Titulo(s) relacionado(s):" + chr (13) + chr (10) + chr (13) + chr (10)
@@ -154,14 +162,13 @@ static function _MailFin ()
 	next
 	U_ZZUNU ({'008','011'}, "Exclusao NF " + sf2 -> f2_doc, _sMsg)
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Envia e-mail de aviso para a logistica
 static function _MailLog ()
 	local _oSQL := NIL
 	local _sMsg := ""
+
 	_sMsg := "Exclusao NF '" + sf2 -> f2_doc + "' serie '" + sf2 -> f2_serie + "'" + chr (13) + chr (10)
 	_sMsg += "Cliente: " + sf2 -> f2_cliente + "/" + sf2 -> f2_loja
 	if sf2 -> f2_tipo $ "B/D"
@@ -181,9 +188,7 @@ static function _MailLog ()
 	_sMsg += " Carga: '" + _oSQL:RetQry () + "'" + chr (13) + chr (10) + chr (13) + chr (10)
 	U_ZZUNU ({'030'}, "Cancelamento NF " + sf2 -> f2_doc, _sMsg)
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Atualiza arquivo de conta corrente de associados, quando for o caso.
 static function _AtuSZI ()
@@ -241,3 +246,37 @@ static function _AtuSZI ()
 		endif
 	endif
 return
+//
+//
+// Exclui títulos de NF's de cartões cartões CC/CD
+Static Function _ExcTitCartao()
+	local _aDados := {}
+	local _oSQL   := ClsSQL ():New ()
+
+	_oSQL:_sQuery := ""
+    _oSQL:_sQuery += " SELECT * "
+    _oSQL:_sQuery += " FROM " + RetSQLName ("SE1")
+	_oSQL:_sQuery += " WHERE E1_FILIAL = '" + sf2 -> f2_filial + "'"
+	_oSQL:_sQuery += " AND E1_NUM      = '" + sf2 -> f2_doc    + "'"
+	_oSQL:_sQuery += " AND E1_PREFIXO  = '" + sf2 -> f2_serie  + "'"
+	_oSQL:_sQuery += " AND E1_TIPO IN('CC','CD') "
+    _oSQL:_sQuery += " AND E1_ADM   <> '' "
+	_oSQL:_sQuery += " AND E1_BAIXA = '' "
+	_aDados := aclone (_oSQL:Qry2Array ())
+
+	if len(_aDados) > 0
+
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " UPDATE SE1010 SET D_E_L_E_T_ = '*' "
+		_oSQL:_sQuery += " FROM " + RetSQLName ("SE1")
+		_oSQL:_sQuery += " WHERE E1_FILIAL = '" + sf2 -> f2_filial + "'"
+		_oSQL:_sQuery += " AND E1_NUM      = '" + sf2 -> f2_doc    + "'"
+		_oSQL:_sQuery += " AND E1_PREFIXO  = '" + sf2 -> f2_serie  + "'"
+		_oSQL:_sQuery += " AND E1_TIPO IN('CC','CD') "
+		_oSQL:_sQuery += " AND E1_ADM   <> '' "
+		_oSQL:_sQuery += " AND E1_BAIXA = '' "
+		_oSQL:Log ()
+		_oSQL:Exec ()
+	endif
+
+Return

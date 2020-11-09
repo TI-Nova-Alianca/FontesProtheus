@@ -11,21 +11,22 @@
 // #Modulos           #todos_modulos
 //
 // Historico de alteracoes:
-// 01/09/2005 - Robert - Ajustes para trabalhar com profile de usuario (versao 8.11)
-// 16/02/2006 - Robert - Melhorias gerais
-// 12/12/2006 - Robert - Sempre grava numerico no X1_PRESEL
-// 11/09/2007 - Robert - Parametros tipo 'combo' podem receber informacao numerica ou caracter.
-//                     - Testa existencia da variavel __cUserId
-// 02/04/2008 - Robert - Mostra mensagem quando tipo de dados for incompativel.
-//                     - Melhoria geral nas mensagens.
-// 03/06/2009 - Robert - Tratamento para aumento de tamanho do X1_GRUPO no Protheus10
-// 26/01/2010 - Robert - Chamadas da msgalert trocadas por u_help.
-// 29/07/2010 - Robert - Soh trabalhava com profile de usuario na versao 8.
-// 26/09/2013 - Robert - Chama 2 atualizacoes de profile para tratar casos em que o usuario tem o acesso '150 - Grava respostas parametros por empresa' 
-// 09/07/2020 - Robert - Melhorada gravacao de logs e mensagens.
+// 01/09/2005 - Robert  - Ajustes para trabalhar com profile de usuario (versao 8.11)
+// 16/02/2006 - Robert  - Melhorias gerais
+// 12/12/2006 - Robert  - Sempre grava numerico no X1_PRESEL
+// 11/09/2007 - Robert  - Parametros tipo 'combo' podem receber informacao numerica ou caracter.
+//                      - Testa existencia da variavel __cUserId
+// 02/04/2008 - Robert  - Mostra mensagem quando tipo de dados for incompativel.
+//                      - Melhoria geral nas mensagens.
+// 03/06/2009 - Robert  - Tratamento para aumento de tamanho do X1_GRUPO no Protheus10
+// 26/01/2010 - Robert  - Chamadas da msgalert trocadas por u_help.
+// 29/07/2010 - Robert  - Soh trabalhava com profile de usuario na versao 8.
+// 26/09/2013 - Robert  - Chama 2 atualizacoes de profile para tratar casos em que o usuario tem o acesso 
+//						 '150 - Grava respostas parametros por empresa' 
+// 09/07/2020 - Robert  - Melhorada gravacao de logs e mensagens.
 // 21/10/2020 - Claudia - Ajuste da rotina incluindo scripts SQL. GLPI: 8690
 //
-// --------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------
 // Parametros:
 // 1 - Grupo de perguntas a atualizar
 // 2 - Codigo (ordem) da pergunta
@@ -108,7 +109,7 @@ static function _AtuProf (_sUserName, _sGrupo, _sPerg)
 	_oSQL:_sQuery += " AND P_TYPE   = 'MV_PAR'"
 	_oSQL:_sQuery += " AND P_EMPANT = '" + cEmpAnt + "'"
 	_oSQL:_sQuery += " order by R_E_C_N_O_ desc"
-	_oSQL:Log ()
+	//_oSQL:Log ()
 	_aDados := aclone (_oSQL:Qry2Array ())
 
 	 If len(_aDados) > 0
@@ -156,14 +157,14 @@ static function _AtuProf (_sUserName, _sGrupo, _sPerg)
 		_oSQL:_sQuery += " AND P_TASK   ='PERGUNTE'"
 		_oSQL:_sQuery += " AND P_TYPE   = 'MV_PAR'"
 		_oSQL:_sQuery += " AND P_EMPANT = '" + cEmpAnt + "'"
-		_oSQL:Log ()
+		//_oSQL:Log ()
 		_oSQL:Exec ()
 	else
 		_oSQL:= ClsSQL ():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " INSERT INTO [dbo].[MP_SYSTEM_PROFILE] ([P_NAME],[P_PROG],[P_TASK],[P_TYPE],[P_DEFS],[P_EMPANT],[P_FILANT],[D_E_L_E_T_],[R_E_C_D_E_L_])"
 		_oSQL:_sQuery += " VALUES('"+ _sUserName +"','" + _sGrupo +"','PERGUNTE','MV_PAR', Cast('" + ALLTRIM(_sMemoProf) + "' as VARBINARY(max)),'" + cEmpAnt +"','','', 0)"
-		_oSQL:Log ()
+		//_oSQL:Log ()
 		_oSQL:Exec ()
 	EndIf
 

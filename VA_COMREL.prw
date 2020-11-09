@@ -10,8 +10,9 @@
 // #Modulos 		  #FIN 
 //
 //  Historico de alteracoes:
+// 06/11/2020 - Claudia - Incluida impressão de indenização e dados de pgto. GLPI: 8775
 //
-// --------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
 
@@ -391,29 +392,33 @@ Static Function PrintReport(oReport)
 			oReport:PrintText(" ",,100)
 			oReport:PrintText("RESUMO DO CÁLCULO DE COMISSÕES " + AllTrim(_sVendedor) ,,100)
 			oReport:PrintText(" ",,100)
-			
+
 			_nLinha :=  oReport:Row()
+			_nLinha:= _PulaFolha(_nLinha)
 			oReport:PrintText("BASE COMISSÃO LIBERADA:" ,_nLinha, 100)
 			oReport:PrintText(PADL('R$' + Transform(_nTotBaseLib, "@E 999,999,999.99"),20,' '),_nLinha, 900)
 			oReport:SkipLine(1) 
 			
 			_nLinha :=  oReport:Row()
+			_nLinha:= _PulaFolha(_nLinha)
 			oReport:PrintText("OUTRAS VERBAS:" ,_nLinha, 100)
 			oReport:PrintText(PADL('R$' + Transform(_nVlrVer, "@E 999,999,999.99"),20,' '),_nLinha, 900)
 			oReport:SkipLine(1) 
 			
 			_nLinha :=  oReport:Row()
+			_nLinha:= _PulaFolha(_nLinha)
 			oReport:PrintText("OUTROS DESCONTOS/BONIFICAÇÕES:" ,_nLinha, 100)
 			oReport:PrintText(PADL('R$' + Transform(_nVlrBon, "@E 999,999,999.99"),20,' '),_nLinha, 900)
 			oReport:SkipLine(1) 
 
 			_nLinha :=  oReport:Row()
+			_nLinha:= _PulaFolha(_nLinha)
 			oReport:PrintText("DEVOLUÇÕES:" ,_nLinha, 100)
 			oReport:PrintText(PADL('R$' + Transform(_nTotDev, "@E 999,999,999.99"),20,' '),_nLinha, 900)
 			oReport:SkipLine(1) 
-			
-			_nLinha :=  oReport:Row()
 
+			_nLinha :=  oReport:Row()
+			_nLinha:= _PulaFolha(_nLinha)
 			// DESCONTA AS VERBAS
 			If _nVlrTVerbas < 0
 				_nVlrTVerbas = _nVlrTVerbas * -1
@@ -429,8 +434,7 @@ Static Function PrintReport(oReport)
 			Else
 				_nVlrCom:= _nVlrCom + _nTotDev
 			EndIf
-
-			
+			_nLinha:= _PulaFolha(_nLinha)
 			oReport:PrintText("COMISSÃO TOTAL: ",_nLinha, 100)
 			oReport:PrintText(PADL('R$' + Transform(_nVlrCom, "@E 999,999,999.99"),20,' '),_nLinha, 900)
 			oReport:SkipLine(1) 
@@ -441,6 +445,7 @@ Static Function PrintReport(oReport)
 				_nVlrIR := ROUND(_nVlrCom * 1.5 /100 , 2)
 				If _nVlrIR > 10
 					_nLinha :=  oReport:Row()
+					_nLinha:= _PulaFolha(_nLinha)
 					oReport:PrintText("TOTAL DO IR:" ,_nLinha,100)
 					oReport:PrintText(PADL('R$' + Transform(_nVlrIR, "@E 999,999,999.99"),20,' '),_nLinha, 900)
 					oReport:SkipLine(1) 
@@ -450,13 +455,69 @@ Static Function PrintReport(oReport)
 			EndIf
 			
 			_nLinha :=  oReport:Row()
+			_nLinha:= _PulaFolha(_nLinha)
 			oReport:PrintText("TOTAL COMISSÃO A RECEBER:" ,_nLinha, 100)
 			oReport:PrintText(PADL('R$' + Transform(_nVlrCom - _nVlrIR, "@E 999,999,999.99"),20,' '),_nLinha, 900)
 			oReport:SkipLine(1) 
-			
+
+			//
+			// ----------------------------------------------------------------------------------------------------------
+			// Indenização
+			_nTotalInde := _nVlrCom // Sem IR
+			_nIndeniz = ROUND(_nTotalInde /12 , 2)
+			_nLinha :=  oReport:Row()
+			_nLinha:= _PulaFolha(_nLinha)
+			oReport:PrintText("VLR INDENIZAÇÃO 1/12 " + IIF (_sTipIndeniz ='S', 'PAGA', 'PROVISIONADA')	+":" ,_nLinha,100)
+			oReport:PrintText(PADL('R$' + Transform(_nIndeniz, "@E 999,999,999.99"),20,' '),_nLinha, 900)
+			oReport:SkipLine(1) 
+
+			If _sTipIndeniz ='S' 
+				_vIRind := 0
+				If _nSimples != '1'
+					_vIRind = ROUND(_nIndeniz * 15 /100 , 2)
+					If _vIRind > 10
+						_nLinha :=  oReport:Row()
+						_nLinha:= _PulaFolha(_nLinha)
+						oReport:PrintText("TOTAL DO IR (INDENIZ):" ,_nLinha,100)
+						oReport:PrintText(PADL('R$' + Transform(_vIRind, "@E 999,999,999.99"),20,' '),_nLinha, 900)
+						oReport:SkipLine(1) 
+						
+						_nLinha :=  oReport:Row()
+						_nLinha:= _PulaFolha(_nLinha)
+						oReport:PrintText("TOTAL INDENIZ (-) IR :" ,_nLinha,100)
+						oReport:PrintText(PADL('R$' + Transform(_nIndeniz - _vIRind, "@E 999,999,999.99"),20,' '),_nLinha, 900)
+						oReport:SkipLine(1) 
+					Else
+						_vIRind := 0
+					Endif
+				Endif
+			Endif
+		
+			//
+			// ----------------------------------------------------------------------------------------------------------
+			// Banco
+			_nLinha:= _PulaFolha(_nLinha)
+			oReport:PrintText(" "  ,,100)
+			oReport:ThinLine()
+			oReport:PrintText(" "  ,,100)
+			_nLinha:= _PulaFolha(_nLinha)
+			oReport:PrintText("*** DADOS DO PAGAMENTO "  ,,100)
+			oReport:PrintText(" "  ,,100)
+			_nLinha:= _PulaFolha(_nLinha)
+			oReport:PrintText("BANCO   :" + alltrim(_sBanco) + " - " + alltrim(_sNomeBanco) ,,100)
+			_nLinha:= _PulaFolha(_nLinha)
+			oReport:PrintText("AGENCIA :" + _nAgencia ,,100)
+			_nLinha:= _PulaFolha(_nLinha)
+			oReport:PrintText("CONTA   :" + _nConta ,,100)
+			_nLinha:= _PulaFolha(_nLinha)
+			oReport:PrintText(" "  ,,100)
+
+			oReport:EndPage()
+			oReport:StartPage()
 		Next
 		
 		oSection1:Finish()
+
 	EndIf
 Return
 //
@@ -598,6 +659,20 @@ Static Function MontaParcelas(_sFilial,_sNota,_sSerie,_sCliente,_sLoja,_sParcela
 	
 	_sRet := _sParcela + ' ' + _sP +'/'+ alltrim(str(_qtdParc))
 Return _sRet
+//
+// --------------------------------------------------------------------------
+// Pular folha na impressão
+Static Function _PulaFolha(_nLinha)
+	local _nRet := 0
+
+	If  _nLinha > 2300
+		oReport:EndPage()
+		oReport:StartPage()
+		_nRet := oReport:Row()
+	Else
+		_nRet := _nLinha
+	EndIf
+Return _nRet
 //
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1

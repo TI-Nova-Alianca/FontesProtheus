@@ -290,7 +290,7 @@ static function _Filtra ()
 			_sQuery += " AND SC5.C5_TPCARGA = '1'"  // Utiliza
 		endif
 		_sQuery += " ORDER BY C5_VAFEMB, C5_VAPRIOR, C9_PEDIDO"
-		// u_log (_sQuery)
+		//u_log (_sQuery)
 		_aPedAux = aclone (U_Qry2Array (_sQuery))
 		if len (_aPedAux) == 0
 			u_help ("Nao foram encontrados pedidos em aberto.",, .t.)
