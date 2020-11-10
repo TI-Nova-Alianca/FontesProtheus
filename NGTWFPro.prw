@@ -13,14 +13,14 @@ User Function NGTWFPro()
  
     Local oProcess := ParamIXB[1]
     Local cOrigin  := ParamIXB[2]
-    Local nIndex   := 0
+//    Local nIndex   := 0
  
     Do case
     
     case cOrigin == 'MNTW040'
  
-        aAdd( oProcess:oHTML:ValByName( 'head1.strBEMPAR' ), 'Parado'        )
-        aAdd( oProcess:oHTML:ValByName( 'col1.strBEMPAR'  ), TQB->TQB_PARADA )
+//desabilitado para testes - GLPI 8786        aAdd( oProcess:oHTML:ValByName( 'head1.strBEMPAR' ), 'Parado'        )
+//desabilitado para testes - GLPI 8786        aAdd( oProcess:oHTML:ValByName( 'col1.strBEMPAR'  ), TQB->TQB_PARADA )
         /*
         dbSelectArea( 'ST9' )
         dbSetOrder( 1 )
@@ -36,8 +36,8 @@ User Function NGTWFPro()
       // Inclusão de S.S.
     Case cOrigin == 'MNTW025'
  
-   		aAdd( oProcess:oHTML:ValByName( 'head.strBEMPAR' ), 'Parado'        )
-   		aAdd( oProcess:oHTML:ValByName( 'cols.strBEMPAR'  ), TQB->TQB_PARADA )
+//desabilitado para testes - GLPI 8786   		aAdd( oProcess:oHTML:ValByName( 'head.strBEMPAR' ), 'Parado'        )
+//desabilitado para testes - GLPI 8786   		aAdd( oProcess:oHTML:ValByName( 'cols.strBEMPAR'  ), TQB->TQB_PARADA )
     
     EndCase
  
