@@ -43,6 +43,7 @@
 // 14/05/2020 - Robert - Desmembrado do BatMerc (tinha varias funcionalidades no mesmo programa e ficava confuso).
 // 22/06/2020 - Robert - Funcao U_LkSrvMer() renomeada para U_LsServer().
 // 06/11/2020 - Robert - Quando nao tiver o TES no Mercanet, usa do zc5_TipVen para alimentar o TES inteligente.
+// 10/11/2020 - Robert - Passa a desconsiderar o TES que vem do Mercanet e usa apenas o zc5_TipVen para alimentar o TES inteligente (GLPI 8785).
 //
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -317,12 +318,12 @@ static function _LePed ()
 					aadd (_aLinhaSC6, {"C6_PRODUTO", (_sAliasQ) -> zc6_produt, NIL})
 					aadd (_aLinhaSC6, {"C6_QTDVEN",  (_sAliasQ) -> zc6_qtdven, NIL})
 				//	aadd (_aLinhaSC6, {"C6_TES",     (_sAliasQ) -> zc6_tes, NIL})
-					if len (alltrim ((_sAliasQ) -> zc6_tes)) == 3  // Se estiver incompleto, presumo que o Mercanet nao tenha encontrado o TES correto
-						aadd (_aLinhaSC6, {"C6_TES",     (_sAliasQ) -> zc6_tes, NIL})
-					else
+//					if len (alltrim ((_sAliasQ) -> zc6_tes)) == 3  // Se estiver incompleto, presumo que o Mercanet nao tenha encontrado o TES correto
+//						aadd (_aLinhaSC6, {"C6_TES",     (_sAliasQ) -> zc6_tes, NIL})
+//					else
 						aadd (_aLinhaSC6, {"C6_VAOPER",  iif ((_sAliasQ) -> zc5_TipVen == 'V', '01', iif ((_sAliasQ) -> zc5_TipVen == 'B', '04', '')), NIL})
-						u_log2 ('aviso', 'TES nao definido no Mercanet. Vou deixar em branco para que os gatilhos do Protheus resolvam por TES inteligente.')
-					endif
+//						u_log2 ('aviso', 'TES nao definido no Mercanet. Vou deixar em branco para que os gatilhos do Protheus resolvam por TES inteligente.')
+//					endif
 					aadd (_aLinhaSC6, {"C6_PRCVEN",  (_sAliasQ) -> zc6_vlr_liq, NIL})
 					if ! empty ((_sAliasQ) -> zc5_pedcli)
 						aadd (_aLinhaSC6, {"C6_NUMPCOM", alltrim ((_sAliasQ) -> zc5_pedcli), NIL})

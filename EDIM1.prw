@@ -53,7 +53,9 @@
 //					    - Alterado utilização do campo B1_VAEANUN pelo campo padrão B5_2CODBAR.
 // 28/10/2019 - Robert  - Passa a validar retorno da funcao U_ArqTrb().
 // 14/08/2020 - Cláudia - Ajuste de Api em loop, conforme solicitação da versao 25 protheus. GLPI: 7339
+// 10/11/2020 - Robert  - Passa a alimentar o campo C6_VAPOER para gerar TES via gatilhos do TES inteligente (GLPI 8785).
 //
+
 // --------------------------------------------------------------------------
 User Function EDIM1 (_lAutomat, _sArq, _nRegZZS)
 	Local cCadastro   := "Importacao de arquivos EDI padrao Mercador"
@@ -274,7 +276,7 @@ Static Function _GeraPed (_sSeqPed)
 	local _oEvento   := NIL
 	local _i		 := 0
 	local _lAvisaST  := .F.
-	local _lAvisaBon := .F.
+//	local _lAvisaBon := .F.
 	local _sB1Cod    := ""
 	local _sCodNovo  := ""
 	local _sObsPed   := ""
@@ -500,14 +502,14 @@ Static Function _GeraPed (_sSeqPed)
 			endif
 		endif
 		
-		// Define o TES a ser usado
-		if _lContinua
-			if _cabec -> TpPed == "001"  // Normal (venda)
-				_lAvisaBon = .F.
-			elseif _cabec -> TpPed == "002"  // Bonificacao
-				_lAvisaBon = .T.
-			endif
-		endif
+//		// Define o TES a ser usado
+//		if _lContinua
+//			if _cabec -> TpPed == "001"  // Normal (venda)
+//				_lAvisaBon = .F.
+//			elseif _cabec -> TpPed == "002"  // Bonificacao
+//				_lAvisaBon = .T.
+//			endif
+//		endif
 
 		// Valida embalagem
 		if alltrim (_itens -> TipoEmbal) != "BX" .and. ! empty (_itens -> TipoEmbal)
@@ -531,9 +533,17 @@ Static Function _GeraPed (_sSeqPed)
 			aadd (_aLinhaSC6, {"C6_PRODUTO", sb1 -> b1_cod, NIL})
 			if _cabec -> TpPed == "001"  // Normal (venda)
 				aadd (_aLinhaSC6, {"C6_QTDVEN", _itens -> QuantPed, NIL})
+
+				// Ainda meio 'em teste' (GLPI 8785)
+				aadd (_aLinhaSC6, {"C6_VAOPER",  '01', NIL})
+
 			elseif _cabec -> TpPed == "002"  // Bonificacao
 				aadd (_aLinhaSC6, {"C6_QTDVEN", _itens -> QuantBonif, NIL})
 				aadd (_aLinhaSC6, {"C6_BONIFIC", "08" , NIL})
+
+				// Ainda meio 'em teste' (GLPI 8785)
+				aadd (_aLinhaSC6, {"C6_VAOPER",  '04', NIL})
+
 			endif
 			// validar essa alteracao
 			aadd (_aLinhaSC6, {"C6_NUMPCOM", _cabec -> PedCompr, NIL})
@@ -610,14 +620,14 @@ Static Function _GeraPed (_sSeqPed)
 			_oEvento:LojaCli  = sc5 -> c5_lojacli
 			_oEvento:Grava ()
 
-			// Manda avisos ao usuario
-			if _lAvisaST
-				U_ZZUNU ('001', "Importacao EDI Mercador - Verifique ST pedido " + sc5 -> c5_num + "Pedido de venda " + sc5 -> c5_num + " foi gerado automaticamente SEM cobranca de substituicao tributaria. Verifique-o.")
-			endif
-			if _lAvisaBon
-				U_ZZUNU ('001', "Importacao EDI Mercador - Verifique pedido BONIFICADO " + sc5 -> c5_num, ;
-				                "Pedido de venda " + sc5 -> c5_num + " veio como 'bonificado', mas entrou no sistema como pedido normal. Verifique os TES do pedido.")
-			endif
+// Nao precisa mais, pois usaremos TES inteligente			// Manda avisos ao usuario
+// Nao precisa mais, pois usaremos TES inteligente			if _lAvisaST
+// Nao precisa mais, pois usaremos TES inteligente				U_ZZUNU ('001', "Importacao EDI Mercador - Verifique ST pedido " + sc5 -> c5_num + "Pedido de venda " + sc5 -> c5_num + " foi gerado automaticamente SEM cobranca de substituicao tributaria. Verifique-o.")
+// Nao precisa mais, pois usaremos TES inteligente			endif
+// Nao precisa mais, pois usaremos TES inteligente			if _lAvisaBon
+// Nao precisa mais, pois usaremos TES inteligente				U_ZZUNU ('001', "Importacao EDI Mercador - Verifique pedido BONIFICADO " + sc5 -> c5_num, ;
+// Nao precisa mais, pois usaremos TES inteligente				                "Pedido de venda " + sc5 -> c5_num + " veio como 'bonificado', mas entrou no sistema como pedido normal. Verifique os TES do pedido.")
+// Nao precisa mais, pois usaremos TES inteligente			endif
 		endif
 
 	endif
