@@ -212,7 +212,12 @@ static function _Incluir ()
 				_dEmis = lastday (_dEmis)  
 			endif
 			
+//			U_LOG2 ('DEBUG', (_sAliasQ) -> nrosequencial)
+//			IF (_sAliasQ) -> nrosequencial == 7070  // SITUACAO ESPECIFICA QUE ESTAVA SEM NATUREZA
+//				_GeraSE2 ((_sAliasQ) -> nrosequencial, (_sAliasQ) -> Fornece, '120401', _dEmis, stod ((_sAliasQ) -> vencto), (_sAliasQ) -> valor, (_sAliasQ) -> hist)
+//			ELSE
 			_GeraSE2 ((_sAliasQ) -> nrosequencial, (_sAliasQ) -> Fornece, (_sAliasQ) -> Natureza, _dEmis, stod ((_sAliasQ) -> vencto), (_sAliasQ) -> valor, (_sAliasQ) -> hist)
+//			ENDIF
 
 			(_sAliasQ) -> (dbskip ())
 			u_log2 ('info', '')
