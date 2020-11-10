@@ -72,16 +72,25 @@ static function _AndaLogo ()
 //	local _oCtaCorr  := NIL
 //	local _nParc     := 0
 //	local _oAssoc    := NIL
-	local _aAssoc := {}
-	local _nAssoc := 0
+//	local _aAssoc := {}
+//	local _nAssoc := 0
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
 
-//	u_help ('Nada definido.')
-//	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
+	u_help ('Nada definido.')
+	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
+return
+
+//	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batmetaf ()
 //return
 
+//	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batmercp ()
+//RETURN
+
+/*
 	// Compara relatorios associados
 	_aAssoc = {}
 //	aadd (_aAssoc, '003577')  // bastante movimento

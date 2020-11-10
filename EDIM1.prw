@@ -275,7 +275,7 @@ Static Function _GeraPed (_sSeqPed)
 	local _sTransp   := ""
 	local _oEvento   := NIL
 	local _i		 := 0
-	local _lAvisaST  := .F.
+//	local _lAvisaST  := .F.
 //	local _lAvisaBon := .F.
 	local _sB1Cod    := ""
 	local _sCodNovo  := ""
