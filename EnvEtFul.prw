@@ -26,6 +26,7 @@
 // 25/09/2019 - Robert - Nao considerava ZAG_ALMORI na busca do lote no SB8.
 // 20/08/2020 - Robert - Envia para o Full somente se o item existir na view v_wms_item.
 //                     - Inseridas tags para catalogar fontes.
+// 10/11/2020 - Robert - Valida dados logisticos no Full (qt.pallet e regiao de armazenagem) antes de enviar a etiqueta (GLPI 8790)
 //
 
 // ------------------------------------------------------------------------------------
@@ -172,25 +173,63 @@ Return
 
 // --------------------------------------------------------------------------
 // Grava etiqueta na tabela de integracao.
-static function _GravaEtq (_sEmpresa, _sLote, _dValid)
-	local _oSQL := NIL
+static function _GravaEtq (_sEmprWMS, _sLote, _dValid)
+	local _oSQL     := NIL
+	local _aQryWMS  := {}
+	local _lRetEnv  := .T.
+	local _sMsgNEnv := ''
+	local _sLinkSrv := ""
 
-	_oSQL := ClsSQL ():New ()
-//	_oSQL:_sQuery := " if not exists (SELECT * FROM tb_wms_etiquetas WHERE id = '" + cvaltochar (za1 -> za1_codigo) + "')" 
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " if not exists (SELECT * FROM tb_wms_etiquetas WHERE id = '" + cvaltochar (za1 -> za1_codigo) + "')"  // Etiqueta ja deve existir
-	_oSQL:_sQuery += " and exists (select * from v_wms_item where coditem = '" + alltrim (za1 -> za1_prod) + "')"  // Item ja deve existir
-	_oSQL:_sQuery += " insert into tb_wms_etiquetas (id, coditem, lote, qtde, validade, empresa, cd, status)"
-	_oSQL:_sQuery += " values (" + cvaltochar (za1 -> za1_codigo) + ","
-	_oSQL:_sQuery +=          "'" + alltrim (za1 -> za1_prod) + "',"
-	_oSQL:_sQuery +=          "'" + _sLote + "',"
-	_oSQL:_sQuery +=          cvaltochar (za1 -> za1_quant) + ","
-	_oSQL:_sQuery +=          "'" + dtos (_dValid) + "',"
-	_oSQL:_sQuery +=          "'" + _sEmpresa + "',"
-	_oSQL:_sQuery +=          "'" + za1 -> za1_filial + "',"
-	_oSQL:_sQuery +=          "'N')"  // N=ainda nao lida pelo Full
-	_oSQL:Log ()
-	if ! _oSQL:Exec ()
-		U_help ("Erro ao enviar etiqueta para FullWMS: " + _oSQL:_sQuery,, .t.)
+	// Busca o caminho do banco de dados do FullWMS
+	_sLinkSrv = U_LkServer ('FULLWMS_AX' + _sEmprWMS)
+
+	// Verifica alguns cadastros que costumam dar problema no FullWMS.
+	// Consulta via linked server
+	if _lRetEnv .and. ! empty (_sLinkSrv)
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "SELECT REGIAO_ARMAZENAGEM, QTD_PALETE"
+		_oSQL:_sQuery += " FROM openquery (" + _sLinkSrv + ","
+		_oSQL:_sQuery += " 'select *"
+		_oSQL:_sQuery +=  " from V_WMS_DADOS_LOGISTICOS"
+		_oSQL:_sQuery += " where COD_ITEM = ''" + alltrim (za1 -> za1_prod) + "''"
+		_oSQL:_sQuery += " ')"
+		_oSQL:Log ()
+		_aQryWMS = aclone (_oSQL:Qry2Array (.F., .F.))
+//		u_log2 ('debug', _aQryWMS)
+		if len (_aQryWMS) == 0
+			_sMsgNEnv += "Nao encontrei nenhum cadastro de dados logisticos para o item '" + alltrim (za1 -> za1_prod) + "' no FullWMS."
+			_lRetEnv = .F.
+		endif
+		if _lRetEnv .and. empty (_aQryWMS [1, 1])
+			_sMsgNEnv += "Regiao de armazenagem nao informada."
+			_lRetEnv = .F.
+		endif
+		if _lRetEnv .and. _aQryWMS [1, 2] != za1 -> za1_quant
+			_sMsgNEnv += "Qtd.por pallet nos dados logisticos do FullWMS (" + cvaltochar (_aQryWMS [1, 2]) + ") diferente da quantidade da etiqueta (" + cvaltochar (za1 -> za1_quant) + ")."
+			_lRetEnv = .F.
+		endif
 	endif
-return
+	if ! _lRetEnv
+		u_help ("Nao vou enviar a etiqueta '" + za1 -> za1_codigo + "' para o FullWMS. " + _sMsgNEnv + " Voce pode reenviar esta etiqueta mais tarde no programa de etiquetas para pallets.", _oSQL:_sQuery, .t.)
+	else
+		_oSQL := ClsSQL ():New ()
+	//	_oSQL:_sQuery := " if not exists (SELECT * FROM tb_wms_etiquetas WHERE id = '" + cvaltochar (za1 -> za1_codigo) + "')" 
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " if not exists (SELECT * FROM tb_wms_etiquetas WHERE id = '" + cvaltochar (za1 -> za1_codigo) + "')"  // Etiqueta ja deve existir
+		_oSQL:_sQuery += " and exists (select * from v_wms_item where coditem = '" + alltrim (za1 -> za1_prod) + "')"  // Item ja deve existir
+		_oSQL:_sQuery += " insert into tb_wms_etiquetas (id, coditem, lote, qtde, validade, empresa, cd, status)"
+		_oSQL:_sQuery += " values (" + cvaltochar (za1 -> za1_codigo) + ","
+		_oSQL:_sQuery +=          "'" + alltrim (za1 -> za1_prod) + "',"
+		_oSQL:_sQuery +=          "'" + _sLote + "',"
+		_oSQL:_sQuery +=          cvaltochar (za1 -> za1_quant) + ","
+		_oSQL:_sQuery +=          "'" + dtos (_dValid) + "',"
+		_oSQL:_sQuery +=          "'" + _sEmprWMS + "',"
+		_oSQL:_sQuery +=          "'" + za1 -> za1_filial + "',"
+		_oSQL:_sQuery +=          "'N')"  // N=ainda nao lida pelo Full
+		_oSQL:Log ()
+		if ! _oSQL:Exec ()
+			U_help ("Erro ao enviar etiqueta para FullWMS: " + _oSQL:_sQuery,, .t.)
+			_lRetEnv = .F.
+		endif
+	endif
+return _lRetEnv

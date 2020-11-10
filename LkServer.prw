@@ -5,6 +5,7 @@
 //
 // Historico de alteracoes:
 // 22/06/2020 - Robert - Renomeado de LkSrvMer para LkServer e torna-se generico (recebe servidor destino por parametro)
+// 10/11/2020 - Robert - Criado tratamento para FullWMS (logistica).
 //
 
 // --------------------------------------------------------------------------
@@ -24,13 +25,22 @@ user function LkServer (_sQualSrv)
 		else
 			_sRetLk = "LKSRV_MERCANETPRD.MercanetPRD.dbo"
 		endif
+
 	case upper (alltrim (_sQualSrv)) == 'NAWEB'
 		if _lBaseTST
 			_sRetLk = "LKSRV_NAWEB_TESTE.naweb_teste.dbo"
 		else
 			_sRetLk = "LKSRV_NAWEB.naweb.dbo"
 		endif
+
+	case upper (alltrim (_sQualSrv)) == 'FULLWMS_AX01'
+		if _lBaseTST
+			_sRetLk = ""  // Nao existe ainda (precisa instalar bastante coisa; ver GLPI 5701
+		else
+			_sRetLk = "LKSRV_FULLWMS_LOGISTICA"  // Deve ser usado com OpenQuery por se tratar de banco Oracle.
+		endif
+
 	otherwise
-		u_help ("Sem definicao de 'linker server' para o banco de dados '" + _sQualSrv + "'",, .t.)
+		u_help ("Sem definicao de LINKED SERVER para o sistema/banco de dados '" + _sQualSrv + "'",, .t.)
 	endcase
 return _sRetLk
