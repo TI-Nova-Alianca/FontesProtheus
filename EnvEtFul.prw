@@ -176,6 +176,7 @@ Return
 static function _GravaEtq (_sEmprWMS, _sLote, _dValid)
 	local _oSQL     := NIL
 	local _aQryWMS  := {}
+	local _lEnviar  := .T.
 	local _lRetEnv  := .T.
 	local _sMsgNEnv := ''
 	local _sLinkSrv := ""
@@ -185,7 +186,7 @@ static function _GravaEtq (_sEmprWMS, _sLote, _dValid)
 
 	// Verifica alguns cadastros que costumam dar problema no FullWMS.
 	// Consulta via linked server
-	if _lRetEnv .and. ! empty (_sLinkSrv)
+	if _lRetEnv .and. _lEnviar .and. ! empty (_sLinkSrv)
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "SELECT REGIAO_ARMAZENAGEM, QTD_PALETE"
 		_oSQL:_sQuery += " FROM openquery (" + _sLinkSrv + ","
@@ -196,7 +197,7 @@ static function _GravaEtq (_sEmprWMS, _sLote, _dValid)
 		_oSQL:Log ()
 		_aQryWMS = aclone (_oSQL:Qry2Array (.F., .F.))
 //		u_log2 ('debug', _aQryWMS)
-		if len (_aQryWMS) == 0
+		if _lRetEnv .and. len (_aQryWMS) == 0
 			_sMsgNEnv += "Nao encontrei nenhum cadastro de dados logisticos para o item '" + alltrim (za1 -> za1_prod) + "' no FullWMS."
 			_lRetEnv = .F.
 		endif
@@ -204,32 +205,57 @@ static function _GravaEtq (_sEmprWMS, _sLote, _dValid)
 			_sMsgNEnv += "Regiao de armazenagem nao informada."
 			_lRetEnv = .F.
 		endif
-		if _lRetEnv .and. _aQryWMS [1, 2] != za1 -> za1_quant
-			_sMsgNEnv += "Qtd.por pallet nos dados logisticos do FullWMS (" + cvaltochar (_aQryWMS [1, 2]) + ") diferente da quantidade da etiqueta (" + cvaltochar (za1 -> za1_quant) + ")."
+		if _lRetEnv .and. _aQryWMS [1, 2] < za1 -> za1_quant
+			_sMsgNEnv += "Qtd.por pallet nos dados logisticos do FullWMS (" + cvaltochar (_aQryWMS [1, 2]) + "). Quantidade da etiqueta (" + cvaltochar (za1 -> za1_quant) + ") nao pode ser maior."
 			_lRetEnv = .F.
 		endif
 	endif
+	if _lRetEnv .and. _lEnviar
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "select count (*)"
+		_oSQL:_sQuery +=  " from tb_wms_etiquetas"
+		_oSQL:_sQuery += " where id = '" + cvaltochar (za1 -> za1_codigo) + "'"
+		_oSQL:Log ()
+		if _oSQL:RetQry () > 0
+			_lEnviar = .F.
+			_sMsgNEnv += "Etiqueta jah existe na tabela tb_wms_etiquetas."
+			u_log2 ('info', _sMsgNEnv)
+		endif
+	endif
+	if _lRetEnv .and. _lEnviar
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "select count (*)"
+		_oSQL:_sQuery +=  " from v_wms_item"
+		_oSQL:_sQuery += " where coditem = '" + alltrim (za1 -> za1_prod) + "'"
+		_oSQL:Log ()
+		if _oSQL:RetQry () == 0
+			_lRetEnv = .F.
+			_sMsgNEnv += "Produto ainda nao foi disponibilizado para o FullWMS (view v_wms_item). Verifique no cadastro se foi configurado para usar FullWMS."
+		endif
+	endif
+
 	if ! _lRetEnv
 		u_help ("Nao vou enviar a etiqueta '" + za1 -> za1_codigo + "' para o FullWMS. " + _sMsgNEnv + " Voce pode reenviar esta etiqueta mais tarde no programa de etiquetas para pallets.", _oSQL:_sQuery, .t.)
 	else
-		_oSQL := ClsSQL ():New ()
-	//	_oSQL:_sQuery := " if not exists (SELECT * FROM tb_wms_etiquetas WHERE id = '" + cvaltochar (za1 -> za1_codigo) + "')" 
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " if not exists (SELECT * FROM tb_wms_etiquetas WHERE id = '" + cvaltochar (za1 -> za1_codigo) + "')"  // Etiqueta ja deve existir
-		_oSQL:_sQuery += " and exists (select * from v_wms_item where coditem = '" + alltrim (za1 -> za1_prod) + "')"  // Item ja deve existir
-		_oSQL:_sQuery += " insert into tb_wms_etiquetas (id, coditem, lote, qtde, validade, empresa, cd, status)"
-		_oSQL:_sQuery += " values (" + cvaltochar (za1 -> za1_codigo) + ","
-		_oSQL:_sQuery +=          "'" + alltrim (za1 -> za1_prod) + "',"
-		_oSQL:_sQuery +=          "'" + _sLote + "',"
-		_oSQL:_sQuery +=          cvaltochar (za1 -> za1_quant) + ","
-		_oSQL:_sQuery +=          "'" + dtos (_dValid) + "',"
-		_oSQL:_sQuery +=          "'" + _sEmprWMS + "',"
-		_oSQL:_sQuery +=          "'" + za1 -> za1_filial + "',"
-		_oSQL:_sQuery +=          "'N')"  // N=ainda nao lida pelo Full
-		_oSQL:Log ()
-		if ! _oSQL:Exec ()
-			U_help ("Erro ao enviar etiqueta para FullWMS: " + _oSQL:_sQuery,, .t.)
-			_lRetEnv = .F.
+		if _lEnviar
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+	// criada verificacao em separado acima		_oSQL:_sQuery += " if not exists (SELECT * FROM tb_wms_etiquetas WHERE id = '" + cvaltochar (za1 -> za1_codigo) + "')"  // Etiqueta ja deve existir
+	// criada verificacao em separado acima		_oSQL:_sQuery += " and exists (select * from v_wms_item where coditem = '" + alltrim (za1 -> za1_prod) + "')"  // Item ja deve existir
+			_oSQL:_sQuery += " insert into tb_wms_etiquetas (id, coditem, lote, qtde, validade, empresa, cd, status)"
+			_oSQL:_sQuery += " values (" + cvaltochar (za1 -> za1_codigo) + ","
+			_oSQL:_sQuery +=          "'" + alltrim (za1 -> za1_prod) + "',"
+			_oSQL:_sQuery +=          "'" + _sLote + "',"
+			_oSQL:_sQuery +=          cvaltochar (za1 -> za1_quant) + ","
+			_oSQL:_sQuery +=          "'" + dtos (_dValid) + "',"
+			_oSQL:_sQuery +=          "'" + _sEmprWMS + "',"
+			_oSQL:_sQuery +=          "'" + za1 -> za1_filial + "',"
+			_oSQL:_sQuery +=          "'N')"  // N=ainda nao lida pelo Full
+			_oSQL:Log ()
+			if ! _oSQL:Exec ()
+				U_help ("Erro ao enviar etiqueta para FullWMS: " + _oSQL:_sQuery,, .t.)
+				_lRetEnv = .F.
+			endif
 		endif
 	endif
 return _lRetEnv
