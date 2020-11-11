@@ -304,7 +304,7 @@ static function _LePed ()
 
 				// Ordena campos cfe. dicionario de dados.
 				_aAutoSC5 = aclone (U_OrdAuto (_aAutoSC5))
-				u_log ('debug', _aAutoSC5)
+				u_log2 ('debug', _aAutoSC5)
 			endif
 
 			_aAutoSC6 = {}
