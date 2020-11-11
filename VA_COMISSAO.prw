@@ -28,7 +28,8 @@ User Function VA_COMISSAO()
 		Case mv_par01 == 2
 			U_VA_COMMAIL()// PDF para envio por email
 		Case mv_par01 == 3
-			U_BatVerbas(2)// Grava registros na tabela ZB0
+			//u_help('filial corrente:' + cFilAnt)
+			U_BatVerbas(2,cFilAnt)// Grava registros na tabela ZB0
 	EndCase
 Return
 //

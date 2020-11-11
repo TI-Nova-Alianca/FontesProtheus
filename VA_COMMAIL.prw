@@ -247,7 +247,8 @@ Static Function _GeraPDF_Email()
 		_oSQL:_sQuery += "     END AS ACRDES"
 		_oSQL:_sQuery += "    ,ZB0_DTAPGT"
 		_oSQL:_sQuery += " FROM " + RetSQLName ("ZB0") 
-		_oSQL:_sQuery += " WHERE ZB0_DATA BETWEEN '" + DTOS(mv_par01) + "' AND '" + DTOS(mv_par02) +"'"
+		_oSQL:_sQuery += " WHERE ZB0_FILIAL = '" +  xFilial('ZB0')  +"'" 
+		_oSQL:_sQuery += " AND ZB0_DATA BETWEEN '" + DTOS(mv_par01) + "' AND '" + DTOS(mv_par02) +"'"
 		_oSQL:_sQuery += " AND ZB0_VENDCH = '"+_sVend+"'"
 		_oSQL:Log ()
 				
@@ -683,8 +684,9 @@ Static Function _GeraPDF_Email()
 		// envia email para o represenante
 		_sMailDest := (_sAliasVend) -> EMAIL
 		U_SendMail (_sMailDest, "Relatorio de Comissões - Envio automatico", "", {cDestino + _cFile + ".PDF"}, _sCtaMail)
+		
+		
 		// le o proximo vendedor
-	
 		(_sAliasVend) -> (dbskip())
 	Enddo
 	

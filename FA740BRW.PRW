@@ -16,6 +16,7 @@
 //						  no array _atitulos que nao estava desconsiderando a subconta 100
 // 01/04/2020 - Claudia - Alterada a chamada do arquivo de trabalho _sAliasQ2 que nao existia mais para o array aTitulos. GLPI 7752
 // 24/09/2020 - Cláudia - Criada a rotina "Baixa Rapel" - VA_040BRAP. GLPI: 8367
+// 10/11/2020 - Claudia - Incluido CNPJ formatado com mascara no corpo e rodapé da impressão do relatorio de anuencia. GLPI: 8789
 //
 // ---------------------------------------------------------------------------------------------------------------------------------
 User Function FA740BRW()
@@ -479,10 +480,26 @@ Return
 // ---------------------------------------------------------------------------------------------------------------------------------
 // Carta Anuência impressão
 Static Function RptDetail()
+	Local _oSQL  := ClsSQL ():New ()
+	Local _aCNPJ := {}
+	Local _sCNPJ := ""
+
+	// BUSCA CNPJ LOGADO
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT M0_CGC FROM VA_SM0 "
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_=''"
+	_oSQL:_sQuery += " AND M0_CODIGO = '01'"
+	_oSQL:_sQuery += " AND M0_CODFIL = '"+ cFilAnt +"'"
+	_aCNPJ = aclone (_oSQL:Qry2Array ())
+
+	If Len(_aCNPJ) > 0
+		_sCNPJ := SUBSTR(alltrim(_aCNPJ[1,1]),1,2) +"."+ SUBSTR(alltrim(_aCNPJ[1,1]),3,3) +"."+ SUBSTR(alltrim(_aCNPJ[1,1]),6,3) +"/"+ SUBSTR(alltrim(_aCNPJ[1,1]),9,4) +"-"+ SUBSTR(alltrim(_aCNPJ[1,1]),13,2) 
+	Else
+		_sCNPJ := ""
+	EndIf
 
     // imprime relatorio
     // Objetos para impressao
-	
 	::_oPrn      := _oPrn
 	::_nPagAtual := 1  // Contador de paginas
 	::_nLinAtual := 0
@@ -524,7 +541,7 @@ Static Function RptDetail()
 	_sLinhaImp := "Autorizamos V.Sas. a cancelar o PROTESTO referente a duplicata abaixo, registradas e"
 	::_oPrn:Say (::_nMargsup + ::_nLinAtual, ::_nMargEsq + 200, _sLinhaImp, _oCour10N, 100)
 	::_nLinAtual += ::_nAltLin * 1
-	_sLinhaImp := "emitida por nós, credores originários."
+	_sLinhaImp := "emitida por nós, credores originários no CNPJ " + alltrim(_sCNPJ) + "."
 	::_oPrn:Say (::_nMargsup + ::_nLinAtual, ::_nMargEsq + 200, _sLinhaImp, _oCour10N, 100)
 	::_nLinAtual += ::_nAltLin * 1
 	
@@ -591,7 +608,7 @@ Static Function RptDetail()
 	::_nLinAtual += ::_nAltLin * 1
 	
 	::_nLinAtual += ::_nAltLin * 13
-	_rodape()
+	_rodape(_sCNPJ)
 			
      // Visualiza antes de imprimir
 	 _oPrn:Preview()
@@ -620,9 +637,13 @@ return
 //
 // ---------------------------------------------------------------------------------------------------------------------------------
 // imprime rodapé
-static function _rodape()
+static function _rodape(_sCNPJ)
 	
 	_sLinhaImp := "Cooperativa Agroindustrial Nova Aliança Ltda"
+	::_oPrn:Say (::_nLinAtual, 200, _sLinhaImp, ::_oTimes8, 100)
+	::_nLinAtual += ::_nAltLin * 1
+
+	_sLinhaImp := "CNPJ:" + _sCNPJ
 	::_oPrn:Say (::_nLinAtual, 200, _sLinhaImp, ::_oTimes8, 100)
 	::_nLinAtual += ::_nAltLin * 1
 	

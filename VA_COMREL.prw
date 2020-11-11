@@ -259,7 +259,8 @@ Static Function PrintReport(oReport)
 			_oSQL:_sQuery += "     END AS ACRDES"
 			_oSQL:_sQuery += "    ,ZB0_DTAPGT"
 			_oSQL:_sQuery += " FROM " + RetSQLName ("ZB0") 
-			_oSQL:_sQuery += " WHERE ZB0_DATA BETWEEN '" + DTOS(mv_par01) + "' AND '" + DTOS(mv_par02) +"'"
+			_oSQL:_sQuery += " WHERE ZB0_FILIAL = '" +  xFilial('ZB0')  +"'" 
+			_oSQL:_sQuery += " AND ZB0_DATA BETWEEN '" + DTOS(mv_par01) + "' AND '" + DTOS(mv_par02) +"'"
 			_oSQL:_sQuery += " AND ZB0_VENDCH = '"+_sVend+"'"
 			_oSQL:Log ()
 				

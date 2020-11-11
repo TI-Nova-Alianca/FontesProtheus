@@ -17,7 +17,7 @@
 #include 'protheus.ch'
 #include 'parmtype.ch'
 
-User function BatVerbas(_nTipo)
+User function BatVerbas(_nTipo, _sFilial)
 	Local _aDados   := {}
 	Local _aVend    := {}
 	Local _x		:= 0
@@ -62,7 +62,7 @@ User function BatVerbas(_nTipo)
 	_sErroAuto := ''  // Para a funcao u_help gravar mensagens
 	u_log ( DTOS(_dDtaIni) +'-' + DTOS(_dDtaFin))
 	_sSQL := " DELETE FROM ZB0010" 
-	_sSQL += " WHERE ZB0_DATA BETWEEN '" + DTOS(_dDtaIni) + "' AND '" + DTOS(_dDtaFin) + "'"
+	_sSQL += " WHERE ZB0_FILIAL= '" +_sFilial +"' AND ZB0_DATA BETWEEN '" + DTOS(_dDtaIni) + "' AND '" + DTOS(_dDtaFin) + "'"
 	u_log (_sSQL)
 	
 	If TCSQLExec (_sSQL) < 0
@@ -94,7 +94,7 @@ User function BatVerbas(_nTipo)
 		_aVend := _oSQL:Qry2Array ()
 		
 		For _i := 1 to Len(_aVend)
-			_aDados := U_VA_COMVERB(_dDtaIni, _dDtaFin, _aVend[_i,1], 3)
+			_aDados := U_VA_COMVERB(_dDtaIni, _dDtaFin, _aVend[_i,1], 3, _sFilial)
 			
 			u_log ( DTOS(_dDtaIni) +'-' + DTOS(_dDtaFin) +'/'+_aVend[_i,1])
 			For _x := 1 to Len(_aDados)

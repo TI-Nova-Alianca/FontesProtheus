@@ -23,7 +23,7 @@
 #include 'protheus.ch'
 #include 'parmtype.ch'
 
-User Function VA_COMVERB(_dtaIni, _dtaFin, _sVend, _nLibPg)
+User Function VA_COMVERB(_dtaIni, _dtaFin, _sVend, _nLibPg, _sFilial)
 	Local _oSQL    := ClsSQL ():New ()
 	Local _aRet    := {}
 	
@@ -85,7 +85,8 @@ User Function VA_COMVERB(_dtaIni, _dtaFin, _sVend, _nLibPg)
 	_oSQL:_sQuery += " 			AND SE1.E1_PREFIXO = E3_PREFIXO"
 	_oSQL:_sQuery += " 			AND SE1.E1_PARCELA = E3_PARCELA)"
 	_oSQL:_sQuery += " WHERE ZA5.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery += " AND ZA5_FILIAL = '" + xFilial('ZA5') + "' " 
+	//_oSQL:_sQuery += " AND ZA5_FILIAL = '" + xFilial('ZA5') + "' " 
+	_oSQL:_sQuery += " AND ZA5_FILIAL = '" + _sFilial + "' " 
 	_oSQL:_sQuery += " AND ZA5_DTA BETWEEN '" + dtos(_dtaIni) + "' AND '" + dtos(_dtaFin) + "'"
 	
 	_oSQL:_sQuery += " UNION ALL"
@@ -146,7 +147,8 @@ User Function VA_COMVERB(_dtaIni, _dtaFin, _sVend, _nLibPg)
 	_oSQL:_sQuery += " 			AND SE1.E1_PREFIXO = E3_PREFIXO"
 	_oSQL:_sQuery += " 			AND SE1.E1_PARCELA = E3_PARCELA)"
 	_oSQL:_sQuery += " WHERE ZA5.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery += " AND ZA5_FILIAL = '" + xFilial('ZA5') + "' " 
+	//_oSQL:_sQuery += " AND ZA5_FILIAL = '" + xFilial('ZA5') + "' " 
+	_oSQL:_sQuery += " AND ZA5_FILIAL = '" + _sFilial + "' " 
 	_oSQL:_sQuery += " AND ZA5_DTA BETWEEN '" + dtos(_dtaIni) + "' AND '" + dtos(_dtaFin) + "'"
 	
 	_oSQL:_sQuery += " UNION ALL"
@@ -208,6 +210,8 @@ User Function VA_COMVERB(_dtaIni, _dtaFin, _sVend, _nLibPg)
 	_oSQL:_sQuery += " 			AND SF4.F4_CODIGO = SD2.D2_TES"
 	_oSQL:_sQuery += " 			AND F4_MARGEM = '3')"
 	_oSQL:_sQuery += " WHERE SD2.D_E_L_E_T_ = ''"
+	//_oSQL:_sQuery += " AND SD2.D2_FILIAL = '"+ xFilial('SD2') +"'"
+	_oSQL:_sQuery += " AND SD2.D2_FILIAL = '"+ _sFilial +"'"
 	_oSQL:_sQuery += " AND SD2.D2_EMISSAO BETWEEN '" + dtos(_dtaIni) + "' AND '" + dtos(_dtaFin) + "'"
 	_oSQL:_sQuery += " AND SF2.F2_VEND1 = '"+alltrim(_sVend)+"'"
 	_oSQL:_sQuery += " GROUP BY SF2.F2_DOC"
@@ -333,7 +337,8 @@ User Function VA_COMVERB(_dtaIni, _dtaFin, _sVend, _nLibPg)
 	_oSQL:_sQuery += " 			AND SE1.E1_PREFIXO = E3_PREFIXO"
 	_oSQL:_sQuery += " 			AND SE1.E1_PARCELA = E3_PARCELA)"
 	_oSQL:_sQuery += " WHERE ZA5.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery += " AND ZA5_FILIAL = '" + xFilial('ZA5') + "' " 
+	//_oSQL:_sQuery += " AND ZA5_FILIAL = '" + xFilial('ZA5') + "' " 
+	_oSQL:_sQuery += " AND ZA5_FILIAL = '" + _sFilial + "' " 
 	_oSQL:_sQuery += " AND ZA5_DTA BETWEEN '" + dtos(_dtaIni) + "' AND '" + dtos(_dtaFin) + "'"
 	
 	_oSQL:_sQuery += " UNION ALL"
@@ -410,7 +415,8 @@ User Function VA_COMVERB(_dtaIni, _dtaFin, _sVend, _nLibPg)
 	_oSQL:_sQuery += " 	ON (SA1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery += " 			AND SA1.A1_COD = ZA5.ZA5_CLI)"
 	_oSQL:_sQuery += " WHERE ZA5.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery += " AND ZA5_FILIAL = '" + xFilial('ZA5') + "' " 
+	//_oSQL:_sQuery += " AND ZA5_FILIAL = '" + xFilial('ZA5') + "' " 
+	_oSQL:_sQuery += " AND ZA5_FILIAL = '" + _sFilial + "' " 
 	_oSQL:_sQuery += " AND ZA5_DTA BETWEEN '" + dtos(_dtaIni) + "' AND '" + dtos(_dtaFin) + "'"
 	_oSQL:Log ()
 	

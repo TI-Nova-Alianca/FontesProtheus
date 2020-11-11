@@ -1,11 +1,12 @@
 // Programa...: ZB1_FEC
 // Autor......: Cláudia Lionço
 // Data.......: 26/10/2020
-// Descricao..: Tela de extrato de recebimento Cielo
+// Descricao..: Fechamento de registros de pagamentos sem conciliação - Cielo
+//
 //
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Atualizacao
-// #Descricao         #Fechamento de registros de pagamentos sem conciliação
+// #Descricao         #Fechamento de registros de pagamentos sem conciliação - Cielo
 // #PalavasChave      #extrato #cielo #recebimento #cartoes #fechamento
 // #TabelasPrincipais #ZB1
 // #Modulos   		  #FIN 

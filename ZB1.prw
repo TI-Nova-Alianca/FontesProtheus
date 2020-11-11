@@ -39,9 +39,9 @@ User Function ZB1()
 		AADD(aRotina, {"Relatorio de titulos", "U_ZB1RTIT()"   , 0, 4})
 		AADD(aRotina, {"Fechar Registro"     , "U_ZB1_FEC()"   , 0, 6})
 
-		AADD(aCores,{ "ZB1_STAIMP == 'I'", 'BR_VERMELHO' })
-        AADD(aCores,{ "ZB1_STAIMP == 'C'", 'BR_VERDE'    })
-		AADD(aCores,{ "ZB1_STAIMP == 'F'", 'BR_PRETO'    })
+		AADD(aCores,{ "ZB1_STAIMP == 'I'", 'BR_VERMELHO' }) // importado
+        AADD(aCores,{ "ZB1_STAIMP == 'C'", 'BR_VERDE'    }) // conciliado
+		AADD(aCores,{ "ZB1_STAIMP == 'F'", 'BR_PRETO'    }) // fechado
                       
 		dbSelectArea ("ZB1")
 		dbSetOrder (1)

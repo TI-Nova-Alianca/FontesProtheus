@@ -33,7 +33,7 @@ User Function F070Desc ()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _lRet     := .T.
 	
-	If !IsInCallStack("U_ZB1_CON") .and. !IsInCallStack("U_VA_040BRAP") // Não chama tela de descontos qndo realizada a baixa de titulos cielo e baixa do rapel
+	If !IsInCallStack("U_ZB2_CON") .and. !IsInCallStack("U_ZB1_CON") .and. !IsInCallStack("U_VA_040BRAP") // Não chama tela de descontos qndo realizada a baixa de titulos cielo e baixa do rapel
 	    _lRet = _Compos ()
 	EndIf
 
