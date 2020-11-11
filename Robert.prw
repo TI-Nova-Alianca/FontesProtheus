@@ -83,7 +83,7 @@ static function _AndaLogo ()
 
 	//za1 -> (dbsetorder (1))
 	//if za1 -> (dbseek ('01'+'2000341473', .f.))
-	U_EnvEtFul ('2000345213', .t.)
+;;coment do branch teste	U_EnvEtFul ('2000345213', .t.)
 return
 
 //	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
