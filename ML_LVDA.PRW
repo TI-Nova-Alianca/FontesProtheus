@@ -13,6 +13,7 @@
 // 1 - Retorna valor 0 para notas e-commerce
 // 2 - Retorna valor para notas e-commerce
 // 3 - Retorna conta contabil por bandeira
+// 4 - Retorna valor credito
 //
 // Historico de alteracoes:
 // 16/06/2008 - Robert  - Passa a validar o parametro VA_SERIECF
@@ -50,20 +51,20 @@ User Function ML_LVDA(_nEcomm)
         EndIf
     EndIf
 
-    If _lEcomm == .F. // se nao for nota e-commerce
+    If _lEcomm == .F. .and. (_nEcomm == '1' .or. _nEcomm == '4')// se nao for nota e-commerce
         If  SF4->F4_DUPLIC<>"S" .or. SD2->D2_TIPO=="D" .or. SD2->D2_TES$"518/510/603" .or. SD2->D2_SERIE $ GetMV ("VA_SERIECF") .or. SF4->F4_TOCON$('15/16')
             _wVAL := 0
         Else
             _wVAL := SD2->D2_TOTAL+SD2->D2_VALIPI+sd2->d2_icmsret
         EndIf
     Else
-        If _nEcomm == 1 .and. _lEcomm == .T. // Nota ecommerce que retorna zero
+        If _nEcomm == '1' .and. _lEcomm == .T. // Nota ecommerce que retorna zero
             _wVAL := 0
         EndIf
-        If _nEcomm == 2 .and. _lEcomm == .T. // Nota ecommerce que retorna valor
+        If _nEcomm == '2' .and. _lEcomm == .T. // Nota ecommerce que retorna valor
             _wVAL := SD2->D2_TOTAL+SD2->D2_VALIPI+sd2->d2_icmsret
         EndIf
-        If _nEcomm == 3 .and. _lEcomm == .T. // Retorna conta contabil
+        If _nEcomm == '3' .and. _lEcomm == .T. // Retorna conta contabil
             Do Case
                 Case _sADM == "100" .or. _sADM == "101"
                     _wVAL:= "101021101002"
