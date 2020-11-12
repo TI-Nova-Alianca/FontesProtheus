@@ -2,7 +2,14 @@
 // Autor:      Robert Koch
 // Data:       08/05/2008
 // Descricao:  Relatorio de evolucao mensal do custo medio/standard dos produtos.
-// 
+ 
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Relatorio
+// #Descricao         #Relatorio de evolucao mensal do custo medio/standard dos produtos.
+// #PalavasChave      #evolucao #custos
+// #TabelasPrincipais #SB9
+// #Modulos           #EST
+
 // Historico de alteracoes:
 // 20/05/2008 - Robert  - Criado parametro para filtrar pelo campo B1_MRP
 // 13/10/2008 - Robert  - Criadas ordenacoes por linha e grupo.
@@ -14,7 +21,10 @@
 // 25/10/2018 - Robert  - Criada opcao de ignorar almoxarifados zerados.
 // 28/02/2019 - Robert  - Criada selecao de filiais - Opcao de aglutinar por Filial+almox / Filial / Empresa
 // 12/03/2020 - Cláudia - Incluido filtros no SQL retirando filtros AO,AP,GF e MO, conforme GLPI 7641
+// 12/11/2020 - Robert  - Cadastro de linhas de produtos passa a ser lido da tabela 39 do ZX5 e nao mais da tabela 88 do SX5 (GLPI 8496)
+//                      - Inseridos tags para catalogo de programas.
 //
+
 // --------------------------------------------------------------------------
 user function VA_ECM () //(_lAutomat)
 	local _aPeriodos := {}
@@ -106,9 +116,9 @@ Static function _Imprime (_aPeriodos)
 	local _nMaxLin   := 63
 	local _aCampos   := {}
 	local _nPeriodo  := 0
-	local _dData     := ctod ("")
-	local _dDataIni  := _aPeriodos [1, 1]
-	local _dDataFim  := _aPeriodos [len (_aPeriodos), 2]
+//	local _dData     := ctod ("")
+//	local _dDataIni  := _aPeriodos [1, 1]
+//	local _dDataFim  := _aPeriodos [len (_aPeriodos), 2]
 	local _aArqTrb   := {}
 	local _lTemValor := .F.
 	local _lContinua := .T.
@@ -418,7 +428,8 @@ Static function _Imprime (_aPeriodos)
 				_xQuebra = _trb -> &(_sQuebra)
 				do case
 					case aReturn [8] == 1
-						@ li, 0 psay "Linha: " + _xQuebra + " - " + Tabela ("88", _xQuebra)
+//						@ li, 0 psay "Linha: " + _xQuebra + " - " + Tabela ("88", _xQuebra)
+						@ li, 0 psay "Linha: " + _xQuebra + " - " + U_RetZX5 ('39', _xQuebra, 'ZX5_39DESC')
 						li += 2
 					case aReturn [8] == 2
 						@ li, 0 psay "Grupo: " + _xQuebra + " - " + fBuscaCpo ("SBM", 1, xfilial ("SBM") + _xQuebra, "BM_DESC")
@@ -466,24 +477,24 @@ return
 Static Function _ValidPerg ()
 	local _aRegsPerg := {}
 	
-	//                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                                 Help
-	aadd (_aRegsPerg, {01, "Mes inicial (MM/AAAA)         ", "C", 7,  0,  "",   "   ", {},                                    "Mes inicial para analise. Informe mes e ano separados por barra. Ex.: 11/2007"})
-	aadd (_aRegsPerg, {02, "Mes final (MM/AAAA)           ", "C", 7,  0,  "",   "   ", {},                                    "Mes final para analise. Informe mes e ano separados por barra. Ex.: 12/2007"})
-	aadd (_aRegsPerg, {03, "Tipo produtos de              ", "C", 2,  0,  "",   "02 ", {},                                    "Tipo de produtos inicial a ser considerado"})
-	aadd (_aRegsPerg, {04, "Tipo produtos ate             ", "C", 2,  0,  "",   "02 ", {},                                    "Tipo de produtos final a ser considerado"})
-	aadd (_aRegsPerg, {05, "Produto de                    ", "C", 15, 0,  "",   "SB1", {},                                    "Produto inicial a ser considerado"})
-	aadd (_aRegsPerg, {06, "Produto ate                   ", "C", 15, 0,  "",   "SB1", {},                                    "Produto final a ser considerado"})
-	aadd (_aRegsPerg, {07, "Produtos especif.(sep.barras) ", "C", 60, 0,  "",   "   ", {},                                    ""})
-	aadd (_aRegsPerg, {08, "Grupo de                      ", "C", 4,  0,  "",   "SBM", {},                                    "Grupo de produto inicial a ser considerado"})
-	aadd (_aRegsPerg, {09, "Grupo ate                     ", "C", 4,  0,  "",   "SBM", {},                                    "Grupo de produto final a ser considerado"})
-	aadd (_aRegsPerg, {10, "Ignorar almox.zerados         ", "N", 1,  0,  "",   "   ", {"Sim", "Nao"},                        ""})
-	aadd (_aRegsPerg, {11, "Linha produtos de             ", "C", 4,  0,  "",   "88 ", {},                                    "Linha de produtos inicial a ser considerada"})
-	aadd (_aRegsPerg, {12, "Linha produtos ate            ", "C", 4,  0,  "",   "88 ", {},                                    "Linha de produtos final a ser considerada"})
-	aadd (_aRegsPerg, {13, "Almoxarifado de               ", "C", 2,  0,  "",   "AL ", {},                                    "Almoxarifado (local) inicial a ser considerado"})
-	aadd (_aRegsPerg, {14, "Almoxarifado ate              ", "C", 2,  0,  "",   "AL ", {},                                    "Almoxarifado (local) final a ser considerado"})
-	aadd (_aRegsPerg, {15, "Qual custo?                   ", "N", 1,  0,  "",   "   ", {"Medio", "Standard"},                 ""})
-	aadd (_aRegsPerg, {16, "Destino                       ", "N", 1,  0,  "",   "   ", {"Relatorio", "Planilha"},             ""})
-	aadd (_aRegsPerg, {17, "Agrupar por                   ", "N", 1,  0,  "",   "   ", {"Filial+almox", "Filial", "Empresa"}, ""})
+	//                     PERGUNT                           TIPO TAM DEC VALID F3       Opcoes                                 Help
+	aadd (_aRegsPerg, {01, "Mes inicial (MM/AAAA)         ", "C", 7,  0,  "",   "   ",   {},                                    "Mes inicial para analise. Informe mes e ano separados por barra. Ex.: 11/2007"})
+	aadd (_aRegsPerg, {02, "Mes final (MM/AAAA)           ", "C", 7,  0,  "",   "   ",   {},                                    "Mes final para analise. Informe mes e ano separados por barra. Ex.: 12/2007"})
+	aadd (_aRegsPerg, {03, "Tipo produtos de              ", "C", 2,  0,  "",   "02 ",   {},                                    "Tipo de produtos inicial a ser considerado"})
+	aadd (_aRegsPerg, {04, "Tipo produtos ate             ", "C", 2,  0,  "",   "02 ",   {},                                    "Tipo de produtos final a ser considerado"})
+	aadd (_aRegsPerg, {05, "Produto de                    ", "C", 15, 0,  "",   "SB1",   {},                                    "Produto inicial a ser considerado"})
+	aadd (_aRegsPerg, {06, "Produto ate                   ", "C", 15, 0,  "",   "SB1",   {},                                    "Produto final a ser considerado"})
+	aadd (_aRegsPerg, {07, "Produtos especif.(sep.barras) ", "C", 60, 0,  "",   "   ",   {},                                    ""})
+	aadd (_aRegsPerg, {08, "Grupo de                      ", "C", 4,  0,  "",   "SBM",   {},                                    "Grupo de produto inicial a ser considerado"})
+	aadd (_aRegsPerg, {09, "Grupo ate                     ", "C", 4,  0,  "",   "SBM",   {},                                    "Grupo de produto final a ser considerado"})
+	aadd (_aRegsPerg, {10, "Ignorar almox.zerados         ", "N", 1,  0,  "",   "   ",   {"Sim", "Nao"},                        ""})
+	aadd (_aRegsPerg, {11, "Linha produtos de             ", "C", 4,  0,  "",   "ZX539", {},                                    "Linha de produtos inicial a ser considerada"})
+	aadd (_aRegsPerg, {12, "Linha produtos ate            ", "C", 4,  0,  "",   "ZX539", {},                                    "Linha de produtos final a ser considerada"})
+	aadd (_aRegsPerg, {13, "Almoxarifado de               ", "C", 2,  0,  "",   "AL ",   {},                                    "Almoxarifado (local) inicial a ser considerado"})
+	aadd (_aRegsPerg, {14, "Almoxarifado ate              ", "C", 2,  0,  "",   "AL ",   {},                                    "Almoxarifado (local) final a ser considerado"})
+	aadd (_aRegsPerg, {15, "Qual custo?                   ", "N", 1,  0,  "",   "   ",   {"Medio", "Standard"},                 ""})
+	aadd (_aRegsPerg, {16, "Destino                       ", "N", 1,  0,  "",   "   ",   {"Relatorio", "Planilha"},             ""})
+	aadd (_aRegsPerg, {17, "Agrupar por                   ", "N", 1,  0,  "",   "   ",   {"Filial+almox", "Filial", "Empresa"}, ""})
 	
 	U_ValPerg (cPerg, _aRegsPerg)
 Return

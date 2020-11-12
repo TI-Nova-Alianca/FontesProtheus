@@ -78,13 +78,8 @@ static function _AndaLogo ()
 	procregua (100)
 	incproc ()
 
-//	u_help ('Nada definido.')
-//	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
-
-	//za1 -> (dbsetorder (1))
-	//if za1 -> (dbseek ('01'+'2000341473', .f.))
-;;coment do branch teste	U_EnvEtFul ('2000345213', .t.)
-segunto teste
+	u_help ('Nada definido.')
+	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
 return
 
 //	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
