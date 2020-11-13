@@ -5,6 +5,7 @@
 //  Descricao..: Relatório de titulos de cartão
 //
 // #TipoDePrograma    #relatorio
+// #Descricao         #Relatório de titulos de cartão
 // #PalavasChave      #cartao #titulos #
 // #TabelasPrincipais #SE1 
 // #Modulos 		  #FIN 
@@ -59,7 +60,7 @@ Static Function PrintReport(oReport)
     Local _aDados   := {}
     Local i         := 0
 
-    _oSQL  := ClsSQL ():New ()
+    _oSQL:= ClsSQL ():New ()
     _oSQL:_sQuery := ""
     _oSQL:_sQuery += "	SELECT"
     _oSQL:_sQuery += "		E1_FILIAL"
