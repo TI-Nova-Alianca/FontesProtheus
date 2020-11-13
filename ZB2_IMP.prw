@@ -164,6 +164,13 @@ Static Function BuscaCV(_aCV, cLinha)
 	_sStaImp := 'I'
 	_sDesLan := BuscaLancamento(_sCodLan)
 
+	_sParc := ''
+	If alltrim(_sParNum) <> '00' .or. alltrim(_sParNum) <> '' 
+		_sParc := BuscaParcela(_sParNum)
+	Else
+		_sParc := ""
+	EndIf
+
 	aadd (_aCV,{_dDtLan  ,; // 1
 				_sCodLan ,; // 2
 				_dDtMov  ,; // 3
@@ -177,7 +184,8 @@ Static Function BuscaCV(_aCV, cLinha)
 				_nLiqPar ,; // 11
 				_sSeqReg ,; // 12
 				_sStaImp ,; // 13
-				_sDesLan }) // 14
+				_sDesLan ,; // 14
+				_sParc   }) // 15
 				
 Return _aCV
 //
@@ -212,6 +220,7 @@ Static Function GravaZB2(_aHeader, _aRO, _aCV, _aRel )
 				ZB2 -> ZB2_NSUCOD := _aCV[1,4]
 				ZB2 -> ZB2_AUTCOD := sAut
 				ZB2 -> ZB2_NUMPAR := _aCV[1,5]
+				ZB2 -> ZB2_PARTIT := _aCV[1,15]
 				ZB2 -> ZB2_PARBRT := _aCV[1,6]
 				ZB2 -> ZB2_TARFIX := _aCV[1,7]
 				ZB2 -> ZB2_PERTAX := _aCV[1,8]
@@ -224,31 +233,31 @@ Static Function GravaZB2(_aHeader, _aRO, _aCV, _aRel )
 			
 			ZB2->(MsUnlock())
 
-			aadd(_aRel,{ 	_aRO[1,1] ,; 	// filial
-							_aCV[1,6] ,;    // vlr bruto
-							_aRO[1,5] ,; 	// valor liquido da venda
-							_aCV[1,11],; 	// valor da parcela
-							_aCV[1,8] ,; 	// % taxa
-							_aCV[1,9] ,;    // valor da taxa
-							_aCV[1,3] ,;    // data do movimento
-							sAut      ,; 	// autorização
-							_aCV[1,4] ,; 	// NSU
-							_aCV[1,14],;	// lançamento
-							'INCLUIDO'  })
+			// aadd(_aRel,{ 	_aRO[1,1] ,; 	// filial
+			// 				_aCV[1,6] ,;    // vlr bruto
+			// 				_aRO[1,5] ,; 	// valor liquido da venda
+			// 				_aCV[1,11],; 	// valor da parcela
+			// 				_aCV[1,8] ,; 	// % taxa
+			// 				_aCV[1,9] ,;    // valor da taxa
+			// 				_aCV[1,3] ,;    // data do movimento
+			// 				sAut      ,; 	// autorização
+			// 				_aCV[1,4] ,; 	// NSU
+			// 				_aCV[1,14],;	// lançamento
+			// 				'INCLUIDO'  })
 
 			u_log("Registro Importado! NSU:" + sNSU +" Autorização:"+ sAut)
 		Else
-			aadd(_aRel,{ 	_aRO[1,1] ,; 	// filial
-							_aCV[1,6] ,;    // vlr bruto
-							_aRO[1,5] ,; 	// valor liquido da venda
-							_aCV[1,11],; 	// valor da parcela
-							_aCV[1,8] ,; 	// % taxa
-							_aCV[1,9] ,;    // valor da taxa
-							_aCV[1,3] ,;    // data do movimento
-							sAut      ,; 	// autorização
-							_aCV[1,4] ,; 	// NSU
-							_aCV[1,14],;	// lançamento
-							'JÁ IMPORTADO'  })
+			// aadd(_aRel,{ 	_aRO[1,1] ,; 	// filial
+			// 				_aCV[1,6] ,;    // vlr bruto
+			// 				_aRO[1,5] ,; 	// valor liquido da venda
+			// 				_aCV[1,11],; 	// valor da parcela
+			// 				_aCV[1,8] ,; 	// % taxa
+			// 				_aCV[1,9] ,;    // valor da taxa
+			// 				_aCV[1,3] ,;    // data do movimento
+			// 				sAut      ,; 	// autorização
+			// 				_aCV[1,4] ,; 	// NSU
+			// 				_aCV[1,14],;	// lançamento
+			// 				'JÁ IMPORTADO'  })
 
 			u_log("Registro já importado! NSU:" + sNSU +" Autorização:"+ sAut)
 		EndIf
@@ -340,103 +349,138 @@ Static Function BuscaLancamento(_sCodLan)
 Return _sDesLan
 //
 // --------------------------------------------------------------------------
-// Relatorio de registros importados
-Static Function RelImportacao(_aRel)
-	Private oReport
-	
-	oReport := ReportDef()
-	oReport:PrintDialog()
-Return
-//
-// ---------------------------------------------------------------------------
-// Cabeçalho da rotina
-Static Function ReportDef()
-	Local oReport  := Nil
-	Local oSection1:= Nil
-	//Local oBreak1
+// Busca Parcelas
+Static Function BuscaParcela(_sParcela)
+	Local _sParc := ''
 
-	oReport := TReport():New("ZB2_IMP","Importação de pagamentos Banrisul",cPerg,{|oReport| PrintReport(oReport)},"Importação de pagamentos Banrisul")
+	Do Case
+		Case alltrim(_sParcela) == '01'
+			_sParc:= 'A'
+		Case alltrim(_sParcela) == '02'
+			_sParc:= 'B'
+		Case alltrim(_sParcela) == '03'
+			_sParc:= 'C'
+		Case alltrim(_sParcela) == '04'
+			_sParc:= 'D'
+		Case alltrim(_sParcela) == '05'
+			_sParc:= 'E'
+		Case alltrim(_sParcela) == '06'
+			_sParc:= 'F'
+		Case alltrim(_sParcela) == '07'
+			_sParc:= 'G'
+		Case alltrim(_sParcela) == '08'
+			_sParc:= 'H'
+		Case alltrim(_sParcela) == '09'
+			_sParc:= 'I'
+		Case alltrim(_sParcela) == '10'
+			_sParc:= 'J'
+		Case alltrim(_sParcela) == '11'
+			_sParc:= 'K'
+		Case alltrim(_sParcela) == '12'
+			_sParc:= 'L'
+		Otherwise
+			_sParc:=''
+	EndCase
+Return _sParc
+// //
+// // --------------------------------------------------------------------------
+// // Relatorio de registros importados
+// Static Function RelImportacao(_aRel)
+// 	Private oReport
 	
-	oReport:SetTotalInLine(.F.)
-	oReport:SetLandscape()
-	oReport:ShowHeader()
+// 	oReport := ReportDef()
+// 	oReport:PrintDialog()
+// Return
+// //
+// // ---------------------------------------------------------------------------
+// // Cabeçalho da rotina
+// Static Function ReportDef()
+// 	Local oReport  := Nil
+// 	Local oSection1:= Nil
+// 	//Local oBreak1
+
+// 	oReport := TReport():New("ZB2_IMP","Importação de pagamentos Banrisul",cPerg,{|oReport| PrintReport(oReport)},"Importação de pagamentos Banrisul")
 	
-	oSection1 := TRSection():New(oReport,,{}, , , , , ,.T.,.F.,.F.) 
+// 	oReport:SetTotalInLine(.F.)
+// 	oReport:SetLandscape()
+// 	oReport:ShowHeader()
 	
-	TRCell():New(oSection1,"COLUNA1", 	"" ,"Filial"		,	    					, 8,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA2", 	"" ,"Título"		,       					,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA3", 	"" ,"Cliente"		,       					,35,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA4", 	"" ,"Vlr.Bruto"		, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA5", 	"" ,"Vlr.Liquido"	, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA6", 	"" ,"Vlr.Parcela"	, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA7", 	"" ,"%.Taxa"		, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA8", 	"" ,"Vlr.Taxa"		, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA9", 	"" ,"Dt.Movimento"  ,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA10", 	"" ,"Autoriz."		,							,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA11", 	"" ,"NSU"			,	    					,10,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA12", 	"" ,"Lançamento"			,	    			,35,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA13", 	"" ,"Status"		,	    					,20,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
+// 	oSection1 := TRSection():New(oReport,,{}, , , , , ,.T.,.F.,.F.) 
 	
-	TRFunction():New(oSection1:Cell("COLUNA6")	,,"SUM"	, , "Total parcela ", "@E 999,999,999.99", NIL, .F., .T.)
-	TRFunction():New(oSection1:Cell("COLUNA7")	,,"SUM"	, , "Total taxa "   , "@E 999,999,999.99", NIL, .F., .T.)
+// 	TRCell():New(oSection1,"COLUNA1", 	"" ,"Filial"		,	    					, 8,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
+// 	TRCell():New(oSection1,"COLUNA2", 	"" ,"Título"		,       					,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+// 	TRCell():New(oSection1,"COLUNA3", 	"" ,"Cliente"		,       					,35,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+// 	TRCell():New(oSection1,"COLUNA4", 	"" ,"Vlr.Bruto"		, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+// 	TRCell():New(oSection1,"COLUNA5", 	"" ,"Vlr.Liquido"	, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+// 	TRCell():New(oSection1,"COLUNA6", 	"" ,"Vlr.Parcela"	, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+// 	TRCell():New(oSection1,"COLUNA7", 	"" ,"%.Taxa"		, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+// 	TRCell():New(oSection1,"COLUNA8", 	"" ,"Vlr.Taxa"		, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+// 	TRCell():New(oSection1,"COLUNA9", 	"" ,"Dt.Movimento"  ,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+// 	TRCell():New(oSection1,"COLUNA10", 	"" ,"Autoriz."		,							,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+// 	TRCell():New(oSection1,"COLUNA11", 	"" ,"NSU"			,	    					,10,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
+// 	TRCell():New(oSection1,"COLUNA12", 	"" ,"Lançamento"			,	    			,35,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
+// 	TRCell():New(oSection1,"COLUNA13", 	"" ,"Status"		,	    					,20,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 	
-Return(oReport)
-//
-// -------------------------------------------------------------------------
-// Impressão
-Static Function PrintReport(oReport)
-	Local oSection1 := oReport:Section(1)
-	Local i         := 0
+// 	TRFunction():New(oSection1:Cell("COLUNA6")	,,"SUM"	, , "Total parcela ", "@E 999,999,999.99", NIL, .F., .T.)
+// 	TRFunction():New(oSection1:Cell("COLUNA7")	,,"SUM"	, , "Total taxa "   , "@E 999,999,999.99", NIL, .F., .T.)
+	
+// Return(oReport)
+// //
+// // -------------------------------------------------------------------------
+// // Impressão
+// Static Function PrintReport(oReport)
+// 	Local oSection1 := oReport:Section(1)
+// 	Local i         := 0
 
-	oSection1:Init()
-	oSection1:SetHeaderSection(.T.)
+// 	oSection1:Init()
+// 	oSection1:SetHeaderSection(.T.)
 
-	For i:=1 to Len(_aRel)
+// 	For i:=1 to Len(_aRel)
 
-// Busca dados do título para fazer a baixa
-		_oSQL:= ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT "
-		_oSQL:_sQuery += "     SE1.E1_PREFIXO"	// 01
-		_oSQL:_sQuery += "    ,SE1.E1_NUM"		// 02
-		_oSQL:_sQuery += "    ,SE1.E1_PARCELA"	// 03
-		_oSQL:_sQuery += "    ,SE1.E1_CLIENTE"	// 04
-		_oSQL:_sQuery += "    ,SE1.E1_LOJA"		// 05
-		_oSQL:_sQuery += " FROM " + RetSQLName ("SE1") + " AS SE1 "
-		_oSQL:_sQuery += " WHERE SE1.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery += " AND SE1.E1_FILIAL  = '" + _aRel[i, 1] + "'"
-		_oSQL:_sQuery += " AND SE1.E1_EMISSAO = '" + DTOS(_aRel[i,7]) + "'"
-		_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aRel[i,9] + "'"
-		_aTitulo := aclone (_oSQL:Qry2Array ())
+// // Busca dados do título para fazer a baixa
+// 		_oSQL:= ClsSQL ():New ()
+// 		_oSQL:_sQuery := ""
+// 		_oSQL:_sQuery += " SELECT "
+// 		_oSQL:_sQuery += "     SE1.E1_PREFIXO"	// 01
+// 		_oSQL:_sQuery += "    ,SE1.E1_NUM"		// 02
+// 		_oSQL:_sQuery += "    ,SE1.E1_PARCELA"	// 03
+// 		_oSQL:_sQuery += "    ,SE1.E1_CLIENTE"	// 04
+// 		_oSQL:_sQuery += "    ,SE1.E1_LOJA"		// 05
+// 		_oSQL:_sQuery += " FROM " + RetSQLName ("SE1") + " AS SE1 "
+// 		_oSQL:_sQuery += " WHERE SE1.D_E_L_E_T_ = ''"
+// 		_oSQL:_sQuery += " AND SE1.E1_FILIAL  = '" + _aRel[i, 1] + "'"
+// 		_oSQL:_sQuery += " AND SE1.E1_EMISSAO = '" + DTOS(_aRel[i,7]) + "'"
+// 		_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aRel[i,9] + "'"
+// 		_aTitulo := aclone (_oSQL:Qry2Array ())
 
-		If len(_aTitulo) > 0
-			_sTitulo  := alltrim(_aTitulo[1,2]) +"/" + alltrim(_aTitulo[1,1] +"/"+_aTitulo[1,3])
-			_sNome    := Posicione("SA1",1,xFilial("SA1")+_aTitulo[1,4] + _aTitulo[1,5],"A1_NOME")
-			_sCliente := alltrim(_aTitulo[1,4]) +"/" + alltrim(_sNome)
-		Else
-			_sTitulo  := "-"
-			_sNome    := "-"
-			_sCliente := "-"
-		EndIf
+// 		If len(_aTitulo) > 0
+// 			_sTitulo  := alltrim(_aTitulo[1,2]) +"/" + alltrim(_aTitulo[1,1] +"/"+_aTitulo[1,3])
+// 			_sNome    := Posicione("SA1",1,xFilial("SA1")+_aTitulo[1,4] + _aTitulo[1,5],"A1_NOME")
+// 			_sCliente := alltrim(_aTitulo[1,4]) +"/" + alltrim(_sNome)
+// 		Else
+// 			_sTitulo  := "-"
+// 			_sNome    := "-"
+// 			_sCliente := "-"
+// 		EndIf
 
-		oSection1:Cell("COLUNA1")	:SetBlock   ({|| _aRel[i,1] }) // filial
-		oSection1:Cell("COLUNA2")	:SetBlock   ({|| _sTitulo   }) // titulo
-		oSection1:Cell("COLUNA3")	:SetBlock   ({|| _sCliente  }) // cliente
-		oSection1:Cell("COLUNA4")	:SetBlock   ({|| _aRel[i,2]})  // vlr. bruto
-		oSection1:Cell("COLUNA5")	:SetBlock   ({|| _aRel[i,3] }) // vlr. liquido
-		oSection1:Cell("COLUNA6")	:SetBlock   ({|| _aRel[i,4] }) // vlr.parcela
-		oSection1:Cell("COLUNA7")	:SetBlock   ({|| _aRel[i,5] }) // % taxa
-		oSection1:Cell("COLUNA8")	:SetBlock   ({|| _aRel[i,6] }) // vlr. taxa
-		oSection1:Cell("COLUNA9")	:SetBlock   ({|| _aRel[i,7] }) // dt. movimento
-		oSection1:Cell("COLUNA10")	:SetBlock   ({|| _aRel[i,8] }) // cod.autoriz
-		oSection1:Cell("COLUNA11")	:SetBlock   ({|| _aRel[i,9] }) // NSU
-		oSection1:Cell("COLUNA12")	:SetBlock   ({|| _aRel[i,10]}) // Lançamento
-		oSection1:Cell("COLUNA13")	:SetBlock   ({|| _aRel[i,11]}) // status
+// 		oSection1:Cell("COLUNA1")	:SetBlock   ({|| _aRel[i,1] }) // filial
+// 		oSection1:Cell("COLUNA2")	:SetBlock   ({|| _sTitulo   }) // titulo
+// 		oSection1:Cell("COLUNA3")	:SetBlock   ({|| _sCliente  }) // cliente
+// 		oSection1:Cell("COLUNA4")	:SetBlock   ({|| _aRel[i,2]})  // vlr. bruto
+// 		oSection1:Cell("COLUNA5")	:SetBlock   ({|| _aRel[i,3] }) // vlr. liquido
+// 		oSection1:Cell("COLUNA6")	:SetBlock   ({|| _aRel[i,4] }) // vlr.parcela
+// 		oSection1:Cell("COLUNA7")	:SetBlock   ({|| _aRel[i,5] }) // % taxa
+// 		oSection1:Cell("COLUNA8")	:SetBlock   ({|| _aRel[i,6] }) // vlr. taxa
+// 		oSection1:Cell("COLUNA9")	:SetBlock   ({|| _aRel[i,7] }) // dt. movimento
+// 		oSection1:Cell("COLUNA10")	:SetBlock   ({|| _aRel[i,8] }) // cod.autoriz
+// 		oSection1:Cell("COLUNA11")	:SetBlock   ({|| _aRel[i,9] }) // NSU
+// 		oSection1:Cell("COLUNA12")	:SetBlock   ({|| _aRel[i,10]}) // Lançamento
+// 		oSection1:Cell("COLUNA13")	:SetBlock   ({|| _aRel[i,11]}) // status
 			
-		oSection1:PrintLine()
-	Next
-	oSection1:Finish()
-Return
+// 		oSection1:PrintLine()
+// 	Next
+// 	oSection1:Finish()
+// Return
 //
 // --------------------------------------------------------------------------
 // Perguntas
