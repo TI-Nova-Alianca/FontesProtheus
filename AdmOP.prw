@@ -45,6 +45,7 @@
 //                      - Inseridas tags para catalogacao de fontes
 // 04/08/2020 - Robert  - Usuario deve pertencer ao grupo 117 do ZZU para permitir alteracoes (nao mais pelos grupos do configurador).
 //
+//
 
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Processamento
