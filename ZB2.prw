@@ -32,10 +32,11 @@ User Function ZB2()
 	endif
 
 	If _lContinua
-		AADD(aRotina, {"&Visualizar" 	     , "AxVisual"       , 0, 1})
-		AADD(aRotina, {"Importar"    	     , "U_ZB2_IMP()"    , 0, 4})
-		AADD(aRotina, {"Conciliar Barisul"   , "U_ZB2_CON()"    , 0, 4})
-		AADD(aRotina, {"Fechar Registro"     , "U_ZB2_FEC()"   , 0, 6})
+		AADD(aRotina, {"&Visualizar" 	       , "AxVisual"       , 0, 1})
+		AADD(aRotina, {"Importar"    	       , "U_ZB2_IMP()"    , 0, 4})
+		AADD(aRotina, {"Conciliar Barisul"     , "U_ZB2_CON()"    , 0, 4})
+		AADD(aRotina, {"Fechar Registro"       , "U_ZB2_FEC()"    , 0, 6})
+		AADD(aRotina, {"Rel.Totais importados" , "U_ZB2_REL()"    , 0, 6})
 
 		AADD(aCores,{ "ZB2_STAIMP == 'I'", 'BR_VERMELHO' }) // importado
         AADD(aCores,{ "ZB2_STAIMP == 'C'", 'BR_VERDE'    }) // conciliado

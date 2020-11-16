@@ -1,6 +1,6 @@
 // Programa...: ZB2_FEC
 // Autor......: Cláudia Lionço
-// Data.......: 11/11/2020
+// Data.......: 12/11/2020
 // Descricao..: Fechamento de registros sem conciliação - Banrisul
 //
 // Tags para automatizar catalogo de customizacoes:
@@ -13,58 +13,56 @@
 // Historico de alteracoes:
 //
 // --------------------------------------------------------------------------
-User function ZB1_FEC()
-    	// u_logIni ("Fechamento de registros ZB1" + DTOS(date()) )
+User function ZB2_FEC()
+    Local _aZB2 := {}
+    u_logIni ("Fechamento de registros ZB2" + DTOS(date()) )
 
-        // cPerg   := "ZB1_FEC"
-		// _ValidPerg ()
-		
-		// If ! pergunte (cPerg, .T.)
-		// 	return
-		// Endif
+    cPerg   := "ZB2_FEC"
+    _ValidPerg ()
+    
+    If ! pergunte (cPerg, .T.)
+        return
+    Endif
 
-        // If empty(mv_par01) .and. empty(mv_par02)
-        //     u_help("Autorização ou NSU devem ser preenchidos")
-        // else
-        //     _oSQL:= ClsSQL ():New ()
-        //     _oSQL:_sQuery := ""
-        //     _oSQL:_sQuery += " SELECT * "
-        //     _oSQL:_sQuery += " FROM " + RetSQLName ("ZB1") 
-        //     _oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''" 
-        //     _oSQL:_sQuery += " AND ZB1_STAIMP = 'I' "        //-- APENAS OS IMPORTADOS
-        //     _oSQL:_sQuery += " AND ZB1_ARQUIV LIKE'%CIELO%'" //-- APENAS ARQUIVOS DA CIELO
-        //     If !empty(mv_par01)
-        //         _oSQL:_sQuery += " AND ZB1_NSUCOD = '" + mv_par01 + "' " // FILTRA POR NSU
-        //     EndIf
-        //     If !empty(mv_par02) 
-        //         _oSQL:_sQuery += " AND ZB1_AUTCOD = '" + mv_par02 + "' " // FILTRA PELO CÓDIGO DE AUTORIZAÇÃO
-        //     EndIf
-        //     _oSQL:Log ()
+    If empty(mv_par01) .and. empty(mv_par02)
+        u_help("Autorização ou NSU devem ser preenchidos")
+    else
+        _oSQL:= ClsSQL ():New ()
+        _oSQL:_sQuery := ""
+        _oSQL:_sQuery += " SELECT * "
+        _oSQL:_sQuery += " FROM " + RetSQLName ("ZB2") 
+        _oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''" 
+        _oSQL:_sQuery += " AND ZB2_STAIMP = 'I' "        //-- APENAS OS IMPORTADOS
+        If !empty(mv_par01)
+            _oSQL:_sQuery += " AND ZB2_NSUCOD = '" + mv_par01 + "' " // FILTRA POR NSU
+        EndIf
+        If !empty(mv_par02) 
+            _oSQL:_sQuery += " AND ZB2_AUTCOD = '" + mv_par02 + "' " // FILTRA PELO CÓDIGO DE AUTORIZAÇÃO
+        EndIf
+        _oSQL:Log ()
 
-        //     _aZB1 := aclone (_oSQL:Qry2Array ())
+        _aZB2 := aclone (_oSQL:Qry2Array ())
 
-        //     _cMens := "Existem " + alltrim(str(len(_aZB1))) + " registros para fechar. Deseja continuar?"
-		//     If MsgYesNo(_cMens,"Fechamento de registros")
-        //         _oSQL:= ClsSQL ():New ()
-        //         _oSQL:_sQuery := ""
-        //         _oSQL:_sQuery += " UPDATE " + RetSQLName ("ZB1") 
-        //         _oSQL:_sQuery += " SET  ZB1_STAIMP = 'F'" 
-        //         _oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''" 
-        //         _oSQL:_sQuery += " AND ZB1_STAIMP = 'I' "        //-- APENAS OS IMPORTADOS
-        //         _oSQL:_sQuery += " AND ZB1_ARQUIV LIKE'%CIELO%'" //-- APENAS ARQUIVOS DA CIELO
-        //         If !empty(mv_par01)
-        //             _oSQL:_sQuery += " AND ZB1_NSUCOD = '" + mv_par01 + "' " // FILTRA POR NSU
-        //         EndIf
-        //         If !empty(mv_par02) 
-        //             _oSQL:_sQuery += " AND ZB1_AUTCOD = '" + mv_par02 + "' " // FILTRA PELO CÓDIGO DE AUTORIZAÇÃO
-        //         EndIf
-        //         _oSQL:Log ()
-		// 		_oSQL:Exec ()
-                
-        //         u_help("Processo finalizado")
-        //     EndIf
-
-        // EndIf
+        _cMens := "Existem " + alltrim(str(len(_aZB2))) + " registros para fechar. Deseja continuar?"
+        If MsgYesNo(_cMens,"Fechamento de registros")
+            _oSQL:= ClsSQL ():New ()
+            _oSQL:_sQuery := ""
+            _oSQL:_sQuery += " UPDATE " + RetSQLName ("ZB2") 
+            _oSQL:_sQuery += " SET ZB2_STAIMP = 'F'" 
+            _oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''" 
+            _oSQL:_sQuery += " AND ZB2_STAIMP = 'I' "                    //-- APENAS OS IMPORTADOS
+            If !empty(mv_par01)
+                _oSQL:_sQuery += " AND ZB2_NSUCOD = '" + mv_par01 + "' " // FILTRA POR NSU
+            EndIf
+            If !empty(mv_par02) 
+                _oSQL:_sQuery += " AND ZB2_AUTCOD = '" + mv_par02 + "' " // FILTRA PELO CÓDIGO DE AUTORIZAÇÃO
+            EndIf
+            _oSQL:Log ()
+            _oSQL:Exec ()
+            
+            u_help("Processo finalizado")
+        EndIf
+    EndIf
 Return
 //
 // --------------------------------------------------------------------------
