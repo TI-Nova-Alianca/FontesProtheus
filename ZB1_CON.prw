@@ -18,6 +18,8 @@
 // Historico de alteracoes:
 // 03/11/2020 - Claudia - Incluida a gravação do SXK
 //
+//
+//
 // --------------------------------------------------------------------------
 #Include "Protheus.ch"
 #Include "totvs.ch"
