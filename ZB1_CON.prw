@@ -18,7 +18,6 @@
 // Historico de alteracoes:
 // 03/11/2020 - Claudia - Incluida a gravação do SXK
 //
-//
 // --------------------------------------------------------------------------
 #Include "Protheus.ch"
 #Include "totvs.ch"
@@ -129,6 +128,7 @@ User Function ZB1_CON(_sConciliar)
 				Else
 					_oSQL:_sQuery += " AND SE1.E1_CARTAUT = '" + _aZB1[i,17] + "'"
 					_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aZB1[i,18] + "'"
+					_oSQL:_sQuery += " AND SE1.E1_EMISSAO = '" + DTOS(_aZB1[i,16]) + "'"
 				EndIf
 				_oSQL:_sQuery += " AND SE1.E1_BAIXA   = ''"
 				If alltrim(_sParc) <> ''
