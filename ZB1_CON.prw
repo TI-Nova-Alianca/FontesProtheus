@@ -18,7 +18,6 @@
 // Historico de alteracoes:
 // 03/11/2020 - Claudia - Incluida a gravação do SXK
 //
-// comentario do teste para ver se esta atualizando...
 //
 // --------------------------------------------------------------------------
 #Include "Protheus.ch"
