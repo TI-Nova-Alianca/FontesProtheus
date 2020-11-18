@@ -216,15 +216,16 @@ Static Function GravaZB1(_aHeader, _aRO, _aCV, _aRel )
 		
 		sAut	 := alltrim(_aCV[1,8])
 		sNSU	 := alltrim(_aCV[1,10])
+		sDtPro   := DTOS(_aHeader[1,1])
 		sBanco   := Buscabanco(_aRO[1,2],'B')
 		sAgencia := Buscabanco(_aRO[1,2],'A')
 		sConta   := Buscabanco(_aRO[1,2],'C')
 		
 		dbSelectArea("ZB1")
-		dbSetOrder(1) // ZB1_NUMNSU + ZB1_CODAUT
+		dbSetOrder(4) // ZB1_NUMNSU + ZB1_CODAUT + DTA PROCESSAMENTO
 		dbGoTop()
 		
-		If !dbSeek(PADR(sNSU ,8,' ') +sAut)
+		If !dbSeek(sDtPro + PADR(sNSU ,8,' ') +sAut)
 		
 			Reclock("ZB1",.T.)
 				ZB1->ZB1_FILIAL := _aRO[1,1]
@@ -275,7 +276,8 @@ Static Function GravaZB1(_aHeader, _aRO, _aCV, _aRel )
 							_aHeader[1,1],; // data do processamento
 							_aCV[1,8] ,; 	// autorização
 							_aCV[1,10],; 	// NSU
-							'INCLUIDO'  })
+							'INCLUIDO',;
+							_aCV[1,4]  }) // parcela
 
 			u_log("Registro Importado! NSU:" + sNSU +" Autorização:"+ sAut)
 		Else
@@ -326,7 +328,8 @@ Static Function GravaZB1(_aHeader, _aRO, _aCV, _aRel )
 							_aHeader[1,1],; // data do processamento
 							_aCV[1,8] ,; 	// autorização
 							_aCV[1,10],; 	// NSU
-							'JÁ IMPORTADO'  })
+							'JÁ IMPORTADO',;
+							_aCV[1,4]  })   // parcela
 
 			u_log("Registro já importado! NSU:" + sNSU +" Autorização:"+ sAut)
 		EndIf
@@ -549,7 +552,11 @@ Static Function PrintReport(oReport)
 
 	For i:=1 to Len(_aRel)
 
-// Busca dados do título para fazer a baixa
+		_sParc := ''
+		If alltrim(_aRel[i, 11]) <> '00' .or. alltrim(_aRel[i, 11]) <> '' 
+			_sParc := BuscaParcela(_aRel[i, 11])
+		EndIf
+		// Busca dados do título para fazer a baixa
 		_oSQL:= ClsSQL ():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " SELECT "
@@ -567,6 +574,9 @@ Static Function PrintReport(oReport)
 		Else
 			_oSQL:_sQuery += " AND SE1.E1_CARTAUT = '" + _aRel[i,8] + "'"
 			_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aRel[i,9] + "'"
+		EndIf
+		If alltrim(_sParc) <> ''
+			_oSQL:_sQuery += " AND SE1.E1_PARCELA   = '" + _sParc + "'"
 		EndIf
 		_aTitulo := aclone (_oSQL:Qry2Array ())
 
@@ -597,6 +607,40 @@ Static Function PrintReport(oReport)
 	Next
 	oSection1:Finish()
 Return
+// --------------------------------------------------------------------------
+// Busca Parcelas
+Static Function BuscaParcela(_sParcela)
+	Local _sParc := ''
+
+	Do Case
+		Case alltrim(_sParcela) == '01'
+			_sParc:= 'A'
+		Case alltrim(_sParcela) == '02'
+			_sParc:= 'B'
+		Case alltrim(_sParcela) == '03'
+			_sParc:= 'C'
+		Case alltrim(_sParcela) == '04'
+			_sParc:= 'D'
+		Case alltrim(_sParcela) == '05'
+			_sParc:= 'E'
+		Case alltrim(_sParcela) == '06'
+			_sParc:= 'F'
+		Case alltrim(_sParcela) == '07'
+			_sParc:= 'G'
+		Case alltrim(_sParcela) == '08'
+			_sParc:= 'H'
+		Case alltrim(_sParcela) == '09'
+			_sParc:= 'I'
+		Case alltrim(_sParcela) == '10'
+			_sParc:= 'J'
+		Case alltrim(_sParcela) == '11'
+			_sParc:= 'K'
+		Case alltrim(_sParcela) == '12'
+			_sParc:= 'L'
+		Otherwise
+			_sParc:=''
+	EndCase
+Return _sParc
 //
 // --------------------------------------------------------------------------
 // Perguntas
