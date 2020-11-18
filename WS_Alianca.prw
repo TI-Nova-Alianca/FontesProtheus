@@ -969,10 +969,10 @@ static function _IncCli ()
 		{"A1_SIMPNAC", "2"                    ,Nil},;
 		{"A1_VABARAP", "0"                    ,Nil},;
 		{"A1_CONTA"  , "101020201001"         ,Nil},;
-		{"A1_COND"   , "097"				   ,Nil},;
-		{"A1_VAUEXPO", ddatabase			   ,Nil},;
-		{"A1_VERBA"  , "2"					   ,Nil},;
-		{"A1_GRPTRIP", "003"				   ,Nil},;
+		{"A1_COND"   , "097"				  ,Nil},;
+		{"A1_VAUEXPO", ddatabase			  ,Nil},;
+		{"A1_VERBA"  , "2"					  ,Nil},;
+		{"A1_GRPTRIB", "003"			      ,Nil},;
 		{"A1_FORMA"  , "3"                    ,Nil},;
 		{"A1_LOJAS"  , "S"                    ,Nil},;
 		{"A1_CNAE"   , "0"                    ,Nil},;
