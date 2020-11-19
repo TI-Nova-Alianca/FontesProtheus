@@ -40,7 +40,7 @@
 // 01/04/2020 - Robert  - Criado tratamento para tag FiltroAppend na rotina AtuEstru.
 // 13/07/2020 - Robert  - Inseridas tags para catalogacao de fontes.
 // 10/08/2020 - Robert  - Inseridas chamadas da funcao UsoRot().
-//
+// 18/11/2020 - Sandra/Robert  - Alteração campo A1_GRPTRIB DE 002 para 003
 
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #web_service
@@ -969,10 +969,10 @@ static function _IncCli ()
 		{"A1_SIMPNAC", "2"                    ,Nil},;
 		{"A1_VABARAP", "0"                    ,Nil},;
 		{"A1_CONTA"  , "101020201001"         ,Nil},;
-		{"A1_COND"   , "097"				   ,Nil},;
-		{"A1_VAUEXPO", ddatabase			   ,Nil},;
-		{"A1_VERBA"  , "2"					   ,Nil},;
-		{"A1_GRPTRIP", "001"				   ,Nil},;
+		{"A1_COND"   , "097"				  ,Nil},;
+		{"A1_VAUEXPO", ddatabase			  ,Nil},;
+		{"A1_VERBA"  , "2"					  ,Nil},;
+		{"A1_GRPTRIB", "003"			      ,Nil},;
 		{"A1_FORMA"  , "3"                    ,Nil},;
 		{"A1_LOJAS"  , "S"                    ,Nil},;
 		{"A1_CNAE"   , "0"                    ,Nil},;
