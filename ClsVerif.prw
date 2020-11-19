@@ -1405,7 +1405,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		case ::Numero == 32
 			::Setores    = 'FIS'
 			::Descricao  = "Pre-notas fiscais de entrada sem classificacao"
-			::Sugestao   = "Classifique (ou exclua, se ferem indevidas) as pre-notas no modulo de compras ou estoque."
+			::Sugestao   = "Classifique (ou exclua, se forem indevidas) as pre-notas no modulo de compras ou estoque."
 			::Query := ""	
 			::Query += " SELECT DISTINCT D1_FILIAL AS FILIAL, D1_DOC AS DOC, D1_SERIE SERIE, D1_FORNECE AS FORNECEDOR, D1_LOJA AS LOJA, D1_EMISSAO EMISSAO "
 			::Query +=   " FROM " + RetSQLName ("SD1") + " SD1  "
@@ -2947,7 +2947,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=     " JOIN VA_USR_GRUPOS G"
 			::Query +=       " ON (G.TIPO_GRUPO = AG.TIPO_ACESSO"
 			::Query +=       " AND G.ID_GRUPO = AG.ID_GRUPO)"
-			::Query +=  " WHERE AG.TIPO_ACESSO = 'CFG' AND AG.ACESSO IN ('121', '169', '190')"
+			::Query +=  " WHERE AG.TIPO_ACESSO = 'CFG' AND AG.ACESSO IN ('121', '169', '190', '024', '164')"
 			::Query +=  " ORDER BY AG.ID_GRUPO, AG.ACESSO"
 
 		case ::Numero == 73
