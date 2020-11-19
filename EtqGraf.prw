@@ -32,7 +32,7 @@ User Function EtqGraf (_aEtiq, _sFolha, _nQtCol, _nQtLin, _nLayout, _lBox)
 		_nAltPag  = 2350
 		_nLargPag = 3400
 	else
-		msgalert ("Funcao " + procname () + ": Tamanho de folha nao previsto!")
+		u_help ("Funcao " + procname () + ": Tamanho de folha nao previsto!")
 		return
 	endif
 
@@ -108,7 +108,7 @@ User Function EtqGraf (_aEtiq, _sFolha, _nQtCol, _nQtLin, _nLayout, _lBox)
 	         oPrn:Say(_nLIniBox + 360, _nCIniBox + 10, _aLinha3 [2], _oCour12N, 100)
          endif
       else
-			msgalert ("Funcao " + procname () + ": Layout nao previsto!")
+			u_help ("Funcao " + procname () + ": Layout nao previsto!")
 			return
       endif
 

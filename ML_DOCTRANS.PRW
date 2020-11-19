@@ -49,7 +49,7 @@ User function ML_DOCTRANS()
 	   	
 	   	U_F3Array (_aDados, "Consulta Notas X Conhecimentos", _aCols, oMainWnd:nClientWidth - 50, oMainWnd:nClientHeight -15 , "", "", .T., 'C' )
 	else
-		msgalert("Não foram encontrados dados para consulta")
+		u_help("Não foram encontrados dados para consulta")
 	endif    		
 	
 return

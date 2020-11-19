@@ -14,7 +14,7 @@
 // --------------------------------------------------------------------------
 user function MT120ISC ()
 	local _aAreaAnt := U_ML_SRArea ()
-	local _nCampo   := 0
+	//local _nCampo   := 0
 
 	if nTipoPed != 2  // Ped. compra
 		GDFieldPut ("C7_VAPROSE", sc1 -> c1_vaprose)

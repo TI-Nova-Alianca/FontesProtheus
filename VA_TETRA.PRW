@@ -14,7 +14,7 @@ User function VA_TETRA()
 	
 	_ValidPerg()
 	if mv_par01 > mv_par02
-		msgalert ("Data inicial maior que a data final.")
+		u_help ("Data inicial maior que a data final.")
 		_ValidPerg()
 	endif
 	
@@ -55,7 +55,7 @@ User function VA_TETRA()
 	    	
     		U_F3Array (_aDados, "Consulta Notas de Resíduos", _aCols, oMainWnd:nClientWidth - 50, oMainWnd:nClientHeight -15 , "", "", .T., 'C' )
 		else
-			msgalert("Não foram encontrados dados para consulta")
+			u_help("Não foram encontrados dados para consulta")
 		endif    		
 	endif
 	

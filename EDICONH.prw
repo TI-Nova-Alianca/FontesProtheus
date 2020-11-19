@@ -392,8 +392,8 @@ return
 // ------------------------------------------------------------------------------------
 Static Function _Consulta(_xArq1)
     local _lContinua := .T.
-    local _werro     := ""
-    local _werro1    := ""
+    //local _werro     := ""
+    //local _werro1    := ""
     local _versao    := 681
     local _i 		 := 0
     
@@ -524,9 +524,9 @@ Static Function _Consulta(_xArq1)
 return     
 // ------------------------------------------------------------------------------------
 Static Function _Valida(_xArq1)
-    local _lContinua := .T.
+    //local _lContinua := .T.
     local _werro     := ""
-    local _werro1    := ""
+    //local _werro1    := ""
     local _versao    := 681
     
     
@@ -606,7 +606,7 @@ return
 // ----------------------------------------------------------------------------------------------------------------------           
 // Importa 
 Static Function _Importa(_xArq1, _XnomTransp1)
-    local _aCampos   := {}
+    //local _aCampos   := {}
     local _xCONT     := 0
     local _xCONT_NAO := 0
     local _xCONT_CANC:= 0

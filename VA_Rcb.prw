@@ -36,18 +36,18 @@ Return
 // Geracao do arquivo de trabalho p/ impressao
 static function _AndaLogo (_aDados)
 	local _oPrn      := NIL
-	local _oCour14N  := TFont():New("Courier New",,14,,.T.,,,,,.F.)
+	//local _oCour14N  := TFont():New("Courier New",,14,,.T.,,,,,.F.)
 	local _oCour16   := TFont():New("Courier New",,16,,.F.,,,,,.F.)
-	local _oCour16N  := TFont():New("Courier New",,16,,.T.,,,,,.F.)
+	//local _oCour16N  := TFont():New("Courier New",,16,,.T.,,,,,.F.)
 	local _oCour20N  := TFont():New("Courier New",,20,,.T.,,,,,.F.)
 	local _oArial10  := TFont():New("Arial",,10,,.F.,,,,,.F.)
-	local _oArial16  := TFont():New("Arial",,16,,.F.,,,,,.F.)
+	//local _oArial16  := TFont():New("Arial",,16,,.F.,,,,,.F.)
 	local _oArial32N := TFont():New("Arial",,32,,.T.,,,,,.F.)
 	local _oArial48N := TFont():New("Arial",,48,,.T.,,,,,.F.)
-	local _nPagAtual := 1
-	local _nLinAtual := 0
+	//local _nPagAtual := 1
+	//local _nLinAtual := 0
 	local _nMargSup  := 40
-	local _nMargInf  := 50
+	//local _nMargInf  := 50
 	local _nMargEsq  := 40
 	local _nAltPag   := 1400
 	local _nLargPag  := 2350

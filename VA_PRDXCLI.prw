@@ -27,7 +27,7 @@ Static Function ReportDef()
 
 Local oReport
 Local oSection
-Local oBreak
+//Local oBreak
 Local cTitulo:='TABELA DE PREÇO POR CANAL'
 
 oReport := TReport():New("VA_PRDXCLI",cTitulo,cPerg,{|oReport| PrintReport(oReport)},"Este relatório trará informações da tabela PROCUTO X CLIENTES")

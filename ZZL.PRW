@@ -74,8 +74,8 @@ return
 // --------------------------------------------------------------------------
 // Alteracao
 user function ZZLA ()
-	local _aArea     := {}
-	local _aBotAdic  := {}
+	//local _aArea     := {}
+	//local _aBotAdic  := {}
 	private altera   := .T.
 	private inclui   := .F.
 	private aGets    := {}
@@ -146,7 +146,7 @@ return _aRet
 // --------------------------------------------------------------------------
 // Inclusao
 user function ZZLI ()
-	local _aArea     := {}
+	//local _aArea     := {}
 	local _aBotAdic  := {}
 	private altera   := .F.
 	private inclui   := .T.

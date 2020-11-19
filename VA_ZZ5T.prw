@@ -157,11 +157,11 @@ return .t.
 // Processo de transferencia
 // --------------------------------------------------------------------------
 static function _Transf ()
-	local _sQuery    := ""
+	//local _sQuery    := ""
 	local _sDocto    := ""
 	local _aAutoCab  := {}
 	local _aAutoIte  := {}
-	local _aLinha    := {}
+	//local _aLinha    := {}
 	local _sFilSD3   := ""
 	local _sLocal    := '10'
 

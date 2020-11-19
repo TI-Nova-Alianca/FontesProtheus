@@ -299,7 +299,7 @@ static function _VerSEFAZ (_sSerie, _sNF)
 						else
 							//if type ("oMainWnd") == "O"  // Se tem interface com o usuario
 							If alltrim(_MainWnd) == "O"  // Se tem interface com o usuario
-								_lRet = msgnoyes ("Numero de NF '" + _sNF + "': " + iif (! empty (_sProtEmis), "emissao ja' autorizada", "cancelamento ja' autorizado") + " pela SEFAZ. Deseja gerar assim mesmo?")
+								_lRet = msgnoyes ("Numero de NF '" + _sNF + "': " + iif (! empty (_sProtEmis), "emissao ja' autorizada", "cancelamento ja' autorizado") + " pela SEFAZ. Deseja gerar assim mesmo?","Continuar")
 							else
 								u_help ("Numero de NF '" + _sNF + "': " + iif (! empty (_sProtEmis), "emissao ja' autorizada", "cancelamento ja' autorizado") + " pela SEFAZ.")
 								_lRet = .F.

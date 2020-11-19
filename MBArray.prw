@@ -63,11 +63,11 @@ user function MbArray (_aArray, _sTitulo, _aCols, _nColMarca, _nLarg, _nAltur, _
 	endif
 	
 	if valtype (_aArray) != "A"
-		msgalert ("Funcao " + procname () + " recebeu parametro incorreto")
+		u_help ("Funcao " + procname () + " recebeu parametro incorreto")
 		return {}
 	endif
 	if len (_aArray) == 0
-		msgalert ("Funcao " + procname () + " recebeu array de opcoes vazia")
+		u_help ("Funcao " + procname () + " recebeu array de opcoes vazia")
 		return {}
 	endif
 	_aMBArrayV [1] := aclone (_aArray)

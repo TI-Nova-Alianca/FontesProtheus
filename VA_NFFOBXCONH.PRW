@@ -67,7 +67,7 @@ User function VA_NFFOBXCONH()
         
 		U_F3Array (_aDados, "Consulta Conhecimentos em NF Frete FOB", _aCols, oMainWnd:nClientWidth - 50, oMainWnd:nClientHeight -15 , "", "", .T., 'C' )
 	else
-		msgalert("Não foram encontrados dados para consulta")
+		u_help("Não foram encontrados dados para consulta")
 	endif    		
 	
 return

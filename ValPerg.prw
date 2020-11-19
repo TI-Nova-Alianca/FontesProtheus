@@ -23,8 +23,8 @@ user function ValPerg (_cPerg, _aRegsOri, _aHelps, _aRespDef)
 	local _j         := 0
 	local _aRegs     := {}
 	local _sSeq      := ""
-	local _aTxtHelp  := {}
-	local _nTxtHelp  := 0
+	//local _aTxtHelp  := {}
+	//local _nTxtHelp  := 0
 	local _lNovaPerg := .F.
 	local _nRespDef  := 0
 	
@@ -94,7 +94,7 @@ user function ValPerg (_cPerg, _aRegsOri, _aHelps, _aRespDef)
 	// Verifica perguntas do tipo combo sem opcoes
 	For _i := 1 to Len (_aRegs)
 		if _aRegs [_i, 11] == "C" .and. empty (_aRegs [_i, 14])
-			msgalert ("Funcao " + procname () + ": Me foi solicitado que criasse a pergunta " + _aRegs [_i, 2] + " no grupo de perguntas " + _aRegs [_i, 1] + " como 'lista de opcoes', mas nao foi especificada nenhuma opcao. Provavel problema no programa " + funname ())
+			u_help ("Funcao " + procname () + ": Me foi solicitado que criasse a pergunta " + _aRegs [_i, 2] + " no grupo de perguntas " + _aRegs [_i, 1] + " como 'lista de opcoes', mas nao foi especificada nenhuma opcao. Provavel problema no programa " + funname ())
 			_aRegs [_i, 14] = "?"
 		endif
 	next

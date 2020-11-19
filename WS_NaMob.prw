@@ -92,7 +92,7 @@ Return .T.
 static function _AsCapSoc ()
 	local   _sAssoc    := ""
 	local   _sLoja     := ""
-	local   _aCapSoc   := {}
+	//local   _aCapSoc   := {}
 	local   _sRet      := ''
 	private _sErroAuto := ""  // Variavel alimentada pela funcao U_Help
 

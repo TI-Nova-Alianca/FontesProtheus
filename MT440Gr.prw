@@ -27,6 +27,7 @@ static function _VerEstq ()
 	local _aItens  := {}
 	local _sMsg    := ""
 	local _oEvento := NIL
+	local _nItem   := 0
 
 //	if cEmpAnt != "02"
 
@@ -64,7 +65,7 @@ static function _VerEstq ()
 		next
 		
 		if ! empty (_sMsg)
-			_lRet = msgyesno ("O(s) seguinte(s) produto(s) nao tem estoque suficiente:" + chr (13) + chr (10) + _sMsg + chr (13) + chr (10) + "Deseja liberar o pedido mesmo assim?")
+			_lRet = msgyesno ("O(s) seguinte(s) produto(s) nao tem estoque suficiente:" + chr (13) + chr (10) + _sMsg + chr (13) + chr (10) + "Deseja liberar o pedido mesmo assim?","Pedido")
 
 			// Grava evento para posterior consulta.
 			if _lRet

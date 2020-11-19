@@ -11,11 +11,11 @@
 
 // --------------------------------------------------------------------------
 User Function VA_RDS18 ()
-	Local cCadastro := "Retatorio distribuicao sobras 2018"
-	Local aSays     := {}
-	Local aButtons  := {}
-	Local nOpca     := 0
-	Local lPerg     := .F.
+	//Local cCadastro := "Retatorio distribuicao sobras 2018"
+	//Local aSays     := {}
+	//Local aButtons  := {}
+	//Local nOpca     := 0
+	//Local lPerg     := .F.
 	
 	// Variaveis obrigatorias dos programas de relatorio
 	Private cDesc1   := "Relatorio distribuicao de sobras 2018"

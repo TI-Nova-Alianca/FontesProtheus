@@ -19,9 +19,9 @@ user Function ATFA060()
     Local cIdPonto := ""
     Local cIdModel := ""
     Local lIsGrid := .F.
-    Local nLinha := 0
-    Local nQtdLinhas := 0
-    Local cMsg := ""
+    //Local nLinha := 0
+    //Local nQtdLinhas := 0
+    //Local cMsg := ""
 
     If aParam <> NIL
         oObj := aParam[1]
@@ -58,7 +58,7 @@ Return _xRet
 Static function _AF060TOK() 
 Local aArea := GetArea() 
 Local lRet := .T. 
-Local nZ := 0 
+//Local nZ := 0 
 
 //Informações passadas por parametro 
 //Private cFilDest := ParamIXB[1] 

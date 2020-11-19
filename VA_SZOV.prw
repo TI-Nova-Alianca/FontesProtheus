@@ -40,7 +40,7 @@ user function VA_SZOV (_lExclui, _lConfEmb)
 	local _oDlg        := NIL
 	local _aAreaAnt    := U_ML_SRArea ()
 	local _aAmbAnt     := U_SalvaAmb ()
-	local _sSQL        := ""
+	//local _sSQL        := ""
 	local _lContinua   := .T.
     local _sNome       := ""
     local _sMun        := ""
@@ -234,7 +234,7 @@ static function _Deleta ()
 	_sSQL += "    And F2_FILIAL  = '" + xfilial ("SF2")      + "'"
 	_sSQL += "    And D_E_L_E_T_ = ''"
 	if TCSQLExec (_sSQL) < 0
-		msgalert ("ERRO na limpeza das notas fiscais desta ordem de embarque.")
+		u_help ("ERRO na limpeza das notas fiscais desta ordem de embarque.")
 	endif
 	
 	reclock ("SZO", .F.)

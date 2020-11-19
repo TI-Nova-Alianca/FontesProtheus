@@ -30,7 +30,7 @@ user function BatMercM ()
 		endif
 	endif
 	
-	msgalert("INICIO")
+	u_help("INICIO")
 
 	if _lContinua
 		_oSQL := ClsSQL ():New ()
@@ -43,7 +43,7 @@ user function BatMercM ()
 		endif
 	endif
 
-	msgalert("DELETOU A TABELA")
+	u_help("DELETOU A TABELA")
 	
 	if _lContinua
 		_oSQL:_sQuery := ""

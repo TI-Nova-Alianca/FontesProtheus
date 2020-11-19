@@ -20,7 +20,7 @@ User Function OS010Del ()
 	_sQuery += "    And ZY_FILTAB  = '" + da0 -> da0_filial + "'"
 	_sQuery += "    And ZY_CODTAB  = '" + da0 -> da0_codtab + "'"
 	if U_RetSQL (_sQuery) > 0
-		msgalert ("Tabela possui amarracao com vendedor(es). Nao pode ser excluida.")
+		u_help ("Tabela possui amarracao com vendedor(es). Nao pode ser excluida.")
 		_lRet = .F.
 	endif
 	U_ML_SRArea (_aAreaAnt)

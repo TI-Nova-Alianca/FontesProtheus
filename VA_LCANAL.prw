@@ -22,11 +22,11 @@ Return
 static function ReportDef()
 	local oReport
 	Local oSection1
-	Local oSection2
-	Local cCodTab := ""
+	//Local oSection2
+	//Local cCodTab := ""
 	Local cTitulo := 'Lista de Preços Por Canal x Estado'
-	Local aArray  := {}
-	Local oBreak
+	//Local aArray  := {}
+	//Local oBreak
  
 	oReport := TReport():New("VA_LCANAL", cTitulo, cPerg, {|oReport| PrintReport(oReport)},"Este relatorio ira emitir a lista de valores por canal.")
 	oReport:SetPortrait()

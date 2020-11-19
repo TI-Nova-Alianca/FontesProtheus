@@ -56,7 +56,7 @@ static function _AndaLogo (_lPaletiz)
 	local _aSize      := {}  // Para posicionamento de objetos em tela
 	local _oDlg       := NIL
 	local _aSZH       := {} 
-	local _aSF8		  := {}
+	//local _aSF8		  := {}
 	local _aCols      := {}
 	local _nTotFret   := 0
 	local _sProdCIF   := alltrim (GetMv('VA_PRODCIF'))
@@ -161,7 +161,7 @@ static function _AndaLogo (_lPaletiz)
 	
 	if _lContinua
 		if ! alltrim (GDFieldGet ("D1_COD", 1)) $ _sProdCIF  // Item especifico para frete sobre vendas.
-			msgalert ("Funcionalidade disponivel apenas para notas envolvendo frete sobre vendas (contendo produto (s)" + _sProdCIF + ").")
+			u_help ("Funcionalidade disponivel apenas para notas envolvendo frete sobre vendas (contendo produto (s)" + _sProdCIF + ").")
 			_lContinua = .F.
 		endif
 	endif
@@ -275,7 +275,7 @@ return
 // Leitura dos fretes previstos para a transportadora atual.
 static Function _LePrev (_lTodos, _lPaletiz)
 	local _sQuery := ""
-	local _aRet   := {}
+	//local _aRet   := {}
 	local _nFrete := 0
 
 	// Para paletizacoes nao traz fretes previstos. Isso apenas para evitar que o conhecimento de
@@ -351,7 +351,7 @@ User Function FrtSelF1 ()
 	N := _oGetD:nAt
 
 	if _lRet .and. ascan (_aFretes, {|_aVal| _aVal [2] == GDFieldGet ("ZZZ_06DOC") .and. _aVal [3] == GDFieldGet ("ZZZ_06SERI")}) > 0
-		msgalert ("Nota fiscal consta no browse acima. Nao pode ser redigitada aqui, nem mesmo com a linha deletada.")
+		u_help ("Nota fiscal consta no browse acima. Nao pode ser redigitada aqui, nem mesmo com a linha deletada.")
 		_lRet = .F.
 	endif
 	if _lRet .and. ! GDDeleted () .and. ! empty (GDFieldGet ("ZZZ_06DOC"))
@@ -360,11 +360,11 @@ User Function FrtSelF1 ()
 	if _lRet .and. ! GDDeleted () .and. ! empty (GDFieldGet ("ZZZ_06DOC"))
 		sf2 -> (dbsetorder (1))
 		if ! sf2 -> (dbseek (xfilial ("SF2") + GDFieldGet ("ZZZ_06DOC") + GDFieldGet ("ZZZ_06SERI"), .F.))
-			msgalert ("Nota fiscal '" + GDFieldGet ("ZZZ_06DOC") + "' nao encontrada.")
+			u_help ("Nota fiscal '" + GDFieldGet ("ZZZ_06DOC") + "' nao encontrada.")
 			_lRet = .F.
 		else
 			if sf2 -> f2_emissao < dDataBase - 60
-				_lRet = msgnoyes ("Nota fiscal '" + GDFieldGet ("ZZZ_06DOC") + "' foi emitida em " + dtoc (sf2 -> f2_emissao) + ". O conhecimento de frete encontra-se muito atrasado. Confirma essa nota?")
+				_lRet = msgnoyes ("Nota fiscal '" + GDFieldGet ("ZZZ_06DOC") + "' foi emitida em " + dtoc (sf2 -> f2_emissao) + ". O conhecimento de frete encontra-se muito atrasado. Confirma essa nota?","Confirmar")
 			endif
 		endif
 	endif
@@ -384,7 +384,7 @@ User Function FrtSelF1 ()
 			_oSQL:_sQuery +=    " and SZH.ZH_SERNFS  = '" + GDFieldGet ("ZZZ_06SERI") + "'"
 			_oSQL:_sQuery +=    " and SZH.ZH_TPDESP  = '1'"
 			if ! empty (_oSQL:RetQry ())
-				msgalert ("A nota fiscal de venda '" + GDFieldGet ("ZZZ_06DOC") + "' ja tem entrega amarrada a ela pelo conhecimento de frete '" + _oSQL:_xRetQry + "'. Informe outra NF de venda ou altere o campo " + alltrim (RetTitle ("ZZZ_06TPSE")) + ".")
+				u_help ("A nota fiscal de venda '" + GDFieldGet ("ZZZ_06DOC") + "' ja tem entrega amarrada a ela pelo conhecimento de frete '" + _oSQL:_xRetQry + "'. Informe outra NF de venda ou altere o campo " + alltrim (RetTitle ("ZZZ_06TPSE")) + ".")
 				_lRet = .F.
 			endif
 		endif
@@ -417,7 +417,7 @@ User Function FrtSelF2 (_oBmpOk, _nTotFret)
 		next
 		if ! _lTemPrev
 			if empty (GDFieldGet ("ZZZ_06DOC"))
-				msgalert ("Selecione pelo menos uma nota prevista ou informe uma nao prevista.")
+				u_help ("Selecione pelo menos uma nota prevista ou informe uma nao prevista.")
 				_lRet = .F.
 			endif
 		endif
@@ -442,7 +442,7 @@ User Function FrtSelF2 (_oBmpOk, _nTotFret)
 			endif
 		next
 		if _nTotFret > (_nTotSaid * .2)  // A principio, o frete nao deve passar de 20% do faturamento
-			_lRet = msgnoyes ("Valor do frete (" + cvaltochar (_nTotFret) + ") excessivamente alto para as notas de saida informadas (" + cvaltochar (_nTotSaid) + ") . Confirma assim mesmo?")
+			_lRet = msgnoyes ("Valor do frete (" + cvaltochar (_nTotFret) + ") excessivamente alto para as notas de saida informadas (" + cvaltochar (_nTotSaid) + ") . Confirma assim mesmo?","Confirmar")
 			_oClsFrtFr:_bValor  = .T. // se este objeto for igual a .T., significa que existe diferença entre valores
 		endif
 	endif

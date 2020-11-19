@@ -30,9 +30,11 @@
 User Function VA_CUSREP()
 	
 	local _aCores  := U_L_CUSREP (.T.)
-	Local cArqTRB  := ""
-	Local cInd1    := ""
-	Local nI       := 0
+	//Local cArqTRB  := ""
+	//Local cInd1    := ""
+	//Local nI       := 0
+	Local I        := 0
+	Local n        := 0
 	Local aStruct  := {}
 	Local aHead := {}
 	

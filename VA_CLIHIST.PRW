@@ -37,7 +37,7 @@ return
 // --------------------------------------------------------------------------
 // Tela de manutencao
 user function ZACA ()
-	local   _aUser   := {}
+	//local   _aUser   := {}
 	private _sRotina := ""
 	private _sDescri := ""
 	private aHeader  := {}
@@ -183,7 +183,7 @@ user function ZACA ()
 				_sSQL += "    AND ZAC_CLI    = '" + _sCli + "'"
 	   			_sSQL += "    AND ZAC_LOJA   = '" + _sLoja + "'"
 	   			if TCSQLExec (_sSQL) < 0
-					msgalert ("Nao foi possivel atualizar dados de ultimo contato (ZAC). Erro no UPDATE.")
+					u_help ("Nao foi possivel atualizar dados de ultimo contato (ZAC). Erro no UPDATE.")
 				endif
 				// atualiza a sequencia
 				_sSQL := ""
@@ -194,7 +194,7 @@ user function ZACA ()
 	   			_sSQL += "    AND ZAC_LOJA   = '" + _sLoja + "'"
 	   			_sSQL += "    AND ZAC_SEQ    = '' "
 	   			if TCSQLExec (_sSQL) < 0
-					msgalert ("Nao foi possivel atualizar dados de ultimo contato (ZAC). Erro no UPDATE.")
+					u_help ("Nao foi possivel atualizar dados de ultimo contato (ZAC). Erro no UPDATE.")
 				endif
 	    	endif
 	    	
@@ -219,7 +219,7 @@ user function ZACA ()
 	   			_sSQL += "    AND ZAC_LOJA   = '" + _sLoja + "'"
 	   			_sSQL += "    AND ZAC_SEQ= '000001'"
 	   			if TCSQLExec (_sSQL) < 0
-					msgalert ("Nao foi possivel atualizar dados de ultimo contato (ZAC). Erro no UPDATE.")
+					u_help ("Nao foi possivel atualizar dados de ultimo contato (ZAC). Erro no UPDATE.")
 				endif
 			endif		
 		endif
@@ -244,7 +244,7 @@ return _lRet
 
 user function ZAC_LOK()
 	local _lRet    := .T.
-	local _nLinha  := 0
+	//local _nLinha  := 0
 
 	if ! empty(GDFieldGet ("ZAC_TPPROX")) .and. empty(GDFieldGet ("ZAC_PROX"))
 		u_help ("Informe data do proximo contato.")

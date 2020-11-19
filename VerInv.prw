@@ -15,7 +15,7 @@ User Function VerInv (_nQual)
 	local _aRetSQL   := {}
 	local _aVerif    := {}
 	local _aCols     := {}
-	local _oSQL      := NIL
+	//local _oSQL      := NIL
 	local _nVerif	 := 0
 	private _sArqLog := iif (type ("_sArqLog") == "C", _sArqLog, U_NomeLog ())
 
@@ -162,7 +162,7 @@ User Function VerInv (_nQual)
 					endif
 					_aVerif [_nVerif, 1] = .F.
 				next
-				if ! msgyesno ("Deseja fazer nova consulta?")
+				If !MsgYesNo("Deseja fazer nova consulta?","Consulta")
 					exit
 				endif
 			enddo

@@ -33,8 +33,8 @@ return _lRet
 static function _VerFOB ()
 	local _oSQL    	:= NIL
 	local _lRet    	:= .T.
-	local _sFrom   	:= ""
-	local _sTransp 	:= ""
+	//local _sFrom   	:= ""
+	//local _sTransp 	:= ""
 	local _aPed 	:= {}
 	local _nPed 	:= 0
 	local _sMsg 	:= ""

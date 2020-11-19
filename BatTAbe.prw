@@ -16,7 +16,7 @@ user function BatTAbe ()
 	local _aAmbAnt   := U_SalvaAmb ()
 	local _sMsg   := ""
 	local _sQuery := ""
-	local _sVend  := ""
+	//local _sVend  := ""
 	local _nLinha := 0
 	local _aRet   := {}
 	local _sDest  := ""

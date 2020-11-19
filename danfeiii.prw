@@ -147,7 +147,7 @@ Local aArea      := GetArea()
 Local aAreaSF3   := {}
 Local aNotas     := {}
 Local aXML       := {}
-Local aAutoriza  := {}
+//Local aAutoriza  := {}
 Local cNaoAut    := ""
 
 Local cAliasSF3  := "SF3"
@@ -161,7 +161,7 @@ Local cAutoriza  := ""
 Local cModalidade:= ""
 Local cChaveSFT  := ""
 Local cAliasSFT  := "SFT"
-Local cCondicao	 := ""
+//Local cCondicao	 := ""
 Local cIndex	 := ""
 Local cChave	 := ""
 Local cCampos := ""
@@ -183,7 +183,7 @@ Local nLenarray	 := 0
 Local nCursor	 := 0
 Local lBreak	 := .F.
 Local aGrvSF3    := {}
-Local lDanfeSimpl
+//Local lDanfeSimpl
 Local lUsaColab	:=  UsaColaboracao("1") 
 Local lMVGfe	:= GetNewPar( "MV_INTGFE", .F. ) // Se tem integração com o GFE
 Local lContinua := .T.
@@ -962,7 +962,7 @@ Static Function PrtDanfe(oDanfe,oNFE,cCodAutSef,cModalidade,oNfeDPEC,cCodAutDPEC
 
 
 Local aAuxCabec     := {} // Array que conterá as strings de cabeçalho das colunas de produtos/serviços.
-Local aTamanho      := {}
+//Local aTamanho      := {}
 Local aTamCol       := {} // Array que conterá o tamanho das colunas dos produtos/serviços.
 Local aSimpNac		:= {}  
 Local aSitTrib      := {}
@@ -981,17 +981,17 @@ Local aEspVol       := {}
 Local aEspecie      := {}
 Local aIndImp       := {}
 Local aIndAux       := {}
-Local aLote         := {}
+//Local aLote         := {}
                            
 Local nHPage        := 0
 Local nVPage        := 0
 Local nPosV         := 0
-Local nPosVOld      := 0
-Local nPosH         := 0
-Local nPosHOld      := 0
-Local nAuxH         := 0
+//Local nPosVOld      := 0
+//Local nPosH         := 0
+//Local nPosHOld      := 0
+//Local nAuxH         := 0
 Local nAuxH2        := 0
-Local nAuxV         := 0
+//Local nAuxV         := 0
 Local nSnBaseIcm	 := 0
 Local nSnValIcm    := 0
 Local nDetImp		 := 0
@@ -999,13 +999,13 @@ Local nS			 := 0
 Local nX            := 0
 Local nY            := 0
 Local nL            := 0
-Local nJ            := 0
-Local nW            := 0
-Local nTamanho      := 0
+//Local nJ            := 0
+//Local nW            := 0
+//Local nTamanho      := 0
 Local nFolha        := 1
 Local nFolhas       := 0
-Local nItem         := 0
-Local nMensagem     := 0
+//Local nItem         := 0
+//Local nMensagem     := 0
 Local nBaseICM      := 0
 Local nValICM       := 0
 Local nBaseICMST    := 0
@@ -1019,15 +1019,15 @@ Local nDesc         := 0
 Local nQtd          := 0
 Local nVUnit        := 0
 Local nVolume	    := 0
-Local nLenFatura
+//Local nLenFatura
 Local nLenVol
 Local nLenDet
 Local nLenSit
 Local nLenItens     := 0
-Local nLenMensagens := 0
-Local nLen          := 0
+//Local nLenMensagens := 0
+//Local nLen          := 0
 Local nColuna       := 0
-Local nLinSum       := 0
+//Local nLinSum       := 0
 Local nE            := 0
 Local nMaxCod       := 10
 Local nMaxDes       := MAXITEMC
@@ -1038,9 +1038,9 @@ Local nZ            := 0
 
 Local cAux          := ""
 Local cSitTrib      := ""
-Local cUF           := ""
-Local cChaveCont    := ""
-Local cLogo         := FisxLogo("1")
+//Local cUF           := ""
+//Local cChaveCont    := ""
+//Local cLogo         := FisxLogo("1")
 Local cMVCODREG     := Alltrim( SuperGetMV("MV_CODREG", ," ") )
 Local cGuarda       := "" 
 Local cEsp          := ""
@@ -1055,7 +1055,7 @@ Local lConverte     := GetNewPar("MV_CONVERT",.F.)
 Local lImpSimpN		:= GetNewPar("MV_IMPSIMP",.F.)
 Local lMv_ItDesc    := Iif( GetNewPar("MV_ITDESC","N")=="S", .T., .F. )
 Local lNFori2       := .T.
-Local lCompleECF    := .F.
+//Local lCompleECF    := .F.
 Local lEntIpiDev   	:= GetNewPar("MV_EIPIDEV",.F.) /*Apenas para nota de entrada de Devolução de ipi. .T.-Séra destacado no cabeçalho + inf.compl/.F.-Será destacado apenas em inf.compl*/
 Local lVerso		:= .F. // Impressão de DANFE no verso?
 
@@ -3134,17 +3134,17 @@ Return(.T.)
 */
 Static Function DanfeCab(oDanfe,nPosV,oNFe,oIdent,oEmitente,nFolha,nFolhas,cCodAutSef,oNfeDPEC,cCodAutDPEC,cDtHrRecCab,dDtReceb,nLine,nBaseCol,nBaseTxt,aUf)
 
-Local aTamanho   := {}
+//Local aTamanho   := {}
 Local nHPage     := 0
 Local nVPage     := 0
-Local nPosVOld   := 0
-Local nPosH      := 0
-Local nPosHOld   := 0
-Local nAuxV      := 0
-Local nAuxH      := 0
+//Local nPosVOld   := 0
+//Local nPosH      := 0
+//Local nPosHOld   := 0
+//Local nAuxV      := 0
+//Local nAuxH      := 0
 Local cChaveCont := ""
 Local cDataEmi   := ""
-Local cDigito    := ""
+//Local cDigito    := ""
 Local cTPEmis    := ""
 Local cValIcm    := ""
 Local cICMSp     := ""
@@ -4361,9 +4361,9 @@ Executa o retorna de notas
 //-----------------------------------------------------------------------
 static function executeRetorna( aNfe, cIdEnt, lUsacolab, lAutomato)
 
-Local aExecute		:= {}  
-Local aFalta		:= {}
-Local aResposta		:= {}
+//Local aExecute		:= {}  
+//Local aFalta		:= {}
+//Local aResposta		:= {}
 Local aRetorno		:= {}
 Local aDados		:= {} 
 Local aIdNfe		:= {}
@@ -4383,18 +4383,18 @@ Local cCodRetNFE	:= ""
 Local cMsgNFE		:=	""
 Local cMsgRet		:= ""
 Local cURL			:= PadR(GetNewPar("MV_SPEDURL","http://localhost:8080/sped"),250)
-Local cModel		:= "55"
+//Local cModel		:= "55"
 Local cCodStat		:= ""
 Local dDtRecib		:= CToD("")
-Local lFlag			:= .T.
+//Local lFlag			:= .T.
 Local nDtHrRec1		:= 0
-Local nL			:= 0
+//Local nL			:= 0
 Local nX			:= 0
 Local nY			:= 0
 Local nZ			:= 1
-Local nCount		:= 0
-Local nLenNFe
-Local nLenWS
+//Local nCount		:= 0
+//Local nLenNFe
+//Local nLenWS
 Local nPos			:= 0
 
 Local oWS

@@ -83,7 +83,7 @@ Return ::self
 METHOD LeXML (_oObjPai) Class ClsNFSe
 	local _nDet     := 0
 	local _nTamDoc  := TamSX3 ('ZZX_DOC')[1]
-	local _aAreaSM0 := {}
+	//local _aAreaSM0 := {}
 //	local _nErro    := 0
 //	local _nAviso   := 0
 

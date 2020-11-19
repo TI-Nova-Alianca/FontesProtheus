@@ -21,7 +21,7 @@ User function ML_LOJTOP20()
 	
 	_ValidPerg()
 	if mv_par01 > mv_par02
-		msgalert ("Data inicial maior que a data final.")
+		u_help ("Data inicial maior que a data final.")
 		_ValidPerg()
 	endif
 	
@@ -32,7 +32,7 @@ User function ML_LOJTOP20()
 		// Controle de semaforo.
 		_nLock := U_Semaforo (procname () + cEmpAnt + xfilial ("SA1"))
 		if _nLock == 0
-			msgalert ("Nao foi possivel obter acesso exclusivo a esta rotina nesta empresa/filial.")
+			u_help ("Nao foi possivel obter acesso exclusivo a esta rotina nesta empresa/filial.")
 			_lContinua = .F.
 		endif
 		
@@ -70,7 +70,7 @@ User function ML_LOJTOP20()
 			_sSQL += " GROUP BY SL2.L2_FILIAL, SL2.L2_PRODUTO, SB1.B1_DESC"
 			_sSQL += " ORDER BY SUM(SL2.L2_QUANT) DESC" 
 		   	if TCSQLExec (_sSQL) < 0
-				msgalert("Erro na criacao da tabela temporária - TMP_TOP")
+				u_help("Erro na criacao da tabela temporária - TMP_TOP")
 	            return
 	        endif 
 	        // gera array com os dados da filial 10 e atualiza tabela temporaria
@@ -100,7 +100,7 @@ User function ML_LOJTOP20()
 		 			_sSQL += "		, QUANT10   = "  + TRANSF(_aDados[i,4], "@ 99999")
 		 			_sSQL += "  WHERE RECNO     = "  + TRANSF(i, "@ 99")
 		 			if TCSQLExec (_sSQL) < 0
-		 				msgalert("Erro ao atualizar a tabela temporária - TMP_TOP (10)")
+		 				u_help("Erro ao atualizar a tabela temporária - TMP_TOP (10)")
 	            		return
 	        		endif 
 				next
@@ -133,7 +133,7 @@ User function ML_LOJTOP20()
 		 			_sSQL += "  WHERE RECNO     = "  + TRANSF(i, "@ 99")
 		 			if TCSQLExec (_sSQL) < 0
 		 				u_showmemo(_sSQL)
-		 				msgalert("Erro ao atualizar a tabela temporária - TMP_TOP (08)")
+		 				u_help("Erro ao atualizar a tabela temporária - TMP_TOP (08)")
 	            		return
 	        		endif 
 				next
@@ -165,7 +165,7 @@ User function ML_LOJTOP20()
 		 			_sSQL += "		, QUANT03   = "  + TRANSF(_aDados[i,4], "@ 99999")
 		 			_sSQL += "  WHERE RECNO     = "  + TRANSF(i, "@ 99")
 		 			if TCSQLExec (_sSQL) < 0
-		 				msgalert("Erro ao atualizar a tabela temporária - TMP_TOP (03)")
+		 				u_help("Erro ao atualizar a tabela temporária - TMP_TOP (03)")
 	            		return
 	        		endif 
 				next
@@ -212,7 +212,7 @@ User function ML_LOJTOP20()
 				enddo				
 			
 			else
-				msgalert("Não foram encontrados dados para consulta")
+				u_help("Não foram encontrados dados para consulta")
 			endif
 						
 		endif    		

@@ -8,7 +8,7 @@
 
 // --------------------------------------------------------------------------
 user function LocEmp (_sProduto)
-	local _aAreaAnt := U_ML_SRArea ()
+	//local _aAreaAnt := U_ML_SRArea ()
 	local _sRet     := ''
 	local _sAlmEnv  := ""
 	local _sAlmPrep := ""

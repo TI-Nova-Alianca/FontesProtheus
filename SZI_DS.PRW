@@ -87,7 +87,7 @@ Static Function _Calc ()
 	local _nTotDist   := 0
 	local _oAux       := NIL
 	local _aCols      := {}
-	local _oAssoc     := NIL
+	//local _oAssoc     := NIL
 	local _sLinInf    := ""
 	local _oEvento    := NIL
 	local _sPrefixo   := ''

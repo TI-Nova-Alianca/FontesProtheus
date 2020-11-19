@@ -10,7 +10,7 @@
 user function MA261Est ()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _lRet     := .T.
-	local _sMsg     := ""
+	//local _sMsg     := ""
 
 	// Valida estorno, quando tiver etiqueta informada.
 	if ! empty (sd3 -> d3_vaetiq)

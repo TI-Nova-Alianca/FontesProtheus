@@ -40,9 +40,9 @@ User Function VACGFRET (_sCNPJDest, _sCEPDest, _dEmbarq, _nQtVol, _sTpFrete, _nV
 	Local oTransp	:=	NIL
 	Local oNfVal	:=	NIL
 	Local oReturn	:=	NIL
-	Local lCancel	:= .F.
-	Local nVolumes  := 0
-	Local nTPFrete	:= 1
+	//Local lCancel	:= .F.
+	//Local nVolumes  := 0
+	//Local nTPFrete	:= 1
 	local _aRet		:= {}
 	local nLinha	:= 0
 	

@@ -31,6 +31,7 @@ Return
 User Function SB5SisdA () 
 	local _sPasta  := ""
 	local _aCampos := {}
+	local i        := 0
 	
 	_sPasta := 'B' // Adicionado valor SXA fixo pois não será mais permitida a leitura do SXA na release 25, apenas em telas MVC possuímos funções
 	_aCpoSX3 := FwSX3Util():GetAllFields(cString)

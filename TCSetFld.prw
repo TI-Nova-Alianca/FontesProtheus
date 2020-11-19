@@ -10,7 +10,7 @@
 
 // --------------------------------------------------------------------------
 user function TCSetFld (_sAlias)
-   local _aCampos   := {}
+   //local _aCampos   := {}
    local _aAreaAnt  := U_ML_SRArea ()
    local _nCampo    := 0
 

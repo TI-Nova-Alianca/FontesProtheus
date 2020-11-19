@@ -18,9 +18,9 @@
 User Function VA_PRENTR()
 
 Local oReport
-Local oSection1
-Local oBreak
-Local _nLin 	:= 0
+//Local oSection1
+//Local oBreak
+//Local _nLin 	:= 0
 private cPerg 	:= "VA_PRENTR"
 
 _ValidPerg ()
@@ -257,7 +257,7 @@ Return
 Static Function SomaDiaUt (_dDataIni, _nDias)
 local _i         := 0
 local _dNovaData := _dDataIni
-local _dDataAux  := ctod ("")
+//local _dDataAux  := ctod ("")
 
 if valtype (_nDias) != "N"
 	msgbox ("Metodo SomaDiaUt recebeu parametro(s) invalido(s)" +_nDias)

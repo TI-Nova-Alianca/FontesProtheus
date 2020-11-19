@@ -222,9 +222,8 @@ Return .t.
 Static Function PVGrvA(_cDoc)
 Local aArea := GetArea()
 Local nI := 0
-Local nX := 0
-
-Local aDados := {}
+//Local nX := 0
+//Local aDados := {}
 PRIVATE lMsErroAuto := .F.
 PRIVATE lAutoErrNoFile := .T.
 

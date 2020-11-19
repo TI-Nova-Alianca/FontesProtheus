@@ -72,8 +72,8 @@ Static Function RptDetail()
 local _iy	:= 0
 local _ix	:= 0
 local _x	:= 0
-local i		:= 0
-local j		:= 0
+//local i		:= 0
+//local j		:= 0
 //зддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
 //Ё Inicializa  regua de impressao                            Ё
 //юддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды

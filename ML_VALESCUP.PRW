@@ -32,7 +32,7 @@ Return
 Static Function ReportDef()
 	Local oReport  := Nil
 	Local oSection1:= Nil
-	Local oFunction
+	//Local oFunction
 
 	oReport := TReport():New("ML_VALESCUP","Vales Presentes em CUPONS ",cPerg,{|oReport| PrintReport(oReport)},"Vales Presentes em CUPONS ")
 	

@@ -78,7 +78,7 @@ Static Function RptDetail()
 	local _sFiliais := ""
 	local _aFiliais := {}
 	local _i        := 0
-	local _sTpForn  := ''
+	//local _sTpForn  := ''
 	local _aArqTrb  := {}
 
 	// Verifica se o usuario tem liberacao para ver valores.

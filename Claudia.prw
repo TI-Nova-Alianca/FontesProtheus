@@ -1,6 +1,6 @@
 // --------------------------------------------------------------------------
 user function claudia ()
-local i := 0
+//local i := 0
 
 	u_help(" nada em execução")
 //	u_help("BatVerbas")

@@ -14,11 +14,11 @@
 
 user function BatFisc ()
 	local _sMsg     := ""
-	local _sQuery   := ""
-	local _sQryBase := ""
-	local _aCampos  := {}
-	local _nCampo   := 0
-	local _aCols    := {}
+	//local _sQuery   := ""
+	//local _sQryBase := ""
+	//local _aCampos  := {}
+	//local _nCampo   := 0
+	//local _aCols    := {}
 	local _oSQL     := NIL
 	local _sArqLog2 := iif (type ("_sArqLog") == "C", _sArqLog, "")
 	_sArqLog := U_NomeLog (.t., .f.)

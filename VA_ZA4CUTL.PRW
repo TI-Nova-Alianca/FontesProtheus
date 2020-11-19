@@ -216,7 +216,7 @@ User function VA_ZA4CUTL()
 		    U_F3Array (_aDados, "Consulta Verbas Utilizadas:", _aCols, oMainWnd:nClientWidth - 50, oMainWnd:nClientHeight -30 , "", "", .T., 'C' )
 			
 		else
-			msgalert("Não foram encontrados dados para consulta")			
+			u_help("Não foram encontrados dados para consulta")			
 		endif			
 			    	
 	endif

@@ -13,7 +13,7 @@
 user function SF1140I ()
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aAmbAnt   := U_SalvaAmb ()
-	local _xRet      := " "
+	//local _xRet      := " "
 	
 //   //  se a pre-nota estiver bloqueada, manda email solicitando tomada de decisao.
  //   _xRet = fbuscacpo("SF1", 1 ,xFilial("SF1") + sf1->f1_doc +  sf1->f1_serie + sf1->f1_fornece + sf1->f1_loja, "F1_STATUS")

@@ -30,7 +30,7 @@ User function ML_LOJFATTAB()
     
 	_ValidPerg()
 	if mv_par01 > mv_par02
-		msgalert ("Data inicial maior que a data final.")
+		u_help ("Data inicial maior que a data final.")
 		_ValidPerg()
 	endif
 	
@@ -40,7 +40,7 @@ User function ML_LOJFATTAB()
 		// Controle de semaforo.
 		_nLock := U_Semaforo (procname () + cEmpAnt + xfilial ("SA1"))
 		if _nLock == 0
-			msgalert ("Nao foi possivel obter acesso exclusivo a esta rotina nesta empresa/filial.")
+			u_help ("Nao foi possivel obter acesso exclusivo a esta rotina nesta empresa/filial.")
 			_lContinua = .F.
 		endif
 		
@@ -181,7 +181,7 @@ User function ML_LOJFATTAB()
 						endif
 					enddo
   				else
-					msgalert("Não foram encontrados dados para consulta")
+					u_help("Não foram encontrados dados para consulta")
 				endif
 			else
 				// se for opcao do resumo por data
@@ -284,7 +284,7 @@ User function ML_LOJFATTAB()
 						endif
 					enddo
   				else
-					msgalert("Não foram encontrados dados para consulta")
+					u_help("Não foram encontrados dados para consulta")
 				endif
 			endif	
 		endif

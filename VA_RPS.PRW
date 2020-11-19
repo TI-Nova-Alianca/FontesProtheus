@@ -352,10 +352,10 @@ Return
 
 // --------------------------------------------------------------------------
 Static Function _Imprime (_aVerbas, _nVerbaIni, _nTotVenc, _nTotDesc, _nBaseFgts, _nFgts, _nBaseIr, _sAliasQ, _nBaseINSS, _dDatPag)
-	local _nPagAtual := 1
-	local _nLinAtual := 0
+	//local _nPagAtual := 1
+	//local _nLinAtual := 0
 	local _nMargSup  := 40
-	local _nMargInf  := 50
+	//local _nMargInf  := 50
 	local _nMargEsq  := 40
 	local _nAltPag   := 1400
 	local _nLargPag  := 2350

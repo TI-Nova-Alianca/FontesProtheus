@@ -21,7 +21,7 @@ User function VA_CSISDEVIN()
 	
 	_ValidPerg()
 	if mv_par01 > mv_par02
-		msgalert ("Data inicial maior que a data final.")
+		u_help ("Data inicial maior que a data final.")
 		_ValidPerg()
 	endif
 	if Pergunte(cPerg,.T.) 
@@ -273,7 +273,7 @@ static function _ExecQuery()
  	    	endif	
 	    enddo	
 	else
-		msgalert("Não foram encontrados dados para consulta")
+		u_help("Não foram encontrados dados para consulta")
 	endif    		
 return
 // --------------------------------------------------------------------------

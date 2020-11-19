@@ -20,8 +20,8 @@ user function A260Proc (_sProdOri, _sAlmOri, _nQuant, _dData, _sProdDest, _sAlmD
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aAmbAnt   := U_SalvaAmb ()
 	local _lContinua := .T.
-	local _aAutoSB9  := {}
-	local _aAutoSD3  := {}
+	//local _aAutoSB9  := {}
+	//local _aAutoSD3  := {}
 	local _sDocSD3   := ""
 	local _xRet      := NIL
 	local _oSQL      := NIL

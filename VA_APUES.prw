@@ -10,7 +10,7 @@
 #include 'parmtype.ch'
 
 User Function VA_APUES()
-	Local _cQry1	 := ""
+	//Local _cQry1	 := ""
 	Local _oSQL      := NIL
 	Private oReport
 	Private cPerg   := "VA_APUES"

@@ -72,7 +72,7 @@ User Function LeBalan (_sPorta, _sModelo)
 			_nTentativ ++
 		enddo
 		if ! _lLeuOK
-			if msgyesno ("Leitura da balanca nao foi realizada ou o peso esta´ zerado. Deseja ler novamente?")
+			if msgyesno ("Leitura da balanca nao foi realizada ou o peso esta zerado. Deseja ler novamente?","Continuar")
 				loop
 			else
 				exit

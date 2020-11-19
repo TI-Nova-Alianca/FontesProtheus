@@ -17,7 +17,7 @@ User Function VA_ZZ5 ()
 	private aRotina := {}
 
 	if ! cEmpAnt + cFilAnt $ '0113/0110'
-		if ! msgnoyes ("Rotina desenvolvida para atender as filiais com loja (10 e 13). Confirma assim mesmo?")
+		if ! msgnoyes ("Rotina desenvolvida para atender as filiais com loja (10 e 13). Confirma assim mesmo?","Confirmar")
 			return
 		endif
 	endif
@@ -61,7 +61,7 @@ return
 // Exclusao (cancelamento de solicitacao)
 user function VA_ZZ5C ()
 	if ! empty (zz5 -> zz5_dtaten)
-		msgalert ("Solicitacao ja' atendida nao pode ser cancelada.")
+		u_help ("Solicitacao ja' atendida nao pode ser cancelada.")
 	else
 		AxDeleta ("ZZ5", zz5 -> (recno ()), 5)
 	endif

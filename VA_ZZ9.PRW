@@ -71,7 +71,7 @@ user function VA_ZZ9N ()
 		endif
 	
 		if TCSQLExec (_sSQL) < 0
-			msgalert ("Erro ao atualizar tabela.")
+			u_help ("Erro ao atualizar tabela.")
 		endif
 	endif
 return

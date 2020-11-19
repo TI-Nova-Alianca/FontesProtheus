@@ -20,7 +20,7 @@ Return
 Static Function ReportDef()
 	Local oReport   := Nil
 	Local oSection1 := Nil
-	Local oFunction
+	//Local oFunction
 
 	oReport := TReport():New("VA_SALEND","Relatorio de saldos a endereçar",,{|oReport| PrintReport(oReport)},"Relatorio de saldos a endereçar")
 	

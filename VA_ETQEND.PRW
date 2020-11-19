@@ -18,12 +18,12 @@
 
 User Function VA_ETQEND
 
-Local _lContinua := .T.
+//Local _lContinua := .T.
 Local _sQuery := ''
-Local _aEtiqs := {}
-Local cPorta   := ""
+//Local _aEtiqs := {}
+//Local cPorta   := ""
 Local _Enter := chr(13)+chr(10)
-Local _Esc   := chr(27)
+//Local _Esc   := chr(27)
 cPerg    := "VA_ETQENDE"
 private _sArq  := criatrab (NIL, .F.)
 private _nHdl  := 0

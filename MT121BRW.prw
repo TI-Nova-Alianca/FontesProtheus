@@ -20,7 +20,7 @@ user function VA_ALTDT()
 	local _lRet := .T.
 	// testa se o pedido esta pendente
 	if sc7 -> c7_residuo = 'S' .or. sc7 -> c7_quje >=  sc7 -> c7_quant 
-		msgalert("Pedido não esta pendente. Não pode ser alterado.")
+		u_help("Pedido não esta pendente. Não pode ser alterado.")
 		_lRet = .F.		
 	endif
 	// solicita nova data entrega
@@ -29,7 +29,7 @@ user function VA_ALTDT()
 		_sNewEntr = U_Get ("Data Entrega", "D", 8, "@D", "", _sOldEntr, .F., '.T.')
 		
 		if dtos(_sNewEntr) < dtos(sc7->c7_emissao)
-			msgalert("Data do lançamento é anterior a data de emissão do pedido.Alteração não permitida.")
+			u_help("Data do lançamento é anterior a data de emissão do pedido.Alteração não permitida.")
 			_lRet = .F.
 		endif
 		if _lRet
@@ -44,7 +44,7 @@ user function VA_ALTCP()
 	local _lRet := .T.
 	// testa se o pedido esta pendente
 	if sc7 -> c7_residuo = 'S' .or. sc7 -> c7_quje >=  sc7 -> c7_quant
-		msgalert("Pedido não esta pendente. Não pode ser alterado.")
+		u_help("Pedido não esta pendente. Não pode ser alterado.")
 		_lRet = .F.		
 	endif
 	// solicita nova condicao de pagamento
@@ -62,7 +62,7 @@ user function VA_DITEM()
 	local _lRet := .T.
 	// testa se o pedido esta pendente
 	if sc7 -> c7_residuo = 'S' .or. sc7 -> c7_quje >=  sc7 -> c7_quant
-		msgalert("Pedido não esta pendente. Não pode ser alterado.")
+		u_help("Pedido não esta pendente. Não pode ser alterado.")
 		_lRet = .F.		
 	endif
 	// solicita nova descricao do item

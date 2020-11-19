@@ -50,7 +50,7 @@ User Function ENVPED(caminho)
 		activate dialog _oDlg centered on init (_oGet2:SetFocus ())  // Para que o foco caia no segundo get.
 		
 		if _lCancel
-			ConOut ("Usuario cancelou tela de confirmacao de enderecos de e-mail.")
+			//ConOut ("Usuario cancelou tela de confirmacao de enderecos de e-mail.")
 			_lContinua = .F.
 			exit
 		endif

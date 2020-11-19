@@ -57,7 +57,7 @@ Static Function _Gera()
 	local _sQuery      := ""
 	local _sAliasQ     := ""
 	local _nEmpFil	   := 0
-	local _aSM0        := {}
+	//local _aSM0        := {}
 	private _aEmpFil   := {}   // Deixar private para ser vista pelas funcoes de detalhamento
 	private _sFilCT1   := ""
 	private _sFiliais  := ""   // Deixar private para ser vista pelas funcoes de detalhamento

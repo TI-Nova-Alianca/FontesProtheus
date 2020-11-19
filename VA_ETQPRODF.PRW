@@ -12,14 +12,14 @@
 #INCLUDE "rwmake.ch"
 #Include "PROTHEUS.CH"
 
-User Function VA_ETQPRODF
+User Function VA_ETQPRODF()
 
-Local _lContinua := .T.
+//Local _lContinua := .T.
 Local _sQuery := ''
-Local _aEtiqs := {}
-Local cPorta   := ""
+//Local _aEtiqs := {}
+//Local cPorta   := ""
 Local _Enter := chr(13)+chr(10)
-Local _Esc   := chr(27)
+//Local _Esc   := chr(27)
 Local _QtdPcs := 0
 Local _QtdEtq := 0
 Local _QtdUsada := 0

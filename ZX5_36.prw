@@ -19,10 +19,10 @@ Return
 // Linha OK
 User Function ZX5_36LO ()
 	Local _lRet := .T.
-	Local _x	:= 0
+	//Local _x	:= 0
 	Local _aCod := {}
 	Local _oSQL := NIL
-	Local _Err  := 0
+	//Local _Err  := 0
 	
 	// Verifica linha duplicada.
 	If _lRet .and. ! GDDeleted ()

@@ -182,7 +182,7 @@ return _aRet
 // --------------------------------------------------------------------------
 // Consulta autorizacao de notas NFe emitidas usando formulario proprio (atraves da ID_NFE).
 METHOD ConsAutFP () Class ClsNFe
-	local _oWS  := NIL
+	//local _oWS  := NIL
 	local _sRet := ''
 
 	//u_logIni (GetClassName (::Self) + '.' + procname ())
@@ -280,19 +280,19 @@ METHOD GeraNF (_lPreNota, _sCondPag) Class ClsNFe
 	local _aAutoSD1  := {}
 	local _sProduto  := ""
 	local _sUF       := ""
-	local _nTamDoc   := TamSX3 ('ZZX_DOC')[1]
+	//local _nTamDoc   := TamSX3 ('ZZX_DOC')[1]
 	local _nVlTot    := 0
 	local _nQuant    := 0
-	local _vNCM      := ""
-	local _vXped     := ""
-	local _vItemPed  := ""
-	local _vCprod    := ""
+	//local _vNCM      := ""
+	//local _vXped     := ""
+	//local _vItemPed  := ""
+	//local _vCprod    := ""
 	local _sEspecie  := ""
 	local _nItem     := 0
 	local _sTES      := ""
 	local _oSQL      := NIL
-	local _nPesoL     := 0
-	local _nPesoB     := 0
+	//local _nPesoL     := 0
+	//local _nPesoB     := 0
 	private lMsHelpAuto := .F.  // se .t. direciona as mensagens de help
 	private lMsErroAuto := .F.  // necessario a criacao
 	private altera   := .F.     // Requerido por rotinas automaticas.
@@ -565,7 +565,7 @@ return _sRet
 METHOD LeXML (_oObjPai) Class ClsNFe
 	local _nDet     := 0
 	local _nTamDoc  := TamSX3 ('ZZX_DOC')[1]
-	local _aAreaSM0 := {}
+	//local _aAreaSM0 := {}
 
 	u_logIni (GetClassName (::Self) + '.' + procname ())
 

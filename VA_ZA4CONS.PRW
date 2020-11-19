@@ -407,14 +407,14 @@ User function VA_ZA4CONS()
 	    	endif
 		endif
 	else
-		msgalert("Não foram encontrados dados para consulta")			
+		u_help("Não foram encontrados dados para consulta")			
 	endif			    	
 return
 //
 // -------------------------------------------------------------------------------------------------------------
 User Function ZA4CONS1 ()
     local _sMvPar    := ''
-    local _sMvParDef := ""
+    //local _sMvParDef := ""
     local _aOpcoes   := {}
     
     // Carrega array de opcoes
@@ -436,7 +436,7 @@ Return .T.
 // -------------------------------------------------------------------------------------------------------------
 User Function ZA4CONS2 ()
     local _sMvPar    := ''
-    local _sMvParDef := ""
+    //local _sMvParDef := ""
     local _aOpcoes   := {}
     
     // Carrega array de opcoes

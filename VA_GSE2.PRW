@@ -72,7 +72,7 @@ Static Function _Gera () //(_caminho)
 	local _sContaD   := ''
 	local _nQtGera   := 0
 	local _nVlGera   := 0
-	local i			 := 0
+	//local i			 := 0
 	local _i	     := 0
 
 	Private lMsErroAuto := .F. // Determina se houve alguma inconsistencia na execucao da rotina 

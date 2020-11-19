@@ -150,7 +150,7 @@ User Function ml_sci()
 			_xPRCCLI:=DTOS(SA1->A1_PRICOM)
 			_xPRCCLI:=SUBSTR(_xPRCCLI,5,2)+LEFT(_xPRCCLI,4)
 		Else
-			MsgAlert("Cliente "+_xCLIENT+" Nao Cadastrado. Verifique !!!")
+			u_help("Cliente "+_xCLIENT+" Nao Cadastrado. Verifique !!!")
 			_xTIPCLI:=SPACE(01)
 			_xCGCCLI:=SPACE(14)
 			_xIDECLI:=SPACE(20)

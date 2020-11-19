@@ -19,7 +19,7 @@ User function VA_CTABMASTER()
 	
     if Pergunte(cPerg,.T.)
     	if mv_par01 = ''
-    		msgalert("Necessario informar o cliente")
+    		u_help("Necessario informar o cliente")
     		return
 		endif   
 		_wcliente = mv_par01
@@ -31,7 +31,7 @@ User function VA_CTABMASTER()
 		// define tabela do cliente
     	_wclitab   = fBuscaCpo ('SA1', 1, xfilial('SA1') + _wcliente + _wloja, "A1_TABELA")
     	if _wclitab = ''
-    		msgalert("Cliente sem tabela de preço para comparação")
+    		u_help("Cliente sem tabela de preço para comparação")
     		return
 		endif
 		
@@ -129,7 +129,7 @@ User function VA_CTABMASTER()
 			enddo				
 		
 		else
-			msgalert("Não foram encontrados dados para consulta")
+			u_help("Não foram encontrados dados para consulta")
 		endif
 	endif
 	

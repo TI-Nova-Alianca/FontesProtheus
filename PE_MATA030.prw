@@ -17,10 +17,10 @@ User Function CRMA980()
     Local cIdPonto := ""
     Local cIdModel := ""
     Local lIsGrid := .F.
-    Local nLinha := 0
+    //Local nLinha := 0
     Local nOper := 0
-    Local nQtdLinhas := 0
-    Local cMsg := ""
+  //  Local nQtdLinhas := 0
+   // Local cMsg := ""
  
     If aParam <> NIL
         oObj := aParam[1]
@@ -113,10 +113,10 @@ static Function _ma030tok()
 	Local _xNOME    := M->A1_NOME
 	Local _xEST     := M->A1_EST
 	Local _xTIPO    := M->A1_TIPO
-	Local _xINSCR   := M->A1_INSCR
-	Local _xSUFRAMA := M->A1_SUFRAMA
-	Local _xCODMUN  := M->A1_CODMUN
-	Local _xCALCSUF := M->A1_CALCSUF
+	//Local _xINSCR   := M->A1_INSCR
+	//Local _xSUFRAMA := M->A1_SUFRAMA
+	//Local _xCODMUN  := M->A1_CODMUN
+	//Local _xCALCSUF := M->A1_CALCSUF
 	Local _xCGC     := M->A1_CGC
 	Local _xBCO1    := M->A1_BCO1
 	Local _xPRACA   := M->A1_PRACA

@@ -18,7 +18,7 @@ user function VA_ExRM2 ()
 	private cPerg := "EXRM_2"
 	
 	if cNumEmp != "0103"
-		msgalert ("Programa especifico para uso na filial de Livramento. Para uso em outras filiais, solicite manutencao do mesmo.")
+		u_help ("Programa especifico para uso na filial de Livramento. Para uso em outras filiais, solicite manutencao do mesmo.")
 	else
 	
 		// Cria as perguntas na tabela SX1
@@ -59,7 +59,7 @@ Static Function _AndaLogo ()
 		incproc ("Conectando matriz")
 		_oServer := RpcConnect (mv_par01, mv_par02, mv_par03, cEmpAnt, cFilAnt)
 		If valtype (_oServer) != "O"
-			msgalert ("Nao foi possivel conectar com a matriz.")
+			u_help ("Nao foi possivel conectar com a matriz.")
 			_lContinua = .F.
 		endif
 	endif
@@ -67,20 +67,20 @@ Static Function _AndaLogo ()
 	if _lContinua
 		_oServer:CallProc ("RPCSetType", 3)  // Nao consome licenca
 		if _oServer == NIL
-			msgalert ("Erro ao conectar com a matriz.")
+			u_help ("Erro ao conectar com a matriz.")
 		else
 			_aRPCRet := _oServer:CallProc("U_RPCMat05", cNumEmp)
 			RpcDisconnet(_oServer)
 			if valtype (_aRPCRet) != "A" .or. (valtype (_aRPCRet) == "A" .and. len (_aRPCRet) != 2)
-				msgalert ("Matriz retornou dados em formato desconhecido. Provavel erro de processamento na matriz.")
+				u_help ("Matriz retornou dados em formato desconhecido. Provavel erro de processamento na matriz.")
 				_lContinua = .F.
 			else
 				// A posicao 1 do retorno indica o sucesso ou nao da operacao.
 				if ! _aRPCRet [1]
-					msgalert ("Erro no processamento na matriz: " + chr (13) + chr (10) + _aRPCRet [2])
+					u_help ("Erro no processamento na matriz: " + chr (13) + chr (10) + _aRPCRet [2])
 					_lContinua = .F.
 				else
-					msginfo ("Dados importados com sucesso na matriz.")
+					u_help ("Dados importados com sucesso na matriz.")
 				endif
 			endif
 		endif

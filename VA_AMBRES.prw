@@ -26,9 +26,9 @@ Return
 Static Function ReportDef()
 	Local oReport  := Nil
 	Local oSection1:= Nil
-	Local oSection2:= Nil
+	//Local oSection2:= Nil
 	Local oBreak1
-	Local oFunction
+	//Local oFunction
 	
 	oReport := TReport():New("VA_AMBRES","Entradas/saídas de resíduos por fornecedor/cliente",cPerg,{|oReport| PrintReport(oReport)},"Entradas/saídas de resíduos por fornecedor/cliente")
 	

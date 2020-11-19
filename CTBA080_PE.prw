@@ -11,7 +11,7 @@
 #include "Protheus.ch"
 #include "FWMVCDEF.CH"
 
-Static lFlag := .F.
+//Static lFlag := .F.
 
 User Function CTBA080()
 	Local aParam := PARAMIXB

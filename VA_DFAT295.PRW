@@ -140,7 +140,7 @@ RETURN
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
-    local _aDefaults := {}
+   // local _aDefaults := {}
     
     aadd (_aRegsPerg, {01, "Data Emissao Fatura de  ?", "D", 8, 0,  "",   "   ", {},                         ""})
     aadd (_aRegsPerg, {02, "Data Emissao Fatura até ?", "D", 8, 0,  "",   "   ", {},                         ""})

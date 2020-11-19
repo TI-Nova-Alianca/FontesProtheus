@@ -55,14 +55,14 @@ Return _lRet
 // --------------------------------------------------------------------------
 Static Function _Gera()
 	local _oSQL      := NIL
-	local _oAssoc    := NIL
-	local _aLinVazia := {}
+	//local _oAssoc    := NIL
+	//local _aLinVazia := {}
 	local _sAliasQ   := ""
-    local cSit	  	 := ""	//Situacao
-    local cCat	  	 := ""	//Categoria
-    local cSit2	  	 := ""	//Situacao
-    local cCat2	  	 := ""	//Categoria
-    local _sTmpPath  := AllTrim (GetTempPath ())
+    //local cSit	  	 := ""	//Situacao
+    //local cCat	  	 := ""	//Categoria
+    //local cSit2	  	 := ""	//Situacao
+    //local cCat2	  	 := ""	//Categoria
+    //local _sTmpPath  := AllTrim (GetTempPath ())
 	private aHeader  := {}  // Para simular a exportacao de um GetDados.
 	private aCols    := {}  // Para simular a exportacao de um GetDados.
 	private N        := 0

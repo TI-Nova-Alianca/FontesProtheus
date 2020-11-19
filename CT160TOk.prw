@@ -21,7 +21,7 @@ return _lRet
 static function _Sobrepos ()
 	local _oSQL      := NIL
 	local _sSobrep   := ""
-	local _aSobrep   := {}
+	//local _aSobrep   := {}
 	local _nLinha    := 0
 	local _n		 := 0
 	private aHeader  := aclone (oGDItens:aHeader)

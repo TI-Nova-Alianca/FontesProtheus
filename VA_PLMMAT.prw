@@ -28,8 +28,8 @@ Static Function ReportDef()
 	Local oSection2:= Nil
 	Local oSection3:= Nil
 	Local oSection4:= Nil
-	Local oFunction
-	Local oBreak1
+	//Local oFunction
+	//Local oBreak1
 	
 	oReport := TReport():New("VA_PLMMAT","Relação de materiais - sintético",cPerg,{|oReport| PrintReport(oReport)},"Relação de materiais - sintético")
 	
@@ -102,7 +102,7 @@ Static Function PrintReport(oReport)
 	Local oSection3 := oReport:Section(3)
 	Local oSection4 := oReport:Section(4)
 	Local cQuery    := ""
-	Local cQuery2   := ""		
+	//Local cQuery2   := ""		
 	Local nAlx02 	:= 0
 	Local nAlx07 	:= 0
 	Local nAlx08 	:= 0
@@ -123,7 +123,7 @@ Static Function PrintReport(oReport)
 	Local nOut		:= 0
 	Local nNov		:= 0
 	Local nDez		:= 0
-	Local oBreak1
+	//Local oBreak1
 	Private sDesc
 	Private sTipo
 	
@@ -641,7 +641,7 @@ Static Function _BuscaTerc(sComp)
 Return nQtdTerc
 // ----------------------------------------------------------------------------------
 // Busca descrição do componente
-Static Function _BuscaDescProduto(sComp)
+Static Function _BuscaDescProduto(sComp,sDesc,sTipo)
 	//Local sDesPro := ""
 	Local cQuery5 := ""
 	

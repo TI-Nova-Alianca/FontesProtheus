@@ -7,7 +7,8 @@
 
 User Function BATMOEDA() 
 
-Local cArq, cTexto, nLinhas, j
+//Local cArq, cTexto, nLinhas, j
+Local cArq, j
 Local m      		:= 0
 Local aDados  		:= {}
 Local cLocalFile 	:= ""

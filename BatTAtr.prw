@@ -25,6 +25,7 @@ user function BatTAtr ()
 	local _nSeconds := seconds ()
 	local _sArqLog2 := iif (type ("_sArqLog") == "C", _sArqLog, "")
 	local _nEMail	:= 0
+	local i         := 0
 	
 	_sArqLog := U_NomeLog (.t., .f.)
 	u_logIni ()

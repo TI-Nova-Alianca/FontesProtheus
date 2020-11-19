@@ -57,7 +57,7 @@ return
 static function _Gera12 (_wbase)
 	local _aAutoSE2   := {}
 	local lMsErroAuto := .f.
-	local lMsHelpAuto := .f.
+	//local lMsHelpAuto := .f.
 	local _aAreaAnt   := U_ML_SRArea ()
 	local _aAmbAnt    := U_SalvaAmb ()
 	local cPerg       := "          "

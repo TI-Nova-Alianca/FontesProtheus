@@ -68,7 +68,7 @@ return
 // --------------------------------------------------------------------------
 // Inclusao manual de eventos. Pode receber array de campos jah preenchidos.
 user function VA_SZNI (_aCpos)
-	local _nCampo    := 0
+//	local _nCampo    := 0
 //	local _aCpoUsad  := {}
 	local _aRotina   := iif (type ("aRotina") == "A", aclone (aRotina), {})
 	private _aCampos := iif (valtype (_aCpos) == "A", aclone (_aCpos), {})
@@ -136,16 +136,16 @@ static function _LeDados (_sOQue, _sChave1, _sChave2, _sChave3, _sChave4, _sChav
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aAmbAnt   := U_SalvaAmb ()
 	local _oDlg      := NIL
-	local _oBrw      := NIL
-	local _aCpos     := {}
-	local _aEstrut   := {}
+	//local _oBrw      := NIL
+	//local _aCpos     := {}
+	//local _aEstrut   := {}
 	local _nCampo    := 0
 	local _sQuery    := ""
 	local _aLinVazia := {}
 	local _lContinua := .T.
 	local _sOrdEmb   := ""
 	local _sMsgInf   := ""
-	local _oDlgMemo  := NIL
+	//local _oDlgMemo  := NIL
 	local _aSize     := {}  // Para posicionamento de objetos em tela
 	local _aRecnos   := {}
 	local _nRecno    := 0
@@ -211,7 +211,7 @@ static function _LeDados (_sOQue, _sChave1, _sChave2, _sChave3, _sChave4, _sChav
 	endif
 
 	if len (_aRecnos) == 0 .and. empty (_sMsgInf)
-		msginfo ("Nao ha' eventos ou dados adicionais a mostrar.")
+		u_help ("Nao ha' eventos ou dados adicionais a mostrar.")
 		_lContinua = .F.
 	endif
 	
@@ -271,13 +271,13 @@ return
 
 
 
-// --------------------------------------------------------------------------
-// Faz exportacao da pilha de chamadas para uma string.
-static function _PCham ()
-	local _i      := 2
-	local _sPilha := ""
-	do while procname (_i) != ""
-		_sPilha += procname (_i) + "=>"
-		_i++
-	enddo
-return _sPilha
+// // --------------------------------------------------------------------------
+// // Faz exportacao da pilha de chamadas para uma string.
+// static function _PCham ()
+// 	local _i      := 2
+// 	local _sPilha := ""
+// 	do while procname (_i) != ""
+// 		_sPilha += procname (_i) + "=>"
+// 		_i++
+// 	enddo
+// return _sPilha

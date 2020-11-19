@@ -32,7 +32,7 @@ User Function ml_vcli1 ()
 
 	sa1 -> (dbsetorder (1))
 	if ! sa1 -> (dbseek (xfilial ("SA1") + m->cj_Cliente + iif (!empty (m->cj_loja), m->cj_loja, ""), .F.))
-		msgalert ("Cliente nao cadastrado.")
+		u_help ("Cliente nao cadastrado.")
 		_lRet = .F.
 	endif
 	
@@ -40,15 +40,15 @@ User Function ml_vcli1 ()
 		if sa1 -> a1_vend != m->cj_vend1
 			sa3 -> (dbsetorder (1))
 			if ! sa3 -> (dbseek (xfilial ("SA3") + m->cj_vend1, .F.))
-				msgalert ("Representante nao cadastrado.")
+				u_help ("Representante nao cadastrado.")
 				_lRet = .F.
 			else
 				if sa3 -> a3_ativo != "S"
-					msgalert ("Representante inativo.")
+					u_help ("Representante inativo.")
 					_lRet = .F.
 				else
 					if sa3 -> a3_vaClOut != "S"
-						msgalert ("Representante sem permissao para atender clientes de outros representantes.")
+						u_help ("Representante sem permissao para atender clientes de outros representantes.")
 						_lRet = .F.
 					endif
 				endif

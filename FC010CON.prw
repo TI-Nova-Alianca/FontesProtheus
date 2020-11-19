@@ -1284,6 +1284,7 @@ Return(.T.)
 // Funcao que Processa os Itens Bonificados                      
 User Function LPITBOM(_xCLIENTE,_xLOJA)
 	Local nX		:= 0
+	Local i         := 0
 	Local _aArea    := GetArea()
 	Local _aAreaSD2 := SD2->(GetArea())
 	Local _aAreaSF4 := SF4->(GetArea())
@@ -1396,6 +1397,7 @@ Return(.T.)
 // Funcao que Processa as NFs da Loja (sigaloja)                 
 User Function LPNFLOJA(_xCLIENTE,_xLOJA)
 	Local nX		:= 0
+	Local i         := 0
 	Local _aArea    := GetArea()
 	Local _aAreaSF2 := SF2->(GetArea())
 	Local _aAreaSX3 := SX3->(GetArea())

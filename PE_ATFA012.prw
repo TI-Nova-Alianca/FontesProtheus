@@ -18,9 +18,9 @@ user Function ATFA012()
     Local cIdPonto := ""
     Local cIdModel := ""
     Local lIsGrid := .F.
-    Local nLinha := 0
-    Local nQtdLinhas := 0
-    Local cMsg := ""
+   // Local nLinha := 0
+   // Local nQtdLinhas := 0
+   // Local cMsg := ""
 
     If aParam <> NIL
         oObj := aParam[1]

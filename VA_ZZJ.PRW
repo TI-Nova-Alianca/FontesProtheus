@@ -127,7 +127,7 @@ User Function VA_ZZJI1 ()
 				for _nJaExist = 1 to len (_aJaExist)
 					_sMsg += _aJaExist [_nJaExist, 1] + '/' + _aJaExist [_nJaExist, 1] + "' - " + alltrim (_aJaExist [_nJaExist, 3]) + " (" + alltrim (X3Combo ("ZZJ_TITUL", _aJaExist [_nJaExist, 4])) + ")" + chr (13) + chr (10)
 				next
-				_lRet = msgnoyes ("Banco/agencia/conta ja cadastrada para o(s) associado(s) abaixo:" + chr (13) + chr (10) + _sMsg + chr (13) + chr (10) + "Confirma o uso desta conta tambem para o associado " + m->zzj_cbase + '/' + m->zzj_lbase + "?")
+				_lRet = msgnoyes ("Banco/agencia/conta ja cadastrada para o(s) associado(s) abaixo:" + chr (13) + chr (10) + _sMsg + chr (13) + chr (10) + "Confirma o uso desta conta tambem para o associado " + m->zzj_cbase + '/' + m->zzj_lbase + "?","Confirmar")
 			endif
 		endif
 	endif

@@ -17,7 +17,7 @@ user function ZZXPEND()
 	Private cString   := "ZZX"
 	private _sArqLog  := iif (type ("_sArqLog") == "C", _sArqLog, U_Nomelog ())
 	
-	msgalert("Programa foi substituído. Usar manutenção de XML de Entrada.")
+	u_help("Programa foi substituído. Usar manutenção de XML de Entrada.")
 	return
 	
 	cPerg   := "ZZXPEND"
@@ -91,7 +91,7 @@ user function ZZXPRE_()
 	local _nNota	:= 0
 	local _aAmbAnt  := U_SalvaAmb ()  // As rotinas automaticas alteram o conteudo das variaveis mv_par.
 	
-	msgalert("Função ainda não implementada.")
+	u_help("Função ainda não implementada.")
 	return
 	
 	u_logIni ()
@@ -126,7 +126,7 @@ return
 // Identifica documento
 // --------------------
 user function ZZXSF1()
-    msgalert("Função ainda não implementada.")
+    u_help("Função ainda não implementada.")
 return
 
 // ------------------------------------------------------

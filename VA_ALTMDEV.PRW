@@ -14,9 +14,9 @@
 
 User function VA_ALTMDEV()
 
-	Local cArqTRB  	:= ""
-	Local cInd1    	:= ""
-	Local nI       	:= 0
+	//Local cArqTRB  	:= ""
+	//Local cInd1    	:= ""
+	//Local nI       	:= 0
 	Local aStruct  	:= {}
 	Local aHead 	:= {}
 	Local I			:= 0

@@ -56,8 +56,8 @@ static function _Tela (_sFilial, _sProduto, _sOP, _sEtiq, _dDataIni, _dDataFim)
 	local _bBotaoCan   := {|| NIL}
 	local _aBotAdic    := {}
 	local _aSize       := {}  // Para posicionamento de objetos em tela
-	local _oCour24     := TFont():New("Courier New",,24,,.T.,,,,,.F.)
-	local _oCour18     := TFont():New("Courier New",,18,,.T.,,,,,.F.)
+	//local _oCour24     := TFont():New("Courier New",,24,,.T.,,,,,.F.)
+	//local _oCour18     := TFont():New("Courier New",,18,,.T.,,,,,.F.)
 	local _aHead1      := {}
 	local _aCols1      := {}
 	local _oDlg        := NIL

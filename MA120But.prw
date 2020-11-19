@@ -25,11 +25,11 @@ static function _Menu ()
 	local _aF3      := {}
 	local _nF3      := 0
 	local _aCols    := {}
-	local _aColsLib := {}
+	//local _aColsLib := {}
 	local _aAmbAnt  := U_SalvaAmb ()
 	local _aAreaAnt := U_ML_SRArea ()
-	local _aNotas   := {}
-	local _sQuery   := {}
+	//local _aNotas   := {}
+	//local _sQuery   := {}
 
 	// Colunas para menu de opcoes
 	aadd (_aCols, {1, "Opcao",     100, ""})

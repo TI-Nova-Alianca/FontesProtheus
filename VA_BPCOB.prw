@@ -12,10 +12,10 @@
 
 User Function VA_BPCOB()
 	
-	local _aCores  := ""
-	Local cArqTRB  := ""
-	Local cInd1    := ""
-	Local nI       := 0
+	//local _aCores  := ""
+	//Local cArqTRB  := ""
+	//Local cInd1    := ""
+	//Local nI       := 0
 	Local aStruct  := {}
 	Local aHead    := {}
 	Local I		   := 0
@@ -197,7 +197,7 @@ User Function ALT_BANC()
 	@ 55, 100 get _wbanco3 picture "@!" size 03, 11 F3 'A62'"
 	@ 70, 100 get _wbanco4 picture "@!" size 03, 11 F3 'A62'"
 	@ 85, 100 get _wbanco5 picture "@!" size 03, 11 F3 'A62'"
-	@ _oDlg:nClientHeight / 2 - 40, _oDlg:nClientWidth / 2 - 90 bmpbutton type 1 action ( iif(u_valida_bco() = .T. , _oDlg:End (), msgalert("Altera Bancos Prefenciais Cobrança") )) 
+	@ _oDlg:nClientHeight / 2 - 40, _oDlg:nClientWidth / 2 - 90 bmpbutton type 1 action ( iif(u_valida_bco() = .T. , _oDlg:End (), u_help("Altera Bancos Prefenciais Cobrança") )) 
 	@ _oDlg:nClientHeight / 2 - 40, _oDlg:nClientWidth / 2 - 40 bmpbutton type 2 action (_lRet := .F., _oDlg:End ())
 	activate dialog _oDlg centered
 	

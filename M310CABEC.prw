@@ -13,7 +13,7 @@ User Function M310CABEC
 
 Local cProg  := PARAMIXB[1]
 Local aCabec := PARAMIXB[2]
-Local aPar   := PARAMIXB[3]
+//Local aPar   := PARAMIXB[3]
 local _sTPFrete := ""
 local _sTransp  := ""
 

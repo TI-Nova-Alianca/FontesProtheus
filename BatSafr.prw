@@ -22,7 +22,7 @@ user function BatSafr (_sQueFazer)
 	local _sMsg      := ""
 	local _aCols     := {}
 	local _aSemNota  := {}
-	local _sDestin   := ""
+	//local _sDestin   := ""
 	local _sArqLog2  := iif (type ("_sArqLog") == "C", _sArqLog, "")
 	local _oSQL      := NIL
 

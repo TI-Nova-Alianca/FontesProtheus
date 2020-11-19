@@ -53,10 +53,10 @@ Return _lRet
 Static Function _Gera()
 	local _sQuery    := ""
 	local _sAliasQ   := ""
-	local _oPrn      := NIL
+	//local _oPrn      := NIL
 	local _aDados    := {}
 	local _aRecibo   := {}
-	local _nValor    := 0
+	//local _nValor    := 0
 	local _i		 := 0
 
 	procregua (3)
@@ -110,7 +110,7 @@ Static Function _Gera()
 
 	// Utiliza a rotina de impressao de recibos genericos.
 	if len (_aDados) == 0
-		msgalert ("Nao ha dados gerados.")
+		u_help ("Nao ha dados gerados.")
 	else
 		U_VA_RCB (_aDados)
 	endif

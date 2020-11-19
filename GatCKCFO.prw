@@ -16,12 +16,12 @@ user function GatCkCFO (_sTES)
 	if ! empty (_sTES)
 		sa1 -> (dbsetorder (1))
 		if ! sa1 -> (dbseek (xfilial ("SA1") + m->cj_cliente + m->cj_loja, .F.))
-			msgalert ("Funcao " + procname () + ": Nao encontrei cadastro do cliente!")
+			u_help ("Funcao " + procname () + ": Nao encontrei cadastro do cliente!")
 		else
 
 			sf4 -> (dbsetorder (1))
 			if ! sf4 -> (dbseek (xfilial ("SF4") + _sTES, .F.))
-				msgalert ("Funcao " + procname () + ": Nao encontrei cadastro do TES!")
+				u_help ("Funcao " + procname () + ": Nao encontrei cadastro do TES!")
 			else
 				
 				// Preenche mnemonicos para a funcao MaFisCFO

@@ -26,7 +26,7 @@ user function ClUva20 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAspe
 	local _sPrm05    := ''
 	local _sPrm99    := ''
 	local _aRetClUva := {}
-	local _oSQL      := NIL
+	//local _oSQL      := NIL
 	local _aGrupo52  := {}
 
 	u_logIni ()

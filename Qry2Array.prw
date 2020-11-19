@@ -14,10 +14,10 @@
 user function Qry2Array (_sQuery, _lSetField, _lRetNomes)
 	local _aLinha    := {}
 	local _aArray    := {}
-	local _aCampos   := {}
+	//local _aCampos   := {}
 	local _aAreaQry  := GetArea ()
 	local _aAreaSX3  := {}
-	local _aEstrut   := {}
+	//local _aEstrut   := {}
 	local _nCampo	 := 0
 	local _sAliasQ   := ""
 	

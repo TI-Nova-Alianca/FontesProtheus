@@ -29,7 +29,7 @@ return
 // --------------------------------------------------------------------------
 // Tela de manutencao
 user function ZAHA ()
-	local   _aUser   := {}
+	//local   _aUser   := {}
 	Local   _aRotAdic := {}
 	private _sCelula := ""
 	private _sDescri := ""
@@ -194,7 +194,7 @@ return
 // --------------------------------------------------------------------------
 // Exclusao total.
 user function ZAHE ()
-	local _aArea     := getarea ()
+	//local _aArea     := getarea ()
 	local _sCelula   := ZAH -> ZAH_CELCOD
 	local _oSQL      := NIL
 	local _sRetSQL   := ""
@@ -238,7 +238,7 @@ return
 // Validacao de 'Linha OK'
 user function ZAHLK ()
 	local _lRet    := .T.
-	local _nLinha  := 0
+	//local _nLinha  := 0
 
 	// Verifica campos obrigatorios
 	if _lRet .and. ! GDDeleted ()

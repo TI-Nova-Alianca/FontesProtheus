@@ -22,7 +22,7 @@ user function ma261IN ()
 	local _nPosEtiq  := ascan (aHeader, {|_aVal| alltrim (upper (_aVal [2])) == 'D3_VAETIQ'})
 	local _nPosChvEx := ascan (aHeader, {|_aVal| alltrim (upper (_aVal [2])) == 'D3_VACHVEX'})
 	local _nLinha    := 0
-	local _aCols     := {}
+	//local _aCols     := {}
 	local _aAreaAnt  := U_ML_SRArea ()
 	
 	if _nPosRecno > 0 .and. ! inclui

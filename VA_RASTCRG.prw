@@ -15,10 +15,10 @@
 User Function VA_RASTCRG()
 
 Local oReport
-Local oSA1
-Local oBreak
-Local oSection1
-Local z := 1
+//Local oSA1
+//Local oBreak
+//Local oSection1
+//Local z := 1
 
 cPerg   := "VA_RASTCRG"
 _ValidPerg()
@@ -38,7 +38,7 @@ Static Function ReportDef()
 
 Local oReport
 Local oSection1
-Local oBreak
+//Local oBreak
 
 oReport := TReport():New("VA_RASTCRG","Rastreamento de carga","VA_RASTCRG",{|oReport| PrintReport(oReport)},"Rastreamento de carga")
 oReport:SetPortrait()
@@ -69,9 +69,9 @@ Return oReport
 // função para buscas informações e adicionar nos arrays
 Static Function PrintReport(oReport)
 
-Local cAliasDAI := GetNextAlias()
+//Local cAliasDAI := GetNextAlias()
 local _sAliasQ  := ""
-Local _aArray 	:= {}
+//Local _aArray 	:= {}
 Local _i		:= 0
 Local nI		:= 0
 Local z 		:= 1

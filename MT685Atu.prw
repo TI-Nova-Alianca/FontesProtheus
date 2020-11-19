@@ -13,8 +13,8 @@ user function MT685Atu ()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _oSQL     := NIL
 	local _oSQL1    := NIL
-	local _aItens   := {} 
-	local _x 		:= 0
+	//local _aItens   := {} 
+	//local _x 		:= 0
 
 	// Atualiza campo identificador de perdas no SD3 para uso em relatorios.
 	// Nao faz via AdvPl por que teria apenas o D3_NUMSEQ da ultima linha do aCols.

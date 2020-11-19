@@ -60,7 +60,7 @@ Static Function _Gera ()
 	local _nQtDemis   := mv_par06  // Por enquanto nao sei como buscar do Metadados.
 	local _sIniFim    := alltrim (sm0 -> m0_cgc) + ';' + cvaltochar (val (mv_par02)) + ';' + cvaltochar (val (mv_par01))
 	local _dUltDiaMes := lastday (stod (mv_par01 + mv_par02 + '01'))
-	local _dUDMesAnt  := ctod ('')
+	//local _dUDMesAnt  := ctod ('')
 
 	procregua (100)
 	incproc ('Buscando saldos contabeis')

@@ -153,8 +153,8 @@ return
 // --------------------------------------------------------------------------
 // Negar liberacao (para tirar deste browse e 'devolver' ao comercial).
 User Function SC5LBGN ()
-	local _oEvento   := NIL
-	local _lContinua := .T.
+	//local _oEvento   := NIL
+	//local _lContinua := .T.
 
 	CursorWait ()
 	reclock ("SC5", .F.)

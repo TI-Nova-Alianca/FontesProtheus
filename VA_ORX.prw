@@ -44,7 +44,7 @@ static function _Gera ()
 	enddo
 
 	if len (aCols) == 0
-		msgalert ("Nao foram encontrados dados com os parametros informados.")
+		u_help ("Nao foram encontrados dados com os parametros informados.")
 	else
 		U_aColsXLS ()
 	endif

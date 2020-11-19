@@ -11,11 +11,11 @@
 
 User Function VA_DESPFRE()
 	
-	Local cArqTRB  	:= ""
-	Local cInd1   	 := ""
-	Local nI       	:= 0
-	Local aStruct 	 := {}
-	Local aHead 	:= {}
+	//Local cArqTRB  	:= ""
+	//Local cInd1   	 := ""
+	//Local nI       	:= 0
+	//Local aStruct 	 := {}
+	//Local aHead 	:= {}
 	Local i			:= 0
 	cPerg   := "VA_DESPFRE"
 	

@@ -109,8 +109,8 @@ return
 static function _Imprime ()
 	local _nMaxLin   := 63
 	local _sQuery    := ""
-	local _aAliasQ   := ""
-	local _aAliasUC  := ""
+	//local _aAliasQ   := ""
+	//local _aAliasUC  := ""
 	local _nCustD    := 0
 	local _nUPrc     := 0
 	local _nCusRep   := 0

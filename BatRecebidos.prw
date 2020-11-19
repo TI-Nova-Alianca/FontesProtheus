@@ -18,9 +18,9 @@ user function BatRecebidos (_sQueFazer)
 	local _oSQL     := NIL
 	local _lContinua := .T.
 	local _sMsg     := ""
-	local _sDest    := ""
+	//local _sDest    := ""
 	local _aCols    := {}
-	local _sAliasQ   := ""
+	//local _sAliasQ   := ""
 	local _sArqLog2 := iif (type ("_sArqLog") == "C", _sArqLog, "")
 	_sArqLog := U_NomeLog (.t., .f.)
 	u_logIni ()

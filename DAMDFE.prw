@@ -868,7 +868,7 @@ Local nDtHrRec1		:= 0
 Local nX			:= 0
 Local nY			:= 0
 Local nZ			:= 1
-Local nCount		:= 0
+//Local nCount		:= 0
 Local oWS
 
 Private oNFeRet

@@ -20,16 +20,16 @@
 User Function VA_LIBPED()
 	
 	local _aCores   := {}
-	Local cArqTRB   := ""
-	Local cInd1     := ""
-	Local cInd2     := ""
-	Local cInd3     := ""
-	Local cInd4     := ""
-	Local nI        := 0
+	//Local cArqTRB   := ""
+	//Local cInd1     := ""
+	//Local cInd2     := ""
+	//Local cInd3     := ""
+	//Local cInd4     := ""
+	//Local nI        := 0
 	Local aStruct   := {}
 	Local aHead     := {}
 	Local _aArqTrb  := {}
-	Local _aIndices := {}
+	//Local _aIndices := {}
 	Local j		    := 0
 	Local i		    := 0
 	Private bFiltraBrw := {|| Nil}
@@ -422,10 +422,10 @@ User Function D_LIBPED(sCliente,sLoja)
 	Local oSay7
 	Local oSay8
 	Local oSay9
-	Local oButton1 
+	//Local oButton1 
 	Local cObs     := ""
 	Local cQuery   := ""
-	Local aButtons := {}
+	//Local aButtons := {}
 	Static oDlg
 	
 	cQuery := " SELECT "

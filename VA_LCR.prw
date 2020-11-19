@@ -55,9 +55,9 @@ Static Function _AndaLogo ()
 	_sSQL += "    And A1_RISCO   = '" + {"A","B","C","D","E"}[mv_par02] + "'"
 	_sSQL += "    And A1_COD     between '" + mv_par03 + "' and '" + mv_par04 + "'"
 	if TCSQLExec (_sSQL) < 0
-		msgalert ("ERRO na execucao do processo.")
+		u_help ("ERRO na execucao do processo.")
 	else
-		msginfo ("Processo executado.")
+		u_help ("Processo executado.")
 	endif
 return
 

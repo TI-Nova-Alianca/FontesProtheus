@@ -14,7 +14,7 @@ user function GEmailPreNF (_sFornece, _sLoja, _sNF, _sSerie, _lSoTela)
 	local _sCRLF := chr (13) + chr (10)
 	local _oSQL     := NIL
 	local _sMsg     := ""
-	local _sDest    := ""
+	//local _sDest    := ""
 	local _aCols    := {}
 	local _aRetQry  := {}
 	

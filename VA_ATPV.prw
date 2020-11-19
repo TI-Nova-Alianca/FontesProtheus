@@ -14,8 +14,8 @@ user function VA_ATPV ()
 	local _lContinua := .T.
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _sTransp   := ""
-	local _lRet      := .T.
-	local _aLiber    := {.F.,,}
+	//local _lRet      := .T.
+	//local _aLiber    := {.F.,,}
 
 	u_logIni ()
 	u_log ('pedido:', sc5 -> c5_num, 'transp.atual:', sc5 -> c5_transp)

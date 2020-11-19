@@ -35,17 +35,17 @@ return
 
 // --------------------------------------------------------------------------
 user function VA_ZZIP (_sPacote)
-	local _oSQL    := NIL
-	local _aNotas  := {}
-	local _nNota   := 0
-	local _aPag    := {}
-	local _nPag    := 0
-	local _oPag    := NIL
+	//local _oSQL    := NIL
+	//local _aNotas  := {}
+	//local _nNota   := 0
+	//local _aPag    := {}
+	//local _nPag    := 0
+	//local _oPag    := NIL
 	local _sAno    := ""
-	local _nVlrNF  := 0
+	//local _nVlrNF  := 0
 	local _aRet    := {}
-	local _aRetNF  := {}
-	local _nVlrCompr := 0
+	//local _aRetNF  := {}
+	//local _nVlrCompr := 0
 	private _sArqLog := iif (type ("_sArqLog") == "C", _sArqLog, U_NomeLog ())
 
 	aadd (_aRet, {'Associado', 'Loja', 'Nome', 'NF Filial', 'NF Numero', 'NF Serie', 'NF Valor', 'Pgt.Filial', 'Pgt.banco', 'Pgt.data', 'Pgt.Valor'})
@@ -53,7 +53,7 @@ user function VA_ZZIP (_sPacote)
 	_sAno    = zzi -> zzi_ano
 	_sPacote = iif (_sPacote == NIL, zzi -> zzi_pacote, _sPacote)
 
-	if ! msgyesno ("Esta rotina procura combinacoes de valores de notas X pagamentos. Deseja executa-la para o pacote " + _sPacote + "?")
+	if ! msgyesno ("Esta rotina procura combinacoes de valores de notas X pagamentos. Deseja executa-la para o pacote " + _sPacote + "?","Executar")
 		return
 	endif
 

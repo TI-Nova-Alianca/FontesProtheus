@@ -53,8 +53,8 @@ Return _lRet
 	
 // --------------------------------------------------------------------------
 Static Function _Gera()
-	local _lContinua   := .T.
-	local _sQuery      := ""
+	//local _lContinua   := .T.
+	//local _sQuery      := ""
 	local _oSQL := NIL
 
 	procregua (4)

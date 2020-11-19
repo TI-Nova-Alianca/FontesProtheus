@@ -13,8 +13,8 @@
 User Function VA_OCPARM() 
 
 Local oReport
-Local oSection1
-Local oBreak
+//Local oSection1
+//Local oBreak
 
 Private cPerg := "VA_OCPARM" 
 
@@ -29,7 +29,7 @@ Return
 Static Function ReportDef()
 	Local oReport
 	Local oSection1
-	Local oBreak
+	//Local oBreak
 	Local cTitulo := "Ocupação Armazem"
 	
 	oReport := TReport():New(cPerg,cTitulo,'',{|oReport| PrintReport(oReport)},cTitulo)
@@ -166,14 +166,14 @@ EndDo
     dbCloseArea()
 Return		     
 
-Static Function _ValidPerg ()
-	local _aRegsPerg := {}
+// Static Function _ValidPerg ()
+// 	local _aRegsPerg := {}
 	
-	//                     PERGUNT                TIPO TAM DEC VALID  F3    Opcoes                        Help   
-	aadd (_aRegsPerg, {01, "Endereço de ?",		  "C", 04, 0,  "",   "SBE", {},                           ""})  
-	aadd (_aRegsPerg, {02, "Endereço até ?", 	  "C", 04, 0,  "",   "SBE", {},                           ""})
-   	//aadd (_aRegsPerg, {03, "Recurso	?",           "C", 08, 0,   "",   "SH1", {},                           ""})   	
-  	//aadd (_aRegsPerg, {04, "Tipo Produto de ?",   "C", 02, 0,   "",   "02", {},                           ""})
+// 	//                     PERGUNT                TIPO TAM DEC VALID  F3    Opcoes                        Help   
+// 	aadd (_aRegsPerg, {01, "Endereço de ?",		  "C", 04, 0,  "",   "SBE", {},                           ""})  
+// 	aadd (_aRegsPerg, {02, "Endereço até ?", 	  "C", 04, 0,  "",   "SBE", {},                           ""})
+//    	//aadd (_aRegsPerg, {03, "Recurso	?",           "C", 08, 0,   "",   "SH1", {},                           ""})   	
+//   	//aadd (_aRegsPerg, {04, "Tipo Produto de ?",   "C", 02, 0,   "",   "02", {},                           ""})
 	
-	U_ValPerg (cPerg, _aRegsPerg)
-Return
+// 	U_ValPerg (cPerg, _aRegsPerg)
+// Return

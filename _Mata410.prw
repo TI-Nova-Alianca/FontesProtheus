@@ -9,7 +9,7 @@
 
 // --------------------------------------------------------------------------
 USER FUNCTION _MATA410 ()
-	local _xUsuario := upper(alltrim(cUserName))
+	//local _xUsuario := upper(alltrim(cUserName))
 	local _xMat_usu := ALLTRIM(__CUSERID)
 	
 	u_logId ()

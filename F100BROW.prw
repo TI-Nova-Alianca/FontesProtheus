@@ -23,31 +23,31 @@ return _aRet
 user function VA_DESP()
 	local _lRet := .T.
 	if ! U_ZZUVL ('036', __cUserId, .F.) .and. ! U_ZZUVL ('043', __cUserId, .F.)
-		msgalert("Usuário sem permissão para executar essa rotina.")
+		u_help("Usuário sem permissão para executar essa rotina.")
 		return
 	endif
 	// testa se eh uma despesa financeira
 	if !'DESP BANC'$ se5 -> e5_naturez
-		msgalert("Lançamento não refere-se a uma despesa financeira.")
+		u_help("Lançamento não refere-se a uma despesa financeira.")
 		_lRet = .F.		
 	endif
 	// testa parametro do financeiro
 	if _lRet 
 		_wdatafin = GetMv ("MV_DATAFIN")
 		if dtos(ddatabase) < dtos(_wdatafin)
-			msgalert("Não são permitidas movimentações financeiras com datas menores que a data limite de movimentações no financeiro")
+			u_help("Não são permitidas movimentações financeiras com datas menores que a data limite de movimentações no financeiro")
 			_lRet = .F.
 		endif
 	endif
 	if _lRet		
 		if dtos(se5 -> e5_data) < dtos(_wdatafin)
-			msgalert("Data do lançamento é anterior a data limite de movimentações financeiras. Exclusão não permitida.")
+			u_help("Data do lançamento é anterior a data limite de movimentações financeiras. Exclusão não permitida.")
 			_lRet = .F.
 		endif
 	endif		
 	// pede confirmação
 	if _lRet
-		_lConf = msgnoyes ("Confirma exclusão da despesa financeira ?")
+		_lConf = msgnoyes ("Confirma exclusão da despesa financeira ?","Excluir")
 		if _lConf
 			reclock ("SE5", .F.)
 			dbdelete()
@@ -62,20 +62,20 @@ return
 user function VA_ALTDISPO()
 	local _lRet := .T.
 	if ! U_ZZUVL ('036', __cUserId, .F.) .and. ! U_ZZUVL ('043', __cUserId, .F.)
-		msgalert("Usuário sem permissão para executar essa rotina.")
+		u_help("Usuário sem permissão para executar essa rotina.")
 		return
 	endif
 	// testa parametro do financeiro
 	if _lRet 
 		_wdatafin = GetMv ("MV_DATAFIN")
 		if dtos(ddatabase) < dtos(_wdatafin)
-			msgalert("Não são permitidas movimentações financeiras com datas menores que a data limite de movimentações no financeiro")
+			u_help("Não são permitidas movimentações financeiras com datas menores que a data limite de movimentações no financeiro")
 			_lRet = .F.
 		endif
 	endif
 	if _lRet		
 		if dtos(se5 -> e5_data) < dtos(_wdatafin)
-			msgalert("Data do lançamento é anterior a data limite de movimentações financeiras. Alteração não permitida.")
+			u_help("Data do lançamento é anterior a data limite de movimentações financeiras. Alteração não permitida.")
 			_lRet = .F.
 		endif
 	endif		
@@ -85,7 +85,7 @@ user function VA_ALTDISPO()
 		_sNewDispo = U_Get ("Data Disponibilidade", "D", 8, "@D", "", _sOldDispo, .F., '.t.')
 		
 		if dtos(_sNewDispo) < dtos(_wdatafin)
-			msgalert("Data do lançamento é anterior a data limite de movimentações financeiras. Alteração não permitida.")
+			u_help("Data do lançamento é anterior a data limite de movimentações financeiras. Alteração não permitida.")
 			_lRet = .F.
 		endif
 		if _lRet
@@ -98,14 +98,14 @@ return
 
 
 
-// --------------------------------------------------------------------------
-//--- roda acerto de saldos - para evitar problemas 
-static function SE8_ACERTA()
+// // --------------------------------------------------------------------------
+// //--- roda acerto de saldos - para evitar problemas 
+// static function SE8_ACERTA()
 
-	Pergunte("FIN210",.F.)
+// 	Pergunte("FIN210",.F.)
 	
-	mv_par07 := msdate() - 5
+// 	mv_par07 := msdate() - 5
 	
-	FINA210(.T.)
+// 	FINA210(.T.)
 
-return   
+// return   

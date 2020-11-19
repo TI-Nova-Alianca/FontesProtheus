@@ -32,11 +32,11 @@ user function VerEstq (_sOnde, _sProduto, _sFilEmb, _sLocal, _nQtdVen, _sTES, _s
 	local _lContinua := .T.
 	local _nSldDisp  := 0
 	local _oSQL      := NIL
-	local _nSaldo    := 0
-	local _nReserva  := 0
-	local _nEnder    := 0
-	local _aSldEnder := {}
-	local _nMyReserv := 0
+	//local _nSaldo    := 0
+	//local _nReserva  := 0
+	//local _nEnder    := 0
+	//local _aSldEnder := {}
+	//local _nMyReserv := 0
 
 	//u_logIni ()
 	//U_LOG (_sOnde, _sProduto, _sFilEmb, _sLocal, _nQtdVen, _sTES, _sLocaliz, _sLote, _sPedido)

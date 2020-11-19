@@ -13,7 +13,7 @@ user function fa190Ch ()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _aAmbAnt  := U_SalvaAmb ()
 
-	if msgyesno ("Deseja imprimir o cheque agora?")
+	if msgyesno ("Deseja imprimir o cheque agora?","Confirmar")
 		U_ImpCheq (se5 -> e5_numcheq, se5 -> e5_Benef, se5 -> e5_Valor, se5 -> e5_data, se5 -> e5_Banco, alltrim (sm0 -> m0_cidcob), "1")
 	endif
 

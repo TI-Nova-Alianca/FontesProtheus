@@ -40,6 +40,7 @@ Return
 // --------------------------------------------------------------------------
 // Função para alteração do cadastro de associados
 User Function ASSOCALT() 
+	local i        := 0
 	local _aCampos := {}
 	local _sFolder := ''
 	private aCpos  := {}   

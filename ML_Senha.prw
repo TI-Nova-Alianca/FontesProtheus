@@ -51,8 +51,8 @@ return {_lOK, _sUser, _sJustLib}
 // --------------------------------------------------------------------------
 // Verifica a senha informada
 static function _ConfSenha (_sUsersOK, _lQuerJust)
-   local _nUser    := 0
-   local _aSenhas  := {}
+  // local _nUser    := 0
+  // local _aSenhas  := {}
    local _oDlgJust := NIL
 
    _lFechaDlg = .F.
@@ -61,11 +61,11 @@ static function _ConfSenha (_sUsersOK, _lQuerJust)
    // Busca usuario
    psworder (2)
    if ! pswseek (_sUser)
-      msgalert ("Usuario nao cadastrado")
+      u_help ("Usuario nao cadastrado")
       return .F.
    endif
    if ! PswName (_sSenha)
-      msgalert ("Usuario / Senha invalidos")
+      u_help ("Usuario / Senha invalidos")
       return .F.
    endif
 
@@ -83,6 +83,6 @@ static function _ConfSenha (_sUsersOK, _lQuerJust)
       _lFechaDlg = .T.
       _lOK = .T.
    else
-      msgalert ("Usuario nao autorizado a fazer esta liberacao.")
+      u_help ("Usuario nao autorizado a fazer esta liberacao.")
    endif
 return _lOK

@@ -11,9 +11,9 @@
 
 // --------------------------------------------------------------------------
 user function MT360VLD(_sCampo)
-	local _lRet 	 := .T.
 	local _sCampo    := alltrim (ReadVar ())
-		
+	local _lRet 	 := .T.
+	
 	if valtype (M->E4_CODIGO) == 'C'  // Quando se usa cond.pagto. tipo B este campo vem com NIL.
 		do case
 			case _sCampo $ "M->E4_CODIGO"

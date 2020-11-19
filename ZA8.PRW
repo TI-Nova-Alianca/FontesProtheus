@@ -339,7 +339,7 @@ return
 // Valida 'Linha OK' da getdados
 User Function ZA8TLLK ()
 	local _lRet := .T.
-	local _oSQL := NIL
+	//local _oSQL := NIL
 
 	if _lRet .and. ! GDDeleted ()
 		_lRet = GDCheckKey ({"Z9_SEQ"}, 4, {}, "Campos repetidos", .t.)

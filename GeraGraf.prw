@@ -31,7 +31,7 @@ user function GeraGraf (_sArq, _sHTM, _sXML)
 			next
 			CpyS2T ("\FusionChartsFree\FusionCharts.js" , _sPathGraf, .F.)
 			if ! file  (_sPathGraf + "*.swf") .or. ! file  (_sPathGraf + "FusionCharts.js")
-				msgalert ("Nao foi possivel criar na estacao os arquivos necessarios `a geracao de graficos.")
+				u_help ("Nao foi possivel criar na estacao os arquivos necessarios `a geracao de graficos.")
 			endif
 		endif
 	endif

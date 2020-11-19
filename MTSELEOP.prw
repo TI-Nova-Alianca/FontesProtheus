@@ -10,8 +10,8 @@
 // --------------------------------------------------------------------------
 User function MTSELEOP()
 
-	Local cRet 	:= ParamIxb[1]
-	Local cProd := ParamIxb[2]
+	//Local cRet 	:= ParamIxb[1]
+	//Local cProd := ParamIxb[2]
 	Local cProg := ParamIxb[3]
 	Local lRet  := .F.
 

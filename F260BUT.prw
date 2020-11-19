@@ -30,7 +30,7 @@ User function VA_CFOR()
    	_sSQL += "    AND FIG_TITULO = '" + FIG -> FIG_TITULO + "'"
    	
  	if TCSQLExec (_sSQL) < 0	
-		msgalert ("Nao foi possivel atualizar registros DDA da OWENS. Erro no UPDATE.")
+		u_help ("Nao foi possivel atualizar registros DDA da OWENS. Erro no UPDATE.")
 	endif
 	 	
 return

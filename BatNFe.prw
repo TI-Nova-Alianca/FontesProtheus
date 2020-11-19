@@ -22,8 +22,8 @@ user function BatNFe ()
 	local _oSQL      := NIL
 	local _sQuery    := ""
 	local _sOcorr    := ""
-	local _oNFe      := NIL
-	local _aAutori   := {}
+	//local _oNFe      := NIL
+	//local _aAutori   := {}
 	local _nQtAvisos := 0
 	local _sArqLog2  := iif (type ("_sArqLog") == "C", _sArqLog, "")
 	_sArqLog := U_NomeLog (.t., .f.)

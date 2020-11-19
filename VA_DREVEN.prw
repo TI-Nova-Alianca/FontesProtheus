@@ -39,7 +39,7 @@ Return
 Static Function ReportDef()
 	Local oReport  := Nil
 	Local oSection1:= Nil
-	Local oFunction
+	//Local oFunction
 
 	oReport := TReport():New("VA_DREVEN","Relatório de Rentabilidade",cPerg,{|oReport| PrintReport(oReport)},"Relatório de Rentabilidade")
 	TReport():ShowParamPage()
@@ -62,8 +62,8 @@ Static Function PrintReport(oReport)
 	Local _nBaseDados := mv_par16
 	Local _nTipo      := mv_par01
 	Local _i          := 0
-	Local _x		  := 1
-	Local _y          := 1
+	//Local _x		  := 1
+	//Local _y          := 1
 	
 	_aDados := U_GeraRent(mv_par01,mv_par02,mv_par03,mv_par04,mv_par05,mv_par06,mv_par07,mv_par08,mv_par09,mv_par10,mv_par11,mv_par12,mv_par13,mv_par14,mv_par15, mv_par17)	
 	

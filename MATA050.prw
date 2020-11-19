@@ -11,7 +11,7 @@
 
 // --------------------------------------------------------------------------
 User Function mata050 ()
-	local _oFullW := NIL
+	//local _oFullW := NIL
 	private _sArqLog := U_NomeLog ()
 	u_logId ()
 

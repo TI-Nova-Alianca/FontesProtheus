@@ -8,7 +8,7 @@
 //
 // -----------------------------------------------------------------------------------------------------------------------
 User Function MT140TOK()
-	Local lRetorno 	:= PARAMIXB[1]
+	//Local lRetorno 	:= PARAMIXB[1]
     Local _lRet 	:= .T.   //..Customização do clienteReturn lRet
     Local _nLinha	:= 0
     

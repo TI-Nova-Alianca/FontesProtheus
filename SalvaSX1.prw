@@ -20,7 +20,7 @@ user function SalvaSX1 (_sPerg, _aRest)
 	local _aAmbAnt  := U_SalvaAmb ()
 	local _aBak     := {}
 	local _nRest    := 0
-	local _xDado    := NIL
+	//local _xDado    := NIL
 
 	// Se nao recebi a array a restaurar, entao presumo que seja para salvar.
 	if valtype (_aRest) == "U"

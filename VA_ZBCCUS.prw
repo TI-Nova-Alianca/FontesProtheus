@@ -31,17 +31,17 @@ Return(oReport)
 
 Static Function PrintReport(oReport)
 	Local oSection1 := Nil
-	Local oSection2 := Nil
-	Local oSection3 := Nil
-	Local oSection4 := Nil
+	//Local oSection2 := Nil
+	//Local oSection3 := Nil
+	//Local oSection4 := Nil
 	Local cQuery    := ""	
-	Local nAlx02 	:= 0
-	Local nAlx07 	:= 0
-	Local nAlx08 	:= 0
-	Local nAlx90 	:= 0
-	Local x			:= 0
-	Local y			:= 0
-	Local z		    := 0
+	//Local nAlx02 	:= 0
+	//Local nAlx07 	:= 0
+	//Local nAlx08 	:= 0
+	//Local nAlx90 	:= 0
+	//Local x			:= 0
+	//Local y			:= 0
+	//Local z		    := 0
 	Local _lContinua:= .T.
 	Private sDesc
 	Private sTipo

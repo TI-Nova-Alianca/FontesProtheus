@@ -84,7 +84,7 @@ Static Function _Relatorio(oPrint, lEnd, _cNumGuia)
 	Local	_aSafras	:=	{}
 	Local	_bFormEsp	:=	.f.		//formulário da gráfica Lige Ltda. Flores da Cunha
 	Local	_nCopias	:=	5		//número de cópias iguais a primeira página
-	Local	_nPagina	:=	0
+	//Local	_nPagina	:=	0
 	Local _cLitros  	:= ""
 	Local _cLitros2 	:= ""
 	Local _sTipoNF  	:= ""
@@ -511,7 +511,7 @@ Return
 // rotina que transforma em texto o numero das notas
 Static Function _Notas (_sTipoNF)
 	Local _cTexto  := ""
-	Local _aArea   := GetArea()
+	//Local _aArea   := GetArea()
 	local _oSQL    := NIL
 	local _aRetQry := {}
 /*	Local	_nF, _cNf

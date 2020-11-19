@@ -32,7 +32,8 @@ User Function MAQUIALT()
 	local aCpos    := {}
 	local _aCampos := {}
 	local _sFolder := ''
-	private aCpos  := {}   
+	local i        := 0
+	//private aCpos  := {}   
 	
 	// Alguns campos que nao estao na aba dos associados tambem ficam disponiveis para alteracao.
 	//aadd (_aCampos, "<NOME_CAMPO>")

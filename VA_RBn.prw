@@ -104,10 +104,10 @@ return
 static function _Imprime ()
 	local _nMaxLin   := 63
 	local _sQuery    := ""
-	local _aAliasQ   := ""
+	//local _aAliasQ   := ""
 	local _aMotivos  := {}
 	local _nMotivo   := 0
-	local _nValor    := 0
+	//local _nValor    := 0
 	local _aTotVend  := {}
 	local _aTotGer   := {}
 

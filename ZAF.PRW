@@ -15,7 +15,7 @@
 // --------------------------------------------------------------------------
 User Function ZAF ()
 	local _aCores      := U_ZAFLG (.T.)
-	local _aRotAdic    := {}
+	//local _aRotAdic    := {}
 	private cString    := "ZAF"
 	private cCadastro  := "Controle laudos / ensaios"
 	private aRotina    := {}
@@ -64,7 +64,7 @@ return
 // --------------------------------------------------------------------------
 // Alteracao.
 user function ZAFA ()
-	local _aBotAdic := {}
+	//local _aBotAdic := {}
 	private _nTpLaudo := 0  // Deixar private para ser vista por validacoes de campos.
 
 	//aadd(_aBotAdic,{"BALANCA",{|| U_PesaZZT()},"Pesagem"})

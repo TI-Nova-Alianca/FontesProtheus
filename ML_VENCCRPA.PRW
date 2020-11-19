@@ -20,7 +20,7 @@ User function ML_VENCCRPA()
 	// Controle de semaforo.
 	_nLock := U_Semaforo (procname () + cEmpAnt + xfilial ("SE1"))
 	if _nLock == 0
-		msgalert ("Nao foi possivel obter acesso exclusivo a esta rotina nesta empresa/filial.")
+		u_help ("Nao foi possivel obter acesso exclusivo a esta rotina nesta empresa/filial.")
 		_lContinua = .F.
 	endif
 	
@@ -42,7 +42,7 @@ User function ML_VENCCRPA()
    		_sSQL += "    AND E1_EMISSAO BETWEEN '1980101' AND dbo.VA_DatetimeToVarchar(getDATE()-1)"  // titulos emitidos ate ontem
    		_sSQL += "  GROUP BY E1_VENCREA"  
 		if TCSQLExec (_sSQL) < 0
-			msgalert("Erro na criacao da tabela temporária - SE1")
+			u_help("Erro na criacao da tabela temporária - SE1")
             return
         endif 
         _sSQL := " "
@@ -63,7 +63,7 @@ User function ML_VENCCRPA()
    		_sSQL += "    AND E2_EMISSAO BETWEEN '1980101' AND dbo.VA_DatetimeToVarchar(getDATE()-1)" // titulos emitidos ate ontem
    		_sSQL += " GROUP BY E2_VENCREA"
 		if TCSQLExec (_sSQL) < 0
-			msgalert("Erro na criacao da tabela temporária - SE2")
+			u_help("Erro na criacao da tabela temporária - SE2")
             return
         endif 
         
@@ -336,7 +336,7 @@ User function ML_VENCCRPA()
 				endif
 			enddo			
 		else
-			msgalert("Não foram encontrados dados para consulta")
+			u_help("Não foram encontrados dados para consulta")
 		endif				
 	endif    		
 	

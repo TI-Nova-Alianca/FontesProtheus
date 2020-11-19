@@ -46,7 +46,7 @@ user function ZAXVAL()
 	// verifica cliente bloqueado
 	if _lRet
 		if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->ZAX_CLIENT + m->ZAX_LOJA, "A1_MSBLQL") != "2"
-			msgalert ("Cliente Bloqueado")
+			u_help ("Cliente Bloqueado")
 			_lRet = .F.
 		endif
 	endif
@@ -54,7 +54,7 @@ user function ZAXVAL()
 	if _lRet .and. inclui
 		ZAX -> (dbsetorder (3))
 		if ZAX -> (dbseek (xfilial ("ZAX") + m->ZAX_CLIENT + m->ZAX_LOJA + m->ZAX_LINHA + m->ZAX_ITEM, .F.))
-			msgalert ("Ja' existe registro de rapel para este cliente/linha e/ou item. Verifique! ")
+			u_help ("Ja' existe registro de rapel para este cliente/linha e/ou item. Verifique! ")
 			_lRet = .F.
 		endif
 	endif

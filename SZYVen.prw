@@ -28,7 +28,7 @@ user function SZYVen (_sTabela, _lComTela)
 
 	if _lComTela
 		if len (_aVend) == 0
-			msginfo ("Tabela nao encontra-se ligada a nenhum vendedor.")
+			u_help ("Tabela nao encontra-se ligada a nenhum vendedor.")
 		else
 			_aCampos = {}
 			aadd (_aCampos, {1, "Vendedor", 50,  "@!"})

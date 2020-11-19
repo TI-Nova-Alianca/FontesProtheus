@@ -210,7 +210,7 @@ Return _lRet
 User Function PLJA (_nOpcao, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr)
 	local _lContinua  := .T.
 	local _aCampos    := {}
-	local _sFiltro    := ""
+	//local _sFiltro    := ""
 	local _n		  := 1
 	local aButtons 	  := {}
 	private _sModo    := ""
@@ -417,7 +417,7 @@ User Function ZBCSelOpc(_opc)
 	Local _stru		:= {}
 	Local aCpoBro 	:= {}
 	Local _cQuery 	:= ""
-	Local _aResult	:= {}
+	//Local _aResult	:= {}
 	Local _sRet     := ""
 	Local _sProd    := ""
 	Local _sRev     := ""
@@ -428,7 +428,7 @@ User Function ZBCSelOpc(_opc)
 	lOCAL _nQnt		:= 0
 	Local _aArqTrb  := {}
 	Local _aAreaAnt := U_ML_SRArea ()
-	Local aCores 	:= {}
+	//Local aCores 	:= {}
 	Private lInverte:= .F.
 	Private cMark   := GetMark()   
 	Private oMark
@@ -539,7 +539,7 @@ Return _sRet
 // Funcao executada ao Marcar/Desmarcar um registro.   
 Static Function _MarcaOpc()
 	Local _aAreaAnt := U_ML_SRArea ()
-	Local _AntItem  := ""
+	//Local _AntItem  := ""
 	
 	RecLock("TTRB",.F.)
 
@@ -560,8 +560,8 @@ Static Function _GrvOpc(_sFilial, _sEvento, _sProd, _sData, _nQnt, _sItem, _sAno
 	Local _aAreaAnt  := U_ML_SRArea ()
 	Local _opcionais := ""
 	Local _cQuery    := ""
-	Local _x         := 1
-	Local _Dif       := 0 
+	//Local _x         := 1
+	//Local _Dif       := 0 
 
 	dbSelectArea("TTRB")
 	dbGotop()
@@ -745,7 +745,7 @@ Return
 Static Function ReportDef()
 	Local oReport  := Nil
 	Local oSection1:= Nil
-	Local oFunction
+	//Local oFunction
 
 	oReport := TReport():New("VA_RPLJPRD","Planejamento de produção",cPerg,{|oReport| PrintReport(oReport)},"Planejamento de produção")
 	
@@ -776,10 +776,10 @@ Static Function PrintReport(oReport)
 	Local cQuery1    := ""
 	Local cQuery2    := ""
 	Local aZBC       := {}
-	Local aOpc		 := {}
+	//Local aOpc		 := {}
 	Local cTituloRel := ""
 	Local x			 := 0
-	Local y			 := 0
+	//Local y			 := 0
 	
 		If mv_par09 == 1
 			nHandle := FCreate("c:\temp\VA_RPLJPRD.CSV")
@@ -1008,7 +1008,7 @@ Return
 // Busca a descrição do dia da semana
 Static Function _BuscaDiaSemana(_cDt)
 	Local cDescDt := ""
-	Local cDt     := 0
+	//Local cDt     := 0
 	
 	nDt := DOW(STOD(_cDt))
 	

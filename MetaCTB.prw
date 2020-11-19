@@ -45,7 +45,7 @@ return
 static function _AndaLogo ()
 	local _lContinua := .T.
 	local _oSQL      := NIL
-	local _aLcto     := {}
+	//local _aLcto     := {}
 	local _aLctos    := {}
 	local _nLcto     := 0
 	local _aLinhaCT2 := {}

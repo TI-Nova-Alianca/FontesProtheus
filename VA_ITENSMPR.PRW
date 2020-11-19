@@ -31,8 +31,8 @@ ACTIVATE DIALOG oDlg CENTERED
 return
 
 
-Static Function close()
-Return
+// Static Function close()
+// Return
 
 
 Static Function diretorio()
@@ -46,9 +46,9 @@ Static Function importar(_caminho)
 Local cArq    := _caminho
 Local cLinha  := ""
 Local aDados  := {}
-Local aJaTem  := {}
-Local aCab    := {}   
-Local aItens  := {}
+//Local aJaTem  := {}
+//Local aCab    := {}   
+//Local aItens  := {}
 Local _i	  := 0
 
 Private lMsErroAuto := .F. // Determina se houve alguma inconsistencia na execucao da rotina 

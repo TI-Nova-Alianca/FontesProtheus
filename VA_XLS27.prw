@@ -51,8 +51,8 @@ Return _lRet
 Static Function _Gera()
 	local _sQuery    := ""
 	local _sAliasQ   := ""
-	local _aArqTrb   := {}
-	local _nOpcao    := 0
+	//local _aArqTrb   := {}
+	//local _nOpcao    := 0
 
 	procregua (10)
 

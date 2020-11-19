@@ -135,11 +135,11 @@ Return
 // Gera titulo de indenizacao de comissoes com base em NF de compra de servico de comissoes.
 static function _GeraInd ()
 	
-	local _oSQL      := NIL
-	local _sVend     := ''
+	//local _oSQL      := NIL
+	//local _sVend     := ''
 	local _aAutoSE2  := {}
-	local _aRetQry   := {}
-	local _dVencto   := ctod ('')
+	//local _aRetQry   := {}
+	//local _dVencto   := ctod ('')
 	local _aBkpSX1   := {}
 	local _aAreaAnt  := U_ML_SRArea ()
 	private lMsErroAuto	:= .f.

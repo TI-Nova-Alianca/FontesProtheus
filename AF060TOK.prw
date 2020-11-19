@@ -15,7 +15,7 @@
 User function AF060TOK() 
 Local aArea := GetArea() 
 Local lRet := .T. 
-Local nZ := 0 
+//Local nZ := 0 
 
 //Informações passadas por parametro 
 //Private cFilDest := ParamIXB[1] 

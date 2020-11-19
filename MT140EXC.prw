@@ -6,7 +6,7 @@ User Function MT140EXC()
 Local nOpc := 3
 Local nX
 Local cCod  := ""
-Local cItem := ""
+//Local cItem := ""
 
     Private aCabec      := {}
     Private aItens      := {}
@@ -52,15 +52,15 @@ Next nX
 
   If lMsErroAuto
         MostraErro()
-        ConOut(Repl("-", 80))
-        ConOut(PadC("Teste MATA140 finalizado com erro!", 80))
-        ConOut(PadC("Fim: " + Time(), 80))
-        ConOut(Repl("-", 80))
+        // ConOut(Repl("-", 80))
+        // ConOut(PadC("Teste MATA140 finalizado com erro!", 80))
+        // ConOut(PadC("Fim: " + Time(), 80))
+        // ConOut(Repl("-", 80))
     Else
-        ConOut(Repl("-", 80))
-        ConOut(PadC("Teste MATA140 finalizado com sucesso!", 80))
-        ConOut(PadC("Fim: " + Time(), 80))
-        ConOut(Repl("-", 80))
+        // ConOut(Repl("-", 80))
+        // ConOut(PadC("Teste MATA140 finalizado com sucesso!", 80))
+        // ConOut(PadC("Fim: " + Time(), 80))
+        // ConOut(Repl("-", 80))
     EndIf
 
     RESET ENVIRONMENT

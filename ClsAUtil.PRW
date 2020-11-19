@@ -648,9 +648,9 @@ return
 METHOD Dist (_nColDest, _nVlADist, _nDec, _sAjuste) Class ClsAUtil
 	local _aRet      := aclone (::_aArray)
 	local _nLinha    := 0
-	local _nTotBase  := 0
+	//local _nTotBase  := 0
 	local _nTotDist  := 0
-	local _nMaiorLin := 0
+	//local _nMaiorLin := 0
 
 	for _nLinha = 1 to len (_aRet)
 		_aRet [_nLinha, _nColDest] = round (_nVlADist / len (_aRet), _nDec)
@@ -794,7 +794,7 @@ return _nRet
 //         - posicao (linha) inicial. Dafault = primeira.
 //         - posicao (linha) final. Default = ultima.
 METHOD MediaCol (_nCol, _nLinIni, _nLinFim) Class ClsAUtil
-	local _nRet      := 0
+	//local _nRet      := 0
 	local _nLinha    := 0
 	local _nSoma     := 0
 	_nLinIni = iif (_nLinIni == NIL, 1, _nLinIni)
@@ -811,7 +811,7 @@ return _nSoma / (_nLinFim - _nLinIni + 1)
 // Recebe: - numero da coluna dos valores
 //         - numero da coluna dos pesos
 METHOD MedPonder (_nColValor, _nColPeso) Class ClsAUtil
-	local _nRet      := 0
+	//local _nRet      := 0
 	local _nLinha    := 0
 	local _nTotMult  := 0
 	local _nTotPeso  := 0

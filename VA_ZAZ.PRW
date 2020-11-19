@@ -21,7 +21,7 @@ user function ZAZVAL()
 	if inclui
 		ZAZ -> (dbsetorder (1))
 		if ZAZ -> (dbseek (xfilial ("ZAZ") + m->ZAZ_CLINF, .F.))
-			msgalert ("Código já cadastrado! ")
+			u_help ("Código já cadastrado! ")
 			_lRet = .F.
 		endif
 	endif

@@ -18,7 +18,7 @@
 
 // --------------------------------------------------------------------------
 user function AvisaTI (_sAviso)
-	local _oSQL := NIL
+	//local _oSQL := NIL
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aAmbAnt   := U_SalvaAmb ()
 	local _sArqAviso := "Avisos_para_TI_" + left (dtos (date ()), 6) + ".txt"

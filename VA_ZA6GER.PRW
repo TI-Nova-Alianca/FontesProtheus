@@ -207,9 +207,9 @@ User Function VA_ZA6GER()
 	        do while __lSX8
 	           ConfirmSX8 ()
 	        enddo
-	        msgalert ('Verbas geradas com sucesso.')
+	        u_help ('Verbas geradas com sucesso.')
 		else
-			msgalert ('Não ha verbas a serem geradas.')			        
+			u_help ('Não ha verbas a serem geradas.')			        
 	    endif
 	    u_logFim ()
 	endif	    

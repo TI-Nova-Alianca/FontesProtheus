@@ -157,7 +157,7 @@ user function VA_SZ2E ()
 	local _oSQL := ClsSQL():New ()
 	local _lContinua := .T.
 
-	_lContinua = msgyesno ("Confirma a exclusao das amarracoes deste cadastro viticola com variedades e patriarcas?")
+	_lContinua = msgyesno ("Confirma a exclusao das amarracoes deste cadastro viticola com variedades e patriarcas?","Excluir")
 
 //	if _lContinua
 //		_oSQL:_sQuery := ""
@@ -190,7 +190,7 @@ user function VA_SZ2E ()
 		reclock ("SZ2", .F.)
 		sz2 -> (dbdelete ())
 		msunlock ()
-		msginfo ("Dados excluidos.")
+		u_help ("Dados excluidos.")
 	endif
 return
 
@@ -421,9 +421,9 @@ return
 // Validacao de 'Linha OK'
 user function VA_SZ2LK (_sQual)
 	local _lRet    := .T.
-	local _nLinha  := 0
-	local _oAssoc  := NIL
-	local _oSQL    := NIL
+	//local _nLinha  := 0
+	//local _oAssoc  := NIL
+	//local _oSQL    := NIL
 
 	// Verifica campos obrigatorios
 	if _lRet .and. ! GDDeleted ()

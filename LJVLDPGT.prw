@@ -14,10 +14,10 @@
 
 User Function LJVLDPGT()
 	Local _lRet 	:= .T.
-	Local dData 	:= PARAMIXB[01]
-	Local nValor 	:= PARAMIXB[02]
+	//Local dData 	:= PARAMIXB[01]
+	//Local nValor 	:= PARAMIXB[02]
 	Local cFPgto	:= PARAMIXB[03]
-	Local nQdeParc 	:= PARAMIXB[04]
+	//Local nQdeParc 	:= PARAMIXB[04]
 	Local sCGC      := M -> LQ_VACGC
 	Local cPosProd  := AScan(aHeader,{|x| Alltrim(x[2]) == "LR_PRODUTO"})  // retorna conteudo do campo
 	Local lVale     := .F.

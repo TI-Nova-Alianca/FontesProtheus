@@ -26,7 +26,7 @@ Static Function EstComExp()
 	Local sPeriodo    := ""
 	Local aCtb        := {}
 	Local aEnt        := {}
-	Local aCabExcel   := {}
+	//Local aCabExcel   := {}
 	Local aItensExcel := {}
 	Local x			  := 0
 	Local y           := 0

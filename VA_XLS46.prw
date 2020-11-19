@@ -8,11 +8,11 @@
 
 // --------------------------------------------------------------------------
 User Function VA_XLS46 (_lAuto)
-	Local cCadastro := "Notas de industrializacao"
-	Local aSays     := {}
-	Local aButtons  := {}
-	Local nOpca     := 0
-	Local lPerg     := .F.
+	//Local cCadastro := "Notas de industrializacao"
+	//Local aSays     := {}
+	//Local aButtons  := {}
+	//Local nOpca     := 0
+	//Local lPerg     := .F.
 	Private cPerg   := "VAXLS46"
 	_ValidPerg()
 	Pergunte (cPerg, .F.)

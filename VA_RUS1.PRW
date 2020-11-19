@@ -30,7 +30,7 @@ User Function va_rus1 ()
 	local _lContinua   := .T.
 	local _sBarras     := ""
 	local _sQuery      := ""
-	local _sRetQry     := ""
+	//local _sRetQry     := ""
 	local _aRetQry     := {}
 	local _nF3         := 0
 	//local _aPatriar    := {}

@@ -41,7 +41,7 @@ If cTipo <> "D" .and. ! IsInCallStack ("MATA140")
 	
 	For _xI:=1 To Len(_cCond)
 		If _cCond[_xI,1] < DATE()
-			If !MsgYesNo("Confirmar inclusão da parcelas " + cvaltochar(_xI) + " com data de vencimento menor que a data de digitação ?")
+			If !MsgYesNo("Confirmar inclusão da parcelas " + cvaltochar(_xI) + " com data de vencimento menor que a data de digitação ?","Confirmar")
 				_lRet := .F.
 			Endif
 		Endif

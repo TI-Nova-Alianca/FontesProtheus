@@ -12,7 +12,7 @@
 // --------------------------------------------------------------------------
 user function MT080GRV ()
 	local _aAreaAnt := U_ML_SRArea ()
-	local _oEvento := NIL
+	//local _oEvento := NIL
 
 	U_AtuMerc ('SF4', sf4 -> (recno ()))
 

@@ -48,7 +48,8 @@ User Function LibOpPr (_sOPIni, _sOPFim)
 
 	// Se nao recebeu parametros de numero de OP, abre tela para o usuario selecionar.
 	case empty (_sOPIni) .and. empty (_sOPFim)
-		_ValidPerg (cPerg)
+		//_ValidPerg (cPerg)
+		_ValidPerg()
 		if pergunte (cPerg, .T.)
 			processa ({|| _Tela ()})
 		endif
@@ -189,7 +190,7 @@ static function _GeraZAG (_sOP)
 	local _nJaRequis := 0
 	local _nNecessid := 0
 	local _nOutrEmp  := 0
-	local _nDispon   := 0
+	//local _nDispon   := 0
 	local _sErros    := ""
 	local _aCols     := {}
 	private _sErroAuto := ''

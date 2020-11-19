@@ -755,8 +755,8 @@ Local aColDiv2		:= {}	//largura das colunas da Divisao II
 Local lSTImPFNfce	:= ExistFunc("STImPFNfce") .And. STImPFNfce()
 Local cImgQrCode	:= ""
 Local aMensagem		:= ""
-Local cImpressora	:= LjGetStation("IMPFISC")
-Local cPorta		:= LjGetStation("PORTIF")
+//Local cImpressora	:= LjGetStation("IMPFISC")
+//Local cPorta		:= LjGetStation("PORTIF")
 Local lContinua		:= .F.
 Local lSaiImp		:= .F.
 Local nMVNFCEIMP	:= SuperGetMV("MV_NFCEIMP",, 1)
@@ -828,7 +828,7 @@ BEGIN SEQUENCE
 				If !IsBlind()
 					LjMsgRun( "Aguarde. Abrindo a Impressora Não Fiscal...",, { || nHdlECF := INFAbrir( cImpressora,cPorta ) } )
 				Else
-					conout("Aguarde. Abrindo a Impressora...")
+					//conout("Aguarde. Abrindo a Impressora...")
 					nHdlECF := INFAbrir( cImpressora,cPorta )
 				EndIf
 			EndIf
@@ -850,7 +850,7 @@ BEGIN SEQUENCE
 						EndIf
 					EndIf
 				Else
-					conout("NFC-e: Não foi possível estabelecer comunicação com a Impressora:" + cImpressora)
+					//conout("NFC-e: Não foi possível estabelecer comunicação com a Impressora:" + cImpressora)
 					//nao ha necessidade de retornar erro quando houver erro de impressora
 				EndIf				
 				
@@ -925,7 +925,7 @@ BEGIN SEQUENCE
 			If !IsBlind()
 				MsgStop("Nfc-e: Tipo de Impressão incompatível: "+aIdNfce:_TPIMP:TEXT)
 			Else
-				Conout("Nfc-e: Tipo de Impressão incompatível: "+aIdNfce:_TPIMP:TEXT)
+				//Conout("Nfc-e: Tipo de Impressão incompatível: "+aIdNfce:_TPIMP:TEXT)
 			EndIf			
 			//aborta a rotina de impressao
 			BREAK

@@ -129,7 +129,7 @@ return
 // --------------------------------------------------------------------------
 // Exclusao total.
 user function VA_ZZ3E ()
-	local _aArea     := getarea ()
+	//local _aArea     := getarea ()
    local _sTransp   := zz3 -> zz3_transp
 	local _sQuery    := ""
 	local _lContinua := .T.
@@ -141,11 +141,11 @@ user function VA_ZZ3E ()
 	_sQuery += "    and ZZ0.ZZ0_FILIAL =  '" + xfilial ("ZZ0") + "'"
 	_sQuery += "    and ZZ0.ZZ0_TRANSP =  '" + _sTransp + "'"
 	if U_RetSQL (_sQuery) > 0
-		msgalert ("Tabela nao pode ser deletada, pois tem relacionamento(s) na tabela de cidades atendidas.")
+		u_help ("Tabela nao pode ser deletada, pois tem relacionamento(s) na tabela de cidades atendidas.")
 		_lContinua = .F.
 	endif
 
-	if _lContinua .and. msgyesno ("Confirma a exclusao de todos os valores para a transportadora " + zz3 -> zz3_transp + "?")
+	if _lContinua .and. msgyesno ("Confirma a exclusao de todos os valores para a transportadora " + zz3 -> zz3_transp + "?","Exclusão")
 		zz3 -> (dbsetorder (1))  // zz3_FILIAL + zz3_TRANSP + zz3_ORIGEM + zz3_DESTIN
 		zz3 -> (dbseek (xfilial ("zz3") + _sTransp, .T.))
 		do while ! zz3 -> (eof ()) .and. zz3 -> zz3_filial == xfilial ("zz3") .and. zz3 -> zz3_transp == _sTransp
@@ -154,7 +154,7 @@ user function VA_ZZ3E ()
 			msunlock ()
 			zz3 -> (dbskip ())
 		enddo
-		msginfo ("Dados excluidos.")
+		u_help ("Dados excluidos.")
 	endif
 return
 
@@ -173,7 +173,7 @@ return _lRet
 // Validacao de 'Linha OK'
 user function VA_zz3LK ()
    local _lRet    := .T.
-   local _nLinha  := 0
+   //local _nLinha  := 0
 
    // Verifica campos obrigatorios
    if _lRet .and. ! GDDeleted ()
@@ -191,7 +191,7 @@ return _lRet
 // Validacao de 'Tudo OK'
 user function VA_zz3TK ()
    local _lRet    := .T.
-   local _nLinha  := 0
+   //local _nLinha  := 0
 	local _sQuery  := ""
 
 	for N = 1 to len (aCols)
@@ -204,7 +204,7 @@ user function VA_zz3TK ()
 			_sQuery += "    and ZZ0.ZZ0_TRANSP =  '" + _sTransp + "'"
 			_sQuery += "    and ZZ0.ZZ0_ITEM   =  '" + GDFieldGet ("ZZ3_ITEM") + "'"
 			if U_RetSQL (_sQuery) > 0
-				msgalert ("Linha " + cvaltochar (N) + " nao pode ser deletada, pois tem relacionamento na tabela de cidades atendidas.")
+				u_help ("Linha " + cvaltochar (N) + " nao pode ser deletada, pois tem relacionamento na tabela de cidades atendidas.")
 				_lRet = .F.
 				exit
 			endif

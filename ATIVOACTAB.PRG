@@ -28,7 +28,7 @@ User function ATIVOACTAB()
    		_sSQL += "    AND N4_FILIAL  = '"  + xfilial ("SN4")+ "'"
    		_sSQL += "    AND N4_DATA    > '" + dtos(_wULTDEPR) + "'"
    		if TCSQLExec (_sSQL) < 0
-   			msgalert ("Erro ao executar UPDATE. Comunique a TI")
+   			u_help ("Erro ao executar UPDATE. Comunique a TI")
             return
        	endif
        	  
@@ -38,7 +38,7 @@ User function ATIVOACTAB()
    		_sSQL += "    AND N5_FILIAL  = '"  + xfilial ("SN5") + "'"
    		_sSQL += "    AND N5_DATA    > '" + dtos(_wULTDEPR) + "'"
    		if TCSQLExec (_sSQL) < 0
-   			msgalert ("Erro ao executar UPDATE. Comunique a TI")
+   			u_help ("Erro ao executar UPDATE. Comunique a TI")
 			return
        	endif  
 	endif

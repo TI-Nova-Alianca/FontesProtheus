@@ -36,9 +36,9 @@ private _sArqLog := procname () + "_" + alltrim (cUserName) + ".log"
     if Pergunte(cPerg,.T.)
     
     	if mv_par03 = 2
-   			msgalert("Na opção de cliente por REDE, o sistema buscar o codigo do cliente MATRIZ informado no cadastro. Esta informação tem que estar correta para que funcione como o esperado.")
+   			u_help("Na opção de cliente por REDE, o sistema buscar o codigo do cliente MATRIZ informado no cadastro. Esta informação tem que estar correta para que funcione como o esperado.")
    			if mv_par04 != mv_par05
-   				msgalert("Na opção por REDE, os parametros inicial e final de cliente devem ser iguais.")   			
+   				u_help("Na opção por REDE, os parametros inicial e final de cliente devem ser iguais.")   			
    			endif
    		endif
 	

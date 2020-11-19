@@ -239,14 +239,14 @@ return
 // --------------------------------------------------------------------------
 // Exclusao total.
 user function VA_ZZ2E ()
-	local _aArea := getarea ()
+	//local _aArea := getarea ()
 	local _ZZ2Cod := zz2 -> zz2_cod
 	
 	if ! U_ZZUVL ('020')
 		return
 	endif
 
-	if msgyesno ("Confirma a exclusao de todos os relacionamentos para o codigo " + zz2 -> zz2_cod + "?")
+	if msgyesno ("Confirma a exclusao de todos os relacionamentos para o codigo " + zz2 -> zz2_cod + "?","Excluir")
 		zz2 -> (dbsetorder (2))  // ZZ2_FILIAL+ZZ2_COD+ZZ2_TPPROD+ZZ2_GRUPO
 		zz2 -> (dbseek (xfilial ("ZZ2") + _ZZ2Cod, .T.))
 		do while ! zz2 -> (eof ()) .and. zz2 -> zz2_filial == xfilial ("ZZ2") .and. zz2 -> zz2_cod == _ZZ2Cod
@@ -255,7 +255,7 @@ user function VA_ZZ2E ()
 			msunlock ()
 			zz2 -> (dbskip ())
 		enddo
-		msginfo ("Dados excluidos.")
+		u_help ("Dados excluidos.")
 	endif
 return
 
@@ -265,7 +265,7 @@ return
 // Validacao de 'Linha OK'
 user function VA_ZZ2LK ()
 	local _lRet    := .T.
-	local _nLinha  := 0
+	//local _nLinha  := 0
 	
 	// Verifica campos obrigatorios
 	if _lRet .and. ! GDDeleted ()
@@ -306,6 +306,11 @@ user function VA_ZZ2TK ()
 	local _msg      := ''
 	local _oEvento  := NIL
 	local _n        := N
+	local _nCampo   := 0
+	local _nFilial  := 0
+	local _x        := 0
+	local i         := 0
+	local _y        := 0
 
 	_lRet = Obrigatorio (aGets, aTela)
 

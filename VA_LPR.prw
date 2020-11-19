@@ -77,8 +77,8 @@ static function _AndaLogo ()
 	local _oImpGr    := NIL
 	local _oPrn      := NIL
 	local _lVendOK   := .T.
-	local _aVend     := {}
-	local _nVend     := 0
+	//local _aVend     := {}
+	//local _nVend     := 0
 	local _sAvisos   := ""
 	local _sInstr    := ""
 	local _aInstr    := {}

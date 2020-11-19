@@ -77,7 +77,7 @@ Return _lRet
 Static Function _AndaLogo ()
 	local _lContinua  := .T.
 	local _aArqTrb    := {}
-	local _aJahExist  := ""
+	//local _aJahExist  := ""
 	local _sSeqArq    := ""
 	local _sQuery     := ""
 	local _aColunas   := ""

@@ -38,7 +38,7 @@ return _lRet
 Static Function _VerFunc(_sCGC,_sTabela,_lRet)
 	local _sQuery2  	:= ""
 	local _aFun			:= {}
-	local _lRetFun      := .T.
+	//local _lRetFun      := .T.
 	local _lRAssoc      := .T.
 	
 	_sQuery2 += " SELECT" 

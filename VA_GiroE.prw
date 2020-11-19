@@ -61,7 +61,7 @@ Static Function PrintReport(_oRep)
 	local _sAliasQ  := ""
 	local _nEstqMed := 0
 	local _nGiro    := 0
-	local _oFont10 := TFont():New("Arial",,11,,.f.,,,,,.f.)
+	//local _oFont10 := TFont():New("Arial",,11,,.f.,,,,,.f.)
 
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := " SELECT B1_TIPO, B1_COD, B1_DESC, B1_UM"

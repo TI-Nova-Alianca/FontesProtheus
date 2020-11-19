@@ -21,7 +21,7 @@ User Function VA_DDA ()
    	_sSQL += "    AND FIG_VENCTO < '" + dtos (date ()) + "'"
    	
 	if TCSQLExec (_sSQL) < 0
-		msgalert ("Nao foi possivel excluir registros vencidos no DDA. Erro no UPDATE.")
+		u_help ("Nao foi possivel excluir registros vencidos no DDA. Erro no UPDATE.")
 	endif
 	// TRATAMENTO ESPECIFICO PARA OWENS 
 	// altera os registros DDA da OWENS que vem no outro CNPJ por conta da filial de cobrança
@@ -53,7 +53,7 @@ User Function VA_DDA ()
  			_sSQL += "    AND R_E_C_N_O_ = " + _wrecno
  	
  			if TCSQLExec (_sSQL) < 0	
-				msgalert ("Nao foi possivel atualizar registros DDA da OWENS. Erro no UPDATE.")
+				u_help ("Nao foi possivel atualizar registros DDA da OWENS. Erro no UPDATE.")
 			endif
 		next
 	endif
@@ -86,7 +86,7 @@ User Function VA_DDA ()
  			_sSQL += "    AND R_E_C_N_O_ = " + _wrecno
  	
  			if TCSQLExec (_sSQL) < 0	
-				msgalert ("Nao foi possivel atualizar registros DDA da KLABIN. Erro no UPDATE.")
+				u_help ("Nao foi possivel atualizar registros DDA da KLABIN. Erro no UPDATE.")
 			endif
 		next
 	endif
@@ -120,7 +120,7 @@ User Function VA_DDA ()
  			_sSQL += "    AND R_E_C_N_O_ = " + _wrecno
  	
  			if TCSQLExec (_sSQL) < 0	
-				msgalert ("Nao foi possivel atualizar registros DDA da SAINT GOBAIN. Erro no UPDATE.")
+				u_help ("Nao foi possivel atualizar registros DDA da SAINT GOBAIN. Erro no UPDATE.")
 			endif
 		next
 	endif
@@ -153,7 +153,7 @@ User Function VA_DDA ()
  			_sSQL += "    AND R_E_C_N_O_ = " + _wrecno
  	
  			if TCSQLExec (_sSQL) < 0	
-				msgalert ("Nao foi possivel atualizar registros DDA da IRANI. Erro no UPDATE.")
+				u_help ("Nao foi possivel atualizar registros DDA da IRANI. Erro no UPDATE.")
 			endif
 		next
 	endif
@@ -186,7 +186,7 @@ User Function VA_DDA ()
  			_sSQL += "    AND R_E_C_N_O_ = " + _wrecno
  	
  			if TCSQLExec (_sSQL) < 0	
-				msgalert ("Nao foi possivel atualizar registros DDA da RINCAO. Erro no UPDATE.")
+				u_help ("Nao foi possivel atualizar registros DDA da RINCAO. Erro no UPDATE.")
 			endif
 		next
 	endif
@@ -219,7 +219,7 @@ User Function VA_DDA ()
  			_sSQL += "    AND R_E_C_N_O_ = " + _wrecno
  	
  			if TCSQLExec (_sSQL) < 0	
-				msgalert ("Nao foi possivel atualizar registros DDA da STV. Erro no UPDATE.")
+				u_help ("Nao foi possivel atualizar registros DDA da STV. Erro no UPDATE.")
 			endif
 		next
 	endif

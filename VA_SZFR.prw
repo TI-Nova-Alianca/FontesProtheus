@@ -118,7 +118,7 @@ static function _Imprime ()
 
 	// Nao aceita filtro por que precisaria inserir na query.
 	If !Empty(aReturn[7])
-		msgalert ("Este relatorio nao aceita filtro do usuario.")
+		u_help ("Este relatorio nao aceita filtro do usuario.")
 		return
 	EndIf	
 

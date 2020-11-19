@@ -68,7 +68,7 @@ static function _Gera ()
 	local _aLinha    := {}
 	local _aAutoSC5  := {}
 	local _aAutoSC6  := {}
-	local _sPedGer   := ""
+	//local _sPedGer   := ""
 	local _sAliasQ   := ""
 	local _sPedIni   := ""
 	local _sPedFim   := ""
@@ -225,7 +225,7 @@ static function _Gera2015 ()
 	local _aLinha    := {}
 	local _aAutoSC5  := {}
 	local _aAutoSC6  := {}
-	local _sPedGer   := ""
+	//local _sPedGer   := ""
 	local _sAliasQ1  := ""
 	local _sAliasQ2  := ""
 	local _sPedIni   := ""
@@ -403,7 +403,7 @@ static function _Gera2015B ()
 	local _aLinha    := {}
 	local _aAutoSC5  := {}
 	local _aAutoSC6  := {}
-	local _sPedGer   := ""
+	//local _sPedGer   := ""
 	local _sAliasQ1  := ""
 	local _sAliasQ2  := ""
 	local _sPedIni   := ""

@@ -7,8 +7,8 @@
 //
 // --------------------------------------------------------------------------
 User Function MT103DRF()
-Local nCombo  := PARAMIXB[1] 
-Local cCodRet := PARAMIXB[2] 
+//Local nCombo  := PARAMIXB[1] 
+//Local cCodRet := PARAMIXB[2] 
 Local aImpRet := {}
 
 aadd(aImpRet,{"IRR",1,"1708"})

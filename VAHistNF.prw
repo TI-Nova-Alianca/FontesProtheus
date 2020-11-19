@@ -44,23 +44,24 @@ User Function VARASTRO(_sDoc, _sSerie)
 	local _aAreaAnt  	:= U_ML_SRArea ()
 	local _aAmbAnt   	:= U_SalvaAmb ()
 	local _oDlg      	:= NIL
-	local _oBrw      	:= NIL
-	local _aCpos     	:= {}
-	local _aEstrut   	:= {}
-	local _nCampo    	:= 0
-	local _sQuery   	:= ""
+	Local i             := 0
+	//local _oBrw      	:= NIL
+	//local _aCpos     	:= {}
+	//local _aEstrut   	:= {}
+	//local _nCampo    	:= 0
+	//local _sQuery   	:= ""
 	Local nI
-	Local oDlg
-	Local oGetDados2
+	//Local oDlg
+	//Local oGetDados2
 	Local nUsado 	 	:= 0
 	Local _ret		 	:= .F.
-	local _aLinVazia 	:= {}
-	local _lContinua 	:= .T.
-	local _sOrdEmb   	:= ""
-	local _sMsgInf   	:= ""
-	local _oDlgMemo  	:= NIL
+	//local _aLinVazia 	:= {}
+	//local _lContinua 	:= .T.
+	//local _sOrdEmb   	:= ""
+	//local _sMsgInf   	:= ""
+	//local _oDlgMemo  	:= NIL
 	local _aSize     	:= {}  // Para posicionamento de objetos em tela
-	Local nUsado 	 	:= 0
+	//Local nUsado 	 	:= 0
 	local _oEvento 		:= NIL
 	local _i			:= 0
 	Private lRefresh 	:= .T.

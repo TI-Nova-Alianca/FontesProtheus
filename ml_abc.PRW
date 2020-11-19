@@ -890,7 +890,7 @@ return _wrentab
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
 	local _aRegsPerg := {}
-	local _aDefaults := {}
+	//local _aDefaults := {}
 	
 	aadd (_aRegsPerg, {01, "Periodo de            ? ", "D", 8,  0,  "",   "   ", {},    ""})
 	aadd (_aRegsPerg, {02, "Periodo ate           ? ", "D", 8,  0,  "",   "   ", {},    ""})

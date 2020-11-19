@@ -67,7 +67,7 @@ Return _oRep
 Static Function PrintReport(_oRep)
 	local _oSec1    := _oRep:Section(1)
 	local _oSec2    := _oRep:Section(2)
-	local _oFont10  := TFont():New("Arial",,11,,.f.,,,,,.f.)
+	//local _oFont10  := TFont():New("Arial",,11,,.f.,,,,,.f.)
 	local _sAliasQ  := ""
 	local _nSldCap  := 0
 	local _nTotCap  := 0

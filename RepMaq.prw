@@ -158,9 +158,9 @@ User Function CADSH1(_aSH1, _sAcao)
 Return
 
 User Function SN1CCU(_sN1_CBASE)
-	Local _lContinua := .T.
+	//Local _lContinua := .T.
 	Local _oSQL      := NIL
-	Local _sCCusto   := ""
+	//Local _sCCusto   := ""
 	
 	_oSQL := ClsSQl():New()
 	_oSQL:_sQuery := ""
@@ -188,7 +188,7 @@ User Function MATSH1(_sCampo, _aSH1)
 Return _sValor
 
 User Function SN1INT(_sN1_GRUPO)
-	Local _lContinua := .T.
+	//Local _lContinua := .T.
 	Local _oSQL      := NIL
 	lOCAL _nGrupos   := 0
 	

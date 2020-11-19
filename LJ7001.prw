@@ -39,66 +39,66 @@ user function LJ7001 ()
 	U_SalvaAmb (_aAmbAnt)
 return _lRet
 
-// --------------------------------------------------------------------------
-static function _VerTES ()
-	local _lRet     := .T.
-	local _nColTES  := ascan (aPosCpoDet, {|_aVal| alltrim (_aVal [1]) == "LR_TES"})
-	local _sTES     := ""
-	local _N		:= 0
+// // --------------------------------------------------------------------------
+// static function _VerTES ()
+// 	local _lRet     := .T.
+// 	local _nColTES  := ascan (aPosCpoDet, {|_aVal| alltrim (_aVal [1]) == "LR_TES"})
+// 	local _sTES     := ""
+// 	local _N		:= 0
 	
-	if _nColTES > 0 .and. paramixb [1] == 2  // 1-orcamento  2-venda  3-pedido
-		for _N = 1 to len (aCols)
-			N := _N
-			if ! GDDeleted ()
-				_sTES = iif (alltrim (GDFieldGet ("LR_PRODUTO")) == '8000', '531', '526')
-				if aColsDet [N, _nColTES] != _sTES
-					u_help ("Linha " + cValToChar (N) + ": TES para cupom fiscal deve ser '526'")
-					_lRet = .F.
-					exit
-				endif
-			endif
-		next
-	endif
-return _lRet
+// 	if _nColTES > 0 .and. paramixb [1] == 2  // 1-orcamento  2-venda  3-pedido
+// 		for _N = 1 to len (aCols)
+// 			N := _N
+// 			if ! GDDeleted ()
+// 				_sTES = iif (alltrim (GDFieldGet ("LR_PRODUTO")) == '8000', '531', '526')
+// 				if aColsDet [N, _nColTES] != _sTES
+// 					u_help ("Linha " + cValToChar (N) + ": TES para cupom fiscal deve ser '526'")
+// 					_lRet = .F.
+// 					exit
+// 				endif
+// 			endif
+// 		next
+// 	endif
+// return _lRet
 
-// --------------------------------------------------------------------------
-static function _VerAlmox ()
-	local _lRet     := .T.
-	local _nColLoc  := ascan (aPosCpoDet, {|_aVal| alltrim (_aVal [1]) == "LR_LOCAL"})
-	local _N		:= 0
+// // --------------------------------------------------------------------------
+// static function _VerAlmox ()
+// 	local _lRet     := .T.
+// 	local _nColLoc  := ascan (aPosCpoDet, {|_aVal| alltrim (_aVal [1]) == "LR_LOCAL"})
+// 	local _N		:= 0
 	
-	if _nColLoc > 0 .and. paramixb [1] == 2  // 1-orcamento  2-venda  3-pedido
-		for _N = 1 to len (aCols)
-			N := _N
-			if ! GDDeleted ()
-				if aColsDet [N, _nColLoc] != '10'
-					u_help ("Linha " + cValToChar (N) + ": Vendas via cupom devem ser feitas a partir do almoxarifado '10'")
-					_lRet = .F.
-					exit
-				endif
-			endif
-		next
-	endif
-return _lRet
+// 	if _nColLoc > 0 .and. paramixb [1] == 2  // 1-orcamento  2-venda  3-pedido
+// 		for _N = 1 to len (aCols)
+// 			N := _N
+// 			if ! GDDeleted ()
+// 				if aColsDet [N, _nColLoc] != '10'
+// 					u_help ("Linha " + cValToChar (N) + ": Vendas via cupom devem ser feitas a partir do almoxarifado '10'")
+// 					_lRet = .F.
+// 					exit
+// 				endif
+// 			endif
+// 		next
+// 	endif
+// return _lRet
 
-// --------------------------------------------------------------------------
-static function _VerCGC ()
-	local _lRet      := .T.
-	local _nColVlr   := ascan (aPosCpoDet, {|_aVal| alltrim (_aVal [1]) == "LR_BASEICM"})  // Unico campo disponivel, por enquanto.
-	local _nValor    := 0
-	local _N		 := 0
+// // --------------------------------------------------------------------------
+// static function _VerCGC ()
+// 	local _lRet      := .T.
+// 	local _nColVlr   := ascan (aPosCpoDet, {|_aVal| alltrim (_aVal [1]) == "LR_BASEICM"})  // Unico campo disponivel, por enquanto.
+// 	local _nValor    := 0
+// 	local _N		 := 0
 
-	if paramixb [1] == 2  // 1-orcamento  2-venda  3-pedido
-		if _nColVlr == 0
-			u_help ("Nao foi possivel buscar o valor do cupom. Campo LR_BASEICM deve estar em uso para validacoes.")
-			_lRet = .F.
-		else 
-			for _N = 1 to len (aCols)
-				N := _N
-				if ! GDDeleted ()
-					_nValor += aColsDet [N, _nColVlr]
-				endif
-			next
-		endif
-	endif
-return _lRet
+// 	if paramixb [1] == 2  // 1-orcamento  2-venda  3-pedido
+// 		if _nColVlr == 0
+// 			u_help ("Nao foi possivel buscar o valor do cupom. Campo LR_BASEICM deve estar em uso para validacoes.")
+// 			_lRet = .F.
+// 		else 
+// 			for _N = 1 to len (aCols)
+// 				N := _N
+// 				if ! GDDeleted ()
+// 					_nValor += aColsDet [N, _nColVlr]
+// 				endif
+// 			next
+// 		endif
+// 	endif
+// return _lRet

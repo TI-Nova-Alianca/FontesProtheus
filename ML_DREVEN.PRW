@@ -56,15 +56,15 @@ User Function ML_DREVEN()
     Endif
     
     if mv_par17 = 2
-   		msgalert("Na opção de cliente por REDE, o sistema busca o codigo do cliente MATRIZ informado no cadastro. Esta informação tem que estar correta para que funcione como o esperado.")
+   		u_help("Na opção de cliente por REDE, o sistema busca o codigo do cliente MATRIZ informado no cadastro. Esta informação tem que estar correta para que funcione como o esperado.")
    		if mv_par07 != mv_par08
-   			msgalert("Na opção por REDE, os parametros inicial e final de cliente devem ser iguais.")
+   			u_help("Na opção por REDE, os parametros inicial e final de cliente devem ser iguais.")
    			Return   			
    		endif
    		// verifica se o codigo digitado é um codigo matriz
    		_wmatriz := fbuscacpo ("SA1", 1, xfilial ("SA1") + mv_par07,  "A1_VACBASE")
    		if _wmatriz != mv_par07
-   			msgalert("Codigo de cliente informado não é o codigo matriz, alterando para o codigo matriz correto.")
+   			u_help("Codigo de cliente informado não é o codigo matriz, alterando para o codigo matriz correto.")
    			mv_par07 := _wmatriz
    			mv_par08 := _wmatriz
    		endif
@@ -73,7 +73,7 @@ User Function ML_DREVEN()
    	// Controle de semaforo.
 	_nLock := U_Semaforo (procname () + cEmpAnt + xfilial ("SA1"))
 	if _nLock == 0
-		msgalert ("Nao foi possivel obter acesso exclusivo a esta rotina nesta empresa/filial.")
+		u_help ("Nao foi possivel obter acesso exclusivo a esta rotina nesta empresa/filial.")
 		_lContinua = .F.
 	endif
 	

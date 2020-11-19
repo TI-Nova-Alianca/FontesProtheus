@@ -15,7 +15,7 @@ User Function CH_ETF()
 	Do While LFIM
 	   U_ML_etf()
 	   
-	   If MSGYESNO("Continua no programa?")
+	   If MSGYESNO("Continuar no programa?","Continuar")
 	      nopc := "1"
 	   Else
 	      nopc := "2"

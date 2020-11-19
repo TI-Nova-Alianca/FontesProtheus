@@ -88,9 +88,9 @@ Return ::self
 // --------------------------------------------------------------------------
 // Leitura do 'XML interno' de um evento.
 METHOD LeXML (_oObjPai) Class ClsXmlEvt
-	local _nDet     := 0
-	local _nTamDoc  := TamSX3 ('ZZX_DOC')[1]
-	local _aAreaSM0 := {}
+	//local _nDet     := 0
+	//local _nTamDoc  := TamSX3 ('ZZX_DOC')[1]
+	//local _aAreaSM0 := {}
 
 	u_logIni (GetClassName (::Self) + '.' + procname ())
 

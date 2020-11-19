@@ -54,8 +54,8 @@ Return
 Static Function RptDetail()
 	local _sQuery    := ""
 	local _sAliasQ   := ""
-	local _aMuni     := {}
-	local _nMuni     := 0
+	//local _aMuni     := {}
+	//local _nMuni     := 0
 	local _nVia		 := 0
 	private _nMaxLin := 60
 	

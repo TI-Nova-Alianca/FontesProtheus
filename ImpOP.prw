@@ -59,7 +59,7 @@ Return
 // --------------------------------------------------------------------------
 static function _AndaLogo ()
 	local   _oSQL      := NIL
-	local   _nCompAux  := 0
+	//local   _nCompAux  := 0
 	local   _aCompon   :={}  // Array com os componentes da OP
 	local   _nCompon   := 0
 	local   _aFant     := {}

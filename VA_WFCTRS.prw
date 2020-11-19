@@ -62,7 +62,7 @@ return
 // Função para iniciar o processo de workflow preenchendo o html e enviando o e-mail para o destinatário
 Static Function WfNfFil(oProcess)
 
-Local cSubject
+//Local cSubject
 Local _nTot := 0
 Local _dEmissao           
 Local _lPrim := .T.
@@ -150,9 +150,9 @@ Return
 // Função para executar o retorno no Workflow
 Static Function WfRet(oProcess)
 
-Local _cNumRet  := 	oProcess:oHtml:RetByName('NUM')
+//Local _cNumRet  := 	oProcess:oHtml:RetByName('NUM')
 Local _xLibera  := 	oProcess:oHtml:RetByName('LIBERA')
-Local _cMotivob := 	oProcess:oHtml:RetByName('MOTIVOB')
+//Local _cMotivob := 	oProcess:oHtml:RetByName('MOTIVOB')
 
 If _xLibera == "Sim"
 	// campo de "esperando WF" no agendamento do ZZ6 fica como .F.

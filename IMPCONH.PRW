@@ -95,7 +95,7 @@ Return
 // ------------------------------------------------------------------------------------
 Static Function _Importa()
     local _aArqTrb   := {}
-    local _aCampos   := {}
+    //local _aCampos   := {}
     local _xCONT     := 0
     local _lContinua := .T.
     local _xFORNECE  := ' '

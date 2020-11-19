@@ -12,7 +12,7 @@ User Function MTA410V()
 
 	if type ("_oClsFrtPV") == "O" // verifica se o frete foi alterado...senão, não faz nada
 		if U_ZZUVL ('002', __cUserId, .F.)
-			if MsgYesNo("Confirmar gravação das informações do frete ?")
+			if MsgYesNo("Confirmar gravação das informações do frete ?","Confirmar")
 	
 				// O pedido assume a transportadora selecionada / informada.
 				reclock("SC5", .F.)

@@ -44,7 +44,7 @@ User function ML_RECTIT()
     Pergunte(cPerg,.T.)
     
 	if val(mv_par01) = 0
-		msgalert("É necessário informar o codigo do cliente")
+		u_help("É necessário informar o codigo do cliente")
 	else
 		wnrel:=SetPrint(cString,wnrel,cPerg,titulo,cDesc1,cDesc2,cDesc3,.F.)
 	    If nLastKey == 27

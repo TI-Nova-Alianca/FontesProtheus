@@ -32,7 +32,7 @@ user function M110STTS ()
 	local _sSolicit  := ""
 	local _sComCopia := ""
 	local _aUser     := {}
-	local _sTo       := ""
+	//local _sTo       := ""
 	
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""

@@ -16,9 +16,9 @@ user Function CUSTOMERVENDOR()
     Local cIdPonto := ""
     Local cIdModel := ""
     Local lIsGrid := .F.
-    Local nLinha := 0
-    Local nQtdLinhas := 0
-    Local cMsg := ""
+    //Local nLinha := 0
+    //Local nQtdLinhas := 0
+    //Local cMsg := ""
 
     If aParam <> NIL
         oObj := aParam[1]
@@ -78,7 +78,7 @@ Static Function MA020TDOK ()
 	Local _xEST     := M->A2_EST
 	Local _xTIPO    := M->A2_TIPO
 	Local _xCGC     := M->A2_CGC
-	Local _xInscr   := M->A2_INSCR
+	//Local _xInscr   := M->A2_INSCR
 	Local _nInd     := 0
 
 	// Consiste Estado com Tipo do Fornecedor (Critica Importacao)

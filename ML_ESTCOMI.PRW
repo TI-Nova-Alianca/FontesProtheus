@@ -47,18 +47,18 @@ private _sArqLog := procname () + "_" + alltrim (cUserName) + ".log"
 return
 
 Static Function RptDetail()
-	local _aCFOP  := {}
-	local _nCFOP   := 0
-	local _aFILCFOP  := {}
-	local _nFILCFOP  := 0
-	local _nMaxLin   := 63
+	//local _aCFOP  := {}
+	//local _nCFOP   := 0
+	//local _aFILCFOP  := {}
+	//local _nFILCFOP  := 0
+	//local _nMaxLin   := 63
 	local _sQuery    := ""
-	local _aAliasQ   := ""
-	local _nValor    := 0
-	local _aTotVend  := {}
+	//local _aAliasQ   := ""
+	//local _nValor    := 0
+	//local _aTotVend  := {}
 	local _aTotGer   := {}
-	local _sFilial   := ""
-	local _aTotFil   := {}
+	//local _sFilial   := ""
+	//local _aTotFil   := {}
 	
     SetRegua(LastRec())
     nTipo   := IIF(aReturn[4]==1,15,18)

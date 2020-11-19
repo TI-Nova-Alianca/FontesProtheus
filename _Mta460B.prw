@@ -26,7 +26,7 @@
 
 // --------------------------------------------------------------------------
 user function _Mta460B ()
-	local _sQuery    := ""
+	//local _sQuery    := ""
 	local _sNFIni    := ""
 	local _sNFFim    := ""
 	local _sSerie    := "10 "
@@ -41,11 +41,11 @@ user function _Mta460B ()
 	if _lContinua
 		_nLock := U_Semaforo ('faturamento' + cEmpAnt + xfilial ("SC9"))
 		if _nLock == 0
-			msgalert ("Nao foi possivel obter acesso exclusivo a esta rotina nesta empresa/filial.")
+			u_help ("Nao foi possivel obter acesso exclusivo a esta rotina nesta empresa/filial.")
 			_lContinua = .F.
 			
 			// Para os tristes e vergonhosos casos de travamento de servico...
-			if alltrim (upper (cUserName)) == "ROBERT.KOCH" .and. msgnoyes ("Devo ignorar o semaforo?")
+			if alltrim (upper (cUserName)) == "ROBERT.KOCH" .and. msgnoyes ("Devo ignorar o semaforo?","Ignorar")
 				_lContinua = .T.
 			endif
 		endif

@@ -34,7 +34,7 @@ return
 // -------------------------------------------------------------------------
 // Inclusao
 User Function ZA6_I ()
-local _oCtaCorr  := NIL
+    //local _oCtaCorr  := NIL
     private inclui   := .T.
     private altera   := .F.
     private aGets    := {}

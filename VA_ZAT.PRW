@@ -16,7 +16,7 @@ User Function VA_ZAT()
 	
     u_logId ()
     
-    msgalert("Rotina ainda nao liberada.")
+    u_help("Rotina ainda nao liberada.")
     return
 	
 	// Menu principal
@@ -265,7 +265,7 @@ user Function ZAT_COMP()
 	    
 	    U_F3Array (_aDados, "Componentes Fornecidos pelo Cliente", _aCols, oMainWnd:nClientWidth - 750, oMainWnd:nClientHeight -450 , "", "", .F., 'C' )
 	else
-		msgalert("Não há componentes fornecidos para esta operação.")	    
+		u_help("Não há componentes fornecidos para esta operação.")	    
     endif
 return     
 
@@ -309,13 +309,13 @@ User Function ZAT_GOC()
 					if ! empty (NomeAutoLog ())
 						_sMsg = memoread (NomeAutoLog ())
 						u_help (_sMsg)
-						msgalert("Erro - LINHA 1")
+						u_help("Erro - LINHA 1")
 					else
 						u_help ("Nao foi possivel ler o log de erros.")
-						msgalert("Erro - LINHA 2")
+						u_help("Erro - LINHA 2")
 					endif
 				else
-					msgalert("gerou o pedido")
+					u_help("gerou o pedido")
 					u_log ('pedido gerado:', SC5 -> C5_NUM)
 				endif
 			endif			
@@ -329,8 +329,8 @@ return
 // -----------------------
 User Function ZAT_GPV()
 
-	msgalert("Cliente")
-	msgalert(ZAT-> ZAT_CLIENT)
+	u_help("Cliente")
+	u_help(ZAT-> ZAT_CLIENT)
 		
 	// busca dados do cliente para gerar o pedido
 	_wtransp  = fBuscaCpo ('SA1', 1, xfilial('SA1') + ZAT-> ZAT_CLIENT + '01', "A1_TRANSP")
@@ -375,13 +375,13 @@ User Function ZAT_GPV()
 			if ! empty (NomeAutoLog ())
 				_sMsg = memoread (NomeAutoLog ())
 				u_help (_sMsg)
-				msgalert("Erro - LINHA 1")
+				u_help("Erro - LINHA 1")
 			else
 				u_help ("Nao foi possivel ler o log de erros.")
-				msgalert("Erro - LINHA 2")
+				u_help("Erro - LINHA 2")
 			endif
 		else
-			msgalert("gerou o pedido")
+			u_help("gerou o pedido")
 			u_log ('pedido gerado:', SC5 -> C5_NUM)
 		endif
 	endif
@@ -426,7 +426,7 @@ User Function ZAT_CNE()
 	    
 	    U_F3Array (_aDados, "Notas de Entrada referentes a esta operação", _aCols, oMainWnd:nClientWidth - 450, oMainWnd:nClientHeight -450 , "", "", .F., 'C' )
 	else
-		msgalert("Não há notas de entrada referentes a esta operação.")	    
+		u_help("Não há notas de entrada referentes a esta operação.")	    
     endif
 
 return
@@ -463,7 +463,7 @@ User Function ZAT_CNS()
 	    
 	    U_F3Array (_aDados, "Notas de Saida referentes a esta operação", _aCols, oMainWnd:nClientWidth - 450, oMainWnd:nClientHeight -450 , "", "", .F., 'C' )
 	else
-		msgalert("Não há notas de Saida referentes a esta operação.")	    
+		u_help("Não há notas de Saida referentes a esta operação.")	    
     endif
 	
 return
@@ -500,7 +500,7 @@ User Function ZAT_OPS()
 	    
 	    U_F3Array (_aDados, "Ordens de Produção referentes a esta operação", _aCols, oMainWnd:nClientWidth - 450, oMainWnd:nClientHeight -450 , "", "", .F., 'C' )
 	else
-		msgalert("Não há Ordens de Produção referentes a esta operação.")	    
+		u_help("Não há Ordens de Produção referentes a esta operação.")	    
     endif
 	
 return

@@ -18,7 +18,7 @@ User function MsgNoYes (_sMsg, _lDefault)
 		_lRet = msgNoyes (_sMsg, 'Pergunta')
 	else
 		_lRet = iif (valtype (_lDefault) == "L", _lDefault, .F.)
-		ConOut (_sMsg + ' [' + cValToChar (_lRet) + ']')
+		//ConOut (_sMsg + ' [' + cValToChar (_lRet) + ']')
 	endif
 
 	// Se esta variavel estiver definida, eh por que estah sendo executada alguma rotina automatica, e a mensagem deve ser retornada atraves dela.

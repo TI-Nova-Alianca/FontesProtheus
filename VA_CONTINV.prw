@@ -25,8 +25,8 @@ Return
 Static Function ReportDef()
 	Local oReport  := Nil
 	Local oSection1:= Nil
-	Local oFunction
-	Local oBreak1
+	//Local oFunction
+	//Local oBreak1
  
 	oReport := TReport():New("VA_CONTINV","Formulário para contagem de inventário",cPerg,{|oReport| PrintReport(oReport)},"Formulário para contagem de inventário",,,,,,,-2)
 	//oReport:SetCustomText({||AddCab()})
@@ -55,6 +55,7 @@ Return(oReport)
 Static Function PrintReport(oReport)
 	Local oSection1 := oReport:Section(1)
 	Local _aDados   := {}
+	Local _i        := 0
 
 	_oSQL := ClsSQL():New ()
 	_oSQL:_sQuery += " SELECT"

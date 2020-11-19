@@ -14,8 +14,8 @@
 User Function MonMerc1 ()
 	local _aAreaAnt   := U_ML_SRArea ()
 	local _aAmbAnt    := U_SalvaAmb ()
-	local _dDataIni   := date ()
-	local _dDataFin   := date ()
+	//local _dDataIni   := date ()
+	//local _dDataFin   := date ()
 	
 	u_logId ()
 	u_logIni ()
@@ -36,7 +36,7 @@ return
 //--------------------------------------------------------------
 // Chama processamento
 Static Function _MontaTela(oDlg,_dDtIni,_sCliente,_sLoja,_sPedido,_sVend,_sProd,_sTitulo,_sPref,_sParc,_sNfsNum,_sNfsSer,_sNfeNum,_sNfeSer)
-	Local _oSQL := NIL
+	//Local _oSQL := NIL
 	
 	oDlg:End()
 	
@@ -151,8 +151,8 @@ Return
 //--------------------------------------------------------------
 // Parametros de entrada - Tela de parametros
 Static Function _ParamTela()
-	Local _dDtFin 
-	Local cdDtFin  := date()
+	//Local _dDtFin 
+	//Local cdDtFin  := date()
 	Local _dDtIni 
 	Local cdDtIni  := date()
 	Local _sCliente
@@ -185,7 +185,7 @@ Static Function _ParamTela()
 	Local oSay12
 	Local oSay13
 	Local oSay14
-	Local oSay2
+	//Local oSay2
 	Local oSay3
 	Local oSay4
 	Local oSay5

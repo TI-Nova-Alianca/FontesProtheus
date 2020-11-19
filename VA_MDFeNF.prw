@@ -29,9 +29,9 @@ Static Function ReportDef()
 	Local oReport  := Nil
 	Local oSection1:= Nil
 	Local oSection2:= Nil
-	Local oFunction
-	Local oBreak1
-	Local oBreak2
+	//Local oFunction
+	//Local oBreak1
+	//Local oBreak2
 
 	oReport := TReport():New("VA_MDFeNF","NFs X MDFe",cPerg,{|oReport| PrintReport(oReport)},"Listagem de Notas Fiscais e MDF'e correspondentes")
 	

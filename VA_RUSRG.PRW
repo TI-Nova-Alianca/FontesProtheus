@@ -12,7 +12,7 @@
 user function VA_RUSRG ()
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _lContinua := .T.
-	local _sFilDest  := ''
+	//local _sFilDest  := ''
 	local _sMsg      := ''
 
 	if sze -> ze_pesobru <= 0

@@ -20,8 +20,8 @@ Return
 
 Static Function ReportDef()
 	Local oReport  := Nil
-	Local oFunction
-	Local oBreak1
+	//Local oFunction
+	//Local oBreak1
 	
 	oReport := TReport():New("VA_ZBCMAT","Relação de materiais do planejamento",cPerg,{|oReport| PrintReport(oReport)},"Relação de materiais do planejamento")
 	
@@ -454,7 +454,7 @@ User Function ZBCBTer(sComp)
 Return nQtdTerc
 // ----------------------------------------------------------------------------------
 // Busca descrição do componente
-Static Function _BuscaDescProduto(sComp)
+Static Function _BuscaDescProduto(sComp,sDesc,sTipo)
 	//Local sDesPro := ""
 	Local cQuery5 := ""
 	

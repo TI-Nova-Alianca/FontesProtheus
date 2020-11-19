@@ -26,7 +26,7 @@ Return
 Static Function ReportDef()
 	Local oReport  := Nil
 	Local oSection1:= Nil
-	Local oFunction
+	//Local oFunction
 
 	oReport := TReport():New("VA_RELIRE","Indice de rotação de estoque",cPerg,{|oReport| PrintReport(oReport)},"Indice de rotação de estoque")
 	TReport():ShowParamPage()

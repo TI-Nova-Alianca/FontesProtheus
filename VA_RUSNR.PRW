@@ -20,6 +20,7 @@ return
 // --------------------------------------------------------------------------
 static function _Altera ()
 	local _aCampos := {}
+	local i 	   := 1
 	private aCpos  := {}
 	private inclui := .F.
 	private altera := .F.

@@ -110,7 +110,7 @@ static function _Imprime ()
 
 	// Nao aceita filtro por que precisaria inserir na query.
 	If !Empty(aReturn[7])
-		msgalert ("Este relatorio nao aceita filtro do usuario.")
+		u_help ("Este relatorio nao aceita filtro do usuario.")
 		_lContinua = .F.
 	EndIf	
 
@@ -139,11 +139,11 @@ static function _Imprime ()
 		_sQuery2 += " group by B2_LOCAL"
 		_aAlmox = aclone (U_Qry2Array (_sQuery2))
 		if len (_aAlmox) == 0
-			msgalert ("Nenhum almoxarifado encontrado dentro dos parametros informados.")
+			u_help ("Nenhum almoxarifado encontrado dentro dos parametros informados.")
 			_lContinua = .F.
 		endif
 		if len (_aAlmox) > 12
-			msgalert ("Foram encontrados " + cvaltochar (len (_aAlmox)) + " almoxarifados a listar. Numero maximo permitido = 12.")
+			u_help ("Foram encontrados " + cvaltochar (len (_aAlmox)) + " almoxarifados a listar. Numero maximo permitido = 12.")
 			_lContinua = .F.
 		endif
 	endif

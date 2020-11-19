@@ -40,7 +40,7 @@ user function ImpCheq (_sCheque, _sBenef, _nValor, _dData, _sBanco, _sCidade, _s
 		MsWrite(_nDllSer,_sDadChq)
 		MsClosePort(_nDllSer)
 	
-		if msgyesno ("Deseja imprimir a copia do cheque?")
+		if msgyesno ("Deseja imprimir a copia do cheque?","Confirmar")
 	
 			// Imprime em impressora Bematech (porta serial)
 			_aExt := U_QuebraTxt (alltrim (Extenso (_nValor)), 78)
@@ -169,7 +169,7 @@ user function ImpCheq (_sCheque, _sBenef, _nValor, _dData, _sBanco, _sCidade, _s
 						if _lRet
 							MsgRun ("Comunicando com a impressora...", "Aguarde", {|| _lRet := _EnviaPert (_nDLLSer, _sMsgValor)})
 							if _lRet
-								if msgyesno ("Deseja imprimir a copia do cheque?")
+								if msgyesno ("Deseja imprimir a copia do cheque?","Confirmar")
 									MsgRun ("Comunicando com a impressora...", "Aguarde", {|| _lRet := _EnviaPert (_nDLLSer, _sMsgCopia)})
 								endif
 							endif
@@ -179,7 +179,7 @@ user function ImpCheq (_sCheque, _sBenef, _nValor, _dData, _sBanco, _sCidade, _s
 				MsClosePort(_nDLLSer)
 				exit
 			else
-				if msgyesno ("Nao foi possivel comunicar com a porta '" + _cPorta + "'. Tentar novamente?")
+				if msgyesno ("Nao foi possivel comunicar com a porta '" + _cPorta + "'. Tentar novamente?","Confirmar")
 					loop
 				else
 					exit
@@ -187,7 +187,7 @@ user function ImpCheq (_sCheque, _sBenef, _nValor, _dData, _sBanco, _sCidade, _s
 			endif
 		enddo
 	else
-		msgalert ("Funcao " + procname () + ": Modelo de impressora desconhecido: " + _sImpress)
+		u_help ("Funcao " + procname () + ": Modelo de impressora desconhecido: " + _sImpress)
 	endif
 
 return _lRet
@@ -221,7 +221,7 @@ static function _EnviaPert (_nDLLSer, _sMensag)
 				_sErro = substr (_sResult, at (substr (_sMensag, 2, 1), _sResult) + 1, 3)
 				
 				if _sErro != "000"
-					msgalert ("Impressora retornou erro " + _sErro + " - " + _ErrPerto (_sErro))
+					u_help ("Impressora retornou erro " + _sErro + " - " + _ErrPerto (_sErro))
 					_lRet = .F.
 				endif
 			endif
@@ -231,10 +231,10 @@ static function _EnviaPert (_nDLLSer, _sMensag)
 			sleep (800)  // Aguarda o restante do tempo para completar 1 segundo.
 		next
 		if empty (_sErro)
-			if msgyesno ("A impressora nao responde. Ela esta' imprimindo?")
+			if msgyesno ("A impressora nao responde. Ela esta' imprimindo?","Confirmar")
 				loop
 			else
-				msgalert ("Erro de comunicacao ou impressora sem papel.")
+				u_help ("Erro de comunicacao ou impressora sem papel.")
 				_lRet = .F.
 				exit
 			endif

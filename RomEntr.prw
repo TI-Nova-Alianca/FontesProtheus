@@ -53,8 +53,8 @@ Return
 Static Function ReportDef()
 	Local oReport  := Nil
 	Local oSection1:= Nil
-	Local oSection2:= Nil
-	Local oFunction
+	//Local oSection2:= Nil
+	//Local oFunction
 	
 	oReport := TReport():New("ROMENTR","Romaneio de Entrada",cPerg,{|oReport| PrintReport(oReport)},"Romaneio de Entrada")
 	
@@ -86,8 +86,8 @@ Return(oReport)
 Static Function PrintReport(oReport)
 	Local oSection1 := oReport:Section(1)
 	Local cQuery    := ""		
-	Local nVia      := 0
-	Local nQtdProd  := 0
+	//Local nVia      := 0
+	//Local nQtdProd  := 0
     
 	sf1 -> (dbsetorder (1))  // F1_FILIAL+F1_DOC+F1_SERIE+F1_FORNECE+F1_LOJA+F1_TIPO
 	If ! sf1 -> (dbseek (xfilial ("SF1") + mv_par03 + mv_par04 + mv_par01 + mv_par02, .F.))

@@ -18,7 +18,7 @@ User Function BatVenFun()
 	Local _aAreaAnt := U_ML_SRArea ()
 	Local _oSQL     := NIL
 	Local _sMsg     := ""
-	Local _nDias    := 30
+	//Local _nDias    := 30
 	Local _sArqLog2 := iif (type ("_sArqLog") == "C", _sArqLog, "")
 	Local _dDtIni   := Date()
 	Local _dDtFin   := Date()

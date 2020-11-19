@@ -49,9 +49,9 @@ user function Help (_sMsg, _sDAdic, _lHlpErro)
 	endif
 	
 	// Grava na console do servico
-	ConOut (iif (_lHlpErro, '[ERRO]', '') + '[' + procname (1) + '] ' + cValToChar (_sMsg))
+	//ConOut (iif (_lHlpErro, '[ERRO]', '') + '[' + procname (1) + '] ' + cValToChar (_sMsg))
 	if valtype (_sDAdic) == "C" .and. ! empty (_sDAdic)
-		ConOut ("Dados adicionais: " + _sDAdic)
+		//ConOut ("Dados adicionais: " + _sDAdic)
 	endif
 
 	// Tratamentos em caso de mensagem de erro.

@@ -65,8 +65,8 @@ User Function ML_Comp2 (_sItem, _nQtid, _sFilSG1, _dDtValid, _lSaldoAtu, _lSaldo
    local _nDiasPai  := 0
    local _nDias     := 0
    local _aRot      := {}
-   local _nLotePad  := 0
-   local _nTempo    := 0
+  // local _nLotePad  := 0
+  // local _nTempo    := 0
    local _nSaldoAtu := 0
    local _nSaldoTer := 0
    local _nSaldoEmp := 0

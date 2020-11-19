@@ -53,7 +53,7 @@ Return _lRet
 	
 // --------------------------------------------------------------------------
 Static Function _Gera()
-	local _lContinua := .T.
+	//local _lContinua := .T.
 	local _oEvento   := NIL
 	local _nAlter    := 0
 	local _oSQL      := NIL

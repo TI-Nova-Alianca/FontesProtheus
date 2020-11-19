@@ -13,12 +13,12 @@ User Function pesotot()
 
 Local _aArea    := GetArea()
 Local _aAreaSA1 := SA1->(GetArea())
-Local _lRet     := .T.
-Local _xfim     := chr(13)+chr(10)
+//Local _lRet     := .T.
+//Local _xfim     := chr(13)+chr(10)
 //Adelar D. Minuzzo - ARM SERRA GAÚCHA - 13/10/2006
 //OBJETIVO:	INFORMAR AO USUÁRIO O PESO TOTAL DOS ITENS DO PEDIDO
-Local _nPosPeso := 	aScan(aHeader, {|x| AllTrim(x[2])=="C6_QTDVEN"}) 
-Local _nPosCodp := 	aScan(aHeader, {|x| AllTrim(x[2])=="C6_PRODUTO"}) 
+//Local _nPosPeso := 	aScan(aHeader, {|x| AllTrim(x[2])=="C6_QTDVEN"}) 
+//Local _nPosCodp := 	aScan(aHeader, {|x| AllTrim(x[2])=="C6_PRODUTO"}) 
 Local _nTotPeso	:=	0
 Local _nPesopro :=  0
 _nPesopro := FBUSCACPO('SB1',1,	,'SB1->B1_PESBRU') 

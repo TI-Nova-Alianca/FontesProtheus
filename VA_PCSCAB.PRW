@@ -13,10 +13,10 @@
 User Function VA_PCSCAB()
 
 	Local oReport
-	Local oSection1
-	Local oSection2
-	Local oSection3
-	Local oBreak
+	//Local oSection1
+	//Local oSection2
+	//Local oSection3
+	//Local oBreak
 	Private cPerg := "VA_PCSCAB"
 //	private _sArqLog := U_NomeLog ()
 
@@ -72,7 +72,7 @@ Return oReport
 ///////////////////////////////////////////////// IMPRESSAO
 Static Function PrintReport(oReport)
 	Local oSection1 := oReport:Section(1)
-	Local oSection2 := oReport:Section(1):Section(1)
+	//Local oSection2 := oReport:Section(1):Section(1)
 	local _oSQL     := ClsSQL ():New ()
 	local _sAliasQ  := ""
 	local _sProduto := ""
@@ -154,7 +154,7 @@ Static Function PrintReport(oReport)
 	do while ! (_sAliasQ) -> (EOF())
 		oReport:IncMeter()
 		If oReport:Cancel()
-			MsgAlert("Operação cancelada pelo usuário.")
+			u_help("Operação cancelada pelo usuário.")
 			Exit
 		End
 

@@ -19,7 +19,7 @@ user function MT110TOK ()
 		if ! empty (GDFieldGet ("C1_DATPRF"), _nLinha)
 			if  ! GDDeleted (_nLinha) 
 				if dtos(GDFieldGet ("C1_DATPRF", _nLinha) ) < dtos( DATE() )
-					msgalert ("Data de necessidade deve ser obrigatóriamente maior ou igual a data de digitação da solicitação.")
+					u_help ("Data de necessidade deve ser obrigatóriamente maior ou igual a data de digitação da solicitação.")
 					_lRet = .F.
 					exit
 				endif	

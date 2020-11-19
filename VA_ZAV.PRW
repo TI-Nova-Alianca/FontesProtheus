@@ -23,24 +23,24 @@ user function VALIDAZAV()
 	
 	// testa vendedor ativo
 	if _lRet .and. fBuscaCpo ("SA3", 1, xfilial ("SA3") + m->ZAV_VEND, "A3_ATIVO") != "S"
-		msgalert ("Vendedor Inativo")
+		u_help ("Vendedor Inativo")
 		_lRet = .F.
 	endif
 	// testa digitacao da linha ou do item
 	if _lRet .and. EMPTY(m->ZAV_LINHA).and. EMPTY(m->ZAV_ITEM)
-		msgalert ("Informar a LINHA ou ITEM. Verifique! ")
+		u_help ("Informar a LINHA ou ITEM. Verifique! ")
 		_lRet = .F.
 	endif 
 	// testa digitacao da linha ou do item
 	if _lRet .and. ! EMPTY(m->ZAV_LINHA).and. ! EMPTY(m->ZAV_ITEM)
-		msgalert ("Informar a LINHA ou ITEM. Verifique! ")
+		u_help ("Informar a LINHA ou ITEM. Verifique! ")
 		_lRet = .F.
 	endif 
 	// testa duplicidade
 	if _lRet .and. inclui
 		ZAV -> (dbsetorder (3))
 		if ZAV -> (dbseek (xfilial ("ZAV") + m->ZAV_VEND + m->ZAV_LINHA + m->ZAV_ITEM, .F.))
-			msgalert ("Ja' existe registro desse vendedor para essa linha e/ou item. Verifique! ")
+			u_help ("Ja' existe registro desse vendedor para essa linha e/ou item. Verifique! ")
 			_lRet = .F.
 		endif
 	endif

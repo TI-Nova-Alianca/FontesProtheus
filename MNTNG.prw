@@ -13,8 +13,8 @@ User Function MNTNG()
    
     Local cId := PARAMIXB[1] //Indica o momento da chamada do PE
     Local oWS := PARAMIXB[2] //Objeto com referência ao webservice
-    Local oParser, aArea, aAreaSTL
-    Local _xRet := NIL
+    //Local oParser, aArea, aAreaSTL
+   // Local _xRet := NIL
       
     If cId == "CANCEL_VALID" //valida cancelamento da ordem
         If FWJsonDeserialize(oWS:GetContent(),@oParser) //Parse da string no formato Json

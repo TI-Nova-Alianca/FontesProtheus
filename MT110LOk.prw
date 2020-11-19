@@ -31,11 +31,11 @@ user function mt110lok ()
 
 	if _lRet .and. ! GDDeleted () .and. GDFieldGet ("C1_VAENCAM") == "S"
 		if _lRet .and. empty (GDFieldGet ("C1_VAJENC"))
-			msgalert ("Solicitacoes ja' encaminhadas devem ter justificativa para o encaminhamento.")
+			u_help ("Solicitacoes ja' encaminhadas devem ter justificativa para o encaminhamento.")
 			_lRet = .F.
 		endif
 		if _lRet .and. GDFieldGet ("C1_VAVLUNI") == 0
-			msgalert ("Solicitacoes ja' encaminhadas devem ter valor informado.")
+			u_help ("Solicitacoes ja' encaminhadas devem ter valor informado.")
 			_lRet = .F.
 		endif
 	endif
@@ -45,11 +45,11 @@ user function mt110lok ()
 	if _lRet .and. ! GDDeleted ()
 		if GDFieldGet ("C1_PRODUTO") = '7117' .or. GDFieldGet ("C1_PRODUTO") = '7017'
 			if empty(GDFieldGet ("C1_CC"))
-				msgalert ("Obrigatório informar centro de custo para solicitação de pecas.")
+				u_help ("Obrigatório informar centro de custo para solicitação de pecas.")
 				_lRet = .F.
 			endif
 			if _lRet .and. empty(GDFieldGet ("C1_VADESTI"))
-				msgalert ("Obrigatório informar o equipamento no destino")
+				u_help ("Obrigatório informar o equipamento no destino")
 				_lRet = .F.
 			endif
 		endif			
@@ -65,7 +65,7 @@ user function mt110lok ()
 				// produtos considerados excessao - chamado 
 				_lRet = .T.	
 			else 
-				msgalert ("Obrigatório informar centro de custo para este item.")
+				u_help ("Obrigatório informar centro de custo para este item.")
 				_lRet = .F.
 			endif				
 		//endif
@@ -75,7 +75,7 @@ user function mt110lok ()
 	// valida data de necessidade que obrigatoriamente tem que ser maior ou igual a data do sistema
 	if _lRet .and. ! GDDeleted () .and. ! empty (GDFieldGet ("C1_DATPRF"))
 		if dtos(GDFieldGet ("C1_DATPRF")) < dtos( DATE() )
-		 	msgalert ("Data de necessidade deve ser obrigatóriamente maior ou igual a data de digitação da solicitação.")
+		 	u_help ("Data de necessidade deve ser obrigatóriamente maior ou igual a data de digitação da solicitação.")
 			_lRet = .F.
 		endif
 	endif

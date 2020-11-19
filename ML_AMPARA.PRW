@@ -54,9 +54,9 @@ Static Function RptDetail()
 	local _nFILCFOP  := 0
 	local _nMaxLin   := 63
 	local _sQuery    := ""
-	local _aAliasQ   := ""
-	local _nValor    := 0
-	local _aTotVend  := {}
+	//local _aAliasQ   := ""
+	//local _nValor    := 0
+	//local _aTotVend  := {}
 	local _aTotGer   := {}
 	local _sFilial   := ""
 	local _aTotFil   := {}

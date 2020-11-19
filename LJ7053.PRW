@@ -23,7 +23,7 @@ User function VA_LJCOND()
 		
 		
 		if _sDtvenda < (date() -10) // permite alterar cupons emitidos ate 2 dias antes
-			msgalert("Data da Venda não permite mais a alteração da condição de pagamento.")
+			u_help("Data da Venda não permite mais a alteração da condição de pagamento.")
 			return
 		endif
 		

@@ -13,15 +13,15 @@
 User Function va_rusR ()
 
 	if sze -> ze_status == "1" .and. sze -> ze_aglutin != 'D'
-		msgalert ("Falta segunda pesagem")
+		u_help ("Falta segunda pesagem")
 		return
 	endif
 	if sze -> ze_status == "C"
-		msgalert ("Carga cancelada.")
+		u_help ("Carga cancelada.")
 		return
 	endif
 	if sze -> ze_coop == "000021"
-		if ! msgnoyes ("Associados precisam gerar contranota. Confirma a impressao do recibo mesmo assim?")
+		if ! msgnoyes ("Associados precisam gerar contranota. Confirma a impressao do recibo mesmo assim?","Confirmar")
 			return
 		endif
 	endif
@@ -103,7 +103,7 @@ static function _Imprime ()
 		else
 			sa2 -> (dbsetorder (1))
 			if ! sa2 -> (dbseek (xFilial("SA2") + sze -> ze_assoc + sze -> ze_lojasso, .F.))
-				msgalert ("Fornecedor nao cadastrado!")
+				u_help ("Fornecedor nao cadastrado!")
 				return
 			else
 				_sNome = sa2 -> a2_nome

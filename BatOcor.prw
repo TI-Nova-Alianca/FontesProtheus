@@ -17,9 +17,9 @@ user function BatOcor ()
 	local _aAmbAnt   := {}
 	local _nDir      := 0
 	local _aDir      := {}
-	local _sQuery    := ""
-	local _aClientes := {}
-	local _nCliente  := 0
+	//local _sQuery    := ""
+	//local _aClientes := {}
+	//local _nCliente  := 0
 	local _nLock     := 0
 	local _lContinua := .T.
 	Local cLinha     := ''
@@ -88,7 +88,7 @@ Static Function _Move (_sArq, _sDest)
 	local _sDirRmt  := ""
 	local _sArqRmt  := ""
 	local _sExtRmt  := ""
-	local _sPath    := ""
+	//local _sPath    := ""
 	local _sArqDest := ""
 	local _nSeqNome := 0
 

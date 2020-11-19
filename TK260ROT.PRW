@@ -15,7 +15,7 @@ aadd( aRotina, { "Tornar Cliente"      , "U_MPROSP" , 0, 3} )
 return aRotina
 
 User Function MPROSP()
-Local nOpca := 0 
+//Local nOpca := 0 
 Local aParam := {}
 Local cProsp:= SUS->US_COD 
 Local cLoja:= SUS->US_LOJA
@@ -28,7 +28,7 @@ aAdd( aParam, {|| U_MPROSP1() } )
 aAdd( aParam, {|| U_MPROSP2() } ) //ao fim da transação
 
 if SUS->US_STATUS == "6"     // Status não pode ser = CLIENTE
-   MsgAlert("Este Prospect já se tornou cliente!")
+   u_help("Este Prospect já se tornou cliente!")
    return .F.
 endif
 

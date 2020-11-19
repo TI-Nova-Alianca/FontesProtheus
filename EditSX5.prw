@@ -48,7 +48,7 @@ User Function EditSX5 (_sTabela, _sLinhaOK, _sTudoOK, _nMaxLin, _lPodeDel, _sApo
 
 	sx5 -> (dbsetorder (1))
 	if ! sx5 -> (dbseek (_sFilialX5 + _sTabela, .T.))
-		msgalert ("Tabela " + _sTabela + " nao encontrada no configurador.")
+		u_help ("Tabela " + _sTabela + " nao encontrada no configurador.")
 		_lRet = .F.
 	else
 
@@ -151,7 +151,7 @@ user function EditSX5K (_lLinha, _lTudo)
 		if _lRet
 			//if empty (GDFieldGet ("X5_CHAVE")) .or. empty (GDFieldGet ("X5_DESCRI")) .or. empty (GDFieldGet ("X5_DESCSPA")) .or. empty (GDFieldGet ("X5_DESCENG"))
 			if empty (GDFieldGet ("X5_DESCRI")) .or. empty (GDFieldGet ("X5_DESCSPA")) .or. empty (GDFieldGet ("X5_DESCENG"))
-				msgalert ("Ha' campos nao informados.")
+				u_help ("Ha' campos nao informados.")
 				_lRet = .F.
 			endif
 		endif

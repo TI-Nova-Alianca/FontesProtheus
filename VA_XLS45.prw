@@ -8,11 +8,11 @@
 // 
 // --------------------------------------------------------------------------
 User Function VA_XLS45 ()
-	Local cCadastro := "Verificar diferenças entre estrutura e OP"
-	Local aSays     := {}
-	Local aButtons  := {}
-	Local nOpca     := 0
-	Local lPerg     := .F.
+	//Local cCadastro := "Verificar diferenças entre estrutura e OP"
+	//Local aSays     := {}
+	//Local aButtons  := {}
+	//Local nOpca     := 0
+	//Local lPerg     := .F.
 	Private cPerg   := "VAXLS45"
 	
 	_ValidPerg()

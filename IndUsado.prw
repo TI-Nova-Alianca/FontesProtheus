@@ -97,11 +97,11 @@ static function _AndaLogo ()
 	enddo
 
 	if empty (_sResult)
-		msginfo ("Nada encontrado.")
+		u_help ("Nada encontrado.")
 	else
 		msginfo (_sResult, "Utilizacao do indice")
 	endif
-	msgalert ("Lembre-se de verificar, tambem, nos fontes de programas!")
+	u_help ("Lembre-se de verificar, tambem, nos fontes de programas!")
 Return
 
 

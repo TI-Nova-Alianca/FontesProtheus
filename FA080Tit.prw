@@ -19,8 +19,8 @@ user function fa080tit ()
 	local _lRet2    := .T.
 	local _aAreaAnt := U_ML_SRArea ()
 	local _aAmbAnt  := U_SalvaAmb ()
-	local _oSQL     := ClsSQL():New ()
-	local _sSeqSE5  := ""
+	//local _oSQL     := ClsSQL():New ()
+	//local _sSeqSE5  := ""
 
 	u_logIni ()
 	

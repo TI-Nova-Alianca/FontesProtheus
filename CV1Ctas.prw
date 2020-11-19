@@ -20,8 +20,8 @@ user function CV1Ctas ()
 	local _sCampo    := ''
 	local _lContinua := .T.
 	local _sAno      := ""
-	local _nMes      := 0
-	local _sMes      := ""
+	//local _nMes      := 0
+	//local _sMes      := ""
 	local _sSeq      := ''
 	private cPerg := "CV1ITE"
 

@@ -23,7 +23,7 @@ Static Function ReportDef()
 	Local oReport  := Nil
 	Local oSection1:= Nil
 	Local oBreak1
-	Local oFunction
+	//Local oFunction
 
 	oReport := TReport():New("VA_LOGTRAN","Transferencias de estoque",cPerg,{|oReport| PrintReport(oReport)},"Transferencias de estoque")
 	

@@ -24,7 +24,7 @@ user function mt120lok ()
 				// produtos considerados excessao - chamado 
 				_lRet = .T.	
 			else 
-				msgalert ("Obrigatório informar centro de custo para este item.")
+				u_help ("Obrigatório informar centro de custo para este item.")
 				_lRet = .F.
 			endif				
 		//endif

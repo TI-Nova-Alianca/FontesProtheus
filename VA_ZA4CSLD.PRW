@@ -160,7 +160,7 @@ User function VA_ZA4CSLD()
 			endif	    			    	
 	    	
 	    else
-			msgalert("Não foram encontrados dados para consulta")
+			u_help("Não foram encontrados dados para consulta")
 		endif			
 	endif
 	

@@ -10,8 +10,8 @@
 user function VA_ALTBCO (_wpedido)
 	local _lContinua := .T.
 	local _aAreaAnt  := U_ML_SRArea ()
-	local _lRet      := .T.
-	local _aLiber    := {.F.,,}
+	//local _lRet      := .T.
+	//local _aLiber    := {.F.,,}
 
 	// -- posiciona o pedido
 	DbSelectArea("SC5")

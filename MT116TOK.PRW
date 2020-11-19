@@ -13,9 +13,9 @@ User Function MT116TOK()
 	local _aAmbAnt   := U_SalvaAmb ()
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _lRet      := .T.
-	local _xFim      := chr(13)+chr(10)
-	local _sQuery    := ""
-	local _nRetQry   := 0
+	//local _xFim      := chr(13)+chr(10)
+	//local _sQuery    := ""
+	//local _nRetQry   := 0
 	local _nLinha	 := 0
 	private _aMatriz := {}
 	public _nRegZZX  := 0  // Deixar como 'public' para ser vista em outros pontos de entrada.
@@ -63,20 +63,20 @@ Return(_lRet)
 // --------------------------------------------------------------------------
 // Verifica preenchimento da chave NFe.
 static function _ValChvNFe ()
-	local _i         := 0
+	//local _i         := 0
 	local _lRet      := .T.
 	local _oSQL      := NIL
-	local _aUF       := {}
+	//local _aUF       := {}
 	local _sChvNFe   := iif (type ("aNFeDANFe") == "A", aNFeDANFe [13], "")
 	local _sCNPJ     := ""
 	local _nTamDoc   := tamsx3 ("F1_DOC")[1]
 	local _sNumNF    := ""
 	local _lDeveTer  := .F.
-	local _oNFe      := NIL
-	local _aRetSEFAZ := {}
-	local _lAutSEFAZ := .F.
-	local _sCGCEmit  := ''
-	local _sFilOri   := ''
+	//local _oNFe      := NIL
+	//local _aRetSEFAZ := {}
+	//local _lAutSEFAZ := .F.
+	//local _sCGCEmit  := ''
+	//local _sFilOri   := ''
 	
 	_lDeveTer = .T.
 	
@@ -153,8 +153,8 @@ static function _ValXML ()
 	local _lRet      := .T.
 	local _lContinua := .T.
 	local _aUF       := {}
-    local _IEFor     := ''     
-    local _lRet2     := .T.        
+    //local _IEFor     := ''     
+    //local _lRet2     := .T.        
 	u_logIni ()
 
 	// Tenta buscar pela chave da NF-e, em qualquer filial.

@@ -14,7 +14,7 @@
 #include 'parmtype.ch'
 
 User Function M410PCDV()
-	Local cAliasSD1 := PARAMIXB[1]
+	//Local cAliasSD1 := PARAMIXB[1]
 	Local aArea 	:= GetArea()
 	Local nItem     := 0
 	Local nProd 	:= 0

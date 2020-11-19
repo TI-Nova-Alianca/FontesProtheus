@@ -120,7 +120,7 @@ Static Function PrintReport(oReport)
 			oReport:IncMeter()
 	
 			If oReport:Cancel()
-				MsgAlert("Operacao cancelada pelo usuario.")
+				u_help("Operacao cancelada pelo usuario.")
 				Exit
 			End
 		

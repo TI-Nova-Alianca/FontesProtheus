@@ -28,8 +28,8 @@ Local _cCondPg  := Paramixb[6]   // Condicao de Pagto
 Local _xFim     := chr(13)+chr(10)
 Local _xRet     := .T.
 //Local _xUSUARIO := ""
-Local _xCONT    := 7
-Local _xFLAG    := ""
+//Local _xCONT    := 7
+//Local _xFLAG    := ""
 
 /*
 Do While _xCONT < Len(cUsuario)
@@ -86,8 +86,8 @@ User Function _CondPagto()
 Local _cAlias    := Alias()
 Local _xRet      := "097"  // Padrao Cupom
 //Local _xUSUARIO  := ""
-Local _xCONT     := 7
-Local _xFLAG     := ""
+//Local _xCONT     := 7
+//Local _xFLAG     := ""
 /*
 Do While _xCONT < Len(cUsuario)
 	_xFLAG := Substr(cUsuario,_xCONT,1)

@@ -24,12 +24,12 @@ User Function va_szda ()
 local _lRet := .T.
 
 		If posicione ('SA2', 1, xFilial ('SA2') + M->ZD_FORNECE + M->ZD_LOJA, 'A2_TIPO') != 'F'
-			MsgAlert ('Associado deve ser pessoa fisica')
+			u_help ('Associado deve ser pessoa fisica')
 			_lRet = .F.
 		endif
 	
 		if u_EhAssoc (M->ZD_FORNECE, M->ZD_LOJA, dDatabase)
-			MsgAlert ('Este Fornecedor é nosso associado')
+			u_help ('Este Fornecedor é nosso associado')
 			_lRet = .F.
 		endif
 		

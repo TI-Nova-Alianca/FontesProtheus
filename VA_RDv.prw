@@ -114,16 +114,16 @@ return _aRet
 static function _Imprime ()
 	local _nMaxLin   := 68
 	local _sQuery    := ""
-	local _aAliasQ   := ""
+	//local _aAliasQ   := ""
 	local _aMotivos  := {}
 	local _aRespon   := {}
 	local _nMotivo   := 0
 	local _nRespon   := 0
-	local _nValor    := 0
-	local _aTotVend  := {}
+	//local _nValor    := 0
+	//local _aTotVend  := {}
 	local _aTotGer   := {}
-	local _aTotGer   := {}
-	local _aTotRep   := {}
+	//local _aTotGer   := {}
+	//local _aTotRep   := {}
 
 	// Nao aceita filtro por que precisaria inserir na query.
 	If !Empty(aReturn[7])

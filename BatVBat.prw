@@ -16,10 +16,10 @@ user function BatVBat ()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _aAmbAnt  := U_SalvaAmb ()
 	local _sQuery   := ""
-	local _sMsg     := ""
+	//local _sMsg     := ""
 	local _aRetQry  := {}
 	local _i        := 0
-	local _oSQL     := NIL
+	//local _oSQL     := NIL
 	local _sArqLog2 := iif (type ("_sArqLog") == "C", _sArqLog, "")
 	_sArqLog := U_NomeLog (.t., .f.)
 	u_logIni ()

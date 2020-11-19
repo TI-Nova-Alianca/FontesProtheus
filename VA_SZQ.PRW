@@ -41,10 +41,10 @@ Return
 User Function VA_SZQA(cAlias, nReg, nAcao)
 	
 	local lRet
-	local cCampo
+	//local cCampo
 	local _nLinha, _nF, _cNf
 	local _aButtons	 	 := {}
-	local aCpoEnChoice   := {}
+	//local aCpoEnChoice   := {}
 	local _nCampo      	 := 0
 	local _nX			 := 0
 	PRIVATE aCols        := {}

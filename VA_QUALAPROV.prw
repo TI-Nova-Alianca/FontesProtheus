@@ -19,9 +19,9 @@
 User Function VA_QUALAPROV()
 
 	Local _aCores  := U_L_QUALAPROV (.T.)
-	Local cArqTRB  := ""
-	Local cInd1    := ""
-	Local nI       := 0
+	//Local cArqTRB  := ""
+	//Local cInd1    := ""
+	//Local nI       := 0
 	Local aStruct  := {}
 	Local aHead    := {}
 	Local I		   := 0
@@ -124,7 +124,7 @@ User Function VA_QUALAPROV()
 		aadd (aRotina, {"&Legenda"            ,"U_L_QUALAPROV(.F.)", 0 ,5})
 		
 		Private cDelFunc := ".T."
-		private _sArqLog := U_NomeLog ()Þ
+		private _sArqLog := U_NomeLog ()
 		u_logId ()
 		
 		dbSelectArea("TRB")

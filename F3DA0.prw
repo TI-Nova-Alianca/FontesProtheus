@@ -22,9 +22,9 @@ User Function F3DA0 ()
 	local _nOpcao    := 0
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aCampos   := {}
-	local _sCliente  := ""
-	local _sLoja     := ""
-	local _sVend     := ""
+	//local _sCliente  := ""
+	//local _sLoja     := ""
+	//local _sVend     := ""
 	local _sQuery    := ""
 	local _lContinua := .T.
     local _sCodRep   := ""
@@ -144,7 +144,7 @@ User Function F3DA0 ()
 			//			u_ShowMemo (_squery)
 
 		otherwise
-			msgalert ("Programa " + procname () + ": Chamada nao prevista. Solicite manutencao.")
+			u_help ("Programa " + procname () + ": Chamada nao prevista. Solicite manutencao.")
 			_lContinua = .F.
 		endcase
 	endif
@@ -153,7 +153,7 @@ User Function F3DA0 ()
 		_aOpcoes = aclone (U_Qry2Array (_sQuery))
 	
 		if len (_aOpcoes) == 0
-			msgalert ("Nao foi encontrada nenhuma tabela disponivel.")
+			u_help ("Nao foi encontrada nenhuma tabela disponivel.")
 			_lContinua = .F.
 		endif
 	endif

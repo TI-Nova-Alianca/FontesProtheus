@@ -11,7 +11,7 @@
 // --------------------------------------------------------------------------
 User Function Verif (_nQual, _aParam)
 	local _aAreaAnt  := U_ML_SRArea ()
-	local _lContinua := .T.
+	//local _lContinua := .T.
 	local _aRet      := {}
 	local _aVerif    := {}
 	local _nVerif    := 0

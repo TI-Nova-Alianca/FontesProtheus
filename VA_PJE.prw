@@ -113,7 +113,7 @@ return
 static function _Imprime ()
 	local _nMaxLin   := 63
 	local _sQuery    := ""
-	local _aAliasQ   := ""
+	//local _aAliasQ   := ""
 	local _oDUtil    := ClsDUtil():New ()
 	local _oAUtil    := NIL
 	local _aSemanas  := {}

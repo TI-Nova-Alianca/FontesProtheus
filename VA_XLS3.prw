@@ -102,7 +102,7 @@ Static Function _Gera()
 		u_log (_sQuery)
 		_aAlmox = aclone (U_Qry2Array (_sQuery))
 		if len (_aAlmox) == 0
-			msgalert ("Nao foi encontrado saldo em nenhum almoxarifado. Verifique parametros!")
+			u_help ("Nao foi encontrado saldo em nenhum almoxarifado. Verifique parametros!")
 			_lContinua = .F.
 		endif
 	endif
@@ -135,7 +135,7 @@ Static Function _Gera()
 		DbUseArea(.t., 'TOPCONN', TcGenQry (,, _sQuery), _sAliasQ, .f., .t.)
 		count to _nRecCount
 		if _nRecCount == 0
-			msgalert ("Nao ha dados gerados. Verifique parametros!")
+			u_help ("Nao ha dados gerados. Verifique parametros!")
 		else
 			procregua (_nRecCount)
 			incproc ("Gerando arquivo de exportacao")

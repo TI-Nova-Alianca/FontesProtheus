@@ -183,12 +183,12 @@ Return
 
 // --------------------------------------------------------------------------
 static function _ImpZAG ()
-	local _sOP        := ""
+	//local _sOP        := ""
 	local _sDoc       := ""
-	local _sData      := ""
-	local _sDataF     := ""
+	//local _sData      := ""
+	//local _sDataF     := ""
 	local _sDataV     := ""
-	local _sLote      := ""
+	//local _sLote      := ""
 	local _sUM        := ""
 	local _sDescri1   := ""
 	local _sDescri2   := ""
@@ -366,22 +366,22 @@ return
 static function _ImpOP ()
 	local _sOP        := ""
 	local _sPbrt      := ""
-	local _sDoc       := ""
+	//local _sDoc       := ""
 	local _sData      := ""
-	local _sDataF     := ""
-	local _sDataV     := ""
+	//local _sDataF     := ""
+	//local _sDataV     := ""
 	local _sLote      := ""
 	local _sUM        := ""
 	local _sDescri1   := ""
 	local _sDescri2   := ""
 	local _sDescri3   := ""
-	local _sNome1     := ""
-	local _sNome2     := ""
-	local _sLoteF	  := "" 
-	local _sLoteI	  := ""				
+	//local _sNome1     := ""
+	//local _sNome2     := ""
+	//local _sLoteF	  := "" 
+	//local _sLoteI	  := ""				
 	local _sSeqEtq    := ""
 	local _lContinua  := .T.
-	local _sMargEsq   := ""
+	//local _sMargEsq   := ""
 
 	u_logIni ()
 	
@@ -597,10 +597,10 @@ return
 // --------------------------------------------------------------------------
 static function _ImpNF ()
 	local _sDoc       := ""
-	local _sData      := ""
+	//local _sData      := ""
 	local _sDataF     := ""
 	local _sDataV     := ""
-	local _sLote      := ""
+	//local _sLote      := ""
 	local _sUM        := ""
 	local _sDescri1   := ""
 	local _sDescri2   := ""

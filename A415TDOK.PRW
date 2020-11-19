@@ -82,7 +82,7 @@ static function _Campanhas ()
 				tmp1 -> (dbgotop ())
 				do while ! tmp1 -> (eof ())
 					if ! tmp1 -> ck_flag .and. ! acl -> (dbseek (xfilial ("ACL") + tmp1 -> Ck_PRODUTO, .F.))
-						msgalert ("Produto '" + tmp1 -> Ck_PRODUTO + "' nao consta na campanha de vendas " + m->cj_vaverba)
+						u_help ("Produto '" + tmp1 -> Ck_PRODUTO + "' nao consta na campanha de vendas " + m->cj_vaverba)
 						_lRet = .F.
 						exit
 					endif
@@ -96,7 +96,7 @@ static function _Campanhas ()
 			tmp1 -> (dbgotop ())
 			do while ! tmp1 -> (eof ())
 				if ! tmp1 -> ck_flag .and. tmp1 -> ck_ENTREG < ack -> ack_datini .or. tmp1 -> CK_ENTREG > ack -> ack_datfim
-					msgalert ("Linha " + cvaltochar (tmp1 -> (recno ())) + ": data de entrega fora do periodo da campanha (" + dtoc (ack -> ack_datini) + " a " + dtoc (ack -> ack_datfim) + ").")
+					u_help ("Linha " + cvaltochar (tmp1 -> (recno ())) + ": data de entrega fora do periodo da campanha (" + dtoc (ack -> ack_datini) + " a " + dtoc (ack -> ack_datfim) + ").")
 					_lRet = .F.
 					exit
 				endif

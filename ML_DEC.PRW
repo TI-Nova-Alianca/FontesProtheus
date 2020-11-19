@@ -317,7 +317,7 @@ Return
 Static Function _Tipo20N ()
 	local _sTipoDocF := ''
 	local _sQry20    := ''
-	local _sQry20T   := ''
+	//local _sQry20T   := ''
 	local _sPos      := ''
 	local _vTotLit   := 0
 	local _lContinua := .T.
@@ -535,7 +535,7 @@ Return
 Static Function _Tipo20D ()
 	local _sTipoDocF := ''
 	local _sQry20    := ''
-	local _sQry20T   := ''
+	//local _sQry20T   := ''
 	local _sPos      := ''
 	local _vTotLit   := 0
 	local _lContinua := .T.

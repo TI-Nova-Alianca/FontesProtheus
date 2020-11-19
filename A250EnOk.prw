@@ -30,7 +30,7 @@ return _lRet
 // Consiste dados da etiqueta, quando informada.
 static function _VerEtiq ()
 	local _lRet     := .T.
-	local _oSQL     := NIL
+	//local _oSQL     := NIL
 	local _oVerif   := NIL
 	local _sMsgSup  := ""
 	local _oEtiq    := NIL

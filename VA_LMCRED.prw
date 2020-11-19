@@ -15,9 +15,9 @@
 
 User Function VA_LMCRED()
 	local _aCores   := U_L_LMCRED (.T.)
-	Local cArqTRB   := ""
-	Local cInd1     := ""
-	Local nI        := 0
+	//Local cArqTRB   := ""
+	//Local cInd1     := ""
+	//Local nI        := 0
 	Local aStruct   := {}
 	Local aHead 	:= {}
 	Local I			:= 0

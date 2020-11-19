@@ -10,7 +10,7 @@
 // --------------------------------------------------------------------------
 user function ML_DVEAN (_sCodSemDV, _lRetTudo)
 	local _nPos      := 0
-	local _sMultiplo := 0
+	//local _sMultiplo := 0
 	local _nSoma     := 0
 	local _nMult10   := 0
 	local _sRet      := ""

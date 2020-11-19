@@ -17,7 +17,7 @@ User Function MATUCOMP()
 	Local cCliefor := ParamIXB[4]
 	Local cLoja    := ParamIXB[5]	
 	Local cQuery   := ""
-	Local x		   := 0
+	//Local x		   := 0
 	
 	// Entradas
 	If (IsInCallStack ("MATA910") .or. IsInCallStack ("MATA103")) .and. cEntSai = 'E' // Entradas ou aquisições de serviços do exterior

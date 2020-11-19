@@ -16,7 +16,7 @@
 User Function A260GRV()
 	local _aAreaAnt := U_ML_SRArea ()
 	Local _lRet     := .T.
-	local _sMsg     := .T.
+	//local _sMsg     := .T.
 	if type ('cCodOrig') == 'C'
 		if !empty(alltrim(cCodOrig)) .and. !empty(alltrim(cCodDest))
 

@@ -30,7 +30,7 @@ user function aColsXLS (_aCols, _lTitHead)
 	local _nHdl     := 0
 	local _sCrLf    := chr (13) + chr (10)
 	local _nLinha 	:= 0
-	local _sCampo 	:= ""
+	//local _sCampo 	:= ""
 	local _aHeader 	:= {}
 	local _nMaxCols := 0
 	local _lContinua:= .T.

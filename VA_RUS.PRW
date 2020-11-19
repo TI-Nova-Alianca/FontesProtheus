@@ -277,7 +277,7 @@ return
 user function VA_RUSRD ()
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _lContinua := .T.
-	local _sFilDest  := ''
+	//local _sFilDest  := ''
 
 	if _lContinua
 		if sze -> ze_status $ '2/R/N/D/C'  // 1=Primeira pesagem OK;2=Segunda pesagem OK;R=Recibo impresso;N=NF gerada;D=Redirecionada;C=Cancelada
@@ -407,7 +407,7 @@ return
 // Imprime (DANFe) a NF posicionada no browse.
 user function VA_RUSi ()
 	if empty (sze -> ze_nfger)
-		msgalert ("Nao ha nota fiscal gerada para esta carga.")
+		u_help ("Nao ha nota fiscal gerada para esta carga.")
 	else
 		U_ImpDanfe ('E', sze -> ze_nfger, sze -> ze_nfger, sze -> ze_serie)
 	endif

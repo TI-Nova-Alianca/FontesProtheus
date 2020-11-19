@@ -5,12 +5,12 @@ User Function zMsgLog(cMsg, cTitulo, nTipo, lEdit)
     Local lRetMens := .F.
     Local oDlgMens
     Local oBtnOk, cTxtConf := ""
-    Local oBtnCnc,cTxtCancel := ""
-    Local oBtnSlv
+    //Local oBtnCnc,cTxtCancel := ""
+    //Local oBtnSlv
     Local oFntTxt := TFont():New("Lucida Console",,-015,,.F.,,,,,.F.,.F.)
     Local oMsg
-    Local nIni:=1
-    Local nFim:=50    
+   // Local nIni:=1
+   // Local nFim:=50    
     Default lEdit   := .F.
      
     //Definindo os textos dos botões

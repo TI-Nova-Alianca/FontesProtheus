@@ -36,13 +36,13 @@ User Function FrtPV (_sQueFazer)
 	if _sQueFazer == "V"  // Verifica 'Tudo OK'
 		if m->c5_tpfrete == "C"
 			if type ("_oClsFrtPV") != "O"
-				msgalert ("Nao foi feita a selecao de frete. Verifique!", "Funcao " + procname ())
+				u_help ("Nao foi feita a selecao de frete. Verifique!", "Funcao " + procname ())
 				_lRet = .F.
 			endif
 			if _lRet
 				// Verifica se o usuario alterou algo depois de informar o frete.
 				if empty (_oClsFrtPV:_C5TRANSP) .or. empty (_oClsFrtPV:_ZZ1ORIGEM) .or. empty (_oClsFrtPV:_ZZ1DESTIN)
-					msgalert ("Dados de frete incompletos, nao informados ou foi feita alguma alteracao no pedido. A selecao de frete deve ser refeita.")
+					u_help ("Dados de frete incompletos, nao informados ou foi feita alguma alteracao no pedido. A selecao de frete deve ser refeita.")
 					_lRet = .F.
 				endif
 			endif
@@ -53,7 +53,7 @@ User Function FrtPV (_sQueFazer)
 					 _oClsFrtPV:_C5CLIENT  != m->c5_client  .or. ;
 					 _oClsFrtPV:_C5LOJAENT != m->c5_lojaent .or. ;
 					 _oClsFrtPV:_C5TRANSP  != m->c5_transp
-					msgalert ("Houve alteracao nos campos de cliente / cliente de entrega / transportadora. A selecao de frete deve ser refeita.")
+					u_help ("Houve alteracao nos campos de cliente / cliente de entrega / transportadora. A selecao de frete deve ser refeita.")
 					_lRet = .F.
 				endif
 			endif

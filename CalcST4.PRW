@@ -11,7 +11,7 @@
 // --------------------------------------------------------------------------
 user function CalcST4 (_sUF, _sProduto, _nPreco, _sCliente, _sLoja, _nQuant, _sTES)
 	local _aAreaAnt  := U_ML_SRArea ()
-	local _sTES      := ""
+	//local _sTES      := ""
 	local _nRet      := 0
 	local _oSQL      := NIL
 	local _lContinua := .T.

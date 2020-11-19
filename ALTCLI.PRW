@@ -47,13 +47,13 @@ return
 
 // --------------------------------------------------------------------------
 Static Function GeraTxt()
-	local _aArqTrb := {}
-	local _aTipos  := {}
-	local _nTipo   := 0
-	local _oSisDec  := NIL
-	local _nErro    := 0
-	local _nAviso   := 0
-	local _aCampos  := {}
+	//local _aArqTrb := {}
+	//local _aTipos  := {}
+	//local _nTipo   := 0
+	//local _oSisDec  := NIL
+	//local _nErro    := 0
+	//local _nAviso   := 0
+	//local _aCampos  := {}
 	private _aProdutos := {}
 	private _aMarcas   := {}
 	private _sErros    := ""

@@ -561,7 +561,7 @@ static function _LeCli (_sLinkSrv)
 	local _sSimpNac  := ""
 	local _sEMail    := ""
 	LOCAL _sStatMerc := ""
-	Local aAI0Auto   := ""
+	//Local aAI0Auto   := ""
 	private _sErroAuto := ""  // Deixar private para ser vista por rotinas automaticas, etc.
 	//oModel:= MPFormModel():New("MATA030",/*Pre-Validacao*/, /*Pos-Validacao*/, /*Commit*/,/*Cancel*/)
 	oModel := FWLoadModel("MATA030")
@@ -833,69 +833,69 @@ return
 static function _NoAcento (_sTexto)
 return strtran (U_NoAcento (_sTexto), '&', 'e')
 
-// --------------------------------------------------------------------------
-static function _AtuReferencia (_sTexto)
+// // --------------------------------------------------------------------------
+// static function _AtuReferencia (_sTexto)
 
 
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT * "
-		_oSQL:_sQuery += " FROM LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_CLIENTE_REFERENCIA "
-		_oSQL:_sQuery += "	INNER JOIN " + RetSQLName ("SA1") + " AS SA1 "
-		_oSQL:_sQuery += "	 ON (SA1.D_E_L_E_T_ = '' "
-		_oSQL:_sQuery += "		AND SA1.A1_FILIAL = '' "
-		_oSQL:_sQuery += "		AND SA1.A1_COD = REPLICATE('0', 6 - LEN(CLIENTE)) + RTRIM(CLIENTE)) "
-		_oSQL:_sQuery += " WHERE NOT EXISTS (SELECT * "
-		_oSQL:_sQuery += " 	FROM " + RetSQLName ("SAO") + " SAO "
-		_oSQL:_sQuery += "	WHERE SAO.D_E_L_E_T_ = '' "
-		_oSQL:_sQuery += "  AND SAO.AO_FILIAL = '01' "
-		_oSQL:_sQuery += "	AND SAO.AO_CLIENTE = SA1.A1_COD)"
+// 		_oSQL := ClsSQL ():New ()
+// 		_oSQL:_sQuery := ""
+// 		_oSQL:_sQuery += " SELECT * "
+// 		_oSQL:_sQuery += " FROM LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_CLIENTE_REFERENCIA "
+// 		_oSQL:_sQuery += "	INNER JOIN " + RetSQLName ("SA1") + " AS SA1 "
+// 		_oSQL:_sQuery += "	 ON (SA1.D_E_L_E_T_ = '' "
+// 		_oSQL:_sQuery += "		AND SA1.A1_FILIAL = '' "
+// 		_oSQL:_sQuery += "		AND SA1.A1_COD = REPLICATE('0', 6 - LEN(CLIENTE)) + RTRIM(CLIENTE)) "
+// 		_oSQL:_sQuery += " WHERE NOT EXISTS (SELECT * "
+// 		_oSQL:_sQuery += " 	FROM " + RetSQLName ("SAO") + " SAO "
+// 		_oSQL:_sQuery += "	WHERE SAO.D_E_L_E_T_ = '' "
+// 		_oSQL:_sQuery += "  AND SAO.AO_FILIAL = '01' "
+// 		_oSQL:_sQuery += "	AND SAO.AO_CLIENTE = SA1.A1_COD)"
 		
-		_oSQL:Log ()
-		_sAliasQ = _oSQL:Qry2Trb ()
-		u_logtrb (_sAliasQ, .T.)
-		(_sAliasQ) -> (dbgotop ())
-		_sItem1 == '01'
-		_sItem2 == '01'
-		_sItem3 == '01'
-		do while ! (_sAliasQ) -> (eof ())
-			reclock ("SAO", .T.)
-			sao -> sao_filial  = xfilial ("SAO")
-			sao -> sao_cliente = (_sAliasQ) -> CLIENTE
-			sao -> sao_loja    = '01'
-			if (_sAliasQ) -> TIPO = '01'
-				sao -> sao_tipo   = '03'
-				sao -> sao_item    = _sItem3
-				_sItem3 = Soma1(_sItem3)
-			else
-				sao -> sao_tipo   = (_sAliasQ) -> TIPO
-				sao -> sao_item    = _sItem2
-				_sItem2 = Soma1(_sItem2)
-			endif
-			sao -> sao_nomins  = (_sAliasQ) -> REFERENCIA
-//			sao -> sao_data    =  
-//			sao -> sao_nomfun  = 
-			sao -> sao_telefon = (_sAliasQ) -> TELEFONE
-//			sao -> sao_contato = 
-//			sao -> sao_desde   = 
-//			sao -> sao_ultcom  = 
-//			sao -> sao_maicom  =  
-			sao -> sao_vlrmai  = (_sAliasQ) -> VOLUME_MES_COMPRAS
-//			sao -> sao_pagpon  = 
-//			sao -> sao_bcocar  = 
-			sao -> sao_agencia = (_sAliasQ) -> AGENCIA
-//			sao -> sao_limcre  = 
-//			sao -> sao_movcc   = 
-//			sao -> sao_outope  = 
-//			sao -> sao_observ  = 
-			sao -> sao_prfpag  = (_sAliasQ) -> PERFIL_PAGAMENTO 
-			sao -> sao_credito = (_sAliasQ) -> CREDITO
-			sao -> sao_impcli  = (_sAliasQ) -> IMPORTANCIA
-			msunlock ()
-			(_sAliasQ) -> (dbskip ())
+// 		_oSQL:Log ()
+// 		_sAliasQ = _oSQL:Qry2Trb ()
+// 		u_logtrb (_sAliasQ, .T.)
+// 		(_sAliasQ) -> (dbgotop ())
+// 		_sItem1 == '01'
+// 		_sItem2 == '01'
+// 		_sItem3 == '01'
+// 		do while ! (_sAliasQ) -> (eof ())
+// 			reclock ("SAO", .T.)
+// 			sao -> sao_filial  = xfilial ("SAO")
+// 			sao -> sao_cliente = (_sAliasQ) -> CLIENTE
+// 			sao -> sao_loja    = '01'
+// 			if (_sAliasQ) -> TIPO = '01'
+// 				sao -> sao_tipo   = '03'
+// 				sao -> sao_item    = _sItem3
+// 				_sItem3 = Soma1(_sItem3)
+// 			else
+// 				sao -> sao_tipo   = (_sAliasQ) -> TIPO
+// 				sao -> sao_item    = _sItem2
+// 				_sItem2 = Soma1(_sItem2)
+// 			endif
+// 			sao -> sao_nomins  = (_sAliasQ) -> REFERENCIA
+// //			sao -> sao_data    =  
+// //			sao -> sao_nomfun  = 
+// 			sao -> sao_telefon = (_sAliasQ) -> TELEFONE
+// //			sao -> sao_contato = 
+// //			sao -> sao_desde   = 
+// //			sao -> sao_ultcom  = 
+// //			sao -> sao_maicom  =  
+// 			sao -> sao_vlrmai  = (_sAliasQ) -> VOLUME_MES_COMPRAS
+// //			sao -> sao_pagpon  = 
+// //			sao -> sao_bcocar  = 
+// 			sao -> sao_agencia = (_sAliasQ) -> AGENCIA
+// //			sao -> sao_limcre  = 
+// //			sao -> sao_movcc   = 
+// //			sao -> sao_outope  = 
+// //			sao -> sao_observ  = 
+// 			sao -> sao_prfpag  = (_sAliasQ) -> PERFIL_PAGAMENTO 
+// 			sao -> sao_credito = (_sAliasQ) -> CREDITO
+// 			sao -> sao_impcli  = (_sAliasQ) -> IMPORTANCIA
+// 			msunlock ()
+// 			(_sAliasQ) -> (dbskip ())
 			
-		enddo
-RETURN
+// 		enddo
+// RETURN
 		
 		
 		

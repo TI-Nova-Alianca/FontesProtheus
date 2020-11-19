@@ -12,7 +12,7 @@
 
 User Function VA_FATGRAF()
 	Local oScroll
-    Local nGrafico := BARCOMPCHART
+    //Local nGrafico := BARCOMPCHART
 	Private cPerg  := "VA_FATGRAF"
 	
 	_ValidPerg()
@@ -46,7 +46,7 @@ Static Function _FatGraf(oScroll,nGrafico)
 	Local x		  := 0
 	Local _aDados := {}
 	Local oChart
-	Local cQuery  := ""
+	//Local cQuery  := ""
 
 	If Valtype(oChart)=="O"
 		FreeObj(@oChart) //Usando a função FreeObj liberamos o objeto para ser recriado novamente, gerando um novo gráfico
@@ -130,9 +130,9 @@ Return _aDados
 // Consulta por hora
 Static Function _PorHora(_aDados)
 	Local cQuery   := ""
-	Local _aHora   := {}
-	Local _aQCupom := {}
-	Local x        := 0
+	//Local _aHora   := {}
+	//Local _aQCupom := {}
+	//Local x        := 0
 	
 	cQuery += " SELECT"
 	cQuery += " 	HORA"

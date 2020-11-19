@@ -161,11 +161,11 @@ return
 // --------------------------------------------------------------------------
 // Exclusao total.
 user function ML_SZ1E ()
-	local _aArea    := getarea ()
+	//local _aArea    := getarea ()
 	local _sProduto := sz1 -> z1_codprd
-	local _sQuery   := ""
+	//local _sQuery   := ""
 	
-	if msgyesno ("Confirma a exclusao de todos os valores para o produto " + sz1 -> z1_codprd + "?")
+	if msgyesno ("Confirma a exclusao de todos os valores para o produto " + sz1 -> z1_codprd + "?","Excluir")
 		sz1 -> (dbsetorder (1))
 		sz1 -> (dbseek (xfilial ("SZ1") + sza -> za_cod + _sProduto, .T.))
 		do while ! sz1 -> (eof ()) .and. sz1 -> z1_filial == xfilial ("SZ1") .and. sz1 -> z1_tabela == sza -> za_cod .and. sz1 -> z1_codprd == _sProduto
@@ -174,7 +174,7 @@ user function ML_SZ1E ()
 			msunlock ()
 			sz1 -> (dbskip ())
 		enddo
-		msginfo ("Dados excluidos.")
+		u_help ("Dados excluidos.")
 	endif
 return
 
@@ -183,7 +183,7 @@ return
 // --------------------------------------------------------------------------
 // Copia precos para outro(s) produto(s).
 user function ML_SZ1C ()
-	local _aArea     := getarea ()
+	//local _aArea     := getarea ()
 	local _sProduto  := sz1 -> z1_codprd
 	local _aTpPrc   := {}
 	local _aColsMB   := {}
@@ -347,7 +347,7 @@ user function ML_SZ1VC ()
 	local _nDecim   := 0
 	sz1 -> (dbsetorder (1))
 	if ! sz1 -> (dbseek (xfilial ("SZ1") + sza -> za_cod + _sProdOri, .F.))
-		msgalert ("Produto '" + _sProdOri + "' nao encontrado nesta tabela de precos.")
+		u_help ("Produto '" + _sProdOri + "' nao encontrado nesta tabela de precos.")
 		_lRet = .F.
 	else
 		if inclui
@@ -423,7 +423,7 @@ return _lRet
 // Validacao de 'Linha OK'
 user function ML_SZ1LK ()
 	local _lRet    := .T.
-	local _nLinha  := 0
+	//local _nLinha  := 0
 	
 	// Verifica campos obrigatorios
 	if _lRet .and. ! GDDeleted (N)
@@ -444,6 +444,7 @@ user function ML_SZ1TK ()
 	local _nLinha    := 0
 	local _nMenor    := 99
 	local _nMaior    := 0
+	local _nGrau     := 0
 	
 	if _lRet
 		_lRet = U_ML_SZ1LK ()

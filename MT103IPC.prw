@@ -14,7 +14,7 @@
 User Function MT103IPC()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _nItem    := Paramixb[1]    // numero do item do acols
-	local _lObra    := .F.
+	//local _lObra    := .F.
 
 	// Varre campos do SC7 e atualiza no SD1 os que tiverem nomes iguais.
 	DbSelectArea("SX3")

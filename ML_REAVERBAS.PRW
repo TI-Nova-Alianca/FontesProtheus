@@ -37,7 +37,7 @@ User Function ML_REAVERBAS()
     	
     // se iniciar o parametro de data inicial como branco - assume a data da primeira verba liberada
     if dtos(mv_par09) < '20150424'
-		msgalert("Data inicial não pode ser menor do que 24/04/2015, que foi quando foi implantado o controle de verbas")
+		u_help("Data inicial não pode ser menor do que 24/04/2015, que foi quando foi implantado o controle de verbas")
    		return		    		
     endif
     

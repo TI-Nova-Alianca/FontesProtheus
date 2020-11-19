@@ -109,10 +109,10 @@ return
 // Exclusao total.
 user function VA_SZAE ()
 	local _sSQL   := ""
-	local _sQuery := ""
-	local _nUsado := 0
+	//local _sQuery := ""
+	//local _nUsado := 0
 
-	if msgyesno ("Confirma a exclusao desta tabela e todos os precos relacionados a ela?")
+	if msgyesno ("Confirma a exclusao desta tabela e todos os precos relacionados a ela?","Excluir")
 		CursorWait ()
 		_sSQL := ""
 		_sSQL += " Update " + RetSQLName ("SZ1")
@@ -122,7 +122,7 @@ user function VA_SZAE ()
 		_sSQL +=    " and Z1_TABELA  = '" + sza -> za_cod + "'"
 		u_log (_ssql)
 		if TCSQLExec (_sSQL) < 0
-			msgalert ("Erro na exclusao dos itens da tabela")
+			u_help ("Erro na exclusao dos itens da tabela")
 		else
 			_sSQL := ""
 			_sSQL += " Update " + RetSQLName ("SZA")
@@ -132,7 +132,7 @@ user function VA_SZAE ()
 			_sSQL +=    " and ZA_COD     = '" + sza -> za_cod + "'"
 			u_log (_ssql)
 			if TCSQLExec (_sSQL) < 0
-				msgalert ("Erro na exclusao da tabela")
+				u_help ("Erro na exclusao da tabela")
 			endif
 		endif
 		CursorArrow ()
@@ -147,14 +147,14 @@ User Function VA_SZAC ()
 	local _sTabOrig := sza -> za_cod
 	local _sQuery  := ""
 	local _sAliasQ := ""
-	local _aAreaQ  := {}
+	//local _aAreaQ  := {}
 	local _nCampo  := 0
 	local _sCampo  := ""
 	local _xDado   := NIL
 	local _nFatorR := 1
 	local _nFatorC := 1
 
-	if ! msgyesno ("Esta rotina permite que uma nova tabela de precos seja criada com os precos da tabela '" + _sTabOrig + "'. Para isso, confirme o cadastro na tela seguinte e, depois, aguarde a copia dos valores.")
+	if ! msgyesno ("Esta rotina permite que uma nova tabela de precos seja criada com os precos da tabela '" + _sTabOrig + "'. Para isso, confirme o cadastro na tela seguinte e, depois, aguarde a copia dos valores.","Confirmar")
 		return
 	endif
 
@@ -228,7 +228,7 @@ User Function VA_SZAI ()
 	local _sTabDest := sza -> za_cod
 	local _sQuery   := ""
 	local _sCampo   := ""
-	local _aTabelas := {}
+	//local _aTabelas := {}
 	local _nNovoPrc := 0
 	local _nRegSZ1  := 0
 	local _sProduto := ""
@@ -238,7 +238,7 @@ User Function VA_SZAI ()
 	local _nVaried	:= 0
 	private _aVaried  := {}
 
-	if ! msgyesno ("Esta rotina permite que a tabela de precos '" + _sTabDest + "' seja atualizada buscando os precos correspondentes em outra tabela. Deseja continuar?")
+	if ! msgyesno ("Esta rotina permite que a tabela de precos '" + _sTabDest + "' seja atualizada buscando os precos correspondentes em outra tabela. Deseja continuar?","Continuar")
 		return
 	endif
 
@@ -321,7 +321,7 @@ User Function VA_SZAI ()
 	enddo
 
 	CursorArrow ()
-	msginfo ("Tabela copiada.")
+	u_help ("Tabela copiada.")
 return
 
 
@@ -330,7 +330,7 @@ return
 // Markbrowse para o usuario selecionar as variedades.
 static function _SelVaried ()
 	local _nVaried := 0
-	local _nLinha  := 0
+	//local _nLinha  := 0
 	local _aCols   := {}
 	local _sRet      := ""
 

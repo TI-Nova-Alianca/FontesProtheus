@@ -36,7 +36,7 @@ return _lRet
 User Function VA_ZZGEK ()
 	local _lRet     := .T.
 	local _oSQL     := NIL
-	local _sMsg     := ""
+	//local _sMsg     := ""
 
 	CursorWait ()
 

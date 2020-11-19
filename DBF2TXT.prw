@@ -42,7 +42,7 @@ user function DBF2TXT (_sAlias, _sArqTXT, _lDeleta, _lBarras, _nFormData, _lDeci
 	if _lDeleta .and. file (_sArqTXT)
 		delete file (_sArqTXT)
 		if file (_sArqTXT)
-			msgalert (procname () + ": Problema na geracao do arquivo texto '" + _sArqTXT + "': o arquivo ja' existe a nao foi possivel remove-lo.")
+			u_help (procname () + ": Problema na geracao do arquivo texto '" + _sArqTXT + "': o arquivo ja' existe a nao foi possivel remove-lo.")
 			U_ML_SRArea (_aAreaAnt)
 			return .F.
 		endif
@@ -92,7 +92,7 @@ user function DBF2TXT (_sAlias, _sArqTXT, _lDeleta, _lBarras, _nFormData, _lDeci
 				case _aEstrut [_nCampo, 2] == "D"
 					_sDado = GravaData ((_sAlias) -> (fieldget (_nCampo)), _lBarras, _nFormData)  //dtos ((_sAlias) -> (fieldget (_nCampo)))
 				otherwise
-					msgalert ("Tipo de campo nao suportado na exportacao: " + _aEstrut [_nCampo, 1])
+					u_help ("Tipo de campo nao suportado na exportacao: " + _aEstrut [_nCampo, 1])
 			endcase
 			fwrite (_nHdl, _sDado)
 		next
