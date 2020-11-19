@@ -17,7 +17,7 @@
 //
 // Historico de alteracoes:
 // 03/11/2020 - Claudia - Incluida a gravação do SXK
-//
+// 19/11/2020 - Claudia - Retirada a data de emissão de vendas link
 // --------------------------------------------------------------------------
 #Include "Protheus.ch"
 #Include "totvs.ch"
@@ -74,6 +74,7 @@ User Function ZB1_CON(_sConciliar)
 		_oSQL:_sQuery += "    ,ZB1_NUMNFE" // 19
 		_oSQL:_sQuery += "    ,ZB1_STAIMP" // 20
 		_oSQL:_sQuery += "    ,ZB1_DTAAPR" // 21 - DATA DE EMISSAO
+		_oSQL:_sQuery += "    ,ZB1_DTAPRO" // 22 - DATA DE PROCESSAMENTO
 		_oSQL:_sQuery += " FROM " + RetSQLName ("ZB1") 
 		//_oSQL:_sQuery += " WHERE ZB1_FILIAL = '" +xFilial("ZB1")+ "'"
 		_oSQL:_sQuery += " WHERE ZB1_FILIAL = '" + cFilAnt + "'"
@@ -128,7 +129,7 @@ User Function ZB1_CON(_sConciliar)
 				Else
 					_oSQL:_sQuery += " AND SE1.E1_CARTAUT = '" + _aZB1[i,17] + "'"
 					_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aZB1[i,18] + "'"
-					_oSQL:_sQuery += " AND SE1.E1_EMISSAO = '" + DTOS(_aZB1[i,16]) + "'"
+					//_oSQL:_sQuery += " AND SE1.E1_EMISSAO = '" + DTOS(_aZB1[i,16]) + "'"
 				EndIf
 				_oSQL:_sQuery += " AND SE1.E1_BAIXA   = ''"
 				If alltrim(_sParc) <> ''
@@ -147,6 +148,7 @@ User Function ZB1_CON(_sConciliar)
 						_nVlrTax   := ROUND((_aZB1[i,08] * _aZB1[i,04])/100,2)
 						_nVlrRec   := ROUND(_aZB1[i,08] - _nVlrTax,2)
 						_nVlrTit   := _aTitulo[x,05]
+						_sDtPro    := DTOS(_aZB1[i,22])
 						_sNSUCod   := _aZB1[i,18]
 						_sAutCod   := _aZB1[i,17]
 
@@ -263,9 +265,11 @@ User Function ZB1_CON(_sConciliar)
 												'BAIXADO'    }) // status
 
 								dbSelectArea("ZB1")
-								dbSetOrder(1) // ZB1_NUMNSU + ZB1_CODAUT
+								dbSetOrder(4) // ZB1_NUMNSU + ZB1_CODAUT + DTA PROCESSAMENTO
+								//dbSetOrder(1) // ZB1_NUMNSU + ZB1_CODAUT
 								dbGoTop()
-								If dbSeek(_sNSUCod + _sAutCod)
+								//If dbSeek(_sNSUCod + _sAutCod)
+								If dbSeek(_sDtPro + PADR(_sNSUCod ,8,' ') +_sAutCod)
 									Reclock("ZB1",.F.)
 										ZB1 -> ZB1_STAIMP := 'C'
 										ZB1 -> ZB1_DTABAI := date()
