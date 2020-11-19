@@ -33,6 +33,7 @@
 // 19/12/2019 - Robert  - Criava associados no SA1 apenas se tivessem compra de uva. Agora basta ter movto.tipo 08 (GLPI 7266)
 //                        Tambem nao importa mais associados falecidos.
 // 14/08/2020 - Cláudia - Ajuste de Api em loop, conforme solicitação da versao 25 protheus. GLPI: 7339
+// 1911/2020  - Sandra -  Ajuste do campo A1_GRPTRIB" de 001 para "003" no caso de funcionario e clientes, conforme A1_lojas
 //
 // -----------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
@@ -193,7 +194,7 @@ User function BATFUNATLZ()
 					oSA1Mod:setValue("A1_COND"		, "097"						)
 					oSA1Mod:setValue("A1_VAUEXPO"	, ddatabase					)
 					oSA1Mod:setValue("A1_VERBA"		, "2"						)
-					oSA1Mod:setValue("A1_GRPTRIB"	, "001"						)
+					oSA1Mod:setValue("A1_GRPTRIB"	, "003"						)
 					oSA1Mod:setValue("A1_FORMA"		, "3" 						)
 					oSA1Mod:setValue("A1_CONTA"		, _wconta					)
 					oSA1Mod:setValue("A1_CNAE"		, "0"  						)

@@ -17,6 +17,7 @@
 // 06/10/2020 - Robert - Criado tratamento para envio de avisos para a informatica
 //                     - Melhorados logs
 //                     - Inseridas tags para catalogo de fontes.
+// 18/11/2020 - Robert - Maioria das validacoes estava desabilitada (para testes) desde 10/09/2020 e esqueci assim.
 //
 
 // --------------------------------------------------------------------------
@@ -44,7 +45,7 @@ user function BatVerif ()
 
 						// Prepara mensagem em formato HTM para envio por e-mail.
 						_sMsg := _oVerif:ConvHTM (50)  // Converte poucas linhas para os e-mails nao ficarem pesados demais.
-						/*
+
 						// Envia aos setores interessados.
 						if 'ENG' $ _oVerif:Setores
 							_Envia (_oVerif, {'070'}, _sMsg)
@@ -64,13 +65,12 @@ user function BatVerif ()
 						if 'CML' $ _oVerif:Setores
 							_Envia (_oVerif, {'003'}, _sMsg)
 						endif
-						*/
 						if 'INF' $ _oVerif:Setores
 							_Envia (_oVerif, {'122'}, _sMsg)
 						endif
 					endif
 				else
-					U_AvisaTI ("Problemas ao executar a verificacao '" + _oVerif:Descricao + "'. Descricao do erro: " + _oVerif:UltMsg)
+					U_help ("Problemas ao executar a verificacao '" + _oVerif:Descricao, _oVerif:UltMsg, .T.)
 				endif
 			endif
 		endif
