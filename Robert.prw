@@ -83,11 +83,6 @@ static function _AndaLogo ()
 //return
 
 	_sArqLog := 'U_BatRevCH_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-	U_BatRevCh ("SC", "CTE", 10)
-return
-
-/*
-	_sArqLog := 'U_BatRevCH_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 	U_BatRevCh ("AC", "CTE", 90)
 	U_BatRevCh ("AC", "NFE", 90)
 	U_BatRevCh ("AL", "CTE", 90)

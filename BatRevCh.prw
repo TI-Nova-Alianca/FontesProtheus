@@ -50,7 +50,9 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 	local _sWarning  := ''
 	local _sAliasQ   := ''
 	local _sSoapResp := ""
+	local _oEvento   := NIL
 	private _lWSDL_OK  := .T.  // Deixar PRIVATE para a rotina de interpretacao do retorno poder alterar.
+	private _nQtAReval  := 0    // Deixar PRIVATE para a rotina de interpretacao do retorno poder alterar.
 	private _nQtReval  := 0    // Deixar PRIVATE para a rotina de interpretacao do retorno poder alterar.
 	private _sTxtEvt := ''    // Deixar PRIVATE para a rotina de interpretacao do retorno poder alterar.
 	_lDebug := iif (_lDebug == NIL, .F., _lDebug)
@@ -128,9 +130,9 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 		_oSQL:_sQuery += " ORDER BY ZZX_CHAVE, ZZX_LAYOUT, ZZX_VERSAO desc, ZZX_DUCC, ZZX_EMISSA"
 		_oSQL:Log ()
 		_sAliasQ = _oSQL:Qry2Trb (.F.)
-//		count to _robert
-//		u_log2 ('info', cvaltochar (_robert) + " chaves a verificar")
-//		dbgotop ()
+		count to _nQtAReval
+		u_log2 ('info', cvaltochar (_nQtAReval) + " chaves a verificar")
+		(_sAliasQ) -> (dbgotop ())
 		do while ! (_sAliasQ) -> (eof ())
 	
 			// Quebra por UF / layout / versao por que para cada caso tem um web service diferente.
@@ -342,11 +344,17 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 		(_sAliasQ) -> (dbclosearea ())
 	endif
 
-	_oBatch:Mensagens += iif (empty (_oBatch:Mensagens), '', '; ') + cvaltochar (_nQtReval) + ' chaves verificadas'
-	_Evento (_sEstado, _sTipo, _oBatch:Mensagens)
-	u_log2 ('debug', '')
-	u_log2 ('debug', _sTxtEvt)
-	u_log2 ('debug', '')
+	_oBatch:Mensagens += iif (empty (_oBatch:Mensagens), '', '; ') + cvaltochar (_nQtReval) + ' de ' + cvaltochar (_nQtAReval) + ' chaves verificadas'
+	_Evento (_sEstado, _sTipo, 'Verificadas ' + cvaltochar (_nQtReval) + ' de ' + cvaltochar (_nQtAReval) + ' chaves pendentes.')
+
+	// Grava um evento para posterior acompanhamento pelo setor fiscal e demais interessados
+	_oEvento := ClsEvent ():New ()
+	_oEvento:CodEven = 'ZZX001'
+	_oEvento:Chave   = _sEstado + ' - ' + _sTipo
+	_oEvento:Texto   = _sTxtEvt
+	_oEvento:Grava ()
+	_sTxtEvt = ''
+
 	if empty (_oBatch:Retorno)
 		_oBatch:Retorno = 'S'
 	endif
@@ -501,8 +509,9 @@ return
 // --------------------------------------------------------------------------
 // Grava evento para monitoramento posterior
 static function _Evento (_sUF, _sTpDFe, _sMsgEvt, _sChvEvt)
-	local _sLinMsg := 'Tipo ' + _sTpDFe + alltrim (_sMsgEvt) + iif (! empty (_sChvEvt), ' Chave: ' + _sChvEvt, '')
-	if ! _sLinMsg $ _sTxtEvt
-		_sTxtEvt += _sLinMsg
+	local _sLinMsg := _sTpDFe + ': ' + alltrim (_sMsgEvt)
+	// + iif (! empty (_sChvEvt), ' Chave: ' + _sChvEvt, '')
+	if ! _sLinMsg $ alltrim (_sTxtEvt)
+		_sTxtEvt += iif (empty (_sTxtEvt), '', chr (13) + chr (10)) + _sLinMsg
 	endif
 return
