@@ -15,7 +15,8 @@
 // 19/09/2019 - Cláudia - Alterada tela para ler itens da nota e colunas conforme solicitação. GLPI: 6639
 // 01/10/2019 - Cláudia - Alterado campo F2_VAGUIA de 6 para 11 caracteres e ajustada a tela correspondente. 
 // 13/10/2020 - Claudia - Ajuste nas consultas para somarquantidade para mesmo produto e mesma nota. GLPI: 8640
-// 
+// 20/11/2020 - Claudia - Retirado o botão filtro conforme GLPI: 8663
+//
 // -------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
@@ -60,6 +61,7 @@ User Function VA_GLTF2()
 		AAdd( aStruct, { "DOC"        , "C", 09, 0 } )
 		AAdd( aStruct, { "SERIE"      , "C", 03, 0 } )
 		AAdd( aStruct, { "DIGITACAO"  , "C", 10, 0 } )
+
 		U_ArqTrb ("Cria", "TRB", aStruct, {"DOC + SERIE + CLIENTE"}, @_aArqTrb)
 						  
 		// cria arquivo de trabalho
@@ -173,8 +175,7 @@ User Function VA_GLTF2()
 	    dbSelectArea("TRB")
 		dbSetOrder(1)
 	    	
-		//mBrowse(,,,,"TRB",aHead,,,,,_aCores)
-		mBrowse(6,1,22,75,"TRB",aHead,,,,2,_aCores)
+		mBrowse(6,1,22,75,"TRB",aHead,,,,2,_aCores,,,,,.T.)
 			
 		TRB->(dbCloseArea())   
 		
