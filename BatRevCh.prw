@@ -50,8 +50,11 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 	local _sWarning  := ''
 	local _sAliasQ   := ''
 	local _sSoapResp := ""
+	local _oEvento   := NIL
 	private _lWSDL_OK  := .T.  // Deixar PRIVATE para a rotina de interpretacao do retorno poder alterar.
+	private _nQtAReval  := 0    // Deixar PRIVATE para a rotina de interpretacao do retorno poder alterar.
 	private _nQtReval  := 0    // Deixar PRIVATE para a rotina de interpretacao do retorno poder alterar.
+	private _sTxtEvt := ''    // Deixar PRIVATE para a rotina de interpretacao do retorno poder alterar.
 	_lDebug := iif (_lDebug == NIL, .F., _lDebug)
 	_oBatch:Mensagens = ''
 	_oBatch:Retorno   = ''
@@ -93,6 +96,7 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 			otherwise
 				_oBatch:Mensagens += "UF '" + _sEstado + "' desconhecida."
 				u_help (_oBatch:Mensagens,, .t.)
+				_Evento (_sEstado, _sTipo, _oBatch:Mensagens)
 				_lContinua = .F.
 		endcase
 	endif
@@ -100,42 +104,6 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 	if _lContinua
 		// A verificacao de chaves sempre eh feita em cima do arquivo ZZX (preciso dados adicionais dele)
 		_oSQL := ClsSQL ():New ()
-/*
-		_oSQL:_sQuery := "SELECT top 1000 R_E_C_N_O_ AS RECNO, ZZX_CHAVE AS CHAVE, ZZX_VERSAO AS VERSAO, "
-		_oSQL:_sQuery +=       " SUBSTRING (ZZX_CHAVE, 1, 2) AS UF,"
-		_oSQL:_sQuery +=       " CASE WHEN UPPER(ZZX_LAYOUT) LIKE '%NFE%' THEN 'NFE' ELSE CASE WHEN UPPER(ZZX_LAYOUT) LIKE '%CTE%' THEN 'CTE' ELSE '' END END AS LAYOUT"
-		_oSQL:_sQuery += " FROM " + RetSQLName ("ZZX") + " ZZX "
-		_oSQL:_sQuery += " WHERE ZZX.D_E_L_E_T_     = ''"
-		_oSQL:_sQuery +=   " AND ZZX_CHAVE         != ''"
-		_oSQL:_sQuery +=   " AND upper (ZZX_CHAVE) != 'NAO SE APLICA'"
-		_oSQL:_sQuery +=   " AND ZZX_LAYOUT != ''"
-		if ! empty (_sChave)
-			_oSQL:_sQuery += " AND ZZX.ZZX_CHAVE = '" + _sChave + "'"
-		else
-			// Seleciona chaves precisando de revalidacao periodica
-			_oSQL:_sQuery +=   " AND ZZX_VERSAO >= '3'"  // Versao antiga nao valida quando tpEmis=0
-			_oSQL:_sQuery +=   " AND ZZX_EMISSA != ''"
-	
-			// Determinadas UFs nao aceitam mais chaves emitidas ha mais de 6 meses
-			_oSQL:_sQuery +=   " AND not (ZZX_CHAVE like '43%' AND DATEDIFF (DAY, CAST (ZZX_EMISSA + ' ' + '00:00' AS DATETIME), GETDATE ()) > 180)"
-	
-			// Notas emitidas ha muito tempo nao vou mais verificar (caso necessite verificar notas antigas, desabilitar esta validacao).
-			_oSQL:_sQuery +=   " AND DATEDIFF (DAY, CAST (ZZX_DTIMP + ' ' + '00:00' AS DATETIME), GETDATE ()) <= " + cvaltochar (_nQtDias)
-	
-			// Pelo menos algumas horas depois da ultima verificacao.
-			_oSQL:_sQuery +=   " AND DATEDIFF (HOUR, CAST (ZZX_DUCC + ' ' + ZZX_HUCC AS DATETIME), GETDATE ()) >= 6"
-	
-			if ! empty (_sEstado) .and. ! empty (_sTipo)  // Permite agendar um batch para cada UF
-				_oSQL:_sQuery += " AND substring (ZZX_CHAVE, 1, 2) = '" + _sCodUF + "'"
-				_oSQL:_sQuery += " AND UPPER (ZZX_LAYOUT) LIKE '%" + _sTipo + "%'"
-			endif
-		endif
-//		_oSQL:_sQuery += " ORDER BY UF, ZZX_LAYOUT, ZZX_VERSAO desc"  // Pega as versoes mais novas antes por que provavelmente sejam as mais urgentes
-
-		// Ordena por UF + layout + versao para fazer um unico acesso a cada servico.
-		// Dentro disso, inicia pelas chaves nunca validadas e depois pelas emitidas ha mais tempo.
-		_oSQL:_sQuery += " ORDER BY UF, ZZX_LAYOUT, ZZX_VERSAO desc, ZZX_DUCC, ZZX_EMISSA"
-*/
 
 		// Ordena por UF (chave) + layout + versao para fazer um unico acesso a cada servico.
 		// Dentro disso, inicia pelas chaves nunca validadas e depois pelas emitidas ha mais tempo.
@@ -162,9 +130,9 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 		_oSQL:_sQuery += " ORDER BY ZZX_CHAVE, ZZX_LAYOUT, ZZX_VERSAO desc, ZZX_DUCC, ZZX_EMISSA"
 		_oSQL:Log ()
 		_sAliasQ = _oSQL:Qry2Trb (.F.)
-//		count to _robert
-//		u_log2 ('info', cvaltochar (_robert) + " chaves a verificar")
-//		dbgotop ()
+		count to _nQtAReval
+		u_log2 ('info', cvaltochar (_nQtAReval) + " chaves a verificar")
+		(_sAliasQ) -> (dbgotop ())
 		do while ! (_sAliasQ) -> (eof ())
 	
 			// Quebra por UF / layout / versao por que para cada caso tem um web service diferente.
@@ -189,11 +157,13 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 			_aRegZZ4 = aclone (_oSQL:Qry2Array ())
 			if len (_aRegZZ4) == 0
 				_oBatch:Mensagens += "Sem tratamento (ou inativo) na tabela ZZ4 para UF/layout/versao " + _sUF + "/" + _sLayout + "/" + _sVersao + ". Query para verificacao: " + _oSQL:_sQuery
+				_Evento (_sEstado, _sTipo, _oBatch:Mensagens)
 				u_help (_oBatch:Mensagens,, .t.)
 				_lWSDL_OK = .F.
 				_oBatch:Retorno = 'N'
 			elseif len (_aRegZZ4) > 1
 				_oBatch:Mensagens += "Existe mais de um tratamento na tabela ZZ4 para UF/layout/versao " + _sUF + "/" + _sLayout + "/" + _sVersao + ". Elimine a duplicidade. Query para verificacao: " + _oSQL:_sQuery
+				_Evento (_sEstado, _sTipo, _oBatch:Mensagens)
 				u_help (_oBatch:Mensagens,, .t.)
 				_lWSDL_OK = .F.
 				_oBatch:Retorno = 'N'
@@ -201,6 +171,7 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 				zz4 -> (dbgoto (_aRegZZ4 [1, 1]))
 				if empty (zz4 -> zz4_wsdl)
 					_oBatch:Mensagens += "Caminho WSDL nao informado para UF/layout/versao " + _sUF + "/" + _sLayout + "/" + _sVersao
+					_Evento (_sEstado, _sTipo, _oBatch:Mensagens)
 					u_help (_oBatch:Mensagens,, .t.)
 					_lWSDL_OK = .F.
 					_oBatch:Retorno = 'N'
@@ -228,12 +199,12 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 					_oWSDL:cSSLCACertFile := "\\192.168.1.3\siga\TSS\certs\000021_ca.pem"
 					_oWSDL:cSSLCertFile   := "\\192.168.1.3\siga\TSS\certs\000021_cert.pem"
 					_oWSDL:cSSLKeyFile    := "\\192.168.1.3\siga\TSS\certs\000021_key.pem"
-
 					_oWsdl:lSSLInsecure   := .T.
 
 					_oWSDL:ParseURL (alltrim (zz4 -> zz4_wsdl))
 					if len (_oWSDL:ListOperations()) == 0
 						_oBatch:Mensagens += "Erro na consulta WSDL. Confira o certificado digital e/ou tente novamente mais tarde. " + _oWSDL:cError
+						_Evento (_sEstado, _sTipo, _oBatch:Mensagens)
 						u_help (_oBatch:Mensagens,, .t.)
 						u_log2 ('debug', 'URL: ' + alltrim (zz4 -> zz4_wsdl))
 //						u_log2 ('debug', _oWSDL:ListOperations())
@@ -242,12 +213,14 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 					else
 						if empty (zz4 -> zz4_SOper)
 							_oBatch:Mensagens += "Sem definicao de operacao SOAP na tabela ZZ4."
+							_Evento (_sEstado, _sTipo, _oBatch:Mensagens)
 							u_help (_oBatch:Mensagens,, .t.)
 							_lWSDL_OK = .F.
 							_oBatch:Retorno = 'N'
 						else
 							if ! _oWSDL:SetOperation (alltrim (zz4 -> zz4_SOper))
 								_oBatch:Mensagens += "Erro definicao operacao do WSDL para layout " + zz4 -> zz4_layout + ":" + _oWSDL:cError
+								_Evento (_sEstado, _sTipo, _oBatch:Mensagens)
 								u_help (_oBatch:Mensagens,, .t.)
 								u_log2 ('debug', 'Operacao: ' + alltrim (zz4 -> zz4_SOper))
 								_lWSDL_OK = .F.
@@ -319,7 +292,7 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 						u_log2 ('debug', 'Enviando SOAP: ' + _sSOAP)
 					endif
 					
-					// Apensar de acusar erro, parece que a operacao prossegue.
+					// Apesar de acusar erro, parece que a operacao prossegue.
 					if ! _oWSDL:SendSoapMsg(_sSOAP)
 						u_log2 ('aviso', "Erro metodo SendSoapMsg: " + _oWSDL:cError)
 						// esta vindo vazio --> u_log2 ('erro', 'Atributo cFaultCode...: ' + cvaltochar (_oWSDL:cFaultCode))
@@ -339,18 +312,19 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 					// Leitura da mensagem de retorno.
 					if empty (_sSoapResp)
 						_oBatch:Mensagens += "Retorno vazio para o pacote SOAP"
+						_Evento (_sEstado, _sTipo, _oBatch:Mensagens)
 						u_help (_oBatch:Mensagens,, .t.)
 						_lWSDL_OK = .F.
 						loop
 						_oBatch:Retorno = 'N'
 					else
-//						_oXMLRet := XmlParser(strtran(strtran (_sSoapResp, 'soap:', ''),'env:', ''), "_", @_sError, @_sWarning )
 						_sSoapResp = strtran (_sSoapResp, 'soapenv:', '')
 						_sSoapResp = strtran (_sSoapResp, 'env:', '')
 						_sSoapResp = strtran (_sSoapResp, 'soap:', '')
 						_oXMLRet := XmlParser(_sSoapResp, "_", @_sError, @_sWarning )
 						if ! empty (_sError) .or. ! empty (_sWarning)
 							_oBatch:Mensagens += "Erro ao decodificar retorno: " + _sError + _sWarning + '    SOAP response: ' + _sSoapResp
+							_Evento (_sEstado, _sTipo, _oBatch:Mensagens)
 							u_help (_oBatch:Mensagens,, .t.)
 							_lWSDL_OK = .F.
 							loop
@@ -358,7 +332,7 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 						else
 		
 							// Interpreta e da tratamento ao retorno do web service.
-							_TrataRet (_lDebug)
+							_TrataRet (_sEstado, _sTipo, _lDebug)
 
 						endif
 						//u_logFim (zzx -> zzx_chave)
@@ -370,7 +344,17 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 		(_sAliasQ) -> (dbclosearea ())
 	endif
 
-	_oBatch:Mensagens += iif (empty (_oBatch:Mensagens), '', '; ') + cvaltochar (_nQtReval) + ' chaves verificadas'
+	_oBatch:Mensagens += iif (empty (_oBatch:Mensagens), '', '; ') + cvaltochar (_nQtReval) + ' de ' + cvaltochar (_nQtAReval) + ' chaves verificadas'
+	_Evento (_sEstado, _sTipo, 'Verificadas ' + cvaltochar (_nQtReval) + ' de ' + cvaltochar (_nQtAReval) + ' chaves pendentes.')
+
+	// Grava um evento para posterior acompanhamento pelo setor fiscal e demais interessados
+	_oEvento := ClsEvent ():New ()
+	_oEvento:CodEven = 'ZZX001'
+	_oEvento:Chave   = _sEstado + ' - ' + _sTipo
+	_oEvento:Texto   = _sTxtEvt
+	_oEvento:Grava ()
+	_sTxtEvt = ''
+
 	if empty (_oBatch:Retorno)
 		_oBatch:Retorno = 'S'
 	endif
@@ -382,7 +366,7 @@ Return
 
 // --------------------------------------------------------------------------
 // Interpreta e da tratamento ao retorno do web service.
-static function _TrataRet (_lDebug)
+static function _TrataRet (_sEstado, _sTipo, _lDebug)
 	local _sRetChv   := ''
 	local _sRetStat  := ''
 	local _sRetPrAut := ''
@@ -405,10 +389,12 @@ static function _TrataRet (_lDebug)
 	if _sRetStat $ '656/678'         // Uso indevido
 		u_log2 ('aviso', 'Servico retornou mensagem de uso indevido. Tente esta UF mais tarde.')
 		_oBatch:Mensagens += 'Servico retornou mensagem de uso indevido. Tente esta UF mais tarde.'
-		u_help (_oBatch:Mensagens)
+		_Evento (_sEstado, _sTipo, _oBatch:Mensagens, zzx -> zzx_chave)
+		u_help (_oBatch:Mensagens,, .t.)
 		_lWSDL_OK = .F.
 		_lAtuZZX = .F.
 	elseif _sRetStat $ '587/731/526'  // Tags erradas, chave muito antiga, etc.
+		_Evento (_sEstado, _sTipo, 'Retornou status ' + _sRetStat, zzx -> zzx_chave)
 		u_help (_sRetMsg)
 		_lAtuZZX = .F.
 	else
@@ -466,6 +452,7 @@ static function _TrataRet (_lDebug)
 	if _lAtuZZX
 		if _sRetChv != zzx -> zzx_chave
 			_oBatch:Mensagens += "Retorno veio para outra chave (" + _sRetChv + ")"
+			_Evento (_sEstado, _sTipo, _oBatch:Mensagens, zzx -> zzx_chave)
 			u_help (_oBatch:Mensagens,, .t.)
 			_lAtuZZX = .F.
 			_oBatch:Retorno = 'N'
@@ -473,6 +460,7 @@ static function _TrataRet (_lDebug)
 		if _sRetStat $ '100/150'
 			if empty (_sRetPrAut)
 				_oBatch:Mensagens += "Retornou status '" + _sRetStat + "' (autorizado), mas nao consegui ler protocolo de autorizacao."
+				_Evento (_sEstado, _sTipo, _oBatch:Mensagens, zzx -> zzx_chave)
 				u_help (_oBatch:Mensagens,, .t.)
 				_lAtuZZX = .F.
 				_oBatch:Retorno = 'N'
@@ -480,19 +468,21 @@ static function _TrataRet (_lDebug)
 		elseif _sRetStat == '101'
 			if empty (_sRetPrCan)
 				_oBatch:Mensagens += "Retornou status '" + _sRetStat + "' (cancelado), mas nao consegui ler protocolo de cancelamento."
+				_Evento (_sEstado, _sTipo, _oBatch:Mensagens, zzx -> zzx_chave)
 				u_help (_oBatch:Mensagens,, .t.)
 				_lAtuZZX = .F.
 				_oBatch:Retorno = 'N'
 			endif
 		else
 			_oBatch:Mensagens += "Retornou status '" + _sRetStat + "' (nao sei como tratar esse retorno e nao vou gravar no ZZX)."
+			_Evento (_sEstado, _sTipo, _oBatch:Mensagens, zzx -> zzx_chave)
 			u_help (_oBatch:Mensagens,, .t.)
 			_lAtuZZX = .F.
 			_oBatch:Retorno = 'N'
 		endif
 	endif
 
-	if _lAtuZZX // .and. ! empty (_sRetStat) .and. ! empty (_sRetPrAut)
+	if _lAtuZZX
 		if zzx -> zzx_retsef != _sRetStat
 			u_log2 ('info', 'Atualizando chave ' + zzx -> zzx_chave + ' no ZZX status  autorizacao: ' + zzx -> zzx_retsef + ' ==> ' + _sRetStat)
 		endif
@@ -511,5 +501,17 @@ static function _TrataRet (_lDebug)
 		zzx -> zzx_protoc = _sRetPrAut
 		zzx -> zzx_prtcan = _sRetPrCan
 		msunlock ()
+	endif
+return
+
+
+
+// --------------------------------------------------------------------------
+// Grava evento para monitoramento posterior
+static function _Evento (_sUF, _sTpDFe, _sMsgEvt, _sChvEvt)
+	local _sLinMsg := _sTpDFe + ': ' + alltrim (_sMsgEvt)
+	// + iif (! empty (_sChvEvt), ' Chave: ' + _sChvEvt, '')
+	if ! _sLinMsg $ alltrim (_sTxtEvt)
+		_sTxtEvt += iif (empty (_sTxtEvt), '', chr (13) + chr (10)) + _sLinMsg
 	endif
 return
