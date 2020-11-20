@@ -14,6 +14,7 @@
 // 01/10/2019 - Cláudia - Alterado campo F1_VAGUIA de 6 para 11 caracteres e ajustada a tela correspondente.      
 // 09/06/2020 - Robert  - Aumentados decimais gravacao F1_VADENS.
 // 13/10/2020 - Claudia - Ajuste nas consultas para somarquantidade para mesmo produto e mesma nota. GLPI: 8640
+// 20/11/2020 - Claudia - Retirado o botão filtro conforme GLPI: 8663
 //
 // ----------------------------------------------------------------------------------------------------------------
 User Function VA_GLTF1()  
@@ -161,9 +162,10 @@ User Function VA_GLTF1()
 	    dbSelectArea("TRB")
 		dbSetOrder(1)
 	    	
-		//mBrowse(,,,,"TRB",aHead,,,,,_aCores)
-		mBrowse(6,1,22,75,"TRB",aHead,,,,2,_aCores)
-			
+		//mBrowse( <nLinha1>, <nColuna1>, <nLinha2>, <nColuna2>, <cAlias>, <aFixe>, <cCpo>, <nPar>, <cCorFun>, <nClickDef>, <aColors>, 
+		//<cTopFun>, <cBotFun>, <nPar14>, <bInitBloc>, <lNoMnuFilter>, <lSeeAll>, <lChgAll>, <cExprFilTop>, <nInterval>, <uPar22>, <uPar23> )
+		mBrowse(6,1,22,75,"TRB",aHead,,,,2,_aCores,,,,,.T.)
+
 		TRB->(dbCloseArea())    
 		
 		u_arqtrb ("FechaTodos",,,, @_aArqTrb)            
