@@ -60,7 +60,7 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 	_oBatch:Retorno   = ''
 	
 	if _lContinua .and. empty (_sEstado) .and. empty (_sTipo) .and. empty (_sChave)
-		_Evento ("Informe estado (UF) + tipo (NFE/CTE) ou chave.", .T.)
+		_Evento ("ERRO: Informe estado (UF) + tipo (NFE/CTE) ou chave.", .T.)
 	endif
 	if _lContinua .and. empty (_sChave) .and. ! empty (_sEstado)
 		do case
@@ -93,7 +93,7 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 			case _sEstado == 'DF' ; _sCodUF = '53'
 			
 			otherwise
-				_Evento ("UF '" + _sEstado + "' desconhecida.", .T.)
+				_Evento ("ERRO: UF '" + _sEstado + "' desconhecida.", .T.)
 				_lContinua = .F.
 		endcase
 	endif
@@ -153,17 +153,17 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 			_oSQL:Log ()
 			_aRegZZ4 = aclone (_oSQL:Qry2Array ())
 			if len (_aRegZZ4) == 0
-				_Evento ("Sem tratamento (ou inativo) na tabela ZZ4 para UF/layout/versao " + _sUF + "/" + _sLayout + "/" + _sVersao + ". Query para verificacao: " + _oSQL:_sQuery, .T.)
+				_Evento ("ERRO: Sem tratamento (ou inativo) na tabela ZZ4 para UF/layout/versao " + _sUF + "/" + _sLayout + "/" + _sVersao + ". Query para verificacao: " + _oSQL:_sQuery, .T.)
 				_lWSDL_OK = .F.
 				_oBatch:Retorno = 'N'
 			elseif len (_aRegZZ4) > 1
-				_Evento ("Existe mais de um tratamento na tabela ZZ4 para UF/layout/versao " + _sUF + "/" + _sLayout + "/" + _sVersao + ". Elimine a duplicidade. Query para verificacao: " + _oSQL:_sQuery, .T.)
+				_Evento ("ERRO: Existe mais de um tratamento na tabela ZZ4 para UF/layout/versao " + _sUF + "/" + _sLayout + "/" + _sVersao + ". Elimine a duplicidade. Query para verificacao: " + _oSQL:_sQuery, .T.)
 				_lWSDL_OK = .F.
 				_oBatch:Retorno = 'N'
 			else
 				zz4 -> (dbgoto (_aRegZZ4 [1, 1]))
 				if empty (zz4 -> zz4_wsdl)
-					_Evento ("Caminho WSDL nao informado para UF/layout/versao " + _sUF + "/" + _sLayout + "/" + _sVersao, .T.)
+					_Evento ("ERRO: Caminho WSDL nao informado para UF/layout/versao " + _sUF + "/" + _sLayout + "/" + _sVersao, .T.)
 					_lWSDL_OK = .F.
 					_oBatch:Retorno = 'N'
 				else
@@ -194,17 +194,17 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 
 					_oWSDL:ParseURL (alltrim (zz4 -> zz4_wsdl))
 					if len (_oWSDL:ListOperations()) == 0
-						_Evento ("Erro na consulta WSDL. Confira o certificado digital e/ou tente novamente mais tarde. " + _oWSDL:cError, .T.)
+						_Evento ("ERRO na consulta WSDL. Confira o certificado digital e/ou tente novamente mais tarde. " + _oWSDL:cError, .T.)
 						_lWSDL_OK = .F.
 						_oBatch:Retorno = 'N'
 					else
 						if empty (zz4 -> zz4_SOper)
-							_Evento ("Sem definicao de operacao SOAP na tabela ZZ4.", .T.)
+							_Evento ("ERRO: Sem definicao de operacao SOAP na tabela ZZ4.", .T.)
 							_lWSDL_OK = .F.
 							_oBatch:Retorno = 'N'
 						else
 							if ! _oWSDL:SetOperation (alltrim (zz4 -> zz4_SOper))
-								_Evento ("Erro definicao operacao do WSDL para layout " + zz4 -> zz4_layout + ":" + _oWSDL:cError, .T.)
+								_Evento ("ERRO na definicao de operacao do WSDL para layout " + zz4 -> zz4_layout + ":" + _oWSDL:cError, .T.)
 								_lWSDL_OK = .F.
 								_oBatch:Retorno = 'N'
 							endif
@@ -293,7 +293,7 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 					 
 					// Leitura da mensagem de retorno.
 					if empty (_sSoapResp)
-						_Evento ("Retorno vazio para o pacote SOAP", .T.)
+						_Evento ("ERRO: Retorno vazio para o pacote SOAP", .T.)
 						_lWSDL_OK = .F.
 						loop
 						_oBatch:Retorno = 'N'
@@ -303,7 +303,7 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 						_sSoapResp = strtran (_sSoapResp, 'soap:', '')
 						_oXMLRet := XmlParser(_sSoapResp, "_", @_sError, @_sWarning )
 						if ! empty (_sError) .or. ! empty (_sWarning)
-							_Evento ("Erro ao decodificar retorno: " + _sError + _sWarning + '    SOAP response: ' + _sSoapResp, .T.)
+							_Evento ("ERRO ao decodificar retorno: " + _sError + _sWarning + '    SOAP response: ' + _sSoapResp, .T.)
 							_lWSDL_OK = .F.
 							loop
 							_oBatch:Retorno = 'N'
@@ -364,14 +364,14 @@ static function _TrataRet (_sEstado, _sTipo, _lDebug)
 
 	if _sRetStat $ '656/678'         // Uso indevido
 		u_log2 ('aviso', 'Servico retornou mensagem de uso indevido. Tente esta UF mais tarde.')
-		_Evento ('Servico retornou mensagem de uso indevido. Tente esta UF mais tarde.', .T.)
+		_Evento ('AVISO: Servico retornou mensagem de uso indevido. Tente esta UF mais tarde.', .T.)
 		_lWSDL_OK = .F.
 		_lAtuZZX = .F.
 	elseif _sRetStat $ '587/731/526'  // Tags erradas, chave muito antiga, etc.
-		_Evento ("Retornou status '" + _sRetStat + "' para a chave " + zzx -> zzx_chave, .F.)
+		_Evento ("AVISO: Retornou status '" + _sRetStat + "' para a chave " + zzx -> zzx_chave, .F.)
 		_lAtuZZX = .F.
 	elseif _sRetStat $ '280'  // Certificado emissor invalido
-		_Evento ("Retornou status '" + _sRetStat + "' (certificado emissor invalido)", .F.)
+		_Evento ("ERRO: Retornou status '" + _sRetStat + "' (certificado emissor invalido)", .T.)
 		_lWSDL_OK = .F.
 		_lAtuZZX = .F.
 	else
@@ -392,7 +392,7 @@ static function _TrataRet (_sEstado, _sTipo, _lDebug)
 				u_log2 ('aviso', 'Chave (cancelada).......: ' + _sRetChv)
 				_sRetEvCan = &('_oEvtCanc:' + alltrim (zz4 -> zz4_TREvCa) + ':TEXT')
 				if _sRetEvCan != '110111'
-					_Evento ("Status de cancelamento (" + _sRetStat + "), mas evento (" + _sRetEvCan + ") nao corresponde.", .T.)
+					_Evento ("ERRO: Status de cancelamento (" + _sRetStat + "), mas evento (" + _sRetEvCan + ") nao corresponde.", .T.)
 					_lAtuZZX = .F.
 				else
 					_sRetPrCan = &('_oEvtCanc:' + alltrim (zz4 -> zz4_TRPrCa) + ':TEXT')
@@ -428,24 +428,24 @@ static function _TrataRet (_sEstado, _sTipo, _lDebug)
 	// Se pretento atualizar o ZZX, confiro consistencia entre chave, protocolos, etc.
 	if _lAtuZZX
 		if _sRetChv != zzx -> zzx_chave
-			_Evento ("Retorno veio para outra chave", .T.)
+			_Evento ("ERRO: Retorno veio para outra chave", .T.)
 			_lAtuZZX = .F.
 			_oBatch:Retorno = 'N'
 		endif
 		if _sRetStat $ '100/150'
 			if empty (_sRetPrAut)
-				_Evento ("Retornou status '" + _sRetStat + "' (autorizado), mas nao consegui ler protocolo de autorizacao para a chave " + zzx -> zzx_chave, .T.)
+				_Evento ("ERRO: Retornou status '" + _sRetStat + "' (autorizado), mas nao consegui ler protocolo de autorizacao para a chave " + zzx -> zzx_chave, .T.)
 				_lAtuZZX = .F.
 				_oBatch:Retorno = 'N'
 			endif
 		elseif _sRetStat == '101'
 			if empty (_sRetPrCan)
-				_Evento ("Retornou status '" + _sRetStat + "' (cancelado), mas nao consegui ler protocolo de cancelamento para a chave " + zzx -> zzx_chave, .T.)
+				_Evento ("ERRO: Retornou status '" + _sRetStat + "' (cancelado), mas nao consegui ler protocolo de cancelamento para a chave " + zzx -> zzx_chave, .T.)
 				_lAtuZZX = .F.
 				_oBatch:Retorno = 'N'
 			endif
 		else
-			_Evento ("Retornou status '" + _sRetStat + "' (nao sei como tratar esse retorno)", .T.)
+			_Evento ("ERRO: Retornou status '" + _sRetStat + "' (nao sei como tratar esse retorno)", .T.)
 			_lAtuZZX = .F.
 			_oBatch:Retorno = 'N'
 		endif
