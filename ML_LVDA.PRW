@@ -19,7 +19,7 @@
 // 16/06/2008 - Robert  - Passa a validar o parametro VA_SERIECF
 // 29/07/2009 - Robert  - Passa a somar d2_icmsret no valor retornado
 // 18/03/2010 - Robert  - TES 603 (venda sucata) retorna valor zerado.
-// 05/11/2020 - Claudia - Incluida validações para notas do e-commerce 
+// 20/11/2020 - Claudia - Incluida validações para notas do e-commerce 
 //
 // -------------------------------------------------------------------------------------
 #include "rwmake.ch"
@@ -91,18 +91,6 @@ User Function ML_LVDA(_nEcomm)
     EndIf
 
 Return(_wVAL)
-
-
-// // Programa..: ML_LVDA.PRX
-// // Autor.....: Ricardo
-// // Data......: 9:39pm Abr 20,1999
-// // Nota......: ExecBlock Lancto Padrao Vendas
-// //
-// // Historico de alteracoes:
-// // 16/06/2008 - Robert - Passa a validar o parametro VA_SERIECF
-// // 29/07/2009 - Robert - Passa a somar d2_icmsret no valor retornado
-// // 18/03/2010 - Robert - TES 603 (venda sucata) retorna valor zerado.
-// //
 
 // #include "rwmake.ch"
 
