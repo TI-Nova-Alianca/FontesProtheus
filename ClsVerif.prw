@@ -46,6 +46,7 @@
 // 08/10/2020 - Robert  - Verificacao SD5 x SD3 nao considerava D5_LOTECTL = D3_LOTECTL.
 //                      - Passa a enviar a query junto no e-mail, para ajudar em testes posteriores.
 // 22/10/2020 - Robert  - Adicionados acessos que deveriam e que nao deveriam existir, nas verif. de acessos do sigacfg.
+// 23/11/2020 - Robert  - Crida validacao 76 (Todos os grupos deveriam ter privilegio 000002).
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -2982,8 +2983,23 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=                     " FROM VA_USR_ACESSOS_POR_GRUPO AG"
 			::Query +=                    " WHERE AG.TIPO_ACESSO = 'CFG'"
 			::Query +=                      " AND AG.ID_GRUPO = G.ID_GRUPO"
-			::Query +=                      " AND AG.ACESSO in ('108', '150')"  // Por enquanto estes sao os unicos acessos que entendo que todos precisariam ter.
+			::Query +=                      " AND AG.ACESSO in ('108', '150'))"  // Por enquanto estes sao os unicos acessos que entendo que todos precisariam ter.
 			::Query += " ORDER BY G.ID_GRUPO"
+
+		case ::Numero == 76
+			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+			::Setores    = 'INF'
+			::Descricao  = 'Grupos: Todos os grupos deveriam ter privilegio 000002.'
+			::Query := "SELECT G.GR__ID, G.GR__CODIGO, G.GR__NOME"
+			::Query +=  " FROM SYS_GRP_GROUP G"
+			::Query += " WHERE G.D_E_L_E_T_ = ''"
+			::Query +=   " AND G.GR__MSBLQL != '1'"
+			::Query +=   " AND NOT EXISTS (SELECT *"
+			::Query +=                     " FROM SYS_RULES_GRP_RULES R"
+			::Query +=                    " WHERE R.D_E_L_E_T_ = ''"
+			::Query +=                      " AND R.GROUP_ID = G.GR__ID"
+			::Query +=                      " AND R.GR__RL_ID IN ('000002'))"  // Privilegio 'base'.
+			::Query +=  "ORDER BY G.GR__ID"
 
 		otherwise
 			::UltMsg = "Verificacao numero " + cvaltochar (::Numero) + " nao definida."
