@@ -78,10 +78,10 @@ static function _AndaLogo ()
 	procregua (100)
 	incproc ()
 
-//	u_help ('Nada definido.')
-//	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
-//return
-
+	u_help ('Nada definido.')
+	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
+return
+/*
 	_sArqLog := 'U_BatRevCH_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 	U_BatRevCh ("AC", "CTE", 90)
 	U_BatRevCh ("AC", "NFE", 90)
