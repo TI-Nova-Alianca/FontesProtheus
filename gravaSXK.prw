@@ -14,9 +14,10 @@
 // 1 - Grupo de perguntas a atualizar
 // 2 - Codigo (ordem) da pergunta
 // 3 - Dado a ser gravado
-// 4 - Grava ou deleta o registro da SXK - G - Gravar D - Deletar
+// 4 - Grava ou deleta o registro da SXK - G - Gravar D - Deletar 
 //
 // Historico de alteracoes:
+// 23/11/2020 - Claudia - Retirada a busca por valor para deletar registros
 //
 // -------------------------------------------------------------------------------
 User Function GravaSXK (_sGrupo, _sPerg, _xValor, _sAcao )
@@ -27,7 +28,7 @@ User Function GravaSXK (_sGrupo, _sPerg, _xValor, _sAcao )
 			PswSeek(__cUserID)  // Pesquisa usuario corrente
 			_sUserName := PswRet(1) [1, 1]
 
-            If _sAcao == 'D'
+            If _sAcao == 'D' .or. _sAcao == 'T'
                 _DelSXK (_sGrupo, _sPerg, _sUserName, _xValor)
             Else
 			    _GrvSXK (_sGrupo, _sPerg, _sUserName, _xValor)
@@ -46,7 +47,7 @@ Static Function  _DelSXK (_sGrupo, _sPerg, _sUserName, _xValor)
     _oSQL:_sQuery += " WHERE XK_GRUPO = '"+ _sGrupo +"'"
     _oSQL:_sQuery += " AND XK_SEQ     = '"+ _sPerg  +"'"
     _oSQL:_sQuery += " AND XK_IDUSER  = '"+ _usu +"'"
-    _oSQL:_sQuery += " AND XK_CONTEUD = '"+ _xValor +"'"
+    //_oSQL:_sQuery += " AND XK_CONTEUD = '"+ _xValor +"'"
     _oSQL:Exec ()
 Return
 //

@@ -4,12 +4,6 @@
 // Cliente....: Alianca
 // Descricao..: Tela de manutencao de ordens de embarque.
 //
-// Historico de alteracoes:
-// 23/04/2010 - Robert - Criada rotina de confirmacao de embarque.
-// 21/07/2020 - Robert - Desabilitado botao 'confirmar embarque' pois nao eh mais usado.
-//                     - Inseridas tags para catalogacao de fontes
-//
-
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Atualizacao
 // #Descricao         #Manutencao de ordens de embarque expedicao
@@ -17,11 +11,17 @@
 // #TabelasPrincipais #ZZO
 // #Modulos           #FAT
 //
-
-// --------------------------------------------------------------------------
+// Historico de alteracoes:
+// 23/04/2010 - Robert  - Criada rotina de confirmacao de embarque.
+// 21/07/2020 - Robert  - Desabilitado botao 'confirmar embarque' pois nao eh mais usado.
+//                      - Inseridas tags para catalogacao de fontes
+// 23/11/2020 - Claudia - Ajustada variavel de numero conforme GLPI: 8750
+//
+// -------------------------------------------------------------------------------------
 User Function VA_SZO ()
    local _aCores := U_VA_SZOLG (.T.)
 	private aRotina := {}
+
 	aadd (aRotina, {"&Pesquisar"        , "AxPesqui",                   0,1})
 	aadd (aRotina, {"&Visualizar"       , "U_VA_SZOV (.F., .F.)",       0,2})
 	aadd (aRotina, {"&Nova"             , "U_VA_SZON",                  0,3})
@@ -33,7 +33,9 @@ User Function VA_SZO ()
 	private cCadastro := "Manutencao de ordens de embarque"
 	dbselectarea ("SZO")
 	dbSetOrder (1)
-	mBrowse(,,,,"SZO",,,,,4, _aCores)
+	
+	//mBrowse(,,,,"SZO",,,,,4, _aCores)
+	MBrowse(,,,,"SZO",,,,,4, _aCores,,,,,,,,, 60000, {|| o := GetMBrowse(), o:GoBottom(), o:GoTop(), o:Refresh() }) 
 return
 
 
