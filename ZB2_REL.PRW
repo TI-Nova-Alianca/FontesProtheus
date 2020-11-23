@@ -39,14 +39,14 @@ Static Function ReportDef()
 	oSection1 := TRSection():New(oReport,,{}, , , , , ,.F.,.F.,.F.) 
 	
 	TRCell():New(oSection1,"COLUNA1", 	"" ,"Filial"		,	    					, 8,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA2", 	"" ,"Título"		,       					,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA2", 	"" ,"Título"		,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA3", 	"" ,"Cliente"		,       					,35,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA4", 	"" ,"Vlr.Recebido"	, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA5", 	"" ,"Vlr.Taxa"		, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA6", 	"" ,"Autoriz."		,							,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA7", 	"" ,"NSU"			,	    					,10,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA8", 	"" ,"Lançamento"	,	    					,35,/*lPixel*/,{||	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA9", 	"" ,"Status"		,	    					,20,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA7", 	"" ,"NSU"			,	    					,20,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA8", 	"" ,"Lançamento"	,	    					,30,/*lPixel*/,{||	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA9", 	"" ,"Status"		,	    					,15,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 	
 	TRFunction():New(oSection1:Cell("COLUNA4")	,,"SUM"	, , "Total recebido " , "@E 999,999,999.99", NIL, .F., .T.)
 	TRFunction():New(oSection1:Cell("COLUNA5")	,,"SUM"	, , "Total taxa "	  , "@E 999,999,999.99", NIL, .F., .T.)
@@ -83,8 +83,10 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "	LEFT JOIN SE1010 SE1"
     _oSQL:_sQuery += "		ON (SE1.D_E_L_E_T_ = ''"
     _oSQL:_sQuery += "				AND SE1.E1_FILIAL = ZB2.ZB2_FILIAL"
-    _oSQL:_sQuery += "				AND SE1.E1_NSUTEF = ZB2_NSUCOD "
-    _oSQL:_sQuery += "				AND SE1.E1_EMISSAO = ZB2_DTAMOV)"
+    _oSQL:_sQuery += "				AND SE1.E1_NSUTEF = ZB2_NSUCOD"
+    _oSQL:_sQuery += "				AND SE1.E1_EMISSAO = ZB2_DTAMOV"
+    _oSQL:_sQuery += "              AND SE1.E1_PARCELA = ZB2.ZB2_PARTIT"
+    _oSQL:_sQuery += "          )"
     _oSQL:_sQuery += "	WHERE ZB2.D_E_L_E_T_ = ''"
     _oSQL:_sQuery += "	AND ZB2.ZB2_DTAGER = '"+ DTOS(mv_par01)+"'"
     _aDados := _oSQL:Qry2Array ()

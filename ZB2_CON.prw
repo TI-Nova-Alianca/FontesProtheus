@@ -104,8 +104,9 @@ User Function ZB2_CON()
 			_oSQL:_sQuery += " AND SE1.E1_FILIAL  = '" + _aZB2[i, 1] + "'"
 			_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aZB2[i,14] + "'" 
 			_oSQL:_sQuery += " AND SE1.E1_EMISSAO = '" + DTOS(_aZB2[i,13]) + "'"
+			_oSQL:_sQuery += " AND SE1.E1_PARCELA = '" + _aZB2[i,24] + "'"
 			_oSQL:_sQuery += " AND SE1.E1_BAIXA   = ''"
-			//_oSQL:_sQuery += " AND SE1.E1_PARCELA = '" + _aZB2[i,24] + "'"
+
 			_oSQL:Log ()
 
 			_aTitulo := aclone (_oSQL:Qry2Array ())
