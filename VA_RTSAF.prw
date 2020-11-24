@@ -315,7 +315,7 @@ Static Function _MoveTe ()
 	if _lContinua
 		sb1 -> (dbsetorder (1))
 		if ! sb1 -> (dbseek (xfilial ("SB1") + "MMMSAFRA", .F.))
-			u_help ("Produto a ser usado para apropriar o custo nao foi encontrado no cadastro.",, .t.)
+			u_help ("Produto 'MMMSAFRA' a ser usado para apropriar o custo nao foi encontrado no cadastro.",, .t.)
 			_lContinua = .F.
 		endif
 	endif

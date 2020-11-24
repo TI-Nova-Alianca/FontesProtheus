@@ -22,12 +22,15 @@
 // 04/09/2017 - Robert - Filtro por nucleo nao funcionava quando deixado em branco.
 //                     - Soh compoe o saldo quando data != date ()
 // 19/11/2018 - Robert - Filtro de nucleo passa a validar objeto da classe ClsAssoc e nao mais campo A2_VANUCL
+// 23/11/2020 - Robert - Criada opcao de listar com saldo/sem saldo/todos
+//                     - Inserida coluna com o valor original.
+//                     - Nao chama mais impressao de recibos (em desuso, pois agora deposita-se em conta).
 //
 
 // --------------------------------------------------------------------------
 user function SZI_LCS (_lAutomat, _nOrdem)
 	private _lAuto     := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
-	private _aRecibos  := {}
+//	private _aRecibos  := {}
 
 	// Verifica se o usuario tem acesso.
 	if ! U_ZZUVL ('059')
@@ -115,17 +118,17 @@ user function SZI_LCS (_lAutomat, _nOrdem)
 		Endif
 	endif
 
-	// Utiliza a rotina de impressao de recibos genericos.
-	if mv_par15 == 1
-		if len (_aRecibos) == 0
-			u_help ("Nao ha recibos gerados.")
-		else
-			_aRecibos = asort (_aRecibos,,, {|_x, _y| _x [4] < _y [4]})
-			_oAUtil := ClsAUtil():New (_aRecibos)
-			u_help ("A seguir serao gerados os recibos, totalizando valor de " + cvaltochar (_oAUtil:TotCol (2)))
-			U_VA_RCB (_aRecibos)
-		endif
-	endif
+//	// Utiliza a rotina de impressao de recibos genericos.
+//	if mv_par16 == 1
+//		if len (_aRecibos) == 0
+//			u_help ("Nao ha recibos gerados.")
+//		else
+//			_aRecibos = asort (_aRecibos,,, {|_x, _y| _x [4] < _y [4]})
+//			_oAUtil := ClsAUtil():New (_aRecibos)
+//			u_help ("A seguir serao gerados os recibos, totalizando valor de " + cvaltochar (_oAUtil:TotCol (2)))
+//			U_VA_RCB (_aRecibos)
+//		endif
+//	endif
 return
 
 
@@ -143,9 +146,11 @@ static function _Imprime ()
 	local _aHist     := {}
 	local _nHist     := 0
 	local _nTamHist  := 75 //45
-	local _nTotGer   := 0
-	local _nSubTot   := 0
-	local _aRecibo   := {}
+	local _nTotGerV   := 0
+	local _nTotGerS   := 0
+	local _nSubTotV   := 0
+	local _nSubTotS   := 0
+//	local _aRecibo   := {}
 	local _sNomAsso  := ""
 	local _oAssoc    := NIL
 	private _nMaxLin := 66
@@ -153,26 +158,24 @@ static function _Imprime ()
 
 	procregua (3)
 
-	if mv_par15 == 1 .and. ! (aReturn [8] == 1 .or. aReturn [8] == 3)  // Por associado (nome ou codigo, tanto faz) + filial
-		u_help ("Geracao de recibos so' deve ser usada quando o relatorio for ordenado por associado.")
-		return
-	endif
+	// if mv_par16 == 1 .and. ! (aReturn [8] == 1 .or. aReturn [8] == 3)  // Por associado (nome ou codigo, tanto faz) + filial
+	// 	u_help ("Geracao de recibos so' deve ser usada quando o relatorio for ordenado por associado.",, .t.)
+	// 	return
+	// endif
 
 	// Nao aceita filtro por que precisaria inserir na query.
 	If !Empty(aReturn[7])
-		u_help ("Este relatorio nao aceita filtro do usuario.")
+		u_help ("Este relatorio nao aceita filtro do usuario.",, .t.)
 		return
 	EndIf	
 
 	// Define titulo e cabecalhos
 	titulo += " - posicao em " + dtoc (mv_par07)
 	do case
-	case aReturn [8] == 1 .or. aReturn [8] == 3
-		cCabec1 = "Filial         Data        Titulo      Tipo de movimento                  Historico                                                                               Saldo"
-	case aReturn [8] == 2
-		cCabec1 = "Filial         Data        Titulo      Associado                          Historico                                                                               Saldo"
+	case aReturn [8] == 1 .or. aReturn [8] == 2 .or. aReturn [8] == 3
+		cCabec1 = "Filial         Data        Titulo           Associado                          Historico                                                                      Valor orig.               Saldo"
 	otherwise
-		u_help ('Ordenacao sem tratamento.')
+		u_help ('Ordenacao sem tratamento na geracao de cabecalhos.',, .t.)
 	endcase
 
 	procregua (10)
@@ -187,7 +190,8 @@ static function _Imprime ()
 	_oSQL:_sQuery +=       " ZI_FILIAL, M0_FILIAL,"
 	_oSQL:_sQuery +=       " ZI_TM, ZI_ASSOC, ZI_LOJASSO, ZI_HISTOR, ZI_DATA, ZI_SERIE, ZI_DOC, ZI_CODMEMO, ZI_PARCELA,"
 	_oSQL:_sQuery +=       " A2_NOME, ZX5_10DESC, ZX5_10DC,"
-	_oSQL:_sQuery +=       " ZI_SALDO AS SALDO"
+	_oSQL:_sQuery +=       " ZI_SALDO AS SALDO,"
+	_oSQL:_sQuery +=       " ZI_VALOR AS VALOR"
 	_oSQL:_sQuery +=  " FROM " + RETSQLNAME ("SZI") + " SZI, "
 	_oSQL:_sQuery +=             RETSQLNAME ("ZX5") + " ZX5, "
 	_oSQL:_sQuery +=             RETSQLNAME ("SA2") + " SA2, "
@@ -230,21 +234,21 @@ static function _Imprime ()
 	case aReturn [8] == 2
 		_oSQL:_sQuery += " ORDER BY ZI_TM, ZI_ASSOC, ZI_LOJASSO, ZI_DATA, ZI_FILIAL, ZI_HISTOR, ZI_SERIE, ZI_DOC, ZI_PARCELA"
 	otherwise
-		u_help ('Ordenacao sem tratamento na query.')
+		u_help ('Ordenacao sem tratamento na query.',, .t.)
 	endcase
-	_oSQL:Log ()
+	//_oSQL:Log ()
 
 	_sArqTrb = _oSQL:Copy2Trb ()
 
 
 	// Filtra nucleos.
-	if ! empty (mv_par19)
+	if ! empty (mv_par20)
 		procregua ((_sArqTrb) -> (reccount ()))
 		(_sArqTrb) -> (dbgotop ())
 		do while ! (_sArqTrb) -> (eof ())
 			incproc ('Filtrando nucleos')
 			_oAssoc := ClsAssoc ():New ((_sArqTrb) -> zi_assoc, (_sArqTrb) -> zi_lojasso, .T.)
-			if ! _oAssoc:Nucleo $ mv_par19
+			if ! _oAssoc:Nucleo $ mv_par20
 				//u_log ('Assoc', (_sArqTrb) -> zi_assoc + "/" + (_sArqTrb) -> zi_lojasso, 'pertence ao nucleo', _oAssoc:Nucleo)
 				reclock ((_sArqTrb), .F.)
 				(_sArqTrb) -> (dbdelete ())
@@ -269,6 +273,7 @@ static function _Imprime ()
 			_nSaldo = (_sArqTrb) -> saldo
 		endif
 
+/*
 		reclock ((_sArqTrb), .F.)
 		if _nSaldo == 0
 			(_sArqTrb) -> (dbdelete ())
@@ -276,11 +281,24 @@ static function _Imprime ()
 			(_sArqTrb) -> saldo = _nSaldo
 		endif
 		msunlock ()
+*/
+		reclock ((_sArqTrb), .F.)
+		(_sArqTrb) -> saldo = _nSaldo
+
+		if mv_par15 == 1 .and. _nSaldo == 0
+			(_sArqTrb) -> (dbdelete ())
+		endif
+		if mv_par15 == 2 .and. _nSaldo != 0
+			(_sArqTrb) -> (dbdelete ())
+		endif
+
+		msunlock ()
 
 		(_sArqTrb) -> (dbskip ())
 	enddo
 
-	_nTotGer = 0
+	_nTotGerV = 0
+	_nTotGerS = 0
 	(_sArqTrb) -> (dbgotop ())
 	do while ! (_sArqTrb) -> (eof ())
 		incproc ('Imprimindo')
@@ -305,11 +323,12 @@ static function _Imprime ()
 			@ li, 0 psay "Tipo de movimento: " + _xQuebra + ' - ' + _sNomeQbr
 			li += 2
 		otherwise
-			u_help ('Ordenacao sem tratamento.')
+			u_help ('Ordenacao sem tratamento na definicao de quebras.',, .t.)
 		endcase
 	
 		// Controla quebra
-		_nSubTot = 0
+		_nSubTotV = 0
+		_nSubTotS = 0
 		do while ! (_sArqTrb) -> (eof ()) .and. (_sArqTrb) -> &(_sQuebra) == _xQuebra
 			incproc ()
 
@@ -325,7 +344,6 @@ static function _Imprime ()
 			_sLinImp = ""
 			_sLinImp += U_TamFixo ((_sArqTrb) -> m0_filial, 13) + "  "
 			_sLinImp += U_TamFixo (dtoc ((_sArqTrb) -> zi_data), 10) + "  "
-//			_sLinImp += (_sArqTrb) -> zi_serie + '/' + (_sArqTrb) -> zi_doc + '  '
 			_sLinImp += (_sArqTrb) -> zi_serie + '/' + (_sArqTrb) -> zi_doc + '-' + (_sArqTrb) -> zi_parcela + '  '
 			do case
 			case aReturn [8] == 1 .or. aReturn [8] == 3  // Por associado
@@ -333,22 +351,26 @@ static function _Imprime ()
 			case aReturn [8] == 2  // Por tipo de movimento
 				_sLinImp += U_TamFixo ((_sArqTrb) -> zi_assoc + "/" + (_sArqTrb) -> zi_lojasso + " " + (_sArqTrb) -> a2_nome, 32) + "   "
 			otherwise
-				u_help ('Ordenacao sem tratamento na impressao.')
+				u_help ('Ordenacao sem tratamento na impressao.',, .t.)
 			endcase
 			
 			// Primeira linha do historico
 			_sLinImp += U_TamFixo (_aHist [1], _nTamHist) + " "
 			
-			_sLinImp += iif ((_sArqTrb) -> ZX5_10DC == 'D', '(-)', '   ')
+			_sLinImp += transform ((_sArqTrb) -> valor, "@E 999,999,999.99")
+			_sLinImp += iif ((_sArqTrb) -> ZX5_10DC == 'D', '(-)', '   ') + '   '
 			_sLinImp += transform ((_sArqTrb) -> saldo, "@E 999,999,999.99")
+			_sLinImp += iif ((_sArqTrb) -> ZX5_10DC == 'D', '(-)', '   ')
 
 			if li > _nMaxLin - 2
 				cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
 			endif
 			@ li, 0 psay _sLinImp
 			li ++
-			_nSubTot += (_sArqTrb) -> saldo * iif ((_sArqTrb) -> ZX5_10DC == 'D', -1, 1)
-			_nTotGer += (_sArqTrb) -> saldo * iif ((_sArqTrb) -> ZX5_10DC == 'D', -1, 1)
+			_nSubTotV += (_sArqTrb) -> valor * iif ((_sArqTrb) -> ZX5_10DC == 'D', -1, 1)
+			_nSubTotS += (_sArqTrb) -> saldo * iif ((_sArqTrb) -> ZX5_10DC == 'D', -1, 1)
+			_nTotGerV += (_sArqTrb) -> valor * iif ((_sArqTrb) -> ZX5_10DC == 'D', -1, 1)
+			_nTotGerS += (_sArqTrb) -> saldo * iif ((_sArqTrb) -> ZX5_10DC == 'D', -1, 1)
 
 			// Imprime as linhas restantes do historico.
 			for _nHist = 2 to len (_aHist)
@@ -361,9 +383,12 @@ static function _Imprime ()
 
 			(_sArqTrb) -> (dbskip ())
 		enddo
-		@ li, 158 psay '--------------'
+		@ li, 155 psay '--------------      --------------'
 		li ++
-		@ li, 145 psay 'Subtotal: ' + iif (_nSubTot < 0, '(-)', '   ') + transform (_nSubTot, "@E 999,999,999.99")
+		_sLinImp := 'Subtotais: '
+		_sLinImp += transform (_nSubTotV, "@E 999,999,999.99") + iif (_nSubTotV < 0, '(-)', '   ') + '   '
+		_sLinImp += transform (_nSubTotS, "@E 999,999,999.99") + iif (_nSubTotS < 0, '(-)', '   ')
+		@ li, 144 psay _sLinImp
 		li ++
 
 		if li > _nMaxLin - 3
@@ -372,20 +397,20 @@ static function _Imprime ()
 		@ li, 0 psay __PrtThinLine ()
 		li += 1
 
-		// Prepara dados para posterior geracao de recibos.
-		if mv_par15 == 1
-			_aRecibo = {}
-			aadd (_aRecibo, sm0 -> m0_nomecom)
-			aadd (_aRecibo, _nSubTot)
-			aadd (_aRecibo, mv_par16)
-			aadd (_aRecibo, _sNomAsso)
-			aadd (_aRecibo, '')
-			aadd (_aRecibo, mv_par17)
-			aadd (_aRecibo, mv_par18)
-			aadd (_aRecibo, 1)
-			aadd (_aRecibo, 1)
-			aadd (_aRecibos, aclone (_aRecibo))
-		endif
+		// // Prepara dados para posterior geracao de recibos.
+		// if mv_par16 == 1
+		// 	_aRecibo = {}
+		// 	aadd (_aRecibo, sm0 -> m0_nomecom)
+		// 	aadd (_aRecibo, _nSubTotS)
+		// 	aadd (_aRecibo, mv_par17)
+		// 	aadd (_aRecibo, _sNomAsso)
+		// 	aadd (_aRecibo, '')
+		// 	aadd (_aRecibo, mv_par18)
+		// 	aadd (_aRecibo, mv_par19)
+		// 	aadd (_aRecibo, 1)
+		// 	aadd (_aRecibo, 1)
+		// 	aadd (_aRecibos, aclone (_aRecibo))
+		// endif
 		
 		if aReturn [8] == 3
 			li = _nMaxLin + 1
@@ -393,9 +418,13 @@ static function _Imprime ()
 
 	enddo
 	(_sArqTrb) -> (dbclosearea ())
-	@ li, 158 psay '--------------'
+	@ li, 155 psay '--------------      --------------'
 	li ++
-	@ li, 142 psay 'Total geral: ' + iif (_nTotGer < 0, '(-)', '   ') + transform (_nTotGer, "@E 999,999,999.99")
+//	@ li, 140 psay 'Totais gerais: ' + iif (_nTotGerV < 0, '(-)', '   ') + transform (_nTotGerV, "@E 999,999,999.99") + '  ' + iif (_nTotGerS < 0, '(-)', '   ') + transform (_nTotGerS, "@E 999,999,999.99")
+	_sLinImp := 'Totais gerais: '
+	_sLinImp += transform (_nTotGerV, "@E 999,999,999.99") + iif (_nTotGerV < 0, '(-)', '   ') + '   '
+	_sLinImp += transform (_nTotGerS, "@E 999,999,999.99") + iif (_nTotGerS < 0, '(-)', '   ')
+	@ li, 140 psay _sLinImp
 	li ++
 
 	// Imprime parametros usados na geracao do relatorio
@@ -414,25 +443,26 @@ Static Function _ValidPerg ()
 	local _aRegsPerg := {}
 	local _aDefaults := {}
 	
-	//                     PERGUNT                           TIPO TAM DEC VALID F3        Opcoes                            Help
-	aadd (_aRegsPerg, {01, "Associado inicial             ", "C", 6,  0,  "",   "SA2_AS", {},                               ""})
-	aadd (_aRegsPerg, {02, "Loja associado inicial        ", "C", 2,  0,  "",   "      ", {},                               ""})
-	aadd (_aRegsPerg, {03, "Associado final               ", "C", 6,  0,  "",   "SA2_AS", {},                               ""})
-	aadd (_aRegsPerg, {04, "Loja associado final          ", "C", 2,  0,  "",   "      ", {},                               ""})
-	aadd (_aRegsPerg, {05, "Tipo de movimento inicial     ", "C", 2,  0,  "",   "ZX510 ", {},                               ""})
-	aadd (_aRegsPerg, {06, "Tipo de movimento final       ", "C", 2,  0,  "",   "ZX510 ", {},                               ""})
-	aadd (_aRegsPerg, {07, "Posicao em                    ", "D", 8,  0,  "",   "      ", {},                               ""})
-	aadd (_aRegsPerg, {08, "Coop.orig(AL/SV/...) bco=todas", "C", 18, 0,  "",   "      ", {},                               ""})
-	aadd (_aRegsPerg, {09, "Filial inicial                ", "C", 2,  0,  "",   "SM0   ", {},                               ""})
-	aadd (_aRegsPerg, {10, "Filial final                  ", "C", 2,  0,  "",   "SM0   ", {},                               ""})
-	aadd (_aRegsPerg, {11, "Forma pagamento (bco=todas)   ", "C", 1,  0,  "",   "      ", {},                               ""})
-	aadd (_aRegsPerg, {12, "Movtos a debito ou a credido  ", "N", 1,  0,  "",   "      ", {"Debito", "Credito", "Todos"},   ""})
-	aadd (_aRegsPerg, {13, "T.M. desconsiderar (separ. /) ", "C", 30, 0,  "",   "      ", {},                               ""})
-	aadd (_aRegsPerg, {14, "Parcelas (separ. /) bco=todas ", "C", 60, 0,  "",   "      ", {},                               ""})
-	aadd (_aRegsPerg, {15, "Gerar recibos apos o relatorio", "N", 1,  0,  "",   "      ", {"Sim", "Nao"},                   ""})
-	aadd (_aRegsPerg, {16, "P/recibo: Correspondente a... ", "C", 50, 0,  "",   "      ", {},                               ""})
-	aadd (_aRegsPerg, {17, "P/recibo: Local               ", "C", 25, 0,  "",   "      ", {},                               ""})
-	aadd (_aRegsPerg, {18, "P/recibo: Data                ", "D", 8,  0,  "",   "      ", {},                               ""})
-	aadd (_aRegsPerg, {19, "Nucleos(SG/FC/...) bco=todos  ", "C", 18, 0,  "",   "      ", {},                               ""})
+	//                     PERGUNT                           TIPO TAM DEC VALID F3        Opcoes                              Help
+	aadd (_aRegsPerg, {01, "Associado inicial             ", "C", 6,  0,  "",   "SA2_AS", {},                                 ""})
+	aadd (_aRegsPerg, {02, "Loja associado inicial        ", "C", 2,  0,  "",   "      ", {},                                 ""})
+	aadd (_aRegsPerg, {03, "Associado final               ", "C", 6,  0,  "",   "SA2_AS", {},                                 ""})
+	aadd (_aRegsPerg, {04, "Loja associado final          ", "C", 2,  0,  "",   "      ", {},                                 ""})
+	aadd (_aRegsPerg, {05, "Tipo de movimento inicial     ", "C", 2,  0,  "",   "ZX510 ", {},                                 ""})
+	aadd (_aRegsPerg, {06, "Tipo de movimento final       ", "C", 2,  0,  "",   "ZX510 ", {},                                 ""})
+	aadd (_aRegsPerg, {07, "Posicao em                    ", "D", 8,  0,  "",   "      ", {},                                 ""})
+	aadd (_aRegsPerg, {08, "Coop.orig(AL/SV/...) bco=todas", "C", 18, 0,  "",   "      ", {},                                 ""})
+	aadd (_aRegsPerg, {09, "Filial inicial                ", "C", 2,  0,  "",   "SM0   ", {},                                 ""})
+	aadd (_aRegsPerg, {10, "Filial final                  ", "C", 2,  0,  "",   "SM0   ", {},                                 ""})
+	aadd (_aRegsPerg, {11, "Forma pagamento (bco=todas)   ", "C", 1,  0,  "",   "      ", {},                                 ""})
+	aadd (_aRegsPerg, {12, "Movtos a debito ou a credido  ", "N", 1,  0,  "",   "      ", {"Debito", "Credito", "Todos"},     ""})
+	aadd (_aRegsPerg, {13, "T.M. desconsiderar (separ. /) ", "C", 30, 0,  "",   "      ", {},                                 ""})
+	aadd (_aRegsPerg, {14, "Parcelas (separ. /) bco=todas ", "C", 60, 0,  "",   "      ", {},                                 ""})
+	aadd (_aRegsPerg, {15, "Quanto ao saldo               ", "N", 1,  0,  "",   "      ", {"Com saldo", "Sem saldo", "Todos"},""})
+//	aadd (_aRegsPerg, {16, "Gerar recibos apos o relatorio", "N", 1,  0,  "",   "      ", {"Sim", "Nao"},                     ""})
+//	aadd (_aRegsPerg, {17, "P/recibo: Correspondente a... ", "C", 50, 0,  "",   "      ", {},                                 ""})
+//	aadd (_aRegsPerg, {18, "P/recibo: Local               ", "C", 25, 0,  "",   "      ", {},                                 ""})
+//	aadd (_aRegsPerg, {19, "P/recibo: Data                ", "D", 8,  0,  "",   "      ", {},                                 ""})
+//	aadd (_aRegsPerg, {20, "Nucleos(SG/FC/...) bco=todos  ", "C", 18, 0,  "",   "      ", {},                                 ""})
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 return

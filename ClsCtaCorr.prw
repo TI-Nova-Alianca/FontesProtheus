@@ -742,7 +742,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCtaCorr
 	next
 
 	U_ML_SRArea (_aAreaAnt)
-	u_log2 ('debug', 'Gerei DtMovto com ' + cvaltochar (::DtMovto))
+	//u_log2 ('debug', 'Gerei DtMovto com ' + cvaltochar (::DtMovto))
 return
 
 
