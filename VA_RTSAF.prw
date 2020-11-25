@@ -344,8 +344,16 @@ Static Function _MoveTe ()
 					// Encontra um movimento de requisicao desta OP para servir como base para replicacao.
 					// Replica campos como NUMSEQ e equivalentes para tentar fazer com que
 					// o processo de recalculo do custo medio considere estes novos registros.
-					_sUltReqD3 := "SELECT TOP 1 *"
+					_sUltReqD3 := "SELECT TOP 1 D3_CF, D3_OP, D3_LOCAL, D3_DOC, D3_EMISSAO, D3_NUMSEQ, D3_CHAVE, D3_IDENT"
 					_sUltReqD3 +=  " FROM " + RetSQLName ("SD3") + " SD3 "
+					
+					// // Em 24/11/2020, sem motivo aparente, o SQL na base teste simplesmente decidiu que nao ia mais usar
+					// // o indice por OP na SEGUNDA execucao (quando inclui o campo D3_COD) desta query... tentei varias coisas
+					// // sem sucesso...
+					// if alltrim (upper (getenvserver ())) == "TESTE" 
+					// 	_sUltReqD3 += " with (index (SD30101)) "
+					// endif
+
 					_sUltReqD3 += " WHERE D_E_L_E_T_ = ''"
 					_sUltReqD3 +=   " AND D3_FILIAL = '" + xfilial ("SD3") + "'"
 					_sUltReqD3 +=   " AND D3_OP = '" + _aOP [_nOP, 1] + "'"
@@ -355,14 +363,14 @@ Static Function _MoveTe ()
 					_oSQL := ClsSQL ():New ()
 					_oSQL:_sQuery := _sUltReqD3 + " AND D3_COD like 'MMM%'"
 					_oSQL:_sQuery +=   " order by D3_NUMSEQ"
-					//_oSQL:Log ()
+					_oSQL:Log ()
 					_sAliasQ = (_oSQL:Qry2Trb (.T.))
 					if (_sAliasQ) -> (eof ())
 						u_log2 ('aviso', 'Nao encontrei requisicao de mao de obra na OP ' + alltrim (_aOP [_nOP, 1]) + '. Vou pegar uma outra requisicao qualquer para replicar.')
 						_oSQL := ClsSQL ():New ()
 						_oSQL:_sQuery := _sUltReqD3
 						_oSQL:_sQuery +=   " order by D3_NUMSEQ"
-						//_oSQL:Log ()
+						_oSQL:Log ()
 						_sAliasQ = (_oSQL:Qry2Trb (.T.))
 						if (_sAliasQ) -> (eof ())
 							u_help ('Nao encontrei nenhuma requisicao na OP ' + alltrim (_aOP [_nOP, 1]) + '. Essa OP nao vai receber rateio.',, .t.)
@@ -395,13 +403,14 @@ Static Function _MoveTe ()
 						sd3 -> d3_vamotiv := "RATEIO CUSTOS " + alltrim (_aCC [_nCC, 2])
 						sd3 -> d3_vachvex := _sChaveSD3
 						msunlock ()
+						u_log2 ('debug', 'gravacao do SD3 finalizada')
 					else
 						u_log2 ('aviso', 'Valor ficaria zerado: ' + sb1 -> b1_cod + ' na OP ' + (_sAliasQ)->d3_op + ' TM ' + _aCC [_nCC, .CCTipoMovimento] + ' $' + transform (_nCusto1, "@E 999,999,999,999.99999"))
 					endif
 
 					(_sAliasQ)->(dbclosearea())
+					u_log2 ('debug', 'fechei sAliasQ')
 					dbselectarea ("SD3")
-
 				next
 			endif
 		next

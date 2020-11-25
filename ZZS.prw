@@ -4,10 +4,20 @@
 // Autor......: Robert Koch
 // Data.......: 04/10/2013
 // Descricao..: Manutencao de arquivos de pedidos de venda recebidos pelo EDI
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Importa o conteudo dos arquivos de EDI da Neogrid (pedidos de clientes) e chama seu processamento.
+// #PalavasChave      #EDI #faturamento #pedidos #Neogrid
+// #TabelasPrincipais #ZZS
+// #Modulos           #FAT
+
 // Historico de alteracoes:
+// 24/11/2020 - Robert - Adicionado um item no aRotina para nao dar erro no AXDeleta().
+//                     - Inseridas tags para catalogo de fontes.
 //
 
+// --------------------------------------------------------------------------
 User Function ZZS()
 	local _aCores     := U_ZZSLG (.T.)
 	Private aRotina   := {}
@@ -17,11 +27,10 @@ User Function ZZS()
 	aadd (aRotina, {"&Pesquisar",   "AxPesqui", 0, 1})
 	aadd (aRotina, {"&Visualizar",  "AxVisual", 0, 2})
 	aadd (aRotina, {"Reprocessa",   "U_ZZSR (.F.)",   0, 2})
+	aadd (aRotina, {"&Em_desuso",	"allwaystrue()", 0, 4})  // Apenas para ter mais um elemento no aRotina.
 	aadd (aRotina, {"&Excluir",		"U_ZZSX", 0, 5})
 	Private cDelFunc := ".T."
 	Private cString  := "ZZS"
-	private _sArqLog := U_NomeLog ()
-	u_logId ()
 	dbSelectArea(cString)
 	dbSetOrder(1)
 	mBrowse(,,,,cString,,,,,2, _aCores)
@@ -36,9 +45,8 @@ user function ZZSR (_lAuto)
     local _lContinua := .T.
 	local nHdl       := 0
 
-	u_logIni ()
 	if ! empty (zzs -> zzs_numped)
-		u_help ("Pedido ja´ gerado no sistema")
+		u_help ("Pedido ja´ gerado no sistema",, .t.)
 		_lContinua = .F.
 	endif
 	if _lContinua
@@ -48,9 +56,7 @@ user function ZZSR (_lAuto)
 		do case
 		case zzs -> zzs_origem == "M"
 			_sDados = MSMM (ZZS->ZZS_MEMARQ,,,,3)
-			u_log (_sDados)
 			_sArqTXT := "\mercador\ped\" + alltrim(ZZS->ZZS_NOMARQ)
-			u_log (_sArqTXT)
 			nHdl = fCreate(_sArqTXT)
 			FT_FUSE(_sArqTXT)	 
 			fwrite(nHdl,_sDados,Len(_sDados)) 
@@ -58,11 +64,10 @@ user function ZZSR (_lAuto)
 			FT_FUSE()
 			U_EDIM1(_lAuto, _sArqTxt, zzs -> (recno ()))
 		otherwise
-			u_help ("Sem tratamento para esta origem de dados")
+			u_help ("Sem tratamento para esta origem de dados",, .t.)
 		endcase
 		CursorArrow ()
 	endif
-	u_logFim ()
 return
 
 // --------------------------------------------------------------------------

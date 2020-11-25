@@ -2,10 +2,18 @@
 // Autor......: Robert Koch
 // Data.......: 15/09/2016
 // Descricao..: Exporta planilha com movimentos de/para terceiros.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #consulta
+// #Descricao         #Exporta planilha com movimentos de notas fiscais envolvendo controle de terceiros.
+// #PalavasChave      #terceiros #NF
+// #TabelasPrincipais #SD1 #SD2 #SF4
+// #Modulos           #CTB #FIS #EST
+
 // Historico de alteracoes:
 // 27/09/2016 - Robert - Incluida coluna com CFOP.
 // 13/09/2018 - Robert - Passa a mostrar a serie 99 para ajudar nas conferencias.
+// 25/11/2020 - Robert - Acrescentado campo F4_ESTOQUE.
 //
 
 // --------------------------------------------------------------------------
@@ -61,7 +69,7 @@ Static Function _Gera()
 	_oSQL:_sQuery += "WITH C AS("
 	_oSQL:_sQuery += " SELECT 'SD1' AS ORIGEM,D1_FILIAL AS FILIAL,dbo.VA_DTOC(D1_DTDIGIT) AS DATA,D1_TIPO AS TIPO_NF,D1_DOC AS NF,"
 	_oSQL:_sQuery +=        " D1_SERIE AS SERIE,D1_FORNECE AS CLI_FOR,D1_LOJA AS LOJA,D1_COD AS PRODUTO,SD1.D1_TP AS TIPO_PROD,SD1.D1_GRUPO AS GRUPO_PROD,D1_TES AS TES, D1_CF AS CFOP, SD1.D1_QUANT AS QUANT,"
-	_oSQL:_sQuery +=        " SD1.D1_CUSTO AS CUSTO,SD1.D1_TOTAL AS VALOR_NF,SF4.F4_PODER3"
+	_oSQL:_sQuery +=        " SD1.D1_CUSTO AS CUSTO,SD1.D1_TOTAL AS VALOR_NF,SF4.F4_PODER3, SF4.F4_ESTOQUE"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD1") + " SD1,"
 	_oSQL:_sQuery +=              RetSQLName ("SF4") + " SF4"
 	_oSQL:_sQuery +=  " WHERE SD1.D_E_L_E_T_ = ''"
@@ -71,7 +79,7 @@ Static Function _Gera()
 	_oSQL:_sQuery +=    " AND SF4.F4_CODIGO  = SD1.D1_TES"
 	_oSQL:_sQuery +=    " AND SF4.F4_PODER3 != 'N'"
 	_oSQL:_sQuery += " UNION ALL"
-	_oSQL:_sQuery += " SELECT 'SD2' AS ORIGEM,D2_FILIAL,dbo.VA_DTOC(D2_EMISSAO),D2_TIPO,D2_DOC,D2_SERIE,D2_CLIENTE,D2_LOJA,D2_COD,D2_TP,D2_GRUPO,D2_TES,D2_CF,D2_QUANT,D2_CUSTO1,SD2.D2_TOTAL,SF4.F4_PODER3"
+	_oSQL:_sQuery += " SELECT 'SD2' AS ORIGEM,D2_FILIAL,dbo.VA_DTOC(D2_EMISSAO),D2_TIPO,D2_DOC,D2_SERIE,D2_CLIENTE,D2_LOJA,D2_COD,D2_TP,D2_GRUPO,D2_TES,D2_CF,D2_QUANT,D2_CUSTO1,SD2.D2_TOTAL,SF4.F4_PODER3, SF4.F4_ESTOQUE"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD2") + " SD2,"
 	_oSQL:_sQuery +=              RetSQLName ("SF4") + " SF4"
 	_oSQL:_sQuery +=  " WHERE SD2.D_E_L_E_T_ = ''"

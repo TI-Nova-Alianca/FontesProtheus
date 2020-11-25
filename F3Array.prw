@@ -3,7 +3,14 @@
 // Data.......: 19/03/2008
 // Descricao..: Implementa tela para mostrar uma array onde o usuario pode selecionar uma das linhas.
 //              Se nenhuma linha for selecionada (pressionado ESC ou fechado dialogo), retorna zero.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Consulta
+// #Descricao         #Mostra array em tela (grid) para selecao do usuario.
+// #PalavasChave      #auxiliar #uso_generico
+// #TabelasPrincipais 
+// #Modulos           #todos_modulos
+
 // Historico de alteracoes:
 // 08/05/2008 - Robert - Melhoria layout
 //                     - Botao "Excel" nao eh mais selecionado como default.
@@ -15,6 +22,8 @@
 // 23/09/2015 - Robert - Tratamento para quando receber dado que nao eh array.
 //                     - Quando receber um vetor (unidimensional) converte para array bidimensional.
 // 25/11/2019 - Robert - Mensagem de aviso quando tenta-se exportar planilha sem ter a variavel _aCols.
+// 24/11/2020 - Robert - Comentariados logs desnecessarios.
+//                     - Inseridas tags para catalogo de fontes.
 //
 
 #include "rwmake.ch"
@@ -57,12 +66,12 @@ user function F3Array (_aArray, _sTitulo, _aCols, _nLarg, _nAltur, _sMsgSup, _sM
 		_lContinua = .F.
 	endif
 
-	u_log2 ('debug', 'Array recebida:')
-	u_log2 ('debug', _aArray)
+//	u_log2 ('debug', 'Array recebida:')
+//	u_log2 ('debug', _aArray)
 	
 	// Se recebeu uma array unidimensional, cria uma nova, "convertendo" para colunas.
 	if _lContinua .and. len (_aArray) >= 1 .and. valtype (_aArray [1]) != 'A'
-		u_log2 ('debug', '[' + procname () + '] Convertendo vetor para array bidimensional.')
+//		u_log2 ('debug', '[' + procname () + '] Convertendo vetor para array bidimensional.')
 		_aAux = aclone (_aArray)
 		_aArray = {}
 		for _nLinha = 1 to len (_aAux)
