@@ -233,6 +233,7 @@ Static Function GravaZB2(_aHeader, _aRO, _aCV, _aRel )
 			
 			ZB2->(MsUnlock())
 
+
 			// aadd(_aRel,{ 	_aRO[1,1] ,; 	// filial
 			// 				_aCV[1,6] ,;    // vlr bruto
 			// 				_aRO[1,5] ,; 	// valor liquido da venda

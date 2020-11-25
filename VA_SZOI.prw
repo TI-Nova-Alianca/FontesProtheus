@@ -8,13 +8,14 @@
 // 26/11/2008 - Robert  - Impressao da relacao dos municipios para entrega.
 // 10/04/2019 - Robert  - Migrada tabela 98 do SX5 para 50 do ZX5.
 // 30/08/2019 - Claudia - Alterado campo b1_p_brt para b1_pesbru.
+// 23/11/2020 - Claudia - Ajustada a gravação de parametros SX1/SXK. GLPI: 8750
 //
-
-// --------------------------------------------------------------------------
+// -------------------------------------------------------------------------------
 User Function VA_SZOI (_sOrdem)
 	private cPerg := "VASZOI"
 	private wnrel := "VA_SZOI"
 	private nomeprog := "VA_SZOI"
+	
 	cString := "SZO"
 	cDesc1  := "Este programa tem como objetivo imprimir relatorio de"
 	cDesc2  := "Ordem de Embarque"
@@ -34,6 +35,10 @@ User Function VA_SZOI (_sOrdem)
 	
 	// Se foi passado o numero da ordem de embarque, ajusta os parametros.
 	if _sOrdem != NIL
+
+		_ValidSXK(_sOrdem, 'D')
+		_ValidSXK(_sOrdem, 'G')
+
 		U_GravaSX1 (cPerg, "01", _sOrdem)           // Ordem de
 		U_GravaSX1 (cPerg, "02", _sOrdem)           // Ordem ate
 		U_GravaSX1 (cPerg, "03", "")                // Transp de
@@ -46,6 +51,7 @@ User Function VA_SZOI (_sOrdem)
 		U_GravaSX1 (cPerg, "10", "zz")              // Loja ate
 		U_GravaSX1 (cPerg, "11", "")                // Estado de
 		U_GravaSX1 (cPerg, "12", "zz")              // Estado ate
+
 	endif
 	
 	Pergunte(cPerg, .T.)
@@ -65,10 +71,10 @@ User Function VA_SZOI (_sOrdem)
 		DbCommitAll ()
 		ourspool(wnrel)
 	Endif
+
+	_ValidSXK(_sOrdem, 'G')
 Return
-
-
-
+//
 // --------------------------------------------------------------------------
 Static Function RptDetail()
 	local _sQuery    := ""
@@ -360,9 +366,7 @@ Static Function RptDetail()
 	(_sAliasQ) -> (dbclosearea ())
 	dbselectarea ("SZO")
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
@@ -385,4 +389,21 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {14, "Maximo de linhas por pagina   ", "N", 2,  0,  "",   "   ", {},    ""})
 	
 	U_ValPerg (cPerg, _aRegsPerg)
+Return
+//
+// --------------------------------------------------------------------------
+// Executa SXK
+Static Function _ValidSXK(_sOrdem, _sTipo)
+	U_GravaSXK (cPerg, "01", _sOrdem			, _sTipo )
+	U_GravaSXK (cPerg, "02", _sOrdem			, _sTipo )
+	U_GravaSXK (cPerg, "03", ""					, _sTipo )
+	U_GravaSXK (cPerg, "04", "zzzzz"			, _sTipo )
+	U_GravaSXK (cPerg, "05", ""					, _sTipo )
+	U_GravaSXK (cPerg, "06", "20491231"			, _sTipo )
+	U_GravaSXK (cPerg, "07", ""					, _sTipo )
+	U_GravaSXK (cPerg, "08", ""					, _sTipo )
+	U_GravaSXK (cPerg, "09", "zzzzzz"			, _sTipo )
+	U_GravaSXK (cPerg, "10", "zz"				, _sTipo )
+	U_GravaSXK (cPerg, "11", ""					, _sTipo )
+	U_GravaSXK (cPerg, "12", "zz"				, _sTipo )
 Return
