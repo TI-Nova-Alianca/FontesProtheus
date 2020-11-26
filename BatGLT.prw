@@ -14,50 +14,26 @@
 // 23/02/2016 - Robert  - Desconsidera especie CTE nas notas de entrada.
 //                      - Considera somente B1_SISDEC = 'S'.
 // 17/05/2016 - Robert  - Campos do Sisdeclara migrados da tabela SB1 para SB5.
-// 06/11/2017 - Robert  - Desconsidera notas de transferencia simbolicas feitas em out/2017 para equalizacao de custos entre filiais.
+// 06/11/2017 - Robert  - Desconsidera notas de transferencia simbolicas feitas em out/2017 para 
+//                        equalizacao de custos entre filiais.
 // 09/08/2018 - Robert  - Estabelace litragem minima (GLPI 1499).
 // 12/09/2018 - Robert  - Desconsidera serie 99 (notas de cobertura de operacao triangular).
 // 20/07/2020 - Claudia - Criada uma nova consulta para contemplar os novos campos solicitados. GLPI: 8164.
 // 11/09/2020 - Robert  - Melhorados logs.
+// 24/11/2020 - Claudia - Ajustadas as cconsultas conforme GLPI: 8768
 //
-
-// --------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------
 user function BatGLT ()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _oSQL     := NIL
 	local _sMsg     := ""
 	local _nDias    := 30
 
-	// Verifica notas de saida
-	//	_oSQL := ClsSQL ():New ()
-	//	_oSQL:_sQuery := ""
-	//	_oSQL:_sQuery += " SELECT 'Tipo:' + CASE WHEN D2_TIPO IN ('D', 'B') THEN 'FORNECEDOR' ELSE 'CLIENTE' END AS TIPO,"
-	//	_oSQL:_sQuery +=        " 'NF:' + D2_DOC + '/' + D2_SERIE AS NF, dbo.VA_DTOC (D2_EMISSAO) AS EMISSAO,"
-	//	_oSQL:_sQuery +=        " rtrim (B1_DESC) AS PRODUTO, 'Transp:' + F2_TRANSP AS TRANSP"
-	//	_oSQL:_sQuery +=   " FROM " + RetSqlName( "SB1" ) + " SB1,"
-	//	_oSQL:_sQuery +=              RetSqlName( "SF2" ) + " SF2,"
-	//	_oSQL:_sQuery +=              RetSqlName( "SD2" ) + " SD2,"
-	//	_oSQL:_sQuery +=              RetSqlName( "SB5" ) + " SB5"
-	//	_oSQL:_sQuery +=  " WHERE SB1.D_E_L_E_T_ <> '*' "
-	//	_oSQL:_sQuery += "    AND (B1_GRPEMB = '18' OR B5_VATPSIS IN ('24', '40'))"  // Borra ou acucar.
-	//	_oSQL:_sQuery += "    AND B1_COD = D2_COD "
-	//	_oSQL:_sQuery += "    AND B5_VASISDE = 'S' "
-	//	_oSQL:_sQuery += "    AND B1_FILIAL = '" + xFilial("SB1") + "' "
-	//	_oSQL:_sQuery +=    " AND SB5.D_E_L_E_T_ <> '*' "
-	//	_oSQL:_sQuery += "    AND B5_COD = B1_COD"
-	//	_oSQL:_sQuery += "    AND B5_FILIAL = '" + xFilial("SB5") + "' "
-	//	_oSQL:_sQuery += "    AND SF2.D_E_L_E_T_ <> '*' "
-	//	_oSQL:_sQuery += "    AND F2_VAGUIA = ' ' "
-	//	_oSQL:_sQuery += "    AND F2_SERIE = D2_SERIE "
-	//	_oSQL:_sQuery += "    AND F2_DOC = D2_DOC "
-	//	_oSQL:_sQuery += "    AND F2_FILIAL = D2_FILIAL "
-	//	_oSQL:_sQuery += "    AND SD2.D_E_L_E_T_ <> '*' "
-	//	_oSQL:_sQuery += "    AND D2_EMISSAO BETWEEN '" + dtos (date () - _nDias) + "' AND '" + dtos (date ()) + "'"
-	//	_oSQL:_sQuery += "    AND D2_FILIAL = '" + xFilial("SD2") + "' "
-	//	_oSQL:_sQuery += "    AND (B1_LITROS = 0 OR D2_QUANT * B1_LITROS >= 10)"  // Litragem minima (GLPI 1499)
-	//	_oSQL:_sQuery += "    AND D2_SERIE != '99 '"  // Notas de cobertura de operacao triangular
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " WITH C"
+	_oSQL:_sQuery += " AS"
+	_oSQL:_sQuery += " ("
 	_oSQL:_sQuery += " SELECT"
 	_oSQL:_sQuery += " 	'Tipo:' +"
 	_oSQL:_sQuery += " 	CASE"
@@ -84,7 +60,7 @@ user function BatGLT ()
 	_oSQL:_sQuery += " 		AND C5_SERIE = SF2.F2_SERIE)"
 	_oSQL:_sQuery += " 	) AS PLACA"
 	_oSQL:_sQuery += "    ,RTRIM(B1_DESC) AS PRODUTO"
-	_oSQL:_sQuery += "    ,CAST(SD2.D2_QUANT AS VARCHAR) AS QUANTIDADE "
+	_oSQL:_sQuery += "    ,SD2.D2_QUANT AS QUANTIDADE "
 	_oSQL:_sQuery += " FROM " + RetSqlName( "SD2" ) + " SD2"
 	_oSQL:_sQuery += " INNER JOIN " + RetSqlName( "SB5" ) + " SB5"
 	_oSQL:_sQuery += " 	ON (SB5.D_E_L_E_T_ = ''"
@@ -143,7 +119,31 @@ user function BatGLT ()
 	_oSQL:_sQuery +=               " or (D2_FILIAL = '13' AND D2_DOC BETWEEN '000007444' AND '000007450')"
 	_oSQL:_sQuery +=             "))"
 
-	_oSQL:_sQuery += "  ORDER BY D2_DOC"
+	//_oSQL:_sQuery += "  ORDER BY D2_DOC"
+	_oSQL:_sQuery += ")"
+	_oSQL:_sQuery += " SELECT"
+	_oSQL:_sQuery += "	TIPO"
+	_oSQL:_sQuery += "   ,EMITENTE"
+	_oSQL:_sQuery += "   ,DESTINATARIO"
+	_oSQL:_sQuery += "   ,DT_EMISSAO
+	_oSQL:_sQuery += "   ,TIPO_OPERACAO"
+	_oSQL:_sQuery += "   ,NF
+	_oSQL:_sQuery += "   ,TRANSPORTADOR"
+	_oSQL:_sQuery += "   ,PLACA"
+	_oSQL:_sQuery += "   ,PRODUTO"
+	_oSQL:_sQuery += "   ,SUM(QUANTIDADE)"
+	_oSQL:_sQuery += " FROM C"
+	_oSQL:_sQuery += " GROUP BY TIPO"
+	_oSQL:_sQuery += "		,EMITENTE
+	_oSQL:_sQuery += "		,DESTINATARIO"
+	_oSQL:_sQuery += "		,DT_EMISSAO"
+	_oSQL:_sQuery += "		,TIPO_OPERACAO"
+	_oSQL:_sQuery += "		,NF"
+	_oSQL:_sQuery += "		,TRANSPORTADOR"
+	_oSQL:_sQuery += "		,PLACA"
+	_oSQL:_sQuery += "		,PRODUTO"
+	_oSQL:_sQuery += " ORDER BY NF"
+
 	_oSQL:Log ()
 	if len (_oSQL:Qry2Array (.F., .F.)) > 0
 		_aCols := {}
@@ -169,7 +169,10 @@ user function BatGLT ()
 	// Verifica notas de entrada
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT D1_DOC AS DOC, D1_SERIE AS SERIE, dbo.VA_DTOC (D1_DTDIGIT) AS DT_ENTRADA, B1_DESC AS PRODUTO, D1_FORNECE + '/' + D1_LOJA AS FORNECEDOR"
+	_oSQL:_sQuery += " WITH C"
+	_oSQL:_sQuery += " AS"
+	_oSQL:_sQuery += " ("
+	_oSQL:_sQuery += "  SELECT DISTINCT D1_DOC AS DOC, D1_SERIE AS SERIE, dbo.VA_DTOC (D1_DTDIGIT) AS DT_ENTRADA, B1_DESC AS PRODUTO, D1_FORNECE + '/' + D1_LOJA AS FORNECEDOR"
 	_oSQL:_sQuery +=   " FROM " + RetSqlName( "SB1" ) + " SB1,"
 	_oSQL:_sQuery +=              RetSqlName( "SB5" ) + " SB5,"
 	_oSQL:_sQuery +=              RetSqlName( "SF1" ) + " SF1,"
@@ -211,7 +214,17 @@ user function BatGLT ()
 	_oSQL:_sQuery +=               " or (D1_FORNECE = '004565' AND D1_LOJA = '01' AND D1_SERIE = '10' AND D1_DOC BETWEEN '000007444' AND '000007450')"
 	_oSQL:_sQuery +=             "))"
 
-	_oSQL:_sQuery += "  ORDER BY D1_DOC, D1_FORNECE"
+	//_oSQL:_sQuery += "  ORDER BY D1_DOC, D1_FORNECE"
+	_oSQL:_sQuery += " )"
+	_oSQL:_sQuery += " 	SELECT"
+	_oSQL:_sQuery += " 	   DOC"
+	_oSQL:_sQuery += "    ,SERIE"
+	_oSQL:_sQuery += "    ,DT_ENTRADA"
+	_oSQL:_sQuery += "    ,PRODUTO"
+	_oSQL:_sQuery += "    ,FORNECEDOR"
+	_oSQL:_sQuery += " FROM C"
+	_oSQL:_sQuery += " ORDER BY DOC, SERIE, FORNECEDOR"
+
 	_oSQL:Log ()
 	if len (_oSQL:Qry2Array (.F., .F.)) > 0
 		_sMsg = _oSQL:Qry2HTM ("Notas de ENTRADA nos ultimos " + cvaltochar (_nDias) + " dias faltando informar guia de livre transito", NIL, "", .F.)
