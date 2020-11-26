@@ -725,7 +725,7 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 		if empty (::UsrAutOri) .and. alltrim (upper (_sUserName)) $ _aLib [1, 1]
 			u_log2 ('info', 'Usuario tem liberacao para o almox. origem')
 			if ::FWProdOrig .and. ::AlmUsaFull (::AlmOrig) .and. _sUserName != 'FULLWMS'
-				u_log ('info', '... mas o produto usa Full e o AX origem eh controlado pelo FullWMS')
+				u_log2 ('info', '... mas o produto usa Full e o AX origem eh controlado pelo FullWMS')
 				_sMsg = "Produto '" + alltrim (::ProdOrig) + "' tem controle via FullWMS no AX '" + ::AlmOrig + "' e nao deve ser movimentado manualmente."
 				if U_ZZUVL ('029', __cUserId, .F.) .and. U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
 					if ::AtuZAG ("zag_UAutO", _sUserName)
