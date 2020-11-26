@@ -29,7 +29,7 @@ User Function VAHISTNF(_xCliente, _xLoja)
 	
 	cExprFilTop := "F2_FILIAL = '" 	+ xFilial ("SF2") + "'"
 	if _xCliente != NIL .and. _xLoja != NIL
-		cExprFilTop += "F2_CLIENTE = '" 	+ alltrim(_xCliente) 	+"'"
+		cExprFilTop += "AND F2_CLIENTE = '" 	+ alltrim(_xCliente) 	+"'"
 		cExprFilTop += "AND F2_LOJA >= " 	+ alltrim(_xLoja)  		+" "
 	endif
 	cExprFilTop += "AND F2_EMISSAO >= " + dtos(MV_PAR01) 		+" "
