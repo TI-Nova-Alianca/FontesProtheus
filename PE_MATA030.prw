@@ -3,13 +3,27 @@
 // Data:       07/05/2019
 // Descricao:  P.E. novo padrão MVC na tela de cadastro de clientes.
 //
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #P.E. novo padrão MVC na tela de cadastro de clientes.
+// #PalavasChave      #MVC #clientes #cadastro_de_clientes
+// #TabelasPrincipais #SA1 
+// #Modulos   		  #TODOS 
 //
 // Historico de alteracoes:
+// 18/08/2008 - Robert - Criada validacao cfe. campo A3_VAEXTAB
+// 27/01/2010 - Robert - Passa a usar a funcao u_help para avisos.
+// 13/02/2012 - Robert - Nao exige mais %comis se estiver zerado tambem no vendedor.
+// 20/02/2012 - Robert - Verifica se o CNPJ jah existe em outro cliente.
+// 24/05/2012 - Robert - Impedia alteracao de cliente com CNPJ repetido, mesmo que o outro estivesse bloqueado.
+// 29/05/2013 - Elaine - Inclui tratamento para Inscricao Estadual para mercado externo
+// 12/03/2015 - Catia  - Desabilitada a validação para inscrição estadual
+// 27/11/2020 - Cláudia - Incluido botão de obs.financeira. GLPI: 8923
 //
-
+// -----------------------------------------------------------------------------------------------
 #include "protheus.ch"
 #include "parmtype.ch"
- 
+
 User Function CRMA980()
     Local aParam := PARAMIXB
     Local xRet := .T.
@@ -17,10 +31,7 @@ User Function CRMA980()
     Local cIdPonto := ""
     Local cIdModel := ""
     Local lIsGrid := .F.
-    //Local nLinha := 0
     Local nOper := 0
-  //  Local nQtdLinhas := 0
-   // Local cMsg := ""
  
     If aParam <> NIL
         oObj := aParam[1]
@@ -74,7 +85,14 @@ User Function CRMA980()
         ElseIf cIdPonto == "MODELCANCEL"
             xRet := .T.
         ElseIf cIdPonto == "BUTTONBAR"
-            xRet := {}
+           // xRet := {}
+		   	If cFilAnt == '01'
+			   	if u_zzuvl ('036', __cUserId, .T.)
+					xRet := {{"Obs.Financeiro", "Obs.Financeiro", {||U_VA_OBSFIN()}}}
+				else
+					 _xRet := {}
+				endif
+		   	EndIf
         EndIf
     EndIf
 
@@ -92,16 +110,6 @@ static function _GeraLog ()
 return
 
 
-// --------------------------------------------------------------------------
-
-// Historico de alteracoes:
-// 18/08/2008 - Robert - Criada validacao cfe. campo A3_VAEXTAB
-// 27/01/2010 - Robert - Passa a usar a funcao u_help para avisos.
-// 13/02/2012 - Robert - Nao exige mais %comis se estiver zerado tambem no vendedor.
-// 20/02/2012 - Robert - Verifica se o CNPJ jah existe em outro cliente.
-// 24/05/2012 - Robert - Impedia alteracao de cliente com CNPJ repetido, mesmo que o outro estivesse bloqueado.
-// 29/05/2013 - Elaine - Inclui tratamento para Inscricao Estadual para mercado externo
-// 12/03/2015 - Catia  - Desabilitada a validação para inscrição estadual
 
 
 static Function _ma030tok()
