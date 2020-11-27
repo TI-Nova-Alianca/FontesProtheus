@@ -9,10 +9,13 @@
 // Historico de alteracoes:
 // 08/04/2019 - Catia   - include TbiConn.ch 
 // 12/04/2019 - Robert  - Deixa variavel _lClsTrEst declarada para posterior uso em pontos de entrada.
-// 25/09/2019 - Robert - Quando o produto tiver controle via FullWMS, libera somente para usuarios do grupo 029.
-//                       - Criado atributo LibNaIncl.
+// 25/09/2019 - Robert  - Quando o produto tiver controle via FullWMS, libera somente para usuarios do grupo 029.
+//                      - Criado atributo LibNaIncl.
 // 26/09/2019 - Cláudia - Incluída validação de lote mínimo.
+// 27/11/2020 - Robert  - Quando existir etiqueta relacionada, tenta inutiliza-la automaticamente.
+//            - Transf. envolvendo o AX01 (FullWMS) liberadas, momentaneamente, para aceitar liberacao manual (sem ser o Full).
 //
+
 // ------------------------------------------------------------------------------------
 #include "colors.ch"
 #Include "Protheus.ch"
@@ -191,7 +194,8 @@ return
 // Exclui movimento.
 METHOD Exclui () Class ClsTrEstq
 	local _lContinua := .T.
-	local _oSQL := NIL
+	local _oSQL      := NIL
+	local _sEtiq     := ''
 
 	u_logIni (GetClassName (::Self) + '.' + procname ())
 	::UltMsg = ""
@@ -215,9 +219,13 @@ METHOD Exclui () Class ClsTrEstq
 		_oSQL:_sQuery += " AND ZA1_FILIAL  = '" + xfilial ("ZA1") + "'"
 		_oSQL:_sQuery += " AND ZA1_IDZAG   = '" + ::Docto + "'"
 		_oSQL:_sQuery += " AND ZA1_APONT  != 'I'"
-		if ! empty (_oSQL:RetQry (1, .F.))
-			::UltMsg += "Existe a etiqueta " + _oSQL:RetQry (1, .F.) + " gerada para esta solicitacao. Inutilize, antes, a etiqueta."
-			_lContinua = .F.
+		_sEtiq = _oSQL:RetQry (1, .F.)
+		if ! empty (_sEtiq)
+			// Tenta inutilizar a etiqueta
+			if ! U_EtqPllIn (_sEtiq, .F.)
+				::UltMsg += "Existe a etiqueta " + _sEtiq + " gerada para esta solicitacao. Inutilize, antes, a etiqueta."
+				_lContinua = .F.
+			endif
 		endif
 	endif
 
@@ -702,7 +710,7 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 	local _lNenhuma := .T.
 	local _oSQL     := NIL
 	local _aLib     := {}
-	local _sMsg     := ""
+//	local _sMsg     := ""
 
 //	u_logIni (GetClassName (::Self) + '.' + procname ())
 
@@ -724,8 +732,9 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 		u_log2 ('debug', 'Testando com usuario ' + _sUserName)
 		if empty (::UsrAutOri) .and. alltrim (upper (_sUserName)) $ _aLib [1, 1]
 			u_log2 ('info', 'Usuario tem liberacao para o almox. origem')
+			/* Permitido ateh que a gente implemente integracao com o endereco 'avarias' do Full (GLPI 8914)
 			if ::FWProdOrig .and. ::AlmUsaFull (::AlmOrig) .and. _sUserName != 'FULLWMS'
-				u_log ('info', '... mas o produto usa Full e o AX origem eh controlado pelo FullWMS')
+				u_log2 ('info', '... mas o produto usa Full e o AX origem eh controlado pelo FullWMS')
 				_sMsg = "Produto '" + alltrim (::ProdOrig) + "' tem controle via FullWMS no AX '" + ::AlmOrig + "' e nao deve ser movimentado manualmente."
 				if U_ZZUVL ('029', __cUserId, .F.) .and. U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
 					if ::AtuZAG ("zag_UAutO", _sUserName)
@@ -737,16 +746,18 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 					::UltMsg += _sMsg
 				endif
 			else
+			*/
 				if ::AtuZAG ("zag_UAutO", _sUserName)
 					::UsrAutOri = _sUserName
 					::UltMsg += iif (_lMsg, "AX orig.liberado. ", '')
 					_lNenhuma = .F.
 				endif
-			endif
+//			endif
 		endif
 
 		if empty (::UsrAutDst) .and. alltrim (upper (_sUserName)) $ _aLib [1, 2]
 			u_log2 ('info', 'Usuario tem liberacao para o almox. destino')
+			/* Permitido ateh que a gente implemente integracao com o endereco 'avarias' do Full (GLPI 8914)
 			if ::FWProdDest .and. ::AlmUsaFull (::AlmDest) .and. _sUserName != 'FULLWMS'
 				u_log ('info', '... mas o produto usa Full e o AX destino eh controlado pelo FullWMS')
 				_sMsg = "Produto '" + alltrim (::ProdDest) + "' tem controle via FullWMS no AX '" + ::AlmDest + "' e nao deve ser movimentado manualmente."
@@ -760,12 +771,13 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 					::UltMsg += _sMsg
 				endif
 			else
+			*/
 				if ::AtuZAG ("zag_UAutD", _sUserName)
 					::UltMsg += iif (_lMsg, "AX dest.liberado. ", '')
 					::UsrAutDst = _sUserName
 					_lNenhuma = .F.
 				endif
-			endif
+//			endif
 		endif
 		
 		// Inicialmente a liberacao de PCP e qualidade vai ser automatica
