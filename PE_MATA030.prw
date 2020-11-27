@@ -87,11 +87,7 @@ User Function CRMA980()
         ElseIf cIdPonto == "BUTTONBAR"
            // xRet := {}
 		   	If cFilAnt == '01'
-			   	if u_zzuvl ('036', __cUserId, .T.)
-					xRet := {{"Obs.Financeiro", "Obs.Financeiro", {||U_VA_OBSFIN()}}}
-				else
-					 _xRet := {}
-				endif
+				xRet := {{"Obs.Financeiro", "Obs.Financeiro", {||U_VA_OBSFIN()}}}
 		   	EndIf
         EndIf
     EndIf

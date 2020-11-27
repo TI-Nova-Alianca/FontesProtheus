@@ -21,9 +21,15 @@ User Function VA_OBSFIN
 	Private cCadastro := "Observações financeiras "	
 	Private cDelFunc  := ".T."
 	Private cString   := "SZN"
-	Private aRotina   := {	{"Observações"	,"U_VAOBSFIN(M->A1_COD, M->A1_LOJA )"	,0,2}  ,;
-                            {"Excluir"   	,"U_VAOBSEXC(M->A1_COD, M->A1_LOJA )"	,0,2}  ,;
-							{"Visualizar"	,"U_VAOBSVIS(M->A1_COD, M->A1_LOJA )"	,0,2}  }
+	Private aRotina   := {	{"Observações"	,"U_VAOBSFIN(M->A1_COD, M->A1_LOJA )"	,0,2} ,;
+							{"Visualizar"	,"U_VAOBSVIS(M->A1_COD, M->A1_LOJA )"	,0,2} ,;
+                            {"Excluir"   	,"U_VAOBSEXC(M->A1_COD, M->A1_LOJA )"	,0,2}  }
+
+
+	If !u_zzuvl ('036', __cUserId, .T.)
+		Return
+	EndIf
+
 	_VerificaOBS(M->A1_COD, M->A1_LOJA)
 
 	dbSelectArea("SZN")
@@ -108,6 +114,7 @@ User Function VAOBSEXC(_sCliente, _sLoja)
     _oSQL:_sQuery += " AND ZN_HORA      = '" + _sHora    + "'"
     _oSQL:_sQuery += " AND ZN_CODEVEN = 'SA1004'"
     _oSQL:Exec ()
+	u_log()
 
     If ! _oSQL:Exec ()
         u_help("Registro não deletado!")
