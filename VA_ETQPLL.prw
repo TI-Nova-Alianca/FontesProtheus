@@ -593,22 +593,21 @@ User Function EtqPllIn (_sCodigo, _bMostraMsg)
 
 	za1 -> (dbsetorder(1))
 	if ! za1 -> (dbseek(xFilial("ZA1") + AllTrim(_sCodigo), .F.))
-		u_help ("Etiqueta '" + _sCodigo + "' nao encontrada!")
+		u_help ("Etiqueta '" + _sCodigo + "' nao encontrada!",, .t.)
 		_lContinua = .F.
 	endif
 	
 	if ! empty (ZA1 -> ZA1_OP) .and. _lContinua
-		u_help ("A etiqueta '" + alltrim(ZA1 -> ZA1_CODIGO) + "' não pode ser inutilizada." + chr(13) + "Motivo: É uma etiqueta de ordem de produção.")
+		u_help ("A etiqueta '" + alltrim(ZA1 -> ZA1_CODIGO) + "' nao pode ser inutilizada por ser uma etiqueta de ordem de producao.",, .t.)
 		_lContinua := .F.
 	endif
 
 	if (ZA1 -> ZA1_APONT == 'I') .and. _lContinua
-		u_help ("A etiqueta '" + alltrim(ZA1 -> ZA1_CODIGO) + "' já está inutilizada.")
+		u_help ("A etiqueta '" + alltrim(ZA1 -> ZA1_CODIGO) + "' ja encontra-se inutilizada.",, .t.)
 		_lContinua := .F.
 	endif
 
 	if _lContinua
-	
 		if _bMostraMsg
 			_lContinua = .F.
 			_lContinua = U_MsgNoYes ("Confirma a inutilização da etiqueta?")
@@ -627,7 +626,8 @@ User Function EtqPllIn (_sCodigo, _bMostraMsg)
 			u_help ("Etiqueta '" + alltrim(_sCodigo) + "' inutilizada!" + chr(13) + "(Remover do Recipiente)")
 		endif
 	endif
-return
+return _lContinua
+
 
 // --------------------------------------------------------------------------
 // Gera etique a partir da NF de Entrada
