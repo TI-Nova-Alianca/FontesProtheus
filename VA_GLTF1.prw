@@ -15,6 +15,7 @@
 // 09/06/2020 - Robert  - Aumentados decimais gravacao F1_VADENS.
 // 13/10/2020 - Claudia - Ajuste nas consultas para somarquantidade para mesmo produto e mesma nota. GLPI: 8640
 // 20/11/2020 - Claudia - Retirado o botão filtro conforme GLPI: 8663
+// 27/11/2020 - Sandra  - Incluso grupo de produtos 4000
 //
 // ----------------------------------------------------------------------------------------------------------------
 User Function VA_GLTF1()  
@@ -98,6 +99,7 @@ User Function VA_GLTF1()
 		_sSQL += "				AND SB1.B1_COD = SD1.D1_COD)"
 		_sSQL += "		INNER JOIN SB5010 AS SB5"
 		_sSQL += "			ON (SB5.D_E_L_E_T_ = ''"
+		_sSQL += "           AND SB5.B5_VASISDE = 'S'" 
 		if mv_par01 == 2 // acucar e borra seca
 			_sSQL += "           AND SB5.B5_VATPSIS IN ('24','40') " 
 		endif
@@ -115,7 +117,7 @@ User Function VA_GLTF1()
 	    _sSQL += "	   AND SD1.D1_DTDIGIT > '" + dtos (date() - 90 ) + "'"
 	    _sSQL += "	   AND SD1.D1_QUANT   > 0"
 	    if mv_par01 == 1 // granel
-	    	_sSQL += "     AND SD1.D1_GRUPO = '3000'" 
+	    	_sSQL += "     AND SD1.D1_GRUPO IN  ('3000','4000')" 
 	    else // acucar e borra seca
 	    	_sSQL += "     AND SD1.D1_GRUPO IN ('4001','0603')"
 	    endif	
