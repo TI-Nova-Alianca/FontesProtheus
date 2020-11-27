@@ -10,7 +10,7 @@
 User Function va_rusTX ()
 	local _aAreaAnt := U_ML_SRArea ()
 
-	u_logIni ()
+	u_Log2 ('info', 'Iniciando ' + procname ())
 	if empty (sze -> ze_nfger)
 		u_help ("Nao ha contranota gerada para esta carga.")
 	else
@@ -26,5 +26,4 @@ User Function va_rusTX ()
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
 return

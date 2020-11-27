@@ -11,12 +11,11 @@
 User Function VA_RusCA (_nQual, _lRetCarg)
 	local _lContinua := .T.
 	local _aAreaAnt  := U_ML_SRArea ()
-//	local _sCRLF     := chr (13) + chr (10)
 	local _oSQL      := NIL
 	local _sCargas   := ""
 
 	if _lContinua .and. _nQual == 1 .and. ! sze -> ze_aglutin $ 'D/O'
-		u_help ("Esta nao e´ uma carga aglutinada / aglutinadora")
+		u_help ("Esta nao e´ uma carga aglutinada / aglutinadora",, .t.)
 		_lContinua = .F.
 	endif
 

@@ -44,17 +44,11 @@ User Function va_rus2 (_nOpc)
 	local _aBotAdic    := {}
 	local _oDlg        := NIL
 	local _lContinua   := .T.
-//	local _aRetPatr    := {}
-//	local _oEvento     := NIL
-//	local _aPatriar    := {}
 	local _oSQL        := NIL
 	local _nLock       := 0
 	local _oAvisos     := NIL
 	local _oCour24     := TFont():New("Courier New",,18,,.T.,,,,,.F.)
 	local _sTxtAviso   := ""
-//	local _nAglut      := 0
-//	local _aClasFina   := {}
-//	local _oLivram     := NIL
 	local _nVitNC      := 0
 	local _nLinha      := 0
 	private _aRusInsp  := {}  // Deixar private para ser vista e alimentada por outras rotinas.
@@ -72,8 +66,8 @@ User Function va_rus2 (_nOpc)
 	private _aAglut    := {}  // Deixar private para ser vista por outras rotinas.
 	private cArqMnu    := FWGetMnuFile()  //'COOPERATIVA.XNU'
 
-	u_logIni ()
-	u_logDH ('Carga:', sze -> ze_carga, 'inclui:', inclui, 'altera:', altera, '_nOpc:', _nOpc)
+	u_Log2 ('info', 'Iniciando ' + procname ())
+	u_log2 ('info', 'Carga: ' + sze -> ze_carga + '   inclui: ' + cvaltochar (inclui) + '   altera: ' + cvaltochar (altera) + '   _nOpc: ' + cvaltochar (_nOpc))
 
 	if _lContinua .and. _nOpc >= 4 .and. sze -> ze_status == "N"
 		u_help ("Nota fiscal (" + sze -> ze_nfger + ") ja gerada para esta carga. Alteracao / exclusao nao permitidas. Exclua, antes, a nota fiscal.")
@@ -194,14 +188,12 @@ User Function va_rus2 (_nOpc)
 			_oAssoc := ClsAssoc():New (sze -> ze_assoc, sze -> ze_lojasso, .F.)
 		endif
 		if valtype (_oAssoc) != "O"
-			//if type ('_sErros') == 'C' ; _sErros += 'Nao consta como associado nem como ex-associado.' ; endif
 			u_help ("Nao consta como associado nem como ex-associado.",, .t.)
 			_lContinua = .F.
 		endif
 	endif
 
 	if type ('_oAssoc') == "O" .and. ! empty (_oAssoc:DtFalecim) .and. _nOpc != 5
-		//if type ('_sErros') == 'C' ; _sErros += "Associado consta como falecido em " + dtoc (_oAssoc:DtFalecim); endif
 		u_help ("Associado consta como falecido em " + dtoc (_oAssoc:DtFalecim),, .t.)
 		_lContinua = .F.
 	endif
@@ -339,11 +331,6 @@ User Function va_rus2 (_nOpc)
 			endif
 		endif
 		
-		// Funcionalidade desabilitada a partir de 2020 por que ficavamos sem rastreabilidade.
-		//if inclui
-		//	aadd (_aBotAdic, {"S4WB005N", {|| _Aglutina ()}, "Aglutinar"})
-		//endif
-	
 		if (inclui .or. altera) .and. _lBalEletr
 			set key 119 to _LePeso ()  // tecla F8
 			aadd (_aBotAdic, {"BALANCA", {|| _LePeso ()}, "[F8] Peso"})
@@ -362,7 +349,7 @@ User Function va_rus2 (_nOpc)
 	endif
 
 	set key 119 to
-	u_logFim ()
+	
 return
 
 
@@ -370,8 +357,7 @@ return
 // --------------------------------------------------------------------------
 // Importa pesos da rotina de portaria.
 static function _LePortar ()
-	//u_logIni ()
-	u_logDH ('Lendo dados de portaria')
+	u_Log2 ('info', 'Iniciando ' + procname ())
 	zzt -> (dbsetorder (2))  // ZZT_FILIAL+ZZT_SAFRA+ZZT_CARGA
 	if ! zzt -> (dbseek (xfilial ("ZZT") + m->ze_safra + m->ze_carga, .F.))
 		u_help ("Nao encontrei nenhum ticket de portaria referente a esta carga.")
@@ -388,9 +374,7 @@ static function _LePortar ()
 			U_VA_RUS2D ()
 		endif
 	endif
-	//u_logFim ()
 return
-
 
 
 

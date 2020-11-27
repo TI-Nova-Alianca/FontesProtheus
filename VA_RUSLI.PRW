@@ -25,17 +25,9 @@ user function va_rusLI (_nPesagem)
 	local _sInspAcid  := ''
 	local _sInspMEst  := ''
 	local _sInspDesu  := ''
-	local _sLinkSrv   := ''
+	local _sLinkSrv   := U_LkServer ('NAWEB')
 
-	u_logIni ()
-//	u_log ('Pesagem:', _nPesagem)
-
-	// Define de onde vai ler as inspecoes.
-	if "TESTE" $ upper (GetEnvServer())
-		_sLinkSrv = "LKSRV_NAWEB_TESTE.naweb_teste.dbo"
-	else
-		_sLinkSrv = "LKSRV_NAWEB.naweb.dbo"
-	endif
+	u_Log2 ('info', 'Iniciando ' + procname () + ' para a pesagem ' + cvaltochar (_nPesagem))
 
 	// Verifica situacao do agendamento / inspecoes.
 	if _lContinua
@@ -56,8 +48,6 @@ user function va_rusLI (_nPesagem)
 		_oSQL:_sQuery +=        " ACIDEZ_VOLATIL_TOMBADOR as AcVolT, "
 		_oSQL:_sQuery +=        " MATERIAIS_ESTRANHOS_PATIO as MEstrP, "
 		_oSQL:_sQuery +=        " MATERIAIS_ESTRANHOS_TOMBADOR as MEstrT, "
-		// Eliminado em 2020 --> _oSQL:_sQuery +=        " DESUNIFORMIDADE_MATURACAO_PATIO as DesunP, "
-		// Eliminado em 2020 --> _oSQL:_sQuery +=        " DESUNIFORMIDADE_MATURACAO_TOMBADOR as DesunT, "
 		_oSQL:_sQuery +=        " MISTURA_VARIEDADES as Mistu,"
 		_oSQL:_sQuery +=        " AGENDAORI as AgendaOri"
 		_oSQL:_sQuery +=   " FROM " + _sLinkSrv + ".VA_VINSPECOES_SAFRA_" + sze -> ze_safra
@@ -101,33 +91,32 @@ user function va_rusLI (_nPesagem)
 			_sInspPodr = iif (! empty ((_sAliasInsp) -> PodriT), (_sAliasInsp) -> PodriT, (_sAliasInsp) -> PodriP)
 			_sInspAcid = iif (! empty ((_sAliasInsp) -> AcVolT), (_sAliasInsp) -> AcVolT, (_sAliasInsp) -> AcVolP)
 			_sInspMEst = iif (! empty ((_sAliasInsp) -> MEstrT), (_sAliasInsp) -> MEstrT, (_sAliasInsp) -> MEstrP)
-			// Eliminado em 2020 --> _sInspDesu = iif (! empty ((_sAliasInsp) -> DesunT), (_sAliasInsp) -> DesunT, (_sAliasInsp) -> DesunP)
 		endif
 		(_sAliasInsp) -> (dbclosearea ())
 		dbselectarea ("SZE")
-//		U_LOG ('Finalizei a leitura das inspecoes com:', _aRusInsp)
+//		U_LOG2 ('info', 'Finalizei a leitura das inspecoes com:')
+//		u_log2 ('info', _aRusInsp)
 	endif
 
-//	u_log ('Inspecoes:')
-//	u_log (   'Situacao da carga no APP........: ', _aRusInsp [.InspecoesSafraSituacao])
-//	u_log (   'Varied.nao prevista no cad.vitic: ', _aRusInsp [.InspecoesSafraVarNaoPrevCadVit])
-//	u_log (   'Entrega cad.campo...............: ', _aRusInsp [.InspecoesSafraEntrCadCpo])
-//	u_log (   'Mistura variedades no tombador..: ', _aRusInsp [.InspecoesSafraMisturaNoTombador])
-//	u_log (   'Chave agenda original...........: ', _aRusInsp [.InspecoesSafraAgendaOri])
-//	u_log (   'Botrytis......:', _sInspBotr)
-//	u_log (   'Glomerella....:', _sInspGlom)
-//	u_log (   'Aspergyllus...:', _sInspAspe)
-//	u_log (   'Podridoes.....:', _sInspPodr)
-//	u_log (   'Acidez volatil:', _sInspAcid)
-//	u_log (   'Mat.estranho..:', _sInspMEst)
+	u_log2 ('info', 'Inspecoes:')
+	u_log2 ('info', '   Situacao da carga no APP........: ' + _aRusInsp [.InspecoesSafraSituacao])
+	u_log2 ('info', '   Varied.nao prevista no cad.vitic: ' + _aRusInsp [.InspecoesSafraVarNaoPrevCadVit])
+	u_log2 ('info', '   Entrega cad.campo...............: ' + _aRusInsp [.InspecoesSafraEntrCadCpo])
+	u_log2 ('info', '   Mistura variedades no tombador..: ' + _aRusInsp [.InspecoesSafraMisturaNoTombador])
+	u_log2 ('info', '   Chave agenda original...........: ' + _aRusInsp [.InspecoesSafraAgendaOri])
+	u_log2 ('info', '   Botrytis......: ' + _sInspBotr)
+	u_log2 ('info', '   Glomerella....: ' + _sInspGlom)
+	u_log2 ('info', '   Aspergyllus...: ' + _sInspAspe)
+	u_log2 ('info', '   Podridoes.....: ' + _sInspPodr)
+	u_log2 ('info', '   Acidez volatil: ' + _sInspAcid)
+	u_log2 ('info', '   Mat.estranho..: ' + _sInspMEst)
 
 	// Tratamento para dados retornados pelo sistema de inspecao
 	if _lContinua
 		if _nPesagem == 1
-//			if ! _aRusInsp [.InspecoesSafraSituacao] $ "LIB/SEG/CON"
 			if ! _aRusInsp [.InspecoesSafraSituacao] $ "LIB/SEG/CON/INS"
 				u_help ("Carga nao localizada ou com status '" + _aRusInsp [.InspecoesSafraSituacao] + "' no sistema de agendamento / inspecao. Somente cargas com status LIB (liberadas), SEG (segregadas), CON (concluidas), INS (inspecionadas) na inspecao de patio poderao ser recebidas.")
-				if U_ZZUVL ('045', __cUserID, .F.)//, cEmpAnt, cFilAnt)
+				if U_ZZUVL ('045', __cUserID, .F.)
 					_lContinua = U_MsgNoYes ("A T E N C A O: Se voce continuar o recebimento, nao vai ser possivel ler as inspecoes a partir do sistema de agenda/inspecao. Confirma assim mesmo?")
 					_oEvento := ClsEvent ():New ()
 					_oEvento:Alias   = 'SZE'
@@ -139,7 +128,7 @@ user function va_rusLI (_nPesagem)
 					_oEvento:CodAlias = sze -> ze_safra + sze -> ze_carga
 					_oEvento:Grava ()
 				else
-					u_help ("Verifique no sistema de agenda / inspecao se esta carga ja foi liberada. Para prosseguir com o recebimento assim mesmo, deve ser feito com algum usuario responsavel pelos cadastros de safra (" + U_ZZULD ('045')[1] + ").")
+					u_help ("Verifique no sistema de agenda / inspecao se esta carga ja foi liberada. Para prosseguir com o recebimento assim mesmo, deve ser feito com algum usuario responsavel pelos cadastros de safra (" + U_ZZULD ('045')[1] + ").",, .t.)
 					_lContinua = .F.
 				endif
 			endif
@@ -152,11 +141,14 @@ user function va_rusLI (_nPesagem)
 	endif
 
 	if _lContinua
-		if _aRusInsp [.InspecoesSafraSituacao] == "SEG"
-			reclock ("SZE", .F.)
-			sze->ze_segreg = 'S'
-			msunlock ()
-		endif
+		// if _aRusInsp [.InspecoesSafraSituacao] == "SEG"
+		// 	reclock ("SZE", .F.)
+		// 	sze->ze_segreg = 'S'
+		// 	msunlock ()
+		// endif
+		reclock ("SZE", .F.)
+		sze->ze_segreg = iif (_aRusInsp [.InspecoesSafraSituacao] == "SEG", 'S', 'N')
+		msunlock ()
 	endif
 
 	// Atualiza itens da carga.
@@ -181,7 +173,6 @@ user function va_rusLI (_nPesagem)
 					_lContinua = .F.
 					exit
 				else
-//					if sb1 -> b1_varuva == 'F' .and. sb1 -> b1_vafcuva == 'F'
 					_aClasUva = {'','','','',''}  // Para o caso de nao encontrar nada.
 					if sze -> ze_safra == '2019' .and. sb1 -> b1_varuva == 'F' .and. sb1 -> b1_vafcuva == 'F'
 						_aClasUva = aclone (U_ClUva19 (szf -> zf_produto, val (szf -> zf_grau), szf -> zf_conduc, val (_sInspBotr), val (_sInspGlom), val (_sInspAspe), val (_sInspPodr), val (_sInspAcid), _sInspMEst, val (_sInspDesu)))
@@ -220,5 +211,4 @@ user function va_rusLI (_nPesagem)
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
 return _lContinua

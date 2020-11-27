@@ -11,7 +11,6 @@
 
 // --------------------------------------------------------------------------
 User Function va_rusR ()
-
 	if sze -> ze_status == "1" .and. sze -> ze_aglutin != 'D'
 		u_help ("Falta segunda pesagem")
 		return
@@ -59,9 +58,6 @@ User Function va_rusR ()
 	If aReturn [5] == 1
 		ourspool(wnrel)
 	endif
-
-	// Reaplica filtro no mbrowse.
-//	Eval(_bFilBrwZE)
 return
 
 

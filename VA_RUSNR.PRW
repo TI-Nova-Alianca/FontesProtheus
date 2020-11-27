@@ -29,16 +29,6 @@ static function _Altera ()
 	aadd (_aCampos, "ZE_NFCOOP")
 	aadd (_aCampos, "ZE_SNFCOOP")
 
-//	DbSelectArea("SX3")
-//	DbSetOrder(1)
-//	DbSeek("SZE")
-//	While !Eof() .and. SX3->X3_ARQUIVO == "SZE"
-//		If X3Uso(SX3->X3_USADO) .and. ascan (_aCampos, alltrim (sx3 -> x3_campo)) > 0
-//			aadd(aCpos,alltrim(SX3->X3_CAMPO))
-//		EndIf
-//		DbSkip()
-//	End 
-
 	_aCpoSX3 := FwSX3Util():GetAllFields('SZE')
 	For i := 1 To Len(_aCpoSX3)
 	    If(X3Uso(GetSx3Cache(_aCpoSX3[i], 'X3_USADO')) .and. (ascan (_aCampos, GetSx3Cache(_aCpoSX3[i],'X3_CAMPO')) > 0 ))
@@ -49,7 +39,9 @@ static function _Altera ()
 	
 	AxAltera ("SZE", sze->(recno ()), 4, NIL, aCpos, NIL, NIL, "U_VA_RUSNR('V')")
 Return
-//
+
+
+
 // --------------------------------------------------------------------------
 static function _Valida ()
 	local _lRet := .T.

@@ -48,45 +48,33 @@ User Function va_rusN ()
 	local _sTES      := ""
 	local _sNF       := ""
 	local _nTamDesc  := tamsx3 ("D1_DESCRI")[1]
-//	local _nTamItem  := tamsx3 ("D1_ITEM")[1]
 	local _sMsgContr := ""
-//	local _nVlIni    := 0
 	local _nVlTot    := 0
 	local _sDescri   := ""
 	local _nTaraItem := 0
 	local _aAutoSD1  := {}
 	local _aAutoSF1  := {}
 	local _aLinha    := {}
-//	local _bFilBrw   := NIL
-//	local _aFilBrw   := NIL
 	local _sVitic    := ""
 	local _sNaoConf  := ""
 	local _nNaoConf  := 0
 	local _sAlmox    := ""
-//	local _sUvaF     := ""
-//	local _nLock     := 0
 	local _oSQL      := NIL
 	local _sDescNC   := ""
 	local _sAglutin  := ""
 	local _sClasFina := ''
-//	local _cPerg     := ''
-//	local _aBkpSX1   := ""
 	local _nVlUni    := 0
 	local _sLoteCtl  := ""
 	local _sMenorVlr := ''
 	local _aProdut   := {}
 	local _nProdut   := 0
 	local _aAux      := {}
-//	local _sVarReal  := ''
-	//local _sPNaoPrev := ''
 	local _aPrevia   := {}
 	local _aCols     := {}
 	local _nVlFrete  := 0
-//	local _nFrtItem  := 0
-//	local _sLinkSrv  := ''
 	private _oAssoc  := NIL
 
-	u_logIni ()
+	u_Log2 ('info', 'Iniciando ' + procname ())
 	
 	CursorWait ()
 
@@ -376,7 +364,7 @@ User Function va_rusN ()
 				exit
 			endif
 
-			u_log ('Retornou preco =', _nVlUni)
+			u_log2 ('info', 'Retornou preco = ' + cvaltochar (_nVlUni))
 			
 			// Especificamente esse fornecedor mandou como 'venda' e preciso emitir a contranota com valor identico
 			if _sTES == '192'
@@ -499,7 +487,6 @@ User Function va_rusN ()
 			AADD(_aLinha , {"D1_VAVITIC" , szf -> zf_cadviti    , Nil } )
 			if sb1 -> b1_localiz == 'S'
 				AADD(_aLinha , {"D1_LOTECTL", _sLoteCtl, Nil } )
-	//			AADD(_aLinha , {"D1_LOTEFOR", szf -> zf_idZA8 + szf -> zf_idSZ9, Nil } )
 				AADD(_aLinha , {"D1_LOTEFOR", szf -> zf_idZA8, Nil } )
 			endif
 			u_log (_aLinha)
@@ -515,14 +502,9 @@ User Function va_rusN ()
 	// Prepara dados adicionais
 	if _lContinua
 		_sMsgContr = ""
-//		if ! empty (_sPNaoPrev)
-//			_sMsgContr += "Varied.nao prevista no cad.vitic: '" + alltrim (_sPNaoPrev) + "';"
-//		endif
 		if ! empty (_sMenorVlr)
 			_sMsgContr += "Mist.varied:precificando por '" + alltrim (_sMenorVlr) + "';"
 		endif
-		// Jah gera no SF1100I --> _sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Pl.veic:" + alltrim (sze -> ze_placa)
-		// Jah busca no NfeSefaz  ---> _sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Ref.NF produtor:" + alltrim (sze -> ze_snfprod) + "/" + alltrim (sze -> ze_nfprod)
 		_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Peso tara:" + cvaltochar (sze -> ze_pesotar) + 'Kg'
 		_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Cad.vitic:" + _sVitic
 		if ! empty (_sNaoConf)
@@ -610,26 +592,16 @@ User Function va_rusN ()
 
 		// Ordena campos cfe. SX3.
 		_aAutoSF1 = aClone (U_OrdAuto (_aAutoSF1))
-		//u_log (_aAutoSF1)
-
-		// Altera parametro "Contabiliza on-line" para "Nao" na tela de NF de entrada
-//		_cPerg = 'MTA103'
-		// estou setando este parametro antes do backup pq esse nao eh pra voltar mesmo, é pra ficar sempre NAO
-	//	U_GravaSX1 (_cPerg, "05", 2)
-//		_aBkpSX1 = U_SalvaSX1 (_cPerg)
-//		U_GravaSX1 (_cPerg, "06", 2)
+		u_log2 ('info', _aAutoSF1)
 
 		lMsHelpAuto := .F.  // se .t. direciona as mensagens de help
 		lMsErroAuto := .F.  // necessario a criacao
 		DbSelectArea ("SF1")
-		//u_log ('chamando MATA103')
+		u_log2 ('debug', 'chamando MATA103')
 
 		CursorWait ()
 		begin transaction
 		MsExecAuto({|x,y,z|MATA103(x,y,z)},_aAutoSF1,_aAutoSD1,3)
-
-		// Volta parametros da rotina de notas de entrada.
-//		U_SalvaSX1 (_cPerg, _aBkpSX1)
 
 		If lMsErroAuto
 			DisarmTransaction()
@@ -665,12 +637,9 @@ User Function va_rusN ()
 
 		// Faz a transmissao da NF para a SEFAZ
 		if ! empty (sze -> ze_nfger)
-			//U_SpedAut ('E', sf1 -> f1_serie, sf1 -> f1_doc, sf1 -> f1_doc)
-			//dbselectarea ("SZE")
 			U_VA_RUSTX ()
 		endif
 	endif
 
 	CursorArrow ()
-	u_logFim ()
 return

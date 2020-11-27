@@ -12,7 +12,6 @@
 user function VA_RUSRG ()
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _lContinua := .T.
-	//local _sFilDest  := ''
 	local _sMsg      := ''
 
 	if sze -> ze_pesobru <= 0
@@ -21,7 +20,6 @@ user function VA_RUSRG ()
 	endif
 
 	if _lContinua
-	//	if sze -> ze_status $ '2/R/N/D/C'  // 1=Primeira pesagem OK;2=Segunda pesagem OK;R=Recibo impresso;N=NF gerada;D=Redirecionada;C=Cancelada
 		if sze -> ze_status $ 'R/N/D/C'  // 1=Primeira pesagem OK;2=Segunda pesagem OK;R=Recibo impresso;N=NF gerada;D=Redirecionada;C=Cancelada
 			u_help ("Status da carga nao permite mais ser reenviada para leitura de grau.")
 			_lContinua = .F.
