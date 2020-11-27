@@ -1,24 +1,42 @@
 // --------------------------------------------------------------------------
 user function claudia ()
-//local i := 0
 
 	u_help(" nada em execução")
-//	u_help("BatVerbas")
-//	U_BatVerbas(1)
-//	_ajusteZA5()
-//	cQuery := " select A1_NOME from SA1010 WHERE A1_COD='018731'"
-//	_aProd  := U_Qry2Array(cQuery)
-//	for i:=1 to len(_aProd)
-//		texto := StrTran(_aProd[i,1], '&', '' ) 
-//		u_help(texto) 
-//	Next
-//	
-	//U_BatRevCh(,,, '50200312662352000353551030000115721100186691', .T.)     
-	//U_ATUESTRU ("SD2")
-	//U_ATUESTRU ("SC6")
-	//U_ATUESTRU ("SC9")
-return
+	//u_help("U_ImpOBSFin")
 
+	//ImpOBSFin()
+return
+// // ----------------------------------------------------------------------------
+// // Importa CSV obs financeiro
+
+// static Function ImpOBSFin()
+// Local _aDados 	:= {}
+// Local _i 		:=0
+// local _oEvento 	:= NIL
+
+// 	_aDados = U_LeCSV ('C:\Temp\obs.csv', ';')
+
+// 	//u_log (len(_aDados))
+
+// 	for _i := 1 to len (_aDados)
+
+// 		If Len(alltrim(_aDados [_i, 1])) <= 6
+// 			_oEvento    := NIL
+
+// 			_oEvento := ClsEvent():new ()
+// 			_oEvento:CodEven   = "SA1004"
+// 			_oEvento:DtEvento  = date()
+// 			_oEvento:Texto	   = _aDados [_i, 3]
+// 			_oEvento:Cliente   = PADL(_aDados [_i, 1],6,'0')
+// 			_oEvento:LojaCli   = PADL(_aDados [_i, 2],2,'0')
+// 			_oEvento:Grava ()
+
+// 			_Cliente := PADL(_aDados [_i, 2],2,'0')
+// 		else
+// 			u_log ("---AJUSTE:" +alltrim(_Cliente) + alltrim(_aDados [_i, 1]))
+// 		EndIf
+// 	Next
+// return
 //Static Function _ajusteZA5()
 //	local _i := 0
 //	
