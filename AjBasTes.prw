@@ -139,9 +139,6 @@ user function AjBasTes ()
 		u_log2 ('info', 'Alterando MV_NFCEIDT (conteudo anterior: ' + alltrim (_mv_nfceidt) + ')')
 		PutMv ('MV_NFCEIDT', '000002')
 
-	//	u_log ('Alterando VA_DBNAWEB')
-	//	PutMv ('VA_DBNAWEB', 'LKSRV_NAWEB_TESTE.naweb_teste.dbo')
-
 		// Muda NFe e NFCe para 'homologacao'
 		_oClsNFe := ClsNFe ():New ()
 		_oSQL := ClsSQL ():New ()

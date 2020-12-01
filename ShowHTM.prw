@@ -40,10 +40,3 @@ User Function ShowHTM (_sHTM)
 	@ (_oDlg:nClientHeight / 2 - 25), (_oDlg:nClientWidth / 2 - 40) bmpbutton type 1 action close (_oDlg)
 	activate msdialog _oDlg center  // on init (close _oDlg)
 return
-
-
-// exemplo de uso:
-// _sHTML := "<HTML>teste</HTML>"
-// U_ShowHTM (_sHTML)
-// U_ShowHTM ('http://naweb.novaalianca.coop.br/wpnnucentrar.aspx')
-

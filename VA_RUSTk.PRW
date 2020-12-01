@@ -12,7 +12,6 @@
 //
 
 // --------------------------------------------------------------------------
-//User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _lSohDados, _sModelImp, _lPicote)
 User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 	local _lContinua := .T.
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -34,16 +33,15 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 	_nQtVias := iif (_nQtVias == NIL, 1, _nQtVias)
 	_sModelImp = upper (_sModelImp)
 	
-	u_logIni ()
-//	u_log (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
+	u_Log2 ('info', 'Iniciando ' + procname ())
+	u_log2 ('debug', '   Qual ticket......: ' + cvaltochar (_nQual))
+	u_log2 ('debug', '   Porta............: ' + _sPorta)
+	u_log2 ('debug', '   Modelo impressora: ' + _sModelImp)
 
-//	if ! _lSohDados
-	//	if ! _lImpTick
-		if type ("_lImpTick") == "L" .and. ! _lImpTick
-			u_help ("Impressao disponivel somente em estacoes com impressora de ticket/cupom",, .t.)
-			_lContinua = .F.
-		endif
-//	endif
+	if type ("_lImpTick") == "L" .and. ! _lImpTick
+		u_help ("Impressao disponivel somente em estacoes com impressora de ticket/cupom",, .t.)
+		_lContinua = .F.
+	endif
 	
 	// Busca os produtos da carga
 	if _lContinua .and. (_nQual == 1 .or. _nQual == 2)
@@ -70,18 +68,14 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 
 	if _lContinua .and. (_nQual == 1 .or. _nQual == 2)
 		_sTicket := ""
-//		if ! _lSohDados
-			if _sModelImp == 'BEMATECH'
-				_sTicket += chr(27) + '@' + _Enter
-			endif
-//		endif
-			_sTicket += padc (left (alltrim (sm0 -> m0_nomecom), _nTamLin), _nTamLin, ' ') + _Enter
-		//endif
+		if _sModelImp == 'BEMATECH'
+			_sTicket += chr(27) + '@' + _Enter
+		endif
+		_sTicket += padc (left (alltrim (sm0 -> m0_nomecom), _nTamLin), _nTamLin, ' ') + _Enter
 		_sTicket += padc (left ('***  ENTRADA SAFRA ' + sze -> ze_safra + '  ***', _nTamLin), _nTamLin, ' ') + _Enter
 		_sTicket += padc (left ('Local: ' + sze -> ze_local + '  (filial ' + alltrim (sm0 -> m0_filial) + ')', _nTamLin), _nTamLin, ' ') + _Enter
 		_sTicket += _Enter
 		_sTicket += 'Carga: ' + sze -> ze_carga + '   ' + dtoc (sze -> ze_data) + ' ' + sze -> ze_hora + '   ' + left (sze -> ze_placa, 3) + '-' + substr (sze -> ze_placa, 4, 4) + _Enter
-		//_sTicket += _Enter
 	
 		// Codigo de barras CODE128
 		_sCodBar = alltrim (sze -> ze_filial + '-' + sze -> ze_carga)
@@ -105,22 +99,20 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 			_sTicket += "/ __| __/ __| _ | __/ __| /_\ | _ \" + _Enter
 			_sTicket += "\__ | _| (_ |   | _| (_ |/ _ \|   /" + _Enter
 			_sTicket += "|___|___\___|_|_|___\___/_/ \_|_|_\" + _Enter
-  			_sTicket += _Enter
+			_sTicket += _Enter
 			_sTicket += "      ___   _   ___  ___   _   " + _Enter
- 			_sTicket += "     / __| /_\ | _ \/ __| /_\  " + _Enter
+			_sTicket += "     / __| /_\ | _ \/ __| /_\  " + _Enter
 			_sTicket += "    | (__ / _ \|   | (_ |/ _ \ " + _Enter
 			_sTicket += "     \___/_/ \_|_|_\\___/_/ \_\" + _Enter
-  			_sTicket += _Enter
-		endif
-	//	if ! _lSohDados
-			_sTicket += 'Peso bruto....: ' + transform (sze -> ze_pesobru, "@E 999,999") + ' Kg' + _Enter
-			
-			if _nQual == 2
-				_sTicket += 'Peso tara.....: ' + transform (sze -> ze_pesotar, "@E 999,999") + ' Kg' + _Enter
-				_sTicket += 'Peso liquido..: ' + transform (sze -> ze_pesobru - sze -> ze_pesotar, "@E 999,999") + ' Kg' + _Enter
-			endif
 			_sTicket += _Enter
-	//	endif
+		endif
+		_sTicket += 'Peso bruto....: ' + transform (sze -> ze_pesobru, "@E 999,999") + ' Kg' + _Enter
+		
+		if _nQual == 2
+			_sTicket += 'Peso tara.....: ' + transform (sze -> ze_pesotar, "@E 999,999") + ' Kg' + _Enter
+			_sTicket += 'Peso liquido..: ' + transform (sze -> ze_pesobru - sze -> ze_pesotar, "@E 999,999") + ' Kg' + _Enter
+		endif
+		_sTicket += _Enter
 		_sTicket += 'Variedade(s)                  Grau     Kg' + _Enter
 		if _sModelImp == 'BEMATECH'
 			_sTicket += replicate ('-', _nTamLin) + _Enter
@@ -143,9 +135,9 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 		if _nQual == 1  // Estou imprimindo a 1a.pesagem
 			_sAvaliac = ""
 			_aAmost = {}
+
 			// Se for uma carga nao conforme, solicita amostra de todas as variedades.
-			//if sze->ze_segreg == 'S' .or. (type ("_lColAmCar") == 'L' .and. _lColAmCar)
-			U_LOG ('ZE_SEGREG:', sze->ze_segreg, 'ZE_AMOSTRA:', SZE -> ZE_AMOSTRA)
+			U_LOG2 ('debug', 'ZE_SEGREG: ' + sze->ze_segreg + '   ZE_AMOSTRA: ' + SZE -> ZE_AMOSTRA)
 			if sze->ze_segreg == 'S' .or. SZE -> ZE_AMOSTRA == 'S'  //(type ("_lColAmCar") == 'L' .and. _lColAmCar)
 				for _nItem = 1 to len (_aItens)
 					if ascan (_aAmost, {|_aVal| _aVal [1] == _aItens [_nItem, 1]}) == 0
@@ -155,7 +147,7 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 			endif
 
 			if len (_aAmost) > 0
-				_sAvaliac += _Enter + _Enter // + _Enter // + _Enter + _Enter + _Enter
+				_sAvaliac += _Enter + _Enter
 				_sAvaliac += '#########################################' + _Enter
 				_sAvaliac += '########### COLETAR AMOSTRA #############' + _Enter
 				for _nAmost = 1 to len (_aAmost)
@@ -177,7 +169,6 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 			_sTicket += '<DLINE>' + _Enter
 		endif
 		if ! empty (sze -> ze_locdesc)
-	//		_sTicket += "  TOMBADOR PREVISTO: " + sze -> ze_locdesc + "   EFETIVO: ____" + _Enter
 			_sTicket += "  TOMBADOR" + iif (sze -> ze_filial != '01', " PREVISTO: " + sze -> ze_locdesc, "") + "   EFETIVO: ____" + _ýEnter
 			_sTicket += _Enter
 		endif
@@ -226,24 +217,20 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 		endif
 	endif
 
-//	U_LOG (_sTicket)
+//	U_LOG2 ('info', _sTicket)
 
 	// Grava ticket em arquivo e copia para a porta destino.
 	if _lContinua .and. ! empty (_sTicket) .and. ! empty (_sPorta)
-//		if ! _lSohDados
-			_sArq := CriaTrab (NIL, .F.)
-			_nHdl = fcreate (_sArq, 0)
-			fwrite (_nHdl, _sTicket)
-			fclose (_nHdl)
-			u_log ('copiando ticket para', alltrim (_sPorta))
-			for _nVia = 1 to _nQtVias
-				copy file (_sArq) to (alltrim (_sPorta))
-			next
-			delete file (_sArq)
-//		endif
+		_sArq := CriaTrab (NIL, .F.)
+		_nHdl = fcreate (_sArq, 0)
+		fwrite (_nHdl, _sTicket)
+		fclose (_nHdl)
+		u_log ('copiando ticket para', alltrim (_sPorta))
+		for _nVia = 1 to _nQtVias
+			copy file (_sArq) to (alltrim (_sPorta))
+		next
+		delete file (_sArq)
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-
-	u_logFim ()
 return _sTicket
