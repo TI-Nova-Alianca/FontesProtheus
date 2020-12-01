@@ -16,14 +16,13 @@
 // 15/05/2020 - Claudia - Incluida validações de mensagens, conforme GPLI: 7920
 // 29/10/2020 - Robert  - Invertido teste de grupo de produtos na carastrado para evitar msg REGNOIS
 //                      - Inseridas tags para catalogo de programas.
+// 30/11/2020 - Claudia - Incluidos novos campos conforme GLPI: 8809
 //
-
 //-------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
 #include "rwmake.ch"
 
-// ------------------------------------------------------------------------------------------
 User Function VA_MT089 ()
 	private aRotina   := {}
 	private cString   := "SFM"
@@ -48,6 +47,7 @@ User Function VA_MT089 ()
 		aadd (aRotina, {"&Incluir"		, "U_MT89I"		,   0, 3})
 		aadd (aRotina, {"&Alterar"		, "U_MT89A (4, 	'allwaystrue ()', 'allwaystrue ()', .T., _sPreFiltr)",   0, 4})
 		aadd (aRotina, {"&Relatório"	, "U_MT89R (6)"	,   0, 6})
+		aadd (aRotina, {"&Cópia Reg."	, "U_MT089REP()",   0, 6})
 		
 		dbselectarea ("SFM")
 		dbSetOrder (1)
@@ -64,10 +64,20 @@ User Function VA_MT089 ()
 		aadd (aCabTela,{ "NCM"					,"FM_POSIPI"	})
 		aadd (aCabTela,{ "Produto"			    ,"FM_PRODUTO"	})
 		aadd (aCabTela,{ "Enq. IPI"				,"FM_GRPCST"	})
+		aadd (aCabTela,{ "Cliente"				,"FM_CLIENTE"	})
+		aadd (aCabTela,{ "Loja Cliente"			,"FM_LOJACLI"	})
+		aadd (aCabTela,{ "Fornecedor"			,"FM_FORNECE"	})
+		aadd (aCabTela,{ "Loja Fornec."			,"FM_LOJAFOR"	})
+		aadd (aCabTela,{ "Ref.Grd.Cfg"			,"FM_REFGRD"	})
+		aadd (aCabTela,{ "Desc.Ref.Grd"			,"FM_DESREF"	})
+		aadd (aCabTela,{ "Grupo TI"				,"FM_GRPTI"		})
+		aadd (aCabTela,{ "Tp.Contrato"			,"FM_TPCTO"		})
+		aadd (aCabTela,{ "Descrição"			,"FM_DESCR"		})
 		
 		mBrowse(,,,,"SFM",aCabTela,,,,,,,,,,,,,_sPreFiltr)
 	EndIf
-return
+Return
+//
 // --------------------------------------------------------------------------
 // Incluir AxCadastro
 User Function MT89I()
@@ -77,6 +87,7 @@ User Function MT89I()
 		_Mt89GrAx(_sId)			
 	EndIf
 Return
+//
 // --------------------------------------------------------------------------
 // Visualizacao, Alteracao, Exclusao
 User Function MT89A (_nOpcao, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr)
@@ -120,7 +131,7 @@ User Function MT89A (_nOpcao, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr)
 		                      .F.		,;  // Nao executa gatilhos
 		                      altera	,;  // Gera linha vazia, se nao encontrar dados.
 		                      .T.		,;  // Trava registros
-		                      _sFiltro )  // Expressao para filtro adicional
+		                      _sFiltro )    // Expressao para filtro adicional
 		
 		CursorArrow ()
 
@@ -154,18 +165,31 @@ User Function MT89A (_nOpcao, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr)
 				
 				For _n = 1 to len (aCols)
 					N = _n
-					_sGrTrib := GDFieldGet ("FM_GRTRIB")
-					_sEst	 := GDFieldGet ("FM_EST")
-					_sGrProd := GDFieldGet ("FM_GRPROD")
-					_sTipCli := GDFieldGet ("FM_TIPOCLI")
-					_sTipOp  := GDFieldGet ("FM_TIPO")
-					_sTe	 := GDFieldGet ("FM_TE")
-					_sTs	 := GDFieldGet ("FM_TS")
-					_sTipPed := GDFieldGet ("FM_TIPOMOV")
-					_sNCM    := GDFieldGet ("FM_POSIPI")
-					_sProd   := GDFieldGet ("FM_PRODUTO")
-					_sEnqIPI := GDFieldGet ("FM_GRPCST")				
-					_recno   := GDFieldGet ("ZZZ_RECNO")
+
+					_aCmp  := {} 
+					aadd (_aCmp,{ GDFieldGet ("FM_GRTRIB")	})
+					aadd (_aCmp,{ GDFieldGet ("FM_EST")		})
+					aadd (_aCmp,{ GDFieldGet ("FM_GRPROD")	})
+					aadd (_aCmp,{ GDFieldGet ("FM_TIPOCLI")	})
+					aadd (_aCmp,{ GDFieldGet ("FM_TIPO")	})
+					aadd (_aCmp,{ GDFieldGet ("FM_TE")		})
+					aadd (_aCmp,{ GDFieldGet ("FM_TS")		})
+					aadd (_aCmp,{ GDFieldGet ("FM_TIPOMOV")	})
+					aadd (_aCmp,{ GDFieldGet ("FM_POSIPI")	})
+					aadd (_aCmp,{ GDFieldGet ("FM_PRODUTO")	})
+					aadd (_aCmp,{ GDFieldGet ("FM_GRPCST")	})
+					aadd (_aCmp,{ GDFieldGet ("FM_CLIENTE")	})
+					aadd (_aCmp,{ GDFieldGet ("FM_LOJACLI")	})
+					aadd (_aCmp,{ GDFieldGet ("FM_FORNECE")	})
+					aadd (_aCmp,{ GDFieldGet ("FM_LOJAFOR")	})
+					aadd (_aCmp,{ GDFieldGet ("FM_REFGRD")	})
+					aadd (_aCmp,{ GDFieldGet ("FM_DESREF")	})
+					aadd (_aCmp,{ GDFieldGet ("FM_GRPTI")	})
+					aadd (_aCmp,{ GDFieldGet ("FM_TPCTO")	})
+					aadd (_aCmp,{ GDFieldGet ("FM_DESCR")	})
+					aadd (_aCmp,{ GDFieldGet ("ZZZ_RECNO")	})
+					
+					_recno    := GDFieldGet ("ZZZ_RECNO")
 					
 					// Procura esta linha no arquivo por que posso ter situacoes de exclusao ou alteracao.
 					If GDFieldGet ("ZZZ_RECNO") > 0
@@ -178,15 +202,15 @@ User Function MT89A (_nOpcao, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr)
 							msunlock ("SFM")
 							
 							_GrvDesc := "Exclusão de Tes inteligente (Grid)"
-							_Mt89GrvEv (_sGrTrib, _sEst, _sGrProd, _sTipCli, _sTipOp, _sTe, _sTs, _sTipPed, _sNCM, _sProd, _sEnqIPI, _GrvDesc)
+							_Mt89GrvEv (_aCmp, _GrvDesc)
 						Else
 							// verifica se alterado ou apenas repasse do grid
 							_AltDes := ""
-							_lAlt := _VerAltReg(_sGrTrib, _sEst, _sGrProd, _sTipCli, _sTipOp, _sTe, _sTs, _sTipPed, _sNCM, _sProd, _sEnqIPI, _recno,_AltDes)
+							_lAlt := _VerAltReg(_aCmp,_recno,_AltDes)
 							
 							If _lAlt == .F.
 								_GrvDesc := "Alteração de Tes inteligente (Grid) " + alltrim(_AltDes)
-								_Mt89GrvEv (_sGrTrib, _sEst, _sGrProd, _sTipCli, _sTipOp, _sTe, _sTs, _sTipPed, _sNCM, _sProd, _sEnqIPI, _GrvDesc)
+								_Mt89GrvEv (_aCmp, _GrvDesc)
 							EndIf
 							
 							reclock ("SFM", .F.)
@@ -206,7 +230,7 @@ User Function MT89A (_nOpcao, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr)
 							msunlock ("SFM")
 							
 							_GrvDesc := "Inclusão de Tes inteligente (Grid)"
-							_Mt89GrvEv (_sGrTrib, _sEst, _sGrProd, _sTipCli, _sTipOp, _sTe, _sTs, _sTipPed, _sNCM, _sProd, _sEnqIPI, _GrvDesc)
+							_Mt89GrvEv (_aCmp, _GrvDesc)
 						EndIf
 					EndIf
 				Next
@@ -216,41 +240,17 @@ User Function MT89A (_nOpcao, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr)
 
 	SFM -> (dbgotop ())
 Return
+//
 // --------------------------------------------------------------------------
 // Valida 'Linha OK' da getdados
 User Function MT89LOK ()
 	local _lRet := .T.
-//	u_log2 ('debug', 'iniciando ' + procname ())
 
 	If _lRet .and. ! GDDeleted ()
-//		u_log2 ('debug', 'vou chamar GDCheckKey')
-//		_lRet = GDCheckKey ({"FM_FILIAL","FM_TIPOCLI","FM_GRTRIB","FM_GRPROD","FM_EST","FM_TIPO"}, 4, {}, "Registro duplicado", .t.)
-		_lRet = GDCheckKey ({"FM_GRTRIB","FM_GRPROD","FM_EST","FM_TIPOCLI","FM_TIPO"}, 4)
-//		u_log2 ('debug', 'voltou do GDCheckKey com ' + cvaltochar (_lRet))
+		_lRet = GDCheckKey ({"FM_GRTRIB","FM_GRPROD","FM_EST","FM_TIPOCLI","FM_TIPO","FM_CLIENTE","FM_LOJACLI","FM_FORNECE","FM_LOJAFOR", "FM_PRODUTO","FM_POSIPI","FM_REFGRD"}, 4)
 	Endif
 	
 	If _lRet .and. ! GDDeleted ()
-//		If empty(GDFieldGet("FM_GRTRIB"))
-//			u_help("Campo Grupo de tributação é obrigatório!")
-//			_lRet := .F.
-//		EndIf
-//		
-//		If empty(GDFieldGet("FM_GRPROD"))
-//			u_help("Campo Grupo tributário do produto é obrigatório")
-//			_lRet := .F.
-//		EndIf
-//		
-//		If empty(GDFieldGet("FM_EST"))
-//			u_help("Campo Estado é obrigatório")
-//			_lRet := .F.
-//		EndIf
-//		
-//		If empty(GDFieldGet("FM_TIPOCLI"))
-//			u_help("Campo Tipo de cliente é obrigatório")
-//			_lRet := .F.
-//		EndIf
-		
-//		u_log2 ('debug', 'testando campos 1')
 		If empty(GDFieldGet("FM_TIPO"))
 			u_help("Campo Tipo de operação é obrigatório",, .t.)
 			_lRet := .F.
@@ -261,7 +261,6 @@ User Function MT89LOK ()
 			EndIf
 		EndIf
 		
-		//u_log2 ('debug', 'testando campos 2')
 		If empty(GDFieldGet("FM_TE")) .and. empty(GDFieldGet("FM_TS"))
 			u_help("Campos Tes de entrada e Tes de saída vazios! Obrigatório o preenchimento de um dos campos.",, .t.)
 			_lRet := .F.
@@ -269,16 +268,12 @@ User Function MT89LOK ()
 	EndIf
 	
 	If _lRet .and. ! GDDeleted ()
-		//u_log2 ('debug', 'testando campos 3')
-//		If (ExistCpo ("SX5", "ZF" + (GDFieldGet("FM_GRTRIB"))) == .F.) .and. !empty(GDFieldGet("FM_GRTRIB"))
 		If !empty(GDFieldGet("FM_GRTRIB")) .and. ! ExistCpo ("SX5", "ZF" + GDFieldGet("FM_GRTRIB"))
 			u_help("Valor digitado no campo <Grupo de tributação> não existe no cadastro!",, .t.)
 			_lRet := .F.
 		EndIf
 
-		//u_log2 ('debug', 'testando campos 4')
 		If alltrim(GDFieldGet("FM_GRPROD")) <> ''
-//			If (ExistCpo ("SX5", "21" + (GDFieldGet("FM_GRPROD"))) == .F.) .and. (!empty(GDFieldGet("FM_GRPROD")))
 			If !empty(GDFieldGet("FM_GRPROD")) .and. ! ExistCpo ("SX5", "21" + GDFieldGet("FM_GRPROD"))
 				u_help("Valor digitado no campo <Grupo de tributação do produto> não existe no cadastro!",, .t.)
 				_lRet := .F.
@@ -286,7 +281,6 @@ User Function MT89LOK ()
 		EndIf
 
 		If alltrim(GDFieldGet("FM_EST")) <> ''
-//			If (ExistCpo ("SX5", "12" + (GDFieldGet("FM_EST"))) == .F.) .and. (!empty(GDFieldGet("FM_EST")))
 			If !empty(GDFieldGet("FM_EST")) .and. ! ExistCpo ("SX5", "12" + GDFieldGet("FM_EST"))
 				u_help("Valor digitado no campo <Estado> não existe no cadastro!",, .t.)
 				_lRet := .F.
@@ -310,33 +304,15 @@ User Function MT89LOK ()
 			_lRet := .F.
 		EndIf
 	EndIf
-	//u_log2 ('debug', 'finalizando ' + procname ())
+
 Return _lRet
+//
 // --------------------------------------------------------------------------
 // Valida 'Linha OK' da getdados
 User Function MT89TudOk()
 	Local _lRet := .T.
 	
 	If _lRet 
-//		If empty(M -> FM_GRTRIB)
-//			u_help("Campo Grupo de tributação é obrigatório!")
-//			_lRet := .F.
-//		EndIf
-//		
-//		If empty(M -> FM_GRPROD)
-//			u_help("Campo Grupo tributário do produto é obrigatório")
-//			_lRet := .F.
-//		EndIf
-//		
-//		If empty(M -> FM_EST)
-//			u_help("Campo Estado é obrigatório")
-//			_lRet := .F.
-//		EndIf
-//		
-//		If empty(M -> FM_TIPOCLI)
-//			u_help("Campo Tipo de cliente é obrigatório")
-//			_lRet := .F.
-//		EndIf
 		
 		If empty(M -> FM_TIPO)
 			u_help("Campo Tipo de operação é obrigatório")
@@ -390,6 +366,7 @@ User Function MT89TudOk()
 		EndIf
 	EndIf
 Return _lRet
+//
 // --------------------------------------------------------------------------
 // Adiciona campos no grid
 User Function MT89Cpos()
@@ -406,9 +383,19 @@ User Function MT89Cpos()
 	aadd (_aCampos, "FM_POSIPI")
 	aadd (_aCampos, "FM_PRODUTO")
 	aadd (_aCampos, "FM_GRPCST")
+	aadd (_aCampos, "FM_CLIENTE")
+	aadd (_aCampos, "FM_LOJACLI")
+	aadd (_aCampos, "FM_FORNECE")
+	aadd (_aCampos, "FM_LOJAFOR")
+	aadd (_aCampos, "FM_REFGRD")
+	aadd (_aCampos, "FM_DESREF")
+	aadd (_aCampos, "FM_GRPTI")
+	aadd (_aCampos, "FM_TPCTO")
+	aadd (_aCampos, "FM_DESCR")
 	aadd (_aCampos, "ZZZ_RECNO") 	// Adiciona sempre o campo RECNO para posterior uso em gravacoes.
 
 Return _aCampos   
+//
 //-------------------------------------------------------------------
 //Atualiza SX5
 User Function MT89SX5()
@@ -421,49 +408,38 @@ User Function MT89SX5()
 	
 	For _i=1 to len(_aDados)
 		_X5Descri := _aDados[_i,4]
-		//U_HELP(_X5Descri)
 		_cRet	  := Soma1(Substr(_X5Descri,1,6),6)
-		//u_help(_cRet)
+	
 		FwPutSX5(/*cFlavour*/,"RV","SFM",_cRet)
 	Next
-	//Atualizar SX5 com o último ID utilizado
-	
-//	If  SX5->( dbSeek(xFilial('SX5')+"RV"+'SFM'))
-//		_cRet	:= Soma1(Substr(X5Descri(),1,6),6)
-//	EndIf
-//
-//	//Atualizar SX5 com o último ID utilizado
-//	SX5->( dbSeek(xFilial('SX5')+"RV"+'SFM'))
-//	If SX5->(dbSeek(xFilial("SX5")+"RV"+'SFM'))
-//		RecLock('SX5',.F.)
-//		SX5->X5_DESCRI		:= _cRet
-//		SX5->X5_DESCSPA 	:= _cRet
-//		SX5->X5_DESCENG 	:= _cRet
-//		MsUnlock()
-//	EndIF
+
 Return _cRet
 //-------------------------------------------------------------------
 //Grava Eventos
-Static Function _Mt89GrvEv (_sGrTrib, _sEst, _sGrProd, _sTipCli, _sTipOp, _sTe, _sTs, _sTipPed, _sNCM, _sProd, _sEnqIPI, _GrvDesc)
+Static Function _Mt89GrvEv (_aCmp, _GrvDesc)
 	_oEvento := ClsEvent():New ()
 	_oEvento:Alias     = 'SFM'
 	_oEvento:Texto     = AllTrim(_GrvDesc) + chr (13) + chr (10) + ;
-						 "Grp.Trib.:" + alltrim(_sGrTrib) + " Est:" + alltrim(_sEst) + " Grp.Prod.:" + alltrim(_sGrProd) + chr (13) + chr (10) + ;
-						 "Tipo Cli.:" + alltrim(_sTipCli) + " Tipo Op.:" + alltrim(_sTipOp) + " TE:" + alltrim(_sTe) + " TS:" + alltrim(_sTs) + chr (13) + chr (10) + ;
-						 "Tip.Ped.:" + alltrim(_sTipPed) + " NCM:"+alltrim(_sNCM) + " Prod.:" + alltrim(_sProd) + " Enq.IPI:" + alltrim(_sEnqIPI) + "."
+						 " Grp.Trib.:" + alltrim(_aCmp[1,1]) + " Est:" + alltrim(_aCmp[2,1]) + " Grp.Prod.:" + alltrim(_aCmp[3,1]) + chr (13) + chr (10) + ;
+						 " Tipo Cli.:" + alltrim(_aCmp[4,1]) + " Tipo Op.:" + alltrim(_aCmp[5,1]) + " TE:" + alltrim(_aCmp[6,1]) + " TS:" + alltrim(_aCmp[7,1]) + chr (13) + chr (10) + ;
+						 " Tip.Ped.:" + alltrim(_aCmp[8,1]) + " NCM:"+alltrim(_aCmp[9,1]) + " Prod.:" + alltrim(_aCmp[10,1]) + " Enq.IPI:" + alltrim(_aCmp[11,1]) + chr (13) + chr (10) + ;
+						 " Cliente:" + alltrim(_aCmp[12,1]) +"/" + alltrim(_aCmp[13,1])  + " Fornecedor:"+alltrim(_aCmp[14,1]) + "/" + alltrim(_aCmp[15,1]) + chr (13) + chr (10) + ;
+						 " Ref.Grd:" + alltrim(_aCmp[16,1]) + " Ref.Desc.:" + alltrim(_aCmp[17,1]) + " Grupo TI:" + alltrim(_aCmp[18,1]) + chr (13) + chr (10) + ;
+						 " Tp.Contrato:" + alltrim(_aCmp[19,1]) + " Descrição:" + alltrim(_aCmp[20,1]) + "."
 	_oEvento:CodEven   = "SFM001"
 	_oEvento:Grava()
 Return
+//
 //-------------------------------------------------------------------
 //Evento de alteração
-Static Function _VerAltReg(_sGrTrib, _sEst, _sGrProd, _sTipCli, _sTipOp, _sTe, _sTs, _sTipPed, _sNCM, _sProd, _sEnqIPI, _recno, _AltDes)
+Static Function _VerAltReg(_aCmp,_recno,_AltDes)
 	Local _lAlt     := .T.
 	Local _cQueryA  := ""
 	Local aRetAlt	:= {}
 	Local x			:= 0
 	
 	_cQueryA += " SELECT"
-	_cQueryA += "	FM_GRTRIB"
+	_cQueryA += "	 FM_GRTRIB"
 	_cQueryA += "   ,FM_EST"
 	_cQueryA += "   ,FM_GRPROD"
 	_cQueryA += "   ,FM_TIPOCLI"
@@ -473,7 +449,16 @@ Static Function _VerAltReg(_sGrTrib, _sEst, _sGrProd, _sTipCli, _sTipOp, _sTe, _
 	_cQueryA += "   ,FM_TIPOMOV"
 	_cQueryA += "   ,FM_POSIPI"
 	_cQueryA += "   ,FM_PRODUTO"
-	_cQueryA += "   ,FM_GRPCST"		
+	_cQueryA += "   ,FM_GRPCST"	
+	_cQueryA += "   ,FM_CLIENTE"
+	_cQueryA += "   ,FM_LOJACLI"
+	_cQueryA += "   ,FM_FORNECE"
+	_cQueryA += "   ,FM_LOJAFOR"
+	_cQueryA += "   ,FM_REFGRD"
+	_cQueryA += "   ,FM_DESREF"
+	_cQueryA += "   ,FM_GRPTI"
+	_cQueryA += "   ,FM_TPCTO"
+	_cQueryA += "   ,FM_DESCR"	
 	_cQueryA += " FROM " + RetSQLName ("SFM")
 	_cQueryA += " WHERE D_E_L_E_T_ = ''"
 	_cQueryA += " AND R_E_C_N_O_ = '" + ALLTRIM(str(_recno)) + "'"
@@ -481,23 +466,34 @@ Static Function _VerAltReg(_sGrTrib, _sEst, _sGrProd, _sTipCli, _sTipOp, _sTe, _
 	
 	If len(aRetAlt) > 0
 		For x:=1 to len(aRetAlt)
-			If  alltrim (aRetAlt[x,1])  <>  alltrim(_sGrTrib) 	.or.;
-				alltrim (aRetAlt[x,2])  <>  alltrim(_sEst) 		.or.;
-				alltrim (aRetAlt[x,3])  <>  alltrim(_sGrProd) 	.or.;
-				alltrim (aRetAlt[x,4])  <>  alltrim(_sTipCli) 	.or.;
-				alltrim (aRetAlt[x,5])  <>  alltrim(_sTipOp) 	.or.;
-				alltrim (aRetAlt[x,6])  <>  alltrim(_sTe) 		.or.;
-				alltrim (aRetAlt[x,7])  <>  alltrim(_sTs) 		.or.;
-				alltrim (aRetAlt[x,8])  <>  alltrim(_sTipPed) 	.or.;
-				alltrim (aRetAlt[x,9])  <>  alltrim(_sNCM) 		.or.;
-				alltrim (aRetAlt[x,10]) <>  alltrim(_sProd) 	.or.;
-				alltrim (aRetAlt[x,11]) <>  alltrim(_sEnqIPI) 
-					_lAlt     := .F.
+			If  alltrim (aRetAlt[x,1])  <>  alltrim(_aCmp[1,1]) .or.;
+				alltrim (aRetAlt[x,2])  <>  alltrim(_aCmp[2,1]) .or.;
+				alltrim (aRetAlt[x,3])  <>  alltrim(_aCmp[3,1]) .or.;
+				alltrim (aRetAlt[x,4])  <>  alltrim(_aCmp[4,1]) .or.;
+				alltrim (aRetAlt[x,5])  <>  alltrim(_aCmp[5,1]) .or.;
+				alltrim (aRetAlt[x,6])  <>  alltrim(_aCmp[6,1]) .or.;
+				alltrim (aRetAlt[x,7])  <>  alltrim(_aCmp[7,1]) .or.;
+				alltrim (aRetAlt[x,8])  <>  alltrim(_aCmp[8,1]) .or.;
+				alltrim (aRetAlt[x,9])  <>  alltrim(_aCmp[9,1]) .or.;
+				alltrim (aRetAlt[x,10]) <>  alltrim(_aCmp[10,1]) .or.;
+				alltrim (aRetAlt[x,11]) <>  alltrim(_aCmp[11,1]) .or.;
+				alltrim (aRetAlt[x,12]) <>  alltrim(_aCmp[12,1]) .or.;
+				alltrim (aRetAlt[x,13]) <>  alltrim(_aCmp[13,1]) .or.;
+				alltrim (aRetAlt[x,14]) <>  alltrim(_aCmp[14,1]) .or.;
+				alltrim (aRetAlt[x,15]) <>  alltrim(_aCmp[15,1]) .or.;
+				alltrim (aRetAlt[x,16]) <>  alltrim(_aCmp[16,1]) .or.;
+				alltrim (aRetAlt[x,17]) <>  alltrim(_aCmp[17,1]) .or.;
+				alltrim (aRetAlt[x,18]) <>  alltrim(_aCmp[18,1]) .or.;
+				alltrim (aRetAlt[x,19]) <>  alltrim(_aCmp[19,1]) .or.;
+				alltrim (aRetAlt[x,20]) <>  alltrim(_aCmp[20,1]) 
+				
+				_lAlt     := .F.
 			EndIf
 		Next
 	EndIf
 
 Return _lAlt
+//
 //-------------------------------------------------------------------
 //Evento de inclusão pelo AxCadastro
 Static Function _Mt89GrAx(_sId)
@@ -506,7 +502,7 @@ Static Function _Mt89GrAx(_sId)
 	Local x			:= 0
 	
 	_cQueryA += " SELECT"
-	_cQueryA += "	FM_GRTRIB"
+	_cQueryA += "	 FM_GRTRIB"
 	_cQueryA += "   ,FM_EST"
 	_cQueryA += "   ,FM_GRPROD"
 	_cQueryA += "   ,FM_TIPOCLI"
@@ -517,6 +513,15 @@ Static Function _Mt89GrAx(_sId)
 	_cQueryA += "   ,FM_POSIPI"
 	_cQueryA += "   ,FM_PRODUTO"
 	_cQueryA += "   ,FM_GRPCST"		
+	_cQueryA += "   ,FM_CLIENTE"
+	_cQueryA += "   ,FM_LOJACLI"
+	_cQueryA += "   ,FM_FORNECE"
+	_cQueryA += "   ,FM_LOJAFOR"
+	_cQueryA += "   ,FM_REFGRD"
+	_cQueryA += "   ,FM_DESREF"
+	_cQueryA += "   ,FM_GRPTI"
+	_cQueryA += "   ,FM_TPCTO"
+	_cQueryA += "   ,FM_DESCR"
 	_cQueryA += " FROM " + RetSQLName ("SFM")
 	_cQueryA += " WHERE D_E_L_E_T_ = ''"
 	_cQueryA += " AND FM_ID = '" + ALLTRIM(_sId) + "'"
@@ -524,21 +529,31 @@ Static Function _Mt89GrAx(_sId)
 	
 	If len(aRetAlt) > 0
 		For x:=1 to len(aRetAlt)
-			_sGrTrib := alltrim (aRetAlt[x,1])
-			_sEst	 := alltrim (aRetAlt[x,2])
-			_sGrProd := alltrim (aRetAlt[x,3])
-			_sTipCli := alltrim (aRetAlt[x,4])
-			_sTipOp  := alltrim (aRetAlt[x,5])
-			_sTe	 := alltrim (aRetAlt[x,6])
-			_sTs     := alltrim (aRetAlt[x,7])
-			_sTipPed := alltrim (aRetAlt[x,8])
-			_sNCM	 := alltrim (aRetAlt[x,9])
-			_sProd	 := alltrim (aRetAlt[x,10])
-			_sEnqIPI := alltrim (aRetAlt[x,11])
+			_aCmp  := {} 
+			aadd (_aCmp,{ alltrim (aRetAlt[x, 1])})
+			aadd (_aCmp,{ alltrim (aRetAlt[x, 2])})
+			aadd (_aCmp,{ alltrim (aRetAlt[x, 3])})
+			aadd (_aCmp,{ alltrim (aRetAlt[x, 4])})
+			aadd (_aCmp,{ alltrim (aRetAlt[x, 5])})
+			aadd (_aCmp,{ alltrim (aRetAlt[x, 6])})
+			aadd (_aCmp,{ alltrim (aRetAlt[x, 7])})
+			aadd (_aCmp,{ alltrim (aRetAlt[x, 8])})
+			aadd (_aCmp,{ alltrim (aRetAlt[x, 9])})
+			aadd (_aCmp,{ alltrim (aRetAlt[x,10])})
+			aadd (_aCmp,{ alltrim (aRetAlt[x,11])})
+			aadd (_aCmp,{ alltrim (aRetAlt[x,12])})
+			aadd (_aCmp,{ alltrim (aRetAlt[x,13])})
+			aadd (_aCmp,{ alltrim (aRetAlt[x,14])})
+			aadd (_aCmp,{ alltrim (aRetAlt[x,15])})
+			aadd (_aCmp,{ alltrim (aRetAlt[x,16])})
+			aadd (_aCmp,{ alltrim (aRetAlt[x,17])})
+			aadd (_aCmp,{ alltrim (aRetAlt[x,18])})
+			aadd (_aCmp,{ alltrim (aRetAlt[x,19])})
+			aadd (_aCmp,{ alltrim (aRetAlt[x,20])})
 			
 			_GrvDesc := "Inclusão de Tes inteligente (Grid)"
 			
-			_Mt89GrvEv (_sGrTrib, _sEst, _sGrProd, _sTipCli, _sTipOp, _sTe, _sTs, _sTipPed, _sNCM, _sProd, _sEnqIPI, _GrvDesc)		
+			_Mt89GrvEv (_aCmp(), _GrvDesc)		
 		Next
 	EndIf
 Return 
@@ -553,25 +568,23 @@ Static Function _ValidPerg ()
      U_ValPerg (_cPerg, _aRegsPerg)
 Return
 //
-//
 //-------------------------------------------------------------------
 // Relatório
 User Function MT89R()
 	Private oReport
 	Private cPerg   := "MT89R"
 	
-	//_ValidPerg()
 	Pergunte(cPerg,.F.)
 	
 	oReport := ReportDef()
 	oReport:PrintDialog()
 Return
+//
 //-------------------------------------------------------------------
 // ReportDef
 Static Function ReportDef()
 	Local oReport  := Nil
 	Local oSection1:= Nil
-//	Local oFunction
 	
 	oReport := TReport():New("MT89R","TES Inteligente",cPerg,{|oReport| PrintReport(oReport)},"TES Inteligente")
 	
@@ -591,6 +604,7 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA6", 	"" ,"04 Bonificação"		,,20,/*lPixel*/,{|| },"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA7", 	"" ,"51 Devolucao de Venda"	,,20,/*lPixel*/,{|| },"LEFT",,,,,,,,.F.)
 Return(oReport)
+//
 //-------------------------------------------------------------------
 // PrintReport
 Static Function PrintReport(oReport)
