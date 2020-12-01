@@ -81,6 +81,10 @@ static function _AndaLogo ()
 	u_help ('Nada definido.')
 	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
 return
+
+
+
+
 /*
 	cPerg := "VA_RTSAF"
 	U_GravaSX1 (cPerg, "01", stod ('20200131'))
