@@ -16,14 +16,9 @@ user function VA_RUS2T (_nOpc)
 	local _nPesoTot  := 0
 	local _nBkpN     := N
 	local _nLinha    := 0
-//	local _sSelect   := ""
-//	local _sBusca    := ""       
-//	local _sPerg     := 'S'
-//	local _oSQL      := NIL
-//	local _aRetAge   := {}
 	local _nCpoSZE   := 0
 
-	u_logIni ()
+	u_Log2 ('info', 'Iniciando ' + procname ())
 
 	if (cEmpAnt + cFilAnt == '0101' .and. ! m->ze_local $ 'LB/QL/GS/GB') ;
 		.or. (cEmpAnt + cFilAnt == '0103' .and. ! m->ze_local $ 'LV') ;
@@ -40,18 +35,14 @@ user function VA_RUS2T (_nOpc)
 	// Em caso de inclusao via web service, tenta validar todos os campos.
 	if _lRet .and. inclui .and. IsInCallStack ("U_GERASZE")
 		for _nCpoSZE = 1 to sze -> (fcount ())
-//			u_log ('verificando se preciso validar campo', sze -> (fieldname (_nCpoSZE)))
 			if type ("M->" + sze -> (fieldname (_nCpoSZE))) != 'U'
-//				u_log ('variavel M-> existe:', &('M->' + sze -> (fieldname (_nCpoSZE))))
 				_sValSZE = GetSX3Cache (sze -> (fieldname (_nCpoSZE)), "X3_VALID")
 				If !Empty (_sValSZE)
-//					u_log ('valid:', _sValSZE)
 					_lRet := &(_sValSZE)
 				Endif
 				If _lRet
 					_sValSZE := GetSX3Cache (sze -> (fieldname (_nCpoSZE)), "X3_VLDUSER" )
 					if !Empty(_sValSZE)
-//						u_log ('vlduser:', _sValSZE)
 						_lRet := &(_sValSZE)
 					endif
 				Endif
@@ -76,27 +67,22 @@ user function VA_RUS2T (_nOpc)
 		endif
 
 		if _lRet .and. altera .and. _nOpc == 4 .and. (empty (m->ze_pesotar) .or. empty (m->ze_pesobru))
-			//if type ('_sErros') == 'C' ; _sErros += 'Peso tara e peso bruto devem ser informados.' ; endif
 			u_help ("Peso tara e peso bruto devem ser informados",, .T.)
 			_lRet = .F.
 		endif
 		if _lRet .and. altera .and. m->ze_pesotar >= m->ze_pesobru
-			//if type ('_sErros') == 'C' ; _sErros += 'Peso tara deve ser menor que o peso bruto.' ; endif
 			u_help ("Peso tara deve ser menor que o peso bruto",, .T.)
 			_lRet = .F.
 		endif
 		if _lRet .and. empty (m->ze_nfprod) .and. m->ze_aglutin == 'D'
-			//if type ('_sErros') == 'C' ; _sErros += 'NF produtor deve ser informada' ; endif
 			u_help ("NF produtor deve ser informada",, .T.)
 			_lRet = .F.
 		endif
 		if _lRet .and. empty (m->ze_placa)
-			//if type ('_sErros') == 'C' ; _sErros += 'Placa do veiculo deve ser informada.' ; endif
 			u_help ("Placa do veiculo deve ser informada",, .T.)
 			_lRet = .F.
 		endif
 		if _lRet .and. empty (m->ze_coop)
-			//if type ('_sErros') == 'C' ; _sErros += 'Cooperativa deve ser informada.' ; endif
 			u_help ("Cooperativa deve ser informada",, .T.)
 			_lRet = .F.
 		endif
@@ -113,7 +99,6 @@ user function VA_RUS2T (_nOpc)
 	endif
 
 	if _lRet .and. (inclui .or. altera) .and. cEmpAnt + cFilAnt $ '0101/0107' .and. empty (m->ZE_LOCDESC)
-		//if type ('_sErros') == 'C' ; _sErros += 'Informe tombador para descarga.' ; endif
 		u_help ("Informe tombador para descarga.",, .T.)
 		_lRet = .F.
 	endif
@@ -165,5 +150,4 @@ user function VA_RUS2T (_nOpc)
 	endif
 
 	N = _nBkpN
-	u_logFim ()
 return _lRet

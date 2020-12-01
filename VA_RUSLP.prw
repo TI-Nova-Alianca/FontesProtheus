@@ -33,7 +33,6 @@ User Function VA_RUSLP ()
 		_ZFEMBALAG = {'GRANEL', 'CAIXAS'} [mv_par07]
 		_nPesoEmb  = mv_par08
 		_lImpTick  = (mv_par09 == 1)
-//		_sPortTick = mv_par10
 		_sPortTick = iif (_lImpTick, U_RetZX5 ('49', mv_par10, 'ZX5_49CAM'), '')
 		_lLeBrix   = (mv_par11 == 1)
 		_nQViasTk1 = mv_par12
@@ -82,6 +81,5 @@ User Function VA_RUSLP ()
 		_lRet = .T.
 		exit
 	enddo
-	u_log ('parametros lidos. porta de ticket >>' + _sPortTick + '<<')
-
+	u_log2 ('debug', 'parametros lidos. porta de ticket >>' + _sPortTick + '<<')
 return _lRet

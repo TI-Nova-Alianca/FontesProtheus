@@ -81,6 +81,10 @@ static function _AndaLogo ()
 	u_help ('Nada definido.')
 	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
 return
+
+
+
+
 /*
 	cPerg := "VA_RTSAF"
 	U_GravaSX1 (cPerg, "01", stod ('20200131'))
@@ -1762,11 +1766,7 @@ return
 */
 /*
 	// Recalcula classificacao uvas para 2020 e compara com conteudo gravado no SZF.
-	if "TESTE" $ upper (GetEnvServer())
-		_sLinkSrv = "LKSRV_NAWEB_TESTE.naweb_teste.dbo"
-	else
-		_sLinkSrv = "LKSRV_NAWEB.naweb.dbo"
-	endif
+	_sLinkSrv = U_LkServer ('NAWEB')
 	private _aRusInsp := {}
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := "SELECT FILIAL, SAFRA, CARGA "
@@ -2073,11 +2073,7 @@ return
 */
 /*
 	// teste leitura inspecoes safra
-	if "TESTE" $ upper (GetEnvServer())
-		_sLinkSrv = "LKSRV_NAWEB_TESTE.naweb_teste.dbo"
-	else
-		_sLinkSrv = "LKSRV_NAWEB.naweb.dbo"
-	endif
+	_sLinkSrv = U_LkServer ('NAWEB')
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := "SELECT top 50 FILIAL, SAFRA, CARGA "
 	_oSQL:_sQuery +=  " FROM VA_VCARGAS_SAFRA"

@@ -12,28 +12,20 @@
 user function va_rusAI (_sStatDe, _sStatPara)
 	local _lContinua   := .T.
 	local _aAreaAnt    := U_ML_SRArea ()
-	local _sLinkSrv    := ''
+	local _sLinkSrv    := U_LkServer ('NAWEB')
 
-	u_logIni ()
+	u_Log2 ('info', 'Iniciando ' + procname ())
 
 	// Nao posso estragar a variavel caso ela venha populada de rotinas anteriores.
 	if _lContinua
 		if type ("_aRusInsp") != 'A' .or. len (_aRusInsp) < .InspecoesSafraQtColunas
-//			u_log ('Declarando _aRusInsp')
 			private _aRusInsp  := {}  // Deixar private para ser vista e alimentada por outras rotinas.
 			_lContinua = U_VA_RusLI (1)
-//		else
-//			u_log ('_aRusInsp jah existia:', _aRusInsp)
 		endif
 	endif
 
 	if _lContinua
 		if _aRusInsp [.InspecoesSafraSituacao] $ _sStatDe
-			if "TESTE" $ upper (GetEnvServer())
-				_sLinkSrv = "LKSRV_NAWEB_TESTE.naweb_teste.dbo"
-			else
-				_sLinkSrv = "LKSRV_NAWEB.naweb.dbo"
-			endif
 			_oSQL := ClsSQL ():New ()
 			_oSQL:_sQuery := ""
 			_oSQL:_sQuery += " UPDATE " + _sLinkSrv + ".TrnAgeAgenda"
@@ -47,5 +39,4 @@ user function va_rusAI (_sStatDe, _sStatPara)
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
 return

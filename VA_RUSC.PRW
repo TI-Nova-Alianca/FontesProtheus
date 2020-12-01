@@ -14,7 +14,6 @@ User Function va_rusC ()
 	private aRotina    := {}
 	private cString    := "SZE"
 	private cCadastro  := "Classificacao de uva recebida na safra"
-	
 	private _ZFEMBALAG := ""  // Deixar private para ser vista por outras rotinas.
 	private _sBalanca  := ""  // Deixar private para ser vista por outras rotinas.
 	private _lLeitBar  := ""  // Deixar private para ser vista por outras rotinas.

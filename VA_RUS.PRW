@@ -27,15 +27,9 @@ User Function va_rus ()
 	local _nCoop       := 0
 	local _sCoop       := ""
 	local _aCores      := U_VA_RUSLG (.T.)
-//	local _aSemNota    := {}
 	local _aMenuOut    := {}
 	local _aMenuNFe    := {}
-//	local _aIndBrw     := {}
-//	local _nOpcao      := 0
 	local _lContinua   := .T.
-//	local _oAssoc      := NIL
-//	local _oSQL        := NIL
-//	local _sAliasQ     := ''
 	local _nPCham      := 0
 	private _ZFEMBALAG := ""  // Deixar private para ser vista por outras rotinas.
 	private _sBalanca  := ""  // Deixar private para ser vista por outras rotinas.
@@ -57,13 +51,11 @@ User Function va_rus ()
 	private _zx509fina := ""  // Deixar private para ser vista por outras rotinas.
 	private _zx509orga := ""  // Deixar private para ser vista por outras rotinas.
 	private _lIntPort  := ""  // Deixar private para ser vista por outras rotinas.
-	//private _lColAmCar := .F. // Alimentada pelo web service. Deixar private para ser vista por outras rotinas.
 
 	// Verifica se estah sendo feita chamada resursiva (Na tela de portaria tem atalho para esta e vice-versa)
 	// Devido as diversas chamadas de menus, etc. feitas pelo Protheus, se esta tela jah estiver na pilha, vai ser em um numero bem alto
 	_nPCham = 8
 	do while procname (_nPCham) != ""
-		u_log ('pilha', _nPCham, procname (_nPCham))
 		if procname () $ procname (_nPCham)
 			u_help ("Esta tela ja encontra-se aberta. Verifique se foi chamada de dentro da tela de recebimento de safra (ou vice-versa).")
 			return
@@ -72,7 +64,6 @@ User Function va_rus ()
 	enddo
 
 	// Cria parametros e obriga usuario a responde-los na entrada da rotina.
-	u_logId ()
 	_ValidPerg ()
 	_lContinua = U_VA_RUSLP ()
 
@@ -143,7 +134,7 @@ User Function va_rus ()
 
 	// Monta menu para a rotina.
 	if _lContinua
-		u_log ('vou montar o meno com porta de ticket >>' + _sPortTick + '<<')
+		u_log2 ('debug', 'vou montar o menu com porta de ticket >>' + _sPortTick + '<<')
 
 		// Submenu para contranota.
 		_aMenuNFe = {}
@@ -331,7 +322,6 @@ user function VA_RUSRC ()
 				exit
 			endif
 			processa ({|| _sRastUva = U_RastLT (sze -> ze_filial, _aLotes [_nLote, 1], _aLotes [_nLote, 3], 0, NIL)})
-			//u_log (_sRastUva)
 			_sArq := 'c:\temp\rast_carga_' + _aRast [_nRast, 4] + '.mm'
 			delete file (_sArq)
 			if file (_sArq)
@@ -448,7 +438,6 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {07, "Embalagem padrao              ", "N", 1,  0,  "",   "",      {'GRANEL', 'CAIXAS'},              ""})
 	aadd (_aRegsPerg, {08, "Peso padrao embalagem (caixa) ", "N", 2,  0,  "",   "",      {},                                ""})
 	aadd (_aRegsPerg, {09, "Usa impressora de ticket      ", "N", 1,  0,  "",   "",      {"Sim", "Nao"},                    ""})
-//	aadd (_aRegsPerg, {10, "Porta impressora de ticket    ", "C", 60, 0,  "",   "",      {},                                "Ex.: lpt1: ou LPT2:"})
 	aadd (_aRegsPerg, {10, "Impressora de ticket          ", "C", 2,  0,  "",   "ZX549", {},                                "Ex.: lpt1: ou LPT2:"})
 	aadd (_aRegsPerg, {11, "Comunicacao c/ medidor de brix", "N", 1,  0,  "",   "",      {"Sim", "Nao"},                    ""})
 	aadd (_aRegsPerg, {12, "Qt. de vias ticket 1a.pesagem ", "N", 1,  0,  "",   "",      {},                                ""})

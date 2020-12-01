@@ -30,13 +30,11 @@ User Function va_rus1 ()
 	local _lContinua   := .T.
 	local _sBarras     := ""
 	local _sQuery      := ""
-	//local _sRetQry     := ""
 	local _aRetQry     := {}
 	local _nF3         := 0
-	//local _aPatriar    := {}
 	local _oSQL        := NIL
 
-	u_logIni ()
+	u_Log2 ('info', 'Iniciando ' + procname ())
 
 	private _oAssoc    := NIL
 	private _ZESAFRA   := _xSafraJ   // Variavel private para alimentar a tela final de AxInclui
@@ -96,7 +94,6 @@ User Function va_rus1 ()
 				if _nF3 > 0
 					if _lContinua
 						_oAssoc := ClsAssoc():New (_aRetQry [_nF3, 5], _aRetQry [_nF3, 6])
-//						if valtype (_oAssoc) != "O"
 						if valtype (_oAssoc) != "O" .or. empty (_oAssoc:Codigo) .or. empty (_oAssoc:Loja)
 							u_help ("Problemas no cadastro do associado.")
 							_lContinua = .F.
@@ -205,7 +202,6 @@ User Function va_rus1 ()
 		if valtype (_oAssoc) != "O"
 			_lContinua = .F.
 		endif
-//		if _lContinua .and. ! _oAssoc:Codigo + _oAssoc:Loja == '00136901'
 		if _lContinua .and. ! _oAssoc:Codigo + _oAssoc:Loja == '00136901' .and. ! _oAssoc:Codigo + _oAssoc:Loja == '01237301'  // lIVRAMENTO E fornecedor VINHEDOS DA QUINTA
 			if _lContinua .and. _oAssoc:Bloqueado
 				u_help ("Fornecedor com cadastro bloqueado.")
@@ -238,5 +234,4 @@ User Function va_rus1 ()
 		U_VA_RUS2 (3)
 	endif
 
-	u_logFim ()
 return

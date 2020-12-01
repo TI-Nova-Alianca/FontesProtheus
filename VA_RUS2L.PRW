@@ -24,7 +24,6 @@ user function VA_RUS2L ()
 	local _oSQL      := NIL
 	local _aLimEspum := {}
 
-	//u_logIni ()
 	if _lRet .and. m->ze_aglutin == "D" .and. GDDeleted ()
 		u_help ("Nao eh permitido alterar itens de cargas aglutinadas",, .T.)
 		_lRet = .F.
@@ -60,20 +59,17 @@ user function VA_RUS2L ()
 
 	if _lRet .and. altera .and. ! GDDeleted ()
 		if GDFieldGet ("ZF_QTEMBAL") == 0 .or. GDFieldGet ("ZF_PESO") == 0 .or. empty (GDFieldGet ("ZF_EMBALAG")) .or. val (GDFieldGet ("ZF_GRAU")) == 0
-//			if type ('_sErros') == 'C' ; _sErros += 'Quantidades, embalagens e graus devem ser informados.' ; endif
 			u_help ("Quantidades, embalagens e graus devem ser informados.",, .t.)
 			_lRet = .F.
 		endif
 	endif
 
 	if _lRet .and. (inclui .or. altera) .and. ! GDDeleted () .and. ! _sVarUva $ "CF"
-//		if type ('_sErros') == 'C' ; _sErros += 'Tipo da uva (Comum/Fina) e invalida. Verifique cadastro do produto.' ; endif
 		u_help ("Tipo da uva (Comum/Fina) e' invalida. Verifique cadastro do produto.",, .t.)
 		_lRet = .F.
   	endif
 
    	// Verifica preenchimento das classificacoes de uvas.
-//   	if _lRet .and. ! GDDeleted () .and. altera .and. _sVarUva == "F" .and. _sFormClas == 'F'
    	if _lRet .and. altera .and. ! GDDeleted ()
 		if GDFieldGet ("ZF_CONDUC") == 'E'
 			if empty (GDFieldGet ("ZF_PRM02"))
@@ -114,7 +110,6 @@ user function VA_RUS2L ()
 
 	// Verifica linhas duplicadas
 	if _lRet .and. (inclui .or. altera) .and. ! GDDeleted ()
-//		_lRet = GDCheckKey ({"ZF_CADVITI", "ZF_PRODUTO", "ZF_GRAU", "ZF_PRM02", "ZF_PRM03", "ZF_PRM04", "ZF_PRM05", "ZF_PRM99", "ZF_CLASABD", "ZF_NCONF01", "ZF_NCONF02", "ZF_NCONF03", "ZF_NCONF04", "ZF_IDZA8", "ZF_IDSZ9"}, 4)
 		_lRet = GDCheckKey ({"ZF_CADVITI", "ZF_PRODUTO", "ZF_GRAU", "ZF_PRM02", "ZF_PRM03", "ZF_PRM04", "ZF_PRM05", "ZF_PRM99", "ZF_CLASABD", "ZF_NCONF01", "ZF_NCONF02", "ZF_NCONF03", "ZF_NCONF04", "ZF_IDZA8"}, 4)
 
 		// Gera retorno de erro em caso de chamada via web service
@@ -194,7 +189,6 @@ u_log2 ('aviso', 'Ver com Daiana onde validar se foi feito remapeamento (isso re
 			.or. (! empty (GDFieldGet ("ZF_NCONF02")) .and. GDFieldGet ("ZF_NCONF02") == GDFieldGet ("ZF_NCONF03")) ;
 			.or. (! empty (GDFieldGet ("ZF_NCONF02")) .and. GDFieldGet ("ZF_NCONF02") == GDFieldGet ("ZF_NCONF04")) ;
 			.or. (! empty (GDFieldGet ("ZF_NCONF03")) .and. GDFieldGet ("ZF_NCONF03") == GDFieldGet ("ZF_NCONF04"))
-//			if type ('_sErros') == 'C' ; _sErros += 'Nao conformidades repetidas.' ; endif
 			u_help ("Nao conformidades repetidas.",, .t.)
 			_lRet = .F.
 		endif
@@ -239,6 +233,4 @@ u_log2 ('aviso', 'Ver com Daiana onde validar se foi feito remapeamento (isso re
 			_lRet = .F.
 		endif
 	endif
-
-	//u_logFim ()
 return _lRet

@@ -20,8 +20,10 @@
 // 12/09/2018 - Robert  - Desconsidera serie 99 (notas de cobertura de operacao triangular).
 // 20/07/2020 - Claudia - Criada uma nova consulta para contemplar os novos campos solicitados. GLPI: 8164.
 // 11/09/2020 - Robert  - Melhorados logs.
-// 24/11/2020 - Claudia - Ajustadas as cconsultas conforme GLPI: 8768
+// 24/11/2020 - Claudia - Ajustadas as consultas conforme GLPI: 8768
+// 01/12/2020 - Robert  - Faltava clausula AND F1_FILIAL = D1_FILIAL na query, deixando-a muio lenta.
 //
+
 // ---------------------------------------------------------------------------------------------------------
 user function BatGLT ()
 	local _aAreaAnt := U_ML_SRArea ()
@@ -158,10 +160,9 @@ user function BatGLT ()
 	   aadd (_aCols, {'PLACA'          	,    'left' ,  ''})
 	   aadd (_aCols, {'PRODUTO'  		,    'left' ,  ''})
 	   aadd (_aCols, {'QUANTIDADE'  	,    'right',  ''})
-												
 		
 		_sMsg = _oSQL:Qry2HTM ("Notas de SAIDA nos ultimos " + cvaltochar (_nDias) + " dias faltando gerar guia de livre transito", _aCols, "", .F.,.T.)
-		u_log2 ('info', _sMsg)
+		//u_log2 ('info', _sMsg)
 		U_ZZUNU ({'018'}, 'Filial ' + cFilAnt + '-verif. guias livre transito saida', _sMsg, .F., cEmpAnt, cFilAnt)
 	endif
 
@@ -186,6 +187,7 @@ user function BatGLT ()
 	_oSQL:_sQuery += "    AND B1_FILIAL = '" + xFilial("SB1") + "' "
 	_oSQL:_sQuery += "    AND B5_FILIAL = '" + xFilial("SB5") + "' "
 	_oSQL:_sQuery += "    AND SB1.D_E_L_E_T_ <> '*' "
+	_oSQL:_sQuery += "    AND F1_FILIAL = D1_FILIAL"
 	_oSQL:_sQuery += "    AND F1_FORNECE = D1_FORNECE"
 	_oSQL:_sQuery += "    AND F1_LOJA = D1_LOJA"
 	_oSQL:_sQuery += "    AND F1_DOC = D1_DOC"
@@ -228,7 +230,7 @@ user function BatGLT ()
 	_oSQL:Log ()
 	if len (_oSQL:Qry2Array (.F., .F.)) > 0
 		_sMsg = _oSQL:Qry2HTM ("Notas de ENTRADA nos ultimos " + cvaltochar (_nDias) + " dias faltando informar guia de livre transito", NIL, "", .F.)
-		u_log2 ('info', _sMsg)
+		//u_log2 ('info', _sMsg)
 		U_ZZUNU ({'018'}, 'Filial ' + cFilAnt + '-verif. guias livre transito entrada', _sMsg, .F., cEmpAnt, cFilAnt)
 	endif
 

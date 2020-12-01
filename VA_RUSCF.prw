@@ -44,8 +44,6 @@ User Function va_rusCF (_lRegrav)
 		_oSQL:_sQuery := "SELECT dbo.VA_FTIPO_FORNECEDOR_UVA ('" + sze -> ze_assoc   + "'"
 		_oSQL:_sQuery +=                                   ", '" + sze -> ze_lojasso + "'"
 		_oSQL:_sQuery +=                                   ", '" + dtos (sze -> ze_data) + "')"
-	//	_oSQL:Log ()
-	//	u_log2 ('debug', _oSQL:RetQry (1, .F.))
 		if ! alltrim (_oSQL:RetQry (1, .F.)) $ 'ASSOCIADO/EX ASSOCIADO'
 			u_log2 ('info', 'Fornecedor ' + sze -> ze_assoc + '/' + sze -> ze_lojasso + ' nao eh associado nem ex associado nesta data. Nao deve calcular frete.')
 			_lDeveCalc = .F.
@@ -96,7 +94,6 @@ User Function va_rusCF (_lRegrav)
 			else
 				u_log2 (iif (szf -> zf_valfret == _nFrtItem, 'info', 'aviso'), 'Carga ' + szf -> zf_carga + ' Prod.' + alltrim (szf -> zf_produto) + ' Frete simulado: ' + transform (_nFrtItem, '@E 999,999.99') + '   Valor atual: ' + transform (szf -> zf_valfret, '@E 999,999.99'))
 			endif
-
 			szf -> (dbskip ())
 		enddo
 	endif
