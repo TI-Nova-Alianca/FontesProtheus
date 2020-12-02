@@ -12,6 +12,7 @@
 //
 // Historico de alteracoes:
 // 14/10/2020 - Claudia - Alterada a impressão das colunas vlr.liquido e taxa.GLPI: 8647
+// 02/12/2020 - Claudia - Ajuste de devoluções - GLPI: 8937
 //
 // --------------------------------------------------------------------------------------------
 #Include "Protheus.ch"

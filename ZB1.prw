@@ -11,6 +11,7 @@
 // #Modulos   		  #FIN 
 //
 // Historico de alteracoes:
+// 02/12/2020 - Claudia - Ajuste de devoluções - GLPI: 8937
 //
 // --------------------------------------------------------------------------
 #Include "Protheus.ch"
