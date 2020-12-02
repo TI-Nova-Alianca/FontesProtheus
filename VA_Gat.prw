@@ -859,7 +859,7 @@ do case
 			else
 				_aCampos = {}
 				aadd (_aCampos, {.CadVitCodigo,     "Cad.viticola",    50,  ""})
-				aadd (_aCampos, {.CadVitDescMun,    "Municipio",       80,  ""})
+				//aadd (_aCampos, {.CadVitDescMun,    "Municipio",       80,  ""})
 				aadd (_aCampos, {.CadVitProduto,    "Variedade",       50,  ""})
 				aadd (_aCampos, {.CadVitDescPro,    "Descricao",      100,  ""})
 				aadd (_aCampos, {.CadVitSafrVit,    "Renov.p/",        40,  ""})

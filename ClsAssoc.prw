@@ -82,6 +82,7 @@
 //                     - Metodo :ExtratoCC comentariado, pois nao tinha mais utilizacao.
 // 03/09/2020 - Robert - Criado grupo resumoVariedadeItem no metodo :FechSafra.
 // 04/09/2020 - Robert - Nao calcula correcao monetaria para ex associados.
+// 01/12/2020 - Robert - Passa a buscar dados de cadastro viticola na view GX0001_AGENDA_SAFRA e nao mais na VA_VASSOC_CAD_VITIC2
 //
 
 #include "protheus.ch"
@@ -441,28 +442,40 @@ Return
 
 // --------------------------------------------------------------------------
 // Busca os dados de cadastros viticolas ligados ao associado.
-//METHOD CadVitic (_sSafra) Class ClsAssoc
 METHOD CadVitic () Class ClsAssoc
 	local _oSQL    := NIL
 	local _aRetQry := {}
 	local _aRet    := {}
 	local _nLinha  := 0
-//	u_logIni ()
-//			u_log (::Codigo)
-//			u_log (::Loja)
 
 	_oSQL := ClsSQL():New ()
 	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += "SELECT CAD_VITIC, GRPFAM, DESCR_GRPFAM, PRODUTO, DESCRICAO, TIPO_ORGANICO, RECADAST_VITIC, FINA_COMUM, DESCR_MUN, AMOSTRA, RECEB_FISICO_VITIC, SIST_CONDUCAO"
-	_oSQL:_sQuery +=  " FROM VA_VASSOC_CAD_VITIC2 V"
-	_oSQL:_sQuery += " WHERE V.ASSOCIADO  = '" + ::Codigo + "'"
-	_oSQL:_sQuery +=   " AND V.LOJA_ASSOC = '" + ::Loja   + "'"
-	_oSQL:_sQuery += " ORDER BY CAD_VITIC, GRPFAM, PRODUTO"
-//	u_log (_oSQL:_squery)
+	// _oSQL:_sQuery += "SELECT CAD_VITIC, GRPFAM, DESCR_GRPFAM, PRODUTO, DESCRICAO, TIPO_ORGANICO, RECADAST_VITIC, FINA_COMUM, DESCR_MUN, AMOSTRA, RECEB_FISICO_VITIC, SIST_CONDUCAO"
+	// _oSQL:_sQuery +=  " FROM VA_VASSOC_CAD_VITIC2 V"
+	// _oSQL:_sQuery += " WHERE V.ASSOCIADO  = '" + ::Codigo + "'"
+	// _oSQL:_sQuery +=   " AND V.LOJA_ASSOC = '" + ::Loja   + "'"
+	// _oSQL:_sQuery += " ORDER BY CAD_VITIC, GRPFAM, PRODUTO"
+	_oSQL:_sQuery += "SELECT GX0001_VITICOLA_CODIGO"       // 1
+	_oSQL:_sQuery +=      ", GX0001_GRUPO_CODIGO"          // 2
+	_oSQL:_sQuery +=      ", GX0001_GRUPO_DESCRICAO"       // 3
+	_oSQL:_sQuery +=      ", GX0001_PRODUTO_CODIGO"        // 4
+	_oSQL:_sQuery +=      ", GX0001_PRODUTO_DESCRICAO"     // 5
+	_oSQL:_sQuery +=      ", GX0001_TIPO_ORGANICO"         // 6
+	_oSQL:_sQuery +=      ", GX0001_VITICOLA_RECADASTRO"   // 7
+	_oSQL:_sQuery +=      ", GX0001_FINA_COMUM"            // 8
+	_oSQL:_sQuery +=      ", GX0001_VITICOLA_FISICO"       // 9
+	_oSQL:_sQuery +=      ", GX0001_SISTEMA_CONDUCAO"      // 10
+	_oSQL:_sQuery +=      ", GX0001_SIVIBE_CODIGO"         // 11
+	_oSQL:_sQuery +=  " FROM GX0001_AGENDA_SAFRA V"
+	_oSQL:_sQuery += " WHERE GX0001_ASSOCIADO_CODIGO = '" + ::Codigo + "'"
+	_oSQL:_sQuery +=   " AND GX0001_ASSOCIADO_LOJA   = '" + ::Loja   + "'"
+	_oSQL:_sQuery += " ORDER BY GX0001_VITICOLA_CODIGO, GX0001_GRUPO_CODIGO, GX0001_PRODUTO_CODIGO"
+	_oSQL:Log ()
 
 	// Poderia simplesmente pegar o retorno da query, mas usando os includes facilito
 	// futuras pesquisas em fontes para saber onde estes dados sao usados.
-	_aRetQry = _oSQL:Qry2Array ()
+	_aRetQry = aclone (_oSQL:Qry2Array ())
+	u_log (_aRetQry)
 	aRet = {}
 	for _nLinha = 1 to len (_aRetQry)
 		aadd (_aRet, array (.CadVitQtColunas))
@@ -474,13 +487,10 @@ METHOD CadVitic () Class ClsAssoc
 		_aRet [_nLinha, .CadVitOrganico]    = _aRetQry [_nLinha, 6]
 		_aRet [_nLinha, .CadVitSafrVit]     = _aRetQry [_nLinha, 7]
 		_aRet [_nLinha, .CadVitVarUva]      = _aRetQry [_nLinha, 8]
-		_aRet [_nLinha, .CadVitDescMun]     = _aRetQry [_nLinha, 9]
-		_aRet [_nLinha, .CadVitAmostra]     = _aRetQry [_nLinha, 10]
-		_aRet [_nLinha, .CadVitRecebFisico] = stod (_aRetQry [_nLinha, 11])
-		_aRet [_nLinha, .CadVitSistCond]    = _aRetQry [_nLinha, 12]
+		_aRet [_nLinha, .CadVitRecebFisico] = stod (_aRetQry [_nLinha, 9])
+		_aRet [_nLinha, .CadVitSistCond]    = _aRetQry [_nLinha, 10]
+		_aRet [_nLinha, .CadVitSivibe]      = _aRetQry [_nLinha, 11]
 	next
-//	U_LOG (_ArET)
-//	u_logFim ()
 return _aRet
 
 

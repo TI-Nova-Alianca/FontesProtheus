@@ -11,6 +11,7 @@
 // 21/10/2019 - Robert - Consulta de capital social passa a retornar (opcional) ano da ultima safra.
 // 20/12/2019 - Robert - Passa a permitir tambem a alteracao do A2_NOME.
 // 09/03/2020 - Claudia - Ajuste de fonte conforme solicitação de versão 12.1.25 -  SX3 e SXA
+// 01/12/2020 - Robert - Passa a buscar dados de cadastro viticola na view GX0001_AGENDA_SAFRA e nao mais na VA_VASSOC_CAD_VITIC2
 //
 // --------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
@@ -129,8 +130,8 @@ User Function AssocOut (_nQual)
 			_aCadVit [1, .CadVitOrganico]    = 'Organico'
 			_aCadVit [1, .CadVitSafrVit]     = 'Renovado p/'
 			_aCadVit [1, .CadVitVarUva]      = 'Fina/comum'
-			_aCadVit [1, .CadVitDescMun]     = 'Municipio'
-			_aCadVit [1, .CadVitAmostra]     = 'Precisa amostra'
+		//	_aCadVit [1, .CadVitDescMun]     = 'Municipio'
+		//	_aCadVit [1, .CadVitAmostra]     = 'Precisa amostra'
 			_aCadVit [1, .CadVitRecebFisico] = 'Recebto.fisico'
 			U_ShowArray (_aCadVit, "Cadastro(s) viticola(s) relacionados ao associado")
 
@@ -139,11 +140,16 @@ User Function AssocOut (_nQual)
 
 		case _nQual == 4  // Variedades esperadas / liberadas para recebimento na safra
 			_oSQL := ClsSQL ():New ()
-			_oSQL:_sQuery := "SELECT *"
-			_oSQL:_sQuery += " FROM VA_VAGENDA_SAFRA"
-			_oSQL:_sQuery += " WHERE ASSOCIADO  = '" + _oAssoc:Codigo + "'"
-			_oSQL:_sQuery +=   " AND LOJA_ASSOC = '" + _oAssoc:Loja   + "'"
-			_oSQL:_sQuery += " ORDER BY GRPFAM, CAD_VITIC, DESCRICAO"
+			// _oSQL:_sQuery := "SELECT *"
+			// _oSQL:_sQuery += " FROM VA_VAGENDA_SAFRA"
+			// _oSQL:_sQuery += " WHERE ASSOCIADO  = '" + _oAssoc:Codigo + "'"
+			// _oSQL:_sQuery +=   " AND LOJA_ASSOC = '" + _oAssoc:Loja   + "'"
+			// _oSQL:_sQuery += " ORDER BY GRPFAM, CAD_VITIC, DESCRICAO"
+			_oSQL:_sQuery += "SELECT *"
+			_oSQL:_sQuery +=  " FROM GX0001_AGENDA_SAFRA"
+			_oSQL:_sQuery += " WHERE GX0001_ASSOCIADO_CODIGO = '" + _oAssoc:Codigo + "'"
+			_oSQL:_sQuery +=   " AND GX0001_ASSOCIADO_LOJA   = '" + _oAssoc:Loja   + "'"
+			_oSQL:_sQuery += " ORDER BY GX0001_GRUPO_CODIGO, GX0001_SIVIBE_CODIGO, GX0001_PRODUTO_CODIGO"
 			_oSQL:F3Array ("Cadastros viticolas e variedades esperados na safra", .T.)
 		otherwise
 			u_help ("Consulta / relatorio nao previsto.")
