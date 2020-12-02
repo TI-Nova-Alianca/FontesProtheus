@@ -165,7 +165,7 @@ Return _lRet
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT                TIPO TAM DEC VALID F3     Opcoes                      				Help
-    aadd (_aRegsPerg, {01, "Filial destino	", "C", 2, 0,  "",  "SFM", {},                         					""})
+    aadd (_aRegsPerg, {01, "Filial destino	", "C", 2, 0,  "",  "SM0", {},                         					""})
     
      U_ValPerg (cPerg, _aRegsPerg)
 Return
