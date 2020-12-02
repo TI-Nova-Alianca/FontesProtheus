@@ -191,7 +191,12 @@ Static Function BuscaCV(_aCV, cLinha)
 	_sNSUCod := SubStr(cLinha, 93, 6)
 	_sNumNFe := SubStr(cLinha,140, 9)
 	_sIDTran := SubStr(cLinha,189,29)
-	_sStaImp := 'I'
+	_sSinal  := SubStr(cLinha,46,1)
+	If _sSinal == '+'
+		_sStaImp := 'I'
+	Else
+		_sStaImp := 'D'
+	EndIf
 	
 	aadd (_aCV,{_sCartao ,; // 1
 				_dDtVen	 ,; // 2
@@ -205,7 +210,8 @@ Static Function BuscaCV(_aCV, cLinha)
 				_sNSUCod ,; // 10
 				_sNumNFe ,; // 11
 				_sIDTran ,; // 12
-				_sStaImp }) // 13
+				_sStaImp ,; // 13
+				_sSinal })  // 14
 				
 Return _aCV
 //
@@ -216,6 +222,7 @@ Static Function GravaZB1(_aHeader, _aRO, _aCV, _aRel )
 		
 		sAut	 := alltrim(_aCV[1,8])
 		sNSU	 := alltrim(_aCV[1,10])
+		sSinal	 := alltrim(_aCV[1,14])
 		sDtPro   := DTOS(_aHeader[1,1])
 		sBanco   := Buscabanco(_aRO[1,2],'B')
 		sAgencia := Buscabanco(_aRO[1,2],'A')
@@ -225,7 +232,7 @@ Static Function GravaZB1(_aHeader, _aRO, _aCV, _aRel )
 		dbSetOrder(4) // ZB1_NUMNSU + ZB1_CODAUT + DTA PROCESSAMENTO
 		dbGoTop()
 		
-		If !dbSeek(sDtPro + PADR(sNSU ,8,' ') +sAut)
+		If !dbSeek(sDtPro + PADR(sNSU ,8,' ') +sAut + sSinal)
 		
 			Reclock("ZB1",.T.)
 				ZB1->ZB1_FILIAL := _aRO[1,1]
@@ -262,7 +269,8 @@ Static Function GravaZB1(_aHeader, _aRO, _aCV, _aRel )
 				ZB1->ZB1_NSUCOD := _aCV[1,10]  
 				ZB1->ZB1_NUMNFE := _aCV[1,11]  
 				ZB1->ZB1_IDTRAN := _aCV[1,12]  
-				ZB1->ZB1_STAIMP := _aCV[1,13] 		
+				ZB1->ZB1_STAIMP := _aCV[1,13] 	
+				ZB1->ZB1_SINAL  := _aCV[1,14] 	
 				ZB1->ZB1_ARQUIV := alltrim(mv_par02)	
 			ZB1->(MsUnlock())
 
@@ -276,48 +284,23 @@ Static Function GravaZB1(_aHeader, _aRO, _aCV, _aRel )
 							_aHeader[1,1],; // data do processamento
 							_aCV[1,8] ,; 	// autorização
 							_aCV[1,10],; 	// NSU
-							'INCLUIDO',;
-							_aCV[1,4]  }) // parcela
+							'INCLUIDO',;    // status
+							_aCV[1,4] ,;	// parcela
+							_aCV[1,13],;    // status letra
+							_aCV[1,14] })   // sinal
 
 			u_log("Registro Importado! NSU:" + sNSU +" Autorização:"+ sAut)
+
+			// se é um registro de debito procurar registro de credito e fechar
+			If alltrim(_aCV[1,14]) == '+'
+				If dbSeek(sDtPro + PADR(sNSU ,8,' ') +sAut + sSinal)
+					Reclock("ZB1",.F.)
+						ZB1->ZB1_STAIMP := 'F'
+					ZB1->(MsUnlock())
+				EndIf
+			EndIf
 		Else
-			// _Status := Posicione('ZB1',1,sNSU + sAut,'ZB1_STAIMP')
-			// If _Status == 'I' // DEIXA ATUALIZAR O REGISTRO APENAS SE NAO TIVER CONCILIADO
-			// 	Reclock("ZB1",.F.)
-			// 		ZB1->ZB1_DTAPRO := _aHeader[1,1] 
-			// 		ZB1->ZB1_DTAINI := _aHeader[1,2] 
-			// 		ZB1->ZB1_DTAFIN := _aHeader[1,3] 
-			// 		ZB1->ZB1_NUMSEQ := _aHeader[1,4] 
-			// 		ZB1->ZB1_TPTRAN := _aRO[1,3]
-			// 		ZB1->ZB1_DTAAPR := _aRO[1,4]
-			// 		ZB1->ZB1_DTAENV := _aRO[1,5]
-			// 		ZB1->ZB1_VLRBRT := _aRO[1,6] 
-			// 		ZB1->ZB1_VLRTAX := _aRO[1,7]
-			// 		ZB1->ZB1_VLRREJ := _aRO[1,8]
-			// 		ZB1->ZB1_VLRLIQ := _aRO[1,9]
-			// 		ZB1->ZB1_BANCO  := sBanco	//_aRO[1,10] 
-			// 		ZB1->ZB1_AGENCI := sAgencia //_aRO[1,11] 
-			// 		ZB1->ZB1_CONTA  := sConta   //_aRO[1,12]
-			// 		ZB1->ZB1_STAPGT := _aRO[1,13]
-			// 		ZB1->ZB1_ADM	:= _aRO[1,14]
-			// 		ZB1->ZB1_ADMDES := _aRO[1,15] 
-			// 		ZB1->ZB1_NUMRO  := _aRO[1,16]  
-			// 		ZB1->ZB1_PERTAX := _aRO[1,17]  
-			// 		ZB1->ZB1_VLRTAR := _aRO[1,18]  
-			// 		ZB1->ZB1_CARTAO := _aCV[1,1] 
-			// 		ZB1->ZB1_DTAVEN := _aCV[1,2]  
-			// 		ZB1->ZB1_VLRPAR := _aCV[1,3]  
-			// 		ZB1->ZB1_PARNUM := _aCV[1,4]  
-			// 		ZB1->ZB1_PARTOT := _aCV[1,5]  
-			// 		ZB1->ZB1_MOTREJ := _aCV[1,6]  
-			// 		ZB1->ZB1_DESREJ := _aCV[1,7] 
-			// 		ZB1->ZB1_AUTCOD := _aCV[1,8]  
-			// 		ZB1->ZB1_TID	:= _aCV[1,9]  
-			// 		ZB1->ZB1_NSUCOD := _aCV[1,10]  
-			// 		ZB1->ZB1_NUMNFE := _aCV[1,11]  
-			// 		ZB1->ZB1_IDTRAN := _aCV[1,12]  		
-			// 	ZB1->(MsUnlock())
-			// EndIf
+
 			_vlrTaxa := ROUND((_aCV[1,3] * _aRO[1,17])/100,2)
 			aadd(_aRel,{ 	_aRO[1,1],; 	// filial
 							_aRO[1,9],; 	// valor liquido da venda
@@ -328,8 +311,10 @@ Static Function GravaZB1(_aHeader, _aRO, _aCV, _aRel )
 							_aHeader[1,1],; // data do processamento
 							_aCV[1,8] ,; 	// autorização
 							_aCV[1,10],; 	// NSU
-							'JÁ IMPORTADO',;
-							_aCV[1,4]  })   // parcela
+							'JÁ IMPORTADO',;// status
+							_aCV[1,4]  ,;	// parcela
+							_aCV[1,13],;    // status letra
+							_aCV[1,14] })   // sinal
 
 			u_log("Registro já importado! NSU:" + sNSU +" Autorização:"+ sAut)
 		EndIf
@@ -532,20 +517,23 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA9", 	"" ,"Dt.Proces."	,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA10", 	"" ,"Autoriz."		,							,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA11", 	"" ,"NSU"			,	    					,10,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA12", 	"" ,"Status"		,	    					,20,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA12", 	"" ,"Status"		,	    					,15,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA13", 	"" ,"Cre/Deb"		,	    					,20,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 	
-	//TRFunction():New(oSection1:Cell("COLUNA4")	,,"SUM"	, , "Total bruto "  , "@E 999,999,999.99", NIL, .F., .T.)
-	//TRFunction():New(oSection1:Cell("COLUNA5")	,,"SUM"	, , "Total liquido ", "@E 999,999,999.99", NIL, .F., .T.)
-	TRFunction():New(oSection1:Cell("COLUNA5")	,,"SUM"	, , "Total parcela ", "@E 999,999,999.99", NIL, .F., .T.)
-	TRFunction():New(oSection1:Cell("COLUNA7")	,,"SUM"	, , "Total taxa "   , "@E 999,999,999.99", NIL, .F., .T.)
+	//TRFunction():New(oSection1:Cell("COLUNA5")	,,"SUM"	, , "Total parcela ", "@E 999,999,999.99", NIL, .F., .T.)
+	//TRFunction():New(oSection1:Cell("COLUNA7")	,,"SUM"	, , "Total taxa "   , "@E 999,999,999.99", NIL, .F., .T.)
 	
 Return(oReport)
 //
 // -------------------------------------------------------------------------
 // Impressão
 Static Function PrintReport(oReport)
-	Local oSection1 := oReport:Section(1)
-	Local i         := 0
+	Local oSection1  := oReport:Section(1)
+	Local i          := 0
+	Local _nTotVenda := 0
+	Local _nTotTax   := 0
+	Local _nTotDVenda:= 0
+	Local _nTotDTax  := 0
 
 	oSection1:Init()
 	oSection1:SetHeaderSection(.T.)
@@ -590,6 +578,11 @@ Static Function PrintReport(oReport)
 			_sCliente := "-"
 		EndIf
 
+		If _aRel[i,13] == '+'
+			_sCreDeb := 'Crédito'
+		Else
+			_sCreDeb := 'Débito'
+		EndIf
 		oSection1:Cell("COLUNA1")	:SetBlock   ({|| _aRel[i,1] }) // filial
 		oSection1:Cell("COLUNA2")	:SetBlock   ({|| _sTitulo   }) // titulo
 		oSection1:Cell("COLUNA3")	:SetBlock   ({|| _sCliente  }) // cliente
@@ -602,11 +595,67 @@ Static Function PrintReport(oReport)
 		oSection1:Cell("COLUNA10")	:SetBlock   ({|| _aRel[i,8] }) // cod.autoriz
 		oSection1:Cell("COLUNA11")	:SetBlock   ({|| _aRel[i,9] }) // NSU
 		oSection1:Cell("COLUNA12")	:SetBlock   ({|| _aRel[i,10]}) // status
-			
+		oSection1:Cell("COLUNA13")	:SetBlock   ({|| _sCreDeb  }) // status
+		
+		If alltrim(_aRel[i,12]) == 'I'
+			_nTotVenda += _aRel[i,3]
+			_nTotTax   += _aRel[i,5] 
+		Else
+			If alltrim(_aRel[i,12]) == 'D'
+				_nTotDVenda += _aRel[i,3]
+				_nTotDTax   += _aRel[i,5] 
+			EndIf
+		EndIf
 		oSection1:PrintLine()
 	Next
+
+	oReport:ThinLine()
+	oReport:SkipLine(1)
+	_nLinha:= _PulaFolha(_nLinha)
+	oReport:PrintText("TOTAL CREDITO EM CONTA:" ,, 100)
+	_nLinha:= _PulaFolha(_nLinha)
+	oReport:PrintText("Valor da Parcela:" ,, 100)
+	oReport:PrintText(PADL('R$' + Transform(_nTotVenda, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:PrintText("Valor da Taxa:" ,, 100)
+	oReport:PrintText(PADL('R$' + Transform(_nTotTax, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:SkipLine(1)
+
+	_nLinha:= _PulaFolha(_nLinha)
+	oReport:PrintText("TOTAL DEBITO EM CONTA:" ,, 100)
+	_nLinha:= _PulaFolha(_nLinha)
+	oReport:PrintText("Valor da Parcela:" ,, 100)
+	oReport:PrintText(PADL('R$' + Transform(_nTotDVenda, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:PrintText("Valor da Taxa:" ,, 100)
+	oReport:PrintText(PADL('R$' + Transform(_nTotDTax, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:SkipLine(1)
+	oReport:ThinLine()
+
+	_nLinha:= _PulaFolha(_nLinha)
+	oReport:PrintText("TOTAL GERAL" ,, 100)
+	_nLinha:= _PulaFolha(_nLinha)
+	oReport:PrintText("Valor da Parcela:" ,, 100)
+	oReport:PrintText(PADL('R$' + Transform(_nTotVenda - _nTotDVenda , "@E 999,999,999.99"),20,' '),, 900)
+	oReport:PrintText("Valor da Taxa:" ,, 100)
+	oReport:PrintText(PADL('R$' + Transform(_nTotTax - _nTotDTax, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:SkipLine(1)
+	oReport:ThinLine()
+
 	oSection1:Finish()
 Return
+//
+// --------------------------------------------------------------------------
+// Pular folha na impressão
+Static Function _PulaFolha(_nLinha)
+	local _nRet := 0
+
+	If  _nLinha > 2300
+		oReport:EndPage()
+		oReport:StartPage()
+		_nRet := oReport:Row()
+	Else
+		_nRet := _nLinha
+	EndIf
+Return _nRet
 // --------------------------------------------------------------------------
 // Busca Parcelas
 Static Function BuscaParcela(_sParcela)

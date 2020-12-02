@@ -21,7 +21,7 @@ User Function ZB1()
 	Local _sFiltrTop  := ""
 	Local _lContinua  := .T.
 	Private aRotina   := {}  
-	Private aCores    := {}
+	Private _aCores    := {}
 	Private cCadastro := "Extrato de recebimento Cielo"
 
 	// Controle de semaforo.
@@ -36,22 +36,48 @@ User Function ZB1()
 		AADD(aRotina, {"Importar"    	     , "U_ZB1_IMP()"   , 0, 4})
 		AADD(aRotina, {"Conciliar Cielo Loja", "U_ZB1_CON('1')", 0, 4})
 		AADD(aRotina, {"Conciliar Cielo Link", "U_ZB1_CON('2')", 0, 4})
-		AADD(aRotina, {"Relatorio de titulos", "U_ZB1RTIT()"   , 0, 4})
+		AADD(aRotina, {"&Legenda"        	 , "U_ZB1LGD (.F.)"   , 0 ,5})
+		AADD(aRotina, {"Relatorio de titulos", "U_ZB1RTIT()"   , 0, 6})
 		AADD(aRotina, {"Fechar Registro"     , "U_ZB1_FEC()"   , 0, 6})
 
-		AADD(aCores,{ "ZB1_STAIMP == 'I'", 'BR_VERMELHO' }) // importado
-        AADD(aCores,{ "ZB1_STAIMP == 'C'", 'BR_VERDE'    }) // conciliado
-		AADD(aCores,{ "ZB1_STAIMP == 'F'", 'BR_PRETO'    }) // fechado
+		AADD(_aCores,{ "ZB1_STAIMP == 'I'", 'BR_VERMELHO' }) // importado
+		AADD(_aCores,{ "ZB1_STAIMP == 'C'", 'BR_VERDE'    }) // conciliado
+		AADD(_aCores,{ "ZB1_STAIMP == 'F'", 'BR_PRETO'    }) // fechado
+		AADD(_aCores,{ "ZB1_STAIMP == 'D'", 'BR_AZUL'     }) // debito
                       
 		dbSelectArea ("ZB1")
 		dbSetOrder (1)
 		_sFiltrTop := "ZB1_FILIAL ='" + cFilAnt +"'"
-		mBrowse(,,,,"ZB1",,,,,,aCores,,,,,,,,_sFiltrTop)
+		mBrowse(,,,,"ZB1",,,,,,_aCores,,,,,,,,_sFiltrTop)
 	EndIf
 
 Return
 
+// --------------------------------------------------------------------------
+// Retorna Legenda
+User function ZB1LGD (_lRetCores)
+	local aCores  := {}
+	local aCores2 := {}
+	local _i       := 0
+	
+	aadd (aCores, {"ZB1->ZB1_STAIMP=='I'", 'BR_VERMELHO', 'Reg.Importados'	})
+	aadd (aCores, {"ZB1->ZB1_STAIMP=='C'", 'BR_VERDE'	 , 'Reg.Baixados'	})
+	aadd (aCores, {"ZB1->ZB1_STAIMP=='F'", 'BR_PRETO'	 , 'Reg.Fechados'	})
+	aadd (aCores, {"ZB1->ZB1_STAIMP=='D'", 'BR_AZUL'	 , 'Reg.Debitados'	})
 
+	if ! _lRetCores
+		for _i = 1 to len (aCores)
+			aadd (aCores2, {aCores [_i, 2], aCores [_i, 3]})
+		next
+		BrwLegenda (cCadastro, "Legenda", aCores2)
+	else
+		for _i = 1 to len (aCores)
+			aadd (aCores2, {aCores [_i, 1], aCores [_i, 2]})
+		next
+		return aCores
+	endif
+	
+return
 
 
 
