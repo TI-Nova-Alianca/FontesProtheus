@@ -20,6 +20,7 @@
 // 13/12/2019 - Robert - Adequacoes iniciais para safra 2020 (porta impressora ticket).
 // 03/01/2020 - Robert - Criada opcao de (re)transmitir o XML da contranota para a SEFAZ.
 // 20/01/2020 - Robert - Novos parametros chamada geracao ticket safra.
+// 01/12/2020 - Robert - Passa a buscar dados de cadastro viticola na view GX0001_AGENDA_SAFRA e nao mais na VA_VASSOC_CAD_VITIC2
 //
 
 // --------------------------------------------------------------------------
@@ -196,9 +197,17 @@ static function _LeAssoc ()
 	ProcRegua (10)
 	incproc ("Buscando lista de associados...")
 	
+	sa2 -> (dbsetorder (1))
 	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := "SELECT DISTINCT GRPFAM, ASSOCIADO, LOJA_ASSOC, NOME_ASSOC, RESTRICAO "
-	_oSQL:_sQuery +=  " FROM VA_VAGENDA_SAFRA"
+//	_oSQL:_sQuery := "SELECT DISTINCT GRPFAM, ASSOCIADO, LOJA_ASSOC, NOME_ASSOC, RESTRICAO "
+//	_oSQL:_sQuery +=  " FROM VA_VAGENDA_SAFRA"
+	_oSQL:_sQuery += "SELECT DISTINCT GX0001_GRUPO_CODIGO as grpfam"
+	_oSQL:_sQuery +=      ", GX0001_ASSOCIADO_CODIGO as associado"
+	_oSQL:_sQuery +=      ", GX0001_ASSOCIADO_LOJA as loja_assoc"
+	_oSQL:_sQuery +=      ", GX0001_ASSOCIADO_NOME as nome_assoc"
+	_oSQL:_sQuery +=      ", GX0001_ASSOCIADO_RESTRICAO as restricao"
+	_oSQL:_sQuery +=  " FROM GX0001_AGENDA_SAFRA"
+	_oSQL:Log ()
 	_sAliasQ = _oSQL:Qry2Trb ()
 	do while ! (_sAliasQ) -> (eof ())
 		incproc ()
@@ -219,6 +228,8 @@ static function _LeAssoc ()
 		else
 			if sa2 -> (dbseek (xfilial ("SA2") + (_sAliasQ) -> associado + (_sAliasQ) -> loja_assoc, .F.))
 				aadd (_a00002101, {(_sAliasQ) -> nome_assoc, sa2 -> a2_cgc, sa2 -> a2_mun, sa2 -> a2_end, sa2 -> a2_cod, sa2 -> a2_loja, (_sAliasQ) -> restricao})
+			else
+				u_log2 ('aviso', 'Nao encontrei SA2 com chave >>' + xfilial ("SA2") + (_sAliasQ) -> associado + (_sAliasQ) -> loja_assoc + '<<')
 			endif
 		endif
 		(_sAliasQ) -> (dbskip ())

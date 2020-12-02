@@ -1239,6 +1239,7 @@ static function _IncCarSaf ()
 	local _sImpTkCar := ''
 	local _oSQL      := NIL
 	local _aRegSA2   := {}
+	local _sSivibe   := ''
 
 	u_log2 ('info', 'Iniciando web service de geracao de carga.')
 	u_log2 ('debug', 'cFilAnt:' + cFilAnt)
@@ -1306,24 +1307,27 @@ static function _IncCarSaf ()
 	if empty (_sErros) ; _sVaried  = _ExtraiTag ("_oXML:_WSAlianca:_variedade1",        .T., .F.) ; endif
 	if empty (_sErros) ; _sEmbalag = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem1",        .T., .F.) ; endif
 	if empty (_sErros) ; _sLote    = _ExtraiTag ("_oXML:_WSAlianca:_Lote1",             .F., .F.) ; endif
+	if empty (_sErros) ; _sSivibe  = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe1",           .F., .F.) ; endif
 	if empty (_sErros)
-		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote})
+		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe})
 	endif
 	//
 	if empty (_sErros) ; _sCadVit  = _ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola2", .F., .F.) ; endif
 	if empty (_sErros) ; _sVaried  = _ExtraiTag ("_oXML:_WSAlianca:_variedade2",        .F., .F.) ; endif
 	if empty (_sErros) ; _sEmbalag = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem2",        .F., .F.) ; endif
 	if empty (_sErros) ; _sLote    = _ExtraiTag ("_oXML:_WSAlianca:_Lote2",             .F., .F.) ; endif
+	if empty (_sErros) ; _sSivibe  = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe2",           .F., .F.) ; endif
 	if empty (_sErros) .and. ! empty (_sCadVit)  // Pode nao ter 2 itens na carga
-		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote})
+		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe})
 	endif
 	//
 	if empty (_sErros) ; _sCadVit  = _ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola3", .F., .F.) ; endif
 	if empty (_sErros) ; _sVaried  = _ExtraiTag ("_oXML:_WSAlianca:_variedade3",        .F., .F.) ; endif
 	if empty (_sErros) ; _sEmbalag = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem3",        .F., .F.) ; endif
 	if empty (_sErros) ; _sLote    = _ExtraiTag ("_oXML:_WSAlianca:_Lote3",             .F., .F.) ; endif
+	if empty (_sErros) ; _sSivibe  = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe3",           .F., .F.) ; endif
 	if empty (_sErros) .and. ! empty (_sCadVit)  // Pode nao ter 3 itens na carga
-		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote})
+		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe})
 	endif
 	u_log2 ('info', 'Itens da carga:')
 	u_log2 ('info', _aItensCar)

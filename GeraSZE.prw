@@ -14,11 +14,8 @@
 user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sIdImpr)
 	local _sCargaGer := ''
 	local _nItemCar  := 0
-//	local _nItemVit  := 0
 	local _nLock     := 0
-//	local _sIdImpr   := ''
 	local _oSQL      := NIL
-//	local _aRetQry   := {}
 
 	u_log2 ('info', 'Iniciando ' + procname ())
 //	u_log ('param:', _oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd)
@@ -35,23 +32,6 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		_sErros += "Bloqueio de semaforo. Verifique se existe outra sessao gerando carga e tente novamente."
 	endif
 
-
-/*
-	// Define qual a impressora a usar para imprimir os tickets
-	if empty (_sErros)
-		do case
-		case _sBalanca == 'LB'
-			_sIdImpr = '07'  // LAB SAFRA MATRIZ
-// Ainda nao consegui imprimir fora da rede da matriz --> 		case _sBalanca == 'JC'
-// Ainda nao consegui imprimir fora da rede da matriz --> 			_sIdImpr = '08'
-// Ainda nao consegui imprimir fora da rede da matriz --> 		case _sBalanca == 'LV'
-// Ainda nao consegui imprimir fora da rede da matriz --> 			_sIdImpr = '09'
-		otherwise
-			_sIdImpr = ''
-			u_log ("Impressora de ticket nao definida para a balanca '" + _sBalanca + "'. Nao vou solicitar impressao.")
-		endcase
-	endif
-*/
 	if empty (_sErros)
 
 		// Algumas variaveis que devem estar prontas para as validacoes dos programas originais.
@@ -61,13 +41,8 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		private _sModelBal := 0
 		private _nMultBal  := 10
 		private _nPesoEmb  := 20
-		private _lImpTick  := ! empty (_sIdImpr)
-		private _sPortTick := iif (_lImpTick, U_RetZX5 ('49', _sIdImpr, 'ZX5_49CAM'), '')
-		if _lImpTick .and. empty (_sPortTick)
-			_sErros += "Impressora de tickets informada (" + _sIdImpr + ") nao cadastrada ou sem caminho definido na tabela 49 do ZX5."
-		endif
-		u_log2 ('debug', '_sIdImpr:' + _sIdImpr)
-		u_log2 ('debug', '_sPortTick:' + _sPortTick)
+		private _lImpTick  := .F.
+		private _sPortTick := ''
 		private _lLeBrix   := .T.
 		private _nQViasTk1 := 1
 		private _nQViasTk2 := 2
@@ -104,17 +79,40 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		private _zx509fina    := U_RetZX5 ("09", _sSafra + _sBalanca, 'ZX5_09FINA')
 		private _zx509orga    := U_RetZX5 ("09", _sSafra + _sBalanca, 'ZX5_09ORGA')
 	endif
-	//u_log ('Porta para impressao de ticket:', _sPortTick)
+
+	// Se nao informada uma impressora especifica, mantem a impressora default desta filial.
+	if ! empty (_sIdImpr)
+		_sPortaBal = U_RetZX5 ('49', _sIdImpr, 'ZX5_49CAM')
+	else
+		do case
+		case _sBalanca == 'LB'
+			_sIdImpr = '07'  // LAB SAFRA MATRIZ
+		// Ainda nao consegui imprimir fora da rede da matriz --> 		case _sBalanca == 'JC'
+		// Ainda nao consegui imprimir fora da rede da matriz --> 			_sIdImpr = '08'
+		// Ainda nao consegui imprimir fora da rede da matriz --> 		case _sBalanca == 'LV'
+		// Ainda nao consegui imprimir fora da rede da matriz --> 			_sIdImpr = '09'
+		otherwise
+			_sIdImpr = ''
+			u_log ("Impressora de ticket nao definida para a balanca '" + _sBalanca + "'. Nao vou solicitar impressao.")
+		endcase
+	endif
+	u_log2 ('debug', '_sIdImpr:' + _sIdImpr)
+	u_log2 ('debug', '_sPortTick:' + _sPortTick)
 
 	// Verifica se o associado tem alguma restricao
 	if empty (_sErros)
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "SELECT TOP 1 RESTRICAO"
-		_oSQL:_sQuery +=  " FROM VA_VAGENDA_SAFRA"
-		_oSQL:_sQuery += " WHERE ASSOCIADO    = '" + _oAssoc:Codigo + "'"
-		_oSQL:_sQuery +=   " AND LOJA_ASSOC   = '" + _oAssoc:Loja   + "'"
-		_oSQL:_sQuery +=   " AND RESTRICAO   != ''"
+		// _oSQL:_sQuery += "SELECT TOP 1 RESTRICAO"
+		// _oSQL:_sQuery +=  " FROM VA_VAGENDA_SAFRA"
+		// _oSQL:_sQuery += " WHERE ASSOCIADO    = '" + _oAssoc:Codigo + "'"
+		// _oSQL:_sQuery +=   " AND LOJA_ASSOC   = '" + _oAssoc:Loja   + "'"
+		// _oSQL:_sQuery +=   " AND RESTRICAO   != ''"
+		_oSQL:_sQuery += "SELECT GX0001_ASSOCIADO_RESTRICAO as restricao"
+		_oSQL:_sQuery +=  " FROM GX0001_AGENDA_SAFRA"
+		_oSQL:_sQuery += " WHERE GX0001_ASSOCIADO_CODIGO = '" + _oAssoc:Codigo + "'"
+		_oSQL:_sQuery +=   " AND GX0001_ASSOCIADO_LOJA   = '" + _oAssoc:Loja   + "'"
+		_oSQL:_sQuery +=   " AND GX0001_ASSOCIADO_RESTRICAO != ''"
 		_oSQL:Log ()
 		_sRestri = _oSQL:RetQry ()
 		if ! empty (_sRestri)
@@ -146,7 +144,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 				//u_log (_aCadVitic)
 				_nItemVit = ascan (_aCadVitic, {|_aVal| _aVal [.CadVitProduto] == sb1 -> b1_cod})
 				if _nItemVit == 0
-					_sErros += "Variedade " + SB1 -> B1_COD + " nao vinculada ao cadastro viticola " + _aItensCar [_nItemCar, 1]
+					_sErros += "Variedade " + alltrim (SB1 -> B1_COD) + " nao vinculada com a propriedade rural " + _aItensCar [_nItemCar, 1] + ' / SIVIBE ' + _aItensCar [_nItemCar, 5]
 					exit
 				endif
 				//u_log ('encontrei itemvit:', _nItemVit)
@@ -155,6 +153,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 				N = len (aCols)
 				GDFieldPut ("ZF_ITEM",    strzero (_nItemCar, 2))
 				GDFieldPut ("ZF_CADVITI", _aItensCar [_nItemCar, 1])
+				GDFieldPut ("ZF_SIVIBE",  _aItensCar [_nItemCar, 5])
 				GDFieldPut ("ZF_ITEMVIT", _nItemVit)
 				GDFieldPut ("ZF_PRODUTO", sb1 -> b1_cod)
 				GDFieldPut ("ZF_DESCRI",  sb1 -> b1_desc)
@@ -166,7 +165,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 				GDFieldPut ("ZF_OBS",     _sObs)
 
 				//u_log ('Vou chamar validacao de linha com o seguinte conteudo:')
-				//u_logACols ()
+				u_logACols ()
 
 				// Executa a validacao de linha
 				if ! U_VA_RUS2L ()
