@@ -154,7 +154,7 @@ User Function ZB2_CON()
 						u_log(memoread (NomeAutoLog ()))
 						u_log("IMPORTAÇÃO NÃO REALIZADA: Registro NSU+AUT:" + _sNSUCod + _sAutCod)
 
-					Else// Se gravado, inclui campos n SE5 finaliza o registro da ZA1
+					Else
 						// Atualiza banco e administradora
 						_sAdm := alltrim(_aTitulo[x,6]) 
 
