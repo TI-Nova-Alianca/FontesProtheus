@@ -13,6 +13,8 @@
 
 // Historico de alteracoes:
 // 15/10/2020 - Robert - Melhorados logs.
+// 07/12/2020 - Robert - Gravava D3_QUANT zerado. Passa a gravar a litragem total produzida pela OP.
+//                     - Extensao do arquivo fonte alterada de .prw para .tlpp (linguagem TL++)
 //
 
 #XTranslate .CCCodigo        => 1
@@ -27,7 +29,7 @@
 
 // --------------------------------------------------------------------------
 User function VA_RTSAF (_lAuto)
-	local cCadastro    := "Calculo correcao monetaria conta corrente associados"
+	local cCadastro    := "Rateio de custos de estocagem e provisao de safra em cima das OPs de consumo de uva."
 	local aSays        := {}
 	local aButtons     := {}
 	local nOpca        := 0
@@ -387,7 +389,7 @@ Static Function _MoveTe ()
 						sd3 -> d3_tm      := _aCC [_nCC, .CCTipoMovimento]
 						sd3 -> d3_cod     := sb1 -> b1_cod
 						sd3 -> d3_um      := sb1 -> b1_um
-						sd3 -> d3_quant   := 0
+						sd3 -> d3_quant   := _aOP [_nOP, 3]
 						sd3 -> d3_custo1  := _nCusto1
 						sd3 -> d3_cf      := (_sAliasQ)->d3_cf
 						sd3 -> d3_op      := (_sAliasQ)->d3_op
@@ -403,13 +405,13 @@ Static Function _MoveTe ()
 						sd3 -> d3_vamotiv := "RATEIO CUSTOS " + alltrim (_aCC [_nCC, 2])
 						sd3 -> d3_vachvex := _sChaveSD3
 						msunlock ()
-						u_log2 ('debug', 'gravacao do SD3 finalizada')
+					//	u_log2 ('debug', 'gravacao do SD3 finalizada')
 					else
 						u_log2 ('aviso', 'Valor ficaria zerado: ' + sb1 -> b1_cod + ' na OP ' + (_sAliasQ)->d3_op + ' TM ' + _aCC [_nCC, .CCTipoMovimento] + ' $' + transform (_nCusto1, "@E 999,999,999,999.99999"))
 					endif
 
 					(_sAliasQ)->(dbclosearea())
-					u_log2 ('debug', 'fechei sAliasQ')
+				//	u_log2 ('debug', 'fechei sAliasQ')
 					dbselectarea ("SD3")
 				next
 			endif
