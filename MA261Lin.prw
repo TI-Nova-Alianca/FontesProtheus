@@ -33,6 +33,7 @@
 //                     - Inseridas tags para catalogacao de fontes
 // 07/08/2020 - Robert - Bloqueio transf. AX 66 e itens '4191/9998' (pallets) no AX 02
 // 26/10/2020 - Robert - Passa a bloquear almoxarifados com base no parametro VA_ALMZAG.
+// 04/12/2020 - Robert - Aceita transferencia de um codigo para outro (msg.Harry Potter) quando solicitacao vem da classe ClsTrEstq e usuario tem acesso pelo ZZU.
 //
 
 // ------------------------------------------------------------------------------------
@@ -116,11 +117,22 @@ user function ma261Lin ()
 			If Posicione ("SB1", 1, xfilial("SB1") + _sProdOrig, "B1_VATROUT") != "S"
 				//_lRet = U_PodeMov ('E01')
 				_sMsg = "Harry Potter usa o feitiço 'Riddikulus' para transformar bichos-papões em outros objetos. Como não podemos usar magia fora de Hogwarts, você deve informar o produto destino igual ao produto origem."
-				if U_ZZUVL ('119', __cUserId, .F.)
-					_lRet = U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
+
+				if type ("_lClsTrEst") == 'L' .and. _lClsTrEst == .T.  // Se estah sendo chamado de dentro dessa classe, vou assumir que as devidas verificacoes jah foram feitas.
+					if U_ZZUVL ('119', __cUserId, .F.)
+						// Pode passar
+						u_log2 ('info', 'aceitando transferencia por que vem de uma chamada da classe ClsTrEstq e o usuario pertence ao grupo 119.')
+					else
+						u_help (_sMsg,, .t.)
+						_lRet = .F.
+					endif
 				else
-					u_help (_sMsg,, .t.)
-					_lRet = .F.
+					if U_ZZUVL ('119', __cUserId, .F.)
+						_lRet = U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
+					else
+						u_help (_sMsg,, .t.)
+						_lRet = .F.
+					endif
 				endif
 			endif
 		endif

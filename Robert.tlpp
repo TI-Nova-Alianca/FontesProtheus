@@ -20,7 +20,7 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '01' modulo '04'
+		prepare environment empresa '01' filial '03' modulo '06'
 		private cModulo   := 'FAT'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -82,9 +82,59 @@ static function _AndaLogo ()
 	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
 return
 
+/*
+	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+	u_batmetaf ()
+return
+*/
+/*
+	// Testes verificacoes genericas.
+	// _oVerif := ClsVerif():New (25)
+	// _oVerif:SetParam ('01', '2017')
+	// _oVerif:SetParam ('02', '')
+	// _oVerif:SetParam ('03', 'zz')
+	// _oVerif:SetParam ('04', '30 ')
+	// _oVerif:SetParam ('05', '028')
+	// _oVerif:SetParam ('06', '077')
+	// _oVerif:SetParam ('07', '000017')
+	// _oVerif := ClsVerif():New (24)
+	// _oVerif:SetParam ('01', '09189201001  ')
+	// _oVerif:SetParam ('02', '09189201001  ')
+	// _oVerif:SetParam ('03', '')
+	// _oVerif:SetParam ('04', 'z')
+	_oVerif := ClsVerif():New (79)
+	if _oVerif:Executa ()
+		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
+		u_log2 ('debug', _oVerif:Result)
+	else
+		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
+	endif
+return
+*/
 
 
-
+/*
+	// Testes metodos associados.
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT DISTINCT ZI_ASSOC, ZI_LOJASSO"
+	_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
+	_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
+	_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC between '000161' and '000167'" //'012351' and '012360'"
+	_oSQL:_sQuery +=  " ORDER BY ZI_ASSOC, ZI_LOJASSO"
+	_aAssoc = _oSQL:Qry2Array ()
+	_sResult = ''
+	for _nAssoc = 1 to len (_aAssoc)
+		_oAssoc := ClsAssoc():New (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
+		//_aSld1 := aclone (_oAssoc:SaldoEmOLD (stod ('20200331')))
+		//_aSld2 := aclone (_oAssoc:SaldoEm (stod ('20200331')))
+		u_log (_oAssoc:CadVitic ())
+	//	if ! _oAssoc:CalcCM ('032020', 1.0, 1.0, 999.99, .T., .F.)
+	//		u_help (_oAssoc:Codigo + "/" + _oAssoc:Loja + ' - ' + alltrim (_oAssoc:Nome) + _oAssoc:UltMsg,, .t.)
+	//	endif
+	next
+return
+*/
 /*
 	cPerg := "VA_RTSAF"
 	U_GravaSX1 (cPerg, "01", stod ('20200131'))
@@ -366,10 +416,6 @@ RETURN
 return
 */
 
-//	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batmetaf ()
-//return
-
 //	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batmercp ()
 //RETURN
@@ -609,30 +655,6 @@ RETURN
 //	enddo
 return
 */
-/*
-	// Testes verificacoes genericas.
-	// _oVerif := ClsVerif():New (25)
-	// _oVerif:SetParam ('01', '2017')
-	// _oVerif:SetParam ('02', '')
-	// _oVerif:SetParam ('03', 'zz')
-	// _oVerif:SetParam ('04', '30 ')
-	// _oVerif:SetParam ('05', '028')
-	// _oVerif:SetParam ('06', '077')
-	// _oVerif:SetParam ('07', '000017')
-	// _oVerif := ClsVerif():New (24)
-	// _oVerif:SetParam ('01', '09189201001  ')
-	// _oVerif:SetParam ('02', '09189201001  ')
-	// _oVerif:SetParam ('03', '')
-	// _oVerif:SetParam ('04', 'z')
-	_oVerif := ClsVerif():New (34)
-	if _oVerif:Executa ()
-		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
-		u_log2 ('debug', _oVerif:Result)
-	else
-		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
-	endif
-return
-*/
 /* Aguarda atualizacao de build
 	// Linguagem TL++: https://tdn.totvs.com/pages/viewpage.action?pageId=334340072
 	// local varJson := { "teste" : { "var1" : "oioi", "var2": "oioi2", "var3": "oioi3" }}  https://tdn.totvs.com/display/tec/Json
@@ -673,32 +695,6 @@ RETURN
 	U_GravaSX1 (cPerg, '01', '2020')
 	U_GravaSX1 (cPerg, '02', '2020')
 	u_va_xls53 (.T.)
-return
-*/
-/*
-	// Testes metodos associados.
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT DISTINCT ZI_ASSOC, ZI_LOJASSO"
-	_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
-	_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
-	_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC between '012351' and '012360'"
-	_oSQL:_sQuery +=  " ORDER BY ZI_ASSOC, ZI_LOJASSO"
-	_aDados = _oSQL:Qry2Array ()
-	_sResult = ''
-	for _nDado = 1 to len (_aDados)
-		_oAssoc := ClsAssoc():New (_aDados [_nDado, 1], _aDados [_nDado, 2])
-		_aSld1 := aclone (_oAssoc:SaldoEmOLD (stod ('20200331')))
-		_aSld2 := aclone (_oAssoc:SaldoEm (stod ('20200331')))
-		_sLinImp = _aDados [_nDado, 1] + _aDados [_nDado, 2] + ' ' + transform (_aSld1 [1], '@E 999,999,999.99') + ' ' + transform (_aSld2 [1], '@E 999,999,999.99') + ' ' + transform (_aSld1 [2], '@E 999,999,999.99') + ' ' + transform (_aSld2 [2], '@E 999,999,999.99');
-		                                                           + transform (_aSld1 [3], '@E 999,999,999.99') + ' ' + transform (_aSld2 [3], '@E 999,999,999.99') + ' ' + transform (_aSld1 [4], '@E 999,999,999.99') + ' ' + transform (_aSld2 [4], '@E 999,999,999.99')
-		u_log (_sLinImp)
-		_sResult += _sLinImp + chr (13) + chr (10)
-	//	if ! _oAssoc:CalcCM ('032020', 1.0, 1.0, 999.99, .T., .F.)
-	//		u_help (_oAssoc:Codigo + "/" + _oAssoc:Loja + ' - ' + alltrim (_oAssoc:Nome) + _oAssoc:UltMsg,, .t.)
-	//	endif
-	next
-	u_log (_sResult)
 return
 */
 /*

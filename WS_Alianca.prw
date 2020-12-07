@@ -2,7 +2,13 @@
 // Autor:     Robert Koch (royalties: http://advploracle.blogspot.com.br/2014/09/webservice-no-protheus-parte-2-montando.html)
 // Data:      14/07/2017
 // Descricao: Disponibilizacao de Web Services em geral.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #web_service
+// #PalavasChave      #web_service #generico #integracoes #naweb
+// #TabelasPrincipais #SD1 #SD2 #SD3
+// #Modulos           
+
 // Historico de alteracoes:
 // ??/08/2017 - Julio   - Implementda gravacao do arquico ZAM
 // 31/08/2017 - Robert  - Implementacao execucao de rotinas sem interface com o usurio.
@@ -41,12 +47,9 @@
 // 13/07/2020 - Robert  - Inseridas tags para catalogacao de fontes.
 // 10/08/2020 - Robert  - Inseridas chamadas da funcao UsoRot().
 // 18/11/2020 - Sandra/Robert  - Alteração campo A1_GRPTRIB DE 002 para 003
-
-// Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #web_service
-// #PalavasChave      #web_service #generico #integracoes #naweb
-// #TabelasPrincipais #SD1 #SD2 #SD3
-// #Modulos           
+// 04/12/2020 - Robert  - Tags novas na geracao de cargas de safra
+//                      - Criada tag <FP> na consulta de orcamentos a ser retornada para o NaWeb (GLPI 8900).
+// 07/12/2020 - Robert  - Criadas tags <REA_MES> na consulta de orcamentos a ser retornada para o NaWeb (GLPI 8893).
 //
 
 // ----------------------------------------------------------------------------------------------------------
@@ -125,7 +128,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	if empty (_sErros)
 		//u_log ('vou mudar arqlog com cUserName=', cusername)
 		_sArqLgOld = _sArqLog
-		_sArqLog2 = 'WS_Alianca_' + cUserName + "_" + dtos (date ()) + ".log"
+		_sArqLog2 = 'WS_Alianca_' + alltrim (cUserName) + "_" + dtos (date ()) + ".log"
 		u_log2 ('info', 'Log da thread ' + cValToChar (ThreadID ()) + ' prossegue em outro arquivo: ' + _sArqLog2)
 		_sArqLog = _sArqLog2
 		u_log2 ('info', '')
@@ -1082,9 +1085,7 @@ Static function _ExecConsOrc()
 	local _sModelo      := ""
 	local _aPerfNA      := {}
 
-	u_logIni ()
-	
-//	// busca valores de entrada
+	// busca valores de entrada
 	if empty (_sErros)
 		_wFilialIni   = _ExtraiTag ("_oXML:_WSAlianca:_FilialIni"	, .T., .F.)
 		_wFilialFin   = _ExtraiTag ("_oXML:_WSAlianca:_FilialFin"	, .T., .F.)
@@ -1095,12 +1096,13 @@ Static function _ExecConsOrc()
 	endif
 	If empty(_sErros) .and. _sModelo == '2020'
 		_aPerfNA      = U_SeparaCpo (_ExtraiTag ("_oXML:_WSAlianca:_Perfis", .T., .F.), ',')
-		u_log ('Perfis deste usuario como recebido no XML:', _aPerfNA)
+		//u_log2 ('debug', 'Perfis deste usuario como recebido no XML:')
+		//u_log2 ('debug', _aPerfNA)
 		// Complementa 5 posicoes caso necessario
 		do while len (_aPerfNA) < 5
 			aadd (_aPerfNA, 'null')
 		enddo
-		u_log ('Perfis deste usuario ajustados:', _aPerfNA)
+		//u_log ('Perfis deste usuario ajustados:', _aPerfNA)
 	endif
 	If empty(_sErros)
 		_oSQL := ClsSQL():New ()
@@ -1129,12 +1131,19 @@ Static function _ExecConsOrc()
 			_oSQL:_sQuery += "with C AS ("
 			_oSQL:_sQuery +=  " SELECT ORDEM, DESC_N1, DESC_N2, NIVEL, CONTA, DESCRICAO,"
 			_oSQL:_sQuery +=         " SUM (ORC_ANO)    AS ORC_ANO,"
+			_oSQL:_sQuery +=         " MAX (ORC_ANO_FP) AS ORC_ANO_FP,"
 			_oSQL:_sQuery +=         " SUM (ORC_ANO_AV) AS ORC_ANO_AV,"
 			_oSQL:_sQuery +=         " SUM (ORC_PER)    AS ORC_PER,"
+			_oSQL:_sQuery +=         " MAX (ORC_PER_FP) AS ORC_PER_FP,"
 			_oSQL:_sQuery +=         " SUM (ORC_PER_AV) AS ORC_PER_AV,"
+			_oSQL:_sQuery +=         " SUM (REA_MES)    AS REA_MES,"
+			_oSQL:_sQuery +=         " MAX (REA_MES_FP) AS REA_MES_FP,"
+			_oSQL:_sQuery +=         " SUM (REA_MES_AV) AS REA_MES_AV,"
 			_oSQL:_sQuery +=         " SUM (REA_PER)    AS REA_PER,"
+			_oSQL:_sQuery +=         " MAX (REA_PER_FP) AS REA_PER_FP,"
 			_oSQL:_sQuery +=         " SUM (REA_PER_AV) AS REA_PER_AV,"
 			_oSQL:_sQuery +=         " SUM (REA_ANT)    AS REA_ANT,"
+			_oSQL:_sQuery +=         " MAX (REA_ANT_FP) AS REA_ANT_FP,"
 			_oSQL:_sQuery +=         " SUM (REA_ANT_AV) AS REA_ANT_AV,"
 			_oSQL:_sQuery +=         " DESTACAR, FILTRACC"
 			_oSQL:_sQuery +=  " FROM VA_FCONS_ORCAMENTO_525 "
@@ -1185,12 +1194,19 @@ Static function _ExecConsOrc()
 				_XmlRet += 			"<Conta>"			 + IIf(Empty(alltrim((_sAliasQ) -> conta))				,'0' 	, alltrim((_sAliasQ) -> conta))				+ "</Conta>"
 				_XmlRet += 			"<CtiDesc01>"		 + IIf(Empty(alltrim((_sAliasQ) -> descricao))			,'-' 	, alltrim((_sAliasQ) -> descricao))			+ "</CtiDesc01>"
 				_XmlRet += 			"<OrcadoAno>"		 + alltrim (Transform (                                                 (_sAliasQ) -> orc_ano,     "999999999999.99")) + "</OrcadoAno>"
+				_XmlRet += 			"<FP>"				 +                                                                      (_sAliasQ) -> orc_ano_fp                       + "</FP>"
 				_XmlRet += 			"<OrcadoAnoAV>"		 + alltrim (Transform (iif (abs ((_sAliasQ) -> orc_ano_AV) > 999999, 0, (_sAliasQ) -> orc_ano_AV), "999999999999.99")) + "</OrcadoAnoAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
 				_XmlRet += 			"<Orcado>"			 + alltrim (Transform (                                                 (_sAliasQ) -> orc_per,     "999999999999.99")) + "</Orcado>"
+				_XmlRet += 			"<FP>"				 +                                                                      (_sAliasQ) -> orc_per_fp                       + "</FP>"
 				_XmlRet += 			"<OrcadoAV>"		 + alltrim (Transform (iif (abs ((_sAliasQ) -> orc_per_AV) > 999999, 0, (_sAliasQ) -> orc_per_AV), "999999999999.99")) + "</OrcadoAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
+				_XmlRet += 			"<ReaMes>"			 + alltrim (Transform (                                                 (_sAliasQ) -> rea_mes,     "999999999999.99")) + "</ReaMes>"
+				_XmlRet += 			"<FP>"				 +                                                                      (_sAliasQ) -> rea_mes_fp                       + "</FP>"
+				_XmlRet += 			"<ReaMesAV>"		 + alltrim (Transform (iif (abs ((_sAliasQ) -> rea_mes_AV) > 999999, 0, (_sAliasQ) -> rea_mes_AV), "999999999999.99")) + "</ReaMesAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
 				_XmlRet += 			"<Realizado>"		 + alltrim (Transform (                                                 (_sAliasQ) -> rea_per,     "999999999999.99")) + "</Realizado>"
+				_XmlRet += 			"<FP>"				 +                                                                      (_sAliasQ) -> rea_per_fp                       + "</FP>"
 				_XmlRet += 			"<RealizadoAV>"		 + alltrim (Transform (iif (abs ((_sAliasQ) -> rea_per_AV) > 999999, 0, (_sAliasQ) -> rea_per_AV), "999999999999.99")) + "</RealizadoAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
 				_XmlRet += 			"<RealizadoAnt>"	 + alltrim (Transform (                                                 (_sAliasQ) -> rea_ant,     "999999999999.99")) + "</RealizadoAnt>"
+				_XmlRet += 			"<FP>"				 +                                                                      (_sAliasQ) -> rea_ant_fp                       + "</FP>"
 				_XmlRet += 			"<RealizadoAntAV>"	 + alltrim (Transform (iif (abs ((_sAliasQ) -> rea_ant_AV) > 999999, 0, (_sAliasQ) -> rea_ant_AV), "999999999999.99")) + "</RealizadoAntAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
 				_XmlRet += 			"<Destacar>"		 + (_sAliasQ) -> destacar + "</Destacar>"
 				_XmlRet += 			"<FilCC>"			 + alltrim ((_sAliasQ) -> FiltraCC) + "</FilCC>"
@@ -1198,6 +1214,7 @@ Static function _ExecConsOrc()
 				_sErros += "Modelo de orcamento '" + _sModelo + "' desconhecido ou sem tratamento na montagem do XML"
 			endif
 			_XmlRet += 		"</OrcamentoItem>"
+
 			(_sAliasQ) -> (dbskip ())
 		EndDo
 
@@ -1208,7 +1225,7 @@ Static function _ExecConsOrc()
 		
 		_sMsgRetWS := _XmlRet
 	EndIf
-	u_logFim ()
+//	u_logFim ()
 Return 
 
 
@@ -1220,8 +1237,6 @@ static function _IncCarSaf ()
 	local _sBalanca  := ''
 	local _sAssoc    := ''
 	local _sLoja     := ''
-//	local _dDtCheg   := ctod ('')
-//	local _sHrCheg   := ''
 	local _sSerieNF  := ''
 	local _sNumNF    := ''
 	local _sChvNfPe  := ''
@@ -1240,6 +1255,7 @@ static function _IncCarSaf ()
 	local _oSQL      := NIL
 	local _aRegSA2   := {}
 	local _sSivibe   := ''
+	local _sEspumant := ''
 
 	u_log2 ('info', 'Iniciando web service de geracao de carga.')
 	u_log2 ('debug', 'cFilAnt:' + cFilAnt)
@@ -1303,31 +1319,34 @@ static function _IncCarSaf ()
 	endif
 
 	// Leitura dos itens de forma repetitiva (tentei ler em array mas nao funcionou e tenho pouco tempo pra ficar testando...)
-	if empty (_sErros) ; _sCadVit  = _ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola1", .T., .F.) ; endif
-	if empty (_sErros) ; _sVaried  = _ExtraiTag ("_oXML:_WSAlianca:_variedade1",        .T., .F.) ; endif
-	if empty (_sErros) ; _sEmbalag = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem1",        .T., .F.) ; endif
-	if empty (_sErros) ; _sLote    = _ExtraiTag ("_oXML:_WSAlianca:_Lote1",             .F., .F.) ; endif
-	if empty (_sErros) ; _sSivibe  = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe1",           .F., .F.) ; endif
+	if empty (_sErros) ; _sCadVit   = _ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola1", .T., .F.) ; endif
+	if empty (_sErros) ; _sVaried   = _ExtraiTag ("_oXML:_WSAlianca:_variedade1",        .T., .F.) ; endif
+	if empty (_sErros) ; _sEmbalag  = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem1",        .T., .F.) ; endif
+	if empty (_sErros) ; _sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote1",             .F., .F.) ; endif
+	if empty (_sErros) ; _sSivibe   = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe1",           .F., .F.) ; endif
+	if empty (_sErros) ; _sEspumant = _ExtraiTag ("_oXML:_WSAlianca:_Espumante1",        .F., .F.) ; endif
 	if empty (_sErros)
-		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe})
+		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
 	endif
 	//
-	if empty (_sErros) ; _sCadVit  = _ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola2", .F., .F.) ; endif
-	if empty (_sErros) ; _sVaried  = _ExtraiTag ("_oXML:_WSAlianca:_variedade2",        .F., .F.) ; endif
-	if empty (_sErros) ; _sEmbalag = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem2",        .F., .F.) ; endif
-	if empty (_sErros) ; _sLote    = _ExtraiTag ("_oXML:_WSAlianca:_Lote2",             .F., .F.) ; endif
-	if empty (_sErros) ; _sSivibe  = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe2",           .F., .F.) ; endif
+	if empty (_sErros) ; _sCadVit   = _ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola2", .F., .F.) ; endif
+	if empty (_sErros) ; _sVaried   = _ExtraiTag ("_oXML:_WSAlianca:_variedade2",        .F., .F.) ; endif
+	if empty (_sErros) ; _sEmbalag  = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem2",        .F., .F.) ; endif
+	if empty (_sErros) ; _sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote2",             .F., .F.) ; endif
+	if empty (_sErros) ; _sSivibe   = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe2",           .F., .F.) ; endif
+	if empty (_sErros) ; _sEspumant = _ExtraiTag ("_oXML:_WSAlianca:_Espumante2",        .F., .F.) ; endif
 	if empty (_sErros) .and. ! empty (_sCadVit)  // Pode nao ter 2 itens na carga
-		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe})
+		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
 	endif
 	//
-	if empty (_sErros) ; _sCadVit  = _ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola3", .F., .F.) ; endif
-	if empty (_sErros) ; _sVaried  = _ExtraiTag ("_oXML:_WSAlianca:_variedade3",        .F., .F.) ; endif
-	if empty (_sErros) ; _sEmbalag = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem3",        .F., .F.) ; endif
-	if empty (_sErros) ; _sLote    = _ExtraiTag ("_oXML:_WSAlianca:_Lote3",             .F., .F.) ; endif
-	if empty (_sErros) ; _sSivibe  = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe3",           .F., .F.) ; endif
+	if empty (_sErros) ; _sCadVit   = _ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola3", .F., .F.) ; endif
+	if empty (_sErros) ; _sVaried   = _ExtraiTag ("_oXML:_WSAlianca:_variedade3",        .F., .F.) ; endif
+	if empty (_sErros) ; _sEmbalag  = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem3",        .F., .F.) ; endif
+	if empty (_sErros) ; _sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote3",             .F., .F.) ; endif
+	if empty (_sErros) ; _sSivibe   = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe3",           .F., .F.) ; endif
+	if empty (_sErros) ; _sEspumant = _ExtraiTag ("_oXML:_WSAlianca:_Espumante2",        .F., .F.) ; endif
 	if empty (_sErros) .and. ! empty (_sCadVit)  // Pode nao ter 3 itens na carga
-		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe})
+		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
 	endif
 	u_log2 ('info', 'Itens da carga:')
 	u_log2 ('info', _aItensCar)

@@ -137,7 +137,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		private aCols := {}
 		for _nItemCar = 1 to len (_aItensCar)
 			if ! sb1 -> (dbseek (xfilial ("SB1") + _aItensCar [_nItemCar, 2], .F.))
-				_sErros += "Variedade '" + _aItensCar [_nItemCar, 2] + "' nado encontrada no cadastro de itens."
+				_sErros += "Variedade '" + _aItensCar [_nItemCar, 2] + "' nao encontrada no cadastro de itens."
 			else
 				// Verifica em qual das linhas da array de cadastros viticolas encontra-se esta variedade.
 				//u_log ('procurando variedade', sb1 -> b1_cod, 'nos cad. viticolas abaixo:')

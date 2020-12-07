@@ -455,7 +455,7 @@ METHOD CadVitic () Class ClsAssoc
 	// _oSQL:_sQuery += " WHERE V.ASSOCIADO  = '" + ::Codigo + "'"
 	// _oSQL:_sQuery +=   " AND V.LOJA_ASSOC = '" + ::Loja   + "'"
 	// _oSQL:_sQuery += " ORDER BY CAD_VITIC, GRPFAM, PRODUTO"
-	_oSQL:_sQuery += "SELECT GX0001_VITICOLA_CODIGO"       // 1
+	_oSQL:_sQuery += "SELECT GX0001_PROPRIEDADE_CODIGO"    // 1
 	_oSQL:_sQuery +=      ", GX0001_GRUPO_CODIGO"          // 2
 	_oSQL:_sQuery +=      ", GX0001_GRUPO_DESCRICAO"       // 3
 	_oSQL:_sQuery +=      ", GX0001_PRODUTO_CODIGO"        // 4
@@ -469,7 +469,7 @@ METHOD CadVitic () Class ClsAssoc
 	_oSQL:_sQuery +=  " FROM GX0001_AGENDA_SAFRA V"
 	_oSQL:_sQuery += " WHERE GX0001_ASSOCIADO_CODIGO = '" + ::Codigo + "'"
 	_oSQL:_sQuery +=   " AND GX0001_ASSOCIADO_LOJA   = '" + ::Loja   + "'"
-	_oSQL:_sQuery += " ORDER BY GX0001_VITICOLA_CODIGO, GX0001_GRUPO_CODIGO, GX0001_PRODUTO_CODIGO"
+	_oSQL:_sQuery += " ORDER BY GX0001_PROPRIEDADE_CODIGO, GX0001_GRUPO_CODIGO, GX0001_PRODUTO_CODIGO"
 	_oSQL:Log ()
 
 	// Poderia simplesmente pegar o retorno da query, mas usando os includes facilito

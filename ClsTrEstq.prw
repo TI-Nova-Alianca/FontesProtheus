@@ -13,7 +13,8 @@
 //                      - Criado atributo LibNaIncl.
 // 26/09/2019 - Cláudia - Incluída validação de lote mínimo.
 // 27/11/2020 - Robert  - Quando existir etiqueta relacionada, tenta inutiliza-la automaticamente.
-//            - Transf. envolvendo o AX01 (FullWMS) liberadas, momentaneamente, para aceitar liberacao manual (sem ser o Full).
+//                      - Transf. envolvendo o AX01 (FullWMS) liberadas, momentaneamente, para aceitar liberacao manual (sem ser o Full).
+// 04/12/2020 - RObert  - Criado tratamento para produto destino diferente do produto origem.
 //
 
 // ------------------------------------------------------------------------------------
@@ -130,7 +131,7 @@ METHOD New (_nRecno) Class ClsTrEstq
 		::OP        = zag -> zag_op
 		::Motivo    = zag -> zag_Motivo
 		::ProdOrig  = zag -> zag_PrdOri
-		::ProdDest  = zag -> zag_PrdOri  // Inicialmente a ideia eh transferir sempre para o mesmo produto
+		::ProdDest  = zag -> zag_PrdDst
 		::AlmOrig   = zag -> zag_AlmOri
 		::AlmDest   = zag -> zag_AlmDst
 		::EndOrig   = zag -> zag_EndOri
@@ -164,7 +165,7 @@ METHOD AtuZAG (_sCampo, _xValor) Class ClsTrEstq
 	local _lRet := .F.
 	local _aAreaAnt  := U_ML_SRArea ()
 
-	u_log ('Atualizando campo', _sCampo, 'com', _xValor)
+	u_log2 ('info', 'Atualizando campo ' + _sCampo + ' com ' + cvaltochar (_xValor))
 	if ::RegZAG > 0
 		zag -> (dbgoto (::RegZAG))
 		reclock ("ZAG", .F.)
@@ -320,7 +321,7 @@ METHOD GeraSD3 () class ClsTrEstq
 	local _sChaveEx  := 'ZAG' + ::Docto
 	local _aRegsSD3  := {}
 
-	u_logIni (GetClassName (::Self) + '.' + procname ())
+	u_log2 ('info', 'Iniciando ' + GetClassName (::Self) + '.' + procname ())
 
 	// Se o produto ainda nao existe no almoxarifado destino, cria-o, para nao bloquear a transferencia de estoque.
 	if _lContinua
@@ -348,7 +349,7 @@ METHOD GeraSD3 () class ClsTrEstq
 		aadd(_aItens,'')           //D3_UM					Unidade de Medida Origem
 		aadd(_aItens,::AlmOrig)    //Almox origem
 		aadd(_aItens,::EndOrig)    //Endereco origem
-		aadd(_aItens,::ProdDest)   //Codigo do produto destino (inicilmente a ideia eh sempre transferir para o msmo produto)
+		aadd(_aItens,::ProdDest)   //Codigo do produto destino
 		aadd(_aItens,'')           //D3_DESCRI				DescriÁ„o do Produto de Destino
 		aadd(_aItens,'')           //D3_UM					Unidade de Medida de Destino
 		aadd(_aItens,::AlmDest)    //Almox destino
@@ -415,7 +416,6 @@ METHOD GeraSD3 () class ClsTrEstq
 		endif
 	endif
 
-	u_logFim (GetClassName (::Self) + '.' + procname ())
 return _lContinua
 
 
@@ -664,6 +664,7 @@ METHOD Grava () Class ClsTrEstq
 		zag -> zag_op     = ::OP
 		zag -> zag_Motivo = ::Motivo
 		zag -> zag_PrdOri = ::ProdOrig
+		zag -> zag_PrdDst = ::ProdDest
 		zag -> zag_AlmOri = ::AlmOrig
 		zag -> zag_AlmDst = ::AlmDest
 		zag -> zag_EndOri = ::EndOrig

@@ -46,7 +46,8 @@
 // 08/10/2020 - Robert  - Verificacao SD5 x SD3 nao considerava D5_LOTECTL = D3_LOTECTL.
 //                      - Passa a enviar a query junto no e-mail, para ajudar em testes posteriores.
 // 22/10/2020 - Robert  - Adicionados acessos que deveriam e que nao deveriam existir, nas verif. de acessos do sigacfg.
-// 23/11/2020 - Robert  - Crida validacao 76 (Todos os grupos deveriam ter privilegio 000002).
+// 23/11/2020 - Robert  - Criada validacao 76 (Todos os grupos deveriam ter privilegio 000002).
+// 07/12/2020 - Robert  - Criada validacao 77 (pessoa do Metadados referenciando mais de um usuario no Protheus).
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -3000,6 +3001,40 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=                      " AND R.GROUP_ID = G.GR__ID"
 			::Query +=                      " AND R.GR__RL_ID IN ('000002'))"  // Privilegio 'base'.
 			::Query +=  "ORDER BY G.GR__ID"
+
+		case ::Numero == 77
+			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+			::Setores    = 'INF'
+			::Descricao  = 'Pessoa do Metadados referenciando mais de um usuario no Protheus'
+			::Query := "SELECT *"
+			::Query +=  " FROM VA_VUSR_PROTHEUS_X_METADADOS"
+			::Query += " WHERE PESSOA IN (SELECT PESSOA"
+			::Query +=                    " FROM VA_VUSR_PROTHEUS_X_METADADOS"
+			::Query +=                   " GROUP BY PESSOA"
+			::Query +=                  " HAVING COUNT (*) > 1)"
+			::Query += " ORDER BY USR_CARGO"
+
+		case ::Numero == 78
+			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+			::Setores    = 'INF'
+			::Descricao  = 'Usuarios Protheus nao relacionados a nenhuma pessoa do Metadados'
+			::Query := "SELECT *"
+			::Query +=  " FROM VA_VUSR_PROTHEUS_X_METADADOS"
+			::Query += " WHERE USR_MSBLQL != '1'"
+			::Query +=   " AND USR_CODIGO NOT LIKE 'rep_%'"  // Representantes estao sendo migrados para o Mercanet
+			::Query +=   " AND USR_CODIGO NOT LIKE 'cupom.%'"  // Usuarios 'caixa' pare emissao de cupom fiscal nas lojas
+			::Query +=   " AND PESSOA IS NULL"
+			::Query += " ORDER BY USR_ID"
+
+		case ::Numero == 79
+			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+			::Setores    = 'INF'
+			::Descricao  = 'Pessoas demitidas cujo usuario nao foi bloqueado no Protheus'
+			::Query := "SELECT *"
+			::Query +=  " FROM VA_VUSR_PROTHEUS_X_METADADOS"
+			::Query += " WHERE USR_MSBLQL != '1'"
+			::Query +=   " AND SITUACAO in ('3', '4')"
+			::Query += " ORDER BY USR_ID"
 
 		otherwise
 			::UltMsg = "Verificacao numero " + cvaltochar (::Numero) + " nao definida."
