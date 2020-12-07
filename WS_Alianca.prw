@@ -49,6 +49,7 @@
 // 18/11/2020 - Sandra/Robert  - Alteração campo A1_GRPTRIB DE 002 para 003
 // 04/12/2020 - Robert  - Tags novas na geracao de cargas de safra
 //                      - Criada tag <FP> na consulta de orcamentos a ser retornada para o NaWeb (GLPI 8900).
+// 07/12/2020 - Robert  - Criadas tags <REA_MES> na consulta de orcamentos a ser retornada para o NaWeb (GLPI 8893).
 //
 
 // ----------------------------------------------------------------------------------------------------------
@@ -1135,6 +1136,9 @@ Static function _ExecConsOrc()
 			_oSQL:_sQuery +=         " SUM (ORC_PER)    AS ORC_PER,"
 			_oSQL:_sQuery +=         " MAX (ORC_PER_FP) AS ORC_PER_FP,"
 			_oSQL:_sQuery +=         " SUM (ORC_PER_AV) AS ORC_PER_AV,"
+			_oSQL:_sQuery +=         " SUM (REA_MES)    AS REA_MES,"
+			_oSQL:_sQuery +=         " MAX (REA_MES_FP) AS REA_MES_FP,"
+			_oSQL:_sQuery +=         " SUM (REA_MES_AV) AS REA_MES_AV,"
 			_oSQL:_sQuery +=         " SUM (REA_PER)    AS REA_PER,"
 			_oSQL:_sQuery +=         " MAX (REA_PER_FP) AS REA_PER_FP,"
 			_oSQL:_sQuery +=         " SUM (REA_PER_AV) AS REA_PER_AV,"
@@ -1195,6 +1199,9 @@ Static function _ExecConsOrc()
 				_XmlRet += 			"<Orcado>"			 + alltrim (Transform (                                                 (_sAliasQ) -> orc_per,     "999999999999.99")) + "</Orcado>"
 				_XmlRet += 			"<FP>"				 +                                                                      (_sAliasQ) -> orc_per_fp                       + "</FP>"
 				_XmlRet += 			"<OrcadoAV>"		 + alltrim (Transform (iif (abs ((_sAliasQ) -> orc_per_AV) > 999999, 0, (_sAliasQ) -> orc_per_AV), "999999999999.99")) + "</OrcadoAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
+				_XmlRet += 			"<ReaMes>"			 + alltrim (Transform (                                                 (_sAliasQ) -> rea_mes,     "999999999999.99")) + "</ReaMes>"
+				_XmlRet += 			"<FP>"				 +                                                                      (_sAliasQ) -> rea_mes_fp                       + "</FP>"
+				_XmlRet += 			"<ReaMesAV>"		 + alltrim (Transform (iif (abs ((_sAliasQ) -> rea_mes_AV) > 999999, 0, (_sAliasQ) -> rea_mes_AV), "999999999999.99")) + "</ReaMesAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
 				_XmlRet += 			"<Realizado>"		 + alltrim (Transform (                                                 (_sAliasQ) -> rea_per,     "999999999999.99")) + "</Realizado>"
 				_XmlRet += 			"<FP>"				 +                                                                      (_sAliasQ) -> rea_per_fp                       + "</FP>"
 				_XmlRet += 			"<RealizadoAV>"		 + alltrim (Transform (iif (abs ((_sAliasQ) -> rea_per_AV) > 999999, 0, (_sAliasQ) -> rea_per_AV), "999999999999.99")) + "</RealizadoAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
