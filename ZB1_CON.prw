@@ -19,6 +19,8 @@
 // 03/11/2020 - Claudia - Incluida a gravação do SXK
 // 19/11/2020 - Claudia - Retirada a data de emissão de vendas link
 // 04/12/2020 - Claudia - Alteração de ajustes para arredondamento. GLPI: 8970
+// 07/12/2020 - Claudia - Inclusao do calculo de taxa para registros que a cielo 
+//              adiciona em apenas um cabeçalho.
 //
 // -----------------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -166,9 +168,13 @@ User Function ZB1_CON(_sConciliar)
 								u_log("DIFERENÇA DE ARREDONDAMENTO TAXA:Registro NSU+AUT:" + _sNSUCod + _sAutCod + " Valor com diferença de arredondameto. Diferença:" + alltrim(str(_nDif)))
 							Else
 								// Diferença é maior que a permitida
-								_lContinua := .F.
-								u_log("DIFERENÇA DE TAXA: Registro NSU+AUT:" + _sNSUCod + _sAutCod + " Valor com diferença e não será importado. Diferença:" + alltrim(str(_nDif)))
-								u_help("DIFERENÇA DE TAXA: Registro NSU+AUT:" + _sNSUCod + _sAutCod + " Valor com diferença e não será importado. Diferença:" + alltrim(str(_nDif)))
+								// Pode ser devido a cielo "juntar" itens
+								// dessa forma será calculado valor do titulo Protheus * percentual da taxa
+								_nPerTax := (_aZB1[i,4]/100) 
+								_nVlrTax := ROUND(_nVlrTit * _nPerTax,2)
+								_nVlrLiq := _nVlrPar - _nVlrTax
+								_lContinua := .T.
+								u_log("DIFERENÇA DE TAXA:Registro NSU+AUT:" + _sNSUCod + _sAutCod + " Valor CALCULADO pelo percentual da taxa.")
 							EndIf
 						EndIf
 
