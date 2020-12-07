@@ -87,7 +87,7 @@ User Function CRMA980()
         ElseIf cIdPonto == "BUTTONBAR"
            // xRet := {}
 		   	If cFilAnt == '01'
-				xRet := {{"Obs.Financeiro", "Obs.Financeiro", {||U_VA_OBSFIN()}}}
+				xRet := {{"Obs.Financeiro", "Obs.Financeiro", {||U_VA_OBSFIN('1')}}}
 		   	EndIf
         EndIf
     EndIf

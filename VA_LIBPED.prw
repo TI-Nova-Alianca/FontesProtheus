@@ -227,11 +227,11 @@ User Function VA_LIBPED()
 		aadd (aRotina, {"&Libera"             			, "U_L_LIBPED"              , 0 ,5})
 		aadd (aRotina, {"&Altera Banco"       			, "U_A_LIBPED(TRB->PEDIDO)" , 0 ,5})
 		aadd (aRotina, {"&Totais por Banco"   			, "U_T_LIBPED"              , 0 ,5})
-		//aadd (aRotina, {"&Dados adicionais clientes"    , "MATA030" 				, 0 ,5})
 		aadd (aRotina, {"&Dados adicionais clientes"    , "U_D_LIBPED(TRB->CODIGO,TRB->LOJA)" , 0 ,5})
+		aadd (aRotina, {"&Observações"    				, "U_VA_OBSFIN('2',TRB->CODIGO,TRB->LOJA)" , 0 ,5})
 		
 		Private cDelFunc := ".T."
-		private _sArqLog := U_NomeLog ()
+		_sArqLog := U_NomeLog ()
 		u_logId ()
 		
 		dbSelectArea("TRB")

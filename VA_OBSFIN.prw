@@ -17,28 +17,34 @@
 #include "rwmake.ch"
 #Include "PROTHEUS.CH"   
 
-User Function VA_OBSFIN
+User Function VA_OBSFIN(_sTipo,_sCliente, _sLoja)
 	Private cCadastro := "Observações financeiras "	
 	Private cDelFunc  := ".T."
 	Private cString   := "SZN"
-	Private aRotina   := {	{"Observações"	,"U_VAOBSFIN(M->A1_COD, M->A1_LOJA )"	,0,2} ,;
-							{"Visualizar"	,"U_VAOBSVIS(M->A1_COD, M->A1_LOJA )"	,0,2} ,;
-                            {"Excluir"   	,"U_VAOBSEXC(M->A1_COD, M->A1_LOJA )"	,0,2}  }
-
+	Private aRotina   := {}
 
 	If !u_zzuvl ('036', __cUserId, .T.)
 		Return
 	EndIf
 
-	_VerificaOBS(M->A1_COD, M->A1_LOJA)
+	If _sTipo == '1'
+		_sCliente := M->A1_COD
+		_sLoja    := M->A1_LOJA
+	EndIf
+
+	aRotina   := {	{"Observações"	,"U_VAOBSFIN('"+_sCliente +"','"+_sLoja+"')"	,0,2} ,;
+					{"Visualizar"	,"U_VAOBSVIS('"+_sCliente +"','"+_sLoja+"')"	,0,2} ,;
+					{"Excluir"   	,"U_VAOBSEXC('"+_sCliente +"','"+_sLoja+"')"	,0,2}  }
+
+	_VerificaOBS(_sCliente, _sLoja)
 
 	dbSelectArea("SZN")
 	dbSetOrder(1)
 	
 	cExprFilTop := " D_E_L_E_T_ = '' "
     cExprFilTop += " AND ZN_CODEVEN = 'SA1004'"
-    cExprFilTop += " AND ZN_CLIENTE = '" + M->A1_COD  + "'"
-    cExprFilTop += " AND ZN_LOJACLI = '" + M->A1_LOJA + "'"
+    cExprFilTop += " AND ZN_CLIENTE = '" + _sCliente + "'"
+    cExprFilTop += " AND ZN_LOJACLI = '" + _sLoja    + "'"
 
     aCabTela  := {} 
     aadd (aCabTela,{ "Data"	        ,"ZN_DATA"	    })
@@ -139,6 +145,7 @@ User Function VAOBSVIS(_sCliente, _sLoja)
 
     _sData := DTOS(SZN->ZN_DATA)
     _sHora := SZN->ZN_HORA
+
 
     _oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT ZN_DATA, ZN_USUARIO, ISNULL(CAST(CAST(ZN_TXT AS VARBINARY(8000)) AS VARCHAR(8000)),'') "
