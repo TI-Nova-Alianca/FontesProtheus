@@ -29,6 +29,7 @@
 //                     - Melhorados logs e retornos para o Metadados.
 //                     - Incluidas tags para catalogo de fontes.
 // 16/09/2020 - Robert - Melhorado controle/logs de desmembramento em mais de uma filial.
+// 07/12/2020 - Robert - Desabilitada gravacao do campo E2_ORIGEM como 'U_METAFI' para que os titulos possam ser excluidos manualmente pelo financeiro, caso necessario.
 //
 
 // ------------------------------------------------------------------------------------
@@ -213,7 +214,7 @@ static function _Incluir ()
 			endif
 			
 //			U_LOG2 ('DEBUG', (_sAliasQ) -> nrosequencial)
-//			IF (_sAliasQ) -> nrosequencial == 7070  // SITUACAO ESPECIFICA QUE ESTAVA SEM NATUREZA
+//			IF (_sAliasQ) -> nrosequencial == 7154 //7070  // SITUACAO ESPECIFICA QUE ESTAVA SEM NATUREZA
 //				_GeraSE2 ((_sAliasQ) -> nrosequencial, (_sAliasQ) -> Fornece, '120401', _dEmis, stod ((_sAliasQ) -> vencto), (_sAliasQ) -> valor, (_sAliasQ) -> hist)
 //			ELSE
 			_GeraSE2 ((_sAliasQ) -> nrosequencial, (_sAliasQ) -> Fornece, (_sAliasQ) -> Natureza, _dEmis, stod ((_sAliasQ) -> vencto), (_sAliasQ) -> valor, (_sAliasQ) -> hist)
@@ -305,7 +306,7 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 		aadd (_aAutoSE2, {"E2_HIST"   , alltrim (U_NoAcento (_sHistSE2)),         Nil})
 		aadd (_aAutoSE2, {"E2_PARCELA", _sParcela,                                         Nil})
 		aadd (_aAutoSE2, {"E2_VACHVEX", _sChvEx, Nil})
-		aadd (_aAutoSE2, {"E2_ORIGEM" , "U_METAFI",                                        Nil})
+	//	aadd (_aAutoSE2, {"E2_ORIGEM" , "U_METAFI",                                        Nil})
 		_aAutoSE2 := aclone (U_OrdAuto (_aAutoSE2))
 		u_log2 ('info', _aAutoSE2)
 		lMsErroAuto	:= .f.
