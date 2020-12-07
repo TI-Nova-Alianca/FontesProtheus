@@ -11,8 +11,9 @@
 // #Modulos 		  #FIN 
 //
 //  Historico de alteracoes:
+//  07/12/2020 - Claudia - Incluido valor de indenização no totalizador do PDF de comissão. GLPI: 8991 
 //
-// --------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
 #include "rwmake.ch"

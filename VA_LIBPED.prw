@@ -3,6 +3,13 @@
 // Data.......: 14/04/2016
 // Descricao..: Analise e Libera Pedidos com Bloqueio Financeiro
 //
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Tela #Atualizacao
+// #Descricao         #Analise e Libera Pedidos com Bloqueio Financeiro
+// #PalavasChave      #liberacao_de_pedidos #bloqueio_financeiro
+// #TabelasPrincipais #SC5 #SC6 
+// #Modulos   		  #FIN 
+//
 // Historico de alteracoes:
 // 14/04/2016 - criado novo indice por banco
 // 03/05/2016 - ao liberar o pedido nao estava "sumindo" da tela de seleÃ§Ã£o
@@ -14,22 +21,17 @@
 // 15/10/2019 - Sandra/Claudia - criado novo indice por Nome
 // 19/12/2019 - Cláudia - Criação de tela de dados do cliente e gravação do campo OBS
 // 13/01/2020 - Claudia - Inclusão da função <ArqTrb> (exigencia release 12.1.25 do Protheus)
+// 07/12/2020 - Claudia - Inclusão de botao para visualização de observações de clientes. GLPI: 8971
 //
+// ----------------------------------------------------------------------------------------------
 #include 'totvs.ch'
 
 User Function VA_LIBPED()
 	
 	local _aCores   := {}
-	//Local cArqTRB   := ""
-	//Local cInd1     := ""
-	//Local cInd2     := ""
-	//Local cInd3     := ""
-	//Local cInd4     := ""
-	//Local nI        := 0
 	Local aStruct   := {}
 	Local aHead     := {}
 	Local _aArqTrb  := {}
-	//Local _aIndices := {}
 	Local j		    := 0
 	Local i		    := 0
 	Private bFiltraBrw := {|| Nil}
@@ -75,24 +77,6 @@ User Function VA_LIBPED()
 		AAdd( aStruct, { "PED_REG" , "N", 08, 0 } )
 		
 		U_ArqTrb ("Cria", "TRB", aStruct, {"PEDIDO","CODIGO+LOJA","BANCO+PEDIDO","NOME"}, @_aArqTrb)		
-		
-//		// cria arquivo de trabalho
-//		cArqTRB := CriaTrab( aStruct, .T. )
-//		dbUseArea( .T., __LocalDriver, cArqTRB, "TRB", .F., .F. )
-//		cInd1 := Left( cArqTRB, 7 ) + "1"
-//		IndRegua( "TRB", cInd1, "PEDIDO", , , "Criando Ã­ndices...")
-//		cInd2 := Left( cArqTRB, 7 ) + "2"
-//		IndRegua( "TRB", cInd2, "CODIGO + LOJA", , , "Criando Ã­ndices...")
-//		cInd3 := Left( cArqTRB, 7 ) + "3"
-//		IndRegua( "TRB", cInd3, "BANCO + PEDIDO", , , "Criando Ã­ndices...")
-//		cInd4 := Left( cArqTRB, 7 ) + "4"
-//		IndRegua( "TRB", cInd4, "NOME", , , "Criando Ã­ndices...")
-//		
-//		dbClearIndex()
-//		dbSetIndex( cInd1 + OrdBagExt() )
-//		dbSetIndex( cInd2 + OrdBagExt() )
-//		dbSetIndex( cInd3 + OrdBagExt() )
-//		dbSetIndex( cInd4 + OrdBagExt() )
 
 		// gera arquivo dados dos pedidos
 		_sSQL := ""

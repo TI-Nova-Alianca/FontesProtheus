@@ -11,6 +11,8 @@
 // #Modulos   		  #FIN 
 //
 // Historico de alteracoes:
+// 07/12/2020 - Claudia - Inclusão de botao para visualização de observações 
+//                        de clientes. GLPI: 8971
 //
 // --------------------------------------------------------------------------
 
@@ -36,6 +38,7 @@ User Function VA_OBSFIN(_sTipo,_sCliente, _sLoja)
 					{"Visualizar"	,"U_VAOBSVIS('"+_sCliente +"','"+_sLoja+"')"	,0,2} ,;
 					{"Excluir"   	,"U_VAOBSEXC('"+_sCliente +"','"+_sLoja+"')"	,0,2}  }
 
+
 	_VerificaOBS(_sCliente, _sLoja)
 
 	dbSelectArea("SZN")
@@ -53,6 +56,7 @@ User Function VA_OBSFIN(_sTipo,_sCliente, _sLoja)
 	
     mBrowse(6,1,22,75,"SZN",aCabTela,,,,,,,,,,,,,cExprFilTop)
 Return
+//
 // --------------------------------------------------------------------------
 // Abre tela para incluir observações
 User Function VAOBSFIN(_sCliente, _sLoja)
