@@ -71,9 +71,9 @@ static function _AndaLogo ()
 //	local _sWarning  := ''
 //	local _oCtaCorr  := NIL
 //	local _nParc     := 0
-//	local _oAssoc    := NIL
-//	local _aAssoc := {}
-//	local _nAssoc := 0
+	local _oAssoc    := NIL
+	local _aAssoc := {}
+	local _nAssoc := 0
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
@@ -83,8 +83,28 @@ static function _AndaLogo ()
 return
 
 
-
-
+/*
+	// Testes metodos associados.
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT DISTINCT ZI_ASSOC, ZI_LOJASSO"
+	_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
+	_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
+	_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC between '000161' and '000167'" //'012351' and '012360'"
+	_oSQL:_sQuery +=  " ORDER BY ZI_ASSOC, ZI_LOJASSO"
+	_aAssoc = _oSQL:Qry2Array ()
+	_sResult = ''
+	for _nAssoc = 1 to len (_aAssoc)
+		_oAssoc := ClsAssoc():New (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
+		//_aSld1 := aclone (_oAssoc:SaldoEmOLD (stod ('20200331')))
+		//_aSld2 := aclone (_oAssoc:SaldoEm (stod ('20200331')))
+		u_log (_oAssoc:CadVitic ())
+	//	if ! _oAssoc:CalcCM ('032020', 1.0, 1.0, 999.99, .T., .F.)
+	//		u_help (_oAssoc:Codigo + "/" + _oAssoc:Loja + ' - ' + alltrim (_oAssoc:Nome) + _oAssoc:UltMsg,, .t.)
+	//	endif
+	next
+return
+*/
 /*
 	cPerg := "VA_RTSAF"
 	U_GravaSX1 (cPerg, "01", stod ('20200131'))
@@ -673,32 +693,6 @@ RETURN
 	U_GravaSX1 (cPerg, '01', '2020')
 	U_GravaSX1 (cPerg, '02', '2020')
 	u_va_xls53 (.T.)
-return
-*/
-/*
-	// Testes metodos associados.
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT DISTINCT ZI_ASSOC, ZI_LOJASSO"
-	_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
-	_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
-	_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC between '012351' and '012360'"
-	_oSQL:_sQuery +=  " ORDER BY ZI_ASSOC, ZI_LOJASSO"
-	_aDados = _oSQL:Qry2Array ()
-	_sResult = ''
-	for _nDado = 1 to len (_aDados)
-		_oAssoc := ClsAssoc():New (_aDados [_nDado, 1], _aDados [_nDado, 2])
-		_aSld1 := aclone (_oAssoc:SaldoEmOLD (stod ('20200331')))
-		_aSld2 := aclone (_oAssoc:SaldoEm (stod ('20200331')))
-		_sLinImp = _aDados [_nDado, 1] + _aDados [_nDado, 2] + ' ' + transform (_aSld1 [1], '@E 999,999,999.99') + ' ' + transform (_aSld2 [1], '@E 999,999,999.99') + ' ' + transform (_aSld1 [2], '@E 999,999,999.99') + ' ' + transform (_aSld2 [2], '@E 999,999,999.99');
-		                                                           + transform (_aSld1 [3], '@E 999,999,999.99') + ' ' + transform (_aSld2 [3], '@E 999,999,999.99') + ' ' + transform (_aSld1 [4], '@E 999,999,999.99') + ' ' + transform (_aSld2 [4], '@E 999,999,999.99')
-		u_log (_sLinImp)
-		_sResult += _sLinImp + chr (13) + chr (10)
-	//	if ! _oAssoc:CalcCM ('032020', 1.0, 1.0, 999.99, .T., .F.)
-	//		u_help (_oAssoc:Codigo + "/" + _oAssoc:Loja + ' - ' + alltrim (_oAssoc:Nome) + _oAssoc:UltMsg,, .t.)
-	//	endif
-	next
-	u_log (_sResult)
 return
 */
 /*
