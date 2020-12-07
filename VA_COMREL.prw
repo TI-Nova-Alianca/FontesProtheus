@@ -464,8 +464,9 @@ Static Function PrintReport(oReport)
 			//
 			// ----------------------------------------------------------------------------------------------------------
 			// Indenização
-			_nTotalInde := _nVlrCom // Sem IR
+			_nTotalInde := _nTotComis - _nVlrTVerbas //_nVlrCom // Sem IR
 			_nIndeniz = ROUND(_nTotalInde /12 , 2)
+
 			_nLinha :=  oReport:Row()
 			_nLinha:= _PulaFolha(_nLinha)
 			oReport:PrintText("VLR INDENIZAÇÃO 1/12 " + IIF (_sTipIndeniz ='S', 'PAGA', 'PROVISIONADA')	+":" ,_nLinha,100)

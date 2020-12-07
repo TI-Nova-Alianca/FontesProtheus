@@ -471,7 +471,7 @@ Static Function _GeraPDF_Email()
 		_ImprimeCabec(_sVend, _sNomeVend, @_wpag, @nlinha) // Imprime cabeçalho
 		oPrint:Say(nLinha,0150,  "TOTAL COMISSÃO A RECEBER:"												,oFont12n)
 		oPrint:Say(nLinha,0900,  PADL('R$' + Transform(_nVlrCom - _nVlrIR, "@E 999,999,999.99"),20,' ')   	,oFont12n)
-		nLinha += 100
+		nLinha += 50
 		
 		If (nLinha/50) > 32
 		    _wpag += 1	
@@ -482,7 +482,11 @@ Static Function _GeraPDF_Email()
 		// Indenização
 		_nTotalInde := _nTotComis - _nVlrTVerbas // Sem IR
 		_nIndeniz = ROUND(_nTotalInde /12 , 2)
-		
+
+		oPrint:Say(nLinha,0150,  "VLR INDENIZAÇÃO 1/12 " + IIF (_sTipIndeniz ='S', 'PAGA', 'PROVISIONADA')	+":" ,oFont12n)
+		oPrint:Say(nLinha,0900,  PADL('R$' + Transform(_nIndeniz, "@E 999,999,999.99"),20,' ')   		 ,oFont12n)
+		nLinha += 100
+
 		If _sTipIndeniz ='S' 
 			_vIRind := 0
 			If _nSimples != '1'
