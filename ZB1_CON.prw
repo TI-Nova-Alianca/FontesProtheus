@@ -18,7 +18,9 @@
 // Historico de alteracoes:
 // 03/11/2020 - Claudia - Incluida a gravação do SXK
 // 19/11/2020 - Claudia - Retirada a data de emissão de vendas link
-// --------------------------------------------------------------------------
+// 04/12/2020 - Claudia - Alteração de ajustes para arredondamento. GLPI: 8970
+//
+// -----------------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
 #Include "totvs.ch"
 
@@ -76,7 +78,6 @@ User Function ZB1_CON(_sConciliar)
 		_oSQL:_sQuery += "    ,ZB1_DTAAPR" // 21 - DATA DE EMISSAO
 		_oSQL:_sQuery += "    ,ZB1_DTAPRO" // 22 - DATA DE PROCESSAMENTO
 		_oSQL:_sQuery += " FROM " + RetSQLName ("ZB1") 
-		//_oSQL:_sQuery += " WHERE ZB1_FILIAL = '" +xFilial("ZB1")+ "'"
 		_oSQL:_sQuery += " WHERE ZB1_FILIAL = '" + cFilAnt + "'"
 		_oSQL:_sQuery += " AND D_E_L_E_T_ = ''" 
 		_oSQL:_sQuery += " AND ZB1_STAPGT = '01'" 		 //-- PAGO
@@ -96,8 +97,10 @@ User Function ZB1_CON(_sConciliar)
 		If MsgYesNo(_cMens,"Baixa de titulos")
 			_nImpReg := 0
 			_nTotReg := Len(_aZB1)
+
 			For i:=1 to Len(_aZB1)
 				
+				// Verificações de parcela Cielo X Protheus
 				_sParc := ''
 				If alltrim(_aZB1[i, 9]) <> '00' .or. alltrim(_aZB1[i, 9]) <> '' 
 					_sParc := BuscaParcela(_aZB1[i, 9])
@@ -129,7 +132,6 @@ User Function ZB1_CON(_sConciliar)
 				Else
 					_oSQL:_sQuery += " AND SE1.E1_CARTAUT = '" + _aZB1[i,17] + "'"
 					_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aZB1[i,18] + "'"
-					//_oSQL:_sQuery += " AND SE1.E1_EMISSAO = '" + DTOS(_aZB1[i,16]) + "'"
 				EndIf
 				_oSQL:_sQuery += " AND SE1.E1_BAIXA   = ''"
 				If alltrim(_sParc) <> ''
@@ -144,30 +146,29 @@ User Function ZB1_CON(_sConciliar)
 				Else
 					
 					For x:=1 to len(_aTitulo)	
-						_lContinua := .T.
-						_nVlrTax   := ROUND((_aZB1[i,08] * _aZB1[i,04])/100,2)
-						_nVlrRec   := ROUND(_aZB1[i,08] - _nVlrTax,2)
-						_nVlrTit   := _aTitulo[x,05]
-						_sDtPro    := DTOS(_aZB1[i,22])
-						_sNSUCod   := _aZB1[i,18]
-						_sAutCod   := _aZB1[i,17]
+						_lContinua  := .T.
 
-						// Verifica se valor + taxa cielo é igual ao valor do título (podem ter ajustes de arredondamento)
-						If ROUND(_nVlrTax + _nVlrRec,2) == ROUND(_nVlrTit,2)
-							_lContinua := .T.
-							u_log("REGISTRO DE VALOR OK: Registro NSU+AUT:" + _sNSUCod + _sAutCod + " Valor compatível.")
-						Else
-							_nDif := _nVlrTit - (_nVlrTax + _nVlrRec)
+						_sDtPro     := DTOS(_aZB1[i,22])	// ZB1_DTAPRO
+						_sNSUCod    := _aZB1[i,18]			// ZB1_NSUCOD
+						_sAutCod    := _aZB1[i,17]			// ZB1_AUTCOD
 
-							// Quando existe diferenças de arredondamento, pega vlr do titulo e diminui a taxa para dar baixa correta
-							If  _nDif >= -0.5 .and. _nDif <= 0.5 
-								_nVlrRec := _nVlrTit - _nVlrTax 
+						_nVlrTit    := _aTitulo[x,05] 		// E1_VALOR
+						_nVlrLiq    := _aZB1[i,07]  		// ZB1_VLRLIQ
+						_nVlrPar    := _aZB1[i,08]          // ZB1_VLRPAR
+						_nVlrTax    := _nVlrTit - _nVlrLiq  // valor da taxa calculada
+						_nTaxCielo  := _aZB1[i,03]  		// ZB1_VLRTAX cielo
+					
+						If ROUND(_nVlrTax, 2) <> ROUND(_nTaxCielo, 2) // taxa calculada X taxa cielo
+							_nDif := _nVlrTax - _nTaxCielo
+
+							If _nDif >= -0.5 .and. _nDif <= 0.5
 								_lContinua := .T.
-								u_log("DIFERENÇA DE ARREDONDAMENTO:Registro NSU+AUT:" + _sNSUCod + _sAutCod + " Valor com diferença de arredondameto. Diferença:" + alltrim(str(_nDif)))
+								u_log("DIFERENÇA DE ARREDONDAMENTO TAXA:Registro NSU+AUT:" + _sNSUCod + _sAutCod + " Valor com diferença de arredondameto. Diferença:" + alltrim(str(_nDif)))
 							Else
 								// Diferença é maior que a permitida
 								_lContinua := .F.
-								u_log("DIFERENÇA DE VALOR TITULO X CIELO: Registro NSU+AUT:" + _sNSUCod + _sAutCod + " Valor com diferença e não será importado. Diferença:" + alltrim(str(_nDif)))
+								u_log("DIFERENÇA DE TAXA: Registro NSU+AUT:" + _sNSUCod + _sAutCod + " Valor com diferença e não será importado. Diferença:" + alltrim(str(_nDif)))
+								u_help("DIFERENÇA DE TAXA: Registro NSU+AUT:" + _sNSUCod + _sAutCod + " Valor com diferença e não será importado. Diferença:" + alltrim(str(_nDif)))
 							EndIf
 						EndIf
 
@@ -175,9 +176,6 @@ User Function ZB1_CON(_sConciliar)
 
 							lMsErroAuto := .F.
 
-							//_sBanco   := PADL(alltrim(_aZB1[i,11]), 3,' ')
-							//_sAgencia := PADL(alltrim(_aZB1[i,12]), 5,' ')
-							//_sConta   := PADL(alltrim(_aZB1[i,13]),10,' ')
 							// executar a rotina de baixa automatica do SE1 gerando o SE5 - DO VALOR LÍQUIDO
 							_aAutoSE1 := {}
 							aAdd(_aAutoSE1, {"E1_FILIAL" 	, _aTitulo[x,1]	    				, Nil})
@@ -197,7 +195,7 @@ User Function ZB1_CON(_sConciliar)
 							AAdd(_aAutoSE1, {"AUTDESCONT"	, _nVlrTax         					, Nil})
 							AAdd(_aAutoSE1, {"AUTMULTA"  	, 0         						, Nil})
 							AAdd(_aAutoSE1, {"AUTJUROS"  	, 0         						, Nil})
-							AAdd(_aAutoSE1, {"AUTVALREC"  	, _nVlrRec							, Nil})
+							AAdd(_aAutoSE1, {"AUTVALREC"  	, _nVlrLiq							, Nil})
 						
 							_aAutoSE1 := aclone (U_OrdAuto (_aAutoSE1))  // orderna conforme dicionário de dados
 
@@ -213,7 +211,7 @@ User Function ZB1_CON(_sConciliar)
 							If lMsErroAuto
 								u_log(memoread (NomeAutoLog ()))
 								u_log("IMPORTAÇÃO NÃO REALIZADA: Registro NSU+AUT:" + _sNSUCod + _sAutCod)
-								//
+								
 								// Salva dados para impressão
 								_sErro := ALLTRIM(memoread (NomeAutoLog ()))
 								aadd(_aRelErr,{ _aTitulo[x,1],; // filial
@@ -222,13 +220,13 @@ User Function ZB1_CON(_sConciliar)
 												_aTitulo[x,4],; // parcela
 												_aTitulo[x,6],; // cliente
 												_aTitulo[x,7],; // loja
-												_nVlrRec	 ,; // valor recebido
+												_nVlrLiq	 ,; // valor recebido
 												_nVlrTax     ,; // taxa
 												_aZB1[i,17]  ,; // autorização
 												_aZB1[i,18]  ,; // NSU
 												_sErro       }) // status
 
-							Else// Se gravado, inclui campos n SE5 finaliza o registro da ZA1
+							Else
 								// Atualiza banco e administradora
 								if alltrim(_aTitulo[x,1]) == '01' // matriz - link
 									_sAdm := alltrim(_aTitulo[x,13]) 
@@ -258,17 +256,16 @@ User Function ZB1_CON(_sConciliar)
 												_aTitulo[x,4],; // parcela
 												_aTitulo[x,6],; // cliente
 												_aTitulo[x,7],; // loja
-												_nVlrRec	 ,; // valor recebido
+												_nVlrLiq	 ,; // valor recebido
 												_nVlrTax     ,; // taxa
 												_aZB1[i,17]  ,; // autorização
 												_aZB1[i,18]  ,; // NSU
 												'BAIXADO'    }) // status
 
 								dbSelectArea("ZB1")
-								dbSetOrder(4) // ZB1_NUMNSU + ZB1_CODAUT + DTA PROCESSAMENTO
-								//dbSetOrder(1) // ZB1_NUMNSU + ZB1_CODAUT
+								dbSetOrder(4) // DTA PROCESSAMENTO + ZB1_NUMNSU + ZB1_CODAUT + ZB1_SINAL
 								dbGoTop()
-								//If dbSeek(_sNSUCod + _sAutCod)
+
 								If dbSeek(_sDtPro + PADR(_sNSUCod ,8,' ') +_sAutCod)
 									Reclock("ZB1",.F.)
 										ZB1 -> ZB1_STAIMP := 'C'
@@ -279,7 +276,6 @@ User Function ZB1_CON(_sConciliar)
 								_nImpReg += 1
 								u_log("IMPORTAÇÃO FINALIZADA COM SUCESSO: Registro NSU+AUT:" + _sNSUCod + _sAutCod)
 							Endif
-
 							
 							U_GravaSXK (cPerg, "01", "2", 'D' )
 							U_GravaSXK (cPerg, "04", "2", 'D' )
@@ -454,7 +450,6 @@ Static Function PrintReport(oReport)
 		Next
 		oSection2:Finish()
 	EndIf
-
 	
 Return
 //
@@ -463,8 +458,6 @@ Return
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT                TIPO TAM DEC VALID F3     Opcoes                      			Help
-    //aadd (_aRegsPerg, {01, "Filial de          ", "C",  2, 0,  "",  "   ", {},                         				""})
-    //aadd (_aRegsPerg, {02, "Filial até         ", "C",  2, 0,  "",  "   ", {},                         				""})
     aadd (_aRegsPerg, {01, "NSU                ", "C",  6, 0,  "",  "   ", {},                         				""})
     aadd (_aRegsPerg, {02, "Cod.Autorização    ", "C",  6, 0,  "",  "   ", {},                         				""})
     U_ValPerg (cPerg, _aRegsPerg)

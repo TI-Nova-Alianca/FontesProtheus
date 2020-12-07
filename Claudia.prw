@@ -1,8 +1,8 @@
 // --------------------------------------------------------------------------
 user function claudia ()
 
-	u_help(" nada em execução")
-	//u_help("U_ImpOBSFin")
+//	u_help(" nada em execução")
+	u_help("U_ImpOBSFin")
 
 	//ImpOBSFin()
 return
@@ -37,6 +37,7 @@ return
 // 		EndIf
 // 	Next
 // return
+//
 //Static Function _ajusteZA5()
 //	local _i := 0
 //	

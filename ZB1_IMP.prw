@@ -293,8 +293,8 @@ Static Function GravaZB1(_aHeader, _aRO, _aCV, _aRel )
 			u_log("Registro Importado! NSU:" + sNSU +" Autorização:"+ sAut)
 
 			// se é um registro de debito procurar registro de credito e fechar
-			If alltrim(_aCV[1,14]) == '+'
-				If dbSeek(sDtPro + PADR(sNSU ,8,' ') +sAut + sSinal)
+			If alltrim(_aCV[1,14]) == '-'
+				If dbSeek(sDtPro + PADR(sNSU ,8,' ') +sAut + '+')
 					Reclock("ZB1",.F.)
 						ZB1->ZB1_STAIMP := 'F'
 					ZB1->(MsUnlock())
