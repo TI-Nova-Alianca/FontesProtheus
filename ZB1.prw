@@ -37,8 +37,9 @@ User Function ZB1()
 		AADD(aRotina, {"Importar"    	     , "U_ZB1_IMP()"   , 0, 4})
 		AADD(aRotina, {"Conciliar Cielo Loja", "U_ZB1_CON('1')", 0, 4})
 		AADD(aRotina, {"Conciliar Cielo Link", "U_ZB1_CON('2')", 0, 4})
-		AADD(aRotina, {"&Legenda"        	 , "U_ZB1LGD (.F.)"   , 0 ,5})
-		AADD(aRotina, {"Relatorio de titulos", "U_ZB1RTIT()"   , 0, 6})
+		AADD(aRotina, {"&Legenda"        	 , "U_ZB1LGD (.F.)", 0 ,5})
+		AADD(aRotina, {"Relatorio titulos"   , "U_ZB1RTIT()"   , 0, 6})
+		AADD(aRotina, {"Relatorio importação", "U_ZB1REL()"    , 0, 6})
 		AADD(aRotina, {"Fechar Registro"     , "U_ZB1_FEC()"   , 0, 6})
 
 		AADD(_aCores,{ "ZB1_STAIMP == 'I'", 'BR_VERMELHO' }) // importado
