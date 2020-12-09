@@ -137,6 +137,7 @@
 // 30/09/2019 - Sandra - Baixado fonte padrao e reaplicadas as customizacoes; habilitado tag cbenef
 // 02/02/2020 - Robert - Baixado fonte padrao e reaplicadas as customizacoes (projeto melhorias fiscal 2020).
 // 12/02/2020 - Claudia - Retirado o tratamento de para nota sobre Cupom. A Frase nas obs imprimia duas vezes. GLPI: 7010
+// 09/12/2020 - Claudia - Ajuste Impressão de titulos na Danfe tipo CC e CD - GLPI 8990.
 //
 // --------------------------------------------------------------------------
 User Function XmlNfeSef(cTipo,cSerie,cNota,cClieFor,cLoja,cNotaOri,cSerieOri)
@@ -1561,7 +1562,7 @@ If cTipo == "1"
 							SE1.E1_FILIAL = %Exp:cFilTit% AND
 							SE1.E1_PREFIXO = %Exp:cPrfTit% AND 
 							SE1.E1_NUM = %Exp:cNumDupl% AND 
-							((SE1.E1_TIPO = %Exp:MVNOTAFIS%) OR (SE1.E1_TIPO = 'DP ' ) OR
+							((SE1.E1_TIPO = %Exp:MVNOTAFIS%) OR (SE1.E1_TIPO = 'DP ' ) OR (SE1.E1_TIPO = 'CC ' ) OR (SE1.E1_TIPO = 'CD ' ) OR
 							 ((SE1.E1_ORIGEM IN ('LOJA701','FATA701','LOJA010')) AND SE1.E1_TIPO IN (%Exp:cWhere%))) AND
 							SE1.%NotDel%
 							ORDER BY %Order:SE1%
@@ -1579,7 +1580,8 @@ If cTipo == "1"
 								cED_RECFUN := alltrim(SED->ED_RECFUN)
 							EndIf
 						
-							If (cAliasSE1)->E1_TIPO = MVNOTAFIS .OR. (cAliasSE1)->E1_TIPO = 'DP' .OR. ((Alltrim((cAliasSE1)->E1_ORIGEM) $ 'LOJA701|FATA701|LOJA010') .AND. (cAliasSE1)->E1_TIPO $ cWhere)
+							//If (cAliasSE1)->E1_TIPO = MVNOTAFIS .OR. (cAliasSE1)->E1_TIPO = 'DP' .OR. ((Alltrim((cAliasSE1)->E1_ORIGEM) $ 'LOJA701|FATA701|LOJA010') .AND. (cAliasSE1)->E1_TIPO $ cWhere)
+							If (cAliasSE1)->E1_TIPO = MVNOTAFIS .OR. (cAliasSE1)->E1_TIPO = 'CC' .OR. (cAliasSE1)->E1_TIPO = 'CD' .OR. (cAliasSE1)->E1_TIPO = 'DP' .OR. ((Alltrim((cAliasSE1)->E1_ORIGEM) $ 'LOJA701|FATA701|LOJA010') .AND. (cAliasSE1)->E1_TIPO $ cWhere)
 								//Aletrado a busca do valor da Fatura do campo E1_VLCURZ para E1_VLRREAL, 
 								//devido a titulos com desconto da TAXA do Cartão de Créito que não devem
 								//ser repassados para o XML e DANFE.                                                                                    
