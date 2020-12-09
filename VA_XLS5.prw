@@ -77,6 +77,8 @@
 //                      - Inseridas tags para catalogacao de fontes
 // 05/10/2020 - Claudia - Incluido grupo para impressão simplificado. GLPI:8588 
 // 13/10/2020 - Cláudia - Incluidas colunas na versao resumida, conforme GLPI: 8642
+// 09/12/2020 - Cláudia - Alterada busca de promotor. GLPI: 8880
+//
 // ---------------------------------------------------------------------------------------------------------------
 User Function VA_XLS5 (_lAutomat)
 	Local cCadastro  := "Exportacao geral de dados de faturamento para planilha"
@@ -92,7 +94,7 @@ User Function VA_XLS5 (_lAutomat)
 	private _lAuto   := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
 
 	if u_zzuvl ('120', __cUserId, .F.) .or. u_zzuvl ('038', __cUserId, .F.) 
-		if u_zzuvl ('120', __cUserId, .T.,.F.) 
+		if u_zzuvl ('120', __cUserId, .F.) 
 			_sTipo := 'P'
 		else
 			_sTipo := 'T'
@@ -264,7 +266,8 @@ Static Function _Opcoes (_sTipo)
 		aadd (_aOpcoes, {.F., "Motivo de DEVOLUÇÃO",      "V.MOTDEV"})
 		aadd (_aOpcoes, {.F., "Cod.Supervisor",           "A3_VAGEREN"})
 		aadd (_aOpcoes, {.F., "Cod.promotor",             "SA1.A1_VAPROMO AS PROMOTOR"})
-		aadd (_aOpcoes, {.F., "Nome promotor",            "RTRIM (ISNULL ((SELECT ZX5_46DESC FROM " + RetSQLName ("ZX5") + " WHERE D_E_L_E_T_ = '' AND ZX5_FILIAL = '  ' AND ZX5_TABELA = '46' AND ZX5_46COD = SA1.A1_VAPROMO), '')) AS NOME_PROMOTOR"})
+		aadd (_aOpcoes, {.F., "Nome promotor",            "RTRIM (ISNULL ((SELECT A2_NOME FROM " + RetSQLName ("SA2") + " AS SA2FOR WHERE SA2FOR.D_E_L_E_T_ = '' AND SA2FOR.A2_COD = SA1.A1_VAPROMO), '')) AS NOME_PROMOTOR"})
+		//aadd (_aOpcoes, {.F., "Nome promotor",            "RTRIM (ISNULL ((SELECT ZX5_46DESC FROM " + RetSQLName ("ZX5") + " WHERE D_E_L_E_T_ = '' AND ZX5_FILIAL = '  ' AND ZX5_TABELA = '46' AND ZX5_46COD = SA1.A1_VAPROMO), '')) AS NOME_PROMOTOR"})
 		aadd (_aOpcoes, {.F., "Custo medio do movto",     "CUSTOMEDIO"})
 		aadd (_aOpcoes, {.F., "Tipo embalagem",           "RTRIM (ISNULL ((SELECT ZAZ_NLINF FROM " + RetSQLName ("ZAZ") + " WHERE D_E_L_E_T_ = '' AND ZAZ_FILIAL = '" + xfilial ("ZAZ") + "' AND ZAZ_CLINF = SB1.B1_CLINF), '')) AS TIPO_EMBALAGEM"})
 		aadd (_aOpcoes, {.F., "Agrupador unitário",       "CASE WHEN (SB1.B1_CODPAI <> '')  THEN  SB1.B1_CODPAI ELSE SB1.B1_COD END AS AGRUPADOR_UNITARIO"})
