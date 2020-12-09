@@ -335,7 +335,7 @@ METHOD GeraSD3 () class ClsTrEstq
 		
 		// Variavel publica usada para retornad erros na funcao U_Help().
 		if type ("_sErroAuto") != 'C'
-			u_log ('Criando variavel _sErroAuto')
+			//u_log2 ('debug', 'Criando variavel _sErroAuto')
 			private _sErroAuto := ""
 		endif
 	
@@ -349,7 +349,7 @@ METHOD GeraSD3 () class ClsTrEstq
 		aadd(_aItens,'')           //D3_UM					Unidade de Medida Origem
 		aadd(_aItens,::AlmOrig)    //Almox origem
 		aadd(_aItens,::EndOrig)    //Endereco origem
-		aadd(_aItens,::ProdDest)   //Codigo do produto destino
+		aadd(_aItens,iif (empty (::ProdDest), ::ProdOrig, ::ProdDest))   //Codigo do produto destino
 		aadd(_aItens,'')           //D3_DESCRI				DescriÁ„o do Produto de Destino
 		aadd(_aItens,'')           //D3_UM					Unidade de Medida de Destino
 		aadd(_aItens,::AlmDest)    //Almox destino
@@ -367,14 +367,14 @@ METHOD GeraSD3 () class ClsTrEstq
 		aadd(_aItens,ctod(""))               // D3_DTVALID			Validade de Destino
 		aadd(_aItens,criavar("D3_ITEMGRD"))  // D3_ITEMGRD			Item Grade
 		//aadd(_aItens,0)                      // Per.Imp. D3_PERIMP
-		aadd(_aItens,'')                     // D3_OBSERVA
+		aadd(_aItens,::Motivo)                 // D3_OBSERVA
 		aadd(_aItens,::Motivo)               // motivo
 		aadd(_aItens,ctod (''))              // dt digit (vai ser gravado pelo SQL)
 		aadd(_aItens,'')                     // hr digit (vai ser gravado pelo SQL)
 		//aadd(_aItens,'')                     // laudo laboratorial (tabela ZAF)
 		aadd(_aItens,::Etiqueta)             // D3_VAETIQ Etiqueta
 		aadd(_aItens,_sChaveEx)        // Chave externa D3_VACHVEX
-		//u_log (_aItens)
+	//	u_log2 ('debug', _aItens)
 		aadd(_aAuto261, aclone (_aItens))
 
 		lMsErroAuto := .F.
@@ -409,10 +409,12 @@ METHOD GeraSD3 () class ClsTrEstq
 			::Executado = 'E'
 			::AtuZAG ("zag_exec", ::Executado)
 			_lContinua = .F.
+			u_log2 ('erro', ::UltMsg)
 		else
 			::Executado = 'S'
 			::AtuZAG ("zag_exec", ::Executado)
 			::UltMsg += "Movto.gerado no Protheus com DOC=" + _sDoc
+			u_log2 ('info', ::UltMsg)
 		endif
 	endif
 
@@ -662,7 +664,7 @@ METHOD Grava () Class ClsTrEstq
 		zag -> zag_emis   = ::DtEmis
 		zag -> zag_usrinc = ::UsrIncl
 		zag -> zag_op     = ::OP
-		zag -> zag_Motivo = ::Motivo
+		zag -> zag_Motivo = U_NoAcento (::Motivo)
 		zag -> zag_PrdOri = ::ProdOrig
 		zag -> zag_PrdDst = ::ProdDest
 		zag -> zag_AlmOri = ::AlmOrig

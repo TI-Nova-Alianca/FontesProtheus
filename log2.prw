@@ -33,7 +33,7 @@ user function Log2 (_sTipo, _xDado, _xExtra)
 		_i++
 	enddo
 
-	_sTipo = upper (_sTipo)
+	_sTipo = upper (cvaltochar (_sTipo))
 	if ! 'ERRO' $ _sTipo
 		_sTipo = Capital (_sTipo)
 	endif
