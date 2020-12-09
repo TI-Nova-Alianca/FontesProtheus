@@ -16,7 +16,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 	local _nItemCar  := 0
 	local _nLock     := 0
 	local _oSQL      := NIL
-
+	local _aEspum := {}
 	u_log2 ('info', 'Iniciando ' + procname ())
 //	u_log ('param:', _oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd)
 
@@ -136,42 +136,61 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		private aHeader := aclone (U_GeraHead ("SZF", .F., {}, {}, .F.))
 		private aCols := {}
 		for _nItemCar = 1 to len (_aItensCar)
+
+			// Verifica em qual das linhas da array de cadastros viticolas encontra-se esta variedade.
+			_nItemVit = ascan (_aCadVitic, {|_aVal| _aVal [.CadVitProduto] == _aItensCar [_nItemCar, 2]})
+			if _nItemVit == 0
+				_sErros += "Variedade " + alltrim (_aItensCar [_nItemCar, 2]) + " nao vinculada com a propriedade rural " + _aItensCar [_nItemCar, 1] + ' / SIVIBE ' + _aItensCar [_nItemCar, 5]
+				exit
+			endif
+
 			if ! sb1 -> (dbseek (xfilial ("SB1") + _aItensCar [_nItemCar, 2], .F.))
 				_sErros += "Variedade '" + _aItensCar [_nItemCar, 2] + "' nao encontrada no cadastro de itens."
-			else
-				// Verifica em qual das linhas da array de cadastros viticolas encontra-se esta variedade.
-				//u_log ('procurando variedade', sb1 -> b1_cod, 'nos cad. viticolas abaixo:')
-				//u_log (_aCadVitic)
-				_nItemVit = ascan (_aCadVitic, {|_aVal| _aVal [.CadVitProduto] == sb1 -> b1_cod})
-				if _nItemVit == 0
-					_sErros += "Variedade " + alltrim (SB1 -> B1_COD) + " nao vinculada com a propriedade rural " + _aItensCar [_nItemCar, 1] + ' / SIVIBE ' + _aItensCar [_nItemCar, 5]
+				exit
+			endif
+
+			// Se foi informado que eh uva para espumante, preciso converter do codigo base (uva para vinho) para o codigo 'para espumante'
+			if _aItensCar [_nItemCar, 6] == 'S'
+				u_log2 ('debug', 'Eh uva para espumante')
+				_oSQL := ClsSQL():New ()
+				_oSQL:_sQuery := "SELECT COD_PARA_ESPUMANTE"
+				_oSQL:_sQuery +=  " FROM VA_VFAMILIAS_UVAS"
+				_oSQL:_sQuery += " WHERE COD_BASE = '" + _aItensCar [_nItemCar, 2] + "'"
+				_aEspum = aclone (_oSQL:Qry2Array (.F., .F.))
+				if len (_aEspum) == 0
+					_sErros += "Nao encontrei codigo para espumante relacionado com a variedade " + _aItensCar [_nItemCar, 2]
 					exit
-				endif
-				//u_log ('encontrei itemvit:', _nItemVit)
-
-				aadd (aCols, aclone (U_LinVazia (aHeader)))
-				N = len (aCols)
-				GDFieldPut ("ZF_ITEM",    strzero (_nItemCar, 2))
-				GDFieldPut ("ZF_CADVITI", _aItensCar [_nItemCar, 1])
-				GDFieldPut ("ZF_SIVIBE",  _aItensCar [_nItemCar, 5])
-				GDFieldPut ("ZF_ITEMVIT", _nItemVit)
-				GDFieldPut ("ZF_PRODUTO", sb1 -> b1_cod)
-				GDFieldPut ("ZF_DESCRI",  sb1 -> b1_desc)
-				GDFieldPut ("ZF_CONDUC",  _aCadVitic [_nItemVit, .CadVitSistCond])
-				GDFieldPut ("ZF_EMBALAG", iif (_aItensCar [_nItemCar, 3] == 'G', 'GRANEL', iif (_aItensCar [_nItemCar, 3] == 'C', 'CAIXAS', _aItensCar [_nItemCar, 3])))
-				GDFieldPut ("ZF_QTEMBAL", 1)
-				GDFieldPut ("ZF_HRRECEB", left (time (), 5))
-				GDFieldPut ("ZF_IDZA8",   _aItensCar [_nItemCar, 1])  // Por enquanto ainda eh igual ao cadastro viticola
-				GDFieldPut ("ZF_OBS",     _sObs)
-
-				//u_log ('Vou chamar validacao de linha com o seguinte conteudo:')
-				u_logACols ()
-
-				// Executa a validacao de linha
-				if ! U_VA_RUS2L ()
-					_sErros += 'Erro na validacao do item ' + cvaltochar (_nItemCar)
+				elseif len (_aEspum) > 1
+					_sErros += "Encontrei mais de um codigo para espumante relacionado com a variedade " + _aItensCar [_nItemCar, 2]
 					exit
+				else
+					if ! sb1 -> (dbseek (xfilial ("SB1") + _aEspum [1, 1], .F.))
+						_sErros += "Variedade para espumante '" + _aEspum [1, 1] + "' nao encontrada no cadastro de itens."
+						exit
+					endif
 				endif
+			endif
+
+			aadd (aCols, aclone (U_LinVazia (aHeader)))
+			N = len (aCols)
+			GDFieldPut ("ZF_ITEM",    strzero (_nItemCar, 2))
+			GDFieldPut ("ZF_CADVITI", _aItensCar [_nItemCar, 1])
+			GDFieldPut ("ZF_SIVIBE",  _aItensCar [_nItemCar, 5])
+			GDFieldPut ("ZF_ITEMVIT", _nItemVit)
+			GDFieldPut ("ZF_PRODUTO", sb1 -> b1_cod)
+			GDFieldPut ("ZF_DESCRI",  sb1 -> b1_desc)
+			GDFieldPut ("ZF_CONDUC",  _aCadVitic [_nItemVit, .CadVitSistCond])
+			GDFieldPut ("ZF_EMBALAG", iif (_aItensCar [_nItemCar, 3] == 'G', 'GRANEL', iif (_aItensCar [_nItemCar, 3] == 'C', 'CAIXAS', _aItensCar [_nItemCar, 3])))
+			GDFieldPut ("ZF_QTEMBAL", 1)
+			GDFieldPut ("ZF_HRRECEB", left (time (), 5))
+			GDFieldPut ("ZF_IDZA8",   _aItensCar [_nItemCar, 1])  // Por enquanto ainda eh igual ao cadastro viticola
+			GDFieldPut ("ZF_OBS",     _sObs)
+			u_logACols ()
+
+			// Executa a validacao de linha
+			if ! U_VA_RUS2L ()
+				_sErros += 'Erro na validacao do item ' + cvaltochar (_nItemCar)
+				exit
 			endif
 		next
 	//	u_log (aHeader)
