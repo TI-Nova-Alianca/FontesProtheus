@@ -126,6 +126,7 @@ Static Function PrintReport(oReport)
 		If alltrim(_sParc) <> ''
 			_oSQL:_sQuery += " AND SE1.E1_PARCELA   = '" + _sParc + "'"
 		EndIf
+		_oSQL:_sQuery += " AND SE1.E1_TIPO   IN ('CC','CD')"
 		_aTitulo := aclone (_oSQL:Qry2Array ())
 
 		If len(_aTitulo) > 0
