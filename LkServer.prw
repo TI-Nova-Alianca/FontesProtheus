@@ -1,11 +1,19 @@
 // Programa:   LkServer
 // Autor:      Robert Koch
 // Data:       10/05/2020
-// Descricao:  Retorna o nome do linked server para que o Protheus consulte o banco de dados do sistema Mercanet.
-//
+// Descricao:  Retorna nome / caminho de outros databases e linked servers para que o Protheus possa acessa-los.
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Funcao que retorna caminhos/nomes de bancos de dados de outros siatemas.
+// #PalavasChave      #auxiliar #uso_generico
+// #TabelasPrincipais 
+// #Modulos           #todos_modulos
+
 // Historico de alteracoes:
 // 22/06/2020 - Robert - Renomeado de LkSrvMer para LkServer e torna-se generico (recebe servidor destino por parametro)
 // 10/11/2020 - Robert - Criado tratamento para FullWMS (logistica).
+// 09/12/2020 - Robert - Criado tratamento para o BI_ALIANCA.
 //
 
 // --------------------------------------------------------------------------
@@ -38,6 +46,13 @@ user function LkServer (_sQualSrv)
 			_sRetLk = ""  // Nao existe ainda (precisa instalar bastante coisa; ver GLPI 5701
 		else
 			_sRetLk = "LKSRV_FULLWMS_LOGISTICA"  // Deve ser usado com OpenQuery por se tratar de banco Oracle.
+		endif
+
+	case upper (alltrim (_sQualSrv)) == 'BI_ALIANCA'
+		if _lBaseTST
+			_sRetLk = "BI_ALIANCA_teste.dbo"
+		else
+			_sRetLk = "BI_ALIANCA.dbo"
 		endif
 
 	otherwise

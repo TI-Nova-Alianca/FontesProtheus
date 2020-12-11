@@ -2,7 +2,13 @@
 // Descricao..: Interface para gerar e consultar DREs industriais (parte de um estudo da diretoria em jul/2019)
 // Data.......: 18/08/2019
 // Autor......: Robert Koch
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento #relatorio
+// #PalavasChave      #analise #DRE_industrial
+// #TabelasPrincipais #SD2 #SF2 #CT2
+// #Modulos           #CTB
+
 // Historico de alteracoes:
 // 04/09/2019 - Robert - Parametros insuficientes chamada funcao FVA_DRE_TETRAS
 // 05/09/2019 - Robert - Criada interface usando mBrowse.
@@ -17,24 +23,44 @@
 // 19/03/2020 - Robert - Passa a oferecer selecao de filial para consultar (quando o rateio foi feito por filial) - GLPI 7689.
 //                     - Passa a enviar parametro de filial inicial... final em todas as consultas.
 //                     - Melhorado descritivo (nome coluna 2) para todas as consultas
-// 13/07/2020 - Robert  - Inseridas tags para catalogacao de fontes
-//                      - Melhorias mensagens de log e de erros.
+// 13/07/2020 - Robert - Inseridas tags para catalogacao de fontes.
+//                     - Melhorias mensagens de log e de erros.
+// 09/12/2020 - Robert - Passa a buscar nome do database BI_ALIANCA pela funcao U_LkServer (para poder usar com a base teste).
 //
-
-// Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #Processamento #relatorio
-// #PalavasChave      #analise #DRE_industrial
-// #TabelasPrincipais #SD2 #SF2 #CT2
-// #Modulos           #CTB
 
 // --------------------------------------------------------------------------
 user function DREindl ()
 	local _aHead       := {}
+	local _oSQL        := NIL
 	Private bFiltraBrw := {|| Nil}
 	Private aRotina    := {}
 	private cCadastro  := "DREs industriais"
+	private _sLinkSrv  := U_LkServer ('BI_ALIANCA')
 
-	if ! U_ZZUVL ('096', __cUserID, .T.)//, cEmpAnt, cFilAnt)
+	if ! U_ZZUVL ('096', __cUserID, .T.)
+		return
+	endif
+
+	// Script para criar a tabela de 'capa' caso nao exista.
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "IF (NOT EXISTS (SELECT *"
+	_oSQL:_sQuery +=                  " FROM INFORMATION_SCHEMA.TABLES"
+	_oSQL:_sQuery += " WHERE TABLE_NAME = 'DRE_INDL'))"
+	_oSQL:_sQuery += " BEGIN"
+	_oSQL:_sQuery += " CREATE TABLE DRE_INDL("
+	_oSQL:_sQuery += " 	ID_ANALISE              int      NOT NULL default 0,"
+	_oSQL:_sQuery += " 	DESCRICAO               varchar (40) NULL default '',"
+	_oSQL:_sQuery += " 	DATA_INI_NF             varchar (8)  NULL default '',"
+	_oSQL:_sQuery += " 	DATA_FIM_NF             varchar (8)  NULL default '',"
+	_oSQL:_sQuery += " 	AGRUPAMENTO_PARA_RATEIO varchar (1)  NULL default '',"
+	_oSQL:_sQuery += " 	FORMA_RATEIO            varchar (1)  NULL default '',"
+	_oSQL:_sQuery += " 	USUARIO                 varchar (15) NULL default '',"
+	_oSQL:_sQuery += "  CONSTRAINT PK_DRE_INDL PRIMARY KEY CLUSTERED (ID_ANALISE ASC)"
+	_oSQL:_sQuery += " )"
+	_oSQL:_sQuery += " END"
+	_oSQL:Log ()
+	if ! _oSQL:Exec ()
+		u_help ("Erro ao criar tabelas.",, .t.)
 		return
 	endif
 
@@ -105,7 +131,7 @@ static function _AtuTrb ()
 
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := "SELECT ID_ANALISE, DESCRICAO, DATA_INI_NF, DATA_FIM_NF, AGRUPAMENTO_PARA_RATEIO, FORMA_RATEIO, USUARIO"
-	_oSQL:_sQuery +=  " FROM BI_ALIANCA.dbo.DRE_INDL"
+	_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".DRE_INDL"
 	_oSQL:_sQuery += " ORDER BY DESCRICAO"
 	_aConsAtu := _oSQL:Qry2Array ()
 	for _nConsAtu = 1 to len (_aConsAtu)
@@ -156,7 +182,7 @@ static function _Gera (_sDescri, _dDataIni, _dDataFim, _sAgrRat, _sFormaRat)
 	
 	if _lContinua
 		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := "SELECT COUNT (*) FROM BI_ALIANCA.dbo.DRE_INDL WHERE DESCRICAO = '" + alltrim (_sDescri) + "'"
+		_oSQL:_sQuery := "SELECT COUNT (*) FROM " + _sLinkSrv + ".DRE_INDL WHERE DESCRICAO = '" + alltrim (_sDescri) + "'"
 		_oSQL:Log ()
 		if _oSQL:RetQry () > 0
 			u_help ("Ja existe analise com esse nome.",, .t.)
@@ -164,27 +190,12 @@ static function _Gera (_sDescri, _dDataIni, _dDataFim, _sAgrRat, _sFormaRat)
 		endif
 	endif
 
-	/*
-	// Script para criar a tabela de 'capa' caso nao exista.
-	IF (NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'DRE_INDL'))
-	BEGIN
-	CREATE TABLE DRE_INDL 
-	 (ID_ANALISE INT DEFAULT 0
-	 ,DESCRICAO VARCHAR (40) DEFAULT ''
-	 ,DATA_INI_NF VARCHAR (8) DEFAULT ''
-	 ,DATA_FIM_NF VARCHAR (8) DEFAULT ''
-	 ,AGRUPAMENTO_PARA_RATEIO VARCHAR (1) DEFAULT ''
-	 ,FORMA_RATEIO VARCHAR (1) DEFAULT '')
-	 CREATE INDEX IDX1 ON DRE_INDL (ID_ANALISE)
-	END
-	*/
-
 	// Cria a 'capa' da analise
 	if _lContinua
-		_oSQL:_sQuery := "SELECT MAX (ID_ANALISE) + 1 FROM BI_ALIANCA.dbo.DRE_INDL"
+		_oSQL:_sQuery := "SELECT MAX (ID_ANALISE) + 1 FROM " + _sLinkSrv + ".DRE_INDL"
 		_nIdAnalis = _oSQL:RetQry ()
 		u_log2 ('info', 'Criando ID = ' + cvaltochar (_nIdAnalis))
-		_oSQL:_sQuery := "INSERT INTO BI_ALIANCA.dbo.DRE_INDL (ID_ANALISE, DESCRICAO, DATA_INI_NF, DATA_FIM_NF, AGRUPAMENTO_PARA_RATEIO, FORMA_RATEIO, USUARIO)
+		_oSQL:_sQuery := "INSERT INTO " + _sLinkSrv + ".DRE_INDL (ID_ANALISE, DESCRICAO, DATA_INI_NF, DATA_FIM_NF, AGRUPAMENTO_PARA_RATEIO, FORMA_RATEIO, USUARIO)
 		_oSQL:_sQuery += " VALUES (" + cvaltochar (_nIdAnalis)
 		_oSQL:_sQuery +=          ",'" + alltrim (_sDescri) + "'"
 		_oSQL:_sQuery +=          ",'" + dtos (_dDataIni) + "'"
@@ -202,13 +213,13 @@ static function _Gera (_sDescri, _dDataIni, _dDataFim, _sAgrRat, _sFormaRat)
 	// Leitura inicial da movimentacao (vendas)
 	if _lContinua
 		incproc ('Buscando movimentacao do periodo')
-		_oSQL:_sQuery := "EXEC BI_ALIANCA.dbo.SP_DRE_INDL_GERA_DADOS " + cvaltochar (_nIdAnalis)
+		_oSQL:_sQuery := "EXEC " + _sLinkSrv + ".SP_DRE_INDL_GERA_DADOS " + cvaltochar (_nIdAnalis)
 		_oSQL:Log ()
 		if ! _oSQL:Exec ()
 			u_help ("Erro ao buscar a movimentacao do periodo: " + _oSQL:UltMsg,, .t.)
 			_lContinua = .F.
 		else
-			_oSQL:_sQuery := "SELECT COUNT (*) FROM BI_ALIANCA.dbo.DRE_INDL_ITENS WHERE ID_ANALISE = " + cvaltochar (_nIdAnalis)
+			_oSQL:_sQuery := "SELECT COUNT (*) FROM " + _sLinkSrv + ".DRE_INDL_ITENS WHERE ID_ANALISE = " + cvaltochar (_nIdAnalis)
 			_nQtItens = _oSQL:RetQry ()
 			u_log2 ('info', cvaltochar (_nQtItens) + ' itens de NF lidos.')
 		endif
@@ -220,7 +231,7 @@ static function _Gera (_sDescri, _dDataIni, _dDataFim, _sAgrRat, _sFormaRat)
 		u_log2 ('info', 'Vou gerar rateios')
 		// Agrupamento consolidado
 		if _sAgrRat $ 'C'
-			_oSQL:_sQuery := "EXEC BI_ALIANCA.dbo.SP_DRE_INDL_GERA_RATEIOS " + cvaltochar (_nIdAnalis) + ", '', 'zz'"
+			_oSQL:_sQuery := "EXEC " + _sLinkSrv + ".SP_DRE_INDL_GERA_RATEIOS " + cvaltochar (_nIdAnalis) + ", '', 'zz'"
 			_oSQL:Log ()
 			if ! _oSQL:Exec ()
 				u_help ("Erro ao gerar rateios: " + _oSQL:UltMsg,, .t.)
@@ -231,10 +242,10 @@ static function _Gera (_sDescri, _dDataIni, _dDataFim, _sAgrRat, _sFormaRat)
 		// dentro de cada filial. Visa analisar determinadas filiais (como as lojas) isoladamente, sem
 		// receber custos de outras que representam depositos, por exemplo.
 		elseif _sAgrRat == 'F'
-			_oSQL:_sQuery := "SELECT DISTINCT FILIAL FROM BI_ALIANCA.dbo.DRE_INDL_ITENS WHERE ID_ANALISE = " + cvaltochar (_nIdAnalis)
+			_oSQL:_sQuery := "SELECT DISTINCT FILIAL FROM " + _sLinkSrv + ".DRE_INDL_ITENS WHERE ID_ANALISE = " + cvaltochar (_nIdAnalis)
 			_oSQL:Log ()
 			for _nFilial = 1 to len (_aFiliais)
-				_oSQL:_sQuery := "EXEC BI_ALIANCA.dbo.SP_DRE_INDL_GERA_RATEIOS " + cvaltochar (_nIdAnalis) + ", '" + _aFiliais [_nFilial, 1] + "', '" + _aFiliais [_nFilial, 1] + "'"
+				_oSQL:_sQuery := "EXEC " + _sLinkSrv + ".SP_DRE_INDL_GERA_RATEIOS " + cvaltochar (_nIdAnalis) + ", '" + _aFiliais [_nFilial, 1] + "', '" + _aFiliais [_nFilial, 1] + "'"
 				_oSQL:Log ()
 				if ! _oSQL:Exec ()
 					u_help ("Erro ao gerar rateios: " + _oSQL:UltMsg,, .t.)
@@ -292,7 +303,7 @@ user function DREIndlC ()
 		// Verifica cada filial movimentada para permitir ao usuario selecionar qual deseja exportar.
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "SELECT DISTINCT FILIAL, SM0.M0_FILIAL"
-		_oSQL:_sQuery +=  " FROM BI_ALIANCA.dbo.DRE_INDL_ITENS"
+		_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".DRE_INDL_ITENS"
 		_oSQL:_sQuery +=       ",VA_SM0 SM0"
 		_oSQL:_sQuery += " WHERE ID_ANALISE = " + cvaltochar (_trbDRE->IdAnalise)
 		_oSQL:_sQuery +=   " AND SM0.D_E_L_E_T_ = ''"
@@ -341,7 +352,7 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 	_oSQL:_sQuery +=              " WHEN 'V' THEN '_Rat_valor'"
 	_oSQL:_sQuery +=              " WHEN 'L' THEN '_Rat_litrag'"
 	_oSQL:_sQuery +=              " ELSE '' END"
-	_oSQL:_sQuery +=  " FROM BI_ALIANCA.dbo.DRE_INDL"
+	_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".DRE_INDL"
 	_oSQL:_sQuery += " WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
 	_oSQL:Log ()
 	_sDescDRE = strtran (strtran (strtran (alltrim (_oSQL:RetQry ()), ' ', '_'), '.', '_'), '-', '_')
@@ -353,7 +364,7 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 		_oSQL:_sQuery := "SELECT GRUPO"
 		_oSQL:_sQuery +=      ", DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
 		_oSQL:_sQuery +=      " ,VIDRO,ISOBARICA,EM_3OS,PET,TETRA_200,TETRA_1000,BAG,FILIAL_09,GRANEL,OUTRAS"
-		_oSQL:_sQuery +=  " FROM BI_ALIANCA.dbo.FDRE_INDL_LINENV (" + cvaltochar (_trbDRE -> idanalise) + ","
+		_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".FDRE_INDL_LINENV (" + cvaltochar (_trbDRE -> idanalise) + ","
 		_oSQL:_sQuery +=         "'" + _sFilIni + "', '" + _sFilFim + "'"
 		_oSQL:_sQuery += " ) ORDER BY GRUPO"
 		_oSQL:Log ()
@@ -367,7 +378,7 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 		_oSQL:_sQuery := "SELECT GRUPO"
 		_oSQL:_sQuery +=      ", DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
 		_oSQL:_sQuery +=      ", SUCO_INTEGRAL,ORGANICO,SUCO_100,NECT_BEBID,PREPARADOS,VINHO_FINO,ESPUMANTE,VINHO_MESA,FILTRADO,SAGU_QUENTAO,INDUSTRIALIZ,REVENDA,GRANEL,OUTRAS"
-		_oSQL:_sQuery +=  " FROM BI_ALIANCA.dbo.FDRE_INDL_LINCOM ("
+		_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".FDRE_INDL_LINCOM ("
 		_oSQL:_sQuery +=         "'" + cvaltochar (_trbDRE -> idanalise) + "'"
 		_oSQL:_sQuery +=         ",'" + _sFilIni + "', '" + _sFilFim + "'"
 		_oSQL:_sQuery +=         ",'', ''"  // Cliente/loja base inical
@@ -401,11 +412,11 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 			_sLojBIni = _oSQL:_xRetQry [_nOpcao + 1, 3]
 			_sCliBFim = _sCliBIni
 			_sLojBFim = _sLojBIni
-//			_oSQL:_sQuery := "SELECT * FROM BI_ALIANCA.dbo.FDRE_INDL_LINCOM ('" + cvaltochar (_trbDRE -> idanalise) + "', '', 'zz', '" + _sCliBIni + "', '" + _sLojBIni + "', '" + _sCliBFim + "', '" + _sLojBFim + "') ORDER BY GRUPO"
+//			_oSQL:_sQuery := "SELECT * FROM " + _sLinkSrv + ".FDRE_INDL_LINCOM ('" + cvaltochar (_trbDRE -> idanalise) + "', '', 'zz', '" + _sCliBIni + "', '" + _sLojBIni + "', '" + _sCliBFim + "', '" + _sLojBFim + "') ORDER BY GRUPO"
 			_oSQL:_sQuery := "SELECT GRUPO"
 			_oSQL:_sQuery +=      ", DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
 			_oSQL:_sQuery +=      ", SUCO_INTEGRAL,ORGANICO,SUCO_100,NECT_BEBID,PREPARADOS,VINHO_FINO,ESPUMANTE,VINHO_MESA,FILTRADO,SAGU_QUENTAO,INDUSTRIALIZ,REVENDA,GRANEL,OUTRAS"
-			_oSQL:_sQuery +=  " FROM BI_ALIANCA.dbo.FDRE_INDL_LINCOM ("
+			_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".FDRE_INDL_LINCOM ("
 			_oSQL:_sQuery +=         "'" + cvaltochar (_trbDRE -> idanalise) + "'"
 			_oSQL:_sQuery +=         ",'" + _sFilIni  + "', '" + _sFilFim  + "'"
 			_oSQL:_sQuery +=         ",'" + _sCliBIni + "', '" + _sLojBIni + "'"  // Cliente/loja base inical
@@ -419,11 +430,11 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 		endif
 
 	case _sLayout == 'TT'  // por linha de envase Tetrapak
-//		_oSQL:_sQuery := "SELECT * FROM BI_ALIANCA.dbo.FDRE_INDL_TETRAS ('" + cvaltochar (_trbDRE -> idanalise) + "', '', 'zz', '', 'z') ORDER BY GRUPO"
+//		_oSQL:_sQuery := "SELECT * FROM " + _sLinkSrv + ".FDRE_INDL_TETRAS ('" + cvaltochar (_trbDRE -> idanalise) + "', '', 'zz', '', 'z') ORDER BY GRUPO"
 		_oSQL:_sQuery := "SELECT GRUPO"
 		_oSQL:_sQuery +=      ", DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
 		_oSQL:_sQuery +=      ", TT200_UVA_NOSSO, TT200_UVA_3OS, TT200_OUTROS_NOSSO, TT200_OUTROS_3OS, TT1000_UVA_NOSSO, TT1000_UVA_3OS, TT1000_OUTROS_NOSSO, TT1000_OUTROS_3OS"
-		_oSQL:_sQuery +=  " FROM BI_ALIANCA.dbo.FDRE_INDL_TETRAS ('" + cvaltochar (_trbDRE -> idanalise) + "'"
+		_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".FDRE_INDL_TETRAS ('" + cvaltochar (_trbDRE -> idanalise) + "'"
 		_oSQL:_sQuery +=         ",'" + _sFilIni + "', '" + _sFilFim + "'"
 		_oSQL:_sQuery +=         ",'', 'ZZ'"
 		_oSQL:_sQuery +=  ") ORDER BY GRUPO"
@@ -434,7 +445,7 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 
 		// Monta browse para o usuario selecionar qual a marca de terceiro que deseja visualizar
 		_oSQL:_sQuery := "SELECT DISTINCT MARCA_TERCEIRO as MARCA_TERCEIRO"
-		_oSQL:_sQuery +=  " FROM BI_ALIANCA.dbo.DRE_INDL_ITENS"
+		_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".DRE_INDL_ITENS"
 		_oSQL:_sQuery += " WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
 		_oSQL:_sQuery += " ORDER BY MARCA_TERCEIRO"
 		_oSQL:Log ()
@@ -442,11 +453,11 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 		u_log2 ('info', 'opcao selecionada: ' + cvaltochar (_nOpcao))
 		if _nOpcao > 0
 			_sMarca3 = _oSQL:_xRetQry [_nOpcao + 1, 1]
-//			_oSQL:_sQuery := "SELECT * FROM BI_ALIANCA.dbo.FDRE_INDL_TETRAS ('" + cvaltochar (_trbDRE -> idanalise) + "', '', 'zz', '" + _sMarca3 + "', '" + _sMarca3 + "') ORDER BY GRUPO"
+//			_oSQL:_sQuery := "SELECT * FROM " + _sLinkSrv + ".FDRE_INDL_TETRAS ('" + cvaltochar (_trbDRE -> idanalise) + "', '', 'zz', '" + _sMarca3 + "', '" + _sMarca3 + "') ORDER BY GRUPO"
 			_oSQL:_sQuery := "SELECT GRUPO"
 			_oSQL:_sQuery +=      ", DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
 			_oSQL:_sQuery +=      ", TT200_UVA_NOSSO, TT200_UVA_3OS, TT200_OUTROS_NOSSO, TT200_OUTROS_3OS, TT1000_UVA_NOSSO, TT1000_UVA_3OS, TT1000_OUTROS_NOSSO, TT1000_OUTROS_3OS"
-			_oSQL:_sQuery +=  " FROM BI_ALIANCA.dbo.FDRE_INDL_TETRAS ('" + cvaltochar (_trbDRE -> idanalise) + "'"
+			_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".FDRE_INDL_TETRAS ('" + cvaltochar (_trbDRE -> idanalise) + "'"
 			_oSQL:_sQuery +=         ",'" + _sFilIni + "', '" + _sFilFim + "'"
 			_oSQL:_sQuery +=         ",'" + _sMarca3 + "', '" + _sMarca3 + "'"
 			_oSQL:_sQuery +=  ") ORDER BY GRUPO"
@@ -455,26 +466,26 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 		endif
 
 	case _sLayout == 'TL'  // por Tabela de precos das Lojas
-	//	_oSQL:_sQuery := "SELECT * FROM BI_ALIANCA.dbo.FDRE_INDL_TABLOJ ('" + cvaltochar (_trbDRE -> idanalise) + "', '08', '08') ORDER BY GRUPO"
+	//	_oSQL:_sQuery := "SELECT * FROM " + _sLinkSrv + ".FDRE_INDL_TABLOJ ('" + cvaltochar (_trbDRE -> idanalise) + "', '08', '08') ORDER BY GRUPO"
 		_oSQL:_sQuery := "SELECT GRUPO"
 		_oSQL:_sQuery +=      ", DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
 		_oSQL:_sQuery +=      ", GONDOLA, CX_FECHADA, ASSOC_FUNC, PARCEIR_REVD, FEIRINH_COMUNID, COML_EXT, COML_EXT2, TUMELERO, PROMOCOES, OUTROS"
-		_oSQL:_sQuery +=  " FROM BI_ALIANCA.dbo.FDRE_INDL_TABLOJ ('" + cvaltochar (_trbDRE -> idanalise) + "'"
+		_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".FDRE_INDL_TABLOJ ('" + cvaltochar (_trbDRE -> idanalise) + "'"
 		_oSQL:_sQuery +=         ",'" + _sFilIni + "', '" + _sFilFim + "'"
 		_oSQL:_sQuery +=  ") ORDER BY GRUPO"
 		_oSQL:Log ()
 		_oSQL:Qry2XLS(.F.,.F.,.F.)
-	//	_oSQL:_sQuery := "SELECT * FROM BI_ALIANCA.dbo.FDRE_INDL_TABLOJ ('" + cvaltochar (_trbDRE -> idanalise) + "', '10', '10') ORDER BY GRUPO"
+	//	_oSQL:_sQuery := "SELECT * FROM " + _sLinkSrv + ".FDRE_INDL_TABLOJ ('" + cvaltochar (_trbDRE -> idanalise) + "', '10', '10') ORDER BY GRUPO"
 	//	_oSQL:Log ()
 	//	_oSQL:Qry2XLS(.F.,.F.,.F.)
-	//	_oSQL:_sQuery := "SELECT * FROM BI_ALIANCA.dbo.FDRE_INDL_TABLOJ ('" + cvaltochar (_trbDRE -> idanalise) + "', '13', '13') ORDER BY GRUPO"
+	//	_oSQL:_sQuery := "SELECT * FROM " + _sLinkSrv + ".FDRE_INDL_TABLOJ ('" + cvaltochar (_trbDRE -> idanalise) + "', '13', '13') ORDER BY GRUPO"
 	//	_oSQL:Log ()
 	//	_oSQL:Qry2XLS(.F.,.F.,.F.)
 
 	case _sLayout == 'AC'  // Aberto por Cliente
 		_oSQL:_sQuery := " WITH DADOS AS "
 		_oSQL:_sQuery += "(SELECT *"
-		_oSQL:_sQuery += " FROM BI_ALIANCA.dbo.DRE_INDL_ITENS"
+		_oSQL:_sQuery += " FROM " + _sLinkSrv + ".DRE_INDL_ITENS"
 		_oSQL:_sQuery += " WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
 		_oSQL:_sQuery += "), TOTAIS1 AS"
 		_oSQL:_sQuery += "(SELECT CLIENTE, LOJA, CLIBASE, LOJABASE, LIN_COML, CC"
@@ -555,10 +566,10 @@ static function _Excl ()
 	procregua (10)
 	incproc ('Excluindo...')
 	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := "DELETE BI_ALIANCA.dbo.DRE_INDL_ITENS WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
+	_oSQL:_sQuery := "DELETE " + _sLinkSrv + ".DRE_INDL_ITENS WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
 	_oSQL:Log ()
 	if _oSQL:Exec ()
-		_oSQL:_sQuery := "DELETE BI_ALIANCA.dbo.DRE_INDL WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
+		_oSQL:_sQuery := "DELETE " + _sLinkSrv + ".DRE_INDL WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
 		_oSQL:Log ()
 		if _oSQL:Exec ()
 			_AtuTrb ()
@@ -593,7 +604,7 @@ Static Function _ListaPrd (_nIdAn, _sQualTipo)
 		_oSQL:_sQuery +=                " ,CASE WHEN GRP_LIN_COML = 'L' THEN PRODUTO ELSE '' END AS COL12"
 		_oSQL:_sQuery +=                " ,CASE WHEN GRP_LIN_COML = 'M' THEN PRODUTO ELSE '' END AS COL13"
 		_oSQL:_sQuery +=                " ,CASE WHEN GRP_LIN_COML = 'Z' THEN PRODUTO ELSE '' END AS COL14"
-		_oSQL:_sQuery += " FROM BI_ALIANCA.dbo.DRE_INDL_ITENS "
+		_oSQL:_sQuery += " FROM " + _sLinkSrv + ".DRE_INDL_ITENS "
 		_oSQL:_sQuery += " WHERE ID_ANALISE = " + cvaltochar (_nIdAn)
 		_oSQL:_sQuery += " )"
 		_oSQL:_sQuery += " SELECT "
@@ -624,7 +635,7 @@ Static Function _ListaPrd (_nIdAn, _sQualTipo)
 		_oSQL:_sQuery +=                " ,CASE WHEN CC = 'F09'    THEN PRODUTO ELSE '' END AS COL08"
 		_oSQL:_sQuery +=                " ,CASE WHEN CC = 'GRANEL' THEN PRODUTO ELSE '' END AS COL09"
 		_oSQL:_sQuery +=                " ,CASE WHEN CC = 'OUTRAS' THEN PRODUTO ELSE '' END AS COL10"
-		_oSQL:_sQuery += " FROM BI_ALIANCA.dbo.DRE_INDL_ITENS "
+		_oSQL:_sQuery += " FROM " + _sLinkSrv + ".DRE_INDL_ITENS "
 		_oSQL:_sQuery += " WHERE ID_ANALISE = " + cvaltochar (_nIdAn)
 		_oSQL:_sQuery += " )"
 		_oSQL:_sQuery += " SELECT "

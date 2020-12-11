@@ -91,6 +91,7 @@ Static Function _MoveTe ()
 	local _nTotLitr  := 0
 	local _sUltReqD3 := ''
 	local _nCusto1   := 0
+	local _aCols     := {}
 
 	u_logSX1 ()
 
@@ -125,14 +126,14 @@ Static Function _MoveTe ()
 		_aCC [len (_aCC), .CCCodigo]        = cFilAnt + '1102'
 		_aCC [len (_aCC), .CCDescricao]     = fBuscaCpo ("CTT", 1, xfilial ("CTT") + _aCC [len (_aCC), .CCCodigo], "CTT_DESC01")
 		_aCC [len (_aCC), .CCTipoMovimento] = '301'
-		aadd (_aCC, afill (array (.CCQtColunas), 0))
-		_aCC [len (_aCC), .CCCodigo]        = cFilAnt + '1201'
-		_aCC [len (_aCC), .CCDescricao]     = fBuscaCpo ("CTT", 1, xfilial ("CTT") + _aCC [len (_aCC), .CCCodigo], "CTT_DESC01")
-		_aCC [len (_aCC), .CCTipoMovimento] = '302'
-		aadd (_aCC, afill (array (.CCQtColunas), 0))
-		_aCC [len (_aCC), .CCCodigo]        = cFilAnt + '1202'
-		_aCC [len (_aCC), .CCDescricao]     = fBuscaCpo ("CTT", 1, xfilial ("CTT") + _aCC [len (_aCC), .CCCodigo], "CTT_DESC01")
-		_aCC [len (_aCC), .CCTipoMovimento] = '303'
+		// aadd (_aCC, afill (array (.CCQtColunas), 0))
+		// _aCC [len (_aCC), .CCCodigo]        = cFilAnt + '1201'
+		// _aCC [len (_aCC), .CCDescricao]     = fBuscaCpo ("CTT", 1, xfilial ("CTT") + _aCC [len (_aCC), .CCCodigo], "CTT_DESC01")
+		// _aCC [len (_aCC), .CCTipoMovimento] = '302'
+		// aadd (_aCC, afill (array (.CCQtColunas), 0))
+		// _aCC [len (_aCC), .CCCodigo]        = cFilAnt + '1202'
+		// _aCC [len (_aCC), .CCDescricao]     = fBuscaCpo ("CTT", 1, xfilial ("CTT") + _aCC [len (_aCC), .CCCodigo], "CTT_DESC01")
+		// _aCC [len (_aCC), .CCTipoMovimento] = '303'
 
 		// Linha adicional para o movimento de complemento de compra de uva. Apensar de nao ser um centro
 		// de custo, a maioria dos tratamentos neste programa eh igual.
@@ -149,22 +150,22 @@ Static Function _MoveTe ()
 	// Remove movimentos, se jah existirem
 	if _lContinua
 		incproc ('Exclusao de movimentos anteriores')
-		for _nCC = 1 to len (_aCC)
+		//for _nCC = 1 to len (_aCC)
 			_oSQL := ClsSQL ():New ()
 			_oSQL:_sQuery := "UPDATE " + RetSQLName ("SD3")
 			_oSQL:_sQuery += " SET D_E_L_E_T_ = '*'"
 			_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ' '"
 			_oSQL:_sQuery +=   " AND D3_FILIAL  = '"  + XFilial("SD3") + "'"
 			_oSQL:_sQuery +=   " AND D3_EMISSAO BETWEEN '" + _ddini + "' AND '"  + _ddfim + "'"
-			_oSQL:_sQuery +=   " AND D3_TM      = '" + _aCC [_nCC, .CCTipoMovimento] + "'"
+		//	_oSQL:_sQuery +=   " AND D3_TM      = '" + _aCC [_nCC, .CCTipoMovimento] + "'"
 			_oSQL:_sQuery +=   " AND D3_VACHVEX = '" + _sChaveSD3 + "'"
 			_oSQL:Log ()
 			if ! _oSQL:Exec ()
 				u_help ('Nao foi possivel limpar movimentos anteriores',, .t.)
 				_lContinua = .F.
-				exit
+			//	exit
 			endif
-		next
+		//next
 	endif
 
 
@@ -349,12 +350,13 @@ Static Function _MoveTe ()
 					_sUltReqD3 := "SELECT TOP 1 D3_CF, D3_OP, D3_LOCAL, D3_DOC, D3_EMISSAO, D3_NUMSEQ, D3_CHAVE, D3_IDENT"
 					_sUltReqD3 +=  " FROM " + RetSQLName ("SD3") + " SD3 "
 					
-					// // Em 24/11/2020, sem motivo aparente, o SQL na base teste simplesmente decidiu que nao ia mais usar
-					// // o indice por OP na SEGUNDA execucao (quando inclui o campo D3_COD) desta query... tentei varias coisas
-					// // sem sucesso...
-					// if alltrim (upper (getenvserver ())) == "TESTE" 
-					// 	_sUltReqD3 += " with (index (SD30101)) "
-					// endif
+					// Em 24/11/2020, sem motivo aparente, o SQL na base teste simplesmente decidiu que nao ia mais usar
+					// o indice por OP na SEGUNDA execucao (quando inclui o campo D3_COD) desta query... tentei varias coisas
+					// sem sucesso...
+					// Rodei o analisador na base quente e estava prevendo fazer a mesma coisa. Por isso vou mandar usar o indice abaixo.
+					//if alltrim (upper (getenvserver ())) == "TESTE" 
+					 	_sUltReqD3 += " with (index (SD30101)) "
+					//endif
 
 					_sUltReqD3 += " WHERE D_E_L_E_T_ = ''"
 					_sUltReqD3 +=   " AND D3_FILIAL = '" + xfilial ("SD3") + "'"
@@ -422,7 +424,16 @@ Static Function _MoveTe ()
 	if ! _lContinua
 		u_help ("Processo cancelado.",, .t.)
 	else
-		u_help ("Processo de rateios finalizado.")
+		_aCols = {}
+		aadd (_aCols, {.CCCodigo,        'C.custo',         90, ''})
+		aadd (_aCols, {.CCDescricao,     'Descricao',      140, ''})
+		aadd (_aCols, {.CCSaldoMO,       'Saldo MO',        50, '@E 999,999,999,999.99'})
+		aadd (_aCols, {.CCSaldoGGF,      'Saldo GGF',       50, '@E 999,999,999,999.99'})
+		aadd (_aCols, {.CCSaldoSemGrupo, 'Saldo sem grupo', 50, '@E 999,999,999,999.99'})
+		aadd (_aCols, {.CCSaldoTransf,   'Saldo Transf',    50, '@E 999,999,999,999.99'})
+		aadd (_aCols, {.CCSaldoApoio,    'Saldo apoio',     50, '@E 999,999,999,999.99'})
+		aadd (_aCols, {.CCTipoMovimento, 'Tipo movto',      30, ''})
+		U_F3Array (_aCC, "Valores rateados", _aCols, NIL,  NIL, 'Valores rateados')
 	endif
 Return
 
