@@ -67,6 +67,7 @@ Considerações adicionais:
 // 21/01/2020 - Robert  - Campos D3_VAMO e D3_VAGGF nao eram consultados e serao excluidos.
 // 20/07/2020 - Robert  - Permissao para executar passa a validar acesso 103 e nao mais 069.
 //                      - Inseridas tags para catalogacao de fontes
+// 11/12/2020 - Robert  - Ignora centros de custo de recebimento e processamento (por enquanto apenas base teste) por que serao processados pelo VA_RTSAF.TLPP
 //
 
 
