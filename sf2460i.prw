@@ -134,8 +134,8 @@
 // 27/08/2020 - Cláudia - Gravação do campo e1_cartaut com c5 -> c5_vaaut. 
 //						  Incluida verificação se campos do SC5 estao preenchidos para gravar na SE1
 // 24/10/2020 - Robert  - Desabilitada gravacao SC0 (reservas) cfe. campo C5_VARESER (nao usamos mais desde 2014).
+// 10/12/2020 - Claudia - Gravação do campo ID transação do pagar.me em títulos. GLPI: 9012
 //
-
 // -------------------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -269,7 +269,9 @@ User Function sf2460i ()
 			If !empty(sc5 -> c5_vaaut)
 				se1 -> e1_cartaut = sc5 -> c5_vaaut
 			EndIf
-
+			If !empty(sc5 -> c5_vaidt)
+				se1 -> e1_vaidt = sc5 -> c5_vaidt
+			EndIf
 			msunlock ()
 			se1 -> (dbskip ())
 		enddo
