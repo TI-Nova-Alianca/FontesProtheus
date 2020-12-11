@@ -152,14 +152,18 @@ Static Function _esxest01a ()
 	// Obs.: caso seja alterado algum tipo de movimento aqui, deve-se ajustar os lctos.padrao do grupo 668.
 	if _lContinua
 		_aCC = {}
-		aadd (_aCC, afill (array (.CCQtColunas), 0))
-		_aCC [len (_aCC), .CCCodigo]        = cFilAnt + '1101'
-		_aCC [len (_aCC), .CCDescricao]     = fBuscaCpo ("CTT", 1, xfilial ("CTT") + _aCC [len (_aCC), .CCCodigo], "CTT_DESC01")
-		_aCC [len (_aCC), .CCTipoMovimento] = '300'
-		aadd (_aCC, afill (array (.CCQtColunas), 0))
-		_aCC [len (_aCC), .CCCodigo]        = cFilAnt + '1102'
-		_aCC [len (_aCC), .CCDescricao]     = fBuscaCpo ("CTT", 1, xfilial ("CTT") + _aCC [len (_aCC), .CCCodigo], "CTT_DESC01")
-		_aCC [len (_aCC), .CCTipoMovimento] = '301'
+
+		// por enquanto, apenas na base de testes
+		if ! 'TESTE' $ upper (getenvserver ())
+			aadd (_aCC, afill (array (.CCQtColunas), 0))
+			_aCC [len (_aCC), .CCCodigo]        = cFilAnt + '1101'
+			_aCC [len (_aCC), .CCDescricao]     = fBuscaCpo ("CTT", 1, xfilial ("CTT") + _aCC [len (_aCC), .CCCodigo], "CTT_DESC01")
+			_aCC [len (_aCC), .CCTipoMovimento] = '300'
+			aadd (_aCC, afill (array (.CCQtColunas), 0))
+			_aCC [len (_aCC), .CCCodigo]        = cFilAnt + '1102'
+			_aCC [len (_aCC), .CCDescricao]     = fBuscaCpo ("CTT", 1, xfilial ("CTT") + _aCC [len (_aCC), .CCCodigo], "CTT_DESC01")
+			_aCC [len (_aCC), .CCTipoMovimento] = '301'
+		endif
 		aadd (_aCC, afill (array (.CCQtColunas), 0))
 		_aCC [len (_aCC), .CCCodigo]        = cFilAnt + '1201'
 		_aCC [len (_aCC), .CCDescricao]     = fBuscaCpo ("CTT", 1, xfilial ("CTT") + _aCC [len (_aCC), .CCCodigo], "CTT_DESC01")
@@ -174,23 +178,22 @@ Static Function _esxest01a ()
 	// Remove movimentos, se jah existirem
 	if _lContinua
 		incproc ('Exclusao de movimentos anteriores')
-		for _nCC = 1 to len (_aCC)
+//		for _nCC = 1 to len (_aCC)
 			_oSQL := ClsSQL ():New ()
-//			_oSQL:_sQuery := "DELETE " + RetSQLName ("SD3")
 			_oSQL:_sQuery := "UPDATE " + RetSQLName ("SD3")
 			_oSQL:_sQuery += " SET D_E_L_E_T_ = '*'"
 			_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ' '"
 			_oSQL:_sQuery +=   " AND D3_FILIAL  = '"  + XFilial("SD3") + "'"
 			_oSQL:_sQuery +=   " AND D3_EMISSAO BETWEEN '" + _ddini + "' AND '"  + _ddfim + "'"
-			_oSQL:_sQuery +=   " AND D3_TM      = '" + _aCC [_nCC, .CCTipoMovimento] + "'"
+//			_oSQL:_sQuery +=   " AND D3_TM      = '" + _aCC [_nCC, .CCTipoMovimento] + "'"
 			_oSQL:_sQuery +=   " AND D3_VACHVEX = '" + _sChaveSD3 + "'"
 			_oSQL:Log ()
 			if ! _oSQL:Exec ()
 				u_help ('Nao foi possivel limpar movimentos anteriores',, .t.)
 				_lContinua = .F.
-				exit
+			//	exit
 			endif
-		next
+//		next
 	endif
 
 
