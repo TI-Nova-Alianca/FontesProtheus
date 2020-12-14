@@ -154,7 +154,7 @@ METHOD Executa () Class ClsVerif
 
 	if empty (::Query)
 		::UltMsg += "Query nao definida para esta verificacao."
-		u_help (::UltMsg)
+		u_help (::UltMsg,, .t.)
 		_lContinua = .F.
 	endif
 	if ::Filiais != '*' .and. ! cFilAnt $ ::Filiais
