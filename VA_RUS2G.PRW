@@ -26,7 +26,7 @@ user Function VA_RUS2G (_nOpc)
 	local _nLinha    := 0
 	local _nAglut    := 0
 
-	u_logIni ()
+	u_log2 ('info', 'Iniciando ' + procname ())
 
 	// Confere se jah existe este numero de carga (caso haja problema com os sequenciais).
 	if _lContinua .and. inclui
@@ -55,9 +55,9 @@ user Function VA_RUS2G (_nOpc)
 		endif
 
 		// Variavel para retorno do numero da carga para a funcao de geracao automatica.
-		if type ("_RetGrvZZE") == 'C'
-			_RetGrvZZE = sze -> ze_carga
-			u_log ('_RetGrvZZE:', _RetGrvZZE)
+		if type ("_RetGrvSZE") == 'C'
+			_RetGrvSZE = sze -> ze_carga
+			u_log2 ('debug', '_RetGrvSZE:', _RetGrvSZE)
 		endif
 	
 		msunlock ("SZE")
@@ -136,8 +136,10 @@ user Function VA_RUS2G (_nOpc)
 		// Verifica se deve imprimir ticket em impressora termica.
 		if _lImpTick
 			if inclui
+			//	u_log2 ('debug', 'vou mandar imprimir ticket de inclusao')
 				U_VA_RUSTk (1, _sPortTick, _nQViasTk1, {}, 'Bematech', .t.)
 			elseif altera
+			//	u_log2 ('debug', 'vou mandar imprimir ticket de alteracao')
 				U_VA_RUSTk (2, _sPortTick, _nQViasTk2, {}, 'Bematech', .t.)
 			endif
 		endif

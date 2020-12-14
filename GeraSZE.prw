@@ -80,9 +80,10 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		private _zx509orga    := U_RetZX5 ("09", _sSafra + _sBalanca, 'ZX5_09ORGA')
 	endif
 
+
 	// Se nao informada uma impressora especifica, mantem a impressora default desta filial.
 	if ! empty (_sIdImpr)
-		_sPortaBal = U_RetZX5 ('49', _sIdImpr, 'ZX5_49CAM')
+		_sPortTick = U_RetZX5 ('49', _sIdImpr, 'ZX5_49CAM')
 	else
 		do case
 		case _sBalanca == 'LB'
@@ -98,6 +99,10 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 	endif
 	u_log2 ('debug', '_sIdImpr:' + _sIdImpr)
 	u_log2 ('debug', '_sPortTick:' + _sPortTick)
+	if ! empty (_sPortTick)
+		_lImpTick = .T.
+	endif
+
 
 	// Verifica se o associado tem alguma restricao
 	if empty (_sErros)
@@ -127,7 +132,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 			_sErros += "Nao ha nenhuma variedade de uva ligada ao associado."
 		endif
 	endif
-	u_log2 ('info', '_aCadVitic ficou assim:')
+	//u_log2 ('info', '_aCadVitic ficou assim:')
 	u_log2 ('info', _aCadVitic)
 
 	// Cria aHeader e aCols para poder usar as validacoes do VA_RUS2.PRW
@@ -135,10 +140,13 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		sb1 -> (dbsetorder (1))
 		private aHeader := aclone (U_GeraHead ("SZF", .F., {}, {}, .F.))
 		private aCols := {}
+		//u_log2 ('debug', '_aItensCar:')
+		//u_log2 ('debug', _aItensCar)
 		for _nItemCar = 1 to len (_aItensCar)
 
 			// Verifica em qual das linhas da array de cadastros viticolas encontra-se esta variedade.
-			_nItemVit = ascan (_aCadVitic, {|_aVal| _aVal [.CadVitProduto] == _aItensCar [_nItemCar, 2]})
+			//u_log2 ('debug', 'Pesquisando ' + _aItensCar [_nItemCar, 2])
+			_nItemVit = ascan (_aCadVitic, {|_aVal| alltrim (_aVal [.CadVitProduto]) == alltrim (_aItensCar [_nItemCar, 2])})
 			if _nItemVit == 0
 				_sErros += "Variedade " + alltrim (_aItensCar [_nItemCar, 2]) + " nao vinculada com a propriedade rural " + _aItensCar [_nItemCar, 1] + ' / SIVIBE ' + _aItensCar [_nItemCar, 5]
 				exit
@@ -206,11 +214,11 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 			//u_log ('Tentando gravar carga')
 			
 			// Deixa criara variavel para retorno
-			private _RetGrvZZE := ""
+			private _RetGrvSZE := ""
 			
 			 // Gravacao pelo programa original.
 			if U_VA_RUS2G ()
-				_sCargaGer = _RetGrvZZE
+				_sCargaGer = _RetGrvSZE
 			else
 				_sCargaGer = ''
 			endif

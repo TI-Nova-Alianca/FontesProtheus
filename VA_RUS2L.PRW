@@ -23,6 +23,7 @@ user function VA_RUS2L ()
 	local _lParaEsp  := .F.
 	local _oSQL      := NIL
 	local _aLimEspum := {}
+	local _sUvaBase  := ''
 
 	if _lRet .and. m->ze_aglutin == "D" .and. GDDeleted ()
 		u_help ("Nao eh permitido alterar itens de cargas aglutinadas",, .T.)
@@ -121,7 +122,15 @@ user function VA_RUS2L ()
 
 	// Verifica se o produto consta no cadastro viticola.
 	if _lRet .and. (inclui .or. altera) .and. ! GDDeleted () .and. m->ze_coop $ '00136901/00002101'
-		_nVitic = ascan (_aCadVitic, {|_aVal| _aVal [.CadVitCodigo] == GDFieldGet ("ZF_CADVITI") .and. _aVal [.CadVitProduto] == GDFieldGet ("ZF_PRODUTO")})
+
+		// Se for uva para espumante, o que vai estar no cadastro viticola vai ser o a vriedade base (para vinho)
+		if _lParaEsp
+			_sUvaBase = fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("ZF_PRODUTO"), "B1_CODPAI")
+			u_log ('debug', 'Vou testar cadastro viticola com uva base: ' + _sUvaBase)
+			_nVitic = ascan (_aCadVitic, {|_aVal| _aVal [.CadVitCodigo] == GDFieldGet ("ZF_CADVITI") .and. _aVal [.CadVitProduto] == _sUvaBase})
+		else
+			_nVitic = ascan (_aCadVitic, {|_aVal| _aVal [.CadVitCodigo] == GDFieldGet ("ZF_CADVITI") .and. _aVal [.CadVitProduto] == GDFieldGet ("ZF_PRODUTO")})
+		endif
 
 		if _nVitic == 0
 			_lRet = .F.
