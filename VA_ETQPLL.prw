@@ -43,6 +43,7 @@
 // 07/05/2020 - Sandra - Melhorada msg quando o usuario nao tem acesso a 'cancelar a transf. para FullWMS'.
 // 20/07/2020 - Robert - Cancelamento de guarda de etiqueta passa a validar acesso 100 e nao mais 069.
 //                     - Inseridas tags para catalogacao de fontes
+// 14/12/2020 - Robert - Rotina de inutilizacao (EtqPllIn) migrada para fonte proprio.
 //
 
 // Tags para automatizar catalogo de customizacoes:
@@ -74,7 +75,8 @@ User Function VA_ETQPLL()
 	aadd(aRotina, {"Gera Etq NF entrada", "processa ({||U_EtqPllGN ()})", 0, 3})
 	aadd(aRotina, {"Regerar Grupo"      , "U_EtqPllRG()", 0, 3})
 	aadd(aRotina, {"Excluir Grupo"      , "U_EtqPlltG(za1 -> za1_op, za1 -> za1_doce, za1 -> za1_seriee, za1 -> za1_fornec, za1 -> za1_lojaf, 'E')", 0, 2})
-	aadd(aRotina, {"Inutilizar"         , "U_EtqPllIn(ZA1->ZA1_CODIGO,.T.)", 0, 2})
+//	aadd(aRotina, {"Inutilizar"         , "U_EtqPllIn(ZA1->ZA1_CODIGO,.T.)", 0, 2})
+	aadd(aRotina, {"Inutilizar"         , "U_ZA1In (ZA1->ZA1_CODIGO, .T.)", 0, 2})
 	aAdd(aRotina, {"Excluir"            , "U_EtqPlltE (.T.)", 0, 5})
 	aAdd(aRotina, {"Cancela transf.Full", "U_EtqPllCT (ZA1->ZA1_CODIGO)", 0, 5})
 	aadd(aRotina, {"Legenda", "U_ZA1LG()", 0, 7})
@@ -125,9 +127,8 @@ User Function EtqPlltI ()
 
 	// Cria variáveis 'M->' aqui para serem vistas depois da inclusão.
 	RegToMemory ("ZA1", inclui, inclui)
-	u_log ('vou chamar axinclui')
 	if axinclui ("ZA1", za1 -> (recno ()), 3, NIL, NIL, NIL, "allwaystrue ()") == 1
-		u_log ('exinclui deu certo')
+		u_log2 ('aviso', 'Axinclui deu certo')
 	endif
 
 return
@@ -440,7 +441,8 @@ User Function EtqPlltG (_sOP, _sNF, _sSerie, _sFornece, _sLoja, _sQueFazer)
 				for _nEtiq = 1 to len (_aEtiq)
 					if _aEtiq [_nEtiq, 1] .and. _aEtiq [_nEtiq, 7] != ''
 						if _PodeExcl (.T.)
-							U_EtqPllIn(_aEtiq[_nEtiq, 2], .F.)
+						//	U_EtqPllIn(_aEtiq[_nEtiq, 2], .F.)
+							U_ZA1In(_aEtiq[_nEtiq, 2], .F.)
 						endif
 					else
 						if _aEtiq [_nEtiq, 1] .and. za1 -> (dbseek (xfilial ("ZA1") + _aEtiq [_nEtiq, 2], .F.))
@@ -576,13 +578,21 @@ User Function EtqPllCT (_sCodigo)
 	endif
 return
 
-
+/*
 // --------------------------------------------------------------------------
 // Inutiliza Etiqueta
 User Function EtqPllIn (_sCodigo, _bMostraMsg)
 	local _oSQL      := NIL
 	local _lContinua := .T.
 	
+	u_log2 ('info', 'Iniciando ' + procname ())
+
+	za1 -> (dbsetorder(1))
+	if ! za1 -> (dbseek(xFilial("ZA1") + AllTrim(_sCodigo), .F.))
+		u_help ("Etiqueta '" + _sCodigo + "' nao encontrada!",, .t.)
+		_lContinua = .F.
+	endif
+
 	// Verifica se o usuario tem liberacao.
 	if ! empty (za1 -> za1_op) .and. ! U_ZZUVL ('073', __cUserID, .T.)
 		_lContinua = .F.
@@ -591,12 +601,6 @@ User Function EtqPllIn (_sCodigo, _bMostraMsg)
 		_lContinua = .F.
 	endif
 
-	za1 -> (dbsetorder(1))
-	if ! za1 -> (dbseek(xFilial("ZA1") + AllTrim(_sCodigo), .F.))
-		u_help ("Etiqueta '" + _sCodigo + "' nao encontrada!",, .t.)
-		_lContinua = .F.
-	endif
-	
 	if ! empty (ZA1 -> ZA1_OP) .and. _lContinua
 		u_help ("A etiqueta '" + alltrim(ZA1 -> ZA1_CODIGO) + "' nao pode ser inutilizada por ser uma etiqueta de ordem de producao.",, .t.)
 		_lContinua := .F.
@@ -627,7 +631,7 @@ User Function EtqPllIn (_sCodigo, _bMostraMsg)
 		endif
 	endif
 return _lContinua
-
+*/
 
 // --------------------------------------------------------------------------
 // Gera etique a partir da NF de Entrada
