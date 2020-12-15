@@ -7,6 +7,7 @@
 // 15/06/2020 - Robert - Verifica existencia da variavel cFilAnt antes de usa-la.
 // 15/10/2020 - Robert - Tratamento para dado tipo NIL.
 // 14/12/2020 - Robert - Exporta arrays usando a mesma formatacao inicial de linha, para facilitar posterior filtragem.
+// 15/12/2020 - Robert - Exportacao de array deu erro na importacao de pedidos!!! GLPI 9033
 //
 
 // --------------------------------------------------------------------------
@@ -47,7 +48,8 @@ user function Log2 (_sTipo, _xDado, _xExtra)
 
 	// Verifica se consegue gravar tudo em uma linha apenas
 	if valtype (_xDado) == 'A'
-		_DumpArray (_xDado, _sTipo) //, space (8))
+		//_DumpArray (_xDado, _sTipo) //, space (8))
+		u_log (_xdado)
 	elseif valtype (_xDado) == 'O'
 		_sTextoLog += padr (' variavel tipo ' + valtype (_xDado), 100)
 		_lUmaLinha = .F.
@@ -98,7 +100,7 @@ user function Log2 (_sTipo, _xDado, _xExtra)
 return
 
 
-
+/*
 // --------------------------------------------------------------------------
 static function _DumpArray (_aMatriz, _sTipoLog) //_sEspacos)
 	local _nLin      := 0
@@ -244,21 +246,11 @@ static function _DumpArray (_aMatriz, _sTipoLog) //_sEspacos)
 		endif
 	endif
 	//U_Log (_sMensagem)
-/*
-	_nLin = 1
-	do while .T.
-		_sDado = memoline (_sMensagem,, _nLin)
-		if empty (_sDado)
-			exit
-		endif
-		u_log2 (_sTipo, _sDado)
-		_nLin ++
-	enddo
-*/
+
 return _sMensagem
+*/
 
-
-
+/*
 // --------------------------------------------------------------------------
 // Converte campos de array para caracter, para exportacao para log.
 static function _Arr2Char (_xDado)
@@ -289,7 +281,7 @@ static function _Arr2Char (_xDado)
 			_sDado = "*ERRO*"
 	endcase
 return _sDado
-
+*/
 
 
 // --------------------------------------------------------------------------
