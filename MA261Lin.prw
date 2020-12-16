@@ -34,6 +34,7 @@
 // 07/08/2020 - Robert - Bloqueio transf. AX 66 e itens '4191/9998' (pallets) no AX 02
 // 26/10/2020 - Robert - Passa a bloquear almoxarifados com base no parametro VA_ALMZAG.
 // 04/12/2020 - Robert - Aceita transferencia de um codigo para outro (msg.Harry Potter) quando solicitacao vem da classe ClsTrEstq e usuario tem acesso pelo ZZU.
+// 16/12/2020 - Robert - Aceita transf. de liquidos sem laudo quando solicitacao vem da classe ClsTrEstq (GLPI 9051)
 //
 
 // ------------------------------------------------------------------------------------
@@ -227,7 +228,12 @@ user function ma261Lin ()
 	if _lRet .and. ! empty (_sLoteOrig)
 		if fBuscaCpo ("SB1", 1, xfilial ("SB1") + _sProdOrig, "B1_TIPO") $ "VD/"
 			if empty (U_LaudoEm (_sProdOrig, _sLoteOrig, dA261Data))
-				_lRet = U_MsgNoYes ("Nao encontrei laudo laboratorial valido para este produto/lote. Confirma a movimentacao assim mesmo?", .F.)
+				if type ("_lClsTrEst") == 'L' .and. _lClsTrEst == .T.  // Se estah sendo chamado de dentro dessa classe, vou assumir que as devidas verificacoes jah foram feitas (GLPI 9051)
+					// Pode passar
+					u_log2 ('info', 'aceitando transferencia por que vem de uma chamada da classe ClsTrEstq.')
+				else
+					_lRet = U_MsgNoYes ("Nao encontrei laudo laboratorial valido para este produto/lote. Confirma a movimentacao assim mesmo?", .F.)
+				endif
 			endif
 		endif
 	endif
