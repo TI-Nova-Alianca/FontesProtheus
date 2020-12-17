@@ -173,15 +173,15 @@ static function _LePed ()
 			// Por isso, busca tambem pelo CNPJ.
 			_oSQL := ClsSQL ():New ()
 			_oSQL:_sQuery := ""
-			_oSQL:_sQuery += " SELECT DISTINCT DB_PED_CLIENTE, ISNULL (DB_CLI_CGCMF, '')"
+			_oSQL:_sQuery += "SELECT DISTINCT DB_PED_CLIENTE, ISNULL (DB_CLI_CGCMF, '')"
 			_oSQL:_sQuery +=   " FROM " + _sLinkSrv + ".DB_PEDIDO "
 			_oSQL:_sQuery +=   " LEFT JOIN " + _sLinkSrv + ".DB_CLIENTE ON (DB_CLI_CODIGO = DB_PED_CLIENTE)"
 			_oSQL:_sQuery +=  " WHERE DB_PED_NRO = " + substr ((_sAliasQ) -> zc5_pedmer, 1, 4) + substr ((_sAliasQ) -> zc5_pedmer, 6, 4)
-			_oSQL:Log ()
+			//_oSQL:Log ()
 			_aCNPJ = _oSQL:Qry2Array (.F., .F.)
 			
-			u_log2 ('info', 'Resultado da busca do cliente por CNPJ:')
-			u_log2 ('info', _aCNPJ)
+			//u_log2 ('info', 'Resultado da busca do cliente por CNPJ:')
+			//u_log2 ('info', _aCNPJ)
 			
 			if len (_aCNPJ) == 0
 				_sMsgErro += "O pedido Mercanet '" + substr ((_sAliasQ) -> zc5_pedmer, 1, 4) + substr ((_sAliasQ) -> zc5_pedmer, 6, 4) + "' consta na tabela de pedidos a importar, mas nao o encontrei na tabela de pedidos!"
@@ -334,7 +334,7 @@ static function _LePed ()
 					endif
 					aadd (_aLinhaSC6, {"C6_COMIS1",  (_sAliasQ) -> zc6_comis1, NIL})
 					
-					u_log2 ('debug', 'zc5_pedcli: '+ (_sAliasQ) -> zc5_pedcli)
+					//u_log2 ('debug', 'zc5_pedcli: '+ (_sAliasQ) -> zc5_pedcli)
 					u_log2 ('debug', _aLinhaSC6)
 					
 					// Ordena campos cfe. dicionario de dados
@@ -374,6 +374,7 @@ static function _LePed ()
 					If lMsErroAuto
 						_sMsgErro += iif (! empty (_sErroAuto), _sErroAuto + "; ", "")
 						if ! empty (NomeAutoLog ())
+							u_log2 ('erro', memoread (NomeAutoLog ()))
 							_sMsgErro += U_LeErro (memoread (NomeAutoLog ()))
 						else
 							_sMsgErro += "Impossivel ler arquivo de log de erros."

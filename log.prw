@@ -181,7 +181,7 @@ user function LogACols (_aHeader, _aCols)
 
 	if _aHeader == NIL
 		if type ("aHeader") != 'A'
-			u_log ('aHeader nao definido. Geracao de log nao vai ser possivel.')
+			u_log2 ('aviso', 'aHeader nao definido. Geracao de log nao vai ser possivel.')
 			return
 		else
 			_aHeader = aclone (aHeader)
@@ -189,7 +189,7 @@ user function LogACols (_aHeader, _aCols)
 	endif
 	if _aCols == NIL
 		if type ("aCols") != 'A'
-			u_log ('aCols nao definido. Geracao de log nao vai ser possivel.')
+			u_log2 ('aviso', 'aCols nao definido. Geracao de log nao vai ser possivel.')
 			return
 		else
 			_aCols = aclone (aCols)
@@ -207,13 +207,9 @@ user function LogACols (_aHeader, _aCols)
 		_aAux [2, _nCol + 1] = _aHeader [_nCol, 1]  // Titulo do campo
 	next
 	for _nLin = 1 to len (_aCols)
-		//u_log ('_nLin:', _nLin)
 		aadd (_aAux, array (len (_aHeader) + 1))
 		for _nCol = 1 to len (_aHeader)
-			//u_log ('_nCol:', _nCol)
-		//	_aAux [len (_aAux), _nCol + 1] = transform (_aCols [_nLin, _nCol], _aHeader [_nCol, 3])
 			_aAux [len (_aAux), _nCol + 1] = cvaltochar (_aCols [_nLin, _nCol])
-			//u_log (_aCols [_nLin, len (_aCols [_nLin])])
 			if _aCols [_nLin, len (_aCols [_nLin])]
 				_aAux [len (_aAux), 1] = '*DEL*'
 			else
@@ -221,7 +217,7 @@ user function LogACols (_aHeader, _aCols)
 			endif
 		next 
 	next
-	u_log (_aAux)
+	u_log2 ('debug', _aAux)
 return
 
 
