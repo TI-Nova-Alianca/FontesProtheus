@@ -1,0 +1,112 @@
+// Programa...: MonMeta1
+// Autor......: Robert Koch
+// Data.......: 16/12/2020
+// Descricao..: Tela de monitoramento de integracao (recebimento de titulos) com sistema Metadados (GLPI 
+//
+// Historico de alteracoes:
+//
+
+// --------------------------------------------------------------------------
+user function MonMeta1 ()
+	local _nSeqRH    := 0
+	local _dDataIni  := date ()
+	local _sSituacao := 'P'
+
+	do while .T.
+		_dDataIni  = U_Get ("Data liberacao no Metadados a partir de", "D", 8, "@D", "", _dDataIni, .F., ".T.")
+		_nSeqRH    = U_Get ("Sequencial no Metadados (vazio=todos)", "N", 6, "999999", "", _nSeqRH, .F., ".T.")
+		_sSituacao = U_Get ("Situacao da integracao: P=pendentes;T=todos", "C", 1, "@!", "", _sSituacao, .F., ".T.")
+
+		if empty (_dDataIni)
+			u_help ("Informe data inicial")
+		else
+			processa ({|| _Tela (_nSeqRH, _dDataIni, _sSituacao)})
+		endif
+		
+		if ! u_msgyesno ("Deseja fazer nova consulta?")
+			exit
+		endif
+	enddo
+return
+
+
+
+// --------------------------------------------------------------------------
+static function _Tela (_nSeqRH, _dDataIni, _sSituacao)
+	local _sLkSrvRH := ''
+	local _oSQL     := NIL
+	local _aCols    := {}
+	local _aSeqMeta := {}
+	local _lTemErro := .F.
+	local _nSeqMeta := 0
+
+	_sLkSrvRH = U_LkServer ("METADADOS")
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT ' ' AS OK, STATUSREG + '-' + DESCR_STATUS AS STATUS"
+	_oSQL:_sQuery +=       ", NROSEQ, FILIAL, REMESSA, EMISSAO, VENCTO, VALOR, rtrim (HIST), NATUREZA"
+	_oSQL:_sQuery +=       ", TPITEMCP + '-' + DESCR_TPITCP AS TIPO_ITEM"
+	_oSQL:_sQuery += " FROM " + _sLkSrvRH + ".VA_VTITULOS_CPAGAR"
+	_oSQL:_sQuery += " WHERE EMISSAO >= '" + dtos (_dDataIni) + "'"
+	if _nSeqRH > 0
+		_oSQL:_sQuery += " AND NROSEQ = " + cvaltochar (_nSeqRH)
+	endif
+	if _sSituacao == 'P'
+		_oSQL:_sQuery += " AND STATUSREG IN ('02','06','07','08','10')"
+	endif
+	_oSQL:_sQuery += " ORDER BY NROSEQ, FILIAL, REMESSA, EMISSAO"
+	_oSQL:Log ()
+	_aSeqMeta := aclone (_oSQL:Qry2Array ())
+	u_log (_aSeqMeta)
+
+	// Prepara dados para a funcao U_MBArray.
+	for _nSeqMeta = 1 to len (_aSeqMeta)
+		_aSeqMeta [_nSeqMeta, 1] = .F.
+	next
+	_aCols = {}
+	aadd (_aCols, {2,  "Status",        100, ""})
+	aadd (_aCols, {3,  "Seq.Metadados",  50, ""})
+	aadd (_aCols, {4,  "Filial",         25, ""})
+	aadd (_aCols, {5,  "Remessa",        30, ""})
+	aadd (_aCols, {6,  "Emissao",        40, "@D"})
+	aadd (_aCols, {7,  "Vencto",         40, "@D"})
+	aadd (_aCols, {8,  "Valor",          50, "@E 999,999,999.99"})
+	aadd (_aCols, {9,  "Historico",      50, ""})
+	aadd (_aCols, {10, "Natureza",       25, ""})
+	aadd (_aCols, {11, "Tipo item",      80, ""})
+	U_MbArray (@_aSeqMeta, "Integracao Metadados x contas a pagar", _aCols, 1,,,)
+	
+	// Verifica se tem pedidos 'reprocessaveis'.
+	_lTemErro = .F.
+	for _nSeqMeta = 1 to len (_aSeqMeta)
+		if _aSeqMeta [_nSeqMeta, 1]  // Usuario selecionou para reprocessar.
+			if left (_aSeqMeta [_nSeqMeta, 2], 2) $ '06/08'
+				_lTemErro = .T.
+			else  // outros status eu nao vou aceitar que sejam 'reprocessados'
+				_aSeqMeta [_nSeqMeta, 1] = .F.
+			endif
+		endif
+	next
+	if _lTemErro .and. U_MsgNoYes ("Deseja solicitar reprocessamento das sequencias selecionadas?")
+		for _nSeqMeta = 1 to len (_aSeqMeta)
+			if _aSeqMeta [_nSeqMeta, 1]
+				if left (_aSeqMeta [_nSeqMeta, 2], 2) == '08'
+					_oSQL := ClsSQL ():New ()
+					_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
+					_oSQL:_sQuery +=   " SET STATUSREGISTRO = '02'"
+					_oSQL:_sQuery += " WHERE NROSEQUENCIAL  = " + cvaltochar (_aSeqMeta [_nSeqMeta, 3])
+					_oSQL:Log ()
+					_oSQL:Exec ()
+				elseif left (_aSeqMeta [_nSeqMeta, 2], 2) == '06'
+					_oSQL := ClsSQL ():New ()
+					_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
+					_oSQL:_sQuery +=   " SET STATUSREGISTRO = '07'"
+					_oSQL:_sQuery += " WHERE NROSEQUENCIAL  = " + cvaltochar (_aSeqMeta [_nSeqMeta, 3])
+					_oSQL:Log ()
+					_oSQL:Exec ()
+				endif
+			endif
+		next
+	endif
+return
