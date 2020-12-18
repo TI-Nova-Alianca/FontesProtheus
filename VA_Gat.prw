@@ -120,6 +120,7 @@
 // 03/11/2020 - Robert - Gatilho C6_VAOPER acionando triggers do C6_OPER
 //                     - Tags para catalogo de fontes.
 // 06/11/2020 - Robert - Ajuste gatilho C6_TES para consumidor final RS
+// 17/12/2020 - Robert - Chamada funcao classificacao de uvas para safra 2021.
 //
 
 #include "VA_Inclu.prw"
@@ -129,25 +130,14 @@ user function VA_Gat (_sParCpo, _sParSeq)
 local _xRet     := NIL
 local _sCampo   := alltrim (ReadVar ())
 local _sCDomin  := ""
-//local _sSeqGat  := ""
 local _aAreaAnt := U_ML_SRArea ()
 local _aAmbAnt  := U_SalvaAmb ()
 local _sQuery   := ""
-//local _sAliasQ  := ""
 local _aCampos  := {}
-//local _aAlmox   := {}
 local _nF3      := 0
-//local _sCpo     := ""
-//local _nCpo     := 0
-//local _aDadosST := {}
-//local _aRetQry  := 0
 local _sMsg     := ""
 local _oEvento  := NIL
-//local _oAssoc   := NIL
 local _oSQL     := NIL
-//local _sUvaF    := ""
-//local _oLivram  := NIL
-//local _lRecolST := .F.
 local _sMsgErr  := ""
 local _nLin     := 0
 local _sProduto := ""
@@ -896,6 +886,8 @@ do case
 			_xRet = U_ClUva19 (GDFieldGet ("ZF_PRODUTO"), val (m->zf_grau), GDFieldGet ("ZF_CONDUC"), 0, 0, 0, 0, 0, '', 0) [1]
 		elseif m->ze_safra == '2020'
 			_xRet = U_ClUva20 (GDFieldGet ("ZF_PRODUTO"), val (m->zf_grau), GDFieldGet ("ZF_CONDUC"), 0, 0, 0, 0, 0) [1]
+		elseif m->ze_safra == '2021'
+			_xRet = U_ClUva21 (GDFieldGet ("ZF_PRODUTO"), val (m->zf_grau), GDFieldGet ("ZF_CONDUC"), 0, 0, 0, 0, 0) [1]
 		else
 			u_help ("Sem tratamento para gerar o campo '" + _sCDomin + "' para esta safra.",, .T.)
 		endif

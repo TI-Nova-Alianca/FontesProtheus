@@ -48,7 +48,8 @@
 // 22/10/2020 - Robert  - Adicionados acessos que deveriam e que nao deveriam existir, nas verif. de acessos do sigacfg.
 // 23/11/2020 - Robert  - Criada validacao 76 (Todos os grupos deveriam ter privilegio 000002).
 // 07/12/2020 - Robert  - Criada validacao 77 (pessoa do Metadados referenciando mais de um usuario no Protheus).
-// 18/12/2020 - Robert  - Verificacao 26 passa a usar a procedure VA_SP_VERIFICA_ESTOQUES e passa a ser de interesse tambem de CUS/CTB.
+// 18/12/2020 - Robert  - Verificacao 26 passa a usar a procedure VA_SP_VERIFICA_ESTOQUES e passa a ser de interesse tambem de CUS/CTB. (GLPI 9054).
+//
 
 // --------------------------------------------------------------------------------------------------------------------
 #include "protheus.ch"

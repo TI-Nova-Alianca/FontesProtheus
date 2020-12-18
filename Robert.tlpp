@@ -80,9 +80,14 @@ static function _AndaLogo ()
 	procregua (100)
 	incproc ()
 
-	u_help ('Nada definido.')
-	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
-return
+//	u_help ('Nada definido.')
+//	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
+//	return
+
+//	_oSQL := ClsSQL ():New ()
+//	_oSQL:_sQuery := "exec VA_SP_VERIFICA_ESTOQUES '03', null, null"
+//	u_log (_oSQL:Qry2Array ())
+//return
 // 	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 // 	u_batmercp ()
 // RETURN
@@ -93,7 +98,7 @@ return
 //	u_batmetaf ()
 //return
 
-/*
+
 	// Testes verificacoes genericas.
 	// _oVerif := ClsVerif():New (25)
 	// _oVerif:SetParam ('01', '2017')
@@ -108,7 +113,7 @@ return
 	// _oVerif:SetParam ('02', '09189201001  ')
 	// _oVerif:SetParam ('03', '')
 	// _oVerif:SetParam ('04', 'z')
-	_oVerif := ClsVerif():New (79)
+	_oVerif := ClsVerif():New (26)
 	if _oVerif:Executa ()
 		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
 		u_log2 ('debug', _oVerif:Result)
