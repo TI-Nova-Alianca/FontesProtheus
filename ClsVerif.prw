@@ -48,7 +48,7 @@
 // 22/10/2020 - Robert  - Adicionados acessos que deveriam e que nao deveriam existir, nas verif. de acessos do sigacfg.
 // 23/11/2020 - Robert  - Criada validacao 76 (Todos os grupos deveriam ter privilegio 000002).
 // 07/12/2020 - Robert  - Criada validacao 77 (pessoa do Metadados referenciando mais de um usuario no Protheus).
-//
+// 18/12/2020 - Robert  - Verificacao 26 passa a usar a procedure VA_SP_VERIFICA_ESTOQUES e passa a ser de interesse tambem de CUS/CTB.
 
 // --------------------------------------------------------------------------------------------------------------------
 #include "protheus.ch"
@@ -1237,11 +1237,12 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=                      " AND SZ8.Z8_SAFRA   = '" + ::Param01 + "')"
 
 		case ::Numero == 26
-			::Setores   = 'PCP'
+			::Setores   = 'PCP/CUS/CTB'
 			::Descricao = 'Diferenca saldo estq do produto X lotes X enderecos'
 			::Sugestao  = 'Reprocesse saldo atual; possivelmente nao tenha sido gerado lote inicial (tela MATA390); verifique fechamento (SB9 x SBJ x SBK); verifique movimentacao.'
+/*
 			::Query := "WITH C AS ("
-			::Query += " SELECT B1_COD, SB1.B1_DESC,"
+			::Query += " SELECT B1_COD, SB1.B1_DESC, SB1.B1_RASTRO, SB1.B1_LOCALIZ,"
 			::Query +=        " ISNULL((SELECT SUM(B2_QATU - SB2.B2_QACLASS)"
 			::Query +=                  " FROM " + RetSQLName ("SB2") + " SB2 "
 			::Query +=                 " WHERE SB2.D_E_L_E_T_ = ''"
@@ -1260,7 +1261,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=  " FROM " + RetSQLName ("SB1") + " SB1 "  
 			::Query += " WHERE SB1.D_E_L_E_T_ = ''"
 			::Query +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
-			::Query +=   " AND SB1.B1_RASTRO  = 'L'"
+			::Query +=   " AND (SB1.B1_RASTRO = 'L' OR SB1.B1_LOCALIZ = 'S')"
 			::Query += ")"
 			::Query += " SELECT B1_COD AS PRODUTO, RTRIM (B1_DESC) AS DESCRICAO," 
 			::Query +=   " CAST (CAST (SALDO_PRODUTO   AS DECIMAL (" + cvaltochar (TamSX3 ("B2_QATU")[1])  + "," + cvaltochar (TamSX3 ("B2_QATU")[2]) + ")) AS VARCHAR) AS SALDO_PRODUTO, " 
@@ -1268,6 +1269,9 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=   " CAST (CAST (SALDO_LOTES     AS DECIMAL (" + cvaltochar (TamSX3 ("B8_SALDO")[1]) + "," + cvaltochar (TamSX3 ("B8_SALDO")[2]) + ")) AS VARCHAR) AS SALDO_LOTES " 
 			::Query +=   " FROM C"
 			::Query +=  " WHERE ROUND (SALDO_PRODUTO, 4) != ROUND (SALDO_ENDERECOS, 4) OR ROUND (SALDO_PRODUTO, 4) != ROUND (SALDO_LOTES, 4) OR ROUND (SALDO_ENDERECOS, 4) != ROUND (SALDO_LOTES, 4)"
+*/
+			::Query := "exec VA_SP_VERIFICA_ESTOQUES '" + cFilAnt + "', null, null"
+
 
 		case ::Numero == 27
 			::Setores    = 'CUS'
