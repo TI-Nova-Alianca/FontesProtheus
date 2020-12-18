@@ -1,3 +1,5 @@
+
+
 // Programa:  U_Robert
 // Autor:     Robert Koch
 // Descricao: Ajustes e testes diversos
@@ -672,7 +674,7 @@ return
 	U_GravaSX1 (cPerg, "05", '')  //	Doc de Saida
 	U_GravaSX1 (cPerg, "06", 'Z') // Doc de Saida
 	U_GravaSX1 (cPerg, "07", '')  // Fornecedor de
-	U_GravaSX1 (cPerg, "08", 'z') // Fornecedor atÈ
+	U_GravaSX1 (cPerg, "08", 'z') // Fornecedor atÔøΩ
 	U_GravaSX1 (cPerg, "09", '')  // Doc de Entrada
 	U_GravaSX1 (cPerg, "10", 'Z') // Doc de Entrada
 	U_GravaSX1 (cPerg, "11", '')  // UF
@@ -764,7 +766,7 @@ User Function AFTERLOGIN
 	Local cId     := ParamIXB[1]
 	Local cNome := ParamIXB[2]
 	IF OAPP:LMDI
-		ALERT("VOCE N√O TEM AUTORIZA«√O PARA FAZER ESTE ACESSO !!!")
+		ALERT("VOCE NÔøΩO TEM AUTORIZAÔøΩÔøΩO PARA FAZER ESTE ACESSO !!!")
 		FINAL()
 	ENDIF
 RETURN
@@ -1071,7 +1073,7 @@ return
 				Aadd(_aFatPag, (_sAliasQ) -> e2_loja)                               //-- Loja do fornecedor para geracao
 				Aadd(_aFatPag, '801')                            //-- Condicao de pagto
 				Aadd(_aFatPag, 01)                                   //-- Moeda
-				Aadd(_aFatPag, aclone(_aTitOri) )                    //-- ARRAY com os titulos da fatura (Prefixo,Numero,Parcela,Tipo,TÌtulo localizado na geracao de fatura (lÛgico). Iniciar com falso.)
+				Aadd(_aFatPag, aclone(_aTitOri) )                    //-- ARRAY com os titulos da fatura (Prefixo,Numero,Parcela,Tipo,TÔøΩtulo localizado na geracao de fatura (lÔøΩgico). Iniciar com falso.)
 				Aadd(_aFatPag, 0)                                    //-- Valor de decrescimo
 				Aadd(_aFatPag, 0)                                    //-- Valor de acrescimo
 
@@ -1243,7 +1245,7 @@ return
 */
 /*
 	// aKeyValues:= {"USR_CODIGO","USR_NOME","USR_EMAIL","USR_MSBLQL"}
-	// Para obter as informaÁıes das empresas que o usu·rio tem acesso, deve-se usar a funÁ„o FWUsrEmp
+	// Para obter as informaÔøΩÔøΩes das empresas que o usuÔøΩrio tem acesso, deve-se usar a funÔøΩÔøΩo FWUsrEmp
 	// FWSFallGrps
 	// http://sempreju.com.br/principais-funcoes-para-informacoes-de-usuarios/
 	// RETORNA O MESMO QUE PSWRET(), MAS PRA TODOS OS USUARIOS --> u_showarray (allusers ())
@@ -3193,8 +3195,8 @@ return
 	next
 return
 */
-//	U_ClUva19 ('9908           ', 15.0, 'L', 0, 0, 0, 0, 0, 'mùdio', 0)
-//	U_ClUva19 ('9963           ', 14.0, 'E', 0, 0, 0, 0, 0, 'mùdio', 0)  // cab.sauv.p/esp
+//	U_ClUva19 ('9908           ', 15.0, 'L', 0, 0, 0, 0, 0, 'mÔøΩdio', 0)
+//	U_ClUva19 ('9963           ', 14.0, 'E', 0, 0, 0, 0, 0, 'mÔøΩdio', 0)  // cab.sauv.p/esp
 //	U_ClUva19 ('9908           ', 24.0, 'E', 0, 0, 0, 0, 0, 'ausente', 0)
 
 //	u_log (U_PrcUva19 ('03', '9902', 15, 'B', 'E', .T.))  // chardonnay
@@ -3443,7 +3445,7 @@ return
 	_sSeq := 'x09A1H'  // PRIMEIRA SEQ DO DIA 23/11
 	_oSQL := ClsSQL ():New ()
 	do while ! sd2_rk -> (eof ())
-		// Encontra sequencial livre na base quente. Vai demorar... mas se demorar demais, ù por que nao achou...
+		// Encontra sequencial livre na base quente. Vai demorar... mas se demorar demais, ÔøΩ por que nao achou...
 		do while .T.
 			_oSQL:_sQuery := " SELECT (SELECT COUNT (*) FROM LKSRV_PROTHEUS.protheus.dbo.SD1010 WHERE D_E_L_E_T_ = '' AND D1_NUMSEQ = '" + _sSeq + "')"
 			_oSQL:_sQuery +=      " + (SELECT COUNT (*) FROM LKSRV_PROTHEUS.protheus.dbo.SD2010 WHERE D_E_L_E_T_ = '' AND D2_NUMSEQ = '" + _sSeq + "')"
@@ -4312,13 +4314,13 @@ return
 			endif
 			
 			_sRefrig = ''  // 1=Nao tem;2=Nao isolado;3=Isolado;4=Cintas ext.isolado;5=Cintas ext.nao isolado;6=Placas internas
-			if 'CINTAS EXTERNAS - NùO ISOLADO' $ upper (tanques -> refrig)
+			if 'CINTAS EXTERNAS - NÔøΩO ISOLADO' $ upper (tanques -> refrig)
 				_sRefrig = '5'
 			elseif 'CINTAS EXTERNAS - ISOLADO' $ upper (tanques -> refrig)
 				_sRefrig = '4'
 			elseif 'PLACAS INTERNAS' $ upper (tanques -> refrig)
 				_sRefrig = '6'
-			elseif 'NùO TEM' $ upper (tanques -> refrig)
+			elseif 'NÔøΩO TEM' $ upper (tanques -> refrig)
 				_sRefrig = '1'
 			elseif 'NAO ISOLADO' $ upper (tanques -> refrig)
 				_sRefrig = '2'
@@ -4327,7 +4329,7 @@ return
 			endif
 
 			_sRevInt = ''
-			if 'NùO TEM' $ upper (tanques -> revint) .or. 'SEM REVESTIMENTO' $ upper (tanques -> revint) .or. empty (tanques -> revint)
+			if 'NÔøΩO TEM' $ upper (tanques -> revint) .or. 'SEM REVESTIMENTO' $ upper (tanques -> revint) .or. empty (tanques -> revint)
 				_sRevInt = '1'
 			elseif 'EPOXI' $ upper (tanques -> revint)
 				_sRevInt = '2'
@@ -4336,7 +4338,7 @@ return
 			endif
 
 			_sApoio = ''
-			if 'PùS' $ upper (tanques -> apoio)
+			if 'PÔøΩS' $ upper (tanques -> apoio)
 				_sApoio = '1'
 			elseif 'MURETAS' $ upper (tanques -> apoio)
 				_sApoio = '2'
@@ -4710,7 +4712,7 @@ Return
 	U_GravaSX1 (cPerg, '20', 'O')    // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
 	U_VA_GNF1 (.T.)
 
-	// Demais uvas organicas parte 2 (exceto assoc. da Jacinto, pois jù entraram no lote anterior)
+	// Demais uvas organicas parte 2 (exceto assoc. da Jacinto, pois jÔøΩ entraram no lote anterior)
 	cPerg = "VAGNF1"
 	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
 	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
@@ -4758,7 +4760,7 @@ Return
 	U_GravaSX1 (cPerg, '20', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
 	U_VA_GNF1 (.T.)
 
-	// Demais uvas tintoreas parte 2 (exceto assoc. da Jacinto, pois jù entraram no lote anterior)
+	// Demais uvas tintoreas parte 2 (exceto assoc. da Jacinto, pois jÔøΩ entraram no lote anterior)
 	cPerg = "VAGNF1"
 	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
 	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
@@ -4807,7 +4809,7 @@ Return
 	U_GravaSX1 (cPerg, '20', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
 	U_VA_GNF1 (.T.)
 
-	// O que sobrou vai ateh chegar a 50% do valor total da safra: parte 2 - exceto o pessoal da Jacinto, pois jù entraram no lote anterior
+	// O que sobrou vai ateh chegar a 50% do valor total da safra: parte 2 - exceto o pessoal da Jacinto, pois jÔøΩ entraram no lote anterior
 	// Por enquanto vou apenas separar numa parcela para conferir quantidades.
 	cPerg = "VAGNF1"
 	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
@@ -5033,7 +5035,7 @@ return
 	U_GravaSX1 (cPerg, '20', 'OCEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
 	U_VA_GNF1 (.T.)
 
-	// Demais uvas tintoreas: paga 50% + 50%: parte 2 (exceto assoc. da Jacinto, pois jù entraram no lote 3)
+	// Demais uvas tintoreas: paga 50% + 50%: parte 2 (exceto assoc. da Jacinto, pois jÔøΩ entraram no lote 3)
 	cPerg = "VAGNF1"
 	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
 	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
@@ -5082,7 +5084,7 @@ return
 	U_GravaSX1 (cPerg, '20', 'OCEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
 	U_VA_GNF1 (.T.)
 
-	// O que sobrou vai ateh chegar a 50% do valor total da safra: parte 2 - exceto o pessoal da Jacinto, pois jù entraram no lote 5
+	// O que sobrou vai ateh chegar a 50% do valor total da safra: parte 2 - exceto o pessoal da Jacinto, pois jÔøΩ entraram no lote 5
 	// Por enquanto vou apenas separar numa parcela para conferir quantidades.
 	cPerg = "VAGNF1"
 	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
@@ -5110,8 +5112,8 @@ return
 */	
 /*
 Beleza Robert, 
-tentei tambùm com a SoftLock, mas me parece que ele bloqueava o registro tambùm.
-Consegui fazer com a funùùo RLOCK( RECNO ).. essa ele retorna falso se nùo conseguir bloquear.
+tentei tambÔøΩm com a SoftLock, mas me parece que ele bloqueava o registro tambÔøΩm.
+Consegui fazer com a funÔøΩÔøΩo RLOCK( RECNO ).. essa ele retorna falso se nÔøΩo conseguir bloquear.
 Valeu!
 Att.
 Germano Possamai Neto
