@@ -20,7 +20,7 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '03' modulo '06'
+		prepare environment empresa '01' filial '01' modulo '05'
 		private cModulo   := 'FAT'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -81,12 +81,16 @@ static function _AndaLogo ()
 	u_help ('Nada definido.')
 	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
 return
+// 	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+// 	u_batmercp ()
+// RETURN
+//	_sArqLog := 'U_BatVerif_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batVerif ()
+//return
+//	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batmetaf ()
+//return
 
-/*
-	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-	u_batmetaf ()
-return
-*/
 /*
 	// Testes verificacoes genericas.
 	// _oVerif := ClsVerif():New (25)
@@ -415,11 +419,6 @@ RETURN
 	enddo
 return
 */
-
-//	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batmercp ()
-//RETURN
-
 /*
 	// Importa TES inteligente (executar apenas 1 vez) - GLPI 8727
 	_aDados = U_LeCSV ('\sfm_import.csv', ';')
