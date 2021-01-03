@@ -18,7 +18,7 @@
 // 04/01/2016 - Robert - Tratamento para parametro VA_SERSAFR.
 // 18/02/2016 - Robert - Restaura parametros da rotina MATA103 apos sua execucao.
 // 18/01/2017 - Robert - Valida campo ZZC_OK.
-// 07/03/2017 - Catia  - Setar o parametro de amarração com fornecedores sempre como NAO
+// 07/03/2017 - Catia  - Setar o parametro de amarraï¿½ï¿½o com fornecedores sempre como NAO
 // 04/01/2017 - Robert - Gravacao do campo F1_VASAFRA (criado por que comecamos a safra 2018 ainda dentro no ano de 2017).
 // 18/01/2018 - Robert - Passa a bloquear acesso via funcao SoftLock() e nao mais Semaforo().
 // 08/01/2019 - Robert - Ajustes na geracao do D1_LOTECTL para tratar nao conformidades.
@@ -107,7 +107,7 @@ User Function va_rusN ()
 		_lContinua = .F.
 	endif
 	if _lContinua .and. sze -> ze_aglutin == "O"
-		u_help ("Carga aglutinada em outra. Geracao de contranota nao sera´ permitida.")
+		u_help ("Carga aglutinada em outra. Geracao de contranota nao seraï¿½ permitida.")
 		_lContinua = .F.
 	endif
 	
@@ -145,7 +145,16 @@ User Function va_rusN ()
 		u_help ("Fornecedor / associado '" + sa2 -> a2_cod + '/' + sa2 -> a2_loja + "' deve ter inscricao estadual.")
 		_lContinua = .F.
 	endif
+	if _lContinua .and. empty (sze -> ze_placa)
+		u_help ("Placa do veiculo nao informada.")
+		_lContinua = .F.
+	endif
+	if _lContinua .and. sze -> ze_pesotar == 0
+		u_help ("Peso tara nao informado.")
+		_lContinua = .F.
+	endif
 
+/*
 	// Definicao do TES a ser usado.
 	if _lContinua .and. ! GetMv("ML_TESCSAF", .T.)
 		u_help ("Parametro ML_TESCSAF vazio ou inexistente",, .t.)
@@ -163,15 +172,41 @@ User Function va_rusN ()
 			_sTES = '028'
 		endif
 	endif
+*/
+	// Definicao do TES a ser usado.
+	if _lContinua
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT distinct GX0001_TIPO_FORNECEDOR"
+		_oSQL:_sQuery +=  " FROM GX0001_AGENDA_SAFRA V"
+		_oSQL:_sQuery += " WHERE GX0001_ASSOCIADO_CODIGO = '" + sze -> ze_assoc + "'"
+		_oSQL:_sQuery +=   " AND GX0001_ASSOCIADO_LOJA   = '" + sze -> ze_lojasso   + "'"
+		_oSQL:Log ()
+		local _aTpForUva := {}
+		local _sTpForUva := ""
+		_aTpForUva = _oSQL:RetFixo (1, "ao consultar o tipo de fornecedor de uva para o fornecedor '" + sze -> ze_assoc + "/" + sze -> ze_lojasso + "'. Verifique cadastro no NaWeb.")
+		if len (_sTpForUva) == 1
+			_sTpForUva = _aTpForUva [1, 1]
+		else
+			_lContinua = .F.
+		endif
+	endif
+	if _lContinua
+		do case
+		case _sTpForUva + sa2 -> a2_pessoa == 'AF'
+			_sTES = GetMv ("VA_TSAFAF")  // Associado pessoa fisica
+		case _sTpForUva + sa2 -> a2_pessoa == 'AJ'
+			_sTES = GetMv ("VA_TSAFAJ")  // Associado pessoa juridica
+		case _sTpForUva + sa2 -> a2_pessoa == 'NF'
+			_sTES = GetMv ("VA_TSAFNF")  // Nao associado pessoa fisica
+		case _sTpForUva + sa2 -> a2_pessoa == 'NJ'
+			_sTES = GetMv ("VA_TSAFNJ")  // Nao associado pessoa juridica
+		otherwise
+			u_help ("Nao foi possivel definir o TES a ser usado para gerar contranota. Verifique o cadastro do fornecedor (pessoa fisica/juridica) e tipo de fornecedor no NaWeb.",, .T.)
+			_lContinua = .F.
+		enddo
+	endif
 	u_log ('_sTES:', _sTES)
-	if _lContinua .and. empty (sze -> ze_placa)
-		u_help ("Placa do veiculo nao informada.")
-		_lContinua = .F.
-	endif
-	if _lContinua .and. sze -> ze_pesotar == 0
-		u_help ("Peso tara nao informado.")
-		_lContinua = .F.
-	endif
 	if _lContinua
 		_oAssoc := ClsAssoc():New (sze -> ze_assoc, sze -> ze_lojasso)
 		if valtype (_oAssoc) != "O"
@@ -530,8 +565,8 @@ User Function va_rusN ()
 	endif
 	
 	// Mostra tela com valores previstos, para que a filial de Livramento possa saber qual valor vai ficar
-	// e, assim, emitir a NF-e de produtos já com o valor igual.
-	if _lContinua .and. .F.  // No final nem precisou, pois conseguimos emitir sem preço no site da SEFAZ
+	// e, assim, emitir a NF-e de produtos jï¿½ com o valor igual.
+	if _lContinua .and. .F.  // No final nem precisou, pois conseguimos emitir sem preï¿½o no site da SEFAZ
 		if sze -> ze_filial == '03' .and. sze -> ze_assoc == '001369'  // Soh mostra quando producao propria
 
 			// Monta colunas para mostrar na tela.
