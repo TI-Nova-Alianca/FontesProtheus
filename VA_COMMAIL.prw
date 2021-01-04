@@ -12,6 +12,7 @@
 //
 //  Historico de alteracoes:
 //  07/12/2020 - Claudia - Incluido valor de indenização no totalizador do PDF de comissão. GLPI: 8991 
+//  04/01/2020 - Claudia - Incluido o codigo e nome da empresa/filial. GLPI: 8925
 //
 // ----------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -699,16 +700,18 @@ Return
 // -----------------------------------------------------------------------------
 // Imprime cabeçalho Master
 Static Function xCabec(_wvendedor, _wnomevend)
+
 	oPrint:StartPage()
 	oPrint:SayBitmap(150,100,'logo.jpg',720,170)
 	oPrint:Say(0300,1000,OemToAnsi('Relatorio de Comissões'),oFont22)
-	oPrint:Say(00270,2175,OemToAnsi('Recebimentos: ' + dtoc(mv_par01) + ' até ' + dtoc(mv_par02) ),oFont13)
-	oPrint:Say(00300,2175,OemToAnsi('Emissao     : ' + dtoc(date()) + '     Pagina: ' + strzero(_wpag,2) ),oFont13)
-	oPrint:Line(0350,00045,0350,2850)
-	oPrint:Say(0400,0045,OemToAnsi('NUMERO PARCELA           CLIENTE                            TOTAL NOTA   BASE COM.   DATA        VALOR      DESCONTOS       VALOR  BASE COMISSAO   % MEDIO      VALOR'),oFont13)
-    oPrint:Say(0430,0045,OemToAnsi('TITULO                                                                   PREV.NOTA   PAGTO       TITULO   FINANCEIROS    RECEBIDO   * LIBERADA *             COMISSAO'),oFont13)
-    oPrint:Line(0450,00045,0450,2850)
-    oPrint:Say(0500,0045,OemToAnsi('VENDEDOR: ' + _wvendedor + ' - '+ _wnomevend),oFont13)
+	oPrint:Say(00270,2175,OemToAnsi('Recebimentos   : ' + dtoc(mv_par01) + ' até ' + dtoc(mv_par02) ),oFont13)
+	oPrint:Say(00300,2175,OemToAnsi('Emissao        : ' + dtoc(date()) + '     Pagina: ' + strzero(_wpag,2) ),oFont13)
+	oPrint:Say(00330,2175,OemToAnsi('Empresa/Filial : ' + alltrim(RetField('SM0',1,cEmpAnt+cFilAnt,'M0_CODFIL')) + ' - ' + alltrim(RetField('SM0',1,cEmpAnt+cFilAnt,'M0_FILIAL')) ),oFont13)
+	oPrint:Line(0400,00045,0400,2850)
+	oPrint:Say(0430,0045,OemToAnsi('NUMERO PARCELA           CLIENTE                            TOTAL NOTA   BASE COM.   DATA        VALOR      DESCONTOS       VALOR  BASE COMISSAO   % MEDIO      VALOR'),oFont13)
+    oPrint:Say(0460,0045,OemToAnsi('TITULO                                                                   PREV.NOTA   PAGTO       TITULO   FINANCEIROS    RECEBIDO   * LIBERADA *             COMISSAO'),oFont13)
+    oPrint:Line(0500,00045,0500,2850)
+    oPrint:Say(0550,0045,OemToAnsi('VENDEDOR: ' + _wvendedor + ' - '+ _wnomevend),oFont13)
     
 Return
 // --------------------------------------------------------------------------
