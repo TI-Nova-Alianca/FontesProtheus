@@ -80,9 +80,144 @@ static function _AndaLogo ()
 	procregua (100)
 	incproc ()
 
-//	u_help ('Nada definido.')
-//	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
-//	return
+	u_help ('Nada definido.')
+	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
+	return
+/*
+	// Inicializa custo em partes
+	IF ! U_MsgNoYes ("Confirma inicializacao do custo em partes?")
+		return
+	endif
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "SELECT count (*) "
+	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB9") + " SB9"
+	_oSQL:_sQuery += " WHERE SB9.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=   " AND SB9.B9_FILIAL  = '" + xfilial ("SB9") + "'"
+	_oSQL:_sQuery +=   " AND SB9.B9_DATA    > '20191231'"
+	_oSQL:Log ()
+	if _oSQL:RetQry () > 0
+		u_help ("Encontrei SB9 com data posterior a 31/12/2019. Processo abortado.",, .t.)
+		return
+	endif
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "SELECT SB9.R_E_C_N_O_ AS REGSB9, B9_COD, B1_TIPO, B1_CODLIN, B1_DESC, B1_AGREGCU, B1_VAMARCM, B9_VINI1, B9_QINI"
+	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB9") + " SB9,"
+	_oSQL:_sQuery +=            RetSQLName ("SB1") + " SB1 "
+	_oSQL:_sQuery += " WHERE SB9.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=   " AND SB9.B9_FILIAL  = '" + xfilial ("SB9") + "'"
+	_oSQL:_sQuery +=   " and SB9.B9_DATA = '20191231'"
+	_oSQL:_sQuery +=   " AND SB9.B9_VINI1   > 0"
+	//_oSQL:_sQuery +=   " AND SB9.B9_QINI    > 0"
+	_oSQL:_sQuery +=   " AND SB1.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+	_oSQL:_sQuery +=   " AND SB1.B1_COD     = SB9.B9_COD"
+	_oSQL:_sQuery += " ORDER BY SB9.B9_COD"
+	_oSQL:Log ()
+	_sAliasQ := _oSQL:Qry2Trb ()
+	do while ! (_sAliasQ) -> (eof ())
+		sb9 -> (dbgoto ((_sAliasQ) -> regsb9))
+		_nParte1 := _nParte2 := _nParte3 := _nParte4 := _nParte5 := _nParte6 := 0
+		do case
+			case (_sAliasQ) -> b1_tipo $ 'MO/AP'
+				_nParte1 = 100
+			case (_sAliasQ) -> b1_tipo == 'GF'
+				_nParte2 = 100
+			case (_sAliasQ) -> b1_tipo == 'ME'
+				_nParte3 = 100
+			case (_sAliasQ) -> b1_tipo == 'MP'
+				_nParte4 = 100
+			case (_sAliasQ) -> b1_tipo == 'BN'
+				_nParte5 = 100
+			case alltrim ((_sAliasQ) -> b9_cod) $ '2343/2343/2347/4057/405/4059/4416'  // garrafas pet sopradas
+				_nParte3 = 71.8
+				_nParte5 = 28.2
+			case (_sAliasQ) -> b1_codlin $ '18'  // NECTARES E BEBIDAS
+				_nParte1 = 10.97
+				_nParte2 = 13.25
+				_nParte3 = 32.9
+				_nParte4 = 42.88
+			case (_sAliasQ) -> b1_tipo == 'VD' .and. 'R' $ (_sAliasQ) -> b9_cod  // Retrabalho (VD)
+				_nParte1 = 4.84
+				_nParte2 = 9.65
+				_nParte4 = 83.7
+			case ! (_sAliasQ) -> b1_tipo $ 'MR/MM/BN' .and. ((_sAliasQ) -> b1_desc $ 'CONCENT' .or. (_sAliasQ) -> b1_desc $ 'POLPA' .or. (_sAliasQ) -> b1_tipo = 'PP')  // concentrado/polpa
+				_nParte1 = 4.25
+				_nParte2 = 8.5
+				_nParte4 = 73.4
+				_nParte5 = 12.76
+			case ! (_sAliasQ) -> b1_tipo $ 'II/ME/UC/MP' .and. ((_sAliasQ) -> b1_agregcu = '1' .or. (_sAliasQ) -> b1_vaMarcm = '10') // para terceiros + marcas de terceiros
+				_nParte1 = 11.42
+				_nParte2 = 10.41
+				_nParte3 = 31.52
+			case (_sAliasQ) -> b1_tipo == 'VD'  // granel
+				_nParte1 = 4.87
+				_nParte2 = 9.7
+				_nParte4 = 84.15
+			case (_sAliasQ) -> b1_codlin $ '01/13'  // especificos: 01	PREPARADOS;13	SAGU E QUENTAO
+				_nParte1 = 6.49
+				_nParte2 = 7.61
+				_nParte3 = 39.3
+				_nParte4 = 45.9
+			case (_sAliasQ) -> b1_codlin $ '04'  // ESPUMANTES
+				_nParte1 = 9.2
+				_nParte2 = 6.3
+				_nParte3 = 41
+				_nParte4 = 42
+				_nParte5 = 1
+			case (_sAliasQ) -> b1_codlin $ '09'  // FILTRADOS
+				_nParte1 = 3.83
+				_nParte2 = 4.8
+				_nParte3 = 44.23
+				_nParte4 = 33.2
+				_nParte5 = 13.44
+			case (_sAliasQ) -> b1_codlin $ '06/08/11'  // 06	SUCOS INTEGRAIS; 08	SUCOS 100%; 11	ORGANICOS
+				_nParte1 = 5.25
+				_nParte2 = 3.24
+				_nParte3 = 34.43
+				_nParte4 = 56.11
+				_nParte5 = 0.26
+			case (_sAliasQ) -> b1_codlin $ '03'  // 03	VINHOS FINOS
+				_nParte1 = 14.1
+				_nParte2 = 11.5
+				_nParte3 = 18.71
+				_nParte4 = 54.8
+				_nParte5 = 0.1
+			case (_sAliasQ) -> b1_codlin $ '07'  // 07	VINHOS MESA
+				_nParte1 = 13.6
+				_nParte2 = 11.1
+				_nParte3 = 29.53
+				_nParte4 = 44.81
+				_nParte5 = 0.06
+			case (_sAliasQ) -> b1_tipo $ 'MM/RE/MR/PS/II/CL/GG/EP/II/MA/MT/UC/VA/MB'  // parte OUTROS
+				// 100% para a parte outros.
+			otherwise
+				u_log2 ('aviso', 'Sem classificacao: ' + (_sAliasQ) -> b9_cod + ' (' + (_sAliasQ) -> b1_tipo + ') ' + (_sAliasQ) -> b1_desc)
+		endcase
+		_nParte6 = 100 - _nParte1 - _nParte2 - _nParte3 - _nParte4 - _nParte5
+		if _nParte6 < 0
+			u_log2 ('erro', 'Parte 6 nao pode ficar negativa')
+		else
+			reclock ("SB9", .F.)
+			sb9 -> b9_cp0101  = _nParte1 / 100 * (_sAliasQ) -> b9_vini1
+			sb9 -> b9_cp0201  = _nParte2 / 100 * (_sAliasQ) -> b9_vini1
+			sb9 -> b9_cp0301  = _nParte3 / 100 * (_sAliasQ) -> b9_vini1
+			sb9 -> b9_cp0401  = _nParte4 / 100 * (_sAliasQ) -> b9_vini1
+			sb9 -> b9_cp0501  = _nParte5 / 100 * (_sAliasQ) -> b9_vini1
+			sb9 -> b9_cp0601  = _nParte6 / 100 * (_sAliasQ) -> b9_vini1
+			if (_sAliasQ) -> b9_qini > 0
+				sb9 -> b9_cpm0101 = _nParte1 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
+				sb9 -> b9_cpm0201 = _nParte2 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
+				sb9 -> b9_cpm0301 = _nParte3 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
+				sb9 -> b9_cpm0401 = _nParte4 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
+				sb9 -> b9_cpm0501 = _nParte5 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
+				sb9 -> b9_cpm0601 = _nParte6 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
+			endif
+			msunlock ()
+		endif
+		(_sAliasQ) -> (dbskip ())
+	enddo
+return
+*/
 
 //	_oSQL := ClsSQL ():New ()
 //	_oSQL:_sQuery := "exec VA_SP_VERIFICA_ESTOQUES '03', null, null"
@@ -98,7 +233,7 @@ static function _AndaLogo ()
 //	u_batmetaf ()
 //return
 
-
+/*
 	// Testes verificacoes genericas.
 	// _oVerif := ClsVerif():New (25)
 	// _oVerif:SetParam ('01', '2017')
@@ -293,138 +428,6 @@ return
 	U_BatRevCh ("TO", "CTE", 90)
 	U_BatRevCh ("TO", "NFE", 90)
 RETURN
-*/
-/*
-	// Inicializa custo em partes
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := "SELECT count (*) "
-	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB9") + " SB9"
-	_oSQL:_sQuery += " WHERE SB9.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=   " AND SB9.B9_FILIAL  = '" + xfilial ("SB9") + "'"
-	_oSQL:_sQuery +=   " AND SB9.B9_DATA    > '20191231'"
-	_oSQL:Log ()
-	if _oSQL:RetQry () > 0
-		u_help ("Encontrei SB9 com data posterior a 31/12/2019. Processo abortado.",, .t.)
-		return
-	endif
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := "SELECT SB9.R_E_C_N_O_ AS REGSB9, B9_COD, B1_TIPO, B1_CODLIN, B1_DESC, B1_AGREGCU, B1_VAMARCM, B9_VINI1, B9_QINI"
-	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB9") + " SB9,"
-	_oSQL:_sQuery +=            RetSQLName ("SB1") + " SB1 "
-	_oSQL:_sQuery += " WHERE SB9.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=   " AND SB9.B9_FILIAL  = '" + xfilial ("SB9") + "'"
-	_oSQL:_sQuery +=   " and SB9.B9_DATA = '20191231'"
-	_oSQL:_sQuery +=   " AND SB9.B9_VINI1   > 0"
-	//_oSQL:_sQuery +=   " AND SB9.B9_QINI    > 0"
-	_oSQL:_sQuery +=   " AND SB1.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
-	_oSQL:_sQuery +=   " AND SB1.B1_COD     = SB9.B9_COD"
-	_oSQL:_sQuery += " ORDER BY SB9.B9_COD"
-	_oSQL:Log ()
-	_sAliasQ := _oSQL:Qry2Trb ()
-	do while ! (_sAliasQ) -> (eof ())
-		sb9 -> (dbgoto ((_sAliasQ) -> regsb9))
-		_nParte1 := _nParte2 := _nParte3 := _nParte4 := _nParte5 := _nParte6 := 0
-		do case
-			case (_sAliasQ) -> b1_tipo $ 'MO/AP'
-				_nParte1 = 100
-			case (_sAliasQ) -> b1_tipo == 'GF'
-				_nParte2 = 100
-			case (_sAliasQ) -> b1_tipo == 'ME'
-				_nParte3 = 100
-			case (_sAliasQ) -> b1_tipo == 'MP'
-				_nParte4 = 100
-			case (_sAliasQ) -> b1_tipo == 'BN'
-				_nParte5 = 100
-			case alltrim ((_sAliasQ) -> b9_cod) $ '2343/2343/2347/4057/405/4059/4416'  // garrafas pet sopradas
-				_nParte3 = 71.8
-				_nParte5 = 28.2
-			case (_sAliasQ) -> b1_codlin $ '18'  // NECTARES E BEBIDAS
-				_nParte1 = 10.97
-				_nParte2 = 13.25
-				_nParte3 = 32.9
-				_nParte4 = 42.88
-			case (_sAliasQ) -> b1_tipo == 'VD' .and. 'R' $ (_sAliasQ) -> b9_cod  // Retrabalho (VD)
-				_nParte1 = 4.84
-				_nParte2 = 9.65
-				_nParte4 = 83.7
-			case ! (_sAliasQ) -> b1_tipo $ 'MR/MM/BN' .and. ((_sAliasQ) -> b1_desc $ 'CONCENT' .or. (_sAliasQ) -> b1_desc $ 'POLPA' .or. (_sAliasQ) -> b1_tipo = 'PP')  // concentrado/polpa
-				_nParte1 = 4.25
-				_nParte2 = 8.5
-				_nParte4 = 73.4
-				_nParte5 = 12.76
-			case ! (_sAliasQ) -> b1_tipo $ 'II/ME/UC/MP' .and. ((_sAliasQ) -> b1_agregcu = '1' .or. (_sAliasQ) -> b1_vaMarcm = '10') // para terceiros + marcas de terceiros
-				_nParte1 = 11.42
-				_nParte2 = 10.41
-				_nParte3 = 31.52
-			case (_sAliasQ) -> b1_tipo == 'VD'  // granel
-				_nParte1 = 4.87
-				_nParte2 = 9.7
-				_nParte4 = 84.15
-			case (_sAliasQ) -> b1_codlin $ '01/13'  // especificos: 01	PREPARADOS;13	SAGU E QUENTAO
-				_nParte1 = 6.49
-				_nParte2 = 7.61
-				_nParte3 = 39.3
-				_nParte4 = 45.9
-			case (_sAliasQ) -> b1_codlin $ '04'  // ESPUMANTES
-				_nParte1 = 9.2
-				_nParte2 = 6.3
-				_nParte3 = 41
-				_nParte4 = 42
-				_nParte5 = 1
-			case (_sAliasQ) -> b1_codlin $ '09'  // FILTRADOS
-				_nParte1 = 3.83
-				_nParte2 = 4.8
-				_nParte3 = 44.23
-				_nParte4 = 33.2
-				_nParte5 = 13.44
-			case (_sAliasQ) -> b1_codlin $ '06/08/11'  // 06	SUCOS INTEGRAIS; 08	SUCOS 100%; 11	ORGANICOS
-				_nParte1 = 5.25
-				_nParte2 = 3.24
-				_nParte3 = 34.43
-				_nParte4 = 56.11
-				_nParte5 = 0.26
-			case (_sAliasQ) -> b1_codlin $ '03'  // 03	VINHOS FINOS
-				_nParte1 = 14.1
-				_nParte2 = 11.5
-				_nParte3 = 18.71
-				_nParte4 = 54.8
-				_nParte5 = 0.1
-			case (_sAliasQ) -> b1_codlin $ '07'  // 07	VINHOS MESA
-				_nParte1 = 13.6
-				_nParte2 = 11.1
-				_nParte3 = 29.53
-				_nParte4 = 44.81
-				_nParte5 = 0.06
-			case (_sAliasQ) -> b1_tipo $ 'MM/RE/MR/PS/II/CL/GG/EP/II/MA/MT/UC/VA/MB'  // parte OUTROS
-				// 100% para a parte outros.
-			otherwise
-				u_log2 ('aviso', 'Sem classificacao: ' + (_sAliasQ) -> b9_cod + ' (' + (_sAliasQ) -> b1_tipo + ') ' + (_sAliasQ) -> b1_desc)
-		endcase
-		_nParte6 = 100 - _nParte1 - _nParte2 - _nParte3 - _nParte4 - _nParte5
-		if _nParte6 < 0
-			u_log2 ('erro', 'Parte 6 nao pode ficar negativa')
-		else
-			reclock ("SB9", .F.)
-			sb9 -> b9_cp0101  = _nParte1 / 100 * (_sAliasQ) -> b9_vini1
-			sb9 -> b9_cp0201  = _nParte2 / 100 * (_sAliasQ) -> b9_vini1
-			sb9 -> b9_cp0301  = _nParte3 / 100 * (_sAliasQ) -> b9_vini1
-			sb9 -> b9_cp0401  = _nParte4 / 100 * (_sAliasQ) -> b9_vini1
-			sb9 -> b9_cp0501  = _nParte5 / 100 * (_sAliasQ) -> b9_vini1
-			sb9 -> b9_cp0601  = _nParte6 / 100 * (_sAliasQ) -> b9_vini1
-			if (_sAliasQ) -> b9_qini > 0
-				sb9 -> b9_cpm0101 = _nParte1 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
-				sb9 -> b9_cpm0201 = _nParte2 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
-				sb9 -> b9_cpm0301 = _nParte3 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
-				sb9 -> b9_cpm0401 = _nParte4 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
-				sb9 -> b9_cpm0501 = _nParte5 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
-				sb9 -> b9_cpm0601 = _nParte6 / 100 * (_sAliasQ) -> b9_vini1 / (_sAliasQ) -> b9_qini
-			endif
-			msunlock ()
-		endif
-		(_sAliasQ) -> (dbskip ())
-	enddo
-return
 */
 /*
 	// Importa TES inteligente (executar apenas 1 vez) - GLPI 8727
