@@ -154,8 +154,6 @@ user function VA_VCpo (_sCampo)
 	local _aArray	 := {}
 	local _x         := 0
 	
-//	CursorWait ()
-
 	// Verifica a melhor forma de obter o nome do campo a ser validado.
 	if _sCampo == NIL
 //		u_log ('vou pegar pelo readvar ()')

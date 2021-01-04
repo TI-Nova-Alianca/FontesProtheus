@@ -5,7 +5,9 @@
 //
 // Historico de alteracoes:
 // 15/06/2020 - Robert - Verifica existencia da variavel cFilAnt antes de usa-la.
-// 15/10/2020 - Robert - TRatamento para dado tipo NIL.
+// 15/10/2020 - Robert - Tratamento para dado tipo NIL.
+// 14/12/2020 - Robert - Exporta arrays usando a mesma formatacao inicial de linha, para facilitar posterior filtragem.
+// 15/12/2020 - Robert - Exportacao de array deu erro na importacao de pedidos!!! GLPI 9033
 //
 
 // --------------------------------------------------------------------------
@@ -38,36 +40,32 @@ user function Log2 (_sTipo, _xDado, _xExtra)
 		_sTipo = Capital (_sTipo)
 	endif
 	_sTextoLog += '[' + padc (_sTipo, 5, ' ') + ']'  // + ' ; '
-	//_sTextoLog += dtoc (date ()) + ' ' + time () + ' '  // + ' ; '
 	_sTextoLog += '[' + substr (_sDataLog, 1, 4) + '' + substr (_sDataLog, 5, 2) + '' + substr (_sDataLog, 7, 2) + ' ' + strtran (TimeFull (), '.', ',') + ']'
 	_sTextoLog += '[' + GetEnvServer () + ']'
 	_sTextoLog += '[F' + iif (type ('cFilAnt') == 'C', cFilAnt, '  ') + ']'  // + ' ; '
+	_sTextoLog += '[' + padr (iif (type ("cUserName") == "C", cUserName, ''), 10) + ']'
 	_xTextoLog = padc (_sTextoLog, 30, ' ')
 
 	// Verifica se consegue gravar tudo em uma linha apenas
-/*	if ! valtype (_xDado) $ 'A/O'
-		_xDado = alltrim (cValToChar (_xDado))
-		_sTextoLog += padr (_xDado, max (len (_xDado), 100))
-	else
-		_sTextoLog += padr (' variavel tipo ' + valtype (_xDado), 100)
-		_lUmaLinha = .F.
-	endif
-*/
-	if valtype (_xDado) $ 'A/O'
+	if valtype (_xDado) == 'A'
+		//_DumpArray (_xDado, _sTipo) //, space (8))
+		u_log (_xdado)
+	elseif valtype (_xDado) == 'O'
 		_sTextoLog += padr (' variavel tipo ' + valtype (_xDado), 100)
 		_lUmaLinha = .F.
 	else
 		if valtype (_xDado) == 'U'
 			_xDado = '*NIL*'
 		else
-			_xDado = alltrim (cValToChar (_xDado))
+		//	_xDado = alltrim (cValToChar (_xDado))
+			_xDado = rtrim (cValToChar (_xDado))
 		endif
 		_sTextoLog += padr (_xDado, max (len (_xDado), 100))
 	endif
 
 	if _sTipo == 'DEBUG'
 		_sTextoLog += ' ; '
-		_sTextoLog += 'Usr:' + padr (iif (type ("cUserName") == "C", cUserName, ''), 10) + ' ; '
+	//	_sTextoLog += 'Usr:' + padr (iif (type ("cUserName") == "C", cUserName, ''), 10) + ' ; '
 		_sTextoLog += 'Comp:' + GetComputerName () + ' ; '
 		_sTextoLog += 'Pilha:' + _sPCham + ' ; '
 	endif
@@ -86,9 +84,11 @@ user function Log2 (_sTipo, _xDado, _xExtra)
 
 	// Continua na linha seguinte, se precisar.
 	if ! _lUmaLinha
-		if valtype (_xDado) == "A"
-			_sTextoLog = _DumpArray (aclone (_xDado), space (8))
-		elseif valtype (_xDado) == "O"
+//		if valtype (_xDado) == "A"
+//			_sTextoLog = _DumpArray (aclone (_xDado), _sTipo) //, space (8))
+//			u_log ('vou usar dumparray')
+//		else
+		if valtype (_xDado) == "O"
 			_sTextoLog = _DumpObj (_xDado)
 		else
 			_sTextoLog = space (46) + cvaltochar (_xDado)
@@ -100,9 +100,9 @@ user function Log2 (_sTipo, _xDado, _xExtra)
 return
 
 
-
+/*
 // --------------------------------------------------------------------------
-static function _DumpArray (_aMatriz, _sEspacos)
+static function _DumpArray (_aMatriz, _sTipoLog) //_sEspacos)
 	local _nLin      := 0
 	local _nCol      := 0
 	local _sDado     := ""
@@ -114,8 +114,11 @@ static function _DumpArray (_aMatriz, _sEspacos)
 	local _nLargCol  := 0
 	local _lUniDim   := .T.
 	
+//	u_logIni ()
+
 	if len (_aMatriz) == 0
-		_sMensagem += _sEspacos + "*MATRIZ VAZIA*"
+	//	_sMensagem += _sEspacos + "*MATRIZ VAZIA*"
+		_sMensagem += "*MATRIZ VAZIA*"
 	else
 
 		// Se recebi uma matriz unidimensional, 'converto-a' para uma bidimensional de uma
@@ -182,39 +185,46 @@ static function _DumpArray (_aMatriz, _sEspacos)
 		endif
 		
 		if valtype (_aMatriz) != "A"
-			_sMensagem += _sEspacos + procname () + ": nao recebi uma array"
+		//	_sMensagem += _sEspacos + procname () + ": nao recebi uma array"
+			_sMensagem += procname () + ": nao recebi uma array"
 		else
 			
 			// Se for uma matriz perfeita, posso gerar uma linha acima com os numeros das colunas.
 			if _lPerfeita
 				_nLargTot = 0
 			//	_sMensagem += space (7)
-				_sMensagem += space (7) + _sEspacos
+				_sMensagem += space (6) //+ _sEspacos
 				for _nCol = 1 to len (_aMatriz [1])
 					_nLargCol = len (_Arr2Char (_aMatriz [1, _nCol])) + 3
-					_sMensagem += padr (cvaltochar (_nCol), _nLargCol, " ")
+					_sMensagem += padr (cvaltochar (_nCol), _nLargCol, "-")
 					_nLargTot += _nLargCol
 				next
-				_sMensagem += chr (13) + chr (10)
-				_sMensagem += _sEspacos + space (6) + replicate ("-", _nLargTot - 1) + chr (13) + chr (10)
+				u_log2 (_sTipoLog, _sMensagem)
+				_sMensagem = ''
+			//	_sMensagem += chr (13) + chr (10)
+			//	_sMensagem += _sEspacos + space (6) + replicate ("-", _nLargTot - 1) + chr (13) + chr (10)
+			//	u_log2 (_sTipoLog, space (6) + replicate ("-", _nLargTot - 1))
 			endif
 			
 			// Tratamento original
 			for _nLin = 1 to len (_aMatriz)
-				if len (_sMensagem) > 64000  // Antes que alcance o tamanho maximo de uma string, vou jogar para o log.
-					u_log (_sMensagem)
-					_sMensagem += "************ Exportando matriz por que alcancou tamanho maximo para uma string"
-					_sMensagem = ""
-				endif
-				_sMensagem += _sEspacos
+//				if len (_sMensagem) > 64000  // Antes que alcance o tamanho maximo de uma string, vou jogar para o log.
+//					u_log (_sMensagem)
+//					_sMensagem += "************ Exportando matriz por que alcancou tamanho maximo para uma string"
+//					_sMensagem = ""
+//				endif
+				//_sMensagem += _sEspacos
 				if valtype (_aMatriz [_nLin]) != "A"
-					_sMensagem += _sEspacos + "Linha " + cValToChar (_nLin) + " nao eh array. Contem o seguinte dado: " + cValToChar (_aMatriz [_nLin])
+				//	_sMensagem += _sEspacos + "Linha " + cValToChar (_nLin) + " nao eh array. Contem o seguinte dado: " + cValToChar (_aMatriz [_nLin])
+					u_log2 (_sTipoLog, "Linha " + cValToChar (_nLin) + " nao eh array. Contem o seguinte dado: " + cValToChar (_aMatriz [_nLin]))
 				else
 					if len (_aMatriz [_nLin]) == 0
-						_sMensagem += _sEspacos + "Linha " + cValToChar (_nLin) + " eh array, mas nao tem nenhum elemento."
+					//	_sMensagem += _sEspacos + "Linha " + cValToChar (_nLin) + " eh array, mas nao tem nenhum elemento."
+						u_log2 (_sTipoLog, "Linha " + cValToChar (_nLin) + " eh array, mas nao tem nenhum elemento.")
 					else
 						if _lPerfeita
-							_sMensagem += padr (cvaltochar (_nLin), 5, " ")
+						//	_sMensagem += padr (cvaltochar (_nLin), 5, " ")
+							_sMensagem += transform (_nLin, "99999")
 						endif
 						_sMensagem += "| "
 						for _nCol = 1 to len (_aMatriz [_nLin])
@@ -223,20 +233,24 @@ static function _DumpArray (_aMatriz, _sEspacos)
 						next
 					endif
 				endif
-				_sMensagem += _sEspacos + chr (13) + chr (10) // + _sEspacos
+			//	_sMensagem += _sEspacos + chr (13) + chr (10)
+				u_log2 (_sTipoLog, _sMensagem)
+				_sMensagem = ''
 			next
 			
 			// 'Fecha' a matriz com uma linha na parte de baixo.
 			if _lPerfeita
-				_sMensagem += _sEspacos + space (6) + replicate ("-", _nLargTot - 1) + chr (13) + chr (10)
+			//	_sMensagem += _sEspacos + space (6) + replicate ("-", _nLargTot - 1) + chr (13) + chr (10)
+				u_log2 (_sTipoLog, space (6) + replicate ("-", _nLargTot - 1))
 			endif
 		endif
 	endif
-	U_Log (_sMensagem)
+	//U_Log (_sMensagem)
+
 return _sMensagem
+*/
 
-
-
+/*
 // --------------------------------------------------------------------------
 // Converte campos de array para caracter, para exportacao para log.
 static function _Arr2Char (_xDado)
@@ -267,7 +281,7 @@ static function _Arr2Char (_xDado)
 			_sDado = "*ERRO*"
 	endcase
 return _sDado
-
+*/
 
 
 // --------------------------------------------------------------------------

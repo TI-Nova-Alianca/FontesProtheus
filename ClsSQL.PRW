@@ -4,7 +4,14 @@
 // Descricao: Declaracao de classe de utilitarios para SQL, para uso em outros programas.
 //            Poderia trabalhar como uma include, mas prefiro declarar uma funcao de usuario
 //            apenas para poder incluir no projeto e manter na pasta dos fontes.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #classe
+// #Descricao         #Classe com funcionalidades diversas para o banco de dados.
+// #PalavasChave      #SQL
+// #TabelasPrincipais 
+// #Modulos           
+
 // Historico de alteracoes:
 // 23/12/2011 - Robert - Criado metodo Qry2Trb.
 // 27/12/2011 - Robert - Criado metodo Exec.
@@ -35,14 +42,9 @@
 // 23/07/2020 - Robert - No metodo Exec(), quando o TOP retornava valor negativo (erro), somente setava _lRet para .F. se o SQL tambem tivesse retornado algum erro.
 //                     - Inseridas tags para catalogacao de fontes.
 // 11/09/2020 - Robert - Testes para uso de metodos estaticos (aguarda atualizar build)
+// 04/01/2021 - Robert - Implementado metodo RetFixo.
 //
 
-// Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #classe
-// #Descricao         #Classe com funcionalidades diversas para o banco de dados.
-// #PalavasChave      #SQL
-// #TabelasPrincipais 
-// #Modulos           
 
 #include "protheus.ch"
 
@@ -77,6 +79,7 @@ CLASS ClsSQL
 	/*public */ METHOD Qry2Str ()
 	/*public */ METHOD Qry2Trb ()
 	/*public */ METHOD Qry2XLS ()
+	/*public */ METHOD RetFixo ()
 	/*public */ METHOD RetQry ()
 	/*public */ METHOD SetField ()  // Para uso externo: informar campo e para qual tipo deve ser convertido.
 ENDCLASS
@@ -196,13 +199,8 @@ METHOD Exec () Class ClsSQL
 		_sErroSQL = alltrim (TCSQLError ())
 		if ! empty (_sErroSQL)
 			_lRet = .F.
-			// logs e batches jah sao alimentados pela funcao U_HELP ---> u_log2 ('erro', 'DBAccess retornou ' + cvaltochar (_nRetTOP) + ' para o comando ' + ::_sQuery)
 			_sErroTOP = "Erro DbAccess '" + cvaltochar (_nRetTOP) + "' durante a atualizacao dos dados!"
-			// logs e batches jah sao alimentados pela funcao U_HELP ---> u_log2 ('erro', 'Erro retornado pelo SQL: ' + strtran (_sErroSQL, chr (10), chr (13) + chr (10) + space (32)))
 			::UltMsg = _sErroTOP + chr (13) + chr (10) + _sErroSQL
-			// logs e batches jah sao alimentados pela funcao U_HELP ---> if type ('_oBatch') == 'O'
-			// logs e batches jah sao alimentados pela funcao U_HELP ---> 	_oBatch:Mensagens += ::UltMsg
-			// logs e batches jah sao alimentados pela funcao U_HELP ---> endif
 			u_help (::UltMsg,, .t.)
 				
 			// Grava aviso. A gravacao do aviso, se executada direto via SQL, gera erro de estouro de pilha. Nao descobri o motivo. Robert, 10/10/2019.
@@ -220,8 +218,6 @@ return _lRet
 METHOD F3Array (_sMsgTit, _lSempre) Class ClsSQL
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _nCampo    := 0
-//	local _aEstrut   := {}
-	//local _sAliasQ   := ""
 	local _aCols     := {}
 	local _sNomeCol  := ""
 	local _oResult   := NIL
@@ -349,10 +345,8 @@ return
 METHOD Qry2Array (_lSetField, _lRetNomes) Class ClsSQL
 	local _aLinha    := {}
 	local _aArray    := {}
-//	local _aCampos   := {}
 	local _nCampo    := 0
 	local _aAreaQry  := GetArea ()
-//	local _aEstrut   := {}
 
 	_lSetField = iif (_lSetField == NIL, .T., _lSetField)
 	_lRetNomes = iif (_lRetNomes == NIL, .F., _lRetNomes)
@@ -581,6 +575,24 @@ METHOD Qry2XLS (_lSetField, _lFixaChar, _lSemEspac) Class ClsSQL
 	
 	U_ML_SRArea (_aAreaAnt)
 return
+
+
+
+// --------------------------------------------------------------------------
+// Executa uma query, verifica a quantidade de registros encontrados estah
+// de acordo com o solicitado. Se nao estiver, mostra mensagem de aviso e
+// devolve resultado vazio.
+METHOD RetFixo (_nRetFixo, _sMsgFixo) Class ClsSQL
+	local _aRetFixo := NIL
+	_aRetFixo := ::Qry2Array (.T., .F.)
+	if len (_aRetFixo) != _nRetFixo
+		u_help ("Foram encontrados " + ;
+		        iif (len (_aRetFixo) > _nRetFixo, "mais", "menos") + ;
+		        " registros (" + cvaltochar (len (_aRetFixo)) + ")" + ;
+		        " do que o esperado (" + cvaltochar (_nRetFixo) + ") " + _sMsgFixo)
+		_aRetFixo = {}
+	endif
+return _aRetFixo
 
 
 

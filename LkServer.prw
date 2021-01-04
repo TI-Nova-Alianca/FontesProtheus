@@ -14,6 +14,7 @@
 // 22/06/2020 - Robert - Renomeado de LkSrvMer para LkServer e torna-se generico (recebe servidor destino por parametro)
 // 10/11/2020 - Robert - Criado tratamento para FullWMS (logistica).
 // 09/12/2020 - Robert - Criado tratamento para o BI_ALIANCA.
+// 16/12/2020 - Robert - Criado tratamento para o Metadados.
 //
 
 // --------------------------------------------------------------------------
@@ -53,6 +54,14 @@ user function LkServer (_sQualSrv)
 			_sRetLk = "BI_ALIANCA_teste.dbo"
 		else
 			_sRetLk = "BI_ALIANCA.dbo"
+		endif
+
+	case upper (alltrim (_sQualSrv)) == 'METADADOS'
+		if _lBaseTST
+			u_help ("Sem definicao de linked server do Metadados para ambiente de testes.",, .t.)
+			_sRetLk = ""
+		else
+			_sRetLk = "LKSRV_SIRH.SIRH.dbo"
 		endif
 
 	otherwise

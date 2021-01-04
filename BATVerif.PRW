@@ -70,7 +70,7 @@ user function BatVerif ()
 						endif
 					endif
 				else
-					U_help ("Problemas ao executar a verificacao '" + _oVerif:Descricao, _oVerif:UltMsg, .T.)
+					U_help ("Problemas ao executar a verificacao '" + _oVerif:Descricao + ": " + _oVerif:UltMsg,, .T.)
 				endif
 			endif
 		endif
@@ -98,7 +98,8 @@ static function _Envia (_oVerif, _aGrupos, _sMsg)
 
 	// Se a verificacao nao tem restricao de grupo, ja pode enviar para todos. 
 	if empty (_oVerif:LiberZZU)
-		U_ZZUNU (_aGrupos, "Verif.Protheus " + _oVerif:Descricao, _sMsg, .F.)
+//		U_ZZUNU (_aGrupos, "Verif.Protheus " + _oVerif:Descricao, _sMsg, .F.)
+		U_ZZUNU (_aGrupos, "Verif.Protheus " + cvaltochar (_oVerif:Numero) + '-' + _oVerif:Descricao, _sMsg, .F.)
 		//U_SendMail ('robert.koch@novaalianca.coop.br', "Verif.Protheus " + _oVerif:Descricao, _sMsg)
 	else
 	

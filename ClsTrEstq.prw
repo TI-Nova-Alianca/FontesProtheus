@@ -198,7 +198,7 @@ METHOD Exclui () Class ClsTrEstq
 	local _oSQL      := NIL
 	local _sEtiq     := ''
 
-	u_logIni (GetClassName (::Self) + '.' + procname ())
+	u_log2 ('info', 'Iniciando exclusao do ZAG docto ' + ::Docto + ' na rotina ' + GetClassName (::Self) + '.' + procname ())
 	::UltMsg = ""
 
 	if _lContinua .and. ::Executado == 'S'
@@ -223,7 +223,8 @@ METHOD Exclui () Class ClsTrEstq
 		_sEtiq = _oSQL:RetQry (1, .F.)
 		if ! empty (_sEtiq)
 			// Tenta inutilizar a etiqueta
-			if ! U_EtqPllIn (_sEtiq, .F.)
+		//	if ! U_EtqPllIn (_sEtiq, .F.)
+			if ! U_ZA1In (_sEtiq, .F.)
 				::UltMsg += "Existe a etiqueta " + _sEtiq + " gerada para esta solicitacao. Inutilize, antes, a etiqueta."
 				_lContinua = .F.
 			endif
@@ -241,7 +242,7 @@ METHOD Exclui () Class ClsTrEstq
 		u_help (::UltMsg)
 	endif
 
-	u_logFim (GetClassName (::Self) + '.' + procname ())
+//	u_logFim (GetClassName (::Self) + '.' + procname ())
 return _lContinua
 
 
@@ -429,7 +430,7 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 	local _sEtiq     := ''
 	local _sMsg      := ''
 
-	u_logIni (GetClassName (::Self) + '.' + procname ())
+//	u_logIni (GetClassName (::Self) + '.' + procname ())
 	if empty (::RegZAG)
 		_sMsg += "Registro ainda nao gravado na tabela ZAG. Etiqueta nao vai ser gerada."
 		_lContinua = .F.
@@ -457,7 +458,7 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 	if _lMsg .and. ! empty (_sMsg)
 		u_help (_sMsg)
 	endif
-	u_logFim (GetClassName (::Self) + '.' + procname ())
+//	u_logFim (GetClassName (::Self) + '.' + procname ())
 return
 
 
@@ -468,7 +469,7 @@ METHOD Grava () Class ClsTrEstq
 	local _lContinua := .T.
 	local _lRet      := .F.
 
-	u_logIni (GetClassName (::Self) + '.' + procname ())
+//	u_logIni (GetClassName (::Self) + '.' + procname ())
 	if ::RegZAG != 0
 		::UltMsg += "Registro ja existe na tabela ZAG (recno " + cvaltochar (::RegZAG) + ") e nao vai ser regravado."
 		_lContinua = .F.
@@ -655,7 +656,7 @@ METHOD Grava () Class ClsTrEstq
 	
 	if _lContinua
 		::Docto = GetSXENum ("ZAG", "ZAG_DOC")
-		u_log ("Gravando ZAG_DOC:", ::Docto, ::ProdOrig, ::QtdSolic)
+		u_log2 ('info', "Gravando ZAG_DOC " + ::Docto + ' Prd.orig: ' + ::ProdOrig + ' ' + ::AlmOrig + '->' + ::AlmDest + ' Qt: ' + cvaltochar (::QtdSolic))
 		reclock ("ZAG", .T.)
 		zag -> zag_filial = xfilial ("ZAG")
 		zag -> zag_FilOri = ::FilOrig
@@ -702,7 +703,7 @@ METHOD Grava () Class ClsTrEstq
 		u_help (::UltMsg)
 	endif
 
-	u_logFim (GetClassName (::Self) + '.' + procname ())
+//	u_logFim (GetClassName (::Self) + '.' + procname ())
 return _lRet
 
 
@@ -728,11 +729,11 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 		_oSQL:_sQuery +=  " FROM VA_VSOL_TRANSF_ESTOQUE"
 		_oSQL:_sQuery += " WHERE ZAG_FILIAL = '" + xfilial ("ZAG") + "'"
 		_oSQL:_sQuery +=   " AND ZAG_DOC    = '" + ::Docto + "'"
-		_oSQL:Log ()
+		//_oSQL:Log ()
 		_aLib := aclone (_oSQL:Qry2Array (.F., .F.))
-		u_log2 ('debug', 'Liberadores alm ' + ::AlmOrig + '(origem) :' + alltrim (_aLib [1, 1]))
-		u_log2 ('debug', 'Liberadores alm ' + ::AlmDest + '(destino):' + alltrim (_aLib [1, 2]))
-		u_log2 ('debug', 'Testando com usuario ' + _sUserName)
+		//u_log2 ('debug', 'Liberadores alm ' + ::AlmOrig + '(origem) :' + alltrim (_aLib [1, 1]))
+		//u_log2 ('debug', 'Liberadores alm ' + ::AlmDest + '(destino):' + alltrim (_aLib [1, 2]))
+		//u_log2 ('debug', 'Testando com usuario ' + _sUserName)
 		if empty (::UsrAutOri) .and. alltrim (upper (_sUserName)) $ _aLib [1, 1]
 			u_log2 ('info', 'Usuario tem liberacao para o almox. origem')
 			/* Permitido ateh que a gente implemente integracao com o endereco 'avarias' do Full (GLPI 8914)
@@ -805,4 +806,3 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 
 //	u_logFim (GetClassName (::Self) + '.' + procname ())
 return
-

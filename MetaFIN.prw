@@ -76,21 +76,17 @@ static function _Incluir ()
 	local _oSQL        := NIL
 	local _sAliasQ     := ""
 	local _sMsgSE2     := ""
-//	local _sDoc        := ""
-//	local _aAutoSE2    := {}
-//	local _sParcela    := ""
 	local _dEmis       := ctod ('')
 	local _oDUtil      := NIL
 	local _sAnoMes     := ""
 	local cPerg        := ""
 	local _aBkpSX1     := {}
-//	local _aFiliais    := {}
-//	local _nFilial     := 0
-//	local _lFilOK      := .F.
-//	local _sNaturez    := ""
 	private _sCTE        := ""  // Deixar private para ser vista em mais de uma function.
 	
 	procregua (10)
+
+	U_LOG2 ('AVISO', "Melhorar este programa para ler da view VA_VTITULOS_CPAGAR")
+	U_LOG2 ('AVISO', "Melhorar este programa para usar U_LkServer")
 
 	// Inclusao de titulos
 	if _lContinua
@@ -248,7 +244,6 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 	local _sMsgSE2  := ''
 	local _aFiliais    := {}
 	local _nFilial     := 0
-//	local _lFilOK      := .F.
 	local _sChvEx      := ""
 	local _sStatReg    := ''
 	private lMsErroAuto	:= .f.  // Variavel padrao para rotinas automticas.
@@ -292,21 +287,20 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 		_sParcela = soma1 (_oSQL:RetQry ())
 
 		_aAutoSE2 := {}
-		aadd (_aAutoSE2, {"E2_PREFIXO", _sPrefixo,                                         NIL})
-		aadd (_aAutoSE2, {"E2_NUM"    , _sDoc,                                             Nil})
-		aadd (_aAutoSE2, {"E2_TIPO"   , 'FOL',                                             Nil})
-		aadd (_aAutoSE2, {"E2_FORNECE", _sFornece,                             Nil})
-		aadd (_aAutoSE2, {"E2_LOJA"   , '01',                                              Nil})
-		aadd (_aAutoSE2, {"E2_NATUREZ", _sNaturez,                                         Nil})
-		aadd (_aAutoSE2, {"E2_EMISSAO", _dEmisSE2,                                            Nil})
-		aadd (_aAutoSE2, {"E2_EMIS1",   _dEmisSE2,                                            Nil})
-		aadd (_aAutoSE2, {"E2_VENCTO" , _dVencSE2,                       Nil})
-		aadd (_aAutoSE2, {"E2_VENCREA", dataValida (_dVencSE2),          Nil})
-		aadd (_aAutoSE2, {"E2_VALOR"  , _nValorSE2,                               Nil})
-		aadd (_aAutoSE2, {"E2_HIST"   , alltrim (U_NoAcento (_sHistSE2)),         Nil})
-		aadd (_aAutoSE2, {"E2_PARCELA", _sParcela,                                         Nil})
-		aadd (_aAutoSE2, {"E2_VACHVEX", _sChvEx, Nil})
-	//	aadd (_aAutoSE2, {"E2_ORIGEM" , "U_METAFI",                                        Nil})
+		aadd (_aAutoSE2, {"E2_PREFIXO", _sPrefixo,                        NIL})
+		aadd (_aAutoSE2, {"E2_NUM"    , _sDoc,                            Nil})
+		aadd (_aAutoSE2, {"E2_TIPO"   , 'FOL',                            Nil})
+		aadd (_aAutoSE2, {"E2_FORNECE", _sFornece,                        Nil})
+		aadd (_aAutoSE2, {"E2_LOJA"   , '01',                             Nil})
+		aadd (_aAutoSE2, {"E2_NATUREZ", _sNaturez,                        Nil})
+		aadd (_aAutoSE2, {"E2_EMISSAO", _dEmisSE2,                        Nil})
+		aadd (_aAutoSE2, {"E2_EMIS1",   _dEmisSE2,                        Nil})
+		aadd (_aAutoSE2, {"E2_VENCTO" , _dVencSE2,                        Nil})
+		aadd (_aAutoSE2, {"E2_VENCREA", dataValida (_dVencSE2),           Nil})
+		aadd (_aAutoSE2, {"E2_VALOR"  , _nValorSE2,                       Nil})
+		aadd (_aAutoSE2, {"E2_HIST"   , alltrim (U_NoAcento (_sHistSE2)), Nil})
+		aadd (_aAutoSE2, {"E2_PARCELA", _sParcela,                        Nil})
+		aadd (_aAutoSE2, {"E2_VACHVEX", _sChvEx,                          Nil})
 		_aAutoSE2 := aclone (U_OrdAuto (_aAutoSE2))
 		u_log2 ('info', _aAutoSE2)
 		lMsErroAuto	:= .f.
@@ -363,16 +357,13 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 		_oSQL:_sQuery +=  " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeqMeta)
 		_oSQL:Log ()
 		_aFiliais = _oSQL:Qry2Array ()
-		//u_log (_aFiliais)
 		
 		// Verifica se falta gerar para alguma filial.
 		_sStatReg = '03'  // Inicialmente, assume que gerou para todas, 'ateh prova em contrario'.
-//		_lFilOK = .T.
 		for _nFilial = 1 to len (_aFiliais)
 			if _aFiliais [_nFilial, 2] == 0
 				_sStatReg = '10'  // Achei uma 'prova em contrario'
 				u_log2 ('info', 'Verifiquei que ainda falta gerar para a filial ' + _aFiliais [_nFilial, 1] + '. Manterei o Metadados com status=' + _sStatReg)
-//				_lFilOk = .F.
 			else
 				u_log2 ('info', 'Verifiquei que jah foi gerado para a filial ' + _aFiliais [_nFilial, 1])
 			endif
@@ -380,14 +371,10 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 
 		// Muda status da sequencia no Metadados.
 		_oSQL:_sQuery := "UPDATE LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST"
-//		_oSQL:_sQuery +=   " SET STATUSREGISTRO          = '" + iif (_lFilOK, "03", "10") + "',"  // Se jah gerou para todas as filiais, marca como 03 (aceito)
 		_oSQL:_sQuery +=   " SET STATUSREGISTRO          = '" + _sStatReg + "',"
 		_oSQL:_sQuery +=       " DATAACEITACAOLIBERACAO  = cast ('" + dtos (date ()) + " " + time () + "' as datetime),"
-	//	_oSQL:_sQuery +=       " CHAVEOUTROSISTEMATITULO = " + _sDoc + ","
 		_oSQL:_sQuery +=       " CHAVEOUTROSISTEMATITULO = " + se2 -> e2_num + ","
-	//	_oSQL:_sQuery +=       " NUMEROTITULO            = " + _sDoc + ","
 		_oSQL:_sQuery +=       " NUMEROTITULO            = " + se2 -> e2_num + ","
-	//	_oSQL:_sQuery +=       " SERIEDOC                = '" + _sPrefixo + _sParcela + "'"
 		_oSQL:_sQuery +=       " SERIEDOC                = '" + se2 -> e2_prefixo + se2 -> e2_parcela + "'"
 		_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeqMeta)
 		_oSQL:Log ()
@@ -403,23 +390,8 @@ static function _Excluir ()
 	local _oSQL        := NIL
 	local _sAliasQ     := ""
 	local _sMsgSE2     := ""
-//	local _sDoc        := ""
-//	local _sPrefixo    := 'FOL'
 	local _aAutoSE2    := {}
-//	local _sParcela    := ""
-//	local _dEmis       := ctod ('')
-//	local _oDUtil      := NIL
-//	local _sAnoMes     := ""
-//	local _sChvEx      := ""
-//	local cPerg        := ""
-//	local _aBkpSX1     := {}
-//	local _sCTE        := ""
-//	local _aFiliais    := {}
-//	local _nFilial     := 0
-//	local _lFilOK      := .F.
 	local _sChaveSE2   := ''
-//	local _sNaturez    := ""
-//	local _nQtTitGer   := 0
 	private lMsErroAuto	:= .f.  // Variavel padrao para rotinas automticas.
 	private lMsHelpAuto	:= .f.  // Variavel padrao para rotinas automticas.
 	

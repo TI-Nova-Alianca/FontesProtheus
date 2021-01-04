@@ -26,6 +26,7 @@ user function va_rusLI (_nPesagem)
 	local _sInspMEst  := ''
 	local _sInspDesu  := ''
 	local _sLinkSrv   := U_LkServer ('NAWEB')
+	local _aClasUva   := {}
 
 	u_Log2 ('info', 'Iniciando ' + procname () + ' para a pesagem ' + cvaltochar (_nPesagem))
 
@@ -54,7 +55,7 @@ user function va_rusLI (_nPesagem)
 		_oSQL:_sQuery +=  " WHERE SAFRA  = '" + sze -> ze_safra  + "'"
 		_oSQL:_sQuery +=    " AND FILIAL = '" + sze -> ze_filial + "'"
 		_oSQL:_sQuery +=    " AND CARGA  = '" + sze -> ze_carga  + "'"
-//		_oSQL:Log ()
+		_oSQL:Log ()
 		_sAliasInsp = _oSQL:Qry2Trb (.F.)
 
 		// Alimenta array de inspecoes. Deve estar previamente criada como 'private' na rotina chamadora.
@@ -176,8 +177,11 @@ user function va_rusLI (_nPesagem)
 					_aClasUva = {'','','','',''}  // Para o caso de nao encontrar nada.
 					if sze -> ze_safra == '2019' .and. sb1 -> b1_varuva == 'F' .and. sb1 -> b1_vafcuva == 'F'
 						_aClasUva = aclone (U_ClUva19 (szf -> zf_produto, val (szf -> zf_grau), szf -> zf_conduc, val (_sInspBotr), val (_sInspGlom), val (_sInspAspe), val (_sInspPodr), val (_sInspAcid), _sInspMEst, val (_sInspDesu)))
-					elseif sze -> ze_safra >= '2020'
+					elseif sze -> ze_safra == '2020'
 						_aClasUva = aclone (U_ClUva20 (szf -> zf_produto, val (szf -> zf_grau), szf -> zf_conduc, val (_sInspBotr), val (_sInspGlom), val (_sInspAspe), val (_sInspPodr), val (_sInspAcid), _sInspMEst))
+					else
+						_aClasUva = aclone (eval (&("{||U_ClUva" + right (sze -> ze_safra, 2) + " (szf -> zf_produto, val (szf -> zf_grau), szf -> zf_conduc, val (_sInspBotr), val (_sInspGlom), val (_sInspAspe), val (_sInspPodr), val (_sInspAcid), _sInspMEst)}")))
+						u_log2 ('debug', _aClasUva)
 					endif
 
 					reclock ("SZF", .F.)
