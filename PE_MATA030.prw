@@ -11,14 +11,15 @@
 // #Modulos   		  #TODOS 
 //
 // Historico de alteracoes:
-// 18/08/2008 - Robert - Criada validacao cfe. campo A3_VAEXTAB
-// 27/01/2010 - Robert - Passa a usar a funcao u_help para avisos.
-// 13/02/2012 - Robert - Nao exige mais %comis se estiver zerado tambem no vendedor.
-// 20/02/2012 - Robert - Verifica se o CNPJ jah existe em outro cliente.
-// 24/05/2012 - Robert - Impedia alteracao de cliente com CNPJ repetido, mesmo que o outro estivesse bloqueado.
-// 29/05/2013 - Elaine - Inclui tratamento para Inscricao Estadual para mercado externo
-// 12/03/2015 - Catia  - Desabilitada a validação para inscrição estadual
+// 18/08/2008 - Robert  - Criada validacao cfe. campo A3_VAEXTAB
+// 27/01/2010 - Robert  - Passa a usar a funcao u_help para avisos.
+// 13/02/2012 - Robert  - Nao exige mais %comis se estiver zerado tambem no vendedor.
+// 20/02/2012 - Robert  - Verifica se o CNPJ jah existe em outro cliente.
+// 24/05/2012 - Robert  - Impedia alteracao de cliente com CNPJ repetido, mesmo que o outro estivesse bloqueado.
+// 29/05/2013 - Elaine  - Inclui tratamento para Inscricao Estadual para mercado externo
+// 12/03/2015 - Catia   - Desabilitada a validação para inscrição estadual
 // 27/11/2020 - Cláudia - Incluido botão de obs.financeira. GLPI: 8923
+// 04/01/2020 - Cláudia - Incluida a filial 16 para oas observações financeiras. GLPI: 9069
 //
 // -----------------------------------------------------------------------------------------------
 #include "protheus.ch"
@@ -86,7 +87,7 @@ User Function CRMA980()
             xRet := .T.
         ElseIf cIdPonto == "BUTTONBAR"
            // xRet := {}
-		   	If cFilAnt == '01'
+		   	If cFilAnt == '01' .or. cFilAnt == '16'
 				xRet := {{"Obs.Financeiro", "Obs.Financeiro", {||U_VA_OBSFIN('1')}}}
 		   	EndIf
         EndIf
