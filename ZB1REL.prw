@@ -165,8 +165,8 @@ Static Function PrintReport(oReport)
 			_nTotVenda += _aZB1[i,3]
 			_nTotTax   += _vlrTaxa
 		Else
-			If alltrim(_aRel[i,10]) == 'D'
-				_nTotDVenda += _aRel[i,3]
+			If alltrim(_aZB1[i,10]) == 'D'
+				_nTotDVenda += _aZB1[i,3]
 				_nTotDTax   += _vlrTaxa
 			EndIf
 		EndIf

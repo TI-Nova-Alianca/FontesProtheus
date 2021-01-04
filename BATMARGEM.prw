@@ -20,7 +20,10 @@
 // 15/04/2020 - Cláudia - Incluido o campo de data da ZA4 na data de emissao do TIPO A	  
 // 21/05/2020 - Claudia - Acrescentada nova coluna CODMUN, conforme GLPI: 7957
 // 05/08/2020 - Cláudia - Ajuste vendedor verba e vendedor NF nos tipos 6 e A. GLPI: 8268
-// 01/09/2020 - Cláudia - Ajuste no tipo 6, passando a pesquisar o supervisor pelo vendedor da verba. GLPI: 8403
+// 01/09/2020 - Cláudia - Ajuste no tipo 6, passando a pesquisar o supervisor pelo vendedor da verba. 
+//				          GLPI: 8403
+// 11/12/2020 - Cláudia - Incluido o campo PROMOTOR. GLPI: 8882
+//
 // -----------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
@@ -115,6 +118,7 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += "    ,0 AS VERBAS_UTIL "
 		_oSQL:_sQuery += "    ,0 AS VERBAS_LIB "
 		_oSQL:_sQuery += "    ,SA1.A1_COD_MUN AS CODMUN "
+		_oSQL:_sQuery += "    ,SA1.A1_VAPROMO AS PROMOTOR"
 		_oSQL:_sQuery += " FROM " + RetSQLName ("SD2") + " SD2 "
 		_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SF2") + " SF2 "
 		_oSQL:_sQuery += " 	ON (SF2.D_E_L_E_T_ = '' "
@@ -166,6 +170,7 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 		,SD2.D2_QUANT "
 		_oSQL:_sQuery += " 		,SF2.F2_PBRUTO "
 		_oSQL:_sQuery += "      ,SA1.A1_COD_MUN "
+		_oSQL:_sQuery += "      ,SA1.A1_VAPROMO "
 		_oSQL:_sQuery += " UNION ALL SELECT "
 		_oSQL:_sQuery += " 		SF4.F4_MARGEM AS TIPO "
 		_oSQL:_sQuery += " 	   ,SD1.D1_FILIAL AS FILIAL "
@@ -203,6 +208,7 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 	   ,0 AS VERBAS_UTIL "
 		_oSQL:_sQuery += "     ,0 AS VERBAS_LIB "
 		_oSQL:_sQuery += "     ,SA1.A1_COD_MUN AS CODMUN "
+		_oSQL:_sQuery += "     ,SA1.A1_VAPROMO AS PROMOTOR"
 		_oSQL:_sQuery += " 	FROM " + RetSQLName ("SD1") + " SD1 "
 		_oSQL:_sQuery += " 	INNER JOIN " + RetSQLName ("SF1") + " SF1 "
 		_oSQL:_sQuery += " 		ON (SF1.D_E_L_E_T_ = '' "
@@ -273,6 +279,7 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 			,SD1.D1_FORNECE "
 		_oSQL:_sQuery += " 			,SD1.D1_LOJA "
 		_oSQL:_sQuery += "          ,SA1.A1_COD_MUN "
+		_oSQL:_sQuery += "          ,SA1.A1_VAPROMO "
 		_oSQL:_sQuery += " 	UNION ALL SELECT "
 		_oSQL:_sQuery += " 		SF4.F4_MARGEM AS TIPO "
 		_oSQL:_sQuery += " 	   ,SD2.D2_FILIAL AS FILIAL "
@@ -321,6 +328,7 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 	   ,0 AS VERBAS_UTIL "
 		_oSQL:_sQuery += "     ,0 AS VERBAS_LIB "
 		_oSQL:_sQuery += "     ,SA1.A1_COD_MUN AS CODMUN "
+		_oSQL:_sQuery += "     ,SA1.A1_VAPROMO AS PROMOTOR"
 		_oSQL:_sQuery += " 	FROM " + RetSQLName ("SD2") + " SD2 "
 		_oSQL:_sQuery += " 	INNER JOIN " + RetSQLName ("SF2") + " SF2 "
 		_oSQL:_sQuery += " 		ON (SF2.D_E_L_E_T_ = '' "
@@ -376,6 +384,7 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 			,SB1.B1_P_BRT "
 		_oSQL:_sQuery += " 			,SD2.D2_QUANT "
 		_oSQL:_sQuery += "          ,SA1.A1_COD_MUN "
+		_oSQL:_sQuery += "          ,SA1.A1_VAPROMO "
 		_oSQL:_sQuery += " UNION ALL SELECT "
 		_oSQL:_sQuery += " 		'6' AS TIPO "
 		_oSQL:_sQuery += " 	   ,ZA5.ZA5_FILIAL AS FILIAL "
@@ -414,6 +423,7 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 	   ,SUM(ZA5.ZA5_VLR) AS VERBAS_UTIL "
 		_oSQL:_sQuery += "     ,0 AS VERBAS_LIB "
 		_oSQL:_sQuery += "     ,SA1.A1_COD_MUN AS CODMUN "
+		_oSQL:_sQuery += "     ,SA1.A1_VAPROMO AS PROMOTOR"
 		_oSQL:_sQuery += " 	FROM " + RetSQLName ("ZA5") + " ZA5 "
 		_oSQL:_sQuery += " 	INNER JOIN " + RetSQLName ("SA1") + " SA1 "
 		_oSQL:_sQuery += " 		ON (SA1.D_E_L_E_T_ = '' "
@@ -457,6 +467,7 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 			,SA1.A1_VEND "
 		_oSQL:_sQuery += " 			,ZA5.ZA5_VENVER "
 		_oSQL:_sQuery += "          ,SA1.A1_COD_MUN "
+		_oSQL:_sQuery += "          ,SA1.A1_VAPROMO "
 		_oSQL:_sQuery += " UNION ALL SELECT "
 		_oSQL:_sQuery += " 	  'A' AS TIPO "
 		_oSQL:_sQuery += "    ,ZA4.ZA4_FILIAL AS FILIAL"
@@ -494,6 +505,7 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += "    ,0 AS VERBAS_UTIL"
 		_oSQL:_sQuery += "    ,SUM(ZA4.ZA4_VLR) AS VERBAS_LIB"
 		_oSQL:_sQuery += "    ,SA1.A1_COD_MUN AS CODMUN "
+		_oSQL:_sQuery += "    ,SA1.A1_VAPROMO AS PROMOTOR"
 		_oSQL:_sQuery += " FROM " + RetSQLName ("ZA4") + " ZA4 "
 		_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA1") + " SA1 " 
 		_oSQL:_sQuery += " 	ON (SA1.D_E_L_E_T_ = ''"
@@ -514,7 +526,9 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 		,SA1.A1_VEND"
 		_oSQL:_sQuery += " 		,SA3.A3_VAGEREN"
 		_oSQL:_sQuery += "      ,ZA4_VEND"
-		_oSQL:_sQuery += "      ,SA1.A1_COD_MUN)"
+		_oSQL:_sQuery += "      ,SA1.A1_COD_MUN "
+		_oSQL:_sQuery += "      ,SA1.A1_VAPROMO "
+		_oSQL:_sQuery += "       )"
 		_oSQL:_sQuery += " SELECT * INTO LKSRV_BI_ALIANCA.BI_ALIANCA.dbo.VA_RENTABILIDADE FROM C "
 		_oSQL:Log()
 		If ! _oSQL:Exec()

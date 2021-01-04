@@ -1,4 +1,15 @@
+/*
+Anotacoes ferias 2020
+- remover va_rusc
+- eliminar parametro ML_TESCSAF
+- criar parametros:
+			_sTES = GetMv ("VA_TSAFAF")  // Associado pessoa fisica
+			_sTES = GetMv ("VA_TSAFAJ")  // Associado pessoa juridica
+			_sTES = GetMv ("VA_TSAFNF")  // Nao associado pessoa fisica
+			_sTES = GetMv ("VA_TSAFNJ")  // Nao associado pessoa juridica
 
+
+*/
 
 // Programa:  U_Robert
 // Autor:     Robert Koch
