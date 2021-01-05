@@ -3,7 +3,13 @@
 // Data:      22/07/2009
 // Descricao: Direciona mensagens conforme o ambiente em uso.
 //            Criada inicialmente para uso em rotinas sem interface com o usuario.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Consulta
+// #PalavasChave      #auxiliar #avisos #mensagem #tela #uso_generico
+// #TabelasPrincipais 
+// #Modulos           
+
 // Historico de alteracoes:
 // 19/01/2010 - Robert - Testa variavel oMainWnd para ver se existe interf. com usuario,
 //                       pois a funcao IsBlind () nao atendeu rotinas automaticas.
@@ -22,12 +28,6 @@
 // 09/07/2020 - Robert - Desabilitadas chamadas da funcao U_LOG().
 // 21/07/2020 - Robert - Passa a gravar log e console sempre.
 //
-
-// Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #Consulta
-// #PalavasChave      #auxiliar #avisos #mensagem #tela #uso_generico
-// #TabelasPrincipais 
-// #Modulos           
 
 // --------------------------------------------------------------------------
 user function Help (_sMsg, _sDAdic, _lHlpErro)
