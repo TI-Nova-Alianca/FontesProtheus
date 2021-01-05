@@ -5,6 +5,7 @@
 //
 // Historico de alteracoes:
 // 27/03/2020 - Claudia - Alterado o modelo TREPORT para exportação direto para planilha
+// 05/01/2020 - Cláudia - Retirada as CFOP's '1151', '1557', '2151'. GLPI: 9076
 //
 // --------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -50,7 +51,7 @@ Static Function EstComExp()
 	cQuery += " AND A.D_E_L_E_T_ = ''"
 	cQuery += " AND SUBSTRING(A.D1_DTDIGIT, 1, 6) = '" + sPeriodo + "'"
 	cQuery += " AND A.D1_TIPO != 'D'"
-	cQuery += " AND A.D1_CF NOT IN ('1151', '1557', '2151')"
+	//cQuery += " AND A.D1_CF NOT IN ('1151', '1557', '2151')"
 	cQuery += " AND ((A.D1_CF NOT LIKE '19%'"
 	cQuery += " AND A.D1_CF NOT LIKE '29%'))"
 	cQuery += " AND B.D_E_L_E_T_ = ''"
