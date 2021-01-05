@@ -2,7 +2,14 @@
 // Autor......: Robert Koch
 // Data.......: 19/05/2009
 // Descricao..: Tela de manutencao do arquivo ZX5 - tabelas genericas (especificas Alianca)
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Cadastro
+// #Descricao         #Tela de manutencao do arquivo ZX5 - tabelas genericas (especificas Alianca)
+// #PalavasChave      #auxiliar #uso_generico
+// #TabelasPrincipais #ZX5
+// #Modulos           #todos_modulos
+
 // Historico de alteracoes:
 // 12/05/2010 - Robert - Incluida validacao de 'linha OK' da tabela 06.
 // 07/12/2010 - Robert - Incluida validacao de 'linha OK' da tabela 08 e 09.
@@ -15,7 +22,8 @@
 // 07/12/2017 - Robert - Chama metodo PodeExcl() da classe ClsTabGen na validacao de linha deletada.
 // 24/12/2018 - Robert - Criado parametro para receber filtro inicial na funcao ZX5A().
 // 08/01/2019 - Robert - Criado parametro para receber nomes de campos a serem usados para ordenar o aCols.
-// 13/12/2019 - Robert - Paltavam parametros na visualizacao e dava erro.
+// 13/12/2019 - Robert - Faltavam parametros na visualizacao e dava erro.
+// 04/01/2021 - Robert - Criado botao adicional para exportar para planilha.
 //
 
 #include "rwmake.ch"
@@ -80,6 +88,7 @@ User Function ZX5A (_nOpcao, _sCodTab, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr
 	local _nCpoOrd    := 0
 	local _nPosCpo    := 0
 	local _nLinha     := 0
+	local _aButtons   := {}
 	private _sModo    := ""
 	private _sTabela  := ""
 	private _sNomeTab := ""
@@ -91,7 +100,6 @@ User Function ZX5A (_nOpcao, _sCodTab, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr
 	private nOpc      := _nOpcao
 	private _oTab     := NIL
 
-	u_logIni ()
 	zx5 -> (dbsetorder (1))
 	if ! zx5 -> (dbseek (xfilial ("ZX5") + '00' + _sCodTab, .F.))
 		u_help ("Cadastro da tabela '" + _sCodTab + "' nao encontrado no arquivo ZX5. Para ter dados cadastrados, uma tabela deve ser criada, antes, com chave '00' no arquivo ZX5.")
@@ -116,7 +124,6 @@ User Function ZX5A (_nOpcao, _sCodTab, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr
 	endif
 
 	if _lContinua
-		CursorWait ()
 		_sTabela  = iif (zx5 -> zx5_tabela == "00", zx5 -> zx5_chave, zx5 -> zx5_tabela)
 		_sModo    = zx5 -> zx5_modo
 		_sFilial  = iif (_sModo == "C", "  ", cFilAnt)
@@ -156,11 +163,13 @@ User Function ZX5A (_nOpcao, _sCodTab, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr
 					endif
 				endif
 			next
-//			u_log ('Ordenando aCols por:', _sSort1) 
 			_bSort = "{|_x, _y|" + _sSort1 + "<" + _sSort2 + "}"
 			aCols = asort (aCols,,, &(_bSort))
 		endif
-		CursorArrow ()
+
+		// Define botoes adicionais
+		aadd (_aButtons, {"Export.planilha", {|| U_AColsXLS ()}, "Export.planilha", "Export.planilha" , {|| .T.}} ) 
+
 
 		// Variaveis para o Modelo2
 		aC   := {}
@@ -183,7 +192,9 @@ User Function ZX5A (_nOpcao, _sCodTab, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr
 		                 , ;       // Campos inicializados
 		                 999, ;    // Numero maximo de linhas
 		                 {100, 50, oMainWnd:nClientHeight - 50, oMainWnd:nClientWidth - 50}, ;  // Coordenadas da janela
-		                 inclui .or. altera)      // Linhas podem ser deletadas.
+		                 inclui .or. altera, ;      // Linhas podem ser deletadas.
+		                 .T., ;   // Se a tela deve vir maximizada ou nao
+		                 _aButtons)
 	
 	endif
 
@@ -260,7 +271,6 @@ User Function ZX5A (_nOpcao, _sCodTab, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr
 		endif
 	endif
 	zx5 -> (dbgotop ())
-	u_logFim ()
 return
 
 
@@ -271,7 +281,8 @@ User Function ZX5LK (_sTabela)
 	local _lRet := .T.
 
 	if _lRet .and. ! GDDeleted ()
-		u_log ('Verificando campos duplicados:', _oTab:CposChave)
+		u_log2 ('debug', 'Verificando campos duplicados:')
+		u_log2 ('debug', _oTab:CposChave)
 		_lRet = GDCheckKey (_oTab:CposChave, 4, {}, "Campos repetidos", .t.)
 	endif
 	

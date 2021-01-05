@@ -3,7 +3,14 @@
 // Data:       01/10/2012
 // Descricao:  Replica requisicoes de produtos MOD para produtos AO- e GF- no arquivo SD3,
 //             para posterior valorizacao no recalculo do custo medio.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Atualizacao
+// #Descricao         #Desmembra requisicoes de itens MMM em AP-, AO-, GF- para posterior recalculo do custo medio.
+// #PalavasChave      #mao_de_obra
+// #TabelasPrincipais #SD3
+// #Modulos           #EST
+
 // Historico de alteracoes:
 // 06/11/2014 - Robert - Verifica se os codigos jah existem no SB2, senao cria-os.
 // 15/03/2016 - Robert - Passa a usar a classe ClsSQL ()
@@ -14,14 +21,7 @@
 // 20/07/2020 - Robert - Permissao para executar passa a validar acesso 102 e nao mais 069.
 //                     - Inseridas tags para catalogacao de fontes
 // 14/10/2020 - Robert - Desconsidera item 'MMMSAFRA' usado em simulacoes de rateio de safra (por enquanto apenas na base teste).
-//
-
-// Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #Atualizacao
-// #Descricao         #Desmembra requisicoes de itens MMM em AP-, AO-, GF- para posterior recalculo do custo medio.
-// #PalavasChave      #mao_de_obra
-// #TabelasPrincipais #SD3
-// #Modulos           #EST
+// 04/01/2021 - Robert - Habilitado novamente o MMMSAFRA, melhorados logs.
 //
 
 // -------------------------------------------------------------------------------
@@ -103,7 +103,7 @@ Static function _Roda()
 		_oSQL:_sQuery +=   " AND D3_OP      != ''"
 		_oSQL:_sQuery +=   " AND D3_EMISSAO BETWEEN '" + DtoS(MV_PAR01) + "' AND '" + DtoS(MV_PAR02) + "'"
 		_oSQL:_sQuery +=   " AND LEFT(D3_COD,3) = 'MMM'"
-		_oSQL:_sQuery +=   " AND D3_COD != 'MMMSAFRA'"  // Item usado em simulacoes de rateio de safra (por enquanto apenas na base teste)
+//		_oSQL:_sQuery +=   " AND D3_COD != 'MMMSAFRA'"  // Item usado em simulacoes de rateio de safra (por enquanto apenas na base teste)
 		_oSQL:Log ()
 		_sAliasQ = _oSQL:Qry2Trb (.T.)
 
@@ -120,7 +120,7 @@ Static function _Roda()
 
 				sb1->(dbsetorder(1))
 				if !(sb1->(dbseek(XFilial("SB1")+ _sProduto)))
-					U_Help ("Produto '" + _sProduto + "' nao cadastrado para MO/GGF. Verifique se foi movimentado um CC que nao existe nesta filial. Processo vai ser abortado.")
+					U_Help ("Produto '" + _sProduto + "' nao cadastrado para MO/GGF. Verifique se foi movimentado um CC que nao existe nesta filial. Processo vai ser abortado.",, .T.)
 					_lContinua = .F.
 					exit
 				endif
@@ -131,6 +131,7 @@ Static function _Roda()
 				endif
 	
 		 		// Nao usa rotina automatica por que as OPs jah estao encerradas e precisa manter o D3_NUMSEQ original.
+				u_log2 ('info', 'Gerando movto ' + _sTM + ' para produto ' + _sProduto + ' e OP ' + (_sAliasQ)->d3_op)
 				reclock ("SD3", .T.)
 				sd3 -> d3_filial  := xFilial("SD3")
 				sd3 -> d3_tm      := _sTM

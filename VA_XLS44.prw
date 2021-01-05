@@ -1,20 +1,29 @@
 // Programa...: VA_XLS44
 // Autor......: Robert Koch
 // Data.......: 14/06/2019
-// Descricao..: Consulta prazos medios de recebimentos ee pagamentos
-//
+// Descricao..: Consulta prazos medios de recebimentos e pagamentos
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Consulta
+// #Descricao         #Consulta prazos medios de recebimentos e pagamentos
+// #PalavasChave      #prazo_medio_pagamentos #prazo_medio_recebimentos
+// #TabelasPrincipais #SE1 #SE2
+// #Modulos           #FIN
+
 // Historico de alteracoes:
-// 09/12/2019 - Robert - Passa a permitir selecionar criterio de agrupamento por cliente ou representante (apenas carteira a receber).
+// 09/12/2019 - Robert  - Passa a permitir selecionar criterio de agrupamento por cliente ou representante (apenas carteira a receber).
 // 05/03/2020 - Claudia - Ajuste de fonte conforme solicitação de versão 12.1.25
+// 05/01/2021 - Robert  - Nao estava abrindo a tela de parametros.
 //
+
 // --------------------------------------------------------------------------
 User Function VA_XLS44 ()	
 	Private cPerg   := "VAXLS44"
 	
 	_ValidPerg()
-	Pergunte(cPerg,.F.)
-	
-	Processa( { |lEnd| _Gera() } )
+	if Pergunte(cPerg, .T.)
+		Processa( { |lEnd| _Gera() } )
+	endif
 
 return
 //

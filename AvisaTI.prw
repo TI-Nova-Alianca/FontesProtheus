@@ -14,6 +14,7 @@
 // 04/01/2017 - Robert - Formatacao dados adicionais.
 // 01/10/2018 - Robert - Gera um arquivo por mes.
 // 10/10/2019 - Robert - Inicio gravacao tabela avisos.
+// 04/01/2021 - Robert - Nao grava mais em arquivo (nunca foi consultado).
 //
 
 // --------------------------------------------------------------------------
@@ -21,8 +22,8 @@ user function AvisaTI (_sAviso)
 	//local _oSQL := NIL
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aAmbAnt   := U_SalvaAmb ()
-	local _sArqAviso := "Avisos_para_TI_" + left (dtos (date ()), 6) + ".txt"
-	local _nHdl      := 0
+//	local _sArqAviso := "Avisos_para_TI_" + left (dtos (date ()), 6) + ".txt"
+//	local _nHdl      := 0
 	local _oAviso    := NIL
 
 	_sMsg := '[' + dtoc (date ()) + ' ' + time () + ']'
@@ -32,7 +33,7 @@ user function AvisaTI (_sAviso)
 	_sMsg += _sAviso
 	_sMsg += _PCham ()
 	_sMsg += chr (13) + chr (10)
-
+/*
 	if file (_sArqAviso)
 		_nHdl = fopen(_sArqAviso, 1)
 	else
@@ -41,9 +42,9 @@ user function AvisaTI (_sAviso)
 	fseek (_nHdl, 0, 2)  // Encontra final do arquivo
 	fwrite (_nHdl, _sMsg)
 	fclose (_nHdl)
-
+*/
 	// Caso tenha arquivo de log, grava a mensagem nele tambem.
-	U_Log (procname () + ": " + _sMsg)
+	U_Log2 ('aviso', procname () + ": " + _sAviso)
 
 	// Ainda em implementacao. Depois pretendemos passar para o NaWeb.
 	//U_GrvAviso ('E', 'robert.koch', _sAviso, procname (1) + '==>' + procname (2), 0)
