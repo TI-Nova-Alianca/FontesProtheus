@@ -508,19 +508,20 @@ Static Function ReportDef()
 	oSection1 := TRSection():New(oReport,,{}, , , , , ,.T.,.F.,.F.) 
 	
 	TRCell():New(oSection1,"COLUNA1", 	"" ,"Filial"		,	    					, 8,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA2", 	"" ,"Título"		,       					,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA3", 	"" ,"Cliente"		,       					,35,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA2", 	"" ,"Título"		,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA3", 	"" ,"Cliente"		,       					,30,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA4", 	"" ,"Vlr.Liquido"	, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA5", 	"" ,"Vlr.Parcela"	, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA6", 	"" ,"%.Taxa"		, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA6", 	"" ,"%.Taxa"		, "@E 999.99"   			,15,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA7", 	"" ,"Vlr.Taxa"		, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA8", 	"" ,"Dt.Venda"		,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA9", 	"" ,"Dt.Proces."	,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA10", 	"" ,"Autoriz."		,							,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA11", 	"" ,"NSU"			,	    					,10,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA12", 	"" ,"Status"		,	    					,15,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA13", 	"" ,"Cre/Deb"		,	    					,20,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
-	
+	TRCell():New(oSection1,"COLUNA13", 	"" ,"Cre/Deb"		,	    					,15,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA14", 	"" ,"Sta.Titulo"	,	    					,20,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
+
 	//TRFunction():New(oSection1:Cell("COLUNA5")	,,"SUM"	, , "Total parcela ", "@E 999,999,999.99", NIL, .F., .T.)
 	//TRFunction():New(oSection1:Cell("COLUNA7")	,,"SUM"	, , "Total taxa "   , "@E 999,999,999.99", NIL, .F., .T.)
 	
@@ -535,6 +536,7 @@ Static Function PrintReport(oReport)
 	Local _nTotTax   := 0
 	Local _nTotDVenda:= 0
 	Local _nTotDTax  := 0
+	Local _sStaTitulo:= "-"
 
 	oSection1:Init()
 	oSection1:SetHeaderSection(.T.)
@@ -567,17 +569,40 @@ Static Function PrintReport(oReport)
 		If alltrim(_sParc) <> ''
 			_oSQL:_sQuery += " AND SE1.E1_PARCELA   = '" + _sParc + "'"
 		EndIf
-			_oSQL:_sQuery += " AND SE1.E1_TIPO IN ('CC','CD')"
+		_oSQL:_sQuery += " AND SE1.E1_TIPO IN ('CC','CD')"
 		_aTitulo := aclone (_oSQL:Qry2Array ())
 
 		If len(_aTitulo) > 0
 			_sTitulo  := alltrim(_aTitulo[1,2]) +"/" + alltrim(_aTitulo[1,1] +"/"+_aTitulo[1,3])
 			_sNome    := Posicione("SA1",1,xFilial("SA1")+_aTitulo[1,4] + _aTitulo[1,5],"A1_NOME")
 			_sCliente := alltrim(_aTitulo[1,4]) +"/" + alltrim(_sNome)
+
+			// Verifica se tem baixa o titulo
+			_oSQL:= ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " SELECT "
+			_oSQL:_sQuery += " 	 E5_NUMERO"
+			_oSQL:_sQuery += " 	,E5_PREFIXO"
+			_oSQL:_sQuery += " 	,E5_PARCELA"
+			_oSQL:_sQuery += " FROM " + RetSQLName ("SE5") 
+			_oSQL:_sQuery += " WHERE E5_FILIAL = '" + _aRel[i, 1]   + "'"
+			_oSQL:_sQuery += " AND E5_PREFIXO  = '" + _aTitulo[1,1] + "'"
+			_oSQL:_sQuery += " AND E5_NUMERO   = '" + _aTitulo[1,2] + "'"
+			_oSQL:_sQuery += " AND E5_PARCELA  = '" + _aTitulo[1,3] + "'"
+			_oSQL:_sQuery += " AND E5_CLIENTE  = '" + _aTitulo[1,4] + "'"
+			_oSQL:_sQuery += " AND E5_LOJA     = '" + _aTitulo[1,5] + "'"
+			_aBaixa := aclone (_oSQL:Qry2Array ())
+
+			If len(_aBaixa) > 0
+				_sStaTitulo:= "Baixado"
+			Else
+				_sStaTitulo:= "Aberto"
+			Endif
 		Else
-			_sTitulo  := "-"
-			_sNome    := "-"
-			_sCliente := "-"
+			_sTitulo    := "-"
+			_sNome      := "-"
+			_sCliente   := "-"
+			_sStaTitulo := "-"
 		EndIf
 
 		If _aRel[i,13] == '+'
@@ -597,7 +622,8 @@ Static Function PrintReport(oReport)
 		oSection1:Cell("COLUNA10")	:SetBlock   ({|| _aRel[i,8] }) // cod.autoriz
 		oSection1:Cell("COLUNA11")	:SetBlock   ({|| _aRel[i,9] }) // NSU
 		oSection1:Cell("COLUNA12")	:SetBlock   ({|| _aRel[i,10]}) // status
-		oSection1:Cell("COLUNA13")	:SetBlock   ({|| _sCreDeb  }) // status
+		oSection1:Cell("COLUNA13")	:SetBlock   ({|| _sCreDeb   }) // credito/debito
+		oSection1:Cell("COLUNA14")	:SetBlock   ({|| _sStaTitulo}) // status titulo
 		
 		If alltrim(_aRel[i,12]) == 'I'
 			_nTotVenda += _aRel[i,3]
@@ -636,9 +662,13 @@ Static Function PrintReport(oReport)
 	oReport:PrintText("TOTAL GERAL" ,, 100)
 	_nLinha:= _PulaFolha(_nLinha)
 	oReport:PrintText("Valor da Parcela:" ,, 100)
-	oReport:PrintText(PADL('R$' + Transform(_nTotVenda - _nTotDVenda , "@E 999,999,999.99"),20,' '),, 900)
+	_vTPar := _nTotVenda - _nTotDVenda 
+	oReport:PrintText(PADL('R$' + Transform(_vTPar, "@E 999,999,999.99"),20,' '),, 900)
 	oReport:PrintText("Valor da Taxa:" ,, 100)
-	oReport:PrintText(PADL('R$' + Transform(_nTotTax - _nTotDTax, "@E 999,999,999.99"),20,' '),, 900)
+	_vTTax := _nTotTax - _nTotDTax
+	oReport:PrintText(PADL('R$' + Transform(_vTTax, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:PrintText("Valor Total(Parcela - Taxa):" ,, 100)
+	oReport:PrintText(PADL('R$' + Transform(_vTPar - _vTTax, "@E 999,999,999.99"),20,' '),, 900)
 	oReport:SkipLine(1)
 	oReport:ThinLine()
 
