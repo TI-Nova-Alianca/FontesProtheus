@@ -1,16 +1,3 @@
-/*
-Anotacoes ferias 2020
-- remover va_rusc
-- eliminar parametro ML_TESCSAF
-- criar parametros:
-			_sTES = GetMv ("VA_TSAFAF")  // Associado pessoa fisica
-			_sTES = GetMv ("VA_TSAFAJ")  // Associado pessoa juridica
-			_sTES = GetMv ("VA_TSAFNF")  // Nao associado pessoa fisica
-			_sTES = GetMv ("VA_TSAFNJ")  // Nao associado pessoa juridica
-
-
-*/
-
 // Programa:  U_Robert
 // Autor:     Robert Koch
 // Descricao: Ajustes e testes diversos
@@ -93,7 +80,7 @@ static function _AndaLogo ()
 
 	u_help ('Nada definido.')
 	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
-	return
+return
 /*
 	// Inicializa custo em partes
 	IF ! U_MsgNoYes ("Confirma inicializacao do custo em partes?")
