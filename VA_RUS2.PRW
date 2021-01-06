@@ -215,8 +215,9 @@ User Function va_rus2 (_nOpc)
 					_lContinua = .F.
 				endif
 			
-			// Para outras cooperativas nao tenho como buscar na classe ClsAssoc, entao gero uma array equivalente.
+			// Para nao associados, nao tenho como buscar na classe ClsAssoc, entao gero uma array equivalente.
 			else
+			/*
 				_oSQL := ClsSQL ():New ()
 				// _oSQL:_sQuery := "SELECT * "
 				// _oSQL:_sQuery +=  " FROM VA_VAGENDA_SAFRA"
@@ -249,6 +250,8 @@ User Function va_rus2 (_nOpc)
 					(_sAliasQ) -> (dbskip ())
 				enddo
 				(_sAliasQ) -> (dbclosearea ())
+			*/
+				_aCadVitic = aclone (U_VA_RusCV (m->ze_assoc, m->ze_lojasso))
 			endif
 		endif
 		if _lContinua

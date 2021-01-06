@@ -41,6 +41,7 @@
 #Include "RwMake.ch"
 #Include "TbiConn.ch"
 #include "rwmake.ch"  // Deixar este include para aparecerem os botoes da tela de acompanhamento do SPED
+#include "VA_Inclu.prw"
 
 // --------------------------------------------------------------------------
 User Function va_rusN ()
@@ -72,6 +73,9 @@ User Function va_rusN ()
 	local _aPrevia   := {}
 	local _aCols     := {}
 	local _nVlFrete  := 0
+	local _aTpForUva := {}
+	local _sTpForUva := ""
+	local _nVitic    := 0
 	private _oAssoc  := NIL
 
 	u_Log2 ('info', 'Iniciando ' + procname ())
@@ -83,8 +87,8 @@ User Function va_rusN ()
 		softlock ("SZE")
 	endif
 
-	U_HELP ('EM 2020 nao gravou os campos D1_PRM02 ...99 nem D1_VACLABD. Poderia ser algum gatilho?',, .t.)
-	u_help ("Testar a parte de calculo e gravacao de frete, pois foi implementada em 01/07/2020 (depois da safra) e nao foi testada. Ver tb se vai levar a soma para o SF1",, .t.)
+	U_log2 ('erro', 'EM 2020 nao gravou os campos D1_PRM02 ...99 nem D1_VACLABD. Poderia ser algum gatilho?')
+	u_log2 ('erro', "Testar a parte de calculo e gravacao de frete, pois foi implementada em 01/07/2020 (depois da safra) e nao foi testada. Ver tb se vai levar a soma para o SF1")
 
 	// Testa se jah tem contranota somente depois do softlock para pegar casos em que dois usuarios tentam gerar
 	// contranota da mesma carga e o segundo fica aguardando a liberacao do softlock. Quando o primeiro liberar,
@@ -116,6 +120,25 @@ User Function va_rusN ()
 		_lContinua = .F.
 	endif
 
+	// Verifica qual o tipo de fornecedor de uva (associado / nao associado)
+	if _lContinua
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT distinct GX0001_TIPO_FORNECEDOR_UVA"
+		_oSQL:_sQuery +=  " FROM GX0001_AGENDA_SAFRA V"
+		_oSQL:_sQuery += " WHERE GX0001_ASSOCIADO_CODIGO = '" + sze -> ze_assoc + "'"
+		_oSQL:_sQuery +=   " AND GX0001_ASSOCIADO_LOJA   = '" + sze -> ze_lojasso   + "'"
+		_oSQL:Log ()
+		_aTpForUva = _oSQL:RetFixo (1, "ao consultar o 'tipo de fornecedor de uva' cod. '" + sze -> ze_assoc + "/" + sze -> ze_lojasso + "'. Verifique cadastro no NaWeb.")
+		if len (_aTpForUva) == 1
+			_sTpForUva = _aTpForUva [1, 1]
+		else
+			u_log2 ('erro', "Sem definicao para 'tipo de fornecedor de uva'.")
+			_lContinua = .F.
+		endif
+	endif
+
+	/* Agora tenho a variavel _sTpForUva
 	// Deve ser producao propria, associado ou ex-associado (pode ter entregue alguma carga e solicitado desligamento).
 	if _lContinua
 		if sze -> ze_assoc == '001369' .and. sze -> ze_lojasso == '01'
@@ -134,6 +157,21 @@ User Function va_rusN ()
 			endif
 		endif
 	endif
+	*/
+	
+	// Algumas validacoes adicionais quando associado.
+	if _lContinua .and. _sTpForUva == 'A'
+		_oAssoc := ClsAssoc():New (sze -> ze_assoc, sze -> ze_lojasso)
+		if valtype (_oAssoc) != "O" .or. (!_oAssoc:EhSocio (dDataBase) .and. empty (_oAssoc:DtSaida (dDataBase)))  
+			u_help ("Fornecedor '" + zz9 -> zz9_fornec + "/" + zz9 -> zz9_loja + "' nao e' associado e nem ex-associado.")
+		else
+			if ! empty (_oAssoc:DtFalecim)
+				u_help ("Associado consta como falecido em " + dtoc (_oAssoc:DtFalecim))
+				_lContinua = .F.
+			endif
+		endif
+	endif
+
 	if _lContinua
 		sa2 -> (dbsetorder (1))
 		if ! sa2 -> (dbseek (xfilial ("SA2") + sze -> ze_assoc + sze -> ze_lojasso, .F.))
@@ -175,48 +213,21 @@ User Function va_rusN ()
 */
 	// Definicao do TES a ser usado.
 	if _lContinua
-		_oSQL := ClsSQL():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "SELECT distinct GX0001_TIPO_FORNECEDOR"
-		_oSQL:_sQuery +=  " FROM GX0001_AGENDA_SAFRA V"
-		_oSQL:_sQuery += " WHERE GX0001_ASSOCIADO_CODIGO = '" + sze -> ze_assoc + "'"
-		_oSQL:_sQuery +=   " AND GX0001_ASSOCIADO_LOJA   = '" + sze -> ze_lojasso   + "'"
-		_oSQL:Log ()
-		local _aTpForUva := {}
-		local _sTpForUva := ""
-		_aTpForUva = _oSQL:RetFixo (1, "ao consultar o tipo de fornecedor de uva para o fornecedor '" + sze -> ze_assoc + "/" + sze -> ze_lojasso + "'. Verifique cadastro no NaWeb.")
-		if len (_sTpForUva) == 1
-			_sTpForUva = _aTpForUva [1, 1]
-		else
-			_lContinua = .F.
-		endif
-	endif
-	if _lContinua
 		do case
-		case _sTpForUva + sa2 -> a2_pessoa == 'AF'
+		case _sTpForUva + sa2 -> a2_tipo == 'AF'
 			_sTES = GetMv ("VA_TSAFAF")  // Associado pessoa fisica
-		case _sTpForUva + sa2 -> a2_pessoa == 'AJ'
-			_sTES = GetMv ("VA_TSAFAJ")  // Associado pessoa juridica
-		case _sTpForUva + sa2 -> a2_pessoa == 'NF'
+// ainda nao sei se dev gerar contranota nesta caso		case _sTpForUva + sa2 -> a2_tipo == 'AJ'
+// ainda nao sei se dev gerar contranota nesta caso			_sTES = GetMv ("VA_TSAFAJ")  // Associado pessoa juridica
+		case _sTpForUva + sa2 -> a2_tipo == 'NF'
 			_sTES = GetMv ("VA_TSAFNF")  // Nao associado pessoa fisica
-		case _sTpForUva + sa2 -> a2_pessoa == 'NJ'
-			_sTES = GetMv ("VA_TSAFNJ")  // Nao associado pessoa juridica
+// ainda nao sei se dev gerar contranota nesta caso		case _sTpForUva + sa2 -> a2_tipo == 'NJ'
+// ainda nao sei se dev gerar contranota nesta caso			_sTES = GetMv ("VA_TSAFNJ")  // Nao associado pessoa juridica
 		otherwise
 			u_help ("Nao foi possivel definir o TES a ser usado para gerar contranota. Verifique o cadastro do fornecedor (pessoa fisica/juridica) e tipo de fornecedor no NaWeb.",, .T.)
 			_lContinua = .F.
-		enddo
+		endcase
 	endif
-	u_log ('_sTES:', _sTES)
-	if _lContinua
-		_oAssoc := ClsAssoc():New (sze -> ze_assoc, sze -> ze_lojasso)
-		if valtype (_oAssoc) != "O"
-			_lContinua = .F.
-		endif
-		if _lContinua .and. ! empty (_oAssoc:DtFalecim)
-			u_help ("Associado consta como falecido em " + dtoc (_oAssoc:DtFalecim))
-			_lContinua = .F.
-		endif
-	endif
+	u_log2 ('info', '_sTES:' + _sTES)
 
 
 	// Atualiza sistema de agendamento/inspecao com status de 'CON' (concluida). Mais para garantir em algum caso que o inspetor de tombadores tenha deixado passar.
@@ -261,7 +272,7 @@ User Function va_rusN ()
 	// considerando um grau medio e classificacoes medias. Neste momento nao interessa a classificacao
 	// por que quero saber apenas qual a de menor valor comercial.
 	if _lContinua
-		u_logIni ('Verificacao de misturas')
+		u_log2 ('info', 'Verificacao de misturas')
 		_aProdut = {}
 		szf -> (dbsetorder (1))  // filial + safra + carga + item
 		szf -> (dbseek (xfilial ("SZF") + sze -> ze_safra + sze -> ze_carga, .T.))
@@ -284,6 +295,8 @@ User Function va_rusN ()
 					_aProdut [_nProdut, 2] = U_PrcUva19 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3])[1]
 				elseif sze -> ze_safra == '2020'
 					_aProdut [_nProdut, 2] = U_PrcUva20 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F.)[5]  // pos.5=preco MOC
+				elseif sze -> ze_safra == '2021'
+					_aProdut [_nProdut, 2] = U_PrcUva21 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[2]  // pos.2=preco de compra
 				else
 					u_help ("Sem tratamento de precificacao para mistura de variedades nesta safra.",, .t.)
 					_lContinua = .F.
@@ -291,7 +304,8 @@ User Function va_rusN ()
 				endif
 			next
 			_aProdut = asort (_aProdut,,, {|_x, _y| _x[2] < _y [2]})
-			u_log ('_aProdut:', _aProdut)
+			u_log2 ('info', '_aProdut:')
+			u_log2 ('info', _aProdut)
 			
 			// Elimina produtos com precos iguais.
 			_aAux = {}
@@ -301,13 +315,11 @@ User Function va_rusN ()
 				endif
 			next
 			_aProdut = aclone (_aAux)
-			u_log ('_aProdut eliminadas duplicidades:', _aProdut)
 			if len (_aProdut) > 1  // Se ainda sobrou mais de um produto com diferentes precos
 				_sMenorVlr = _aProdut [1, 1]
-				u_log ('produto de menor valor:', _sMenorVlr)
+				u_log2 ('info', 'produto de menor valor: ' + _sMenorVlr)
 			endif
 		endif
-		u_logFim ('Verificacao de misturas')
 	endif
 
 
@@ -315,6 +327,16 @@ User Function va_rusN ()
 	if _lContinua
 		_nVlFrete = 0
 		U_VA_RUSCF (.T.)
+	endif
+
+	// Gera array com cadastro viticola.
+	if _lContinua
+		if type ('_aCadVitic') != 'A'
+			_aCadVitic = aclone (U_VA_RusCV (sze -> ze_assoc, sze -> ze_lojasso))
+			if len (_aCadVitic) == 0
+				_lContinua = .F.
+			endif
+		endif
 	endif
 
 	if _lContinua
@@ -337,6 +359,7 @@ User Function va_rusN ()
 				_lContinua = .F.
 				exit
 			else
+				/*
 				sz2 -> (dbsetorder (1))  // Z2_FILIAL+Z2_CADVITI
 				if ! sz2 -> (dbseek (xfilial ("SZ2") + szf -> zf_cadviti, .F.))
 					u_help ("Cadastro viticola '" + szf -> zf_cadviti + "' nao encontrado na tabela de cadastros viticolas.")
@@ -362,6 +385,20 @@ User Function va_rusN ()
 						endif
 					endif 
 				endif
+				*/
+			//	u_log2 ('debug', _aCadVitic)
+				_nVitic = ascan (_aCadVitic, {|_aVal| alltrim (_aVal [.CadVitCodigo]) == alltrim (szf -> zf_cadviti) .and. alltrim (_aVal [.CadVitProduto]) == alltrim (szf -> zf_produto)})
+				if _nVitic == 0
+					u_help ("Variedade '" + szf -> zf_produto + "' nao encontrada no cadastro viticola '" + szf -> zf_cadviti + "'.",, .T.)
+					_lContinua = .F.
+					exit
+				else
+					if _aCadVitic [_nVitic, .CadVitSafrVit] < sze -> ze_safra
+						u_help ("Cadastro viticola consta como renovado para a safra " + _aCadVitic [_nVitic, .CadVitSafrVit])
+						_lContinua = .F.
+						exit
+					endif
+				endif
 			endif
 
 			if ! sb1 -> (dbseek (xfilial ("SB1") + szf -> zf_produto, .F.))
@@ -386,13 +423,13 @@ User Function va_rusN ()
 				_sClasFina = szf -> zf_prm99
 			endif
 
-			//u_log ("Usando classificacao '" + _sClasFina + "' para buscar preco uva fina '" + sb1 -> b1_cod + "'.") 
-
 			// Busca preco unitario.
 			if szf -> zf_safra == '2019'
 				_nVlUni = U_PrcUva19 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc)[1]
 			elseif szf -> zf_safra == '2020'
 				_nVlUni = U_PrcUva20 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F.)[5]  // pos.5=preco MOC
+			elseif szf -> zf_safra == '2021'
+				_nVlUni = U_PrcUva21 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[2]  // pos.2 = preco de compra
 			else
 				u_help ("Sem tratamento para leitura de precos para esta safra.")
 				_lContinua = .F.
@@ -436,15 +473,15 @@ User Function va_rusN ()
 
 			// Monta descricao com grau e classificacao da uva. Inicia com o grau e
 			// classificacao, reduzindo o nome da uva caso necessario.
-			_sDescri = " Gr:" + alltrim (szf -> zf_grau)
+			_sDescri = " GR:" + alltrim (szf -> zf_grau)
 
 			// Todas as classificacoes devem estar informadas.
 			if ! empty (szf -> zf_prm02) .and. ! empty (szf -> zf_prm03) .and. ! empty (szf -> zf_prm04) .and. ! empty (szf -> zf_prm05) .and. ! empty (szf -> zf_prm99)
-				_sDescri += " Clas.:" + alltrim (szf -> zf_prm99)
+				_sDescri += " CL:" + alltrim (szf -> zf_prm99)
 			endif
 			// Classificacao A/B/D criada em 2014.
 			if ! empty (szf -> zf_clasabd)
-				_sDescri += " Cl.:" + alltrim (szf -> zf_clasabd)
+				_sDescri += " CL:" + alltrim (szf -> zf_clasabd)
 			endif
 			_sDescri = left (alltrim (sb1 -> b1_desc), _nTamDesc - len (_sDescri)) + _sDescri
 
@@ -453,22 +490,6 @@ User Function va_rusN ()
 				_sVitic += iif (empty (_sVitic), '', ',') + alltrim (szf -> zf_cadviti)
 			endif
 
-//			// Calcula valor do frete a ser incluido na nota. Precisa ser nos itens por que pode haver mais de um cadastro viticola.
-//			if sze -> ze_safra >= '2020' .and. valtype (_oAssoc) == "O"
-//				if ! sze -> ze_assoc $ '001369/003114/012373'  // Producao propria / Vinhedos da Quinta (3os)
-//					_nFrtItem = U_FrtSaf20 (_oAssoc:Nucleo, szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor)
-//					// aval do fiscal em 10/01 por telefone --> _nVlFrete = 0  // ainda nao tenho aval do setor fiscal -> precisaria destacar ICMS !!!
-//					if _nFrtItem > 0
-//						reclock ("SZF", .F.)
-//						szf -> zf_valfret = _nFrtItem
-//						msunlock ()
-//					endif
-//					_nVlFrete += _nFrtItem
-//				endif
-//			elseif sze -> ze_safra > '2020'
-//				u_help ("Sem tratamento de calculo de frete para esta safra",, .T.)
-//			endif
-			
 			// Acumula frete previamente calculado nos itens.
 			_nVlFrete += szf -> zf_valfret
 
@@ -524,7 +545,9 @@ User Function va_rusN ()
 				AADD(_aLinha , {"D1_LOTECTL", _sLoteCtl, Nil } )
 				AADD(_aLinha , {"D1_LOTEFOR", szf -> zf_idZA8, Nil } )
 			endif
-			u_log (_aLinha)
+			AADD(_aLinha , {"D1_VACONDU" , szf -> zf_conduc   , Nil } )
+			AADD(_aLinha , {"D1_DESPESA" , szf -> zf_valfret  , Nil } )
+			u_log2 ('info', _aLinha)
 			AADD(_aAutoSD1, aClone (U_OrdAuto (_aLinha)))
 
 			// Atualiza array de previsao de nota
@@ -593,9 +616,9 @@ User Function va_rusN ()
 		// Apresenta Tela para Confirmar o Numero da Primeira NF a Ser Gerada
 		_lContinua = Sx5NumNota (@_sSerie)
 		if _lContinua
-			u_log ('confirmou proxima nota para a serie', @_sSerie)
+			u_log2 ('info', 'confirmou proxima nota para a serie ' + _sSerie)
 		else
-			u_log ('Nao confirmou proxima nota')
+			u_log2 ('aviso', 'Nao confirmou proxima nota')
 		endif
 	endif
 	
@@ -604,7 +627,7 @@ User Function va_rusN ()
 
 		// Busca a Proxima NF da serie informada.
 		_sNF = NxtSX5Nota (_sSerie)
-		u_log ('_sNF:', _sNF)
+		u_log2 ('info', '_sNF: ' + _sNF)
 
 		// Prepara campos do cabecalho da nota
 		_aAutoSF1 := {}
@@ -622,7 +645,7 @@ User Function va_rusN ()
 		AADD( _aAutoSF1, { "F1_VASEPRO"  , sze->ze_SNFProd, Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
 		AADD( _aAutoSF1, { "F1_VAPLVEI"  , sze->ze_Placa,   Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
 		AADD( _aAutoSF1, { "F1_VASAFRA"  , sze->ze_safra,   Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
-		AADD( _aAutoSF1, { "F1_FRETE"    , _nVlFrete,       Nil})
+//		AADD( _aAutoSF1, { "F1_FRETE"    , _nVlFrete,       Nil})
 		AADD( _aAutoSF1, { "F1_VAFLAG"   , 'G',             Nil})  // 'Gerada' (Campo customizado, serah tratado pelo P.E. SF1100I)
 
 		// Ordena campos cfe. SX3.
@@ -640,15 +663,15 @@ User Function va_rusN ()
 
 		If lMsErroAuto
 			DisarmTransaction()
-			u_log ('lMsErroAuto')
+			u_log2 ('erro', 'lMsErroAuto')
 			if ! empty (NomeAutoLog ())
-				u_log (memoread (NomeAutoLog ()))
+				u_log2 ('erro', memoread (NomeAutoLog ()))
 				MostraErro()
 			else
 				u_help ("Nao foi possivel ler o arquivo de log de erros.")
 			endif
 		else
-			u_log ('carga', sze -> ze_carga, '  NF gerada:', sf1 -> f1_doc)
+			u_log2 ('info', 'Carga ' + sze -> ze_carga + ' gerou NF ' + sf1 -> f1_doc)
 
 			// Grava dados adicionais na nota.
 			if ! empty (_sMsgContr)

@@ -104,7 +104,7 @@ user function va_rusLI (_nPesagem)
 	u_log2 ('info', '   Varied.nao prevista no cad.vitic: ' + _aRusInsp [.InspecoesSafraVarNaoPrevCadVit])
 	u_log2 ('info', '   Entrega cad.campo...............: ' + _aRusInsp [.InspecoesSafraEntrCadCpo])
 	u_log2 ('info', '   Mistura variedades no tombador..: ' + _aRusInsp [.InspecoesSafraMisturaNoTombador])
-	u_log2 ('info', '   Chave agenda original...........: ' + _aRusInsp [.InspecoesSafraAgendaOri])
+	u_log2 ('info', '   Chave agenda original...........: ' + cvaltochar (_aRusInsp [.InspecoesSafraAgendaOri]))
 	u_log2 ('info', '   Botrytis......: ' + _sInspBotr)
 	u_log2 ('info', '   Glomerella....: ' + _sInspGlom)
 	u_log2 ('info', '   Aspergyllus...: ' + _sInspAspe)
@@ -165,7 +165,7 @@ user function va_rusLI (_nPesagem)
 					szf -> zf_entrcad = 'S'
 				endif
 				msunlock ()
-				u_logDH ('Atualizei ZZF_ENTRCAD para ', szf -> zf_entrcad)
+				u_log2 ('info', 'Atualizei ZZF_ENTRCAD para ' + szf -> zf_entrcad)
 			endif
 
 			if _nPesagem == 2  // Estou fazendo a 2a. pesagem

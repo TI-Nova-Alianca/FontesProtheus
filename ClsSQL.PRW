@@ -583,14 +583,17 @@ return
 // de acordo com o solicitado. Se nao estiver, mostra mensagem de aviso e
 // devolve resultado vazio.
 METHOD RetFixo (_nRetFixo, _sMsgFixo) Class ClsSQL
-	local _aRetFixo := NIL
+	local _aRetFixo  := NIL
+	local _sErrRetFx := ''
 	_aRetFixo := ::Qry2Array (.T., .F.)
 	if len (_aRetFixo) != _nRetFixo
-		u_help ("Foram encontrados " + ;
-		        iif (len (_aRetFixo) > _nRetFixo, "mais", "menos") + ;
-		        " registros (" + cvaltochar (len (_aRetFixo)) + ")" + ;
-		        " do que o esperado (" + cvaltochar (_nRetFixo) + ") " + _sMsgFixo)
+		_sErrRetFx := "Foram encontrados "
+		_sErrRetFx += iif (len (_aRetFixo) > _nRetFixo, "mais", "menos")
+		_sErrRetFx += " registros (" + cvaltochar (len (_aRetFixo)) + ")"
+		_sErrRetFx += " do que o esperado (" + cvaltochar (_nRetFixo) + ") "
+		_sErrRetFx += _sMsgFixo
 		_aRetFixo = {}
+		u_help (_sErrRetFx, ::_sQuery, .T.)
 	endif
 return _aRetFixo
 

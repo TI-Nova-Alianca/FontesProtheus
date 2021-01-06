@@ -56,6 +56,7 @@
 // 06/03/2020 - Claudia - Ajustado o fonte conforme solicitação da R25 - Uso NÃO PERMITIDO de API em LOOP - Retirada a leitura o getmv do For
 // 16/06/2020 - Robert  - Desabilitadas chamadas de logs desnecessarios.
 //                      - Eliminadas algumas declaracoes de variaveis nao usadas.
+// 06/01/2021 - Robert  - Desabilitada chamada do U_FrtNFe quando estao sendo usadas rotinas de safra.
 //
 
 // -----------------------------------------------------------------------------------------------------------------------
@@ -160,9 +161,13 @@ User Function MT100TOK()
 		Next
 	endif
 	
-	// Testes ref. controle de fretes
+	// Testes ref. controle de fretes.
 	if _lRet .and. ! cTipo $ "BD" .and. cNumEmp == "0101"
-		_lRet = U_FrtNFE ("V")
+//		U_LOG2 ('debug', IsInCallStack ("VA_RUS"))
+//		U_LOG2 ('debug', IsInCallStack ("U_VA_RUS"))
+		if ! IsInCallStack ("U_VA_RUS")  // Nao precisa perder tempo com contranotas de safra.
+			_lRet = U_FrtNFE ("V")
+		endif
 	endif
 	
 	// Verificacoes para NF-e

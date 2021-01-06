@@ -2,15 +2,24 @@
 // Autor:     Robert Koch
 // Data:      26/02/2018
 // Descricao: Exportacao de planilha com calculo de precos de uvas safra
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Exportacao_para_planilha
+// #Descricao         #Gera planilha com precos de uva calculados cfe. safra parametrizada.
+// #PalavasChave      #precos_safra
+// #TabelasPrincipais #ZX5 #SB1 #SB5
+// #Modulos           #COOP
+
 // Historico de alteracoes:
-// 21/03/2019 - Robert - Passa a usar a include VA_INCLU para compatibilidade com retorno da funcao de calculo de precos.
-// 22/01/2020 - Robert - Ajustes para safra 2020
-//                     - Possibilidade de gerar tabela MOC da CONAB.
+// 21/03/2019 - Robert  - Passa a usar a include VA_INCLU para compatibilidade com retorno da funcao de calculo de precos.
+// 22/01/2020 - Robert  - Ajustes para safra 2020
+//                      - Possibilidade de gerar tabela MOC da CONAB.
 // 05/03/2020 - Claudia - Ajuste de fonte conforme solicitação de versão 12.1.25
+// 04/01/2021 - Robert  - Tratamentos para safra 2021.
 //
+
 #include "VA_INCLU.prw"
-//
+
 // --------------------------------------------------------------------------
 user function VA_XLS40 (_lAutomat)
 	Local cCadastro := "Exportacao de planilha com calculo de precos de uvas safra"
@@ -47,13 +56,21 @@ user function VA_XLS40 (_lAutomat)
 		Endif
 	endif
 return
-//
+
+
+
 // --------------------------------------------------------------------------
 // 'Tudo OK' do FormBatch.
 Static Function _TudoOk()
 	Local _lRet     := .T.
+	if mv_par01 >= '2021' .and. mv_par03 == 1
+		u_help ("A partir da safra 2021 nao se usa mais operacao de 'entrada'. Somente 'compra'.",, .t.)
+		_lRet = .F.
+	endif
 Return _lRet
-//
+
+
+
 // --------------------------------------------------------------------------
 Static Function _Gera()
 	local _oSQL      := NIL
@@ -77,7 +94,6 @@ Static Function _Gera()
 	local _nPosPreco := 0
 	private aHeader  := {}  // Para simular a exportacao de um GetDados.
 	private aCols    := {}  // Para simular a exportacao de um GetDados.
-	//u_logId ()
 
 	// Posicao (na array retornada pela funcao de calculo de precos) relativa ao tipo de preco solicitado.
 	if mv_par03 == 1
@@ -181,8 +197,19 @@ Static Function _Gera()
 			elseif mv_par02 == 4
 				_aPrecos  = aclone (U_PrcUva20 ('07', _sProduto, 15, 'B', 'L', .T.)[4])
 			endif
+		elseif mv_par01 == '2021'
+			if mv_par02 == 1
+				_aPrecos  = aclone (U_PrcUva21 ('01', _sProduto, 15, 'B', 'L', .T., .F.)[4])
+			elseif mv_par02 == 2
+				_aPrecos  = aclone (U_PrcUva21 ('03', _sProduto, 15, 'B', 'E', .T., .F.)[4])
+			elseif mv_par02 == 3
+				_aPrecos  = aclone (U_PrcUva21 ('03', _sProduto, 15, 'B', 'L', .T., .F.)[4])
+			elseif mv_par02 == 4
+				_aPrecos  = aclone (U_PrcUva21 ('07', _sProduto, 15, 'B', 'L', .T., .F.)[4])
+			endif
 		else
 			u_help ('Sem tratamento para a safra informada.')
+			exit
 		endif
 		//u_log (_aPrecos)
 
@@ -286,7 +313,9 @@ Static Function _Gera()
 	endif
 	u_aColsXLS (_aResult)
 return
-//
+
+
+
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()

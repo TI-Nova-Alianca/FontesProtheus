@@ -1185,7 +1185,7 @@ METHOD FechSafra (_sSafra) Class ClsAssoc
 
 	// Regras de pagamento (informativo)
 	_sRetFechS += '<regraPagamento>'
-		if _sSafra $ '2019/2020'
+		if _sSafra $ '2019/2020/2021'
 			_sRetFechS += '<regraPagamentoItem>'
 			_sRetFechS += '<grupo>A</grupo>'
 			_sRetFechS += '<descricao>Bordo e organicas                - 5 vezes</descricao>'

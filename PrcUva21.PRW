@@ -12,12 +12,13 @@
 
 // Historico de alteracoes:
 // 16/10/2020 - Robert - Copiado do PrcUva20 para uma simulacao inicial como se fosse 2021.
+// 04/01/2020 - Robert - Criado parametro para nao mostrar mensagem em tela.
 //
 
 #include "VA_INCLU.prw"
 
 // --------------------------------------------------------------------------
-user function PrcUva21 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRetArray)
+user function PrcUva21 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRetArray, _lMostrMsg)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aRet      := {}
 	local _nPrcRec   := 0
@@ -70,7 +71,7 @@ user function PrcUva21 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	// Viniferas tem tratamento diferenciado conforme a filial onde sao recebidas, podendo inclusive
 	// ser precificadas como outra variedade.
 	if _lContinua
-//		u_log2 ('info', 'Variedade solicitada: ' + _sProduto + ' ' + alltrim (sb1 -> b1_desc))
+		u_log2 ('info', 'Varied: ' + alltrim (_sProduto) + '-' + alltrim (sb1 -> b1_desc) + ' gr: ' + cvaltochar (_nGrau))
 		if sb1 -> b1_varuva == 'F'
 			if _sFilial $ '01/09'
 				_lIsabel = .T.
@@ -123,7 +124,6 @@ user function PrcUva21 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 
 			// Define o % a ser aplicado sobre o preco do produto base
 			if sb1 -> b1_vaorgan $ 'BEO'  // [B]ordadura, [E]m conversao ou [O]rganica
-				// 2019 --> _nAgioOrg = iif (sb1 -> b1_vaorgan == 'E', 15, iif (sb1 -> b1_vaorgan == 'O', 60, 0))
 				_nAgioOrg = 0
 				if sb1 -> b1_vaorgan == 'E'
 					_nAgioOrg = 15
@@ -235,10 +235,10 @@ user function PrcUva21 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 		_aGrupo := aclone (_oSQL:Qry2Array (.F., .F.))
 		//U_log (_aGrupo)
 		if len (_aGrupo) == 0
-			_sComent += "Produto '" + alltrim (sb1 -> b1_cod) + ' - ' + alltrim (sb1 -> b1_desc) + "' nao encontrado na tabela 14 (uvas X grupos) do arquivo ZX5, ou respectivo grupo 'M' (ref.tabela MOC) nao cadastrado na tabela 13 do arquivo ZX5 para esta safra."
+			_sComent += "Produto '" + alltrim (sb1 -> b1_cod) + ' - ' + alltrim (sb1 -> b1_desc) + "' nao encontrado nos grupos 'M' (MOC) na tabela 14 (uvas X grupos) do arquivo ZX5, ou respectivo grupo nao cadastrado na tabela 13 do arquivo ZX5 para esta safra."
 			_lContinua = .F.
 		elseif len (_aGrupo) > 1
-			_sComent += "Produto '" + alltrim (sb1 -> b1_cod) + ' - ' + alltrim (sb1 -> b1_desc) + "' encontrado MAIS DE UMA VEZ na tabela 14 (uvas X grupos) do arquivo ZX5, ou respectivo grupo 'M' (ref.tabela MOC) cadastrado MAIS DE UMA VEZ na tabela 13 do arquivo ZX5 para esta safra."
+			_sComent += "Produto '" + alltrim (sb1 -> b1_cod) + ' - ' + alltrim (sb1 -> b1_desc) + "' encontrado MAIS DE UMA VEZ nos grupos 'M' (MOC) na tabela 14 (uvas X grupos) do arquivo ZX5, ou respectivo grupo cadastrado MAIS DE UMA VEZ na tabela 13 do arquivo ZX5 para esta safra."
 			_lContinua = .F.
 		else
 			_nGBaseMOC = _aGrupo [1, 1]
@@ -560,16 +560,31 @@ user function PrcUva21 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 
 	// Monta array para retorno dos dados.
 	if _lContinua
-//		_aRet = {round (_nPrcRec, _nArred), round (_nPrcCom, _nArred), _sComent, _aGrausInt, round (_nPrcMOC, _nArred)}
 		_aRet = {round (_nPrcRec, _nArredEnt), round (_nPrcCom, _nArredCom), _sComent, _aGrausInt, round (_nPrcMOC, _nArredMOC)}
 	else
-		u_help (_sComent,, .t.)
+		if _lMostrMsg
+			u_help (_sComent,, .t.)
+		else
+
+			// Gravacoes que seriam feitas pela funcao u_help.
+			u_log2 ('erro', _sComent)
+			if type ("_sErroAuto") == "C"  // Variavel private (customizada) para retorno de erros em rotinas automaticas.
+				_sErroAuto += iif (empty (_sErroAuto), '', '; ') + _sComent
+			endif
+			if type ('_sErros') == 'C'  // Variavel private (customizada) geralmente usada em chamadas via web service.
+				_sErros += iif (empty (_sErros), '', '; ') + _sComent
+			endif
+			if type ("_oBatch") == "O"
+				_oBatch:Mensagens += iif (alltrim (_sComent) $ _oBatch:Mensagens, '', '; ' + alltrim (_sComent))
+			endif
+		endif
+
 		_aRet = {0, 0, _sComent, _aGrausInt, 0}
 	endif
 
 //	u_log ('Preco entrada:', _aRet [1])
 //	u_log ('Preco compra :', _aRet [2])
 //	u_log ('Preco MOC    :', _aRet [5])
-//	u_log ('Comentarios  :', _aRet [3])
+	u_log2 ('info', _aRet [3])
 	U_ML_SRArea (_aAreaAnt)
 return _aRet
