@@ -67,21 +67,20 @@ User Function va_rusN ()
 	local _nVlUni    := 0
 	local _sLoteCtl  := ""
 	local _sMenorVlr := ''
-	local _aProdut   := {}
-	local _nProdut   := 0
-	local _aAux      := {}
+//	local _aProdut   := {}
+//	local _nProdut   := 0
+//	local _aAux      := {}
 	local _aPrevia   := {}
 	local _aCols     := {}
 	local _nVlFrete  := 0
 	local _aTpForUva := {}
 	local _sTpForUva := ""
 	local _nVitic    := 0
+	local _sGrpPgSaf := ''
 	private _oAssoc  := NIL
 
 	u_Log2 ('info', 'Iniciando ' + procname ())
 	
-	CursorWait ()
-
 	// Nao permite duas sessoes alterando a mesma carga. Usa a funcao SoftLock para que mostre a mensagem 'registro em uso por fulano'
 	if _lContinua
 		softlock ("SZE")
@@ -272,6 +271,7 @@ User Function va_rusN ()
 	// considerando um grau medio e classificacoes medias. Neste momento nao interessa a classificacao
 	// por que quero saber apenas qual a de menor valor comercial.
 	if _lContinua
+/*
 		u_log2 ('info', 'Verificacao de misturas')
 		_aProdut = {}
 		szf -> (dbsetorder (1))  // filial + safra + carga + item
@@ -320,8 +320,35 @@ User Function va_rusN ()
 				u_log2 ('info', 'produto de menor valor: ' + _sMenorVlr)
 			endif
 		endif
+*/
+		_sMenorVlr = U_VA_RusMV ()
 	endif
 
+	// Define qual o grupo para pagamento ao qual esta nota deve ser vinculada.
+	// Posso definir isso agora por que, se tiver mistura de variedades, jah terei
+	// definicao de uma com menor valor, que vai ser o criterio de desempate.
+	if _lContinua
+		szf -> (dbsetorder (1))  // filial + safra + carga + item
+		szf -> (dbseek (xfilial ("SZF") + sze -> ze_safra + sze -> ze_carga, .T.))
+		do while ! szf -> (eof ()) ;
+			.and. szf -> zf_filial == xfilial ("SZF") ;
+			.and. szf -> zf_safra  == sze -> ze_safra ;
+			.and. szf -> zf_carga  == sze -> ze_carga
+			
+			// Se tem produto de menor valor definido, usa-o (carga com mistura). Senao, eh por que tem apenas 1 item na carga.
+			U_Log2 ('info', szf -> zf_produto)
+			U_Log2 ('info', _sMenorVlr)
+			if szf -> zf_produto == _sMenorVlr .or. empty (_sMenorVlr)
+				_sGrpPgSaf = U_VA_RusGP (szf -> zf_produto, szf -> zf_conduc)
+				exit
+			endif
+			szf -> (dbskip ())
+		enddo
+		if empty (_sGrpPgSaf)
+			u_help ("Nao ha definicao de grupo para pagamento.",, .T.)
+			_lContinua = .F.
+		endif
+	endif
 
 	// Calcula valor do frete a ser incluido na nota. Roda em funcao separada por que eh comum precisar recalcular depois.
 	if _lContinua
@@ -359,34 +386,6 @@ User Function va_rusN ()
 				_lContinua = .F.
 				exit
 			else
-				/*
-				sz2 -> (dbsetorder (1))  // Z2_FILIAL+Z2_CADVITI
-				if ! sz2 -> (dbseek (xfilial ("SZ2") + szf -> zf_cadviti, .F.))
-					u_help ("Cadastro viticola '" + szf -> zf_cadviti + "' nao encontrado na tabela de cadastros viticolas.")
-					_lContinua = .F.
-					exit
-				else
-					if sz2 -> z2_safrvit != sze -> ze_safra
-						u_help ("Cadastro viticola '" + szf -> zf_cadviti + "' consta como renovado para a safra " + sz2 -> z2_safrvit)
-						_lContinua = .F.
-						exit
-					else
-						zzc -> (dbsetorder (1))  // ZZC_FILIAL+ZZC_CADVIT + ZZC_PRODUT
-						if ! zzc -> (dbseek (xfilial ("ZZC") + szf -> zf_cadviti + szf -> zf_produto, .F.))
-							u_help ("Produto '" + szf -> zf_produto + "' nao encontrado no cadastro viticola '" + szf -> zf_cadviti + "'.")
-							_lContinua = .F.
-							exit
-						else
-							if zzc -> zzc_ok != 'S'
-								u_help ("Produto '" + szf -> zf_produto + "' nao consta como 'conferido' no cadastro viticola '" + szf -> zf_cadviti + "'. Emissao de contranota nao permitida.")
-								_lContinua = .F.
-								exit
-							endif
-						endif
-					endif 
-				endif
-				*/
-			//	u_log2 ('debug', _aCadVitic)
 				_nVitic = ascan (_aCadVitic, {|_aVal| alltrim (_aVal [.CadVitCodigo]) == alltrim (szf -> zf_cadviti) .and. alltrim (_aVal [.CadVitProduto]) == alltrim (szf -> zf_produto)})
 				if _nVitic == 0
 					u_help ("Variedade '" + szf -> zf_produto + "' nao encontrada no cadastro viticola '" + szf -> zf_cadviti + "'.",, .T.)
@@ -640,13 +639,20 @@ User Function va_rusN ()
 		AADD( _aAutoSF1, { "F1_LOJA"     , sa2 -> a2_loja,  Nil})
 		AADD( _aAutoSF1, { "F1_EST"      , sa2 -> a2_est,   Nil})
 		AADD( _aAutoSF1, { "F1_ESPECIE"  , "SPED",          Nil})
-		AADD( _aAutoSF1, { "F1_COND"     , "019",           Nil})  // 90 dias, para os raros e problematicos casos de usar um TES de compra.
 		AADD( _aAutoSF1, { "F1_VANFPRO"  , sze->ze_NFProd,  Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
 		AADD( _aAutoSF1, { "F1_VASEPRO"  , sze->ze_SNFProd, Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
 		AADD( _aAutoSF1, { "F1_VAPLVEI"  , sze->ze_Placa,   Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
 		AADD( _aAutoSF1, { "F1_VASAFRA"  , sze->ze_safra,   Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
 //		AADD( _aAutoSF1, { "F1_FRETE"    , _nVlFrete,       Nil})
-		AADD( _aAutoSF1, { "F1_VAFLAG"   , 'G',             Nil})  // 'Gerada' (Campo customizado, serah tratado pelo P.E. SF1100I)
+		AADD( _aAutoSF1, { "F1_VAFLAG"   , 'G',             Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I. Indica 'nota ja gerada' para a rotina de manut. XML
+		AADD( _aAutoSF1, { "F1_VAGPSAF"  , _sGrpPgSaf,      Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
+		if _sGrpPgSaf == 'A'
+			AADD( _aAutoSF1, {"F1_COND"     , "815",           Nil})
+		elseif _sGrpPgSaf == 'B'
+			AADD( _aAutoSF1, {"F1_COND"     , "816",           Nil})
+		elseif _sGrpPgSaf == 'C'
+			AADD( _aAutoSF1, {"F1_COND"     , "817",           Nil})
+		endif
 
 		// Ordena campos cfe. SX3.
 		_aAutoSF1 = aClone (U_OrdAuto (_aAutoSF1))
@@ -657,7 +663,6 @@ User Function va_rusN ()
 		DbSelectArea ("SF1")
 		u_log2 ('debug', 'chamando MATA103')
 
-		CursorWait ()
 		begin transaction
 		MsExecAuto({|x,y,z|MATA103(x,y,z)},_aAutoSF1,_aAutoSD1,3)
 
@@ -691,13 +696,83 @@ User Function va_rusN ()
 			msunlock ()
 		endif
 		end transaction
-		CursorArrow ()
 
-		// Faz a transmissao da NF para a SEFAZ
+		// Faz a transmissao da NF para a SEFAZ e posterior impressao.
 		if ! empty (sze -> ze_nfger)
 			U_VA_RUSTX ()
 		endif
+
+		// Atualiza conta corrente associados
+		if _sTpForUva == 'A'
+	//		processa ({|| _GravaSZI ()})
+		endif
+
 	endif
 
-	CursorArrow ()
+return
+
+
+
+// Gera entrada na conta corrente do associado, com base nos titulos gerados no financeiro.
+static function _GravaSZI ()
+	local _sAliasQ   := ''
+	local _oCtaCorr  := NIL
+
+	procregua (10)
+	incproc ('Gravando conta corrente associado')
+	
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT E2_FILIAL, E2_FORNECE, E2_LOJA, E2_NOMFOR, E2_EMISSAO, E2_VENCREA, E2_NUM, E2_PREFIXO, E2_TIPO, E2_VALOR, E2_SALDO, E2_HIST, R_E_C_N_O_, E2_LA, E2_PARCELA,"
+	_oSQL:_sQuery +=        " ROW_NUMBER () OVER (ORDER BY E2_PARCELA) AS NUM_PARC"
+	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2")
+	_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=    " AND E2_TIPO    = 'NF'"
+	_oSQL:_sQuery +=    " AND E2_FORNECE = '" + sf1 -> f1_fornece + "'"
+	_oSQL:_sQuery +=    " AND E2_LOJA    = '" + sf1 -> f1_loja + "'"
+	_oSQL:_sQuery +=    " AND E2_PREFIXO = '" + sf1 -> f1_serie + "'"
+	_oSQL:_sQuery +=    " AND E2_NUM     = '" + sf1 -> f1_doc + "'"
+	_oSQL:_sQuery +=    " AND E2_VACHVEX = ''"
+	_oSQL:_sQuery +=    " AND E2_FILIAL  = '" + xfilial ("SE2") + "'"
+	_oSQL:_sQuery +=  " ORDER BY E2_PARCELA"
+	_oSQL:Log ()
+	_sAliasQ = _oSQL:Qry2Trb (.F.)
+	do while ! (_sAliasQ) -> (eof ())
+		//u_log ('Filial:' + (_sAliasQ) -> e2_filial, 'Forn:' + (_sAliasQ) -> e2_fornece + '/' + (_sAliasQ) -> e2_loja + ' ' + (_sAliasQ) -> e2_nomfor, 'Emis:', (_sAliasQ) -> e2_emissao, 'Vcto:', (_sAliasQ) -> e2_vencrea, 'Doc:', (_sAliasQ) -> e2_num+'/'+(_sAliasQ) -> e2_prefixo, 'Tipo:', (_sAliasQ) -> e2_tipo, 'Valor: ' + transform ((_sAliasQ) -> e2_valor, "@E 999,999,999.99"), 'Saldo: ' + transform ((_sAliasQ) -> e2_saldo, "@E 999,999,999.99"), (_sAliasQ) -> e2_hist)
+
+		_oCtaCorr := ClsCtaCorr():New ()
+		_oCtaCorr:Assoc    = (_sAliasQ) -> e2_fornece
+		_oCtaCorr:Loja     = (_sAliasQ) -> e2_loja
+		_oCtaCorr:TM       = '13'
+		_oCtaCorr:DtMovto  = (_sAliasQ) -> e2_EMISSAO
+		_oCtaCorr:Valor    = (_sAliasQ) -> e2_valor
+		_oCtaCorr:SaldoAtu = (_sAliasQ) -> e2_saldo
+		_oCtaCorr:Usuario  = cUserName
+		_oCtaCorr:Histor   = 'COMPRA SAFRA ' + _sSafra + " GRP." + sf1 -> f1_vagpsaf
+		_oCtaCorr:MesRef   = strzero(month(_oCtaCorr:DtMovto),2)+strzero(year(_oCtaCorr:DtMovto),4)
+		_oCtaCorr:Doc      = (_sAliasQ) -> e2_num
+		_oCtaCorr:Serie    = (_sAliasQ) -> e2_prefixo
+		_oCtaCorr:Parcela  = (_sAliasQ) -> e2_parcela
+		_oCtaCorr:Origem   = 'VA_RUS'
+		if _oCtaCorr:PodeIncl ()
+			if ! _oCtaCorr:Grava (.F., .F.)
+				U_help ("Erro na atualizacao da conta corrente para o associado '" + (_sAliasQ) -> e2_fornece + '/' + (_sAliasQ) -> e2_loja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
+				_lContinua = .F.
+			else
+				se2 -> (dbgoto ((_sAliasQ) -> r_e_c_n_o_))
+				if empty (se2 -> e2_vachvex)  // Soh pra garantir...
+					reclock ("SE2", .F.)
+					se2 -> e2_vachvex = _oCtaCorr:ChaveExt ()
+					msunlock ()
+				endif
+			endif
+		else
+			U_help ("Gravacao do SZI nao permitida na atualizacao da conta corrente para o associado '" + (_sAliasQ) -> e2_fornece + '/' + (_sAliasQ) -> e2_loja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
+			_lContinua = .F.
+		endif
+
+		(_sAliasQ) -> (dbskip ())
+	enddo
+	(_sAliasQ) -> (dbclosearea ())
+	dbselectarea ("SZE")
 return

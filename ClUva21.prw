@@ -22,7 +22,7 @@ user function ClUva21 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAspe
 	//local _oSQL      := NIL
 	local _aGrupo52  := {}
 
-	u_logIni ()
+	U_Log2 ('info', 'Iniciando ' + procname ())
 
 	if _lContinua
 		sb1 -> (dbsetorder (1))
@@ -33,16 +33,16 @@ user function ClUva21 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAspe
 	endif
 
 	if _lContinua
-		u_log ('Variedade..................:', _sVaried, sb1 -> b1_desc)
-		u_log ('Grau.......................:', _nGrau)
-		u_log ('Sistema de conducao........:', _sConduc)
-		u_log ('% botrytis.................:', _nPBotryt)
-		u_log ('% glomerella...............:', _nPGlomer)
-		u_log ('% aspergillus..............:', _nPAsperg)
-		u_log ('% podridao acida...........:', _nPPodrAc)
-		u_log ('% soma de podridoes........:', _nSomaPodr)
-		u_log ('% acidez volatil...........:', _nAcidVol)
-		u_log ('Soma das podridoes.........:', _nSomaPodr)
+		u_log2 ('info', '   Variedade..................:' + _sVaried + sb1 -> b1_desc)
+		u_log2 ('info', '   Grau.......................:' + cvaltochar (_nGrau))
+		u_log2 ('info', '   Sistema de conducao........:' + _sConduc)
+		u_log2 ('info', '   % botrytis.................:' + cvaltochar (_nPBotryt))
+		u_log2 ('info', '   % glomerella...............:' + cvaltochar (_nPGlomer))
+		u_log2 ('info', '   % aspergillus..............:' + cvaltochar (_nPAsperg))
+		u_log2 ('info', '   % podridao acida...........:' + cvaltochar (_nPPodrAc))
+		u_log2 ('info', '   % soma de podridoes........:' + cvaltochar (_nSomaPodr))
+		u_log2 ('info', '   % acidez volatil...........:' + cvaltochar (_nAcidVol))
+		u_log2 ('info', '   Soma das podridoes.........:' + cvaltochar (_nSomaPodr))
 		if empty (_sConduc)
 			u_help ("Sistema de conducao nao informado. Impossivel determinar a classificacao da uva.",, .t.)
 			_lContinua = .F.
@@ -195,11 +195,10 @@ user function ClUva21 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAspe
 		_aRetClUva = {'', '', '', '', ''}
 	endif
 	
-	u_log ('Acucar......: ', _aRetClUva [1])
-	u_log ('Sanidade....: ', _aRetClUva [2])
-	u_log ('Maturacao...: ', _aRetClUva [3])
-	u_log ('Mat.estranho: ', _aRetClUva [4])
-	u_log ('Clas.final..: ', _aRetClUva [5])
+	u_log2 ('info', '   Acucar......: ' + _aRetClUva [1])
+	u_log2 ('info', '   Sanidade....: ' + _aRetClUva [2])
+	u_log2 ('info', '   Maturacao...: ' + _aRetClUva [3])
+	u_log2 ('info', '   Mat.estranho: ' + _aRetClUva [4])
+	u_log2 ('info', '   Clas.final..: ' + _aRetClUva [5])
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
 return _aRetClUva

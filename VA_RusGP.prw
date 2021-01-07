@@ -1,0 +1,80 @@
+// Programa...: VA_RusGP
+// Autor......: Robert Koch
+// Data.......: 07/01/2021
+// Descricao..: Define em qual grupo de pagamento de safra as uvas devem ser enquadradas.
+//
+// Historico de alteracoes:
+//
+
+// --------------------------------------------------------------------------
+User Function VA_RusGP (_sVaried, _sConduc)  //aProdut, _sMenorVlr)
+	local _aAreaAnt  := U_ML_SRArea ()
+	local _lContinua := .T.
+	local _sRetGrpPg := ''
+//	local _sVaried   := ''
+//	local _sConduc   := ''
+
+	u_Log2 ('info', 'Iniciando ' + procname ())
+
+/*
+	if _lContinua .and. valtype (_aProdut) != 'A'
+		u_help (procname () + ": Lista de produtos deve ser do tipo array.",, .T.)
+		_lContinua = .F.
+	endif
+
+	if _lContinua .and. len (_aProdut) > 1 .and. empty (_sMenorVlr)
+		u_help (procname () + ": Quando houver mais de um produto, deve ser definido qual o de menor valor.",, .T.)
+		_lContinua = .F.
+	endif
+*/	
+	if _lContinua
+		
+		// // Define qual o produto a verificar. Na pratica, sempre que tiver mais de um, jah deve vir informado qual o de menor valor.
+		// if ! empty (_sMenorVlr)
+		// 	_sVaried = _sMenorVlr
+		// else
+		// 	_sVaried = _aProdut [1, 1]
+		// 	_sConduc = _aProdut [1, 2]
+		// endif
+
+		sb1 -> (dbsetorder (1))
+		if ! sb1 -> (dbseek (xfilial ("SB1") + _sVaried, .F.))
+			u_help ("Produto '" + _sVaried + "' nao cadastrado.")
+			_lContinua = .F.
+		else
+			if sb1 -> b1_grupo != '0400'
+				u_help ("Produto '" + _sVaried + "' nao parece ser uva (grupo diferente de 0400)")
+				_lContinua = .F.
+			endif
+		endif
+	endif
+
+	// Segue politicas definidas para cada safra e que devem ser consistentes com o que consta
+	// na tag <regraPagamento> retornada pelo metodo ClsAssoc:FechSafra()
+	if _lContinua
+
+		// Nao tenho muitas opcoes alem de fazer alguns testes com codigos fixos...
+		if alltrim (sb1 -> b1_cod) $ '9925/9822/9948/9959'  //(bordo, bordo de bordadura/em conversao/organico)
+			_sRetGrpPg = 'A'
+		elseif alltrim (sb1 -> b1_codpai) == '9925'  // Alguma possoivel nova variacao de bordo
+			_sRetGrpPg = 'A'
+		elseif sb1 -> b1_vaorgan == 'O'  // Organicas
+			_sRetGrpPg = 'A'
+		elseif sb1 -> b1_vattr == 'S'  // Tintorias
+			_sRetGrpPg = 'B'
+		elseif sb1 -> b1_varuva == 'F'
+			if _sConduc == 'E'  // Viniferas em espaldeira
+				_sRetGrpPg = 'B'
+			elseif _sConduc == 'L'
+				_sRetGrpPg = 'C'
+			else
+				u_help (procname () + ": Sistema de conducao '" + _sConduc + "' invalido.",, .t.)
+				_lContinua = .F.
+			endif
+		else
+			_sRetGrpPg = 'C'
+		endif
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
+return _sRetGrpPg

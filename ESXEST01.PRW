@@ -155,7 +155,7 @@ Static Function _esxest01a ()
 		_aCC = {}
 
 //		// por enquanto, apenas na base de testes
-//		if ! 'TESTE' $ upper (getenvserver ())
+		if U_MsgNoYes ("Deseja apropriar CC de recebimento / processamento?")
 			aadd (_aCC, afill (array (.CCQtColunas), 0))
 			_aCC [len (_aCC), .CCCodigo]        = cFilAnt + '1101'
 			_aCC [len (_aCC), .CCDescricao]     = fBuscaCpo ("CTT", 1, xfilial ("CTT") + _aCC [len (_aCC), .CCCodigo], "CTT_DESC01")
@@ -164,7 +164,7 @@ Static Function _esxest01a ()
 			_aCC [len (_aCC), .CCCodigo]        = cFilAnt + '1102'
 			_aCC [len (_aCC), .CCDescricao]     = fBuscaCpo ("CTT", 1, xfilial ("CTT") + _aCC [len (_aCC), .CCCodigo], "CTT_DESC01")
 			_aCC [len (_aCC), .CCTipoMovimento] = '301'
-//		endif
+		endif
 		aadd (_aCC, afill (array (.CCQtColunas), 0))
 		_aCC [len (_aCC), .CCCodigo]        = cFilAnt + '1201'
 		_aCC [len (_aCC), .CCDescricao]     = fBuscaCpo ("CTT", 1, xfilial ("CTT") + _aCC [len (_aCC), .CCCodigo], "CTT_DESC01")

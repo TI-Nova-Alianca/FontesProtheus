@@ -62,8 +62,8 @@ user function va_rusLI (_nPesagem)
 		_aRusInsp = aclone (afill (array (.InspecoesSafraQtColunas), ''))
 
 		if (_sAliasInsp) -> (eof ())
-			u_log ('Sem retorno na consulta de inspecoes. Vou assumir valores padrao.')
-			
+			u_log2 ('aviso', 'Sem retorno na consulta de inspecoes. Vou assumir valores padrao.')
+
 			// Se nao encontou inspecao, assume status vazio e nao conforme para facilitar nos testes posteriores.
 			_aRusInsp [.InspecoesSafraSituacao]         = '   '
 			_aRusInsp [.InspecoesSafraVarNaoPrevCadVit] = 'N'  // N='Nao teve nenhuma variedade nao prevista no cadastro viticola'
@@ -100,17 +100,17 @@ user function va_rusLI (_nPesagem)
 	endif
 
 	u_log2 ('info', 'Inspecoes:')
-	u_log2 ('info', '   Situacao da carga no APP........: ' + _aRusInsp [.InspecoesSafraSituacao])
-	u_log2 ('info', '   Varied.nao prevista no cad.vitic: ' + _aRusInsp [.InspecoesSafraVarNaoPrevCadVit])
-	u_log2 ('info', '   Entrega cad.campo...............: ' + _aRusInsp [.InspecoesSafraEntrCadCpo])
-	u_log2 ('info', '   Mistura variedades no tombador..: ' + _aRusInsp [.InspecoesSafraMisturaNoTombador])
+//	u_log2 ('info', '   Situacao da carga no APP........: ' + _aRusInsp [.InspecoesSafraSituacao])
+//	u_log2 ('info', '   Varied.nao prevista no cad.vitic: ' + _aRusInsp [.InspecoesSafraVarNaoPrevCadVit])
+//	u_log2 ('info', '   Entrega cad.campo...............: ' + _aRusInsp [.InspecoesSafraEntrCadCpo])
+//	u_log2 ('info', '   Mistura variedades no tombador..: ' + _aRusInsp [.InspecoesSafraMisturaNoTombador])
 	u_log2 ('info', '   Chave agenda original...........: ' + cvaltochar (_aRusInsp [.InspecoesSafraAgendaOri]))
-	u_log2 ('info', '   Botrytis......: ' + _sInspBotr)
-	u_log2 ('info', '   Glomerella....: ' + _sInspGlom)
-	u_log2 ('info', '   Aspergyllus...: ' + _sInspAspe)
-	u_log2 ('info', '   Podridoes.....: ' + _sInspPodr)
-	u_log2 ('info', '   Acidez volatil: ' + _sInspAcid)
-	u_log2 ('info', '   Mat.estranho..: ' + _sInspMEst)
+//	u_log2 ('info', '   Botrytis......: ' + _sInspBotr)
+//	u_log2 ('info', '   Glomerella....: ' + _sInspGlom)
+//	u_log2 ('info', '   Aspergyllus...: ' + _sInspAspe)
+//	u_log2 ('info', '   Podridoes.....: ' + _sInspPodr)
+//	u_log2 ('info', '   Acidez volatil: ' + _sInspAcid)
+//	u_log2 ('info', '   Mat.estranho..: ' + _sInspMEst)
 
 	// Tratamento para dados retornados pelo sistema de inspecao
 	if _lContinua

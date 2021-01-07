@@ -83,6 +83,7 @@
 // 03/09/2020 - Robert - Criado grupo resumoVariedadeItem no metodo :FechSafra.
 // 04/09/2020 - Robert - Nao calcula correcao monetaria para ex associados.
 // 01/12/2020 - Robert - Passa a buscar dados de cadastro viticola na view GX0001_AGENDA_SAFRA e nao mais na VA_VASSOC_CAD_VITIC2
+// 06/01/2021 - Robert - Regras para pagamento (grupos A/B/C) permanecem iguais ao ano passado no metodo FechSafra).
 //
 
 #include "protheus.ch"
