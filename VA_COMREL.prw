@@ -11,7 +11,8 @@
 //
 //  Historico de alteracoes:
 //  06/11/2020 - Claudia - Incluida impressão de indenização e dados de pgto. GLPI: 8775
-//  08/01/2021 - Claudia - Alterada a indenização, pegando direto o Total da comissão e dividindo por 12
+//  08/01/2021 - Claudia - Alterada a indenização, pegando direto o Total da comissão
+//		         e dividindo por 12. GLPI: 9099
 //
 //
 // --------------------------------------------------------------------------------------------------------

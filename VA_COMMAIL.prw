@@ -13,7 +13,8 @@
 //  Historico de alteracoes:
 //  07/12/2020 - Claudia - Incluido valor de indenização no totalizador do PDF de comissão. GLPI: 8991 
 //  04/01/2020 - Claudia - Incluido o codigo e nome da empresa/filial. GLPI: 8925
-//  08/01/2021 - Claudia - Alterada a indenização, pegando direto o Total da comissão e dividindo por 12
+//  08/01/2021 - Claudia - Alterada a indenização, pegando direto o Total da comissão 
+//               e dividindo por 12. GLPI: 9099
 //
 // ----------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
