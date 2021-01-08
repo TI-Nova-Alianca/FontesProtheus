@@ -147,7 +147,8 @@ user function VA_RUS2L ()
 				U_F3Array (_aCadVitic, "Variedade nao ligada ao cadastro viticola.", _aCampos, 700, 400, "As combinacoes de cadastro viticola X variedades para este associado sao:", "Verifique cadastro viticola e patriarca.", .F.)
 			endif
 		else
-			if _aCadVitic [_nVitic, .CadVitSafrVit] < m->ze_safra
+		//	if _aCadVitic [_nVitic, .CadVitSafrVit] < m->ze_safra
+			if _aCadVitic [_nVitic, .CadVitSafrVit] < (m->ze_safra - 1)  // A partir de 2021 consideramos que "foi revisado durante o ano de 2020 para a safra 2021"
 				u_help ("ATENCAO: Cadastro viticola nao renovado para esta safra! Solicite comprovante de recadastramento ao produtor!")
 			endif
 

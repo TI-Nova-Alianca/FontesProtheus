@@ -4,6 +4,7 @@
 // Descricao..: Gera array com dados do cadastro viticola, para uso nas rotinas de safra.
 
 // Historico de alteracoes:
+// 08/01/2021 - Robert - Preenche o cad.viticola com zeros a esquerda (tipo numerico no NaWeb)
 //
 
 #include "VA_Inclu.prw"
@@ -16,7 +17,7 @@ User Function va_rusCV (_sFornCV, _sLojaCV)
 
 	u_Log2 ('info', 'Iniciando ' + procname ())
 	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery += "SELECT GX0001_PROPRIEDADE_CODIGO cadvit, GX0001_GRUPO_CODIGO grpfam, GX0001_GRUPO_DESCRICAO descgrp"
+	_oSQL:_sQuery += "SELECT GX0001_VITICOLA_CODIGO cadvit, GX0001_GRUPO_CODIGO grpfam, GX0001_GRUPO_DESCRICAO descgrp"
 	_oSQL:_sQuery +=      ", GX0001_PRODUTO_CODIGO produto, GX0001_PRODUTO_DESCRICAO descprod, GX0001_TIPO_ORGANICO tipo_organ"
 	_oSQL:_sQuery +=      ", GX0001_VITICOLA_RECADASTRO safravit, GX0001_FINA_COMUM varuva"
 	_oSQL:_sQuery +=      ", GX0001_VITICOLA_FISICO fis_vitic, GX0001_SISTEMA_CONDUCAO conduc, GX0001_SIVIBE_CODIGO sivibe"
