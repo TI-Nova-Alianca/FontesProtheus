@@ -13,6 +13,7 @@
 //  Historico de alteracoes:
 //  07/12/2020 - Claudia - Incluido valor de indenização no totalizador do PDF de comissão. GLPI: 8991 
 //  04/01/2020 - Claudia - Incluido o codigo e nome da empresa/filial. GLPI: 8925
+//  08/01/2021 - Claudia - Alterada a indenização, pegando direto o Total da comissão e dividindo por 12
 //
 // ----------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -482,7 +483,8 @@ Static Function _GeraPDF_Email()
 		Endif
 		// ----------------------------------------------------------------------------------------------------------
 		// Indenização
-		_nTotalInde := _nTotComis - _nVlrTVerbas // Sem IR
+		//_nTotalInde := _nTotComis - _nVlrTVerbas - _nTotDev// Sem IR
+		_nTotalInde:=_nVlrCom // alterado para pegar ja direta a comissão total
 		_nIndeniz = ROUND(_nTotalInde /12 , 2)
 
 		oPrint:Say(nLinha,0150,  "VLR INDENIZAÇÃO 1/12 " + IIF (_sTipIndeniz ='S', 'PAGA', 'PROVISIONADA')	+":" ,oFont12n)
@@ -678,6 +680,7 @@ Static Function _GeraPDF_Email()
 
 		u_log(cDestino + _cFile + ".PDF")
 
+		//u_help("TESTE")
 		//_sMailDest := 'claudia.lionco@novaalianca.coop.br'
 		//U_SendMail (_sMailDest, "Relatorio de Comissões - Envio automatico", "", {cDestino + _cFile + ".PDF"}, _sCtaMail)
 

@@ -10,7 +10,9 @@
 // #Modulos 		  #FIN 
 //
 //  Historico de alteracoes:
-// 06/11/2020 - Claudia - Incluida impressão de indenização e dados de pgto. GLPI: 8775
+//  06/11/2020 - Claudia - Incluida impressão de indenização e dados de pgto. GLPI: 8775
+//  08/01/2021 - Claudia - Alterada a indenização, pegando direto o Total da comissão e dividindo por 12
+//
 //
 // --------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -464,7 +466,8 @@ Static Function PrintReport(oReport)
 			//
 			// ----------------------------------------------------------------------------------------------------------
 			// Indenização
-			_nTotalInde := _nTotComis - _nVlrTVerbas //_nVlrCom // Sem IR
+			//_nTotalInde := _nTotComis - _nVlrTVerbas - _nTotDev //_nVlrCom // Sem IR
+			_nTotalInde := _nVlrCom // alterado para pegar ja direta a comissão total
 			_nIndeniz = ROUND(_nTotalInde /12 , 2)
 
 			_nLinha :=  oReport:Row()
