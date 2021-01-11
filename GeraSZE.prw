@@ -127,7 +127,8 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 
 	// Gera array com os cadastros viticolas vinculados ao associado. Deve ser mantido, aqui, o mesmo formato gerado pela classe ClsAssoc.
 	if empty (_sErros)
-		_aCadVitic := aclone (_oAssoc:CadVitic ())
+	//	_aCadVitic := aclone (_oAssoc:CadVitic ())
+		_aCadVitic = aclone (U_VA_RusCV (_oAssoc:Codigo, _oAssoc:Loja))
 		if len (_aCadVitic) == 0
 			_sErros += "Nao ha nenhuma variedade de uva ligada ao associado."
 		endif

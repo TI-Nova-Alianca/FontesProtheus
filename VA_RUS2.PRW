@@ -217,40 +217,6 @@ User Function va_rus2 (_nOpc)
 			
 			// Para nao associados, nao tenho como buscar na classe ClsAssoc, entao gero uma array equivalente.
 			else
-			/*
-				_oSQL := ClsSQL ():New ()
-				// _oSQL:_sQuery := "SELECT * "
-				// _oSQL:_sQuery +=  " FROM VA_VAGENDA_SAFRA"
-				// _oSQL:_sQuery += " WHERE ASSOCIADO  = '" + m->ze_assoc + "'"
-				// _oSQL:_sQuery +=   " AND LOJA_ASSOC = '" + m->ze_lojasso + "'"
-				_oSQL:_sQuery += "SELECT GX0001_PROPRIEDADE_CODIGO cadvit, GX0001_GRUPO_CODIGO grpfam, GX0001_GRUPO_DESCRICAO descgrp"
-				_oSQL:_sQuery +=      ", GX0001_PRODUTO_CODIGO produto, GX0001_PRODUTO_DESCRICAO descprod, GX0001_TIPO_ORGANICO tipo_organ"
-				_oSQL:_sQuery +=      ", GX0001_VITICOLA_RECADASTRO safravit, GX0001_FINA_COMUM varuva"
-				_oSQL:_sQuery +=      ", GX0001_VITICOLA_FISICO fis_vitic, GX0001_SISTEMA_CONDUCAO conduc, GX0001_SIVIBE_CODIGO sivibe"
-				_oSQL:_sQuery +=  " FROM GX0001_AGENDA_SAFRA"
-				_oSQL:_sQuery += " WHERE GX0001_ASSOCIADO_CODIGO = '" + m->ze_assoc   + "'"
-				_oSQL:_sQuery +=   " AND GX0001_ASSOCIADO_LOJA   = '" + m->ze_lojasso + "'"
-				_oSQL:Log ()
-				_sAliasQ = _oSQL:Qry2Trb ()
-				_aCadVitic = {}
-				do while ! (_sAliasQ) -> (eof ())
-					incproc ()
-					aadd (_aCadVitic, array (.CadVitQtColunas))
-					_aCadVitic [len (_aCadVitic), .CadVitCodigo]      = (_sAliasQ) -> cadvit
-					_aCadVitic [len (_aCadVitic), .CadVitCodGrpFam]   = (_sAliasQ) -> grpfam
-					_aCadVitic [len (_aCadVitic), .CadVitNomeGrpFam]  = (_sAliasQ) -> descgrp
-					_aCadVitic [len (_aCadVitic), .CadVitProduto]     = (_sAliasQ) -> produto
-					_aCadVitic [len (_aCadVitic), .CadVitDescPro]     = (_sAliasQ) -> descprd
-					_aCadVitic [len (_aCadVitic), .CadVitOrganico]    = (_sAliasQ) -> tipo_organ
-					_aCadVitic [len (_aCadVitic), .CadVitSafrVit]     = (_sAliasQ) -> safravit
-					_aCadVitic [len (_aCadVitic), .CadVitVarUva]      = (_sAliasQ) -> varuva
-					_aCadVitic [len (_aCadVitic), .CadVitRecebFisico] = (_sAliasQ) -> fis_vitic
-					_aCadVitic [len (_aCadVitic), .CadVitSistCond]    = (_sAliasQ) -> conduc
-					_aCadVitic [len (_aCadVitic), .CadVitSivibe]      = (_sAliasQ) -> sivibe
-					(_sAliasQ) -> (dbskip ())
-				enddo
-				(_sAliasQ) -> (dbclosearea ())
-			*/
 				_aCadVitic = aclone (U_VA_RusCV (m->ze_assoc, m->ze_lojasso))
 			endif
 		endif
