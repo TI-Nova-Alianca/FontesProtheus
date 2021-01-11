@@ -4,6 +4,7 @@
 // Descricao..: Define em qual grupo de pagamento de safra as uvas devem ser enquadradas.
 //
 // Historico de alteracoes:
+// 08/01/2021 - Robert - Uvas niagara, concord e 'concord clone 30' passadas do grupo C para A
 //
 
 // --------------------------------------------------------------------------
@@ -51,12 +52,15 @@ User Function VA_RusGP (_sVaried, _sConduc)  //aProdut, _sMenorVlr)
 
 	// Segue politicas definidas para cada safra e que devem ser consistentes com o que consta
 	// na tag <regraPagamento> retornada pelo metodo ClsAssoc:FechSafra()
+	// Possivelmente seja necessario dar manutencao a cada nova safra...
 	if _lContinua
 
 		// Nao tenho muitas opcoes alem de fazer alguns testes com codigos fixos...
-		if alltrim (sb1 -> b1_cod) $ '9925/9822/9948/9959'  //(bordo, bordo de bordadura/em conversao/organico)
+	//	if alltrim (sb1 -> b1_cod) $ '9925/9822/9948/9959'  //(bordo, bordo de bordadura/em conversao/organico)
+		if alltrim (sb1 -> b1_cod) $ '9925/9904/9922/9855'  // bordo, niagara, concord
 			_sRetGrpPg = 'A'
-		elseif alltrim (sb1 -> b1_codpai) == '9925'  // Alguma possoivel nova variacao de bordo
+	//	elseif alltrim (sb1 -> b1_codpai) == '9925'  // Alguma possivel nova variacao de bordo, niagara, concord
+		elseif alltrim (sb1 -> b1_codpai) $ '9925/9904/9922/9855'  // Alguma possivel nova variacao de bordo, niagara, concord
 			_sRetGrpPg = 'A'
 		elseif sb1 -> b1_vaorgan == 'O'  // Organicas
 			_sRetGrpPg = 'A'

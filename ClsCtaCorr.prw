@@ -74,6 +74,7 @@
 // 23/05/2020 - Robert - Criados tratamentos para :TM=31
 //                     - Melhoradas algumas mensagens de erro e removidas linhas comentariadas
 // 26/10/2020 - Robert - Na exclusao, exigia ZI_DATA = dDataBase. Agora exige E2_EMISSAO = dDataBase, que eh o que realmente importa.
+// 08/01/2021 - Robert - Permite incluir TM 13 quando rotina U_VA_RUSN.
 //
 
 // ------------------------------------------------------------------------------------
@@ -742,7 +743,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCtaCorr
 	next
 
 	U_ML_SRArea (_aAreaAnt)
-	//u_log2 ('debug', 'Gerei DtMovto com ' + cvaltochar (::DtMovto))
+	//u_log2 ('debug', 'Gerei DtMovto com ' + cvaltochar (::DtMovto)) 
 return
 
 
@@ -1483,8 +1484,9 @@ METHOD PodeIncl () Class ClsCtaCorr
 			::UltMsg += "Nao consta como associado nem como ex-associado nesta data." + _sCRLF
 			_lContinua = .F.
 		endif
-		if _lContinua .and. empty (::FilOrig) .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_FTSAFRA") .and. ! IsInCallStack ("U_FTSAFRA1") .and. ! IsInCallStack ("U_ROBERT")  // habilitado por causa de um baca em 2018
-			::UltMsg += "Movimento de compra de safra: so' pode ser incluido manualmente quando tratar-se de titulo transferido de outra filial. Informe filial de origem." + _sCRLF
+//		if _lContinua .and. empty (::FilOrig) .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_FTSAFRA") .and. ! IsInCallStack ("U_FTSAFRA1") .and. ! IsInCallStack ("U_ROBERT")  // habilitado por causa de um baca em 2018
+		if _lContinua .and. empty (::FilOrig) .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_FTSAFRA") .and. ! IsInCallStack ("U_FTSAFRA1") .and. ! IsInCallStack ("U_VA_RUSN")
+			::UltMsg += "Movimento de compra de safra: so' pode ser incluido por rotinas especificas, ou manualmente quando tratar-se de titulo transferido de outra filial. Informe filial de origem." + _sCRLF
 			_lContinua = .F.
 		endif
 		if _lContinua .and. ! empty (::FilOrig)
@@ -1862,9 +1864,8 @@ METHOD TransFil () Class ClsCtaCorr
 	local cPerg      := "          "
 	Private lMsErroAuto := .F.
 	
-	u_logIni (GetClassName (::Self) + '.' + procname ())
-	//u_logObj (::Self)
-
+	u_log2 ('info', 'Iniciando ' + GetClassName (::Self) + '.' + procname ())
+	
 	if alltrim (::OQueGera ()) $ "PA/DP+SE5_R"
 		::UltMsg += "Transferencia de saldo que gerou movimento bancario nao permitida, pois nao tenho o mesmo bco/ag/cta na filial destino. Baixe o movimento manualmente na filial origem e digite lcto correspondente na filiai destino."
 		_lContinua = .F.
@@ -1907,6 +1908,7 @@ METHOD TransFil () Class ClsCtaCorr
 	// Verifica se existe titulo correspondente no financeiro e guarda seu RECNO.
 	if _lContinua
 		_aTit [1] = {::RecnoSE2 ()}  // Formato de array por que pode baixar mais de um titulo por vez.
+		U_Log2 ('info', 'Registro do SE2 a ser baixado via conta transitoria: ' + cvaltochar (_aTit [1, 1]))
 		if _aTit [1, 1] == 0
 			::UltMsg += "Nao ha titulo correspondente no financeiro.
 			_lContinua = .F.
@@ -1944,7 +1946,7 @@ METHOD TransFil () Class ClsCtaCorr
 	// de novo movimento na filial destino.
 	if _lContinua
 		_aTit [8] = dDataBase
-		//u_log ('Array a ser enviada para o FINA090:', _atit)
+		u_log2 ('debug', _atit)
 
 		// Ajusta parametros de contabilizacao para NAO, pois a rotina automatica nao aceita.
 		cPerg = 'FIN090'
@@ -1984,7 +1986,7 @@ METHOD TransFil () Class ClsCtaCorr
 		_oSQL:_sQuery +=   " AND SE5.E5_VACHVEX = ''"
 		_oSQL:Log ()
 		_nRegSE5 = _oSQL:RetQry ()
-		u_log ('reg se5:', _nRegSE5)
+		u_log2 ('debug', 'recno se5 para atualizar: ' + cvaltochar (_nRegSE5))
 		if _nRegSE5 > 0
 			se5 -> (dbgoto (_nRegSE5))
 			//u_log ('Vou atualizar SE5')
@@ -1994,9 +1996,9 @@ METHOD TransFil () Class ClsCtaCorr
 			se5 -> e5_vachvex = se2 -> e2_vachvex
 			se5 -> e5_histor  = left (_sHistSE5, tamsx3 ("E5_HISTOR")[1])
 			msunlock ()
-			//u_log ('regravei historico do SE5 para:', se5 -> e5_histor)
+			u_log2 ('info', 'Regravei historico do SE5 para: ' + se5 -> e5_histor)
 		else
-			u_log ('Nao encontrei SE5')
+			u_log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + '] Nao encontrei SE5 para atualizar historico e chave externa.')
 		endif
 		
 		if fk2 -> fk2_valor == _nSaldo .and. fk2 -> fk2_motbx == 'NOR'  // Para ter mais certeza de que estah posicionado no registro correto.
@@ -2004,7 +2006,7 @@ METHOD TransFil () Class ClsCtaCorr
 			reclock ('FK2', .F.)
 			fk2 -> fk2_histor = left (alltrim (fk2 -> fk2_histor) + ' TR.CC.FIL.' + ::FilDest + ' ' + ::Histor, tamsx3 ("FK2_HISTOR")[1])
 			msunlock ()
-			//u_log ('regravei historico do FK2 para:', fk2 -> fk2_histor)
+			u_log2 ('info', 'regravei historico do FK2 para: ' + fk2 -> fk2_histor)
 		endif
 	endif
 
@@ -2025,7 +2027,7 @@ METHOD TransFil () Class ClsCtaCorr
 		_oBatch:Grava ()
 	endif
 
-	u_logFim (GetClassName (::Self) + '.' + procname ())
+//	u_logFim (GetClassName (::Self) + '.' + procname ())
 return _lContinua
 
 

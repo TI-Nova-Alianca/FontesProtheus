@@ -29,7 +29,7 @@ User Function va_rusCV (_sFornCV, _sLojaCV)
 	_aRetCV = {}
 	do while ! (_sAliasQ) -> (eof ())
 		aadd (_aRetCV, array (.CadVitQtColunas))
-		_aRetCV [len (_aRetCV), .CadVitCodigo]      = (_sAliasQ) -> cadvit
+		_aRetCV [len (_aRetCV), .CadVitCodigo]      = alltrim ((_sAliasQ) -> cadvit)
 		_aRetCV [len (_aRetCV), .CadVitCodGrpFam]   = (_sAliasQ) -> grpfam
 		_aRetCV [len (_aRetCV), .CadVitNomeGrpFam]  = alltrim ((_sAliasQ) -> descgrp)
 		_aRetCV [len (_aRetCV), .CadVitProduto]     = (_sAliasQ) -> produto
