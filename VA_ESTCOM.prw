@@ -5,7 +5,8 @@
 //
 // Historico de alteracoes:
 // 27/03/2020 - Claudia - Alterado o modelo TREPORT para exportação direto para planilha
-// 05/01/2020 - Cláudia - Retirada as CFOP's '1151', '1557', '2151'. GLPI: 9076
+// 05/01/2021 - Cláudia - Retirada as CFOP's '1151', '1557', '2151'. GLPI: 9076
+// 12/01/2021 - Cláudia - GLPI: 9105 Incluido o CFOP na rotina. 
 //
 // --------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -25,9 +26,8 @@ Static Function EstComExp()
 	Local cQuery      := ""	
 	Local cQuery1     := ""	
 	Local sPeriodo    := ""
-	Local aCtb        := {}
-	Local aEnt        := {}
-	//Local aCabExcel   := {}
+	Local _aCtb       := {}
+	Local _aEnt       := {}
 	Local aItensExcel := {}
 	Local x			  := 0
 	Local y           := 0
@@ -42,6 +42,7 @@ Static Function EstComExp()
 	cQuery += " 		ELSE A.D1_TP"
 	cQuery += " 	END AS TIPO_CTB"
 	cQuery += "    ,SUM(A.D1_CUSTO) AS CUSTO_CTB"
+	cQuery += "    ,A.D1_CF AS CFOP"
 	cQuery += " FROM SD1010 AS A"
 	cQuery += " LEFT JOIN SF4010 AS B"
 	cQuery += " 	ON B.F4_CODIGO = A.D1_TES"
@@ -59,10 +60,11 @@ Static Function EstComExp()
 	cQuery += " GROUP BY A.D1_FILIAL"
 	cQuery += " 		,A.D1_TP"
 	cQuery += " 		,A.D1_DOC"
+	cQuery += "         ,A.D1_CF"
 	cQuery += " ORDER BY A.D1_FILIAL"
 	cQuery += " 		,A.D1_TP"
 	cQuery += " 		,A.D1_DOC"
-	aCtb:= U_Qry2Array(cQuery)
+	_aEnt:= U_Qry2Array(cQuery)
 	
 	cQuery1 += " SELECT"
 	cQuery1 += "    CT.CT2_FILIAL AS FILIAL_ENT"
@@ -107,43 +109,34 @@ Static Function EstComExp()
 	cQuery1 += " 		,CT.CT2_DEBITO"
 	cQuery1 += " 		,CT.CT2_HIST"
 	cQuery1 += " 		,SUBSTRING(CT.CT2_KEY, 3, 9)"
-	aEnt:= U_Qry2Array(cQuery1)	
+	_aCtb:= U_Qry2Array(cQuery1)	
 	
-		
-//	AADD(aCabExcel, {"Filial Ctb"  ,"C", 02, 0})
-//	AADD(aCabExcel, {"Doc.Ctb."    ,"C", 20, 0})
-//	AADD(aCabExcel, {"Tipo Ctb."   ,"C", 02, 0})
-//	AADD(aCabExcel, {"Valor Ctb."  ,"N", 18, 2})
-//	AADD(aCabExcel, {"Filial.Ent." ,"C", 02, 0})
-//	AADD(aCabExcel, {"Doc.Ent."    ,"C", 20, 0})
-//	AADD(aCabExcel, {"Tipo.Ent."   ,"C", 02, 0})
-//	AADD(aCabExcel, {"Valor.Ent."  ,"C", 18, 2})
 
-	AADD(aItensExcel,{"Filial Ctb","Doc.Ctb.","Tipo Ctb.","Valor Ctb.","Filial.Ent.","Doc.Ent.","Tipo.Ent.","Valor.Ent." })
+	AADD(aItensExcel,{"Filial Ent","Doc.Ent","Tipo Ent","Valor Ent","Cfop Ent","Filial.Ctb","Doc.Ctb","Tipo.Ctb","Valor.Ctb"})
 	
-	For x:=1 to len(aCtb)
+	For x:=1 to len(_aEnt)
 		_nAchou := 0
-		For y:=1 to len (aEnt)
-			If aCtb[x,1] == aEnt[y,1] .and. aCtb[x,2] == aEnt[y,2] .and. aCtb[x,3] == aEnt[y,3]
-				AADD(aItensExcel,{aCtb[x,1],aCtb[x,2],aCtb[x,3],aCtb[x,4],aEnt[y,1],aEnt[y,2],aEnt[y,3],aEnt[y,4]})
+		For y:=1 to len (_aCtb)
+			If _aEnt[x,1] == _aCtb[y,1] .and. _aEnt[x,2] == _aCtb[y,2] .and. _aEnt[x,3] == _aCtb[y,3]
+				AADD(aItensExcel,{_aEnt[x,1],_aEnt[x,2],_aEnt[x,3],_aEnt[x,4],_aEnt[x,5],_aCtb[y,1],_aCtb[y,2],_aCtb[y,3],_aCtb[y,4]})
 				
 				_nAchou := 1
 			EndIf
 		Next
 		If _nAchou == 0
-			AADD(aItensExcel,{aCtb[x,1],aCtb[x,2],aCtb[x,3],aCtb[x,4],'','','',0})
+			AADD(aItensExcel,{_aEnt[x,1],_aEnt[x,2],_aEnt[x,3],_aEnt[x,4],_aEnt[x,5],'','','',0})
 		EndIf
 	Next
 	
-	For x:=1 to len(aEnt)
+	For x:=1 to len(_aCtb)
 		_nAchou := 0
-		For y:=1 to len (aCtb)
-			If aEnt[x,1] == aCtb[y,1] .and. aEnt[x,2] == aCtb[y,2] .and. aEnt[x,3] == aCtb[y,3]
+		For y:=1 to len (_aEnt)
+			If _aCtb[x,1] == _aEnt[y,1] .and. _aCtb[x,2] == _aEnt[y,2] .and. _aCtb[x,3] == _aEnt[y,3]
 				_nAchou := 1
 			EndIf
 		Next
 		If _nAchou == 0
-			AADD(aItensExcel,{'','','',0,aEnt[x,1],aEnt[x,2],aEnt[x,3],aEnt[x,4]})
+			AADD(aItensExcel,{'','','',0,'',_aCtb[x,1],_aCtb[x,2],_aCtb[x,3],_aCtb[x,4]})
 		EndIf
 	Next
 
