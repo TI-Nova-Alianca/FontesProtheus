@@ -18,7 +18,7 @@
 #Include "totvs.ch"
 
 User Function ZB3()
-	Local _sFiltrTop  := ""
+	//Local _sFiltrTop  := ""
 	Local _lContinua  := .T.
 	Private aRotina   := {}  
 	Private _aCores   := {}
@@ -45,8 +45,9 @@ User Function ZB3()
                       
 		dbSelectArea ("ZB3")
 		dbSetOrder (3)
-		_sFiltrTop := "ZB3_FILIAL ='" + cFilAnt +"'"
-		mBrowse(,,,,"ZB3",,,,,,_aCores,,,,,,,,_sFiltrTop)
+		//_sFiltrTop := "ZB3_FILIAL ='" + cFilAnt +"'"
+		//mBrowse(,,,,"ZB3",,,,,,_aCores,,,,,,,,_sFiltrTop)
+		mBrowse(,,,,"ZB3",,,,,,_aCores,,,,,,,,)
 	EndIf
 
 Return
