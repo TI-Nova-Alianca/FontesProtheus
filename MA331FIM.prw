@@ -17,7 +17,6 @@ User Function MA331FIM()
 
 	Processa({|| U_CtbMedio (.T.)}, "Ajustando lctos contabeis")
 	
-	FClose(nHandle)
 	U_ML_SRArea (_aAreaAnt)
 	
 	u_logFim ()

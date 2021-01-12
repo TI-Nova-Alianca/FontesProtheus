@@ -1003,7 +1003,7 @@ return _aRet
 
 // --------------------------------------------------------------------------
 // Gera string para posteriormente montar demonstrativo de fechamento de safra em formato XML.
-METHOD FechSafra (_sSafra) Class ClsAssoc
+METHOD FechSafra (_sSafra, _lSohRegra) Class ClsAssoc
 	local _sRetFechS      := ''
 	local _oSQL      := NIL
 	local _sAliasQ   := ""
@@ -1019,6 +1019,8 @@ METHOD FechSafra (_sSafra) Class ClsAssoc
 		::UltMsg += "Safra nao informada"
 	endif
 
+	_lSohRegra = iif (_lSohRegra == NIL, .F., _lSohRegra)
+
 	//u_logIni (GetClassName (::Self) + '.' + procname ())
 	_sRetFechS += '<assocFechSafra>'
 	_sRetFechS += '<associado>' + ::Codigo + '</associado>'
@@ -1026,102 +1028,103 @@ METHOD FechSafra (_sSafra) Class ClsAssoc
 	_sRetFechS += '<safra>' + _sSafra + '</safra>'
 
 	// Busca notas do associado
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += "SELECT TIPO_NF, FILIAL, DATA, DOC, SERIE, PRODUTO, DESCRICAO, GRAU, PESO_LIQ, VALOR_UNIT, VALOR_TOTAL, "
-	_oSQL:_sQuery +=       " CASE WHEN SIST_CONDUCAO = 'E' THEN CLAS_FINAL ELSE CLAS_ABD END AS CLASSE,"
-	_oSQL:_sQuery +=       " CASE WHEN TIPO_NF = 'E'"
-	_oSQL:_sQuery +=            " THEN 'Nao serve como base para valor de compra'"
-	_oSQL:_sQuery +=            " ELSE CASE WHEN TIPO_NF = 'C'"
-	_oSQL:_sQuery +=                 " THEN ISNULL ((SELECT top 1 RTRIM (ZZ9_MSGNF) + CASE WHEN ZZ9_MSGNF = '' THEN '' ELSE ';' END + ZZ9_OBS"
-	_oSQL:_sQuery +=                                 " FROM " + RetSQLName ("ZZ9") + " ZZ9 "
-	_oSQL:_sQuery +=                                " WHERE ZZ9.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=                                  " AND ZZ9_FILIAL     = V.FILIAL"
-	_oSQL:_sQuery +=                                  " AND ZZ9_SAFRA      = V.SAFRA"
-	_oSQL:_sQuery +=                                  " AND ZZ9_FORNEC     = V.ASSOCIADO"
-	_oSQL:_sQuery +=                                  " AND ZZ9_LOJA       = V.LOJA_ASSOC"
-	_oSQL:_sQuery +=                                  " AND ZZ9_NFCOMP     = V.DOC"
-	_oSQL:_sQuery +=                                  " AND ZZ9_SERCOM     = V.SERIE"
-	_oSQL:_sQuery +=                                  " AND ZZ9_PRODUT     = V.PRODUTO"
-	_oSQL:_sQuery +=                                  " AND ZZ9_GRAU       = V.GRAU"
-	_oSQL:_sQuery +=                                  " AND ZZ9_CLASSE     = V.CLAS_FINAL"
-	_oSQL:_sQuery +=                                  " AND ZZ9_CLABD      = V.CLAS_ABD"
-	_oSQL:_sQuery +=                                  " AND ZZ9_VUNIT      = V.VALOR_UNIT)"
-	_oSQL:_sQuery +=                        " , '')"
-	_oSQL:_sQuery +=                 " ELSE ''"
-	_oSQL:_sQuery +=                 " END"
-	_oSQL:_sQuery +=            " END"
-	_oSQL:_sQuery +=   	       " AS OBS"
-	_oSQL:_sQuery +=  " FROM VA_VNOTAS_SAFRA V"
-	_oSQL:_sQuery += " WHERE SAFRA      = '" + _sSafra  + "'"
-	_oSQL:_sQuery +=   " AND SAFRA     >= '2019'"  // Primeira safra em que este metodo foi implementado.
-	_oSQL:_sQuery +=   " AND ASSOCIADO  = '" + ::Codigo + "'"
-	_oSQL:_sQuery +=   " AND LOJA_ASSOC = '" + ::Loja   + "'"
-	_oSQL:_sQuery += " ORDER BY CASE TIPO_NF WHEN 'E' THEN '1' WHEN 'C' THEN '2' WHEN 'V' THEN '3' END, DATA, DESCRICAO, GRAU"
-	_sAliasQ := _oSQL:Qry2Trb (.F.)
-		
-	// Gera grupos de tags diferentes conforme o tipo de nota.
-	for _nTipoNF = 1 to len (_aTipoNF)
-		_nTotPeso = 0
-		_nTotValor = 0
-		_sRetFechS += '<' + _aTipoNF [_nTipoNF, 2] + '>'
-		(_sAliasQ) -> (dbgotop ())
-		do while ! (_sAliasQ) -> (eof ())
-			if (_sAliasQ) -> tipo_nf == _aTipoNF [_nTipoNF, 1]
-				_sRetFechS += '<' + _aTipoNF [_nTipoNF, 2] + 'Item>'
-				_sRetFechS += '<filial>'  + (_sAliasQ) -> filial + '</filial>'
-				_sRetFechS += '<doc>'     + (_sAliasQ) -> doc + '</doc>'
-				_sRetFechS += '<emissao>' + dtoc (stod ((_sAliasQ) -> data)) + '</emissao>'
-				_sRetFechS += '<varied>'  + alltrim ((_sAliasQ) -> produto) + '</varied>'
-				_sRetFechS += '<desc>'    + alltrim ((_sAliasQ) -> descricao) + '</desc>'
-				_sRetFechS += '<grau>'    + (_sAliasQ) -> grau + '</grau>'
-				_sRetFechS += '<clas>'    + alltrim ((_sAliasQ) -> classe) + '</clas>'
-				_sRetFechS += '<peso>'    + cvaltochar ((_sAliasQ) -> peso_liq) + '</peso>'
-				if _aTipoNF [_nTipoNF, 1] == 'V'  // Notas de complemento de valor nao tem valor 'unitario'. Apenas valor 'total'.
-					_sRetFechS += '<valunit>0</valunit>'
-				else
-					_sRetFechS += '<valunit>' + cvaltochar ((_sAliasQ) -> valor_unit) + '</valunit>'
-				endif
-				if _aTipoNF [_nTipoNF, 1] == 'V'  // Notas de complemento de valor nao tem quantidade.
-					_sRetFechS += '<valtot>'  + cvaltochar ((_sAliasQ) -> valor_unit) + '</valtot>'
-				else
-					_sRetFechS += '<valtot>'  + cvaltochar ((_sAliasQ) -> peso_liq * (_sAliasQ) -> valor_unit) + '</valtot>'
-				endif
-				_sRetFechS += '<obs>'     + alltrim ((_sAliasQ) -> obs) + '</obs>'
-				_sRetFechS += '</' + _aTipoNF [_nTipoNF, 2] + 'Item>'
-				_nTotPeso += (_sAliasQ) -> peso_liq
-				_nTotValor += (_sAliasQ) -> valor_unit * iif ((_sAliasQ) -> tipo_nf == 'V', 1, (_sAliasQ) -> peso_liq)
-			endif
-			(_sAliasQ) -> (dbskip ())
-		//	u_log (_sRetFechS)
-		enddo
-
-		// Exporta totais no final de cada tipo de nota.
-		_sRetFechS += '<' + _aTipoNF [_nTipoNF, 2] + 'Item>'
-		_sRetFechS += '<filial/>'
-		_sRetFechS += '<doc>TOTAIS</doc>'
-		_sRetFechS += '<emissao/>'
-		_sRetFechS += '<varied/>'
-		_sRetFechS += '<desc>TOTAIS NF ' + upper (_aTipoNF [_nTipoNF, 2]) + '</desc>'
-		_sRetFechS += '<grau/>'
-		_sRetFechS += '<clas/>'
-		_sRetFechS += '<peso>'    + cvaltochar (_nTotPeso) + '</peso>'
-		_sRetFechS += '<valunit/>'
-		_sRetFechS += '<valtot>'  + cvaltochar (round (_nTotValor, 2)) + '</valtot>'
-		_sRetFechS += '<obs/>'
-		_sRetFechS += '</' + _aTipoNF [_nTipoNF, 2] + 'Item>'
-
-		// Fecha este tipo de nota
-		_sRetFechS += '</' + _aTipoNF [_nTipoNF, 2] + '>'
-	next
-	(_sAliasQ) -> (dbclosearea ())
-
-
-	// Busca previsoes de pagamento (faturas e notas em aberto no contas a pagar).
-	_sRetFechS += '<faturaPagamento>'
+	if ! _lSohRegra
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
-	//	_oSQL:_sQuery += "SELECT E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VENCTO, E2_VALOR, E2_SALDO, E2_HIST"
+		_oSQL:_sQuery += "SELECT TIPO_NF, FILIAL, DATA, DOC, SERIE, PRODUTO, DESCRICAO, GRAU, PESO_LIQ, VALOR_UNIT, VALOR_TOTAL, "
+		_oSQL:_sQuery +=       " CASE WHEN SIST_CONDUCAO = 'E' THEN CLAS_FINAL ELSE CLAS_ABD END AS CLASSE,"
+		_oSQL:_sQuery +=       " CASE WHEN TIPO_NF = 'E'"
+		_oSQL:_sQuery +=            " THEN 'Nao serve como base para valor de compra'"
+		_oSQL:_sQuery +=            " ELSE CASE WHEN TIPO_NF = 'C'"
+		_oSQL:_sQuery +=                 " THEN ISNULL ((SELECT top 1 RTRIM (ZZ9_MSGNF) + CASE WHEN ZZ9_MSGNF = '' THEN '' ELSE ';' END + ZZ9_OBS"
+		_oSQL:_sQuery +=                                 " FROM " + RetSQLName ("ZZ9") + " ZZ9 "
+		_oSQL:_sQuery +=                                " WHERE ZZ9.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=                                  " AND ZZ9_FILIAL     = V.FILIAL"
+		_oSQL:_sQuery +=                                  " AND ZZ9_SAFRA      = V.SAFRA"
+		_oSQL:_sQuery +=                                  " AND ZZ9_FORNEC     = V.ASSOCIADO"
+		_oSQL:_sQuery +=                                  " AND ZZ9_LOJA       = V.LOJA_ASSOC"
+		_oSQL:_sQuery +=                                  " AND ZZ9_NFCOMP     = V.DOC"
+		_oSQL:_sQuery +=                                  " AND ZZ9_SERCOM     = V.SERIE"
+		_oSQL:_sQuery +=                                  " AND ZZ9_PRODUT     = V.PRODUTO"
+		_oSQL:_sQuery +=                                  " AND ZZ9_GRAU       = V.GRAU"
+		_oSQL:_sQuery +=                                  " AND ZZ9_CLASSE     = V.CLAS_FINAL"
+		_oSQL:_sQuery +=                                  " AND ZZ9_CLABD      = V.CLAS_ABD"
+		_oSQL:_sQuery +=                                  " AND ZZ9_VUNIT      = V.VALOR_UNIT)"
+		_oSQL:_sQuery +=                        " , '')"
+		_oSQL:_sQuery +=                 " ELSE ''"
+		_oSQL:_sQuery +=                 " END"
+		_oSQL:_sQuery +=            " END"
+		_oSQL:_sQuery +=   	       " AS OBS"
+		_oSQL:_sQuery +=  " FROM VA_VNOTAS_SAFRA V"
+		_oSQL:_sQuery += " WHERE SAFRA      = '" + _sSafra  + "'"
+		_oSQL:_sQuery +=   " AND SAFRA     >= '2019'"  // Primeira safra em que este metodo foi implementado.
+		_oSQL:_sQuery +=   " AND ASSOCIADO  = '" + ::Codigo + "'"
+		_oSQL:_sQuery +=   " AND LOJA_ASSOC = '" + ::Loja   + "'"
+		_oSQL:_sQuery += " ORDER BY CASE TIPO_NF WHEN 'E' THEN '1' WHEN 'C' THEN '2' WHEN 'V' THEN '3' END, DATA, DESCRICAO, GRAU"
+		_sAliasQ := _oSQL:Qry2Trb (.F.)
+			
+		// Gera grupos de tags diferentes conforme o tipo de nota.
+		for _nTipoNF = 1 to len (_aTipoNF)
+			_nTotPeso = 0
+			_nTotValor = 0
+			_sRetFechS += '<' + _aTipoNF [_nTipoNF, 2] + '>'
+			(_sAliasQ) -> (dbgotop ())
+			do while ! (_sAliasQ) -> (eof ())
+				if (_sAliasQ) -> tipo_nf == _aTipoNF [_nTipoNF, 1]
+					_sRetFechS += '<' + _aTipoNF [_nTipoNF, 2] + 'Item>'
+					_sRetFechS += '<filial>'  + (_sAliasQ) -> filial + '</filial>'
+					_sRetFechS += '<doc>'     + (_sAliasQ) -> doc + '</doc>'
+					_sRetFechS += '<emissao>' + dtoc (stod ((_sAliasQ) -> data)) + '</emissao>'
+					_sRetFechS += '<varied>'  + alltrim ((_sAliasQ) -> produto) + '</varied>'
+					_sRetFechS += '<desc>'    + alltrim ((_sAliasQ) -> descricao) + '</desc>'
+					_sRetFechS += '<grau>'    + (_sAliasQ) -> grau + '</grau>'
+					_sRetFechS += '<clas>'    + alltrim ((_sAliasQ) -> classe) + '</clas>'
+					_sRetFechS += '<peso>'    + cvaltochar ((_sAliasQ) -> peso_liq) + '</peso>'
+					if _aTipoNF [_nTipoNF, 1] == 'V'  // Notas de complemento de valor nao tem valor 'unitario'. Apenas valor 'total'.
+						_sRetFechS += '<valunit>0</valunit>'
+					else
+						_sRetFechS += '<valunit>' + cvaltochar ((_sAliasQ) -> valor_unit) + '</valunit>'
+					endif
+					if _aTipoNF [_nTipoNF, 1] == 'V'  // Notas de complemento de valor nao tem quantidade.
+						_sRetFechS += '<valtot>'  + cvaltochar ((_sAliasQ) -> valor_unit) + '</valtot>'
+					else
+						_sRetFechS += '<valtot>'  + cvaltochar ((_sAliasQ) -> peso_liq * (_sAliasQ) -> valor_unit) + '</valtot>'
+					endif
+					_sRetFechS += '<obs>'     + alltrim ((_sAliasQ) -> obs) + '</obs>'
+					_sRetFechS += '</' + _aTipoNF [_nTipoNF, 2] + 'Item>'
+					_nTotPeso += (_sAliasQ) -> peso_liq
+					_nTotValor += (_sAliasQ) -> valor_unit * iif ((_sAliasQ) -> tipo_nf == 'V', 1, (_sAliasQ) -> peso_liq)
+				endif
+				(_sAliasQ) -> (dbskip ())
+			//	u_log (_sRetFechS)
+			enddo
+
+			// Exporta totais no final de cada tipo de nota.
+			_sRetFechS += '<' + _aTipoNF [_nTipoNF, 2] + 'Item>'
+			_sRetFechS += '<filial/>'
+			_sRetFechS += '<doc>TOTAIS</doc>'
+			_sRetFechS += '<emissao/>'
+			_sRetFechS += '<varied/>'
+			_sRetFechS += '<desc>TOTAIS NF ' + upper (_aTipoNF [_nTipoNF, 2]) + '</desc>'
+			_sRetFechS += '<grau/>'
+			_sRetFechS += '<clas/>'
+			_sRetFechS += '<peso>'    + cvaltochar (_nTotPeso) + '</peso>'
+			_sRetFechS += '<valunit/>'
+			_sRetFechS += '<valtot>'  + cvaltochar (round (_nTotValor, 2)) + '</valtot>'
+			_sRetFechS += '<obs/>'
+			_sRetFechS += '</' + _aTipoNF [_nTipoNF, 2] + 'Item>'
+
+			// Fecha este tipo de nota
+			_sRetFechS += '</' + _aTipoNF [_nTipoNF, 2] + '>'
+		next
+		(_sAliasQ) -> (dbclosearea ())
+	endif
+
+	// Busca previsoes de pagamento (faturas e notas em aberto no contas a pagar).
+	if ! _lSohRegra
+		_sRetFechS += '<faturaPagamento>'
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += "WITH C AS ("
 		_oSQL:_sQuery += "SELECT E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VENCTO, "
 		
@@ -1181,7 +1184,8 @@ METHOD FechSafra (_sSafra) Class ClsAssoc
 		_sRetFechS += '<valor>'  + cvaltochar (_nTotValor) + '</valor>'
 		_sRetFechS += '<saldo>'  + cvaltochar (_nTotSaldo) + '</saldo>'
 		_sRetFechS += '</faturaPagamentoItem>'
-	_sRetFechS += '</faturaPagamento>'
+		_sRetFechS += '</faturaPagamento>'
+	endif
 
 
 	// Regras de pagamento (informativo)
@@ -1234,181 +1238,186 @@ METHOD FechSafra (_sSafra) Class ClsAssoc
 
 
 	// Valores efetivos por variedade/grau
-	_aMedVar = {}
-	_sRetFechS += '<valoresEfetivos>'
-		_oSQL := ClsSQL():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "SELECT DISTINCT PRODUTO, DESCRICAO, GRAU, CLAS_ABD, CLAS_FINAL, PESO_LIQ, VUNIT_EFETIVO, VALOR_COMPRA + VALOR_COMPLEMENTO AS VALOR_TOTAL"
-		_oSQL:_sQuery +=  " FROM VA_VPRECO_EFETIVO_SAFRA"
-		_oSQL:_sQuery += " WHERE ASSOCIADO  = '" + ::Codigo + "'"
-		_oSQL:_sQuery +=   " AND LOJA_ASSOC = '" + ::Loja + "'"
-		_oSQL:_sQuery +=   " AND SAFRA      = '" + _sSafra + "'"
-		_oSQL:_sQuery += " ORDER BY DESCRICAO, GRAU"
-		_sAliasQ := _oSQL:Qry2Trb (.F.)
-		(_sAliasQ) -> (dbgotop ())
-		do while ! (_sAliasQ) -> (eof ())
-			_sRetFechS += '<valorEfetivoItem>'
-			_sRetFechS += '<varied>'         + alltrim ((_sAliasQ) -> produto) + '</varied>'
-			_sRetFechS += '<desc>'           + alltrim ((_sAliasQ) -> descricao) + '</desc>'
-			_sRetFechS += '<grau>'           + (_sAliasQ) -> grau + '</grau>'
-			_sRetFechS += '<clasLatada>'     + alltrim ((_sAliasQ) -> clas_abd) + '</clasLatada>'
-			_sRetFechS += '<clasEspaldeira>' + alltrim ((_sAliasQ) -> clas_final) + '</clasEspaldeira>'
-			_sRetFechS += '<peso>'           + cvaltochar ((_sAliasQ) -> peso_liq) + '</peso>'
-			_sRetFechS += '<valunit>'        + cvaltochar (round ((_sAliasQ) -> vunit_efetivo, 4)) + '</valunit>'
-			_sRetFechS += '<valtot>'         + cvaltochar (round ((_sAliasQ) -> valor_total, 2)) + '</valtot>'
-			_sRetFechS += '</valorEfetivoItem>'
+	if ! _lSohRegra
+		_aMedVar = {}
+		_sRetFechS += '<valoresEfetivos>'
+			_oSQL := ClsSQL():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += "SELECT DISTINCT PRODUTO, DESCRICAO, GRAU, CLAS_ABD, CLAS_FINAL, PESO_LIQ, VUNIT_EFETIVO, VALOR_COMPRA + VALOR_COMPLEMENTO AS VALOR_TOTAL"
+			_oSQL:_sQuery +=  " FROM VA_VPRECO_EFETIVO_SAFRA"
+			_oSQL:_sQuery += " WHERE ASSOCIADO  = '" + ::Codigo + "'"
+			_oSQL:_sQuery +=   " AND LOJA_ASSOC = '" + ::Loja + "'"
+			_oSQL:_sQuery +=   " AND SAFRA      = '" + _sSafra + "'"
+			_oSQL:_sQuery += " ORDER BY DESCRICAO, GRAU"
+			_sAliasQ := _oSQL:Qry2Trb (.F.)
+			(_sAliasQ) -> (dbgotop ())
+			do while ! (_sAliasQ) -> (eof ())
+				_sRetFechS += '<valorEfetivoItem>'
+				_sRetFechS += '<varied>'         + alltrim ((_sAliasQ) -> produto) + '</varied>'
+				_sRetFechS += '<desc>'           + alltrim ((_sAliasQ) -> descricao) + '</desc>'
+				_sRetFechS += '<grau>'           + (_sAliasQ) -> grau + '</grau>'
+				_sRetFechS += '<clasLatada>'     + alltrim ((_sAliasQ) -> clas_abd) + '</clasLatada>'
+				_sRetFechS += '<clasEspaldeira>' + alltrim ((_sAliasQ) -> clas_final) + '</clasEspaldeira>'
+				_sRetFechS += '<peso>'           + cvaltochar ((_sAliasQ) -> peso_liq) + '</peso>'
+				_sRetFechS += '<valunit>'        + cvaltochar (round ((_sAliasQ) -> vunit_efetivo, 4)) + '</valunit>'
+				_sRetFechS += '<valtot>'         + cvaltochar (round ((_sAliasQ) -> valor_total, 2)) + '</valtot>'
+				_sRetFechS += '</valorEfetivoItem>'
 
-			// Aproveita a leitura destes dados para preparar array para calculo do grau medio por variedade.
-			_nMedVar = ascan (_aMedVar, {|_aVal| _aVal [1] == (_sAliasQ) -> produto .and. _aVal [2] == (_sAliasQ) -> descricao})
-			if _nMedVar == 0
-				aadd (_aMedVar, {(_sAliasQ) -> produto, (_sAliasQ) -> descricao, 0, 0, 0, 0})
-				_nMedVar = len (_aMedVar)
-			endif
-			_aMedVar [_nMedVar, 3] += (_sAliasQ) -> peso_liq
-			_aMedVar [_nMedVar, 4] += (_sAliasQ) -> peso_liq * val ((_sAliasQ) -> grau)  // Para posterior calculo de media ponderada do grau medio
-			_aMedVar [_nMedVar, 6] += (_sAliasQ) -> valor_total
+				// Aproveita a leitura destes dados para preparar array para calculo do grau medio por variedade.
+				_nMedVar = ascan (_aMedVar, {|_aVal| _aVal [1] == (_sAliasQ) -> produto .and. _aVal [2] == (_sAliasQ) -> descricao})
+				if _nMedVar == 0
+					aadd (_aMedVar, {(_sAliasQ) -> produto, (_sAliasQ) -> descricao, 0, 0, 0, 0})
+					_nMedVar = len (_aMedVar)
+				endif
+				_aMedVar [_nMedVar, 3] += (_sAliasQ) -> peso_liq
+				_aMedVar [_nMedVar, 4] += (_sAliasQ) -> peso_liq * val ((_sAliasQ) -> grau)  // Para posterior calculo de media ponderada do grau medio
+				_aMedVar [_nMedVar, 6] += (_sAliasQ) -> valor_total
 
-			(_sAliasQ) -> (dbskip ())
-		enddo
-		(_sAliasQ) -> (dbclosearea ())
-	_sRetFechS += '</valoresEfetivos>'
-
+				(_sAliasQ) -> (dbskip ())
+			enddo
+			(_sAliasQ) -> (dbclosearea ())
+		_sRetFechS += '</valoresEfetivos>'
+	endif
 
 	// Resumo grau medio por variedade
 	// Termina de calcular as medias por variedade e insere nos dados para retorno da funcao.
-	_sRetFechS += '<resumoVariedade>'
-	_nTotValor = 0
-	_nTotSaldo = 0
-	for _nMedVar = 1 to len (_aMedVar)
-		_aMedVar [_nMedVar, 4] /= _aMedVar [_nMedVar, 3]  // grau medio = sum(qt*grau)/sum(qt)
-		_aMedVar [_nMedVar, 5]  = _aMedVar [_nMedVar, 6] / _aMedVar [_nMedVar, 3]
-		_sRetFechS += '<resumoVariedadeItem>'
-		_sRetFechS += '<varied>'    + alltrim (_aMedVar [_nMedVar, 1]) + '</varied>'
-		_sRetFechS += '<desc>'      + alltrim (_aMedVar [_nMedVar, 2]) + '</desc>'
-		_sRetFechS += '<peso>'      + cvaltochar (_aMedVar [_nMedVar, 3]) + '</peso>'
-		_sRetFechS += '<grauMedio>' + cvaltochar (_aMedVar [_nMedVar, 4]) + '</grauMedio>'
-		_sRetFechS += '<valMedio>'  + cvaltochar (_aMedVar [_nMedVar, 5]) + '</valMedio>'
-		_sRetFechS += '<valTotal>'  + cvaltochar (_aMedVar [_nMedVar, 6]) + '</valTotal>'
-		_sRetFechS += '</resumoVariedadeItem>'
-		_nTotValor += _aMedVar [_nMedVar, 3]
-		_nTotSaldo += _aMedVar [_nMedVar, 6]
-	next
+	if ! _lSohRegra
+		_sRetFechS += '<resumoVariedade>'
+			_nTotValor = 0
+			_nTotSaldo = 0
+			for _nMedVar = 1 to len (_aMedVar)
+				_aMedVar [_nMedVar, 4] /= _aMedVar [_nMedVar, 3]  // grau medio = sum(qt*grau)/sum(qt)
+				_aMedVar [_nMedVar, 5]  = _aMedVar [_nMedVar, 6] / _aMedVar [_nMedVar, 3]
+				_sRetFechS += '<resumoVariedadeItem>'
+				_sRetFechS += '<varied>'    + alltrim (_aMedVar [_nMedVar, 1]) + '</varied>'
+				_sRetFechS += '<desc>'      + alltrim (_aMedVar [_nMedVar, 2]) + '</desc>'
+				_sRetFechS += '<peso>'      + cvaltochar (_aMedVar [_nMedVar, 3]) + '</peso>'
+				_sRetFechS += '<grauMedio>' + cvaltochar (_aMedVar [_nMedVar, 4]) + '</grauMedio>'
+				_sRetFechS += '<valMedio>'  + cvaltochar (_aMedVar [_nMedVar, 5]) + '</valMedio>'
+				_sRetFechS += '<valTotal>'  + cvaltochar (_aMedVar [_nMedVar, 6]) + '</valTotal>'
+				_sRetFechS += '</resumoVariedadeItem>'
+				_nTotValor += _aMedVar [_nMedVar, 3]
+				_nTotSaldo += _aMedVar [_nMedVar, 6]
+			next
 
-	// Ultima linha contem os totais
-	_sRetFechS += '<resumoVariedadeItem>'
-	_sRetFechS += '<varied>TOTAIS</varied>'
-	_sRetFechS += '<peso>'  + cvaltochar (_nTotValor) + '</peso>'
-	_sRetFechS += '<valTotal>'  + cvaltochar (_nTotSaldo) + '</valTotal>'
-	_sRetFechS += '</resumoVariedadeItem>'
-	u_log2 ('debug', _aMedVar)
-	_sRetFechS += '</resumoVariedade>'
-
+			// Ultima linha contem os totais
+			_sRetFechS += '<resumoVariedadeItem>'
+			_sRetFechS += '<varied>TOTAIS</varied>'
+			_sRetFechS += '<peso>'  + cvaltochar (_nTotValor) + '</peso>'
+			_sRetFechS += '<valTotal>'  + cvaltochar (_nTotSaldo) + '</valTotal>'
+			_sRetFechS += '</resumoVariedadeItem>'
+			u_log2 ('debug', _aMedVar)
+		_sRetFechS += '</resumoVariedade>'
+	endif
 
 	// Auxilio combustivel
-	_sRetFechS += '<freteSafra>'
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "WITH C AS ("
-		_oSQL:_sQuery += "SELECT E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VENCTO, "
-		
-		// Existem casos em que nem todo o valor do titulo foi usado na geracao de uma parcela
-		// Devo descontar do valor do titulo somente a parte que foi consumida na geracao da fatura.
-		_oSQL:_sQuery += " E2_VALOR - ISNULL ((SELECT SUM (FK2_VALOR)"
-		_oSQL:_sQuery +=                       " FROM " + RetSQLName ("FK7") + " FK7, "
-		_oSQL:_sQuery +=                                  RetSQLName ("FK2") + " FK2 "
-		_oSQL:_sQuery +=                            " WHERE FK7.D_E_L_E_T_ = '' AND FK7.FK7_FILIAL = SE2.E2_FILIAL AND FK7.FK7_ALIAS = 'SE2' AND FK7.FK7_CHAVE = SE2.E2_FILIAL + '|' + SE2.E2_PREFIXO + '|' + SE2.E2_NUM + '|' + SE2.E2_PARCELA + '|' + SE2.E2_TIPO + '|' + SE2.E2_FORNECE + '|' + SE2.E2_LOJA"
-		_oSQL:_sQuery +=                              " AND FK2.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=                              " AND FK2.FK2_FILIAL = FK7.FK7_FILIAL"
-		_oSQL:_sQuery +=                              " AND FK2.FK2_IDDOC = FK7.FK7_IDDOC"
-		_oSQL:_sQuery +=                              " AND FK2.FK2_MOTBX = 'FAT'"
-		_oSQL:_sQuery +=                              " AND FK2.FK2_TPDOC != 'ES'"  // ES=Movimento de estorno
-		_oSQL:_sQuery +=                              " AND dbo.VA_FESTORNADO_FK2 (FK2.FK2_FILIAL, FK2.FK2_IDFK2) = 0"
-		_oSQL:_sQuery +=                        "), 0) AS E2_VALOR, "
-		_oSQL:_sQuery +=       " E2_SALDO, E2_HIST"
-		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE2") + " SE2 "
-		_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND E2_FILIAL  = '01'"  // Pagamentos de frete sao feitos sempre pela matriz.
-		_oSQL:_sQuery +=   " AND E2_FORNECE = '" + ::Codigo + "'"
-		_oSQL:_sQuery +=   " AND E2_LOJA    = '" + ::Loja + "'"
-		_oSQL:_sQuery +=   " AND E2_VACHVEX = 'FRTSAFRA" + _sSafra + "'"
-		_oSQL:_sQuery +=   " AND E2_EMISSAO >= '" + _sSafra + "0101'"
-		_oSQL:_sQuery +=   " AND E2_EMISSAO >= '20200101'"  // Primeira safra em que este metodo foi implementado. Para safras anteriores o tratamento era diferente.
-		_oSQL:_sQuery +=   ")"
-		_oSQL:_sQuery += " SELECT *"
-		_oSQL:_sQuery +=   " FROM C"
-		_oSQL:_sQuery +=  " WHERE E2_VALOR != 0"  // Os que estao zerados eh por que foram totalmente consumidos em uma fatura.
-		_oSQL:_sQuery +=  " ORDER BY E2_VENCTO, E2_NUM, E2_PREFIXO"
-		_oSQL:Log ()
-		_sAliasQ := _oSQL:Qry2Trb (.F.)
-		_nTotValor = 0
-		_nTotSaldo = 0
-		(_sAliasQ) -> (dbgotop ())
-		do while ! (_sAliasQ) -> (eof ())
+	if ! _lSohRegra
+		_sRetFechS += '<freteSafra>'
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += "WITH C AS ("
+			_oSQL:_sQuery += "SELECT E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VENCTO, "
+			
+			// Existem casos em que nem todo o valor do titulo foi usado na geracao de uma parcela
+			// Devo descontar do valor do titulo somente a parte que foi consumida na geracao da fatura.
+			_oSQL:_sQuery += " E2_VALOR - ISNULL ((SELECT SUM (FK2_VALOR)"
+			_oSQL:_sQuery +=                       " FROM " + RetSQLName ("FK7") + " FK7, "
+			_oSQL:_sQuery +=                                  RetSQLName ("FK2") + " FK2 "
+			_oSQL:_sQuery +=                            " WHERE FK7.D_E_L_E_T_ = '' AND FK7.FK7_FILIAL = SE2.E2_FILIAL AND FK7.FK7_ALIAS = 'SE2' AND FK7.FK7_CHAVE = SE2.E2_FILIAL + '|' + SE2.E2_PREFIXO + '|' + SE2.E2_NUM + '|' + SE2.E2_PARCELA + '|' + SE2.E2_TIPO + '|' + SE2.E2_FORNECE + '|' + SE2.E2_LOJA"
+			_oSQL:_sQuery +=                              " AND FK2.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=                              " AND FK2.FK2_FILIAL = FK7.FK7_FILIAL"
+			_oSQL:_sQuery +=                              " AND FK2.FK2_IDDOC = FK7.FK7_IDDOC"
+			_oSQL:_sQuery +=                              " AND FK2.FK2_MOTBX = 'FAT'"
+			_oSQL:_sQuery +=                              " AND FK2.FK2_TPDOC != 'ES'"  // ES=Movimento de estorno
+			_oSQL:_sQuery +=                              " AND dbo.VA_FESTORNADO_FK2 (FK2.FK2_FILIAL, FK2.FK2_IDFK2) = 0"
+			_oSQL:_sQuery +=                        "), 0) AS E2_VALOR, "
+			_oSQL:_sQuery +=       " E2_SALDO, E2_HIST"
+			_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE2") + " SE2 "
+			_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND E2_FILIAL  = '01'"  // Pagamentos de frete sao feitos sempre pela matriz.
+			_oSQL:_sQuery +=   " AND E2_FORNECE = '" + ::Codigo + "'"
+			_oSQL:_sQuery +=   " AND E2_LOJA    = '" + ::Loja + "'"
+			_oSQL:_sQuery +=   " AND E2_VACHVEX = 'FRTSAFRA" + _sSafra + "'"
+			_oSQL:_sQuery +=   " AND E2_EMISSAO >= '" + _sSafra + "0101'"
+			_oSQL:_sQuery +=   " AND E2_EMISSAO >= '20200101'"  // Primeira safra em que este metodo foi implementado. Para safras anteriores o tratamento era diferente.
+			_oSQL:_sQuery +=   ")"
+			_oSQL:_sQuery += " SELECT *"
+			_oSQL:_sQuery +=   " FROM C"
+			_oSQL:_sQuery +=  " WHERE E2_VALOR != 0"  // Os que estao zerados eh por que foram totalmente consumidos em uma fatura.
+			_oSQL:_sQuery +=  " ORDER BY E2_VENCTO, E2_NUM, E2_PREFIXO"
+			_oSQL:Log ()
+			_sAliasQ := _oSQL:Qry2Trb (.F.)
+			_nTotValor = 0
+			_nTotSaldo = 0
+			(_sAliasQ) -> (dbgotop ())
+			do while ! (_sAliasQ) -> (eof ())
+				_sRetFechS += '<freteSafraItem>'
+				_sRetFechS += '<doc>'    + (_sAliasQ) -> e2_num + '/' + (_sAliasQ) -> e2_prefixo + '-' + (_sAliasQ) -> e2_parcela + '</doc>'
+				_sRetFechS += '<vencto>' + dtoc (stod ((_sAliasQ) -> e2_vencto)) + '</vencto>'
+				_sRetFechS += '<valor>'  + cvaltochar ((_sAliasQ) -> e2_valor) + '</valor>'
+				_sRetFechS += '<saldo>'  + cvaltochar ((_sAliasQ) -> e2_saldo) + '</saldo>'
+				_sRetFechS += '<hist>'  + alltrim ((_sAliasQ) -> e2_hist) + '</hist>'
+				_nTotValor += (_sAliasQ) -> e2_valor
+				_nTotSaldo += (_sAliasQ) -> e2_saldo
+				_sRetFechS += '</freteSafraItem>'
+				(_sAliasQ) -> (dbskip ())
+			enddo
+			(_sAliasQ) -> (dbclosearea ())
+
+			// Ultima linha contem os totais
 			_sRetFechS += '<freteSafraItem>'
-			_sRetFechS += '<doc>'    + (_sAliasQ) -> e2_num + '/' + (_sAliasQ) -> e2_prefixo + '-' + (_sAliasQ) -> e2_parcela + '</doc>'
-			_sRetFechS += '<vencto>' + dtoc (stod ((_sAliasQ) -> e2_vencto)) + '</vencto>'
-			_sRetFechS += '<valor>'  + cvaltochar ((_sAliasQ) -> e2_valor) + '</valor>'
-			_sRetFechS += '<saldo>'  + cvaltochar ((_sAliasQ) -> e2_saldo) + '</saldo>'
-			_sRetFechS += '<hist>'  + alltrim ((_sAliasQ) -> e2_hist) + '</hist>'
-			_nTotValor += (_sAliasQ) -> e2_valor
-			_nTotSaldo += (_sAliasQ) -> e2_saldo
+			_sRetFechS += '<doc>TOTAIS</doc>'
+			_sRetFechS += '<vencto/>'
+			_sRetFechS += '<valor>'  + cvaltochar (_nTotValor) + '</valor>'
+			_sRetFechS += '<saldo>'  + cvaltochar (_nTotSaldo) + '</saldo>'
 			_sRetFechS += '</freteSafraItem>'
-			(_sAliasQ) -> (dbskip ())
-		enddo
-		(_sAliasQ) -> (dbclosearea ())
-
-		// Ultima linha contem os totais
-		_sRetFechS += '<freteSafraItem>'
-		_sRetFechS += '<doc>TOTAIS</doc>'
-		_sRetFechS += '<vencto/>'
-		_sRetFechS += '<valor>'  + cvaltochar (_nTotValor) + '</valor>'
-		_sRetFechS += '<saldo>'  + cvaltochar (_nTotSaldo) + '</saldo>'
-		_sRetFechS += '</freteSafraItem>'
-	_sRetFechS += '</freteSafra>'
-
+		_sRetFechS += '</freteSafra>'
+	endif
 
 	// Lancamentos com saldo na conta corrente
-	_sRetFechS += '<lctoCC>'
-		_oSQL := ClsSQL():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "SELECT SZI.ZI_DATA, ZI_TM, ZI_DOC, ZI_SERIE, ZI_PARCELA, ZI_HISTOR, ZX5_10DC, ZI_SALDO"
-		_oSQL:_sQuery +=  " FROM " + RETSQLNAME ("SZI") + " SZI, "
-		_oSQL:_sQuery +=             RETSQLNAME ("ZX5") + " ZX5 "
-		_oSQL:_sQuery += " WHERE ZX5.D_E_L_E_T_ != '*'"
-		_oSQL:_sQuery +=   " AND ZX5.ZX5_FILIAL  = '" + xfilial ("ZX5")  + "'"
-		_oSQL:_sQuery +=   " AND ZX5.ZX5_TABELA  = '10'"
-		_oSQL:_sQuery +=   " AND ZX5.ZX5_10COD   = SZI.ZI_TM"
-		_oSQL:_sQuery +=   " AND SZI.D_E_L_E_T_ != '*'"
-		_oSQL:_sQuery +=   " AND SZI.ZI_FILIAL   BETWEEN '  ' and 'zz'"
-		_oSQL:_sQuery +=   " AND SZI.ZI_ASSOC    = '" + ::Codigo + "'"
-		_oSQL:_sQuery +=   " AND SZI.ZI_LOJASSO  = '" + ::Loja + "'"
-		_oSQL:_sQuery +=   " AND SZI.ZI_TM       NOT IN ('10','17','18','19')"
-//		_oSQL:_sQuery +=   " AND SZI.ZI_DATA     like '" + _sSafra + "%'"
-		_oSQL:_sQuery +=   " AND SZI.ZI_SALDO    > 0"
-		_oSQL:_sQuery += " ORDER BY ZI_DATA, ZI_TM, ZI_FILIAL, ZI_HISTOR, ZI_SERIE, ZI_DOC, ZI_PARCELA"
-		_sAliasQ := _oSQL:Qry2Trb (.F.)
-		_nTotSaldo = 0
-		(_sAliasQ) -> (dbgotop ())
-		do while ! (_sAliasQ) -> (eof ())
+	if ! _lSohRegra
+		_sRetFechS += '<lctoCC>'
+			_oSQL := ClsSQL():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += "SELECT SZI.ZI_DATA, ZI_TM, ZI_DOC, ZI_SERIE, ZI_PARCELA, ZI_HISTOR, ZX5_10DC, ZI_SALDO"
+			_oSQL:_sQuery +=  " FROM " + RETSQLNAME ("SZI") + " SZI, "
+			_oSQL:_sQuery +=             RETSQLNAME ("ZX5") + " ZX5 "
+			_oSQL:_sQuery += " WHERE ZX5.D_E_L_E_T_ != '*'"
+			_oSQL:_sQuery +=   " AND ZX5.ZX5_FILIAL  = '" + xfilial ("ZX5")  + "'"
+			_oSQL:_sQuery +=   " AND ZX5.ZX5_TABELA  = '10'"
+			_oSQL:_sQuery +=   " AND ZX5.ZX5_10COD   = SZI.ZI_TM"
+			_oSQL:_sQuery +=   " AND SZI.D_E_L_E_T_ != '*'"
+			_oSQL:_sQuery +=   " AND SZI.ZI_FILIAL   BETWEEN '  ' and 'zz'"
+			_oSQL:_sQuery +=   " AND SZI.ZI_ASSOC    = '" + ::Codigo + "'"
+			_oSQL:_sQuery +=   " AND SZI.ZI_LOJASSO  = '" + ::Loja + "'"
+			_oSQL:_sQuery +=   " AND SZI.ZI_TM       NOT IN ('10','17','18','19')"
+	//		_oSQL:_sQuery +=   " AND SZI.ZI_DATA     like '" + _sSafra + "%'"
+			_oSQL:_sQuery +=   " AND SZI.ZI_SALDO    > 0"
+			_oSQL:_sQuery += " ORDER BY ZI_DATA, ZI_TM, ZI_FILIAL, ZI_HISTOR, ZI_SERIE, ZI_DOC, ZI_PARCELA"
+			_sAliasQ := _oSQL:Qry2Trb (.F.)
+			_nTotSaldo = 0
+			(_sAliasQ) -> (dbgotop ())
+			do while ! (_sAliasQ) -> (eof ())
+				_sRetFechS += '<lctoCCItem>'
+				_sRetFechS += '<dtMovto>' + dtoc (stod ((_sAliasQ) -> zi_data)) + '</dtMovto>'
+				_sRetFechS += '<doc>' + (_sAliasQ) -> zi_doc + '/' + (_sAliasQ) -> zi_serie + '-' + (_sAliasQ) -> zi_parcela + '</doc>'
+				_sRetFechS += '<hist>' + alltrim ((_sAliasQ) -> zi_histor) + '</hist>'
+				_sRetFechS += '<saldo>' + cvaltochar ((_sAliasQ) -> zi_saldo) + '</saldo>'
+				_sRetFechS += '<dc>' + (_sAliasQ) -> zx5_10dc + '</dc>'
+				_sRetFechS += '</lctoCCItem>'
+				_nTotSaldo += (_sAliasQ) -> zi_saldo * iif ((_sAliasQ) -> zx5_10dc == 'D', -1, 1)
+				(_sAliasQ) -> (dbskip ())
+			enddo
+			(_sAliasQ) -> (dbclosearea ())
 			_sRetFechS += '<lctoCCItem>'
-			_sRetFechS += '<dtMovto>' + dtoc (stod ((_sAliasQ) -> zi_data)) + '</dtMovto>'
-			_sRetFechS += '<doc>' + (_sAliasQ) -> zi_doc + '/' + (_sAliasQ) -> zi_serie + '-' + (_sAliasQ) -> zi_parcela + '</doc>'
-			_sRetFechS += '<hist>' + alltrim ((_sAliasQ) -> zi_histor) + '</hist>'
-			_sRetFechS += '<saldo>' + cvaltochar ((_sAliasQ) -> zi_saldo) + '</saldo>'
-			_sRetFechS += '<dc>' + (_sAliasQ) -> zx5_10dc + '</dc>'
+			_sRetFechS += '<dtMovto/>'
+			_sRetFechS += '<doc>TOTAIS</doc>'
+			_sRetFechS += '<hist>SALDO TOTAL</hist>'
+			_sRetFechS += '<saldo>' + cvaltochar (round (_nTotSaldo, 2)) + '</saldo>'
+			_sRetFechS += '<dc>' + iif (_nTotSaldo >= 0, 'C', 'D') + '</dc>'
 			_sRetFechS += '</lctoCCItem>'
-			_nTotSaldo += (_sAliasQ) -> zi_saldo * iif ((_sAliasQ) -> zx5_10dc == 'D', -1, 1)
-			(_sAliasQ) -> (dbskip ())
-		enddo
-		(_sAliasQ) -> (dbclosearea ())
-		_sRetFechS += '<lctoCCItem>'
-		_sRetFechS += '<dtMovto/>'
-		_sRetFechS += '<doc>TOTAIS</doc>'
-		_sRetFechS += '<hist>SALDO TOTAL</hist>'
-		_sRetFechS += '<saldo>' + cvaltochar (round (_nTotSaldo, 2)) + '</saldo>'
-		_sRetFechS += '<dc>' + iif (_nTotSaldo >= 0, 'C', 'D') + '</dc>'
-		_sRetFechS += '</lctoCCItem>'
-	_sRetFechS += '</lctoCC>'
+		_sRetFechS += '</lctoCC>'
+	endif
 
 	_sRetFechS += '</assocFechSafra>'
 

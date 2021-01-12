@@ -50,6 +50,7 @@
 // 04/12/2020 - Robert  - Tags novas na geracao de cargas de safra
 //                      - Criada tag <FP> na consulta de orcamentos a ser retornada para o NaWeb (GLPI 8900).
 // 07/12/2020 - Robert  - Criadas tags <REA_MES> na consulta de orcamentos a ser retornada para o NaWeb (GLPI 8893).
+// 11/01/2021 - Robert  - Preenche cadastro viticola com zeros a esquerda na geracao de cargas de safra.
 //
 
 // ----------------------------------------------------------------------------------------------------------
@@ -1319,7 +1320,7 @@ static function _IncCarSaf ()
 	endif
 
 	// Leitura dos itens de forma repetitiva (tentei ler em array mas nao funcionou e tenho pouco tempo pra ficar testando...)
-	if empty (_sErros) ; _sCadVit   = _ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola1", .T., .F.) ; endif
+	if empty (_sErros) ; _sCadVit   = strzero (val (_ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola1", .T., .F.)), 5) ; endif
 	if empty (_sErros) ; _sVaried   = _ExtraiTag ("_oXML:_WSAlianca:_variedade1",        .T., .F.) ; endif
 	if empty (_sErros) ; _sEmbalag  = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem1",        .T., .F.) ; endif
 	if empty (_sErros) ; _sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote1",             .F., .F.) ; endif
@@ -1329,7 +1330,7 @@ static function _IncCarSaf ()
 		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
 	endif
 	//
-	if empty (_sErros) ; _sCadVit   = _ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola2", .F., .F.) ; endif
+	if empty (_sErros) ; _sCadVit   = strzero (val (_ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola2", .F., .F.)), 5) ; endif
 	if empty (_sErros) ; _sVaried   = _ExtraiTag ("_oXML:_WSAlianca:_variedade2",        .F., .F.) ; endif
 	if empty (_sErros) ; _sEmbalag  = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem2",        .F., .F.) ; endif
 	if empty (_sErros) ; _sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote2",             .F., .F.) ; endif
@@ -1339,7 +1340,7 @@ static function _IncCarSaf ()
 		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
 	endif
 	//
-	if empty (_sErros) ; _sCadVit   = _ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola3", .F., .F.) ; endif
+	if empty (_sErros) ; _sCadVit   = strzero (val (_ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola3", .F., .F.)), 5) ; endif
 	if empty (_sErros) ; _sVaried   = _ExtraiTag ("_oXML:_WSAlianca:_variedade3",        .F., .F.) ; endif
 	if empty (_sErros) ; _sEmbalag  = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem3",        .F., .F.) ; endif
 	if empty (_sErros) ; _sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote3",             .F., .F.) ; endif

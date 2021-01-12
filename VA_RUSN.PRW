@@ -18,7 +18,7 @@
 // 04/01/2016 - Robert - Tratamento para parametro VA_SERSAFR.
 // 18/02/2016 - Robert - Restaura parametros da rotina MATA103 apos sua execucao.
 // 18/01/2017 - Robert - Valida campo ZZC_OK.
-// 07/03/2017 - Catia  - Setar o parametro de amarra��o com fornecedores sempre como NAO
+// 07/03/2017 - Catia  - Setar o parametro de amarracao com fornecedores sempre como NAO
 // 04/01/2017 - Robert - Gravacao do campo F1_VASAFRA (criado por que comecamos a safra 2018 ainda dentro no ano de 2017).
 // 18/01/2018 - Robert - Passa a bloquear acesso via funcao SoftLock() e nao mais Semaforo().
 // 08/01/2019 - Robert - Ajustes na geracao do D1_LOTECTL para tratar nao conformidades.
@@ -33,6 +33,8 @@
 // 10/02/2020 - Robert - Desabilitada altercao de parametros para 'contabiliza online=nao'.
 // 20/02/2020 - Robert - Desabilitada gravacao do ZF_IDSZ9 no D1_LOTEFOR (cadastros estao desatualizados, nao ajuda em nada. Vai ser passado para NaWeb)
 // 01/07/2020 - Robert - Calculo de frete passa a ser em funcao separada, para facilitar posteriores recalculos.
+// 04/01/2021 - Robert - Ajustes diversos safra 2021
+// 11/01/2021 - Robert - Ajustes diversos safra 2021
 //
 
 // ------------------------------------------------------------------------------------
@@ -81,6 +83,7 @@ User Function va_rusN ()
 	local _sCondPg   := ''
 //	private _oAssoc  := NIL
 	local _oAssocN   := NIL
+	private _aParPgSaf := {}  // Parcelas pre calculadas. Deixar PRIVATE para ser lida pelo ponto de entrada MTCOLSE2().
 
 	u_Log2 ('info', 'Iniciando ' + procname ())
 	
@@ -330,6 +333,13 @@ User Function va_rusN ()
 			u_help ("Nao ha definicao de grupo para pagamento.",, .T.)
 			_lContinua = .F.
 		else
+			// Prepara valores e datas pas parcelas do financeiro, para ser lida pelo P.E. MTColSE2
+			_aParPgSaf := aclone (_RegrasPG (_sGrpPgSaf))
+			if len (_aParPgSaf) == 0
+				_lContinua = .F.
+			endif
+			_sCond = '801'
+			/*
 			if _sGrpPgSaf == 'A'
 				_sCondPg = "815"
 			elseif _sGrpPgSaf == 'B'
@@ -337,6 +347,7 @@ User Function va_rusN ()
 			elseif _sGrpPgSaf == 'C'
 				_sCondPg = "817"
 			endif
+			*/
 		endif
 	endif
 	U_Log2 ('info', 'Grupo para pagamento: ' + _sGrpPgSaf)
@@ -389,7 +400,7 @@ User Function va_rusN ()
 					_lContinua = .F.
 					exit
 				else
-					if _aCadVitic [_nVitic, .CadVitSafrVit] < sze -> ze_safra
+					if val (_aCadVitic [_nVitic, .CadVitSafrVit]) < val (sze -> ze_safra) - 1
 						u_help ("Cadastro viticola consta como renovado para a safra " + _aCadVitic [_nVitic, .CadVitSafrVit])
 						_lContinua = .F.
 						exit
@@ -717,7 +728,7 @@ User Function va_rusN ()
 return
 
 
-
+/*
 // --------------------------------------------------------------------------
 // Gera entrada na conta corrente do associado, com base nos titulos gerados no financeiro.
 static function _GravaSZI ()
@@ -795,7 +806,7 @@ static function _GravaSZI ()
 	(_sAliasQ) -> (dbclosearea ())
 	dbselectarea ("SZE")
 return
-
+*/
 
 
 // --------------------------------------------------------------------------
@@ -919,3 +930,52 @@ static function _ValRegraP (_sGrpPgSaf, _sCondPg, _sSafPag)
 		endif
 	endif
 return _lRetRegPg
+
+
+/*
+// --------------------------------------------------------------------------
+// Monta variaveis com as regras de pagamento, a serem usadas no P.E. MTCOLSE2.
+static function _RegrasPG (_sGrpPgSaf, _nVlUva, _nVlFrete)
+	local _sError     := ''
+	local _sWarning   := ''
+	local _sXMLFech   := ''
+	local _nRegraPag  := 0
+	local _oAssocCP   := NIL
+	local _aRetParPg  := {
+	local _nParcPg    := 0
+	local _aRegraPag  := {}
+	private _oXMLFech := NIL  // Precisa ser do tipo PRIVATE senao a funcao XmlParser() nao funciona... vai entender.
+
+	// Aqui nao preciso de um associado especifico... preciso apenas ler as regras de pagamento.
+	_oAssocCP = ClsAssoc():New ('000161', '01')
+	_sXmlFech = _oAssocCP:FechSafra (_sSafPag)
+	U_Log2 ('debug', _sXmlFech)
+	
+	// Converte de texto para XML
+	_oXMLFech := XmlParser (_sXmlFech, "_", @_sError, @_sWarning)
+	if ! empty (_sError) .or. ! empty (_sWarning)
+		u_help ("Erro ao decodificar retorno do XML de regras de pagamento para esta safra: " + _sError + _sWarning,, .t.)
+	else
+		// Verifica se tem este tipo de tag no XML
+		if Type('_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem') != 'A'
+			u_help ('Nao encontrei regras de pagamento para esta safra.',, .T.)
+		else
+			for _nRegraPag = 1 to len (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem)
+				if _oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_grupo:TEXT == _sGrpPgSaf
+					_aRetParPg [1, 1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc01:TEXT)
+					_aRetParPg [2, 1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc02:TEXT)
+					_aRetParPg [3, 1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc03:TEXT)
+					_aRetParPg [4, 1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc04:TEXT)
+					_aRetParPg [5, 1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc05:TEXT)
+					_aRetParPg [6, 1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc06:TEXT)
+					_aRetParPg [7, 1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc07:TEXT)
+					_aRetParPg [8, 1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc08:TEXT)
+					_aRetParPg [9, 1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc09:TEXT)
+					_aRetParPg [10, 1] = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc10:TEXT)
+					_aRetParPg [11, 1] = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc11:TEXT)
+				endif
+			next
+		endif
+	endif
+return _aRetParPg
+*/
