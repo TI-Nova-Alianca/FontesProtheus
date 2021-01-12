@@ -35,6 +35,7 @@ static function _AtuSZI ()
 		szi -> (dbsetorder (2))  // ZI_FILIAL+ZI_ASSOC+ZI_LOJASSO+ZI_SEQ
 		if szi -> (dbseek (xfilial ("SZI") + substr (se2 -> e2_vachvex, 4), .F.))
 
+			// Regrava chave externa do SE5, quando necessario (algumas rotinas anteriores jah fazem isso).
 			// Arquivo SE5 vem, algumas vezes, desposicionado. Robert, 20/12/2016.
 			_oSQL := ClsSQL ():New ()
 			_oSQL:_sQuery := ""
@@ -49,9 +50,9 @@ static function _AtuSZI ()
 			_oSQL:_sQuery +=   " AND SE5.E5_PARCELA = '" + se2 -> e2_parcela + "'"
 			_oSQL:_sQuery +=   " AND SE5.E5_TIPO    = '" + se2 -> e2_tipo    + "'"
 			_oSQL:_sQuery +=   " AND SE5.E5_VACHVEX = ''"
-//			_oSQL:Log ()
+			//_oSQL:Log ()
 			_nRegSE5 = _oSQL:RetQry ()
-//			u_log ('reg se5:', _nRegSE5)
+			// u_log2 ('debug', 'Recno encontrado no SE5 para atualizar a baixa:' + cvaltochar (_nRegSE5))
 			if _nRegSE5 > 0
 				se5 -> (dbgoto (_nRegSE5))
 //				u_log ('Vou atualizar SE5')
@@ -61,8 +62,8 @@ static function _AtuSZI ()
 				se5 -> e5_vachvex = se2 -> e2_vachvex
 				SE5 -> E5_VAUSER   := alltrim(cUserName)
 				msunlock ()
-			else
-				u_log (procname () + ': Nao encontrei SE5')
+			//else
+			//	u_log2 ('aviso', procname (1) + ': Nao encontrei SE5')
 			endif
 				
 		
@@ -74,3 +75,4 @@ static function _AtuSZI ()
 
 	endif
 return
+

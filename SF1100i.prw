@@ -3,7 +3,14 @@
 // Data:      05/06/2008
 // Descricao: P.E. apos a gravacao do SF1 na NF de entrada.
 //            Criado, inicialmente, para tratamento de titulos de substituicao tributaria.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #Ponto de entrada executado apos a gravacao do arquivo SF1, na NF de entrada.
+// #PalavasChave      #ponto_de_entrada #nota_de_entrada
+// #TabelasPrincipais #SF1 #SD1 #SE2
+// #Modulos           #FIS #EST
+
 // Historico de alteracoes:
 // 04/09/2008 - Robert  - Gravacao de dados adicionais no arquivo ZZ4.
 // 18/09/2008 - Robert  - Revisao rotina gravacao titulo NCC ref. ST.
@@ -91,7 +98,9 @@
 // 27/06/2019 - Andre   - Ajustado query de notas de devolução que vão para Mercanet
 // 03/01/2020 - Robert  - Ajuste msg. placa veiculo e NF produtor nos dados adicionais.
 // 30/01/2020 - Robert  - Melhorados logs (tentativa verificar bloqueio notas safra).
+// 11/01/2021 - Robert  - Recalcula datas de vencimento de parcelas de notas de safra (este ano vamos fazer todas como 'compra').
 //
+
 // --------------------------------------------------------------------------
 #include "rwmake.ch"
 
@@ -482,7 +491,7 @@ static function _AjSE2 ()
 			enddo
 		endif
 	endif
-/*
+
 	// Se for uma nota de compra de uva (em 2021 jah vamos gerar contranotas de compra em vez de 'entrada'), ajusta vencimentos.
 	if sf1 -> f1_tipo == "N" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) .and. IsInCallStack ("U_VA_RUS")
 		U_Log2 ('info', 'Ajustando datas de vencimento dos titulos de nota de compra de safra.')
@@ -550,7 +559,7 @@ static function _AjSE2 ()
 			se2 -> (dbskip ())
 		enddo
 	endif
-*/
+
 return
 
 

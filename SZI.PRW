@@ -54,7 +54,9 @@
 // 13/08/2020 - Cláudia - Ajustado o valor das consultas de faturas. GLPI: 8255
 // 16/10/2020 - Robert  - Baixa de titulos: Busca contas contabeis parra TM=29 iguais as do TM=01.
 // 23/10/2020 - Claudia - Ajuste de visualização do cadastro de fornecedores. GLPI: 8683
+// 11/01/2021 - Robert  - Melhorada mes. na rotina de transferencia de saldo para outra filial.
 //
+
 // --------------------------------------------------------------------------------------------------
 #include "colors.ch"
 #Include "Protheus.ch"
@@ -1143,7 +1145,7 @@ User Function SZIT (_sFilDest)
 		_oCtaCorrT:FilDest = _sFilDest
 		_oCtaCorrT:Origem  = FunName ()
 		if ! _oCtaCorrT:TransFil (_nValor)
-			u_help ("A transferencia para outra filial nao foi possivel:" + chr (13) + char (10) + _oCtaCorrT:UltMsg)
+			u_help ("A transferencia para outra filial nao foi possivel. " + _oCtaCorrT:UltMsg,, .T.)
 		endif
 		CursorArrow ()
 	endif

@@ -20,7 +20,7 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '01' modulo '05'
+		prepare environment empresa '01' filial '01' modulo '06'
 		private cModulo   := 'FAT'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -81,6 +81,143 @@ static function _AndaLogo ()
 	u_help ('Nada definido.')
 	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
 return
+
+/*
+	_sGrpPgSaf = 'A'
+	_sCondPg = '815'
+	_ValRegraP (_sGrpPgSaf, _sCondPg, '2021')
+
+	_sGrpPgSaf = 'B'
+	_sCondPg = '816'
+	_ValRegraP (_sGrpPgSaf, _sCondPg, '2021')
+
+	_sGrpPgSaf = 'C'
+	_sCondPg = '817'
+	_ValRegraP (_sGrpPgSaf, _sCondPg, '2021')
+return
+
+// --------------------------------------------------------------------------
+// Consiste regra de pagamento com a condicao a ser usada na geracao da nota.
+static function _ValRegraP (_sGrpPgSaf, _sCondPg, _sSafPag)
+	local _sError     := ''
+	local _sWarning   := ''
+	local _sXMLFech   := ''
+	local _nRegraPag  := 0
+	local _oAssocCP   := NIL
+	local _lRetRegPg  := .T.
+	local _oSQL       := NIL
+	local _nParcPg    := 0
+	local _aRegraPag  := {}
+	static _aRegraA   := {}
+	static _aRegraB   := {}
+	static _aRegraC   := {}
+	private _oXMLFech := NIL  // Precisa ser do tipo PRIVATE senao a funcao XmlParser() nao funciona... vai entender.
+
+	// Vou usar uma variavel estatica para nao ficar lendorepetidamente, pois, em tese, essas
+	// regras de pagamento nao devem ser alteradas durante a safra.
+	if len (_aRegraA) == 0 .or. len (_aRegraB) == 0 .or. len (_aRegraC) == 0
+		_aRegraA = {0,0,0,0,0,0,0,0,0,0,0}
+		_aRegraB = {0,0,0,0,0,0,0,0,0,0,0}
+		_aRegraC = {0,0,0,0,0,0,0,0,0,0,0}
+		_oAssocCP = ClsAssoc():New ('000161', '01')  // Aqui nao preciso de um associado especifico... preciso apenas ler as regras de pagamento.
+		_sXmlFech = _oAssocCP:FechSafra (_sSafPag)
+		U_Log2 ('debug', _sXmlFech)
+		// Converte de texto para XML
+		_oXMLFech := XmlParser (_sXmlFech, "_", @_sError, @_sWarning)
+		if ! empty (_sError) .or. ! empty (_sWarning)
+			u_help ("Erro ao decodificar retorno: " + _sError + _sWarning,, .t.)
+		endif
+		// Verifica se tem este tipo de tag no XML
+		if Type('_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem') != 'A'
+			u_help ('Nao foi possivel ler as regras de pagamento para esta safra.',, .T.)
+			_lRetRegPg = .F.
+		else
+			for _nRegraPag = 1 to len (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem)
+				if _oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_grupo:TEXT == 'A'
+					_aRegraA [1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc01:TEXT)
+					_aRegraA [2]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc02:TEXT)
+					_aRegraA [3]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc03:TEXT)
+					_aRegraA [4]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc04:TEXT)
+					_aRegraA [5]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc05:TEXT)
+					_aRegraA [6]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc06:TEXT)
+					_aRegraA [7]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc07:TEXT)
+					_aRegraA [8]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc08:TEXT)
+					_aRegraA [9]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc09:TEXT)
+					_aRegraA [10] = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc10:TEXT)
+					_aRegraA [11] = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc11:TEXT)
+				endif
+				if _oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_grupo:TEXT == 'B'
+					_aRegraB [1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc01:TEXT)
+					_aRegraB [2]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc02:TEXT)
+					_aRegraB [3]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc03:TEXT)
+					_aRegraB [4]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc04:TEXT)
+					_aRegraB [5]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc05:TEXT)
+					_aRegraB [6]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc06:TEXT)
+					_aRegraB [7]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc07:TEXT)
+					_aRegraB [8]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc08:TEXT)
+					_aRegraB [9]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc09:TEXT)
+					_aRegraB [10] = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc10:TEXT)
+					_aRegraB [11] = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc11:TEXT)
+				endif
+				if _oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_grupo:TEXT == 'C'
+					_aRegraC [1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc01:TEXT)
+					_aRegraC [2]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc02:TEXT)
+					_aRegraC [3]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc03:TEXT)
+					_aRegraC [4]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc04:TEXT)
+					_aRegraC [5]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc05:TEXT)
+					_aRegraC [6]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc06:TEXT)
+					_aRegraC [7]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc07:TEXT)
+					_aRegraC [8]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc08:TEXT)
+					_aRegraC [9]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc09:TEXT)
+					_aRegraC [10] = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc10:TEXT)
+					_aRegraC [11] = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc11:TEXT)
+				endif
+			next
+		endif
+	endif
+	if _lRetRegPg
+		if _sGrpPgSaf == 'A'
+			_aRegraPag = aclone (_aRegraA)
+		elseif _sGrpPgSaf == 'B'
+			_aRegraPag = aclone (_aRegraB)
+		elseif _sGrpPgSaf == 'C'
+			_aRegraPag = aclone (_aRegraC)
+		endif
+	endif
+
+	// Compara com o cadastro da condicao de pagamento
+	if _lRetRegPg .and. len (_aRegraPag) > 0
+		U_Log2 ('debug', _aRegraPag)
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT COUNT (*)"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE4") + " SE4"
+		_oSQL:_sQuery += " WHERE SE4.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SE4.E4_FILIAL  = '" + xfilial ("SE4") + "'"
+		_oSQL:_sQuery +=   " AND SE4.E4_CODIGO  = '" + _sCondPg + "'"
+		_oSQL:_sQuery +=   " AND SE4.E4_TIPO    = 'B'"
+		for _nParcPg = 1 to len (_aRegraPag)
+			if _aRegraPag [_nParcPg] != 0
+				_oSQL:_sQuery +=   " AND EXISTS (SELECT *"
+				_oSQL:_sQuery +=                 " FROM " + RetSQLName ("SEC") + " SEC"
+				_oSQL:_sQuery +=                " WHERE SEC.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=                  " AND SEC.EC_FILIAL  = '" + xfilial ("SE4") + "'"
+				_oSQL:_sQuery +=                  " AND SEC.EC_CODIGO  = SE4.E4_CODIGO"
+				_oSQL:_sQuery +=                  " AND SEC.EC_ITEM    = '" + strzero (_nParcPg, 2) + "'"
+				_oSQL:_sQuery +=                  " AND SEC.EC_RATEIO  = "  + cvaltochar (_aRegraPag [_nParcPg])
+				_oSQL:_sQuery +=               ")"
+			endif
+		next
+		_oSQL:Log ()
+		if _oSQL:RetQry (1, .F.) != 1
+			u_help ("Configuracao da condicao de pagamento '" + _sCondPg + ;
+			        "' incompativel com a regra de pagamento para uvas do grupo '" + _sGrpPgSaf + ;
+					"'. A condicao deve ser do tipo B e as parcelas devem ser distribuidas de forma a compor os mesmos percentuais a serem usados no pagamento da safra. As datas de vencimento serao recalculadas via ponto de entrada SF1100I.",, .t.)
+			_lRetRegPg = .F.
+		endif
+	endif
+return _lRetRegPg
+*/
 /*
 	// Inicializa custo em partes
 	IF ! U_MsgNoYes ("Confirma inicializacao do custo em partes?")

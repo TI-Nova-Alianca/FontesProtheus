@@ -9,6 +9,7 @@
 // 23/01/2020 - Robert - Gera aviso para agronomia quando falta cadastro.
 // 01/07/2020 - Robert - Calcula frete independente de distancia - GLPI 8131.
 // 06/01/2021 - Robert - Busca as distancias na tabela CCPropriedade do NaWeb e nao mais no ZA8.
+// 11/01/2021 - Robert - Manda e-mail de aviso quando nao tiver distancia cadastrada.
 //
 
 // ------------------------------------------------------------------------------------
@@ -86,10 +87,16 @@ User Function FrtSaf21 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor)
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
 			_oAviso:Destinatar = 'grpAgronomia'
-			_oAviso:Texto      = "Sem distancias cadastradas na propriedade " + _sCadVit + " para calculo de frete."
+		//	_oAviso:Texto      = "Sem distancias cadastradas na propriedade " + _sCadVit + " para calculo de frete."
+			_oAviso:Texto      = "Distancia nao informada entre a propriedade " + _sCadVit + " e a filial " + _sFilDest + ". Frete de safra nao pode ser calculado."
 			_oAviso:Origem     = procname ()
 			_oAviso:CodAviso   = '011'
-			_oAviso:Grava ()
+		//	_oAviso:Grava ()
+			// como ainda nao estamos usando os avisos, vou mandar por e-mail
+			U_ZZUNU ({'075'}, ;  // 075=agronomia
+		          "Sem distancias prop.rural " + _sCadVit, ;
+		         "Distancia nao informada entre a propriedade " + _sCadVit + " e a filial " + _sFilDest + ". Frete de safra nao pode ser calculado.")
+
 		endif
 	endif
 	u_log2 ('info', '[' + procname () + '] Distancia Km..: ' + cvaltochar (_nDist))

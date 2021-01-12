@@ -57,6 +57,7 @@ User Function va_rusN ()
 	local _aAutoSF1  := {}
 	local _aLinha    := {}
 	local _sVitic    := ""
+	local _sSivibe   := ""
 	local _sNaoConf  := ""
 	local _nNaoConf  := 0
 	local _sAlmox    := ""
@@ -77,7 +78,9 @@ User Function va_rusN ()
 	local _sTpForUva := ""
 	local _nVitic    := 0
 	local _sGrpPgSaf := ''
-	private _oAssoc  := NIL
+	local _sCondPg   := ''
+//	private _oAssoc  := NIL
+	local _oAssocN   := NIL
 
 	u_Log2 ('info', 'Iniciando ' + procname ())
 	
@@ -137,35 +140,14 @@ User Function va_rusN ()
 		endif
 	endif
 
-	/* Agora tenho a variavel _sTpForUva
-	// Deve ser producao propria, associado ou ex-associado (pode ter entregue alguma carga e solicitado desligamento).
-	if _lContinua
-		if sze -> ze_assoc == '001369' .and. sze -> ze_lojasso == '01'
-			//u_log ('eh prod.propria livramento.')
-		elseif sze -> ze_assoc == '012373' .and. sze -> ze_lojasso == '01' .and. sze -> ze_safra $ '2019/2020'
-			u_log ('Trata-se do Vinhedos da Quinta (negociacao especifica em 2019 E 2020).')
-		elseif sze -> ze_assoc $ '012791/012792' .and. sze -> ze_safra $ '2020'
-			u_log ('Trata-se de LUIZ PEDRO DUARTE ESCOSTEGUY ou SINVAL CONSTANCIO DE ALMEIDA FERNANDES (negociacao especifica Livramento em 2020).')
-		elseif sze -> ze_coop == '000026' .and. sze -> ze_lojasso == '01' .and. sze -> ze_safra == '2019'
-			u_log ('Trata-se de recebimento de uva de associados da Garibaldi (negociacao especifica em 2019).')
-		else
-			_oAssoc := ClsAssoc():New (sze -> ze_assoc, sze -> ze_lojasso)
-			if valtype (_oAssoc) != "O" .or. (!_oAssoc:EhSocio (dDataBase) .and. empty (_oAssoc:DtSaida (dDataBase)))  
-				u_help ("Fornecedor '" + zz9 -> zz9_fornec + "/" + zz9 -> zz9_loja + "' nao e' associado e nem ex-associado.")
-				_lContinua = .F.
-			endif
-		endif
-	endif
-	*/
-	
 	// Algumas validacoes adicionais quando associado.
 	if _lContinua .and. _sTpForUva == 'A'
-		_oAssoc := ClsAssoc():New (sze -> ze_assoc, sze -> ze_lojasso)
-		if valtype (_oAssoc) != "O" .or. (!_oAssoc:EhSocio (dDataBase) .and. empty (_oAssoc:DtSaida (dDataBase)))  
+		_oAssocN := ClsAssoc():New (sze -> ze_assoc, sze -> ze_lojasso)
+		if valtype (_oAssocN) != "O" .or. (!_oAssocN:EhSocio (dDataBase) .and. empty (_oAssocN:DtSaida (dDataBase)))  
 			u_help ("Fornecedor '" + zz9 -> zz9_fornec + "/" + zz9 -> zz9_loja + "' nao e' associado e nem ex-associado.")
 		else
-			if ! empty (_oAssoc:DtFalecim)
-				u_help ("Associado consta como falecido em " + dtoc (_oAssoc:DtFalecim))
+			if ! empty (_oAssocN:DtFalecim)
+				u_help ("Associado consta como falecido em " + dtoc (_oAssocN:DtFalecim))
 				_lContinua = .F.
 			endif
 		endif
@@ -336,8 +318,8 @@ User Function va_rusN ()
 			.and. szf -> zf_carga  == sze -> ze_carga
 			
 			// Se tem produto de menor valor definido, usa-o (carga com mistura). Senao, eh por que tem apenas 1 item na carga.
-			U_Log2 ('info', szf -> zf_produto)
-			U_Log2 ('info', _sMenorVlr)
+			U_Log2 ('info', 'zf_produto: ' + szf -> zf_produto)
+			U_Log2 ('info', '_sMenorVlr: ' + _sMenorVlr)
 			if szf -> zf_produto == _sMenorVlr .or. empty (_sMenorVlr)
 				_sGrpPgSaf = U_VA_RusGP (szf -> zf_produto, szf -> zf_conduc)
 				exit
@@ -347,7 +329,21 @@ User Function va_rusN ()
 		if empty (_sGrpPgSaf)
 			u_help ("Nao ha definicao de grupo para pagamento.",, .T.)
 			_lContinua = .F.
+		else
+			if _sGrpPgSaf == 'A'
+				_sCondPg = "815"
+			elseif _sGrpPgSaf == 'B'
+				_sCondPg = "816"
+			elseif _sGrpPgSaf == 'C'
+				_sCondPg = "817"
+			endif
 		endif
+	endif
+	U_Log2 ('info', 'Grupo para pagamento: ' + _sGrpPgSaf)
+
+	// Confere se a condicao de pagamento a ser usada compoe o mesmo parcelamento definido no grupo de pagamento
+	if _lContinua
+		_lContinua = _ValRegraP (_sGrpPgSaf, _sCondPg, sze -> ze_safra)
 	endif
 
 	// Calcula valor do frete a ser incluido na nota. Roda em funcao separada por que eh comum precisar recalcular depois.
@@ -360,9 +356,10 @@ User Function va_rusN ()
 	if _lContinua
 		if type ('_aCadVitic') != 'A'
 			_aCadVitic = aclone (U_VA_RusCV (sze -> ze_assoc, sze -> ze_lojasso))
-			if len (_aCadVitic) == 0
-				_lContinua = .F.
-			endif
+		endif
+		if len (_aCadVitic) == 0
+			u_help ("Cadastro viticola vazio!",, .T.)
+			_lContinua = .F.
 		endif
 	endif
 
@@ -489,6 +486,11 @@ User Function va_rusN ()
 				_sVitic += iif (empty (_sVitic), '', ',') + alltrim (szf -> zf_cadviti)
 			endif
 
+			// Pode haver mais de um codigo SIVIBE, por isso alimenta item a item.
+			if ! alltrim (szf -> zf_cadviti) $ _sSivibe
+				_sSivibe += iif (empty (_sSivibe), '', ',') + alltrim (szf -> zf_sivibe)
+			endif
+
 			// Acumula frete previamente calculado nos itens.
 			_nVlFrete += szf -> zf_valfret
 
@@ -563,7 +565,16 @@ User Function va_rusN ()
 			_sMsgContr += "Mist.varied:precificando por '" + alltrim (_sMenorVlr) + "';"
 		endif
 		_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Peso tara:" + cvaltochar (sze -> ze_pesotar) + 'Kg'
-		_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Cad.vitic:" + _sVitic
+
+
+	//	_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Cad.vitic:" + _sVitic
+		if empty (_sSivibe)  // Se tiver codigo SIVIBE, eu prefiro.
+			_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Cad.vitic:" + _sVitic
+		else
+			_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "SIVIBE:" + _sSivibe
+		endif
+
+
 		if ! empty (_sNaoConf)
 			_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "N.conform:" + _sNaoConf
 		endif
@@ -646,13 +657,7 @@ User Function va_rusN ()
 //		AADD( _aAutoSF1, { "F1_FRETE"    , _nVlFrete,       Nil})
 		AADD( _aAutoSF1, { "F1_VAFLAG"   , 'G',             Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I. Indica 'nota ja gerada' para a rotina de manut. XML
 		AADD( _aAutoSF1, { "F1_VAGPSAF"  , _sGrpPgSaf,      Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
-		if _sGrpPgSaf == 'A'
-			AADD( _aAutoSF1, {"F1_COND"     , "815",           Nil})
-		elseif _sGrpPgSaf == 'B'
-			AADD( _aAutoSF1, {"F1_COND"     , "816",           Nil})
-		elseif _sGrpPgSaf == 'C'
-			AADD( _aAutoSF1, {"F1_COND"     , "817",           Nil})
-		endif
+		AADD( _aAutoSF1, { "F1_COND"     , _sCondPg,        Nil})
 
 		// Ordena campos cfe. SX3.
 		_aAutoSF1 = aClone (U_OrdAuto (_aAutoSF1))
@@ -704,7 +709,7 @@ User Function va_rusN ()
 
 		// Atualiza conta corrente associados
 		if _sTpForUva == 'A'
-	//		processa ({|| _GravaSZI ()})
+// ainda nao 100%			processa ({|| _GravaSZI ()})
 		endif
 
 	endif
@@ -713,6 +718,7 @@ return
 
 
 
+// --------------------------------------------------------------------------
 // Gera entrada na conta corrente do associado, com base nos titulos gerados no financeiro.
 static function _GravaSZI ()
 	local _sAliasQ   := ''
@@ -736,8 +742,11 @@ static function _GravaSZI ()
 	_oSQL:_sQuery +=    " AND E2_FILIAL  = '" + xfilial ("SE2") + "'"
 	_oSQL:_sQuery +=  " ORDER BY E2_PARCELA"
 	_oSQL:Log ()
-	_sAliasQ = _oSQL:Qry2Trb (.F.)
+	_sAliasQ = _oSQL:Qry2Trb (.T.)
+	procregua ((_sAliasQ) -> (reccount ()))
+	(_sAliasQ) -> (dbgotop ())
 	do while ! (_sAliasQ) -> (eof ())
+		incproc ('Gravando cta.corr.assoc.')
 		//u_log ('Filial:' + (_sAliasQ) -> e2_filial, 'Forn:' + (_sAliasQ) -> e2_fornece + '/' + (_sAliasQ) -> e2_loja + ' ' + (_sAliasQ) -> e2_nomfor, 'Emis:', (_sAliasQ) -> e2_emissao, 'Vcto:', (_sAliasQ) -> e2_vencrea, 'Doc:', (_sAliasQ) -> e2_num+'/'+(_sAliasQ) -> e2_prefixo, 'Tipo:', (_sAliasQ) -> e2_tipo, 'Valor: ' + transform ((_sAliasQ) -> e2_valor, "@E 999,999,999.99"), 'Saldo: ' + transform ((_sAliasQ) -> e2_saldo, "@E 999,999,999.99"), (_sAliasQ) -> e2_hist)
 
 		_oCtaCorr := ClsCtaCorr():New ()
@@ -748,7 +757,7 @@ static function _GravaSZI ()
 		_oCtaCorr:Valor    = (_sAliasQ) -> e2_valor
 		_oCtaCorr:SaldoAtu = (_sAliasQ) -> e2_saldo
 		_oCtaCorr:Usuario  = cUserName
-		_oCtaCorr:Histor   = 'COMPRA SAFRA ' + _sSafra + " GRP." + sf1 -> f1_vagpsaf
+		_oCtaCorr:Histor   = 'COMPRA SAFRA ' + sf1 -> f1_vasafra + " GRP." + sf1 -> f1_vagpsaf
 		_oCtaCorr:MesRef   = strzero(month(_oCtaCorr:DtMovto),2)+strzero(year(_oCtaCorr:DtMovto),4)
 		_oCtaCorr:Doc      = (_sAliasQ) -> e2_num
 		_oCtaCorr:Serie    = (_sAliasQ) -> e2_prefixo
@@ -765,7 +774,17 @@ static function _GravaSZI ()
 					se2 -> e2_vachvex = _oCtaCorr:ChaveExt ()
 					msunlock ()
 				endif
+
+				// Se gerei conta corrente numa filial, preciso transferir esse lcto para a matriz, pois todos os pagamentos sao centralizados.
+				if sf1 -> f1_filial != '01' //.and. 'TESTE' $ upper (getenvserver ())  // por enqto apenas na base teste
+					_oCtaCorr:FilDest = '01'
+					_oCtaCorr:Origem  = FunName ()
+					if ! _oCtaCorr:TransFil (_oCtaCorr:Valor)
+						u_help ("A transferencia para outra filial nao foi possivel. " + _oCtaCorrT:UltMsg,, .T.)
+					endif
+				endif
 			endif
+
 		else
 			U_help ("Gravacao do SZI nao permitida na atualizacao da conta corrente para o associado '" + (_sAliasQ) -> e2_fornece + '/' + (_sAliasQ) -> e2_loja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
 			_lContinua = .F.
@@ -776,3 +795,127 @@ static function _GravaSZI ()
 	(_sAliasQ) -> (dbclosearea ())
 	dbselectarea ("SZE")
 return
+
+
+
+// --------------------------------------------------------------------------
+// Consiste regra de pagamento com a condicao a ser usada na geracao da nota.
+static function _ValRegraP (_sGrpPgSaf, _sCondPg, _sSafPag)
+	local _sError     := ''
+	local _sWarning   := ''
+	local _sXMLFech   := ''
+	local _nRegraPag  := 0
+	local _oAssocCP   := NIL
+	local _lRetRegPg  := .T.
+	local _oSQL       := NIL
+	local _nParcPg    := 0
+	local _aRegraPag  := {}
+	static _aRegraA   := {}
+	static _aRegraB   := {}
+	static _aRegraC   := {}
+	private _oXMLFech := NIL  // Precisa ser do tipo PRIVATE senao a funcao XmlParser() nao funciona... vai entender.
+
+	// Vou usar uma variavel estatica para nao ficar lendorepetidamente, pois, em tese, essas
+	// regras de pagamento nao devem ser alteradas durante a safra.
+	if len (_aRegraA) == 0 .or. len (_aRegraB) == 0 .or. len (_aRegraC) == 0
+		_aRegraA = {0,0,0,0,0,0,0,0,0,0,0}
+		_aRegraB = {0,0,0,0,0,0,0,0,0,0,0}
+		_aRegraC = {0,0,0,0,0,0,0,0,0,0,0}
+		_oAssocCP = ClsAssoc():New ('000161', '01')  // Aqui nao preciso de um associado especifico... preciso apenas ler as regras de pagamento.
+		_sXmlFech = _oAssocCP:FechSafra (_sSafPag)
+		U_Log2 ('debug', _sXmlFech)
+		// Converte de texto para XML
+		_oXMLFech := XmlParser (_sXmlFech, "_", @_sError, @_sWarning)
+		if ! empty (_sError) .or. ! empty (_sWarning)
+			u_help ("Erro ao decodificar retorno: " + _sError + _sWarning,, .t.)
+		endif
+		// Verifica se tem este tipo de tag no XML
+		if Type('_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem') != 'A'
+			u_help ('Nao foi possivel ler as regras de pagamento para esta safra.',, .T.)
+			_lRetRegPg = .F.
+		else
+			for _nRegraPag = 1 to len (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem)
+				if _oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_grupo:TEXT == 'A'
+					_aRegraA [1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc01:TEXT)
+					_aRegraA [2]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc02:TEXT)
+					_aRegraA [3]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc03:TEXT)
+					_aRegraA [4]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc04:TEXT)
+					_aRegraA [5]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc05:TEXT)
+					_aRegraA [6]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc06:TEXT)
+					_aRegraA [7]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc07:TEXT)
+					_aRegraA [8]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc08:TEXT)
+					_aRegraA [9]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc09:TEXT)
+					_aRegraA [10] = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc10:TEXT)
+					_aRegraA [11] = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc11:TEXT)
+				endif
+				if _oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_grupo:TEXT == 'B'
+					_aRegraB [1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc01:TEXT)
+					_aRegraB [2]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc02:TEXT)
+					_aRegraB [3]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc03:TEXT)
+					_aRegraB [4]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc04:TEXT)
+					_aRegraB [5]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc05:TEXT)
+					_aRegraB [6]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc06:TEXT)
+					_aRegraB [7]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc07:TEXT)
+					_aRegraB [8]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc08:TEXT)
+					_aRegraB [9]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc09:TEXT)
+					_aRegraB [10] = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc10:TEXT)
+					_aRegraB [11] = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc11:TEXT)
+				endif
+				if _oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_grupo:TEXT == 'C'
+					_aRegraC [1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc01:TEXT)
+					_aRegraC [2]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc02:TEXT)
+					_aRegraC [3]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc03:TEXT)
+					_aRegraC [4]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc04:TEXT)
+					_aRegraC [5]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc05:TEXT)
+					_aRegraC [6]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc06:TEXT)
+					_aRegraC [7]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc07:TEXT)
+					_aRegraC [8]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc08:TEXT)
+					_aRegraC [9]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc09:TEXT)
+					_aRegraC [10] = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc10:TEXT)
+					_aRegraC [11] = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc11:TEXT)
+				endif
+			next
+		endif
+	endif
+	if _lRetRegPg
+		if _sGrpPgSaf == 'A'
+			_aRegraPag = aclone (_aRegraA)
+		elseif _sGrpPgSaf == 'B'
+			_aRegraPag = aclone (_aRegraB)
+		elseif _sGrpPgSaf == 'C'
+			_aRegraPag = aclone (_aRegraC)
+		endif
+	endif
+
+	// Compara com o cadastro da condicao de pagamento
+	if _lRetRegPg .and. len (_aRegraPag) > 0
+		U_Log2 ('debug', _aRegraPag)
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT COUNT (*)"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE4") + " SE4"
+		_oSQL:_sQuery += " WHERE SE4.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SE4.E4_FILIAL  = '" + xfilial ("SE4") + "'"
+		_oSQL:_sQuery +=   " AND SE4.E4_CODIGO  = '" + _sCondPg + "'"
+		_oSQL:_sQuery +=   " AND SE4.E4_TIPO    = 'B'"
+		for _nParcPg = 1 to len (_aRegraPag)
+			if _aRegraPag [_nParcPg] != 0
+				_oSQL:_sQuery +=   " AND EXISTS (SELECT *"
+				_oSQL:_sQuery +=                 " FROM " + RetSQLName ("SEC") + " SEC"
+				_oSQL:_sQuery +=                " WHERE SEC.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=                  " AND SEC.EC_FILIAL  = '" + xfilial ("SE4") + "'"
+				_oSQL:_sQuery +=                  " AND SEC.EC_CODIGO  = SE4.E4_CODIGO"
+				_oSQL:_sQuery +=                  " AND SEC.EC_ITEM    = '" + strzero (_nParcPg, 2) + "'"
+				_oSQL:_sQuery +=                  " AND SEC.EC_RATEIO  = "  + cvaltochar (_aRegraPag [_nParcPg])
+				_oSQL:_sQuery +=               ")"
+			endif
+		next
+		_oSQL:Log ()
+		if _oSQL:RetQry (1, .F.) != 1
+			u_help ("Configuracao da condicao de pagamento '" + _sCondPg + ;
+			        "' incompativel com a regra de pagamento para uvas do grupo '" + _sGrpPgSaf + ;
+					"'. A condicao deve ser do tipo B e as parcelas devem ser distribuidas de forma a compor os mesmos percentuais a serem usados no pagamento da safra. As datas de vencimento serao recalculadas via ponto de entrada SF1100I.",, .t.)
+			_lRetRegPg = .F.
+		endif
+	endif
+return _lRetRegPg
