@@ -80,7 +80,9 @@ User Function VA_COPPROD()
                             _aProduto [_x, 17]          ,; // 17 VARMAAL
                             _aProduto [_x, 18]          }) // 18 GRUPO TRIBUTARIO
 			
-            U_VA_COPSB1(_aSB1, _sProdOld, _sProdNew, _aRelat)
+            MsAguarde({|| U_VA_COPSB1(_aSB1, _sProdOld, _sProdNew, _aRelat)}, "Aguarde...", "Processando Registros...")
+
+            //U_VA_COPSB1(_aSB1, _sProdOld, _sProdNew, _aRelat)
 			
 		Next
 	Next
@@ -103,7 +105,7 @@ User Function VA_COPSB1(_aSB1, _sProdOld, _sProdNew, _aRelat)
 	oModel:SetValue("SB1MASTER","B1_FILIAL"     ,_aSB1[1, 1] )
 	oModel:SetValue("SB1MASTER","B1_COD"        ,_aSB1[1, 2] )
 	oModel:SetValue("SB1MASTER","B1_DESC"       ,_aSB1[1, 3] )
-	oModel:SetValue("SB1MASTER","B1_TIPO"       ,_aSB1[1, 4] )
+	oModel:SetValue("SB1MASTER","B1_TIPO"       ,"MC"        ) // _aSB1[1, 4] Solicit. por juliana 20210112
 	oModel:SetValue("SB1MASTER","B1_UM"     	,_aSB1[1, 5] )
 	oModel:SetValue("SB1MASTER","B1_LOCPAD" 	,_aSB1[1, 6] )
 	oModel:SetValue("SB1MASTER","B1_LOCALIZ"    ,_aSB1[1, 7] )
@@ -117,8 +119,9 @@ User Function VA_COPSB1(_aSB1, _sProdOld, _sProdNew, _aRelat)
     oModel:SetValue("SB1MASTER","B1_CODLIN"     ,_aSB1[1,15] )
     oModel:SetValue("SB1MASTER","B1_VAMARCM"    ,_aSB1[1,16] )
     oModel:SetValue("SB1MASTER","B1_VARMAAL"    ,_aSB1[1,17] )
-    oModel:SetValue("SB1MASTER","B1_GRTRIB"     ,_aSB1[1,18] )
+    oModel:SetValue("SB1MASTER","B1_GRTRIB"     ,"MC"        ) // _aSB1[1,18]
 
+    MsProcTxt(" Gravando registros...")
 	If oModel:VldData()
 		oModel:CommitData()
 		
@@ -130,6 +133,22 @@ User Function VA_COPSB1(_aSB1, _sProdOld, _sProdNew, _aRelat)
                        "-"           ,; // codigo prod/fornecedor
                        "SB1"         }) // tabela
 
+        // INCLUSÃO DO COMPLEMENTO DO PRODUTO - SB5
+         _oSQL:= ClsSQL ():New ()
+        _oSQL:_sQuery := ""
+        _oSQL:_sQuery += " SELECT B5_COD, B5_CEME, B5_CODZON, B5_MSIDENT"
+        _oSQL:_sQuery += " FROM SB5010 "
+        _oSQL:_sQuery += " WHERE D_E_L_E_T_=''"
+        _oSQL:_sQuery += " AND B5_COD ='" + alltrim(_sProdOld) + "'"
+        _aCompl := aclone (_oSQL:Qry2Array ())
+
+         If len(_aCompl) > 0
+            For _x:= 1 to len(_aCompl)
+                U_VA_CSB5(_aCompl, _x, _sProdNew)
+            Next
+        EndIf
+        // ---------------------------------------------------------------------------------------------------
+        // INCLUSÃO DE PRODUTO X FORNECEDOR
         _oSQL:= ClsSQL ():New ()
         _oSQL:_sQuery := ""
         _oSQL:_sQuery += " SELECT A5_PRODUTO, A5_NOMPROD, A5_FORNECE, A5_LOJA, A5_NOMEFOR, A5_CODPRF, A5_TOLEDIF,"
@@ -229,6 +248,30 @@ User Function VA_COPSA5(_aFornece, _x, _sProdNew, _aRelat)
 
 	oModelo:Destroy()
 
+Return
+//
+// ------------------------------------------------------------------------------------------
+// Realiza a cópia do produto x fornecedor
+User Function VA_CSB5(_aCompl, _x, _sProdNew)
+    Local oModel    := Nil
+
+    //Para utilização da mesma, o modelo de dados chama-se MATA180M e nao MATA180
+    oModel:= FwLoadModel("MATA180")
+    oModel:SetOperation(MODEL_OPERATION_INSERT)
+    oModel:Activate()
+
+    oModel:SetValue("SB5MASTER","B5_COD"     , _sProdNew)
+    oModel:SetValue("SB5MASTER","B5_CEME"    , _aCompl[_x, 2])
+    oModel:SetValue("SB5MASTER","B5_CODZON"  , _aCompl[_x, 3])
+    oModel:SetValue("SB5MASTER","B5_MSIDENT" , _aCompl[_x, 4])
+
+    If oModel:VldData()
+        oModel:CommitData()
+    EndIf
+
+    oModel:DeActivate()
+    oModel:Destroy()
+    oModel := NIL
 Return
 //
 // --------------------------------------------------------------------------
