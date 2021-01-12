@@ -76,11 +76,12 @@ User Function va_rusN ()
 	local _aPrevia   := {}
 	local _aCols     := {}
 	local _nVlFrete  := 0
+	local _nVlrUvas  := 0
 	local _aTpForUva := {}
 	local _sTpForUva := ""
 	local _nVitic    := 0
 	local _sGrpPgSaf := ''
-	local _sCondPg   := ''
+//	local _sCondPg   := ''
 //	private _oAssoc  := NIL
 	local _oAssocN   := NIL
 	private _aParPgSaf := {}  // Parcelas pre calculadas. Deixar PRIVATE para ser lida pelo ponto de entrada MTCOLSE2().
@@ -250,63 +251,17 @@ User Function va_rusN ()
 		endif
 	endif
 
-
 	// Se existe mistura de variedades, precifica pela de menor valor.
 	// Para isso, varre os itens, monta uma lista de codigos distintos e busca o preco de cada um
 	// considerando um grau medio e classificacoes medias. Neste momento nao interessa a classificacao
 	// por que quero saber apenas qual a de menor valor comercial.
 	if _lContinua
-/*
-		u_log2 ('info', 'Verificacao de misturas')
-		_aProdut = {}
-		szf -> (dbsetorder (1))  // filial + safra + carga + item
-		szf -> (dbseek (xfilial ("SZF") + sze -> ze_safra + sze -> ze_carga, .T.))
-		do while _lContinua ;
-			.and. ! szf -> (eof ()) ;
-			.and. szf -> zf_filial == xfilial ("SZF") ;
-			.and. szf -> zf_safra  == sze -> ze_safra ;
-			.and. szf -> zf_carga  == sze -> ze_carga
-
-			if ascan (_aProdut, {|_aVal| _aVal [1] == szf -> zf_produto}) == 0
-				aadd (_aProdut, {szf -> zf_produto, 0, szf -> zf_conduc})
-			endif
-			szf -> (dbskip ())
-		enddo
-		
-		// Se tem apenas um produto, nem perde tempo buscando precos.
-		if len (_aProdut) > 1
-			for _nProdut = 1 to len (_aProdut)
-				if sze -> ze_safra == '2019'
-					_aProdut [_nProdut, 2] = U_PrcUva19 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3])[1]
-				elseif sze -> ze_safra == '2020'
-					_aProdut [_nProdut, 2] = U_PrcUva20 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F.)[5]  // pos.5=preco MOC
-				elseif sze -> ze_safra == '2021'
-					_aProdut [_nProdut, 2] = U_PrcUva21 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[2]  // pos.2=preco de compra
-				else
-					u_help ("Sem tratamento de precificacao para mistura de variedades nesta safra.",, .t.)
-					_lContinua = .F.
-					exit
-				endif
-			next
-			_aProdut = asort (_aProdut,,, {|_x, _y| _x[2] < _y [2]})
-			u_log2 ('info', '_aProdut:')
-			u_log2 ('info', _aProdut)
-			
-			// Elimina produtos com precos iguais.
-			_aAux = {}
-			for _nProdut = 1 to len (_aProdut)
-				if ascan (_aAux, {|_aVal| _aVal [2] = _aProdut [_nProdut, 2]}) == 0
-					aadd (_aAux, aclone (_aProdut [_nProdut]))
-				endif
-			next
-			_aProdut = aclone (_aAux)
-			if len (_aProdut) > 1  // Se ainda sobrou mais de um produto com diferentes precos
-				_sMenorVlr = _aProdut [1, 1]
-				u_log2 ('info', 'produto de menor valor: ' + _sMenorVlr)
-			endif
-		endif
-*/
 		_sMenorVlr = U_VA_RusMV ()
+	endif
+
+	// Calcula valor do frete a ser incluido na nota. Roda em funcao separada por que eh comum precisar recalcular depois da safra.
+	if _lContinua
+		U_VA_RUSCF (.T.)
 	endif
 
 	// Define qual o grupo para pagamento ao qual esta nota deve ser vinculada.
@@ -333,12 +288,6 @@ User Function va_rusN ()
 			u_help ("Nao ha definicao de grupo para pagamento.",, .T.)
 			_lContinua = .F.
 		else
-			// Prepara valores e datas pas parcelas do financeiro, para ser lida pelo P.E. MTColSE2
-			_aParPgSaf := aclone (_RegrasPG (_sGrpPgSaf))
-			if len (_aParPgSaf) == 0
-				_lContinua = .F.
-			endif
-			_sCond = '801'
 			/*
 			if _sGrpPgSaf == 'A'
 				_sCondPg = "815"
@@ -353,15 +302,9 @@ User Function va_rusN ()
 	U_Log2 ('info', 'Grupo para pagamento: ' + _sGrpPgSaf)
 
 	// Confere se a condicao de pagamento a ser usada compoe o mesmo parcelamento definido no grupo de pagamento
-	if _lContinua
-		_lContinua = _ValRegraP (_sGrpPgSaf, _sCondPg, sze -> ze_safra)
-	endif
-
-	// Calcula valor do frete a ser incluido na nota. Roda em funcao separada por que eh comum precisar recalcular depois.
-	if _lContinua
-		_nVlFrete = 0
-		U_VA_RUSCF (.T.)
-	endif
+//	if _lContinua
+//		_lContinua = _ValRegraP (_sGrpPgSaf, _sCondPg, sze -> ze_safra)
+//	endif
 
 	// Gera array com cadastro viticola.
 	if _lContinua
@@ -502,9 +445,6 @@ User Function va_rusN ()
 				_sSivibe += iif (empty (_sSivibe), '', ',') + alltrim (szf -> zf_sivibe)
 			endif
 
-			// Acumula frete previamente calculado nos itens.
-			_nVlFrete += szf -> zf_valfret
-
 			// Lista cada nao conformidade uma unica vez, independente de quantos itens a tenham
 			for _nNaoConf = 1 to 4  // Aumentar aqui se forem criados novos campos.
 				_sDescNC = alltrim (U_RetZX5 ('11', sze -> ze_safra + szf -> &('zf_nconf' + strzero (_nNaoConf, 2)), 'ZX5_11DESC'))
@@ -565,8 +505,18 @@ User Function va_rusN ()
 			// Atualiza array de previsao de nota
 			aadd (_aPrevia, {szf -> zf_produto, _sDescri, szf -> zf_peso, sb1 -> b1_um, szf -> zf_grau, iif (! empty (szf -> zf_prm99), szf -> zf_prm99, szf -> zf_clasABD), _nVlUni})
 
+			// Acumula valores das uvas e do frete, para calcular distribuicao de parcelas.
+			_nVlFrete += szf -> zf_valfret
+			_nVlrUvas += _nVlTot
+
 			szf -> (dbskip ())
 		enddo
+	endif
+
+	// Prepara valores e datas das parcelas do financeiro, para ser lida pelo P.E. MTColSE2
+	_aParPgSaf := aclone (U_VA_RusPP (sze -> ze_safra, _sGrpPgSaf, _nVlrUvas, _nVlFrete))
+	if len (_aParPgSaf) == 0
+		_lContinua = .F.
 	endif
 
 	// Prepara dados adicionais
@@ -668,7 +618,7 @@ User Function va_rusN ()
 //		AADD( _aAutoSF1, { "F1_FRETE"    , _nVlFrete,       Nil})
 		AADD( _aAutoSF1, { "F1_VAFLAG"   , 'G',             Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I. Indica 'nota ja gerada' para a rotina de manut. XML
 		AADD( _aAutoSF1, { "F1_VAGPSAF"  , _sGrpPgSaf,      Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
-		AADD( _aAutoSF1, { "F1_COND"     , _sCondPg,        Nil})
+		AADD( _aAutoSF1, { "F1_COND"     , '801',        Nil})
 
 		// Ordena campos cfe. SX3.
 		_aAutoSF1 = aClone (U_OrdAuto (_aAutoSF1))
@@ -808,7 +758,7 @@ static function _GravaSZI ()
 return
 */
 
-
+/*
 // --------------------------------------------------------------------------
 // Consiste regra de pagamento com a condicao a ser usada na geracao da nota.
 static function _ValRegraP (_sGrpPgSaf, _sCondPg, _sSafPag)
@@ -930,7 +880,7 @@ static function _ValRegraP (_sGrpPgSaf, _sCondPg, _sSafPag)
 		endif
 	endif
 return _lRetRegPg
-
+*/
 
 /*
 // --------------------------------------------------------------------------

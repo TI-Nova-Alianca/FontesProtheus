@@ -10,6 +10,7 @@
 // 01/07/2020 - Robert - Calcula frete independente de distancia - GLPI 8131.
 // 06/01/2021 - Robert - Busca as distancias na tabela CCPropriedade do NaWeb e nao mais no ZA8.
 // 11/01/2021 - Robert - Manda e-mail de aviso quando nao tiver distancia cadastrada.
+// 12/01/2021 - Robert - NaWeb guarda o cadastro da propriedade (que eu trato por cad.viticola) em formato numerico.
 //
 
 // ------------------------------------------------------------------------------------
@@ -72,7 +73,8 @@ User Function FrtSaf21 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor)
 		_oAviso:Grava ()
 	endif
 	_oSQL:_sQuery +=   " FROM " + _sLinkSrv + ".CCPropriedade"
-	_oSQL:_sQuery +=  " WHERE CCPropriedadeCod = '" + _sCadVit + "'"
+//	_oSQL:_sQuery +=  " WHERE CCPropriedadeCod = '" + _sCadVit + "'"
+	_oSQL:_sQuery +=  " WHERE CCPropriedadeCod = " + cvaltochar (val (_sCadVit))  // NaWeb guarda em formato numerico.
 	_oSQL:Log ()
 	_aDistKM = aclone (_oSQL:RetFixo (1, "ao consultar a distancia da propriedade rural '" + _sCadVit + "'. Verifique cadastro no NaWeb."))
 	if len (_aDistKM) == 1
