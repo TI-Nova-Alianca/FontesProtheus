@@ -75,6 +75,7 @@
 //                     - Melhoradas algumas mensagens de erro e removidas linhas comentariadas
 // 26/10/2020 - Robert - Na exclusao, exigia ZI_DATA = dDataBase. Agora exige E2_EMISSAO = dDataBase, que eh o que realmente importa.
 // 08/01/2021 - Robert - Permite incluir TM 13 quando rotina U_VA_RUSN.
+// 13/01/2021 - Robert - Permite incluir TM 16 quando ex socio.
 //
 
 // ------------------------------------------------------------------------------------
@@ -1692,12 +1693,19 @@ METHOD PodeIncl () Class ClsCtaCorr
 			endif
 		else
 			if ! ::TM $ '11/08/13/19'
-				 if empty (::FilOrig)  // Aceita movto. de ex associados quando tratar-se de transferencia de outra filial.
-					if alltrim (::OQueGera ()) $ "NDF/" .and. msgnoyes ("Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data de " + dtoc (::DtMovto) + ". Confirma a inclusao deste registro?")
-						// Pode passar
-					else
-						::UltMsg += "Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data de " + dtoc (::DtMovto)
+				if ::TM == '16'
+					if ! msgnoyes ("Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data informada. Confirma a inclusao deste registro?")
+						::UltMsg += "Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data informada."
 						_lContinua = .F.
+					endif
+				else
+					if empty (::FilOrig)  // Aceita movto. de ex associados quando tratar-se de transferencia de outra filial.
+						if alltrim (::OQueGera ()) $ "NDF/" .and. msgnoyes ("Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data de " + dtoc (::DtMovto) + ". Confirma a inclusao deste registro?")
+							// Pode passar
+						else
+							::UltMsg += "Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data de " + dtoc (::DtMovto)
+							_lContinua = .F.
+						endif
 					endif
 				endif
 			endif
