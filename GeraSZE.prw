@@ -18,7 +18,6 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 	local _oSQL      := NIL
 	local _aEspum := {}
 	u_log2 ('info', 'Iniciando ' + procname ())
-//	u_log ('param:', _oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd)
 
 	// Este programa foi criado para ser chamado via web service, que jah deve
 	// deixar a variavel _sErros criada, mas, para garantir...
@@ -108,11 +107,6 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 	if empty (_sErros)
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery := ""
-		// _oSQL:_sQuery += "SELECT TOP 1 RESTRICAO"
-		// _oSQL:_sQuery +=  " FROM VA_VAGENDA_SAFRA"
-		// _oSQL:_sQuery += " WHERE ASSOCIADO    = '" + _oAssoc:Codigo + "'"
-		// _oSQL:_sQuery +=   " AND LOJA_ASSOC   = '" + _oAssoc:Loja   + "'"
-		// _oSQL:_sQuery +=   " AND RESTRICAO   != ''"
 		_oSQL:_sQuery += "SELECT GX0001_ASSOCIADO_RESTRICAO as restricao"
 		_oSQL:_sQuery +=  " FROM GX0001_AGENDA_SAFRA"
 		_oSQL:_sQuery += " WHERE GX0001_ASSOCIADO_CODIGO = '" + _oAssoc:Codigo + "'"
@@ -127,7 +121,6 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 
 	// Gera array com os cadastros viticolas vinculados ao associado. Deve ser mantido, aqui, o mesmo formato gerado pela classe ClsAssoc.
 	if empty (_sErros)
-	//	_aCadVitic := aclone (_oAssoc:CadVitic ())
 		_aCadVitic = aclone (U_VA_RusCV (_oAssoc:Codigo, _oAssoc:Loja))
 		if len (_aCadVitic) == 0
 			_sErros += "Nao ha nenhuma variedade de uva ligada ao associado."
@@ -141,12 +134,12 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		sb1 -> (dbsetorder (1))
 		private aHeader := aclone (U_GeraHead ("SZF", .F., {}, {}, .F.))
 		private aCols := {}
-		//u_log2 ('debug', '_aItensCar:')
-		//u_log2 ('debug', _aItensCar)
+		u_log2 ('debug', '_aItensCar:')
+		u_log2 ('debug', _aItensCar)
 		for _nItemCar = 1 to len (_aItensCar)
 
 			// Verifica em qual das linhas da array de cadastros viticolas encontra-se esta variedade.
-			//u_log2 ('debug', 'Pesquisando ' + _aItensCar [_nItemCar, 2])
+			u_log2 ('debug', 'Pesquisando ' + _aItensCar [_nItemCar, 2])
 			_nItemVit = ascan (_aCadVitic, {|_aVal| alltrim (_aVal [.CadVitProduto]) == alltrim (_aItensCar [_nItemCar, 2])})
 			if _nItemVit == 0
 				_sErros += "Variedade " + alltrim (_aItensCar [_nItemCar, 2]) + " nao vinculada com a propriedade rural " + _aItensCar [_nItemCar, 1] + ' / SIVIBE ' + _aItensCar [_nItemCar, 5]

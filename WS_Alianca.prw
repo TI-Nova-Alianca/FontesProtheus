@@ -136,7 +136,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 		u_log2 ('info', '')
 		u_log2 ('info', '###############################################################################################')
 		u_log2 ('info', '...continuacao de log da thread ' + cValToChar (ThreadID ()) + ' (gerado por chamada de web service)')
-		u_log2 ('info', '')
+		u_log2 ('debug', 'XML recebido: ' + ::XmlRcv)
 	endif
 
 	// Executa a acao especificada no XML.
@@ -1336,7 +1336,7 @@ static function _IncCarSaf ()
 	if empty (_sErros) ; _sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote2",             .F., .F.) ; endif
 	if empty (_sErros) ; _sSivibe   = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe2",           .F., .F.) ; endif
 	if empty (_sErros) ; _sEspumant = _ExtraiTag ("_oXML:_WSAlianca:_Espumante2",        .F., .F.) ; endif
-	if empty (_sErros) .and. ! empty (_sCadVit)  // Pode nao ter 2 itens na carga
+	if empty (_sErros) .and. ! empty (_sVaried) .and. ! empty (_sCadVit)  // Pode nao ter 2 itens na carga
 		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
 	endif
 	//
@@ -1346,7 +1346,7 @@ static function _IncCarSaf ()
 	if empty (_sErros) ; _sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote3",             .F., .F.) ; endif
 	if empty (_sErros) ; _sSivibe   = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe3",           .F., .F.) ; endif
 	if empty (_sErros) ; _sEspumant = _ExtraiTag ("_oXML:_WSAlianca:_Espumante2",        .F., .F.) ; endif
-	if empty (_sErros) .and. ! empty (_sCadVit)  // Pode nao ter 3 itens na carga
+	if empty (_sErros) .and. ! empty (_sVaried) .and. ! empty (_sCadVit)  // Pode nao ter 3 itens na carga
 		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
 	endif
 	u_log2 ('info', 'Itens da carga:')

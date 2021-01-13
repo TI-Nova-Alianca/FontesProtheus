@@ -81,7 +81,7 @@ User Function va_rusN ()
 	local _sTpForUva := ""
 	local _nVitic    := 0
 	local _sGrpPgSaf := ''
-//	local _sCondPg   := ''
+	local _sCondPg   := ''
 //	private _oAssoc  := NIL
 	local _oAssocN   := NIL
 	private _aParPgSaf := {}  // Parcelas pre calculadas. Deixar PRIVATE para ser lida pelo ponto de entrada MTCOLSE2().
@@ -93,8 +93,8 @@ User Function va_rusN ()
 		softlock ("SZE")
 	endif
 
-	U_log2 ('erro', 'EM 2020 nao gravou os campos D1_PRM02 ...99 nem D1_VACLABD. Poderia ser algum gatilho?')
-	u_log2 ('erro', "Testar a parte de calculo e gravacao de frete, pois foi implementada em 01/07/2020 (depois da safra) e nao foi testada. Ver tb se vai levar a soma para o SF1")
+	U_log2 ('aviso', 'EM 2020 nao gravou os campos D1_PRM02 ...99 nem D1_VACLABD. Poderia ser algum gatilho?')
+	u_log2 ('aviso', "Testar a parte de calculo e gravacao de frete, pois foi implementada em 01/07/2020 (depois da safra) e nao foi testada. Ver tb se vai levar a soma para o SF1")
 
 	// Testa se jah tem contranota somente depois do softlock para pegar casos em que dois usuarios tentam gerar
 	// contranota da mesma carga e o segundo fica aguardando a liberacao do softlock. Quando o primeiro liberar,
@@ -288,15 +288,14 @@ User Function va_rusN ()
 			u_help ("Nao ha definicao de grupo para pagamento.",, .T.)
 			_lContinua = .F.
 		else
-			/*
-			if _sGrpPgSaf == 'A'
-				_sCondPg = "815"
-			elseif _sGrpPgSaf == 'B'
-				_sCondPg = "816"
-			elseif _sGrpPgSaf == 'C'
-				_sCondPg = "817"
-			endif
-			*/
+			// if _sGrpPgSaf == 'A'
+			// 	_sCondPg = "815"
+			// elseif _sGrpPgSaf == 'B'
+			// 	_sCondPg = "816"
+			// elseif _sGrpPgSaf == 'C'
+			// 	_sCondPg = "817"
+			// endif
+			_sCondPg = "801"
 		endif
 	endif
 	U_Log2 ('info', 'Grupo para pagamento: ' + _sGrpPgSaf)
@@ -618,7 +617,7 @@ User Function va_rusN ()
 //		AADD( _aAutoSF1, { "F1_FRETE"    , _nVlFrete,       Nil})
 		AADD( _aAutoSF1, { "F1_VAFLAG"   , 'G',             Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I. Indica 'nota ja gerada' para a rotina de manut. XML
 		AADD( _aAutoSF1, { "F1_VAGPSAF"  , _sGrpPgSaf,      Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
-		AADD( _aAutoSF1, { "F1_COND"     , '801',        Nil})
+		AADD( _aAutoSF1, { "F1_COND"     , _sCondPg,        Nil})
 
 		// Ordena campos cfe. SX3.
 		_aAutoSF1 = aClone (U_OrdAuto (_aAutoSF1))

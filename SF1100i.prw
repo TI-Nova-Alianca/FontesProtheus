@@ -492,74 +492,77 @@ static function _AjSE2 ()
 		endif
 	endif
 
-	// Se for uma nota de compra de uva (em 2021 jah vamos gerar contranotas de compra em vez de 'entrada'), ajusta vencimentos.
-	if sf1 -> f1_tipo == "N" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) .and. IsInCallStack ("U_VA_RUS")
-		U_Log2 ('info', 'Ajustando datas de vencimento dos titulos de nota de compra de safra.')
-		se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
-		se2 -> (dbseek (xfilial ("SE2") + sf1 -> f1_fornece + sf1 -> f1_loja + sf1 -> f1_serie + sf1 -> f1_doc, .T.))
-		do while ! se2 -> (eof ()) ;
-			.and. se2 -> e2_filial  == xfilial ("SE2") ;
-			.and. se2 -> e2_fornece == sf1 -> f1_fornece ;
-			.and. se2 -> e2_loja    == sf1 -> f1_loja ;
-			.and. se2 -> e2_prefixo == sf1 -> f1_serie ;
-			.and. se2 -> e2_num     == sf1 -> f1_doc
-			
-			U_Log2 ('debug', se2 -> e2_parcela)
-			_sAnoVcSaf = strzero (year (se2 -> e2_emissao), 4)  // A maioria dos vencimentos vai ser no ano atual.
-			do case
-			case alltrim (se2 -> e2_parcela) == 'A'
-				// Como pagamos a primeira parcela no final do mes de marco, e a safra ainda pode estar em andamento,
-				// vou usar uma data de corte antes do final do mes, para dar tempo ao financeiro de gerar faturas e
-				// enviar ao banco.
-				if month (se2 -> e2_emissao) == 3 .and. day (se2 -> e2_emissao) > 20
-					U_Log2 ('info', 'Fora da data de corte. Movendo 1a.parcela para o mes de abril.')
+	if ! ExistBlock ("MTCOLSE2")
+		// Se for uma nota de compra de uva (em 2021 jah vamos gerar contranotas de compra em vez de 'entrada'), ajusta vencimentos.
+		if sf1 -> f1_tipo == "N" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) .and. IsInCallStack ("U_VA_RUS")
+			U_Log2 ('info', 'Ajustando datas de vencimento dos titulos de nota de compra de safra.')
+			se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
+			se2 -> (dbseek (xfilial ("SE2") + sf1 -> f1_fornece + sf1 -> f1_loja + sf1 -> f1_serie + sf1 -> f1_doc, .T.))
+			do while ! se2 -> (eof ()) ;
+				.and. se2 -> e2_filial  == xfilial ("SE2") ;
+				.and. se2 -> e2_fornece == sf1 -> f1_fornece ;
+				.and. se2 -> e2_loja    == sf1 -> f1_loja ;
+				.and. se2 -> e2_prefixo == sf1 -> f1_serie ;
+				.and. se2 -> e2_num     == sf1 -> f1_doc
+				
+				U_Log2 ('debug', se2 -> e2_parcela)
+				_sAnoVcSaf = strzero (year (se2 -> e2_emissao), 4)  // A maioria dos vencimentos vai ser no ano atual.
+				do case
+				case alltrim (se2 -> e2_parcela) == 'A'
+					// Como pagamos a primeira parcela no final do mes de marco, e a safra ainda pode estar em andamento,
+					// vou usar uma data de corte antes do final do mes, para dar tempo ao financeiro de gerar faturas e
+					// enviar ao banco.
+					if month (se2 -> e2_emissao) == 3 .and. day (se2 -> e2_emissao) > 20
+						U_Log2 ('info', 'Fora da data de corte. Movendo 1a.parcela para o mes de abril.')
+						_sMesVcSaf = '04'
+					else
+						_sMesVcSaf = '03'
+					endif
+				case alltrim (se2 -> e2_parcela) == 'B'
 					_sMesVcSaf = '04'
-				else
-					_sMesVcSaf = '03'
-				endif
-			case alltrim (se2 -> e2_parcela) == 'B'
-				_sMesVcSaf = '04'
-			case alltrim (se2 -> e2_parcela) == 'C'
-				_sMesVcSaf = '05'
-			case alltrim (se2 -> e2_parcela) == 'D'
-				_sMesVcSaf = '06'
-			case alltrim (se2 -> e2_parcela) == 'E'
-				_sMesVcSaf = '07'
-			case alltrim (se2 -> e2_parcela) == 'F'
-				_sMesVcSaf = '08'
-			case alltrim (se2 -> e2_parcela) == 'G'
-				_sMesVcSaf = '09'
-			case alltrim (se2 -> e2_parcela) == 'H'
-				_sMesVcSaf = '10'
-			case alltrim (se2 -> e2_parcela) == 'I'
-				_sMesVcSaf = '11'
-			case alltrim (se2 -> e2_parcela) == 'J'
-				_sMesVcSaf = '12'
-			case alltrim (se2 -> e2_parcela) == 'K'
-				_sAnoVcSaf = strzero (year (se2 -> e2_emissao) + 1, 4)
-				_sMesVcSaf = '01'
-			otherwise
-				u_help ("Sem tratamento para parcela '" + se2 -> e2_parcela + "' no ajuste de datas de pagamento de safra. Verifique os titulos gerados para a nota '" + sf1 -> f1_doc + "'",, .T.)
-				_dVctSafra = se2 -> e2_vencto  // Deixa com o vencimento original.
-			endcase
-			_dVctSafra = lastday (stod (_sAnoVcSaf + _sMesVcSaf + '01'))
+				case alltrim (se2 -> e2_parcela) == 'C'
+					_sMesVcSaf = '05'
+				case alltrim (se2 -> e2_parcela) == 'D'
+					_sMesVcSaf = '06'
+				case alltrim (se2 -> e2_parcela) == 'E'
+					_sMesVcSaf = '07'
+				case alltrim (se2 -> e2_parcela) == 'F'
+					_sMesVcSaf = '08'
+				case alltrim (se2 -> e2_parcela) == 'G'
+					_sMesVcSaf = '09'
+				case alltrim (se2 -> e2_parcela) == 'H'
+					_sMesVcSaf = '10'
+				case alltrim (se2 -> e2_parcela) == 'I'
+					_sMesVcSaf = '11'
+				case alltrim (se2 -> e2_parcela) == 'J'
+					_sMesVcSaf = '12'
+				case alltrim (se2 -> e2_parcela) == 'K'
+					_sAnoVcSaf = strzero (year (se2 -> e2_emissao) + 1, 4)
+					_sMesVcSaf = '01'
+				otherwise
+					u_help ("Sem tratamento para parcela '" + se2 -> e2_parcela + "' no ajuste de datas de pagamento de safra. Verifique os titulos gerados para a nota '" + sf1 -> f1_doc + "'",, .T.)
+					_dVctSafra = se2 -> e2_vencto  // Deixa com o vencimento original.
+				endcase
+				_dVctSafra = lastday (stod (_sAnoVcSaf + _sMesVcSaf + '01'))
 
-			// Retroage o vencimento ateh que seja uma data valida
-			U_Log2 ('info', '_dVctSafra antes de verificar se eh data valida: ' + dtoc (_dVctSafra))
-			do while _dVctSafra > se1 -> e1_vencori .and. datavalida (_dVctSafra) > _dVctSafra
-				_dVctSafra -= 1
-				U_Log2 ('debug', 'Reduzi _dVctSafra para ' + dtoc (_dVctSafra))
+				// Retroage o vencimento ateh que seja uma data valida
+				U_Log2 ('info', '_dVctSafra antes de verificar se eh data valida: ' + dtoc (_dVctSafra))
+				do while _dVctSafra > se1 -> e1_vencori .and. datavalida (_dVctSafra) > _dVctSafra
+					_dVctSafra -= 1
+					U_Log2 ('debug', 'Reduzi _dVctSafra para ' + dtoc (_dVctSafra))
+				enddo
+				U_Log2 ('info', '_dVctSafra depois de verificar se eh data valida: ' + dtoc (_dVctSafra))
+				reclock ("SE2", .F.)
+				se2 -> e2_hist    = alltrim (se2 -> e2_hist) + 'SAFRA GR.' + sf1 -> F1_VAGPSAF
+				se2 -> e2_vencto  = _dVctSafra
+				se2 -> e2_vencrea = _dVctSafra
+				msunlock ()
+				se2 -> (dbskip ())
 			enddo
-			U_Log2 ('info', '_dVctSafra depois de verificar se eh data valida: ' + dtoc (_dVctSafra))
-			reclock ("SE2", .F.)
-			se2 -> e2_hist    = alltrim (se2 -> e2_hist) + 'SAFRA GR.' + sf1 -> F1_VAGPSAF
-			se2 -> e2_vencto  = _dVctSafra
-			se2 -> e2_vencrea = _dVctSafra
-			msunlock ()
-			se2 -> (dbskip ())
-		enddo
+		endif
+	else
+		U_Log2 ('info', '[' + procname () + '] ponto de entrada MTCOLSE2 implementado. No vou mexer nas duplicatas de safra.')
 	endif
-
 return
 
 

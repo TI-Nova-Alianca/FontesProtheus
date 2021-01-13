@@ -1,0 +1,189 @@
+// Programa...: VA_RusPP
+// Autor......: Robert Koch
+// Data.......: 12/01/2021
+// Descricao..: Gera array com definicao de percentuais e datas para pagamento de safra (regras mudam de uma safra para outra).
+//
+// Historico de alteracoes:
+//
+
+// ------------------------------------------------------------------------------------
+User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
+	local _sError     := ''
+	local _sWarning   := ''
+	local _sXMLFech   := ''
+	local _nRegraPag  := 0
+	local _oAssocCP   := NIL
+	local _aParcel    := {}
+	local _nParcel    := 0
+	local _nParcFrt   := 0
+	local _nPerFrt    := 0
+	local _nPerUva    := 0
+	local _nSomaPer   := 0
+	local _dVctSafra  := ctod ('')
+	local _aAux       := {}
+	local _sAnoVcSaf  := ''
+	local _sMesVcSaf  := ''
+	private _oXMLFech := NIL  // Precisa ser do tipo PRIVATE senao a funcao XmlParser() nao funciona... vai entender.
+
+	U_Log2 ('info', 'Iniciando ' + procname ())
+	U_Log2 ('info', 'Calculando parcelas para safra ' + _sSafPag + ' grp: ' + _sGrpPgSaf + ' vlr.uva: ' + cvaltochar (_nVlUva) + ' vlr.frt: ' + cvaltochar (_nVlFrete))
+
+	// Ateh o momento, a forma de pagamento mais longa tem 11 parcelas. Acrescenta uma para o frete.
+	_aParcel = {}
+	aadd (_aParcel, {0, ctod (''), 0})
+	aadd (_aParcel, {0, ctod (''), 0})
+	aadd (_aParcel, {0, ctod (''), 0})
+	aadd (_aParcel, {0, ctod (''), 0})
+	aadd (_aParcel, {0, ctod (''), 0})
+	aadd (_aParcel, {0, ctod (''), 0})
+	aadd (_aParcel, {0, ctod (''), 0})
+	aadd (_aParcel, {0, ctod (''), 0})
+	aadd (_aParcel, {0, ctod (''), 0})
+	aadd (_aParcel, {0, ctod (''), 0})
+	aadd (_aParcel, {0, ctod (''), 0})
+	aadd (_aParcel, {0, ctod (''), 0})
+
+	// Aqui nao preciso de um associado especifico... preciso apenas ler as regras de pagamento.
+	_oAssocCP = ClsAssoc():New ('000161', '01')
+	_sXmlFech = _oAssocCP:FechSafra (_sSafPag, .t.)
+	//U_Log2 ('debug', _sXmlFech)
+
+	// Converte de texto para XML
+	_oXMLFech := XmlParser (_sXmlFech, "_", @_sError, @_sWarning)
+	if ! empty (_sError) .or. ! empty (_sWarning)
+		u_help ("Erro ao decodificar retorno do XML de regras de pagamento para esta safra: " + _sError + _sWarning,, .t.)
+	else
+		// Verifica se tem este tipo de tag no XML
+		if type ('_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem') != 'A'
+			u_help ('Nao encontrei regras de pagamento para esta safra.',, .T.)
+		else
+			for _nRegraPag = 1 to len (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem)
+				if _oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_grupo:TEXT == _sGrpPgSaf
+					_aParcel [1, 1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc01:TEXT)
+					_aParcel [2, 1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc02:TEXT)
+					_aParcel [3, 1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc03:TEXT)
+					_aParcel [4, 1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc04:TEXT)
+					_aParcel [5, 1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc05:TEXT)
+					_aParcel [6, 1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc06:TEXT)
+					_aParcel [7, 1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc07:TEXT)
+					_aParcel [8, 1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc08:TEXT)
+					_aParcel [9, 1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc09:TEXT)
+					_aParcel [10, 1] = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc10:TEXT)
+					_aParcel [11, 1] = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc11:TEXT)
+				endif
+			next
+		endif
+	endif
+	//u_log (_aParcel)
+
+	// A parcela do frete cai sempre na proxima posicao livre
+	_nParcel = 1
+	do while _nParcel <= len (_aParcel) .and. _aParcel [_nParcel, 1] > 0
+		_nParcel ++
+	enddo
+	_nParcFrt = _nParcel
+	U_Log2 ('debug', 'Usarei a ' + cvaltochar (_nParcFrt) + 'a. parcela para o frete.')
+
+	if _nVlUva == 0
+		u_help ("Sem valor da uva para calcular parcelas de pagamento.",, .T.)
+	else
+		// Calcula quanto representa o frete sobre o total dos valores.
+		// Seu percentual fica arredondado para 2 decimais e o vencimento para fevereiro do ano seguinte.
+		_nPerFrt = (_nVlFrete * 100) / (_nVlUva + _nVlFrete)
+		_nPerFrt = round (_nPerFrt, 2)
+		U_Log2 ('debug', 'Percentual do frete sobre o total: ' + cvaltochar (_nPerFrt))
+		_nPerFrt = round (_nPerFrt, 2)
+		_aParcel [_nParcFrt, 3] = _nPerFrt
+
+		// Estando definido quanto o frete representa sobre o total da nota, preciso diminuir
+		// esse percentual proporcionalmente das demais parcelas.
+		_nPerUva = 100 - _nPerFrt
+		U_Log2 ('debug', 'Percentual restante para a uva: ' + cvaltochar (_nperUva))
+		_nParcel = 1
+		do while _nParcel <= len (_aParcel) .and. _nParcel < _nParcFrt
+			_aParcel [_nParcel, 3] = round (_nPerUva * _aParcel [_nParcel, 1] / 100, 1)
+			_nParcel ++
+		enddo
+
+		// Joga a diferenca de arredondamento dos percentuais na penultima parcela (a ultima tem o frete)
+		_nSomaPer = 0
+		for _nParcel = 1 to len (_aParcel)
+			_nSomaPer += _aParcel [_nParcel, 3]
+		next
+		U_Log2 ('debug', 'ajustando dif.percent. de ' + cvaltochar (_nSomaPer))
+		_aParcel [_nParcFrt - 1, 3] += (100 - _nSomaPer)
+
+
+		// Define ano e mes para vencimento das parcelas.
+		//
+		// A maioria dos vencimentos vai ser no mesmo ano da safra.
+		_sAnoVcSaf = _sSafPag
+		//
+		for _nParcel = 1 to len (_aParcel)
+			if _aParcel [_nParcel, 3] <= 0
+				loop
+			endif
+			if _nParcel == _nParcFrt  // Parcela do frete sempre em fevereiro do ano seguinte.
+				_sAnoVcSaf = strzero (val (_sSafPag) + 1, 4)
+				// u_log2 ('debug', _sAnoVcSaf)
+				_sMesVcSaf = '02'
+			elseif _nParcel == 1
+				// Como pagamos a primeira parcela no final do mes de marco, e a safra ainda pode estar em andamento,
+				// vou usar uma data de corte antes do final do mes, para dar tempo ao financeiro de gerar faturas e
+				// enviar ao banco.
+				if month (dDataBase) == 3 .and. day (dDataBase) > 20
+					U_Log2 ('info', 'Fora da data de corte. Movendo 1a.parcela para o mes de abril.')
+					_sMesVcSaf = '04'
+				else
+					_sMesVcSaf = '03'
+				endif
+			elseif _nParcel == 2
+				_sMesVcSaf = '04'
+			elseif _nParcel == 3
+				_sMesVcSaf = '05'
+			elseif _nParcel == 4
+				_sMesVcSaf = '06'
+			elseif _nParcel == 5
+				_sMesVcSaf = '07'
+			elseif _nParcel == 6
+				_sMesVcSaf = '08'
+			elseif _nParcel == 7
+				_sMesVcSaf = '09'
+			elseif _nParcel == 8
+				_sMesVcSaf = '10'
+			elseif _nParcel == 9
+				_sMesVcSaf = '11'
+			elseif _nParcel == 10
+				_sMesVcSaf = '12'
+			elseif _nParcel == 11
+				_sAnoVcSaf = strzero (val (_sSafPag) + 1, 4)
+				_sMesVcSaf = '01'
+			else
+				u_help ("Sem tratamento para parcela " + cvaltochar (_nParcel) + " no ajuste de datas de pagamento de safra.",, .T.)
+				_dVctSafra = dDataBase
+			endif
+			_aParcel [_nParcel, 2] = lastday (stod (_sAnoVcSaf + _sMesVcSaf + '01'))
+		next
+	endif
+
+	// Retroage datas dos vencimentos ateh que sejam datas validas.
+	for _nParcel = 1 to len (_aParcel)
+		if ! empty (_aParcel [_nParcel, 2])
+			do while _aParcel [_nParcel, 2] >= dDataBase .and. datavalida (_aParcel [_nParcel, 2]) > _aParcel [_nParcel, 2]
+				_aParcel [_nParcel, 2] -= 1
+			enddo
+		endif
+	next
+	
+	U_Log2 ('info', 'Parcelamento previsto:')
+	u_log2 ('info', _aParcel)
+
+	// Retorna somente as linhas com dados definidos
+	_aAux = {}
+	for _nParcel = 1 to len (_aParcel)
+		if ! empty (_aParcel [_nParcel, 2]) .and. _aParcel [_nParcel, 3] > 0
+			aadd (_aAux, {_aParcel [_nParcel, 2], _aParcel [_nParcel, 3]})
+		endif
+	next
+	U_Log2 ('info', 'Finalizando ' + procname ())
+return _aAux

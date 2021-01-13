@@ -57,11 +57,14 @@ User Function FrtSaf21 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor)
 	_oSQL:_sQuery := ""
 
 	if _sFilDest == '03'
-		_oSQL:_sQuery += " SELECT CCPropriedadeKMF03"
+	//	_oSQL:_sQuery += " SELECT CCPropriedadeKMF03"
+		_oSQL:_sQuery += " SELECT distinct CCPropriedadeKMF03"  // Usa DISTINCT por que pode haver caso de propriedade explorada por mais de 1 grupo familiar
 	elseif _sFilDest == '07'
-		_oSQL:_sQuery += " SELECT CCPropriedadeKMF07"
+	//	_oSQL:_sQuery += " SELECT CCPropriedadeKMF07"
+		_oSQL:_sQuery += " SELECT distinct CCPropriedadeKMF07"  // Usa DISTINCT por que pode haver caso de propriedade explorada por mais de 1 grupo familiar
 	elseif _sFilDest $ '01/09'
-		_oSQL:_sQuery += " SELECT CCPropriedadeKMF01"
+	//	_oSQL:_sQuery += " SELECT CCPropriedadeKMF01"
+		_oSQL:_sQuery += " SELECT distinct CCPropriedadeKMF01"  // Usa DISTINCT por que pode haver caso de propriedade explorada por mais de 1 grupo familiar
 	else
 		u_help ("Filial destino '" + _sFilDest + "' sem tratamento no programa " + procname (),, .T.)
 		_oAviso := ClsAviso ():New ()

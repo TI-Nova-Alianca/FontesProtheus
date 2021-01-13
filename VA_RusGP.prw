@@ -8,36 +8,15 @@
 //
 
 // --------------------------------------------------------------------------
-User Function VA_RusGP (_sVaried, _sConduc)  //aProdut, _sMenorVlr)
+User Function VA_RusGP (_sVaried, _sConduc)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _lContinua := .T.
 	local _sRetGrpPg := ''
-//	local _sVaried   := ''
-//	local _sConduc   := ''
 
 	u_Log2 ('info', 'Iniciando ' + procname ())
 
-/*
-	if _lContinua .and. valtype (_aProdut) != 'A'
-		u_help (procname () + ": Lista de produtos deve ser do tipo array.",, .T.)
-		_lContinua = .F.
-	endif
-
-	if _lContinua .and. len (_aProdut) > 1 .and. empty (_sMenorVlr)
-		u_help (procname () + ": Quando houver mais de um produto, deve ser definido qual o de menor valor.",, .T.)
-		_lContinua = .F.
-	endif
-*/	
 	if _lContinua
 		
-		// // Define qual o produto a verificar. Na pratica, sempre que tiver mais de um, jah deve vir informado qual o de menor valor.
-		// if ! empty (_sMenorVlr)
-		// 	_sVaried = _sMenorVlr
-		// else
-		// 	_sVaried = _aProdut [1, 1]
-		// 	_sConduc = _aProdut [1, 2]
-		// endif
-
 		sb1 -> (dbsetorder (1))
 		if ! sb1 -> (dbseek (xfilial ("SB1") + _sVaried, .F.))
 			u_help ("Produto '" + _sVaried + "' nao cadastrado.")

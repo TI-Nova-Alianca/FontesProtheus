@@ -1,0 +1,66 @@
+// Programa:  MtColSE2
+// Autor:     Robert Koch
+// Data:      12/01/2021
+// Descricao: P.E. para alterar as duplicatas da NF de entrada.
+//            Usado inicialmente para compra de safra.
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #Ponto de entrada durante a grevacao da NF de entrada. Permite manipular as duplicatas a pagar.
+// #PalavasChave      #ponto_de_entrada #NF_entrada #duplicatas #safra
+// #TabelasPrincipais #SE2
+// #Modulos           #COM #EST
+
+// --------------------------------------------------------------------------
+user function MTColSE2 ()
+	local _aAreaAnt := U_ML_SRArea ()
+	local _aColsE2  := aclone (paramixb [1])
+	local _aRet     := {}
+	local _nParc    := 0
+	local _nTotParc := 0
+	local _nTotDist := 0
+
+	U_Log2 ('info', 'Iniciando ' + procname ())
+
+	// Este P.E. eh chamado 2 vezes: uma na gravacao da nota e outra na 'troca de pasta'.
+	// Parece que preciso ajustar no momento da troca de pasta, pois se fizer na segunda chamada, nao tem efeito.
+	if IsInCallStack ("U_VA_RUS") .and. IsInCallStack ("NFEFLDCHG")
+		if cTipo == "N" .and. cFormul == "S" //.and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf)
+			if type ('_aParPgSaf') != 'A'
+				u_help ("Nao tenho dados para distribuir as parcelas de pagamento da safra.",, .T.)
+			else
+				U_Log2 ('info', 'Ajustando parcelas para NF de compra de safra.')
+				_aColsE2 := aclone (paramixb [1])
+				U_Log2 ('debug', 'posicao anterior:')
+				U_Log2 ('debug', _aColsE2)
+				for _nParc = 1 to len (_aColsE2)
+					_nTotParc += _aColsE2 [_nParc, 3]
+				next
+
+				// Gera novas parcelas distribuindo o valor total conforme datas e percentuais especificados na _aParPgSaf.
+				for _nParc = 1 to len (_aParPgSaf)
+					aadd (_aRet, aclone (_aColsE2 [1]))
+					_aRet [_nParc, 1] = chr (64 + _nParc)  // Gera letras a partir do 'A'.
+					_aRet [_nParc, 2] = _aParPgSaf [_nParc, 1]
+					_aRet [_nParc, 3] = round (_aParPgSaf [_nParc, 2] * _nTotParc / 100, 2)
+				next
+				//U_Log2 ('debug', _aRet)
+
+				// Joga diferenca de arredondamento na primeira parcela
+				for _nParc = 1 to len (_aRet)
+					_nTotDist += _aRet [_nParc, 3]
+				next
+				U_Log2 ('debug', 'ajustando dif.valor total de ' + cvaltochar (_nTotDist) + ' para ' + cvaltochar (_nTotParc))
+				_aRet [1, 3] += (_nTotParc - _nTotDist)
+			endif
+		endif
+	else
+		U_Log2 ('info', 'nao vou mexer nas parcelas neste momento')
+		_aRet := aclone (_aColsE2)  // Se nao alterar nada, retorna o original.
+	endif
+
+	U_Log2 ('debug', '[' + procname () + '] retornando:')
+	U_Log2 ('debug', _aRet)
+	U_ML_SRArea (_aAreaAnt)
+	U_Log2 ('info', 'Finalizando ' + procname ())
+return _aRet
