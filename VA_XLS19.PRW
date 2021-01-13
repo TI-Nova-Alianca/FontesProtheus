@@ -2,7 +2,14 @@
 // Autor......: Robert Koch
 // Data.......: 25/05/2012
 // Descricao..: Exportacao de dados gerais de associados para planilha.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #relatorio
+// #Descricao         #Exporta dados gerais de associados para planilha.
+// #PalavasChave      #dados_gerais_associados
+// #TabelasPrincipais SZI
+// #Modulos           #COOP
+
 // Historico de alteracoes:
 // 19/08/2014 - Robert - Incluido parametro de ativos/inativos/ambos.
 // 11/09/2014 - Robert - Passa a buscar por codigo e loja base.
@@ -24,13 +31,8 @@
 // 04/02/2020 - Andre  - Adicionado campo A2_VAOBS no relatório.
 // 10/08/2020 - Robert - Somente alimentava coluna 'ultima safra' junto com os dados de capital social.
 //                     - Inseridas tags para catalogacao de fontes.
-
-// Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #relatorio
-// #Descricao         #Exporta dados gerais de associados para planilha.
-// #PalavasChave      #dados_gerais_associados
-// #TabelasPrincipais SZI
-// #Modulos           #COOP
+// 12/01/2021 - Robert - Atributo :SubNucleo passa a vir com a descricao por extenso e nao mais o codigo (pela no NaWeb).
+//
 
 #include "VA_INCLU.PRW"
 
@@ -228,7 +230,8 @@ Static Function _Gera()
 			GDFieldPut ('A2_VAFUNC',  _oAssoc:FUNCAO)
 			//GDFieldPut ('A2_VAOBS',   _oAssoc:OBSERVACAO)
 			GDFieldPut ('ZAN_NUCLEO', _oAssoc:Nucleo + ' - ' + alltrim (X3Combo ("ZAN_NUCLEO", _oAssoc:Nucleo)))
-			GDFieldPut ('ZAN_SUBNUC', _oAssoc:SubNucleo + ' - ' + alltrim (U_RetZX5("36", _oAssoc:SubNucleo, 'ZX5_36DESC')))
+		//	GDFieldPut ('ZAN_SUBNUC', _oAssoc:SubNucleo + ' - ' + alltrim (U_RetZX5("36", _oAssoc:SubNucleo, 'ZX5_36DESC')))
+			GDFieldPut ('ZAN_SUBNUC', _oAssoc:SubNucleo)
 			GDFieldPut ('Ativo',      iif (_oAssoc:Ativo (mv_par11), 'Ativo', 'Inativo'))
 			GDFieldPut ('MotInativ',  _oAssoc:MotInativ)
 

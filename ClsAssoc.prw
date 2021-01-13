@@ -83,7 +83,9 @@
 // 03/09/2020 - Robert - Criado grupo resumoVariedadeItem no metodo :FechSafra.
 // 04/09/2020 - Robert - Nao calcula correcao monetaria para ex associados.
 // 01/12/2020 - Robert - Passa a buscar dados de cadastro viticola na view GX0001_AGENDA_SAFRA e nao mais na VA_VASSOC_CAD_VITIC2
-// 06/01/2021 - Robert - Regras para pagamento (grupos A/B/C) permanecem iguais ao ano passado no metodo FechSafra).
+// 06/01/2021 - Robert - Regras para pagamento (grupos A/B/C) permanecem iguais ao ano passado no metodo FechSafra.
+// 08/01/2021 - Robert - Novas regras para pagamento (grupos A/B/C) no metodo FechSafra.
+// 12/01/2021 - Robert - Passa a buscar grupo familiar, nucleo e subnucleo no NaWeb.
 //
 
 #include "protheus.ch"
@@ -174,6 +176,8 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 	local _oSQL      := NIL
 	local _aCodigos  := {}
 	local _nCodigo   := 0
+	local _sLinkSrv  := U_LkServer ('NAWEB')
+	local _aGrpFam   := {}
 
 	::UltMsg    = ""
 	::MotInativ = ""
@@ -250,6 +254,7 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 				::Subnucleo  := ''
 				::CodAvisad  := ''
 				::LojAvisad  := ''
+				/*
 				zak -> (dbsetorder (2))  // ZAK_FILIAL, ZAK_ASSOC, ZAK_LOJA, ZAK_IDZAN
 				if zak -> (dbseek (xfilial ("ZAK") + ::Codigo + ::Loja, .F.))
 					::GrpFam := zak -> zak_IdZAN
@@ -269,6 +274,30 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 						_sErros += 'Associado ' + ::Codigo + '/' + ::Loja + 'nao vinculado a nenhum grupo familiar'
 					endif
 				endif
+				*/
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery += "SELECT CCAssociadoGrpFamCod       as grpfam "
+				_oSQL:_sQuery +=      ", CCAssociadoGrpFamNucleo    as nucleo"
+				_oSQL:_sQuery +=      ", CCAssociadoGrpFamSubNucleo as subnucleo"
+				_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".CCAssociadoGrpFam CCAGF,"
+				_oSQL:_sQuery +=             _sLinkSrv + ".CCAssociadoInscricoes CCAI"
+				_oSQL:_sQuery += " where CCAGF.CCAssociadoGrpFamCod = CCAI.CCAssocIEGrpFamCod
+				_oSQL:_sQuery +=   " and CCAI.CCAssociadoCod        = '" + ::Codigo + "'"
+				_oSQL:_sQuery +=   " and CCAI.CCAssociadoLoja       = '" + ::Loja + "'"
+				_oSQL:Log ()
+				_aGrpFam := aclone (_oSQL:RetFixo (1, "ao consultar grupo familiar do associado '" + ::Codigo + '/' + ::Loja + "' no sistema NaWeb.",, .T.))
+				if len (_aGrpFam) == 1
+					::GrpFam    = _aGrpFam [1, 1]
+					::Nucleo    = _aGrpFam [1, 2]
+					::SubNucleo = _aGrpFam [1, 3]
+				else
+					::GrpFam = ''
+					u_log2 ('aviso', 'Associado ' + ::Codigo + '/' + ::Loja + ' nao vinculado a nenhum grupo familiar.')
+					if type ("_sErros") == 'C'
+						_sErros += 'Associado ' + ::Codigo + '/' + ::Loja + 'nao vinculado a nenhum grupo familiar'
+					endif
+				endif
+
 			endif
 
 			// Dados que podem ter mais de uma ocorrencia, quando o associado tiver mais de uma loja, sao armazenados em arrays.
