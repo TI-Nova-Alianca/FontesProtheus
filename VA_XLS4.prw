@@ -11,7 +11,8 @@
 //
 // Historico de alteracoes:
 // 04/07/2018 - Robert  - Incluidos campos de linha de envase, perda, data/hora digitacao e usuario.
-// 01/04/2019 - Andre   - Alterado busca da linha de envase do B1_CLINF pelo B1_VALINEN, descrição também passa a ser buscada na tabela SH1 e não mais ZAZ.
+// 01/04/2019 - Andre   - Alterado busca da linha de envase do B1_CLINF pelo B1_VALINEN, 
+//                        descrição também passa a ser buscada na tabela SH1 e não mais ZAZ.
 // 07/06/2019 - Andre   - Adicionado campos D3_VATURNO e D3_VADTPRD.
 // 22/10/2020 - Cláudia - Ajuste de formatação de data. GLPI: 8694
 // 13/01/2021 - Claudia - GLPI: 8694 Realizado ajuste na consulta na linha de produção.
