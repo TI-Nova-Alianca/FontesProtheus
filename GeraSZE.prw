@@ -86,7 +86,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 	else
 		do case
 		case _sBalanca == 'LB'
-			_sIdImpr = '07'  // LAB SAFRA MATRIZ
+			_sIdImpr = '14' //'07'  // LAB SAFRA MATRIZ
 		// Ainda nao consegui imprimir fora da rede da matriz --> 		case _sBalanca == 'JC'
 		// Ainda nao consegui imprimir fora da rede da matriz --> 			_sIdImpr = '08'
 		// Ainda nao consegui imprimir fora da rede da matriz --> 		case _sBalanca == 'LV'
