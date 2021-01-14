@@ -86,6 +86,7 @@
 // 06/01/2021 - Robert - Regras para pagamento (grupos A/B/C) permanecem iguais ao ano passado no metodo FechSafra.
 // 08/01/2021 - Robert - Novas regras para pagamento (grupos A/B/C) no metodo FechSafra.
 // 12/01/2021 - Robert - Passa a buscar grupo familiar, nucleo e subnucleo no NaWeb.
+// 14/01/2021 - Robert - Metodo :CadVitic() passa a ler a funcao VA_RusCV() parabuscar tudo de um mesmo local.
 //
 
 #include "protheus.ch"
@@ -473,6 +474,7 @@ Return
 // --------------------------------------------------------------------------
 // Busca os dados de cadastros viticolas ligados ao associado.
 METHOD CadVitic () Class ClsAssoc
+	/*
 	local _oSQL    := NIL
 	local _aRetQry := {}
 	local _aRet    := {}
@@ -522,6 +524,8 @@ METHOD CadVitic () Class ClsAssoc
 		_aRet [_nLinha, .CadVitSivibe]      = _aRetQry [_nLinha, 11]
 	next
 return _aRet
+*/
+return U_VA_RusCV (::Codigo, ::Loja)
 
 
 
