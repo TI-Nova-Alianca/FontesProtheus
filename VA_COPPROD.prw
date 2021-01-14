@@ -50,7 +50,8 @@ User Function VA_COPPROD()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " SELECT B1_FILIAL, B1_COD, B1_DESC, B1_TIPO, B1_UM, B1_LOCPAD, B1_LOCALIZ,"
         _oSQL:_sQuery += " B1_GRUPO, B1_ORIGEM, B1_PICM, B1_IPI, B1_CONTRAT, B1_POSIPI, "
-        _oSQL:_sQuery += " B1_GRPEMB, B1_CODLIN, B1_VAMARCM, B1_VARMAAL, B1_GRTRIB "
+        _oSQL:_sQuery += " B1_GRPEMB, B1_CODLIN, B1_VAMARCM, B1_VARMAAL, B1_GRTRIB, "
+        _oSQL:_sQuery += " B1_APROPRI, B1_TE, B1_TIPCONV, B1_TIPE, B1_VAGRLP, B1_CONTA, B1_CONV"
 		_oSQL:_sQuery += " FROM SB1010 "
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_= '' "
 		_oSQL:_sQuery += " AND B1_COD = '" + alltrim(_aDados [_i, 1]) + "'"
@@ -78,8 +79,16 @@ User Function VA_COPPROD()
                             _aProduto [_x, 15]          ,; // 15 CodLin
                             _aProduto [_x, 16]          ,; // 16 VAMARCM
                             _aProduto [_x, 17]          ,; // 17 VARMAAL
-                            _aProduto [_x, 18]          }) // 18 GRUPO TRIBUTARIO
-			
+                            _aProduto [_x, 18]          ,; // 18 GRUPO TRIBUTARIO
+                            _aProduto [_x, 19]          ,; // 19 B1_APROPRI
+                            _aProduto [_x, 20]          ,; // 20 B1_TE
+                            _aProduto [_x, 21]          ,; // 21 B1_TIPCONV
+                            _aProduto [_x, 22]          ,; // 22 B1_TIPE
+                            _aProduto [_x, 23]          ,; // 23 B1_VAGRLP
+                            _aProduto [_x, 24]          ,;  // B1_CONTA
+                            _aProduto [_x, 25]          })  // B1_CONV
+                            
+
             MsAguarde({|| U_VA_COPSB1(_aSB1, _sProdOld, _sProdNew, _aRelat)}, "Aguarde...", "Processando Registros...")
 
             //U_VA_COPSB1(_aSB1, _sProdOld, _sProdNew, _aRelat)
@@ -120,6 +129,14 @@ User Function VA_COPSB1(_aSB1, _sProdOld, _sProdNew, _aRelat)
     oModel:SetValue("SB1MASTER","B1_VAMARCM"    ,_aSB1[1,16] )
     oModel:SetValue("SB1MASTER","B1_VARMAAL"    ,_aSB1[1,17] )
     oModel:SetValue("SB1MASTER","B1_GRTRIB"     ,"MC"        ) // _aSB1[1,18]
+    oModel:SetValue("SB1MASTER","B1_APROPRI"    ,_aSB1[1,19] ) 
+    oModel:SetValue("SB1MASTER","B1_TE"         ,_aSB1[1,20] ) 
+    oModel:SetValue("SB1MASTER","B1_TIPCONV"    ,_aSB1[1,21] ) 
+    oModel:SetValue("SB1MASTER","B1_TIPE"       ,_aSB1[1,22] ) 
+    oModel:SetValue("SB1MASTER","B1_VAGRLP"     ,_aSB1[1,23] ) 
+    oModel:SetValue("SB1MASTER","B1_CONTA"      ,_aSB1[1,24] ) 
+    oModel:SetValue("SB1MASTER","B1_VATROUT"    ,"N"         ) 
+    oModel:SetValue("SB1MASTER","B1_CONV"       ,_aSB1[1,25] ) 
 
     MsProcTxt(" Gravando registros...")
 	If oModel:VldData()
