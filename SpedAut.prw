@@ -5,13 +5,14 @@
 //              e de entrada (com formulario proprio). Verifica se as notas estao autorizadas e chama impressao de DANFe.
 //
 // Historico de alteracoes:
-// 08/03/2017 - Robert - Melhorado teste de 'ambiente' para evitar envio de notas a partir da base 'teste'.
-// 22/08/2019 - Robert - Seleciona arquivo SF2 antes de chamar rotina de transmissao (tentava dar RETINDEX em arquivo ja fechado). GLPI 6531.
+// 08/03/2017 - Robert  - Melhorado teste de 'ambiente' para evitar envio de notas a partir da base 'teste'.
+// 22/08/2019 - Robert  - Seleciona arquivo SF2 antes de chamar rotina de transmissao 
+//                        (tentava dar RETINDEX em arquivo ja fechado). GLPI 6531.
+// 13/01/2020 - Claudia - GLPI: 9149 - Incluida a gravação do SXK para parametros.
 //
-
+// ---------------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"  // Deixar este include para aparecerem os botoes da tela de acompanhamento do SPED
 
-// --------------------------------------------------------------------------
 user function SPEDAut (_sEntSai, _sSerie, _sNFIni, _sNFFim)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aAmbAnt   := U_SalvaAmb ()
@@ -123,6 +124,24 @@ user function SPEDAut (_sEntSai, _sSerie, _sNFIni, _sNFFim)
 		if ascan (_aNotas, {|_aVal| _aVal [4] == .F.}) == 0  .or. U_MsgYesNo ("Ha notas nao autorizadas. Deseja executar a impressao assim mesmo?")
 		
 			// Grava parametros para impressao de DANFe
+			_sGrupo := "NFSIGW"
+			_sTipo  := "D"
+			If _sEntSai == 'E'
+				_par04 := '1'
+			Else
+				_par04 := '2'
+			EndIf
+			U_GravaSXK (_sGrupo, "01", _sNFIni			, _sTipo)
+			U_GravaSXK (_sGrupo, "02", _sNFFim			, _sTipo)
+			U_GravaSXK (_sGrupo, "03", _sSerie			, _sTipo)
+			U_GravaSXK (_sGrupo, "04", _par04           , _sTipo) 
+
+			_sTipo  := "G"
+			U_GravaSXK (_sGrupo, "01", _sNFIni			, _sTipo)
+			U_GravaSXK (_sGrupo, "02", _sNFFim			, _sTipo)
+			U_GravaSXK (_sGrupo, "03", _sSerie			, _sTipo)
+			U_GravaSXK (_sGrupo, "04", _par04           , _sTipo) 
+
 			U_GravaSX1 ("NFSIGW", "01", _sNFIni)
 			U_GravaSX1 ("NFSIGW", "02", _sNFFim)
 			U_GravaSX1 ("NFSIGW", "03", _sSerie)

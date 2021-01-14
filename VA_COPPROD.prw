@@ -25,6 +25,11 @@ User Function VA_COPPROD()
     Local _x        := 0
     Private _aRelat     := {}
 
+    if ! U_ZZUVL ('124', __cUserId, .T.)
+        u_help("Usuário sem acesso para a rotina 124")
+		return
+	endif
+
     cPerg   := "VA_COPPROD"
 	_ValidPerg ()
 	If ! pergunte (cPerg, .T.)
