@@ -99,6 +99,7 @@
 // 03/01/2020 - Robert  - Ajuste msg. placa veiculo e NF produtor nos dados adicionais.
 // 30/01/2020 - Robert  - Melhorados logs (tentativa verificar bloqueio notas safra).
 // 11/01/2021 - Robert  - Recalcula datas de vencimento de parcelas de notas de safra (este ano vamos fazer todas como 'compra').
+// 14/01/2021 - Robert  - Datas e valores das dupl.safra jah vem certas do MtColSE2. Apenas grava historico.
 //
 
 // --------------------------------------------------------------------------
@@ -458,6 +459,7 @@ static function _AjSE2 ()
 	local _dVctSafra := ctod ('')
 	local _sAnoVcSaf := ''
 	local _sMesVcSaf := ''
+	local _nParc     := 0
 
 	// Grava observacoes no historico dos titulos de compra de lenha, para facilitar filtragens posteriores.
 	if sf1 -> f1_tipo == "N" .and. sf1 -> f1_formul == "S"
@@ -561,7 +563,23 @@ static function _AjSE2 ()
 			enddo
 		endif
 	else
-		U_Log2 ('info', '[' + procname () + '] ponto de entrada MTCOLSE2 implementado. No vou mexer nas duplicatas de safra.')
+	//	U_Log2 ('info', '[' + procname () + '] ponto de entrada MTCOLSE2 implementado. No vou mexer nas datas e valores das duplicatas de safra. Somente historicos.')
+		if sf1 -> f1_tipo == "N" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) .and. IsInCallStack ("U_VA_RUS")
+			if type ('_aParPgSaf') == 'A'  // Variavel criada no programa VA_RUSN().
+				U_Log2 ('info', '[' + procname () + '] Ajustando historicos dos titulos de nota de compra de safra (valores e datas jah devem ter sido gerados via ponto de entrada MTCOLSE2).')
+				se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
+				for _nParc = 1 to len (_aParPgSaf)
+					// Localiza a parcela somando 64 ao _nParc, pois as parcelas iniciam na letra 'A'.
+					if ! se2 -> (dbseek (xfilial ("SE2") + sf1 -> f1_fornece + sf1 -> f1_loja + sf1 -> f1_serie + sf1 -> f1_doc + chr (64 + _nParc) + 'NF', .F.))
+						U_Log2 ('aviso', 'Nao encontrei a parcela ' + chr (64 + _nParc) + ' para ajustar historico de safra.')
+					else
+						reclock ("SE2", .F.)
+						se2 -> e2_hist = alltrim (se2 -> e2_hist) + alltrim (_aParPgSaf [_nParc, 5])
+						msunlock ()
+					endif
+				next
+			endif
+		endif
 	endif
 return
 

@@ -1,9 +1,10 @@
 // Programa...: VA_RusPP
 // Autor......: Robert Koch
-// Data.......: 12/01/2021
+// Data.......: 13/01/2021
 // Descricao..: Gera array com definicao de percentuais e datas para pagamento de safra (regras mudam de uma safra para outra).
 //
 // Historico de alteracoes:
+// 14/01/2021 - Robert - Criada coluna 4 com valores (a distr.por percentuais penaliza sempre a ultima parcela (frete)
 //
 
 // ------------------------------------------------------------------------------------
@@ -19,6 +20,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
 	local _nPerFrt    := 0
 	local _nPerUva    := 0
 	local _nSomaPer   := 0
+	local _nSomaUva   := 0
 	local _dVctSafra  := ctod ('')
 	local _aAux       := {}
 	local _sAnoVcSaf  := ''
@@ -30,18 +32,18 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
 
 	// Ateh o momento, a forma de pagamento mais longa tem 11 parcelas. Acrescenta uma para o frete.
 	_aParcel = {}
-	aadd (_aParcel, {0, ctod (''), 0})
-	aadd (_aParcel, {0, ctod (''), 0})
-	aadd (_aParcel, {0, ctod (''), 0})
-	aadd (_aParcel, {0, ctod (''), 0})
-	aadd (_aParcel, {0, ctod (''), 0})
-	aadd (_aParcel, {0, ctod (''), 0})
-	aadd (_aParcel, {0, ctod (''), 0})
-	aadd (_aParcel, {0, ctod (''), 0})
-	aadd (_aParcel, {0, ctod (''), 0})
-	aadd (_aParcel, {0, ctod (''), 0})
-	aadd (_aParcel, {0, ctod (''), 0})
-	aadd (_aParcel, {0, ctod (''), 0})
+	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
 
 	// Aqui nao preciso de um associado especifico... preciso apenas ler as regras de pagamento.
 	_oAssocCP = ClsAssoc():New ('000161', '01')
@@ -87,6 +89,9 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
 	if _nVlUva == 0
 		u_help ("Sem valor da uva para calcular parcelas de pagamento.",, .T.)
 	else
+
+		// Parte 1: monta coluna de percentuais de participacao de cada parcela.
+		// Se a parte 2 (por valor) rodar bem, deixo de usar os percentuais.
 		// Calcula quanto representa o frete sobre o total dos valores.
 		// Seu percentual fica arredondado para 2 decimais e o vencimento para fevereiro do ano seguinte.
 		_nPerFrt = (_nVlFrete * 100) / (_nVlUva + _nVlFrete)
@@ -94,7 +99,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
 		U_Log2 ('debug', 'Percentual do frete sobre o total: ' + cvaltochar (_nPerFrt))
 		_nPerFrt = round (_nPerFrt, 2)
 		_aParcel [_nParcFrt, 3] = _nPerFrt
-
+		//
 		// Estando definido quanto o frete representa sobre o total da nota, preciso diminuir
 		// esse percentual proporcionalmente das demais parcelas.
 		_nPerUva = 100 - _nPerFrt
@@ -104,7 +109,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
 			_aParcel [_nParcel, 3] = round (_nPerUva * _aParcel [_nParcel, 1] / 100, 1)
 			_nParcel ++
 		enddo
-
+		//
 		// Joga a diferenca de arredondamento dos percentuais na penultima parcela (a ultima tem o frete)
 		_nSomaPer = 0
 		for _nParcel = 1 to len (_aParcel)
@@ -112,6 +117,33 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
 		next
 		U_Log2 ('debug', 'ajustando dif.percent. de ' + cvaltochar (_nSomaPer))
 		_aParcel [_nParcFrt - 1, 3] += (100 - _nSomaPer)
+
+
+		// Parte 1: monta coluna de valor de cada parcela (por percentual o sistema arredonda na ultima parcela, distorcendo o frete)
+		// Frete sempre valor cheio na sua parcela (mesmo que zerado).
+		_aParcel [_nParcFrt, 4] = _nVlFrete
+		_aParcel [_nParcFrt, 5] = 'AUX.COMB.' + _sSafPag
+		//
+		// Distribui o valor da uva conforme percentuais definidos nas regras de pagamento.
+		_nParcel = 1
+		do while _nParcel <= len (_aParcel) .and. _nParcel < _nParcFrt
+			_aParcel [_nParcel, 4] = round ((_nVlUva * _aParcel [_nParcel, 1] / 100), 2)
+			_aParcel [_nParcel, 5] = 'COMPRA SAFRA ' + _sSafPag + ' GRP.' + _sGrpPgSaf
+			_nParcel ++
+		enddo
+		//U_Log2 ('debug', 'antes de ajustar a diferenca de arredondamento de valor da uva:')
+		//U_Log2 ('debug', _aParcel)
+		//
+		// Joga a diferenca de arredondamento do valor da uva na penultima parcela (a ultima tem o frete)
+		_nSomaUva = 0
+		_nParcel = 1
+		do while _nParcel <= len (_aParcel) .and. _nParcel < _nParcFrt
+			_nSomaUva += _aParcel [_nParcel, 4]
+			_nParcel ++
+		enddo
+		U_Log2 ('debug', 'ajustando dif.vlr.uva de ' + cvaltochar (_nSomaUva))
+		_aParcel [_nParcFrt - 1, 4] += (_nVlUva - _nSomaUva)
+
 
 
 		// Define ano e mes para vencimento das parcelas.
@@ -181,8 +213,10 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
 	// Retorna somente as linhas com dados definidos
 	_aAux = {}
 	for _nParcel = 1 to len (_aParcel)
-		if ! empty (_aParcel [_nParcel, 2]) .and. _aParcel [_nParcel, 3] > 0
-			aadd (_aAux, {_aParcel [_nParcel, 2], _aParcel [_nParcel, 3]})
+//		if ! empty (_aParcel [_nParcel, 2]) .and. _aParcel [_nParcel, 3] > 0
+		if ! empty (_aParcel [_nParcel, 2]) .and. (_aParcel [_nParcel, 3] > 0 .or. _aParcel [_nParcel, 4] > 0)
+//			aadd (_aAux, {_aParcel [_nParcel, 2], _aParcel [_nParcel, 3]})
+			aadd (_aAux, aclone (_aParcel [_nParcel])) 
 		endif
 	next
 	U_Log2 ('info', 'Finalizando ' + procname ())
