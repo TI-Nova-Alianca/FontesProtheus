@@ -14,6 +14,7 @@
 // 20/11/2019 - Robert - Ajustes para safra 2020 (novos campos tabela 17 do ZX5)
 // 03/01/2020 - Robert - Campo ZX5_17COND vai ser excluido (a tabela 17 serve somente para espaldeira, entao nao ha motivo para manter o campo).
 // 16/10/2020 - Robert - Nao levava valores junto quando copia a tabela 13 (grp.prc.safra)
+// 15/01/2021 - Robert - Replica tabela 52
 //
 
 // --------------------------------------------------------------------------
@@ -88,9 +89,10 @@ Static Function _Opcoes ()
 
 	// Monta array de opcoes.
 	_aOpcoes = {}
-//	aadd (_aOpcoes, {.F., "Tabela de nao conformidades uvas",    "ZX5_11"})
-	aadd (_aOpcoes, {.F., "Grupos de uvas p/tabela precos",      "ZX5_13"})
-	aadd (_aOpcoes, {.F., "Faixas calculo grau uvas viniferas",  "ZX5_17"})
+//	aadd (_aOpcoes, {.F., "Tabela de nao conformidades uvas",      "ZX5_11"})
+	aadd (_aOpcoes, {.F., "Grupos de uvas p/tabela precos",        "ZX5_13"})
+	aadd (_aOpcoes, {.F., "Faixas grau uvas viniferas espaldeira", "ZX5_17"})
+	aadd (_aOpcoes, {.F., "Faixas grau uvas viniferas latadas",    "ZX5_52"})
 
 	// Pre-seleciona opcoes cfe. conteudo anterior
 	for _nOpcao = 1 to len (_aOpcoes)
@@ -121,6 +123,8 @@ Static Function _AndaLogo ()
 					processa ({|| _ReplZX513 ()})
 				case _aOpcoes [_nOpcao, 3] == "ZX5_17"
 					processa ({|| _ReplZX517 ()})
+				case _aOpcoes [_nOpcao, 3] == "ZX5_52"
+					processa ({|| _ReplZX552 ()})
 				otherwise
 					u_help ("Opcao sem tratamento: '" + _aOpcoes [_nOpcao, 3] + "'.")
 			endcase
@@ -337,7 +341,8 @@ static function _ReplZX517 ()
 		CursorWait ()
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT ZX5_17PROD, ZX5_17COND, ZX5_17GIPR, ZX5_17GIAA, ZX5_17GIA, ZX5_17GIB, ZX5_17GIC, ZX5_17GID, ZX5_17GIDS, ZX5_17GIES, ZX5_17GFES," // ZX5_17LSAN, ZX5_17LMAT, ZX5_17LEST"
+//		_oSQL:_sQuery += " SELECT ZX5_17PROD, ZX5_17COND, ZX5_17GIPR, ZX5_17GIAA, ZX5_17GIA, ZX5_17GIB, ZX5_17GIC, ZX5_17GID, ZX5_17GIDS, ZX5_17GIES, ZX5_17GFES," // ZX5_17LSAN, ZX5_17LMAT, ZX5_17LEST"
+		_oSQL:_sQuery += " SELECT ZX5_17PROD, ZX5_17GIPR, ZX5_17GIAA, ZX5_17GIA, ZX5_17GIB, ZX5_17GIC, ZX5_17GID, ZX5_17GIDS, ZX5_17GIES, ZX5_17GFES," // ZX5_17LSAN, ZX5_17LMAT, ZX5_17LEST"
 		_oSQL:_sQuery +=        " max (ZX5_CHAVE) over () as MaxChv"
 		_oSQL:_sQuery +=   " FROM " + RetSqlName ("ZX5") + " ZX5 "
 		_oSQL:_sQuery +=  " WHERE ZX5.D_E_L_E_T_ != '*'"
@@ -375,6 +380,97 @@ static function _ReplZX517 ()
 //			zx5 -> zx5_17LSan = (_sAliasQ) -> zx5_17LSan
 //			zx5 -> zx5_17LMat = (_sAliasQ) -> zx5_17LMat
 //			zx5 -> zx5_17LEst = (_sAliasQ) -> zx5_17LEst
+			msunlock ()
+			_nCopiado ++
+			(_sAliasQ) -> (dbskip ())
+		enddo
+		CursorArrow ()
+		u_help ("Processo concluido. " + cvaltochar (_nCopiado) + " registro(s) copiado(s).")
+		dbselectarea ("SB1")
+	endif
+return
+
+
+
+// --------------------------------------------------------------------------
+static function _ReplZX552 ()
+	local _oSQL      := NIL
+	local _sAliasQ   := ""
+	local _nCopiado  := 0
+	local _sChave    := ""
+	local _lContinua := .T.
+	private cPerg    := "REPLSAFR"
+	
+	if ! u_msgyesno ("Esta rotina permite copiar varios registros de determinada safra para uma nova safra (faixas de grau para determinar classificacao de uvas viniferas). Registros ja existentes nao serao copiados. Deseja continuar?")
+		_lContinua = .F.
+	endif
+
+	if _lContinua .and. ! pergunte (cPerg, .T.)
+		_lContinua = .F.
+	endif
+	
+	if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT COUNT (*)"
+		_oSQL:_sQuery +=   " FROM " + RetSqlName ("ZX5") + " ZX5 "
+		_oSQL:_sQuery +=  " WHERE ZX5.D_E_L_E_T_ != '*'"
+		_oSQL:_sQuery +=    " AND ZX5.ZX5_FILIAL  = '" + xFilial ("ZX5") + "'"
+		_oSQL:_sQuery +=    " AND ZX5.ZX5_TABELA  = '52'"
+		_oSQL:_sQuery +=    " AND ZX5.ZX5_52SAFR  = '" + mv_par02 + "'"
+		if _oSQL:RetQry () > 0
+			if U_MsgNoYes ("Ja existe cadastro desta tabela para a safra '" + mv_par02 + "'. Deseja sobrepor?")
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += " UPDATE " + RetSqlName ("ZX5")
+				_oSQL:_sQuery +=    " SET D_E_L_E_T_  = '*'"
+				_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ != '*'"
+				_oSQL:_sQuery +=    " AND ZX5_FILIAL  = '" + xFilial ("ZX5") + "'"
+				_oSQL:_sQuery +=    " AND ZX5_TABELA  = '52'"
+				_oSQL:_sQuery +=    " AND ZX5_52SAFR  = '" + mv_par02 + "'"
+				if ! _oSQL:Exec ()
+					u_help ("Erro na exclusao dos dados anteriores.")
+					_lContinua = .F.
+				endif
+			else
+				_lContinua = .F.
+			endif
+		endif
+	endif
+
+	if _lContinua
+		CursorWait ()
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT ZX5_52SAFR, ZX5_52GRUP, ZX5_52DESC, ZX5_52GIA, ZX5_52GIB, ZX5_52GIC,"
+		_oSQL:_sQuery +=        " max (ZX5_CHAVE) over () as MaxChv"
+		_oSQL:_sQuery +=   " FROM " + RetSqlName ("ZX5") + " ZX5 "
+		_oSQL:_sQuery +=  " WHERE ZX5.D_E_L_E_T_ != '*'"
+		_oSQL:_sQuery +=    " AND ZX5.ZX5_FILIAL  = '" + xFilial ("ZX5") + "'"
+		_oSQL:_sQuery +=    " AND ZX5.ZX5_TABELA  = '52'"
+		_oSQL:_sQuery +=    " AND ZX5.ZX5_52SAFR  = '" + mv_par01 + "'"
+		_oSQL:_sQuery +=    " AND NOT EXISTS (SELECT *"
+		_oSQL:_sQuery +=              " FROM " + RetSqlName ("ZX5") + " NOVA "
+		_oSQL:_sQuery +=             " WHERE NOVA.D_E_L_E_T_ != '*'"
+		_oSQL:_sQuery +=               " AND NOVA.ZX5_FILIAL  = ZX5.ZX5_FILIAL"
+		_oSQL:_sQuery +=               " AND NOVA.ZX5_52SAFR  = '" + mv_par02 + "'"
+		_oSQL:_sQuery +=               " AND NOVA.ZX5_52GRUP  = ZX5.ZX5_52GRUP)"
+		_oSQL:_sQuery +=  " ORDER BY ZX5_52GRUP"
+		u_log (_oSQL:_sQuery)
+		_sAliasQ := _oSQL:Qry2Trb ()
+		_sChave = (_sAliasQ) -> MaxChv
+		do while ! (_sAliasQ) -> (eof ())
+			_sChave = soma1 (_sChave)
+			reclock ("ZX5", .T.)
+			zx5 -> zx5_filial = xfilial ("ZX5")
+			zx5 -> zx5_tabela = '52'
+			zx5 -> zx5_CHAVE  = _sChave
+			zx5 -> zx5_52safr = mv_par02
+			zx5 -> zx5_52grup = (_sAliasQ) -> zx5_52grup
+			zx5 -> zx5_52desc = (_sAliasQ) -> zx5_52desc
+			zx5 -> zx5_52GIA  = (_sAliasQ) -> zx5_52gia
+			zx5 -> zx5_52GIB  = (_sAliasQ) -> zx5_52gib
+			zx5 -> zx5_52GIC  = (_sAliasQ) -> zx5_52gic
 			msunlock ()
 			_nCopiado ++
 			(_sAliasQ) -> (dbskip ())

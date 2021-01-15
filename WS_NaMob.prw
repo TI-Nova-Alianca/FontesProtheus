@@ -2,11 +2,19 @@
 // Autor......: Robert Koch (royalties: http://advploracle.blogspot.com.br/2014/09/webservice-no-protheus-parte-2-montando.html)
 // Descricao..: Disponibilizacao de Web Services para acesso do sistema NaMob (aplicativo associados)
 // Data.......: 10/05/2019
-// 
+ 
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #web_service
+// #PalavasChave      #web_service #generico #integracoes #namob #acesso_externo
+// #TabelasPrincipais #SD1 #SD2 #SD3 #SZE
+// #Modulos           #COOP
+
 // Historico de alteracoes:
 // 14/05/2019 - Robert - Implementado metodo de consulta de capital social.
 // 24/09/2019 - Robert - Implementado metodo de consulta de conta corrente.
+// 15/01/2021 - Robert - Acao 'RetTicketCargaSafra' migrada do ws_alianca para ca (preciso acessar das filiais)
 //
+
 // ------------------------------------------------------------------------------------------------
 #include "APWEBSRV.CH"
 #include "PROTHEUS.CH"
@@ -71,6 +79,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_NaMob
 				_AsCapSoc ()
 			case _sAcao == 'ConsultaExtratoCCAssoc'
 				_AsExtrCC ()
+			case _sAcao == 'RetTicketCargaSafra'  // Implementado neste web service por que o ws_alianca nao estah publicado na internet.
+				_RTkCarSaf ()
 			otherwise
 				_sErros += "A acao especificada no XML eh invalida: " + _sAcao
 		endcase
@@ -87,6 +97,9 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_NaMob
 
 	u_logFim (GetClassName (::Self) + '.' + procname ())
 Return .T.
+
+
+
 // --------------------------------------------------------------------------
 // Associados - consulta capital social.
 static function _AsCapSoc ()
@@ -115,6 +128,9 @@ static function _AsCapSoc ()
 	endif
 	u_logFim ()
 return
+
+
+
 // --------------------------------------------------------------------------
 // Associados - consulta extrato conta corrente.
 static function _AsExtrCC ()
@@ -161,6 +177,9 @@ static function _AsExtrCC ()
 	endif
 	u_logFim ()
 return
+
+
+
 // --------------------------------------------------------------------------
 // Associados - consulta fechamento de safra.
 static function _AsFecSaf ()
@@ -191,7 +210,9 @@ static function _AsFecSaf ()
 	endif
 	u_logFim ()
 return
-//
+
+
+
 // --------------------------------------------------------------------------
 static function _ExtraiTag (_sTag, _lObrig, _lValData)
 	local _sRet    := ""
@@ -226,3 +247,65 @@ static function _ExtraiTag (_sTag, _lObrig, _lValData)
 	//u_log ('_sRet = ', _sRet)
 	//u_logFim ()
 return _sRet
+
+
+
+// --------------------------------------------------------------------------
+// Retorna texto ticket carga safra
+static function _RTkCarSaf ()
+	local _sSafra    := ''
+	local _sBalanca  := ''
+	local _sCargaIni := ''
+	local _sCargaFim := ''
+	local _dDataIni  := ctod ('')
+	local _dDataFim  := ctod ('')
+
+	U_Log2 ('info', 'Iniciando ' + procname ())
+	if empty (_sErros) ; _sSafra    = _ExtraiTag ("_oXML:_WSAlianca:_Safra",                  .T., .F.) ; endif
+	if empty (_sErros) ; _sBalanca  = _ExtraiTag ("_oXML:_WSAlianca:_Balanca",                .T., .F.) ; endif
+	if empty (_sErros) ; _sCargaIni = _ExtraiTag ("_oXML:_WSAlianca:_CargaIni",               .T., .F.) ; endif
+	if empty (_sErros) ; _sCargaFim = _ExtraiTag ("_oXML:_WSAlianca:_CargaFim",               .T., .F.) ; endif
+	if empty (_sErros) ; _dDataIni  = _ExtraiTag ("_oXML:_WSAlianca:_DataIni",                .T., .T.) ; endif
+	if empty (_sErros) ; _dDataFim  = _ExtraiTag ("_oXML:_WSAlianca:_DataFim",                .T., .T.) ; endif
+	if empty (_sErros)
+		private _lImpTick  := .T.         // Variavel usada pelo programa de impressao do ticket
+		sze -> (dbsetorder (1))  // ZE_FILIAL+ZE_SAFRA+ZE_CARGA
+		sze -> (dbseek (xfilial ("SZE") + _sSafra + _sCargaIni, .T.))
+		do while ! sze -> (eof ()) .and. sze -> ze_filial == xfilial ("SZE") .and. sze -> ze_safra == _sSafra .and. sze -> ze_carga <= _sCargaFim
+			if sze -> ze_status = 'C'
+				U_Log2 ('info', 'Carga ' + sze -> ze_carga + ' cancelada; Nao retornarei ticket.')
+				sze -> (dbskip ())
+				loop
+			endif
+			if sze -> ze_local != _sBalanca
+				U_Log2 ('info', 'Carga ' + sze -> ze_carga + ' foi gerada pela balanca ' + sze -> ze_local + '; Nao retornarei ticket.')
+				sze -> (dbskip ())
+				loop
+			endif
+			if sze -> ze_data < stod (_dDataIni) .or. sze -> ze_data > stod (_dDataFim)
+				U_Log2 ('info', 'Carga ' + sze -> ze_carga + ' fora do intervalo de datas; Nao retornarei ticket.')
+				sze -> (dbskip ())
+				loop
+			endif
+			if ! empty (sze -> ze_ImpTk)
+				U_Log2 ('info', 'Carga ' + sze -> ze_carga + ' ticket jah foi impresso; Nao retornarei ticket.')
+				sze -> (dbskip ())
+				loop
+			endif
+			_sMsgRetWS = U_va_rusTk (1, '', 1, {}, 'BEMATECH', .t.)
+
+			// Substitui caracteres especiais, pois ficam invalidos no XML
+			_sMsgRetWS = strtran (_sMsgRetWS, chr (27), 'chr(27)')
+			_sMsgRetWS = strtran (_sMsgRetWS, chr (29), 'chr(29)')
+			_sMsgRetWS = strtran (_sMsgRetWS, chr (60), 'chr(60)')
+			_sMsgRetWS = strtran (_sMsgRetWS, chr (11), 'chr(11)')
+
+
+			//DURANTE TESTES. depois a intencao eh retornar varios tickets numa mesma chamada.
+			EXIT
+
+			sze -> (dbskip ())
+		enddo
+	endif
+	U_Log2 ('info', 'Finalizando ' + procname ())
+Return

@@ -87,6 +87,7 @@
 // 08/01/2021 - Robert - Novas regras para pagamento (grupos A/B/C) no metodo FechSafra.
 // 12/01/2021 - Robert - Passa a buscar grupo familiar, nucleo e subnucleo no NaWeb.
 // 14/01/2021 - Robert - Metodo :CadVitic() passa a ler a funcao VA_RusCV() parabuscar tudo de um mesmo local.
+// 15/01/2021 - Robert - Melhorado retorno de erros quando associado nao tem codigo/loja base no cadastro.
 //
 
 #include "protheus.ch"
@@ -197,7 +198,13 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 		endif
 		if _lContinua .and. (empty (sa2 -> a2_vacbase) .or. empty (sa2 -> a2_valbase))
 			//::UltMsg += "Associado '" + _sCodigo + '/' + _sLoja + "' sem codigo/loja base no cadastro."
-			u_log ("Associado '" + _sCodigo + '/' + _sLoja + "' sem codigo/loja base no cadastro.")
+			u_log2 ('erro', "Associado '" + _sCodigo + '/' + _sLoja + "' sem codigo/loja base no cadastro.")
+			if type ("_sErroAuto") == "C"  // Variavel private (customizada) para retorno de erros em rotinas automaticas.
+				_sErroAuto += iif (empty (_sErroAuto), '', '; ') + "Associado '" + _sCodigo + '/' + _sLoja + "' sem codigo/loja base no cadastro."
+			endif
+			if type ('_sErros') == 'C'  // Variavel private (customizada) geralmente usada em chamadas via web service.
+				_sErros += iif (empty (_sErros), '', '; ') + "Associado '" + _sCodigo + '/' + _sLoja + "' sem codigo/loja base no cadastro."
+			endif
 			_lContinua = .F.
 		endif
 		if _lContinua
