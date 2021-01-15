@@ -148,6 +148,12 @@ user function SPEDAut (_sEntSai, _sSerie, _sNFIni, _sNFFim)
 			U_GravaSX1 ("NFSIGW", "04", iif (_sEntSai == 'E', 1, 2))  // 1=Entrada;2=Saida
 	
 			SpedDanfe ()  // Impressao do DANFe
+
+			_sTipo  := "D"
+			U_GravaSXK (_sGrupo, "01", _sNFIni			, _sTipo)
+			U_GravaSXK (_sGrupo, "02", _sNFFim			, _sTipo)
+			U_GravaSXK (_sGrupo, "03", _sSerie			, _sTipo)
+			U_GravaSXK (_sGrupo, "04", _par04           , _sTipo) 
 		endif
 	endif
 
