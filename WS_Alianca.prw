@@ -51,6 +51,7 @@
 //                      - Criada tag <FP> na consulta de orcamentos a ser retornada para o NaWeb (GLPI 8900).
 // 07/12/2020 - Robert  - Criadas tags <REA_MES> na consulta de orcamentos a ser retornada para o NaWeb (GLPI 8893).
 // 11/01/2021 - Robert  - Preenche cadastro viticola com zeros a esquerda na geracao de cargas de safra.
+// 15/01/2021 - Robert  - Acao 'RetTicketCargaSafra' migrada para ws_namob (preciso acessar das filiais)
 //
 
 // ----------------------------------------------------------------------------------------------------------
@@ -179,8 +180,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 			_ExecConsOrc ()
 			case _sAcao == 'IncluiCargaSafra'
 			_IncCarSaf ()
-			case _sAcao == 'RetTicketCargaSafra'
-			_RTkCarSaf ()
+		//	case _sAcao == 'RetTicketCargaSafra'
+		//	_RTkCarSaf ()
 			case _sAcao == 'ConsultaKardex'
 			_ExecKardex ()
 			case _sAcao == 'MonitorProtheus'
@@ -1363,45 +1364,67 @@ static function _IncCarSaf ()
 Return
 
 
-
+/* movido para ws_namob
 // --------------------------------------------------------------------------
 // Retorna texto ticket carga safra
 static function _RTkCarSaf ()
 	local _sSafra    := ''
 	local _sBalanca  := ''
-	local _sCarga    := ''
+	local _sCargaIni := ''
+	local _sCargaFim := ''
+	local _dDataIni  := ctod ('')
+	local _dDataFim  := ctod ('')
 	local _lAmostra  := .F.
 	local _sSenhaOrd := ''
 
-	u_logIni ()
-	u_log ('cFilAnt:', cFilAnt)
-	if empty (_sErros) ; _sSafra    = _ExtraiTag ("_oXML:_WSAlianca:_Safra",             .T., .F.) ; endif
-	if empty (_sErros) ; _sBalanca  = _ExtraiTag ("_oXML:_WSAlianca:_Balanca",           .T., .F.) ; endif
-	if empty (_sErros) ; _sCarga    = _ExtraiTag ("_oXML:_WSAlianca:_Carga",             .T., .F.) ; endif
-	if empty (_sErros) ; _lAmostra  = (upper (_ExtraiTag ("_oXML:_WSAlianca:_ColetarAmostra",    .T., .F.)) == 'S') ; endif
-	if empty (_sErros) ; _sSenhaOrd = _ExtraiTag ("_oXML:_WSAlianca:_Senha",             .F., .F.) ; endif
-	if empty (_sErros)
-		sze -> (dbsetorder (1))  // ZE_FILIAL+ZE_SAFRA+ZE_CARGA
-		if ! sze -> (dbseek (xfilial ("SZE") + _sSafra + _sCarga, .F.))
-			_sErros += "Carga nao localizada na filial '" + cFilAnt + "' para a safra '" + _sSafra + "'"
-		endif
-	endif
-	if empty (_sErros) .and. sze -> ze_status = 'C'
-		_sErros += "Carga '" + sze -> ze_carga + "' cancelada."
-	endif
-	if empty (_sErros) .and. sze -> ze_local != _sBalanca
-		_sErros += "Carga '" + sze -> ze_carga + "' foi gerada pela balanca '" + sze -> ze_local + "'."
-	endif
+	U_Log2 ('info', 'Iniciando ' + procname ())
+	if empty (_sErros) ; _sSafra    = _ExtraiTag ("_oXML:_WSAlianca:_Safra",                  .T., .F.) ; endif
+	if empty (_sErros) ; _sBalanca  = _ExtraiTag ("_oXML:_WSAlianca:_Balanca",                .T., .F.) ; endif
+	if empty (_sErros) ; _sCargaIni = _ExtraiTag ("_oXML:_WSAlianca:_CargaIni",               .T., .F.) ; endif
+	if empty (_sErros) ; _sCargaFim = _ExtraiTag ("_oXML:_WSAlianca:_CargaFim",               .T., .F.) ; endif
+	if empty (_sErros) ; _dDataIni  = _ExtraiTag ("_oXML:_WSAlianca:_DataIni",                .T., .T.) ; endif
+	if empty (_sErros) ; _dDataFim  = _ExtraiTag ("_oXML:_WSAlianca:_DataFim",                .T., .T.) ; endif
+//	if empty (_sErros) ; _lAmostra  = (upper (_ExtraiTag ("_oXML:_WSAlianca:_ColetarAmostra", .T., .F.)) == 'S') ; endif
+//	if empty (_sErros) ; _sSenhaOrd = _ExtraiTag ("_oXML:_WSAlianca:_Senha",                  .F., .F.) ; endif
 	if empty (_sErros)
 		private _lImpTick  := .T.         // Variavel usada pelo programa de impressao do ticket
-	//	private _lColAmCar := _lAmostra   // Variavel usada pelo programa de impressao do ticket
-	//	private _sOrDesSaf := _sSenhaOrd  // Variavel usada pelo programa de impressao do ticket
-		_sMsgRetWS = U_va_rusTk (1, '', 1, {}, 'QUICKPRINTER', .t.)
+		sze -> (dbsetorder (1))  // ZE_FILIAL+ZE_SAFRA+ZE_CARGA
+		sze -> (dbseek (xfilial ("SZE") + _sSafra + _sCargaIni, .T.))
+		do while ! sze -> (eof ()) .and. sze -> ze_filial == xfilial ("SZE") .and. sze -> ze_safra == _sSafra .and. sze -> ze_carga <= _sCargaFim
+			if sze -> ze_status = 'C'
+				U_Log2 ('info', 'Carga ' + sze -> ze_carga + ' cancelada; Nao retornarei ticket.')
+				sze -> (dbskip ())
+				loop
+			endif
+			if sze -> ze_local != _sBalanca
+				U_Log2 ('info', 'Carga ' + sze -> ze_carga + ' foi gerada pela balanca ' + sze -> ze_local + '; Nao retornarei ticket.')
+				sze -> (dbskip ())
+				loop
+			endif
+			if sze -> ze_data < _dDataIni .or. sze -> ze_data > _dDataFim
+				U_Log2 ('info', 'Carga ' + sze -> ze_carga + ' fora do intervalo de datas; Nao retornarei ticket.')
+				sze -> (dbskip ())
+				loop
+			endif
+			if ! empty (sze -> ze_ImpTk)
+				U_Log2 ('info', 'Carga ' + sze -> ze_carga + ' ticket jah foi impresso; Nao retornarei ticket.')
+				sze -> (dbskip ())
+				loop
+			endif
+			_sMsgRetWS += U_va_rusTk (1, '', 1, {}, 'BEMATECH', .t.)
+		
+			sze -> (dbskip ())
+
+			
+			//DURANTE TESTES
+			EXIT
+
+			
+		enddo
 	endif
-
-	u_logFim ()
+	U_Log2 ('info', 'Finalizando ' + procname ())
 Return
-
+*/
 
 
 // --------------------------------------------------------------------------

@@ -9,6 +9,7 @@
 // 13/12/2019 - Robert - Ajustes iniciais para safra 2020 (imprimir cod. barras com numero da carga).
 // 20/01/2020 - Robert - Melhorias para integracao com portaria.
 // 26/02/2020 - Robert - Campo ze_senhade passa a ser do tipo caracter.
+// 15/01/2021 - Robert - Grava campo ze_imptk no final da impressao.
 //
 
 // --------------------------------------------------------------------------
@@ -231,6 +232,12 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 		next
 		delete file (_sArq)
 	endif
+
+	// Marca a carga como 'primeiro ticket jah impresso' por que este web service eh chamado em loop
+	// por estacoes nas filiais, onde o servidor nao consegue enviar o ticket.
+	reclock ("SZE", .F.)
+	sze -> ze_imptk = cvaltochar (_nQual)
+	msunlock ()
 
 	U_ML_SRArea (_aAreaAnt)
 return _sTicket
