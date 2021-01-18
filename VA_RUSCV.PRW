@@ -11,8 +11,9 @@
 
 // --------------------------------------------------------------------------
 User Function va_rusCV (_sFornCV, _sLojaCV)
-	local _oSQL        := NIL
-	local _aRetCV      := {}
+	local _oSQL     := NIL
+	local _aRetCV   := {}
+	local _aEspum   := {}
 	local _aAreaAnt := U_ML_SRArea ()
 
 	u_Log2 ('info', 'Iniciando ' + procname ())
@@ -27,19 +28,49 @@ User Function va_rusCV (_sFornCV, _sLojaCV)
 	_oSQL:Log ()
 	_sAliasQ = _oSQL:Qry2Trb ()
 	_aRetCV = {}
+	sb1 -> (dbsetorder (1))
 	do while ! (_sAliasQ) -> (eof ())
-		aadd (_aRetCV, array (.CadVitQtColunas))
-		_aRetCV [len (_aRetCV), .CadVitCodigo]      = alltrim ((_sAliasQ) -> cadvit)
-		_aRetCV [len (_aRetCV), .CadVitCodGrpFam]   = (_sAliasQ) -> grpfam
-		_aRetCV [len (_aRetCV), .CadVitNomeGrpFam]  = alltrim ((_sAliasQ) -> descgrp)
-		_aRetCV [len (_aRetCV), .CadVitProduto]     = (_sAliasQ) -> produto
-		_aRetCV [len (_aRetCV), .CadVitDescPro]     = alltrim ((_sAliasQ) -> descprod)
-		_aRetCV [len (_aRetCV), .CadVitOrganico]    = (_sAliasQ) -> tipo_organ
-		_aRetCV [len (_aRetCV), .CadVitSafrVit]     = (_sAliasQ) -> safravit
-		_aRetCV [len (_aRetCV), .CadVitVarUva]      = (_sAliasQ) -> varuva
-		_aRetCV [len (_aRetCV), .CadVitRecebFisico] = (_sAliasQ) -> fis_vitic
-		_aRetCV [len (_aRetCV), .CadVitSistCond]    = (_sAliasQ) -> conduc
-		_aRetCV [len (_aRetCV), .CadVitSivibe]      = (_sAliasQ) -> sivibe
+		if ! sb1 -> (dbseek (xfilial ("SB1") + (_sAliasQ) -> produto, .F.))
+			u_help ("Problema na leitura do cadastro viticola: produto '" + (_sAliasQ) -> produto + "' nao cadastrado.",, .T.)
+		else
+			aadd (_aRetCV, array (.CadVitQtColunas))
+			_aRetCV [len (_aRetCV), .CadVitCodigo]      = alltrim ((_sAliasQ) -> cadvit)
+			_aRetCV [len (_aRetCV), .CadVitCodGrpFam]   = (_sAliasQ) -> grpfam
+			_aRetCV [len (_aRetCV), .CadVitNomeGrpFam]  = alltrim ((_sAliasQ) -> descgrp)
+			_aRetCV [len (_aRetCV), .CadVitProduto]     = (_sAliasQ) -> produto
+			_aRetCV [len (_aRetCV), .CadVitDescPro]     = alltrim ((_sAliasQ) -> descprod)
+			_aRetCV [len (_aRetCV), .CadVitOrganico]    = (_sAliasQ) -> tipo_organ
+			_aRetCV [len (_aRetCV), .CadVitSafrVit]     = (_sAliasQ) -> safravit
+			_aRetCV [len (_aRetCV), .CadVitVarUva]      = (_sAliasQ) -> varuva
+			_aRetCV [len (_aRetCV), .CadVitRecebFisico] = (_sAliasQ) -> fis_vitic
+			_aRetCV [len (_aRetCV), .CadVitSistCond]    = (_sAliasQ) -> conduc
+			_aRetCV [len (_aRetCV), .CadVitSivibe]      = (_sAliasQ) -> sivibe
+
+			// Se existir essa mesma variedade 'para espumante', insere na lista para evitar que as validacoes dos programas de safra
+			// reclamem que a variedade nao existe no cadatro viticola.
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += "SELECT COD_PARA_ESPUMANTE COD, DESCR_PARA_ESPUMANTE DESCRI"
+			_oSQL:_sQuery +=  " FROM VA_VFAMILIAS_UVAS"
+			_oSQL:_sQuery += " WHERE COD_BASE = '" + (_sAliasQ) -> produto + "'"
+			_oSQL:_sQuery +=   " AND COD_PARA_ESPUMANTE != ''"
+			//_oSQL:Log ()
+			_aEspum = _oSQL:Qry2Array (.F., .F.)
+			if len (_aEspum) == 1
+				aadd (_aRetCV, array (.CadVitQtColunas))
+				_aRetCV [len (_aRetCV), .CadVitCodigo]      = alltrim ((_sAliasQ) -> cadvit)
+				_aRetCV [len (_aRetCV), .CadVitCodGrpFam]   = (_sAliasQ) -> grpfam
+				_aRetCV [len (_aRetCV), .CadVitNomeGrpFam]  = alltrim ((_sAliasQ) -> descgrp)
+				_aRetCV [len (_aRetCV), .CadVitProduto]     = _aEspum [1, 1]
+				_aRetCV [len (_aRetCV), .CadVitDescPro]     = alltrim (_aEspum [1, 2])
+				_aRetCV [len (_aRetCV), .CadVitOrganico]    = (_sAliasQ) -> tipo_organ
+				_aRetCV [len (_aRetCV), .CadVitSafrVit]     = (_sAliasQ) -> safravit
+				_aRetCV [len (_aRetCV), .CadVitVarUva]      = (_sAliasQ) -> varuva
+				_aRetCV [len (_aRetCV), .CadVitRecebFisico] = (_sAliasQ) -> fis_vitic
+				_aRetCV [len (_aRetCV), .CadVitSistCond]    = (_sAliasQ) -> conduc
+				_aRetCV [len (_aRetCV), .CadVitSivibe]      = (_sAliasQ) -> sivibe
+			endif
+		endif
 		(_sAliasQ) -> (dbskip ())
 	enddo
 	(_sAliasQ) -> (dbclosearea ())

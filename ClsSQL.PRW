@@ -43,8 +43,8 @@
 //                     - Inseridas tags para catalogacao de fontes.
 // 11/09/2020 - Robert - Testes para uso de metodos estaticos (aguarda atualizar build)
 // 04/01/2021 - Robert - Implementado metodo RetFixo.
+// 15/01/2021 - Robert - Novo parametro (_lMsgTela) no metodo :RetFixo().
 //
-
 
 #include "protheus.ch"
 
@@ -579,13 +579,13 @@ return
 
 
 // --------------------------------------------------------------------------
-// Executa uma query, verifica a quantidade de registros encontrados estah
-// de acordo com o solicitado. Se nao estiver, mostra mensagem de aviso e
-// devolve resultado vazio.
-METHOD RetFixo (_nRetFixo, _sMsgFixo) Class ClsSQL
+// Executa uma query, verifica a quantidade de registros encontrados estah de acordo com o solicitado.
+// Se nao estiver, mostra mensagem de aviso e devolve resultado vazio.
+METHOD RetFixo (_nRetFixo, _sMsgFixo, _lMsgTela) Class ClsSQL
 	local _aRetFixo  := NIL
 	local _sErrRetFx := ''
 	_aRetFixo := ::Qry2Array (.T., .F.)
+	_lMsgTela = iif (_lMsgTela == NIL, .T., _lMsgTela)
 	if len (_aRetFixo) != _nRetFixo
 		_sErrRetFx := "Foram encontrados "
 		_sErrRetFx += iif (len (_aRetFixo) > _nRetFixo, "mais", "menos")
@@ -593,7 +593,18 @@ METHOD RetFixo (_nRetFixo, _sMsgFixo) Class ClsSQL
 		_sErrRetFx += " do que o esperado (" + cvaltochar (_nRetFixo) + ") "
 		_sErrRetFx += _sMsgFixo
 		_aRetFixo = {}
-		u_help (_sErrRetFx, ::_sQuery, .T.)
+		if _lMsgTela
+			u_help (_sErrRetFx, ::_sQuery, .T.)
+		else
+			U_Log2 ('erro', _sErrRetFx)
+			U_Log2 ('erro', ::_sQuery)
+			if type ("_sErroAuto") == "C"  // Variavel private (customizada) para retorno de erros em rotinas automaticas.
+				_sErroAuto += iif (empty (_sErroAuto), '', '; ') + _sErrRetFx
+			endif
+			if type ('_sErros') == 'C'  // Variavel private (customizada) geralmente usada em chamadas via web service.
+				_sErros += iif (empty (_sErros), '', '; ') + _sErrRetFx
+			endif
+		endif
 	endif
 return _aRetFixo
 

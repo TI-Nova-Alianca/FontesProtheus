@@ -11,6 +11,7 @@
 // 06/01/2021 - Robert - Busca as distancias na tabela CCPropriedade do NaWeb e nao mais no ZA8.
 // 11/01/2021 - Robert - Manda e-mail de aviso quando nao tiver distancia cadastrada.
 // 12/01/2021 - Robert - NaWeb guarda o cadastro da propriedade (que eu trato por cad.viticola) em formato numerico.
+// 15/01/2021 - Robert - Novo parametro metodo :RetFixo da classe ClsSQL().
 //
 
 // ------------------------------------------------------------------------------------
@@ -79,7 +80,7 @@ User Function FrtSaf21 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor)
 //	_oSQL:_sQuery +=  " WHERE CCPropriedadeCod = '" + _sCadVit + "'"
 	_oSQL:_sQuery +=  " WHERE CCPropriedadeCod = " + cvaltochar (val (_sCadVit))  // NaWeb guarda em formato numerico.
 	_oSQL:Log ()
-	_aDistKM = aclone (_oSQL:RetFixo (1, "ao consultar a distancia da propriedade rural '" + _sCadVit + "'. Verifique cadastro no NaWeb."))
+	_aDistKM = aclone (_oSQL:RetFixo (1, "ao consultar a distancia da propriedade rural '" + _sCadVit + "'. Verifique cadastro no NaWeb.", .T.))
 	if len (_aDistKM) == 1
 		_nDist = _aDistKM [1, 1] * 2  // ida e volta
 	else

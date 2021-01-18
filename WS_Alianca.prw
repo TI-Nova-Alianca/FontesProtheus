@@ -1276,48 +1276,41 @@ static function _IncCarSaf ()
 	if empty (_sErros) ; _lAmostra  = (upper (_ExtraiTag ("_oXML:_WSAlianca:_ColetarAmostra",    .T., .F.)) == 'S') ; endif
 	if empty (_sErros) ; _sObs      = _ExtraiTag ("_oXML:_WSAlianca:_Obs",               .F., .F.) ; endif
 	if empty (_sErros) ; _sSenhaOrd = _ExtraiTag ("_oXML:_WSAlianca:_Senha",             .F., .F.) ; endif
+
+	// A partir de 2021 o app de safra manda tambem CPF e inscricao, para os casos em que foi gerado 'lote de entrega'
+	// pelo caderno de campo, e lah identifica apenas o grupo familiar. A inscricao e o CPF serao conhecidos somente
+	// no momento em que o associado chegar aqui com o talao de produtor.
 	if empty (_sErros)
-//		if _sAssoc $ '012373/012791/012792'  // Nao associados que vou instanciar para que a carga seja aceita.
-//			_oAssoc := ClsAssoc ():New ()
-//			_oAssoc:Codigo = _sAssoc
-//			_oAssoc:Loja   = _sLoja
-//			_oAssoc:Nome   = fBuscaCpo ("SA2", 1, xfilial ("SA2") + _sAssoc + _sLoja, "A2_NOME")
-//			u_log2 ('aviso', 'Instanciando nao associado: ' + _oAssoc:Codigo + '/' + _oAssoc:Loja)
-//		else
-			// A partir de 2021 o app de safra manda tambem CPF e inscricao, para os casos em que foi gerado 'lote de entrega'
-			// pelo caderno de campo, e lah identifica apenas o grupo familiar. A inscricao e o CPF serao conhecidos somente
-			// no momento em que o associado chegar aqui com o talao de produtor.
-			_oSQL := ClsSQL ():New ()
-			_oSQL:_sQuery := ""
-			_oSQL:_sQuery += " SELECT A2_COD, A2_LOJA"
-			_oSQL:_sQuery += " FROM " + RetSQLName ("SA2") + " SA2 "
-			_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-			_oSQL:_sQuery += " AND A2_FILIAL = '" + xfilial ("SA2") + "'"
-			if ! empty (_sAssoc)
-				_oSQL:_sQuery += " AND A2_COD    = '" + _sAssoc + "'"
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT A2_COD, A2_LOJA"
+		_oSQL:_sQuery += " FROM " + RetSQLName ("SA2") + " SA2 "
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery += " AND A2_FILIAL = '" + xfilial ("SA2") + "'"
+		if ! empty (_sAssoc)
+			_oSQL:_sQuery += " AND A2_COD    = '" + _sAssoc + "'"
+		endif
+		if ! empty (_sLoja)
+			_oSQL:_sQuery += " AND A2_LOJA   = '" + _sLoja + "'"
+		endif
+		if ! empty (_sCPFCarg)
+			_oSQL:_sQuery += " AND A2_CGC   = '" + _sCPFCarg + "'"
+		endif
+		if ! empty (_sInscCarg)
+			_oSQL:_sQuery += " AND A2_INSCR = '" + _sInscCarg + "'"
+		endif
+		_oSQL:Log ()
+		_aRegSA2 = aclone (_oSQL:Qry2Array (.F., .F.))
+		if len (_aRegSA2) == 0
+			_sErros += "Nao foi localizado nenhum fornecedor pelos parametros informados (cod/loja/CPF/IE)"
+		elseif len (_aRegSA2) > 1
+			_sErros += "Foi localizado MAIS DE UM fornecedor pelos parametros informados (cod/loja/CPF/IE)"
+		else
+			_oAssoc := ClsAssoc ():New (_aRegSA2 [1, 1], _aRegSA2 [1, 2])
+			if valtype (_oAssoc) != 'O'
+				_sErros += "Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto
 			endif
-			if ! empty (_sLoja)
-				_oSQL:_sQuery += " AND A2_LOJA   = '" + _sLoja + "'"
-			endif
-			if ! empty (_sCPFCarg)
-				_oSQL:_sQuery += " AND A2_CGC   = '" + _sCPFCarg + "'"
-			endif
-			if ! empty (_sInscCarg)
-				_oSQL:_sQuery += " AND A2_INSCR = '" + _sInscCarg + "'"
-			endif
-			_oSQL:Log ()
-			_aRegSA2 = aclone (_oSQL:Qry2Array (.F., .F.))
-			if len (_aRegSA2) == 0
-				_sErros += "Nao foi localizado nenhum fornecedor pelos parametros informados (cod/loja/CPF/IE)"
-			elseif len (_aRegSA2) > 1
-				_sErros += "Foi localizado MAIS DE UM fornecedor pelos parametros informados (cod/loja/CPF/IE)"
-			else
-				_oAssoc := ClsAssoc ():New (_aRegSA2 [1, 1], _aRegSA2 [1, 2])
-				if valtype (_oAssoc) != 'O'
-					_sErros += "Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto
-				endif
-			endif
-//		endif
+		endif
 	endif
 
 	// Leitura dos itens de forma repetitiva (tentei ler em array mas nao funcionou e tenho pouco tempo pra ficar testando...)

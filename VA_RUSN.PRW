@@ -35,6 +35,8 @@
 // 01/07/2020 - Robert - Calculo de frete passa a ser em funcao separada, para facilitar posteriores recalculos.
 // 04/01/2021 - Robert - Ajustes diversos safra 2021
 // 11/01/2021 - Robert - Ajustes diversos safra 2021
+// 15/01/2021 - Robert - Novo parametro metodo :RetFixo da classe ClsSQL().
+//                     - Definido TES (028) e preco unitario (1,00) para producao propria Livramento.
 //
 
 // ------------------------------------------------------------------------------------
@@ -135,7 +137,7 @@ User Function va_rusN ()
 		_oSQL:_sQuery += " WHERE GX0001_ASSOCIADO_CODIGO = '" + sze -> ze_assoc + "'"
 		_oSQL:_sQuery +=   " AND GX0001_ASSOCIADO_LOJA   = '" + sze -> ze_lojasso   + "'"
 		_oSQL:Log ()
-		_aTpForUva = _oSQL:RetFixo (1, "ao consultar o 'tipo de fornecedor de uva' cod. '" + sze -> ze_assoc + "/" + sze -> ze_lojasso + "'. Verifique cadastro no NaWeb.")
+		_aTpForUva = _oSQL:RetFixo (1, "ao consultar o 'tipo de fornecedor de uva' cod. '" + sze -> ze_assoc + "/" + sze -> ze_lojasso + "'. Verifique cadastro no NaWeb.", .T.)
 		if len (_aTpForUva) == 1
 			_sTpForUva = _aTpForUva [1, 1]
 		else
@@ -199,10 +201,12 @@ User Function va_rusN ()
 	// Definicao do TES a ser usado.
 	if _lContinua
 		do case
+		case sze -> ze_assoc == '001369'  // Producao propria Livramento
+			_sTES = '028'
 		case _sTpForUva + sa2 -> a2_tipo == 'AF'
 			_sTES = GetMv ("VA_TSAFAF")  // Associado pessoa fisica
-// ainda nao sei se dev gerar contranota nesta caso		case _sTpForUva + sa2 -> a2_tipo == 'AJ'
-// ainda nao sei se dev gerar contranota nesta caso			_sTES = GetMv ("VA_TSAFAJ")  // Associado pessoa juridica
+		case _sTpForUva + sa2 -> a2_tipo == 'AJ'
+			_sTES = GetMv ("VA_TSAFAJ")  // Associado pessoa juridica
 		case _sTpForUva + sa2 -> a2_tipo == 'NF'
 			_sTES = GetMv ("VA_TSAFNF")  // Nao associado pessoa fisica
 // ainda nao sei se dev gerar contranota nesta caso		case _sTpForUva + sa2 -> a2_tipo == 'NJ'
@@ -378,7 +382,11 @@ User Function va_rusN ()
 			elseif szf -> zf_safra == '2020'
 				_nVlUni = U_PrcUva20 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F.)[5]  // pos.5=preco MOC
 			elseif szf -> zf_safra == '2021'
-				_nVlUni = U_PrcUva21 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[2]  // pos.2 = preco de compra
+				if sze -> ze_assoc == '001369'  // Producao propria Livramento
+					_nVlUni = 1
+				else
+					_nVlUni = U_PrcUva21 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[2]  // pos.2 = preco de compra
+				endif
 			else
 				u_help ("Sem tratamento para leitura de precos para esta safra.")
 				_lContinua = .F.
@@ -558,8 +566,8 @@ User Function va_rusN ()
 	endif
 	
 	// Mostra tela com valores previstos, para que a filial de Livramento possa saber qual valor vai ficar
-	// e, assim, emitir a NF-e de produtos j� com o valor igual.
-	if _lContinua .and. .F.  // No final nem precisou, pois conseguimos emitir sem pre�o no site da SEFAZ
+	// e, assim, emitir a NF-e de produtos ja com o valor igual.
+	if _lContinua .and. .F.  // No final nem precisou, pois conseguimos emitir sem preco no site da SEFAZ
 		if sze -> ze_filial == '03' .and. sze -> ze_assoc == '001369'  // Soh mostra quando producao propria
 
 			// Monta colunas para mostrar na tela.

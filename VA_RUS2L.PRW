@@ -149,7 +149,7 @@ user function VA_RUS2L ()
 		else
 		//	if _aCadVitic [_nVitic, .CadVitSafrVit] < m->ze_safra
 			if val (_aCadVitic [_nVitic, .CadVitSafrVit]) < (val (m->ze_safra) - 1)  // A partir de 2021 consideramos que "foi revisado durante o ano de 2020 para a safra 2021"
-				u_help ("ATENCAO: Cadastro viticola nao renovado para esta safra! Solicite comprovante de recadastramento ao produtor!")
+				u_help ("ATENCAO: Cadastro viticola nao renovado para esta safra! Verifique no NaWeb as datas dos mapeamentos da propriedade rural " + _aCadVitic [_nVitic, .CadVitCodigo],, .T.)
 			endif
 
 			if _aCadVitic [_nVitic, .CadVitOrganico] == "O" .and. _zx509orga != 'S'
