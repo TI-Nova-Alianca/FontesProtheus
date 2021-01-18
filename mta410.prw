@@ -88,8 +88,8 @@
 // 30/06/2020 - Robert  - Liberado para usar montagem de carga na filial 16.
 // 15/07/2020 - Cláudia - Retirado o lembrete de associado e tipo de nota.
 // 14/08/2020 - Robert  - Desabilitada validacao do 'custo para transferencia' quando chamado a partir do MATA310 (GLPI 8077)
+// 18/01/2021 - Claudia - GLPI: 8966 - Incluida validação de forma de pagamento CC e CD
 //
-
 // --------------------------------------------------------------------------------------
 User Function MTA410 ()
 	local _lRet      := .T.
@@ -97,8 +97,6 @@ User Function MTA410 ()
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _sQueroCFO := ""
 	local _sCartu    := ""
-//	local _wbonifc   := .F.
-//	local _wverbas   := ''
 	local _N         := 0
 	
 	// Verifica se a liberacao dos itens foi totalmente feita.
@@ -183,7 +181,6 @@ User Function MTA410 ()
 			N := _N
 			if ! GDDeleted ()
 				if left (GDFieldGet ("C6_CF"), 1) != _sQueroCFO
-					//u_help ("Erro na linha " + cvaltochar (N) + ": CFO invalido para o estado de destino.")
 					u_help ("Erro no item " + GDFieldGet ("C6_ITEM") + ": CFO invalido para o estado de destino.",, .t.)
 					_lRet = .F.
 					exit
@@ -258,8 +255,23 @@ User Function MTA410 ()
 	// Recalcula valor previsto para a nota fiscal e margem por que ficam persistidos em campos do SC5 que sao consultados fora desta tela. 
 	if _lRet
 		m->c5_vaVlFat = Ma410Impos (iif (inclui, 3, 4), .T.)  // (nOpc, lRetTotal, aRefRentab)
-//		processa ({|| U_VA_McPed (.F.), "Calculando margem de contribuicao"})
 		processa ({|| U_VA_McPed (.F., .F.), "Calculando margem de contribuicao"})
+	endif
+
+	// validação condição de pagamento/forma de pagamento
+	if _lRet
+		if alltrim(m->c5_vatipo) == 'CD'
+			if !(m->c5_condpag $ GetMv("VA_PGTOCD")) 
+				_lRet := .F.
+				u_help("Forma de pgto " + m->c5_condpag + " não é a correta para a forma de pgto " + m->c5_vatipo + ". Verifique!")
+			endif
+		endif
+		if alltrim(m->c5_vatipo) == 'CC'
+			if !(m->c5_condpag $  GetMv("VA_PGTOCC")) 
+				_lRet := .F.
+				u_help("Forma de pgto " + m->c5_condpag + " não é a correta para a forma de pgto " + m->c5_vatipo + ". Verifique!")
+			endif
+		endif
 	endif
 
 	U_SalvaAmb (_aAmbAnt)

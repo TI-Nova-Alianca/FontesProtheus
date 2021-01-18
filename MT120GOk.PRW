@@ -1,16 +1,14 @@
-#include "rwmake.ch"
-#include "colors.ch"
-#include "sigawin.ch"
-#include "set.ch"
-#include "ap5mail.ch" 
-#include "topconn.ch"
-#Include "PROTHEUS.CH"
-
 // Programa:  MT120GOk
 // Autor:     Robert Koch
 // Data:      30/05/20102
 // Descricao: P.E. apos gravacao / exclusao de pedido de compra / autorizacao de entrega.
 //            Criado inicialmente para disparar envio de e-mail ao fornecedor.
+//   
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #P.E. apos gravacao / exclusao de pedido de compra / autorizacao de entrega
+// #PalavasChave      #pedido_de_compra #autorizacao_de_entrega
+// #TabelasPrincipais #SC7 
+// #Modulos 		  #COM         
 //
 // Historico de alteracoes:
 // 06/06/2012 - Robert  - Chamava envio de pedido por e-mail somente na inclusao.
@@ -20,8 +18,17 @@
 // 15/05/2015 - Robert  - Removida chamada de envio em formato HTML.
 // 02/09/2019 - Andre   - Alterado UPDATE para gravar os novos campos da tabela SCR (CR_TIPOPRO, CR_CC).
 // 06/03/2020 - Claudia - Criação de campo com nome de comprador e disponibilizado no browser. GLPI 7596
+// 15/01/2021 - Claudia - Incluido bloco de descrições do programa no cabeçalho.
 //
-// --------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------
+#include "rwmake.ch"
+#include "colors.ch"
+#include "sigawin.ch"
+#include "set.ch"
+#include "ap5mail.ch" 
+#include "topconn.ch"
+#Include "PROTHEUS.CH"
+
 user function MT120GOk ()  
 	//local _sAutEnt  := ParamIXB [1]
 	local _lInclui  := ParamIXB [2]
@@ -31,10 +38,6 @@ user function MT120GOk ()
 	local _aAmbAnt  := U_SalvaAmb ()
 	local _oSQL     := NIL
 	local _nOpcao   := 0
-    //Static oDlg
-	//Static oButton1
-	//Static oButton2
-	//Static oSay1
 	
 	u_logini()
 	
@@ -44,8 +47,7 @@ user function MT120GOk ()
 		                 {"PDF", "Nao enviar"}, ;
 		                 3, ;
 		                 "Envio do pedido por e-mail")
-		//if _nOpcao == 1
-		//	u_wfpcomp (_sAutEnt)
+						 
 		if _nOpcao == 1 //2
 			u_pedvend ()
 		endif
