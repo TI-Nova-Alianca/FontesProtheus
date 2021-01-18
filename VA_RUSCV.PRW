@@ -54,7 +54,7 @@ User Function va_rusCV (_sFornCV, _sLojaCV)
 			_oSQL:_sQuery +=  " FROM VA_VFAMILIAS_UVAS"
 			_oSQL:_sQuery += " WHERE COD_BASE = '" + (_sAliasQ) -> produto + "'"
 			_oSQL:_sQuery +=   " AND COD_PARA_ESPUMANTE != ''"
-			_oSQL:Log ()
+			//_oSQL:Log ()
 			_aEspum = _oSQL:Qry2Array (.F., .F.)
 			if len (_aEspum) == 1
 				aadd (_aRetCV, array (.CadVitQtColunas))
