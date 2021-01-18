@@ -88,6 +88,7 @@
 // 12/01/2021 - Robert - Passa a buscar grupo familiar, nucleo e subnucleo no NaWeb.
 // 14/01/2021 - Robert - Metodo :CadVitic() passa a ler a funcao VA_RusCV() parabuscar tudo de um mesmo local.
 // 15/01/2021 - Robert - Melhorado retorno de erros quando associado nao tem codigo/loja base no cadastro.
+// 15/01/2021 - Robert - Novo parametro metodo :RetFixo da classe ClsSQL().
 //
 
 #include "protheus.ch"
@@ -293,7 +294,7 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 				_oSQL:_sQuery +=   " and CCAI.CCAssociadoCod        = '" + ::Codigo + "'"
 				_oSQL:_sQuery +=   " and CCAI.CCAssociadoLoja       = '" + ::Loja + "'"
 				_oSQL:Log ()
-				_aGrpFam := aclone (_oSQL:RetFixo (1, "ao consultar grupo familiar do associado '" + ::Codigo + '/' + ::Loja + "' no sistema NaWeb.",, .T.))
+				_aGrpFam := aclone (_oSQL:RetFixo (1, "ao consultar grupo familiar do associado '" + ::Codigo + '/' + ::Loja + "' no sistema NaWeb.", .F.))
 				if len (_aGrpFam) == 1
 					::GrpFam    = _aGrpFam [1, 1]
 					::Nucleo    = _aGrpFam [1, 2]

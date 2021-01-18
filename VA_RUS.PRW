@@ -160,6 +160,9 @@ User Function va_rus ()
 		aadd (_aMenuOut, {"&Rastrear estoque",   "U_VA_RUSRC ()", 0,4})
 		aadd (_aMenuOut, {"&NF remessa coop",    "U_VA_RUSNR ('A')", 0,4})
 		aadd (_aMenuOut, {"Controle Portaria",   "U_VA_CPORT ()", 0,4})
+		if upper (alltrim (cUserName)) == 'ROBERT.KOCH'
+			aadd (_aMenuOut, {"Rev.frete (Robert)",  "U_VA_RusCF (.F.)", 0,4})  // Apenas para ver nova simulacao no arquivo de log.
+		endif
 
 		// Menu principal
 		aadd (aRotina, {"&Pesquisar"        , "AxPesqui",      0,1})

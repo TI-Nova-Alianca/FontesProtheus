@@ -128,7 +128,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
 		_nParcel = 1
 		do while _nParcel <= len (_aParcel) .and. _nParcel < _nParcFrt
 			_aParcel [_nParcel, 4] = round ((_nVlUva * _aParcel [_nParcel, 1] / 100), 2)
-			_aParcel [_nParcel, 5] = 'COMPRA SAFRA ' + _sSafPag + ' GRP.' + _sGrpPgSaf
+			_aParcel [_nParcel, 5] = 'SAFRA ' + _sSafPag + ' GRP.' + _sGrpPgSaf
 			_nParcel ++
 		enddo
 		//U_Log2 ('debug', 'antes de ajustar a diferenca de arredondamento de valor da uva:')
@@ -207,8 +207,8 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
 		endif
 	next
 	
-	U_Log2 ('info', 'Parcelamento previsto:')
-	u_log2 ('info', _aParcel)
+//	U_Log2 ('info', 'Parcelamento previsto:')
+//	u_log2 ('info', _aParcel)
 
 	// Retorna somente as linhas com dados definidos
 	_aAux = {}

@@ -2,13 +2,13 @@
 // Autor......: Robert Koch
 // Data.......: 10/10/2013
 // Descricao..: Tela de manutencao de rotinas x usuarios.
-//
+
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Atualizacao
 // #PalavasChave      #usuarios #grupos_de_usuarios #ZZU #acessos
 // #TabelasPrincipais #ZZU
 // #Modulos    
-//
+
 // Historico de alteracoes:
 // 23/10/2013 - Robert  - Criado tratamento para campos ZZU_EMP e ZZU_FIL.
 // 30/10/2013 - Robert  - Funcao ZZUNU passa a aceitar array de rotinas.
@@ -18,7 +18,7 @@
 // 02/07/2015 - Robert  - Funcao ZZUVL passa a aceitar parametro com tipos de acessos.
 // 30/09/2015 - Robert  - Selecionada ordem 1 (PswOrder) na funcao ZZULD.
 // 05/11/2015 - Robert  - Notifica usuarios somente se estiverem com tipo 2 ou 3 
-//						  (antes notificava mesmo estando com tipo 1=libera).
+//                        (antes notificava mesmo estando com tipo 1=libera).
 // 04/10/2017 - Robert  - Funcao ZZUNU retorna numero de e-mails enviados.
 // 19/10/2017 - Robert  - Funcao ZZULD passa a retornar tambem uma array com os IDs dos usuarios.
 // 11/12/2017 - Robert  - Passa a validar usuario atual pelos grupos do configurador.
@@ -30,7 +30,9 @@
 //                      - Tratamento para novos campos ZZU_ROTIN e ZZU_MODUL
 //                      - Removido tratamento por empresa (campo ZZU_EMP).
 // 05/10/2020 - Cláudia - Incluida variavel na função zzuvl para emitir/não emitir a mensagem de aviso.
+// 17/01/2021 - Robert  - Eliminadas algumas linhas comentariadas.
 //
+
 // -------------------------------------------------------------------------------------------------------
 User Function ZZU ()
 	local _sFiltrTop := ""
@@ -57,7 +59,6 @@ return
 // --------------------------------------------------------------------------
 // Tela de manutencao
 user function ZZUA ()
-//	local   _aUser     := {}
 	local   _oEvento   := NIL
 	local   _nLinACols := 0
 	private _sGrupoZZU := ""
@@ -280,10 +281,7 @@ user function ZZUVL (_sGrupoZZU, _sUser, _lComTela)  //, _sEmp, _sFil, _sTipos)
 
 	_sUser    := iif (_sUser    == NIL, __cUserID, _sUser)
 	_lComTela := iif (_lComTela == NIL, .T.,       _lComTela)
-//	_sEmp     := iif (_sEmp     == NIL, cEmpAnt,   _sEmp)
-//	_sFil     := iif (_sFil     == NIL, cFilAnt,   _sFil)
 	_sTipos   := iif (_sTipos   == NIL, '13',      _sTipos)
-	//_lMsg     := iif (_lMsg     == NIL, .T.,       _lMsg)
 
 	zzu -> (dbsetorder (1))  // ZZU_FILIAL+ZZU_GRUPO+ZZU_FIL+ZZU_USER
 	if ! zzu -> (dbseek (xfilial ("ZZU") + _sGrupoZZU, .T.))
@@ -330,7 +328,7 @@ return _lRet
 
 // --------------------------------------------------------------------------
 // Notifica usuarios associados ao grupo.
-user function ZZUNU (_aGrpZZU, _sTitMsg, _sCorpoMsg, _lComTela) //, _sEmp, _sFil, _sComCopia)
+user function ZZUNU (_aGrpZZU, _sTitMsg, _sCorpoMsg, _lComTela)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _sResultTo := ""
 	local _sMsgErro  := ""
@@ -339,8 +337,6 @@ user function ZZUNU (_aGrpZZU, _sTitMsg, _sCorpoMsg, _lComTela) //, _sEmp, _sFil
 	local _nEnvios   := 0
 
 	_lComTela := iif (_lComTela == NIL, .T.,       _lComTela)
-//	_sEmp     := iif (_sEmp     == NIL, cEmpAnt,   _sEmp)
-//	_sFil     := iif (_sFil     == NIL, cFilAnt,   _sFil)
 	_aGrpZZU  := iif (valtype (_aGrpZZU) == 'C', {_aGrpZZU}, _aGrpZZU)
 
 	if empty (_sTitMsg) .and. empty (_sCorpoMsg)
@@ -357,11 +353,7 @@ user function ZZUNU (_aGrpZZU, _sTitMsg, _sCorpoMsg, _lComTela) //, _sEmp, _sFil
 			_sResultTo = ''
 
 			// Busca lista de destinatarios do grupo atual.
-//			_sResultTo = U_ZZULD (_sGrupoZZU, _sFil, '23')[1]
 			_sResultTo = U_ZZULD (_sGrupoZZU, cFilAnt, '23')[1]
-		//	if _sComCopia != NIL
-		//		_sResultTo += iif (empty (_sResultTo), '', ';') + _sComCopia
-		//	endif
 
 			// Envia notificacao por e-mail
 			if ! empty (_sResultTo)

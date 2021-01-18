@@ -79,67 +79,73 @@ static function _AndaLogo ()
 	incproc ()
 
 	u_help ('Nada definido.')
-//	U_BatSafr ('3')
 	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
 return
-/*	
+
+/*
 	// Insere registro no SE2 para notas de safra que foram geradas com parcelamento incorreto
-	_sFilial = '07'
-	_sFornece = '002654'
+	_sFilial = '09'
+	_sFornece = '004927'
 	_sLoja = '01'
 	_sPref = '30 '
-	_sNum = '000015391'
-	_sParc = 'K'
-	se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
-	if ! se2 -> (dbseek (_sFilial + _sFornece + _sLoja + _sPref + _sNum + _sParc, .F.))
-		U_Log2 ('debug', 'nao tem ainda')
-		if se2 -> (dbseek (_sFilial + _sFornece + _sLoja + _sPref + _sNum + 'A', .F.))
-			U_Log2 ('debug', 'criando se2')
-			_dEmis = se2 -> e2_emissao
-			_sNomfor = se2 -> e2_nomfor
-			_sHist = se2 -> e2_hist
-			_dVencOri = se2 -> e2_vencori
-			_sFilorig = se2 -> e2_filorig
-			_sMSFil = se2 -> e2_msfil
-			_scodrcof = se2 -> e2_codrcof
-			_scodrcsl = se2 -> e2_codrcsl
-			_scodrpis = se2 -> e2_codrpis
-			_sForBco = se2 -> e2_forbco
-			_sForAge = se2 -> e2_forage
-			_sForCta = se2 -> e2_forcta
-			_sFCtaDV = se2 -> e2_fctadv
-			reclock ("SE2", .T.)
-			se2 -> e2_filial = _sFilial
-			se2 -> e2_fornece = _sFornece
-			se2 -> e2_loja = _sLoja
-			se2 -> e2_prefixo = _sPref
-			se2 -> e2_num = _sNum
-			se2 -> e2_parcela = _sParc
-			se2 -> e2_emissao = _dEmis
-			se2 -> e2_emis1 = _dEmis
-			se2 -> e2_tipo = 'NF'
-			se2 -> e2_naturez = '120201'
-			se2 -> e2_nomfor = _sNomFor
-			se2 -> e2_hist = _sHist
-			se2 -> e2_la = 'S'
-			se2 -> e2_vencori = _dVencOri
-			se2 -> e2_moeda = 1
-			se2 -> e2_fluxo = 'S'
-			se2 -> e2_origem = 'MATA100'
-			se2 -> e2_filorig = _sFilorig
-			se2 -> e2_msfil = _sMSFil
-			se2 -> e2_mdrtiss = '1'
-			se2 -> e2_aplvlmn = '1'
-			se2 -> e2_codrcof = _scodrcof
-			se2 -> e2_codrcsl = _scodrcsl
-			se2 -> e2_codrpis = _scodrpis
-			se2 -> e2_forbco = _sForBco
-			se2 -> e2_forage = _sForAge
-			se2 -> e2_forcta = _sForcta
-			se2 -> e2_fctadv = _sFCtaDV
-			msunlock ()
+	_sNum = '000003083'
+	//_aParc := {'B','C','D','E','F','G','H','I','J','K'}
+	_aParc := {'G'}
+	for _nParc = 1 to len (_aParc)
+		_sParc = _aParc [_nParc]
+		se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
+		if ! se2 -> (dbseek (_sFilial + _sFornece + _sLoja + _sPref + _sNum + _sParc, .F.))
+			U_Log2 ('debug', 'nao tem ainda')
+			if se2 -> (dbseek (_sFilial + _sFornece + _sLoja + _sPref + _sNum + 'A', .F.))
+				U_Log2 ('info', 'criando parcela ' + _sParc + ' no SE2')
+				_dEmis = se2 -> e2_emissao
+				_sNomfor = se2 -> e2_nomfor
+				_sHist = se2 -> e2_hist
+				_dVencOri = se2 -> e2_vencori
+				_sFilorig = se2 -> e2_filorig
+				_sMSFil = se2 -> e2_msfil
+				_scodrcof = se2 -> e2_codrcof
+				_scodrcsl = se2 -> e2_codrcsl
+				_scodrpis = se2 -> e2_codrpis
+				_sForBco = se2 -> e2_forbco
+				_sForAge = se2 -> e2_forage
+				_sForCta = se2 -> e2_forcta
+				_sFCtaDV = se2 -> e2_fctadv
+				reclock ("SE2", .T.)
+				se2 -> e2_filial = _sFilial
+				se2 -> e2_fornece = _sFornece
+				se2 -> e2_loja = _sLoja
+				se2 -> e2_prefixo = _sPref
+				se2 -> e2_num = _sNum
+				se2 -> e2_parcela = _sParc
+				se2 -> e2_emissao = _dEmis
+				se2 -> e2_emis1 = _dEmis
+				se2 -> e2_tipo = 'DP'
+				se2 -> e2_naturez = '120201'
+				se2 -> e2_nomfor = _sNomFor
+				se2 -> e2_hist = _sHist
+				se2 -> e2_la = 'S'
+				se2 -> e2_vencori = _dVencOri
+				se2 -> e2_moeda = 1
+				se2 -> e2_fluxo = 'S'
+				se2 -> e2_origem = 'MATA100'
+				se2 -> e2_filorig = _sFilorig
+				se2 -> e2_msfil = _sMSFil
+				se2 -> e2_mdrtiss = '1'
+				se2 -> e2_aplvlmn = '1'
+				se2 -> e2_codrcof = _scodrcof
+				se2 -> e2_codrcsl = _scodrcsl
+				se2 -> e2_codrpis = _scodrpis
+				se2 -> e2_forbco = _sForBco
+				se2 -> e2_forage = _sForAge
+				se2 -> e2_forcta = _sForcta
+				se2 -> e2_fctadv = _sFCtaDV
+				msunlock ()
+			else
+				U_Log2 ('erro', 'Nao encontrei SE2 original')
+			endif
 		endif
-	endif
+	next
 return
 */
 /*
