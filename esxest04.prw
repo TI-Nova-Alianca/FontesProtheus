@@ -22,6 +22,7 @@
 //                     - Inseridas tags para catalogacao de fontes
 // 14/10/2020 - Robert - Desconsidera item 'MMMSAFRA' usado em simulacoes de rateio de safra (por enquanto apenas na base teste).
 // 04/01/2021 - Robert - Habilitado novamente o MMMSAFRA, melhorados logs.
+// 18/01/2021 - Robert - Verifica parametro MV_DBLQMOV antes de executar.
 //
 
 // -------------------------------------------------------------------------------
@@ -60,7 +61,11 @@ Static function _Roda()
 	local _oEvento   := NIL
 
 	if _lContinua .and. mv_par01 <= getmv('MV_ULMES',.F.,'20000101')
-		u_help ('Processo nao pode rodar em mes fechado !!!')
+		u_help ('Processo nao pode rodar em mes fechado (MV_ULMES)',, .T.)
+		_lContinua = .F.
+	endif
+	if _lContinua .and. mv_par01 <= getmv('MV_DBLQMOV',.F.,'20000101')
+		u_help ('Processo nao pode rodar com bloqueio de data (MV_DBLQMOV)',, .T.)
 		_lContinua = .F.
 	endif
 
@@ -70,7 +75,7 @@ Static function _Roda()
 
 	if _lContinua
 		_oEvento := ClsEvent ():New ()
-		_oEvento:Texto := "Iniciando processo rateio complemento compra safra"
+		_oEvento:Texto := "Iniciando processo desmembramento MMM para AP,MO,GF"
 		_oEvento:CodEven = 'SD3006'
 		_oEvento:LeParam (cPerg)
 		_oEvento:Grava ()

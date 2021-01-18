@@ -87,6 +87,10 @@ Static Function esxest01a()
 		u_help ("Periodo ja encerrado (MV_ULMES).")
 		_lContinua = .F.
 	endif
+	if _lContinua .and. stod (_ddfim) <= getmv('MV_DBLQMOV',.F.,'20000101')
+		u_help ('Processo nao pode rodar com bloqueio de data (MV_DBLQMOV)',, .T.)
+		_lContinua = .F.
+	endif
 
 	if _lContinua
 		_oEvento := ClsEvent ():New ()
