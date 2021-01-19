@@ -37,6 +37,7 @@
 // 11/01/2021 - Robert - Ajustes diversos safra 2021
 // 15/01/2021 - Robert - Novo parametro metodo :RetFixo da classe ClsSQL().
 //                     - Definido TES (028) e preco unitario (1,00) para producao propria Livramento.
+// 19/01/2021 - Robert - Producao propria Livramento passa a entrar com mesmo preco de associados (entrava a 1,00)
 //
 
 // ------------------------------------------------------------------------------------
@@ -94,9 +95,6 @@ User Function va_rusN ()
 	if _lContinua
 		softlock ("SZE")
 	endif
-
-	U_log2 ('aviso', 'EM 2020 nao gravou os campos D1_PRM02 ...99 nem D1_VACLABD. Poderia ser algum gatilho?')
-	u_log2 ('aviso', "Testar a parte de calculo e gravacao de frete, pois foi implementada em 01/07/2020 (depois da safra) e nao foi testada. Ver tb se vai levar a soma para o SF1")
 
 	// Testa se jah tem contranota somente depois do softlock para pegar casos em que dois usuarios tentam gerar
 	// contranota da mesma carga e o segundo fica aguardando a liberacao do softlock. Quando o primeiro liberar,
@@ -382,11 +380,11 @@ User Function va_rusN ()
 			elseif szf -> zf_safra == '2020'
 				_nVlUni = U_PrcUva20 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F.)[5]  // pos.5=preco MOC
 			elseif szf -> zf_safra == '2021'
-				if sze -> ze_assoc == '001369'  // Producao propria Livramento
-					_nVlUni = 1
-				else
-					_nVlUni = U_PrcUva21 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[2]  // pos.2 = preco de compra
-				endif
+//				if sze -> ze_assoc == '001369'  // Producao propria Livramento
+//					_nVlUni = 1
+//				else
+				_nVlUni = U_PrcUva21 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[2]  // pos.2 = preco de compra
+//				endif
 			else
 				u_help ("Sem tratamento para leitura de precos para esta safra.")
 				_lContinua = .F.
