@@ -17,8 +17,9 @@
 // 6 - VERBA EM TITULO SEM COMISSAO
 //
 //  Historico de alteracoes:
+// 15/01/2021 - Claudia - GLPI: 9077 - Incluida média de percentual de comissão para tipo 5 VERBA EM TITULO DE OUTROS
 //
-// --------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------
 
 #include 'protheus.ch'
 #include 'parmtype.ch'
@@ -295,9 +296,42 @@ User Function VA_COMVERB(_dtaIni, _dtaFin, _sVend, _nLibPg, _sFilial)
 	_oSQL:_sQuery += "    ,E3_PREFIXO AS SERIE"
 	_oSQL:_sQuery += "    ,E3_CODCLI AS CLIENTE"
 	_oSQL:_sQuery += "    ,E3_LOJA AS LOJA"
-	_oSQL:_sQuery += "    ,E3_PORC AS PERCENTUAL"
+	//_oSQL:_sQuery += "    ,E3_PORC AS PERCENTUAL"
+	_oSQL:_sQuery += "    ,(SELECT"
+	_oSQL:_sQuery += " 			SUM(E1_COMIS1) / COUNT(*)"
+	_oSQL:_sQuery += " 		FROM " + RetSQLName ("SE1") + " SE1 "
+	_oSQL:_sQuery += " 		WHERE SE1.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " 		AND SE1.E1_CLIENTE IN (SELECT"
+	_oSQL:_sQuery += " 				SA1.A1_COD"
+	_oSQL:_sQuery += " 			FROM " + RetSQLName ("SA1") + " SA1 "
+	_oSQL:_sQuery += " 			WHERE SA1. D_E_L_E_T_ = '' AND SA1.A1_VACBASE = (SELECT "
+	_oSQL:_sQuery += " 					SA11.A1_VACBASE "
+	_oSQL:_sQuery += " 				FROM " + RetSQLName ("SA1") + " SA11 "
+	_oSQL:_sQuery += " 				WHERE SA11. D_E_L_E_T_ = '' AND SA11.A1_COD = ZA5.ZA5_CLI "
+	_oSQL:_sQuery += " 				AND SA11.A1_LOJA = ZA5.ZA5_LOJA))"
+	_oSQL:_sQuery += " 		AND SE1.E1_LOJA = ZA5.ZA5_LOJA"
+	_oSQL:_sQuery += " 		AND SE1.E1_COMIS1 <> 0"
+	_oSQL:_sQuery += " 		AND SE1.E1_VEND1 = '"+alltrim(_sVend)+"'"
+	_oSQL:_sQuery += " 		AND SE1.E1_EMISSAO BETWEEN '" + dtos(_dtaAnt) + "' AND '" + dtos(_dtaFin) + "')"
+	_oSQL:_sQuery += " 	    AS PERCENTUAL"
 	_oSQL:_sQuery += "    ,ZA5.ZA5_VLR AS BASE_COMISSAO"
-	_oSQL:_sQuery += "    ,(ZA5.ZA5_VLR * E3_PORC / 100) * -1 AS COMISSAO"
+	_oSQL:_sQuery += "    ,(ZA5.ZA5_VLR * (SELECT"
+	_oSQL:_sQuery += " 			SUM(E1_COMIS1) / COUNT(*)"
+	_oSQL:_sQuery += " 		FROM " + RetSQLName ("SE1") + " SE1 "
+	_oSQL:_sQuery += " 		WHERE SE1.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " 		AND SE1.E1_CLIENTE IN (SELECT"
+	_oSQL:_sQuery += " 				SA1.A1_COD"
+	_oSQL:_sQuery += " 			FROM " + RetSQLName ("SA1") + " SA1 "
+	_oSQL:_sQuery += " 			WHERE SA1. D_E_L_E_T_ = '' AND SA1.A1_VACBASE = (SELECT "
+	_oSQL:_sQuery += " 					SA11.A1_VACBASE "
+	_oSQL:_sQuery += " 				FROM " + RetSQLName ("SA1") + " SA11 "
+	_oSQL:_sQuery += " 				WHERE SA11. D_E_L_E_T_ = '' AND SA11.A1_COD = ZA5.ZA5_CLI "
+	_oSQL:_sQuery += " 				AND SA11.A1_LOJA = ZA5.ZA5_LOJA))"
+	_oSQL:_sQuery += " 		AND SE1.E1_LOJA = ZA5.ZA5_LOJA"
+	_oSQL:_sQuery += " 		AND SE1.E1_COMIS1 <> 0"
+	_oSQL:_sQuery += " 		AND SE1.E1_VEND1 = '"+alltrim(_sVend)+"'"
+	_oSQL:_sQuery += " 		AND SE1.E1_EMISSAO BETWEEN '" + dtos(_dtaAnt) + "' AND '" + dtos(_dtaFin) + "'))/100 * -1 AS COMISSAO"
+	//_oSQL:_sQuery += "    ,(ZA5.ZA5_VLR * E3_PORC / 100) * -1 AS COMISSAO"
 	_oSQL:_sQuery += "    ,'DESCONTO' AS TP"
 	_oSQL:_sQuery += " 	  ,'5' AS TPO"
     _oSQL:_sQuery += "    ,ZA5.ZA5_FILIAL AS FILIAL"
