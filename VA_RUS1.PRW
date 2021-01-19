@@ -93,6 +93,7 @@ User Function va_rus1 ()
 				endif
 				if _nF3 > 0
 					if _lContinua
+						U_Log2 ('debug', 'Instanciando associado')
 						_oAssoc := ClsAssoc():New (_aRetQry [_nF3, 5], _aRetQry [_nF3, 6])
 						if valtype (_oAssoc) != "O" .or. empty (_oAssoc:Codigo) .or. empty (_oAssoc:Loja)
 							u_help ("Problemas no cadastro do associado.")
@@ -202,7 +203,8 @@ User Function va_rus1 ()
 		if valtype (_oAssoc) != "O"
 			_lContinua = .F.
 		endif
-		if _lContinua .and. ! _oAssoc:Codigo + _oAssoc:Loja == '00136901' .and. ! _oAssoc:Codigo + _oAssoc:Loja == '01237301'  // lIVRAMENTO E fornecedor VINHEDOS DA QUINTA
+//		if _lContinua .and. ! _oAssoc:Codigo + _oAssoc:Loja == '00136901' .and. ! _oAssoc:Codigo + _oAssoc:Loja == '01237301'  // lIVRAMENTO E fornecedor VINHEDOS DA QUINTA
+		if _lContinua .and. ! _oAssoc:Codigo + _oAssoc:Loja $ '00136901/00136902' .and. ! _oAssoc:Codigo + _oAssoc:Loja == '01237301'  // lIVRAMENTO E fornecedor VINHEDOS DA QUINTA
 			if _lContinua .and. _oAssoc:Bloqueado
 				u_help ("Fornecedor com cadastro bloqueado.")
 				_lContinua = .F.
