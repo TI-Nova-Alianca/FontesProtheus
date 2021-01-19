@@ -81,12 +81,13 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 
 
 	// Se nao informada uma impressora especifica, mantem a impressora default desta filial.
-	if ! empty (_sIdImpr)
-		_sPortTick = U_RetZX5 ('49', _sIdImpr, 'ZX5_49CAM')
-	else
+//parece que ta vindo sempra 14 no web servce-->	if ! empty (_sIdImpr)
+//parece que ta vindo sempra 14 no web servce-->//		_sPortTick = U_RetZX5 ('49', _sIdImpr, 'ZX5_49CAM')
+//parece que ta vindo sempra 14 no web servce-->//	else
 		do case
 		case _sBalanca == 'LB'
 			_sIdImpr = '14' //'07'  // LAB SAFRA MATRIZ
+			_sPortTick = U_RetZX5 ('49', _sIdImpr, 'ZX5_49CAM')
 		// Ainda nao consegui imprimir fora da rede da matriz --> 		case _sBalanca == 'JC'
 		// Ainda nao consegui imprimir fora da rede da matriz --> 			_sIdImpr = '08'
 		// Ainda nao consegui imprimir fora da rede da matriz --> 		case _sBalanca == 'LV'
@@ -95,7 +96,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 			_sIdImpr = ''
 			u_log ("Impressora de ticket nao definida para a balanca '" + _sBalanca + "'. Nao vou solicitar impressao.")
 		endcase
-	endif
+//parece que ta vindo sempra 14 no web servce-->//	endif
 	u_log2 ('debug', '_sIdImpr:' + _sIdImpr)
 	u_log2 ('debug', '_sPortTick:' + _sPortTick)
 	if ! empty (_sPortTick)

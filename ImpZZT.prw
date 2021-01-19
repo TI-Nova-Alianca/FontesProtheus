@@ -203,7 +203,7 @@ user function ImpZZT (_sCodTick, _sIdImpr, _nQtVias)
 				else
 					u_help ("Safra/carga '" + ZZT->ZZT_SAFRA + '/' + ZZT->ZZT_CARGA + "' nao localizada na tabela SZE.",, .t.)
 				endif
-				u_log ('funcao padrao da safra retornou o seguinte:', _sTicket)
+				//u_log ('funcao padrao da safra retornou o seguinte:', _sTicket)
 			else
 				_sTicket := ""
 				_sTicket += chr(27) + '@' + _Enter  // Inicializa impressora
