@@ -3,10 +3,17 @@
 // Data.......: 06/05/2019
 // Descricao..: Ponto entrada na tela cadastro de Produtos.
 //
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #Ponto entrada na tela cadastro de Produtos.
+// #PalavasChave      #ponto_de_entrada #cadastro_de_produto  #cadastro_de_produto_MVC
+// #TabelasPrincipais #SB1 
+// #Modulos 		  #todos
+//
 // Historico de alteracoes:
 // 16/08/2019 - Robert  - Campo B1_VADUNCX substituido pelo campo B1_CODBAR.
 // 20/08/2019 - Robert  - Ajustes para opcao de nao copiar determinados campos e gravacao de eventos.
-// 28/08/2019 - Cláudia - Incluida validação para não permitir salvar o produto quando fator de conversão informado no complemento e unidade DIPI não informada.
+// 28/08/2019 - Cláudia - Incluida validação para não permitir salvar o produto quando fator de conversão 
+//                        informado no complemento e unidade DIPI não informada.
 // 29/08/2019 - Andre   - Removido validação do campo CODEAN. 
 // 02/09/2019 - Andre   - Campos de RASTRO e LOCALIZACAO removidos do NÃO COPIA.
 // 06/03/2020 - Claudia - Ajustada a leitura do SX3/SXA conforme solicitação da R25
@@ -14,9 +21,9 @@
 // 22/06/2020 - Robert  - Somente envia atualizacao para o Mercanet quando for item do tipo PA (GLPI 8090).
 //                      - Antes de permitir a exclusao, verifica se o item existe no Mercanet, FullWMS e NaWeb.
 //                      - Eliminados logs desnecessarios.
+// 20/01/2021 - Cláudia - GLPI:8921 - Incluida verificação de caracteres especiais.
 //
-
-//-------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
 #Include "TOTVS.ch"
 #Include "FWMVCDEF.ch"
@@ -37,8 +44,6 @@ User Function ITEM()
 			oObj := paramixb [1]
 			nOper := oObj:nOperation
 			If nOper == 5  // Exclusao
-				//u_help ("Nenhum registro de produto pode ser excluído em função da integração com o software Mercanet.")
-				//_xRet = .F.
 				_xRet = _ValidExcl ()
 			EndIf
 			if _xRet
@@ -51,7 +56,7 @@ User Function ITEM()
 			u_log2 ('debug', 'Iniciando modelo ' + paramixb [2])
 			oObj := paramixb [1]
 			if oObj:IsCopy ()
-				// Limpa vampos que nao devem ser copiados.
+				// Limpa campos que nao devem ser copiados.
 				_NaoCopia()
 			endif
 			_xRet := {}  // Nao quero criar nenhum botao
@@ -77,7 +82,7 @@ User Function ITEM()
 		elseif paramixb [2] == 'FORMPRE'  // Chamado a cada campo que tiver validacao de usuario.
 			_xRet = NIL
 		ElseIf paramixb [2] == "FORMPOS"  // Pós configurações do Formulário
-			_xRet = NIL
+			_xRet = NIL			
 		ElseIf paramixb [2] == "MODELCANCEL"  // Quando o usuario cancela a edicao (tenta sair sem salvar)
 			_xRet = .T.
 		ElseIf paramixb [2] == "FORMCOMMITTTSPOS"  //Pós validações do Commit
@@ -88,14 +93,17 @@ User Function ITEM()
 			_xRet = NIL
 		EndIf 
 	endif
+	//If _xRet == .F.
+	//	Help("",1,"PE_MATA410",,"Problemas em validações. Verifique!",1) 
+	//EndIf
 Return _xRet
-// --------------------------------------------------------------------------
 //
+// --------------------------------------------------------------------------
+// Limpa campos que nao devem ser copiados.
 static function _NaoCopia ()
 	Local oObj := paramixb [1]
-//	u_logIni ()
 
-// Altera campos do modelo principal (tabela SB1)
+	// Altera campos do modelo principal (tabela SB1)
 	oModelB1 := oObj:GetModel("SB1MASTER")
 	if ! U_msgnoyes ("Deseja copiar os dados de impostos?")
 		oModelB1:LoadValue("B1_VALIPI",'')
@@ -122,12 +130,12 @@ static function _NaoCopia ()
 	oModelB1:LoadValue("B1_CODBAR",'')
 	oModelB1:LoadValue("B1_VARMAAL",'')
 	oModelB1:LoadValue("B1_VAFULLW",'')
-// Atualiza campos na tela do usuario
+	// Atualiza campos na tela do usuario
 	oView := FwViewActive()
 	oView:Refresh ()
 
 
-// Altera campos do modelo de dados adicionais (tabela SB5)
+	// Altera campos do modelo de dados adicionais (tabela SB5)
 	oModelB5 := oObj:GetModel("SB5DETAIL")
 	oModelB5:LoadValue("B5_2CODBAR",'')
 	oModelB5:LoadValue("B5_VACSD01",'')
@@ -141,30 +149,26 @@ static function _NaoCopia ()
 	oModelB5:LoadValue("B5_VACSD11",'')
 	oModelB5:LoadValue("B5_VACSD12",'')
 	oModelB5:LoadValue("B5_VACSD13",'')
-// Atualiza campos na tela do usuario
+	// Atualiza campos na tela do usuario
 	oView := FwViewActive()
 	oView:Refresh ()
 	
-// Altera campos do modelo de dados adicionais (tabela SA5)
+	// Altera campos do modelo de dados adicionais (tabela SA5)
 	oModelA5 := oObj:GetModel("MdGridSA5"):DelAllLine()
-// Atualiza campos na tela do usuario
+	// Atualiza campos na tela do usuario
 	oView := FwViewActive()
 	oView:Refresh ()
-	
-//	u_logFim ()
 	
 return
-// --------------------------------------------------------------------------
 //
+// --------------------------------------------------------------------------
+// Validação 'tudo OK' ao clicar no Botão Confirmar
 static function _A010TOk ()
 	local _lRet      := .T.
 	local _lEhUva    := .F.
 	local _aAreaSB1  := {}
 	local _oEvento   := NIL
 	static _lJahPassou := .F.
-
-//	u_logIni ()
-//	u_log ('operation:', paramixb [1]:nOperation)
 
 	if ! _lJahPassou
 		if m->b1_tipo $ "PA/PI/VD"
@@ -247,22 +251,25 @@ static function _A010TOk ()
 		// Marca flag como 'jah passou por este local' por que o P.E. eh chamado duas vezes.
 		_lJahPassou = .T.
 	else
-//		u_log ('Jah passou por este P.E.')
+
 	endif
 	
 	if m->b5_convdip != 0 .and. empty(m->b5_umdipi)
 		u_help ("Fator de conversão informado no complemento. A unidade DIPI deve ser informada no registro!")
 		_lRet = .F.
 	endif 
+
+	// valida caracter espacial
+	If paramixb [1]:nOperation == 3 // inclusão
+		_lRet = CaracEsp(m->b1_cod)
+	EndIf
 	
-//	u_logFim ()
 return _lRet
-// --------------------------------------------------------------------------
 //
+// --------------------------------------------------------------------------
+// validação de alteração
 static function _MT010Alt()
 	local _aAreaAnt  := U_ML_SRArea ()
-//	local _sDadAdic  := ""
-//	local _nCposEvt  := 0
 	local _oSQL      := NIL
 
 	if sb1 -> b1_tipo == 'PA'  // A principio nao temos intencao de vender outros tipos de itens.
@@ -279,11 +286,11 @@ static function _MT010Alt()
 	_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND A5_FILIAL  = '" + xfilial ("SA5") + "'"
 	_oSQL:_sQuery +=    " AND A5_PRODUTO = '" + SB1->B1_COD + "'"
-	//_oSQL:Log ()
 	_oSQL:Exec ()
 
 	U_ML_SRArea (_aAreaAnt)
 Return
+//
 // --------------------------------------------------------------------------
 // Avisos de interesse da logistica.
 static function _AvisaLog ()
@@ -305,15 +312,10 @@ static function _VerAcesso ()
 	local i			 := 1
 	public _sCposAlt := ""  // Deixar com PUBLIC para ser visivel no X3_WHEN
 
-//    u_logIni ()
-
 	// Se a variavel jah existir, nao preciso releitura dos acessos.
 	if empty (_sCposAlt)
 
 		// Cria antes uma lista de pastas para diminuir o numero de leituras do ZZU.
-		//sxa -> (dbsetorder (1))  // xa_alias + xa_ordem
-		//sxa -> (dbseek ('SB1', .T.))
-		//do while ! sxa -> (eof ()) .and. sxa -> xa_alias == 'SB1'
 		if U_ZZUVL('060',__CUSERID,.F.)
 			_sPastas += '2/'  // Impostos
 		endif
@@ -332,9 +334,7 @@ static function _VerAcesso ()
 		if U_ZZUVL('065',__CUSERID,.F.)
 			_sPastas += '4/'  // C.Q.
 		endif
-		//	sxa -> (dbskip ())
-		//enddo
-		
+
 		_aCpoSX3 := FwSX3Util():GetAllFields('SB1')
 		
 		For i:=1 To Len(_aCpoSX3)
@@ -344,22 +344,9 @@ static function _VerAcesso ()
 		    	EndIf
 		    Endif
 		Next i
-		
-//		//u_log ('Pastas:', _spastas)
-//		sx3 -> (DbSetOrder(1))
-//		sx3 -> (DbSeek('SB1', .T.))
-//		While !sx3 -> (Eof ()) .and. SX3->X3_ARQUIVO == 'SB1'
-//			if SX3->X3_FOLDER $ _sPastas
-//				_sCposAlt += (SX3 -> X3_CAMPO)
-//				//u_log (sx3 -> x3_campo, _sCposAlt)
-//			EndIf
-//			sx3 -> (DbSkip ())
-//		End
 	endif
-//	u_logFim ()
 Return
-
-
+//
 // --------------------------------------------------------------------------
 // Valida se pode excluir o item.
 static function _ValidExcl ()
@@ -398,3 +385,71 @@ static function _ValidExcl ()
 	endif
 
 return _lRetExcl
+//
+// --------------------------------------------------------------------------
+// Caracteres especiais
+Static Function CaracEsp(_sCampo)
+    Local _i       := 0
+    Local _lRet    := .T.
+    Local _nExiste := 0
+    Local _aCarac  := {}
+
+    AADD(_aCarac,{"!"})
+    AADD(_aCarac,{"@"})
+    AADD(_aCarac,{"#"})
+    AADD(_aCarac,{"$"})
+    AADD(_aCarac,{"%"})
+    AADD(_aCarac,{"*"})
+    AADD(_aCarac,{"/"})
+    AADD(_aCarac,{"("})
+    AADD(_aCarac,{")"})
+    AADD(_aCarac,{"+"})
+    AADD(_aCarac,{"¨"})
+    AADD(_aCarac,{"="})
+    AADD(_aCarac,{"~"})
+    AADD(_aCarac,{"^"})
+    AADD(_aCarac,{"]"})
+    AADD(_aCarac,{"["})
+    AADD(_aCarac,{"{"})
+    AADD(_aCarac,{"}"})
+    AADD(_aCarac,{";"})
+    AADD(_aCarac,{":"})
+    AADD(_aCarac,{">"})
+    AADD(_aCarac,{"<"})
+    AADD(_aCarac,{"?"})
+    AADD(_aCarac,{"_"})
+    AADD(_aCarac,{","})
+    AADD(_aCarac,{" "})
+    AADD(_aCarac,{"‘"}) 
+    AADD(_aCarac,{","}) 
+    AADD(_aCarac,{"Á"})
+    AADD(_aCarac,{"É"})
+    AADD(_aCarac,{"Í"})
+    AADD(_aCarac,{"Ó"})
+    AADD(_aCarac,{"Ú"})
+    AADD(_aCarac,{"Â"})
+    AADD(_aCarac,{"Ê"})
+    AADD(_aCarac,{"Î"})
+    AADD(_aCarac,{"Ô"})
+    AADD(_aCarac,{"Û"})
+    AADD(_aCarac,{"Ã"})
+    AADD(_aCarac,{"Õ"})
+    AADD(_aCarac,{"Ü"})
+    AADD(_aCarac,{"Ç"})
+    AADD(_aCarac,{"."})
+    AADD(_aCarac,{"&"})
+    AADD(_aCarac,{"|"})
+    AADD(_aCarac,{"À"})
+    AADD(_aCarac,{" "})
+
+    For _i:= 1 to Len(_aCarac)
+        If _aCarac[_i, 1] $ RTRIM(_sCampo) 
+            _nExiste += 1
+        EndIf
+    Next
+
+    If _nExiste > 0
+        _lRet := .F.
+        u_help("Produto "+ RTRIM(_sCampo) + " com caracteres especiais. Verifique!")
+    EndIf
+Return _lRet
