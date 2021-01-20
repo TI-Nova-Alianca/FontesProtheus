@@ -28,6 +28,7 @@
 // 02/12/2019 - Robert  - Declaradas variaveis locais para for...next - tratamento para mensagem [For variable is not Local]
 // 09/03/2020 - Claudia - Comentado include faltante conforme solicitação da release 12.1.25
 // 28/09/2020 - Cláudia - Liberada a impressão dos dados adicionais para todos os tipos de produtos/serviços. GLPI: 8539
+// 20/01/2021 - Sandra  - Alterado texto do campo Recebimento de Mercadorias do pedido de compra conforme chamado 9160.
 //
 // ------------------------------------------------------------------------------------------------------------------------
 //#include 'fivewin.ch'
@@ -546,9 +547,9 @@ Static Function xPrintRel()
     oPrint:Line(nLinha+100,030,nLinha+100,2150)// linha inferior
    
     nLinha += 40
-    oPrint:Say(nLinha,0060,'RECEBIMENTO DE MERCADORIAS - SEGUNDA A SEXTA: Manhã:  8:00hrs as 10:45hrs',oFont14)
+    oPrint:Say(nLinha,0060,'RECEBIMENTO DE MERCADORIAS - SEGUNDA A SEXTA: Manhã:  8:00hrs as 12:00hrs',oFont14)
     nLinha += 40
-    oPrint:Say(nLinha,0060,'                                              Tarde: 13:30hrs as 16:00hrs',oFont14)
+    oPrint:Say(nLinha,0060,'                                              Tarde:  13:00hrs as 16:00hrs',oFont14)
     nLinha += 40
    
 	nLinha += 80
