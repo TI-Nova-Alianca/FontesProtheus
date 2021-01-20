@@ -15,6 +15,7 @@
 // 10/11/2020 - Robert - Criado tratamento para FullWMS (logistica).
 // 09/12/2020 - Robert - Criado tratamento para o BI_ALIANCA.
 // 16/12/2020 - Robert - Criado tratamento para o Metadados.
+// 20/01/2021 - Robert - Tratamento para ambiente TesteMedio no acesso ao BI_ALIANCA (criado database temporario em separado)
 //
 
 // --------------------------------------------------------------------------
@@ -49,9 +50,15 @@ user function LkServer (_sQualSrv)
 			_sRetLk = "LKSRV_FULLWMS_LOGISTICA"  // Deve ser usado com OpenQuery por se tratar de banco Oracle.
 		endif
 
+	// Nao usa linked server por que nao permite executar funcoes como consulta ao DRE industrial remotamente. (ainda nao descobri se tem como fazer)
 	case upper (alltrim (_sQualSrv)) == 'BI_ALIANCA'
 		if _lBaseTST
-			_sRetLk = "BI_ALIANCA_teste.dbo"
+		//	_sRetLk = "BI_ALIANCA_teste.dbo"
+			if upper (alltrim (getenvserver ())) == 'TESTEMEDIO'
+				_sRetLk = "BI_ALIANCA_testeMedio.dbo"
+			else
+				_sRetLk = "BI_ALIANCA_teste.dbo"
+			endif
 		else
 			_sRetLk = "BI_ALIANCA.dbo"
 		endif
