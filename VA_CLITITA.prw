@@ -31,10 +31,13 @@ Return
 Static Function ReportDef()
     Local oReport   := Nil
 	Local oSection1 := Nil
+    Local oSection2 := Nil
+    Local oBreak1
 
-    oReport := TReport():New("VA_CLITITA","Titulos pagos em atraso",cPerg,{|oReport| PrintReport(oReport)},"Titulos pagos em atraso")
+    oReport := TReport():New("VA_CLITITA","Titulos quitados em atraso",cPerg,{|oReport| PrintReport(oReport)},"Titulos quitados em atraso")
 	
 	oSection1 := TRSection():New(oReport,,{}, , , , , ,.F.,.F.,.F.) 
+    oSection1:SetPageBreak(.T.)
 	
 	TRCell():New(oSection1,"COLUNA1", 	"" ,"Filial"		,	    			    ,10,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA2", 	"" ,"Titulo"		,	    			    ,20,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
@@ -47,18 +50,32 @@ Static Function ReportDef()
     TRCell():New(oSection1,"COLUNA9", 	"" ,"Valor"	        , "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA10", 	"" ,"Dias Vencidos"	,	    			    ,20,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
 
+    oBreak1 := TRBreak():New(oSection1,{|| oSection1:Cell("COLUNA1"):uPrint },"Total da filial:")
+	TRFunction():New(oSection1:Cell("COLUNA9")	,,"SUM"	,oBreak1, "Valor total ", "@E 999,999,999,999.99", NIL, .F., .F.)
+
+    oSection2 := TRSection():New(oReport,,{}, , , , , ,.F.,.F.,.F.) 
+    oSection2:SetPageBreak(.T.)
+	
+    TRCell():New(oSection2,"COLUNA1", 	"" ,"Cliente"		,	    			    ,20,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection2,"COLUNA2", 	"" ,"Nome"		    ,	    			    ,60,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection2,"COLUNA3", 	"" ,"Valor"	        , "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection2,"COLUNA4", 	"" ,"Média dias"	,	    			    ,20,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
+
 
 Return(oReport)
 //
 // -------------------------------------------------------------------------
 Static Function PrintReport(oReport)
 	Local oSection1   := oReport:Section(1)	
-    Local _aDados := {}
+    Local oSection2   := oReport:Section(2)	
+    Local _aDados     := {}
+    Local _aDadosCli  := {}
     Local _aTipos     := {}
     Local _sTipo      := ""
     Local i           := 0
     Local Y           := 0
     Local _nVlrTotal  := 0
+    Local _nVlrTCli   := 0
 
     _aTipos := STRTOKARR(mv_par05,";")
 
@@ -69,6 +86,8 @@ Static Function PrintReport(oReport)
         EndIf
     Next
 
+    // ----------------------------------------------------------------------------------
+    // DIAS PAGOS EM ATRASO - POR TÍTULO
     _oSQL:= ClsSQL ():New ()
     _oSQL:_sQuery := ""
     _oSQL:_sQuery += " WITH C"
@@ -104,7 +123,12 @@ Static Function PrintReport(oReport)
     
     _aDados := _oSQL:Qry2Array ()
 
+    oReport:SkipLine(2) 
+    oReport:ThinLine()
     oSection1:Init()
+
+    oReport:SkipLine(1) 
+    oReport:PrintText(" DIAS PAGOS EM ATRASO - POR TÍTULO",,100)
 
     For i := 1 to Len(_aDados)
         oSection1:Cell("COLUNA1")	:SetBlock   ({|| _aDados[i,1] })
@@ -112,9 +136,9 @@ Static Function PrintReport(oReport)
         oSection1:Cell("COLUNA3")	:SetBlock   ({|| _aDados[i,3] })
         oSection1:Cell("COLUNA4")	:SetBlock   ({|| _aDados[i,4] })
         oSection1:Cell("COLUNA5")	:SetBlock   ({|| _aDados[i,5] })
-        oSection1:Cell("COLUNA6")	:SetBlock   ({|| _aDados[i,6] })
-        oSection1:Cell("COLUNA7")	:SetBlock   ({|| _aDados[i,7] })
-        oSection1:Cell("COLUNA8")	:SetBlock   ({|| _aDados[i,8] })
+        oSection1:Cell("COLUNA6")	:SetBlock   ({|| STOD(_aDados[i,6]) })
+        oSection1:Cell("COLUNA7")	:SetBlock   ({|| STOD(_aDados[i,7]) })
+        oSection1:Cell("COLUNA8")	:SetBlock   ({|| STOD(_aDados[i,8]) })
         oSection1:Cell("COLUNA9")	:SetBlock   ({|| _aDados[i,9] })
         oSection1:Cell("COLUNA10")	:SetBlock   ({|| _aDados[i,10]})
 
@@ -122,6 +146,8 @@ Static Function PrintReport(oReport)
 
         _nVlrTotal += _aDados[i,9]
     Next
+
+    oSection1:Finish()
 
     oReport:ThinLine()
     oReport:SkipLine(1) 
@@ -132,7 +158,88 @@ Static Function PrintReport(oReport)
     oReport:PrintText(PADL('R$' + Transform(_nVlrTotal, "@E 999,999,999.99"),20,' '),_nLinha, 900)
     oReport:SkipLine(1) 
 
-    oSection1:Finish()
+    // --------------------------------------------------------------------------------------
+    // TITULOS PAGOS EM ATRASO - AGRUPADO POR CLIENTE
+    _oSQL:= ClsSQL ():New ()
+    _oSQL:_sQuery := ""
+    _oSQL:_sQuery += " WITH C"
+    _oSQL:_sQuery += " AS"
+    _oSQL:_sQuery += " (SELECT"
+    _oSQL:_sQuery += "		SE1.E1_FILIAL AS FILIAL"
+    _oSQL:_sQuery += "	   ,SE1.E1_NUM + '/' + SE1.E1_PREFIXO + '/' + SE1.E1_PARCELA AS TITULO"
+    _oSQL:_sQuery += "	   ,SE1.E1_TIPO AS TIPO"
+    _oSQL:_sQuery += "	   ,SE1.E1_CLIENTE + '/' + SE1.E1_LOJA AS CLIENTE"
+    _oSQL:_sQuery += "	   ,SA1.A1_NOME AS NOME"
+    _oSQL:_sQuery += "	   ,SE1.E1_EMISSAO AS EMISSAO"
+    _oSQL:_sQuery += "	   ,SE1.E1_VENCREA AS VENCREA"
+    _oSQL:_sQuery += "	   ,SE1.E1_BAIXA AS BAIXA"
+    _oSQL:_sQuery += "	   ,SE1.E1_VALOR AS VALOR"
+    _oSQL:_sQuery += "	   ,ISNULL(DATEDIFF(DAY, CAST(SE1.E1_VENCREA AS DATETIME), CAST(SE1.E1_BAIXA AS DATETIME)), 1) AS QDIAS"
+    _oSQL:_sQuery += " 	FROM " + RetSQLName ("SE1") + " AS SE1"
+    _oSQL:_sQuery += " 	INNER JOIN " + RetSQLName ("SA1") + " AS SA1"
+    _oSQL:_sQuery += "		ON (SA1.D_E_L_E_T_ = ''"
+    _oSQL:_sQuery += "		AND SA1.A1_COD = SE1.E1_CLIENTE"
+    _oSQL:_sQuery += "		AND SA1.A1_LOJA = SE1.E1_LOJA)"
+    _oSQL:_sQuery += "	WHERE SE1.D_E_L_E_T_ = ''"
+    _oSQL:_sQuery += "		AND SE1.E1_FILIAL BETWEEN '" + mv_par01 + "' and '" + mv_par02 + "'"
+    _oSQL:_sQuery += "		AND SE1.E1_TIPO NOT IN (" + alltrim(_sTipo) + ")"
+    _oSQL:_sQuery += "		AND SE1.E1_SALDO = 0"
+    _oSQL:_sQuery += "		AND SE1.E1_EMISSAO BETWEEN '20030101' AND '" + dtos(mv_par04) + "'"
+    _oSQL:_sQuery += "		AND SE1.E1_VENCREA BETWEEN '" + DTOS(mv_par03) + "' AND '" + dtos(mv_par04) + "'"
+    _oSQL:_sQuery += " )"
+    _oSQL:_sQuery += " SELECT"
+    _oSQL:_sQuery += " 	   CLIENTE"
+    _oSQL:_sQuery += "    ,NOME"
+    _oSQL:_sQuery += "    ,SUM(VALOR)"
+    _oSQL:_sQuery += "    ,SUM(QDIAS) / COUNT(TITULO)"
+    _oSQL:_sQuery += " FROM C"
+    _oSQL:_sQuery += " WHERE QDIAS > 1"
+    _oSQL:_sQuery += " GROUP BY CLIENTE"
+    _oSQL:_sQuery += " 		,NOME"
+    _oSQL:_sQuery += " ORDER BY CLIENTE"
+    _oSQL:_sQuery += "      ,NOME"
+
+    _aDadosCli := _oSQL:Qry2Array ()
+
+    oReport:SkipLine(2) 
+    oReport:ThinLine()
+    oSection2:Init()
+
+    oReport:SkipLine(1) 
+    oReport:PrintText(" MÉDIA DE DIAS PAGOS EM ATRASO - POR CLIENTE",,100)
+
+    For i := 1 to Len(_aDadosCli)
+        oSection2:Cell("COLUNA1")	:SetBlock   ({|| _aDadosCli[i,1] })
+        oSection2:Cell("COLUNA2")	:SetBlock   ({|| _aDadosCli[i,2] })
+        oSection2:Cell("COLUNA3")	:SetBlock   ({|| _aDadosCli[i,3] })
+        oSection2:Cell("COLUNA4")	:SetBlock   ({|| _aDadosCli[i,4] })
+
+        oSection2:PrintLine()
+
+        _nVlrTCli += _aDadosCli[i,3]
+    Next
+
+    oReport:ThinLine()
+    oReport:SkipLine(2) 
+    _nLinha :=  oReport:Row()
+    _nLinha:= _PulaFolha(_nLinha)
+    oReport:PrintText("VALOR TOTAL:" ,_nLinha, 100)
+    oReport:PrintText(PADL('R$' + Transform(_nVlrTCli, "@E 999,999,999.99"),20,' '),_nLinha, 900)
+    oReport:SkipLine(1) 
+
+    // ----------------------------------------------------------------------------------
+    // PARAMETROS
+    oReport:SkipLine(1)
+
+    oReport:PrintText("PARAMETROS:",, 100)
+    oReport:PrintText("Filial de:" + alltrim(mv_Par01) + " até " + alltrim(mv_Par02),, 100)
+    oReport:PrintText("Dt. vencimento real de:" + DTOC(mv_Par03) + " até " + DTOC(mv_Par04),, 100)
+    oReport:PrintText("Tipos não inclusos:" + alltrim(mv_Par05) ,, 100)
+
+    oReport:SkipLine(1)
+    oReport:ThinLine()
+
+    oSection2:Finish()
 
 Return
 //

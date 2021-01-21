@@ -63,6 +63,8 @@ Static Function PrintReport(oReport)
         EndIf
     Next
 
+    // ----------------------------------------------------------------------------------
+    // CLIENTES DE ATRASO
     _oSQL:= ClsSQL ():New ()
     _oSQL:_sQuery := ""
     _oSQL:_sQuery += "	WITH C"
@@ -77,7 +79,7 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "		   ,SE1.E1_VENCREA AS VENCREA"
     _oSQL:_sQuery += "		   ,SE1.E1_VALOR AS VALOR"
     _oSQL:_sQuery += "		   ,SE1.E1_SALDO AS SALDO"
-    _oSQL:_sQuery += "		   ,ISNULL(DATEDIFF(DAY, CAST(SE1.E1_VENCREA AS DATETIME), CAST('" + dtos(mv_par04) + "' AS DATETIME)), 1) AS QDIAS"
+    _oSQL:_sQuery += "		   ,ISNULL(DATEDIFF(DAY, CAST(SE1.E1_VENCREA AS DATETIME), CAST('" + dtos(mv_par06) + "' AS DATETIME)), 1) AS QDIAS"
     _oSQL:_sQuery += "		FROM " + RetSQLName ("SE1") + " AS SE1"
     _oSQL:_sQuery += "		INNER JOIN " + RetSQLName ("SA1") + " AS SA1"
     _oSQL:_sQuery += "			ON (SA1.D_E_L_E_T_ = ''"
@@ -132,6 +134,19 @@ Static Function PrintReport(oReport)
 
     oSection1:Finish()
 
+    // ----------------------------------------------------------------------------------
+    // PARAMETROS
+    oReport:SkipLine(1)
+
+    oReport:PrintText("PARAMETROS:",, 100)
+    oReport:PrintText("Filial de:" + alltrim(mv_Par01) + " até " + alltrim(mv_Par02),, 100)
+    oReport:PrintText("Dt. vencimento real de:" + DTOC(mv_Par03) + " até " + DTOC(mv_Par04),, 100)
+    oReport:PrintText("Tipos não inclusos:" + alltrim(mv_Par05) ,, 100)
+    oReport:PrintText("Dt.Base para calculo de dias:" + DTOC(mv_Par06) ,, 100)
+
+    oReport:SkipLine(1)
+    oReport:ThinLine()
+
 Return
 //
 // --------------------------------------------------------------------------
@@ -158,6 +173,7 @@ Static Function _ValidPerg ()
     aadd (_aRegsPerg, {03, "Dt.Venc.real de  ", "D",  8, 0,  "",   "   ", {},                         		 ""})
     aadd (_aRegsPerg, {04, "Dt.Venc.real até ", "D",  8, 0,  "",   "   ", {},                        		 ""})
     aadd (_aRegsPerg, {05, "Tipo não incluso ", "C", 20, 0,  "",   "   ", {},                        		 ""})
+    aadd (_aRegsPerg, {06, "Dt.Base p/Dias   ", "D",  8, 0,  "",   "   ", {},                        		 ""})
 
     U_ValPerg (cPerg, _aRegsPerg)
 Return
