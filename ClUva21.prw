@@ -91,22 +91,6 @@ user function ClUva21 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAspe
 		if _nAcidVol > 10
 			_sPrm03 = 'DS'
 		else
-/*
-			// Uvas comuns e finas sem classificacao
-			if sb1 -> b1_varuva == 'C' .or. (sb1 -> b1_varuva == 'F' .and. sb1 -> b1_vafcuva == 'C')
-				_sPrm03 = 'B'
-			else  // Uvas viniferas
-				if _nSomaPodr < 6
-					_sPrm03 = 'A'
-				elseif _nSomaPodr >= 6 .and. _nSomaPodr < 12
-					_sPrm03 = 'B'
-				elseif _nSomaPodr >= 12 .and. _nSomaPodr < 18
-					_sPrm03 = 'C'
-				else
-					_sPrm03 = 'DS'
-				endif
-			endif
-*/
 			_sPrm03 = 'PR'  // Assume PR para nao puxar as demais classificacoes para baixo.
 		endif
 
@@ -157,30 +141,14 @@ user function ClUva21 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAspe
 		if _nAcidVol > 10
 			_sPrm03 = 'DS'
 		else
-/*
-			if _nSomaPodr == 0
-				_sPrm03 = 'PR'
-			elseif _nSomaPodr > 0 .and. _nSomaPodr < 3
-				_sPrm03 = 'B'
-			elseif _nSomaPodr >= 3 .and. _nSomaPodr < 6
-				_sPrm03 = 'C'
-			elseif _nSomaPodr >= 6 .and. _nSomaPodr < 12
-				_sPrm03 = 'D'
-			elseif _nSomaPodr > 12
-				_sPrm03 = 'DS'
-			endif
-*/
 			_sPrm03 = 'PR'  // Assume PR para nao puxar as demais classificacoes para baixo.
 		endif
 
-		// Define classificacao por uniformidade de maturacao: em 2020 nao vai ser inspecionado.
-//		_sPrm04 = 'B'
+		// Define classificacao por uniformidade de maturacao.
 		_sPrm04 = _sPrm02  // Assume a mesma do acucar, pois eh o melhor parametro para indicar maturacao da uva.
 
 		// Define classificacao por presenca de materiais estranhos
-//		_sPrm05 = 'B'  // Em 2020 nao vai ser inspecionado.
-		// Conforme normas de safra para este ano: "Materiais estranhos não terão valor de enquadramento da uva nas classes,
-		// apenas deverá ser apontada a natureza do material"
+		// Conforme normas de safra: "Materiais estranhos não terão valor de enquadramento da uva nas classes, apenas deverá ser apontada a natureza do material"
 		// Portanto, deixarei PR para que nunca possa puxar as demais classificaoes para baixo.
 		_sPrm05 = 'PR'
 	endif
