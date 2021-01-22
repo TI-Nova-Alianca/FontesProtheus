@@ -379,12 +379,12 @@ Return _nRet
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT             TIPO  TAM DEC VALID F3     Opcoes                      Help
-    aadd (_aRegsPerg, {01, "Filial de          ", "C",  2, 0,  "",   "   ", {},                              ""})
-    aadd (_aRegsPerg, {02, "Filial ate         ", "C",  2, 0,  "",   "   ", {},                        		 ""})
-    aadd (_aRegsPerg, {03, "Dt.Venc.real de    ", "D",  8, 0,  "",   "   ", {},                         	 ""})
-    aadd (_aRegsPerg, {04, "Dt.Venc.real até   ", "D",  8, 0,  "",   "   ", {},                        		 ""})
-    aadd (_aRegsPerg, {05, "Tipos não inclusos ", "C", 20, 0,  "",   "   ", {},                        		 ""})
-    aadd (_aRegsPerg, {06, "Dt.Base p/Dias     ", "D",  8, 0,  "",   "   ", {},                        		 ""})
+    aadd (_aRegsPerg, {01, "Filial de        ", "C",  2, 0,  "",   "   ", {},              "Filial de"})
+    aadd (_aRegsPerg, {02, "Filial ate       ", "C",  2, 0,  "",   "   ", {},              "Filial até"})
+    aadd (_aRegsPerg, {03, "Dt.Venc.real de  ", "D",  8, 0,  "",   "   ", {},              "Data de vencimento de"})
+    aadd (_aRegsPerg, {04, "Dt.Venc.real até ", "D",  8, 0,  "",   "   ", {},              "Data de vencimento até"})
+    aadd (_aRegsPerg, {05, "Tipo não incluso ", "C", 20, 0,  "",   "   ", {},              "Incluir os tipos que não serão impressos, através de ;"})
+    aadd (_aRegsPerg, {06, "Dt.Base p/Dias   ", "D",  8, 0,  "",   "   ", {},              "Data base para"})
 
     U_ValPerg (cPerg, _aRegsPerg)
 Return

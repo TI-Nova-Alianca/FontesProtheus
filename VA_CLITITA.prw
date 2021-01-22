@@ -159,7 +159,7 @@ Static Function PrintReport(oReport)
     oReport:SkipLine(1) 
 
     // --------------------------------------------------------------------------------------
-    // TITULOS PAGOS EM ATRASO - AGRUPADO POR CLIENTE
+    // TITULOS PAGOS EM ATRASO - AGRUPADO POR CLIENTE BASE
     _oSQL:= ClsSQL ():New ()
     _oSQL:_sQuery := ""
     _oSQL:_sQuery += " WITH C"
@@ -168,7 +168,7 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "		SE1.E1_FILIAL AS FILIAL"
     _oSQL:_sQuery += "	   ,SE1.E1_NUM + '/' + SE1.E1_PREFIXO + '/' + SE1.E1_PARCELA AS TITULO"
     _oSQL:_sQuery += "	   ,SE1.E1_TIPO AS TIPO"
-    _oSQL:_sQuery += "	   ,SE1.E1_CLIENTE + '/' + SE1.E1_LOJA AS CLIENTE"
+    _oSQL:_sQuery += "	   ,SA1.A1_VACBASE + '/' + SA1.A1_VALBASE AS CLIENTE"
     _oSQL:_sQuery += "	   ,SA1.A1_NOME AS NOME"
     _oSQL:_sQuery += "	   ,SE1.E1_EMISSAO AS EMISSAO"
     _oSQL:_sQuery += "	   ,SE1.E1_VENCREA AS VENCREA"
@@ -196,8 +196,7 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += " WHERE QDIAS > 1"
     _oSQL:_sQuery += " GROUP BY CLIENTE"
     _oSQL:_sQuery += " 		,NOME"
-    _oSQL:_sQuery += " ORDER BY CLIENTE"
-    _oSQL:_sQuery += "      ,NOME"
+    _oSQL:_sQuery += " ORDER BY NOME"
 
     _aDadosCli := _oSQL:Qry2Array ()
 
@@ -262,11 +261,11 @@ Return _nRet
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT             TIPO  TAM DEC VALID F3     Opcoes                      Help
-    aadd (_aRegsPerg, {01, "Filial de        ", "C",  2, 0,  "",   "   ", {},                         		 ""})
-    aadd (_aRegsPerg, {02, "Filial ate       ", "C",  2, 0,  "",   "   ", {},                        		 ""})
-    aadd (_aRegsPerg, {03, "Dt.Venc.real de  ", "D",  8, 0,  "",   "   ", {},                         		 ""})
-    aadd (_aRegsPerg, {04, "Dt.Venc.real até ", "D",  8, 0,  "",   "   ", {},                        		 ""})
-    aadd (_aRegsPerg, {05, "Tipo não incluso ", "C", 20, 0,  "",   "   ", {},                        		 ""})
+    aadd (_aRegsPerg, {01, "Filial de        ", "C",  2, 0,  "",   "   ", {},              "Filial de"})
+    aadd (_aRegsPerg, {02, "Filial ate       ", "C",  2, 0,  "",   "   ", {},              "Filial até"})
+    aadd (_aRegsPerg, {03, "Dt.Venc.real de  ", "D",  8, 0,  "",   "   ", {},              "Data de vencimento de"})
+    aadd (_aRegsPerg, {04, "Dt.Venc.real até ", "D",  8, 0,  "",   "   ", {},              "Data de vencimento até"})
+    aadd (_aRegsPerg, {05, "Tipo não incluso ", "C", 20, 0,  "",   "   ", {},              "Incluir os tipos que não serão impressos, através de ;"})
 
     U_ValPerg (cPerg, _aRegsPerg)
 Return
