@@ -179,14 +179,23 @@ user function va_rusLI (_nPesagem)
 						_aClasUva = aclone (U_ClUva19 (szf -> zf_produto, val (szf -> zf_grau), szf -> zf_conduc, val (_sInspBotr), val (_sInspGlom), val (_sInspAspe), val (_sInspPodr), val (_sInspAcid), _sInspMEst, val (_sInspDesu)))
 					elseif sze -> ze_safra == '2020'
 						_aClasUva = aclone (U_ClUva20 (szf -> zf_produto, val (szf -> zf_grau), szf -> zf_conduc, val (_sInspBotr), val (_sInspGlom), val (_sInspAspe), val (_sInspPodr), val (_sInspAcid), _sInspMEst))
-					else
+					elseif sze -> ze_safra == '2021'
+				//		_aClasUva = aclone (U_ClUva21 (szf -> zf_produto, val (szf -> zf_grau), szf -> zf_conduc, val (_sInspBotr), val (_sInspGlom), val (_sInspAspe), val (_sInspPodr), val (_sInspAcid), _sInspMEst))
 						_aClasUva = aclone (eval (&("{||U_ClUva" + right (sze -> ze_safra, 2) + " (szf -> zf_produto, val (szf -> zf_grau), szf -> zf_conduc, val (_sInspBotr), val (_sInspGlom), val (_sInspAspe), val (_sInspPodr), val (_sInspAcid), _sInspMEst)}")))
-						u_log2 ('debug', _aClasUva)
+					else
+						// A chamada com EVAL rodou bem, mas uma pesquisa nos fontes por CLUVA21, por exemplo, nao retorna nada. ---> _aClasUva = aclone (eval (&("{||U_ClUva" + right (sze -> ze_safra, 2) + " (szf -> zf_produto, val (szf -> zf_grau), szf -> zf_conduc, val (_sInspBotr), val (_sInspGlom), val (_sInspAspe), val (_sInspPodr), val (_sInspAcid), _sInspMEst)}")))
+						u_help ("Sem tratamento para leitura de classificacao de uvas no programa " + procname ())
+						_lContinua = .F.
+						exit
 					endif
+//					u_log2 ('debug', '_aClasUva:')
+//					u_log2 ('debug', _aClasUva)
 
 					reclock ("SZF", .F.)
 
 					// Classificacao por grau ('Acucar') deve obrigatoriamente ser encontrada, pois nao fica carga sem grau informado.
+					u_log (_aClasUva [1])
+					u_log (valtype (_aClasUva [1]))
 					szf -> zf_prm02 = _aClasUva [1]
 
 					// Assume as classificoes calculadas somente se encontrou dados de inspecao no NaWeb. Senao, assume valores medios.
