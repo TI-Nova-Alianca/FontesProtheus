@@ -17,6 +17,7 @@
 // 01/04/2020 - Claudia - Alterada a chamada do arquivo de trabalho _sAliasQ2 que nao existia mais para o array aTitulos. GLPI 7752
 // 24/09/2020 - Cláudia - Criada a rotina "Baixa Rapel" - VA_040BRAP. GLPI: 8367
 // 10/11/2020 - Claudia - Incluido CNPJ formatado com mascara no corpo e rodapé da impressão do relatorio de anuencia. GLPI: 8789
+// 22/01/2021 - Cláudia - Incluida validação verificando se o valor já movimentado + rapel é igual ou menor que o valor do título. GLPI: 9066
 //
 // ---------------------------------------------------------------------------------------------------------------------------------
 User Function FA740BRW()
@@ -240,6 +241,7 @@ return
 // Baixas rapel
 user function VA_040BRAP()
 	local _aTitulo := {}
+	local _aSE5    := {}
 	local x        := 0
 
 	cPerg   := "VA_040BRAP"
@@ -249,7 +251,7 @@ user function VA_040BRAP()
 		return
 	else
 		if empty(mv_par01) .or. empty(mv_par02) .or. empty(mv_par03) .or. empty(mv_par04)
-			u_help("banco, agencia, conta e data da baixa devem ser preenchidos!")
+			u_help("Banco, agencia, conta e data da baixa devem ser preenchidos!")
 		else
 			_oSQL:= ClsSQL ():New ()
 			_oSQL:_sQuery := ""
@@ -263,6 +265,7 @@ user function VA_040BRAP()
 			_oSQL:_sQuery += " 		,E1_TIPO"
 			_oSQL:_sQuery += " 		,E1_VARAPEL"
 			_oSQL:_sQuery += " 		,E1_BAIXA"
+			_oSQL:_sQuery += " 		,E1_VALOR"
 			_oSQL:_sQuery += " FROM " + RetSQLName ("SE1") + " AS SE1 "
 			_oSQL:_sQuery += " WHERE SE1.D_E_L_E_T_ = ''"
 			_oSQL:_sQuery += " AND E1_FILIAL   = '" + cFilAnt  + "'"
@@ -286,48 +289,78 @@ user function VA_040BRAP()
 			if len(_aTitulo) <= 0
 				u_help("Não existe titulos com rapel para baixar")
 			endif
+
 			if len(_aTitulo) > 0
 				_cMens := "Existem " + alltrim(str(len(_aTitulo))) + " registros para realizar a baixa de rapel. Deseja continuar?"
+
 				if MsgYesNo(_cMens,"Baixa de rapel de titulos")
 					for x:=1 to len(_aTitulo)
 
-						lMsErroAuto := .F.
+						_oSQL:= ClsSQL ():New ()
+						_oSQL:_sQuery := ""
+						_oSQL:_sQuery += " SELECT"
+						_oSQL:_sQuery += " 		SUM(E5_VALOR)"
+						_oSQL:_sQuery += " FROM " + RetSQLName ("SE5")
+						_oSQL:_sQuery += " WHERE E5_FILIAL = '" + _aTitulo[x,1]	+ "'"
+						_oSQL:_sQuery += " AND E5_PREFIXO  = '" + _aTitulo[x,2]	+ "'"
+						_oSQL:_sQuery += " AND E5_NUMERO   = '" + _aTitulo[x,3]	+ "'"
+						_oSQL:_sQuery += " AND E5_PARCELA  = '" + _aTitulo[x,4]	+ "'"
+						_oSQL:_sQuery += " AND E5_CLIFOR   = '" + _aTitulo[x,5] + "'"
+						_oSQL:_sQuery += " AND E5_LOJA     = '" + _aTitulo[x,6] + "'"
+						_oSQL:_sQuery += " AND E5_TIPODOC IN ('VL', 'DC')"
+						_aSE5 := aclone (_oSQL:Qry2Array ())
 
-						// executar a rotina de baixa automatica do SE1 gerando o SE5 - DO VALOR LÍQUIDO
-						_aAutoSE1 := {}
-						aAdd(_aAutoSE1, {"E1_FILIAL" 	, _aTitulo[x,1]	    				, Nil})
-						aAdd(_aAutoSE1, {"E1_PREFIXO" 	, _aTitulo[x,2]	    				, Nil})
-						aAdd(_aAutoSE1, {"E1_NUM"     	, _aTitulo[x,3]	    				, Nil})
-						aAdd(_aAutoSE1, {"E1_PARCELA" 	, _aTitulo[x,4]	    				, Nil})
-						aAdd(_aAutoSE1, {"E1_CLIENTE" 	, _aTitulo[x,5] 					, Nil})
-						aAdd(_aAutoSE1, {"E1_LOJA"    	, _aTitulo[x,6] 					, Nil})
-						aAdd(_aAutoSE1, {"E1_TIPO"    	, _aTitulo[x,7] 					, Nil})
-						aAdd(_aAutoSE1, {"E1_VARAPEL"   , _aTitulo[x,8] 					, Nil})
-						AAdd(_aAutoSE1, {"AUTMOTBX"		, 'NORMAL'  						, Nil})
-						AAdd(_aAutoSE1, {"AUTBANCO"  	, 'CX1'		    					, Nil})
-						AAdd(_aAutoSE1, {"AUTAGENCIA"  	, 'CX1  '		    				, Nil})
-						AAdd(_aAutoSE1, {"AUTCONTA"  	, 'CX1       '		    			, Nil})				
-						AAdd(_aAutoSE1, {"AUTDTBAIXA"	, _aTitulo[x,9]		 				, Nil})
-						AAdd(_aAutoSE1, {"AUTDTCREDITO"	, _aTitulo[x,9]		 				, Nil})
-						AAdd(_aAutoSE1, {"AUTHIST"   	, 'DESC RAPEL'					    , Nil})
-						AAdd(_aAutoSE1, {"AUTDESCONT"	, _aTitulo[x,8]          		    , Nil})
-						AAdd(_aAutoSE1, {"AUTMULTA"  	, 0         						, Nil})
-						AAdd(_aAutoSE1, {"AUTJUROS"  	, 0         						, Nil})
-						AAdd(_aAutoSE1, {"AUTVALREC"  	, 0								    , Nil})
-					
-						_aAutoSE1 := aclone (U_OrdAuto (_aAutoSE1))  // orderna conforme dicionário de dados
+						if len(_aSE5) > 0
+							_nSE5Vlr := _aSE5[1,1]
+						else
+							_nSE5Vlr := 0
+						endif
 
-						cPerg = 'FIN070'
-						_aBkpSX1 = U_SalvaSX1 (cPerg)  // Salva parametros da rotina.
-						U_GravaSX1 (cPerg, "01", 1)    // testar mostrando o lcto contabil depois pode passar para nao
-						U_GravaSX1 (cPerg, "04", 1)    // esse movimento tem que contabilizar
+						_nValorSE5 := _nSE5Vlr + _aTitulo[x,8] 
+						_nValorSE1 := _aTitulo[x,10] 
+				
+						_sTitulo := alltrim(_aTitulo[x,3])+"/"+ alltrim(_aTitulo[x,2])+"/"+ _aTitulo[x,4]
+						if _nValorSE5 > _nValorSE1
+							u_help("Não será realizada a baixa de rapel do titulo:" + _sTitulo + " pois o valor do titulo é menor que o valor das baixas!")
+						else
+							lMsErroAuto := .F.
 
-						MSExecAuto({|x,y| Fina070(x,y)},_aAutoSE1,3,.F.,5) // rotina automática para baixa de títulos
+							// executar a rotina de baixa automatica do SE1 gerando o SE5 - DO VALOR LÍQUIDO
+							_aAutoSE1 := {}
+							aAdd(_aAutoSE1, {"E1_FILIAL" 	, _aTitulo[x,1]	    				, Nil})
+							aAdd(_aAutoSE1, {"E1_PREFIXO" 	, _aTitulo[x,2]	    				, Nil})
+							aAdd(_aAutoSE1, {"E1_NUM"     	, _aTitulo[x,3]	    				, Nil})
+							aAdd(_aAutoSE1, {"E1_PARCELA" 	, _aTitulo[x,4]	    				, Nil})
+							aAdd(_aAutoSE1, {"E1_CLIENTE" 	, _aTitulo[x,5] 					, Nil})
+							aAdd(_aAutoSE1, {"E1_LOJA"    	, _aTitulo[x,6] 					, Nil})
+							aAdd(_aAutoSE1, {"E1_TIPO"    	, _aTitulo[x,7] 					, Nil})
+							aAdd(_aAutoSE1, {"E1_VARAPEL"   , _aTitulo[x,8] 					, Nil})
+							AAdd(_aAutoSE1, {"AUTMOTBX"		, 'NORMAL'  						, Nil})
+							AAdd(_aAutoSE1, {"AUTBANCO"  	, 'CX1'		    					, Nil})
+							AAdd(_aAutoSE1, {"AUTAGENCIA"  	, 'CX1  '		    				, Nil})
+							AAdd(_aAutoSE1, {"AUTCONTA"  	, 'CX1       '		    			, Nil})				
+							AAdd(_aAutoSE1, {"AUTDTBAIXA"	, _aTitulo[x,9]		 				, Nil})
+							AAdd(_aAutoSE1, {"AUTDTCREDITO"	, _aTitulo[x,9]		 				, Nil})
+							AAdd(_aAutoSE1, {"AUTHIST"   	, 'DESC RAPEL'					    , Nil})
+							AAdd(_aAutoSE1, {"AUTDESCONT"	, _aTitulo[x,8]          		    , Nil})
+							AAdd(_aAutoSE1, {"AUTMULTA"  	, 0         						, Nil})
+							AAdd(_aAutoSE1, {"AUTJUROS"  	, 0         						, Nil})
+							AAdd(_aAutoSE1, {"AUTVALREC"  	, 0								    , Nil})
+						
+							_aAutoSE1 := aclone (U_OrdAuto (_aAutoSE1))  // orderna conforme dicionário de dados
 
-						If lMsErroAuto
-							u_help("Erro na baixa do titulo:" + alltrim(_aTitulo[x,2]) +"/"+ alltrim(_aTitulo[x,3]))
-							u_help(memoread (NomeAutoLog ()))
-						EndIf
+							cPerg = 'FIN070'
+							_aBkpSX1 = U_SalvaSX1 (cPerg)  // Salva parametros da rotina.
+							U_GravaSX1 (cPerg, "01", 1)    // testar mostrando o lcto contabil depois pode passar para nao
+							U_GravaSX1 (cPerg, "04", 1)    // esse movimento tem que contabilizar
+
+							MSExecAuto({|x,y| Fina070(x,y)},_aAutoSE1,3,.F.,5) // rotina automática para baixa de títulos
+
+							if lMsErroAuto
+								u_help("Erro na baixa do titulo:" + _sTitulo)
+								u_help(memoread (NomeAutoLog ()))
+							endif
+						endif
 					next
 				endif
 			endif
