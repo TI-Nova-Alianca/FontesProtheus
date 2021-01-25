@@ -26,6 +26,7 @@
 // 13/07/2020 - Robert - Inseridas tags para catalogacao de fontes.
 //                     - Melhorias mensagens de log e de erros.
 // 09/12/2020 - Robert - Passa a buscar nome do database BI_ALIANCA pela funcao U_LkServer (para poder usar com a base teste).
+// 22/01/2021 - Robert - Restaurada linha que pegava retorno das filiais, na opcao de rateio filial a filial.
 //
 
 // --------------------------------------------------------------------------
@@ -220,6 +221,7 @@ static function _Gera (_sDescri, _dDataIni, _dDataFim, _sAgrRat, _sFormaRat)
 			_lContinua = .F.
 		else
 			_oSQL:_sQuery := "SELECT COUNT (*) FROM " + _sLinkSrv + ".DRE_INDL_ITENS WHERE ID_ANALISE = " + cvaltochar (_nIdAnalis)
+			_oSQL:Log ()
 			_nQtItens = _oSQL:RetQry ()
 			u_log2 ('info', cvaltochar (_nQtItens) + ' itens de NF lidos.')
 		endif
@@ -228,7 +230,7 @@ static function _Gera (_sDescri, _dDataIni, _dDataFim, _sAgrRat, _sFormaRat)
 	// Gera rateios de valores contabeis
 	if _lContinua
 		incproc ('Gerando rateios dos valores contabeis')
-		u_log2 ('info', 'Vou gerar rateios')
+		u_log2 ('info', 'Vou gerar rateios por ' + _sAgrRat)
 		// Agrupamento consolidado
 		if _sAgrRat $ 'C'
 			_oSQL:_sQuery := "EXEC " + _sLinkSrv + ".SP_DRE_INDL_GERA_RATEIOS " + cvaltochar (_nIdAnalis) + ", '', 'zz'"
@@ -244,6 +246,7 @@ static function _Gera (_sDescri, _dDataIni, _dDataFim, _sAgrRat, _sFormaRat)
 		elseif _sAgrRat == 'F'
 			_oSQL:_sQuery := "SELECT DISTINCT FILIAL FROM " + _sLinkSrv + ".DRE_INDL_ITENS WHERE ID_ANALISE = " + cvaltochar (_nIdAnalis)
 			_oSQL:Log ()
+			_aFiliais = aclone (_oSQL:Qry2Array ())
 			for _nFilial = 1 to len (_aFiliais)
 				_oSQL:_sQuery := "EXEC " + _sLinkSrv + ".SP_DRE_INDL_GERA_RATEIOS " + cvaltochar (_nIdAnalis) + ", '" + _aFiliais [_nFilial, 1] + "', '" + _aFiliais [_nFilial, 1] + "'"
 				_oSQL:Log ()
