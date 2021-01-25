@@ -3,13 +3,13 @@
 // Data.......: 18/04/2008
 // Descricao..: P.E. 'Tudo OK' da tela de pedidos de vendas
 //              Criado inicialmente para verificar CFO
-//
+
 // Tags de localização
 // #TipoDePrograma    #PontoDeEntrada
 // #PalavasChave      #PE #pontodeentrada #pedido #venda #pedidosdevendas #TudoOK
 // #TabelasPrincipais #SC5 #SC6 
 // #Modulos 		  #faturamento #FAT
-//
+
 // Historico de alteracoes:
 // 03/06/2008 - Robert - Passa a avisar quando tem item do grupo ML_CARTU sem qt. volumes.
 // 11/06/2008 - Robert - Aviso sobre volumes passa a ser apenas em pedidos do tipo 'normal'.
@@ -89,7 +89,9 @@
 // 15/07/2020 - Cláudia - Retirado o lembrete de associado e tipo de nota.
 // 14/08/2020 - Robert  - Desabilitada validacao do 'custo para transferencia' quando chamado a partir do MATA310 (GLPI 8077)
 // 18/01/2021 - Claudia - GLPI: 8966 - Incluida validação de forma de pagamento CC e CD
+// 25/01/2021 - Robert  - Melhorada msg. de cond.pag. bonificacao com TES gerando financeiro (GLPI 9128).
 //
+
 // --------------------------------------------------------------------------------------
 User Function MTA410 ()
 	local _lRet      := .T.
@@ -148,7 +150,8 @@ User Function MTA410 ()
 			for _N = 1 to len (aCols)
 				N := _N
 				if ! GDDeleted () .and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES"), "F4_DUPLIC") = "S"
-					u_help ("Para condição BONIFICAÇÃO, TES não deve gerar finaneiro.",, .t.)
+				//	u_help ("Para condição BONIFICAÇÃO, TES não deve gerar finaneiro.",, .t.)
+					u_help ("Para condicao de pagamento '" + m->c5_condpag + "' (bonificacao), o TES (" + GDFieldGet ("C6_TES") + ") nao deve gerar finaneiro.",, .t.)
 					_lRet = .F.
 					exit
 				endif
