@@ -54,7 +54,7 @@ Static Function PrintReport(oReport)
     Local _nVlrTotal  := 0
     Local _nVlrSaldo  := 0
 
-    _aTipos := STRTOKARR(mv_par05,";")
+    _aTipos := STRTOKARR(mv_par05,",")
 
     For y:=1 to Len(_aTipos)
         _sTipo += "'" + alltrim(_aTipos[y]) + "'"
@@ -98,7 +98,7 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "	   ,SUM(VALOR)"
     _oSQL:_sQuery += "	   ,SUM(SALDO)"
     _oSQL:_sQuery += "	FROM C"
-    _oSQL:_sQuery += "	WHERE QDIAS > 0"
+    _oSQL:_sQuery += "	WHERE QDIAS >= 0"
     _oSQL:_sQuery += "	GROUP BY FILIAL, CLIENTE, NOME"
     _oSQL:_sQuery += "	ORDER BY NOME"
     
@@ -139,11 +139,22 @@ Static Function PrintReport(oReport)
     oReport:SkipLine(1)
 
     oReport:PrintText("PARAMETROS:",, 100)
-    oReport:PrintText("Filial de:" + alltrim(mv_Par01) + " até " + alltrim(mv_Par02),, 100)
-    oReport:PrintText("Dt. vencimento real de:" + DTOC(mv_Par03) + " até " + DTOC(mv_Par04),, 100)
-    oReport:PrintText("Tipos não inclusos:" + alltrim(mv_Par05) ,, 100)
-    oReport:PrintText("Dt.Base para calculo de dias:" + DTOC(mv_Par06) ,, 100)
-
+    oReport:PrintText("     Filial de:" + alltrim(mv_Par01) + " até " + alltrim(mv_Par02),, 100)
+    oReport:PrintText("     Dt. vencimento real de:" + DTOC(mv_Par03) + " até " + DTOC(mv_Par04),, 100)
+    oReport:PrintText("     Tipos não inclusos:" + alltrim(mv_Par05) ,, 100)
+    oReport:PrintText("     Dt.Base para calculo de dias:" + DTOC(mv_Par06) ,, 100)
+    oReport:PrintText(" **********************************************************************************" ,, 100)
+    oReport:PrintText(" Descrição de tipos disponíveis:" ,, 100)
+    oReport:PrintText("     CC  CARTAO CREDITO" ,, 100)
+    oReport:PrintText("     CD  CARTAO DEBITO " ,, 100)
+    oReport:PrintText("     CH  CHEQUE" ,, 100)
+    oReport:PrintText("     CO  CONVENIO" ,, 100)
+    oReport:PrintText("     DP  DUPLICATA" ,, 100)
+    oReport:PrintText("     FTC FATURA DE CLIENTE " ,, 100)
+    oReport:PrintText("     NCC NOTA CREDITO CLIENTE" ,, 100)
+    oReport:PrintText("     NF  Nota Fiscal " ,, 100)
+    oReport:PrintText("     R$  DINHEIRO (REAL) " ,, 100)
+    oReport:PrintText("     RA  RECEBIMENTO ANTECIPADO  " ,, 100)
     oReport:SkipLine(1)
     oReport:ThinLine()
 
