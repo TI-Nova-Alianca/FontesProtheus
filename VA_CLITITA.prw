@@ -77,7 +77,7 @@ Static Function PrintReport(oReport)
     Local _nVlrTotal  := 0
     Local _nVlrTCli   := 0
 
-    _aTipos := STRTOKARR(mv_par05,";")
+    _aTipos := STRTOKARR(mv_par05,",")
 
     For y:=1 to Len(_aTipos)
         _sTipo += "'" + alltrim(_aTipos[y]) + "'"
@@ -231,10 +231,21 @@ Static Function PrintReport(oReport)
     oReport:SkipLine(1)
 
     oReport:PrintText("PARAMETROS:",, 100)
-    oReport:PrintText("Filial de:" + alltrim(mv_Par01) + " até " + alltrim(mv_Par02),, 100)
-    oReport:PrintText("Dt. vencimento real de:" + DTOC(mv_Par03) + " até " + DTOC(mv_Par04),, 100)
-    oReport:PrintText("Tipos não inclusos:" + alltrim(mv_Par05) ,, 100)
-
+    oReport:PrintText("     Filial de:" + alltrim(mv_Par01) + " até " + alltrim(mv_Par02),, 100)
+    oReport:PrintText("     Dt. vencimento real de:" + DTOC(mv_Par03) + " até " + DTOC(mv_Par04),, 100)
+    oReport:PrintText("     Tipos não inclusos:" + alltrim(mv_Par05) ,, 100)
+    oReport:PrintText(" **********************************************************************************" ,, 100)
+    oReport:PrintText(" Descrição de tipos disponíveis:" ,, 100)
+    oReport:PrintText("     CC  CARTAO CREDITO" ,, 100)
+    oReport:PrintText("     CD  CARTAO DEBITO " ,, 100)
+    oReport:PrintText("     CH  CHEQUE" ,, 100)
+    oReport:PrintText("     CO  CONVENIO" ,, 100)
+    oReport:PrintText("     DP  DUPLICATA" ,, 100)
+    oReport:PrintText("     FTC FATURA DE CLIENTE " ,, 100)
+    oReport:PrintText("     NCC NOTA CREDITO CLIENTE" ,, 100)
+    oReport:PrintText("     NF  Nota Fiscal " ,, 100)
+    oReport:PrintText("     R$  DINHEIRO (REAL) " ,, 100)
+    oReport:PrintText("     RA  RECEBIMENTO ANTECIPADO  " ,, 100)
     oReport:SkipLine(1)
     oReport:ThinLine()
 
@@ -265,7 +276,7 @@ Static Function _ValidPerg ()
     aadd (_aRegsPerg, {02, "Filial ate       ", "C",  2, 0,  "",   "   ", {},              "Filial até"})
     aadd (_aRegsPerg, {03, "Dt.Venc.real de  ", "D",  8, 0,  "",   "   ", {},              "Data de vencimento de"})
     aadd (_aRegsPerg, {04, "Dt.Venc.real até ", "D",  8, 0,  "",   "   ", {},              "Data de vencimento até"})
-    aadd (_aRegsPerg, {05, "Tipo não incluso ", "C", 20, 0,  "",   "   ", {},              "Incluir os tipos que não serão impressos, através de ;"})
+    aadd (_aRegsPerg, {05, "Tipo não incluso ", "C", 20, 0,  "",   "   ", {},              "Incluir os tipos que não serão impressos, através de virgula ,"})
 
     U_ValPerg (cPerg, _aRegsPerg)
 Return

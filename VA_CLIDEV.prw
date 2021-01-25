@@ -22,12 +22,15 @@ User Function VA_CLIDEV()
 	Pergunte(cPerg,.T.)
 	
 	Do Case
-	      Case mv_par01 == 1 // Títulos em atraso - Analitico
+            Case mv_par01 == 1 // Indice
+                  U_VA_CLIIND()
+	      Case mv_par01 == 2 // Títulos em atraso - Analitico
                   U_VA_CLIATIT()
-		Case mv_par01 == 2 // Clientes em atraso
+		Case mv_par01 == 3 // Clientes em atraso
                   U_VA_CLITATR()
-            Case mv_par01 == 3 // Titulos já quitados em atraso
+            Case mv_par01 == 4 // Titulos já quitados em atraso
                   U_VA_CLITITA()
+           
 
 	EndCase
 Return
@@ -37,6 +40,6 @@ Return
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT         TIPO TAM DEC VALID F3     Opcoes                      Help
-    aadd (_aRegsPerg, {01, "Opção 		", "N", 1,  0,  "",   "   ", {"Títulos","Clientes", "Pagos em atraso"}			,"Define o tipo de impressão"})
+    aadd (_aRegsPerg, {01, "Opção 		", "N", 1,  0,  "",   "   ", {"Indice","Títulos","Clientes", "Pagos em atraso"}			,"Define o tipo de impressão"})
     U_ValPerg (cPerg, _aRegsPerg)
 Return
