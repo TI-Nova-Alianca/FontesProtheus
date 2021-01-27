@@ -1,14 +1,23 @@
 // Programa...: VA_XLS50
 // Autor......: Robert Koch
 // Data.......: 17/03/2020
-// Descricao..: Exporta planilha com totais de contranotas de safra.
-//
+// Descricao..: Exporta planilha com entradas de MP/VD identificando se sao de associados ou nao.
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Relatorio
+// #Descricao         #Exporta planilha com entradas de MP/VD para classificacao entre ato cooperativo e nao cooperativo.
+// #PalavasChave      #entradas #uva #materia-prima #ato_cooperativo #ato_nao_cooperativo #ato_cooperado #ato_nao_cooperado
+// #TabelasPrincipais #SD1 #SZI
+// #Modulos           #COOP #CTB
+
 // Historico de alteracoes:
+// 25/01/2021 - Robert - Adicionada loja 02 do fornecedor 001369 como producao propria.
+// 27/01/2021 - Robert - Alteracao geral: deixa de ler view de notas e passa a buscar do SD1 (GLPI 9198).
 //
 
 // --------------------------------------------------------------------------
 User Function VA_XLS50 (_lAutomat)
-	Local cCadastro := "Exporta comparativo contranotas de safra por tipo de fornecedor / operacao"
+	Local cCadastro := "Exporta com entradas de MP/VD para classificacao entre ato cooperativo e nao cooperativo."
 	Local aSays     := {}
 	Local aButtons  := {}
 	Local nOpca     := 0
@@ -16,7 +25,7 @@ User Function VA_XLS50 (_lAutomat)
 	private _lAuto   := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
 
 	// Verifica se o usuario tem liberacao para uso desta rotina.
-	if ! U_ZZUVL ('045', __cUserID, .T.)//, cEmpAnt, cFilAnt)
+	if ! U_ZZUVL ('045', __cUserID, .T.)
 		return
 	endif
 
@@ -53,7 +62,7 @@ Return _lRet
 // --------------------------------------------------------------------------
 Static Function _Gera()
 	local _oSQL   := NIL
-	local _sSafra := ''
+//	local _sSafra := ''
 
 	procregua (10)
 	incproc ("Gerando arquivo de exportacao")
@@ -61,6 +70,7 @@ Static Function _Gera()
 	// Busca dados
 	incproc ("Buscando dados")
 	_oSQL := ClsSQL ():New ()
+	/* Versao original (ateh 27/01/2021)
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += "WITH C AS"
 	_oSQL:_sQuery += "( SELECT SAFRA, TIPO_NF, TIPO_FORNEC"
@@ -77,7 +87,7 @@ Static Function _Gera()
 	_oSQL:_sQuery +=       ", SUM (PESO_LIQ) AS PESO"
 	_oSQL:_sQuery +=       ", SUM (" + iif (U_ZZUVL ('051', __cUserID, .F., cEmpAnt, cFilAnt), "VALOR_TOTAL", "0") + ") AS VALOR"
 	_oSQL:_sQuery +=  " FROM (SELECT SAFRA, 'D' AS TIPO_NF"
-	_oSQL:_sQuery +=              " ,CASE WHEN FORNECEDOR + LOJA IN ('00136901', '00109401', '00311401')"
+	_oSQL:_sQuery +=              " ,CASE WHEN FORNECEDOR + LOJA IN ('00136901', '00136902', '00109401', '00311401')"
 	_oSQL:_sQuery +=                    " THEN 'PROD_PROPRIA'"
 	_oSQL:_sQuery +=                    " ELSE CASE WHEN dbo.VA_ASSOC_DT_ENTRADA (FORNECEDOR, LOJA, SD2.D2_EMISSAO) != ''"
 	_oSQL:_sQuery +=                              " THEN 'ASSOCIADO'"
@@ -140,7 +150,42 @@ Static Function _Gera()
 	_oSQL:_sQuery += " SELECT *"
 	_oSQL:_sQuery +=  " FROM E"
 	_oSQL:_sQuery += " ORDER BY QUANT_OU_VALOR DESC, TIPO_FORNEC, OPERACAO"
-
+*/
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += "SELECT SD1.D1_FILIAL AS FILIAL"
+	_oSQL:_sQuery +=       ",SD1.D1_COD AS PRODUTO"
+	_oSQL:_sQuery +=       ",SB1.B1_DESC AS DESCRICAO"
+	_oSQL:_sQuery +=       ",SD1.D1_TP AS TIPO_PRODUTO"
+	_oSQL:_sQuery +=       ",FORMAT (CAST (SD1.D1_DTDIGIT AS DATETIME), 'dd/MM/yyyy') AS DT_MOVTO"
+	_oSQL:_sQuery +=       ",SD1.D1_FORNECE AS FORNECEDOR"
+	_oSQL:_sQuery +=       ",SD1.D1_LOJA AS LOJA"
+	_oSQL:_sQuery +=       ",A2_NOME AS NOME"
+	_oSQL:_sQuery +=       ",CASE WHEN dbo.VA_ASSOC_DT_ENTRADA(D1_FORNECE, D1_LOJA, D1_DTDIGIT) != ''"
+	_oSQL:_sQuery +=       "    THEN 'ASSOCIADO'"
+	_oSQL:_sQuery +=       "    ELSE 'NAO ASSOCIADO'"
+	_oSQL:_sQuery +=       "END AS TIPO_FORNECEDOR"
+	_oSQL:_sQuery +=       ",SD1.D1_TIPO AS TIPO_NF"
+	_oSQL:_sQuery +=       ",SD1.D1_TES AS TES"
+	_oSQL:_sQuery +=       ",SD1.D1_CF AS CFOP"
+	_oSQL:_sQuery +=       ",D1_DOC AS NF"
+	_oSQL:_sQuery +=       ",SD1.D1_SERIE AS SERIE"
+	_oSQL:_sQuery +=       ",SD1.D1_QUANT AS QUANTIDADE"
+	_oSQL:_sQuery +=       ",SD1.D1_UM AS UN_MEDIDA"
+	_oSQL:_sQuery +=       ",SD1.D1_TOTAL AS VL_TOTAL"
+	_oSQL:_sQuery +=       ",SD1.D1_CUSTO AS CUSTO_MEDIO"
+	_oSQL:_sQuery += " FROM " + RetSQLName ("SD1") + " SD1 "
+	_oSQL:_sQuery +=     " LEFT JOIN " + RetSQLName ("SB1") + " SB1 "
+	_oSQL:_sQuery +=            " ON (SB1.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=           " AND SB1.B1_FILIAL = '" + xfilial ("SB1") + "'"
+	_oSQL:_sQuery +=           " AND SB1.B1_COD = SD1.D1_COD)"
+	_oSQL:_sQuery +=     " LEFT JOIN " + RetSQLName ("SA2") + " SA2 "
+	_oSQL:_sQuery +=            " ON (SA2.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=           " AND SA2.A2_FILIAL = '" + xfilial ("SA2") + "'"
+	_oSQL:_sQuery +=           " AND SA2.A2_COD = SD1.D1_FORNECE"
+	_oSQL:_sQuery +=           " AND SA2.A2_LOJA = SD1.D1_LOJA)"
+	_oSQL:_sQuery += " WHERE SD1.D1_DTDIGIT BETWEEN '" + dtos (mv_par01) + "' AND '" + dtos (mv_par02) + "'"
+	_oSQL:_sQuery +=   " AND SD1.D1_TP IN ('MP', 'VD')"
+	_oSQL:_sQuery +=   " AND SD1.D1_TIPO NOT IN ('B', 'D')"
 	_oSQL:Log ()
 	_oSQL:Qry2Xls ()
 return
@@ -152,9 +197,7 @@ Static Function _ValidPerg ()
 	local _aDefaults := {}
 	
 	//                 Ordem Descri                          tipo tam           dec          valid    F3     opcoes (combo)                                 help
-	aadd (_aRegsPerg, {01, "Safra inicial                 ", "C", 4,             0,            "",   "   ",  {},                                            ""})
-	aadd (_aRegsPerg, {02, "Safra final                   ", "C", 4,             0,            "",   "   ",  {},                                            ""})
-	aadd (_aRegsPerg, {03, "Filial inicial                ", "C", 2,             0,            "",   "SM0",  {},                                            ""})
-	aadd (_aRegsPerg, {04, "Filial final                  ", "C", 2,             0,            "",   "SM0",  {},                                            ""})
+	aadd (_aRegsPerg, {01, "Data inicial NF entrada       ", "D", 8,             0,            "",   "   ",  {},                                            ""})
+	aadd (_aRegsPerg, {02, "Data final NF entrada         ", "D", 8,             0,            "",   "   ",  {},                                            ""})
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 Return

@@ -49,6 +49,7 @@
 // 23/11/2020 - Robert  - Criada validacao 76 (Todos os grupos deveriam ter privilegio 000002).
 // 07/12/2020 - Robert  - Criada validacao 77 (pessoa do Metadados referenciando mais de um usuario no Protheus).
 // 18/12/2020 - Robert  - Verificacao 26 passa a usar a procedure VA_SP_VERIFICA_ESTOQUES e passa a ser de interesse tambem de CUS/CTB. (GLPI 9054).
+// 26/01/2021 - Robert  - Verificacao 77 considerava usuarios bloqueados (que mudaram de username, por exemplo).
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -3015,6 +3016,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=  " FROM VA_VUSR_PROTHEUS_X_METADADOS"
 			::Query += " WHERE PESSOA IN (SELECT PESSOA"
 			::Query +=                    " FROM VA_VUSR_PROTHEUS_X_METADADOS"
+			::Query +=                   " WHERE USR_MSBLQL != '1'"
 			::Query +=                   " GROUP BY PESSOA"
 			::Query +=                  " HAVING COUNT (*) > 1)"
 			::Query += " ORDER BY USR_CARGO"
