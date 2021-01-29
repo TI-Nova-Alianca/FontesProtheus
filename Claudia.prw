@@ -2,10 +2,53 @@
 user function claudia ()
 
 //	u_help(" nada em execução")
-	u_help("U_ImpOBSFin")
+	u_help('descCC')
 
+//	descCC()
 	//ImpOBSFin()
 return
+
+
+// // INSERE DESCRICAO CC NO SC7
+// Static function descCC()
+// 	Local _aDados := {}
+// 	Local i       := 0
+
+// 	u_help('começa')
+
+// 	_oSQL := ClsSQL():New ()
+// 	_oSQL:_sQuery := ""
+// 	_oSQL:_sQuery += " SELECT"
+// 	_oSQL:_sQuery += " 	   C7_FILIAL"
+// 	_oSQL:_sQuery += "    ,C7_NUM"
+// 	_oSQL:_sQuery += "    ,C7_ITEM"
+// 	_oSQL:_sQuery += "    ,C7_SEQUEN"
+// 	_oSQL:_sQuery += "    ,CTT_DESC01"
+// 	_oSQL:_sQuery += " FROM SC7010"
+// 	_oSQL:_sQuery += " INNER JOIN CTT010 CTT"
+// 	_oSQL:_sQuery += " 	ON (CTT.D_E_L_E_T_ = ''"
+// 	_oSQL:_sQuery += " 			AND C7_CC = CTT_CUSTO)"
+// 	_oSQL:_sQuery += " WHERE C7_EMISSAO >= '20201201'"
+// 	_oSQL:_sQuery += " AND C7_CC <> ''"
+// 	_oSQL:_sQuery += " AND C7_VACCDES = ''"
+// 	_oSQL:_sQuery += " ORDER BY C7_FILIAL, C7_EMISSAO "
+// 	_aDados := _oSQL:Qry2Array ()
+
+
+// 	For i:=1 to Len(_aDados)
+// 			dbSelectArea("SC7")
+// 			dbSetOrder(1) // c7_filial, c7_num, c7_item, c7_sequen                                                                                                                                  
+// 			dbSeek(_aDados[i,1] + _aDados[i,2]  + _aDados[i,3] + _aDados[i,4] )
+			
+// 			If Found() // Avalia o retorno da pesquisa realizada
+// 				RECLOCK("SC7", .F.)
+				
+// 				SC7->C7_VACCDES := _aDados[i,5] 
+				
+// 				MSUNLOCK()     // Destrava o registro
+// 			EndIf		
+// 	Next
+// Return
 // // ----------------------------------------------------------------------------
 // // Importa CSV obs financeiro
 
