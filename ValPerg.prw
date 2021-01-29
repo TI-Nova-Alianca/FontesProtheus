@@ -14,6 +14,7 @@
 // 01/06/2010 - Robert - Criada possibilidade de informar valores default na criacao das perguntas.
 // 13/06/2010 - Robert - Deleta perguntas duplicadas, se encontrar.
 // 21/03/2016 - Robert - Faltava ALLTRIM nas perguntas ao chamar PutSX1Help.
+// 27/01/2021 - Robert - Melhorados logs e inseridas tags para catalogo de fontes.
 //
 
 // --------------------------------------------------------------------------
@@ -23,8 +24,6 @@ user function ValPerg (_cPerg, _aRegsOri, _aHelps, _aRespDef)
 	local _j         := 0
 	local _aRegs     := {}
 	local _sSeq      := ""
-	//local _aTxtHelp  := {}
-	//local _nTxtHelp  := 0
 	local _lNovaPerg := .F.
 	local _nRespDef  := 0
 	
@@ -94,7 +93,7 @@ user function ValPerg (_cPerg, _aRegsOri, _aHelps, _aRespDef)
 	// Verifica perguntas do tipo combo sem opcoes
 	For _i := 1 to Len (_aRegs)
 		if _aRegs [_i, 11] == "C" .and. empty (_aRegs [_i, 14])
-			u_help ("Funcao " + procname () + ": Me foi solicitado que criasse a pergunta " + _aRegs [_i, 2] + " no grupo de perguntas " + _aRegs [_i, 1] + " como 'lista de opcoes', mas nao foi especificada nenhuma opcao. Provavel problema no programa " + funname ())
+			u_help ("Funcao " + procname () + ": Me foi solicitado que criasse a pergunta " + _aRegs [_i, 2] + " no grupo de perguntas " + _aRegs [_i, 1] + " como 'lista de opcoes', mas nao foi especificada nenhuma opcao. Provavel problema no programa " + funname (),, .T.)
 			_aRegs [_i, 14] = "?"
 		endif
 	next
@@ -107,9 +106,11 @@ user function ValPerg (_cPerg, _aRegsOri, _aHelps, _aRespDef)
 	DbSetOrder (1)
 	For _i := 1 to Len (_aRegs)
 		If ! DbSeek (_cPerg + _aRegs [_i, 2])
+			//U_Log2 ('debug', 'Inserindo registro no SX1 para >>' + _cPerg + _aRegs [_i, 2] + '<<')
 			RecLock ("SX1", .T.)
 			_lNovaPerg = .T.
 		else
+			//U_Log2 ('debug', 'Atualizando registro no SX1 para >>' + _cPerg + _aRegs [_i, 2] + '<<')
 			RecLock ("SX1", .F.)
 			_lNovaPerg = .F.
 		endif
@@ -152,7 +153,7 @@ user function ValPerg (_cPerg, _aRegsOri, _aHelps, _aRespDef)
 		// rotina de criacao de perguntas as deixaram duplicadas)
 		sx1 -> (dbskip ())
 		do while ! sx1 -> (eof ()) .and. sx1 -> x1_grupo == _cPerg .and. sx1 -> x1_ordem == _aRegs [_i, 2]
-			//u_log ('Deletando pergunta excedente: ', sx1 -> x1_ordem)
+			//u_log2 ('debug', 'Deletando pergunta excedente: ' + sx1 -> x1_ordem)
 			reclock ("SX1", .F.)
 			dbdelete ()
 			msunlock ()
@@ -165,6 +166,7 @@ user function ValPerg (_cPerg, _aRegsOri, _aHelps, _aRespDef)
 	DbSeek (_cPerg, .T.)
 	do while ! eof () .and. x1_grupo == _cPerg
 		if ascan (_aRegs, {|_aVal| _aVal [2] == sx1 -> x1_ordem}) == 0
+			//u_log2 ('debug', 'Deletando do SX1 as perguntas que nao constam em _sRegs: ' + sx1 -> x1_ordem)
 			reclock ("SX1", .F.)
 			dbdelete ()
 			msunlock ()

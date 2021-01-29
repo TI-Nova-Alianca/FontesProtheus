@@ -6,6 +6,7 @@
 // Historico de alteracoes:
 // 05/02/2020 - Robert - Verifica se o associado tem alguma restricao na view VA_VAGENDA_SAFRA
 // 26/02/2020 - Robert - Campo ze_senhade passa a ser do tipo caracter.
+// 26/01/2021 - Robert - Testes iniciais impressora ticket F07
 //
 
 #include "VA_INCLU.prw"
@@ -80,23 +81,18 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 	endif
 
 
-	// Se nao informada uma impressora especifica, mantem a impressora default desta filial.
-//parece que ta vindo sempra 14 no web servce-->	if ! empty (_sIdImpr)
-//parece que ta vindo sempra 14 no web servce-->//		_sPortTick = U_RetZX5 ('49', _sIdImpr, 'ZX5_49CAM')
-//parece que ta vindo sempra 14 no web servce-->//	else
-		do case
-		case _sBalanca == 'LB'
-			_sIdImpr = '14' //'07'  // LAB SAFRA MATRIZ
-			_sPortTick = U_RetZX5 ('49', _sIdImpr, 'ZX5_49CAM')
-		// Ainda nao consegui imprimir fora da rede da matriz --> 		case _sBalanca == 'JC'
-		// Ainda nao consegui imprimir fora da rede da matriz --> 			_sIdImpr = '08'
-		// Ainda nao consegui imprimir fora da rede da matriz --> 		case _sBalanca == 'LV'
-		// Ainda nao consegui imprimir fora da rede da matriz --> 			_sIdImpr = '09'
-		otherwise
-			_sIdImpr = ''
-			u_log ("Impressora de ticket nao definida para a balanca '" + _sBalanca + "'. Nao vou solicitar impressao.")
-		endcase
-//parece que ta vindo sempra 14 no web servce-->//	endif
+	// Define impressora de ticket.
+	do case
+	case _sBalanca == 'LB'
+		_sIdImpr = '14' //'07'  // LAB SAFRA MATRIZ
+		_sPortTick = U_RetZX5 ('49', _sIdImpr, 'ZX5_49CAM')
+	case _sBalanca == 'JC'
+		_sIdImpr = '08' // balanca JC
+		_sPortTick = U_RetZX5 ('49', _sIdImpr, 'ZX5_49CAM')
+	otherwise
+		_sIdImpr = ''
+		u_log ("Impressora de ticket nao definida para a balanca '" + _sBalanca + "'. Nao vou solicitar impressao.")
+	endcase
 	u_log2 ('debug', '_sIdImpr:' + _sIdImpr)
 	u_log2 ('debug', '_sPortTick:' + _sPortTick)
 	if ! empty (_sPortTick)
