@@ -15,6 +15,7 @@
 // 15/10/2020 - Robert - Melhorados logs.
 // 07/12/2020 - Robert - Gravava D3_QUANT zerado. Passa a gravar a litragem total produzida pela OP.
 //                     - Extensao do arquivo fonte alterada de .prw para .tlpp (linguagem TL++)
+// 18/01/2021 - Robert - Verifica parametro MV_DBLQMOV antes de executar.
 //
 
 #XTranslate .CCCodigo        => 1
@@ -103,6 +104,10 @@ Static Function _MoveTe ()
 		u_help ("Periodo ja encerrado (MV_ULMES).",, .t.)
 		_lContinua = .F.
 	endif
+	if _lContinua .and. stod (_ddfim) <= getmv('MV_DBLQMOV',.F.,'20000101')
+		u_help ('Processo nao pode rodar com bloqueio de data (MV_DBLQMOV)',, .T.)
+		_lContinua = .F.
+	endif
 
 	PROCREGUA (10)
 
@@ -168,6 +173,8 @@ Static Function _MoveTe ()
 		//next
 	endif
 
+	U_HELP("Apaguei meus movimentos anteriores e nao vou gerar mais nada. Agora tudo passa a ser feito pelo programa original.",, .t.)
+	return
 
 	// Cria lista de OPs 'de safra' (que consumiram uva).
 	if _lContinua

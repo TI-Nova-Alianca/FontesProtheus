@@ -2,16 +2,25 @@
 // Autor...: Robert Koch
 // Data....: 03/06/2020
 // Funcao..: Grava arquivo de log em texto para conferencia
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Relatorio
+// #Descricao         #Exporta arquivo de log.
+// #PalavasChave      #auxiliar #uso_generico
+// #TabelasPrincipais 
+// #Modulos           #todos_modulos
+
 // Historico de alteracoes:
 // 15/06/2020 - Robert - Verifica existencia da variavel cFilAnt antes de usa-la.
 // 15/10/2020 - Robert - Tratamento para dado tipo NIL.
 // 14/12/2020 - Robert - Exporta arrays usando a mesma formatacao inicial de linha, para facilitar posterior filtragem.
 // 15/12/2020 - Robert - Exportacao de array deu erro na importacao de pedidos!!! GLPI 9033
+// 20/01/2021 - Robert - Melhorada exportacao: transforma tudo em array e lista todas as linhas num unico processo fopnen...fclose
 //
 
 // --------------------------------------------------------------------------
-user function Log2 (_sTipo, _xDado, _xExtra)
+user function Log2 (_sTipo, _xDadoOri, _xExtra)
+/*
 	local _sTextoLog := ''
 	local _i         := 0
 	local _sPCham    := ""
@@ -97,32 +106,113 @@ user function Log2 (_sTipo, _xDado, _xExtra)
 	endif
 
 	fclose (_nHdl)
+*/
+
+	local _sTagsLog := ''
+	local _sDirLogs  := ''
+	local _nHdl      := ''
+	local _sDataLog  := dtos (date ())
+	local _aTxtLog   := {}
+	local _nTxtLog   := 0
+
+	// Prepara 'tags' para o inicio de linha
+	_sTipo = cvaltochar (_sTipo)
+	_sTipo = Capital (_sTipo)
+	_sTagsLog += '[' + padc (_sTipo, 5, ' ') + ']'
+	_sTagsLog += '[' + substr (_sDataLog, 1, 4) + '' + substr (_sDataLog, 5, 2) + '' + substr (_sDataLog, 7, 2) + ' ' + strtran (TimeFull (), '.', ',') + ']'
+	_sTagsLog += '[' + GetEnvServer () + ']'
+	_sTagsLog += '[F' + iif (type ('cFilAnt') == 'C', cFilAnt, '  ') + ']'
+	_sTagsLog += '[' + padr (iif (type ("cUserName") == "C", cUserName, ''), 10) + ']'
+
+	// Transforma o dado de origem em array, sendo cada elemento da array uma linha a ser gravada no log.
+	if valtype (_xDadoOri) == 'A'
+		_aTxtLog = ACLONE (_DumpArray (_xDadoOri))
+	elseif valtype (_xDadoOri) == 'O'
+		_aTxtLog = aclone (_DumpObj (_xDadoOri))
+	else
+		if valtype (_xDadoOri) == 'U'
+			_aTxtLog = {'*NIL*'}
+		else
+			_aTxtLog = _DumpTXT (rtrim (cValToChar (_xDadoOri)))
+		endif
+	endif
+
+	if _xExtra != NIL
+		U_Log2 ('AVISO', '[' + procname () + '] Parametro extra ignorado: ' + cvaltochar (_xExtra))
+	endif
+
+	// Grava log em diretorio especifico. Se ainda nao existir, cria-o.
+	_sDirLogs = '\logs\'
+	makedir (_sDirLogs)
+	if type ("_sArqLog") != "C"
+		_sArqLog = alltrim (funname (1)) + "_" + iif (type ("cUserName") == "C", alltrim (cUserName), "") + "_" + dtos (date ()) + ".log"
+	endif
+	if file (_sDirLogs + _sArqLog)
+		_nHdl = fopen(_sDirLogs + _sArqLog, 1)
+		fseek (_nHdl, 0, 2)  // Encontra final do arquivo
+	else
+		_nHdl = fcreate(_sDirLogs + _sArqLog, 0)
+	endif
+	for _nTxtLog = 1 to len (_aTxtLog)
+		fwrite (_nHdl, _sTagsLog + _aTxtLog [_nTxtLog] + chr (13) + chr (10))
+	next
+	fclose (_nHdl)
 return
 
 
-/*
+
 // --------------------------------------------------------------------------
-static function _DumpArray (_aMatriz, _sTipoLog) //_sEspacos)
+static function _DumpTXT (_sDadoTXT)
+	local _aRet     := {}
+	local _nChar    := 1
+	local _lCortei  := .F.
+	local _nLimChar := 2000
+
+	// Se for uma string muito grande, corta-a.
+	if len (_sDadoTXT) > _nLimChar
+		_sDadoTXT = left (_sDadoTXT, _nLimChar)
+		_lCortei  = .T.
+	endif
+	do while _nChar <= len (_sDadoTXT)
+		if substr (_sDadoTXT, _nChar, 2) == chr (13) + chr (10)  // 'ENTER' com 2 caracteres (formato Windows)
+			aadd (_aRet, left (_sDadoTXT, _nChar - 1))
+			_sDadoTXT = substr (_sDadoTXT, _nChar + 2)  // Para 'pular' o chr(13) e o chr(10)
+			_nChar = 1
+			loop
+		elseif substr (_sDadoTXT, _nChar, 1) == chr (10)  // 'New line' em formato linux
+			aadd (_aRet, left (_sDadoTXT, _nChar - 1))
+			_sDadoTXT = substr (_sDadoTXT, _nChar + 1)  // Para 'pular' o chr(10)
+			_nChar = 1
+			loop
+		endif
+		_nChar ++
+	enddo
+	aadd (_aRet, _sDadoTXT)
+	if _lCortei
+		aadd (_aRet, "***VISUALIZACAO DO LOG CORTADA EM " + cvaltochar (_nLimChar) + " CARACTERES***")
+	endif
+return _aRet
+
+
+
+// --------------------------------------------------------------------------
+static function _DumpArray (_aMatriz)
 	local _nLin      := 0
 	local _nCol      := 0
 	local _sDado     := ""
-	local _sMensagem := ""
 	local _aNovaLin  := {}
 	local _aNovaMat  := {}
 	local _lPerfeita := .F.
 	local _nQtCol    := 0
 	local _nLargCol  := 0
-	local _lUniDim   := .T.
-	
-//	u_logIni ()
-
+//	local _lUniDim   := .T.
+	local _sLinha := ''
+	local _aRet   := {}
+	local _sLinFech := ''
 	if len (_aMatriz) == 0
-	//	_sMensagem += _sEspacos + "*MATRIZ VAZIA*"
-		_sMensagem += "*MATRIZ VAZIA*"
+		aadd (_aRet, "*MATRIZ VAZIA*")
 	else
 
-		// Se recebi uma matriz unidimensional, 'converto-a' para uma bidimensional de uma
-		// unica linha, para melhorar a visualizacao no arquivo de log.
 		_lUniDim = .T.
 		for _nLin = 1 to len (_aMatriz)
 			if valtype (_aMatriz[_nLin]) == "A"
@@ -130,6 +220,7 @@ static function _DumpArray (_aMatriz, _sTipoLog) //_sEspacos)
 				exit
 			endif
 		next
+		/*
 		if _lUniDim
 			_aNovaMat = {}
 			for _nLin = 1 to len (_aMatriz)
@@ -137,173 +228,200 @@ static function _DumpArray (_aMatriz, _sTipoLog) //_sEspacos)
 			next
 			_aMatriz := {aclone (_aNovaMat)}
 		endif
+		*/
 
 		// Se recebi uma matriz "quadradinha" faco com que todas as linhas tenham a mesma largura.
-		if valtype (_aMatriz) == "A" .and. len (_aMatriz) > 0
+		//
+		// Se todos os elementos forem simples (nao array) entendo como perfeita.
+		if ! _lUniDim
+			if valtype (_aMatriz) == "A" .and. len (_aMatriz) > 0
+				_lPerfeita = .T.
+				for _nLin = 1 to len (_aMatriz)
+					if valtype (_aMatriz[_nLin]) != "A"
+						_lPerfeita = .F.
+						exit
+					endif
+				next
+			endif
+			if _lPerfeita
+				_nQtCol = len (_aMatriz [1])
+				for _nLin = 1 to len (_aMatriz)
+					if len (_aMatriz [_nLin]) != _nQtCol
+						_lPerfeita = .F.
+						exit
+					endif
+				next
+			endif
+			if _lPerfeita
+		//		u_log ("Eh perfeita (matriz MxN)")
+			else
+		//		u_log ("Nao eh perfeita (matriz MxN)")
+			endif
+		else
+			_nQtCol = 1
 			_lPerfeita = .T.
-			for _nLin = 1 to len (_aMatriz)
-				if valtype (_aMatriz[_nLin]) != "A"
-					_lPerfeita = .F.
-					exit
-				endif
-			next
+		//	u_log ("Eh perfeita (matriz unidimensional)")
 		endif
+
 		if _lPerfeita
-			_nQtCol = len (_aMatriz [1])
-			for _nLin = 1 to len (_aMatriz)
-				if len (_aMatriz [_nLin]) != _nQtCol
-					_lPerfeita = .F.
-					exit
-				endif
-			next
-		endif
-		if _lPerfeita
-			//		u_log ("Eh perfeita")
 			_aNovaMat = {}
 			for _nLin = 1 to len (_aMatriz)
-				// Passa dados para nova matriz, jah convertidos para caracter, para poder,
-				// depois, deixar todas as colunas com a mesma largura.
+				// Passa dados para nova matriz, jah convertidos para caracter, para poder, depois, deixar todas as colunas com a mesma largura.
 				_aNovaLin = {}
-				for _nCol = 1 to len (_aMatriz [_nLin])
-					_sDado = _Arr2Char (_aMatriz [_nLin, _nCol])
-					aadd (_aNovaLin, _sDado)
-				next
-				aadd (_aNovaMat, aclone (_aNovaLin))
+				if _lUniDim
+					_sDado = _Arr2Char (_aMatriz [_nLin])
+		//			u_log ('valtype (_sDado):', valtype (_sDado))
+					aadd (_aNovaMat, _sDado)
+				else
+					for _nCol = 1 to len (_aMatriz [_nLin])
+						_sDado = _Arr2Char (_aMatriz [_nLin, _nCol])
+						aadd (_aNovaLin, _sDado)
+					next
+					aadd (_aNovaMat, aclone (_aNovaLin))
+				endif
 			next
+		//	u_log ('_aNovaMat:', _aNovaMat)
+		//	u_log ('valtype (_aNovaMat[1]):', valtype (_aNovaMat[1]))
+			// Deixa todas as linhas do mesmo tamanho, para melhorar a visualizacao no log.
 			for _nCol = 1 to _nQtCol
-				_nLargCol = len (_aNovaMat [1, _nCol])
+				// Largura da primeira linha
+				if _lUniDim
+					_nLargCol = len (_aNovaMat [1])
+				else
+					_nLargCol = len (_aNovaMat [1, _nCol])
+				endif
+		//		u_log ('Largura da coluna 1:', _nLargCol)
+				// Verifica se tem alguma linha mais larga que a primeira
 				for _nLin = 1 to len (_aNovaMat)
-					_nLargCol = max (_nLargCol, len (_aNovaMat [_nLin, _nCol]))
+					if _lUniDim
+						_nLargCol = max (_nLargCol, len (_aNovaMat [_nLin]))
+					else
+						_nLargCol = max (_nLargCol, len (_aNovaMat [_nLin, _nCol]))
+					endif
 				next
+		//		u_log ('Maior Largura:', _nLargCol)
+				// Ajusta todas as linhas para a maior largura
 				for _nLin = 1 to len (_aNovaMat)
-					_aNovaMat [_nLin, _nCol] = padr (_aNovaMat [_nLin, _nCol], _nLargCol, " ")
+					if _lUniDim
+						_aNovaMat [_nLin] = padr (_aNovaMat [_nLin], _nLargCol, " ")
+					else
+						_aNovaMat [_nLin, _nCol] = padr (_aNovaMat [_nLin, _nCol], _nLargCol, " ")
+					endif
 				next
+		//		u_log ('_aNovaMat depois de ajustar larguras:', _aNovaMat)
 			next
-			
-			// Clona a nova matriz para a matriz a ser mostrada.
-			_aMatriz = aclone (_aNovaMat)
+		else
+			_aNovaMat = aclone (_aMatriz)
 		endif
 		
-		if valtype (_aMatriz) != "A"
-		//	_sMensagem += _sEspacos + procname () + ": nao recebi uma array"
-			_sMensagem += procname () + ": nao recebi uma array"
-		else
-			
-			// Se for uma matriz perfeita, posso gerar uma linha acima com os numeros das colunas.
-			if _lPerfeita
-				_nLargTot = 0
-			//	_sMensagem += space (7)
-				_sMensagem += space (6) //+ _sEspacos
-				for _nCol = 1 to len (_aMatriz [1])
-					_nLargCol = len (_Arr2Char (_aMatriz [1, _nCol])) + 3
-					_sMensagem += padr (cvaltochar (_nCol), _nLargCol, "-")
-					_nLargTot += _nLargCol
+		// Se for uma matriz perfeita, posso gerar uma linha acima com os numeros das colunas.
+		if _lPerfeita
+			_sLinha   = '      '
+			_sLinFech = '      '
+			if _lUniDim
+				_nLargCol = len (_Arr2Char (_aNovaMat [1])) + 3
+				_sLinha += padc (cvaltochar (_nCol), _nLargCol, "-")
+				_sLinFech += replicate ('-', _nLargCol)
+			else
+				for _nCol = 1 to len (_aNovaMat [1])
+					_nLargCol = len (_Arr2Char (_aNovaMat [1, _nCol])) + 3
+					_sLinha += padc (cvaltochar (_nCol), _nLargCol, "-")
+					_sLinFech += replicate ('-', _nLargCol)
 				next
-				u_log2 (_sTipoLog, _sMensagem)
-				_sMensagem = ''
-			//	_sMensagem += chr (13) + chr (10)
-			//	_sMensagem += _sEspacos + space (6) + replicate ("-", _nLargTot - 1) + chr (13) + chr (10)
-			//	u_log2 (_sTipoLog, space (6) + replicate ("-", _nLargTot - 1))
 			endif
-			
-			// Tratamento original
-			for _nLin = 1 to len (_aMatriz)
-//				if len (_sMensagem) > 64000  // Antes que alcance o tamanho maximo de uma string, vou jogar para o log.
-//					u_log (_sMensagem)
-//					_sMensagem += "************ Exportando matriz por que alcancou tamanho maximo para uma string"
-//					_sMensagem = ""
-//				endif
-				//_sMensagem += _sEspacos
-				if valtype (_aMatriz [_nLin]) != "A"
-				//	_sMensagem += _sEspacos + "Linha " + cValToChar (_nLin) + " nao eh array. Contem o seguinte dado: " + cValToChar (_aMatriz [_nLin])
-					u_log2 (_sTipoLog, "Linha " + cValToChar (_nLin) + " nao eh array. Contem o seguinte dado: " + cValToChar (_aMatriz [_nLin]))
+		//	u_log ('Gerei linha acima:', _sLinha)
+			aadd (_aRet, _sLinha)
+		endif
+		
+		// Tratamento original
+		for _nLin = 1 to len (_aNovaMat)
+			_sLinha   = ''
+			if valtype (_aNovaMat [_nLin]) != "A"
+//				_sLinha = "Linha " + cValToChar (_nLin) + " nao eh array. Contem o seguinte dado: " + cValToChar (_aNovaMat [_nLin])
+				_sLinha += '      | ' + cValToChar (_aNovaMat [_nLin]) + '|'
+			else
+				if len (_aNovaMat [_nLin]) == 0
+					_sLinha = "Linha " + cValToChar (_nLin) + " eh array, mas nao tem nenhum elemento."
 				else
-					if len (_aMatriz [_nLin]) == 0
-					//	_sMensagem += _sEspacos + "Linha " + cValToChar (_nLin) + " eh array, mas nao tem nenhum elemento."
-						u_log2 (_sTipoLog, "Linha " + cValToChar (_nLin) + " eh array, mas nao tem nenhum elemento.")
-					else
-						if _lPerfeita
-						//	_sMensagem += padr (cvaltochar (_nLin), 5, " ")
-							_sMensagem += transform (_nLin, "99999")
-						endif
-						_sMensagem += "| "
-						for _nCol = 1 to len (_aMatriz [_nLin])
-							_sDado = _Arr2Char (_aMatriz [_nLin, _nCol]) + " | "
-							_sMensagem += _sDado
-						next
+					if _lPerfeita
+						_sLinha = transform (_nLin, "99999")
 					endif
+					_sLinha += "| "
+					for _nCol = 1 to len (_aNovaMat [_nLin])
+						_sLinha += _Arr2Char (_aNovaMat [_nLin, _nCol]) + " | "
+					next
 				endif
-			//	_sMensagem += _sEspacos + chr (13) + chr (10)
-				u_log2 (_sTipoLog, _sMensagem)
-				_sMensagem = ''
-			next
-			
-			// 'Fecha' a matriz com uma linha na parte de baixo.
-			if _lPerfeita
-			//	_sMensagem += _sEspacos + space (6) + replicate ("-", _nLargTot - 1) + chr (13) + chr (10)
-				u_log2 (_sTipoLog, space (6) + replicate ("-", _nLargTot - 1))
 			endif
+			aadd (_aRet, _sLinha)
+		next
+		
+		// 'Fecha' a matriz com uma linha na parte de baixo.
+		if _lPerfeita
+			aadd (_aRet, _sLinFech)
 		endif
 	endif
-	//U_Log (_sMensagem)
+return _aRet
 
-return _sMensagem
-*/
 
-/*
+
 // --------------------------------------------------------------------------
 // Converte campos de array para caracter, para exportacao para log.
-static function _Arr2Char (_xDado)
-	local _sDado := ""
+static function _Arr2Char (_xDadoA)
+	local _sDadoA := ""
 	do case
-		case valtype (_xDado) == "N"
-			_sDado = alltrim (str (_xDado, 18, 6))
-		case valtype (_xDado) == "D"
-			_sDado = dtoc (_xDado)
-		case valtype (_xDado) == "L"
-			_sDado = iif (_xDado, ".T.", ".F.")
-		case valtype (_xDado) == "M"
-			_sDado = "*MEMO*"
-		case valtype (_xDado) == "A"
-			_sDado = "*ARRAY [" + alltrim (str (len (_xDado))) + "]*"
-		case _xDado == NIL
-			_sDado = "*NIL*"
-		case valtype (_xDado) == "U"
-			_sDado = "*INDEF*"
-		case valtype (_xDado) == "O"
-			_sDado = "*OBJETO*"
-		case valtype (_xDado) == "C"
-			_sDado = _xDado
-			if empty (_sDado)
-				_sDado = "*STR.VAZIA*"
+		case valtype (_xDadoA) == "N"
+			_sDadoA = alltrim (str (_xDadoA, 18, 6))
+		case valtype (_xDadoA) == "D"
+			_sDadoA = dtoc (_xDadoA)
+		case valtype (_xDadoA) == "L"
+			_sDadoA = iif (_xDadoA, ".T.", ".F.")
+		case valtype (_xDadoA) == "M"
+			_sDadoA = "*MEMO*"
+		case valtype (_xDadoA) == "A"
+			_sDadoA = "*ARRAY [" + alltrim (str (len (_xDadoA))) + "]*"
+		case _xDadoA == NIL
+			_sDadoA = "*NIL*"
+		case valtype (_xDadoA) == "U"
+			_sDadoA = "*INDEF*"
+		case valtype (_xDadoA) == "O"
+			_sDadoA = "*OBJETO*"
+		case valtype (_xDadoA) == "C"
+			_sDadoA = _xDadoA
+			if empty (_sDadoA)
+				_sDadoA = "*STR.VAZIA*"
 			endif
 		otherwise
-			_sDado = "*ERRO*"
+			_sDadoA = "*ERRO*"
 	endcase
-return _sDado
-*/
+return _sDadoA
+
 
 
 // --------------------------------------------------------------------------
 // Gera listagem dos dados e metodos de um objeto.
 static function _DumpObj (_oObj)
+	local _aAtrib   := aclone (ClassDataArr (_oObj))
+	local _nAtrib   := 0
 	local _aMetodos := aclone (ClassMethArr(_oObj))
 	local _nMetodo  := 0
 	local _aDet     := {}
 	local _nDet     := 0
-	local _sRet     := ''
-	u_log ('')
-	u_log ("Dados da classe " + GetClassName (_oObj) + ':')
-	u_log (ClassDataArr (_oObj))
-	u_log ("Metodos da classe " + GetClassName (_oObj) + ':')
-	for _nMetodo = 1 to len (_aMetodos)
-		_aDet = aclone (ClassMethArr(_oObj)[_nMetodo])
-		_sRet += strtran (_aDet[1], chr (13) + chr (10), '') + ' ('
-		for _nDet = 1 to len (_aDet [2])
-			_sRet += alltrim (_aDet [2, _nDet]) + iif (_nDet < len (_aDet [2]), ', ', ')')
-		next
-		_sRet += iif (len (_aDet [2]) == 0, ')', '')
-		u_log (_sRet)
-		_sRet = ''
+	local _sLinha   := ''
+	local _aRet     := {}
+	aadd (_aRet, "Objeto da classe " + GetClassName (_oObj))
+	aadd (_aRet, "   Atributos:")
+	for _nAtrib = 1 to len (_aAtrib)
+		aadd (_aRet, '      ' + _aAtrib [_nAtrib, 1] + ': ' + cvaltochar (_aAtrib [_nAtrib, 2]))
 	next
-return _sRet
+	aadd (_aRet, "   Metodos:")
+	for _nMetodo = 1 to len (_aMetodos)
+		_sLinha = '      '
+		_aDet = aclone (ClassMethArr(_oObj)[_nMetodo])
+		_sLinha += strtran (_aDet[1], chr (13) + chr (10), '') + ' ('
+		for _nDet = 1 to len (_aDet [2])
+			_sLinha += alltrim (_aDet [2, _nDet]) + iif (_nDet < len (_aDet [2]), ', ', ')')
+		next
+		_sLinha += iif (len (_aDet [2]) == 0, ')', '')
+		aadd (_aRet, _sLinha)
+	next
+return _aRet
