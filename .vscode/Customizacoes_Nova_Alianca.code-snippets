@@ -1,0 +1,59 @@
+{
+	// Place your FontesProtheus workspace snippets here. Each snippet is defined under a snippet name and has a scope, prefix, body and 
+	// description. Add comma separated ids of the languages where the snippet is applicable in the scope field. If scope 
+	// is left empty or omitted, the snippet gets applied to all languages. The prefix is what is 
+	// used to trigger the snippet and the body will be expanded and inserted. Possible variables are: 
+	// $1, $2 for tab stops, $0 for the final cursor position, and ${1:label}, ${2:another} for placeholders. 
+	// Placeholders with the same ids are connected.
+	// Example:
+	// "Print to console": {
+	// 	"scope": "javascript,typescript",
+	// 	"prefix": "log",
+	// 	"body": [
+	// 		"console.log('$1');",
+	// 		"$2"
+	// 	],
+	// 	"description": "Log output to console"
+	// }
+
+	"Gravar log para debug": {"prefix": "logD", "body": ["U_Log2 ('debug', $1)"]},
+	"Gravar log de aviso":   {"prefix": "logA", "body": ["U_Log2 ('aviso', $1)"]},
+	"Gravar log de erro":    {"prefix": "logE", "body": ["U_Log2 ('erro', $1)"]},
+	"Gravar log de info":    {"prefix": "logI", "body": ["U_Log2 ('info', $1)"]},
+	"Gravar log de inicio de funcao": {"prefix": "logIni",       "body": ["U_Log2 ('info', 'Iniciando ' + procname ())"]},
+	"Gravar log de final de funcao":  {"prefix": "logFim",       "body": ["U_Log2 ('info', 'Finalizando ' + procname ())"]},
+	"Gravar log de inicio de metodo": {"prefix": "logIniMetodo", "body": ["U_Log2 ('info', 'Iniciando ' + GetClassName (::Self) + '.' + procname ())"]},
+	"Gravar log de final de metodo":  {"prefix": "logFimMetodo", "body": ["U_Log2 ('info', 'Finalizando ' + GetClassName (::Self) + '.' + procname ())"]},
+	"ClsSQL:New":        {"prefix": "new",        "body": ["New ())"]},
+	"ClsSQL:Array2In":   {"prefix": "Array2In" ,  "body": ["Array2In (_aArray)"]},
+	"ClsSQL:CaseX3CBox": {"prefix": "CaseX3CBox", "body": ["CaseX3CBox (_sCampo)"]},
+	"ClsSQL:Copy2Trb":   {"prefix": "Copy2Trb" ,  "body": ["Copy2Trb (_lSetField, _nDecFixo)"]},
+	"ClsSQL:Exec":       {"prefix": "Exec"     ,  "body": ["Exec ()"]},
+	"ClsSQL:F3Array":    {"prefix": "F3Array"  ,  "body": ["F3Array (_sMsgTit, _lSempre)"]},
+	"ClsSQL:FormatIn":   {"prefix": "FormatIn" ,  "body": ["FormatIn ()"]},
+	"ClsSQL:MudaTipo":   {"prefix": "MudaTipo" ,  "body": ["MudaTipo ()"]},
+	"ClsSQL:InsValues":  {"prefix": "InsValues",  "body": ["InsValues (_sTabela, _aDados)"]},
+	"ClsSQL:Log":        {"prefix": "Log"      ,  "body": ["Log (_lQuebra)"]},
+	"ClsSQL:Qry2Array":  {"prefix": "Qry2Array",  "body": ["Qry2Array (_lSetField, _lRetNomes)"]},
+	"ClsSQL:Qry2HTM":    {"prefix": "Qry2HTM"  ,  "body": ["Qry2HTM (_sTitTab, _aCols, _sArgsTbl, _lDestUlt, _lRetNomes)"]},
+	"ClsSQL:Qry2Str":    {"prefix": "Qry2Str"  ,  "body": ["Qry2Str (_nColuna, _sSeparad)"]},
+	"ClsSQL:Qry2Trb":    {"prefix": "Qry2Trb"  ,  "body": ["Qry2Trb (_lSetField)"]},
+	"ClsSQL:Qry2XLS":    {"prefix": "Qry2XLS"  ,  "body": ["Qry2XLS (_lSetField, _lFixaChar, _lSemEspac)"]},
+	"ClsSQL:RetFixo":    {"prefix": "RetFixo"  ,  "body": ["RetFixo (_nRetFixo, _sMsgFixo, _lMsgTela)"]},
+	"ClsSQL:RetQry":     {"prefix": "RetQry"   ,  "body": ["RetQry (_nColuna, _lSetField)"]},
+	"ClsSQL:SetField":   {"prefix": "SetField" ,  "body": ["SetField (_sColuna, _sTipo, _nTamanho, _nDecimal)"]},
+
+	"Montar query SQL":{
+		"prefix": "query",
+		"body": [
+			"_oSQL := ClsSQL ():New ()",
+			"_oSQL:_sQuery := \"\"",
+			"_oSQL:_sQuery += \"SELECT *\"",
+			"_oSQL:_sQuery +=  \" FROM \" + RetSQLName (\"$1\") + \" $1\"",
+			"_oSQL:_sQuery += \" WHERE $1.D_E_L_E_T_ = ''\"",
+			"_oSQL:_sQuery +=   \" AND $1.$1_FILIAL  = '\" + xfilial (\"$1\") + \"'\"",
+			"_oSQL:_sQuery +=   \" AND $1.$1_\""
+			]
+		}
+
+}
