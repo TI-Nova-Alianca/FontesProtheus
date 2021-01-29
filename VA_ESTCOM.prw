@@ -7,6 +7,7 @@
 // 27/03/2020 - Claudia - Alterado o modelo TREPORT para exportação direto para planilha
 // 05/01/2021 - Cláudia - Retirada as CFOP's '1151', '1557', '2151'. GLPI: 9076
 // 12/01/2021 - Cláudia - GLPI: 9105 Incluido o CFOP na rotina. 
+// 28/01/2021 - Cláudia - GLPI: 9242 - Incluida coluna de TES
 //
 // --------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -43,6 +44,7 @@ Static Function EstComExp()
 	cQuery += " 	END AS TIPO_CTB"
 	cQuery += "    ,SUM(A.D1_CUSTO) AS CUSTO_CTB"
 	cQuery += "    ,A.D1_CF AS CFOP"
+	cQuery += "    ,A.D1_TES AS TES"
 	cQuery += " FROM SD1010 AS A"
 	cQuery += " LEFT JOIN SF4010 AS B"
 	cQuery += " 	ON B.F4_CODIGO = A.D1_TES"
@@ -61,6 +63,7 @@ Static Function EstComExp()
 	cQuery += " 		,A.D1_TP"
 	cQuery += " 		,A.D1_DOC"
 	cQuery += "         ,A.D1_CF"
+	cQuery += "         ,A.D1_TES"
 	cQuery += " ORDER BY A.D1_FILIAL"
 	cQuery += " 		,A.D1_TP"
 	cQuery += " 		,A.D1_DOC"
@@ -112,19 +115,19 @@ Static Function EstComExp()
 	_aCtb:= U_Qry2Array(cQuery1)	
 	
 
-	AADD(aItensExcel,{"Filial Ent","Doc.Ent","Tipo Ent","Valor Ent","Cfop Ent","Filial.Ctb","Doc.Ctb","Tipo.Ctb","Valor.Ctb"})
+	AADD(aItensExcel,{"Filial Ent","Doc.Ent","Tipo Ent","Valor Ent","Cfop Ent","TES","Filial.Ctb","Doc.Ctb","Tipo.Ctb","Valor.Ctb"})
 	
 	For x:=1 to len(_aEnt)
 		_nAchou := 0
 		For y:=1 to len (_aCtb)
 			If _aEnt[x,1] == _aCtb[y,1] .and. _aEnt[x,2] == _aCtb[y,2] .and. _aEnt[x,3] == _aCtb[y,3]
-				AADD(aItensExcel,{_aEnt[x,1],_aEnt[x,2],_aEnt[x,3],_aEnt[x,4],_aEnt[x,5],_aCtb[y,1],_aCtb[y,2],_aCtb[y,3],_aCtb[y,4]})
+				AADD(aItensExcel,{_aEnt[x,1],_aEnt[x,2],_aEnt[x,3],_aEnt[x,4],_aEnt[x,5],_aEnt[x,6],_aCtb[y,1],_aCtb[y,2],_aCtb[y,3],_aCtb[y,4]})
 				
 				_nAchou := 1
 			EndIf
 		Next
 		If _nAchou == 0
-			AADD(aItensExcel,{_aEnt[x,1],_aEnt[x,2],_aEnt[x,3],_aEnt[x,4],_aEnt[x,5],'','','',0})
+			AADD(aItensExcel,{_aEnt[x,1],_aEnt[x,2],_aEnt[x,3],_aEnt[x,4],_aEnt[x,5],_aEnt[x,6],'','','',0})
 		EndIf
 	Next
 	
