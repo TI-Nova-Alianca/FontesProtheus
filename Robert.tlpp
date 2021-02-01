@@ -31,6 +31,7 @@ user function robert ()
 		msgalert ('Nao te conheco, nao gosto de ti e nao vou te deixar continuar. Vai pra casa.', procname ())
 		return
 	endif
+
 	private _sArqLog := procname () + "_" + alltrim (cUserName) + cEmpAnt + ".log"
 //	private _sArqLog := procname () + "_" + alltrim (cUserName) + '_' + ALLTRIM (upper (GetEnvServer())) + ".log"
 	delete file ('\logs\' + _sArqLog)
@@ -77,11 +78,66 @@ static function _AndaLogo ()
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
-
 	u_help ('Nada definido.')
 	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
 return
-
+/*
+	// testes impressao danfe
+	U_GravaSX1 ("NFSIGW", "01", '000022776')
+	U_GravaSX1 ("NFSIGW", "02", '000022776')
+	U_GravaSX1 ("NFSIGW", "03", '30 ')
+	U_GravaSX1 ("NFSIGW", "04", 1)
+	Private AFILBRW := {}
+	Private cCondicao :=" "
+	cCondicao := "F2_FILIAL=='"+xFilial("SF2")+"'"
+	AFILBRW	 := {'SF2',cCondicao}
+	do while u_msgyesno ('novo teste?')
+		SpedDanfe ()  // Impressao do DANFe
+	enddo
+return
+*/
+/* exemplo de uso de profile para definicao de impressao. extraido de https://tdn.totvs.com/display/public/PROT/FWMsPrinter
+Function u_localPrint()
+    Local lAdjustToLegacy   := .F.
+    Local lDisableSetup     := .T.
+    Local oPrinter
+    Local cLocal            := "c:\temp"
+    Local nPrtType          := 6 // IMP_PDF > 6 || IMP_SPOOL > 2
+    Local aDevice           := {}
+    Local cSession          := GetPrinterSession()
+ 
+    AADD(aDevice,"DISCO") // 1
+    AADD(aDevice,"SPOOL") // 2
+    AADD(aDevice,"EMAIL") // 3
+    AADD(aDevice,"EXCEL") // 4
+    AADD(aDevice,"HTML" ) // 5
+    AADD(aDevice,"PDF"  ) // 6
+     
+    oProfile    := FWProfile():New()
+    oProfile:SetTask('PRINTTYPE')   
+    cDevice := oProfile:LoadStrProfile()
+     
+    nPrtType := aScan(aDevice,{|x| x == cDevice })
+ 
+    oPrinter := FWMSPrinter():New("exemplo", nPrtType, lAdjustToLegacy, cLocal, lDisableSetup, , , , , , .F., )
+    oPrinter:Say(10, 0, "teste")
+    oPrinter:Setup()
+ 
+    If oPrinter:nModalResult == PD_OK
+        oProfile:SetTask('PRINTTYPE')   
+        oProfile:SetStringProfile(If(oPrinter:nDevice==2, "SPOOL", "PDF"))
+        oProfile:Save()
+        oPrinter:Preview()
+    EndIf
+Return
+*/
+/*
+	Private cPerg   := "VAXLS50"
+	U_GravaSX1 (cPerg, '01', stod ('20200101'))
+	U_GravaSX1 (cPerg, '02', stod ('20201231'))
+	u_va_xls50 (.T.)
+return
+*/
 /*
 	// Insere registro no SE2 para notas de safra que foram geradas com parcelamento incorreto
 	_sFilial = '09'
@@ -1983,15 +2039,6 @@ return
 		msunlock ()
 	//	exit
 	next
-*/
-/*
-	Private cPerg   := "VAXLS50"
-	U_GravaSX1 (cPerg, '01', '2006')
-	U_GravaSX1 (cPerg, '02', '2020')
-	U_GravaSX1 (cPerg, '03', '')
-	U_GravaSX1 (cPerg, '04', 'z')
-	u_va_xls50 (.T.)
-return
 */
 
 /*	_a := {}

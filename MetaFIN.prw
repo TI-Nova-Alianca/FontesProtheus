@@ -30,6 +30,8 @@
 //                     - Incluidas tags para catalogo de fontes.
 // 16/09/2020 - Robert - Melhorado controle/logs de desmembramento em mais de uma filial.
 // 07/12/2020 - Robert - Desabilitada gravacao do campo E2_ORIGEM como 'U_METAFI' para que os titulos possam ser excluidos manualmente pelo financeiro, caso necessario.
+// 01/02/2021 - Robert - Passa a usar a funcao LkServer para acesso ao Meadados.
+//                     - Envia e-mail de notificacao em caso de erro na importacao (GLPI 9273).
 //
 
 // ------------------------------------------------------------------------------------
@@ -39,10 +41,16 @@
 #Include "TbiConn.ch"
 
 user function MetaFin (_lAuto)
-	private _nQtTitGer   := 0
-	private _nQtTitDel   := 0
-	private _nQtTitErr   := 0
+	private _nQtTitGer := 0
+	private _nQtTitDel := 0
+	private _nQtTitErr := 0
 	private _sErroAuto := ""  // Deixar private para ser usada pela funcao U_Help.
+	private _sLkSrvRH  := U_LkServer ("METADADOS")
+
+	if empty (_sLkSrvRH)
+		u_help ("Impossivel continuar sem definicao de linked server para acesso ao Metadados.",, .t.)
+		return
+	endif
 
 	// A rotina FINA050 soh funciona dentro destes modulos.
 	if ! (AmIIn (5,6,7,11,12,14,41,97,17))           // S¢ Fin,GPE, Vei, Loja , Ofi, Pecas e Esp, EIC
@@ -81,12 +89,12 @@ static function _Incluir ()
 	local _sAnoMes     := ""
 	local cPerg        := ""
 	local _aBkpSX1     := {}
-	private _sCTE        := ""  // Deixar private para ser vista em mais de uma function.
+	private _sCTE      := ""  // Deixar private para ser vista em mais de uma function.
 	
 	procregua (10)
 
 	U_LOG2 ('AVISO', "Melhorar este programa para ler da view VA_VTITULOS_CPAGAR")
-	U_LOG2 ('AVISO', "Melhorar este programa para usar U_LkServer")
+//	U_LOG2 ('AVISO', "Melhorar este programa para usar U_LkServer")
 
 	// Inclusao de titulos
 	if _lContinua
@@ -122,11 +130,13 @@ static function _Incluir ()
 		_sCTE +=       " END AS NATUREZA,"
 		_sCTE +=       " C.TIPOITEMCONTAPAGAR AS TPITEMCP,"
 		_sCTE +=       " C.STATUSREGISTRO AS STATUSREG"
-		_sCTE +=  " FROM LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST C "
+//		_sCTE +=  " FROM LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST C "
+		_sCTE +=  " FROM " + _sLkSrvRH + ".RHCONTASPAGARHIST C "
 		
 		// Busca detalhamento de remessa para bancos.
 		_sCTE +=     " LEFT JOIN (SELECT EMPRESA, BANCO, NROREMESSA, ESTABELECIMENTO, NUMERODOCUMENTO, SUM (VALOR) AS VALOR"
-		_sCTE +=                  " FROM LKSRV_SIRH.SIRH.dbo.RHDEPOSITOSANALITICO"
+		// _sCTE +=                  " FROM LKSRV_SIRH.SIRH.dbo.RHDEPOSITOSANALITICO"
+		_sCTE +=                  " FROM " + _sLkSrvRH + ".RHDEPOSITOSANALITICO"
 		_sCTE +=                 " WHERE EMPRESA = '00' + '" + cEmpAnt + "'"
 		_sCTE +=                 " GROUP BY EMPRESA, BANCO, NROREMESSA, ESTABELECIMENTO, NUMERODOCUMENTO) AS DEP"
 		_sCTE +=          " ON (DEP.EMPRESA = C.EMPRESA"
@@ -139,11 +149,13 @@ static function _Incluir ()
 		// atual eh incluir manualmente no financeiro. Outra possibilidade seria desvincular os titulos de PIS desta rotina automatica
 		// e fazer a geracao atraves de um programa com parametrizacao manual do usuario, assim poderia gerar em qualquer data.
 		_sCTE +=     " LEFT JOIN (SELECT EMPRESA, UNIDADE, DATAEMISSAO, SUM (LIQUIDOCOMPETENCIA) AS VALOR"
-		_sCTE +=                  " FROM LKSRV_SIRH.SIRH.dbo.RHDARFANALITICO"
+		// _sCTE +=                  " FROM LKSRV_SIRH.SIRH.dbo.RHDARFANALITICO"
+		_sCTE +=                  " FROM " + _sLkSrvRH + ".RHDARFANALITICO"
 		_sCTE +=                 " WHERE ESTABELECIMENTO = '00' + '" + cEmpAnt + "'"
 		_sCTE +=                   " AND TIPODARF = '3'" // 3=PIS
 		_sCTE +=                   " AND DATAEMISSAO = (SELECT MAX (DATAEMISSAO)"
-		_sCTE +=                                        " FROM LKSRV_SIRH.SIRH.dbo.RHDARFANALITICO"
+		// _sCTE +=                                        " FROM LKSRV_SIRH.SIRH.dbo.RHDARFANALITICO"
+		_sCTE +=                                        " FROM " + _sLkSrvRH + ".RHDARFANALITICO"
 		_sCTE +=                                       " WHERE ESTABELECIMENTO = '0001'"
 		_sCTE +=                                         " AND TIPODARF = '3')"
 		_sCTE +=                 " GROUP BY EMPRESA, UNIDADE, DATAEMISSAO"
@@ -168,7 +180,8 @@ static function _Incluir ()
 		// marco-os como '10' (provisionado) no Metadados, e vou controlando se jah foram gerados para cada filial
 		// atraves do arquivo de historicos. Por isso, nao mexer no texto do historico.
 		_oSQL:_sQuery +=    " AND NOT EXISTS (SELECT *"
-		_oSQL:_sQuery +=                      " FROM LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHISTLOG"
+		// _oSQL:_sQuery +=                      " FROM LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHISTLOG"
+		_oSQL:_sQuery +=                      " FROM " + _sLkSrvRH + ".RHCONTASPAGARHISTLOG"
 		_oSQL:_sQuery +=                     " WHERE NROSEQUENCIAL = CTE.NROSEQUENCIAL"
 		_oSQL:_sQuery +=                       " AND DESCRICAOMEMO LIKE 'Filial ' + CTE.FILIAL + ': Titulo gerado%')"
 		_oSQL:_sQuery +=  " ORDER BY NROSEQUENCIAL, NROREMESSA"
@@ -184,7 +197,8 @@ static function _Incluir ()
 				u_help (_sMsgSE2,, .t.)
 
 				_oSQL := ClsSQL ():New ()
-				_oSQL:_sQuery := "UPDATE LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST"
+				// _oSQL:_sQuery := "UPDATE LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST"
+				_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
 				_oSQL:_sQuery +=   " SET STATUSREGISTRO = '08'"
 				_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar ((_sAliasQ) -> NroSequencial)
 				_oSQL:Log ()
@@ -226,7 +240,7 @@ static function _Incluir ()
 
 	// Caso seja execucao em batch, deixa mensagem pronta para retorno.
 	if type ("_oBatch") == "O"
-		_oBatch:Mensagens += 'Filial ' + cFilAnt + ': ' + cvaltochar (_nQtTitGer) + " titulos gerados; " + cvaltochar (_nQtTitDel) + " titulos excluidos; " + cvaltochar (_nQtTitErr) + " lctos com problemas. "
+		_oBatch:Mensagens += 'F.' + cFilAnt + ': ' + cvaltochar (_nQtTitGer) + " tit.gerados; " + cvaltochar (_nQtTitDel) + " tit.excluidos; " + cvaltochar (_nQtTitErr) + " lctos c/problemas. "
 	else
 		u_help (cvaltochar (_nQtTitGer) + " titulos gerados; " + cvaltochar (_nQtTitDel) + " titulos excluidos; " + cvaltochar (_nQtTitErr) + " lctos com problemas. ")
 	endif
@@ -236,16 +250,17 @@ return
 
 // --------------------------------------------------------------------------
 static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2, _nValorSE2, _sHistSE2)
-	local _oSQL     := NIL
-	local _sDoc     := ''
-	local _sParcela := ''
-	local _sPrefixo := 'FOL'
-	local _aAutoSE2 := {}
-	local _sMsgSE2  := ''
-	local _aFiliais    := {}
-	local _nFilial     := 0
-	local _sChvEx      := ""
-	local _sStatReg    := ''
+	local _oSQL         := NIL
+	local _sDoc         := ''
+	local _sParcela     := ''
+	local _sPrefixo     := 'FOL'
+	local _aAutoSE2     := {}
+	local _sMsgSE2      := ''
+	local _aFiliais     := {}
+	local _nFilial      := 0
+	local _sChvEx       := ""
+	local _sStatReg     := ''
+	local _sMsgMail     := ''
 	private lMsErroAuto	:= .f.  // Variavel padrao para rotinas automticas.
 	private lMsHelpAuto	:= .f.  // Variavel padrao para rotinas automticas.
 
@@ -286,6 +301,12 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 		//_oSQL:Log ()
 		_sParcela = soma1 (_oSQL:RetQry ())
 
+		// Se chegou com data de vencimento retroativa, nao adianta importar. Ajusto para data de hoje.
+		if _dVencSE2 < date ()
+			U_Log2 ('aviso', 'Alterando date de vencimento original (' + dtoc (_dVencSE2) + ') por que nao tem como pagar retroativo.')
+			_dVencSE2 = date ()
+		endif
+
 		_aAutoSE2 := {}
 		aadd (_aAutoSE2, {"E2_PREFIXO", _sPrefixo,                        NIL})
 		aadd (_aAutoSE2, {"E2_NUM"    , _sDoc,                            Nil})
@@ -317,8 +338,18 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 		_sMsgSE2 += "Erro FINA050:" + U_LeErro (memoread (NomeAutoLog ())) + _sErroAuto
 		u_help (_sMsgSE2,, .t.)
 
+		// Se estiver rodando via batch, manda aviso por e-mail.
+		if IsInCallStack ("U_BATMETAF")
+			_sMsgMail := "Aviso de problema na integracao Metadados X Protheus:" + chr (13) + chr (10)
+			_sMsgMail += 'Sequencia Metadados: ' + cvaltochar (_nSeqMeta) + chr (13) + chr (10)
+			_sMsgMail += alltrim (U_NoAcento (_sHistSE2)) + chr (13) + chr (10)
+			_sMsgMail += _sMsgSE2
+			U_ZZUNU ({'023'}, 'Erro integracao Metadados x Protheus', _sMsgMail, .F.)
+		endif
+
 		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := "UPDATE LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST"
+		// _oSQL:_sQuery := "UPDATE LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST"
+		_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
 		_oSQL:_sQuery +=   " SET STATUSREGISTRO = '08'"
 		_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeqMeta)
 		_oSQL:Log ()
@@ -350,7 +381,8 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 		_oSQL:_sQuery := _sCTE
 		_oSQL:_sQuery += " SELECT FILIAL,"
 		_oSQL:_sQuery +=        " (SELECT COUNT (*)"
-		_oSQL:_sQuery +=           " FROM LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHISTLOG"
+		// _oSQL:_sQuery +=           " FROM LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHISTLOG"
+		_oSQL:_sQuery +=           " FROM " + _sLkSrvRH + ".RHCONTASPAGARHISTLOG"
 		_oSQL:_sQuery +=          " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeqMeta)
 		_oSQL:_sQuery +=            " AND DESCRICAOMEMO LIKE 'Filial ' + CTE.FILIAL + ': Titulo gerado%')"
 		_oSQL:_sQuery +=   " FROM CTE"
@@ -370,7 +402,8 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 		next
 
 		// Muda status da sequencia no Metadados.
-		_oSQL:_sQuery := "UPDATE LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST"
+		// _oSQL:_sQuery := "UPDATE LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST"
+		_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
 		_oSQL:_sQuery +=   " SET STATUSREGISTRO          = '" + _sStatReg + "',"
 		_oSQL:_sQuery +=       " DATAACEITACAOLIBERACAO  = cast ('" + dtos (date ()) + " " + time () + "' as datetime),"
 		_oSQL:_sQuery +=       " CHAVEOUTROSISTEMATITULO = " + se2 -> e2_num + ","
@@ -406,7 +439,8 @@ static function _Excluir ()
 		_oSQL:_sQuery += "SELECT NROSEQUENCIAL,"
 		_oSQL:_sQuery +=       " CHAVEOUTROSISTEMATITULO AS NUM,"
 		_oSQL:_sQuery +=       " SERIEDOC"
-		_oSQL:_sQuery +=  " FROM LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST"
+		// _oSQL:_sQuery +=  " FROM LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST"
+		_oSQL:_sQuery +=  " FROM " + _sLkSrvRH + ".RHCONTASPAGARHIST"
 		_oSQL:_sQuery += " WHERE EMPRESA         = '00' + '" + cEmpAnt + "'"
 		_oSQL:_sQuery +=   " AND ESTABELECIMENTO = '00' + '" + cFilAnt + "'"
 		//_oSQL:_sQuery +=   " AND STATUSREGISTRO  = '04'"
@@ -446,7 +480,8 @@ static function _Excluir ()
 				_LogMeta ((_sAliasQ) -> NroSequencial, AllTrim (EnCodeUtf8 (_sMsgSE2)))
 
 				// Muda status da sequencia no Metadados.
-				_oSQL:_sQuery := "UPDATE LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST"
+				// _oSQL:_sQuery := "UPDATE LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST"
+				_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
 				_oSQL:_sQuery +=   " SET STATUSREGISTRO          = '" + iif (lMsErroAuto, "05", "06") + "'"
 				_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar ((_sAliasQ) -> NroSequencial)
 				_oSQL:Log ()
@@ -473,12 +508,14 @@ static function _LogMeta (_nSeq, _sMsg)
 	// Busca a proxima ordem livre para esta sequencia.
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := " SELECT ISNULL ((SELECT MAX (NROORDEM)"
-	_oSQL:_sQuery +=                   " FROM LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHISTLOG" 
+	// _oSQL:_sQuery +=                   " FROM LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHISTLOG" 
+	_oSQL:_sQuery +=                   " FROM " + _sLkSrvRH + ".RHCONTASPAGARHISTLOG" 
 	_oSQL:_sQuery +=                  " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeq) + "), 0) "
 	_oSQL:Log ()
 	_nNroOrdem = _oSQL:RetQry ()
 
-	_oSQL:_sQuery := "INSERT INTO LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHISTLOG"
+	// _oSQL:_sQuery := "INSERT INTO LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHISTLOG"
+	_oSQL:_sQuery := "INSERT INTO " + _sLkSrvRH + ".RHCONTASPAGARHISTLOG"
 	_oSQL:_sQuery +=        " (NROSEQUENCIAL, NROORDEM, DATAHORAALTERACAO, DESCRICAOMEMO)"
 	_oSQL:_sQuery += " VALUES (" + cvaltochar (_nSeq) + ", "
 	_oSQL:_sQuery +=         cvaltochar (_nNroOrdem + 1) + ","

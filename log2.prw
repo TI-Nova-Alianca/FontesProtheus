@@ -16,98 +16,11 @@
 // 14/12/2020 - Robert - Exporta arrays usando a mesma formatacao inicial de linha, para facilitar posterior filtragem.
 // 15/12/2020 - Robert - Exportacao de array deu erro na importacao de pedidos!!! GLPI 9033
 // 20/01/2021 - Robert - Melhorada exportacao: transforma tudo em array e lista todas as linhas num unico processo fopnen...fclose
+// 01/02/2021 - Robert - Aumentado limite de log de texto, de 2000 para 20000 caracteres.
 //
 
 // --------------------------------------------------------------------------
 user function Log2 (_sTipo, _xDadoOri, _xExtra)
-/*
-	local _sTextoLog := ''
-	local _i         := 0
-	local _sPCham    := ""
-	local _lUmaLinha := .T.
-	local _sDirLogs  := ''
-	local _nHdl      := ''
-	local _sDataLog  := dtos (date ())
-
-	if type ("_sArqLog") != "C"
-		_sArqLog = alltrim (funname (1)) + "_" + iif (type ("cUserName") == "C", alltrim (cUserName), "") + "_" + dtos (date ()) + ".log"
-	endif
-
-	if _xExtra != NIL
-		U_Log2 ('AVISO', '[' + procname () + '] Parametro extra ignorado: ' + cvaltochar (_xExtra))
-	endif
-
-	_sPCham = procname (1)
-	_i = 2
-	do while procname (_i) != "" .and. _i <= 5
-		_sPCham += " => " + procname (_i)
-		_i++
-	enddo
-
-	_sTipo = upper (cvaltochar (_sTipo))
-	if ! 'ERRO' $ _sTipo
-		_sTipo = Capital (_sTipo)
-	endif
-	_sTextoLog += '[' + padc (_sTipo, 5, ' ') + ']'  // + ' ; '
-	_sTextoLog += '[' + substr (_sDataLog, 1, 4) + '' + substr (_sDataLog, 5, 2) + '' + substr (_sDataLog, 7, 2) + ' ' + strtran (TimeFull (), '.', ',') + ']'
-	_sTextoLog += '[' + GetEnvServer () + ']'
-	_sTextoLog += '[F' + iif (type ('cFilAnt') == 'C', cFilAnt, '  ') + ']'  // + ' ; '
-	_sTextoLog += '[' + padr (iif (type ("cUserName") == "C", cUserName, ''), 10) + ']'
-	_xTextoLog = padc (_sTextoLog, 30, ' ')
-
-	// Verifica se consegue gravar tudo em uma linha apenas
-	if valtype (_xDado) == 'A'
-		//_DumpArray (_xDado, _sTipo) //, space (8))
-		u_log (_xdado)
-	elseif valtype (_xDado) == 'O'
-		_sTextoLog += padr (' variavel tipo ' + valtype (_xDado), 100)
-		_lUmaLinha = .F.
-	else
-		if valtype (_xDado) == 'U'
-			_xDado = '*NIL*'
-		else
-		//	_xDado = alltrim (cValToChar (_xDado))
-			_xDado = rtrim (cValToChar (_xDado))
-		endif
-		_sTextoLog += padr (_xDado, max (len (_xDado), 100))
-	endif
-
-	if _sTipo == 'DEBUG'
-		_sTextoLog += ' ; '
-	//	_sTextoLog += 'Usr:' + padr (iif (type ("cUserName") == "C", cUserName, ''), 10) + ' ; '
-		_sTextoLog += 'Comp:' + GetComputerName () + ' ; '
-		_sTextoLog += 'Pilha:' + _sPCham + ' ; '
-	endif
-
-	// Grava log em diretorio especifico. Se ainda nao existir, cria-o.
-	_sDirLogs = '\logs\'
-	makedir (_sDirLogs)
-	if file (_sDirLogs + _sArqLog)
-		_nHdl = fopen(_sDirLogs + _sArqLog, 1)
-		fseek (_nHdl, 0, 2)  // Encontra final do arquivo
-	else
-		_nHdl = fcreate(_sDirLogs + _sArqLog, 0)
-	endif
-	fwrite (_nHdl, _sTextoLog + chr (13) + chr (10))
-	_sTextoLog = ''
-
-	// Continua na linha seguinte, se precisar.
-	if ! _lUmaLinha
-//		if valtype (_xDado) == "A"
-//			_sTextoLog = _DumpArray (aclone (_xDado), _sTipo) //, space (8))
-//			u_log ('vou usar dumparray')
-//		else
-		if valtype (_xDado) == "O"
-			_sTextoLog = _DumpObj (_xDado)
-		else
-			_sTextoLog = space (46) + cvaltochar (_xDado)
-		endif
-		fwrite (_nHdl, _sTextoLog + chr (13) + chr (10))
-	endif
-
-	fclose (_nHdl)
-*/
-
 	local _sTagsLog := ''
 	local _sDirLogs  := ''
 	local _nHdl      := ''
@@ -166,7 +79,7 @@ static function _DumpTXT (_sDadoTXT)
 	local _aRet     := {}
 	local _nChar    := 1
 	local _lCortei  := .F.
-	local _nLimChar := 2000
+	local _nLimChar := 20000
 
 	// Se for uma string muito grande, corta-a.
 	if len (_sDadoTXT) > _nLimChar
@@ -220,15 +133,6 @@ static function _DumpArray (_aMatriz)
 				exit
 			endif
 		next
-		/*
-		if _lUniDim
-			_aNovaMat = {}
-			for _nLin = 1 to len (_aMatriz)
-				aadd (_aNovaMat, _aMatriz[_nLin])
-			next
-			_aMatriz := {aclone (_aNovaMat)}
-		endif
-		*/
 
 		// Se recebi uma matriz "quadradinha" faco com que todas as linhas tenham a mesma largura.
 		//
