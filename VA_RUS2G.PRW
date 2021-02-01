@@ -104,6 +104,7 @@ user Function VA_RUS2G (_nOpc)
 		enddo
 
 		// Atualiza tabela de comunicacao com leitor de grau.
+		U_Log2 ('debug', '[' + procname () + '] Gravei SZE e SZF e vou chamar a atualizacao do ZZA.')
 		U_AtuZZA (sze -> ze_safra, sze -> ze_carga)
 
 		// Grava relacionamento entre cargas de origem e de destino, em caso de aglutinacao de cargas.

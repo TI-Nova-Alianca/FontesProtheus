@@ -20,6 +20,7 @@
 //                      - Melhoria nos logs e mensagens de retorno.
 //                      - Deixa de gravar campo ZZX_DPCC (vai ser eliminado)
 //                      - Passa a gravar protocolo de cancelamento (criado campo zzx_prtcan).
+// 01/02/2021 - Robert  - Ajuste leitura retorno CTe do MS (GLPI 9196)
 //
 
 // Tags para automatizar catalogo de customizacoes:
@@ -301,6 +302,13 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 						_sSoapResp = strtran (_sSoapResp, 'soapenv:', '')
 						_sSoapResp = strtran (_sSoapResp, 'env:', '')
 						_sSoapResp = strtran (_sSoapResp, 'soap:', '')
+
+						// Peguei caso da teg ENVELOPE vir com S: na frente. Ex.: <S:Envelope [..]>
+						// Nao sei se isso ocorre noutras UF. por enquanto notei apenas no MS.
+						if _sUF == 'MS' .and. _sTipo == 'CTE'
+							_sSoapResp = strtran (_sSoapResp, 'S:', '')
+						endif
+
 						_oXMLRet := XmlParser(_sSoapResp, "_", @_sError, @_sWarning )
 						if ! empty (_sError) .or. ! empty (_sWarning)
 							_Evento ("ERRO ao decodificar retorno: " + _sError + _sWarning + '    SOAP response: ' + _sSoapResp, .T.)

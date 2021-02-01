@@ -26,17 +26,17 @@ user function AtuZZA (_sSafra, _sCarga)
 	if ! sze -> (dbseek (xfilial ("SZE") + _sSafra + _sCarga, .F.))
 		u_help ("Carga nao localizada nesta filial/safra. Atualizacao da tabela ZZA nao pode ser feita.",, .t.)
 	else
-		u_log2 ('debug', 'Pesquisei safra/carga ' + _sSafra + _sCarga + ' e parei em ' + sze -> ze_safra + sze -> ze_carga)
+		u_log2 ('debug', '[' + procname () + '] Pesquisei safra/carga ' + _sSafra + _sCarga + ' e parei no SZE com ' + sze -> ze_safra + sze -> ze_carga)
 		if sze -> ze_aglutin != "D"  // Cargas aglutinadoras nao precisam medir grau
 			zza -> (dbsetorder (1))  // ZZA_FILIAL, ZZA_SAFRA, ZZA_CARGA, ZZA_PRODUT
 			szf -> (dbsetorder (1))  // filial + safra + carga + item
 			szf -> (dbseek (xfilial ("SZF") + sze -> ze_safra + sze -> ze_carga, .T.))
 			do while ! szf -> (eof ()) .and. szf -> zf_filial == xfilial ("SZF") .and. szf -> zf_safra == sze -> ze_safra .and. szf -> zf_carga == sze -> ze_carga
 				if ! zza -> (dbseek (xfilial ("ZZA") + sze -> ze_safra + sze -> ze_carga + szf -> zf_item, .F.))
-					u_log2 ('info', 'incluindo ZZA')
+					u_log2 ('info', '[' + procname () + '] incluindo ZZA')
 					reclock ("ZZA", .T.)
 				else
-					u_log2 ('info', 'alterando ZZA')
+					u_log2 ('info', '[' + procname () + '] vou alterar ZZA (zza_status encontra-se com ' + zza -> zza_status + ')')
 					reclock ("ZZA", .F.)
 				endif
 				zza -> zza_filial = xfilial ("ZZA")
@@ -51,19 +51,19 @@ user function AtuZZA (_sSafra, _sCarga)
 				elseif sze->ze_pesobru == 0
 					zza -> zza_status = '0'
 				elseif sze -> ze_pesotar > 0 .and. zza -> zza_status != '3' .and. val (szf -> zf_grau) > 0  // Jah fez a segunda pesagem, sem finalizar no BL01.
-					u_log2 ('aviso', 'Alterando ZZA_STATUS para M por que jah estah sendo feita a segunda pesagem, mesmo sem finalizar no programa do grau.')
+					u_log2 ('aviso', '[' + procname () + '] Alterando ZZA_STATUS para M por que jah estah sendo feita a segunda pesagem, mesmo sem finalizar no programa do grau.')
 					zza -> zza_status = 'M'
 				elseif sze -> ze_pesobru > 0 .and. sze -> ze_pesotar == 0
 					zza -> zza_status = '1'
 				elseif sze -> ze_pesobru > 0 .and. sze -> ze_pesotar > 0 .and. zza -> zza_status == '3'  // Segunda pesagem OK
-					u_log2 ('info', 'Nao preciso mudar o ZZA_STATUS')
+					u_log2 ('info', '[' + procname () + '] Nao preciso mudar o ZZA_STATUS')
 				else
 					u_help ("Situacao nao prevista para gravacao do campo ZZA_STATUS. Revise programa.",, .t.)
 				endif
 				msunlock ()
 				szf -> (dbskip ())
 			enddo
-			u_log2 ('info', 'ZZA_STATUS gravado: ' + zza -> zza_status)
+			u_log2 ('info', '[' + procname () + '] ZZA_STATUS gravado: ' + zza -> zza_status)
 		endif
 	endif
 

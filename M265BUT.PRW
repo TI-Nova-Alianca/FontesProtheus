@@ -1,7 +1,7 @@
 // Programa:   M265BUT
 // Autor:      Robert Koch
 // Data:       27/11/2020
-// Descricao:  P.E. para inclusao de botoes na tela de enderecar produtos
+// Descricao:  P.E. para inclusao de botoes na tela de enderecar produtos (DENTRO da tela. Precisa estar em visualizar/enderecar/...)
 //             Criado inicialmente para chamar tela de consulta de enderecos anteriores (GLPI 8887)
  
 // Tags para automatizar catalogo de customizacoes:
@@ -12,14 +12,17 @@
 // #Modulos           #EST
 
 // Historico de alteracoes:
-// 
+// 01/02/2021 - Robert - Criado botão para chamar tela e destinação de lotes (GLPI 5563).
+//
 
 #include "rwmake.ch"
 
 // --------------------------------------------------------------------------
+// Este P.E. eh chamado DENTRO da tela de manutencao. Nao no browse.
 user function M265BUT ()
 	local _aRet := {}
 	aadd (_aRet, {"Outros end.docto.", {|| U_ConsSDB (m->da_doc, m->da_serie)} , "Outros end.docto." , "Outros end.docto." })
+	aadd (_aRet, {"Destinacao lotes",  {|| U_AtuSB8 (m->da_produto, m->da_lotectl)} , "Destinacao lotes" , "Destinacao lotes" })
 return _aRet
 
 
