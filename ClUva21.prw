@@ -4,6 +4,7 @@
 // Descricao: Determina a classificacao das uvas para a safra 2021.
 //
 // Historico de alteracoes:
+// 01/02/2021 - Robert - Comentariadas linhas de log.
 //
 
 // --------------------------------------------------------------------------
@@ -33,16 +34,16 @@ user function ClUva21 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAspe
 	endif
 
 	if _lContinua
-		u_log2 ('info', '   Variedade..................:' + _sVaried + sb1 -> b1_desc)
-		u_log2 ('info', '   Grau.......................:' + cvaltochar (_nGrau))
-		u_log2 ('info', '   Sistema de conducao........:' + _sConduc)
-		u_log2 ('info', '   % botrytis.................:' + cvaltochar (_nPBotryt))
-		u_log2 ('info', '   % glomerella...............:' + cvaltochar (_nPGlomer))
-		u_log2 ('info', '   % aspergillus..............:' + cvaltochar (_nPAsperg))
-		u_log2 ('info', '   % podridao acida...........:' + cvaltochar (_nPPodrAc))
-		u_log2 ('info', '   % soma de podridoes........:' + cvaltochar (_nSomaPodr))
-		u_log2 ('info', '   % acidez volatil...........:' + cvaltochar (_nAcidVol))
-		u_log2 ('info', '   Soma das podridoes.........:' + cvaltochar (_nSomaPodr))
+		// u_log2 ('info', '   Variedade..................:' + _sVaried + sb1 -> b1_desc)
+		// u_log2 ('info', '   Grau.......................:' + cvaltochar (_nGrau))
+		// u_log2 ('info', '   Sistema de conducao........:' + _sConduc)
+		// u_log2 ('info', '   % botrytis.................:' + cvaltochar (_nPBotryt))
+		// u_log2 ('info', '   % glomerella...............:' + cvaltochar (_nPGlomer))
+		// u_log2 ('info', '   % aspergillus..............:' + cvaltochar (_nPAsperg))
+		// u_log2 ('info', '   % podridao acida...........:' + cvaltochar (_nPPodrAc))
+		// u_log2 ('info', '   % soma de podridoes........:' + cvaltochar (_nSomaPodr))
+		// u_log2 ('info', '   % acidez volatil...........:' + cvaltochar (_nAcidVol))
+		// u_log2 ('info', '   Soma das podridoes.........:' + cvaltochar (_nSomaPodr))
 		if empty (_sConduc)
 			u_help ("Sistema de conducao nao informado. Impossivel determinar a classificacao da uva.",, .t.)
 			_lContinua = .F.
@@ -163,10 +164,10 @@ user function ClUva21 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAspe
 		_aRetClUva = {'', '', '', '', ''}
 	endif
 	
-	u_log2 ('info', '   Acucar......: ' + _aRetClUva [1])
-	u_log2 ('info', '   Sanidade....: ' + _aRetClUva [2])
-	u_log2 ('info', '   Maturacao...: ' + _aRetClUva [3])
-	u_log2 ('info', '   Mat.estranho: ' + _aRetClUva [4])
-	u_log2 ('info', '   Clas.final..: ' + _aRetClUva [5])
+	// u_log2 ('info', '   Acucar......: ' + _aRetClUva [1])
+	// u_log2 ('info', '   Sanidade....: ' + _aRetClUva [2])
+	// u_log2 ('info', '   Maturacao...: ' + _aRetClUva [3])
+	// u_log2 ('info', '   Mat.estranho: ' + _aRetClUva [4])
+	// u_log2 ('info', '   Clas.final..: ' + _aRetClUva [5])
 	U_ML_SRArea (_aAreaAnt)
 return _aRetClUva

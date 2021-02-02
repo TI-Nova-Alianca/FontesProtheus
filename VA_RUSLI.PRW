@@ -7,6 +7,7 @@
 // 01/03/2019 - Robert - Criada tag .InspecoesSafraMisturaNoTombador
 // 13/12/2019 - Robert - Adequacoes iniciais para safra 2020.
 // 21/02/2020 - Robert - Eliminados alguns logs desnecessarios.
+// 01/02/2021 - Robert - Comentariadas linhas de log.
 //
 
 #include "VA_Inclu.prw"
@@ -99,12 +100,12 @@ user function va_rusLI (_nPesagem)
 //		u_log2 ('info', _aRusInsp)
 	endif
 
-	u_log2 ('info', 'Inspecoes:')
+//	u_log2 ('info', 'Inspecoes:')
 //	u_log2 ('info', '   Situacao da carga no APP........: ' + _aRusInsp [.InspecoesSafraSituacao])
 //	u_log2 ('info', '   Varied.nao prevista no cad.vitic: ' + _aRusInsp [.InspecoesSafraVarNaoPrevCadVit])
 //	u_log2 ('info', '   Entrega cad.campo...............: ' + _aRusInsp [.InspecoesSafraEntrCadCpo])
 //	u_log2 ('info', '   Mistura variedades no tombador..: ' + _aRusInsp [.InspecoesSafraMisturaNoTombador])
-	u_log2 ('info', '   Chave agenda original...........: ' + cvaltochar (_aRusInsp [.InspecoesSafraAgendaOri]))
+//	u_log2 ('info', '   Chave agenda original...........: ' + cvaltochar (_aRusInsp [.InspecoesSafraAgendaOri]))
 //	u_log2 ('info', '   Botrytis......: ' + _sInspBotr)
 //	u_log2 ('info', '   Glomerella....: ' + _sInspGlom)
 //	u_log2 ('info', '   Aspergyllus...: ' + _sInspAspe)

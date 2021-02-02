@@ -53,6 +53,8 @@ User Function va_rus ()
 	private _zx509orga := ""  // Deixar private para ser vista por outras rotinas.
 	private _lIntPort  := ""  // Deixar private para ser vista por outras rotinas.
 
+	u_help ("Ambiente desatualizado",, .t.)
+return
 	// Verifica se estah sendo feita chamada resursiva (Na tela de portaria tem atalho para esta e vice-versa)
 	// Devido as diversas chamadas de menus, etc. feitas pelo Protheus, se esta tela jah estiver na pilha, vai ser em um numero bem alto
 	_nPCham = 8
