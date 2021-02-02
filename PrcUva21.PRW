@@ -13,6 +13,7 @@
 // Historico de alteracoes:
 // 16/10/2020 - Robert - Copiado do PrcUva20 para uma simulacao inicial como se fosse 2021.
 // 04/01/2020 - Robert - Criado parametro para nao mostrar mensagem em tela.
+// 01/02/2021 - Robert - Nao tinha tratamento de desagio para classif. D e DS em espaldeira.
 //
 
 #include "VA_INCLU.prw"
@@ -506,6 +507,12 @@ user function PrcUva21 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 				case alltrim (_sClassif) $ "B/C"
 					_nPrcRec *= 1
 					_nPrcCom *= 1
+				case alltrim (_sClassif) == "D"
+					_nPrcRec *= 0.8
+					_nPrcCom *= 0.8
+				case alltrim (_sClassif) == "DS"
+					_nPrcRec *= 0.5
+					_nPrcCom *= 0.5
 				otherwise
 					_sComent += '[' + procname () + '] Sem calculo de agio para classificacao ' + _sClassif + ' e sistema de conducao ' + _sConducao
 					_lContinua = .F.
