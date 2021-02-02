@@ -121,6 +121,7 @@
 //                     - Tags para catalogo de fontes.
 // 06/11/2020 - Robert - Ajuste gatilho C6_TES para consumidor final RS
 // 17/12/2020 - Robert - Chamada funcao classificacao de uvas para safra 2021.
+// 02/02/2021 - Robert - Mudanca de u_log para u_log2.
 //
 
 #include "VA_Inclu.prw"
@@ -148,7 +149,7 @@ local _aColsAlt := {}
 if valtype (_sParCpo) != "C" .or. valtype (_sParSeq) != "C"
 	_sMsgErr = "Funcao " + procname () + " nao recebeu parametros de campo/sequencia. Gatilho nao vai ser executado. Caso ajude, o retorno da funcao READVAR eh '" + alltrim (ReadVar ()) + "'"
 	u_help (_sMsgErr)
-	u_AvisaTI (_sMsgErr)
+	//u_AvisaTI (_sMsgErr)
 else
 
 	// Ajusta tamanho da variavel para nao dar problema no dbseek.
@@ -462,10 +463,7 @@ do case
 	case _sCampo == "M->C6_VAOPER" .and. _sCDomin == "C6_VAOPER"
 		_xRet = GDFieldGet ("C6_VAOPER")
 		if ExistTrigger('C6_OPER')
-			u_log2 ('debug','existe gat.c6_VAoper')
 			RunTrigger (2, N,,, 'C6_OPER')
-//			GetDRefresh ()  // Atualiza tela dos itens do pedido.
-//			Sysrefresh ()  // Atualiza a tela inteira.
 
 			// Marca variavel que indica que o aCols deve ser mantido assim,pois foi alterado.
 			_aColsAlt = aclone (aCols)
@@ -1056,7 +1054,7 @@ do case
 	// gatilho no SX7 e retorna o valor original que estava nesse campo (seria como se o
 	// gatilho nao tivesse sido executado).
 	if ! empty (_sCampo)
-		U_Log ("Campo '" + _sCampo + "' nao previsto na rotina " + procname () + " --> Contra dominio: '" + _sCDomin + "'  --> sequencia: " + _sParSeq)
+		U_Log2 ('aviso', "Campo '" + _sCampo + "' nao previsto na rotina " + procname () + " --> Contra dominio: '" + _sCDomin + "'  --> sequencia: " + _sParSeq)
 		// Incluir aqui a geracao de um aviso no ZAB
 	endif
 	if type ("aHeader") == "A" .and. type ("aCols") == "A" .and. type ("N") == "N"

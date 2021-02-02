@@ -21,10 +21,11 @@
 // 25/01/2016 - Robert - Envia avisos para o grupo 045.
 // 16/01/2019 - Robert - Incluido grupo 047 no aviso de cargas sem contranota.
 // 17/01/2021 - Robert - Criada verificacao tipo 3 (parcelamento das notas de compra).
+// 01/02/2021 - Robert - Criado parametro que permite ajustar os titulos, para casos especificos de recalculo de frete (ainda nao testado/usado).
 //
 
 // --------------------------------------------------------------------------
-user function BatSafr (_sQueFazer)
+user function BatSafr (_sQueFazer, _lAjustar)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aAmbAnt   := U_SalvaAmb ()
 	local _sMsg      := ""
@@ -32,6 +33,9 @@ user function BatSafr (_sQueFazer)
 	local _aSemNota  := {}
 	//local _sDestin   := ""
 	local _oSQL      := NIL
+
+	_sQueFazer = iif (_sQueFazer == NIL, '', _sQueFazer)
+	_lAjustar = iif (_lAjustar == NIL, .F., _lAjustar)
 
 	// Procura cargas sem contranota.
 	if _sQueFazer == '1'
@@ -53,12 +57,11 @@ user function BatSafr (_sQueFazer)
 			_sMsg += _oAUtil:ConvHTM ("", _aCols, 'width="80%" border="1" cellspacing="0" cellpadding="3" align="center"', .F.)
 			U_ZZUNU ({'045', '047'}, "Inconsistencias cargas safra", _sMsg)
 		endif
-	endif
 
-	/* Em desuso. A partir de 2021 trabalha-se com codigo SIVIBE e os cadastros de propriedades
-	   rurais (antigos cad.viticolas) estao no NaWeb
 	// Verifica contranotas com cadastro viticola desatualizado
-	if _sQueFazer == '2'
+	elseif _sQueFazer == '2'
+		/* Em desuso. A partir de 2021 trabalha-se com codigo SIVIBE e os cadastros de propriedades
+		   rurais (antigos cad.viticolas) estao no NaWeb
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " SELECT DISTINCT 'Filial:' + FILIAL + ' Assoc:' + ASSOCIADO + '-' + RTRIM (NOME_ASSOC) + ' Cad.vit:' + CAD_VITIC"
@@ -82,18 +85,16 @@ user function BatSafr (_sQueFazer)
 			u_log (_smsg)
 			U_ZZUNU ({'045'}, "Inconsistencias cadastro viticola", _sMsg)
 		endif
-	endif
-	*/
+		*/
 
 	// Verifica composicao das parcelas das notas. Em 2021 jah estamos fazendo 'compra' durante a safra.
 	// Como as primeiras notas sairam erradas, optei por fazer esta rotina de novo a identifica-las
 	// e manter monitoramento.
-	if _sQueFazer == '3' .and. year (date ()) >= 2021
-		_ConfParc ()
-	endif
+	elseif _sQueFazer == '3' .and. year (date ()) >= 2021
+		_ConfParc (_lAjustar)
 
 	// Verifica contranotas "sem carga". Isso indica possivel problema nas amarracoes entre tabelas.
-	if _sQueFazer == '4'
+	elseif _sQueFazer == '4'
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " SELECT DISTINCT 'Filial:' + FILIAL + ' Assoc:' + ASSOCIADO + '-' + RTRIM (NOME_ASSOC) + ' Contranota:' + DOC"
@@ -111,6 +112,14 @@ user function BatSafr (_sQueFazer)
 			u_log (_smsg)
 			U_ZZUNU ({'999'}, "Contranotas sem carga", _sMsg)
 		endif
+
+	// Verifica frete
+	elseif _sQueFazer == '5'
+		_ConfFrt ()
+	
+	else
+		u_help ("Sem definicao para verificacao '" + _sQueFazer + "'.",, .T.)
+		//_oBatch:Retorno += "Sem definicao para verificacao '" + _sQueFazer + "'."
 	endif
 
 	U_SalvaAmb (_aAmbAnt)
@@ -120,7 +129,50 @@ return .T.
 
 
 // --------------------------------------------------------------------------
-static function _ConfParc ()
+static function _ConfFrt ()
+	local _oSQL      := NIL
+	local _sAliasQ   := ''
+	local _sMsg      := ''
+
+	sf1 -> (dbsetorder (1))  // F1_FILIAL, F1_DOC, F1_SERIE, F1_FORNECE, F1_LOJA, F1_TIPO, R_E_C_N_O_, D_E_L_E_T_
+
+	_oSQL := ClsSQL():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, SUM (VALOR_FRETE) AS VLR_FRT"
+	_oSQL:_sQuery +=   " FROM VA_VNOTAS_SAFRA V"
+	_oSQL:_sQuery +=  " WHERE SAFRA   = '" + cvaltochar (year (date ())) + "'"
+	_oSQL:_sQuery +=    " AND TIPO_NF = 'C'"
+	_oSQL:_sQuery += " GROUP BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE"
+	_oSQL:_sQuery += " ORDER BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE"
+	_oSQL:Log ()
+	_sAliasQ := _oSQL:Qry2Trb (.F.)
+	do while ! (_sAliasQ) -> (eof ())
+		_sMsg = ''
+		if ! sf1 -> (dbseek ((_sAliasQ) -> filial + (_sAliasQ) -> doc + (_sAliasQ) -> serie + (_sAliasQ) -> associado + (_sAliasQ) -> loja_assoc, .F.))
+			_sMsg += "Arquivo SF1 nao localizado" + chr (13) + chr (10)
+		else
+			u_log2 ('debug', cvaltochar ((_sAliasQ) -> vlr_frt) + '   ' + cvaltochar (sf1 -> f1_despesa))
+			if (_sAliasQ) -> vlr_frt != sf1 -> f1_despesa
+				_sMsg += "Frete no ZF_VALFRET (" + cvaltochar ((_sAliasQ) -> vlr_frt) + ") diferente do campo F1_DESPESA (" + cvaltochar (sf1 -> f1_despesa) + ")" + chr (13) + chr (10)
+			endif
+		endif
+		if ! empty (_sMsg)
+			U_Log2 ('erro', 'Inconsistencia frete safra - filial: ' + (_sAliasQ) -> filial + ' NF: ' + (_sAliasQ) -> doc + ' forn: ' + (_sAliasQ) -> associado)
+			U_Log2 ('erro', _sMsg)
+			u_zzunu ({'122'}, 'Inconsistencia frete safra - F.' + (_sAliasQ) -> filial + ' NF: ' + (_sAliasQ) -> doc + ' forn: ' + (_sAliasQ) -> associado, _sMsg)
+
+			// cai fora no primeiro erro encontrado (estou ainda ajustando)
+		//	EXIT   // REMOVER DEPOIS !!!!!!!!!!!!!!!!!
+
+		endif
+		(_sAliasQ) -> (dbskip ())
+	enddo
+return
+
+
+
+// --------------------------------------------------------------------------
+static function _ConfParc (_lAjustar)
 	local _sAliasQ   := ''
 	local _oSQL      := NIL
 	local _aParcPrev := {}
@@ -142,7 +194,7 @@ static function _ConfParc ()
 	//_oSQL:_sQuery +=    " and V.VALOR_FRETE = 0"
 	//_oSQL:_sQuery +=    " and GRUPO_PAGTO = 'C'"
 	//_oSQL:_sQuery +=    " and FILIAL = '09'"
-	//_oSQL:_sQuery +=    " and ASSOCIADO >= '001868'"
+//	_oSQL:_sQuery +=    " and ASSOCIADO = '003003'"
 
 	
 	_oSQL:_sQuery += " GROUP BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, GRUPO_PAGTO"
@@ -190,8 +242,8 @@ static function _ConfParc ()
 				_nSomaPrev += _aParcPrev [_nParc, 4]
 			next
 
-			U_Log2 ('aviso', 'como estah no SE2:')
-			U_Log2 ('aviso', _aParcReal)
+//			U_Log2 ('aviso', 'como estah no SE2:')
+//			U_Log2 ('aviso', _aParcReal)
 
 			if len (_aParcReal) != len (_aParcPrev)
 				_sMsg += 'Encontrei qt.diferente (' + cvaltochar (len (_aParcReal)) + ') de parcelas no SE2 do que o previsto (' + cvaltochar (len (_aParcPrev)) + ')' + chr (13) + chr (10)
@@ -207,36 +259,43 @@ static function _ConfParc ()
 					endif
 				next
 
-				/*
 				// Ajusta valores e datas. A safra 2021 iniciou usando cond.pagto.invalida, e tive
 				// diversas notas para ajustar. Espero nao precisar mais disto...
-				// remover isso depois! Eh que no inicio tive miutas notas com problema
-				se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
-				for _nParc = 1 to len (_aParcReal)
-					// Posiciona SE2 para o caso de precisar mexer.
-					if ! se2 -> (dbseek ((_sAliasQ) -> filial + (_sAliasQ) -> associado + (_sAliasQ) -> loja_assoc + (_sAliasQ) -> serie + (_sAliasQ) -> doc + chr (64 + _nParc), .F.))  // Localiza a parcela somando 64 ao _nParc, pois as parcelas iniciam na letra 'A'.
-						U_Log2 ('aviso', 'Nao encontrei a parcela ' + chr (64 + _nParc) + ' para ajustar.')
+				if _lAjustar
+					if cUserName != 'robert.koch'
+						u_help ("Ajuste liberado somente para o maluco que criou a rotina.",, .t.)
 					else
-						reclock ("SE2", .F.)
-						if se2 -> e2_valor != _aParcPrev [_nParc, 4]
-							u_log2 ('info', "Ajustando parcela " + se2 -> e2_parcela + ' de ' + cvaltochar (se2 -> e2_valor) + ' para ' + cvaltochar (_aParcPrev [_nParc, 4]))
-							se2 -> e2_valor = _aParcPrev [_nParc, 4]
-							se2 -> e2_saldo = _aParcPrev [_nParc, 4]
-							se2 -> e2_vlcruz = _aParcPrev [_nParc, 4]
-						endif
-						if ! alltrim (_aParcPrev [_nParc, 5]) $ se2 -> e2_hist
-							u_log2 ('info', "Ajustando parcela " + se2 -> e2_parcela + ' de ' + se2 -> e2_hist + ' para ' + _aParcPrev [_nParc, 5])
-							se2 -> e2_hist = alltrim (_aParcPrev [_nParc, 5])
-						endif
-						if se2 -> e2_vencto != _aParcPrev [_nParc, 2]
-							u_log2 ('info', "Ajustando parcela " + se2 -> e2_parcela + ' de ' + cvaltochar (se2 -> e2_vencto) + ' para ' + cvaltochar (_aParcPrev [_nParc, 2]))
-							se2 -> e2_vencto = _aParcPrev [_nParc, 2]
-							se2 -> e2_vencrea = _aParcPrev [_nParc, 2]
-						endif
-						msunlock ()
+						se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
+						for _nParc = 1 to len (_aParcReal)
+							// Posiciona SE2 para o caso de precisar mexer.
+							if ! se2 -> (dbseek ((_sAliasQ) -> filial + (_sAliasQ) -> associado + (_sAliasQ) -> loja_assoc + (_sAliasQ) -> serie + (_sAliasQ) -> doc + chr (64 + _nParc), .F.))  // Localiza a parcela somando 64 ao _nParc, pois as parcelas iniciam na letra 'A'.
+								U_Log2 ('aviso', 'Nao encontrei a parcela ' + chr (64 + _nParc) + ' para ajustar.')
+							else
+								if e2_saldo != e2_valor
+									u_help ("Saldo diferente do valor do titulo. Nao farei ajustes.",, .T.)
+								else
+									reclock ("SE2", .F.)
+									if se2 -> e2_valor != _aParcPrev [_nParc, 4]
+										u_log2 ('info', "Ajustando parcela " + se2 -> e2_parcela + ' de ' + cvaltochar (se2 -> e2_valor) + ' para ' + cvaltochar (_aParcPrev [_nParc, 4]))
+										se2 -> e2_valor = _aParcPrev [_nParc, 4]
+										se2 -> e2_saldo = _aParcPrev [_nParc, 4]
+										se2 -> e2_vlcruz = _aParcPrev [_nParc, 4]
+									endif
+									if ! alltrim (_aParcPrev [_nParc, 5]) $ se2 -> e2_hist
+										u_log2 ('info', "Ajustando parcela " + se2 -> e2_parcela + ' de ' + se2 -> e2_hist + ' para ' + _aParcPrev [_nParc, 5])
+										se2 -> e2_hist = alltrim (_aParcPrev [_nParc, 5])
+									endif
+									if se2 -> e2_vencto != _aParcPrev [_nParc, 2]
+										u_log2 ('info', "Ajustando parcela " + se2 -> e2_parcela + ' de ' + cvaltochar (se2 -> e2_vencto) + ' para ' + cvaltochar (_aParcPrev [_nParc, 2]))
+										se2 -> e2_vencto = _aParcPrev [_nParc, 2]
+										se2 -> e2_vencrea = _aParcPrev [_nParc, 2]
+									endif
+									msunlock ()
+								endif
+							endif
+						next
 					endif
-				next
-				*/
+				endif
 			endif
 
 			if _nSomaSE2 != (_sAliasQ) -> vlr_uvas + (_sAliasQ) -> vlr_frt
@@ -260,7 +319,7 @@ static function _ConfParc ()
 			U_Log2 ('erro', _sMsg)
 			U_Log2 ('aviso', 'como deveria estar no SE2:')
 			U_Log2 ('aviso', _aParcPrev)
-			u_zzunu ({'122'}, 'Inconsistencia parcelamento safra', _sMsg)
+			u_zzunu ({'122'}, 'Inconsistencia parcelamento safra - F.' + (_sAliasQ) -> filial + ' NF: ' + (_sAliasQ) -> doc + ' forn: ' + (_sAliasQ) -> associado, _sMsg)
 
 			// cai fora no primeiro erro encontrado (estou ainda ajustando)
 //			EXIT   // REMOVER DEPOIS !!!!!!!!!!!!!!!!!
