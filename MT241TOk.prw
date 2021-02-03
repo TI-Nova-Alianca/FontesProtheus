@@ -15,8 +15,9 @@
 // 02/04/2018 - Robert  - Movimentacao retroativa habilitada para o grupo 084.
 // 28/01/2020 - Cláudia - Inclusão de validação de OP, conforme GLPI 7401
 // 03/09/2020 - Robert  - Liberado movimentar retroativo quando tipo MO (para quando nao havia MO em alguma OP)
+// 03/02/2021 - Cláudia - Vinculação Itens C ao movimento 573 - GLPI: 9163
 //
-// -----------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
 user function MT241TOk ()
 	local _lRet     := .T.
 	local _aAreaAnt := U_ML_SRArea ()
@@ -69,6 +70,19 @@ user function MT241TOk ()
 			u_help ("Este tipo de movimento foi parametrizado para exigir a inclusão do número da OP.",, .t.)
 		endif
 	endif
+
+	if _lRet 
+		_nPos := aScan(aHeader,{|x| Alltrim(x[2]) == "D3_COD" })
+		for _x:=1 to len(aCols)
+			_ProdC := RIGHT(alltrim(aCols[_x,_nPos]), 1)  
+	        if alltrim(_ProdC) == 'C' .and. alltrim(CTM) != '573' 
+	        	_lRet = .F.
+	        EndIf
+		next
+		if _lRet = .F.
+			u_help ("Itens da manutenção com final C só podem ser movimentados com movimento 573.",, .t.)
+		endif
+	endIf
 
 	U_ML_SRArea (_aAreaAnt)
 return _lRet
