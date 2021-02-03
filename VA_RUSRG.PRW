@@ -65,7 +65,7 @@ user function VA_RUSRG ()
 						u_help (_sMsg + " Reenvio para medicao de grau nao permitida, pois ja contem valor no grau.")
 					endif
 				endif
-				u_help ('Status atualizado na tabela ZZA.')
+				u_help ('Processo de reenvio concluido.')
 			endif
 			szf -> (dbskip ())
 		enddo
