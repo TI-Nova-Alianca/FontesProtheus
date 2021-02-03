@@ -38,6 +38,7 @@
 // 15/01/2021 - Robert - Novo parametro metodo :RetFixo da classe ClsSQL().
 //                     - Definido TES (028) e preco unitario (1,00) para producao propria Livramento.
 // 19/01/2021 - Robert - Producao propria Livramento passa a entrar com mesmo preco de associados (entrava a 1,00)
+// 02/02/2021 - Robert - Chamada do VA_RusEn no final para enderecar uva no estoque (GLPI 8779).
 //
 
 // ------------------------------------------------------------------------------------
@@ -638,6 +639,7 @@ User Function va_rusN ()
 		MsExecAuto({|x,y,z|MATA103(x,y,z)},_aAutoSF1,_aAutoSD1,3)
 
 		If lMsErroAuto
+			_lContinua = .F.
 			DisarmTransaction()
 			u_log2 ('erro', 'lMsErroAuto')
 			if ! empty (NomeAutoLog ())
@@ -667,15 +669,22 @@ User Function va_rusN ()
 			msunlock ()
 		endif
 		end transaction
+		U_Log2 ('info', 'Fim da transacao de geracao da contranota.')
 
 		// Faz a transmissao da NF para a SEFAZ e posterior impressao.
 		if ! empty (sze -> ze_nfger)
 			U_VA_RUSTX ()
 		endif
 
+		// Endereca (saldos a distribuir) o lote de uva recebido por esta contranota.
+		if ! empty (sze -> ze_nfger)
+			U_VA_RusEn (sze -> ze_nfger, sze -> ze_serie, sze -> ze_assoc, sze -> ze_Lojasso)
+		endif
+
 		// Atualiza conta corrente associados
-		if _sTpForUva == 'A'
-// ainda nao 100%			processa ({|| _GravaSZI ()})
+		// Acho que vou fazer em batch, pois nao tem pressa e eh muito lento.
+		if ! empty (sze -> ze_nfger) .and. _sTpForUva == 'A'
+			// ainda nao 100%			processa ({|| _GravaSZI ()})
 		endif
 
 	endif
