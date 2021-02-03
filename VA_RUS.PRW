@@ -22,6 +22,7 @@
 // 20/01/2020 - Robert - Novos parametros chamada geracao ticket safra.
 // 01/12/2020 - Robert - Passa a buscar dados de cadastro viticola na view GX0001_AGENDA_SAFRA e nao mais na VA_VASSOC_CAD_VITIC2
 // 02/02/2021 - Robert - Criado botao para chamar o VA_RusEn (GLPI 8779).
+// 03/02/2021 - Robert - Novos parametros funcao U_VA_Rus2().
 //
 
 // --------------------------------------------------------------------------
@@ -67,7 +68,7 @@ User Function va_rus ()
 
 	// Cria parametros e obriga usuario a responde-los na entrada da rotina.
 	_ValidPerg ()
-	_lContinua = U_VA_RUSLP ()
+	_lContinua = U_VA_RUSLP (.T.)
 
 	if _lContinua .and. empty (U_RetZX5 ("09", _xSafraJ + _sBalanca, 'ZX5_09LOCA'))
 		u_help ("Relacao balanca X safra nao cadastrada. Verifique tabela 09 do ZX5.")
@@ -150,7 +151,7 @@ User Function va_rus ()
 
 		// Submenu para Outros.
 		_aMenuOut = {}
-		aadd (_aMenuOut, {"&Parametros",         "U_VA_RUSLP ()", 0,4})
+		aadd (_aMenuOut, {"&Parametros",         "U_VA_RUSLP (.T.)", 0,4})
 		aadd (_aMenuOut, {"&Ticket 1a.pesag",    "U_VA_RUSTk (1, _sPortTick, _nQViasTk1, {}, 'Bematech', .t.)",0,4})
 		aadd (_aMenuOut, {"&Ticket 2a.pesag",    "U_VA_RUSTk (2, _sPortTick, _nQViasTk2, {}, 'Bematech', .t.)",0,4})
 		aadd (_aMenuOut, {"&Impr.Recibo",        "U_VA_RUSR ()", 0,4})
@@ -168,13 +169,13 @@ User Function va_rus ()
 
 		// Menu principal
 		aadd (aRotina, {"&Pesquisar"        , "AxPesqui",      0,1})
-		aadd (aRotina, {"&Visualizar"       , "U_VA_RUS2 (2)", 0,2})
+		aadd (aRotina, {"&Visualizar"       , "U_VA_RUS2 (2, .F.)", 0,2})
 		aadd (aRotina, {"Incluir"           , "U_VA_RUS1",     0,3})
 		aadd (aRotina, {"&1a pesagem"       , "U_VA_RUS1P ()", 0,4})
-		aadd (aRotina, {"&2a pesagem"       , "U_VA_RUS2 (4)", 0,4})
+		aadd (aRotina, {"&2a pesagem"       , "U_VA_RUS2 (4, .F.)", 0,4})
 		aadd (aRotina, {"&Contranota"       , _aMenuNFe,       0,4})
 		aadd (aRotina, {"&Outros"           , _aMenuOut,       0,4})
-		aadd (aRotina, {"&Cancelar/Excluir" , "U_VA_RUS2 (5)", 0,5})
+		aadd (aRotina, {"&Cancelar/Excluir" , "U_VA_RUS2 (5, .F.)", 0,5})
 		aadd (aRotina, {"&Legenda"          , "U_VA_RUSLG(.F.)", 0,5})
 		private cString   := "SZE"
 		private cCadastro := "Recebimento de uva safra"

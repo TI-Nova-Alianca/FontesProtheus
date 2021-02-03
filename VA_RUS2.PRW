@@ -39,7 +39,7 @@
 #include "VA_Inclu.prw"
 
 // --------------------------------------------------------------------------
-User Function va_rus2 (_nOpc)
+User Function va_rus2 (_nOpc, _lFechPort)
 	local _bBotaoOK    := {|| NIL}
 	local _bBotaoCan   := {|| NIL}
 	local _aBotAdic    := {}
@@ -47,9 +47,9 @@ User Function va_rus2 (_nOpc)
 	local _lContinua   := .T.
 	local _oSQL        := NIL
 	local _nLock       := 0
-	local _oAvisos     := NIL
-	local _oCour24     := TFont():New("Courier New",,18,,.T.,,,,,.F.)
-	local _sTxtAviso   := ""
+//	local _oAvisos     := NIL
+//	local _oCour24     := TFont():New("Courier New",,18,,.T.,,,,,.F.)
+//	local _sTxtAviso   := ""
 	local _nVitNC      := 0
 	local _nLinha      := 0
 	private _aRusInsp  := {}  // Deixar private para ser vista e alimentada por outras rotinas.
@@ -58,7 +58,8 @@ User Function va_rus2 (_nOpc)
 	private N          := 1
 	private agets      := {}  // Alimentada pelas rotinas do sistema e necessaria para validacoes de campos obrigatorios.
 	private aTela      := {}  // Alimentada pelas rotinas do sistema e necessaria para validacoes de campos obrigatorios.
-	private _oGetD     := NIL
+	private _oGetD     := NIL // Deixar private para poder executar refresh na abertura da tela.
+	private _oEnch1    := NIL // Deixar private para poder executar refresh na abertura da tela.
 	private inclui     := (_nOpc == 3)
 	private altera     := (_nOpc == 4)
 	private _lDlgOK    := .F.  // Para retorno da tela modelo3.
@@ -67,8 +68,7 @@ User Function va_rus2 (_nOpc)
 	private _aAglut    := {}  // Deixar private para ser vista por outras rotinas.
 	private cArqMnu    := FWGetMnuFile()  //'COOPERATIVA.XNU'
 
-	u_Log2 ('info', 'Iniciando ' + procname ())
-	u_log2 ('info', 'Carga: ' + sze -> ze_carga + '   inclui: ' + cvaltochar (inclui) + '   altera: ' + cvaltochar (altera) + '   _nOpc: ' + cvaltochar (_nOpc))
+	u_Log2 ('info', 'Iniciando ' + procname () + ' Carga: ' + sze -> ze_carga + '   inclui: ' + cvaltochar (inclui) + '   altera: ' + cvaltochar (altera) + '   _nOpc: ' + cvaltochar (_nOpc))
 
 	if _lContinua .and. _nOpc >= 4 .and. sze -> ze_status == "N"
 		u_help ("Nota fiscal (" + sze -> ze_nfger + ") ja gerada para esta carga. Alteracao / exclusao nao permitidas. Exclua, antes, a nota fiscal.")
@@ -228,6 +228,7 @@ User Function va_rus2 (_nOpc)
 		endif
 	endif
 	
+/*
     // Prepara mensagens de aviso.
 	if _lContinua
 		_sTxtAviso = ""
@@ -241,7 +242,7 @@ User Function va_rus2 (_nOpc)
 			_sTxtAviso += 'Tem uvas de bordadura'
 		endcase
 	endif
-	
+*/
 	if _lContinua
 		
 		// Monta tela para o usuario fazer as manutencoes
@@ -272,10 +273,10 @@ User Function va_rus2 (_nOpc)
 		
 		// Objeto de texto por cima da enchoice, para exibicao de eventuais avisos.
 		//                       Lin                        Col bTxt oWnd   pict oFont     ?    ?    ?    pixel corTxt   corBack larg                         altura
-		_oAvisos := tSay ():New (_oDlg:nClientHeight / 3.5, 2,  NIL, _oDlg, NIL, _oCour24, NIL, NIL, NIL, .T.,  CLR_RED, NIL,    _oDlg:nClientWidth / 2 - 10, 15)
-		if ! empty (_sTxtAviso)
-			_oAvisos:SetText ("ATENCAO: " + _sTxtAviso)
-		endif
+//		_oAvisos := tSay ():New (_oDlg:nClientHeight / 3.5, 2,  NIL, _oDlg, NIL, _oCour24, NIL, NIL, NIL, .T.,  CLR_RED, NIL,    _oDlg:nClientWidth / 2 - 10, 15)
+//		if ! empty (_sTxtAviso)
+//			_oAvisos:SetText ("ATENCAO: " + _sTxtAviso)
+//		endif
 
 		// Itens
 		_oGetD := MSGetDados ():New (_oDlg:nClientHeight / 3.5 + 15, ;       // Limite superior
@@ -309,10 +310,15 @@ User Function va_rus2 (_nOpc)
 		endif
 		
 		if (inclui .or. altera) .and. _lBalEletr
-			set key 119 to _LePeso ()  // tecla F8
+		//	set key 119 to _LePeso ()  // tecla F8
+			SetKey(VK_F8, {|| _LePeso ()})
 			aadd (_aBotAdic, {"BALANCA", {|| _LePeso ()}, "[F8] Peso"})
 		endif
-		activate dialog _oDlg on init EnchoiceBar (_oDlg, _bBotaoOK, _bBotaoCan,, _aBotAdic)
+		if _lFechPort
+			activate dialog _oDlg on init (EnchoiceBar (_oDlg, _bBotaoOK, _bBotaoCan,, _aBotAdic), _LePortar (), _oEnch1:Refresh (), _oGetD:Refresh ())
+		else
+			activate dialog _oDlg on init EnchoiceBar (_oDlg, _bBotaoOK, _bBotaoCan,, _aBotAdic)
+		endif
 	endif
 
 	// Tratamento caso o usuario tenha confirmado a tela modelo3.
@@ -407,7 +413,7 @@ static function _LePeso ()
 		// Distribui peso entre as caixas dos itens. Existe chamada semenhante nos gatilhos dos campos de peso.
 		U_VA_RUS2D ()
 	else
-		u_help ("Estacao sem comunicacao com balanca. Verifique seus parametros.")
+		u_help ("Estacao sem comunicacao com balanca. Verifique seus parametros.",, .t.)
 	endif
 return
 

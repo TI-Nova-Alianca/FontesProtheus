@@ -57,6 +57,7 @@
 // 16/06/2020 - Robert  - Desabilitadas chamadas de logs desnecessarios.
 //                      - Eliminadas algumas declaracoes de variaveis nao usadas.
 // 06/01/2021 - Robert  - Desabilitada chamada do U_FrtNFe quando estao sendo usadas rotinas de safra.
+// 03/02/2021 - Robert  - Para saber se estava gerando contranota de safra, testava rotina U_VA_RUS. Passa a testar U_VA_RUSN.
 //
 
 // -----------------------------------------------------------------------------------------------------------------------
@@ -163,9 +164,8 @@ User Function MT100TOK()
 	
 	// Testes ref. controle de fretes.
 	if _lRet .and. ! cTipo $ "BD" .and. cNumEmp == "0101"
-//		U_LOG2 ('debug', IsInCallStack ("VA_RUS"))
-//		U_LOG2 ('debug', IsInCallStack ("U_VA_RUS"))
-		if ! IsInCallStack ("U_VA_RUS")  // Nao precisa perder tempo com contranotas de safra.
+//		if ! IsInCallStack ("U_VA_RUS")  // Nao precisa perder tempo com contranotas de safra.
+		if ! IsInCallStack ("U_VA_RUSN")  // Nao precisa perder tempo com contranotas de safra.
 			_lRet = U_FrtNFE ("V")
 		endif
 	endif

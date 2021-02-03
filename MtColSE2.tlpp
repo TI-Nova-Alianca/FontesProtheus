@@ -13,6 +13,7 @@
 
 // Historico de alteracoes
 // 02/02/2021 - Robert - Removidas linhas de logs.
+// 03/02/2021 - Robert - Para saber se estava gerando contranota de safra, testava rotina U_VA_RUS. Passa a testar U_VA_RUSN.
 //
 
 // --------------------------------------------------------------------------
@@ -28,7 +29,8 @@ user function MTColSE2 ()
 
 	// Este P.E. eh chamado 2 vezes: uma na gravacao da nota e outra na 'troca de pasta'.
 	// Parece que preciso ajustar no momento da troca de pasta, pois se fizer na segunda chamada, nao tem efeito.
-	if IsInCallStack ("U_VA_RUS") .and. IsInCallStack ("NFEFLDCHG")
+//	if IsInCallStack ("U_VA_RUS") .and. IsInCallStack ("NFEFLDCHG")
+	if IsInCallStack ("U_VA_RUSN") .and. IsInCallStack ("NFEFLDCHG")
 		if cTipo == "N" .and. cFormul == "S" //.and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf)
 			if type ('_aParPgSaf') != 'A'
 				u_help ("Nao tenho dados para distribuir as parcelas de pagamento da safra.",, .T.)
@@ -71,3 +73,4 @@ user function MTColSE2 ()
 	U_ML_SRArea (_aAreaAnt)
 	//U_Log2 ('info', 'Finalizando ' + procname ())
 return _aRet
+

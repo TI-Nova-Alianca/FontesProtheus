@@ -100,6 +100,7 @@
 // 30/01/2020 - Robert  - Melhorados logs (tentativa verificar bloqueio notas safra).
 // 11/01/2021 - Robert  - Recalcula datas de vencimento de parcelas de notas de safra (este ano vamos fazer todas como 'compra').
 // 14/01/2021 - Robert  - Datas e valores das dupl.safra jah vem certas do MtColSE2. Apenas grava historico.
+// 03/02/2021 - Robert  - Para saber se estava gerando contranota de safra, testava rotina U_VA_RUS. Passa a testar U_VA_RUSN.
 //
 
 // --------------------------------------------------------------------------
@@ -180,9 +181,10 @@ user function SF1100i ()
 	endif
 
 	// Imprime romaneio de entrada
-    if cEmpAnt + cFilAnt == '0101' .and. ! IsInCallStack ("U_VA_RUS") .and. cEspecie !='CTR' .and. cEspecie !='CTE' .and. ! IsInCallStack ("U_VA_GNF2")
-    	if U_MsgYesNo ("Deseja imprimir o romaneio de entrada?")
-    		U_RomEntr (sf1 -> f1_fornece, sf1 -> f1_loja, sf1 -> f1_doc, sf1 -> f1_serie)
+//	if cEmpAnt + cFilAnt == '0101' .and. ! IsInCallStack ("U_VA_RUS") .and. cEspecie !='CTR' .and. cEspecie !='CTE' .and. ! IsInCallStack ("U_VA_GNF2")
+	if cEmpAnt + cFilAnt == '0101' .and. ! IsInCallStack ("U_VA_RUSN") .and. cEspecie !='CTR' .and. cEspecie !='CTE' .and. ! IsInCallStack ("U_VA_GNF2")
+		if U_MsgYesNo ("Deseja imprimir o romaneio de entrada?")
+			U_RomEntr (sf1 -> f1_fornece, sf1 -> f1_loja, sf1 -> f1_doc, sf1 -> f1_serie)
 		endif
 	endif
 	
@@ -496,7 +498,8 @@ static function _AjSE2 ()
 
 	if ! ExistBlock ("MTCOLSE2")
 		// Se for uma nota de compra de uva (em 2021 jah vamos gerar contranotas de compra em vez de 'entrada'), ajusta vencimentos.
-		if sf1 -> f1_tipo == "N" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) .and. IsInCallStack ("U_VA_RUS")
+//		if sf1 -> f1_tipo == "N" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) .and. IsInCallStack ("U_VA_RUS")
+		if sf1 -> f1_tipo == "N" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) .and. IsInCallStack ("U_VA_RUSN")
 			U_Log2 ('info', 'Ajustando datas de vencimento dos titulos de nota de compra de safra.')
 			se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
 			se2 -> (dbseek (xfilial ("SE2") + sf1 -> f1_fornece + sf1 -> f1_loja + sf1 -> f1_serie + sf1 -> f1_doc, .T.))
@@ -564,7 +567,8 @@ static function _AjSE2 ()
 		endif
 	else
 	//	U_Log2 ('info', '[' + procname () + '] ponto de entrada MTCOLSE2 implementado. No vou mexer nas datas e valores das duplicatas de safra. Somente historicos.')
-		if sf1 -> f1_tipo == "N" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) .and. IsInCallStack ("U_VA_RUS")
+//		if sf1 -> f1_tipo == "N" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) .and. IsInCallStack ("U_VA_RUS")
+		if sf1 -> f1_tipo == "N" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) .and. IsInCallStack ("U_VA_RUSN")
 			if type ('_aParPgSaf') == 'A'  // Variavel criada no programa VA_RUSN().
 				U_Log2 ('info', '[' + procname () + '] Ajustando historicos dos titulos de nota de compra de safra (valores e datas jah devem ter sido gerados via ponto de entrada MTCOLSE2).')
 				se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
@@ -628,7 +632,8 @@ static function _DadosAdic ()
 	
 	// Abre tela para usuario informar dados adicionais
 //	if sf1 -> f1_formul == "S" .and. funname () != "VA_GNF2" .and. funname () != "VA_RUS" .and. sf1 -> f1_est != "EX"
-	if sf1 -> f1_formul == "S" .and. sf1 -> f1_est != "EX" .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_VA_RUS")
+//	if sf1 -> f1_formul == "S" .and. sf1 -> f1_est != "EX" .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_VA_RUS")
+	if sf1 -> f1_formul == "S" .and. sf1 -> f1_est != "EX" .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_VA_RUSN")
 		// Tela em loop para validar dados.
 		do while .T.
 			@ 0, 0 TO 300, 320 DIALOG oDlg1 TITLE "Dados Adicionais NF"

@@ -7,17 +7,22 @@
 //              dos parametros sem sair da tela.
 //
 // Historico de alteracoes:
-// 12/01/2016 - Criado local de entrega GB (Vinicola Garibaldi) ligado a filial 01.
+// 12/01/2016 - Robert - Criado local de entrega GB (Vinicola Garibaldi) ligado a filial 01.
 // 13/12/2019 - Robert - Adequacoes iniciais para safra 2020 (porta impressora ticket).
+// 03/02/2021 - Robert - Criado parametro para mostrar ou nao as perguntas para o usuario.
 //
 
 // --------------------------------------------------------------------------
-User Function VA_RUSLP ()
+User Function VA_RUSLP (_lMostra)
 	local _lRet := .F.
 
 	do while .T.
-		if ! pergunte (cPerg, .T.)
-			exit
+		if ! _lMostra
+			pergunte (cPerg, _lMostra)
+		else
+			if ! pergunte (cPerg, _lMostra)
+				exit
+			endif
 		endif
 
 		u_logsx1 (cPerg)
@@ -74,7 +79,7 @@ User Function VA_RUSLP ()
 		endif
 		
 		if _nMultBal < 1
-			u_help ("Peso multiplo para balanca nao pode ser menor que 1 Kg")
+			u_help ("Peso multiplo para balanca nao pode ser menor que 1 Kg",, .t.)
 			loop
 		endif
 		
