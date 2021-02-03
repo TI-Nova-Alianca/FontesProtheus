@@ -8,6 +8,7 @@
 // 04/03/2020 - Sandra - Inclusão dos campos B8_VALOJA, PRODUTO, LOCAL, DTVALID, SALDO, LOTEFOR, DATA, LOTECTL, CLIFOR, DOC, LOJA, SERIE
 // 01/02/2021 - Robert - Valida se o usuario tem acesso (grupo 125)
 //                     - Aceita receber produto e lote por parametro (GLPI 5563)
+//03/02/2021 - sandra - Inclusão do campo B8_VAPRODE (GLPI 9285)
 //
 
 // --------------------------------------------------------------------------
@@ -51,6 +52,7 @@ User Function AtuSB8A ()
 	aadd (_aCampos, "B8_VALOJA")
 	aadd (_aCampos, "B8_VACRSIS")
 	aadd (_aCampos, "B8_PRODUTO")
+	aadd (_aCampos, "B8_PRODDES")
 	aadd (_aCampos, "B8_LOCAL")
 	aadd (_aCampos, "B8_DTVALID")
 	aadd (_aCampos, "B8_SALDO")
