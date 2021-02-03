@@ -12,6 +12,7 @@
 
 // Historico de alteracoes:
 // 02/02/2021 - Robert - Testa se o campo zza_status estah vazio antes de gravar status 1 (pois eh chamado tb a partir da 2a.pesagem)
+// 03/02/2021 - Robert - Ajuste gravacao ZZA_STATUS na primeira pesagem.
 //
 
 // Possiveis situacoes para o campo ZZA_STATUS:
@@ -66,8 +67,8 @@ user function AtuZZA (_sSafra, _sCarga)
 					zza -> zza_status = 'M'
 //				elseif sze -> ze_pesobru > 0 .and. sze -> ze_pesotar == 0
 				elseif sze -> ze_pesobru > 0 .and. sze -> ze_pesotar == 0
-					if empty (zza -> zza_status)
-						U_Log2 ('debug', 'Entendo que acabei de criar ZZA e preciso gravar status 1')
+					if empty (zza -> zza_status) .or. zza -> zza_status == '0'
+						U_Log2 ('debug', 'Entendo que o ZZA estah vazio ou zero. Preciso gravar status 1')
 						zza -> zza_status = '1'
 					else
 						U_Log2 ('debug', 'Entendo que rodou VA_Rus1P a partir da 2a.pesagem e nao preciso alterar zza_status')
