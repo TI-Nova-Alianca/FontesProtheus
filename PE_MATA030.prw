@@ -19,7 +19,8 @@
 // 29/05/2013 - Elaine  - Inclui tratamento para Inscricao Estadual para mercado externo
 // 12/03/2015 - Catia   - Desabilitada a validação para inscrição estadual
 // 27/11/2020 - Cláudia - Incluido botão de obs.financeira. GLPI: 8923
-// 04/01/2020 - Cláudia - Incluida a filial 16 para oas observações financeiras. GLPI: 9069
+// 04/01/2021 - Cláudia - Incluida a filial 16 para oas observações financeiras. GLPI: 9069
+// 03/02/2021 - Cláudia - Ajuste para visualização das OBS nas demais filiais. GLPI: 9263
 //
 // -----------------------------------------------------------------------------------------------
 #include "protheus.ch"
@@ -87,9 +88,9 @@ User Function CRMA980()
             xRet := .T.
         ElseIf cIdPonto == "BUTTONBAR"
            // xRet := {}
-		   	If cFilAnt == '01' .or. cFilAnt == '16'
+		   //	If cFilAnt == '01' .or. cFilAnt == '16'
 				xRet := {{"Obs.Financeiro", "Obs.Financeiro", {||U_VA_OBSFIN('1')}}}
-		   	EndIf
+		   //	EndIf
         EndIf
     EndIf
 

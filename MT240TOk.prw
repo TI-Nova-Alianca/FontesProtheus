@@ -8,8 +8,8 @@
 // 02/04/2018 - Robert  - Movimentacao retroativa habilitada para o grupo 084.
 // 28/01/2020 - Cláudia - Inclusão de validação de OP, conforme GLPI 7401
 // 29/05/2020 - Robert  - Liberada gravacao mov.retroativo para programa U_ESXEST01.
+// 03/02/2021 - Cláudia - Vinculação Itens C ao movimento 573 - GLPI: 9163
 //
-
 // --------------------------------------------------------------------------
 user function MT240TOk ()
 	local _lRet := .T.
@@ -45,6 +45,15 @@ user function MT240TOk ()
 		u_help ("Este tipo de movimento foi parametrizado para exigir a inclusão do número da OP.")
 		_lRet = .F.
 	endif
+
+	if _lRet  
+		_ProdC := RIGHT(alltrim(m->d3_cod), 1)  
+
+		if alltrim(_ProdC) == 'C' .and. alltrim(m->d3_tm) != '573' 
+			u_help ("Itens da manutenção com final C só podem ser movimentados com movimento 573.")
+			_lRet = .F.
+		endif
+	endIf
 
 	U_ML_SRArea (_aAreaAnt)
 return _lRet

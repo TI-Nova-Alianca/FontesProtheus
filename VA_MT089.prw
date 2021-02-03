@@ -17,6 +17,7 @@
 // 29/10/2020 - Robert  - Invertido teste de grupo de produtos na carastrado para evitar msg REGNOIS
 //                      - Inseridas tags para catalogo de programas.
 // 30/11/2020 - Claudia - Incluidos novos campos conforme GLPI: 8809
+// 01/02/2021 - Cláudia - Incluida coluna de filial. GLPI:9288
 //
 //-------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -53,6 +54,7 @@ User Function VA_MT089 ()
 		dbSetOrder (1)
 		
 		aCabTela  := {} 
+		aadd (aCabTela,{ "Filial"				,"FM_FILIAL"	})
 		aadd (aCabTela,{ "Grupo de tributação"	,"FM_GRTRIB"	})
 		aadd (aCabTela,{ "Grupo de produto"		,"FM_GRPROD"	})
 		aadd (aCabTela,{ "Estado"				,"FM_EST"		})
@@ -162,11 +164,12 @@ User Function MT89A (_nOpcao, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr)
 				// Grava dados do aCols.
 				SFM -> (dbsetorder (1))
 				_aCposFora := {}
-				
+
 				For _n = 1 to len (aCols)
 					N = _n
 
 					_aCmp  := {} 
+					aadd (_aCmp,{ GDFieldGet ("FM_FILIAL")	})
 					aadd (_aCmp,{ GDFieldGet ("FM_GRTRIB")	})
 					aadd (_aCmp,{ GDFieldGet ("FM_EST")		})
 					aadd (_aCmp,{ GDFieldGet ("FM_GRPROD")	})
@@ -247,10 +250,14 @@ User Function MT89LOK ()
 	local _lRet := .T.
 
 	If _lRet .and. ! GDDeleted ()
-		_lRet = GDCheckKey ({"FM_GRTRIB","FM_GRPROD","FM_EST","FM_TIPOCLI","FM_TIPO","FM_CLIENTE","FM_LOJACLI","FM_FORNECE","FM_LOJAFOR", "FM_PRODUTO","FM_POSIPI","FM_REFGRD"}, 4)
+		_lRet = GDCheckKey ({"FM_FILIAL","FM_GRTRIB","FM_GRPROD","FM_EST","FM_TIPOCLI","FM_TIPO","FM_CLIENTE","FM_LOJACLI","FM_FORNECE","FM_LOJAFOR", "FM_PRODUTO","FM_POSIPI","FM_REFGRD"}, 4)
 	Endif
 	
 	If _lRet .and. ! GDDeleted ()
+		If empty(GDFieldGet("FM_FILIAL"))
+			u_help("Campo Filial é obrigatório",, .t.)
+			_lRet := .F.
+		EndIf
 		If empty(GDFieldGet("FM_TIPO"))
 			u_help("Campo Tipo de operação é obrigatório",, .t.)
 			_lRet := .F.
@@ -313,7 +320,11 @@ User Function MT89TudOk()
 	Local _lRet := .T.
 	
 	If _lRet 
-		
+		If empty(M -> FM_FILIAL)
+			u_help("Campo Filial é obrigatório")
+			_lRet := .F.
+		EndIf
+
 		If empty(M -> FM_TIPO)
 			u_help("Campo Tipo de operação é obrigatório")
 			_lRet := .F.
@@ -372,6 +383,7 @@ Return _lRet
 User Function MT89Cpos()
 	local _aCampos := {}
 	
+	aadd (_aCampos, "FM_FILIAL")
 	aadd (_aCampos, "FM_GRTRIB")
 	aadd (_aCampos, "FM_GRPROD")
 	aadd (_aCampos, "FM_EST")
@@ -420,12 +432,12 @@ Static Function _Mt89GrvEv (_aCmp, _GrvDesc)
 	_oEvento := ClsEvent():New ()
 	_oEvento:Alias     = 'SFM'
 	_oEvento:Texto     = AllTrim(_GrvDesc) + chr (13) + chr (10) + ;
-						 " Grp.Trib.:" + alltrim(_aCmp[1,1]) + " Est:" + alltrim(_aCmp[2,1]) + " Grp.Prod.:" + alltrim(_aCmp[3,1]) + chr (13) + chr (10) + ;
-						 " Tipo Cli.:" + alltrim(_aCmp[4,1]) + " Tipo Op.:" + alltrim(_aCmp[5,1]) + " TE:" + alltrim(_aCmp[6,1]) + " TS:" + alltrim(_aCmp[7,1]) + chr (13) + chr (10) + ;
-						 " Tip.Ped.:" + alltrim(_aCmp[8,1]) + " NCM:"+alltrim(_aCmp[9,1]) + " Prod.:" + alltrim(_aCmp[10,1]) + " Enq.IPI:" + alltrim(_aCmp[11,1]) + chr (13) + chr (10) + ;
-						 " Cliente:" + alltrim(_aCmp[12,1]) +"/" + alltrim(_aCmp[13,1])  + " Fornecedor:"+alltrim(_aCmp[14,1]) + "/" + alltrim(_aCmp[15,1]) + chr (13) + chr (10) + ;
-						 " Ref.Grd:" + alltrim(_aCmp[16,1]) + " Ref.Desc.:" + alltrim(_aCmp[17,1]) + " Grupo TI:" + alltrim(_aCmp[18,1]) + chr (13) + chr (10) + ;
-						 " Tp.Contrato:" + alltrim(_aCmp[19,1]) + " Descrição:" + alltrim(_aCmp[20,1]) + "."
+						 " Filial:" + alltrim(_aCmp[1,1]) + " Grp.Trib.:" + alltrim(_aCmp[2,1]) + " Est:" + alltrim(_aCmp[3,1]) + " Grp.Prod.:" + alltrim(_aCmp[4,1]) + chr (13) + chr (10) + ;
+						 " Tipo Cli.:" + alltrim(_aCmp[5,1]) + " Tipo Op.:" + alltrim(_aCmp[6,1]) + " TE:" + alltrim(_aCmp[7,1]) + " TS:" + alltrim(_aCmp[8,1]) + chr (13) + chr (10) + ;
+						 " Tip.Ped.:" + alltrim(_aCmp[9,1]) + " NCM:"+alltrim(_aCmp[10,1]) + " Prod.:" + alltrim(_aCmp[11,1]) + " Enq.IPI:" + alltrim(_aCmp[12,1]) + chr (13) + chr (10) + ;
+						 " Cliente:" + alltrim(_aCmp[13,1]) +"/" + alltrim(_aCmp[14,1])  + " Fornecedor:"+alltrim(_aCmp[15,1]) + "/" + alltrim(_aCmp[16,1]) + chr (13) + chr (10) + ;
+						 " Ref.Grd:" + alltrim(_aCmp[17,1]) + " Ref.Desc.:" + alltrim(_aCmp[18,1]) + " Grupo TI:" + alltrim(_aCmp[19,1]) + chr (13) + chr (10) + ;
+						 " Tp.Contrato:" + alltrim(_aCmp[20,1]) + " Descrição:" + alltrim(_aCmp[21,1]) + "."
 	_oEvento:CodEven   = "SFM001"
 	_oEvento:Grava()
 Return
@@ -439,7 +451,8 @@ Static Function _VerAltReg(_aCmp,_recno,_AltDes)
 	Local x			:= 0
 	
 	_cQueryA += " SELECT"
-	_cQueryA += "	 FM_GRTRIB"
+	_cQueryA += "	 FM_FILIAL"
+	_cQueryA += "	,FM_GRTRIB"
 	_cQueryA += "   ,FM_EST"
 	_cQueryA += "   ,FM_GRPROD"
 	_cQueryA += "   ,FM_TIPOCLI"
@@ -485,7 +498,8 @@ Static Function _VerAltReg(_aCmp,_recno,_AltDes)
 				alltrim (aRetAlt[x,17]) <>  alltrim(_aCmp[17,1]) .or.;
 				alltrim (aRetAlt[x,18]) <>  alltrim(_aCmp[18,1]) .or.;
 				alltrim (aRetAlt[x,19]) <>  alltrim(_aCmp[19,1]) .or.;
-				alltrim (aRetAlt[x,20]) <>  alltrim(_aCmp[20,1]) 
+				alltrim (aRetAlt[x,20]) <>  alltrim(_aCmp[20,1]) .or.;
+				alltrim (aRetAlt[x,21]) <>  alltrim(_aCmp[21,1]) 
 				
 				_lAlt     := .F.
 			EndIf
@@ -500,9 +514,11 @@ Static Function _Mt89GrAx(_sId)
 	Local _cQueryA  := ""
 	Local aRetAlt	:= {}
 	Local x			:= 0
+	Local _aCmp     := {} 
 	
 	_cQueryA += " SELECT"
-	_cQueryA += "	 FM_GRTRIB"
+	_cQueryA += "	 FM_FILIAL"
+	_cQueryA += "	,FM_GRTRIB"
 	_cQueryA += "   ,FM_EST"
 	_cQueryA += "   ,FM_GRPROD"
 	_cQueryA += "   ,FM_TIPOCLI"
@@ -550,10 +566,11 @@ Static Function _Mt89GrAx(_sId)
 			aadd (_aCmp,{ alltrim (aRetAlt[x,18])})
 			aadd (_aCmp,{ alltrim (aRetAlt[x,19])})
 			aadd (_aCmp,{ alltrim (aRetAlt[x,20])})
+			aadd (_aCmp,{ alltrim (aRetAlt[x,21])})
 			
 			_GrvDesc := "Inclusão de Tes inteligente (Grid)"
 			
-			_Mt89GrvEv (_aCmp(), _GrvDesc)		
+			_Mt89GrvEv (_aCmp, _GrvDesc)		
 		Next
 	EndIf
 Return 
