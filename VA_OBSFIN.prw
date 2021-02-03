@@ -13,8 +13,9 @@
 // Historico de alteracoes:
 // 07/12/2020 - Claudia - Inclusão de botao para visualização de observações 
 //                        de clientes. GLPI: 8971
+// 03/02/2021 - Cláudia - Ajuste para visualização das OBS nas demais filiais. GLPI: 9263
 //
-// --------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 #include "rwmake.ch"
 #Include "PROTHEUS.CH"   
