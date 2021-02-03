@@ -21,6 +21,7 @@
 // 03/01/2020 - Robert - Criada opcao de (re)transmitir o XML da contranota para a SEFAZ.
 // 20/01/2020 - Robert - Novos parametros chamada geracao ticket safra.
 // 01/12/2020 - Robert - Passa a buscar dados de cadastro viticola na view GX0001_AGENDA_SAFRA e nao mais na VA_VASSOC_CAD_VITIC2
+// 02/02/2021 - Robert - Criado botao para chamar o VA_RusEn (GLPI 8779).
 //
 
 // --------------------------------------------------------------------------
@@ -53,8 +54,6 @@ User Function va_rus ()
 	private _zx509orga := ""  // Deixar private para ser vista por outras rotinas.
 	private _lIntPort  := ""  // Deixar private para ser vista por outras rotinas.
 
-	u_help ("Ambiente desatualizado",, .t.)
-return
 	// Verifica se estah sendo feita chamada resursiva (Na tela de portaria tem atalho para esta e vice-versa)
 	// Devido as diversas chamadas de menus, etc. feitas pelo Protheus, se esta tela jah estiver na pilha, vai ser em um numero bem alto
 	_nPCham = 8
@@ -163,7 +162,8 @@ return
 		aadd (_aMenuOut, {"&NF remessa coop",    "U_VA_RUSNR ('A')", 0,4})
 		aadd (_aMenuOut, {"Controle Portaria",   "U_VA_CPORT ()", 0,4})
 		if upper (alltrim (cUserName)) == 'ROBERT.KOCH'
-			aadd (_aMenuOut, {"Rev.frete (Robert)",  "U_VA_RusCF (.F.)", 0,4})  // Apenas para ver nova simulacao no arquivo de log.
+			aadd (_aMenuOut, {"Simular frete (Robert)",  "U_VA_RusCF (.F.)", 0,4})  // Apenas para ver nova simulacao no arquivo de log.
+			aadd (_aMenuOut, {"Enderecar uva (Robert)",  "U_VA_RusEn (sze -> ze_nfger, sze -> ze_serie, sze -> ze_assoc, sze -> ze_Lojasso)", 0,4})  // Apenas para ver nova simulacao no arquivo de log.
 		endif
 
 		// Menu principal

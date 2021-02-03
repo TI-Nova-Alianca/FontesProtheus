@@ -66,7 +66,8 @@ static function _AndaLogo ()
 //	local _lContinua := .T.
 //	local _aDados    := {}
 //	local _nDado     := 0
-//	local _nCarga    := 0
+	local _aCargas   := {}
+	local _nCarga    := 0
 //	local _i         := 0
 //	local _sError    := ''
 //	local _sWarning  := ''
@@ -81,6 +82,29 @@ static function _AndaLogo ()
 	u_help ('Nada definido.')
 	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
 return
+/*
+	// Recalcula frete safra e compara com conteudo jah gravado
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "SELECT FILIAL, SAFRA, CARGA "
+	_oSQL:_sQuery +=  " FROM VA_VCARGAS_SAFRA"
+	_oSQL:_sQuery += " WHERE SAFRA = '2021'"
+	_oSQL:_sQuery +=   " and STATUS != 'C'"
+	_oSQL:_sQuery +=   " and CONTRANOTA != ''"
+	_oSQL:_sQuery +=   " and ASSOCIADO = '002636'"
+	_oSQL:_sQuery += " ORDER BY ASSOCIADO, FILIAL, CARGA"
+	_oSQL:Log ()
+	_aCargas = _oSQL:Qry2Array ()
+	for _nCarga = 1 to len (_aCargas)
+		u_log2 ('info', replicate ('-', 80))
+		sze -> (dbsetorder (1))
+		if sze -> (dbseek (_aCargas [_nCarga, 1] + _aCargas [_nCarga, 2] + _aCargas [_nCarga, 3], .T.))
+			U_VA_RUSCF (.f.)
+		else
+			u_log2 ('erro', 'Carga nao encontrada com a seguinte chave: ' + _aCargas [_nCarga, 1] + _aCargas [_nCarga, 2] + _aCargas [_nCarga, 3])
+		endif
+	next
+return
+*/
 /*
 	// testes impressao danfe
 	U_GravaSX1 ("NFSIGW", "01", '000022776')
@@ -1299,30 +1323,6 @@ return
 		(_sAliasQ) -> (dbskip ())
 		//exit  // teste
 	enddo
-return
-*/
-/*
-	// Recalcula frete safra 2020 e compara com conteudo jah gravado
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := "SELECT FILIAL, SAFRA, CARGA "
-	_oSQL:_sQuery +=  " FROM VA_VCARGAS_SAFRA"
-	_oSQL:_sQuery += " WHERE SAFRA = '2020'"
-	// AND FILIAL = '" + xfilial ("SZE") + "'"
-	_oSQL:_sQuery +=   " and STATUS != 'C'"
-	_oSQL:_sQuery +=   " and CONTRANOTA != ''"
-	//_oSQL:_sQuery +=   " and ASSOCIADO = '000161'"
-	_oSQL:_sQuery += " ORDER BY ASSOCIADO, FILIAL, CARGA"
-	_oSQL:Log ()
-	_aCargas = _oSQL:Qry2Array ()
-	for _nCarga = 1 to len (_aCargas)
-		u_log2 ('info', replicate ('-', 80))
-		sze -> (dbsetorder (1))
-		if sze -> (dbseek (_aCargas [_nCarga, 1] + _aCargas [_nCarga, 2] + _aCargas [_nCarga, 3], .T.))
-			U_VA_RUSCF (.f.)
-		else
-			u_log2 ('erro', 'Carga nao encontrada com a seguinte chave: ' + _aCargas [_nCarga, 1] + _aCargas [_nCarga, 2] + _aCargas [_nCarga, 3])
-		endif
-	next
 return
 */
 /*

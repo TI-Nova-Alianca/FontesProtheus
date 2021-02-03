@@ -343,6 +343,7 @@ User Function ZT_Tick(_sOpcao)
 							msunlock ()
 
 							// Chama primeira pesagem de safra para atualizacoes adicionais
+							U_Log2 ('debug', 'Chamando VA_Rus1P de dentro do ' + procname ())
 							U_VA_RUS1P (.T.)
 						else
 							u_help ("Carga safra jah tem peso bruto cadastrado. O mesmo nao serah atualizado.",, .t.)

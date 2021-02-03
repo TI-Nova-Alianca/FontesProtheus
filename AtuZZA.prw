@@ -2,8 +2,16 @@
 // Autor......: Robert Koch
 // Data.......: 21/02/2020 (criado com base no VA_RUS2 de 18/01/2010)
 // Descricao..: Gravacao dos dados da tabela ZZA (comunicacao com medidor de brix para safra).
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Gravacao dos dados da tabela ZZA (integracao com medidor de brix para safra).
+// #PalavasChave      #grau #brix #babo #safra #integracao #Maseli #BL01
+// #TabelasPrincipais #ZZA
+// #Modulos           #coop
+
 // Historico de alteracoes:
+// 02/02/2021 - Robert - Testa se o campo zza_status estah vazio antes de gravar status 1 (pois eh chamado tb a partir da 2a.pesagem)
 //
 
 // Possiveis situacoes para o campo ZZA_STATUS:
@@ -12,6 +20,7 @@
 // 2 = carga selecionada pelo usuario no programa BL01. Estah pronto para medir grau, ou jah medindo;
 // 3 = usuario clicou botao 'Armazenar' no programa BL01 e jah gravou tambem o ZZA_GRAU.
 // M = usuario (do Protheus) finalizou manualmente (ZZA_STATUS nao estava 3 por algum motivo).
+// C = Carga cancelada no Protheus
 
 // --------------------------------------------------------------------------
 // Gravacao do arquivo de dados para medidor de brix.
@@ -55,8 +64,14 @@ user function AtuZZA (_sSafra, _sCarga)
 				elseif sze -> ze_pesotar > 0 .and. zza -> zza_status != '3' .and. val (szf -> zf_grau) > 0  // Jah fez a segunda pesagem, sem finalizar no BL01.
 					u_log2 ('aviso', '[' + procname () + '] Alterando ZZA_STATUS para M por que jah estah sendo feita a segunda pesagem, mesmo sem finalizar no programa do grau.')
 					zza -> zza_status = 'M'
+//				elseif sze -> ze_pesobru > 0 .and. sze -> ze_pesotar == 0
 				elseif sze -> ze_pesobru > 0 .and. sze -> ze_pesotar == 0
-					zza -> zza_status = '1'
+					if empty (zza -> zza_status)
+						U_Log2 ('debug', 'Entendo que acabei de criar ZZA e preciso gravar status 1')
+						zza -> zza_status = '1'
+					else
+						U_Log2 ('debug', 'Entendo que rodou VA_Rus1P a partir da 2a.pesagem e nao preciso alterar zza_status')
+					endif
 				elseif sze -> ze_pesobru > 0 .and. sze -> ze_pesotar > 0 .and. zza -> zza_status == '3'  // Segunda pesagem OK
 					u_log2 ('info', '[' + procname () + '] Nao preciso mudar o ZZA_STATUS')
 				else
