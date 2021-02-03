@@ -5,6 +5,7 @@
 //
 // Historico de alteracoes:
 // 24/02/2020 - Robert - Passa a permitir reenviar para grau tambem quando status '2' ou 'M'
+// 02/02/2021 - Robert - Nao contemplava zza_status = '0'.
 //
 
 // --------------------------------------------------------------------------
@@ -15,19 +16,19 @@ user function VA_RUSRG ()
 	local _sMsg      := ''
 
 	if sze -> ze_pesobru <= 0
-		u_help ("Carga ainda nao tem peso bruto. Efetue, antes, a primeira pesagem.")
+		u_help ("Carga ainda nao tem peso bruto. Efetue, antes, a primeira pesagem.",, .t.)
 		_lContinua = .F.
 	endif
 
 	if _lContinua
 		if sze -> ze_status $ 'R/N/D/C'  // 1=Primeira pesagem OK;2=Segunda pesagem OK;R=Recibo impresso;N=NF gerada;D=Redirecionada;C=Cancelada
-			u_help ("Status da carga nao permite mais ser reenviada para leitura de grau.")
+			u_help ("Status da carga nao permite mais ser reenviada para leitura de grau.",, .t.)
 			_lContinua = .F.
 		endif
 	endif
 
 	if _lContinua .and. sze -> ze_aglutin $ 'D/O'
-		u_help ("Esta e´ uma carga aglutinada / aglutinadora.")
+		u_help ("Esta e´ uma carga aglutinada / aglutinadora.",, .t.)
 		_lContinua = .F.
 	endif
 
@@ -38,13 +39,18 @@ user function VA_RUSRG ()
 		do while ! szf -> (eof ()) .and. szf -> zf_filial == xfilial ("SZF") .and. szf -> zf_safra == sze -> ze_safra .and. szf -> zf_carga == sze -> ze_carga
 			if zza -> (dbseek (xfilial ("ZZA") + szf -> zf_safra + szf -> zf_carga + szf -> zf_item, .F.))
 				if zza -> zza_status == '1'
-					u_help ("Status do item " + zza -> zza_nprod + " ja encontra-se como 'aguardando leitura do grau'.")
-				elseif zza -> zza_status == '2'
-					if U_MsgNoYes ("Item " + zza -> zza_nprod + " encontra-se com status 'em descarga' na tabela de integracao com medidor de grau. Deseja reiniciar o status?")
-						reclock ("ZZA", .F.)
-						zza -> zza_status = iif (sze -> ze_pesobru <= 0, '0', '1')
-						msunlock ()
-					endif
+					u_help ("Status do item " + zza -> zza_nprod + " ja encontra-se como 'aguardando leitura do grau'.",, .t.)
+				// elseif zza -> zza_status == '2'
+				// 	if U_MsgNoYes ("Item " + zza -> zza_nprod + " encontra-se com status 'em descarga' na tabela de integracao com medidor de grau. Deseja reiniciar o status?")
+				// 		reclock ("ZZA", .F.)
+				// 		zza -> zza_status = iif (sze -> ze_pesobru <= 0, '0', '1')
+				// 		msunlock ()
+				// 	endif
+				elseif zza -> zza_status == '0' .or. (zza -> zza_status == '2' .and. U_MsgNoYes ("Item " + zza -> zza_nprod + " encontra-se com status 'em descarga' na tabela de integracao com medidor de grau. Deseja reiniciar o status?"))
+					reclock ("ZZA", .F.)
+					zza -> zza_status = iif (sze -> ze_pesobru <= 0, '0', '1')
+					msunlock ()
+
 				elseif zza -> zza_status $ '3/M'
 					_sMsg = "Status do item " + zza -> zza_nprod + " encontra-se 'concluido' na tabela de integracao com o medidor de grau (resultado: " + cvaltochar (zza -> zza_grau) + " gravado em " + zza -> zza_inist3 + "."
 					
@@ -59,6 +65,7 @@ user function VA_RUSRG ()
 						u_help (_sMsg + " Reenvio para medicao de grau nao permitida, pois ja contem valor no grau.")
 					endif
 				endif
+				u_help ('Status atualizado na tabela ZZA.')
 			endif
 			szf -> (dbskip ())
 		enddo
