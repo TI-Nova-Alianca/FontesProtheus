@@ -17,7 +17,7 @@
 // 29/10/2020 - Robert  - Invertido teste de grupo de produtos na carastrado para evitar msg REGNOIS
 //                      - Inseridas tags para catalogo de programas.
 // 30/11/2020 - Claudia - Incluidos novos campos conforme GLPI: 8809
-// 01/02/2021 - Cláudia - Incluida coluna de filial. GLPI:
+// 01/02/2021 - Cláudia - Incluida coluna de filial. GLPI:9288
 //
 //-------------------------------------------------------------------------------------------
 #include 'protheus.ch'
