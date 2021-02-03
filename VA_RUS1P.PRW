@@ -68,6 +68,7 @@ user function va_rus1P (_lPortaria)
 
 	// Atualiza itens da carga (SZF) e status para medicao de grau (ZZA).
 	if _lContinua
+		U_Log2 ('debug', 'Chamando AtuZZA de dentro do ' + procname ())
 		U_AtuZZA (sze -> ze_safra, sze -> ze_carga)
 	endif
 

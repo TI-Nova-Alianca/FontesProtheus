@@ -345,6 +345,7 @@ static function _LePortar ()
 			m->ze_pesotar = zzt -> zzt_pessai
 
 			// Chama primeira pesagem de safra para atualizacoes adicionais
+			U_Log2 ('debug', 'Chamando VA_Rus1P de dentro do ' + procname ())
 			U_VA_RUS1P (.T.)
 
 			// Distribui peso entre as caixas dos itens. Existe chamada semelhante nos gatilhos dos campos de peso.
