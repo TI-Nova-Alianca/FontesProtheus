@@ -1,4 +1,5 @@
-// Programa:  MT240TOk
+// Programa:  
+
 // Autor:     Robert Koch
 // Data:      24/09/2016
 // Descricao: P.E. 'Tudo OK' na tela de movimentos internos.
@@ -48,8 +49,9 @@ user function MT240TOk ()
 
 	if _lRet  
 		_ProdC := RIGHT(alltrim(m->d3_cod), 1)  
+		_sTipo  := fbuscacpo("SB1",1,xfilial("SB1") + m->d3_cod,"B1_TIPO")
 
-		if alltrim(_ProdC) == 'C' .and. alltrim(m->d3_tm) != '573' 
+		if alltrim(_ProdC) == 'C' .and. alltrim(m->d3_tm) != '573' .and. _sTipo $ ('MM/BN/MC/CL') 
 			u_help ("Itens da manutenção com final C só podem ser movimentados com movimento 573.")
 			_lRet = .F.
 		endif
