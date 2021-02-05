@@ -139,7 +139,7 @@ Static Function EstComExp()
 			EndIf
 		Next
 		If _nAchou == 0
-			AADD(aItensExcel,{'','','',0,'',_aCtb[x,1],_aCtb[x,2],_aCtb[x,3],_aCtb[x,4]})
+			AADD(aItensExcel,{'','','',0,_aCtb[x,1],_aCtb[x,2],_aCtb[x,3],_aCtb[x,4]})
 		EndIf
 	Next
 
