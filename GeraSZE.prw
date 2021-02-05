@@ -7,6 +7,7 @@
 // 05/02/2020 - Robert - Verifica se o associado tem alguma restricao na view VA_VAGENDA_SAFRA
 // 26/02/2020 - Robert - Campo ze_senhade passa a ser do tipo caracter.
 // 26/01/2021 - Robert - Testes iniciais impressora ticket F07
+// 05/02/2021 - Robert - Se receber serie/NF produtor zeradas, grava vazio.
 //
 
 #include "VA_INCLU.prw"
@@ -61,13 +62,16 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		private _ZECPFTERC := ''
 		private _ZENOMTERC := ''
 		private _ZEPATRIAR := ''
-		private _ZESNFPROD := _sSerieNF
-		private _ZENFPROD  := _sNumNF
+		// private _ZESNFPROD := _sSerieNF
+		// private _ZENFPROD  := _sNumNF
+		private _ZESNFPROD := iif (val (_sSerieNF) == 0, '', _sSerieNF)  // Para casos em que o app de safra mandar 000
+		private _ZENFPROD  := iif (val (_sNumNF) == 0, '', _sNumNF)  // Para casos em que o app de safra mandar 000000000
 		private _ZFQTEMBAL    := 1
 		private _ZFEMBALAG    := 'GRANEL'
 		private inclui        := .T.
 		private altera        := .F.
 		RegToMemory ("SZE", inclui, inclui)  // Cria variaveis M->... para simular uma enchoice
+	//	U_Log2 ('debug', m->ze_carga)
 		private m->ZE_PLACA   := _sPlacaVei
 		private m->ZE_locdesc := _sTombador
 		private m->ZE_amostra := IIF (_lAmostra, 'S', 'N')
