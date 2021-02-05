@@ -40,6 +40,7 @@
 // 03/06/2020 - Robert - Criado tratamento para exclusao de contranotas de comprea de uva (atualiza ZZ9 e SZI).
 // 28/09/2020 - Robert - Quando nao informado motivo de exclusao na primeira vez, a variavel ficava com tamanho zero e nao permitia mais digitar.
 //                     - Inseridas tags para catalogo de programas.
+// 03/02/2021 - Robert - Soh verificava necessidade de limpar SZE quando serie 30. Agora verifica para qualquer serie.
 //
 
 // -----------------------------------------------------------------------------------------------------------------------------------------------
@@ -148,7 +149,8 @@ Return()
 static function _NFSafra ()
 	local _oSQL     := NIL
 
-	if sf1 -> f1_formul == "S" .and. sf1 -> f1_serie == '30 ' .and. sf1 -> f1_vasafra != ''
+//	if sf1 -> f1_formul == "S" .and. sf1 -> f1_serie == '30 ' .and. sf1 -> f1_vasafra != ''
+	if sf1 -> f1_formul == "S" .and. sf1 -> f1_vasafra != ''
 
 		// Se encontrar este docto como uma contranota de entrada...
 		sze -> (dbsetorder (3))  // ZE_FILIAL+ZE_NFGER+ZE_SERIE

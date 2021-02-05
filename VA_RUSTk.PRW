@@ -235,9 +235,11 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 
 	// Marca a carga como 'primeiro ticket jah impresso' por que este web service eh chamado em loop
 	// por estacoes nas filiais, onde o servidor nao consegue enviar o ticket.
-	reclock ("SZE", .F.)
-	sze -> ze_imptk = cvaltochar (_nQual)
-	msunlock ()
+	if sze -> (fieldpos ("ZE_IMPTK")) > 0  // cpo ainda nao criado na base teste
+		reclock ("SZE", .F.)
+		sze -> ze_imptk = cvaltochar (_nQual)
+		msunlock ()
+	endif
 
 	U_ML_SRArea (_aAreaAnt)
 return _sTicket

@@ -11,6 +11,7 @@
 // #Modulos           #FAT #COOP
 
 // Historico de alteracoes:
+// 03/02/2021 - Robert - Para saber se estava gerando contranota de safra, testava rotina U_VA_RUS. Passa a testar U_VA_RUSN.
 //
 
 #INCLUDE "RPTDEF.CH"
@@ -39,8 +40,8 @@ user function SPNFESETUP ()
 
 	// Se estou na tela de contranotas de safra, tento usar uma impressora especifica
 	// para isso, que jah deve ter configuracao de impressao de 3 copias.
-	if IsInCallStack ("U_VA_RUS")
-//		U_Log2 ('debug', 'Estou na tela de safra')
+	if IsInCallStack ("U_VA_RUSN")
+//		U_Log2 ('debug', 'Estou gerando contranota de safra')
 		_nImpres = ascan (_aImpres, {|_aVal| 'CONTRANOTA' $ upper (_aVal)})
 //		U_Log2 ('debug', 'achei impresora de contranotas na pos ' + cvaltochar (_nImpres))
 	else

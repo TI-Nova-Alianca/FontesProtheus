@@ -29,7 +29,8 @@
 // 07/08/2020 - Robert  - Incluidas tags para catalogacao de fontes
 //                      - Melhorados logs e mensagens de erro; ajuste paravras acentuadas e caracteres com erro de conversao para UTF8
 //                      - Liberado uso em todas as filiais (antes era restito para a matriz)
-//
+// 03/02/2021 - Robert  - Chamada do fechamento de safra apos fechar entrada de portaria (GLPI 9319)
+// 
 
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Atualizacao
@@ -123,6 +124,9 @@ user function ZZTLG (_lRetCores)
 		return _aCores
 	endif
 return
+
+
+
 // --------------------------------------------------------------------------
 // Libera saida com diferenca de peso.
 user function ZT_LPS ()
@@ -133,6 +137,9 @@ user function ZT_LPS ()
 		msunlock ()
 	endif
 return
+
+
+
 // --------------------------------------------------------------------------
 // Lista cargas do OMS relacionadas a este ticket
 User Function ZT_COMS ()
@@ -167,6 +174,8 @@ User Function ZT_COMS ()
 	//_oSQL:Log ()
 	_oSQL:F3Array ("Cargas OMS relacionadas a este ticket")
 return
+
+
 
 // --------------------------------------------------------------------------
 // Função para deletar registro
@@ -244,6 +253,9 @@ User Function DelZZT()
 		end transaction
 	endif
 Return
+
+
+
 // --------------------------------------------------------------------------
 // Função para manutenção dos tickets (entrada ou saida)
 User Function ZT_Tick(_sOpcao)
@@ -254,12 +266,12 @@ User Function ZT_Tick(_sOpcao)
 	local oButton1
 	local oGet1
 	local oSay1
-//	local oSay
 	local _aOpcoes := {}
 	local _aCols   := {}
 	private _sOperPort  := ''  // Deixar private para ser vista por inicializadores de campos, getilhos, etc.
 
-	set key 119 to U_PesaZZT()  // tecla F8
+//	set key 119 to U_PesaZZT()  // tecla F8
+	SetKey(VK_F8, {|| U_PesaZZT()})
 	aadd(_aBotAdic,{"BALANCA",{|| U_PesaZZT()},"Pesagem"})
 
 	_aCargas = {}
@@ -276,9 +288,9 @@ User Function ZT_Tick(_sOpcao)
 		_sOperPort = alltrim (str (U_F3Array (_aOpcoes, ;  // Opcoes
 		"Controle de portaria", ;  // Titulo
 		_aCols, ;  // Colunas a mostrar
-		NIL, ;  // Largura
-		NIL, ;  // Altura
-		'', ;  // Texto acima
+		500, ; //NIL, ;  // Largura
+		300, ; //NIL, ;  // Altura
+		'Selecione a operacao a realizar', ;  // Texto acima
 		'', ;  // Texto abaixo
 		.F., ;  // Mostra botao 'exportar para planilha'
 		'')))  // Tipo de pesquisa
@@ -323,6 +335,12 @@ User Function ZT_Tick(_sOpcao)
 			if AxAltera ("ZZT", ZZT -> (Recno ()), 4, NIL, NIL, NIL, NIL, "U_ZZT_TOk ()", NIL, "U_ZZT_AA ()", _aBotAdic) == 1
 				if _sOperPort == '3'
 					_AtuCargas (_aCargas)
+
+					// Se estiver fechando uma entrada de recebimento de safra, abre a tela de segunda pesagem de uva para finalizar o recebimento.
+					if ! empty (zzt -> zzt_safra) .and. ! empty (zzt -> zzt_carga)
+						_SegPesSZE ()
+					endif
+
 				elseif _sOperPort == '4'
 //					U_ZT_Impri(ZZT->ZZT_COD, mv_par07)
 				endif
@@ -330,7 +348,7 @@ User Function ZT_Tick(_sOpcao)
 		endif
 	endif
 	if _lContinua .and. _sOperPort $ '12'
-// nao permite atualizar o naweb dentro de uma transacao (va_rus1p)		begin transaction
+		// nao permite atualizar o naweb dentro de uma transacao (va_rus1p)		begin transaction
 			if AxInclui ("ZZT", ZZT -> (recno ()), 3, NIL, NIL, NIL, "U_ZZT_TOk ()",,,_aBotAdic) == 1
 
 				// Atualiza carga safra.
@@ -353,7 +371,7 @@ User Function ZT_Tick(_sOpcao)
 			else
 				_lContinua = .F.
 			endif
-// nao permite atualizar o naweb dentro de uma transacao (va_rus1p)		end transaction
+		// nao permite atualizar o naweb dentro de uma transacao (va_rus1p)		end transaction
 	
 		// Impressao de ticket
 		if _lContinua
@@ -373,6 +391,59 @@ User Function ZT_Tick(_sOpcao)
 
 	set key 119 to
 Return
+
+
+
+// --------------------------------------------------------------------------
+// Chama tela de segunda pesagem de safra para fechamento da carga.
+static function _SegPesSZE ()
+	local _aAmbPort  := {}
+	local _aAreaPort := {}
+
+	sze -> (dbsetorder (1))  // ZE_FILIAL+ZE_SAFRA+ZE_CARGA
+	if sze -> (dbseek (xfilial ("SZE") + zzt -> zzt_safra + zzt -> zzt_carga, .F.))
+		if U_MsgYesNo ("Deseja abrir a tela de safra para finalizar o recebimento da carga " + zzt -> zzt_carga + " ?")
+			U_Log2 ('info', '[' + procname () + '] Vou chamar a tela de segunda pesagem de safra para encerrar a carga.')
+			_aAreaPort := U_ML_SRArea ()
+			_aAmbPort  := U_SalvaAmb ()
+
+			// Variaveis que os programas de safra esperam encontrar.
+			private _ZFEMBALAG := ""  // Deixar private para ser vista por outras rotinas.
+			private _sBalanca  := ""  // Deixar private para ser vista por outras rotinas.
+			private _lLeitBar  := ""  // Deixar private para ser vista por outras rotinas.
+			private _lBalEletr := ""  // Deixar private para ser vista por outras rotinas.
+			private _sPortaBal := ""  // Deixar private para ser vista por outras rotinas.
+			private _sModelBal := ""  // Deixar private para ser vista por outras rotinas.
+			private _nMultBal  := ""  // Deixar private para ser vista por outras rotinas.
+			private _nPesoEmb  := ""  // Deixar private para ser vista por outras rotinas.
+			private _lImpTick  := ""  // Deixar private para ser vista por outras rotinas.
+			private _sPortTick := ""  // Deixar private para ser vista por outras rotinas.
+			private _lLeBrix   := .F. // Deixar private para ser vista por outras rotinas.
+			private _nQViasTk1 := 0   // Deixar private para ser vista por outras rotinas.
+			private _nQViasTk2 := 0   // Deixar private para ser vista por outras rotinas.
+			private _lTickPeso := .F. // Deixar private para ser vista por outras rotinas.
+			private _xSAFRAJ   := U_IniSafra ()  // Retorna o Ano da Safra (ML_SZ9.PRW)
+			private aRotina    := {}
+			private cPerg      := 'VA_RUS'
+			private _zx509fina := ""  // Deixar private para ser vista por outras rotinas.
+			private _zx509orga := ""  // Deixar private para ser vista por outras rotinas.
+			private _lIntPort  := ""  // Deixar private para ser vista por outras rotinas.
+			aadd (aRotina, {"&Pesquisar"        , "AxPesqui",      0,1})
+			aadd (aRotina, {"&Visualizar"       , "U_VA_RUS2 (2, .F.)", 0,2})
+			aadd (aRotina, {"Incluir"           , "U_VA_RUS1",     0,3})
+			aadd (aRotina, {"&1a pesagem"       , "U_VA_RUS1P ()", 0,4})
+			aadd (aRotina, {"&2a pesagem"       , "U_VA_RUS2 (4, .F.)", 0,4})
+			U_VA_RUSLP (.F.)  // Releitura de parametros do programa de safra
+			U_VA_Rus2 (4, .T.)  // Segunda pesagem: opcao4=alteracao; .t.=a partir do fechamento de uma entrada no contr.portaria
+			U_SalvaAmb (_aAmbPort)
+			U_ML_SRArea (_aAreaPort)
+			U_Log2 ('info', '[' + procname () + '] Retornou da tela de segunda pesagem de safra.')
+		endif
+	endif
+return
+
+
+
 // --------------------------------------------------------------------------
 // Atualiza numero do ticket nas cargas.
 static function _AtuCargas (_aCargas)
@@ -403,6 +474,9 @@ static function _AtuCargas (_aCargas)
 		endif
 	next
 return
+
+
+
 // --------------------------------------------------------------------------
 // Valida inclusao e alteracao.
 User Function ZZT_TOk ()
@@ -661,12 +735,13 @@ User Function ZZT_TOk ()
 		endif	
 		
 	endif
-	
 return _lRet
+
+
+
 // --------------------------------------------------------------------------
 // Funcao chamada antes da alteracao.
 User Function ZZT_AA ()
-
 	if _sOperPort == '3'
 		m->zzt_dtsai  = date ()
 		m->zzt_hrsai  = time ()
@@ -682,8 +757,11 @@ User Function ZZT_AA ()
 		m->zzt_usrfec = cUserName
 	endif
 return
+
+
+
 // --------------------------------------------------------------------------
-// Cria tela de selecao de cargas que podem ser vinculadas ao ticket da portaria.
+// Cria tela de selecao de cargas (da logistica) que podem ser vinculadas ao ticket da portaria.
 static function _SelCarg ()
 	local _oSQL    := NIL
 	local _aCols   := {}

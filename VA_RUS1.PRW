@@ -16,7 +16,7 @@
 // 05/01/2017 - Robert - Ajustes para safra 2017.
 //    02/2019 - Robert - Melhorias gerais para safra 2019
 // 05/02/2019 - Robert - Ajustes para receber uva de associados da Coop.Garibaldi.
-//
+// 03/02/2021 - Robert - Novos parametros funcao U_VA_Rus2().
 //
 
 #include "rwmake.ch"
@@ -233,7 +233,7 @@ User Function va_rus1 ()
 
 	// Se chegou ateh aqui, abre tela para inclusao da primeira pesagem.
 	if _lContinua
-		U_VA_RUS2 (3)
+		U_VA_RUS2 (3, .F.)
 	endif
 
 return

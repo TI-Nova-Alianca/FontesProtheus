@@ -24,6 +24,7 @@
 // 30/04/2015 - Robert - Passa a liberar todas as series para usuarios do grupo 040.
 // 04/01/2016 - Robert - Tratamento para parametro VA_SERSAFR.
 // 20/11/2017 - Robert - Filtro especifico para serie 100 na tela de MDF-e
+// 03/02/2021 - Robert - Para saber se estava gerando contranota de safra, testava rotina U_VA_RUS. Passa a testar U_VA_RUSN.
 //
 
 // --------------------------------------------------------------------------
@@ -39,7 +40,8 @@ User Function SX5NOTA ()
 			_lRet = .F.
 		endif
 	else
-		if IsInCallStack ("U_VA_RUS") .or. IsInCallStack ("U_VA_GNF2") .or. IsInCallStack ("U_VA_GNF5")
+//		if IsInCallStack ("U_VA_RUS") .or. IsInCallStack ("U_VA_GNF2") .or. IsInCallStack ("U_VA_GNF5")
+		if IsInCallStack ("U_VA_RUSN") .or. IsInCallStack ("U_VA_GNF2") .or. IsInCallStack ("U_VA_GNF5")
 			if ! left (_xSERIE, 3) $ GetMv ("VA_SERSAFR", .F., '')
 				_lRet = .F.
 			endif
