@@ -74,8 +74,9 @@ user function MT241TOk ()
 	if _lRet 
 		_nPos := aScan(aHeader,{|x| Alltrim(x[2]) == "D3_COD" })
 		for _x:=1 to len(aCols)
-			_ProdC := RIGHT(alltrim(aCols[_x,_nPos]), 1)  
-	        if alltrim(_ProdC) == 'C' .and. alltrim(CTM) != '573' 
+			_sProdC := RIGHT(alltrim(aCols[_x,_nPos]), 1) 
+			_sTipo  := fbuscacpo("SB1",1,xfilial("SB1")+aCols[_x,_nPos],"B1_TIPO")
+	        if alltrim(_sProdC) == 'C' .and. alltrim(CTM) != '573' .and. _sTipo $ ('MM/BN/MC/CL') .and. !GDDeleted (_x)
 	        	_lRet = .F.
 	        EndIf
 		next

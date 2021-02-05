@@ -3,12 +3,20 @@
 // Data.......: 11/07/2016
 // Descricao..: Tela de consulta de saldos de/em terceiros.
 //
-// Historico de alteracoes:
-// 16/09/2016 - Robert - Acrescentada a coluna B1_TIPO.
-// 05/03/2020 - Claudia - Ajuste de fonte conforme solicitação de versão 12.1.25 - Pergunte em Loop 
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #consulta
+// #Descricao         #Tela de consulta de saldos de/em terceiros
+// #PalavasChave      #saldos_de_terceiro 
+// #TabelasPrincipais #VA_VSALDOS_TERCEIROS #SB6
+// #Modulos           #EST
 //
-// --------------------------------------------------------------------------
-user function SldTerc ()
+// Historico de alteracoes:
+// 16/09/2016 - Robert  - Acrescentada a coluna B1_TIPO.
+// 05/03/2020 - Claudia - Ajuste de fonte conforme solicitação de versão 12.1.25 - Pergunte em Loop 
+// 05/02/2021 - Claudia - Alteração do campo descrição, conforme view VA_VSALDOS_TERCEIROS. GLPI: 9297
+// 
+// --------------------------------------------------------------------------------------------------
+User Function SldTerc ()
 	local _aAreaAnt   := U_ML_SRArea ()
 	local _aAmbAnt    := U_SalvaAmb ()
 	private cPerg     := "SLDTERC"
@@ -20,9 +28,6 @@ user function SldTerc ()
 	Pergunte (cPerg, .T.)
 	
 	Processa ({|| _Tela ()})
-//	do while Pergunte (cPerg, .T.)
-//		processa ({|| _Tela ()})
-//	enddo
 
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
@@ -41,7 +46,7 @@ static function _Tela ()
 	_oSQL:_sQuery += "        dbo.VA_DTOC(B6_EMISSAO) AS EMISSAO,"
 	_oSQL:_sQuery += "        B1_TIPO AS TP_PROD,"
 	_oSQL:_sQuery += "        B6_PRODUTO AS PRODUTO,"
-	_oSQL:_sQuery += "        V.B1_DESC AS DESCRICAO,"
+	_oSQL:_sQuery += "        V.DESCRICAO AS DESCRICAO,"
 	_oSQL:_sQuery += "        B6_QUANT AS QT_ORIG,"
 	_oSQL:_sQuery += "        B6_SALDO AS SALDO,"
 	_oSQL:_sQuery += "        B6_PRUNIT AS P_UNIT,"
@@ -70,6 +75,7 @@ static function _Tela ()
 	
 	_oSQL:F3Array ('Saldos de/em terceiros')
 Return
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()

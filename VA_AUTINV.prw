@@ -3,28 +3,28 @@
 // Data.......: 04/09/2019
 // Descricao..: Gera registros de inventário na tabela SB7
 //
-// Historico de alteracoes:
-// 12/11/2019 - Robert - Valida se o usuario tem acesso a esta rotina.
-// 25/03/2020 - Ajuste da rotina, criando a tabela temporaria ao gerar o arquivo .csv 
-//				e ao realizar a gravação dos dados.
-// 20/07/2020 - Robert  - Verificacao de acesso passa a validar acesso 106 e nao mais 069.
-//                      - Inseridas tags para catalogacao de fontes
-//
-
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Atualizacao
 // #Descricao         #Gera registros de saldo atual na tabela SB7 para posterior comparativo com a contagem fisica.
 // #PalavasChave      #inventario
 // #TabelasPrincipais #SB7
 // #Modulos           #EST
-
+//
+// Historico de alteracoes:
+// 12/11/2019 - Robert - Valida se o usuario tem acesso a esta rotina.
+// 25/03/2020 - Ajuste da rotina, criando a tabela temporaria ao gerar o arquivo .csv 
+//				e ao realizar a gravação dos dados.
+// 20/07/2020 - Robert  - Verificacao de acesso passa a validar acesso 106 e nao mais 069.
+//                      - Inseridas tags para catalogacao de fontes
+// 03/02/2021 - Cláudia - Ajustada a importação de itens. GLPI: 9254
+//
+// -------------------------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
 #Include "Protheus.ch"
 #include 'parmtype.ch'
 #Include "RwMake.ch"
 #Include "TbiConn.ch"
 
-// -------------------------------------------------------------------------------------------------------------------------------
 User Function VA_AUTINV ()
 	local _lContinua   := .T.
 	local cCadastro    := "Gera registros de inventário"
@@ -81,6 +81,7 @@ User Function VA_AUTINV ()
 Return
 //	
 // --------------------------------------------------------------------------
+// validação tudo OK
 Static Function _TudoOk()
 	Local _lRet     := .T.
 	
@@ -92,8 +93,8 @@ Static Function _TudoOk()
 Return(_lRet)
 //
 // --------------------------------------------------------------------------
+// Busca estoque
 Static Function BuscaEstoque()
-//	local   _oSQL      := NIL
 	local   _lContinua := .T.
 	Private sDoc       := ""
 
@@ -227,6 +228,7 @@ Static Function BuscaEstoque()
 Return
 //
 // --------------------------------------------------------------------------
+// Grava SB7
 Static function GravaSB7()
 	lMsErroAuto := .F.
 	aAuto       := {}	
@@ -269,12 +271,8 @@ Static Function zMsgLog(cMsg, cTitulo, nTipo, lEdit)
     Local lRetMens := .F.
     Local oDlgMens
     Local oBtnOk, cTxtConf := ""
-//    Local oBtnCnc,cTxtCancel := ""
-//    Local oBtnSlv
     Local oFntTxt := TFont():New("Lucida Console",,-015,,.F.,,,,,.F.,.F.)
-    Local oMsg
-//    Local nIni:=1
-//    Local nFim:=50    
+    Local oMsg  
     Default lEdit   := .F.
      
     //Definindo os textos dos botões
@@ -296,6 +294,63 @@ Static Function zMsgLog(cMsg, cTitulo, nTipo, lEdit)
  
 Return lRetMens
 // --------------------------------------------------------------------------
+// Importa registro por .CSV
+// Formato de arquivo: .csv
+// Nome do arquivo: inventario.csv
+// Separador: ; (ponto e virgula)
+// Cabeçalho: B7_FILIAL;B7_COD;B7_LOCAL;B7_TIPO;B7_DOC;B7_QUANT;B7_DATA;B7_CONTAGE;B7_STATUS;B7_ORIGEM
+//
+Static Function _IMPSB7()
+	Local _aDados   := {}
+	Local i         := 0
+	Private cPerg1  := "AUTINV"
+
+	_ValidP1 ()
+	Pergunte (cPerg1, .T.)
+
+	_sArq     := alltrim(mv_par01) + alltrim(mv_par02)  + '.csv'
+	_sSeparad := ";"
+	_aDados := U_LeCSV (_sArq, _sSeparad)
+	If Len(_aDados) == 0
+		Return
+	EndIf
+
+	ProcRegua(Len(_aDados))
+	
+	For i:=2 to Len(_aDados)
+	
+		IncProc("Importando dados...")
+	
+		dbSelectArea("SB7")
+		dbSetOrder(3) // B7_FILIAL+B7_DOC+B7_COD+B7_LOCAL                                                                                                                                
+		dbGoTop()
+		
+		_sDoc   := PADR(_aDados[i,5], 9,' ')
+		_sProd  := PADR(_aDados[i,2],15,' ')
+		_sLocal := _aDados[i,3]
+		
+		If dbSeek(xFilial("SB7") + _sDoc + _sProd + _sLocal)
+			u_help(" O produto: " + alltrim(_sProd) + " no local " + _sLocal + " no documento " + alltrim(_sDoc) + " já está importado! O processo será finalizado." )
+		Else
+			
+			Reclock("SB7",.T.)
+			SB7->B7_FILIAL 	:= xFilial("SB7")
+			SB7->B7_COD	   	:= _aDados[i,2]
+			SB7->B7_LOCAL 	:= _aDados[i,3]
+			SB7->B7_TIPO 	:= _aDados[i,4]
+			SB7->B7_DOC 	:= _aDados[i,5]
+			SB7->B7_QUANT 	:= val(_aDados[i,6])
+			SB7->B7_DATA 	:= STOD(_aDados[i,7])
+			SB7->B7_CONTAGE := _aDados[i,8]
+			SB7->B7_STATUS 	:= _aDados[i,9]
+			SB7->B7_ORIGEM 	:= _aDados[i,10]
+			SB7->(MsUnlock())
+		EndIf
+	Next i
+	u_help("Importação finalizada!")
+Return
+//
+// --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
 	local _aRegsPerg := {}
@@ -313,100 +368,14 @@ Static Function _ValidPerg ()
 
 	U_ValPerg (cPerg, _aRegsPerg)
 Return
-// --------------------------------------------------------------------------
-// Importa registro por .CSV
-// Formato de arquivo: .csv
-// Nome do arquivo: inventario.csv
-// Separador: ; (ponto e virgula)
-// Cabeçalho: B7_FILIAL;B7_COD;B7_LOCAL;B7_TIPO;B7_DOC;B7_QUANT;B7_DATA;B7_CONTAGE;B7_STATUS;B7_ORIGEM
 //
-Static Function _IMPSB7()
-	Local cArq    := "inventario.csv"
-	Local cLinha  := ""
-	Local lPrim   := .T.
-	Local aCampos := {}
-	Local aDados  := {} 
-	Local i		  := 0
-	Local j	      := 0
-	Private aErro := {}
-	 
-	cDir:= _BuscaArq()
-	//u_help(cDir)
-	If !File(cDir+cArq)
-		u_help("O arquivo " +cDir+cArq + " não foi encontrado. A importação será abortada!")
-		Return
-	EndIf
-	 
-	FT_FUSE(cDir+cArq)
-	ProcRegua(FT_FLASTREC())
-	FT_FGOTOP()
-	
-	While !FT_FEOF()
-	 
-		IncProc("Lendo arquivo texto...")
-	 
-		cLinha := FT_FREADLN()
-	 
-		If lPrim
-			aCampos := Separa(cLinha,";",.T.)
-			lPrim := .F.
-		Else
-			AADD(aDados,Separa(cLinha,";",.T.))
-		EndIf
-	 
-		FT_FSKIP()
-	EndDo
-	 
-	Begin Transaction
-		ProcRegua(Len(aDados))
-		For i:=1 to Len(aDados)
-	 
-			IncProc("Importando dados...")
-	 
-			dbSelectArea("SB7")
-			dbSetOrder(3) // B7_FILIAL+B7_DOC+B7_COD+B7_LOCAL                                                                                                                                
-			dbGoTop()
-			
-			//_sDoc   := PADR(aDados[i,5], 9,' ')
-			//_sProd  := PADR(aDados[i,2],15,' ')
-			//_sLocal := aDados[i,3]
-			
-			//If !dbSeek(xFilial("SB7") + _sDoc + _sProd + _sLocal)
-				
-				Reclock("SB7",.T.)
-				SB7->B7_FILIAL := xFilial("SB7")
-				For j:=1 to Len(aCampos)
-					If "SB7->" + aCampos[j] == 'SB7->B7_QUANT'
-						cCampo  := "SB7->" + aCampos[j]
-						&cCampo := val(aDados[i,j])
-					Else
-						If "SB7->" + aCampos[j] == 'SB7->B7_DATA' .OR. "SB7->" + aCampos[j] == 'SB7->B7_DTVALID'
-							cCampo  := "SB7->" + aCampos[j]
-							&cCampo := STOD(aDados[i,j])
-						Else
-							cCampo  := "SB7->" + aCampos[j]
-							&cCampo := aDados[i,j]
-						EndIf
-					EndIf
-				Next j
-				SB7->(MsUnlock())
-			//Else
-			//	u_help(" O produto: " + alltrim(_sProd) + " no local " + _sLocal + " no documento " + alltrim(_sDoc) + " já está importado! O processo será finalizado." )
-			//	Exit
-			//EndIf
-		Next i
-	End Transaction
-	 
-	FT_FUSE()
-	 
-	u_help("Importação finalizada!")
- 
-Return
 // --------------------------------------------------------------------------
-// Busca arquivos
-Static Function _BuscaArq()
-    Local cDir
-  
-    cDir:= cGetFile( '*.csv|*.csv' , 'LOCAL DO ARQUIVO.CSV', 1, 'C:\', .T., nOR( GETF_LOCALHARD, GETF_LOCALFLOPPY, GETF_RETDIRECTORY ),.T., .T. )
-  
-Return cDir
+// Cria Perguntas no SX1
+Static Function _ValidP1 ()
+	local _aRegsPerg := {}
+	//                     PERGUNT                 TIPO TAM DEC VALID F3        Opcoes Help
+	aadd (_aRegsPerg, {01, "Caminho do arquivo  ", "C", 20,  0,  "",   "      ", {},    ""})
+	aadd (_aRegsPerg, {02, "Nome do arquivo     ", "C", 20,  0,  "",   "      ", {},    ""})
+
+	U_ValPerg (cPerg1, _aRegsPerg)
+Return

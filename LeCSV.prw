@@ -1,12 +1,19 @@
-// Programa:  LeCSV
-// Autor:     Robert Koch
-// Data:      18/07/2016
-// Descricao: Leitura de arquivos CSV.
+// Programa...: LeCSV
+// Autor......: Robert Koch
+// Data.......: 18/07/2016
+// Descricao..: Leitura de arquivos CSV.
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #processo
+// #Descricao         #Leitura de arquivos CSV.
+// #PalavasChave      #csv #arquivo
+// #TabelasPrincipais #
+// #Modulos           #TODOS
 //
 // Historico de alteracoes:
-// 13/10/2017  - Robert - Alterado separador padrao de virgula para ponto e virgula.
+// 13/10/2017 - Robert  - Alterado separador padrao de virgula para ponto e virgula.
+// 05/02/2021 - Cláudia - Incluido retorno quando o arquivo não é encontrado
 //
-
 // --------------------------------------------------------------------------
 user function LeCSV (_sArq, _sSeparad)
 	local _aRet := {}
@@ -23,6 +30,7 @@ static function _AndaLogo (_sArq, _sSeparad)
 
 	if ! file (_sArq)
 		u_help ("Arquivo nao encontrado: " + _sArq)
+		Return _aRet
 	endif
 	
 	FT_FUSE(_sArq)
