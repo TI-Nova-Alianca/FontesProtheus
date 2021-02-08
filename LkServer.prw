@@ -16,6 +16,7 @@
 // 09/12/2020 - Robert - Criado tratamento para o BI_ALIANCA.
 // 16/12/2020 - Robert - Criado tratamento para o Metadados.
 // 20/01/2021 - Robert - Tratamento para ambiente TesteMedio no acesso ao BI_ALIANCA (criado database temporario em separado)
+// 08/02/2021 - Robert - Criado tratamento para acessar o database TI (GLPI 9353)
 //
 
 // --------------------------------------------------------------------------
@@ -69,6 +70,14 @@ user function LkServer (_sQualSrv)
 			_sRetLk = ""
 		else
 			_sRetLk = "LKSRV_SIRH.SIRH.dbo"
+		endif
+
+	case upper (alltrim (_sQualSrv)) == 'TI'
+		if _lBaseTST
+			u_help ("Sem definicao de linked server para database TI para ambiente de testes.",, .t.)
+			_sRetLk = ""
+		else
+			_sRetLk = "LKSRV_TI.TI.dbo"
 		endif
 
 	otherwise
