@@ -10,6 +10,7 @@
 // #Modulos 		  #FIN 
 //
 // Historico de alteracoes:
+// 05/02/2021 - Claudia - Incluido mais um parametro para tipos nao inclusos
 //
 // --------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -47,21 +48,12 @@ Return(oReport)
 Static Function PrintReport(oReport)
 	Local oSection1   := oReport:Section(1)	
     Local _aDados := {}
-    Local _aTipos     := {}
     Local _sTipo      := ""
     Local i           := 0
-    Local Y           := 0
     Local _nVlrTotal  := 0
     Local _nVlrSaldo  := 0
 
-    _aTipos := STRTOKARR(mv_par05,",")
-
-    For y:=1 to Len(_aTipos)
-        _sTipo += "'" + alltrim(_aTipos[y]) + "'"
-        If y < Len(_aTipos)
-            _sTipo += ","
-        EndIf
-    Next
+    _sTipo := RetornaTipo()
 
     // ----------------------------------------------------------------------------------
     // CLIENTES DE ATRASO
@@ -79,7 +71,7 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "		   ,SE1.E1_VENCREA AS VENCREA"
     _oSQL:_sQuery += "		   ,SE1.E1_VALOR AS VALOR"
     _oSQL:_sQuery += "		   ,SE1.E1_SALDO AS SALDO"
-    _oSQL:_sQuery += "		   ,ISNULL(DATEDIFF(DAY, CAST(SE1.E1_VENCREA AS DATETIME), CAST('" + dtos(mv_par06) + "' AS DATETIME)), 1) AS QDIAS"
+    _oSQL:_sQuery += "		   ,ISNULL(DATEDIFF(DAY, CAST(SE1.E1_VENCREA AS DATETIME), CAST('" + dtos(mv_par07) + "' AS DATETIME)), 1) AS QDIAS"
     _oSQL:_sQuery += "		FROM " + RetSQLName ("SE1") + " AS SE1"
     _oSQL:_sQuery += "		INNER JOIN " + RetSQLName ("SA1") + " AS SA1"
     _oSQL:_sQuery += "			ON (SA1.D_E_L_E_T_ = ''"
@@ -141,8 +133,8 @@ Static Function PrintReport(oReport)
     oReport:PrintText("PARAMETROS:",, 100)
     oReport:PrintText("     Filial de:" + alltrim(mv_Par01) + " até " + alltrim(mv_Par02),, 100)
     oReport:PrintText("     Dt. vencimento real de:" + DTOC(mv_Par03) + " até " + DTOC(mv_Par04),, 100)
-    oReport:PrintText("     Tipos não inclusos:" + alltrim(mv_Par05) ,, 100)
-    oReport:PrintText("     Dt.Base para calculo de dias:" + DTOC(mv_Par06) ,, 100)
+    oReport:PrintText("     Tipos não inclusos:" + alltrim(_sTipo) ,, 100)
+    oReport:PrintText("     Dt.Base para calculo de dias:" + DTOC(mv_par07) ,, 100)
     oReport:PrintText(" **********************************************************************************" ,, 100)
     oReport:PrintText(" Descrição de tipos disponíveis:" ,, 100)
     oReport:PrintText("     CC  CARTAO CREDITO" ,, 100)
@@ -174,6 +166,30 @@ Static Function _PulaFolha(_nLinha)
 	EndIf
 Return _nRet
 //
+// --------------------------------------------------------------------------
+// Retorna os tipos não inclusos
+Static Function RetornaTipo()
+    Local _sTipo   := ""
+    Local _aTipos  := {}
+    Local _aTipos2 := {}
+    Local y        := 0
+
+    _aTipos := STRTOKARR(mv_par05,",")
+
+    For y:=1 to Len(_aTipos)
+        _sTipo += "'" + alltrim(_aTipos[y]) + "'"
+        If y < Len(_aTipos)
+            _sTipo += ","
+        EndIf
+    Next
+
+    _aTipos2 := STRTOKARR(mv_par06,",")
+
+    For y:=1 to Len(_aTipos2)
+        _sTipo += ",'" + alltrim(_aTipos2[y]) + "'"
+    Next
+Return _sTipo
+//
 // -------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
@@ -184,7 +200,8 @@ Static Function _ValidPerg ()
     aadd (_aRegsPerg, {03, "Dt.Venc.real de  ", "D",  8, 0,  "",   "   ", {},             "Data de vencimento de"})
     aadd (_aRegsPerg, {04, "Dt.Venc.real até ", "D",  8, 0,  "",   "   ", {},             "Data de vencimento até"})
     aadd (_aRegsPerg, {05, "Tipo não incluso ", "C", 20, 0,  "",   "   ", {},             "Incluir os tipos que não serão impressos, através de ;"})
-    aadd (_aRegsPerg, {06, "Dt.Base p/Dias   ", "D",  8, 0,  "",   "   ", {},             "Data base para"})
+    aadd (_aRegsPerg, {06, "Tipo não incluso ", "C", 20, 0,  "",   "   ", {},             "Data base para"})
+    aadd (_aRegsPerg, {07, "Dt.Base p/Dias   ", "D",  8, 0,  "",   "   ", {},             "Data base para"})
 
     U_ValPerg (cPerg, _aRegsPerg)
 Return
