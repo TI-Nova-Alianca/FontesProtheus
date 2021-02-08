@@ -12,10 +12,11 @@
 // 11/01/2021 - Robert - Manda e-mail de aviso quando nao tiver distancia cadastrada.
 // 12/01/2021 - Robert - NaWeb guarda o cadastro da propriedade (que eu trato por cad.viticola) em formato numerico.
 // 15/01/2021 - Robert - Novo parametro metodo :RetFixo da classe ClsSQL().
+// 03/02/2021 - Robert - Melhorada mensagem de aviso por e-mail.
 //
 
 // ------------------------------------------------------------------------------------
-User Function FrtSaf21 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor)
+User Function FrtSaf21 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor, _sFilCarg)
 	local _nDist    := 0
 	local _nValFre  := 0
 	local _oAviso   := NIL
@@ -100,9 +101,8 @@ User Function FrtSaf21 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor)
 		//	_oAviso:Grava ()
 			// como ainda nao estamos usando os avisos, vou mandar por e-mail
 			U_ZZUNU ({'075'}, ;  // 075=agronomia
-		          "Sem distancias prop.rural " + _sCadVit, ;
-		         "Distancia nao informada entre a propriedade " + _sCadVit + " e a filial " + _sFilDest + ". Frete de safra nao pode ser calculado.")
-
+			          "Sem distancias prop.rural " + _sCadVit, ;
+			          "Distancia nao informada entre a propriedade " + _sCadVit + " e a filial " + _sFilDest + ". Frete de safra nao pode ser calculado para a carga " + sze -> ze_carga + ' da filial ' + cFilAnt + ".")
 		endif
 	endif
 	u_log2 ('info', '[' + procname () + '] Distancia Km..: ' + cvaltochar (_nDist))

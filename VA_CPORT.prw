@@ -2,7 +2,14 @@
 // Autor:      Leandro - DWT
 // Data:       11/09/2013
 // Descricao:  Controle de portaria, para emitir tickets na entrada e sa�da de cargas
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Atualizacao
+// #Descricao         #Rotina de controle de portaria
+// #PalavasChave      #controle_de_portaria #pesagem #veiculos #motoristas
+// #TabelasPrincipais #ZZT
+// #Modulos           #COOP
+
 // Historico de alteracoes:
 // 28/04/2014 - Marcelo DWT - Grava codigo do ticket na carga selecionada pelo usu�rio.
 // 30/04/2014 - Robert  - Gravacao de eventos e conf.embarque migrado para dentro de controle de transacao.
@@ -30,14 +37,8 @@
 //                      - Melhorados logs e mensagens de erro; ajuste paravras acentuadas e caracteres com erro de conversao para UTF8
 //                      - Liberado uso em todas as filiais (antes era restito para a matriz)
 // 03/02/2021 - Robert  - Chamada do fechamento de safra apos fechar entrada de portaria (GLPI 9319)
+// 08/02/2021 - Robert  - Nao alimentava as variaveis _zx509fina e _zx509orga na chamada da tela de fechamento de safra (GLPI 9319)
 // 
-
-// Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #Atualizacao
-// #Descricao         #Rotina de controle de portaria
-// #PalavasChave      #controle_de_portaria #pesagem #veiculos #motoristas
-// #TabelasPrincipais #ZZT
-// #Modulos           #COOP
 
 #Include "PROTHEUS.CH"
 
@@ -409,7 +410,7 @@ static function _SegPesSZE ()
 
 			// Variaveis que os programas de safra esperam encontrar.
 			private _ZFEMBALAG := ""  // Deixar private para ser vista por outras rotinas.
-			private _sBalanca  := ""  // Deixar private para ser vista por outras rotinas.
+			private _sBalanca  := iif (cFilAnt == '01', 'LB', iif (cFilAnt == '07', 'JC', iif (cFilAnt == '09', 'SP', '')))
 			private _lLeitBar  := ""  // Deixar private para ser vista por outras rotinas.
 			private _lBalEletr := ""  // Deixar private para ser vista por outras rotinas.
 			private _sPortaBal := ""  // Deixar private para ser vista por outras rotinas.
@@ -425,8 +426,8 @@ static function _SegPesSZE ()
 			private _xSAFRAJ   := U_IniSafra ()  // Retorna o Ano da Safra (ML_SZ9.PRW)
 			private aRotina    := {}
 			private cPerg      := 'VA_RUS'
-			private _zx509fina := ""  // Deixar private para ser vista por outras rotinas.
-			private _zx509orga := ""  // Deixar private para ser vista por outras rotinas.
+			private _zx509fina := U_RetZX5 ("09", zzt -> zzt_safra + _sBalanca, 'ZX5_09FINA')
+			private _zx509orga := U_RetZX5 ("09", zzt -> zzt_safra + _sBalanca, 'ZX5_09ORGA')
 			private _lIntPort  := ""  // Deixar private para ser vista por outras rotinas.
 			aadd (aRotina, {"&Pesquisar"        , "AxPesqui",      0,1})
 			aadd (aRotina, {"&Visualizar"       , "U_VA_RUS2 (2, .F.)", 0,2})
