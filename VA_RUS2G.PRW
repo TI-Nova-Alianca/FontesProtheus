@@ -31,6 +31,7 @@ user Function VA_RUS2G (_nOpc)
 	// Confere se jah existe este numero de carga (caso haja problema com os sequenciais).
 	if _lContinua .and. inclui
 		sze -> (dbsetorder (1))  // ZE_FILIAL+ZE_SAFRA+ZE_CARGA
+		U_Log2 ('debug', 'Pesquisando SZE com >>' + xfilial ("SZE") + m->ze_safra + m->ze_carga + '<<')
 		if sze -> (dbseek (xfilial ("SZE") + m->ze_safra + m->ze_carga, .F.))
 			u_help ("Nao sera possivel gravar esta carga. Carga '" + m->ze_carga + "' ja existe.",, .t.)
 			_lContinua = .F.

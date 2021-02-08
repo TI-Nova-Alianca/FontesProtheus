@@ -33,6 +33,7 @@
 // 13/12/2019 - Robert - Adequacoes iniciais para safra 2020 (inclusao de cargas via web service).
 // 20/01/2020 - Robert - Novos parametros chamada geracao ticket safra.
 // 01/12/2020 - Robert - Passa a buscar dados de cadastro viticola na view GX0001_AGENDA_SAFRA e nao mais na VA_VASSOC_CAD_VITIC2
+// 05/02/2021 - Robert - Funcao de aglutinacao de cargas, removida ha uns 2 anos, foi reativada (GLPI 9336)
 //
 
 #include "totvs.ch"
@@ -308,7 +309,9 @@ User Function va_rus2 (_nOpc, _lFechPort)
 				aadd (_aBotAdic, {"S4WB005N", {|| _LePortar ()}, "Portaria"})
 			endif
 		endif
-		
+		if inclui
+			aadd (_aBotAdic, {"S4WB005N", {|| U_VA_RusAG ()}, "Aglutinar"})
+		endif
 		if (inclui .or. altera) .and. _lBalEletr
 		//	set key 119 to _LePeso ()  // tecla F8
 			SetKey(VK_F8, {|| _LePeso ()})
