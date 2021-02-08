@@ -10,6 +10,7 @@
 // #Modulos 		  #FIN 
 //
 // Historico de alteracoes:
+// 05/02/2021 - Claudia - Incluido mais um parametro para tipos nao inclusos
 //
 // --------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -46,18 +47,9 @@ Return(oReport)
 // -------------------------------------------------------------------------
 Static Function PrintReport(oReport)
 	Local oSection1 := oReport:Section(1)	
-    Local _aTipos   := {}
     Local _sTipo    := ""
-    Local y         := 0
 
-    _aTipos := STRTOKARR(mv_par05,",")
-
-    For y:=1 to Len(_aTipos)
-        _sTipo += "'" + alltrim(_aTipos[y]) + "'"
-        If y < Len(_aTipos)
-            _sTipo += ","
-        EndIf
-    Next
+    _sTipo := RetornaTipo()
 
     // ----------------------------------------------------------------------------------
     //VALOR TOTAL
@@ -126,7 +118,7 @@ Static Function PrintReport(oReport)
     oReport:PrintText("PARAMETROS UTILIZADOS:",, 100)
     oReport:PrintText("     Filial de:" + alltrim(mv_Par01) + " até " + alltrim(mv_Par02),, 100)
     oReport:PrintText("     Dt. vencimento real de:" + DTOC(mv_Par03) + " até " + DTOC(mv_Par04),, 100)
-    oReport:PrintText("     Tipos não inclusos:" + alltrim(mv_Par05) ,, 100)
+    oReport:PrintText("     Tipos não inclusos:" + alltrim(_sTipo)  ,, 100)
     oReport:PrintText(" **********************************************************************************" ,, 100)
     oReport:PrintText(" Descrição de tipos disponíveis:" ,, 100)
     oReport:PrintText("     CC  CARTAO CREDITO" ,, 100)
@@ -144,6 +136,30 @@ Static Function PrintReport(oReport)
 
 Return
 //
+// --------------------------------------------------------------------------
+// Retorna os tipos não inclusos
+Static Function RetornaTipo()
+    Local _sTipo   := ""
+    Local _aTipos  := {}
+    Local _aTipos2 := {}
+    Local y        := 0
+
+    _aTipos := STRTOKARR(mv_par05,",")
+
+    For y:=1 to Len(_aTipos)
+        _sTipo += "'" + alltrim(_aTipos[y]) + "'"
+        If y < Len(_aTipos)
+            _sTipo += ","
+        EndIf
+    Next
+
+    _aTipos2 := STRTOKARR(mv_par06,",")
+
+    For y:=1 to Len(_aTipos2)
+        _sTipo += ",'" + alltrim(_aTipos2[y]) + "'"
+    Next
+Return _sTipo
+//
 // -------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
@@ -153,7 +169,7 @@ Static Function _ValidPerg ()
     aadd (_aRegsPerg, {02, "Filial ate       ", "C",  2, 0,  "",   "   ", {},              "Filial até"})
     aadd (_aRegsPerg, {03, "Dt.Venc.real de  ", "D",  8, 0,  "",   "   ", {},              "Data de vencimento de"})
     aadd (_aRegsPerg, {04, "Dt.Venc.real até ", "D",  8, 0,  "",   "   ", {},              "Data de vencimento até"})
-    aadd (_aRegsPerg, {05, "Tipo não incluso ", "C", 20, 0,  "",   "   ", {},              "Incluir os tipos que não serão impressos, através de virgula ,"})
-
+    aadd (_aRegsPerg, {05, "Tipo não incluso ", "C", 30, 0,  "",   "   ", {},              "Incluir os tipos que não serão impressos, através de virgula ,"})
+    aadd (_aRegsPerg, {06, "Tipo não incluso ", "C", 20, 0,  "",   "   ", {},              "Incluir os tipos que não serão impressos, através de virgula ,"})
     U_ValPerg (cPerg, _aRegsPerg)
 Return
