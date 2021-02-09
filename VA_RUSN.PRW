@@ -39,6 +39,7 @@
 //                     - Definido TES (028) e preco unitario (1,00) para producao propria Livramento.
 // 19/01/2021 - Robert - Producao propria Livramento passa a entrar com mesmo preco de associados (entrava a 1,00)
 // 02/02/2021 - Robert - Chamada do VA_RusEn no final para enderecar uva no estoque (GLPI 8779).
+// 09/02/2021 - Robert - Finaliza a thread (paliativo) se estiver usando muita memoria (GLPI 9376).
 //
 
 // ------------------------------------------------------------------------------------
@@ -88,6 +89,7 @@ User Function va_rusN ()
 	local _sCondPg   := ''
 //	private _oAssoc  := NIL
 	local _oAssocN   := NIL
+	local _nRetMem   := 0
 	private _aParPgSaf := {}  // Parcelas pre calculadas. Deixar PRIVATE para ser lida pelo ponto de entrada MTCOLSE2().
 
 	u_Log2 ('info', 'Iniciando ' + procname ())
@@ -689,6 +691,12 @@ User Function va_rusN ()
 
 	endif
 
+	_nRetMem := U_UsoMem ()
+	u_log2 ('info', 'Achei minha thread usando ' + transform (_nRetMem, "@E 999,999,999,999,999") + ' bytes de memoria')
+	if _nRetMem > 250000000
+		u_help ("ATENCAO: Esta sessao esta usando muita memoria e vai ser finalizada. Por favor acesse novamente para continuar seu trabalho.",, .T.)
+		Final ("Termino proposital para alivio de memoria")
+	endif
 return
 
 

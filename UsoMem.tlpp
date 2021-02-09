@@ -1,0 +1,23 @@
+// Programa:  UsoMem
+// Autor:     Robert Koch
+// Data:      09/02/2021
+// Descricao: Retorna a memoria (em bytes) usada pela thread atual.
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Gererico
+// #Descricao         #Retorna a memoria (em bytes) usada pela thread atual.
+// #PalavasChave      #auxiliar #uso_generico
+// #TabelasPrincipais 
+// #Modulos           #todos_modulos
+
+// --------------------------------------------------------------------------
+user function UsoMem ()
+	local _aUsrInfo := GetUserInfoArray (.F.)
+	local _nLinha   := 0
+	local _nRetMem  := 0
+	_nLinha = ascan (_aUsrInfo, {|_aVal| _aVal [3] == ThreadId ()})
+	if _nLinha != 0
+		_nRetMem = _aUsrInfo [_nLinha, 12]
+	//	u_log2 ('info', 'Achei minha thread usando ' + transform (_nRetMem, "@E 999,999,999,999,999") + ' bytes de memoria')
+	endif
+return _nRetMem
