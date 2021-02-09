@@ -69,8 +69,8 @@ static function _AndaLogo ()
 //	local _lContinua := .T.
 //	local _aDados    := {}
 //	local _nDado     := 0
-	local _aCargas   := {}
-	local _nCarga    := 0
+//	local _aCargas   := {}
+//	local _nCarga    := 0
 //	local _i         := 0
 //	local _sError    := ''
 //	local _sWarning  := ''
@@ -85,6 +85,41 @@ static function _AndaLogo ()
 	u_help ('Nada definido.')
 	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
 return
+/*
+	// Testes verificacoes genericas.
+	// _oVerif := ClsVerif():New (25)
+	// _oVerif:SetParam ('01', '2017')
+	// _oVerif:SetParam ('02', '')
+	// _oVerif:SetParam ('03', 'zz')
+	// _oVerif:SetParam ('04', '30 ')
+	// _oVerif:SetParam ('05', '028')
+	// _oVerif:SetParam ('06', '077')
+	// _oVerif:SetParam ('07', '000017')
+	// _oVerif := ClsVerif():New (24)
+	// _oVerif:SetParam ('01', '09189201001  ')
+	// _oVerif:SetParam ('02', '09189201001  ')
+	// _oVerif:SetParam ('03', '')
+	// _oVerif:SetParam ('04', 'z')
+	_oVerif := ClsVerif():New (78)
+	if _oVerif:Executa ()
+		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
+		u_log2 ('debug', _oVerif:Result)
+	else
+		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
+	endif
+return
+*/
+/*
+	// Testes inclusao de carga safra via web service
+	private _sErros := ''
+	_oAssoc := ClsAssoc():New ('000161', '01')
+	_aItensCar = {}
+	aadd (_aItensCar, {'13386', U_TamFixo ('9901', 15), 'G', 'lote1', 'siviRe', 'N'})
+	aadd (_aItensCar, {'13386', U_TamFixo ('9904', 15), 'G', 'lote1', 'siviRe', 'N'})
+	u_log ('retorno do U_GeraZZE:', U_GeraSZE (_oAssoc,'2021','LB', '000', '000000000', 'chave_nfe', 'abc1x34', '1', 'teste robert',_aItensCar, .T., '789000', '99'))
+	u_log ('Msg de problemas:', _sErros)
+return
+*/
 /*
 	// Recalcula frete safra e compara com conteudo jah gravado
 	_oSQL := ClsSQL ():New ()
@@ -397,33 +432,6 @@ return
 //	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batmetaf ()
 //return
-
-/*
-	// Testes verificacoes genericas.
-	// _oVerif := ClsVerif():New (25)
-	// _oVerif:SetParam ('01', '2017')
-	// _oVerif:SetParam ('02', '')
-	// _oVerif:SetParam ('03', 'zz')
-	// _oVerif:SetParam ('04', '30 ')
-	// _oVerif:SetParam ('05', '028')
-	// _oVerif:SetParam ('06', '077')
-	// _oVerif:SetParam ('07', '000017')
-	// _oVerif := ClsVerif():New (24)
-	// _oVerif:SetParam ('01', '09189201001  ')
-	// _oVerif:SetParam ('02', '09189201001  ')
-	// _oVerif:SetParam ('03', '')
-	// _oVerif:SetParam ('04', 'z')
-	_oVerif := ClsVerif():New (26)
-	if _oVerif:Executa ()
-		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
-		u_log2 ('debug', _oVerif:Result)
-	else
-		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
-	endif
-return
-*/
-
-
 /*
 	cPerg := "VA_RTSAF"
 	U_GravaSX1 (cPerg, "01", stod ('20200131'))
@@ -2143,18 +2151,6 @@ return
 	u_va_xls40 (.T.)
 return
 */
-/*
-	// Testes inclusao de carga safra via web service
-	private _sErros := ''
-	_oAssoc := ClsAssoc():New ('000161', '01')
-	_aItensCar = {}
-	aadd (_aItensCar, {'13386', U_TamFixo ('9901', 15), 'G'})
-	aadd (_aItensCar, {'13386', U_TamFixo ('9904', 15), 'G'})
-	u_log ('retorno do U_GeraZZE:', U_GeraSZE (_oAssoc,'2020','LB', '123', '123453789', 'chave_nfe', 'abc1x34', '1', 'teste robert',_aItensCar, .T., '789000'))
-	u_log ('Msg de problemas:', _sErros)
-return
-*/
-
 /*
 	// Gera alguns XML para testar criacao de novas cargas
 	_oSQL := ClsSQL ():New ()

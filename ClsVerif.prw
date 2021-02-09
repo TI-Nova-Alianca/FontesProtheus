@@ -50,6 +50,7 @@
 // 07/12/2020 - Robert  - Criada validacao 77 (pessoa do Metadados referenciando mais de um usuario no Protheus).
 // 18/12/2020 - Robert  - Verificacao 26 passa a usar a procedure VA_SP_VERIFICA_ESTOQUES e passa a ser de interesse tambem de CUS/CTB. (GLPI 9054).
 // 26/01/2021 - Robert  - Verificacao 77 considerava usuarios bloqueados (que mudaram de username, por exemplo).
+// 08/02/2021 - Robert  - View VA_VUSR_PROTHEUS_X_METADADOS migrada para o database TI. Passa a usar linked server. (GLPI 9353)
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -3013,9 +3014,9 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Setores    = 'INF'
 			::Descricao  = 'Pessoa do Metadados referenciando mais de um usuario no Protheus'
 			::Query := "SELECT *"
-			::Query +=  " FROM VA_VUSR_PROTHEUS_X_METADADOS"
+			::Query +=  " FROM " + U_LkServer ("TI") + ".VA_VUSR_PROTHEUS_X_METADADOS"
 			::Query += " WHERE PESSOA IN (SELECT PESSOA"
-			::Query +=                    " FROM VA_VUSR_PROTHEUS_X_METADADOS"
+			::Query +=                    " FROM " + U_LkServer ("TI") + ".VA_VUSR_PROTHEUS_X_METADADOS"
 			::Query +=                   " WHERE USR_MSBLQL != '1'"
 			::Query +=                   " GROUP BY PESSOA"
 			::Query +=                  " HAVING COUNT (*) > 1)"
@@ -3026,9 +3027,12 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Setores    = 'INF'
 			::Descricao  = 'Usuarios Protheus nao relacionados a nenhuma pessoa do Metadados'
 			::Query := "SELECT *"
-			::Query +=  " FROM VA_VUSR_PROTHEUS_X_METADADOS"
+			::Query +=  " FROM " + U_LkServer ("TI") + ".VA_VUSR_PROTHEUS_X_METADADOS"
 			::Query += " WHERE USR_MSBLQL != '1'"
-			::Query +=   " AND USR_CODIGO NOT LIKE 'rep_%'"  // Representantes estao sendo migrados para o Mercanet
+			::Query +=   " AND upper (USR_CODIGO) NOT LIKE 'REP_%'"  // Representantes estao sendo migrados para o Mercanet
+			::Query +=   " AND upper (USR_CODIGO) != 'ADMINISTRADOR'"
+			::Query +=   " AND upper (USR_CODIGO) != 'SUPORTE.TOTVS'"
+			::Query +=   " AND upper (USR_CODIGO) != 'SOL.MANUT'"  // Generico para o pessoal de fabrica abrir solicitacoes de manutencao.
 			::Query +=   " AND USR_CODIGO NOT LIKE 'cupom.%'"  // Usuarios 'caixa' pare emissao de cupom fiscal nas lojas
 			::Query +=   " AND PESSOA IS NULL"
 			::Query += " ORDER BY USR_ID"
@@ -3038,7 +3042,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Setores    = 'INF'
 			::Descricao  = 'Pessoas demitidas cujo usuario nao foi bloqueado no Protheus'
 			::Query := "SELECT *"
-			::Query +=  " FROM VA_VUSR_PROTHEUS_X_METADADOS"
+			::Query +=  " FROM " + U_LkServer ("TI") + ".VA_VUSR_PROTHEUS_X_METADADOS"
 			::Query += " WHERE USR_MSBLQL != '1'"
 			::Query +=   " AND SITUACAO in ('3', '4')"
 			::Query += " ORDER BY USR_ID"
