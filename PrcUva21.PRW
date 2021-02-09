@@ -522,7 +522,8 @@ user function PrcUva21 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 
 				if _sGrpZX513 == '302'  // Este ano nao pagaremos agio para cabernet e outras com clas.A latada
 					do case
-					case alltrim (_sClassif) $ "A/B/DS"  // A=nao tem agio; B=jah era 0%; DS=jah caiu na regra de pagar como isabel
+				//	case alltrim (_sClassif) $ "A/B/DS"  // A=nao tem agio; B=jah era 0%; DS=jah caiu na regra de pagar como isabel
+					case alltrim (_sClassif) $ "A/B/C/DS"  // A=nao tem agio; B=jah era 0%; DS=jah caiu na regra de pagar como isabel
 						_nPrcRec *= 1.0
 						_nPrcCom *= 1.0
 					otherwise
