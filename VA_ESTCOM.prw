@@ -72,7 +72,11 @@ Static Function EstComExp()
 	_oSQL:_sQuery += " , SD1.D1_TP"
 	_oSQL:_sQuery += " , SD1.D1_DOC"
 	_aEnt := _oSQL:Qry2Array ()
-	
+
+	//nHandle := FCreate("c:\temp\log1.txt")
+	//FWrite(nHandle,_oSQL:_sQuery )
+	//FClose(nHandle)
+
 	// DADOS CTB
 	_oSQL:= ClsSQL ():New ()
 	_oSQL:_sQuery := ""
@@ -129,19 +133,22 @@ Static Function EstComExp()
 	_oSQL:_sQuery += " SELECT DISTINCT"
 	_oSQL:_sQuery += " 	FILIAL_CTB"
 	_oSQL:_sQuery += "    ,DOCUMENTO_CTB"
-	_oSQL:_sQuery += "    ,TIPO_CTB"
+	_oSQL:_sQuery += "    ,TIPO_CTB" 
 	_oSQL:_sQuery += "    ,VALOR_CTB"
 	_oSQL:_sQuery += " FROM C"
 	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SD1") + " AS SD1" 
 	_oSQL:_sQuery += " 	ON (SD1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery += "          AND SD1.D1_FILIAL=FILIAL_CTB"
 	_oSQL:_sQuery += " 			AND SD1.D1_DOC = DOCUMENTO_CTB"
-	_oSQL:_sQuery += "          AND SD1.D1_SERIE = SERIE_CTB"
+	_oSQL:_sQuery += "          AND SUBSTRING(SD1.D1_EMISSAO, 1, 6) = '" + sPeriodo + "'"
 	_oSQL:_sQuery += " 			)"
 	_oSQL:_sQuery += " WHERE SD1.D1_CF NOT IN ('1910', '2910', '1151', '1152', '1552', '1557', '2151', '2152', '2552', '2557')"
 	_oSQL:_sQuery += " ORDER BY FILIAL_CTB, TIPO_CTB, DOCUMENTO_CTB"
 	_aCtb := _oSQL:Qry2Array ()
 
+	//nHandle := FCreate("c:\temp\log2.txt")
+	//FWrite(nHandle,_oSQL:_sQuery )
+	//FClose(nHandle)
 	// -------------------------------------------------------------------------------------------------------------
 	// IMPRESSÃO DOS DADOS
 
