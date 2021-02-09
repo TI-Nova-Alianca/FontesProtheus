@@ -23,6 +23,7 @@
 // 14/10/2020 - Robert - Desconsidera item 'MMMSAFRA' usado em simulacoes de rateio de safra (por enquanto apenas na base teste).
 // 04/01/2021 - Robert - Habilitado novamente o MMMSAFRA, melhorados logs.
 // 18/01/2021 - Robert - Verifica parametro MV_DBLQMOV antes de executar.
+// 08/02/2021 - Robert - Valida campo B1_CCCUSTO no cadastro dos itens tipo MO, AP, GF (GLPI 9356).
 //
 
 // -------------------------------------------------------------------------------
@@ -59,6 +60,7 @@ Static function _Roda()
 	local _nNovo     := 0
 	local _nGerados  := 0
 	local _oEvento   := NIL
+	local _aErrSB1   := {}
 
 	if _lContinua .and. mv_par01 <= getmv('MV_ULMES',.F.,'20000101')
 		u_help ('Processo nao pode rodar em mes fechado (MV_ULMES)',, .T.)
@@ -71,6 +73,29 @@ Static function _Roda()
 
 	if _lContinua
 		 _lContinua = U_msgyesno ('Este programa replica as requisicoes de produtos MMM em ordens de producao para AO, GF e AP, gerando movimentos ' + _sTM + ' para posterior custeio das OP. Confirma?')
+	endif
+
+	if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT DISTINCT SB1.B1_COD, SB1.B1_DESC, B1_CCCUSTO"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD3") + " SD3, "
+		_oSQL:_sQuery +=             RetSQLName ("SB1") + " SB1 "
+		_oSQL:_sQuery += " WHERE SD3.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND D3_FILIAL = '" + xfilial ("SD3") + "'"
+		_oSQL:_sQuery +=   " AND D3_EMISSAO BETWEEN '" + DtoS(MV_PAR01)+"' AND '"+DtoS(MV_PAR02) + "'"
+		_oSQL:_sQuery +=   " AND D3_TIPO = 'MO'"
+		_oSQL:_sQuery +=   " AND SUBSTRING (SD3.D3_OP, 7, 2) != 'OS'"
+		_oSQL:_sQuery +=   " AND SB1.B1_FILIAL = '" + xfilial ("SB1") + "'"
+		_oSQL:_sQuery +=   " AND SB1.B1_COD = D3_COD"
+		_oSQL:_sQuery +=   " AND SB1.D_E_L_E_T_ = '' AND B1_TIPO IN ('AP', 'MO', 'GF')"
+		_oSQL:_sQuery +=   " AND (B1_COD NOT LIKE 'MMM%' AND B1_CCCUSTO != SUBSTRING (B1_COD, 4, 9) OR (B1_COD LIKE 'MMM%' AND B1_CCCUSTO != '999999'))"
+		_oSQL:Log ()
+		_aErrSB1 := _oSQL:Qry2Array (.T., .t.)
+		if len (_aErrSB1) > 1  // Primeira linha vai trazer os nomes dos campos
+			U_F3Array (_aErrSB1, 'Inconsistencia cadastro itens', NIL, NIL, NIL, 'Campo CCC PARA CUSTO inconsistente', "Campo CC PARA CUSTO deveria conter o mesmo CC que faz parte do codigo do produto (ou 999999 no caso de item MMM).", .F., "", NIL)
+			_lContinua = .F.
+		endif
 	endif
 
 	if _lContinua
