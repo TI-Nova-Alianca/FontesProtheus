@@ -42,7 +42,8 @@
 	"ClsSQL:RetFixo":    {"prefix": "RetFixo"  ,  "body": ["RetFixo (_nRetFixo, _sMsgFixo, _lMsgTela)"]},
 	"ClsSQL:RetQry":     {"prefix": "RetQry"   ,  "body": ["RetQry (_nColuna, _lSetField)"]},
 	"ClsSQL:SetField":   {"prefix": "SetField" ,  "body": ["SetField (_sColuna, _sTipo, _nTamanho, _nDecimal)"]},
-
+	"F3Array":           {"prefix": "F3Array"  ,  "body": ["U_F3Array (_aArray, _sTitulo, _aCols, _nLarg, _nAltur, _sMsgSup, _sMsgInf, _lExcel, _sTipoPesq, _oFonte)"]},
+	
 	"Montar query SQL":{
 		"prefix": "query",
 		"body": [
