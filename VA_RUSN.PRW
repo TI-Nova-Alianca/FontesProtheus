@@ -40,6 +40,8 @@
 // 19/01/2021 - Robert - Producao propria Livramento passa a entrar com mesmo preco de associados (entrava a 1,00)
 // 02/02/2021 - Robert - Chamada do VA_RusEn no final para enderecar uva no estoque (GLPI 8779).
 // 09/02/2021 - Robert - Finaliza a thread (paliativo) se estiver usando muita memoria (GLPI 9376).
+// 10/02/2021 - Robert - Limite memoria (finaliza rotina) aumentado de 250 p/ 300 Mb (GLPI 9376).
+//                     - Inseridas chamadas da funcao FreeObj() em alguns casos (GLPI 9376).
 //
 
 // ------------------------------------------------------------------------------------
@@ -145,6 +147,7 @@ User Function va_rusN ()
 			u_log2 ('erro', "Sem definicao para 'tipo de fornecedor de uva'.")
 			_lContinua = .F.
 		endif
+		FreeObj (_oSQL)
 	endif
 
 	// Algumas validacoes adicionais quando associado.
@@ -158,6 +161,7 @@ User Function va_rusN ()
 				_lContinua = .F.
 			endif
 		endif
+		FreeObj (_oAssocN)
 	endif
 
 	if _lContinua
@@ -254,6 +258,7 @@ User Function va_rusN ()
 				_lContinua = .F.
 			endif
 		endif
+		FreeObj (_oSQL)
 	endif
 
 	// Se existe mistura de variedades, precifica pela de menor valor.
@@ -466,8 +471,8 @@ User Function va_rusN ()
 			next
 
 			// Define lote a ser gerado. Se tiver nao conformidades, acrescenta 'NC' ao mesmo.
-			_oSQL := ClsSQL():New ()
-			_oSQL:_sQuery := ""
+//			_oSQL := ClsSQL():New ()
+//			_oSQL:_sQuery := ""
 			if sze -> ze_segreg == 'S'  // Carga segregada: deve gerar lote nao conforme
 				_sLoteCtl = right (sze -> ze_safra, 2) + szf -> zf_filial + szf -> zf_carga + 'NC'
 			else
@@ -564,6 +569,7 @@ User Function va_rusN ()
 		if ! empty (_sAglutin)
 			_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Cargas:" + _sAglutin
 		endif
+		FreeObj (_oSQL)
 	endif
 	
 	// Mostra tela com valores previstos, para que a filial de Livramento possa saber qual valor vai ficar
@@ -693,7 +699,7 @@ User Function va_rusN ()
 
 	_nRetMem := U_UsoMem ()
 	u_log2 ('info', 'Achei minha thread usando ' + transform (_nRetMem, "@E 999,999,999,999,999") + ' bytes de memoria')
-	if _nRetMem > 250000000
+	if _nRetMem > 300000000
 		u_help ("ATENCAO: Esta sessao esta usando muita memoria e vai ser finalizada. Por favor acesse novamente para continuar seu trabalho.",, .T.)
 		Final ("Termino proposital para alivio de memoria")
 	endif

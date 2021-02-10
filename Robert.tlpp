@@ -78,7 +78,7 @@ static function _AndaLogo ()
 //	local _nParc     := 0
 //	local _oAssoc    := NIL
 //	local _aAssoc := {}
-	local _nAssoc := 0
+//	local _nAssoc := 0
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
@@ -94,6 +94,7 @@ return
 		_oCtaCorr := ClsCtaCorr ():New ()
 		_oAviso := ClsAviso ():New ()
 		_otrEstq := ClsTrEstq ():New ()
+		_oSQL := ClsSQL ():new ()
 		FreeObj (_oSQL)
 		FreeObj (_oXML)
 		FreeObj (_oVerif)
