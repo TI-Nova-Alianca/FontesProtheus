@@ -4,6 +4,13 @@
 // Descricao..: Para ser chamado no menu em lugar do MATA460A.
 //              Criado inicialmente para controle de semaforo e verificacoes iniciais.
 //
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #atualizacao
+// #Descricao         #Mascaramento da tela de faturamento de pedidos.
+// #PalavasChave      #faturamento #MATA460 #preparacao_documento_saida #logistica #expedicao
+// #TabelasPrincipais #SF2 #SC6 #SC9
+// #Modulos           #FAT
+//
 // Historico de alteracoes:
 // 01/12/2010 - Robert  - Libera semaforo logo apos a geracao das notas.
 // 09/12/2010 - Robert  - Incluida coluna no browse com o total de volumes do pedido.
@@ -40,15 +47,9 @@
 //                        faixa de numeracao, com a possibilidade de ter notas inutilizadas ou de entrada (formulário próprio) no meio.
 // 31/07/2020 - Robert  - Melhorados avisos e logs.
 //                      - Inseridas tags para catalogacao de fontes
+// 12/02/2021 - Cláudia - Validação de cliente bloqueado. GLPI: 7982
 //
-
-// Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #atualizacao
-// #Descricao         #Mascaramento da tela de faturamento de pedidos.
-// #PalavasChave      #faturamento #MATA460 #preparacao_documento_saida #logistica #expedicao
-// #TabelasPrincipais #SF2 #SC6 #SC9
-// #Modulos           #FAT
-
+// -------------------------------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"  // Deixar este include para aparecerem os botoes da tela de acompanhamento do SPED
 
 #XTranslate .PedOk             => 1
@@ -63,7 +64,6 @@
 #XTranslate .PedPrioridade     => 10
 #XTranslate .PedTransp         => 11
 
-// --------------------------------------------------------------------------
 user function _Mata460 ()
 	local _sParam     := "VA_USRENF"
 	local _sUserLib   := alltrim (upper (GetMV (_sParam, .F., "")))
@@ -71,13 +71,9 @@ user function _Mata460 ()
 	local _aLiber     := {.F.,,}
 	local _lContinua  := .T.
 	local _nLock      := 0
-//	local _sQuery     := ""
 	local _sNFIni     := ""
 	local _sNFFim     := ""
 	local _sSerie     := "10 "
-//	local _nPend      := 0
-//	local _aVerif     := {}
-//	local _nVerif     := 0
 	local _oSQL       := NIL
 	local _sPerg      := "MT461A"
 	local _aBkpSX1    := {}
@@ -136,9 +132,10 @@ user function _Mata460 ()
 			
 			// Tela padrao de preparacao de doctos.
 			u_log2 ('info', 'Chamando MATA460A')
+
 			MATA460A ()
 			u_log2 ('info', 'Retornou do MATA460A')
-			
+
 			// Restaura parametros da rotina, caso os tenha alterado.
 			if len (_aBkpSX1) > 0
 				U_SalvaSX1 (_sPerg, _aBkpSX1)
@@ -208,26 +205,15 @@ user function _Mata460 ()
 	endif
 	u_log2 ('info', 'Finalizando execucao')
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Grava campo customizado a ser usado posteriormente pelo P.E. M460Fil.
 static function _Filtra ()
 	local _sSQL      := ""
-//	local _sQuery    := ""
 	local _aPed      := {}
 	local _aPedAux   := {}
 	local _nPed      := {}
-//	local _aCols     := {}
 	local _lContinua := .T.
-//	local _nOpcao    := 0
-//	local _aRetQry   := {}
-//	local _aSC9      := {}
-//	local _nSC9      := 0
-//	local _sRetEstq  := ""
-//	local _sPedSel   := ""
-//	local _sAliasQ   := ""
 	local _oDlgMbA   := NIL
 	local _oBmpOK    := LoadBitmap( GetResources(), "LBOK" )
 	local _oBmpNo    := LoadBitmap( GetResources(), "LBNO" )
@@ -298,7 +284,6 @@ static function _Filtra ()
 		endif
 	endif
 
-
 	// Faz uma verificacao inicial dos pedidos e filtra conforme selecao do usuario.
 	if _lContinua
 
@@ -325,7 +310,6 @@ static function _Filtra ()
 			_lContinua = .F.
 		endif
 	endif
-
 
 	// Abre tela para o usuario marcar quais pedidos deseja faturar.
 	if _lContinua
@@ -385,14 +369,37 @@ static function _Filtra ()
 				endif
 			endif
 		next
-
 	endif
 
+	if _lContinua
+		for _nPed = 1 to len (_aPed)
+			if _aPed [_nPed, .PedOk]  // Usuario selecionou este pedido para faturar
+				_sSQL := " SELECT"
+				_sSQL += " 		 SA1.A1_MSBLQL"
+				_sSQL += " 		,SC5.C5_NUM"
+				_sSQL += " 		,SC5.C5_CLIENTE"
+				_sSQL += " FROM SC5010 SC5"
+				_sSQL += " INNER JOIN SA1010 SA1"
+				_sSQL += " 	ON (SA1.D_E_L_E_T_ = ''"
+				_sSQL += " 			AND SA1.A1_COD = SC5.C5_CLIENTE"
+				_sSQL += " 			AND SA1.A1_LOJA = SC5.C5_LOJACLI)"
+				_sSQL += " WHERE SC5.D_E_L_E_T_ = ''"
+				_sSQL += " AND SC5.C5_FILIAL = '" + xfilial ("SC5") + "'"
+				_sSQL += " AND SC5.C5_NUM    = '" + _aPed [_nPed, .PedPedido] + "'"
+				_aDados := U_Qry2Array(_sSQL)
+
+				if Len(_aDados) > 0
+					if alltrim(_aDados[1,1]) == '1'
+						u_help(" O pedido " + alltrim(_aDados[1,2]) + " está com o cliente " + alltrim(_aDados[1,3]) + " bloqueado!")
+						_lContinua := .F.
+					endif
+				endif
+			endif
+		next
+	endif
 	U_ML_SRArea (_aAreaAnt)
 return _lBotaoOK .and. _lContinua
-
-
-
+//
 // --------------------------------------------------------------------------
 // Verifica se estah tudo OK com a marcacao do usuario.
 static function _TudoOK (_aPed)
@@ -419,9 +426,7 @@ static function _TudoOK (_aPed)
 	endif
 	CursorArrow ()
 return _lRet
-
-
-
+//
 // --------------------------------------------------------------------------
 // Visualiza pedido.
 static function _VisualPed (_sPedido)
@@ -441,9 +446,7 @@ static function _VisualPed (_sPedido)
 	U_SalvaAmb (_aAmbAnt)
 	CursorArrow ()
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Inverte a mancacao no browse.
 static function _Inverte (_aOpcoes)
@@ -454,9 +457,7 @@ static function _Inverte (_aOpcoes)
 	next
 	CursorArrow ()
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Verifica situacao dos pedidos selecionados.
 static function _VerifPed (_aPed)
@@ -547,7 +548,6 @@ static function _VerifPed (_aPed)
 			_sQuery +=                      " AND ((SC5.C5_VAFEMB != SC5.C5_FILIAL AND ZZ6.ZZ6_FILDES  = SC5.C5_VAFEMB)"
 			_sQuery +=                       " OR  (SC5.C5_FILIAL IN ('04', '14') AND ZZ6.ZZ6_FILDES  = SC5.C5_FILIAL))"
 			_sQuery +=                      " AND ZZ6.ZZ6_ATIVO   = 'S'"
-//			_sQuery +=                      " AND ZZ6.ZZ6_RODADO != 'S') > 0"
 			_sQuery +=                      " AND ZZ6.ZZ6_RODADO NOT IN ('S', 'C')) > 0"
 			_sQuery +=             " THEN 'FALTA TR.ALM.RET;'"
 			_sQuery +=             " ELSE ''"
@@ -572,7 +572,6 @@ static function _VerifPed (_aPed)
 			_sQuery +=    " AND SC5.C5_FILIAL  = SC9.C9_FILIAL"
 			_sQuery +=    " AND SC5.D_E_L_E_T_ = ' '"
 			_sQuery +=    " AND SC5.C5_NUM     = SC9.C9_PEDIDO"
-//			_sQuery +=  " GROUP BY SC5.C5_TRANSP"
 			_sQuery +=  " GROUP BY SC5.C5_TRANSP, SC5.C5_FILIAL, SC5.C5_VAFEMB, SC5.C5_VAPEMB, SC5.C5_NUM, SC5.C5_TPCARGA, SC5.C5_TPFRETE"
 			// u_log (_sQuery)
 			//_aPed [_nPed, .PedAviso] = alltrim (U_RetSQL (_sQuery))
@@ -668,7 +667,6 @@ static function _VerifPed (_aPed)
 				if ! empty (_sRetEstq) .and. at (alltrim (_aSC9 [_nSC9, 1]), _aPed [_nPed, .PedErros]) == 0
 					_aPed [_nPed, .PedErros] += alltrim (_aSC9 [_nSC9, 1]) + " insuficiente; "
 				else
-				
 					// Acrescenta produto/filial de embarque/local `a lista de reservas.
 					if _nUsado == 0
 						aadd (_aUsados, {_aSC9 [_nSC9, 1], _aSC9 [_nSC9, 2], _aSC9 [_nSC9, 3], _nQtSolic, _aSC9 [_nSC9, 6]})
