@@ -86,6 +86,61 @@ static function _AndaLogo ()
 	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
 return
 /*
+	for _nAssoc = 1 to 100
+		//_oAssoc := ClsAssoc ():New ('000161', '01')
+		_oSQL := ClsSQL ():new ()
+		_oXML := ClsXMLSef ():New ()
+		_oVerif := ClsVerif ():New ()
+		_oCtaCorr := ClsCtaCorr ():New ()
+		_oAviso := ClsAviso ():New ()
+		_otrEstq := ClsTrEstq ():New ()
+		_oSQL := ClsSQL ():new ()
+		FreeObj (_oSQL)
+		FreeObj (_oXML)
+		FreeObj (_oVerif)
+		FreeObj (_oCtaCorr)
+		FreeObj (_oAviso)
+		FreeObj (_oTrEstq)
+		U_UsoMem ()
+	next
+return
+*/
+/*
+static Function tst_showinfomem()
+	local infos
+	local i
+	local texto
+	infos := Array(50, 2)
+	ShowInfMem("inicio",infos)
+	u_log("Informacao relevante: " + cValtoChar(infos[1][1]) + " kb , Count " + cValtoChar(infos[1][2]))
+	u_log("Informacao relevante: " + cValtoChar(infos[2][1]) + " kb , Count " + cValtoChar(infos[2][2]))
+	u_log("Informacao relevante: " + cValtoChar(infos[3][1]) + " kb , Count " + cValtoChar(infos[3][2]))
+	u_log("FIZ UM CONOUT SIMPLES.. QUAL SERIA O CONSUMO DO SMARTHEAP?")
+	ShowInfMem("Antes leitura do Cursor: Programa 1", infos)
+	u_log("Informacao relevante: " + cValtoChar(infos[3][1]) + " kb , Count " + cValtoChar(infos[3][2]) )
+	For i := 1 to 10
+		texto := "Teste de repeticoes: " + cValtoChar(i)
+		teste_advpl_showmeminf02()
+		ShowInfMem(texto,infos)
+		u_log("Informacao relevante: " + cValtoChar(infos[3][1]) + " kb , Count " + cValtoChar(infos[3][2]) )
+		u_log (infos)
+	Next
+Return
+static FUNCTION teste_advpl_showmeminf02()
+	tclink()
+	u_log("Conectado. Testando com tcsqlexec")
+	if tcsqlexec("select top 10 A1_COD from SA1010") == 0
+		u_log('Sql executado!')
+	end if
+return
+*/
+/*
+  Local oObj := MyClass():New()
+  oObj:DoSomething("Hello")
+  oObj:DoNothing("Goodbye")
+  FreeObj(oObj)
+*/
+/*
 	// Testes verificacoes genericas.
 	// _oVerif := ClsVerif():New (25)
 	// _oVerif:SetParam ('01', '2017')

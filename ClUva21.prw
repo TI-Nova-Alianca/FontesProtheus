@@ -2,16 +2,24 @@
 // Autor:     Robert Koch
 // Data:      15/12/2020
 // Descricao: Determina a classificacao das uvas para a safra 2021.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Determina a classificacao das uvas para a safra 2021, com base nos demais dados de grau e inspecoes.
+// #PalavasChave      #safra #classificacao_uva
+// #TabelasPrincipais #ZX5
+// #Modulos           #COOP
+
 // Historico de alteracoes:
 // 01/02/2021 - Robert - Comentariadas linhas de log.
+// 10/02/2021 - Robert - Estava com safra 2020 fixa nas queries (ainda bem que as faixas nao mudaram do ano passado!) - GLPI 9383
 //
 
 // --------------------------------------------------------------------------
 user function ClUva21 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAsperg, _nPPodrAc, _nAcidVol)
 	local _lContinua := .T.
 	local _aAreaAnt  := U_ML_SRArea ()
-	local _nSomaPodr := _nPBotryt + _nPGlomer + _nPAsperg + _nPPodrAc
+//	local _nSomaPodr := _nPBotryt + _nPGlomer + _nPAsperg + _nPPodrAc
 	local _oSQL      := NIL
 	local _aTab17    := {}
 	local _sPrm02    := ''
@@ -22,6 +30,7 @@ user function ClUva21 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAspe
 	local _aRetClUva := {}
 	//local _oSQL      := NIL
 	local _aGrupo52  := {}
+	local _sSafraCl  := '2021'  // Ajustar caso seja copiado para o proximo ano!
 
 	U_Log2 ('info', 'Iniciando ' + procname ())
 
@@ -41,9 +50,8 @@ user function ClUva21 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAspe
 		// u_log2 ('info', '   % glomerella...............:' + cvaltochar (_nPGlomer))
 		// u_log2 ('info', '   % aspergillus..............:' + cvaltochar (_nPAsperg))
 		// u_log2 ('info', '   % podridao acida...........:' + cvaltochar (_nPPodrAc))
-		// u_log2 ('info', '   % soma de podridoes........:' + cvaltochar (_nSomaPodr))
 		// u_log2 ('info', '   % acidez volatil...........:' + cvaltochar (_nAcidVol))
-		// u_log2 ('info', '   Soma das podridoes.........:' + cvaltochar (_nSomaPodr))
+		// u_log2 ('info', '   Soma das podridoes.........:' + cvaltochar (_nPBotryt + _nPGlomer + _nPAsperg + _nPPodrAc))
 		if empty (_sConduc)
 			u_help ("Sistema de conducao nao informado. Impossivel determinar a classificacao da uva.",, .t.)
 			_lContinua = .F.
@@ -60,7 +68,7 @@ user function ClUva21 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAspe
 		_oSQL:_sQuery += " WHERE ZX5_52.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND ZX5_52.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
 		_oSQL:_sQuery +=   " AND ZX5_52.ZX5_TABELA = '52'"
-		_oSQL:_sQuery +=   " AND ZX5_52.ZX5_52SAFR = '2020'"
+		_oSQL:_sQuery +=   " AND ZX5_52.ZX5_52SAFR = '" + _sSafraCl + "'"
 		_oSQL:_sQuery +=   " AND ZX5_53.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND ZX5_53.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
 		_oSQL:_sQuery +=   " AND ZX5_53.ZX5_TABELA = '53'"
@@ -71,10 +79,10 @@ user function ClUva21 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAspe
 		_aGrupo52 := aclone (_oSQL:Qry2Array (.F., .F.))
 //		U_log ('faixas de grau:', _aGrupo52)
 		if len (_aGrupo52) == 0
-			u_help ("Produto '" + alltrim (_sVaried) + "' nao encontrado na combinacao das tabelas 52 e 53 do arquivo ZX5 para esta safra.",, .t.)
+			u_help ("Produto '" + alltrim (_sVaried) + "' nao encontrado na combinacao das tabelas 52 e 53 do arquivo ZX5 para a safra '" + _sSafraCl + "'",, .t.)
 			_lContinua = .F.
 		elseif len (_aGrupo52) > 1
-			u_help ("Produto '" + alltrim (_sVaried) + "' encontrado MAIS DE UMA VEZ na combinacao das tabelas 52 e 53 do arquivo ZX5 para esta safra.",, .t.)
+			u_help ("Produto '" + alltrim (_sVaried) + "' encontrado MAIS DE UMA VEZ na combinacao das tabelas 52 e 53 do arquivo ZX5 para a safra '" + _sSafraCl + "'",, .t.)
 			_lContinua = .F.
 		else
 			if _nGrau >= val (_aGrupo52 [1, 1])
@@ -98,7 +106,7 @@ user function ClUva21 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAspe
 		// Nas latadas nao se considera uniformidade de maturacao
 		_sPrm04 = 'B'
 
-		// Define classificacao por presenca de materiais estranhos: nao usaremos em 2020.
+		// Define classificacao por presenca de materiais estranhos: nao usaremos neste ano.
 		_sPrm05 = 'B'
 	endif
 
@@ -111,15 +119,15 @@ user function ClUva21 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAspe
 		_oSQL:_sQuery += " WHERE ZX5_17.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND ZX5_17.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
 		_oSQL:_sQuery +=   " AND ZX5_17.ZX5_TABELA = '17'"
-		_oSQL:_sQuery +=   " AND ZX5_17.ZX5_17SAFR = '2020'"
+		_oSQL:_sQuery +=   " AND ZX5_17.ZX5_17SAFR = '" + _sSafraCl + "'"
 		_oSQL:_sQuery +=   " AND ZX5_17.ZX5_17PROD = '" + _sVaried + "'"
 		_oSQL:Log ()
 		_aTab17 = aclone (_oSQL:Qry2Array (.F., .F.))
 		//u_log (_aTab17)
 		if len (_aTab17) == 0
-			u_help ("Variedade '" + _sVaried + "' nao localizada na tabela 17 do arquivo ZX5 (graus X classes uvas viniferas) para esta safra.",, .t.)
+			u_help ("Variedade '" + _sVaried + "' nao localizada na tabela 17 do arquivo ZX5 (graus X classes uvas viniferas) para a safra '" + _sSafraCl + "'",, .t.)
 		elseif len (_aTab17) > 1
-			u_help ("Variedade '" + _sVaried + "' aparece mais de uma vez na tabela 17 do arquivo ZX5 (graus X classes uvas viniferas) para esta safra.",, .t.)
+			u_help ("Variedade '" + _sVaried + "' aparece mais de uma vez na tabela 17 do arquivo ZX5 (graus X classes uvas viniferas) para a safra '" + _sSafraCl + "'",, .t.)
 		else
 			if _nGrau >= val (_aTab17 [1, 1])
 				_sPrm02 = 'PR'

@@ -31,7 +31,7 @@ User Function F240fil()
 	   _cFiltro += " .AND. fBuscaCpo ('SA2', 1, xfilial('SA2') + E2_FORNECE + E2_LOJA, 'A2_BANCO') == '" + cPort240 + "'" 
 	
 	ElseIf cModPgto == "03" 
-	   // Transferencias para outros bancos
+	   // Transferencias para outros bancos, comissoes, ...
 	   _cFiltro := " EMPTY(E2_CODBAR)"
 	   _cFiltro += " .AND. val(fBuscaCpo ('SA2', 1, xfilial('SA2') + E2_FORNECE + E2_LOJA, 'A2_BANCO')) > 0 "
 	   _cFiltro += " .AND. fBuscaCpo ('SA2', 1, xfilial('SA2') + E2_FORNECE + E2_LOJA, 'A2_BANCO') != '" + cPort240 + "'"

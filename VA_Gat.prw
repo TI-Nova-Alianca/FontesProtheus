@@ -166,7 +166,7 @@ else
 			_sCDomin = ''
 		endif
 	else
-		U_AvisaTI ("Gatilho nao encontrado no SX7. Campo: '" + _sParCpo + "' Seq.: '" + _sParSeq + "'. Gatilho nao serah executado.")
+		U_help ("Gatilho nao encontrado no SX7. Campo: '" + _sParCpo + "' Seq.: '" + _sParSeq + "'. Gatilho nao serah executado.",, .T.)
 		_sCampo = ''
 		_sCDomin = ''
 	endif

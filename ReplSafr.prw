@@ -3,7 +3,14 @@
 // Data:      07/01/2013
 // Descricao: Replica cadastros de uma safra para outra, pois muitas informacoes permanecem
 //            iguais em todas as safras.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Replica cadastros de uma safra para outra, pois muitas informacoes permanecem iguais em todas as safras.
+// #PalavasChave      #safra #tabelas_safra
+// #TabelasPrincipais #ZX5
+// #Modulos           #COOP
+
 // Historico de alteracoes:
 // 26/01/2014 - Robert - Replica patriarca mesmo que jah existam (outros, claro...) patriarcas na safra destino.
 // 08/01/2015 - Robert - Replica tabela 17 do ZX5.
@@ -15,6 +22,7 @@
 // 03/01/2020 - Robert - Campo ZX5_17COND vai ser excluido (a tabela 17 serve somente para espaldeira, entao nao ha motivo para manter o campo).
 // 16/10/2020 - Robert - Nao levava valores junto quando copia a tabela 13 (grp.prc.safra)
 // 15/01/2021 - Robert - Replica tabela 52
+// 10/02/2021 - Robert - Replicacao da tabela 52 nao fazia da 53 (itens) - GLPI 9383.
 //
 
 // --------------------------------------------------------------------------
@@ -353,6 +361,7 @@ static function _ReplZX517 ()
 		_oSQL:_sQuery +=              " FROM " + RetSqlName ("ZX5") + " NOVA "
 		_oSQL:_sQuery +=             " WHERE NOVA.D_E_L_E_T_ != '*'"
 		_oSQL:_sQuery +=               " AND NOVA.ZX5_FILIAL  = ZX5.ZX5_FILIAL"
+		_oSQL:_sQuery +=               " AND NOVA.ZX5_TABELA  = '17'"
 		_oSQL:_sQuery +=               " AND NOVA.ZX5_17SAFR  = '" + mv_par02 + "'"
 		_oSQL:_sQuery +=               " AND NOVA.ZX5_17PROD  = ZX5.ZX5_17PROD)"
 		_oSQL:_sQuery +=  " ORDER BY ZX5_17PROD"
@@ -393,6 +402,7 @@ return
 
 
 // --------------------------------------------------------------------------
+// Faixas de grau para classificacao de uvas latadas.
 static function _ReplZX552 ()
 	local _oSQL      := NIL
 	local _sAliasQ   := ""
@@ -401,7 +411,7 @@ static function _ReplZX552 ()
 	local _lContinua := .T.
 	private cPerg    := "REPLSAFR"
 	
-	if ! u_msgyesno ("Esta rotina permite copiar varios registros de determinada safra para uma nova safra (faixas de grau para determinar classificacao de uvas viniferas). Registros ja existentes nao serao copiados. Deseja continuar?")
+	if ! u_msgyesno ("Esta rotina permite copiar varios registros de determinada safra para uma nova safra (faixas de grau para determinar classificacao de uvas latadas). Registros ja existentes nao serao copiados. Deseja continuar?")
 		_lContinua = .F.
 	endif
 
@@ -429,8 +439,20 @@ static function _ReplZX552 ()
 				_oSQL:_sQuery +=    " AND ZX5_TABELA  = '52'"
 				_oSQL:_sQuery +=    " AND ZX5_52SAFR  = '" + mv_par02 + "'"
 				if ! _oSQL:Exec ()
-					u_help ("Erro na exclusao dos dados anteriores.")
+					u_help ("Erro na exclusao dos dados anteriores da tabela 52.")
 					_lContinua = .F.
+				else
+					_oSQL:_sQuery := ""
+					_oSQL:_sQuery += " UPDATE " + RetSqlName ("ZX5")
+					_oSQL:_sQuery +=    " SET D_E_L_E_T_  = '*'"
+					_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ != '*'"
+					_oSQL:_sQuery +=    " AND ZX5_FILIAL  = '" + xFilial ("ZX5") + "'"
+					_oSQL:_sQuery +=    " AND ZX5_TABELA  = '53'"
+					_oSQL:_sQuery +=    " AND ZX5_53SAFR  = '" + mv_par02 + "'"
+					if ! _oSQL:Exec ()
+						u_help ("Erro na exclusao dos dados anteriores da tabela 53.")
+						_lContinua = .F.
+					endif
 				endif
 			else
 				_lContinua = .F.
@@ -439,7 +461,6 @@ static function _ReplZX552 ()
 	endif
 
 	if _lContinua
-		CursorWait ()
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " SELECT ZX5_52SAFR, ZX5_52GRUP, ZX5_52DESC, ZX5_52GIA, ZX5_52GIB, ZX5_52GIC,"
@@ -453,11 +474,13 @@ static function _ReplZX552 ()
 		_oSQL:_sQuery +=              " FROM " + RetSqlName ("ZX5") + " NOVA "
 		_oSQL:_sQuery +=             " WHERE NOVA.D_E_L_E_T_ != '*'"
 		_oSQL:_sQuery +=               " AND NOVA.ZX5_FILIAL  = ZX5.ZX5_FILIAL"
+		_oSQL:_sQuery +=               " AND NOVA.ZX5_TABELA  = '52'"
 		_oSQL:_sQuery +=               " AND NOVA.ZX5_52SAFR  = '" + mv_par02 + "'"
 		_oSQL:_sQuery +=               " AND NOVA.ZX5_52GRUP  = ZX5.ZX5_52GRUP)"
 		_oSQL:_sQuery +=  " ORDER BY ZX5_52GRUP"
 		u_log (_oSQL:_sQuery)
 		_sAliasQ := _oSQL:Qry2Trb ()
+		_nCopiado = 0
 		_sChave = (_sAliasQ) -> MaxChv
 		do while ! (_sAliasQ) -> (eof ())
 			_sChave = soma1 (_sChave)
@@ -475,8 +498,44 @@ static function _ReplZX552 ()
 			_nCopiado ++
 			(_sAliasQ) -> (dbskip ())
 		enddo
-		CursorArrow ()
-		u_help ("Processo concluido. " + cvaltochar (_nCopiado) + " registro(s) copiado(s).")
+		u_help (cvaltochar (_nCopiado) + " registro(s) copiado(s) na tabela 52.")
+
+		// Os 'itens' ficam na tabela 53.
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT ZX5_53SAFR, ZX5_53GRUP, ZX5_53PROD,"
+		_oSQL:_sQuery +=        " max (ZX5_CHAVE) over () as MaxChv"
+		_oSQL:_sQuery +=   " FROM " + RetSqlName ("ZX5") + " ZX5 "
+		_oSQL:_sQuery +=  " WHERE ZX5.D_E_L_E_T_ != '*'"
+		_oSQL:_sQuery +=    " AND ZX5.ZX5_FILIAL  = '" + xFilial ("ZX5") + "'"
+		_oSQL:_sQuery +=    " AND ZX5.ZX5_TABELA  = '53'"
+		_oSQL:_sQuery +=    " AND ZX5.ZX5_53SAFR  = '" + mv_par01 + "'"
+		_oSQL:_sQuery +=    " AND NOT EXISTS (SELECT *"
+		_oSQL:_sQuery +=              " FROM " + RetSqlName ("ZX5") + " NOVA "
+		_oSQL:_sQuery +=             " WHERE NOVA.D_E_L_E_T_ != '*'"
+		_oSQL:_sQuery +=               " AND NOVA.ZX5_FILIAL  = ZX5.ZX5_FILIAL"
+		_oSQL:_sQuery +=               " AND NOVA.ZX5_TABELA  = '53'"
+		_oSQL:_sQuery +=               " AND NOVA.ZX5_53SAFR  = '" + mv_par02 + "'"
+		_oSQL:_sQuery +=               " AND NOVA.ZX5_53GRUP  = ZX5.ZX5_53GRUP)"
+		_oSQL:_sQuery +=  " ORDER BY ZX5_53GRUP"
+		u_log (_oSQL:_sQuery)
+		_sAliasQ := _oSQL:Qry2Trb ()
+		_nCopiado = 0
+		_sChave = (_sAliasQ) -> MaxChv
+		do while ! (_sAliasQ) -> (eof ())
+			_sChave = soma1 (_sChave)
+			reclock ("ZX5", .T.)
+			zx5 -> zx5_filial = xfilial ("ZX5")
+			zx5 -> zx5_tabela = '53'
+			zx5 -> zx5_CHAVE  = _sChave
+			zx5 -> zx5_53safr = mv_par02
+			zx5 -> zx5_53grup = (_sAliasQ) -> zx5_53grup
+			zx5 -> zx5_53prod = (_sAliasQ) -> zx5_53prod
+			msunlock ()
+			_nCopiado ++
+			(_sAliasQ) -> (dbskip ())
+		enddo
+		u_help (cvaltochar (_nCopiado) + " registro(s) copiado(s) na tabela 53.")
 		dbselectarea ("SB1")
 	endif
 return

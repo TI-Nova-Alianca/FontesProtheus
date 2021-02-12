@@ -14,6 +14,7 @@
 // 16/10/2020 - Robert - Copiado do PrcUva20 para uma simulacao inicial como se fosse 2021.
 // 04/01/2020 - Robert - Criado parametro para nao mostrar mensagem em tela.
 // 01/02/2021 - Robert - Nao tinha tratamento de desagio para classif. D e DS em espaldeira.
+// 09/02/2021 - Robert - Sem definicao de agio para class.C grupo 302 (viniferas latadas). GLPI 9359
 //
 
 #include "VA_INCLU.prw"
