@@ -5,6 +5,7 @@
 //
 // Historico de alteracoes:
 // 14/01/2021 - Robert - Criada coluna 4 com valores (a distr.por percentuais penaliza sempre a ultima parcela (frete)
+// 12/02/2021 - Robert - Novos parametros metodo ClsAssoc:FechSafra() - GLPI 9318
 //
 
 // ------------------------------------------------------------------------------------
@@ -47,7 +48,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
 
 	// Aqui nao preciso de um associado especifico... preciso apenas ler as regras de pagamento.
 	_oAssocCP = ClsAssoc():New ('000161', '01')
-	_sXmlFech = _oAssocCP:FechSafra (_sSafPag, .t.)
+	_sXmlFech = _oAssocCP:FechSafra (_sSafPag, .t., .F.)
 	//U_Log2 ('debug', _sXmlFech)
 
 	// Converte de texto para XML

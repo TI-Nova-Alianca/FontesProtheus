@@ -89,6 +89,7 @@
 // 14/01/2021 - Robert - Metodo :CadVitic() passa a ler a funcao VA_RusCV() parabuscar tudo de um mesmo local.
 // 15/01/2021 - Robert - Melhorado retorno de erros quando associado nao tem codigo/loja base no cadastro.
 // 15/01/2021 - Robert - Novo parametro metodo :RetFixo da classe ClsSQL().
+// 12/02/2021 - Robert - Metodo :FechSafra() tem opcao de retornar ou nao as previsoes de pagamento (GLPI 9318).
 //
 
 #include "protheus.ch"
@@ -1044,7 +1045,7 @@ return _aRet
 
 // --------------------------------------------------------------------------
 // Gera string para posteriormente montar demonstrativo de fechamento de safra em formato XML.
-METHOD FechSafra (_sSafra, _lSohRegra) Class ClsAssoc
+METHOD FechSafra (_sSafra, _lSohRegra, _lPrevPag) Class ClsAssoc
 	local _sRetFechS      := ''
 	local _oSQL      := NIL
 	local _sAliasQ   := ""
@@ -1162,7 +1163,8 @@ METHOD FechSafra (_sSafra, _lSohRegra) Class ClsAssoc
 	endif
 
 	// Busca previsoes de pagamento (faturas e notas em aberto no contas a pagar).
-	if ! _lSohRegra
+//	if ! _lSohRegra
+	if ! _lSohRegra .and. _lPrevPag
 		_sRetFechS += '<faturaPagamento>'
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
