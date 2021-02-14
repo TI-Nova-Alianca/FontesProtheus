@@ -1,22 +1,13 @@
-// Programa...:  VA_ESTCOM
-// Autor......:  Cláudia Lionço
-// Data.......:  26/03/2020
-// Descricao..:  Relatório para conferência de compra com estoque
-//
-// #TipoDePrograma    #relatorio
-// #Descricao         #Relatório para conferência de compra com estoque
-// #PalavasChave      #compra_com_estoque 
-// #TabelasPrincipais #SE1 
-// #Modulos 		  #EST
+// Programa:  VA_ESTCOM
+// Autor:     Cláudia Lionço
+// Data:      26/03/2020
+// Descricao: Relatório para conferência de compra com estoque
 //
 // Historico de alteracoes:
 // 27/03/2020 - Claudia - Alterado o modelo TREPORT para exportação direto para planilha
-// 05/01/2021 - Cláudia - Retirada as CFOP's '1151', '1557', '2151'. GLPI: 9076
-// 12/01/2021 - Cláudia - GLPI: 9105 Incluido o CFOP na rotina. 
-// 28/01/2021 - Cláudia - GLPI: 9242 - Incluida coluna de TES
-// 08/02/2021 - Cláudia - GLPI: 9300 - Alterada as querys e retiradas bonificações/transferencias
-//
-// ------------------------------------------------------------------------------------------------
+// 05/01/2020 - Cláudia - Retirada as CFOP's '1151', '1557', '2151'. GLPI: 9076
+// 12/02/2021 - Cláudia - Ajuste relatório. GLPI: 9033
+// --------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
 
@@ -31,158 +22,133 @@ Return
 //
 // -------------------------------------------------------------------------
 Static Function EstComExp()
+	Local cQuery      := ""	
+	Local cQuery1     := ""	
 	Local sPeriodo    := ""
-	Local _aCtb       := {}
-	Local _aEnt       := {}
+	Local aCtb        := {}
+	Local aEnt        := {}
+	//Local aCabExcel   := {}
 	Local aItensExcel := {}
 	Local x			  := 0
 	Local y           := 0
 	
 	sPeriodo := mv_par02 + PADL(mv_par01,2,'0')
 	
-	// DADOS NOTAS DE ENTRADA
-	_oSQL:= ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT"
-	_oSQL:_sQuery += " 	SD1.D1_FILIAL AS FILIAL_ENT"
-	_oSQL:_sQuery += "    ,SD1.D1_DOC AS DOCUMENTO_ENT"
-	_oSQL:_sQuery += "    ,CASE"
-	_oSQL:_sQuery += " 		WHEN SD1.D1_TP = 'II' THEN 'MA'"
-	_oSQL:_sQuery += " 		ELSE SD1.D1_TP"
-	_oSQL:_sQuery += " 	END AS TIPO_ENT"
-	_oSQL:_sQuery += "    ,SUM(SD1.D1_CUSTO) AS CUSTO_ENT"
-	_oSQL:_sQuery += " FROM " + RetSQLName ("SD1") + " AS SD1" 
-	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SF4") + " AS SF4"
-	_oSQL:_sQuery += " 	ON SF4.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery += " 		AND SF4.F4_CODIGO = SD1.D1_TES"
-	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SB1") + " AS SB1"
-	_oSQL:_sQuery += " 	ON SB1.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery += " 		AND SD1.D1_COD = SB1.B1_COD"
-	_oSQL:_sQuery += " WHERE (SF4.F4_ESTOQUE = 'S')"
-	_oSQL:_sQuery += " AND SD1.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery += " AND SUBSTRING(SD1.D1_DTDIGIT, 1, 6) = '" + sPeriodo + "'"
-	_oSQL:_sQuery += " AND SD1.D1_TIPO != 'D'"
-	_oSQL:_sQuery += " AND SD1.D1_CF NOT IN ('1910', '2910', '1151', '1152', '1552', '1557', '2151', '2152', '2552', '2557')"
-	_oSQL:_sQuery += " AND ((SD1.D1_CF NOT LIKE '19%'"
-	_oSQL:_sQuery += " AND SD1.D1_CF NOT LIKE '29%'))"
-	_oSQL:_sQuery += " GROUP BY SD1.D1_FILIAL"
-	_oSQL:_sQuery += " 		,SD1.D1_TP"
-	_oSQL:_sQuery += " 		,SD1.D1_DOC"
-	_oSQL:_sQuery += " ORDER BY SD1.D1_FILIAL"
-	_oSQL:_sQuery += " , SD1.D1_TP"
-	_oSQL:_sQuery += " , SD1.D1_DOC"
-	_aEnt := _oSQL:Qry2Array ()
-
-	//nHandle := FCreate("c:\temp\log1.txt")
-	//FWrite(nHandle,_oSQL:_sQuery )
-	//FClose(nHandle)
-
-	// DADOS CTB
-	_oSQL:= ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " WITH C"
-	_oSQL:_sQuery += " AS"
-	_oSQL:_sQuery += " (SELECT"
-	_oSQL:_sQuery += " 		CT.CT2_FILIAL AS FILIAL_CTB"
-	_oSQL:_sQuery += " 	   ,CASE"
-	_oSQL:_sQuery += " 			WHEN SUBSTRING(CT.CT2_KEY, 3, 9) = '' THEN SUBSTRING(CT.CT2_HIST, CHARINDEX('NR ', CT.CT2_HIST) + 3, 9)"
-	_oSQL:_sQuery += " 			ELSE SUBSTRING(CT.CT2_KEY, 3, 9)"
-	_oSQL:_sQuery += " 		END AS DOCUMENTO_CTB"
-	_oSQL:_sQuery += " 	   ,CASE"
-	_oSQL:_sQuery += " 			WHEN SUBSTRING(CT.CT2_KEY, 12, 2) = '' THEN SUBSTRING(CT.CT2_HIST, CHARINDEX('NR ', CT.CT2_HIST) + 12, 2)"
-	_oSQL:_sQuery += " 			ELSE SUBSTRING(CT.CT2_KEY, 12, 2)"
-	_oSQL:_sQuery += " 		END AS SERIE_CTB"
-	_oSQL:_sQuery += " 	   ,CASE"
-	_oSQL:_sQuery += " 			WHEN CT.CT2_DEBITO = '101030301008' THEN 'CL'"
-	_oSQL:_sQuery += " 			WHEN CT.CT2_DEBITO = '101030301002' THEN 'MM'"
-	_oSQL:_sQuery += " 			WHEN CT.CT2_DEBITO = '101030301006' THEN 'MB'"
-	_oSQL:_sQuery += " 			WHEN CT.CT2_DEBITO = '101030301005' THEN 'EP'"
-	_oSQL:_sQuery += " 			WHEN CT.CT2_DEBITO = '101030301001' THEN 'UC'"
-	_oSQL:_sQuery += " 			WHEN CT.CT2_DEBITO = '101030101016' THEN 'ME'"
-	_oSQL:_sQuery += " 			WHEN CT.CT2_DEBITO = '101030101011' THEN 'PA'"
-	_oSQL:_sQuery += " 			WHEN CT.CT2_DEBITO = '101030301004' THEN 'MA'"
-	_oSQL:_sQuery += " 			WHEN CT.CT2_DEBITO = '101030101014' THEN 'MP'"
-	_oSQL:_sQuery += " 			WHEN CT.CT2_DEBITO = '101030101015' THEN 'PS'"
-	_oSQL:_sQuery += " 			WHEN CT.CT2_DEBITO = '101030101025' THEN 'MR'"
-	_oSQL:_sQuery += " 			WHEN CT.CT2_DEBITO = '101030101013' THEN 'VD'"
-	_oSQL:_sQuery += " 			WHEN CT.CT2_DEBITO = '101030301007' THEN 'MT'"
-	_oSQL:_sQuery += " 			WHEN CT.CT2_DEBITO = '101030101023' THEN 'BN'"
-	_oSQL:_sQuery += " 			WHEN CT.CT2_DEBITO = '101030301009' THEN 'IA'"
-	_oSQL:_sQuery += " 			ELSE ''"
-	_oSQL:_sQuery += " 		END AS TIPO_CTB"
-	_oSQL:_sQuery += " 	   ,ROUND(SUM(CASE"
-	_oSQL:_sQuery += " 			WHEN CT.CT2_DEBITO != '' THEN CT.CT2_VALOR"
-	_oSQL:_sQuery += " 			WHEN CT.CT2_CREDIT != '' THEN -CT.CT2_VALOR"
-	_oSQL:_sQuery += " 			ELSE ''"
-	_oSQL:_sQuery += " 		END), 2) AS VALOR_CTB"
-	_oSQL:_sQuery += " 	FROM " + RetSQLName ("CT2") + " AS CT"    
-	_oSQL:_sQuery += " 	WHERE CT.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery += " 	AND CT.CT2_ROTINA IN ('MATA103', 'MATA100', 'CTBANFE')"
-	_oSQL:_sQuery += " 	AND SUBSTRING(CT.CT2_DATA, 1, 6) = '" + sPeriodo + "'"
-	_oSQL:_sQuery += " 	AND (CT.CT2_DEBITO != ''"
-	_oSQL:_sQuery += " 	OR CT.CT2_CREDIT != '')"
-	_oSQL:_sQuery += " 	AND CT.CT2_HIST NOT LIKE '%DEVOL%'"
-	_oSQL:_sQuery += " 	AND (CT.CT2_DEBITO NOT LIKE '4%'"
-	_oSQL:_sQuery += " 	AND CT.CT2_DEBITO NOT LIKE '7%')"
-	_oSQL:_sQuery += " 	AND CT.CT2_DEBITO LIKE '101030%'"
-	_oSQL:_sQuery += " 	GROUP BY CT.CT2_FILIAL"
-	_oSQL:_sQuery += " 			,CT.CT2_DEBITO"
-	_oSQL:_sQuery += " 			,CT.CT2_HIST"
-	_oSQL:_sQuery += " 			,SUBSTRING(CT.CT2_KEY, 3, 9)"
-	_oSQL:_sQuery += "          ,SUBSTRING(CT.CT2_KEY,12, 2))"
-	_oSQL:_sQuery += " SELECT DISTINCT"
-	_oSQL:_sQuery += " 	FILIAL_CTB"
-	_oSQL:_sQuery += "    ,DOCUMENTO_CTB"
-	_oSQL:_sQuery += "    ,TIPO_CTB" 
-	_oSQL:_sQuery += "    ,VALOR_CTB"
-	_oSQL:_sQuery += " FROM C"
-	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SD1") + " AS SD1" 
-	_oSQL:_sQuery += " 	ON (SD1.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery += "          AND SD1.D1_FILIAL=FILIAL_CTB"
-	_oSQL:_sQuery += " 			AND SD1.D1_DOC = DOCUMENTO_CTB"
-	_oSQL:_sQuery += "          AND SUBSTRING(SD1.D1_EMISSAO, 1, 6) = '" + sPeriodo + "'"
-	_oSQL:_sQuery += " 			)"
-	_oSQL:_sQuery += " WHERE SD1.D1_CF NOT IN ('1910', '2910', '1151', '1152', '1552', '1557', '2151', '2152', '2552', '2557')"
-	_oSQL:_sQuery += " ORDER BY FILIAL_CTB, TIPO_CTB, DOCUMENTO_CTB"
-	_aCtb := _oSQL:Qry2Array ()
-
-	//nHandle := FCreate("c:\temp\log2.txt")
-	//FWrite(nHandle,_oSQL:_sQuery )
-	//FClose(nHandle)
-	// -------------------------------------------------------------------------------------------------------------
-	// IMPRESSÃO DOS DADOS
-
-	AADD(aItensExcel,{"Filial Ent","Doc.Ent","Tipo Ent","Valor Ent","Filial.Ctb","Doc.Ctb","Tipo.Ctb","Valor.Ctb"})
+	cQuery += " SELECT"
+	cQuery += " 	A.D1_FILIAL AS FILIAL_CTB"
+	cQuery += "    ,A.D1_DOC AS DOCUMENTO_CTB"
+	cQuery += "    ,CASE"
+	cQuery += " 		WHEN A.D1_TP = 'II' THEN 'MA'"
+	cQuery += " 		ELSE A.D1_TP"
+	cQuery += " 	END AS TIPO_CTB"
+	cQuery += "    ,SUM(A.D1_CUSTO) AS CUSTO_CTB"
+	cQuery += " FROM SD1010 AS A"
+	cQuery += " LEFT JOIN SF4010 AS B"
+	cQuery += " 	ON B.F4_CODIGO = A.D1_TES"
+	cQuery += " LEFT JOIN SB1010 AS C"
+	cQuery += " 	ON A.D1_COD = C.B1_COD"
+	cQuery += " WHERE (B.F4_ESTOQUE = 'S')"
+	cQuery += " AND A.D_E_L_E_T_ = ''"
+	cQuery += " AND SUBSTRING(A.D1_DTDIGIT, 1, 6) = '" + sPeriodo + "'"
+	cQuery += " AND A.D1_TIPO != 'D'"
+	//cQuery += " AND A.D1_CF NOT IN ('1151', '1557', '2151')"
+	cQuery += " AND ((A.D1_CF NOT LIKE '19%'"
+	cQuery += " AND A.D1_CF NOT LIKE '29%'))"
+	cQuery += " AND B.D_E_L_E_T_ = ''"
+	cQuery += " AND C.D_E_L_E_T_ = ''"
+	cQuery += " GROUP BY A.D1_FILIAL"
+	cQuery += " 		,A.D1_TP"
+	cQuery += " 		,A.D1_DOC"
+	cQuery += " ORDER BY A.D1_FILIAL"
+	cQuery += " 		,A.D1_TP"
+	cQuery += " 		,A.D1_DOC"
+	aCtb:= U_Qry2Array(cQuery)
 	
-	For x:=1 to len(_aEnt)
+	cQuery1 += " SELECT"
+	cQuery1 += "    CT.CT2_FILIAL AS FILIAL_ENT"
+	cQuery1 += "    ,CASE"
+	cQuery1 += " 		WHEN SUBSTRING(CT.CT2_KEY, 3, 9) = '' THEN SUBSTRING(CT.CT2_HIST, CHARINDEX('NR ', CT.CT2_HIST) + 3, 9)"
+	cQuery1 += " 		ELSE SUBSTRING(CT.CT2_KEY, 3, 9)"
+	cQuery1 += " 	END AS DOCUMENTO_ENT"
+	cQuery1 += "    ,CASE"
+	cQuery1 += " 		WHEN CT.CT2_DEBITO = '101030301008' THEN 'CL'"
+	cQuery1 += " 		WHEN CT.CT2_DEBITO = '101030301002' THEN 'MM'"
+	cQuery1 += " 		WHEN CT.CT2_DEBITO = '101030301006' THEN 'MB'"
+	cQuery1 += " 		WHEN CT.CT2_DEBITO = '101030301005' THEN 'EP'"
+	cQuery1 += " 		WHEN CT.CT2_DEBITO = '101030301001' THEN 'UC'"
+	cQuery1 += " 		WHEN CT.CT2_DEBITO = '101030101016' THEN 'ME'"
+	cQuery1 += " 		WHEN CT.CT2_DEBITO = '101030101011' THEN 'PA'"
+	cQuery1 += " 		WHEN CT.CT2_DEBITO = '101030301004' THEN 'MA'"
+	cQuery1 += " 		WHEN CT.CT2_DEBITO = '101030101014' THEN 'MP'"
+	cQuery1 += " 		WHEN CT.CT2_DEBITO = '101030101015' THEN 'PS'"
+	cQuery1 += " 		WHEN CT.CT2_DEBITO = '101030101025' THEN 'MR'"
+	cQuery1 += " 		WHEN CT.CT2_DEBITO = '101030101013' THEN 'VD'"
+	cQuery1 += " 		WHEN CT.CT2_DEBITO = '101030301007' THEN 'MT'"
+	cQuery1 += " 		WHEN CT.CT2_DEBITO = '101030101023' THEN 'BN'"
+	cQuery1 += " 		WHEN CT.CT2_DEBITO = '101030301009' THEN 'IA'"
+	cQuery1 += " 		ELSE ''"
+	cQuery1 += " 	END AS TIPO_ENT"
+	cQuery1 += "    ,ROUND(SUM(CASE"
+	cQuery1 += " 		WHEN CT.CT2_DEBITO != '' THEN CT.CT2_VALOR"
+	cQuery1 += " 		WHEN CT.CT2_CREDIT != '' THEN -CT.CT2_VALOR"
+	cQuery1 += " 		ELSE ''"
+	cQuery1 += " 	END), 2) AS VALOR_ENT"
+	cQuery1 += " FROM CT2010 AS CT"
+	cQuery1 += " WHERE CT.D_E_L_E_T_ = ''"
+	cQuery1 += " AND CT.CT2_ROTINA IN ('MATA103', 'MATA100', 'CTBANFE')"
+	cQuery1 += " AND SUBSTRING(CT.CT2_DATA, 1, 6) = '" + sPeriodo + "'"
+	cQuery1 += " AND (CT.CT2_DEBITO != ''"
+	cQuery1 += " OR CT.CT2_CREDIT != '')"
+	cQuery1 += " AND CT.CT2_HIST NOT LIKE '%DEVOL%'"
+	cQuery1 += " AND (CT.CT2_DEBITO NOT LIKE '4%'"
+	cQuery1 += " AND CT.CT2_DEBITO NOT LIKE '7%')"
+	cQuery1 += " AND CT.CT2_DEBITO LIKE '101030%'"
+	cQuery1 += " GROUP BY CT.CT2_FILIAL"
+	cQuery1 += " 		,CT.CT2_DEBITO"
+	cQuery1 += " 		,CT.CT2_HIST"
+	cQuery1 += " 		,SUBSTRING(CT.CT2_KEY, 3, 9)"
+	aEnt:= U_Qry2Array(cQuery1)	
+	
+		
+//	AADD(aCabExcel, {"Filial Ctb"  ,"C", 02, 0})
+//	AADD(aCabExcel, {"Doc.Ctb."    ,"C", 20, 0})
+//	AADD(aCabExcel, {"Tipo Ctb."   ,"C", 02, 0})
+//	AADD(aCabExcel, {"Valor Ctb."  ,"N", 18, 2})
+//	AADD(aCabExcel, {"Filial.Ent." ,"C", 02, 0})
+//	AADD(aCabExcel, {"Doc.Ent."    ,"C", 20, 0})
+//	AADD(aCabExcel, {"Tipo.Ent."   ,"C", 02, 0})
+//	AADD(aCabExcel, {"Valor.Ent."  ,"C", 18, 2})
+
+	AADD(aItensExcel,{"Filial Ctb","Doc.Ctb.","Tipo Ctb.","Valor Ctb.","Filial.Ent.","Doc.Ent.","Tipo.Ent.","Valor.Ent." })
+	
+	For x:=1 to len(aCtb)
 		_nAchou := 0
-		For y:=1 to len (_aCtb)
-			If _aEnt[x,1] == _aCtb[y,1] .and. _aEnt[x,2] == _aCtb[y,2] .and. _aEnt[x,3] == _aCtb[y,3]
-				AADD(aItensExcel,{_aEnt[x,1],_aEnt[x,2],_aEnt[x,3],_aEnt[x,4],_aCtb[y,1],_aCtb[y,2],_aCtb[y,3],_aCtb[y,4]})
+		For y:=1 to len (aEnt)
+			If aCtb[x,1] == aEnt[y,1] .and. aCtb[x,2] == aEnt[y,2] .and. aCtb[x,3] == aEnt[y,3]
+				AADD(aItensExcel,{aCtb[x,1],aCtb[x,2],aCtb[x,3],aCtb[x,4],aEnt[y,1],aEnt[y,2],aEnt[y,3],aEnt[y,4]})
 				
 				_nAchou := 1
 			EndIf
 		Next
 		If _nAchou == 0
-			AADD(aItensExcel,{_aEnt[x,1],_aEnt[x,2],_aEnt[x,3],_aEnt[x,4],'','','',0})
+			AADD(aItensExcel,{aCtb[x,1],aCtb[x,2],aCtb[x,3],aCtb[x,4],'','','',0})
 		EndIf
 	Next
 	
-	For x:=1 to len(_aCtb)
+	For x:=1 to len(aEnt)
 		_nAchou := 0
-		For y:=1 to len (_aEnt)
-			If _aCtb[x,1] == _aEnt[y,1] .and. _aCtb[x,2] == _aEnt[y,2] .and. _aCtb[x,3] == _aEnt[y,3]
+		For y:=1 to len (aCtb)
+			If aEnt[x,1] == aCtb[y,1] .and. aEnt[x,2] == aCtb[y,2] .and. aEnt[x,3] == aCtb[y,3]
 				_nAchou := 1
 			EndIf
 		Next
 		If _nAchou == 0
-			AADD(aItensExcel,{'','','',0,_aCtb[x,1],_aCtb[x,2],_aCtb[x,3],_aCtb[x,4]})
+			AADD(aItensExcel,{'','','',0,aEnt[x,1],aEnt[x,2],aEnt[x,3],aEnt[x,4]})
 		EndIf
 	Next
 
 	u_aColsXLS (aItensExcel,.T.)
 Return
-//
 // -------------------------------------------------------------------------
 // Perguntas
 Static Function _ValidPerg ()
