@@ -1,0 +1,60 @@
+// Programa:  PerfMon
+// Autor:     Robert Koch
+// Data:      12/02/2021
+// Descricao: Auxiliar para monitoramento de performance - calculo e gravacao de tempos (GLPI 9409)
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Auxiliar para monitoramento de performance (calculo e gravacao de tempos.
+// #PalavasChave      #auxiliar #uso_generico #monitor #performance
+// #TabelasPrincipais #
+// #Modulos           #todos_modulos
+
+// Historico de alteracoes:
+//
+
+// --------------------------------------------------------------------------
+
+user function PerfMon (_sQueFazer, _sChvPerf)
+	local _nPosPerf := 0
+	local _oSQL     := NIL
+	local _oAviso   := NIL
+
+	if _sQueFazer == 'I'
+		if type ('_aPerfMon') != 'A'
+			public _aPerfMon := {}
+		endif
+		aadd (_aPerfMon, {_sChvPerf, seconds (), 0})
+	elseif _sQueFazer == 'F'
+		if type ('_aPerfMon') == 'A'
+			_nPosPerf = ascan (_aPerfMon, {|_aVal| _aVal [1] == _sChvPerf})
+			if _nPosPerf == 0
+				U_Log2 ('aviso', "Chave '" + _sChvPerf + "' nao localizada na array de chaves de medicao de performance.")
+			else
+				_aPerfMon [_nPosPerf, 3] = seconds () - _aPerfMon [_nPosPerf, 2]
+				U_Log2 ('info', 'Tempo de execucao da chave ' + _sChvPerf + ': ' + cvaltochar (_aPerfMon [_nPosPerf, 3]) + ' segundos')
+
+				if len (_sChvPerf) > 25  // Deve estar de acordo com o campo CHAVE da tabela VA_PERFMON
+					_oAviso := ClsAviso ():New ()
+					_oAviso:Tipo       = 'E'
+					_oAviso:DestinAvis = {'robert.koch'}
+					_oAviso:Texto      = "Chave de medicao de performance '" + _sChvPerf + "' excedeu tamanho maximo.'
+					_oAviso:Origem     = procname ()
+					_oAviso:CodAviso   = '014'
+					_oAviso:Grava ()
+				else
+					_oSQL := ClsSQL():New ()
+					_oSQL:_sQuery := "INSERT INTO VA_PERFMON (CHAVE, SEGUNDOS)"
+					_oSQL:_sQuery += " VALUES ("
+					_oSQL:_sQuery +=           "'" + _sChvPerf + "', "
+					_oSQL:_sQuery +=           cValToChar (_aPerfMon [_nPosPerf, 3])
+					_oSQL:_sQuery +=         ")"
+					_oSQL:Log ()
+					_oSQL:Exec ()
+				endif
+			endif
+		else
+			U_Log2 ('aviso', "Tempo de execucao da chave '" + _sChvPerf + "' nao pode ser medido por que nao existe em memoria a array de chaves de medicao de performance.")
+		endif
+	endif
+return

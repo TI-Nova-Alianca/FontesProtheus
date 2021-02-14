@@ -7,6 +7,8 @@
 //
 // Historico de alteracoes:
 // 17/06/2020 - Robert - Passa a validar codigo do aviso, para manter consistencia.
+// 14/02/2021 - Robert - Atrbuto ::Destinatar substituido por ::DestinAvis
+//                     - Nao grava mais para GrpTI qunto tipo 'Erro'.
 //
 
 #include "protheus.ch"
@@ -24,7 +26,8 @@ CLASS ClsAviso
 
 	// Declaracao das propriedades da Classe
 	data Tipo
-	data Destinatar
+	data Destinatar  // soh pra manter compatibilidade com fontes antigos
+	data DestinAvis
 	data Texto
 	data Origem
 	data DiasDeVida
@@ -40,6 +43,7 @@ ENDCLASS
 METHOD New () Class ClsAviso
 	::Tipo       := ""
 	::Destinatar := ""
+	::DestinAvis := {}
 	::Texto      := ""
 	::Origem     := ""
 	::DiasDeVida := 0
@@ -50,12 +54,21 @@ Return Self
 // --------------------------------------------------------------------------
 // Serializacao e gravacao em arquivo
 METHOD Grava () Class ClsAviso
-	local _aAreaAnt := U_ML_SRArea ()
-	local _i        := 0
-	local _sPilha   := ""
-	local _aCodAvis := {}
+	local _aAreaAnt  := U_ML_SRArea ()
+	local _i         := 0
+	local _sPilha    := ""
+	local _aCodAvis  := {}
+	local _nDestAvis := 0
 
-	u_log2 (iif (::Tipo == 'A', 'info', 'erro'), '[' + GetClassName (::Self) + '.' + procname () + '] ' + iif (::Tipo == 'A', 'Aviso', 'Notificacao de erro') + ' para ' + ::Destinatar + ': ' + ::Texto)
+	if empty (::DestinAvis)  // ateh eliminar o atributo antigo
+		::DestinAvis = {U_SeparaCpo (::Destinatar, ';')}
+	endif
+
+	u_log2 (iif (::Tipo == 'A', 'info', 'erro'), '[' + GetClassName (::Self) + '.' + procname () + '] ' + iif (::Tipo == 'A', 'Aviso', 'Notificacao de erro') + ' para ' + ::DestinAvis + ': ' + ::Texto)
+
+	if empty (::CodAviso)	
+		U_Log2 ('aviso', 'Codigo de aviso nao informado.')
+	endif
 
 	_aCodAVis = {}
 	aadd (_aCodAvis, {'001', 'Usuario deveria estar bloqueado (ferias/afastamento/desligamento)'})
@@ -71,36 +84,33 @@ METHOD Grava () Class ClsAviso
 	aadd (_aCodAvis, {'011', 'Problemas no calculo de frete de uva para associados.'})
 	aadd (_aCodAvis, {'012', 'Ajustado custo negativo no B2_VATU'})
 	aadd (_aCodAvis, {'013', 'Erro atualizacao SE5 na compensacao de contas a pagar'})
+	aadd (_aCodAvis, {'014', 'Tamanho chave medicao performance excedido'})
 
 	if ascan (_aCodAVis, {|_aVal| _aVal [1] == ::CodAviso}) == 0
 		u_log2 ('erro', "Codigo de aviso '" + ::CodAviso + "' nao cadastrado na classe " + GetClassName (::Self))
 	endif
 
-	if ::Tipo == 'E'  // Erro
-		if ! 'GRPTI' $ upper (::Destinatar)
-			::Destinatar += ';grpTI'
+	for _nDestAvis = 1 to len (DestinAvis)
+		reclock ("ZAB", .T.)
+		zab -> zab_tipo   = ::Tipo
+		zab -> zab_destin = ::DestinAvis [_nDestAvis]
+		zab -> zab_texto  = ::Texto
+		zab -> zab_dtemis = date ()
+		zab -> zab_hremis = time ()
+		if ::Origem == NIL .or. empty (::Origem)
+			do while procname (_i) != ""
+				_sPilha += '=>' + procname (_i)
+				_i++
+			enddo
+			zab -> zab_origem = _sPilha
+		else
+			zab -> zab_origem = ::Origem
 		endif
-	endif
-
-	reclock ("ZAB", .T.)
-	zab -> zab_tipo   = ::Tipo
-	zab -> zab_destin = ::Destinatar
-	zab -> zab_texto  = ::Texto
-	zab -> zab_dtemis = date ()
-	zab -> zab_hremis = time ()
-	if ::Origem == NIL .or. empty (::Origem)
-		do while procname (_i) != ""
-			_sPilha += '=>' + procname (_i)
-			_i++
-		enddo
-		zab -> zab_origem = _sPilha
-	else
-		zab -> zab_origem = ::Origem
-	endif
-	zab -> zab_valid  = iif (::DiasDeVida == NIL, iif (::Tipo == 'E', 0, 30), ::DiasDeVida)
-	zab -> zab_lido   = 'N'
-	zab -> zab_codigo = ::CodAviso
-	msunlock ()
+		zab -> zab_valid  = iif (::DiasDeVida == NIL, iif (::Tipo == 'E', 0, 30), ::DiasDeVida)
+		zab -> zab_lido   = 'N'
+		zab -> zab_codigo = ::CodAviso
+		msunlock ()
+	next
 
 	U_ML_SRArea (_aAreaAnt)
 return

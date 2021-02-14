@@ -1,5 +1,6 @@
 // Programa:  U_Robert
 // Autor:     Robert Koch
+// Data:      ??/??/????
 // Descricao: Ajustes e testes diversos
 
 // Para estudar...
@@ -13,6 +14,9 @@
 // #PalavasChave      #auxiliar #uso_generico
 // #TabelasPrincipais 
 // #Modulos           #todos_modulos
+
+// Historico de alteracoes:
+//
 
 #include "protheus.ch"
 //#include "rwmake.ch"
@@ -82,9 +86,69 @@ static function _AndaLogo ()
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
+
+	U_PerfMon ('I', 'testedetamanhodechavedeperformance')  // Deixa variavel pronta para posterior medicao de tempos de execucao
+	U_PerfMon ('F', 'testedetamanhodechavedeperformance')  // Deixa variavel pronta para posterior medicao de tempos de execucao
+
+					_oAviso := ClsAviso ():New ()
+					_oAviso:Tipo       = 'E'
+					_oAviso:DestinAvis = {'robert.koch', 'daiana.ribas'}
+					_oAviso:Texto      = "teste de aviso novo'
+					_oAviso:Origem     = procname ()
+					_oAviso:CodAviso   = '014'
+					_oAviso:Grava ()
+
+					_oAviso := ClsAviso ():New ()
+					_oAviso:Tipo       = 'E'
+					_oAviso:Destinatar = 'robert.koch;daiana.ribas'
+					_oAviso:Texto      = "teste de aviso velho'
+					_oAviso:Origem     = procname ()
+					_oAviso:CodAviso   = '014'
+					_oAviso:Grava ()
+
 	u_help ('Nada definido.')
 	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
 return
+
+user function MT242LOk ()
+	local _sMsg     := ''
+	local _sRevisao := ''
+	local _aEstrut  := {}
+	local _lRet     := .T.
+	local _lFilhoOk := .F.
+	local _lCompOk  := .F.
+	local _aAreaAnt := U_ML_SRArea ()
+
+	if ! GDDeleted ()
+		If ! fbuscacpo("SB1",1,xfilial("SB1")+GDFieldGet ("D3_COD"),"B1_CODPAI") == CProduto
+			_lFilhoOK = .F.
+		else
+			_lFilhoOK = .T.
+		endif
+		if ! _lFilhoOK  // Se eh filho, nem preciso olhar a estrutura
+			_sRevisao = fbuscacpo("SB1",1,xfilial("SB1") + CProduto, "B1_REVATU")
+			U_Log2 ('debug', _srevisao)
+			_aEstrut := aclone (U_ML_Comp2 (CProduto, 1, ".T.", dDataBase, .F., .F., .F., .F., .T., '', .F., '.t.', .T., .F., _sRevisao))
+			u_log2 ('debug', _aEstrut)
+			If ascan (_aEstrut, {|_aVal| _aVal [2] == GDFieldGet ("D3_COD")}) == 0
+				_lCompOK = .F.
+			else
+				_lCompOK = .T.
+			endif
+		endif
+	endif
+	if ! _lFilhoOK .and. ! _lCompOK
+		_sMsg = "O item '" + GDFieldGet ("D3_COD") + "' não é componente do produto origem, nem consta relacionamento do tipo 'caixa x unidade'."
+		if U_ZZUVL ('098', __cUserId, .F.)
+			_lRet = U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
+		else
+			u_help (_sMsg)
+			_lRet = .F.
+		endif
+	endif
+	U_ML_SRArea (_aAreaAnt)
+return _lRet
+
 /*
 	for _nAssoc = 1 to 100
 		//_oAssoc := ClsAssoc ():New ('000161', '01')
