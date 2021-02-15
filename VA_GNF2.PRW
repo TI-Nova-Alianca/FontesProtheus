@@ -30,6 +30,7 @@
 // 13/05/2020 - Robert - Ajustes para 2020: compra parcial (apenas bordo e bordo de bordadura). Refeito while principal (GLPI 7705)
 //                     - Melhorados logs e mensagens de erro.
 // 16/06/2020 - Robert - TInha um dbskip() a mais e perdia a pre-nf quando a mesma tivesse apenas um item.
+// 15/02/2021 - Robert - Passa a prever parcelas via VA_RusPP.prw para manter consistencia com VA_RusN (GLPI 9389)
 //
 
 #include "tbiconn.ch"
@@ -61,10 +62,6 @@ User Function VA_GNF2 (_lAutomat)
 	Private cPerg      := "VAGNF2"
 	private _sOrigSZI  := "VA_GNF2"
 	private _sErroAuto := ""  // Deixar private para ser vista pela funcao U_Help ()
-
-	U_HELP ('CRIAR VALIDACAO VERIFICANDO SE O TES ESTAH CONTIDO NO PARAMETRO ML_TESCSAF')
-	u_help ('conferir se contabilizou em associados cta producao, em vez de materia prima')
-	Return
 
 	// Verifica se o usuario tem liberacao para uso desta rotina.
 	if _lContinua
@@ -157,7 +154,7 @@ Static Function _Gera03 ()
 	u_logSX1 ()
 	
 	// Pega-ratao (no caso, eu mesmo). Jah gerei notas usando a cond.pagto. errada mais de uma vez... provavelmente precise ajustar em cada safra.
-	_lContinua = _ValCond ()
+	// A partir de 2021 pretendo se salvo pelo P.E. MTCOLSE2 --> _lContinua = _ValCond ()
 
 	// A partir de 2016 teremos uma serie especifica para NF de safra.
 	// Fica fixo no programa para nem precisar abrir tela para o usuario.
@@ -200,12 +197,6 @@ Static Function _Gera03 ()
 		_sVariNao = alltrim (mv_par13)
 		_nTamDesc = tamsx3 ("D1_DESCRI")[1]
 		_nTamItem = tamsx3 ("D1_ITEM")[1]
-	endif
-
-	// Soh para me obrigar a revisar anualmente...
-	if _sSafra > '2020'
-		u_help ("revisar rotina de geracao de NF para esta safra")
-		return
 	endif
 
 //	if _lContinua .and. _sTipoNF == "N"  // Notas normais
@@ -341,7 +332,7 @@ Static Function _Gera03 ()
 						loop
 					endif
 					if ! empty (_sParcelas) .and. ! zz9 -> zz9_parcel $ _sParcelas
-						u_log2 ('debug', 'Parcela fora da faixa selecionada.')
+						u_log2 ('debug', "Parcela '" + zz9 -> zz9_parcel + "' fora da faixa selecionada.")
 						zz9 -> (dbskip ())
 						loop
 					endif
@@ -910,160 +901,188 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 	local _oSQL      := NIL
 	local _sMemoAnt  := ""
 	local _nPreNF    := 0
+	local _nVlrUvas  := 0
+	private _aParPgSaf := {}  // Parcelas pre calculadas. Deixar PRIVATE para ser lida pelo ponto de entrada MTCOLSE2().
 
 //	u_logIni ()
 
+
 	// A partir de 2012 preciso informar uma NF de produtor rural referenciada. Como aqui sao misturadas
-	// diversas notas, pegarei uma das notas de entrada de safra deste associado.
-	_oSQL := ClsSQL():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT TOP 1 NF_PRODUTOR"
-	_oSQL:_sQuery +=   " FROM dbo.VA_VNOTAS_SAFRA V"
-	_oSQL:_sQuery +=  " WHERE V.SAFRA      = '" + _sSafra + "'"
-	_oSQL:_sQuery +=    " AND V.FILIAL     = '" + cFilAnt + "'"
-	_oSQL:_sQuery +=    " AND V.ASSOCIADO  = '" + _sFornece + "'"
-	_oSQL:_sQuery +=    " AND V.LOJA_ASSOC = '" + _sLoja + "'"
-	_oSQL:_sQuery +=    " AND V.TIPO_NF    = 'E'"
-	_oSQL:_sQuery +=    " AND V.PRODUTO    = '" + _aItens [1, .ItensProduto] + "'"
-	_sNFPRur = _oSQL:RetQry (1, .F.)
+	// diversas notas, pegarei a primeira nota deste associado na safra em questao.
+	if _lContinua
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT TOP 1 NF_PRODUTOR"
+		_oSQL:_sQuery +=   " FROM dbo.VA_VNOTAS_SAFRA V"
+		_oSQL:_sQuery +=  " WHERE V.SAFRA      = '" + _sSafra + "'"
+		_oSQL:_sQuery +=    " AND V.FILIAL     = '" + cFilAnt + "'"
+		_oSQL:_sQuery +=    " AND V.ASSOCIADO  = '" + _sFornece + "'"
+		_oSQL:_sQuery +=    " AND V.LOJA_ASSOC = '" + _sLoja + "'"
+		//_oSQL:_sQuery +=    " AND V.TIPO_NF    = 'E'"
+		_oSQL:_sQuery +=    " AND V.TIPO_NF    in ('E', 'C')"
+		_oSQL:_sQuery +=    " AND V.PRODUTO    = '" + _aItens [1, .ItensProduto] + "'"
+		_sNFPRur = _oSQL:RetQry (1, .F.)
+		if empty (_sNFPRur)
+			u_help ("Nao encontrei nenhuma NF de produtor para referenciar.", _oSQL:_sQuery, .T.)
+			_lContinua = .F.
+		endif
+	endif
 
 	// Busca a Proxima NF da Sequencia
-	_sNF = NxtSX5Nota (_sSerie)
+	if _lContinua
+		_sNF = NxtSX5Nota (_sSerie)
 
-	// Prepara campos do cabecalho da nota
-	_aAutoSF1 := {}
-	AADD( _aAutoSF1, { "F1_DOC"      , _sNF,           Nil } )
-	AADD( _aAutoSF1, { "F1_SERIE"    , _sSerie,        Nil } )
-	AADD( _aAutoSF1, { "F1_TIPO"     , _sTipoNota,     Nil } )
-	AADD( _aAutoSF1, { "F1_FORMUL"   , "S",            Nil } )
-	AADD( _aAutoSF1, { "F1_EMISSAO"  , dDataBase,      Nil } )
-	AADD( _aAutoSF1, { "F1_FORNECE"  , _sFornece,      Nil } )
-	AADD( _aAutoSF1, { "F1_LOJA"     , _sLoja,         Nil } )
-	AADD( _aAutoSF1, { "F1_EST"      , _sUF,           Nil } )
-	AADD( _aAutoSF1, { "F1_ESPECIE"  , "SPED",         Nil } )
-	AADD( _aAutoSF1, { "F1_COND"     , _sCondPag,      Nil } )
-	AADD( _aAutoSF1, { "F1_VADCO"    , _sDCO,          Nil } )  // Cpo customizado: serah tratado no P.E. SF1100I
-	AADD( _aAutoSF1, { "F1_VANFPRO"  , _sNFPRur,       Nil } )  // Campo customizado, serah tratado pelo P.E. SF1100I
-	AADD( _aAutoSF1, { "F1_VASAFRA"  , _sSafra,        Nil } )  // Campo customizado, serah tratado pelo P.E. SF1100I
-	AADD( _aAutoSF1, { "F1_VAGPSAF"  , _sGrpPagto,     Nil } )  // Campo customizado, serah tratado pelo P.E. SF1100I
-	AADD( _aAutoSF1, { "F1_VAFLAG"   , 'G',            Nil } )  // Campo customizado, serah tratado pelo P.E. SF1100I. Indica 'nota ja gerada' para a rotina de manut. XML
+		// Prepara campos do cabecalho da nota
+		_aAutoSF1 := {}
+		AADD( _aAutoSF1, { "F1_DOC"      , _sNF,           Nil } )
+		AADD( _aAutoSF1, { "F1_SERIE"    , _sSerie,        Nil } )
+		AADD( _aAutoSF1, { "F1_TIPO"     , _sTipoNota,     Nil } )
+		AADD( _aAutoSF1, { "F1_FORMUL"   , "S",            Nil } )
+		AADD( _aAutoSF1, { "F1_EMISSAO"  , dDataBase,      Nil } )
+		AADD( _aAutoSF1, { "F1_FORNECE"  , _sFornece,      Nil } )
+		AADD( _aAutoSF1, { "F1_LOJA"     , _sLoja,         Nil } )
+		AADD( _aAutoSF1, { "F1_EST"      , _sUF,           Nil } )
+		AADD( _aAutoSF1, { "F1_ESPECIE"  , "SPED",         Nil } )
+		AADD( _aAutoSF1, { "F1_COND"     , _sCondPag,      Nil } )
+		AADD( _aAutoSF1, { "F1_VADCO"    , _sDCO,          Nil } )  // Cpo customizado: serah tratado no P.E. SF1100I
+		AADD( _aAutoSF1, { "F1_VANFPRO"  , _sNFPRur,       Nil } )  // Campo customizado, serah tratado pelo P.E. SF1100I
+		AADD( _aAutoSF1, { "F1_VASAFRA"  , _sSafra,        Nil } )  // Campo customizado, serah tratado pelo P.E. SF1100I
+		AADD( _aAutoSF1, { "F1_VAGPSAF"  , _sGrpPagto,     Nil } )  // Campo customizado, serah tratado pelo P.E. SF1100I
+		AADD( _aAutoSF1, { "F1_VAFLAG"   , 'G',            Nil } )  // Campo customizado, serah tratado pelo P.E. SF1100I. Indica 'nota ja gerada' para a rotina de manut. XML
 
 
-//	u_log ("Fornecedor:", _sFornece, _sLoja)
-//	u_log ("Msg.:", _sMsgContr)
-//	u_log ("Pre-notas:", _aPreNF)
-//	u_log ("Cabecalho:", _aAutoSF1)
-//	if _sTipoNota == "C"
-//	u_log2 ('DEBUG', _aitens)
-//	endif
+	//	u_log ("Fornecedor:", _sFornece, _sLoja)
+	//	u_log ("Msg.:", _sMsgContr)
+	//	u_log ("Pre-notas:", _aPreNF)
+	//	u_log ("Cabecalho:", _aAutoSF1)
+	//	if _sTipoNota == "C"
+	//	u_log2 ('DEBUG', _aitens)
+	//	endif
 
-	// Prepara itens da nota
-	_aAutoSD1 = {}
-	for _nItem = 1 to len (_aItens)
+		// Prepara itens da nota
+		_nVlrUvas = 0
+		_aAutoSD1 = {}
+		for _nItem = 1 to len (_aItens)
 
-		sb1 -> (dbsetorder (1))
-		sb1 -> (dbseek (xfilial ("SB1") + _aItens [_nItem, .ItensProduto], .F.))
-		
-		// Monta descricao com grau e classificacao da uva. Inicia com o grau e classificacao, reduzindo o nome da uva caso necessario.
-		_sDescri = " Gr:" + alltrim (_aItens [_nItem, .ItensGrau])
-		if ! empty (_aItens [_nItem, 4])  // Classificacao espaldeira (DS/D/C/B/A/AA)
-			_sDescri += " Clas.:" + alltrim (_aItens [_nItem, .ItensClasEspald])
-		elseif ! empty (_aItens [_nItem, 5])  // Classificacao latada (A/B/D)
-			_sDescri += " Clas.:" + alltrim (_aItens [_nItem, .ItensClasLatada])
+			sb1 -> (dbsetorder (1))
+			sb1 -> (dbseek (xfilial ("SB1") + _aItens [_nItem, .ItensProduto], .F.))
+			
+			// Monta descricao com grau e classificacao da uva. Inicia com o grau e classificacao, reduzindo o nome da uva caso necessario.
+			_sDescri = " Gr:" + alltrim (_aItens [_nItem, .ItensGrau])
+			if ! empty (_aItens [_nItem, 4])  // Classificacao espaldeira (DS/D/C/B/A/AA)
+				_sDescri += " Clas.:" + alltrim (_aItens [_nItem, .ItensClasEspald])
+			elseif ! empty (_aItens [_nItem, 5])  // Classificacao latada (A/B/D)
+				_sDescri += " Clas.:" + alltrim (_aItens [_nItem, .ItensClasLatada])
+			endif
+			_sDescri = left (alltrim (_aItens [_nItem, .ItensDescricao]), _nTamDesc - len (_sDescri)) + _sDescri
+
+			// Arredonda valor total p/ 2 casas p/ compatibilizar com SFT, SF3, SE2, contabilizacao, SPED, etc...
+			if _sTipoNota == "N"
+				_nQuant = round (_aItens [_nItem, .ItensQuantidade], TamSX3 ("D1_QUANT")[2])
+				_nVlUni = _aItens [_nItem, .ItensValorTotal] / _nQuant
+				_nVlTot = round (_nQuant * _nVlUni, 2)
+			else
+				_nQuant = 0
+				_nVlUni = 0
+				_nVlTot = round (_aItens [_nItem, .ItensValorTotal], 2)
+			endif
+
+			// Prepara array com o item para a nota
+			_aLinha = {}
+			AADD(_aLinha , {"D1_COD"     , _aItens [_nItem, .ItensProduto]  , Nil } )
+			AADD(_aLinha , {"D1_TES"     , _aItens [_nItem, .ItensTES]    , Nil } )
+			AADD(_aLinha , {"D1_LOCAL"   , sb1 -> B1_LOCPAD     , Nil } )
+			AADD(_aLinha , {"D1_DESCRI"  , _sDescri             , Nil } )
+			AADD(_aLinha , {"D1_GRAU"    , _aItens [_nItem, .ItensGrau]  , Nil } )
+			AADD(_aLinha , {"D1_PRM99"   , _aItens [_nItem, .ItensClasEspald]  , Nil } )
+			AADD(_aLinha , {"D1_VACLABD" , _aItens [_nItem, .ItensClasLatada]  , Nil } )
+			AADD(_aLinha , {"D1_TOTAL"   , _nVlTot              , Nil } )
+			AADD(_aLinha , {"D1_VAVOLES" , "KG"                 , Nil } )
+			AADD(_aLinha , {"D1_VACONDU" , _aItens [_nItem, .ItensConducao] , Nil } )
+			if _sTipoNota == "N"
+				AADD(_aLinha , {"D1_UM"      , sb1 -> B1_UM         , Nil } )
+				AADD(_aLinha , {"D1_TP"      , sb1 -> B1_TIPO       , Nil } )
+				AADD(_aLinha , {"D1_QUANT"   , _nQuant              , Nil } )
+				AADD(_aLinha , {"D1_VUNIT"   , _nVlUni              , Nil } )
+				AADD(_aLinha , {"D1_PESBRT"  , _nQuant              , Nil } )
+				AADD(_aLinha , {"D1_VAVOLQT" , _nQuant              , Nil } )
+			else
+				AADD(_aLinha , {"D1_VAVOLQT", 1                    , Nil } )
+				AADD(_aLinha , {"D1_NFORI",   _aItens [_nItem, .ItensNFOri]  , Nil } )
+				AADD(_aLinha , {"D1_SERIORI", _aItens [_nItem, .ItensSerieOri]  , Nil } )
+				// Essa RONHA desse sistema nao aceita por que precisa 4 digitos, mas a mascara do campo tem 2... o jeito foi passar por cima da validacao padrao. -->  AADD(_aLinha , {"D1_ITEMORI", right (_aItens [_nItem, 9], tamsx3 ("D1_ITEMORI")[1]) , Nil } )
+				AADD(_aLinha , {"D1_ITEMORI", right (_aItens [_nItem, .ItensItemOri], tamsx3 ("D1_ITEMORI")[1]) , '.t.' } )
+			endif
+		//	U_LOG2 ('DEBUG', aClone (U_OrdAuto (_aLinha)))
+			AADD(_aAutoSD1, aClone (U_OrdAuto (_aLinha)))
+
+			_nVlrUvas += _nVlTot
+		next
+	endif
+
+	// Prepara valores e datas das parcelas do financeiro, para ser lida pelo P.E. MTColSE2
+	if _lContinua
+		_aParPgSaf := aclone (U_VA_RusPP (_sSafra, _sGrpPagto, _nVlrUvas, 0))
+		if len (_aParPgSaf) == 0
+			u_help ("Sem definicao de parcelamento para pagamento.",, .T.)
+			_lContinua = .F.
 		endif
-		_sDescri = left (alltrim (_aItens [_nItem, .ItensDescricao]), _nTamDesc - len (_sDescri)) + _sDescri
-
-		// Arredonda valor total p/ 2 casas p/ compatibilizar com SFT, SF3, SE2, contabilizacao, SPED, etc...
-		if _sTipoNota == "N"
-			_nQuant = round (_aItens [_nItem, .ItensQuantidade], TamSX3 ("D1_QUANT")[2])
-			_nVlUni = _aItens [_nItem, .ItensValorTotal] / _nQuant
-			_nVlTot = round (_nQuant * _nVlUni, 2)
-		else
-			_nQuant = 0
-			_nVlUni = 0
-			_nVlTot = round (_aItens [_nItem, .ItensValorTotal], 2)
-		endif
-
-		// Prepara array com o item para a nota
-		_aLinha = {}
-		AADD(_aLinha , {"D1_COD"     , _aItens [_nItem, .ItensProduto]  , Nil } )
-		AADD(_aLinha , {"D1_TES"     , _aItens [_nItem, .ItensTES]    , Nil } )
-		AADD(_aLinha , {"D1_LOCAL"   , sb1 -> B1_LOCPAD     , Nil } )
-		AADD(_aLinha , {"D1_DESCRI"  , _sDescri             , Nil } )
-		AADD(_aLinha , {"D1_GRAU"    , _aItens [_nItem, .ItensGrau]  , Nil } )
-		AADD(_aLinha , {"D1_PRM99"   , _aItens [_nItem, .ItensClasEspald]  , Nil } )
-		AADD(_aLinha , {"D1_VACLABD" , _aItens [_nItem, .ItensClasLatada]  , Nil } )
-		AADD(_aLinha , {"D1_TOTAL"   , _nVlTot              , Nil } )
-		AADD(_aLinha , {"D1_VAVOLES" , "KG"                 , Nil } )
-		AADD(_aLinha , {"D1_VACONDU" , _aItens [_nItem, .ItensConducao] , Nil } )
-		if _sTipoNota == "N"
-			AADD(_aLinha , {"D1_UM"      , sb1 -> B1_UM         , Nil } )
-			AADD(_aLinha , {"D1_TP"      , sb1 -> B1_TIPO       , Nil } )
-			AADD(_aLinha , {"D1_QUANT"   , _nQuant              , Nil } )
-			AADD(_aLinha , {"D1_VUNIT"   , _nVlUni              , Nil } )
-			AADD(_aLinha , {"D1_PESBRT"  , _nQuant              , Nil } )
-			AADD(_aLinha , {"D1_VAVOLQT" , _nQuant              , Nil } )
-		else
-			AADD(_aLinha , {"D1_VAVOLQT", 1                    , Nil } )
-			AADD(_aLinha , {"D1_NFORI",   _aItens [_nItem, .ItensNFOri]  , Nil } )
-			AADD(_aLinha , {"D1_SERIORI", _aItens [_nItem, .ItensSerieOri]  , Nil } )
-			// Essa RONHA desse sistema nao aceita por que precisa 4 digitos, mas a mascara do campo tem 2... o jeito foi passar por cima da validacao padrao. -->  AADD(_aLinha , {"D1_ITEMORI", right (_aItens [_nItem, 9], tamsx3 ("D1_ITEMORI")[1]) , Nil } )
-			AADD(_aLinha , {"D1_ITEMORI", right (_aItens [_nItem, .ItensItemOri], tamsx3 ("D1_ITEMORI")[1]) , '.t.' } )
-		endif
-	//	U_LOG2 ('DEBUG', aClone (U_OrdAuto (_aLinha)))
-		AADD(_aAutoSD1, aClone (U_OrdAuto (_aLinha)))
-	next
+		U_Log2 ('debug', '_aParPgSaf dentro do VA_GNF2:')
+		U_Log2 ('debug', _aParPgSaf)
+	endif
 
 	// Gera a NF de Compra
-	_sErroAuto = ""
-	lMsHelpAuto := .F.  // se .t. direciona as mensagens de help
-	lMsErroAuto := .F.  // necessario a criacao
-	DbSelectArea("SF1")
-	dbsetorder (1)
-	u_log2 ('info', 'Chamando MATA103 para gerar a nota ' + _sNF)
-	MsExecAuto({|x,y,z|MATA103(x,y,z)},_aAutoSF1,_aAutoSD1,3)
-	If lMsErroAuto
-		u_help (_sErroAuto + chr (13) + chr (10) + U_LeErro (memoread (NomeAutoLog ())))
-		_lContinua = .F.
-	else
-		U_LOG2 ('info', "NF " + sf1 -> f1_doc + " gerada")
+	if _lContinua
+		_sErroAuto = ""
+		lMsHelpAuto := .F.  // se .t. direciona as mensagens de help
+		lMsErroAuto := .F.  // necessario a criacao
+		DbSelectArea("SF1")
+		dbsetorder (1)
+		u_log2 ('info', 'Chamando MATA103 para gerar a nota ' + _sNF)
+		MsExecAuto({|x,y,z|MATA103(x,y,z)},_aAutoSF1,_aAutoSD1,3)
+		If lMsErroAuto
+			u_help (_sErroAuto + chr (13) + chr (10) + U_LeErro (memoread (NomeAutoLog ())))
+			_lContinua = .F.
+		else
+			U_LOG2 ('info', "NF " + sf1 -> f1_doc + " gerada")
 
-		// Grava dados adicionais na nota.
-		if ! empty (_sMsgContr)
-			if empty (sf1 -> f1_vacmemc)
-				//u_log ('Incluindo memo no SF1:', _sMsgContr)
-				msmm(,,,_sMsgContr,1,,,"SF1","F1_VACMEMC")
-			else
-				_sMemoAnt = alltrim (MSMM (sf1->f1_vacmemc,,,,3))
-				//u_log ("Acrescentando '" + _sMsgContr + "' ao memo do SF1, que continha '" + _sMemoAnt + "'")
-				msmm (sf1 -> f1_vacmemc,,, _sMemoAnt + '; ' + _sMsgContr, 1,,,"SF1","F1_VACMEMC")
+			// Grava dados adicionais na nota.
+			if ! empty (_sMsgContr)
+				if empty (sf1 -> f1_vacmemc)
+					//u_log ('Incluindo memo no SF1:', _sMsgContr)
+					msmm(,,,_sMsgContr,1,,,"SF1","F1_VACMEMC")
+				else
+					_sMemoAnt = alltrim (MSMM (sf1->f1_vacmemc,,,,3))
+					//u_log ("Acrescentando '" + _sMsgContr + "' ao memo do SF1, que continha '" + _sMemoAnt + "'")
+					msmm (sf1 -> f1_vacmemc,,, _sMemoAnt + '; ' + _sMsgContr, 1,,,"SF1","F1_VACMEMC")
+				endif
 			endif
-		endif
-//		u_log ('dados adicionais gravados')
+	//		u_log ('dados adicionais gravados')
 
-		// Grava no ZZ9 o numero da nota gerada, para evitar geracao em duplicidade.
-		dbselectarea ("ZZ9")
-		_aAreaZZ9 := GetArea ()
-		for _nPreNF = 1 to len (_aPreNF)
-			zz9 -> (dbgoto (_aPreNF [_nPreNF]))
-			if empty (zz9 -> zz9_nfcomp)
-			//	u_log ('Atualizando ZZ9 recno', zz9 -> (recno ()))
-				reclock ("ZZ9", .F.)
-				zz9 -> zz9_nfComp = sf1 -> f1_doc
-				zz9 -> zz9_serCom = sf1 -> f1_serie
-				msunlock ()
-			else
-				u_log2 ("ERRO", 'Tentando atualizar ZZ9, mas ja tem zz9_nfcomp')
+			// Grava no ZZ9 o numero da nota gerada, para evitar geracao em duplicidade.
+			dbselectarea ("ZZ9")
+			_aAreaZZ9 := GetArea ()
+			for _nPreNF = 1 to len (_aPreNF)
+				zz9 -> (dbgoto (_aPreNF [_nPreNF]))
+				if empty (zz9 -> zz9_nfcomp)
+				//	u_log ('Atualizando ZZ9 recno', zz9 -> (recno ()))
+					reclock ("ZZ9", .F.)
+					zz9 -> zz9_nfComp = sf1 -> f1_doc
+					zz9 -> zz9_serCom = sf1 -> f1_serie
+					msunlock ()
+				else
+					u_log2 ("ERRO", 'Tentando atualizar ZZ9, mas ja tem zz9_nfcomp')
+				endif
+			next
+			RestArea (_aAreaZZ9)
+	//		u_log ('ZZ9 atualizado')
+
+			// Guarda intervalo de numeracao para mostrar em mensagem no final do processo.
+			if empty (_sNFIni)
+				_sNFIni = sf1 -> f1_doc
 			endif
-		next
-		RestArea (_aAreaZZ9)
-//		u_log ('ZZ9 atualizado')
-
-		// Guarda intervalo de numeracao para mostrar em mensagem no final do processo.
-		if empty (_sNFIni)
-			_sNFIni = sf1 -> f1_doc
+			_sNFFim = sf1 -> f1_doc
 		endif
-		_sNFFim = sf1 -> f1_doc
 	endif
 
 	// Gera entrada na conta corrente do associado, com base nos titulos gerados no financeiro.
@@ -1129,7 +1148,7 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 return _lContinua
 
 
-
+/*
 // --------------------------------------------------------------------------
 // Valida condicao de pagamento
 static function _ValCond ()
@@ -1167,7 +1186,7 @@ static function _ValCond ()
 		_lRet = U_MsgYesNo ("As notas serao geradas com a(s) seguinte(s) data(s) de vencimento:" + chr (10) + chr (13) + _sMsgVcto + chr (10) + chr (13) + "Confirma?", .T.)
 	endif
 return _lRet
-
+*/
 
 
 // --------------------------------------------------------------------------
