@@ -29,6 +29,8 @@
 // 14/08/2020 - Cláudia - Ajuste de Api em loop, conforme solicitação da versao 25 protheus. GLPI: 7339
 // 31/08/2020 - Robert  - Concatena safra+cod+loja associado no nome do arquivo destino.
 // 03/09/2020 - Robert  - Criado layout resumido.
+// 12/02/2021 - Robert  - Criados modelos com/sem previsao de pagamento - GLPI 9318
+//                      - Novos parametros metodo ClsAssoc:FechSafra() - GLPI 9318
 //
 
 #include "protheus.ch"
@@ -103,10 +105,14 @@ User Function ML_FECHASAFRA (_lAutomat)
 	if mv_par01 < '2020'  // Metodo original
 		processa ({|| RptDetail ()})
 	else  // Busca da classe ClsAssoc.
-		if mv_par06 == 1  // Detalhado
-			processa ({|| _Modelo2 ()})
-		elseif mv_par06 == 2  // Resumido
-			processa ({|| _Modelo3 ()})
+		if mv_par06 == 1  // Detalhado COM previsoes de pagamento
+			processa ({|| _Modelo2 (.T.)})
+		elseif mv_par06 == 2  // Detalhado SEM previsoes de pagamento
+			processa ({|| _Modelo2 (.F.)})
+		elseif mv_par06 == 3  // Resumido COM previsoes de pagamento
+			processa ({|| _Modelo3 (.T.)})
+		elseif mv_par06 == 4  // Resumido SEM previsoes de pagamento
+			processa ({|| _Modelo3 (.F.)})
 		else
 			u_help ("Modelo sem tratamento.",, .t.)
 		endif
@@ -903,7 +909,7 @@ return
 // --------------------------------------------------------------------------
 // Modelo a partir da safra 2020, onde busca dados da classe ClsAssoc para
 // manter consistencia web service que atende APP de associados.
-static function _Modelo2 ()
+static function _Modelo2 (_lPrevPag)
 	local _aAssoc    := {}
 	local _nAssoc    := 0
 	local _oAssoc    := NIL
@@ -988,7 +994,7 @@ static function _Modelo2 ()
 		endif
 
 		// Busca dados do fechamento de safra. Usa mesmo o metodo do APP associados.
-		_sXmlFech = _oAssoc:FechSafra (mv_par01)
+		_sXmlFech = _oAssoc:FechSafra (mv_par01, .F., _lPrevPag)
 		//	u_log2 ('debug', _sXmlFech)
 		if empty (_sXmlFech)
 			u_help ("Associado ", _aAssoc [_nAssoc, 1] + '/' + _aAssoc [_nAssoc, 2] + ": Retorno vazio metodo FechSafra " + _oAssoc:UltMsg,, .t.)
@@ -1367,7 +1373,7 @@ Return _type
 // --------------------------------------------------------------------------
 // Modelo (resumido) a partir da safra 2020, onde busca dados da classe ClsAssoc para
 // manter consistencia web service que atende APP de associados.
-static function _Modelo3 ()
+static function _Modelo3 (_lPrevPag)
 	local _aAssoc    := {}
 	local _nAssoc    := 0
 	local _oAssoc    := NIL
@@ -1437,7 +1443,7 @@ static function _Modelo3 ()
 		endif
 
 		// Busca dados do fechamento de safra. Usa mesmo o metodo do APP associados.
-		_sXmlFech = _oAssoc:FechSafra (mv_par01)
+		_sXmlFech = _oAssoc:FechSafra (mv_par01, .F., _lPrevPag)
 		u_log2 ('debug', _sXmlFech)
 		if empty (_sXmlFech)
 			u_help ("Associado ", _aAssoc [_nAssoc, 1] + '/' + _aAssoc [_nAssoc, 2] + ": Retorno vazio metodo FechSafra " + _oAssoc:UltMsg,, .t.)
@@ -1578,7 +1584,7 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {03, "Loja                          ", "C", 2,  0,  "",   "",    {},                        ""})
 	aadd (_aRegsPerg, {04, "Nucleo                        ", "C", 2,  0,  "",   "   ", {},                        ""})
 	aadd (_aRegsPerg, {05, "Lista Saldo C/C               ", "N", 1,  0,  "",   "   ", {"Sim", "Não"}           , ""})	
-	aadd (_aRegsPerg, {06, "Modelo                        ", "N", 1,  0,  "",   "   ", {"Detalhado", "Resumido"}, ""})	
+	aadd (_aRegsPerg, {06, "Detalhado ou resumido         ", "N", 1,  0,  "",   "   ", {"Det.COM prev.pg", "Det.SEM prev.pg", "Res.COM prev.pg", "Res.SEM prev.pg"}, ""})	
 	
 	U_ValPerg (cPerg, _aRegsPerg)
 Return

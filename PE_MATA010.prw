@@ -22,7 +22,9 @@
 //                      - Antes de permitir a exclusao, verifica se o item existe no Mercanet, FullWMS e NaWeb.
 //                      - Eliminados logs desnecessarios.
 // 20/01/2021 - Cláudia - GLPI:8921 - Incluida verificação de caracteres especiais.
+// 12/02/2021 - Robert  - Incluidas chamadas da funcao U_PerfMon para testes de monitoramento de performance (GLPI 9409)
 //
+
 //---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
 #Include "TOTVS.ch"
@@ -39,7 +41,8 @@ User Function ITEM()
 		// Devido ao fato deste P.E. ser chamado mais de uma vez para cada campo da tela, optei por tratar somente os casos necessarios
 		// e deixar de usar um programa mais estruturado.
 		if paramixb [2] == "MODELVLDACTIVE"  // Valida a abertura da tela (executa apenas uma vez na abertura da tela)
-			u_log2 ('debug', 'Iniciando modelo ' + paramixb [2])
+		//	u_log2 ('debug', 'Iniciando modelo ' + paramixb [2])
+			U_PerfMon ('I', 'AbrirEdicaoMATA010')  // Deixa variavel pronta para posterior medicao de tempos de execucao
 			_xRet = .T.
 			oObj := paramixb [1]
 			nOper := oObj:nOperation
@@ -53,7 +56,8 @@ User Function ITEM()
 			endif
 
 		elseif paramixb [2] == 'BUTTONBAR'  // Chamado uma vez apos montar os campos na tela, antes de montar a barra de botoes.
-			u_log2 ('debug', 'Iniciando modelo ' + paramixb [2])
+		//	u_log2 ('debug', 'Iniciando modelo ' + paramixb [2])
+			U_PerfMon ('F', 'AbrirEdicaoMATA010')  // Finaliza medicao de tempos de execucao
 			oObj := paramixb [1]
 			if oObj:IsCopy ()
 				// Limpa campos que nao devem ser copiados.
@@ -62,11 +66,11 @@ User Function ITEM()
 			_xRet := {}  // Nao quero criar nenhum botao
 
 		elseif paramixb [2] == "MODELPOS"  //Validação 'tudo OK' ao clicar no Botão Confirmar
-			u_log2 ('debug', 'Iniciando modelo ' + paramixb [2])
+		//	u_log2 ('debug', 'Iniciando modelo ' + paramixb [2])
 			_xRet := _A010TOk () 
 
 		elseif paramixb [2] == "MODELCOMMITNTTS"  //Commit das operações (após a gravação)
-			u_log2 ('debug', 'Iniciando modelo ' + paramixb [2])
+		//	u_log2 ('debug', 'Iniciando modelo ' + paramixb [2])
 			oObj := paramixb [1]
 			nOper := oObj:nOperation
 			if nOper == 3  // Inclusao
@@ -78,24 +82,28 @@ User Function ITEM()
 				_MT010Alt ()
 			endif
 			_xRet = NIL
+			U_PerfMon ('F', 'GravarMATA010')
 
 		elseif paramixb [2] == 'FORMPRE'  // Chamado a cada campo que tiver validacao de usuario.
 			_xRet = NIL
 		ElseIf paramixb [2] == "FORMPOS"  // Pós configurações do Formulário
+		//	u_log2 ('debug', 'Iniciando modelo ' + paramixb [2])
 			_xRet = NIL			
 		ElseIf paramixb [2] == "MODELCANCEL"  // Quando o usuario cancela a edicao (tenta sair sem salvar)
 			_xRet = .T.
 		ElseIf paramixb [2] == "FORMCOMMITTTSPOS"  //Pós validações do Commit
+		//	u_log2 ('debug', 'Iniciando modelo ' + paramixb [2])
 			_xRet = NIL
 		ElseIf paramixb [2] == "MODELCOMMITTTS"  //Commit das operações (antes da gravação)
+		//	u_log2 ('debug', 'Iniciando modelo ' + paramixb [2])
 			_xRet = NIL
+			// Deixa variavel pronta para posterior medicao de tempos de execucao
+			U_PerfMon ('I', 'GravarMATA010')
 		ElseIf paramixb [2] == "FORMCOMMITTTSPRE"  //Pré validações do Commit
+		//	u_log2 ('debug', 'Iniciando modelo ' + paramixb [2])
 			_xRet = NIL
 		EndIf 
 	endif
-	//If _xRet == .F.
-	//	Help("",1,"PE_MATA410",,"Problemas em validações. Verifique!",1) 
-	//EndIf
 Return _xRet
 //
 // --------------------------------------------------------------------------

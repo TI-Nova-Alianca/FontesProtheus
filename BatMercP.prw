@@ -3,14 +3,14 @@
 // Data.......: 11/11/2016
 // Descricao..: Importa pedidos de venda do sistema Mercanet.
 //              Criado para ser executado via batch.
-// 
+
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #batch
 // #Descricao         #Importa pedidos de venda do sistema Mercanet.
 // #PalavasChave      #mercanet #pedidos_de_venda #importacao
 // #TabelasPrincipais #SC5 #SC6 #ZC5
 // #Modulos           #FAT
-//
+
 // Historico de alteracoes:
 // 01/03/2017 - Robert - Chamada da funcao ConfirmSXC8() apos o MATA410 para tentar eliminar perda se sequencia de numero de pedidos.
 // 03/05/2017 - Robert - Obriga banco CX1 quando cond.pag.097 (a vista).
@@ -44,6 +44,7 @@
 // 22/06/2020 - Robert - Funcao U_LkSrvMer() renomeada para U_LsServer().
 // 06/11/2020 - Robert - Quando nao tiver o TES no Mercanet, usa do zc5_TipVen para alimentar o TES inteligente.
 // 10/11/2020 - Robert - Passa a desconsiderar o TES que vem do Mercanet e usa apenas o zc5_TipVen para alimentar o TES inteligente (GLPI 8785).
+// 14/02/2021 - Robert  - Incluidas chamadas da funcao U_PerfMon para testes de monitoramento de performance (GLPI 9409)
 //
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -128,6 +129,8 @@ static function _LePed ()
 		do while _lContinua .and. ! (_sAliasQ) -> (eof ())
 			_sFila = (_sAliasQ) -> zc5_fila
 			_sPedMer = (_sAliasQ) -> zc5_pedmer
+
+			U_PerfMon ('I', 'ImportarPedidoMercanet')  // Deixa variavel pronta para posterior medicao de tempos de execucao
 
 			// Avisa o Mercanet que estah iniciando o processamento deste pedido.
 			_oSQL := ClsSQL ():New ()
@@ -381,6 +384,7 @@ static function _LePed ()
 						endif
 						u_log2 ('erro', _sMsgErro)
 					else
+						U_PerfMon ('F', 'ImportarPedidoMercanet')  // Finaliza medicao de tempos de execucao
 						u_help ("Pedido gerado: " + alltrim (_sPedMer) + '->' + sc5 -> c5_num)
 						aadd (_aPedGer, alltrim (_sPedMer) + '->' + sc5 -> c5_num)
 						

@@ -138,7 +138,10 @@
 // 03/09/2020 - Robert  - Liberado movimentar retroativo quando tipo MO (para quando nao havia MO em alguma OP)
 // 06/11/2020 - Robert  - Nao valida mais D3_TM '550/560/561/562/563/564/565/566/567/568/569' x grupo 069 do ZZU (agora temos cadastro de usuarios x TM)
 // 12/01/2021 - Claudia - Retirado programa de criação de saldos por endereço (MATA805) da validação de campo DB_LOCALIZ/DB_QUANT. GLPI: 9122
+// 14/02/2021 - Robert  - Validacoes do D3_COD para programa MATA242 passadas para U_MTA242V e MT242LOk (GLPI 9388)
+//                      - Melhoria envio de avisos para TI.
 //
+
 // --------------------------------------------------------------------------
 user function VA_VCpo (_sCampo)
 	local _lRet      := .T.
@@ -928,7 +931,7 @@ user function VA_VCpo (_sCampo)
 				endif
 			endif		
 			
-			//
+			/* Passado para MT242LOk.prw
 			If _lRet .and. IsInCallStack ("MATA242") // Validação desmontagem 
 				_lRet = .F.
 				If fbuscacpo("SB1",1,xfilial("SB1")+M->D3_Cod,"B1_CODPAI") == CProduto
@@ -964,7 +967,7 @@ user function VA_VCpo (_sCampo)
 					endif
 				EndIf
 			Endif
-
+			*/
 		case _sCampo $ "M->D3_EMISSAO"
 			_lRet = .T.
 			if M->D3_EMISSAO != date ()
@@ -1630,7 +1633,7 @@ user function VA_VCpo (_sCampo)
 			//U_AvisaTI ("Campo '" + _sCampo + "' nao previsto na rotina " + procname ())
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:Destinatar = 'grpTI'
+			_oAviso:DestinAvis = {'robert.koch', 'sandra.sugari', 'claudia.lionco'}
 			_oAviso:Texto      = "Campo '" + _sCampo + "' nao previsto na rotina " + procname ()
 			_oAviso:Origem     = procname ()
 			_oAviso:CodAviso   = '005'
