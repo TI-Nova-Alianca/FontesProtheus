@@ -299,6 +299,7 @@ Return lRetMens
 // Nome do arquivo: inventario.csv
 // Separador: ; (ponto e virgula)
 // Cabeçalho: B7_FILIAL;B7_COD;B7_LOCAL;B7_TIPO;B7_DOC;B7_QUANT;B7_DATA;B7_CONTAGE;B7_STATUS;B7_ORIGEM
+// 01;0151;02;PA;20210213;1;20210213;1;1;IMPMANUAL      
 //
 Static Function _IMPSB7()
 	Local _aDados   := {}
@@ -325,25 +326,28 @@ Static Function _IMPSB7()
 		dbSetOrder(3) // B7_FILIAL+B7_DOC+B7_COD+B7_LOCAL                                                                                                                                
 		dbGoTop()
 		
-		_sDoc   := PADR(_aDados[i,5], 9,' ')
-		_sProd  := PADR(_aDados[i,2],15,' ')
-		_sLocal := _aDados[i,3]
 		
-		If dbSeek(xFilial("SB7") + _sDoc + _sProd + _sLocal)
+		_sFilial := PADL(_aDados[i,1],2,'0')
+		_sProd   := PADR(_aDados[i,2],15,' ')
+		_sLocal  := PADL(_aDados[i,3],2,'0')
+		_sTipo   := UPPER(_aDados[i,4])
+		_sDoc    := PADR(_aDados[i,5], 9,' ')
+		
+		
+		If dbSeek(_sFilial + _sDoc + _sProd + _sLocal)
 			u_help(" O produto: " + alltrim(_sProd) + " no local " + _sLocal + " no documento " + alltrim(_sDoc) + " já está importado! O processo será finalizado." )
 		Else
-			
 			Reclock("SB7",.T.)
-			SB7->B7_FILIAL 	:= xFilial("SB7")
-			SB7->B7_COD	   	:= _aDados[i,2]
-			SB7->B7_LOCAL 	:= _aDados[i,3]
-			SB7->B7_TIPO 	:= _aDados[i,4]
-			SB7->B7_DOC 	:= _aDados[i,5]
-			SB7->B7_QUANT 	:= val(_aDados[i,6])
-			SB7->B7_DATA 	:= STOD(_aDados[i,7])
-			SB7->B7_CONTAGE := _aDados[i,8]
-			SB7->B7_STATUS 	:= _aDados[i,9]
-			SB7->B7_ORIGEM 	:= _aDados[i,10]
+				SB7->B7_FILIAL 	:= _sFilial
+				SB7->B7_COD	   	:= _aDados[i,2]
+				SB7->B7_LOCAL 	:= _sLocal
+				SB7->B7_TIPO 	:= _sTipo
+				SB7->B7_DOC 	:= _aDados[i,5]
+				SB7->B7_QUANT 	:= val(_aDados[i,6])
+				SB7->B7_DATA 	:= STOD(_aDados[i,7])
+				SB7->B7_CONTAGE := _aDados[i,8]
+				SB7->B7_STATUS 	:= _aDados[i,9]
+				SB7->B7_ORIGEM 	:= _aDados[i,10]
 			SB7->(MsUnlock())
 		EndIf
 	Next i
