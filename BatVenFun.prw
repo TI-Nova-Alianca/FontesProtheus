@@ -9,6 +9,7 @@
 // #Modulos 		  #LOJ #RH
 //
 // Historico de alteracoes:
+// 15/02/2021 - Alterada datas para primeira e ultima do mes. GLPI: 9410
 //
 // --------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -18,40 +19,13 @@ User Function BatVenFun()
 	Local _aAreaAnt := U_ML_SRArea ()
 	Local _oSQL     := NIL
 	Local _sMsg     := ""
-	//Local _nDias    := 30
 	Local _sArqLog2 := iif (type ("_sArqLog") == "C", _sArqLog, "")
-	Local _dDtIni   := Date()
+	Local _dDtIni   := FirstDate(Date())
 	Local _dDtFin   := Date()
 	
 	_sArqLog := U_NomeLog (.t., .f.)
 	u_logId()
 	u_logIni()
-	
-	_dDtAtual := Date()
-	
-	_sDiaAtual := Day2Str(_dDtAtual)
-
-	// Se já esta no mes atual
-	If _sDiaAtual >= '01' .and. _sDiaAtual <='25'
-		_dDtMesAnt := MonthSub(Date(),1)
-		
-		_sDiaIni := '26'
-		_sMesIni := Month2Str(_dDtMesAnt)
-		_sAnoIni := Year2Str(_dDtMesAnt)
-		
-		_dDtIni  := STOD(_sAnoIni+_sMesIni+_sDiaIni)
-		_dDtFin  := Date()
-	EndIf
-	
-	// Se esta entre dia 26/MM e 31/MM
-	If _sDiaAtual >= '26' .and. _sDiaAtual <='31'		
-		_sDiaIni := '26'
-		_sMesIni := Month2Str(Date())
-		_sAnoIni := Year2Str(Date())
-		
-		_dDtIni  := STOD(_sAnoIni+_sMesIni+_sDiaIni)
-		_dDtFin  := Date()
-	EndIf
 
 	//u_help(DTOS(_dDtIni) + " - "+ DTOS(_dDtFin))
 

@@ -80,18 +80,23 @@ Static Function _VerCliente ()
 	Local _sMarca := ParamIXB [1]  // "marca" do markbrowse do SC9 (pedidos selecionados pelo usuario)
 	Local _i      := 0
 
-	_sQuery := " SELECT DISTINCT "
-	_sQuery += "      C9_CLIENTE"
-	_sQuery += "     ,C9_LOJA"
-	_sQuery += "     ,C9_PEDIDO"
-	_sQuery += "  FROM " + RETSQLName ("SC9") 
-	_sQuery += "  WHERE D_E_L_E_T_ = ''"
-	_sQuery += "  AND C9_FILIAL = '" + xFilial ("SC9") + "'"
-	_sQuery += "  AND C9_OK     = '" + _sMarca + "'"
+	_sQuery := " SELECT DISTINCT"
+	_sQuery += "  	  SC9.C9_CLIENTE"
+	_sQuery += "     ,SC9.C9_LOJA"
+	_sQuery += "     ,SC9.C9_PEDIDO"
+	_sQuery += "     ,SC5.C5_TIPO"
+	_sQuery += "  FROM " + RETSQLName ("SC9") + " SC9 "
+	_sQuery += "  INNER JOIN " + RETSQLName ("SC5") + " SC5 "
+	_sQuery += "  	ON (SC5.D_E_L_E_T_ = ''"
+	_sQuery += "  			AND SC5.C5_NUM = SC9.C9_PEDIDO"
+	_sQuery += "  			AND SC5.C5_CLIENTE = SC9.C9_CLIENTE)"
+	_sQuery += "  WHERE SC9.D_E_L_E_T_ = ''"
+	_sQuery += "  AND SC9.C9_FILIAL = '" + xFilial ("SC9") + "'"
+	_sQuery += "  AND SC9.C9_OK     = '" + _sMarca + "'"
 	_aDados:= U_Qry2Array(_sQuery)
 
 	For _i:= 1 to Len(_aDados)
-		_lRet := _EhBloq(_aDados[_i, 1], _aDados[_i, 2], _aDados[_i, 3])
+		_lRet := _EhBloq(_aDados[_i, 1], _aDados[_i, 2], _aDados[_i, 3], _aDados[_i, 4])
 		if _lRet == .F.
 			Return _lRet
 		endIf
@@ -100,19 +105,31 @@ Return _lRet
 //
 // --------------------------------------------------------------------------
 // Verifica se cliente é bloqueado
-Static Function _EhBloq(_sCliente, _sLoja, _sPedido)
+Static Function _EhBloq(_sCliente, _sLoja, _sPedido, _sTipo)
 	Local _lRet    := .T.
 	Local _aDados := {}
 	Local _sQuery := ""
 
-	_sQuery := " SELECT"
-	_sQuery += "  	A1_MSBLQL "
-	_sQuery += " FROM " + RETSQLName ("SA1")
-	_sQuery += " WHERE D_E_L_E_T_ = '' "
-	_sQuery += " AND A1_COD  = '" + _sCliente + "'"
-	_sQuery += " AND A1_LOJA = '" + _sLoja    + "'"
-	_aDados:= U_Qry2Array(_sQuery)	
+	If _sTipo == 'D' .or. _sTipo == 'B' // é fornecedor
+		_sQuery := " SELECT"
+		_sQuery += "  	A2_MSBLQL "
+		_sQuery += " FROM " + RETSQLName ("SA2")
+		_sQuery += " WHERE D_E_L_E_T_ = '' "
+		_sQuery += " AND A2_COD  = '" + _sCliente + "'"
+		_sQuery += " AND A2_LOJA = '" + _sLoja    + "'"
+		_aDados:= U_Qry2Array(_sQuery)	
+	
+	Else // é cliente
 
+		_sQuery := " SELECT"
+		_sQuery += "  	A1_MSBLQL "
+		_sQuery += " FROM " + RETSQLName ("SA1")
+		_sQuery += " WHERE D_E_L_E_T_ = '' "
+		_sQuery += " AND A1_COD  = '" + _sCliente + "'"
+		_sQuery += " AND A1_LOJA = '" + _sLoja    + "'"
+		_aDados:= U_Qry2Array(_sQuery)	
+	EndIf
+	
 	If Len(_aDados) > 0
 		If alltrim(_aDados[1,1]) == '1'
 			u_help(" O pedido " + alltrim(_sPedido) + " está com o cliente " + alltrim(_sCliente) + " bloqueado!")

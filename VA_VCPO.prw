@@ -154,8 +154,8 @@ user function VA_VCpo (_sCampo)
 	local _sMsg      := ""
 	local _oAviso    := NIL
 	local _aRetSQL   := {}
-	local _aArray	 := {}
-	local _x         := 0
+	//local _aArray	 := {}
+	//local _x         := 0
 	
 	// Verifica a melhor forma de obter o nome do campo a ser validado.
 	if _sCampo == NIL
