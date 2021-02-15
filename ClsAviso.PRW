@@ -61,10 +61,12 @@ METHOD Grava () Class ClsAviso
 	local _nDestAvis := 0
 
 	if empty (::DestinAvis)  // ateh eliminar o atributo antigo
-		::DestinAvis = {U_SeparaCpo (::Destinatar, ';')}
+		::DestinAvis = U_SeparaCpo (::Destinatar, ';')
 	endif
 
-	u_log2 (iif (::Tipo == 'A', 'info', 'erro'), '[' + GetClassName (::Self) + '.' + procname () + '] ' + iif (::Tipo == 'A', 'Aviso', 'Notificacao de erro') + ' para ' + ::DestinAvis + ': ' + ::Texto)
+	for _nDestAvis = 1 to len (::DestinAvis)
+		u_log2 (iif (::Tipo == 'A', 'info', 'erro'), '[' + GetClassName (::Self) + '.' + procname () + '] ' + iif (::Tipo == 'A', 'Aviso', 'Notificacao de erro') + ' para ' + ::DestinAvis [_nDestAvis] + ': ' + ::Texto)
+	next
 
 	if empty (::CodAviso)	
 		U_Log2 ('aviso', 'Codigo de aviso nao informado.')
@@ -90,7 +92,7 @@ METHOD Grava () Class ClsAviso
 		u_log2 ('erro', "Codigo de aviso '" + ::CodAviso + "' nao cadastrado na classe " + GetClassName (::Self))
 	endif
 
-	for _nDestAvis = 1 to len (DestinAvis)
+	for _nDestAvis = 1 to len (::DestinAvis)
 		reclock ("ZAB", .T.)
 		zab -> zab_tipo   = ::Tipo
 		zab -> zab_destin = ::DestinAvis [_nDestAvis]
