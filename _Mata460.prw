@@ -213,6 +213,7 @@ static function _Filtra ()
 	local _aPed      := {}
 	local _aPedAux   := {}
 	local _nPed      := {}
+	local _aSC5      := {}
 	local _lContinua := .T.
 	local _oDlgMbA   := NIL
 	local _oBmpOK    := LoadBitmap( GetResources(), "LBOK" )
@@ -374,26 +375,52 @@ static function _Filtra ()
 	if _lContinua
 		for _nPed = 1 to len (_aPed)
 			if _aPed [_nPed, .PedOk]  // Usuario selecionou este pedido para faturar
+
 				_sSQL := " SELECT"
-				_sSQL += " 		 SA1.A1_MSBLQL"
-				_sSQL += " 		,SC5.C5_NUM"
+				_sSQL += " 		 SC5.C5_NUM"
 				_sSQL += " 		,SC5.C5_CLIENTE"
-				_sSQL += " FROM SC5010 SC5"
-				_sSQL += " INNER JOIN SA1010 SA1"
-				_sSQL += " 	ON (SA1.D_E_L_E_T_ = ''"
-				_sSQL += " 			AND SA1.A1_COD = SC5.C5_CLIENTE"
-				_sSQL += " 			AND SA1.A1_LOJA = SC5.C5_LOJACLI)"
+				_sSQL += " 		,SC5.C5_LOJACLI"
+				_sSQL += " 		,SC5.C5_TIPO"
+				_sSQL += " FROM " + RETSQLName ("SC5") + " SC5 "
 				_sSQL += " WHERE SC5.D_E_L_E_T_ = ''"
 				_sSQL += " AND SC5.C5_FILIAL = '" + xfilial ("SC5") + "'"
 				_sSQL += " AND SC5.C5_NUM    = '" + _aPed [_nPed, .PedPedido] + "'"
-				_aDados := U_Qry2Array(_sSQL)
+				_aSC5 := U_Qry2Array(_sSQL)
 
-				if Len(_aDados) > 0
-					if alltrim(_aDados[1,1]) == '1'
-						u_help(" O pedido " + alltrim(_aDados[1,2]) + " está com o cliente " + alltrim(_aDados[1,3]) + " bloqueado!")
-						_lContinua := .F.
-					endif
-				endif
+				If Len(_aSC5) > 0
+					_sPedido  := alltrim(_aSC5[1,1])
+					_sCliente := alltrim(_aSC5[1,2])
+					_sLoja    := alltrim(_aSC5[1,3])
+					_sTipo    := alltrim(_aSC5[1,4])
+
+					If _sTipo == 'D' .or. _sTipo == 'B' // é fornecedor
+						_sQuery := " SELECT"
+						_sQuery += "  	A2_MSBLQL "
+						_sQuery += " FROM " + RETSQLName ("SA2")
+						_sQuery += " WHERE D_E_L_E_T_ = '' "
+						_sQuery += " AND A2_COD  = '" + _sCliente + "'"
+						_sQuery += " AND A2_LOJA = '" + _sLoja    + "'"
+						_aDados:= U_Qry2Array(_sQuery)	
+					
+					Else // é cliente
+
+						_sQuery := " SELECT"
+						_sQuery += "  	A1_MSBLQL "
+						_sQuery += " FROM " + RETSQLName ("SA1")
+						_sQuery += " WHERE D_E_L_E_T_ = '' "
+						_sQuery += " AND A1_COD  = '" + _sCliente + "'"
+						_sQuery += " AND A1_LOJA = '" + _sLoja    + "'"
+						_aDados:= U_Qry2Array(_sQuery)	
+					EndIf
+	
+					If Len(_aDados) > 0
+						If alltrim(_aDados[1,1]) == '1'
+							u_help(" O pedido " + alltrim(_sPedido) + " está com o cliente " + alltrim(_sCliente) + " bloqueado!")
+							_lRet := .F.
+						EndIf
+					EndIf
+
+				EndIf
 			endif
 		next
 	endif
