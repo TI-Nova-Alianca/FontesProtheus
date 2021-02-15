@@ -93,9 +93,9 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += " FROM " + RetSQLName ("ZB1") 
     _oSQL:_sQuery += " WHERE D_E_L_E_T_=''
     If !empty(mv_par01)
-        _oSQL:_sQuery += " AND ZB1_FILIAL = '"+ mv_par01+"'"
+        _oSQL:_sQuery += " AND ZB1_FILIAL BETWEEN '" + mv_par01 +"' AND '" + mv_par02 +"'"
     EndIf
-    _oSQL:_sQuery += " AND ZB1_DTAPRO = '"+ DTOS(mv_par02)+"'"
+    _oSQL:_sQuery += " AND ZB1_DTAPRO = '"+ DTOS(mv_par03)+"'"
     _aZB1 := aclone (_oSQL:Qry2Array ())
 
 	For i:=1 to Len(_aZB1)
@@ -261,8 +261,9 @@ Return _sParc
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT             TIPO TAM DEC VALID F3     Opcoes                      Help
-    aadd (_aRegsPerg, {01, "Filial           ", "C", 2, 0,  "",   "   ", {},                         		 ""})
-    aadd (_aRegsPerg, {02, "Data             ", "D", 8, 0,  "",   "   ", {},                         		 ""})
+    aadd (_aRegsPerg, {01, "Filial de        ", "C", 2, 0,  "",   "   ", {},                         		 ""})
+	aadd (_aRegsPerg, {02, "Filial até       ", "C", 2, 0,  "",   "   ", {},                         		 ""})
+    aadd (_aRegsPerg, {03, "Data             ", "D", 8, 0,  "",   "   ", {},                         		 ""})
 
     U_ValPerg (cPerg, _aRegsPerg)
 Return
