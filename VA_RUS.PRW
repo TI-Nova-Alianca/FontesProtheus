@@ -23,6 +23,7 @@
 // 01/12/2020 - Robert - Passa a buscar dados de cadastro viticola na view GX0001_AGENDA_SAFRA e nao mais na VA_VASSOC_CAD_VITIC2
 // 02/02/2021 - Robert - Criado botao para chamar o VA_RusEn (GLPI 8779).
 // 03/02/2021 - Robert - Novos parametros funcao U_VA_Rus2().
+// 16/02/2021 - Robert - Implementada simulacao de geracao de contranota (GLPI 9420)
 //
 
 // --------------------------------------------------------------------------
@@ -141,13 +142,14 @@ User Function va_rus ()
 
 		// Submenu para contranota.
 		_aMenuNFe = {}
-		aadd (_aMenuNFe, {"Gera contra&nota"   ,  "U_VA_RUSN",    0,4})
+		aadd (_aMenuNFe, {"Gera contra&nota"   ,  "U_VA_RUSN(.F.)", 0,4})
 		aadd (_aMenuNFe, {"Im&prime DANFe"     ,  "U_VA_RUSi ()", 0,4})
 		aadd (_aMenuNFe, {"Monitor Faixa"      ,  "U_VA_RUSM (1)",0,2})
 		aadd (_aMenuNFe, {"Monitor Tempo"      ,  "U_VA_RUSM (2)",0,2})
 		aadd (_aMenuNFe, {"Transmite contanota",  "U_VA_RUSTX ()",0,2})
 		aadd (_aMenuNFe, {"Visualiza contanota",  "U_VA_RUSVC ()",0,2})
 		aadd (_aMenuNFe, {"Devolucao carga    ",  "U_VA_RUSDC ()",0,2})
+		aadd (_aMenuNFe, {"Simular contranota" ,  "U_VA_RUSN(.T.)", 0,4})
 
 		// Submenu para Outros.
 		_aMenuOut = {}

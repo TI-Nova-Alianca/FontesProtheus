@@ -187,15 +187,13 @@ static function _ConfParc (_lAjustar)
 	_oSQL:_sQuery += " SELECT SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, GRUPO_PAGTO, SUM (VALOR_TOTAL) AS VLR_UVAS, SUM (VALOR_FRETE) AS VLR_FRT"
 	_oSQL:_sQuery +=   " FROM VA_VNOTAS_SAFRA V"
 	_oSQL:_sQuery +=  " WHERE SAFRA   = '" + cvaltochar (year (date ())) + "'"
-	_oSQL:_sQuery +=    " AND TIPO_NF = 'C'"
-	
-	// alguns casos especiais
-	//_oSQL:_sQuery +=    " and V.DATA = '20210115'"
-	//_oSQL:_sQuery +=    " and V.VALOR_FRETE = 0"
-	//_oSQL:_sQuery +=    " and GRUPO_PAGTO = 'C'"
-	//_oSQL:_sQuery +=    " and FILIAL = '09'"
-//	_oSQL:_sQuery +=    " and ASSOCIADO = '003003'"
+	_oSQL:_sQuery +=    " AND TIPO_NF IN ('C', 'V')"
 
+	if _lAjustar  // Soh uso pra casos especiais
+		_oSQL:_sQuery +=    " and FILIAL = '01'"
+		_oSQL:_sQuery +=    " and ASSOCIADO = '002978'"
+		_oSQL:_sQuery +=    " and DOC = '000023832'"
+	endif
 	
 	_oSQL:_sQuery += " GROUP BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, GRUPO_PAGTO"
 	_oSQL:_sQuery += " ORDER BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, GRUPO_PAGTO"
@@ -271,7 +269,7 @@ static function _ConfParc (_lAjustar)
 							if ! se2 -> (dbseek ((_sAliasQ) -> filial + (_sAliasQ) -> associado + (_sAliasQ) -> loja_assoc + (_sAliasQ) -> serie + (_sAliasQ) -> doc + chr (64 + _nParc), .F.))  // Localiza a parcela somando 64 ao _nParc, pois as parcelas iniciam na letra 'A'.
 								U_Log2 ('aviso', 'Nao encontrei a parcela ' + chr (64 + _nParc) + ' para ajustar.')
 							else
-								if e2_saldo != e2_valor
+								if se2 -> e2_saldo != se2 -> e2_valor
 									u_help ("Saldo diferente do valor do titulo. Nao farei ajustes.",, .T.)
 								else
 									reclock ("SE2", .F.)
@@ -319,7 +317,7 @@ static function _ConfParc (_lAjustar)
 			U_Log2 ('erro', _sMsg)
 			U_Log2 ('aviso', 'como deveria estar no SE2:')
 			U_Log2 ('aviso', _aParcPrev)
-			u_zzunu ({'122'}, 'Inconsistencia parcelamento safra - F.' + (_sAliasQ) -> filial + ' NF: ' + (_sAliasQ) -> doc + ' forn: ' + (_sAliasQ) -> associado, _sMsg)
+			u_zzunu ({'999'}, 'Inconsistencia parcelamento safra - F.' + (_sAliasQ) -> filial + ' NF: ' + (_sAliasQ) -> doc + ' forn: ' + (_sAliasQ) -> associado, _sMsg)
 
 			// cai fora no primeiro erro encontrado (estou ainda ajustando)
 //			EXIT   // REMOVER DEPOIS !!!!!!!!!!!!!!!!!

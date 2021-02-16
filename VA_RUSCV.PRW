@@ -75,8 +75,8 @@ User Function va_rusCV (_sFornCV, _sLojaCV)
 	enddo
 	(_sAliasQ) -> (dbclosearea ())
 
-	u_log2 ('debug', 'Array de cadastro viticola gerada:')
-	u_log2 ('debug', _aRetCV)
+//	u_log2 ('debug', 'Array de cadastro viticola gerada:')
+//	u_log2 ('debug', _aRetCV)
 
 	U_ML_SRArea (_aAreaAnt)
 return _aRetCV

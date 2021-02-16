@@ -6,7 +6,8 @@
 // Historico de alteracoes:
 // 20/01/2020 - Robert - Novos parametros chamada geracao ticket safra.
 // 20/02/2020 - Robert - Desabilitada gravacao do talhao na descricao do ZZA.
-// 21/02/2020 - Robert  - Alteracoes na tabela ZZA passam a ser feitas em rotina externa (U_AtuZZA).
+// 21/02/2020 - Robert - Alteracoes na tabela ZZA passam a ser feitas em rotina externa (U_AtuZZA).
+// 16/02/2021 - Robert - Implementada simulacao de geracao de contranota (GLPI 9420)
 //
 
 #include "totvs.ch"
@@ -152,7 +153,7 @@ user Function VA_RUS2G (_nOpc)
 				if empty (m->ze_nfger) .and. ! empty (m->ze_nfprod)
 					if U_msgyesno ("Deseja gerar a contranota agora?")
 						CursorWait ()
-						U_VA_RUSN ()
+						U_VA_RUSN (.F.)
 						CursorArrow ()
 					endif
 				endif

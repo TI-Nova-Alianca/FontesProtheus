@@ -42,6 +42,8 @@
 // 09/02/2021 - Robert - Finaliza a thread (paliativo) se estiver usando muita memoria (GLPI 9376).
 // 10/02/2021 - Robert - Limite memoria (finaliza rotina) aumentado de 250 p/ 300 Mb (GLPI 9376).
 //                     - Inseridas chamadas da funcao FreeObj() em alguns casos (GLPI 9376).
+// 16/02/2021 - Robert - Passa a ler parametro VA_TSAFNJ (GLPI 9424)
+//                     - Implementada simulacao de geracao de contranota (GLPI 9420)
 //
 
 // ------------------------------------------------------------------------------------
@@ -53,7 +55,7 @@
 #include "VA_Inclu.prw"
 
 // --------------------------------------------------------------------------
-User Function va_rusN ()
+User Function va_rusN (_lSimulNF)
 	local _lContinua := .T.
 	local _sTES      := ""
 	local _sNF       := ""
@@ -104,7 +106,8 @@ User Function va_rusN ()
 	// Testa se jah tem contranota somente depois do softlock para pegar casos em que dois usuarios tentam gerar
 	// contranota da mesma carga e o segundo fica aguardando a liberacao do softlock. Quando o primeiro liberar,
 	// o segundo vai prosseguir o processo e tentar gerar contranota dessa mesma carga.
-	if _lContinua .and. ! empty (sze -> ze_nfger)
+	// if _lContinua .and. ! empty (sze -> ze_nfger)
+	if _lContinua .and. ! empty (sze -> ze_nfger) .and. ! _lSimulNF
 		u_help ("Contranota ja foi gerada com o numero " + sze -> ze_nfger)
 		_lContinua = .F.
 	endif
@@ -122,7 +125,7 @@ User Function va_rusN ()
 		_lContinua = .F.
 	endif
 	if _lContinua .and. sze -> ze_aglutin == "O"
-		u_help ("Carga aglutinada em outra. Geracao de contranota nao sera� permitida.")
+		u_help ("Carga aglutinada em outra. Geracao de contranota nao permitida.")
 		_lContinua = .F.
 	endif
 	
@@ -184,27 +187,9 @@ User Function va_rusN ()
 		_lContinua = .F.
 	endif
 
-/*
-	// Definicao do TES a ser usado.
-	if _lContinua .and. ! GetMv("ML_TESCSAF", .T.)
-		u_help ("Parametro ML_TESCSAF vazio ou inexistente",, .t.)
-		_lContinua = .F.
-	endif
-	if _lContinua
-		_sTES = left (GetMv("ML_TESSAFR"), 3)
-		if sze -> ze_coop == '000026' .and. sze -> ze_safra == '2019'
-			_sTES = '024'
-		elseif sze -> ze_assoc + sze -> ze_lojasso == '01237301'  // Vinhedos da Quinta a partir de 2020: manda a nota como 'venda'.
-			_sTES = '192'
-		elseif sze -> ze_assoc + sze -> ze_lojasso == '01279101'  // Nao associado que manda como 'remessa para deposito'.
-			_sTES = '028'
-		elseif sze -> ze_assoc + sze -> ze_lojasso == '01279201'  // Sinval: nao associado que manda como 'remessa para deposito'.
-			_sTES = '028'
-		endif
-	endif
-*/
 	// Definicao do TES a ser usado.
 	if _lContinua
+		U_Log2 ('debug', 'Para definicao de TES: _sTpForUva + sa2 -> a2_tipo = ' + _sTpForUva + sa2 -> a2_tipo)
 		do case
 		case sze -> ze_assoc == '001369'  // Producao propria Livramento
 			_sTES = '028'
@@ -214,8 +199,8 @@ User Function va_rusN ()
 			_sTES = GetMv ("VA_TSAFAJ")  // Associado pessoa juridica
 		case _sTpForUva + sa2 -> a2_tipo == 'NF'
 			_sTES = GetMv ("VA_TSAFNF")  // Nao associado pessoa fisica
-// ainda nao sei se dev gerar contranota nesta caso		case _sTpForUva + sa2 -> a2_tipo == 'NJ'
-// ainda nao sei se dev gerar contranota nesta caso			_sTES = GetMv ("VA_TSAFNJ")  // Nao associado pessoa juridica
+		case _sTpForUva + sa2 -> a2_tipo == 'NJ'
+			_sTES = GetMv ("VA_TSAFNJ")  // Nao associado pessoa juridica
 		otherwise
 			u_help ("Nao foi possivel definir o TES a ser usado para gerar contranota. Verifique o cadastro do fornecedor (pessoa fisica/juridica) e tipo de fornecedor no NaWeb.",, .T.)
 			_lContinua = .F.
@@ -289,31 +274,19 @@ User Function va_rusN ()
 			U_Log2 ('info', 'zf_produto: ' + szf -> zf_produto)
 			U_Log2 ('info', '_sMenorVlr: ' + _sMenorVlr)
 			if szf -> zf_produto == _sMenorVlr .or. empty (_sMenorVlr)
-				_sGrpPgSaf = U_VA_RusGP (szf -> zf_produto, szf -> zf_conduc)
+				_sGrpPgSaf = U_VA_RusGP (szf -> zf_safra, szf -> zf_produto, szf -> zf_conduc)
 				exit
 			endif
 			szf -> (dbskip ())
 		enddo
-		if empty (_sGrpPgSaf)
-			u_help ("Nao ha definicao de grupo para pagamento.",, .T.)
-			_lContinua = .F.
-		else
-			// if _sGrpPgSaf == 'A'
-			// 	_sCondPg = "815"
-			// elseif _sGrpPgSaf == 'B'
-			// 	_sCondPg = "816"
-			// elseif _sGrpPgSaf == 'C'
-			// 	_sCondPg = "817"
-			// endif
-			_sCondPg = "801"
-		endif
 	endif
 	U_Log2 ('info', 'Grupo para pagamento: ' + _sGrpPgSaf)
+	if _lContinua .and. empty (_sGrpPgSaf)
+		u_help ("Nao ha definicao de grupo para pagamento.",, .T.)
+		_lContinua = .F.
+	endif
 
-	// Confere se a condicao de pagamento a ser usada compoe o mesmo parcelamento definido no grupo de pagamento
-//	if _lContinua
-//		_lContinua = _ValRegraP (_sGrpPgSaf, _sCondPg, sze -> ze_safra)
-//	endif
+	_sCondPg = "801"
 
 	// Gera array com cadastro viticola.
 	if _lContinua
@@ -388,11 +361,7 @@ User Function va_rusN ()
 			elseif szf -> zf_safra == '2020'
 				_nVlUni = U_PrcUva20 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F.)[5]  // pos.5=preco MOC
 			elseif szf -> zf_safra == '2021'
-//				if sze -> ze_assoc == '001369'  // Producao propria Livramento
-//					_nVlUni = 1
-//				else
 				_nVlUni = U_PrcUva21 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[2]  // pos.2 = preco de compra
-//				endif
 			else
 				u_help ("Sem tratamento para leitura de precos para esta safra.")
 				_lContinua = .F.
@@ -471,8 +440,6 @@ User Function va_rusN ()
 			next
 
 			// Define lote a ser gerado. Se tiver nao conformidades, acrescenta 'NC' ao mesmo.
-//			_oSQL := ClsSQL():New ()
-//			_oSQL:_sQuery := ""
 			if sze -> ze_segreg == 'S'  // Carga segregada: deve gerar lote nao conforme
 				_sLoteCtl = right (sze -> ze_safra, 2) + szf -> zf_filial + szf -> zf_carga + 'NC'
 			else
@@ -527,9 +494,11 @@ User Function va_rusN ()
 	endif
 
 	// Prepara valores e datas das parcelas do financeiro, para ser lida pelo P.E. MTColSE2
-	_aParPgSaf := aclone (U_VA_RusPP (sze -> ze_safra, _sGrpPgSaf, _nVlrUvas, _nVlFrete))
-	if len (_aParPgSaf) == 0
-		_lContinua = .F.
+	if _lContinua
+		_aParPgSaf := aclone (U_VA_RusPP (sze -> ze_safra, _sGrpPgSaf, _nVlrUvas, _nVlFrete))
+		if len (_aParPgSaf) == 0
+			_lContinua = .F.
+		endif
 	endif
 
 	// Prepara dados adicionais
@@ -597,8 +566,16 @@ User Function va_rusN ()
 		endif
 	endif
 
+	if _lSimulNF
+		u_help ('A seguir serao mostrados alguns dados da simulacao de garacao de NF')
+		u_showarray (_aAutoSD1, 'Itens para a contranota')
+		u_showarray (_aParPgSaf, 'Parcelas e percentuais previstos para pagamento')
+		u_help ('Mensagem do contribuinte: ' + _sMsgContr)
+		_lContinua = .F.
+	endif
+
 	if _lContinua
-		// Apresenta Tela para Confirmar o Numero da Primeira NF a Ser Gerada
+		// Apresenta Tela para7 Confirmar o Numero da Primeira NF a Ser Gerada
 		_lContinua = Sx5NumNota (@_sSerie)
 		if _lContinua
 			u_log2 ('info', 'confirmou proxima nota para a serie ' + _sSerie)
