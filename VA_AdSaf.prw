@@ -9,6 +9,7 @@
 // 28/05/2020 - Robert - Geracao terceira parcela 2020
 // 03/06/2020 - Robert - Estava gravando TM=07. Alterado para 31.
 // 12/02/2021 - Robert - Novos parametros metodo ClsAssoc:FechSafra() - GLPI 9318
+// 15/02/2021 - Robert - Mais parametros metodo ClsAssoc:FechSafra() - GLPI 9318
 //
 
 // --------------------------------------------------------------------------
@@ -155,7 +156,8 @@ Static Function _Gera()
 		// Instancia um associado generico para buscar os percentuais de pagamento desta parcela.
 		_oAssoc := ClsAssoc ():New ('000161', '01')
 
-		_sXmlFech = _oAssoc:FechSafra (mv_par05, .F., .T.)
+		//                              _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResV, _lFSFrtS, _lFSLcCC
+		_sXmlFech = _oAssoc:FechSafra (mv_par05, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,      .t.,      .t.)
 		u_log (_sXmlFech)
 		if empty (_sXmlFech)
 			u_help ("Erro ao ler formas de pagamento para esta safra.",, .t.)

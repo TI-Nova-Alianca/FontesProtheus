@@ -48,8 +48,10 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
 
 	// Aqui nao preciso de um associado especifico... preciso apenas ler as regras de pagamento.
 	_oAssocCP = ClsAssoc():New ('000161', '01')
-	_sXmlFech = _oAssocCP:FechSafra (_sSafPag, .t., .F.)
-	//U_Log2 ('debug', _sXmlFech)
+	//                                _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResV, _lFSFrtS, _lFSLcCC
+	_sXmlFech = _oAssocCP:FechSafra (_sSafPag, .f.,     .f.,     .f.,     .f.,     .f.,      .t.,      .f.,      .f.,      .f.,      .f.)
+//	_sXmlFech = _oAssocCP:FechSafra (_sSafPag, .t., .F.)
+	U_Log2 ('debug', _sXmlFech)
 
 	// Converte de texto para XML
 	_oXMLFech := XmlParser (_sXmlFech, "_", @_sError, @_sWarning)
@@ -116,7 +118,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
 		for _nParcel = 1 to len (_aParcel)
 			_nSomaPer += _aParcel [_nParcel, 3]
 		next
-		U_Log2 ('debug', 'ajustando dif.percent. de ' + cvaltochar (_nSomaPer))
+		U_Log2 ('debug', 'Calculando ajuste para dif.percent. de ' + cvaltochar (_nSomaPer))
 		_aParcel [_nParcFrt - 1, 3] += (100 - _nSomaPer)
 
 
@@ -142,7 +144,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
 			_nSomaUva += _aParcel [_nParcel, 4]
 			_nParcel ++
 		enddo
-		U_Log2 ('debug', 'ajustando dif.vlr.uva de ' + cvaltochar (_nSomaUva))
+		U_Log2 ('debug', 'Calculando ajuste dif.vlr.uva de ' + cvaltochar (_nSomaUva))
 		_aParcel [_nParcFrt - 1, 4] += (_nVlUva - _nSomaUva)
 
 

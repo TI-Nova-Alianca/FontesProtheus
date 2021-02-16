@@ -29,7 +29,7 @@
 // 14/08/2020 - Cláudia - Ajuste de Api em loop, conforme solicitação da versao 25 protheus. GLPI: 7339
 // 31/08/2020 - Robert  - Concatena safra+cod+loja associado no nome do arquivo destino.
 // 03/09/2020 - Robert  - Criado layout resumido.
-// 12/02/2021 - Robert  - Criados modelos com/sem previsao de pagamento - GLPI 9318
+// 15/02/2021 - Robert  - Criados modelos com/sem previsao de pagamento - GLPI 9318
 //                      - Novos parametros metodo ClsAssoc:FechSafra() - GLPI 9318
 //
 
@@ -105,14 +105,12 @@ User Function ML_FECHASAFRA (_lAutomat)
 	if mv_par01 < '2020'  // Metodo original
 		processa ({|| RptDetail ()})
 	else  // Busca da classe ClsAssoc.
-		if mv_par06 == 1  // Detalhado COM previsoes de pagamento
+		if mv_par06 == 1  // Detalhado
+			processa ({|| _Modelo2 (.f.)})
+		elseif mv_par06 == 2  // Resumido
+			processa ({|| _Modelo3 ()})
+		elseif mv_par06 == 3  // Resumido (apenas NF compra)
 			processa ({|| _Modelo2 (.T.)})
-		elseif mv_par06 == 2  // Detalhado SEM previsoes de pagamento
-			processa ({|| _Modelo2 (.F.)})
-		elseif mv_par06 == 3  // Resumido COM previsoes de pagamento
-			processa ({|| _Modelo3 (.T.)})
-		elseif mv_par06 == 4  // Resumido SEM previsoes de pagamento
-			processa ({|| _Modelo3 (.F.)})
 		else
 			u_help ("Modelo sem tratamento.",, .t.)
 		endif
@@ -407,8 +405,6 @@ Static Function RptDetail()
 				endif
 				// imprime saldo conta corrente
 				if mv_par05 == 1				 
-	//					_oAssoc := ClsAssoc ():New (_vAnt , _VAntLj)
-	//					_aSld := _oAssoc:LctComSald ('', 'zz', date(), '', 'zz', '10/17/18/19')
 					_oSQL := ClsSQL():New ()
 					_oSQL:_sQuery := ""
 					_oSQL:_sQuery += "SELECT SZI.ZI_DATA, ZI_TM, ZI_DOC, ZI_HISTOR, ZX5_10DC, ZI_SALDO"
@@ -434,12 +430,6 @@ Static Function RptDetail()
 						_wsaldo := 0
 						@li,  00 PSAY "Lctos Aberto Conta Corrente:"
 						for i=1 to len (_aSld)
-	//							_wdata  = _aSld [i,3]
-	//							_wdoc   = _aSld [i,5]
-	//							_wtpmov = _aSld [i,7]
-	//							_whist  = substr(_aSld [i,9],1,80)
-	//							_wdc    = _aSld [i,10]
-	//							_wvalor = _aSld [i,11]			
 							_wdata  = stod (_aSld [i,1])
 							_wtpmov = _aSld [i,2]
 							_wdoc   = _aSld [i,3]
@@ -909,7 +899,7 @@ return
 // --------------------------------------------------------------------------
 // Modelo a partir da safra 2020, onde busca dados da classe ClsAssoc para
 // manter consistencia web service que atende APP de associados.
-static function _Modelo2 (_lPrevPag)
+static function _Modelo2 (_lSohCompr)
 	local _aAssoc    := {}
 	local _nAssoc    := 0
 	local _oAssoc    := NIL
@@ -994,7 +984,12 @@ static function _Modelo2 (_lPrevPag)
 		endif
 
 		// Busca dados do fechamento de safra. Usa mesmo o metodo do APP associados.
-		_sXmlFech = _oAssoc:FechSafra (mv_par01, .F., _lPrevPag)
+		//                                  _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResV, _lFSFrtS, _lFSLcCC
+		if _lSohCompr
+			_sXmlFech = _oAssoc:FechSafra (mv_par01, .f.,     .t.,     .f.,     .f.,     .f.,      .f.,      .f.,      .f.,      .f.,      .f.)
+		else
+			_sXmlFech = _oAssoc:FechSafra (mv_par01, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,      .t.,      .t.)
+		endif
 		//	u_log2 ('debug', _sXmlFech)
 		if empty (_sXmlFech)
 			u_help ("Associado ", _aAssoc [_nAssoc, 1] + '/' + _aAssoc [_nAssoc, 2] + ": Retorno vazio metodo FechSafra " + _oAssoc:UltMsg,, .t.)
@@ -1127,9 +1122,11 @@ static function _Modelo2 (_lPrevPag)
 
 
 		// Imprime totais do associado por tipo de nota.
-		li ++
-		_ImprTot ('Totais do associado', _aTAsEnt, _aTAsPro, _aTAsCom, _aTAsCpl)
-		li ++
+		if ! _lSohCompr
+			li ++
+			_ImprTot ('Totais do associado', _aTAsEnt, _aTAsPro, _aTAsCom, _aTAsCpl)
+			li ++
+		endif
 
 		// Acumula totais gerais
 		_aTGerEnt [1] += _aTAsEnt [1]
@@ -1340,7 +1337,9 @@ static function _ImprNota (_sTipoNota, _sNFFilial, _sNFDoc, _sNFEmis, _sNFProd, 
 	endif
 	@ li, 0 psay _sLinImp
 return
-//
+
+
+
 // --------------------------------------------------------------------------
 // Imprime totais (por associado ou gerais) formatados.
 static function _ImprTot (_sTitTot, _aEntradas, _aPropria, _aCompra, _aComplem)
@@ -1361,7 +1360,9 @@ static function _ImprTot (_sTitTot, _aEntradas, _aPropria, _aCompra, _aComplem)
 	@ li, 0 psay space (72) + 'Total a receber                               ' + transform (_aCompra [2] + _aComplem [2], "@E 9,999,999,999.99")
 	li += 2
 Return
-//
+
+
+
 // --------------------------------------------------------------------------
 // Retorno do type - type em looling nao é permitido da R25 
 Static Function _RetType(_var)
@@ -1373,7 +1374,7 @@ Return _type
 // --------------------------------------------------------------------------
 // Modelo (resumido) a partir da safra 2020, onde busca dados da classe ClsAssoc para
 // manter consistencia web service que atende APP de associados.
-static function _Modelo3 (_lPrevPag)
+static function _Modelo3 (_lSohCompr)
 	local _aAssoc    := {}
 	local _nAssoc    := 0
 	local _oAssoc    := NIL
@@ -1388,6 +1389,7 @@ static function _Modelo3 (_lPrevPag)
 	local _nFatPag   := 0
 //	local _aTotResV  := {}
 	local _aTotResP  := {}
+	local _nRegraPag := 0
 	local _nLctoCC   := 0
 	local _sMesPagto := ''
 	local _nTotDesc  := 0
@@ -1404,11 +1406,6 @@ static function _Modelo3 (_lPrevPag)
 	private cabec2   := ""
 	private _nMaxLin := 68
 	li = _nMaxLin + 1
-
-//	_aTGerEnt := {0, 0}
-//	_aTGerPro := {0, 0}
-//	_aTGerCom := {0, 0}
-//	_aTGerCpl := {0, 0}
 
 	// Gera lista de associados a imprimir.
 	_oSQL := ClsSQL ():New ()
@@ -1443,7 +1440,12 @@ static function _Modelo3 (_lPrevPag)
 		endif
 
 		// Busca dados do fechamento de safra. Usa mesmo o metodo do APP associados.
-		_sXmlFech = _oAssoc:FechSafra (mv_par01, .F., _lPrevPag)
+		//                                  _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResV, _lFSFrtS, _lFSLcCC
+		if _lSohCompr
+			_sXmlFech = _oAssoc:FechSafra (mv_par01, .f.,     .t.,     .f.,     .f.,     .f.,      .t.,      .f.,      .f.,      .f.,      .f.)
+		else
+			_sXmlFech = _oAssoc:FechSafra (mv_par01, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,      .t.,      .t.)
+		endif
 		u_log2 ('debug', _sXmlFech)
 		if empty (_sXmlFech)
 			u_help ("Associado ", _aAssoc [_nAssoc, 1] + '/' + _aAssoc [_nAssoc, 2] + ": Retorno vazio metodo FechSafra " + _oAssoc:UltMsg,, .t.)
@@ -1516,7 +1518,7 @@ static function _Modelo3 (_lPrevPag)
 				endif
 			next
 
-			u_log2 ('debug', _aResPag)
+//			u_log2 ('debug', _aResPag)
 			_aTotResP = {0, 0}
 			for _nResPag = 1 to len (_aResPag)
 				If li > _nMaxLin - 4
@@ -1535,6 +1537,26 @@ static function _Modelo3 (_lPrevPag)
 			li ++
 			@ li, 0 psay '                                    ' + transform (_aTotResP [1], _sMascVTot) + '  ' + transform (_aTotResP [2], _sMascVTot)
 			li += 2
+		endif
+
+		// Verifica se tem este tipo de tag no XML
+		_ValType := _RetType('_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem')
+		if _ValType == 'A'  // Enquanto tivermos mais de um grupo de pagamentos, vai funcionar...
+			If li > _nMaxLin - 4
+				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+			Endif
+			@li, 0 PSAY 'Regras para pagamento:'
+			li ++
+			for _nRegraPag = 1 to len (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem)
+				If li > _nMaxLin
+					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+				Endif
+				_sLinImp := space (35)
+				_sLinImp += _oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_descComParc:TEXT
+				@ li, 0 psay _sLinImp
+				li ++
+			next
+			li ++
 		endif
 
 		// Verifica se tem este tipo de tag no XML
@@ -1584,7 +1606,8 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {03, "Loja                          ", "C", 2,  0,  "",   "",    {},                        ""})
 	aadd (_aRegsPerg, {04, "Nucleo                        ", "C", 2,  0,  "",   "   ", {},                        ""})
 	aadd (_aRegsPerg, {05, "Lista Saldo C/C               ", "N", 1,  0,  "",   "   ", {"Sim", "Não"}           , ""})	
-	aadd (_aRegsPerg, {06, "Detalhado ou resumido         ", "N", 1,  0,  "",   "   ", {"Det.COM prev.pg", "Det.SEM prev.pg", "Res.COM prev.pg", "Res.SEM prev.pg"}, ""})	
+//	aadd (_aRegsPerg, {06, "Detalhado ou resumido         ", "N", 1,  0,  "",   "   ", {"Det.COM prev.pg", "Det.SEM prev.pg", "Res.COM prev.pg", "Res.SEM prev.pg", "Apenas NF compra"}, ""})
+	aadd (_aRegsPerg, {06, "Detalhado ou resumido         ", "N", 1,  0,  "",   "   ", {"Detalhado", "Resumido", "Apenas NF compra"}, ""})
 	
 	U_ValPerg (cPerg, _aRegsPerg)
 Return

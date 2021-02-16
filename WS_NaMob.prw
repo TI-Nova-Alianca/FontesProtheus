@@ -202,7 +202,9 @@ static function _AsFecSaf ()
 		endif
 	endif
 	if empty (_sErros)
-		_sRet = _oAssoc:FechSafra (_sSafra, .F., .T.)
+		//                         _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResV, _lFSFrtS, _lFSLcCC
+		_sRet = _oAssoc:FechSafra (_sSafra, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,      .t.,      .t.)
+//		_sRet = _oAssoc:FechSafra (_sSafra, .F., .T.)
 		if empty (_sRet)
 			_sErros += "Retorno invalido metodo FechSafra " + _oAssoc:UltMsg
 		else
