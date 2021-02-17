@@ -8,6 +8,7 @@
 // 18/12/2018 - Sandra  - Alterado para considerar data da emissão da nota fiscal e não do orçamento
 // 30/06/2020 - Cláudia - Incluido campos de cliente/nome e numero do vale. GLPI: 8108
 //                        Alterado modelo para TREPORT, com opção de geração em planilha excel e PDF
+// 17/02/2021 - Sandra  - Alteração nome campos valor vale e valor cupom
 //
 // ------------------------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -52,11 +53,11 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA7", 	"" ,"Nome"			,						,40,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA8", 	"" ,"Nº Vale"		,						,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA9", 	"" ,"Situação"		,						,12,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA10", 	"" ,"Vlr.Bruto"		, "@E 999,999,999.99"   ,30,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA11", 	"" ,"Vlr.Vale"		, "@E 999,999,999.99"   ,30,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA10", 	"" ,"Vlr.Vale"		, "@E 999,999,999.99"   ,30,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA11", 	"" ,"Vlr.Cupom"		, "@E 999,999,999.99"   ,30,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	
-	TRFunction():New(oSection1:Cell("COLUNA10") ,"Vlr.Bruto", "SUM",,,"@E 999,999,999.99",,.F.,.T.)
-	TRFunction():New(oSection1:Cell("COLUNA11") ,"Vlr.Vale" , "SUM",,,"@E 999,999,999.99",,.F.,.T.)
+	TRFunction():New(oSection1:Cell("COLUNA10") ,"Vlr.Vale", "SUM",,,"@E 999,999,999.99",,.F.,.T.)
+	TRFunction():New(oSection1:Cell("COLUNA11") ,"Vlr.Cupom" , "SUM",,,"@E 999,999,999.99",,.F.,.T.)
 
 Return(oReport)
 //
@@ -78,7 +79,7 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += "    ,SL4.L4_NUMCART AS NUMVALE"
 	_oSQL:_sQuery += "    ,SL1.L1_SITUA AS SITUACAO"
 	_oSQL:_sQuery += "    ,SL1.L1_VALES AS VLRVALE"
-	_oSQL:_sQuery += "    ,SL1.L1_VALBRUT AS VALORBRT   "
+	_oSQL:_sQuery += "    ,SL1.L1_VALBRUT AS VLRCUPOM   "
 	_oSQL:_sQuery += " FROM " + RetSQLName ("SL1") + " SL1 "
 	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA1") + " SA1 "
 	_oSQL:_sQuery += " 	ON (SA1.D_E_L_E_T_ = ''"
@@ -116,7 +117,7 @@ Static Function PrintReport(oReport)
 		oSection1:Cell("COLUNA8")	:SetBlock   ({|| (_sAliasQ) -> NUMVALE		})
 		oSection1:Cell("COLUNA9")	:SetBlock   ({|| (_sAliasQ) -> SITUACAO		})
 		oSection1:Cell("COLUNA10")	:SetBlock   ({|| (_sAliasQ) -> VLRVALE		})
-		oSection1:Cell("COLUNA11")	:SetBlock   ({|| (_sAliasQ) -> VALORBRT		})
+		oSection1:Cell("COLUNA11")	:SetBlock   ({|| (_sAliasQ) -> VLRCUPOM		})
 
 		oSection1:PrintLine()
 		
