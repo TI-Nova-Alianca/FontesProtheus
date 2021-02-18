@@ -1,27 +1,32 @@
-// Programa:  A260Proc
-// Autor:     Robert Koch
-// Data:      20/06/2013
-// Descricao: Gera transferencia de estoque, com base na rotina A260Processa.
+// Programa..: A260Proc
+// Autor.....: Robert Koch
+// Data......: 20/06/2013
+// Descricao.: Gera transferencia de estoque, com base na rotina A260Processa.
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #processo
+// #Descricao         #Gera transferencia de estoque, com base na rotina A260Processa.
+// #PalavasChave      #processo #transferencia_de_estoque
+// #TabelasPrincipais #SD3 
+// #Modulos           #EST
 //
 // Historico de alteracoes:
-// 21/09/2013 - Robert - Implementado estorno de transferencia.
-// 08/08/2014 - Robert - Passa a receber parametros de lote e endereco.
-// 30/09/2015 - Robert - Aborta movimentacao quando quantidade negativa ou zerada.
-// 08/10/2015 - Robert - Grava campos D3_HADTINC e D3_VAHRINC.
-// 27/01/2016 - Robert - Posiciona SB1 antes de gerar a transferencia.
-// 28/02/2017 - Robert - Gravacao dos campos D3_VAMOTIV e D3_VACHVEX.
-// 06/03/2017 - Robert - Gravacao do campo D3_VALAUDO.
-// 10/04/2017 - Robert - Nao validava se o endereco destino existia no almoxarifado destino.
-// 11/04/2017 - Robert - Campos D3_VADTINC e D3_VAHRINC passam a ser alimentados via default do SQL.
+// 21/09/2013 - Robert  - Implementado estorno de transferencia.
+// 08/08/2014 - Robert  - Passa a receber parametros de lote e endereco.
+// 30/09/2015 - Robert  - Aborta movimentacao quando quantidade negativa ou zerada.
+// 08/10/2015 - Robert  - Grava campos D3_HADTINC e D3_VAHRINC.
+// 27/01/2016 - Robert  - Posiciona SB1 antes de gerar a transferencia.
+// 28/02/2017 - Robert  - Gravacao dos campos D3_VAMOTIV e D3_VACHVEX.
+// 06/03/2017 - Robert  - Gravacao do campo D3_VALAUDO.
+// 10/04/2017 - Robert  - Nao validava se o endereco destino existia no almoxarifado destino.
+// 11/04/2017 - Robert  - Campos D3_VADTINC e D3_VAHRINC passam a ser alimentados via default do SQL.
+// 17/02/2021 - Claudia - Incluido parametro filial da chamada do CpLaudo. GLPI:5592
 //
-
 // --------------------------------------------------------------------------
 user function A260Proc (_sProdOri, _sAlmOri, _nQuant, _dData, _sProdDest, _sAlmDest, _aRecnEst, _sLoteOri, _sLoteDest, _sEndOri, _sEndDest, _sMotivo, _sChvEx)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aAmbAnt   := U_SalvaAmb ()
 	local _lContinua := .T.
-	//local _aAutoSB9  := {}
-	//local _aAutoSD3  := {}
 	local _sDocSD3   := ""
 	local _xRet      := NIL
 	local _oSQL      := NIL
@@ -29,12 +34,9 @@ user function A260Proc (_sProdOri, _sAlmOri, _nQuant, _dData, _sProdDest, _sAlmD
 	private lMsHelpAuto := .F.
 	private lMsErroAuto := .F.
 
-//	u_logIni ()
 	_sMotivo := iif (_sMotivo == NIL, "", _sMotivo)
 	_sChvEx := iif (_sChvEx == NIL, "", _sChvEx)
 	
-//	u_log ('param.:', 'prodori:', _sProdOri, 'almori:', _sAlmOri, 'qunt:', _nQuant, 'data:', _dData, 'prodest:', _sProdDest, 'amdest:', _sAlmDest, 'aRecnEst:', _aRecnEst, 'loteori:', _sLoteOri, 'lotedest:', _sLoteDest, 'endori:', _sEndOri, 'enddest:', _sEndDest, 'motivo:', _sMotivo, 'chvext:', _sChvEx)
-
 	_sErroAuto  := ""  // Variavel para erros de rotinas automaticas. Deixar tipo 'private'.
 
 	if valtype (_aRecnEst) == "A"  // Estornar transferencia
@@ -61,23 +63,23 @@ user function A260Proc (_sProdOri, _sAlmOri, _nQuant, _dData, _sProdDest, _sAlmD
 			EndIf
 	
 			// Para estorno passar o 15o. parametro com .T.
-			_xRet = a260Processa (NIL, ;  // Produto origem
-			NIL, ;  // Almox origem
-			NIL, ;  // Quantidade a transferir
-			NIL, ;
-			NIL, ;
-			NIL, ;  // Quant segunda UM
-			NIL, ;  // Sub-lote
-			_sLoteOri, ;  // Lote origem
-			NIL, ;  // Validade
-			NIL, ;  // Numero de serie
-			NIL, ;  // Localizacao origem
-			NIL, ;  // Produto destino
-			NIL, ;  //  Localizacao destino
-			NIL, ;
-			.T., ;    // Indica se eh estorno
-			_aRecnEst [1], _aRecnEst [2], "MATA260",NIL,NIL,NIL,NIL,NIL,NIL,NIL,NIL,NIL,NIL,NIL,NIL,NIL,NIL,NIL,0, ;  // Dados para APDL
-			NIL)  // Lote destino
+			_xRet = a260Processa (  NIL, ;  // Produto origem
+									NIL, ;  // Almox origem
+									NIL, ;  // Quantidade a transferir
+									NIL, ;
+									NIL, ;
+									NIL, ;  // Quant segunda UM
+									NIL, ;  // Sub-lote
+									_sLoteOri, ;  // Lote origem
+									NIL, ;  // Validade
+									NIL, ;  // Numero de serie
+									NIL, ;  // Localizacao origem
+									NIL, ;  // Produto destino
+									NIL, ;  //  Localizacao destino
+									NIL, ;
+									.T., ;    // Indica se eh estorno
+									_aRecnEst [1], _aRecnEst [2], "MATA260",NIL,NIL,NIL,NIL,NIL,NIL,NIL,NIL,NIL,NIL,NIL,NIL,NIL,NIL,NIL,0, ;  // Dados para APDL
+									NIL)  // Lote destino
 			A260Comum ()
 		endif
 
@@ -175,15 +177,13 @@ user function A260Proc (_sProdOri, _sAlmOri, _nQuant, _dData, _sProdDest, _sAlmD
 				_oSQL := ClsSQL ():New ()
 				_oSQL:_sQuery := " UPDATE " + RetSQLName ("SD3")
 				_oSQL:_sQuery += " SET D3_VACHVEX = '" + _sChvEx + "',"
-				_oSQL:_sQuery +=     " D3_VAMOTIV = '" + alltrim (left (_sMotivo, TamSX3 ("D3_VAMOTIV")[1])) + "'"
-				//_oSQL:_sQuery +=     " D3_VALAUDO = '" + _sLaudo + "'"
+				_oSQL:_sQuery += " D3_VAMOTIV = '" + alltrim (left (_sMotivo, TamSX3 ("D3_VAMOTIV")[1])) + "'"
 				_oSQL:_sQuery += " WHERE R_E_C_N_O_ IN (" + cvaltochar (_xRet [1]) + " , " + cvaltochar (_xRet [2]) + ")"
-				//u_log (_oSQL:_sQuery)
 				_oSQL:Exec ()
 
 				// Se existe laudo no endereco origem, cria um novo no endereco destino para manter a rastreabilidade.
 				if _sLoteDest != _sLoteOri .and. ! empty (_sLaudo)
-					U_CpLaudo (_sLaudo, _sProdDest, _sAlmDest, _sEndDest, _sLoteDest, _nQuant)
+					U_CpLaudo (cFilAnt, _sLaudo, _sProdDest, _sAlmDest, _sEndDest, _sLoteDest, _nQuant, .T.)
 				endif
 
 			else
@@ -194,5 +194,5 @@ user function A260Proc (_sProdOri, _sAlmOri, _nQuant, _dData, _sProdDest, _sAlmD
 
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
-//	u_logFim ()
+
 return _xRet

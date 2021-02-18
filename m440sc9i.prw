@@ -1,32 +1,25 @@
-/*/
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
-±±³Programa  ³ M440SC9I ³ Autor ³     Jeferson Rech     ³ Data ³ Out/2005 ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descricao ³ Atualiza Arquivo de Pedidos Liberados (SC9)                ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Retorno   ³                                                            ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Utilizacao³ Especifico para Clientes Microsiga                         ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³   Data   ³ Programador   ³Manutencao Efetuada                         ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³          ³               ³                                            ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-/*/
+// Programa...: M440SC9I
+// Autor......: Jeferson Rech
+// Data.......: 10/2005
+// Descricao..: Atualiza Arquivo de Pedidos Liberados (SC9)
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #Atualiza Arquivo de Pedidos Liberados (SC9)
+// #PalavasChave      #ponto_de_entrada #pedidos_liberados
+// #TabelasPrincipais #SC6 #SC9 #SC5
+// #Modulos           #FAT #EST
+//
 // Historico de alteracoes:
 // 17/09/2009 - Robert - Gravacao de evento para posterior consulta.
 // 02/01/2012 - Robert - Funcao _NCLIFOR passada de 'user' para 'static'.
 // 30/08/2019 - Robert - Melhorada gravacao de log de evento (passa a gravar apenas um por pedido).
 // 30/03/2020 - Robert - Comentariadas linhas de gravacao de logs.
+// 17/02/2021 - Claudia - Incluida as tags de pesquisas
 //
-
+// ------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
-// --------------------------------------------------------------------------
 User Function M440SC9I()
 	local _aAreaAnt := U_ML_SRArea ()
 	dbSelectArea("SA1")
@@ -54,30 +47,21 @@ User Function M440SC9I()
 		Endif
 	ENDIF
 	
-//	If SC9->(FieldPos("C9_NREDUZ")) > 0    // Teste para nao dar erro demais empresas
-		SC9->C9_NREDUZ  := _NCLIFOR(SC5->C5_TIPO,2,SC5->C5_CLIENTE,SC5->C5_LOJACLI)[2]
-//	Endif
-//	If SC9->(FieldPos("C9_VANOME")) > 0    // Teste para nao dar erro demais empresas
-//		SC9->C9_VANOME  := _NCLIFOR(SC5->C5_TIPO,2,SC5->C5_CLIENTE,SC5->C5_LOJACLI)[1]
-//	Endif
-	
+	SC9->C9_NREDUZ  := _NCLIFOR(SC5->C5_TIPO,2,SC5->C5_CLIENTE,SC5->C5_LOJACLI)[2]
+
 	// Grava evento
 	_GrvEvento ()
 
 	U_ML_SRArea (_aAreaAnt)
 Return(.T.)
-
-
-
+//
 // --------------------------------------------------------------------------
-//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-//³Funcao que Retorna o Nome / N. Fantasia do Cliente                      ³
-//³1 Parametro := N/B/C/D/etc                                              ³
-//³2 Parametro := 1 Entradas / 2 - Saidas                                  ³
-//³3 Parametro := Cod. do Cliente / Fornecedor                             ³
-//³4 Parametro := Loja. do Cliente / Fornecedor                            ³
-//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-//User Function _NCLIFOR(_xTIPO,nTipoMov,_xCOD,_xLOJA)
+// Funcao que Retorna o Nome / N. Fantasia do Cliente                      
+// 1 Parametro := N/B/C/D/etc                                              
+// 2 Parametro := 1 Entradas / 2 - Saidas                                  
+// 3 Parametro := Cod. do Cliente / Fornecedor                             
+// 4 Parametro := Loja. do Cliente / Fornecedor                            
+//
 static Function _NCLIFOR(_xTIPO,nTipoMov,_xCOD,_xLOJA)
 	Local _aArea    := GetArea()
 	Local _aAreaSA1 := SA1->(GetArea())
@@ -120,19 +104,17 @@ static Function _NCLIFOR(_xTIPO,nTipoMov,_xCOD,_xLOJA)
 	_aRetx[1] := _xNOMEX
 	_aRetx[2] := _xNREDUZX
 	
-	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-	//³Retorno do Array                                                        ³
-	//³[1] := Nome do Cliente / Fornecedor                                     ³
-	//³[2] := Nome Fantasia do Cliente / Fornecedor                            ³
-	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	// Retorno do Array                                                        
+	// [1] := Nome do Cliente / Fornecedor                                     
+	// [2] := Nome Fantasia do Cliente / Fornecedor      
+
 	RestArea(_aAreaSA2)
 	RestArea(_aAreaSA1)
 	RestArea(_aArea)
 Return(_aRetx)
-
-
-
+//
 // --------------------------------------------------------------------------
+// Grava evento
 static function _GrvEvento ()
 	local _oEvento := NIL
 	local _oSQL    := NIL
@@ -165,7 +147,5 @@ static function _GrvEvento ()
 			_oEvento:PedVenda  = sc9 -> c9_pedido
 			_oEvento:Grava ()
 		endif
-	//else
-		//u_log ('nao eh o primeiro item do pedido')
 	endif
 return

@@ -1,26 +1,33 @@
-// Programa:   MA261D3
-// Autor:      Bruno Silva (DWT)
-// Data:       25/07/2014
-// Descricao:  P.E. apos a gravacao da tranferencia (mod.II) de produtos.
-//             Criado inicialmente para bloquear lote destino.
-//             Deve ser usado em conjunto com os P.E. MA261Cpo e MA261IN.
+// Programa...: MA261D3
+// Autor......: Bruno Silva (DWT)
+// Data.......: 25/07/2014
+// Descricao..: P.E. apos a gravacao da tranferencia (mod.II) de produtos.
+//              Criado inicialmente para bloquear lote destino.
+//              Deve ser usado em conjunto com os P.E. MA261Cpo e MA261IN.
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #P.E. apos a gravacao da tranferencia (mod.II) de produtos
+// #PalavasChave      #ponto_de_entrada #transferencias_de_produto
+// #TabelasPrincipais #SD3 #SB8 #SE2
+// #Modulos           #FIS #EST
 //
 // Historico de alteracoes:
-// 22/08/2014 - Robert - Passa a chamar funcao U_BlqLot para compatibilizar com MA260D3
-// 05/02/2015 - Robert - Nao chama mais funcao de bloqueio de lotes.
-//                     - Gravacao do campo D3_VAMOTIV.
-// 08/05/2015 - Robert - Gravacao dos campos D3_VADTINC e D3_VAHRINC.
-// 29/09/2015 - Robert - Tratamento para remover aspas simples da string com o motivo, para evitar erro no SQL.
-// 20/10/2016 - Robert - Tratamento para gravar campo D3_VALAUDO.
-// 11/04/2017 - Robert - Campos D3_VADTINC e D3_VAHRINC passam a ser alimentados via default do SQL.
-// 18/05/2016 - Robert - Novos parametros funcao LaudoEm().
-// 15/10/2018 - Robert - Gravacao do campo D3_VACHVEX.
-// 26/10/2018 - Robert - Gravacao do campo D3_VAETIQ.
-// 04/11/2018 - Robert - Tratamento para criar laudo de corte via 'merge' quando transf. para lote ja existente.
-// 13/11/2019 - Robert - Nao chamava merge de laudos quando transferencia de um produto para outro.
+// 22/08/2014 - Robert  - Passa a chamar funcao U_BlqLot para compatibilizar com MA260D3
+// 05/02/2015 - Robert  - Nao chama mais funcao de bloqueio de lotes.
+//                      - Gravacao do campo D3_VAMOTIV.
+// 08/05/2015 - Robert  - Gravacao dos campos D3_VADTINC e D3_VAHRINC.
+// 29/09/2015 - Robert  - Tratamento para remover aspas simples da string com o motivo, para evitar erro no SQL.
+// 20/10/2016 - Robert  - Tratamento para gravar campo D3_VALAUDO.
+// 11/04/2017 - Robert  - Campos D3_VADTINC e D3_VAHRINC passam a ser alimentados via default do SQL.
+// 18/05/2016 - Robert  - Novos parametros funcao LaudoEm().
+// 15/10/2018 - Robert  - Gravacao do campo D3_VACHVEX.
+// 26/10/2018 - Robert  - Gravacao do campo D3_VAETIQ.
+// 04/11/2018 - Robert  - Tratamento para criar laudo de corte via 'merge' quando transf. para lote ja existente.
+// 13/11/2019 - Robert  - Nao chamava merge de laudos quando transferencia de um produto para outro.
+// 17/02/2021 - Claudia - Incluido parametro filial da chamada do CpLaudo. GLPI:5592
 //
-
-// --------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------------------------
 User Function MA261D3 ()
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _nLinha    := ParamIXB
@@ -28,8 +35,6 @@ User Function MA261D3 ()
 	local _nPosChvEx := ascan (aHeader, {|_aVal| alltrim (upper (_aVal [2])) == 'D3_VACHVEX'})
 	local _nPosEtiq  := ascan (aHeader, {|_aVal| alltrim (upper (_aVal [2])) == 'D3_VAETIQ'})
 	local _oSQL      := NIL
-
-	//u_logIni ()
 
 	if _nPosMotiv > 0 .and. _nPosEtiq > 0 .and. _nPosChvEx > 0
 		
@@ -57,8 +62,7 @@ User Function MA261D3 ()
 	U_ML_SRArea (_aAreaAnt)
 	//u_logFim ()
 return
-
-
+//
 // --------------------------------------------------------------------------
 // Atualiza laudos laboratoriais, caso necessario.
 static function _AtuLaudo ()
@@ -81,25 +85,9 @@ static function _AtuLaudo ()
 	local _nPosQuant := ascan (aHeader, {|_aVal| alltrim (upper (_aVal [2])) == 'D3_QUANT'})
 	local _lContinua := .T.
 
-	//u_logIni ()
-
 	// Lote destino, se nao informado, assume o mesmo do lote origem.
 	_sLoteOri = aCols [_nLinha, _nPosLotOr]
 	_sLoteDes = iif (empty (aCols [_nLinha, _nPosLotDs]), _sLoteOri, aCols [_nLinha, _nPosLotDs])
-//	u_log ('Prod origem :', aCols [_nLinha, _nPosProOr])
-//	u_log ('Prod destino:', aCols [_nLinha, _nPosProDs])
-//	u_log ('Lote origem :', _sLoteOri)
-//	u_log ('Lote destino:', _sLoteDes)
-//	u_log ('Local origem :', aCols [_nLinha, _nPosLocOr])
-//	u_log ('Local destino:', aCols [_nLinha, _nPosLocDs])
-//	u_log ('Endereco origem :', aCols [_nLinha, _nPosEndOr])
-//	u_log ('Endereco destino:', aCols [_nLinha, _nPosEndDs])
-//	u_log ('Quantidade:', aCols [_nLinha, _nPosQuant])
-
-	// Se mudar de produto, nao tenho tratamento definido.
-	//if _lContinua .and. aCols [_nLinha, _nPosProOr] != aCols [_nLinha, _nPosProDs]
-	//	_lContinua = .F.
-	//endif
 
 	// Se o produto nao controla lotes, nao vai ter laudo envolvido.
 	if _lContinua .and. (empty (_sLoteOri) .or. empty (_sLoteDes))
@@ -156,9 +144,8 @@ static function _AtuLaudo ()
 			endif
 		else
 			u_log ('vou copiar o laudo ', _sLaudoOri)
-			U_CpLaudo (_sLaudoOri, aCols [_nLinha, _nPosProDs], aCols [_nLinha, _nPosLocDs], aCols [_nLinha, _nPosEndDs], _sLoteDes, sd3 -> d3_quant)
+			U_CpLaudo (cFilAnt, _sLaudoOri, aCols [_nLinha, _nPosProDs], aCols [_nLinha, _nPosLocDs], aCols [_nLinha, _nPosEndDs], _sLoteDes, sd3 -> d3_quant, .T.)
 		endif
 	endif
 
-	//u_logFim ()
 return

@@ -1,16 +1,16 @@
-// Programa:  SF1100i
-// Autor:     Robert Koch
-// Data:      05/06/2008
-// Descricao: P.E. apos a gravacao do SF1 na NF de entrada.
-//            Criado, inicialmente, para tratamento de titulos de substituicao tributaria.
-
+// Programa...: SF1100i
+// Autor......: Robert Koch
+// Data.......: 05/06/2008
+// Descricao..: P.E. apos a gravacao do SF1 na NF de entrada.
+//              Criado, inicialmente, para tratamento de titulos de substituicao tributaria.
+//
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #ponto_de_entrada
 // #Descricao         #Ponto de entrada executado apos a gravacao do arquivo SF1, na NF de entrada.
 // #PalavasChave      #ponto_de_entrada #nota_de_entrada
 // #TabelasPrincipais #SF1 #SD1 #SE2
 // #Modulos           #FIS #EST
-
+//
 // Historico de alteracoes:
 // 04/09/2008 - Robert  - Gravacao de dados adicionais no arquivo ZZ4.
 // 18/09/2008 - Robert  - Revisao rotina gravacao titulo NCC ref. ST.
@@ -101,14 +101,13 @@
 // 11/01/2021 - Robert  - Recalcula datas de vencimento de parcelas de notas de safra (este ano vamos fazer todas como 'compra').
 // 14/01/2021 - Robert  - Datas e valores das dupl.safra jah vem certas do MtColSE2. Apenas grava historico.
 // 03/02/2021 - Robert  - Para saber se estava gerando contranota de safra, testava rotina U_VA_RUS. Passa a testar U_VA_RUSN.
+// 17/02/2021 - CLáudia - Incluida cópia de laudo para transferencias entre filiais. GLPI:5592
 //
-
-// --------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
-user function SF1100i ()
+User Function SF1100i ()
 	local _aAreaAnt := U_ML_SRArea ()
-//	local _oBatch   := NIL
 
 	// Grava campos adicionais enviados para a rotina automatica. Deve ser a
 	// primeira rotina executada, pois outras rotinas usam dados gravados por esta.
@@ -180,8 +179,10 @@ user function SF1100i ()
 		_AtuATF()
 	endif
 
+	// Verifica se tem laudo para copiar
+	_GeraLaudo(sf1 -> f1_filial, sf1 -> f1_fornece, sf1 -> f1_loja, sf1 -> f1_doc, sf1 -> f1_serie, sf1 -> f1_tipo)
+
 	// Imprime romaneio de entrada
-//	if cEmpAnt + cFilAnt == '0101' .and. ! IsInCallStack ("U_VA_RUS") .and. cEspecie !='CTR' .and. cEspecie !='CTE' .and. ! IsInCallStack ("U_VA_GNF2")
 	if cEmpAnt + cFilAnt == '0101' .and. ! IsInCallStack ("U_VA_RUSN") .and. cEspecie !='CTR' .and. cEspecie !='CTE' .and. ! IsInCallStack ("U_VA_GNF2")
 		if U_MsgYesNo ("Deseja imprimir o romaneio de entrada?")
 			U_RomEntr (sf1 -> f1_fornece, sf1 -> f1_loja, sf1 -> f1_doc, sf1 -> f1_serie)
@@ -189,12 +190,10 @@ user function SF1100i ()
 	endif
 	
 	U_ML_SRArea (_aAreaAnt)
-//	u_logFim ()
 return
-
-// --------------------------------------------------------
+// 
+// -----------------------------------------------------------------------------------------------------
 // verifica motivo de devolução 66 - email para o comercial
-// --------------------------------------------------------
 static function _VerMot ()
 	local _oSQL := NIL
 
@@ -227,7 +226,6 @@ static function _VerMot ()
 		aadd (_aCols, {'Descricao'         ,    'left'  ,  ''})
 		aadd (_aCols, {'Quantidade'        ,    'right' ,  '@E 999.99'})
 		
-//		_oSQL:_sQuery =  aClone(_aDados)
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery = _sQuery
 		if len (_oSQL:Qry2Array (.T., .F.)) > 0
@@ -237,8 +235,9 @@ static function _VerMot ()
 		endif
 	endif
 return
-// --------------------------------------------------------------------------
-// força gravação do vendedor na NCC gerada pelo nota de devolução
+// 
+// -----------------------------------------------------------------------------------------------------
+// Força gravação do vendedor na NCC gerada pelo nota de devolução
 static function _GrvDadosNCC ()
 	// grava vendedor na nota de devolucao e na NCC
 	_sQuery := ""
@@ -251,14 +250,16 @@ static function _GrvDadosNCC ()
 	_sQuery += "    AND D1_DOC     = '" + sf1 -> f1_doc + "'"
 	_sQuery += "    AND D1_SERIE   = '" + sf1 -> f1_serie + "'"
 	_aDados := U_Qry2Array(_sQuery)
+
 	if len(_aDados) > 0
     	_wNForig  = _aDados[1,1]
 		_wSerOrig = _aDados[1,2]
 		_wvendDEV := ""
 		_wvendCAD := ""
+
     	// busca o vendedor informado nos dados de devolucao na manutenção de XML
     	u_help (SF1 -> F1_CHVNFE + "chave"  )
-    	///_wvendDEV = fBuscaCpo ('ZAJ', 1, xfilial('ZAJ') + SF1 -> F1_CHVNFE , "ZAJ_VENDDV")
+
     	_sSQL := "SELECT ZAJ_VENDDV"
     	_sSQL += "   FROM ZAJ010"
     	_sSQL += "  WHERE ZAJ_CHAVE = '" + SF1 -> F1_CHVNFE + "'"
@@ -266,6 +267,7 @@ static function _GrvDadosNCC ()
     	if len(_aDados) > 0
     		_wvendDEV = _aDados[1,1]
     	endif
+
     	_wvendCAD = fBuscaCpo ('SA1', 1, xfilial('SA1') + sf1 -> f1_fornece + sf1 -> f1_loja , "A1_VEND")
     	if val(_wvendDEV) = 0
 	    	// busca o vendedor da nota original
@@ -282,96 +284,71 @@ static function _GrvDadosNCC ()
    		_sSQL += "   AND E1_LOJA    = '" + sf1 -> f1_loja + "'"
    		TCSQLExec (_sSQL)
    		
-   		if val(_wvendDEV) <> val(_wvendCAD)
-	       			
-	    _aCols = {}
-		aadd (_aCols, {'Documento'         ,    'left'  ,  ''})
-		aadd (_aCols, {'Serie'             ,    'left'  ,  ''})
-		aadd (_aCols, {'Dt.Emissao'        ,    'left'  ,  ''})
-		aadd (_aCols, {'Dt.Digitada'       ,    'left'  ,  ''})
-		aadd (_aCols, {'Cliente'		   ,    'left'  ,  ''})
-		aadd (_aCols, {'Vendedor Devolucao',    'left'  ,  ''})
-		aadd (_aCols, {'Vendedor Cadastro' ,    'left'  ,  ''})
-		aadd (_aCols, {'Nota Original'     ,    'left'  ,  ''})
-		aadd (_aCols, {'Serie Original'    ,    'left'  ,  ''})
-		aadd (_aCols, {'Vendedor Original' ,    'left'  ,  ''})
-		
-				
-		_oSQL:= ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT SD1.D1_DOC, SD1.D1_SERIE, SD1.D1_EMISSAO, SD1.D1_DTDIGIT"
-	    _oSQL:_sQuery += "      , SA1.A1_NOME, ZAJ.ZAJ_VENDDV, SA1.A1_VEND, SD1.D1_NFORI, SD1.D1_SERIORI ,SF2.F2_VEND1 "
-		_oSQL:_sQuery += "   FROM " + RetSQLName ("SD1") + " SD1"
-		_oSQL:_sQuery += "		INNER JOIN SF1010 AS SF1"
-		_oSQL:_sQuery += "			ON (SF1.D_E_L_E_T_ = '' "
-		_oSQL:_sQuery += "				AND SF1.F1_FILIAL = SD1.D1_FILIAL"
-		_oSQL:_sQuery += "				AND SF1.F1_FORNECE = SD1.D1_FORNECE"
-		_oSQL:_sQuery += "				AND SF1.F1_DOC    = SD1.D1_DOC"
-		_oSQL:_sQuery += "				AND SF1.F1_SERIE  = SD1.D1_SERIE"
-		_oSQL:_sQuery += "				AND SF1.F1_LOJA   = SD1.D1_LOJA)"
-	    _oSQL:_sQuery += " 		INNER JOIN SD2010 AS SD2"
-		_oSQL:_sQuery += " 			ON (SD2.D_E_L_E_T_ = '' "	
-		_oSQL:_sQuery += " 				AND SD2.D2_FILIAL  = SD1.D1_FILIAL"
-		_oSQL:_sQuery += " 				AND SD2.D2_CLIENTE = SD1.D1_FORNECE"
-		_oSQL:_sQuery += "				AND SD2.D2_DOC     = SD1.D1_NFORI"
-		_oSQL:_sQuery += "				AND SD2.D2_SERIE   = SD1.D1_SERIORI"
-		_oSQL:_sQuery += "				AND SD2.D2_ITEM    = SD1.D1_ITEMORI)
-		_oSQL:_sQuery += "		INNER JOIN SF2010 AS SF2"
-		_oSQL:_sQuery += "			ON (SF2.D_E_L_E_T_ = '' "
-		_oSQL:_sQuery += "				AND SF2.F2_FILIAL = SD2.D2_FILIAL"
-		_oSQL:_sQuery += "				AND SF2.F2_CLIENTE = SD2.D2_CLIENTE"
-		_oSQL:_sQuery += "				AND SF2.F2_DOC    = SD2.D2_DOC"
-		_oSQL:_sQuery += "				AND SF2.F2_SERIE  = SD2.D2_SERIE"
-		_oSQL:_sQuery += "				AND SF2.F2_LOJA   = SD2.D2_LOJA)"
-		_oSQL:_sQuery += "		LEFT JOIN SA1010 AS SA1"
-		_oSQL:_sQuery += "			ON (SA1.D_E_L_E_T_ = '' "
-		_oSQL:_sQuery += "				AND SA1.A1_COD    = SD1.D1_FORNECE"
-		_oSQL:_sQuery += "				AND SA1.A1_LOJA   = SD1.D1_LOJA)"
-		_oSQL:_sQuery += "		LEFT JOIN ZAJ010 AS ZAJ"
-		_oSQL:_sQuery += "			ON (ZAJ.D_E_L_E_T_ = '' "
-		_oSQL:_sQuery += "				AND ZAJ.ZAJ_FILIAL = SD1.D1_FILIAL"
-		_oSQL:_sQuery += "				AND ZAJ.ZAJ_NFORIG = SD1.D1_NFORI"
-		_oSQL:_sQuery += "				AND ZAJ.ZAJ_SORIG  = SD1.D1_SERIORI"
-		_oSQL:_sQuery += "				AND ZAJ.ZAJ_ITORIG = SD1.D1_ITEMORI)"
-		_oSQL:_sQuery += "  WHERE SD1.D_E_L_E_T_ != '*' "
-		_oSQL:_sQuery += "    AND SD1.D1_FILIAL   = '" + xfilial ("SD1")   + "'"
-		_oSQL:_sQuery += "    AND SD1.D1_DOC      = '" + sf1 -> f1_doc     + "'"
-		_oSQL:_sQuery += "    AND SD1.D1_SERIE    = '" + sf1 -> f1_serie   + "'"
-		_oSQL:_sQuery += "    AND SD1.D1_FORNECE  = '" + sf1 -> f1_fornece + "'"
-		_oSQL:_sQuery += "    AND SD1.D1_LOJA     = '" + sf1 -> f1_loja    + "'"
+   		if val(_wvendDEV) <> val(_wvendCAD)	
+			_aCols = {}
+			aadd (_aCols, {'Documento'         ,    'left'  ,  ''})
+			aadd (_aCols, {'Serie'             ,    'left'  ,  ''})
+			aadd (_aCols, {'Dt.Emissao'        ,    'left'  ,  ''})
+			aadd (_aCols, {'Dt.Digitada'       ,    'left'  ,  ''})
+			aadd (_aCols, {'Cliente'		   ,    'left'  ,  ''})
+			aadd (_aCols, {'Vendedor Devolucao',    'left'  ,  ''})
+			aadd (_aCols, {'Vendedor Cadastro' ,    'left'  ,  ''})
+			aadd (_aCols, {'Nota Original'     ,    'left'  ,  ''})
+			aadd (_aCols, {'Serie Original'    ,    'left'  ,  ''})
+			aadd (_aCols, {'Vendedor Original' ,    'left'  ,  ''})
+			
+					
+			_oSQL:= ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " SELECT SD1.D1_DOC, SD1.D1_SERIE, SD1.D1_EMISSAO, SD1.D1_DTDIGIT"
+			_oSQL:_sQuery += "      , SA1.A1_NOME, ZAJ.ZAJ_VENDDV, SA1.A1_VEND, SD1.D1_NFORI, SD1.D1_SERIORI ,SF2.F2_VEND1 "
+			_oSQL:_sQuery += "   FROM " + RetSQLName ("SD1") + " SD1"
+			_oSQL:_sQuery += "		INNER JOIN SF1010 AS SF1"
+			_oSQL:_sQuery += "			ON (SF1.D_E_L_E_T_ = '' "
+			_oSQL:_sQuery += "				AND SF1.F1_FILIAL = SD1.D1_FILIAL"
+			_oSQL:_sQuery += "				AND SF1.F1_FORNECE = SD1.D1_FORNECE"
+			_oSQL:_sQuery += "				AND SF1.F1_DOC    = SD1.D1_DOC"
+			_oSQL:_sQuery += "				AND SF1.F1_SERIE  = SD1.D1_SERIE"
+			_oSQL:_sQuery += "				AND SF1.F1_LOJA   = SD1.D1_LOJA)"
+			_oSQL:_sQuery += " 		INNER JOIN SD2010 AS SD2"
+			_oSQL:_sQuery += " 			ON (SD2.D_E_L_E_T_ = '' "	
+			_oSQL:_sQuery += " 				AND SD2.D2_FILIAL  = SD1.D1_FILIAL"
+			_oSQL:_sQuery += " 				AND SD2.D2_CLIENTE = SD1.D1_FORNECE"
+			_oSQL:_sQuery += "				AND SD2.D2_DOC     = SD1.D1_NFORI"
+			_oSQL:_sQuery += "				AND SD2.D2_SERIE   = SD1.D1_SERIORI"
+			_oSQL:_sQuery += "				AND SD2.D2_ITEM    = SD1.D1_ITEMORI)
+			_oSQL:_sQuery += "		INNER JOIN SF2010 AS SF2"
+			_oSQL:_sQuery += "			ON (SF2.D_E_L_E_T_ = '' "
+			_oSQL:_sQuery += "				AND SF2.F2_FILIAL = SD2.D2_FILIAL"
+			_oSQL:_sQuery += "				AND SF2.F2_CLIENTE = SD2.D2_CLIENTE"
+			_oSQL:_sQuery += "				AND SF2.F2_DOC    = SD2.D2_DOC"
+			_oSQL:_sQuery += "				AND SF2.F2_SERIE  = SD2.D2_SERIE"
+			_oSQL:_sQuery += "				AND SF2.F2_LOJA   = SD2.D2_LOJA)"
+			_oSQL:_sQuery += "		LEFT JOIN SA1010 AS SA1"
+			_oSQL:_sQuery += "			ON (SA1.D_E_L_E_T_ = '' "
+			_oSQL:_sQuery += "				AND SA1.A1_COD    = SD1.D1_FORNECE"
+			_oSQL:_sQuery += "				AND SA1.A1_LOJA   = SD1.D1_LOJA)"
+			_oSQL:_sQuery += "		LEFT JOIN ZAJ010 AS ZAJ"
+			_oSQL:_sQuery += "			ON (ZAJ.D_E_L_E_T_ = '' "
+			_oSQL:_sQuery += "				AND ZAJ.ZAJ_FILIAL = SD1.D1_FILIAL"
+			_oSQL:_sQuery += "				AND ZAJ.ZAJ_NFORIG = SD1.D1_NFORI"
+			_oSQL:_sQuery += "				AND ZAJ.ZAJ_SORIG  = SD1.D1_SERIORI"
+			_oSQL:_sQuery += "				AND ZAJ.ZAJ_ITORIG = SD1.D1_ITEMORI)"
+			_oSQL:_sQuery += "  WHERE SD1.D_E_L_E_T_ != '*' "
+			_oSQL:_sQuery += "    AND SD1.D1_FILIAL   = '" + xfilial ("SD1")   + "'"
+			_oSQL:_sQuery += "    AND SD1.D1_DOC      = '" + sf1 -> f1_doc     + "'"
+			_oSQL:_sQuery += "    AND SD1.D1_SERIE    = '" + sf1 -> f1_serie   + "'"
+			_oSQL:_sQuery += "    AND SD1.D1_FORNECE  = '" + sf1 -> f1_fornece + "'"
+			_oSQL:_sQuery += "    AND SD1.D1_LOJA     = '" + sf1 -> f1_loja    + "'"
 			if len (_oSQL:Qry2Array (.T., .F.)) > 0
 				_sMens = _oSQL:Qry2HTM ("NOTAS DE DEVOLUCAO COM DIVERGENCIA DE VENDEDOR: " + dtoc(sf1 -> f1_dtdigit), _aCols, "", .F.)
 				U_ZZUNU ({'067'}, "NOTAS DE DEVOLUCAO COM DIVERGENCIA DE VENDEDOR: " + dtoc(sf1 -> f1_dtdigit), _sMens, .F., cEmpAnt, cFilAnt, "")
 			endif	
     	endif
 	endif
-	/*
-	// se cliente teve rapel na nota que esta sendo devolvida, grava rapel na NCC - SE1				
-	_sQuery := ""
-	_sQuery += " SELECT D1_NFORI, D1_SERIORI"
-	_sQuery += "   FROM " + RetSQLName ("SD1") + " SD1 "
-	_sQuery += "  WHERE D_E_L_E_T_ = ''"
-	_sQuery += "    AND D1_FILIAL  = '" + sf1 -> f1_filial + "'"
-	_sQuery += "    AND D1_FORNECE = '" + sf1 -> f1_fornece + "'"
-	_sQuery += "    AND D1_LOJA    = '" + sf1 -> f1_loja + "'"
-	_sQuery += "    AND D1_DOC     = '" + sf1 -> f1_doc + "'"
-	_sQuery += "    AND D1_SERIE   = '" + sf1 -> f1_serie + "'"
-	_aDados := U_Qry2Array(_sQuery)
-    if len(_aDados) > 0
-    	_wNForig  = _aDados[1,1]
-		_wSerOrig = _aDados[1,2]
-    	_wrapel = fBuscaCpo ('SD2', 1, xfilial('SD2') + _wNForig + _wSerOrig , "D2_VARAPEL")
-    	// se teve rapel na nota original que esta sendo devolvida, grava valor de rapel na NCC - proporcional a quantidade devolvida
-    	if _wrapel > 0
-			    	
-    	endif
-	endif
-	*/
-	
 return	
-
-
-// --------------------------------------------------------------------------
+// 
+// -----------------------------------------------------------------------------------------------------
 // Grava campos adicionais do SF1 enviados para a rotina automatica
 static function _GrvCpAdic ()
 	local _nLinha := 0
@@ -399,11 +376,9 @@ static function _GrvCpAdic ()
     	sf1 -> f1_vadtinc = date ()
     	sf1 -> f1_vahrinc = time ()
     MsUnLock()
-	
 return
-
-
-// --------------------------------------------------------------------------
+// 
+// -----------------------------------------------------------------------------------------------------
 // Verifica dados para notas de importacao.
 static function _Import ()
 	local _F1vaDesMI := sf1 -> f1_vaDesMI
@@ -451,9 +426,8 @@ static function _Import ()
 		enddo
 	endif
 return
-
-
-// --------------------------------------------------------------------------
+// 
+// -----------------------------------------------------------------------------------------------------
 // Ajusta dados no arquivo SE2.
 static function _AjSE2 ()
 	local _sQuery    := ""
@@ -498,7 +472,6 @@ static function _AjSE2 ()
 
 	if ! ExistBlock ("MTCOLSE2")
 		// Se for uma nota de compra de uva (em 2021 jah vamos gerar contranotas de compra em vez de 'entrada'), ajusta vencimentos.
-//		if sf1 -> f1_tipo == "N" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) .and. IsInCallStack ("U_VA_RUS")
 		if sf1 -> f1_tipo == "N" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) .and. IsInCallStack ("U_VA_RUSN")
 			U_Log2 ('info', 'Ajustando datas de vencimento dos titulos de nota de compra de safra.')
 			se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
@@ -567,7 +540,6 @@ static function _AjSE2 ()
 		endif
 	else
 	//	U_Log2 ('info', '[' + procname () + '] ponto de entrada MTCOLSE2 implementado. No vou mexer nas datas e valores das duplicatas de safra. Somente historicos.')
-//		if sf1 -> f1_tipo == "N" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) .and. IsInCallStack ("U_VA_RUS")
 		if sf1 -> f1_tipo == "N" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) .and. IsInCallStack ("U_VA_RUSN")
 			if type ('_aParPgSaf') == 'A'  // Variavel criada no programa VA_RUSN().
 				U_Log2 ('info', '[' + procname () + '] Ajustando historicos dos titulos de nota de compra de safra (valores e datas jah devem ter sido gerados via ponto de entrada MTCOLSE2).')
@@ -586,9 +558,8 @@ static function _AjSE2 ()
 		endif
 	endif
 return
-
-
-// --------------------------------------------------------------------------
+// 
+// -----------------------------------------------------------------------------------------------------
 // Grava dados adicionais para posterior uso na impressao da nota / envio para NF eletronica.
 static function _DadosAdic ()
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -600,7 +571,6 @@ static function _DadosAdic ()
 	local _sPLACA    := sf1 -> f1_vaPlVei
 	local _sNPRODU   := sf1 -> f1_vaNfPro
 	local _sSNPRODU  := sf1 -> f1_vaSePro
-//	local _aRetQry   := {}
 	local _oSQL      := NIL
 	
 	// Mensagens do pedido de venda.
@@ -631,8 +601,6 @@ static function _DadosAdic ()
 	next
 	
 	// Abre tela para usuario informar dados adicionais
-//	if sf1 -> f1_formul == "S" .and. funname () != "VA_GNF2" .and. funname () != "VA_RUS" .and. sf1 -> f1_est != "EX"
-//	if sf1 -> f1_formul == "S" .and. sf1 -> f1_est != "EX" .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_VA_RUS")
 	if sf1 -> f1_formul == "S" .and. sf1 -> f1_est != "EX" .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_VA_RUSN")
 		// Tela em loop para validar dados.
 		do while .T.
@@ -687,14 +655,10 @@ static function _DadosAdic ()
 			u_help ("A T E N C A O: Produtor rural deveria ter inscricao estadual. Verifique!")
 		endif
 	endif
-//	if ! empty (sf1 -> f1_vaPlVei) .and. funname () != "VA_RUS"
+
 	if ! empty (sf1 -> f1_vaPlVei)
 		_SomaMsg (@_sMsgContr, "Placa veic:" + sf1 -> f1_vaPlVei)
 	endif
-
-//	Jah busca por padrao no NFESEFAZ --> if ! empty (sf1 -> f1_vaNfPro) .and. funname () != "VA_RUS"
-//	Jah busca por padrao no NFESEFAZ --> 	_SomaMsg (@_sMsgContr, "NF produtor:" + sf1 -> f1_vaNfPro)
-//	Jah busca por padrao no NFESEFAZ --> endif
 	
 	// Verifica se a empresa tem inscricao estadual na UF informada (MG, por exemplo)
 	if sf1 -> f1_formul == "S" .and. sf1 -> f1_est == "MG"
@@ -707,16 +671,15 @@ static function _DadosAdic ()
 	
 	U_ML_SRArea (_aAreaAnt)
 return
-
-// --------------------------------------------------------------------------
+// 
+// -----------------------------------------------------------------------------------------------------
 // Acrescenta texto `a mensagem.
 static function _SomaMsg (_sVariav, _sTexto)
 	_sVariav += iif (! empty (_sVariav), "; ", "") + alltrim (_sTexto)
 return
-
-
-
-// --------------------------------------------------------------------------
+// 
+// -----------------------------------------------------------------------------------------------------
+// Envia e-mail para responsáveis dispensadoras de suco
 Static Function _Dispenser()
 	if sf1 -> f1_especie ='SPED' .or. sf1 -> f1_especie ='NF' // não manda emails a partir de conhecimentos
 	
@@ -762,199 +725,9 @@ Static Function _Dispenser()
 		
 	endif				
 return
-
-/*
-// --------------------------------------------------------------------------
-Static Function _VerVenc()
-	local i := 0
-	
-	if sf1 -> f1_especie !='CTE' .and. sf1 -> f1_especie !='CTR' .and. sf1 -> f1_tipo = 'N'
-		// verifica se tem condicao de pagamento diferentes nas solicitacoes diferentes atendidas na NF
-		_sQuery := ""
-		_sQuery += " SELECT DISTINCT SC7.C7_COND"
-  		_sQuery += "   FROM SD1010 AS SD1"
-		_sQuery += " 	INNER JOIN SC7010 AS SC7"
-		_sQuery += " 		ON (SC7.D_E_L_E_T_ = ''"
-		_sQuery += " 			AND SC7.C7_FILIAL  = SD1.D1_FILIAL"
-		_sQuery += " 			AND SC7.C7_FORNECE = SD1.D1_FORNECE"
-		_sQuery += " 			AND SC7.C7_NUM     = SD1.D1_PEDIDO)"
-		_sQuery += "  WHERE SD1.D_E_L_E_T_ = ''"
- 		_sQuery += "    AND SD1.D1_FILIAL  = '" + xfilial ("SD1")   + "'"
-   		_sQuery += "    AND SD1.D1_DOC     = '" + sf1 -> f1_doc     + "'"
-   		_sQuery += "    AND SD1.D1_SERIE   = '" + sf1 -> f1_serie   + "'"
-   		_sQuery += "    AND SD1.D1_FORNECE = '" + sf1 -> f1_fornece + "'"
-   		_sQuery += "    AND SD1.D1_LOJA    = '" + sf1 -> f1_loja    + "'"
-   		
-   		_aDados := U_Qry2Array(_sQuery)
-   		if len(_aDados) > 0
-   			_sQuery += " SELECT DISTINCT SC7.C7_COND, SC7.C7_NUM"
-  			_sQuery += "   FROM SD1010 AS SD1"
-			_sQuery += " 	INNER JOIN SC7010 AS SC7"
-			_sQuery += " 		ON (SC7.D_E_L_E_T_ = ''"
-			_sQuery += " 			AND SC7.C7_FILIAL  = SD1.D1_FILIAL"
-			_sQuery += " 			AND SC7.C7_FORNECE = SD1.D1_FORNECE"
-			_sQuery += " 			AND SC7.C7_NUM     = SD1.D1_PEDIDO)"
-			_sQuery += "  WHERE SD1.D_E_L_E_T_ = ''"
- 			_sQuery += "    AND SD1.D1_FILIAL  = '" + xfilial ("SD1")   + "'"
-   			_sQuery += "    AND SD1.D1_DOC     = '" + sf1 -> f1_doc     + "'"
-   			_sQuery += "    AND SD1.D1_SERIE   = '" + sf1 -> f1_serie   + "'"
-   			_sQuery += "    AND SD1.D1_FORNECE = '" + sf1 -> f1_fornece + "'"
-   			_sQuery += "    AND SD1.D1_LOJA    = '" + sf1 -> f1_loja    + "'"
-   			_aDados := U_Qry2Array(_sQuery)
-   			
-			// manda email avisando que existem condiçoes de pagamento diferentes nas OC atendidas para essa nota
-			_aCols = {}
-			aadd (_aCols, {'Documento Entrada' ,    'left'  ,  ''})
-			aadd (_aCols, {'Serie'             ,    'left'  ,  ''})
-			aadd (_aCols, {'Fornecedor'        ,    'left'  ,  ''})
-			aadd (_aCols, {'Nome'              ,    'left'  ,  ''})
-			aadd (_aCols, {'Pedido'            ,    'left'  ,  ''})
-			aadd (_aCols, {'Condição'          ,    'left'  ,  ''})
-			aadd (_aCols, {'Descricao Condicao',    'left'  ,  ''})
-			
-			_oSQL := ClsSQL ():New ()
-			_oSQL:_sQuery := ""
-			_oSQL:_sQuery += " SELECT DISTINCT SD1.D1_DOC, SD1.D1_SERIE, SD1.D1_FORNECE, SA2.A2_NOME, SD1.D1_PEDIDO, SC7.C7_COND, SE4.E4_DESCRI"
-			_oSQL:_sQuery += "   FROM SD1010 AS SD1"
-			_oSQL:_sQuery += " 		INNER JOIN SC7010 AS SC7"
-			_oSQL:_sQuery += " 			ON (SC7.D_E_L_E_T_ = ''"
-			_oSQL:_sQuery += " 				AND C7_FILIAL  = SD1.D1_FILIAL"
-			_oSQL:_sQuery += " 				AND C7_FORNECE = SD1.D1_FORNECE"
-			_oSQL:_sQuery += " 				AND C7_NUM     = SD1.D1_PEDIDO)"
-			_oSQL:_sQuery += " 		INNER JOIN SA2010 AS SA2"
-			_oSQL:_sQuery += " 			ON (SA2.D_E_L_E_T_ = ''"
-			_oSQL:_sQuery += " 				AND SA2.A2_COD  = SD1.D1_FORNECE"
-			_oSQL:_sQuery += " 				AND SA2.A2_LOJA = SD1.D1_LOJA)"
-			_oSQL:_sQuery += " 		INNER JOIN SE4010 AS SE4"
-			_oSQL:_sQuery += " 			ON (SE4.D_E_L_E_T_ = ''"
-			_oSQL:_sQuery += " 				AND SE4.E4_CODIGO = SC7.C7_COND)"
-			_oSQL:_sQuery += " WHERE SD1.D_E_L_E_T_ = ''"
-	 		_oSQL:_sQuery += "   AND SD1.D1_FILIAL  = '" + xfilial ("SD1")   + "'"
-	   		_oSQL:_sQuery += "   AND SD1.D1_DOC     = '" + sf1 -> f1_doc     + "'"
-	   		_oSQL:_sQuery += "   AND SD1.D1_SERIE   = '" + sf1 -> f1_serie   + "'"
-	   		_oSQL:_sQuery += "   AND SD1.D1_FORNECE = '" + sf1 -> f1_fornece + "'"
-	   		_oSQL:_sQuery += "   AND SD1.D1_LOJA    = '" + sf1 -> f1_loja    + "'"
-	   		
-	   		_wfornece = fBuscaCpo ('SA2', 1, xfilial('SA2') + sf1 -> f1_fornece, "A2_NOME")
-    		_wpedido  = _aDados[1,2]
-			_wcond    = _aDados[1,1]
-			_wdcond   = fBuscaCpo ('SE4', 1, xfilial('SE4') + _wcond, "E4_DESCRI")
-			_cCond   := Condicao(10000,_wcond,,sf1 -> f1_emissao)
-				
-	   		if len (_oSQL:Qry2Array (.T., .F.)) > 0
-	   			// monta email
-			   	_sMens  = "Fornecedor.....: " + sf1 -> f1_fornece + ' - ' + _wfornece + chr(13) + chr(10)
-			   	_sMens += "Numero/Serie NF: " + sf1 -> f1_doc + ' - ' + sf1 -> f1_serie +  chr(13) + chr(10)
-			   	_sMens += "Emissao NF.....: " + dtoc(sf1 -> f1_emissao) + chr(13) + chr(10)
-			   	_sMens += "Vlr.Total NF...: " + cValToChar (sf1 -> f1_valbrut) + chr(13) + chr(10)
-			   	_sMens += "Pedido/O.C.....: " + _wpedido + chr(13) + chr(10)
-			   	_sMens += "Condicao na O.C: " + _wcond + ' - ' + _wdcond + chr(13) + chr(10)
-				_sMens = _oSQL:Qry2HTM ("NF CONTEM ORDENS DE COMPRA COM CONDICAO DE PAGAMENTO DIFERENTES", _aCols, "", .F.)
-				U_SendMail ('compras@novaalianca.coop.br', "NF NÃO CONFORME COM A ORDEM DE COMPRA", _sMens, {})
-			endif	   
-		else
-			// busca parcelas geradas no contas a pagar
-			_sQuery := ""
-			_sQuery += " SELECT E2_VENCTO, E2_NUM, E2_PARCELA"
-  			_sQuery += "   FROM SE2010"
- 			_sQuery += "  WHERE D_E_L_E_T_ = ''"
-   			_sQuery += "    AND E2_FILIAL  = '" + xfilial ("SD1")   + "'"
-   			_sQuery += "    AND E2_FORNECE = '" + sf1 -> f1_fornece + "'"
-   			_sQuery += "    AND E2_LOJA    = '" + sf1 -> f1_loja    + "'"
-   			_sQuery += "    AND E2_NUM     = '" + sf1 -> f1_doc     + "'"
-   			_sQuery += " ORDER BY E2_NUM, E2_PARCELA"
-   			_aDados1 := U_Qry2Array(_sQuery)
-   			_werro := 0
-   			if len(_aDados1) > 0
-    			// guarda dados para enviar no email
-    			_wfornece = fBuscaCpo ('SA2', 1, xfilial('SA2') + sf1 -> f1_fornece, "A2_NOME")
-    			//_wpedido  = _aDados[1,2]
-				_wcond    = _aDados[1,1]
-				_wdcond   = fBuscaCpo ('SE4', 1, xfilial('SE4') + _wcond, "E4_DESCRI")
-				_cCond   := Condicao(10000,_wcond,,sf1 -> f1_emissao)
-				if len(_aDados1) = 1
-					_xPARCELA := ""	
-				else 
-					_xPARCELA := "A"
-				endif
-				if len(_aDados1) = len(_cCond)
-					// verifica se os vencimentos do financeiro estao MENORES que da ordem de compra
-					For i=1 To Len(_cCond)
-						if _aDados1[i,1] < _cCond[i,1] .or. _werro=2 
-							_sSQL := ""
-							_sSQL += " INSERT INTO AUX_ENTNF ( FORNECE, DOC, EMISSAO, PARCELA, VENCTO)" 
-		                    _sSQL += " VALUES ( '" + sf1 -> f1_fornece + "'"
-		                    _sSQL += "        , '" + sf1 -> f1_doc     + "'"
-		                    _sSQL += "        , '" + dtos(sf1 -> f1_emissao) + "'"
-		                    _sSQL += "        , '" + _xPARCELA + "'"
-		                    _sSQL += "        , '" + dtos(_cCond[i,1]) + "')"
-		                    if TCSQLExec (_sSQL) < 0
-				                u_showmemo(_sSQL)
-				                return
-				            endif
-				            _werro = 2
-						endif					 
-						_xPARCELA := Soma1(_xPARCELA)               
-					next
-        		else
-					_werro = 1  // nro de parcelas não eh igual									
-				endif	
-												
-				if _werro > 0
-					_aCols = {}
-					aadd (_aCols, {'Parcela'                  ,  'left'  ,  ''})
-					aadd (_aCols, {'Vencimento pela O.C.'     ,  'left'  ,  ''})
-					aadd (_aCols, {'Vencimento no Financeiro' ,  'left'  ,  ''})
-					
-					_oSQL := ClsSQL ():New ()
-					_oSQL:_sQuery := ""
-					_oSQL:_sQuery += " SELECT SE2.E2_PARCELA AS PARCELA"
-					_oSQL:_sQuery += "      , (SELECT dbo.VA_DTOC(AUX.VENCTO)"
-	 				_oSQL:_sQuery += "   		 FROM AUX_ENTNF AS AUX"
-	 				_oSQL:_sQuery += "  		WHERE AUX.DOC     = SE2.E2_NUM"
-			   		_oSQL:_sQuery += "    		  AND AUX.FORNECE = SE2.E2_FORNECE"
-			   		_oSQL:_sQuery += "    		  AND AUX.PARCELA = SE2.E2_PARCELA) AS OC_VENCTO"
-	 				_oSQL:_sQuery += "      , dbo.VA_DTOC(SE2.E2_VENCTO) AS FIN_VENCTO"
-	 				_oSQL:_sQuery += "   FROM SE2010 AS SE2"
-					_oSQL:_sQuery += "  WHERE SE2.D_E_L_E_T_ = ''"
-			 		_oSQL:_sQuery += "    AND SE2.E2_FILIAL  = '" + xfilial ("SD1")   + "'"
-			   		_oSQL:_sQuery += "    AND SE2.E2_NUM     = '" + sf1 -> f1_doc     + "'"
-			   		_oSQL:_sQuery += "    AND SE2.E2_PREFIXO = '" + sf1 -> f1_serie   + "'"
-			   		_oSQL:_sQuery += "    AND SE2.E2_FORNECE = '" + sf1 -> f1_fornece + "'"
-			   		_oSQL:_sQuery += "    AND SE2.E2_LOJA    = '" + sf1 -> f1_loja    + "'"
-			   						   		
-			   		if len (_oSQL:Qry2Array (.T., .F.)) > 0
-			   			// monta email
-			   			_sMens  = "Fornecedor.....: " + sf1 -> f1_fornece + ' - ' + _wfornece + chr(13) + chr(10)
-			   			_sMens += "Numero/Serie NF: " + sf1 -> f1_doc + ' - ' + sf1 -> f1_serie +  chr(13) + chr(10)
-			   			_sMens += "Emissao NF.....: " + dtoc(sf1 -> f1_emissao) + chr(13) + chr(10)
-			   			_sMens += "Vlr.Total NF...: " + cValToChar (sf1 -> f1_valbrut) + chr(13) + chr(10)
-			   			//_sMens += "Pedido/O.C.....: " + _wpedido + chr(13) + chr(10)
-			   			_sMens += "Condicao na O.C: " + _wcond + ' - ' + _wdcond + chr(13) + chr(10)
-						if _werro = 1
-			   				_sMens += _oSQL:Qry2HTM ("QUANTIDADE DE PARCELAS DA NF DIFERENTES DA O.C.", _aCols, "", .F.)
-			   			else
-			   				// monta email
-			   				_sMens += _oSQL:Qry2HTM ("VENCIMENTOS DA OC DIFERENTES NF", _aCols, "", .F.)
-							// deleta arquivo auxiliar
-							_sSQL := ""
-    						_sSQL += " DELETE AUX_ENTNF" 
-							_sSQL += "  WHERE FORNECE = '" + sf1 -> f1_fornece + "'"
-							_sSQL += "    AND DOC     = '" + sf1 -> f1_doc     + "'"
-							if TCSQLExec (_sSQL) < 0
-         						return
-   							endif
-						endif	
-						U_SendMail ('compras@novaalianca.coop.br', "NF NÃO CONFORME COM A ORDEM DE COMPRA", _sMens, {})
-					endif
-				endif			     			
-			endif
-		endif				
-	endif						
-return
-*/
-
-// --------------------------------------------------------------------------
+// 
+// -----------------------------------------------------------------------------------------------------
+// envia e-mail para responsáveis - itens controlados pela policia federal
 Static Function _Controle_PF()
 	if sf1 -> f1_especie !='CTE' .and. sf1 -> f1_especie !='CTR' // não manda emails a partir de conhecimentos
 		
@@ -1009,8 +782,9 @@ Static Function _Controle_PF()
 		
 	endif				
 return
-
-
+// 
+// -----------------------------------------------------------------------------------------------------
+// Se for nota de compra normal - verifica e atualiza ativo fixo
 Static Function _AtuATF()
 	local i := 0
 	
@@ -1092,10 +866,10 @@ Static Function _AtuATF()
 	    	
 	endif		
 return
-
-// --------------------------------------------------------------------------
+// 
+// -----------------------------------------------------------------------------------------------------
+//
 Static Function _HistNf()
-//	local _sMsg := ""
 	
 	_oEvento := ClsEvent():new ()
 	_oEvento:CodEven   = "SZN001"
@@ -1115,7 +889,9 @@ Static Function _HistNf()
 	_oEvento:Grava ()
 	
 return
-// --------------------------------------------------------------------------
+// 
+// -----------------------------------------------------------------------------------------------------
+// email para a logistica avisando entradas no almox 91 e 10
 Static Function _EmailLog()
 		
 	if sf1 -> f1_filial = '01'  // verifica so na matriz
@@ -1169,27 +945,27 @@ Static Function _EmailLog()
 		endif
 	endif	
 	
-		// Avisa interessados sobre devolucoes de vendas.
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " select distinct D1_COD, D1_DESCRI, D1_QUANT, D1_UM, D1_DTDIGIT, D1_NFORI"
-		_oSQL:_sQuery += " from " + RetSQLName ("SD1") + " SD1"
-		_oSQL:_sQuery += " where SD1.D_E_L_E_T_ != '*'"
-		_oSQL:_sQuery +=   " AND SD1.D1_FILIAL   = '" + xfilial ("SD1")   + "'"
-		_oSQL:_sQuery +=   " AND SD1.D1_DOC      = '" + sf1 -> f1_doc     + "'"
-		_oSQL:_sQuery +=   " AND SD1.D1_SERIE    = '" + sf1 -> f1_serie   + "'"
-		_oSQL:_sQuery +=   " AND SD1.D1_FORNECE  = '" + sf1 -> f1_fornece + "'"
-		_oSQL:_sQuery +=   " AND SD1.D1_LOJA     = '" + sf1 -> f1_loja    + "'"
-		if sf1 -> f1_tipo = 'D'
-			_sMsg = _oSQL:Qry2HTM ("NF devolucao '" + sf1 -> f1_doc + "' do cliente '" + sf1 -> f1_fornece , NIL, "", .F.)
-			if ! empty (_sMsg)
-				U_ZZUNU ({"089"}, "NF devolucao de venda", _sMsg, .F., cEmpAnt, cFilAnt)
-			endif
-		endif	
-		
+	// Avisa interessados sobre devolucoes de vendas.
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " select distinct D1_COD, D1_DESCRI, D1_QUANT, D1_UM, D1_DTDIGIT, D1_NFORI"
+	_oSQL:_sQuery += " from " + RetSQLName ("SD1") + " SD1"
+	_oSQL:_sQuery += " where SD1.D_E_L_E_T_ != '*'"
+	_oSQL:_sQuery +=   " AND SD1.D1_FILIAL   = '" + xfilial ("SD1")   + "'"
+	_oSQL:_sQuery +=   " AND SD1.D1_DOC      = '" + sf1 -> f1_doc     + "'"
+	_oSQL:_sQuery +=   " AND SD1.D1_SERIE    = '" + sf1 -> f1_serie   + "'"
+	_oSQL:_sQuery +=   " AND SD1.D1_FORNECE  = '" + sf1 -> f1_fornece + "'"
+	_oSQL:_sQuery +=   " AND SD1.D1_LOJA     = '" + sf1 -> f1_loja    + "'"
+	if sf1 -> f1_tipo = 'D'
+		_sMsg = _oSQL:Qry2HTM ("NF devolucao '" + sf1 -> f1_doc + "' do cliente '" + sf1 -> f1_fornece , NIL, "", .F.)
+		if ! empty (_sMsg)
+			U_ZZUNU ({"089"}, "NF devolucao de venda", _sMsg, .F., cEmpAnt, cFilAnt)
+		endif
+	endif	
+	
 return
-
-// --------------------------------------------------------------------------
+// 
+// -----------------------------------------------------------------------------------------------------
 // Avisa o solicitante, quando for o caso, que seu pedido chegou.
 Static Function _AvisaSoli ()
 	local _sMsg     := ""
@@ -1267,16 +1043,15 @@ Static Function _AvisaSoli ()
 
 	U_ML_SRArea (_aAreaAnt)
 return
-
-// --------------------------------------------------------------------------
+// 
+// -----------------------------------------------------------------------------------------------------
 // Atualiza status na tabela ZZX  --- essa rotina é usada pelo SF1140I
 static function _AtuZZX (_zzxstatus)
-//	local _oSQL      := NIL
 	if sf1->f1_est != 'EX'
 		if sf1->f1_especie = 'SPED' .or.  sf1->f1_especie = 'CTE' // Doc.Lançado
 			DbSelectArea("ZZX")
 			DbSetOrder(1)
-			///F1_FILIAL, F1_DOC, F1_SERIE, F1_FORNECE, F1_LOJA, F1_TIPO, R_E_C_N_O_, D_E_L_E_T_
+
 			if dbseek (sf1 -> f1_filial + sf1 -> f1_doc + sf1 -> f1_serie + sf1 -> f1_fornece + sf1 -> f1_loja + sf1 -> f1_tipo, .F.)
 				reclock ("ZZX", .F.)
 					if ! empty (sf1 -> f1_chvnfe)
@@ -1289,4 +1064,105 @@ static function _AtuZZX (_zzxstatus)
 			endif
 		endif	
 	endif	 
+return
+// 
+// -----------------------------------------------------------------------------------------------------
+// Verifica se tem laudo para realizar a cópia em transferencias
+static function _GeraLaudo(_sFilial, _sFornece, _sLoja, _sDoc, _sSerie, _sTipo)
+	local _oSQL   := ClsSQL ():New ()
+	local _aDados := {}
+	local _aLaudo := {}
+	local _x      := 0
+	local lRet    := .T.
+
+	// Verifica se fornecedor é filial
+	If _sTipo == 'D' .or. _sTipo =='B' // cliente
+		_sCGC := Posicione("SA1",1,xFilial("SA1")+ _sFornece + _sLoja,"A1_CGC")
+	Else
+		_sCGC := Posicione("SA2",1,xFilial("SA2")+ _sFornece + _sLoja,"A2_CGC")
+	EndIf
+
+	If (_sCGC <= '88612486000000' .or. _sCGC >= '88612486999999') // não é filial		
+		//u_help("Cliente/fornecedor não é filial de transferência! Verifique cliente e/ou TES.")
+		lRet := .F.
+	EndIf
+
+	If lRet
+		// Busca lote original
+		_oSQL:_sQuery := " SELECT"
+		_oSQL:_sQuery += " 		TEF.D2_FILIAL"
+		_oSQL:_sQuery += "     ,TEF.D2_LOTECTL"
+		_oSQL:_sQuery += "     ,TEF.D2_COD"
+		_oSQL:_sQuery += "     ,TEF.D1_QUANT"
+		_oSQL:_sQuery += " FROM VA_VTRANSF_ENTRE_FILIAIS TEF"
+		_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SB1") + " AS SB1 "
+		_oSQL:_sQuery += " 	ON SB1.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery += " 		AND SB1.B1_COD = TEF.D2_COD"
+		_oSQL:_sQuery += " 		AND SB1.B1_RASTRO = 'L'"
+		_oSQL:_sQuery += " WHERE D1_FILIAL = '" + _sFilial  + "'"
+		_oSQL:_sQuery += " AND D1_DOC      = '" + _sDoc     + "'"
+		_oSQL:_sQuery += " AND D1_SERIE    = '" + _sSerie   + "'"
+		_oSQL:_sQuery += " AND D1_FORNECE  = '" + _sFornece + "'"
+		_oSQL:_sQuery += " AND D1_LOJA     = '" + _sLoja    + "'"
+		_aDados := aclone (_oSQL:Qry2Array ())
+
+		For _x:= 1 to Len(_aDados)
+			_sFilOri  := _aDados[_x,1]
+			_sLoteOri := _aDados[_x,2]
+			_sProduto := _aDados[_x,3]
+			_nQuant   := _aDados[_x,4]
+
+			_oSQL:_sQuery := " SELECT"
+			_oSQL:_sQuery += " 		ZAF.ZAF_ENSAIO"
+			_oSQL:_sQuery += " 	   ,ZAF.ZAF_PRODUT"
+			_oSQL:_sQuery += " 	   ,ZAF.ZAF_LOCAL"
+			_oSQL:_sQuery += " 	   ,ZAF.ZAF_LOCALI"
+			_oSQL:_sQuery += " 	   ,ZAF.ZAF_LOTE"
+			_oSQL:_sQuery += " 	FROM " + RetSQLName ("ZAF") + " AS ZAF "
+			_oSQL:_sQuery += " 	WHERE ZAF.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery += " 	AND ZAF.ZAF_FILIAL = '" + _sFilOri  + "'"
+			_oSQL:_sQuery += " 	AND ZAF_LOTE       = '" + _sLoteOri + "'"
+			_oSQL:_sQuery += " 	AND ZAF.ZAF_PRODUT = '" + _sProduto + "'"
+			_oSQL:_sQuery += " 	AND ZAF.ZAF_DATA = (SELECT"
+			_oSQL:_sQuery += " 			MAX(ZAF2.ZAF_DATA)"
+			_oSQL:_sQuery += " 		FROM " + RetSQLName ("ZAF") + " AS ZAF2 "
+			_oSQL:_sQuery += " 		WHERE ZAF2.D_E_L_E_T_ = '' "
+			_oSQL:_sQuery += " 		AND ZAF.ZAF_FILIAL = '" + _sFilOri  + "'"
+			_oSQL:_sQuery += " 		AND ZAF_LOTE       = '" + _sLoteOri + "'"
+			_oSQL:_sQuery += " 		AND ZAF.ZAF_PRODUT = '" + _sProduto + "')"
+			_aLaudo := aclone (_oSQL:Qry2Array ())
+
+			If Len(_aLaudo) > 0
+				_sLaudo    := _aLaudo[1, 1]
+				_sProdDest := _aLaudo[1, 2]
+				_sAlmDest  := _aLaudo[1, 3]
+				_sEndDest  := _aLaudo[1, 4]
+				_sLoteDest := _aLaudo[1, 5]
+
+				U_CpLaudo (_sFilOri, _sLaudo, _sProdDest, _sAlmDest, _sEndDest, _sLoteDest, _nQuant, .F.)
+
+				_oEvento := ClsEvent():new ()
+				_oEvento:CodEven   = "ZAF001"
+				_oEvento:Texto	   = "Inclusão de Laudo - Laudo Ori." + alltrim(_sLaudo) + " Filial:" + _sFilOri + " Lote:" + alltrim(_sLoteOri) + " Produto:" + alltrim(_sProduto) 
+				_oEvento:NFEntrada = sf1 -> f1_doc
+				_oEvento:SerieEntr = sf1 -> f1_serie
+				_oEvento:Cliente   = sf1 -> f1_fornece
+				_oEvento:LojaCli   = sf1 -> f1_loja
+				_oEvento:Grava ()
+
+			Else
+				_sMens = "Filial:" + _sFilOri + " Lote:" + alltrim(_sLoteOri) + " Produto:" + alltrim(_sProduto) + " não contém laudo para cópia. NF de entrada: " + alltrim(sf1->f1_filial) + "-" + alltrim(sf1 -> f1_doc)+"/"+alltrim(sf1 -> f1_serie)+"."
+				U_ZZUNU ({'127'}, "Laudo automático em transf. entre filiais", _sMens, .F.) 
+
+				_oEvento := ClsEvent():new ()
+				_oEvento:CodEven   = "ZAF001"
+				_oEvento:Texto	   = "Laudo não copiado - Filial:" + _sFilOri + " Lote:" + alltrim(_sLoteOri) + " Produto:" + alltrim(_sProduto) 
+				_oEvento:NFEntrada = sf1 -> f1_doc
+				_oEvento:SerieEntr = sf1 -> f1_serie
+				_oEvento:Cliente   = sf1 -> f1_fornece
+				_oEvento:LojaCli   = sf1 -> f1_loja
+				_oEvento:Grava () 
+			EndIf
+		Next
+	EndIf
 return
