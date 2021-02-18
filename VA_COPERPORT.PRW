@@ -2,12 +2,20 @@
 //  Autor......: Catia Cardoso
 //  Data.......: 12/03/2019
 //  Descricao..: Consulta de Operações Portaria 
-// 
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #consulta
+// #Descricao         #Consulta de Operações Portaria 
+// #PalavasChave      #operacoes_portaria 
+// #TabelasPrincipais #SD1 #ZAF #SF1 #ZZT 
+// #Modulos   		  #EST #COM 
+//
 //  Historico de alterações
 //  02/10/2019 - ROBERT/SANDRA - AND SF1.F1_CHVNFE <> '')"  /* PARA EVITAR LEITURA DE TICKETS SEM CHAVE */
 //  02/10/2019 - ROBERT/SANDRA - Para não aceitar Pre nota.
 //  25/06/2020 - Cláudia - Incluida coluna de placa e alterado o nome do cliente/fornecedor para nome reduzido. GLPI:8027
 //  10/07/2020 - Cláudia - Voltada a alteração pois Segundo a Deise mesmo com a alteração não vai ajudar no processo.
+//  18/02/2021 - Cláudia - Incluida colunas referentes ao laudo. GLPI: 9283
 //
 // --------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
@@ -46,6 +54,13 @@ User function VA_COPERPORT()
     	_sQuery += "      , SF1.F1_VADENS   AS DENSIDADE"
     	_sQuery += "      , IIF (SF1.F1_VADENS>0,(ZZT.ZZT_PESENT - ZZT.ZZT_PESSAI) / SF1.F1_VADENS,0) AS VOLUME"
     	_sQuery += "      , SD1.D1_QUANT - IIF (SF1.F1_VADENS>0,(ZZT.ZZT_PESENT - ZZT.ZZT_PESSAI) / SF1.F1_VADENS,0) AS DIFERENCA"
+		_sQuery += "      , ZAF.ZAF_EXTRSE AS EXTRATO_SECO"
+		_sQuery += "      , ZAF.ZAF_BRIX AS BRIX"
+		_sQuery += "      , ZAF.ZAF_COR AS COR"
+		_sQuery += "      , ZAF.ZAF_COR420 AS COR420"
+		_sQuery += "      , ZAF.ZAF_COR520 AS COR520"
+		_sQuery += "      , ZAF.ZAF_COR620 AS COR620"
+		_sQuery += "      , ZAF.ZAF_DENSID AS DENSIDADE_LAUDO"
     	_sQuery += "   FROM SD1010 AS SD1"
     	_sQuery += " 		INNER JOIN SF1010 AS SF1"
 		_sQuery += " 			ON (SF1.D_E_L_E_T_ = ''"
@@ -69,6 +84,20 @@ User function VA_COPERPORT()
 		_sQuery += " 			ON (SA1.D_E_L_E_T_  = ''"
 		_sQuery += " 				AND SA1.A1_COD  = SF1.F1_FORNECE"
 		_sQuery += " 				AND SA1.A1_LOJA = SF1.F1_LOJA)"
+		_sQuery += " 		LEFT JOIN ZAF010 ZAF"
+		_sQuery += " 			ON ZAF.D_E_L_E_T_ = ''"
+		_sQuery += " 				AND ZAF.ZAF_FILIAL = SD1.D1_FILIAL"
+		_sQuery += " 				AND ZAF.ZAF_PRODUT = SD1.D1_COD"
+		_sQuery += " 				AND ZAF.ZAF_LOTE = SD1.D1_LOTECTL"
+		_sQuery += " 				AND ZAF.ZAF_DATA <= SD1.D1_EMISSAO"
+		_sQuery += " 				AND ZAF.ZAF_VALID >= SD1.D1_EMISSAO"
+		_sQuery += " 				AND NOT EXISTS (SELECT"
+		_sQuery += " 						*"
+		_sQuery += " 					FROM ZAF010 MAIS_RECENTE"
+		_sQuery += " 					WHERE MAIS_RECENTE.D_E_L_E_T_ = ''"
+		_sQuery += " 					AND MAIS_RECENTE.ZAF_FILIAL = ZAF.ZAF_FILIAL"
+		_sQuery += " 					AND MAIS_RECENTE.ZAF_LOTE = ZAF.ZAF_LOTE"
+		_sQuery += " 					AND MAIS_RECENTE.ZAF_ENSAIO > ZAF.ZAF_ENSAIO)"
 		_sQuery += "   WHERE SD1.D_E_L_E_T_ = ''"
 		_sQuery += " 	 AND SD1.D1_FILIAL  BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'"
 		_sQuery += " 	 AND SD1.D1_DTDIGIT BETWEEN '" + dtos (mv_par03) + "' AND '" + dtos (mv_par04) + "'"
@@ -76,7 +105,7 @@ User function VA_COPERPORT()
 		_sQuery += " 	 AND SD1.D1_FORNECE BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
 		_sQuery += " 	 AND SD1.D1_COD BETWEEN '" + mv_par07 + "' AND '" + mv_par08 + "'"
    		_sQuery += "     AND SD1.D1_TES <> ''"
-   	//	u_log2 ('debug', _sQuery)
+   		u_log2 ('debug', _sQuery)
    		//u_showmemo (_sQuery)
    		
 		_aDados := U_Qry2Array(_sQuery)
@@ -103,9 +132,16 @@ User function VA_COPERPORT()
 		    	aadd (_aCols, {15, "Peso Bruto"    	   ,  50,  "@E 9,999,999.9999"})
 		    	aadd (_aCols, {16, "Tara"    	       ,  50,  "@E 9,999,999.9999"})
 		    	aadd (_aCols, {17, "Peso Liquido"      ,  50,  "@E 9,999,999.9999"})
-		    	aadd (_aCols, {18, "Densidade"   	   ,  20,  "@E 9.9999"})
+		    	aadd (_aCols, {18, "Densidade NF"      ,  20,  "@E 9.9999"})
 		    	aadd (_aCols, {19, "Volume"   	       ,  50,  "@E 9,999,999.9999"})
 		    	aadd (_aCols, {20, "Diferença" 	       ,  50,  "@E 9,999,999.9999"})
+				aadd (_aCols, {21, "Extrato Seco" 	   ,  50,  "@E 9,999,999.9999"})
+				aadd (_aCols, {22, "Brix" 	       	   ,  50,  "@E 9,999,999.9999"})
+				aadd (_aCols, {23, "Cor" 	           ,  50,  "@E 9,999,999.9999"})
+				aadd (_aCols, {24, "Cor 420nm" 	       ,  50,  "@E 9,999,999.9999"})
+				aadd (_aCols, {25, "Cor 520nm" 	       ,  50,  "@E 9,999,999.9999"})
+				aadd (_aCols, {26, "Cor 620nm" 	       ,  50,  "@E 9,999,999.9999"})
+				aadd (_aCols, {27, "Densidade Laudo"   ,  50,  "@E 9,999,999.9999"})
 		    	
 		        
 		    	_wlinha = U_F3Array (_aDados, "Consulta X Guias Transito", _aCols, oMainWnd:nClientWidth - 50, oMainWnd:nClientHeight -15 , "", "", .T., 'C' )
