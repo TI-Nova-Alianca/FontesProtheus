@@ -180,8 +180,10 @@ User Function SF1100i ()
 	endif
 
 	// Verifica se tem laudo para copiar
-	_GeraLaudo(sf1 -> f1_filial, sf1 -> f1_fornece, sf1 -> f1_loja, sf1 -> f1_doc, sf1 -> f1_serie, sf1 -> f1_tipo)
-
+	If ! IsInCallStack ("U_VA_RUSN")
+		_GeraLaudo(sf1 -> f1_filial, sf1 -> f1_fornece, sf1 -> f1_loja, sf1 -> f1_doc, sf1 -> f1_serie, sf1 -> f1_tipo)
+	EndIf
+	
 	// Imprime romaneio de entrada
 	if cEmpAnt + cFilAnt == '0101' .and. ! IsInCallStack ("U_VA_RUSN") .and. cEspecie !='CTR' .and. cEspecie !='CTE' .and. ! IsInCallStack ("U_VA_GNF2")
 		if U_MsgYesNo ("Deseja imprimir o romaneio de entrada?")
