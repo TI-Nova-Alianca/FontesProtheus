@@ -100,7 +100,8 @@ user function BatSafr (_sQueFazer, _lAjustar)
 		_oSQL:_sQuery += " SELECT DISTINCT 'Filial:' + FILIAL + ' Assoc:' + ASSOCIADO + '-' + RTRIM (NOME_ASSOC) + ' Contranota:' + DOC"
 		_oSQL:_sQuery +=   " FROM VA_VNOTAS_SAFRA V"
 		_oSQL:_sQuery +=  " WHERE SAFRA   = '" + cvaltochar (year (date ())) + "'"
-		_oSQL:_sQuery +=    " AND (CARGA = '' OR CARGA IS NULL)
+		_oSQL:_sQuery +=    " AND TIPO_NF != 'V'"
+		_oSQL:_sQuery +=    " AND (CARGA = '' OR CARGA IS NULL)"
 		u_log (_oSQL:_sQuery)
 		_aCols = {}
 		aadd (_aCols, {"Mensagem",        "left",  "@!"})
