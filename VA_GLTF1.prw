@@ -1,8 +1,14 @@
-#include "rwmake.ch"
 // Programa...: VA_GLTF1
 // Autor......: Elaine Ballico	
 // Data.......: 26/02/2013
 // Descricao..: Atualiza campo F1_VAGUIA (Numero da Guia de Livre Transito) das Notas de Entrada
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Alteracao
+// #Descricao         #Atualiza campo F1_VAGUIA (Numero da Guia de Livre Transito) das Notas de Entrada
+// #PalavasChave      #guia_de_livre_transito #F1_VAGUIA
+// #TabelasPrincipais #SF1 #SB1 #SD1
+// #Modulos           #EST #ESP
 //
 // Historico de alteracoes:
 // 11/07/2013 - Robert  - Passa a aceitar tambem acucar nas guias.
@@ -19,6 +25,8 @@
 // 19/02/2021 - Cláudia - Incluida validação para retorno vazio da guia e densidade. GLPI: 9445
 //
 // ----------------------------------------------------------------------------------------------------------------
+#include "rwmake.ch"
+
 User Function VA_GLTF1()  
 
 	Local _aCores     := U_GLTF1LG (.T.)
