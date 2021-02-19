@@ -16,6 +16,7 @@
 // 01/10/2019 - Cláudia - Alterado campo F2_VAGUIA de 6 para 11 caracteres e ajustada a tela correspondente. 
 // 13/10/2020 - Claudia - Ajuste nas consultas para somarquantidade para mesmo produto e mesma nota. GLPI: 8640
 // 20/11/2020 - Claudia - Retirado o botão filtro conforme GLPI: 8663
+// 19/02/2021 - Cláudia - Incluida validação para retorno vazio da guia. GLPI: 9445
 //
 // -------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
@@ -243,7 +244,12 @@ User function AtuGuia2()
         _sOldGuia = PADL(TRB -> GUIA,11)
 		_sNewGuia = U_Get ("Guia de Transito", "C", 11, "@# 999999/9999", "", _sOldGuia, .F., '.T.')
 		
-		if _lRet
+		If empty(_sNewGuia)
+			_sNewGuia := ""
+			_lRet := .F.
+		EndIf
+		
+		if _lRet 
 			DbSelectArea("SF2")                
 			DbSetOrder(1)
 			if SF2 -> (dbseek (xFilial("SF2") + _Nota + _Serie + _Cliente + _Loja))

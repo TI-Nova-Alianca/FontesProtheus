@@ -16,12 +16,12 @@
 // 13/10/2020 - Claudia - Ajuste nas consultas para somarquantidade para mesmo produto e mesma nota. GLPI: 8640
 // 20/11/2020 - Claudia - Retirado o botão filtro conforme GLPI: 8663
 // 27/11/2020 - Sandra  - Incluso grupo de produtos 4000
+// 19/02/2021 - Cláudia - Incluida validação para retorno vazio da guia e densidade. GLPI: 9445
 //
 // ----------------------------------------------------------------------------------------------------------------
 User Function VA_GLTF1()  
 
 	Local _aCores     := U_GLTF1LG (.T.)
-	//Local cArqTRB     := ""
 	Local aStruct     := {}
 	Local aHead       := {}
 	Local _aArqTrb    := {}
@@ -206,6 +206,14 @@ User function AtuGuia()
 		_sNewGuia = U_Get ("Guia de Transito", "C", 11, "@# 999999/9999", "", _sOldGuia, .F., '.T.')
 		_sNewDens = U_Get ("Densidade" , "N", 6, '@E 9.9999', "", _sOldDens, .F., '.T.')
 		
+		If empty(_sNewGuia)
+			_sNewGuia := ""
+		EndIf
+
+		If empty(_sNewDens)
+			_sNewDens := 0
+		EndIf
+
 		if _lRet
 			DbSelectArea("SF1")                
 			DbSetOrder(1)
