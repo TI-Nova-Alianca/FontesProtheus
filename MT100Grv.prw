@@ -4,6 +4,7 @@
 // Descricao:  P.E. para validacao da gravacao ou exclusao da NF de entrada, depois do MT100TOK.
 //
 // Historico de alteracoes:
+// 19/02/2021 - Robert - Inclusao de chamadas da funcao U_PerfMon() para metricas de performance (GLPI 9409).
 //
 
 // --------------------------------------------------------------------------
@@ -20,5 +21,10 @@ user function mt100grv ()
 	if ! _lRet
 		lMSErroAuto = .T.  // Em testes que fiz, esta variavel nao foi atualizada automaticamente. Robert, 18/02/2011.
 	endif
+
+	if _lRet
+		U_PerfMon ('I', 'GravacaoMATA100')  // Deixa variavel pronta para posterior medicao de tempos de execucao
+	endif
+
 	U_ML_SRArea (_aAreaAnt)
 return _lRet
