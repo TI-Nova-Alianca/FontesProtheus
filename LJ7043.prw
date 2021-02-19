@@ -1,9 +1,16 @@
-// Programa:   	LJ7043
-// Autor:      	Cláudia Lionço
-// Data:       	04/10/2019
-// Cliente:    	Alianca
-// Descricao:  	P.E. "Valida tabela de preço" na tela de venda assistida.
+// Programa...: LJ7043
+// Autor......: Cláudia Lionço
+// Data.......: 04/10/2019
+// Cliente....: Alianca
+// Descricao..: P.E. "Valida tabela de preço" na tela de venda assistida.
 // 				https://tdn.totvs.com/pages/releaseview.action?pageId=6790911
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #P.E. "Valida tabela de preço" na tela de venda assistida.
+// #PalavasChave      #valida_tabela_de_preco #tabela_de_preco
+// #TabelasPrincipais #SLQ #SA2 
+// #Modulos   		  #LOJA 
 //
 // Historico de alteracoes:
 // 08/10/2019 - Claudia - Alteradas regras de bloqueio de tabela conforme descrito no chamado GLPI 6657
@@ -13,8 +20,9 @@
 // 11/01/2020 - Robert  - Variaveis _sCliente e _sLoja nao inicializadas
 //                      - Renomeadas funcoes com nomes maiores que 10 caracteres
 //                      - Gera aviso quando associado tiver mais de 1 codigo base.
+// 19/02/2021 - Claudia - Incluidas tags de pesquisa
 //
-
+// ---------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
 
@@ -33,24 +41,24 @@ User function LJ7043()
 		EndIf
 	EndIf
 return _lRet
-
+//
 //-----------------------------------------------------------------------------------------
+// Verificar funcionario
 Static Function _VerFunc(_sCGC,_sTabela,_lRet)
 	local _sQuery2  	:= ""
 	local _aFun			:= {}
-	//local _lRetFun      := .T.
 	local _lRAssoc      := .T.
 	
-	_sQuery2 += " SELECT" 
-	_sQuery2 += " 	NOME"
+	_sQuery2 := " SELECT" 
+	_sQuery2 += " 	  NOME"
 	_sQuery2 += "    ,SITUACAO"
 	_sQuery2 += "    ,CPF"
 	_sQuery2 += " FROM LKSRV_SIRH.SIRH.dbo.VA_VFUNCIONARIOS"
 	_sQuery2 += " WHERE CPF = '"+ alltrim(_sCGC) +"'"
 	_aFun 	 := U_Qry2Array(_sQuery2)  
-	//
+	/
 	If len(_aFun) <= 0 // verifica se eh socio jah que não eh funcionario
-		_lRet := _VerAssoc(_sCGC,_sTabela,'1',_lRet)
+		_lRet   := _VerAssoc(_sCGC,_sTabela,'1',_lRet)
 	Else
 		_EhFun  := IIf(!empty(_aFun[1,1]),'S','N')
 		_SitFun := alltrim(_aFun[1,2])
@@ -70,20 +78,11 @@ Static Function _VerFunc(_sCGC,_sTabela,_lRet)
 		Else
 			_lRet := _VerAssoc(_sCGC,_sTabela,'1',_lRet)
 		EndIf
-	
-//		_EhFun  := IIf(!empty(_aFun[1,1]),'S','N')
-//		_SitFun := alltrim(_aFun[1,2])
-//		If !empty(_aFun[1,2])
-//			If _EhFun == 'S' .and. (_SitFun == '3' .or. _SitFun == '4' )
-//				u_help('Este cliente não faz mais parte do quadro de funcionários! Não é permitida a utilização da tabela de preço '+_sTabela+'.')
-//				_lRet := .F.
-//			EndIf
-//		Else
-//			_lRet = _VerAssoc(_sCGC,_sTabela,_lRet)
-//		EndIf
 	EndIf
 Return _lRet
-
+//
+//-----------------------------------------------------------------------------------------
+// Verificar associados
 Static Function _VerAssoc(_sCGC,_sTabela,_sTP,_lRet)
 	local _dUltDiaMes := lastday ( Date() )
 	local _sQuery1 	  := " "
