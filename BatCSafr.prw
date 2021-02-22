@@ -131,7 +131,7 @@ user function BatCSafr ()
 		_sDest += "borrachadirceu@hotmail.com;"
 */
 		// Internos - gestores
-		_sDest += "rubiane.busetti@novaalianca.coop.br;"
+	//conta inativa --->	_sDest += "rubiane.busetti@novaalianca.coop.br;"
 		_sDest += "evandro.marcon@novaalianca.coop.br;"
 		_sDest += "rodimar.vizentin@novaalianca.coop.br;"
 
