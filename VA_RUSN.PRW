@@ -44,6 +44,7 @@
 //                     - Inseridas chamadas da funcao FreeObj() em alguns casos (GLPI 9376).
 // 16/02/2021 - Robert - Passa a ler parametro VA_TSAFNJ (GLPI 9424)
 //                     - Implementada simulacao de geracao de contranota (GLPI 9420)
+// 19/02/2021 - Robert - Inclusao de chamadas da funcao U_PerfMon() para metricas de performance (GLPI 9409).
 //
 
 // ------------------------------------------------------------------------------------
@@ -621,7 +622,12 @@ User Function va_rusN (_lSimulNF)
 		u_log2 ('debug', 'chamando MATA103')
 
 		begin transaction
+
+		U_PerfMon ('I', 'GravarContranotaSafra')  // Para metricas de performance
+
 		MsExecAuto({|x,y,z|MATA103(x,y,z)},_aAutoSF1,_aAutoSD1,3)
+
+		U_PerfMon ('F', 'GravarContranotaSafra')  // Para metricas de performance
 
 		If lMsErroAuto
 			_lContinua = .F.

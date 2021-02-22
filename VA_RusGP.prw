@@ -35,13 +35,33 @@ User Function VA_RusGP (_sSafra, _sVaried, _sConduc)
 	// Possivelmente seja necessario dar manutencao a cada nova safra...
 	if _lContinua
 		do case
-		case _sSafra == '2021'
-
+		case _sSafra == '2020'
 			// Nao tenho muitas opcoes alem de fazer alguns testes com codigos fixos...
-		//	if alltrim (sb1 -> b1_cod) $ '9925/9822/9948/9959'  //(bordo, bordo de bordadura/em conversao/organico)
+			if alltrim (sb1 -> b1_cod) $ '9925'  // bordo
+				_sRetGrpPg = 'A'
+			elseif alltrim (sb1 -> b1_codpai) $ '9925'  // Alguma possivel nova variacao de bordo
+				_sRetGrpPg = 'A'
+			elseif sb1 -> b1_vaorgan == 'O'  // Organicas
+				_sRetGrpPg = 'A'
+			elseif sb1 -> b1_vattr == 'S'  // Tintorias
+				_sRetGrpPg = 'B'
+			elseif sb1 -> b1_varuva == 'F'
+				if _sConduc == 'E'  // Viniferas em espaldeira
+					_sRetGrpPg = 'B'
+				elseif _sConduc == 'L'
+					_sRetGrpPg = 'C'
+				else
+					u_help (procname () + ": Sistema de conducao '" + _sConduc + "' invalido.",, .t.)
+					_lContinua = .F.
+				endif
+			else
+				_sRetGrpPg = 'C'
+			endif
+
+		case _sSafra == '2021'
+			// Nao tenho muitas opcoes alem de fazer alguns testes com codigos fixos...
 			if alltrim (sb1 -> b1_cod) $ '9925/9904/9922/9855'  // bordo, niagara, concord
 				_sRetGrpPg = 'A'
-		//	elseif alltrim (sb1 -> b1_codpai) == '9925'  // Alguma possivel nova variacao de bordo, niagara, concord
 			elseif alltrim (sb1 -> b1_codpai) $ '9925/9904/9922/9855'  // Alguma possivel nova variacao de bordo, niagara, concord
 				_sRetGrpPg = 'A'
 			elseif sb1 -> b1_vaorgan == 'O'  // Organicas
@@ -60,6 +80,7 @@ User Function VA_RusGP (_sSafra, _sVaried, _sConduc)
 			else
 				_sRetGrpPg = 'C'
 			endif
+
 		otherwise
 			u_help ("Sem definicao de regras para grupos de pagamento para a safra '" + _sSafra + "'.",, .t.)
 		endcase

@@ -17,6 +17,9 @@
 //
 // 23/01/2018 - Catia  - Geração do titulo de indenizacao de comissoes
 // 08/04/2019 - Catia  - include TbiConn.ch 
+// 19/02/2021 - Robert - Inclusao de chamadas da funcao U_PerfMon() para metricas de performance (GLPI 9409).
+//
+
 // ------------------------------------------------------------------------------------
 #include "colors.ch"
 #Include "Protheus.ch"
@@ -27,6 +30,7 @@ User Function MT100Agr ()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _aSZH 	:= {}
 	local _nLin		:= 0
+
 	// Tratamento para controle de fretes
 	if inclui  // Este P.E. eh chamado tambem na exclusao da nota.
 		
@@ -127,8 +131,9 @@ User Function MT100Agr ()
 		endif
 	endif
 
+	U_PerfMon ('F', 'GravacaoMATA100')  // Para metricas de performance
+
 	U_ML_SRArea (_aAreaAnt)
-//	u_logFim ()
 Return
 
 // --------------------------------------------------------------------------
