@@ -132,9 +132,6 @@ static function _Imprime ()
 	local _aMensNota := {}
 	local _nMensNota := 0
 	local _sPedido   := ""
-	//local _sObsPed   := ""
-	//local _aObsPed   := {}
-	//local _nObsPed   := 0
 	local _i		 := 0
 	local j		     := 0
 	local i			 := 0
@@ -433,31 +430,6 @@ static function _Imprime ()
 						if ! empty (_sMensNota)
 							li ++
 						endif 
-						// _sMensNota = ""
-						// if ! empty (sc5 -> c5_mennota)
-						// 	_sMensNota = alltrim (sc5 -> c5_mennota)
-						// endif
-						// if ! empty (_sMensNota)
-						// 	_aMensNota = U_QuebraTXT (_sMensNota, 115)
-						// 	for _nMensNota = 1 to len (_aMensNota)
-						// 		@ li, 5 psay iif (_nMensNota == 1, 'Mens. p/NF: ', '            ') + _aMensNota [_nMensNota]
-						// 		li ++
-						// 	next
-						// endif
-						// _sObsPed   = ""
-						// if ! empty (sc5 -> c5_obs)
-						// 	_sObsPed = alltrim (sc5 -> c5_obs)
-						// endif
-						// if ! empty (_sObsPed)
-						// 	_aObsPed = U_QuebraTXT (_sObsPed, 115)
-						// 	for _nObsPed = 1 to len (_aObsPed)
-						// 		@ li, 5 psay iif (_nObsPed == 1, 'Obs.pedido: ', '            ') + _aObsPed [_nObsPed]
-						// 		li ++
-						// 	next
-						// endif
-						// if ! empty (_sMensNota) .or. ! empty (_sObsPed)
-						// 	li ++
-						// endif
 					endif
 				endif																																																												
 			endif
@@ -569,7 +541,7 @@ static function _Imprime ()
 	U_ImpParam (_nMaxLin)
 	
 return
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 static function _ValidPerg ()
