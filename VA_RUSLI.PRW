@@ -100,12 +100,12 @@ user function va_rusLI (_nPesagem)
 //		u_log2 ('info', _aRusInsp)
 	endif
 
-//	u_log2 ('info', 'Inspecoes:')
-//	u_log2 ('info', '   Situacao da carga no APP........: ' + _aRusInsp [.InspecoesSafraSituacao])
-//	u_log2 ('info', '   Varied.nao prevista no cad.vitic: ' + _aRusInsp [.InspecoesSafraVarNaoPrevCadVit])
+	u_log2 ('info', 'Inspecoes:')
+	u_log2 ('info', '   Situacao da carga no APP........: ' + _aRusInsp [.InspecoesSafraSituacao])
+	u_log2 ('info', '   Varied.nao prevista no cad.vitic: ' + _aRusInsp [.InspecoesSafraVarNaoPrevCadVit])
 //	u_log2 ('info', '   Entrega cad.campo...............: ' + _aRusInsp [.InspecoesSafraEntrCadCpo])
 //	u_log2 ('info', '   Mistura variedades no tombador..: ' + _aRusInsp [.InspecoesSafraMisturaNoTombador])
-//	u_log2 ('info', '   Chave agenda original...........: ' + cvaltochar (_aRusInsp [.InspecoesSafraAgendaOri]))
+	u_log2 ('info', '   Chave agenda original...........: ' + cvaltochar (_aRusInsp [.InspecoesSafraAgendaOri]))
 //	u_log2 ('info', '   Botrytis......: ' + _sInspBotr)
 //	u_log2 ('info', '   Glomerella....: ' + _sInspGlom)
 //	u_log2 ('info', '   Aspergyllus...: ' + _sInspAspe)
@@ -117,7 +117,7 @@ user function va_rusLI (_nPesagem)
 	if _lContinua
 		if _nPesagem == 1
 			if ! _aRusInsp [.InspecoesSafraSituacao] $ "LIB/SEG/CON/INS"
-				u_help ("Carga nao localizada ou com status '" + _aRusInsp [.InspecoesSafraSituacao] + "' no sistema de agendamento / inspecao. Somente cargas com status LIB (liberadas), SEG (segregadas), CON (concluidas), INS (inspecionadas) na inspecao de patio poderao ser recebidas.")
+				u_help ("Carga nao localizada ou com status '" + _aRusInsp [.InspecoesSafraSituacao] + "' no sistema de agendamento / inspecao. Somente cargas com status LIB (liberadas), SEG (segregadas), CON (concluidas), INS (inspecionadas) na inspecao de patio poderao ser recebidas.",, .t.)
 				if U_ZZUVL ('045', __cUserID, .F.)
 					_lContinua = U_MsgNoYes ("A T E N C A O: Se voce continuar o recebimento, nao vai ser possivel ler as inspecoes a partir do sistema de agenda/inspecao. Confirma assim mesmo?")
 					_oEvento := ClsEvent ():New ()
@@ -195,13 +195,13 @@ user function va_rusLI (_nPesagem)
 					reclock ("SZF", .F.)
 
 					// Classificacao por grau ('Acucar') deve obrigatoriamente ser encontrada, pois nao fica carga sem grau informado.
-					u_log (_aClasUva [1])
-					u_log (valtype (_aClasUva [1]))
+//					u_log (_aClasUva [1])
+//					u_log (valtype (_aClasUva [1]))
 					szf -> zf_prm02 = _aClasUva [1]
 
 					// Assume as classificoes calculadas somente se encontrou dados de inspecao no NaWeb. Senao, assume valores medios.
 					if empty (_sInspBotr) .or. empty (_sInspGlom) .or. empty (_sInspAspe) .or. empty (_sInspPodr) .or. empty (_sInspAcid) .or. empty (_sInspMEst) .or. empty (_sInspDesu)
-						u_logDH ('Nao tenho os dados de inspecoes. Assumindo valores medios.')
+						u_log2 ('aviso', 'Nao tenho os dados de inspecoes. Assumindo valores medios.')
 						szf -> zf_prm03 = 'B'
 						szf -> zf_prm04 = 'B'
 						szf -> zf_prm05 = 'B'

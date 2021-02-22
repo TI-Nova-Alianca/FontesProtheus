@@ -35,9 +35,8 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 	_sModelImp = upper (_sModelImp)
 	
 	u_Log2 ('info', 'Iniciando ' + procname ())
-	u_log2 ('debug', '   Qual ticket......: ' + cvaltochar (_nQual))
-	u_log2 ('debug', '   Porta............: ' + cvaltochar (_sPorta))
-	u_log2 ('debug', '   Modelo impressora: ' + cvaltochar (_sModelImp))
+	u_log2 ('debug', '   Qual ticket......: ' + cvaltochar (_nQual) + "   Porta: " + cvaltochar (_sPorta))
+//	u_log2 ('debug', '   Modelo impressora: ' + cvaltochar (_sModelImp))
 
 	if type ("_lImpTick") == "L" .and. ! _lImpTick
 		u_help ("Impressao disponivel somente em estacoes com impressora de ticket/cupom",, .t.)

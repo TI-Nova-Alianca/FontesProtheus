@@ -23,11 +23,11 @@ User Function FrtSaf21 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor, _sFilCa
 	local _sLinkSrv := U_LkServer ('NAWEB')
 	local _aDistKM  := {}
 
-	u_log2 ('info', '[' + procname () + '] Nucleo........: ' + _sNucleo)
-	u_log2 ('info', '[' + procname () + '] Propr.rural...: ' + _sCadVit)
-	u_log2 ('info', '[' + procname () + '] Filial entrega: ' + _sFilDest)
-	u_log2 ('info', '[' + procname () + '] Peso..........: ' + cvaltochar (_nPesoFrt))
-	u_log2 ('info', '[' + procname () + '] Cor da uva....: ' + _sCor)
+//	u_log2 ('info', '[' + procname () + '] Nucleo........: ' + _sNucleo)
+//	u_log2 ('info', '[' + procname () + '] Propr.rural...: ' + _sCadVit)
+//	u_log2 ('info', '[' + procname () + '] Filial entrega: ' + _sFilDest)
+//	u_log2 ('info', '[' + procname () + '] Peso..........: ' + cvaltochar (_nPesoFrt))
+//	u_log2 ('info', '[' + procname () + '] Cor da uva....: ' + _sCor)
 
 /*
 	// Busca as distancias da propriedade rural de onde vem a uva

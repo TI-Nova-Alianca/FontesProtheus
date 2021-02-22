@@ -207,7 +207,7 @@ User Function va_rusN (_lSimulNF)
 			_lContinua = .F.
 		endcase
 	endif
-	u_log2 ('info', '_sTES:' + _sTES)
+//	u_log2 ('info', '_sTES:' + _sTES)
 
 
 	// Atualiza sistema de agendamento/inspecao com status de 'CON' (concluida). Mais para garantir em algum caso que o inspetor de tombadores tenha deixado passar.
@@ -614,7 +614,7 @@ User Function va_rusN (_lSimulNF)
 
 		// Ordena campos cfe. SX3.
 		_aAutoSF1 = aClone (U_OrdAuto (_aAutoSF1))
-		u_log2 ('info', _aAutoSF1)
+//		u_log2 ('info', _aAutoSF1)
 
 		lMsHelpAuto := .F.  // se .t. direciona as mensagens de help
 		lMsErroAuto := .F.  // necessario a criacao
@@ -679,6 +679,8 @@ User Function va_rusN (_lSimulNF)
 		endif
 
 	endif
+
+	U_Log2 ('info', '############################## Final da rotina de geracao de contranota')
 
 	_nRetMem := U_UsoMem ()
 	u_log2 ('info', 'Achei minha thread usando ' + transform (_nRetMem, "@E 999,999,999,999,999") + ' bytes de memoria')

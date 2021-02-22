@@ -24,7 +24,7 @@ user function ImpZZT (_sCodTick, _sIdImpr, _nQtVias)
 	static _sPortaImp := ""  // Tipo STATIC para que o programa abra as perguntas apenas na primeira execucao.
 	static _nModelImp := 0   // Tipo STATIC para que o programa abra as perguntas apenas na primeira execucao.
 
-	u_logIni ()
+	U_Log2 ('info', 'Iniciando ' + procname ())
 	
 	// Se recebi a identificacao da impressora, nao preciso perguntar ao usuario.
 	if ! empty (_sIdImpr)

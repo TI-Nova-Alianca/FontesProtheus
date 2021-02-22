@@ -144,7 +144,7 @@ User Function va_rus2 (_nOpc, _lFechPort)
 					reclock ("SZF", .F.)
 					szf -> zf_grau = _FmtGrau (_oSQL:RetQry ())
 					msunlock ()
-					U_LOGDH ('Gravei grau com ', szf -> zf_grau)
+					U_LOG2 ('info', 'Gravei grau com ' + szf -> zf_grau)
 				endif
 				szf -> (dbskip ())
 			enddo

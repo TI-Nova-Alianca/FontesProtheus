@@ -87,7 +87,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
 		_nParcel ++
 	enddo
 	_nParcFrt = _nParcel
-	U_Log2 ('debug', 'Usarei a ' + cvaltochar (_nParcFrt) + 'a. parcela para o frete.')
+//	U_Log2 ('debug', 'Usarei a ' + cvaltochar (_nParcFrt) + 'a. parcela para o frete.')
 
 	if _nVlUva == 0
 		u_help ("Sem valor da uva para calcular parcelas de pagamento.",, .T.)
@@ -99,14 +99,14 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
 		// Seu percentual fica arredondado para 2 decimais e o vencimento para fevereiro do ano seguinte.
 		_nPerFrt = (_nVlFrete * 100) / (_nVlUva + _nVlFrete)
 		_nPerFrt = round (_nPerFrt, 2)
-		U_Log2 ('debug', 'Percentual do frete sobre o total: ' + cvaltochar (_nPerFrt))
+//		U_Log2 ('debug', 'Percentual do frete sobre o total: ' + cvaltochar (_nPerFrt))
 		_nPerFrt = round (_nPerFrt, 2)
 		_aParcel [_nParcFrt, 3] = _nPerFrt
 		//
 		// Estando definido quanto o frete representa sobre o total da nota, preciso diminuir
 		// esse percentual proporcionalmente das demais parcelas.
 		_nPerUva = 100 - _nPerFrt
-		U_Log2 ('debug', 'Percentual restante para a uva: ' + cvaltochar (_nperUva))
+//		U_Log2 ('debug', 'Percentual restante para a uva: ' + cvaltochar (_nperUva))
 		_nParcel = 1
 		do while _nParcel <= len (_aParcel) .and. _nParcel < _nParcFrt
 			_aParcel [_nParcel, 3] = round (_nPerUva * _aParcel [_nParcel, 1] / 100, 1)
@@ -118,7 +118,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
 		for _nParcel = 1 to len (_aParcel)
 			_nSomaPer += _aParcel [_nParcel, 3]
 		next
-		U_Log2 ('debug', 'Calculando ajuste para dif.percent. de ' + cvaltochar (_nSomaPer))
+//		U_Log2 ('debug', 'Calculando ajuste para dif.percent. de ' + cvaltochar (_nSomaPer))
 		_aParcel [_nParcFrt - 1, 3] += (100 - _nSomaPer)
 
 
@@ -144,7 +144,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
 			_nSomaUva += _aParcel [_nParcel, 4]
 			_nParcel ++
 		enddo
-		U_Log2 ('debug', 'Calculando ajuste dif.vlr.uva de ' + cvaltochar (_nSomaUva))
+//		U_Log2 ('debug', 'Calculando ajuste dif.vlr.uva de ' + cvaltochar (_nSomaUva))
 		_aParcel [_nParcFrt - 1, 4] += (_nVlUva - _nSomaUva)
 
 
@@ -167,7 +167,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
 				// vou usar uma data de corte antes do final do mes, para dar tempo ao financeiro de gerar faturas e
 				// enviar ao banco.
 				if month (dDataBase) == 3 .and. day (dDataBase) > 20
-					U_Log2 ('info', 'Fora da data de corte. Movendo 1a.parcela para o mes de abril.')
+//					U_Log2 ('info', 'Fora da data de corte. Movendo 1a.parcela para o mes de abril.')
 					_sMesVcSaf = '04'
 				else
 					_sMesVcSaf = '03'
@@ -222,5 +222,5 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
 			aadd (_aAux, aclone (_aParcel [_nParcel])) 
 		endif
 	next
-	U_Log2 ('info', 'Finalizando ' + procname ())
+//	U_Log2 ('info', 'Finalizando ' + procname ())
 return _aAux

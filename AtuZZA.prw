@@ -30,24 +30,24 @@
 // finalizar alguma carga perdida, e as demais cargas novas ficariam sem o ZZA.
 user function AtuZZA (_sSafra, _sCarga)
 	local _aAreaAnt := U_ML_SRArea ()
-	u_log2 ('info', 'Iniciando ' + procname () + ' com parametros safra >>' + _sSafra + '<< e carga >>' + _sCarga + '<<')
+//	u_log2 ('info', 'Iniciando ' + procname () + ' com parametros safra >>' + _sSafra + '<< e carga >>' + _sCarga + '<<')
 
 	sze -> (dbsetorder (1))  // ZE_FILIAL, ZE_SAFRA, ZE_CARGA
 	if ! sze -> (dbseek (xfilial ("SZE") + _sSafra + _sCarga, .F.))
 		u_help ("Carga nao localizada nesta filial/safra. Atualizacao da tabela ZZA nao pode ser feita.",, .t.)
 	else
-		u_log2 ('debug', '[' + procname () + '] Pesquisei SZE com safra/carga ' + _sSafra + _sCarga + ' e parei no SZE com ' + sze -> ze_safra + sze -> ze_carga)
+//		u_log2 ('debug', '[' + procname () + '] Pesquisei SZE com safra/carga ' + _sSafra + _sCarga + ' e parei no SZE com ' + sze -> ze_safra + sze -> ze_carga)
 		if sze -> ze_aglutin != "D"  // Cargas aglutinadoras nao precisam medir grau
 			zza -> (dbsetorder (1))  // ZZA_FILIAL, ZZA_SAFRA, ZZA_CARGA, ZZA_PRODUT
 			szf -> (dbsetorder (1))  // filial + safra + carga + item
 			szf -> (dbseek (xfilial ("SZF") + sze -> ze_safra + sze -> ze_carga, .T.))
 			do while ! szf -> (eof ()) .and. szf -> zf_filial == xfilial ("SZF") .and. szf -> zf_safra == sze -> ze_safra .and. szf -> zf_carga == sze -> ze_carga
-				U_Log2 ('debug', 'Chave busca ZZA: >>' + xfilial ("ZZA") + sze -> ze_safra + sze -> ze_carga + szf -> zf_item + '<<')
+//				U_Log2 ('debug', 'Chave busca ZZA: >>' + xfilial ("ZZA") + sze -> ze_safra + sze -> ze_carga + szf -> zf_item + '<<')
 				if ! zza -> (dbseek (xfilial ("ZZA") + sze -> ze_safra + sze -> ze_carga + szf -> zf_item, .F.))
 					u_log2 ('info', '[' + procname () + '] incluindo ZZA')
 					reclock ("ZZA", .T.)
 				else
-					u_logtrb ('ZZA', .F.)
+//					u_logtrb ('ZZA', .F.)
 					u_log2 ('info', '[' + procname () + '] vou alterar ZZA (zza_status encontra-se com ' + zza -> zza_status + ')')
 					reclock ("ZZA", .F.)
 				endif
@@ -68,19 +68,19 @@ user function AtuZZA (_sSafra, _sCarga)
 //				elseif sze -> ze_pesobru > 0 .and. sze -> ze_pesotar == 0
 				elseif sze -> ze_pesobru > 0 .and. sze -> ze_pesotar == 0
 					if empty (zza -> zza_status) .or. zza -> zza_status == '0'
-						U_Log2 ('debug', 'Entendo que o ZZA estah vazio ou zero. Preciso gravar status 1')
+//						U_Log2 ('debug', 'Entendo que o ZZA estah vazio ou zero. Preciso gravar status 1')
 						zza -> zza_status = '1'
 					else
-						U_Log2 ('debug', 'Entendo que rodou VA_Rus1P a partir da 2a.pesagem e nao preciso alterar zza_status')
+//						U_Log2 ('debug', 'Entendo que rodou VA_Rus1P a partir da 2a.pesagem e nao preciso alterar zza_status')
 					endif
 				elseif sze -> ze_pesobru > 0 .and. sze -> ze_pesotar > 0 .and. zza -> zza_status == '3'  // Segunda pesagem OK
-					u_log2 ('info', '[' + procname () + '] Nao preciso mudar o ZZA_STATUS')
+//					u_log2 ('info', '[' + procname () + '] Nao preciso mudar o ZZA_STATUS')
 				else
 					u_help ("Situacao nao prevista para gravacao do campo ZZA_STATUS. Revise programa.",, .t.)
 				endif
 				msunlock ()
 				szf -> (dbskip ())
-				u_log2 ('info', '[' + procname () + '] ZZA_STATUS gravado: ' + zza -> zza_status)
+//				u_log2 ('info', '[' + procname () + '] ZZA_STATUS gravado: ' + zza -> zza_status)
 			enddo
 		endif
 	endif
