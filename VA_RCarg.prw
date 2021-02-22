@@ -1,8 +1,15 @@
-// Programa:   VA_RCarg
-// Autor:      Robert Koch
-// Data:       16/042014
-// Descricao:  Romaneio de carga OMS.
-// 
+// Programa...: VA_RCarg
+// Autor......: Robert Koch
+// Data.......: 16/04/2014
+// Descricao..: Romaneio de carga OMS.
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #relatorio
+// #Descricao         #Romaneio de carga OMS.
+// #PalavasChave      #romaneiro #carga #OMS
+// #TabelasPrincipais #DAK #SC9 #DAI #SB1 
+// #Modulos   		  #OMS
+//
 // Historico de alteracoes:
 // 20/05/2014 - Tiago DWT - Melhorias diversas
 // 09/06/2014 - Robert    - Destacada mensagem de 'declaro que foi minha culpa', etc.
@@ -11,12 +18,14 @@
 // 18/11/2015 - Catia     - Observacoes de Clientes
 // 29/08/2019 - Cláudia   - Alterado o campo de peso bruto de B1_P_BRT para B1_PESBRU  
 //							Na montagem de carga o valor do DAK_PESO ficava diferenciado do relatório.
+// 22/02/2021 - Cláudia   - Ajustes nos campos de observações. GLPI:9421
 //
 // --------------------------------------------------------------------------
-user function VA_RCarg (_lAutomat, _sCarga, _dEmissao, _sTipo, _nSintet)
+#include 'protheus.ch'
+
+User function VA_RCarg (_lAutomat, _sCarga, _dEmissao, _sTipo, _nSintet)
 	local _aRet     := {}
 	private _lAuto  := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)  // Uso sem interface com o usuario.
-//	private _sArqLog := U_NomeLog ()
 
 	// Variaveis obrigatorias dos programas de relatorio
 	Titulo   := "Romaneio de Carga"
@@ -40,21 +49,6 @@ user function VA_RCarg (_lAutomat, _sCarga, _dEmissao, _sTipo, _nSintet)
 
 	_ValidPerg ()
 
-	// if valtype (_sCarga) != "U"
-	// 	U_GravaSX1 (cPerg, '01', _sCarga)
-	// 	U_GravaSX1 (cPerg, '02', _sCarga)
-	// endif
-	// if valtype (_dEmissao) != "U"
-	// 	U_GravaSX1 (cPerg, '03', _dEmissao)
-	// 	U_GravaSX1 (cPerg, '04', _dEmissao)
-	// endif
-	// if valtype (_sTipo) != "U"
-	// 	U_GravaSX1 (cPerg, '05', _sTipo)
-	// endif
-	// if valtype (_nSintet) != "U"
-	// 	U_GravaSX1 (cPerg, '06', _nSintet)
-	// endif
-
 	pergunte (cPerg, .F.)
 
 	If IsInCallStack("OMSA200") 
@@ -75,33 +69,35 @@ user function VA_RCarg (_lAutomat, _sCarga, _dEmissao, _sTipo, _nSintet)
 		delete file (__reldir + wnrel + ".##r")
 		// Chama funcao setprint sem interface... essa deu trabalho!
 		__AIMPRESS[1]:=1  // Obriga a impressao a ser "em disco" na funcao SetPrint
-		wnrel := SetPrint (cString, ;  // Alias
-		wnrel, ;  // Sugestao de nome de arquivo para gerar em disco
-		cPerg, ;  // Parametros
-		@titulo, ;  // Titulo do relatorio
-		cDesc1, ;  // Descricao 1
-		cDesc2, ;  // Descricao 2
-		cDesc3, ;  // Descricao 3
-		.F., ;  // .T. = usa dicionario
-		aOrd, ;  // Array de ordenacoes para o usuario selecionar
-		.T., ;  // .T. = comprimido
-		tamanho, ;  // P/M/G
-		NIL, ;  // Nao pude descobrir para que serve.
-		.F., ;  // .T. = usa filtro
-		NIL, ;  // lCrystal
-		NIL, ;  // Nome driver. Ex.: "EPSON.DRV"
-		.T., ;  // .T. = NAO mostra interface para usuario
-		.T., ;  // lServer
-		NIL)    // cPortToPrint
+		wnrel := SetPrint (cString	, ;  // Alias
+		wnrel						, ;  // Sugestao de nome de arquivo para gerar em disco
+		cPerg						, ;  // Parametros
+		@titulo						, ;  // Titulo do relatorio
+		cDesc1						, ;  // Descricao 1
+		cDesc2						, ;  // Descricao 2
+		cDesc3						, ;  // Descricao 3
+		.F.							, ;  // .T. = usa dicionario
+		aOrd						, ;  // Array de ordenacoes para o usuario selecionar
+		.T.							, ;  // .T. = comprimido
+		tamanho						, ;  // P/M/G
+		NIL							, ;  // Nao pude descobrir para que serve.
+		.F.							, ;  // .T. = usa filtro
+		NIL							, ;  // lCrystal
+		NIL							, ;  // Nome driver. Ex.: "EPSON.DRV"
+		.T.							, ;  // .T. = NAO mostra interface para usuario
+		.T.							, ;  // lServer
+		NIL							)    // cPortToPrint
 	endif
 	If nLastKey == 27
 		Return
 	Endif
 	delete file (__reldir + wnrel + ".##r")
 	SetDefault (aReturn, cString)
+
 	If nLastKey == 27
 		Return
 	Endif
+
 	processa ({|| _Imprime ()})
 	MS_FLUSH ()
 	DbCommitAll ()
@@ -117,9 +113,10 @@ user function VA_RCarg (_lAutomat, _sCarga, _dEmissao, _sTipo, _nSintet)
 			ourspool(wnrel)
 		Endif
 	endif
-return _aRet
-
+Return _aRet
+//
 // --------------------------------------------------------------------------
+// Imprime
 static function _Imprime ()
 	local _nMaxLin   := 63
 	local _oSQL      := NIL
@@ -130,15 +127,11 @@ static function _Imprime ()
 	local _sAliasQ   := ""
 	local _nQtCarg   := 0
 	local _aNotas    := {}
-	//local _sNotas    := ""
 	local _nNota     := 0
 	local _sMensNota := ""
 	local _aMensNota := {}
 	local _nMensNota := 0
 	local _sPedido   := ""
-	local _sObsPed   := ""
-	local _aObsPed   := {}
-	local _nObsPed   := 0
 	local _i		 := 0
 	local j		     := 0
 	local i			 := 0
@@ -209,6 +202,7 @@ static function _Imprime ()
 		_nQtCarg ++
 		_sCarga = (_sAliasQ) -> dak_cod
 		_aTCarga = {}
+		
 		cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
 		_sLinImp := ""
 		_sLinImp += 'Carga: ' + _sCarga + '  ' + dtoc ((_sAliasQ) -> dak_data) + '     '
@@ -423,8 +417,8 @@ static function _Imprime ()
 					endif
 					if ! empty (_sPedido) .and. sc5 -> (dbseek (xfilial ("SC5") + _sPedido, .F.))
 						_sMensNota = ""
-						if ! empty (sc5 -> c5_mennota)
-							_sMensNota = alltrim (sc5 -> c5_mennota)
+						if ! empty (sc5 -> c5_vaobslg)
+							_sMensNota = alltrim (sc5 -> c5_vaobslg)
 						endif
 						if ! empty (_sMensNota)
 							_aMensNota = U_QuebraTXT (_sMensNota, 115)
@@ -433,20 +427,9 @@ static function _Imprime ()
 								li ++
 							next
 						endif
-						_sObsPed   = ""
-						if ! empty (sc5 -> c5_obs)
-							_sObsPed = alltrim (sc5 -> c5_obs)
-						endif
-						if ! empty (_sObsPed)
-							_aObsPed = U_QuebraTXT (_sObsPed, 115)
-							for _nObsPed = 1 to len (_aObsPed)
-								@ li, 5 psay iif (_nObsPed == 1, 'Obs.pedido: ', '            ') + _aObsPed [_nObsPed]
-								li ++
-							next
-						endif
-						if ! empty (_sMensNota) .or. ! empty (_sObsPed)
+						if ! empty (_sMensNota)
 							li ++
-						endif
+						endif 
 					endif
 				endif																																																												
 			endif
@@ -558,7 +541,7 @@ static function _Imprime ()
 	U_ImpParam (_nMaxLin)
 	
 return
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 static function _ValidPerg ()
