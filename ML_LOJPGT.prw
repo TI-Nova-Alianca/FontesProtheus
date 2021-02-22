@@ -1,12 +1,20 @@
-// Programa:  ML_LOJPGT
-// Autor:     Cláudia Lionço
-// Data:      30/08/2019
-// Descricao: Relatorio de vendas de lojas com listagem de tipo de de pagamentos
+// Programa...: ML_LOJPGT
+// Autor......: Cláudia Lionço
+// Data.......: 30/08/2019
+// Descricao..: Relatorio de vendas de lojas com listagem de tipo de de pagamentos
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #relatorio
+// #Descricao         #Relatorio de vendas de lojas com listagem de tipo de de pagamentos
+// #PalavasChave      #vendas_loja #movimentos_diarios
+// #TabelasPrincipais #SL1 #SL4 #SF2 #SE1 #SC5 
+// #Modulos   		  #LOJA
 //
 // Historico de alteracoes:
 // 23/09/2019 - Claudia - Incluidas alterações conforme GLPI 6312
 // 25/09/2019 - Claudia - Incluida opção sintética do relatório
 // 10/12/2019 - Claudia - Incluido filtro de itens deletados e cancelados na tabela SE5
+// 22/02/2021 - Cláudia - GLPI: 9444 - Incluido todos tipos de NF's
 //
 // -----------------------------------------------------------------------------------------------
 
@@ -39,9 +47,6 @@ Static Function ReportDef()
 	Local oSection6:= Nil
 	Local oSection7:= Nil
 	Local oSection8:= Nil
-	//Local oBreak
-	//Local oFunction
-	//Local oBreak1
 
 	oReport := TReport():New("ML_LOJPGT","Movimentos diários",cPerg,{|oReport| PrintReport(oReport)},"Movimentos diários")
 	
@@ -481,15 +486,15 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += "    ,SUM(SE1.E1_VALOR) AS VALOR"
 	_oSQL:_sQuery += "    ,SE1.E1_NSUTEF AS NSU"
 	_oSQL:_sQuery += "    ,SE1.E1_CARTAUT AS AUT"
-	_oSQL:_sQuery += "    ,SC5.C5_VATIPO AS TIPO"
+	_oSQL:_sQuery += "    ,SE1.E1_TIPO AS TIPO"
 	_oSQL:_sQuery += " FROM " + RetSQLName ("SF2") + " AS SF2"
 	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SC5") + " AS SC5"
 	_oSQL:_sQuery += " 	ON (SC5.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery += " 			AND SC5.C5_FILIAL = SF2.F2_FILIAL"
 	_oSQL:_sQuery += " 			AND SC5.C5_NOTA = SF2.F2_DOC"
 	_oSQL:_sQuery += " 			AND SC5.C5_SERIE = SF2.F2_SERIE"
-	_oSQL:_sQuery += " 			AND SC5.C5_VATIPO <> ''"
-	_oSQL:_sQuery += " 			AND SC5.C5_VATIPO IN ('CC', 'CD', 'R$','BOL')"
+	//_oSQL:_sQuery += " 			AND SC5.C5_VATIPO <> ''"
+	//_oSQL:_sQuery += " 			AND SC5.C5_VATIPO IN ('CC', 'CD', 'R$','BOL')"
 	_oSQL:_sQuery += " 		)"
 	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SE1") + " AS SE1"
 	_oSQL:_sQuery += " 	ON (SE1.D_E_L_E_T_ = ''"
@@ -505,12 +510,12 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " 		,SF2.F2_EMISSAO"
 	_oSQL:_sQuery += " 		,SE1.E1_CARTAUT"
 	_oSQL:_sQuery += " 		,SE1.E1_NSUTEF"
-	_oSQL:_sQuery += " 		,SC5.C5_VATIPO"
+	_oSQL:_sQuery += " 		,SE1.E1_TIPO "
 	Do Case
 		Case mv_par12 == 1
 			_oSQL:_sQuery += " ORDER BY SF2.F2_DOC, SF2.F2_SERIE, SF2.F2_EMISSAO" 
 		Case mv_par12 == 2
-			_oSQL:_sQuery += " ORDER BY SC5.C5_VATIPO,SF2.F2_DOC, SF2.F2_SERIE, SF2.F2_EMISSAO"
+			_oSQL:_sQuery += " ORDER BY SE1.E1_TIPO ,SF2.F2_DOC, SF2.F2_SERIE, SF2.F2_EMISSAO"
 		Case mv_par12 == 3
 			_oSQL:_sQuery += " ORDER BY SF2.F2_SERIE, SF2.F2_DOC, SF2.F2_EMISSAO" 
 	EndCase
@@ -540,7 +545,7 @@ Static Function PrintReport(oReport)
 	_oSQL:= ClsSQL ():New ()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " 	SELECT"
-	_oSQL:_sQuery += " 	   SC5.C5_VATIPO AS TIPO"
+	_oSQL:_sQuery += " 	   SE1.E1_TIPO AS TIPO"
 	_oSQL:_sQuery += "    ,SUM(SE1.E1_VALOR) AS VALOR"
 	_oSQL:_sQuery += " FROM " + RetSQLName ("SF2") + " AS SF2"
 	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SC5") + " AS SC5"
@@ -548,8 +553,8 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " 			AND SC5.C5_FILIAL = SF2.F2_FILIAL"
 	_oSQL:_sQuery += " 			AND SC5.C5_NOTA = SF2.F2_DOC"
 	_oSQL:_sQuery += " 			AND SC5.C5_SERIE = SF2.F2_SERIE"
-	_oSQL:_sQuery += " 			AND SC5.C5_VATIPO <> ''"
-	_oSQL:_sQuery += " 			AND SC5.C5_VATIPO IN ('CC', 'CD', 'R$','BOL')"
+	//_oSQL:_sQuery += " 			AND SC5.C5_VATIPO <> ''"
+	//_oSQL:_sQuery += " 			AND SC5.C5_VATIPO IN ('CC', 'CD', 'R$','BOL')"
 	_oSQL:_sQuery += " 		)"
 	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SE1") + " AS SE1"
 	_oSQL:_sQuery += " 	ON (SE1.D_E_L_E_T_ = ''"
@@ -560,7 +565,7 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " WHERE SF2.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery += " AND SF2.F2_FILIAL = '" + xFilial("SF2") +"'"
 	_oSQL:_sQuery += " AND SF2.F2_EMISSAO BETWEEN '"+ dtos(mv_par01) +"' AND '"+ dtos(mv_par02) +"'"
-	_oSQL:_sQuery += " GROUP BY SC5.C5_VATIPO"
+	_oSQL:_sQuery += " GROUP BY  SE1.E1_TIPO "
 	_oSQL:Log ()
 
 	aTNFs := aclone (_oSQL:Qry2Array ())
@@ -618,7 +623,7 @@ Static Function PrintReport(oReport)
 	EndIf
 	_oSQL:_sQuery += " 		UNION ALL"
 	_oSQL:_sQuery += " 		SELECT"
-	_oSQL:_sQuery += " 			SC5.C5_VATIPO AS TFORMA"
+	_oSQL:_sQuery += " 			SE1.E1_TIPO  AS TFORMA"
 	_oSQL:_sQuery += " 		   ,SE1.E1_VALOR AS TVALOR"
 	_oSQL:_sQuery += " 		FROM " + RetSQLName ("SF2") + " AS SF2"
 	_oSQL:_sQuery += " 		INNER JOIN " + RetSQLName ("SC5") + " AS SC5"
@@ -626,8 +631,8 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " 			AND SC5.C5_FILIAL = SF2.F2_FILIAL"
 	_oSQL:_sQuery += " 			AND SC5.C5_NOTA = SF2.F2_DOC"
 	_oSQL:_sQuery += " 			AND SC5.C5_SERIE = SF2.F2_SERIE"
-	_oSQL:_sQuery += " 			AND SC5.C5_VATIPO <> ''"
-	_oSQL:_sQuery += " 			AND SC5.C5_VATIPO IN ('CC', 'CD', 'R$', 'BOL')"
+	//_oSQL:_sQuery += " 			AND SC5.C5_VATIPO <> ''"
+	//_oSQL:_sQuery += " 			AND SC5.C5_VATIPO IN ('CC', 'CD', 'R$', 'BOL')"
 	_oSQL:_sQuery += " 			)"
 	_oSQL:_sQuery += " 		INNER JOIN " + RetSQLName ("SE1") + " AS SE1"
 	_oSQL:_sQuery += " 			ON (SE1.D_E_L_E_T_ = ''"
