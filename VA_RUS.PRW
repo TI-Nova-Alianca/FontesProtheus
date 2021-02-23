@@ -24,6 +24,7 @@
 // 02/02/2021 - Robert - Criado botao para chamar o VA_RusEn (GLPI 8779).
 // 03/02/2021 - Robert - Novos parametros funcao U_VA_Rus2().
 // 16/02/2021 - Robert - Implementada simulacao de geracao de contranota (GLPI 9420)
+// 23/02/2021 - Robert - Criada chamada para exportar planilha de medicoes de grau (GLPI 9454).
 //
 
 // --------------------------------------------------------------------------
@@ -164,6 +165,7 @@ User Function va_rus ()
 		aadd (_aMenuOut, {"&Rastrear estoque",   "U_VA_RUSRC ()", 0,4})
 		aadd (_aMenuOut, {"&NF remessa coop",    "U_VA_RUSNR ('A')", 0,4})
 		aadd (_aMenuOut, {"Controle Portaria",   "U_VA_CPORT ()", 0,4})
+		aadd (_aMenuOut, {"Medicoes do grau",    "U_VA_XLS54 (sze -> ze_filial, sze -> ze_safra, sze -> ze_carga)", 0,4})
 		if upper (alltrim (cUserName)) == 'ROBERT.KOCH'
 			aadd (_aMenuOut, {"Simular frete (Robert)",  "U_VA_RusCF (.F.)", 0,4})  // Apenas para ver nova simulacao no arquivo de log.
 			aadd (_aMenuOut, {"Enderecar uva (Robert)",  "U_VA_RusEn (sze -> ze_nfger, sze -> ze_serie, sze -> ze_assoc, sze -> ze_Lojasso)", 0,4})  // Apenas para ver nova simulacao no arquivo de log.

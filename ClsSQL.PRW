@@ -44,6 +44,7 @@
 // 11/09/2020 - Robert - Testes para uso de metodos estaticos (aguarda atualizar build)
 // 04/01/2021 - Robert - Implementado metodo RetFixo.
 // 15/01/2021 - Robert - Novo parametro (_lMsgTela) no metodo :RetFixo().
+// 23/02/2021 - Robert - Criado atributo QtLinRet.
 //
 
 #include "protheus.ch"
@@ -61,6 +62,7 @@ CLASS ClsSQL
 	DATA TempoExec
 	DATA lGeraHead
 	DATA aHeader
+	DATA QtLinRet
 
 
 	// Declaracao dos Metodos da Classe
@@ -656,6 +658,10 @@ static function _ExecQry (_oSelf)
 
 	_oSelf:_sAliasQry = GetNextAlias ()
 	DbUseArea(.t., 'TOPCONN', TcGenQry (,, _oSelf:_sQuery), _oSelf:_sAliasQry, .f., .t.)
+
+	count to _oSelf:QtLinRet
+	// u_log2 ('debug', _oSelf:QtLinRet)
+	(_oSelf:_sAliasQry) -> (dbgotop ())
 
 	// Gera array com as definicoes de colunas (default = nao gerar, para ganho de performance).
 	if _oSelf:lGeraHead
