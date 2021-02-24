@@ -816,7 +816,7 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _lCtOnLine) class ClsCtaCorr
 			_sParcela = ::Parcela
 		else
 			_sParcela = soma1 (_aRetParc [1, 1])
-			//u_log ('Alterando da parcela desejada (', ::Parcela, ') para:', _sParcela)
+			u_log2 ('aviso', '[' + procname () + '] Alterando da parcela desejada (' + ::Parcela + ') para: ' + _sParcela)
 		endif
 
 		// Vencimento nao pode ser menor que a data base
@@ -1694,10 +1694,12 @@ METHOD PodeIncl () Class ClsCtaCorr
 		else
 			if ! ::TM $ '11/08/13/19'
 				if ::TM == '16'
-					if ! msgnoyes ("Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data informada. Confirma a inclusao deste registro?")
-						::UltMsg += "Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data informada."
-						_lContinua = .F.
-					endif
+					IF ! (DTOS (DATE ()) = '20210224' .AND. ISiNCALLSTACK ('U_ROBERT'))  // REMOVER DEPOIS... NESTA DATA ESTOU GERANDO PREMIO SAFRA 2020 (GLPI 9515)
+						if ! u_msgnoyes ("Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data informada. Confirma a inclusao deste registro?")
+							::UltMsg += "Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data informada."
+							_lContinua = .F.
+						endif
+					ENDIF
 				else
 					if empty (::FilOrig)  // Aceita movto. de ex associados quando tratar-se de transferencia de outra filial.
 						if alltrim (::OQueGera ()) $ "NDF/" .and. msgnoyes ("Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data de " + dtoc (::DtMovto) + ". Confirma a inclusao deste registro?")
