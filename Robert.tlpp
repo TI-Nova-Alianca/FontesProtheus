@@ -87,11 +87,117 @@ static function _AndaLogo ()
 	procregua (100)
 	incproc ()
 
-	u_help ('Nada definido.')
-	u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
-return
+	//u_help ('Nada definido.')
+	//u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
+//	u_va_xls54 ('01', '2021', '0055')
+//return
 //	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batsafr ('3', .f.)
+
+	// Gera conta 'PREMIACAO QUALIDADE E FIDELIDADE' na corrente a partir de dados prontos na tabela ZZ9 (GLPI 9415)
+	dDataBase = stod ('20210223')
+	_sArqLog := 'GLPI9415_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "WITH C AS ("
+	_oSQL:_sQuery += "SELECT ZZ9.R_E_C_N_O_ as regZZ9, ZZ9_SAFRA, ZZ9_FILIAL, ZZ9_FORNEC, ZZ9_LOJA, ZZ9_NFORI, B1_DESC"
+	_oSQL:_sQuery +=      " ,(SELECT PESO_LIQ"  // BUSCO NA NOTA ORIGINAL POR QUE NESTE MOMENTO O ZZ9_QUANT ESTAH ZERADO (NF COMPLEMENTO PRECO)
+	_oSQL:_sQuery +=          " FROM VA_VNOTAS_SAFRA V"
+	_oSQL:_sQuery +=         " WHERE V.SAFRA = ZZ9.ZZ9_SAFRA"
+	_oSQL:_sQuery +=           " AND V.FILIAL = ZZ9_FILIAL"
+	_oSQL:_sQuery +=           " AND V.DOC = ZZ9_NFORI"
+	_oSQL:_sQuery +=           " AND V.ITEM_NOTA = ZZ9_ITEMOR"
+	_oSQL:_sQuery +=           " AND V.ASSOCIADO = ZZ9_FORNEC"
+	_oSQL:_sQuery +=           " AND V.LOJA_ASSOC = ZZ9_LOJA) as PESO_LIQ"
+	_oSQL:_sQuery +=      ",ZZ9_VUNOLD AS VUN_PAGO"
+	_oSQL:_sQuery +=      ",ZZ9_VUNIT2 AS VUN_NOVO"
+	_oSQL:_sQuery +=      ",ZZ9_VUNIT3 AS ACR_CLAS"
+	_oSQL:_sQuery +=      ",ZZ9.ZZ9_OBS AS OBS"
+	_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZ9") + " ZZ9, "
+	_oSQL:_sQuery +=             RetSQLName ("SB1") + " SB1, "
+	_oSQL:_sQuery +=             RetSQLName ("SA2") + " SA2 "
+	_oSQL:_sQuery += " WHERE ZZ9.D_E_L_E_T_ = ''"
+	//_oSQL:_sQuery += " AND ZZ9.ZZ9_FILIAL = '" + xfilial ("ZZ9") + "'"
+	_oSQL:_sQuery += " AND ZZ9_SAFRA = '2020'"
+	_oSQL:_sQuery += " AND ZZ9_PARCEL = 'K'"
+	_oSQL:_sQuery += " AND ZZ9_NFCOMP = ''"
+
+//	_oSQL:_sQuery += " AND ZZ9_FORNEC = '001104'"
+
+	_oSQL:_sQuery += " AND SB1.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " AND SB1.B1_FILIAL = '" + xfilial ("SB1") + "'"
+	_oSQL:_sQuery += " AND SB1.B1_COD = ZZ9.ZZ9_PRODUT"
+	_oSQL:_sQuery += " AND SA2.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " AND SA2.A2_FILIAL = '" + xfilial ("SA2") + "'"
+	_oSQL:_sQuery += " AND SA2.A2_COD = ZZ9.ZZ9_FORNEC"
+	_oSQL:_sQuery += " AND SA2.A2_LOJA = ZZ9.ZZ9_LOJA"
+	_oSQL:_sQuery += " )"
+	_oSQL:_sQuery += " SELECT *"
+	_oSQL:_sQuery += " ,(PESO_LIQ * VUN_NOVO) + (PESO_LIQ * ACR_CLAS) - (PESO_LIQ * VUN_PAGO) AS VLR_COMPL"
+	_oSQL:_sQuery += " FROM C"
+	_oSQL:_sQuery += " WHERE  (PESO_LIQ * VUN_NOVO) + (PESO_LIQ * ACR_CLAS) - (PESO_LIQ * VUN_PAGO) > 0"
+	_oSQL:_sQuery += " ORDER BY ZZ9_SAFRA, ZZ9_FORNEC, ZZ9_LOJA, ZZ9_FILIAL, ZZ9_NFORI"
+	_oSQL:Log ()
+	_sAliasQ := _oSQL:Qry2Trb (.F.)
+	U_Log2 ('debug', _oSQL:QtLinRet)
+	do while ! (_sAliasQ) -> (eof ())
+		_sFornece = (_sAliasQ) -> zz9_fornec
+		_sLoja = (_sAliasQ) -> zz9_loja
+		u_log2 ('debug', _sFornece + _sLoja)
+		_nTotForn = 0
+		_aRegZZ9 = {}
+		_nRegZZ9 = 0
+		_sHistCpl = ''
+		do while ! (_sAliasQ) -> (eof ()) .and. (_sAliasQ) -> zz9_fornec == _sFornece .and. (_sAliasQ) -> zz9_loja == _sLoja
+			_nTotForn += (_sAliasQ) -> vlr_compl
+			_sLinHist = 'Fil/doc ' + (_sAliasQ) -> zz9_filial + '/' + (_sAliasQ) -> zz9_nfori + " " + alltrim ((_sAliasQ) -> b1_desc) + chr (13) + chr (10)
+			if ! _sLinHist $ _sHistCpl
+				_sHistCpl += _sLinHist
+			endif
+			aadd (_aRegZZ9, (_sAliasQ) -> regzz9)
+			(_sAliasQ) -> (dbskip ())
+		enddo
+
+		U_Log2 ('debug', _aRegzz9)
+		_oCtaCorr := ClsCtaCorr():New ()
+		_oCtaCorr:Assoc    = _sFornece
+		_oCtaCorr:Loja     = _sLoja
+		_oCtaCorr:TM       = '16'
+		_oCtaCorr:DtMovto  = dDataBase
+		_oCtaCorr:Valor    = _nTotForn
+		_oCtaCorr:SaldoAtu = _nTotForn
+		_oCtaCorr:Usuario  = cUserName
+		_oCtaCorr:Histor   = 'PREMIACAO QUALID/FIDELIDADE SAFRA 2020'
+		_oCtaCorr:MesRef   = strzero(month(_oCtaCorr:DtMovto),2)+strzero(year(_oCtaCorr:DtMovto),4)
+		_oCtaCorr:Doc      = '20209415'  // safra + numero chamado. Eu sou mesmo criativo, neh?
+		_oCtaCorr:Serie    = 'OUT'
+		_oCtaCorr:Parcela  = '1'
+		_oCtaCorr:Origem   = 'GLPI9415'
+		_oCtaCorr:Obs      = "Premiacao por qualidade e fidelidade ref:" + chr (13) + chr (10) + _sHistCpl
+		if _oCtaCorr:PodeIncl ()
+			if ! _oCtaCorr:Grava (.F., .F.)
+				U_help ("Erro na atualizacao da conta corrente para o associado '" + _sFornece + '/' + _sLoja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg,, .t.)
+			else
+				for _nRegZZ9 = 1 to len (_aRegZZ9)
+					zz9 -> (dbgoto (_aRegZZ9 [_nRegZZ9]))
+					reclock ("ZZ9", .F.)
+					zz9 -> zz9_nfComp = _oCtaCorr:Doc
+					zz9 -> zz9_SerCom = _oCtaCorr:Serie
+					msunlock ()
+				next
+			endif
+		else
+			U_help ("Gravacao do SZI nao permitida na atualizacao da conta corrente para o associado '" + _sFornece + '/' + _sLoja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg,, .T.)
+		endif
+		FreeObj (_oCtaCorr)
+	//	EXIT  // por enquanto quero gerar apenas um
+	enddo
+	FreeObj (_oSQL)
+return
+
+
+
+
+
 /*
 	// Gera pre-notas de complemento de safra 2020 apos atualizacao de tabelas de precos (glpi 9415)
 	aHeader := {}
@@ -129,6 +235,19 @@ return
 	_oSQL:_sQuery +=        "), 0) AS REGZZ9"
 	_oSQL:_sQuery +=   " FROM SB1010 SB1, SA2010 SA2, VA_VPRECO_EFETIVO_SAFRA V"
 	_oSQL:_sQuery +=  " WHERE SAFRA = '2020'"
+
+	
+	// Solicitado por Rodrigo (e-mail) em 22/02/2021:
+	// Associados que nao vao receber por terem se desligado da cooperativa.
+	_oSQL:_sQuery +=    " AND ASSOCIADO not IN ('001847','000640','000255','006455','004379','002870','003059','002933','002699','004266','000251','001071','004825','002768','002779','002717','003114','000568','002080','002081','003393','000564','003399','003383','002113','002533','002656','002748','010694','004364','002949','010569','002725','001130','003029','004611','012814','002937','002925','002988','002916','002283','001885','002500','012718','000236','010261','003853','006164','002567','002663','000977','000289','004625','002615','002714','002728','002734','002860','004556','003002','002732','003241','002635')"
+	// Desconsiderar uvas viniferas em espaldeira
+	_oSQL:_sQuery +=    " AND NOT (B1_VARUVA = 'F' AND SIST_CONDUCAO = 'E')"
+	// Viníferas: apenas moscatos
+	_oSQL:_sQuery +=    " AND NOT (B1_VARUVA = 'F' AND B1_DESC NOT LIKE '%MOSCATO%')"
+	// Desconsiderar uvas organicas
+	_oSQL:_sQuery +=    " AND B1_VAORGAN = 'C'"
+
+
 	_oSQL:_sQuery +=    " AND SB1.D_E_L_E_T_ = '' AND B1_FILIAL = '  ' AND B1_COD = V.PRODUTO"
 	_oSQL:_sQuery +=    " AND SA2.D_E_L_E_T_ = '' AND A2_FILIAL = '  ' AND A2_COD = V.ASSOCIADO AND A2_LOJA = V.LOJA_ASSOC"
 	// pra bater com a planilha de out/2020 --->  _oSQL:_sQuery +=    " AND (PRODUTO IN ('9904','9922','9855','9832','9830','9827','9834','9827','9834')"
@@ -179,11 +298,17 @@ return
 				endif
 			endif
 
+			// Premiacao/incentivo por qualidade
 			if (_sAliasQ) -> b1_varuva == 'C'
-				if alltrim ((_sAliasQ) -> clas_abd) == 'A'
-					_nVlClas = 0.05
-				elseif alltrim ((_sAliasQ) -> clas_abd) == 'B'
-					_nVlClas = 0.03
+
+				// Solicitado por Rodrigo (e-mail) em 22/02/2021: Moscato Embrapa nao ganha classificacao.
+				if ! alltrim ((_sAliasQ) -> produto) $ '9918/9838/9837/9836'
+
+					if alltrim ((_sAliasQ) -> clas_abd) == 'A'
+						_nVlClas = 0.05
+					elseif alltrim ((_sAliasQ) -> clas_abd) == 'B'
+						_nVlClas = 0.02  //0.03
+					endif
 				endif
 			endif
 
@@ -211,7 +336,7 @@ return
 			zz9 -> zz9_filial = (_sAliasQ) -> filial
 			zz9 -> zz9_safra  = (_sAliasQ) -> safra
 			zz9 -> zz9_grupo  = (_sAliasQ) -> grupo_pagto
-			zz9 -> zz9_parcel = 'I'
+			zz9 -> zz9_parcel = 'K'
 			zz9 -> zz9_fornec = (_sAliasQ) -> associado
 			zz9 -> zz9_loja   = (_sAliasQ) -> loja_assoc
 			zz9 -> zz9_pre_nf = _sPreNF

@@ -17,6 +17,7 @@
 // 16/12/2020 - Robert - Criado tratamento para o Metadados.
 // 20/01/2021 - Robert - Tratamento para ambiente TesteMedio no acesso ao BI_ALIANCA (criado database temporario em separado)
 // 08/02/2021 - Robert - Criado tratamento para acessar o database TI (GLPI 9353)
+// 23/02/2021 - Robert - Adicionado database BL01 (GLPI 9454).
 //
 
 // --------------------------------------------------------------------------
@@ -30,26 +31,6 @@ user function LkServer (_sQualSrv)
 	endif
 
 	do case
-	case upper (alltrim (_sQualSrv)) == 'MERCANET'
-		if _lBaseTST
-			_sRetLk = "LKSRV_MERCANETHML.MercanetHML.dbo"
-		else
-			_sRetLk = "LKSRV_MERCANETPRD.MercanetPRD.dbo"
-		endif
-
-	case upper (alltrim (_sQualSrv)) == 'NAWEB'
-		if _lBaseTST
-			_sRetLk = "LKSRV_NAWEB_TESTE.naweb_teste.dbo"
-		else
-			_sRetLk = "LKSRV_NAWEB.naweb.dbo"
-		endif
-
-	case upper (alltrim (_sQualSrv)) == 'FULLWMS_AX01'
-		if _lBaseTST
-			_sRetLk = ""  // Nao existe ainda (precisa instalar bastante coisa; ver GLPI 5701
-		else
-			_sRetLk = "LKSRV_FULLWMS_LOGISTICA"  // Deve ser usado com OpenQuery por se tratar de banco Oracle.
-		endif
 
 	// Nao usa linked server por que nao permite executar funcoes como consulta ao DRE industrial remotamente. (ainda nao descobri se tem como fazer)
 	case upper (alltrim (_sQualSrv)) == 'BI_ALIANCA'
@@ -64,12 +45,41 @@ user function LkServer (_sQualSrv)
 			_sRetLk = "BI_ALIANCA.dbo"
 		endif
 
+	// Nao usa linked server por que nao permite executar funcoes como FMEDICAO_CONTINUA_CARGA_SAFRA remotamente. (ainda nao descobri se tem como fazer)
+	case upper (alltrim (_sQualSrv)) == 'BL01'
+		if _lBaseTST
+			_sRetLk = ""
+		else
+			_sRetLk = "BL01.dbo"
+		endif
+
+	case upper (alltrim (_sQualSrv)) == 'FULLWMS_AX01'
+		if _lBaseTST
+			_sRetLk = ""  // Nao existe ainda (precisa instalar bastante coisa; ver GLPI 5701
+		else
+			_sRetLk = "LKSRV_FULLWMS_LOGISTICA"  // Deve ser usado com OpenQuery por se tratar de banco Oracle.
+		endif
+
+	case upper (alltrim (_sQualSrv)) == 'MERCANET'
+		if _lBaseTST
+			_sRetLk = "LKSRV_MERCANETHML.MercanetHML.dbo"
+		else
+			_sRetLk = "LKSRV_MERCANETPRD.MercanetPRD.dbo"
+		endif
+
 	case upper (alltrim (_sQualSrv)) == 'METADADOS'
 		if _lBaseTST
 			u_help ("Sem definicao de linked server do Metadados para ambiente de testes.",, .t.)
 			_sRetLk = ""
 		else
 			_sRetLk = "LKSRV_SIRH.SIRH.dbo"
+		endif
+
+	case upper (alltrim (_sQualSrv)) == 'NAWEB'
+		if _lBaseTST
+			_sRetLk = "LKSRV_NAWEB_TESTE.naweb_teste.dbo"
+		else
+			_sRetLk = "LKSRV_NAWEB.naweb.dbo"
 		endif
 
 	case upper (alltrim (_sQualSrv)) == 'TI'
