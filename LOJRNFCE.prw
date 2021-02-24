@@ -5,7 +5,7 @@
 
 // Historico de alteracoes:
 // 23/05/2019 - Catia - impressao customizada do cupom - procurar por CUSTOMIZADO
-
+// 23/02/2021 - Sandra - Ajuste para nova versão
 
 //Modalidades de TEF disponíveis no sistema
 #DEFINE TEF_SEMCLIENT_DEDICADO  "2"         // Utiliza TEF Dedicado Troca de Arquivos                      
@@ -220,11 +220,11 @@
 User Function LOJRNFCe(	oNFCe		, oProt		, nDecimais	, aFormas	,;
 						cProtAuto	, lContigen	, cDtHoraAut, aEmitNfce	,; 
 						aDestNfce	, aIdNfce	, aPagNfce	, aItemNfce	,; 
-						aTotal		, cChvNFCe	)
+						aTotal		, cChvNFCe  , cInscMun  , aItensNFCe,;
+						cXMLProt )						 
 
 	//Local lPrinter 	:= .F.			
 	//Local cXml		:= ""
-	//Local cXmlProt	:= ""
 	Local cPath 			:= "\spool\"		
 	//Local cSession			:= GetPrinterSession()	
 	Local cStartPath		:= GetSrvProfString("StartPath","")	
@@ -246,7 +246,10 @@ User Function LOJRNFCe(	oNFCe		, oProt		, nDecimais	, aFormas	,;
 	Default cProtAuto	:= ""
 	Default lContigen	:= .T.
 	Default cDtHoraAut	:= ""
-	Default cChvNFCe	:= ""	          		                                          	                                	    
+	Default cChvNFCe	:= ""	
+	Default cInscMun    := ""
+	Default aItensNFCe  := {}    
+	Default cXMLProt    := ""  		                                          	                                	    
 		
 	oPrint := FWMsPrinter():New("Impressão NFC-e_"+cChvNFCe, IMP_PDF, lAdjustToLegacy,cPath)
 	
@@ -255,7 +258,8 @@ User Function LOJRNFCe(	oNFCe		, oProt		, nDecimais	, aFormas	,;
 		oPrint:SetPaperSize(DMPAPER_A4)
 		
 		LJMsgRun("Imprimindo NFC-e",,{|| U_LjrImpNFCE(oNFCe, oProt, nDecimais, aFormas, cProtAuto, lContigen, cDtHoraAut, ;
-						aEmitNfce, aDestNfce, aIdNfce, aPagNfce, aItemNfce, aTotal, cChvNFCe)})
+														aEmitNfce, aDestNfce, aIdNfce, aPagNfce, aItemNfce, aTotal, cChvNFCe, ; 
+														aItensNFCe, cXMLProt )})
 		
 		oPrint:Preview()
 	Else
@@ -267,7 +271,7 @@ Return Nil
 User Function LjRImpNFCE(	oNFCe		, oProt		, nDecimais	, aFormas	,; 
 							cProtAuto	, lContigen	, cDtHoraAut, aEmitNfce	,; 
 							aDestNfce	, aIdNfce	, aPagNfce	, aItemNfce	,;
-							aTotal		, cChvNFCe	)
+							aTotal		, cChvNFCe	, aItensNFCe, cXMLProt )
 	
 	//Local aItNfceAux	:= {}//Itens	
 	Local nContItImp	:= 0
@@ -305,6 +309,12 @@ User Function LjRImpNFCE(	oNFCe		, oProt		, nDecimais	, aFormas	,;
 	Local cColuna		:= "" //Texto da Coluna
 	Local cMaskTot		:= "" //Mascara de total
 	Local nTamMask		:= 0 //Tamanho do Total
+	Local nValDeson     := 0 //Valor do imposto da Desoneração
+	Local nTotDeson     := 0 //Valor total do imposto da desoneração
+	Local cMsgDeson     := "Valor do ICMS abatido: R$" // mensagem a ser impresso para desoneração de ICMS
+	Local aMsgNfPre     := {}   // Mensagem de Nota Fiscal Premiada
+	
+
 	//1 - Label
 	//2 - Pos Coluna
 	//3 - Tamanho
@@ -315,7 +325,7 @@ User Function LjRImpNFCE(	oNFCe		, oProt		, nDecimais	, aFormas	,;
 				 { "Descricao", 0430, 40, "", "D"},;		
 				{ "Qtd", 1250, 6, "", "E"},;	
 				{ "UN", 1500, 2, "", "D"},;	
-				{ "VlUnit.", 1600, 14, '@E 999,999,999.99', "E"},;	
+				{ "VlUnit.", 1600, 14, '@E 999,999,999.99', "E"},;				
 				{ "VlTotal.", 1800, 17, '@E 999,999,999,999.99', "E"}}
 				
 
@@ -343,9 +353,9 @@ User Function LjRImpNFCE(	oNFCe		, oProt		, nDecimais	, aFormas	,;
 	nAuxLn := 80
 	
 	oPrint:SayBitmap( 0025, 0050, cBmp, 200, 200)														// Logotipo
-	
-	cTextoAux := AllTrim(aEmitNfce:_XNOME:TEXT)												//Razao Social
-	cTextoAux += AllTrim(" - CNPJ - " + Transform(aEmitNfce:_CNPJ:TEXT, "@R 99.999.999/9999-99"))	//CNPJ do Emitente
+
+	cTextoAux := AllTrim( "CNPJ: " + Transform(aEmitNfce:_CNPJ:TEXT, "@R 99.999.999/9999-99") ) + " "	//CNPJ
+	cTextoAux += AllTrim(aEmitNfce:_XNOME:TEXT)															//Razao Social
 	oPrint:Say( nAuxLn, 1, PadC(cTextoAux,85) )
 	nAuxLn += 40
 
@@ -355,10 +365,9 @@ User Function LjRImpNFCE(	oNFCe		, oProt		, nDecimais	, aFormas	,;
 	cTextoAux += AllTrim(aEmitNfce:_ENDEREMIT:_XMUN:TEXT) + " - "
 	cTextoAux += AllTrim(aEmitNfce:_ENDEREMIT:_UF:TEXT)
 	oPrint:Say( nAuxLn, 1, PadC(cTextoAux,85) )
-	nAuxLn += 60	//quebra de linha entre as divisoes
-		
+	nAuxLn += 60
 
-	oPrint:Say( nAuxLn, 1, PadC("DOCUMENTO AUXILIAR DA TESTE TESTE TESTE NOTA FISCAL DE CONSUMIDOR ELETRÔNICA", 85) )
+	oPrint:Say( nAuxLn, 1, PadC("DOCUMENTO AUXILIAR DA NOTA FISCAL DE CONSUMIDOR ELETRÔNICA", 85) )
 	
 	/* todo aumentar a fonte*/ 
 	If lContigen
@@ -375,15 +384,12 @@ User Function LjRImpNFCE(	oNFCe		, oProt		, nDecimais	, aFormas	,;
 		* a impressao dessa divisão é opcional ou conforme definido por UF
 	*/
 	
-
-	
 	For nI := 1 to Len(aColDet)
 		If aColDet[nI, 05] = "D"
 			cColuna  := PadR(aColDet[nI, 01], aColDet[nI, 03])
 		Else
 			cColuna  := PadL(aColDet[nI, 01], aColDet[nI, 03])
-		EndIf
-		
+		EndIf		
 	
 		oPrint:Say( nAuxLn,aColDet[nI, 02], cColuna, oFont1 )
 	Next nI
@@ -392,9 +398,12 @@ User Function LjRImpNFCE(	oNFCe		, oProt		, nDecimais	, aFormas	,;
 
 		nContItImp++ //Contador de itens a serem impressos
 
+		nValDeson := IIf(Len(aItensNFCe) > 0 .And. Len(aItensNFCe[nX+1]) >= 9 .And. aItensNFCe[nX+1][8] <> "S"  ,aItensNFCe[nX+1][9], 0)  
+		nTotDeson += nValDeson
+
 		nItemQtde	:= Val(aItemNfce[nX]:_PROD:_QCOM:TEXT)
-		nItemUnit 	:= Val(aItemNfce[nX]:_PROD:_VUNCOM:TEXT)
-		nItemTotal	:= Val(aItemNfce[nX]:_PROD:_VPROD:TEXT)
+		nItemUnit 	:= Val(aItemNfce[nX]:_PROD:_VUNCOM:TEXT) 
+		nItemTotal	:= Val(aItemNfce[nX]:_PROD:_VPROD:TEXT) 
 
 		nAuxLn += 40
 		
@@ -421,6 +430,12 @@ User Function LjRImpNFCE(	oNFCe		, oProt		, nDecimais	, aFormas	,;
 			oPrint:Say( nAuxLn,aColDet[02, 02],PADR(cDescrPro, nTamCol ),oFont1 )					//Descricao de Produto
 			cDescrPro := Substr(cDescrPro,nTamCol+1,Len(AllTrim(cDescrPro)))			
 		EndDo
+
+		If nValDeson > 0
+			nAuxLn+=40
+			oPrint:Say( nAuxLn,aColDet[02, 02],cMsgDeson, oFont1 )		//Mensagem de Desoneração
+			oPrint:Say( nAuxLn,aColDet[06, 02],PadL(AllTrim(Transform(nValDeson, aColDet[06, 04])),aColDet[06, 03])			,oFont1 )	//Valor Desoneração
+		EndIf
 		
 		If nAuxLn > nTamPgV
 			nAuxLn := 20
@@ -442,9 +457,9 @@ User Function LjRImpNFCE(	oNFCe		, oProt		, nDecimais	, aFormas	,;
 	nAuxLn += 40
 	//se existir ISSQN, o VALOR TOTAL é igual a soma da tag vProd + vServ
 	If LjRTemNode(aTotal,"_ISSQNTOT")
-		nVlrTotal := Val(aTotal:_ICMSTOT:_VPROD:TEXT) + Val(aTotal:_ISSQNTot:_VSERV:TEXT)
+		nVlrTotal := Val(aTotal:_ICMSTOT:_VPROD:TEXT) + Val(aTotal:_ISSQNTot:_VSERV:TEXT) - nTotDeson
 	Else
-		nVlrTotal := Val(aTotal:_ICMSTOT:_VPROD:TEXT)
+		nVlrTotal := Val(aTotal:_ICMSTOT:_VPROD:TEXT) - nTotDeson
 	EndIf
 	oPrint:Say( nAuxLn,aColDet[01, 02],"VALOR TOTAL R$")
 	oPrint:Say( nAuxLn,aColDet[06, 02],PADL(AllTrim(Transform(nVlrTotal, cMaskTot)),nTamMask))
@@ -583,9 +598,8 @@ User Function LjRImpNFCE(	oNFCe		, oProt		, nDecimais	, aFormas	,;
 
 	oPrint:Say( nAuxLn, 1, PadC(cTextoAux,85), oFont )
 	nAuxLn += 40
-
+	
 	If !lContigen
-
 		aDtHrLocal := LjUTCtoLoc(cDtHoraAut)
 		/* Protocolo de Autorização  DD/MM/AAAA hh:mm:ss */
 		cTextoAux := "Protocolo de Autorização: " + cProtAuto + " "
@@ -625,6 +639,22 @@ User Function LjRImpNFCE(	oNFCe		, oProt		, nDecimais	, aFormas	,;
 		nAuxLn += 60
 	EndIf
 
+    // Mensagem para a Nota Fiscal Premiada MS
+	If !Empty(cXMLProt)
+		aMsgNfPre := StrToKArr(cXMLPROT,"|")
+		If Len(aMsgNfPre) > 2 .And. "DEZENAS" $ Upper(aMsgNfPre[2])
+			cTextoAux := "NOTA MS PREMIADA" 
+			oPrint:Say( nAuxLn, 1, PadC(cTextoAux,85), oFont )
+			nAuxLn += 40
+			cTextoAux := aMsgNfPre[2] 
+			oPrint:Say( nAuxLn, 1, PadC(cTextoAux,85), oFont )
+			nAuxLn += 40
+			cTextoAux := SubStr(aMsgNfPre[3],1, AT("<",aMsgNfPre[3]) -1 )
+			oPrint:Say( nAuxLn, 1, PadC(cTextoAux,85), oFont )
+			nAuxLn += 60			
+		EndIf
+	EndIf
+
 	//Se Ambiente for Homologacao		
 	If cAmbiente == "2"		
 		oPrint:Say( nAuxLn, 1, PadC("EMITIDA EM AMBIENTE DE HOMOLOGAÇÃO – SEM VALOR FISCAL",85), oFont )
@@ -644,7 +674,7 @@ User Function LjRImpNFCE(	oNFCe		, oProt		, nDecimais	, aFormas	,;
 		impressa à esquerda das informações exigidas nas Divisões VI e VII
 	*/
 	// obtem o QR-Code
-	cKeyQRCode := LjNFCeQRCo(oNFCe, cAmbiente)		
+	cKeyQRCode := LjNFCeQRCo(oNFCe, cAmbiente, lContigen)		
 	
 	/* Tratamento feito para controlar posição da impressao do QRCODE, pois o metodo
 	do mesmo, nao esta respeitando a posição de impressao quando a Quebra de Pagina */
@@ -657,7 +687,9 @@ User Function LjRImpNFCE(	oNFCe		, oProt		, nDecimais	, aFormas	,;
 	nAuxLn += 775
 	
 	//Impressão do QrCode
-	oPrint:QRCode( nAuxLn, 750, cKeyQRCode,5)
+	//O 4º parâmetro igual à "1", define o tamanho da papel que será usado na impressora Laser.
+	//Sendo igual à "1", está configurado para tamnaho igual a "A4", não atrapalhando a visualização e impressão do Qr-Code
+    oPrint:QRCode( nAuxLn, 750, cKeyQRCode, 5)
 
 	/*		
 		DIVISAO IX – Mensagem de Interesse do Contribuinte
@@ -678,8 +710,6 @@ User Function LjRImpNFCE(	oNFCe		, oProt		, nDecimais	, aFormas	,;
 			EndIf
 		Next
 	EndIf
-	
-	
 
 	////////////////////
 	//Fim da Impressão/
@@ -699,7 +729,7 @@ Imprime Danfe(Vulgo: Danfinha)
 @return	 lRet - imprimiu 
 */
 //--------------------------------------------------------
-User Function LjRDnfNFCe(cXML, cXMLProt, cChvNFCe, lDANFEPad)
+User Function LjRDnfNFCe(cXML, cXMLProt, cChvNFCe, lDANFEPad, aItensNFCe, lNFe)
 
 Local nX			:= 0 
 Local nY			:= 0 
@@ -707,10 +737,12 @@ Local aFormas		:= {}
 Local aRet			:= {}
 Local lRet			:= .T. //Retorna se conseguiu transmitir a Nota, não deve retornar erro caso ocorra problema de impressao
 Local lImpComum		:= SuperGetMV("MV_LJSTPRT",,1) == 2
+Local lPOS 			:= STFIsPOS()
 Local cTexto		:= ""  
-Local cCrLf			:= Chr(10)
-Local cImpressora	:= ""
-Local cPorta		:= ""
+Local cCRLF			:= Chr(10)
+Local cImpressora	:= IIF(lPOS, STFGetStation("IMPFISC"),LjGetStation("IMPFISC"))
+Local cPorta		:= IIF(lPOS, STFGetStation("PORTIF"),LjGetStation("PORTIF"))
+Local cModelo		:= AllTrim( cImpressora )
 Local cTextoAux 	:= ""
 Local cFormaPgto	:= ""
 Local cVlrFormPg	:= ""
@@ -737,8 +769,6 @@ Local nRetImp 		:= -1
 Local cL2ItemPic	:= ""	
 Local nConteudo		:= 0
 Local cConteudo		:= ""
-Local lPOS 			:= STFIsPOS()
-Local cModelo		:= AllTrim( IIF(lPOS, STFGetStation("IMPFISC"), LJGetStation("IMPFISC")) )
 Local lCondensa		:= SuperGetMV("MV_LJCONDE",,.F.) .OR. IIf("EPSON" $ cModelo, .T., .F.)
 Local cTagCondIni	:= Iif(lCondensa, TAG_CONDEN_INI , "")
 Local cTagCondFim	:= IIf(lCondensa, TAG_CONDEN_FIM , "")
@@ -746,7 +776,7 @@ Local cTagCondFim	:= IIf(lCondensa, TAG_CONDEN_FIM , "")
 //variaveis de controle para impressao da coluna Descricao na DIVISAO III
 Local cLinha		:= ""	//conteudo da linha que sera impressa na Divisão III
 //Local nColunas		:= 48	//quantidade de caracteres de uma linha inteira
-Local nColunas		:= 60	//quantidade de caracteres de uma linha inteira  -- customizado
+Local nColunas		:= 60	//quantidade de caracteres de uma linha inteira  -- customizado																					 
 Local nIniDesc		:= 1	//indica a posição inicial da leitura da tag xProd (descrição do produto)
 Local nFimDesc		:= 0
 Local nCodDesc		:= 0	//soma das colunas Codigo + " " + Descricao
@@ -755,18 +785,23 @@ Local aColDiv2		:= {}	//largura das colunas da Divisao II
 Local lSTImPFNfce	:= ExistFunc("STImPFNfce") .And. STImPFNfce()
 Local cImgQrCode	:= ""
 Local aMensagem		:= ""
-//Local cImpressora	:= LjGetStation("IMPFISC")
-//Local cPorta		:= LjGetStation("PORTIF")
 Local lContinua		:= .F.
 Local lSaiImp		:= .F.
 Local nMVNFCEIMP	:= SuperGetMV("MV_NFCEIMP",, 1)
 Local cVersao		:= ""	// Versao da NFC-e
+Local lImpConting	:= .F.
+Local lClasImpNfce	:= ExistFunc("LNfceTemCo")
+Local oLojINfce		:= IIF( lClasImpNfce , LOJINFCE():New(), NIL ) 
+Local nValDeson     := 0	// Valor do imposto da desoneração
+Local nTotDeson     := 0	// Valor Total do imposto da desoneração
+Local aMsgNfPre     := {}   // Mensagem de Nota Fiscal Premiada
 
-//Parametros enviados pela função no fonte LOJNFCE
 Default cXml 		:= ""
 Default cXmlProt	:= ""
 Default cChvNFCe	:= ""
 Default lDanfePad	:= .F.
+Default aItensNFCe  := {}
+Default lNFe		:= .F.
 
 Private oNFCe				//retorno do XML da NFCe funcao convertido para objeto
 Private oProt				//retorno do XML do protocolo de autorizacao convertido para objeto
@@ -774,12 +809,12 @@ Private aDestNFCe	:= {}	//dados do destinatário
 Private aItemNFCe	:= {}	//dados dos itens
 
 BEGIN SEQUENCE
-
+	
 	//-----------------------------------------------------
 	// Conversao XML da NFC-e e do Protocolo de Autorizacao
 	//-----------------------------------------------------
 	aRet := LjXMLNFCe(cXML)
-	If aRet[1]
+	If aRet[1] .and. !Empty(cXML)
 		oNFCe := aRet[2]
 	Else
 		BREAK
@@ -803,7 +838,9 @@ BEGIN SEQUENCE
 	// .T. - apos a execucao do ponto de entrada, realiza a impressao padrao do DANFE
 	// .F. - apos a execucao do ponto de entrada, NAO realiza a impressao padrao do DANFE
 	If ExistBlock("LJ7084")
+		LjGrvLog( NIL, "Antes da execução do PE LJ7084")
 		lLj7084 := ExecBlock( "LJ7084", .F., .F., {oNFCe, oProt} )
+		LjGrvLog( NIL, "Antes da execução do PE LJ7084", lLj7084)
 		If ValType(lLj7084) <> "L"
 			lLj7084 = .T.
 		EndIf
@@ -812,7 +849,7 @@ BEGIN SEQUENCE
 	//--------------------------
 	// Impressao padrao do DANFE
 	//--------------------------
-	If (lDanfePad .AND. lLJ7084) .Or. lSTImPFNfce
+	If (lDanfePad .AND. lLj7084) .Or. lSTImPFNfce
 		
 		lImpComum := lImpComum .And. !lSTImPFNfce
 		
@@ -869,11 +906,14 @@ BEGIN SEQUENCE
 		aFormas := LjDfRetFrm()
 
 		lContigen := oNFCe:_NFE:_INFNFE:_IDE:_TPEMIS:TEXT <> "1"
+		If lClasImpNfce
+			oLojINfce:lConting := lContigen
+		EndIf
 
 		//Verifica se conseguiu montar o objeto do XML e sinaliza nao contingencia 
 		If (oProt <> NIL) .And. LjRTemNode(oProt:_PROTNFE:_INFPROT,"_NPROT")
 
-			cProtAuto := AllTrim(oProt:_PROTNFE:_INFPROT:_NPROT:TEXT)			
+			cProtAuto := AllTrim(oProt:_PROTNFE:_INFPROT:_NPROT:TEXT)
 
 			If LjRTemNode(oProt:_PROTNFE:_INFPROT,"_DHRECBTO")
 				cDtHoraAut := oProt:_PROTNFE:_INFPROT:_DHRECBTO:TEXT
@@ -920,8 +960,18 @@ BEGIN SEQUENCE
 		//Total da NF
 		aTotal := oNfce:_NFE:_INFNFE:_TOTAL
 		
-		//Verifica compatibilidade de Impressao: 4-DANFE Detalhada e 5-DANFE Resumida
-		If !aIdNfce:_TPIMP:TEXT $ "45"
+		/*Verifica compatibilidade de Impressao: 4-DANFE Detalhada e 5-DANFE Resumida
+			0=Sem geração de DANFE; 
+			1=DANFE normal, Retrato; 
+			2=DANFE normal, Paisagem; 
+			3=DANFE Simplificado; 
+			4=DANFE NFC-e; 
+			5=DANFE NFC-e em mensagem eletrônica (o envio de mensagem eletrônica pode ser feita de forma simultânea com a impressão do DANFE; usar o tpImp=5 quando esta for a única forma de disponibilização do DANFE).
+				
+			O parametro MV_NFTPIMP controla o preenchimento da TAG
+		*/
+		//-- TBC-GO acrescimo tipo 1 e 3 para emissao de danfinha de NFe na impressora nao fiscal
+		If !aIdNfce:_TPIMP:TEXT $ "1345"
 			If !IsBlind()
 				MsgStop("Nfc-e: Tipo de Impressão incompatível: "+aIdNfce:_TPIMP:TEXT)
 			Else
@@ -939,9 +989,9 @@ BEGIN SEQUENCE
 			cTexto += TAG_BMP_INI + TAG_BMP_FIM
 	
 			/* CNPJ: 99.999.999/9999-99 Razão social do Emitente */		
-			cTextoAux := "CNPJ: " + Transform(aEmitNfce:_CNPJ:TEXT, "@R 99.999.999/9999-99") + " - "
+			cTextoAux := "CNPJ: " + Transform(aEmitNfce:_CNPJ:TEXT, "@R 99.999.999/9999-99") + " "
 			//cTextoAux += TAG_NEGRITO_INI + AllTrim(aEmitNfce:_XNOME:TEXT) + TAG_NEGRITO_FIM
-			cTextoAux += TAG_NEGRITO_INI + 'COOP.AGROINDUSTRIAL NOVA ALIANCA LTDA' + TAG_NEGRITO_FIM // customizado
+			cTextoAux += TAG_NEGRITO_INI + 'COOP.AGROINDUSTRIAL NOVA ALIANCA LTDA' + TAG_NEGRITO_FIM // customizado																							  
 			
 			cTexto += TAG_CENTER_INI
 			cTexto += cTagCondIni
@@ -955,22 +1005,28 @@ BEGIN SEQUENCE
 			cTextoAux += AllTrim(aEmitNfce:_ENDEREMIT:_XBAIRRO:TEXT)+ ","
 			cTextoAux += AllTrim(aEmitNfce:_ENDEREMIT:_XMUN:TEXT)	+ ","
 			cTextoAux += AllTrim(aEmitNfce:_ENDEREMIT:_UF:TEXT)
-			
+	
 			cTexto += (cTagCondIni + cTextoAux + cTagCondFim) 
 			cTexto += cCRLF
-			
-			// cutomizado - imprimir linha pontilhada - separador visual
+					// cutomizado - imprimir linha pontilhada - separador visual
 			cTextoAux := Replicate('-',50)
 			cTexto    += (cTagCondIni + cTextoAux + cTagCondFim) 
 			cTexto    += cCRLF
-			
 		EndIf
 		
-		cTextoAux := (cTagCondIni + "DOCUMENTO AUXILIAR DA NOTA FISCAL ELETRONICA" + cTagCondFim)
+		cTextoAux := (cTagCondIni + "DOCUMENTO AUXILIAR DA")
+		cTextoAux += cCRLF
+
+		If lNfe
+			cTextoAux += (PadC("NOTA FISCAL ELETRÔNICA",SLG->LG_LARGCOL) + cTagCondFim) 
+		Else
+			cTextoAux += (PadC("NOTA FISCAL DE CONSUMIDOR ELETRÔNICA",SLG->LG_LARGCOL) + cTagCondFim)
+        Endif
+
 		cTexto += cTextoAux
 		cTexto += TAG_CENTER_FIM
 		//cTexto += Replicate(cCRLF,2)
-		cTexto += cCRLF 		// customizado p/nao saltar linha
+		cTexto += cCRLF 		// customizado p/nao saltar linha											 
 
 		If lContigen
 			cTexto += TAG_CENTER_INI
@@ -979,14 +1035,13 @@ BEGIN SEQUENCE
 			cTexto += (cTagCondIni + "Pendente de autorização" + cTagCondFim)
 			cTexto += TAG_CENTER_FIM
 			//cTexto += Replicate(cCRLF,2)
-			cTexto += cCRLF 		// customizado p/nao saltar linha
+			cTexto += cCRLF 		// customizado p/nao saltar linha										  
 		EndIf
-		
 		// cutomizado - imprimir linha pontilhada - separador visual
 		cTextoAux := Replicate('-',50)
 		cTexto    += (cTagCondIni + cTextoAux + cTagCondFim) 
 		cTexto    += cCRLF
-
+		
 		/*
 			DIVISAO II – Informações de detalhes de produtos/serviços
 			A impressao dessa divisão é opcional ou conforme definido por UF
@@ -999,14 +1054,14 @@ BEGIN SEQUENCE
 		// das posicoes do array e a dos espacos (5) devem ser igual a variavel nColunas.		 
 		//
 		cTexto += (TAG_NEGRITO_INI + TAG_CENTER_INI + cTagCondIni)
-		//cTexto += "Codigo   Desc. Qtd UN Vlr Unit. Vlr Total"	//48 colunas
+		//cTexto += "Codigo          Desc. Qtd UN Vlr Unit. Vlr Total"	//48 colunas
 		cTexto += "Cod Descricao                    Qtde   Vlr Unit.  Vlr Total"	//60 colunas
-		//         xxxxxx xxxxxxxxxxxxxxxxxxxxxxxxxxx    9999 XX   9.999,99  99.999,99
+		//         xxxxxx xxxxxxxxxxxxxxxxxxxxxxxxxxx    9999 XX   9.999,99  99.999,99																			   
 		cTexto +=  (cTagCondFim + TAG_CENTER_FIM + TAG_NEGRITO_FIM)
 		cTexto += cCRLF
 		
 		// ATENCAO: se alterar algum valor do array, deve-se alterar o cabecalho acima tambem
-		//Aadd(aColDiv2, 15)	// Codigo
+        //Aadd(aColDiv2, 15)	// Codigo
 		//Aadd(aColDiv2, 04)	// Descricao
 		//Aadd(aColDiv2, 04)	// Qtd
 		//Aadd(aColDiv2, 02)	// Un
@@ -1018,16 +1073,14 @@ BEGIN SEQUENCE
 		Aadd(aColDiv2, 04)	// Qtd
 		Aadd(aColDiv2, 02)	// Un
 		Aadd(aColDiv2, 08)	// VlUnit.
-		Aadd(aColDiv2, 10)	// VlTotal
-	
-	
+		Aadd(aColDiv2, 10)	// VlTotal	
+		
 		// soma das colunas Codigo + " " + Descricao 
 		//nCodDesc := aColDiv2[1] + 1 + aColDiv2[2]
-		nCodDesc := aColDiv2[1] + 3 + aColDiv2[2] // customizado
-		
+	    nCodDesc := aColDiv2[1] + 3 + aColDiv2[2] // customizado
 		//obtemos a Picture que sera utilizada para o valor unitario
 		//cL2ItemPic := "@E " + Right( "@E 999,999,999.99", aColDiv2[5] )
-		cL2ItemPic := "@E " + Right( "@E 99,999.99", aColDiv2[5] )
+		cL2ItemPic := "@E " + Right( "@E 99,999.99", aColDiv2[5] )													
 		
 		For nX := 1 to Len(aItemNfce)
 
@@ -1046,6 +1099,8 @@ BEGIN SEQUENCE
 			lImpDesc := .T.
 			nIniDesc := 1
 			nFimDesc := aColDiv2[2] + aColDiv2[3] + aColDiv2[4] + aColDiv2[5] + aColDiv2[6] + 4 //4 espaços separadores
+
+			nValDeson := IIf(Len(aItensNFCe) > 0 .And. Len(aItensNFCe[nX+1 ]) >= 9 .And. aItensNFCe[nX+1][8] <> "S"  ,aItensNFCe[nX+1][9], 0) 
 
 			While lImpDesc
 		
@@ -1102,7 +1157,7 @@ BEGIN SEQUENCE
 			cLinha += PadL(aItemNfce[nX]:_PROD:_UCOM:TEXT, aColDiv2[4]) + " "
 
 			// VlUnit. - valor unitario
-			nConteudo := Val( aItemNfce[nX]:_PROD:_VUNCOM:TEXT )
+			nConteudo := Val( aItemNfce[nX]:_PROD:_VUNCOM:TEXT ) 
 			cConteudo := Transform(nConteudo, cL2ItemPic) + " "
 			cLinha += cConteudo
 
@@ -1113,6 +1168,13 @@ BEGIN SEQUENCE
 		
 			cTexto += (TAG_CENTER_INI + cTagCondIni + cLinha + cTagCondFim + TAG_CENTER_FIM)
 			cTexto += cCRLF
+
+			If  nValDeson > 0 				    
+				cLinha := "Valor do ICMS abatido: R$  "+ Padl(Transform(nValDeson,'@E 999,999.99'),nColunas - 26 )
+				cTexto += (TAG_CENTER_INI + cTagCondIni + cLinha + cTagCondFim + TAG_CENTER_FIM)
+				cTexto += cCRLF
+				nTotDeson += nValDeson
+			EndIf
 
 			If nMVNFCEDES == 1
 				If Type("aItemNfce["+AllTrim(Str(nX))+"]:_PROD:_VDESC") == "O"
@@ -1128,34 +1190,47 @@ BEGIN SEQUENCE
 			EndIf
 			
 			//Tratamento necessário pois dependendo tamanho das informações dos itens a serem impressos,
-			//apos um determinado tamanho o texto não é impresso, gerenado o erro de DEBUG/TOTVSAPI na DLL.
+			//apos um determinado tamanho o texto não é impresso, gerando o erro de DEBUG/TOTVSAPI na DLL.
 			//para isso foi quebrada a impressão em 50 itens.			
 			If nContItImp == 30
 				If !lSTImPFNfce
 					If !lPos
-						If ExistFunc("LjAskImp")
-							//Tratamento paliativo para impressora Bematech, ate a solucao de problema de comunicacao ppor parte da BEMATECH
-							nRetImp := 999						
-							lSaiImp := .F.
-							While nRetImp <> 0 .And. !lSaiImp .And. LjAskImp(nRetImp)
-								LJGrvLog(Nil, "Envia o texto para a impressao intermediaria (INFTexto)")
-								nRetImp := INFTexto(cTexto)  //Envia comando para a Impressora
-								
-								If nMVNFCEIMP == 1 .And. nRetImp <> 0 .And. !MsgYesNo("Houve erro na impressão, deseja tentar imprimir novamente ?", "Atenção")
-									lSaiImp := .T.
-									LjGrvLog( Nil,	" Impressão da NFC-e está como não obrigatório [MV_NFCEIMP igual a 1], " +; 
-													" houve erro na impressão do comprovante e usuário optou por sair sem imprimir  ")
-								EndIf
-							End
-						Else
+						//Tratamento paliativo para impressora Bematech, ate a solucao de problema de comunicacao ppor parte da BEMATECH
+						nRetImp := 999						
+						lSaiImp := .F.
+						While nRetImp <> 0 .And. !lSaiImp .And. LjAskImp(nRetImp)
 							LJGrvLog(Nil, "Envia o texto para a impressao intermediaria (INFTexto)")
-							INFTexto(cTexto)  //Envia comando para a Impressora
-						EndIf
+							
+							lImpConting := .F.
+							If lClasImpNfce
+								//Se retorno for falso, não houve impressão em contingencia
+								lImpConting := oLojINfce:ImpMsgCon(lContigen, @cTexto, @nRetImp)
+							EndIf
+							
+							If !lImpConting
+								nRetImp := INFTexto(cTexto)  //Envia comando para a Impressora
+							EndIf
+						
+							If nMVNFCEIMP == 1 .And. nRetImp <> 0 .And. !MsgYesNo("Houve erro na impressão, deseja tentar imprimir novamente ?", "Atenção")
+								lSaiImp := .T.
+								LjGrvLog( Nil,	" Impressão da NFC-e está como não obrigatório [MV_NFCEIMP igual a 1], " +; 
+												" houve erro na impressão do comprovante e usuário optou por sair sem imprimir  ")
+							EndIf
+						End
 					Else
-						LJGrvLog(Nil, "Envia o texto para a impressao intermediaria (STWPrintTextNotFiscal)")
-						STWPrintTextNotFiscal(cTexto)
+						lImpConting := .F.
+						If lClasImpNfce
+							//Se retorno for falso, não houve impressão em contingencia
+							lImpConting := oLojINfce:ImpMsgCon(lContigen, @cTexto, @nRetImp)
+						EndIf
+							
+						If !lImpConting
+							LJGrvLog(Nil, "Envia o texto para a impressao intermediaria (STWPrintTextNotFiscal)")
+							nRetImp := STWPrintTextNotFiscal(cTexto)
+							LJGrvLog(Nil, "Retorno do texto para a impressao intermediaria (STWPrintTextNotFiscal)",nRetImp)
+						EndIf
 					EndIf
-					cTexto		:= ""
+					cTexto	:= ""
 				EndIf
 				nContItImp	:= 0
 			EndIf
@@ -1164,7 +1239,7 @@ BEGIN SEQUENCE
 		// cutomizado - imprimir linha pontilhada - separador visual
 		cTextoAux := Replicate('-',50)
 		cTexto    += (cTagCondIni + cTextoAux + cTagCondFim) 
-		cTexto    += cCRLF
+		cTexto    += cCRLF														  			
 		/*
 			DIVISAO III – Informações de Total do DANFE NFC-e
 		*/
@@ -1182,9 +1257,9 @@ BEGIN SEQUENCE
 		//--------------------------------------------
 		//se existir ISSQN, o VALOR TOTAL é igual a soma da tag vProd + vServ
 		If LjRTemNode(aTotal,"_ISSQNTOT")
-			nVlrTotal := Val(aTotal:_ICMSTOT:_VPROD:TEXT) + Val(aTotal:_ISSQNTot:_VSERV:TEXT)
+			nVlrTotal := Val(aTotal:_ICMSTOT:_VPROD:TEXT) + Val(aTotal:_ISSQNTot:_VSERV:TEXT)  - nTotDeson
 		Else
-			nVlrTotal := Val(aTotal:_ICMSTOT:_VPROD:TEXT)
+			nVlrTotal := Val(aTotal:_ICMSTOT:_VPROD:TEXT) - nTotDeson
 		EndIf		
 
 		cTextoAux 	:= "VALOR TOTAL R$"		
@@ -1258,8 +1333,8 @@ BEGIN SEQUENCE
 		// cutomizado - imprimir linha pontilhada - separador visual
 		cTextoAux := Replicate('-',50)
 		cTexto    += (cTagCondIni + cTextoAux + cTagCondFim) 
-		cTexto    += cCRLF
-
+		cTexto    += cCRLF											 
+  
 		/*
 			DIVISAO IV – Informações da consulta via chave de acesso
 		*/
@@ -1269,7 +1344,7 @@ BEGIN SEQUENCE
 
 		cTexto += TAG_CONDEN_INI
 		//URL de Consulta Publica
-		cTexto += LjNFCeURL(cAmbiente, .T.)		
+		cTexto += LjNFCeURL(cAmbiente, .T., lNFe)
 		cTexto += cCRLF
 
 		//1111 2222 3333 4444 5555 6666 7777 8888 9999 0000 1111
@@ -1284,8 +1359,8 @@ BEGIN SEQUENCE
 		// cutomizado - imprimir linha pontilhada - separador visual
 		cTextoAux := Replicate('-',50)
 		cTexto    += (cTagCondIni + cTextoAux + cTagCondFim) 
-		cTexto    += cCRLF
-
+		cTexto    += cCRLF											 
+  
 		/*
 			Divisão VI – Informações sobre o Consumidor
 		*/		
@@ -1334,25 +1409,32 @@ BEGIN SEQUENCE
 		// cutomizado - imprimir linha pontilhada - separador visual
 		cTextoAux := Replicate('-',50)
 		cTexto    += (cTagCondIni + cTextoAux + cTagCondFim) 
-		cTexto    += cCRLF
-
+		cTexto    += cCRLF											 
 		/*
 			DIVISAO VI – Informações de Identificação da NFC-e e do Protocolo de Autorização
 			Número Série Emissão DD/MM/AAAA hh:mm:ss
 		*/		
 		aDtHrLocal := LjUTCtoLoc(aIdNfce:_DHEMI:TEXT)
 
-		cTextoAux := "NFC-e n " + aIdNfce:_NNF:TEXT + " " 		//Número da NFC-e
+		cTextoAux := iif( lNFe, "NF-e","NFC-e") + " n " + aIdNfce:_NNF:TEXT + " " 		//Número da NFC-e
 		cTextoAux += "Série " + aIdNfce:_SERIE:TEXT + " " 		//Série da NFC-e
 		cTextoAux += PadL( Day(aDtHrLocal[1]),2,"0" ) + "/"		//DD
 		cTextoAux += PadL( Month(aDtHrLocal[1]),2,"0" ) + "/"	//MM
 		cTextoAux += cValToChar( Year(aDtHrLocal[1]) ) + " "	//AAAA
 		cTextoAux += aDtHrLocal[2]								//hh:mm:ssa
-
+		
 		cTexto += (TAG_CENTER_INI + TAG_NEGRITO_INI + cTagCondIni)
 		cTexto += cTextoAux
 		cTexto += (cTagCondFim + TAG_NEGRITO_FIM + TAG_CENTER_FIM)
 		cTexto += cCRLF
+		
+		If lClasImpNfce
+			oLojINfce:RetMsgCon(lContigen)
+			
+			If !Empty(AllTrim(oLojINfce:cMsgConting))
+				cTexto += oLojINfce:cMsgConting
+			EndIf
+		EndIf
 
 		// obtemos o Protocolo de Autorizacao do XML retornado do SEFAZ (se modalidade NORMAL)
 		If !lContigen
@@ -1375,12 +1457,10 @@ BEGIN SEQUENCE
 			cTexto += TAG_CENTER_FIM
 			cTexto += cCRLF			
 		EndIf		
-		
 		// cutomizado - imprimir linha pontilhada - separador visual
 		cTextoAux := Replicate('-',50)
 		cTexto    += (cTagCondIni + cTextoAux + cTagCondFim) 
 		cTexto    += cCRLF
-
 		/*
 			DIVISAO VIII – Área de Mensagem Fiscal
 		*/		
@@ -1410,37 +1490,49 @@ BEGIN SEQUENCE
 			cTexto += cCRLF
 		EndIf
 
+		// Mensagem para a Nota Fiscal Premiada MS
+		If !Empty(cXMLProt)
+			aMsgNfPre := StrToKArr(cXMLPROT,"|")
+			If Len(aMsgNfPre) > 2 .And. "DEZENAS" $ Upper(aMsgNfPre[2])
+				cTexto += TAG_CENTER_INI + cTagCondIni
+				cTexto += "NOTA MS PREMIADA" + cCRLF
+				cTexto += aMsgNfPre[2] + cCRLF
+				CtEXTO += SubStr(aMsgNfPre[3],1, AT("<",aMsgNfPre[3]) -1 )
+				cTexto += cTagCondFim + TAG_CENTER_FIM
+				cTexto += cCRLF
+			EndIf
+		EndIf
+
 		//Se Ambiente for Homologacao		
 		If cAmbiente == "2"
 			cTexto += cCRLF
 			cTexto += (TAG_CENTER_INI + TAG_CONDEN_INI + "EMITIDA EM AMBIENTE DE HOMOLOGAÇÃO – SEM VALOR FISCAL" + TAG_CONDEN_FIM + TAG_CENTER_FIM)
 			//cTexto += Replicate(cCRLF,2)
-			cTexto += cCRLF 		// customizado p/nao saltar linha
+			cTexto += cCRLF 		// customizado p/nao saltar linha										  
 		EndIf
 
-		If lContigen			
+		If lContigen
 			cTexto += cCRLF
 			cTexto += (TAG_CENTER_INI + TAG_NEGRITO_INI + "EMITIDA EM CONTINGÊNCIA" + TAG_NEGRITO_FIM + TAG_CENTER_FIM)
 			cTexto += cCRLF
 			cTexto += (TAG_CENTER_INI + cTagCondIni + "Pendente de autorização" + cTagCondFim + TAG_CENTER_FIM)
 			//cTexto += Replicate(cCRLF,2)
-			cTexto += cCRLF 		// customizado p/nao saltar linha
+			cTexto += cCRLF 		// customizado p/nao saltar linha										  
 		EndIf
 		
 		cTexto	+= TAG_CENTER_INI
 		If lSTImPFNfce
-			cImgQrCode	:= LjRetQrCd( oNfce, cAmbiente,	cModelo	)
+			cImgQrCode	:= LjRetQrCd( oNfce, cAmbiente,	cModelo, lContigen, lNFe )
 		Else
-			cTexto	+= LjRetQrCd( oNfce, cAmbiente,	cModelo	)
+			cTexto	+= LjRetQrCd( oNfce, cAmbiente,	cModelo, lContigen, lNFe )
 		EndIf
 		cTexto	+= TAG_CENTER_FIM
 		cTexto	+= cCRLF
-		
 		// cutomizado - imprimir linha pontilhada - separador visual
 		cTextoAux := Replicate('-',50)
 		cTexto    += (cTagCondIni + cTextoAux + cTagCondFim) 
-		cTexto    += cCRLF
-
+		cTexto    += cCRLF													  
+		
 		/*
 			DIVISAO IX – Mensagem de Interesse do Contribuinte
 		*/
@@ -1460,8 +1552,8 @@ BEGIN SEQUENCE
 			Next
 			cTexto += (TAG_CENTER_INI + cTextoAux + TAG_CENTER_FIM)
 			cTexto += cCRLF
-		EndIf
-		
+		EndIf		
+
 		//
 		// Salta linha extra
 		//
@@ -1476,7 +1568,8 @@ BEGIN SEQUENCE
 			U_LOJRNFCe(	oNFCe		, oProt		, nDecimais	, aFormas	,;
 						cProtAuto	, lContigen	, cDtHoraAut, aEmitNfce	,; 
 						aDestNfce	, aIdNfce	, aPagNfce	, aItemNfce	,; 
-						aTotal		, cChvNFCe	)
+						aTotal		, cChvNFCe	, Nil       , aItensNFCe,;
+						cXMLProt )
 			nRetImp := 0 
 		Else //Imprime Não Fiscal
 			
@@ -1492,28 +1585,44 @@ BEGIN SEQUENCE
 				
 				If lPos
 					LJGrvLog(Nil, "Envia o texto para a impressao final (STWPrintTextNotFiscal)")
-					STWPrintTextNotFiscal(cTexto)
-				Else
-					If ExistFunc("LjAskImp")
-						//Tratamento paliativo para impressora Bematech, ate a solucao de problema de comunicacao ppor parte da BEMATECH
-						nRetImp := 999
-						lSaiImp := .F.
-						
-						While nRetImp <> 0 .And. !lSaiImp .And. LjAskImp(nRetImp)
-							LJGrvLog(Nil, "Envia o texto para a impressao final (INFTexto)")
-							nRetImp := INFTexto(cTexto)  //Envia comando para a Impressora
-							
-														
-							If nMVNFCEIMP == 1 .And. nRetImp <> 0 .And. !MsgYesNo("Houve erro na impressão, deseja tentar imprimir novamente ?", "Atenção")
-								lSaiImp := .T.
-								LjGrvLog( Nil,	" Impressão da NFC-e está como não obrigatório [MV_NFCEIMP igual a 1], " +; 
-												" houve erro na impressão do comprovante e usuário optou por sair sem imprimir  ")
-							EndIf
-						End
-					Else
-						LJGrvLog(Nil, "Envia o texto para a impressao final (INFTexto)")
-						INFTexto(cTexto)	//Envia comando para a Impressora
+					
+					lImpConting := .F.
+					If lClasImpNfce
+						//Se retorno for falso, não houve impressão em contingencia
+						lImpConting := oLojINfce:ImpMsgCon(lContigen, @cTexto, @nRetImp)
 					EndIf
+							
+					If !lImpConting
+						nRetImp := STWPrintTextNotFiscal(cTexto)
+					EndIf
+					
+					LJGrvLog(Nil, "Retorno do envio do texto para a impressao final (STWPrintTextNotFiscal)")
+				Else
+					//Tratamento paliativo para impressora Bematech, ate a solucao de problema de comunicacao ppor parte da BEMATECH
+					nRetImp := 999
+					lSaiImp := .F.
+					
+					While nRetImp <> 0 .And. !lSaiImp .And. LjAskImp(nRetImp)
+						LJGrvLog(Nil, "Envia o texto para a impressao final (INFTexto)")
+						
+						lImpConting := .F.
+						If lClasImpNfce
+							//Se retorno for falso, não houve impressão em contingencia
+							lImpConting := oLojINfce:ImpMsgCon(lContigen, @cTexto, @nRetImp)
+						EndIf
+							
+						If !lImpConting
+							nRetImp := INFTexto(cTexto)  //Envia comando para a Impressora
+						EndIf
+													
+						If nMVNFCEIMP == 1 .And. nRetImp <> 0 .And. !MsgYesNo("Houve erro na impressão, deseja tentar imprimir novamente ?", "Atenção")
+							lSaiImp := .T.
+							LjGrvLog( Nil,	" Impressão da NFC-e está como não obrigatório [MV_NFCEIMP igual a 1], " +; 
+											" houve erro na impressão do comprovante e usuário optou por sair sem imprimir  ")
+						EndIf
+						
+						LJGrvLog(Nil, "Retorno do envio do texto para a impressao final (INFTexto)")
+					End
 				EndIf
 			EndIf
 		EndIf
@@ -1556,7 +1665,15 @@ lRet := (XmlChildEx(oObjeto,cNode) <> NIL)
 
 Return lRet
 
+//--------------------------------------------------------
+/*{Protheus.doc} LjUTCtoLoc
 
+@author  Varejo
+@version P11.8
+@since   02/02/2016
+@return	 aRet, array,  
+*/
+//--------------------------------------------------------
 Static Function LjUTCtoLoc(cDataUTC)
 
 Local dData			:= Nil
@@ -1637,25 +1754,53 @@ Retorno do QrCode para impressão
 @return	 cRet - qrCode para impressão 
 */
 //--------------------------------------------------------
-Static Function LjRetQrCd(	oNfce,	cAmbiente, 	cModelo	)
-Local cKeyQRCode := ""
-Local cRet		 := ""
-Local lSTImPFNfce:= ExistFunc("STImPFNfce") .And. STImPFNfce()
-Local aParams	 := {}
+Static Function LjRetQrCd(	oNfce,	cAmbiente, 	cModelo,  lContigen, lNFe)
+Local cKeyQRCode 	:= ""
+Local cRet		 	:= ""
+Local lSTImPFNfce	:= ExistFunc("STImPFNfce") .And. STImPFNfce()
+Local aParams	 	:= {}
+Local cCRLF			:= chr(10)
+
+Default	lContigen	:= .F.
+Default lNFe		:= Substr(oNfce:_NFE:_INFNFE:_ID:Text,24,02) == "55"
 
 /*
 	DIVISAO V – Informações da Consulta via QR Code
 	A imagem do QR Code poderá ser CENTRALIZADA (conforme o rdmake) ou
 	impressa à esquerda das informações exigidas nas Divisões VI e VII
-*/		
-cKeyQRCode := LjNFCeQRCo(oNFCe, cAmbiente)
-cRet := TAG_QRCODE_INI
-cRet += cKeyQRCode
-If "DARUMA" $ cModelo
-	//define o tamanho do QR-Code
-	cRet += (TAG_LMODULO_INI + '3' + TAG_LMODULO_FIM) 
-EndIf			
-cRet += TAG_QRCODE_FIM
+*/
+if lNFe 
+	cKeyQRCode := Right(oNfce:_NFE:_INFNFE:_ID:Text,12)	//-- 44
+	cRet := MTAG_CODABAR_INI
+	cRet += Left(cKeyQRCode,44)
+	cRet += MTAG_CODABAR_FIM
+	cRet += cCRLF
+
+	cRet += cCRLF
+	cRet += TAG_COD128_INI
+	cRet += Left(cKeyQRCode,44)
+	cRet += TAG_COD128_FIM
+	cRet += cCRLF
+	
+	cRet += cCRLF
+	cRet += TAG_CODE39_INI
+	cRet += Left(cKeyQRCode,44)
+	cRet += TAG_CODE39_INI
+	cRet += cCRLF	
+
+	cRet += cCRLF
+	cRet += TAG_CODE93_INI
+	cRet += Left(cKeyQRCode,44)
+	cRet += TAG_CODE93_FIM
+	cRet += cCRLF
+	
+Else
+	cKeyQRCode := LjNFCeQRCo(oNFCe, cAmbiente, lContigen)
+	cRet := TAG_QRCODE_INI
+	cRet += cKeyQRCode
+	cRet += INFTamQrCd(cModelo,"NFCE")
+	cRet += TAG_QRCODE_FIM
+EndIf
 
 If lSTImPFNfce
 	aParams := {"Q",cKeyQRCode,cRet}
@@ -1846,10 +1991,10 @@ If lContinua
 
 	// ATENCAO: se alterar algum valor do array, deve-se alterar o cabecalho acima tambem
 	Aadd(aColDiv2, 20)	// Descricao
-	Aadd(aColDiv2, 04)	// Qtd
+	Aadd(aColDiv2, 05)	// Qtd
 	Aadd(aColDiv2, 02)	// Un
 	Aadd(aColDiv2, 08)	// VlUnit.
-	Aadd(aColDiv2, 10)	// VlTotal
+	Aadd(aColDiv2, 09)	// VlTotal
 
 	// soma das colunas
 	nCodDesc := aColDiv2[1]
@@ -1956,3 +2101,4 @@ If lContinua
 EndIf
 
 Return .T.
+

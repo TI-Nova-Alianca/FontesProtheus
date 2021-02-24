@@ -19,6 +19,8 @@
 // 29/08/2019 - Cláudia   - Alterado o campo de peso bruto de B1_P_BRT para B1_PESBRU  
 //							Na montagem de carga o valor do DAK_PESO ficava diferenciado do relatório.
 // 22/02/2021 - Cláudia   - Ajustes nos campos de observações. GLPI:9421
+// 23/02/2021 - Sandra    - Ajustado para sempre imprimir obs Expedição GLPI: 9466
+//	                      - Alterado nome do campo Mens. p/NF para OBS.Expedição  
 //
 // --------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -395,7 +397,7 @@ static function _Imprime ()
 			endif
 			li ++
 
-			if mv_par07 == 2  // imprimir obs pedido
+			//if mv_par07 == 2  // imprimir obs pedido
 	
 				// Nao gosto da forma como foi feito o controle de quebra neste relatorio, mas agora tenho que acompanhar a musica...
 				if _nNota == len (_aNotas) .or. (_nNota < len (_aNotas) .and. _aNotas [_nNota, 1] != _aNotas [_nNota + 1, 1])
@@ -423,7 +425,7 @@ static function _Imprime ()
 						if ! empty (_sMensNota)
 							_aMensNota = U_QuebraTXT (_sMensNota, 115)
 							for _nMensNota = 1 to len (_aMensNota)
-								@ li, 5 psay iif (_nMensNota == 1, 'Mens. p/NF: ', '            ') + _aMensNota [_nMensNota]
+								@ li, 5 psay iif (_nMensNota == 1, 'OBS. Expedição: ', '            ') + _aMensNota [_nMensNota]
 								li ++
 							next
 						endif
@@ -432,7 +434,7 @@ static function _Imprime ()
 						endif 
 					endif
 				endif																																																												
-			endif
+			//endif
 		next
 		//
 		@ li, 10 psay Space(80) + "TOTAIS -> QT:"+transform (_SumQt, "@E 9,999") + "  P.Bruto:" + transform (_SumPes, "@E 999,999.99") 
@@ -554,7 +556,7 @@ static function _ValidPerg ()
 	aadd (_aRegsPerg, {04, "Data final geracao carga      ", "D", 8,  0,  "",   "",    {},    ""})
 	aadd (_aRegsPerg, {05, "(S)Separacao ou (E)Entrega?   ", "C", 1,  0,  "",   "",    {},    ""})
 	aadd (_aRegsPerg, {06, "Sintetico?                    ", "N", 1,  0,  "",   "",    {"1-Nao","2-Sim"},    ""})	
-	aadd (_aRegsPerg, {07, "Imprime observacoes pedido?   ", "N", 1,  0,  "",   "",    {"1-Nao","2-Sim"},    ""})	
+	//aadd (_aRegsPerg, {07, "Imprime observacoes pedido?   ", "N", 1,  0,  "",   "",    {"1-Nao","2-Sim"},    ""})	
 	
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 Return
