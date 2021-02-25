@@ -12,6 +12,7 @@
 //
 // Historico de alteracoes:
 // 02/12/2020 - Claudia - Ajuste de devoluções - GLPI: 8937
+// 24/02/2021 - Claudia - Invertida a legenda 
 //
 // --------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -42,8 +43,8 @@ User Function ZB1()
 		AADD(aRotina, {"Relatorio importação", "U_ZB1REL()"    , 0, 6})
 		AADD(aRotina, {"Fechar Registro"     , "U_ZB1_FEC()"   , 0, 6})
 
-		AADD(_aCores,{ "ZB1_STAIMP == 'I'", 'BR_VERMELHO' }) // importado
-		AADD(_aCores,{ "ZB1_STAIMP == 'C'", 'BR_VERDE'    }) // conciliado
+		AADD(_aCores,{ "ZB1_STAIMP == 'I'", 'BR_VERDE'    }) // importado
+		AADD(_aCores,{ "ZB1_STAIMP == 'C'", 'BR_VERMELHO' }) // conciliado
 		AADD(_aCores,{ "ZB1_STAIMP == 'F'", 'BR_PRETO'    }) // fechado
 		AADD(_aCores,{ "ZB1_STAIMP == 'D'", 'BR_AZUL'     }) // debito
                       
@@ -54,7 +55,7 @@ User Function ZB1()
 	EndIf
 
 Return
-
+//
 // --------------------------------------------------------------------------
 // Retorna Legenda
 User function ZB1LGD (_lRetCores)
