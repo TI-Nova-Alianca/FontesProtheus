@@ -87,13 +87,51 @@ static function _AndaLogo ()
 	procregua (100)
 	incproc ()
 
-	//u_help ('Nada definido.')
-	//u_log2 ('info', 'Batch: [retorno:' + _oBatch:Retorno + '] [Mensagens:' + _oBatch:Mensagens + ']')
-//	u_va_xls54 ('01', '2021', '0055')
-//return
+	u_help ('Nada definido.')
+return
+/*
+	// Testes metodos associados.
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT DISTINCT ZI_ASSOC, ZI_LOJASSO"
+	_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
+	_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
+//	_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC between '000161' and '000167'" //'012351' and '012360'"
+	_oSQL:_sQuery +=  " ORDER BY ZI_ASSOC, ZI_LOJASSO"
+	_aAssoc = _oSQL:Qry2Array ()
+	_sResult = ''
+	for _nAssoc = 1 to len (_aAssoc)
+		_oAssoc := ClsAssoc():New (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
+		u_log (_oAssoc:Codigo, _oAssoc:Loja, _oAssoc:Nome, _oAssoc:GrpFam, _oAssoc:Nucleo, _oAssoc:Subnucleo)
+	next
+return
+*/
+/*
+	Private cPerg   := "VAXLS30"
+	U_GravaSX1 (cPerg, '01', '')  // assoc 
+	U_GravaSX1 (cPerg, '02', '')  // loja
+	U_GravaSX1 (cPerg, '03', 'z')  // assoc 
+	U_GravaSX1 (cPerg, '04', 'z')  // loja
+	U_GravaSX1 (cPerg, '05', '2021')  // safra
+	U_GravaSX1 (cPerg, '06', '')  // filial
+	U_GravaSX1 (cPerg, '07', 'zz')  // filial
+	U_GravaSX1 (cPerg, '08', '')  // carga
+	U_GravaSX1 (cPerg, '09', 'z')  // carga
+	U_GravaSX1 (cPerg, '10', 3)  // comum/fina/ambas
+	U_GravaSX1 (cPerg, '11', '')  // nf produtor ini
+	U_GravaSX1 (cPerg, '12', 'z')  // nf produtor fim
+	U_GravaSX1 (cPerg, '13', stod ('20210101'))  // data contranota inicial
+	U_GravaSX1 (cPerg, '14', stod ('20210223'))  // data contranota final
+	U_GravaSX1 (cPerg, '15', 1)  // notas de entrada [S/N]
+	U_GravaSX1 (cPerg, '16', 1)  // notas de prod.propria [S/N]
+	U_GravaSX1 (cPerg, '17', 1)  // notas de compra [S/N]
+	U_GravaSX1 (cPerg, '18', 1)  // notas de complemento valor [S/N]
+	u_va_xls30 (.T.)
+return
+*/
 //	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batsafr ('3', .f.)
-
+/*
 	// Gera conta 'PREMIACAO QUALIDADE E FIDELIDADE' na corrente a partir de dados prontos na tabela ZZ9 (GLPI 9415)
 	dDataBase = stod ('20210223')
 	_sArqLog := 'GLPI9415_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
@@ -193,11 +231,7 @@ static function _AndaLogo ()
 	enddo
 	FreeObj (_oSQL)
 return
-
-
-
-
-
+*/
 /*
 	// Gera pre-notas de complemento de safra 2020 apos atualizacao de tabelas de precos (glpi 9415)
 	aHeader := {}
@@ -661,23 +695,6 @@ return
 				U_Log2 ('erro', 'Nao encontrei SE2 original')
 			endif
 		endif
-	next
-return
-*/
-/*
-	// Testes metodos associados.
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT DISTINCT ZI_ASSOC, ZI_LOJASSO"
-	_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
-	_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
-//	_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC between '000161' and '000167'" //'012351' and '012360'"
-	_oSQL:_sQuery +=  " ORDER BY ZI_ASSOC, ZI_LOJASSO"
-	_aAssoc = _oSQL:Qry2Array ()
-	_sResult = ''
-	for _nAssoc = 1 to len (_aAssoc)
-		_oAssoc := ClsAssoc():New (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
-		u_log (_oAssoc:Codigo, _oAssoc:Loja, _oAssoc:Nome, _oAssoc:GrpFam, _oAssoc:Nucleo, _oAssoc:Subnucleo)
 	next
 return
 */
