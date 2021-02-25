@@ -90,6 +90,7 @@
 // 15/01/2021 - Robert - Melhorado retorno de erros quando associado nao tem codigo/loja base no cadastro.
 // 15/01/2021 - Robert - Novo parametro metodo :RetFixo da classe ClsSQL().
 // 12/02/2021 - Robert - Metodo :FechSafra() tem opcao de retornar ou nao as previsoes de pagamento (GLPI 9318).
+// 25/02/2021 - Robert - Passa a buscar grupo familiar na view VA_VASSOC_GRP_FAM para manter consistencia com outros programas (GLPI 8804).
 //
 
 #include "protheus.ch"
@@ -180,7 +181,7 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 	local _oSQL      := NIL
 	local _aCodigos  := {}
 	local _nCodigo   := 0
-	local _sLinkSrv  := U_LkServer ('NAWEB')
+	// local _sLinkSrv  := U_LkServer ('NAWEB')
 	local _aGrpFam   := {}
 
 	::UltMsg    = ""
@@ -264,44 +265,34 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 				::Subnucleo  := ''
 				::CodAvisad  := ''
 				::LojAvisad  := ''
-				/*
-				zak -> (dbsetorder (2))  // ZAK_FILIAL, ZAK_ASSOC, ZAK_LOJA, ZAK_IDZAN
-				if zak -> (dbseek (xfilial ("ZAK") + ::Codigo + ::Loja, .F.))
-					::GrpFam := zak -> zak_IdZAN
-					zan -> (dbsetorder (1))  // ZAN_FILIAL+ZAN_COD
-					if zan -> (dbseek (xfilial ("ZAN") + ::GrpFam, .F.))
-						::Nucleo     := zan -> zan_nucleo
-						::Subnucleo  := zan -> zan_subnuc
-						::CodAvisad  := zan -> zan_avisad
-						::LojAvisad  := zan -> zan_ljavis
-					else
-						u_log ('Associado', ::Codigo, '/', ::Loja, 'vinculado ao grupo familiar', ::GrpFam, 'mas nao encontrei esse grupo')
-					endif
-				else
-					::GrpFam = ''
-					u_log2 ('aviso', 'Associado ' + ::Codigo + '/' + ::Loja + ' nao vinculado a nenhum grupo familiar.')
-					if type ("_sErros") == 'C'
-						_sErros += 'Associado ' + ::Codigo + '/' + ::Loja + 'nao vinculado a nenhum grupo familiar'
-					endif
-				endif
-				*/
+
 				_oSQL := ClsSQL ():New ()
+				// _oSQL:_sQuery += "SELECT CCAssociadoGrpFamCod       as grpfam "
+				// _oSQL:_sQuery +=      ", CCAssociadoGrpFamNucleo    as nucleo"
+				// _oSQL:_sQuery +=      ", CCAssociadoGrpFamSubNucleo as subnucleo"
+				// _oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".CCAssociadoGrpFam CCAGF,"
+				// _oSQL:_sQuery +=             _sLinkSrv + ".CCAssociadoInscricoes CCAI"
+				// _oSQL:_sQuery += " where CCAGF.CCAssociadoGrpFamCod = CCAI.CCAssocIEGrpFamCod
+				// _oSQL:_sQuery +=   " and CCAI.CCAssociadoCod        = '" + ::Codigo + "'"
+				// _oSQL:_sQuery +=   " and CCAI.CCAssociadoLoja       = '" + ::Loja + "'"
+				// //_oSQL:Log ()
+
 				_oSQL:_sQuery += "SELECT CCAssociadoGrpFamCod       as grpfam "
 				_oSQL:_sQuery +=      ", CCAssociadoGrpFamNucleo    as nucleo"
 				_oSQL:_sQuery +=      ", CCAssociadoGrpFamSubNucleo as subnucleo"
-				_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".CCAssociadoGrpFam CCAGF,"
-				_oSQL:_sQuery +=             _sLinkSrv + ".CCAssociadoInscricoes CCAI"
-				_oSQL:_sQuery += " where CCAGF.CCAssociadoGrpFamCod = CCAI.CCAssocIEGrpFamCod
-				_oSQL:_sQuery +=   " and CCAI.CCAssociadoCod        = '" + ::Codigo + "'"
-				_oSQL:_sQuery +=   " and CCAI.CCAssociadoLoja       = '" + ::Loja + "'"
-				//_oSQL:Log ()
+				_oSQL:_sQuery +=  " FROM VA_VASSOC_GRP_FAM"
+				_oSQL:_sQuery += " WHERE CCAssociadoCod  = '" + ::Codigo + "'"
+				_oSQL:_sQuery +=   " AND CCAssociadoLoja = '" + ::Loja + "'"
+
 				_aGrpFam := aclone (_oSQL:RetFixo (1, "ao consultar grupo familiar do associado '" + ::Codigo + '/' + ::Loja + "' no sistema NaWeb.", .F.))
 				if len (_aGrpFam) == 1
 					::GrpFam    = _aGrpFam [1, 1]
 					::Nucleo    = _aGrpFam [1, 2]
 					::SubNucleo = _aGrpFam [1, 3]
 				else
-					::GrpFam = ''
+					::GrpFam    = ''
+					::Nucleo    = ''
+					::SubNucleo = ''
 					u_log2 ('aviso', 'Associado ' + ::Codigo + '/' + ::Loja + ' nao vinculado a nenhum grupo familiar.')
 					if type ("_sErros") == 'C'
 						_sErros += 'Associado ' + ::Codigo + '/' + ::Loja + 'nao vinculado a nenhum grupo familiar'
