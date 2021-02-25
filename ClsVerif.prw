@@ -51,6 +51,7 @@
 // 18/12/2020 - Robert  - Verificacao 26 passa a usar a procedure VA_SP_VERIFICA_ESTOQUES e passa a ser de interesse tambem de CUS/CTB. (GLPI 9054).
 // 26/01/2021 - Robert  - Verificacao 77 considerava usuarios bloqueados (que mudaram de username, por exemplo).
 // 08/02/2021 - Robert  - View VA_VUSR_PROTHEUS_X_METADADOS migrada para o database TI. Passa a usar linked server. (GLPI 9353)
+// 25/02/2021 - Robert  - Verificacao 78 passa a usar a view VISAO_GERAL_ACESSOS.
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -3026,16 +3027,22 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 			::Setores    = 'INF'
 			::Descricao  = 'Usuarios Protheus nao relacionados a nenhuma pessoa do Metadados'
-			::Query := "SELECT *"
-			::Query +=  " FROM " + U_LkServer ("TI") + ".VA_VUSR_PROTHEUS_X_METADADOS"
-			::Query += " WHERE USR_MSBLQL != '1'"
-			::Query +=   " AND upper (USR_CODIGO) NOT LIKE 'REP_%'"  // Representantes estao sendo migrados para o Mercanet
-			::Query +=   " AND upper (USR_CODIGO) != 'ADMINISTRADOR'"
-			::Query +=   " AND upper (USR_CODIGO) != 'SUPORTE.TOTVS'"
-			::Query +=   " AND upper (USR_CODIGO) != 'SOL.MANUT'"  // Generico para o pessoal de fabrica abrir solicitacoes de manutencao.
-			::Query +=   " AND USR_CODIGO NOT LIKE 'cupom.%'"  // Usuarios 'caixa' pare emissao de cupom fiscal nas lojas
-			::Query +=   " AND PESSOA IS NULL"
-			::Query += " ORDER BY USR_ID"
+			::Query := "SELECT PROTHEUS_ID, PROTHEUS_USER, PROTHEUS_NOME, PROTHEUS_CARGO"
+			::Query +=  " FROM " + U_LkServer ("TI") + ".VISAO_GERAL_ACESSOS"
+			::Query += " WHERE PROTHEUS_USER IS NOT NULL"
+			::Query += " AND PROTHEUS_SITUACAO = 'ATIVO'"
+			::Query += " AND PESSOA_FOLHA IS NULL"
+			::Query +=   " AND upper (PROTHEUS_USER) NOT LIKE 'REP_%'"  // Representantes estao sendo migrados para o Mercanet
+			::Query +=   " AND upper (PROTHEUS_USER) != 'ADMINISTRADOR'"
+			::Query +=   " AND upper (PROTHEUS_USER) != 'SUPORTE.TOTVS'"
+			::Query +=   " AND upper (PROTHEUS_USER) != 'SARA.CETOLIN'"  // pessoa juridica
+			::Query +=   " AND upper (PROTHEUS_USER) != 'CONSAD'"
+			::Query +=   " AND upper (PROTHEUS_USER) != 'MANUTENCAO'"
+			::Query +=   " AND upper (PROTHEUS_USER) != 'SOL.MANUT'"  // Generico para o pessoal de fabrica abrir solicitacoes de manutencao.
+			::Query +=   " AND upper (PROTHEUS_USER) != 'BALANCA.SP'"
+			::Query +=   " AND upper (PROTHEUS_USER) != 'SIGALOJA'"
+			::Query +=   " AND upper (PROTHEUS_USER) NOT LIKE 'CUPOM%'"  // Usuarios 'caixa' para emissao de cupom fiscal nas lojas
+			::Query += " ORDER BY PROTHEUS_USER"
 
 		case ::Numero == 79
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
