@@ -1,7 +1,7 @@
-// Programa:  ML_PCPR
-// Autor:     Marcelo Minuzzo (DWT)
-// Data:      10/08/2014
-// Descricao: Impressao pedido compra em PDF
+// Programa...: ML_PCPR
+// Autor......: Marcelo Minuzzo (DWT)
+// Data.......: 10/08/2014
+// Descricao..: Impressao pedido compra em PDF
 //
 // #TipoDePrograma    #relatorio
 // #Descricao         #Impressao pedido compra em PDF
@@ -29,9 +29,9 @@
 // 09/03/2020 - Claudia - Comentado include faltante conforme solicitação da release 12.1.25
 // 28/09/2020 - Cláudia - Liberada a impressão dos dados adicionais para todos os tipos de produtos/serviços. GLPI: 8539
 // 20/01/2021 - Sandra  - Alterado texto do campo Recebimento de Mercadorias do pedido de compra conforme chamado 9160.
+// 25/02/2021 - Claudia - Observações para pedidos de serviço. GLPI: 7846
 //
 // ------------------------------------------------------------------------------------------------------------------------
-//#include 'fivewin.ch'
 #include 'topconn.ch'
 #INCLUDE "PROTHEUS.CH"
 #INCLUDE "TBICONN.CH"
@@ -84,6 +84,7 @@ User Function ML_PCPR()
 Return (caminho)
 //
 // --------------------------------------------------------------------------
+// Imprimir
 Static Function xPrintRel()
 	local i              := 0
 	Private _cTransp     := ""
@@ -94,9 +95,9 @@ Static Function xPrintRel()
 	lAdjustToLegacy      := .T.
 	lDisableSetup        := .T.
 
-	cDestino := "\pedidos\"
+	cDestino  := "\pedidos\"
 	_cPathPDF := "C:\temp\" // local aonde ele vai gravar o arquivo. Tentar gravar direto no \protheus_data\
-	_cFile := "Ped_com_"+ALLTRIM(SC7->C7_NUM) //nome do arquivo padrão, deve ser alterado para não sobrescrever
+	_cFile    := "Ped_com_"+ALLTRIM(SC7->C7_NUM) //nome do arquivo padrão, deve ser alterado para não sobrescrever
 	
 	oPrint := FWMSPrinter():New(_cFile+".rel", IMP_PDF, lAdjustToLegacy, , lDisableSetup)
 
@@ -118,7 +119,6 @@ Static Function xPrintRel()
 	Private oFont15      := TFont():New('Tahoma',15,15,,.T.,,,,.T.,.F.)
 	Private oFont16      := TFont():New('Tahoma',16,16,,.T.,,,,.T.,.F.)
 	Private oFont18      := TFont():New('Tahoma',18,18,,.T.,,,,.T.,.F.)
-	//Private oFont16      := TFont():New('Arial',16,16,,.T.,,,,.T.,.F.)
 	Private oFont20      := TFont():New('Arial',20,20,,.F.,,,,.T.,.F.)
 	Private oFont22      := TFont():New('Arial',22,22,,.T.,,,,.T.,.F.)
 	Private oFont23      := TFont():New('Tahoma',14,14,,.T.,,,,.T.,.F.,.T.)
@@ -205,14 +205,12 @@ Static Function xPrintRel()
 
 		oPrint:Say(nLinha,0045,TRA->C7_ITEM,oFont10n)
 		oPrint:Say(nLinha,0140,SubStr(TRA->C7_PRODUTO,1,15),oFont10n)
-		//aadd(_dCorPrf,U_QuebraTxt(fbuscacpo("SA5",1,XFILIAL("SA5")+TRA->C7_FORNECE+TRA->C7_LOJA+TRA->C7_PRODUTO,"A5_CODPRF"),18),oFont10n)
 		aadd(_dCorPrf,U_QuebraTxt(fbuscacpo("SA5",1,XFILIAL("SA5")+TRA->C7_FORNECE+TRA->C7_LOJA+TRA->C7_PRODUTO,"A5_CODPRF"),18))
 
 		if len(_dCorPrf[1]) > 0
 			oPrint:Say(nLinha,0270,_dCorPrf[1][1],oFont10n)
 		endif
-		
-		//aadd(_aDescIt,U_QuebraTxt(alltrim(TRA->C7_DESCRI),45),oFont10n)
+
 		aadd(_aDescIt,U_QuebraTxt(alltrim(TRA->C7_DESCRI),45))
 		
 		if len(_aDescIt[1]) > 0
@@ -243,28 +241,6 @@ Static Function xPrintRel()
 		if len(_aDescIt[1]) > 1
 				nLinha += 35
 			oPrint:Say(nLinha,0580,_aDescIt[1][2],oFont10n)
-/*
-			if len(_aDscObs[1]) > 0
-				nLinha += 30
-				oPrint:Say(nLinha,0580,"Obs: " + _aDscObs[1][1],oFont09)
-			endif
-
-			if len(_aDscObs[1]) > 1
-				nLinha += 30
-				oPrint:Say(nLinha,0580,_aDscObs[1][2],oFont09)
-			endif
-
-		else
-			if len(_aDscObs[1]) > 0
-				nLinha += 30
-				oPrint:Say(nLinha,0580,"Obs: " + _aDscObs[1][1],oFont09)
-			endif
-
-			if len(_aDscObs[1]) > 1
-				nLinha += 30
-				oPrint:Say(nLinha,0580,_aDscObs[1][2],oFont09)
-			endif
-			*/
 		endif
 
 		nLinha += 40
@@ -370,6 +346,16 @@ Static Function xPrintRel()
 	_oSQL:_sQuery +=   " AND CHAVE = 'SC7" + cEmpAnt + cFilAnt + _cNumPed + "'"
 	_sDadAdic = alltrim (_oSQL:RetQry ())
 
+
+	//Imprime as observacoes dos parametros. 
+	// Busca dados adicionais do pedido.
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT RTRIM (CAST (CAST (TEXTO AS VARBINARY (8000)) AS VARCHAR (8000))) AS TEXTO"
+	_oSQL:_sQuery += " FROM VA_TEXTOS"
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " AND CHAVE = 'OBS_SERVICO'
+	_sObsServico = alltrim (_oSQL:RetQry ())
+
 	If (SC7->C7_FILENT <> SC7->C7_FILIAL) .and. !Empty(SC7->C7_FILENT)
 		SM0->(dbSeek(cEmpAnt+SC7->C7_FILENT))
 	EndIf
@@ -404,27 +390,25 @@ Static Function xPrintRel()
 			xPulaPag()
 		next
 	endif
-	// If SC7->C7_VAPROSE == 'S'
-	// 	aadd(_obsfull,U_QuebraTxt(alltrim(_obsTerceiros),120))
-	// 	if len(_obsfull) > 0
-	// 		for i=1 to len(_obsfull[1])
-	// 			xVerPag()
-	// 			oPrint:Say(nLinha,0380,_obsfull[1][i],oFont10)
-	// 			nLinha += 40
-	// 			xPulaPag()
-	// 		next
-	// 	endif
-	// else 
-	// 	aadd(_obsfull,U_QuebraTxt(alltrim(_sDadAdic),120))
-	// 	if len(_obsfull) > 0
-	// 		for i=1 to len(_obsfull[1])
-	// 			xVerPag()
-	// 			oPrint:Say(nLinha,0380,_obsfull[1][i],oFont10)
-	// 			nLinha += 40
-	// 			xPulaPag()
-	// 		next
-	// 	endif
-	// endif
+	nLinha += 50
+	if SC7->C7_VAPROSE == 'S'
+		aadd(_obsfull,U_QuebraTxt(alltrim(_sObsServico),120))
+		if len(_obsfull) > 0
+			for i=1 to len(_obsfull[1])
+				xVerPag()
+				oPrint:Say(nLinha,0380,_obsfull[1][i],oFont10)
+				nLinha += 40
+				xPulaPag()
+			next
+			for i=1 to len(_obsfull[2])
+				xVerPag()
+				oPrint:Say(nLinha,0380,_obsfull[2][i],oFont10)
+				nLinha += 40
+				xPulaPag()
+			next
+		endif
+	endif
+
 	nLinha += 30
 	xPulaPag()
 
@@ -470,19 +454,6 @@ Static Function xPrintRel()
 	oPrint:Say(nLinha,0030,OemToAnsi('Dest Mercadoria: '),oFont14)
 	oPrint:Say(nLinha,0380, cDestMerc ,oFont14)
 
-	/*
-	//status do Pedido
-	nLinha += 50
-	oPrint:Say(nLinha,0030,OemToAnsi('Status do Pedido: '),oFont14)
-	IF _LibPed == "L"
-		oPrint:Say(nLinha,0380, "Liberado" ,oFont15)
-		_lLiberado := .T.
-	ELSE
-		oPrint:Say(nLinha,0380, "Bloqueado" ,oFont15)
-		_lLiberado := .F.
-	ENDIF
-	*/
-
 	xPulaPag()
 
 	DbSelectArea("SC1")
@@ -505,20 +476,7 @@ Static Function xPrintRel()
 	oPrint:Line(nLinha,030,nLinha,2150) //linha superior
 	oPrint:Line(nLinha,030,nLinha+380,030) //barra inicial
 	oPrint:Line(nLinha,2150,nLinha+380,2150) //barra final
-	oPrint:Line(nLinha+380,030,nLinha+380,2150)// linha inferior
-
-/*	nLinha += 40
-	oPrint:Say(nLinha,0060,'NOTAS: Só aceitaremos a mercadoria se na sua Nota Fiscal constar o numero do nosso Pedido de Compras.',oFont14)
-	nLinha += 40
-	oPrint:Say(nLinha,0060,'       NOTAS EMITIDAS A PARTIR DE 15/07/2019, DEVEM CONSIDERAR PAGAMENTO DE SEGUNDA A QUINTA-FEIRA,',oFont14)
-	nLinha += 40
-	oPrint:Say(nLinha,0060,'       POIS NÃO SERÃO EFETUADOS PAGAMENTOS NAS SEXTAS-FEIRAS. PAGAMENTOS EMITIDOS PARA AS',oFont14)
-	nLinha += 40
-	oPrint:Say(nLinha,0060,'       SEXTAS-FEIRAS DEVEM SER POSTERGADOS PARA PRÓXIMO DIA ÚTIL. .',oFont14)
-	nLinha += 40
-	oPrint:Say(nLinha,0060,'       Enviar o arquivo XML da nota para compras@novaalianca.coop.br.',oFont14)
-   nLinha += 40
-*/  
+	oPrint:Line(nLinha+380,030,nLinha+380,2150)// linha inferior 
 
  	nLinha += 40
 	oPrint:Say(nLinha,0060,'NOTAS: - Favor mencionar o número deste pedido de compras na nota fiscal, caso este não estiver',oFont14n)
@@ -565,7 +523,6 @@ Static Function xPrintRel()
 
 	oPrint:Preview() //abre o PDF na tela
 	dbSelectArea("TRA")
-	//dbCloseArea("TRA")
 	dbCloseArea()
   	CpyT2S(_cPathPDF +_cFile+".PDF",cDestino)
 	caminho := cDestino +_cFile+".pdf"
@@ -625,7 +582,6 @@ Static Function xCabec()
 	oPrint:Say(0730,0360, TRA->C7_CONTATO ,oFont14)
 	oPrint:Say(0730,1080,OemToAnsi('Bairro:'),oFont14)
 	oPrint:Say(0730,1300,AllTrim(SA2->A2_BAIRRO),oFont14)
-
 	//Numero/Emissao
 	if sim == .F.
 		oPrint:Say(0650,1930,'Nº '+ TRA->C7_NUM,oFont18)
@@ -637,7 +593,6 @@ Static Function xCabec()
 		oPrint:Say(0640,1910,TRA->C7_NUM,oFont18)
 		oPrint:Say(0750,1860,DtoC(dEmissao),oFont14)
 	endif
-
 	oPrint:Say(0780,0030,OemToAnsi('C.G.C.'),oFont14)
 	oPrint:Say(0780,0360,TransForm(SA2->A2_CGC,'@R 99.999.999/9999-99'),oFont14)
 	oPrint:Say(0780,1080,OemToAnsi('Insc.Est.:'),oFont14)
@@ -663,16 +618,13 @@ Static Function xCabec()
 	nLinha += 50
    	nCountReg := 1
 Return
-//-------------------------------------------------------------
-// Rodapé
-//Static Function xRodape()
-
-//return
+//
 //-------------------------------------------------------------
 // Verifica página
 Static Function xVerPag()
-//Inicia a montagem da impressao.
+	//Inicia a montagem da impressao.
 Return
+//
 //-------------------------------------------------------------
 // Verifica se deve ou nao saltar pagina
 Static Function xPulaPag()
@@ -686,11 +638,3 @@ Static Function xPulaPag()
 		xCabec()
 	EndIf
 Return
-// //-------------------------------------------------------------
-// // Perguntas
-// Static Function _ValidPerg ()
-// 	local _aRegsPerg := {}
-// 	//                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                        Help
-//   	aadd (_aRegsPerg, {01, "Nro do Pedido                ?", "C", 06, 0,  "",   "SC7", {},                           ""})
-// 	U_ValPerg (cPerg, _aRegsPerg)
-// Return
