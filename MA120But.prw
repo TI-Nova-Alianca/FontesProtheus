@@ -1,35 +1,38 @@
-// Programa:   MA120But
-// Autor:      Robert Koch
-// Data:       12/07/2012
-// Descricao:  P.E. para inclusao de botoes nas telas de pedido de compras e autorizacoes de entrega.
-//             Criado inicialmente para chamar tela de dados adicionais.
-// 
+// Programa....: MA120But
+// Autor.......: Robert Koch
+// Data........: 12/07/2012
+// Descricao...: P.E. para inclusao de botoes nas telas de pedido de compras e autorizacoes de entrega.
+//               Criado inicialmente para chamar tela de dados adicionais.
+//
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #P.E. para inclusao de botoes nas telas de pedido de compras e autorizacoes de entrega
+// #PalavasChave      #pedido_de_compra #pedido #compras #botoes
+// #TabelasPrincipais #SC7 
+// #Modulos 		  #COM
+//
 // Historico de alteracoes:
 // 06/10/2015 - Robert - Passa extensao na chamada da visualizacao de especificacoes / imagem do produto.
+// 25/02/2021 - Claudia - Observações para pedidos de serviço. GLPI: 7846
 //
-
+// ---------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
+#Include "PROTHEUS.CH"    
 
-// --------------------------------------------------------------------------
 User Function MA120But()
 	local _aRet := {}
 
 	aadd (_aRet, {"LANDSCAPE", {|| _Menu ()}, "Especificos"})
 
 Return _aRet
-
-
-
+//
 // --------------------------------------------------------------------------
+// Menu
 static function _Menu ()
 	local _aF3      := {}
 	local _nF3      := 0
 	local _aCols    := {}
-	//local _aColsLib := {}
 	local _aAmbAnt  := U_SalvaAmb ()
 	local _aAreaAnt := U_ML_SRArea ()
-	//local _aNotas   := {}
-	//local _sQuery   := {}
 
 	// Colunas para menu de opcoes
 	aadd (_aCols, {1, "Opcao",     100, ""})
@@ -40,6 +43,7 @@ static function _Menu ()
 	aadd (_aF3, {"Visualizar especificacoes produto", "Espec_produto"})
 	aadd (_aF3, {"Visualizar imagem do produto",      "Imagem_produto"})
 	aadd (_aF3, {"Cancelar",                          "Cancelar"})
+	aadd (_aF3, {"Obs.Serviços",                      "ObsServico"})
 
 	_nF3 = U_F3Array (_aF3, procname () + " - Opcoes", _aCols, oMainWnd:nClientWidth / 3, oMainWnd:nClientHeight / 1.5, "", "", .F.)
 	do case
@@ -54,6 +58,9 @@ static function _Menu ()
 
 	case _nF3 != 0 .and. _aF3 [_nF3, 2] == "Imagem_produto"
 		U_EspPrd (GDFieldGet ("C7_PRODUTO"), 'JPG')
+	
+	case _nF3 != 0 .and. _aF3 [_nF3, 2] == "ObsServico"
+		_ObsServico ()
 
 	endcase
 
@@ -61,10 +68,9 @@ static function _Menu ()
 	U_SalvaAmb (_aAmbAnt)
 
 return
-	
-
-
+//
 // --------------------------------------------------------------------------
+// Dados adicionais
 static function _DadosAdic ()
 	local _oDlg     := NIL
 	local _oGetMemo := NIL
@@ -118,6 +124,57 @@ static function _DadosAdic ()
 
 	if _nOpcao == 1
 
+		// Verifica existencia da chave. O registro poderah ser reativado, caso esteja deletado.
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT COUNT (*)"
+		_oSQL:_sQuery +=  " FROM VA_TEXTOS"
+		_oSQL:_sQuery += " WHERE CHAVE = '" + _sChave + "'"
+		if _oSQL:RetQry () > 0
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += "UPDATE VA_TEXTOS"
+			_oSQL:_sQuery +=   " SET D_E_L_E_T_ = ' ',"
+			_oSQL:_sQuery +=       " TEXTO = '" + _sTexto + "'"
+			_oSQL:_sQuery += " WHERE CHAVE = '" + _sChave + "'"
+			_oSQL:Exec ()
+		elseif ! empty (_sTexto)  // Soh inclui se tiver texto a gravar.
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += "INSERT INTO VA_TEXTOS (CHAVE, D_E_L_E_T_, TEXTO)"
+			_oSQL:_sQuery += " VALUES ('" + _sChave + "',"
+			_oSQL:_sQuery +=          "' ',"
+			_oSQL:_sQuery +=          "'" + _sTexto + "')"
+			_oSQL:Exec ()
+		endif
+	endif
+return
+//
+// --------------------------------------------------------------------------
+// Observação de serviço
+static function _ObsServico ()
+	Local oButton1
+	Local oButton2
+	Local oMultiGe1
+	Local _sTexto   := " "
+	Local _oSQL     := ClsSQL():New ()
+	Local _sChave   := 'OBS_SERVICO'
+	Static oDlg
+
+	// Leitura dos dados anteriores (para caso de alteracao).
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += "SELECT RTRIM (CAST (CAST (TEXTO AS VARBINARY (8000)) AS VARCHAR (8000))) AS TEXTO"
+	_oSQL:_sQuery +=  " FROM VA_TEXTOS"
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=   " AND CHAVE = '" + _sChave + "'"
+	_sTexto = alltrim (_oSQL:RetQry ())  // Preciso do ALLTRIM por que o TopConnect retorna com 8000 caracteres cfe. configurado no SQL.
+
+	DEFINE MSDIALOG oDlg TITLE "Obsercações de Serviço" FROM 000, 000  TO 600, 800 COLORS 0, 16777215 PIXEL
+
+	@ 007, 006 GET oMultiGe1 VAR _sTexto OF oDlg MULTILINE SIZE 387, 275 COLORS 0, 16777215 HSCROLL PIXEL
+	@ 285, 342 BUTTON oButton1 PROMPT "Salvar" SIZE 050, 012 OF oDlg ACTION  (_ret := .T., oDlg:End ()) PIXEL
+	@ 285, 287 BUTTON oButton2 PROMPT "Sair" SIZE 050, 012 OF oDlg ACTION  (_ret := .F., oDlg:End ()) PIXEL
+
+	ACTIVATE MSDIALOG oDlg CENTERED
+
+	if _ret
 		// Verifica existencia da chave. O registro poderah ser reativado, caso esteja deletado.
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += "SELECT COUNT (*)"
