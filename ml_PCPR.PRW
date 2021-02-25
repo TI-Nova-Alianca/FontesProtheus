@@ -391,7 +391,17 @@ Static Function xPrintRel()
 		next
 	endif
 	nLinha += 50
-	if SC7->C7_VAPROSE == 'S'
+
+	_cQuery := " SELECT "
+	_cQuery += " 	C7_VAPROSE "
+	_cQuery += " FROM  " + RetSqlName("SC7") + " SC7 "
+	_cQuery += " WHERE SC7.D_E_L_E_T_ = ''"
+	_cQuery += " AND SC7.C7_FILIAL  = '"+ xFilial('SC7') +"'"
+	_cQuery += " AND SC7.C7_NUM     = '" + cNumPed  +"'"
+	_cQuery += " AND SC7.C7_VAPROSE = 'S'"
+	_aServ := U_Qry2Array(_cQuery)
+
+	if len(_aServ) > 0
 		aadd(_obsfull,U_QuebraTxt(alltrim(_sObsServico),120))
 		if len(_obsfull) > 0
 			for i=1 to len(_obsfull[1])
