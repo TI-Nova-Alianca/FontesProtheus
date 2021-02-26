@@ -436,6 +436,17 @@ user function VA_IniPd (_sCampo, _lBrowse)
 			_xRet = fbuscacpo ("SA5",1,XFILIAL("SA5")+SC1->C1_FORNECE+SC1->C1_LOJA+SC1->C1_PRODUTO,"A5_CODPRF")
 
 		case _sCampo = "ZAX_VABARA"
+		    _sVABARA = POSICIONE("SA1",1,XFILIAL("ZAX")+ZAX->ZAX_CLIENT+ZAX->ZAX_LOJA,"A1_VABARAP")                                     
+		    Do Case 
+				Case Alltrim(_sVABARA) == '0'
+					_xRet = 'Não' 
+				Case Alltrim(_sVABARA) == '1'
+					_xRet = 'Base Nota'
+				Case Alltrim(_sVABARA) == '2'
+					_xRet = 'Base Mercadoria' 
+				Case Alltrim(_sVABARA) == '3'
+					_xRet = 'Total NF - ST' 		 	
+			endcase   
 
 
 		otherwise
