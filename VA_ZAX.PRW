@@ -7,9 +7,10 @@
 //
 // Historico de alteracoes:
 // 
-// 26/06/2017 - Catia - Criada rotina 076 para validar a permissao de quem altera a rotina
-// 27/06/2017 - Catia - Erro do indice unico resolvido
-// 04/11/2019 - Andre - Adicionado dedo duro para inclusão, alteração e exclusão.
+// 26/06/2017 - Catia  - Criada rotina 076 para validar a permissao de quem altera a rotina
+// 27/06/2017 - Catia  - Erro do indice unico resolvido
+// 04/11/2019 - Andre  - Adicionado dedo duro para inclusão, alteração e exclusão.
+// 26/02/2021 - Sandra - Valida se Cliente tem Rapel - GLPI 8551. 
 
 User Function VA_ZAX()
 
@@ -41,8 +42,13 @@ user function ZAXVAL()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _oEvento := NIL
 
-// TESTER AQUI SE O CLIENTE NÃO TEM RAPEL
-
+// Vailida se Cliente tem Rapel
+    if _lRet
+		if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->ZAX_CLIENT + m->ZAX_LOJA, "A1_VABARAP") = "0"
+			u_help ("Não tem Rapel no Cadastro de Cliente!")
+			_lRet = .F.
+		endif
+	endif
 	// verifica cliente bloqueado
 	if _lRet
 		if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->ZAX_CLIENT + m->ZAX_LOJA, "A1_MSBLQL") != "2"
