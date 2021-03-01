@@ -14,6 +14,8 @@
 // 07/12/2020 - Claudia - Inclusão de botao para visualização de observações 
 //                        de clientes. GLPI: 8971
 // 03/02/2021 - Cláudia - Ajuste para visualização das OBS nas demais filiais. GLPI: 9263
+// 12/02/2021 - Cláudia - Alterada a estrutura para criar uma tabela temporária 
+//                        para manipulação dos dados. GLPI: 9263
 //
 // ---------------------------------------------------------------------------------------
 
@@ -21,10 +23,16 @@
 #Include "PROTHEUS.CH"   
 
 User Function VA_OBSFIN(_sTipo,_sCliente, _sLoja)
+	Local aStruct     := {}
+	Local aHead       := {}
+	Local _aArqTrb    := {}
+	Local aDados      := {}
+	local i           := 0
 	Private cCadastro := "Observações financeiras "	
 	Private cDelFunc  := ".T."
 	Private cString   := "SZN"
 	Private aRotina   := {}
+	
 
 	If !u_zzuvl ('036', __cUserId, .T.)
 		Return
@@ -35,27 +43,57 @@ User Function VA_OBSFIN(_sTipo,_sCliente, _sLoja)
 		_sLoja    := M->A1_LOJA
 	EndIf
 
-	aRotina   := {	{"Observações"	,"U_VAOBSFIN('"+_sCliente +"','"+_sLoja+"')"	,0,2} ,;
-					{"Visualizar"	,"U_VAOBSVIS('"+_sCliente +"','"+_sLoja+"')"	,0,2} ,;
-					{"Excluir"   	,"U_VAOBSEXC('"+_sCliente +"','"+_sLoja+"')"	,0,2}  }
-
-
 	_VerificaOBS(_sCliente, _sLoja)
 
-	dbSelectArea("SZN")
-	dbSetOrder(1)
+	AAdd( aHead, { "Data"      ,{|| TOBS->DT}       ,"D", 08 , 0, "" } )
+	AAdd( aHead, { "Hora"      ,{|| TOBS->HORA}     ,"C", 08 , 0, "" } )
+	AAdd( aHead, { "Usuário"   ,{|| TOBS->USU}      ,"C", 15 , 0, "" } )
+	AAdd( aHead, { "Obs"       ,{|| TOBS->OBS}      ,"C", 20000 , 0, "" } )
 	
-	cExprFilTop := " D_E_L_E_T_ = '' "
-    cExprFilTop += " AND ZN_CODEVEN = 'SA1004'"
-    cExprFilTop += " AND ZN_CLIENTE = '" + _sCliente + "'"
-    cExprFilTop += " AND ZN_LOJACLI = '" + _sLoja    + "'"
+	AAdd( aStruct, { "DT"      , "D", 08, 0 } )
+	AAdd( aStruct, { "HORA"    , "C", 08, 0 } )
+	AAdd( aStruct, { "USU"     , "C", 15, 0 } )
+	AAdd( aStruct, { "OBS"     , "M", 30, 0 } )
+	
+	U_ArqTrb ("Cria", "TOBS", aStruct, {"DT + HORA + USU"}, @_aArqTrb)		
 
-    aCabTela  := {} 
-    aadd (aCabTela,{ "Data"	        ,"ZN_DATA"	    })
-    aadd (aCabTela,{ "Observação"	,"ZN_TEXTO"	    })
-    aadd (aCabTela,{ "Usuário"		,"ZN_USUARIO"	})
+	_sSQL := " SELECT"
+	_sSQL += " 	   ZN_DATA"
+	_sSQL += "    ,ZN_HORA"
+	_sSQL += "    ,ZN_USUARIO"
+	_sSQL += "    ,ISNULL(CAST(CAST(ZN_TXT AS VARBINARY(8000)) AS VARCHAR(8000)), '')"
+	_sSQL += " FROM SZN010"
+	_sSQL += " WHERE D_E_L_E_T_ = '' "
+	_sSQL += " AND ZN_CLIENTE = '" + _sCliente + "'"
+	_sSQL += " AND ZN_LOJACLI   = '" + _sLoja    + "'"
+	_sSQL += " AND ZN_CODEVEN   = 'SA1004'"
+	aDados := U_Qry2Array(_sSQL)
 	
-    mBrowse(6,1,22,75,"SZN",aCabTela,,,,,,,,,,,,,cExprFilTop)
+	If len (aDados) > 0
+		For i :=1 to len(aDados)
+			DbSelectArea("TOBS")
+			RecLock("TOBS",.T.)
+				TOBS-> DT      := aDados[i, 1]
+				TOBS-> HORA    := aDados[i, 2]
+				TOBS-> USU     := aDados[i, 3]
+				TOBS-> OBS     := aDados[i, 4]
+				
+			MsUnLock()
+		Next
+	Endif
+
+	aRotina   := {	{"Observações"	,"U_VAOBSFIN('"+_sCliente +"','"+_sLoja+"')"	,0,6} ,;
+					{"Visualizar"	,"U_VAOBSVIS('"+_sCliente +"','"+_sLoja+"')"	,0,6} ,;
+					{"Excluir"   	,"U_VAOBSEXC('"+_sCliente +"','"+_sLoja+"')"	,0,6}  }
+
+    dbSelectArea("TOBS")
+	dbSetOrder(1)
+
+	mBrowse(6,1,22,75,"TOBS",aHead,,,,2,,,,,,.T.)
+
+	TOBS->(dbCloseArea())    
+	
+	u_arqtrb ("FechaTodos",,,, @_aArqTrb)    
 Return
 //
 // --------------------------------------------------------------------------
@@ -103,6 +141,7 @@ User Function VAOBSFIN(_sCliente, _sLoja)
 		_oEvento:LojaCli   = _sLoja
 		_oEvento:Grava ()
 			
+		AtualizaTela(_sCliente,_sLoja)
 	endif
 
 	U_SalvaAmb (_aAmbAnt)
@@ -113,8 +152,10 @@ Return
 // Exclui observações
 User Function VAOBSEXC(_sCliente, _sLoja)
     Local _oSQL := ClsSQL ():New ()
-    _sData := DTOS(SZN->ZN_DATA)
-    _sHora := SZN->ZN_HORA
+    //_sData := DTOS(SZN->ZN_DATA)
+    //_sHora := SZN->ZN_HORA
+	_sData := DTOS(TOBS->DT)
+    _sHora := TOBS->HORA
 
     _oSQL:_sQuery := ""
 	_oSQL:_sQuery += " UPDATE " + RetSQLName ("SZN") 
@@ -131,6 +172,7 @@ User Function VAOBSEXC(_sCliente, _sLoja)
         u_help("Registro não deletado!")
     else
         u_help("Registro deletado!")
+		AtualizaTela(_sCliente,_sLoja)
     EndIf
 Return
 // --------------------------------------------------------------------------
@@ -148,9 +190,10 @@ User Function VAOBSVIS(_sCliente, _sLoja)
 	Local oMultiGe1
 	Static oDlg
 
-    _sData := DTOS(SZN->ZN_DATA)
-    _sHora := SZN->ZN_HORA
-
+    //_sData := DTOS(SZN->ZN_DATA)
+    //_sHora := SZN->ZN_HORA
+	_sData := DTOS(TOBS->DT)
+    _sHora := TOBS->HORA
 
     _oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT ZN_DATA, ZN_USUARIO, ISNULL(CAST(CAST(ZN_TXT AS VARBINARY(8000)) AS VARCHAR(8000)),'') "
@@ -189,7 +232,8 @@ Static Function _VerificaOBS(_sCliente, _sLoja)
     _oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT * "
     _oSQL:_sQuery += " FROM " + RetSQLName ("SZN") 
-    _oSQL:_sQuery += " WHERE ZN_CLIENTE = '" + _sCliente + "'"
+    _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " AND ZN_CLIENTE = '" + _sCliente + "'"
     _oSQL:_sQuery += " AND ZN_LOJACLI = '" + _sLoja    + "'"
     _oSQL:_sQuery += " AND ZN_CODEVEN = 'SA1004'"
     _aSZN := aclone (_oSQL:Qry2Array ())
@@ -205,4 +249,54 @@ Static Function _VerificaOBS(_sCliente, _sLoja)
     EndIf
 
 Return
+// --------------------------------------------------------------------------
+// Realiza a atualização da tela após excluir/alterar
+Static Function AtualizaTela(_sCliente,_sLoja)
+	Local aStruct     := {}
+	Local _aArqTrb    := {}
+	Local aDados      := {}
+	local i           := 0
 
+	TOBS->(dbCloseArea())    
+	
+	u_arqtrb ("FechaTodos",,,, @_aArqTrb) 
+	AAdd( aStruct, { "DT"      , "D", 08, 0 } )
+	AAdd( aStruct, { "HORA"    , "C", 08, 0 } )
+	AAdd( aStruct, { "USU"     , "C", 15, 0 } )
+	AAdd( aStruct, { "OBS"     , "M", 30, 0 } )
+	
+	U_ArqTrb ("Cria", "TOBS", aStruct, {"DT + HORA + USU"}, @_aArqTrb)		
+
+	_sSQL := " SELECT"
+	_sSQL += " 	   ZN_DATA"
+	_sSQL += "    ,ZN_HORA"
+	_sSQL += "    ,ZN_USUARIO"
+	_sSQL += "    ,ISNULL(CAST(CAST(ZN_TXT AS VARBINARY(8000)) AS VARCHAR(8000)), '')"
+	_sSQL += " FROM SZN010"
+	_sSQL += " WHERE D_E_L_E_T_ = '' "
+	_sSQL += " AND ZN_CLIENTE = '" + _sCliente + "'"
+	_sSQL += " AND ZN_LOJACLI   = '" + _sLoja    + "'"
+	_sSQL += " AND ZN_CODEVEN   = 'SA1004'"
+	aDados := U_Qry2Array(_sSQL)
+	
+	If len (aDados) > 0
+		For i :=1 to len(aDados)
+			DbSelectArea("TOBS")
+			RecLock("TOBS",.T.)
+				TOBS-> DT      := aDados[i, 1]
+				TOBS-> HORA    := aDados[i, 2]
+				TOBS-> USU     := aDados[i, 3]
+				TOBS-> OBS     := aDados[i, 4]
+				
+			MsUnLock()
+		Next
+	Endif
+
+	aRotina   := {	{"Observações"	,"U_VAOBSFIN('"+_sCliente +"','"+_sLoja+"')"	,0,6} ,;
+					{"Visualizar"	,"U_VAOBSVIS('"+_sCliente +"','"+_sLoja+"')"	,0,6} ,;
+					{"Excluir"   	,"U_VAOBSEXC('"+_sCliente +"','"+_sLoja+"')"	,0,6}  }
+
+    dbSelectArea("TOBS")
+	dbSetOrder(1)
+
+Return
