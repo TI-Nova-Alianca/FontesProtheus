@@ -2964,11 +2964,17 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 			::Setores    = 'INF'
 			::Descricao  = 'Usuarios: Usuario nao deveria ter acesso a configurar data base. Deve ser um acesso dos grupos.'
-			::Query := "SELECT ID_USR, NOME"
-			::Query +=  " FROM VA_USR_USUARIOS"
-			::Query += " WHERE CONFIGURA_DATA_BASE = 'S'"
-			::Query +=   " AND BLOQUEADO != 'S'"
-			::Query += " ORDER BY ID_USR"
+			// ::Query := "SELECT ID_USR, NOME"
+			// ::Query +=  " FROM VA_USR_USUARIOS"
+			// ::Query += " WHERE CONFIGURA_DATA_BASE = 'S'"
+			// ::Query +=   " AND BLOQUEADO != 'S'"
+			// ::Query += " ORDER BY ID_USR"
+			::Query := "SELECT USR_ID, USR_CODIGO"
+			::Query +=  " FROM SYS_USR"
+			::Query += " WHERE USR_DTBASE  = '1'"
+			::Query +=   " AND USR_ID     != '000000'"  // Administrador
+			::Query +=   " AND USR_MSBLQL != '1'"
+			::Query += " ORDER BY USR_CODIGO"
 
 		case ::Numero == 74
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
@@ -3036,6 +3042,8 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=   " AND upper (PROTHEUS_USER) != 'ADMINISTRADOR'"
 			::Query +=   " AND upper (PROTHEUS_USER) != 'SUPORTE.TOTVS'"
 			::Query +=   " AND upper (PROTHEUS_USER) != 'SARA.CETOLIN'"  // pessoa juridica
+			::Query +=   " AND upper (PROTHEUS_USER) != 'KAREN.NUNES'"  // Menor aprendiz F03
+			::Query +=   " AND upper (PROTHEUS_USER) != 'TOBIAS.BEBBER'"  // Estagiario agronomia
 			::Query +=   " AND upper (PROTHEUS_USER) != 'CONSAD'"
 			::Query +=   " AND upper (PROTHEUS_USER) != 'MANUTENCAO'"
 			::Query +=   " AND upper (PROTHEUS_USER) != 'SOL.MANUT'"  // Generico para o pessoal de fabrica abrir solicitacoes de manutencao.
