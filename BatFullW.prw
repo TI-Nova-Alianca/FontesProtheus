@@ -89,7 +89,7 @@ static function _Entradas ()
 	_oSQL:_sQuery +=  " where status = '3'"
 	_oSQL:_sQuery +=    " and status_protheus != '3'"  // 3 = executado
 	_oSQL:_sQuery +=    " and status_protheus != 'C'"  // C = cancelado: por que jah foi acertado manualmente, ou jah foi inventariado, etc.
-	_oSQL:_sQuery +=    " and status_protheus != '5'"  // 5 = estornado
+	_oSQL:_sQuery +=    " and status_protheus != '5'"  // 5 = qtd.movimentada diferente qt.executada
 	_oSQL:_sQuery +=  " order by entrada_id"
 	_oSQL:Log ()
 	_sAliasQ := _oSQL:Qry2Trb ()
