@@ -17,6 +17,9 @@
 // 12/03/2020 - Robert  - Ajustes / alinhamentos layout de impressao.
 //                      - Tratamento adto sobras pago em 2019 (GLPI 7614)
 // 13/03/2020 - Claudia - Criado parametros de associado e nucleo. GLPI 7660
+// 03/03/2021 - Robert  - Separados trechos de leitura de rendimentos de producao, por safra (GLPI 9535)
+//
+
 // -----------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
 
@@ -97,10 +100,10 @@ User function IRAssoc (_lAutomat)
 
 	// Se era execucao via rotina automatica, converte o relatorio para TXT.
 	if _lAuto
-		_sErroConv = U_ML_R2T (__reldir + wnrel + ".##r", __reldir + wnrel + ".txt")
-		if ! empty (_sErroConv)
-			u_help (_sErroConv)
-		endif
+//		_sErroConv = U_ML_R2T (__reldir + wnrel + ".##r", __reldir + wnrel + ".txt")
+//		if ! empty (_sErroConv)
+//			u_help (_sErroConv)
+//		endif
 	else
 		If aReturn [5] == 1
 			ourspool(wnrel)
@@ -244,17 +247,33 @@ static function _Imprime ()
 		li += 2
 		@ li, 0 psay __PrtThinLine ()
 		li += 2
-		@ li, 25 psay 'SALDO QUOTA CAPITAL EM 31/12/' + mv_par03 + ': ' + transform (_oAssoc:SldQuotCap (stod (mv_par03 + '1231')) [.QtCapSaldoNaData], "@E 999,999,999.99")
+	//	@ li, 25 psay 'SALDO QUOTA CAPITAL EM 31/12/' + mv_par03 + ': ' + transform (_oAssoc:SldQuotCap (stod (mv_par03 + '1231')) [.QtCapSaldoNaData], "@E 999,999,999.99")
+		@ li, 5 psay 'SALDO QUOTA CAPITAL EM 31/12/' + mv_par03 + ': ' + transform (_oAssoc:SldQuotCap (stod (mv_par03 + '1231')) [.QtCapSaldoNaData], "@E 999,999,999.99")
 		li += 2
 		@ li, 0 psay __PrtThinLine ()
 		li += 2
+
+		// Monta lista de codigos e lojas do associado (pode ter mais de uma loja) para uso na query, pois preciso
+		// listar neste relatorio o total de rendimentos dele, em qualquer das suas lojas.
+		//u_log ('aCodigos:', _oAssoc:aCodigos)
+		if len (_oAssoc:aCodigos) > 0
+			_sCodLoja = ''
+			for _nCodLoja = 1 to len (_oAssoc:aCodigos)
+				_sCodLoja += _oAssoc:aCodigos [_nCodLoja] + _oAssoc:aLojas [_nCodLoja] + iif (_nCodLoja < len (_oAssoc:aCodigos), '/', '')
+			next
+		else
+			_sCodLoja = _oAssoc:Codigo + _oAssoc:Loja
+		endif
+		//u_log (_sCodLoja)
 
 		// A partir de 2018 o parcelamento foi em 11 vezes, fazendo com que a ultima parcela seja paga no ano seguinte.
 		// Para fins de IR devo listar o valor efetivamente pago e nao os direitos gerados pela nota de compra.
 		_nRendProd = 0
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery := ""
+
 		if mv_par03 < '2018'
+
 			_oSQL:_sQuery += " SELECT SUM (V.VALOR_TOTAL) "
 			_oSQL:_sQuery +=   " FROM VA_VNOTAS_SAFRA V"
 			_oSQL:_sQuery +=  " WHERE V.SAFRA         = '" + MV_PAR03 + "'"
@@ -262,28 +281,17 @@ static function _Imprime ()
 			_oSQL:_sQuery +=    " AND V.LOJABASEASSOC = '" + _oAssoc:LojaBase + "'"
 			_oSQL:_sQuery +=    " AND V.TIPO_NF IN ('C', 'V')"
 			_nRendProd = _oSQL:RetQry (1, .F.)
-		else
 
-			// Monta lista de codigos e lojas do associado (pode ter mais de uma loja) para uso na query, pois preciso
-			// listar neste relatorio o total de rendimentos dele, em qualquer das suas lojas.
-			//u_log ('aCodigos:', _oAssoc:aCodigos)
-			if len (_oAssoc:aCodigos) > 0
-				_sCodLoja = ''
-				for _nCodLoja = 1 to len (_oAssoc:aCodigos)
-					_sCodLoja += _oAssoc:aCodigos [_nCodLoja] + _oAssoc:aLojas [_nCodLoja] + iif (_nCodLoja < len (_oAssoc:aCodigos), '/', '')
-				next
-			else
-				_sCodLoja = _oAssoc:Codigo + _oAssoc:Loja
-			endif
-			//u_log (_sCodLoja)
+		elseif mv_par03 $ '2018/2019'
 
-			_oSQL:_sQuery += " SELECT E2_FILIAL, E2_NUM, E2_PARCELA, E2_EMISSAO, E2_VENCREA, E2_VALOR "
+			_oSQL:_sQuery += " SELECT E2_FILIAL, E2_NUM, E2_PARCELA, E2_EMISSAO, E2_VENCREA, E2_VALOR, '' as E2_HIST "
 			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2 "
 			_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '01'"  // Pagamento de safra sempre fica concentrado na matriz.
 			_oSQL:_sQuery +=    " AND SE2.E2_TIPO    = 'FAT'"  // Pagamentos ficam aglutinados em faturas
 			_oSQL:_sQuery +=    " AND SE2.E2_FATURA  = 'NOTFAT'"  // Evita que seja lida alguma 'fatura que virou fatura'
 			_oSQL:_sQuery +=    " AND SE2.E2_VENCREA between '" + mv_par03 + "0101' AND '" + mv_par03 + "1231'"
+			_oSQL:_sQuery +=    " AND SE2.E2_FORNECE + E2_LOJA IN " + FormatIn (_sCodLoja, '/')
 			_oSQL:_sQuery +=    " AND EXISTS (SELECT *"
 			_oSQL:_sQuery +=                  " FROM " + RetSQLName ("SZI") + " SZI "
 			_oSQL:_sQuery +=                 " WHERE ZI_FILIAL  = SE2.E2_FILIAL""
@@ -294,16 +302,17 @@ static function _Imprime ()
 			_oSQL:_sQuery +=                   " AND ZI_PARCELA = SE2.E2_PARCELA"
 			_oSQL:_sQuery +=                   " AND ZI_DATA    between '" + Tira1 (mv_par03) + "0101' AND '" + mv_par03 + "1231'" // Para pegar possiveis parcelas do ano anterior que foram pagas este ano.
 			_oSQL:_sQuery +=                   " AND ZI_TM      = '13')"
-			_oSQL:_sQuery +=    " AND SE2.E2_FORNECE + E2_LOJA IN " + FormatIn (_sCodLoja, '/')
 
-			if mv_par03 == '2019'  // Para este ano deve somar o adto.de distribuicao de sobras gerado em 28/02/2019
+			// Para este ano deve somar o adto.de distribuicao de sobras gerado em 28/02/2019
+			if mv_par03 == '2019'
 				_oSQL:_sQuery += " UNION ALL"
-				_oSQL:_sQuery += " SELECT E2_FILIAL, E2_NUM, E2_PARCELA, E2_EMISSAO, E2_VENCREA, E2_VALOR "
+				_oSQL:_sQuery += " SELECT E2_FILIAL, E2_NUM, E2_PARCELA, E2_EMISSAO, E2_VENCREA, E2_VALOR, E2_HIST "
 				_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2 "
 				_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
 				_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '01'"  // Pagamento de safra sempre fica concentrado na matriz.
 				_oSQL:_sQuery +=    " AND SE2.E2_TIPO    = 'DP'"  // Pagamentos ficam aglutinados em faturas
 				_oSQL:_sQuery +=    " AND SE2.E2_VENCREA between '" + mv_par03 + "0101' AND '" + mv_par03 + "1231'"
+				_oSQL:_sQuery +=    " AND SE2.E2_FORNECE + E2_LOJA IN " + FormatIn (_sCodLoja, '/')
 				_oSQL:_sQuery +=    " AND EXISTS (SELECT *"
 				_oSQL:_sQuery +=                  " FROM " + RetSQLName ("SZI") + " SZI "
 				_oSQL:_sQuery +=                 " WHERE ZI_FILIAL  = SE2.E2_FILIAL""
@@ -314,33 +323,109 @@ static function _Imprime ()
 				_oSQL:_sQuery +=                   " AND ZI_PARCELA = SE2.E2_PARCELA"
 				_oSQL:_sQuery +=                   " AND ZI_DATA    between '" + Tira1 (mv_par03) + "0101' AND '" + mv_par03 + "1231'" // Para pegar possiveis parcelas do ano anterior que foram pagas este ano.
 				_oSQL:_sQuery +=                   " AND ZI_TM      = '30')"
-				_oSQL:_sQuery +=    " AND SE2.E2_FORNECE + E2_LOJA IN " + FormatIn (_sCodLoja, '/')
+				_oSQL:_sQuery +=  " ORDER BY E2_VENCREA, E2_FILIAL, E2_NUM, E2_PARCELA"
 			endif
-			//_oSQL:Log ()
+
+		elseif mv_par03 $ '2020/2021'
+
+			_oSQL:_sQuery += " WITH C AS ("
+			_oSQL:_sQuery += " SELECT E2_FILIAL, E2_NUM, E2_PARCELA, E2_EMISSAO, E2_VENCREA, "
+
+			// Existem casos em que nem todo o valor do titulo foi usado na geracao de uma fatura.
+			// Por exemplo quando parte foi compensada e apenas o saldo restante virou fatura.
+			// Ex.: título 000021485/30 -D do fornecedor 000643. Foi compensado R$ 3.066,09 e o saldo (R$ 1028,71) foi gerada a fatura 202000051.
+			// Devo descontar do valor do titulo somente a parte que foi consumida na geracao da fatura.
+			_oSQL:_sQuery += " E2_VALOR - ISNULL ((SELECT SUM (FK2_VALOR)"
+			_oSQL:_sQuery +=                       " FROM " + RetSQLName ("FK7") + " FK7, "
+			_oSQL:_sQuery +=                                  RetSQLName ("FK2") + " FK2 "
+			_oSQL:_sQuery +=                            " WHERE FK7.D_E_L_E_T_ = '' AND FK7.FK7_FILIAL = SE2.E2_FILIAL AND FK7.FK7_ALIAS = 'SE2' AND FK7.FK7_CHAVE = SE2.E2_FILIAL + '|' + SE2.E2_PREFIXO + '|' + SE2.E2_NUM + '|' + SE2.E2_PARCELA + '|' + SE2.E2_TIPO + '|' + SE2.E2_FORNECE + '|' + SE2.E2_LOJA"
+			_oSQL:_sQuery +=                              " AND FK2.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=                              " AND FK2.FK2_FILIAL = FK7.FK7_FILIAL"
+			_oSQL:_sQuery +=                              " AND FK2.FK2_IDDOC  = FK7.FK7_IDDOC"
+			_oSQL:_sQuery +=                              " AND FK2.FK2_MOTBX  = 'FAT'"
+			_oSQL:_sQuery +=                              " AND FK2.FK2_TPDOC != 'ES'"  // ES=Movimento de estorno
+			_oSQL:_sQuery +=                              " AND dbo.VA_FESTORNADO_FK2 (FK2.FK2_FILIAL, FK2.FK2_IDFK2) = 0"
+			_oSQL:_sQuery +=                        "), 0) AS E2_VALOR, "
+			_oSQL:_sQuery +=  " E2_HIST "
+			_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE2") + " SE2 "
+			_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND E2_FILIAL  = '01'"  // Pagamentos sao feitos sempre pela matriz.
+			_oSQL:_sQuery +=   " AND E2_PREFIXO in ('30 ', '31 ')"  // Serie usada para notas e faturas de safra
+			_oSQL:_sQuery +=   " AND E2_TIPO IN ('NF', 'DP', 'FAT')"  // NF quando compra original da matriz; DP quando saldo transferido de outra filial; FAT quando agrupados em uma fatura.
+			_oSQL:_sQuery +=   " AND E2_EMISSAO between '" + Tira1 (mv_par03) + "0101' AND '" + mv_par03 + "1231'" // Para pegar possiveis parcelas do ano anterior que foram pagas este ano.
+			_oSQL:_sQuery +=   " AND SE2.E2_VENCREA between '" + mv_par03 + "0101' AND '" + mv_par03 + "1231'"
+			_oSQL:_sQuery +=   " AND SE2.E2_FORNECE + E2_LOJA IN " + FormatIn (_sCodLoja, '/')
+			_oSQL:_sQuery +=   " AND EXISTS (SELECT *"
+			_oSQL:_sQuery +=                 " FROM " + RetSQLName ("SZI") + " SZI "
+			_oSQL:_sQuery +=                " WHERE ZI_FILIAL  = SE2.E2_FILIAL""
+			_oSQL:_sQuery +=                  " AND ZI_ASSOC   = SE2.E2_FORNECE"
+			_oSQL:_sQuery +=                  " AND ZI_LOJASSO = SE2.E2_LOJA"
+			_oSQL:_sQuery +=                  " AND ZI_DOC     = SE2.E2_NUM"
+			_oSQL:_sQuery +=                  " AND ZI_SERIE   = SE2.E2_PREFIXO"
+			_oSQL:_sQuery +=                  " AND ZI_PARCELA = SE2.E2_PARCELA"
+			_oSQL:_sQuery +=                  " AND ZI_TM      = '13')"
+			_oSQL:_sQuery +=   ")"
+			_oSQL:_sQuery += " SELECT *"
+			_oSQL:_sQuery +=   " FROM C"
+			_oSQL:_sQuery +=  " WHERE E2_VALOR != 0"  // Os que estao zerados eh por que foram totalmente consumidos em uma fatura.
+
+			// Somar o premio de qualidade referente a safra 2020, mas que foi pago em fev/2021.
+			if mv_par03 == '2021'
+				_oSQL:_sQuery += " UNION ALL"
+				_oSQL:_sQuery += " SELECT E2_FILIAL, E2_NUM, E2_PARCELA, E2_EMISSAO, E2_VENCREA, E2_VALOR, E2_HIST "
+				_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2 "
+				_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '01'"
+				_oSQL:_sQuery +=    " AND SE2.E2_TIPO    = 'DP'"
+				_oSQL:_sQuery +=    " AND SE2.E2_PREFIXO = 'OUT'"  // 
+				_oSQL:_sQuery +=    " AND SE2.E2_VENCREA between '" + mv_par03 + "0101' AND '" + mv_par03 + "1231'"
+				_oSQL:_sQuery +=    " AND SE2.E2_FORNECE + E2_LOJA IN " + FormatIn (_sCodLoja, '/')
+				_oSQL:_sQuery +=    " AND EXISTS (SELECT *"
+				_oSQL:_sQuery +=                  " FROM " + RetSQLName ("SZI") + " SZI "
+				_oSQL:_sQuery +=                 " WHERE ZI_FILIAL  = SE2.E2_FILIAL""
+				_oSQL:_sQuery +=                   " AND ZI_ASSOC   = SE2.E2_FORNECE"
+				_oSQL:_sQuery +=                   " AND ZI_LOJASSO = SE2.E2_LOJA"
+				_oSQL:_sQuery +=                   " AND ZI_DOC     = SE2.E2_NUM"
+				_oSQL:_sQuery +=                   " AND ZI_SERIE   = SE2.E2_PREFIXO"
+				_oSQL:_sQuery +=                   " AND ZI_PARCELA = SE2.E2_PARCELA"
+				_oSQL:_sQuery +=                   " AND ZI_DATA    = SE2.E2_EMISSAO"
+				_oSQL:_sQuery +=                   " AND ZI_TM      = '16')"
+			endif
+
+			_oSQL:_sQuery +=  " ORDER BY E2_VENCREA, E2_FILIAL, E2_NUM, E2_PARCELA"
+
+		else
+			u_help ("Sem definicao de tratamento para leitura dos rendimentos de producao para a safra '" + mv_par03 + "'. Solicite manutencao do programa.",, .t.)
+			_oSQL:_sQuery = " SELECT '' as E2_FILIAL, '' as E2_NUM, '' as E2_PARCELA, '' as E2_EMISSAO, '' as E2_VENCREA, 0 as E2_VALOR, '' as E2_HIST "
+		endif
+		_oSQL:Log ()
+
+		// A partir de 2019 passou a listar os titulos do financeiro
+		if mv_par03 >= '2018'
 			_sAliasQ = _oSQL:Qry2Trb (.T.)
 			(_sAliasQ) -> (dbgotop ())
-//			if mv_par05 == 1  // Detalhar rendimentos de producao
-				@ li, 16 psay 'Filial   Titulo       Emissao     Vencto             Valor'
-				li ++
-//			endif
+		//	@ li, 16 psay 'Filial   Titulo       Emissao     Vencto             Valor'
+			@ li, 0 psay 'Filial Titulo       Emissao     Vencto           Valor  Historico'
+			li ++
 			do while ! (_sAliasQ) -> (eof ())
-//				if mv_par05 == 1  // Detalhar rendimentos de producao
-					if li > _nMaxLin - 1
-						cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
-					endif
-					@ li, 16 psay (_sAliasQ) -> e2_filial + '       ' + (_sAliasQ) -> e2_num + '-' + (_sAliasQ) -> e2_parcela + '  ' + dtoc ((_sAliasQ) -> e2_emissao) + '  ' + dtoc ((_sAliasQ) -> e2_vencrea) + transform ((_sAliasQ) -> e2_valor, "@E 999,999,999.99")
-					li ++
-//				endif
+				if li > _nMaxLin - 1
+					cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
+				endif
+		//		@ li, 16 psay (_sAliasQ) -> e2_filial + '       ' + (_sAliasQ) -> e2_num + '-' + (_sAliasQ) -> e2_parcela + '  ' + dtoc ((_sAliasQ) -> e2_emissao) + '  ' + dtoc ((_sAliasQ) -> e2_vencrea) + transform ((_sAliasQ) -> e2_valor, "@E 999,999,999.99")
+				@ li, 0 psay (_sAliasQ) -> e2_filial + '     ' + (_sAliasQ) -> e2_num + '-' + (_sAliasQ) -> e2_parcela + '  ' + dtoc ((_sAliasQ) -> e2_emissao) + '  ' + dtoc ((_sAliasQ) -> e2_vencrea) + transform ((_sAliasQ) -> e2_valor, "@E 9,999,999.99") + '  ' + left ((_sAliasQ) -> e2_hist, 24)
+				li ++
 				_nRendProd += (_sAliasQ) -> e2_valor
 				(_sAliasQ) -> (dbskip ())
 			enddo
 		endif
 
 		if _nRendProd != 0
-			@ li, 64 psay '----------'
+		//	@ li, 64 psay '----------'
+			@ li, 44 psay '----------'
 			li ++
 		endif
-		@ li, 12 psay 'TOTAL RENDIMENTOS PRODUCAO RECEBIDOS EM ' + mv_par03 + ':   ' + transform (_nRendProd, "@E 999,999,999.99")
+	//	@ li, 12 psay 'TOTAL RENDIMENTOS PRODUCAO RECEBIDOS EM ' + mv_par03 + ':   ' + transform (_nRendProd, "@E 999,999,999.99")
+		@ li, 0 psay 'TOTAL RENDIM. PRODUCAO RECEBIDOS EM ' + mv_par03 + ':   ' + transform (_nRendProd, "@E 999,999.99")
 		li += 2
 	next
 
@@ -363,6 +448,9 @@ static function _Array2TXT (_aArray, _sSeparad)
 		_sRet += alltrim (_aArray [_i]) + iif (_i < len (_aArray), _sSeparad, '')
 	next
 return _sRet
+
+
+
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 static function _ValidPerg ()
@@ -378,7 +466,6 @@ static function _ValidPerg ()
 	aadd (_aRegsPerg, {06, "Associado final               ", "C", 6,  0,  "",   "SA2_AS", {},   ""})
 	aadd (_aRegsPerg, {07, "Loja associado final          ", "C", 2,  0,  "",   "      ", {},   ""})
 	aadd (_aRegsPerg, {08, "Nucleo                        ", "C", 2,  0,  "",   "   "   , {},   ""})
-
 
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 Return

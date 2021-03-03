@@ -86,9 +86,46 @@ static function _AndaLogo ()
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
+//	u_help ('Nada definido.')
+//return
 
-	u_help ('Nada definido.')
+	Private cPerg   := "IRASSOC"
+	U_GravaSX1 (cPerg, '01', '')  // CPF ini
+	U_GravaSX1 (cPerg, '02', 'z')  // CPF fim
+	U_GravaSX1 (cPerg, '03', '2020')  // ano base
+	U_GravaSX1 (cPerg, '04', '') //002932')  // assoc ini
+	U_GravaSX1 (cPerg, '05', '')  // loja ini
+	U_GravaSX1 (cPerg, '06', '000300')  // assoc fim
+	U_GravaSX1 (cPerg, '07', 'z')  // loja fim
+	U_GravaSX1 (cPerg, '08', 'SG')  // nucleo
+	u_IRAssoc (.T.)
+
 return
+*/
+/*
+	// Testes verificacoes genericas.
+	// _oVerif := ClsVerif():New (25)
+	// _oVerif:SetParam ('01', '2017')
+	// _oVerif:SetParam ('02', '')
+	// _oVerif:SetParam ('03', 'zz')
+	// _oVerif:SetParam ('04', '30 ')
+	// _oVerif:SetParam ('05', '028')
+	// _oVerif:SetParam ('06', '077')
+	// _oVerif:SetParam ('07', '000017')
+	// _oVerif := ClsVerif():New (24)
+	// _oVerif:SetParam ('01', '09189201001  ')
+	// _oVerif:SetParam ('02', '09189201001  ')
+	// _oVerif:SetParam ('03', '')
+	// _oVerif:SetParam ('04', 'z')
+	_oVerif := ClsVerif():New (73)
+	if _oVerif:Executa ()
+		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
+		u_log2 ('debug', _oVerif:Result)
+	else
+		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
+	endif
+return
+*/
 /*
 	// Testes metodos associados.
 	_oSQL := ClsSQL ():New ()
@@ -515,30 +552,6 @@ return
 		FreeObj (_oTrEstq)
 		U_UsoMem ()
 	next
-return
-*/
-/*
-	// Testes verificacoes genericas.
-	// _oVerif := ClsVerif():New (25)
-	// _oVerif:SetParam ('01', '2017')
-	// _oVerif:SetParam ('02', '')
-	// _oVerif:SetParam ('03', 'zz')
-	// _oVerif:SetParam ('04', '30 ')
-	// _oVerif:SetParam ('05', '028')
-	// _oVerif:SetParam ('06', '077')
-	// _oVerif:SetParam ('07', '000017')
-	// _oVerif := ClsVerif():New (24)
-	// _oVerif:SetParam ('01', '09189201001  ')
-	// _oVerif:SetParam ('02', '09189201001  ')
-	// _oVerif:SetParam ('03', '')
-	// _oVerif:SetParam ('04', 'z')
-	_oVerif := ClsVerif():New (78)
-	if _oVerif:Executa ()
-		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
-		u_log2 ('debug', _oVerif:Result)
-	else
-		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
-	endif
 return
 */
 /*
