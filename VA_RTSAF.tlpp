@@ -176,6 +176,7 @@ Static Function _MoveTe ()
 	U_HELP("Apaguei meus movimentos anteriores e nao vou gerar mais nada. Agora tudo passa a ser feito pelo programa original.",, .t.)
 	return
 
+
 	// Cria lista de OPs 'de safra' (que consumiram uva).
 	if _lContinua
 		incproc ('Verificacao OPs de safra')
