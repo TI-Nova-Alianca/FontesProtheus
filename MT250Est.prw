@@ -18,7 +18,7 @@
 // 27/08/2019 - Cláudia - Incluida rotina _LibEst(liberar estorno) para verificar se usuário tem permissão para executar o processo.
 // 15/10/2020 - Robert  - Validacao de acesso do usuario passa a ser feita antes de verificar o FullWMS (mais demorado).
 //                      - Incluidas tags para catalogo de fontes.
-//
+// 03/03/2021 - Robert  - Desabilitado gravação do Evento
 
 // ----------------------------------------------------------------
 user function MT250Est ()
@@ -87,7 +87,7 @@ static function _VerFull ()
 					_oEvtEstF:Etiqueta = sd3 -> d3_vaetiq
 					_oEvtEstF:OP       = sd3 -> d3_op
 					
-					_oEvtEstF:Grava()
+					//_oEvtEstF:Grava()
 				endif
 			else
 				u_help (_sMsg)
