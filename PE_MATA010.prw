@@ -23,7 +23,7 @@
 //                      - Eliminados logs desnecessarios.
 // 20/01/2021 - Cláudia - GLPI:8921 - Incluida verificação de caracteres especiais.
 // 12/02/2021 - Robert  - Incluidas chamadas da funcao U_PerfMon para testes de monitoramento de performance (GLPI 9409)
-//
+// 02/03/2021 - Sandra  - Comentariado Altera campos do modelo de dados adicionais (tabela SA5) foi retirada do parametro mv_cadprod GLPI 8987
 
 //---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
@@ -110,6 +110,7 @@ Return _xRet
 // Limpa campos que nao devem ser copiados.
 static function _NaoCopia ()
 	Local oObj := paramixb [1]
+		
 
 	// Altera campos do modelo principal (tabela SB1)
 	oModelB1 := oObj:GetModel("SB1MASTER")
@@ -160,12 +161,13 @@ static function _NaoCopia ()
 	// Atualiza campos na tela do usuario
 	oView := FwViewActive()
 	oView:Refresh ()
-	
+
 	// Altera campos do modelo de dados adicionais (tabela SA5)
-	oModelA5 := oObj:GetModel("MdGridSA5"):DelAllLine()
+	//oModelA5 := oObj:GetModel("MdGridSA5"):DelAllLine()
+
 	// Atualiza campos na tela do usuario
-	oView := FwViewActive()
-	oView:Refresh ()
+	//oView := FwViewActive()
+	//oView:Refresh ()
 	
 return
 //
