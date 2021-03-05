@@ -247,8 +247,7 @@ static function _Imprime ()
 		li += 2
 		@ li, 0 psay __PrtThinLine ()
 		li += 2
-	//	@ li, 25 psay 'SALDO QUOTA CAPITAL EM 31/12/' + mv_par03 + ': ' + transform (_oAssoc:SldQuotCap (stod (mv_par03 + '1231')) [.QtCapSaldoNaData], "@E 999,999,999.99")
-		@ li, 5 psay 'SALDO QUOTA CAPITAL EM 31/12/' + mv_par03 + ': ' + transform (_oAssoc:SldQuotCap (stod (mv_par03 + '1231')) [.QtCapSaldoNaData], "@E 999,999,999.99")
+		@ li, 25 psay 'SALDO QUOTA CAPITAL EM 31/12/' + mv_par03 + ': ' + transform (_oAssoc:SldQuotCap (stod (mv_par03 + '1231')) [.QtCapSaldoNaData], "@E 999,999,999.99")
 		li += 2
 		@ li, 0 psay __PrtThinLine ()
 		li += 2
@@ -284,7 +283,7 @@ static function _Imprime ()
 
 		elseif mv_par03 $ '2018/2019'
 
-			_oSQL:_sQuery += " SELECT E2_FILIAL, E2_NUM, E2_PARCELA, E2_EMISSAO, E2_VENCREA, E2_VALOR, '' as E2_HIST "
+			_oSQL:_sQuery += " SELECT E2_FILIAL, E2_NUM, E2_PARCELA, E2_EMISSAO, E2_VENCREA, E2_VALOR"
 			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2 "
 			_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '01'"  // Pagamento de safra sempre fica concentrado na matriz.
@@ -306,7 +305,7 @@ static function _Imprime ()
 			// Para este ano deve somar o adto.de distribuicao de sobras gerado em 28/02/2019
 			if mv_par03 == '2019'
 				_oSQL:_sQuery += " UNION ALL"
-				_oSQL:_sQuery += " SELECT E2_FILIAL, E2_NUM, E2_PARCELA, E2_EMISSAO, E2_VENCREA, E2_VALOR, E2_HIST "
+				_oSQL:_sQuery += " SELECT E2_FILIAL, E2_NUM, E2_PARCELA, E2_EMISSAO, E2_VENCREA, E2_VALOR"
 				_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2 "
 				_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
 				_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '01'"  // Pagamento de safra sempre fica concentrado na matriz.
@@ -345,8 +344,7 @@ static function _Imprime ()
 			_oSQL:_sQuery +=                              " AND FK2.FK2_MOTBX  = 'FAT'"
 			_oSQL:_sQuery +=                              " AND FK2.FK2_TPDOC != 'ES'"  // ES=Movimento de estorno
 			_oSQL:_sQuery +=                              " AND dbo.VA_FESTORNADO_FK2 (FK2.FK2_FILIAL, FK2.FK2_IDFK2) = 0"
-			_oSQL:_sQuery +=                        "), 0) AS E2_VALOR, "
-			_oSQL:_sQuery +=  " E2_HIST "
+			_oSQL:_sQuery +=                        "), 0) AS E2_VALOR "
 			_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE2") + " SE2 "
 			_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=   " AND E2_FILIAL  = '01'"  // Pagamentos sao feitos sempre pela matriz.
@@ -372,7 +370,7 @@ static function _Imprime ()
 			// Somar o premio de qualidade referente a safra 2020, mas que foi pago em fev/2021.
 			if mv_par03 == '2021'
 				_oSQL:_sQuery += " UNION ALL"
-				_oSQL:_sQuery += " SELECT E2_FILIAL, E2_NUM, E2_PARCELA, E2_EMISSAO, E2_VENCREA, E2_VALOR, E2_HIST "
+				_oSQL:_sQuery += " SELECT E2_FILIAL, E2_NUM, E2_PARCELA, E2_EMISSAO, E2_VENCREA, E2_VALOR"
 				_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2 "
 				_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
 				_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '01'"
@@ -396,7 +394,7 @@ static function _Imprime ()
 
 		else
 			u_help ("Sem definicao de tratamento para leitura dos rendimentos de producao para a safra '" + mv_par03 + "'. Solicite manutencao do programa.",, .t.)
-			_oSQL:_sQuery = " SELECT '' as E2_FILIAL, '' as E2_NUM, '' as E2_PARCELA, '' as E2_EMISSAO, '' as E2_VENCREA, 0 as E2_VALOR, '' as E2_HIST "
+			_oSQL:_sQuery = " SELECT '' as E2_FILIAL, '' as E2_NUM, '' as E2_PARCELA, '' as E2_EMISSAO, '' as E2_VENCREA, 0 as E2_VALOR"
 		endif
 		_oSQL:Log ()
 
@@ -404,15 +402,13 @@ static function _Imprime ()
 		if mv_par03 >= '2018'
 			_sAliasQ = _oSQL:Qry2Trb (.T.)
 			(_sAliasQ) -> (dbgotop ())
-		//	@ li, 16 psay 'Filial   Titulo       Emissao     Vencto             Valor'
-			@ li, 0 psay 'Filial Titulo       Emissao     Vencto           Valor  Historico'
+			@ li, 16 psay 'Filial   Titulo       Emissao     Vencto             Valor'
 			li ++
 			do while ! (_sAliasQ) -> (eof ())
 				if li > _nMaxLin - 1
 					cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
 				endif
-		//		@ li, 16 psay (_sAliasQ) -> e2_filial + '       ' + (_sAliasQ) -> e2_num + '-' + (_sAliasQ) -> e2_parcela + '  ' + dtoc ((_sAliasQ) -> e2_emissao) + '  ' + dtoc ((_sAliasQ) -> e2_vencrea) + transform ((_sAliasQ) -> e2_valor, "@E 999,999,999.99")
-				@ li, 0 psay (_sAliasQ) -> e2_filial + '     ' + (_sAliasQ) -> e2_num + '-' + (_sAliasQ) -> e2_parcela + '  ' + dtoc ((_sAliasQ) -> e2_emissao) + '  ' + dtoc ((_sAliasQ) -> e2_vencrea) + transform ((_sAliasQ) -> e2_valor, "@E 9,999,999.99") + '  ' + left ((_sAliasQ) -> e2_hist, 24)
+				@ li, 16 psay (_sAliasQ) -> e2_filial + '       ' + (_sAliasQ) -> e2_num + '-' + (_sAliasQ) -> e2_parcela + '  ' + dtoc ((_sAliasQ) -> e2_emissao) + '  ' + dtoc ((_sAliasQ) -> e2_vencrea) + transform ((_sAliasQ) -> e2_valor, "@E 999,999,999.99")
 				li ++
 				_nRendProd += (_sAliasQ) -> e2_valor
 				(_sAliasQ) -> (dbskip ())
@@ -420,12 +416,10 @@ static function _Imprime ()
 		endif
 
 		if _nRendProd != 0
-		//	@ li, 64 psay '----------'
-			@ li, 44 psay '----------'
+			@ li, 64 psay '----------'
 			li ++
 		endif
-	//	@ li, 12 psay 'TOTAL RENDIMENTOS PRODUCAO RECEBIDOS EM ' + mv_par03 + ':   ' + transform (_nRendProd, "@E 999,999,999.99")
-		@ li, 0 psay 'TOTAL RENDIM. PRODUCAO RECEBIDOS EM ' + mv_par03 + ':   ' + transform (_nRendProd, "@E 999,999.99")
+		@ li, 12 psay 'TOTAL RENDIMENTOS PRODUCAO RECEBIDOS EM ' + mv_par03 + ':   ' + transform (_nRendProd, "@E 999,999,999.99")
 		li += 2
 	next
 
