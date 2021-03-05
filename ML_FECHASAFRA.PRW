@@ -100,7 +100,7 @@ User Function ML_FECHASAFRA (_lAutomat)
 		Return
 	Endif
 
-	u_logSX1 (cPerg)
+	// u_logSX1 (cPerg)
 
 	if mv_par01 < '2020'  // Metodo original
 		processa ({|| RptDetail ()})
@@ -856,7 +856,8 @@ Static Function RptDetail()
 		if len (_aSld) > 0
 			_wsaldo := 0
 			li ++
-			@li,  00 PSAY "Lctos Conta Corrente:"
+			// @li,  00 PSAY "Lctos Conta Corrente:"
+			@li,  00 PSAY "Lctos Aberto Conta Corrente:"
 			for i=1 to len (_aSld)
 				_wdata  = stod (_aSld [i,1])
 				_wtpmov = _aSld [i,2]
@@ -1262,7 +1263,8 @@ static function _Modelo2 (_lSohCompr)
 			If li > _nMaxLin - 4
 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 			Endif
-			@li, 0 PSAY 'Lctos conta corrente:'
+			// @li, 0 PSAY 'Lctos conta corrente:'
+			@li, 0 PSAY 'Lctos em aberto na conta corrente:'
 			li ++
 			for _nLctoCC = 1 to len (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem)
 				If li > _nMaxLin
