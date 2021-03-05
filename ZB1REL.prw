@@ -11,8 +11,9 @@
 // #Modulos 		  #FIN 
 //
 // Historico de alteracoes:
+// 05/03/2021 - Claudia - Ajuste dos totalizadores para nao incluir os débitos. GLPI:9369
 //
-// --------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
 #include "totvs.ch"
@@ -159,13 +160,13 @@ Static Function PrintReport(oReport)
 		oSection1:Cell("COLUNA10")	:SetBlock   ({|| _aZB1[i,7] }) // cod.autoriz
 		oSection1:Cell("COLUNA11")	:SetBlock   ({|| _aZB1[i,8] }) // NSU
 		oSection1:Cell("COLUNA12")	:SetBlock   ({|| _aZB1[i,10]}) // status
-		oSection1:Cell("COLUNA13")	:SetBlock   ({|| _sCreDeb  }) // status
+		oSection1:Cell("COLUNA13")	:SetBlock   ({|| _sCreDeb  })  // sinal
 		
-		If alltrim(_aZB1[i,10]) == 'I'
+		If alltrim(_aZB1[i,10]) == 'I' .and. _aZB1[i,11] == '+'
 			_nTotVenda += _aZB1[i,3]
 			_nTotTax   += _vlrTaxa
 		Else
-			If alltrim(_aZB1[i,10]) == 'D'
+			If alltrim(_aZB1[i,10]) == 'D' .and. _aZB1[i,11] == '+'
 				_nTotDVenda += _aZB1[i,3]
 				_nTotDTax   += _vlrTaxa
 			EndIf

@@ -14,6 +14,7 @@
 // 14/10/2020 - Claudia - Alterada a impressão das colunas vlr.liquido e taxa.GLPI: 8647
 // 02/12/2020 - Claudia - Ajuste de devoluções - GLPI: 8937
 // 06/01/2020 - Claudia - Incluido totalizador e coluna de status de titulo. GLPI: 9079
+// 05/03/2021 - Claudia - Ajuste dos totalizadores para nao incluir os débitos. GLPI:9369
 //
 // --------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -626,11 +627,11 @@ Static Function PrintReport(oReport)
 		oSection1:Cell("COLUNA13")	:SetBlock   ({|| _sCreDeb   }) // credito/debito
 		oSection1:Cell("COLUNA14")	:SetBlock   ({|| _sStaTitulo}) // status titulo
 		
-		If alltrim(_aRel[i,12]) == 'I'
+		If alltrim(_aRel[i,12]) == 'I' .and. _aRel[i,13] == '+'
 			_nTotVenda += _aRel[i,3]
 			_nTotTax   += _aRel[i,5] 
 		Else
-			If alltrim(_aRel[i,12]) == 'D'
+			If alltrim(_aRel[i,12]) == 'D' .and. _aRel[i,13] == '+'
 				_nTotDVenda += _aRel[i,3]
 				_nTotDTax   += _aRel[i,5] 
 			EndIf
