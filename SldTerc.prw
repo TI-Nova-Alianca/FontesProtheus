@@ -14,7 +14,8 @@
 // 16/09/2016 - Robert  - Acrescentada a coluna B1_TIPO.
 // 05/03/2020 - Claudia - Ajuste de fonte conforme solicitação de versão 12.1.25 - Pergunte em Loop 
 // 05/02/2021 - Claudia - Alteração do campo descrição, conforme view VA_VSALDOS_TERCEIROS. GLPI: 9297
-// 
+// 08/03/2021 - Cláudia - GLPI: 9427 - Preço unitário VLR_UNIT
+//
 // --------------------------------------------------------------------------------------------------
 User Function SldTerc ()
 	local _aAreaAnt   := U_ML_SRArea ()
@@ -49,7 +50,7 @@ static function _Tela ()
 	_oSQL:_sQuery += "        V.DESCRICAO AS DESCRICAO,"
 	_oSQL:_sQuery += "        B6_QUANT AS QT_ORIG,"
 	_oSQL:_sQuery += "        B6_SALDO AS SALDO,"
-	_oSQL:_sQuery += "        B6_PRUNIT AS P_UNIT,"
+	_oSQL:_sQuery += "        B6_PRUNIT AS VLR_UNIT,"
 	_oSQL:_sQuery += "        B6_CLIFOR AS CLI_FORN,"
 	_oSQL:_sQuery += "        B6_LOJA AS LOJA,"
 	_oSQL:_sQuery += "        NOME,"
