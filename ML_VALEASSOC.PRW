@@ -7,6 +7,7 @@
 // 
 // 17/02/2021 - Sandra  - Associação dos vales aos associados GLPI 9329.
 // 08/03/2021 - Cláudia - Incluida coluna e parametro de status. GLPI 9571
+// 08/03/2021 - Claudia - Ajuste da nomenclatura "cod. associado" para "cod cliente".
 //
 // ------------------------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -40,7 +41,7 @@ Static Function ReportDef()
 	
 	oSection1 := TRSection():New(oReport,,{}, , , , , ,.T.,.F.,.F.) 
 	
-	TRCell():New(oSection1,"COLUNA1", 	"" ,"Cod Associado" ,	    				, 8,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA1", 	"" ,"Cód.Cliente"   ,	    				, 8,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA2", 	"" ,"Associado"		,       				,40,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA3", 	"" ,"Loja"			,       				,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA4", 	"" ,"Nº Vale"   	,						,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
