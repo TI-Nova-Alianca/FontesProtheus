@@ -52,6 +52,7 @@
 // 26/01/2021 - Robert  - Verificacao 77 considerava usuarios bloqueados (que mudaram de username, por exemplo).
 // 08/02/2021 - Robert  - View VA_VUSR_PROTHEUS_X_METADADOS migrada para o database TI. Passa a usar linked server. (GLPI 9353)
 // 25/02/2021 - Robert  - Verificacao 78 passa a usar a view VISAO_GERAL_ACESSOS.
+// 04/03/2021 - Robert  - Consulta 69 passa a usar tabelas padrao do sistema (agora usuarios estao no banco de dados).
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -2905,7 +2906,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 			::Setores    = 'INF'
 			::Descricao  = 'Grupos: Acesso repetido (deveria estar apenas no grupo GERAL)'
-			::Query := " SELECT GR.TIPO_GRUPO, GR.ID_GRUPO, RTRIM (GR.DESCRICAO) AS DESCR_GRUPO"
+/*			::Query := " SELECT GR.TIPO_GRUPO, GR.ID_GRUPO, RTRIM (GR.DESCRICAO) AS DESCR_GRUPO"
 			::Query +=      " , AG.TIPO_ACESSO, AG.ACESSO, RTRIM (LA.DESCRICAO) AS DESCR_ACESSO"
 			::Query +=   " FROM VA_USR_GRUPOS GR,"
 			::Query +=        " VA_USR_ACESSOS_POR_GRUPO AG"
@@ -2920,7 +2921,23 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=                  " AND GRUPO_GERAL.TIPO_ACESSO = LA.TIPO"
 			::Query +=                  " AND GRUPO_GERAL.ACESSO = LA.ACESSO)"
 			::Query += " ORDER BY AG.ACESSO"
-		
+*/
+			::Query := " WITH C AS ("
+			::Query += " SELECT GR.GR__ID, GR.GR__CODIGO, GR.GR__NOME, AG.GR__CODACESSO, AG.GR__DESCACESSO"
+			::Query +=   " FROM SYS_GRP_GROUP GR"
+			::Query +=       " ,SYS_GRP_ACCESS AG"
+			::Query +=  " WHERE GR.GR__ID = AG.GR__ID"
+			::Query +=    " AND AG.GR__ACESSO = 'T'"
+			::Query += ")"
+			::Query += " SELECT *"
+			::Query +=   " FROM C"
+			::Query +=  " WHERE UPPER(GR__CODIGO) LIKE 'FUNCAO%'"
+			::Query +=    " AND EXISTS (SELECT *"
+			::Query +=                  " FROM C AS C2"
+			::Query +=                 " WHERE C2.GR__ID = '000102'"  // grupo 'geral'
+			::Query +=                   " AND C2.GR__CODACESSO = C.GR__CODACESSO)"
+			::Query +=  " ORDER BY GR__ID, GR__CODACESSO
+
 		case ::Numero == 70
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 			::Setores    = 'INF'

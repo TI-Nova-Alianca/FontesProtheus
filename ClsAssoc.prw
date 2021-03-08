@@ -91,6 +91,8 @@
 // 15/01/2021 - Robert - Novo parametro metodo :RetFixo da classe ClsSQL().
 // 12/02/2021 - Robert - Metodo :FechSafra() tem opcao de retornar ou nao as previsoes de pagamento (GLPI 9318).
 // 25/02/2021 - Robert - Passa a buscar grupo familiar na view VA_VASSOC_GRP_FAM para manter consistencia com outros programas (GLPI 8804).
+// 05/03/2021 - Robert - Na leitura de prev.pagto. (método FechSafra) nao considerava faturas que podem ainda ser geradas em janeiro do ano seguinte (GLPI 9558).
+//                       Na leitura de prev.pagto. (método FechSafra) somar premio qualid.safra 2020 (GLPI 9530).
 //
 
 #include "protheus.ch"
@@ -1168,6 +1170,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 	// Busca previsoes de pagamento (faturas e notas em aberto no contas a pagar).
 //	if ! _lSohRegra .and. _lPrevPag
 	if _lFSPrPg
+		U_Log2 ('debug', 'Buscando previsao de pagamento')
 		_sRetFechS += '<faturaPagamento>'
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
@@ -1198,14 +1201,44 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 		_oSQL:_sQuery +=   " AND E2_PREFIXO in ('30 ', '31 ')"  // Serie usada para notas e faturas de safra
 		_oSQL:_sQuery +=   " AND E2_TIPO IN ('NF', 'DP', 'FAT')"  // NF quando compra original da matriz; DP quando saldo transferido de outra filial; FAT quando agrupados em uma fatura.
 		_oSQL:_sQuery +=   " AND E2_EMISSAO >= '" + _sSafra + "0101'"
-		_oSQL:_sQuery +=   " AND E2_EMISSAO <= '" + _sSafra + "1231'"
+		if _sSafra <= '2019'
+			_oSQL:_sQuery +=   " AND E2_EMISSAO <= '" + _sSafra + "1231'"
+		else  // Fatura para pagamento pode ainda ser gerada em janeiro do ano seguinte (GLPI 9558).
+			_oSQL:_sQuery +=   " AND (E2_EMISSAO <= '" + _sSafra + "1231' OR (E2_EMISSAO <= '" + Soma1 (_sSafra) + "0131' AND E2_TIPO = 'FAT'))"
+		endif
 		_oSQL:_sQuery +=   " AND E2_EMISSAO >= '20190101'"  // Primeira safra em que este metodo foi implementado. Para safras anteriores o tratamento era diferente.
 		_oSQL:_sQuery +=   ")"
 		_oSQL:_sQuery += " SELECT *"
 		_oSQL:_sQuery +=   " FROM C"
 		_oSQL:_sQuery +=  " WHERE E2_VALOR != 0"  // Os que estao zerados eh por que foram totalmente consumidos em uma fatura.
+
+		// Somar o premio de qualidade referente a safra 2020, mas que foi gerado e pago em 2021 (GLPI 9530 e 9415)
+		if _sSafra == '2020'
+			_oSQL:_sQuery += " UNION ALL"
+			_oSQL:_sQuery += " SELECT E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VENCTO, E2_VALOR, E2_SALDO, E2_HIST"
+			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2 "
+			_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '01'"
+			_oSQL:_sQuery +=    " AND SE2.E2_TIPO    = 'DP'"
+			_oSQL:_sQuery +=    " AND SE2.E2_PREFIXO = 'OUT'"
+			_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO like '202102%'"
+			_oSQL:_sQuery +=    " AND SE2.E2_VENCREA like '202102%'"
+			_oSQL:_sQuery +=    " AND SE2.E2_FORNECE = '" + ::Codigo + "'"
+			_oSQL:_sQuery +=    " AND SE2.E2_LOJA    = '" + ::Loja + "'"
+			_oSQL:_sQuery +=    " AND EXISTS (SELECT *"
+			_oSQL:_sQuery +=                  " FROM " + RetSQLName ("SZI") + " SZI "
+			_oSQL:_sQuery +=                 " WHERE ZI_FILIAL  = SE2.E2_FILIAL""
+			_oSQL:_sQuery +=                   " AND ZI_ASSOC   = SE2.E2_FORNECE"
+			_oSQL:_sQuery +=                   " AND ZI_LOJASSO = SE2.E2_LOJA"
+			_oSQL:_sQuery +=                   " AND ZI_DOC     = SE2.E2_NUM"
+			_oSQL:_sQuery +=                   " AND ZI_SERIE   = SE2.E2_PREFIXO"
+			_oSQL:_sQuery +=                   " AND ZI_PARCELA = SE2.E2_PARCELA"
+			_oSQL:_sQuery +=                   " AND ZI_DATA    = SE2.E2_EMISSAO"
+			_oSQL:_sQuery +=                   " AND ZI_TM      = '16')"
+		endif
+
 		_oSQL:_sQuery +=  " ORDER BY E2_VENCTO, E2_NUM, E2_PREFIXO"
-		//_oSQL:Log ()
+		_oSQL:Log ()
 		_sAliasQ := _oSQL:Qry2Trb (.F.)
 		_nTotValor = 0
 		_nTotSaldo = 0
@@ -1386,6 +1419,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 	// Auxilio combustivel / frete
 //	if ! _lSohRegra
 	if _lFSFrtS
+		U_Log2 ('debug', 'Buscando fretes de safra')
 		_sRetFechS += '<freteSafra>'
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
