@@ -4,6 +4,13 @@
 // Cliente....: Alianca
 // Descricao..: Tratamento Recepcao Bancaria CNAB - Compatibiliza Baixas 
 //
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #Tratamento Recepcao Bancaria CNAB - Compatibiliza Baixas
+// #PalavasChave      #CNAB #compatibiliza_baixas 
+// #TabelasPrincipais #SE1 #SE5 #ZB5
+// #Modulos   		  #FIN 
+//
 // Historico de alteracoes:
 // 16/09/2008 - Robert  - Na leitura do BB, soma 'outros creditos' aos 'juros'.
 // 01/10/2008 - Robert  - Zera variavel nVarCc na leitura do BB, apos somar 'outros creditos' aos 'juros'.
@@ -47,6 +54,7 @@
 // 27/08/2018 - Catia   - Sicredi - tratamento para buscar as despesas financeiras na ocorrencia 28
 // 26/06/2019 - Catia   - Itau - tratamento despesas de cartorio ocorrencias 08
 // 01/07/2020 - Cláudia - Inclusão de filial 16 para banco do brasil. GLPI: 8103
+// 24/02/2021 - Claudia - Criada rotina para gravar titulos que terão transf. de valores enter filiais. GLPI: 9059
 //
 // -------------------------------------------------------------------------------------------------------------------------------------------
 User Function F200VAR()
@@ -74,10 +82,10 @@ User Function F200VAR()
 		_aAux [2]  = _aValores  [2]
 		_aAux [3]  = _aValores  [3]
 		_aAux [4]  = _aValores  [4] // nosso numero
-		_aAux [5]  = _aValores  [5]
+		_aAux [5]  = _aValores  [5] // Valor da despesa
 		_aAux [6]  = _aValores  [6]
 		_aAux [7]  = _aValores  [7]
-		_aAux [8]  = _aValores  [8]
+		_aAux [8]  = _aValores  [8] // Valor recebido
 		_aAux [9]  = _aValores  [9] // juros
 		_aAux [10] = _aValores [10] // tarifa de cobranca
 		_aAux [11] = 0
@@ -110,20 +118,104 @@ User Function F200VAR()
 	// aValores[16] - Linha Inteira
 
 	// Logs para depuracao
-//	u_log ("cBanco = ", cbanco)
-//	u_log ("_aValores:", {_avalores})
-//	u_log ("nValRec: ",   nValRec)
-//	u_log ("nJuros: ",    nJuros)
-//	u_log ("nAbatim: ",   nAbatim)
-//	u_log ("nDescont: ",  nDescont)
-//	u_log ("nDespes: ",   nDespes)
-//	u_log ("nMulta: ",    nMulta)
-//	u_log ("nOutrDesp: ", nOutrDesp)
-//	u_log ("nValCC: ",    nValCC)
+	//	u_log ("cBanco = ", cbanco)
+	//	u_log ("_aValores:", {_avalores})
+	//	u_log ("nValRec: ",   nValRec)
+	//	u_log ("nJuros: ",    nJuros)
+	//	u_log ("nAbatim: ",   nAbatim)
+	//	u_log ("nDescont: ",  nDescont)
+	//	u_log ("nDespes: ",   nDespes)
+	//	u_log ("nMulta: ",    nMulta)
+	//	u_log ("nOutrDesp: ", nOutrDesp)
+	//	u_log ("nValCC: ",    nValCC)
 
 	// Verifica qual banco estah sendo processado. Verifica diferentes variaveis por que este
 	// ponto de entrada eh executado na impressao de relatorio e na importacao do arquivo de retorno.
-//	u_log ('Banco:', cBanco)
+
+	If upper (GetEnvServer ()) $ "TESTE/TESTECLAUDIA" 
+		if IsInCallStack ("FINA200") .and.  xFilial("SE1") <> '01'
+			if substr(cNumTit,1,3) == '000'
+				_sTit = '10 ' + cNumTit
+			else
+				_sTiT = 'FAT' + cNumTit
+			endif
+
+			_sQuery := " "
+			_sQuery += " SELECT "
+			_sQuery += " 	 SE1.E1_FILIAL "
+			_sQuery += "    ,SE1.E1_PREFIXO "
+			_sQuery += "    ,SE1.E1_NUM "
+			_sQuery += "    ,SE1.E1_PARCELA "
+			_sQuery += "    ,SE1.E1_CLIENTE "
+			_sQuery += "    ,SE1.E1_LOJA "
+			_sQuery += "    ,SE1.E1_PORTADO "
+			_sQuery += "    ,SE1.E1_AGEDEP "
+			_sQuery += "    ,SE1.E1_CONTA "
+			_sQuery += " FROM " + RetSQLName ("SE1") + " AS SE1 "
+			_sQuery += " INNER JOIN " + RetSQLName ("ZB4") + " AS ZB4 "
+			_sQuery += " 	ON ZB4.D_E_L_E_T_ = '' "
+			_sQuery += " 		AND ZB4.ZB4_FILIAL = E1_FILIAL "
+			_sQuery += " 		AND ZB4.ZB4_BANCO  = E1_PORTADO "
+			_sQuery += " 		AND ZB4.ZB4_AGEN   = E1_AGEDEP "
+			_sQuery += " 		AND ZB4.ZB4_CONTA  = E1_CONTA "
+			_sQuery += " WHERE SE1.D_E_L_E_T_ = '' "
+			_sQuery += " AND SE1.E1_FILIAL    = '"+ xFilial("SE1") + "'"
+			_sQuery += " AND SE1.E1_PREFIXO + SE1.E1_NUM + SE1.E1_PARCELA = '"+ _sTiT + "'"
+			_aSE1 := U_Qry2Array(_sQuery)
+
+			if len(_aSE1) > 0
+				Begin Transaction
+
+				_cFil	 := _aSE1[1,1]
+				_cSerie  := _aSE1[1,2]
+				_cNum    := _aSE1[1,3]
+				_cParc   := _aSE1[1,4]
+				_cCli    := _aSE1[1,5]
+				_cLoja   := _aSE1[1,6]
+				_cBanco  := _aSE1[1,7]
+				_cAgen   := _aSE1[1,8]
+				_cConta  := _aSE1[1,9]
+				_nVlrRec := _aValores[8]
+				_nVlrDes := _aValores[5]
+				_cStatus := 'A'
+				_dDtBai  := _aValores[02]
+				_dDtPro  := date()
+				
+				dbSelectArea("ZB5")
+				dbSetOrder(1) // ZB5_FILIAL+ZB5_SERIE+ ZB5_NUM + ZB5_PARC + ZB5_CLI + ZB5_LOJA
+				dbGoTop()
+				
+				if !dbSeek(_cFil + _cSerie + _cNum + _cParc + _cCli + _cLoja)
+				
+					Reclock("ZB5",.T.)
+						ZB5->ZB5_FILIAL := _cFil
+						ZB5->ZB5_SERIE 	:= _cSerie
+						ZB5->ZB5_NUM 	:= _cNum
+						ZB5->ZB5_PARC 	:= _cParc
+						ZB5->ZB5_CLI 	:= _cCli
+						ZB5->ZB5_LOJA 	:= _cLoja
+						ZB5->ZB5_BANCO  := _cBanco
+						ZB5->ZB5_AGEN 	:= _cAgen
+						ZB5->ZB5_CONTA  := _cConta
+						ZB5->ZB5_VLRREC := _nVlrRec
+						ZB5->ZB5_VLRDES := _nVlrDes
+						ZB5->ZB5_STATUS := _cStatus
+						ZB5->ZB5_DTABAI := _dDtBai
+						ZB5->ZB5_DTAPRO := _dDtPro
+							
+					ZB5->(MsUnlock())
+
+					_oEvento := ClsEvent():New ()
+					_oEvento:Alias     = 'ZB5'
+					_oEvento:Texto     = "INCLUSÃO DE REGISTRO DE TÍTULO:" + _cFil +'-'+ _cSerie +'-'+ _cNum +'-'+ _cParc +'-'+ _cCli +'-'+ _cLoja
+					_oEvento:CodEven   = "ZB5001"
+					_oEvento:Grava()
+
+				endif
+				End Transaction			
+			endif
+		endif
+	EndIf
 	
 	// TRATAMENTO DO CNAB A RECEBER
 	if IsInCallStack ("FINA200") .or. (IsInCallStack ("FINR650") .and. mv_par07= 1) 
@@ -378,7 +470,6 @@ User Function F200VAR()
 	        endif	            
 	       
 		endif
-		
 		RestArea(_aAreaSE1)
 		RestArea(_aAreaSA1)
 	
