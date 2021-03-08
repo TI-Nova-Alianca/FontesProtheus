@@ -6,6 +6,7 @@
 // Historico de alteracoes:
 // 
 // 17/02/2021 - Sandra  - Associação dos vales aos associados GLPI 9329.
+// 08/03/2021 - Cláudia - Incluida coluna e parametro de status. GLPI 9571
 //
 // ------------------------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -30,13 +31,11 @@ Return
 Static Function ReportDef()
 	Local oReport  := Nil
 	Local oSection1:= Nil
-	//Local oFunction
 
 	oReport := TReport():New("ML_VALEASOC","Vales Presentes Vinculados a Associados ",cPerg,{|oReport| PrintReport(oReport)},"Vales Presentes Vinculados a Associados ")
 	
 	oReport:SetTotalInLine(.F.)
 	oReport:SetPortrait()
-	//oReport:SetLandScape()
 	oReport:ShowHeader()
 	
 	oSection1 := TRSection():New(oReport,,{}, , , , , ,.T.,.F.,.F.) 
@@ -48,8 +47,8 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA5", 	"" ,"Vlr Vale"		, "@E 999,999,999.99"   ,30,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA6", 	"" ,"Ini Vigência"	,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA7", 	"" ,"Fim Vigência"	,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA8", 	"" ,"Status"		,       				,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	
-
 Return(oReport)
 //
 // -------------------------------------------------------------------------
@@ -66,6 +65,7 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += "    ,MDD_VALOR AS VALOR"
 	_oSQL:_sQuery += "    ,MDD_DTINI AS INI_VIGENCIA"  
 	_oSQL:_sQuery += "    ,MDD_DTFIM AS FIM_VIGENCIA"
+	_oSQL:_sQuery += "    ,MDD_STATUS AS STATUS"
 	_oSQL:_sQuery += " FROM MDD010, SA1010 " 
 	_oSQL:_sQuery += " WHERE MDD_CLIV = A1_COD "
     _oSQL:_sQuery += " AND MDD_LJCLIV = A1_LOJA "
@@ -76,13 +76,20 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " AND MDD_LJCLIV BETWEEN '" + mv_par04 + "' AND '" + mv_par06 + "'"
     _oSQL:_sQuery += " AND MDD010.D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " AND SA1010.D_E_L_E_T_ = '' "
-	_oSQL:_sQuery += " AND MDD_STATUS = '2' "
+	Do Case 
+		Case mv_par09 == 2
+			_oSQL:_sQuery += " AND MDD_STATUS = '1' "
+		Case mv_par09 == 3
+			_oSQL:_sQuery += " AND MDD_STATUS = '2' "
+		Case mv_par09 == 4
+			_oSQL:_sQuery += " AND MDD_STATUS = '3' "
+		Case mv_par09 == 5
+			_oSQL:_sQuery += " AND MDD_STATUS = '4' "
+	EndCase 
 		
-nHandle := FCreate("c:\temp\log.txt")
-FWrite(nHandle, _oSQL:_sQuery )
-FClose(nHandle)
-
-
+	// nHandle := FCreate("c:\temp\log.txt")
+	// FWrite(nHandle, _oSQL:_sQuery )
+	// FClose(nHandle)
 
 	_sAliasQ := _oSQL:Qry2Trb (.f.)
 	(_sAliasQ) -> (dbgotop ())
@@ -91,10 +98,19 @@ FClose(nHandle)
 	oSection1:SetHeaderSection(.T.)
 			
 	While !(_sAliasQ) -> (eof ())
-		//_sCliente :=  alltrim((_sAliasQ) -> NOME) +'/'+  (_sAliasQ) -> LOJA
-		//_dt :=  DTOC(STOD((_sAliasQ) -> MDD_DTINI))
-		//_dt :=  DTOC(STOD((_sAliasQ) -> MDD_DTFIM))
 		
+		_sCodStatus := (_sAliasQ) -> status 
+		Do Case
+			Case _sCodStatus == '1'
+				_sStatus := "Ativo"
+			Case _sCodStatus == '2'
+				_sStatus := "Vendido"
+			Case _sCodStatus == '3'
+				_sStatus := "Recebido"
+			Case _sCodStatus == '4'
+				_sStatus := "Inativo"
+		EndCase
+
 		oSection1:Cell("COLUNA1")	:SetBlock   ({|| (_sAliasQ) -> Cod_Associado   	})
 		oSection1:Cell("COLUNA2")	:SetBlock   ({|| (_sAliasQ) -> Nome     		})
 		oSection1:Cell("COLUNA3")	:SetBlock   ({|| (_sAliasQ) -> Loja      		})
@@ -102,8 +118,7 @@ FClose(nHandle)
 		oSection1:Cell("COLUNA5")	:SetBlock   ({|| (_sAliasQ) -> Valor    	    })
 		oSection1:Cell("COLUNA6")	:SetBlock   ({|| Stod((_sAliasQ)-> Ini_Vigencia)})
 		oSection1:Cell("COLUNA7")	:SetBlock   ({|| Stod((_sAliasQ)-> Fim_Vigencia)})
-		
-		
+		oSection1:Cell("COLUNA8")	:SetBlock   ({|| _sStatus                	    })
 
 		oSection1:PrintLine()
 		
@@ -112,21 +127,21 @@ FClose(nHandle)
 	oSection1:Finish()
 	(_sAliasQ) -> (dbclosearea ())
 Return
+//
 // -------------------------------------------------------------------------
 // Perguntas
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT                      TIPO TAM DEC VALID F3     Opcoes                      				Help
-	aadd (_aRegsPerg, {01, "Vigencia INI            ?", "D", 8, 0,  "",  "   ", {},                         ""})
-    aadd (_aRegsPerg, {02, "Vigencia Final          ?", "D", 8, 0,  "",  "   ", {},                         ""})
-    aadd (_aRegsPerg, {03, "Associado de            ?", "C",11, 0,  "",  "SA1", {},                         "Associado Inicial"})
-	aadd (_aRegsPerg, {04, "Filial Associado de     ?", "C", 2, 0,  "",  "SA1", {},                         ""})
-    aadd (_aRegsPerg, {05, "Associado até           ?", "C",11, 0,  "",  "SA1", {},                         "Associado Final"})
-    aadd (_aRegsPerg, {06, "Filial Associado até    ?", "C", 2, 0,  "",  "SA1", {},                         ""})
-    aadd (_aRegsPerg, {07, "Vale de                 ?", "C", 7, 0,  "",  "MDD", {},                         ""})
-    aadd (_aRegsPerg, {08, "Vale Até                ?", "C", 7, 0,  "",  "MDD", {},                         ""})
-
-
+	aadd (_aRegsPerg, {01, "Vigencia INI            ?", "D", 8, 0,  "",  "   ", {},                         						""})
+    aadd (_aRegsPerg, {02, "Vigencia Final          ?", "D", 8, 0,  "",  "   ", {},                         						""})
+    aadd (_aRegsPerg, {03, "Associado de            ?", "C",11, 0,  "",  "SA1", {},                         						"Associado Inicial"})
+	aadd (_aRegsPerg, {04, "Filial Associado de     ?", "C", 2, 0,  "",  "SA1", {},                         						""})
+    aadd (_aRegsPerg, {05, "Associado até           ?", "C",11, 0,  "",  "SA1", {},                         						"Associado Final"})
+    aadd (_aRegsPerg, {06, "Filial Associado até    ?", "C", 2, 0,  "",  "SA1", {},                         						""})
+    aadd (_aRegsPerg, {07, "Vale de                 ?", "C", 7, 0,  "",  "MDD", {},                         						""})
+    aadd (_aRegsPerg, {08, "Vale Até                ?", "C", 7, 0,  "",  "MDD", {},                         						""})
+	aadd (_aRegsPerg, {09, "Status                  ?", "N", 1, 0,  "",  "   ", { "Todos", "Ativo","Vendido","Recebido","Inativo"},  ""})
 
      U_ValPerg (cPerg, _aRegsPerg)
 Return
