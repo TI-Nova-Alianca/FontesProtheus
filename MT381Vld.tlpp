@@ -1,0 +1,50 @@
+// Programa:  MT381VLD
+// Autor:     Robert Koch
+// Data:      08/03/2021
+// Descricao: Valida 'tudo ok' na tela de ajuste de empenhos de OP modelo II
+//            Criado inicialmente para validar linha de envase X centro de custo (GLPI 8849)
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #Valida 'tudo ok' na tela de ajuste de empenhos de OP modelo II
+// #PalavasChave      #empenhos_de_OP
+// #TabelasPrincipais #SD4 #SC2 #SH1
+// #Modulos           #PCP
+
+// Historico de alteracoes:
+//
+
+// --------------------------------------------------------------------------
+user function MT381VLD ()
+	local _aAreaAnt := U_ML_SRArea ()
+	local _lRet     := .T.
+	local _sH1CC    := ''
+	local _nLinha   := 0
+
+	// Se tem linha de envase informada na OP, verifica qual eh o seu centro de custo
+	sc2 -> (dbsetorder (1))
+	if ! sc2 -> (dbseek (xfilial ("SC2") + cOP, .F.))
+		u_help ("OP nao encontrada: '" + cOP + "'")
+		_lRet = .F.
+	endif
+
+	if _lRet .and. ! empty (sc2 -> c2_valinen)
+		sh1 -> (dbsetorder (1))
+		if ! sh1 -> (dbseek (xfilial ("SH1") + sc2 -> c2_valinen, .F.))
+			u_help ("Linha de envase '" + sc2 -> c2_valinen + "' informada no campo " + alltrim (RetTitle ("C2_VALINEN")) + " da OP nao encontrada no cadastro de recursos.")
+			_lRet = .F.
+		else
+			_sH1CC = sh1 -> h1_ccusto
+		endif
+	endif
+	
+	// Verifica se tem empenho de mao de obra referente ao CC da linha de envase.
+	if _lRet .and. ! empty (_sH1CC)
+		_nLinha = ascan (aCols, {|_aVal| alltrim (_aVal [GDFieldPos ("D4_COD")]) == alltrim ('MMM' + _sH1CC)})
+		if _nLinha == 0 .or. GDDeleted (_nLinha)
+			_lRet = u_MsgNoYes ("Na OP consta que vai ser envasada na linha " + sc2 -> c2_valinen + ", que encontra-se ligada ao centro de custo '" + _sH1CC + "'. Entretanto, nao encontrei empenho de mao de obra (item MMM) deste centro de custo. Confirma assim mesmo?")
+		endif
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
+return _lRet
