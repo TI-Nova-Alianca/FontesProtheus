@@ -19,10 +19,10 @@
 // 03/11/2020 - Claudia - Incluida a gravação do SXK
 // 19/11/2020 - Claudia - Retirada a data de emissão de vendas link
 // 04/12/2020 - Claudia - Alteração de ajustes para arredondamento. GLPI: 8970
-// 07/12/2020 - Claudia - Inclusao do calculo de taxa para registros que a cielo 
-//              adiciona em apenas um cabeçalho.
+// 07/12/2020 - Claudia - Inclusao do calculo de taxa para registros que a cielo adiciona em apenas um cabeçalho.
+// 08/03/2021 - Cláudia - Alterado o motivo da baixa para links. GLPI:9574
 //
-// -----------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
 #Include "totvs.ch"
 
@@ -182,6 +182,13 @@ User Function ZB1_CON(_sConciliar)
 						If _lContinua == .T.
 
 							lMsErroAuto := .F.
+							If _sConciliar == '2' // link
+								_sMotBaixa := 'NORMAL' 
+								_sHist     := 'Baixa Link'
+							Else
+								_sMotBaixa := 'DEBITO CC' 
+								_sHist     := 'Baixa Cielo'	
+							EndIf
 
 							// executar a rotina de baixa automatica do SE1 gerando o SE5 - DO VALOR LÍQUIDO
 							_aAutoSE1 := {}
@@ -192,13 +199,13 @@ User Function ZB1_CON(_sConciliar)
 							aAdd(_aAutoSE1, {"E1_CLIENTE" 	, _aTitulo[x,6] 					, Nil})
 							aAdd(_aAutoSE1, {"E1_LOJA"    	, _aTitulo[x,7] 					, Nil})
 							aAdd(_aAutoSE1, {"E1_TIPO"    	, _aTitulo[x,9] 					, Nil})
-							AAdd(_aAutoSE1, {"AUTMOTBX"		, 'DEBITO CC'  						, Nil})
+							AAdd(_aAutoSE1, {"AUTMOTBX"		, _sMotBaixa  						, Nil})
 							AAdd(_aAutoSE1, {"CBANCO"  		, alltrim(_aZB1[i,11])	    		, Nil})  	
 							AAdd(_aAutoSE1, {"CAGENCIA"   	, alltrim(_aZB1[i,12])		    	, Nil})  
 							AAdd(_aAutoSE1, {"CCONTA"  		, alltrim(_aZB1[i,13])				, Nil})
 							AAdd(_aAutoSE1, {"AUTDTBAIXA"	, dDataBase		 					, Nil})
 							AAdd(_aAutoSE1, {"AUTDTCREDITO"	, dDataBase		 					, Nil})
-							AAdd(_aAutoSE1, {"AUTHIST"   	, 'Baixa Cielo'					    , Nil})
+							AAdd(_aAutoSE1, {"AUTHIST"   	, _sHist    					    , Nil})
 							AAdd(_aAutoSE1, {"AUTDESCONT"	, _nVlrTax         					, Nil})
 							AAdd(_aAutoSE1, {"AUTMULTA"  	, 0         						, Nil})
 							AAdd(_aAutoSE1, {"AUTJUROS"  	, 0         						, Nil})
