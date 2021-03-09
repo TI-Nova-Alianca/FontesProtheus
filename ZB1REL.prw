@@ -12,6 +12,7 @@
 //
 // Historico de alteracoes:
 // 05/03/2021 - Claudia - Ajuste dos totalizadores para nao incluir os débitos. GLPI:9369
+// 09/03/2021 - Cláudia - Incluido Valor Total(Parcela - Taxa)
 //
 // --------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -199,9 +200,13 @@ Static Function PrintReport(oReport)
 	oReport:PrintText("TOTAL GERAL" ,, 100)
 	_nLinha:= _PulaFolha(_nLinha)
 	oReport:PrintText("Valor da Parcela:" ,, 100)
-	oReport:PrintText(PADL('R$' + Transform(_nTotVenda - _nTotDVenda , "@E 999,999,999.99"),20,' '),, 900)
+	_vTPar := _nTotVenda - _nTotDVenda 
+	oReport:PrintText(PADL('R$' + Transform(_vTPar, "@E 999,999,999.99"),20,' '),, 900)
 	oReport:PrintText("Valor da Taxa:" ,, 100)
-	oReport:PrintText(PADL('R$' + Transform(_nTotTax - _nTotDTax, "@E 999,999,999.99"),20,' '),, 900)
+	_vTTax := _nTotTax - _nTotDTax
+	oReport:PrintText(PADL('R$' + Transform(_vTTax, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:PrintText("Valor Total(Parcela - Taxa):" ,, 100)
+	oReport:PrintText(PADL('R$' + Transform(_vTPar - _vTTax, "@E 999,999,999.99"),20,' '),, 900)
 	oReport:SkipLine(1)
 	oReport:ThinLine()
 
