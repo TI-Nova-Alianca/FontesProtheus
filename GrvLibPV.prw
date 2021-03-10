@@ -2,7 +2,14 @@
 // Autor:      Robert Koch
 // Data:       21/06/2010
 // Descricao:  Chamado por botao na tela de pedido de vendas. Grava campo C6_QTDLIB no aCols.
-// 
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Atualizacao
+// #Descricao         #Valida se pode gravar o campo C6_QTDLIB durante a edicao do pedido de venda.
+// #PalavasChave      #liberacao #pedido_de_venda
+// #TabelasPrincipais #SC5 #SC6
+// #Modulos           #FAT
+//
 // Historico de alteracoes:
 // 04/10/2010 - Robert - Testa existencia da variavel oGetDad.
 // 20/10/2010 - Robert - Testa preenchimento da filial de embarque.
@@ -21,50 +28,42 @@
 // 31/05/2012 - Robert - Nao restringe mais a leitura do ultimo pedido a 31/03/12 para bloqueio gerencial.
 // 29/05/2013 - Elaine DWT  - Inclui tratamento para bloqueio gerencial caso o pedido for da tabela 151 e o preco informado estiver abaixo da mesma
 // 21/08/2013 - Leandro DWT - Inclusão de validação para que somente os usuários do parâmetro possam liberar o pedido de venda
-// 02/06/2015 - Catia  - Validação saldo em verbas a bonificar.
-// 06/07/2015 - Catia  - Alterado para buscar a ST pela rotina MaFisRet na hora de somar o total do pedido
-// 04/08/2015 - Robert - Nao valida mais o preco da ultima compra para pedidos tipo D/B
-// 23/09/2015 - Robert - Quando misturava motivos de bonificao com e sem controle de verbas, nem todos os itens eram adicionados no MaFisAdd.
-// 13/10/2015 - Catia  - Dava mensagem de que o cliente nao tinha saldo e bonificar mas mesmo assim liberava o pedido
-// 22/10/2015 - Catia  - Alterado para no calculo do item bonificado - busque o IPI valor da planilia do MATFISRET
-// 11/07/2016 - Robert - Chama consulta de margem de contribuicao e deixa campo C5_VABLOQ setado com 'M' caso esteja abaixo da margem minima.
-// 25/10/2016 - Robert - Dados da ultima venda (preco menor) passa a ser em TXT e nao mais em HTML.
-// 29/03/2017 - Catia  - Itens com eliminação de Resíduo - ainda estava tentando liberar no estoque
-// 28/04/2017 - Robert - Passa tambem o lote do produto e o pedido para a funcao VerEstq().
-// 22/05/2017 - Catia  - Alterado o parametro de margem para 1% para não bloquear nada no gerencial
-// 13/10/2017 - Robert - Volta a fazer bloqueio por margem (agora via parametro VA_MCPED1).
-// 16/10/2017 - Robert - Ignora bloqueio de margem para pedidos de granel.
-// 23/10/2017 - Robert - Valida campo c5_vaPrPed.
-// 30/10/2017 - Robert - Chama rotina de selecao de frete somente para frete tipo CIF.
-// 19/02/2018 - Catia  - Valida rapel e base do cliente - nao deixa incluir pedido com dados conflitantes
-// 25/04/2018 - Catia  - Validação da loja do codigo matriz quando o cliente controla verbas
-// 19/06/2018 - Catia  - bloqueio por % de aumento
-// 03/07/2018 - Robert - Funcao Va_McPed() tem novos parametros
-//                     - Cotacao de frete passa a ser chamada diretamente pela funcao de calculo de margem de contribuicao.
-// 17/08/2018 - Catia  - teste de caracteres especiais nas observações
-// 14/11/2018 - Andre  - Adicionado verificação dos campos A1_VAMDANF e A2_VAMDANF para não liberar pedido com email LIXO@NOVAALIANCA.COOP.BR
-// 04/12/2018 - Andre  - Adicionado validação nos CAMPOS A1_EMAIL e A2_EMAIL. Bloqueado inclusão neste campos para conteudo LIXO@NOVA OU NOVALIANCA.
-// 10/12/2018 - Andre  - Validacao para que itens com TES 630 e 657 apenas usuários dos grupos 069 e 066 possam liberar.
-// 25/01/2019 - Andre  - Pesquisa ZX5 alterada de FBUSCACPO para U_RETZX5.
-// 22/05/2019 - Robert - Liberados caracteres especiais no C5_OBS apenas em base teste (GLPI 5961)
-// 27/05/2019 - Catia  - estava dando erro linha 418 e 427 _lTes 
-// 28/05/2019 - Sandra - Não valida mais caracteres especias no campo de observacoes conforme GLPI 5961
-// 11/11/2019 - Robert - Revisado tratamento campo ZA5_FILIAL (tabela passar de compartilhada para exclusiva). GLPI 6987.
-//                     - Passa a validar campo ZA4_FILIAL na query.
-// 18/11/2019 - Robert - Iniciadas melhorias bloqueio pedido bonificado sem pedido faturado correspondente
+// 02/06/2015 - Catia   - Validação saldo em verbas a bonificar.
+// 06/07/2015 - Catia   - Alterado para buscar a ST pela rotina MaFisRet na hora de somar o total do pedido
+// 04/08/2015 - Robert  - Nao valida mais o preco da ultima compra para pedidos tipo D/B
+// 23/09/2015 - Robert  - Quando misturava motivos de bonificao com e sem controle de verbas, nem todos os itens eram adicionados no MaFisAdd.
+// 13/10/2015 - Catia   - Dava mensagem de que o cliente nao tinha saldo e bonificar mas mesmo assim liberava o pedido
+// 22/10/2015 - Catia   - Alterado para no calculo do item bonificado - busque o IPI valor da planilia do MATFISRET
+// 11/07/2016 - Robert  - Chama consulta de margem de contribuicao e deixa campo C5_VABLOQ setado com 'M' caso esteja abaixo da margem minima.
+// 25/10/2016 - Robert  - Dados da ultima venda (preco menor) passa a ser em TXT e nao mais em HTML.
+// 29/03/2017 - Catia   - Itens com eliminação de Resíduo - ainda estava tentando liberar no estoque
+// 28/04/2017 - Robert  - Passa tambem o lote do produto e o pedido para a funcao VerEstq().
+// 22/05/2017 - Catia   - Alterado o parametro de margem para 1% para não bloquear nada no gerencial
+// 13/10/2017 - Robert  - Volta a fazer bloqueio por margem (agora via parametro VA_MCPED1).
+// 16/10/2017 - Robert  - Ignora bloqueio de margem para pedidos de granel.
+// 23/10/2017 - Robert  - Valida campo c5_vaPrPed.
+// 30/10/2017 - Robert  - Chama rotina de selecao de frete somente para frete tipo CIF.
+// 19/02/2018 - Catia   - Valida rapel e base do cliente - nao deixa incluir pedido com dados conflitantes
+// 25/04/2018 - Catia   - Validação da loja do codigo matriz quando o cliente controla verbas
+// 19/06/2018 - Catia   - bloqueio por % de aumento
+// 03/07/2018 - Robert  - Funcao Va_McPed() tem novos parametros
+//                      - Cotacao de frete passa a ser chamada diretamente pela funcao de calculo de margem de contribuicao.
+// 17/08/2018 - Catia   - teste de caracteres especiais nas observações
+// 14/11/2018 - Andre   - Adicionado verificação dos campos A1_VAMDANF e A2_VAMDANF para não liberar pedido com email LIXO@NOVAALIANCA.COOP.BR
+// 04/12/2018 - Andre   - Adicionado validação nos CAMPOS A1_EMAIL e A2_EMAIL. Bloqueado inclusão neste campos para conteudo LIXO@NOVA OU NOVALIANCA.
+// 10/12/2018 - Andre   - Validacao para que itens com TES 630 e 657 apenas usuários dos grupos 069 e 066 possam liberar.
+// 25/01/2019 - Andre   - Pesquisa ZX5 alterada de FBUSCACPO para U_RETZX5.
+// 22/05/2019 - Robert  - Liberados caracteres especiais no C5_OBS apenas em base teste (GLPI 5961)
+// 27/05/2019 - Catia   - estava dando erro linha 418 e 427 _lTes 
+// 28/05/2019 - Sandra  - Não valida mais caracteres especias no campo de observacoes conforme GLPI 5961
+// 11/11/2019 - Robert  - Revisado tratamento campo ZA5_FILIAL (tabela passar de compartilhada para exclusiva). GLPI 6987.
+//                      - Passa a validar campo ZA4_FILIAL na query.
+// 18/11/2019 - Robert  - Iniciadas melhorias bloqueio pedido bonificado sem pedido faturado correspondente
 // 09/04/2020 - Claudia - Incluido o controle de endereço da linha do pedido de venda, conforme GLPI: 7765
-// 20/07/2020 - Robert - Permissao para liberar pedido de baixa de estoque para ajustes passa a validar acesso 101 e nao mais 069+066.
-//                     - Inseridas tags para catalogacao de fontes
+// 20/07/2020 - Robert  - Permissao para liberar pedido de baixa de estoque para ajustes passa a validar acesso 101 e nao mais 069+066.
+//                      - Inseridas tags para catalogacao de fontes
+// 09/03/2021 - Claudia - BLoqueio de bonificação. GLPI: 9070
 //
-
-// Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #Atualizacao
-// #Descricao         #Valida se pode gravar o campo C6_QTDLIB durante a edicao do pedido de venda.
-// #PalavasChave      #liberacao #pedido_de_venda
-// #TabelasPrincipais #SC5 #SC6
-// #Modulos           #FAT
-//
-
 // --------------------------------------------------------------------------------------------------------
 user function GrvLibPV (_lLiberar)
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -72,7 +71,6 @@ user function GrvLibPV (_lLiberar)
 	local _sErro     := ""
 	local _nQtdEnt   := 0
 	local _sQuery    := ""
-//	local _sUltPed   := ""
 	local _aUltPrc   := {}
 	local _nUltPrc   := 0
 	local _sMsg      := ""
@@ -80,8 +78,6 @@ user function GrvLibPV (_lLiberar)
 	local _sRetEstq  := ""
 	local _nLinAnt   := 0
 	local _nAcumAnt  := 0
-//	local _wbonif    := .F.
-//	local _nQtItens  := 0
 	local _lFaturado := .F.
 	local _lBonific  := .F.
 	local _lSoGranel := .F.
@@ -131,7 +127,6 @@ user function GrvLibPV (_lLiberar)
 			   	_sErro += "E-mail para DANFE inválido. Por favor, verifique!"
 				_lLiberar = .F.
 			endif
-			
 		endif
 	endif
 
@@ -282,15 +277,11 @@ user function GrvLibPV (_lLiberar)
 								"TAB PRC", ;
 								"151"})
 						endif
-
 					endif
-
 				endif
-
 			endif
 		next
-
-                                                
+              
 		if len (_aUltPrc) > 0
 
    			// Prepara mensagem para visualizacao
@@ -300,7 +291,6 @@ user function GrvLibPV (_lLiberar)
 			_sMsg += "Representante: " + m->c5_vend1 + " - " + fBuscaCpo ("SA3", 1, xfilial ("SA3") + m->c5_vend1, "A3_NOME") + chr (13) + chr (10)
 			_sMsg += 'Produtos:' + chr (13) + chr (10)
 			for _nUltPrc = 1 to len (_aUltPrc)
-//				_sMsg += _aUltPrc [_nUltPrc, 1] + ' - ' + _aUltPrc [_nUltPrc, 2] + ' (preco atual: ' + _aUltPrc [_nUltPrc, 3] + ' - ult.venda: ' + _aUltPrc [_nUltPrc, 4] + ')' + chr (13) + chr (10) 
 				_sMsg += _aUltPrc [_nUltPrc, 1] + ' - ' + _aUltPrc [_nUltPrc, 2] + ' (preco atual: ' + cvaltochar (_aUltPrc [_nUltPrc, 3]) + ' - ult.venda: ' + cvaltochar (_aUltPrc [_nUltPrc, 4]) + ')' + chr (13) + chr (10) 
 			next
 
@@ -312,7 +302,6 @@ user function GrvLibPV (_lLiberar)
 			if _nOpcao == 1
 
 				// Bloqueia o pedido.
-			//	m->c5_vaBloq = 'P'
 				m->c5_vaBloq = iif ('P' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'P')
 				U_LOG ('M->C5_VABLOQ ficou com', m->c5_vaBloq)
 
@@ -324,15 +313,11 @@ user function GrvLibPV (_lLiberar)
 					u_log (m->c5_vaPrPed, 100 - _aUltPrc [_nUltPrc, 3] * 100 / _aUltPrc [_nUltPrc, 4])
 					m->c5_vaPrPed = max (m->c5_vaPrPed, 100 - _aUltPrc [_nUltPrc, 3] * 100 / _aUltPrc [_nUltPrc, 4])
 					u_log ('var=', m->c5_vaPrPed)
-					//_aUltPrc [_nUltPrc, 4] = 100%
-					//_aUltPrc [_nUltPrc, 3] = X
-					//X = 100 - _aUltPrc [_nUltPrc, 3] * 100 / _aUltPrc [_nUltPrc, 4]
 				next
 			
 				// verifica se o bloqueio é por ser menor que o aumento
 				for _nUltPrc = 1 to len (_aUltPrc)
-					if _aUltPrc [_nUltPrc, 3] < _aUltPrc [_nUltPrc, 4]
-//						m->c5_vaBloq = 'A'  /// bloqueia por preço menor que o aumento estabelecido				
+					if _aUltPrc [_nUltPrc, 3] < _aUltPrc [_nUltPrc, 4]		
 						// bloqueia por preço menor que o aumento estabelecido				
 						m->c5_vaBloq = iif ('A' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'A')
 						U_LOG ('M->C5_VABLOQ ficou com', m->c5_vaBloq)
@@ -351,10 +336,8 @@ user function GrvLibPV (_lLiberar)
 				_sErro = "Venda nao confirmada - preco abaixo do preco anterior/tabela de precos."
 				_lLiberar = .F.
 			endif
-			
 		endif
 		N = _n
-
 
 		// Prepara algumas variaveis para validacoes posteriores.
 		if _lLiberar
@@ -381,24 +364,8 @@ user function GrvLibPV (_lLiberar)
 			u_log ('contem itens faturados:', _lFaturado, 'contem itens bonificados:', _lBonific, 'contem apenas itens a granel:', _lSoGranel)
 		endif
 
-
 		// Valida margem de contribuicao.
-		if _lLiberar //.and. empty (m->c5_vaBloq) // .and. cFilAnt == '01'
-//			_lFaturado = .F.
-//			_lSoGranel = .T.
-//			_n = N
-//			for _nLinha = 1 to len (aCols)
-//				N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
-//				if ! GDDeleted ()
-//					if ! _lFaturado .and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES"), "F4_MARGEM") == '1'
-//						_lFaturado = .T.
-//					endif
-//					if _lSoGranel .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("C6_PRODUTO"), "B1_GRPEMB") != '18'
-//						_lSoGranel = .F.
-//					endif
-//				endif
-//			next
-			//u_log ('faturado:', _lFaturado, 'so granel:', _lSoGranel)
+		if _lLiberar //.and. empty (m->c5_vaBloq) 
 
 			N = _n
 			if _lFaturado .and. ! _lSoGranel  // Ignora bloqueio de margem para pedidos de granel
@@ -414,12 +381,7 @@ user function GrvLibPV (_lLiberar)
 					                 {"Sim", "Nao"}, ;
 					                 3, ;
 					                 "Margem minima")
-					if _nOpcao == 1
-//						if m->c5_vaBloq = 'A'   // se ja parou no % de ajuste
-//							m->c5_vabloq = 'N'  // % de ajuste e margem
-//						else
-//							m->c5_vabloq = 'M'
-//						endif							
+					if _nOpcao == 1							
 						m->c5_vaBloq = iif ('M' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'M')
 						U_LOG ('M->C5_VABLOQ ficou com', m->c5_vaBloq)
 					elseif _nOpcao == 2
@@ -427,11 +389,9 @@ user function GrvLibPV (_lLiberar)
 					endif
 				endif
 				
-//				if cFilAnt == '01' .and. empty (m->c5_vabloq) .and. m->c5_tpfrete == 'C' .and. m->c5_mvfre == 0
 				if cFilAnt == '01' .and. empty (m->c5_vabloq) .and. m->c5_tpfrete == 'C' .and. m->c5_mvfre == 0 .and. GetMv ("VA_BLPSF") == 'S'
 					_sErro += "Parametro VA_BLPSF: Pedido com frete CIF, mas sem valor de frete para calculo de margem. Liberacao nao sera´ feita. Cadastre rota valida no entregou.com ou informe frete negociado no cadastro do cliente."
 				endif
-
 			endif
 		endif
 
@@ -463,149 +423,156 @@ user function GrvLibPV (_lLiberar)
     			endif
 			endif
 		endif
-		
-/* nao usamos mais por esta rotina. GLPI 7001
-		// Validacoes controle de verbas
-		If _lLiberar
-			_wverbas = fBuscaCpo ('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_VERBA")
-			if _wverbas = '1'
-				_wmatriz = fBuscaCpo ('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_VACBASE")
-				_wljmatriz = fBuscaCpo ('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_VALBASE")
-				if _wmatriz=''
-					_sErro += "Cliente sem codigo MATRIZ informado"
-					_lLiberar = .F.
-				endif
-				if _wljmatriz=''
-					_sErro += "Cliente sem codigo LOJA MATRIZ informado"
-					_lLiberar = .F.
-				endif
-						
-				// se o cliente controla verbas - verifica se tem bonificacao nesse pedido
-				if _lLiberar
-					for _nLinha = 1 to len (aCols)
-						N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
-						if ! GDDeleted ()
-							if alltrim (GDFieldGet ("C6_BLQ")) != "R"
-								if alltrim (GDFieldGet ("C6_BONIFIC")) != ""
-									// busca na ZX5 se este tipo de bonificacao abate do saldo de verbas
-									//if fBuscaCpo ('ZX5', 1, xfilial('ZX5') + '22' + GDFieldGet ("C6_BONIFIC"), "ZX5_22CONT") = 'S'
-									if u_RetZX5 ('22', GDFieldGet ("C6_BONIFIC"), "ZX5_22CONT") = 'S'   
-										_wbonif = .T.
-										exit
-									endif
-								endif
-							endif								
-						endif
-					next
-					// se tem bonificacao no pedido atual - verifica saldo a bonificar
-					if _wbonif
-						_wSldBonif = 0
-						// busca saldo a bonificar
-						_sQuery := ""
-						_sQuery += " SELECT SUM(ZA4.ZA4_VLR) - ISNULL( ( SELECT SUM(ZA5_VLR)"
-						_sQuery += "         			      		       FROM ZA5010"
-						_sQuery += "       				  		          WHERE D_E_L_E_T_ = ''"
-						// eu QUERO todas as filiais para compor o saldo da verba --> _oSQL:_sQuery +=    " AND ZA5.ZA5_FILIAL = '" + xfilial ("ZA5") + "'"
-						_sQuery += "       				  		            AND ZA5_TLIB = '1'"
-						_sQuery += "         						        AND ZA5_CLI  = ZA4.ZA4_CLI
-						_sQuery += "                                        AND ZA5_LOJA = ZA4.ZA4_LOJA) ,0)"
-						_sQuery += "  FROM ZA4010 AS ZA4"
-						_sQuery += " WHERE ZA4.D_E_L_E_T_ = ''
-						_sQuery +=   " AND ZA4.ZA4_FILIAL = '" + xfilial ("ZA4") + "'"
-						_sQuery += "   AND ZA4.ZA4_CLI    = '" + _wmatriz + "'"
-						_sQuery += "   AND ZA4.ZA4_TLIB   = '1'"
-						_sQuery += " GROUP BY ZA4.ZA4_CLI, ZA4.ZA4_LOJA"
-						u_log (_sQuery)
-						_aDados := U_Qry2Array(_sQuery)
-						if len(_aDados) > 0
-							_wSldBonif = _aDados[1,1]
-						endif
-						
-						//msgalert(_wSldBonif)
-						
-						if _wSldBonif =0
-							_sErro += "Cliente sem saldo a bonificar"
-							_lLiberar = .F.
-						endif
-		
-						// monta total a bonifica neste pedido (todos os itens)
-						_wTotBonPed = 0
-						_wipiprod = 0
-						if _lLiberar
-							// inicializa MAFISINI para poder bucar o valor da ST
-							MaFisIni(M->C5_CLIENTE,;						// 1-Codigo Cliente/Fornecedor
-							M->C5_LOJACLI,;						// 2-Loja do Cliente/Fornecedor
-							IIf(M->C5_TIPO$'DB',"F","C"),;			// 3-C:Cliente , F:Fornecedor
-							M->C5_TIPO,;							// 4-Tipo da NF
-							M->C5_TIPOCLI,;						// 5-Tipo do Cliente/Fornecedor
-							MaFisRelImp("MTR700",{"SC5","SC6"}),;	// 6-Relacao de Impostos que suportados no arquivo
-							,;						   				// 7-Tipo de complemento
-							,;										// 8-Permite Incluir Impostos no Rodape .T./.F.
-							"SB1",;								// 9-Alias do Cadastro de Produtos - ("SBI" P/ Front Loja)
-							"MTR700")								// 10-Nome da rotina que esta utilizando a funcao
 
-							// tem que ler todos os itens do pedido
-							_lTes = .F.
-							_nQtItens = 0
-							for _nLinha = 1 to len (aCols)
-								N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
-								if ! GDDeleted ()
-									if alltrim (GDFieldGet ("C6_BONIFIC")) != ""
-										// le todos os itens do pedido e calcula total a bonificar no pedido
-										//if fBuscaCpo ('ZX5', 1, xfilial('ZX5') + '22' + GDFieldGet ("C6_BONIFIC"), "ZX5_22CONT") = 'S'
-										if u_RetZX5 ('22', GDFieldGet ("C6_BONIFIC"), "ZX5_22CONT") = 'S'
-											// busca IPI do item
-											MaFisAdd( GDFieldGet ("C6_PRODUTO"),;
-												GDFieldGet ("C6_TES"),;
-												GDFieldGet ("C6_QTDVEN"),;
-												GDFieldGet ("C6_PRCVEN"),;
-												0,;
-												"",;
-												"",;
-												"",;
-												0,;
-												0,;
-												0,;
-												0,;
-												( GDFieldGet ("C6_QTDVEN")* GDFieldGet ("C6_PRCVEN") ),;
-												0,;
-												0,;
-												0)
-											_nQtItens ++
-											
-											_nValSol := MaFisRet(_nQtItens, "IT_VALSOL")
-											_nValIpi := MaFisRet(_nQtItens, "IT_VALIPI")
-											_wTotBonPed = _wTotBonPed + GDFieldGet ("C6_VALOR") + _nValSol + _nValIPI 
-										endif
-									endif
-//									if GDFieldGet ("C6_TES") $ '630/657'
-//										lTes = .T.
-//									endif
-								endif
-							next
-							_wSldOutBon = 0
-							//msgalert("SALDO OUTROS PEDIDOS")
-							//msgalert(_wSldOutBon)
-							//msgalert("SALDO A BONIFICAR")
-							//msgalert(_wSldBonif)
-							//msgalert("TOTAL A BONIFICAR NO PEDIDO")
-							//msgalert(_wTotBonPed)
-						
-							if _lLiberar 
-								if  _wSldBonif < (_wTotBonPed + _wSldOutBon)
-									_sErro += "Saldo a bonificar é insuficiente para liberação dos itens bonificados. Verifique!"
-									_lLiberar = .F.
-								else
-									u_help ("Pedido com itens a bonificar, irá abater saldo em verbas." )
-									_lLiberar = .T.
-								endif
-							endif								
-						endif
-					endif
-				endif
-			endif
-		endif
-*/
+		// se pedido é bonificação
+		If _lLiberar
+			If _lBonif // É bonificação
+				m->c5_vaBloq = iif ('B' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'B')
+			EndIf
+		EndIf
+				
+		//      // nao usamos mais por esta rotina. GLPI 7001
+		// 		// Validacoes controle de verbas
+		// 		If _lLiberar
+		// 			_wverbas = fBuscaCpo ('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_VERBA")
+		// 			if _wverbas = '1'
+		// 				_wmatriz = fBuscaCpo ('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_VACBASE")
+		// 				_wljmatriz = fBuscaCpo ('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_VALBASE")
+		// 				if _wmatriz=''
+		// 					_sErro += "Cliente sem codigo MATRIZ informado"
+		// 					_lLiberar = .F.
+		// 				endif
+		// 				if _wljmatriz=''
+		// 					_sErro += "Cliente sem codigo LOJA MATRIZ informado"
+		// 					_lLiberar = .F.
+		// 				endif
+								
+		// 				// se o cliente controla verbas - verifica se tem bonificacao nesse pedido
+		// 				if _lLiberar
+		// 					for _nLinha = 1 to len (aCols)
+		// 						N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
+		// 						if ! GDDeleted ()
+		// 							if alltrim (GDFieldGet ("C6_BLQ")) != "R"
+		// 								if alltrim (GDFieldGet ("C6_BONIFIC")) != ""
+		// 									// busca na ZX5 se este tipo de bonificacao abate do saldo de verbas
+		// 									//if fBuscaCpo ('ZX5', 1, xfilial('ZX5') + '22' + GDFieldGet ("C6_BONIFIC"), "ZX5_22CONT") = 'S'
+		// 									if u_RetZX5 ('22', GDFieldGet ("C6_BONIFIC"), "ZX5_22CONT") = 'S'   
+		// 										_wbonif = .T.
+		// 										exit
+		// 									endif
+		// 								endif
+		// 							endif								
+		// 						endif
+		// 					next
+		// 					// se tem bonificacao no pedido atual - verifica saldo a bonificar
+		// 					if _wbonif
+		// 						_wSldBonif = 0
+		// 						// busca saldo a bonificar
+		// 						_sQuery := ""
+		// 						_sQuery += " SELECT SUM(ZA4.ZA4_VLR) - ISNULL( ( SELECT SUM(ZA5_VLR)"
+		// 						_sQuery += "         			      		       FROM ZA5010"
+		// 						_sQuery += "       				  		          WHERE D_E_L_E_T_ = ''"
+		// 						// eu QUERO todas as filiais para compor o saldo da verba --> _oSQL:_sQuery +=    " AND ZA5.ZA5_FILIAL = '" + xfilial ("ZA5") + "'"
+		// 						_sQuery += "       				  		            AND ZA5_TLIB = '1'"
+		// 						_sQuery += "         						        AND ZA5_CLI  = ZA4.ZA4_CLI
+		// 						_sQuery += "                                        AND ZA5_LOJA = ZA4.ZA4_LOJA) ,0)"
+		// 						_sQuery += "  FROM ZA4010 AS ZA4"
+		// 						_sQuery += " WHERE ZA4.D_E_L_E_T_ = ''
+		// 						_sQuery +=   " AND ZA4.ZA4_FILIAL = '" + xfilial ("ZA4") + "'"
+		// 						_sQuery += "   AND ZA4.ZA4_CLI    = '" + _wmatriz + "'"
+		// 						_sQuery += "   AND ZA4.ZA4_TLIB   = '1'"
+		// 						_sQuery += " GROUP BY ZA4.ZA4_CLI, ZA4.ZA4_LOJA"
+		// 						u_log (_sQuery)
+		// 						_aDados := U_Qry2Array(_sQuery)
+		// 						if len(_aDados) > 0
+		// 							_wSldBonif = _aDados[1,1]
+		// 						endif
+								
+		// 						//msgalert(_wSldBonif)
+								
+		// 						if _wSldBonif =0
+		// 							_sErro += "Cliente sem saldo a bonificar"
+		// 							_lLiberar = .F.
+		// 						endif
+				
+		// 						// monta total a bonifica neste pedido (todos os itens)
+		// 						_wTotBonPed = 0
+		// 						_wipiprod = 0
+		// 						if _lLiberar
+		// 							// inicializa MAFISINI para poder bucar o valor da ST
+		// 							MaFisIni(M->C5_CLIENTE,;						// 1-Codigo Cliente/Fornecedor
+		// 							M->C5_LOJACLI,;						// 2-Loja do Cliente/Fornecedor
+		// 							IIf(M->C5_TIPO$'DB',"F","C"),;			// 3-C:Cliente , F:Fornecedor
+		// 							M->C5_TIPO,;							// 4-Tipo da NF
+		// 							M->C5_TIPOCLI,;						// 5-Tipo do Cliente/Fornecedor
+		// 							MaFisRelImp("MTR700",{"SC5","SC6"}),;	// 6-Relacao de Impostos que suportados no arquivo
+		// 							,;						   				// 7-Tipo de complemento
+		// 							,;										// 8-Permite Incluir Impostos no Rodape .T./.F.
+		// 							"SB1",;								// 9-Alias do Cadastro de Produtos - ("SBI" P/ Front Loja)
+		// 							"MTR700")								// 10-Nome da rotina que esta utilizando a funcao
+
+		// 							// tem que ler todos os itens do pedido
+		// 							_lTes = .F.
+		// 							_nQtItens = 0
+		// 							for _nLinha = 1 to len (aCols)
+		// 								N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
+		// 								if ! GDDeleted ()
+		// 									if alltrim (GDFieldGet ("C6_BONIFIC")) != ""
+		// 										// le todos os itens do pedido e calcula total a bonificar no pedido
+		// 										//if fBuscaCpo ('ZX5', 1, xfilial('ZX5') + '22' + GDFieldGet ("C6_BONIFIC"), "ZX5_22CONT") = 'S'
+		// 										if u_RetZX5 ('22', GDFieldGet ("C6_BONIFIC"), "ZX5_22CONT") = 'S'
+		// 											// busca IPI do item
+		// 											MaFisAdd( GDFieldGet ("C6_PRODUTO"),;
+		// 												GDFieldGet ("C6_TES"),;
+		// 												GDFieldGet ("C6_QTDVEN"),;
+		// 												GDFieldGet ("C6_PRCVEN"),;
+		// 												0,;
+		// 												"",;
+		// 												"",;
+		// 												"",;
+		// 												0,;
+		// 												0,;
+		// 												0,;
+		// 												0,;
+		// 												( GDFieldGet ("C6_QTDVEN")* GDFieldGet ("C6_PRCVEN") ),;
+		// 												0,;
+		// 												0,;
+		// 												0)
+		// 											_nQtItens ++
+													
+		// 											_nValSol := MaFisRet(_nQtItens, "IT_VALSOL")
+		// 											_nValIpi := MaFisRet(_nQtItens, "IT_VALIPI")
+		// 											_wTotBonPed = _wTotBonPed + GDFieldGet ("C6_VALOR") + _nValSol + _nValIPI 
+		// 										endif
+		// 									endif
+		// //									if GDFieldGet ("C6_TES") $ '630/657'
+		// //										lTes = .T.
+		// //									endif
+		// 								endif
+		// 							next
+		// 							_wSldOutBon = 0
+		// 							//msgalert("SALDO OUTROS PEDIDOS")
+		// 							//msgalert(_wSldOutBon)
+		// 							//msgalert("SALDO A BONIFICAR")
+		// 							//msgalert(_wSldBonif)
+		// 							//msgalert("TOTAL A BONIFICAR NO PEDIDO")
+		// 							//msgalert(_wTotBonPed)
+								
+		// 							if _lLiberar 
+		// 								if  _wSldBonif < (_wTotBonPed + _wSldOutBon)
+		// 									_sErro += "Saldo a bonificar é insuficiente para liberação dos itens bonificados. Verifique!"
+		// 									_lLiberar = .F.
+		// 								else
+		// 									u_help ("Pedido com itens a bonificar, irá abater saldo em verbas." )
+		// 									_lLiberar = .T.
+		// 								endif
+		// 							endif								
+		// 						endif
+		// 					endif
+		// 				endif
+		// 			endif
+		// 		endif
+
 		// Se alguma das linhas tinha problemas, nao libera nenhuma.
 		if ! empty (_sErro)
 			u_help (_sErro)
