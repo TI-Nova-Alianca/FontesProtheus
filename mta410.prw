@@ -90,9 +90,9 @@
 // 14/08/2020 - Robert  - Desabilitada validacao do 'custo para transferencia' quando chamado a partir do MATA310 (GLPI 8077)
 // 18/01/2021 - Claudia - GLPI: 8966 - Incluida validação de forma de pagamento CC e CD
 // 25/01/2021 - Robert  - Melhorada msg. de cond.pag. bonificacao com TES gerando financeiro (GLPI 9128).
-//
+// 10/03/2021 - Claudia - Alterado o parametro da função VA_McPed para calcular frete. GLPI: 9581
 
-// --------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------------
 User Function MTA410 ()
 	local _lRet      := .T.
 	local _aAmbAnt   := U_SalvaAmb ()
@@ -258,7 +258,7 @@ User Function MTA410 ()
 	// Recalcula valor previsto para a nota fiscal e margem por que ficam persistidos em campos do SC5 que sao consultados fora desta tela. 
 	if _lRet
 		m->c5_vaVlFat = Ma410Impos (iif (inclui, 3, 4), .T.)  // (nOpc, lRetTotal, aRefRentab)
-		processa ({|| U_VA_McPed (.F., .F.), "Calculando margem de contribuicao"})
+		processa ({|| U_VA_McPed (.F., .T.), "Calculando margem de contribuicao"})
 	endif
 
 	// validação condição de pagamento/forma de pagamento
