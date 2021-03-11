@@ -93,6 +93,7 @@
 // 25/02/2021 - Robert - Passa a buscar grupo familiar na view VA_VASSOC_GRP_FAM para manter consistencia com outros programas (GLPI 8804).
 // 05/03/2021 - Robert - Na leitura de prev.pagto. (método FechSafra) nao considerava faturas que podem ainda ser geradas em janeiro do ano seguinte (GLPI 9558).
 //                       Na leitura de prev.pagto. (método FechSafra) somar premio qualid.safra 2020 (GLPI 9530).
+// 08/03/2021 - Robert - Criado resumo variedade/grau/clas no metodo FechSafra (GLPI 9572).
 //
 
 #include "protheus.ch"
@@ -1039,7 +1040,7 @@ return _aRet
 // --------------------------------------------------------------------------
 // Gera string para posteriormente montar demonstrativo de fechamento de safra em formato XML.
 //METHOD FechSafra (_sSafra, _lSohRegra, _lPrevPag) Class ClsAssoc
-METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResV, _lFSFrtS, _lFSLcCC) Class ClsAssoc
+METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC) Class ClsAssoc
 	local _sRetFechS      := ''
 	local _oSQL      := NIL
 	local _sAliasQ   := ""
@@ -1143,7 +1144,6 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 					_nTotValor += (_sAliasQ) -> valor_unit * iif ((_sAliasQ) -> tipo_nf == 'V', 1, (_sAliasQ) -> peso_liq)
 				endif
 				(_sAliasQ) -> (dbskip ())
-			//	u_log (_sRetFechS)
 			enddo
 
 			// Exporta totais no final de cada tipo de nota.
@@ -1364,8 +1364,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 
 	// Resumo grau medio por variedade
 	// Termina de calcular as medias por variedade e insere nos dados para retorno da funcao.
-//	if ! _lSohRegra
-	if _lFSResV
+	if _lFSResVGM
 		_sRetFechS += '<resumoVariedade>'
 		_aMedVar = {}
 		_nTotValor = 0
@@ -1415,6 +1414,58 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 		_sRetFechS += '</resumoVariedadeItem>'
 		_sRetFechS += '</resumoVariedade>'
 	endif
+
+
+	// Resumo de grau e classificaca por variedade
+	// Termina de calcular as medias por variedade e insere nos dados para retorno da funcao.
+	U_Log2 ('debug', _lFSResVGC)
+	if _lFSResVGC
+		U_Log2 ('debug', 'Buscando resumo por variedade / grau / classif')
+		_sRetFechS += '<resumoVarGrauClas>'
+		_nTotPeso  = 0
+		_nTotValor = 0
+		_oSQL := ClsSQL():New ()
+
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT PRODUTO, DESCRICAO, GRAU, CLAS_ABD, CLAS_FINAL, SIST_CONDUCAO, SUM (PESO_LIQ) AS PESO_LIQ, SUM (VALOR_COMPRA + VALOR_COMPLEMENTO) AS VALOR_TOTAL"
+		_oSQL:_sQuery +=  " FROM VA_VPRECO_EFETIVO_SAFRA"
+		_oSQL:_sQuery += " WHERE ASSOCIADO  = '" + ::Codigo + "'"
+		_oSQL:_sQuery +=   " AND LOJA_ASSOC = '" + ::Loja + "'"
+		_oSQL:_sQuery +=   " AND SAFRA      = '" + _sSafra + "'"
+		_oSQL:_sQuery += " GROUP BY PRODUTO, DESCRICAO, GRAU, CLAS_ABD, CLAS_FINAL, SIST_CONDUCAO"
+		_oSQL:_sQuery += " ORDER BY DESCRICAO, GRAU, CLAS_ABD, CLAS_FINAL"
+		_sAliasQ := _oSQL:Qry2Trb (.F.)
+		(_sAliasQ) -> (dbgotop ())
+		do while ! (_sAliasQ) -> (eof ())
+			_sRetFechS += '<resumoVarGrauClasItem>'
+			_sRetFechS += '<varied>'    + alltrim ((_sAliasQ) -> produto) + '</varied>'
+			_sRetFechS += '<desc>'      + alltrim ((_sAliasQ) -> descricao) + '</desc>'
+			_sRetFechS += '<grau>' + cvaltochar ((_sAliasQ) -> grau) + '</grau>'
+			if (_sAliasQ) -> sist_conducao == 'L'
+				_sRetFechS += '<clas>' + cvaltochar ((_sAliasQ) -> clas_abd) + '</clas>'
+			elseif (_sAliasQ) -> sist_conducao == 'E'
+				_sRetFechS += '<clas>' + cvaltochar ((_sAliasQ) -> clas_fina) + '</clas>'
+			else
+				_sRetFechS += '</clas>'
+			endif
+			_sRetFechS += '<peso>'      + cvaltochar ((_sAliasQ) -> peso_liq) + '</peso>'
+			_sRetFechS += '<valTotal>'  + cvaltochar ((_sAliasQ) -> valor_total) + '</valTotal>'
+			_sRetFechS += '</resumoVarGrauClasItem>'
+			_nTotPeso  += (_sAliasQ) -> peso_liq
+			_nTotValor += (_sAliasQ) -> valor_total
+			(_sAliasQ) -> (dbskip ())
+		enddo
+		(_sAliasQ) -> (dbclosearea ())
+
+		// Ultima linha contem os totais
+		_sRetFechS += '<resumoVarGrauClasItem>'
+		_sRetFechS += '<varied>TOTAIS</varied>'
+		_sRetFechS += '<peso>'  + cvaltochar (_nTotPeso) + '</peso>'
+		_sRetFechS += '<valTotal>'  + cvaltochar (_nTotValor) + '</valTotal>'
+		_sRetFechS += '</resumoVarGrauClasItem>'
+		_sRetFechS += '</resumoVarGrauClas>'
+	endif
+
 
 	// Auxilio combustivel / frete
 //	if ! _lSohRegra

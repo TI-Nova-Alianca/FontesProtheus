@@ -14,6 +14,7 @@
 // 24/09/2019 - Robert - Implementado metodo de consulta de conta corrente.
 // 15/01/2021 - Robert - Acao 'RetTicketCargaSafra' migrada do ws_alianca para ca (preciso acessar das filiais)
 // 12/02/2021 - Robert - Novos parametros metodo ClsAssoc:FechSafra() - GLPI 9318
+// 08/03/2021 - Robert - Novos parametros metodo ClsAssoc:FechSafra (GLPI 9572)
 //
 
 // ------------------------------------------------------------------------------------------------
@@ -202,8 +203,8 @@ static function _AsFecSaf ()
 		endif
 	endif
 	if empty (_sErros)
-		//                         _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResV, _lFSFrtS, _lFSLcCC
-		_sRet = _oAssoc:FechSafra (_sSafra, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,      .t.,      .t.)
+		//                         _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC
+		_sRet = _oAssoc:FechSafra (_sSafra, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,        .t.,      .t.,      .f.)
 //		_sRet = _oAssoc:FechSafra (_sSafra, .F., .T.)
 		if empty (_sRet)
 			_sErros += "Retorno invalido metodo FechSafra " + _oAssoc:UltMsg
