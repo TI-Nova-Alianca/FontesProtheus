@@ -38,6 +38,8 @@
 //                      - Criado parametro para nao enviar e-mail de notificacao de alteracao de cadastro (util para execucao em batch)
 // 20/08/2019 - Robert  - Melhorado metodo AltCadast() para gerar em formato parecido com XML.
 // 22/06/2020 - Robert  - Eliminados alguns logs desnecessarios.
+// 10/03/2021 - Robert  - Melhoria metodo Log().
+//                      - Implementado metodo GravaNovo().
 //
 
 #include "protheus.ch"
@@ -94,6 +96,7 @@ CLASS ClsEvent
 	METHOD AltCadast ()
 	METHOD Exclui ()
 	METHOD Grava ()
+	METHOD GravaNovo ()
 	METHOD LeParam ()
 	METHOD Log ()
 	METHOD SendMail ()
@@ -179,14 +182,6 @@ Return Self
 METHOD Grava () Class ClsEvent
 	local _aArea    := U_ML_SRArea ()
 	local _sTextoZN := ""
-//	local _sMemo    := ""
-
-	//u_logIni (GetClassName (::Self) + '.' + procname ())
-
-	// Se tem quebras de linha no texto ou se o texto eh grande demais, gera memo.
-//	if chr (13) $ ::Texto .or. len (alltrim (::Texto)) > tamsx3 ("ZN_TEXTO")[1]
-//		_sMemo = ::Texto
-//	endif
 	
 	// Se tem quebras de linha no texto, gravo soh a primeira linha no SZN e deixo o restante para o campo memo.
 	if chr (13) $ ::Texto
@@ -245,6 +240,47 @@ METHOD Grava () Class ClsEvent
 	U_ML_SRArea (_aArea)
 	//u_logFim (GetClassName (::Self) + '.' + procname ())
 return .t.
+
+
+
+// --------------------------------------------------------------------------
+// Gravacao de eventos somente quando ainda nao existirem (evitar duplicidade)
+METHOD GravaNovo () Class ClsEvent
+	local _oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += "SELECT COUNT (*)"
+	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZN") + " SZN "
+	_oSQL:_sQuery += " WHERE SZN.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=   " AND SZN.ZN_FILIAL  = '" + ::Filial + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_CODEVEN = '" + ::CodEven + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_DATA    = '" + dtos (::DtEvento) + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_HORA    = '" + ::HrEvento + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_NFS     = '" + ::NFSaida + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_SERIES  = '" + ::SerieSaid + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_NFE     = '" + ::NFEntrada + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_SERIEE  = '" + ::SerieEntr + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_PRODUTO = '" + ::Produto + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_PEDVEND = '" + ::PedVenda + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_CLIENTE = '" + ::Cliente + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_LOJACLI = '" + ::LojaCli + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_FORNECE = '" + ::Fornece + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_LOJAFOR = '" + ::LojaFor + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_ALIAS   = '" + ::Alias + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_COD     = '" + ::CodAlias + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_CHAVE   = '" + ::Chave + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_PARCTIT = '" + ::ParcTit + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_OP      = '" + ::OP + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_ETIQ    = '" + ::Etiqueta + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_TRANSP  = '" + ::Transp + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_REDESP  = '" + ::TranspReds + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_CODPROC = '" + ::CodProceda + "'"
+	// _oSQL:Log ()
+	if _oSQL:RetQry (1, .f.) == 0
+		::Grava ()
+	else
+		U_Log2 ('aviso', 'Evento nao vai ser gravado, pois jah existe registro com essa informacao no SZN.')
+	endif
+return
 
 
 
@@ -393,28 +429,53 @@ return
 // --------------------------------------------------------------------------
 // Grava dados do evento em arquivo de log
 METHOD Log () Class ClsEvent
-	U_Log ("----------------- EVENTO ----------------- [" + dtoc (date()) + ' ' + time() + ']')
-	if !empty (::CodEven);                 U_Log ("Cod.evento.....:" + ::CodEven); endif
-	if !empty (::Texto);                   U_Log ("Texto..........:" + ::Texto); endif
-	if !empty (::OP);                      U_Log ("OP.............:" + ::OP); endif
-	if !empty (::Produto);                 U_Log ("Produto........:" + ::Produto); endif
-	if !empty (::PedVenda);                U_Log ("Pedido venda...:" + ::PedVenda); endif
-	if !empty (::NFEntrada + ::SerieEntr); U_Log ("NF entr./serie.:" + ::NFEntrada + "/" + ::SerieEntr); endif
-	if !empty (::NFSaida + ::SerieSaid);   U_Log ("NF saida/serie.:" + ::NFSaida + "/" + ::SerieSaid); endif
-	if !empty (::ParcTit);                 U_Log ("Parcela titulo.:" + ::ParcTit); endif
-	if !empty (::Cliente + ::LojaCli);     U_Log ("Cliente/loja...:" + ::Cliente + "/" + ::LojaCli); endif
-	if !empty (::Fornece + ::LojaFor);     U_Log ("Fornecedor/loja:" + ::Fornece + "/" + ::LojaFor); endif
-	if !empty (::Alias);                   U_Log ("Alias/recno....:" + ::Alias + "/" + cvaltochar (::Recno)); endif
-	if !empty (::Recno);                   U_Log ("Recno..........:" + cvaltochar (::Recno)); endif
-	if !empty (::CodAlias);                U_Log ("Codigo alias...:" + ::CodAlias); endif
-	if !empty (::MailTo);                  U_Log ("MailTo.........:" + ::MailTo); endif
-	if !empty (::MailToZZU);               U_Log ("MailToZZU......:" + ::MailToZZU); endif
-	if !empty (::Hist);                    U_Log ("Historico......:" + ::Hist); endif
-	if !empty (::Status);                  U_Log ("Status.........:" + ::Status); endif
-	if !empty (::Sub);                     U_Log ("Substatus......:" + ::Sub); endif
-	if !empty (::Prazo);                   U_Log ("Prazo..........:" + cvaltochar (::Prazo)); endif
-	                                       U_Log ("Flag...........:" + cvaltochar (::Flag))
-	U_Log ("-----------------------------------------------------------")
+	local _sTxtlog := ''
+	// U_Log ("----------------- EVENTO ----------------- [" + dtoc (date()) + ' ' + time() + ']')
+	// if !empty (::CodEven);                 U_Log ("Cod.evento.....:" + ::CodEven); endif
+	// if !empty (::Texto);                   U_Log ("Texto..........:" + ::Texto); endif
+	// if !empty (::OP);                      U_Log ("OP.............:" + ::OP); endif
+	// if !empty (::Produto);                 U_Log ("Produto........:" + ::Produto); endif
+	// if !empty (::PedVenda);                U_Log ("Pedido venda...:" + ::PedVenda); endif
+	// if !empty (::NFEntrada + ::SerieEntr); U_Log ("NF entr./serie.:" + ::NFEntrada + "/" + ::SerieEntr); endif
+	// if !empty (::NFSaida + ::SerieSaid);   U_Log ("NF saida/serie.:" + ::NFSaida + "/" + ::SerieSaid); endif
+	// if !empty (::ParcTit);                 U_Log ("Parcela titulo.:" + ::ParcTit); endif
+	// if !empty (::Cliente + ::LojaCli);     U_Log ("Cliente/loja...:" + ::Cliente + "/" + ::LojaCli); endif
+	// if !empty (::Fornece + ::LojaFor);     U_Log ("Fornecedor/loja:" + ::Fornece + "/" + ::LojaFor); endif
+	// if !empty (::Alias);                   U_Log ("Alias/recno....:" + ::Alias + "/" + cvaltochar (::Recno)); endif
+	// if !empty (::Recno);                   U_Log ("Recno..........:" + cvaltochar (::Recno)); endif
+	// if !empty (::CodAlias);                U_Log ("Codigo alias...:" + ::CodAlias); endif
+	// if !empty (::MailTo);                  U_Log ("MailTo.........:" + ::MailTo); endif
+	// if !empty (::MailToZZU);               U_Log ("MailToZZU......:" + ::MailToZZU); endif
+	// if !empty (::Hist);                    U_Log ("Historico......:" + ::Hist); endif
+	// if !empty (::Status);                  U_Log ("Status.........:" + ::Status); endif
+	// if !empty (::Sub);                     U_Log ("Substatus......:" + ::Sub); endif
+	// if !empty (::Prazo);                   U_Log ("Prazo..........:" + cvaltochar (::Prazo)); endif
+	//                                        U_Log ("Flag...........:" + cvaltochar (::Flag))
+	// U_Log ("-----------------------------------------------------------")
+	_sTxtLog := "----------------- EVENTO -----------------" + chr (13) + chr (10)
+	                                       _sTxtLog += "Data/hora evt..: " + dtoc (::DtEvento) + ' ' + ::HrEvento + chr (13) + chr (10)
+	if !empty (::CodEven);                 _sTxtLog += "Cod.evento.....: " + ::CodEven + chr (13) + chr (10); endif
+	if !empty (::Texto);                   _sTxtLog += "Texto..........: " + ::Texto + chr (13) + chr (10); endif
+	if !empty (::OP);                      _sTxtLog += "OP.............: " + ::OP + chr (13) + chr (10); endif
+	if !empty (::Produto);                 _sTxtLog += "Produto........: " + ::Produto + chr (13) + chr (10); endif
+	if !empty (::PedVenda);                _sTxtLog += "Pedido venda...: " + ::PedVenda + chr (13) + chr (10); endif
+	if !empty (::NFEntrada + ::SerieEntr); _sTxtLog += "NF entr./serie.: " + ::NFEntrada + "/" + ::SerieEntr + chr (13) + chr (10); endif
+	if !empty (::NFSaida + ::SerieSaid);   _sTxtLog += "NF saida/serie.: " + ::NFSaida + "/" + ::SerieSaid + chr (13) + chr (10); endif
+	if !empty (::ParcTit);                 _sTxtLog += "Parcela titulo.: " + ::ParcTit + chr (13) + chr (10); endif
+	if !empty (::Cliente + ::LojaCli);     _sTxtLog += "Cliente/loja...: " + ::Cliente + "/" + ::LojaCli + chr (13) + chr (10); endif
+	if !empty (::Fornece + ::LojaFor);     _sTxtLog += "Fornecedor/loja: " + ::Fornece + "/" + ::LojaFor + chr (13) + chr (10); endif
+	if !empty (::Alias);                   _sTxtLog += "Alias/recno....: " + ::Alias + "/" + cvaltochar (::Recno) + chr (13) + chr (10); endif
+	if !empty (::Recno);                   _sTxtLog += "Recno..........: " + cvaltochar (::Recno) + chr (13) + chr (10); endif
+	if !empty (::CodAlias);                _sTxtLog += "Codigo alias...: " + ::CodAlias + chr (13) + chr (10) ; endif
+	if !empty (::MailTo);                  _sTxtLog += "MailTo.........: " + ::MailTo + chr (13) + chr (10); endif
+	if !empty (::MailToZZU);               _sTxtLog += "MailToZZU......: " + ::MailToZZU + chr (13) + chr (10); endif
+	if !empty (::Hist);                    _sTxtLog += "Historico......: " + ::Hist + chr (13) + chr (10); endif
+//	if !empty (::Status);                  _sTxtLog += "Status.........: " + ::Status + chr (13) + chr (10); endif
+//	if !empty (::Sub);                     _sTxtLog += "Substatus......: " + ::Sub + chr (13) + chr (10); endif
+//	if !empty (::Prazo);                   _sTxtLog += "Prazo..........: " + cvaltochar (::Prazo) + chr (13) + chr (10); endif
+//	                                       _sTxtLog += "Flag...........: " + cvaltochar (::Flag) + chr (13) + chr (10)
+	_sTxtLog += "-----------------------------------------------------------" + chr (13) + chr (10)
+	u_log2 ('info', _sTxtLog)
 return
 
 
