@@ -16,7 +16,7 @@
 // ---------------------------------------------------------------------------------------------------------------
 
 User Function F200FIM()
-    If upper (GetEnvServer ()) $ "TESTE/TESTECLAUDIA" 
+    //If upper (GetEnvServer ()) $ "TESTE/TESTECLAUDIA" 
         u_ZB5TRANSF(cFilAnt)
-    EndIf
+    //EndIf
 Return

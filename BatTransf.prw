@@ -17,7 +17,7 @@
 #include 'parmtype.ch'
 #Include "totvs.ch"
 
-User Function BatTransf(_sFilBat)
+User Function BatTransf(_sFilBat, _sFilReg)
 	cPerg   := "ZB5TRANSF"
 
     _oSQL:= ClsSQL ():New ()
@@ -52,6 +52,7 @@ User Function BatTransf(_sFilBat)
         _oSQL:_sQuery += " AND ZB5.ZB5_FILIAL = '" + _sFilBat + "'"
     Else
         _oSQL:_sQuery += " AND ZB5.ZB5_STATUS = 'P'"
+        _oSQL:_sQuery += " AND ZB5.ZB5_FILIAL = '" + _sFilReg + "'"
     EndIf
     _oSQL:_sQuery += " GROUP BY ZB5.ZB5_FILIAL"
     _oSQL:_sQuery += " 		,ZB4.ZB4_BANCO"
@@ -71,9 +72,9 @@ User Function BatTransf(_sFilBat)
 
     If Len(_aZB5) > 0
         If _sFilBat <> '01' 
-            _FilialToCT(_sFilBat,_aZB5) // Transf. FIlial -> conta transitória
+            _FilialToCT(_sFilBat,_sFilReg,_aZB5) // Transf. FIlial -> conta transitória
         Else
-            _CTtoMatriz(_sFilBat,_aZB5) // Conta transitória -> Matriz
+            _CTtoMatriz(_sFilBat,_sFilReg,_aZB5) // Conta transitória -> Matriz
         EndIf
     Else
         _oEvento := ClsEvent():New ()
@@ -87,10 +88,10 @@ Return
 //
 // --------------------------------------------------------------------------
 // Realiza as tranferencias Filial -> conta transitoria
-Static Function _FilialToCT(_sFilBat,_aZB5)
+Static Function _FilialToCT(_sFilBat,_sFilReg,_aZB5)
     Local _x        := 0
     Local _aFINA100 := {}
-    Local _sNumDoc  := _sFilBat + Substr(DTOS(date()),7,2) + Substr(DTOS(date()),5,2) + Substr(DTOS(date()),3,2) + SUBSTR(TIME(), 1, 2)    
+    Local _sNumDoc  := _sFilReg + Substr(DTOS(date()),7,2) + Substr(DTOS(date()),5,2) + Substr(DTOS(date()),3,2) //+ TIME()   
 
     For _x := 1 to Len(_aZB5)
         _nVlrRec    := _aZB5[_x, 2] 
@@ -196,16 +197,32 @@ Static Function _FilialToCT(_sFilBat,_aZB5)
 
         If lCont .and. (_nVlrDes > 0 .or. _nVlrRec > 0) // grava status nos registros
             _GravaStatus('A','P', _sFilBat, _sFilial)
+            // cria o bacht da matriz
+                _oBatch := ClsBatch():new ()
+                _oBatch:Dados    = 'Transf.vlr. CT para 01 - Referente:'+_sFilBat
+                _oBatch:EmpDes   = cEmpAnt
+                _oBatch:FilDes   = '01'
+                _oBatch:DataBase = dDataBase
+                _oBatch:Modulo   = 6 
+                _oBatch:Comando  = "U_BatTransf('01','" + _sFilBat + "')"
+                _oBatch:Grava ()
+
+                _oEvento := ClsEvent():New ()
+                _oEvento:Alias     = 'ZB5'
+                _oEvento:Texto     = "CRIOU BATCH C.T-> MATRIZ:" + cEmpAnt +'-01-' + dtos(dDataBase) +'-'+ "U_BatTransf('01','" + _sFilBat + "')"
+                _oEvento:CodEven   = "ZB5001"
+                _oEvento:Grava()
+
         EndIf
     Next
 Return
 //
 // --------------------------------------------------------------------------
 // Realiza as tranferencias conta transitoria -> matriz
-Static Function _CTtoMatriz(_sFilBat,_aZB5)
+Static Function _CTtoMatriz(_sFilBat,_sFilReg,_aZB5)
     Local _x        := 0
     Local _aFINA100 := {}
-    Local _sNumDoc  := _sFilBat + Substr(DTOS(date()),7,2) + Substr(DTOS(date()),5,2) + Substr(DTOS(date()),3,2) + 'A' + SUBSTR(TIME(), 1, 2)  
+    Local _sNumDoc  := _sFilReg + Substr(DTOS(date()),7,2) + Substr(DTOS(date()),5,2) + Substr(DTOS(date()),3,2) + 'A' //+ TIME()
 
     For _x := 1 to Len(_aZB5)
         _nVlrRec    := _aZB5[_x, 2] 

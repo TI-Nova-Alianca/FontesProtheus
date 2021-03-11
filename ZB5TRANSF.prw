@@ -21,22 +21,12 @@ User Function ZB5TRANSF(_sFilial)
     _oBatch:FilDes   = _sFilial
     _oBatch:DataBase = dDataBase
     _oBatch:Modulo   = 6 
-    _oBatch:Comando  = "U_BatTransf('" + _sFilial + "')"
-    _oBatch:Grava ()
-
-    _oBatch := ClsBatch():new ()
-    _oBatch:Dados    = 'Transf.vlr. CT para 01 - '+_sFilial
-    _oBatch:EmpDes   = cEmpAnt
-    _oBatch:FilDes   = '01'
-    _oBatch:DataBase = dDataBase
-    _oBatch:Modulo   = 6 
-    _oBatch:Comando  = "U_BatTransf('01')"
+    _oBatch:Comando  = "U_BatTransf('" + _sFilial + "','" + _sFilial + "')"
     _oBatch:Grava ()
 
     _oEvento := ClsEvent():New ()
     _oEvento:Alias     = 'ZB5'
-    _oEvento:Texto     = "CRIOU BATCHS:" + cEmpAnt +'-' + _sFilial +'-' + dtos(dDataBase) +'-'+"U_BatTransf('" + _sFilial + "')" + "*******" + chr (13) + chr (10) + ;
-                          cEmpAnt +'- 01'+ dtos(dDataBase) + "U_BatTransf('01')"
+    _oEvento:Texto     = "CRIOU BATCH FILIAL-> C.T:" + cEmpAnt +'-' + _sFilial +'-' + dtos(dDataBase) +'-'+ "U_BatTransf('" + _sFilial + "','" + _sFilial + "')"
     _oEvento:CodEven   = "ZB5001"
     _oEvento:Grava()
 

@@ -132,7 +132,7 @@ User Function F200VAR()
 	// Verifica qual banco estah sendo processado. Verifica diferentes variaveis por que este
 	// ponto de entrada eh executado na impressao de relatorio e na importacao do arquivo de retorno.
 
-	If upper (GetEnvServer ()) $ "TESTE/TESTECLAUDIA" 
+	//If upper (GetEnvServer ()) $ "TESTE/TESTECLAUDIA" 
 		if IsInCallStack ("FINA200") .and.  xFilial("SE1") <> '01'
 			if substr(cNumTit,1,3) == '000'
 				_sTit = '10 ' + cNumTit
@@ -215,7 +215,7 @@ User Function F200VAR()
 				End Transaction			
 			endif
 		endif
-	EndIf
+	//EndIf
 	
 	// TRATAMENTO DO CNAB A RECEBER
 	if IsInCallStack ("FINA200") .or. (IsInCallStack ("FINR650") .and. mv_par07= 1) 
