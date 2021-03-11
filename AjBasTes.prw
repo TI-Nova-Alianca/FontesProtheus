@@ -142,7 +142,8 @@ user function AjBasTes ()
 		// Muda NFe e NFCe para 'homologacao'
 		_oClsNFe := ClsNFe ():New ()
 		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := "UPDATE SPED000 SET CONTEUDO='2' WHERE D_E_L_E_T_ = '' AND PARAMETRO IN ('MV_AMBIENT', 'MV_AMBCCE', 'MV_AMBMDFE', 'MV_AMBNFCE') AND ID_ENT = '" + _oClsNFe:GetEntid () + "'"
+		// _oSQL:_sQuery := "UPDATE SPED000 SET CONTEUDO='2' WHERE D_E_L_E_T_ = '' AND PARAMETRO IN ('MV_AMBIENT', 'MV_AMBCCE', 'MV_AMBMDFE', 'MV_AMBNFCE') AND ID_ENT = '" + _oClsNFe:GetEntid () + "'"
+		_oSQL:_sQuery := "UPDATE SPED000 SET CONTEUDO='2' WHERE D_E_L_E_T_ = '' AND PARAMETRO IN ('MV_AMBIENT', 'MV_AMBCCE', 'MV_AMBMDFE', 'MV_AMBNFCE')"
 		_oSQL:Log ()
 		_oSQL:Exec ()
 
