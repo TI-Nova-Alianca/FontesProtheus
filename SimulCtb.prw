@@ -71,7 +71,7 @@ static function _FujaLouco ()
 */
 
 	for _nTabMovto = 1 to 3
-		u_log2 ('info', '_nTabMovto: ' + _nTabMovto + ' _lContinua: ' + _lContinua)
+		u_log2 ('info', '_nTabMovto: ' + cvaltochar (_nTabMovto) + ' _lContinua: ' + cvaltochar (_lContinua))
 		if ! _lContinua
 			u_help ('Abortando no inicio da tabela de movtos',, .t.)
 			exit
@@ -130,6 +130,7 @@ static function _FujaLouco ()
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND CT5_FILIAL = '" + xfilial ("CT5") + "'"
 		_oSQL:_sQuery +=   " AND CT5_STATUS = '1'"  // Ativo
+		
 		do case
 		case _sTabMovto == 'SD1'
 			_oSQL:_sQuery +=   " AND CT5_VLR01 LIKE '%D1$_%' ESCAPE '$'"
@@ -144,8 +145,8 @@ static function _FujaLouco ()
 		_oSQL:_sQuery += " ORDER BY CT5_LANPAD, CT5_SEQUEN"
 		_oSQL:Log ()
 		_aRegCT5 = aclone (_oSQL:Qry2Array ())
-		u_log2 ('debug', 'Registros CT5:')
-		u_log2 ('debug', _aRegCT5)
+		//u_log2 ('debug', 'Registros CT5:')
+		//u_log2 ('debug', _aRegCT5)
 
 		// Varre o arquivo de movimentos e tenta executar as contabilizacoes.
 		sf4 -> (dbsetorder (1))
@@ -181,16 +182,16 @@ static function _FujaLouco ()
 
 					// Quando lcto de rateio, processa todos os registros da tabela SDE (rateios)
 					if 'DE_' $ upper (ct5 -> ct5_vlr01)
-						u_log2 ('info', 'LPAD ' + ct5 -> ct5_lanpad + ' tem rateio. Testando chave ' + xfilial ("SDE") + sd1 -> d1_doc + sd1 -> d1_serie + sd1 -> d1_fornece + sd1 -> d1_loja + sd1 -> d1_item)
+					//	u_log2 ('info', 'LPAD ' + ct5 -> ct5_lanpad + '/' + ct5 -> ct5_sequen + ' tem rateio. Testando chave ' + xfilial ("SDE") + sd1 -> d1_doc + sd1 -> d1_serie + sd1 -> d1_fornece + sd1 -> d1_loja + sd1 -> d1_item)
 						sde -> (dbseek (xfilial ("SDE") + sd1 -> d1_doc + sd1 -> d1_serie + sd1 -> d1_fornece + sd1 -> d1_loja + sd1 -> d1_item, .T.))
 						do while ! sde -> (eof ());
 						.and. sde -> de_filial  == xfilial ("SDE");
 						.and. sde -> de_doc     == sd1 -> d1_doc;
 						.and. sde -> de_serie   == sd1 -> d1_serie;
 						.and. sde -> de_fornece == sd1 -> d1_fornece;
-						.and. sde -> de loja    == sd1 -> d1_loja;
+						.and. sde -> de_loja    == sd1 -> d1_loja;
 						.and. sde -> de_itemnf  == sd1 -> d1_item
-							u_log2 ('info', 'Verificando de_item: ' + sde -> de_item)
+					//		u_log2 ('info', 'Verificando de_item: ' + sde -> de_item)
 							_ExecLPad ()
 							sde -> (dbskip ())
 						enddo

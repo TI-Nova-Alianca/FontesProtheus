@@ -55,6 +55,21 @@
 			"_oSQL:_sQuery +=   \" AND $1.$1_FILIAL  = '\" + xfilial (\"$1\") + \"'\"",
 			"_oSQL:_sQuery +=   \" AND $1.$1_\""
 			]
-		}
+		},
 
+	"Salvar area de trabalho":{
+		"prefix": "salvar",
+		"body": [
+			"local _aAreaAnt := U_ML_SRArea ()",
+			"local _aAmbAnt  := U_SalvaAmb ()"
+		]
+	},
+
+	"Restaurar area de trabalho":{
+		"prefix": "restaurar",
+		"body": [
+			"U_SalvaAmb (_aAmbAnt)",
+			"U_ML_SRArea (_aAreaAnt)"
+		]
+	},
 }

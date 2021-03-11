@@ -31,6 +31,8 @@
 // 03/09/2020 - Robert  - Criado layout resumido.
 // 15/02/2021 - Robert  - Criados modelos com/sem previsao de pagamento - GLPI 9318
 //                      - Novos parametros metodo ClsAssoc:FechSafra() - GLPI 9318
+// 08/03/2021 - Robert  - Resumo por variedade/grau medio passa a listar graus abertos (GLPI 9572)
+//                      - Novos parametros metodo ClsAssoc:FechSafra()
 //
 
 #include "protheus.ch"
@@ -985,11 +987,11 @@ static function _Modelo2 (_lSohCompr)
 		endif
 
 		// Busca dados do fechamento de safra. Usa mesmo o metodo do APP associados.
-		//                                  _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResV, _lFSFrtS, _lFSLcCC
+		//                                  _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lResVGC
 		if _lSohCompr
-			_sXmlFech = _oAssoc:FechSafra (mv_par01, .f.,     .t.,     .f.,     .f.,     .f.,      .f.,      .f.,      .f.,      .f.,      .f.)
+			_sXmlFech = _oAssoc:FechSafra (mv_par01, .f.,     .t.,     .f.,     .f.,     .f.,      .f.,      .f.,      .f.,        .f.,      .f.,      .F.)
 		else
-			_sXmlFech = _oAssoc:FechSafra (mv_par01, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,      .t.,      .t.)
+			_sXmlFech = _oAssoc:FechSafra (mv_par01, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,        .t.,      .t.,      .f.)
 		endif
 		//	u_log2 ('debug', _sXmlFech)
 		if empty (_sXmlFech)
@@ -1442,11 +1444,11 @@ static function _Modelo3 (_lSohCompr)
 		endif
 
 		// Busca dados do fechamento de safra. Usa mesmo o metodo do APP associados.
-		//                                  _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResV, _lFSFrtS, _lFSLcCC
+		//                                  _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lResVGC
 		if _lSohCompr
-			_sXmlFech = _oAssoc:FechSafra (mv_par01, .f.,     .t.,     .f.,     .f.,     .f.,      .t.,      .f.,      .f.,      .f.,      .f.)
+			_sXmlFech = _oAssoc:FechSafra (mv_par01, .f.,     .t.,     .f.,     .f.,     .f.,      .t.,      .f.,      .f.,        .f.,      .f.,      .f.)
 		else
-			_sXmlFech = _oAssoc:FechSafra (mv_par01, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,      .t.,      .t.)
+			_sXmlFech = _oAssoc:FechSafra (mv_par01, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .f.,        .t.,      .t.,      .t.)
 		endif
 		u_log2 ('debug', _sXmlFech)
 		if empty (_sXmlFech)
@@ -1466,12 +1468,12 @@ static function _Modelo3 (_lSohCompr)
 		li += 2
 
 		// Verifica se tem este tipo de nota no XML
+/* glpi 9572: mudar de 'grau medio' para 'graus abertos'
 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_resumoVariedade:_resumoVariedadeItem')
 		u_log2 ('debug', _ValType)
 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 nota + 1 linha de totais)
 			@ li, 0 psay 'Producao:              Codigo          Variedade                           Kg total  Grau medio   Vlr.medio        Vlr.total'
 			li ++
-//			_aTotResV = {0, 0}
 			for _nVaried = 1 to len (_oXMLFech:_assocFechSafra:_resumoVariedade:_resumoVariedadeItem)
 				If li > _nMaxLin - 4
 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
@@ -1494,7 +1496,35 @@ static function _Modelo3 (_lSohCompr)
 				endif
 			next
 		endif
+*/
+		_ValType := _RetType('_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem')
+		u_log2 ('debug', _ValType)
+		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 nota + 1 linha de totais)
+			@ li, 0 psay 'Producao:              Codigo          Variedade                       Grau  Clas     Kg total        Vlr.total'
+			li ++
+			for _nVaried = 1 to len (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem)
+				If li > _nMaxLin - 4
+					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+				endif
+				if _oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_varied:TEXT != 'TOTAIS'
+					_sLinImp = space (23)
+					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_varied:TEXT, 15) + ' '
+					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_desc:TEXT, 30) + ' '
+					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_grau:TEXT), '@E 999.9') + '  '
+					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_clas:TEXT, 2) + '  '
+					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_peso:TEXT), _sMascPeso) + ' '
+					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_valTotal:TEXT), _sMascVTot)
+					@ li, 0 psay _sLinImp
+					li ++
+				else
 
+					@ li, 0 psay '                                                                                --------------    -------------'
+					li ++
+					@ li, 0 psay '                                                                                 ' + transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_peso:TEXT), _sMascPeso) + ' ' + transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_valTotal:TEXT), _sMascVTot)
+					li += 2
+				endif
+			next
+		endif
 
 		// Verifica se tem este tipo de tag no XML
 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem') 
