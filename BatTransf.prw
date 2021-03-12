@@ -54,6 +54,7 @@ User Function BatTransf(_sFilBat, _sFilReg)
         _oSQL:_sQuery += " AND ZB5.ZB5_STATUS = 'P'"
         _oSQL:_sQuery += " AND ZB5.ZB5_FILIAL = '" + _sFilReg + "'"
     EndIf
+    _oSQL:_sQuery += " AND ZB5_DTAPRO = '"+ DTOS(date())+"'"
     _oSQL:_sQuery += " GROUP BY ZB5.ZB5_FILIAL"
     _oSQL:_sQuery += " 		,ZB4.ZB4_BANCO"
     _oSQL:_sQuery += " 		,ZB4.ZB4_AGEN"
@@ -196,7 +197,7 @@ Static Function _FilialToCT(_sFilBat,_sFilReg,_aZB5)
         EndIf
 
         If lCont .and. (_nVlrDes > 0 .or. _nVlrRec > 0) // grava status nos registros
-            _GravaStatus('A','P', _sFilBat, _sFilial)
+            _GravaStatus('A','P', _sFilBat, _sFilial,_sFilReg)
             // cria o bacht da matriz
                 _oBatch := ClsBatch():new ()
                 _oBatch:Dados    = 'Transf.vlr. CT para 01 - Referente:'+_sFilBat
@@ -325,14 +326,14 @@ Static Function _CTtoMatriz(_sFilBat,_sFilReg,_aZB5)
         EndIf
 
         If lCont .and. (_nVlrDes > 0 .or. _nVlrRec > 0)// grava status nos registros
-            _GravaStatus('P','F', _sFilBat, _sFilial)
+            _GravaStatus('P','F', _sFilBat, _sFilial,_sFilReg)
         EndIf
     Next
 Return
 //
 // --------------------------------------------------------------------------
 // Grava Status em registro ZB5 
-Static Function _GravaStatus(_sStaAnt, _sStatus, _sFilBat, _sFilial)
+Static Function _GravaStatus(_sStaAnt, _sStatus, _sFilBat, _sFilial,_sFilReg)
     Local _i:= 0
 
     _oSQL:= ClsSQL ():New ()
@@ -353,9 +354,11 @@ Static Function _GravaStatus(_sStaAnt, _sStatus, _sFilBat, _sFilial)
     _oSQL:_sQuery += " 		AND ZB4.ZB4_CONTA = ZB5.ZB5_CONTA"
     _oSQL:_sQuery += " WHERE ZB5.D_E_L_E_T_ = ''"
     _oSQL:_sQuery += " AND ZB5.ZB5_STATUS = '" + _sStaAnt + "'"
-    if _sFilBat <> '01'
-        _oSQL:_sQuery += " AND ZB5.ZB5_FILIAL = '" + _sFilial + "'"
-    endif
+    If _sFilBat <> '01'
+        _oSQL:_sQuery += " AND ZB5.ZB5_FILIAL = '" + _sFilBat + "'"
+    Else
+        _oSQL:_sQuery += " AND ZB5.ZB5_FILIAL = '" + _sFilReg + "'"
+    EndIf
     _aZB5 := aclone (_oSQL:Qry2Array ()) 
 
     For _i := 1 to Len(_aZB5)
