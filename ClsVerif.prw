@@ -53,6 +53,7 @@
 // 08/02/2021 - Robert  - View VA_VUSR_PROTHEUS_X_METADADOS migrada para o database TI. Passa a usar linked server. (GLPI 9353)
 // 25/02/2021 - Robert  - Verificacao 78 passa a usar a view VISAO_GERAL_ACESSOS.
 // 04/03/2021 - Robert  - Consulta 69 passa a usar tabelas padrao do sistema (agora usuarios estao no banco de dados).
+// 12/03/2021 - Robert  - Ignorar usuario robert_teste na verificacao 78
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -3066,6 +3067,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=   " AND upper (PROTHEUS_USER) != 'SOL.MANUT'"  // Generico para o pessoal de fabrica abrir solicitacoes de manutencao.
 			::Query +=   " AND upper (PROTHEUS_USER) != 'BALANCA.SP'"
 			::Query +=   " AND upper (PROTHEUS_USER) != 'SIGALOJA'"
+			::Query +=   " AND upper (PROTHEUS_USER) != 'ROBERT_TESTE'"
 			::Query +=   " AND upper (PROTHEUS_USER) NOT LIKE 'CUPOM%'"  // Usuarios 'caixa' para emissao de cupom fiscal nas lojas
 			::Query += " ORDER BY PROTHEUS_USER"
 
