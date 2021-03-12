@@ -6,7 +6,7 @@
 
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #batch
-// #Descricao         #Verificacoes diversas durante periodo de safra
+// #Descricao         #Verificacoes e processamentos diversos durante periodo de safra
 // #PalavasChave      #safra
 // #TabelasPrincipais #SF1 SD1 $SZE #SZF
 // #Modulos           #COOP
@@ -22,6 +22,8 @@
 // 16/01/2019 - Robert - Incluido grupo 047 no aviso de cargas sem contranota.
 // 17/01/2021 - Robert - Criada verificacao tipo 3 (parcelamento das notas de compra).
 // 01/02/2021 - Robert - Criado parametro que permite ajustar os titulos, para casos especificos de recalculo de frete (ainda nao testado/usado).
+// 12/03/2021 - Robert - Migrado e-mail diario de acompanhamento da safra do U_BatCSaf() para este programa.
+//                     - Implementada geracao do SZI e verificacao de inconsistencias SZI x SE2 (GLPI 9592).
 //
 
 // --------------------------------------------------------------------------
@@ -118,6 +120,18 @@ user function BatSafr (_sQueFazer, _lAjustar)
 	elseif _sQueFazer == '5'
 		_ConfFrt ()
 	
+	// Envia e-mail de acompanhamento de totais de safra
+	elseif _sQueFazer == '6'
+		_MailAcomp ()
+	
+	// Gera titulos na conta corrente referentes as notas de compra (a partir de 2021 geramos direto como compra) - GLPI 9592
+	elseif _sQueFazer == '7'
+		_GeraSZI ()
+
+	// Confere conta corrente (SZI) x titulos referentes as notas de compra (a partir de 2021 geramos direto como compra) - GLPI 9592
+	elseif _sQueFazer == '8'
+		_ConfSZI ()
+	
 	else
 		u_help ("Sem definicao para verificacao '" + _sQueFazer + "'.",, .T.)
 		//_oBatch:Retorno += "Sem definicao para verificacao '" + _sQueFazer + "'."
@@ -173,6 +187,7 @@ return
 
 
 // --------------------------------------------------------------------------
+// Confere parcelas geradas nas notas de compra da safra.
 static function _ConfParc (_lAjustar)
 	local _sAliasQ   := ''
 	local _oSQL      := NIL
@@ -325,6 +340,329 @@ static function _ConfParc (_lAjustar)
 
 		endif
 		U_Log2 ('info', 'Finalizando F' + (_sAliasQ) -> filial + ' NF' + (_sAliasQ) -> doc)
+		(_sAliasQ) -> (dbskip ())
+	enddo
+return
+
+
+
+// --------------------------------------------------------------------------
+static function _MailAcomp ()
+	local _sMsg   := ""
+	local _sDest  := ""
+	local _oSQL   := NIL
+	local _sSafra := U_IniSafra ()
+	local _aCols  := {}
+
+	_oSQL := ClsSQL():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " WITH C AS ("
+	_oSQL:_sQuery += " SELECT FILIAL, PRODUTO, DESCRICAO, GRAU, PESO_LIQ"
+	_oSQL:_sQuery += " FROM VA_VCARGAS_SAFRA"
+	_oSQL:_sQuery += " WHERE SAFRA = '" + _sSafra + "'"
+	_oSQL:_sQuery += " AND STATUS != 'C'"  // Cancelada
+	_oSQL:_sQuery += " AND AGLUTINACAO != 'O'"  // Aglutinada em outra carga
+	_oSQL:_sQuery += " AND PESO_LIQ > 0"  // Para evitar cargas 'em recebimento'
+	_oSQL:_sQuery += " AND NF_DEVOLUCAO = ''"  // Para evitar cargas devolvidas'
+	_oSQL:_sQuery += " )"
+	
+	// Agrupado por variedade
+	_oSQL:_sQuery += " SELECT PRODUTO, DESCRICAO"
+	_oSQL:_sQuery += " , SUM (CASE WHEN FILIAL = '01' THEN PESO_LIQ ELSE 0 END) AS KG_F01"
+	_oSQL:_sQuery += " , ROUND (ISNULL ((SELECT SUM (PESO_LIQ * GRAU) / SUM (PESO_LIQ) FROM C AS C2 WHERE C2.FILIAL = '01' AND C2.PRODUTO = C.PRODUTO), 0), 1) AS GRAU_F01"
+	_oSQL:_sQuery += " , SUM (CASE WHEN FILIAL = '03' THEN PESO_LIQ ELSE 0 END) AS KG_F03"
+	_oSQL:_sQuery += " , ROUND (ISNULL ((SELECT SUM (PESO_LIQ * GRAU) / SUM (PESO_LIQ) FROM C AS C2 WHERE C2.FILIAL = '03' AND C2.PRODUTO = C.PRODUTO), 0), 1) AS GRAU_F03"
+	_oSQL:_sQuery += " , SUM (CASE WHEN FILIAL = '07' THEN PESO_LIQ ELSE 0 END) AS KG_F07"
+	_oSQL:_sQuery += " , ROUND (ISNULL ((SELECT SUM (PESO_LIQ * GRAU) / SUM (PESO_LIQ) FROM C AS C2 WHERE C2.FILIAL = '07' AND C2.PRODUTO = C.PRODUTO), 0), 1) AS GRAU_F07"
+	_oSQL:_sQuery += " , SUM (CASE WHEN FILIAL = '09' THEN PESO_LIQ ELSE 0 END) AS KG_F09"
+	_oSQL:_sQuery += " , ROUND (ISNULL ((SELECT SUM (PESO_LIQ * GRAU) / SUM (PESO_LIQ) FROM C AS C2 WHERE C2.FILIAL = '09' AND C2.PRODUTO = C.PRODUTO), 0), 1) AS GRAU_F09"
+	_oSQL:_sQuery += " , SUM (PESO_LIQ) AS KG_GERAL"
+	_oSQL:_sQuery += " , ROUND (ISNULL ((SELECT SUM (PESO_LIQ * GRAU) / SUM (PESO_LIQ) FROM C AS C2 WHERE C2.PRODUTO = C.PRODUTO), 0), 1) AS GRAU_GERAL"
+	_oSQL:_sQuery += " FROM C"
+	_oSQL:_sQuery += " GROUP BY PRODUTO, DESCRICAO"
+	
+	// Linha com totais no final
+	_oSQL:_sQuery += " UNION ALL"
+	_oSQL:_sQuery += " SELECT 'TOTAIS', 'ZZZZZZZZZZZZZZ'"
+	_oSQL:_sQuery += " , SUM (CASE WHEN FILIAL = '01' THEN PESO_LIQ ELSE 0 END) AS KG_F01"
+	_oSQL:_sQuery += " , ROUND (ISNULL ((SELECT SUM (PESO_LIQ * GRAU) / SUM (PESO_LIQ) FROM C AS C2 WHERE C2.FILIAL = '01'), 0), 1) AS GRAU_F01"
+	_oSQL:_sQuery += " , SUM (CASE WHEN FILIAL = '03' THEN PESO_LIQ ELSE 0 END) AS KG_F03"
+	_oSQL:_sQuery += " , ROUND (ISNULL ((SELECT SUM (PESO_LIQ * GRAU) / SUM (PESO_LIQ) FROM C AS C2 WHERE C2.FILIAL = '03'), 0), 1) AS GRAU_F03"
+	_oSQL:_sQuery += " , SUM (CASE WHEN FILIAL = '07' THEN PESO_LIQ ELSE 0 END) AS KG_F07"
+	_oSQL:_sQuery += " , ROUND (ISNULL ((SELECT SUM (PESO_LIQ * GRAU) / SUM (PESO_LIQ) FROM C AS C2 WHERE C2.FILIAL = '07'), 0), 1) AS GRAU_F07"
+	_oSQL:_sQuery += " , SUM (CASE WHEN FILIAL = '09' THEN PESO_LIQ ELSE 0 END) AS KG_F09"
+	_oSQL:_sQuery += " , ROUND (ISNULL ((SELECT SUM (PESO_LIQ * GRAU) / SUM (PESO_LIQ) FROM C AS C2 WHERE C2.FILIAL = '09'), 0), 1) AS GRAU_F09"
+	_oSQL:_sQuery += " , SUM (PESO_LIQ) AS KG_GERAL"
+//	_oSQL:_sQuery += " , 0 AS GRAU_GERAL"
+	_oSQL:_sQuery += " , ROUND(ISNULL((SELECT SUM(PESO_LIQ * GRAU) / SUM(PESO_LIQ) FROM C AS C2), 0), 1) AS GRAU_GERAL"
+	_oSQL:_sQuery += " FROM C"
+
+	_oSQL:_sQuery += " ORDER BY DESCRICAO"
+	_oSQL:Log ()
+
+	_aCols = {}
+	aadd (_aCols, {'Variedade',  'left' ,  ''})
+	aadd (_aCols, {'Descricao',  'left' ,  ''})
+	aadd (_aCols, {'Kg F01',     'right',  '@E 999,999,999'})
+	aadd (_aCols, {'Grau F01',   'right',  '@E 99.9'})
+	aadd (_aCols, {'Kg F03',     'right',  '@E 999,999,999'})
+	aadd (_aCols, {'Grau F03',   'right',  '@E 99.9'})
+	aadd (_aCols, {'Kg F07',     'right',  '@E 999,999,999'})
+	aadd (_aCols, {'Grau F07',   'right',  '@E 99.9'})
+	aadd (_aCols, {'Kg F09',     'right',  '@E 999,999,999'})
+	aadd (_aCols, {'Grau F09',   'right',  '@E 99.9'})
+	aadd (_aCols, {'Kg geral',   'right',  '@E 999,999,999'})
+	aadd (_aCols, {'Grau geral', 'right',  '@E 99.9'})
+
+	_sMsg = _oSQL:Qry2HTM ("Acompanhamento cargas safra " + _sSafra, _aCols, "", .T., .F.)
+	if len (_oSQL:_xRetQry) > 1
+		u_log (_sMsg)
+		_sDest := ""
+
+		// Internos - direcao
+		_sDest += "alceu.dallemolle@novaalianca.coop.br;"
+		_sDest += "joel.panizzon@novaalianca.coop.br;"
+		_sDest += "jocemar.dalcorno@novaalianca.coop.br;"
+		_sDest += "rodrigo.colleoni@novaalianca.coop.br;"
+
+		// Conselho administracao titulares
+		_sDest += "diegowaiss@hotmail.com;"
+		_sDest += "gilbertoverdi@gmail.com;"
+		_sDest += "joel.caldart@hotmail.com;"
+		_sDest += "linojoaopan@hotmail.com;"
+		_sDest += "marciogirelli.st@gmail.com;"
+		_sDest += "marcioferrar@gmail.com;"
+		_sDest += "rodrigovdebona@gmail.com;"
+		_sDest += "romildowferrari@hotmail.com;"
+
+		// Conselho administracao suplentes
+		_sDest += "darci.boldrin@novaalianca.coop.br;"
+		_sDest += "drcioato@hotmail.com;"
+		_sDest += "ledacioato@hotmail.com;"
+		_sDest += "juninhosalton@outlook.com;"
+		_sDest += "marcosparisotto6@gmail.com;"
+		_sDest += "roberto.pagliarin@novaalianca.coop.br;"
+
+		// Conselho fiscal titulares
+		_sDest += "sidimarfleck@gmail.com;"
+		_sDest += "ivanortoscan276@gmail.com;"
+		_sDest += "daniederbof@hotmail.com;"
+
+		// Conselho fiscal suplentes
+		_sDest += "carloscbusetti@hotmail.com;"
+		_sDest += "fernandoantoniogiordani@gmail.com;"
+
+		// Internos - gestores
+		_sDest += "evandro.marcon@novaalianca.coop.br;"
+		_sDest += "rodimar.vizentin@novaalianca.coop.br;"
+
+		// Internos - tecnico / enologia / operacao
+		_sDest += "talison.brisotto@novaalianca.coop.br;"
+		_sDest += "eliane.lopes@novaalianca.coop.br;"
+		_sDest += "pedro.toniolo@novaalianca.coop.br;"
+		_sDest += "anderson.felten@novaalianca.coop.br;"
+		_sDest += "eduardo.guarche@novaalianca.coop.br;"
+		_sDest += "renan.mascarello@novaalianca.coop.br;"
+		_sDest += "sergio.pereira@novaalianca.coop.br;"
+		_sDest += "deise.demori@novaalianca.coop.br;"
+
+		// Internos - agronomia
+		_sDest += "leonardo.reffatti@novaalianca.coop.br;"
+		_sDest += "paulo.dullius@novaalianca.coop.br;"
+		_sDest += "waldir.schu@novaalianca.coop.br;"
+		_sDest += "odinei.cardoso@novaalianca.coop.br;"
+		_sDest += "alex.cervinski@novaalianca.coop.br;"
+
+		// Internos - TI (monitoramento)
+		_sDest += "sandra.sugari@novaalianca.coop.br;"
+		_sDest += "robert.koch@novaalianca.coop.br;"
+
+		U_SendMail (_sDest, "Acompanhamento cargas safra", _sMsg)
+	endif
+return
+
+
+
+// --------------------------------------------------------------------------
+// Gera entrada na conta corrente do associado, com base nos titulos gerados no financeiro.
+static function _GeraSZI ()
+	local _sAliasQ   := ''
+	local _oCtaCorr  := NIL
+	local _sSafrComp := strzero (year (dDataBase), 4)
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT E2_FILIAL, E2_FORNECE, E2_LOJA, E2_NOMFOR, E2_EMISSAO, E2_VENCREA, E2_NUM, E2_PREFIXO, E2_TIPO, E2_VALOR, E2_SALDO, E2_HIST, R_E_C_N_O_, E2_LA, E2_PARCELA,"
+	_oSQL:_sQuery +=        " ROW_NUMBER () OVER (ORDER BY E2_PARCELA) AS NUM_PARC"
+	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2"
+	_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '" + xfilial ("SE2") + "'"
+	_oSQL:_sQuery +=    " AND SE2.E2_TIPO    = 'NF'"
+	_oSQL:_sQuery +=    " AND SE2.E2_VACHVEX = ''"
+	_oSQL:_sQuery +=    " AND EXISTS (SELECT *"  // Precisa ser nota de safra
+	_oSQL:_sQuery +=                  " FROM VA_VNOTAS_SAFRA V"
+	_oSQL:_sQuery +=                 " WHERE V.SAFRA      = '" + _sSafrComp + "'"
+	_oSQL:_sQuery +=                   " AND V.FILIAL     = SE2.E2_FILIAL"
+	_oSQL:_sQuery +=                   " AND V.ASSOCIADO  = SE2.E2_FORNECE"
+	_oSQL:_sQuery +=                   " AND V.LOJA_ASSOC = SE2.E2_LOJA"
+	_oSQL:_sQuery +=                   " AND V.SERIE      = SE2.E2_PREFIXO"
+	_oSQL:_sQuery +=                   " AND V.DOC        = SE2.E2_NUM"
+	_oSQL:_sQuery +=                   " AND V.TIPO_NF    = 'C')"
+	_oSQL:_sQuery +=    " AND NOT EXISTS (SELECT *"  // Ainda nao deve existir na conta corrente
+	_oSQL:_sQuery +=                  " FROM " + RetSQLName ("SZI") + " SZI "
+	_oSQL:_sQuery +=                 " WHERE SZI.ZI_FILIAL  = SE2.E2_FILIAL"
+	_oSQL:_sQuery +=                   " AND SZI.ZI_ASSOC   = SE2.E2_FORNECE"
+	_oSQL:_sQuery +=                   " AND SZI.ZI_LOJASSO = SE2.E2_LOJA"
+	_oSQL:_sQuery +=                   " AND SZI.ZI_SERIE   = SE2.E2_PREFIXO"
+	_oSQL:_sQuery +=                   " AND SZI.ZI_DOC     = SE2.E2_NUM"
+	_oSQL:_sQuery +=                   " AND SZI.ZI_PARCELA = SE2.E2_PARCELA"
+	_oSQL:_sQuery +=                   " AND SZI.ZI_TM      = '13')"
+	_oSQL:_sQuery +=  " ORDER BY SE2.E2_FORNECE, SE2.E2_LOJA, SE2.E2_NUM, SE2.E2_PREFIXO, SE2.E2_PARCELA"
+	_oSQL:Log ()
+	_sAliasQ = _oSQL:Qry2Trb (.T.)
+	procregua ((_sAliasQ) -> (reccount ()))
+	(_sAliasQ) -> (dbgotop ())
+	do while ! (_sAliasQ) -> (eof ())
+
+		// Quero gerar tudo com a mesma data de emissao da nota
+		dDataBase = (_sAliasQ) -> e2_EMISSAO
+
+		//u_log ('Filial:' + (_sAliasQ) -> e2_filial, 'Forn:' + (_sAliasQ) -> e2_fornece + '/' + (_sAliasQ) -> e2_loja + ' ' + (_sAliasQ) -> e2_nomfor, 'Emis:', (_sAliasQ) -> e2_emissao, 'Vcto:', (_sAliasQ) -> e2_vencrea, 'Doc:', (_sAliasQ) -> e2_num+'/'+(_sAliasQ) -> e2_prefixo, 'Tipo:', (_sAliasQ) -> e2_tipo, 'Valor: ' + transform ((_sAliasQ) -> e2_valor, "@E 999,999,999.99"), 'Saldo: ' + transform ((_sAliasQ) -> e2_saldo, "@E 999,999,999.99"), (_sAliasQ) -> e2_hist)
+
+		_oCtaCorr := ClsCtaCorr():New ()
+		_oCtaCorr:Assoc    = (_sAliasQ) -> e2_fornece
+		_oCtaCorr:Loja     = (_sAliasQ) -> e2_loja
+		_oCtaCorr:TM       = '13'
+		_oCtaCorr:DtMovto  = (_sAliasQ) -> e2_EMISSAO
+		_oCtaCorr:Valor    = (_sAliasQ) -> e2_valor
+		_oCtaCorr:SaldoAtu = (_sAliasQ) -> e2_saldo
+		_oCtaCorr:Usuario  = cUserName
+		_oCtaCorr:Histor   = (_sAliasQ) -> e2_hist  //'COMPRA SAFRA ' + strzero (year (dDataBase), 4) + " GRP." + ? sf1 -> f1_vagpsaf
+		_oCtaCorr:MesRef   = strzero(month(_oCtaCorr:DtMovto),2)+strzero(year(_oCtaCorr:DtMovto),4)
+		_oCtaCorr:Doc      = (_sAliasQ) -> e2_num
+		_oCtaCorr:Serie    = (_sAliasQ) -> e2_prefixo
+		_oCtaCorr:Parcela  = (_sAliasQ) -> e2_parcela
+		_oCtaCorr:Origem   = 'BATSAFR'
+		if _oCtaCorr:PodeIncl ()
+			if ! _oCtaCorr:Grava (.F., .F.)
+				U_help ("Erro na atualizacao da conta corrente para o associado '" + (_sAliasQ) -> e2_fornece + '/' + (_sAliasQ) -> e2_loja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
+				_lContinua = .F.
+			else
+				se2 -> (dbgoto ((_sAliasQ) -> r_e_c_n_o_))
+				if empty (se2 -> e2_vachvex)  // Soh pra garantir...
+					u_log2 ('debug', 'Gravando e2_vachvex')
+					reclock ("SE2", .F.)
+					se2 -> e2_vachvex = _oCtaCorr:ChaveExt ()
+					msunlock ()
+				endif
+
+				// Se gerei conta corrente numa filial, preciso transferir esse lcto para a matriz, pois todos os pagamentos sao centralizados.
+				if cFilAnt != '01' //.and. 'TESTE' $ upper (getenvserver ())  // por enqto apenas na base teste
+					_oCtaCorr:FilDest = '01'
+					if ! _oCtaCorr:TransFil (_oCtaCorr:DtMovto)
+						u_help ("A transferencia para outra filial nao foi possivel. " + _oCtaCorrT:UltMsg,, .T.)
+					endif
+				endif
+			endif
+		else
+			U_help ("Gravacao do SZI nao permitida na atualizacao da conta corrente para o associado '" + (_sAliasQ) -> e2_fornece + '/' + (_sAliasQ) -> e2_loja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
+			_lContinua = .F.
+		endif
+
+		(_sAliasQ) -> (dbskip ())
+	enddo
+	(_sAliasQ) -> (dbclosearea ())
+	dbselectarea ("SZE")
+return
+
+
+// --------------------------------------------------------------------------
+// Confere consistencia da conta corrente de associados X parcelas geradas nas notas de compra da safra.
+static function _ConfSZI ()
+	local _sAliasQ   := ''
+	local _oSQL      := NIL
+	local _sMsg      := ''
+	local _nRegSZI   := 0
+	local _sSafrComp := strzero (year (dDataBase), 4)
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT E2_FILIAL, E2_FORNECE, E2_LOJA, E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VALOR, E2_HIST"
+	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2"
+	_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '" + xfilial ("SE2") + "'"
+	_oSQL:_sQuery +=    " AND SE2.E2_TIPO    = 'NF'"
+	_oSQL:_sQuery +=    " AND EXISTS (SELECT *"  // Precisa ser nota de safra
+	_oSQL:_sQuery +=                  " FROM VA_VNOTAS_SAFRA V"
+	_oSQL:_sQuery +=                 " WHERE V.SAFRA      = '" + _sSafrComp + "'"
+	_oSQL:_sQuery +=                   " AND V.FILIAL     = SE2.E2_FILIAL"
+	_oSQL:_sQuery +=                   " AND V.ASSOCIADO  = SE2.E2_FORNECE"
+	_oSQL:_sQuery +=                   " AND V.LOJA_ASSOC = SE2.E2_LOJA"
+	_oSQL:_sQuery +=                   " AND V.SERIE      = SE2.E2_PREFIXO"
+	_oSQL:_sQuery +=                   " AND V.DOC        = SE2.E2_NUM"
+	_oSQL:_sQuery +=                   " AND V.TIPO_NF    = 'C')"
+	_oSQL:_sQuery +=  " ORDER BY SE2.E2_FORNECE, SE2.E2_LOJA, SE2.E2_NUM, SE2.E2_PREFIXO, SE2.E2_PARCELA"
+	_oSQL:Log ()
+	_sAliasQ = _oSQL:Qry2Trb (.T.)
+	procregua ((_sAliasQ) -> (reccount ()))
+	(_sAliasQ) -> (dbgotop ())
+	do while ! (_sAliasQ) -> (eof ())
+		_sMsg = ''
+
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := " SELECT R_E_C_N_O_ "
+		_oSQL:_sQuery +=   " FROM " + RetSQLName ("SZI") + " SZI "
+		_oSQL:_sQuery +=  " WHERE SZI.ZI_FILIAL  = '" + (_sAliasQ) -> e2_filial + "'"
+		_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC   = '" + (_sAliasQ) -> e2_fornece + "'"
+		_oSQL:_sQuery +=    " AND SZI.ZI_LOJASSO = '" + (_sAliasQ) -> e2_loja + "'"
+		_oSQL:_sQuery +=    " AND SZI.ZI_SERIE   = '" + (_sAliasQ) -> e2_prefixo + "'"
+		_oSQL:_sQuery +=    " AND SZI.ZI_DOC     = '" + (_sAliasQ) -> e2_num + "'"
+		_oSQL:_sQuery +=    " AND SZI.ZI_PARCELA = '" + (_sAliasQ) -> e2_parcela + "'"
+		_oSQL:_sQuery +=    " AND SZI.ZI_TM      = '13'"
+		// _oSQL:Log ()
+		_nRegSZI = _oSQL:RetFixo (1, 'Procurando registro no SZI ref. titulo NF compra safra', .F.) [1, 1]
+		if _nRegSZI == 0
+			_sMsg += "Nao localizado registro na tabela SZI para parcela da nota de compra." + chr (13) + chr (10)
+			_sMsg := _oSQL:_sQuery
+		else
+			szi -> (dbgoto (_nRegSZI))
+			if szi -> zi_valor != (_sAliasQ) -> e2_valor
+				_sMsg += "Valor do SZI (" + cvaltochar (szi -> zi_valor) + ") diferente do SE2 (" + cvaltochar ((_sAliasQ) -> e2_valor) + ")."
+				_sMsg := _oSQL:_sQuery
+			else
+				if (_sAliasQ) -> e2_filial != '01'
+					if szi -> zi_saldo > 0
+						_sMsg += "SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela + " deveria ter transferido para a matriz."
+					else
+						_oSQL := ClsSQL ():New ()
+						_oSQL:_sQuery := " SELECT count (*) "
+						_oSQL:_sQuery +=   " FROM " + RetSQLName ("SZI") + " SZI "
+						_oSQL:_sQuery +=  " WHERE SZI.ZI_FILIAL  = '01'"
+						_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC   = '" + szi -> zi_assoc + "'"
+						_oSQL:_sQuery +=    " AND SZI.ZI_LOJASSO = '" + szi -> zi_lojasso + "'"
+						_oSQL:_sQuery +=    " AND SZI.ZI_SERIE   = '" + szi -> zi_serie + "'"
+						_oSQL:_sQuery +=    " AND SZI.ZI_DOC     = '" + szi -> zi_doc + "'"
+						_oSQL:_sQuery +=    " AND SZI.ZI_PARCELA = '" + szi -> zi_parcela + "'"
+						_oSQL:_sQuery +=    " AND SZI.ZI_FILORIG = '" + szi -> zi_filial + "'"
+						_oSQL:_sQuery +=    " AND SZI.ZI_TM      = '13'"
+						_oSQL:Log ()
+						if _oSQL:RetQry (1, .f.) == 0
+							_sMsg += "SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela + " transferencia nao apareceu na matriz."
+						endif
+					endif
+				endif
+			endif
+		endif
+
+		if ! empty (_sMsg)
+			U_Log2 ('erro', 'Inconsistencia SZI x SE2 safra - filial: ' + (_sAliasQ) -> e2_filial + ' NF: ' + (_sAliasQ) -> e2_num + ' forn: ' + (_sAliasQ) -> e2_fornece)
+			U_Log2 ('erro', _sMsg)
+			u_zzunu ({'999'}, 'Inconsistencia SZI x SE2 safra - filial: ' + (_sAliasQ) -> e2_filial + ' NF: ' + (_sAliasQ) -> e2_num + ' forn: ' + (_sAliasQ) -> e2_fornece, _sMsg)
+
+			// cai fora no primeiro erro encontrado (estou ainda ajustando)
+			EXIT   // REMOVER DEPOIS !!!!!!!!!!!!!!!!!
+
+		endif
 		(_sAliasQ) -> (dbskip ())
 	enddo
 return

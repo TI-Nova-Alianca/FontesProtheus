@@ -4,7 +4,14 @@
 // Descricao: Declaracao de classe de representacao de movimentos da conta corrente dos associados da cooperativa.
 //            Poderia trabalhar como uma include, mas prefiro declarar uma funcao de usuario
 //            apenas para poder incluir no projeto e manter na pasta dos fontes.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Classe
+// #Descricao         #Representa atributos e metodos da conta corrente de associados.
+// #PalavasChave      #conta_corrente_associados
+// #TabelasPrincipais #SZI
+// #Modulos           #COOP
+
 // Historico de alteracoes:
 // 02/09/2011 - Robert - Implementados metodos Grava, PodeIncl, GeraAtrib.
 // 12/12/2011 - Robert - Implementados metodos Associar e Desassoc.
@@ -76,6 +83,8 @@
 // 26/10/2020 - Robert - Na exclusao, exigia ZI_DATA = dDataBase. Agora exige E2_EMISSAO = dDataBase, que eh o que realmente importa.
 // 08/01/2021 - Robert - Permite incluir TM 13 quando rotina U_VA_RUSN.
 // 13/01/2021 - Robert - Permite incluir TM 16 quando ex socio.
+// 13/03/2021 - Robert - Permite incluir TM 13 quando chamado da rotina BatSafr (opcao de geracao do SZI sobre notas de compra de safra) - GLPI 9592.
+//                     - Metodo TransFil passa a aceitar data para baixa contra transitoria; melhorados logs.
 //
 
 // ------------------------------------------------------------------------------------
@@ -1486,7 +1495,8 @@ METHOD PodeIncl () Class ClsCtaCorr
 			_lContinua = .F.
 		endif
 //		if _lContinua .and. empty (::FilOrig) .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_FTSAFRA") .and. ! IsInCallStack ("U_FTSAFRA1") .and. ! IsInCallStack ("U_ROBERT")  // habilitado por causa de um baca em 2018
-		if _lContinua .and. empty (::FilOrig) .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_FTSAFRA") .and. ! IsInCallStack ("U_FTSAFRA1") .and. ! IsInCallStack ("U_VA_RUSN")
+//		if _lContinua .and. empty (::FilOrig) .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_FTSAFRA") .and. ! IsInCallStack ("U_FTSAFRA1") .and. ! IsInCallStack ("U_VA_RUSN")
+		if _lContinua .and. empty (::FilOrig) .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_FTSAFRA") .and. ! IsInCallStack ("U_FTSAFRA1") .and. ! (IsInCallStack ("U_BATSAFR") .and. IsInCallStack ("_GERASZI"))
 			::UltMsg += "Movimento de compra de safra: so' pode ser incluido por rotinas especificas, ou manualmente quando tratar-se de titulo transferido de outra filial. Informe filial de origem." + _sCRLF
 			_lContinua = .F.
 		endif
@@ -1863,7 +1873,7 @@ return _nSaldo
 
 // --------------------------------------------------------------------------
 // Transfere saldo deste lancamento para outra filial.
-METHOD TransFil () Class ClsCtaCorr
+METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 	local _lContinua := .T.
 	local _aTit      := afill (array (8), '')
 	local _oBatch    := NIL
@@ -1955,8 +1965,10 @@ METHOD TransFil () Class ClsCtaCorr
 	// o saldo deve ser baixado na filial de origem atraves de conta transitoria e deve ser feita inclusao
 	// de novo movimento na filial destino.
 	if _lContinua
-		_aTit [8] = dDataBase
-		u_log2 ('debug', _atit)
+
+	//	_aTit [8] = dDataBase
+		_aTit [8] = iif (empty (_dDtBxTran), dDataBase, _dDtBxTran)
+		//u_log2 ('debug', _atit)
 
 		// Ajusta parametros de contabilizacao para NAO, pois a rotina automatica nao aceita.
 		cPerg = 'FIN090'
@@ -1994,29 +2006,25 @@ METHOD TransFil () Class ClsCtaCorr
 		_oSQL:_sQuery +=   " AND SE5.E5_PARCELA = '" + se2 -> e2_parcela + "'"
 		_oSQL:_sQuery +=   " AND SE5.E5_TIPO    = '" + se2 -> e2_tipo    + "'"
 		_oSQL:_sQuery +=   " AND SE5.E5_VACHVEX = ''"
-		_oSQL:Log ()
+		//_oSQL:Log ()
 		_nRegSE5 = _oSQL:RetQry ()
-		u_log2 ('debug', 'recno se5 para atualizar: ' + cvaltochar (_nRegSE5))
+		u_log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + '] recno se5 para atualizar: ' + cvaltochar (_nRegSE5))
 		if _nRegSE5 > 0
 			se5 -> (dbgoto (_nRegSE5))
-			//u_log ('Vou atualizar SE5')
-			//u_log ('SE2:', se2 -> e2_num, se2 -> e2_prefixo, se2 -> e2_parcela, SE2 -> E2_VACHVEX)
-			//u_log ('SE5:', se5 -> e5_numero, se5 -> e5_prefixo, se5 -> e5_parcela, se5 -> e5_vachvex, se5 -> e5_seq)
 			reclock ('SE5', .F.)
 			se5 -> e5_vachvex = se2 -> e2_vachvex
 			se5 -> e5_histor  = left (_sHistSE5, tamsx3 ("E5_HISTOR")[1])
 			msunlock ()
-			u_log2 ('info', 'Regravei historico do SE5 para: ' + se5 -> e5_histor)
+			u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + '] Regravei historico do SE5 para: ' + se5 -> e5_histor)
 		else
 			u_log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + '] Nao encontrei SE5 para atualizar historico e chave externa.')
 		endif
 		
 		if fk2 -> fk2_valor == _nSaldo .and. fk2 -> fk2_motbx == 'NOR'  // Para ter mais certeza de que estah posicionado no registro correto.
-			//u_log ('Vou atualizar FK2')
 			reclock ('FK2', .F.)
 			fk2 -> fk2_histor = left (alltrim (fk2 -> fk2_histor) + ' TR.CC.FIL.' + ::FilDest + ' ' + ::Histor, tamsx3 ("FK2_HISTOR")[1])
 			msunlock ()
-			u_log2 ('info', 'regravei historico do FK2 para: ' + fk2 -> fk2_histor)
+			u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + '] Regravei historico do FK2 para: ' + fk2 -> fk2_histor)
 		endif
 	endif
 
@@ -2031,9 +2039,11 @@ METHOD TransFil () Class ClsCtaCorr
 		_oBatch:Dados    = 'Transf.sld.SZI fil.' + ::Filial + ' p/' + ::FilDest + '-Assoc.' + ::Assoc + '/' + ::Loja
 		_oBatch:EmpDes   = cEmpAnt
 		_oBatch:FilDes   = ::FilDest
-		_oBatch:DataBase = dDataBase
+		// _oBatch:DataBase = dDataBase
+		_oBatch:DataBase = iif (empty (_dDtBxTran), dDataBase, _dDtBxTran)
 		_oBatch:Modulo   = 6  // Campo E2_VACHVEX nao eh gravado em alguns modulos... vai saber...
-		_oBatch:Comando  = "U_BatTrSZI('" + ::Assoc + "','" + ::Loja + "','" + ::SeqSZI + "','" + cEmpAnt + "','" + ::Filial + "','" + ::FilDest + "','" + ::TM + "','" + dtos (dDatabase) + "'," + cvaltochar (_nSaldo) + ")"
+		// _oBatch:Comando  = "U_BatTrSZI('" + ::Assoc + "','" + ::Loja + "','" + ::SeqSZI + "','" + cEmpAnt + "','" + ::Filial + "','" + ::FilDest + "','" + ::TM + "','" + dtos (dDatabase) + "'," + cvaltochar (_nSaldo) + ")"
+		_oBatch:Comando  = "U_BatTrSZI('" + ::Assoc + "','" + ::Loja + "','" + ::SeqSZI + "','" + cEmpAnt + "','" + ::Filial + "','" + ::FilDest + "','" + ::TM + "','" + dtos (iif (empty (_dDtBxTran), dDataBase, _dDtBxTran)) + "'," + cvaltochar (_nSaldo) + ")"
 		_oBatch:Grava ()
 	endif
 
