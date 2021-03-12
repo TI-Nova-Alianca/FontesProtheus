@@ -11,12 +11,13 @@
 // #Modulos           #EST
 //
 // Historico de alteracoes:
-// 12/11/2019 - Robert - Valida se o usuario tem acesso a esta rotina.
-// 25/03/2020 - Ajuste da rotina, criando a tabela temporaria ao gerar o arquivo .csv 
-//				e ao realizar a gravação dos dados.
+// 12/11/2019 - Robert  - Valida se o usuario tem acesso a esta rotina.
+// 25/03/2020 - Claudia - Ajuste da rotina, criando a tabela temporaria ao gerar o arquivo .csv 
+//						  e ao realizar a gravação dos dados.
 // 20/07/2020 - Robert  - Verificacao de acesso passa a validar acesso 106 e nao mais 069.
 //                      - Inseridas tags para catalogacao de fontes
 // 03/02/2021 - Cláudia - Ajustada a importação de itens. GLPI: 9254
+// 12/03/2021 - Cláudia - Incluida a busca de dados do Ax 66. GLPI: 9052
 //
 // -------------------------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
@@ -139,8 +140,8 @@ Static Function BuscaEstoque()
 	_sQuery += " 		AND B8_LOTECTL = BF_LOTECTL)"
 	_sQuery += " 	WHERE SB1.D_E_L_E_T_ = ''"
 	_sQuery += " 	AND SB2.B2_QATU <> 0"
-	_sQuery += "  AND SB1.B1_TIPO NOT IN ('MO')"
-	_sQuery += "  AND B2_LOCAL NOT IN ('66')"
+	_sQuery += "    AND SB1.B1_TIPO NOT IN ('MO')"
+	//_sQuery += "  AND B2_LOCAL NOT IN ('66')"
 	If ! empty(mv_par01) // filial
 		_sQuery += "  AND B2_FILIAL = '" + alltrim(cFilAnt) + "'"
 	EndIf
@@ -160,6 +161,7 @@ Static Function BuscaEstoque()
 	_sQuery += " SELECT * FROM C"
 	_sQuery += " WHERE QTD <> 0"
 	_sQuery += " ORDER BY FILIAL, ALMOX, TPROD, GRUPO, PRODUTO"
+
 	// -------------------- Faz validações no processo para mostrar em tela
 	dbUseArea(.T., "TOPCONN", TCGenQry(,,_sQuery), "_trb", .F., .T.)
 
@@ -189,8 +191,6 @@ Static Function BuscaEstoque()
 	_trb -> (dbCloseArea ())
 
 	// -------------------- Executa o processo
-	//dbUseArea(.T., "TOPCONN", TCGenQry(,,_sQuery), "_trb", .F., .T.)
-	// procregua (_trb -> (reccount ()))	
 	If _lContinua
 		If U_MsgNoYes ("Deseja exportar para uma planilha para conferencia?")
 			dbUseArea(.T., "TOPCONN", TCGenQry(,,_sQuery), "_trb", .F., .T.)
@@ -326,13 +326,11 @@ Static Function _IMPSB7()
 		dbSetOrder(3) // B7_FILIAL+B7_DOC+B7_COD+B7_LOCAL                                                                                                                                
 		dbGoTop()
 		
-		
 		_sFilial := PADL(_aDados[i,1],2,'0')
 		_sProd   := PADR(_aDados[i,2],15,' ')
 		_sLocal  := PADL(_aDados[i,3],2,'0')
 		_sTipo   := UPPER(_aDados[i,4])
 		_sDoc    := PADR(_aDados[i,5], 9,' ')
-		
 		
 		If dbSeek(_sFilial + _sDoc + _sProd + _sLocal)
 			u_help(" O produto: " + alltrim(_sProd) + " no local " + _sLocal + " no documento " + alltrim(_sDoc) + " já está importado! O processo será finalizado." )
