@@ -3,9 +3,17 @@
 // Data:       11/10/2012
 // Descricao:  P.E. apos gravacao do SE5 na tela FINA090 (baixa automatica de contas a pagar).
 //             Criado inicialmente para atualizar conta corrente associados.
-// 
+ 
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #P.E. apos gravacao do SE5 na tela FINA090 (baixa automatica de contas a pagar).
+// #PalavasChave      #baixa #contas_a_pagar
+// #TabelasPrincipais #SE5
+// #Modulos           #FIN
+
 // Historico de alteracoes:
 // 03/01/2016 - Robert - Ajustes atualizacao SZI.
+// 12/03/2021 - Robert - Removidos logs desnecessarios.
 //
 
 // --------------------------------------------------------------------------
@@ -52,20 +60,13 @@ static function _AtuSZI ()
 			_oSQL:_sQuery +=   " AND SE5.E5_VACHVEX = ''"
 			//_oSQL:Log ()
 			_nRegSE5 = _oSQL:RetQry ()
-			// u_log2 ('debug', 'Recno encontrado no SE5 para atualizar a baixa:' + cvaltochar (_nRegSE5))
 			if _nRegSE5 > 0
 				se5 -> (dbgoto (_nRegSE5))
-//				u_log ('Vou atualizar SE5')
-//				u_log ('SE2:', se2 -> e2_num, se2 -> e2_prefixo, se2 -> e2_parcela, SE2 -> E2_VACHVEX)
-//				u_log ('SE5:', se5 -> e5_numero, se5 -> e5_prefixo, se5 -> e5_parcela, se5 -> e5_vachvex, se5 -> e5_seq)
 				reclock ('SE5', .F.)
 				se5 -> e5_vachvex = se2 -> e2_vachvex
 				SE5 -> E5_VAUSER   := alltrim(cUserName)
 				msunlock ()
-			//else
-			//	u_log2 ('aviso', procname (1) + ': Nao encontrei SE5')
 			endif
-				
 		
 			// Atualiza saldo conta corrente.
 			_oCtaCorr := ClsCtaCorr():New (szi -> (recno ()))

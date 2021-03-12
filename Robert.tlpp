@@ -27,7 +27,7 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '01' modulo '05'
+		prepare environment empresa '01' filial '07' modulo '05'
 		private cModulo   := 'FAT'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -89,6 +89,12 @@ static function _AndaLogo ()
 	u_help ('Nada definido.')
 return
 
+//	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batsafr ('7')
+//return
+
+//	_sArqLog := 'U_BatBlUsr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batBlUsr ()
 //	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batocor ()
 //	u_log2 ('info', _oBatch:Mensagens)
@@ -411,8 +417,6 @@ return
 	u_va_xls30 (.T.)
 return
 */
-//	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batsafr ('3', .f.)
 /*
 	// Gera conta 'PREMIACAO QUALIDADE E FIDELIDADE' na corrente a partir de dados prontos na tabela ZZ9 (GLPI 9415)
 	dDataBase = stod ('20210223')
