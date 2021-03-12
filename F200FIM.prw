@@ -17,6 +17,8 @@
 
 User Function F200FIM()
     //If upper (GetEnvServer ()) $ "TESTE/TESTECLAUDIA" 
+    If cFilAnt <> '01'
         u_ZB5TRANSF(cFilAnt)
+    EndIf
     //EndIf
 Return
