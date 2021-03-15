@@ -1,14 +1,14 @@
-// Programa:  WS_Alianca
-// Autor:     Robert Koch (royalties: http://advploracle.blogspot.com.br/2014/09/webservice-no-protheus-parte-2-montando.html)
-// Data:      14/07/2017
-// Descricao: Disponibilizacao de Web Services em geral.
-
+// Programa...: WS_Alianca
+// Autor......: Robert Koch (royalties: http://advploracle.blogspot.com.br/2014/09/webservice-no-protheus-parte-2-montando.html)
+// Data.......: 14/07/2017
+// Descricao..: Disponibilizacao de Web Services em geral.
+//
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #web_service
 // #PalavasChave      #web_service #generico #integracoes #naweb
 // #TabelasPrincipais #SD1 #SD2 #SD3
 // #Modulos           
-
+//
 // Historico de alteracoes:
 // ??/08/2017 - Julio   - Implementda gravacao do arquico ZAM
 // 31/08/2017 - Robert  - Implementacao execucao de rotinas sem interface com o usurio.
@@ -52,12 +52,13 @@
 // 07/12/2020 - Robert  - Criadas tags <REA_MES> na consulta de orcamentos a ser retornada para o NaWeb (GLPI 8893).
 // 11/01/2021 - Robert  - Preenche cadastro viticola com zeros a esquerda na geracao de cargas de safra.
 // 15/01/2021 - Robert  - Acao 'RetTicketCargaSafra' migrada para ws_namob (preciso acessar das filiais)
+// 15/03/2021 - Claudia - Incluida a ação 'CapitalSocialAssoc'.GLPI: 8824
 //
-
 // ----------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
 #INCLUDE "PROTHEUS.CH"
 #include "tbiconn.ch"
+#include "VA_INCLU.prw"
 
 // Estrutura de retorno de dados
 WSSTRUCT RetornoWS
@@ -99,7 +100,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 
 	// Validacoes gerais e extracoes de dados basicos.
 	U_ValReqWS (GetClassName (::Self), ::XmlRcv, @_sErros, @_sWS_Empr, @_sWS_Filia, @_sAcao)
-//	u_log2 ('DEBUG', 'Apos ValReqWS tenho _sWS_Filia = ' + _sWS_Filia)
+	//u_log2 ('DEBUG', 'Apos ValReqWS tenho _sWS_Filia = ' + _sWS_Filia)
 	if empty (_sErros)
 		_aUsuario = {__cUserId, cUserName}  // Guarda para uso posterior, pois o PREPARE ENVIRONMENT limpa essas variaveis.
 	endif
@@ -145,49 +146,50 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 		u_log2 ('info', 'Acao solicitada ao web service: ' + _sAcao)
 		PtInternal (1, _sAcao)
 		U_UsoRot ('I', _sAcao, '')
+
 		do case
 			case _sAcao == 'ExecutaBatch'
-			_ExecBatch ()
+				_ExecBatch ()
 			case _sAcao == 'GravaInspecao'
-			_GrvInsp ()
+				_GrvInsp ()
 			case _sAcao == 'RastrearLote'
-			_RastLt ()
+				_RastLt ()
 			case _sAcao == 'ZAM'
-			_ZAM ()
+				_ZAM ()
 			// nunca consegui fazer funcionar ---> case _sAcao == 'Executar'
 			// nunca consegui fazer funcionar ---> _Exec ()
 			case _sAcao == 'RefazSaldoAtual'
-			_SaldoAtu ()
+				_SaldoAtu ()
 			case _sAcao == 'AtuEstru'
-			_AtuEstru ()
+				_AtuEstru ()
 			case _sAcao == 'TransfEstqInsere'
-			_TrEstq ('I')
+				_TrEstq ('I')
 			case _sAcao == 'TransfEstqAutoriza'
-			_TrEstq ('A')
+				_TrEstq ('A')
 			case _sAcao == 'TransfEstqDeleta'
-			_TrEstq ('D')
+				_TrEstq ('D')
 			case _sAcao == 'OndeSeUsa'
-			_OndeSeUsa ()
+				_OndeSeUsa ()
 			case _sAcao == 'IncluiCliente'
-			_IncCli ()
+				_IncCli ()
 			case _sAcao == 'AlteraCliente'
-			_AltCli ()
+				_AltCli ()
 			case _sAcao == 'IncluiEvento'
-			_IncEvt ()
+				_IncEvt ()
 			case _sAcao == 'IncluiProduto'
-			_IncProd ()
+				_IncProd ()
 			case _sAcao == 'ConsultaDeOrcamentos'
-			_ExecConsOrc ()
+				_ExecConsOrc ()
 			case _sAcao == 'IncluiCargaSafra'
-			_IncCarSaf ()
-		//	case _sAcao == 'RetTicketCargaSafra'
-		//	_RTkCarSaf ()
+				_IncCarSaf ()
 			case _sAcao == 'ConsultaKardex'
-			_ExecKardex ()
+				_ExecKardex ()
 			case _sAcao == 'MonitorProtheus'
-			_MonitProt ()
+				_MonitProt ()
+			case _sAcao == 'CapitalSocialAssoc'
+				_ExecCapAssoc ()
 			otherwise
-			_sErros += "A acao especificada no XML eh invalida: " + _sAcao
+				_sErros += "A acao especificada no XML eh invalida: " + _sAcao
 		endcase
 		U_UsoRot ('F', _sAcao, '')
 	else
@@ -210,9 +212,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	RPCClearEnv ()
 
 Return .T.
-
-
-
+//
 // --------------------------------------------------------------------------
 // Atualiza a estrutura de uma tabela (drop + chkfile + append)
 static function _AtuEstru ()
@@ -238,7 +238,6 @@ static function _AtuEstru ()
 	u_logFim ()
 Return
 
-
 /*
 // --------------------------------------------------------------------------
 static function _ExtraiTag (_sTag, _lObrig)
@@ -261,6 +260,7 @@ static function _ExtraiTag (_sTag, _lObrig, _lValData)
 	local _sRet    := ""
 	local _lDataOK := .T.
 	local _nPos    := 0
+
 	//u_logIni ()
 	//u_log ('Procurando tag', _sTag)
 	if type (_sTag) != "O"
@@ -290,8 +290,7 @@ static function _ExtraiTag (_sTag, _lObrig, _lValData)
 	//u_log ('_sRet = ', _sRet)
 	//u_logFim ()
 return _sRet
-
-
+//
 // --------------------------------------------------------------------------
 static function _ExecBatch ()
 	local _sSeqBatch := ""
@@ -322,7 +321,7 @@ static function _ExecBatch ()
 
 	u_logFim ()
 Return
-
+//
 /* nunca consegui fazer funcionar
 // --------------------------------------------------------------------------
 static function _Exec ()
@@ -365,8 +364,7 @@ static function _Exec ()
 	// u_logFim ()
 Return
 */
-
-
+//
 // --------------------------------------------------------------------------
 static function _GrvInsp ()
 	local _oSQL      := NIL
@@ -434,7 +432,7 @@ static function _GrvInsp ()
 
 	// u_logFim ()
 Return
-
+//
 // --------------------------------------------------------------------------
 static function _RastLt ()
 	local _sProduto  := ""
@@ -470,7 +468,7 @@ static function _RastLt ()
 
 	// u_logFim ()
 Return
-
+//
 // --------------------------------------------------------------------------
 // Recalculo do saldo atual em estoque
 static function _SaldoAtu ()
@@ -529,7 +527,7 @@ static function _SaldoAtu ()
 
 	//u_logFim ()
 Return
-
+//
 // --------------------------------------------------------------------------
 static function _ZAM ()
 	local _sFILIAL := ""
@@ -544,7 +542,6 @@ static function _ZAM ()
 	local _sOBS    := ""
 	local _sUSUCOD := ""
 	local _sIAE    := ""
-//	local _sMSG    := ""
 
 	u_logIni ()
 
@@ -604,14 +601,6 @@ static function _ZAM ()
 		if (AllTrim(_sDATFIM) + AllTrim(_sHORFIM)) > (DtoS(date()) + SubStr(time(),1,5))
 			_sErros += "Data Final nao pode ser maior do que hoje."
 		endif
-
-		//if (AllTrim(_sDATINI) + AllTrim(_sHORINI) > AllTrim(_sDATFIM) + AllTrim(_sHORFIM)) .and. .not. Empty(_sDATFIM)
-		//	_sErros += "Periodo invalido."
-		//endif
-
-		//if empty(_sTEMPO) .and. .not. Empty(_sDATFIM)
-		//	_sErros += "Tempo invalido."
-		//endif
 
 		if .not. empty(AllTrim(_sTIPCOD)) .and. ! U_ExistZX5("45", _sTIPCOD)
 			_sErros += "Tipo invalido."
@@ -679,7 +668,7 @@ static function _ZAM ()
 
 	u_logFim ()
 Return
-
+//
 // --------------------------------------------------------------------------
 // Interface para incluir eventos genericos
 static function _IncEvt ()
@@ -743,8 +732,7 @@ static function _IncEvt ()
 	endif
 	u_logFim ()
 Return
-
-
+//
 // --------------------------------------------------------------------------
 // Interface para a classe de transferencias de estoque.
 static function _TrEstq (_sQueFazer)
@@ -812,8 +800,7 @@ static function _TrEstq (_sQueFazer)
 		endif
 	endcase
 Return
-
-
+//
 // --------------------------------------------------------------------------
 // Verifica onde determinada string eh usada. Geralmente serve para pesquisar por
 // nomes de campos, nicknames de gatilhos, etc.
@@ -827,7 +814,7 @@ static function _OndeSeUsa ()
 		_sMsgRetWS = U_OndeSeUsa (_sCampo)
 	endif
 Return
-
+//
 // --------------------------------------------------------------------------
 // Inclui novo produto (cadastro em tela simplificada do NaWeb)
 static function _IncProd()
@@ -876,7 +863,6 @@ static function _IncProd()
 		aAdd(_aProduto, {"B1_VAMARCM" ,"00"	 	  		 , Nil})
 		aAdd(_aProduto, {"B1_GARANT" ,"2"	 	  		 , Nil})
 		aAdd(_aProduto, {"B1_VARMAAL" ,"00000000000000"	 , Nil})
-  //	aAdd(_aProduto, {"B1_VAGRWWC" ,"000"	 	  	 , Nil})
 		aAdd(_aProduto, {"B1_GRTRIB" ,_wB1_TIPO	 	  	 , Nil})
 
 		u_log (_aProduto)
@@ -902,7 +888,7 @@ static function _IncProd()
 	EndIf
 	u_logFim ()
 Return Nil
-
+//
 // --------------------------------------------------------------------------
 // Inclui novo cliente (cadastro em tela simplificada do NaWeb)
 static function _IncCli ()
@@ -1007,11 +993,10 @@ static function _IncCli ()
 	endif
 	u_logFim ()
 return
-
+//
 // --------------------------------------------------------------------------
 // Altera cliente (cadastro em tela simplificada do NaWeb)
 static function _AltCli ()
-//	local _aCliente := {}
 	local _wnome 	:= ""
 	local _wtipo 	:= ""
 	local _wcgc 	:= ""
@@ -1069,10 +1054,9 @@ static function _AltCli ()
 			u_log ('rotina automatica OK')
 			_sMsgRetWS = 'Cliente alterado codigo ' + _wcodcli
 		endif
-
 	endif
 return
-
+//
 // --------------------------------------------------------------------------
 // Executa consulta de orcamentos
 Static function _ExecConsOrc()
@@ -1100,6 +1084,7 @@ Static function _ExecConsOrc()
 		_aPerfNA      = U_SeparaCpo (_ExtraiTag ("_oXML:_WSAlianca:_Perfis", .T., .F.), ',')
 		//u_log2 ('debug', 'Perfis deste usuario como recebido no XML:')
 		//u_log2 ('debug', _aPerfNA)
+
 		// Complementa 5 posicoes caso necessario
 		do while len (_aPerfNA) < 5
 			aadd (_aPerfNA, 'null')
@@ -1229,8 +1214,7 @@ Static function _ExecConsOrc()
 	EndIf
 //	u_logFim ()
 Return 
-
-
+//
 // --------------------------------------------------------------------------
 // Inclusao de cargas de recebimento de uva durante a safra.
 static function _IncCarSaf ()
@@ -1355,8 +1339,7 @@ static function _IncCarSaf ()
 
 	u_log2 ('info', 'Finalizando web service de geracao de carga.')
 Return
-
-
+//
 /* movido para ws_namob
 // --------------------------------------------------------------------------
 // Retorna texto ticket carga safra
@@ -1418,8 +1401,7 @@ static function _RTkCarSaf ()
 	U_Log2 ('info', 'Finalizando ' + procname ())
 Return
 */
-
-
+//
 // --------------------------------------------------------------------------
 // Executa consulta de Kardex
 Static function _ExecKardex()
@@ -1520,9 +1502,7 @@ Static function _ExecKardex()
 	EndIf
 	u_logFim ()
 Return 
-
-
-
+//
 // --------------------------------------------------------------------------
 // Executa rotina semelhante ao antigo 'monitor' do sistema
 Static function _MonitProt ()
@@ -1533,13 +1513,10 @@ Static function _MonitProt ()
 	local _aServicos := {}
 	local _nServico  := 0
 	local _sAmbs     := ''
-//	local _sPortaMon := ''
 
 	u_logIni ()
-
 	if empty (_sErros)
 		_sAmbs     = _ExtraiTag ("_oXML:_WSAlianca:_Ambientes", .F., .F.)
-//		_sPortaMon = _ExtraiTag ("_oXML:_WSAlianca:_Porta",    .F., .F.)
 
 		// Cria lista de servicos e portas a serem verificados
 		_aServicos = {}
@@ -1554,11 +1531,6 @@ Static function _MonitProt ()
 		if empty (_sAmbs) .or. 'TESTE' $ upper (_sAmbs); aadd (_aServicos, {'Teste', 1280, 'TESTE'}) ; endif
 		if empty (_sAmbs) .or. 'TESTEFISCAL' $ upper (_sAmbs); aadd (_aServicos, {'TesteFiscal', 1281, 'TESTEFISCAL'}) ; endif
 		if empty (_sAmbs) .or. 'TESTEMEDIO' $ upper (_sAmbs); aadd (_aServicos, {'TesteMedio', 1282, 'TESTEMEDIO'}) ; endif
-
-		// Se recebida alguma porta na chamada, acrescenta-a junto na lista.
-//		if ! empty (_sPortaMon)
-//			aadd (_aServicos, {'Porta_' + _sPortaMon, val (_sPortaMon), 'Porta_' + _sPortaMon})
-//		endif
 
 		_sRetMon := '<monitorProtheus>'
 		for _nServico = 1 to len (_aServicos)
@@ -1607,3 +1579,35 @@ Static function _MonitProt ()
 
 	u_logFim ()
 return
+//
+// -------------------------------------------------------------------------------------------------
+// // Associados - retorna texto do capital social
+Static Function _ExecCapAssoc ()
+	Local   _sAssoc    := ""
+	Local   _sLoja     := ""
+	Local   _sRet      := ''
+	Private _sErroAuto := ""  // Variavel alimentada pela funcao U_Help
+
+	//u_logIni ()
+
+	if empty (_sErros) ; _sAssoc = _ExtraiTag ("_oXML:_WSAlianca:_Assoc", .T., .F.) ; endif
+	if empty (_sErros) ; _sLoja  = _ExtraiTag ("_oXML:_WSAlianca:_Loja", .T., .F.)  ; endif
+
+	if empty (_sErros)
+		_oAssoc := ClsAssoc ():New (_sAssoc, _sLoja)
+		if valtype (_oAssoc) != 'O'
+			_sErros += "Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto
+		endif
+	endif
+
+	if empty (_sErros)
+		_sRet = _oAssoc:SldQuotCap (dDataBase, .T.) [.QtCapRetTXT]
+
+		if empty (_sRet)
+			_sErros += "Retorno invalido metodo SldQuotCap " + _oAssoc:UltMsg
+		else
+			_sMsgRetWS = _sRet
+		endif
+	endif
+	//u_logFim ()
+Return
