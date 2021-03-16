@@ -27,6 +27,14 @@ User Function BatZB5Mail()
     Local _x        := 0
     Local _i        := 0
 
+    _nDiaSemana := Dow(date())
+
+    If _nDiaSemana == 2
+        _dDate := DaySub(date(), 3)
+    Else
+        _dDate := DaySub(date(), 1)
+    EndIf
+
     // Busca filiais
     _oSQL:= ClsSQL ():New ()
     _oSQL:_sQuery := ""
@@ -53,7 +61,7 @@ User Function BatZB5Mail()
         _oSQL:_sQuery += " FROM " + RetSQLName ("CT2") 
         _oSQL:_sQuery += " WHERE D_E_L_E_T_='' "
         _oSQL:_sQuery += " AND CT2_FILIAL = '01'"
-        _oSQL:_sQuery += " AND CT2_DATA = '" + DTOS(dDataBase) + "'"
+        _oSQL:_sQuery += " AND CT2_DATA = '" + DTOS(_dDate) + "'"
         _oSQL:_sQuery += " AND CT2_HIST LIKE 'TRANSF ENTRE CONTAS FL " + _aFilial[_x,1] + "'"
         _oSQL:_sQuery += " GROUP BY CT2_FILIAL, CT2_HIST"
         _aCT201 := aclone (_oSQL:Qry2Array ()) 
@@ -68,7 +76,7 @@ User Function BatZB5Mail()
         _oSQL:_sQuery += " FROM " + RetSQLName ("CT2") 
         _oSQL:_sQuery += " WHERE D_E_L_E_T_='' "
         _oSQL:_sQuery += " AND CT2_FILIAL = '" + _aFilial[_x,1] +"'"
-        _oSQL:_sQuery += " AND CT2_DATA = '" + DTOS(dDataBase) + "'"
+        _oSQL:_sQuery += " AND CT2_DATA = '" + DTOS(_dDate) + "'"
         _oSQL:_sQuery += " AND CT2_HIST LIKE 'TRANSF ENTRE CONTAS FL " + _aFilial[_x,1] + "'"
         _oSQL:_sQuery += " GROUP BY CT2_FILIAL, CT2_HIST"
         _aCT2Fil := aclone (_oSQL:Qry2Array ()) 
@@ -119,7 +127,7 @@ User Function BatZB5Mail()
                 _oSQL:_sQuery += "    ,CT2_VALOR"
                 _oSQL:_sQuery += " FROM " + RetSQLName ("CT2") 
                 _oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-                _oSQL:_sQuery += " AND CT2_DATA = '" + DTOS(dDataBase) + "'"
+                _oSQL:_sQuery += " AND CT2_DATA = '" + DTOS(_dDate) + "'"
                 _oSQL:_sQuery += " AND CT2_HIST LIKE 'TRANSF ENTRE CONTAS FL " + _aFilial[_x,1] + "'"
                // _oSQL:_sQuery += " ORDER BY CT2_HIST, CT2_FILIAL"
                 _aRetErro := aclone (_oSQL:Qry2Array ())
@@ -148,7 +156,7 @@ User Function BatZB5Mail()
 
         _sMsg := '<H1 align="center"></H1>'
        // _sMsg += '<H2 align="center">TRANSFERENCIA DE VALORES ENTRE FILIAIS</H1>' + chr (13) + chr (10)
-		_sMsg += '<H3 align="center">DATA DE PROCESSAMENTO ' + dtoc (date ()) + '</H2>' + chr (13) + chr (10)
+		_sMsg += '<H3 align="center">DATA DE PROCESSAMENTO ' + dtoc (date ()) + ' DATA DE ENTRADA CTB ' + dtoc (_dDate) +'</H2>' + chr (13) + chr (10)
 
         For _x:=1 to Len(_aRetorno)
             _aCols = {}
@@ -162,6 +170,7 @@ User Function BatZB5Mail()
         _oAUtil := ClsAUtil():New (_aRetorno)
 		_sMsg += _oAUtil:ConvHTM ("", _aCols, 'width="80%" border="1" cellspacing="0" cellpadding="3" align="center"', .T.)
         _sDestin := 'claudia.lionco@novaalianca.coop.br;charlene.baldez@novaalianca.coop.br'
+        //_sDestin := 'claudia.lionco@novaalianca.coop.br'
 
 		U_SendMail (_sDestin, "Transferencias de valores entre filiais", _sMsg, {})
     EndIf
