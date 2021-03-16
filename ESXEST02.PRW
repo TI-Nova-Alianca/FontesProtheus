@@ -2,7 +2,14 @@
 // Autor:      Robert Koch (creditos: Eduardo Candido)
 // Data:       2013
 // Descricao:  Ajuste do custo dos produtos VD conforme valor informado (complemento safra)
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Atualizacao
+// #Descricao         #Gera movimento de valor em itens tipo VD para distribuir complemento de preco de compra de safra ou FUNRURAL.
+// #PalavasChave      #complemento #safra
+// #TabelasPrincipais #SD3
+// #Modulos           #EST
+
 // Historico de alteracoes:
 // 21/06/2013 - Robert - Criado parametro para gerar entradas ou saidas
 //                     - Passa a gravar campo D3_VACHVEX para controle da rotina.
@@ -20,31 +27,23 @@
 //                     - Grava evento
 // 20/07/2020 - Robert - Permissao para executar passa a validar acesso 104 e nao mais 069.
 //                     - Inseridas tags para catalogacao de fontes
+// 16/03/2021 - Robert - Criado tratamento para distribuir comlplemento e FUNRURAL ao mesmo tempo - GLPI 9637
 //
 
-// Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #Atualizacao
-// #Descricao         #Gera entrada de valor em itens tipo VD para distribuir complemento de preco de compra de safra.
-// #PalavasChave      #complemento #safra
-// #TabelasPrincipais #SD3
-// #Modulos           #EST
-//
-//
+//#include "colors.ch"
+//#Include "Protheus.ch"
+//#Include "RwMake.ch"
+//#Include "TbiConn.ch"
 
 // ------------------------------------------------------------------------------------
-#include "colors.ch"
-#Include "Protheus.ch"
-#Include "RwMake.ch"
-#Include "TbiConn.ch"
-
 User function ESXEST02()
 	local _lContinua := .T.
 	Private cPerg    := 'ESXEST02'
 	u_logId ()
 
-	if ! U_MsgNoYes ("Existe a intencao de melhorar este processo para que o rateio seja feito somente nos itens produzidos na safra em questao. Deseja continuar mesmo assim?")
-		return
-	endif
+//	if ! U_MsgNoYes ("Existe a intencao de melhorar este processo para que o rateio seja feito somente nos itens produzidos na safra em questao. Deseja continuar mesmo assim?")
+//		return
+//	endif
 
 	// Verifica se o usuario tem liberacao para uso desta rotina.
 	if _lContinua
@@ -53,7 +52,6 @@ User function ESXEST02()
 
 	if _lContinua
 		_ValidPerg()
-		U_GravaSX1 (cPerg, '01', lastday (getmv('MV_ULMES')+1))
 		if Pergunte(cPerg, .T.)
 			processa ({|| esxest01a()},"Processando ...")
 		endif
@@ -72,11 +70,9 @@ Static Function esxest01a()
 	local _nTotal    := 0
 	local _aRequis   := {}
 	local _aSaldo    := {}
-	local _nPar02    := mv_par02
-	local _nPar03    := mv_par03
+	local _aCplADist := mv_par02
+	local _aFnrADist := mv_par03
 	local _nGerados  := 0
-//	local _nQtdMin   := 0.01  // Quantidade minima em estoque para receber rateio.
-	local _nVlrDist  := 0
 	local _aItens    := {}
 	local _nItem     := 0
 	local _oAux      := NIL
@@ -94,7 +90,7 @@ Static Function esxest01a()
 
 	if _lContinua
 		_oEvento := ClsEvent ():New ()
-		_oEvento:Texto := "Iniciando processo rateio complemento compra safra"
+		_oEvento:Texto := "Iniciando processo rateio complemento compra safra / FUNRURAL"
 		_oEvento:CodEven = 'SD3005'
 		_oEvento:LeParam (cPerg)
 		_oEvento:Grava ()
@@ -103,8 +99,6 @@ Static Function esxest01a()
 	// Remove movimentos se ja existirem
 	if _lContinua
 		_oSQL := ClsSQL():New ()
-//		_oSQL:_sQuery := "DELETE  "
-//		_oSQL:_sQuery += "FROM SD3010 "
 		_oSQL:_sQuery := "UPDATE " + RetSQLName ("SD3")
 		_oSQL:_sQuery += " SET D_E_L_E_T_ = '*'"
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ' ' "
@@ -118,7 +112,7 @@ Static Function esxest01a()
 	if _lContinua
 		// Busca estoques dos produtos do tipo VD
 		_oSQL := ClsSQL():New ()
-		_oSQL:_sQuery := "SELECT B2_COD, B2_LOCAL, 0, 0 "
+		_oSQL:_sQuery := "SELECT B2_COD, B2_LOCAL, 0, 0, 0 "
 		_oSQL:_sQuery += " FROM " + RetSQLName ("SB2") + " SB2, " + RetSQLName ("SB1") + " SB1 "
 		_oSQL:_sQuery += " WHERE SB2.D_E_L_E_T_ = ' ' "
 		_oSQL:_sQuery += " AND SB1.D_E_L_E_T_ = ' ' "
@@ -142,7 +136,6 @@ Static Function esxest01a()
 		for _nItem = 1 to len (_aItens)
 			incproc ('Verificando estoque ' + _aItens [_nItem, 1])
 			_asaldo := aclone (calcest(_aItens [_nItem, 1], _aItens [_nItem, 2], stod(_ddfim)+1))
-	//		if _aSaldo [1] >= 0.1  // Para evitar itens com saldo infimo, que apenas gera problema no recalculo do medio.
 			
 			// Para evitar itens com saldo infimo (tanto na data de referencia como na data atual), que apenas
 			// gera problema no recalculo do medio, testa antes de gravar na array.
@@ -163,34 +156,38 @@ Static Function esxest01a()
 
 	// Distribui o valor proporcionalmente ao estoque dos itens.
 	if _lContinua
-		_nVlrDist = 0
-/*
-		for _nItem = 1 to len (_aItens)
-			_aItens [_nItem, 4] = _nPar02 / _nTotal * _aItens [_nItem, 3]
-			_nVlrDist += _aItens [_nItem, 4]
-		next
-*/
+		
+		// Calcula distribuicao do valor de complemento e grava em coluna especifica da array de itens
 		_oAux := ClsAUtil ():New (_aItens)
-		_oAux:Dist3 (3, 4, _nPar02, 2)
+		_oAux:Dist3 (3, 4, _aCplADist, 2)
 		_aItens := aclone (_oAux:_aArray)
-
-		// soh pra gerar log
 		for _nItem = 1 to len (_aItens)
-			_nVlrDist += _aItens [_nItem, 4]
+			_aItens [_nItem, 4] = _oAux:_aArray [_nItem, 4]
 		next
-		u_log ('distribuidos:', _aItens, 'total=', _nVlrDist)
+
+		// Calcula distribuicao do valor de FUNRURAL e grava em coluna especifica da array de itens
+		_oAux := ClsAUtil ():New (_aItens)
+		_oAux:Dist3 (3, 5, _aFnrADist, 2)
+		_aItens := aclone (_oAux:_aArray)
+		for _nItem = 1 to len (_aItens)
+			_aItens [_nItem, 5] = _oAux:_aArray [_nItem, 5]
+		next
+
+		u_log2 ('info', 'Previsao de distribuicao:')
+		u_Log2 ('info', _aItens)
 	endif
-	_nVlrDist = 0
 
 	// Gera movimento de valor para os itens
 	if _lContinua
 		procregua (len (_aItens))
 		for _nItem = 1 to len (_aItens)
 			incproc ('Distribuindo valor item ' + _aItens [_nItem, 1])
-			if _aItens [_nItem, 4] > 0
+
+			// Se tem valor de complemento...
+			if _aItens [_nItem, 4] != 0
 				_aRequis	:=	{}
 				aadd( _aRequis, {"D3_FILIAL",  xFilial("SD3"), NIL})
-				aadd( _aRequis, {"D3_TM",      iif (_nPar03 == 1, "413", '513'), NIL})
+				aadd( _aRequis, {"D3_TM",      iif (_aItens [_nItem, 4] > 0, "413", '513'), NIL})
 				aadd( _aRequis, {"D3_COD",     _aItens [_nItem, 1], NIL})
 				aadd( _aRequis, {"D3_QUANT",   0, NIL})
 				aadd( _aRequis, {"D3_LOCAL",   _aItens [_nItem, 2], NIL})
@@ -199,24 +196,47 @@ Static Function esxest01a()
 				aadd( _aRequis, {"D3_VACHVEX", _sChaveSD3, NIL})
 				aadd( _aRequis, {"D3_VAMOTIV", "Rateio Complemento Safra", NIL})
 				_aRequis := aclone (U_OrdAuto (_aRequis))
-				u_log (_aRequis)
+				u_log2 ('info', _aRequis)
 				lMSErroAuto := .f.
 				MSExecAuto({|x| MATA240(x)}, _aRequis)
 				If lMsErroAuto
 					_lContinua = .F.
-					Msginfo ("Erro ao fazer o ajuste de valor de estoque")
+					u_help ("Erro ao fazer o ajuste de valor de complemento safra",, .t.)
 					mostraerro()
 				else
 					_nGerados ++
-					_nVlrDist += _aItens [_nItem, 4]
+				endif
+			endif
+			
+			// Se tem valor de FUNRURAL...
+			if _aItens [_nItem, 5] != 0
+				_aRequis	:=	{}
+				aadd( _aRequis, {"D3_FILIAL",  xFilial("SD3"), NIL})
+				aadd( _aRequis, {"D3_TM",      '414', NIL})
+				aadd( _aRequis, {"D3_COD",     _aItens [_nItem, 1], NIL})
+				aadd( _aRequis, {"D3_QUANT",   0, NIL})
+				aadd( _aRequis, {"D3_LOCAL",   _aItens [_nItem, 2], NIL})
+				aadd( _aRequis, {"D3_CUSTO1",  _aItens [_nItem, 5], NIL})
+				aadd( _aRequis, {"D3_EMISSAO", stod(_ddfim), NIL})
+				aadd( _aRequis, {"D3_VACHVEX", _sChaveSD3, NIL})
+				aadd( _aRequis, {"D3_VAMOTIV", "Rateio FUNRURAL", NIL})
+				_aRequis := aclone (U_OrdAuto (_aRequis))
+				u_log2 ('info', _aRequis)
+				lMSErroAuto := .f.
+				MSExecAuto({|x| MATA240(x)}, _aRequis)
+				If lMsErroAuto
+					_lContinua = .F.
+					u_help ("Erro ao fazer o ajuste de valor de FUNRURAL",, .t.)
+					mostraerro()
+				else
+					_nGerados ++
 				endif
 			endif
 		next
 	endif
 	
 	u_help ("Processo finalizado " + iif (_lContinua, "com sucesso. ", "COM PROBLEMAS. ") + chr (13) + chr (10) + ;
-	        cvaltochar (_nGerados) + " movimentacoes de estoque geradas." + chr (13) + chr (10) + chr (13) + chr (10) + ;
-	        "Valor distribuido: " + cvaltochar (_nVlrDist))
+	        cvaltochar (_nGerados) + " movimentacoes de estoque geradas.")
 Return
 
 
@@ -227,9 +247,9 @@ Static Function _ValidPerg ()
 	local _aRegsPerg := {}
 	local _aDefaults := {}
 
-//                     PERGUNT                           TIPO TAM DEC VALID                         F3  Opcoes                Help
-	aadd (_aRegsPerg, {01, "Ultimo dia mes processamento  ", "D", 8,  0,  "mv_par01>getmv('MV_ULMES')", "", {},                   ""})
-	aadd (_aRegsPerg, {02, "Valor a distribuir            ", "N", 11, 2,  "",                           "", {},                   ""})
-	aadd (_aRegsPerg, {03, "Gerar qual movto.de estoque?  ", "N", 1,  0,  "",                           "", {"Entrada", "Saida"}, ""})
+	//                 PERGUNT                               TIPO TAM DEC VALID F3  Opcoes                                  Help
+	aadd (_aRegsPerg, {01, "Ultimo dia mes processamento  ", "D", 8,  0,  "",   "", {},                                 ""})
+	aadd (_aRegsPerg, {02, "Valor complemento/premio      ", "N", 11, 2,  "",   "", {},                                 ""})
+	aadd (_aRegsPerg, {03, "Valor FUNRURAL                ", "N", 11, 2,  "",   "", {},                                 ""})
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 return

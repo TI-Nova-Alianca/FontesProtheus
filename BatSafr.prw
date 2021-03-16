@@ -236,8 +236,11 @@ static function _ConfParc (_lAjustar)
 
 				_nSomaSE2 += se2 -> e2_valor
 
-				if se2 -> e2_valor != se2 -> e2_saldo .or. se2 -> e2_valor != se2 -> e2_vlcruz
-					_sMsg += 'Parcela ' + se2 -> e2_parcela + ' no SE2 diferenca entre e2_valor x e2_saldo x e2_vlcruz' + chr (13) + chr (10)
+// apos transf p/ matriz o saldo zera;nao posso mais consistir.				if se2 -> e2_valor != se2 -> e2_saldo .or. se2 -> e2_valor != se2 -> e2_vlcruz
+// apos transf p/ matriz o saldo zera;nao posso mais consistir.					_sMsg += 'Parcela ' + se2 -> e2_parcela + ' no SE2 diferenca entre e2_valor x e2_saldo x e2_vlcruz' + chr (13) + chr (10)
+// apos transf p/ matriz o saldo zera;nao posso mais consistir.				endif
+				if se2 -> e2_valor != se2 -> e2_vlcruz
+					_sMsg += 'Parcela ' + se2 -> e2_parcela + ' no SE2 diferenca entre e2_valor x e2_vlcruz' + chr (13) + chr (10)
 				endif
 				if se2 -> e2_vencto != se2 -> e2_vencrea
 					_sMsg += 'Parcela ' + se2 -> e2_parcela + ' no SE2 diferenca entre e2_vencto x e2_vencrea' + chr (13) + chr (10)
