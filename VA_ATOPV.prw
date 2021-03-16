@@ -4,10 +4,19 @@
 // Descricao..: Altera observacao do pedido de venda sem precisar abrir o pedido (a partir de botao no browse).
 //              Criado inicialmente para pedidos importados do Mercanet (a alteracao dos demais campos eh bloqueada) (GLPI 2729).
 //
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Atualizacao
+// #Descricao         #Altera observacao do pedido de venda sem precisar abrir o pedido
+// #PalavasChave      #obs #pedido_de_venda
+// #TabelasPrincipais #SC5 
+// #Modulos           #FAT
+//
 // Historico de alteracoes:
 //
+// 12/03/2021 - Claudia - Retirado caracteres especiais " e ' da gravação da OBS. GLPI: 9634
+//
+// ------------------------------------------------------------------------------------------------------
 
-// --------------------------------------------------------------------------
 user function VA_ATOPV ()
 	local _lContinua := .T.
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -28,9 +37,12 @@ user function VA_ATOPV ()
 	if _lContinua
 		_sObs = sc5 -> c5_obs
 		_sObsOld = _sObs
-//		u_log ('obs antes...:', _sObs)
 		_sObs = u_showmemo (_sObs)
-//		u_log ('obs depois..:', _sObs)
+
+		// retira caracteres " e '
+		_sObs = StrTran( _sObs, "'", " " )
+		_sObs = StrTran( _sObs, '"', ' ' )
+
 		if alltrim (_sObs) != alltrim (_sObsOld)
 			reclock ("SC5", .F.)
 			sc5 -> c5_obs = _sObs 

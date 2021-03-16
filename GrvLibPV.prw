@@ -63,6 +63,7 @@
 // 20/07/2020 - Robert  - Permissao para liberar pedido de baixa de estoque para ajustes passa a validar acesso 101 e nao mais 069+066.
 //                      - Inseridas tags para catalogacao de fontes
 // 09/03/2021 - Claudia - BLoqueio de bonificação. GLPI: 9070
+// 12/03/2021 - Claudia - Retirado caracteres especiais " e ' da gravação da OBS. GLPI: 9634
 //
 // --------------------------------------------------------------------------------------------------------
 user function GrvLibPV (_lLiberar)
@@ -605,6 +606,12 @@ user function GrvLibPV (_lLiberar)
 	if type ("oGetDad") == "O"
 		oGetDad:oBrowse:Refresh ()
 	endif
+
+	// retira caracteres " e ' das OBS
+	_sObs := m -> c5_obs
+	_sObs := StrTran( _sObs, "'", " " )
+	_sObs := StrTran( _sObs, '"', ' ' )
+	m -> c5_obs := _sObs
 
 	U_ML_SRArea (_aAreaAnt)
 return
