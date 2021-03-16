@@ -1610,4 +1610,4 @@ Static Function _ExecCapAssoc ()
 		endif
 	endif
 	//u_logFim ()
-Return
+Return _sMsgRetWS
