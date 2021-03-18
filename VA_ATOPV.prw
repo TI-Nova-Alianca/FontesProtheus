@@ -42,6 +42,7 @@ user function VA_ATOPV ()
 		// retira caracteres " e '
 		_sObs = StrTran( _sObs, "'", " " )
 		_sObs = StrTran( _sObs, '"', ' ' )
+		_sObs = StrTran( _sObs, '--', ' ' )
 
 		if alltrim (_sObs) != alltrim (_sObsOld)
 			reclock ("SC5", .F.)

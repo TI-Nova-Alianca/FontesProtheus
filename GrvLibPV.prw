@@ -611,6 +611,7 @@ user function GrvLibPV (_lLiberar)
 	_sObs := m -> c5_obs
 	_sObs := StrTran( _sObs, "'", " " )
 	_sObs := StrTran( _sObs, '"', ' ' )
+	_sObs := StrTran( _sObs, '--', ' ' )
 	m -> c5_obs := _sObs
 
 	U_ML_SRArea (_aAreaAnt)

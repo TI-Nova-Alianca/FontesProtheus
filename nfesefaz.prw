@@ -6280,7 +6280,7 @@ If !Empty(aNota)
 	cString += "</infNFe>"
 EndIf
 // As linhas abaixo podem ser habilitada para 'derrubar' o programa antes que a NF seja transmitida. Serve para conferencia do XML gerado.
-if "COMP"$upper (alltrim (getenvserver ())) .or. "TESTE"$upper (alltrim (getenvserver ())) .or. "ROBERT"$upper (alltrim (getenvserver ()))
+if "COMP"$upper (alltrim (getenvserver ())) .or. "SANDRA"$upper (alltrim (getenvserver ())) .or. "CLAUDIA"$upper (alltrim (getenvserver ())) .or. "TESTE"$upper (alltrim (getenvserver ())) .or. "ROBERT"$upper (alltrim (getenvserver ()))
 	u_log ('Retornando:')
 	u_log (EncodeUTF8(cString))
 	if msgyesno ("Deseja visualizar o XML gerado?")
