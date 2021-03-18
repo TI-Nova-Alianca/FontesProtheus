@@ -2,12 +2,177 @@
 user function claudia ()
 
 //	u_help(" nada em execução")
-	u_help('descCC')
+	u_help('comissoes')
 
 //	descCC()
 	//ImpOBSFin()
+//	comissoes()
 return
 
+// static function comissoes()
+// 	Local _aDados 	:= {}
+// 	Local _aCom     := {}
+// 	Local i 		:= 0
+// 	Local _x        := 0
+// 	Local _oSQL  := ClsSQL ():New ()
+
+// 	 nHandle := FCreate("c:\temp\retornoComissao.csv")
+
+// 	_aDados = U_LeCSV ('C:\Temp\comissao.csv', ';')
+
+// 	For i:=1 to Len(_aDados)
+// 		_sFilial 	:= _aDados[i,1]
+// 		_sDocumento := _aDados[i,2]
+// 		_sSerie 	:= _aDados[i,3]
+// 		_sParc 		:= _aDados[i,4]
+// 		_sCliente 	:= _aDados[i,5]
+// 		_sLoja 		:= _aDados[i,6]
+
+// 		_oSQL:_sQuery := ""
+// 		_oSQL:_sQuery += " WITH C"
+// 		_oSQL:_sQuery += " AS"
+// 		_oSQL:_sQuery += " (SELECT"
+// 		_oSQL:_sQuery += " 		SF2.F2_VEND1 AS VEND"
+// 		_oSQL:_sQuery += " 	   ,SE1.E1_FILIAL AS FILIAL"
+// 		_oSQL:_sQuery += " 	   ,SE1.E1_NUM AS DOCUMENTO"
+// 		_oSQL:_sQuery += " 	   ,SE1.E1_PREFIXO AS SERIE"
+// 		_oSQL:_sQuery += " 	   ,SE1.E1_PARCELA AS PARCELA"
+// 		_oSQL:_sQuery += " 	   ,SE1.E1_CLIENTE AS CLIENTE"
+// 		_oSQL:_sQuery += " 	   ,SE1.E1_LOJA AS LOJA"
+// 		_oSQL:_sQuery += " 	   ,F2_VALBRUT AS TOTAL_NF"
+// 		_oSQL:_sQuery += " 	   ,F2_VALIPI AS IPI_NF"
+// 		_oSQL:_sQuery += " 	   ,F2_ICMSRET AS ST_NF"
+// 		_oSQL:_sQuery += " 	   ,F2_FRETE AS FRETE_NF"
+// 		_oSQL:_sQuery += " 	   ,E1_BASCOM1 AS BASE_TIT"
+// 		_oSQL:_sQuery += " 	   ,E1_VENCTO AS VENCIMENTO"
+// 		_oSQL:_sQuery += " 	   ,E1_VALOR AS VALOR_TIT"
+// 		_oSQL:_sQuery += " 	   ,ISNULL((SELECT"
+// 		_oSQL:_sQuery += " 				ROUND(SUM(E5_VALOR), 2)"
+// 		_oSQL:_sQuery += " 			FROM SE5010 AS SE52"
+// 		_oSQL:_sQuery += " 			WHERE SE52.E5_FILIAL = E5_FILIAL"
+// 		_oSQL:_sQuery += " 			AND SE52.D_E_L_E_T_ != '*'"
+// 		_oSQL:_sQuery += " 			AND SE52.E5_RECPAG = 'R'"
+// 		_oSQL:_sQuery += " 			AND SE52.E5_SITUACA != 'C'"
+// 		_oSQL:_sQuery += " 			AND SE52.E5_NUMERO = SE1.E1_NUM"
+// 		_oSQL:_sQuery += " 			AND (SE52.E5_TIPODOC = 'DC'"
+// 		_oSQL:_sQuery += " 			OR (SE52.E5_TIPODOC = 'CP'"
+// 		_oSQL:_sQuery += " 			AND SE52.E5_DOCUMEN NOT LIKE '% RA %'))"
+// 		_oSQL:_sQuery += " 			AND SE52.E5_PREFIXO = SE1.E1_PREFIXO"
+// 		_oSQL:_sQuery += " 			AND SE52.E5_PARCELA = SE1.E1_PARCELA"
+// 		_oSQL:_sQuery += " 			GROUP BY SE52.E5_FILIAL"
+// 		_oSQL:_sQuery += " 					,SE52.E5_RECPAG"
+// 		_oSQL:_sQuery += " 					,SE52.E5_NUMERO"
+// 		_oSQL:_sQuery += " 					,SE52.E5_PARCELA"
+// 		_oSQL:_sQuery += " 					,SE52.E5_PREFIXO)"
+// 		_oSQL:_sQuery += " 		, 0) AS VLR_DESCONTO"
+// 		_oSQL:_sQuery += " 	   ,ISNULL((SELECT"
+// 		_oSQL:_sQuery += " 				ROUND(SUM(E5_VALOR), 2)"
+// 		_oSQL:_sQuery += " 			FROM SE5010 AS SE53"
+// 		_oSQL:_sQuery += " 			WHERE SE53.E5_FILIAL = SE1.E1_FILIAL"
+// 		_oSQL:_sQuery += " 			AND SE53.D_E_L_E_T_ != '*'"
+// 		_oSQL:_sQuery += " 			AND SE53.E5_RECPAG = 'R'"
+// 		_oSQL:_sQuery += " 			AND SE53.E5_NUMERO = E1_NUM"
+// 		_oSQL:_sQuery += " 			AND (SE53.E5_TIPODOC = 'VL'"
+// 		_oSQL:_sQuery += " 			OR (SE53.E5_TIPODOC = 'CP'"
+// 		_oSQL:_sQuery += " 			AND SE53.E5_DOCUMEN LIKE '% RA %'))"
+// 		_oSQL:_sQuery += " 			AND SE53.E5_PREFIXO = SE1.E1_PREFIXO"
+// 		_oSQL:_sQuery += " 			AND SE53.E5_PARCELA = SE1.E1_PARCELA"
+// 		_oSQL:_sQuery += " 			GROUP BY SE53.E5_FILIAL"
+// 		_oSQL:_sQuery += " 					,SE53.E5_RECPAG"
+// 		_oSQL:_sQuery += " 					,SE53.E5_NUMERO"
+// 		_oSQL:_sQuery += " 					,SE53.E5_PARCELA"
+// 		_oSQL:_sQuery += " 					,SE53.E5_PREFIXO)"
+// 		_oSQL:_sQuery += " 		, 0) AS VLR_RECEBIDO"
+// 		_oSQL:_sQuery += " 	   ,F2_VALBRUT - F2_VALIPI - F2_ICMSRET - F2_FRETE - (ISNULL((SELECT"
+// 		_oSQL:_sQuery += " 				ROUND(SUM(E5_VALOR), 2)"
+// 		_oSQL:_sQuery += " 			FROM SE5010 AS SE52"
+// 		_oSQL:_sQuery += " 			WHERE SE52.E5_FILIAL = E5_FILIAL"
+// 		_oSQL:_sQuery += " 			AND SE52.D_E_L_E_T_ != '*'"
+// 		_oSQL:_sQuery += " 			AND SE52.E5_RECPAG = 'R'"
+// 		_oSQL:_sQuery += " 			AND SE52.E5_SITUACA != 'C'"
+// 		_oSQL:_sQuery += " 			AND SE52.E5_NUMERO = SE1.E1_NUM"
+// 		_oSQL:_sQuery += " 			AND (SE52.E5_TIPODOC = 'DC'"
+// 		_oSQL:_sQuery += " 			OR (SE52.E5_TIPODOC = 'CP'"
+// 		_oSQL:_sQuery += " 			AND SE52.E5_DOCUMEN NOT LIKE '% RA %'))"
+// 		_oSQL:_sQuery += " 			AND SE52.E5_PREFIXO = SE1.E1_PREFIXO"
+// 		_oSQL:_sQuery += " 			AND SE52.E5_PARCELA = SE1.E1_PARCELA"
+// 		_oSQL:_sQuery += " 			GROUP BY SE52.E5_FILIAL"
+// 		_oSQL:_sQuery += " 					,SE52.E5_RECPAG"
+// 		_oSQL:_sQuery += " 					,SE52.E5_NUMERO"
+// 		_oSQL:_sQuery += " 					,SE52.E5_PARCELA"
+// 		_oSQL:_sQuery += " 					,SE52.E5_PREFIXO)"
+// 		_oSQL:_sQuery += " 		, 0)) AS BASE"
+// 		_oSQL:_sQuery += " 	FROM SE1010 SE1"
+// 		_oSQL:_sQuery += " 	LEFT JOIN SF2010 AS SF2"
+// 		_oSQL:_sQuery += " 		ON (SF2.D_E_L_E_T_ = ''"
+// 		_oSQL:_sQuery += " 		AND SF2.F2_FILIAL = SE1.E1_FILIAL"
+// 		_oSQL:_sQuery += " 		AND SF2.F2_DOC = SE1.E1_NUM"
+// 		_oSQL:_sQuery += " 		AND SF2.F2_SERIE = SE1.E1_PREFIXO"
+// 		_oSQL:_sQuery += " 		AND SF2.F2_CLIENTE = SE1.E1_CLIENTE"
+// 		_oSQL:_sQuery += " 		AND SF2.F2_LOJA = SE1.E1_LOJA)"
+// 		_oSQL:_sQuery += " 	WHERE SE1.D_E_L_E_T_ = ''"
+// 		_oSQL:_sQuery += " 	AND E1_FILIAL IN ('01', '16'))"
+// 		_oSQL:_sQuery += " SELECT"
+// 		_oSQL:_sQuery += " 	   VEND"
+// 		_oSQL:_sQuery += "    ,TOTAL_NF"
+// 		_oSQL:_sQuery += "    ,IPI_NF"
+// 		_oSQL:_sQuery += "    ,ST_NF"
+// 		_oSQL:_sQuery += "    ,FRETE_NF"
+// 		_oSQL:_sQuery += "    ,BASE_TIT"
+// 		_oSQL:_sQuery += "    ,VALOR_TIT"
+// 		_oSQL:_sQuery += "    ,VLR_DESCONTO"
+// 		_oSQL:_sQuery += "    ,VLR_RECEBIDO"
+// 		_oSQL:_sQuery += "    ,BASE"
+// 		_oSQL:_sQuery += "    ,SUM(SD2.D2_COMIS1) / COUNT(SD2.D2_COD) AS MEDIA_COMISSAO"
+// 		_oSQL:_sQuery += "    ,BASE * (SUM(SD2.D2_COMIS1) / COUNT(SD2.D2_COD)) / 100"
+// 		_oSQL:_sQuery += " FROM C"
+// 		_oSQL:_sQuery += " INNER JOIN SD2010 SD2"
+// 		_oSQL:_sQuery += " 	ON (SD2.D_E_L_E_T_ = ''"
+// 		_oSQL:_sQuery += " 			AND SD2.D2_FILIAL = FILIAL"
+// 		_oSQL:_sQuery += " 			AND SD2.D2_DOC = DOCUMENTO"
+// 		_oSQL:_sQuery += " 			AND SD2.D2_SERIE = SERIE"
+// 		_oSQL:_sQuery += " 			AND SD2.D2_CLIENTE = CLIENTE"
+// 		_oSQL:_sQuery += " 			AND SD2.D2_LOJA = LOJA"
+// 		_oSQL:_sQuery += " 		)"
+// 		_oSQL:_sQuery += " WHERE FILIAL  = '" + _sFilial + "'"
+// 		_oSQL:_sQuery += " AND DOCUMENTO = '" + _sDocumento + "'"
+// 		_oSQL:_sQuery += " AND SERIE     = '" + _sSerie + "'"
+// 		_oSQL:_sQuery += " AND PARCELA   = '" + _sParc + "'"
+// 		_oSQL:_sQuery += " AND CLIENTE   = '" + _sCliente + "'"
+// 		_oSQL:_sQuery += " AND LOJA      = '" + _sLoja + "'"
+// 		_oSQL:_sQuery += " GROUP BY VEND"
+// 		_oSQL:_sQuery += " 		,TOTAL_NF"
+// 		_oSQL:_sQuery += " 		,IPI_NF"
+// 		_oSQL:_sQuery += " 		,ST_NF"
+// 		_oSQL:_sQuery += " 		,FRETE_NF"
+// 		_oSQL:_sQuery += " 		,BASE_TIT"
+// 		_oSQL:_sQuery += " 		,VALOR_TIT"
+// 		_oSQL:_sQuery += " 		,VLR_DESCONTO"
+// 		_oSQL:_sQuery += " 		,VLR_RECEBIDO"
+// 		_oSQL:_sQuery += " 		,BASE"
+// 		_aCom := aclone (_oSQL:Qry2Array ())
+
+// 		_sLinha := 'VEND;TOTAL_NF;IPI_NF;ST_NF;FRETE_NF;BASE_TIT;VALOR_TIT;VLR_DESCONTO;VLR_RECEBIDO;BASE;MEDIA_COMISSAO;COMISSAO' + chr (13) + chr (10)
+
+// 		For _x:=1 to Len(_aCom)
+// 			_sLinha := alltrim(_aCom[_x,1]) +';' 
+// 			_sLinha += StrTran(alltrim(str(_aCom[_x, 2])),'.',',') +';' 
+// 			_sLinha += StrTran(alltrim(str(_aCom[_x, 3])),'.',',') +';' 
+// 			_sLinha += StrTran(alltrim(str(_aCom[_x, 4])),'.',',') +';' 
+// 			_sLinha += StrTran(alltrim(str(_aCom[_x, 5])),'.',',') +';' 
+// 			_sLinha += StrTran(alltrim(str(_aCom[_x, 6])),'.',',') +';' 
+// 			_sLinha += StrTran(alltrim(str(_aCom[_x, 7])),'.',',') +';' 
+// 			_sLinha += StrTran(alltrim(str(_aCom[_x, 8])),'.',',') +';' 
+// 			_sLinha += StrTran(alltrim(str(_aCom[_x, 9])),'.',',') +';' 
+// 			_sLinha += StrTran(alltrim(str(_aCom[_x,10])),'.',',') +';' 
+// 			_sLinha += StrTran(alltrim(str(_aCom[_x,11])),'.',',') +';' 
+// 			_sLinha += StrTran(alltrim(str(_aCom[_x,12])),'.',',') + chr (13) + chr (10)
+			
+// 			FWrite(nHandle,_sLinha )
+// 		Next
+// 	Next
+// 	FClose(nHandle)
+// return
 
 // // INSERE DESCRICAO CC NO SC7
 // Static function descCC()
