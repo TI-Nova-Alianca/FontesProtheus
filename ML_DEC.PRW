@@ -76,6 +76,7 @@
 //                     - Opcao de exportar ou nao as guias de livre transito (tipo 30)
 // 22/03/2019 - Andre  - Trocado erro por aviso na validação A2_VAREGMA.
 // 10/01/2020 - Robert - Ignora algunas NF de saida de suco em dez/2019 que jah foram digitadas manualmente no site do Sisdevin.
+// 19/03/2021 - Robert - Tratamento para exportar NF de safra tipo C na safra 2021 (GLPI 9660).
 //
 
 // --------------------------------------------------------------------------
