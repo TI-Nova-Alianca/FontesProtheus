@@ -1175,7 +1175,14 @@ Static Function _Tipo60 ()
 	_oSQL:_sQuery +=          RetSQLName ("SB5") + " SB5 "
 	_oSQL:_sQuery +=  " WHERE V.DATA         BETWEEN '" + dtos (mv_par01) + "' AND '" + dtos (mv_par02) + "'"
 	_oSQL:_sQuery +=    " AND V.FILIAL       = '" + cFilAnt + "'"
-	_oSQL:_sQuery +=    " AND V.TIPO_NF      IN ('E', 'P')"
+
+//	_oSQL:_sQuery +=    " AND V.TIPO_NF      IN ('E', 'P')"
+	if mv_par01 >= stod ('20210101')  // A partir desta safra geramos as notas como 'compra'.
+		_oSQL:_sQuery +=    " AND V.TIPO_NF      IN ('C', 'P')"
+	else
+		_oSQL:_sQuery +=    " AND V.TIPO_NF      IN ('E', 'P')"
+	endif
+
 	_oSQL:_sQuery +=    " AND SA2.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND SA2.A2_FILIAL  = '" + xfilial ("SA2") + "'"
 	_oSQL:_sQuery +=    " AND SA2.A2_COD     = V.ASSOCIADO"
