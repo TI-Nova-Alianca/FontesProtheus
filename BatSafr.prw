@@ -39,6 +39,8 @@ user function BatSafr (_sQueFazer, _lAjustar)
 	_sQueFazer = iif (_sQueFazer == NIL, '', _sQueFazer)
 	_lAjustar = iif (_lAjustar == NIL, .F., _lAjustar)
 
+	U_Log2 ('info', 'Iniciando ' + procname () + ' com _sQueFazer=' + _sQueFazer)
+
 	// Procura cargas sem contranota.
 	if _sQueFazer == '1'
 		_aSemNota = {}
@@ -133,7 +135,7 @@ user function BatSafr (_sQueFazer, _lAjustar)
 		_ConfSZI ()
 	
 	else
-		u_help ("Sem definicao para verificacao '" + _sQueFazer + "'.",, .T.)
+		u_help ("Sem definicao para o que fazer quando parametro = '" + _sQueFazer + "'.",, .T.)
 		//_oBatch:Retorno += "Sem definicao para verificacao '" + _sQueFazer + "'."
 	endif
 
@@ -148,6 +150,8 @@ static function _ConfFrt ()
 	local _oSQL      := NIL
 	local _sAliasQ   := ''
 	local _sMsg      := ''
+
+	U_Log2 ('info', 'Iniciando ' + procname ())
 
 	sf1 -> (dbsetorder (1))  // F1_FILIAL, F1_DOC, F1_SERIE, F1_FORNECE, F1_LOJA, F1_TIPO, R_E_C_N_O_, D_E_L_E_T_
 
@@ -166,7 +170,7 @@ static function _ConfFrt ()
 		if ! sf1 -> (dbseek ((_sAliasQ) -> filial + (_sAliasQ) -> doc + (_sAliasQ) -> serie + (_sAliasQ) -> associado + (_sAliasQ) -> loja_assoc, .F.))
 			_sMsg += "Arquivo SF1 nao localizado" + chr (13) + chr (10)
 		else
-			u_log2 ('debug', cvaltochar ((_sAliasQ) -> vlr_frt) + '   ' + cvaltochar (sf1 -> f1_despesa))
+//			u_log2 ('debug', cvaltochar ((_sAliasQ) -> vlr_frt) + '   ' + cvaltochar (sf1 -> f1_despesa))
 			if (_sAliasQ) -> vlr_frt != sf1 -> f1_despesa
 				_sMsg += "Frete no ZF_VALFRET (" + cvaltochar ((_sAliasQ) -> vlr_frt) + ") diferente do campo F1_DESPESA (" + cvaltochar (sf1 -> f1_despesa) + ")" + chr (13) + chr (10)
 			endif
@@ -198,6 +202,8 @@ static function _ConfParc (_lAjustar)
 	local _nSomaPrev := 0
 	local _nSomaSE2  := 0
 
+	U_Log2 ('info', 'Iniciando ' + procname ())
+
 	_oSQL := ClsSQL():New ()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, GRUPO_PAGTO, SUM (VALOR_TOTAL) AS VLR_UVAS, SUM (VALOR_FRETE) AS VLR_FRT"
@@ -210,7 +216,7 @@ static function _ConfParc (_lAjustar)
 		_oSQL:_sQuery +=    " and ASSOCIADO = '002978'"
 		_oSQL:_sQuery +=    " and DOC = '000023832'"
 	endif
-	
+
 	_oSQL:_sQuery += " GROUP BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, GRUPO_PAGTO"
 	_oSQL:_sQuery += " ORDER BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, GRUPO_PAGTO"
 	_oSQL:Log ()
@@ -273,6 +279,7 @@ static function _ConfParc (_lAjustar)
 					endif
 					if round (_aParcReal [_nParc, 3], 2) != round (_aParcPrev [_nParc, 4], 2)
 						_sMsg += "Diferenca nos valores de uva - linha " + cvaltochar (_nParc) + chr (13) + chr (10)
+						_sMsg += "Parcela real: " + cvaltochar (round (_aParcReal [_nParc, 3], 2)) + " prevista: " + cvaltochar (round (_aParcPrev [_nParc, 4], 2)) + chr (13) + chr (10)
 					endif
 				next
 
@@ -356,6 +363,8 @@ static function _MailAcomp ()
 	local _oSQL   := NIL
 	local _sSafra := U_IniSafra ()
 	local _aCols  := {}
+
+	U_Log2 ('info', 'Iniciando ' + procname ())
 
 	_oSQL := ClsSQL():New ()
 	_oSQL:_sQuery := ""
@@ -493,6 +502,8 @@ static function _GeraSZI ()
 	local _oCtaCorr  := NIL
 	local _sSafrComp := strzero (year (dDataBase), 4)
 
+	U_Log2 ('info', 'Iniciando ' + procname ())
+
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT E2_FILIAL, E2_FORNECE, E2_LOJA, E2_NOMFOR, E2_EMISSAO, E2_VENCREA, E2_NUM, E2_PREFIXO, E2_TIPO, E2_VALOR, E2_SALDO, E2_HIST, R_E_C_N_O_, E2_LA, E2_PARCELA,"
@@ -585,8 +596,11 @@ static function _ConfSZI ()
 	local _sAliasQ   := ''
 	local _oSQL      := NIL
 	local _sMsg      := ''
-	local _nRegSZI   := 0
+	local _aRegSZI   := {}
+	//local _nRegSZI   := 0
 	local _sSafrComp := strzero (year (dDataBase), 4)
+
+	U_Log2 ('info', 'Iniciando ' + procname ())
 
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
@@ -623,19 +637,19 @@ static function _ConfSZI ()
 		_oSQL:_sQuery +=    " AND SZI.ZI_PARCELA = '" + (_sAliasQ) -> e2_parcela + "'"
 		_oSQL:_sQuery +=    " AND SZI.ZI_TM      = '13'"
 		// _oSQL:Log ()
-		_nRegSZI = _oSQL:RetFixo (1, 'Procurando registro no SZI ref. titulo NF compra safra', .F.) [1, 1]
-		if _nRegSZI == 0
+		_aRegSZI = _oSQL:RetFixo (1, 'Procurando registro no SZI ref. titulo NF compra safra', .F.)
+		if len (_aRegSZI) == 0
 			_sMsg += "Nao localizado registro na tabela SZI para parcela da nota de compra." + chr (13) + chr (10)
-			_sMsg := _oSQL:_sQuery
+			_sMsg += _oSQL:_sQuery
 		else
-			szi -> (dbgoto (_nRegSZI))
+			szi -> (dbgoto (_aRegSZI [1,1]))
 			if szi -> zi_valor != (_sAliasQ) -> e2_valor
-				_sMsg += "Valor do SZI (" + cvaltochar (szi -> zi_valor) + ") diferente do SE2 (" + cvaltochar ((_sAliasQ) -> e2_valor) + ")."
-				_sMsg := _oSQL:_sQuery
+				_sMsg += "Valor do SZI (" + cvaltochar (szi -> zi_valor) + ") diferente do SE2 (" + cvaltochar ((_sAliasQ) -> e2_valor) + ")." + chr (13) + chr (10)
+				_sMsg += _oSQL:_sQuery
 			else
 				if (_sAliasQ) -> e2_filial != '01'
 					if szi -> zi_saldo > 0
-						_sMsg += "SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela + " deveria ter transferido para a matriz."
+						_sMsg += "SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela + " deveria ter sido transferido para a matriz." + chr (13) + chr (10)
 					else
 						_oSQL := ClsSQL ():New ()
 						_oSQL:_sQuery := " SELECT count (*) "
@@ -650,7 +664,7 @@ static function _ConfSZI ()
 						_oSQL:_sQuery +=    " AND SZI.ZI_TM      = '13'"
 						_oSQL:Log ()
 						if _oSQL:RetQry (1, .f.) == 0
-							_sMsg += "SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela + " transferencia nao apareceu na matriz."
+							_sMsg += "SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela + " transferencia nao apareceu na matriz." + chr (13) + chr (10)
 						endif
 					endif
 				endif
