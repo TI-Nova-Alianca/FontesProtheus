@@ -3,42 +3,6 @@
 // Data:      2012
 // Descricao: Rateio custo estocagem (ajuste do custo dos produtos VD conforme despesa dos CC)
 
-/*
-Descritivo das operações feitas pelo programa ESXEST01 (rateio custo estocagem)
-
-A finalidade do programa é buscar os saldos dos centros de custos de estocagem no mês, e distribuir esses saldos entre os itens de granel mais representativos em estoque.
-A forma de gerar essa distribuição é gerando entradas de valor em cada item. Como a quantidade não é alterada, automaticamente obtém-se um aumento do custo médio.
-
-O programa verifica os saldos contábeis dos centros de custo abaixo (onde XX = filial):
-XX1101
-XX1102
-XX1201
-XX1202
-
-Para cada centro de custo, são lidas as contas contábeis abaixo:
-- contas 7010110...    (transferências de um CC para outro)
-- contas do grupo 0070 (mão de obra)
-- contas do grupo 0080 (GGF)
-- contas do grupo 0110 (apoio)
-- outras contas        (contas sem grupo)
-
-A soma desses saldos será distribuída entre os produtos em estoque que atendam às seguintes condições:
-- ser do tipo VD;
-- não ser 'de terceiros' (campo B1_AGREGCU diferente de '1');
-- não ter mão de obra (item MMM) em sua estrutura;
-- Possuir saldo mínimo de 0,01 litro em estoque no último dia do mês em questão.
-
-
-Considerações adicionais:
-- Para o CC XX1101 são gerados movimentos de estoque tipo 300
-- Para o CC XX1102 são gerados movimentos de estoque tipo 301
-- Para o CC XX1201 são gerados movimentos de estoque tipo 302
-- Para o CC XX1202 são gerados movimentos de estoque tipo 303
-- O programa gera dados somente para a filial atual.
-- Em caso de nova execução no mesmo mês, os movimentos anteriores serão automaticamente apagados.
-- Atualmente os movimentos gerados por este programa são contabilizados pelo lcto.padrão 668.
-*/
-
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Atualizacao
 // #Descricao         #Gera entrada de valor em itens tipo VD para agregar custo de estocagem
@@ -70,6 +34,7 @@ Considerações adicionais:
 // 11/12/2020 - Robert  - Ignora centros de custo de recebimento e processamento (por enquanto apenas base teste) por que serao processados pelo VA_RTSAF.TLPP
 // 18/01/2021 - Robert  - Verifica parametro MV_DBLQMOV antes de executar.
 // 25/01/2021 - Robert  - Incorporadas funcionalidades do VA_RTSAF (rateio recebimento e processamento safra) para que fique num unico programa (GLPI 8609)
+// 19/03/2021 - Robert  - Faltava tratamento para quando nao houvesse nenhum item em estoque que pudesse receber o rateio (GLPI 9659).
 //
 
 
@@ -361,7 +326,11 @@ Static Function _esxest01a ()
 		_oSQL:_sQuery += " WHERE SALDOESTQ > 0.01"  // Evita pegar produtos com saldo muito pequeno
 		_oSQL:Log ()
 		_aEstq = aclone (_oSQL:Qry2Array ())
-		_nTotEstq = _aEstq [1, 4]
+		if len (_aEstq) == 0
+			u_help ("Nao encontrei nenhum item no estoque para onde possam ser distribuidos valores.")
+		else
+			_nTotEstq = _aEstq [1, 4]
+		endif
 		u_log2 ('info', 'Estoques:')
 		u_log2 ('info', _aEstq)
 	endif
