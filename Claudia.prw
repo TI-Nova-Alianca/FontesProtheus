@@ -1,7 +1,7 @@
 // --------------------------------------------------------------------------
 user function claudia ()
 
-	u_help(" nada em execução")
+	u_help("Nada para executar")
 //	u_help('comissoes')
 
 //	descCC()
