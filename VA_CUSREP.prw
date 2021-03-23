@@ -2,20 +2,6 @@
 // Autor......: Catia Cardoso
 // Data.......: 29/03/2017	
 // Descricao..: Atualiza Custo Reposição
-//
-// Historico de alteracoes:
-//
-// 03/05/2017 - Catia  - Alterações de escopo - redefinições Diuli
-// 04/05/2017 - Catia  - Frete nao estava buscando certo - tem que ser custo e nao valor
-// 05/07/2017 - Catia  - bloqueio para nao buscar produtos do tipo PA
-// 29/08/2017 - Catia  - novo parametro para nao exibir itens com custo a atualizar = zero
-// 26/04/2018 - Catia  - erro de divisao por zero
-// 08/05/2018 - Catia  - incluido parametro de ultima compra e alterado o parametro de ultima atualizacao para de/ate
-// 12/02/2019 - Catia  - alterado os campos de custo para que tenham 4 decimais
-// 04/03/2020 - Claudia - Ajuste de fonte conforme solicitação de versão 12.1.25 - Arquivo de trabalho
-// 27/07/2020 - Robert  - Verificacao de acesso: passa a validar acesso 114 e nao mais 069.
-//                      - Inseridas tags para catalogacao de fontes
-//
 
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #atualizacao
@@ -24,15 +10,27 @@
 // #TabelasPrincipais #SB1
 // #Modulos           #EST
 
-// ------------------------------------------------------------------------------------------
+// Historico de alteracoes:
+//
+// 03/05/2017 - Catia   - Alterações de escopo - redefinições Diuli
+// 04/05/2017 - Catia   - Frete nao estava buscando certo - tem que ser custo e nao valor
+// 05/07/2017 - Catia   - bloqueio para nao buscar produtos do tipo PA
+// 29/08/2017 - Catia   - novo parametro para nao exibir itens com custo a atualizar = zero
+// 26/04/2018 - Catia   - erro de divisao por zero
+// 08/05/2018 - Catia   - incluido parametro de ultima compra e alterado o parametro de ultima atualizacao para de/ate
+// 12/02/2019 - Catia   - alterado os campos de custo para que tenham 4 decimais
+// 04/03/2020 - Claudia - Ajuste de fonte conforme solicitação de versão 12.1.25 - Arquivo de trabalho
+// 27/07/2020 - Robert  - Verificacao de acesso: passa a validar acesso 114 e nao mais 069.
+//                      - Inseridas tags para catalogacao de fontes
+// 22/03/2021 - Robert  - Eliminada redefinicao da variavel _sArqLog.
+// 22/03/2021 - Robert  - Adequacao para usar variaveis locais em lacos FOR...NEXT
+//
+
 #include 'totvs.ch'
 
+// ------------------------------------------------------------------------------------------
 User Function VA_CUSREP()
-	
 	local _aCores  := U_L_CUSREP (.T.)
-	//Local cArqTRB  := ""
-	//Local cInd1    := ""
-	//Local nI       := 0
 	Local I        := 0
 	Local n        := 0
 	Local aStruct  := {}
@@ -91,21 +89,6 @@ User Function VA_CUSREP()
 		AAdd( aStruct, { "CUSTATUAL" , "N", 12, 4 } )
 		AAdd( aStruct, { "DIGITADO"  , "C", 01, 0 } )
 		
-//		// cria arquivo de trabalho
-//		cArqTRB := CriaTrab( aStruct, .T. )
-//		dbUseArea( .T., __LocalDriver, cArqTRB, "TRB", .F., .F. )
-//		cInd1 := Left( cArqTRB, 7 ) + "1"
-//		IndRegua( "TRB", cInd1, "DESC", , , "Criando índices...")
-//		cInd2 := Left( cArqTRB, 7 ) + "2"
-//		IndRegua( "TRB", cInd2, "COD", , , "Criando índices...")
-//		cInd3 := Left( cArqTRB, 7 ) + "3"
-//		IndRegua( "TRB", cInd3, "VARIA", , , "Criando índices...")
-//		
-//		dbClearIndex()
-//		dbSetIndex( cInd1 + OrdBagExt() )
-//		dbSetIndex( cInd2 + OrdBagExt() )
-//		dbSetIndex( cInd3 + OrdBagExt() )
-
 		// cria arquivo de trabalho
 		_aArqTrb  := {}
 		U_ArqTrb ("Cria", "TRB", aStruct, {"DESCR","COD","VARIA"}, @_aArqTrb)	
@@ -258,7 +241,7 @@ User Function VA_CUSREP()
 
 		Private aRotina   := {}
 		private cCadastro := "Atualização Custo Reposição"
-		private _sArqLog  := iif (type ("_sArqLog") == "C", _sArqLog, U_Nomelog ())
+//		private _sArqLog  := iif (type ("_sArqLog") == "C", _sArqLog, U_Nomelog ())
 			
 		aadd (aRotina, {"&Pesquisar"           ,"AxPesqui"       , 0, 1})
 		aadd (aRotina, {"&Altera Custo Manual" ,"U_L_ALTCUSTNEW" , 0, 2})
@@ -270,8 +253,8 @@ User Function VA_CUSREP()
 		aadd (aRotina, {"&Legenda"             ,"U_L_CUSREP(.F.)", 0 ,5})
 		
 		Private cDelFunc := ".T."
-		private _sArqLog := U_NomeLog ()Þ
-		u_logId ()
+//		private _sArqLog := U_NomeLog ()Þ
+//		u_logId ()
 		
 		dbSelectArea("TRB")
 		dbSetOrder(1)
@@ -475,6 +458,7 @@ return
 user function L_CUSREP (_lRetCores)
 	local _aCores  := {}
 	local _aCores2 := {}
+	local _i       := 0
 	
     aadd (_aCores, {"TRB->CUSTATUAL > 0", 'BR_AZUL'    , 'Produto com Custo Reposição'})
     aadd (_aCores, {"TRB->CUSTATUAL = 0", 'BR_AMARELO' , 'Produto sem Custo Reposição'})

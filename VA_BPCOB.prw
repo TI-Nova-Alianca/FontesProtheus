@@ -6,10 +6,12 @@
 // Historico de alteracoes:
 // 06/10/2015 - Catia   - Incluido maior saldo e media de atraso - para facilitar a analise
 // 10/03/2020 - Claudia - Ajuste de fonte conforme solicitação de versão 12.1.25 - Arquivo de trabalho
+// 22/03/2021 - Robert  - Eliminada redefinicao da variavel _sArqLog.
 //
-// -----------------------------------------------------------------------------------------------------
+
 #include "rwmake.ch"
 
+// -----------------------------------------------------------------------------------------------------
 User Function VA_BPCOB()
 	
 	//local _aCores  := ""
@@ -145,15 +147,14 @@ User Function VA_BPCOB()
 
 		Private aRotina   := {}
 		private cCadastro := "Manutenção Bancos Preferencias da Cobrança p/Clientes"
-		private _sArqLog  := iif (type ("_sArqLog") == "C", _sArqLog, U_Nomelog ())
+//		private _sArqLog  := iif (type ("_sArqLog") == "C", _sArqLog, U_Nomelog ())
 			
 		aadd (aRotina, {"&Pesquisar"             ,"AxPesqui"       , 0, 1})
 		aadd (aRotina, {"&Visualizar"            ,"U_VIS_CLI"      , 0, 2})
 		aadd (aRotina, {"&Alterar"               ,"U_ALT_BANC()"   , 0, 3})
 		
-		//Private cDelFunc := ".T."
-		private _sArqLog := U_NomeLog ()
-		u_logId ()
+//		private _sArqLog := U_NomeLog ()
+//		u_logId ()
 		
 		dbSelectArea("TRB")
 		dbSetOrder(1)

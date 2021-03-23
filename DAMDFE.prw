@@ -7,8 +7,8 @@
 #DEFINE IMP_SPOOL     2				
 #DEFINE MAXMENLIN   200				// Máximo de caracteres por linha de dados adicionais
 #DEFINE MAXLINOBS   018             // Máximo de linhas nas observaçoes.
-#DEFINE MAXLINREP	550				// Máximo de linhas relatório.	
-#DEFINE HALFLINREP	(MAXLINREP/2)	// Metade de linhas do relatório.						
+#DEFINE MAXLINREP	550				// Máximo de linhas relatório.
+#DEFINE HALFLINREP	(MAXLINREP/2)	// Metade de linhas do relatório.
 
 User Function DAMDFE(cIdEnt,oDamdfe,oSetup,cFilePrint)
 

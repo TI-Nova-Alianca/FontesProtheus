@@ -5,7 +5,10 @@
 //
 // Historico de alteracoes:
 //
-// 24/04/2019 - Catia - Testar data de necessidade 
+// 24/04/2019 - Catia  - Testar data de necessidade 
+// 22/03/2021 - Robert - Teste com empty () do C1_DATPRF estava desconsiderando a variavel _nLinha.
+//
+
 // ----------------------------------------------------------------------------------------------------------------------------------------------------
 user function MT110TOK ()
 
@@ -16,10 +19,11 @@ user function MT110TOK ()
 	
 	For _nLinha := 1 to Len(aCols)
 		// valida data de necessidade que obrigatoriamente tem que ser maior ou igual a data do sistema
-		if ! empty (GDFieldGet ("C1_DATPRF"), _nLinha)
+		// if ! empty (GDFieldGet ("C1_DATPRF"), _nLinha)
+		if ! empty (GDFieldGet ("C1_DATPRF", _nLinha))
 			if  ! GDDeleted (_nLinha) 
 				if dtos(GDFieldGet ("C1_DATPRF", _nLinha) ) < dtos( DATE() )
-					u_help ("Data de necessidade deve ser obrigatóriamente maior ou igual a data de digitação da solicitação.")
+					u_help ("Data de necessidade deve ser obrigatoriamente maior ou igual a data de digitação da solicitação.")
 					_lRet = .F.
 					exit
 				endif	

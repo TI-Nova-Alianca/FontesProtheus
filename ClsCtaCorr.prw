@@ -1790,6 +1790,13 @@ METHOD PodeIncl () Class ClsCtaCorr
 		endif
 	endif	
 
+	
+	// // Estou gerando atrasado, e conferi com a Cris que o TM 13 nao influencia na correcao mon por que ela rodou somente corr a debito.
+	// if (date () == stod ('20210321') .or. date () == stod ('20210322')) ;
+	//  	.and. ::TM = '13' ;
+	// 	.and. (IsInCallStack ("U_BATSAFR") .OR. IsInCallStack ("U_BATTRSZI"))
+	// 	// hoje vou aceitar
+	// else
 	// Verifica periodo fechado (correcao monetaria jah calculada) - independente de filial.
 	if _lContinua .and. ! ::TM $ '19/'
 		_sQuery := ""
@@ -1806,6 +1813,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 			_lContinua = .F.
 		endif
 	endif
+	// endif
 
 	if ! _lContinua .and. ! empty (::UltMsg)
 		u_help (::UltMsg,, .t.)
@@ -2039,10 +2047,8 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 		_oBatch:Dados    = 'Transf.sld.SZI fil.' + ::Filial + ' p/' + ::FilDest + '-Assoc.' + ::Assoc + '/' + ::Loja
 		_oBatch:EmpDes   = cEmpAnt
 		_oBatch:FilDes   = ::FilDest
-		// _oBatch:DataBase = dDataBase
 		_oBatch:DataBase = iif (empty (_dDtBxTran), dDataBase, _dDtBxTran)
 		_oBatch:Modulo   = 6  // Campo E2_VACHVEX nao eh gravado em alguns modulos... vai saber...
-		// _oBatch:Comando  = "U_BatTrSZI('" + ::Assoc + "','" + ::Loja + "','" + ::SeqSZI + "','" + cEmpAnt + "','" + ::Filial + "','" + ::FilDest + "','" + ::TM + "','" + dtos (dDatabase) + "'," + cvaltochar (_nSaldo) + ")"
 		_oBatch:Comando  = "U_BatTrSZI('" + ::Assoc + "','" + ::Loja + "','" + ::SeqSZI + "','" + cEmpAnt + "','" + ::Filial + "','" + ::FilDest + "','" + ::TM + "','" + dtos (iif (empty (_dDtBxTran), dDataBase, _dDtBxTran)) + "'," + cvaltochar (_nSaldo) + ")"
 		_oBatch:Grava ()
 	endif

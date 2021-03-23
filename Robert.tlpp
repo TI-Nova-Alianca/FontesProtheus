@@ -27,7 +27,7 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '07' modulo '05'
+		prepare environment empresa '01' filial '01' modulo '05'
 		private cModulo   := 'FAT'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -40,9 +40,7 @@ user function robert ()
 	endif
 
 	private _sArqLog := procname () + "_" + alltrim (cUserName) + cEmpAnt + ".log"
-//	private _sArqLog := procname () + "_" + alltrim (cUserName) + '_' + ALLTRIM (upper (GetEnvServer())) + ".log"
 	delete file ('\logs\' + _sArqLog)
-	//u_logId ()
 	if ! empty (GetSrvProfString ("IXBLOG", ""))
 		u_help ("Parametro IXBLOG ativo no appserver.ini")
 	else

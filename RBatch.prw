@@ -31,26 +31,16 @@ User Function RBatch (_sEmp, _sFil)
 	local _lContinua  := .T.
 	local _aSeq       := {}
 	local _nSeq       := 0
-	//local _aProxAvis  := {}
-	//local _lExecuta   := .F.
-	//local _sLogAnt    := ""
 	local _nLock      := 0
 	local _sModulo    := ""
 	local _sArqModul  := ""
-//	local _aProxExec  := {}
 	local _nHdl       := 0
 	local _sArqEmpFi  := ""
-//	local _sUltEmpFi  := ""
 	local _aUltEmpFi  := {}
 	local _nUltEmpFi  := 0
-//	local _dDtUExe    := ctod ('')
-//	local _sHrUExe    := ""
 	local _nTenta     := 0
 	local _lGlbOK     := .F.
 	local _sVarGlob   := ""
-//	local _sSQLUExe   := ""
-//	local _sSQLIntRp  := ""
-//	local _sSQLProx   := ""
 	local _oSQL       := NIL
 	local _oAviso     := NIL 
 
@@ -70,11 +60,11 @@ User Function RBatch (_sEmp, _sFil)
 	_aUltEmpFi = {}
 	aadd (_aUltEmpFi, '0101')
 	aadd (_aUltEmpFi, '0103')
-	aadd (_aUltEmpFi, '0105')// ; aadd (_aUltEmpFi, '0101') //; aadd (_aUltEmpFi, '0113')
+	aadd (_aUltEmpFi, '0105')
 	aadd (_aUltEmpFi, '0106')
 	aadd (_aUltEmpFi, '0107')
 	aadd (_aUltEmpFi, '0108')
-	aadd (_aUltEmpFi, '0109')// ; aadd (_aUltEmpFi, '0101') //; aadd (_aUltEmpFi, '0113')
+	aadd (_aUltEmpFi, '0109')
 	aadd (_aUltEmpFi, '0110')
 	aadd (_aUltEmpFi, '0111')
 	//aadd (_aUltEmpFi, '0112')

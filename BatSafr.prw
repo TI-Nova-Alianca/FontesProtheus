@@ -511,17 +511,18 @@ static function _GeraSZI ()
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2"
 	_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '" + xfilial ("SE2") + "'"
-	_oSQL:_sQuery +=    " AND SE2.E2_TIPO    = 'NF'"
+	//_oSQL:_sQuery +=    " AND SE2.E2_TIPO    = 'NF'"
 	_oSQL:_sQuery +=    " AND SE2.E2_VACHVEX = ''"
 	_oSQL:_sQuery +=    " AND EXISTS (SELECT *"  // Precisa ser nota de safra
 	_oSQL:_sQuery +=                  " FROM VA_VNOTAS_SAFRA V"
-	_oSQL:_sQuery +=                 " WHERE V.SAFRA      = '" + _sSafrComp + "'"
-	_oSQL:_sQuery +=                   " AND V.FILIAL     = SE2.E2_FILIAL"
-	_oSQL:_sQuery +=                   " AND V.ASSOCIADO  = SE2.E2_FORNECE"
-	_oSQL:_sQuery +=                   " AND V.LOJA_ASSOC = SE2.E2_LOJA"
-	_oSQL:_sQuery +=                   " AND V.SERIE      = SE2.E2_PREFIXO"
-	_oSQL:_sQuery +=                   " AND V.DOC        = SE2.E2_NUM"
-	_oSQL:_sQuery +=                   " AND V.TIPO_NF    = 'C')"
+	_oSQL:_sQuery +=                 " WHERE V.SAFRA       = '" + _sSafrComp + "'"
+	_oSQL:_sQuery +=                   " AND V.FILIAL      = SE2.E2_FILIAL"
+	_oSQL:_sQuery +=                   " AND V.ASSOCIADO   = SE2.E2_FORNECE"
+	_oSQL:_sQuery +=                   " AND V.LOJA_ASSOC  = SE2.E2_LOJA"
+	_oSQL:_sQuery +=                   " AND V.SERIE       = SE2.E2_PREFIXO"
+	_oSQL:_sQuery +=                   " AND V.DOC         = SE2.E2_NUM"
+	_oSQL:_sQuery +=                   " AND V.TIPO_NF     = 'C'"
+	_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC = 'ASSOCIADO')"
 	_oSQL:_sQuery +=    " AND NOT EXISTS (SELECT *"  // Ainda nao deve existir na conta corrente
 	_oSQL:_sQuery +=                  " FROM " + RetSQLName ("SZI") + " SZI "
 	_oSQL:_sQuery +=                 " WHERE SZI.ZI_FILIAL  = SE2.E2_FILIAL"
@@ -604,20 +605,21 @@ static function _ConfSZI ()
 
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT E2_FILIAL, E2_FORNECE, E2_LOJA, E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VALOR, E2_HIST"
+	_oSQL:_sQuery += " SELECT E2_FILIAL, E2_FORNECE, E2_LOJA, E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VALOR, E2_HIST,E2_SALDO"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2"
 	_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '" + xfilial ("SE2") + "'"
-	_oSQL:_sQuery +=    " AND SE2.E2_TIPO    = 'NF'"
+	//_oSQL:_sQuery +=    " AND SE2.E2_TIPO    = 'NF'"
 	_oSQL:_sQuery +=    " AND EXISTS (SELECT *"  // Precisa ser nota de safra
 	_oSQL:_sQuery +=                  " FROM VA_VNOTAS_SAFRA V"
-	_oSQL:_sQuery +=                 " WHERE V.SAFRA      = '" + _sSafrComp + "'"
-	_oSQL:_sQuery +=                   " AND V.FILIAL     = SE2.E2_FILIAL"
-	_oSQL:_sQuery +=                   " AND V.ASSOCIADO  = SE2.E2_FORNECE"
-	_oSQL:_sQuery +=                   " AND V.LOJA_ASSOC = SE2.E2_LOJA"
-	_oSQL:_sQuery +=                   " AND V.SERIE      = SE2.E2_PREFIXO"
-	_oSQL:_sQuery +=                   " AND V.DOC        = SE2.E2_NUM"
-	_oSQL:_sQuery +=                   " AND V.TIPO_NF    = 'C')"
+	_oSQL:_sQuery +=                 " WHERE V.SAFRA       = '" + _sSafrComp + "'"
+	_oSQL:_sQuery +=                   " AND V.FILIAL      = SE2.E2_FILIAL"
+	_oSQL:_sQuery +=                   " AND V.ASSOCIADO   = SE2.E2_FORNECE"
+	_oSQL:_sQuery +=                   " AND V.LOJA_ASSOC  = SE2.E2_LOJA"
+	_oSQL:_sQuery +=                   " AND V.SERIE       = SE2.E2_PREFIXO"
+	_oSQL:_sQuery +=                   " AND V.DOC         = SE2.E2_NUM"
+	_oSQL:_sQuery +=                   " AND V.TIPO_NF     = 'C'"
+	_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC = 'ASSOCIADO')"
 	_oSQL:_sQuery +=  " ORDER BY SE2.E2_FORNECE, SE2.E2_LOJA, SE2.E2_NUM, SE2.E2_PREFIXO, SE2.E2_PARCELA"
 	_oSQL:Log ()
 	_sAliasQ = _oSQL:Qry2Trb (.T.)
@@ -643,32 +645,38 @@ static function _ConfSZI ()
 			_sMsg += _oSQL:_sQuery
 		else
 			szi -> (dbgoto (_aRegSZI [1,1]))
+		//	U_Log2 ('info', "Verificando SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela)
 			if szi -> zi_valor != (_sAliasQ) -> e2_valor
 				_sMsg += "Valor do SZI (" + cvaltochar (szi -> zi_valor) + ") diferente do SE2 (" + cvaltochar ((_sAliasQ) -> e2_valor) + ")." + chr (13) + chr (10)
 				_sMsg += _oSQL:_sQuery
-			else
-				if (_sAliasQ) -> e2_filial != '01'
-					if szi -> zi_saldo > 0
-						_sMsg += "SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela + " deveria ter sido transferido para a matriz." + chr (13) + chr (10)
-					else
-						_oSQL := ClsSQL ():New ()
-						_oSQL:_sQuery := " SELECT count (*) "
-						_oSQL:_sQuery +=   " FROM " + RetSQLName ("SZI") + " SZI "
-						_oSQL:_sQuery +=  " WHERE SZI.ZI_FILIAL  = '01'"
-						_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC   = '" + szi -> zi_assoc + "'"
-						_oSQL:_sQuery +=    " AND SZI.ZI_LOJASSO = '" + szi -> zi_lojasso + "'"
-						_oSQL:_sQuery +=    " AND SZI.ZI_SERIE   = '" + szi -> zi_serie + "'"
-						_oSQL:_sQuery +=    " AND SZI.ZI_DOC     = '" + szi -> zi_doc + "'"
-						_oSQL:_sQuery +=    " AND SZI.ZI_PARCELA = '" + szi -> zi_parcela + "'"
-						_oSQL:_sQuery +=    " AND SZI.ZI_FILORIG = '" + szi -> zi_filial + "'"
-						_oSQL:_sQuery +=    " AND SZI.ZI_TM      = '13'"
-						_oSQL:Log ()
-						if _oSQL:RetQry (1, .f.) == 0
-							_sMsg += "SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela + " transferencia nao apareceu na matriz." + chr (13) + chr (10)
-						endif
+			endif
+			if szi -> zi_saldo != (_sAliasQ) -> e2_saldo
+				_sMsg += "Saldo do SZI (" + cvaltochar (szi -> zi_saldo) + ") diferente do SE2 (" + cvaltochar ((_sAliasQ) -> e2_saldo) + ")." + chr (13) + chr (10)
+				_sMsg += _oSQL:_sQuery
+			endif
+			/* VOU HABILITAR AMANHA
+			if (_sAliasQ) -> e2_filial != '01'
+				if szi -> zi_saldo > 0
+					_sMsg += "SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela + " deveria ter sido transferido para a matriz." + chr (13) + chr (10)
+				else
+					_oSQL := ClsSQL ():New ()
+					_oSQL:_sQuery := " SELECT count (*) "
+					_oSQL:_sQuery +=   " FROM " + RetSQLName ("SZI") + " SZI "
+					_oSQL:_sQuery +=  " WHERE SZI.ZI_FILIAL  = '01'"
+					_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC   = '" + szi -> zi_assoc + "'"
+					_oSQL:_sQuery +=    " AND SZI.ZI_LOJASSO = '" + szi -> zi_lojasso + "'"
+					_oSQL:_sQuery +=    " AND SZI.ZI_SERIE   = '" + szi -> zi_serie + "'"
+					_oSQL:_sQuery +=    " AND SZI.ZI_DOC     = '" + szi -> zi_doc + "'"
+					_oSQL:_sQuery +=    " AND SZI.ZI_PARCELA = '" + szi -> zi_parcela + "'"
+					_oSQL:_sQuery +=    " AND SZI.ZI_FILORIG = '" + szi -> zi_filial + "'"
+					_oSQL:_sQuery +=    " AND SZI.ZI_TM      = '13'"
+					// _oSQL:Log ()
+					if _oSQL:RetQry (1, .f.) == 0
+						_sMsg += "SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela + " transferencia nao apareceu na matriz." + chr (13) + chr (10)
 					endif
 				endif
 			endif
+			*/
 		endif
 
 		if ! empty (_sMsg)

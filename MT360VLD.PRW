@@ -6,11 +6,13 @@
 // Descricao: Ponto de entrada utilizado para validar se o código da condição não contém LETRA.
 
 // Historico de alteracoes:
-// 23/03/2019 - Robert -  Desabilitado teste quando se usa cond.pagto. tipo B (campo vem com NIL).
+// 23/03/2019 - Robert - Desabilitado teste quando se usa cond.pagto. tipo B (campo vem com NIL).
+// 22/03/2021 - Robert - Eliminada redefinicao da variavel _sCampo.
 //
 
 // --------------------------------------------------------------------------
-user function MT360VLD(_sCampo)
+// user function MT360VLD(_sCampo)
+user function MT360VLD()
 	local _sCampo    := alltrim (ReadVar ())
 	local _lRet 	 := .T.
 	

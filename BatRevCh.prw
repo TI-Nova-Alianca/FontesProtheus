@@ -453,7 +453,8 @@ static function _TrataRet (_sEstado, _sTipo, _lDebug)
 				_oBatch:Retorno = 'N'
 			endif
 		else
-			_Evento ("ERRO: Retornou status '" + _sRetStat + "' (nao sei como tratar esse retorno)", .T.)
+			_Evento ("ERRO: Retornou status '" + _sRetStat + "' (nao sei como tratar esse retorno) - " + _sRetMsg, .T.)
+			u_log2 ('info', 'Mensagem................: ' + _sRetMsg)
 			_lAtuZZX = .F.
 			_oBatch:Retorno = 'N'
 		endif
