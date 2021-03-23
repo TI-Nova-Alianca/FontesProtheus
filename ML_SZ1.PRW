@@ -18,6 +18,7 @@
 // 20/12/2017 - Robert - Copiava indevidamente precos para produtos validando apenas parte do codigo.
 // 23/03/2018 - Robert - Tratamento para tabela DESC (uvas desclassificadas na serra).
 // 04/12/2018 - Robert - Permite informar decimais para arredondamento ao copiar preco de outro produto.
+// 22/03/2021 - Robert - Adequacao para usar variaveis locais em lacos FOR...NEXT
 //
 
 #include "rwmake.ch"
@@ -49,6 +50,7 @@ return
 // --------------------------------------------------------------------------
 // Tela de manutencao
 user function ML_SZ1a ()
+	local   _nLinha    := 0
 	private _sProduto  := ""  // Deixar private para ser visto em gatilhos e validacoes.
 	private _sNomePrd  := space (50)
 	private _sProdOri  := space (15)  // Deixar private para ser visto em gatilhos e validacoes.
@@ -126,7 +128,8 @@ user function ML_SZ1a ()
 		
 		// Grava dados do aCols.
 		SZ1 -> (dbsetorder (1))  // SZ1_FILIAL + z1_tabela + z1_codprd + SZ1_ORIGEM + SZ1_DESTIN
-		for N = 1 to len (aCols)
+		for _nLinha = 1 to len (aCols)
+			N = _nLinha
 			
 			// Procura esta linha no arquivo por que posso ter situacoes de exclusao ou alteracao.
 			if SZ1 -> (dbseek (xfilial ("SZ1") + sza -> za_cod + _sProduto + GDFieldGet ("Z1_GRAU"), .F.))
@@ -345,6 +348,8 @@ user function ML_SZ1VC ()
 	local _aAreaAnt := {}
 	local _nPercent := 0
 	local _nDecim   := 0
+	local _nLinha   := 0
+
 	sz1 -> (dbsetorder (1))
 	if ! sz1 -> (dbseek (xfilial ("SZ1") + sza -> za_cod + _sProdOri, .F.))
 		u_help ("Produto '" + _sProdOri + "' nao encontrado nesta tabela de precos.")
@@ -399,7 +404,8 @@ user function ML_SZ1VC ()
 
 			_aAreaAnt = U_ML_SRArea ()
 			sz1 -> (dbsetorder (1))  // Z1_FILIAL+Z1_TABELA+Z1_CODPRD+Z1_GRAU
-			for N = 1 to len (aCols)
+			for _nLinha = 1 to len (aCols)
+				N = _nLinha
 				if sz1 -> (dbseek (xfilial ("SZ1") + sza -> za_cod + _sProdOri + GDFieldGet ("Z1_GRAU"), .F.))
 //					GDFieldPut (_sCampo, sz1 -> &(_sCampo))
 					GDFieldPut (_sCampo, sz1 -> &(_sCampo) + sz1 -> &(_sCampo) * _nPercent / 100)

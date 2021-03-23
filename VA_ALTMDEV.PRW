@@ -1,22 +1,20 @@
-//  Programa...: VA_ALTMDEV
-//  Autor......: Catia Cardoso
-//  Data.......: 13/0/2017
-//  Descricao..: Altera motivos de devolucao 66  
+// Programa...: VA_ALTMDEV
+// Autor......: Catia Cardoso
+// Data.......: 13/0/2017
+// Descricao..: Altera motivos de devolucao 66  
 // 
-//  Historico de alterações
+// Historico de alterações
 //
-//  06/09/2017 - Catia   - inner join no SA2 e deveria ser no SA1 - ai nao mostrava notas para alterar
-//  10/03/2020 - Claudia - Ajuste de fonte conforme solicitação de versão 12.1.25 - Arquivo de trabalho
+// 06/09/2017 - Catia   - inner join no SA2 e deveria ser no SA1 - ai nao mostrava notas para alterar
+// 10/03/2020 - Claudia - Ajuste de fonte conforme solicitação de versão 12.1.25 - Arquivo de trabalho
+// 22/03/2021 - Robert  - Eliminada redefinicao da variavel _sArqLog.
 //
-// -----------------------------------------------------------------------------------------------------
+
 #include "rwmake.ch"
 #include "VA_INCLU.prw"
 
+// -----------------------------------------------------------------------------------------------------
 User function VA_ALTMDEV()
-
-	//Local cArqTRB  	:= ""
-	//Local cInd1    	:= ""
-	//Local nI       	:= 0
 	Local aStruct  	:= {}
 	Local aHead 	:= {}
 	Local I			:= 0
@@ -51,15 +49,6 @@ User function VA_ALTMDEV()
 	AAdd( aStruct, { "MOTDEVD"   , "C", 25, 0 } )
 	AAdd( aStruct, { "LOJA"      , "C", 02, 0 } )
 	AAdd( aStruct, { "ITEM"      , "C", 04, 0 } )
-	
-//	// cria arquivo de trabalho
-//	cArqTRB := CriaTrab( aStruct, .T. )
-//	dbUseArea( .T., __LocalDriver, cArqTRB, "TRB", .F., .F. )
-//	cInd1 := Left( cArqTRB, 7 ) + "1"
-//	IndRegua( "TRB", cInd1, "DOC", , , "Criando índices...")
-//	
-//	dbClearIndex()
-//	dbSetIndex( cInd1 + OrdBagExt() )
 	
 	// cria arquivo de trabalho
 	_aArqTrb  := {}
@@ -115,13 +104,13 @@ User function VA_ALTMDEV()
 
 	Private aRotina   := {}
 	private cCadastro := "Altera Motivo de Devolução"
-	private _sArqLog  := iif (type ("_sArqLog") == "C", _sArqLog, U_Nomelog ())
+//	private _sArqLog  := iif (type ("_sArqLog") == "C", _sArqLog, U_Nomelog ())
 	
 	aadd (aRotina, {"&Altera Mot.Devolucao" ,"U_ALTMOV()" , 0, 2})
 	
 	Private cDelFunc := ".T."
-	private _sArqLog := U_NomeLog ()
-	u_logId ()
+//	private _sArqLog := U_NomeLog ()
+//	u_logId ()
 	
 	dbSelectArea("TRB")
 	dbSetOrder(1)

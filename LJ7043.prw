@@ -56,7 +56,7 @@ Static Function _VerFunc(_sCGC,_sTabela,_lRet)
 	_sQuery2 += " FROM LKSRV_SIRH.SIRH.dbo.VA_VFUNCIONARIOS"
 	_sQuery2 += " WHERE CPF = '"+ alltrim(_sCGC) +"'"
 	_aFun 	 := U_Qry2Array(_sQuery2)  
-	/
+
 	If len(_aFun) <= 0 // verifica se eh socio jah que não eh funcionario
 		_lRet   := _VerAssoc(_sCGC,_sTabela,'1',_lRet)
 	Else
