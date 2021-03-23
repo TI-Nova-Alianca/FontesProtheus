@@ -140,7 +140,7 @@ user function GrvLibPV (_lLiberar)
 			    IF GDFieldGet ("C6_TES") $ '630/657'
 					if ! U_ZZUVL ('101', __cUserId, .F.)
  						u_help ("Usuário sem permissão para emissão de nota fiscal de baixa de estoque",, .t.)
- 						_sErro += "Usuário sem permissão para emissão de nota fiscal de baixa de estoque"
+ 						_sErro += "Usuário sem permissão para emissão de nota fiscal de baixa de estoque. Rotina 101"
 						_lTes = .T.
 						exit
 					endif
