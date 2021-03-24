@@ -3,15 +3,6 @@
 // Data:       10/10/2012
 // Descricao:  Gera lcto. de entrada de transf. de saldo na conta corrente de associados (SZI)
 //             Criado para ser executado via batch.
-//
-// Historico de alteracoes:
-// 26/10/2015 - Robert - Criado atributo SeqOrig na classe ClsCtaCorr (passa a ser exigido para inclusao por transf. de outra filial).
-// 06/11/2015 - Robert - Valida tambem o valor na leitura do SE5 para tratar casos de transf. parcial do titulo.
-// 16/04/2016 - Robert - Busca forma pagto, bco, ag, conta, parcela e data vcto. do movimento original.
-// 28/03/2018 - Robert - Nao buscava corretamente a data de vencimento do titulo na filial original.
-// 29/07/2020 - Robert - Busca SE5 por num+pref_parc e nao mais por CHVEX.
-//                     - Inseridas tags para catalogacao de fontes
-//
 
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #atualizacao
@@ -19,6 +10,16 @@
 // #PalavasChave      #conta_corrente_associados #transferencia
 // #TabelasPrincipais #SZI #SE2
 // #Modulos           #COOP
+
+// Historico de alteracoes:
+// 26/10/2015 - Robert - Criado atributo SeqOrig na classe ClsCtaCorr (passa a ser exigido para inclusao por transf. de outra filial).
+// 06/11/2015 - Robert - Valida tambem o valor na leitura do SE5 para tratar casos de transf. parcial do titulo.
+// 16/04/2016 - Robert - Busca forma pagto, bco, ag, conta, parcela e data vcto. do movimento original.
+// 28/03/2018 - Robert - Nao buscava corretamente a data de vencimento do titulo na filial original.
+// 29/07/2020 - Robert - Busca SE5 por num+pref_parc e nao mais por CHVEX.
+//                     - Inseridas tags para catalogacao de fontes
+// 23/03/2021 - Robert - Gravacao atributos :Safra e :GrpPgSafra (GLPI 9592)
+//
 
 // --------------------------------------------------------------------------
 user function BatTrSZI (_sAssoc, _sLoja, _sSeqSZI, _sEmpOrig, _sFilOrig, _sFilDest, _sTM, _sDtMovto, _nValor)
@@ -47,7 +48,7 @@ user function BatTrSZI (_sAssoc, _sLoja, _sSeqSZI, _sEmpOrig, _sFilOrig, _sFilDe
 	if _lContinua
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "SELECT ZI_DOC, ZI_SERIE, ZI_MESREF, ZI_HISTOR, E5_VALOR, ZI_FORMPAG, ZI_BANCO, ZI_AGENCIA, ZI_NUMCON, E5_PARCELA"
+		_oSQL:_sQuery += "SELECT ZI_DOC, ZI_SERIE, ZI_MESREF, ZI_HISTOR, E5_VALOR, ZI_FORMPAG, ZI_BANCO, ZI_AGENCIA, ZI_NUMCON, E5_PARCELA, ZI_SAFRA, ZI_GPSAF"
 		_oSQL:_sQuery +=  " FROM SZI" + _sEmpOrig + "0 SZI, "
 		_oSQL:_sQuery +=       " SE5" + _sEmpOrig + "0 SE5, "
 		_oSQL:_sQuery +=         RetSQLName ("SA6") + " SA6 "
@@ -123,6 +124,8 @@ user function BatTrSZI (_sAssoc, _sLoja, _sSeqSZI, _sEmpOrig, _sFilOrig, _sFilDe
 		_oCtaCorr:Agencia    = _aRegOri [1, 8]
 		_oCtaCorr:NumCon     = _aRegOri [1, 9]
 		_oCtaCorr:Parcela    = _aRegOri [1, 10]
+		_oCtaCorr:Safra      = _aRegOri [1, 11]
+		_oCtaCorr:GrpPgSafra = _aRegOri [1, 12]
 		_oCtaCorr:VctoSE2    = _dVctoSE2
 		if _oCtaCorr:PodeIncl ()
 			if ! _oCtaCorr:Grava ()

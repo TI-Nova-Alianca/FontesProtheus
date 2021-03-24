@@ -63,6 +63,10 @@ User Function VA_GNF2 (_lAutomat)
 	private _sOrigSZI  := "VA_GNF2"
 	private _sErroAuto := ""  // Deixar private para ser vista pela funcao U_Help ()
 
+	U_HELP ("NAO GRAVOU E2_HIST QUANDO GEROU NF COMPL FORN 002825 EM 16/02/21 (GLPI 9389)",,.T.)
+	RETURN
+
+	
 	// Verifica se o usuario tem liberacao para uso desta rotina.
 	if _lContinua
 		_lContinua = U_ZZUVL ('045', __cUserID, .T.)//, cEmpAnt, cFilAnt)

@@ -85,6 +85,7 @@
 // 13/01/2021 - Robert - Permite incluir TM 16 quando ex socio.
 // 13/03/2021 - Robert - Permite incluir TM 13 quando chamado da rotina BatSafr (opcao de geracao do SZI sobre notas de compra de safra) - GLPI 9592.
 //                     - Metodo TransFil passa a aceitar data para baixa contra transitoria; melhorados logs.
+// 23/03/2021 - Robert - Criados atributos Safra e GrpPgSafra, com respectiva leitura e gravacao (GLPI 9592).
 //
 
 // ------------------------------------------------------------------------------------
@@ -113,6 +114,7 @@ CLASS ClsCtaCorr
 	data FilOrig
 	data FormPag
 	data Fornece
+	data GrpPgSafra
 	data Histor
 	data Loja
 	data LojaFor
@@ -120,9 +122,9 @@ CLASS ClsCtaCorr
 	data Obs
 	data Origem
 	data Parcela
-//	data PJurMes
 	data RegSZI
 	data SaldoAtu
+	data Safra
 	data SeqOrig
 	data SeqSZI
 	data Serie
@@ -657,6 +659,8 @@ METHOD GeraAtrib (_sOrigem) Class ClsCtaCorr
 	::NumCon     = ''
 	::Parcela    = ''
 	::VctoSE2    = ctod ('')
+	::Safra      = ''
+	::GrpPgSafra = ''
 
 	if _sOrigem == 'M'  // Variaveis M->
 		::Filial   = xfilial ("SZI")
@@ -711,6 +715,8 @@ METHOD GeraAtrib (_sOrigem) Class ClsCtaCorr
 		if ! empty (szi -> zi_codmemo)
 			::Obs = alltrim (msmm (szi -> zi_codmemo,,,,3,,,'SZI'))
 		endif
+		::Safra      = szi -> zi_safra
+		::GrpPgSafra = szi -> zi_gpsaf
 		
 		// Busca dados do SE2, caso exista (nem todos os movimentos geram SE2).
 		_oSQL := ClsSQL ():New ()
@@ -1040,6 +1046,8 @@ METHOD Grava (_lSZIGrav, _lMemoGrav) Class ClsCtaCorr
 			szi -> zi_FilOrig = ::FilOrig
 			szi -> zi_Origem  = ::Origem
 			szi -> zi_Parcela = ::Parcela
+			szi -> zi_safra   = ::Safra
+			szi -> zi_gpsaf   = ::GrpPgSafra
 			msunlock ()
 			_lSZIGrav = .T.
 			::RegSZI = szi -> (recno ())
