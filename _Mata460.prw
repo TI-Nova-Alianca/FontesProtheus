@@ -48,9 +48,11 @@
 // 31/07/2020 - Robert  - Melhorados avisos e logs.
 //                      - Inseridas tags para catalogacao de fontes
 // 12/02/2021 - Cláudia - Validação de cliente bloqueado. GLPI: 7982
+// 22/03/2021 - Cláudia - Validação para pedidos com bloqueio gerencial. GLPI: 9666
 //
 // -------------------------------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"  // Deixar este include para aparecerem os botoes da tela de acompanhamento do SPED
+#include "PROTHEUS.ch"
 
 #XTranslate .PedOk             => 1
 #XTranslate .PedFilialEmbarque => 2
@@ -339,7 +341,8 @@ static function _Filtra ()
 			_oLbx:bLDblClick := {|| (_aPed [_oLbx:nAt, .PedOk] := ! _aPed [_oLbx:nAt, .PedOk], _oLbx:Refresh())}
 			@ _oDlgMbA:nClientHeight / 2 - 40, _oDlgMbA:nClientWidth / 2 - 90 bmpbutton type 1 action (iif (_TudoOK (_aPed), (_lBotaoOK  := .T., _oDlgMbA:End ()), NIL))
 			@ _oDlgMbA:nClientHeight / 2 - 40, _oDlgMbA:nClientWidth / 2 - 40 bmpbutton type 2 action (_lBotaoOK  := .F., _oDlgMbA:End ())
-			@ _oDlgMbA:nClientHeight / 2 - 40, 10  button "Inverte selecao"   size 60, 14 action (_Inverte (@_aPed, _oBmpOk, _oBmpNo), _oLbx:Refresh())
+			//@ _oDlgMbA:nClientHeight / 2 - 40, 10  button "Inverte selecao"   size 60, 14 action (_Inverte (@_aPed, _oBmpOk, _oBmpNo), _oLbx:Refresh())
+			@ _oDlgMbA:nClientHeight / 2 - 40, 10  button "Inverte selecao"   size 60, 14 action (_Inverte (@_aPed), _oLbx:Refresh())
 			@ _oDlgMbA:nClientHeight / 2 - 40, 150 button "Visualizar pedido" size 60, 14 action (_VisualPed (_aPed [_oLbx:nAt, .PedPedido]))
 		activate dialog _oDlgMbA centered
 
@@ -442,6 +445,15 @@ static function _TudoOK (_aPed)
 			endif
 		next
 	endif
+
+	// em bloqueio gerencial não deixa seguir para faturar
+	if _lRet .and. alltrim(_aPed [_nPed, .PedAviso]) == 'BLQ.GERENCIAL;'
+		u_help ("Foram selecionados pedidos com bloqueio gerencial que impedem a geracao de notas. Revise marcacao. " + alltrim (_aPed [_nPed, .PedAviso]),, .T.)
+		_lRet := .F.
+	Else
+		_lRet := .T.
+	EndIf
+
 	if _lRet
 		for _nPed = 1 to len (_aPed)
 			if _aPed [_nPed, .PedOk] .and. ! empty (_aPed [_nPed, .PedErros])
