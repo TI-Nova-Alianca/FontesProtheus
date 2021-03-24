@@ -107,42 +107,35 @@ User Function BatZB5Mail()
                                 _n01Vlr                              ,; // vlr matriz
                                 _nXXVlr                              ,; // vlr filial
                                     ''                               ,;
-                                    ''                                })
+                                    ''                                })                                
 
-                aadd(_aRetorno, {   'HISTÓRICO'    ,; // historico
-                                    'FILIAL'       ,; // filial
-                                    'VALOR'        ,; // valor
-                                    '-'            ,; // 
-                                    'CONTA DEB.'   ,; // conta debito
-                                    'CONTA CRED.'  }) // conta credito
-                                    
-
-                _oSQL:= ClsSQL ():New ()
-                _oSQL:_sQuery := ""
-                _oSQL:_sQuery += " SELECT"
-                _oSQL:_sQuery += " 	   CT2_HIST"
-                _oSQL:_sQuery += "    ,CT2_FILIAL"
-                _oSQL:_sQuery += "    ,CT2_DEBITO"
-                _oSQL:_sQuery += "    ,CT2_CREDIT"
-                _oSQL:_sQuery += "    ,CT2_VALOR"
-                _oSQL:_sQuery += " FROM " + RetSQLName ("CT2") 
-                _oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-                _oSQL:_sQuery += " AND CT2_DATA = '" + DTOS(_dDate) + "'"
-                _oSQL:_sQuery += " AND CT2_HIST LIKE 'TRANSF ENTRE CONTAS FL " + _aFilial[_x,1] + "'"
-               // _oSQL:_sQuery += " ORDER BY CT2_HIST, CT2_FILIAL"
-                _aRetErro := aclone (_oSQL:Qry2Array ())
-
-                For _i := 1 to Len(_aRetErro) 
-                    aadd(_aRetorno, {   _aRetErro[_i, 1] ,; // historico
-                                        _aRetErro[_i, 2] ,; // filial
-                                        _aRetErro[_i, 5] ,; // valor
-                                        0                ,;
-                                        _aRetErro[_i, 3] ,; // conta debito
-                                        _aRetErro[_i, 4] }) // conta credito
-                                        
-                Next
             EndIf
         EndIf
+
+        _oSQL:= ClsSQL ():New ()
+        _oSQL:_sQuery := ""
+        _oSQL:_sQuery += " SELECT"
+        _oSQL:_sQuery += " 	   CT2_HIST"
+        _oSQL:_sQuery += "    ,CT2_FILIAL"
+        _oSQL:_sQuery += "    ,CT2_DEBITO"
+        _oSQL:_sQuery += "    ,CT2_CREDIT"
+        _oSQL:_sQuery += "    ,CT2_VALOR"
+        _oSQL:_sQuery += " FROM " + RetSQLName ("CT2") 
+        _oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+        _oSQL:_sQuery += " AND CT2_DATA = '" + DTOS(_dDate) + "'"
+        _oSQL:_sQuery += " AND CT2_HIST LIKE 'TRANSF ENTRE CONTAS FL " + _aFilial[_x,1] + "'"
+        // _oSQL:_sQuery += " ORDER BY CT2_HIST, CT2_FILIAL"
+        _aRetErro := aclone (_oSQL:Qry2Array ())
+
+        For _i := 1 to Len(_aRetErro) 
+            aadd(_aRetorno, {   _aRetErro[_i, 1] ,; // historico
+                                _aRetErro[_i, 2] ,; // filial
+                                _aRetErro[_i, 5] ,; // valor
+                                0                ,;
+                                _aRetErro[_i, 3] ,; // conta debito
+                                _aRetErro[_i, 4] }) // conta credito
+                                
+        Next
     Next
 
     If Len(_aRetorno) > 0 // tem sempre o cabeçalho
@@ -160,13 +153,14 @@ User Function BatZB5Mail()
 
         For _x:=1 to Len(_aRetorno)
             _aCols = {}
-            aadd(_aCols, {'STATUS'      , "left"    ,  "@!"})
-            aadd(_aCols, {'FILIAL'      , "left"    ,  "@!"})
-            aadd(_aCols, {'VALOR MATRIZ', "right"   ,  "@E 999,999,999.99"})
-            aadd(_aCols, {'VALOR FILIAL', "right"   ,  "@E 999,999,999.99"})
-            aadd(_aCols, {'-'           , "left"   ,  "@!"})
-            aadd(_aCols, {'-'           , "left"   ,  "@!"})
+            aadd(_aCols, {'STATUS/HISTÓRICO'    , "left"    ,  "@!"})
+            aadd(_aCols, {'FILIAL'              , "left"    ,  "@!"})
+            aadd(_aCols, {'VALOR MATRIZ'        , "right"   ,  "@E 999,999,999.99"})
+            aadd(_aCols, {'VALOR FILIAL'        , "right"   ,  "@E 999,999,999.99"})
+            aadd(_aCols, {'CONTA DEB.'          , "left"    ,  "@!"})
+            aadd(_aCols, {'CONTA CRED.'         , "left"    ,  "@!"})
         Next
+                            
         _oAUtil := ClsAUtil():New (_aRetorno)
 		_sMsg += _oAUtil:ConvHTM ("", _aCols, 'width="80%" border="1" cellspacing="0" cellpadding="3" align="center"', .T.)
         _sDestin := 'claudia.lionco@novaalianca.coop.br;charlene.baldez@novaalianca.coop.br'
