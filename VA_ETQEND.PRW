@@ -12,26 +12,27 @@
 // 02/01/2014 - Robert  - Criado parametro para especificar porta da impressora.
 //                      - Nao verificava a filial atual.
 // 01/10/2018 - Andre   - Ajustado para imprimir etiquetas de endereços da Manutencao.
+// 24/03/2021 - Robert  - Comando RETURN estava comentariado no final, gerando aviso de erro em futuras versoes.
+//
 
 #INCLUDE "rwmake.ch"
 #Include "PROTHEUS.CH"
 
-User Function VA_ETQEND
+User Function VA_ETQEND ()
+	//Local _lContinua := .T.
+	Local _sQuery := ''
+	//Local _aEtiqs := {}
+	//Local cPorta   := ""
+	Local _Enter := chr(13)+chr(10)
+	//Local _Esc   := chr(27)
+	cPerg    := "VA_ETQENDE"
+	private _sArq  := criatrab (NIL, .F.)
+	private _nHdl  := 0
+	private _CRLF  := chr (13) + chr (10)
+	static _sPortaImp := ""  
+	static _nModelImp := 0   
 
-//Local _lContinua := .T.
-Local _sQuery := ''
-//Local _aEtiqs := {}
-//Local cPorta   := ""
-Local _Enter := chr(13)+chr(10)
-//Local _Esc   := chr(27)
-cPerg    := "VA_ETQENDE"
-private _sArq  := criatrab (NIL, .F.)
-private _nHdl  := 0
-private _CRLF  := chr (13) + chr (10)
-static _sPortaImp := ""  
-static _nModelImp := 0   
-
-_ValidPerg()
+	_ValidPerg()
 
 	If Pergunte(cPerg)
 		_sPortaImp = U_RetZX5 ('49', mv_par03, 'ZX5_49CAM')
@@ -122,9 +123,9 @@ _ValidPerg()
 	endif
 	
 endif
-
+*/
 Return
-
+/*
 
 //****************************************************************************************
 // Função para imprimir as etiquetas

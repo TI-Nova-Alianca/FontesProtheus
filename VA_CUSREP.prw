@@ -1,4 +1,4 @@
-// Programa...: VA_CUSRE777P
+// Programa...: VA_CUSREP
 // Autor......: Catia Cardoso
 // Data.......: 29/03/2017	
 // Descricao..: Atualiza Custo Reposição

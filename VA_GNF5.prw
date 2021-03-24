@@ -217,7 +217,7 @@ static function _Gera ()
 return
 
 
-
+/*
 // --------------------------------------------------------------------------
 static function _Gera2015 ()
 	local _oSQL      := NIL
@@ -391,7 +391,7 @@ static function _Gera2015 ()
 	(_sAliasQ1) -> (dbclosearea ())
 	dbselectarea ("SD1")
 return
-
+*/
 
 
 // --------------------------------------------------------------------------
