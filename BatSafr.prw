@@ -506,23 +506,48 @@ static function _GeraSZI ()
 
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT E2_FILIAL, E2_FORNECE, E2_LOJA, E2_NOMFOR, E2_EMISSAO, E2_VENCREA, E2_NUM, E2_PREFIXO, E2_TIPO, E2_VALOR, E2_SALDO, E2_HIST, R_E_C_N_O_, E2_LA, E2_PARCELA,"
-	_oSQL:_sQuery +=        " ROW_NUMBER () OVER (ORDER BY E2_PARCELA) AS NUM_PARC"
-	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2"
+	// _oSQL:_sQuery += " SELECT E2_FILIAL, E2_FORNECE, E2_LOJA, E2_NOMFOR, E2_EMISSAO, E2_VENCREA, E2_NUM, E2_PREFIXO, E2_TIPO, E2_VALOR, E2_SALDO, E2_HIST, R_E_C_N_O_, E2_LA, E2_PARCELA,"
+	// _oSQL:_sQuery +=        " ROW_NUMBER () OVER (ORDER BY E2_PARCELA) AS NUM_PARC"
+	// _oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2"
+	// _oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
+	// _oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '" + xfilial ("SE2") + "'"
+	// _oSQL:_sQuery +=    " AND SE2.E2_VACHVEX = ''"
+	// _oSQL:_sQuery +=    " AND EXISTS (SELECT *"  // Precisa ser nota de safra
+	// _oSQL:_sQuery +=                  " FROM VA_VNOTAS_SAFRA V"
+	// _oSQL:_sQuery +=                 " WHERE V.SAFRA       = '" + _sSafrComp + "'"
+	// _oSQL:_sQuery +=                   " AND V.FILIAL      = SE2.E2_FILIAL"
+	// _oSQL:_sQuery +=                   " AND V.ASSOCIADO   = SE2.E2_FORNECE"
+	// _oSQL:_sQuery +=                   " AND V.LOJA_ASSOC  = SE2.E2_LOJA"
+	// _oSQL:_sQuery +=                   " AND V.SERIE       = SE2.E2_PREFIXO"
+	// _oSQL:_sQuery +=                   " AND V.DOC         = SE2.E2_NUM"
+	// _oSQL:_sQuery +=                   " AND V.TIPO_NF     = 'C'"
+	// _oSQL:_sQuery +=                   " AND V.TIPO_FORNEC = 'ASSOCIADO')"
+	// _oSQL:_sQuery +=    " AND NOT EXISTS (SELECT *"  // Ainda nao deve existir na conta corrente
+	// _oSQL:_sQuery +=                  " FROM " + RetSQLName ("SZI") + " SZI "
+	// _oSQL:_sQuery +=                 " WHERE SZI.ZI_FILIAL  = SE2.E2_FILIAL"
+	// _oSQL:_sQuery +=                   " AND SZI.ZI_ASSOC   = SE2.E2_FORNECE"
+	// _oSQL:_sQuery +=                   " AND SZI.ZI_LOJASSO = SE2.E2_LOJA"
+	// _oSQL:_sQuery +=                   " AND SZI.ZI_SERIE   = SE2.E2_PREFIXO"
+	// _oSQL:_sQuery +=                   " AND SZI.ZI_DOC     = SE2.E2_NUM"
+	// _oSQL:_sQuery +=                   " AND SZI.ZI_PARCELA = SE2.E2_PARCELA"
+	// _oSQL:_sQuery +=                   " AND SZI.ZI_TM      = '13')"
+	// _oSQL:_sQuery +=  " ORDER BY SE2.E2_FORNECE, SE2.E2_LOJA, SE2.E2_NUM, SE2.E2_PREFIXO, SE2.E2_PARCELA"
+
+	_oSQL:_sQuery += " SELECT E2_FILIAL, E2_FORNECE, E2_LOJA, E2_NOMFOR, E2_EMISSAO, E2_VENCREA, E2_NUM, E2_PREFIXO, E2_TIPO"
+	_oSQL:_sQuery +=        ",E2_VALOR, E2_SALDO, E2_HIST, R_E_C_N_O_, E2_LA, E2_PARCELA, V.GRUPO_PAGTO"
+	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2, "
+	_oSQL:_sQuery +=          " VA_VNOTAS_SAFRA V"
 	_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '" + xfilial ("SE2") + "'"
-	//_oSQL:_sQuery +=    " AND SE2.E2_TIPO    = 'NF'"
 	_oSQL:_sQuery +=    " AND SE2.E2_VACHVEX = ''"
-	_oSQL:_sQuery +=    " AND EXISTS (SELECT *"  // Precisa ser nota de safra
-	_oSQL:_sQuery +=                  " FROM VA_VNOTAS_SAFRA V"
-	_oSQL:_sQuery +=                 " WHERE V.SAFRA       = '" + _sSafrComp + "'"
-	_oSQL:_sQuery +=                   " AND V.FILIAL      = SE2.E2_FILIAL"
-	_oSQL:_sQuery +=                   " AND V.ASSOCIADO   = SE2.E2_FORNECE"
-	_oSQL:_sQuery +=                   " AND V.LOJA_ASSOC  = SE2.E2_LOJA"
-	_oSQL:_sQuery +=                   " AND V.SERIE       = SE2.E2_PREFIXO"
-	_oSQL:_sQuery +=                   " AND V.DOC         = SE2.E2_NUM"
-	_oSQL:_sQuery +=                   " AND V.TIPO_NF     = 'C'"
-	_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC = 'ASSOCIADO')"
+	_oSQL:_sQuery +=    " AND V.SAFRA        = '" + _sSafrComp + "'"
+	_oSQL:_sQuery +=    " AND V.FILIAL       = SE2.E2_FILIAL"
+	_oSQL:_sQuery +=    " AND V.ASSOCIADO    = SE2.E2_FORNECE"
+	_oSQL:_sQuery +=    " AND V.LOJA_ASSOC   = SE2.E2_LOJA"
+	_oSQL:_sQuery +=    " AND V.SERIE        = SE2.E2_PREFIXO"
+	_oSQL:_sQuery +=    " AND V.DOC          = SE2.E2_NUM"
+	_oSQL:_sQuery +=    " AND V.TIPO_NF      IN ('C', 'V')"
+	_oSQL:_sQuery +=    " AND V.TIPO_FORNEC  = 'ASSOCIADO'"
 	_oSQL:_sQuery +=    " AND NOT EXISTS (SELECT *"  // Ainda nao deve existir na conta corrente
 	_oSQL:_sQuery +=                  " FROM " + RetSQLName ("SZI") + " SZI "
 	_oSQL:_sQuery +=                 " WHERE SZI.ZI_FILIAL  = SE2.E2_FILIAL"
@@ -545,19 +570,21 @@ static function _GeraSZI ()
 		//u_log ('Filial:' + (_sAliasQ) -> e2_filial, 'Forn:' + (_sAliasQ) -> e2_fornece + '/' + (_sAliasQ) -> e2_loja + ' ' + (_sAliasQ) -> e2_nomfor, 'Emis:', (_sAliasQ) -> e2_emissao, 'Vcto:', (_sAliasQ) -> e2_vencrea, 'Doc:', (_sAliasQ) -> e2_num+'/'+(_sAliasQ) -> e2_prefixo, 'Tipo:', (_sAliasQ) -> e2_tipo, 'Valor: ' + transform ((_sAliasQ) -> e2_valor, "@E 999,999,999.99"), 'Saldo: ' + transform ((_sAliasQ) -> e2_saldo, "@E 999,999,999.99"), (_sAliasQ) -> e2_hist)
 
 		_oCtaCorr := ClsCtaCorr():New ()
-		_oCtaCorr:Assoc    = (_sAliasQ) -> e2_fornece
-		_oCtaCorr:Loja     = (_sAliasQ) -> e2_loja
-		_oCtaCorr:TM       = '13'
-		_oCtaCorr:DtMovto  = (_sAliasQ) -> e2_EMISSAO
-		_oCtaCorr:Valor    = (_sAliasQ) -> e2_valor
-		_oCtaCorr:SaldoAtu = (_sAliasQ) -> e2_saldo
-		_oCtaCorr:Usuario  = cUserName
-		_oCtaCorr:Histor   = (_sAliasQ) -> e2_hist  //'COMPRA SAFRA ' + strzero (year (dDataBase), 4) + " GRP." + ? sf1 -> f1_vagpsaf
-		_oCtaCorr:MesRef   = strzero(month(_oCtaCorr:DtMovto),2)+strzero(year(_oCtaCorr:DtMovto),4)
-		_oCtaCorr:Doc      = (_sAliasQ) -> e2_num
-		_oCtaCorr:Serie    = (_sAliasQ) -> e2_prefixo
-		_oCtaCorr:Parcela  = (_sAliasQ) -> e2_parcela
-		_oCtaCorr:Origem   = 'BATSAFR'
+		_oCtaCorr:Assoc      = (_sAliasQ) -> e2_fornece
+		_oCtaCorr:Loja       = (_sAliasQ) -> e2_loja
+		_oCtaCorr:TM         = '13'
+		_oCtaCorr:DtMovto    = (_sAliasQ) -> e2_EMISSAO
+		_oCtaCorr:Valor      = (_sAliasQ) -> e2_valor
+		_oCtaCorr:SaldoAtu   = (_sAliasQ) -> e2_saldo
+		_oCtaCorr:Usuario    = cUserName
+		_oCtaCorr:Histor     = (_sAliasQ) -> e2_hist
+		_oCtaCorr:MesRef     = strzero(month(_oCtaCorr:DtMovto),2)+strzero(year(_oCtaCorr:DtMovto),4)
+		_oCtaCorr:Doc        = (_sAliasQ) -> e2_num
+		_oCtaCorr:Serie      = (_sAliasQ) -> e2_prefixo
+		_oCtaCorr:Parcela    = (_sAliasQ) -> e2_parcela
+		_oCtaCorr:Origem     = 'BATSAFR'
+		_oCtaCorr:Safra      = _sSafrComp
+		_oCtaCorr:GrpPgSafra = (_sAliasQ) -> GRUPO_PAGTO
 		if _oCtaCorr:PodeIncl ()
 			if ! _oCtaCorr:Grava (.F., .F.)
 				U_help ("Erro na atualizacao da conta corrente para o associado '" + (_sAliasQ) -> e2_fornece + '/' + (_sAliasQ) -> e2_loja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
@@ -583,7 +610,6 @@ static function _GeraSZI ()
 			U_help ("Gravacao do SZI nao permitida na atualizacao da conta corrente para o associado '" + (_sAliasQ) -> e2_fornece + '/' + (_sAliasQ) -> e2_loja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
 			_lContinua = .F.
 		endif
-
 		(_sAliasQ) -> (dbskip ())
 	enddo
 	(_sAliasQ) -> (dbclosearea ())
@@ -598,7 +624,7 @@ static function _ConfSZI ()
 	local _oSQL      := NIL
 	local _sMsg      := ''
 	local _aRegSZI   := {}
-	//local _nRegSZI   := 0
+	// local _nRegSZI   := 0
 	local _sSafrComp := strzero (year (dDataBase), 4)
 
 	U_Log2 ('info', 'Iniciando ' + procname ())
@@ -609,7 +635,6 @@ static function _ConfSZI ()
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2"
 	_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '" + xfilial ("SE2") + "'"
-	//_oSQL:_sQuery +=    " AND SE2.E2_TIPO    = 'NF'"
 	_oSQL:_sQuery +=    " AND EXISTS (SELECT *"  // Precisa ser nota de safra
 	_oSQL:_sQuery +=                  " FROM VA_VNOTAS_SAFRA V"
 	_oSQL:_sQuery +=                 " WHERE V.SAFRA       = '" + _sSafrComp + "'"
@@ -618,7 +643,7 @@ static function _ConfSZI ()
 	_oSQL:_sQuery +=                   " AND V.LOJA_ASSOC  = SE2.E2_LOJA"
 	_oSQL:_sQuery +=                   " AND V.SERIE       = SE2.E2_PREFIXO"
 	_oSQL:_sQuery +=                   " AND V.DOC         = SE2.E2_NUM"
-	_oSQL:_sQuery +=                   " AND V.TIPO_NF     = 'C'"
+	_oSQL:_sQuery +=                   " AND V.TIPO_NF     IN ('C', 'V')"
 	_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC = 'ASSOCIADO')"
 	_oSQL:_sQuery +=  " ORDER BY SE2.E2_FORNECE, SE2.E2_LOJA, SE2.E2_NUM, SE2.E2_PREFIXO, SE2.E2_PARCELA"
 	_oSQL:Log ()
@@ -654,7 +679,6 @@ static function _ConfSZI ()
 				_sMsg += "Saldo do SZI (" + cvaltochar (szi -> zi_saldo) + ") diferente do SE2 (" + cvaltochar ((_sAliasQ) -> e2_saldo) + ")." + chr (13) + chr (10)
 				_sMsg += _oSQL:_sQuery
 			endif
-			/* VOU HABILITAR AMANHA
 			if (_sAliasQ) -> e2_filial != '01'
 				if szi -> zi_saldo > 0
 					_sMsg += "SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela + " deveria ter sido transferido para a matriz." + chr (13) + chr (10)
@@ -676,7 +700,6 @@ static function _ConfSZI ()
 					endif
 				endif
 			endif
-			*/
 		endif
 
 		if ! empty (_sMsg)
