@@ -54,7 +54,8 @@
 // 13/08/2020 - Cláudia - Ajustado o valor das consultas de faturas. GLPI: 8255
 // 16/10/2020 - Robert  - Baixa de titulos: Busca contas contabeis parra TM=29 iguais as do TM=01.
 // 23/10/2020 - Claudia - Ajuste de visualização do cadastro de fornecedores. GLPI: 8683
-// 11/01/2021 - Robert  - Melhorada mes. na rotina de transferencia de saldo para outra filial.
+// 11/01/2021 - Robert  - Melhorada msg. na rotina de transferencia de saldo para outra filial.
+// 25/03/2021 - Robert  - Criada funcao _Pergunte para ler parametros de rotinas automaticas (GLPI 9697)
 //
 
 // --------------------------------------------------------------------------------------------------
@@ -990,18 +991,22 @@ User Function SZIB ()
 				// O saldo do SZI serah atualizado via pontos de entrada.
 				CursorWait ()
 				if _nForma == 1
-					cPerg = 'FIN080'
-					_aBkpSX1 = U_SalvaSX1 (cPerg)
-					if _lCtOnLine
-						U_GravaSX1 (cPerg, "01", 1)
-						U_GravaSX1 (cPerg, "02", 2)
-						U_GravaSX1 (cPerg, "03", 1)
-					else
-						U_GravaSX1 (cPerg, "03", 2)
-					endif
+					// cPerg = 'FIN080'
+					// _aBkpSX1 = U_SalvaSX1 (cPerg)
+					// if _lCtOnLine
+					// 	U_GravaSX1 (cPerg, "01", 1)
+					// 	U_GravaSX1 (cPerg, "02", 2)
+					// 	U_GravaSX1 (cPerg, "03", 1)
+					// else
+					// 	U_GravaSX1 (cPerg, "03", 2)
+					// endif
+					_Pergunte ('FIN080')
+					_lCtOnLine = (MV_PAR03 == 1)
+					U_Log2 ('debug', 'ENTENDO que estou com _lCtOnLine = ' + cvaltochar (_lCtOnLine))
+
 					u_log2 ('debug', 'Vou chamar FINA080')
 					FINA080 (NIL, 3, .T.)
-					U_SalvaSX1 (cPerg, _aBkpSX1)
+					// U_SalvaSX1 (cPerg, _aBkpSX1)
 					
 					// O P.E. generico FINA080 nao eh executado quando contabiliza on-line=NAO
 					// (pelo menos quando executado da forma como chamei o FINA080 aqui).
@@ -1010,27 +1015,28 @@ User Function SZIB ()
 					endif
 
 				elseif _nForma == 2 .or. _nForma == 3
-					cPerg = 'AFI340'
-					_aBkpSX1 = U_SalvaSX1 (cPerg)
-					U_GravaSX1 (cPerg, "01", 1)  // Considera loja: sim.
-					if _nForma == 2
-						U_GravaSX1 (cPerg, "02", 1)  // Considera fornecedor: original.
-					elseif _nForma == 3
-						U_GravaSX1 (cPerg, "02", 2)  // Considera fornecedor: outros
-						U_GravaSX1 (cPerg, "03", _sOutrIni)  // Fornecedor nao original inicial.
-						U_GravaSX1 (cPerg, "04", _sOutrFim)  // Fornecedor nao original final.
-					endif
-					U_GravaSX1 (cPerg, "05", 2)  // Considera filiais abaixo: nao (talvez permita compensar entre filiais, mas, por enquanto, preferimos nao tentar).
-					U_GravaSX1 (cPerg, "10", 1)  // Compensa titulos: normais.
-					U_GravaSX1 (cPerg, "12", 1)  // Compensa transferidos [S/N]
-					if _lCtOnLine
-						U_GravaSX1 (cPerg, "08", 2)
-						U_GravaSX1 (cPerg, "09", 1)
-						U_GravaSX1 (cPerg, "11", 1)
-					else
-						U_GravaSX1 (cPerg, "11", 2)
-					endif
-			//		u_log2 ('debug', 'Vou chamar FINA340')
+					// cPerg = 'AFI340'
+					// _aBkpSX1 = U_SalvaSX1 (cPerg)
+					// U_GravaSX1 (cPerg, "01", 1)  // Considera loja: sim.
+					// if _nForma == 2
+					// 	U_GravaSX1 (cPerg, "02", 1)  // Considera fornecedor: original.
+					// elseif _nForma == 3
+					// 	U_GravaSX1 (cPerg, "02", 2)  // Considera fornecedor: outros
+					// 	U_GravaSX1 (cPerg, "03", _sOutrIni)  // Fornecedor nao original inicial.
+					// 	U_GravaSX1 (cPerg, "04", _sOutrFim)  // Fornecedor nao original final.
+					// endif
+					// U_GravaSX1 (cPerg, "05", 2)  // Considera filiais abaixo: nao (talvez permita compensar entre filiais, mas, por enquanto, preferimos nao tentar).
+					// U_GravaSX1 (cPerg, "10", 1)  // Compensa titulos: normais.
+					// U_GravaSX1 (cPerg, "12", 1)  // Compensa transferidos [S/N]
+					// if _lCtOnLine
+					// 	U_GravaSX1 (cPerg, "08", 2)
+					// 	U_GravaSX1 (cPerg, "09", 1)
+					// 	U_GravaSX1 (cPerg, "11", 1)
+					// else
+					// 	U_GravaSX1 (cPerg, "11", 2)
+					// endif
+					_Pergunte ('AFI340')
+					u_log2 ('debug', 'Vou chamar FINA340')
 					fina340 (3)
 					U_SalvaSX1 (cPerg, _aBkpSX1)
 				endif
@@ -1220,7 +1226,25 @@ static function _SZIRS2 (_nQual)
 		endif
 	endif
 return
-//
+
+
+
+// --------------------------------------------------------------------------
+// Chama a funcao padrao pergunte() para rotinas que serao executadas via rot.automatica.
+Static Function _Pergunte (_sPerg)
+	static _sPergLida := ''
+
+	// Pergunta apenas uma vez por sessao
+	if ! _sPerg $ _sPergLida
+		u_help ('Confirme, a seguir, os parametros da subrotina ' + _sPerg + ' relacionada, que serao ocupados durante o processo.')
+		if pergunte (_sPerg, .t.)
+			_sPergLida += _sPerg + '/'
+		endif
+	endif
+return
+
+
+
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
