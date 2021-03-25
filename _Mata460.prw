@@ -447,12 +447,14 @@ static function _TudoOK (_aPed)
 	endif
 
 	// em bloqueio gerencial não deixa seguir para faturar
-	if _lRet .and. alltrim(_aPed [_nPed, .PedAviso]) == 'BLQ.GERENCIAL;'
-		u_help ("Foram selecionados pedidos com bloqueio gerencial que impedem a geracao de notas. Revise marcacao. " + alltrim (_aPed [_nPed, .PedAviso]),, .T.)
-		_lRet := .F.
-	Else
-		_lRet := .T.
-	EndIf
+	for _nPed = 1 to len (_aPed)
+		if _lRet .and. alltrim(_aPed [_nPed, .PedAviso]) == 'BLQ.GERENCIAL;'
+			u_help ("Foram selecionados pedidos com bloqueio gerencial que impedem a geracao de notas. Revise marcacao. " + alltrim (_aPed [_nPed, .PedAviso]),, .T.)
+			_lRet := .F.
+		Else
+			_lRet := .T.
+		EndIf
+	next
 
 	if _lRet
 		for _nPed = 1 to len (_aPed)
