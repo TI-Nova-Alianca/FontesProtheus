@@ -1011,6 +1011,7 @@ User Function SZIB ()
 					// O P.E. generico FINA080 nao eh executado quando contabiliza on-line=NAO
 					// (pelo menos quando executado da forma como chamei o FINA080 aqui).
 					if ! _lCtOnLine
+						U_Log2 ('debug', 'Chamando a rotina U_FINA080() por que nao ex executada quando contabiliza online')
 						U_FINA080 ()
 					endif
 
