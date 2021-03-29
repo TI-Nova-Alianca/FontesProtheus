@@ -79,17 +79,103 @@ static function _AndaLogo ()
 //	local _oCtaCorr  := NIL
 //	local _nParc     := 0
 //	local _oAssoc    := NIL
-//	local _aAssoc := {}
-//	local _nAssoc := 0
+	local _aAssoc := {}
+	local _nAssoc := 0
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
 	u_help ('Nada definido.')
 return
+/*
+	// Testes relatorios associados
+	_aAssoc = {}
+	// aadd (_aAssoc, '003577')  // bastante movimento
+	// aadd (_aAssoc, '005128')  // apenas 1 entrada e 1 compra
+	// aadd (_aAssoc, '001369')  // so 14 complementos
+	// aadd (_aAssoc, '004826')  // 9+6+0
+	// aadd (_aAssoc, '003241')  // 16+15+2 Idalino Pan - tem complemento
+	// aadd (_aAssoc, '000643')  // UM ASSOCIADO QUE TEVE REPARCELAMENTO em 2020
+	// aadd (_aAssoc, '012791')  // lUIS eSCOSTEGUY (nao associado de Livramento)
+	// aadd (_aAssoc, '002380')  // Elmar Busetti
+	// aadd (_aAssoc, '002859')  // Celso Chiarani
+	// aadd (_aAssoc, '000289')  // Rui Bertuol - UNIMED em aberto.
+	// aadd (_aAssoc, '003024')  // Vilson Da Campo - NF de compra devolvida em 2020.
+	// aadd (_aAssoc, '002660')  // Cledinei Da Campo - NF trocada com Vilson em 2020.
+	// aadd (_aAssoc, '002932')  // Joel Panizzon
+	// aadd (_aAssoc, '000184')  // Arside Piton
+	// aadd (_aAssoc, '002517')  // Santo Jose Busetti (diversas variedades de uva)
+	aadd (_aAssoc, '004341')  // Fernando Fagundes
+	for _nAssoc = 1 to len (_aAssoc)
+		//U_Log2 ('info', 'Iniciando associado ' + _aAssoc [_nAssoc])
+		//U_GravaSX1 ("ML_FECHASAFRA", '01', '2020')  // safra
+		//U_GravaSX1 ("ML_FECHASAFRA", '02', _aAssoc [_nAssoc])
+		//U_GravaSX1 ("ML_FECHASAFRA", '03', '01')  // loja
+		//U_GravaSX1 ("ML_FECHASAFRA", '04', '  ')  // nucleo
+		//U_GravaSX1 ("ML_FECHASAFRA", '05', 1)  // lista saldo CC 1=sim;2=nao
+		//U_GravaSX1 ("ML_FECHASAFRA", '06', 2)  // 1=detalhado;2=resumido;3=apenas NF compra
+		//U_ml_fechasafra (.T.)
+		//U_GravaSX1 ("IRASSOC", '01', '')  // CPF ini
+		//U_GravaSX1 ("IRASSOC", '02', 'z')  // CPF fim
+		//U_GravaSX1 ("IRASSOC", '03', '2021')  // ano base
+		//U_GravaSX1 ("IRASSOC", '04', _aAssoc [_nAssoc])  // assoc ini
+		//U_GravaSX1 ("IRASSOC", '05', '')  // loja ini
+		//U_GravaSX1 ("IRASSOC", '06', _aAssoc [_nAssoc]) //002932')  // assoc fim
+		//U_GravaSX1 ("IRASSOC", '07', 'z')  // loja fim
+		//U_GravaSX1 ("IRASSOC", '08', '')  // nucleo
+		//u_IRAssoc (.T.)
+		//
+		U_GravaSX1 ("SZI_REL2", "01", _aAssoc [_nAssoc])
+		U_GravaSX1 ('SZI_REL2', "02", '')
+		U_GravaSX1 ("SZI_REL2", "03", _aAssoc [_nAssoc])
+		U_GravaSX1 ('SZI_REL2', "04", 'zz')
+		U_GravaSX1 ('SZI_REL2', "05", stod ("19000101"))
+		U_GravaSX1 ('SZI_REL2', "06", stod ("20201231"))
+		U_GravaSX1 ('SZI_REL2', "07", 1)  // tipo normal/capital
+		U_GravaSX1 ('SZI_REL2', "08", 2)  //listar OBS S/N
+		U_szi_rel2 (.t.)
+		U_GravaSX1 ('SZI_REL', "01", _aAssoc [_nAssoc])
+		U_GravaSX1 ('SZI_REL', "02", '')
+		U_GravaSX1 ('SZI_REL', "03", _aAssoc [_nAssoc])
+		U_GravaSX1 ('SZI_REL', "04", 'zz')
+		U_GravaSX1 ('SZI_REL', "05", '')
+		U_GravaSX1 ('SZI_REL', "06", 'zz')
+		U_GravaSX1 ('SZI_REL', "07", stod ("19000101"))
+		U_GravaSX1 ('SZI_REL', "08", stod ("20201231"))
+		U_GravaSX1 ('SZI_REL', "09", 1)
+		U_GravaSX1 ('SZI_REL', "10", '')
+		U_GravaSX1 ('SZI_REL', "11", 2)
+		U_GravaSX1 ('SZI_REL', "12", 1)
+		U_GravaSX1 ('SZI_REL', "13", '')
+		U_GravaSX1 ('SZI_REL', "14", 'zz')
+		U_GravaSX1 ('SZI_REL', "15", 2)
+		U_szi_rel (.t., 1)
+		//u_gravasx1 ('SZI_LCS', '01', _aAssoc [_nAssoc])  // Associado inicial
+		//u_gravasx1 ('SZI_LCS', '02', '')  // Loja associado inicial
+		//u_gravasx1 ('SZI_LCS', '03', _aAssoc [_nAssoc])  // Associado final
+		//u_gravasx1 ('SZI_LCS', '04', 'z')  // Loja associado final          
+		//u_gravasx1 ('SZI_LCS', '05', '17')  // Tipo de movimento inicial     
+		//u_gravasx1 ('SZI_LCS', '06', '18')  // Tipo de movimento final       
+		//u_gravasx1 ('SZI_LCS', '07', stod ('20201031'))  // Posicao em                    
+		//u_gravasx1 ('SZI_LCS', '08', '')  // Coop.orig(AL/SV/...) bco=todas
+		//u_gravasx1 ('SZI_LCS', '09', '')  // Filial inicial                
+		//u_gravasx1 ('SZI_LCS', '10', 'z')  // Filial final                  
+		//u_gravasx1 ('SZI_LCS', '11', '')  // Forma pagamento (bco=todas)
+		//u_gravasx1 ('SZI_LCS', '12', 3)   // Movtos a: debito /credito /Todos
+		//u_gravasx1 ('SZI_LCS', '13', '')  // T.M. desconsiderar (separ. /)
+		//u_gravasx1 ('SZI_LCS', '14', '')  // Parcelas (separ. /) bco=todas
+		//u_gravasx1 ('SZI_LCS', '15', 1)  // com saldo / sem saldo / todos
+		//u_gravasx1 ('SZI_LCS', '16', 2)  // Gerar recibos apos o relatorio: Sim/Nao
+		//u_gravasx1 ('SZI_LCS', '17', '')  // P/recibo: Correspondente a... 
+		//u_gravasx1 ('SZI_LCS', '18', '')  // P/recibo: Local               
+		//u_gravasx1 ('SZI_LCS', '19', date ())  // P/recibo: Data                
+		//u_gravasx1 ('SZI_LCS', '20', '')  // Nucleos(SG/FC/...) bco=todos
+		//u_szi_lcs (.t., 3)
+	next
+return
+*/
 //	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batsafr ('8')
 //return
-
 //	_sArqLog := 'U_BatBlUsr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batBlUsr ()
 //	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
@@ -262,92 +348,6 @@ return
 		(_sAliasQ) -> (dbskip ())
 	enddo
 	u_acolsxls (_aprev)
-return
-*/
-/*
-	// Testes relatorios associados
-	_aAssoc = {}
-	// aadd (_aAssoc, '003577')  // bastante movimento
-	// aadd (_aAssoc, '005128')  // apenas 1 entrada e 1 compra
-	// aadd (_aAssoc, '001369')  // so 14 complementos
-	// aadd (_aAssoc, '004826')  // 9+6+0
-	// aadd (_aAssoc, '003241')  // 16+15+2 Idalino Pan - tem complemento
-	// aadd (_aAssoc, '000643')  // UM ASSOCIADO QUE TEVE REPARCELAMENTO em 2020
-	// aadd (_aAssoc, '012791')  // lUIS eSCOSTEGUY (nao associado de Livramento)
-	// aadd (_aAssoc, '002380')  // Elmar Busetti
-	// aadd (_aAssoc, '002859')  // Celso Chiarani
-	// aadd (_aAssoc, '000289')  // Rui Bertuol - UNIMED em aberto.
-	// aadd (_aAssoc, '003024')  // Vilson Da Campo - NF de compra devolvida em 2020.
-	// aadd (_aAssoc, '002660')  // Cledinei Da Campo - NF trocada com Vilson em 2020.
-	aadd (_aAssoc, '002932')  // Joel Panizzon
-	aadd (_aAssoc, '000184')  // Arside Piton
-	aadd (_aAssoc, '002517')  // Santo Jose Busetti (diversas variedades de uva)
-	for _nAssoc = 1 to len (_aAssoc)
-		U_Log2 ('info', 'Iniciando associado ' + _aAssoc [_nAssoc])
-		U_GravaSX1 ("ML_FECHASAFRA", '01', '2020')  // safra
-		U_GravaSX1 ("ML_FECHASAFRA", '02', _aAssoc [_nAssoc])
-		U_GravaSX1 ("ML_FECHASAFRA", '03', '01')  // loja
-		U_GravaSX1 ("ML_FECHASAFRA", '04', '  ')  // nucleo
-		U_GravaSX1 ("ML_FECHASAFRA", '05', 1)  // lista saldo CC 1=sim;2=nao
-		U_GravaSX1 ("ML_FECHASAFRA", '06', 2)  // 1=detalhado;2=resumido;3=apenas NF compra
-		U_ml_fechasafra (.T.)
-		//U_GravaSX1 ("IRASSOC", '01', '')  // CPF ini
-		//U_GravaSX1 ("IRASSOC", '02', 'z')  // CPF fim
-		//U_GravaSX1 ("IRASSOC", '03', '2021')  // ano base
-		//U_GravaSX1 ("IRASSOC", '04', _aAssoc [_nAssoc])  // assoc ini
-		//U_GravaSX1 ("IRASSOC", '05', '')  // loja ini
-		//U_GravaSX1 ("IRASSOC", '06', _aAssoc [_nAssoc]) //002932')  // assoc fim
-		//U_GravaSX1 ("IRASSOC", '07', 'z')  // loja fim
-		//U_GravaSX1 ("IRASSOC", '08', '')  // nucleo
-		//u_IRAssoc (.T.)
-		//
-		//U_GravaSX1 ("SZI_REL2", "01", _aAssoc [_nAssoc])
-		//U_GravaSX1 ('SZI_REL2', "02", '')
-		//U_GravaSX1 ("SZI_REL2", "03", _aAssoc [_nAssoc])
-		//U_GravaSX1 ('SZI_REL2', "04", 'zz')
-		//U_GravaSX1 ('SZI_REL2', "05", stod ("19000101"))
-		//U_GravaSX1 ('SZI_REL2', "06", stod ("20201231"))
-		//U_GravaSX1 ('SZI_REL2', "07", 1)  // tipo normal/capital
-		//U_GravaSX1 ('SZI_REL2', "08", 2)  //listar OBS S/N
-		//U_szi_rel2 (.t.)
-		//U_GravaSX1 ('SZI_REL', "01", _aAssoc [_nAssoc])
-		//U_GravaSX1 ('SZI_REL', "02", '')
-		//U_GravaSX1 ('SZI_REL', "03", _aAssoc [_nAssoc])
-		//U_GravaSX1 ('SZI_REL', "04", 'zz')
-		//U_GravaSX1 ('SZI_REL', "05", '')
-		//U_GravaSX1 ('SZI_REL', "06", 'zz')
-		//U_GravaSX1 ('SZI_REL', "07", stod ("19000101"))
-		//U_GravaSX1 ('SZI_REL', "08", stod ("20201231"))
-		//U_GravaSX1 ('SZI_REL', "09", 1)
-		//U_GravaSX1 ('SZI_REL', "10", '')
-		//U_GravaSX1 ('SZI_REL', "11", 2)
-		//U_GravaSX1 ('SZI_REL', "12", 1)
-		//U_GravaSX1 ('SZI_REL', "13", '')
-		//U_GravaSX1 ('SZI_REL', "14", 'zz')
-		//U_GravaSX1 ('SZI_REL', "15", 2)
-		//U_szi_rel (.t., 1)
-		//u_gravasx1 ('SZI_LCS', '01', _aAssoc [_nAssoc])  // Associado inicial
-		//u_gravasx1 ('SZI_LCS', '02', '')  // Loja associado inicial
-		//u_gravasx1 ('SZI_LCS', '03', _aAssoc [_nAssoc])  // Associado final
-		//u_gravasx1 ('SZI_LCS', '04', 'z')  // Loja associado final          
-		//u_gravasx1 ('SZI_LCS', '05', '17')  // Tipo de movimento inicial     
-		//u_gravasx1 ('SZI_LCS', '06', '18')  // Tipo de movimento final       
-		//u_gravasx1 ('SZI_LCS', '07', stod ('20201031'))  // Posicao em                    
-		//u_gravasx1 ('SZI_LCS', '08', '')  // Coop.orig(AL/SV/...) bco=todas
-		//u_gravasx1 ('SZI_LCS', '09', '')  // Filial inicial                
-		//u_gravasx1 ('SZI_LCS', '10', 'z')  // Filial final                  
-		//u_gravasx1 ('SZI_LCS', '11', '')  // Forma pagamento (bco=todas)
-		//u_gravasx1 ('SZI_LCS', '12', 3)   // Movtos a: debito /credito /Todos
-		//u_gravasx1 ('SZI_LCS', '13', '')  // T.M. desconsiderar (separ. /)
-		//u_gravasx1 ('SZI_LCS', '14', '')  // Parcelas (separ. /) bco=todas
-		//u_gravasx1 ('SZI_LCS', '15', 1)  // com saldo / sem saldo / todos
-		//u_gravasx1 ('SZI_LCS', '16', 2)  // Gerar recibos apos o relatorio: Sim/Nao
-		//u_gravasx1 ('SZI_LCS', '17', '')  // P/recibo: Correspondente a... 
-		//u_gravasx1 ('SZI_LCS', '18', '')  // P/recibo: Local               
-		//u_gravasx1 ('SZI_LCS', '19', date ())  // P/recibo: Data                
-		//u_gravasx1 ('SZI_LCS', '20', '')  // Nucleos(SG/FC/...) bco=todos
-		//u_szi_lcs (.t., 3)
-	next
 return
 */
 /*

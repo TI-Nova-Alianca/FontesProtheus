@@ -276,6 +276,7 @@ static function _ConfParc (_lAjustar)
 				for _nParc = 1 to len (_aParcReal)
 					if _aParcReal [_nParc, 1] != _aParcPrev [_nParc, 2]
 						_sMsg += "Diferenca nas datas - linha " + cvaltochar (_nParc) + chr (13) + chr (10)
+						_sMsg += "Real: " + dtoc (_aParcReal [_nParc, 1]) + ' X prev: ' + dtoc (_aParcPrev [_nParc, 2]) + chr (13) + chr (10)
 					endif
 					if round (_aParcReal [_nParc, 3], 2) != round (_aParcPrev [_nParc, 4], 2)
 						_sMsg += "Diferenca nos valores de uva - linha " + cvaltochar (_nParc) + chr (13) + chr (10)
@@ -346,7 +347,7 @@ static function _ConfParc (_lAjustar)
 			u_zzunu ({'999'}, 'Inconsistencia parcelamento safra - F.' + (_sAliasQ) -> filial + ' NF: ' + (_sAliasQ) -> doc + ' forn: ' + (_sAliasQ) -> associado, _sMsg)
 
 			// cai fora no primeiro erro encontrado (estou ainda ajustando)
-//			EXIT   // REMOVER DEPOIS !!!!!!!!!!!!!!!!!
+			EXIT   // REMOVER DEPOIS !!!!!!!!!!!!!!!!!
 
 		endif
 		U_Log2 ('info', 'Finalizando F' + (_sAliasQ) -> filial + ' NF' + (_sAliasQ) -> doc)

@@ -35,10 +35,18 @@ user function FTSAFRA
 		return
 	endif
 
+	u_help ('Confirme, a seguir, os parametros da tela de geracao de faturas, que serao ocupados durante o processo. Por padrao, os parametros de contabilizacao devem ser alterado spara NAO.')
+	if ! pergunte ('AFI290', .T.)
+		u_help ("Processo cancelado.")
+		return
+	endif
+
 	private cPerg := "FTSAFRA"
 	_ValidPerg ()
 	if pergunte (cPerg, .T.)
 		processa ({|| _gera ()})
+	else
+		u_help ("Processo cancelado.")
 	endif
 return
 
@@ -106,7 +114,7 @@ static function _Gera ()
 		_sWhere += "    AND E2_VENCREA BETWEEN '" + _wdataini + "' AND '" + _wdatafim + "'"
 		_sWhere += "    AND (E2_PREFIXO ='30' OR E2_PREFIXO ='31')"
 		_sWhere += "    AND E2_SALDO   > 0"
-		_sWhere += "    AND E2_TIPO IN " + FormatIn (mv_par11, '/')
+		_sWhere += "    AND E2_TIPO IN " + FormatIn (alltrim (mv_par11), '/')
 	//	_sWhere += "    AND E2_FATURA != 'NOTFAT'"  // O sistema gera NOTFAT nesse campo para que faturas nao possam mais gerar novas faturas.
 		_sWhere += "    AND EXISTS (SELECT 1" 
 		_sWhere += "                  FROM " + RetSQLName ("SZI") + " AS SZI"
@@ -145,6 +153,7 @@ static function _Gera ()
 		_sQuery += " SELECT E2_FORNECE, E2_LOJA, SUM (E2_SALDO)"
 		_sQuery += _sWhere
 		_sQuery += " GROUP BY E2_FORNECE, E2_LOJA"
+		// FICA RUIM POR QUE O TOTALZAO NAO BATE --> _sQuery += " HAVING COUNT (*) > 1"  // Quem tem apenas 1 titulo nao precisa gerar fatura.
 		_sQuery += " ORDER BY E2_FORNECE, E2_LOJA"
 		u_log2 ('debug', _sQuery)
 		aDados := U_Qry2Array(_sQuery)
@@ -152,13 +161,18 @@ static function _Gera ()
 		for i=1 to len(aDados)
 			_nTotGer += aDados [i, 3]
 		next
-		_aTestCond := condicao (_nTotGer, _sCondPag,, date ())
-		_sMsgVcto = ''
-		for _nVcto = 1 to len (_aTestCond)
-			_sMsgVcto += dtoc (_aTestCond [_nVcto, 1]) + '  -  '
-		next
-		if ! U_MsgYesNo ("Saldo total de titulos encontrados para gerar fatura: " + cvaltochar (_nTotGer) + " ; a fatura vai ser gerada com a(s) seguinte(s) data(s) de vencimento:" + chr (10) + chr (13) + _sMsgVcto + chr (10) + chr (13) + "Confirma?")
+		if _nTotGer == 0
+			u_help ("Nao foram encontrados titulos para agrupar, ou os fornecedores envolvidos possuem apenas 1 titulo, o que nao justifica a geracao de fatura.")
 			_lContinua = .F.
+		else
+			_aTestCond := condicao (_nTotGer, _sCondPag,, date ())
+			_sMsgVcto = ''
+			for _nVcto = 1 to len (_aTestCond)
+				_sMsgVcto += dtoc (_aTestCond [_nVcto, 1]) + '  -  '
+			next
+			if ! U_MsgYesNo ("Saldo total de titulos encontrados para gerar fatura: " + cvaltochar (_nTotGer) + " ; a fatura vai ser gerada com a(s) seguinte(s) data(s) de vencimento:" + chr (10) + chr (13) + _sMsgVcto + chr (10) + chr (13) + "Confirma?")
+				_lContinua = .F.
+			endif
 		endif
 	endif
 

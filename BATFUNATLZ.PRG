@@ -33,8 +33,10 @@
 // 19/12/2019 - Robert  - Criava associados no SA1 apenas se tivessem compra de uva. Agora basta ter movto.tipo 08 (GLPI 7266)
 //                        Tambem nao importa mais associados falecidos.
 // 14/08/2020 - Cláudia - Ajuste de Api em loop, conforme solicitação da versao 25 protheus. GLPI: 7339
-// 1911/2020  - Sandra -  Ajuste do campo A1_GRPTRIB" de 001 para "003" no caso de funcionario e clientes, conforme A1_lojas
+// 19/11/2020 - Sandra  - Ajuste do campo A1_GRPTRIB" de 001 para "003" no caso de funcionario e clientes, conforme A1_lojas
+// 26/03/2021 - Robert  - Nao tinha tratamento para cidades com [til] no nome (GLPI 9706).
 //
+
 // -----------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
 #Include "Protheus.ch"
@@ -359,7 +361,8 @@ Static Function _Exe1Query() // busca associados
 	_sQuery += " 		INNER JOIN CC2010 AS CC2"
 	_sQuery += " 			ON (CC2.D_E_L_E_T_  = ''"
 	_sQuery += " 				AND CC2.CC2_EST =  FUN.UF COLLATE DATABASE_DEFAULT"
-	_sQuery += " 	    		AND CC2.CC2_MUN =  UPPER(REPLACE(REPLACE(FUN.CIDADE,'ç','c'),'á','a')) COLLATE DATABASE_DEFAULT )" 
+	// _sQuery += " 	    		AND CC2.CC2_MUN =  UPPER(REPLACE(REPLACE(FUN.CIDADE,'ç','c'),'á','a')) COLLATE DATABASE_DEFAULT )" 
+	_sQuery += " 	    		AND CC2.CC2_MUN =  UPPER(REPLACE(REPLACE(REPLACE(FUN.CIDADE,'ç','c'),'á','a'),'ã','a')) COLLATE DATABASE_DEFAULT )" 
 	_sQuery += " 		INNER JOIN SZB010 AS SZB"
 	_sQuery += " 			ON (SZB.D_E_L_E_T_  = ''"
 	_sQuery += " 				AND SZB.ZB_COD  = CC2.CC2_VA_SZB)"

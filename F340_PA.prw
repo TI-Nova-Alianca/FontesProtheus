@@ -14,6 +14,7 @@
 // 30/10/2019 - Robert - Passa a gravar avisos e erros usando a classe ClsAviso().
 // 17/07/2020 - Robert - Inseridas tags para catalogacao de fontes
 //                     - Melhorada chamada de reprocessamento de saldo associado (chamava 2 vezes sem necessidade).
+// 25/03/2021 - Robert - Gravacao do E5_VAUSER nao levava em conta o tamanho do campo e dava warning do SQL.
 //
 
 // Tags para automatizar catalogo de customizacoes:
@@ -85,7 +86,8 @@ static function _AtuChv ()
 		_sSQL := ""
 		_sSQL += "UPDATE " + RetSQLName ("SE5")
 		_sSQL +=   " SET E5_VACHVEX = '" + _sChvOrig + "'"
-		_sSQL +=      ", E5_VAUSER  = '" + alltrim(cUserName) + "'"
+		// _sSQL +=      ", E5_VAUSER  = '" + alltrim(cUserName) + "'"
+		_sSQL +=      ", E5_VAUSER  = '" + left (cUserName, 15) + "'"  // Nao pode exceder o tamanho do campo
 		_sSQL += " WHERE D_E_L_E_T_ = ''"
 		_sSQL +=   " AND E5_FILIAL  = '" + xfilial ("SE5")   + "'"
 		_sSQL +=   " AND E5_PREFIXO = '" + se2 -> e2_prefixo + "'"
@@ -124,10 +126,6 @@ static function _AtuChv ()
 		// Deixa informacoes prontas para, em seguida, atualizar o saldo do Associado.
 		_oAssoc := ClsAssoc():New (szi -> zi_assoc, szi -> zi_lojasso)
 		_dMenorSZI = iif (empty (_dMenorSZI), szi -> zi_data, min (_dMenorSZI, szi -> zi_data))
-//		if valtype (_oAssoc) == NIL .or. valtype (_oAssoc) != "O"
-//		else
-//			_oAssoc:AtuSaldo (szi -> zi_data)
-//		endif
 	endif
 
 	if left (_sChvComp, 3) == "SZI" .and. szi -> (dbseek (xfilial ("SZI") + substr (_sChvComp, 4), .F.))
@@ -139,10 +137,6 @@ static function _AtuChv ()
 		// Deixa informacoes prontas para, em seguida, atualizar o saldo do Associado.
 		_oAssoc := ClsAssoc():New (szi -> zi_assoc, szi -> zi_lojasso)
 		_dMenorSZI = iif (empty (_dMenorSZI), szi -> zi_data, min (_dMenorSZI, szi -> zi_data))
-//		if valtype (_oAssoc) == NIL .or. valtype (_oAssoc) != "O"
-//		else
-//			_oAssoc:AtuSaldo (szi -> zi_data)
-//		endif
 	endif
 
 	// Se instanciou o associado, recalcula seu saldo.
