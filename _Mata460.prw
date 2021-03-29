@@ -51,7 +51,7 @@
 // 22/03/2021 - Cláudia - Validação para pedidos com bloqueio gerencial. GLPI: 9666
 // 26/03/2021 - Robert  - Validacao bloq.gerencial lia todos os pedidos e nao apenas os marcados.
 //
-
+// --------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"  // Deixar este include para aparecerem os botoes da tela de acompanhamento do SPED
 #include "PROTHEUS.ch"
 
@@ -67,7 +67,6 @@
 #XTranslate .PedPrioridade     => 10
 #XTranslate .PedTransp         => 11
 
-// -------------------------------------------------------------------------------------------------------------------------------------
 user function _Mata460 ()
 	local _sParam     := "VA_USRENF"
 	local _sUserLib   := alltrim (upper (GetMV (_sParam, .F., "")))
@@ -448,15 +447,6 @@ static function _TudoOK (_aPed)
 		next
 	endif
 
-	// em bloqueio gerencial não deixa seguir para faturar
-	// for _nPed = 1 to len (_aPed)
-	// 	if _lRet .and. alltrim(_aPed [_nPed, .PedAviso]) == 'BLQ.GERENCIAL;'
-	// 		u_help ("Foram selecionados pedidos com bloqueio gerencial que impedem a geracao de notas. Revise marcacao. " + alltrim (_aPed [_nPed, .PedAviso]),, .T.)
-	// 		_lRet := .F.
-	// 	Else
-	// 		_lRet := .T.
-	// 	EndIf
-	// next
 	if _lRet
 		for _nPed = 1 to len (_aPed)
 	//		if _lRet .and. alltrim(_aPed [_nPed, .PedAviso]) == 'BLQ.GERENCIAL;'
