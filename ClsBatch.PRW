@@ -34,6 +34,7 @@
 // 04/11/2019 - Robert - Criado atributo Ativo.
 // 01/09/2020 - Robert - Inseridas tags para catalogo de fontes
 //                     - Revisao logs, remocao chamadas funcao de geracao de mensagens na console.
+// 29/03/2021 - Robert - Tratamento para campo ZZ6_JSON (GLPI 9592).
 //
 
 #include "protheus.ch"
@@ -64,6 +65,7 @@ CLASS ClsBatch
 	data FilDes
 	data HrIni
 	data HrFim
+	data JSON
 	data Modulo
 	data TmpRetent
 	data MaxTent
@@ -92,6 +94,7 @@ METHOD New (_nRegZZ6) Class ClsBatch
 	::Dados     := ""
 	::EmpDes    := cEmpAnt  //""
 	::FilDes    := cFilAnt  //""
+	::JSON      := ""
 	::Comando   := ""
 	::DataBase  := ctod ('')
 	::AnoMes    := ""
@@ -122,6 +125,7 @@ METHOD New (_nRegZZ6) Class ClsBatch
 		::Dados     := zz6 -> zz6_dados
 		::EmpDes    := zz6 -> zz6_empdes
 		::FilDes    := zz6 -> zz6_fildes
+		::JSON      := zz6 -> zz6_json
 		::Comando   := alltrim (zz6 -> zz6_cmd)
 		::DataBase  := zz6 -> zz6_dtbase
 		::AnoMes    := zz6 -> zz6_anomes
@@ -148,54 +152,82 @@ Return Self
 // --------------------------------------------------------------------------
 // Serializacao e gravacao em arquivo
 METHOD Grava () Class ClsBatch
-	local _aAreaAnt := U_ML_SRArea ()
-	local _sSeq     := ""
+	local _aAreaAnt  := U_ML_SRArea ()
+	local _sSeq      := ""
+	local _lContinua := .T.
+	local _oJSBatch  := NIL
+	local _sJSErro   := ''
 
-	::MaxTent = max (5, ::MaxTent) 
-	_sSeq = GetSXeNum ("ZZ6", "ZZ6_SEQ")
+	// Se recebi dados em formato JSON, vou valida-los antes de gravar.
+	if _lContinua .and. ! empty (::JSON)
+		::JSON = alltrim (::JSON)
+		if len (::JSON) > TamSX3 ("ZZ6_JSON")[1]
+			u_help ('Erro na validacao de dados JSON para agendamento de batch: o campo ZZ6_JSON nao comporta todo o JSON recebido: ' + ::JSON,, .t.)
+			_lContinua = .F.
+		endif
+		if _lContinua
+			_oJSBatch := JsonObject():new()
+			_sJSErro := _oJSBatch:FromJson (::JSON)
+			if ValType(_sJSErro) == "C"
+				u_help ('Erro na validacao de dados JSON para agendamento de batch: ' + _sJSErro,, .t.)
+				_lContinua = .F.
+			else
+				U_Log2 ('debug', 'Dados JSON para agendamento de batch:')
+				U_Log2 ('debug', _oJSBatch)
+			endif
+		endif
+	endif
 
-	reclock ("ZZ6", .T.)
-	zz6 -> zz6_filial  = xfilial ("ZZ6")
-	zz6 -> zz6_seq     = _sSeq
-	zz6 -> zz6_EmpInc  = cEmpAnt
-	zz6 -> zz6_FilInc  = cFilAnt
-	zz6 -> zz6_DtInc   = date ()
-	zz6 -> zz6_HrInc   = time ()
-	zz6 -> zz6_CodPro  = ::CodPro
-	zz6 -> zz6_Dados   = ::Dados
-	zz6 -> zz6_EmpDes  = ::EmpDes
-	zz6 -> zz6_FilDes  = ::FilDes
-	zz6 -> zz6_MaxTen  = ::MaxTent
-	zz6 -> zz6_Ativo   = ::Ativo
-	zz6 -> zz6_DtIni   = ::DtIni
-	zz6 -> zz6_HrIni   = ::HrIni
-	zz6 -> zz6_HrFim   = ::HrFim
-	zz6 -> zz6_Period  = ::Period
-	zz6 -> zz6_DiaSem  = ::DiaSem
-	zz6 -> zz6_ACada   = ::ACada
-	zz6 -> zz6_ACadaU  = ::ACadaU
-	zz6 -> zz6_Cmd     = ::Comando
-	zz6 -> zz6_DtBase  = ::DataBase
-	zz6 -> zz6_AnoMes  = ::AnoMes
-	zz6 -> zz6_Modulo  = ::Modulo
-	zz6 -> zz6_Prior   = '5'
-	zz6 -> zz6_minret  = ::TmpRetent
-	zz6 -> zz6_agwf    = ::AguardaWF
-	zz6 -> zz6_TmpLim  = ::TempoLim
-	zz6 -> zz6_AmbTst  = ::AmbTeste
-	zz6 -> zz6_ArqLog  = ::ArqLog
-	msunlock ()
+	if _lContinua
+		::MaxTent = max (5, ::MaxTent) 
+		_sSeq = GetSXeNum ("ZZ6", "ZZ6_SEQ")
+
+		reclock ("ZZ6", .T.)
+		zz6 -> zz6_filial  = xfilial ("ZZ6")
+		zz6 -> zz6_seq     = _sSeq
+		zz6 -> zz6_EmpInc  = cEmpAnt
+		zz6 -> zz6_FilInc  = cFilAnt
+		zz6 -> zz6_DtInc   = date ()
+		zz6 -> zz6_HrInc   = time ()
+		zz6 -> zz6_CodPro  = ::CodPro
+		zz6 -> zz6_Dados   = ::Dados
+		zz6 -> zz6_EmpDes  = ::EmpDes
+		zz6 -> zz6_FilDes  = ::FilDes
+		zz6 -> zz6_JSON    = ::JSON
+		zz6 -> zz6_MaxTen  = ::MaxTent
+		zz6 -> zz6_Ativo   = ::Ativo
+		zz6 -> zz6_DtIni   = ::DtIni
+		zz6 -> zz6_HrIni   = ::HrIni
+		zz6 -> zz6_HrFim   = ::HrFim
+		zz6 -> zz6_Period  = ::Period
+		zz6 -> zz6_DiaSem  = ::DiaSem
+		zz6 -> zz6_ACada   = ::ACada
+		zz6 -> zz6_ACadaU  = ::ACadaU
+		zz6 -> zz6_Cmd     = ::Comando
+		zz6 -> zz6_DtBase  = ::DataBase
+		zz6 -> zz6_AnoMes  = ::AnoMes
+		zz6 -> zz6_Modulo  = ::Modulo
+		zz6 -> zz6_Prior   = '5'
+		zz6 -> zz6_minret  = ::TmpRetent
+		zz6 -> zz6_agwf    = ::AguardaWF
+		zz6 -> zz6_TmpLim  = ::TempoLim
+		zz6 -> zz6_AmbTst  = ::AmbTeste
+		zz6 -> zz6_ArqLog  = ::ArqLog
+		msunlock ()
+		
+		do while __lSX8
+			ConfirmSX8 ()
+		enddo
+
+		// Grava no objeto o numero sequencial gerado no arquivo (talvez seja necessario mais tarde).
+		::Seq = zz6 -> zz6_seq
+		
+		u_log2 ('info', "Batch seq. " + _sSeq + " agendado em " + dtoc (date()) + " " + time())
+	endif
 	
-	do while __lSX8
-		ConfirmSX8 ()
-	enddo
-
-	// Grava no objeto o numero sequencial gerado no arquivo (talvez seja necessario mais tarde).
-	::Seq = zz6 -> zz6_seq
-	
-	u_log2 ('info', "Batch seq. " + _sSeq + " agendado em " + dtoc (date()) + " " + time())
 	U_ML_SRArea (_aAreaAnt)
-return
+return _lContinua
+
 
 
 // --------------------------------------------------------------------------

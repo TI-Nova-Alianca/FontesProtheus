@@ -17,6 +17,7 @@
 // 15/12/2020 - Robert - Exportacao de array deu erro na importacao de pedidos!!! GLPI 9033
 // 20/01/2021 - Robert - Melhorada exportacao: transforma tudo em array e lista todas as linhas num unico processo fopnen...fclose
 // 01/02/2021 - Robert - Aumentado limite de log de texto, de 2000 para 20000 caracteres.
+// 29/03/2021 - Robert - Iniciado tratamento para objetos JSON.
 //
 
 // --------------------------------------------------------------------------
@@ -42,6 +43,8 @@ user function Log2 (_sTipo, _xDadoOri, _xExtra)
 		_aTxtLog = ACLONE (_DumpArray (_xDadoOri))
 	elseif valtype (_xDadoOri) == 'O'
 		_aTxtLog = aclone (_DumpObj (_xDadoOri))
+	elseif valtype (_xDadoOri) == 'J'  // JSON
+		_aTxtLog = aclone (_DumpJSON (_xDadoOri))
 	else
 		if valtype (_xDadoOri) == 'U'
 			_aTxtLog = {'*NIL*'}
@@ -328,4 +331,43 @@ static function _DumpObj (_oObj)
 		_sLinha += iif (len (_aDet [2]) == 0, ')', '')
 		aadd (_aRet, _sLinha)
 	next
+return _aRet
+
+
+
+// --------------------------------------------------------------------------
+static function _DumpJSON (_oObjJS)
+	local _nItemJS  := 0
+	local _j        := 0
+	local _aNomJSON := {}
+	local _oItemJS  := NIL
+	local _aRet     := {}
+	local _sLinha   := ''
+
+	aadd (_aRet, '{')
+	if len(_oObjJS) > 0
+		for _nItemJS := 1 to len(_oObjJS)
+			_DumpJson(_oObjJS[_nItemJS])
+		next
+	else
+		_aNomJSON := _oObjJS:GetNames()
+		for _nItemJS := 1 to len(_aNomJSON)
+			_sLinha = '   ' + _aNomJSON[_nItemJS]
+			_oItemJS := _oObjJS[_aNomJSON[_nItemJS]]
+			if ValType(_oItemJS) == "C"
+				_sLinha += ' = ' + cvaltochar(_oObjJS[_aNomJSON[_nItemJS]])
+			else
+				if ValType(_oItemJS) == "A"
+					aadd (_aRet, "Vetor[")
+					for _j := 1 to len(_oItemJS)
+						aadd (_aRet, "Indice " + cValtochar(_j))
+						_DumpJSON (_oItemJS[j])
+					next _j
+					aadd (_aRet, "]Vetor")
+				endif
+			endif
+			aadd (_aRet, _sLinha)
+		next _nItemJS
+	endif
+	aadd (_aRet, '}')
 return _aRet

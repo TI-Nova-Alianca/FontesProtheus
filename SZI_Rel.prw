@@ -22,6 +22,7 @@
 // 27/09/2017 - Robert - Melhorada mensagem quando compensado titulo com outro fornecedor.
 // 18/02/2018 - Robert - Trazia deb/cred invertido quando TM=15 e transf.saldo para outra filial
 // 20/04/2018 - Robert - Melhora performance: substituido [SZI.ZI_SEQ = SUBSTRING (SE5.E5_VACHVEX, 12, 6)] por [SE5.E5_VACHVEX  = 'SZI' + ZI_ASSOC + ZI_LOJASSO + ZI_SEQ] na query.
+// 29/03/2021 - Robert - Buscava '' para simular E5_PARCELA por que nao tinha esse campo no SZI. Agora existe.
 //
 
 // Tags para automatizar catalogo de customizacoes:
@@ -178,7 +179,8 @@ static function _Imprime ()
 	_sQuery += "SELECT 'SZI' AS ORIGEM, ZI_FILIAL AS FILIAL, " + U_LeSM0 ('2', cEmpAnt, '', 'SZI', 'ZI_FILIAL', 'ZI_FILIAL') [2] + " AS DESCFIL, "
 	_sQuery +=       " ZI_DATA AS DATA, ZI_TM AS TIPO_MOV, ZI_HISTOR AS HIST, ZI_ASSOC AS ASSOC, ZI_LOJASSO AS LOJASSO, ZI_CODMEMO AS CODMEMO,"
 	_sQuery +=       " ZI_VALOR AS VALOR, '' AS E5_RECPAG, ZI_DOC AS NUMERO, ZI_SERIE AS PREFIXO, '' AS DOCUMEN, '' AS E5_SEQ,"
-	_sQuery +=       " '' AS E5_MOTBX, '' AS E5_PARCELA, '' AS E5_TIPODOC, '' AS E5_FORNADT, '' AS E5_LOJAADT, '' AS E5_ORIGEM"
+//	_sQuery +=       " '' AS E5_MOTBX, '' AS E5_PARCELA, '' AS E5_TIPODOC, '' AS E5_FORNADT, '' AS E5_LOJAADT, '' AS E5_ORIGEM"
+	_sQuery +=       " '' AS E5_MOTBX, ZI_PARCELA AS E5_PARCELA, '' AS E5_TIPODOC, '' AS E5_FORNADT, '' AS E5_LOJAADT, '' AS E5_ORIGEM"
 	_sQuery +=  " FROM " + RETSQLNAME ("SZI") + " SZI "
 	_sQuery += " WHERE SZI.D_E_L_E_T_ != '*'"
 	_sQuery +=   " AND SZI.ZI_FILIAL   BETWEEN '" + mv_par13 + "' AND '" + mv_par14 + "'"

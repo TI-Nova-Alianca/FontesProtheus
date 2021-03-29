@@ -81,7 +81,7 @@ Static Function _Gera()
 	_oSQL:_sQuery +=        " SD1.D1_UM AS UN_MED,"
 	_oSQL:_sQuery +=        " CARGAS.ZE_CARGA AS CARGA,"
 	_oSQL:_sQuery +=        " CASE WHEN CARGAS.ZZA_LINHA IS NULL OR CARGAS.ZZA_LINHA = ' ' THEN CARGAS.ZE_LOCDESC"
-	_oSQL:_sQuery +=           " ELSE CARGAS.ZZA_LINHA"
+	_oSQL:_sQuery +=           " ELSE CARGAS.ZZA_LINHA"  // O campo ZZA_LINHA eh gravado pelo softwsre da Mazeli, entao entendo-o como 'tombador efetivo'.
 	_oSQL:_sQuery +=        " END AS TOMBADOR,"
 	_oSQL:_sQuery +=        " V.DOC AS NF"
 	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SF1") + " SF1, "

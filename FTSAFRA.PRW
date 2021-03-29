@@ -16,7 +16,8 @@
 // 06/07/2020 - Robert - Permite utilizar faturas na geracao de nova fatura. Verifica se E2_FATURA = 'NOTFAT'.
 //                     - Gera fatura somente se tiver mais de 1 titulo para agrupar.
 // 24/07/2020 - Robert - Verifica se existem faturas com NOTFAT (ficariam fora do processo) e confirma com o usuario.
-//                      - Inseridas tags para catalogacao de fontes
+//                     - Inseridas tags para catalogacao de fontes
+// 29/03/2021 - Robert - Gravacao atributo :Safra na conta corrente (GLPI 9592)
 //
 
 // Tags para automatizar catalogo de customizacoes:
@@ -321,6 +322,7 @@ static function _CriaSZI (_sSafra)
 	_oCtaCorr:Serie    = se2 -> e2_prefixo
 	_oCtaCorr:Origem   = "FTSAFRA"
 	_oCtaCorr:Parcela  = se2 -> e2_parcela
+	_oCtaCorr:Safra    = _sSafra
 	if _oCtaCorr:PodeIncl ()
 		if ! _oCtaCorr:Grava (.F., .F.)
 			U_help ("Erro na atualizacao da conta corrente para o associado '" + se2 -> e2_fornece + '/' + se2 -> e2_loja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg,, .t.)

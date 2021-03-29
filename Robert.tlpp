@@ -27,8 +27,8 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '03' modulo '05'
-		private cModulo   := 'FAT'
+		prepare environment empresa '01' filial '01' modulo 'FIN'
+		private cModulo   := 'FIN'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
 		private __RelDir  := "c:\temp\spool_protheus\"
@@ -79,13 +79,24 @@ static function _AndaLogo ()
 //	local _oCtaCorr  := NIL
 //	local _nParc     := 0
 //	local _oAssoc    := NIL
-	local _aAssoc := {}
-	local _nAssoc := 0
+//	local _aAssoc := {}
+//	local _nAssoc := 0
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
 	u_help ('Nada definido.')
 return
+/*
+//	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batsafr ('9')
+	_sArqLog := 'U_BatTrSE2_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+	u_log (cmodulo)
+	u_log (nmodulo)
+	zz6 -> (dbgoto (41349))
+	_oBatch := ClsBatch ():New (zz6 -> (recno ()))
+	u_va_zz6ex ()
+return
+*/
 /*
 	// Testes relatorios associados
 	_aAssoc = {}
@@ -128,8 +139,8 @@ return
 		U_GravaSX1 ('SZI_REL2', "02", '')
 		U_GravaSX1 ("SZI_REL2", "03", _aAssoc [_nAssoc])
 		U_GravaSX1 ('SZI_REL2', "04", 'zz')
-		U_GravaSX1 ('SZI_REL2', "05", stod ("19000101"))
-		U_GravaSX1 ('SZI_REL2', "06", stod ("20201231"))
+		U_GravaSX1 ('SZI_REL2', "05", stod ("19000000"))
+		U_GravaSX1 ('SZI_REL2', "06", stod ("20491231"))
 		U_GravaSX1 ('SZI_REL2', "07", 1)  // tipo normal/capital
 		U_GravaSX1 ('SZI_REL2', "08", 2)  //listar OBS S/N
 		U_szi_rel2 (.t.)
@@ -139,8 +150,8 @@ return
 		U_GravaSX1 ('SZI_REL', "04", 'zz')
 		U_GravaSX1 ('SZI_REL', "05", '')
 		U_GravaSX1 ('SZI_REL', "06", 'zz')
-		U_GravaSX1 ('SZI_REL', "07", stod ("19000101"))
-		U_GravaSX1 ('SZI_REL', "08", stod ("20201231"))
+		U_GravaSX1 ('SZI_REL', "07", stod ("19000000"))
+		U_GravaSX1 ('SZI_REL', "08", stod ("20491231"))
 		U_GravaSX1 ('SZI_REL', "09", 1)
 		U_GravaSX1 ('SZI_REL', "10", '')
 		U_GravaSX1 ('SZI_REL', "11", 2)
@@ -173,9 +184,8 @@ return
 	next
 return
 */
-//	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batsafr ('8')
-//return
+//	_sArqLog := 'U_BatFunAtlz_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batfunatlz ()
 //	_sArqLog := 'U_BatBlUsr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batBlUsr ()
 //	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"

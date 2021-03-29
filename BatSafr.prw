@@ -133,6 +133,10 @@ user function BatSafr (_sQueFazer, _lAjustar)
 	// Confere conta corrente (SZI) x titulos referentes as notas de compra (a partir de 2021 geramos direto como compra) - GLPI 9592
 	elseif _sQueFazer == '8'
 		_ConfSZI ()
+
+	// Transfere (das filiais para a matriz) os titulos de nao associados.
+	elseif _sQueFazer == '9'
+		_TransFil ()
 	
 	else
 		u_help ("Sem definicao para o que fazer quando parametro = '" + _sQueFazer + "'.",, .T.)
@@ -507,33 +511,6 @@ static function _GeraSZI ()
 
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
-	// _oSQL:_sQuery += " SELECT E2_FILIAL, E2_FORNECE, E2_LOJA, E2_NOMFOR, E2_EMISSAO, E2_VENCREA, E2_NUM, E2_PREFIXO, E2_TIPO, E2_VALOR, E2_SALDO, E2_HIST, R_E_C_N_O_, E2_LA, E2_PARCELA,"
-	// _oSQL:_sQuery +=        " ROW_NUMBER () OVER (ORDER BY E2_PARCELA) AS NUM_PARC"
-	// _oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2"
-	// _oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
-	// _oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '" + xfilial ("SE2") + "'"
-	// _oSQL:_sQuery +=    " AND SE2.E2_VACHVEX = ''"
-	// _oSQL:_sQuery +=    " AND EXISTS (SELECT *"  // Precisa ser nota de safra
-	// _oSQL:_sQuery +=                  " FROM VA_VNOTAS_SAFRA V"
-	// _oSQL:_sQuery +=                 " WHERE V.SAFRA       = '" + _sSafrComp + "'"
-	// _oSQL:_sQuery +=                   " AND V.FILIAL      = SE2.E2_FILIAL"
-	// _oSQL:_sQuery +=                   " AND V.ASSOCIADO   = SE2.E2_FORNECE"
-	// _oSQL:_sQuery +=                   " AND V.LOJA_ASSOC  = SE2.E2_LOJA"
-	// _oSQL:_sQuery +=                   " AND V.SERIE       = SE2.E2_PREFIXO"
-	// _oSQL:_sQuery +=                   " AND V.DOC         = SE2.E2_NUM"
-	// _oSQL:_sQuery +=                   " AND V.TIPO_NF     = 'C'"
-	// _oSQL:_sQuery +=                   " AND V.TIPO_FORNEC = 'ASSOCIADO')"
-	// _oSQL:_sQuery +=    " AND NOT EXISTS (SELECT *"  // Ainda nao deve existir na conta corrente
-	// _oSQL:_sQuery +=                  " FROM " + RetSQLName ("SZI") + " SZI "
-	// _oSQL:_sQuery +=                 " WHERE SZI.ZI_FILIAL  = SE2.E2_FILIAL"
-	// _oSQL:_sQuery +=                   " AND SZI.ZI_ASSOC   = SE2.E2_FORNECE"
-	// _oSQL:_sQuery +=                   " AND SZI.ZI_LOJASSO = SE2.E2_LOJA"
-	// _oSQL:_sQuery +=                   " AND SZI.ZI_SERIE   = SE2.E2_PREFIXO"
-	// _oSQL:_sQuery +=                   " AND SZI.ZI_DOC     = SE2.E2_NUM"
-	// _oSQL:_sQuery +=                   " AND SZI.ZI_PARCELA = SE2.E2_PARCELA"
-	// _oSQL:_sQuery +=                   " AND SZI.ZI_TM      = '13')"
-	// _oSQL:_sQuery +=  " ORDER BY SE2.E2_FORNECE, SE2.E2_LOJA, SE2.E2_NUM, SE2.E2_PREFIXO, SE2.E2_PARCELA"
-
 	_oSQL:_sQuery += " SELECT E2_FILIAL, E2_FORNECE, E2_LOJA, E2_NOMFOR, E2_EMISSAO, E2_VENCREA, E2_NUM, E2_PREFIXO, E2_TIPO"
 	_oSQL:_sQuery +=        ",E2_VALOR, E2_SALDO, E2_HIST, R_E_C_N_O_, E2_LA, E2_PARCELA, V.GRUPO_PAGTO"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2, "
@@ -714,4 +691,200 @@ static function _ConfSZI ()
 		endif
 		(_sAliasQ) -> (dbskip ())
 	enddo
+return
+
+
+
+// --------------------------------------------------------------------------
+// Transfere o titulo para a matriz (quando nao associado)
+static function _TransFil ()
+	local _lContinua := .T.
+	local _aTit      := afill (array (8), '')
+	local _oSQL      := NIL
+	local _aBanco    := {}
+	local _sAliasQ   := ''
+	local _sSafrComp := strzero (year (dDataBase), 4)
+	local _sFilDest  := '01'
+	local _dDtBxTran := ctod ('')
+	local _sTxtJSON  := ''
+	local _oBatchDst := NIL
+	Private lMsErroAuto := .F.
+	
+	u_log2 ('info', 'Iniciando ' + procname ())
+	
+	if _lContinua .and. cFilAnt == '01'
+		U_Log2 ('erro', 'Transf.de titulos nao se aplica a matriz.')
+		_lContinua = .F.
+	endif
+
+	// Procura a conta transitoria (eh diferente para cada filial).
+	if _lContinua
+
+		// Ajusta parametros de contabilizacao para NAO, pois a rotina automatica nao aceita.
+		cPerg = 'FIN090'
+		_aBkpSX1 = U_SalvaSX1 (cPerg)
+		U_GravaSX1 (cPerg, "03", 2)  // Contabiliza online = nao
+
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery +=" SELECT TOP 1 A6_COD, A6_AGENCIA, A6_NUMCON"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SA6") + " SA6 "
+		_oSQL:_sQuery += " WHERE SA6.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SA6.A6_FILIAL  = '" + xfilial ("SA6") + "'"
+		_oSQL:_sQuery +=   " AND SA6.A6_CONTA   = '101010201099'"
+		_aBanco := aclone (_oSQL:Qry2Array (.f., .f.))
+		if len (_aBanco) == 0
+			U_Log2 ('erro', 'Registro ref.bco/conta transitoria entre filiais nao encontrado na tabela SA6 para esta filial.')
+			_lContinua = .F.
+		endif
+	endif
+
+	// Busca titulos a pagar de notas de compra de safra de fornecedores NAO ASSOCIADOS.
+	if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT SE2.R_E_C_N_O_ as REGSE2, E2_FILIAL, E2_FORNECE, E2_LOJA, E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VALOR, E2_HIST,E2_SALDO"
+		_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2"
+		_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '" + xfilial ("SE2") + "'"
+		_oSQL:_sQuery +=    " AND EXISTS (SELECT *"  // Precisa ser nota de safra
+		_oSQL:_sQuery +=                  " FROM VA_VNOTAS_SAFRA V"
+		_oSQL:_sQuery +=                 " WHERE V.SAFRA       = '" + _sSafrComp + "'"
+		_oSQL:_sQuery +=                   " AND V.FILIAL      = SE2.E2_FILIAL"
+		_oSQL:_sQuery +=                   " AND V.ASSOCIADO   = SE2.E2_FORNECE"
+		_oSQL:_sQuery +=                   " AND V.LOJA_ASSOC  = SE2.E2_LOJA"
+		_oSQL:_sQuery +=                   " AND V.SERIE       = SE2.E2_PREFIXO"
+		_oSQL:_sQuery +=                   " AND V.DOC         = SE2.E2_NUM"
+		_oSQL:_sQuery +=                   " AND V.TIPO_NF     IN ('C', 'V')"
+		_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC = 'NAO ASSOCIADO')"
+		_oSQL:_sQuery +=  " ORDER BY SE2.E2_FORNECE, SE2.E2_LOJA, SE2.E2_NUM, SE2.E2_PREFIXO, SE2.E2_PARCELA"
+		_oSQL:Log ()
+		_sAliasQ = _oSQL:Qry2Trb (.T.)
+		procregua ((_sAliasQ) -> (reccount ()))
+		(_sAliasQ) -> (dbgotop ())
+		do while _lContinua .and. ! (_sAliasQ) -> (eof ())
+			se2 -> (dbgoto ((_sAliasQ) -> RegSE2))
+			_dDtBxTran = se2 -> e2_emissao  // Quero transferir para a matriz na mesma data da emissao
+
+			U_Log2 ('info', 'Registro do SE2 a ser baixado via conta transitoria: ' + cvaltochar (se2 -> (recno ())) + ' ' + se2 -> e2_num + '/' + se2 -> e2_prefixo + '-' + se2 -> e2_parcela + ' de ' + se2 -> e2_fornece + '/' + se2 -> e2_loja)
+			if se2 -> e2_saldo <= 0 .or. se2 -> e2_saldo != se2 -> e2_valor
+				U_Log2 ('erro', 'Titulo sem saldo no financeiro ou saldo diferente do valor original.')
+				(_sAliasQ) -> (dbskip ())
+				loop
+			endif
+
+			// Documentacao cfe. TDN -->  http://tdn.totvs.com/pages/releaseview.action?pageId=6070725
+			// Deve ser passado um array (aTitulos), com oito posicoes, sendo que cada posicao devera conter a seguinte composicao:
+			// aTitulos [1]:= aRecnos   (array contendo os Recnos dos registros a serem baixados)
+			// aTitulos [2]:= cBanco     (Banco da baixa)
+			// aTitulos [3]:= cAgencia   (Agencia da baixa)
+			// aTitulos [4]:= cConta     (Conta da baixa)
+			// aTitulos [5]:= cCheque   (Cheque da Baixa)
+			// aTitulos [6]:= cLoteFin    (Lote Financeiro da baixa)
+			// aTitulos [7]:= cNatureza (Natureza do movimento bancario)
+			// aTitulos [8]:= dBaixa     (Data da baixa)
+			// Caso a contabilizacao seja online e a tela de contabilizacao possa ser mostrada em caso de erro no lancamento (falta de conta, debito/credito nao batem, etc) a baixa automatica em lote nao podera ser utilizada.
+			// Somente sera processada se: 
+			// MV_PRELAN = S
+			// MV_CT105MS = N
+			// MV_ALTLCTO = N
+
+			_aTit [1] = {se2 -> (recno ())}  // Formato de array por que pode baixar mais de um titulo por vez.
+			_aTit [2] = _aBanco [1, 1]
+			_aTit [3] = _aBanco [1, 2]
+			_aTit [4] = _aBanco [1, 3]
+			
+			// A transferencia de saldo entre filiais eh feita atraves de conta financeira transitoria. Para isso,
+			// o saldo deve ser baixado na filial de origem atraves de conta transitoria e deve ser feita inclusao
+			// de novo movimento na filial destino.
+			_aTit [8] = _dDtBxTran
+			
+			U_Log2 ('debug', _aTit)
+			return // testes
+
+
+			lMsErroAuto = .F.
+			MSExecAuto({|x,y| Fina090(x,y)},3,_aTit)
+			If lMsErroAuto
+				_lContinua = .F.
+				U_Log2 ('erro', u_LeErro (memoread (NomeAutoLog ())))
+			else
+
+				// Se fez a baixa, ajusta historico do movimento bancario.
+				_sHistSE5 = 'TR.SLD.P/FIL.' + _sFilDest + ' REF.' + se2 -> e2_hist
+
+				// Arquivo SE5 vem, algumas vezes, desposicionado. Robert, 20/12/2016.
+				se2 -> (dbgoto (_aTit [1, 1]))
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += "SELECT MAX (R_E_C_N_O_)"
+				_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE5") + " SE5 "
+				_oSQL:_sQuery += " WHERE SE5.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=   " AND E5_FILIAL      = '" + se2 -> e2_filial  + "'"
+				_oSQL:_sQuery +=   " AND SE5.E5_CLIFOR  = '" + se2 -> e2_fornece + "'"
+				_oSQL:_sQuery +=   " AND SE5.E5_LOJA    = '" + se2 -> e2_loja    + "'"
+				_oSQL:_sQuery +=   " AND SE5.E5_PREFIXO = '" + se2 -> e2_prefixo + "'"
+				_oSQL:_sQuery +=   " AND SE5.E5_NUMERO  = '" + se2 -> e2_num     + "'"
+				_oSQL:_sQuery +=   " AND SE5.E5_PARCELA = '" + se2 -> e2_parcela + "'"
+				_oSQL:_sQuery +=   " AND SE5.E5_TIPO    = '" + se2 -> e2_tipo    + "'"
+				_oSQL:_sQuery +=   " AND SE5.E5_VACHVEX = ''"
+				//_oSQL:Log ()
+				_nRegSE5 = _oSQL:RetQry ()
+				u_log2 ('debug', 'recno se5 para atualizar: ' + cvaltochar (_nRegSE5))
+				if _nRegSE5 > 0
+					se5 -> (dbgoto (_nRegSE5))
+					reclock ('SE5', .F.)
+					se5 -> e5_vachvex = se2 -> e2_vachvex
+					se5 -> e5_histor  = left (_sHistSE5, tamsx3 ("E5_HISTOR")[1])
+					msunlock ()
+					u_log2 ('info', 'Regravei historico do SE5 para: ' + se5 -> e5_histor)
+				else
+					u_log2 ('erro', 'Nao encontrei SE5 para atualizar historico e chave externa.')
+				endif
+				
+				if fk2 -> fk2_valor == se2 -> e2_valor .and. fk2 -> fk2_motbx == 'NOR'  // Para ter mais certeza de que estah posicionado no registro correto.
+					reclock ('FK2', .F.)
+					fk2 -> fk2_histor = left (alltrim (fk2 -> fk2_histor) + ' TR.FIL.' + _sFilDest + ' ' + se2 -> e2_hist, tamsx3 ("FK2_HISTOR")[1])
+					msunlock ()
+					u_log2 ('info', 'Regravei historico do FK2 para: ' + fk2 -> fk2_histor)
+				endif
+
+				// Prepara dados para geracao de objeto JSON para posterior gravacao de batch.
+				_sTxtJSON := '{"EmpDest":"'    + cEmpAnt           + '"'
+				_sTxtJSON += ',"FilDest":"'    + _sFilDest         + '"'
+				_sTxtJSON += ',"DtBxTran":"'   + dtos (_dDtBxTran) + '"'
+				_sTxtJSON += ',"e2_filial":"'  + se2 -> e2_filial  + '"'
+				_sTxtJSON += ',"e2_num":"'     + se2 -> e2_num     + '"'
+				_sTxtJSON += ',"e2_prefixo":"' + se2 -> e2_prefixo + '"'
+				_sTxtJSON += ',"e2_parcela":"' + se2 -> e2_parcela + '"'
+				_sTxtJSON += ',"e2_fornece":"' + se2 -> e2_fornece + '"'
+				_sTxtJSON += ',"e2_loja":"'    + se2 -> e2_loja    + '"'
+				_sTxtJSON += ',"e2_valor":"'   + cvaltochar (se2 -> e2_valor) + '"'  // Este eh mais por garantia de encontrar o titulo certo...
+				_sTxtJSON += '}'
+				U_Log2 ('debug', _stxtJSON)
+
+				// Se fez a baixa na filial de origem, agenda rotina batch para a inclusao na filial de destino.
+				_oBatchDst := ClsBatch():new ()
+				_oBatchDst:Dados    = 'Transf.sld.SE2 fil.' + cFilAnt + ' p/' + _sFilDest + '-Forn.' + se2 -> e2_fornece + '/' + se2 -> e2_loja
+				_oBatchDst:EmpDes   = cEmpAnt
+				_oBatchDst:FilDes   = _sFilDest
+				_oBatchDst:DataBase = se2 -> e2_emissao
+				_oBatchDst:Modulo   = 6  // Campo E2_VACHVEX nao eh gravado em alguns modulos... vai saber...
+				_oBatchDst:Comando  = "U_BatTrSE2()"
+				_oBatchDst:JSON     = _sTxtJSON
+				if ! _oBatchDst:Grava ()
+					_oBatch:Mensagens += "Erro gravacao batch filial destino"
+					_oBatch:Retorno = 'N'
+					_lContinua = .F.
+				endif
+				
+				
+				// durante testes
+				EXIT
+
+
+			endif
+			(_sAliasQ) -> (dbskip ())
+		enddo
+	endif
 return
