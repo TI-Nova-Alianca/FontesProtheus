@@ -11,6 +11,7 @@
 // #Modulos   		  #FIN 
 //
 // Historico de alteracoes:
+// 29/03/2021 - Cláudia - Incluido logs de execução
 //
 // --------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -26,6 +27,9 @@ User Function BatZB5Mail()
     Local _nTotFil  := 0
     Local _x        := 0
     Local _i        := 0
+
+    u_logIni ()
+	u_log ("Iniciando em", date (), time ())
 
     _nDiaSemana := Dow(date())
 
@@ -64,6 +68,7 @@ User Function BatZB5Mail()
         _oSQL:_sQuery += " AND CT2_DATA = '" + DTOS(_dDate) + "'"
         _oSQL:_sQuery += " AND CT2_HIST LIKE 'TRANSF ENTRE CONTAS FL " + _aFilial[_x,1] + "'"
         _oSQL:_sQuery += " GROUP BY CT2_FILIAL, CT2_HIST"
+        u_log (_oSQL:_sQuery)
         _aCT201 := aclone (_oSQL:Qry2Array ()) 
 
         // Busca registro da filial
@@ -79,6 +84,7 @@ User Function BatZB5Mail()
         _oSQL:_sQuery += " AND CT2_DATA = '" + DTOS(_dDate) + "'"
         _oSQL:_sQuery += " AND CT2_HIST LIKE 'TRANSF ENTRE CONTAS FL " + _aFilial[_x,1] + "'"
         _oSQL:_sQuery += " GROUP BY CT2_FILIAL, CT2_HIST"
+        u_log (_oSQL:_sQuery)
         _aCT2Fil := aclone (_oSQL:Qry2Array ()) 
 
         If Len(_aCT201) > 0
@@ -124,6 +130,7 @@ User Function BatZB5Mail()
         _oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
         _oSQL:_sQuery += " AND CT2_DATA = '" + DTOS(_dDate) + "'"
         _oSQL:_sQuery += " AND CT2_HIST LIKE 'TRANSF ENTRE CONTAS FL " + _aFilial[_x,1] + "'"
+        u_log (_oSQL:_sQuery)
         // _oSQL:_sQuery += " ORDER BY CT2_HIST, CT2_FILIAL"
         _aRetErro := aclone (_oSQL:Qry2Array ())
 
@@ -168,4 +175,6 @@ User Function BatZB5Mail()
 
 		U_SendMail (_sDestin, "Transferencias de valores entre filiais", _sMsg, {})
     EndIf
+
+    u_logFim ()
 Return
