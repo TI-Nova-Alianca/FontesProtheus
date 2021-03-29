@@ -12,6 +12,7 @@
 // #Modulos   		  #FIN 
 //
 // Historico de alteracoes:
+// 29/03/2021 - Claudia - Incluida filial 13. GLPI: 9710
 //
 // --------------------------------------------------------------------------
 User function ZB1_FEC()

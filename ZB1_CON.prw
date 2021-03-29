@@ -21,6 +21,7 @@
 // 04/12/2020 - Claudia - Alteração de ajustes para arredondamento. GLPI: 8970
 // 07/12/2020 - Claudia - Inclusao do calculo de taxa para registros que a cielo adiciona em apenas um cabeçalho.
 // 08/03/2021 - Cláudia - Alterado o motivo da baixa para links. GLPI:9574
+// 29/03/2021 - Claudia - Incluida filial 13. GLPI: 9710
 //
 // -----------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -43,7 +44,7 @@ User Function ZB1_CON(_sConciliar)
 		u_help("Empresa matriz não pode efetuar baixa pelo menu Conciliar Cielo Loja")
 		_lcont := .F.
 	EndIf
-	If cFilAnt == '10' .and. _sConciliar == '2' // conciliação link
+	If (cFilAnt == '10' .or. cFilAnt == '13') .and. _sConciliar == '2' // conciliação link
 		u_help("Baixas pelo Conciliar Cielo Link efetuadas apenas na empresa matriz")
 		_lcont := .F.
 	EndIf

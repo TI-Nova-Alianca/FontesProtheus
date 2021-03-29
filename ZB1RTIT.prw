@@ -11,6 +11,7 @@
 // #Modulos 		  #FIN 
 //
 // Historico de alteracoes:
+// 29/03/2021 - Claudia - Incluida filial 13. GLPI: 9710
 //
 // --------------------------------------------------------------------------
 #include 'protheus.ch'

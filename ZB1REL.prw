@@ -13,6 +13,7 @@
 // Historico de alteracoes:
 // 05/03/2021 - Claudia - Ajuste dos totalizadores para nao incluir os débitos. GLPI:9369
 // 09/03/2021 - Cláudia - Incluido Valor Total(Parcela - Taxa)
+// 29/03/2021 - Claudia - Incluida filial 13. GLPI: 9710
 //
 // --------------------------------------------------------------------------------------
 #include 'protheus.ch'

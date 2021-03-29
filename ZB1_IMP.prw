@@ -15,6 +15,7 @@
 // 02/12/2020 - Claudia - Ajuste de devoluções - GLPI: 8937
 // 06/01/2020 - Claudia - Incluido totalizador e coluna de status de titulo. GLPI: 9079
 // 05/03/2021 - Claudia - Ajuste dos totalizadores para nao incluir os débitos. GLPI:9369
+// 29/03/2021 - Claudia - Incluida filial 13. GLPI: 9710
 //
 // --------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -336,6 +337,9 @@ Static Function BuscaFilial(_sEmpresa)
 			
 		Case alltrim(_sEmpresa) == '2778224593'
 			sFilial := '01'
+
+		Case alltrim(_sEmpresa) == '2773811253'
+			sFilial := '13'
 			
 	EndCase
 	
@@ -347,7 +351,7 @@ Static Function Buscabanco(_sEmpresa,_sTipo)
 	local _sRet := ""
 	
 	Do Case
-		Case alltrim(_sEmpresa) == '1032432176'
+		Case alltrim(_sEmpresa) == '1032432176' // filial 10
 			Do Case 
 				Case _sTipo == 'B' // banco
 					_sRet := '041'
@@ -357,7 +361,7 @@ Static Function Buscabanco(_sEmpresa,_sTipo)
 					_sRet := '0606136809'
 			EndCase
 
-		Case alltrim(_sEmpresa) == '2778224593'
+		Case alltrim(_sEmpresa) == '2778224593' // matriz
 			Do Case 
 				Case _sTipo == 'B' // banco
 					_sRet := '001'
@@ -365,6 +369,16 @@ Static Function Buscabanco(_sEmpresa,_sTipo)
 					_sRet := '3412'
 				Case _sTipo == 'C' // conta
 					_sRet := '32972'
+			EndCase
+
+		Case alltrim(_sEmpresa) == '2773811253' // filial 13
+			Do Case 
+				Case _sTipo == 'B' // banco
+					_sRet := '041'
+				Case _sTipo == 'A' // agencia
+					_sRet := '0873'
+				Case _sTipo == 'C' // conta
+					_sRet := '0619710901'
 			EndCase
 			
 	EndCase

@@ -13,6 +13,7 @@
 // Historico de alteracoes:
 // 02/12/2020 - Claudia - Ajuste de devoluções - GLPI: 8937
 // 24/02/2021 - Claudia - Invertida a legenda 
+// 29/03/2021 - Claudia - Incluida filial 13. GLPI: 9710
 //
 // --------------------------------------------------------------------------
 #Include "Protheus.ch"
