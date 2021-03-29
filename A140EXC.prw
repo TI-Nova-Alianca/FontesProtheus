@@ -13,21 +13,23 @@
 // Historico de alteracoes:
 // 15/05/2018 - Maurício C. Dani - TOTVS RS - Importação XML TOTVS
 // 24/02/2021 - Claudia - Ajustes conforme GLPI: 9481
+// 29/03/2021 - Robert  - Variavel _lRet estava com nome lRet cfe. importador XML da TRS.
 //
-// --------------------------------------------------------------------------
+
 #Include 'protheus.ch'
 
+// --------------------------------------------------------------------------
 User Function A140EXC()
 
 	Local _aAreaAnt := U_ML_SRArea ()
 	Local aZone		:= GetArea()
-	Local lRet 		:= .F.
+	Local _lRet 		:= .F.
 	Local lImpXml   := SuperGetMV('VA_XMLIMP', .F., .F.)
 	Private _aRet 	:= {}
 	Private _cTabMAN:= AllTrim(SuperGetMv("009_TABMAN"  ,.F.,"" ))
 
 	If lImpXml // Importador XML TOTVS
-		lRet 	:= .F.
+		_lRet 	:= .F.
 
 		If !SuperGetMV('009_USAMAN', .F., .F.)
 			Return .T.
@@ -41,11 +43,11 @@ User Function A140EXC()
 			Return .T.
 		EndIf
 
-		lRet := U_fTelaManif()
+		_lRet := U_fTelaManif()
 		RestArea(aZone)
 
 	else
-		lRet 	:= .T.
+		_lRet 	:= .T.
 
 		zzx -> (dbsetorder (4))
 		if zzx -> (dbseek (SF1->F1_CHVNFE, .F.))
