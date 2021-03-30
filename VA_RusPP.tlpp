@@ -7,10 +7,11 @@
 // 14/01/2021 - Robert - Criada coluna 4 com valores (a distr.por percentuais penaliza sempre a ultima parcela (frete)
 // 12/02/2021 - Robert - Novos parametros metodo ClsAssoc:FechSafra() - GLPI 9318
 // 08/03/2021 - Robert - Novos parametros metodo ClsAssoc:FechSafra (GLPI 9572)
+// 29/03/2021 - Robert - Calculava datas a partir da variavel dDataBase. Agora recebe a data de emissao por parametro (GLPI 9592).
 //
 
 // ------------------------------------------------------------------------------------
-User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
+User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 	local _sError     := ''
 	local _sWarning   := ''
 	local _sXMLFech   := ''
@@ -167,7 +168,8 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
 				// Como pagamos a primeira parcela no final do mes de marco, e a safra ainda pode estar em andamento,
 				// vou usar uma data de corte antes do final do mes, para dar tempo ao financeiro de gerar faturas e
 				// enviar ao banco.
-				if month (dDataBase) == 3 .and. day (dDataBase) > 20
+				// if month (dDataBase) == 3 .and. day (dDataBase) > 20
+				if month (_dEmissao) == 3 .and. day (_dEmissao) > 20
 //					U_Log2 ('info', 'Fora da data de corte. Movendo 1a.parcela para o mes de abril.')
 					_sMesVcSaf = '04'
 				else
@@ -196,7 +198,8 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
 				_sMesVcSaf = '01'
 			else
 				u_help ("Sem tratamento para parcela " + cvaltochar (_nParcel) + " no ajuste de datas de pagamento de safra.",, .T.)
-				_dVctSafra = dDataBase
+				// _dVctSafra = dDataBase
+				_dVctSafra = _dEmissao
 			endif
 			_aParcel [_nParcel, 2] = lastday (stod (_sAnoVcSaf + _sMesVcSaf + '01'))
 		next
@@ -205,7 +208,8 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete)
 	// Retroage datas dos vencimentos ateh que sejam datas validas.
 	for _nParcel = 1 to len (_aParcel)
 		if ! empty (_aParcel [_nParcel, 2])
-			do while _aParcel [_nParcel, 2] >= dDataBase .and. datavalida (_aParcel [_nParcel, 2]) > _aParcel [_nParcel, 2]
+			// do while _aParcel [_nParcel, 2] >= dDataBase .and. datavalida (_aParcel [_nParcel, 2]) > _aParcel [_nParcel, 2]
+			do while _aParcel [_nParcel, 2] >= _dEmissao .and. datavalida (_aParcel [_nParcel, 2]) > _aParcel [_nParcel, 2]
 				_aParcel [_nParcel, 2] -= 1
 			enddo
 		endif

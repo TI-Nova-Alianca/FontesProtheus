@@ -210,7 +210,7 @@ static function _ConfParc (_lAjustar)
 
 	_oSQL := ClsSQL():New ()
 	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, GRUPO_PAGTO, SUM (VALOR_TOTAL) AS VLR_UVAS, SUM (VALOR_FRETE) AS VLR_FRT"
+	_oSQL:_sQuery += " SELECT SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, GRUPO_PAGTO, SUM (VALOR_TOTAL) AS VLR_UVAS, SUM (VALOR_FRETE) AS VLR_FRT, DATA AS EMISSAO"
 	_oSQL:_sQuery +=   " FROM VA_VNOTAS_SAFRA V"
 	_oSQL:_sQuery +=  " WHERE SAFRA   = '" + cvaltochar (year (date ())) + "'"
 	_oSQL:_sQuery +=    " AND TIPO_NF IN ('C', 'V')"
@@ -221,7 +221,7 @@ static function _ConfParc (_lAjustar)
 		_oSQL:_sQuery +=    " and DOC = '000023832'"
 	endif
 
-	_oSQL:_sQuery += " GROUP BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, GRUPO_PAGTO"
+	_oSQL:_sQuery += " GROUP BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, GRUPO_PAGTO, DATA"
 	_oSQL:_sQuery += " ORDER BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, GRUPO_PAGTO"
 	_oSQL:Log ()
 	_sAliasQ := _oSQL:Qry2Trb (.F.)
@@ -262,7 +262,7 @@ static function _ConfParc (_lAjustar)
 			enddo
 
 			// Gera array de parcelas previstas cfe. regras de pagamento.
-			_aParcPrev = U_VA_RusPP ((_sAliasQ) -> safra, (_sAliasQ) -> grupo_pagto, (_sAliasQ) -> vlr_uvas, (_sAliasQ) -> vlr_frt)
+			_aParcPrev = U_VA_RusPP ((_sAliasQ) -> safra, (_sAliasQ) -> grupo_pagto, (_sAliasQ) -> vlr_uvas, (_sAliasQ) -> vlr_frt, stod ((_sAliasQ) -> emissao))
 			_nSomaPrev = 0
 			for _nParc = 1 to len (_aParcPrev)
 		//		aadd (_aParcPrev [_nParc], round ((_aParcPrev [_nParc, 3] * ((_sAliasQ) -> vlr_uvas + (_sAliasQ) -> vlr_frt) / 100), 2))
@@ -706,6 +706,7 @@ static function _TransFil ()
 	local _sSafrComp := strzero (year (dDataBase), 4)
 	local _sFilDest  := '01'
 	local _dDtBxTran := ctod ('')
+	local _sHistSE5  := ''
 	local _sTxtJSON  := ''
 	local _oBatchDst := NIL
 	Private lMsErroAuto := .F.
@@ -757,6 +758,17 @@ static function _TransFil ()
 		_oSQL:_sQuery +=                   " AND V.DOC         = SE2.E2_NUM"
 		_oSQL:_sQuery +=                   " AND V.TIPO_NF     IN ('C', 'V')"
 		_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC = 'NAO ASSOCIADO')"
+		_oSQL:_sQuery +=    " AND SE2.E2_SALDO = E2_VALOR"
+		
+		
+		
+		
+		// primeiro pagamento faremos data de corte 26/03/2021. REMOVER ISTO AQUI DEPOIS !!!!
+//		_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO <= '20210326'"
+		
+		
+		
+		
 		_oSQL:_sQuery +=  " ORDER BY SE2.E2_FORNECE, SE2.E2_LOJA, SE2.E2_NUM, SE2.E2_PREFIXO, SE2.E2_PARCELA"
 		_oSQL:Log ()
 		_sAliasQ = _oSQL:Qry2Trb (.T.)
@@ -765,6 +777,7 @@ static function _TransFil ()
 		do while _lContinua .and. ! (_sAliasQ) -> (eof ())
 			se2 -> (dbgoto ((_sAliasQ) -> RegSE2))
 			_dDtBxTran = se2 -> e2_emissao  // Quero transferir para a matriz na mesma data da emissao
+			ddatabase = se2 -> e2_emissao  // Quero transferir para a matriz na mesma data da emissao
 
 			U_Log2 ('info', 'Registro do SE2 a ser baixado via conta transitoria: ' + cvaltochar (se2 -> (recno ())) + ' ' + se2 -> e2_num + '/' + se2 -> e2_prefixo + '-' + se2 -> e2_parcela + ' de ' + se2 -> e2_fornece + '/' + se2 -> e2_loja)
 			if se2 -> e2_saldo <= 0 .or. se2 -> e2_saldo != se2 -> e2_valor
@@ -799,9 +812,7 @@ static function _TransFil ()
 			// de novo movimento na filial destino.
 			_aTit [8] = _dDtBxTran
 			
-			U_Log2 ('debug', _aTit)
-			return // testes
-
+			_sHistSE5 = 'TR.SLD.P/FIL.' + _sFilDest + ' REF.' + se2 -> e2_hist
 
 			lMsErroAuto = .F.
 			MSExecAuto({|x,y| Fina090(x,y)},3,_aTit)
@@ -809,9 +820,6 @@ static function _TransFil ()
 				_lContinua = .F.
 				U_Log2 ('erro', u_LeErro (memoread (NomeAutoLog ())))
 			else
-
-				// Se fez a baixa, ajusta historico do movimento bancario.
-				_sHistSE5 = 'TR.SLD.P/FIL.' + _sFilDest + ' REF.' + se2 -> e2_hist
 
 				// Arquivo SE5 vem, algumas vezes, desposicionado. Robert, 20/12/2016.
 				se2 -> (dbgoto (_aTit [1, 1]))
@@ -844,7 +852,7 @@ static function _TransFil ()
 				
 				if fk2 -> fk2_valor == se2 -> e2_valor .and. fk2 -> fk2_motbx == 'NOR'  // Para ter mais certeza de que estah posicionado no registro correto.
 					reclock ('FK2', .F.)
-					fk2 -> fk2_histor = left (alltrim (fk2 -> fk2_histor) + ' TR.FIL.' + _sFilDest + ' ' + se2 -> e2_hist, tamsx3 ("FK2_HISTOR")[1])
+					fk2 -> fk2_histor = left (alltrim (fk2 -> fk2_histor) + ' ' + _sHistSE5, tamsx3 ("FK2_HISTOR")[1])
 					msunlock ()
 					u_log2 ('info', 'Regravei historico do FK2 para: ' + fk2 -> fk2_histor)
 				endif
@@ -880,7 +888,7 @@ static function _TransFil ()
 				
 				
 				// durante testes
-				EXIT
+//				EXIT
 
 
 			endif

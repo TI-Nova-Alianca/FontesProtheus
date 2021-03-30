@@ -31,6 +31,7 @@
 //                     - Melhorados logs e mensagens de erro.
 // 16/06/2020 - Robert - TInha um dbskip() a mais e perdia a pre-nf quando a mesma tivesse apenas um item.
 // 15/02/2021 - Robert - Passa a prever parcelas via VA_RusPP.prw para manter consistencia com VA_RusN (GLPI 9389)
+// 29/03/2021 - Robert - Novo parametro funcao VA_RusPP (GLPI 9592).
 //
 
 #include "tbiconn.ch"
@@ -1026,7 +1027,7 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 
 	// Prepara valores e datas das parcelas do financeiro, para ser lida pelo P.E. MTColSE2
 	if _lContinua
-		_aParPgSaf := aclone (U_VA_RusPP (_sSafra, _sGrpPagto, _nVlrUvas, 0))
+		_aParPgSaf := aclone (U_VA_RusPP (_sSafra, _sGrpPagto, _nVlrUvas, 0, dDataBase))
 		if len (_aParPgSaf) == 0
 			u_help ("Sem definicao de parcelamento para pagamento.",, .T.)
 			_lContinua = .F.

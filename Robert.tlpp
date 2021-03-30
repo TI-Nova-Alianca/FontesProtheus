@@ -27,7 +27,7 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '01' modulo 'FIN'
+		prepare environment empresa '01' filial '03' modulo 'FIN'
 		private cModulo   := 'FIN'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -84,17 +84,27 @@ static function _AndaLogo ()
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
-	u_help ('Nada definido.')
-return
+//	u_help ('Nada definido.')
+//return
+
+	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+	u_batsafr ('3')
+RETURN
 /*
-//	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batsafr ('9')
-	_sArqLog := 'U_BatTrSE2_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-	u_log (cmodulo)
-	u_log (nmodulo)
-	zz6 -> (dbgoto (41349))
-	_oBatch := ClsBatch ():New (zz6 -> (recno ()))
-	u_va_zz6ex ()
+	if cFilAnt == '03'
+		_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+		u_batsafr ('9')
+	elseif cFilAnt == '01'
+		_sArqLog := 'U_BatTrSE2_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "select R_E_C_N_O_ FROM ZZ6010 where D_E_L_E_T_ = '' and UPPER (ZZ6_CMD) LIKE '%BATTRSE2%' and ZZ6_ATIVO = 'S' and ZZ6_RODADO != 'S'"
+		_aDados := _oSQL:Qry2Array (.f., .f.)
+		for _nDado = 1 to len (_adados)
+			zz6 -> (dbgoto (_aDados [_nDado, 1]))
+			_oBatch := ClsBatch ():New (zz6 -> (recno ()))
+			u_va_zz6ex ()
+		next
+	endif
 return
 */
 /*

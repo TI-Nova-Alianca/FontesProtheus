@@ -1,0 +1,218 @@
+// Programa:   BatTrSE2
+// Autor:      Robert Koch
+// Data:       29/03/2021
+// Descricao:  Gera titulo no SE2 proveniente de transferencia de outra filial
+//             Inicialmente para transferir pagamentos de safra de nao associados para a matriz.
+//             Criado para ser executado via batch (com base no BatTrSZI de 10/10/2012)
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #atualizacao
+// #Descricao         #Batch que importa titulos a pagar que foram transferidos de outra filial (baixados via conta transitoria)
+// #PalavasChave      #contas_a_pagar #transferencia
+// #TabelasPrincipais #SE2
+// #Modulos           #COOP #FIN
+
+// Historico de alteracoes:
+//
+
+// --------------------------------------------------------------------------
+user function BatTrSE2 ()
+	local _lContinua := .T.
+	local _oSQL      := NIL
+	local _nRegOri   := 0
+	local _dVctoSE2  := ctod ('')
+	local _oJSBatch  := NIL
+	local _sJSErro   := ''
+	local _sFKAIDPR  := ''
+	local _aAutoSE2  := {}
+
+	if _lContinua .and. empty (_oBatch:JSON)
+		u_help ("Esta rotina espera receber dados em formato JSON a partir do objeto _oBatch.",, .t.)
+		_lContinua = .F.
+	else
+		_oJSBatch := JsonObject():new()
+		_sJSErro := _oJSBatch:FromJson (_oBatch:JSON)
+		if ValType(_sJSErro) == "C"
+			U_help (_sJSErro,, .t.)
+			_lContinua = .F.
+	//	else
+	//		U_Log2 ('debug', _oJSBatch)
+		endif
+	endif
+	if _lContinua .and. _oJSBatch:GetJSONObject ('EmpDest') + _oJSBatch:GetJSONObject ('FilDest') != cNumEmp
+		u_help ("Movimento nao destinado a esta empresa/filial.",, .t.)
+		_lContinua = .F.
+	endif
+
+	// A rotina FINA050 soh funciona dentro destes modulos.
+	If _lContinua .and. !(AmIIn(5,6,7,11,12,14,41,97,17))           // Somente Fin,GPE, Vei, Loja , Ofi, Pecas e Esp, EIC
+		u_help ("FINA050 funciona apenas nos seguintes modulos: Fin,GPE, Vei, Loja , Ofi, Pecas e Esp, EIC",, .t.)
+		_lContinua = .F.
+	endif
+
+	// Encontra a baixa feita neste titulo, para conferir se foi mesmo via conta transitoria.
+	if _lContinua
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT FKA_IDPROC"
+		_oSQL:_sQuery +=  " FROM " + RETSQLNAME ("FK2") + " FK2, "
+		_oSQL:_sQuery +=             RETSQLNAME ("FKA") + " FKA, "
+		_oSQL:_sQuery +=             RETSQLNAME ("FK7") + " FK7, "
+		_oSQL:_sQuery +=             RETSQLNAME ("SE2") + " SE2 "
+
+		// Ignora movimentos estornados
+		// Pelo que entendi das tabelas FK, cada movimento gera um 'processo' na tabela FKA.
+		// Caso o movimento seja estornado, cria-se novo registro na FKA com o mesmo processo
+		// amarrando ao movimento de estorno.
+		_oSQL:_sQuery += " WHERE NOT EXISTS (SELECT * "
+		_oSQL:_sQuery +=                   " FROM " + RetSQLName ("FKA") + " FKA, "
+		_oSQL:_sQuery +=                              RetSQLName ("FKA") + " FKA2, "
+		_oSQL:_sQuery +=                              RetSQLName ("FK2") + " FK2_ESTORNO "
+		_oSQL:_sQuery +=                  " WHERE FKA.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=                    " AND FKA.FKA_FILIAL   = FK2.FK2_FILIAL"
+		_oSQL:_sQuery +=                    " AND FKA.FKA_IDORIG   = FK2.FK2_IDFK2"
+		_oSQL:_sQuery +=                    " AND FKA.FKA_TABORI   = 'FK2'"
+		_oSQL:_sQuery +=                    " AND FKA2.D_E_L_E_T_  = ''"
+		_oSQL:_sQuery +=                    " AND FKA2.FKA_FILIAL  = FKA.FKA_FILIAL"
+		_oSQL:_sQuery +=                    " AND FKA2.FKA_IDPROC  = FKA.FKA_IDPROC"
+		_oSQL:_sQuery +=                    " AND FKA2.FKA_TABORI  = FKA.FKA_TABORI"
+		_oSQL:_sQuery +=                    " AND FKA2.FKA_IDFKA  != FKA.FKA_IDFKA"
+		_oSQL:_sQuery +=                    " AND FK2_ESTORNO.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=                    " AND FK2_ESTORNO.FK2_FILIAL = FKA2.FKA_FILIAL"
+		_oSQL:_sQuery +=                    " AND FK2_ESTORNO.FK2_IDFK2  = FKA2.FKA_IDORIG"
+		_oSQL:_sQuery +=                    " AND FK2_ESTORNO.FK2_TPDOC  = 'ES'"
+		_oSQL:_sQuery +=                  " )"
+
+		_oSQL:_sQuery += " AND FK2.D_E_L_E_T_ = '' AND FK2.FK2_FILIAL = FK7.FK7_FILIAL AND FK2.FK2_IDDOC  = FK7.FK7_IDDOC"
+		_oSQL:_sQuery += " AND FKA.D_E_L_E_T_ = '' AND FKA.FKA_FILIAL = FK2.FK2_FILIAL AND FKA.FKA_IDORIG = FK2.FK2_IDFK2 AND FKA.FKA_TABORI = 'FK2'
+		_oSQL:_sQuery += " AND FK7.D_E_L_E_T_ = '' AND FK7.FK7_FILIAL = SE2.E2_FILIAL  AND FK7.FK7_ALIAS  = 'SE2' AND FK7.FK7_CHAVE = SE2.E2_FILIAL + '|' + SE2.E2_PREFIXO + '|' + SE2.E2_NUM + '|' + SE2.E2_PARCELA + '|' + SE2.E2_TIPO + '|' + SE2.E2_FORNECE + '|' + SE2.E2_LOJA"
+		_oSQL:_sQuery += " AND SE2.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery += " AND SE2.E2_FILIAL  = '" + _oJSBatch:GetJSONObject ('e2_filial')  + "'"
+		_oSQL:_sQuery += " AND SE2.E2_FORNECE = '" + _oJSBatch:GetJSONObject ('e2_fornece') + "'"
+		_oSQL:_sQuery += " AND SE2.E2_LOJA    = '" + _oJSBatch:GetJSONObject ('e2_loja')    + "'"
+		_oSQL:_sQuery += " AND SE2.E2_NUM     = '" + _oJSBatch:GetJSONObject ('e2_num')     + "'"
+		_oSQL:_sQuery += " AND SE2.E2_PREFIXO = '" + _oJSBatch:GetJSONObject ('e2_prefixo') + "'"
+		_oSQL:_sQuery += " AND SE2.E2_PARCELA = '" + _oJSBatch:GetJSONObject ('e2_parcela') + "'"
+		_oSQL:_sQuery += " AND FK2.FK2_TPDOC != 'ES'"  // Estornos
+		_oSQL:_sQuery += " AND FK2.FK2_DATA   = '" + _oJSBatch:GetJSONObject ('DtBxTran') + "'"
+		_oSQL:_sQuery += " AND FK2.FK2_VALOR  = '" + _oJSBatch:GetJSONObject ('e2_valor') + "'"
+		_oSQL:Log ()
+		_sFKAIDPR = _oSQL:RetQry (1, .F.)
+		if empty (_sFKAIDPR)
+			U_help ('erro', 'Nao consegui encontrar FKA_IDPROC da baixa original. Nao vou gerar novo titulo aqui.',, .T.)
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
+		// Preciso ver se a baixa foi feita via conta transitoria, mas nao tenho o banco/ag/cta na tabela FK2.
+		// Preciso buscar na tabela relacionada (FKA_IDPROC relacionado ao movimento de baixa).
+		// Como a query jah estava complicada demais, optei por fazer outra a partir daqui.
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT COUNT (*)"
+		_oSQL:_sQuery +=  " FROM " + RETSQLNAME ("SEF") + " SEF, "
+		_oSQL:_sQuery +=             RETSQLNAME ("FKA") + " FKA, "
+		_oSQL:_sQuery +=             RETSQLNAME ("SA6") + " SA6 "
+		_oSQL:_sQuery += " WHERE FKA.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND FKA.FKA_FILIAL = '" + _oJSBatch:GetJSONObject ('e2_filial')  + "'"
+		_oSQL:_sQuery +=   " AND FKA.FKA_IDPROC = '" + _sFKAIDPR + "'"
+		_oSQL:_sQuery +=   " AND FKA.FKA_TABORI = 'SEF'"
+		_oSQL:_sQuery +=   " AND SEF.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SEF.EF_FILIAL  = FKA.FKA_FILIAL"
+		_oSQL:_sQuery +=   " AND SEF.EF_IDSEF   = FKA.FKA_IDORIG"
+		_oSQL:_sQuery +=   " AND SEF.EF_BANCO    = A6_COD"
+		_oSQL:_sQuery +=   " AND SEF.EF_AGENCIA  = A6_AGENCIA"
+		_oSQL:_sQuery +=   " AND SEF.EF_CONTA    = A6_NUMCON"
+		_oSQL:_sQuery +=   " AND SEF.EF_VALOR    = " + cvaltochar (_oJSBatch:GetJSONObject ('e2_valor'))
+		_oSQL:_sQuery +=   " AND SA6.D_E_L_E_T_  = ''"
+		_oSQL:_sQuery +=   " AND SA6.A6_FILIAL   = '" + _oJSBatch:GetJSONObject ('e2_filial')  + "'"
+		_oSQL:_sQuery +=   " AND SA6.A6_CONTA    = '101010201099'"  // Conta transitoria entre filiais na contabilidade.
+		_oSQL:Log ()
+		if _oSQL:RetQry (1, .f.) == 0
+			u_help ("Baixa do titulo original nao foi feita via conta transitoria. Nao vou gerar novo titulo aqui.",, .T.)
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
+
+		// Busca dados do SE2, caso exista (nem todos os movimentos geram SE2).
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""                                                                                            
+		_oSQL:_sQuery += " SELECT TOP 1 R_E_C_N_O_"  // Soh deveria encontrar uma ocorrencia, mas usei TOP 1 para garantir.
+		_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2 "
+		_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ != '*'"
+		_oSQL:_sQuery += " AND SE2.E2_FILIAL  = '" + _oJSBatch:GetJSONObject ('e2_filial')  + "'"
+		_oSQL:_sQuery += " AND SE2.E2_FORNECE = '" + _oJSBatch:GetJSONObject ('e2_fornece') + "'"
+		_oSQL:_sQuery += " AND SE2.E2_LOJA    = '" + _oJSBatch:GetJSONObject ('e2_loja')    + "'"
+		_oSQL:_sQuery += " AND SE2.E2_NUM     = '" + _oJSBatch:GetJSONObject ('e2_num')     + "'"
+		_oSQL:_sQuery += " AND SE2.E2_PREFIXO = '" + _oJSBatch:GetJSONObject ('e2_prefixo') + "'"
+		_oSQL:_sQuery += " AND SE2.E2_PARCELA = '" + _oJSBatch:GetJSONObject ('e2_parcela') + "'"
+		_oSQL:Log ()
+		_nRegOri := _oSQL:RetQry (1, .t.)
+		if _nRegOri == 0
+			u_help ("Nao consegui encontrar o titulo original. Nao vou gerar novo titulo aqui.",, .T.)
+			_lContinua = .F.
+		else
+			se2 -> (dbgoto (_nRegOri))
+//			u_logtrb ("SE2")
+
+			_dVctoSE2 = se2 -> e2_vencto
+			if _dVctoSE2 < dDataBase
+				u_help ("Vencimento nao pode ser menor que a data base. Nao vou gerar novo titulo aqui.",, .T.)
+				_lContinua = .F.
+			endif
+		endif
+	endif
+
+	// Gera titulo no contas a pagar.
+	if _lContinua
+		_aAutoSE2 := {}
+		aadd (_aAutoSE2, {"E2_PREFIXO", _oJSBatch:GetJSONObject ('e2_prefixo'),    NIL})
+		aadd (_aAutoSE2, {"E2_NUM"    , _oJSBatch:GetJSONObject ('e2_num'),        Nil})
+		aadd (_aAutoSE2, {"E2_TIPO"   , 'DP',                                      Nil})
+		aadd (_aAutoSE2, {"E2_FORNECE", _oJSBatch:GetJSONObject ('e2_fornece'),    Nil})
+		aadd (_aAutoSE2, {"E2_LOJA"   , _oJSBatch:GetJSONObject ('e2_loja'),       Nil})
+		aadd (_aAutoSE2, {"E2_EMISSAO", se2 -> e2_emissao,                         Nil})
+		aadd (_aAutoSE2, {"E2_VENCTO" , _dVctoSE2,                                 Nil})
+		aadd (_aAutoSE2, {"E2_VENCREA", DataValida (_dVctoSE2),                    Nil})
+		aadd (_aAutoSE2, {"E2_VALOR"  , val(_oJSBatch:GetJSONObject ('e2_valor')), Nil})
+		aadd (_aAutoSE2, {"E2_HIST"   , 'TR.SLD.FIL.' + _oJSBatch:GetJSONObject ('e2_filial') + ' ' + alltrim (se2 -> e2_hist), Nil})
+		aadd (_aAutoSE2, {"E2_PARCELA", _oJSBatch:GetJSONObject ('e2_parcela'),    Nil})
+		aadd (_aAutoSE2, {"E2_ORIGEM" , "FINA050" ,                                Nil})
+		_aAutoSE2 := aclone (U_OrdAuto (_aAutoSE2))
+		u_log2 ('debug', _aAutoSE2)
+
+		lMsErroAuto	:=	.f.
+		lMsHelpAuto	:=	.f.
+		dbselectarea ("SE2")
+		dbsetorder (1)
+		MsExecAuto({ | x,y,z | Fina050(x,y,z) }, _aAutoSE2,, 3)
+		if lMsErroAuto
+
+			// Verifica se o titulo foi gravado, pois casos de avisos na contabilizacao sao entendidos como erros, mas a gravacao ocorre normalmente.
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " SELECT COUNT (*)"
+			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2")
+			_oSQL:_sQuery +=  " WHERE E2_FILIAL  = '" + xfilial ("SE5") + "'"
+			_oSQL:_sQuery +=    " AND E2_PREFIXO = '" + ::Serie   + "'"
+			_oSQL:_sQuery +=    " AND E2_NUM     = '" + ::Doc     + "'"
+			_oSQL:_sQuery +=    " AND E2_PARCELA = '" + _sParcela + "'"
+			_oSQL:_sQuery +=    " AND E2_FORNECE = '" + ::Assoc   + "'"
+			_oSQL:_sQuery +=    " AND E2_LOJA    = '" + ::Loja    + "'"
+			_oSQL:_sQuery +=    " AND D_E_L_E_T_ = ''"
+			_oSQL:Log ()
+			if _oSQL:RetQry () == 0
+				u_help ("Erro na rotina automatica de inclusao de contas a pagar:" + U_LeErro (memoread (NomeAutoLog ())))
+				_lContinua = .F.
+				MostraErro()
+				_oBatch:Retorno = 'N'
+			endif
+		else
+			_oBatch:Retorno = 'S'
+		endif
+	endif
+
+	u_log2 ('info', 'Execucao finalizada.')
+return _lContinua

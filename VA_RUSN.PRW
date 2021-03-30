@@ -45,6 +45,7 @@
 // 16/02/2021 - Robert - Passa a ler parametro VA_TSAFNJ (GLPI 9424)
 //                     - Implementada simulacao de geracao de contranota (GLPI 9420)
 // 19/02/2021 - Robert - Inclusao de chamadas da funcao U_PerfMon() para metricas de performance (GLPI 9409).
+// 29/03/2021 - Robert - Novo parametro funcao VA_RusPP (GLPI 9592).
 //
 
 // ------------------------------------------------------------------------------------
@@ -496,7 +497,7 @@ User Function va_rusN (_lSimulNF)
 
 	// Prepara valores e datas das parcelas do financeiro, para ser lida pelo P.E. MTColSE2
 	if _lContinua
-		_aParPgSaf := aclone (U_VA_RusPP (sze -> ze_safra, _sGrpPgSaf, _nVlrUvas, _nVlFrete))
+		_aParPgSaf := aclone (U_VA_RusPP (sze -> ze_safra, _sGrpPgSaf, _nVlrUvas, _nVlFrete, dDataBase))
 		if len (_aParPgSaf) == 0
 			_lContinua = .F.
 		endif
