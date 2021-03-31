@@ -759,16 +759,6 @@ static function _TransFil ()
 		_oSQL:_sQuery +=                   " AND V.TIPO_NF     IN ('C', 'V')"
 		_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC = 'NAO ASSOCIADO')"
 		_oSQL:_sQuery +=    " AND SE2.E2_SALDO = E2_VALOR"
-		
-		
-		
-		
-		// primeiro pagamento faremos data de corte 26/03/2021. REMOVER ISTO AQUI DEPOIS !!!!
-//		_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO <= '20210326'"
-		
-		
-		
-		
 		_oSQL:_sQuery +=  " ORDER BY SE2.E2_FORNECE, SE2.E2_LOJA, SE2.E2_NUM, SE2.E2_PREFIXO, SE2.E2_PARCELA"
 		_oSQL:Log ()
 		_sAliasQ = _oSQL:Qry2Trb (.T.)

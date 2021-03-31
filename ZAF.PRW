@@ -222,18 +222,17 @@ User Function ZAFM (_aLaudos, _sProduto, _sOP, _sLote, _sAlmox, _sObs)
 	local _nContSafr := 0
 	local _nSafra    := 0
 
-	u_logIni ()
-	
 	// Pega antes os laudos de maior volume.
 	asort (_aLaudos,,, {|_x, _y| _x [2] > _y [2]})
-	u_log ('Laudos para fazer merge:', _aLaudos)
+	u_log2 ('info', 'Laudos para fazer merge:')
+	u_log2 ('info', _aLaudos)
 
 	_aEnsOri = {}
 	_aSafras = {}
 	zaf -> (dbsetorder (1))  // ZAF_FILIAL+ZAF_ENSAIO
 	for _nLaudo = 1 to len (_aLaudos)
 		if ! zaf -> (dbseek (xfilial ("ZAF") + _aLaudos [_nLaudo, 1], .F.))
-//			u_log ("Laudo '" + _aLaudos [_nLaudo, 1] + "' nao cadastrado.")
+			u_log2 ('erro', "Laudo '" + _aLaudos [_nLaudo, 1] + "' nao cadastrado.")
 		else
 			_nAcVol  += zaf -> zaf_acvol
 			_nAcTot  += zaf -> zaf_actot
@@ -300,7 +299,7 @@ User Function ZAFM (_aLaudos, _sProduto, _sOP, _sLote, _sAlmox, _sObs)
 		else
 			_sLauDest = U_VA_INIPD ("ZAF_ENSAIO", .F.)
 			if ! empty (_sLauDest)
-				u_log ('Gravando ZAF_ENSAIO =', _sLauDest)
+				u_log2 ('info', 'Gravando ZAF_ENSAIO = ' + _sLauDest)
 				reclock ("ZAF", .T.)
 				zaf -> zaf_filial = xfilial ("ZAF")
 				zaf -> zaf_ensaio = _sLauDest
@@ -360,5 +359,4 @@ User Function ZAFM (_aLaudos, _sProduto, _sOP, _sLote, _sAlmox, _sObs)
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
 return

@@ -14,7 +14,9 @@
 // 27/05/2017 - Robert  - Inclusao de laudos passa a ter controle de semaforo.
 // 30/05/2017 - Robert  - Nao posicionava no laudo origem antes de fazer a copia dos dados.
 // 17/02/2021 - Claudia - Incluido o parâmetro de filial e de mensagem. GLPI: 5562
+// 31/03/2021 - Robert  - Alteracao logs.
 //
+
 // ----------------------------------------------------------------------------------------
 user function CpLaudo (_sFilial, _sLaudoOri, _sProduto, _sLocal, _sLocaliz, _sLote, _nQtOri, _lMsg)
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -24,8 +26,6 @@ user function CpLaudo (_sFilial, _sLaudoOri, _sProduto, _sLocal, _sLocaliz, _sLo
 	local _sNovo     := ""
 	local _nLock     := 0
 	local _lContinua := .T.
-
-	u_logIni ()
 
 	// Controla inclusao de laudos via semaforo por que desejamos manter numeracao unica entre
 	// todas as filiais via 'SELECT MAX (ZAF_ENSAIO)' e o acesso concorrente nao respeita isso.
@@ -56,7 +56,7 @@ user function CpLaudo (_sFilial, _sLaudoOri, _sProduto, _sLocal, _sLocaliz, _sLo
 		next
 		
 		_sNovo = CriaVar ("ZAF_ENSAIO")
-		u_log ('copiando laudo ', _sLaudoOri, 'para', _sNovo)
+		u_log2 ('info', 'Copiando laudo ' + _sLaudoOri + ' para ' + _sNovo)
 		reclock ("ZAF", .T.)
 
 		for _nCampo = 1 to zaf -> (fcount ())
@@ -89,6 +89,5 @@ user function CpLaudo (_sFilial, _sLaudoOri, _sProduto, _sLocal, _sLocaliz, _sLo
 		U_Semaforo (_nLock)
 	endif
 
-	u_logFim ()
 	U_ML_SRArea (_aAreaAnt)
 return
