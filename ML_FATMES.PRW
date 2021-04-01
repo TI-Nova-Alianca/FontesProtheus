@@ -23,6 +23,7 @@
 // 28/10/2017 - Robert  - Passa a validar parametro VA_SERIECF para leitura de cupons.
 // 22/05/2019 - Catia   - Considerar D1_VALFRE no total das notas de devolucao
 // 19/03/2021 - Claudia - Alterado o valor bruto do item para o cabeçalho. GLPI: 9662
+// 31/03/2021 - Claudia - Alterado o agrupamento dos intes.
 //
 // -----------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
@@ -91,7 +92,7 @@ Static Function RptDetail()
   	_sQuery += " 	 , SUM(SD2.D2_ICMSRET) AS VLR_ST"
 	_sQuery += " 	 , 0 AS VLR_DESCONTO"
 	//_sQuery += " 	 , SUM(SD2.D2_VALBRUT) AS VLR_BRT"
-	_sQuery += "     ,SF2.F2_VALBRUT AS VLR_BRT"
+	_sQuery += "     ,SUM(SF2.F2_VALBRUT) AS VLR_BRT"
   	_sQuery += "  FROM " + RetSQLName ("SD2") + " AS SD2 "
   	_sQuery += "	INNER JOIN " + RetSQLName ("SF2") + " AS SF2 "
   	_sQuery += "			ON (SF2.D_E_L_E_T_ = ''"
@@ -116,9 +117,9 @@ Static Function RptDetail()
 	_sQuery += "   AND SD2.D2_CLIENTE   BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
     _sQuery += "   AND SD2.D2_LOJA      BETWEEN '" + mv_par07 + "' AND '" + mv_par08 + "'"
     if mv_par11 = 1 // opcao analitica 
-    	_sQuery += " GROUP BY SD2.D2_EMISSAO, SF4.F4_MARGEM, SD2.D2_DOC ,SD2.D2_SERIE, SD2.D2_TIPO, SD2.D2_CLIENTE , SD2.D2_LOJA, SD2.D2_EST,SF2.F2_VALBRUT"
+    	_sQuery += " GROUP BY SD2.D2_EMISSAO, SF4.F4_MARGEM, SD2.D2_DOC ,SD2.D2_SERIE, SD2.D2_TIPO, SD2.D2_CLIENTE , SD2.D2_LOJA, SD2.D2_EST"
  	else
- 		_sQuery += " GROUP BY SD2.D2_EMISSAO, SF4.F4_MARGEM,SF2.F2_VALBRUT"
+ 		_sQuery += " GROUP BY SD2.D2_EMISSAO, SF4.F4_MARGEM"
  	endif
     _sQuery += " UNION ALL "
  	_sQuery += " SELECT SD1.D1_DTDIGIT      AS DT_EMISSAO"
@@ -139,7 +140,7 @@ Static Function RptDetail()
     // das 2 uma: ou nao conciliavam direito e nunca viram a situacao dos valores digitados nas despesas
     //            ou foi a primeira vez que aconteceu, por isso o case na data     	 
     //_sQuery += "      , CASE WHEN SD1.D1_DTDIGIT >= '20161201' THEN ROUND(SUM(SD1.D1_TOTAL+SD1.D1_VALIPI+SD1.D1_ICMSRET+SD1.D1_DESPESA+SD1.D1_VALFRE  - SD1.D1_VALDESC ),2)" 
-	_sQuery += "       ,CASE WHEN SD1.D1_DTDIGIT >= '20161201' THEN ROUND(SF1.F1_VALBRUT, 2)"
+	_sQuery += "       ,CASE WHEN SD1.D1_DTDIGIT >= '20161201' THEN ROUND(SUM(SF1.F1_VALBRUT), 2)"
     _sQuery += "             ELSE ROUND(SUM(SD1.D1_TOTAL+SD1.D1_VALIPI+SD1.D1_ICMSRET),2) END AS VLR_BRT"
     _sQuery += "   FROM " + RetSQLName ("SD1") + " AS SD1 "
   	_sQuery += "	 INNER JOIN " + RetSQLName ("SF1") + " AS SF1 "
@@ -170,9 +171,9 @@ Static Function RptDetail()
 	_sQuery += "   AND SD1.D1_FORNECE   BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
     _sQuery += "   AND SD1.D1_LOJA      BETWEEN '" + mv_par07 + "' AND '" + mv_par08 + "'"
     if mv_par11 = 1 // opcao analitica
-    	_sQuery += " GROUP BY SD1.D1_DTDIGIT, SF4.F4_MARGEM, SD1.D1_DOC ,SD1.D1_SERIE, SD1.D1_TIPO, SD1.D1_FORNECE , SD1.D1_LOJA, SF1.F1_EST, SF1.F1_VALBRUT"
+    	_sQuery += " GROUP BY SD1.D1_DTDIGIT, SF4.F4_MARGEM, SD1.D1_DOC ,SD1.D1_SERIE, SD1.D1_TIPO, SD1.D1_FORNECE , SD1.D1_LOJA, SF1.F1_EST"
   	else
- 		_sQuery += " GROUP BY SD1.D1_DTDIGIT, SF4.F4_MARGEM, SF1.F1_VALBRUT"
+ 		_sQuery += " GROUP BY SD1.D1_DTDIGIT, SF4.F4_MARGEM"
  	endif
     if mv_par11 = 1 // opcao analitica
     	_sQuery += " ORDER BY DT_EMISSAO, NOTA, SERIE"
