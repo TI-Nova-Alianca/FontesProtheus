@@ -30,8 +30,8 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 	local _sMesVcSaf  := ''
 	private _oXMLFech := NIL  // Precisa ser do tipo PRIVATE senao a funcao XmlParser() nao funciona... vai entender.
 
-	U_Log2 ('info', 'Iniciando ' + procname ())
-	U_Log2 ('info', 'Calculando parcelas para safra ' + _sSafPag + ' grp: ' + _sGrpPgSaf + ' vlr.uva: ' + cvaltochar (_nVlUva) + ' vlr.frt: ' + cvaltochar (_nVlFrete))
+//	U_Log2 ('info', 'Iniciando ' + procname ())
+//	U_Log2 ('info', 'Calculando parcelas para safra ' + _sSafPag + ' grp: ' + _sGrpPgSaf + ' vlr.uva: ' + cvaltochar (_nVlUva) + ' vlr.frt: ' + cvaltochar (_nVlFrete))
 
 	// Ateh o momento, a forma de pagamento mais longa tem 11 parcelas. Acrescenta uma para o frete.
 	_aParcel = {}
@@ -52,8 +52,6 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 	_oAssocCP = ClsAssoc():New ('000161', '01')
 	//                                _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC
 	_sXmlFech = _oAssocCP:FechSafra (_sSafPag, .f.,     .f.,     .f.,     .f.,     .f.,      .t.,      .f.,      .f.,        .f.,      .f.,      .f.)
-//	_sXmlFech = _oAssocCP:FechSafra (_sSafPag, .t., .F.)
-	U_Log2 ('debug', _sXmlFech)
 
 	// Converte de texto para XML
 	_oXMLFech := XmlParser (_sXmlFech, "_", @_sError, @_sWarning)
@@ -89,7 +87,6 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 		_nParcel ++
 	enddo
 	_nParcFrt = _nParcel
-//	U_Log2 ('debug', 'Usarei a ' + cvaltochar (_nParcFrt) + 'a. parcela para o frete.')
 
 	if _nVlUva == 0
 		u_help ("Sem valor da uva para calcular parcelas de pagamento.",, .T.)
@@ -101,14 +98,12 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 		// Seu percentual fica arredondado para 2 decimais e o vencimento para fevereiro do ano seguinte.
 		_nPerFrt = (_nVlFrete * 100) / (_nVlUva + _nVlFrete)
 		_nPerFrt = round (_nPerFrt, 2)
-//		U_Log2 ('debug', 'Percentual do frete sobre o total: ' + cvaltochar (_nPerFrt))
 		_nPerFrt = round (_nPerFrt, 2)
 		_aParcel [_nParcFrt, 3] = _nPerFrt
 		//
 		// Estando definido quanto o frete representa sobre o total da nota, preciso diminuir
 		// esse percentual proporcionalmente das demais parcelas.
 		_nPerUva = 100 - _nPerFrt
-//		U_Log2 ('debug', 'Percentual restante para a uva: ' + cvaltochar (_nperUva))
 		_nParcel = 1
 		do while _nParcel <= len (_aParcel) .and. _nParcel < _nParcFrt
 			_aParcel [_nParcel, 3] = round (_nPerUva * _aParcel [_nParcel, 1] / 100, 1)
@@ -120,7 +115,6 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 		for _nParcel = 1 to len (_aParcel)
 			_nSomaPer += _aParcel [_nParcel, 3]
 		next
-//		U_Log2 ('debug', 'Calculando ajuste para dif.percent. de ' + cvaltochar (_nSomaPer))
 		_aParcel [_nParcFrt - 1, 3] += (100 - _nSomaPer)
 
 
@@ -136,8 +130,6 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 			_aParcel [_nParcel, 5] = 'SAFRA ' + _sSafPag + ' GRP.' + _sGrpPgSaf
 			_nParcel ++
 		enddo
-		//U_Log2 ('debug', 'antes de ajustar a diferenca de arredondamento de valor da uva:')
-		//U_Log2 ('debug', _aParcel)
 		//
 		// Joga a diferenca de arredondamento do valor da uva na penultima parcela (a ultima tem o frete)
 		_nSomaUva = 0
@@ -146,7 +138,6 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 			_nSomaUva += _aParcel [_nParcel, 4]
 			_nParcel ++
 		enddo
-//		U_Log2 ('debug', 'Calculando ajuste dif.vlr.uva de ' + cvaltochar (_nSomaUva))
 		_aParcel [_nParcFrt - 1, 4] += (_nVlUva - _nSomaUva)
 
 
@@ -162,7 +153,6 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 			endif
 			if _nParcel == _nParcFrt  // Parcela do frete sempre em fevereiro do ano seguinte.
 				_sAnoVcSaf = strzero (val (_sSafPag) + 1, 4)
-				// u_log2 ('debug', _sAnoVcSaf)
 				_sMesVcSaf = '02'
 			elseif _nParcel == 1
 				// Como pagamos a primeira parcela no final do mes de marco, e a safra ainda pode estar em andamento,

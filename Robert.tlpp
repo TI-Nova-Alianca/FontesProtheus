@@ -27,7 +27,7 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '03' modulo 'FIN'
+		prepare environment empresa '01' filial '09' modulo 'FIN'
 		private cModulo   := 'FIN'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -87,8 +87,15 @@ static function _AndaLogo ()
 //	u_help ('Nada definido.')
 //return
 
+	// Batches de safra
 	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-	u_batsafr ('3')
+	u_batsafr ('1')  // cargas sem contranota
+	u_batsafr ('3')  // conferencia geracao das parcelas financeiro
+	u_batsafr ('4')  // contranotas sem carga
+	u_batsafr ('5')  // conferencia fretes
+	u_batsafr ('7')  // gera SZI a partir das parcelas
+	u_batsafr ('8')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
+	u_batsafr ('9')  // Transfere (das filiais para a matriz) os titulos de nao associados.
 RETURN
 /*
 	if cFilAnt == '03'

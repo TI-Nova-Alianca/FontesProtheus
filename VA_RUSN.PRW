@@ -495,6 +495,9 @@ User Function va_rusN (_lSimulNF)
 		enddo
 	endif
 
+		u_help ("em 2021, por estar usando o ponto de entrada MTCOLSE2, foram geradas duplicatas independente do TES mandar gerar duplicatas. AJUSTAR!")
+		_lContinua = .F.
+
 	// Prepara valores e datas das parcelas do financeiro, para ser lida pelo P.E. MTColSE2
 	if _lContinua
 		_aParPgSaf := aclone (U_VA_RusPP (sze -> ze_safra, _sGrpPgSaf, _nVlrUvas, _nVlFrete, dDataBase))
