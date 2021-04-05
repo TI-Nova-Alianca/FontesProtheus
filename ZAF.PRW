@@ -10,6 +10,7 @@
 //                                        - assume finalidade se for igual em todos os laudos envolvidos.
 //                                        - recebe observacao por parametro.
 // 30/09/2019 - Robert - Acrescentados logs para depuracao na funcao de 'merge' de ensaios.
+// 31/03/2021 - Robert - Alteracao logs.
 //
 
 // --------------------------------------------------------------------------

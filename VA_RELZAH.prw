@@ -3,7 +3,9 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Historico de alteracoes:
+// 03/04/2021 - Robert - Removidas chamadas sa funcao ValParRel()
 //
+
 
 // -------------------------------------------------------------------------
 User Function VA_RELZAH()
@@ -147,11 +149,16 @@ Static Function _ValidPerg()
 	local _aRegsPerg := {}
 	
 	//                     PERGUNT                         TIPO TAM DEC VALID F3       OPCOES                      HELP   
-	aadd (_aRegsPerg, {01, "Mes de Referencia ?         ", "C", 02, 0,  "U_VALPARREL(mv_par01, mv_par01, 'Mes', 'MES', .T.)", "     ", {}, ""})
-	aadd (_aRegsPerg, {02, "Ano de Referencia ?         ", "C", 04, 0,  "U_VALPARREL(mv_par02, mv_par02, 'Ano', 'ANO', .T.)", "     ", {}, ""})
+	// aadd (_aRegsPerg, {01, "Mes de Referencia ?         ", "C", 02, 0,  "U_VALPARREL(mv_par01, mv_par01, 'Mes', 'MES', .T.)", "     ", {}, ""})
+	// aadd (_aRegsPerg, {02, "Ano de Referencia ?         ", "C", 04, 0,  "U_VALPARREL(mv_par02, mv_par02, 'Ano', 'ANO', .T.)", "     ", {}, ""})
+	// aadd (_aRegsPerg, {03, "Celula de Producao inicial ?", "C", 04, 0,  "", "ZAH02", {}, ""})
+	// aadd (_aRegsPerg, {04, "Celula de Producao final ?  ", "C", 04, 0,  "U_VALPARREL(mv_par03, mv_par04, 'Celula', 'INTERVALO', .T.)", "ZAH02", {}, ""})
+	// aadd (_aRegsPerg, {05, "Tipo de Impressao ?         ", "N", 01, 0,  "",   "     ", {"Sintetico", "Analitico"}, ""})
+	aadd (_aRegsPerg, {01, "Mes de Referencia ?         ", "C", 02, 0,  "", "     ", {}, ""})
+	aadd (_aRegsPerg, {02, "Ano de Referencia ?         ", "C", 04, 0,  "", "     ", {}, ""})
 	aadd (_aRegsPerg, {03, "Celula de Producao inicial ?", "C", 04, 0,  "", "ZAH02", {}, ""})
-	aadd (_aRegsPerg, {04, "Celula de Producao final ?  ", "C", 04, 0,  "U_VALPARREL(mv_par03, mv_par04, 'Celula', 'INTERVALO', .T.)", "ZAH02", {}, ""})
-	aadd (_aRegsPerg, {05, "Tipo de Impressao ?         ", "N", 01, 0,  "",   "     ", {"Sintetico", "Analitico"}, ""})
+	aadd (_aRegsPerg, {04, "Celula de Producao final ?  ", "C", 04, 0,  "", "ZAH02", {}, ""})
+	aadd (_aRegsPerg, {05, "Tipo de Impressao ?         ", "N", 01, 0,  "", "     ", {"Sintetico", "Analitico"}, ""})
 	
 	U_ValPerg (cPerg, _aRegsPerg)
 Return

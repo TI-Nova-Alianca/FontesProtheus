@@ -1418,7 +1418,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 
 	// Resumo de grau e classificaca por variedade
 	// Termina de calcular as medias por variedade e insere nos dados para retorno da funcao.
-	U_Log2 ('debug', _lFSResVGC)
+	//U_Log2 ('debug', _lFSResVGC)
 	if _lFSResVGC
 		U_Log2 ('debug', 'Buscando resumo por variedade / grau / classif')
 		_sRetFechS += '<resumoVarGrauClas>'
