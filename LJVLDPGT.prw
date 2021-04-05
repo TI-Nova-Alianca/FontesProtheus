@@ -7,12 +7,18 @@
 //
 // Historico de alteracoes:
 // 08/01/2020 - Claudia - Alterada validação de associado, pesquisando pelo código e loja base. GLPI 7305
+// 05/04/2021 - Robert  - Incluidas chamadas da funcao PerfMon para monitoramento de tempos de validacao de funcionarios e associados (GLPI 9573)
+//                      - Nao salvava / restaurava a area de trabalho.
 //
+
 #include 'protheus.ch'
 #include 'parmtype.ch'
 #include 'rwmake.ch' 
 
+// --------------------------------------------------------------------------
 User Function LJVLDPGT()
+	local _aAreaAnt := U_ML_SRArea ()
+	local _aAmbAnt  := U_SalvaAmb ()
 	Local _lRet 	:= .T.
 	//Local dData 	:= PARAMIXB[01]
 	//Local nValor 	:= PARAMIXB[02]
@@ -42,6 +48,8 @@ User Function LJVLDPGT()
 		EndIf
 	EndIf
 	
+	U_SalvaAmb (_aAmbAnt)
+	U_ML_SRArea (_aAreaAnt)
 Return _lRet
 
 //-----------------------------------------------------------------------------------------
@@ -51,6 +59,8 @@ Static Function _VerFunc(sCGC,_lRet)
 	local _lRFun		:= .T.
 	local _lRAssoc	    := .T.
 	
+	U_PerfMon ('I', 'ValidarFuncOuAssocLJVldPgt')  // Deixa variavel pronta para posterior medicao de tempos de execucao
+
 	_sQuery2 += " SELECT" 
 	_sQuery2 += " 	NOME"
 	_sQuery2 += "    ,SITUACAO"
@@ -100,6 +110,7 @@ Static Function _VerFunc(sCGC,_lRet)
 //			_lRet = _VerAssoc(sCGC,_lRet)
 //		EndIf
 //	EndIf
+	U_PerfMon ('F', 'ValidarFuncOuAssocLJVldPgt')
 Return _lRet
 
 //-----------------------------------------------------------------------------------------

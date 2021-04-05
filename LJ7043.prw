@@ -21,12 +21,17 @@
 //                      - Renomeadas funcoes com nomes maiores que 10 caracteres
 //                      - Gera aviso quando associado tiver mais de 1 codigo base.
 // 19/02/2021 - Claudia - Incluidas tags de pesquisa
+// 05/04/2021 - Robert  - Incluidas chamadas da funcao PerfMon para monitoramento de tempos de validacao de funcionarios e associados (GLPI 9573)
+//                      - Nao salvava / restaurava a area de trabalho.
 //
+
 // ---------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
 
 User function LJ7043()
+	local _aAreaAnt := U_ML_SRArea ()
+	local _aAmbAnt  := U_SalvaAmb ()
 	local _lRet     := .T.
 
 	_sCGC     := M -> LQ_VACGC
@@ -40,6 +45,9 @@ User function LJ7043()
 	  		_lRet = _VerFunc(_sCGC,_sTabela,_lRet)
 		EndIf
 	EndIf
+
+	U_SalvaAmb (_aAmbAnt)
+	U_ML_SRArea (_aAreaAnt)
 return _lRet
 //
 //-----------------------------------------------------------------------------------------
@@ -49,6 +57,8 @@ Static Function _VerFunc(_sCGC,_sTabela,_lRet)
 	local _aFun			:= {}
 	local _lRAssoc      := .T.
 	
+	U_PerfMon ('I', 'ValidarFuncOuAssocLJ7043')  // Deixa variavel pronta para posterior medicao de tempos de execucao
+
 	_sQuery2 := " SELECT" 
 	_sQuery2 += " 	  NOME"
 	_sQuery2 += "    ,SITUACAO"
@@ -79,6 +89,7 @@ Static Function _VerFunc(_sCGC,_sTabela,_lRet)
 			_lRet := _VerAssoc(_sCGC,_sTabela,'1',_lRet)
 		EndIf
 	EndIf
+	U_PerfMon ('F', 'ValidarFuncOuAssocLJ7043')
 Return _lRet
 //
 //-----------------------------------------------------------------------------------------
