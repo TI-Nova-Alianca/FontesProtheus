@@ -121,7 +121,7 @@ Static Function PrintReport(oReport)
 		_oSQL:_sQuery += " AND SE1.E1_FILIAL  = '" + _aZB1[i, 1] + "'"
 		If alltrim(_aZB1[i, 1]) <> '01'
 			_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aZB1[i,7] + "'" // Loja salva cod.aut no campo NSU
-			_oSQL:_sQuery += " AND SE1.E1_EMISSAO = '" + DTOS(_aZB1[i,5]) + "'"
+			//_oSQL:_sQuery += " AND SE1.E1_EMISSAO = '" + DTOS(_aZB1[i,5]) + "'"
 		Else
 			_oSQL:_sQuery += " AND SE1.E1_CARTAUT = '" + _aZB1[i,7] + "'"
 			_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aZB1[i,8] + "'"
@@ -130,6 +130,7 @@ Static Function PrintReport(oReport)
 			_oSQL:_sQuery += " AND SE1.E1_PARCELA   = '" + _sParc + "'"
 		EndIf
 		_oSQL:_sQuery += " AND SE1.E1_TIPO   IN ('CC','CD')"
+		u_showmemo(_oSQL:_sQuery )
 		_aTitulo := aclone (_oSQL:Qry2Array ())
 
 		If len(_aTitulo) > 0
