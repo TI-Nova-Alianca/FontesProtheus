@@ -1,30 +1,41 @@
-// Programa:   VerEstq
-// Autor:      Robert Koch
-// Data:       25/10/2010
-// Descricao:  Chamado por outros programas para verificacoes diversas de estoques.
-// 
+// Programa...: VerEstq
+// Autor......: Robert Koch
+// Data.......: 25/10/2010
+// Descricao..: Chamado por outros programas para verificacoes diversas de estoques.
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Atualizacao
+// #Descricao         #Chamado por outros programas para verificacoes diversas de estoques.
+// #PalavasChave      #liberacao #estoque
+// #TabelasPrincipais #SBF #SB8 #SC9
+// #Modulos           #FAT
+//
 // Historico de alteracoes:
 // 16/12/2011 - Robert  - Passa a verificar estoque por localizacao.
-// 10/07/2013 - Leandro - Alteração para que a filial de depósito não seja fixo '04', pegando da tebala ZS da SX5
+// 10/07/2013 - Leandro - Alteração para que a filial de depósito não seja fixo '04', 
+//				          pegando da tebala ZS da SX5
 // 11/12/2013 - Robert  - Quando embarque na propria filial, somava as reservas ao saldo disponivel.
 // 01/02/2014 - Robert  - Passa a mostrar (mas nao usar no calculo) o B2_QTNP.
 // 03/04/2014 - Marcelo - Verifica produtos não enderecados na filial 13.
 // 11/06/2014 - Robert  - Enderecos com bloqueio passam a ser considerados como indisponiveis para estoque.
 // 13/06/2014 - Robert  - Validacao de enderecos bloqueados foi removida
 // 10/07/2014 - Robert  - Passa a considerar campo BE_VADPPED.
-// 15/07/2014 - Robert  - Aplica validacao do campo BE_VADPPED apenas para produtos que controlem enderecamento.
+// 15/07/2014 - Robert  - Aplica validacao do campo BE_VADPPED apenas para produtos que controlem 
+//                        enderecamento.
 // 28/11/2014 - Robert  - Quando informado endereco, nao validava corretamente o estoque por localizacao.
 // 09/02/2015 - Robert  - Volta a validar o estoque do produto 9999.
-// 26/08/2015 - Robert  - Desabilitadas verificacoes de 'usa localizacao', pois nao usamos mais rastreabilidade.
+// 26/08/2015 - Robert  - Desabilitadas verificacoes de 'usa localizacao', pois nao usamos 
+//                        mais rastreabilidade.
 // 09/12/2016 - Robert  - Quando F4_PODER3=='D' considera o B2_QTNP como parte do estoque disponivel.
 //                      - Desabilitados tratamentos para empresa 02.
 // 15/12/2016 - Robert  - Removidos tratamentos para 'filial de embarque'
-//                      - Nao considera mais o B2_QTNP como parte do estoque disponivel quando F4_PODER3=='D'
+//                      - Nao considera mais o B2_QTNP como parte do estoque disponivel 
+//                        quando F4_PODER3=='D'
 // 11/01/2016 - Robert  - Ajustes nos testes de estoque por localizacao.
 // 16/02/2017 - Robert  - Desconsidera B2_QEMP.
+// 05/04/2021 - Claudia - Declaração da variável _nMyReserv e inclusão de tags de pesquisa.
 //
-
-// --------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------
 user function VerEstq (_sOnde, _sProduto, _sFilEmb, _sLocal, _nQtdVen, _sTES, _sLocaliz, _sLote, _sPedido)
 	local _sQuery    := ""
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -32,12 +43,12 @@ user function VerEstq (_sOnde, _sProduto, _sFilEmb, _sLocal, _nQtdVen, _sTES, _s
 	local _lContinua := .T.
 	local _nSldDisp  := 0
 	local _oSQL      := NIL
+	local _nMyReserv := 0
 	//local _nSaldo    := 0
 	//local _nReserva  := 0
 	//local _nEnder    := 0
 	//local _aSldEnder := {}
-	//local _nMyReserv := 0
-
+	
 	//u_logIni ()
 	//U_LOG (_sOnde, _sProduto, _sFilEmb, _sLocal, _nQtdVen, _sTES, _sLocaliz, _sLote, _sPedido)
 
