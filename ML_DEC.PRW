@@ -77,6 +77,7 @@
 // 22/03/2019 - Andre  - Trocado erro por aviso na validação A2_VAREGMA.
 // 10/01/2020 - Robert - Ignora algunas NF de saida de suco em dez/2019 que jah foram digitadas manualmente no site do Sisdevin.
 // 19/03/2021 - Robert - Tratamento para exportar NF de safra tipo C na safra 2021 (GLPI 9660).
+// 05/04/2021 - Robert - Melhorada msg de aviso quando fornecedor nao tem registro no MA informado.
 //
 
 // --------------------------------------------------------------------------
@@ -1274,7 +1275,7 @@ Static Function _Tipo60 ()
 			_sEmpresa := U_TamFixo ((_sAliasQ) -> nome_cf, 40, " ")
 			_sInscMA  := U_TamFixo ((_sAliasQ) -> regma, 8, " ")
 			if empty (_sInscMA)
-				_Aviso ("Fornecedor/Fornecedor " + alltrim ((_sAliasQ) -> clifor) + " e' do tipo Juridico. O campo '" + alltrim (RetTitle ("A2_VAREGMA")) + "' deve ser informado. Contate setor juridico.")
+				_Aviso ("Fornecedor/Fornecedor " + alltrim ((_sAliasQ) -> clifor) + " e' do tipo Juridico. O campo '" + alltrim (RetTitle ("A2_VAREGMA")) + "' deve ser informado. Contate setor responsavel.")
 //				_Erro ("Fornecedor " + alltrim ((_sAliasQ) -> clifor) + " e' do tipo Juridico. O campo '" + alltrim (RetTitle ("A2_VAREGMA")) + "' deve ser informado. Contate setor comercial.")
 			endif
 		elseif alltrim ((_sAliasQ) -> origem) == 'VIEW' .and. (_sAliasQ) -> tipo_cf == "F"
@@ -1292,7 +1293,7 @@ Static Function _Tipo60 ()
 			_sEmpresa := U_TamFixo ((_sAliasQ) -> nome_cf, 40, " ")
 			_sInscMA  := U_TamFixo ((_sAliasQ) -> regma, 8, " ")
 			if empty (_sInscMA)
-				_Aviso ("Fornecedor/Fornecedor " + alltrim ((_sAliasQ) -> clifor) + " e' do tipo Juridico. O campo '" + alltrim (RetTitle ("A2_VAREGMA")) + "' deve ser informado. Contate setor juridico.")
+				_Aviso ("Fornecedor/Fornecedor " + alltrim ((_sAliasQ) -> clifor) + " e' do tipo Juridico. O campo '" + alltrim (RetTitle ("A2_VAREGMA")) + "' deve ser informado. Contate setor responsavel.")
 //				_Erro ("Fornecedor " + alltrim ((_sAliasQ) -> clifor) + " e' do tipo Juridico. O campo '" + alltrim (RetTitle ("A2_VAREGMA")) + "' deve ser informado. Contate setor comercial.")
 			endif
 		elseif alltrim ((_sAliasQ) -> origem) == 'SD2'
@@ -1303,7 +1304,7 @@ Static Function _Tipo60 ()
 			_sEmpresa := U_TamFixo ((_sAliasQ) -> nome_cf, 40, " ")
 			_sInscMA  := U_TamFixo ((_sAliasQ) -> regma, 8, " ")
 			if empty (_sInscMA)
-				_Aviso ("Fornecedor/Fornecedor " + alltrim ((_sAliasQ) -> clifor) + " e' do tipo Juridico. O campo '" + alltrim (RetTitle ("A2_VAREGMA")) + "' deve ser informado. Contate setor juridico.")
+				_Aviso ("Fornecedor/Fornecedor " + alltrim ((_sAliasQ) -> clifor) + " e' do tipo Juridico. O campo '" + alltrim (RetTitle ("A2_VAREGMA")) + "' deve ser informado. Contate setor responsavel.")
 //				_Erro ("Fornecedor " + alltrim ((_sAliasQ) -> clifor) + " e' do tipo Juridico. O campo '" + alltrim (RetTitle ("A2_VAREGMA")) + "' deve ser informado. Contate setor comercial.")
 			endif
 		endif

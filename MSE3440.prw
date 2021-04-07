@@ -29,6 +29,9 @@
 // 26/06/2018 - Catia   - posicionado o SE1 para que fique mais rapido o processamento - nos testes funcionou - 
 //                        aguardar o ok da Andresa
 // 10/08/2020 - Cláudia - Criado novo calculo de comissões com base em informações do Cesar, conforme GLI: 7899
+// 05/04/2021 - Robert  - Incluidas chamadas da funcao PerfMon para monitoramento de tempos na emissao de cupom (GLPI 9573).
+//
+
 // -----------------------------------------------------------------------------------------------------------------------------------
 /*
 #XTranslate .PercPercComis   => 1
@@ -63,6 +66,10 @@ User Function MSE3440 ()
 		u_log ('Estou executando a partir da rotina de preparacao de notas. Abortando.')
 		_lContinua = .F.
 	Endif
+	
+	If _lContinua .and. IsInCallStack ("LOJA701")
+		U_PerfMon ('I', 'MSE3440_em_LOJA701')  // Deixa variavel pronta para posterior medicao de tempos de execucao
+	endif
 	
 	// Posiciona no contas a receber para buscar e atualizar dados.
 	If _lContinua
@@ -477,6 +484,10 @@ User Function MSE3440 ()
 		se3 -> e3_comis := _nNovaComi
 		se3 -> e3_porc  := _npercSE3
 	EndIf
+
+	If _lContinua .and. IsInCallStack ("LOJA701")
+		U_PerfMon ('F', 'MSE3440_em_LOJA701')
+	endif
 
 	U_ML_SRArea (_aAreaAnt)
 	u_logFim ()

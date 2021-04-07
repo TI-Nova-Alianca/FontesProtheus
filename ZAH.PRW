@@ -30,6 +30,7 @@ return
 // Tela de manutencao
 user function ZAHA ()
 	//local   _aUser   := {}
+	local _nLinha := 0
 	Local   _aRotAdic := {}
 	private _sCelula := ""
 	private _sDescri := ""
@@ -161,7 +162,8 @@ user function ZAHA ()
 
 		// Grava dados do aCols.
 		ZAH -> (dbsetorder (1))  // ZAH_FILIAL + ZAH_CELCOD + ZAH_USER
-		for N = 1 to len (aCols)
+		for _nLinha = 1 to len (aCols)
+			N = _nLinha
 			if !Empty(GDFieldGet("ZAH_BEMCOD"))
 				if GDFieldGet("ZAH_RECNO") > 0
 					ZAH -> (dbgoto (GDFieldGet ("ZAH_RECNO")))
@@ -238,7 +240,6 @@ return
 // Validacao de 'Linha OK'
 user function ZAHLK ()
 	local _lRet    := .T.
-	//local _nLinha  := 0
 
 	// Verifica campos obrigatorios
 	if _lRet .and. ! GDDeleted ()

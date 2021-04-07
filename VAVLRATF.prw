@@ -2,10 +2,10 @@
 // Autor:     Sandra Sugari/Robert Koch 
 // Data:      04/11/2019
 // Descricao: Execblock para substituir o parametro MV_VLRATF por falta de espaço na formula.
-// 22/11/2019 Sandra - Inclusão validação SF1->F1_VALIMP5, SF1->F1_VALIMP6
 //
 // Historico de alteracoes:
-
+// 22/11/2019 - Sandra - Inclusão validação SF1->F1_VALIMP5, SF1->F1_VALIMP6
+//
 
 // --------------------------------------------------------------------------------------------------------------------------------
 

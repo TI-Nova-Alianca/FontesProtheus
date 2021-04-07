@@ -24,6 +24,7 @@
 // 01/02/2021 - Robert - Criado parametro que permite ajustar os titulos, para casos especificos de recalculo de frete (ainda nao testado/usado).
 // 12/03/2021 - Robert - Migrado e-mail diario de acompanhamento da safra do U_BatCSaf() para este programa.
 //                     - Implementada geracao do SZI e verificacao de inconsistencias SZI x SE2 (GLPI 9592).
+// 03/04/2021 - Robert - Recalcula saldo do SZI antes de enviar aviso de diferenca com o SE2.
 //
 
 // --------------------------------------------------------------------------
@@ -45,7 +46,8 @@ user function BatSafr (_sQueFazer, _lAjustar)
 	if _sQueFazer == '1'
 		_aSemNota = {}
 		dbselectarea ("SZE")
-		set filter to &('ZE_FILIAL=="' + xFilial("SZE") + '".And.ze_safra=="'+cvaltochar (year (date ()))+'".and.ze_coop$"000021".and.empty(ze_nfger).and.dtos(ze_data)<"' + dtos (ddatabase) + '".and.ze_aglutin!="O".and.ze_assoc!="003114"')
+//		set filter to &('ZE_FILIAL=="' + xFilial("SZE") + '".And.ze_safra=="'+cvaltochar (year (date ()))+'".and.ze_coop$"000021".and.empty(ze_nfger).and.dtos(ze_data)<"' + dtos (ddatabase) + '".and.ze_aglutin!="O".and.ze_assoc!="003114"')
+		set filter to &('ZE_FILIAL=="' + xFilial("SZE") + '".And.ze_safra=="'+cvaltochar (year (date ()))+'".and.ze_coop$"000021".and.empty(ze_nfger).and.dtos(ze_data)<"' + dtos (ddatabase) + '".and.ze_aglutin!="O".and.!ze_status$"C/D"')
 		dbgotop ()
 		do while ! eof ()
 			aadd (_aSemNota, {"Filial/carga '" + sze -> ze_filial + '/' + sze -> ze_carga + "' de " + dtoc (sze -> ze_data) + " sem contranota!", sze -> ze_nomasso})
@@ -59,37 +61,14 @@ user function BatSafr (_sQueFazer, _lAjustar)
 			aadd (_aCols, {"Associado",       "left",  "@!"})
 			_oAUtil := ClsAUtil():New (_aSemNota)
 			_sMsg += _oAUtil:ConvHTM ("", _aCols, 'width="80%" border="1" cellspacing="0" cellpadding="3" align="center"', .F.)
+			U_Log2 ('aviso', _sMsg)
 			U_ZZUNU ({'045', '047'}, "Inconsistencias cargas safra", _sMsg)
 		endif
 
 	// Verifica contranotas com cadastro viticola desatualizado
+	// Em desuso. A partir de 2021 trabalha-se com codigo SIVIBE e os cadastros de propriedades
+	// rurais (antigos cad.viticolas) estao no NaWeb
 	elseif _sQueFazer == '2'
-		/* Em desuso. A partir de 2021 trabalha-se com codigo SIVIBE e os cadastros de propriedades
-		   rurais (antigos cad.viticolas) estao no NaWeb
-		_oSQL := ClsSQL():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT DISTINCT 'Filial:' + FILIAL + ' Assoc:' + ASSOCIADO + '-' + RTRIM (NOME_ASSOC) + ' Cad.vit:' + CAD_VITIC"
-		_oSQL:_sQuery +=   " FROM VA_VNOTAS_SAFRA V"
-		_oSQL:_sQuery +=  " WHERE SAFRA   = '" + cvaltochar (year (date ())) + "'"
-		_oSQL:_sQuery +=    " AND TIPO_NF = 'E'"
-		_oSQL:_sQuery +=    " AND NOT EXISTS (SELECT *"
-		_oSQL:_sQuery +=                      " FROM " + RetSQLName ("SZ2") + " SZ2 "
-		_oSQL:_sQuery +=                     " WHERE SZ2.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=                       " AND SZ2.Z2_FILIAL  = '" + xfilial ("SZ2") + "'"
-		_oSQL:_sQuery +=                       " AND SZ2.Z2_CADVITI = V.CAD_VITIC"
-		_oSQL:_sQuery +=                       " AND SZ2.Z2_SAFRVIT = V.SAFRA)"
-		u_log (_oSQL:_sQuery)
-		_aCols = {}
-		aadd (_aCols, {"Mensagem",        "left",  "@!"})
-		_oAUtil := ClsAUtil():New (_oSQL:Qry2Array ())
-		if len (_oAUtil:_aArray) > 0
-			_sMsg := "Contranotas com cadastro viticola inconsistente ou nao renovado:"
-			_sMsg += "<BR>"
-			_sMsg += _oAUtil:ConvHTM ("", _aCols, 'width="80%" border="1" cellspacing="0" cellpadding="3" align="center"', .F.)
-			u_log (_smsg)
-			U_ZZUNU ({'045'}, "Inconsistencias cadastro viticola", _sMsg)
-		endif
-		*/
 
 	// Verifica composicao das parcelas das notas. Em 2021 jah estamos fazendo 'compra' durante a safra.
 	// Como as primeiras notas sairam erradas, optei por fazer esta rotina de novo a identifica-las
@@ -165,6 +144,7 @@ static function _ConfFrt ()
 	_oSQL:_sQuery +=   " FROM VA_VNOTAS_SAFRA V"
 	_oSQL:_sQuery +=  " WHERE SAFRA   = '" + cvaltochar (year (date ())) + "'"
 	_oSQL:_sQuery +=    " AND TIPO_NF = 'C'"
+	_oSQL:_sQuery +=    " AND FILIAL  = '" + cFilAnt + "'"
 	_oSQL:_sQuery += " GROUP BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE"
 	_oSQL:_sQuery += " ORDER BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE"
 	_oSQL:Log ()
@@ -174,7 +154,6 @@ static function _ConfFrt ()
 		if ! sf1 -> (dbseek ((_sAliasQ) -> filial + (_sAliasQ) -> doc + (_sAliasQ) -> serie + (_sAliasQ) -> associado + (_sAliasQ) -> loja_assoc, .F.))
 			_sMsg += "Arquivo SF1 nao localizado" + chr (13) + chr (10)
 		else
-//			u_log2 ('debug', cvaltochar ((_sAliasQ) -> vlr_frt) + '   ' + cvaltochar (sf1 -> f1_despesa))
 			if (_sAliasQ) -> vlr_frt != sf1 -> f1_despesa
 				_sMsg += "Frete no ZF_VALFRET (" + cvaltochar ((_sAliasQ) -> vlr_frt) + ") diferente do campo F1_DESPESA (" + cvaltochar (sf1 -> f1_despesa) + ")" + chr (13) + chr (10)
 			endif
@@ -182,10 +161,10 @@ static function _ConfFrt ()
 		if ! empty (_sMsg)
 			U_Log2 ('erro', 'Inconsistencia frete safra - filial: ' + (_sAliasQ) -> filial + ' NF: ' + (_sAliasQ) -> doc + ' forn: ' + (_sAliasQ) -> associado)
 			U_Log2 ('erro', _sMsg)
-			u_zzunu ({'122'}, 'Inconsistencia frete safra - F.' + (_sAliasQ) -> filial + ' NF: ' + (_sAliasQ) -> doc + ' forn: ' + (_sAliasQ) -> associado, _sMsg)
+			u_zzunu ({'999'}, 'Inconsistencia frete safra - F.' + (_sAliasQ) -> filial + ' NF: ' + (_sAliasQ) -> doc + ' forn: ' + (_sAliasQ) -> associado, _sMsg)
 
 			// cai fora no primeiro erro encontrado (estou ainda ajustando)
-		//	EXIT   // REMOVER DEPOIS !!!!!!!!!!!!!!!!!
+			EXIT   // REMOVER DEPOIS !!!!!!!!!!!!!!!!!
 
 		endif
 		(_sAliasQ) -> (dbskip ())
@@ -214,6 +193,7 @@ static function _ConfParc (_lAjustar)
 	_oSQL:_sQuery +=   " FROM VA_VNOTAS_SAFRA V"
 	_oSQL:_sQuery +=  " WHERE SAFRA   = '" + cvaltochar (year (date ())) + "'"
 	_oSQL:_sQuery +=    " AND TIPO_NF IN ('C', 'V')"
+	_oSQL:_sQuery +=    " AND FILIAL = '" + cFilAnt + "'"
 
 	if _lAjustar  // Soh uso pra casos especiais
 		_oSQL:_sQuery +=    " and FILIAL = '01'"
@@ -252,12 +232,12 @@ static function _ConfParc (_lAjustar)
 				if se2 -> e2_valor != se2 -> e2_vlcruz
 					_sMsg += 'Parcela ' + se2 -> e2_parcela + ' no SE2 diferenca entre e2_valor x e2_vlcruz' + chr (13) + chr (10)
 				endif
-				if se2 -> e2_vencto != se2 -> e2_vencrea
-					_sMsg += 'Parcela ' + se2 -> e2_parcela + ' no SE2 diferenca entre e2_vencto x e2_vencrea' + chr (13) + chr (10)
-				endif
+				//if se2 -> e2_vencto != se2 -> e2_vencrea
+				//	_sMsg += 'Parcela ' + se2 -> e2_parcela + ' no SE2 diferenca entre e2_vencto x e2_vencrea' + chr (13) + chr (10)
+				//endif
 
 				// Calcula o % de participacao de cada parcela sobre o total do valor das uvas
-				aadd (_aParcReal, {se2 -> e2_vencrea, se2 -> e2_valor * 100 / (_sAliasQ) -> vlr_uvas, se2 -> e2_valor, se2 -> e2_parcela})
+				aadd (_aParcReal, {se2 -> e2_vencto, se2 -> e2_valor * 100 / (_sAliasQ) -> vlr_uvas, se2 -> e2_valor, se2 -> e2_parcela})
 				se2 -> (dbskip ())
 			enddo
 
@@ -278,9 +258,15 @@ static function _ConfParc (_lAjustar)
 
 				// apenas verifica
 				for _nParc = 1 to len (_aParcReal)
-					if _aParcReal [_nParc, 1] != _aParcPrev [_nParc, 2]
-						_sMsg += "Diferenca nas datas - linha " + cvaltochar (_nParc) + chr (13) + chr (10)
-						_sMsg += "Real: " + dtoc (_aParcReal [_nParc, 1]) + ' X prev: ' + dtoc (_aParcPrev [_nParc, 2]) + chr (13) + chr (10)
+
+					// bah em 2021 gerei dia 30/03 em vez de 31/03!!!
+					if _aParcReal [_nParc, 1] = stod ('20210330') .and. _aParcPrev [_nParc, 2] == stod ('20210331')
+						// deixa quieto...
+					else
+						if _aParcReal [_nParc, 1] != _aParcPrev [_nParc, 2]
+							_sMsg += "Diferenca nas datas - linha " + cvaltochar (_nParc) + chr (13) + chr (10)
+							_sMsg += "Real: " + dtoc (_aParcReal [_nParc, 1]) + ' X prev: ' + dtoc (_aParcPrev [_nParc, 2]) + chr (13) + chr (10)
+						endif
 					endif
 					if round (_aParcReal [_nParc, 3], 2) != round (_aParcPrev [_nParc, 4], 2)
 						_sMsg += "Diferenca nos valores de uva - linha " + cvaltochar (_nParc) + chr (13) + chr (10)
@@ -354,7 +340,7 @@ static function _ConfParc (_lAjustar)
 			EXIT   // REMOVER DEPOIS !!!!!!!!!!!!!!!!!
 
 		endif
-		U_Log2 ('info', 'Finalizando F' + (_sAliasQ) -> filial + ' NF' + (_sAliasQ) -> doc)
+//		U_Log2 ('info', 'Finalizando F' + (_sAliasQ) -> filial + ' NF' + (_sAliasQ) -> doc)
 		(_sAliasQ) -> (dbskip ())
 	enddo
 return
@@ -570,7 +556,6 @@ static function _GeraSZI ()
 			else
 				se2 -> (dbgoto ((_sAliasQ) -> r_e_c_n_o_))
 				if empty (se2 -> e2_vachvex)  // Soh pra garantir...
-					u_log2 ('debug', 'Gravando e2_vachvex')
 					reclock ("SE2", .F.)
 					se2 -> e2_vachvex = _oCtaCorr:ChaveExt ()
 					msunlock ()
@@ -604,6 +589,7 @@ static function _ConfSZI ()
 	local _aRegSZI   := {}
 	// local _nRegSZI   := 0
 	local _sSafrComp := strzero (year (dDataBase), 4)
+	local _oCtaCorr  := NIL
 
 	U_Log2 ('info', 'Iniciando ' + procname ())
 
@@ -654,8 +640,13 @@ static function _ConfSZI ()
 				_sMsg += _oSQL:_sQuery
 			endif
 			if szi -> zi_saldo != (_sAliasQ) -> e2_saldo
-				_sMsg += "Saldo do SZI (" + cvaltochar (szi -> zi_saldo) + ") diferente do SE2 (" + cvaltochar ((_sAliasQ) -> e2_saldo) + ")." + chr (13) + chr (10)
-				_sMsg += _oSQL:_sQuery
+				// Tenta recalcular o saldo do SZI. Se ainda continuar errado, temos problemas.
+				_oCtaCorr := ClsCtaCorr ():New (szi -> (recno ()))
+				_oCtaCorr:AtuSaldo ()
+				if szi -> zi_saldo != (_sAliasQ) -> e2_saldo
+					_sMsg += "Saldo do SZI (" + cvaltochar (szi -> zi_saldo) + ") diferente do SE2 (" + cvaltochar ((_sAliasQ) -> e2_saldo) + ")." + chr (13) + chr (10)
+					_sMsg += _oSQL:_sQuery
+				endif
 			endif
 			if (_sAliasQ) -> e2_filial != '01'
 				if szi -> zi_saldo > 0
@@ -828,7 +819,6 @@ static function _TransFil ()
 				_oSQL:_sQuery +=   " AND SE5.E5_VACHVEX = ''"
 				//_oSQL:Log ()
 				_nRegSE5 = _oSQL:RetQry ()
-				u_log2 ('debug', 'recno se5 para atualizar: ' + cvaltochar (_nRegSE5))
 				if _nRegSE5 > 0
 					se5 -> (dbgoto (_nRegSE5))
 					reclock ('SE5', .F.)
@@ -859,7 +849,6 @@ static function _TransFil ()
 				_sTxtJSON += ',"e2_loja":"'    + se2 -> e2_loja    + '"'
 				_sTxtJSON += ',"e2_valor":"'   + cvaltochar (se2 -> e2_valor) + '"'  // Este eh mais por garantia de encontrar o titulo certo...
 				_sTxtJSON += '}'
-				U_Log2 ('debug', _stxtJSON)
 
 				// Se fez a baixa na filial de origem, agenda rotina batch para a inclusao na filial de destino.
 				_oBatchDst := ClsBatch():new ()

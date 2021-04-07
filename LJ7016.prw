@@ -2,7 +2,7 @@
 // Programa...: LJ7016
 // Autor......: Cláudia Lionço
 // Data.......: 19/02/2021
-// Descricao..: P.E. Customização da barra de funções
+// Descricao..: P.E. Customização da barra de funções na tela da venda assistida
 //              https://tdn.totvs.com/pages/releaseview.action?pageId=6791060
 //
 // Tags para automatizar catalogo de customizacoes:
