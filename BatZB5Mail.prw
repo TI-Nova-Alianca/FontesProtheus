@@ -31,14 +31,16 @@ User Function BatZB5Mail()
     u_logIni ()
 	u_log ("Iniciando em", date (), time ())
 
-    _nDiaSemana := Dow(date())
+    // _nDiaSemana := Dow(date())
 
-    If _nDiaSemana == 2
-        _dDate := DaySub(date(), 3)
-    Else
-        _dDate := DaySub(date(), 1)
-    EndIf
+    // If _nDiaSemana == 2
+    //     _dDate := DaySub(date(), 3)
+    // Else
+    //     _dDate := DaySub(date(), 1)
+    // EndIf
 
+    _dDate := DaySub(date(), 1)
+    
     // Busca filiais
     _oSQL:= ClsSQL ():New ()
     _oSQL:_sQuery := ""
