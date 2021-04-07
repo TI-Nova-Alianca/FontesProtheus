@@ -5,7 +5,9 @@
 // 
 //  Historico de alteracoes:
 //  21/06/2019 - Andre  - Adicionado validação de datas retroativas.
-//    
+//  07/04/2021 - Robert - Faltava declaracao variavel oParser (GLPI 9774)
+//
+
 //  ---------------------------------------------------------------------------------------------------------------------
 
 #include "PROTHEUS.ch"
@@ -14,6 +16,7 @@ User Function MNTNG()
     Local cId := PARAMIXB[1] //Indica o momento da chamada do PE
     Local oWS := PARAMIXB[2] //Objeto com referência ao webservice
     //Local oParser, aArea, aAreaSTL
+	local oParser := NIL
    // Local _xRet := NIL
       
     If cId == "CANCEL_VALID" //valida cancelamento da ordem
