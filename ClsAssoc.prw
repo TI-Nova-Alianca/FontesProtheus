@@ -94,6 +94,7 @@
 // 05/03/2021 - Robert - Na leitura de prev.pagto. (método FechSafra) nao considerava faturas que podem ainda ser geradas em janeiro do ano seguinte (GLPI 9558).
 //                       Na leitura de prev.pagto. (método FechSafra) somar premio qualid.safra 2020 (GLPI 9530).
 // 08/03/2021 - Robert - Criado resumo variedade/grau/clas no metodo FechSafra (GLPI 9572).
+// 06/04/2021 - Robert - Ajuste metodo FechSafra para pegar somente titulos da safra 2021 (GLPI 9757)
 //
 
 #include "protheus.ch"
@@ -1211,6 +1212,9 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 		_oSQL:_sQuery += " SELECT *"
 		_oSQL:_sQuery +=   " FROM C"
 		_oSQL:_sQuery +=  " WHERE E2_VALOR != 0"  // Os que estao zerados eh por que foram totalmente consumidos em uma fatura.
+		if _sSafra == '2021'
+			_oSQL:_sQuery +=   " AND E2_VENCTO >= '20210301'"  // Estou achando que devo criar um campo E2_VASAFRA para melhorar estes filtros.
+		endif
 
 		// Somar o premio de qualidade referente a safra 2020, mas que foi gerado e pago em 2021 (GLPI 9530 e 9415)
 		if _sSafra == '2020'
@@ -1444,7 +1448,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 			if (_sAliasQ) -> sist_conducao == 'L'
 				_sRetFechS += '<clas>' + cvaltochar ((_sAliasQ) -> clas_abd) + '</clas>'
 			elseif (_sAliasQ) -> sist_conducao == 'E'
-				_sRetFechS += '<clas>' + cvaltochar ((_sAliasQ) -> clas_fina) + '</clas>'
+				_sRetFechS += '<clas>' + cvaltochar ((_sAliasQ) -> clas_final) + '</clas>'
 			else
 				_sRetFechS += '</clas>'
 			endif
