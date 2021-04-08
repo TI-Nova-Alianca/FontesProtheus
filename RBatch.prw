@@ -22,6 +22,7 @@
 // 11/11/2019 - Robert - Incluida a filial 16 para execucao.
 // 28/11/2019 - Robert - Grava aviso quando encontrar bloqueio de semaforo.
 // 18/12/2019 - Robert - Pequenos ajustes para filial 16
+// 14/02/2021 - Robert - Incluidas chamadas das funcoes U_UsoRot() e U_PerfMon para testes de monitoramento de performance  (GLPI 9409).
 //
 
 #include "tbiconn.ch"
@@ -43,6 +44,7 @@ User Function RBatch (_sEmp, _sFil)
 	local _sVarGlob   := ""
 	local _oSQL       := NIL
 	local _oAviso     := NIL 
+	local _sExprMnt   := ''
 
 	set century on
 	
@@ -201,15 +203,38 @@ User Function RBatch (_sEmp, _sFil)
 				u_help ('Nao foi possivel gravar variavel global de controle de batches.',, .t.)
 			else
 			
-				// Endereca monitor
-				PtInternal (1, "Emp :"+cEmpAnt+"/"+cFilAnt+" - " + alltrim (zz6 -> zz6_cmd))
+				// Busca, no comando a ser executado, uma expressao utilizavel para usar no log de acessos e monitor.
+				_sExprMnt = ''
+				if ! empty (zz6 -> zz6_cmd)
+					_sExprMnt = left (strtran (strtran (strtran (zz6 -> zz6_cmd, ' ', ''), "'", ""), '"', ''), 20)  // Tamanho maximo do campo VA_USOROT.ROTINA
+				endif
+				if ! empty (_sExprMnt)
+
+					// Endereca monitor
+					PtInternal (1, "Emp :"+cEmpAnt+"/"+cFilAnt+" - " + _sExprMnt)
+
+					// Grava log de uso de rotinas
+					U_UsoRot ('I', _sExprMnt, '')
+
+					// Se for um batch com repeticao, vou controlar seus tempos de execucao
+					if zz6 -> zz6_period == 'R'
+						U_PerfMon ('I', _sExprMnt)  // Deixa variavel pronta para posterior medicao de tempos de execucao
+					endif
+				endif
 
 				// Chama a execucao.
 				//U_VA_ZZ6Ex ()
-				//conout (zz6 -> zz6_cmd)
 				_oBatch := ClsBatch ():New (zz6 -> (recno ()))
 				_oBatch:Executa ()
 				
+				// Complementa log de uso de rotinas e performance
+				if ! empty (_sExprMnt)
+					if zz6 -> zz6_period == 'R'
+						U_PerfMon ('F', _sExprMnt)  // Finaliza medicao de tempos de execucao
+					endif
+					U_UsoRot ('F', _sExprMnt, '')
+				endif
+
 				// Limpa variavel global.
 				ClearGlbValue (_sVarGlob)
 			endif

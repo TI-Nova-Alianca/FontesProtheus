@@ -13,6 +13,7 @@
 // Historico de alteracoes:
 // 19/02/2021 - Robert - Passa a gravar nome do usuario
 //                     - A cada chamada de inicio, inseria uma linha na array _aPerfMon (GLPI 9409).
+// 08/04/2021 - Robert - Removidos logs de depuracao (GLPI 9409)
 //
 
 // --------------------------------------------------------------------------
@@ -23,7 +24,7 @@ user function PerfMon (_sQueFazer, _sChvPerf)
 	local _aAreaAnt := U_ML_SRArea ()
 
 	if _sQueFazer == 'I'  // Inicio de contagem de tempo
-		U_Log2 ('debug', 'Iniciando chave ' + _sChvPerf)
+		//U_Log2 ('debug', 'Iniciando chave ' + _sChvPerf)
 		// Declara a varievael com 'public' para ser vista por outros pontos de entrada.
 		if type ('_aPerfMon') != 'A'
 			public _aPerfMon := {}
@@ -38,12 +39,12 @@ user function PerfMon (_sQueFazer, _sChvPerf)
 		else
 			_aPerfMon [_nPosPerf, 2] = seconds ()
 		endif
-		U_Log2 ('debug', _aPerfMon)
+		//U_Log2 ('debug', _aPerfMon)
 
 	elseif _sQueFazer == 'F'  // Fim de contagem de tempo
 		if type ('_aPerfMon') == 'A'
-			U_Log2 ('debug', 'Finalizando chave ' + _sChvPerf)
-			U_Log2 ('debug', _aPerfMon)
+			//U_Log2 ('debug', 'Finalizando chave ' + _sChvPerf)
+			//U_Log2 ('debug', _aPerfMon)
 			_nPosPerf = ascan (_aPerfMon, {|_aVal| _aVal [1] == _sChvPerf})
 			if _nPosPerf == 0
 				U_Log2 ('aviso', "Chave '" + _sChvPerf + "' nao localizada na array de chaves de medicao de performance.")
@@ -74,7 +75,7 @@ user function PerfMon (_sQueFazer, _sChvPerf)
 					_oSQL:_sQuery +=           "," + cValToChar (_aPerfMon [_nPosPerf, 3])
 					_oSQL:_sQuery +=           ",'" + left (cUserName, 15) + "'"
 					_oSQL:_sQuery +=         ")"
-					_oSQL:Log ()
+					//_oSQL:Log ()
 					_oSQL:Exec ()
 				endif
 			endif
