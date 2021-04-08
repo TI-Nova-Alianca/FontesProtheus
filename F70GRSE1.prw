@@ -15,17 +15,18 @@
 // Historico de alteracoes:
 // 07/10/2020 - Cláudia - P.E. gerado a partir do P.E. F070ACont
 // 05/04/2021 - Robert  - Tratamento do SE5 eh especifico para verbas de clientes (desabilitado quando cupons das lojas). GLPI 9573.
+// 07/04/2021 - Sandra  - Tratamento do SE5 eh especifico para verbas de clientes (habilitado quando cupons das lojas)
 //
-
 // ------------------------------------------------------------------------------------
 User Function F70GRSE1()
 	local _aAreaAnt := U_ML_SRArea ()
 	u_logIni ()
 
 	// Atualiza campos de descontos no SE5, e tambem verbas (nos casos de clientes que cobram as verbas em forma de desconto nos titulos de nossas NF de venda).
-	if ! se1 -> e1_prefixo $ GetMv ('VA_SERIECF')  // Tratamento especifico para verbas de clientes (nao se aplica a cupons das lojas)
-		_AtuSE5 ()
-	endif
+	//if ! se1 -> e1_prefixo $ GetMv ('VA_SERIECF')  // Tratamento especifico para verbas de clientes (nao se aplica a cupons das lojas)
+	_AtuSE5 ()
+	//	u_log ("Atualiza SE5")
+	//endif
 	
 	// Clientes que nao fazem desconto em nota fiscal (emitem boleto ou exigem deposito na conta deles) sao controlados via NCC
 	if se1 -> e1_tipo = "NCC" .and. se1 -> e1_naturez = "VERBAS" .and. se1 -> e1_prefixo = "CV"  
@@ -44,6 +45,7 @@ Static Function _AtuSE5 ()
 	local i        := 0
 
 	//u_logIni ()
+	//u_log ("INICIO Atualiza SE5")
 	
 	// Busca a maior sequencia no SE5 (obrigatoriamente vai ser esta que acabou de gerar)
 	_oSQL:_sQuery  = ""
