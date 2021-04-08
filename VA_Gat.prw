@@ -122,6 +122,7 @@
 // 06/11/2020 - Robert - Ajuste gatilho C6_TES para consumidor final RS
 // 17/12/2020 - Robert - Chamada funcao classificacao de uvas para safra 2021.
 // 02/02/2021 - Robert - Mudanca de u_log para u_log2.
+// 08/04/2021 - Robert - Desabilitado gatilho do C6_PRODUTO para C6_TES por que migramos para TES inteligente (GLPI 9784)
 //
 
 #include "VA_Inclu.prw"
@@ -278,6 +279,7 @@ do case
 		endif
 
 
+/* Migramos para TES inteligente
 	case _sCampo == "M->C6_PRODUTO" .and. _sCDomin == "C6_TES"
 		_xRet = ""
 		_wRS       = fbuscacpo ("SA1", 1, xfilial ("SA1") + M->C5_CLIENTE + M->C5_LOJACLI , "A1_EST")
@@ -402,7 +404,7 @@ do case
 				endif
 		endcase
 		endif
-
+*/
 
 	case _sCampo == "M->C6_PRODUTO" .and. _sCDomin == "C6_VAQTVOL"
 		_xRet = GDFieldGet ("C6_QTDVEN")
