@@ -85,6 +85,9 @@ static function _AndaLogo ()
 	procregua (100)
 	incproc ()
 	u_help ('Nada definido.')
+	U_PerfMon ('L', 'teste')
+	U_PerfMon ('I', 'teste')
+	U_PerfMon ('L', 'teste')
 return
 /*
 	// Testes relatorios associados

@@ -45,6 +45,7 @@
 // 04/01/2021 - Robert - Implementado metodo RetFixo.
 // 15/01/2021 - Robert - Novo parametro (_lMsgTela) no metodo :RetFixo().
 // 23/02/2021 - Robert - Criado atributo QtLinRet.
+// 09/04/2021 - Robert - Criado atributo PerfMon e implementado tratamento para mostrar tempos no log quando .T. (GLPI 9797)
 //
 
 #include "protheus.ch"
@@ -59,11 +60,11 @@ CLASS ClsSQL
 	DATA _aSetField
 	DATA _sAliasQry
 	DATA UltMsg
-	DATA TempoExec
+//	DATA TempoExec
 	DATA lGeraHead
 	DATA aHeader
 	DATA QtLinRet
-
+	DATA PerfMon
 
 	// Declaracao dos Metodos da Classe
 	/*public */ METHOD New ()
@@ -97,6 +98,7 @@ METHOD New () Class ClsSQL
 	::_aSetField := {}
 	::_sAliasQry := ""
 	::UltMsg     := ""
+	::PerfMon    := .F.
 Return Self
 
 
@@ -654,10 +656,20 @@ return _aRetTOP
 // Executa a query no banco de dados.
 static function _ExecQry (_oSelf)
 	local _nCampo := 0
-	// habilitar para ajudar a identificar queries lentas -->	local _nSegIni   := seconds ()
+	
+	if _oSelf:PerfMon
+	//	U_Log2 ('info', '-------------- Inicio medicao de tempo de execucao de SQL')
+		_oSelf:Log ()
+		U_PerfMon ('I', '_ExecQry')
+	endif
 
 	_oSelf:_sAliasQry = GetNextAlias ()
 	DbUseArea(.t., 'TOPCONN', TcGenQry (,, _oSelf:_sQuery), _oSelf:_sAliasQry, .f., .t.)
+
+	if _oSelf:PerfMon
+		U_PerfMon ('L', '_ExecQry')
+	//	U_Log2 ('info', '-------------- Final medicao de tempo de execucao de SQL')
+	endif
 
 	count to _oSelf:QtLinRet
 	// u_log2 ('debug', _oSelf:QtLinRet)
@@ -678,7 +690,4 @@ static function _ExecQry (_oSelf)
 			                   _aEstrut [_nCampo, 2]})
 		next
 	endif
-
-	// Habilitar esta linha para ajudar a identificar queries lentas.
-//	u_log ('[' + transform (seconds () - _nSegIni, '@E 999999999.9999') + '] ' + _oSelf:_sQuery)
 return

@@ -35,6 +35,8 @@
 // 23/04/2020 - Claudia - Incluida a busca de cada estrutura na Simulação OP. GLPI: 7841
 // 14/08/2020 - Cláudia - Ajuste de Api em loop, conforme solicitação da versao 25 protheus. GLPI: 7339
 // 17/08/2020 - Robert  - Comentariadas declaracoes de variaveis nao usadas, desabilitada geracao de logs.
+// 09/04/2021 - Robert  - Inseridos logs para analise de performance (GLPI 9797)
+//                      - Incluido teste do B1_FILIAL no na query _sExistsB1 - reduziu de 627 para 33 segundos (GLPI 9797)
 //
 
 #include "colors.ch"
@@ -157,6 +159,8 @@ static function _Tela ()
 	private _sArqGraf  := ""
 	private _lPrimVez  := .T.
 	private _lGrafico  := iif (_sTipoPlan == 'A', (mv_par06 == 1), (mv_par05 == 1))  //(mv_par05 == 1)
+
+	u_logsx1 (cPerg)
 
 	if _lContinua
 		_lContinua = _LeDados (@_aArqTrb)
@@ -676,7 +680,7 @@ static function _SimulOP (_sProduto, _nQtd, _aSimula, _lSimula,_sRevis)
 		_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1")        + "'"
 		_oSQL:_sQuery +=   " AND SB1.B1_COD     = SB2.B2_COD"
 		_oSQL:_sQuery += " GROUP BY SB2.B2_COD"
-		_oSQL:Log ()
+		//_oSQL:Log ()
 		_aSB2 = aclone (_oSQL:Qry2Array ())
 		
 		// Se nao existe registro de estoque deste componente, cria uma array zerada.
@@ -814,6 +818,7 @@ static function _LeDados (_aArqTrb)
 
 	// Monta arquivos de trabalho para facilitar a preparacao dos dados.
 	if _lContinua
+		// U_PerfMon ('I', 'Montar_temporarios')
 		incproc ("Montando arquivos temporarios...")
 		//
 		_aCampos = {}
@@ -889,12 +894,14 @@ static function _LeDados (_aArqTrb)
 		aadd (_aCampos, {"observ",     "C", 80, 0})
 		aadd (_aCampos, {"capproddia", "N", 18, 2})
 		U_ArqTrb ("Cria", "_trb", _aCampos, {"Produto", 'preco_unit', 'valor_estq', 'valor_es', 'valor_entr', 'valor_said'}, @_aArqTrb)
+		// U_PerfMon ('L', 'Montar_temporarios')
 		_trb -> (dbsetorder (1))
 
 		// Monta clausula 'exists' para tabela SB1 a ser usada em todas as filtragens.
 		_sExistsB1 := "SELECT B1_COD"
 		_sExistsB1 +=  " FROM " + RetSQLName ("SB1") + " EXISTS_SB1 "
 		_sExistsB1 += " WHERE EXISTS_SB1.D_E_L_E_T_ = ''"
+		_sExistsB1 +=   " AND EXISTS_SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
 		_sExistsB1 +=   " AND EXISTS_SB1.B1_TIPO    NOT IN ('AI', 'AN', 'BN', 'GF', 'GG', 'MC', 'MO', 'SL')"  // Tipos que nao interessam
 		_sExistsB1 +=   " AND EXISTS_SB1.B1_GRUPO   != '0400'"  // Uvas
 		_sExistsB1 +=   " AND EXISTS_SB1.B1_COD     BETWEEN '" + _sProdIni  + "' AND '" + _sProdFim  + "'"
@@ -940,6 +947,7 @@ static function _LeDados (_aArqTrb)
 		_oSQL:_sQuery +=   " AND SF4.F4_ESTOQUE = 'S'"
 		_oSQL:_sQuery +=   " AND SF4.F4_PODER3  NOT IN ('R', 'D')"
 		_oSQL:_sQuery += " GROUP BY D1_FILIAL, D1_COD, SUBSTRING (SD1.D1_DTDIGIT, 1, 4), SUBSTRING (SD1.D1_DTDIGIT, 5, 2)"
+		// _oSQL:PerfMon = .T.
 		//_oSQL:Log ()
 		_sAliasQ = _oSQL:Qry2Trb (.f.)
 		(_sAliasQ) -> (dbgotop ())
@@ -969,6 +977,7 @@ static function _LeDados (_aArqTrb)
 		_oSQL:_sQuery +=   " AND SD3.D3_CF      LIKE 'PR%'"
 		_oSQL:_sQuery +=   " AND SD3.D3_COD IN (" + _sExistsB1 + ")"
 		_oSQL:_sQuery += " GROUP BY D3_FILIAL, D3_COD, SUBSTRING (SD3.D3_EMISSAO, 1, 4), SUBSTRING (SD3.D3_EMISSAO, 5, 2), D3_CF"
+		// _oSQL:PerfMon = .T.
 		//_oSQL:Log ()
 		_sAliasQ = _oSQL:Qry2Trb (.f.)
 		(_sAliasQ) -> (dbgotop ())
@@ -1005,6 +1014,7 @@ static function _LeDados (_aArqTrb)
 		_oSQL:_sQuery +=   " AND SF4.F4_ESTOQUE = 'S'"
 		_oSQL:_sQuery +=   " AND SF4.F4_PODER3  NOT IN ('R', 'D')"
 		_oSQL:_sQuery += " GROUP BY D2_FILIAL, D2_COD, SUBSTRING (SD2.D2_EMISSAO, 1, 4), SUBSTRING (SD2.D2_EMISSAO, 5, 2)"
+		// _oSQL:PerfMon = .T.
 		//_oSQL:Log ()
 		_sAliasQ = _oSQL:Qry2Trb (.f.)
 		(_sAliasQ) -> (dbgotop ())
@@ -1034,6 +1044,7 @@ static function _LeDados (_aArqTrb)
 		_oSQL:_sQuery +=   " AND SD3.D3_CF      != 'RE4'"  // Transferencias
 		_oSQL:_sQuery +=   " AND SD3.D3_COD IN (" + _sExistsB1 + ")"
 		_oSQL:_sQuery += " GROUP BY D3_FILIAL, D3_COD, SUBSTRING (SD3.D3_EMISSAO, 1, 4), SUBSTRING (SD3.D3_EMISSAO, 5, 2), D3_CF"
+		// _oSQL:PerfMon = .T.
 		//_oSQL:Log ()
 		_sAliasQ = _oSQL:Qry2Trb (.f.)
 		(_sAliasQ) -> (dbgotop ())
@@ -1088,6 +1099,7 @@ static function _LeDados (_aArqTrb)
 			_oSQL:_sQuery +=   " AND ZX5_39.ZX5_39COD  = SB1.B1_CODLIN"
 		//	_oSQL:_sQuery += " GROUP BY D2_FILIAL, SX5_88.X5_DESCRI, SUBSTRING (SD2.D2_EMISSAO, 1, 4), SUBSTRING (SD2.D2_EMISSAO, 5, 2)"
 			_oSQL:_sQuery += " GROUP BY D2_FILIAL, ZX5_39.ZX5_39DESC, SUBSTRING (SD2.D2_EMISSAO, 1, 4), SUBSTRING (SD2.D2_EMISSAO, 5, 2)"
+			// _oSQL:PerfMon = .T.
 			//_oSQL:Log ()
 			_sAliasQ = _oSQL:Qry2Trb (.f.)
 			(_sAliasQ) -> (dbgotop ())
@@ -1134,6 +1146,7 @@ static function _LeDados (_aArqTrb)
 			_oSQL:_sQuery +=   " AND ZX5_39.ZX5_39COD  = SB1.B1_CODLIN"
 //			_oSQL:_sQuery += " GROUP BY D3_FILIAL, SX5_88.X5_DESCRI, SUBSTRING (SD3.D3_EMISSAO, 1, 4), SUBSTRING (SD3.D3_EMISSAO, 5, 2)"
 			_oSQL:_sQuery += " GROUP BY D3_FILIAL, ZX5_39.ZX5_39DESC, SUBSTRING (SD3.D3_EMISSAO, 1, 4), SUBSTRING (SD3.D3_EMISSAO, 5, 2)"
+			// _oSQL:PerfMon = .T.
 			//_oSQL:Log ()
 			_sAliasQ = _oSQL:Qry2Trb (.f.)
 			(_sAliasQ) -> (dbgotop ())
@@ -1230,6 +1243,7 @@ static function _LeDados (_aArqTrb)
 	//	_oSQL:_sQuery += " GROUP BY SX5_98.X5_DESCRI, SX5_88.X5_DESCRI, B1_TIPO, B1_COD, B1_DESC, B1_UM, B1_LM, B1_QE, B1_EMIN, B1_EMAX, B1_PE, B1_TIPE, B1_VAFORAL, B1_MRP, B1_VACAPDI, B1_VACOR, H1_DESCRI, B1_QTDEMB, B1_LITROS, ZX5_40.ZX5_40DESC, B1_VARUVA"
 	//	_oSQL:_sQuery += " GROUP BY SX5_98.X5_DESCRI, ZX5_39.ZX5_39DESC, B1_TIPO, B1_COD, B1_DESC, B1_UM, B1_LM, B1_QE, B1_EMIN, B1_EMAX, B1_PE, B1_TIPE, B1_VAFORAL, B1_MRP, B1_VACAPDI, B1_VACOR, H1_DESCRI, B1_QTDEMB, B1_LITROS, ZX5_40.ZX5_40DESC, B1_VARUVA"
 		_oSQL:_sQuery += " GROUP BY ZX5_50.ZX5_50DESC, ZX5_39.ZX5_39DESC, B1_TIPO, B1_COD, B1_DESC, B1_UM, B1_LM, B1_QE, B1_EMIN, B1_EMAX, B1_PE, B1_TIPE, B1_VAFORAL, B1_MRP, B1_VACAPDI, B1_VACOR, H1_DESCRI, B1_QTDEMB, B1_LITROS, ZX5_40.ZX5_40DESC, B1_VARUVA"
+		// _oSQL:PerfMon = .T.
 		//_oSQL:Log ()
 		_sAliasQ = _oSQL:Qry2Trb (.f.)
 		(_sAliasQ) -> (dbgotop ())
@@ -1275,6 +1289,7 @@ static function _LeDados (_aArqTrb)
 	// Repassa o arquivo de trabalho preenchendo os dados de quantidades.
 	if _lContinua
 		incproc ('Calculando valores')
+		// U_PerfMon ('I', 'Calc_valores_trb')
 		_sPerIni = _aPeriodos [1]
 		_sPerFim = _aPeriodos [len (_aPeriodos)]	
 		_trb -> (dbgotop ())
@@ -1337,20 +1352,24 @@ static function _LeDados (_aArqTrb)
 
 			_trb -> (dbskip ())
 		enddo
+		// U_PerfMon ('L', 'Calc_valores_trb')
 	endif
 
 
 	// Classifica os itens como A/B/C
 	if _lContinua
+		// U_PerfMon ('I', 'Calculo_curvas')
 		_Curva ('preco_unit', 'CurEstat', 2)
 		_Curva ('valor_estq', 'CurInvent', 3)
 		_Curva ('valor_es',   'CurEntSai', 4)
 		_Curva ('valor_entr', 'CurEntr', 5)
 		_Curva ('valor_said', 'CurSaid', 6)
+		// U_PerfMon ('L', 'Calculo_curvas')
 	endif
 
 
 	if _lContinua
+		// U_PerfMon ('I', 'Montar_aCols')
 		_trb -> (dbsetorder (1))
 
 		aHeader = {}
@@ -1501,6 +1520,7 @@ static function _LeDados (_aArqTrb)
 				_trb -> (dbskip ())
 			enddo
 		endif
+		// U_PerfMon ('L', 'Montar_aCols')
 	endif
 return _lContinua
 //
