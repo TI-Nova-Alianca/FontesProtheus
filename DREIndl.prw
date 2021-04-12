@@ -27,6 +27,7 @@
 //                     - Melhorias mensagens de log e de erros.
 // 09/12/2020 - Robert - Passa a buscar nome do database BI_ALIANCA pela funcao U_LkServer (para poder usar com a base teste).
 // 22/01/2021 - Robert - Restaurada linha que pegava retorno das filiais, na opcao de rateio filial a filial.
+// 12/04/2021 - Robert - Acrescentadas colunas CPV, VERBDAS e OUTRAS DESP COML no layout 'por cliente para tab.dinamica'  (GLPI 9802).
 //
 
 // --------------------------------------------------------------------------
@@ -501,6 +502,7 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 		_oSQL:_sQuery +=       " ,SUM (FRETEPREV + FRETE_RATEIO) AS FRETE"
 		_oSQL:_sQuery +=       " ,SUM ((COMISPREV + COMIS_RATEIO) * CASE F4_MARGEM WHEN '2' THEN -1 ELSE 1 END) AS COMISSAO"
 		_oSQL:_sQuery +=       " ,SUM (GASTOS_COML_OUTRAS) AS COML_OUTRAS"
+		_oSQL:_sQuery +=       " ,SUM (DF_ENCART + DF_FEIRAS + DF_FRETES + DF_DESCONT + DF_DEVOL + DF_CAMPANH + DF_ABLOJA + DF_CONTRAT + DF_OUTROS + VERBAS_RATEIO) AS VERBAS"
 		_oSQL:_sQuery +=       " ,SUM (DESP_ADMIN) AS DESP_ADMIN"
 		_oSQL:_sQuery +=       " ,COUNT (DISTINCT DOC) AS CONTAGEM_NF"
 		_oSQL:_sQuery +=   " FROM DADOS"
@@ -508,7 +510,7 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 		_oSQL:_sQuery += "), TOTAIS2 AS"
 		_oSQL:_sQuery += "(SELECT *"
 		_oSQL:_sQuery +=       " ,FAT_BRUTO + DEVOLUCOES + IMPOSTOS AS RECEITA_LIQUIDA"
-		_oSQL:_sQuery +=       " ,BONIFICACOES + RAPEL + FRETE + COMISSAO + COML_OUTRAS AS DESP_COML"
+		_oSQL:_sQuery +=       " ,BONIFICACOES + RAPEL + FRETE + COMISSAO + COML_OUTRAS + VERBAS AS DESP_COML"
 		_oSQL:_sQuery +=   " FROM TOTAIS1"
 		_oSQL:_sQuery += ")"
 		_oSQL:_sQuery += " SELECT CLIENTE, LOJA, RTRIM (A1_NOME) AS NOME_CLIENTE, CLIBASE, LOJABASE"
@@ -526,10 +528,13 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 		_oSQL:_sQuery +=                " ELSE '' END AS LINHA_ENVASE"
 		_oSQL:_sQuery +=       " ,SUM (FAT_BRUTO) AS FAT_BRUTO"
 		_oSQL:_sQuery +=       " ,SUM (RECEITA_LIQUIDA) AS RECEITA_LIQUIDA"
+		_oSQL:_sQuery +=       " ,SUM (CPV) AS CPV"
 		_oSQL:_sQuery +=       " ,SUM (BONIFICACOES) AS BONIFICACOES"
 		_oSQL:_sQuery +=       " ,SUM (RAPEL) AS RAPEL"
 		_oSQL:_sQuery +=       " ,SUM (FRETE) AS FRETE"
 		_oSQL:_sQuery +=       " ,SUM (COMISSAO) AS COMISSAO"
+		_oSQL:_sQuery +=       " ,SUM (VERBAS) AS VERBAS"
+		_oSQL:_sQuery +=       " ,SUM (COML_OUTRAS) AS COML_OUTRAS"
 		_oSQL:_sQuery +=       " ,SUM (DESP_COML) AS TOT_DESP_COML"
 		_oSQL:_sQuery +=       " ,SUM (DESP_ADMIN) AS DESP_ADMIN"
 		_oSQL:_sQuery +=       " ,SUM (RECEITA_LIQUIDA - CPV - DESP_COML - DESP_ADMIN) AS RESULT_OPERACIONAL"
