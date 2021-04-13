@@ -17,7 +17,10 @@
 // 6 - VERBA EM TITULO SEM COMISSAO
 //
 //  Historico de alteracoes:
-// 15/01/2021 - Claudia - GLPI: 9077 - Incluida média de percentual de comissão para tipo 5 VERBA EM TITULO DE OUTROS
+// 15/01/2021 - Claudia - GLPI: 9077 - Incluida média de percentual de comissão para 
+//						  tipo 5 VERBA EM TITULO DE OUTROS
+// 13/04/2021 - claudia - GLPI: 9824 - Retirado do 6 - VERBA EM TITULO SEM COMISSAO' 
+//                        as NCCs (serie: CV)
 //
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -452,6 +455,7 @@ User Function VA_COMVERB(_dtaIni, _dtaFin, _sVend, _nLibPg, _sFilial)
 	//_oSQL:_sQuery += " AND ZA5_FILIAL = '" + xFilial('ZA5') + "' " 
 	_oSQL:_sQuery += " AND ZA5_FILIAL = '" + _sFilial + "' " 
 	_oSQL:_sQuery += " AND ZA5_DTA BETWEEN '" + dtos(_dtaIni) + "' AND '" + dtos(_dtaFin) + "'"
+	_oSQL:_sQuery += " AND ZA5_PREFIX <> 'CV'"
 	_oSQL:Log ()
 	
 	_aRet = aclone (_oSQL:Qry2Array ())
