@@ -1245,7 +1245,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		case ::Numero == 26
 			::Setores   = 'PCP/CUS/CTB'
 			::Descricao = 'Diferenca saldo estq do produto X lotes X enderecos'
-			::Sugestao  = 'Reprocesse saldo atual; possivelmente nao tenha sido gerado lote inicial (tela MATA390); verifique fechamento (SB9 x SBJ x SBK); verifique movimentacao.'
+			::Sugestao  = 'Reprocesse saldo atual; possivelmente nao tenha sido gerado lote inicial (telas MATA805 ou MATA390); verifique fechamento (SB9 x SBJ x SBK); verifique movimentacao.'
 /*
 			::Query := "WITH C AS ("
 			::Query += " SELECT B1_COD, SB1.B1_DESC, SB1.B1_RASTRO, SB1.B1_LOCALIZ,"

@@ -140,6 +140,7 @@
 // 12/01/2021 - Claudia - Retirado programa de criação de saldos por endereço (MATA805) da validação de campo DB_LOCALIZ/DB_QUANT. GLPI: 9122
 // 14/02/2021 - Robert  - Validacoes do D3_COD para programa MATA242 passadas para U_MTA242V e MT242LOk (GLPI 9388)
 //                      - Melhoria envio de avisos para TI.
+// 12/04/2021 - Robert  - Incluida chamada da procedure VA_SP_VERIFICA_ESTOQUES (testes iniciais) para validacao do D3_COD.
 //
 
 // --------------------------------------------------------------------------
@@ -929,7 +930,7 @@ user function VA_VCpo (_sCampo)
 						_lRet = U_MsgNoYes ("Requisicao para CC nao permitida para este tipo de produto. Confirma assim mesmo?")
 					endif
 				endif
-			endif		
+			endif
 			
 			/* Passado para MT242LOk.prw
 			If _lRet .and. IsInCallStack ("MATA242") // Validação desmontagem 
@@ -968,6 +969,20 @@ user function VA_VCpo (_sCampo)
 				EndIf
 			Endif
 			*/
+
+			// Por enquanto vou apenas dar uma monitorada. A intencao eh bloquear depois. Robert, 12/04/2021.
+			if IsInCallStack ("MATA241")
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := "EXEC VA_SP_VERIFICA_ESTOQUES '" + cFilAnt + "', '" + m->d3_cod + "', '" + GDFieldGet ("D3_LOCAL") + "'"
+				// _oSQL:Log ()
+				_sErrEstq = alltrim (_oSQL:RetQry (11, .F.))
+				if ! empty (_sErrEstq)
+					_sMsg = "Foram encontradas inconsistencias de estoque para o produto/almoxarifado " + alltrim (m->d3_cod) + "/" + GDFieldGet ("D3_LOCAL") + ": " + _sErrEstq
+					U_Log2 ('aviso', _sMsg)
+				endif
+			endif
+
+
 		case _sCampo $ "M->D3_EMISSAO"
 			_lRet = .T.
 			if M->D3_EMISSAO != date ()
