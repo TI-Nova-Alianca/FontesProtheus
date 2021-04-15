@@ -9,9 +9,10 @@
 // #TabelasPrincipais #SE3 #SE1 #SF2 #SD2 #SE5 #SA3
 // #Modulos 		  #FIN 
 //
-//  Historico de alteracoes:
+// Historico de alteracoes:
+// 14/04/2021 - Cláudia - Melhoria na consulta com o plano de execução estimado (SQL)
 //
-// --------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
 
 #include 'protheus.ch'
 #include 'parmtype.ch'
@@ -38,6 +39,7 @@ User Function VA_COMEXE(_dtaIni, _dtaFin, _sVend, _nLibPg)
 	_oSQL:_sQuery += " 		FROM SD2010 AS SD2"
 	_oSQL:_sQuery += " 		INNER JOIN " + RetSQLName ("SF4") + " AS SF4 "
 	_oSQL:_sQuery += " 			ON (SF4.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += "          AND SF4.F4_FILIAL ='" + xFilial('SF4') + "' "  
 	_oSQL:_sQuery += " 			AND SF4.F4_CODIGO = SD2.D2_TES"
 	_oSQL:_sQuery += " 			AND SF4.F4_MARGEM = '3')"
 	_oSQL:_sQuery += " 		WHERE SD2.D2_FILIAL = SF2.F2_FILIAL"
@@ -179,6 +181,7 @@ User Function VA_COMEXE(_dtaIni, _dtaFin, _sVend, _nLibPg)
 	_oSQL:_sQuery += " FROM " + RetSQLName ("SE3") + " AS SE3 "
 	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA3") + " AS SA3 "
 	_oSQL:_sQuery += " 	ON (SA3.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += "          AND SA3.A3_FILIAL = '" + xFilial('SA3') + "' "  
 	If mv_par09 = 1 // Não considera bloqueados
 		_oSQL:_sQuery += " 			AND SA3.A3_MSBLQL != '1'"
 		_oSQL:_sQuery += " 			AND SA3.A3_ATIVO != 'N'"
@@ -194,16 +197,19 @@ User Function VA_COMEXE(_dtaIni, _dtaFin, _sVend, _nLibPg)
 	_oSQL:_sQuery += " 			AND SE1.E1_CLIENTE = SE3.E3_CODCLI)"
 	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SF2") + " AS SF2 "
 	_oSQL:_sQuery += " 	ON (SF2.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += "          AND SF2.F2_FILIAL = SE3.E3_FILIAL"
 	_oSQL:_sQuery += " 			AND SF2.F2_DOC = SE3.E3_NUM"
 	_oSQL:_sQuery += " 			AND SF2.F2_SERIE = SE3.E3_PREFIXO"
 	_oSQL:_sQuery += " 			AND SF2.F2_CLIENTE = SE3.E3_CODCLI"
 	_oSQL:_sQuery += " 			AND SF2.F2_LOJA = SE3.E3_LOJA)"
 	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SA2") + " AS SA2 "
 	_oSQL:_sQuery += " 	ON (SA2.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += "          AND A2_FILIAL = '" + xFilial('SA2') + "' "  
 	_oSQL:_sQuery += " 			AND SA2.A2_COD = SA3.A3_FORNECE"
 	_oSQL:_sQuery += " 			AND SA2.A2_LOJA = SA3.A3_LOJA)"
 	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA1") + " AS SA1 "
 	_oSQL:_sQuery += " 	ON (SA1.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += "          AND SA1.A1_FILIAL = '" + xFilial('SA1') + "' "  
 	_oSQL:_sQuery += " 			AND SA1.A1_COD = SE3.E3_CODCLI"
 	_oSQL:_sQuery += " 			AND SA1.A1_LOJA = SE3.E3_LOJA)"
 	_oSQL:_sQuery += " WHERE E3_FILIAL = '" + xFilial('SE3') + "' "  
