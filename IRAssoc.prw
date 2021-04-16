@@ -18,8 +18,8 @@
 //                      - Tratamento adto sobras pago em 2019 (GLPI 7614)
 // 13/03/2020 - Claudia - Criado parametros de associado e nucleo. GLPI 7660
 // 03/03/2021 - Robert  - Separados trechos de leitura de rendimentos de producao, por safra (GLPI 9535)
+// 16/04/2021 - Claudia - Retirado o Movimento 29. GLPI: 9844
 //
-
 // -----------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
 
@@ -213,14 +213,15 @@ static function _Imprime ()
 		// Busca movimentos de plano de saude
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "SELECT ZI_DATA, ZI_HISTOR, ZI_VALOR, R_E_C_N_O_ "
-		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI "
+		_oSQL:_sQuery += " SELECT ZI_DATA, ZI_HISTOR, ZI_VALOR, R_E_C_N_O_ "
+		_oSQL:_sQuery += "      FROM " + RetSQLName ("SZI") + " SZI "
 		_oSQL:_sQuery += " WHERE SZI.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND SZI.ZI_ASSOC   = '" + _oAssoc:Codigo + "'"
-		_oSQL:_sQuery +=   " AND SZI.ZI_LOJASSO = '" + _oAssoc:Loja + "'"
-		_oSQL:_sQuery +=   " AND SZI.ZI_TM      IN ('01', '29')"
-		_oSQL:_sQuery +=   " AND SZI.ZI_DATA    BETWEEN '" + mv_par03 + '0101' + "' AND '" + mv_par03 + '1231' + "'"
-		_oSQL:_sQuery += " ORDER BY ZI_DATA"
+		_oSQL:_sQuery += " AND SZI.ZI_ASSOC   = '" + _oAssoc:Codigo + "'"
+		_oSQL:_sQuery += " AND SZI.ZI_LOJASSO = '" + _oAssoc:Loja + "'"
+		//_oSQL:_sQuery +=   " AND SZI.ZI_TM      IN ('01', '29')"
+		_oSQL:_sQuery += " AND SZI.ZI_TM IN ('01')"
+		_oSQL:_sQuery += " AND SZI.ZI_DATA BETWEEN '" + mv_par03 + '0101' + "' AND '" + mv_par03 + '1231' + "'"
+		_oSQL:_sQuery += " ORDER BY ZI_DATA "
 		//_oSQL:Log ()
 		_aExtrat := aclone (_oSQL:Qry2Array (.F., .F.))
 		
@@ -334,7 +335,7 @@ static function _Imprime ()
 			// Por exemplo quando parte foi compensada e apenas o saldo restante virou fatura.
 			// Ex.: título 000021485/30 -D do fornecedor 000643. Foi compensado R$ 3.066,09 e o saldo (R$ 1028,71) foi gerada a fatura 202000051.
 			// Devo descontar do valor do titulo somente a parte que foi consumida na geracao da fatura.
-			_oSQL:_sQuery += " E2_VALOR - ISNULL ((SELECT SUM (FK2_VALOR)"
+			_oSQL:_sQuery +=  " E2_VALOR - ISNULL ((SELECT SUM (FK2_VALOR)"
 			_oSQL:_sQuery +=                       " FROM " + RetSQLName ("FK7") + " FK7, "
 			_oSQL:_sQuery +=                                  RetSQLName ("FK2") + " FK2 "
 			_oSQL:_sQuery +=                            " WHERE FK7.D_E_L_E_T_ = '' AND FK7.FK7_FILIAL = SE2.E2_FILIAL AND FK7.FK7_ALIAS = 'SE2' AND FK7.FK7_CHAVE = SE2.E2_FILIAL + '|' + SE2.E2_PREFIXO + '|' + SE2.E2_NUM + '|' + SE2.E2_PARCELA + '|' + SE2.E2_TIPO + '|' + SE2.E2_FORNECE + '|' + SE2.E2_LOJA"
@@ -345,8 +346,8 @@ static function _Imprime ()
 			_oSQL:_sQuery +=                              " AND FK2.FK2_TPDOC != 'ES'"  // ES=Movimento de estorno
 			_oSQL:_sQuery +=                              " AND dbo.VA_FESTORNADO_FK2 (FK2.FK2_FILIAL, FK2.FK2_IDFK2) = 0"
 			_oSQL:_sQuery +=                        "), 0) AS E2_VALOR "
-			_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE2") + " SE2 "
-			_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2 "
+			_oSQL:_sQuery +=   " WHERE SE2.D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=   " AND E2_FILIAL  = '01'"  // Pagamentos sao feitos sempre pela matriz.
 			_oSQL:_sQuery +=   " AND E2_PREFIXO in ('30 ', '31 ')"  // Serie usada para notas e faturas de safra
 			_oSQL:_sQuery +=   " AND E2_TIPO IN ('NF', 'DP', 'FAT')"  // NF quando compra original da matriz; DP quando saldo transferido de outra filial; FAT quando agrupados em uma fatura.
