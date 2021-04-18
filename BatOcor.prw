@@ -1,17 +1,24 @@
 // Programa:   BatOcor
 // Autor:      Robert Koch
 // Data:       13/11/2019
-// Descricao:  Importacao e exportacao de arquivos do proceda.
-//
+// Descricao:  Importacao de arquivos do proceda.
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Leitura e importacao de arquivos de EDI padrao Mercador/Proceda (ocorrencias entregas NF)
+// #PalavasChave      #batch #frete #ocorrencias #proceda #importacao
+// #TabelasPrincipais #SZN #SF2 #SF1
+// #Modulos           #FAT #OMS
+
 // Historico de alteracoes:
 // ??/??/???? - Andre? - Gravacao evento
 // 11/03/2021 - Robert - Deleta arquivo quando jah importado.
 //                     - Nao fechava arquivos apos a leitura e nao permitia deletar.
+// 18/04/2021 - Robert - Importa evento, mesmo que a NF tenha sido cancelada (GLPI 5735).
+//                     - Criado tratamento para fretes sobre NF de entrada (GLPI 5735).
+//                     - Importa observacoes e texto livre, caso informado (GLPI 5735).
+//                     - Criadas tags para catalogo de fontes.
 //
-
-#include "totvs.ch"                                                            	
-#include "protheus.ch"
-#include "fileio.ch"
 
 // --------------------------------------------------------------------------
 user function BatOcor ()
@@ -71,9 +78,11 @@ user function BatOcor ()
 				EndDo
 				FT_FUSE()  // Fecha arquivo
 				if _Grava (_aDados) = .T.
+					U_Log2 ('debug', 'Funcao _Grava() retornou .T.')
 					_nQtArqImp ++
 					_Move ("\PROCEDA\" + _aDir [_nDir, 1], "Importado")
 				else
+					U_Log2 ('debug', 'Funcao _Grava() retornou .F.')
 					_nQtArqErr ++
 					_Move ("\PROCEDA\" + _aDir [_nDir, 1], "Erro")
 				endif
@@ -110,13 +119,13 @@ Static Function _Move (_sArq, _sDest)
 
 	// Copia o arquivo e depois deleta do local original.
 	_sArqDest = _sArqRmt
-	// U_Log2 ('debug', 'Movendo >>' + _sDirRmt + _sArqRmt + _sExtRmt + '<< para >>' + _sDirRmt + _sDest + "\" + _sArqDest + _sExtRmt + '<<')
+	U_Log2 ('debug', 'Movendo >>' + _sDirRmt + _sArqRmt + _sExtRmt + '<< para >>' + _sDirRmt + _sDest + "\" + _sArqDest + _sExtRmt + '<<')
 	copy file (_sDirRmt + _sArqRmt + _sExtRmt) to (_sDirRmt + _sDest + "\" + _sArqDest + _sExtRmt)
 	
 	if ! file (_sDirRmt + _sDest + "\" + _sArqDest + _sExtRmt)
 		u_help ("Erro ao mover arquivo " + _sArqRmt + _sExtRmt,, .t.)
 	else
-		// U_Log2 ('debug', 'Apagando arquivo movido >>' + _sDirRmt + _sArqRmt + _sExtRmt + '<<')
+		U_Log2 ('debug', 'Apagando arquivo movido >>' + _sDirRmt + _sArqRmt + _sExtRmt + '<<')
 		delete file (_sDirRmt + _sArqRmt + _sExtRmt)
 	endif
 
@@ -135,6 +144,12 @@ Static Function _Grava (_aDados)
 	local _sData     := ''
 	local _dData     := ctod ('')
 	local _sPedido   := ''
+	local _sFilNF    := ''
+	local _oSQL      := NIL
+	local _sNFEntSai := ''
+	local _sHrEvt    := ''
+	local _sCodObs   := ''
+	local _sTxtLivre := ''
 
 	for _nLinha = 1 to LEN (_aDados)
 		// U_Log2 ('debug', 'lendo linha ' + cvaltochar (_nLinha) + ' --> ' + _aDados[_nLinha])
@@ -161,65 +176,126 @@ Static Function _Grava (_aDados)
 				_lRet := .F.
 				exit
 			endif
-			_sCGC := substr (_aDados[_nLinha],4,14)
-			if substr (_sCGC,1,8) != substr (sm0->m0_cgc,1,8)
-				u_log2 ('aviso', 'Ocorrencia com CGC de outra empresa.(' + _sCGC + ')')
-				_lRet := .F.
-				exit
-			endif
-			if substr (_sCGC,11,2) != cFilAnt
-			 	u_log2 ('aviso', 'Ocorrencia se refere a NF de outra Filial.')
-				_lRet := .F.
-				exit
-			endif
-			_sOcor := substr (_aDados[_nLinha],29,2)
-			_sDescProc = u_retZX5('51',_sOcor,'ZX5_51DESC')
+			_sCGC      := substr (_aDados[_nLinha],4,14)
+			_sSerie    := substr (_aDados[_nLinha],18,3)
+			_sNota     := '0' + substr (_aDados[_nLinha],21,8) // Layout contempla 8 posicoes apenas
+			_sOcor     := substr (_aDados[_nLinha],29,2)
+			_sData     := substr (_aDados[_nLinha],31,8)
+			_dData     := stod (substr (_sData,5,4) + substr (_sData,3,2) + substr (_sData,1,2)) 
+			_sHrEvt    := substr (_aDados[_nLinha],39,2) + ':' + substr (_aDados[_nLinha],41,2) + ':00'
+			_sCodObs   := substr (_aDados[_nLinha],43,2)
+			_sTxtLivre := substr (_aDados[_nLinha],45,70)
+
+			_sDescProc = alltrim (u_retZX5('51',_sOcor,'ZX5_51DESC'))
 			if empty (_sDescProc)
-				u_log2 ('aviso', "Ocorrencia '" + _sOcor + "' nao cadastrada na tabela 51 do ZX5.")
+				u_log2 ('erro', "Ocorrencia '" + _sOcor + "' nao cadastrada na tabela 51 do ZX5.")
 				_lRet := .F.
 				exit
 			endif
-			_sSerie := substr (_aDados[_nLinha],18,3)
-			_sNota := '0' + substr (_aDados[_nLinha],21,8) // Layout contempla 8 posicoes apenas
-			_sData := substr (_aDados[_nLinha],31,8)
-			_dData := STOD(substr (_sData,5,4) + substr (_sData,3,2) + substr (_sData,1,2)) 
-			sf2->(dbsetorder(1))
-			if ! sf2->(dbseek(xfilial('SF2') + _sNota + _sSerie,.F.))
-				u_log2 ('aviso', "NF '" + _sNota + '/' + _sSerie + "' nao encontrada.")
-				_lRet := .F.
-				exit
+			if _sCodObs == '01'
+				_sDescProc += ' Obs: ' + 'Devol/recusa total'
+			elseif _sCodObs == '02'
+				_sDescProc += ' Obs: ' + 'Devol/recusa parcial'
+			elseif _sCodObs == '03'
+				_sDescProc += ' Obs: ' + 'Aceite/entrega por acordo'
+			endif
+			if ! empty (_sTxtLivre)
+				_sDescProc += ' Obs: ' + alltrim (_sTxtLivre)
+			endif
+
+			// Vou considerar registros deletados por que quero gravar os eventos, mesmo que a nota tenha sido cancelada.
+			set deleted off
+
+			if substr (_sCGC,1,8) != substr (sm0->m0_cgc,1,8)
+				u_log2 ('info', 'Ocorrencia com CGC de outra empresa.(' + _sCGC + '). Vou verificar se eh nota de entrada.')
+				sa2 -> (dbsetorder (3))  // A2_FILIAL, A2_CGC, R_E_C_N_O_, D_E_L_E_T_
+				if sa2 -> (dbseek (xfilial ("SA2") + _sCGC, .F.))
+					U_Log2 ('info', 'CGC cadastrado como fornecedor: ' + sa2 -> a2_cod)
+					_sFilNF = cFilAnt  // Por enquanto vou assumir que fretes sobre entradas sejam destinados a matriz (ainda nao achei onde pegar isso no arq.ocorrencias)
+					_sNFEntSai = 'E'  // Frete sobre NF de entrada.
+					sf1 -> (dbsetorder (1))  // F1_FILIAL, F1_DOC, F1_SERIE, F1_FORNECE, F1_LOJA, F1_TIPO, R_E_C_N_O_, D_E_L_E_T_
+					if ! sf1->(dbseek(_sFilNF + _sNota + _sSerie + sa2 -> a2_cod + sa2 -> a2_loja,.F.))
+						u_log2 ('erro', "NF de entrada '" + _sNota + '/' + _sSerie + "' nao encontrada.")
+						_lRet := .F.
+						exit
+					endif
+				else
+					U_Log2 ('info', 'CGC cadastrado como fornecedor: ' + sa2 -> a2_cod)
+					_lRet := .F.
+					exit
+				endif
 			else
-				if _sOcor == '01' .and. empty (sf2 -> f2_vaDtEnt)
-					// U_Log2 ('debug', 'atualizando f2_vaDtEnt')
-					reclock ("SF2", .f.)
-					sf2 -> f2_vaDtEnt = _dDATA
-					msunlock ()
+				_sNFEntSai = 'S'  // Frete sobre NF de saida.
+				if substr (_sCGC,11,2) != cFilAnt
+					u_log2 ('info', 'Ocorrencia se refere a NF de outra Filial. CGC: ' + _sCGC)
+					_oSQL := ClsSQL ():New ()
+					_oSQL:_sQuery := ""
+					_oSQL:_sQuery += "SELECT M0_CODFIL"
+					_oSQL:_sQuery +=  " FROM SYS_COMPANY"
+					_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+					_oSQL:_sQuery +=   " AND M0_CGC  = '" + _sCGC + "'"
+					_sFilNF = alltrim (_oSQL:RetQry (1, .F.))
+				else
+					_sFilNF = cFilAnt
+				endif
+				sf2->(dbsetorder(1))
+				if ! sf2->(dbseek(_sFilNF + _sNota + _sSerie,.F.))
+					u_log2 ('erro', "NF de saida '" + _sNota + '/' + _sSerie + "' nao encontrada.")
+					_lRet := .F.
+					exit
+				else
+					if _sOcor == '01' .and. empty (sf2 -> f2_vaDtEnt)
+						// U_Log2 ('debug', 'atualizando f2_vaDtEnt')
+						reclock ("SF2", .f.)
+						sf2 -> f2_vaDtEnt = _dDATA
+						msunlock ()
+					endif
+
+					// Posiciona SD2 para buscar numero do pedido.
+					sd2->(dbsetorder(3))
+					if sd2->(dbseek(_sFilNF + _sNota + _sSerie,.F.))
+						_sPedido := sd2->d2_pedido
+					else
+						_sPedido := ''
+					endif
 				endif
 			endif
 
-			//posiciona SD2 para buscar numero do pedido.
-			sd2->(dbsetorder(3))
-			if sd2->(dbseek(xfilial('SD2') + _sNota + _sSerie,.F.))
-				_sPedido := sd2->d2_pedido
-			else
-				_sPedido := ''
-			endif
+			u_log2 ('info', 'Dt:' + _sData + ' Fil:' + _sFilNF + ' NF(' + _sNFEntSai + '):' + _sNota + ' Ocor:' + _sOcor + ' ' + _sDescProc)
+
 			_oEvento := ClsEvent():new ()
-			_oEvento:CodEven    = "SF2009"
+			_oEvento:Filial     = _sFilNF
 			_oEvento:Texto      = ALLTRIM(_sDescProc)
-			_oEvento:NFSaida    = sf2 -> f2_doc
-			_oEvento:SerieSaid  = sf2 -> f2_serie
-			_oEvento:PedVenda   = _sPedido
-			_oEvento:Cliente    = sf2 -> f2_cliente
-			_oEvento:LojaCli    = sf2 -> f2_loja
+			if _sNFEntSai == 'S'
+				_oEvento:CodEven    = "SF2009"
+				_oEvento:NFSaida    = _sNota
+				_oEvento:SerieSaid  = _sSerie
+				_oEvento:PedVenda   = _sPedido
+				_oEvento:Cliente    = sf2 -> f2_cliente
+				_oEvento:LojaCli    = sf2 -> f2_loja
+			elseif _sNFEntSai == 'E'
+				_oEvento:CodEven    = "SF1009"
+				_oEvento:NFEntrada  = _sNota
+				_oEvento:SerieEntr  = _sSerie
+				_oEvento:Fornece    = sf1 -> f1_fornece
+				_oEvento:LojaFor    = sf1 -> f1_loja
+			endif
 			_oEvento:DtEvento   = _dDATA
-			_oEvento:HrEvento   = substr (_aDados[_nLinha],39,2) + ':' + substr (_aDados[_nLinha],41,2) 
+			_oEvento:HrEvento   = _sHrEvt // substr (_aDados[_nLinha],39,2) + ':' + substr (_aDados[_nLinha],41,2) 
 			_oEvento:CodProceda = _sOcor
 			_oEvento:Transp	    = _sTransp
 			_oEvento:TranspReds = ''
 			// _oEvento:Log ()
 			_oEvento:GravaNovo ()
+
+			set deleted on
 		endif
+
+		if _lRet .and. substr (_aDados[_nLinha],1,3) = '343'
+			U_Log2 ('aviso', 'Nao fiz tratamento para registro tipo 343 (redespacho) por que nao informa a NF a qual se refere.')
+		endif
+
+		U_Log2 ('info', '')  // Para gerar linha em branco
 	next
 
 Return _lRet
