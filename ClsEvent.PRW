@@ -40,6 +40,7 @@
 // 22/06/2020 - Robert  - Eliminados alguns logs desnecessarios.
 // 10/03/2021 - Robert  - Melhoria metodo Log().
 //                      - Implementado metodo GravaNovo().
+// 18/04/2021 - Robert  - Grava nome e metodo da classe no arquivo de log.
 //
 
 #include "protheus.ch"
@@ -194,7 +195,7 @@ METHOD Grava () Class ClsEvent
 		::Chave = ::CodAlias
 	EndIf	
 	
-	u_log2 ('info', 'Gravando evento: ' + _sTextoZN)
+	u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Gravando evento ' + dtoc (::DtEvento) + ' ' + ::HrEvento + ' ' + _sTextoZN)
 	
 	reclock ("SZN", .T.)
 	SZN -> zn_filial  = ::Filial
