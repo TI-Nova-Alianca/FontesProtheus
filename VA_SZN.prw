@@ -2,7 +2,14 @@
 // Autor......: Robert Koch
 // Data.......: 19/06/2008
 // Descricao..: Gravacao de log de eventos (customizados) do sistema
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Cadastro
+// #Descricao         #Tela de gravacao / consulta de logs customizados do Protheus.
+// #PalavasChave      #auxiliar #logs_eventos #dedo-duro
+// #TabelasPrincipais #SZN
+// #Modulos           #
+
 // Historico de alteracoes:
 // 10/07/2008 - Robert - Gravacao de pedido de venda, cliente e fornecedor.
 //                     - Passa a receber um objeto com os dados do evento.
@@ -19,6 +26,8 @@
 // 22/05/2019 - Robert - Reativada opcao de exclusao, somente para usuario administrador/robert
 // 11/08/2019 - Robert - Removido tratamento para campo memo (migrado de SYP para formato real).
 // 19/11/2019 - Robert - Implementada leitura de eventos de cadastros viticolas.
+// 20/04/2021 - Robert - Campo F2_DtEntr (padrao, mas atualmente vazio) substitui o campo customizado F2_vaDtEntr (GLPI 9884).
+//                     - Incluidas tags para catalogo de fontes.
 //
 
 #include "rwmake.ch"
@@ -203,8 +212,10 @@ static function _LeDados (_sOQue, _sChave1, _sChave2, _sChave3, _sChave4, _sChav
 				endif
 			
 				// Busca data real de entrega (informada pela transportadora)
-				if ! empty (sf2 -> f2_vaDtEnt)
-					_sMsgInf += "Entrega ao cliente realizada em " + dtoc (sf2 -> f2_vaDtEnt) + chr (13) + chr (10)
+				// if ! empty (sf2 -> f2_vaDtEnt)
+				if ! empty (sf2 -> f2_DtEntr)
+					// _sMsgInf += "Entrega ao cliente realizada em " + dtoc (sf2 -> f2_vaDtEnt) + chr (13) + chr (10)
+					_sMsgInf += "Entrega ao cliente realizada em " + dtoc (sf2 -> f2_DtEntr) + chr (13) + chr (10)
 				endif
 			endif
 		endcase

@@ -18,6 +18,7 @@
 //                     - Criado tratamento para fretes sobre NF de entrada (GLPI 5735).
 //                     - Importa observacoes e texto livre, caso informado (GLPI 5735).
 //                     - Criadas tags para catalogo de fontes.
+// 20/04/2021 - Robert - Campo F2_DtEntr (padrao, mas atualmente vazio) substitui o campo customizado F2_vaDtEntr (GLPI 9884).
 //
 
 // --------------------------------------------------------------------------
@@ -244,10 +245,12 @@ Static Function _Grava (_aDados)
 					_lRet := .F.
 					exit
 				else
-					if _sOcor == '01' .and. empty (sf2 -> f2_vaDtEnt)
+					// if _sOcor == '01' .and. empty (sf2 -> f2_vaDtEnt)
+					if _sOcor == '01' .and. empty (sf2 -> f2_DtEntr)
 						// U_Log2 ('debug', 'atualizando f2_vaDtEnt')
 						reclock ("SF2", .f.)
-						sf2 -> f2_vaDtEnt = _dDATA
+						// sf2 -> f2_vaDtEnt = _dDATA
+						sf2 -> f2_DtEntr = _dDATA
 						msunlock ()
 					endif
 
