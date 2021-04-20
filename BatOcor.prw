@@ -292,9 +292,7 @@ Static Function _Grava (_aDados)
 		endif
 
 		if _lRet .and. substr (_aDados[_nLinha],1,3) = '343'
-			U_Log2 ('erro', 'Sem tratamento para registro tipo 343')
-			_lRet := .F.
-			exit
+			U_Log2 ('aviso', 'Nao fiz tratamento para registro tipo 343 (redespacho) por que nao informa a NF a qual se refere.')
 		endif
 
 		U_Log2 ('info', '')  // Para gerar linha em branco
