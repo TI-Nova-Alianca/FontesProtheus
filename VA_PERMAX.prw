@@ -11,6 +11,7 @@
 // #Modulos   		  #FAT
 //
 // Historico de alteracoes:
+// 20/04/2021 - Claudia - Passa a gravar o campo VA_PERMIN da tabela DA0
 //
 // -------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -62,14 +63,16 @@ User Function VA_PERMAX()
                     _sFilial := _aDA02[_x, 1]
                     _sTabela := _aDA02[_x, 2]
                     _nRecno  := _aDA02[_x, 3]
-                    _nPerMax := mv_par05
-
+                    _nPerMin := mv_par05
+                    _nPerMax := mv_par06
+                    
                     dbSelectArea("DA0")
                     dbSetOrder(1) // DA0_FILIAL + DA0_CODTAB
                     dbGoTop()
 		
 		            If dbSeek(_sFilial + _sTabela)
                         Reclock("DA0",.F.)
+                            DA0->DA0_PERMIN := _nPerMin
                             DA0->DA0_PERMAX := _nPerMax
                         DA0->(MsUnlock())
 
@@ -98,7 +101,9 @@ Static Function _ValidPerg ()
     aadd (_aRegsPerg, {02, "Filial até         ", "C", 02, 0,  "",  "SM0", {},          ""})
     aadd (_aRegsPerg, {03, "Tabela de          ", "C", 03, 0,  "",  "DA0", {},          ""})
     aadd (_aRegsPerg, {04, "Tabela até         ", "C", 03, 0,  "",  "DA0", {},          ""})
-    aadd (_aRegsPerg, {05, "Valor % maximo     ", "N", 06, 2,  "",  "   ", {},          ""})
+    aadd (_aRegsPerg, {05, "Valor desconto     ", "N", 06, 2,  "",  "   ", {},          ""})
+    aadd (_aRegsPerg, {06, "Valor acréscimo    ", "N", 06, 2,  "",  "   ", {},          ""})
+    
 
     U_ValPerg (cPerg, _aRegsPerg)
 Return
