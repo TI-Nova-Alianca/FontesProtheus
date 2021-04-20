@@ -20,12 +20,21 @@
 #include "rwmake.ch"
 #include 'topconn.CH'
 
-User Function ZB1DIF()
+User Function ZB1DIF(_sTipo)
 	Private oReport
-	Private cPerg := "ZB1DIF"
-	
-	_ValidPerg()
-	Pergunte(cPerg,.F.)
+	Private cPerg    := "ZB1DIF"
+	Private _cFilIni := '  '
+    Private _cFilFin := 'ZZ'
+    Private _dDate   := dDataBase
+
+    If _sTipo == '1'
+        _ValidPerg()
+        Pergunte(cPerg,.F.)
+
+        _cFilIni := mv_par01
+        _cFilFin := mv_par02
+        _dDate   := mv_par03
+    EndIf
 	
 	oReport := ReportDef()
 	oReport:PrintDialog()
@@ -98,8 +107,8 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "			AND SE5A.E5_RECPAG = 'R'"
     _oSQL:_sQuery += "			AND SE5A.E5_TIPODOC = 'JR'"
     _oSQL:_sQuery += "		WHERE SE1.D_E_L_E_T_ = ''"
-    _oSQL:_sQuery += "		AND SE1.E1_FILIAL BETWEEN '" + MV_PAR01 + "' AND '" + MV_PAR02 + "'"
-    _oSQL:_sQuery += "		AND SE1.E1_EMISSAO >= '" + DTOS(MV_PAR03)+ "'"
+    _oSQL:_sQuery += "		AND SE1.E1_FILIAL BETWEEN '" + _cFilIni + "' AND '" + _cFilFin + "'"
+    _oSQL:_sQuery += "		AND SE1.E1_EMISSAO >= '" + DTOS(_dDate)+ "'"
     _oSQL:_sQuery += "		AND E1_TIPO IN ('CC', 'CD')"
     _oSQL:_sQuery += "		GROUP BY SE1.E1_FILIAL"
     _oSQL:_sQuery += "				,SE1.E1_NUM"
@@ -152,7 +161,7 @@ Static Function PrintReport(oReport)
 
     oReport:ThinLine()
     oReport:PrintText(" ",,100)
-    oReport:PrintText(" DIFERENÇAS LISTADAS DESDE DATA: " + str(mv_par03),,100)
+    oReport:PrintText(" DIFERENÇAS LISTADAS DESDE DATA: " + DTOC(_dDate),,100)
     oSection1:Finish()
 Return
 //
