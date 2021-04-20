@@ -11,7 +11,7 @@
 // #Modulos   		  #FAT
 //
 // Historico de alteracoes:
-// 20/04/2021 - Claudia - Passa a gravar o campo VA_PERMIN da tabela DA0
+// 20/04/2021 - Claudia - Passa a gravar o campo DA0_PERMIN da tabela DA0. GLPI: 9864
 //
 // -------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
