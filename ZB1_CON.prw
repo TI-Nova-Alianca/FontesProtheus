@@ -19,9 +19,12 @@
 // 03/11/2020 - Claudia - Incluida a gravação do SXK
 // 19/11/2020 - Claudia - Retirada a data de emissão de vendas link
 // 04/12/2020 - Claudia - Alteração de ajustes para arredondamento. GLPI: 8970
-// 07/12/2020 - Claudia - Inclusao do calculo de taxa para registros que a cielo adiciona em apenas um cabeçalho.
+// 07/12/2020 - Claudia - Inclusao do calculo de taxa para registros que a cielo 
+//                        adiciona em apenas um cabeçalho.
 // 08/03/2021 - Cláudia - Alterado o motivo da baixa para links. GLPI:9574
 // 29/03/2021 - Claudia - Incluida filial 13. GLPI: 9710
+// 20/04/2021 - Claudia - Incluida a chamada para o relatorio de diferenças no 
+//                        final da conciliação. GLPI: 9835
 //
 // -----------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -313,6 +316,8 @@ User Function ZB1_CON(_sConciliar)
 	EndIf
 	
 	u_logFim ("Fim Conciliação Cielo " + DTOS(date()) )
+
+	U_ZB1DIF('2')
 Return
 
 // --------------------------------------------------------------------------
