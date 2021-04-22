@@ -27,6 +27,7 @@
 //                      - Criado botao para visualizar eventos do pedido.
 // 24/11/2019 - Robert  - Campo C5_VABLOQ passa a ter mais de uma posicao (GLPI 7000).
 // 09/03/2021 - Claudia - Criada legenda para bloq. de bonificação. GLPI: 9070
+// 22/04/2021 - Claudia - GLPI: 9886 - Bloqueio de pedidos de bonificação
 //
 // --------------------------------------------------------------------------------------
 User Function SC5LBG ()
@@ -124,7 +125,16 @@ User Function SC5LBGL ()
 				endif
 			endif
 		endif
-	endif		
+	endif	
+
+	if _lContinua .and. ('B' $ sc5 -> C5_VABLOQ)
+		if _lGrp082 .or. _lGrp004 .or. _lGrp081
+			_lContinua = .T.
+		else
+			u_help ("Bloqueio por bonificação. Usuario sem alcada para liberação.")
+			_lContinua = .F.
+		endif
+	endif
 
 	if _lContinua
 		CursorWait ()
