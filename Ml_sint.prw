@@ -1,25 +1,31 @@
 // Programa...: ML_SINT
 // Autor......: Robert Koch
 // Data.......: 23/10/2002
-// Descricao...: Leitura do arquivo exportado para o Sintegra e remocao de aspas e
-//            	 apostrofes. Para isso, importa o arquivo para DBF e limpa linha
-//             	 por linha.
-// ------------------------------------------------------------------------------------
+// Descricao..: Leitura do arquivo exportado para o Sintegra e remocao de aspas e
+//            	 apostrofes. Para isso, importa o arquivo para DBF e limpa linha por linha.
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Leitura do arquivo exportado para o Sintegra e remocao de aspas e apostrofes.
+// #PalavasChave      #Sintegra
+// #TabelasPrincipais 
+// #Modulos           
 //
 // Historico de alteracoes:
 // 22/11/2002 - Robert Koch - Incluida verificacao do arquivo a procura de NF de
-//                           importacao (reg. 54) onde ha particularidade de ICMS
-//                           e passa a chamar o MATA940A internamente.
+//                            importacao (reg. 54) onde ha particularidade de ICMS
+//                            e passa a chamar o MATA940A internamente.
 // 28/11/2002 - Robert Koch - Incluida verificacao de NF imobiliz. de saida tambem.
 // 03/12/2002 - Robert Koch - Passa a limpar todas as series de NF ateh nov/2002
 // 04/03/2020 - Claudia     - Ajuste de fonte conforme solicitação de versão 12.1.25
+// 23/04/2021 - Claudia - Ajustes para versão R25.
 //
 // ------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
 User Function ML_SINT ()
-   local   _lErroSX1 := .F.
-   private _sArq1 := space (70)
+   local _lErroSX1   := .F.
+   private _sArq1    := space (70)
 
    // Executa o padrao e depois faz ajustes no arquivo gerado
    mata940a ()
@@ -50,7 +56,8 @@ User Function ML_SINT ()
 return
 //
 // --------------------------------------------------------------------------
-static function ML_SINT1 ()
+Static Function ML_SINT1 ()
+   local _aArqTrb    := {}
 
    _sArq1 = upper (alltrim (_sArq1))
    if ! file (_sArq1)
@@ -58,10 +65,14 @@ static function ML_SINT1 ()
       return
    endif
 
-   // Cria arq. de trabalho para importacao
+   // Cria arq. de trabalho para importacao 
+   // incproc ("Processando...")
+   // _ArqTrb ("cria", "_trb", {{"linha", "C", 126,  0}}, {})
+
    procregua (2)
-   incproc ("Processando...")
-   _ArqTrb ("cria", "_trb", {{"linha", "C", 126,  0}}, {})
+   AADD(aCampos,{"linha", "C", 126,  0})
+   U_ArqTrb ("Cria", "_trb", aCampos, {}, @_aArqTrb)
+
    dbselectarea ("_trb")
    append from (_sArq1) sdf
 
@@ -80,7 +91,7 @@ static function ML_SINT1 ()
       _sLinha = strtran (_sLinha, '"', " ")
 
       // Limpa series das NF
-         do case
+      do case
          case left (_sLinha, 2) == "50"
             _sLinha = stuff (_sLinha, 43, 3, "   ")
          case left (_sLinha, 2) == "51"
@@ -95,32 +106,38 @@ static function ML_SINT1 ()
             _sLinha = stuff (_sLinha, 43, 3, "   ")
          case left (_sLinha, 2) == "71"
             _sLinha = stuff (_sLinha, 43, 3, "   ")
-         endcase
+      endcase
 
       fwrite (_nHdl, _sLinha + chr (13) + chr (10))
       _trb -> (dbskip ())
    enddo
    _ArqTrb ("deleta", "_trb")
    fclose (_nHdl)
+
+   u_arqtrb ("FechaTodos",,,, @_aArqTrb)   
 return
 //
 // --------------------------------------------------------------------------
 // Cria ou deleta arquivo de trabalho e seus indices
-static function _ArqTrb (_sOperacao, _sAlias, _aCampos, _aIndices)
+Static Function _ArqTrb (_sOperacao, _sAlias, _aCampos, _aIndices)
    local  _sArqInd := ""
    local  _nIndice := 0
    static _sArqDBF := ""
    static _aArqInd := {}
+
    if upper (_sOperacao) == "CRIA"
-      _sArqDBF = criatrab (_aCampos, .T.)
-      _aArqInd = {}
-      dbusearea (.T.,, _sArqDBF, _sAlias, .F., .F.)
+      // _sArqDBF = criatrab (_aCampos, .T.)
+      // _aArqInd = {}
+      // dbusearea (.T.,, _sArqDBF, _sAlias, .F., .F.)
+      U_ArqTrb ("Cria", _sAlias, _aCampos, {}, @_aArqTrb)
+
       for _nIndice = 1 to len (_aIndices)
          _sArqInd = criatrab ("", .F.)
          indregua (_sAlias, _sArqInd, _aIndices [_nIndice],,, "Indexando arquivo de trabalho")
          aadd (_aArqInd, _sArqInd)
       next
    endif
+
    if upper (_sOperacao) == "DELETA"
       (_sAlias) -> (dbclosearea ())
       ferase (_sArqDBF + ".dbf")
