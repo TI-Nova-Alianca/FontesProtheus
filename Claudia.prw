@@ -3,7 +3,8 @@
 
 user function claudia ()
 
-	u_help("Nada para executar")
+	//u_help("Nada para executar")
+	AXCADASTRO("AK5")
 	//u_help('VERBAS')
 	//U_ClauBatVerbas(2,cFilAnt)
 //	u_help('comissoes')

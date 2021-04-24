@@ -1,31 +1,42 @@
-// Mostra uma array em tela, para conferencia.
+// Programa..: ShowArray
+// Autor.....: Robert Koch
+// Data......: 20/12/2002
+// Descricao.: Mostra uma array em tela, para conferencia.
+//
 // Parametros: - Matriz a ser mostrada (se nao for matriz, mostra tela simples.
 //             - Mensagem a ser mostrada no cabecalho da tela
 //             - Array com o titulo de cada coluna
 //             - Nivel: nao informar. Usado em chamada recursiva.
-// Autor: Robert Koch - 20/12/2002
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Mostra uma array em tela, para conferencia.
+// #PalavasChave      #array #mostra_array
+// #TabelasPrincipais 
+// #Modulos           #todos_modulos
 //
 // Historico de alteracoes:
-// 24/08/2003 - Robert - Trocada multiline por TWBrowse, que permite passar a linha atual como parametro para uma chamada recursiva da propria funcao
-//            - Robert - Melhoramentos gerais
-// 05/09/2003 - Robert - Ajustado para aceitar subarrays de tamanhos diferentes.
-// 10/09/2003 - Robert - Passa a abrir seu proprio arquivo temporario para nao atrapalhar outros.
-// 13/07/2005 - Robert - Gera sempre o dialogo principal, independente do tipo de dado recebido.
-// 22/09/2006 - Robert - Passa a usar fonte monoespacada no browse
-// 21/06/2007 - Robert - Alterada fonte de letras para melhor visualizacao.
-//            - Robert - Passa a usar funcao MsAdvSize para calcular tamanho da tela.
-// 14/07/2011 - Robert - Usa funcao ClassDataArr() para mostrar dados de objetos.
-// 16/12/2013 - Robert - Criado botao de exportacao para planilha.
-// 25/10/2016 - Robert - Exportacao para planilha passa a array original e nao mais a array que foi formatada para mostrar em tela.
-// 01/07/2020 - Robert - Verifica se tem interface com o usuario antes de tentar mostrar a tela.
+// 24/08/2003 - Robert  - Trocada multiline por TWBrowse, que permite passar a linha atual 
+//                        como parametro para uma chamada recursiva da propria funcao
+//            - Robert  - Melhoramentos gerais
+// 05/09/2003 - Robert  - Ajustado para aceitar subarrays de tamanhos diferentes.
+// 10/09/2003 - Robert  - Passa a abrir seu proprio arquivo temporario para nao atrapalhar outros.
+// 13/07/2005 - Robert  - Gera sempre o dialogo principal, independente do tipo de dado recebido.
+// 22/09/2006 - Robert  - Passa a usar fonte monoespacada no browse
+// 21/06/2007 - Robert  - Alterada fonte de letras para melhor visualizacao.
+//            - Robert  - Passa a usar funcao MsAdvSize para calcular tamanho da tela.
+// 14/07/2011 - Robert  - Usa funcao ClassDataArr() para mostrar dados de objetos.
+// 16/12/2013 - Robert  - Criado botao de exportacao para planilha.
+// 25/10/2016 - Robert  - Exportacao para planilha passa a array original e nao mais a array que 
+//                        foi formatada para mostrar em tela.
+// 01/07/2020 - Robert  - Verifica se tem interface com o usuario antes de tentar mostrar a tela.
+// 23/04/2021 - Claudia - Ajustes para versão R25.
 //
-
+// ----------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
-// --------------------------------------------------------------------------
 user function ShowArray (_aMatOrig, _sMensagem, _aTitulos, _nNivel)
    local _oBrowse   := NIL  // Browse da array. Deixar declarado como local para que ainda exista ao retornar de chamada recursiva
-//   local _oDlgElem  := NIL  // Dialogo usado para mostrar dados de um elemento simples
    local _oDlgArray := NIL  // Dialogo usado para o browse
    local _oLinAtu   := NIL  // Objeto get a ser atualizado na troca de linha. Deixar declarado como local para que ainda exista ao retornar de chamada recursiva
    local _aMatriz   := {}   // Matriz mostrada no browse. Nao mostro a original por conter dados de diferentes tipos.
@@ -39,6 +50,7 @@ user function ShowArray (_aMatOrig, _sMensagem, _aTitulos, _nNivel)
    local _sAlias    := ""   // Alias de trabalho para o browse
    local _aAreaAnt  := {}
    local _aSize     := {}
+   local _aArqTrb   := {}
 
    _sMensagem := iif (_sMensagem != NIL, _sMensagem, "")
    _nNivel    := iif (_nNivel    != NIL, _nNivel,    1)
@@ -52,6 +64,7 @@ user function ShowArray (_aMatOrig, _sMensagem, _aTitulos, _nNivel)
       _lTamDifer = .F.
       _nTamLinha = iif (valtype (_aMatOrig [1]) == "A", len (_aMatOrig [1]), 1)
       _sTipoDado = valtype (_aMatOrig [1])
+
       for _nLin = 2 to len (_aMatOrig)
          if valtype (_aMatOrig [_nLin]) != _sTipoDado .or. (valtype (_aMatOrig [_nLin]) == "A" .and. len (_aMatOrig [_nLin]) != _nTamLinha)
             _lTamDifer = .T.
@@ -97,7 +110,6 @@ user function ShowArray (_aMatOrig, _sMensagem, _aTitulos, _nNivel)
       next
 
       // Agora que tenho todos os dados em formato string, posso montar as larguras e titulos
-
       // Se recebi uma matriz unidimensional...
       if valtype (_aMatriz [1]) != "A"
          if len (_aTitulos) == 0
@@ -108,7 +120,6 @@ user function ShowArray (_aMatOrig, _sMensagem, _aTitulos, _nNivel)
             _aLargCols [1] = max (_aLargCols [1], len (alltrim (_aMatriz [_nLin])) * 5)
          next
       else  // Recebi uma matriz multidimensional
-
          // Se encontrar mais colunas que recebi em _aTitulos, completo o resto.
          for _nCol = 1 to len (_aMatriz [1])
             if len (_aTitulos) < _nCol
@@ -134,13 +145,19 @@ user function ShowArray (_aMatOrig, _sMensagem, _aTitulos, _nNivel)
       // eu nao quero confusao com o alias atual do programa chamador, abro outro.
       _aAreaAnt = getarea ()
       _sAlias = "_ShowArr" + strzero (_nNivel, 2)
-      dbusearea (.T.,, criatrab ({{"Bah", "C", 1, 0}}, .T.), _sAlias, .T., .T.)
+      
+      aCampos := {}
+      AADD(aCampos,{"Bah", "C", 1, 0})
+
+      U_ArqTrb ("Cria", _sAlias, aCampos, {}, @_aArqTrb)
+
+      //dbusearea (.T.,, criatrab ({{"Bah", "C", 1, 0}}, .T.), _sAlias, .T., .T.)
    
       // Gera posicoes para a janela na tela
       _aSize := MsAdvSize()
       
       // Ocupa a altura reservada para a barra de botoes.
-   //   _aSize [6] += iif (type ("oApp:lFlat") != "U" .and. oApp:lFlat, 20, 30)
+      // _aSize [6] += iif (type ("oApp:lFlat") != "U" .and. oApp:lFlat, 20, 30)
       _aSize [4] = _aSize [6] / 2
       _aSize [4] -= 30
    
@@ -214,13 +231,13 @@ user function ShowArray (_aMatOrig, _sMensagem, _aTitulos, _nNivel)
          //@ (_oDlgArray:nClientHeight / 2 - 30), (_oDlgArray:nClientWidth / 2 - 150) button 'Planilha' action (U_AColsXLS (_aMatriz))
          @ (_oDlgArray:nClientHeight / 2 - 30), (_oDlgArray:nClientWidth / 2 - 150) button 'Planilha' action (U_AColsXLS (_aMatOrig))
          @ (_oDlgArray:nClientHeight / 2 - 30), (_oDlgArray:nClientWidth / 2 - 40) bmpbutton type 1 action (_oDlgArray:End ())
-      _oDlgArray:Activate (, ;     // ?
-                           , ;     // ?
-                           , ;     // ?
-                           .F., ;  // Centralizado
-                           , ;     // {|Self|<bValid>}  // Bloco de codigo. Se retornar falso, nao permite que o dialogo seja fechado.
-                           , ;     // ?
-                           )       // [{|Self|<bInit>}]  // Bloco de codigo a ser executado na inicializacao do dialogo
+         _oDlgArray:Activate (   , ;     // ?
+                                 , ;     // ?
+                                 , ;     // ?
+                              .F., ;     // Centralizado
+                                 , ;     // {|Self|<bValid>}  // Bloco de codigo. Se retornar falso, nao permite que o dialogo seja fechado.
+                                 , ;     // ?
+                              )          // [{|Self|<bInit>}]  // Bloco de codigo a ser executado na inicializacao do dialogo
       (_sAlias) -> (dbclosearea ())
       restarea (_aAreaAnt)
    endif
