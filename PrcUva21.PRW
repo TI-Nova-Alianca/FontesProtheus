@@ -97,6 +97,15 @@ user function PrcUva21 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 					endif
 				endif
 			endif
+
+			// Complemento gerado em abril 2021 (GLPI 9891) - moscatos, riesling e procecco, trebiano
+			if alltrim (sb1 -> b1_cod) $ '9845/9854/9911/9932/9920/9928/9912' .and. _sConducao == 'L'
+				if _nGrau >= 9
+					_lIsabel = .F.
+					_sComent = "Compl.2021 desclassifica moscatos so abaixo de 9 graus."
+				endif
+			endif
+
 			if _lIsabel
 				_sClassif = ''
 				if sb1 -> b1_vacor == 'T' .and. ! alltrim (sb1 -> b1_cod) $ '9969/9969A' // Alicante vai ser tratada como uva branca.
@@ -500,8 +509,11 @@ user function PrcUva21 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 			if _sConducao == 'E'  // Espaldeira
 				do case
 				case alltrim (_sClassif) == "PR" .or. alltrim (_sClassif) == "AA"// Nao testar alltrim (_sClassif) $ "PR/AA" por que vai abocanhar a classe 'A' junto!
-					_nPrcRec *= 1.4
-					_nPrcCom *= 1.4
+					// Complemento abr/2021 aumentamos preco grau base e pagaremos apenas 20% de agio no PR e AA (GLPI 9891)
+					// _nPrcRec *= 1.4
+					// _nPrcCom *= 1.4
+					_nPrcRec *= 1.2
+					_nPrcCom *= 1.2
 				case alltrim (_sClassif) == "A"
 					_nPrcRec *= 1.2
 					_nPrcCom *= 1.2
@@ -546,7 +558,8 @@ user function PrcUva21 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 						_lContinua = .F.
 					endcase
 
-				elseif _sGrpZX513 == '305'  // Este ano pagaremos agio de 10% para moscato e alicante com clas.A latada
+			//	elseif _sGrpZX513 == '305'  // Este ano pagaremos agio de 10% para moscato e alicante com clas.A latada
+				elseif _sGrpZX513 $ '305/306'  // Este ano pagaremos agio de 10% para moscato e alicante com clas.A latada + trebiano (GLPI 9891)
 
 					do case
 					case alltrim (_sClassif) == "A"

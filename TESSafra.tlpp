@@ -1,0 +1,77 @@
+// Programa:  TESSafra
+// Autor:     Robert Koch
+// Data:      22/04/2021
+// Descricao: Define o TES a ser usado para contranotas de safra, cfe. fornecedor e tipo de nota.
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Define o TES a ser usado para contranotas de safra, cfe. fornecedor e tipo de nota. Criado para atender chamado GLPI 9891
+// #PalavasChave      #safra #TES
+// #TabelasPrincipais #SA2
+// #Modulos           #COOP
+
+// Historico de alteracoes:
+//
+
+// --------------------------------------------------------------------------
+user function TESSafra (_sSafra, _sFornece, _sLoja, _sTipoNF)
+	local _aAreaAnt  := U_ML_SRArea ()
+	local _aAmbAnt   := U_SalvaAmb ()
+	local _oSQL      := NIL
+	local _aTpForUva := {}
+	local _sTpForUva := ''
+	local _sRetTES   := ''
+	local _lContinua := .t.
+
+	// Verifica qual o tipo de fornecedor de uva (associado / nao associado)
+	if _lContinua
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT distinct GX0001_TIPO_FORNECEDOR_UVA"
+		_oSQL:_sQuery +=  " FROM GX0001_AGENDA_SAFRA V"
+		_oSQL:_sQuery += " WHERE GX0001_ASSOCIADO_CODIGO = '" + _sFornece + "'"
+		_oSQL:_sQuery +=   " AND GX0001_ASSOCIADO_LOJA   = '" + _sLoja    + "'"
+//		_oSQL:Log ()
+		_aTpForUva = _oSQL:RetFixo (1, "ao consultar o 'tipo de fornecedor de uva' cod. '" + _sFornece + "/" + _sLoja + "'. Verifique cadastro no NaWeb.", .T.)
+		if len (_aTpForUva) == 1
+			_sTpForUva = _aTpForUva [1, 1]
+		else
+			u_log2 ('erro', "Sem definicao para 'tipo de fornecedor de uva'.")
+			_lContinua = .F.
+		endif
+		FreeObj (_oSQL)
+	endif
+
+	sa2 -> (dbsetorder (1))
+	if ! sa2 -> (dbseek (xfilial ("SA2") + _sFornece + _sLoja, .F.))
+		u_help ("Cadastro do fornecedor '" + _sFornece + '/' + _sLoja + "' nao encontrado!")
+		_lContinua = .F.
+	endif
+
+	if _lContinua
+//		U_Log2 ('debug', 'Para definicao de TES: _sTpForUva + sa2 -> a2_tipo = ' + _sTpForUva + sa2 -> a2_tipo)
+		if _sSafra >= '2021'
+			do case
+			case _sFornece == '001369'  // Producao propria Livramento
+				_sRetTES = '028'
+			case _sTpForUva + sa2 -> a2_tipo == 'AF'
+				_sRetTES = GetMv ("VA_TSAFAF")  // Associado pessoa fisica
+			case _sTpForUva + sa2 -> a2_tipo == 'AJ'
+				_sRetTES = GetMv ("VA_TSAFAJ")  // Associado pessoa juridica
+			case _sTpForUva + sa2 -> a2_tipo == 'NF'
+				_sRetTES = GetMv ("VA_TSAFNF")  // Nao associado pessoa fisica
+			case _sTpForUva + sa2 -> a2_tipo == 'NJ'
+				_sRetTES = GetMv ("VA_TSAFNJ")  // Nao associado pessoa juridica
+			otherwise
+				u_help ("Nao foi possivel definir o TES a ser usado para gerar contranota. Verifique o cadastro do fornecedor (pessoa fisica/juridica) e tipo de fornecedor no NaWeb.",, .T.)
+				_lContinua = .F.
+			endcase
+		else
+			u_help ("Sem tratamento para a safra '" + _sSafra + "' no programa " + procname (),, .t.)
+			_lContinua = .F.
+		endif
+	endif
+
+	U_SalvaAmb (_aAmbAnt)
+	U_ML_SRArea (_aAreaAnt)
+return _sRetTES

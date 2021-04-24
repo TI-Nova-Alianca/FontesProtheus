@@ -17,6 +17,7 @@
 // 21/03/2016 - Robert - Criado filtro por tipo (organica/em conversao/etc.)
 // 27/03/2018 - Robert - Criado tratamento para gravar campos de mistura de variedades e mensagens para NF.
 // 22/04/2020 - Robert - Criado tratamento para gravar campo ZZ9_TES
+// 22/04/2021 - Robert - Passa a usar a funcao U_TESSafra() para definicao do TES a usar (GLPI 9891)
 //
 
 // --------------------------------------------------------------------------
@@ -103,7 +104,7 @@ Static Function _Gera()
 			_sSQL += _sWhere
 			U_Log (_sSQL)
 			if TCSQLExec (_sSQL) < 0
-				u_help ("Erro na exclusao das pre-notas anteriores.")
+				u_help ("Erro na exclusao das pre-notas anteriores.",, .t.)
 				_lContinua = .F.
 			endif
 		endif
@@ -277,35 +278,42 @@ Static Function _Gera()
 						_sMsgNF += "Produto correto: 9923 (Seibel 2)"
 					endif
 
-					if len (_aMistura) > 3
-						u_help ("Este programa nao tem tratamento para cargas com mistura de mais de 3 variedades.")
-					else
-						reclock ("ZZ9", .T.)
-						zz9 -> zz9_filial = _sFilial
-						zz9 -> zz9_pre_nf = _sPreNF
-						zz9 -> zz9_safra  = mv_par05
-						zz9 -> zz9_parcel = mv_par11
-						zz9 -> zz9_fornec = _sFornece
-						zz9 -> zz9_loja   = _sLoja
-						zz9 -> zz9_TipoNF = "N"
-						zz9 -> zz9_produt = (_sAliasQ) -> produto
-						zz9 -> zz9_grau   = (_sAliasQ) -> grau
-						zz9 -> zz9_classe = (_sAliasQ) -> prm99
-						zz9 -> zz9_clabd  = (_sAliasQ) -> clas_abd
-						zz9 -> zz9_quant  = (_sAliasQ) -> peso_liq
-						zz9 -> zz9_vunit  = 0  // Deixa o preco para a rotina de atualizacao de precos.
-						zz9 -> zz9_nfentr = (_sAliasQ) -> doc
-						zz9 -> zz9_mistu1 = iif (len (_aMistura) >= 1, _aMistura [1, 1], '')
-						zz9 -> zz9_mistu2 = iif (len (_aMistura) >= 2, _aMistura [2, 1], '')
-						zz9 -> zz9_mistu3 = iif (len (_aMistura) >= 3, _aMistura [3, 1], '')
-						zz9 -> zz9_obs    = _sObs
-						zz9 -> zz9_msgNF  = _sMsgNF
-						zz9 -> zz9_conduc = _sConduc
-						zz9 -> zz9_grupo  = mv_par19
-						zz9 -> zz9_tes    = iif ((_sAliasQ) -> tp_fornec $ 'ASSOCIADO/EX ASSOCIADO', mv_par21, mv_par21)
-						msunlock ()
+					// Definicao de TES: usar a mesma regra do VA_RUSN
+					_sTes = U_TESSafra (mv_par05, _sFornece, _sLoja, 'V')
+					if empty (_sTES)
+						_lContinua = .F.
 					endif
- 
+
+					if _lContinua
+						if len (_aMistura) > 3
+							u_help ("Este programa nao tem tratamento para cargas com mistura de mais de 3 variedades.")
+						else
+							reclock ("ZZ9", .T.)
+							zz9 -> zz9_filial = _sFilial
+							zz9 -> zz9_pre_nf = _sPreNF
+							zz9 -> zz9_safra  = mv_par05
+							zz9 -> zz9_parcel = mv_par11
+							zz9 -> zz9_fornec = _sFornece
+							zz9 -> zz9_loja   = _sLoja
+							zz9 -> zz9_TipoNF = "N"
+							zz9 -> zz9_produt = (_sAliasQ) -> produto
+							zz9 -> zz9_grau   = (_sAliasQ) -> grau
+							zz9 -> zz9_classe = (_sAliasQ) -> prm99
+							zz9 -> zz9_clabd  = (_sAliasQ) -> clas_abd
+							zz9 -> zz9_quant  = (_sAliasQ) -> peso_liq
+							zz9 -> zz9_vunit  = 0  // Deixa o preco para a rotina de atualizacao de precos.
+							zz9 -> zz9_nfentr = (_sAliasQ) -> doc
+							zz9 -> zz9_mistu1 = iif (len (_aMistura) >= 1, _aMistura [1, 1], '')
+							zz9 -> zz9_mistu2 = iif (len (_aMistura) >= 2, _aMistura [2, 1], '')
+							zz9 -> zz9_mistu3 = iif (len (_aMistura) >= 3, _aMistura [3, 1], '')
+							zz9 -> zz9_obs    = _sObs
+							zz9 -> zz9_msgNF  = _sMsgNF
+							zz9 -> zz9_conduc = _sConduc
+							zz9 -> zz9_grupo  = mv_par19
+							zz9 -> zz9_tes    = _sTES
+							msunlock ()
+						endif
+					endif
 					(_sAliasQ) -> (dbskip ())
 				enddo
 				_nItem ++
@@ -412,8 +420,8 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {18, "[O]rg/[E]m con/[C]onven/[B]ord", "C", 4,             0,            "",   "   ",  {},                                            "Informar letra indicando qual(is) deve(m) ser considerada(s): [O]rganicas, [E]m conversao, [C]conencional, [B]ordadura"})
 	aadd (_aRegsPerg, {19, "Gerar qual grupo pagamento?   ", "C", 1,             0,            "",   "   ",  {},                                            ""})
 	aadd (_aRegsPerg, {20, "Forma de conducao             ", "C", 1,             0,            "",   "   ",  {"Latada", "Espaldeira", "Todas"},             ""})
-	aadd (_aRegsPerg, {21, "TES compra associados         ", "C", 3,             0,            "",   "SF4",  {},                                            ""})
-	aadd (_aRegsPerg, {22, "TES compra nao associados     ", "C", 3,             0,            "",   "SF4",  {},                                            ""})
+//	aadd (_aRegsPerg, {21, "TES compra associados         ", "C", 3,             0,            "",   "SF4",  {},                                            ""})
+//	aadd (_aRegsPerg, {22, "TES compra nao associados     ", "C", 3,             0,            "",   "SF4",  {},                                            ""})
 //	aadd (_aRegsPerg, {23, "TES complemento associados    ", "C", 3,             0,            "",   "SF4",  {},                                            ""})
 //	aadd (_aRegsPerg, {24, "TES complemento nao associados", "C", 3,             0,            "",   "SF4",  {},                                            ""})
 	U_ValPerg (cPerg, _aRegsPerg)
