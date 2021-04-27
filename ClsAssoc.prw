@@ -162,14 +162,11 @@ CLASS ClsAssoc
 	METHOD DtEntrada ()
 	METHOD DtSaida ()
 	METHOD EhSocio ()
-//	METHOD ExtratoCC ()
-//	METHOD ExtratoCC2 ()
 	METHOD FechSafra ()
 	METHOD GrpFam ()
 	METHOD IdadeEm ()
 	METHOD LctComSald ()
 	METHOD SaldoEm ()
-//	METHOD SaldoEmOLD ()
 	METHOD SldQuotCap ()
 	METHOD TmpAssoc ()
 	METHOD UltSafra ()
@@ -558,9 +555,10 @@ METHOD CalcCM (_sMesRef, _nTaxaVl1, _nTaxaVl2, _nLimVl1, _lGerarD, _lGerarC) Cla
 	local _oAssoc2   := NIL
 	local _sTipoCorr := ""
 	local _lRet      := .T.
+	local _sAliasQ   := ''
+	local _nSldNFSaf := 0
 
-//	u_logIni (GetClassName (::Self) + '.' + procname ())
-	u_log2 ('info', 'Iniciando calculo corr.mon. assoc. ' + ::Codigo + '/' + ::Loja)
+	u_log2 ('info', 'Iniciando calculo corr.mon. assoc. ' + ::Codigo + '/' + ::Loja + ' para mes ref. ' + _sMesRef)
 
 	if _lContinua
 		if substr (_sMesRef, 3, 4) + substr (_sMesRef, 1, 2) >= left (dtos (date ()), 6)
@@ -586,12 +584,11 @@ METHOD CalcCM (_sMesRef, _nTaxaVl1, _nTaxaVl2, _nLimVl1, _lGerarD, _lGerarC) Cla
 
 	if _lContinua .and. ! ::EhSocio (_dDtGrvCor)
 		::UltMsg += "Nao consta como associado na data prevista para gravacao da correcao (" + dtoc (_dDtGrvCor) + ")."
-		//_lRet = .F.
 		_lContinua = .F.
 	endif
 
 
-	// A correcao eh sempre gerada na matriz a partir de 30/03/2017.
+	// A partir de 30/03/2017, a correcao eh sempre gerada na matriz.
 	if _lContinua .and. cEmpAnt + cFilAnt != '0101'
 		::UltMsg += "A correcao deve ser gerada na matriz."
 		_lRet = .F.
@@ -623,6 +620,9 @@ METHOD CalcCM (_sMesRef, _nTaxaVl1, _nTaxaVl2, _nLimVl1, _lGerarD, _lGerarC) Cla
 		endif
 	endif
 
+	_sMemCalc := "Corr.mon.calculada em " + dtoc (date ()) + " " + time () + " com taxa de " + alltrim (transform (_nTaxa, "@E 999,999.99")) + "% sobre " + GetMv ("MV_SIMB1") + " " + alltrim (transform (abs (_nBaseCorr), "@E 999,999,999.99")) + chr (13) + chr (10)
+	_sMemCalc += "Dados considerados para calculo:" + chr (13) + chr (10)
+
 	// Busca os saldos de conta corrente de todas as lojas do associado.
 	if _lContinua
 		_nSldAssoc = 0
@@ -635,50 +635,90 @@ METHOD CalcCM (_sMesRef, _nTaxaVl1, _nTaxaVl2, _nLimVl1, _lGerarD, _lGerarC) Cla
 				_oAssoc2 = ::Self
 			endif
 
-			// Calcula o saldo do associado na data de referencia, para que seja a base inicial de calculo
-			// da correcao. Desconsidera movimento tipo 31 por que esse movimento nao representa um 'emprestimo',
-			// mas um direito do associado que estamos pagando agora por ainda nao ter a NF de compra.
+			// Calcula o saldo do associado na data de referencia, para que seja a base inicial de calculo da correcao.
+			// Desconsidera movimento tipo 31 por que esse movimento nao representa um 'emprestimo', mas
+			// um direito do associado que estamos pagando agora por ainda nao ter a NF de compra.
 			_aSldFil = aclone (_oAssoc2:SaldoEm (_dDtLimite, '31'))
 			_nSldAssoc += _aSldFil [.SaldoAssocCapNaoSocialDebito] - _aSldFil [.SaldoAssocCapNaoSocialCredito]
 			u_log2 ('info', 'Saldo devedor cta corrente para assoc/loja ' + _oAssoc2:Codigo + '/' + _oAssoc2:Loja + ' em ' + cvaltochar (_dDtLimite) + ': ' + cvaltochar (_aSldFil [.SaldoAssocCapNaoSocialDebito] - _aSldFil [.SaldoAssocCapNaoSocialCredito]))
 		next
+		_sMemCalc += "Saldo conta corrente em " + dtoc (_dDtLimite) + "..: " + GetMv ("MV_SIMB1") + " " + transform (abs (_nSldAssoc), "@E 999,999,999.99") + iif (_nSldAssoc < 0, ' (C)', ' (D)') + chr (13) + chr (10)
 	endif
-/*
-	// Verifica saldos das notas de compra de safra deste ano.
+
+	// Se tiver movimentos de compra de safra em aberto, verifica suas datas de vencimento, pois em geral essas
+	// compras sao geradas durante ou logo apos a safra, mas o associado tem 'direito' ao valor, em si, somente
+	// a partir da data de vencimento de cada parcela dessas notas.
 	if _lContinua
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT R_E_C_N_O_"
-		_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
+		_oSQL:_sQuery += " SELECT E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VASAFRA, E2_VENCREA, E2_VALOR, E2_SALDO"
+		_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI, "
+		_oSQL:_sQuery +=              RetSQLName ("SE2") + " SE2 "
 		_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
+		_oSQL:_sQuery +=    " AND SZI.ZI_FILIAL   = '" + xfilial ("SZI") + "'"
 		_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC + SZI.ZI_LOJASSO in " + FormatIn (_sInCodLoj, '/')
-		_oSQL:_sQuery +=    " AND SZI.ZI_TM = '13'"
-		_oSQL:_sQuery +=    " AND SZI.ZI_DATA >= '" + substr (_sMesRef, 3, 4) + "0101'"
-		//u_log (_oSQL:_sQuery)
-		_aRegNF = aclone (_oSQL:Qry2Array ())
-		for _nRegNF = 1 to len (_aRegNF)
-			_oCtaCorr := ClsCtaCorr():New (_aRegNF [_nRegNF, 1])
-			_nSldNFSaf += _oCtaCorr:SaldoEm (_dDtLimite)
-		next
-	endif
+		_oSQL:_sQuery +=    " AND SZI.ZI_TM       = '13'"
+		_oSQL:_sQuery +=    " AND SZI.ZI_DATA    <= '" + dtos (_dDtLimite) + "'"
+		_oSQL:_sQuery +=    " AND SE2.D_E_L_E_T_  = ''"
+		_oSQL:_sQuery +=    " AND SE2.E2_FILIAL   = SZI.ZI_FILIAL"
+		_oSQL:_sQuery +=    " AND SE2.E2_FORNECE  = SZI.ZI_ASSOC"
+		_oSQL:_sQuery +=    " AND SE2.E2_LOJA     = SZI.ZI_LOJASSO"
+		_oSQL:_sQuery +=    " AND SE2.E2_NUM      = SZI.ZI_DOC"
+		_oSQL:_sQuery +=    " AND SE2.E2_PREFIXO  = SZI.ZI_SERIE"
+		_oSQL:_sQuery +=    " AND SE2.E2_PARCELA  = SZI.ZI_PARCELA"
+		_oSQL:_sQuery +=    " AND SE2.E2_VENCREA >  '" + dtos (_dDtLimite) + "'"
+		_oSQL:_sQuery +=  " ORDER BY E2_PREFIXO, E2_NUM, E2_PARCELA"
+
+/* ACHO QUE VOU PRECISAR DE ALGUMA COISA ASSIM PRA CALCULAR O SALDO DO TITULO 'NA DATA'
+		// Existem casos em que nem todo o valor do titulo foi usado na geracao de uma fatura.
+		// Por exemplo quando parte foi compensada e apenas o saldo restante virou fatura.
+		// Ex.: título 000021485/30 -D do fornecedor 000643. Foi compensado R$ 3.066,09 e o saldo (R$ 1028,71) foi gerada a fatura 202000051.
+		// Devo descontar do valor do titulo somente a parte que foi consumida na geracao da fatura.
+		_oSQL:_sQuery += " E2_VALOR - ISNULL ((SELECT SUM (FK2_VALOR)"
+		_oSQL:_sQuery +=                       " FROM " + RetSQLName ("FK7") + " FK7, "
+		_oSQL:_sQuery +=                                  RetSQLName ("FK2") + " FK2 "
+		_oSQL:_sQuery +=                            " WHERE FK7.D_E_L_E_T_ = '' AND FK7.FK7_FILIAL = SE2.E2_FILIAL AND FK7.FK7_ALIAS = 'SE2' AND FK7.FK7_CHAVE = SE2.E2_FILIAL + '|' + SE2.E2_PREFIXO + '|' + SE2.E2_NUM + '|' + SE2.E2_PARCELA + '|' + SE2.E2_TIPO + '|' + SE2.E2_FORNECE + '|' + SE2.E2_LOJA"
+		_oSQL:_sQuery +=                              " AND FK2.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=                              " AND FK2.FK2_FILIAL = FK7.FK7_FILIAL"
+		_oSQL:_sQuery +=                              " AND FK2.FK2_IDDOC  = FK7.FK7_IDDOC"
+		_oSQL:_sQuery +=                              " AND FK2.FK2_MOTBX  = 'FAT'"
+		_oSQL:_sQuery +=                              " AND FK2.FK2_TPDOC != 'ES'"  // ES=Movimento de estorno
+		_oSQL:_sQuery +=                              " AND dbo.VA_FESTORNADO_FK2 (FK2.FK2_FILIAL, FK2.FK2_IDFK2) = 0"
+		_oSQL:_sQuery +=                        "), 0) AS E2_VALOR, "
+		_oSQL:_sQuery +=       " E2_SALDO, E2_HIST"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE2") + " SE2 "
+		_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND E2_FILIAL  = '01'"  // Pagamentos sao feitos sempre pela matriz.
+		_oSQL:_sQuery +=   " AND E2_FORNECE = '" + ::Codigo + "'"
+		_oSQL:_sQuery +=   " AND E2_LOJA    = '" + ::Loja + "'"
+		_oSQL:_sQuery +=   " AND E2_PREFIXO in ('30 ', '31 ')"  // Serie usada para notas e faturas de safra
+		_oSQL:_sQuery +=   " AND E2_TIPO IN ('NF', 'DP', 'FAT')"  // NF quando compra original da matriz; DP quando saldo transferido de outra filial; FAT quando agrupados em uma fatura.
+		_oSQL:_sQuery +=   " AND E2_EMISSAO >= '" + _sSafra + "0101'"
 */
+
+		_oSQL:Log ()
+		_sAliasQ := _oSQL:Qry2Trb (.f.)
+		do while ! (_sAliasQ) -> (eof ())
+			_sMemCalc += "Abater NF safra " + (_sAliasQ) -> e2_prefixo + '/' + (_sAliasQ) -> e2_num + '-' + (_sAliasQ) -> e2_parcela + '  vcto: ' + dtoc (stod ((_sAliasQ) -> e2_vencrea)) + '  sld:' + GetMv ('MV_SIMB1') + transform ((_sAliasQ) -> e2_saldo, "@E 999,999.99") + chr (13) + chr (10)
+			_nSldNFSaf += (_sAliasQ) -> e2_saldo
+			(_sAliasQ) -> (dbskip ())
+		enddo
+	endif
+
 	// Calcula base para correcao.
 	if _lContinua
-//		_nAdtSafra = _nPrevSafr - _nSldNFSafr
-		//u_log ('Saldo CC a debito deste associado (todas as lojas em todas as filiais)...:', _nSldAssoc)
-		//u_log ('Previsao de pagamentos de safra posteriores a ' + dtoc (_dDtLimite) + ' ................:', _nPrevSafr)
-		//u_log ('Saldos das notas de compra de safra na data de ' + dtoc (_dDtLimite) + ' ...............:', _nSldNFSafr)
-		//u_log ('Adiantamentos de pagamentos das notas de compra de safra.................:', _nAdtSafra)
 		_nBaseCorr = _nSldAssoc
-		
-//		// Se estamos em epoca de pagamento (tem parcelas de safra previstas)...
-//		if _nPrevSafr > 0
-//			_nBaseCorr = _nPrevSafr + _nSldAssoc
-//		endif
-		u_log2 ('info', 'Base (a debito) para calculo da correcao.................................: ' + cvaltochar (_nBaseCorr))
-		
+		u_log2 ('info', 'Base inicial (a debito) para calculo da correcao.........................: ' + cvaltochar (_nBaseCorr))
+		u_log2 ('info', 'Saldo de notas de compra de uva..........................................: ' + cvaltochar (_nSldNFSaf))
+
+		// Se tem notas de safra em aberto, preciso abater, pois fizeram parte do saldo do associado
+		// no extrato dele, mas entende-se como 'soh tem direito a partir da data de vencimento'.
+		_nBaseCorr += _nSldNFSaf
+		u_log2 ('info', 'Base final (a debito) para calculo da correcao............................: ' + cvaltochar (_nBaseCorr))
+		_sMemCalc += "Base de calculo para corr.monetaria: " + GetMv ("MV_SIMB1") + " " + transform (abs (_nBaseCorr), "@E 999,999,999.99") + iif (_nBaseCorr < 0, ' (C)', ' (D)') + chr (13) + chr (10)
+
 		if _lContinua .and. abs (_nBaseCorr) < _nLimMin
-			::UltMsg += "Base abaixo do limite minimo (" + cvaltochar (_nLimMin) + ")"
+			::UltMsg += "Base (" + cvaltochar (abs (_nBaseCorr)) + ") abaixo do limite minimo (" + cvaltochar (_nLimMin) + ")"
 			_lContinua = .F.
 		endif
 	endif
@@ -698,14 +738,11 @@ METHOD CalcCM (_sMesRef, _nTaxaVl1, _nTaxaVl2, _nLimVl1, _lGerarD, _lGerarC) Cla
 		endif
 	endif
 
+	u_log2 ('info', '------------------------ Memoria de calculo -----------------------------')
+	U_Log2 ('info', _sMemCalc)
+	U_Log2 ('info', '-------------------------------------------------------------------------')
+
 	if _lContinua
-		// Monta texto para memoria de calculo.
-		_sMemCalc := "Corr.mon.calculada em " + dtoc (date ()) + " " + time () + " com taxa de " + alltrim (transform (_nTaxa, "@E 999,999.99")) + "% sobre " + GetMv ("MV_SIMB1") + " " + alltrim (transform (abs (_nBaseCorr), "@E 999,999,999.99")) + chr (13) + chr (10)
-		_sMemCalc += "Dados considerados para calculo:" + chr (13) + chr (10)
-		_sMemCalc += "Saldo conta corrente em " + dtoc (_dDtLimite) + "..: " + GetMv ("MV_SIMB1") + " " + transform (abs (_nSldAssoc), "@E 999,999,999.99") + iif (_nSldAssoc < 0, ' (C)', ' (D)') + chr (13) + chr (10)
-//		_sMemCalc += "Parcelas previstas (futuras) safra..: " + GetMv ("MV_SIMB1") + " " + transform (_nPrevSafr, "@E 999,999,999.99") + chr (13) + chr (10)
-//		_sMemCalc += "Adiantamentos parcelas futuras safra: " + GetMv ("MV_SIMB1") + " " + transform (abs (_nAdtSafra), "@E 999,999,999.99")
-		u_log2 ('info', 'Memoria de calculo: ' + chr (13) + chr (10) + _sMemCalc)
 		
 		// Gera lancamento da correcao monetaria a debito ou a credito, conforme o valor, na conta corrente.
 		if _sTipoCorr == 'C'
@@ -1698,8 +1735,6 @@ METHOD SaldoEm (_dDataSld, _sTMNaoSld) Class ClsAssoc
 	local _oSQL      := NIL
 	local _dUltZZM   := ctod ('')
 	local _aRet      := {}
-//	local _aExtrato  := {}
-//	local _nExtrato  := 0
 	local _aRetQry   := {}
 	local _nTipoExtr := 0
 	local _oExtrSld  := NIL
@@ -1741,30 +1776,7 @@ METHOD SaldoEm (_dDataSld, _sTMNaoSld) Class ClsAssoc
 
 		// Soh preciso gerar extrato se a data que encontrei no ZZM for menor que a solicitada.
 		if _dUltZZM < _dDataSld
-/*
-			// Os movimentos do periodo sao lidos diretamente do extrato do associado, para manter consistencia com outras rotinas.
-			_aExtrato = aclone (::ExtratoCC ('', 'zz', _dUltZZM + 1, _dDataSld, '', 'zz', .F., .T.))
-			u_log (_aExtrato)
-			
-			for _nExtrato = 1 to len (_aExtrato)
-				if _aExtrato [_nExtrato, .ExtratoCCDC] $ 'DC'  // Alguns lancamentos nao movimentam valor.
-					do case
-					case _aExtrato [_nExtrato, .ExtratoCCDC] == 'D' .and. _aExtrato [_nExtrato, .ExtratoCCCapSocial] == 'N'
-						u_log2 ('debug', 'Metodo 1 somando ' + cvaltochar (_aExtrato [_nExtrato, .ExtratoCCValor]))
-//						_aRet [.SaldoAssocCapNaoSocialDebito] += _aExtrato [_nExtrato, .ExtratoCCValor]
-					case _aExtrato [_nExtrato, .ExtratoCCDC] == 'C' .and. _aExtrato [_nExtrato, .ExtratoCCCapSocial] == 'N'
-//						_aRet [.SaldoAssocCapNaoSocialCredito] += _aExtrato [_nExtrato, .ExtratoCCValor]
-					case _aExtrato [_nExtrato, .ExtratoCCDC] == 'D' .and. _aExtrato [_nExtrato, .ExtratoCCCapSocial] == 'S'
-//						_aRet [.SaldoAssocCapSocialDebito] += _aExtrato [_nExtrato, .ExtratoCCValor]
-					case _aExtrato [_nExtrato, .ExtratoCCDC] == 'C' .and. _aExtrato [_nExtrato, .ExtratoCCCapSocial] == 'S'
-//						_aRet [.SaldoAssocCapSocialCredito] += _aExtrato [_nExtrato, .ExtratoCCValor]
-					otherwise
-						::UltMsg += "Retorno '" + _aExtrato [_nExtrato, .ExtratoCCCapSocial] + "' do metodo ExtratoCC desconhecido (nao indica se eh capital social ou nao). Saldo do associado vai ficar comprometido."
-						u_help (::UltMsg)
-					endcase
-				endif
-			next
-*/
+
 			// Gera dois extratos para o associado: um para movimentos normais e outros para movimentos de capital.
 			for _nTipoExtr = 1 to 2
 				_oExtrSld := ClsExtrCC ():New ()
@@ -1786,10 +1798,6 @@ METHOD SaldoEm (_dDataSld, _sTMNaoSld) Class ClsAssoc
 
 				// Varre a array do extrato e extrai os valores.
 				for _nExtrSld = 1 to len (_oExtrSld:Resultado)
-					
-//					// Alguns lancamentos nao movimentam valor.
-//					if _oExtrSld:Resultado [_nExtrSld, .ExtrCCValorDebito] > 0 .or. _oExtrSld:Resultado [_nExtrSld, .ExtrCCValorCredito] > 0
-
 					if _nTipoExtr == 1  // Normal (nao capital social)
 //						if _oExtrSld:Resultado [_nExtrSld, .ExtrCCValorDebito] != 0
 //							u_log2 ('debug', 'Metodo 2.1 somando ' + cvaltochar (_oExtrSld:Resultado [_nExtrSld, .ExtrCCValorDebito]))
@@ -1804,8 +1812,8 @@ METHOD SaldoEm (_dDataSld, _sTMNaoSld) Class ClsAssoc
 						_aRet [.SaldoAssocCapSocialCredito] += _oExtrSld:Resultado [_nExtrSld, .ExtrCCValorCredito]
 					endif
 				next
+				FreeObj (_oExtrSld)
 			next
-
 		endif
 	endif
 
