@@ -2,13 +2,22 @@
 // Autor......: Catia Cardoso
 // Data.......: 18/08/2015
 // Descricao..: Custo de itens no perído
-
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #relatorio
+// #Descricao         #Custo de itens no perído
+// #PalavasChave      #custo_de_itens 
+// #TabelasPrincipais #SB1 #SB9
+// #Modulos   		  #CUS 
 //
 // Historico de alteracoes:
+// 29/04/2021 - Sandra - Solicitada a volta do relatório pela Liane
+//
+// --------------------------------------------------------------------
 
 #include 'totvs.ch'
 
-user function VA_CUSTPER()
+User Function VA_CUSTPER()
 	
 	cPerg   := "VA_LMCRED"
 	
@@ -46,8 +55,8 @@ user function VA_CUSTPER()
     	U_F3Array (_aDados, "Consulta Custo do Período", _aCols, oMainWnd:nClientWidth - 50, NIL, "")
 	endif    	
 	
-return   
-
+Return   
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
