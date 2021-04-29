@@ -52,6 +52,7 @@ CLASS ClsExtrCC
 	data Resultado
 	data FormaResult
 	data TMIgnorar
+//	data TMPorVcto
 
 	// Declaracao dos Metodos da classe
 	METHOD New ()
@@ -77,6 +78,7 @@ METHOD New () Class ClsExtrCC
 	::Resultado   = {}
 	::FormaResult = 'A'  // Formato do resultado: [A]=Array (default) ou [X]=XML
 	::TMIgnorar   = ''
+//	::TMPorVcto   = ''
 
 	// Gera uma linha vazia para retorno. Serve como modelo para incluir novas linhas zeradas no extrato.
 	::LinhaVazia  = aclone (array (.ExtrCCQtColunas))
@@ -200,8 +202,48 @@ METHOD Gera () Class ClsExtrCC
 			if ! empty (::TMIgnorar)
 				_oSQL:_sQuery +=   " AND SZI.ZI_TM   NOT IN " + FormatIn (::TMIgnorar, '/')
 			endif
+
 			_oSQL:_sQuery +=   " AND SZI.ZI_DATA     BETWEEN '" + dtos (_dDataIni) + "' AND '" + dtos (::DataFim) + "'"
 			_oSQL:_sQuery +=   " AND SZI.ZI_DATA     < '" + dtos (_dDtCorte) + "'"
+
+/* Tentativa frustrada
+			// Em ocasioes como calculo de correcao monetaria, preciso considerar a data de vencimento dos titulos, em vez da emissao.
+			if empty (::TMPorVcto)
+				_oSQL:_sQuery +=   " AND SZI.ZI_DATA     BETWEEN '" + dtos (_dDataIni) + "' AND '" + dtos (::DataFim) + "'"
+				_oSQL:_sQuery +=   " AND SZI.ZI_DATA     < '" + dtos (_dDtCorte) + "'"
+			else
+				_oSQL:_sQuery +=   " AND ("
+				_oSQL:_sQuery +=          " (SZI.ZI_TM NOT IN " + FormatIn (::TMPorVcto, '/')
+				_oSQL:_sQuery +=            " AND SZI.ZI_DATA     BETWEEN '" + dtos (_dDataIni) + "' AND '" + dtos (::DataFim) + "'"
+				_oSQL:_sQuery +=            " AND SZI.ZI_DATA     < '" + dtos (_dDtCorte) + "'"
+				_oSQL:_sQuery +=            ")"
+				_oSQL:_sQuery +=         " OR "
+				_oSQL:_sQuery +=       " ( "
+				_oSQL:_sQuery +=          " (SZI.ZI_TM IN " + FormatIn (::TMPorVcto, '/')
+				_oSQL:_sQuery +=          " AND (SELECT SE2.E2_VENCREA"
+				_oSQL:_sQuery +=                 " FROM " + RetSQLName ("SE2") + " SE2 "
+				_oSQL:_sQuery +=                " WHERE SE2.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=                  " AND SE2.E2_FILIAL = SZI.ZI_FILIAL"
+				_oSQL:_sQuery +=                  " AND SE2.E2_FORNECE = SZI.ZI_ASSOC"
+				_oSQL:_sQuery +=                  " AND SE2.E2_LOJA = SZI.ZI_LOJASSO"
+				_oSQL:_sQuery +=                  " AND SE2.E2_NUM = SZI.ZI_DOC"
+				_oSQL:_sQuery +=                  " AND SE2.E2_PREFIXO = SZI.ZI_SERIE"
+				_oSQL:_sQuery +=                  " AND SE2.E2_PARCELA = SZI.ZI_PARCELA"
+				_oSQL:_sQuery +=               ") BETWEEN '" + dtos (_dDataIni) + "' AND '" + dtos (::DataFim) + "'"
+				_oSQL:_sQuery +=          " AND (SELECT SE2.E2_VENCREA"
+				_oSQL:_sQuery +=                 " FROM " + RetSQLName ("SE2") + " SE2 "
+				_oSQL:_sQuery +=                " WHERE SE2.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=                  " AND SE2.E2_FILIAL = SZI.ZI_FILIAL"
+				_oSQL:_sQuery +=                  " AND SE2.E2_FORNECE = SZI.ZI_ASSOC"
+				_oSQL:_sQuery +=                  " AND SE2.E2_LOJA = SZI.ZI_LOJASSO"
+				_oSQL:_sQuery +=                  " AND SE2.E2_NUM = SZI.ZI_DOC"
+				_oSQL:_sQuery +=                  " AND SE2.E2_PREFIXO = SZI.ZI_SERIE"
+				_oSQL:_sQuery +=                  " AND SE2.E2_PARCELA = SZI.ZI_PARCELA"
+				_oSQL:_sQuery +=               ") < '" + dtos (_dDtCorte) + "'"
+				_oSQL:_sQuery +=            "))"
+				_oSQL:_sQuery +=         ")"
+			endif
+*/
 			_oSQL:_sQuery +=   " AND NOT EXISTS (SELECT *"  // Nao quero lcto que gerou movto bancario por que vai ser buscado posteriormente do SE5.
 			_oSQL:_sQuery +=                     " FROM " + RETSQLNAME ("SE5") + " SE5 "
 			_oSQL:_sQuery +=                    " WHERE SE5.D_E_L_E_T_ != '*'"
@@ -487,7 +529,7 @@ METHOD Gera () Class ClsExtrCC
 			endif
 		//	_oSQL:_sQuery += " order by ASSOC, LOJASSO, DATA, TM, ORIGEM DESC, SEQ, FILIAL, HIST, PREFIXO, NUMERO, PARCELA"
 			_oSQL:_sQuery += " order by ASSOC, LOJASSO, DATA, TM, ORIGEM DESC, SEQ, FILIAL, PREFIXO, NUMERO, PARCELA, HIST"
-			_oSQL:Log ()
+		//	_oSQL:Log ()
 			_sAliasQ = _oSQL:Qry2Trb (.F.)
 			TCSetField (_sAliasQ, "DATA", "D")
 			(_sAliasQ) -> (dbgotop ())                	

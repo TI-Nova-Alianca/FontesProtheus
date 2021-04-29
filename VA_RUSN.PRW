@@ -46,6 +46,7 @@
 //                     - Implementada simulacao de geracao de contranota (GLPI 9420)
 // 19/02/2021 - Robert - Inclusao de chamadas da funcao U_PerfMon() para metricas de performance (GLPI 9409).
 // 29/03/2021 - Robert - Novo parametro funcao VA_RusPP (GLPI 9592).
+// 22/04/2021 - Robert - Passa a usar a funcao U_TESSafra() para definicao do TES a usar (GLPI 9891)
 //
 
 // ------------------------------------------------------------------------------------
@@ -191,6 +192,7 @@ User Function va_rusN (_lSimulNF)
 
 	// Definicao do TES a ser usado.
 	if _lContinua
+/*
 		U_Log2 ('debug', 'Para definicao de TES: _sTpForUva + sa2 -> a2_tipo = ' + _sTpForUva + sa2 -> a2_tipo)
 		do case
 		case sze -> ze_assoc == '001369'  // Producao propria Livramento
@@ -207,6 +209,11 @@ User Function va_rusN (_lSimulNF)
 			u_help ("Nao foi possivel definir o TES a ser usado para gerar contranota. Verifique o cadastro do fornecedor (pessoa fisica/juridica) e tipo de fornecedor no NaWeb.",, .T.)
 			_lContinua = .F.
 		endcase
+*/
+		_sTes = U_TESSafra (sze -> ze_safra, sze -> ze_assoc, sze -> ze_lojasso, 'C')
+		if empty (_sTES)
+			_lContinua = .F.
+		endif
 	endif
 //	u_log2 ('info', '_sTES:' + _sTES)
 

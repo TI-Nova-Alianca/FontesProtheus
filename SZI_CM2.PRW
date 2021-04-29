@@ -11,6 +11,7 @@
 // 24/11/2017 - Robert - Melhoria: mostrar mensagens de retorno do calculo.
 // 14/08/2020 - Robert - Inseridas tags para catalogacao de fontes.
 //                     - Melhorias geracao de logs.
+// 24/04/2021 - Robert - Implementada opcao de execucao 'auto' (sem interface com usuario) para depuracao (GLPI 9814).
 //
 
 // Tags para automatizar catalogo de customizacoes:
@@ -21,7 +22,7 @@
 // #Modulos           #COOP
 
 // --------------------------------------------------------------------------
-User Function szi_cm2 ()
+User Function szi_cm2 (_lAuto)
 	local _lContinua   := .T.
 	local cCadastro    := "Calculo correcao monetaria conta corrente associados"
 	local aSays        := {}
@@ -42,7 +43,7 @@ User Function szi_cm2 ()
 	if _lContinua
 		_nLock := U_Semaforo (procname (), .F.)
 		if _nLock == 0
-			u_help ("Nao foi possivel obter acesso exclusivo a esta rotina.")
+			u_help ("Nao foi possivel obter acesso exclusivo a esta rotina.",, .t.)
 			return
 		endif
 	endif
@@ -50,42 +51,51 @@ User Function szi_cm2 ()
 	if _lContinua
 		_ValidPerg ()
 		Pergunte (cPerg, .F.)
+	endif
+
+	if _lContinua
+		if _lAuto == NIL .or. ! _lAuto
+			AADD(aSays,"Este programa gera calculo correcao monetaria conta corrente associados")
+			AADD(aSays,"")
+			AADD(aSays,"")
+			
+			AADD(aButtons, { 5,.T.,{|| lPerg := Pergunte(cPerg,.T. ) } } )
+			AADD(aButtons, { 1,.T.,{|| nOpca := If(( lPerg .Or. Pergunte(cPerg,.T.)) .And. _TudoOk() , 1, 2 ), If( nOpca == 1, FechaBatch(), Nil ) }})
+			AADD(aButtons, { 2,.T.,{|| FechaBatch() }} )
+			
+			FormBatch( cCadastro, aSays, aButtons )
 		
-		AADD(aSays,"Este programa gera calculo correcao monetaria conta corrente associados")
-		AADD(aSays,"")
-		AADD(aSays,"")
-		
-		AADD(aButtons, { 5,.T.,{|| lPerg := Pergunte(cPerg,.T. ) } } )
-		AADD(aButtons, { 1,.T.,{|| nOpca := If(( lPerg .Or. Pergunte(cPerg,.T.)) .And. _TudoOk() , 1, 2 ), If( nOpca == 1, FechaBatch(), Nil ) }})
-		AADD(aButtons, { 2,.T.,{|| FechaBatch() }} )
-		
-	 	FormBatch( cCadastro, aSays, aButtons )
-	
-		If nOpca == 1
+			If nOpca == 1
+				u_logsx1 ()
+				if mv_par01 == 1
+					Processa( {|lEnd| _Calc ()})
+				else
+					Processa( {|lEnd| _Descalc ()})
+				endif
+			Endif
+		else
 			u_logsx1 ()
 			if mv_par01 == 1
 				Processa( {|lEnd| _Calc ()})
 			else
 				Processa( {|lEnd| _Descalc ()})
 			endif
-		Endif
-	
+		endif
+
 		// Libera semaforo.
 		if _nLock > 0
 			U_Semaforo (_nLock)
 		endif
 	endif
-	u_log2 ('INFO', 'Processo finalizado')
+	u_log2 ('INFO', 'Processo de correcao monetaria finalizado')
 return
-	
-	
-	
+
+
+
 // --------------------------------------------------------------------------
-Static Function _TudoOk()
-//	Local _aArea    := GetArea()
+Static Function _TudoOk ()
 	Local _lRet     := .T.
-//	RestArea(_aArea)
-Return(_lRet)
+Return _lRet
 
 
 
@@ -96,7 +106,6 @@ Static Function _Descalc ()
 	local _sQuery     := ""
 	local _sAliasQ    := ""
 	local _nRecCount  := 0
-	//local _oCtaCorr   := NIL
 	local _nExcluid   := 0
 	local _oDUtil     := NIL
 	local _sProxMes   := ""
@@ -217,9 +226,10 @@ Static Function _Calc ()
 		_sQuery +=   " AND SZI.ZI_ASSOC + SZI.ZI_LOJASSO BETWEEN '" + mv_par07 + mv_par08 + "' AND '" + mv_par09 + mv_par10 + "'"
 		u_log2 ('debug', _sQuery)
 		if U_RetSQL (_sQuery) == 0
-			//u_help ("Nao existe correcao monetaria calculada para o mes anterior.")
-			if ! u_msgnoyes ("Nao existe correcao monetaria calculada para o mes anterior. Confirma a geracao do calculo para este mes assim mesmo?")
-				_lContinua = .F.
+			if ! IsInCallStack ("U_ROBERT")  // Me atrapalha muito durante testes
+				if ! u_msgnoyes ("Nao existe correcao monetaria calculada para o mes anterior. Confirma a geracao do calculo para este mes assim mesmo?")
+					_lContinua = .F.
+				endif
 			endif
 		endif
 	endif
@@ -235,15 +245,16 @@ Static Function _Calc ()
 		_sQuery +=   " AND SZI.ZI_ASSOC + SZI.ZI_LOJASSO BETWEEN '" + mv_par07 + mv_par08 + "' AND '" + mv_par09 + mv_par10 + "'"
 		u_log2 ('debug', _sQuery)
 		_nJahTem = U_RetSQL (_sQuery)
-		if _nJahTem > 0
-			_lContinua = U_MsgYesNo ("Ja' existe correcao monetaria neste mes para " + cvaltochar (_nJahTem) + " associados. Nao sera´ recalculada correcao para esses associados. Deseja continuar?")
+		if ! IsInCallStack ("U_ROBERT")  // Me atrapalha muito durante testes
+			if _nJahTem > 0
+				_lContinua = U_MsgYesNo ("Ja' existe correcao monetaria neste mes para " + cvaltochar (_nJahTem) + " associados. Nao sera´ recalculada correcao para esses associados. Deseja continuar?")
+			endif
 		endif
 	endif
 
 
 	// Busca os associados para as quais deve ser calculada correcao monetaria.
-	// A correcao eh gerada sempre no codigo/loja base do associado, e sempre na
-	// filial correspondente aa sua cooperativa de origem.
+	// A correcao eh gerada sempre no codigo/loja base do associado.
 	if _lContinua
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
@@ -273,7 +284,7 @@ Static Function _Calc ()
 				u_help (_oAssoc:Codigo + "/" + _oAssoc:Loja + ' - ' + alltrim (_oAssoc:Nome) + ' ' + _oAssoc:UltMsg,, .t.)
 			endif
 			u_log2 ('info', _oAssoc:UltMsg)
-		next                    
+		next
 	endif
 return
 

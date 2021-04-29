@@ -27,7 +27,7 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '01' modulo 'FIN'
+		prepare environment empresa '01' filial '07' modulo 'FIN'
 		private cModulo   := 'FIN'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -85,9 +85,50 @@ static function _AndaLogo ()
 	procregua (100)
 	incproc ()
 	u_help ('Nada definido.')
-//	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	U_batOcor ()
 return
+/*
+	// Gera pre-notas complemento 2021
+	_sArqLog := 'U_VA_GNF3_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+	if cFilAnt == '07'
+		cPerg = "VAGNF3"
+		U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+		U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+		U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+		U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+		U_GravaSX1 (cPerg, '05', '2021') // Safra referencia
+		U_GravaSX1 (cPerg, '06', 'B')    // gerar qual Parcela
+		U_GravaSX1 (cPerg, '07', '')     // DCO inicial
+		U_GravaSX1 (cPerg, '08', 'z')    // DCO final
+		U_GravaSX1 (cPerg, '09', '')     // Prod ini
+		U_GravaSX1 (cPerg, '10', 'z')    // Prod final
+		U_GravaSX1 (cPerg, '11', 0)    // Preco 2016
+		U_GravaSX1 (cPerg, '12', '9845/9854/9911/9932/9920/9928/9912') // Apenas estas variedades (moscatos, riesling e procecco), trebiano
+		U_GravaSX1 (cPerg, '13', '')  // Exceto estas variedades
+		U_GravaSX1 (cPerg, '14', '07')   // Filial inicial
+		U_GravaSX1 (cPerg, '15', '07')   // Filial final
+		U_VA_GNF3 (.T.)
+	endif
+	if cFilAnt == '03'
+		cPerg = "VAGNF3"
+		U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+		U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+		U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+		U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+		U_GravaSX1 (cPerg, '05', '2021') // Safra referencia
+		U_GravaSX1 (cPerg, '06', 'B')    // gerar qual Parcela
+		U_GravaSX1 (cPerg, '07', '')     // DCO inicial
+		U_GravaSX1 (cPerg, '08', 'z')    // DCO final
+		U_GravaSX1 (cPerg, '09', '')     // Prod ini
+		U_GravaSX1 (cPerg, '10', 'z')    // Prod final
+		U_GravaSX1 (cPerg, '11', 0)      // Preco (especifico safra 2016)
+		U_GravaSX1 (cPerg, '12', '')     // Apenas estas variedades
+		U_GravaSX1 (cPerg, '13', '')     // Exceto estas variedades
+		U_GravaSX1 (cPerg, '14', '03')   // Filial inicial
+		U_GravaSX1 (cPerg, '15', '03')   // Filial final
+		U_VA_GNF3 (.T.)
+	endif
+return
+*/
 /*
 	// Testes relatorios associados
 	_aAssoc = {}
@@ -177,25 +218,92 @@ return
 	next
 return
 */
-/*
-	// Batches de safra
-	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batsafr ('1')  // cargas sem contranota
-	u_batsafr ('3')  // conferencia geracao das parcelas financeiro
-//	u_batsafr ('4')  // contranotas sem carga
-//	u_batsafr ('5')  // conferencia fretes
-//	u_batsafr ('7')  // gera SZI a partir das parcelas
-//	u_batsafr ('8')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
-//	u_batsafr ('9')  // Transfere (das filiais para a matriz) os titulos de nao associados.
-return
-*/
+// Testes batches em geral
+//	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	U_batOcor ()
 //	_sArqLog := 'U_BatFunAtlz_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batfunatlz ()
 //	_sArqLog := 'U_BatBlUsr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batBlUsr ()
 //	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batocor ()
+//	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batsafr ('1')  // cargas sem contranota
+//	u_batsafr ('3')  // conferencia geracao das parcelas financeiro
+//	u_batsafr ('4')  // contranotas sem carga
+//	u_batsafr ('5')  // conferencia fretes
+//	u_batsafr ('7')  // gera SZI a partir das parcelas
+//	u_batsafr ('8')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
+//	u_batsafr ('9')  // Transfere (das filiais para a matriz) os titulos de nao associados.
+// 	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+// 	u_batmercp ()
+//	_sArqLog := 'U_BatVerif_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batVerif ()
+//	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batmetaf ()
+//	_sArqLog := 'U_BatEDIM_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batedim ("I")
 //	u_log2 ('info', _oBatch:Mensagens)
+/*
+	_sArqLog := 'U_BatRevCH_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+	U_BatRevCh ("AC", "CTE", 90)
+	U_BatRevCh ("AC", "NFE", 90)
+	U_BatRevCh ("AL", "CTE", 90)
+	U_BatRevCh ("AL", "NFE", 90)
+	U_BatRevCh ("AM", "CTE", 90)
+	U_BatRevCh ("AM", "NFE", 90)
+	U_BatRevCh ("AP", "CTE", 90)
+	U_BatRevCh ("AP", "NFE", 90)
+	U_BatRevCh ("BA", "CTE", 90)
+	U_BatRevCh ("BA", "NFE", 90)
+	U_BatRevCh ("CE", "CTE", 90)
+	U_BatRevCh ("CE", "NFE", 90)
+	U_BatRevCh ("DF", "CTE", 90)
+	U_BatRevCh ("DF", "NFE", 90)
+	U_BatRevCh ("ES", "CTE", 90)
+	U_BatRevCh ("ES", "NFE", 90)
+	U_BatRevCh ("GO", "CTE", 90)
+	U_BatRevCh ("GO", "NFE", 90)
+	U_BatRevCh ("MA", "CTE", 90)
+	U_BatRevCh ("MA", "NFE", 90)
+	U_BatRevCh ("MG", "CTE", 90)
+	U_BatRevCh ("MG", "NFE", 90)
+	U_BatRevCh ("MS", "CTE", 90)
+	U_BatRevCh ("MS", "NFE", 90)
+	U_BatRevCh ("MT", "CTE", 90)
+	U_BatRevCh ("MT", "NFE", 90)
+	U_BatRevCh ("PA", "CTE", 90)
+	U_BatRevCh ("PA", "NFE", 90)
+	U_BatRevCh ("PB", "CTE", 90)
+	U_BatRevCh ("PB", "NFE", 90)
+	U_BatRevCh ("PE", "CTE", 90)
+	U_BatRevCh ("PE", "NFE", 90)
+	U_BatRevCh ("PI", "CTE", 90)
+	U_BatRevCh ("PI", "NFE", 90)
+	U_BatRevCh ("PR", "CTE", 90)
+	U_BatRevCh ("PR", "NFE", 90)
+	U_BatRevCh ("RJ", "CTE", 90)
+	U_BatRevCh ("RJ", "NFE", 90)
+	U_BatRevCh ("RN", "CTE", 90)
+	U_BatRevCh ("RN", "NFE", 90)
+	U_BatRevCh ("RO", "CTE", 90)
+	U_BatRevCh ("RO", "NFE", 90)
+	U_BatRevCh ("RR", "CTE", 90)
+	U_BatRevCh ("RR", "NFE", 90)
+	U_BatRevCh ("RS", "CTE", 90)
+	U_BatRevCh ("RS", "NFE", 90)
+	U_BatRevCh ("SC", "CTE", 90)
+	U_BatRevCh ("SC", "NFE", 90)
+	U_BatRevCh ("SE", "CTE", 90)
+	U_BatRevCh ("SE", "NFE", 90)
+	U_BatRevCh ("SP", "CTE", 90)
+	U_BatRevCh ("SP", "NFE", 90)
+	U_BatRevCh ("TO", "CTE", 90)
+	U_BatRevCh ("TO", "NFE", 90)
+//	U_BatXML("\\192.168.1.2\Siga\Protheus11\protheus_data\xml_NFe\", 200, .F.)
+//	U_BatXML("\\192.168.1.2\Siga\Protheus11\protheus_data\xml_NFe\CT-e\", 100, .F.)
+RETURN
+*/
 
 // user function MTA650EMP ()
 // 	u_help (procname ())
@@ -1018,15 +1126,6 @@ return
 //	_oSQL:_sQuery := "exec VA_SP_VERIFICA_ESTOQUES '03', null, null"
 //	u_log (_oSQL:Qry2Array ())
 //return
-// 	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-// 	u_batmercp ()
-// RETURN
-//	_sArqLog := 'U_BatVerif_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batVerif ()
-//return
-//	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batmetaf ()
-//return
 /*
 	cPerg := "VA_RTSAF"
 	U_GravaSX1 (cPerg, "01", stod ('20200131'))
@@ -1038,67 +1137,6 @@ return
 	// if cFilAnt == '09' ; U_GravaSX1 (cPerg, "03",   45004.61) ; endif // provisao compra safra
 	_sArqLog := 'VA_RTSAF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 	U_VA_RTSAF (.t.)
-RETURN
-*/
-//	_sArqLog := 'U_BatEDIM_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batedim ("I")
-//RETURN
-/*
-	_sArqLog := 'U_BatRevCH_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-	U_BatRevCh ("AC", "CTE", 90)
-	U_BatRevCh ("AC", "NFE", 90)
-	U_BatRevCh ("AL", "CTE", 90)
-	U_BatRevCh ("AL", "NFE", 90)
-	U_BatRevCh ("AM", "CTE", 90)
-	U_BatRevCh ("AM", "NFE", 90)
-	U_BatRevCh ("AP", "CTE", 90)
-	U_BatRevCh ("AP", "NFE", 90)
-	U_BatRevCh ("BA", "CTE", 90)
-	U_BatRevCh ("BA", "NFE", 90)
-	U_BatRevCh ("CE", "CTE", 90)
-	U_BatRevCh ("CE", "NFE", 90)
-	U_BatRevCh ("DF", "CTE", 90)
-	U_BatRevCh ("DF", "NFE", 90)
-	U_BatRevCh ("ES", "CTE", 90)
-	U_BatRevCh ("ES", "NFE", 90)
-	U_BatRevCh ("GO", "CTE", 90)
-	U_BatRevCh ("GO", "NFE", 90)
-	U_BatRevCh ("MA", "CTE", 90)
-	U_BatRevCh ("MA", "NFE", 90)
-	U_BatRevCh ("MG", "CTE", 90)
-	U_BatRevCh ("MG", "NFE", 90)
-	U_BatRevCh ("MS", "CTE", 90)
-	U_BatRevCh ("MS", "NFE", 90)
-	U_BatRevCh ("MT", "CTE", 90)
-	U_BatRevCh ("MT", "NFE", 90)
-	U_BatRevCh ("PA", "CTE", 90)
-	U_BatRevCh ("PA", "NFE", 90)
-	U_BatRevCh ("PB", "CTE", 90)
-	U_BatRevCh ("PB", "NFE", 90)
-	U_BatRevCh ("PE", "CTE", 90)
-	U_BatRevCh ("PE", "NFE", 90)
-	U_BatRevCh ("PI", "CTE", 90)
-	U_BatRevCh ("PI", "NFE", 90)
-	U_BatRevCh ("PR", "CTE", 90)
-	U_BatRevCh ("PR", "NFE", 90)
-	U_BatRevCh ("RJ", "CTE", 90)
-	U_BatRevCh ("RJ", "NFE", 90)
-	U_BatRevCh ("RN", "CTE", 90)
-	U_BatRevCh ("RN", "NFE", 90)
-	U_BatRevCh ("RO", "CTE", 90)
-	U_BatRevCh ("RO", "NFE", 90)
-	U_BatRevCh ("RR", "CTE", 90)
-	U_BatRevCh ("RR", "NFE", 90)
-	U_BatRevCh ("RS", "CTE", 90)
-	U_BatRevCh ("RS", "NFE", 90)
-	U_BatRevCh ("SC", "CTE", 90)
-	U_BatRevCh ("SC", "NFE", 90)
-	U_BatRevCh ("SE", "CTE", 90)
-	U_BatRevCh ("SE", "NFE", 90)
-	U_BatRevCh ("SP", "CTE", 90)
-	U_BatRevCh ("SP", "NFE", 90)
-	U_BatRevCh ("TO", "CTE", 90)
-	U_BatRevCh ("TO", "NFE", 90)
 RETURN
 */
 /*
@@ -3435,12 +3473,6 @@ return
 return
 */
 
-//	u_batBL01 ('01', '2019', '0698')
-//	u_batBL01 ('01', '2019', '1373')
-//	u_batBL01 ('01', '2019', '1386')
-//	u_batBL01 ()
-//return
-
 // nao deu resultado
 //user function MT242CPO ()
 //	u_help (procname ())
@@ -5191,11 +5223,6 @@ PutSX1(cPerg,"01","Data de?","Data de?","Data de?","MV_CH1","D",8,0,0,"G"," "," 
 
 Return	
 */
-
-//	U_BatXML("\\192.168.1.2\Siga\Protheus11\protheus_data\xml_NFe\", 200, .F.)
-//	U_BatXML("\\192.168.1.2\Siga\Protheus11\protheus_data\xml_NFe\CT-e\", 100, .F.)
-//return
-
 /*
 	// Simulacao: Violeta + bordo + assoc. da JC que entregaram na 01 + organicas.
 	// Bordo e violeta: paga 100%
