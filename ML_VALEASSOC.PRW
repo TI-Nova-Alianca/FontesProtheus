@@ -8,6 +8,7 @@
 // 17/02/2021 - Sandra  - Associação dos vales aos associados GLPI 9329.
 // 08/03/2021 - Cláudia - Incluida coluna e parametro de status. GLPI 9571
 // 08/03/2021 - Claudia - Ajuste da nomenclatura "cod. associado" para "cod cliente".
+// 30/04/2021 - Sandra  - Ajuste para ordenar por codigo do vale.
 //
 // ------------------------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
