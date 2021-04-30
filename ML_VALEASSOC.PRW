@@ -77,6 +77,7 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " AND MDD_LJCLIV BETWEEN '" + mv_par04 + "' AND '" + mv_par06 + "'"
     _oSQL:_sQuery += " AND MDD010.D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " AND SA1010.D_E_L_E_T_ = '' "
+	//_oSQL:_sQuery += " ORDER BY MDD_CODIGO "
 	Do Case 
 		Case mv_par09 == 2
 			_oSQL:_sQuery += " AND MDD_STATUS = '1' "
@@ -87,7 +88,8 @@ Static Function PrintReport(oReport)
 		Case mv_par09 == 5
 			_oSQL:_sQuery += " AND MDD_STATUS = '4' "
 	EndCase 
-		
+	_oSQL:_sQuery += " ORDER BY MDD_CODIGO "
+
 	// nHandle := FCreate("c:\temp\log.txt")
 	// FWrite(nHandle, _oSQL:_sQuery )
 	// FClose(nHandle)
