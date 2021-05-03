@@ -2,19 +2,30 @@
 // Autor.....: Catia Cardoso
 // Data......: 13/02/2015
 // Nota......: Analise de Saidas
-
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #relatorio
+// #Descricao         #Analise de Saidas
+// #PalavasChave      #analise_de_saidas
+// #TabelasPrincipais #SD2 #SF2 #SD1 #SF1 
+// #Modulos           #FAT 
+//
 // Historico de alteracoes:
-// 04/03/2015 - incluida parametros de filial de ate
-// 31/03/2015 - incluido parametro de listar parametros no relatorio
-// 27/05/2015 - aumentado mascara de valores estava imprimindo *** quando pedia um periodo grande
-// 18/06/2015 - fazer o calculo do total dos produtos usando o PRCVEND e nao o PRUNIT
-// 05/08/2016 - opcao de imprimir apenas os cupons
-// 19/01/2017 - incluido campo D1_DESPESA para montar o total da nota
-// 08/08/2017 - incluido campo D1_VALDESC para montar o total da nota - notas de devolucao estava com diferença quando lancava algum valor no desconto
-// 14/09/2017 - estava listando devolucoes de compras - e, decidimos que isso vai ser considerado no analise de entradas 
-// 28/10/2017 - Robert - Passa a validar parametro VA_SERIECF para leitura de cupons.
-// 22/05/2019 - Catia - Considerar D1_VALFRE no total das notas de devolucao
-
+// 04/03/2015 - Catia   - incluida parametros de filial de ate
+// 31/03/2015 - Catia   - incluido parametro de listar parametros no relatorio
+// 27/05/2015 - Catia   - aumentado mascara de valores estava imprimindo *** quando pedia um periodo grande
+// 18/06/2015 - Catia   - fazer o calculo do total dos produtos usando o PRCVEND e nao o PRUNIT
+// 05/08/2016 - Catia   - opcao de imprimir apenas os cupons
+// 19/01/2017 - Catia   - incluido campo D1_DESPESA para montar o total da nota
+// 08/08/2017 - Catia   - incluido campo D1_VALDESC para montar o total da nota - notas de devolucao 
+//                        estava com diferença quando lancava algum valor no desconto
+// 14/09/2017 - Catia   - estava listando devolucoes de compras - e, decidimos que isso vai ser 
+//                        considerado no analise de entradas 
+// 28/10/2017 - Robert  - Passa a validar parametro VA_SERIECF para leitura de cupons.
+// 22/05/2019 - Catia   - Considerar D1_VALFRE no total das notas de devolucao
+// 03/05/2021 - Claudia - Retirado os TES '732','573', '891'. GLPI: 9926
+//
+// ----------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 #IFNDEF WINDOWS
 	#DEFINE PSAY SAY
@@ -53,7 +64,8 @@ User Function ML_FATMES()
 
     RptStatus({|| RptDetail()})
 Return
-
+//
+// ----------------------------------------------------------------------------------------------
 Static Function RptDetail()
 
     SetRegua(LastRec())
@@ -105,6 +117,7 @@ Static Function RptDetail()
 	_sQuery += "   AND SD2.D2_EST       BETWEEN '" + mv_par03 + "' AND '" + mv_par04 + "'"
 	_sQuery += "   AND SD2.D2_CLIENTE   BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
     _sQuery += "   AND SD2.D2_LOJA      BETWEEN '" + mv_par07 + "' AND '" + mv_par08 + "'"
+	_sQuery += "   AND SD2.D2_TES NOT IN ('732','573', '891')"
     if mv_par11 = 1 // opcao analitica 
     	_sQuery += " GROUP BY SD2.D2_EMISSAO, SF4.F4_MARGEM, SD2.D2_DOC ,SD2.D2_SERIE, SD2.D2_TIPO, SD2.D2_CLIENTE , SD2.D2_LOJA, SD2.D2_EST"
  	else
