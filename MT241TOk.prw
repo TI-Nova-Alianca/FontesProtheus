@@ -14,10 +14,12 @@
 // 14/03/2018 - Robert  - Data nao pode mais ser diferente de date().
 // 02/04/2018 - Robert  - Movimentacao retroativa habilitada para o grupo 084.
 // 28/01/2020 - Cláudia - Inclusão de validação de OP, conforme GLPI 7401
-// 03/09/2020 - Robert  - Liberado movimentar retroativo quando tipo MO (para quando nao havia MO em alguma OP)
+// 03/09/2020 - Robert  - Liberado movimentar retroativo quando tipo MO 
+//                        (para quando nao havia MO em alguma OP)
 // 03/02/2021 - Cláudia - Vinculação Itens C ao movimento 573 - GLPI: 9163
+// 13/04/2021 - Claudia - Validação Centro de Custo X Conta Contábil - GLPI: 9120
 //
-// ----------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------
 user function MT241TOk ()
 	local _lRet     := .T.
 	local _aAreaAnt := U_ML_SRArea ()

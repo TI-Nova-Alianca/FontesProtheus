@@ -12,7 +12,7 @@
 //
 // Historico de alteracoes:
 // 27/03/2020 - Andre   - Adicionada validação para data de entrega não ser menor que data atual.
-// 12/04/2021 - Claudia - Validação Centro de Custo X COnta Contábil
+// 12/04/2021 - Claudia - Validação Centro de Custo X Conta Contábil - GLPI: 9120
 //
 // ----------------------------------------------------------------------------------------------------------------------------------------------------
 User Function MT120LOk ()

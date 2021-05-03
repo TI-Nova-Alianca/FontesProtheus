@@ -13,7 +13,7 @@
 // Historico de alteracoes:
 // 24/04/2019 - Catia   - Testar data de necessidade 
 // 22/03/2021 - Robert  - Teste com empty () do C1_DATPRF estava desconsiderando a variavel _nLinha.
-// 12/04/2021 - Claudia - Validação Centro de Custo X Conta Contábil
+// 12/04/2021 - Claudia - Validação Centro de Custo X Conta Contábil - GLPI: 9120
 //
 // ----------------------------------------------------------------------------------------------------------------------------------------------------
 User Function MT110TOK ()

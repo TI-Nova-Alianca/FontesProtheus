@@ -10,7 +10,7 @@
 // 28/01/2020 - Cláudia - Inclusão de validação de OP, conforme GLPI 7401
 // 29/05/2020 - Robert  - Liberada gravacao mov.retroativo para programa U_ESXEST01.
 // 03/02/2021 - Cláudia - Vinculação Itens C ao movimento 573 - GLPI: 9163
-// 13/04/2021 - Claudia - Validação Centro de Custo X COnta Contábil
+// 13/04/2021 - Claudia - Validação Centro de Custo X Conta Contábil - GLPI: 9120
 //
 // --------------------------------------------------------------------------
 user function MT240TOk ()
