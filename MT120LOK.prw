@@ -20,8 +20,6 @@ User Function MT120LOk ()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _aAmbAnt  := U_SalvaAmb ()
 
-	u_help("mt120lok")
-
 	// obriga informacao do centro de custo
 	if _lRet .and. ! GDDeleted () .and. empty (GDFieldGet ("C7_CC"))
 		_wtpprod = fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("C7_PRODUTO"), 'B1_TIPO' )
