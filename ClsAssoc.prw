@@ -95,6 +95,7 @@
 //                       Na leitura de prev.pagto. (método FechSafra) somar premio qualid.safra 2020 (GLPI 9530).
 // 08/03/2021 - Robert - Criado resumo variedade/grau/clas no metodo FechSafra (GLPI 9572).
 // 06/04/2021 - Robert - Ajuste metodo FechSafra para pegar somente titulos da safra 2021 (GLPI 9757)
+// 03/05/2021 - Robert - Ajuste calculo correcao monetaria para abater notas de compra de safra pela data de vencimento dos titulos correspondentes (GLPI 9841).
 //
 
 #include "protheus.ch"

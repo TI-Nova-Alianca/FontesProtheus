@@ -8,6 +8,7 @@
 // 17/02/2021 - Sandra  - Associação dos vales aos associados GLPI 9329.
 // 08/03/2021 - Cláudia - Incluida coluna e parametro de status. GLPI 9571
 // 08/03/2021 - Claudia - Ajuste da nomenclatura "cod. associado" para "cod cliente".
+// 30/04/2021 - Sandra  - Ajuste para ordenar por codigo do vale.
 //
 // ------------------------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -77,6 +78,7 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " AND MDD_LJCLIV BETWEEN '" + mv_par04 + "' AND '" + mv_par06 + "'"
     _oSQL:_sQuery += " AND MDD010.D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " AND SA1010.D_E_L_E_T_ = '' "
+	//_oSQL:_sQuery += " ORDER BY MDD_CODIGO "
 	Do Case 
 		Case mv_par09 == 2
 			_oSQL:_sQuery += " AND MDD_STATUS = '1' "
@@ -87,7 +89,8 @@ Static Function PrintReport(oReport)
 		Case mv_par09 == 5
 			_oSQL:_sQuery += " AND MDD_STATUS = '4' "
 	EndCase 
-		
+	_oSQL:_sQuery += " ORDER BY MDD_CODIGO "
+
 	// nHandle := FCreate("c:\temp\log.txt")
 	// FWrite(nHandle, _oSQL:_sQuery )
 	// FClose(nHandle)
