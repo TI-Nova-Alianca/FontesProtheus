@@ -85,5 +85,22 @@ user function MT241TOk ()
 		endif
 	endIf
 
+	// realiza a validação de amarração centro de custo x conta contábil
+	if GetMv("VA_CUSXCON") == 'S' .and. _lRet // parametro para realizar as validações
+		_nPos := aScan(aHeader,{|x| Alltrim(x[2]) == "D3_CONTA" })
+
+		for _x := 1 to Len(aCols)
+			if !empty(cCC) .and. !empty(aCols[_x,_nPos])
+				_sConta := U_VA_CUSXCON(aCols[_x,_nPos],'1')
+				_sCC    := U_VA_CUSXCON(cCC,'2')
+
+				if alltrim(_sConta) !=alltrim(_sCC)
+					u_help ("Divergencia no cadastro de Amarração C.Custo X C.Contabil. Grupo C.Custo:" + alltrim(_sCC) + " Grupo C.Contabil:" + alltrim(_sConta))
+					_lRet = .F.
+				endif
+			endif
+		next	
+	endif
+
 	U_ML_SRArea (_aAreaAnt)
 return _lRet

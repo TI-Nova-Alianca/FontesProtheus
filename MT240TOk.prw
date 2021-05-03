@@ -10,6 +10,7 @@
 // 28/01/2020 - Cláudia - Inclusão de validação de OP, conforme GLPI 7401
 // 29/05/2020 - Robert  - Liberada gravacao mov.retroativo para programa U_ESXEST01.
 // 03/02/2021 - Cláudia - Vinculação Itens C ao movimento 573 - GLPI: 9163
+// 13/04/2021 - Claudia - Validação Centro de Custo X COnta Contábil
 //
 // --------------------------------------------------------------------------
 user function MT240TOk ()
@@ -57,5 +58,17 @@ user function MT240TOk ()
 		endif
 	endIf
 
+	// realiza a validação de amarração centro de custo x conta contábil
+	if GetMv("VA_CUSXCON") == 'S' .and. _lRet // parametro para realizar as validações
+		if !empty(m->d3_conta) .and. !empty(m->d3_cc)
+			_sConta := U_VA_CUSXCON(m->d3_conta,'1')
+			_sCC    := U_VA_CUSXCON(m->d3_cc,'2')
+
+			if alltrim(_sConta) !=alltrim(_sCC)
+				u_help ("Divergencia no cadastro de Amarração C.Custo X C.Contabil. Grupo C.Custo:" + alltrim(_sCC) + " Grupo C.Contabil:" + alltrim(_sConta))
+				_lRet = .F.
+			endif
+		endif	
+	endif
 	U_ML_SRArea (_aAreaAnt)
 return _lRet
