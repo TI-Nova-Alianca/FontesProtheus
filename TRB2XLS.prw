@@ -9,12 +9,16 @@
 // 02/05/2011 - Robert - Possibilidade de remover espacoes de colunas tipo caracter.
 // 27/07/2015 - Robert - Parametro _lSemEspac passa a ser .T. por default.
 //                     - Remove ';' dos dados quando exportacao para formato CSV.
+// 05/05/2021 - Robert - Criado parametro para informar se tenta ou nao abrir o arquivo apos exportacao (GLPI 9973).
+//                     - Criado parametro para informar o nome do arquivo destino (GLPI 9973).
 //
 
 // --------------------------------------------------------------------------
-// Parametros: - alias do arquivo a exportar
-//             - .T.=Gera campos caracter com tamanho fixo; .F.=gera como numeros
-user function TRB2XLS (_sAlias, _lFixaChar, _lSemEspac)
+// Param: - _sAlias...: alias do arquivo a exportar
+//        - _lFixaChar: .T. = Gera campos caracter com tamanho fixo; .F. = gera como numeros
+//        - _lSemEspac: .T. = Elimina espacos (alltrim) nos campos tipo caracter
+//        - _lAbrir...: .T. = abre o arquivo apos exportacao.
+user function TRB2XLS (_sAlias, _lFixaChar, _lSemEspac, _lAbrir, _sArqDest)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _sNomeArq  := CriaTrab ({}, .F.)
 	local _sArq      := MsDocPath () + "\" + _sNomeArq
@@ -34,6 +38,7 @@ user function TRB2XLS (_sAlias, _lFixaChar, _lSemEspac)
 	
 	_lFixaChar := iif (_lFixaChar == NIL, .F., _lFixaChar)
 	_lSemEspac := iif (_lSemEspac == NIL, .T., _lSemEspac)
+	_lAbrir    := iif (_lAbrir    == NIL, .T., _lAbrir)
 		
 	// Define o programa a ser chamado e o tipo do arquivo.
 	If empty (_sProg) .and. ApOleClient ('MsExcel')
@@ -51,8 +56,13 @@ user function TRB2XLS (_sAlias, _lFixaChar, _lSemEspac)
 	_sHTM += _sCrLf +  '<table>' // width="98%" border="1" cellspacing="0" cellpadding="3" align="center">'
 	_sHTM += _sCrLf +  '<tr>'
 
-	// Cria arquivo temporario onde serao gerados os dados.
-	_sArq += "." + _sTipoArq
+	// Cria arquivo onde serao gerados os dados.
+	if _sArqDest == NIL
+		_sArq += "." + _sTipoArq
+	else
+		_sArq = _sArqDest
+	endif
+	U_Log2 ('debug', 'exportando para ' + _sArq)
 	_nHdl := MsfCreate (_sArq, 0)
 
 	// Monta nomes de colunas no arquivo, tanto em CSV como em HTML. Depois grava um dos dois.
@@ -127,12 +137,14 @@ user function TRB2XLS (_sAlias, _lFixaChar, _lSemEspac)
 	CpyS2T (_sArq, _sTmpPath, .T.)
 	delete file (_sArq)
 	
-	If _sProg == 'MsExcel'
-		oExcelApp := MsExcel():New()
-		oExcelApp:WorkBooks:Open (_sTmpPath + _sNomeArq + "." + _sTipoArq) // Abre uma planilha
-		oExcelApp:SetVisible(.T.)
-	else
-		winexec ("cmd /c start " + _sTmpPath + _sNomeArq + "." + _sTipoArq)
+	if _lAbrir
+		If _sProg == 'MsExcel'
+			oExcelApp := MsExcel():New()
+			oExcelApp:WorkBooks:Open (_sTmpPath + _sNomeArq + "." + _sTipoArq) // Abre uma planilha
+			oExcelApp:SetVisible(.T.)
+		else
+			winexec ("cmd /c start " + _sTmpPath + _sNomeArq + "." + _sTipoArq)
+		endif
 	endif
 	
 	U_ML_SRArea (_aAreaAnt)

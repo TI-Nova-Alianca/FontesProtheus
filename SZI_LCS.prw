@@ -25,6 +25,7 @@
 // 23/11/2020 - Robert - Criada opcao de listar com saldo/sem saldo/todos
 //                     - Inserida coluna com o valor original.
 //                     - Nao chama mais impressao de recibos (em desuso, pois agora deposita-se em conta).
+// 05/05/2021 - Robert - Renomeado campo R_E_C_N_O_ para RegSZI na query por exigencia da classe FWTemporaryTable implementada na ClsAssoc (GLPI 9973).
 //
 
 // --------------------------------------------------------------------------
@@ -186,7 +187,7 @@ static function _Imprime ()
 	_oSQL:_sQuery := ""
 	
 	// Busca conta corrente
-	_oSQL:_sQuery += "SELECT SZI.R_E_C_N_O_,"
+	_oSQL:_sQuery += "SELECT SZI.R_E_C_N_O_ AS REGSZI,"
 	_oSQL:_sQuery +=       " ZI_FILIAL, M0_FILIAL,"
 	_oSQL:_sQuery +=       " ZI_TM, ZI_ASSOC, ZI_LOJASSO, ZI_HISTOR, ZI_DATA, ZI_SERIE, ZI_DOC, ZI_CODMEMO, ZI_PARCELA,"
 	_oSQL:_sQuery +=       " A2_NOME, ZX5_10DESC, ZX5_10DC,"
@@ -267,7 +268,8 @@ static function _Imprime ()
 
 		// Se for data diferente da atual, calcula o saldo.
 		if mv_par07 != date ()
-			_oCtaCorr := ClsCtaCorr():New ((_sArqTrb) -> R_E_C_N_O_)
+			// _oCtaCorr := ClsCtaCorr():New ((_sArqTrb) -> R_E_C_N_O_)
+			_oCtaCorr := ClsCtaCorr():New ((_sArqTrb) -> RegSZI)
 			_nSaldo = _oCtaCorr:SaldoEm (mv_par07)
 		else
 			_nSaldo = (_sArqTrb) -> saldo

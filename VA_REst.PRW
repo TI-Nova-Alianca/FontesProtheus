@@ -20,6 +20,7 @@
 //                     - Incluidas tags para catalogo de fontes.
 // 05/10/2020 - Robert - Implementado tratamento para reabertura de OP (por enquanto, apenas 1 parte e moeda 01) - GLPI 8599
 //                     - Melhorados nomes dos arquivos de bkp.
+// 05/05/2021 - Robert - Passa a exportar backups em formato CSV por que novas releases nao permitem mais uso de criver ISAM (GLPI 9973).
 //
 
 // --------------------------------------------------------------------------
@@ -170,16 +171,19 @@ Static Function _AiQueMedo ()
 		incproc ("Gerando backups...")
 		u_log2 ('info', 'Gerando backup no arquivo ' + _sBkpSB9 + ' a partir de: ' + _oSQLSB9:_sQuery)
 		_sAliasQ := _oSQLSB9:Qry2Trb (.T.)
-		copy to (_sBkpSB9)
+		//copy to (_sBkpSB9)
+		U_Trb2XLS (_sAliasQ, .F., .F., .F., _sBkpSB9 + '.csv')
 
 		if GetMV ("MV_RASTRO") == "S"
 			u_log2 ('info', 'Gerando backup no arquivo ' + _sBkpSBJ + ' a partir de: ' + _oSQLSBJ:_sQuery)
 			_sAliasQ := _oSQLSBJ:Qry2Trb (.T.)
-			copy to (_sBkpSBJ)
+//			copy to (_sBkpSBJ)
+			U_Trb2XLS (_sAliasQ, .F., .F., .F., _sBkpSBJ + '.csv')
 	
 			u_log2 ('info', 'Gerando backup no arquivo ' + _sBkpSBK + ' a partir de: ' + _oSQLSBK:_sQuery)
 			_sAliasQ := _oSQLSBK:Qry2Trb (.T.)
-			copy to (_sBkpSBK)
+			//copy to (_sBkpSBK)
+			U_Trb2XLS (_sAliasQ, .F., .F., .F., _sBkpSBK + '.csv')
 		endif
 
 	endif
