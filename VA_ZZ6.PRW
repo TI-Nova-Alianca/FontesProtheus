@@ -133,6 +133,7 @@ user function VA_ZZ6Ex ()
 	local _sDtHrIni  := ""
 	local _nPosFLog  := 0
 	local _sNomeLog  := ""
+	local _sZZ6Msg   := ''
 	static _lAmbProd := (U_RetSQL ("SELECT CASE WHEN db_name() = 'protheus' THEN 1 ELSE 0 END") == 1)
 
 	procregua (10)
@@ -272,6 +273,7 @@ user function VA_ZZ6Ex ()
 			u_help ("Execucao do processo batch tipo '" + zz6 -> zz6_CodPro + "' ainda nao implementada.",, .t.)
 		endcase
 		_sArqLog := _sArqLog2  // Restaura nome do arquivo de log corrente
+		u_log2 ('info', "[" + procname () + "] Retorno do batch: [" + _oBatch:Retorno + '] ' + _oBatch:Mensagens)
 
 
 		if _lExecOK  // O processo foi executado ateh o final
@@ -283,9 +285,15 @@ user function VA_ZZ6Ex ()
 			else
 				zz6 -> zz6_rodado = "S"
 			endif
-			zz6 -> zz6_msg = alltrim (_oBatch:Mensagens)
+			//zz6 -> zz6_msg = alltrim (_oBatch:Mensagens)
 			zz6 -> zz6_DFUExe = date ()
 			zz6 -> zz6_HFUExe = time ()
+
+			// Ultima mensagem no inicio. Vai 'empurrando' as anteriores para o final.
+			_sZZ6Msg = '[' + time () + ' F' + cFilAnt + ']' + alltrim (_oBatch:Mensagens) + ' '
+			_sZZ6Msg += alltrim (zz6 -> zz6_msg)
+			zz6 -> zz6_msg = left (_sZZ6Msg, tamsx3 ("ZZ6_MSG")[1])
+
 			msunlock ()
 		endif
 	endif

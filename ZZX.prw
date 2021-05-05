@@ -106,6 +106,7 @@
 //                      - Inseridas tags para catalogacao de fontes
 // 24/08/2020 - Cláudia - Ajuste na validação de quantidades. GLPI: 8358
 // 28/09/2020 - Robert  - Nao localizava NF de venda pela chave pois o sistema padrao mudou a ordem dos indices (GLPI 8569).
+// 05/05/2021 - Robert  - Alterada regra geracao TES entrada transf.filiais tipo prod.RE do TES 234 para 151 (GLPI 7916).
 //
 
 // ----------------------------------------------------------------------------------------------------------------------------------
@@ -2179,11 +2180,13 @@ user function ZZXG (_wprenota)
 							if ZZX->ZZX_TRANSF = 'S'
 								_wtpprod = _aRetQry[1,4]
 								do case 
-									case _wtpprod = 'GG'
+									// case _wtpprod = 'GG'
+									case _wtpprod = 'GG' .or. _wtpprod ='RE'
 										_wtes = '151'
 									case _wtpprod = 'AI' .or. _wtpprod = 'AT'
 										_wtes = '081'
-									case _wtpprod = 'UC' .or. _wtpprod ='CL' .or. _wtpprod ='EP' .or. _wtpprod ='CF' .or. _wtpprod ='MB' .or. _wtpprod ='ML' .or. _wtpprod ='MM' .or. _wtpprod ='MT' .or. _wtpprod ='MX' .or. _wtpprod ='RE' 
+									// case _wtpprod = 'UC' .or. _wtpprod ='CL' .or. _wtpprod ='EP' .or. _wtpprod ='CF' .or. _wtpprod ='MB' .or. _wtpprod ='ML' .or. _wtpprod ='MM' .or. _wtpprod ='MT' .or. _wtpprod ='MX' .or. _wtpprod ='RE' 
+									case _wtpprod = 'UC' .or. _wtpprod ='CL' .or. _wtpprod ='EP' .or. _wtpprod ='CF' .or. _wtpprod ='MB' .or. _wtpprod ='ML' .or. _wtpprod ='MM' .or. _wtpprod ='MT' .or. _wtpprod ='MX' //.or. _wtpprod ='RE'
 										_wtes = '234'
 									case _wtpprod = 'PA' .and. cfilant == '16'
 										_wtes = '255'
