@@ -30,8 +30,8 @@
 //                        aguardar o ok da Andresa
 // 10/08/2020 - Cláudia - Criado novo calculo de comissões com base em informações do Cesar, conforme GLI: 7899
 // 05/04/2021 - Robert  - Incluidas chamadas da funcao PerfMon para monitoramento de tempos na emissao de cupom (GLPI 9573).
+// 05/05/2021 - Cláudia - Adicionado valor de frete + seguro + despesas acessorias. GLPI: 9895
 //
-
 // -----------------------------------------------------------------------------------------------------------------------------------
 /*
 #XTranslate .PercPercComis   => 1
@@ -350,6 +350,8 @@ User Function MSE3440 ()
 		_sQuery += "     		AND SD2.D2_CLIENTE = SF2.F2_CLIENTE"
 		_sQuery += "     		AND SD2.D2_LOJA    = SF2.F2_LOJA"
 		_sQuery += "     		AND SD2.D2_EMISSAO = SF2.F2_EMISSAO) AS TOTBASCOM"
+		_sQuery += "      , SF2.F2_SEGURO AS SEGURO"
+		_sQuery += "      , SF2.F2_DESPESA AS DESPESA"
 		_sQuery += "   FROM " +  RetSQLName ("SF2") + " AS SF2 "
 		_sQuery += "  WHERE SF2.D_E_L_E_T_  = ''" 
 		_sQuery += "    AND SF2.F2_FILIAL   =  '" + se3 -> e3_filial  + "'"
@@ -360,7 +362,6 @@ User Function MSE3440 ()
 
 		_aNota := U_Qry2Array(_sQuery)
 		
-		
 		If len(_aNota) > 0
 			_brutoNota:= _aNota[1,1]
 			_ipiNota  := _aNota[1,2]
@@ -368,6 +369,8 @@ User Function MSE3440 ()
 			_vlBonif  := _aNota[1,4]
 			_vlFrete  := _aNota[1,5]
 			_vlrBC	  := _aNota[1,6]
+			_vlrSeg	  := _aNota[1,7]
+			_vlrDesp  := _aNota[1,8]
 
 			//_vlrIpi := U_VA_COMIPIST(se1->e1_filial , se1->e1_num, se1->e1_prefixo, se1->e1_cliente, se1->e1_loja, _parcela, _ipiNota, _stNota, _qtdParc, 'I')
 			//_vlrST  := U_VA_COMIPIST(se1->e1_filial , se1->e1_num, se1->e1_prefixo, se1->e1_cliente, se1->e1_loja, _parcela, _ipiNota, _stNota, _qtdParc, 'S')
@@ -468,7 +471,9 @@ User Function MSE3440 ()
 		// **********************************************************************************************
 		// calculo da base de comissao liberada
 		
-		_vlrComBaseLib := (_vlrRec - _vlrIpi - _vlrST)
+		//_vlrComBaseLib := (_vlrRec - _vlrIpi - _vlrST)
+		_vlrComBaseLib := (_vlrRec - _vlrIpi - _vlrST - _vlFrete - _vlrSeg - _vlrDesp)
+
 		_vlrComis      := _vlrComBaseLib * _npercSE3
 		
 		_nNovaBase := ROUND(_vlrComBaseLib,2)

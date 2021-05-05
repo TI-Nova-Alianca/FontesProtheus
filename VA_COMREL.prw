@@ -13,6 +13,7 @@
 //  06/11/2020 - Claudia - Incluida impressão de indenização e dados de pgto. GLPI: 8775
 //  08/01/2021 - Claudia - Alterada a indenização, pegando direto o Total da comissão
 //		         e dividindo por 12. GLPI: 9099
+//  05/05/2021 - Cláudia - Adicionado valor de frete + seguro + despesas acessorias. GLPI: 9895
 //
 //
 // --------------------------------------------------------------------------------------------------------
@@ -46,7 +47,6 @@ Static Function ReportDef()
 	// NOTAS FISCAIS
 	oSection1 := TRSection():New(oReport,,{}, , , , , ,.F.,.F.,.F.) 
 	
-	//TRCell():New(oSection1,"COLUNA1", 	"" ,"PRF"					,	    				, 4,/*lPixel*/,{||  },"LEFT",,,,,,,,.T.)
 	TRCell():New(oSection1,"COLUNA2", 	"" ,"TÍTULO"				,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.T.)
 	TRCell():New(oSection1,"COLUNA3", 	"" ,"PARC."					,       				,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.T.)
 	TRCell():New(oSection1,"COLUNA4", 	"" ,"CLIENTE"				,						,60,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.T.)
@@ -54,9 +54,8 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA6", 	"" ,"IPI"					, "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.T.)
 	TRCell():New(oSection1,"COLUNA7", 	"" ,"ST"					, "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.T.)
 	TRCell():New(oSection1,"COLUNA8", 	"" ,"BONIF."				, "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.T.)
-	TRCell():New(oSection1,"COLUNA9", 	"" ,"FRETE."				, "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.T.)
+	TRCell():New(oSection1,"COLUNA9", 	"" ,"FRETE/SEGURO"			, "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.T.)
 	TRCell():New(oSection1,"COLUNA10", 	"" ,"DT.PGTO"				,	    				,12,/*lPixel*/,{||  },"LEFT",,,,,,,,.T.)
-	//TRCell():New(oSection1,"COLUNA11", 	"" ,"PEDIDO"				,	    				,12,/*lPixel*/,{||  },"LEFT",,,,,,,,.T.)
 	TRCell():New(oSection1,"COLUNA12", 	"" ,"VLR.TITULO"			, "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.T.)
 	TRCell():New(oSection1,"COLUNA13", 	"" ,"DESC.FIN."				, "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.T.)
 	TRCell():New(oSection1,"COLUNA14", 	"" ,"VLR.RECEBIDO"			, "@E 999,999,999.99"   ,19,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.T.)
@@ -159,7 +158,8 @@ Static Function PrintReport(oReport)
 				_nBaseComis	:= (_sAliasQ) -> BASE_COMIS
 				_nVlrComis  := (_sAliasQ) -> VLR_COMIS
 				_VlrDescNf  := (_sAliasQ) -> BONIF_NF
-				_nBaseNota  := (_sAliasQ) -> TOTAL_NF - (_sAliasQ) -> IPI_NF  - (_sAliasQ) -> ST_NF - (_sAliasQ) -> FRETE_NF - _VlrDescNf 
+				_vlrFreSeg  := (_sAliasQ) -> FRETE_NF + (_sAliasQ) -> SEGURO + (_sAliasQ) -> DESPESA // frete+ seguro + outras despesas acessorias 
+				_nBaseNota  := (_sAliasQ) -> TOTAL_NF - (_sAliasQ) -> IPI_NF - (_sAliasQ) -> ST_NF - _vlrFreSeg - _VlrDescNf 
 				_sDataVenc  := STOD((_sAliasQ) -> VENCIMENTO)
 				_sDtaPgto   := STOD((_sAliasQ) ->DT_COMIS)
 				_nSimples   := (_sAliasQ) -> SIMPLES
@@ -193,7 +193,7 @@ Static Function PrintReport(oReport)
 				oSection1:Cell("COLUNA6")	:SetBlock   ({|| _nIpiNota					})
 				oSection1:Cell("COLUNA7")	:SetBlock   ({|| _nStNota					})
 				oSection1:Cell("COLUNA8")	:SetBlock   ({|| (_sAliasQ) -> BONIF_NF		})
-				oSection1:Cell("COLUNA9")	:SetBlock   ({|| (_sAliasQ) -> FRETE_NF		})
+				oSection1:Cell("COLUNA9")	:SetBlock   ({|| _vlrFreSeg         		})
 				oSection1:Cell("COLUNA10")	:SetBlock   ({|| _sDtaPgto					})
 				//oSection1:Cell("COLUNA11")	:SetBlock   ({|| (_sAliasQ) -> PEDIDO		})
 				oSection1:Cell("COLUNA12")	:SetBlock   ({|| (_sAliasQ) -> VALOR_TIT	})

@@ -15,6 +15,7 @@
 //  04/01/2020 - Claudia - Incluido o codigo e nome da empresa/filial. GLPI: 8925
 //  08/01/2021 - Claudia - Alterada a indenização, pegando direto o Total da comissão 
 //               e dividindo por 12. GLPI: 9099
+//  05/05/2021 - Cláudia - Adicionado valor de frete + seguro + despesas acessorias. GLPI: 9895
 //
 // ----------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -96,7 +97,8 @@ Static Function _GeraPDF_Email()
 	_oSQL:_sQuery += "       , RTRIM(SA2.A2_NUMCON)  + '-' + RTRIM(SA2.A2_DVCTA) AS CONTA"
 	_oSQL:_sQuery += "    FROM " + RetSQLName ("SE3") + " AS SE3 "
 	_oSQL:_sQuery += " 	  	INNER JOIN " + RetSQLName ("SA3") + " AS SA3 "
-	_oSQL:_sQuery += " 		 	ON (SA3.D_E_L_E_T_=''"
+	_oSQL:_sQuery += " 		 	ON (SA3.D_E_L_E_T_    = ''"
+	_oSQL:_sQuery += " 		 	    AND SA3.A3_FILIAL = '' "
 	_oSQL:_sQuery += " 			 	AND SA3.A3_COD = SE3.E3_VEND)"
 	_oSQL:_sQuery += "  	INNER JOIN " + RetSQLName ("SA2") + " AS SA2 "
     _oSQL:_sQuery += "          ON (SA2.D_E_L_E_T_ = '' "
@@ -160,7 +162,9 @@ Static Function _GeraPDF_Email()
 			_nBaseComis	:= (_sAliasQ) -> BASE_COMIS
 			_nVlrComis  := (_sAliasQ) -> VLR_COMIS
 			_VlrDescNf  := (_sAliasQ) -> BONIF_NF
-			_nBaseNota  := (_sAliasQ) -> TOTAL_NF - (_sAliasQ) -> IPI_NF  - (_sAliasQ) -> ST_NF - (_sAliasQ) -> FRETE_NF - _VlrDescNf 
+			_vlrFreSeg  := (_sAliasQ) -> FRETE_NF + (_sAliasQ) -> SEGURO + (_sAliasQ) -> DESPESA // frete+ seguro + outras despesas acessorias 
+			_nBaseNota  := (_sAliasQ) -> TOTAL_NF - (_sAliasQ) -> IPI_NF - (_sAliasQ) -> ST_NF - _vlrFreSeg - _VlrDescNf 
+			//_nBaseNota  := (_sAliasQ) -> TOTAL_NF - (_sAliasQ) -> IPI_NF  - (_sAliasQ) -> ST_NF - (_sAliasQ) -> FRETE_NF - _VlrDescNf 
 			_sDataVenc  := STOD((_sAliasQ) -> VENCIMENTO)
 			_nSimples   := (_sAliasQ) -> SIMPLES
 			_sTipIndeniz:= (_sAliasQ) -> INDENIZ
@@ -169,6 +173,8 @@ Static Function _GeraPDF_Email()
 			_nAgencia   := (_sAliasQ) -> AGENCIA
 			_nConta     := (_sAliasQ) -> CONTA
 			_sNomeVend  := alltrim((_sAliasQ) -> NOM_VEND) 
+			_nIpiNota	:= (_sAliasQ) -> IPI_NF
+			_nStNota	:= (_sAliasQ) -> ST_NF
 			
 			_ImprimeCabec(_sVend, _sNomeVend, @_wpag, @nlinha) // Imprime cabeçalho
 			
@@ -183,6 +189,13 @@ Static Function _GeraPDF_Email()
 				oPrint:Say(nLinha,0470, left((_sAliasQ) -> NOMEREDUZIDO,35) 	 					,oFont12n)
 			EndIf
 			oPrint:Say(nLinha,1045, TransForm((_sAliasQ) -> TOTAL_NF  		, '@E 9,999,999.99')  	,oFont12n)
+			// 20210430
+			//oPrint:Say(nLinha,1045, TransForm(_nIpiNota  					, '@E 9,999,999.99')  	,oFont12n)
+			//oPrint:Say(nLinha,1045, TransForm(_nStNota  					, '@E 9,999,999.99')  	,oFont12n)
+			//oPrint:Say(nLinha,1045, TransForm((_sAliasQ) -> BONIF_NF  		, '@E 9,999,999.99')  	,oFont12n)
+			//oPrint:Say(nLinha,1045, TransForm(_vlrFreSeg  					, '@E 9,999,999.99')  	,oFont12n)
+
+
 			oPrint:Say(nLinha,1245, TransForm((_sAliasQ) -> BASE_TIT  		, '@E 9,999,999.99')  	,oFont12n) 
 			oPrint:Say(nLinha,1475, dtoc(_sDataVenc)  			        							,oFont12n)
 			//oPrint:Say(nLinha,1465, (_sAliasQ) -> PEDIDO       		  					    		,oFont12n)
