@@ -134,8 +134,8 @@ user function TRB2XLS (_sAlias, _lFixaChar, _lSemEspac, _lAbrir, _sArqDest)
 	fClose (_nHdl)
 	
 	// Copia o arquivo para a pasta temporaria da estacao e deleta-o da pasta de documentos
-//	CpyS2T (_sArq, _sTmpPath, .T.)
-//	delete file (_sArq)
+	CpyS2T (_sArq, _sTmpPath, .T.)
+	delete file (_sArq)
 	
 	if _lAbrir
 		If _sProg == 'MsExcel'
