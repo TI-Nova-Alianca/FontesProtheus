@@ -46,6 +46,7 @@
 // 15/01/2021 - Robert - Novo parametro (_lMsgTela) no metodo :RetFixo().
 // 23/02/2021 - Robert - Criado atributo QtLinRet.
 // 09/04/2021 - Robert - Criado atributo PerfMon e implementado tratamento para mostrar tempos no log quando .T. (GLPI 9797)
+// 05/05/2021 - Robert - Adequacao p/usar FWTemporaryTable e nao mais o driver ISAM por exigencia novas releases (GLPI 9973).
 //
 
 #include "protheus.ch"
@@ -60,7 +61,6 @@ CLASS ClsSQL
 	DATA _aSetField
 	DATA _sAliasQry
 	DATA UltMsg
-//	DATA TempoExec
 	DATA lGeraHead
 	DATA aHeader
 	DATA QtLinRet
@@ -148,12 +148,12 @@ return _sRet
 // --------------------------------------------------------------------------
 // Copia o resultado da query para um arquivo de trabalho real.
 METHOD Copy2Trb (_lSetField, _nDecFixo) Class ClsSQL
-	//local _sAliasQ   := ""
-	local _sArqTrb   := ""
+//	local _sArqTrb   := ""
 	local _nCampo    := 0
 	local _nQtCampos := 0
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aEstrut   := {}
+	local _oTempTbl := NIL
 
 	_lSetField = iif (_lSetField == NIL, .T., _lSetField)
 	::_sAliasQry = ::Qry2Trb (_lSetField)
@@ -168,20 +168,32 @@ METHOD Copy2Trb (_lSetField, _nDecFixo) Class ClsSQL
 			endif
 		next
 	endif
-	//u_log (_aEstrut)
-	_sArqTrb = CriaTrab (_aEstrut, .T.)
 
-	_nQtCampos = (::_sAliasQry) -> (fcount ())
-	use (_sArqTrb) exclusive new alias '_trb'
-	(::_sAliasQry) -> (dbgotop ())
-	do while ! (::_sAliasQry) -> (eof ())
-		reclock ('_trb', .T.)
-		for _nCampo = 1 to _nQtCampos
-			_trb -> &(fieldname (_nCampo)) = (::_sAliasQry) -> &(fieldname (_nCampo))
-		next
-		msunlock ()
-		(::_sAliasQry) -> (dbskip ())
-	enddo
+	u_log2 ('debug', _aEstrut)
+	// Classe FWTemporaryTable nao aceita campo R_E_C_N_O_ (imagino que a propria classe crie seu campo).
+	if ascan (_aEstrut, {|_aVal| _aVal [1] == 'R_E_C_N_O_'}) > 0
+		u_help ("Rotina de geracao de arquivos temporarios nao permite campo com nome R_E_C_N_O_",, .T.)
+	else
+	
+	//	_sArqTrb = CriaTrab (_aEstrut, .T.)
+		_oTempTbl := FWTemporaryTable():New ('_trb')
+		_oTempTbl:SetFields (_aEstrut)
+		_oTempTbl:Create ()
+
+		_nQtCampos = (::_sAliasQry) -> (fcount ())
+	//	use (_sArqTrb) exclusive new alias '_trb'
+		(::_sAliasQry) -> (dbgotop ())
+		do while ! (::_sAliasQry) -> (eof ())
+			reclock ('_trb', .T.)
+			for _nCampo = 1 to _nQtCampos
+				_trb -> &(fieldname (_nCampo)) = (::_sAliasQry) -> &(fieldname (_nCampo))
+			next
+			msunlock ()
+			(::_sAliasQry) -> (dbskip ())
+		enddo
+//		_trb -> (dbgotop ())
+	endif
+
 	(::_sAliasQry) -> (dbclosearea ())
 	U_ML_SRArea (_aAreaAnt)
 return '_trb'
