@@ -12,8 +12,9 @@
 //
 // Historico de alteracoes:
 // 29/03/2021 - Cláudia - Incluido logs de execução
+// 05/05/2021 - Claudia - Incluida msg de resumo de lançamentos no mes. GLPI: 9983
 //
-// --------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------
 #Include "Protheus.ch"
 #include 'parmtype.ch'
 #Include "totvs.ch"
@@ -178,5 +179,40 @@ User Function BatZB5Mail()
 		U_SendMail (_sDestin, "Transferencias de valores entre filiais", _sMsg, {})
     EndIf
 
+    // --------------------------------------------------------------------------------------------------------------------------------------
+    // 
+
+    _oSQL:= ClsSQL ():New ()
+    _oSQL:_sQuery := ""
+    _oSQL:_sQuery += " SELECT DISTINCT"
+    _oSQL:_sQuery += " 	   CT2_HIST"
+    _oSQL:_sQuery += "    ,CT2_FILIAL"
+    _oSQL:_sQuery += "    ,CT2_DATA"
+    _oSQL:_sQuery += "    ,CT2_VALOR"
+    _oSQL:_sQuery += " FROM " + RetSQLName ("CT2") 
+    _oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+    _oSQL:_sQuery += " AND CT2_DATA BETWEEN '" + DTOS(FirstDate(date ())) + "' AND '" + dtos(date()) + "'"
+    _oSQL:_sQuery += " AND CT2_HIST LIKE 'TRANSF ENTRE CONTAS FL%'"
+    _oSQL:_sQuery += " ORDER BY CT2_DATA DESC, CT2_VALOR, CT2_FILIAL"
+    u_log (_oSQL:_sQuery)
+    _aResumo := aclone (_oSQL:Qry2Array ())
+
+    If Len(_aResumo) > 0 // tem sempre o cabeçalho
+        _sMsg := '<H1 align="center"></H1>'
+		_sMsg += '<H3 align="center">LANÇAMENTOS DE ' +  DTOC(FirstDate(date ()))+ ' ATE ' + dtoc(date())+'</H2>' + chr (13) + chr (10)
+
+        _aCols = {}
+        aadd(_aCols, {'HISTÓRICO'   , "left"    ,  "@!"})
+        aadd(_aCols, {'FILIAL'      , "left"    ,  "@!"})
+        aadd(_aCols, {'DATA'        , "right"   ,  "@!"})
+        aadd(_aCols, {'VALOR'       , "right"   ,  "@E 999,999,999.99"})
+                            
+        _oAUtil := ClsAUtil():New (_aResumo)
+		_sMsg += _oAUtil:ConvHTM ("", _aCols, 'width="80%" border="1" cellspacing="0" cellpadding="3" align="center"', .F.)
+        _sDestin := 'claudia.lionco@novaalianca.coop.br;charlene.baldez@novaalianca.coop.br'
+        //_sDestin := 'claudia.lionco@novaalianca.coop.br'
+
+		U_SendMail (_sDestin, "Transf.de valores entre filiais MENSAL", _sMsg, {})
+    EndIf
     u_logFim ()
 Return

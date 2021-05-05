@@ -55,6 +55,7 @@
 // 26/06/2019 - Catia   - Itau - tratamento despesas de cartorio ocorrencias 08
 // 01/07/2020 - Cláudia - Inclusão de filial 16 para banco do brasil. GLPI: 8103
 // 24/02/2021 - Claudia - Criada rotina para gravar titulos que terão transf. de valores enter filiais. GLPI: 9059
+// 05/05/2021 - Claudia - Incluida gravação de novos campos na ZB5. GLPI: 9983
 //
 // -------------------------------------------------------------------------------------------------------------------------------------------
 User Function F200VAR()
@@ -180,12 +181,20 @@ User Function F200VAR()
 				_cStatus := 'A'
 				_dDtBai  := _aValores[02]
 				_dDtPro  := date()
+				_dDtBase := dDataBase 
+				
+				If _nVlrRec > 0
+					_cTipo := 'VL'
+				EndIf
+				If _nVlrDes > 0
+					_cTipo := 'TX'
+				EndIf
 				
 				dbSelectArea("ZB5")
-				dbSetOrder(1) // ZB5_FILIAL+ZB5_SERIE+ ZB5_NUM + ZB5_PARC + ZB5_CLI + ZB5_LOJA
+				dbSetOrder(1) // ZB5_FILIAL+ZB5_SERIE+ ZB5_NUM + ZB5_PARC + ZB5_CLI + ZB5_LOJA + ZB5_TIPO + ZB5_DTAPRO
 				dbGoTop()
 				
-				if !dbSeek(_cFil + _cSerie + _cNum + _cParc + _cCli + _cLoja)
+				if !dbSeek(_cFil + _cSerie + _cNum + _cParc + _cCli + _cLoja + _cTipo + DTOS(_dDtPro))
 				
 					Reclock("ZB5",.T.)
 						ZB5->ZB5_FILIAL := _cFil
@@ -194,6 +203,7 @@ User Function F200VAR()
 						ZB5->ZB5_PARC 	:= _cParc
 						ZB5->ZB5_CLI 	:= _cCli
 						ZB5->ZB5_LOJA 	:= _cLoja
+						ZB5->ZB5_TIPO 	:= _cTipo
 						ZB5->ZB5_BANCO  := _cBanco
 						ZB5->ZB5_AGEN 	:= _cAgen
 						ZB5->ZB5_CONTA  := _cConta
@@ -202,12 +212,13 @@ User Function F200VAR()
 						ZB5->ZB5_STATUS := _cStatus
 						ZB5->ZB5_DTABAI := _dDtBai
 						ZB5->ZB5_DTAPRO := _dDtPro
+						ZB5->ZB5_DTABAS := _dDtBase
 							
 					ZB5->(MsUnlock())
 
 					_oEvento := ClsEvent():New ()
 					_oEvento:Alias     = 'ZB5'
-					_oEvento:Texto     = "INCLUSÃO DE REGISTRO DE TÍTULO:" + _cFil +'-'+ _cSerie +'-'+ _cNum +'-'+ _cParc +'-'+ _cCli +'-'+ _cLoja
+					_oEvento:Texto     = "INCLUSÃO DE REGISTRO DE TÍTULO:" + _cFil +'-'+ _cSerie +'-'+ _cNum +'-'+ _cParc +'-'+ _cCli +'-'+ _cLoja + '-'+ _cTipo
 					_oEvento:CodEven   = "ZB5001"
 					_oEvento:Grava()
 
