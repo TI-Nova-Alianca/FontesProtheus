@@ -111,11 +111,11 @@ user function BatMercN (_nQtDias)
 		_oSQL:_sQuery +=                     " WHERE F2_DOC COLLATE DATABASE_DEFAULT = DB_NOTA_NRO"
 		_oSQL:_sQuery +=                       " AND D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=                       " AND F2_FILIAL  = '01'"
-		_oSQL:_sQuery +=                       " AND F2_SERIE   = '10'"  // A principio somente preciso exportar a serie de faturamento normal.
 		_oSQL:_sQuery +=                       " AND F2_SERIE COLLATE DATABASE_DEFAULT = DB_NOTA_SERIE"
 		_oSQL:_sQuery +=                    ")"
-		_oSQL:_sQuery +=    " AND SF2.F2_DOC = DB_NOTA_NRO"
+		_oSQL:_sQuery +=    " AND SF2.F2_DOC    = DB_NOTA_NRO"
 		_oSQL:_sQuery +=    " AND SF2.F2_FILIAL = '" + xfilial ("SF2") + "'"
+		_oSQL:_sQuery +=    " AND SF2.F2_SERIE  = '10'"  // A principio somente preciso exportar a serie de faturamento normal.
 		_oSQL:_sQuery +=  " ORDER BY R_E_C_N_O_"
 		_oSQL:Log ()
 		_aDados = aclone (_oSQL:Qry2Array ())
@@ -178,6 +178,7 @@ user function BatMercN (_nQtDias)
 		_oSQL:_sQuery +=      " WHERE F1_DTDIGIT >= '20180101'"  // Data em que comecamos a exportar notas para o Mercanet
 		_oSQL:_sQuery +=        " AND F1_ESPECIE not in ('ND')"
 		_oSQL:_sQuery +=        " AND F1_FILIAL = '" + xfilial ("SF1") + "'"
+		_oSQL:_sQuery +=        " AND F1_DOC    != '000038/23'"  // Nota-monstro que o SQL nao converet para INT.
 		_oSQL:_sQuery += " )"
 		_oSQL:_sQuery += " SELECT R_E_C_N_O_ "
 		_oSQL:_sQuery +=   " FROM LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_NOTA_FISCAL, SF1"
