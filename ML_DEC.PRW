@@ -78,6 +78,7 @@
 // 10/01/2020 - Robert - Ignora algunas NF de saida de suco em dez/2019 que jah foram digitadas manualmente no site do Sisdevin.
 // 19/03/2021 - Robert - Tratamento para exportar NF de safra tipo C na safra 2021 (GLPI 9660).
 // 05/04/2021 - Robert - Melhorada msg de aviso quando fornecedor nao tem registro no MA informado.
+// 06/05/2021 - Robert - Inserida mensagem de aviso quando codigo CR zerado no reg. tipo 21 (GLPI 9987)
 //
 
 // --------------------------------------------------------------------------
@@ -465,6 +466,9 @@ Static Function _Tipo20N ()
 				endif
 				if empty (x_CODPRD)
 					_Erro ("Produto '" + alltrim ((_sNF20S) -> d2_cod) + "'(" + alltrim ((_sNF20S) -> b1_desc) + ") sem codigo no Sisdeclara.")
+				endif
+				if left (x_CODPRD, 10) = '0000000000'
+					_Aviso ("Produto '" + alltrim ((_sNF20S) -> d2_cod) + "'(" + alltrim ((_sNF20S) -> b1_desc) + ") parece ter codigo CR invalido (zerado).")
 				endif
 				x_UNID   := (_sNF20S) -> D2_UM
 				x_LITROS := STRZERO(((_sNF20S)->D2_QUANT * (_sNF20S)->B1_LITROS)*100,10)
