@@ -50,6 +50,7 @@
 // 12/02/2021 - Cláudia - Validação de cliente bloqueado. GLPI: 7982
 // 22/03/2021 - Cláudia - Validação para pedidos com bloqueio gerencial. GLPI: 9666
 // 26/03/2021 - Robert  - Validacao bloq.gerencial lia todos os pedidos e nao apenas os marcados.
+// 06/05/2021 - Claudia - Retirado a chamada do prohrama U_ML_Senha. GLPI 9988
 //
 // --------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"  // Deixar este include para aparecerem os botoes da tela de acompanhamento do SPED
@@ -71,7 +72,7 @@ user function _Mata460 ()
 	local _sParam     := "VA_USRENF"
 	local _sUserLib   := alltrim (upper (GetMV (_sParam, .F., "")))
 	local _sMsg       := ""
-	local _aLiber     := {.F.,,}
+	//local _aLiber     := {.F.,,}
 	local _lContinua  := .T.
 	local _nLock      := 0
 	local _sNFIni     := ""
@@ -91,8 +92,9 @@ user function _Mata460 ()
 		if alltrim (upper (cUserName)) $ _sUserLib
 			_lContinua =  U_msgnoyes (_sMsg + " Continua assim mesmo?")
 		else
-			_aLiber := U_ML_Senha ("Autorizacao exigida", _sMsg + " Liberacao conforme parametro '" + _sParam + "'", _sUserLib, .F.)
-			_lContinua = _aLiber [1]
+			//_aLiber := U_ML_Senha ("Autorizacao exigida", _sMsg + " Liberacao conforme parametro '" + _sParam + "'", _sUserLib, .F.)
+			//_lContinua = _aLiber [1]
+			_lContinua :=.F.
 		endif
 	endif
 

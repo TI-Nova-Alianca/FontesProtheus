@@ -4,12 +4,23 @@
 //  Cliente....: Alianca
 //  Descricao..: Relatório de Analise de Descontos p/Cliente/Rede - Periodo
 //
-//  Alterações:
-//  19/04/2016 - Incluir a data de vencimento do titulo
-//  12/06/2017 - Alterações conforme definição rapel no SD2 - tirada a parte que acessava o SF2 - não tem mais necessidade
-//  22/02/2018 - Incluir total na coluna de valor do titulo
-//  23/02/2018 - Colocado total na coluna de valor dos titulos
-//  23/02/2018 - Opcao de gerar planilha
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #relatorio
+// #Descricao         #Relatório de Analise de Descontos p/Cliente/Rede - Periodo
+// #PalavasChave      #analise_de_desconto #rede
+// #TabelasPrincipais #SE1 #SE5 
+// #Modulos   		  #CTB #FIN
+//
+//  Historico de alteracoes:
+//  19/04/2016 - Catia   - Incluir a data de vencimento do titulo
+//  12/06/2017 - Catia   - Alterações conforme definição rapel no SD2 -
+//               tirada a parte que acessava o SF2 - não tem mais necessidade
+//  22/02/2018 - Catia   - Incluir total na coluna de valor do titulo
+//  23/02/2018 - Catia   - Colocado total na coluna de valor dos titulos
+//  23/02/2018 - Catia   - Opcao de gerar planilha
+//  07/05/2021 - Claudia - Incluido tags de customizações
+//
+// ----------------------------------------------------------------------------------
 
 #include "rwmake.ch"
 #IFNDEF WINDOWS
@@ -37,8 +48,7 @@ User function ML_PAGDESC()
 	    
     endif
 return
-
-
+//
 // --------------------------------------------------------------------------
 Static Function _ExecQuery()
     local  _sQuery    := ""
@@ -101,16 +111,17 @@ Static Function _ExecQuery()
     DbUseArea(.t., 'TOPCONN', TcGenQry (,, _sQuery), _sAliasQ, .f., .t.)
     count to _nRecCount
     procregua (_nRecCount)
-    
 return
-
+//
+// --------------------------------------------------------------------------
 Static Function _GeraArq()
      incproc ("Gerando arquivo de exportacao")
      DbGoTop()
      processa ({ || U_Trb2XLS (_sAliasQ, .F.)})
      (_sAliasQ) -> (dbclosearea ())
 return
-
+//
+// --------------------------------------------------------------------------
 Static Function _Lista()
 
     cString := "SE5"
@@ -136,10 +147,10 @@ Static Function _Lista()
         Return
     Endif
 	
-	RptStatus({|| RptDetail()})
-         
+	RptStatus({|| RptDetail()})     
 return
-
+//
+// --------------------------------------------------------------------------
 Static Function RptDetail()
 
     SetRegua(LastRec())
@@ -294,7 +305,7 @@ Static Function RptDetail()
      MS_FLUSH() // Libera fila de relatorios em spool (Tipo Rede Netware)
 
 return
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()

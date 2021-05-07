@@ -19,6 +19,7 @@
 // 02/06/2020 - Claudia - Incluido totalizadores de banco, conforme GLPI 7970
 // 03/09/2020 - Cláudia - Incluido filtro de tipo de nota, retirando a impressão de NCC GLPI: 372
 // 21/09/2020 - Cláudia - Alterado campo de Banco, buscando direto do titulo. GLPI: 8513
+// 06/05/2021 - Claudia - Incluido tags de customizações
 //
 // --------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -65,7 +66,6 @@ Static Function RptDetail()
 	nTipo := IIF(aReturn[4]==1,15,18)
 	li    := 80
 	m_pag := 1
-//	cabec1 := "Titulo        Cod.   Nome do Cliente                    Cidade                 Num. Banco    Emissao   Vencto        Valor    Banco"
 	cabec1 := "Titulo        Cod.   Nome do Cliente                    Cidade                Num. Banco          Emissao  Vencto          Valor Bco"
 	cabec2 := ""
 	
@@ -93,7 +93,7 @@ Static Function RptDetail()
 	_sQuery +=   " AND SF2.F2_FILIAL  = '" + xfilial ("SF2") + "'"
 	_sQuery +=   " AND SF2.F2_DOC     = SE1.E1_NUM"
 	_sQuery +=   " AND SF2.F2_SERIE   = SE1.E1_PREFIXO"
-	_sQuery +=   " AND SF2.F2_ESPECIE != 'CF'"  // Cupom fiscal
+	_sQuery +=   " AND SF2.F2_ESPECIE != 'CF'"  
 	_sQuery += " ORDER BY E1_FILIAL,E1_PREFIXO,E1_NUM,E1_PARCELA,E1_TIPO"
 	u_log (_sQuery)
 	_sAliasQ = GetNextAlias ()
@@ -114,10 +114,6 @@ Static Function RptDetail()
 		_xEMISSAO := (_sAliasQ)->F2_EMISSAO
 		_xCLIENTE := (_sAliasQ)->F2_CLIENTE
 		_xLOJA    := (_sAliasQ)->F2_LOJA
-		//_xBANCO   := (_sAliasQ)->F2_BANCO
-		//If _xBANCO == Space(3)
-		//	_xBANCO := (_sAliasQ)->C5_BANCO
-		//Endif
 		_xBANCO := (_sAliasQ)->E1_PORT2
 		If _xBANCO == Space(3)
 			_xBANCO := (_sAliasQ)->C5_BANCO
@@ -129,16 +125,7 @@ Static Function RptDetail()
 		If li>_nMaxLin
 			cabec(titulo,cabec1,cabec2,nomeprog,tamanho,nTipo)
 		Endif
-/*
-		@ li, 000 PSAY _xDOC+" "+_xSERIE+"/"+_xPARCELA
-		@ li, 014 PSAY _xCLIENTE+" "+Left(_xNOME,34)
-		@ li, 056 PSAY Left(_xMUN,18)+" "+_xEST
-		@ li, 079 PSAY Left(_xNUMBCO,14)
-		@ li, 093 PSAY _xEMISSAO
-		@ li, 103 PSAY _xVENCTO
-		@ li, 112 PSAY _xVALOR   Picture "@E 999,999.99"
-		@ li, 128 PSAY _xBANCO
-*/
+
 		_sImpLin := ""
 		_sImpLin += _xDOC+" "+_xSERIE+"/"+_xPARCELA + "  "
 		_sImpLin += _xCLIENTE+" "+Left(_xNOME,34) + " "

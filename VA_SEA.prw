@@ -1,12 +1,18 @@
-// Programa:   VA_SEA
-// Autor:      Robert Koch
-// Data:       16/04/2009
-// Cliente:    Alianca
-// Descricao:  Relatorio de saldos em estoque por almoxarifado.
+// Programa..: VA_SEA
+// Autor.....: Robert Koch
+// Data......: 16/04/2009
+// Descricao.: Relatorio de saldos em estoque por almoxarifado.
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #relatorio
+// #Descricao         #Relatorio de saldos em estoque por almoxarifado.
+// #PalavasChave      #saldos_por_estoque
+// #TabelasPrincipais #SB2 #SB1 
+// #Modulos   		  #EST
 //
 // Historico de alteracoes:
+// 07/05/2021 - Claudia - Incluido tags de customizações
 //
-
 // --------------------------------------------------------------------------
 user function VA_SEA (_lAutomat)
 	private _lAuto   := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
@@ -35,7 +41,6 @@ user function VA_SEA (_lAutomat)
 	pergunte (cPerg, .F.)
 
 	if ! _lAuto
-
 		// Execucao com interface com o usuario.
 		wnrel:=SetPrint(cString,wnrel,cPerg,Titulo,cDesc1,cDesc2,cDesc3,.F., aOrd, .T., NIL, tamanho, NIL, .F., NIL, NIL, .F., .T., NIL)
 	else
@@ -46,28 +51,31 @@ user function VA_SEA (_lAutomat)
 		//
 		// Chama funcao setprint sem interface... essa deu trabalho!
 		__AIMPRESS[1]:=1  // Obriga a impressao a ser "em disco" na funcao SetPrint
-		wnrel := SetPrint (cString, ;  // Alias
-		wnrel, ;  // Sugestao de nome de arquivo para gerar em disco
-		cPerg, ;  // Parametros
-		@titulo, ;  // Titulo do relatorio
-		cDesc1, ;  // Descricao 1
-		cDesc2, ;  // Descricao 2
-		cDesc3, ;  // Descricao 3
-		.F., ;  // .T. = usa dicionario
-		aOrd, ;  // Array de ordenacoes para o usuario selecionar
-		.T., ;  // .T. = comprimido
-		tamanho, ;  // P/M/G
-		NIL, ;  // Nao pude descobrir para que serve.
-		.F., ;  // .T. = usa filtro
-		NIL, ;  // lCrystal
-		NIL, ;  // Nome driver. Ex.: "EPSON.DRV"
-		.T., ;  // .T. = NAO mostra interface para usuario
-		.T., ;  // lServer
-		NIL)    // cPortToPrint
+
+		wnrel := SetPrint (	cString	, ;  // Alias
+							wnrel	, ;  // Sugestao de nome de arquivo para gerar em disco
+							cPerg	, ;  // Parametros
+							@titulo	, ;  // Titulo do relatorio
+							cDesc1	, ;  // Descricao 1
+							cDesc2	, ;  // Descricao 2
+							cDesc3	, ;  // Descricao 3
+							.F.		, ;  // .T. = usa dicionario
+							aOrd	, ;  // Array de ordenacoes para o usuario selecionar
+							.T.		, ;  // .T. = comprimido
+							tamanho	, ;  // P/M/G
+							NIL		, ;  // Nao pude descobrir para que serve.
+							.F.		, ;  // .T. = usa filtro
+							NIL		, ;  // lCrystal
+							NIL		, ;  // Nome driver. Ex.: "EPSON.DRV"
+							.T.		, ;  // .T. = NAO mostra interface para usuario
+							.T.		, ;  // lServer
+							NIL		)    // cPortToPrint
 	endif
+
 	If nLastKey == 27
 		Return
 	Endif
+
 	delete file (__reldir + wnrel + ".##r")
 	SetDefault (aReturn, cString)
 	If nLastKey == 27
@@ -90,10 +98,7 @@ user function VA_SEA (_lAutomat)
 		Endif
 	endif
 return
-
-
-
-
+//
 // --------------------------------------------------------------------------
 // Geracao do arquivo de trabalho p/ impressao
 static function _Imprime ()
@@ -130,7 +135,6 @@ static function _Imprime ()
 		endif
 	endif
 
-
 	// Verifica quais os almoxarifados a serem impressos e monta titulo do relatorio.
 	if _lContinua
 		_sQuery2 := ""
@@ -147,13 +151,13 @@ static function _Imprime ()
 			_lContinua = .F.
 		endif
 	endif
+
 	if _lContinua
 		cCabec1 = "Produto                                                       UM"
 		for _nAlmox = 1 to len (_aAlmox)
 			cCabec1 += "      Alm. " + _aAlmox [_nAlmox, 1] + ""
 		next
 	endif
-
 
 	// Busca dados para impressao
 	if _lContinua
@@ -211,13 +215,9 @@ static function _Imprime ()
 		// Imprime parametros usados na geracao do relatorio
 		li ++
 		U_ImpParam (_nMaxLin)
-
 	endif
-	
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()

@@ -2,10 +2,18 @@
 //  Autor......: Catia Cardoso
 //  Data.......: 10/07/2019
 //  Descricao..: Analise -  Apuracao Credito Presumido
-// 
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #relatorio
+// #Descricao         #Analise -  Apuracao Credito Presumido
+// #PalavasChave      #apuracao_credito_presumido  
+// #TabelasPrincipais #SB1 #SD2
+// #Modulos   		  #FIS #FAT #EST 
+//
 // Historico de alteracoes:
 // 08/01/2020 - Andre   - Ajustado tamanho da tela, não estava aparecendo os botões.
 //						  Acrescentado a seleção de filial.
+// 06/05/2021 - Claudia - Incluido tags de customizações
 //
 // --------------------------------------------------------------------------
 User Function ML_RICM2()
@@ -33,7 +41,6 @@ User Function ML_RICM2()
 		_sSQL +=   " AND SB1.D_E_L_E_T_ != '*'"
 		_sSQL +=   " and SA1.A1_FILIAL  = '" + xfilial ("SA1")  + "'"
 		_sSQL +=   " and SB1.B1_FILIAL  = '" + xfilial ("SB1")  + "'"
-//		_sSQL +=   " and SD2.D2_FILIAL  = '" + xfilial ("SD2")  + "'"
 		_sSQL +=   " and SD2.D2_FILIAL  BETWEEN '" + mv_par01 + "' and '" + mv_par02 + "'"
 		_sSQL +=   " and SA1.A1_COD     = D2_CLIENTE"
 		_sSQL +=   " and SA1.A1_LOJA    = D2_LOJA"
@@ -49,8 +56,6 @@ User Function ML_RICM2()
 			_sSQL +=   " and SA1.A1_INSCR  != 'ISENTO'"
 		endif
 		_sSQL +=   " ORDER BY D2_FILIAL, D2_EMISSAO, D2_DOC, D2_COD"
-		
-	   //u_showmemo (_sSQL)
 		   
 		_aDados := U_Qry2Array(_sSQL)
 		_aCols = {}
@@ -75,7 +80,7 @@ User Function ML_RICM2()
 		U_F3Array (_aDados, "Analise Credito Presumido", _aCols, oMainWnd:nClientWidth - 50, oMainWnd:nClientHeight -40 , "", "", .T., 'C' )
 	endif	
 return	
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()

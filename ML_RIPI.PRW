@@ -1,34 +1,28 @@
-/*/
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
-±±³Programa  ³  ML_RIPI ³ Autor ³     Jeferson Rech     ³ Data ³ Mai/2003 ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descricao ³ Relatorio de Valor de IPI ref. a Cupom Fiscal              ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Retorno   ³                                                            ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Utilizacao³ Especifico para Clientes Microsiga                         ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³   Data   ³ Programador   ³Manutencao Efetuada                         ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³          ³               ³                                            ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-/*/
-// Historico de alteracoes:
-// 05/01/2009 - Robert - Criada (e jah desfeita) versao especifica para buscar valores antigos de IPI
-// 05/06/2010 - Robert - Perguntas ajustadas para versao 10
-// 02/12/2015 - Robert - Tratamento para IPI por aliquota e por valor absoluto.
-// 08/01/2016 - Catia  - Mudado layout, incluido novos campos, calculo IPI por aliquota
-// 08/01/2020 - Andre  - Removido tipo de produto MR.
 
+//  Programa...: ML_RIPI
+//  Autor......: Jeferson Rech
+//  Data.......: 05/2003
+//  Descricao..: Relatorio de Valor de IPI ref. a Cupom Fiscal  
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #relatorio
+// #Descricao         #Relatorio de Valor de IPI ref. a Cupom Fiscal  
+// #PalavasChave      #valor_IPI #cupom_fiscal
+// #TabelasPrincipais #SB1 #SD2 
+// #Modulos   		  #FIS #FAT #EST 
+//
+// Historico de alteracoes:
+// 05/01/2009 - Robert  - Criada (e jah desfeita) versao especifica para buscar valores 
+//                       antigos de IPI
+// 05/06/2010 - Robert  - Perguntas ajustadas para versao 10
+// 02/12/2015 - Robert  - Tratamento para IPI por aliquota e por valor absoluto.
+// 08/01/2016 - Catia   - Mudado layout, incluido novos campos, calculo IPI por aliquota
+// 08/01/2020 - Andre   - Removido tipo de produto MR.
+// 06/05/2021 - Claudia - Incluido tags de customizações
+//
+// --------------------------------------------------------------------------------------
 User Function ml_RIPI()
 	
-	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-	//³ Variaveis obrigatorias dos programas de relatorio            ³
-	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 	cString := "SD2"
 	cDesc1  := "Este programa tem como objetivo, Imprimir o Relatorio"
 	cDesc2  := "Com o Valor do IPI geracao atraves dos ECF."
@@ -42,15 +36,9 @@ User Function ml_RIPI()
 	wnrel   := "ML_RIPI"
 	nTipo   := 0
 	
-	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-	//³ Perguntas no Arquivo SX1                                     ³
-	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 	_ValidPerg()
 	Pergunte(cPerg,.F.)
-	
-	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-	//³ Envia controle para a funcao SETPRINT                        ³
-	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
 	wnrel:=SetPrint(cString,wnrel,cPerg,titulo,cDesc1,cDesc2,cDesc3,.F.)
 	
 	If nLastKey == 27
@@ -63,8 +51,8 @@ User Function ml_RIPI()
 	
 	RptStatus({|| RptDetail()})
 Return
-
-
+//
+// --------------------------------------------------------------------------
 Static Function RptDetail()
 	
 	SetRegua(LastRec())
@@ -149,12 +137,11 @@ Static Function RptDetail()
 	MS_FLUSH()   //Libera fila de relatorios em spool (Tipo Rede Netware)
 	
 return
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
 	local _aRegsPerg := {}
-	
 	//                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes Help
 	aadd (_aRegsPerg, {01, "Emissao de                    ", "D", 8,  0,  "",   "   ", {},    ""})
 	aadd (_aRegsPerg, {02, "Emissao ate                   ", "D", 8,  0,  "",   "   ", {},    ""})
