@@ -28,6 +28,8 @@
 //                     - Inseridas tags para catalogo de fontes.
 // 07/10/2020 - Robert - Exportacao de titulos limitada de 365 para 180 dias retroativos.
 //                     - Melhorados logs.
+// 06/05/2021 - Robert - Filtrada somente F2_SERIE='10' para envio, pois existem outras series que nao sao de faturamento (GLPI 9984)
+//                     - Melhoradas mensagens de retorno.
 //
 
 // --------------------------------------------------------------------------
@@ -65,7 +67,8 @@ user function BatMercN (_nQtDias)
 		For _nLinha := 1 To Len(_aDados)
 			sf4 -> (dbgoto (_aDados [_nLinha, 1]))
 			U_AtuMerc ("SF4", sf4 -> (recno ()))
-		next 
+		next
+		_oBatch:Mensagens += "SF4:ok."
 	endif
 	
 	
@@ -91,6 +94,7 @@ user function BatMercN (_nQtDias)
 			SF2 -> (dbgoto (_aDados [_nLinha, 1]))
 			U_AtuMerc ("SF2", sf2 -> (recno ()))
 		next
+		_oBatch:Mensagens += "SF2:ok."
 	endif
 	
 	if _lContinua //Notas que NÃO deveriam estar no Mercanet
@@ -106,7 +110,8 @@ user function BatMercN (_nQtDias)
 		_oSQL:_sQuery +=                      " FROM " + RetSQLName ("SF2")
 		_oSQL:_sQuery +=                     " WHERE F2_DOC COLLATE DATABASE_DEFAULT = DB_NOTA_NRO"
 		_oSQL:_sQuery +=                       " AND D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=                       " AND F2_FILIAL = '01'
+		_oSQL:_sQuery +=                       " AND F2_FILIAL  = '01'"
+		_oSQL:_sQuery +=                       " AND F2_SERIE   = '10'"  // A principio somente preciso exportar a serie de faturamento normal.
 		_oSQL:_sQuery +=                       " AND F2_SERIE COLLATE DATABASE_DEFAULT = DB_NOTA_SERIE"
 		_oSQL:_sQuery +=                    ")"
 		_oSQL:_sQuery +=    " AND SF2.F2_DOC = DB_NOTA_NRO"
@@ -119,6 +124,7 @@ user function BatMercN (_nQtDias)
 			SF2 -> (dbgoto (_aDados [_nLinha, 1]))
 			U_AtuMerc ("SF2", sf2 -> (recno ()))
 		next
+		_oBatch:Mensagens += "NF que NAO devem estar no Merc.:ok."
 	endif
 
 	// Notas de devolucao: quando o Mercanet importa, vincula-as ao representante naquele momento. Entretando, as consultas de
@@ -153,15 +159,14 @@ user function BatMercN (_nQtDias)
 		_oSQL:_sQuery +=   "	WHERE DB_NOTA_NRO = CAST (SF1.F1_DOC AS INT) AND DB_NOTA_REPRES != SA1.A1_VEND)
 		_oSQL:_sQuery +=   " )"
 		_oSQL:_sQuery += " ORDER BY SF1.R_E_C_N_O_"
-		
 		_oSQL:Log ()
-		
 		_aDados = aclone (_oSQL:Qry2Array ())
 		u_log2 ('info', 'NF devol.: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
 		For _nLinha := 1 To Len(_aDados)
 			SF1 -> (dbgoto (_aDados [_nLinha, 1]))
 			U_AtuMerc ("SF1", sf1 -> (recno ()))
 		next
+		_oBatch:Mensagens += "NF devol:ok."
 	endif
 	
 	if _lContinua //Notas de DEVOLUCAO que NÃO deveriam estar no Mercanet
@@ -201,6 +206,7 @@ user function BatMercN (_nQtDias)
 			SF1 -> (dbgoto (_aDados [_nLinha, 1]))
 			U_AtuMerc ("SF1", sf1 -> (recno ()))
 		next
+		_oBatch:Mensagens += "NF devol.que NAO devem estar no Merc:ok."
 	endif
 
 	// Titulos que devem ser enviados para MERCANET.
@@ -251,19 +257,17 @@ user function BatMercN (_nQtDias)
 		_oSQL:_sQuery += "	AND  SE5A.E5_FILIAL = '01'"
 		_oSQL:_sQuery += "	AND  SE5A.E5_RECPAG = 'R'"
 		_oSQL:_sQuery += "	AND  SE5A.E5_DATA  >= '20180101'"
-		
 	//	_oSQL:_sQuery += "	AND  SE5A.E5_DATA  >= '" + dtos (date () - 365) + "'"  // Robert 08/06/2020
-		_oSQL:_sQuery += "	AND  SE5A.E5_DATA  >= '" + dtos (date () - 180) + "'"
-		
+		// _oSQL:_sQuery += "	AND  SE5A.E5_DATA  >= '" + dtos (date () - 180) + "'"
+		_oSQL:_sQuery += "	AND  SE5A.E5_DATA  >= '" + dtos (date () - _nQtDias) + "'"
 		_oSQL:Log ()
-		
 		_aDados = aclone (_oSQL:Qry2Array ())
 		u_log2 ('info', 'Baixas titulos a receber: enviando ' + cvaltochar (len (_aDados)) + ' registros.')
 		For _nLinha := 1 To Len(_aDados)
 			SE5 -> (dbgoto (_aDados [_nLinha, 1]))
 			U_AtuMerc ("SE5", se5 -> (recno ()))
 		next
-		
+		_oBatch:Mensagens += "Baixas SE5:ok."
 	endif
 		
 	if _lContinua
@@ -288,7 +292,8 @@ user function BatMercN (_nQtDias)
 		_oSQL:_sQuery += "	WHERE SE1.D_E_L_E_T_  = ''"
 		_oSQL:_sQuery += "	AND SE1.E1_FILIAL = '01'"
 		_oSQL:_sQuery += "	AND SE1.E1_VENCTO >= '20180101'"
-		_oSQL:_sQuery += "	AND SE1.E1_EMISSAO >= '" + dtos (date () - 365) + "'"  // Robert 08/06/2020
+		// _oSQL:_sQuery += "	AND SE1.E1_EMISSAO >= '" + dtos (date () - 365) + "'"  // Robert 08/06/2020
+		_oSQL:_sQuery += "	AND SE1.E1_EMISSAO >= '" + dtos (date () - _nQtDias) + "'"  // Robert 08/06/2020
 		_oSQL:_sQuery += "	AND SE1.E1_SALDO <> SE1.E1_VALOR"
 		
 		_oSQL:Log ()
@@ -299,7 +304,7 @@ user function BatMercN (_nQtDias)
 			SE1 -> (dbgoto (_aDados [_nLinha, 1]))
 			U_AtuMerc ("SE1", se1 -> (recno ()))
 		next
-		
+		_oBatch:Mensagens += "SE1:ok."
 	endif
 	
 	//Titulos que NAO DEVERIAM estar no Mercanet
@@ -326,16 +331,17 @@ user function BatMercN (_nQtDias)
 			SE1 -> (dbgoto (_aDados [_nLinha, 1]))
 			U_AtuMerc ("SE1", se1 -> (recno ()))
 		next
-		
+		_oBatch:Mensagens += "SE1 que NAO devem estar no Merc:ok."
 	endif
 	
-	if _lContinua
-		_oBatch:Retorno = 'S'
-	endif
 
 	// Libera semaforo.
 	if _nLock > 0
 		U_Semaforo (_nLock)
+	endif
+
+	if _lContinua
+		_oBatch:Retorno = 'S'
 	endif
 
 	u_log2 ('info', 'Finalizando ' + procname ())
