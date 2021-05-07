@@ -3,6 +3,13 @@
 // Data......: 9:39pm Jan 18,1999
 // Nota......: Rel. Producao P/ Associados
 //
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #relatorio
+// #Descricao         #Rel. Producao P/ Associados
+// #PalavasChave      #producao_po_associado
+// #TabelasPrincipais #SA1 #SD1 #SF1 #SB1 
+// #Modulos   		  #ESP
+//
 // Historico de alteracoes:
 // 27/03/2008 - Robert  - Nao verifica mais se eh formulario proprio (precisa listar recebtos de cooperativas)
 // 26/01/2009 - Robert  - Ajuste leitura do SZ1, pois agora vai trabalhar ligado ao SZA.
@@ -32,7 +39,9 @@
 //                      - Abre sempre a tela de selecao de filliais
 // 09/03/2020 - Claudia - Ajustada criação de arquivo de trabalho conforme solicitação da release 12.1.25
 // 27/03/2020 - Andre   - Removido antigo parametro MV_PAR11 e tb parametros descontinuados.
-// --------------------------------------------------------------------------
+// 06/05/2021 - Claudia - Incluido tags de customizações
+//
+// ----------------------------------------------------------------------------------------------------------------
 User Function ML_PASS()
 	cString  := "SF1"
 	cDesc1   := "Este programa tem como objetivo, imprimir relatorio de"
@@ -145,24 +154,8 @@ Static Function RptDetail()
 	AADD(aCampos,{"_VUNIT"   ,"N",aTam[1],aTam[2]})
 	AADD(aCampos,{"_VTOTAL"  ,"N",12,3})
 	
-//	cArqTra := CriaTrab(aCampos)
-//	DbUseArea( .T.,, cArqTra,cArqTra, .T. , .F. )
-//	cArqTra1:=Substr(cArqTra,1,7)+"1"
-//	
-//	DbSelectArea(cArqTra)
-//	Index on _FLAG+_ASSOC+DTOS(_DTA)+_NOTA+_SERIE+_PRODUTO+_GRAU+_Classe to &cArqTra1
-
 	U_ArqTrb ("Cria", "TRB", aCampos, {"_FLAG + _ASSOC + _DTA + _NOTA + _SERIE + _PRODUTO + _GRAU + _Classe"}, @_aArqTrb)	
-/*
-	// Monta clausula com os tipos de fornecedores.
-	_sTpForn = ''
-	_sTpForn += iif ('1' $ mv_par11, 'A', '')
-	_sTpForn += iif ('2' $ mv_par11, 'C', '')
-	_sTpForn += iif ('3' $ mv_par11, 'O', '')
-	_sTpForn += iif ('4' $ mv_par11, 'E', '')
-	_sTpForn += iif ('5' $ mv_par11, 'P', '')
-	_sTpForn = FormatIn (strtran (_sTpForn, '*', ''),, 1)
-*/
+
 	// Gera dados em arquivo de trabalho.
 	_sQuery += " SELECT FILIAL AS D1_FILIAL, DOC AS D1_DOC, SERIE AS D1_SERIE, ASSOCIADO AS D1_FORNECE, LOJA_ASSOC AS D1_LOJA, "
 	_sQuery +=        " NOME_ASSOC AS A2_NOME, PRODUTO AS D1_COD, PESO_LIQ AS D1_QUANT, GRAU AS D1_GRAU, CLAS_FINAL AS D1_PRM99, "
@@ -182,7 +175,6 @@ Static Function RptDetail()
 	_sQuery +=    " AND V.DATA         BETWEEN '" + dtos (mv_par01) + "' AND '" + dtos (mv_par02) + "'"
 	_sQuery +=    " AND V.ASSOCIADO    BETWEEN '" + mv_par03 + "' AND '" + mv_par04 + "'"
 	_sQuery +=    " AND V.PRODUTO      BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
-	//_sQuery +=    " AND V.TIPO_FORNEC  IN " + _sTpForn
 	_sQuery +=    " AND SB1.B1_TIPO    BETWEEN '" + mv_par10 + "' AND '" + mv_par11 + "'"
 	_sQuery +=    " AND SB1.B1_COD     = V.PRODUTO"
 	_sQuery +=    " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
@@ -512,37 +504,8 @@ Static Function RptDetail()
 	DbCloseArea()
 	
 	u_arqtrb ("FechaTodos",,,, @_aArqTrb)     
-//	cDelArq:=cArqTra+".DBF"
-//	FERASE(cDelArq)
-//	cDelArq:=SubStr(cArqTra,1,7)+"*"+OrdBagExt()
-//	FERASE(cDelArq)
-return
-//
-// --------------------------------------------------------------------------
-// Monta tela semelhante a um MarkBrowse para o usuario selecionar opcoes
-// diversas. Usado na validacao das perguntas do relatorio.
-/*
-user function ML_PASS1 ()
-	local _sMvPar    := ''
-	local _sMvParDef := ""
-	local _aOpcoes   := {}
-	
-	// Carrega array de opcoes
-	aadd (_aOpcoes, '1 - ' + alltrim (X3Combo ('Z7_TIPO', '1')))
-	aadd (_aOpcoes, '2 - ' + alltrim (X3Combo ('Z7_TIPO', '2')))
-	aadd (_aOpcoes, '3 - ' + alltrim (X3Combo ('Z7_TIPO', '3')))
-	aadd (_aOpcoes, '4 - ' + alltrim (X3Combo ('Z7_TIPO', '4')))
-	aadd (_aOpcoes, '5 - ' + alltrim (X3Combo ('Z7_TIPO', '5')))
 
-	f_Opcoes (@_sMvPar, ;  // Variavel para resultado
-	          "Selecione tipos de associados", ;  // Titulo da janela
-	          _aOpcoes, ;  // Opcoes
-	          "12345", ;  // Inicializa posicoes
-	          12, 49, ;  // ?
-	          .F.)  // Nao exclusivo (permite selecionar mais de 1 opcao)
-	&(ReadVar ()) := _smvpar  // Devolve Resultado para o parametro do relatorio.
-Return .T.
-*/
+return
 //
 // --------------------------------------------------------------------------
 Static Function _ValidPerg()
@@ -557,16 +520,11 @@ Static Function _ValidPerg()
 	aadd (_aRegsPerg, {05, "Produto Inicial               ", "C", 15, 0,  "",             "SB1",    {},                                      "Codigo do produto inicial a ser listado"})
 	aadd (_aRegsPerg, {06, "Produto Final                 ", "C", 15, 0,  "",             "SB1",    {},                                      "Codigo do produto final a ser listado"})
 	aadd (_aRegsPerg, {07, "Formato                       ", "N", 1,  0,  "",             "",       {"Geral","Res.I","Res.II"},              "Geral = nota a nota + resumos; Res.I = totais por associado + produto; Res.II = totais por produto"})
-//	aadd (_aRegsPerg, {08, "[Parametro descontinuado]     ", "N", 1,  0,  "",             "",       {},                                      ""})
 	aadd (_aRegsPerg, {08, "Considera NF de               ", "N", 1,  0,  "",             "",       {"Entrada","Compra","Compl.preco"},      "Indica se devem ser consideradas as notas de recebimento ou de compra da uva"})
 	aadd (_aRegsPerg, {09, "Lista valores                 ", "N", 1,  0,  "",             "",       {"Sim","Nao"},                           "Indica se as colunas de valores devem ser impressas"})
-//	aadd (_aRegsPerg, {11, "Tipos de associados a listar  ", "C", 5,  0,  "U_ML_PASS1()", "",       {},                                      ""})
-//	aadd (_aRegsPerg, {11, "[Parametro descontinuado]     ", "N", 1,  0,  "",             "",       {},                                      ""})
 	aadd (_aRegsPerg, {10, "Tipo produto inicial          ", "C", 2,  0,  "",             "02",     {},                                      ""})
 	aadd (_aRegsPerg, {11, "Tipo produto final            ", "C", 2,  0,  "",             "02",     {},                                      ""})
-	
-//	aadd (_aDefaults, {"11", '12345'})
-//	aadd (_aDefaults, {"09", 1})
+
 	aadd (_aDefaults, {"10", ''})
 	aadd (_aDefaults, {"11", 'zz'})
 

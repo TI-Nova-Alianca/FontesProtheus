@@ -4,18 +4,18 @@
 // Cliente....: Generico
 // Descricao..: Converte arquivos ##R para TXT removendo os caracteres de controle.
 //
-// Historico de alteracoes:
-//
-
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Processamento
 // #PalavasChave      #conversao #tipo_arquivo ###r #txt
 // #TabelasPrincipais 
 // #Modulos           #todos_modulos
-
+//
+// Historico de alteracoes:
+// 06/05/2021 - Claudia - Incluido tags de customizações
+//
+// ---------------------------------------------------------------------------------
 #include "rwmake.ch"
 
-// --------------------------------------------------------------------------
 user function ML_R2T (_sArq1, _sArq2)
 	local _nHdl1     := 0
 	local _nHdl2     := 0
@@ -46,14 +46,11 @@ user function ML_R2T (_sArq1, _sArq2)
 	_nContChar := 0
 	do while _lContinua .and. fread (_nHdl1, @_sChar, 1) > 0
 		_nCodASC = asc (_sChar)
-	//	u_log (_nContChar ++, 'testando char', _nCodASC, _sChar)
 		
 		// Remove logotipo
 		if _nCodASC == 17
 			fread (_nHdl1, @_sChar, 11)
 			fwrite (_nHdl2, "   ")
-			//fread (_nHdl1, @_sChar, 1)
-			//_nCodASC = asc (_sChar)
 			loop
 		endif
 		

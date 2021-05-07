@@ -2,7 +2,13 @@
 // Autor......: Jeferson Rech
 // Data.......: 12/2005
 // Descricao..: P.E. para Consultas Especificas Consulta Cliente - Posição de clientes
-//             
+//   
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #P.E. para Consultas Especificas Consulta Cliente - Posição de clientes
+// #PalavasChave      #consultas_especificas #posicao_de_clientes
+// #TabelasPrincipais #SA1 #SF1 #SD1 
+// #Modulos 		  #FAT         
+//      
 // Historico de alteracoes:
 // 14/05/2008 - Robert  - Incluida transportadora na consulta de notas bonificadas total
 //                      - Criado botao para exportar para Excel na consulta produtos X clientes.
@@ -12,6 +18,7 @@
 // 28/10/2015 - Robert  - Eliminadas linhas comentariadas.
 // 22/09/2016 - Catia   - estava dando erro quando ia visualizar notas de devolução
 // 13/03/2020 - Claudia - Ajuste de fonte conforme solicitação de versão 12.1.25 - SX3
+// 06/05/2021 - Claudia - retirada a chamada do programa VAHISTNF
 //
 // --------------------------------------------------------------------------------------------
 #include "rwmake.ch"
@@ -25,7 +32,7 @@ User Function FC010CON()
 	_xParam2 := mv_par02
 	
 	@ 200, 100 TO 505, 440 DIALOG oDlg2 TITLE "Selecione a Consulta Especifica"
-	@ 005, 055 BUTTON OemToAnsi("    Historico NFs    ") SIZE 60,10 ACTION U_VAHISTNF(SA1->A1_COD,SA1->A1_LOJA)
+	//@ 005, 055 BUTTON OemToAnsi("    Historico NFs    ") SIZE 60,10 ACTION U_VAHISTNF(SA1->A1_COD,SA1->A1_LOJA)
 	@ 020, 055 BUTTON OemToAnsi(" _Cad. Produtos      ") SIZE 60,10 ACTION MATA010() .And. Close(oDlg2)
 	@ 035, 055 BUTTON OemToAnsi(" NFs _Devolucao      ") SIZE 60,10 ACTION LPCLIDEV()
 	@ 050, 055 BUTTON OemToAnsi(" NFs _Beneficiamento ") SIZE 60,10 ACTION LPCLIBEN()

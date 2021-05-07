@@ -3,18 +3,25 @@
 //  Data.......: 03/08/2018
 //  Descricao..: Relatório auxiliar para apuracao AMPARA/RS
 //
+// #TipoDePrograma    #relatorio
+// #Descricao         #Relatório auxiliar para apuracao AMPARA/RS
+// #PalavasChave      #AMPARA_RS #apuracao 
+// #TabelasPrincipais #SA1 #SF3
+// #Modulos 		  #FIN 
+//
 //  Historico de alteracoes:
 //  06/11/2018 - Andre - Filtrado para mostrar somente notas do estado do RS
 //  09/11/2018 - Andre - Ajustado para mostrar notas de devolução com valores negatico
-
+//  06/05/2021 - Claudia - Incluido tags de customizações
+//
+// --------------------------------------------------------------------------------------
 #include "rwmake.ch"
 #IFNDEF WINDOWS
     #DEFINE PSAY SAY
 #ENDIF
 
 User function ML_AMPARA()
-
-private _sArqLog := procname () + "_" + alltrim (cUserName) + ".log"
+	private _sArqLog := procname () + "_" + alltrim (cUserName) + ".log"
     delete file (_sArqLog)
 
     cString := "SE1"
@@ -46,7 +53,8 @@ private _sArqLog := procname () + "_" + alltrim (cUserName) + ".log"
     	RptStatus({|| RptDetail()})
 	endif
 return
-
+// 
+// -------------------------------------------------------------------------------------
 Static Function RptDetail()
 	local _aCFOP  := {}
 	local _nCFOP   := 0
@@ -54,9 +62,6 @@ Static Function RptDetail()
 	local _nFILCFOP  := 0
 	local _nMaxLin   := 63
 	local _sQuery    := ""
-	//local _aAliasQ   := ""
-	//local _nValor    := 0
-	//local _aTotVend  := {}
 	local _aTotGer   := {}
 	local _sFilial   := ""
 	local _aTotFil   := {}
@@ -93,7 +98,6 @@ Static Function RptDetail()
 	_sQuery += "			AND SA1.A1_LOJA = SF3.F3_LOJA)"
 	_sQuery += "      WHERE SF3.D_E_L_E_T_ = ''"
 	_sQuery += "        AND SF3.F3_FILIAL  BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'"
-//	_sQuery += "        AND SF3.F3_CFO > '5000'"
   	_sQuery += "        AND SF3.F3_ENTRADA BETWEEN '" + dtos (mv_par03) + "' AND '" + dtos (mv_par04) + "'"
   	_sQuery += "        AND SF3.F3_DTCANC = ''" 
   	_sQuery += "        AND SF3.F3_ESTADO = '" + mv_par05 + "'"
@@ -302,7 +306,7 @@ Static Function RptDetail()
      MS_FLUSH() // Libera fila de relatorios em spool (Tipo Rede Netware)
 
 return
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()

@@ -1,31 +1,26 @@
-/*/
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
-±±³Programa  ³  ML_RICM ³ Autor ³     Jeferson Rech     ³ Data ³ Mai/2006 ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descricao ³ Relatorio de Venda de Vinho - RS - Credito Presumido ICMS  ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Retorno   ³                                                            ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Utilizacao³ Especifico para Clientes Microsiga                         ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³   Data   ³ Programador   ³Manutencao Efetuada                         ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³          ³               ³                                            ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-/*/
-// Historico de alteracoes:
-// 29/07/2009 - Robert - Parametros atualizados para Protheus10
-//                     - Criados parametros para informar grupos a listar
-//                     - Portado para SQL
-//                     - Imprime parametros no final
-// 01/09/2009 - Robert - Ignora transf. entre filiais.
-// 04/11/2015 - Robert - Selecao de produtos passa a ser pelo campo B1_VAGCPI e nao mais pelo B1_PROD.
-//
 
+//  Programa...: ML_RICM
+//  Autor......: Jeferson Rech
+//  Data.......: 05/2006
+//  Descricao..: Relatorio de Venda de Vinho - RS - Credito Presumido ICMS
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #relatorio
+// #Descricao         #Relatorio de Venda de Vinho - RS - Credito Presumido ICMS
+// #PalavasChave      #venda_de_vinho
+// #TabelasPrincipais #SB1 #SD2 #SA1
+// #Modulos   		  #FIS #FAT #EST 
+//
+// Historico de alteracoes:
+// 29/07/2009 - Robert  - Parametros atualizados para Protheus10
+//                      - Criados parametros para informar grupos a listar
+//                      - Portado para SQL
+//                      - Imprime parametros no final
+// 01/09/2009 - Robert  - Ignora transf. entre filiais.
+// 04/11/2015 - Robert  - Selecao de produtos passa a ser pelo campo B1_VAGCPI e nao mais pelo B1_PROD.
+// 06/05/2021 - Claudia - Incluido tags de customizações
+//
+//
 // --------------------------------------------------------------------------
 User Function ML_RICM()
 	cString := "SD2"
@@ -41,15 +36,9 @@ User Function ML_RICM()
 	wnrel   := "ML_RICM"
 	nTipo   := 0
 	
-	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-	//³ Perguntas no Arquivo SX1                                     ³
-	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 	_ValidPerg()
 	Pergunte(cPerg,.F.)
 	
-	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-	//³ Envia controle para a funcao SETPRINT                        ³
-	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 	wnrel:=SetPrint(cString,wnrel,cPerg,titulo,cDesc1,cDesc2,cDesc3,.F.)
 	
 	If nLastKey == 27
@@ -62,9 +51,7 @@ User Function ML_RICM()
 	
 	RptStatus({|| RptDetail()})
 Return
-
-
-
+//
 // --------------------------------------------------------------------------
 Static Function RptDetail()
 	local _sQuery    := ""
@@ -156,9 +143,7 @@ Static Function RptDetail()
 	Endif
 	MS_FLUSH()
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
@@ -169,11 +154,6 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {02, "Data final emissao NF         ", "D", 8,  0,  "",   "   ", {},    ""})
 	aadd (_aRegsPerg, {03, "% credito presumido           ", "N", 6,  2,  "",   "   ", {},    ""})
 	aadd (_aRegsPerg, {04, "Grupo a considerar            ", "C", 1,  0,  "",   "   ", {'Sucos', 'Vinhos'}, ""})
-//	aadd (_aRegsPerg, {05, "Grupo 2 a considerar          ", "C", 2,  0,  "",   "96 ", {},    ""})
-//	aadd (_aRegsPerg, {06, "Grupo 3 a considerar          ", "C", 2,  0,  "",   "96 ", {},    ""})
-//	aadd (_aRegsPerg, {07, "Grupo 4 a considerar          ", "C", 2,  0,  "",   "96 ", {},    ""})
-//	aadd (_aRegsPerg, {08, "Grupo 5 a considerar          ", "C", 2,  0,  "",   "96 ", {},    ""})
-//	aadd (_aRegsPerg, {09, "Grupo 6 a considerar          ", "C", 2,  0,  "",   "96 ", {},    ""})
 	aadd (_aRegsPerg, {05, "Considera inscr.est. ISENTO  ?", "N", 1,  0,  "",   "   ", {'Sim', 'Nao'},    ""})
 	U_ValPerg (cPerg, _aRegsPerg)
 return
