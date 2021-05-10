@@ -1,22 +1,15 @@
-/*/
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
-±±³Programa  ³ MT100LOK ³ Autor ³    Jeferson Rech      ³ Data ³ Dez/2004 ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descricao ³ Validacao LinhaOk da NF de Entrada                         ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Retorno   ³                                                            ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Utilizacao³ Especifico para Clientes Microsiga                         ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³   Data   ³ Programador   ³Manutencao Efetuada                         ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³          ³               ³                                            ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-/*/
+// Programa...: MT100LOK
+// Autor......: Jeferson Rech 
+// Data.......: 10/2004
+// Descricao..: Validacao LinhaOk da NF de Entrada 
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #Validacao LinhaOK da NF de Entrada
+// #PalavasChave      #Nf_de_entrada #linhaOK
+// #TabelasPrincipais #SD1 #SA1 #SA2 #SD2
+// #Modulos   		  #COM 
+//
 // Historico de alteracoes:
 // 13/10/2008 - Robert - Nao exige mais pedido de compra quando tiver NF original informada.
 // 16/10/2008 - Robert - Criada validacao de NF original/item/produto quando tipo NF = D.
@@ -83,8 +76,8 @@
 // 02/04/2020 - Claudia - Voltada alteração GLPI: 7737
 // 13/05/2020 - Robert  - Habilitada novamente validacao de safra, pois passaram notas sem sist.conducao, classificacao, etc. nesta safra.
 // 19/06/2020 - Robert  - Na validacao de safra, quando espaldeira, exigia D1_PRM99 e nao atendia caso especifico de uva bordo em espaldeira.
+// 10/05/2021 - Claudia - Retirada a chamada o programa MATA119. GLPI: 9996
 //
-
 // -------------------------------------------------------------------------------------------------------------------------
 User Function MT100LOK()
 	local _aAreaAnt    := U_ML_SRArea ()
@@ -93,113 +86,109 @@ User Function MT100LOK()
 	local _lTransFil   := .F.
     Private _xLOJAPAT  := ""
 
-//	u_logIni ()
-	
-	// Como este ponto de entrada eh executado tanto durante o 'retornar' como durante o preenchimento
-	// manual da nota, preciso verificar em qual dos momentos estah sendo executado.
-	// Testa se passou pela rotina MSGETDAUTO, o que indica que o usuario clicou em 'retornar' e, neste
-	// momento, o sistema estah fazendo a leitura da nota original e preenchendo a array aCols.
-	// As linhas ainda serao verificadas novamente, em nova passagem por este ponto de entrada.
-	_lVA_Retor = IsInCallStack ("MSGETDAUTO")
-	
-	// Verifica se eh transferencia de filial
-	if cTipo $ 'B/D'
-		if left (fBuscaCpo ("SA1", 1, xfilial ("SA1") + ca100For + cLoja, "A1_CGC"), 8) == left (sm0 -> m0_cgc, 8)
-			_lTransFil = .T.
-		endif
-	else
-		if left (fBuscaCpo ("SA2", 1, xfilial ("SA2") + ca100For + cLoja, "A2_CGC"), 8) == left (sm0 -> m0_cgc, 8)
-			_lTransFil = .T.
-		endif
-	endif
-
-	if _lRet .and. !GDDeleted () .and. cTipo == 'D' .and. ! _lVA_Retor .and. empty(GdFieldGet('D1_MOTDEV'))
-		u_help ('Para nota fiscal de devolução informar motivo da devolução.')
-		_lRet = .F.
-	EndIf
-
-	
-	if _lRet .and. GDFieldGet ("D1_PESBRT") < GDFieldGet ("D1_TARA")
-		u_help ("Peso bruto nao pode ser menor que a tara.")
-		_lRet = .F.
-	endif
-
-	// valida TES de FRETE apenas para documento do tipo CTE ou CTR
-	if _lRet 
-		_wfrete = fBuscaCpo ('SF4', 1, xfilial('SF4') + GDFieldGet ("D1_TES"), "F4_FRETE")
-		if alltrim (cEspecie) $ "CTR/CTE"
-			if _wfrete != '1'
-				u_help ("Tipo de documento é FRETE, porém TES não é de FRETE. Verifique!")
-				_lRet = .F.
+	If !IsInCallStack("MATA119") 
+		
+		// Como este ponto de entrada eh executado tanto durante o 'retornar' como durante o preenchimento
+		// manual da nota, preciso verificar em qual dos momentos estah sendo executado.
+		// Testa se passou pela rotina MSGETDAUTO, o que indica que o usuario clicou em 'retornar' e, neste
+		// momento, o sistema estah fazendo a leitura da nota original e preenchendo a array aCols.
+		// As linhas ainda serao verificadas novamente, em nova passagem por este ponto de entrada.
+		_lVA_Retor = IsInCallStack ("MSGETDAUTO")
+		
+		// Verifica se eh transferencia de filial
+		if cTipo $ 'B/D'
+			if left (fBuscaCpo ("SA1", 1, xfilial ("SA1") + ca100For + cLoja, "A1_CGC"), 8) == left (sm0 -> m0_cgc, 8)
+				_lTransFil = .T.
 			endif
 		else
-			if _wfrete = '1'
-				u_help ("Tipo de documento NÃO é FRETE, porém TES é de FRETE. Verifique!")
-				_lRet = .F.
+			if left (fBuscaCpo ("SA2", 1, xfilial ("SA2") + ca100For + cLoja, "A2_CGC"), 8) == left (sm0 -> m0_cgc, 8)
+				_lTransFil = .T.
 			endif
-		endif							
-	endif
+		endif
 
-	// Validacoes para notas de entrada de safra
-	if _lRet //.and. !GDDeleted ()
-		_lRet = _ValSafra ()
-	endif
-
-    // Validacoes ref. nota fiscal original.
-    if _lRet .and. ! GDDeleted () .and. ! _lVA_Retor //.and. ! IsInCallStack ("ZZX")
-   		_lRet = _ValNFOri ()
-    endif
-
-	// Verifica especies (volumes) e quantidades.
-	if _lRet .and. ! GDDeleted () .and. ! _lVA_Retor
-		if (! empty (GDFieldGet ("D1_VAVOLES")) .and. empty (GDFieldGet ("D1_VAVOLQT"))) .or. (empty (GDFieldGet ("D1_VAVOLES")) .and. ! empty (GDFieldGet ("D1_VAVOLQT")))
-			u_help ("Os campos '" + alltrim (RetTitle ("D1_VAVOLES")) + "' e '" + alltrim (rettitle ("D1_VAVOLQT")) + "' devem estar ambos informados ou ambos vazios.")
+		if _lRet .and. !GDDeleted () .and. cTipo == 'D' .and. ! _lVA_Retor .and. empty(GdFieldGet('D1_MOTDEV'))
+			u_help ('Para nota fiscal de devolução informar motivo da devolução.')
+			_lRet = .F.
+		EndIf
+		
+		if _lRet .and. GDFieldGet ("D1_PESBRT") < GDFieldGet ("D1_TARA")
+			u_help ("Peso bruto nao pode ser menor que a tara.")
 			_lRet = .F.
 		endif
-		if _lRet .and. cFormul == "S" .and. (empty (GDFieldGet ("D1_VAVOLES")) .or. empty (GDFieldGet ("D1_VAVOLQT")))
-			if cTipo == 'N' .and. fBuscaCpo ("SA2", 1, xfilial ("SA2") + ca100For + cLoja, "A2_EST") == "EX"
-				_lRet = U_msgyesno ("Para NF de entrada com formulario proprio os campos '" + alltrim (RetTitle ("D1_VAVOLES")) + "' e '" + alltrim (rettitle ("D1_VAVOLQT")) + "' deveriam ser informados. Confirma?")
+
+		// valida TES de FRETE apenas para documento do tipo CTE ou CTR
+		if _lRet 
+			_wfrete = fBuscaCpo ('SF4', 1, xfilial('SF4') + GDFieldGet ("D1_TES"), "F4_FRETE")
+			if alltrim (cEspecie) $ "CTR/CTE"
+				if _wfrete != '1'
+					u_help ("Tipo de documento é FRETE, porém TES não é de FRETE. Verifique!")
+					_lRet = .F.
+				endif
 			else
-				u_help ("Para NF de entrada com formulario proprio os campos '" + alltrim (RetTitle ("D1_VAVOLES")) + "' e '" + alltrim (rettitle ("D1_VAVOLQT")) + "' devem ser informados.")
+				if _wfrete = '1'
+					u_help ("Tipo de documento NÃO é FRETE, porém TES é de FRETE. Verifique!")
+					_lRet = .F.
+				endif
+			endif							
+		endif
+
+		// Validacoes para notas de entrada de safra
+		if _lRet //.and. !GDDeleted ()
+			_lRet = _ValSafra ()
+		endif
+
+		// Validacoes ref. nota fiscal original.
+		if _lRet .and. ! GDDeleted () .and. ! _lVA_Retor //.and. ! IsInCallStack ("ZZX")
+			_lRet = _ValNFOri ()
+		endif
+
+		// Verifica especies (volumes) e quantidades.
+		if _lRet .and. ! GDDeleted () .and. ! _lVA_Retor
+			if (! empty (GDFieldGet ("D1_VAVOLES")) .and. empty (GDFieldGet ("D1_VAVOLQT"))) .or. (empty (GDFieldGet ("D1_VAVOLES")) .and. ! empty (GDFieldGet ("D1_VAVOLQT")))
+				u_help ("Os campos '" + alltrim (RetTitle ("D1_VAVOLES")) + "' e '" + alltrim (rettitle ("D1_VAVOLQT")) + "' devem estar ambos informados ou ambos vazios.")
+				_lRet = .F.
+			endif
+			if _lRet .and. cFormul == "S" .and. (empty (GDFieldGet ("D1_VAVOLES")) .or. empty (GDFieldGet ("D1_VAVOLQT")))
+				if cTipo == 'N' .and. fBuscaCpo ("SA2", 1, xfilial ("SA2") + ca100For + cLoja, "A2_EST") == "EX"
+					_lRet = U_msgyesno ("Para NF de entrada com formulario proprio os campos '" + alltrim (RetTitle ("D1_VAVOLES")) + "' e '" + alltrim (rettitle ("D1_VAVOLQT")) + "' deveriam ser informados. Confirma?")
+				else
+					u_help ("Para NF de entrada com formulario proprio os campos '" + alltrim (RetTitle ("D1_VAVOLES")) + "' e '" + alltrim (rettitle ("D1_VAVOLQT")) + "' devem ser informados.")
+					_lRet = .F.
+				endif
+			endif
+		endif
+
+		// Validacoes adicionais
+		if _lRet .and. ! GDDeleted ()
+			if len (alltrim (GDFieldGet ("D1_CLASFIS"))) < 3
+				u_help ("Campo '" + alltrim (RetTitle ("D1_CLASFIS")) + "' nao esta' completo. Verifique cadastro do produto e do TES.")
 				_lRet = .F.
 			endif
 		endif
-	endif
+																																				
+		// Validacoes OP e produto BN
+		if _lRet .and. ! GDDeleted ()
+			_lRet = _VerOPBN ()
+		endif
 
-    // Validacoes adicionais
-    if _lRet .and. ! GDDeleted ()
-    	if len (alltrim (GDFieldGet ("D1_CLASFIS"))) < 3
-    		u_help ("Campo '" + alltrim (RetTitle ("D1_CLASFIS")) + "' nao esta' completo. Verifique cadastro do produto e do TES.")
-    		_lRet = .F.
-    	endif
-	endif
-                                                                                                                                             
-    // Validacoes OP e produto BN
-    if _lRet .and. ! GDDeleted ()
-    	_lRet = _VerOPBN ()
-	endif
+		// Verifica integracao com Fullsoft
+		if _lRet .and. ! GDDeleted () .and. ! _lVA_Retor .and. cTipo $ 'N/D'
+			_lRet = _VerFull (_lTransFil)
+		endif
 
-	// Verifica integracao com Fullsoft
-	if _lRet .and. ! GDDeleted () .and. ! _lVA_Retor .and. cTipo $ 'N/D'
-		_lRet = _VerFull (_lTransFil)
-	endif
+		// Verificacoes para controle de lotes.
+		if _lRet .and. ! GDDeleted () //.and. ! IsInCallStack ("ZZX")
+			_lRet = _VerLotes (_lTransFil, _lVA_Retor)
+		endif
 
-	// Verificacoes para controle de lotes.
-	if _lRet .and. ! GDDeleted () //.and. ! IsInCallStack ("ZZX")
-		_lRet = _VerLotes (_lTransFil, _lVA_Retor)
-	endif
-
-	// Verificacoes para data retroativa
-	if _lRet .and. ! GDDeleted ()
-		_lRet = _VerData ()
-	endif
-
+		// Verificacoes para data retroativa
+		if _lRet .and. ! GDDeleted ()
+			_lRet = _VerData ()
+		endif
+	EndIf
 	U_ML_SRArea (_aAreaAnt)
-//	u_logFim ()
 Return(_lRet)
-
-
-
+//
 // ----------------------------------------------------------------------------------------
 // Validacoes ref. nota fiscal original.
 static function _ValNFOri ()
@@ -207,8 +196,6 @@ static function _ValNFOri ()
 	local _sQuery    := ""
 	local _aNfOri    := {}
 	local _nSaldoRet := 0
-
-//	u_logIni ()
 	
 	if _lRet .and. cTipo $ "ND" .and. ! empty (GDFieldGet ("D1_NFORI"))
 		_sQuery := ""
@@ -222,7 +209,6 @@ static function _ValNFOri ()
 		_sQuery +=    " and D2_LOJA    = '" + cLoja + "'"
 		_sQuery +=    " and D2_COD     = '" + GDFieldGet ("D1_COD") + "'"
 		_sQuery +=    " and D2_ITEM    = '" + GDFieldGet ("D1_ITEMORI") + "'"
-//		u_log (_sQuery)
 		_aNfOri = aclone (U_Qry2Array (_sQuery))
 		
 		if len (_aNFOri) == 0
@@ -230,7 +216,6 @@ static function _ValNFOri ()
 		endif
 		
 		if _lRet .and. len (_aNFOri) > 0 .and. GDFieldGet ("D1_VUNIT") != _aNfOri [1, 2]
-//			_lRet = msgnoyes ("Preco unitario deveria ser igual ao da NF de origem (" + cvaltochar (_aNfOri [1, 2]) + "). Confirma assim mesmo?")
 			u_help ("Preco unitario deve ser igual ao da NF de origem (" + cvaltochar (_aNfOri [1, 2]) + ").")
 			_lRet = .F.
 		endif
@@ -278,7 +263,6 @@ static function _ValNFOri ()
 
 		// Faz um acoxambramento por causa da simpatica incompatibilidade de tamanho entre os campos D1_ITEM e D1_ITEMORI...
 		_sQuery +=    " and (SUBSTRING (D1_ITEM, 1, 2) = '" + GDFieldGet ("D1_ITEMORI") + "' or D1_ITEM = '" + iif (len (alltrim (GDFieldGet ("D1_ITEMORI"))) == 1, '00', '') + GDFieldGet ("D1_ITEMORI") + "')"
-		//_sQuery +=    " and D1_ITEM = '" + GDFieldGet ("D1_ITEMORI") + "' "
 		
 		if U_RetSQL (_sQuery) < 1
 			u_help ("Validacao conh.frete: Nao foi encontada a nota fiscal original numero '" + ;
@@ -313,6 +297,7 @@ static function _ValNFOri ()
 				u_help ("Nota/Serie Original Informada não existe.")
 				_lRet = .F.				
 			endif
+
 			if _lRet 
 				_sQuery = ""
 				_sQuery += " SELECT D2_TES "
@@ -332,12 +317,9 @@ static function _ValNFOri ()
 		endif
 	 
 	endif
-	
-//	u_logFim ()
+
 return _lRet
-
-
-
+//
 // -------------------------------------------------------------------------------------------------
 // Validacoes ref. notas de entrada/compra de safra de uva.
 Static Function _ValSafra ()
@@ -345,11 +327,6 @@ Static Function _ValSafra ()
 
 	// Verifica se eh uma nota de entrada de uva.
 	if _lRetSafr .and. ! GDDeleted () .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_GRUPO") == "0400"
-
-	//	u_log ('debug', GDFieldGet ("D1_COD"))
-	//	u_log ('debug', GDFieldGet ("D1_VACONDU"))
-	//	u_log ('debug', fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_VARUVA"))
-	//	u_log ('debug', GDFieldGet ("D1_PRM99"))
 
 		if empty (GDFieldGet ("D1_GRAU"))
 			u_help ("Notas de uva: Grau deve ser informado no campo '" + alltrim (RetTitle ("D1_GRAU")) + "'.",, .t.)
@@ -398,17 +375,16 @@ Static Function _ValSafra ()
 		endif
 	endif
 return _lRetSafr
-
-
-
+//
 // -----------------------------------------------------------------------------------------------
 // Verificacoes sobre OP / item tipo BN
 static function _VerOPBN ()
 	local _lRet     := .T.
 
 	if _lRet .and. empty (GDFieldGet ("D1_OP")) .and. ;
-			fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_TIPO") == "BN"    .AND. ;
-			fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("D1_TES"), "F4_ESTOQUE") == "S"
+		fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_TIPO") == "BN"    .AND. ;
+		fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("D1_TES"), "F4_ESTOQUE") == "S"
+		
 		u_help ("Campo '" + alltrim (RetTitle ("D1_OP")) + "' deve ser preenchido quando produto for do Tipo 'BN' e TES atualizar estoque.")
 		_lRet = .F.
 	endif
@@ -445,141 +421,73 @@ static function _VerOPBN ()
 		_lRet = .F.
 	endif
 return _lRet
+//
 // ---------------------------------------------------------------------------------------------------
 // Verificacoes integracao com Fullsoft.
 static function _VerFull (_lTransFil)
 	local _lRet     := .T.
    	local _sMsg     := ""
 	local _sAlmFull := ""
-//	local _sAlmFulT := ""  // GetMv ("VA_ALMFULT",, '')  // Alm. entrada transf. entre filiais
-//	local _sAlmFulD := ""  // GetMv ("VA_ALMFULD",, '')  // Alm. entrada devolucoes
-//	local _sAlmFulP := ""  // GetMv ("VA_ALMFULP",, '')  // Alm. entrada producao
 
-	// Como os almox. de integracao com o FullWMS existem apenas na matriz, preciso ler os 
-	// parametros da filial 01, entao nao posso usar GetMv.
-//	_sAlmFulT = alltrim (fBuscaCpo ("SX6", 1, '01' + "VA_ALMFULT", 'X6_CONTEUD'))  // Alm. entrada transf. entre filiais
-//	_sAlmFulD = alltrim (fBuscaCpo ("SX6", 1, '01' + "VA_ALMFULD", 'X6_CONTEUD'))  // Alm. entrada devolucoes
-//	_sAlmFulP = alltrim (fBuscaCpo ("SX6", 1, '01' + "VA_ALMFULP", 'X6_CONTEUD'))  // Alm. entrada producao
-//	u_log ('almoxarifados full:', _sAlmFulT, _sAlmFulD, _sAlmFulP)
-	
 	if GDFieldGet ("D1_QUANT") != 0
 		if fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("D1_TES"), "F4_ESTOQUE") == "S"
-//			sb1 -> (dbsetorder (1))
-//			if ! sb1 -> (dbseek (xfilial ("SB1") + GDFieldGet ("D1_COD"), .F.))
-//				u_help ("Cadastro do produto '" + GDFieldGet ("D1_COD") + "' nao localizado!")
-//				_lRet = .F.
-//			endif
-	
-//			if _lRet
-				_sMsg = ""
-//				if cEmpAnt = '01' .and. cFilAnt == '01' .and. sb1 -> b1_vafullw == 'S'  // Produto DEVE entrar em algum almox. de integracao com FullWMS.
-				
-//					// Verifica em qual almox. deve entrar.
-					if _lTransFil
-//						_sAlmFull = _sAlmFulT
-						_sAlmFull = U_AlmFull (GDFieldGet ("D1_COD"), 'TF')  // Entrada transf de filial
-					elseif cTipo == 'D'
-//						_sAlmFull = _sAlmFulD
-						_sAlmFull = U_AlmFull (GDFieldGet ("D1_COD"), 'DV')  // Devol de venda
-					else
-//						_sAlmFull = _sAlmFulP
-						_sAlmFull = U_AlmFull (GDFieldGet ("D1_COD"), 'NE')  // Nota de entrada normal
-					endif
-				if ! empty (_sAlmFull)
-					if !GDFieldGet ("D1_LOCAL") $ _sAlmFull
-						_sMsg = "Produto '" + alltrim (GDFieldGet ("D1_COD")) + "' controla armazenagem via FullWMS nesta filial. Entradas deste tipo de nota devem ser feitas no almoxarifado '" + _sAlmFull + "'."
-					endif
-	
-				else  // Produto NAO DEVE entrar em nenhum almox. de integracao com FullWMS.
-//					if GDFieldGet ("D1_LOCAL") $ _sAlmFulT + '/' + _sAlmFulD + '/' + _sAlmFulP
-					if GDFieldGet ("D1_LOCAL") $ U_AlmFull (NIL, 'TODOS')
-						_sMsg = "Produto '" + alltrim (GDFieldGet ("D1_COD")) + "' nao controla armazenagem via FullWMS nesta filial. Entradas deste tipo de nota NAO devem ser feitas em almoxarifados de integracao com FullWMS."
-					endif
+			_sMsg = ""
+
+			// Verifica em qual almox. deve entrar.
+			if _lTransFil
+				_sAlmFull = U_AlmFull (GDFieldGet ("D1_COD"), 'TF')  // Entrada transf de filial
+			elseif cTipo == 'D'
+				_sAlmFull = U_AlmFull (GDFieldGet ("D1_COD"), 'DV')  // Devol de venda
+			else
+				_sAlmFull = U_AlmFull (GDFieldGet ("D1_COD"), 'NE')  // Nota de entrada normal
+			endif
+
+			if ! empty (_sAlmFull)
+				if !GDFieldGet ("D1_LOCAL") $ _sAlmFull
+					_sMsg = "Produto '" + alltrim (GDFieldGet ("D1_COD")) + "' controla armazenagem via FullWMS nesta filial. Entradas deste tipo de nota devem ser feitas no almoxarifado '" + _sAlmFull + "'."
 				endif
+
+			else  // Produto NAO DEVE entrar em nenhum almox. de integracao com FullWMS.
+				if GDFieldGet ("D1_LOCAL") $ U_AlmFull (NIL, 'TODOS')
+					_sMsg = "Produto '" + alltrim (GDFieldGet ("D1_COD")) + "' nao controla armazenagem via FullWMS nesta filial. Entradas deste tipo de nota NAO devem ser feitas em almoxarifados de integracao com FullWMS."
+				endif
+			endif
 	
-				// Se chegou ateh aqui com retorno negativo, eh por que teve alguma inconsistencia.
-				// Sobra, ainda, o recurso do usuario ter liberacao para movimentar assim mesmo.
-				if ! empty (_sMsg)
-					if u_zzuvl ('029', __cUserId, .F.)
-						_lRet = U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
-					else
-						u_help (_sMsg)
-						_lret = .F.
-					endif
+			// Se chegou ateh aqui com retorno negativo, eh por que teve alguma inconsistencia.
+			// Sobra, ainda, o recurso do usuario ter liberacao para movimentar assim mesmo.
+			if ! empty (_sMsg)
+				if u_zzuvl ('029', __cUserId, .F.)
+					_lRet = U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
+				else
+					u_help (_sMsg)
+					_lret = .F.
 				endif
 			endif
 		endif
-//	endif
+	endif
 return _lRet
+//
 // ------------------------------------------------------------------------------------------
 // Verificacoes para quando houver controle de lote.
 static function _VerLotes (_lTransFil, _lVA_Retor)
 	local _lRet    := .T.
-//	local _oSQL    := NIL
-//	local _aRetQry := {}
 
-//	// Nao deve validar lote na pre-nota.
-//	if ! IsInCallStack ("MATA140")
-//		u_log ('nao estou na pre-nota')
-
-//		if _lRet .and. cTipo == 'N' .and. (empty (GDFieldGet ("D1_LOTEFOR")) .or. empty (GDFieldGet ("D1_DTVALID"))) .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_RASTRO") == "L" 
-		if _lRet .and. ! _lVA_Retor .and. cTipo == 'N' .and. (empty (GDFieldGet ("D1_LOTEFOR")) .or. empty (GDFieldGet ("D1_DTVALID"))) .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_RASTRO") == "L" 
-			if fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("D1_TES"), "F4_ESTOQUE") == "S"
-				u_help ("O produto '" + GDFieldGet ("D1_COD") + "' possui controle de lotes. O lote do fornecedor (campo '" + alltrim (RetTitle ("D1_LOTEFOR")) + "') e data de validade (campo '" + alltrim (RetTitle ("D1_DTVALID")) + "') devem ser informados para possibilitar a rastreabilidade.")
-				_lRet = .F.
-			endif
+	if _lRet .and. ! _lVA_Retor .and. cTipo == 'N' .and. (empty (GDFieldGet ("D1_LOTEFOR")) .or. empty (GDFieldGet ("D1_DTVALID"))) .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_RASTRO") == "L" 
+		if fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("D1_TES"), "F4_ESTOQUE") == "S"
+			u_help ("O produto '" + GDFieldGet ("D1_COD") + "' possui controle de lotes. O lote do fornecedor (campo '" + alltrim (RetTitle ("D1_LOTEFOR")) + "') e data de validade (campo '" + alltrim (RetTitle ("D1_DTVALID")) + "') devem ser informados para possibilitar a rastreabilidade.")
+			_lRet = .F.
 		endif
-		/*
-		// Quando transferencia entre filiais, o lote de saida deve entrar como lote do fornecedor na filial destino.
-		if _lRet .and. cTipo == 'N' .and. _lTransFil .and. ! empty (GDFieldGet ("D1_LOTEFOR"))
-			_oSQL := ClsSQL ():New ()
-			_oSQL:_sQuery := "SELECT COUNT (*), "
-			_oSQL:_sQuery +=       " COUNT (CASE WHEN SD2.D2_COD      = '" + GDFieldGet ("D1_COD") + "'"
-			_oSQL:_sQuery +=                    " AND SD2.D2_QUANT    = '" + GDFieldGet ("D1_QUANT") + "'"
-			_oSQL:_sQuery +=                    " AND SD2.D2_LOTECTL  = '" + GDFieldGet ("D1_LOTEFOR") + "'"
-			_oSQL:_sQuery +=              " THEN 1 ELSE 0 END)"
-			_oSQL:_sQuery += " from " + RetSQLName ("SD2") + " SD2, "
-			_oSQL:_sQuery +=            RetSQLName ("SA2") + " SA2, "
-			_oSQL:_sQuery +=        " VA_SM0 SM0"
-			_oSQL:_sQuery += " WHERE SA2.D_E_L_E_T_ != '*'"
-			_oSQL:_sQuery +=   " AND SA2.A2_COD      = '" + cA100For + "'"
-			_oSQL:_sQuery +=   " AND SA2.A2_FILIAL   = '" + cLoja + "'"
-			_oSQL:_sQuery +=   " AND SM0.D_E_L_E_T_ != '*'"
-			_oSQL:_sQuery +=   " AND SM0.M0_CODIGO   = '" + cEmpAnt + "'"
-			_oSQL:_sQuery +=   " AND SM0.M0_CGC      = SA2.A2_CGC"
-			_oSQL:_sQuery +=   " AND SD2.D_E_L_E_T_ != '*'"
-			_oSQL:_sQuery +=   " AND SD2.D2_FILIAL   = SM0.M0_CODFIL"
-			_oSQL:_sQuery +=   " AND SD2.D2_DOC      = '" + cNFiscal + "'"
-			_oSQL:_sQuery +=   " AND SD2.D2_SERIE    = '" + cSerie + "'"
-			_aRetQry = aclone (_oSQL:Qry2Array ())
-			if _aRetQry [1, 1] == 0
-				u_help ("Nao encontrei a nota fiscal na filial de origem.")
-				_lRet = .F.
-			else
-				if _aRetQry [1, 2] == 0
-					u_help ("Nao encontrei, na NF de saida da filial origem, nenhum registro deste produto com esta quantidade e com o lote informado no campo '" + alltrim (RetTitle ("D1_LOTEFOR")) + "'.")
-					_lRet = .F.
-				endif
-			endif
-		endif
-		*/
-//	endif
-
+	endif
 return _lRet
+//
 // -------------------------------------------------------------------------------------------------------
-//Verificacoes para datas.
+// Verificacoes para datas.
 static function _VerData ()
 	local _lRet    := .T.
 	local _sMsg    := ""
 
 	if dDataBase != date () .and. ! empty (GDFieldGet ("D1_TES")) .and. GDFieldGet ("D1_QUANT") != 0
 		if fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("D1_TES"), "F4_ESTOQUE") == 'S'
-//			u_Help ("Movimentacao fora da data de hoje nao permitida para TES que movimenta estoques.")
-//			if "KATIA.NUNES" $ upper (cusername) .and. date () = stod ('20190703')
-//				// hoje passa, solicitacao do Carlos e Liane.
-//			else
-//				_lRet = .F.
-//			endif
 			_sMsg = "Movimentacao fora da data de hoje nao permitida para TES que movimenta estoques."
 			if U_ZZUVL ('084', __cUserId, .F.)
 				_lRet = U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
