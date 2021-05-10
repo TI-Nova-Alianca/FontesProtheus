@@ -2,8 +2,17 @@
 // Autor......: Robert Koch
 // Data.......: 06/01/2020
 // Descricao..: Consulta faixas de classificacao de uvas latadas para safra.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Consulta
+// #Descricao         #Consulta faixas de classificacao de uvas latadas para safra.
+// #PalavasChave      #uvas #safra #faixas_de_grau #classificacao
+// #TabelasPrincipais #ZX5
+// #Modulos           #coop
+
 // Historico de alteracoes:
+// 10/05/2021 - Robert - Melhorados titulos das colunas
+//                     - Acrescentadas tags para catalogo de fontes.
 //
 
 // --------------------------------------------------------------------------
@@ -35,7 +44,7 @@ Static Function _Gera (_sSafra)
 	// MONTA CTE PARA AGRUPAR AS FAIXAS DE GRAU
 	_oSQL:_sQuery += " 
 	_oSQL:_sQuery += " SELECT ZX5_52.ZX5_52GRUP + '-' + ZX5_52.ZX5_52DESC AS GRUPO,"
-	_oSQL:_sQuery +=        " ZX5_52.ZX5_52GIA AS GRAU_MINIMO_PARA_A, ZX5_52.ZX5_52GIB AS GRAU_MINIMO_PARA_B, ZX5_52.ZX5_52GIC AS GRAU_MINIMO_PARA_C,"
+	_oSQL:_sQuery +=        " ZX5_52.ZX5_52GIA AS GR_MIN_A, ZX5_52.ZX5_52GIB AS GR_MIN_B, ZX5_52.ZX5_52GIC AS GR_MIN_C,"
 	_oSQL:_sQuery +=        " STRING_AGG (RTRIM (SB1.B1_DESC), ', ') AS VARIEDADES"
 	_oSQL:_sQuery += " FROM " + RetSQLName ("ZX5") + " ZX5_52, "
 	_oSQL:_sQuery +=            RetSQLName ("ZX5") + " ZX5_53, "

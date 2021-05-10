@@ -2,8 +2,17 @@
 // Autor......: Robert Koch
 // Data.......: 04/01/2020
 // Descricao..: Consulta faixas de aceitacao de uvas para espumante para safra.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Consulta
+// #Descricao         #Consulta faixas de aceitacao de uvas para espumante para safra.
+// #PalavasChave      #uvas #safra #faixas_de_grau #uva_para_espumante
+// #TabelasPrincipais #ZX5
+// #Modulos           #coop
+
 // Historico de alteracoes:
+// 10/05/2021 - Robert - Melhorados titulos das colunas
+//                     - Acrescentadas tags para catalogo de fontes.
 //
 
 // --------------------------------------------------------------------------
@@ -61,7 +70,7 @@ Static Function _Gera (_sSafra)
 	_oSQL:_sQuery += " 	AND SB5.B5_FILIAL = SB1.B1_FILIAL"
 	_oSQL:_sQuery += " 	AND SB5.B5_COD = SB1.B1_COD),"
 	_oSQL:_sQuery += " CONCATENADOS AS"
-	_oSQL:_sQuery += " (SELECT FAIXA, ZX5_17GIES AS GRAU_INICIAL, ZX5_17GFES AS GRAU_FINAL, STRING_AGG(P1.DESCRI_PROD, ',') AS VARIEDADES"
+	_oSQL:_sQuery += " (SELECT FAIXA, ZX5_17GIES AS GRAU_MIN, ZX5_17GFES AS GRAU_MAX, STRING_AGG(P1.DESCRI_PROD, ',') AS VARIEDADES"
 	_oSQL:_sQuery += " 	FROM PRODUTOS AS P1"
 	_oSQL:_sQuery += " 	GROUP BY FAIXA, ZX5_17GIES, ZX5_17GFES)"
 	_oSQL:_sQuery += " SELECT *"

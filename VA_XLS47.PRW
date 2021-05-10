@@ -2,8 +2,17 @@
 // Autor......: Robert Koch
 // Data.......: 04/01/2020
 // Descricao..: Consulta faixas de classificacao de uvas em espaldeira para safra.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Consulta
+// #Descricao         #Consulta faixas de classificacao de uvas em espaldeira para safra.
+// #PalavasChave      #uvas #safra #faixas_de_grau #classificacao
+// #TabelasPrincipais #ZX5
+// #Modulos           #coop
+
 // Historico de alteracoes:
+// 10/05/2021 - Robert - Melhorados titulos das colunas
+//                     - Acrescentadas tags para catalogo de fontes.
 //
 
 // --------------------------------------------------------------------------
@@ -69,7 +78,7 @@ Static Function _Gera (_sSafra)
 
 	// CONCATENA AS DESCRICOES DOS PRODUTOS"
 	_oSQL:_sQuery += "CONCATENADOS AS ("
-	_oSQL:_sQuery += " SELECT FAIXA, ZX5_17GIPR AS GRAU_MINIMO_PARA_PREMIUM, ZX5_17GIAA AS GRAU_MINIMO_PARA_AA, ZX5_17GIA AS GRAU_MINIMO_PARA_A, ZX5_17GIB AS GRAU_MINIMO_PARA_B, ZX5_17GIC AS GRAU_MINIMO_PARA_C, ZX5_17GID AS GRAU_MINIMO_PARA_D, "
+	_oSQL:_sQuery += " SELECT FAIXA, ZX5_17GIPR AS GR_MIN_PR, ZX5_17GIAA AS GR_MIN_AA, ZX5_17GIA AS GR_MIN_A, ZX5_17GIB AS GR_MIN_B, ZX5_17GIC AS GR_MIN_C, ZX5_17GID AS GR_MIN_D, "
 	_oSQL:_sQuery +=        " STRING_AGG (P1.DESCRI_PROD, ',') AS VARIEDADES"
  	_oSQL:_sQuery += " FROM   PRODUTOS AS P1"
 	_oSQL:_sQuery += " GROUP BY FAIXA, ZX5_17GIPR, ZX5_17GIAA, ZX5_17GIA, ZX5_17GIB, ZX5_17GIC, ZX5_17GID"
