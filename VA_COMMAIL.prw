@@ -16,6 +16,7 @@
 //  08/01/2021 - Claudia - Alterada a indenização, pegando direto o Total da comissão 
 //               e dividindo por 12. GLPI: 9099
 //  05/05/2021 - Cláudia - Adicionado valor de frete + seguro + despesas acessorias. GLPI: 9895
+//  07/05/2021 - Claudia - Retirado _mvsim1:= GetMv ("MV_SIMB1") devido a erros R27. 
 //
 // ----------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -655,9 +656,9 @@ Static Function _GeraPDF_Email()
 			
 			oPrint:Box(_nMargSup + 20, _nMargEsq + 20, _nMargSup + _nAltPag, _nLargPag - _nMargEsq)
 			
-			_mvsim1:= GetMv ("MV_SIMB1") 
+			//_mvsim1:= GetMv ("MV_SIMB1") 
 			oPrint:Say(_nMargSup + 170,  _nMargEsq + 40, "R E C I B O", _oArial32N, 100)
-			oPrint:Say(_nMargSup + 170,  _nMargEsq + 1500, _mvsim1 + " " + alltrim (transform (_wvlrrecibo, "@E 999,999,999.99")) , _oArial32N, 100)
+			oPrint:Say(_nMargSup + 170,  _nMargEsq + 1500,"R$ " + alltrim (transform (_wvlrrecibo, "@E 999,999,999.99")) , _oArial32N, 100)
 			oPrint:Say(_nMargSup + 288,  _nMargEsq + 50, "Recebi de ", _oCour16, 100)
 			oPrint:Say(_nMargSup + 288,  _nMargEsq + 300, "COOPERATIVA AGROINDUSTRIAL NOVA ALIANCA LTDA", _oCour20N, 100)
 			_sExtenso = Extenso (_wvlrrecibo)
