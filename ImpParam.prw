@@ -18,6 +18,7 @@
 // 28/05/2013 - Robert  - desconsiderava nome completo das perguntas no While 
 //                        (ex.: SZI_REL e SZI_REL2)
 // 07/05/2021 - Claudia - Ajustado retirando SX1 conforme R27. GLPI: 8825
+// 11/05/2021 - Claudia - Ajuste retirando o DbSkip. GLPI: 10008
 //
 // -------------------------------------------------------------------------------------
 user function ImpParam (_nMaxLin)
@@ -80,6 +81,7 @@ user function ImpParam (_nMaxLin)
 				_sLinha += ''
 			EndIf
 		Else
+
 			uVar := &(cVar)
 			If ValType(uVar) == "N"
 				cPicture:= "@E "+Replicate("9",_nX1_TAMANHO-_nX1_DECIMAL-1)
@@ -96,7 +98,6 @@ user function ImpParam (_nMaxLin)
 			EndIf
 		EndIf
 		aadd (_aLinhas, alltrim (_sLinha))
-		DbSkip()
 	Next
 
 
