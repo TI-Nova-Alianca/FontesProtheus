@@ -2075,3 +2075,4 @@ METHOD VerifUser (_sMsg) Class ClsCtaCorr
 		u_help (::UltMsg,, .t.)
 	endif
 return _lRet
+

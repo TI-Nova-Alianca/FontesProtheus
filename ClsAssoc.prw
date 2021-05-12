@@ -2179,4 +2179,3 @@ METHOD UltSafra (_dDataRef) Class ClsAssoc
 	endif
 	U_ML_SRArea (_aAreaAnt)
 return _sRet
-

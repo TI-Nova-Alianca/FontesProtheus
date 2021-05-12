@@ -25,6 +25,7 @@
 // 12/03/2021 - Robert - Migrado e-mail diario de acompanhamento da safra do U_BatCSaf() para este programa.
 //                     - Implementada geracao do SZI e verificacao de inconsistencias SZI x SE2 (GLPI 9592).
 // 03/04/2021 - Robert - Recalcula saldo do SZI antes de enviar aviso de diferenca com o SE2.
+// 07/05/2021 - Robert - Removidas algumas linhas comentariadas.
 //
 
 // --------------------------------------------------------------------------
@@ -226,15 +227,9 @@ static function _ConfParc (_lAjustar)
 
 				_nSomaSE2 += se2 -> e2_valor
 
-// apos transf p/ matriz o saldo zera;nao posso mais consistir.				if se2 -> e2_valor != se2 -> e2_saldo .or. se2 -> e2_valor != se2 -> e2_vlcruz
-// apos transf p/ matriz o saldo zera;nao posso mais consistir.					_sMsg += 'Parcela ' + se2 -> e2_parcela + ' no SE2 diferenca entre e2_valor x e2_saldo x e2_vlcruz' + chr (13) + chr (10)
-// apos transf p/ matriz o saldo zera;nao posso mais consistir.				endif
 				if se2 -> e2_valor != se2 -> e2_vlcruz
 					_sMsg += 'Parcela ' + se2 -> e2_parcela + ' no SE2 diferenca entre e2_valor x e2_vlcruz' + chr (13) + chr (10)
 				endif
-				//if se2 -> e2_vencto != se2 -> e2_vencrea
-				//	_sMsg += 'Parcela ' + se2 -> e2_parcela + ' no SE2 diferenca entre e2_vencto x e2_vencrea' + chr (13) + chr (10)
-				//endif
 
 				// Calcula o % de participacao de cada parcela sobre o total do valor das uvas
 				aadd (_aParcReal, {se2 -> e2_vencto, se2 -> e2_valor * 100 / (_sAliasQ) -> vlr_uvas, se2 -> e2_valor, se2 -> e2_parcela})
@@ -245,7 +240,6 @@ static function _ConfParc (_lAjustar)
 			_aParcPrev = U_VA_RusPP ((_sAliasQ) -> safra, (_sAliasQ) -> grupo_pagto, (_sAliasQ) -> vlr_uvas, (_sAliasQ) -> vlr_frt, stod ((_sAliasQ) -> emissao))
 			_nSomaPrev = 0
 			for _nParc = 1 to len (_aParcPrev)
-		//		aadd (_aParcPrev [_nParc], round ((_aParcPrev [_nParc, 3] * ((_sAliasQ) -> vlr_uvas + (_sAliasQ) -> vlr_frt) / 100), 2))
 				_nSomaPrev += _aParcPrev [_nParc, 4]
 			next
 

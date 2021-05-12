@@ -32,9 +32,10 @@
 // 16/06/2020 - Robert - TInha um dbskip() a mais e perdia a pre-nf quando a mesma tivesse apenas um item.
 // 15/02/2021 - Robert - Passa a prever parcelas via VA_RusPP.prw para manter consistencia com VA_RusN (GLPI 9389)
 // 29/03/2021 - Robert - Novo parametro funcao VA_RusPP (GLPI 9592).
+// 07/05/2021 - Robert - Gravacao campo ZI_SAFRA (GLPI 9891).
 //
 
-#include "tbiconn.ch"
+//#include "tbiconn.ch"
 
 #XTranslate .ItensProduto    => 1
 #XTranslate .ItensDescricao  => 2
@@ -65,7 +66,6 @@ User Function VA_GNF2 (_lAutomat)
 	private _sErroAuto := ""  // Deixar private para ser vista pela funcao U_Help ()
 
 	U_HELP ("NAO GRAVOU E2_HIST QUANDO GEROU NF COMPL FORN 002825 EM 16/02/21 (GLPI 9389)",,.T.)
-	RETURN
 
 	
 	// Verifica se o usuario tem liberacao para uso desta rotina.
@@ -1127,6 +1127,7 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 			_oCtaCorr:Serie    = (_sAliasQ) -> e2_prefixo
 			_oCtaCorr:Parcela  = (_sAliasQ) -> e2_parcela
 			_oCtaCorr:Origem   = _sOrigSZI
+			_oCtaCorr:Safra    = _sSafra
 			if _oCtaCorr:PodeIncl ()
 				if ! _oCtaCorr:Grava (.F., .F.)
 					U_help ("Erro na atualizacao da conta corrente para o associado '" + (_sAliasQ) -> e2_fornece + '/' + (_sAliasQ) -> e2_loja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
@@ -1206,7 +1207,7 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {04, "Loja produtor final           ", "C", 2,  0,  "",   "SA2", {},                                  "Loja do produtor (fornecedor) final para geracao das notas."})
 	aadd (_aRegsPerg, {05, "Safra referencia              ", "C", 4,  0,  "",   "   ", {},                                  "Safra (ano) para a qual serao geradas as notas de compra."})
 	aadd (_aRegsPerg, {06, "Parcelas sep.barras(bco=todas)", "C", 30, 0,  "",   "   ", {},                                  "Parcelas. Geralmente para separar tintorias, organicas, etc. Ex.: A/B/F"})
-	aadd (_aRegsPerg, {07, "Grupo pagamento               ", "C", 1,  0,  "",   "   ", {},                                  "Grupo de produtos (geralmente para gerar parcelamento)"})
+	aadd (_aRegsPerg, {07, "Grupo pagamento(bco=todos)    ", "C", 1,  0,  "",   "   ", {},                                  "Grupo de produtos (geralmente para gerar parcelamento)"})
 	aadd (_aRegsPerg, {08, "Geracao por DCO               ", "C", 1,  0,  "",   "   ", {"Com DCO", "Sem DCO", "Todos"},     "Permite gerar separadamente as notas envolvidas em leilao da CONAB."})
 	aadd (_aRegsPerg, {09, "Variedade de uva              ", "N", 1,  0,  "",   "   ", {"Comum", "Fina", "Todas"},          "Permite gerar separadamente as notas por tipo de uva."})
 	aadd (_aRegsPerg, {10, "Tipo de nota a gerar          ", "N", 1,  0,  "",   "   ", {"Normais", "Compl.preco"},          "Compl.preco eh sobre as compras feitas a preco minimo do governo."})

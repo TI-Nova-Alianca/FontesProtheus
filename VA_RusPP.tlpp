@@ -8,6 +8,7 @@
 // 12/02/2021 - Robert - Novos parametros metodo ClsAssoc:FechSafra() - GLPI 9318
 // 08/03/2021 - Robert - Novos parametros metodo ClsAssoc:FechSafra (GLPI 9572)
 // 29/03/2021 - Robert - Calculava datas a partir da variavel dDataBase. Agora recebe a data de emissao por parametro (GLPI 9592).
+// 07/05/2021 - Robert - Criado tratamento para quando nao encontrar as regras para pagamento (GLPI 9891).
 //
 
 // ------------------------------------------------------------------------------------
@@ -28,41 +29,51 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 	local _aAux       := {}
 	local _sAnoVcSaf  := ''
 	local _sMesVcSaf  := ''
+	local _lContinua  := .T.
 	private _oXMLFech := NIL  // Precisa ser do tipo PRIVATE senao a funcao XmlParser() nao funciona... vai entender.
 
 //	U_Log2 ('info', 'Iniciando ' + procname ())
-//	U_Log2 ('info', 'Calculando parcelas para safra ' + _sSafPag + ' grp: ' + _sGrpPgSaf + ' vlr.uva: ' + cvaltochar (_nVlUva) + ' vlr.frt: ' + cvaltochar (_nVlFrete))
+	U_Log2 ('info', 'Calculando parcelas para safra ' + _sSafPag + ' grp: ' + _sGrpPgSaf + ' vlr.uva: ' + cvaltochar (_nVlUva) + ' vlr.frt: ' + cvaltochar (_nVlFrete))
 
 	// Ateh o momento, a forma de pagamento mais longa tem 11 parcelas. Acrescenta uma para o frete.
-	_aParcel = {}
-	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
-	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
-	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
-	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
-	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
-	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
-	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
-	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
-	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
-	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
-	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
-	aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+	if _lContinua
+		_aParcel = {}
+		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
 
-	// Aqui nao preciso de um associado especifico... preciso apenas ler as regras de pagamento.
-	_oAssocCP = ClsAssoc():New ('000161', '01')
-	//                                _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC
-	_sXmlFech = _oAssocCP:FechSafra (_sSafPag, .f.,     .f.,     .f.,     .f.,     .f.,      .t.,      .f.,      .f.,        .f.,      .f.,      .f.)
+		// Aqui nao preciso de um associado especifico... preciso apenas ler as regras de pagamento.
+		_oAssocCP = ClsAssoc():New ('000161', '01')
+		//                                _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC
+		_sXmlFech = _oAssocCP:FechSafra (_sSafPag, .f.,     .f.,     .f.,     .f.,     .f.,      .t.,      .f.,      .f.,        .f.,      .f.,      .f.)
+		U_Log2 ('debug', _sXMLFech)
 
-	// Converte de texto para XML
-	_oXMLFech := XmlParser (_sXmlFech, "_", @_sError, @_sWarning)
-	if ! empty (_sError) .or. ! empty (_sWarning)
-		u_help ("Erro ao decodificar retorno do XML de regras de pagamento para esta safra: " + _sError + _sWarning,, .t.)
-	else
-		// Verifica se tem este tipo de tag no XML
+		// Converte de texto para XML
+		_oXMLFech := XmlParser (_sXmlFech, "_", @_sError, @_sWarning)
+		if ! empty (_sError) .or. ! empty (_sWarning)
+			u_help ("Erro ao decodificar retorno do XML de regras de pagamento para esta safra: " + _sError + _sWarning,, .t.)
+			_lContinua = .F.
+		endif
+		u_log2 ('debug', _oXMLFech)
+	endif
+
+	// Verifica se tem este tipo de tag no XML
+	if _lContinua
 		if type ('_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem') != 'A'
 			u_help ('Nao encontrei regras de pagamento para esta safra.',, .T.)
+			_lContinua = .F.
 		else
 			for _nRegraPag = 1 to len (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem)
+				U_Log2 ('debug', _nRegraPag)
 				if _oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_grupo:TEXT == _sGrpPgSaf
 					_aParcel [1, 1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc01:TEXT)
 					_aParcel [2, 1]  = val (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem[_nRegraPag]:_perc02:TEXT)
@@ -79,19 +90,30 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 			next
 		endif
 	endif
-	//u_log (_aParcel)
+	u_log2 ('debug', '_aParcel depois de ler o XML:')
+	u_log2 ('debug', _aParcel)
 
 	// A parcela do frete cai sempre na proxima posicao livre
-	_nParcel = 1
-	do while _nParcel <= len (_aParcel) .and. _aParcel [_nParcel, 1] > 0
-		_nParcel ++
-	enddo
-	_nParcFrt = _nParcel
+	if _lContinua
+		_nParcel = 1
+		do while _nParcel <= len (_aParcel) .and. _aParcel [_nParcel, 1] > 0
+			_nParcel ++
+		enddo
+		if _nParcFrt == 1
+			u_help ('Array de parcelamentos parece estar toda sem valores.',, .t.)
+			_lContinua = .F.
+		else
+			_nParcFrt = _nParcel
+			U_Log2 ('debug', 'Vou jogar o frete na ' + cvaltochar (_nParcFrt) + 'a. parcela.')
+		endif
+	endif
 
-	if _nVlUva == 0
+	if _lContinua .and. _nVlUva == 0
 		u_help ("Sem valor da uva para calcular parcelas de pagamento.",, .T.)
-	else
+		_lContinua = .F.
+	endif
 
+	if _lContinua
 		// Parte 1: monta coluna de percentuais de participacao de cada parcela.
 		// Se a parte 2 (por valor) rodar bem, deixo de usar os percentuais.
 		// Calcula quanto representa o frete sobre o total dos valores.
@@ -190,32 +212,37 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 				u_help ("Sem tratamento para parcela " + cvaltochar (_nParcel) + " no ajuste de datas de pagamento de safra.",, .T.)
 				// _dVctSafra = dDataBase
 				_dVctSafra = _dEmissao
+				_lContinua = .F.
 			endif
 			_aParcel [_nParcel, 2] = lastday (stod (_sAnoVcSaf + _sMesVcSaf + '01'))
 		next
 	endif
 
 	// Retroage datas dos vencimentos ateh que sejam datas validas.
-	for _nParcel = 1 to len (_aParcel)
-		if ! empty (_aParcel [_nParcel, 2])
-			// do while _aParcel [_nParcel, 2] >= dDataBase .and. datavalida (_aParcel [_nParcel, 2]) > _aParcel [_nParcel, 2]
-			do while _aParcel [_nParcel, 2] >= _dEmissao .and. datavalida (_aParcel [_nParcel, 2]) > _aParcel [_nParcel, 2]
-				_aParcel [_nParcel, 2] -= 1
-			enddo
-		endif
-	next
-	
-//	U_Log2 ('info', 'Parcelamento previsto:')
-//	u_log2 ('info', _aParcel)
+	if _lContinua
+		for _nParcel = 1 to len (_aParcel)
+			if ! empty (_aParcel [_nParcel, 2])
+				// do while _aParcel [_nParcel, 2] >= dDataBase .and. datavalida (_aParcel [_nParcel, 2]) > _aParcel [_nParcel, 2]
+				do while _aParcel [_nParcel, 2] >= _dEmissao .and. datavalida (_aParcel [_nParcel, 2]) > _aParcel [_nParcel, 2]
+					_aParcel [_nParcel, 2] -= 1
+				enddo
+			endif
+		next
+		//	U_Log2 ('info', 'Parcelamento previsto:')
+		//	u_log2 ('info', _aParcel)
+	endif
+
 
 	// Retorna somente as linhas com dados definidos
 	_aAux = {}
-	for _nParcel = 1 to len (_aParcel)
-//		if ! empty (_aParcel [_nParcel, 2]) .and. _aParcel [_nParcel, 3] > 0
-		if ! empty (_aParcel [_nParcel, 2]) .and. (_aParcel [_nParcel, 3] > 0 .or. _aParcel [_nParcel, 4] > 0)
-//			aadd (_aAux, {_aParcel [_nParcel, 2], _aParcel [_nParcel, 3]})
-			aadd (_aAux, aclone (_aParcel [_nParcel])) 
-		endif
-	next
+	if _lContinua
+		for _nParcel = 1 to len (_aParcel)
+	//		if ! empty (_aParcel [_nParcel, 2]) .and. _aParcel [_nParcel, 3] > 0
+			if ! empty (_aParcel [_nParcel, 2]) .and. (_aParcel [_nParcel, 3] > 0 .or. _aParcel [_nParcel, 4] > 0)
+	//			aadd (_aAux, {_aParcel [_nParcel, 2], _aParcel [_nParcel, 3]})
+				aadd (_aAux, aclone (_aParcel [_nParcel])) 
+			endif
+		next
+	endif
 //	U_Log2 ('info', 'Finalizando ' + procname ())
 return _aAux

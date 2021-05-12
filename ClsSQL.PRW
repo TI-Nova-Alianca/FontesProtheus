@@ -703,3 +703,4 @@ static function _ExecQry (_oSelf)
 		next
 	endif
 return
+
