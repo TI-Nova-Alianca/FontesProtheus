@@ -1,26 +1,34 @@
-// Programa:  ClsTabGen
-// Autor:     Robert Koch
-// Data:      04/01/2017
-// Descricao: Declaracao de classe de representacao de tabelas genericas (ZX5).
-//            Poderia trabalhar como uma include, mas prefiro declarar uma funcao de usuario
-//            apenas para poder incluir no projeto e manter na pasta dos fontes.
+// Programa...: ClsTabGen
+// Autor......: Robert Koch
+// Data.......: 04/01/2017
+// Descricao..: Declaracao de classe de representacao de tabelas genericas (ZX5).
+//            	Poderia trabalhar como uma include, mas prefiro declarar uma funcao de usuario
+//            	apenas para poder incluir no projeto e manter na pasta dos fontes.
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #classe
+// #Descricao         #Declaracao de classe de representacao de tabelas genericas (ZX5)
+// #PalavasChave      #clase #uso_generico
+// #TabelasPrincipais #ZX5
+// #Modulos           #todos_modulos
 //
 // Historico de alteracoes:
-// 06/02/2017 - Robert - Tratamento lista de campos chave tabelas Sisdeclara.
-// 21/03/2017 - Robert - Tratamento chaves duplicadas tabela 14.
-// 29/05/2017 - Catia  - tabela 02 estava sem chave
-// 19/06/2017 - Robert - Criado medodo ExistChav().
-//                     - Criado atributo ExistTab e inserida respectiva validacao no momento de instanciar a classe.
-// 07/12/2017 - Robert - Criado metodo PodeExcl().
-// 14/02/2018 - Catia  - tabela 48 estava sem chave
-// 25/01/2019 - Robert - Ajustada chave unica tabela 14.
-// 03/01/2020 - Robert - Campo ZX5_17COND vai ser excluido (a tabela 17 serve somente para espaldeira, entao nao ha motivo para manter o campo).
-//                     - Criado tratamento para as tabelas 52 e 53.
+// 06/02/2017 - Robert  - Tratamento lista de campos chave tabelas Sisdeclara.
+// 21/03/2017 - Robert  - Tratamento chaves duplicadas tabela 14.
+// 29/05/2017 - Catia   - tabela 02 estava sem chave
+// 19/06/2017 - Robert  - Criado medodo ExistChav().
+//                      - Criado atributo ExistTab e inserida respectiva validacao no momento de instanciar a classe.
+// 07/12/2017 - Robert  - Criado metodo PodeExcl().
+// 14/02/2018 - Catia   - tabela 48 estava sem chave
+// 25/01/2019 - Robert  - Ajustada chave unica tabela 14.
+// 03/01/2020 - Robert  - Campo ZX5_17COND vai ser excluido (a tabela 17 serve somente para espaldeira, 
+//                        entao nao ha motivo para manter o campo).
+//                      - Criado tratamento para as tabelas 52 e 53.
+// 11/05/2021 - Claudia - Ajustada a chamada para tabela SX3 devido a R27. GLPI: 8825
 //
-
+// --------------------------------------------------------------------------------------------------------------------
 #include "protheus.ch"
 
-// --------------------------------------------------------------------------
 CLASS ClsTabGen
 
 	// Declaracao das propriedades da Classe
@@ -37,12 +45,12 @@ CLASS ClsTabGen
 	METHOD ExistChav ()
 	METHOD PodeExcl ()
 ENDCLASS
-
-
+//
 // --------------------------------------------------------------------------
 // Construtor.
 METHOD New (_sCodTab) Class ClsTabGen
 	local _aAreaAnt := U_ML_SRArea ()
+	local _x        := 0
 
 	::Campos     = {}
 	::CodTabela  = ''
@@ -73,7 +81,6 @@ METHOD New (_sCodTab) Class ClsTabGen
 			case ::CodTabela == "14" ; ::CposChave = {"ZX5_14SAFR", "ZX5_14PROD", "ZX5_14GRUP"}
 			case ::CodTabela == "15" ; ::CposChave = {"ZX5_15PLAN", "ZX5_15COD"}
 			case ::CodTabela == "16" ; ::CposChave = {"ZX5_16PLAN", "ZX5_16ITEM"}
-//			case ::CodTabela == "17" ; ::CposChave = {"ZX5_17SAFR", "ZX5_17PROD", "ZX5_17COND"}
 			case ::CodTabela == "17" ; ::CposChave = {"ZX5_17SAFR", "ZX5_17PROD"}
 			case ::CodTabela == "20" ; ::CposChave = {"ZX5_20CRQ"}
 			case ::CodTabela == "48" ; ::CposChave = {"ZX5_48MOT"}
@@ -87,23 +94,41 @@ METHOD New (_sCodTab) Class ClsTabGen
 				endif
 		endcase
 
-		// Monta lista de campos pertencentes `a tabela informada.
-		::Campos = {}
-		sx3 -> (dbsetorder (1))
-		sx3 -> (dbseek ("ZX5", .T.))
-		do while ! sx3 -> (eof ()) .and. sx3 -> x3_arquivo == "ZX5"
-			if left (sx3 -> x3_campo, 6) == "ZX5_" + ::CodTabela
-				aadd (::Campos, sx3 -> x3_campo)
-			endif
-			sx3 -> (dbskip ())
-		enddo
+		// // Monta lista de campos pertencentes `a tabela informada.
+		// ::Campos = {}
+		// sx3 -> (dbsetorder (1))
+		// sx3 -> (dbseek ("ZX5", .T.))
+		// do while ! sx3 -> (eof ()) .and. sx3 -> x3_arquivo == "ZX5"
+		// 	if left (sx3 -> x3_campo, 6) == "ZX5_" + ::CodTabela
+		// 		aadd (::Campos, sx3 -> x3_campo)
+		// 	endif
+		// 	sx3 -> (dbskip ())
+		// enddo
 
+		// Monta lista de campos pertencentes a tabela informada.
+		::Campos = {}
+		_oSQL  := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT "
+		_oSQL:_sQuery += " 	   X3_ARQUIVO "
+		_oSQL:_sQuery += "    ,X3_CAMPO  "
+		_oSQL:_sQuery += " FROM SX3010 "
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_='' "
+		_oSQL:_sQuery += " AND X3_ARQUIVO='ZX5' "
+		_aZX5  = aclone (_oSQL:Qry2Array ())
+
+		For _x:= 1 to Len(_aZX5)
+			_sX3_ARQUIVO := _aZX5[_x, 1]
+			_sX3_CAMPO   := _aZX5[_x, 2]
+
+			If left (_sX3_CAMPO, 6) == "ZX5_" + ::CodTabela
+				aadd (::Campos, _sX3_CAMPO)
+			Endif
+		Next
 	endif
 	U_ML_SRArea (_aAreaAnt)
 Return ::self
-
-
-
+//
 // --------------------------------------------------------------------------
 // Verifica se a chave informada existe na tabela.
 METHOD ExistChav (_sChave) Class ClsTabGen
@@ -141,9 +166,7 @@ METHOD ExistChav (_sChave) Class ClsTabGen
 	u_logFim (GetClassName (::Self) + '.' + procname ())
 	U_ML_SRArea (_aAreaAnt)
 return _lRet
-
-
-
+//
 // --------------------------------------------------------------------------
 // Insere novos registros na tabela.
 METHOD Insere (_aDados) Class ClsTabGen
@@ -234,9 +257,7 @@ METHOD Insere (_aDados) Class ClsTabGen
 
 	u_logFim (GetClassName (::Self) + '.' + procname ())
 return _lContinua
-
-
-
+//
 // --------------------------------------------------------------------------
 // Verifica se pode excluir a chave informada.
 METHOD PodeExcl (_sChave) Class ClsTabGen
@@ -244,37 +265,34 @@ METHOD PodeExcl (_sChave) Class ClsTabGen
 	local _lRet     := .T.
 	local _oSQL     := NIL
 
-	//u_logIni (GetClassName (::Self) + '.' + procname ())
-
 	CursorWait ()
 	do case
-	case ::CodTabela == '39'
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT COUNT (*)"
-		_oSQL:_sQuery +=   " FROM " + RetSQLName ("SB1") + " SB1"
-		_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=    " AND B1_FILIAL  = '" + xfilial ("SB1") + "'"
-		_oSQL:_sQuery +=    " AND B1_CODLIN  = '" + _sChave + "'"
-		if _oSQL:RetQry () > 0
-			u_help ("Registro encontra-se amarrado ao cadastro de produtos e nao pode ser excluido.")
-			_lRet = .F.
-		endif
-	case ::CodTabela == '41'
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT COUNT (*)"
-		_oSQL:_sQuery +=   " FROM " + RetSQLName ("SN1") + " SN1"
-		_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=    " AND N1_FILIAL  = '" + xfilial ("SN1") + "'"
-		_oSQL:_sQuery +=    " AND N1_VAZX541 = '" + _sChave + "'"
-		if _oSQL:RetQry () > 0
-			u_help ("Registro encontra-se amarrado ao cadastro de Ativos / Maquinas e nao pode ser excluido.")
-			_lRet = .F.
-		endif
+		case ::CodTabela == '39'
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " SELECT COUNT (*)"
+			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SB1") + " SB1"
+			_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=    " AND B1_FILIAL  = '" + xfilial ("SB1") + "'"
+			_oSQL:_sQuery +=    " AND B1_CODLIN  = '" + _sChave + "'"
+			if _oSQL:RetQry () > 0
+				u_help ("Registro encontra-se amarrado ao cadastro de produtos e nao pode ser excluido.")
+				_lRet = .F.
+			endif
+		case ::CodTabela == '41'
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " SELECT COUNT (*)"
+			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SN1") + " SN1"
+			_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=    " AND N1_FILIAL  = '" + xfilial ("SN1") + "'"
+			_oSQL:_sQuery +=    " AND N1_VAZX541 = '" + _sChave + "'"
+			if _oSQL:RetQry () > 0
+				u_help ("Registro encontra-se amarrado ao cadastro de Ativos / Maquinas e nao pode ser excluido.")
+				_lRet = .F.
+			endif
 	endcase
 
 	CursorArrow ()
-	//u_logFim (GetClassName (::Self) + '.' + procname ())
 	U_ML_SRArea (_aAreaAnt)
 return _lRet

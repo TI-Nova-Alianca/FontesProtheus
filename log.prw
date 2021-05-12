@@ -3,55 +3,61 @@
 // Data....: 13/06/2006
 // Funcao..: Grava arquivo de log em texto para conferencia
 //
-// Historico de alteracoes:
-// 22/03/2007 - Robert - Pode receber array como parametro.
-// 02/04/2007 - Robert - Pode receber ateh 10 parametros e trata cada um separadamente cfe. seu tipo.
-//                     - Funcao DumpArray passa a ser interna.
-// 09/04/2007 - Robert - Indenta arquivo de log cfe. tags recebidas no parametro 1 (semelhante a XML).
-// 30/04/2007 - Robert - Gera uma string inicial simulando XML, para enganar o editor no momento de visualizar o arquivo.
-// 09/05/2007 - Robert - Funcao _aDel passa a ser interna.
-// 15/05/2007 - Robert - Implementacao inicial de log de arquivos.
-// 25/05/2007 - Robert - Melhoria tamanhos log de arquivos.
-// 26/07/2007 - Robert - Criada funcao para exportacao da pilha de chamadas (LogPCham).
-//                     - Criada funcao para exportacao da identificacao da sessao atual (LogID).
-// 02/08/2007 - Robert - Dump de array passa a ser formatado, quando for uma array 'perfeita'.
-// 16/08/2007 - Robert - Implementado log de parametros do SX1.
-// 22/08/2007 - Robert - Melhoria indentacao log de arrays.
-// 19/10/2007 - Robert - Implementadas funcoes LogIni, LogFim e LogXML.
-// 10/01/2008 - Robert - Melhorada formatacao para dump de arrays.
-// 19/02/2008 - Robert - Melhorada formatacao para dump de arrays unidimensionais.
-// 17/03/2008 - Robert - Aumentado numero de parametros de 10 para 20
-//                     - Concatena automaticamente os parametros, quando possivel.
-// 24/03/2008 - Robert - Melhorada formatacao para dump de arrays.
-// 07/04/2008 - Robert - Lista retorno da FunName() no LogID().
-// 23/04/2008 - Robert - Funcoes LogIni e LogFim passam a ter suporte para contagem de tempo.
-// 08/05/2008 - Robert - Quando havia parametros do tipo array junto com outros tipos, tentava concatenar tudo e perdia as arrays.
-// 07/07/2008 - Robert - Quando uma string de mensagem fica grande demais, exporta-a parcialmente e reinicia.
-// 16/02/2010 - Robert - Funcao LogXML insere as quebras de linha, quando necessario.
-//                     - Mostra msg. 'matriz vazia' em vez de tentar listar linha a linha.
-// 14/06/2010 - Robert - Nao gerava log do SX1 quando respostas do tipo combo eram guardadas em formato caracter.
-// 10/09/2014 - Robert - Funcao LogSX1 passa a retornar string com copia do que foi gravado no log.
-// 17/03/2015 - Robert - Criada funcao U_LogDH ().
-// 15/04/2015 - Robert - Criada funcao U_LogObj ().
-// 28/06/2015 - Robert - Melhorias na funcao U_LogObj ().
-// 30/07/2015 - Robert - Criada funcao LogAlinD ().
-// 21/07/2015 - Robert - Criado tratamento para evitar erro e mostrar *OBJETO* quando receber parametro tipo 'O'.
-// 05/11/2015 - Robert - Criada funcao LogACols().
-// 11/01/2016 - Robert - Melhorado tratamento para variaveis tipo N na funcao LogSX1().
-// 21/07/2016 - Robert - Funcao LogTrb nao exporta nada quando estiver em BOF ou EOF. Apenas gera aviso.
-// 01/11/2016 - Robert - Retorna string com o que foi gerado (util para pegar uma array formatada, por exemplo).
-// 09/03/2017 - Robert - Se nao especificado nome do arquivo de log, gera a partir da funcao FunName ().
-// 04/04/2018 - Robert - Na funcao LogTrb() verifica se o arquivo estah filtrado e, nesse caso, mostra a expressao do filtro.
-// 17/07/2018 - Robert - Criada funcao ShowLog ()
-// 26/03/2020 - Robert - Ajustes funcao LogACols () para quando variaveis aHeader e aCols nao estiverem definidas.
-// 29/05/2020 - Robert - Passa a gravar logs em diretorio especifico fora do SIGAADV.
-// 09/06/2020 - Robert - Funcao ShowLog() nao buscava no diretorio de logs.
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #generico
+// #Descricao         #Grava arquivo de log em texto para conferencia
+// #PalavasChave      #log #grava_log 
+// #TabelasPrincipais #SX1
+// #Modulos           #todos
 //
-
-// --------------------------------------------------------------------------
+// Historico de alteracoes:
+// 22/03/2007 - Robert  - Pode receber array como parametro.
+// 02/04/2007 - Robert  - Pode receber ateh 10 parametros e trata cada um separadamente cfe. seu tipo.
+//                      - Funcao DumpArray passa a ser interna.
+// 09/04/2007 - Robert  - Indenta arquivo de log cfe. tags recebidas no parametro 1 (semelhante a XML).
+// 30/04/2007 - Robert  - Gera uma string inicial simulando XML, para enganar o editor no momento de visualizar o arquivo.
+// 09/05/2007 - Robert  - Funcao _aDel passa a ser interna.
+// 15/05/2007 - Robert  - Implementacao inicial de log de arquivos.
+// 25/05/2007 - Robert  - Melhoria tamanhos log de arquivos.
+// 26/07/2007 - Robert  - Criada funcao para exportacao da pilha de chamadas (LogPCham).
+//                      - Criada funcao para exportacao da identificacao da sessao atual (LogID).
+// 02/08/2007 - Robert  - Dump de array passa a ser formatado, quando for uma array 'perfeita'.
+// 16/08/2007 - Robert  - Implementado log de parametros do SX1.
+// 22/08/2007 - Robert  - Melhoria indentacao log de arrays.
+// 19/10/2007 - Robert  - Implementadas funcoes LogIni, LogFim e LogXML.
+// 10/01/2008 - Robert  - Melhorada formatacao para dump de arrays.
+// 19/02/2008 - Robert  - Melhorada formatacao para dump de arrays unidimensionais.
+// 17/03/2008 - Robert  - Aumentado numero de parametros de 10 para 20
+//                      - Concatena automaticamente os parametros, quando possivel.
+// 24/03/2008 - Robert  - Melhorada formatacao para dump de arrays.
+// 07/04/2008 - Robert  - Lista retorno da FunName() no LogID().
+// 23/04/2008 - Robert  - Funcoes LogIni e LogFim passam a ter suporte para contagem de tempo.
+// 08/05/2008 - Robert  - Quando havia parametros do tipo array junto com outros tipos, tentava concatenar tudo e perdia as arrays.
+// 07/07/2008 - Robert  - Quando uma string de mensagem fica grande demais, exporta-a parcialmente e reinicia.
+// 16/02/2010 - Robert  - Funcao LogXML insere as quebras de linha, quando necessario.
+//                      - Mostra msg. 'matriz vazia' em vez de tentar listar linha a linha.
+// 14/06/2010 - Robert  - Nao gerava log do SX1 quando respostas do tipo combo eram guardadas em formato caracter.
+// 10/09/2014 - Robert  - Funcao LogSX1 passa a retornar string com copia do que foi gravado no log.
+// 17/03/2015 - Robert  - Criada funcao U_LogDH ().
+// 15/04/2015 - Robert  - Criada funcao U_LogObj ().
+// 28/06/2015 - Robert  - Melhorias na funcao U_LogObj ().
+// 30/07/2015 - Robert  - Criada funcao LogAlinD ().
+// 21/07/2015 - Robert  - Criado tratamento para evitar erro e mostrar *OBJETO* quando receber parametro tipo 'O'.
+// 05/11/2015 - Robert  - Criada funcao LogACols().
+// 11/01/2016 - Robert  - Melhorado tratamento para variaveis tipo N na funcao LogSX1().
+// 21/07/2016 - Robert  - Funcao LogTrb nao exporta nada quando estiver em BOF ou EOF. Apenas gera aviso.
+// 01/11/2016 - Robert  - Retorna string com o que foi gerado (util para pegar uma array formatada, por exemplo).
+// 09/03/2017 - Robert  - Se nao especificado nome do arquivo de log, gera a partir da funcao FunName ().
+// 04/04/2018 - Robert  - Na funcao LogTrb() verifica se o arquivo estah filtrado e, nesse caso, mostra a expressao do filtro.
+// 17/07/2018 - Robert  - Criada funcao ShowLog ()
+// 26/03/2020 - Robert  - Ajustes funcao LogACols () para quando variaveis aHeader e aCols nao estiverem definidas.
+// 29/05/2020 - Robert  - Passa a gravar logs em diretorio especifico fora do SIGAADV.
+// 09/06/2020 - Robert  - Funcao ShowLog() nao buscava no diretorio de logs.
+// 11/05/2021 - Claudia - Ajustada a chamada para tabela SX1 devido a R27. GLPI: 8825
+//
+// -------------------------------------------------------------------------------------------------------------------------------
 user function Log (_xDado1, _xDado2, _xDado3, _xDado4, _xDado5, _xDado6, _xDado7, _xDado8, _xDado9, _xDado10, _xDado11, _xDado12, _xDado13, _xDado14, _xDado15, _xDado16, _xDado17, _xDado18, _xDado19, _xDado20)
 	local  _nHdl     := 0
-//	local _lContinua := .T.
 	local _sTexto    := ""
 	local _nParam    := 1
 	local _nParam2   := 0
@@ -104,7 +110,6 @@ user function Log (_xDado1, _xDado2, _xDado3, _xDado4, _xDado5, _xDado6, _xDado7
 	else
 		_nEspacos = len (_aPilhaLog) * 3
 	endif
-
 
 	// Verifica se os parametros podem ser concatenados em uma mesma linha. Soh nao concatena
 	// arrays. Isso eh util, por exemplo, para casos em que o usuario quer logar um texto
@@ -169,9 +174,7 @@ user function Log (_xDado1, _xDado2, _xDado3, _xDado4, _xDado5, _xDado6, _xDado7
 		_nParam ++
 	enddo
 return _sRet
-
-
-
+//
 // --------------------------------------------------------------------------
 // Gera log do conjunto aHeader / aCols.
 user function LogACols (_aHeader, _aCols)
@@ -219,80 +222,76 @@ user function LogACols (_aHeader, _aCols)
 	next
 	u_log2 ('debug', _aAux)
 return
-
-
+//
 // --------------------------------------------------------------------------
 // Insere data e hora no inicio da mensagem de log.
 user function LogDH (_xDado1, _xDado2, _xDado3, _xDado4, _xDado5, _xDado6, _xDado7, _xDado8, _xDado9, _xDado10, _xDado11, _xDado12, _xDado13, _xDado14, _xDado15, _xDado16, _xDado17, _xDado18, _xDado19, _xDado20)
 	U_Log ('[' + dtoc (date ()) + ' ' + time () + ']', _xDado1, _xDado2, _xDado3, _xDado4, _xDado5, _xDado6, _xDado7, _xDado8, _xDado9, _xDado10, _xDado11, _xDado12, _xDado13, _xDado14, _xDado15, _xDado16, _xDado17, _xDado18, _xDado19)
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Recebe uma string com dados XML e formata-a para o log.
 user function LogXML (_sTexto, _lQuebrar)
 	local _nLinha  := 0
+
 	_lQuebrar := iif (_lQuebrar == NIL, .F., _lQuebrar)
 	if _lQuebrar
 		_sTexto = strtran (_sTexto, "><", ">" + chr (13) + chr (10) + "<")
 	endif
+
 	for _nLinha = 1 to mlcount (_sTexto)
 		u_log (alltrim (memoline (_sTexto,, _nLinha)))
 	next
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Gera uma linha com um tag de inicio. Se nao informado nenhum parametro, assume o nome da funcao chamadora.
 user function LogIni (_sTexto)
+
 	if _sTexto == NIL
 		_sTexto = procname (1)
 	endif
+
 	_sTexto = cvaltochar (_sTexto)
 	u_log ("<" + _sTexto + ">")
 return seconds ()
-
-
-
+//
 // --------------------------------------------------------------------------
 // Gera uma linha com um tag de fim. Se nao informado nenhum parametro, assume o nome da funcao chamadora.
 user function LogFim (_sTexto)
+
 	if _sTexto == NIL
 		_sTexto = procname (1)
 	endif
+
 	_sTexto = cvaltochar (_sTexto)
 	u_log ("</" + _sTexto + ">")
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Faz exportacao da pilha de chamadas para o arquivo de log.
 user function LogPCham ()
 	local _i      := 0
 	local _sPilha := ""
-//	if type ("_sArqLog") == "C"
-		do while procname (_i) != ""
-			_sPilha += "   =>   " + procname (_i)
-			_i++
-		enddo
-		u_log ("Pilha de chamadas: " + _sPilha)
-//	endif
+
+	do while procname (_i) != ""
+		_sPilha += "   =>   " + procname (_i)
+		_i++
+	enddo
+	u_log ("Pilha de chamadas: " + _sPilha)
+
 return _sPilha
-
-
-
+//
 // --------------------------------------------------------------------------
 // Faz exportacao dos parametros do grupo de perguntas informado.
 user function LogSX1 (_sPerg)
-	local _aAreaSX1 := sx1 -> (getarea ())
-	local _sVar := ""
-	local _sMsg := ""
-	local _uVar := NIL
-	local _sRet := ""
-	local cPicture := ""
+	local _aAreaSX1  := U_ML_SRArea ()
+	local _sVar 	:= ""
+	local _sMsg 	:= ""
+	local _uVar 	:= NIL
+	local _sRet 	:= ""
+	local cPicture 	:= ""
+	local _x		:= ""
 
 	if _sPerg == NIL
 		if type ("cPerg") == "C"
@@ -300,13 +299,33 @@ user function LogSX1 (_sPerg)
 		endif
 	endif
 
-	DbSelectArea("SX1")
-	MsSeek(_sPerg)
-	While !EOF() .AND. X1_GRUPO = _sPerg
-		_sVar := "MV_PAR"+StrZero(Val(X1_ORDEM),2,0)
-//		_sMsg := "parametro " + X1_ORDEM + ": "+ X1Pergunt() + " "
-		_sMsg := "Grp.perg. " + _sPerg + " - param. " + X1_ORDEM + ": "+ X1Pergunt() + " "
-		If X1_GSC == "C"
+	// Monta array com cada pergunta e sua resposta em uma linha.
+	_oSQL  := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT"
+	_oSQL:_sQuery += " 	   X1_GRUPO"
+	_oSQL:_sQuery += "    ,X1_ORDEM"
+	_oSQL:_sQuery += "    ,X1_GSC"
+	_oSQL:_sQuery += "    ,X1_TAMANHO"
+	_oSQL:_sQuery += "    ,X1_DECIMAL"
+	_oSQL:_sQuery += "    ,X1_TIPO"
+	_oSQL:_sQuery += " FROM SX1010 "
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " AND X1_GRUPO     = '" + alltrim(_sPerg) +"'"
+	_aSX1  = aclone (_oSQL:Qry2Array ())	
+
+	For _x:= 1 to Len(_aSX1)
+		_sX1_GRUPO	 := _aSX1[_x, 1]
+		_sX1_ORDEM   := _aSX1[_x, 2]
+		_sX1_GSC	 := _aSX1[_x, 3]
+		_nX1_TAMANHO := _aSX1[_x, 4]
+		_nX1_DECIMAL := _aSX1[_x, 5]
+		_nX1_TIPO    := _aSX1[_x, 6]
+
+		_sVar := "MV_PAR"+StrZero(Val(_sX1_ORDEM),2,0)
+		_sMsg := "Grp.perg. " + _sPerg + " - param. " + _sX1_ORDEM + ": "+ X1Pergunt() + " "
+		
+		If _sX1_GSC == "C"
 			_sMsg += cValToChar (&(_sVar)) + " (" 
 			If ( cvaltochar (&(_sVar))=="1" )
 				_sMsg += alltrim (X1Def01 ())
@@ -322,56 +341,109 @@ user function LogSX1 (_sPerg)
 			_sMsg += ")"
 		Else
 			_uVar := &(_sVar)
-			if sx1 -> x1_tipo == 'N'
-				cPicture:= "@E "+Replicate("9",X1_TAMANHO-X1_DECIMAL-1)
-				If( X1_DECIMAL>0 )
-					cPicture+="."+Replicate("9",X1_DECIMAL)
+			if _nX1_TIPO == 'N'
+				cPicture:= "@E "+Replicate("9",_nX1_TAMANHO-_nX1_DECIMAL-1)
+
+				If(_nX1_DECIMAL>0 )
+					cPicture+="."+Replicate("9",_nX1_DECIMAL)
 				Else
 					cPicture+="9"
 				EndIf
+
 				_sMsg += Transform(_uVar, cPicture)
+
 			Elseif ValType(_uVar) == "D"
 				_sMsg += DTOC(_uVar)
 			Else
 				_sMsg += _uVar
 			EndIf
 		EndIf
+
 		u_log2 ('info', _sMsg)
 		_sRet += _sMsg + chr (10) + chr (13)
-		DbSkip()
-	Enddo
-	sx1 -> (restarea (_aAreaSX1))
+	Next
+	U_ML_SRArea (_aAreaSX1)
 return _sRet
 
+// user function LogSX1 (_sPerg)
+// 	local _aAreaSX1 := sx1 -> (getarea ())
+// 	local _sVar := ""
+// 	local _sMsg := ""
+// 	local _uVar := NIL
+// 	local _sRet := ""
+// 	local cPicture := ""
 
+// 	if _sPerg == NIL
+// 		if type ("cPerg") == "C"
+// 			_sPerg = cPerg
+// 		endif
+// 	endif
 
+// 	DbSelectArea("SX1")
+// 	MsSeek(_sPerg)
+// 	While !EOF() .AND. X1_GRUPO = _sPerg
+// 		_sVar := "MV_PAR"+StrZero(Val(X1_ORDEM),2,0)
+// //		_sMsg := "parametro " + X1_ORDEM + ": "+ X1Pergunt() + " "
+// 		_sMsg := "Grp.perg. " + _sPerg + " - param. " + X1_ORDEM + ": "+ X1Pergunt() + " "
+// 		If X1_GSC == "C"
+// 			_sMsg += cValToChar (&(_sVar)) + " (" 
+// 			If ( cvaltochar (&(_sVar))=="1" )
+// 				_sMsg += alltrim (X1Def01 ())
+// 			ElseIf ( cvaltochar (&(_sVar))=="2" )
+// 				_sMsg += alltrim (X1Def02 ())
+// 			ElseIf ( cvaltochar (&(_sVar))=="3" )
+// 				_sMsg += alltrim (X1Def03 ())
+// 			ElseIf ( cvaltochar (&(_sVar))=="4" )
+// 				_sMsg += alltrim (X1Def04 ())
+// 			ElseIf ( cvaltochar (&(_sVar))=="5" )
+// 				_sMsg += alltrim (X1Def05 ())
+// 			EndIf
+// 			_sMsg += ")"
+// 		Else
+// 			_uVar := &(_sVar)
+// 			if sx1 -> x1_tipo == 'N'
+// 				cPicture:= "@E "+Replicate("9",X1_TAMANHO-X1_DECIMAL-1)
+// 				If( X1_DECIMAL>0 )
+// 					cPicture+="."+Replicate("9",X1_DECIMAL)
+// 				Else
+// 					cPicture+="9"
+// 				EndIf
+// 				_sMsg += Transform(_uVar, cPicture)
+// 			Elseif ValType(_uVar) == "D"
+// 				_sMsg += DTOC(_uVar)
+// 			Else
+// 				_sMsg += _uVar
+// 			EndIf
+// 		EndIf
+// 		u_log2 ('info', _sMsg)
+// 		_sRet += _sMsg + chr (10) + chr (13)
+// 		DbSkip()
+// 	Enddo
+// 	sx1 -> (restarea (_aAreaSX1))
+// return _sRet
+//
 // --------------------------------------------------------------------------
 // Faz exportacao de dados da sessao atual para o arquivo de log.
 user function LogID ()
 	local _sMsg := ""
-//	if type ("_sArqLog") == "C"
-		_sMsg += " dDataBase=" + dtoc (dDataBase)
-		_sMsg += " cEmpAnt=" + cEmpAnt
-		_sMsg += " cFilAnt=" + cFilAnt
-		_sMsg += " cUserName=" + cUserName
-		_sMsg += " funname()=" + FunName ()
-		_sMsg += " cModulo=" + cModulo
-		_sMsg += " GetComputerName=" + getcomputername ()
-		u_logDH ('[' + GetPvProfString ('Service', 'Name', '', GetAdv97()) + ':' + GetEnvServer () + '] ' + _sMsg)
-//	endif
+
+	_sMsg += " dDataBase=" + dtoc (dDataBase)
+	_sMsg += " cEmpAnt=" + cEmpAnt
+	_sMsg += " cFilAnt=" + cFilAnt
+	_sMsg += " cUserName=" + cUserName
+	_sMsg += " funname()=" + FunName ()
+	_sMsg += " cModulo=" + cModulo
+	_sMsg += " GetComputerName=" + getcomputername ()
+	u_logDH ('[' + GetPvProfString ('Service', 'Name', '', GetAdv97()) + ':' + GetEnvServer () + '] ' + _sMsg)
+
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Faz exportacao de registros de um arquivo para o arquivo de log.
 user function LogTrb (_sAlias, _lCompleto, _lSemCabec)
 	local _nCampo   := 0
 	local _aTamCpo  := {}
 	local _aEstrut  := {}
-//	local _sCrLf    := chr (13) + chr (10)
-//	local _aArea    := GetArea ()
-//	local _aArea2   := {}
 	local _nRegOri  := 0
 	local _aAreaAnt := U_ML_SRArea ()
 	local _sFiltro  := ""
@@ -379,14 +451,12 @@ user function LogTrb (_sAlias, _lCompleto, _lSemCabec)
 	_lCompleto := iif (_lCompleto == NIL, .F., _lCompleto)
 	_lSemCabec := iif (_lSemCabec == NIL, .F., _lSemCabec)
 
-//	if type ("_sArqLog") == "C" .and. ! empty (_sAlias) .and. select (_sAlias) != 0
 	if ! empty (_sAlias) .and. valtype (_sAlias) == 'C' .and. select (_sAlias) != 0
 		if (_sAlias) -> (BOF ())
 			u_log ("[" + procname () + "] Alias '" + _sAlias + "' encontra-se em BOF")
 		elseif (_sAlias) -> (EOF ())
 			u_log ("[" + procname () + "] Alias '" + _sAlias + "' encontra-se em EOF")
 		else
-//			u_log ("[" + procname () + "] Alias: " + _sAlias)
 
 			_sFiltro = alltrim ((_sAlias) -> (dbfilter ()))
 			u_log ("[" + procname () + "] Alias: " + _sAlias + iif (empty (_sFiltro), '  (sem filtro)', '  Expr.filtro: ' + _sFiltro))
@@ -429,12 +499,9 @@ user function LogTrb (_sAlias, _lCompleto, _lSemCabec)
 		endif
 	endif
 
-	//restarea (_aArea)
 	U_ML_SRArea (_aAreaAnt)
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 static function _DumpArray (_aMatriz, _sEspacos)
 	local _nLin      := 0
@@ -567,9 +634,7 @@ static function _DumpArray (_aMatriz, _sEspacos)
 	endif
 	U_Log (_sMensagem)
 return _sMensagem
-
-
-
+//
 // --------------------------------------------------------------------------
 // Converte campos de array para caracter, para exportacao para log.
 static function _Arr2Char (_xDado)
@@ -600,9 +665,7 @@ static function _Arr2Char (_xDado)
 			_sDado = "*ERRO*"
 	endcase
 return _sDado
-
-
-
+//
 // --------------------------------------------------------------------------
 static function _ADel (_aMatriz, _nPosIni, _nPosFim)
    local _aMatAux := {}
@@ -619,9 +682,7 @@ static function _ADel (_aMatriz, _nPosIni, _nPosFim)
       endif
    next
 return _aMatAux
-
-
-
+//
 // --------------------------------------------------------------------------
 // Gera listagem dos dados e metodos de um objeto.
 user function LogObj (_oObj)
@@ -630,10 +691,12 @@ user function LogObj (_oObj)
 	local _aDet     := {}
 	local _nDet     := 0
 	local _sRet     := ''
+
 	u_log ('')
 	u_log ("Dados da classe " + GetClassName (_oObj) + ':')
 	u_log (ClassDataArr (_oObj))
 	u_log ("Metodos da classe " + GetClassName (_oObj) + ':')
+
 	for _nMetodo = 1 to len (_aMetodos)
 		_aDet = aclone (ClassMethArr(_oObj)[_nMetodo])
 		_sRet += strtran (_aDet[1], chr (13) + chr (10), '') + ' ('
@@ -644,11 +707,8 @@ user function LogObj (_oObj)
 		u_log (_sRet)
 		_sRet = ''
 	next
-//	u_log (_sRet)
 return _sRet
-
-
-
+//
 // --------------------------------------------------------------------------
 // Tenta fazer uma formatacao basicade uma query do SQL.
 user function LogQry (_sQry)
@@ -671,9 +731,7 @@ user function LogQry (_sQry)
 	next
 	u_log (_sRet)
 return _sRet
-
-
-
+//
 // --------------------------------------------------------------------------
 // Mostra em tela o log atual.
 user function ShowLog ()

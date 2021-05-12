@@ -2,49 +2,51 @@
 // Autor......: Robert Koch
 // Data.......: 19/05/2009
 // Descricao..: Tela de manutencao do arquivo ZX5 - tabelas genericas (especificas Alianca)
-
+//
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Cadastro
 // #Descricao         #Tela de manutencao do arquivo ZX5 - tabelas genericas (especificas Alianca)
 // #PalavasChave      #auxiliar #uso_generico
 // #TabelasPrincipais #ZX5
 // #Modulos           #todos_modulos
-
-// Historico de alteracoes:
-// 12/05/2010 - Robert - Incluida validacao de 'linha OK' da tabela 06.
-// 07/12/2010 - Robert - Incluida validacao de 'linha OK' da tabela 08 e 09.
-// 17/01/2012 - Elaine - Incluida validacao de 'linha OK' da tabela 17.
-// 26/04/2013 - Robert - Passa a abrir Get para usuário informar filtro na tela de atualizacao.
-// 05/05/2013 - Robert - Passa a controlar gravacao com o campo ZZZ_RECNO para possibilitar filtros.
-// 08/12/2016 - Robert - Tratamento para envio de dados para o Mercanet.
-// 14/01/2017 - Robert - Passa a usar classe ClsTabGen para ler lista de campos chave no 'linha ok'.
-// 14/03/2017 - Júlio  - Habilita a edição da descrição se a função chamada for ZX5, nas demais chamadas não permite alterar a descrição.
-// 07/12/2017 - Robert - Chama metodo PodeExcl() da classe ClsTabGen na validacao de linha deletada.
-// 24/12/2018 - Robert - Criado parametro para receber filtro inicial na funcao ZX5A().
-// 08/01/2019 - Robert - Criado parametro para receber nomes de campos a serem usados para ordenar o aCols.
-// 13/12/2019 - Robert - Faltavam parametros na visualizacao e dava erro.
-// 04/01/2021 - Robert - Criado botao adicional para exportar para planilha.
 //
-
+// Historico de alteracoes:
+// 12/05/2010 - Robert  - Incluida validacao de 'linha OK' da tabela 06.
+// 07/12/2010 - Robert  - Incluida validacao de 'linha OK' da tabela 08 e 09.
+// 17/01/2012 - Elaine  - Incluida validacao de 'linha OK' da tabela 17.
+// 26/04/2013 - Robert  - Passa a abrir Get para usuário informar filtro na tela de atualizacao.
+// 05/05/2013 - Robert  - Passa a controlar gravacao com o campo ZZZ_RECNO para possibilitar filtros.
+// 08/12/2016 - Robert  - Tratamento para envio de dados para o Mercanet.
+// 14/01/2017 - Robert  - Passa a usar classe ClsTabGen para ler lista de campos chave no 'linha ok'.
+// 14/03/2017 - Júlio   - Habilita a edição da descrição se a função chamada for ZX5, nas demais chamadas 
+//                        não permite alterar a descrição.
+// 07/12/2017 - Robert  - Chama metodo PodeExcl() da classe ClsTabGen na validacao de linha deletada.
+// 24/12/2018 - Robert  - Criado parametro para receber filtro inicial na funcao ZX5A().
+// 08/01/2019 - Robert  - Criado parametro para receber nomes de campos a serem usados para ordenar o aCols.
+// 13/12/2019 - Robert  - Faltavam parametros na visualizacao e dava erro.
+// 04/01/2021 - Robert  - Criado botao adicional para exportar para planilha.
+// 11/05/2021 - Claudia - Ajustada a chamada para tabela SX3 devido a R27. GLPI: 8825
+//
+// ------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
-// --------------------------------------------------------------------------
 User Function ZX5 ()
 	private aRotina := {}
+
 	aadd (aRotina, {"&Pesquisar",  "AxPesqui", 0, 1})
 	aadd (aRotina, {"&Visualizar", "U_ZX5A (2, zx5 -> zx5_chave, 'allwaystrue ()', 'allwaystrue ()', .T.)",   0, 2})
 	aadd (aRotina, {"&Incluir",    "U_ZX5I",   0, 3})
 	aadd (aRotina, {"&Alterar",    "U_ZX5A (4, zx5 -> zx5_chave, 'allwaystrue ()', 'allwaystrue ()', .T.)",   0, 4})
 	aadd (aRotina, {"&Excluir",    "U_ZX5A (5)",   0, 5})
+	
 	private cString   := "ZX5"
 	private cCadastro := "Manutencao de tabelas genericas - Alianca"
+
 	dbselectarea ("ZX5")
 	dbSetOrder (1)
 	mBrowse(,,,,"ZX5")
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Inclusao
 User Function ZX5I ()
@@ -61,20 +63,19 @@ User Function ZX5I ()
 	@ 55, 65 GET _sModo    PICTURE "@!"
 	@ 120, 124 BMPBUTTON TYPE 1 ACTION Close(oDlg1)
 	ACTIVATE DIALOG oDlg1 CENTERED
+
 	if ! empty (_sTabela)
 		// Se for a inclusao de uma nova tabela, a mesma deve ser criada na tabela 00 (descritor de tabelas)
 		reclock ("ZX5", .T.)
-		zx5 -> zx5_filial = "  "  // A tabela 00 (descritor) eh compartilhada.
-		zx5 -> zx5_tabela = "00"
-		zx5 -> zx5_chave  = _sTabela
-		zx5 -> zx5_modo   = _sModo
-		zx5 -> zx5_descri = _sNomeTab
+			zx5 -> zx5_filial = "  "  // A tabela 00 (descritor) eh compartilhada.
+			zx5 -> zx5_tabela = "00"
+			zx5 -> zx5_chave  = _sTabela
+			zx5 -> zx5_modo   = _sModo
+			zx5 -> zx5_descri = _sNomeTab
 		msunlock ()
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Visualizacao, Alteracao, Exclusao
 User Function ZX5A (_nOpcao, _sCodTab, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr, _aCposOrd)
@@ -129,21 +130,21 @@ User Function ZX5A (_nOpcao, _sCodTab, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr
 		_sFilial  = iif (_sModo == "C", "  ", cFilAnt)
 		_sNomeTab = fBuscaCpo ("ZX5", 1, xfilial ("ZX5") + "00" + _sTabela, "ZX5_DESCRI")
 		_aCampos  = U_ZX5Cpos (_sTabela)
-		aHeader := aclone (U_GeraHead ("", ;        // Arquivo
-		                               .F., ;       // Para MSNewGetDados, informar .T.
-		                               {}, ;        // Campos a nao incluir
-		                               _aCampos, ;  // Campos a incluir
-		                               .T.))        // Apenas os campos informados.
+		aHeader := aclone (U_GeraHead (""		, ;  // Arquivo
+		                               .F.		, ;  // Para MSNewGetDados, informar .T.
+		                               {}		, ;  // Campos a nao incluir
+		                               _aCampos	, ;  // Campos a incluir
+		                               .T.		))   // Apenas os campos informados.
 		
-		aCols := aclone (U_GeraCols ("ZX5", ;      // Alias
-		                             1, ;          // Indice
-		                             _sFilial + _sTabela, ;  // Seek inicial
+		aCols := aclone (U_GeraCols ("ZX5"				, ; // Alias
+		                             1					, ; // Indice
+		                             _sFilial + _sTabela, ; // Seek inicial
 		                             "zx5_filial == '" + _sFilial + "' .and. zx5_tabela == '" + _sTabela + "'", ;  // While
-		                             aHeader, ;    // aHeader
-		                             .F., ;        // Nao executa gatilhos
-		                             altera, ;     // Gera linha vazia, se nao encontrar dados.
-		                             .T., ;        // Trava registros
-		                             _sFiltro))    // Expressao para filtro adicional
+		                             aHeader			, ; // aHeader
+		                             .F.				, ; // Nao executa gatilhos
+		                             altera				, ; // Gera linha vazia, se nao encontrar dados.
+		                             .T.				, ; // Trava registros
+		                             _sFiltro			))  // Expressao para filtro adicional
 		
 
 		// Se recebeu array com campos para ordenacao do aCols, aplica-os
@@ -152,6 +153,7 @@ User Function ZX5A (_nOpcao, _sCodTab, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr
 			// Monta string com expressao de ordenacao, para ser transformado em 'codeblock'
 			_sSort1 = ''
 			_sSort2 = ''
+
 			for _nCpoOrd = 1 to len (_aCposOrd)
 				_nPosCpo = ascan (aHeader, {|_aVal| upper (alltrim (_aVal [2])) == upper (alltrim (_aCposOrd [_nCpoOrd]))})
 				if _nPosCpo > 0
@@ -170,7 +172,6 @@ User Function ZX5A (_nOpcao, _sCodTab, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr
 		// Define botoes adicionais
 		aadd (_aButtons, {"Export.planilha", {|| U_AColsXLS ()}, "Export.planilha", "Export.planilha" , {|| .T.}} ) 
 
-
 		// Variaveis para o Modelo2
 		aC   := {}
 		aadd (aC, {"_sTabela",  {15, 5},   "Cod.tabela",  "@!", "", "", .f.})
@@ -181,20 +182,20 @@ User Function ZX5A (_nOpcao, _sCodTab, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr
 		aCGD := {80, 5, oMainWnd:nClientHeight / 2 - 100, oMainWnd:nClientWidth / 2 - 120}
 		N = 1
 		_lContinua = Modelo2 ("Edicao da tabela " + _sTabela, ;  // Titulo
-		                 aC, ;     // Cabecalho
-		                 aR, ;     // Rodape
-		                 aCGD, ;   // Coordenadas da getdados
-		                 nOpc, ;   // nOPC
-		                 "U_ZX5Lk ('" + _sTabela + "') .and. " + _sLinhaOK, ;  // Linha OK
-		                 _sTudoOK, ;  // Tudo OK
-		                 , ;       // Gets editaveis
-		                 , ;       // bloco codigo para tecla F4
-		                 , ;       // Campos inicializados
-		                 999, ;    // Numero maximo de linhas
-		                 {100, 50, oMainWnd:nClientHeight - 50, oMainWnd:nClientWidth - 50}, ;  // Coordenadas da janela
-		                 inclui .or. altera, ;      // Linhas podem ser deletadas.
-		                 .T., ;   // Se a tela deve vir maximizada ou nao
-		                 _aButtons)
+													aC		, ;  // Cabecalho
+													aR		, ;  // Rodape
+													aCGD	, ;  // Coordenadas da getdados
+													nOpc	, ;  // nOPC
+													"U_ZX5Lk ('" + _sTabela + "') .and. " + _sLinhaOK, ;  // Linha OK
+													_sTudoOK, ;  // Tudo OK
+															, ;  // Gets editaveis
+															, ;  // bloco codigo para tecla F4
+															, ;  // Campos inicializados
+													999		, ;  // Numero maximo de linhas
+													{100, 50, oMainWnd:nClientHeight - 50, oMainWnd:nClientWidth - 50}, ;  // Coordenadas da janela
+													inclui .or. altera, ;    // Linhas podem ser deletadas.
+													.T.		, ;  // Se a tela deve vir maximizada ou nao
+													_aButtons)
 	
 	endif
 
@@ -272,9 +273,7 @@ User Function ZX5A (_nOpcao, _sCodTab, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr
 	endif
 	zx5 -> (dbgotop ())
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Valida 'Linha OK' da getdados
 User Function ZX5LK (_sTabela)
@@ -294,27 +293,37 @@ User Function ZX5LK (_sTabela)
 		endif
 	endif
 return _lRet
-
-
-
+//
 // --------------------------------------------------------------------------
 // Monta lista de campos pertencentes `a tabela informada.
 User Function ZX5Cpos (_sTabela)
 	local _aCampos := {"ZX5_CHAVE"}
+	local _x       := 0
+
 	if _sTabela == "00"
 		aadd (_aCampos, "ZX5_DESCRI")
 	else
-		sx3 -> (dbsetorder (1))
-		sx3 -> (dbseek ("ZX5", .T.))
-		do while ! sx3 -> (eof ()) .and. sx3 -> x3_arquivo == "ZX5"
-			if left (sx3 -> x3_campo, 6) == "ZX5_" + _sTabela
-				aadd (_aCampos, sx3 -> x3_campo)
+		_oSQL  := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT "
+		_oSQL:_sQuery += " 	   X3_ARQUIVO "
+		_oSQL:_sQuery += "    ,X3_CAMPO  "
+		_oSQL:_sQuery += " FROM SX3010 "
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_='' "
+		_oSQL:_sQuery += " AND X3_ARQUIVO='ZX5' "
+		_aZX5  = aclone (_oSQL:Qry2Array ())
+
+		For _x:= 1 to Len(_aZX5)
+			_sX3_ARQUIVO := _aZX5[_x, 1]
+			_sX3_CAMPO   := _aZX5[_x, 2]
+
+			if left (_sX3_CAMPO, 6) == "ZX5_" + _sTabela
+				aadd (_aCampos, _sX3_CAMPO)
 			endif
-			sx3 -> (dbskip ())
-		enddo
+		Next
 	endif
 
 	// Adiciona sempre o campo RECNO para posterior uso em gravacoes.
 	aadd (_aCampos, "ZZZ_RECNO")
 
-return _aCampos              
+return _aCampos       

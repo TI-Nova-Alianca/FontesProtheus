@@ -10,6 +10,12 @@
 // #TabelasPrincipais #SX1 #PROFILE
 // #Modulos           #todos_modulos
 //
+// Parametros:
+// 1 - Grupo de perguntas a atualizar
+// 2 - Codigo (ordem) da pergunta
+// 3 - Dado a ser gravado
+// 4 - Se desativa ou ativa o profile - Criado para os casos de contabilização off line
+//
 // Historico de alteracoes:
 // 01/09/2005 - Robert  - Ajustes para trabalhar com profile de usuario (versao 8.11)
 // 16/02/2006 - Robert  - Melhorias gerais
@@ -25,58 +31,94 @@
 //						 '150 - Grava respostas parametros por empresa' 
 // 09/07/2020 - Robert  - Melhorada gravacao de logs e mensagens.
 // 21/10/2020 - Claudia - Ajuste da rotina incluindo scripts SQL. GLPI: 8690
+// 11/05/2021 - Claudia - Ajustada a chamada para tabela SX1 devido a R27. GLPI: 8825
 //
 // ----------------------------------------------------------------------------------------------------------
-// Parametros:
-// 1 - Grupo de perguntas a atualizar
-// 2 - Codigo (ordem) da pergunta
-// 3 - Dado a ser gravado
-// 4 - Se desativa ou ativa o profile - Criado para os casos de contabilização off line
 
 user function GravaSX1 (_sGrupo, _sPerg, _xValor, _sDelProf)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _sUserName := ""
 	local _lContinua := .T.
+	local _x		 := 0
 
-	// Na versao Protheus10 o tamanho das perguntas aumentou.
-	_sGrupo = padr (_sGrupo, len (sx1 -> x1_grupo), " ")
+	// Monta array com cada pergunta e sua resposta em uma linha.
+	_oSQL  := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT"
+	_oSQL:_sQuery += " 	   X1_GRUPO"
+	_oSQL:_sQuery += "    ,X1_ORDEM"
+	_oSQL:_sQuery += "    ,X1_GSC"
+	_oSQL:_sQuery += "    ,X1_TAMANHO"
+	_oSQL:_sQuery += "    ,X1_DECIMAL"
+	_oSQL:_sQuery += "    ,X1_TIPO"
+	_oSQL:_sQuery += "    ,X1_PRESEL"
+	_oSQL:_sQuery += "    ,X1_CNT01"
+	_oSQL:_sQuery += " FROM SX1010 "
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " AND X1_GRUPO     = '" + alltrim(_sGrupo) + "'"
+	_oSQL:_sQuery += " AND X1_ORDEM     = '" + alltrim(_sPerg)  + "'"
+	_aSX1  = aclone (_oSQL:Qry2Array ())	
 
-	if _lContinua
-		if ! sx1 -> (dbseek (_sGrupo + _sPerg, .F.))
-			u_help ("Programa " + procname () + ": grupo/pergunta '" + _sGrupo + "/" + _sPerg + "' nao encontrado no arquivo SX1.",, .t.)
-			_lContinua = .F.
-		endif
-	endif
-	
-	if _lContinua
-		// Atualizarei sempre no SX1. Depois vou ver se tem profile de usuario.
-		do case
-			case sx1 -> x1_gsc == "C"
-				reclock ("SX1", .F.)
-				sx1 -> x1_presel = val (cvaltochar (_xValor))
-				sx1 -> x1_cnt01  = ""
-				sx1 -> (msunlock ())
-			case sx1 -> x1_gsc == "G"
-				if valtype (_xValor) != sx1 -> x1_tipo
-					u_help ("Programa " + procname () + ": incompatibilidade de tipos: o parametro '" + _sPerg + "' do grupo de perguntas '" + _sGrupo + "' eh do tipo '" + sx1 -> x1_tipo + "', mas o valor recebido eh do tipo '" + valtype (_xValor) + "' (conteudo: " + cvaltochar (_xValor) + ")." + _PCham ())
-					_lContinua = .F.
-				else
-					reclock ("SX1", .F.)
-					sx1 -> x1_presel = 0
-					if sx1 -> x1_tipo == "D"
-						sx1 -> x1_cnt01 = "'" + dtoc (_xValor) + "'"
-					elseif sx1 -> x1_tipo == "N"
-						sx1 -> x1_cnt01 = str (_xValor, sx1 -> x1_tamanho, sx1 -> x1_decimal)
-					elseif sx1 -> x1_tipo == "C"
-						sx1 -> x1_cnt01 = _xValor
+	If Len(_aSX1) > 0
+		For _x:= 1 to Len(_aSX1)
+			_sX1_GRUPO	 := _aSX1[_x, 1]
+			_sX1_ORDEM   := _aSX1[_x, 2]
+			_sX1_GSC	 := _aSX1[_x, 3]
+			_nX1_TAMANHO := _aSX1[_x, 4]
+			_nX1_DECIMAL := _aSX1[_x, 5]
+			_nX1_TIPO    := _aSX1[_x, 6]
+			_nX1_PRESEL  := _aSX1[_x, 7]
+			_nX1_CNT01   := _aSX1[_x, 8]
+
+			Do Case
+				Case _sX1_GSC == "C"
+
+					_nPresel := cvaltochar (_xValor)
+					_oSQL  := ClsSQL ():New ()
+					_oSQL:_sQuery := ""
+					_oSQL:_sQuery += " UPDATE SX1010 "
+					_oSQL:_sQuery += " SET  X1_PRESEL = " + _nPresel + ", X1_CNT01  = '' "
+					_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+					_oSQL:_sQuery += " AND X1_GRUPO     = '" + alltrim(_sGrupo) + "'"
+					_oSQL:_sQuery += " AND X1_ORDEM     = '" + alltrim(_sPerg)  + "'"
+					_oSQL:Exec ()
+
+				Case _sX1_GSC == "G"
+					if valtype (_xValor) != _nX1_TIPO
+						u_help ("Programa " + procname () + ": incompatibilidade de tipos: o parametro '" + _sPerg + "' do grupo de perguntas '" + _sGrupo + "' eh do tipo '" + _nX1_TIPO + "', mas o valor recebido eh do tipo '" + valtype (_xValor) + "' (conteudo: " + cvaltochar (_xValor) + ")." + _PCham ())
+						_lContinua := .F.
+					else
+
+						if _nX1_TIPO == "D"
+							_sCnt01 := "'" + dtoc (_xValor) + "'"
+						elseif _nX1_TIPO == "N"
+							_sCnt01 := str (_xValor, _nX1_TAMANHO, _nX1_DECIMAL)
+						elseif _nX1_TIPO == "C"
+							_sCnt01 := _xValor
+						endif
+
+						_oSQL  := ClsSQL ():New ()
+						_oSQL:_sQuery := ""
+						_oSQL:_sQuery += " UPDATE SX1010 "
+						_oSQL:_sQuery += " SET "
+						_oSQL:_sQuery += "  X1_PRESEL = 0, X1_CNT01  = '" + _sCnt01 +"' "
+						_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+						_oSQL:_sQuery += " AND X1_GRUPO     = '" + alltrim(_sGrupo) + "'"
+						_oSQL:_sQuery += " AND X1_ORDEM     = '" + alltrim(_sPerg)  + "'"
+						_oSQL:Exec ()
+
 					endif
-					sx1 -> (msunlock ())
-				endif
-			otherwise
-				u_help ("Programa " + procname () + ": tratamento para X1_GSC = '" + sx1 -> x1_gsc + "' ainda nao implementado." + _PCham ())
-				_lContinua = .F.
-		endcase
-	endif
+
+				otherwise
+					u_help ("Programa " + procname () + ": tratamento para X1_GSC = '" + _sX1_GSC + "' ainda nao implementado." + _PCham ())
+					_lContinua := .F.
+			endcase
+
+		Next
+	Else
+		u_help ("Programa " + procname () + ": grupo/pergunta '" + _sGrupo + "/" + _sPerg + "' nao encontrado no arquivo SX1.",, .t.)
+		_lContinua := .F.
+	EndIf
 	
 	if _lContinua
 
@@ -91,6 +133,7 @@ user function GravaSX1 (_sGrupo, _sPerg, _xValor, _sDelProf)
 	
 	U_ML_SRArea (_aAreaAnt)
 return .T.
+//
 //--------------------------------------------------------------------------
 // Atualiza perguntas no MP_SYSTEM_PROFILE - Tabela no BD
 static function _AtuProf (_sUserName, _sGrupo, _sPerg)
@@ -109,7 +152,7 @@ static function _AtuProf (_sUserName, _sGrupo, _sPerg)
 	_oSQL:_sQuery += " AND P_TYPE   = 'MV_PAR'"
 	_oSQL:_sQuery += " AND P_EMPANT = '" + cEmpAnt + "'"
 	_oSQL:_sQuery += " order by R_E_C_N_O_ desc"
-	//_oSQL:Log ()
+
 	_aDados := aclone (_oSQL:Qry2Array ())
 
 	 If len(_aDados) > 0
@@ -169,65 +212,14 @@ static function _AtuProf (_sUserName, _sGrupo, _sPerg)
 	EndIf
 
 return
-// // --------------------------------------------------------------------------
-// // Encontra e atualiza profile deste usuario para a rotina / pergunta atual.
-// // Enquanto o usuario nao alterar nenhuma pergunta, ficarah usando do SX1 e
-// // seu profile nao serah criado.
-// static function _AtuProf (_sUserName, _sGrupo, _sPerg)
-// 	local _nLinha    := 0
-// 	local _sMemoProf := ""
-
-// 	If FindProfDef (_sUserName, _sGrupo, "PERGUNTE", "MV_PAR")
-
-// 		// Carrega memo com o profile do usuario (o profile fica gravado em um campo memo)
-// 		_sMemoProf := RetProfDef (_sUserName, _sGrupo, "PERGUNTE", "MV_PAR")
-		
-// 		// Monta array com as linhas do memo (tem uma pergunta por linha)
-// 		_aLinhas = {}
-// 		for _nLinha = 1 to MLCount (_sMemoProf)
-// 			aadd (_aLinhas, alltrim (MemoLine (_sMemoProf,, _nLinha)) + chr (13) + chr (10))
-// 		next
-
-// 		// Monta uma linha com o novo conteudo do parametro atual.
-// 		// Pos 1 = tipo (numerico/data/caracter...)
-// 		// Pos 2 = '#'
-// 		// Pos 3 = GSC
-// 		// Pos 4 = '#'
-// 		// Pos 5 em diante = conteudo.
-// 		_sLinha = sx1 -> x1_tipo + "#" + sx1 -> x1_gsc + "#" + iif (sx1 -> x1_gsc == "C", cValToChar (sx1 -> x1_presel), sx1 -> x1_cnt01) + chr (13) + chr (10)
-
-// 		// Se foi passada uma pergunta que nao consta no profile, deve tratar-se
-// 		// de uma pergunta nova, pois jah encontrei-a no SX1. Entao vou criar uma
-// 		// linha para ela na array. Senao, basta regravar na array.
-// 		if val(_sPerg) > len (_aLinhas)
-// 			aadd (_aLinhas, _sLinha)
-// 		else
-// 			// Grava a linha de volta na array de linhas
-// 			_aLinhas [val (_sPerg)] = _sLinha
-// 		endif
-
-// 		// Remonta memo para gravar no profile
-// 		_sMemoProf = ""
-// 		for _nLinha = 1 to len (_aLinhas)
-// 			_sMemoProf += _aLinhas [_nLinha]
-// 		next
-		
-// 		// Grava o memo no profile
-// 		WriteProfDef(_sUserName, _sGrupo, "PERGUNTE", "MV_PAR", ;  // Chave antiga
-// 		_sUserName, _sGrupo, "PERGUNTE", "MV_PAR", ;  // Chave nova
-// 		_sMemoProf)  // Novo conteudo do memo.
-// 	endif
-// return
-
-
-
+//
+//
 // --------------------------------------------------------------------------
 static Function _PCham ()
 	local _i      := 0
-//	local _sPilha := chr (13) + chr (10) + chr (13) + chr (10) + "Pilha de chamadas:"
 	local _sPilha := "  Pilha de chamadas:"
+
 	do while procname (_i) != ""
-//		_sPilha += chr (13) + chr (10) + procname (_i)
 		_sPilha += ' ==> ' + procname (_i)
 		_i++
 	enddo
