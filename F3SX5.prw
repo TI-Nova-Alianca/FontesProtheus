@@ -1,8 +1,7 @@
-// Programa:  F3SX5
-// Autor:     Robert Koch - TCX021
-// Data:      30/05/2008
-// Cliente:   Generico
-// Descricao: Browse de uma tabela do SX5 para ser chamado via F3.
+// Programa..: F3SX5
+// Autor.....: Robert Koch - TCX021
+// Data......: 30/05/2008
+// Descricao.: Browse de uma tabela do SX5 para ser chamado via F3.
 //
 // Como usar: Será necessário incluir 3 registros no SXB:
 //            Exemplo usando uma consulta chamada "CJC", que executa um execblock que posiciona o SRA:
@@ -29,24 +28,43 @@
 //            Obs.1: O execblock ja deve deixar o SRA posicionado.
 //            Obs.2: O execblock deve retornar .T. para que a consulta seja aceita.
 //
-// Historico de alteracoes:
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #generico
+// #Descricao         #Browse de uma tabela do SX5 para ser chamado via F3
+// #PalavasChave      #SX5 #SX5_F3 #F3 
+// #TabelasPrincipais #SX5
+// #Modulos           #todos
 //
-
+// Historico de alteracoes:
+// 12/05/2021 - Claudia - Ajustada a chamada SX5 para R27. GLPI: 8825
+//
+// -----------------------------------------------------------------------------------
 #include "rwmake.ch"
 
-// --------------------------------------------------------------------------
 User Function F3SX5 (_sTabela)
 	local _aOpcoes  := {}
 	local _nOpcao   := 0
 	local _aAreaAnt := U_ML_SRArea ()
 	local _aCampos  := {}
+	local _x        := 0
 
-	sx5 -> (dbsetorder (1))
-	sx5 -> (dbseek (xfilial ("SX5") + _sTabela, .T.))
-	do while ! sx5 -> (eof ()) .and. x5_filial == xfilial ("SX5") .and. x5_tabela == _sTabela
-		aadd (_aOpcoes, {sx5 -> X5_CHAVE, sx5 -> X5_DESCRI, sx5 -> X5_DESCSPA, sx5 -> X5_DESCENG, sx5 -> (recno ())})
-		sx5 -> (dbskip ())
-	enddo
+	_oSQL  := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT"
+	_oSQL:_sQuery += "     X5_CHAVE"
+	_oSQL:_sQuery += "    ,X5_DESCRI"
+	_oSQL:_sQuery += "    ,X5_DESCSPA"
+	_oSQL:_sQuery += "    ,X5_DESCENG"
+	_oSQL:_sQuery += "    ,R_E_C_N_O_"
+	_oSQL:_sQuery += " FROM SX5010"
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " AND X5_FILIAL = '" + xfilial ("SX5") + "'"
+	_oSQL:_sQuery += " AND X5_TABELA = '" + _sTabela + "'"
+	_aSX5 := aclone (_oSQL:Qry2Array ())	
+
+	For _x := 1 to Len(_aSX5)
+		aadd (_aOpcoes, {_aSX5[_X,1], _aSX5[_X,2], _aSX5[_X,3], _aSX5[_X,4], _aSX5[_X,5] })
+	Next
 
 	_aCampos = {}
 	aadd (_aCampos, {1, "Chave",      30, ""})
@@ -59,6 +77,7 @@ User Function F3SX5 (_sTabela)
 	U_ML_SRArea (_aAreaAnt)
 	
 	// Deixa o SX5 posicionado no registro selecionado.
+	sx5 -> (dbsetorder (1))
 	if _nOpcao > 0
 		sx5 -> (dbgoto (_aOpcoes [_nOpcao, 5]))
 	endif

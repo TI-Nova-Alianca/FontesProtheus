@@ -90,9 +90,9 @@ user function GravaSX1 (_sGrupo, _sPerg, _xValor, _sDelProf)
 					else
 
 						if _nX1_TIPO == "D"
-							_sCnt01 := "'" + dtoc (_xValor) + "'"
+							_sCnt01 :=  dtoc(_xValor) 
 						elseif _nX1_TIPO == "N"
-							_sCnt01 := str (_xValor, _nX1_TAMANHO, _nX1_DECIMAL)
+							_sCnt01 := str(_xValor, _nX1_TAMANHO, _nX1_DECIMAL)
 						elseif _nX1_TIPO == "C"
 							_sCnt01 := _xValor
 						endif
@@ -113,7 +113,6 @@ user function GravaSX1 (_sGrupo, _sPerg, _xValor, _sDelProf)
 					u_help ("Programa " + procname () + ": tratamento para X1_GSC = '" + _sX1_GSC + "' ainda nao implementado." + _PCham ())
 					_lContinua := .F.
 			endcase
-
 		Next
 	Else
 		u_help ("Programa " + procname () + ": grupo/pergunta '" + _sGrupo + "/" + _sPerg + "' nao encontrado no arquivo SX1.",, .t.)
