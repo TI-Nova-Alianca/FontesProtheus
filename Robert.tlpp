@@ -27,7 +27,7 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '01' modulo 'FIN'
+		prepare environment empresa '01' filial '07' modulo 'FIN'
 		private cModulo   := 'FIN'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -84,9 +84,220 @@ static function _AndaLogo ()
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
-	u_help ('Nada definido.')
-return
+//	u_help ('Nada definido.')
+//return
 
+	// Ajusta cadastro produtos em lote
+	sb1 -> (dbsetorder (1))
+	sb5 -> (dbsetorder (1))
+	sb1 -> (dbgotop ())
+	do while ! sb1 -> (eof ())
+		if sb1 -> b1_GRUPO = '0400' .AND. (sb1 -> B1_CONTSOC != 'S' .or. sb1 -> B1_INSS != 'S')
+			if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
+				u_log ('ERRO: Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
+			else
+				u_log ('Verificando item', sb1 -> b1_cod, SB1 -> B1_DESC)
+				
+				// Cria variaveis para uso na gravacao do evento de alteracao
+				regtomemory ("SB1", .F., .F.)
+				regtomemory ("SB5", .F., .F.)
+				m->B1_CONTSOC = 'S'
+				m->B1_INSS    = 'S'
+				//m->b5_alttrib = '1'
+				
+				// Grava evento de alteracao
+				_oEvento := ClsEvent():new ()
+				_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), '', .F.)
+
+				reclock ("SB1", .f.)
+				sb1 -> B1_CONTSOC = m->B1_CONTSOC
+				sb1 -> B1_INSS    = m->B1_INSS
+				msunlock ()
+				//reclock ("SB5", .f.)
+				//msunlock ()
+				//exit
+			endif
+		endif
+		sb1 -> (dbskip ())
+	enddo
+
+	// Ajusta cadastro fornecedores em lote
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT SA2.R_E_C_N_O_"
+	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SA2") + " SA2 "
+	_oSQL:_sQuery +=  " WHERE SA2.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=    " AND SA2.A2_FILIAL = '" + xfilial ("SA2") + "'"
+//	_oSQL:_sQuery +=    " AND (SA2.A2_MSBLQL != '2' or SA2.A2_ATIVO != 'S')"
+	_oSQL:_sQuery +=    " AND EXISTS (SELECT * FROM VA_VNOTAS_SAFRA WHERE ASSOCIADO = SA2.A2_COD AND LOJA_ASSOC = SA2.A2_LOJA)"
+	_oSQL:_sQuery +=    " AND (A2_RECINSS != 'S' OR A2_TPESSOA != 'PF')"
+	_oSQL:_sQuery +=  " ORDER BY A2_COD"
+	_oSQL:Log ()
+	_aDados = _oSQL:Qry2Array ()
+	//u_log (_aDados)
+	for _i = 1 to len (_aDados)
+		sa2 -> (dbgoto (_aDados [_i, 1]))
+		u_log2 ('info', 'Verificando forn ' + sa2 -> a2_cod + ' ' + Sa2 -> a2_nome)
+		// Cria variaveis para uso na gravacao do evento de alteracao
+		regtomemory ("SA2", .F., .F.)
+		m->A2_RECINSS = 'S'
+		m->A2_TPESSOA = 'PF'
+
+		// Grava evento de alteracao
+		_oEvento := ClsEvent():new ()
+		_oEvento:AltCadast ("SA2", m->a2_cod + m->a2_loja, sa2 -> (recno ()), '', .F.)
+
+		reclock ("SA2", .f.)
+		sa2 -> a2_recinss = m->a2_recinss
+		sa2 -> A2_TPESSOA = m->A2_TPESSOA
+		msunlock ()
+		//exit
+	next
+
+	Private cPerg   := "VAGNF2"
+	U_GravaSX1 (cPerg, '01', '002389')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', '004444')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2021') // Safra referencia
+	U_GravaSX1 (cPerg, '06', 'B')     // Parcelas sep.barras (bco=todas)
+	U_GravaSX1 (cPerg, '07', 'C')    // Grupo pagto
+	U_GravaSX1 (cPerg, '08', 3)      // Geracao por DCO: {"Com DCO", "Sem DCO", "Todos"}
+	U_GravaSX1 (cPerg, '09', 3)      // fina/comum: {"Comum", "Fina", "Todas"}
+	U_GravaSX1 (cPerg, '10', 2)      // tipo NF: {"Normais", "Compl.preco"}
+	U_GravaSX1 (cPerg, '11', '801')     // Cond pagto
+	U_GravaSX1 (cPerg, '12', '')     // Apenas estas variedades
+	U_GravaSX1 (cPerg, '13', '')     // Exceto estas variedades
+	u_va_gnf2 (.t.)
+return
+*/
+
+// Testes batches em geral
+//	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	U_batOcor ()
+//	_sArqLog := 'U_BatFunAtlz_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batfunatlz ()
+//	_sArqLog := 'U_BatBlUsr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batBlUsr ()
+//	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batocor ()
+//	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batsafr ('1')  // cargas sem contranota
+//	u_batsafr ('3')  // conferencia geracao das parcelas financeiro
+//	u_batsafr ('4')  // contranotas sem carga
+//	u_batsafr ('5')  // conferencia fretes
+//	u_batsafr ('7')  // gera SZI a partir das parcelas
+//	u_batsafr ('8')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
+//	u_batsafr ('9')  // Transfere (das filiais para a matriz) os titulos de nao associados.
+// 	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+// 	u_batmercp ()
+//	_sArqLog := 'U_BatVerif_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batVerif ()
+//	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batmetaf ()
+//	_sArqLog := 'U_BatEDIM_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batedim ("I")
+//	_sArqLog := 'U_BatMercN_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batMercN (5)
+//	u_log2 ('info', _oBatch:Mensagens)
+//return
+/*
+	Private cPerg   := "VAXLS38"
+	U_GravaSX1 (cPerg, '01', stod ('20210401'))  // data inicial
+	U_GravaSX1 (cPerg, '02', stod ('20210430'))  // data final
+	U_GravaSX1 (cPerg, '03', 'RS-866/2020')  // codigo CR
+	u_va_xls38 (.T.)
+return
+*/
+/*
+	// Testes relatorios associados
+	_aAssoc = {}
+	// aadd (_aAssoc, '003577')  // bastante movimento
+	// aadd (_aAssoc, '005128')  // apenas 1 entrada e 1 compra
+	// aadd (_aAssoc, '001369')  // so 14 complementos
+	// aadd (_aAssoc, '004826')  // 9+6+0
+	// aadd (_aAssoc, '003241')  // 16+15+2 Idalino Pan - tem complemento
+	// aadd (_aAssoc, '000643')  // UM ASSOCIADO QUE TEVE REPARCELAMENTO em 2020
+	// aadd (_aAssoc, '012791')  // lUIS eSCOSTEGUY (nao associado de Livramento)
+	// aadd (_aAssoc, '002380')  // Elmar Busetti
+	// aadd (_aAssoc, '002859')  // Celso Chiarani
+	// aadd (_aAssoc, '000289')  // Rui Bertuol - UNIMED em aberto.
+	// aadd (_aAssoc, '003024')  // Vilson Da Campo - NF de compra devolvida em 2020.
+	// aadd (_aAssoc, '002660')  // Cledinei Da Campo - NF trocada com Vilson em 2020.
+	// aadd (_aAssoc, '002932')  // Joel Panizzon
+	// aadd (_aAssoc, '000184')  // Arside Piton
+	// aadd (_aAssoc, '002517')  // Santo Jose Busetti (diversas variedades de uva)
+	// aadd (_aAssoc, '004341')  // Fernando Fagundes
+	// aadd (_aAssoc, '002637')  // Aldir Marini (aparecem pagtos 2020 junto com 2021)
+	aadd (_aAssoc, '005567')  // Fazenda Passo da Cria
+	for _nAssoc = 1 to len (_aAssoc)
+		U_Log2 ('info', 'Iniciando associado ' + _aAssoc [_nAssoc])
+		//U_GravaSX1 ("ML_FECHASAFRA", '01', '2021')  // safra
+		//U_GravaSX1 ("ML_FECHASAFRA", '02', _aAssoc [_nAssoc])
+		//U_GravaSX1 ("ML_FECHASAFRA", '03', '01')  // loja
+		//U_GravaSX1 ("ML_FECHASAFRA", '04', '  ')  // nucleo
+		//U_GravaSX1 ("ML_FECHASAFRA", '05', 1)  // lista saldo CC 1=sim;2=nao
+		//U_GravaSX1 ("ML_FECHASAFRA", '06', 2 )  // 1=detalhado;2=resumido;3=apenas NF compra
+		//U_ml_fechasafra (.T.)
+		//U_GravaSX1 ("IRASSOC", '01', '')  // CPF ini
+		//U_GravaSX1 ("IRASSOC", '02', 'z')  // CPF fim
+		//U_GravaSX1 ("IRASSOC", '03', '2021')  // ano base
+		//U_GravaSX1 ("IRASSOC", '04', _aAssoc [_nAssoc])  // assoc ini
+		//U_GravaSX1 ("IRASSOC", '05', '')  // loja ini
+		//U_GravaSX1 ("IRASSOC", '06', _aAssoc [_nAssoc]) //002932')  // assoc fim
+		//U_GravaSX1 ("IRASSOC", '07', 'z')  // loja fim
+		//U_GravaSX1 ("IRASSOC", '08', '')  // nucleo
+		//u_IRAssoc (.T.)
+		//
+		//U_GravaSX1 ("SZI_REL2", "01", _aAssoc [_nAssoc])
+		//U_GravaSX1 ('SZI_REL2', "02", '')
+		//U_GravaSX1 ("SZI_REL2", "03", _aAssoc [_nAssoc])
+		//U_GravaSX1 ('SZI_REL2', "04", 'zz')
+		//U_GravaSX1 ('SZI_REL2', "05", stod ("19000000"))
+		//U_GravaSX1 ('SZI_REL2', "06", stod ("20491231"))
+		//U_GravaSX1 ('SZI_REL2', "07", 1)  // tipo normal/capital
+		//U_GravaSX1 ('SZI_REL2', "08", 2)  //listar OBS S/N
+		//U_szi_rel2 (.t.)
+		//U_GravaSX1 ('SZI_REL', "01", _aAssoc [_nAssoc])
+		//U_GravaSX1 ('SZI_REL', "02", '')
+		//U_GravaSX1 ('SZI_REL', "03", _aAssoc [_nAssoc])
+		//U_GravaSX1 ('SZI_REL', "04", 'zz')
+		//U_GravaSX1 ('SZI_REL', "05", '')
+		//U_GravaSX1 ('SZI_REL', "06", 'zz')
+		//U_GravaSX1 ('SZI_REL', "07", stod ("19000000"))
+		//U_GravaSX1 ('SZI_REL', "08", stod ("20491231"))
+		//U_GravaSX1 ('SZI_REL', "09", 1)
+		//U_GravaSX1 ('SZI_REL', "10", '')
+		//U_GravaSX1 ('SZI_REL', "11", 2)
+		//U_GravaSX1 ('SZI_REL', "12", 1)
+		//U_GravaSX1 ('SZI_REL', "13", '')
+		//U_GravaSX1 ('SZI_REL', "14", 'zz')
+		//U_GravaSX1 ('SZI_REL', "15", 2)
+		//U_szi_rel (.t., 1)
+		u_gravasx1 ('SZI_LCS', '01', _aAssoc [_nAssoc])  // Associado inicial
+		u_gravasx1 ('SZI_LCS', '02', '')  // Loja associado inicial
+		u_gravasx1 ('SZI_LCS', '03', _aAssoc [_nAssoc])  // Associado final
+		u_gravasx1 ('SZI_LCS', '04', 'z')  // Loja associado final          
+		u_gravasx1 ('SZI_LCS', '05', '')  // Tipo de movimento inicial     
+		u_gravasx1 ('SZI_LCS', '06', 'z')  // Tipo de movimento final       
+		u_gravasx1 ('SZI_LCS', '07', stod ('20210505'))  // Posicao em                    
+		u_gravasx1 ('SZI_LCS', '08', '')  // Coop.orig(AL/SV/...) bco=todas
+		u_gravasx1 ('SZI_LCS', '09', '')  // Filial inicial                
+		u_gravasx1 ('SZI_LCS', '10', 'z')  // Filial final                  
+		u_gravasx1 ('SZI_LCS', '11', '')  // Forma pagamento (bco=todas)
+		u_gravasx1 ('SZI_LCS', '12', 3)   // Movtos a: debito /credito /Todos
+		u_gravasx1 ('SZI_LCS', '13', '')  // T.M. desconsiderar (separ. /)
+		u_gravasx1 ('SZI_LCS', '14', '')  // Parcelas (separ. /) bco=todas
+		u_gravasx1 ('SZI_LCS', '15', 3)  // com saldo / sem saldo / todos
+		// removido --> u_gravasx1 ('SZI_LCS', '16', 2)  // Gerar recibos apos o relatorio: Sim/Nao
+		// removido --> u_gravasx1 ('SZI_LCS', '17', '')  // P/recibo: Correspondente a... 
+		// removido --> u_gravasx1 ('SZI_LCS', '18', '')  // P/recibo: Local               
+		// removido --> u_gravasx1 ('SZI_LCS', '19', date ())  // P/recibo: Data                
+		// removido --> u_gravasx1 ('SZI_LCS', '20', '')  // Nucleos(SG/FC/...) bco=todos
+		u_szi_lcs (.t., 3)
+	next
+return
+*/
 /*
 	// Testes correcao monetaria associados
 	_sArqLog := 'SZI_CM2_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
@@ -135,95 +346,6 @@ return
 return
 */
 /*
-	// Testes relatorios associados
-	_aAssoc = {}
-	// aadd (_aAssoc, '003577')  // bastante movimento
-	// aadd (_aAssoc, '005128')  // apenas 1 entrada e 1 compra
-	// aadd (_aAssoc, '001369')  // so 14 complementos
-	// aadd (_aAssoc, '004826')  // 9+6+0
-	// aadd (_aAssoc, '003241')  // 16+15+2 Idalino Pan - tem complemento
-	// aadd (_aAssoc, '000643')  // UM ASSOCIADO QUE TEVE REPARCELAMENTO em 2020
-	// aadd (_aAssoc, '012791')  // lUIS eSCOSTEGUY (nao associado de Livramento)
-	// aadd (_aAssoc, '002380')  // Elmar Busetti
-	// aadd (_aAssoc, '002859')  // Celso Chiarani
-	// aadd (_aAssoc, '000289')  // Rui Bertuol - UNIMED em aberto.
-	// aadd (_aAssoc, '003024')  // Vilson Da Campo - NF de compra devolvida em 2020.
-	// aadd (_aAssoc, '002660')  // Cledinei Da Campo - NF trocada com Vilson em 2020.
-	// aadd (_aAssoc, '002932')  // Joel Panizzon
-	// aadd (_aAssoc, '000184')  // Arside Piton
-	// aadd (_aAssoc, '002517')  // Santo Jose Busetti (diversas variedades de uva)
-	// aadd (_aAssoc, '004341')  // Fernando Fagundes
-	// aadd (_aAssoc, '002637')  // Aldir Marini (aparecem pagtos 2020 junto com 2021)
-	aadd (_aAssoc, '005567')  // Fazenda Passo da Cria
-	for _nAssoc = 1 to len (_aAssoc)
-		U_Log2 ('info', 'Iniciando associado ' + _aAssoc [_nAssoc])
-		U_GravaSX1 ("ML_FECHASAFRA", '01', '2021')  // safra
-		U_GravaSX1 ("ML_FECHASAFRA", '02', _aAssoc [_nAssoc])
-		U_GravaSX1 ("ML_FECHASAFRA", '03', '01')  // loja
-		U_GravaSX1 ("ML_FECHASAFRA", '04', '  ')  // nucleo
-		U_GravaSX1 ("ML_FECHASAFRA", '05', 1)  // lista saldo CC 1=sim;2=nao
-		U_GravaSX1 ("ML_FECHASAFRA", '06', 2 )  // 1=detalhado;2=resumido;3=apenas NF compra
-		U_ml_fechasafra (.T.)
-		//U_GravaSX1 ("IRASSOC", '01', '')  // CPF ini
-		//U_GravaSX1 ("IRASSOC", '02', 'z')  // CPF fim
-		//U_GravaSX1 ("IRASSOC", '03', '2021')  // ano base
-		//U_GravaSX1 ("IRASSOC", '04', _aAssoc [_nAssoc])  // assoc ini
-		//U_GravaSX1 ("IRASSOC", '05', '')  // loja ini
-		//U_GravaSX1 ("IRASSOC", '06', _aAssoc [_nAssoc]) //002932')  // assoc fim
-		//U_GravaSX1 ("IRASSOC", '07', 'z')  // loja fim
-		//U_GravaSX1 ("IRASSOC", '08', '')  // nucleo
-		//u_IRAssoc (.T.)
-		//
-		//U_GravaSX1 ("SZI_REL2", "01", _aAssoc [_nAssoc])
-		//U_GravaSX1 ('SZI_REL2', "02", '')
-		//U_GravaSX1 ("SZI_REL2", "03", _aAssoc [_nAssoc])
-		//U_GravaSX1 ('SZI_REL2', "04", 'zz')
-		//U_GravaSX1 ('SZI_REL2', "05", stod ("19000000"))
-		//U_GravaSX1 ('SZI_REL2', "06", stod ("20491231"))
-		//U_GravaSX1 ('SZI_REL2', "07", 1)  // tipo normal/capital
-		//U_GravaSX1 ('SZI_REL2', "08", 2)  //listar OBS S/N
-		//U_szi_rel2 (.t.)
-		//U_GravaSX1 ('SZI_REL', "01", _aAssoc [_nAssoc])
-		//U_GravaSX1 ('SZI_REL', "02", '')
-		//U_GravaSX1 ('SZI_REL', "03", _aAssoc [_nAssoc])
-		//U_GravaSX1 ('SZI_REL', "04", 'zz')
-		//U_GravaSX1 ('SZI_REL', "05", '')
-		//U_GravaSX1 ('SZI_REL', "06", 'zz')
-		//U_GravaSX1 ('SZI_REL', "07", stod ("19000000"))
-		//U_GravaSX1 ('SZI_REL', "08", stod ("20491231"))
-		//U_GravaSX1 ('SZI_REL', "09", 1)
-		//U_GravaSX1 ('SZI_REL', "10", '')
-		//U_GravaSX1 ('SZI_REL', "11", 2)
-		//U_GravaSX1 ('SZI_REL', "12", 1)
-		//U_GravaSX1 ('SZI_REL', "13", '')
-		//U_GravaSX1 ('SZI_REL', "14", 'zz')
-		//U_GravaSX1 ('SZI_REL', "15", 2)
-		//U_szi_rel (.t., 1)
-		//u_gravasx1 ('SZI_LCS', '01', _aAssoc [_nAssoc])  // Associado inicial
-		//u_gravasx1 ('SZI_LCS', '02', '')  // Loja associado inicial
-		//u_gravasx1 ('SZI_LCS', '03', _aAssoc [_nAssoc])  // Associado final
-		//u_gravasx1 ('SZI_LCS', '04', 'z')  // Loja associado final          
-		//u_gravasx1 ('SZI_LCS', '05', '17')  // Tipo de movimento inicial     
-		//u_gravasx1 ('SZI_LCS', '06', '18')  // Tipo de movimento final       
-		//u_gravasx1 ('SZI_LCS', '07', stod ('20201031'))  // Posicao em                    
-		//u_gravasx1 ('SZI_LCS', '08', '')  // Coop.orig(AL/SV/...) bco=todas
-		//u_gravasx1 ('SZI_LCS', '09', '')  // Filial inicial                
-		//u_gravasx1 ('SZI_LCS', '10', 'z')  // Filial final                  
-		//u_gravasx1 ('SZI_LCS', '11', '')  // Forma pagamento (bco=todas)
-		//u_gravasx1 ('SZI_LCS', '12', 3)   // Movtos a: debito /credito /Todos
-		//u_gravasx1 ('SZI_LCS', '13', '')  // T.M. desconsiderar (separ. /)
-		//u_gravasx1 ('SZI_LCS', '14', '')  // Parcelas (separ. /) bco=todas
-		//u_gravasx1 ('SZI_LCS', '15', 1)  // com saldo / sem saldo / todos
-		//u_gravasx1 ('SZI_LCS', '16', 2)  // Gerar recibos apos o relatorio: Sim/Nao
-		//u_gravasx1 ('SZI_LCS', '17', '')  // P/recibo: Correspondente a... 
-		//u_gravasx1 ('SZI_LCS', '18', '')  // P/recibo: Local               
-		//u_gravasx1 ('SZI_LCS', '19', date ())  // P/recibo: Data                
-		//u_gravasx1 ('SZI_LCS', '20', '')  // Nucleos(SG/FC/...) bco=todos
-		//u_szi_lcs (.t., 3)
-	next
-return
-*/
-/*
 	// Gera pre-notas complemento 2021
 	_sArqLog := 'U_VA_GNF3_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 	if cFilAnt == '07'
@@ -266,32 +388,6 @@ return
 	endif
 return
 */
-// Testes batches em geral
-//	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	U_batOcor ()
-//	_sArqLog := 'U_BatFunAtlz_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batfunatlz ()
-//	_sArqLog := 'U_BatBlUsr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batBlUsr ()
-//	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batocor ()
-//	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batsafr ('1')  // cargas sem contranota
-//	u_batsafr ('3')  // conferencia geracao das parcelas financeiro
-//	u_batsafr ('4')  // contranotas sem carga
-//	u_batsafr ('5')  // conferencia fretes
-//	u_batsafr ('7')  // gera SZI a partir das parcelas
-//	u_batsafr ('8')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
-//	u_batsafr ('9')  // Transfere (das filiais para a matriz) os titulos de nao associados.
-// 	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-// 	u_batmercp ()
-//	_sArqLog := 'U_BatVerif_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batVerif ()
-//	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batmetaf ()
-//	_sArqLog := 'U_BatEDIM_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batedim ("I")
-//	u_log2 ('info', _oBatch:Mensagens)
 /*
 	_sArqLog := 'U_BatRevCH_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 	U_BatRevCh ("AC", "CTE", 90)
@@ -2095,24 +2191,6 @@ return
 return
 */
 /*
-	Private cPerg   := "VAGNF2"
-	U_GravaSX1 (cPerg, '01', '000235')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', '000235')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Parcelas sep.barras (bco=todas)
-	U_GravaSX1 (cPerg, '07', 'C')    // Grupos
-	U_GravaSX1 (cPerg, '08', 3)      // Geracao por DCO: {"Com DCO", "Sem DCO", "Todos"}
-	U_GravaSX1 (cPerg, '09', 1)      // fina/comum: {"Comum", "Fina", "Todas"}
-	U_GravaSX1 (cPerg, '10', 1)      // tipo NF: {"Normais", "Compl.preco"}
-	U_GravaSX1 (cPerg, '11', '801')     // Cond pagto
-	U_GravaSX1 (cPerg, '12', '9901')     // Apenas estas variedades
-	U_GravaSX1 (cPerg, '13', '')     // Exceto estas vriedades
-	u_va_gnf2 (.t.)
-return
-*/
-/*
 	// Estoque com codigo de Sisdevin
 	Private cPerg   := "VAXLS15"
 	U_GravaSX1 (cPerg, '01', '2445')
@@ -2566,38 +2644,6 @@ return
 	next
 return
 */
-/*
-	// Ajusta cadastro fornecedores em lote
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT SA2.R_E_C_N_O_"
-	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SA2") + " SA2 "
-	_oSQL:_sQuery +=  " WHERE SA2.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=    " AND SA2.A2_FILIAL = '" + xfilial ("SA2") + "'"
-	_oSQL:_sQuery +=    " AND SA2.A2_COND != '801'"
-//	_oSQL:_sQuery +=    " AND (SA2.A2_MSBLQL != '2' or SA2.A2_ATIVO != 'S')"
-	_oSQL:_sQuery +=    " AND EXISTS (SELECT * FROM SZI010 SZI WHERE SZI.D_E_L_E_T_ = '' and SZI.ZI_ASSOC = SA2.A2_COD AND SZI.ZI_LOJASSO = SA2.A2_LOJA)"
-	_oSQL:_sQuery +=  " ORDER BY A2_COD"
-	_oSQL:Log ()
-	_aDados = _oSQL:Qry2Array ()
-	//u_log (_aDados)
-	for _i = 1 to len (_aDados)
-		sa2 -> (dbgoto (_aDados [_i, 1]))
-		u_log ('Verificando forn', sa2 -> a2_cod, Sa2 -> a2_nome)
-		// Cria variaveis para uso na gravacao do evento de alteracao
-		regtomemory ("SA2", .F., .F.)
-		m->a2_cond = '801'
-
-		// Grava evento de alteracao
-		_oEvento := ClsEvent():new ()
-		_oEvento:AltCadast ("SA2", m->a2_cod + m->a2_loja, sa2 -> (recno ()), '', .F.)
-
-		reclock ("SA2", .f.)
-		sa2 -> a2_cond = m->a2_cond
-		msunlock ()
-	//	exit
-	next
-*/
 
 /*	_a := {}
 	aadd (_a, {'0345', '0082', nil   , nil   , '9901'})
@@ -2852,40 +2898,6 @@ return
 	U_GravaSX1 (cPerg, '02', stod ('20191008'))
 	U_VA_GSE2 (.t.)
 return
-*/
-/*
-	// Ajusta cadastro produtos em lote
-	sb1 -> (dbsetorder (1))
-	sb5 -> (dbsetorder (1))
-	sb1 -> (dbgotop ())
-	do while ! sb1 -> (eof ())
-		if sb1 -> b1_tipo = 'MR' .and. sb1 -> b1_te = '104' .and. sb1 -> b1_clasfis != '60'
-			if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
-				u_log ('ERRO: Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
-			else
-				u_log ('Verificando item', sb1 -> b1_cod, SB1 -> B1_DESC)
-				
-				// Cria variaveis para uso na gravacao do evento de alteracao
-				regtomemory ("SB1", .F., .F.)
-				regtomemory ("SB5", .F., .F.)
-				m->b1_clasfis = '60'
-				m->b5_alttrib = '1'
-				
-				// Grava evento de alteracao
-				_oEvento := ClsEvent():new ()
-				_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), '', .F.)
-
-				reclock ("SB1", .f.)
-				sb1 -> b1_clasfis = m->b1_clasfis
-				msunlock ()
-				reclock ("SB5", .f.)
-				sb5 -> b5_alttrib = m->b5_alttrib
-				msunlock ()
-				//exit
-			endif
-		endif
-		sb1 -> (dbskip ())
-	enddo
 */
 /*
 	// Atualiza tabelas de verbas (ZA4 e ZA5) para casos em que o desconto na baixa do contas a receber nao estava gravando (GLPI 6573)
