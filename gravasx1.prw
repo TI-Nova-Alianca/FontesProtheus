@@ -5,10 +5,10 @@
 // Descricao..: Atualiza respostas das perguntas no SX1
 //
 // Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #Processamento
+// #TipoDePrograma    #generico
 // #PalavasChave      #parametros #perguntas #automacao #auxiliar #uso_generico
 // #TabelasPrincipais #SX1 #PROFILE
-// #Modulos           #todos_modulos
+// #Modulos           #todos
 //
 // Parametros:
 // 1 - Grupo de perguntas a atualizar
@@ -139,6 +139,7 @@ static function _AtuProf (_sUserName, _sGrupo, _sPerg)
 	local _nLinha    := 0
 	local _sMemoProf := ""
 	local _aLinhas   := {}
+	local _x         := 0
 
 	_oSQL:= ClsSQL ():New ()
 	_oSQL:_sQuery := ""
@@ -171,8 +172,30 @@ static function _AtuProf (_sUserName, _sGrupo, _sPerg)
 	// Pos 3 = GSC
 	// Pos 4 = '#'
 	// Pos 5 em diante = conteudo.
-	_sLinha = sx1 -> x1_tipo + "#" + sx1 -> x1_gsc + "#" + iif (sx1 -> x1_gsc == "C", cValToChar (sx1 -> x1_presel), sx1 -> x1_cnt01) + chr (13) + chr (10)
-	_sLinha = StrTran(_sLinha,"'","")
+	//_sLinha = sx1 -> x1_tipo + "#" + sx1 -> x1_gsc + "#" + iif (sx1 -> x1_gsc == "C", cValToChar (sx1 -> x1_presel), sx1 -> x1_cnt01) + chr (13) + chr (10)
+	//_sLinha = StrTran(_sLinha,"'","")
+	// Monta array com cada pergunta e sua resposta em uma linha.
+	_oSQL  := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT"
+	_oSQL:_sQuery += " 	   X1_GRUPO" 	// 01
+	_oSQL:_sQuery += "    ,X1_ORDEM"	// 02
+	_oSQL:_sQuery += "    ,X1_GSC"		// 03
+	_oSQL:_sQuery += "    ,X1_TAMANHO"	// 04
+	_oSQL:_sQuery += "    ,X1_DECIMAL"	// 05	
+	_oSQL:_sQuery += "    ,X1_TIPO"		// 06
+	_oSQL:_sQuery += "    ,X1_PRESEL"	// 07
+	_oSQL:_sQuery += "    ,X1_CNT01"	// 08
+	_oSQL:_sQuery += " FROM SX1010 "
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " AND X1_GRUPO     = '" + alltrim(_sGrupo) + "'"
+	_oSQL:_sQuery += " AND X1_ORDEM     = '" + alltrim(_sPerg)  + "'"
+	_aSX1  = aclone (_oSQL:Qry2Array ())	
+
+	for _x := 1 to Len(_aSX1)
+		_sLinha = _aSX1[_x,6] + "#" + _aSX1[_x,3] + "#" + iif (_aSX1[_x,3] == "C", cValToChar (_aSX1[_x,7]), _aSX1[_x,8]) + chr (13) + chr (10)
+		_sLinha = StrTran(_sLinha,"'","")
+	next
 
 	// Se foi passada uma pergunta que nao consta no profile, deve tratar-se
 	// de uma pergunta nova, pois jah encontrei-a no SX1. Entao vou criar uma

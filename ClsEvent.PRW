@@ -1,9 +1,16 @@
-// Programa:  ClsEvent
-// Autor:     Robert Koch
-// Data:      10/07/2008
+// Programa.: ClsEvent
+// Autor....: Robert Koch
+// Data.....: 10/07/2008
 // Descricao: Declaracao de classe para uso em outros programas. Poderia trabalhar como
 //            uma include, mas prefiro declarar uma funcao de usuario apenas para poder
 //            incluir no projeto e manter na pasta dos fontes.
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Classe
+// #Descricao         #Declaracao de classe para uso em outros programas.
+// #PalavasChave      #classe #eventos
+// #TabelasPrincipais #SZN 
+// #Modulos           #todos
 //
 // Historico de alteracoes:
 // 07/08/2008 - Robert  - Criado metodo de gravacao dos eventos.
@@ -35,24 +42,24 @@
 // 08/07/2019 - Robert  - Desabilitada gravacao campo memo via SYP pois foi migrado para campo ZN_TXT (memo rel).
 // 26/07/2019 - Robert  - Melhorado teste de qual campo foi alterado (antes desconsiderava espacos vazios no final)
 //                      - Quando alias = SB1, verifica tambem alteracoes em campos do SB5.
-//                      - Criado parametro para nao enviar e-mail de notificacao de alteracao de cadastro (util para execucao em batch)
+//                      - Criado parametro para nao enviar e-mail de notificacao de alteracao de cadastro 
+//                        (util para execucao em batch)
 // 20/08/2019 - Robert  - Melhorado metodo AltCadast() para gerar em formato parecido com XML.
 // 22/06/2020 - Robert  - Eliminados alguns logs desnecessarios.
 // 10/03/2021 - Robert  - Melhoria metodo Log().
 //                      - Implementado metodo GravaNovo().
 // 18/04/2021 - Robert  - Grava nome e metodo da classe no arquivo de log.
+// 15/05/2021 - Claudia - Criada função para typo de campo para tirar do loop, bug R27. GLPI: 8825
 //
+// ---------------------------------------------------------------------------------------------------
 
 #include "protheus.ch"
 
-// --------------------------------------------------------------------------
 // Funcao declarada apenas para poder compilar este arquivo fonte.
 user function ClsEvent ()
 return
-
-
-
-// ==========================================================================
+//
+// ------------------------------------------------------------------------------------
 // Classe usada para armazenamento de dados de eventos do sistema (customizados).
 CLASS ClsEvent
 
@@ -102,8 +109,7 @@ CLASS ClsEvent
 	METHOD Log ()
 	METHOD SendMail ()
 ENDCLASS
-
-
+//
 // --------------------------------------------------------------------------
 METHOD New (_nRegSZN) Class ClsEvent
 	::Filial     := xfilial ("SZN")
@@ -139,6 +145,7 @@ METHOD New (_nRegSZN) Class ClsEvent
 	::DtEvento   := DATE()
 	::HrEvento   := TIME()
 	::Ambiente   := GetEnvServer ()
+
 	if _nRegSZN != NIL
 		szn -> (dbgoto (_nRegSZN))
 		::Filial     = SZN -> zn_filial
@@ -175,9 +182,7 @@ METHOD New (_nRegSZN) Class ClsEvent
 		::Ambiente   = SZN -> zn_ambient
 	endif
 Return Self
-
-
-
+//
 // --------------------------------------------------------------------------
 // Gravacao de eventos
 METHOD Grava () Class ClsEvent
@@ -239,15 +244,13 @@ METHOD Grava () Class ClsEvent
 	::Self:SendMail ()
 
 	U_ML_SRArea (_aArea)
-	//u_logFim (GetClassName (::Self) + '.' + procname ())
 return .t.
-
-
-
+//
 // --------------------------------------------------------------------------
 // Gravacao de eventos somente quando ainda nao existirem (evitar duplicidade)
 METHOD GravaNovo () Class ClsEvent
 	local _oSQL := ClsSQL ():New ()
+
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += "SELECT COUNT (*)"
 	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZN") + " SZN "
@@ -275,16 +278,14 @@ METHOD GravaNovo () Class ClsEvent
 	_oSQL:_sQuery +=   " AND SZN.ZN_TRANSP  = '" + ::Transp + "'"
 	_oSQL:_sQuery +=   " AND SZN.ZN_REDESP  = '" + ::TranspReds + "'"
 	_oSQL:_sQuery +=   " AND SZN.ZN_CODPROC = '" + ::CodProceda + "'"
-	// _oSQL:Log ()
+
 	if _oSQL:RetQry (1, .f.) == 0
 		::Grava ()
 	else
 		U_Log2 ('aviso', 'Evento nao vai ser gravado, pois jah existe registro com essa informacao no SZN.')
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Verifica alteracao de cadastros e grava evento quando for o caso.
 // Deve ser disparado ANTES da alteracao, pois compara as variaveis M-> com os campos da tabela.
@@ -296,12 +297,11 @@ METHOD AltCadast (_sAlias, _sCodAlias, _nRecno, _sDadAdic, _lNotif) Class ClsEve
 	local _sContAtu := ''
 	local _aAreaAnt := U_ML_SRArea ()
 
-//	u_logIni (GetClassName (::Self) + '.' + procname ())
-
 	_sDadAdic := iif (_sDadAdic == NIL, '', _sDadAdic)
 	_lNotif   := iif (_lNotif == NIL, .T., _lNotif)
 	::Texto = "Alteracao manual arq." + _sAlias
 	(_sAlias) -> (dbgoto (_nRecno))
+
 	do case
 		case _sAlias == 'CT5'
 			::Texto += " Lcto padrao " + ct5 -> ct5_lanpad + ct5 -> ct5_sequen + chr (13) + chr (10)
@@ -327,11 +327,14 @@ METHOD AltCadast (_sAlias, _sCodAlias, _nRecno, _sDadAdic, _lNotif) Class ClsEve
 	// Monta uma linha para cada campo alterado.
 	for _nCampo = 1 to (_sAlias) -> (fcount ())
 		_sCampo = (_sAlias) -> (fieldname (_nCampo))
-		if type ("M->" + _sCampo) != "U"
+		_sType := BuscaTipo(_sCampo)
+
+		if alltrim(_sType) != "U"
 			_sContAtu = alltrim (cvaltochar (&("M->" + _sCampo)))
 			_sContAnt = alltrim (cvaltochar ((_sAlias) -> &_sCampo))
+
 			if _sContAtu != _sContAnt
-				_sMsgLog += '<cpo>' + alltrim (_sCampo) + '</cpo>' + chr (13) + chr (10)  //<titulo>' + alltrim (RetTitle (upper (_sCampo))) + '</titulo>' + chr (13) + chr (10)
+				_sMsgLog += '<cpo>' + alltrim (_sCampo) + '</cpo>' + chr (13) + chr (10)  
 				_sMsgLog += '<de>' + _sContAnt + '</de>' + chr (13) + chr (10)
 				_sMsgLog += '<para>' + _sContAtu + '</para>' + chr (13) + chr (10)
 			endif
@@ -342,11 +345,14 @@ METHOD AltCadast (_sAlias, _sCodAlias, _nRecno, _sDadAdic, _lNotif) Class ClsEve
 	if _sAlias == 'SB1'
 		for _nCampo = 1 to sb5 -> (fcount ())
 			_sCampo = sb5 -> (fieldname (_nCampo))
-			if type ("M->" + _sCampo) != "U"
+			_sType := BuscaTipo(_sCampo)
+
+			if alltrim(_sType) != "U"
 				_sContAtu = alltrim (cvaltochar (&("M->" + _sCampo)))
 				_sContAnt = alltrim (cvaltochar (sb5 -> &_sCampo))
+
 				if _sContAtu != _sContAnt
-					_sMsgLog += '<cpo>' + alltrim (_sCampo) + '</cpo>' + chr (13) + chr (10)  //<titulo>' + alltrim (RetTitle (upper (_sCampo))) + '</titulo>' + chr (13) + chr (10)
+					_sMsgLog += '<cpo>' + alltrim (_sCampo) + '</cpo>' + chr (13) + chr (10)  
 					_sMsgLog += '<de>' + _sContAnt + '</de>' + chr (13) + chr (10)
 					_sMsgLog += '<para>' + _sContAtu + '</para>' + chr (13) + chr (10)
 				endif
@@ -377,6 +383,7 @@ METHOD AltCadast (_sAlias, _sCodAlias, _nRecno, _sDadAdic, _lNotif) Class ClsEve
 				endif
 			endif
 		endif
+
 		if ::Alias $ "SB1"
 			if _lNotif
 				aadd (::MailToZZU, '069')  // Custos
@@ -392,11 +399,9 @@ METHOD AltCadast (_sAlias, _sCodAlias, _nRecno, _sDadAdic, _lNotif) Class ClsEve
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-//	u_logFim (GetClassName (::Self) + '.' + procname ())
+
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Exclusao do evento posicionado no SZN
 METHOD Exclui () Class ClsEvent
@@ -409,9 +414,7 @@ METHOD Exclui () Class ClsEvent
 
 	U_ML_SRArea (_aArea)
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Faz a leitura das respostas de determinado grupo de perguntas e grava no evento.
 METHOD LeParam (_sPerg) CLASS ClsEvent
@@ -424,35 +427,12 @@ METHOD LeParam (_sPerg) CLASS ClsEvent
 		::Texto += _aPerg [_nPerg, 3] + ' ' + _aPerg [_nPerg, 4] + ' ' + cvaltochar (_aPerg [_nPerg, 5]) + chr (13) + chr (10)
 	next
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Grava dados do evento em arquivo de log
 METHOD Log () Class ClsEvent
 	local _sTxtlog := ''
-	// U_Log ("----------------- EVENTO ----------------- [" + dtoc (date()) + ' ' + time() + ']')
-	// if !empty (::CodEven);                 U_Log ("Cod.evento.....:" + ::CodEven); endif
-	// if !empty (::Texto);                   U_Log ("Texto..........:" + ::Texto); endif
-	// if !empty (::OP);                      U_Log ("OP.............:" + ::OP); endif
-	// if !empty (::Produto);                 U_Log ("Produto........:" + ::Produto); endif
-	// if !empty (::PedVenda);                U_Log ("Pedido venda...:" + ::PedVenda); endif
-	// if !empty (::NFEntrada + ::SerieEntr); U_Log ("NF entr./serie.:" + ::NFEntrada + "/" + ::SerieEntr); endif
-	// if !empty (::NFSaida + ::SerieSaid);   U_Log ("NF saida/serie.:" + ::NFSaida + "/" + ::SerieSaid); endif
-	// if !empty (::ParcTit);                 U_Log ("Parcela titulo.:" + ::ParcTit); endif
-	// if !empty (::Cliente + ::LojaCli);     U_Log ("Cliente/loja...:" + ::Cliente + "/" + ::LojaCli); endif
-	// if !empty (::Fornece + ::LojaFor);     U_Log ("Fornecedor/loja:" + ::Fornece + "/" + ::LojaFor); endif
-	// if !empty (::Alias);                   U_Log ("Alias/recno....:" + ::Alias + "/" + cvaltochar (::Recno)); endif
-	// if !empty (::Recno);                   U_Log ("Recno..........:" + cvaltochar (::Recno)); endif
-	// if !empty (::CodAlias);                U_Log ("Codigo alias...:" + ::CodAlias); endif
-	// if !empty (::MailTo);                  U_Log ("MailTo.........:" + ::MailTo); endif
-	// if !empty (::MailToZZU);               U_Log ("MailToZZU......:" + ::MailToZZU); endif
-	// if !empty (::Hist);                    U_Log ("Historico......:" + ::Hist); endif
-	// if !empty (::Status);                  U_Log ("Status.........:" + ::Status); endif
-	// if !empty (::Sub);                     U_Log ("Substatus......:" + ::Sub); endif
-	// if !empty (::Prazo);                   U_Log ("Prazo..........:" + cvaltochar (::Prazo)); endif
-	//                                        U_Log ("Flag...........:" + cvaltochar (::Flag))
-	// U_Log ("-----------------------------------------------------------")
+
 	_sTxtLog := "----------------- EVENTO -----------------" + chr (13) + chr (10)
 	                                       _sTxtLog += "Data/hora evt..: " + dtoc (::DtEvento) + ' ' + ::HrEvento + chr (13) + chr (10)
 	if !empty (::CodEven);                 _sTxtLog += "Cod.evento.....: " + ::CodEven + chr (13) + chr (10); endif
@@ -471,23 +451,17 @@ METHOD Log () Class ClsEvent
 	if !empty (::MailTo);                  _sTxtLog += "MailTo.........: " + ::MailTo + chr (13) + chr (10); endif
 	if !empty (::MailToZZU);               _sTxtLog += "MailToZZU......: " + ::MailToZZU + chr (13) + chr (10); endif
 	if !empty (::Hist);                    _sTxtLog += "Historico......: " + ::Hist + chr (13) + chr (10); endif
-//	if !empty (::Status);                  _sTxtLog += "Status.........: " + ::Status + chr (13) + chr (10); endif
-//	if !empty (::Sub);                     _sTxtLog += "Substatus......: " + ::Sub + chr (13) + chr (10); endif
-//	if !empty (::Prazo);                   _sTxtLog += "Prazo..........: " + cvaltochar (::Prazo) + chr (13) + chr (10); endif
-//	                                       _sTxtLog += "Flag...........: " + cvaltochar (::Flag) + chr (13) + chr (10)
+
 	_sTxtLog += "-----------------------------------------------------------" + chr (13) + chr (10)
 	u_log2 ('info', _sTxtLog)
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Verifica alteracao de cadastros e grava evento quando for o caso.
 METHOD SendMail (_sDestin) Class ClsEvent
 	local _sTxtMail := ""
 	local _sTxtCabec := ""
 
-//	u_logIni (GetClassName (::Self) + '.' + procname ())
 	_sDestin := iif (_sDestin == NIL, ::MailTo, _sDestin)
 
 	// Soh monta a mensagem se tiver destinatarios.
@@ -504,6 +478,7 @@ METHOD SendMail (_sDestin) Class ClsEvent
 		_sTxtMail += "Descricao......: " + ::Texto + chr (13) + chr (10)
 		_sTxtMail += "Tipo evento....: " + ::CodEven + " - " + Tabela ("79", ::CodEven) + chr (13) + chr (10)
 		_sTxtMail += "Empresa/filial.: " + cEmpAnt + "/" + ::Filial + chr (13) + chr (10)
+
 		if ! empty (::NFSaida)
 			_sTxtMail += "NF saida.......: " + ::NFSaida + "/" + ::SerieSaid + chr (13) + chr (10)
 		endif
@@ -529,15 +504,13 @@ METHOD SendMail (_sDestin) Class ClsEvent
 	if ! empty (_sDestin)
 		U_SendMail (_sDestin, "Evento sist.: " + _sTxtCabec, _sTxtMail, {})
 	endif
+
 	if len (::MailToZZU) > 0
 		U_ZZUNU (::MailToZZU, "Evento sist.: " + _sTxtCabec, _sTxtMail, .F., cEmpAnt, cFilAnt)
 	endif
 
-//	u_logFim (GetClassName (::Self) + '.' + procname ())
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Faz exportacao da pilha de chamadas para uma string.
 static function _PCham ()
@@ -548,3 +521,12 @@ static function _PCham ()
 		_i++
 	enddo
 return _sPilha
+//
+// --------------------------------------------------------------------------
+// Busca o tipo do campo
+static Function BuscaTipo(_sCampo)
+	local _sRet := ""
+
+  	_sRet:= type("M->" + _sCampo) 
+
+return _sRet

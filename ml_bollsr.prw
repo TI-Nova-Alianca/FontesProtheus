@@ -3,14 +3,14 @@
 // Data.......: 01/09/2003
 // Cliente....: Alianca
 // Descricao..: Emissao de boletos bancarios
-
+//
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Processamento
 // #Descricao         #Geracao e impressao de boletos de cobranca.
 // #PalavasChave      #boleto #nosso_numero #cobranca
 // #TabelasPrincipais 
 // #Modulos           #FAT #FIN
-
+//
 // Historico de alteracoes:
 // 19/02/2008 - Robert  - Ajustes calculo Sicredi
 // 10/03/2008 - Robert  - Nao imprimia desconto financeiro.
@@ -81,16 +81,15 @@
 // 17/09/2020 - Sandra  - Alterado Agencia banco 104 de 2515 para 4312.
 // 21/09/2020 - Claudia - Acrescentado para o banco sicredi, a filtragem de banco/agencia e conta 
 //						  para busca de nosso numero duplicado. GLPI: 8413
-
+// 13/05/2021 - Claudia - Criada uam variavel para o parametro VA_PJURBOL, para solucionar erro R27. GLPI: 8825
+//
 // ------------------------------------------------------------------------------------------------------------------------------
 User Function ML_BOLLSR (_aBoletos)
-    //local _nLock   := 0
     local _nBoleto := 0
     
 	cPerg := "BOLL" + cFilAnt
 	_ValidPerg()
 	Pergunte(cPerg,.F.)    // Pergunta no SX1
-	
 	
 	oPrn:=TAVPrinter():New("Boleto Laser")
 	if oPrn:Setup()      // Tela para selecao da impressora.
@@ -99,7 +98,6 @@ User Function ML_BOLLSR (_aBoletos)
 		// Se recebi array com os titulos, nao preciso abrir markbrowse para selecao.
 		// Farei uma chamada do programa para cada titulo.
 		if type ("_aBoletos") == "A"
-		//u_help("tem array de titulos")
 			for _nBoleto = 1 to len (_aBoletos)
 				mv_par01 := _aBoletos [_nBoleto, 1]
 				mv_par02 := _aBoletos [_nBoleto, 1]
@@ -110,8 +108,7 @@ User Function ML_BOLLSR (_aBoletos)
 				mv_par07 := _aBoletos [_nBoleto, 5]
 				mv_par08 := _aBoletos [_nBoleto, 6]
 				mv_par11 :=  1                     // Visualizar
-				//Pergunte (cPerg,.F.)
-				//u_help("titulos de" +mv_par03+" ate " + mv_par04)
+
 				if _aBoletos [_nBoleto, 7] = "FA740BRW"
 					_Gera (.f.)
 				else
@@ -119,36 +116,11 @@ User Function ML_BOLLSR (_aBoletos)
 				endif
 			next
 		else
-			//u_help("NAO tem array te titulos.")
 			U_GravaSX1 (cPerg, "11", 1)  // Visualizar
 			If Pergunte (cPerg,.T.)
 				processa ({|| _Gera (.F.)})
 			endif
 		endif
-		// if type ("_aBoletos") == "A"
-		// 	for _nBoleto = 1 to len (_aBoletos)
-		// 		U_GravaSX1 (cPerg, "01", _aBoletos [_nBoleto, 1])
-		// 		U_GravaSX1 (cPerg, "02", _aBoletos [_nBoleto, 1])
-		// 		U_GravaSX1 (cPerg, "03", _aBoletos [_nBoleto, 2])
-		// 		U_GravaSX1 (cPerg, "04", _aBoletos [_nBoleto, 2])
-		// 		U_GravaSX1 (cPerg, "05", _aBoletos [_nBoleto, 3])
-		// 		U_GravaSX1 (cPerg, "06", _aBoletos [_nBoleto, 4])
-		// 		U_GravaSX1 (cPerg, "07", _aBoletos [_nBoleto, 5])
-		// 		U_GravaSX1 (cPerg, "08", _aBoletos [_nBoleto, 6])
-		// 		U_GravaSX1 (cPerg, "11", 1)  // Visualizar
-		// 		Pergunte (cPerg,.F.)
-		// 		if _aBoletos [_nBoleto, 7] = "FA740BRW"
-		// 			_Gera (.f.)
-		// 		else
-		// 			_Gera (.t.)
-		// 		endif
-		// 	next
-		// else
-		// 	U_GravaSX1 (cPerg, "11", 1)  // Visualizar
-		// 	If Pergunte (cPerg,.T.)
-		// 		processa ({|| _Gera (.F.)})
-		// 	endif
-		// endif
 		
 		// --- verifica se o banco/conta esta bloqueada - se estiver nao deixa imprimir boletos
 		if fbuscacpo ("SA6", 1, xfilial ("SA6") + mv_par05 + mv_par06 + mv_par07,  "A6_BLOCKED") == '1'
@@ -164,12 +136,11 @@ User Function ML_BOLLSR (_aBoletos)
 		oPrn:End()
 	endif
 return
-
+//
 // --------------------------------------------------------------------------
+// Geração
 static function _Gera (_lAutomat)
-	//Local aMarked := {}
 	Local aCampos := {}
-	//local _nBoleto := 0
 
 	aAdd(aCampos, {"E1_NOMCLI"  , "Cliente"    , "@!"              })
 	aAdd(aCampos, {"E1_PREFIXO" , "Prefixo"    , "@!"              })
@@ -233,7 +204,7 @@ static function _Gera (_lAutomat)
 	DbCloseArea()
 	ChkFile('SE1')
 Return
-
+//
 // --------------------------------------------------------------------------
 User Function _IMPTIT()
 	procregua (se5 -> (reccount ()))
@@ -242,16 +213,16 @@ User Function _IMPTIT()
 		u_help('Impressao de boletos para o banco ' + mv_par05 + ' ainda nao liberada no sistema (parametro VA_BCOBOL).')
 		Return
 	EndIf
+
 	MontaRel()
 	if ! _lAuto
 		CloseBrowse ()
 	endif
 Return
-
+//
 // --------------------------------------------------------------------------
 Static Function MontaRel()
 	Local aDadosTit  := {}
-	//Local _aTitulos  := {}
 	Local aDatSacado := {}
 	Local aDadosEmp  := {}
 	Local _aEmp      := {}
@@ -262,6 +233,7 @@ Static Function MontaRel()
 	local _sBcoPed   := ""
 	local _sSituaca  := ""
 	local _nDescFin  := 0
+	local _nPJurbol  := GetMv ("VA_PJURBOL") 
 	Local _oSQL  	 := ClsSQL ():New ()
 	private _nVlrTit := 0
 	private CB_RN    := {}
@@ -275,7 +247,6 @@ Static Function MontaRel()
 	oFont16n := TFont():New("Times New Roman",,15,,.T.,,,,,.F.)
 	oFont24  := TFont():New("Times New Roman",,20,,.T.,,,,,.F.)
 	
-	//202006
 	If cFilAnt $ ("03/07/16/09") .and. alltrim(mv_par05) == '001' // para BB e filiais selecionadas, endreço e CNPJ serão da matriz
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " SELECT"
@@ -314,7 +285,6 @@ Static Function MontaRel()
 		sDadosEmp1 := ALLTRIM(SM0->M0_NOMECOM) + " - " + ALLTRIM(Transform(SM0->M0_CGC, '@R 99.999.999/9999-99'))	
 	EndIf
 	
-	
 	DbSelectArea("SA6")
 	DbSetOrder(1)
 	If !DbSeek(xFilial("SA6")+mv_par05 + mv_par06 + mv_par07,.t.)
@@ -325,10 +295,10 @@ Static Function MontaRel()
 	IndRegua("SE1", cIndexName, cIndexKey,, cFilter, "Aguarde. Selecionando Registros....")
 	DbSelectArea("SE1")
 	DbGoTop()
+
 	Do While !Eof() .and. _lContinua
 
 		incproc ()
-		
 		// Guarda Parametros Originais
 		_xSlvpar05 := mv_par05
 		_xSlvpar06 := mv_par06
@@ -351,7 +321,6 @@ Static Function MontaRel()
 		EndIF
 		
 		// VERIFICA SE CLIENTE ESTA NO PARAMETRO ML_CLIC19 (cliente que exigem que o boleto seja impresso pelo banco)
-		//If alltrim (SE1->E1_CLIENTE) $ getmv("ML_CLIC19")
 		IF fBuscaCpo ("SA1", 1, xfilial ("SA1") + SE1->E1_CLIENTE + se1 -> e1_loja, "A1_VAEBOL") == "B"
 			u_log ("Cliente", SE1->E1_CLIENTE, "Nao recebe boleto - campo A1_VAEBOL")  //parametro ML_CLIC19")
 			DbSelectArea("SE1")
@@ -371,7 +340,6 @@ Static Function MontaRel()
 		DbSelectArea("SEE")
 		DbSetOrder(1)
 		If DbSeek(xFilial("SEE") + mv_par05 + mv_par06 + mv_par07 + mv_par08,.f.)
-		//If DbSeek(xFilial("SEE") + mv_par05 + mv_par06 + mv_par07, .f.)
 			_nNumBco := SEE->EE_BOLATU
 			_cBcoBol := see -> ee_codigo
 			_cAgeBol := see -> ee_vaBolAg
@@ -506,11 +474,6 @@ Static Function MontaRel()
 					_sNumBco = _NosNum399()
 				case _cBcoBol == '422'
 					_sNumBco = _NosNum422_422()
-//					If mv_par12 == 2 // modelo antigo
-//						_sNumBco = _NosNum422_237()
-//					Else
-//						_sNumBco = _NosNum422_422()
-//					EndIf
         		case _cBcoBol == '748'
 					_sNumBco = _NosNum748()
 				case _cBcoBol == 'RED'
@@ -625,7 +588,7 @@ Static Function MontaRel()
 				// Grava evento para posterior consulta
 				_oEvento := ClsEvent():new ()
 				_oEvento:CodEven   = "SE1006"
-				_oEvento:Texto     = "Gerado campo 'nosso numero' com conteudo '" + se1 -> e1_numbco + "' para o banco '" + se1 -> e1_port2 + "' (parcela " + se1 -> e1_parcela + ")"
+				_oEvento:Texto     = "Gerado campo 'nosso numero' com conteudo '" + se1 -> e1_numbco + "' para o banco '" + se1 -> e1_port2 + "' (parcela " + se1 -> e1_parcela + ")"
 				_oEvento:NFSaida   = se1 -> e1_num
 				_oEvento:SerieSaid = se1 -> e1_prefixo
 				_oEvento:PedVenda  = se1 -> e1_pedido
@@ -665,13 +628,6 @@ Static Function MontaRel()
 			case _cBcoBol == '422'
 				CB_RN [1] = _CodBar422_422 ()
 				CB_RN [2] = _LinDig422_422 ()			
-//				If mv_par12 == 2 // modelo antigo
-//					CB_RN [1] = _CodBar422_237 ()
-//					CB_RN [2] = _LinDig422_237 ()
-//                Else
-//                	CB_RN [1] = _CodBar422_422 ()
-//					CB_RN [2] = _LinDig422_422 ()
-//                EndIf
 			case _cBcoBol == '748'
                 CB_RN [1] = _CodBar748 ()
                 CB_RN [2] = _LinDig748 ()
@@ -680,8 +636,6 @@ Static Function MontaRel()
 				_lContinua = .f.
 				loop
 		endcase
-		//u_log ('CB_RN gerado:', cb_rn)
-
 		
 		// Prepara dados para impressao
 		aDadosTit   := {}
@@ -690,10 +644,11 @@ Static Function MontaRel()
 		else	
 			aAdd(aDadosTit, se1 -> e1_prefixo + SE1->E1_NUM+SE1->E1_PARCELA)	// Número do título: BB exige identico ao arquivo de cobranca.
 		endif
-		aAdd(aDadosTit, SE1->E1_EMISSAO)						   // Data da emissão do título
-		aAdd(aDadosTit, Date())									   // Data da emissão do boleto
-		aAdd(aDadosTit, SE1->E1_VENCREA)   						// Data do vencimento
-		aAdd(aDadosTit, _nVlrTit)							// Valor do título
+		aAdd(aDadosTit, SE1->E1_EMISSAO)						   	// Data da emissão do título
+		aAdd(aDadosTit, Date())									   	// Data da emissão do boleto
+		aAdd(aDadosTit, SE1->E1_VENCREA)   							// Data do vencimento
+		aAdd(aDadosTit, _nVlrTit)									// Valor do título
+		
 		do case
 			case _cBcoBol == '001'
 				do case
@@ -720,11 +675,6 @@ Static Function MontaRel()
 				aAdd(aDadosTit, left(ALLTRIM(SE1->E1_NUMBCO), 11))
 			case _cBcoBol == '422' 
 				aAdd(aDadosTit, left(ALLTRIM(SE1->E1_NUMBCO), 9))
-//				If mv_par12 = 2 // modelo antigo
-//					aAdd(aDadosTit, left(ALLTRIM(SE1->E1_NUMBCO), 11))
-//				Else
-//					aAdd(aDadosTit, left(ALLTRIM(SE1->E1_NUMBCO), 9))
-//				EndIf
           	case _cBcoBol == '748'
 				aAdd(aDadosTit, left(ALLTRIM(SE1->E1_NUMBCO),2)+"/"+substr(ALLTRIM(SE1->E1_NUMBCO),3, 6)+"-"+substr(ALLTRIM(SE1->E1_NUMBCO),9, 1))
 			otherwise
@@ -734,7 +684,7 @@ Static Function MontaRel()
 		endcase
 			
 		aAdd(aDadosTit, DDATABASE)								   // Data do Processamento
-		aAdd(aDadosTit, iif(se1 -> e1_vaPJuro>0, se1 -> e1_vaPJuro, GetMv ("VA_PJURBOL") )) // % juro para pagto em atraso.
+		aAdd(aDadosTit, iif(se1 -> e1_vaPJuro>0, se1 -> e1_vaPJuro, _nPJurbol )) // % juro para pagto em atraso.
 		
 		_xCGCCPF    := IIf(Len(AllTrim(SA1->A1_CGC))<>14,Transform(SA1->A1_CGC,"@R 999.999.999-99"),Transform(SA1->A1_CGC,"@R 99.999.999/9999-99"))
 		
@@ -745,8 +695,8 @@ Static Function MontaRel()
 		// Se tem endereco de cobranca completo, otimo. Senao, assume o endereco principal.
 		If !Empty(SA1->A1_ENDCOB) .and. !Empty(SA1->A1_MUNC) .and. !Empty(SA1->A1_ESTC) .and. !Empty(SA1->A1_CEPC)
 			aAdd(aDatSacado, AllTrim(SA1->A1_ENDCOB )+" "+SA1->A1_BAIrroC)		// Endereço
-			aAdd(aDatSacado, AllTrim(SA1->A1_MUNC))									// Cidade
-			aAdd(aDatSacado, SA1->A1_ESTC)												// Estado
+			aAdd(aDatSacado, AllTrim(SA1->A1_MUNC))								// Cidade
+			aAdd(aDatSacado, SA1->A1_ESTC)										// Estado
 			aAdd(aDatSacado, LEFT(SA1->A1_CEPC,5)+"-"+RIGHT(SA1->A1_CEPC,3))	// CEP
 
 			// Aviso para o usuario 'ficar esperto' e nao mandar o boleto junto com a nota
@@ -755,13 +705,13 @@ Static Function MontaRel()
 			endif
 		Else
 			aAdd(aDatSacado, AllTrim(SA1->A1_END )+" "+SA1->A1_BAIRRO)		// Endereço
-			aAdd(aDatSacado, AllTrim(SA1->A1_MUN))									// Cidade
-			aAdd(aDatSacado, SA1->A1_EST)												// Estado
+			aAdd(aDatSacado, AllTrim(SA1->A1_MUN))							// Cidade
+			aAdd(aDatSacado, SA1->A1_EST)									// Estado
 			aAdd(aDatSacado, LEFT(SA1->A1_CEP,5)+"-"+RIGHT(SA1->A1_CEP,3))	// CEP
 		EndIf
 			
-		aAdd(aDatSacado, _xCGCCPF)														// CNPJ
-		aAdd(aDatSacado, _nDescFin)  // Desconto financeiro.
+		aAdd(aDatSacado, _xCGCCPF)											// CNPJ
+		aAdd(aDatSacado, _nDescFin)  										// Desconto financeiro.
 	
 		_Impress(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
 			
@@ -787,8 +737,7 @@ Static Function MontaRel()
 		dbSkip()
 	Enddo
 Return
-
-
+//
 // --------------------------------------------------------------------------
 // Calcula 'Nosso numero' para o banco 001
 Static Function _NosNum001 ()
@@ -797,87 +746,76 @@ Static Function _NosNum001 ()
 	local _nSoma     := 0
 	local _sProxBol  := ""
 	local _sRet      := ""
-	//local _sQuery    := ""
-	//local _lContinua := .T.
+
 	do case
-	case len (alltrim (see -> ee_codemp)) == 6
+		case len (alltrim (see -> ee_codemp)) == 6
 
-		// O 'nosso numero' eh composto pelo numero de nosso convenio (ee_codemp)
-		// mais um sequecial mais o digito verificador (calculado por 'modulo 11').
-		_sProxBol = soma1 (alltrim (see -> ee_codemp) + strzero (see -> ee_bolatu, 5))  // Tamanho: 11
-		_nSoma = 0
-		_nSoma += val (substr (_sProxBol, 1,  1)) * 7
-		_nSoma += val (substr (_sProxBol, 2,  1)) * 8
-		_nSoma += val (substr (_sProxBol, 3,  1)) * 9
-		_nSoma += val (substr (_sProxBol, 4,  1)) * 2
-		_nSoma += val (substr (_sProxBol, 5,  1)) * 3
-		_nSoma += val (substr (_sProxBol, 6,  1)) * 4
-		_nSoma += val (substr (_sProxBol, 7,  1)) * 5
-		_nSoma += val (substr (_sProxBol, 8,  1)) * 6
-		_nSoma += val (substr (_sProxBol, 9,  1)) * 7
-		_nSoma += val (substr (_sProxBol, 10, 1)) * 8
-		_nSoma += val (substr (_sProxBol, 11, 1)) * 9
-		_nResto = _nSoma % 11
-		if _nResto < 10
-			_xDV = _nResto
-		elseif _nResto == 10
-			_xDV = "X"
-		elseif _nResto == 0
-			_xDV = 0
-		endif
-		_sRet = _sProxBol + cvaltochar (_xDV)
+			// O 'nosso numero' eh composto pelo numero de nosso convenio (ee_codemp)
+			// mais um sequecial mais o digito verificador (calculado por 'modulo 11').
+			_sProxBol = soma1 (alltrim (see -> ee_codemp) + strzero (see -> ee_bolatu, 5))  // Tamanho: 11
+			_nSoma = 0
+			_nSoma += val (substr (_sProxBol, 1,  1)) * 7
+			_nSoma += val (substr (_sProxBol, 2,  1)) * 8
+			_nSoma += val (substr (_sProxBol, 3,  1)) * 9
+			_nSoma += val (substr (_sProxBol, 4,  1)) * 2
+			_nSoma += val (substr (_sProxBol, 5,  1)) * 3
+			_nSoma += val (substr (_sProxBol, 6,  1)) * 4
+			_nSoma += val (substr (_sProxBol, 7,  1)) * 5
+			_nSoma += val (substr (_sProxBol, 8,  1)) * 6
+			_nSoma += val (substr (_sProxBol, 9,  1)) * 7
+			_nSoma += val (substr (_sProxBol, 10, 1)) * 8
+			_nSoma += val (substr (_sProxBol, 11, 1)) * 9
+			_nResto = _nSoma % 11
 
-	case len (alltrim (see -> ee_codemp)) == 7
+			if _nResto < 10
+				_xDV = _nResto
+			elseif _nResto == 10
+				_xDV = "X"
+			elseif _nResto == 0
+				_xDV = 0
+			endif
+			_sRet = _sProxBol + cvaltochar (_xDV)
 
-		// O 'nosso numero' eh composto pelo numero de nosso convenio (ee_codemp)
-		// mais um sequecial mais o digito verificador (calculado por 'modulo 11').
-		_sProxBol = alltrim (see -> ee_codemp) + soma1 (strzero (see -> ee_bolatu, 10))  // A funcao SOMA1 parece se atrapalhar com numeros grandes.
-		_nSoma = 0
-		_nSoma += val (substr (_sProxBol, 1,  1)) * 9
-		_nSoma += val (substr (_sProxBol, 2,  1)) * 2
-		_nSoma += val (substr (_sProxBol, 3,  1)) * 3
-		_nSoma += val (substr (_sProxBol, 4,  1)) * 4
-		_nSoma += val (substr (_sProxBol, 5,  1)) * 5
-		_nSoma += val (substr (_sProxBol, 6,  1)) * 6
-		_nSoma += val (substr (_sProxBol, 7,  1)) * 7
-		_nSoma += val (substr (_sProxBol, 8,  1)) * 8
-		_nSoma += val (substr (_sProxBol, 9,  1)) * 9
-		_nSoma += val (substr (_sProxBol, 10, 1)) * 2
-		_nSoma += val (substr (_sProxBol, 11, 1)) * 3
-		_nSoma += val (substr (_sProxBol, 12, 1)) * 4
-		_nSoma += val (substr (_sProxBol, 13, 1)) * 5
-		_nSoma += val (substr (_sProxBol, 14, 1)) * 6
-		_nSoma += val (substr (_sProxBol, 15, 1)) * 7
-		_nSoma += val (substr (_sProxBol, 16, 1)) * 8
-		_nSoma += val (substr (_sProxBol, 17, 1)) * 9
-		_nResto = _nSoma % 11
-		if _nResto < 10
-			_xDV = _nResto
-		elseif _nResto == 10
-			_xDV = "X"
-		elseif _nResto == 0
-			_xDV = 0
-		endif
-		_sRet = _sProxBol + cvaltochar (_xDV)
+		case len (alltrim (see -> ee_codemp)) == 7
 
-	otherwise
-		u_help ("Banco 001: Sem definicao de calculo de 'nosso numero' para este tamanho de convenio.")
-	endcase
-/*	_sNumBco := SE1->E1_NUMBCO
-	// Verifica, por seguranca, se o 'nosso numero' jah existe em algum outro titulo.
-	_sQuery := ""
-	_sQuery += " select count (E1_NUMBCO)"
-	_sQuery +=   " from " + RetSQLName ("SE1") + " SE1 "
-	_sQuery +=  " where D_E_L_E_T_ = ''"
-	_sQuery +=    " and E1_FILIAL = '" + xfilial ("SE1") + "'"
-	_sQuery +=    " and E1_NUMBCO = '" + _sNumBco + "'"
-	if U_RetSQL (_sQuery) > 0
-		u_help ("Problemas na geracao do 'nosso numero' para o titulo '" + se1 -> e1_num + "':" + chr (13) + chr (10) + "O numero '" + _sNumBco + "' ja existe no sistema.")
-		_lContinua = .F.
-	endif
-	*/
+			// O 'nosso numero' eh composto pelo numero de nosso convenio (ee_codemp)
+			// mais um sequecial mais o digito verificador (calculado por 'modulo 11').
+			_sProxBol = alltrim (see -> ee_codemp) + soma1 (strzero (see -> ee_bolatu, 10))  // A funcao SOMA1 parece se atrapalhar com numeros grandes.
+			_nSoma = 0
+			_nSoma += val (substr (_sProxBol, 1,  1)) * 9
+			_nSoma += val (substr (_sProxBol, 2,  1)) * 2
+			_nSoma += val (substr (_sProxBol, 3,  1)) * 3
+			_nSoma += val (substr (_sProxBol, 4,  1)) * 4
+			_nSoma += val (substr (_sProxBol, 5,  1)) * 5
+			_nSoma += val (substr (_sProxBol, 6,  1)) * 6
+			_nSoma += val (substr (_sProxBol, 7,  1)) * 7
+			_nSoma += val (substr (_sProxBol, 8,  1)) * 8
+			_nSoma += val (substr (_sProxBol, 9,  1)) * 9
+			_nSoma += val (substr (_sProxBol, 10, 1)) * 2
+			_nSoma += val (substr (_sProxBol, 11, 1)) * 3
+			_nSoma += val (substr (_sProxBol, 12, 1)) * 4
+			_nSoma += val (substr (_sProxBol, 13, 1)) * 5
+			_nSoma += val (substr (_sProxBol, 14, 1)) * 6
+			_nSoma += val (substr (_sProxBol, 15, 1)) * 7
+			_nSoma += val (substr (_sProxBol, 16, 1)) * 8
+			_nSoma += val (substr (_sProxBol, 17, 1)) * 9
+			_nResto = _nSoma % 11
+
+			if _nResto < 10
+				_xDV = _nResto
+			elseif _nResto == 10
+				_xDV = "X"
+			elseif _nResto == 0
+				_xDV = 0
+			endif
+
+			_sRet = _sProxBol + cvaltochar (_xDV)
+
+		otherwise
+			u_help ("Banco 001: Sem definicao de calculo de 'nosso numero' para este tamanho de convenio.")
+		endcase
 return _sRet
-
+//
 // --------------------------------------------------------------------------
 // Calcula 'Nosso numero' para o banco 041 por 'modulo 10'.
 Static Function _NosNum041 ()
@@ -890,7 +828,6 @@ Static Function _NosNum041 ()
 	local _nMult     := 0
 	local _nPos      := 0
 	local _nPeso     := 0
-//	local _lContinua := .T.
 	
 	// Busca a raiz do 'nosso numero' para o proximo boleto.
 	_sProxBol = soma1 (strzero (see -> ee_bolatu, 8))
@@ -898,6 +835,7 @@ Static Function _NosNum041 ()
 	// Calculo do primeiro digito verificador.
 	_nSoma = 0
 	_nPeso = 2
+
 	for _nPos = len (_sProxBol) to 1 step -1
 		_nMult = val (substr (_sProxBol, _nPos,  1)) * _nPeso
 		if _nMult > 9
@@ -906,6 +844,7 @@ Static Function _NosNum041 ()
 		_nSoma += _nMult
 		_nPeso = iif (_nPeso == 2, 1, 2)
 	next
+
 	_nResto = _nSoma % 10
 	if _nResto == 0
 		_nDV1 = 0
@@ -922,6 +861,7 @@ Static Function _NosNum041 ()
 			_nPeso = iif (_nPeso >= 7, 2, _nPeso + 1)
 			_nSoma += val (substr (_sRet, _nPos,  1)) * _nPeso
 		next
+
 		_nResto = _nSoma % 11
 		if _nSoma < 11
 			_nDV2 = _nSoma
@@ -945,21 +885,8 @@ Static Function _NosNum041 ()
 	enddo
 	
 	_sRet = _sRet + alltrim (str (_nDV2))
-/*
-	_sNumBco := SE1->E1_NUMBCO
-	// Verifica, por seguranca, se o 'nosso numero' jah existe em algum outro titulo.
-	_sQuery := ""
-	_sQuery += " select count (E1_NUMBCO)"
-	_sQuery +=   " from " + RetSQLName ("SE1") + " SE1 "
-	_sQuery +=  " where D_E_L_E_T_ = ''"
-	_sQuery +=    " and E1_FILIAL = '" + xfilial ("SE1") + "'"
-	_sQuery +=    " and E1_NUMBCO = '" + _sNumBco + "'"
-	if U_RetSQL (_sQuery) > 0
-		u_help ("Problemas na geracao do 'nosso numero' para o titulo '" + se1 -> e1_num + "':" + chr (13) + chr (10) + "O numero '" + _sNumBco + "' ja existe no sistema.")
-		_lContinua = .F.
-	endif
-*/	
 return _sRet
+//
 // --------------------------------------------------------------------------
 // Calcula 'Nosso numero' para o banco 237
 Static Function _NosNum237 ()
@@ -968,9 +895,7 @@ Static Function _NosNum237 ()
 	local _nSoma     := 0
 	local _sProxBol  := ""
 	local _sRet      := ""
-//	local _lContinua := .T.
 	
-	//_sProxBol = soma1 (left (alltrim (str (see -> ee_bolatu)), 11))
 	_sProxBol = soma1 (strzero(see -> ee_bolatu,11))
 	_nSoma = 0
 	_nSoma += 0 * 2 // carteira 02
@@ -998,21 +923,7 @@ Static Function _NosNum237 ()
 			_nDV = cvaltochar (_nDV)
 	endcase
 	
-	_sRet = _sProxBol + _nDV
-/*
-	_sNumBco := SE1->E1_NUMBCO
-	// Verifica, por seguranca, se o 'nosso numero' jah existe em algum outro titulo.
-	_sQuery := ""
-	_sQuery += " select count (E1_NUMBCO)"
-	_sQuery +=   " from " + RetSQLName ("SE1") + " SE1 "
-	_sQuery +=  " where D_E_L_E_T_ = ''"
-	_sQuery +=    " and E1_FILIAL = '" + xfilial ("SE1") + "'"
-	_sQuery +=    " and E1_NUMBCO = '" + _sNumBco + "'"
-	if U_RetSQL (_sQuery) > 0
-		u_help ("Problemas na geracao do 'nosso numero' para o titulo '" + se1 -> e1_num + "':" + chr (13) + chr (10) + "O numero '" + _sNumBco + "' ja existe no sistema.")
-		_lContinua = .F.
-	endif
-*/	
+	_sRet = _sProxBol + _nDV	
 Return _sRet
 
 // --------------------------------------------------------------------------
@@ -1023,9 +934,7 @@ Static Function _NosNumRED_237 ()
 	local _nSoma     := 0
 	local _sProxBol  := ""
 	local _sRet      := ""
-//	local _lContinua := .T.
 
-	//_sProxBol = soma1 (left (alltrim (str (see -> ee_bolatu)), 11))
 	_sProxBol = soma1 (strzero(see -> ee_bolatu,11))
 	_nSoma = 0
 	_nSoma += 0 * 2 
@@ -1053,23 +962,9 @@ Static Function _NosNumRED_237 ()
 			_nDV = cvaltochar (_nDV)
 	endcase
 	
-	_sRet = _sProxBol + _nDV
-/*
-	_sNumBco := SE1->E1_NUMBCO
-	// Verifica, por seguranca, se o 'nosso numero' jah existe em algum outro titulo.
-	_sQuery := ""
-	_sQuery += " select count (E1_NUMBCO)"
-	_sQuery +=   " from " + RetSQLName ("SE1") + " SE1 "
-	_sQuery +=  " where D_E_L_E_T_ = ''"
-	_sQuery +=    " and E1_FILIAL = '" + xfilial ("SE1") + "'"
-	_sQuery +=    " and E1_NUMBCO = '" + _sNumBco + "'"
-	if U_RetSQL (_sQuery) > 0
-		u_help ("Problemas na geracao do 'nosso numero' para o titulo '" + se1 -> e1_num + "':" + chr (13) + chr (10) + "O numero '" + _sNumBco + "' ja existe no sistema.")
-		_lContinua = .F.
-	endif
-*/	
+	_sRet = _sProxBol + _nDV	
 Return _sRet
-
+//
 // --------------------------------------------------------------------------
 // Calcula 'Nosso numero' para o banco 341
 Static Function _NosNum341 ()
@@ -1080,24 +975,23 @@ Static Function _NosNum341 ()
 	local _sRet      := ""
 	local _i         := 0
 	local _n         := 0
-//	local _lContinua := .T.
 	
-	// AGENCIA / CONTA (SEM DAC) / CARTEIRA / NOSSO NUMERO
-	//  1612   / 29011           /  109     / PROXIMO NUMERO CONFORME SEE
-	
-	_sDadAux = "1612" + "29011" + "109" 
-	_sProxBol = soma1 (str (see -> ee_bolatu, 8))
+	_sDadAux   = "1612" + "29011" + "109" 
+	_sProxBol  = soma1 (str (see -> ee_bolatu, 8))
 	_wNossoNum = _sDadAux + _sProxBol  
-	_nSoma   = 0
-	_wresu   = 0
-	_wsomdig = 0
-	_wfator  = 1
+	_nSoma     = 0
+	_wresu     = 0
+	_wsomdig   = 0
+	_wfator    = 1
+
 	for _i=1 to 20
 		_wresu = val (substr (_wNossoNum, _i,  1)) * _wfator
 		_wsomdig = 0
+
 		for _n=1 to len( str (_wresu))
 			_wsomdig += val( substr ( str(_wresu), _n, 1))
 		next
+
 		_nSoma += _wsomdig 
 		if _wfator = 1
 			_wfator = 2
@@ -1114,22 +1008,8 @@ Static Function _NosNum341 ()
 	endif
 	
 	_sRet = _sProxBol + alltrim (str (_nDV))		
-/*
-	_sNumBco := SE1->E1_NUMBCO
-	// Verifica, por seguranca, se o 'nosso numero' jah existe em algum outro titulo.
-	_sQuery := ""
-	_sQuery += " select count (E1_NUMBCO)"
-	_sQuery +=   " from " + RetSQLName ("SE1") + " SE1 "
-	_sQuery +=  " where D_E_L_E_T_ = ''"
-	_sQuery +=    " and E1_FILIAL = '" + xfilial ("SE1") + "'"
-	_sQuery +=    " and E1_NUMBCO = '" + _sNumBco + "'"
-	if U_RetSQL (_sQuery) > 0
-		u_help ("Problemas na geracao do 'nosso numero' para o titulo '" + se1 -> e1_num + "':" + chr (13) + chr (10) + "O numero '" + _sNumBco + "' ja existe no sistema.")
-		_lContinua = .F.
-	endif
-*/
 Return _sRet
-
+//
 // --------------------------------------------------------------------------
 // Calcula 'Nosso numero' para o banco 399
 Static Function _NosNum399 ()
@@ -1138,7 +1018,6 @@ Static Function _NosNum399 ()
 	local _nSoma     := 0
 	local _sProxBol  := ""
 	local _sRet      := ""
-//	local _lContinua := .T.
 
 	_sProxBol = soma1 (left (alltrim (str (see -> ee_bolatu)), 10))
 	_nSoma = 0
@@ -1153,6 +1032,7 @@ Static Function _NosNum399 ()
 	_nSoma += val (substr (_sProxBol, 9,  1)) * 3
 	_nSoma += val (substr (_sProxBol, 10, 1)) * 2
 	_nResto = _nSoma % 11
+
 	if _nResto == 0 .or. _nResto == 1
 		_nDV = 0
 	else
@@ -1160,22 +1040,8 @@ Static Function _NosNum399 ()
 	endif
 	
 	_sRet = _sProxBol + alltrim (str (_nDV))
-/*
-	_sNumBco := SE1->E1_NUMBCO
-	// Verifica, por seguranca, se o 'nosso numero' jah existe em algum outro titulo.
-	_sQuery := ""
-	_sQuery += " select count (E1_NUMBCO)"
-	_sQuery +=   " from " + RetSQLName ("SE1") + " SE1 "
-	_sQuery +=  " where D_E_L_E_T_ = ''"
-	_sQuery +=    " and E1_FILIAL = '" + xfilial ("SE1") + "'"
-	_sQuery +=    " and E1_NUMBCO = '" + _sNumBco + "'"
-	if U_RetSQL (_sQuery) > 0
-		u_help ("Problemas na geracao do 'nosso numero' para o titulo '" + se1 -> e1_num + "':" + chr (13) + chr (10) + "O numero '" + _sNumBco + "' ja existe no sistema.")
-		_lContinua = .F.
-	endif
-*/	
 Return _sRet
-
+//
 // --------------------------------------------------------------------------
 // Calcula 'Nosso numero' para o banco 104 - modelo 11 - 
 Static Function _NosNum104 ()
@@ -1184,7 +1050,6 @@ Static Function _NosNum104 ()
 	local _nSoma     := 0
 	local _sProxBol  := ""
 	local _sRet      := ""
-//	local _lContinua := .T.
 
 	_sProxBol = soma1 (strzero (see -> ee_bolatu, 15)) // pq depois tem mais o digito verificador
 	_sProxBol = '14' + _sProxBol
@@ -1214,90 +1079,9 @@ Static Function _NosNum104 ()
 		_nDV = 0
 	endif
 	
-	_sRet = _sProxBol + alltrim (str (_nDV))
-/*
-	_sNumBco := SE1->E1_NUMBCO
-	// Verifica, por seguranca, se o 'nosso numero' jah existe em algum outro titulo.
-	_sQuery := ""
-	_sQuery += " select count (E1_NUMBCO)"
-	_sQuery +=   " from " + RetSQLName ("SE1") + " SE1 "
-	_sQuery +=  " where D_E_L_E_T_ = ''"
-	_sQuery +=    " and E1_FILIAL = '" + xfilial ("SE1") + "'"
-	_sQuery +=    " and E1_NUMBCO = '" + _sNumBco + "'"
-	if U_RetSQL (_sQuery) > 0
-		u_help ("Problemas na geracao do 'nosso numero' para o titulo '" + se1 -> e1_num + "':" + chr (13) + chr (10) + "O numero '" + _sNumBco + "' ja existe no sistema.")
-		_lContinua = .F.
-	endif
-*/	
+	_sRet = _sProxBol + alltrim (str (_nDV))	
 Return _sRet
-
-//// --------------------------------------------------------------------------
-//// Gera 'nosso numero' para o banco 422
-//Static Function _NosNum422_237 ()
-//    local _xDV       := NIL
-//    local _nResto    := 0
-//    local _nSoma     := 0
-//    local _sProxBol  := ""
-//    local _sRet      := ""
-//    local _sQuery    := ""
-//    public _nnrosafra := ""
 //
-//	// busca o proximo numero de boleto e soma um
-//    _sProxBol = soma1 (strzero (see -> ee_bolatu, 8))
-//    
-//    // monta nossa numero DV MODULO SAFRA
-//    _nSoma = 0
-//    _nSoma += val (substr (_sProxBol, 1,  1)) * 9
-//    _nSoma += val (substr (_sProxBol, 2,  1)) * 8
-//    _nSoma += val (substr (_sProxBol, 3,  1)) * 7
-//    _nSoma += val (substr (_sProxBol, 4,  1)) * 6
-//    _nSoma += val (substr (_sProxBol, 5,  1)) * 5
-//    _nSoma += val (substr (_sProxBol, 6,  1)) * 4
-//    _nSoma += val (substr (_sProxBol, 7,  1)) * 3
-//    _nSoma += val (substr (_sProxBol, 8,  1)) * 2
-//    
-//    _nResto = _nSoma % 11
-//    
-//    if _nResto == 0
-//        _xDV = 1
-//    elseif _nResto == 1
-//        _xDV = 0
-//    else
-//        _xDV = 11 - _nResto
-//    endif
-//    
-//    _nnrosafra = _sProxBol + cvaltochar (_xDV)
-//    
-//    // monta nossa numero - DV MODULO BRADESCO
-//    _nSoma  = 0
-//    _nSoma += 0                                * 2
-//    _nSoma += 9                                * 7
-//    _nSoma += val(substr(dtos(se1->e1_emissao),3,1))* 6
-//    _nSoma += val(substr(dtos(se1->e1_emissao),4,1))* 5
-//    _nSoma += val (substr (_nnrosafra, 1,  1)) * 4
-//    _nSoma += val (substr (_nnrosafra, 2,  1)) * 3
-//    _nSoma += val (substr (_nnrosafra, 3,  1)) * 2
-//    _nSoma += val (substr (_nnrosafra, 4,  1)) * 7
-//    _nSoma += val (substr (_nnrosafra, 5,  1)) * 6
-//    _nSoma += val (substr (_nnrosafra, 6,  1)) * 5
-//    _nSoma += val (substr (_nnrosafra, 7,  1)) * 4
-//    _nSoma += val (substr (_nnrosafra, 8,  1)) * 3
-//    _nSoma += val (substr (_nnrosafra, 9,  1)) * 2
-//    
-//    _nResto = _nSoma % 11
-//    
-//    if _nResto == 1
-//        _xDV = "P"
-//    elseif _nResto == 0
-//	     _xDV = 0
-//	else	     
-//    	_xDV = 11 - _nResto    
-//    endif
-//    
-//    _sRet = _nnrosafra + cvaltochar (_xDV)
-//    
-//return _sRet
-
 // --------------------------------------------------------------------------
 // Gera 'nosso numero' para o banco 422 - Safra novo
 Static Function _NosNum422_422 ()
@@ -1306,9 +1090,7 @@ Static Function _NosNum422_422 ()
     local _nSoma     := 0
     local _sProxBol  := ""
     local _sRet      := ""
-    //local _sQuery    := ""
-    //local _lContinua := .T.
-    public _nnrosafra := ""
+    public _nnrosafra:= ""
 
 	// busca o proximo numero de boleto e soma um
     _sProxBol = soma1 (strzero (see -> ee_bolatu, 8))
@@ -1363,32 +1145,16 @@ Static Function _NosNum422_422 ()
     endif
     
     _sRet = _nnrosafra + cvaltochar (_xDV)
-/*
-    _sNumBco := SE1->E1_NUMBCO
-    // Verifica, por seguranca, se o 'nosso numero' jah existe em algum outro titulo.
-	_sQuery := ""
-	_sQuery += " select count (E1_NUMBCO)"
-	_sQuery +=   " from " + RetSQLName ("SE1") + " SE1 "
-	_sQuery +=  " where D_E_L_E_T_ = ''"
-	_sQuery +=    " and E1_FILIAL = '" + xfilial ("SE1") + "'"
-	_sQuery +=    " and E1_NUMBCO = '" + _sNumBco + "'"
-	if U_RetSQL (_sQuery) > 0
-		u_help ("Problemas na geracao do 'nosso numero' para o titulo '" + se1 -> e1_num + "':" + chr (13) + chr (10) + "O numero '" + _sNumBco + "' ja existe no sistema.")
-		_lContinua = .F.
-	endif
-*/
 return _sRet
 
 // --------------------------------------------------------------------------
 // Gera 'nosso numero' para o banco 033
 Static Function _NosNum033()
-    local _xDV       := NIL
-    local _nResto    := 0
-    local _nSoma     := 0
-    local _sProxBol  := ""
-    local _sRet      := ""
-    //local _sQuery    := ""
-    //local _lContinua := .T.
+    local _xDV        := NIL
+    local _nResto     := 0
+    local _nSoma      := 0
+    local _sProxBol   := ""
+    local _sRet       := ""
     public _nnrosafra := ""
     
 	// busca o proximo numero de boleto e soma um
@@ -1417,27 +1183,12 @@ Static Function _NosNum033()
     endif
     
     _sRet = _sProxBol + cvaltochar (_xDV)
-/* 
-    _sNumBco := SE1->E1_NUMBCO
-    // Verifica, por seguranca, se o 'nosso numero' jah existe em algum outro titulo.
-	_sQuery := ""
-	_sQuery += " select count (E1_NUMBCO)"
-	_sQuery +=   " from " + RetSQLName ("SE1") + " SE1 "
-	_sQuery +=  " where D_E_L_E_T_ = ''"
-	_sQuery +=    " and E1_FILIAL = '" + xfilial ("SE1") + "'"
-	_sQuery +=    " and E1_NUMBCO = '" + _sNumBco + "'"
-	if U_RetSQL (_sQuery) > 0
-		u_help ("Problemas na geracao do 'nosso numero' para o titulo '" + se1 -> e1_num + "':" + chr (13) + chr (10) + "O numero '" + _sNumBco + "' ja existe no sistema.")
-		_lContinua = .F.
-	endif
-*/   
 return _sRet
-
+//
 // --------------------------------------------------------------------------
 // Gera 'nosso numero' para o banco 748
 Static Function _NosNum748 ()
 	local _nNumBco := 0
-	//local _lContinua := .T.
 
 	// Ignora o digito verificador do final para incrementar a numercao.
 	_nNumBco = val (left (alltrim (str (see -> ee_bolatu)), len (alltrim (str (see -> ee_bolatu))) - 1)) + 1
@@ -1447,11 +1198,8 @@ Static Function _NosNum748 ()
 		_nNumBco = val (substr (dtos (se1 -> e1_emissao), 3, 2) + "200001")
 	endif
 	_char2 := LEFT(SEE->EE_AGENCIA,4)  // Agencia
-	_char2 += "98"  				  // posto
-	
-	//_char2 += '01571'  // RObert 02/09/2020
+	_char2 += "98"  				   // posto
 	_char2 += alltrim (see -> ee_codemp)
-
 	_char2 += strzero (_nNumBco, 8) 
 	
 	// Calcula digito verificador
@@ -1485,23 +1233,9 @@ Static Function _NosNum748 ()
 	endif
 	
 	_char2 := str(_num4,1)
-	_sRet = StrZero(_nNumBco,8,0)+_char2
-/*	
-	_sNumBco := SE1->E1_NUMBCO
-	// Verifica, por seguranca, se o 'nosso numero' jah existe em algum outro titulo.
-	_sQuery := ""
-	_sQuery += " select count (E1_NUMBCO)"
-	_sQuery +=   " from " + RetSQLName ("SE1") + " SE1 "
-	_sQuery +=  " where D_E_L_E_T_ = ''"
-	_sQuery +=    " and E1_FILIAL = '" + xfilial ("SE1") + "'"
-	_sQuery +=    " and E1_NUMBCO = '" + _sNumBco + "'"
-	if U_RetSQL (_sQuery) > 0
-		u_help ("Problemas na geracao do 'nosso numero' para o titulo '" + se1 -> e1_num + "':" + chr (13) + chr (10) + "O numero '" + _sNumBco + "' ja existe no sistema.")
-		_lContinua = .F.
-	endif
-*/	
+	_sRet  := StrZero(_nNumBco,8,0) + _char2
 Return _sRet
-
+//
 // --------------------------------------------------------------------------
 // Gera codigo de barras para o banco 001
 static function _CodBar001 ()
@@ -1520,7 +1254,7 @@ static function _CodBar001 ()
 	_aCodBar [1] = val (substr (see -> ee_codigo, 1, 1))  // Codigo do banco
 	_aCodBar [2] = val (substr (see -> ee_codigo, 2, 1))  // Codigo do banco
 	_aCodBar [3] = val (substr (see -> ee_codigo, 3, 1))  // Codigo do banco
-	_aCodBar [4] = 9  // Moeda: Reais
+	_aCodBar [4] = 9  									  // Moeda: Reais
 	
 	// Passa o fator de vencimento para as devidas posicoes da array.
 	_nFatorVct = se1 -> e1_vencrea - stod ("19971007")
@@ -1537,32 +1271,33 @@ static function _CodBar001 ()
 	next
 	
 	do case
-	case len (alltrim (see -> ee_codemp)) == 6
-		// Passa nosso numero para a array do codigo de barras
-		for _nPos = 1 to 11
-			_aCodBar [_nPos + 19] = val (substr (se1 -> e1_numbco, _nPos, 1))
-		next
-		
-		// Passa agencia e conta para a array do codigo de barras
-		for _nPos = 1 to 4
-			_aCodBar [_nPos + 30] = val (substr (_cAgeBol, _nPos, 1))
-		next
-		for _nPos = 1 to 8
-			_aCodBar [_nPos + 34] = val (substr (_cCtaBol, _nPos, 1))
-		next
+		case len (alltrim (see -> ee_codemp)) == 6
+			// Passa nosso numero para a array do codigo de barras
+			for _nPos = 1 to 11
+				_aCodBar [_nPos + 19] = val (substr (se1 -> e1_numbco, _nPos, 1))
+			next
+			
+			// Passa agencia e conta para a array do codigo de barras
+			for _nPos = 1 to 4
+				_aCodBar [_nPos + 30] = val (substr (_cAgeBol, _nPos, 1))
+			next
 
-	case len (alltrim (see -> ee_codemp)) == 7
-		for _nPos = 20 to 25
-			_aCodBar [_nPos] = 0
-		next
+			for _nPos = 1 to 8
+				_aCodBar [_nPos + 34] = val (substr (_cCtaBol, _nPos, 1))
+			next
 
-		// Passa nosso numero para a array do codigo de barras
-		for _nPos = 1 to 17
-			_aCodBar [_nPos + 25] = val (substr (se1 -> e1_numbco, _nPos, 1))
-		next
+		case len (alltrim (see -> ee_codemp)) == 7
+			for _nPos = 20 to 25
+				_aCodBar [_nPos] = 0
+			next
 
-	otherwise
-		u_help ("Banco 001: sem tratamento para geracao de codigo de barras para este tamanho de convenio.")
+			// Passa nosso numero para a array do codigo de barras
+			for _nPos = 1 to 17
+				_aCodBar [_nPos + 25] = val (substr (se1 -> e1_numbco, _nPos, 1))
+			next
+
+		otherwise
+			u_help ("Banco 001: sem tratamento para geracao de codigo de barras para este tamanho de convenio.")
 	endcase
 
 	_aCodBar [43] = 1  // Codigo da carteira
@@ -1580,6 +1315,7 @@ static function _CodBar001 ()
 			endif
 		endif
 	next
+
 	_nResto = _nSoma % 11
 	_nSubtr = 11 - _nResto
 	_nDV = iif ((_nSubtr == 0 .or. _nSubtr == 10 .or. _nSubtr == 11), 1, _nSubtr)
@@ -1590,9 +1326,8 @@ static function _CodBar001 ()
 	for _nPos = 1 to 44
 		_sRet += alltrim (str (_aCodBar [_nPos]))
 	next
-
 return _sRet
-
+//
 // --------------------------------------------------------------------------
 // Gera codigo de barras para o banco 041, no padrao FEBRABAN.
 static function _CodBar041 ()
@@ -1635,6 +1370,7 @@ static function _CodBar041 ()
 	for _nPos = 1 to 4
 		_aCodBar [_nPos + 21] = val (substr (_cAgeBol, _nPos, 1))
 	next
+
 	for _nPos = 1 to 7
 		_aCodBar [_nPos + 25] = val (substr (see -> ee_codemp, _nPos, 1))
 	next
@@ -1646,7 +1382,6 @@ static function _CodBar041 ()
 		
 	_aCodBar [41] = 4
 	_aCodBar [42] = 0
-
 	
 	// Calcula posicoes finais por modulo 10 e 11.
 	// Calculo do primeiro digito verificador.
@@ -1657,6 +1392,7 @@ static function _CodBar041 ()
 		_nSoma += (_nMult - iif (_nMult > 9, 9, 0))
 		_nPeso = iif (_nPeso == 2, 1, 2)
 	next
+
 	_nResto = _nSoma % 10
 	if _nResto == 0
 		_nDV1 = 0
@@ -1665,7 +1401,7 @@ static function _CodBar041 ()
 	endif
 
 	_aCodBar [43] = _nDV1
-	//
+	
 	// Calculo do segundo digito verificador em loop por que pode haver necessidade de recalcular.
 	do while .T.
 		_nSoma := 0
@@ -1674,6 +1410,7 @@ static function _CodBar041 ()
 			_nPeso = iif (_nPeso >= 7, 2, _nPeso + 1)
 			_nSoma += _aCodBar [_nPos] * _nPeso
 		next
+
 		_nResto = _nSoma % 11
 		if _nSoma < 11
 			_nDV2 = _nSoma
@@ -1706,6 +1443,7 @@ static function _CodBar041 ()
 			_nSoma += _aCodBar [_nPos] * _nPeso
 		endif
 	next
+
 	_nResto = _nSoma % 11
 	if _nResto == 0 .or. _nResto == 10 .or. _nResto == 1
 		_nDV2 = 1
@@ -1720,8 +1458,7 @@ static function _CodBar041 ()
 		_sRet += alltrim (str (_aCodBar [_nPos]))
 	next
 return _sRet
-
-
+//
 // --------------------------------------------------------------------------
 // Gera codigo de barras para o banco 399
 static function _CodBar399 ()
@@ -1739,7 +1476,7 @@ static function _CodBar399 ()
 	_aCodBar [1] = val (substr (see -> ee_codigo, 1, 1))  // Codigo do banco
 	_aCodBar [2] = val (substr (see -> ee_codigo, 2, 1))  // Codigo do banco
 	_aCodBar [3] = val (substr (see -> ee_codigo, 3, 1))  // Codigo do banco
-	_aCodBar [4] = 9  // Moeda: Reais
+	_aCodBar [4] = 9  									  // Moeda: Reais
 	
 	// Passa o fator de vencimento para as devidas posicoes da array.
 	if se1 -> e1_vencrea >= stod ("20000703")
@@ -1770,6 +1507,7 @@ static function _CodBar399 ()
 	for _nPos = 1 to 4
 		_aCodBar [_nPos + 30] = val (substr (see -> ee_agencia, _nPos + 1, 1))
 	next
+
 	for _nPos = 1 to 7
 		_aCodBar [_nPos + 34] = val (substr (see -> ee_conta, _nPos + 3, 1))
 	next
@@ -1790,10 +1528,9 @@ static function _CodBar399 ()
 			endif
 		endif
 	next
+
 	_nResto = _nSoma % 11
-	
 	_nDAC = iif ((_nResto == 0 .or. _nResto == 1 .or. _nResto == 10), 1, (11 - _nResto))
-	
 	_aCodBar [5] = _nDAC
 	
 	// Converte a array para string, para retorno de dados da funcao.
@@ -1802,7 +1539,7 @@ static function _CodBar399 ()
 		_sRet += alltrim (str (_aCodBar [_nPos]))
 	next
 return _sRet
-
+//
 // --------------------------------------------------------------------------
 // Gera codigo de barras para o banco 104
 static function _CodBar104 ()
@@ -1816,13 +1553,12 @@ static function _CodBar104 ()
 	local _sFatorVct := ""
 	local _nDV1      := NIL  // Para dar erro caso nao encontre o DV.
 	local _nDV2      := NIL  // Para dar erro caso nao encontre o DV.
-	//local _nMult     := 0
 	local _nPeso     := 0
 
-	_aCodBar [1] = val (substr (see -> ee_codigo, 1, 1))  // Codigo do banco
-	_aCodBar [2] = val (substr (see -> ee_codigo, 2, 1))  // Codigo do banco
-	_aCodBar [3] = val (substr (see -> ee_codigo, 3, 1))  // Codigo do banco
-	_aCodBar [4] = 9  // Moeda: Reais
+	_aCodBar [1] = val (substr (see -> ee_codigo, 1, 1))  	// Codigo do banco
+	_aCodBar [2] = val (substr (see -> ee_codigo, 2, 1))  	// Codigo do banco
+	_aCodBar [3] = val (substr (see -> ee_codigo, 3, 1))  	// Codigo do banco
+	_aCodBar [4] = 9  										// Moeda: Reais
 	
 	// Passa o fator de vencimento para as devidas posicoes da array.
 	_nFatorVct = se1 -> e1_vencrea - stod ("19971007")
@@ -1875,6 +1611,7 @@ static function _CodBar104 ()
 		_nSoma += _aCodBar [_nPos] * _nPeso
 		_nPeso = iif (_nPeso == 9, 2, _nPeso + 1)
 	next
+
 	_nResto = _nSoma % 11
 	_nDV1 = 11 - _nResto
 	if _nDV1 > 9
@@ -1891,6 +1628,7 @@ static function _CodBar104 ()
 			_nSoma += _aCodBar [_nPos] * _nPeso
 		endif
 	next
+
 	_nResto = _nSoma % 11
 	_nDV2   = 11 - _nResto
 	if _nDV2 == 0 .or. _nDV2 > 9
@@ -1909,7 +1647,7 @@ static function _CodBar104 ()
 		_sRet = ''
 	endif
 return _sRet
-
+//
 // ---------------------------------------
 // Monta codigo de barras para o banco 237
 Static Function _CodBar237 ()
@@ -1920,7 +1658,6 @@ Static Function _CodBar237 ()
 	local _nSoma     := 0
 	local _nPeso     := 0
 	local _nResto    := 0
-	//local _nSubtr    := 0
 	local _nDV       := 0
 	local _nFatorVct := 0
 	local _sFatorVct := ""
@@ -1997,9 +1734,8 @@ Static Function _CodBar237 ()
 	for _nPos = 20 to 44
 		_campolivre  += alltrim (str (_aCodBar [_nPos]))
 	next
-
 return _sRet
-
+//
 // ---------------------------------------
 // Monta codigo de barras para o banco 237
 Static Function _CodBarRED_237 ()
@@ -2010,7 +1746,6 @@ Static Function _CodBarRED_237 ()
 	local _nSoma     := 0
 	local _nPeso     := 0
 	local _nResto    := 0
-	//local _nSubtr   := 0
 	local _nDV       := 0
 	local _nFatorVct := 0
 	local _sFatorVct := ""
@@ -2087,10 +1822,8 @@ Static Function _CodBarRED_237 ()
 	for _nPos = 20 to 44
 		_campolivre  += alltrim (str (_aCodBar [_nPos]))
 	next
-
 return _sRet
-
-
+//
 // ---------------------------------------
 // Monta codigo de barras para o banco 341
 Static Function _CodBar341 ()
@@ -2101,10 +1834,10 @@ Static Function _CodBar341 ()
 	local _nSoma     := 0
 	local _nPeso     := 0    
 	local _nResto    := 0
-	//local _nSubtr    := 0
 	local _nDV       := 0
 	local _nFatorVct := 0
 	local _sFatorVct := ""
+
 	// monta codigo de barras = 44 posicoes (menos a posicao 5 que eh o DAC)
 	// banco
 	for _nPos = 1 to 3
@@ -2176,103 +1909,8 @@ Static Function _CodBar341 ()
 	for _nPos = 20 to 44
 		_campolivre  += alltrim (str (_aCodBar [_nPos]))
 	next
-	
 return _sRet
-
-//// --------------------------------------------------------------------------
-//// Monta codigo de barras para o banco 422 correspondente 237
-//Static Function _CodBar422_237 ()
-//	local _sRet      := ""
-//	local _aCodBar   := afill (array (44), 0)
-//	local _nPos      := 0
-//	local _sValTit   := ""
-//	local _nSoma     := 0
-//	local _nPeso     := 0
-//	local _nResto    := 0
-//	local _nSubtr    := 0
-//	local _nDV       := 0
-//	local _nFatorVct := 0
-//	local _sFatorVct := ""
-//	
-//	_aCodBar [1] = 2 //val (substr (see -> ee_codigo, 1, 1))  // Codigo do banco
-//	_aCodBar [2] = 3 //val (substr (see -> ee_codigo, 2, 1))  // Codigo do banco
-//	_aCodBar [3] = 7 ///val (substr (see -> ee_codigo, 3, 1))  // Codigo do banco
-//	_aCodBar [4] = 9  // Moeda: Reais
-//	
-//	// Passa o fator de vencimento para as devidas posicoes da array.
-//	_nFatorVct = se1 -> e1_vencrea - stod ("19971007")
-//	_sFatorVct = strzero (_nFatorVct, 4)
-//	
-//	_aCodBar [6] = val (substr (_sFatorVct, 1, 1))
-//	_aCodBar [7] = val (substr (_sFatorVct, 2, 1))
-//	_aCodBar [8] = val (substr (_sFatorVct, 3, 1))
-//	_aCodBar [9] = val (substr (_sFatorVct, 4, 1))
-//	
-//	// Passa o valor do titulo para as devidas posicoes na array do codigo de barras.
-//	_sValTit = strzero (_nVlrTit * 100, 10)
-//	for _nPos = 1 to 10
-//		_aCodBar [_nPos + 9] = val (substr (_sValTit, _nPos, 1))
-//	next
-//	
-//	// Passa agencia e conta para a array do codigo de barras
-//	for _nPos = 1 to 4
-//		_aCodBar [_nPos + 19] = val (substr ('3114', _nPos, 1))
-//	next
-//	
-//	_aCodBar [24] = 0  // Codigo da carteira
-//	_aCodBar [25] = 9  // Codigo da carteira
-//	
-//	_aCodBar [26] = val(substr(dtos(se1->e1_emissao),3,1))
-//	_aCodBar [27] = val(substr(dtos(se1->e1_emissao),4,1))
-//	
-//	// Passa nosso numero para a array do codigo de barras
-//	for _nPos = 1 to 9
-//		_aCodBar [_nPos + 27] = val (substr (se1 -> e1_numbco, _nPos, 1))
-//	next
-//	
-//	for _nPos = 1 to 7
-//		// no caso do banco correspondente usar conta beneficiario fixo "0176300"
-//		_aCodBar [_nPos + 36] = val (substr ('0176300', _nPos, 1))
-//	next
 //
-//	_aCodBar [44] = 0
-//	
-//	// Calculo do digito verificador
-//	_nSoma = 0
-//	_nPeso = 2
-//	
-//	for _nPos = 44 to 1 step -1
-//		if _nPos != 5  // Esta posicao nao participa do calculo.
-//			_nSoma += _aCodBar [_nPos] * _nPeso
-//			_nPeso++
-//			if _nPeso > 9
-//				_nPeso = 2
-//			endif
-//		endif
-//	next
-//	_nResto = _nSoma % 11
-//	
-//	if _nResto == 0 .or. _nResto == 1 .or. _nResto == 10
-//        _nDV = 1
-//    else
-//        _nDV = 11 - _nResto
-//    endif
-//		
-//	_aCodBar [5] = _nDV
-//	
-//	// Converte a array para string, para retorno de dados da funcao.
-//	_sRet = ""
-//	for _nPos = 1 to 44
-//		_sRet += alltrim (str (_aCodBar [_nPos]))
-//	next
-//	
-//	_campolivre = ""
-//	for _nPos = 20 to 44
-//		_campolivre  += alltrim (str (_aCodBar [_nPos]))
-//	next
-//
-//return _sRet
-
 // --------------------------------------------------------------------------
 // Monta codigo de barras para o banco 422 - Safra Novo
 Static Function _CodBar422_422 ()
@@ -2283,7 +1921,6 @@ Static Function _CodBar422_422 ()
 	local _nSoma     := 0
 	local _nPeso     := 0
 	local _nResto    := 0
-	//local _nSubtr    := 0
 	local _nDV       := 0
 	local _nFatorVct := 0
 	local _sFatorVct := ""
@@ -2368,6 +2005,7 @@ Static Function _CodBar422_422 ()
 		_campolivre  += alltrim (str (_aCodBar [_nPos]))
 	next
 return _sRet
+//
 // ---------------------------------------
 // Monta codigo de barras para o banco 033
 Static Function _CodBar033 ()
@@ -2378,8 +2016,6 @@ Static Function _CodBar033 ()
 	local _nSoma     := 0
 	local _nPeso     := 0
 	local _nResto    := 0
-	//local _nSubtr    := 0
-	//local _nDV       := 0
 	local _nFatorVct := 0
 	local _sFatorVct := ""
 	
@@ -2460,9 +2096,8 @@ Static Function _CodBar033 ()
 	for _nPos = 1 to 44
 		_sRet += alltrim (str (_aCodBar [_nPos]))
 	next
-	
 return _sRet
-
+//
 // --------------------------------------------------------------------------
 // Monta codigo de barras para o banco 748
 Static Function _CodBar748 ()
@@ -2695,9 +2330,8 @@ Static Function _CodBar748 ()
 		_ccodbar:=_ccodbar+STR(STR_NUM[i],1,0)
 	NEXT
 	
-Return _cCodBar  //({_ccodbar,_xCODBAR})
-
-
+Return _cCodBar  
+//
 // --------------------------------------------------------------------------
 // Gera linha digitavel para o banco 001
 static function _LinDig001 ()
@@ -2713,7 +2347,7 @@ static function _LinDig001 ()
 	_sCampo5 := substr(CB_RN [1],6,4) + substr(CB_RN [1],10,10)	// valor
 	_sRet := Transform(_sCampo1 + _sCampo2 + _sCampo3 + _sCampo4 + _sCampo5,'@R 99999.99999 99999.999999 99999.999999 9 99999999999999')
 return _sRet
-
+//
 // --------------------------------------------------------------------------
 // Gera linha digitavel para o banco 104
 static function _LinDig104 ()
@@ -2734,8 +2368,7 @@ static function _LinDig104 ()
 	_sCampo5 := substr(CB_RN [1],6,4) + substr(CB_RN [1],10,10)
 	_sRet := Transform (_sCampo1 + _sCampo2 + _sCampo3 + _sCampo4 + _sCampo5,'@R 9999999999 99999999999 99999999999 9 99999999999999')
 return _sRet
-
-
+//
 // --------------------------------------------------------------------------
 // Gera linha digitavel para o banco 041
 static function _LinDig041 ()
@@ -2755,15 +2388,12 @@ static function _LinDig041 ()
 	_sRet := Transform (_sCampo1 + _sCampo2 + _sCampo3 + _sCampo4,'@R 99999.99999 99999.999999 99999.999999 9 99999999999999')
 
 return _sRet
-
-
+//
 // --------------------------------------------------------------------------
 // Gera linha digitavel para o banco 399
 static function _LinDig399 ()
 	local _sRet      := ""
 	local _aLinDig   := afill (array (47), 0)
-	//local _sFatorVct := ""
-	//local _nValTit   := ""
 	local _nPos      := 0
 	local _nMult     := 0
 	local _nSoma     := 0
@@ -2864,7 +2494,7 @@ static function _LinDig399 ()
 		endif
 	next
 return _sRet
-
+//
 // -------------------------------------
 // Gera linha digitavel para o banco 237_RED
 static function _LinDigRED_237 ()
@@ -2879,9 +2509,8 @@ static function _LinDigRED_237 ()
 	_sCampo4 := substr(CB_RN [1],5,1)  // digito verificador do código de barras
 	_sCampo5 := substr(CB_RN [1],6,4) + substr(CB_RN [1],10,10)	// valor
 	_sRet := Transform(_sCampo1 + _sCampo2 + _sCampo3 + _sCampo4 + _sCampo5,'@R 99999.99999 99999.999999 99999.999999 9 99999999999999')
-	
 return _sRet
-
+//
 // -------------------------------------
 // Gera linha digitavel para o banco 237
 static function _LinDig237 ()
@@ -2896,10 +2525,9 @@ static function _LinDig237 ()
 	_sCampo4 := substr(CB_RN [1],5,1)  // digito verificador do código de barras
 	_sCampo5 := substr(CB_RN [1],6,4) + substr(CB_RN [1],10,10)	// valor
 	_sRet := Transform(_sCampo1 + _sCampo2 + _sCampo3 + _sCampo4 + _sCampo5,'@R 99999.99999 99999.999999 99999.999999 9 99999999999999')
-	
 return _sRet
-
-// ---------------------
+//
+// -------------------------------
 // linha digitavel - 341
 static function _LinDig341 ()
 	local _sCampo1 := _sCampo2 := _sCampo3 := _sCampo4 := _sCampo5 := ""
@@ -2913,26 +2541,8 @@ static function _LinDig341 ()
 	_sCampo4 := substr(CB_RN [1],5,1)
 	_sCampo5 := substr(CB_RN [1],6,4) + substr(CB_RN [1],10,10)
 	_sRet := Transform(_sCampo1 + _sCampo2 + _sCampo3 + _sCampo4 + _sCampo5,'@R 99999.99999 99999.999999 99999.999999 9 99999999999999')
-	
 return _sRet
-
-//// --------------------------------------------------------------------------
-//// Gera linha digitavel para o banco 422
-//static function _LinDig422_237 ()
-//	local _sCampo1 := _sCampo2 := _sCampo3 := _sCampo4 := _sCampo5 := ""
-//	
-//	_sCampo1 := substr(CB_RN [1],1,4) + substr(CB_RN [1],20,5)
-//	_sCampo1 += _DvDig001 (_sCampo1)
-//	_sCampo2 := substr(CB_RN [1],25,10)
-//	_sCampo2 += _DvDig001 (_sCampo2)
-//	_sCampo3 := substr(CB_RN [1],35,10)
-//	_sCampo3 += _DvDig001 (_sCampo3)
-//	_sCampo4 := substr(CB_RN [1],5,1)  // digito verificador do código de barras
-//	_sCampo5 := substr(CB_RN [1],6,4) + substr(CB_RN [1],10,10)	// valor
-//	_sRet := Transform(_sCampo1 + _sCampo2 + _sCampo3 + _sCampo4 + _sCampo5,'@R 99999.99999 99999.999999 99999.999999 9 99999999999999')
-//	
-//return _sRet
-
+//
 // --------------------------------------------------------------------------
 // Gera linha digitavel para o banco 422 - Safra Novo
 static function _LinDig422_422 ()
@@ -2948,9 +2558,8 @@ static function _LinDig422_422 ()
 	_sCampo4 := substr(CB_RN [1],5,1)  // digito verificador do código de barras
 	_sCampo5 := substr(CB_RN [1],6,4) + substr(CB_RN [1],10,10)	// valor
 	_sRet := Transform(_sCampo1 + _sCampo2 + _sCampo3 + _sCampo4 + _sCampo5,'@R 99999.99999 99999.999999 99999.999999 9 99999999999999')
-	
 return _sRet
-
+//
 // --------------------------------------------------------------------------
 // Gera linha digitavel para o banco 033
 static function _LinDig033 ()
@@ -2966,8 +2575,7 @@ static function _LinDig033 ()
 	_sCampo5 := substr(CB_RN [1],6,4) + substr(CB_RN [1],10,10)	// valor
 	_sRet := Transform(_sCampo1 + _sCampo2 + _sCampo3 + _sCampo4 + _sCampo5,'@R 99999.99999 99999.999999 99999.999999 9 99999999999999')
 return _sRet
-
-
+//
 // --------------------------------------------------------------------------
 // Gera linha digitavel para o banco 748
 Static Function _LinDig748 ()
@@ -2975,13 +2583,12 @@ Static Function _LinDig748 ()
 
 	_cCampo1 := '7489' + substr(CB_RN [1],20,5)  	+ _DvDig748('7489' + substr(CB_RN [1],20,5))
 	_cCampo2 := substr(CB_RN [1],25,10)			 	+ _DvDig748(substr(CB_RN [1],25,10))
-	_cCampo3 := substr(CB_RN [1],35,10) 				+ _DvDig748(substr(CB_RN [1],35,10))
+	_cCampo3 := substr(CB_RN [1],35,10) 			+ _DvDig748(substr(CB_RN [1],35,10))
 	_cCampo4 := substr(CB_RN [1],5,1)					// digito verificador do código de barras
 	_cCampo5 := substr(CB_RN [1],6,4) + strzero(_nVlrTit*100,10)	// valor
 	_xCodBar := Transform(_cCampo1 + _cCampo2 + _cCampo3 + _cCampo4 + _cCampo5,'@R 99999.99999  99999.999999  99999.999999  9  99999999999999')
 return _xCodBar
-
-
+//
 // --------------------------------------------------------------------------
 // calcula o digito verificador da linha digitavel para o banco 001
 Static Function _DvDig001 (_sCampo)
@@ -3012,7 +2619,7 @@ Static Function _DvDig001 (_sCampo)
 
 	_sRet = alltrim (str (_nDezSup - _nSoma))
 Return _sRet
-
+//
 // --------------------------------------------------------------------------
 // calcula o digito verificador da linha digitavel para o banco 001
 Static Function _DvDig422 (_sCampo)
@@ -3026,13 +2633,14 @@ Static Function _DvDig422 (_sCampo)
 	_nSoma = 0
 	_nPeso = 2
 	
-for _nPos = len (_sCampo) to 1 step -1
-		
+	for _nPos = len (_sCampo) to 1 step -1
 		_nMult = val (substr (_sCampo, _nPos, 1)) * _nPeso
+
 		if _nMult > 9
 			_nMult = strzero(_nMult,2)
 			_nMult = val (substr (_nMult, 1, 1) ) + val (substr (_nMult, 2, 1)) 
 		endif
+
 		_nSoma += _nMult
 		_nPeso = iif (_nPeso == 2, 1, 2)
 	next
@@ -3044,7 +2652,7 @@ for _nPos = len (_sCampo) to 1 step -1
 		_sRet = alltrim (str (10 - _nResto))
 	endif
 Return _sRet
-
+//
 // --------------------------------------------------------------------------
 // calcula o digito verificador da linha digitavel para o banco 041 via 'modulo 10'.
 Static Function _DvDig041 (_sCampo)
@@ -3062,6 +2670,7 @@ Static Function _DvDig041 (_sCampo)
 		_nSoma += (_nMult - iif (_nMult > 9, 9, 0))
 		_nPeso = iif (_nPeso == 2, 1, 2)
 	next
+
 	_nResto = _nSoma % 10
 	if _nResto == 0
 		_sRet = '0'
@@ -3069,8 +2678,7 @@ Static Function _DvDig041 (_sCampo)
 		_sRet = alltrim (str (10 - _nResto))
 	endif
 Return _sRet
-
-
+//
 // --------------------------------------------------------------------------
 // calcula o digito verificador da linha digitavel para o banco 104 via 'modulo 10'.
 Static Function _DvDig104 (_sCampo)
@@ -3093,6 +2701,7 @@ Static Function _DvDig104 (_sCampo)
 		_nSoma += _nMult
 		_nPeso = iif (_nPeso == 2, 1, 2)
 	next
+
 	_nResto = _nSoma % 10
 	if _nResto == 0
 		_sRet = '0'
@@ -3100,16 +2709,14 @@ Static Function _DvDig104 (_sCampo)
 		_sRet = alltrim (str (10 - _nResto))
 	endif
 Return _sRet
-
-
+//
 // --------------------------------------------------------------------------
 // calcula o digito verificador da linha digitavel para o banco 748
 Static Function _DvDig748(_cCampo)
 	Local _nJ := 1
 	Local _nI := 0
 	
-	_cRet := ' '
-	
+	_cRet   := ' '
 	_nSoma  := 0
 	_nFator := 2
 	For _nI := len(_cCampo) to 1 step -1
@@ -3123,6 +2730,7 @@ Static Function _DvDig748(_cCampo)
 		_nSoma += _nMult
 		_nFator := iif(_nFator == 1,2,1)
 	Next
+
 	_cRet := '0'
 	For _nI := 10 to 100 step 10
 		If _nSoma <= _nI
@@ -3131,7 +2739,7 @@ Static Function _DvDig748(_cCampo)
 		EndIf
 	Next
 Return(_cRet)
-
+//
 // --------------------------------------------------------------------------
 // Rotina de impressao do boleto
 Static Function _Impress(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
@@ -3155,11 +2763,11 @@ Static Function _Impress(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
 		// Logotipo canto esq. superior
 		_sArqLogo := alltrim (see -> ee_logobol)
 		if ! empty (_sArqLogo)
-			oPrn:SayBitMap (_nLinIni + 20, ;  // Linha
-			100, ;  // Coluna
-			_sArqLogo, ;  // Arquivo
-			450, ;  // Largura
-			80)  // Altura
+			oPrn:SayBitMap (_nLinIni + 20	, ;  // Linha
+			100								, ;  // Coluna
+			_sArqLogo						, ;  // Arquivo
+			450								, ;  // Largura
+			80								  )  // Altura
 		endif
 		
 		if _cBcoBol == '104' 
@@ -3272,11 +2880,11 @@ Static Function _Impress(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
 		// Logotipo no meio da altura do boleto
 		//_sArqLogo := alltrim (see -> ee_logobol)
 		if ! empty (_sArqLogo)
-			oPrn:SayBitMap (_nLinIni + 620, ;  // Linha
-			100, ;  // Coluna
-			_sArqLogo, ;  // Arquivo
-			450, ;  // Largura
-			80)  // Altura
+			oPrn:SayBitMap (_nLinIni + 620	, ;  // Linha
+			100								, ;  // Coluna
+			_sArqLogo						, ;  // Arquivo
+			450								, ;  // Largura
+			80								  )  // Altura
 		endif
 		
 		if _cBcoBol == '237' .or. _cBcoBol == '422' //banco correspondente bradesco
@@ -3317,7 +2925,7 @@ Static Function _Impress(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
 			oPrn:Say(_nLinIni+0735 , 0100 ,"ATE O VENCIMENTO PAGAR NA REDE BANCARIA" 	,oFont10)
 		endif
 		
-		oPrn:Say(_nLinIni+0705 , 1910 ,"Vencimento"                                 ,oFont8 )
+		oPrn:Say(_nLinIni+0705 , 1910 ,"Vencimento"                                     ,oFont8 )
 		oPrn:Say(_nLinIni+0735 , 2010 ,_Dtoc(aDadosTit[4])                          	,oFont10)
 		
 		do case
@@ -3520,13 +3128,12 @@ Static Function _Impress(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
 		oPrn:EndPage()       // Finaliza a página
 	Endif
 Return
-
+//
 // --------------------------------------------------------------------------
 // Impressão do boleto Safra - novo layout
 Static function _Impress422(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
 	local _nLinIni  := 0
 	local _sNumComp := ""  // Numero de compensacao
-	//local _sArqLogo := ""
 	local i 	    := 0
 	
 	aCoords1 := {2100,1900,2200,2300}
@@ -3539,7 +3146,6 @@ Static function _Impress422(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_R
 	oPrn:Line(_nLinIni+0100 , 0100 , _nLinIni+0520 , 0100)  // vertical
 	oPrn:Line(_nLinIni+0100 , 2300 , _nLinIni+0520 , 2300) // vertical
 	oPrn:Line(_nLinIni+0520 , 0100 , _nLinIni+0520 , 2300) // horizontal
-	
 	
 	_sNumComp   := "422-7"
 	_422Agencia := "03900"
@@ -3654,11 +3260,6 @@ Static function _Impress422(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_R
 	oPrn:Say(_nLinIni+1050 , 0110 ,"COBRAR JUROS DE " + GetMv('MV_SIMB1') + " " + alltrim (transform (Round(aDadosTit [5] * (aDadosTit [8] / 30 / 100),2), "@E 999,999,999.99")) + " AO DIA"		,oFont12)
 	oPrn:Say(_nLinIni+1110 , 0110 ,"PROTESTAR " + cvaltochar (GetMv ("VA_PROTBOL")) + " DIAS DO VENCIMENTO",oFont12)
 	
-//	oPrn:Say(_nLinIni+1050 , 0110 ,"MULTA DE 2% (TAXA UNICA)"		,oFont10)
-//	oPrn:Say(_nLinIni+1100 , 0110 ,"JUROS DE 0,21 (VALOR DIARIO)"   ,oFont10)
-//	oPrn:Say(_nLinIni+1150 , 0110 ,"PROTESTAR EM 10 DIAS"			,oFont10)
-//	oPrn:Say(_nLinIni+1200 , 0110 ,"* Carteira vinculada, a quantidade de dias para protesto é automático, sendo default o prazo de 10 dias corridos, ou "			,oFont10)
-//	oPrn:Say(_nLinIni+1250 , 0110 ,"exista alguma negociação específica entre a empresa e o Banco, devidamente formalizada. "			,oFont10)			
 	oPrn:Say(_nLinIni+1300 , 0100 ,alltrim(mv_par10)                ,oFont12)
 	
 	oPrn:Line(_nLinIni+0700 , 1900 ,_nLinIni+1350 , 1900)
@@ -3685,8 +3286,6 @@ Static function _Impress422(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_R
 	oPrn:Say(_nLinIni+1475 , 0350 ,aDatSacado[6]                                                ,oFont8)
 	
 	oPrn:Say(_nLinIni+1510 , 0110 , "Sacador/Avalista"         ,oFont8 )
-	//oPrn:Say(_nLinIni+1512 , 0350 ,aDadosEmp[1]                ,oFont8)
-		
 	oPrn:Line(_nLinIni+1550 , 0100 ,_nLinIni+1550 , 2300)
 	
 	oPrn:Say (_nLinIni+1550 , 1940 ,"Autenticação Mecânica"     ,oFont8 )
@@ -3703,33 +3302,30 @@ Static function _Impress422(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_R
 	
 	oPrn:EndPage()       // Finaliza a página
 Return
-
+//
 // --------------------------------------------------------------------------
 // Formata datas com 4 digitos no ano, por que o BB eh enjoadinho.
 Static Function _DTOC (_dData)
 	local _sRet := strzero (day (_dData), 2) + "/" + strzero (month (_dData), 2) + "/" + strzero (year (_dData), 4)
 return _sRet
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
 	local _aRegsPerg := {}
 	local _aTamDoc   := aclone (TamSX3 ("E1_NUM"))
-	//                     PERGUNT                           TIPO TAM            DEC          VALID   F3    Opcoes                      Help
-	aadd (_aRegsPerg, {01, "Prefixo inicial               ", "C", 3,             0,            "",   "   ", {},                         "Prefixo inicial a ser considerado"})
-	aadd (_aRegsPerg, {02, "Prefixo final                 ", "C", 3,             0,            "",   "   ", {},                         "Prefixo final a ser considerado"})
-	aadd (_aRegsPerg, {03, "Titulo inicial                ", "C", _aTamDoc [1], _aTamDoc [2],  "",   "   ", {},                         "Numero do titulo inicial a ser impresso"})
-	aadd (_aRegsPerg, {04, "Titulo final                  ", "C", _aTamDoc [1], _aTamDoc [2],  "",   "   ", {},                         "Numero do titulo final a ser impresso"})
-	aadd (_aRegsPerg, {05, "Banco para emissao            ", "C", 3,             0,            "",   "SEE", {},                         "Codigo do banco para o qual os boletos serao gerados"})
-	aadd (_aRegsPerg, {06, "Agencia                       ", "C", 5,             0,            "",   "   ", {},                         "Codigo da agencia bancaria"})
-	aadd (_aRegsPerg, {07, "Conta                         ", "C", 10,            0,            "",   "   ", {},                         "Numero da conta bancaria"})
-	aadd (_aRegsPerg, {08, "Sub-conta                     ", "C", 3,             0,            "",   "   ", {},                         "Sub-conta bancaria"})
-	aadd (_aRegsPerg, {09, "Tipo de impressora            ", "N", 1,             0,            "",   "   ", {"Jato tinta", "Laser"},    "Tipo de impressora. Deve estar de acordo com a impressora selecionada no Windows."})
-	aadd (_aRegsPerg, {10, "Mensagem adicional 1          ", "C", 60,            0,            "",   "   ", {},                         "Mensagem adicional que pode ser impressa na seccao de instrucoes"})
-	aadd (_aRegsPerg, {11, "Visualizar / imprimir         ", "N", 1,             0,            "",   "   ", {"Visualizar", "Imprimir"}, "Indique se deseja visualizar a impressao em tela ou enviar diretamente para a impressora."})
-	//aadd (_aRegsPerg, {12, "Filiais p/ matriz             ", "C", 60,            0,            "",   "   ", {},                         "Indica as filiais que serão impressas com endereço e CNPJ da matriz"})
-	//aadd (_aRegsPerg, {12, "Boleto Safra                  ", "N", 1,             0,            "",   "   ", {"Novo", "Antigo"},         "Indique o modelo de impressãso do boleto Safra."})
-	//aadd (_aRegsPerg, {12, "Boleto Safra                  ", "N", 1,             0,            "",   "   ", {"Antigo", "Novo"},         "Indique o modelo de impressãso do boleto Safra."})
+	//                     PERGUNT                   TIPO TAM            DEC          VALID   F3    Opcoes                      Help
+	aadd (_aRegsPerg, {01, "Prefixo inicial       ", "C", 3,             0,            "",   "   ", {},                         "Prefixo inicial a ser considerado"})
+	aadd (_aRegsPerg, {02, "Prefixo final         ", "C", 3,             0,            "",   "   ", {},                         "Prefixo final a ser considerado"})
+	aadd (_aRegsPerg, {03, "Titulo inicial        ", "C", _aTamDoc [1], _aTamDoc [2],  "",   "   ", {},                         "Numero do titulo inicial a ser impresso"})
+	aadd (_aRegsPerg, {04, "Titulo final          ", "C", _aTamDoc [1], _aTamDoc [2],  "",   "   ", {},                         "Numero do titulo final a ser impresso"})
+	aadd (_aRegsPerg, {05, "Banco para emissao    ", "C", 3,             0,            "",   "SEE", {},                         "Codigo do banco para o qual os boletos serao gerados"})
+	aadd (_aRegsPerg, {06, "Agencia               ", "C", 5,             0,            "",   "   ", {},                         "Codigo da agencia bancaria"})
+	aadd (_aRegsPerg, {07, "Conta                 ", "C", 10,            0,            "",   "   ", {},                         "Numero da conta bancaria"})
+	aadd (_aRegsPerg, {08, "Sub-conta             ", "C", 3,             0,            "",   "   ", {},                         "Sub-conta bancaria"})
+	aadd (_aRegsPerg, {09, "Tipo de impressora    ", "N", 1,             0,            "",   "   ", {"Jato tinta", "Laser"},    "Tipo de impressora. Deve estar de acordo com a impressora selecionada no Windows."})
+	aadd (_aRegsPerg, {10, "Mensagem adicional 1  ", "C", 60,            0,            "",   "   ", {},                         "Mensagem adicional que pode ser impressa na seccao de instrucoes"})
+	aadd (_aRegsPerg, {11, "Visualizar / imprimir ", "N", 1,             0,            "",   "   ", {"Visualizar", "Imprimir"}, "Indique se deseja visualizar a impressao em tela ou enviar diretamente para a impressora."})
 	
 	U_ValPerg (cPerg, _aRegsPerg)
 Return
