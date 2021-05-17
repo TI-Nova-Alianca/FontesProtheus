@@ -65,9 +65,6 @@ User Function VA_GNF2 (_lAutomat)
 	private _sOrigSZI  := "VA_GNF2"
 	private _sErroAuto := ""  // Deixar private para ser vista pela funcao U_Help ()
 
-	U_HELP ("NAO GRAVOU E2_HIST QUANDO GEROU NF COMPL FORN 002825 EM 16/02/21 (GLPI 9389)",,.T.)
-
-	
 	// Verifica se o usuario tem liberacao para uso desta rotina.
 	if _lContinua
 		_lContinua = U_ZZUVL ('045', __cUserID, .T.)//, cEmpAnt, cFilAnt)
@@ -327,27 +324,27 @@ Static Function _Gera03 ()
 						loop
 					endif
 					if zz9 -> zz9_fornec + zz9 -> zz9_loja < _sFornIni + _sLojaIni .or. zz9 -> zz9_fornec + zz9 -> zz9_loja > _sFornFim + _sLojaFim
-						u_log2 ('debug', 'Fornecedor fora da faixa selecionada.')
+						u_log2 ('debug', 'zz9_fornec fora da faixa selecionada.')
 						zz9 -> (dbskip ())
 						loop
 					endif
 					if zz9 -> zz9_safra != _sSafra
-						u_log2 ('debug', 'Safra fora da faixa selecionada.')
+						u_log2 ('debug', 'zz9_safra fora da faixa selecionada.')
 						zz9 -> (dbskip ())
 						loop
 					endif
 					if ! empty (_sParcelas) .and. ! zz9 -> zz9_parcel $ _sParcelas
-						u_log2 ('debug', "Parcela '" + zz9 -> zz9_parcel + "' fora da faixa selecionada.")
+						u_log2 ('debug', "zz9_parcel '" + zz9 -> zz9_parcel + "' fora da faixa selecionada.")
 						zz9 -> (dbskip ())
 						loop
 					endif
 					if zz9 -> zz9_grupo != _sGrpZZ9
-						u_log2 ('debug', 'Grupo para pagamento fora da faixa selecionada.')
+						u_log2 ('debug', 'zz9_grupo fora da faixa selecionada.')
 						zz9 -> (dbskip ())
 						loop
 					endif
 					if zz9 -> zz9_tiponf != _sTipoNF
-						u_log2 ('debug', 'Tipo de nota fora da faixa selecionada.')
+						u_log2 ('debug', 'zz9_tiponf fora da faixa selecionada.')
 						zz9 -> (dbskip ())
 						loop
 					endif
@@ -549,7 +546,11 @@ Static Function _Gera03 ()
 	//			_GeraNota ("N", sa2 -> a2_cod, sa2 -> a2_loja, _aItens, _sMsgContr, _sSerie, sa2 -> a2_est, _sDCO, _aPreNF, _sSafra, _sCondPag, _sParcela, _sGrpZZ9)
 				_GeraNota (_sTipoNF, sa2 -> a2_cod, sa2 -> a2_loja, _aItens, _sMsgContr, _sSerie, sa2 -> a2_est, _sDCO, _aPreNF, _sSafra, _sCondPag, _sParcela, _sGrpZZ9)
 
+				U_Log2 ('aviso', 'caindo fora do primeiro loop por que quero gerar uma nota por vez.')
+				exit
 			enddo
+			U_Log2 ('aviso', 'caindo fora do segundo loop por que quero gerar uma nota por vez.')
+			exit
 		next
 
 
@@ -1032,8 +1033,8 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 			u_help ("Sem definicao de parcelamento para pagamento.",, .T.)
 			_lContinua = .F.
 		endif
-		U_Log2 ('debug', '_aParPgSaf dentro do VA_GNF2:')
-		U_Log2 ('debug', _aParPgSaf)
+		//U_Log2 ('debug', '_aParPgSaf dentro do VA_GNF2:')
+		//U_Log2 ('debug', _aParPgSaf)
 	endif
 
 	// Gera a NF de Compra

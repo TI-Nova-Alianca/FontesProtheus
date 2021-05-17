@@ -102,7 +102,9 @@
 // 14/01/2021 - Robert  - Datas e valores das dupl.safra jah vem certas do MtColSE2. Apenas grava historico.
 // 03/02/2021 - Robert  - Para saber se estava gerando contranota de safra, testava rotina U_VA_RUS. Passa a testar U_VA_RUSN.
 // 17/02/2021 - CLáudia - Incluida cópia de laudo para transferencias entre filiais. GLPI:5592
+// 07/05/2021 - Robert  - Incluida gravacao do campo E2_VASAFRA (GLPI 9891)
 //
+
 // ------------------------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
@@ -472,9 +474,12 @@ static function _AjSE2 ()
 		endif
 	endif
 
-	if ! ExistBlock ("MTCOLSE2")
+	// Se for uma contranota de safra...
+	if sf1 -> f1_tipo $ "N/C" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) .and. (IsInCallStack ("U_VA_RUSN") .or. IsInCallStack ("U_VA_GNF2"))
+
+		if ! ExistBlock ("MTCOLSE2")
 		// Se for uma nota de compra de uva (em 2021 jah vamos gerar contranotas de compra em vez de 'entrada'), ajusta vencimentos.
-		if sf1 -> f1_tipo == "N" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) .and. IsInCallStack ("U_VA_RUSN")
+//		if sf1 -> f1_tipo == "N" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) .and. IsInCallStack ("U_VA_RUSN")
 			U_Log2 ('info', 'Ajustando datas de vencimento dos titulos de nota de compra de safra.')
 			se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
 			se2 -> (dbseek (xfilial ("SE2") + sf1 -> f1_fornece + sf1 -> f1_loja + sf1 -> f1_serie + sf1 -> f1_doc, .T.))
@@ -485,7 +490,7 @@ static function _AjSE2 ()
 				.and. se2 -> e2_prefixo == sf1 -> f1_serie ;
 				.and. se2 -> e2_num     == sf1 -> f1_doc
 				
-				U_Log2 ('debug', se2 -> e2_parcela)
+				U_Log2 ('debug', 'e2_parcela ' + se2 -> e2_parcela)
 				_sAnoVcSaf = strzero (year (se2 -> e2_emissao), 4)  // A maioria dos vencimentos vai ser no ano atual.
 				do case
 				case alltrim (se2 -> e2_parcela) == 'A'
@@ -523,26 +528,37 @@ static function _AjSE2 ()
 					u_help ("Sem tratamento para parcela '" + se2 -> e2_parcela + "' no ajuste de datas de pagamento de safra. Verifique os titulos gerados para a nota '" + sf1 -> f1_doc + "'",, .T.)
 					_dVctSafra = se2 -> e2_vencto  // Deixa com o vencimento original.
 				endcase
+
+				// Se o ano+mes previsto jah passou (ocorre por exemplo quando gera-se nota de complemento de preco apos a safra), nao adianta gerar com data retroativa.
+				if _sMesVcSaf < strzero (month (dDataBase), 2)
+					U_Log2 ('aviso', 'Vencimento desta parcela seria inicialmente calculado para o mes ' + _sMesVcSaf + ' (retroativo). Vou atualizar.')
+					_sMesVcSaf = strzero (month (dDataBase), 2)
+				endif
+
 				_dVctSafra = lastday (stod (_sAnoVcSaf + _sMesVcSaf + '01'))
 
 				// Retroage o vencimento ateh que seja uma data valida
-				U_Log2 ('info', '_dVctSafra antes de verificar se eh data valida: ' + dtoc (_dVctSafra))
+			//	U_Log2 ('info', '_dVctSafra antes de verificar se eh data valida: ' + dtoc (_dVctSafra))
 				do while _dVctSafra > se1 -> e1_vencori .and. datavalida (_dVctSafra) > _dVctSafra
 					_dVctSafra -= 1
-					U_Log2 ('debug', 'Reduzi _dVctSafra para ' + dtoc (_dVctSafra))
+				//	U_Log2 ('debug', 'Reduzi _dVctSafra para ' + dtoc (_dVctSafra))
 				enddo
-				U_Log2 ('info', '_dVctSafra depois de verificar se eh data valida: ' + dtoc (_dVctSafra))
+			//	U_Log2 ('info', '_dVctSafra depois de verificar se eh data valida: ' + dtoc (_dVctSafra))
+				if se2 -> e2_vencrea != _dVctSafra
+					U_Log2 ('info', '[' + procname () + '] e2_parcela ' + se2 -> e2_parcela + ': alterando e2_vencrea de ' + dtoc (se2 -> e2_vencrea) + ' para ' + dtoc (_dVctSafra))
+				endif
 				reclock ("SE2", .F.)
-				se2 -> e2_hist    = alltrim (se2 -> e2_hist) + 'SAFRA GR.' + sf1 -> F1_VAGPSAF
+				se2 -> e2_hist    = alltrim (se2 -> e2_hist) + 'SAFRA ' + sf1 -> f1_vasafra + ' GRP.' + sf1 -> F1_VAGPSAF
 				se2 -> e2_vencto  = _dVctSafra
 				se2 -> e2_vencrea = _dVctSafra
+				se2 -> e2_vasafra = sf1 -> f1_vasafra
 				msunlock ()
 				se2 -> (dbskip ())
 			enddo
-		endif
-	else
+//		endif
+		else
 	//	U_Log2 ('info', '[' + procname () + '] ponto de entrada MTCOLSE2 implementado. No vou mexer nas datas e valores das duplicatas de safra. Somente historicos.')
-		if sf1 -> f1_tipo == "N" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) .and. IsInCallStack ("U_VA_RUSN")
+//		if sf1 -> f1_tipo == "N" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) .and. IsInCallStack ("U_VA_RUSN")
 			if type ('_aParPgSaf') == 'A'  // Variavel criada no programa VA_RUSN().
 				U_Log2 ('info', '[' + procname () + '] Ajustando historicos dos titulos de nota de compra de safra (valores e datas jah devem ter sido gerados via ponto de entrada MTCOLSE2).')
 				se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
@@ -553,6 +569,7 @@ static function _AjSE2 ()
 					else
 						reclock ("SE2", .F.)
 						se2 -> e2_hist = alltrim (se2 -> e2_hist) + alltrim (_aParPgSaf [_nParc, 5])
+						se2 -> e2_vasafra = sf1 -> f1_vasafra
 						msunlock ()
 					endif
 				next
@@ -560,7 +577,7 @@ static function _AjSE2 ()
 		endif
 	endif
 return
-// 
+//
 // -----------------------------------------------------------------------------------------------------
 // Grava dados adicionais para posterior uso na impressao da nota / envio para NF eletronica.
 static function _DadosAdic ()

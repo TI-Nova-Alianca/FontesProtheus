@@ -55,7 +55,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 		_oAssocCP = ClsAssoc():New ('000161', '01')
 		//                                _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC
 		_sXmlFech = _oAssocCP:FechSafra (_sSafPag, .f.,     .f.,     .f.,     .f.,     .f.,      .t.,      .f.,      .f.,        .f.,      .f.,      .f.)
-		U_Log2 ('debug', _sXMLFech)
+	//	U_Log2 ('debug', _sXMLFech)
 
 		// Converte de texto para XML
 		_oXMLFech := XmlParser (_sXmlFech, "_", @_sError, @_sWarning)
@@ -63,7 +63,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 			u_help ("Erro ao decodificar retorno do XML de regras de pagamento para esta safra: " + _sError + _sWarning,, .t.)
 			_lContinua = .F.
 		endif
-		u_log2 ('debug', _oXMLFech)
+		//u_log2 ('debug', _oXMLFech)
 	endif
 
 	// Verifica se tem este tipo de tag no XML
@@ -90,8 +90,8 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 			next
 		endif
 	endif
-	u_log2 ('debug', '_aParcel depois de ler o XML:')
-	u_log2 ('debug', _aParcel)
+	//u_log2 ('debug', '_aParcel depois de ler o XML:')
+	//u_log2 ('debug', _aParcel)
 
 	// A parcela do frete cai sempre na proxima posicao livre
 	if _lContinua
@@ -214,6 +214,13 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 				_dVctSafra = _dEmissao
 				_lContinua = .F.
 			endif
+
+			// Se o ano+mes previsto jah passou (ocorre por exemplo quando gera-se nota de complemento de preco apos a safra), nao adianta gerar com data retroativa.
+			if _sMesVcSaf < strzero (month (dDataBase), 2)
+				U_Log2 ('aviso', 'Vencimento desta parcela seria inicialmente calculado para o mes ' + _sMesVcSaf + ' (retroativo). Vou atualizar.')
+				_sMesVcSaf = strzero (month (dDataBase), 2)
+			endif
+
 			_aParcel [_nParcel, 2] = lastday (stod (_sAnoVcSaf + _sMesVcSaf + '01'))
 		next
 	endif
