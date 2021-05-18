@@ -43,7 +43,7 @@ User Function ZB1()
 		AADD(aRotina, {"&Legenda"        	 , "U_ZB1LGD (.F.)", 0 ,5})
 		AADD(aRotina, {"Relatorio titulos"   , "U_ZB1RTIT()"   , 0, 6})
 		AADD(aRotina, {"Relatorio importação", "U_ZB1REL()"    , 0, 6})
-		AADD(aRotina, {"Relatorio diferenças", "U_ZB1DIF('1')" , 0, 6})
+		AADD(aRotina, {"Relatorio diferenças", "U_ZB1DIF()"    , 0, 6})
 		AADD(aRotina, {"Fechar Registro"     , "U_ZB1_FEC()"   , 0, 6})
 
 		AADD(_aCores,{ "ZB1_STAIMP == 'I'", 'BR_VERDE'    }) // importado
