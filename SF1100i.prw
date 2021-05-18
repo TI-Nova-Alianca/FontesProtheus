@@ -103,6 +103,7 @@
 // 03/02/2021 - Robert  - Para saber se estava gerando contranota de safra, testava rotina U_VA_RUS. Passa a testar U_VA_RUSN.
 // 17/02/2021 - CLáudia - Incluida cópia de laudo para transferencias entre filiais. GLPI:5592
 // 07/05/2021 - Robert  - Incluida gravacao do campo E2_VASAFRA (GLPI 9891)
+// 17/05/2021 - Robert  - Nas parcelas de safra, se o ano+mes previsto jah passou (ocorre por exemplo quando gera-se nota de complemento de preco apos a safra), nao adianta gerar com data retroativa (GLPI 9891)
 //
 
 // ------------------------------------------------------------------------------------------------------------------------------
@@ -194,6 +195,7 @@ User Function SF1100i ()
 	endif
 	
 	U_ML_SRArea (_aAreaAnt)
+	U_Log2 ('info', 'Finalizando ' + procname ())
 return
 // 
 // -----------------------------------------------------------------------------------------------------
@@ -430,7 +432,9 @@ static function _Import ()
 		enddo
 	endif
 return
-// 
+
+
+
 // -----------------------------------------------------------------------------------------------------
 // Ajusta dados no arquivo SE2.
 static function _AjSE2 ()
@@ -440,6 +444,9 @@ static function _AjSE2 ()
 	local _sAnoVcSaf := ''
 	local _sMesVcSaf := ''
 	local _nParc     := 0
+	local _oSQL      := NIL
+	local _aRetFUNRU := {}
+	local _oEvento   := NIL
 
 	// Grava observacoes no historico dos titulos de compra de lenha, para facilitar filtragens posteriores.
 	if sf1 -> f1_tipo == "N" .and. sf1 -> f1_formul == "S"
@@ -479,7 +486,6 @@ static function _AjSE2 ()
 
 		if ! ExistBlock ("MTCOLSE2")
 		// Se for uma nota de compra de uva (em 2021 jah vamos gerar contranotas de compra em vez de 'entrada'), ajusta vencimentos.
-//		if sf1 -> f1_tipo == "N" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) .and. IsInCallStack ("U_VA_RUSN")
 			U_Log2 ('info', 'Ajustando datas de vencimento dos titulos de nota de compra de safra.')
 			se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
 			se2 -> (dbseek (xfilial ("SE2") + sf1 -> f1_fornece + sf1 -> f1_loja + sf1 -> f1_serie + sf1 -> f1_doc, .T.))
@@ -538,12 +544,9 @@ static function _AjSE2 ()
 				_dVctSafra = lastday (stod (_sAnoVcSaf + _sMesVcSaf + '01'))
 
 				// Retroage o vencimento ateh que seja uma data valida
-			//	U_Log2 ('info', '_dVctSafra antes de verificar se eh data valida: ' + dtoc (_dVctSafra))
 				do while _dVctSafra > se1 -> e1_vencori .and. datavalida (_dVctSafra) > _dVctSafra
 					_dVctSafra -= 1
-				//	U_Log2 ('debug', 'Reduzi _dVctSafra para ' + dtoc (_dVctSafra))
 				enddo
-			//	U_Log2 ('info', '_dVctSafra depois de verificar se eh data valida: ' + dtoc (_dVctSafra))
 				if se2 -> e2_vencrea != _dVctSafra
 					U_Log2 ('info', '[' + procname () + '] e2_parcela ' + se2 -> e2_parcela + ': alterando e2_vencrea de ' + dtoc (se2 -> e2_vencrea) + ' para ' + dtoc (_dVctSafra))
 				endif
@@ -555,10 +558,7 @@ static function _AjSE2 ()
 				msunlock ()
 				se2 -> (dbskip ())
 			enddo
-//		endif
 		else
-	//	U_Log2 ('info', '[' + procname () + '] ponto de entrada MTCOLSE2 implementado. No vou mexer nas datas e valores das duplicatas de safra. Somente historicos.')
-//		if sf1 -> f1_tipo == "N" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) .and. IsInCallStack ("U_VA_RUSN")
 			if type ('_aParPgSaf') == 'A'  // Variavel criada no programa VA_RUSN().
 				U_Log2 ('info', '[' + procname () + '] Ajustando historicos dos titulos de nota de compra de safra (valores e datas jah devem ter sido gerados via ponto de entrada MTCOLSE2).')
 				se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
@@ -575,9 +575,72 @@ static function _AjSE2 ()
 				next
 			endif
 		endif
+
+		// Contranotas de compra de safra descontam, por padrao, o FUNRURAL do fornecedor. Mas nao queremos descontar dos associados.
+		// Por isso posiciono no primeiro titulo da nota, que vai ser o titulo pai do FUNRURAL.
+		se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
+		if se2 -> (dbseek (xfilial ("SE2") + sf1 -> f1_fornece + sf1 -> f1_loja + sf1 -> f1_serie + sf1 -> f1_doc, .T.))
+			if se2 -> e2_parcCSS != ''  // Se este titulo gerou FUNRURAL...
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += "SELECT SE2.R_E_C_N_O_"
+				_oSQL:_sQuery +=      ", E2_VALOR"
+				_oSQL:_sQuery +=      ", dbo.VA_FTIPO_FORNECEDOR_UVA ('" + se2 -> E2_FORNECE + "', '" + se2 -> E2_LOJA + "', '" + dtos (se2-> E2_EMISSAO) + "')"
+				_oSQL:_sQuery +=      ", A2_TIPO"
+				_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE2") + " SE2,"
+				_oSQL:_sQuery +=             RetSQLName ("SA2") + " SA2"
+				_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_  = ''"
+				_oSQL:_sQuery +=   " AND SE2.E2_FILIAL   = '" + xfilial ("SE2") + "'"
+				_oSQL:_sQuery +=   " AND SE2.E2_TITPAI   = '" + se2 -> e2_prefixo + se2 -> e2_num + se2 -> e2_parcela + se2 -> e2_tipo + se2 -> e2_fornece + se2 -> e2_loja + "'"
+				_oSQL:_sQuery +=   " AND SE2.E2_TIPO     = 'TX'"
+				_oSQL:_sQuery +=   " AND SA2.D_E_L_E_T_  = ''"
+				_oSQL:_sQuery +=   " AND SA2.A2_FILIAL   = '" + xfilial ("SA2") + "'"
+				_oSQL:_sQuery +=   " AND SA2.A2_COD      = '" + se2 -> e2_fornece + "'"
+				_oSQL:_sQuery +=   " AND SA2.A2_LOJA     = '" + se2 -> e2_loja + "'
+				_oSQL:Log ()
+				_aRetFUNRU = aclone (_oSQL:Qry2Array (.f., .f.))
+				if len (_aRetFUNRU) > 0 .and. _aRetFUNRU [1, 1] >= 0
+					U_Log2 ('debug', 'Achei tit.funrural')
+
+					// Se for associado, nao quero descontar dele o FUNRURAL.
+					if alltrim (upper (_aRetFUNRU [1, 3])) == 'ASSOCIADO' .or. alltrim (upper (_aRetFUNRU [1, 3])) == 'EX ASSOCIADO'
+						if alltrim (upper (_aRetFUNRU [1, 4])) == 'F'  // Somente associados 'pessoa fisica'. Colleoni, maio/2021
+							// Copia o valor do FUNRURAL, apage o titulo correspondente e soma o valor ao titulo original.
+							begin transaction
+
+							reclock ("SE2", .F.)
+							se2 -> e2_valor  += _aRetFUNRU [1, 2]
+							se2 -> e2_saldo  += _aRetFUNRU [1, 2]
+							se2 -> e2_vlcruz += _aRetFUNRU [1, 2]
+							msunlock ()
+
+							// Grava evento para posterior consulta.
+							_oEvento := ClsEvent ():New ()
+							_oEvento:Alias = 'SE2'
+							_oEvento:Texto = 'Acrescentando vlr.FUNRURAL ($' + cvaltochar (_aRetFUNRU [1, 2]) + ') ao vlr.orig.por que nao queremos descontar do associado.'
+							_oEvento:NFEntrada = se2 -> e2_num
+							_oEvento:SerieEntr = se2 -> e2_prefixo
+							_oEvento:CodEven   = 'SE20031
+							_oEvento:Fornece   = se2 -> e2_fornece
+							_oEvento:LojaFor   = se2 -> e2_loja
+							_oEvento:ParcTit   = se2 -> e2_parcela
+							_oEvento:Grava ()
+
+							end transaction
+						else
+							U_Log2 ('info', 'Fornecedor eh associado, mas nao eh pessoa fisica. Vou deixar o desconto do FUNRURAL.')
+						endif
+					else
+						U_Log2 ('info', 'Fornecedor nao eh associado. Vou deixar o desconto do FUNRURAL.')
+					endif
+				endif
+			endif
+		endif
 	endif
 return
-//
+
+
+
 // -----------------------------------------------------------------------------------------------------
 // Grava dados adicionais para posterior uso na impressao da nota / envio para NF eletronica.
 static function _DadosAdic ()

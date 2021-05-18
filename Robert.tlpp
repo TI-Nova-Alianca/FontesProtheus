@@ -27,7 +27,7 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '07' modulo 'FIN'
+		prepare environment empresa '01' filial '03' modulo 'FIN'
 		private cModulo   := 'FIN'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -73,7 +73,7 @@ static function _AndaLogo ()
 //	local _nDado     := 0
 //	local _aCargas   := {}
 //	local _nCarga    := 0
-//	local _i         := 0
+	local _i         := 0
 //	local _sError    := ''
 //	local _sWarning  := ''
 //	local _oCtaCorr  := NIL
@@ -107,7 +107,7 @@ static function _AndaLogo ()
 				
 				// Grava evento de alteracao
 				_oEvento := ClsEvent():new ()
-				_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), '', .F.)
+				_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 10007 - Calcular FUNRURAL', .F.)
 
 				reclock ("SB1", .f.)
 				sb1 -> B1_CONTSOC = m->B1_CONTSOC
@@ -128,9 +128,8 @@ static function _AndaLogo ()
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SA2") + " SA2 "
 	_oSQL:_sQuery +=  " WHERE SA2.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND SA2.A2_FILIAL = '" + xfilial ("SA2") + "'"
-//	_oSQL:_sQuery +=    " AND (SA2.A2_MSBLQL != '2' or SA2.A2_ATIVO != 'S')"
 	_oSQL:_sQuery +=    " AND EXISTS (SELECT * FROM VA_VNOTAS_SAFRA WHERE ASSOCIADO = SA2.A2_COD AND LOJA_ASSOC = SA2.A2_LOJA)"
-	_oSQL:_sQuery +=    " AND (A2_RECINSS != 'S' OR A2_TPESSOA != 'PF')"
+	_oSQL:_sQuery +=    " AND (A2_RECINSS != 'S' OR A2_TPESSOA != 'PF' OR A2_TIPORUR != 'F')"
 	_oSQL:_sQuery +=  " ORDER BY A2_COD"
 	_oSQL:Log ()
 	_aDados = _oSQL:Qry2Array ()
@@ -142,26 +141,83 @@ static function _AndaLogo ()
 		regtomemory ("SA2", .F., .F.)
 		m->A2_RECINSS = 'S'
 		m->A2_TPESSOA = 'PF'
+		m->A2_TIPORUR = 'F'  // Senao, nao calcula FUNRURAL
 
 		// Grava evento de alteracao
 		_oEvento := ClsEvent():new ()
-		_oEvento:AltCadast ("SA2", m->a2_cod + m->a2_loja, sa2 -> (recno ()), '', .F.)
+		_oEvento:AltCadast ("SA2", m->a2_cod + m->a2_loja, sa2 -> (recno ()), 'GLPI 10007 - Calcular FUNRURAL', .F.)
 
 		reclock ("SA2", .f.)
 		sa2 -> a2_recinss = m->a2_recinss
 		sa2 -> A2_TPESSOA = m->A2_TPESSOA
+		sa2 -> A2_TIPORUR = m->A2_TIPORUR
 		msunlock ()
 		//exit
 	next
 
+	// Ajusta cadastro de TES em lote (apenas aqueles que sao usados na compra de safra)
+	sf4 -> (dbsetorder (1))
+	sf4 -> (dbgotop ())
+	do while ! sf4 -> (eof ())
+		if sf4 -> f4_codigo $ '310/311/312' .and. (sf4->F4_CONTSOC != '1' .or. sf4->F4_ALSENAR != 0.2 .or. sf4->F4_BSRURAL != '2')
+			u_log2 ('info', 'Verificando TES ' + sf4 -> f4_codigo)
+				
+			// Cria variaveis para uso na gravacao do evento de alteracao
+			regtomemory ("SF4", .F., .F.)
+			m->F4_CONTSOC = '1'
+			m->F4_ALSENAR = 0.2
+			m->F4_BSRURAL = '2'
+				
+			// Grava evento de alteracao
+			_oEvento := ClsEvent():new ()
+			_oEvento:AltCadast ("SF4", m->f4_codigo, sf4 -> (recno ()), 'GLPI 10007 - Calcular FUNRURAL', .F.)
+
+			reclock ("SF4", .f.)
+			SF4->F4_CONTSOC = m->F4_CONTSOC
+			SF4->F4_ALSENAR = m->F4_ALSENAR
+			SF4->F4_BSRURAL = m->F4_BSRURAL
+			msunlock ()
+		endif
+		sf4 -> (dbskip ())
+	enddo
+
+	// Ajusta cadastro de naturezas em lote (apenas aquelas que sao usadas na compra de safra)
+	sed -> (dbsetorder (1))
+	sed -> (dbgotop ())
+	do while ! sed -> (eof ())
+		if alltrim (sed -> ed_codigo) $ '120201/120209/120236' .and. (sed->ED_CALCINS != 'N' .or. sed->ED_PERCINS != 0 .or. sed->ED_BASEINS != 0 .or. sed->ED_DEDINSS != '2')
+			u_log2 ('info', 'Verificando natureza ' + sed -> ed_codigo)
+				
+			// Cria variaveis para uso na gravacao do evento de alteracao
+			regtomemory ("SED", .F., .F.)
+			m->ED_CALCINS = 'N'
+			m->ED_PERCINS = 0
+			m->ED_BASEINS = 0
+			m->ED_DEDINSS = '2'  // Em todos os testes que fizemos, 1 ou 2 sempre deduzia.
+				
+			// Grava evento de alteracao
+			_oEvento := ClsEvent():new ()
+			_oEvento:AltCadast ("SED", m->ed_codigo, sed -> (recno ()), 'GLPI 10007 - Calcular FUNRURAL', .F.)
+
+			reclock ("SED", .f.)
+			sed->ED_CALCINS = m->ED_CALCINS
+			sed->ED_PERCINS = m->ED_PERCINS
+			sed->ED_BASEINS = m->ED_BASEINS
+			sed->ED_DEDINSS = m->ED_DEDINSS
+			msunlock ()
+		endif
+		sed -> (dbskip ())
+	enddo
+
+	_sArqLog := 'VA_GNF2_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 	Private cPerg   := "VAGNF2"
-	U_GravaSX1 (cPerg, '01', '002389')     // Produtor inicial
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
 	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', '004444')    // Produtor final
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
 	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
 	U_GravaSX1 (cPerg, '05', '2021') // Safra referencia
 	U_GravaSX1 (cPerg, '06', 'B')     // Parcelas sep.barras (bco=todas)
-	U_GravaSX1 (cPerg, '07', 'C')    // Grupo pagto
+	U_GravaSX1 (cPerg, '07', 'B')    // Grupo pagto
 	U_GravaSX1 (cPerg, '08', 3)      // Geracao por DCO: {"Com DCO", "Sem DCO", "Todos"}
 	U_GravaSX1 (cPerg, '09', 3)      // fina/comum: {"Comum", "Fina", "Todas"}
 	U_GravaSX1 (cPerg, '10', 2)      // tipo NF: {"Normais", "Compl.preco"}

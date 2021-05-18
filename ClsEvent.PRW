@@ -50,8 +50,8 @@
 //                      - Implementado metodo GravaNovo().
 // 18/04/2021 - Robert  - Grava nome e metodo da classe no arquivo de log.
 // 15/05/2021 - Claudia - Criada função para typo de campo para tirar do loop, bug R27. GLPI: 8825
+// 17/05/2021 - Robert  - Grava ::Texto e nao mais _sTextoZN no arquivo de log.
 //
-// ---------------------------------------------------------------------------------------------------
 
 #include "protheus.ch"
 
@@ -200,7 +200,7 @@ METHOD Grava () Class ClsEvent
 		::Chave = ::CodAlias
 	EndIf	
 	
-	u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Gravando evento ' + dtoc (::DtEvento) + ' ' + ::HrEvento + ' ' + _sTextoZN)
+	u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Gravando evento ' + dtoc (::DtEvento) + ' ' + ::HrEvento + ' ' + ::Texto)
 	
 	reclock ("SZN", .T.)
 	SZN -> zn_filial  = ::Filial

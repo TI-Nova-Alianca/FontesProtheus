@@ -96,7 +96,7 @@ user function BatOcor ()
 		U_Semaforo (_nLock)
 	endif
 
-	_oBatch:Mensagens += cvaltochar (_nQtArqImp) + ' arq.lidos; ' + cvaltochar (_nQtArqDup) + ' arq.ja importados; ' + cvaltochar (_nQtArqErr) + ' arq.c/erro.'
+	_oBatch:Mensagens += cvaltochar (_nQtArqImp) + ' arq.lidos; ' + cvaltochar (_nQtArqDup) + ' arq.ja importados; ' + cvaltochar (_nQtArqErr) + ' arq.c/probl.'
 
 	U_ML_SRArea (_aAreaAnt)
 return (_oBatch:Retorno == 'N')
