@@ -132,13 +132,10 @@ Static Function _Gera03 ()
 	local _sMsgContr := ""
 	local _aItens    := {}
 	local _sNfEntr   := {}
-//	local _sNfOri    := ""
 	local _sNfProd   := {}
 	local _lPreNFOk  := .F.
-//	local _lFornOk   := .F.
 	local _nPorDCO   := 0
 	local _aPreNF    := {}
-//	local _aNfCprOri := {}
 	local _sCondPag  := ""
 	local _sParcela  := ""
 	local _aFornec   := {}
@@ -239,7 +236,7 @@ Static Function _Gera03 ()
 			_sFornIni := _sFornFim := _aFornec [_nFornec, 1]
 			_sLojaIni := _sLojaFim := _aFornec [_nFornec, 2]
 
-			u_log2 ('info', 'Iniciando fornecedor ' + _sFornIni)
+			u_log2 ('info', 'Iniciando fornecedor ' + _sFornIni + ' ' + _aFornec [_nFornec, 3])
 			incproc ('Associado ' + _sFornIni + '/' + _sLojaIni + '(' + cvaltochar (_nFornec) + ' de ' + cvaltochar (len (_aFornec)) + ')')
 
 			// Busca pre-notas para geracao das nf de compra da uva.
@@ -542,297 +539,16 @@ Static Function _Gera03 ()
 					_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + _sMsgNfZZ9
 				endif
 	
-			//	_lContinua = _GeraNota ("N", sa2 -> a2_cod, sa2 -> a2_loja, _aItens, _sMsgContr, _sSerie, sa2 -> a2_est, _sDCO, _aPreNF, _sSafra, _sCondPag, _sParcela, _sGrpZZ9)
-	//			_GeraNota ("N", sa2 -> a2_cod, sa2 -> a2_loja, _aItens, _sMsgContr, _sSerie, sa2 -> a2_est, _sDCO, _aPreNF, _sSafra, _sCondPag, _sParcela, _sGrpZZ9)
 				_GeraNota (_sTipoNF, sa2 -> a2_cod, sa2 -> a2_loja, _aItens, _sMsgContr, _sSerie, sa2 -> a2_est, _sDCO, _aPreNF, _sSafra, _sCondPag, _sParcela, _sGrpZZ9)
 
-				U_Log2 ('aviso', 'caindo fora do primeiro loop por que quero gerar uma nota por vez.')
-				exit
+		//		U_Log2 ('aviso', 'caindo fora do primeiro loop por que quero gerar uma nota por vez.')
+		//		exit
 			enddo
-			U_Log2 ('aviso', 'caindo fora do segundo loop por que quero gerar uma nota por vez.')
-			exit
+		//	U_Log2 ('aviso', 'caindo fora do segundo loop por que quero gerar uma nota por vez.')
+		//	exit
 		next
 
 
-/*
-	elseif _lContinua .and. _sTipoNF == "C"  // Complementos de preco.
-
-
-
-		//u_help ('nao funcionou gravacao D1_VACONDU para nota tipo C em 13/11/2017')
-
-		// Soh para me obrigar a revisar anualmente...
-		if _sSafra > '2019'
-			u_help ("revisar rotina de compl. preco para esta safra")
-			U_HELP ("NAS COMPRAS REFIZ LOOP NAS PRE-NORAS POR QUE TEVE CASO DE COMPRAR SOMENTE 1 VARIEDADE DA PRE-NOTA")
-			return
-		endif
-
-
-		// Monta array com os fornecedores ordenados por nome, para facilitar a posterior separacao das notas.
-		_oSQL := ClsSQL():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT DISTINCT ZZ9_FORNEC, ZZ9_LOJA, A2_NOME, A2_VACORIG"
-		_oSQL:_sQuery +=   " FROM " + RetSQLName ("ZZ9") + " ZZ9, "
-		_oSQL:_sQuery +=              RetSQLName ("SA2") + " SA2 "
-		_oSQL:_sQuery +=  " WHERE SA2.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=    " AND SA2.A2_COD     = ZZ9_FORNEC"
-		_oSQL:_sQuery +=    " AND SA2.A2_LOJA    = ZZ9_LOJA"
-		_oSQL:_sQuery +=    " AND ZZ9.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=    " AND ZZ9_FILIAL     = '" + xfilial ("ZZ9") + "'"
-		_oSQL:_sQuery +=    " AND ZZ9_SAFRA      = '" + _sSafra + "'"
-		if ! empty (_sParcelas)
-			_oSQL:_sQuery +=    " AND ZZ9_PARCEL     IN " + FormatIn (_sParcelas, '/')
-		endif
-		_oSQL:_sQuery +=    " AND ZZ9_FORNEC + ZZ9_LOJA BETWEEN '" + _sFornIni + _sLojaIni + "' AND '" + _sFornFim + _sLojaFim + "'"
-		_oSQL:_sQuery +=    " AND ZZ9_NFCOMP     = ''"
-		_oSQL:_sQuery +=  " ORDER BY A2_VACORIG, A2_NOME, ZZ9_FORNEC, ZZ9_LOJA"
-		_oSQL:Log ()
-		_aFornec = aclone (_oSQL:Qry2Array (.F., .F.))
-		u_log (_aFornec)
-		procregua (len (_aFornec))
-		for _nFornec = 1 to len (_aFornec)
-			_sFornIni := _sFornFim := _aFornec [_nFornec, 1]
-			_sLojaIni := _sLojaFim := _aFornec [_nFornec, 2]
-
-			zz9 -> (dbsetorder (3))  // ZZ9_FILIAL+ZZ9_FORNEC+ZZ9_LOJA+ZZ9_SAFRA+ZZ9_PARCEL+ZZ9_PRE_NF
-			zz9 -> (dbseek (xfilial ("ZZ9") + _sFornIni + _sLojaIni, .T.))
-			do while _lContinua ;
-				.and. !zz9 -> (eof ()) ;
-				.and.  zz9 -> zz9_filial == xfilial ("ZZ9") ;
-				.and.  zz9 -> zz9_fornec + zz9 -> zz9_loja <= _sFornFim + _sLojaFim
-
-				if zz9 -> zz9_safra != _sSafra
-					zz9 -> (dbskip ())
-					loop
-				endif
-				if ! empty (_sParcelas) .and. ! zz9 -> zz9_parcel $ _sParcelas
-					zz9 -> (dbskip ())
-					loop
-				endif
-
-				// Verifica fornecedor.
-				sa2 -> (dbsetorder (1))
-				if ! sa2 -> (dbseek (xfilial ("SA2") + zz9 -> zz9_fornec + zz9 -> zz9_loja, .F.))
-					u_help ("Fornecedor '" + zz9 -> zz9_fornec + "/" + zz9 -> zz9_loja + "' nao cadastrado.")
-					_lContinua = .F.
-					zz9 -> (dbskip ())
-					loop
-				endif
-
-//				_oAssoc := ClsAssoc():New (zz9 -> zz9_fornec, zz9 -> zz9_loja)
-//				if zz9 -> zz9_fornec + zz9 -> zz9_loja != '00136901'  // Livramento
-//					if valtype (_oAssoc) != "O" .or. (!_oAssoc:EhSocio (dDataBase) .and. empty (_oAssoc:DtSaida (dDataBase)))  // Ex-associado pode ainda ter a safra para receber.
-//						u_help ("Fornecedor '" + zz9 -> zz9_fornec + "/" + zz9 -> zz9_loja + "' nao e' associado e nem ex-associado.")
-//						_lContinua = .F.
-//						zz9 -> (dbskip ())
-//						loop
-//					endif
-//				endif
-
-				if empty (zz9 -> zz9_tes)
-					u_help ("TES para geracao da nota deve ser informado.")
-					_lContinua = .F.
-					zz9 -> (dbskip ())
-					loop
-				endif
-
-				if empty (sa2 -> a2_conta)
-					u_help ("Fornecedor '" + zz9 -> zz9_fornec + "/" + zz9 -> zz9_loja + "' sem conta contabil.")
-					_lContinua = .F.
-					zz9 -> (dbskip ())
-					loop
-				endif
-	
-				u_log ('Iniciando fornecedor ' + zz9 -> zz9_fornec + '/' + zz9 -> zz9_loja)
-	
-				// Controla quebra por fornecedor, pois cada registro do ZZ9 equivale a um registro
-				// de NF de entrada de uva do SD1, mas agora devo somar os valores por fornecedor.
-				_sFornece  = zz9 -> zz9_fornec
-				_sLoja     = zz9 -> zz9_loja
-				_sParcela  = zz9 -> zz9_parcel
-				_sZZ9NFOri = zz9 -> zz9_nfori
-				_aItens    = {}
-				_lFornOk   = .T.
-				_aPreNF    = {}
-				_sNfOri    = ""
-				_sMsgNfZZ9    = ''
-				do while _lContinua ;
-					.and. !zz9 -> (eof ()) ;
-					.and.  zz9 -> zz9_filial == xfilial ("ZZ9") ;
-					.and.  zz9 -> zz9_fornec == _sFornece ;
-					.and.  zz9 -> zz9_loja   == _sLoja ;
-					.and.  zz9 -> zz9_safra  == _sSafra ;
-					.and.  zz9 -> zz9_parcel == _sParcela ;
-					.and.  zz9 -> zz9_nfori  == _sZZ9NFOri  // Em 25/05/18 a SEFAZ jah nao aceitou mais notas referenciando mais de uma NF origem
-	
-					u_log ('pre-nf:', zz9 -> zz9_pre_nf, 'parcela:', zz9 -> zz9_parcel)
-	
-					if ! empty (zz9 -> zz9_nfcomp)  // Nota de compra jah gerada.
-						u_log ('nf jah gerada')
-						zz9 -> (dbskip ())
-						loop
-					endif
-					if ! empty (_sVariNao) .and. alltrim (zz9 -> zz9_produt) $ _sVariNao
-						u_log ("Variedade consta no parametro 'nao gerar para estas variedades'.")
-						zz9 -> (dbskip ())
-						loop
-					endif
-					if ! empty (_sVariSim) .and. ! alltrim (zz9 -> zz9_produt) $ _sVariSim
-						u_log ("Variedade nao consta no parametro 'gerar apenas estas variedades'.")
-						zz9 -> (dbskip ())
-						loop
-					endif
-					if zz9 -> zz9_tiponf != _sTipoNF
-						u_log ('tipo nf diferente')
-						zz9 -> (dbskip ())
-						loop
-					endif
-					if empty (zz9 -> zz9_grau) .and. zz9 -> zz9_fornec != '001369'
-						u_help ("Grau nao informado na pre-nf '" + zz9 -> zz9_pre_nf + "'.")
-						_lFornOk = .F.
-						zz9 -> (dbskip ())
-						loop
-					endif
-					if zz9 -> zz9_vunit <= 0
-						u_help ("Problemas no(s) valor(es) unitario(s) da pre-nf '" + zz9 -> zz9_pre_nf + "'.")
-						_lFornOk = .F.
-						zz9 -> (dbskip ())
-						loop
-					endif
-		
-					// Verifica produto
-					sb1 -> (dbsetorder (1))
-					if ! sb1 -> (dbseek (xfilial ("SB1") + zz9 -> zz9_produt, .F.))
-						u_help ("Produto '" + zz9 -> zz9_produt + "' nao cadastrado.")
-						_lFornOk = .F.
-						zz9 -> (dbskip ())
-						loop
-					endif
-					if _sVarUva == 1 .and. sb1 -> b1_varuva != "C"
-						u_log ('varuva')
-						zz9 -> (dbskip ())
-						loop
-					endif
-					if _sVarUva == 2 .and. sb1 -> b1_varuva != "F"
-						u_log ('varuva')
-						zz9 -> (dbskip ())
-						loop
-					endif
-					if zz9 -> zz9_fornec + zz9 -> zz9_loja != '00136901'  // Livramento
-						if sb1 -> b1_varuva == "F" .and. sb1 -> b1_vafcuva == 'F' .and. empty (zz9 -> zz9_classe) .and. empty (zz9 -> zz9_clabd)
-							u_help ("Classificacao da uva nao informada na pre-nf '" + zz9 -> zz9_pre_nf + "'.")
-							_lFornOk = .F.
-							zz9 -> (dbskip ())
-							loop
-						endif
-					endif
-	
-					// Verificacoes ref. DCO
-					if (_nPorDCO == 1 .and. empty (zz9 -> zz9_dco)) .or. (_nPorDCO == 2 .and. !empty (zz9 -> zz9_dco))
-						u_log ('dco')
-						zz9 -> (dbskip ())
-						loop
-					endif
-					if zz9 -> zz9_tiponf == "C"
-						if empty (zz9 -> zz9_preori) .and. empty (zz9 -> zz9_nfori)
-							u_help ("NF de complemento sem NF origem ou pre-nota original informada (pre-nf '" + zz9 -> zz9_pre_nf + "').")
-							_lFornOk = .F.
-							zz9 -> (dbskip ())
-							loop
-						endif
-					endif
-						
-					// Alimenta lista de mensagens para a nota.
-					if ! empty (zz9 -> zz9_msgNF) .and. ! alltrim (zz9 -> zz9_msgNF) $ _sMsgNfZZ9
-						_sMsgNFZZ9 += ' ' + alltrim (zz9 -> zz9_msgNF)
-					endif
-
-					// Mantem lista de pre-notas atendidas
-					if ascan (_aPreNF, zz9 -> zz9_pre_NF) == 0
-						aadd (_aPreNF, zz9 -> zz9_pre_NF)
-					endif
-	
-					// Busca uma nota original valida, para uso no D1_NFORI. Jah alimenta lista das notas
-					// originais para o campo de dados adicionais.
-					if ! empty (zz9 -> zz9_preori)
-						_aNfCprOri = aclone (_NfCprOri ())
-					else
-						_aNfCprOri = {zz9 -> zz9_nfori, zz9 -> zz9_serior, zz9 -> zz9_itemor}
-					endif
-					if len (_aNFCprOri) == 0
-						u_help ("Nao encontrei NF/serie/item de compra para usar como NF/serie/item original na nota de complemento.")
-						_lFornOk = .F.
-						zz9 -> (dbskip ())
-						loop
-					endif
-					if ! empty (_aNfCprOri [1]) .and. ! alltrim (_aNfCprOri [1]) $ _sNFOri
-						_sNFOri += alltrim (_aNfCprOri [1]) + ","
-					endif
-
-					// Acumula os valores por produto.
-//					_nItem = ascan (_aItens, {|_aVal| _aVal [1] == zz9 -> zz9_produt ;
-//					                            .and. _aVal [3] == zz9 -> zz9_grau ;
-//					                            .and. _aVal [4] == zz9 -> zz9_classe})
-//					if _nItem == 0
-//						aadd (_aItens, {zz9 -> zz9_produt, sb1 -> b1_desc, zz9 -> zz9_grau, zz9 -> zz9_classe, zz9 -> zz9_clabd, 0, 0, _aNfCprOri [1], _aNfCprOri [2], _aNfCprOri [3], zz9 -> zz9_conduc})
-//						_nItem = len (_aItens)
-//					endif
-//					_aItens [_nItem, 6] += zz9 -> zz9_vunit
-//					if (empty (_aItens [_nItem, 7]) .or. empty (_aItens [_nItem, 9])) .and. ! empty (_aNfCprOri [1])  // Caso pre-nf a anterior tenha ficado sem NF original
-//						_aItens [_nItem,  8] = _aNfCprOri [1]  // NF
-//						_aItens [_nItem,  9] = _aNfCprOri [2]  // Serie
-//						_aItens [_nItem, 10] = right (alltrim (_aNfCprOri [3]), 2)  // Item
-//					endif
-					_nItem = ascan (_aItens, {|_aVal| _aVal [.ItensProduto]    == zz9 -> zz9_produt ;
-					                            .and. _aVal [.ItensGrau]       == zz9 -> zz9_grau ;
-					                            .and. _aVal [.ItensClasEspald] == zz9 -> zz9_classe})
-					if _nItem == 0
-						aadd (_aItens, array (.ItensQtColunas))
-						_nItem = len (_aItens)
-						_aItens [_nItem, .ItensProduto] = zz9 -> zz9_produt
-						_aItens [_nItem, .ItensDescricao] = sb1 -> b1_desc
-						_aItens [_nItem, .ItensGrau]      = zz9 -> zz9_grau
-						_aItens [_nItem, .ItensClasEspald] = zz9 -> zz9_classe
-						_aItens [_nItem, .ItensClasLatada] = zz9 -> zz9_clabd
-						_aItens [_nItem, .ItensQuantidade] = 0
-						_aItens [_nItem, .ItensValorTotal] = 0
-						_aItens [_nItem, .ItensNFOri]      = _aNfCprOri [1]
-						_aItens [_nItem, .ItensSerieOri]   = _aNfCprOri [2]
-						_aItens [_nItem, .ItensItemOri]    = _aNfCprOri [3]
-						_aItens [_nItem, .ItensConducao]   = zz9 -> zz9_conduc
-						_aItens [_nItem, .ItensTES]        = zz9 -> zz9_tes
-					endif
-					_aItens [_nItem, .ItensValorTotal] += zz9 -> zz9_vunit  // Complemento nao tem quantidade, entao grava o valor total.
-					if (empty (_aItens [_nItem, .ItensNFOri]) .or. empty (_aItens [_nItem, .ItensSerieOri])) .and. ! empty (_aNfCprOri [1])  // Caso pre-nf a anterior tenha ficado sem NF original
-						_aItens [_nItem, .ItensNFOri]    = _aNfCprOri [1]  // NF
-						_aItens [_nItem, .ItensSerieOri] = _aNfCprOri [2]  // Serie
-						_aItens [_nItem, .ItensItemOri]  = _aNfCprOri [3]  // Item
-					endif
-
-					zz9 -> (dbskip ())
-				enddo
-	
-				u_log ("_lFornOk:", _lFornOk)
-	
-				// A nota pode jah ter sido gerada em processamento anterior ou pode ter sido detectado algum erro no fornecedor.
-				if len (_aItens) == 0 .or. ! _lFornOk
-					u_log ('sem itens')
-					loop
-				endif
-	
-				// Prepara dados adicionais
-				_sMsgContr = ""
-				_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Complem.valor ref.NNF entrada " + substr (_sNFOri, 1, len (_sNFOri) - 1)
-				if ! empty (_sMsgNfZZ9)
-					_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + _sMsgNfZZ9
-				endif
-	
-				_lContinua = _GeraNota ("C", _sFornece, _sLoja, _aItens, _sMsgContr, _sSerie, sa2 -> a2_est, "", _aPreNF, _sSafra, _sCondPag, _sParcela, _sGrpZZ9)
-				
-			enddo
-		next
-	*/
 	endif
 
 
@@ -852,47 +568,6 @@ Static Function _Gera03 ()
 Return
 
 
-/*
-// --------------------------------------------------------------------------
-// Busca a NF de compra que deverah ser considerada como NF original para a nota de complemento de preco.
-Static Function _NfCprOri ()
-	local _aRet := {"","",""}
-	local _oSQL := ClsSQL():New ()
-	
-	// Busca a contranota gerada para a pre-nota de origem.
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT D1_DOC, D1_SERIE, D1_ITEM"
-	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD1") + " SD1, "
-	_oSQL:_sQuery +=              RetSQLName ("ZZ9") + " ZZ9 "
-	_oSQL:_sQuery +=  " WHERE SD1.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=    " AND SD1.D1_FILIAL  = ZZ9_FILIAL"
-	_oSQL:_sQuery +=    " AND SD1.D1_FORNECE = ZZ9_FORNEC"
-	_oSQL:_sQuery +=    " AND SD1.D1_LOJA    = ZZ9_LOJA"
-	_oSQL:_sQuery +=    " AND SD1.D1_DOC     = ZZ9_NFCOMP"
-	_oSQL:_sQuery +=    " AND SD1.D1_SERIE   = ZZ9_SERCOM"
-	_oSQL:_sQuery +=    " AND SD1.D1_COD     = ZZ9_PRODUT"
-	_oSQL:_sQuery +=    " AND SD1.D1_GRAU    = ZZ9_GRAU"
-	_oSQL:_sQuery +=    " AND SD1.D1_PRM99   = ZZ9_CLASSE"
-	_oSQL:_sQuery +=    " AND ZZ9.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=    " AND ZZ9.ZZ9_FILIAL = '" + zz9 -> zz9_filial + "'"
-	_oSQL:_sQuery +=    " AND ZZ9.ZZ9_SAFRA  = '" + zz9 -> zz9_safra  + "'"
-	_oSQL:_sQuery +=    " AND ZZ9.ZZ9_FORNEC = '" + zz9 -> zz9_fornec + "'"
-	_oSQL:_sQuery +=    " AND ZZ9.ZZ9_LOJA   = '" + zz9 -> zz9_loja   + "'"
-	_oSQL:_sQuery +=    " AND ZZ9.ZZ9_PRODUT = '" + zz9 -> zz9_produt + "'"
-	_oSQL:_sQuery +=    " AND ZZ9.ZZ9_GRAU   = '" + zz9 -> zz9_grau   + "'"
-	_oSQL:_sQuery +=    " AND ZZ9.ZZ9_CLASSE = '" + zz9 -> zz9_classe + "'"
-	_oSQL:_sQuery +=    " AND ZZ9.ZZ9_PRE_NF = '" + zz9 -> zz9_PreOri + "'"
-	_aRet = aclone (_oSQL:Qry2Array (.f., .f.))
-	if len (_aRet) == 0
-		u_help ("Nao foi possivel definir NF original")
-		_aRet = {}
-	else
-		_aRet = aclone (_aRet[1])
-	endif
-return _aRet
-*/
-
-
 // --------------------------------------------------------------------------
 // Gera a nota de entrada com os dados informados.
 Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _sSerie, _sUF, _sDCO, _aPreNF, _sSafra, _sCondPag, _sParcela, _sGrpPagto)
@@ -909,8 +584,6 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 	local _nPreNF    := 0
 	local _nVlrUvas  := 0
 	private _aParPgSaf := {}  // Parcelas pre calculadas. Deixar PRIVATE para ser lida pelo ponto de entrada MTCOLSE2().
-
-//	u_logIni ()
 
 
 	// A partir de 2012 preciso informar uma NF de produtor rural referenciada. Como aqui sao misturadas
@@ -1093,7 +766,7 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 
 	// Gera entrada na conta corrente do associado, com base nos titulos gerados no financeiro.
 //	if _lContinua
-	if _lContinua .and. sf1 -> f1_fornece != '001369'
+	if _lContinua
 		_sQuery := ""
 		_sQuery += " SELECT E2_FILIAL, E2_FORNECE, E2_LOJA, E2_NOMFOR, E2_EMISSAO, E2_VENCREA, E2_NUM, E2_PREFIXO, E2_TIPO, E2_VALOR, E2_SALDO, E2_HIST, R_E_C_N_O_, E2_LA, E2_PARCELA,"
 		_sQuery +=        " ROW_NUMBER () OVER (ORDER BY E2_PARCELA) AS NUM_PARC"
@@ -1106,6 +779,7 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 		_sQuery +=    " AND E2_NUM     = '" + sf1 -> f1_doc + "'"
 		_sQuery +=    " AND E2_VACHVEX = ''"
 		_sQuery +=    " AND E2_FILIAL  = '" + xfilial ("SE2") + "'"
+		_sQuery +=    " AND dbo.VA_FTIPO_FORNECEDOR_UVA ('" + sF1 -> F1_FORNECE + "', '" + sF1 -> F1_LOJA + "', '" + dtos (sF1-> F1_EMISSAO) + "') IN ('ASSOCIADO', 'EX ASSOCIADO')"
 		_sQuery +=  " ORDER BY E2_PARCELA"
 		//u_log (_sQuery)
 		_sAliasQ = GetNextAlias ()
@@ -1153,47 +827,6 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 
 //	u_logFim ()
 return _lContinua
-
-
-/*
-// --------------------------------------------------------------------------
-// Valida condicao de pagamento
-static function _ValCond ()
-	local _lRet      := .T.
-	local _nLinha    := 1
-	local _sMsgVcto  := ''
-	local _nVcto	 := 0
-	local _aTestCond := condicao (100, mv_par11,, date ())
-
-	// Provavelmente precise ajustar isto para cada nova safra...
-	if _lRet
-		if mv_par05 == '2019' .and. left (dtos (date ()), 6) == '201904'  // Em abril estamos gerando a 'safrinha' por que a compra inicial jah foi feita.
-			if (mv_par07 == 'A' .and. len (_aTestCond) != 4) .or. (mv_par07 == 'B' .and. len (_aTestCond) != 8) .or. (mv_par07 == 'C' .and. len (_aTestCond) != 10)
-				_lRet = u_MsgNoYes ('Quantidade de parcelas (' + cvaltochar (len (_aTestCond)) + ') da condicao de pagamento incompativel com o grupo ZZ9 a gerar. Confirma?')
-			endif
-		else
-			if (mv_par07 == 'A' .and. len (_aTestCond) != 5) .or. (mv_par07 == 'B' .and. len (_aTestCond) != 9) .or. (mv_par07 == 'C' .and. len (_aTestCond) != 11)
-				_lRet = u_MsgNoYes ('Quantidade de parcelas (' + cvaltochar (len (_aTestCond)) + ') da condicao de pagamento incompativel com o grupo ZZ9 a gerar. Confirma?')
-			endif
-		endif
-	endif
-	if _lRet
-		for _nLinha = 2 to len (_aTestCond)
-			if left (dtos (_aTestCond [_nLinha, 1]), 6) <= left (dtos (_aTestCond [_nLinha - 1, 1]), 6)
-				_lRet = u_MsgNoYes ('Condicao de pagamento vai gerar mais de um vencimento no mesmo mes. Confirma?')
-			endif
-		next
-	endif
-	if _lRet
-		// Valida com o usuario os vencimentos a serem gerados.
-		_sMsgVcto = ''
-		for _nVcto = 1 to len (_aTestCond)
-			_sMsgVcto += dtoc (_aTestCond [_nVcto, 1]) + '  -  '
-		next
-		_lRet = U_MsgYesNo ("As notas serao geradas com a(s) seguinte(s) data(s) de vencimento:" + chr (10) + chr (13) + _sMsgVcto + chr (10) + chr (13) + "Confirma?", .T.)
-	endif
-return _lRet
-*/
 
 
 // --------------------------------------------------------------------------

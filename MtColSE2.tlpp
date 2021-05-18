@@ -24,15 +24,14 @@ user function MTColSE2 ()
 	local _aRet     := {}
 	local _nParc    := 0
 	local _nTotParc := 0
-	local _nPosVcto := 0
 	local _nPosParc := 0
 	local _nPosVcto := 0
 	local _nPosVlr  := 0
 	local _nPosINSS := 0
 
 	U_Log2 ('info', 'Iniciando ' + procname ())
-	U_Log2 ('debug', _aColsE2)
-	U_Log2 ('debug', _aColsE2[1])
+//	U_Log2 ('debug', _aColsE2)
+//	U_Log2 ('debug', _aColsE2[1])
 
 	// Este P.E. eh chamado 2 vezes: uma na gravacao da nota e outra na 'troca de pasta'.
 	// Parece que preciso ajustar no momento da troca de pasta, pois se fizer na segunda chamada, nao tem efeito.
@@ -49,7 +48,7 @@ user function MTColSE2 ()
 					_nPosVcto  = ascan (_aHeadSE2, {|_aVal| upper (alltrim (_aVal [2])) == 'E2_VENCTO'})
 					_nPosVlr   = ascan (_aHeadSE2, {|_aVal| upper (alltrim (_aVal [2])) == 'E2_VALOR'})
 					_nPosINSS  = ascan (_aHeadSE2, {|_aVal| upper (alltrim (_aVal [2])) == 'E2_INSS'})
-					U_Log2 ('debug', _aHeadSE2)
+					//U_Log2 ('debug', _aHeadSE2)
 					U_Log2 ('info', 'Ajustando parcelas para NF de safra.')
 					_aColsE2 := aclone (paramixb [1])
 					for _nParc = 1 to len (_aColsE2)
@@ -59,25 +58,18 @@ user function MTColSE2 ()
 					// Gera novas parcelas distribuindo o valor total conforme datas e percentuais especificados na _aParPgSaf.
 					for _nParc = 1 to len (_aParPgSaf)
 						aadd (_aRet, aclone (_aColsE2 [1]))
-						// _aRet [_nParc, 1] = chr (64 + _nParc)  // Gera letras a partir do 'A'.
 						_aRet [_nParc, _nPosParc] = chr (64 + _nParc)  // Gera letras a partir do 'A'.
-						// _aRet [_nParc, 2] = _aParPgSaf [_nParc, 2]
 						_aRet [_nParc, _nPosVcto] = _aParPgSaf [_nParc, 2]
-						
-						// distribuir por pecentual nao estah bom -->_aRet [_nParc, 3] = round (_aParPgSaf [_nParc, 2] * _nTotParc / 100, 2)
-						// distribuir por pecentual nao estah bom -->_aRet [_nParc, 3] = round (_aParPgSaf [_nParc, 3] * _nTotParc / 100, 2)
-						// _aRet [_nParc, 3] = _aParPgSaf [_nParc, 4]
-						_aRet [_nParc, _nPosVlr] = _aParPgSaf [_nParc, 4]
+						_aRet [_nParc, _nPosVlr]  = _aParPgSaf [_nParc, 4]
 
-/* ainda ta dando poblema com funrural
 						// A partir da segunda parcela nao deve restar nada de FUNRURAL
 						if _nParc > 1
-							U_Log2 ('debug', 'Zerando FUNRURAL da parcela ' + cvaltochar (_nParc))
+							U_Log2 ('debug', 'Zerando E2_INSS (FUNRURAL) da parcela ' + cvaltochar (_nParc) + ' pois deve constar apenas na primeira.')
 							_aRet [_nParc, _nPosINSS]  = 0
 						endif
-*/
+
 					next
-					U_Log2 ('debug', _aRet)
+				//	U_Log2 ('debug', _aRet)
 				endif
 			endif
 		endif
