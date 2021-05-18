@@ -173,6 +173,9 @@ static function _AndaLogo ()
 			_oEvento:AltCadast ("SF4", m->f4_codigo, sf4 -> (recno ()), 'GLPI 10007 - Calcular FUNRURAL', .F.)
 
 			reclock ("SF4", .f.)
+			SF4->F4_CONTSOC = m->F4_CONTSOC
+			SF4->F4_ALSENAR = m->F4_ALSENAR
+			SF4->F4_BSRURAL = m->F4_BSRURAL
 			msunlock ()
 		endif
 		sf4 -> (dbskip ())
@@ -206,10 +209,11 @@ static function _AndaLogo ()
 		sed -> (dbskip ())
 	enddo
 
+	_sArqLog := 'VA_GNF2_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 	Private cPerg   := "VAGNF2"
-	U_GravaSX1 (cPerg, '01', '012373')     // Produtor inicial
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
 	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', '012373')    // Produtor final
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
 	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
 	U_GravaSX1 (cPerg, '05', '2021') // Safra referencia
 	U_GravaSX1 (cPerg, '06', 'B')     // Parcelas sep.barras (bco=todas)

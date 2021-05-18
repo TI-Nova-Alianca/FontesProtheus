@@ -2,7 +2,14 @@
 // Data:      08/05/2009
 // Descricao: Gera notas fiscais de compra/complemento de uva da safra cfe. previsao do arquivo ZZ9.
 //            Criado com base no ML_GNFS de Jeferson Rech.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Gera notas fiscais de compra/complemento de uva da safra cfe. previsao do arquivo ZZ9.
+// #PalavasChave      #contranotas #safra
+// #TabelasPrincipais #ZZ9
+// #Modulos           #COOP
+
 // Historico de alteracoes:
 // 06/07/2009 - Robert - Arredonda valor total p/ 2 casas p/ compatibilizar com SFT, SF3, SE2, contabilizacao, SPED, etc...
 // 15/07/2009 - Robert - Tinha um dbskip indevido e perdia o primeiro registro de uma pre-nota quando nao houvesse sido
@@ -33,9 +40,8 @@
 // 15/02/2021 - Robert - Passa a prever parcelas via VA_RusPP.prw para manter consistencia com VA_RusN (GLPI 9389)
 // 29/03/2021 - Robert - Novo parametro funcao VA_RusPP (GLPI 9592).
 // 07/05/2021 - Robert - Gravacao campo ZI_SAFRA (GLPI 9891).
+// 18/05/2021 - Robert - Melhorias diversas FUNRURAL e complemento safra 2021 (GLPI 9891 e 10007).
 //
-
-//#include "tbiconn.ch"
 
 #XTranslate .ItensProduto    => 1
 #XTranslate .ItensDescricao  => 2
@@ -177,8 +183,13 @@ Static Function _Gera03 ()
 	
 		// Altera parametro "Mostra lctos contabeis" para "Nao" 
 		// e 'Contabiliza online' para 'sim' na tela de NF de entrada
-		U_GravaSX1 ("MTA103", "01", "2")
-		U_GravaSX1 ("MTA103", "06", "1")
+		if "TESTE" $ upper (GetEnvServer())  // na base teste nao quero contabilizar
+			U_GravaSX1 ("MTA103", "01", "2")
+			U_GravaSX1 ("MTA103", "06", "2")
+		else
+			U_GravaSX1 ("MTA103", "01", "2")
+			U_GravaSX1 ("MTA103", "06", "1")
+		endif
 
 		// Guarda parametros em variaveis especificas por que as chamadas de rotinas automaticas vai sobregrava-los.
 		_sFornIni = mv_par01
@@ -558,9 +569,10 @@ Static Function _Gera03 ()
 		u_help ("Processo finalizado. Notas geradas: de '" + _sNFIni + "' a '" + _sNFFim + "'")
 	endif
 		
-	// Notifica setor de RH (nao lembro agora para que precisam ficar sabendo, acho que tem a ver com FUNRURAL) e custos.
+	// Notifica interessados.
 	if _sNFIni != _sNFFim
-		U_ZZUNU ({'019', '023', '116', '052'}, ;  // Fiscal, RH e custos.
+	//	U_ZZUNU ({'019', '023', '116', '052'}, ;  // Fiscal, RH e custos.
+		U_ZZUNU ({'019', '116', '052'}, ;  // Fiscal, custos e contabilidade.
 		          "Geracao nota(s) de compra / complemento preco safra", ;
 		         "Aviso do sistema: foram geradas notas de compra / complemento de preco de safra na filial " + cFilAnt + chr (13) + chr (10) + ;
 		         "Notas geradas: de '" + _sNFIni + "' a '" + _sNFFim + "'")
