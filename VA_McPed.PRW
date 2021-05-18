@@ -12,7 +12,7 @@
 // #Modulos           #FAT 
 //
 // Historico de alteracoes:
-// 
+//
 // 28/01/2017 - Catia   - alteracao para incluir os % de frete e o % financeiro que nao considerava
 // 08/06/2017 - Catia   - alterado para buscar o percentual conforme a nova regra de rapel por cliente/linha/item
 // 01/12/2017 - Robert  - Mostra percentuais de comissao, frete e financeiro junto com os valores.
@@ -41,13 +41,14 @@
 // 27/01/2020 - Robert  - Quando a cond.pagto/TES nao gera duplicata, dava erro na leitura da maior data de vencimento.
 // 05/03/2020 - Andre   - Para calculo financeiro, testa se condição de pagamento é diferente de 007.
 // 14/08/2020 - Cláudia - Ajuste de Api em loop, conforme solicitação da versao 25 protheus. GLPI: 7339
-// 17/08/2020 - Robert  - Passa a buscar percentuais de frete na tabela GU9 (regioes fretes) e nao mais no E-Sales, nem historico do cliente (GLPI 8180).
+// 17/08/2020 - Robert  - Passa a buscar percentuais de frete na tabela GU9 (regioes fretes) e nao mais no E-Sales, 
+//                        nem historico do cliente (GLPI 8180).
+// 17/05/2021 - Claudia - Ajuste no calculo de margem frete. GLPI: 9883
 //
-
+// ------------------------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
 #include "rwmake.ch"
 
-// ------------------------------------------------------------------------------------------------------------------------
 User function VA_McPed (_lComTela, _lAtuFrt)
 	local _aAmbAnt  := U_SalvaAmb ()
 	local _aAreaAnt := U_ML_SRArea ()
@@ -55,7 +56,7 @@ User function VA_McPed (_lComTela, _lAtuFrt)
 	u_log2 ('info', 'Iniciando calculo de margem para o pedido ' + m->c5_num)
 	
 	_lComTela = iif (_lComTela == NIL, .T., _lComTela)
-//	processa ({|| _AndaLogo (_lComTela, _lAtuFrt)})
+
 	_AndaLogo (_lComTela, _lAtuFrt)
 
 	U_ML_SRArea (_aAreaAnt)
@@ -132,7 +133,6 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 
 	U_ArqTrb ("Cria", "_trb", _aCampos, {}, @_aArqTrb)
 
-
 	// Evento para mostrar/gravar historico de cotacao de frete.
 	_oEventoCF := ClsEvent():New ()
 
@@ -165,6 +165,7 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 			_oSQL:_sQuery +=   " AND ZN_CODEVEN = 'SC5008'"
 			_oSQL:_sQuery +=   " ORDER BY R_E_C_N_O_ DESC"  // Caso tenha mais de um evento, quero o mais recente.
 			_nRegSZN = _oSQL:RetQry (1, .F.)
+
 			if _nRegSZN > 0
 				szn -> (dbgoto (_nRegSZN))
 				_oEventoCF:Texto    = alltrim (szn -> zn_txt) //MSMM (SZN -> ZN_CODMEMO)
@@ -188,18 +189,11 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 				endif
 			next
 			_pfrete = m->c5_mvfre * 100 / _pfrete
-		else
-// 			nao queremos mais o historico do cliente. queremos encontrar na tabela GU9.
-//			if ! _lFrtNegoc
-//				_pfrete     := FBuscaCpo("SA1",1,XFILIAL("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_VAPFRE")
-//				_oEventoCF:Texto += 'Sem valor de frete. Buscando percentual de frete (' + cvaltochar (_pfrete) + ') no historico do cadastro do cliente (campo ' + alltrim (RetTitle ("A1_VAPFRE")) + ')' + chr (13) + chr (10)
-//			endif
 		endif
 	endif
 	u_log2 ('debug', 'Finalizei com _pfrete = ' + cvaltochar (_pfrete) + ' e m->c5_mvfre = ' + cvaltochar (m->c5_mvfre))
 
 	_wbaserapel := fBuscaCpo("SA1",1,xfilial("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_VABARAP")
-
 
 	// Calcula quantidade de 'meses completos' para aplicar % de acrescimo financeiro a cada 30 dias.
 	_nDataIni := 0
@@ -209,63 +203,62 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 	_DataInfo = 'N'
 	if .not. Empty(M->C5_DATA1)
 		_DataInfo = 'S'
-		//_nQtMeses = int ((M->C5_DATA1 - date ()) / 30)
 		_nDataIni = (M->C5_DATA1)
 		_nDataFim = (M->C5_DATA1)
 	endif
+
 	if .not. Empty(M->C5_DATA2)
 		_DataInfo = 'S'
-		//_nQtMeses = int ((M->C5_DATA2 - date ()) / 30)
 		_nDataFim = (M->C5_DATA2)
 	endif
+
 	if .not. Empty(M->C5_DATA3)
 		_DataInfo = 'S'
-		//_nQtMeses = int ((M->C5_DATA3 - date ()) / 30)
 		_nDataFim = (M->C5_DATA3)
 	endif
+
 	if .not. Empty(M->C5_DATA4)
 		_DataInfo = 'S'
-		//_nQtMeses = int ((M->C5_DATA4 - date ()) / 30)
 		_nDataFim = (M->C5_DATA4)
 	endif
+
 	if .not. Empty(M->C5_DATA5)
 		_DataInfo = 'S'
-		//_nQtMeses = int ((M->C5_DATA5 - date ()) / 30)
 		_nDataFim = (M->C5_DATA5)
 	endif
+
 	if .not. Empty(M->C5_DATA6)
 		_DataInfo = 'S'
-		//_nQtMeses = int ((M->C5_DATA6 - date ()) / 30)
 		_nDataFim = (M->C5_DATA6)
 	endif
+
 	if .not. Empty(M->C5_DATA7)
 		_DataInfo = 'S'
-		//_nQtMeses = int ((M->C5_DATA7 - date ()) / 30)
 		_nDataFim = (M->C5_DATA7)
 	endif
+
 	if .not. Empty(M->C5_DATA8)
 		_DataInfo = 'S'
-		//_nQtMeses = int ((M->C5_DATA8 - date ()) / 30)
 		_nDataFim = (M->C5_DATA8)
 	endif
+
 	if .not. Empty(M->C5_DATA9)
 		_DataInfo = 'S'
-		//_nQtMeses = int ((M->C5_DATA9 - date ()) / 30)
 		_nDataFim = (M->C5_DATA9)
 	endif
+
 	if .not. Empty(M->C5_DATAA)
 		_DataInfo = 'S'
-		//_nQtMeses = int ((M->C5_DATAA - date ()) / 30)
 		_nDataFim = (M->C5_DATAA)
 	endif
+
 	if .not. Empty(M->C5_DATAB)
 		_DataInfo = 'S'
-		//_nQtMeses = int ((M->C5_DATAB - date ()) / 30)
 		_nDataFim = (M->C5_DATAB)
 	endif
+
 	if .not. Empty(M->C5_DATAC)
 		_DataInfo = 'S'
-		//_nQtMeses = int ((M->C5_DATAC - date ()) / 30)
 		_nDataFim = (M->C5_DATAC)
 	endif
 
@@ -298,8 +291,8 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 	else
 		_nLoops = 1
 	endif
-	for _nLoop = 1 to _nLoops
 
+	for _nLoop = 1 to _nLoops
 		// Inicializa para buscar valor liquido do item no pedido
 		MaFisIni(M->C5_CLIENTE,;				// 1-Codigo Cliente/Fornecedor
 		M->C5_LOJACLI,;							// 2-Loja do Cliente/Fornecedor
@@ -314,7 +307,6 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 		_nitem:= 0
 		
 		For _ix := 1 To Len(aCols)
-
 			// Valida se a Linha Nao estiver deletada
 			_ValInclui := _RetType("Inclui")
 			_ValAltera := _RetType("Altera")
@@ -354,7 +346,6 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 				
 				// Soh grava na ultima passagem
 				if _nLoop == _nLoops
-
 					If FBuscaCpo("SF4",1,XFILIAL("SF4")+aCols[_ix,_nPosTes],"F4_DUPLIC") <> "N"
 						
 						// O valor do IPI esta embutido no preco - nao eh destacado
@@ -395,7 +386,8 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 							endcase
 						else
 							_trb -> c6_rapel   = 0
-						endif							
+						endif	
+
 						_trb -> c6_rapel2  = transform (c6_rapel, "@E 999999.99") + ' (' + alltrim (transform (_txrapel, "@E 99.9")) + '%)'
 						
 						// --- percentuais que faltavam para fechar a margem de bloqueio com o Mercanet
@@ -421,6 +413,7 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 						_nfrete += _trb -> c6_frete
 						_nfinan += _trb -> c6_finan
 						_ntotal += _trb -> c6_total
+
 					ElseIf XBONIF
 						// Soma o ICMS e o IPI da Bonificacao
 						_xTOTIMP := mafisret(_nitem,"IT_VALICM") + mafisret(_nitem,"IT_VALIPI")
@@ -526,44 +519,77 @@ return
 static function _CalcFrt ()
 	local _nRetFrt   := 0
 	local _oSQL      := NIL
-	local _aFrtUF    := {}
 	local _oEvtAnt   := NIL
 	local _nRegSZN   := 0
 	local _sTxtEvent := ''
 	local _nVlProdut := 0
 	local _nLinCols  := 0
+	local _x	     := 0
+	local _aGUL      := {}
+	local _aGU9      := {}
+	local _nFrete    := 0
 
-	_oSQL := ClsSQL ():New ()
+	_sFilial := m->c5_filial
+	_sEst    := m->c5_vaest
+	_sCEP    := Posicione("SA1",1, xFilial("SA1") + m->c5_cliente, "A1_CEP")
+
+	_oSQL  := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += "select GU9_VAPFRE"
-	_oSQL:_sQuery += "  from " + RetSQLName ("GU9") + " GU9 "
-	_oSQL:_sQuery += " where D_E_L_E_T_ != '*'"
-	_oSQL:_sQuery +=   " and GU9_FILIAL  = '" + xfilial ("GU9") + "'"
-	_oSQL:_sQuery +=   " and GU9_CDUF    = '" + m->c5_vaest + "'"
-	_oSQL:_sQuery +=   " and GU9_SIT     = '1'"  // 1=ativo;2=inativo
-	_oSQL:Log ()
-	_aFrtUF = aclone (_oSQL:Qry2Array (.F., .F.))
-	if len (_aFrtUF) == 0
-		_sTxtEvent += "Nao encontrei percentual de frete para a UF '" + m->c5_vaest +  "' na tabela de regioes de fretes (GU9)."
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 		GUL_VAPFRE "
+	_oSQL:_sQuery += " FROM " + RetSQLName ("GUL") 
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " AND GUL_FILIAL   = '" + _sFilial + "' "
+	_oSQL:_sQuery += " AND '" + _sCEP + "' BETWEEN GUL_CEPINI AND GUL_CEPFIM "
+	_aGUL := aclone (_oSQL:Qry2Array ())
+
+	// Se existir na tabela GUL -> 1º opção
+	If len(_aGUL) > 0
+		For _x := 1 to Len(_aGUL)
+			_nFrete := _aGUL[_x, 1]
+		Next
+
+		If _nFrete == 0
+			// Se não existir na GUL, busca da GU9 -> 2º opção
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " SELECT "
+			_oSQL:_sQuery += " 		GU9_VAPFRE "
+			_oSQL:_sQuery += " FROM " + RetSQLName ("GU9") 
+			_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+			_oSQL:_sQuery += " AND GU9_FILIAL   = '" + _sFilial + "'"
+			_oSQL:_sQuery += " AND GU9_CDUF     = '" + _sEst    + "'"
+			_oSQL:_sQuery += " AND GU9_SIT      = '1'"
+			_aGU9 := aclone (_oSQL:Qry2Array ())
+
+			For _x:=1 to Len(_aGU9)
+				_nFrete := _aGU9[_x, 1]
+			Next
+		EndIf
+	EndIf
+
+	If len(_aGUL) == 0 .or. len(_aGU9) == 0
+		_sTxtEvent += "Nao encontrei percentual de frete para a UF '" + _sEst +  "' e/ou CEP '"+ _sCEP +"' na tabela de regioes de fretes (GUL/GU9)."
 		u_help (_sTxtEvent,, .t.)
-	elseif len (_aFrtUF) > 1
-		_sTxtEvent += "Encontrei mais de um percentual de frete para a UF '" + m->c5_vaest +  "' na tabela de regioes de fretes (GU9)."
+	
+	ElseIf len(_aGUL) > 1 .or. len(_aGU9) > 1
+		_sTxtEvent += "Existe mais de um percentual de frete para a UF '" + _sEst +  "' e/ou CEP '"+ _sCEP +"' na tabela de regioes de fretes (GUL/GU9)."
 		u_help (_sTxtEvent,, .t.)
 	else
-
 		for _nLinCols = 1 to len (aCols)
 			u_log2 ('debug', GDFieldGet ("C6_VALOR", _nLinCols))
 			if ! GDDeleted (_nLinCols) .and. empty (GDFieldGet ("C6_BLOQ", _nLinCols))
 				_nVlProdut += GDFieldGet ("C6_VALOR", _nLinCols)
 			endif
 		next
-		//_nRetFrt = m->c5_vaVlFat * _aFrtUF [1, 1] / 100
+
 		u_log2 ('debug', 'vl prod:' + cvaltochar (_nVlProdut))
 		u_log2 ('debug', 'm->c5_vaVlFat:' + cvaltochar (m->c5_vaVlFat))
-		_nRetFrt = _nVlProdut * _aFrtUF [1, 1] / 100
+		_nRetFrt = _nVlProdut * _nFrete / 100
 	endif
-	if len (_aFrtUF) == 1
-		_sTxtEvent += "Percent.frete p/" + cvaltochar (m->c5_vaest) + " cfe.tabela regioes frete: " + cvaltochar (_aFrtUF [1, 1]) + " -> valor frete: " + alltrim (GetMv ('MV_SIMB1')) + " " + alltrim (transform (_nRetFrt, "@E 999,999,999.99"))
+
+	if _nFrete > 0
+		_sTxtEvent += "% frete p/" + cvaltochar (m->c5_vaest) + " e/ou " + _sCEP + " cfe.tabela regioes frete: " + cvaltochar (_nFrete) + " -> valor frete: " + alltrim (GetMv ('MV_SIMB1')) + " " + alltrim (transform (_nRetFrt, "@E 999,999,999.99"))
 	endif
 
 	if ! empty (_sTxtEvent)
@@ -576,23 +602,23 @@ static function _CalcFrt ()
 
 		// Elimina evento anterior, se houver
 		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := "SELECT R_E_C_N_O_"
-		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZN") + " SZN "
+		_oSQL:_sQuery := " SELECT R_E_C_N_O_"
+		_oSQL:_sQuery += " 		FROM " + RetSQLName ("SZN") + " SZN "
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND ZN_FILIAL  = '" + xfilial ("SZN") + "'"
-		_oSQL:_sQuery +=   " AND ZN_PEDVEND = '" + m->c5_num + "'"
-		_oSQL:_sQuery +=   " AND ZN_CODEVEN = 'SC5008'"
+		_oSQL:_sQuery += " AND ZN_FILIAL  = '" + xfilial ("SZN") + "'"
+		_oSQL:_sQuery += " AND ZN_PEDVEND = '" + m->c5_num + "'"
+		_oSQL:_sQuery += " AND ZN_CODEVEN = 'SC5008'"
 		_nRegSZN = _oSQL:RetQry (1, .F.)
+
 		if _nRegSZN > 0
 			_oEvtAnt := ClsEvent ():New ()
 			_oEvtAnt:RecnoSZN = _nRegSZN
 			_oEvtAnt:Exclui ()
 		endif
-		
+
 		// Grava o novo evento
 		_oEventoCF:Grava()
 	endif
-
 return _nRetFrt
 //
 // --------------------------------------------------------------------------
@@ -600,135 +626,79 @@ return _nRetFrt
 Static Function _RetType(_var)
 	_type := type(_var)
 Return _type
+//
+//
+//
+//
+// static function _CalcFrt ()
+// 	local _nRetFrt   := 0
+// 	local _oSQL      := NIL
+// 	local _aFrtUF    := {}
+// 	local _oEvtAnt   := NIL
+// 	local _nRegSZN   := 0
+// 	local _sTxtEvent := ''
+// 	local _nVlProdut := 0
+// 	local _nLinCols  := 0
 
-/*
-// --------------------------------------------------------------------------
-// Calcula valor do frete para posterior uso no calculo da margem de contribuicao.
-static function _CalcFrete ()
-	local _nRetFrt   := 0
-	local _aRetESal  := {}
-	local _lContinua := .T.
-//	local _nTentativ := 0
-	local _aCandidat := {}
-	local _nRetESal  := 0
-	local _nVlCota   := 0
-	local _nQtCota   := 0
-	local _sTxtEvent := ""
-	local _oEvtAnt   := NIL
-	local _nRegSZN   := 0
-	local _oSQL      := NIL
-	local _nCandidat := 0
+// 	_oSQL := ClsSQL ():New ()
+// 	_oSQL:_sQuery := ""
+// 	_oSQL:_sQuery += "select GU9_VAPFRE"
+// 	_oSQL:_sQuery += "  from " + RetSQLName ("GU9") + " GU9 "
+// 	_oSQL:_sQuery += " where D_E_L_E_T_ != '*'"
+// 	_oSQL:_sQuery +=   " and GU9_FILIAL  = '" + xfilial ("GU9") + "'"
+// 	_oSQL:_sQuery +=   " and GU9_CDUF    = '" + m->c5_vaest + "'"
+// 	_oSQL:_sQuery +=   " and GU9_SIT     = '1'"  // 1=ativo;2=inativo
+// 	_oSQL:Log ()
+// 	_aFrtUF = aclone (_oSQL:Qry2Array (.F., .F.))
+// 	if len (_aFrtUF) == 0
+// 		_sTxtEvent += "Nao encontrei percentual de frete para a UF '" + m->c5_vaest +  "' na tabela de regioes de fretes (GU9)."
+// 		u_help (_sTxtEvent,, .t.)
+// 	elseif len (_aFrtUF) > 1
+// 		_sTxtEvent += "Encontrei mais de um percentual de frete para a UF '" + m->c5_vaest +  "' na tabela de regioes de fretes (GU9)."
+// 		u_help (_sTxtEvent,, .t.)
+// 	else
 
-	// Verifica se o pedido tem dados suficientes para cotar o frete.
-	if _lContinua .and. !empty (m->c5_cliente) .and. ! empty (m->c5_lojaent) .and. ! empty (m->c5_pbruto) .and. ! empty (m->c5_volume1)  // Usuario pode ainda estar preenchendo o pedido.
-		sa1 -> (dbsetorder (1))
-		if ! sa1 -> (dbseek (xfilial ("SA1") + m->c5_cliente + m->c5_lojaent, .F.))
-			_sTxtEvent += "Cliente nao encontrado."
-			u_help ("Cliente nao encontrado.",, .t.)
-			_lContinua = .F.
-		endif
-	else
-		_sTxtEvent += "Pedido ainda nao tem dados suficientes para cotar frete."
-		u_help ("Pedido ainda nao tem dados suficientes para cotar frete.")
-		_lContinua = .F.
-	endif
+// 		for _nLinCols = 1 to len (aCols)
+// 			u_log2 ('debug', GDFieldGet ("C6_VALOR", _nLinCols))
+// 			if ! GDDeleted (_nLinCols) .and. empty (GDFieldGet ("C6_BLOQ", _nLinCols))
+// 				_nVlProdut += GDFieldGet ("C6_VALOR", _nLinCols)
+// 			endif
+// 		next
+// 		//_nRetFrt = m->c5_vaVlFat * _aFrtUF [1, 1] / 100
+// 		u_log2 ('debug', 'vl prod:' + cvaltochar (_nVlProdut))
+// 		u_log2 ('debug', 'm->c5_vaVlFat:' + cvaltochar (m->c5_vaVlFat))
+// 		_nRetFrt = _nVlProdut * _aFrtUF [1, 1] / 100
+// 	endif
+// 	if len (_aFrtUF) == 1
+// 		_sTxtEvent += "Percent.frete p/" + cvaltochar (m->c5_vaest) + " cfe.tabela regioes frete: " + cvaltochar (_aFrtUF [1, 1]) + " -> valor frete: " + alltrim (GetMv ('MV_SIMB1')) + " " + alltrim (transform (_nRetFrt, "@E 999,999,999.99"))
+// 	endif
 
-	if _lContinua
-		incproc ('Verificando transportadoras habilitadas')
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " select distinct A4_CGC"
-		_oSQL:_sQuery += "   from " + RetSQLName ("SA4") + " SA4  "
-		_oSQL:_sQuery += "  where SA4.D_E_L_E_T_ != '*'"
-		_oSQL:_sQuery += "    and A4_FILIAL      =  '" + xfilial ("SA4") + "'"
-		_oSQL:_sQuery += "    and A4_CGC         != ''"
-		_oSQL:_sQuery += "    and (A4_CGC      = '88612486000160' or A4_VADISPV  != 'N')"
-		_aCandidat := aclone (_oSQL:Qry2Array (.F., .F.))
+// 	if ! empty (_sTxtEvent)
+// 		_oEventoCF = ClsEvent ():New ()
+// 		_oEventoCF:Texto = _sTxtEvent
+// 		_oEventoCF:CodEven = 'SC5008'
+// 		_oEventoCF:PedVenda = m->c5_num
+// 		_oEventoCF:Cliente = m->c5_cliente
+// 		_oEventoCF:LojaCli = m->c5_lojacli
 
-		// Transforma em vetor simples.
-		for _nCandidat = 1 to len (_aCandidat)
-			_aCandidat [_nCandidat] = _aCandidat [_nCandidat, 1]
-		next
-
-		if len (_aCandidat) == 0
-			_sTxtEvent += "Nenhuma transportadora habilitada para cotacao. Verifique se o campo '" + alltrim (RetTitle ("A4_VADISPV")) + "' encontra-se informado no cadastro das transportadoras." + chr (13) + chr (10)
-			_lContinua = .F.
-		endif
-	endif
-
-	if _lContinua
-		_sTxtEvent += "Frete cotado em " + dtoc (date ()) + ' ' + time () + " para o CEP " + sa1 -> a1_cep + " com os seguintes parametros:" + chr (13) + chr (10)
-		_sTxtEvent += "Valor de NF....: " + transform (m->c5_vaVlFat, "@E 999,999,999.99") + chr (13) + chr (10)
-		_sTxtEvent += "Peso bruto Kg..: " + transform (m->c5_pBruto,  "@E 999,999,999.99") + chr (13) + chr (10) + chr (13) + chr (10)
-
-		incproc ('Consultando entregou.com')
-		_aRetESal := U_VACGFRET (sa1 -> a1_cgc, ;  // CNPJ destino
-		                         sa1 -> a1_cep, ; // CEP destino
-		                         date (), ;  // Data entrega
-		                         m->c5_volume1, ;  // Qt volumes
-		                         'C', ;  // Tipo de frete
-		                         m->c5_vaVlFat, ;  // Valor NF
-		                         m->c5_pBruto, ;  // Peso Kg
-		                         1, ;  // Cubagem. A principio valor fixo, pois o campo eh obrigatorio
-		                         0, ;  // Aliquota ICMS
-		                         _aCandidat)  // Array de transportadoras para cotacao
-
-		// Tenta pegar valor da 'nossa' transportadora, que deverah conter rotas para os principais
-		// destinos, jah com um valor de frete medio (criada justamente para usar aqui).
-		// Se nao conseguir, calcula media entre todas as retornadas.
-		_nRetESal = ascan (_aRetESal, {| _aVal | _aVal [.ESalesRetVlrFrete] > 0 .and. _aVal [.ESalesRetCNPJ] == '88612486000160'})
-		if _nRetESal > 0
-			_nRetFrt = _aRetESal [_nRetESal, .ESalesRetVlrFrete]
-			_sTxtEvent += "Valor retornado pelo entregou.com para transportadora padrao:" + transform (_nRetFrt, "@E 999,999,999.99")
-		else
-			_sTxtEvent += "Calculando media entre:" + chr (13) + chr (10)
-			_nVlCota = 0
-			_nQtCota = 0
-			for _nRetESal = 1 to len (_aRetESal)
-
-				// Pode haver retorno de filiais da transportadora que nem temos no cadastro
-				if _aRetESal [_nRetESal, .ESalesRetVlrFrete] > 0 .and. ! empty (_aRetESal [_nRetESal, .ESalesRetCodTransp])
-
-					// Grava cotacao desta transportadora para o pedido atual
-					_nVlCota += _aRetESal [_nRetESal, .ESalesRetVlrFrete]
-					_nQtCota ++
-					_sTxtEvent += _aRetESal [_nRetESal, .ESalesRetCodTransp] + '-' + U_TamFixo (_aRetESal [_nRetESal, .ESalesRetNome], 20, ' ') + ' ' + transform (_aRetESal [_nRetESal, .ESalesRetVlrFrete], "@E 999,999,999.99") + chr (13) + chr (10)
-				endif
-			next
-			if _nQtCota == 0
-				_sTxtEvent += "Nenhuma transportadora retornada pelo entregou.com" + chr (13) + chr (10)
-			endif
-			_nRetFrt = _nVlCota / _nQtCota
-			_sTxtEvent += chr (13) + chr (10) + "Valor final cotacao frete: " + transform (_nRetFrt, "@E 999,999,999.99") + chr (13) + chr (10)
-		endif
-	endif
-	
-	if ! empty (_sTxtEvent)
-		_oEventoCF = ClsEvent ():New ()
-		_oEventoCF:Texto = _sTxtEvent
-		_oEventoCF:CodEven = 'SC5008'
-		_oEventoCF:PedVenda = m->c5_num
-		_oEventoCF:Cliente = m->c5_cliente
-		_oEventoCF:LojaCli = m->c5_lojacli
-
-		// Elimina evento anterior, se houver
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := "SELECT R_E_C_N_O_"
-		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZN") + " SZN "
-		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND ZN_FILIAL  = '" + xfilial ("SZN") + "'"
-		_oSQL:_sQuery +=   " AND ZN_PEDVEND = '" + m->c5_num + "'"
-		_oSQL:_sQuery +=   " AND ZN_CODEVEN = 'SC5008'"
-		_nRegSZN = _oSQL:RetQry (1, .F.)
-		if _nRegSZN > 0
-			_oEvtAnt := ClsEvent ():New ()
-			_oEvtAnt:RecnoSZN = _nRegSZN
-			_oEvtAnt:Exclui ()
-		endif
+// 		// Elimina evento anterior, se houver
+// 		_oSQL := ClsSQL ():New ()
+// 		_oSQL:_sQuery := "SELECT R_E_C_N_O_"
+// 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZN") + " SZN "
+// 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+// 		_oSQL:_sQuery +=   " AND ZN_FILIAL  = '" + xfilial ("SZN") + "'"
+// 		_oSQL:_sQuery +=   " AND ZN_PEDVEND = '" + m->c5_num + "'"
+// 		_oSQL:_sQuery +=   " AND ZN_CODEVEN = 'SC5008'"
+// 		_nRegSZN = _oSQL:RetQry (1, .F.)
+// 		if _nRegSZN > 0
+// 			_oEvtAnt := ClsEvent ():New ()
+// 			_oEvtAnt:RecnoSZN = _nRegSZN
+// 			_oEvtAnt:Exclui ()
+// 		endif
 		
-		// Grava o novo evento
-		_oEventoCF:Grava()
-	endif
-	u_log2 ('info', 'retornando: ' + cvaltochar (_nRetFrt))
-return _nRetFrt
-*/
+// 		// Grava o novo evento
+// 		_oEventoCF:Grava()
+// 	endif
+
+// return _nRetFrt
+
