@@ -11,6 +11,7 @@
 // #Modulos 		  #FIN 
 //
 // Historico de alteracoes:
+// 18/05/2021 - Claudia - Ajustes nas diferenças e incluido tipodoc 'CP'
 //
 // --------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -23,18 +24,9 @@
 User Function ZB1DIF(_sTipo)
 	Private oReport
 	Private cPerg    := "ZB1DIF"
-	Private _cFilIni := '  '
-    Private _cFilFin := 'ZZ'
-    Private _dDate   := dDataBase
 
-    If _sTipo == '1'
-        _ValidPerg()
-        Pergunte(cPerg,.F.)
-
-        _cFilIni := mv_par01
-        _cFilFin := mv_par02
-        _dDate   := mv_par03
-    EndIf
+    _ValidPerg()
+    Pergunte(cPerg,.F.)
 	
 	oReport := ReportDef()
 	oReport:PrintDialog()
@@ -70,6 +62,10 @@ Static Function PrintReport(oReport)
     Local _aDados   := {}
     Local i         := 0
 
+    _cFilIni := mv_par01
+    _cFilFin := mv_par02
+    _dDate   := mv_par03
+
     _oSQL:= ClsSQL ():New ()
     _oSQL:_sQuery := ""
     _oSQL:_sQuery += "	WITH C"
@@ -95,7 +91,7 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "			AND SE5.E5_CLIFOR = SE1.E1_CLIENTE"
     _oSQL:_sQuery += "			AND SE5.E5_LOJA = SE1.E1_LOJA"
     _oSQL:_sQuery += "			AND SE5.E5_RECPAG = 'R'"
-    _oSQL:_sQuery += "			AND SE5.E5_TIPODOC IN ('VL', 'DC')"
+    _oSQL:_sQuery += "			AND SE5.E5_TIPODOC IN ('VL', 'DC','CP')"
     _oSQL:_sQuery += "		LEFT JOIN " + RetSQLName ("SE5") + " SE5A"
     _oSQL:_sQuery += "			ON SE5A.D_E_L_E_T_ = ''"
     _oSQL:_sQuery += "			AND SE5A.E5_FILIAL = SE1.E1_FILIAL"
@@ -103,7 +99,7 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "			AND SE5A.E5_PREFIXO = SE1.E1_PREFIXO"
     _oSQL:_sQuery += "			AND SE5A.E5_PARCELA = SE1.E1_PARCELA"
     _oSQL:_sQuery += "			AND SE5A.E5_CLIFOR = SE1.E1_CLIENTE"
-    _oSQL:_sQuery += "			AND SE5A.E5_LOJA = SE1.E1_LOJA"
+    _oSQL:_sQuery += "			AND SE5A.E5_LOJA   = SE1.E1_LOJA"
     _oSQL:_sQuery += "			AND SE5A.E5_RECPAG = 'R'"
     _oSQL:_sQuery += "			AND SE5A.E5_TIPODOC = 'JR'"
     _oSQL:_sQuery += "		WHERE SE1.D_E_L_E_T_ = ''"
@@ -132,7 +128,7 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "	   ,VALOR_SE5"
     _oSQL:_sQuery += "	   ,VALOR_SE1 - VALOR_SE5 AS DIFERENCA"
     _oSQL:_sQuery += "	FROM C"
-    _oSQL:_sQuery += "	WHERE VALOR_SE1 - VALOR_SE5 <> 0 "
+    _oSQL:_sQuery += "	WHERE VALOR_SE1 - VALOR_SE5 > 0 "
     _oSQL:_sQuery += "  ORDER BY FILIAL, NUMERO, PREFIXO, PARCELA "
     _aDados := _oSQL:Qry2Array ()
 

@@ -317,7 +317,7 @@ User Function ZB1_CON(_sConciliar)
 	
 	u_logFim ("Fim Conciliação Cielo " + DTOS(date()) )
 
-	U_ZB1DIF('2')
+	//U_ZB1DIF('2')
 Return
 
 // --------------------------------------------------------------------------
