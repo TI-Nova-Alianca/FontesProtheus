@@ -15,8 +15,9 @@
 // 24/02/2021 - Claudia - Invertida a legenda 
 // 29/03/2021 - Claudia - Incluida filial 13. GLPI: 9710
 // 19/04/2021 - Claudia - Incluido relatorio de diferenças de valores. GLPI: 9835
+// 18/05/2021 - Claudia - Incluida chamada para conciliaçao de NF loja. GLPI: 10039
 //
-// --------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------
 #Include "Protheus.ch"
 #include 'parmtype.ch'
 #Include "totvs.ch"
@@ -25,7 +26,7 @@ User Function ZB1()
 	Local _sFiltrTop  := ""
 	Local _lContinua  := .T.
 	Private aRotina   := {}  
-	Private _aCores    := {}
+	Private _aCores   := {}
 	Private cCadastro := "Extrato de recebimento Cielo"
 
 	// Controle de semaforo.
@@ -40,6 +41,7 @@ User Function ZB1()
 		AADD(aRotina, {"Importar"    	     , "U_ZB1_IMP()"   , 0, 4})
 		AADD(aRotina, {"Conciliar Cielo Loja", "U_ZB1_CON('1')", 0, 4})
 		AADD(aRotina, {"Conciliar Cielo Link", "U_ZB1_CON('2')", 0, 4})
+		AADD(aRotina, {"Conciliar NF's Lojas", "U_ZB1_CON('3')", 0, 4})
 		AADD(aRotina, {"&Legenda"        	 , "U_ZB1LGD (.F.)", 0 ,5})
 		AADD(aRotina, {"Relatorio titulos"   , "U_ZB1RTIT()"   , 0, 6})
 		AADD(aRotina, {"Relatorio importação", "U_ZB1REL()"    , 0, 6})

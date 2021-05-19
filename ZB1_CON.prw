@@ -14,6 +14,7 @@
 // parametro _sConciliar: 
 // '1' = CIELO LOJAS 
 // '2' = CIELO LINK
+// '3' = NF DAS LOJAS
 //
 // Historico de alteracoes:
 // 03/11/2020 - Claudia - Incluida a gravação do SXK
@@ -25,6 +26,7 @@
 // 29/03/2021 - Claudia - Incluida filial 13. GLPI: 9710
 // 20/04/2021 - Claudia - Incluida a chamada para o relatorio de diferenças no 
 //                        final da conciliação. GLPI: 9835
+// 18/05/2021 - Claudia - Incluida chamada para conciliaçao de NF loja. GLPI: 10039
 //
 // -----------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -47,10 +49,17 @@ User Function ZB1_CON(_sConciliar)
 		u_help("Empresa matriz não pode efetuar baixa pelo menu Conciliar Cielo Loja")
 		_lcont := .F.
 	EndIf
+
 	If (cFilAnt == '10' .or. cFilAnt == '13') .and. _sConciliar == '2' // conciliação link
 		u_help("Baixas pelo Conciliar Cielo Link efetuadas apenas na empresa matriz")
 		_lcont := .F.
 	EndIf
+
+	If cFilAnt == '01' .and. _sConciliar == '3' // NF loja
+		u_help("Baixas pelo Conciliar NF Loja efetuadas apenas nas filiais-lojas")
+		_lcont := .F.
+	EndIf
+
 	If _lcont == .T.
 		cPerg   := "ZB1_CON"
 		_ValidPerg ()
@@ -132,10 +141,10 @@ User Function ZB1_CON(_sConciliar)
 				_oSQL:_sQuery += " FROM " + RetSQLName ("SE1") + " AS SE1 "
 				_oSQL:_sQuery += " WHERE SE1.D_E_L_E_T_ = ''"
 				_oSQL:_sQuery += " AND SE1.E1_FILIAL  = '" + _aZB1[i, 1] + "'"
-				If _sConciliar == '1'
+				If _sConciliar == '1' // Conciliar Cielo Loja
 					_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aZB1[i,17] + "'" // Loja salva cod.aut no campo NSU
 					_oSQL:_sQuery += " AND SE1.E1_EMISSAO = '" + DTOS(_aZB1[i,16]) + "'"
-				Else
+				Else 				 // conciliação link e NF lojas
 					_oSQL:_sQuery += " AND SE1.E1_CARTAUT = '" + _aZB1[i,17] + "'"
 					_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aZB1[i,18] + "'"
 				EndIf
@@ -154,6 +163,8 @@ User Function ZB1_CON(_sConciliar)
 					
 					For x:=1 to len(_aTitulo)	
 						_lContinua  := .T.
+						_nDifTit    := 0
+						_nDif       := 0
 
 						_sDtPro     := DTOS(_aZB1[i,22])	// ZB1_DTAPRO
 						_sNSUCod    := _aZB1[i,18]			// ZB1_NSUCOD
@@ -169,6 +180,7 @@ User Function ZB1_CON(_sConciliar)
 							_nDif := _nVlrTax - _nTaxCielo
 
 							If _nDif >= -0.5 .and. _nDif <= 0.5
+								_nVlrLiq := _nVlrTit - _nVlrTax
 								_lContinua := .T.
 								u_log("DIFERENÇA DE ARREDONDAMENTO TAXA:Registro NSU+AUT:" + _sNSUCod + _sAutCod + " Valor com diferença de arredondameto. Diferença:" + alltrim(str(_nDif)))
 							Else
@@ -177,7 +189,14 @@ User Function ZB1_CON(_sConciliar)
 								// dessa forma será calculado valor do titulo Protheus * percentual da taxa
 								_nPerTax := (_aZB1[i,4]/100) 
 								_nVlrTax := ROUND(_nVlrTit * _nPerTax,2)
-								_nVlrLiq := _nVlrPar - _nVlrTax
+								
+								_nDifTit := _nVlrPar - _nVlrTit
+								If _nDifTit >= -0.5 .and. _nDifTit <= 0.5
+									_nVlrLiq := _nVlrTit - _nVlrTax
+								Else
+									_nVlrLiq := _nVlrPar - _nVlrTax
+								EndIf
+
 								_lContinua := .T.
 								u_log("DIFERENÇA DE TAXA:Registro NSU+AUT:" + _sNSUCod + _sAutCod + " Valor CALCULADO pelo percentual da taxa.")
 							EndIf
@@ -186,10 +205,10 @@ User Function ZB1_CON(_sConciliar)
 						If _lContinua == .T.
 
 							lMsErroAuto := .F.
-							If _sConciliar == '2' // link
+							If _sConciliar == '2' 	// link
 								_sMotBaixa := 'NORMAL' 
 								_sHist     := 'Baixa Link'
-							Else
+							Else 					// Cupom lojas e NF Lojas
 								_sMotBaixa := 'DEBITO CC' 
 								_sHist     := 'Baixa Cielo'	
 							EndIf
