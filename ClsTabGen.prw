@@ -138,14 +138,12 @@ METHOD ExistChav (_sChave) Class ClsTabGen
 	local _oSQL     := NIL
 	local _aAreaAnt := U_ML_SRArea ()
 	
-	u_logIni (GetClassName (::Self) + '.' + procname ())
 	if ! ::ExistTab
 		_lRet = .F.
 	else
 		for _nCpo = 1 to len (::CposChave)
 			_sCpoChav += ::CposChave [_nCpo] + iif (_nCpo < len (::CposChave), '+', '')
 		next
-		u_log ('cpo chave:', _sCpoChav)
 		if ! empty (_sCpoChav)
 			_oSQL := ClsSQL():New ()
 			_oSQL:_sQuery := ""
@@ -155,15 +153,12 @@ METHOD ExistChav (_sChave) Class ClsTabGen
 			_oSQL:_sQuery += "    and ZX5_FILIAL = '" + iif (::ModoAcesso == 'E', xfilial ("ZX5"), '  ') + "'"
 			_oSQL:_sQuery += "    and ZX5_TABELA = '" + ::CodTabela + "'"
 			_oSQL:_sQuery +=    " AND " + _sCpoChav + " = '" + _sChave + "'"
-			_oSQL:Log ()
 			if _oSQL:RetQry () == 0
 				::UltMsg = "Nao existe registro relacionado: Chave '" + _sChave + "' nao cadastrada na tabela '" + ::CodTabela + "' do arquivo ZX5."
-				//u_log (::UltMsg)
 				_lRet = .F.
 			endif
 		endif
 	endif
-	u_logFim (GetClassName (::Self) + '.' + procname ())
 	U_ML_SRArea (_aAreaAnt)
 return _lRet
 //

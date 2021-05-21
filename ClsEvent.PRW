@@ -51,6 +51,7 @@
 // 18/04/2021 - Robert  - Grava nome e metodo da classe no arquivo de log.
 // 15/05/2021 - Claudia - Criada função para typo de campo para tirar do loop, bug R27. GLPI: 8825
 // 17/05/2021 - Robert  - Grava ::Texto e nao mais _sTextoZN no arquivo de log.
+// 21/05/2021 - Robert  - Campo ZN_PILHA substituido pelo ZN_ORIGEM (GLPI 10072)
 //
 
 #include "protheus.ch"
@@ -98,6 +99,7 @@ CLASS ClsEvent
 	data DtEvento
 	data HrEvento
 	data Ambiente
+	data Origem
 
 	// Declaração dos Métodos da Classe
 	METHOD New ()
@@ -145,6 +147,7 @@ METHOD New (_nRegSZN) Class ClsEvent
 	::DtEvento   := DATE()
 	::HrEvento   := TIME()
 	::Ambiente   := GetEnvServer ()
+	::Origem     := ''
 
 	if _nRegSZN != NIL
 		szn -> (dbgoto (_nRegSZN))
@@ -180,6 +183,7 @@ METHOD New (_nRegSZN) Class ClsEvent
 		::DtEvento   = SZN -> zn_data
 		::HrEvento   = SZN -> zn_hora
 		::Ambiente   = SZN -> zn_ambient
+		::Origem     = SZN -> zn_origem
 	endif
 Return Self
 //
@@ -212,7 +216,7 @@ METHOD Grava () Class ClsEvent
 	SZN -> zn_serieS  = ::SerieSaid
 	SZN -> zn_nfE     = ::NFEntrada
 	SZN -> zn_serieE  = ::SerieEntr
-	SZN -> zn_pilha   = _PCham ()
+// quero excluir este campo --->	SZN -> zn_pilha   = _PCham ()
 	SZN -> zn_texto   = _sTextoZN
 	SZN -> zn_produto = ::Produto
 	SZN -> zn_CodEven = ::CodEven
@@ -238,6 +242,7 @@ METHOD Grava () Class ClsEvent
 	SZN -> zn_redesp  = ::TranspReds
 	szn -> zn_txt     = ::Texto
 	szn -> zn_ambient = ::Ambiente
+	SZN -> zn_origem  = iif (empty (::Origem), _PCham (), ::Origem)
 	msunlock ("SZN")
 
 	// Envia evento por e-mail, se for o caso.
@@ -278,6 +283,7 @@ METHOD GravaNovo () Class ClsEvent
 	_oSQL:_sQuery +=   " AND SZN.ZN_TRANSP  = '" + ::Transp + "'"
 	_oSQL:_sQuery +=   " AND SZN.ZN_REDESP  = '" + ::TranspReds + "'"
 	_oSQL:_sQuery +=   " AND SZN.ZN_CODPROC = '" + ::CodProceda + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_ORIGEM  = '" + ::Origem + "'"
 
 	if _oSQL:RetQry (1, .f.) == 0
 		::Grava ()
@@ -408,6 +414,9 @@ METHOD Exclui () Class ClsEvent
 	local _aArea    := U_ML_SRArea ()
 
 	szn -> (dbgoto (::RecnoSZN))
+	U_Log2 ('aviso', 'Deletando evento:')
+	u_logtrb ('szn')
+
 	reclock ("SZN", .F.)
 	szn -> (dbdelete ())
 	msunlock ()
@@ -476,7 +485,7 @@ METHOD SendMail (_sDestin) Class ClsEvent
 	
 		_sTxtMail := "Novo evento registrado no sistema de gestao:" + chr (13) + chr (10)
 		_sTxtMail += "Descricao......: " + ::Texto + chr (13) + chr (10)
-		_sTxtMail += "Tipo evento....: " + ::CodEven + " - " + Tabela ("79", ::CodEven) + chr (13) + chr (10)
+		_sTxtMail += "Tipo evento....: " + ::CodEven + " - " + U_RetZX5 ('54', ::CodEven, 'ZX5_54DESC') + chr (13) + chr (10)
 		_sTxtMail += "Empresa/filial.: " + cEmpAnt + "/" + ::Filial + chr (13) + chr (10)
 
 		if ! empty (::NFSaida)
@@ -527,6 +536,6 @@ return _sPilha
 static Function BuscaTipo(_sCampo)
 	local _sRet := ""
 
-  	_sRet:= type("M->" + _sCampo) 
+	_sRet:= type("M->" + _sCampo) 
 
 return _sRet

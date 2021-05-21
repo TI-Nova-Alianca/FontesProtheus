@@ -16,7 +16,7 @@ User Function ExistZX5 (_sTabela, _sChave)
 	local _oTabGen  := ClsTabGen ():New (_sTabela)
 	
 	if ! _oTabGen:ExistChav (_sChave)
-		u_help (_oTabGen:UltMsg)
+		u_help (_oTabGen:UltMsg,, .t.)
 		_lRet = .F.
 	endif
 return _lRet

@@ -53,7 +53,9 @@
 // 11/01/2021 - Robert  - Preenche cadastro viticola com zeros a esquerda na geracao de cargas de safra.
 // 15/01/2021 - Robert  - Acao 'RetTicketCargaSafra' migrada para ws_namob (preciso acessar das filiais)
 // 15/03/2021 - Claudia - Incluida a ação 'CapitalSocialAssoc'.GLPI: 8824
+// 21/05/2021 - Robert  - Melhorado metodo de gravacao e criado metodo de exclusao de eventos da tabela SZN (GLPI 10072)
 //
+
 // ----------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
 #INCLUDE "PROTHEUS.CH"
@@ -176,6 +178,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 				_AltCli ()
 			case _sAcao == 'IncluiEvento'
 				_IncEvt ()
+			case _sAcao == 'ExcluiEvento'
+				_DelEvt ()
 			case _sAcao == 'IncluiProduto'
 				_IncProd ()
 			case _sAcao == 'ConsultaDeOrcamentos'
@@ -674,10 +678,12 @@ Return
 static function _IncEvt ()
 	local _oEvento := NIL
 	local _dDtEvt  := ''
-	u_logIni ()
+	U_Log2 ('info', 'Iniciando ' + procname ())
 	_oEvento := ClsEvent ():New ()
 	_oEvento:Filial  = cFilAnt
-	if empty (_sErros) ; _dDtEvt = _ExtraiTag ("_oXML:_WSAlianca:_DataEvento", .F., .T.) ; endif
+	
+	// Data e hora: se nao informadas no XML, assume o momento da gravacao.
+	if empty (_sErros) ; _dDtEvt = _ExtraiTag ("_oXML:_WSAlianca:_DtEvento", .F., .T.) ; endif
 	if empty (_sErros)
 		if empty (_dDtEvt)
 			_oEvento:DtEvento = date ()
@@ -689,7 +695,7 @@ static function _IncEvt ()
 			endif
 		endif
 	endif
-	if empty (_sErros) ; _oEvento:HrEvento   = _ExtraiTag ("_oXML:_WSAlianca:_HoraEvento", .F., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:HrEvento   = _ExtraiTag ("_oXML:_WSAlianca:_HrEvento", .F., .F.) ;   endif
 	if empty (_sErros)
 		if empty (_oEvento:HrEvento)
 			_oEvento:HrEvento = time ()
@@ -699,30 +705,34 @@ static function _IncEvt ()
 			endif
 		endif
 	endif
-	if empty (_sErros) ; _oEvento:CodEven    = _ExtraiTag ("_oXML:_WSAlianca:_CodigoEvento",     .T., .F.) ;   endif
-	if empty (_sErros) ; _oEvento:Texto      = _ExtraiTag ("_oXML:_WSAlianca:_Texto",            .T., .F.) ;   endif
-	if empty (_sErros) ; _oEvento:NFSaida    = _ExtraiTag ("_oXML:_WSAlianca:_NFSaida",          .F., .F.) ;   endif
-	if empty (_sErros) ; _oEvento:SerieSaid  = _ExtraiTag ("_oXML:_WSAlianca:_SerieNFSaida",     .F., .F.) ;   endif
-	if empty (_sErros) ; _oEvento:ParcTit    = _ExtraiTag ("_oXML:_WSAlianca:_ParcelaTitulo",    .F., .F.) ;   endif
-	if empty (_sErros) ; _oEvento:NFEntrada  = _ExtraiTag ("_oXML:_WSAlianca:_NFEntrada",        .F., .F.) ;   endif
-	if empty (_sErros) ; _oEvento:SerieEntr  = _ExtraiTag ("_oXML:_WSAlianca:_SerieNFEntrada",   .F., .F.) ;   endif
-	if empty (_sErros) ; _oEvento:Produto    = _ExtraiTag ("_oXML:_WSAlianca:_Produto",          .F., .F.) ;   endif
-	if empty (_sErros) ; _oEvento:PedVenda   = _ExtraiTag ("_oXML:_WSAlianca:_PedidoVenda",      .F., .F.) ;   endif
-	if empty (_sErros) ; _oEvento:Cliente    = _ExtraiTag ("_oXML:_WSAlianca:_Cliente",          .F., .F.) ;   endif
-	if empty (_sErros) ; _oEvento:LojaCli    = _ExtraiTag ("_oXML:_WSAlianca:_LojaCliente",      .F., .F.) ;   endif
-	if empty (_sErros) ; _oEvento:Fornece    = _ExtraiTag ("_oXML:_WSAlianca:_Fornecedor",       .F., .F.) ;   endif
-	if empty (_sErros) ; _oEvento:LojaFor    = _ExtraiTag ("_oXML:_WSAlianca:_LojaFornecedor",   .F., .F.) ;   endif
-	if empty (_sErros) ; _oEvento:MailTo     = _ExtraiTag ("_oXML:_WSAlianca:_MailTo",           .F., .F.) ;   endif
-	if empty (_sErros) ; _oEvento:MailToZZU  = _ExtraiTag ("_oXML:_WSAlianca:_MailToZZU",        .F., .F.) ;   endif
-	if empty (_sErros) ; _oEvento:Alias      = _ExtraiTag ("_oXML:_WSAlianca:_Alias",            .F., .F.) ;   endif
-	if empty (_sErros) ; _oEvento:Recno      = val (_ExtraiTag ("_oXML:_WSAlianca:_RecnoAlias",  .F., .F.)) ;   endif
-	if empty (_sErros) ; _oEvento:CodAlias   = _ExtraiTag ("_oXML:_WSAlianca:_CodAlias",         .F., .F.) ;   endif
-	if empty (_sErros) ; _oEvento:Chave      = _ExtraiTag ("_oXML:_WSAlianca:_ChaveAlias",       .F., .F.) ;   endif
-	if empty (_sErros) ; _oEvento:OP         = _ExtraiTag ("_oXML:_WSAlianca:_OP",               .F., .F.) ;   endif
-	if empty (_sErros) ; _oEvento:Etiqueta   = _ExtraiTag ("_oXML:_WSAlianca:_Etiqueta",         .F., .F.) ;   endif
-	if empty (_sErros) ; _oEvento:CodProceda = _ExtraiTag ("_oXML:_WSAlianca:_CodigoProceda",    .F., .F.) ;   endif
-	if empty (_sErros) ; _oEvento:Transp     = _ExtraiTag ("_oXML:_WSAlianca:_Transportadora",   .F., .F.) ;   endif
-	if empty (_sErros) ; _oEvento:TranspReds = _ExtraiTag ("_oXML:_WSAlianca:_TranspRedespacho", .F., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:CodEven    = _ExtraiTag ("_oXML:_WSAlianca:_CodEven",      .T., .F.) ;   endif
+	if empty (_sErros) .and. ! U_ExistZX5 ('54', _oEvento:CodEven)
+		_sErros += "Codigo do evento " + _oEvento:CodEven + " nao cadastrado na tabela 54 do arquivo ZX5."
+	endif
+	if empty (_sErros) ; _oEvento:Origem     = _ExtraiTag ("_oXML:_WSAlianca:_Origem",       .T., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:Texto      = _ExtraiTag ("_oXML:_WSAlianca:_Texto",        .T., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:NFSaida    = _ExtraiTag ("_oXML:_WSAlianca:_NFSaida",      .F., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:SerieSaid  = _ExtraiTag ("_oXML:_WSAlianca:_SerieSaid",    .F., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:ParcTit    = _ExtraiTag ("_oXML:_WSAlianca:_ParcTit",      .F., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:NFEntrada  = _ExtraiTag ("_oXML:_WSAlianca:_NFEntrada",    .F., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:SerieEntr  = _ExtraiTag ("_oXML:_WSAlianca:_SerieEntr",    .F., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:Produto    = _ExtraiTag ("_oXML:_WSAlianca:_Produto",      .F., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:PedVenda   = _ExtraiTag ("_oXML:_WSAlianca:_PedVenda",     .F., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:Cliente    = _ExtraiTag ("_oXML:_WSAlianca:_Cliente",      .F., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:LojaCli    = _ExtraiTag ("_oXML:_WSAlianca:_LojaCli",      .F., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:Fornece    = _ExtraiTag ("_oXML:_WSAlianca:_Fornece",      .F., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:LojaFor    = _ExtraiTag ("_oXML:_WSAlianca:_LojaFor",      .F., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:MailTo     = _ExtraiTag ("_oXML:_WSAlianca:_MailTo",       .F., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:MailToZZU  = _ExtraiTag ("_oXML:_WSAlianca:_MailToZZU",    .F., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:Alias      = _ExtraiTag ("_oXML:_WSAlianca:_Alias",        .F., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:Recno      = val (_ExtraiTag ("_oXML:_WSAlianca:_Recno",   .F., .F.)) ;   endif
+	if empty (_sErros) ; _oEvento:CodAlias   = _ExtraiTag ("_oXML:_WSAlianca:_CodAlias",     .F., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:Chave      = _ExtraiTag ("_oXML:_WSAlianca:_Chave",        .F., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:OP         = _ExtraiTag ("_oXML:_WSAlianca:_OP",           .F., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:Etiqueta   = _ExtraiTag ("_oXML:_WSAlianca:_Etiqueta",     .F., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:CodProceda = _ExtraiTag ("_oXML:_WSAlianca:_CodProceda",   .F., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:Transp     = _ExtraiTag ("_oXML:_WSAlianca:_Transp",       .F., .F.) ;   endif
+	if empty (_sErros) ; _oEvento:TranspReds = _ExtraiTag ("_oXML:_WSAlianca:_TranspReds",   .F., .F.) ;   endif
 	if empty (_sErros)
 		if ! _oEvento:Grava ()
 			_sErros += "Erro na gravacao do objeto evento"
@@ -730,9 +740,28 @@ static function _IncEvt ()
 			_sMsgRetWS = "Evento gravado com sucesso"
 		endif
 	endif
-	u_logFim ()
+	U_Log2 ('info', 'Finalizando ' + procname ())
 Return
-//
+
+
+
+// --------------------------------------------------------------------------
+// Interface para deletar eventos genericos
+static function _DelEvt ()
+	local _oEvento := NIL
+	local _nRegSZN := 0
+	if empty (_sErros) ; _nRegSZN = val (_ExtraiTag ("_oXML:_WSAlianca:_RecnoSZN",      .T., .F.)) ;   endif
+	if empty (_sErros)
+		_oEvento := ClsEvent ():New (_nRegSZN)
+		if ! alltrim (upper (_oEvento:Origem)) $ upper ('wpnfateventosnotas/')
+			_sErros += "Eventos com esta origem nao podem ser excluidos manualmente."
+		endif
+	endif
+	if empty (_sErros)
+		_oEvento:Exclui ()
+	endif
+Return
+
 // --------------------------------------------------------------------------
 // Interface para a classe de transferencias de estoque.
 static function _TrEstq (_sQueFazer)
