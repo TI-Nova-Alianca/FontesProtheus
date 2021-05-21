@@ -97,7 +97,9 @@
 // 06/04/2021 - Robert - Ajuste metodo FechSafra para pegar somente titulos da safra 2021 (GLPI 9757)
 // 03/05/2021 - Robert - Ajuste calculo correcao monetaria para abater notas de compra de safra pela data de vencimento dos titulos correspondentes (GLPI 9841).
 // 07/05/2021 - Claudia - Substituido o GetMv ('MV_SIMB1') devido ao erro em looping, da R27. GLPI:8825
+// 21/05/2021 - Robert  - Nao calculava correcao para ex associados (GLPI 10075).
 //
+
 // -------------------------------------------------------------------------------------------------------------------
 #include "protheus.ch"
 #include "VA_Inclu.prw"
@@ -584,10 +586,10 @@ METHOD CalcCM (_sMesRef, _nTaxaVl1, _nTaxaVl2, _nLimVl1, _lGerarD, _lGerarC) Cla
 	endif
 
 
-	if _lContinua .and. ! ::EhSocio (_dDtGrvCor)
-		::UltMsg += "Nao consta como associado na data prevista para gravacao da correcao (" + dtoc (_dDtGrvCor) + ")."
-		_lContinua = .F.
-	endif
+//	if _lContinua .and. ! ::EhSocio (_dDtGrvCor)
+//		::UltMsg += "Nao consta como associado na data prevista para gravacao da correcao (" + dtoc (_dDtGrvCor) + ")."
+//		_lContinua = .F.
+//	endif
 
 
 	// A partir de 30/03/2017, a correcao eh sempre gerada na matriz.
