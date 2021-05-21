@@ -4,6 +4,7 @@
 // Descricao..: Exportacao geral de dados de faturamento para planilha.
 //
 // #TipoDePrograma    #Relatorio
+// #Descricao         #Exportacao geral de dados de faturamento para planilha
 // #PalavasChave      #exportacao_dados #planilha #faturamento #exporta_dados #dados_gerais_faturamento
 // #TabelasPrincipais #SD2 #SF2 #SD1 #SF4 #SF4 #SC5 #SC6
 // #Modulos           #FAT
@@ -32,7 +33,7 @@
 //                      - Implementado parametro 22 para acomodar maio opcoes de selecao de colunas.
 // 18/10/2012 - Elaine  - Inclusao das colunas: Pedido do Cliente, MsgAdicionais, Obs do Pedido  Nro de Serie
 // 25/10/2012 - Elaine  - Adcionei novos filtros de tela: Ignorar devol.venda e Apenas fatur.e bonif 
-//                       e inclusao da coluna observacao do pedido
+//                        e inclusao da coluna observacao do pedido
 // 07/01/2013 - Robert  - Incluida coluna B1_VAMIX.
 // 04/03/2013 - Robert  - Incluida coluna com o ano.
 // 08/08/2013 - Robert  - Incluida coluna com a origem dos dados (SD2 ou SD1).
@@ -78,6 +79,7 @@
 // 05/10/2020 - Claudia - Incluido grupo para impressão simplificado. GLPI:8588 
 // 13/10/2020 - Cláudia - Incluidas colunas na versao resumida, conforme GLPI: 8642
 // 09/12/2020 - Cláudia - Alterada busca de promotor. GLPI: 8880
+// 21/05/2020 - Claudia - Incluida a gravação e exclusão de parametros na SXK. GLPI: 10071
 //
 // ---------------------------------------------------------------------------------------------------------------
 User Function VA_XLS5 (_lAutomat)
@@ -140,6 +142,7 @@ User Function VA_XLS5 (_lAutomat)
 		U_Semaforo (_nLock)
 	endif
 return
+//
 // --------------------------------------------------------------------------
 // 'Tudo OK' do FormBatch.
 Static Function _TudoOk(_sTipo)
@@ -158,6 +161,7 @@ Static Function _TudoOk(_sTipo)
 		_Opcoes (_sTipo)
 	endif
 Return _lRet
+//
 // --------------------------------------------------------------------------
 // Seleciona opcoes especificas do relatorio.
 Static Function _Opcoes (_sTipo)
@@ -170,6 +174,10 @@ Static Function _Opcoes (_sTipo)
 	local _sSelComi5 := "(" + _sSelVlMer + ") * V.COMIS5 / 100"
 	local _sSelCusto := "V.CUSTOREPOS*V.QUANTIDADE"
 	local _nOpcao    := 0
+
+	// exclui SXK para não duplicar as perguntas
+	U_GravaSXK (cPerg, "19", mv_par19, 'D' )
+	U_GravaSXK (cPerg, "22", mv_par22, 'D' )
 
 	// Monta array de opcoes de campos, jah com o respectivo trecho para uso na query.
 	_aOpcoes = {}
@@ -195,7 +203,6 @@ Static Function _Opcoes (_sTipo)
 		aadd (_aOpcoes, {.F., "Mes/ano emissao",          "SUBSTRING (V.EMISSAO, 5, 2) + '/' + SUBSTRING (V.EMISSAO, 1, 4) AS MES_EMIS"})
 		aadd (_aOpcoes, {.F., "Serie",                    "SERIE"})
 		aadd (_aOpcoes, {.F., "Pedido",                   "PEDVENDA"})
-	//	aadd (_aOpcoes, {.F., "Fat/bonif",                "CASE WHEN V.ORIGEM='SD1' THEN 'DEVOLUCAO' WHEN V.F4_MARGEM='1' THEN 'FATURADO' WHEN V.F4_MARGEM='3' THEN 'BONIFICADO' WHEN V.F4_MARGEM='4' THEN 'COMODATO' WHEN V.F4_MARGEM='5' THEN 'RET.COMODATO' WHEN V.F4_MARGEM='9' THEN 'NAO SE APLICA' ELSE V.F4_MARGEM END AS FAT_BONIF"})
 		aadd (_aOpcoes, {.F., "Fat/bonif",                "CASE WHEN V.F4_MARGEM='1' THEN 'FATURADO' WHEN V.F4_MARGEM='2' THEN 'DEVOLUCAO' WHEN V.F4_MARGEM='3' THEN 'BONIFICADO' WHEN V.F4_MARGEM='4' THEN 'COMODATO' WHEN V.F4_MARGEM='5' THEN 'RET.COMODATO' WHEN V.F4_MARGEM='6' THEN 'FRETE' WHEN V.F4_MARGEM='7' THEN 'SERVICOS' WHEN V.F4_MARGEM='8' THEN 'USO E CONSUMO' WHEN V.F4_MARGEM='9' THEN 'NAO SE APLICA' ELSE V.F4_MARGEM END AS FAT_BONIF"})
 		aadd (_aOpcoes, {.F., "Cod.cliente",              "V.CLIENTE AS CODCLI"})
 		aadd (_aOpcoes, {.F., "Nome cliente",             "RTRIM (SA1.A1_NOME) AS CLIENTE"})
@@ -296,14 +303,19 @@ Static Function _Opcoes (_sTipo)
 	U_GravaSX1 (cPerg, "19", mv_par19)
 	U_GravaSX1 (cPerg, "22", mv_par22)
 
+	// Grava SXK para salvar opções
+	U_GravaSXK (cPerg, "19", mv_par19, 'G' )
+	U_GravaSXK (cPerg, "22", mv_par22, 'G' )
+
 	// Indica que as opcoes jah foram selecionadas ou, pelo menos, visualizadas.
 	_lSelCol = .T.
 Return
+//
 // --------------------------------------------------------------------------
+// Gera relatório
 Static Function _Gera()
 	local _sQuery    := ""
 	local _sAliasQ   := ""
-//	local _aArqTrb   := {}
 	local _nOpcao    := 0
 
 	u_logsx1 (cPerg)
@@ -318,6 +330,7 @@ Static Function _Gera()
 			_sQuery += alltrim (_aOpcoes [_nOpcao, 3]) + ", "
 		endif
 	next
+
 	_sQuery = substr (_sQuery, 1, len (_sQuery) - 2)  // Remove virgula do final.
 	if empty (_sQuery)
 		u_help ("Deve ser selecionada pelo menos uma coluna para exportacao")
@@ -381,8 +394,7 @@ Static Function _Gera()
 	_sQuery +=            " left join " + RetSQLName ("SF4") + " SF4 "
 	_sQuery +=                 " on (SF4.D_E_L_E_T_ != '*'"
 	_sQuery +=                 " and SF4.F4_FILIAL   = '" + xfilial ("SF4") + "'"
-	_sQuery +=                 " and SF4.F4_CODIGO   = V.TES)"
-                                      
+	_sQuery +=                 " and SF4.F4_CODIGO   = V.TES)"                            
     if "C5_" $ upper (_sQuery) .or. "C6_" $ upper (_sQuery)
 		// Fazer teste se estes campos foram selecionados para efetivamente incluir o teste
 		_sQuery +=            " left join " + RetSQLName ("SC5") + " SC5 "
@@ -395,7 +407,6 @@ Static Function _Gera()
 		_sQuery +=                 " and SC6.C6_NUM      = V.PEDVENDA "
 		_sQuery +=                 " and SC6.C6_ITEM     = V.ITEMPDVEND)"
     endif
-    
 	_sQuery +=  " where SB1.D_E_L_E_T_    != '*'"
 	_sQuery +=    " and SB1.B1_FILIAL      = '" + xfilial ("SB1") + "'"
 	_sQuery +=    " and SB1.B1_COD         = V.PRODUTO"
@@ -409,11 +420,9 @@ Static Function _Gera()
 	endif
     _sQuery +=    " and V.TIPONFSAID      != 'B'"  // Beneficiamento
     _sQuery +=    " and V.TIPONFSAID      != 'D'"  // Devolucao de compra
-
-   if mv_par23 == 1  // Apenas fatur.e bonif 
-   	   _sQuery +=" AND (V.F4_MARGEM = '2' AND V.ORIGEM='SD1' AND V.TIPONFENTR='D' OR (V.ORIGEM='SD2' AND V.F4_MARGEM IN ('1','3') ) )"
-   endif      
-
+   	if mv_par23 == 1  // Apenas fatur.e bonif 
+   	   	_sQuery +=" AND (V.F4_MARGEM = '2' AND V.ORIGEM='SD1' AND V.TIPONFENTR='D' OR (V.ORIGEM='SD2' AND V.F4_MARGEM IN ('1','3') ) )"
+  	 endif      
  	_sQuery +=    " and V.EMPRESA         between '" + mv_par01 + "' and '" + mv_par02 + "'"
 	_sQuery +=    " and SA1.A1_REGIAO     between '" + mv_par03 + "' and '" + mv_par04 + "'"
 	_sQuery +=    " and V.EST             between '" + mv_par05 + "' and '" + mv_par06 + "'"
@@ -431,13 +440,12 @@ Static Function _Gera()
 	u_log2 ('debug', "Gerando arquivo de exportacao")
 	incproc ("Gerando arquivo de exportacao")
 	processa ({ || U_Trb2XLS (_sAliasQ, .F.)})
+
 	(_sAliasQ) -> (dbclosearea ())
 	dbselectarea ("SD2")
 	u_log2 ('debug', 'Arquivo exportado.')
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
