@@ -40,6 +40,16 @@ User Function m460mark ()
 		_lRet = _VerCliente ()
 	endif
 
+
+
+	// Verifica se o contrato tem nota faturamento
+	if _lRet
+		_lRet = _ContBloq ()
+	endif
+
+
+
+
 	// Verifica geracao de nota fora de sequencia
 	if _lRet //.and. cEmpAnt == "01"
 		_lRet = _VerNumNF ()
@@ -149,3 +159,25 @@ Static Function _VerNumNF ()
 
 Return _lRet
 
+// Verifica se contrato tem nota de faturamento
+Static Function _ContBloq(_sContrato)
+	Local _lRet    := .T.
+	Local _aDados := {}
+	Local _sQuery := ""
+
+	//If _sTipo == 'D' .or. _sTipo == 'B' // é fornecedor
+		_sQuery := " SELECT"
+		_sQuery += "*"
+		_sQuery += " FROM VA_VVENDA_ENT_FUTURA " 
+		_sQuery += " WHERE CONTRATO != '' "
+		_sQuery += " TIPO_MOVTO = 'F'"
+		//_aDados:= U_Qry2Array(_sQuery)	
+	
+		
+	If Len(_aDados) > 0
+		If alltrim(_aDados[1,1]) == '1'
+			u_help(" O contrato " + alltrim(_sContrato) + " não tem nota de faturamento!")
+			_lRet := .F.
+		EndIf
+	EndIf
+Return _lRet

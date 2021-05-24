@@ -1,5 +1,5 @@
 // Programa...: VA_XLS55
-// Autor......: Sandra Sugari
+// Autor......: Sandra Sugari / Robert Koch
 // Data.......: 19/05/2021
 // Descricao..: Exporta Planilha CST/FISCAL.
 
