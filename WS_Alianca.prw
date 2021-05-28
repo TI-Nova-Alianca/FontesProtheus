@@ -54,8 +54,8 @@
 // 15/01/2021 - Robert  - Acao 'RetTicketCargaSafra' migrada para ws_namob (preciso acessar das filiais)
 // 15/03/2021 - Claudia - Incluida a ação 'CapitalSocialAssoc'.GLPI: 8824
 // 21/05/2021 - Robert  - Melhorado metodo de gravacao e criado metodo de exclusao de eventos da tabela SZN (GLPI 10072)
+// 28/05/2021 - Cláudia - Comentariado o if conforme GLPI: 9161
 //
-
 // ----------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
 #INCLUDE "PROTHEUS.CH"
@@ -753,9 +753,10 @@ static function _DelEvt ()
 	if empty (_sErros) ; _nRegSZN = val (_ExtraiTag ("_oXML:_WSAlianca:_RecnoSZN",      .T., .F.)) ;   endif
 	if empty (_sErros)
 		_oEvento := ClsEvent ():New (_nRegSZN)
-		if ! alltrim (upper (_oEvento:Origem)) $ upper ('wpnfateventosnotas/')
-			_sErros += "Eventos com esta origem nao podem ser excluidos manualmente."
-		endif
+		// GLPI: 9161
+		//if ! alltrim (upper (_oEvento:Origem)) $ upper ('wpnfateventosnotas/')
+		//	_sErros += "Eventos com esta origem nao podem ser excluidos manualmente."
+		//endif
 	endif
 	if empty (_sErros)
 		_oEvento:Exclui ()
