@@ -1,8 +1,15 @@
-// Programa: MT110LOk
-// Autor:    Robert Koch
-// Data:     30/12/2008
-// Funcao:   PE 'Linha OK' na manutencao de solicitacoes de compra.
-//           Criado inicialmente para validacao de justificativa de encaminhamento.
+// Programa.: MT110LOk
+// Autor....: Robert Koch
+// Data.....: 30/12/2008
+// Funcao...: PE 'Linha OK' na manutencao de solicitacoes de compra.
+//            Criado inicialmente para validacao de justificativa de encaminhamento.
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #PE 'Linha OK' na manutencao de solicitacoes de compra.
+// #PalavasChave      #ponto_de_entrada #solicitacao_de_compra #linha_OK
+// #TabelasPrincipais #SC1 
+// #Modulos           #COM 
 //
 // Historico de alteracoes:
 //
@@ -13,15 +20,19 @@
 // 03/12/2015 - Robert - Validacoes de CC com campo B1_VARATEI.
 // 30/09/2016 - Robert - Desobrigatoriedade de centro de custo para tipos 'MR/ME/PS/MP/VD/EP/PI/VD/PA/SP/MA/CL/II'
 // 08/12/2016 - Catia  - Alterado os tipos de produtos que nao obrigam centro de custo
-// 12/01/2018 - Catia  - Desobrigatoriedade de centro de custo para tipos 'MM' - pois os itens da manutenção passam a gerar estoque
+// 12/01/2018 - Catia  - Desobrigatoriedade de centro de custo para tipos 'MM' - pois os itens da manutenção 
+//                       passam a gerar estoque
 // 07/02/2018 - Catia  - Tratamentos para produtos que sao considerados excessao dentros do tipo GG
 // 07/02/2018 - Catia  - Desabilitado o teste no campo C1_VAOBRA que foi tirado de uso e da tela
-// 21/03/2018 - Catia  - Incluido mais itens GG para serem tratados como exceção nao sendo obrigada a digitar o centro de custo nas contas transitorias
+// 21/03/2018 - Catia  - Incluido mais itens GG para serem tratados como exceção nao sendo obrigada a digitar 
+//                       o centro de custo nas contas transitorias
 // 26/11/2018 - Sandra - Validação campo C1_DATPRF para não aceitar data menor que a data base.
 // 12/12/2018 - Andre/Sandra - valida data de necessidade que obrigatoriamente tem que ser maior ou igual a data do sistema
 // 23/04/2019 - Catia/Sandra - ajustes na validação data de necessidade
-// 01/07/2019 - Andre        - tirado tipo de produto MM
-// 01/07/2019 - Andre        - Criado parametro VA_GRPSB1 contendo grupos de produto.
+// 01/07/2019 - Andre   - tirado tipo de produto MM
+// 01/07/2019 - Andre   - Criado parametro VA_GRPSB1 contendo grupos de produto.
+// 03/05/2021 - Claudia - Validação de centro de custo X filial. GLPI 9945
+//
 // ----------------------------------------------------------------------------------------------------------------------------------------------------
 user function mt110lok ()
 	local _lRet     := .T.
@@ -39,7 +50,6 @@ user function mt110lok ()
 			_lRet = .F.
 		endif
 	endif
-	
 
 	// valida a centro de custo e o campo destino para as peças - itens 7117 e 7017
 	if _lRet .and. ! GDDeleted ()
@@ -55,6 +65,15 @@ user function mt110lok ()
 		endif			
 	endif
 	
+	// valida a centro de custo X filial
+	if _lRet .and. ! GDDeleted ()
+		_sCC := SUBSTRING(alltrim(GDFieldGet ("C1_CC")), 1, 2)    
+		if _sCC <> cFilAnt
+			u_help ("Obrigatório informar centro de custo da filial logada!")
+			_lRet = .F.
+		endif		
+	endif
+
 	// obriga informacao do centro de custo
 	if _lRet .and. ! GDDeleted () .and. empty (GDFieldGet ("C1_CC"))
 		_wtpprod = fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("C1_PRODUTO"), 'B1_TIPO' )

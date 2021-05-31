@@ -14,6 +14,7 @@
 // 24/04/2019 - Catia   - Testar data de necessidade 
 // 22/03/2021 - Robert  - Teste com empty () do C1_DATPRF estava desconsiderando a variavel _nLinha.
 // 12/04/2021 - Claudia - Validação Centro de Custo X Conta Contábil - GLPI: 9120
+// 03/05/2021 - Claudia - Validação de centro de custo X filial. GLPI 9945
 //
 // ----------------------------------------------------------------------------------------------------------------------------------------------------
 User Function MT110TOK ()
@@ -51,6 +52,18 @@ User Function MT110TOK ()
 		next	
 	endif
 	
+	// valida a centro de custo X filial
+	if _lRet 
+		for _nLinha := 1 to Len(aCols)
+			_sCC := SUBSTRING(alltrim(GDFieldGet("C1_CC", _nLinha)), 1, 2)
+
+			if _sCC <> cFilAnt
+				u_help ("Obrigatório informar centro de custo da filial logada!")
+				_lRet = .F.
+			endif	
+		next	
+	endif
+
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
 	
