@@ -1,25 +1,33 @@
-// Programa:   BatPrDia
-// Autor:      Robert Koch
-// Data:       12/03/2014
+// Programa.:  BatPrDia
+// Autor....:  Robert Koch
+// Data.....:  12/03/2014
 // Descricao:  Envia e-mail com resumo da producao diaria.
 //             Criado para ser executado via batch.
 //
-// Historico de alteracoes:
-// 23/09/2015 - Robert - Pode receber como parametro a data de referencia.
-// 12/04/2017 - Robert - Incluida coluna de total de perda (para OPs de reprocesso).
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #batch
+// #Descricao         #Envia e-mail com resumo da producao diaria.
+// #PalavasChave      #produção diária #resumo_de_producao #recebimento #cartoes #baixa_de_titulos
+// #TabelasPrincipais #SD3 #SH1 #SB1
+// #Modulos   		  #PCP 
 //
-
-// --------------------------------------------------------------------------
+// Historico de alteracoes:
+// 23/09/2015 - Robert  - Pode receber como parametro a data de referencia.
+// 12/04/2017 - Robert  - Incluida coluna de total de perda (para OPs de reprocesso).
+// 31/05/2021 - Claudia - Incluida função para busca do nome da filial. GLPI: 10061
+//
+// ------------------------------------------------------------------------------------
 user function BatPrDia (_dDtRef)
 	local _aAreaAnt := U_ML_SRArea ()
 	local _oSQL     := NIL
 	local _sMsg     := ""
 	local _sArqLog2 := iif (type ("_sArqLog") == "C", _sArqLog, "")
 	local _sTitulo  := ""
-	_sArqLog := procname () + '_filial_' + cFilAnt + '.log'
-//	u_logId ()
-//	u_logIni ()
+	local _sNomeFil := ""
 
+	_sArqLog := procname () + '_filial_' + cFilAnt + '.log'
+
+	// Query principal
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT D3_OP AS OP, D3_COD AS PRODUTO, H1_DESCRI AS [LINHA ENVASE],"
@@ -45,14 +53,40 @@ user function BatPrDia (_dDtRef)
 	_oSQL:_sQuery +=    " AND D3_ESTORNO != 'S'"
 	_oSQL:_sQuery +=  " GROUP BY D3_OP, D3_COD, B1_DESC, B1_UM ,H1_DESCRI"
 	_oSQL:_sQuery +=  " ORDER BY H1_DESCRI, B1_DESC"
+
 	//u_log (_oSQL:_sQuery)
+
 	if len (_oSQL:Qry2Array (.F., .T.)) > 1
-		_sTitulo = 'Apontamento de producao - Data ' + dtoc (date () - 1) + ' - ' + sm0 -> m0_filial
+		_sNomeFil := _BuscaNomeFilial(cFilAnt)
+
+		_sTitulo = 'Apontamento de producao - Data ' + dtoc (date () - 1) + ' - ' + _sNomeFil
 		_sMsg = _oSQL:Qry2HTM (_sTitulo, NIL, "", .F., .T.)
-		//u_log (_sMsg)
+		
 		U_ZZUNU ({'026'}, _sTitulo, _sMsg, .F., cEmpAnt, cFilAnt)
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
 	_sArqLog = _sArqLog2
 Return .T. 
+//
+// ------------------------------------------------------------------------------------
+// Busca nome da filial
+Static Function _BuscaNomeFilial(cFilAnt)
+	local _x        := 0
+	local _sNomeFil := " "
+	local _aFilial  := {}
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "" 
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 		M0_FILIAL"
+	_oSQL:_sQuery += " FROM VA_SM0 "
+	_oSQL:_sQuery += " WHERE M0_CODIGO = '01'"
+	_oSQL:_sQuery += " AND M0_CODFIL   = '" + cFilAnt + "'"
+	_aFilial := aclone (_oSQL:Qry2Array ())
+
+	For _x := 1 to Len(_aFilial)
+		_sNomeFil := _aFilial[_x, 1]
+	Next
+
+Return _sNomeFil
