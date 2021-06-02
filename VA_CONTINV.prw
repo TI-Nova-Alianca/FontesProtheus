@@ -6,6 +6,7 @@
 // Historico de alteracoes:
 // 22/04/2020 - Cláudia - Alterado cabeçalho para padrão
 // 12/02/2021 - Cláudia - Incluida ordenação pela descrição
+// 02/06/2021 - Claudia - Alterada ordenação almox/ites. GLPI: 10146
 //
 // ---------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -76,7 +77,7 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " AND SB7.B7_TIPO BETWEEN '" + mv_par07 + "' AND '" + mv_par08 + "'"
 	Do Case
 		Case mv_par09 == 1
-			_oSQL:_sQuery += " ORDER BY FILIAL, ITEM"
+			_oSQL:_sQuery += " ORDER BY FILIAL, ALMOX, ITEM"
 		Case mv_par09 == 2
 			_oSQL:_sQuery += " ORDER BY FILIAL, ALMOX, TIPO, ENDERECO"
 		Case mv_par09 == 3
@@ -135,7 +136,7 @@ Static Function _ValidPerg ()
     aadd (_aRegsPerg, {06, "Local até       ", "C", 2, 0,  "",  "   ", {},                         								""})
     aadd (_aRegsPerg, {07, "Tipo de         ", "C", 2, 0,  "",  "   ", {},                         								""})
     aadd (_aRegsPerg, {08, "Tipo até        ", "C", 2, 0,  "",  "   ", {},                         								""})
-    aadd (_aRegsPerg, {09, "Ordenação       ", "N", 1, 0,  "",  "   ", {"Item","Tipo+Endereço","Descrição","Tipo+Descrição"},   ""})
+    aadd (_aRegsPerg, {09, "Ordenação       ", "N", 1, 0,  "",  "   ", {"Almox+Item","Tipo+Endereço","Descrição","Tipo+Descrição"},   ""})
      U_ValPerg (cPerg, _aRegsPerg)
 Return
 
