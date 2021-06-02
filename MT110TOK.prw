@@ -58,7 +58,7 @@ User Function MT110TOK ()
 		for _nLinha := 1 to Len(aCols)
 			_sCC := SUBSTRING(alltrim(GDFieldGet("C1_CC", _nLinha)), 1, 2)
 
-			if !(_sCC) .and. _sCC <> cFilAnt
+			if !empty(_sCC) .and. _sCC <> cFilAnt
 				u_help ("Obrigatório informar centro de custo da filial logada!")
 				_lRet = .F.
 			endif	
