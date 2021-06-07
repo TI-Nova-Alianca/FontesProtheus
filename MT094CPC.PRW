@@ -11,12 +11,12 @@
 //
 // Historico de alteracoes:
 // 15/01/2021 - Cláudia - GLPI: 8286/8818. Acrescentados os campos C7_VADESTI|C7_VACCDES
-// 
+// 04/05/2021 - Claudia - Acrescentado o campo C7_SOLICIT. GLPI:9814
 //
 // ------------------------------------------------------------------------------------------------------------------
 #Include 'Protheus.ch'
 
 User Function MT094CPC()
-    Local cCampos := "C7_OBS|C7_COMNOM|C7_VADESTI|C7_VACCDES" //  A separação dos campos devem ser feitos com uma barra vertical ( | ), igual é demonstrado no exemplo. 
+    Local cCampos := "C7_OBS|C7_SOLICIT|C7_COMNOM|C7_VADESTI|C7_VACCDES" //  A separação dos campos devem ser feitos com uma barra vertical ( | ), igual é demonstrado no exemplo. 
 
 Return (cCampos)

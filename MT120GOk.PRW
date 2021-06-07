@@ -1,6 +1,6 @@
-// Programa:  MT120GOk
-// Autor:     Robert Koch
-// Data:      30/05/20102
+// Programa.: MT120GOk
+// Autor....: Robert Koch
+// Data.....: 30/05/2012
 // Descricao: P.E. apos gravacao / exclusao de pedido de compra / autorizacao de entrega.
 //            Criado inicialmente para disparar envio de e-mail ao fornecedor.
 //   
@@ -19,6 +19,7 @@
 // 02/09/2019 - Andre   - Alterado UPDATE para gravar os novos campos da tabela SCR (CR_TIPOPRO, CR_CC).
 // 06/03/2020 - Claudia - Criação de campo com nome de comprador e disponibilizado no browser. GLPI 7596
 // 15/01/2021 - Claudia - Incluido bloco de descrições do programa no cabeçalho.
+// 04/05/2021 - Claudia - Incluida a gravação do solicitante no pedido. GLPI: 9814
 //
 // -------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
@@ -51,11 +52,35 @@ user function MT120GOk ()
 		if _nOpcao == 1 //2
 			u_pedvend ()
 		endif
-		
+
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery := ""		
+		_oSQL:_sQuery += " SELECT DISTINCT "
+		_oSQL:_sQuery += " 		SC1.C1_SOLICIT "
+		_oSQL:_sQuery += " FROM " + RetSqlName("SC7") + " SC7 "
+		_oSQL:_sQuery += " INNER JOIN " + RetSqlName("SC1") + " SC1 "
+		_oSQL:_sQuery += " 	 ON SC1.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery += " 		AND SC1.C1_FILIAL = SC7.C7_FILIAL "
+		_oSQL:_sQuery += " 		AND SC1.C1_PEDIDO = SC7.C7_NUM "
+		_oSQL:_sQuery += " 		AND SC1.C1_ITEM   = SC7.C7_ITEM "
+		_oSQL:_sQuery += " WHERE SC7.D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " AND SC7.C7_FILIAL    = '" + cFilAnt           		+ "'"
+		_oSQL:_sQuery += " AND SC7.C7_NUM       = '" + sc7 -> c7_num     		+ "'"
+		_oSQL:_sQuery += " AND SC7.C7_FORNECE   = '" + sc7 -> c7_fornece 		+ "'" 
+		_oSQL:_sQuery += " AND SC7.C7_EMISSAO   = '" + DTOS(sc7 -> c7_emissao)  + "'" 
+		_aSolic := aclone (_oSQL:Qry2Array ())
+
+		if len(_aSolic) > 0
+			_sSolicitante := _aSolic[1,1]
+		else
+			_sSolicitante := "-"
+		endif
+
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " UPDATE  " + RetSqlName("SC7")
-		_oSQL:_sQuery +=   " SET C7_COMNOM = '" + UsrFullName(sc7 -> c7_user) +"'"
+		_oSQL:_sQuery += " 		SET C7_COMNOM  = '" + UsrFullName(sc7 -> c7_user) +"'"
+		_oSQL:_sQuery += "         ,C7_SOLICIT = '" + _sSolicitante               +"'"
 		_oSQL:_sQuery += " WHERE C7_FILIAL = '" +  cFilAnt + "'"
 		_oSQL:_sQuery += " AND C7_NUM = '"+ sc7 -> c7_num +"'" 
 		_oSQL:_sQuery += " AND C7_FORNECE = '"+ sc7 -> c7_fornece +"'" 
@@ -71,8 +96,8 @@ user function MT120GOk ()
 	if _lDeleta
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "UPDATE VA_TEXTOS"
-		_oSQL:_sQuery +=   " SET D_E_L_E_T_ = '*'"
+		_oSQL:_sQuery += " UPDATE VA_TEXTOS"
+		_oSQL:_sQuery += " SET D_E_L_E_T_ = '*'"
 		_oSQL:_sQuery += " WHERE CHAVE = 'SC7" + cEmpAnt + cFilAnt + sc7 -> c7_num + "'"
 		_oSQL:Exec ()
 	endif
@@ -82,8 +107,8 @@ user function MT120GOk ()
 	u_logfim()
 return
 //
-// Grava dados adicionais nos documentos com alcada.
 // --------------------------------------------------------------------------
+// Grava dados adicionais nos documentos com alcada.
 static function _AtuSCR ()
 	local _oSQL := NIL
 	local _sObs := left (sc7 -> c7_obs, tamsx3 ("CR_OBS")[1])  // Limita ao tamanho do campo, senao o SQL reclama.
@@ -93,23 +118,24 @@ static function _AtuSCR ()
 	
 	_oSQL := ClsSQL():New ()
 	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT COUNT (*) FROM " + RetSQLName ("SCR")
-	_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=    " AND CR_FILIAL = '" + sc7 -> c7_filial + "'"
-	_oSQL:_sQuery +=    " AND CR_TIPO = 'PC'"
-	_oSQL:_sQuery +=    " AND SUBSTRING (CR_NUM, 1, 6) = '" + sc7 -> c7_num + "'"
+	_oSQL:_sQuery += " SELECT COUNT (*) "
+	_oSQL:_sQuery += "		FROM " + RetSQLName ("SCR")
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " AND CR_FILIAL = '" + sc7 -> c7_filial + "'"
+	_oSQL:_sQuery += " AND CR_TIPO = 'PC'"
+	_oSQL:_sQuery += " AND SUBSTRING (CR_NUM, 1, 6) = '" + sc7 -> c7_num + "'"
 	u_log(_oSQL:RetQry())
 	
 	_oSQL := ClsSQL():New ()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " UPDATE " + RetSQLName ("SCR")
-	_oSQL:_sQuery +=    " SET CR_OBS = '" + _sObs + "'"   // Limita ao tamanho do campo, senao o SQL reclama.
-	_oSQL:_sQuery +=    ", CR_CC = '" + sc7 -> c7_cc + "'"
-	_oSQL:_sQuery +=    ", CR_TIPOPRO = '" + fbuscacpo('SB1',1,xfilial('SB1') + SC7 -> C7_PRODUTO,'B1_TIPO') + "'"
-	_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=    " AND CR_FILIAL = '" + sc7 -> c7_filial + "'"
-	_oSQL:_sQuery +=    " AND CR_TIPO = 'PC'"
-	_oSQL:_sQuery +=    " AND SUBSTRING (CR_NUM, 1, 6) = '" + sc7 -> c7_num + "'"
+	_oSQL:_sQuery += " SET CR_OBS = '" + _sObs + "'"   // Limita ao tamanho do campo, senao o SQL reclama.
+	_oSQL:_sQuery += ", CR_CC = '" + sc7 -> c7_cc + "'"
+	_oSQL:_sQuery += ", CR_TIPOPRO = '" + fbuscacpo('SB1',1,xfilial('SB1') + SC7 -> C7_PRODUTO,'B1_TIPO') + "'"
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " AND CR_FILIAL = '" + sc7 -> c7_filial + "'"
+	_oSQL:_sQuery += " AND CR_TIPO = 'PC'"
+	_oSQL:_sQuery += " AND SUBSTRING (CR_NUM, 1, 6) = '" + sc7 -> c7_num + "'"
 	_oSQL:Exec ()
 	u_log(_oSQL:_sQuery)
 	u_log(sc7 -> c7_num)

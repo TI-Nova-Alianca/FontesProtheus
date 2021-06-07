@@ -18,6 +18,7 @@
 // 08/02/2018 - Catia   - ao gerar o pedido de compra assumir o valor digitado na solicitacao
 // 16/10/2018 - Andre   - Ao trazer solicitação de compra, no pedido campo Razão Social é preenchido automaticamente.
 // 15/01/2021 - Claudia - GLPI: 8286/8818. Acrescentados os campos C7_VADESTI|C7_VACCDES
+// 04/05/2021 - Claudia - Acrescentado o campo C7_SOLICIT. GLPI:9814
 //
 // -------------------------------------------------------------------------------------------------------------------
 User function MT120ISC ()
@@ -31,6 +32,7 @@ User function MT120ISC ()
 		GDFieldPut ("C7_VAFNOME", fBuscaCpo ('SA2', 1, xfilial ('SA2') + CA120FORN + CA120LOJ, 'A2_NOME'))
 		GDFieldPut ("C7_VADESTI", sc1 -> c1_vadesti)
 		GDFieldPut ("C7_VACCDES", fbuscacpo('CTT',1,xfilial('CTT') + sc1 -> c1_cc ,'CTT_DESC01') )
+		GDFieldPut ("C7_SOLICIT", sc1 -> c1_solicit)
 
 	else  // Aut.entrega
 		GDFieldPut ("C7_DESCRI",  sc3 -> c3_vadescr)
