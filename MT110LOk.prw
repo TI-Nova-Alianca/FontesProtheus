@@ -68,7 +68,7 @@ user function mt110lok ()
 	// valida a centro de custo X filial
 	if _lRet .and. ! GDDeleted ()
 		_sCC := SUBSTRING(alltrim(GDFieldGet ("C1_CC")), 1, 2)    
-		if _sCC <> cFilAnt
+		if !empty(_sCC) .and. _sCC <> cFilAnt
 			u_help ("Obrigatório informar centro de custo da filial logada!")
 			_lRet = .F.
 		endif		
