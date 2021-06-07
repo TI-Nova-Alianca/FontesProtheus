@@ -17,6 +17,8 @@
 //               e dividindo por 12. GLPI: 9099
 //  05/05/2021 - Cláudia - Adicionado valor de frete + seguro + despesas acessorias. GLPI: 9895
 //  07/05/2021 - Claudia - Retirado _mvsim1:= GetMv ("MV_SIMB1") devido a erros R27. 
+//  07/06/2021 - Claudia - Inicializado o parametro de nome de vendedor com vazio, para casos onde 
+//                         vendedro não possua notas no mes, mas está ativo.
 //
 // ----------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -122,6 +124,7 @@ Static Function _GeraPDF_Email()
     (_sAliasVend) -> (DBGoTop ())
     Do While ! (_sAliasVend) -> (Eof ())
     	_sVend    := (_sAliasVend) -> VENDEDOR
+		_sNomeVend:= ""
 		_dDtaPgto := stod((_sAliasVend) -> DTPAG)
 		
     	_cFile := "RelCom_" + ALLTRIM(_sVend) //nome do arquivo padrão, deve ser alterado para não sobrescrever
