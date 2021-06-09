@@ -1,18 +1,91 @@
 #include 'protheus.ch'
 #include 'parmtype.ch'
 
-user function claudia ()
+User Function claudia ()
+	u_help("Nada para executar")
 
-	//u_help("Nada para executar")
-	AXCADASTRO("AK5")
-	//u_help('VERBAS')
-	//U_ClauBatVerbas(2,cFilAnt)
-//	u_help('comissoes')
+	//u_help("ALMOX1")
+	//Almox1()
+	//u_help("ALMOX2")
+	//Almox2()
+	// u_help('Solicitante')
+	// Solicitante()
 
-//	descCC()
-	//ImpOBSFin()
-//	comissoes()
-return
+Return
+//
+// ------------------------------------------------------------------
+// Static Function Almox1()
+// 	// Ajusta cadastro produtos em lote
+
+// 	sb1 -> (dbsetorder (1))
+// 	sb1 -> (dbgotop ())
+
+// 	do while !sb1 -> (eof ())
+// 		if sb1 -> b1_tipo = 'MM'
+// 			regtomemory ("SB1", .F., .F.)
+			
+// 			// Grava evento de alteracao
+// 			_oEvento := ClsEvent():new ()
+// 			_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI:10102 - AJUSTA LOCPAD DE 60 PARA 02', .F.)
+
+// 			reclock ("SB1", .f.)
+// 				sb1 -> B1_LOCPAD = '02'
+// 			msunlock ()
+// 		endif
+// 		sb1 -> (dbskip ())
+// 	enddo
+// Return
+//
+// ------------------------------------------------------------------
+// Static Function Almox2()
+// 	local _x := 0
+
+// 	U_help("Exec Almox 2")
+// 	_oSQL := ClsSQL():New ()
+// 	_oSQL:_sQuery := ""
+// 	_oSQL:_sQuery += " SELECT "
+// 	_oSQL:_sQuery += " 	  SB1.B1_COD "
+// 	_oSQL:_sQuery += " FROM SB1010 SB1 "
+// 	_oSQL:_sQuery += " INNER JOIN SB2010 SB2 "
+// 	_oSQL:_sQuery += " 	ON SB2.D_E_L_E_T_ = '' "
+// 	_oSQL:_sQuery += " 		AND B2_COD = B1_COD "
+// 	_oSQL:_sQuery += " 		AND SB2.B2_QATU > 0
+// 	_oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = '' "
+// 	_oSQL:_sQuery += " AND SB1.B1_TIPO = 'MC' "
+// 	//_oSQL:_sQuery += " AND SB1.B1_TIPO = 'MM' "
+// 	_aSB1:= _oSQL:Qry2Array ()
+	
+// 	For _x := 1 to Len(_aSB1)
+// 		CriaSB2 (_aSB1[_x, 1], '02')
+// 	Next
+
+// Return
+//
+// ------------------------------------------------------------------
+// Static Function Solicitante()
+// 	Local _aDados 	:= {}
+// 	Local _i 		:=0
+
+// 	_aDados = U_LeCSV ('C:\Temp\solicitante.csv', ';')
+
+// 	for _i := 1 to len (_aDados)
+// 		_sFilial  := _aDados[_i, 1]
+// 		_sNumero  := _aDados[_i, 2]
+// 		_sFornec  := _aDados[_i, 3]
+// 		_dEmissao := _aDados[_i, 4]
+// 		_sSolicit := _aDados[_i, 5]
+
+// 		_oSQL := ClsSQL():New ()
+// 		_oSQL:_sQuery := ""
+// 		_oSQL:_sQuery += " UPDATE  " + RetSqlName("SC7")
+// 		_oSQL:_sQuery += " 		SET C7_SOLICIT = '" + _sSolicit +"'"
+// 		_oSQL:_sQuery += " WHERE C7_FILIAL = '" + _sFilial  + "'"
+// 		_oSQL:_sQuery += " AND C7_NUM      = '" + _sNumero  + "'" 
+// 		_oSQL:_sQuery += " AND C7_FORNECE  = '" + _sFornec  + "'" 
+// 		_oSQL:_sQuery += " AND C7_EMISSAO  = '" + _dEmissao + "'" 
+// 		_oSQL:Exec ()
+// 	Next
+// return
 //
 // User function ClauBatVerbas(_nTipo, _sFilial)
 // 	Local _aDados   := {}
@@ -317,7 +390,7 @@ return
 // Return
 // // ----------------------------------------------------------------------------
 // // Importa CSV obs financeiro
-
+//
 // static Function ImpOBSFin()
 // Local _aDados 	:= {}
 // Local _i 		:=0
