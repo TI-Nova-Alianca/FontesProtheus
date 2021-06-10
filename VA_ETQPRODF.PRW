@@ -14,6 +14,7 @@
 // 02/10/2018 - Andre   - Criação para impressão das etiquetas para produtos da manutenção
 // 15/10/2019 - Andre   - Ajustado fonte para inserir quantidade de peças por etiquetas.
 // 18/02/2021 - Claudia - Incluida msg quando n existe endereçamento do produto. GLPI: 9271
+// 10/06/2021 - Claudia - Incluido loop para impressão. GLPI: 10186
 //
 // ------------------------------------------------------------------------------------------------
 #INCLUDE "rwmake.ch"
@@ -37,7 +38,8 @@ User Function VA_ETQPRODF()
 
 	_ValidPerg()
 
-	If Pergunte(cPerg)
+	//If Pergunte(cPerg)
+	Do While Pergunte(cPerg)
 		_sPortaImp = U_RetZX5 ('49', mv_par05, 'ZX5_49CAM')
 		_nModelImp = val (U_RetZX5 ('49', mv_par05, 'ZX5_49LING'))
 		
@@ -124,7 +126,8 @@ User Function VA_ETQPRODF()
 		Else
 			u_help("Produto sem endereçamento! A etiqueta não será impressa.")
 		EndIf
-	Endif	
+	EndDo
+	//Endif	
 Return
 //
 // -----------------------------------------------------------------------------------------------------
