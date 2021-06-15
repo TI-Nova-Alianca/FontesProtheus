@@ -3,7 +3,8 @@
 
 User Function claudia ()
 	u_help("Nada para executar")
-
+	//u_help("CIELO")
+	//Cielo()
 	//u_help("ALMOX1")
 	//Almox1()
 	//u_help("ALMOX2")
@@ -40,7 +41,7 @@ Return
 // Static Function Almox2()
 // 	local _x := 0
 
-// 	U_help("Exec Almox 2")
+// 	U_help("Exec Almox 2 ITENS")
 // 	_oSQL := ClsSQL():New ()
 // 	_oSQL:_sQuery := ""
 // 	_oSQL:_sQuery += " SELECT "
@@ -51,14 +52,75 @@ Return
 // 	_oSQL:_sQuery += " 		AND B2_COD = B1_COD "
 // 	_oSQL:_sQuery += " 		AND SB2.B2_QATU > 0
 // 	_oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = '' "
-// 	_oSQL:_sQuery += " AND SB1.B1_TIPO = 'MC' "
-// 	//_oSQL:_sQuery += " AND SB1.B1_TIPO = 'MM' "
+// 	//_oSQL:_sQuery += "  AND SB1.B1_COD IN('600524')""
+// 	//_oSQL:_sQuery += " AND SB1.B1_TIPO = 'MC' "
+// 	_oSQL:_sQuery += " AND SB1.B1_TIPO = 'MM' "
+// 	_oSQL:Log ()
 // 	_aSB1:= _oSQL:Qry2Array ()
 	
 // 	For _x := 1 to Len(_aSB1)
 // 		CriaSB2 (_aSB1[_x, 1], '02')
 // 	Next
 
+// Return
+//
+// ------------------------------------------------------------------
+// Bandeira/parcela/NSU/Vlr.Bruto/Vlr,Liq.
+// Static Function Cielo()
+// 	Local _aDados 	:= {}
+// 	Local _aTexto   := {}
+// 	Local _i 		:= 0
+// 	Local _x        := 0
+
+// 	nHandle := FCreate("c:\temp\titulos_cielo.csv")
+// 	_aDados = U_LeCSV ('C:\Temp\cielo.csv', ';')
+
+// 	_sTexto := " FILIAL; TITULO; PREFIXO; PARCELA;CLIENTE;LOJA;NSU;AUTORIZACAO;BANDEIRA;VALOR TITULO; VLR.BRUTO CIELO;VLR.LIQ CIELO"+ chr (13) + chr (10)
+// 	FWrite(nHandle,_sTexto )
+
+// 	for _i := 1 to len (_aDados)
+// 		_sBandeira := _aDados[_i, 1]
+// 		_sParc     := _aDados[_i, 2]
+// 		_sNSU      := _aDados[_i, 3]
+// 		_VlrBrt    := _aDados[_i, 4]
+// 		_VlrLiq    := _aDados[_i, 5]
+
+// 		_oSQL := ClsSQL():New ()
+// 		_oSQL:_sQuery := ""
+// 		_oSQL:_sQuery += " SELECT "
+// 		_oSQL:_sQuery += " 	   E1_FILIAL "
+// 		_oSQL:_sQuery += "    ,E1_NUM "
+// 		_oSQL:_sQuery += "    ,E1_PREFIXO "
+// 		_oSQL:_sQuery += "    ,E1_PARCELA "
+// 		_oSQL:_sQuery += "    ,E1_CLIENTE "
+// 		_oSQL:_sQuery += "    ,E1_LOJA "
+// 		_oSQL:_sQuery += "    ,E1_NSUTEF "
+// 		_oSQL:_sQuery += "    ,E1_CARTAUT "
+// 		_oSQL:_sQuery += "    ,E1_VALOR "
+// 		_oSQL:_sQuery += " FROM " + RetSqlName("SE1")
+// 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+// 		_oSQL:_sQuery += " AND E1_NSUTEF    = '"+ alltrim(_sNSU)  +"' "
+// 		_oSQL:_sQuery += " AND E1_PARCELA   = '"+ alltrim(_sParc) +"' "
+// 		_oSQL:Log ()
+// 		_aTexto:= _oSQL:Qry2Array ()
+
+// 		For _x := 1 to Len(_aTexto)
+// 			_sFilial := _aTexto[_x, 1]
+// 			_sNum    := _aTexto[_x, 2]
+// 			_sPrefix := _aTexto[_x, 3]
+// 			_sParc   := _aTexto[_x, 4]
+// 			_sCliente:= _aTexto[_x, 5]
+// 			_sLoja   := _aTexto[_x, 6]
+// 			_sNsu    := _aTexto[_x, 7]
+// 			_sAut    := _aTexto[_x, 8]
+// 			_nValor  := _aTexto[_x, 9]
+
+// 			_sTexto := _sFilial +";"+ _sNum +";"+ _sPrefix +";"+ _sParc +";"+ _sCliente +";"+ _sLoja +";"+ _sNsu +";"+ _sAut +";"+ _sBandeira +";"+ str(_nValor) +";"+ _VlrBrt +";"+ _VlrLiq + chr (13) + chr (10)
+// 			FWrite(nHandle,_sTexto )
+// 		Next
+
+// 	Next
+// 	FClose(nHandle)
 // Return
 //
 // ------------------------------------------------------------------
