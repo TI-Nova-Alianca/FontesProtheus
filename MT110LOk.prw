@@ -32,13 +32,13 @@
 // 01/07/2019 - Andre   - tirado tipo de produto MM
 // 01/07/2019 - Andre   - Criado parametro VA_GRPSB1 contendo grupos de produto.
 // 03/05/2021 - Claudia - Validação de centro de custo X filial. GLPI 9945
+// 15/06/2021 - Claudia - Incluida novas validações C.custo X C.contabil. GLPI: 10224
 //
-// ----------------------------------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------------------
 user function mt110lok ()
 	local _lRet     := .T.
 	local _aAreaAnt := U_ML_SRArea ()
 	local _aAmbAnt  := U_SalvaAmb ()
-//	local _lUsaRat  := .F.
 
 	if _lRet .and. ! GDDeleted () .and. GDFieldGet ("C1_VAENCAM") == "S"
 		if _lRet .and. empty (GDFieldGet ("C1_VAJENC"))
@@ -104,7 +104,34 @@ user function mt110lok ()
 		_lRet = .F.
 	endif  
 */	
-	
+// realiza a validação de amarração centro de custo x conta contábil
+	if GetMv("VA_CUSXCON") == 'S' .and. _lRet // parametro para realizar as validações
+		_sConta := GDFieldGet("C1_CONTA")
+		_sCC    := GDFieldGet("C1_CC")
+
+		if empty(_sConta)
+			u_help("Conta contábil é obrigatória!")
+			_lRet = .F.
+		endif
+
+		_sPConta := SubStr( _sConta, 1, 1 )
+		if _lRet .and. (_sPConta == '4' .or. _sPConta == '7') .and. empty(_sCC)  // obrigatorio CC
+			u_help("Contas iniciadas em 4 e 7 é obrigatório inserir o centro de custo!")
+			_lRet = .F.
+		endif
+
+		if _lRet .and. (_sPConta == '1' .or. _sPConta == '2') .and. !empty(_sCC)
+			u_help("Conta contábil iniciada em 1, não é necessário a informação do centro de custo! Retire o Centro de custo.")
+			_lRet = .F.
+		endif
+		// if !empty(GDFieldGet("C1_CC")) .and. !empty(GDFieldGet("C1_CONTA"))
+		// if _lRet .and. alltrim(_sConta) != alltrim(_sCC)
+		// 	u_help ("Divergencia no cadastro de Amarração C.Custo X C.Contabil. Grupo C.Custo:" + alltrim(_sCC) + " Grupo C.Contabil:" + alltrim(_sConta))
+		// 	_lRet = .F.
+		// endif
+		// endif
+	endif
+
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
 return _lRet

@@ -11,8 +11,9 @@
 // 29/05/2020 - Robert  - Liberada gravacao mov.retroativo para programa U_ESXEST01.
 // 03/02/2021 - Cláudia - Vinculação Itens C ao movimento 573 - GLPI: 9163
 // 13/04/2021 - Claudia - Validação Centro de Custo X Conta Contábil - GLPI: 9120
+// 15/06/2021 - Claudia - Incluida novas validações C.custo X C.contabil. GLPI: 10224
 //
-// --------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------
 user function MT240TOk ()
 	local _lRet := .T.
 	local _aAreaAnt := U_ML_SRArea ()
@@ -60,15 +61,34 @@ user function MT240TOk ()
 
 	// realiza a validação de amarração centro de custo x conta contábil
 	if GetMv("VA_CUSXCON") == 'S' .and. _lRet // parametro para realizar as validações
-		if !empty(m->d3_conta) .and. !empty(m->d3_cc)
-			_sConta := U_VA_CUSXCON(m->d3_conta,'1')
-			_sCC    := U_VA_CUSXCON(m->d3_cc,'2')
+		_sConta := m->d3_conta
+		_sCC    := m->d3_cc
 
-			if alltrim(_sConta) !=alltrim(_sCC)
-				u_help ("Divergencia no cadastro de Amarração C.Custo X C.Contabil. Grupo C.Custo:" + alltrim(_sCC) + " Grupo C.Contabil:" + alltrim(_sConta))
-				_lRet = .F.
-			endif
-		endif	
+		if empty(_sConta)
+			u_help("Conta contábil é obrigatória!")
+			_lRet = .F.
+		endif
+
+		_sPConta := SubStr( _sConta, 1, 1 )
+		if _lRet .and. (_sPConta == '4' .or. _sPConta == '7') .and. empty(_sCC)  // obrigatorio CC
+			u_help("Contas iniciadas em 4 e 7 é obrigatório inserir o centro de custo!")
+			_lRet = .F.
+		endif
+
+		if _lRet .and. (_sPConta == '1' .or. _sPConta == '2')  .and. !empty(_sCC)
+			u_help("Conta contábil iniciada em 1, não é necessário a informação do centro de custo! Retire o Centro de custo.")
+			_lRet = .F.
+		endif
+		// _sConta := U_VA_CUSXCON(m->d3_conta,'1')
+		// _sCC    := U_VA_CUSXCON(m->d3_cc,'2')
+		// if !empty(m->d3_conta) .and. !empty(m->d3_cc)
+		// if !empty(_sConta) .and. !empty(_sCC)
+		// 	if alltrim(_sConta) !=alltrim(_sCC)
+		// 		u_help ("Divergencia no cadastro de Amarração C.Custo X C.Contabil. Grupo C.Custo:" + alltrim(_sCC) + " Grupo C.Contabil:" + alltrim(_sConta))
+		// 		_lRet = .F.
+		// 	endif
+		// endif
+		// endif
 	endif
 	U_ML_SRArea (_aAreaAnt)
 return _lRet
