@@ -35,6 +35,7 @@
 // 14/08/2020 - Cláudia - Ajuste de Api em loop, conforme solicitação da versao 25 protheus. GLPI: 7339
 // 19/11/2020 - Sandra  - Ajuste do campo A1_GRPTRIB" de 001 para "003" no caso de funcionario e clientes, conforme A1_lojas
 // 26/03/2021 - Robert  - Nao tinha tratamento para cidades com [til] no nome (GLPI 9706).
+// 11/06/2021 - Robert  - Pequena melhoria na geracao de logs.
 //
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -53,9 +54,7 @@ User function BATFUNATLZ()
 	local _tpMainWnd := type ("oMainWnd")
 	private _sQuery  := ''
 	
-	u_logIni ()
 	_sErroAuto := ''  // Para a funcao u_help gravar mensagens.
-
 	_oBatch:Retorno = 'S'  // "Executou OK?" --> S=Sim;N=Nao;I=Iniciado;C=Cancelado;E=Encerrado automaticamente
 
 	//Pegando o modelo de dados, setando a operação de inclusão
@@ -102,7 +101,7 @@ User function BATFUNATLZ()
 				_sSQL += "        , '" + str(i,6) + "'"
 				_sSQL += "        , '" + _aFuncionarios[i,5] + "'"
 				_sSQL += " )"
-				u_log (_sSQL)
+				u_log2 ('info', _sSQL)
 				if TCSQLExec (_sSQL) < 0
 					_oBatch:Mensagens += 'Erro ao alimentar tabela ZAD'
 					_oBatch:Retorno = 'N'  // "Executou OK?" --> S=Sim;N=Nao;I=Iniciado;C=Cancelado;E=Encerrado automaticamente
@@ -128,7 +127,7 @@ User function BATFUNATLZ()
 			for i=1 to len(_aDados)
 			
 				_wnome     = alltrim(_aDados[i,3])
-				u_log (_wnome)
+				u_log2 ('info', _wnome)
 				_wtipo     = _aDados[i,12]
 				_wend      = alltrim(_aDados[i,4])
 			    _wbairro   = alltrim(_aDados[i,5])
@@ -155,7 +154,7 @@ User function BATFUNATLZ()
 				endif
 				
 				if _wcontinua // inclui o cliente
-					u_log ('Incluindo cliente', _wnome)
+					u_log2 ('info', 'Incluindo cliente ' + _wnome)
 					lMsErroAuto := .F.
 					_sErroAuto := ''
 
@@ -228,7 +227,7 @@ User function BATFUNATLZ()
 						_sErroAuto += ("Mensagem da solução: "        + ' [' + AllToChar(aErro[07]) + ']')
 						_sErroAuto += ("Valor atribuído: "            + ' [' + AllToChar(aErro[08]) + ']')
 						_sErroAuto += ("Valor anterior: "             + ' [' + AllToChar(aErro[09]) + ']')
-						u_log (_sErroAuto)
+						u_log2 ('erro', _sErroAuto)
 						//
 						//if type ("oMainWnd") == "O"  // Se tem interface com o usuario
 						if _tpMainWnd == "O"  // Se tem interface com o usuario
@@ -236,13 +235,13 @@ User function BATFUNATLZ()
 						endif
 						//Return()
 					Else
-						u_log ('Cliente incluido:', sa1 -> a1_cod)
+						u_log2 ('Cliente incluido: ' + sa1 -> a1_cod)
 					EndIf
 					//
 					//Desativa o modelo de dados
 					oModel:DeActivate()
 				else
-					u_log ('Cliente', _wcgc, _wnome, 'jah existe.')
+					// u_log ('Cliente', _wcgc, _wnome, 'jah existe.')
 					_wlojas = iif(_wintegra=1,'A','F')
 					if _wintegra = 2 		// FUNCIONARIOS
 						if _wsituacao = '3' .or. _wsituacao = '4' // DESLIGADO - FUNCIONARIO DESLIGADO CONTINUA SENDO CLIENTE
@@ -278,23 +277,23 @@ User function BATFUNATLZ()
 			        _sSQL += "  WHERE D_E_L_E_T_ = ''"
 					_sSQL += "    AND A1_COD     = '" + _wcodcli  + "'"
 					_sSQL += "    AND A1_LOJA    = '" + _wlojacli + "'"
-					u_log (_sSQL)
+					u_log2 ('info', _sSQL)
 					TCSQLExec (_sSQL)
 				endif
 			next
 		endif
 	next
-	u_log ('_sErroAUto:')
-	u_log (_sErroAuto)
+	u_log2 ('debug', '_sErroAUto:')
+	u_log2 ('debug', _sErroAuto)
 	if ! empty (_sErroAuto)
 		_oBatch:Mensagens += _sErroAuto
 		_oBatch:Retorno = 'N'  // "Executou OK?" --> S=Sim;N=Nao;I=Iniciado;C=Cancelado;E=Encerrado automaticamente
 	else
 		_oBatch:Retorno = 'S'  // "Executou OK?" --> S=Sim;N=Nao;I=Iniciado;C=Cancelado;E=Encerrado automaticamente
 	endif
-	u_logFim ()
 return .T.
 
+// --------------------------------------------------------------------------
 Static Function _Exe1Query() // busca associados
     _sQuery += " SELECT SA2.A2_COD"		// 1
     _sQuery += "	  , SA2.A2_LOJA"	// 2
@@ -337,10 +336,11 @@ Static Function _Exe1Query() // busca associados
 	_sQuery += "		        	 AND SZI.ZI_TM      = '09'"  // 09 = desligamento do associado da cooperativa
 	_sQuery += "			     	AND SZI.ZI_LOJASSO  = SA2.A2_LOJA)"
  	_sQuery += " ORDER BY SA2.A2_NOME"
- 	u_log (_sQuery)	
+ 	u_log2 ('info', _sQuery)	
  return	
  
- Static Function _Exe2Query() // busca funcionarios
+// --------------------------------------------------------------------------
+Static Function _Exe2Query() // busca funcionarios
 	_sQuery += " SELECT FUN.UNIDADE" 			//  1
 	_sQuery += "        ,FUN.SITUACAO"			//  2	
 	_sQuery += " 		,UPPER(FUN.NOME)"		//	3
@@ -366,6 +366,7 @@ Static Function _Exe1Query() // busca associados
 	_sQuery += " 		INNER JOIN SZB010 AS SZB"
 	_sQuery += " 			ON (SZB.D_E_L_E_T_  = ''"
 	_sQuery += " 				AND SZB.ZB_COD  = CC2.CC2_VA_SZB)"
-	_sQuery += " ORDER BY SITUACAO, NOME" 
-	u_log (_sQuery)
- return
+//	_sQuery += " ORDER BY SITUACAO, NOME" 
+	_sQuery += " ORDER BY NOME"
+	u_log2 ('info', _sQuery)
+return

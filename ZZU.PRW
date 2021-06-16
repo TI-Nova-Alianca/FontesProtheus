@@ -308,7 +308,8 @@ user function ZZUVL (_sGrupoZZU, _sUser, _lComTela)  //, _sEmp, _sFil, _sTipos)
 			zzu -> (dbskip ())
 		enddo
 		if ! _lRet 
-			_sMsg += "Usuario '" + _sUser + "' sem liberacao (ou nao cadastrado) no grupo '" + _sGrupoZZU + "'."
+			// _sMsg += "Usuario '" + _sUser + "' sem liberacao (ou nao cadastrado) no grupo '" + _sGrupoZZU + "'."
+			_sMsg += "Usuario '" + _sUser + "' sem liberacao (ou nao cadastrado) no grupo '" + _sGrupoZZU + "' na filial '" + cFilAnt + "'."
 		endif
 	endif
 	
