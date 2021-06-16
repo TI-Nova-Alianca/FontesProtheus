@@ -18,8 +18,10 @@
 // 11/11/2019 - Robert  - Atualiza sequencial do SC5.
 // 09/06/2020 - Robert  - Passa a executar todas as empresas/filiais no mesmo loop.
 // 14/08/2020 - Cláudia - retirado parametros e looping conforme solicitação da verção 25. GLPI: 7339
+// 16/06/2021 - Robert  - Acrescentados mais parametros do SX6 (ref.TAF) para serem alterados (GLPI 9843)
+//                      - Parametros a alterar passam a ser tratados em array (loop).
 //
-//
+
 // -------------------------------------------------------------------------------------------------
 user function AjBasTes ()
 	Local cNext
@@ -32,12 +34,14 @@ user function AjBasTes ()
 	local _oSQL       := NIL
 	local _oClsNFe    := NIL
 	local _sSeqC5     := ""
-	local _mv_docseq  := GetMv ('MV_DOCSEQ')
-	local _mv_spedurl := GetMv ('MV_SPEDURL')
-	local _mv_nfceurl := GetMv ('MV_NFCEURL')
-	local _mv_tafsurl := GetMv ('MV_TAFSURL')
-	local _mv_nfcetok := GetMv ('MV_NFCETOK')
-	local _mv_nfceidt := GetMv ('MV_NFCEIDT')
+	local _aParSX6     := {}
+	local _nParSX6     := {}
+	// local _mv_docseq  := GetMv ('MV_DOCSEQ')
+	// local _mv_spedurl := GetMv ('MV_SPEDURL')
+	// local _mv_nfceurl := GetMv ('MV_NFCEURL')
+	// local _mv_tafsurl := GetMv ('MV_TAFSURL')
+	// local _mv_nfcetok := GetMv ('MV_NFCETOK')
+	// local _mv_nfceidt := GetMv ('MV_NFCEIDT')
 
 	if ! U_MsgNoYes ('ATENCAO: Este programa ajusta varios parametros para serem usados em ambiente de teste/homologacao. Foi criado para ser executado NA BASE TESTE depois que a mesma foi atualizada com os dados da quente. Confirma?')
 		return
@@ -120,24 +124,38 @@ user function AjBasTes ()
 		cNext := ProxNum(.f.)
 		
 		IF cGreat >= cNext
-			u_log2 ('info', 'Alterando MV_DOCSEQ (conteudo anterior: ' + alltrim (_mv_docseq) + ') para ' + cGreat)
-			PutMv ("MV_DOCSEQ", cGreat)
+//			u_log2 ('info', 'Alterando MV_DOCSEQ (conteudo anterior: ' + alltrim (_mv_docseq) + ') para ' + cGreat)
+//			PutMv ("MV_DOCSEQ", cGreat)
+			aadd (_aParSX6, {'MV_DOCSEQ', cGreat})
 		Endif
 
-		u_log2 ('info', 'Alterando MV_SPEDURL (conteudo anterior: ' + alltrim (_mv_spedurl) + ')')
-		PutMv ('MV_SPEDURL', 'HTTP://192.168.1.3:8073')
+		aadd (_aParSX6, {'MV_SPEDURL', 'HTTP://192.168.1.3:8073'})
+//		u_log2 ('info', 'Alterando MV_SPEDURL (conteudo anterior: ' + alltrim (_mv_spedurl) + ')')
+//		PutMv ('MV_SPEDURL', 'HTTP://192.168.1.3:8073')
 
-		u_log2 ('info', 'Alterando MV_NFCEURL (conteudo anterior: ' + alltrim (_mv_nfceurl) + ')')
-		PutMv ('MV_NFCEURL', 'HTTP://192.168.1.3:8073')
+		aadd (_aParSX6, {'MV_NFCEURL', 'HTTP://192.168.1.3:8073'})
+//		u_log2 ('info', 'Alterando MV_NFCEURL (conteudo anterior: ' + alltrim (_mv_nfceurl) + ')')
+//		PutMv ('MV_NFCEURL', 'HTTP://192.168.1.3:8073')
 
-		u_log2 ('info', 'Alterando MV_TAFSURL (conteudo anterior: ' + alltrim (_mv_tafsurl) + ')')
-		PutMv ('MV_TAFSURL', 'HTTP://192.168.1.3:8073')
+//		u_log2 ('info', 'Alterando MV_TAFSURL (conteudo anterior: ' + alltrim (_mv_tafsurl) + ')')
+//		PutMv ('MV_TAFSURL', 'HTTP://192.168.1.3:8073')
 
-		u_log2 ('info', 'Alterando MV_NFCETOK (conteudo anterior: ' + alltrim (_mv_nfcetok) + ')')
-		PutMv ('MV_NFCETOK', '5C69E546-0126-462A-9277-45F205EA4503')
+		aadd (_aParSX6, {'MV_NFCETOK', '5C69E546-0126-462A-9277-45F205EA4503'})
+//		u_log2 ('info', 'Alterando MV_NFCETOK (conteudo anterior: ' + alltrim (_mv_nfcetok) + ')')
+//		PutMv ('MV_NFCETOK', '5C69E546-0126-462A-9277-45F205EA4503')
 
-		u_log2 ('info', 'Alterando MV_NFCEIDT (conteudo anterior: ' + alltrim (_mv_nfceidt) + ')')
-		PutMv ('MV_NFCEIDT', '000002')
+		aadd (_aParSX6, {'MV_NFCEIDT', '000002'})
+//		u_log2 ('info', 'Alterando MV_NFCEIDT (conteudo anterior: ' + alltrim (_mv_nfceidt) + ')')
+//		PutMv ('MV_NFCEIDT', '000002')
+
+		aadd (_aParSX6, {'MV_BACKEND', 'HTTP://192.168.1.3:3001/REST'})  // Servidor REST para o TAF
+		aadd (_aParSX6, {'MV_GCTPURL', 'HTTP://192.168.1.3:8094'})  // Servidor HTTP para o TAF
+		aadd (_aParSX6, {'MV_TAFSURL', 'HTTP://192.168.1.3:8073'})  // URL de comunicacao com o TSS no produto TAF
+		aadd (_aParSX6, {'MV_TAFTALI', GetSrvProfString ("topalias", '')})  // Indicar Top Alias da base de dados da tabela ST1 (em dominio do ERP) para integracao
+		for _nParSX6 = 1 to len (_aParSX6)
+			u_log2 ('info', 'Alterando parametro ' + _aParSX6 [_nParSX6, 1] + ' de ' + _UseGetMv (_aParSX6 [_nParSX6, 1]) + ' para ' + _aParSX6 [_nParSX6, 2])
+			_UsePutMv (_aParSX6 [_nParSX6, 1], _aParSX6 [_nParSX6, 2])
+		next
 
 		// Muda NFe e NFCe para 'homologacao'
 		_oClsNFe := ClsNFe ():New ()
