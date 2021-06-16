@@ -158,8 +158,16 @@ Static Function _Gera03 ()
 
 	u_logSX1 ()
 	
-	// Pega-ratao (no caso, eu mesmo). Jah gerei notas usando a cond.pagto. errada mais de uma vez... provavelmente precise ajustar em cada safra.
-	// A partir de 2021 pretendo se salvo pelo P.E. MTCOLSE2 --> _lContinua = _ValCond ()
+
+	// Altera parametro "Mostra lctos contabeis" para "Nao" 
+	// e 'Contabiliza online' para 'sim' na tela de NF de entrada
+	if "TESTE" $ upper (GetEnvServer())  // na base teste nao quero contabilizar
+		U_GravaSX1 ("MTA103", "01", "2")
+		U_GravaSX1 ("MTA103", "06", "2")
+	else
+		U_GravaSX1 ("MTA103", "01", "2")
+		U_GravaSX1 ("MTA103", "06", "1")
+	endif
 
 	// A partir de 2016 teremos uma serie especifica para NF de safra.
 	// Fica fixo no programa para nem precisar abrir tela para o usuario.
@@ -181,16 +189,6 @@ Static Function _Gera03 ()
 
 	if _lContinua
 	
-		// Altera parametro "Mostra lctos contabeis" para "Nao" 
-		// e 'Contabiliza online' para 'sim' na tela de NF de entrada
-		if "TESTE" $ upper (GetEnvServer())  // na base teste nao quero contabilizar
-			U_GravaSX1 ("MTA103", "01", "2")
-			U_GravaSX1 ("MTA103", "06", "2")
-		else
-			U_GravaSX1 ("MTA103", "01", "2")
-			U_GravaSX1 ("MTA103", "06", "1")
-		endif
-
 		// Guarda parametros em variaveis especificas por que as chamadas de rotinas automaticas vai sobregrava-los.
 		_sFornIni = mv_par01
 		_sLojaIni = mv_par02

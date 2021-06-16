@@ -12,6 +12,7 @@
 
 // Historico de alteracoes:
 // 10/05/2021 - Robert - Nao tinha tratamento por tipo de nota (GLPI 9891)
+// 21/05/2021 - Robert - Incluido TES 314 para complemento pessoa juridica (GLPI 9891)
 //
 
 // --------------------------------------------------------------------------
@@ -68,12 +69,14 @@ user function TESSafra (_sSafra, _sFornece, _sLoja, _sTipoNF)
 					u_help ("Nao foi possivel definir o TES a ser usado para gerar contranotas do tipo '" + _sTipoNF + "'. Verifique o cadastro do fornecedor (pessoa fisica/juridica) e tipo de fornecedor no NaWeb.",, .T.)
 					_lContinua = .F.
 				endcase
-			elseif _sTipoNF == 'C'  // Compra
+			elseif _sTipoNF == 'V'  // Complemento de valor
 				do case
 				case _sTpForUva + sa2 -> a2_tipo == 'AF'
 					_sRetTES = '312'  // Associado pessoa fisica
 				case _sTpForUva + sa2 -> a2_tipo == 'NF'  // Nao associado pessoa fisica
 					_sRetTES = '313'
+				case _sTpForUva + sa2 -> a2_tipo $ 'AJ/NJ'  // Pessoa juridica (seja associado ou nao)
+					_sRetTES = '314'
 				otherwise
 					u_help ("Nao foi possivel definir o TES a ser usado para gerar contranotas do tipo '" + _sTipoNF + "'. Verifique o cadastro do fornecedor (pessoa fisica/juridica) e tipo de fornecedor no NaWeb.",, .T.)
 					_lContinua = .F.

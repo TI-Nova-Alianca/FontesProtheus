@@ -125,6 +125,7 @@ user function BatSafr (_sQueFazer, _lAjustar)
 
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
+	U_Log2 ('info', 'Finalizando ' + procname ())
 return .T.
 
 
@@ -170,6 +171,7 @@ static function _ConfFrt ()
 		endif
 		(_sAliasQ) -> (dbskip ())
 	enddo
+	U_Log2 ('info', 'Finalizando ' + procname ())
 return
 
 
@@ -337,6 +339,7 @@ static function _ConfParc (_lAjustar)
 //		U_Log2 ('info', 'Finalizando F' + (_sAliasQ) -> filial + ' NF' + (_sAliasQ) -> doc)
 		(_sAliasQ) -> (dbskip ())
 	enddo
+	U_Log2 ('info', 'Finalizando ' + procname ())
 return
 
 
@@ -571,6 +574,7 @@ static function _GeraSZI ()
 	enddo
 	(_sAliasQ) -> (dbclosearea ())
 	dbselectarea ("SZE")
+	U_Log2 ('info', 'Finalizando ' + procname ())
 return
 
 
@@ -671,11 +675,12 @@ static function _ConfSZI ()
 			u_zzunu ({'999'}, 'Inconsistencia SZI x SE2 safra - filial: ' + (_sAliasQ) -> e2_filial + ' NF: ' + (_sAliasQ) -> e2_num + ' forn: ' + (_sAliasQ) -> e2_fornece, _sMsg)
 
 			// cai fora no primeiro erro encontrado (estou ainda ajustando)
-			EXIT   // REMOVER DEPOIS !!!!!!!!!!!!!!!!!
+			// EXIT   // REMOVER DEPOIS !!!!!!!!!!!!!!!!!
 
 		endif
 		(_sAliasQ) -> (dbskip ())
 	enddo
+	U_Log2 ('info', 'Finalizando ' + procname ())
 return
 
 
@@ -868,4 +873,5 @@ static function _TransFil ()
 			(_sAliasQ) -> (dbskip ())
 		enddo
 	endif
+	U_Log2 ('info', 'Finalizando ' + procname ())
 return

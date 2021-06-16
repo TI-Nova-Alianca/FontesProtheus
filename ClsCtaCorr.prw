@@ -86,6 +86,7 @@
 // 13/03/2021 - Robert - Permite incluir TM 13 quando chamado da rotina BatSafr (opcao de geracao do SZI sobre notas de compra de safra) - GLPI 9592.
 //                     - Metodo TransFil passa a aceitar data para baixa contra transitoria; melhorados logs.
 // 23/03/2021 - Robert - Criados atributos Safra e GrpPgSafra, com respectiva leitura e gravacao (GLPI 9592).
+// 11/06/2021 - Robert - Nao gravava campo E2_VASAFRA no metodo GeraSE2 (GLPI 10208)
 //
 
 // ------------------------------------------------------------------------------------
@@ -842,19 +843,20 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _lCtOnLine) class ClsCtaCorr
 
 		// Gera titulo no contas a pagar.
 		_aAutoSE2 := {}
-		aadd (_aAutoSE2, {"E2_PREFIXO", ::Serie,   NIL})
-		aadd (_aAutoSE2, {"E2_NUM"    , ::Doc,     Nil})
+		aadd (_aAutoSE2, {"E2_PREFIXO", ::Serie,           NIL})
+		aadd (_aAutoSE2, {"E2_NUM"    , ::Doc,             Nil})
 		aadd (_aAutoSE2, {"E2_TIPO"   , _sOQueGera,        Nil})
-		aadd (_aAutoSE2, {"E2_FORNECE", ::Assoc,   Nil})
-		aadd (_aAutoSE2, {"E2_LOJA"   , ::Loja, Nil})
+		aadd (_aAutoSE2, {"E2_FORNECE", ::Assoc,           Nil})
+		aadd (_aAutoSE2, {"E2_LOJA"   , ::Loja,            Nil})
 		aadd (_aAutoSE2, {"E2_EMISSAO", _dEmissao,         Nil})
-		aadd (_aAutoSE2, {"E2_VENCTO" , _dDtVenc,    Nil})
+		aadd (_aAutoSE2, {"E2_VENCTO" , _dDtVenc,          Nil})
 		aadd (_aAutoSE2, {"E2_VENCREA", DataValida (_dDtVenc),    Nil})
-		aadd (_aAutoSE2, {"E2_VALOR"  , ::Valor,   Nil})
-		aadd (_aAutoSE2, {"E2_HIST"   , ::Histor,  Nil})
+		aadd (_aAutoSE2, {"E2_VALOR"  , ::Valor,           Nil})
+		aadd (_aAutoSE2, {"E2_HIST"   , ::Histor,          Nil})
 		aadd (_aAutoSE2, {"E2_PARCELA", _sParcela,         Nil})
 		aadd (_aAutoSE2, {"E2_VACHVEX", _sChvEx,           Nil})
 		aadd (_aAutoSE2, {"E2_ORIGEM" , "FINA050" ,        Nil})
+		aadd (_aAutoSE2, {"E2_VASAFRA", ::Safra,           Nil})
 		_aAutoSE2 := aclone (U_OrdAuto (_aAutoSE2))
 //		u_log (_aAutoSE2)
 

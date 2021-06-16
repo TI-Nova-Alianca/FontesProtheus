@@ -605,7 +605,7 @@ static function _AjSE2 ()
 					// Se for associado, nao quero descontar dele o FUNRURAL.
 					if alltrim (upper (_aRetFUNRU [1, 3])) == 'ASSOCIADO' .or. alltrim (upper (_aRetFUNRU [1, 3])) == 'EX ASSOCIADO'
 						if alltrim (upper (_aRetFUNRU [1, 4])) == 'F'  // Somente associados 'pessoa fisica'. Colleoni, maio/2021
-							// Copia o valor do FUNRURAL, apage o titulo correspondente e soma o valor ao titulo original.
+							// Com o valor do FUNRURAL, soma o valor ao titulo original.
 							begin transaction
 
 							reclock ("SE2", .F.)
@@ -620,7 +620,7 @@ static function _AjSE2 ()
 							_oEvento:Texto = 'Acrescentando vlr.FUNRURAL ($' + cvaltochar (_aRetFUNRU [1, 2]) + ') ao vlr.orig.por que nao queremos descontar do associado.'
 							_oEvento:NFEntrada = se2 -> e2_num
 							_oEvento:SerieEntr = se2 -> e2_prefixo
-							_oEvento:CodEven   = 'SE20031
+							_oEvento:CodEven   = 'SE2003'
 							_oEvento:Fornece   = se2 -> e2_fornece
 							_oEvento:LojaFor   = se2 -> e2_loja
 							_oEvento:ParcTit   = se2 -> e2_parcela
