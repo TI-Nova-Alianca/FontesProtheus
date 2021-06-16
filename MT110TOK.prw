@@ -16,8 +16,9 @@
 // 12/04/2021 - Claudia - Validação Centro de Custo X Conta Contábil - GLPI: 9120
 // 03/05/2021 - Claudia - Validação de centro de custo X filial. GLPI 9945
 // 02/06/2021 - Claudia - Validação de centro de custo x filial apenas para quando for informado o CC.
+// 15/06/2021 - Claudia - Incluida novas validações C.custo X C.contabil. GLPI: 10224
 //
-// ----------------------------------------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------
 User Function MT110TOK ()
 	local _lRet     := .T.
 	local _aAreaAnt := U_ML_SRArea ()
@@ -41,15 +42,32 @@ User Function MT110TOK ()
 	// realiza a validação de amarração centro de custo x conta contábil
 	if GetMv("VA_CUSXCON") == 'S' .and. _lRet // parametro para realizar as validações
 		for _nLinha := 1 to Len(aCols)
-			if !empty(GDFieldGet("C1_CC"   , _nLinha)) .and. !empty(GDFieldGet("C1_CONTA", _nLinha))
-				_sConta := U_VA_CUSXCON(GDFieldGet("C1_CONTA", _nLinha),'1')
-				_sCC    := U_VA_CUSXCON(GDFieldGet("C1_CC"   , _nLinha),'2')
+			_sConta := GDFieldGet("C1_CONTA", _nLinha)
+			_sCC    := GDFieldGet("C1_CC"   , _nLinha)
 
-				if alltrim(_sConta) !=alltrim(_sCC)
-					u_help ("Divergencia no cadastro de Amarração C.Custo X C.Contabil. Grupo C.Custo:" + alltrim(_sCC) + " Grupo C.Contabil:" + alltrim(_sConta))
-					_lRet = .F.
-				endif
+			if empty(_sConta)
+				u_help("Conta contábil é obrigatória!")
+				_lRet = .F.
 			endif
+
+			_sPConta := SubStr( _sConta, 1, 1 )
+			if _lRet .and. (_sPConta == '4' .or. _sPConta == '7') .and. empty(_sCC)  // obrigatorio CC
+				u_help("Contas iniciadas em 4 e 7 é obrigatório inserir o centro de custo!")
+				_lRet = .F.
+			endif
+
+			if _lRet .and. (_sPConta == '1' .or. _sPConta == '2') .and. !empty(_sCC)
+				u_help("Conta contábil iniciada em 1, não é necessário a informação do centro de custo! Retire o Centro de custo.")
+				_lRet = .F.
+			endif
+			// _sConta := U_VA_CUSXCON(GDFieldGet("C1_CONTA", _nLinha),'1')
+			// _sCC    := U_VA_CUSXCON(GDFieldGet("C1_CC"   , _nLinha),'2')
+			// if !empty(GDFieldGet("C1_CC"   , _nLinha)) .and. !empty(GDFieldGet("C1_CONTA", _nLinha))
+			// if _lRet .and. alltrim(_sConta) != alltrim(_sCC)
+			// 	u_help ("Divergencia no cadastro de Amarração C.Custo X C.Contabil. Grupo C.Custo:" + alltrim(_sCC) + " Grupo C.Contabil:" + alltrim(_sConta))
+			// 	_lRet = .F.
+			// endif
+			//endif
 		next	
 	endif
 	

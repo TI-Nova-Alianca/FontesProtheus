@@ -18,8 +18,9 @@
 //                        (para quando nao havia MO em alguma OP)
 // 03/02/2021 - Cláudia - Vinculação Itens C ao movimento 573 - GLPI: 9163
 // 13/04/2021 - Claudia - Validação Centro de Custo X Conta Contábil - GLPI: 9120
+// 15/06/2021 - Claudia - Incluida novas validações C.custo X C.contabil. GLPI: 10224
 //
-// ---------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------
 user function MT241TOk ()
 	local _lRet     := .T.
 	local _aAreaAnt := U_ML_SRArea ()
@@ -92,15 +93,36 @@ user function MT241TOk ()
 		_nPos := aScan(aHeader,{|x| Alltrim(x[2]) == "D3_CONTA" })
 
 		for _x := 1 to Len(aCols)
-			if !empty(cCC) .and. !empty(aCols[_x,_nPos])
-				_sConta := U_VA_CUSXCON(aCols[_x,_nPos],'1')
-				_sCC    := U_VA_CUSXCON(cCC,'2')
+	
+			_sConta := aCols[_x,_nPos]
+			_sCC    := cCC
 
-				if alltrim(_sConta) !=alltrim(_sCC)
-					u_help ("Divergencia no cadastro de Amarração C.Custo X C.Contabil. Grupo C.Custo:" + alltrim(_sCC) + " Grupo C.Contabil:" + alltrim(_sConta))
-					_lRet = .F.
-				endif
+			if empty(_sConta)
+				u_help("Conta contábil é obrigatória!")
+				_lRet = .F.
 			endif
+
+			_sPConta := SubStr( _sConta, 1, 1 )
+			if _lRet .and. (_sPConta == '4' .or. _sPConta == '7') .and. empty(_sCC)  // obrigatorio CC
+				u_help("Contas iniciadas em 4 e 7 é obrigatório inserir o centro de custo!")
+				_lRet = .F.
+			endif
+
+			if _lRet .and. (_sPConta == '1' .or. _sPConta == '2') .and. !empty(_sCC) 
+				u_help("Conta contábil iniciada em 1, não é necessário a informação do centro de custo! Retire o Centro de custo.")
+				_lRet = .F.
+			endif
+			// if !empty(cCC) .and. !empty(aCols[_x,_nPos])
+			// _sConta := U_VA_CUSXCON(aCols[_x,_nPos],'1')
+			// _sCC    := U_VA_CUSXCON(cCC,'2')
+
+			// if !empty(_sConta) .and. !empty(_sCC)
+			// 	if alltrim(_sConta) !=alltrim(_sCC)
+			// 		u_help ("Divergencia no cadastro de Amarração C.Custo X C.Contabil. Grupo C.Custo:" + alltrim(_sCC) + " Grupo C.Contabil:" + alltrim(_sConta))
+			// 		_lRet = .F.
+			// 	endif
+			// endif
+			// endif
 		next	
 	endif
 
