@@ -85,6 +85,7 @@ CLASS ClsSQL
 	/*public */ METHOD RetFixo ()
 	/*public */ METHOD RetQry ()
 	/*public */ METHOD SetField ()  // Para uso externo: informar campo e para qual tipo deve ser convertido.
+	/*public */ METHOD SPExec ()
 ENDCLASS
 
 
@@ -652,16 +653,15 @@ METHOD SetField (_sColuna, _sTipo, _nTamanho, _nDecimal) Class ClsSQL
 return
 
 
-/* nao chaguei a usar por que a procedure estava noutro database e nao era executada.
 // --------------------------------------------------------------------------
 // Executa uma stored procedure no banco de dados.
 METHOD SPExec (_sProc, _xPar01, _xPar02, _xPar03, _xPar04, _xPar05, _xPar06, _xPar07, _xPar08, _xPar09, _xPar10) Class ClsSQL
 	local _aRetTOP := 0
-	U_LOG ('[' + procname () + ']', _sProc, _xPar01, _xPar02, _xPar03, _xPar04, _xPar05, _xPar06, _xPar07, _xPar08, _xPar09, _xPar10)
-	_aRetTOP = TCSPExec (_sProc, _xPar01, _xPar02, _xPar03, _xPar04, _xPar05, _xPar06, _xPar07, _xPar08, _xPar09, _xPar10)
-	u_log ('Retorno da procedure:', _aRetTOP)
+	U_LOG2 ('debug', '[' + procname () + ']' + _sProc) // + ', ' + cvaltochar (_xPar01) + ', ' + cvaltochar (_xPar02) + ', ' + cvaltochar (_xPar03) + ', ' + cvaltochar (_xPar04) + ', ' + cvaltochar (_xPar05) + ', ' + cvaltochar (_xPar06) + ', ' + cvaltochar (_xPar07) + ', ' + cvaltochar (_xPar08) + ', ' + cvaltochar (_xPar09) + ', ' + cvaltochar (_xPar10))
+	_aRetTOP = TCSPExec (_sProc) //, _xPar01, _xPar02, _xPar03, _xPar04, _xPar05, _xPar06, _xPar07, _xPar08, _xPar09, _xPar10)
+	u_log2 ('debug', 'Retorno da procedure:')
+	u_log2 ('debug', _aRetTOP)
 return _aRetTOP
-*/
 
 
 // --------------------------------------------------------------------------
