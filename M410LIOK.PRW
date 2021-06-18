@@ -68,6 +68,7 @@
 //                      - Inseridas tags para catalogacao de fontes
 // 10/08/2020 - Cláudia - Não permitir a inclusão de pedidos com problemas de TES que calcula IPI pelo 
 //						  processo manual do BatMercP. GLPI: 8284
+// 18/06/2021 - Sandra  - Desabilitado linha /M->C5_ESPECI1 := 'VOLUMES', para notas de exportação GLPI 10196
 //
 // ----------------------------------------------------------------------------------------------------------------
 User Function M410LIOK()
@@ -251,7 +252,7 @@ Static Function _PesoPed()
 		endif
 	Next
 	M->C5_VOLUME1 := _XQVOL1
-	M->C5_ESPECI1 := 'VOLUMES'
+	//M->C5_ESPECI1 := 'VOLUMES'
 	M->C5_PBRUTO  := _xTOT_PBRT
 	M->C5_PESOL   := _xTOT_PLIQ
 
