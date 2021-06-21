@@ -11,7 +11,8 @@ User Function claudia ()
 	//Almox2()
 	// u_help('Solicitante')
 	// Solicitante()
-
+	//u_help("Coordenadores")
+	//Coordenadores()
 Return
 //
 // ------------------------------------------------------------------
@@ -62,6 +63,36 @@ Return
 // 		CriaSB2 (_aSB1[_x, 1], '02')
 // 	Next
 
+// Return
+//
+// ------------------------------------------------------------------
+//
+// Static Function Coordenadores()
+// 	Local _aDados 	:= {}
+// 	Local _i 		:=0
+
+// 	_aDados = U_LeCSV ('C:\Temp\coordenadores.csv', ';')
+
+// 	for _i := 1 to len (_aDados)
+// 		_sCliente := _aDados[_i, 1]
+// 		_sLoja    := _aDados[_i, 2]
+// 		_sVend    := _aDados[_i, 3]
+// 		_sGerente := _aDados[_i, 4]
+
+// 		If dbSeek(xFilial("AI0") + _sCliente + _sLoja ) 
+// 			Reclock("AI0",.F.)
+//                 AI0->AI0_VAGERE := alltrim(_sGerente)
+//             AI0->(MsUnlock())
+// 		Else
+// 			Reclock("AI0",.T.)
+// 				AI0->AI0_CODCLI := _sCliente
+// 				AI0->AI0_LOJA   := _sLoja
+// 				AI0->AI0_VAGERE := alltrim(_sGerente)
+// 			AI0->(MsUnlock())
+
+// 		EndIf
+// 	Next
+// 	u_help("Feito!")
 // Return
 //
 // ------------------------------------------------------------------
