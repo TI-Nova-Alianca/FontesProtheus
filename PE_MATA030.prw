@@ -1,6 +1,6 @@
-// Programa:   PE_MATA030
-// Autor:      Andre Alves
-// Data:       07/05/2019
+// Programa.:  PE_MATA030
+// Autor....:  Andre Alves
+// Data.....:  07/05/2019
 // Descricao:  P.E. novo padrão MVC na tela de cadastro de clientes.
 //
 // Tags para automatizar catalogo de customizacoes:
@@ -21,8 +21,9 @@
 // 27/11/2020 - Cláudia - Incluido botão de obs.financeira. GLPI: 8923
 // 04/01/2021 - Cláudia - Incluida a filial 16 para oas observações financeiras. GLPI: 9069
 // 03/02/2021 - Cláudia - Ajuste para visualização das OBS nas demais filiais. GLPI: 9263
+// 21/06/2021 - Claudia - Grava supervisor do representante no supervisor do cliente. GLPI: 8655
 //
-// -----------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------
 #include "protheus.ch"
 #include "parmtype.ch"
 
@@ -43,9 +44,8 @@ User Function CRMA980()
  
         If cIdPonto == "MODELPOS"
         	nOper := oObj:nOperation
+
 			if nOper == 4
-
-
 				u_log ('')
 				u_log ('')
 				u_log ('')
@@ -53,12 +53,11 @@ User Function CRMA980()
 				u_log ('M:', m->a1_nome)
 				u_log ('SA1:', sa1->a1_nome)
 
-
-
         	    _GeraLog ()
         		U_AtuMerc ('SA1', sa1 -> (recno ()))
         	endif
         	xRet := _ma030tok()
+
         ElseIf cIdPonto == "MODELVLDACTIVE"
             nOper := oObj:nOperation
             //Se for Exclusão, não permite abrir a tela
@@ -66,37 +65,46 @@ User Function CRMA980()
 				u_help ("Nenhum registro de cliente pode ser excluído em função da integração com o software Mercanet.")
 				xRet = .F.
 			EndIf
+
         ElseIf cIdPonto == "FORMPOS"
             xRet := NIL
+
         ElseIf cIdPonto == "FORMLINEPRE"
         	xRet := .T.
+
         ElseIf cIdPonto == "FORMLINEPOS"
             xRet := .T.
-        ElseIf cIdPonto == "MODELCOMMITTTS"
+
+        ElseIf cIdPonto == "MODELCOMMITTTS" // altera
+			AtuSuper(sa1->a1_vend)
         	xRet := .T.
+
         ElseIf cIdPonto == "MODELCOMMITNTTS"
         	nOper := oObj:nOperation
         	//Se for inclusão
             If nOper == 3
                 _M030INC()
             EndIf
+
         ElseIf cIdPonto == "FORMCOMMITTTSPRE"
         	xRet := .T.
+
         ElseIf cIdPonto == "FORMCOMMITTTSPOS"
         	xRet := .T.
+
         ElseIf cIdPonto == "MODELCANCEL"
             xRet := .T.
+
         ElseIf cIdPonto == "BUTTONBAR"
-           // xRet := {}
-		   //	If cFilAnt == '01' .or. cFilAnt == '16'
-				xRet := {{"Obs.Financeiro", "Obs.Financeiro", {||U_VA_OBSFIN('1')}}}
-		   //	EndIf
+			xRet := {{"Obs.Financeiro", "Obs.Financeiro", {||U_VA_OBSFIN('1')}}}
+
         EndIf
     EndIf
 
 Return xRet
-
+//
 //----------------------------------------------------------------------------------
+// Gera Log
 static function _GeraLog ()
 	local _oEvento  := NIL
 
@@ -106,10 +114,9 @@ static function _GeraLog ()
 		_oEvento:AltCadast ("SA1", sa1->a1_cod + sa1->a1_loja, sa1 -> (recno ()))
 	
 return
-
-
-
-
+//
+//----------------------------------------------------------------------------------
+// Tudo OK
 static Function _ma030tok()
 	Local _aAreaAnt := U_ML_SRArea ()
 	Local _xFim     := chr(13)+chr(10)
@@ -119,10 +126,6 @@ static Function _ma030tok()
 	Local _xNOME    := M->A1_NOME
 	Local _xEST     := M->A1_EST
 	Local _xTIPO    := M->A1_TIPO
-	//Local _xINSCR   := M->A1_INSCR
-	//Local _xSUFRAMA := M->A1_SUFRAMA
-	//Local _xCODMUN  := M->A1_CODMUN
-	//Local _xCALCSUF := M->A1_CALCSUF
 	Local _xCGC     := M->A1_CGC
 	Local _xBCO1    := M->A1_BCO1
 	Local _xPRACA   := M->A1_PRACA
@@ -154,10 +157,8 @@ static Function _ma030tok()
 			_lRet := .F.
 		Endif
 	Endif
-	
-	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-	//³ Verifico se todos os caracteres do Codigo sao numeros                    ³
-	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+	// Verifico se todos os caracteres do Codigo sao numeros                    
 	If _lRet
 		For _nInd := 1 To Len(_xCOD)
 			_cChar := Substr(_xCOD,_nInd,1)
@@ -230,9 +231,9 @@ static Function _ma030tok()
 	
 	U_ML_SRArea (_aAreaAnt)
 Return(_lRet)
-
-
-// --------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+// M030INC
 Static Function _M030INC()
 
 	// Cria registro para o cliente no arquivo de classes de valor.
@@ -252,6 +253,26 @@ Static Function _M030INC()
 	DbSelectArea('SA1')
 
 	U_AtuMerc ('SA1', sa1 -> (recno ()))
-
 Return()
+//
+//----------------------------------------------------------------------------------
+// Grava Supervisor Cliente com Supervisor Representante
+Static Function AtuSuper(_sVend)
+	Local _aSuper := {}
+	Local _sSuper := ""
 
+	_oSQL := ClsSQL():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 	A3_VAGEREN "
+	_oSQL:_sQuery += " FROM " + RetSqlName("SA3")
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " AND A3_COD = '" + _sVend + "'"
+	_aSuper:= _oSQL:Qry2Array ()
+
+	If len(_aSuper)> 0
+		_sSuper := _aSuper[1,1]
+	EndIf
+
+ 	AI0-> AI0_VAGERE := _sSuper // Atualiza supervisor nos complementos do cliente
+ Return
