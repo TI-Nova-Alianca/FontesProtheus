@@ -24,7 +24,8 @@
 // 20/01/2021 - Cláudia - GLPI:8921 - Incluida verificação de caracteres especiais.
 // 12/02/2021 - Robert  - Incluidas chamadas da funcao U_PerfMon para testes de monitoramento de performance (GLPI 9409)
 // 02/03/2021 - Sandra  - Comentariado Altera campos do modelo de dados adicionais (tabela SA5) foi retirada do parametro mv_cadprod GLPI 8987
-
+// 22/06/2021 - Claudia - Carregado o campo B1_VARMAAL com 000000000 na cópia de produto. GLPI: 10276
+//
 //---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
 #Include "TOTVS.ch"
@@ -137,7 +138,7 @@ static function _NaoCopia ()
 	oModelB1:LoadValue("B1_REVATU",'')
 	oModelB1:LoadValue("B1_UCALSTD",'')
 	oModelB1:LoadValue("B1_CODBAR",'')
-	oModelB1:LoadValue("B1_VARMAAL",'')
+	oModelB1:LoadValue("B1_VARMAAL",'00000000000000') // CARREGAR PADRÃO
 	oModelB1:LoadValue("B1_VAFULLW",'')
 	// Atualiza campos na tela do usuario
 	oView := FwViewActive()
