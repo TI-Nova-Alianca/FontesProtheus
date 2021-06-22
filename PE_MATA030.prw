@@ -76,7 +76,7 @@ User Function CRMA980()
             xRet := .T.
 
         ElseIf cIdPonto == "MODELCOMMITTTS" // altera
-			AtuSuper(sa1->a1_vend)
+			AtuSuper(sa1->a1_vend, sa1->a1_cod, sa1->a1_loja)
         	xRet := .T.
 
         ElseIf cIdPonto == "MODELCOMMITNTTS"
@@ -257,7 +257,7 @@ Return()
 //
 //----------------------------------------------------------------------------------
 // Grava Supervisor Cliente com Supervisor Representante
-Static Function AtuSuper(_sVend)
+Static Function AtuSuper(_sVend, _sCliente, _sLoja)
 	Local _aSuper := {}
 	Local _sSuper := ""
 
@@ -272,7 +272,13 @@ Static Function AtuSuper(_sVend)
 
 	If len(_aSuper)> 0
 		_sSuper := _aSuper[1,1]
-	EndIf
 
- 	AI0-> AI0_VAGERE := _sSuper // Atualiza supervisor nos complementos do cliente
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " UPDATE " + RetSqlName("AI0")
+		_oSQL:_sQuery += " SET AI0_VAGERE   = '"+ _sSuper   +"'"
+		_oSQL:_sQuery += " WHERE AI0_CODCLI = '"+ _sCliente +"'"
+		_oSQL:_sQuery += " AND AI0_LOJA     = '"+ _sLoja    +"'"
+		_oSQL:Exec ()
+	EndIf
  Return
