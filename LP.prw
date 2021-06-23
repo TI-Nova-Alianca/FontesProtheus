@@ -1,6 +1,6 @@
-// Programa:  LP
-// Autor:     Robert Koch - TCX021
-// Data:      10/03/2011
+// Programa.: LP
+// Autor....: Robert Koch - TCX021
+// Data.....: 10/03/2011
 // Descricao: Execblock generico para lancamentos padronizados.
 
 // Tags para automatizar catalogo de customizacoes:
@@ -56,15 +56,14 @@
 // 30/10/2019 - Robert - diferenciava CC coml/adm/indl usando LEFT em vez de SUBSTR (posicao 3) no LPAD 666/008
 // 21/07/2020 - Cláudia -  Ajustada as contas para o LPAD: 500. Conform GLPI: 8094
 // 23/10/2020 - Robert  - Tratamento para tipo IA no lpad 666/008
+// 23/06/2021 - Claudia - Ajuste no lançamento 520 002. GLPI:10294
 //
-
 // --------------------------------------------------------------------------------------------------------------------------------
 // Informar numero e sequencia do lancamento padrao, seguido do campo a ser retornado.
 User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 	local _aAreaAnt := U_ML_SRArea ()
 	local _xRet     := NIL
 	local _sQuery   := ""
-	//local _sRetQry  := ""
 	local _aRetQry  := {}
 	local _oSQL     := NIL
 
@@ -143,23 +142,53 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 
 		case _sLPad == '520' .and. _sSeq='002'
 			if _sQueRet == 'CRED'
-				
-				if alltrim(SE5->E5_ORIGEM)=='ZB1'
-					do case
-						case SE5->E5_ADM == "100" .or. SE5->E5_ADM =="101"
-							_xRet:= "101021101002"
-						case SE5->E5_ADM == "200" .or. SE5->E5_ADM =="201"
-							_xRet:= "101021101001"
-						case SE5->E5_ADM == "300" .or. SE5->E5_ADM =="301"
-							_xRet:= "101021101003"
-						case SE5->E5_ADM == "400" .or. SE5->E5_ADM =="401"
-							_xRet:= "101021101004"
-						otherwise
-							_xRet:= "101021101005"
-					endcase
+				if (alltrim(SE5->E5_ORIGEM) =='ZB1' .or. alltrim(SE5->E5_ORIGEM) =='FINA740') .and. alltrim(SE5->E5_TIPO) $ 'CC/CD' 				
+					if !empty(SE5->E5_ADM) 
+						do case
+							case SE5->E5_ADM == "100" .or. SE5->E5_ADM =="101"
+								_xRet:= "101021101002"
+							case SE5->E5_ADM == "200" .or. SE5->E5_ADM =="201"
+								_xRet:= "101021101001"
+							case SE5->E5_ADM == "300" .or. SE5->E5_ADM =="301"
+								_xRet:= "101021101003"
+							case SE5->E5_ADM == "400" .or. SE5->E5_ADM =="401"
+								_xRet:= "101021101004"
+							otherwise
+								_xRet:= "101021101005"
+						endcase
+					else
+						do case
+							case SE1->E1_ADM == "100" .or. SE1->E1_ADM =="101"
+								_xRet:= "101021101002"
+							case SE1->E1_ADM == "200" .or. SE1->E1_ADM =="201"
+								_xRet:= "101021101001"
+							case SE1->E1_ADM == "300" .or. SE1->E1_ADM =="301"
+								_xRet:= "101021101003"
+							case SE1->E1_ADM == "400" .or. SE1->E1_ADM =="401"
+								_xRet:= "101021101004"
+							otherwise
+								_xRet:= "101021101005"
+						endcase
+					endif
 				else
 					_xRet := "101020201001"
-				endif     
+				endif  
+				// if alltrim(SE5->E5_ORIGEM)=='ZB1'
+				// 	do case
+				// 		case SE5->E5_ADM == "100" .or. SE5->E5_ADM =="101"
+				// 			_xRet:= "101021101002"
+				// 		case SE5->E5_ADM == "200" .or. SE5->E5_ADM =="201"
+				// 			_xRet:= "101021101001"
+				// 		case SE5->E5_ADM == "300" .or. SE5->E5_ADM =="301"
+				// 			_xRet:= "101021101003"
+				// 		case SE5->E5_ADM == "400" .or. SE5->E5_ADM =="401"
+				// 			_xRet:= "101021101004"
+				// 		otherwise
+				// 			_xRet:= "101021101005"
+				// 	endcase
+				// else
+				// 	_xRet := "101020201001"
+				// endif     
 			endif
 
 	case _sLpad+_sseq $ ('520002/521002/527002') // ESX - tratamento baixa e cancelamento da baixa para venda futura
