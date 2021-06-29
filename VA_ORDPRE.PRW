@@ -1,4 +1,4 @@
-// Programa...: ML_ORMANPRE
+// Programa...: VA_ORDPRE
 // Autor......: Sandra Sugari
 // Data.......: 25/06/2021
 // Descricao..: Relatorio Ordens de Manutenção Preventivas
@@ -21,9 +21,9 @@
 #include "rwmake.ch"
 #include 'topconn.CH'
 
-User function ML_ORMANPRE()
+User function VA_ORDPRE()
 	Private oReport
-	Private cPerg   := "ML_ORMANPRE"
+	Private cPerg   := "VA_ORDPRE"
 	
 	_ValidPerg()
 	Pergunte(cPerg,.F.)
@@ -37,7 +37,7 @@ Static Function ReportDef()
 	Local oReport  := Nil
 	Local oSection1:= Nil
 
-	oReport := TReport():New("ML_ORMANPRE","Relatorio Ordens de Manutenção Preventivas",cPerg,{|oReport| PrintReport(oReport)},"Relatorio Ordens de Manutenção Preventivas")
+	oReport := TReport():New("VA_ORDPRE","Relatorio Ordens de Manutenção Preventivas",cPerg,{|oReport| PrintReport(oReport)},"Relatorio Ordens de Manutenção Preventivas")
 	
 	oReport:SetTotalInLine(.F.)
 	oReport:SetPortrait()
