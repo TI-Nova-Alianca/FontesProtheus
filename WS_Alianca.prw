@@ -55,7 +55,9 @@
 // 15/03/2021 - Claudia - Incluida a ação 'CapitalSocialAssoc'.GLPI: 8824
 // 21/05/2021 - Robert  - Melhorado metodo de gravacao e criado metodo de exclusao de eventos da tabela SZN (GLPI 10072)
 // 28/05/2021 - Cláudia - Comentariado o if conforme GLPI: 9161
+// 22/06/2021 - Robert  - Criada acao AgendaEntregaFaturamento (GLPI 10219).
 //
+
 // ----------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
 #INCLUDE "PROTHEUS.CH"
@@ -192,6 +194,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 				_MonitProt ()
 			case _sAcao == 'CapitalSocialAssoc'
 				_ExecCapAssoc ()
+			case _sAcao == 'AgendaEntregaFaturamento'
+				_AgEntFat ()
 			otherwise
 				_sErros += "A acao especificada no XML eh invalida: " + _sAcao
 		endcase
@@ -753,10 +757,11 @@ static function _DelEvt ()
 	if empty (_sErros) ; _nRegSZN = val (_ExtraiTag ("_oXML:_WSAlianca:_RecnoSZN",      .T., .F.)) ;   endif
 	if empty (_sErros)
 		_oEvento := ClsEvent ():New (_nRegSZN)
-		// GLPI: 9161
-		//if ! alltrim (upper (_oEvento:Origem)) $ upper ('wpnfateventosnotas/')
-		//	_sErros += "Eventos com esta origem nao podem ser excluidos manualmente."
-		//endif
+
+		// Permitirei exclusao somente de algumas origens de eventos (GLPI 9161).
+		if ! alltrim (upper (_oEvento:Origem)) $ upper ('WPNFATSOLICITACAOPRORROGACAO/WPNFATEVENTOSNOTASMOV/TRNVA_VEVENTOS/WPNFATAGENDARENTREGA')
+			_sErros += "Eventos com esta origem nao podem ser excluidos manualmente."
+		endif
 	endif
 	if empty (_sErros)
 		_oEvento:Exclui ()
@@ -1641,3 +1646,27 @@ Static Function _ExecCapAssoc ()
 	endif
 	//u_logFim ()
 Return _sMsgRetWS
+
+
+// --------------------------------------------------------------------------
+// Grava agendamento de entrega de faturamento.
+Static function _AgEntFat ()
+	local _sNF      := ''
+	local _sSerie   := ''
+	local _dDtAgend := ctod ('')
+
+	if empty (_sErros) ; _sNF      = _ExtraiTag ("_oXML:_WSAlianca:_NF", .T., .F.) ; endif
+	if empty (_sErros) ; _sSerie   = _ExtraiTag ("_oXML:_WSAlianca:_Serie", .T., .F.) ; endif
+	if empty (_sErros) ; _dDtAgend = stod (_ExtraiTag ("_oXML:_WSAlianca:_DtAgend", .T., .T.)) ; endif
+	if empty (_sErros)
+		sf2 -> (dbsetorder (1))
+		if ! sf2 -> (dbseek (xfilial ("SF2") + _sNf + _sSerie, .F.))
+			_sErros += "NF/serie " + _sNF + '/' + _sSerie + ' de saida nao localizada.'
+		else
+			reclock ("SF2", .F.)
+			sf2 -> f2_vadagen = _dDtAgend
+			msunlock ()
+			_sMsgRetWS = 'Registro atualizado.' 
+		endif
+	endif
+return
