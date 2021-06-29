@@ -41,6 +41,7 @@
 //                      - Campo ZC5_ERRO aumentado de 250 para 1000 caracteres.
 // 11/05/2020 - Robert  - Importacao de pedidos passada para programa proprio (BatMercP.prw).
 // 17/06/2021 - Claudia - Incluido os atributos de dados financeiros. GLPI: 9633
+// 29/06/2021 - Claudia - Incluidos dados logisticos. GLPI: 10320
 //
 // ------------------------------------------------------------------------------------------------------------------------
 user function BatMerc (_sQueFazer)
@@ -255,6 +256,9 @@ static function _LeCli (_sLinkSrv)
 				_sRet213 := ""
 				_sRet214 := ""
 				_sRet215 := ""
+				_sRet216 := ""
+				_sRet217 := ""
+				_sRet218 := ""
 
 				// Contato financeiro 
 				_oSQL := ClsSQL ():New ()
@@ -339,6 +343,42 @@ static function _LeCli (_sLinkSrv)
 				if len (_aAtrRet)
 					_sRet215 := _aAtrRet[1,1]
 				endif
+
+				// Contato logistico
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := " SELECT "
+				_oSQL:_sQuery += " 		db_clia_valor "
+				_oSQL:_sQuery += " FROM " + _sLinkSrv + ".DB_CLIENTE_ATRIB "
+				_oSQL:_sQuery += " WHERE db_clia_atrib = 216 "
+				_oSQL:_sQuery += " AND db_clia_codigo = '" + (_sAliasQ) -> ZA1_CGC + "'"
+				_aAtrRet := aclone (_oSQL:Qry2Array (.F., .F.))
+				if len (_aAtrRet)
+					_sRet216 := _aAtrRet[1,1]
+				endif
+
+				// Telefone logistico
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := " SELECT "
+				_oSQL:_sQuery += " 		db_clia_valor "
+				_oSQL:_sQuery += " FROM " + _sLinkSrv + ".DB_CLIENTE_ATRIB "
+				_oSQL:_sQuery += " WHERE db_clia_atrib = 217 "
+				_oSQL:_sQuery += " AND db_clia_codigo = '" + (_sAliasQ) -> ZA1_CGC + "'"
+				_aAtrRet := aclone (_oSQL:Qry2Array (.F., .F.))
+				if len (_aAtrRet)
+					_sRet217 := _aAtrRet[1,1]
+				endif
+
+				// E-mail logistico
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := " SELECT "
+				_oSQL:_sQuery += " 		db_clia_valor "
+				_oSQL:_sQuery += " FROM " + _sLinkSrv + ".DB_CLIENTE_ATRIB "
+				_oSQL:_sQuery += " WHERE db_clia_atrib = 218 "
+				_oSQL:_sQuery += " AND db_clia_codigo = '" + (_sAliasQ) -> ZA1_CGC + "'"
+				_aAtrRet := aclone (_oSQL:Qry2Array (.F., .F.))
+				if len (_aAtrRet)
+					_sRet218 := _aAtrRet[1,1]
+				endif
 			endif
 	
 			if _lContinua
@@ -417,7 +457,25 @@ static function _LeCli (_sLinkSrv)
 				    If oModel:CommitData()
 				    	_sStatMerc = 'PRO'
 				    	u_log('GRAVOU', SA1->A1_COD)
-				        lDeuCerto := .T.				          
+				        lDeuCerto := .T.
+
+						// Gravou Cliente-> grava complemento dos clientes
+						If dbSeek(xFilial("AI0") + SA1->A1_COD + SA1->A1_LOJA )  
+							Reclock("AI0",.F.)
+							AI0->AI0_VALOGC := _sRet216
+							AI0->AI0_VALOGT := _sRet217
+							AI0->AI0_VALOGE := _sRet218
+							AI0->(MsUnlock())
+						Else
+							Reclock("AI0",.T.)
+							AI0->AI0_CODCLI := SA1->A1_COD
+							AI0->AI0_LOJA   := SA1->A1_LOJA
+							AI0->AI0_VALOGC := _sRet216
+							AI0->AI0_VALOGT := _sRet217
+							AI0->AI0_VALOGE := _sRet218
+							AI0->(MsUnlock())
+						EndIf
+
 				    //Se não deu certo, altera a variável para false
 				    Else
 				    	_sStatMerc = 'ERR'
