@@ -42,6 +42,7 @@
 // 11/05/2020 - Robert  - Importacao de pedidos passada para programa proprio (BatMercP.prw).
 // 17/06/2021 - Claudia - Incluido os atributos de dados financeiros. GLPI: 9633
 // 29/06/2021 - Claudia - Incluidos dados logisticos. GLPI: 10320
+// 29/06/2021 - Claudia - Adicionado campo email XML. GLPI: 10320
 //
 // ------------------------------------------------------------------------------------------------------------------------
 user function BatMerc (_sQueFazer)
@@ -259,6 +260,7 @@ static function _LeCli (_sLinkSrv)
 				_sRet216 := ""
 				_sRet217 := ""
 				_sRet218 := ""
+				_sRet219 := ""
 
 				// Contato financeiro 
 				_oSQL := ClsSQL ():New ()
@@ -379,6 +381,18 @@ static function _LeCli (_sLinkSrv)
 				if len (_aAtrRet)
 					_sRet218 := _aAtrRet[1,1]
 				endif
+
+				// E-mail XML
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := " SELECT "
+				_oSQL:_sQuery += " 		db_clia_valor "
+				_oSQL:_sQuery += " FROM " + _sLinkSrv + ".DB_CLIENTE_ATRIB "
+				_oSQL:_sQuery += " WHERE db_clia_atrib = 219 "
+				_oSQL:_sQuery += " AND db_clia_codigo = '" + (_sAliasQ) -> ZA1_CGC + "'"
+				_aAtrRet := aclone (_oSQL:Qry2Array (.F., .F.))
+				if len (_aAtrRet)
+					_sRet219 := _aAtrRet[1,1]
+				endif
 			endif
 	
 			if _lContinua
@@ -441,6 +455,7 @@ static function _LeCli (_sLinkSrv)
 				oSA1Mod:SetValue("A1_VAAGFIN"	, alltrim(_sRet213))  	
 				oSA1Mod:SetValue("A1_VACTAFN"	, alltrim(_sRet214))  	
 				oSA1Mod:SetValue("A1_VACGCFI"	, alltrim(_sRet215)) 
+				oSA1Mod:SetValue("A1_VAMDANF"	, alltrim(_sRet219)) 
 
 				U_LOG (_aAutoSA1)
 								
