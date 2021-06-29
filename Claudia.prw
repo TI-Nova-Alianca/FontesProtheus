@@ -42,7 +42,7 @@ Return
 // Static Function Almox2()
 // 	local _x := 0
 
-// 	U_help("Exec Almox 2 ITENS")
+// 	U_help("Exec Almox 2 ITENS Varios")
 // 	_oSQL := ClsSQL():New ()
 // 	_oSQL:_sQuery := ""
 // 	_oSQL:_sQuery += " SELECT "
@@ -53,9 +53,8 @@ Return
 // 	_oSQL:_sQuery += " 		AND B2_COD = B1_COD "
 // 	_oSQL:_sQuery += " 		AND SB2.B2_QATU > 0
 // 	_oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = '' "
-// 	//_oSQL:_sQuery += "  AND SB1.B1_COD IN('600524')""
-// 	//_oSQL:_sQuery += " AND SB1.B1_TIPO = 'MC' "
-// 	_oSQL:_sQuery += " AND SB1.B1_TIPO = 'MM' "
+// 	_oSQL:_sQuery += "  AND SB1.B1_COD IN('604532','604537','604538','604539','604540')""
+// 	_oSQL:_sQuery += " AND SB1.B1_TIPO in ('MM','MC')  "
 // 	_oSQL:Log ()
 // 	_aSB1:= _oSQL:Qry2Array ()
 	

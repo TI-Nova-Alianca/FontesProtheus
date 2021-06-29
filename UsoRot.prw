@@ -15,14 +15,12 @@
 // 16/03/2020 - Robert - Gravacao campos ESTACAO e IP.
 // 15/06/2020 - Robert - Gravacao do __cUserID no campo USUARIO e criado campo NOME para o cUserName.
 // 07/08/2020 - Robert - Ajuste teste porta SigaLoja.
+// 22/06/2021 - Robert - Nao validava tamanho do campo ROTINA e podia dar erro no insert.
 //
 
 // --------------------------------------------------------------------------
 user function UsoRot (_sIniFim, _sRotina, _sOrigem)
 	local _oSQL     := ClsSQL ():New ()
-//	local _nMon     := 0
-//	local _aThreads := {}
-//	local _nThread  := 0
 
 	// Criamos um servico em separado exclusivamente para as lojas usarem com os cupons, mas o pessoal comecou a
 	// usar para tudo, entao estou tentando evitar pelo menos que usem outros modulos. Robert, 24/10/2019.
@@ -42,7 +40,7 @@ user function UsoRot (_sIniFim, _sRotina, _sOrigem)
 	_sOrigem = strtran (_sOrigem, "'", "")
 	_sOrigem = strtran (_sOrigem, '"', '')
 	_sOrigem = strtran (_sOrigem, ",", "")
-	_sRotina = iif (_sRotina == NIL, '', _sRotina)
+	_sRotina = left (iif (_sRotina == NIL, '', _sRotina), 20)  // Manter tamanho compativel com o campo VA_USOROT.ROTINA
 
 	if _sIniFim == 'I'
 		// Cria tabela, caso nao exista.
