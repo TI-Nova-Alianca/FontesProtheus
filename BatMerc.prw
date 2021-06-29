@@ -43,6 +43,7 @@
 // 17/06/2021 - Claudia - Incluido os atributos de dados financeiros. GLPI: 9633
 // 29/06/2021 - Claudia - Incluidos dados logisticos. GLPI: 10320
 // 29/06/2021 - Claudia - Adicionado campo email XML. GLPI: 10320
+// 29/06/2021 - Claudia - Ramo de atividade. GLPI:10351
 //
 // ------------------------------------------------------------------------------------------------------------------------
 user function BatMerc (_sQueFazer)
@@ -435,7 +436,8 @@ static function _LeCli (_sLinkSrv)
 				oSA1Mod:SetValue("A1_HPAGE",	(_sAliasQ) -> ZA1_HPAGE)		
 				oSA1Mod:SetValue("A1_VAUSER",	left(_NoAcento (sa3 -> a3_nome),tamSX3('A1_VAUSER')[1]))
 				oSA1Mod:SetValue("A1_VACANAL",	left(_sCanal,tamSX3('A1_VACANAL')[1]))
-				oSA1Mod:SetValue("A1_SATIV1",	_sSativ)
+				//oSA1Mod:SetValue("A1_SATIV1",	_sSativ)
+				oSA1Mod:SetValue("A1_SATIV1",	"01.02")
 				oSA1Mod:SetValue("A1_SIMPNAC",	_sSimpNac)
 				oSA1Mod:SetValue("A1_VABARAP",	'0')
 				oSA1Mod:SetValue("A1_VADTINC",	DATE())
