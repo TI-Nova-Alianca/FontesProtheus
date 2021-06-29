@@ -46,16 +46,16 @@ Static Function ReportDef()
 	oSection1 := TRSection():New(oReport,,{}, , , , , ,.T.,.F.,.F.) 
 	
 	TRCell():New(oSection1,"COLUNA1", 	"" ,"Filial"            ,	    			, 8,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA2", 	"" ,"Ordem"		       ,       				,40,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA2", 	"" ,"Ordem"		       ,       				,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA3", 	"" ,"Plano"			   ,       				,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA4", 	"" ,"Cod Bem"   	   ,					,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA5", 	"" ,"Nome do Bem"	   ,                    ,30,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA8", 	"" ,"Serviço"		   ,       				,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA8", 	"" ,"Nome do Serviço"  ,       				,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA6", 	"" ,"Data Inicio"	   ,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA7", 	"" ,"Data Fim"         ,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA8", 	"" ,"Executante"	   ,                    ,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA9", 	"" ,"Observação"	   ,        			,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA4", 	"" ,"Cod Bem"   	   ,					,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA5", 	"" ,"Nome do Bem"	   ,                    ,40,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA6", 	"" ,"Serviço"		   ,       				,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA7", 	"" ,"Nome do Serviço"  ,       				,30,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA8", 	"" ,"Data Inicio"	   ,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA9", 	"" ,"Data Fim"         ,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA10", 	"" ,"Executante"	   ,                    ,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA11", 	"" ,"Observação"	   ,        			,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	
 	
 Return(oReport)
@@ -76,7 +76,7 @@ _oSQL:_sQuery += "     ,STJ.TJ_SERVICO AS SERVI "
 _oSQL:_sQuery += "     ,ST4.T4_NOME AS NOME_SERVICO "
 _oSQL:_sQuery += "     ,STJ.TJ_DTMPINI AS DT_INICIO "
 _oSQL:_sQuery += "     ,STJ.TJ_DTMPFIM AS DT_FIM "
-_oSQL:_sQuery += "     ,ST1.T1_NOME AS EXECUTANTE
+_oSQL:_sQuery += "     ,ST1.T1_NOME AS EXECUTANTE "
 _oSQL:_sQuery += "     ,ISNULL(CAST(CAST (STJ.TJ_OBSERVA AS VARBINARY (8000)) AS VARCHAR (8000)), '') AS OBSERV "
 _oSQL:_sQuery += " FROM " + RETSQLName ("STJ") + " STJ "
 _oSQL:_sQuery += "       INNER JOIN " + RETSQLName ("ST9") + " ST9 " // LIGAÇÃO DA TAB PRINCIPAL 
@@ -98,11 +98,11 @@ _oSQL:_sQuery += "			AND STL.TL_FILIAL = STJ.TJ_FILIAL "
 _oSQL:_sQuery += "			AND STL.TL_PLANO = STJ.TJ_PLANO) "
 _oSQL:_sQuery += " WHERE STJ.TJ_TIPO = 'PRE' "
 _oSQL:_sQuery += " AND STJ.D_E_L_E_T_ = '' "
-_oSQL:_sQuery += " STJ.TJ_DTMPINI >= '" + dtos (MV_PAR01) + "'"
-_oSQL:_sQuery += " STJ.TJ_DTMPFIM <= '" + dtos (MV_PAR02) + "'"
-_oSQL:_sQuery += " STJ.TJ_CODBEM BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
-_oSQL:_sQuery += " ST1.T1_CODFUNC '" + mv_par03 + "' AND '" + mv_par04 + "'"
-_oSQL:_sQuery += " ORDER BY TJ_DTMPINI "
+_oSQL:_sQuery += " AND STJ.TJ_DTMPINI >= '" + dtos (MV_PAR01) + "'"
+_oSQL:_sQuery += " AND STJ.TJ_DTMPFIM <= '" + dtos (MV_PAR02) + "'"
+_oSQL:_sQuery += " AND STJ.TJ_CODBEM BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
+_oSQL:_sQuery += " AND ST1.T1_CODFUNC BETWEEN '" + mv_par03 + "' AND '" + mv_par04 + "'"
+_oSQL:_sQuery += " ORDER BY STJ.TJ_DTMPINI "
 
 	// nHandle := FCreate("c:\temp\log.txt")
 	// FWrite(nHandle, _oSQL:_sQuery )
