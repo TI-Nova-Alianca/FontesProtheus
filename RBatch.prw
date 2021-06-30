@@ -23,6 +23,7 @@
 // 28/11/2019 - Robert - Grava aviso quando encontrar bloqueio de semaforo.
 // 18/12/2019 - Robert - Pequenos ajustes para filial 16
 // 14/02/2021 - Robert - Incluidas chamadas das funcoes U_UsoRot() e U_PerfMon para testes de monitoramento de performance  (GLPI 9409).
+// 30/06/2021 - Robert - Passa a acessar modulo '06' como default.
 //
 
 #include "tbiconn.ch"
@@ -117,7 +118,8 @@ User Function RBatch (_sEmp, _sFil)
 		if ! empty (_sModulo)
 			prepare environment empresa _sEmp filial _sFil modulo _sModulo
 		else
-			prepare environment empresa _sEmp filial _sFil
+		//	prepare environment empresa _sEmp filial _sFil
+			prepare environment empresa _sEmp filial _sFil modulo "06"
 		endif
 		private __cUserId := "000000"
 		private cUserName := "ADMINISTRADOR"
