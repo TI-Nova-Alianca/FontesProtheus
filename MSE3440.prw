@@ -31,6 +31,7 @@
 // 10/08/2020 - Cláudia - Criado novo calculo de comissões com base em informações do Cesar, conforme GLI: 7899
 // 05/04/2021 - Robert  - Incluidas chamadas da funcao PerfMon para monitoramento de tempos na emissao de cupom (GLPI 9573).
 // 05/05/2021 - Cláudia - Adicionado valor de frete + seguro + despesas acessorias. GLPI: 9895
+// 02/06/2021 - Claudia - Ajuste de descontos de ST e IPI. GLPI: 10051
 //
 // -----------------------------------------------------------------------------------------------------------------------------------
 /*
@@ -49,16 +50,7 @@ User Function MSE3440 ()
 	local _nNovaBase := 0
 	local _nNovaComi := 0
 	local _lContinua := .T.
-	//local _wbasecom  := 0
-	//local _wdesconto := 0
-	//local _wcomp     := 0
-	//local _wvalor    := 0
-	//local _wperc     := 0
-	//local _westornado:= 0
-	//local _wrecebido := 0
-	//local _wparcST   := 0
 	
-	//if upper (getenvserver ()) $ 'TESTE\TESTETI\TESTEFISCAL'  // N LIBERADO NA BASE QUENTE
 	u_logIni ()
 	
 	// Se estiver sendo chamado a partir da rotina de preparacao de notas, nao executa.
@@ -82,9 +74,9 @@ User Function MSE3440 ()
 
 	// busca dados do vendedor que esta lendo no SE3
 	If _lContinua
-		//If se3->e3_num == '000164753'
-		//	u_help("NOta")
-		//EndIf
+		If se3->e3_num == '000187281'
+			u_help("Nota")
+		EndIf
 		_vend1     := se1 -> e1_vend1   
 		_vend2     := se1 -> e1_vend2   
 		_baseComis := se1 -> e1_bascom1 
@@ -372,8 +364,6 @@ User Function MSE3440 ()
 			_vlrSeg	  := _aNota[1,7]
 			_vlrDesp  := _aNota[1,8]
 
-			//_vlrIpi := U_VA_COMIPIST(se1->e1_filial , se1->e1_num, se1->e1_prefixo, se1->e1_cliente, se1->e1_loja, _parcela, _ipiNota, _stNota, _qtdParc, 'I')
-			//_vlrST  := U_VA_COMIPIST(se1->e1_filial , se1->e1_num, se1->e1_prefixo, se1->e1_cliente, se1->e1_loja, _parcela, _ipiNota, _stNota, _qtdParc, 'S')
 			If _sCondTipo == '9' // Escolhe o percentual de cada parcela
 				Do Case 
 					Case alltrim(_parcela) == '' 
@@ -420,13 +410,34 @@ User Function MSE3440 ()
 
 			Else
 				If _sCondIPI == 'N' // IPI distribuídos nas "N" parcelas
-					_vlrIpi := _ipiNota/_qtdParc
-					_vlrST  := _stNota/_qtdParc
+					If alltrim(se3->e3_parcela) == '' .or. alltrim(se3->e3_parcela) == 'A' // se for primeira parcela, verificar se tem mais baixas nele
+						// verificar se existe mais que um registro de comissão. se sim, so retira IPI e ST da primeira.
+						_nQtdCom := BuscaQtdComissao(se3->e3_filial, se3->e3_num, se3->e3_prefixo, se3->e3_parcela, se3->e3_codcli, se3->e3_loja)
+
+						If _nQtdCom == 0 
+							_vlrIpi := _ipiNota
+							_vlrST  := _stNota
+						Else
+							_vlrIpi := 0
+							_vlrST  := 0
+						EndIf
+					Else
+						_vlrIpi := _ipiNota/_qtdParc
+						_vlrST  := _stNota/_qtdParc
+					EndIf
 
 				Else 				// IPI cobrado na primeira parcela
 					If alltrim(se3->e3_parcela) == '' .or. alltrim(se3->e3_parcela) == 'A' // se for a primeira parcela, desconta IPI e ST
-						_vlrIpi := _ipiNota
-						_vlrST  := _stNota
+						// verificar se existe mais que um registro de comissão. se sim, so retira IPI e ST da primeira.
+						_nQtdCom := BuscaQtdComissao(se3->e3_filial, se3->e3_num, se3->e3_prefixo, se3->e3_parcela, se3->e3_codcli, se3->e3_loja)
+
+						If _nQtdCom == 0
+							_vlrIpi := _ipiNota
+							_vlrST  := _stNota
+						Else
+							_vlrIpi := 0
+							_vlrST  := 0
+						EndIf
 					Else
 						_vlrIpi := 0
 						_vlrST  := 0
@@ -498,226 +509,29 @@ User Function MSE3440 ()
 	u_logFim ()
 	
 Return		
-		
-		
-		
-	// Else
-	
-	
-	// 	u_logIni ()
-		
-	// 	// Se estiver sendo chamado a partir da rotina de preparacao de notas, nao executa.
-	// 	if IsInCallStack ("MATA460A") .or. IsInCallStack ("MATA460B")
-	// 		U_ML_SRArea (_aAreaAnt)
-	// 	    u_logFim ()
-	// 	    return
-	// 	endif
-		
-	// 	// busca campos no E1
-	// 	// busca dados do vendedor que esta lendo no SE3
-	// 	_wvend1    := fbuscacpo ("SE1", 1, xfilial ("SE1") + se3 -> e3_prefixo + se3 -> e3_num + se3 -> e3_parcela + se3 -> e3_tipo , "E1_VEND1")
-	// 	_wvend2    := fbuscacpo ("SE1", 1, xfilial ("SE1") + se3 -> e3_prefixo + se3 -> e3_num + se3 -> e3_parcela + se3 -> e3_tipo , "E1_VEND2")
-	// 	_wbasecom  := fbuscacpo ("SE1", 1, xfilial ("SE1") + se3 -> e3_prefixo + se3 -> e3_num + se3 -> e3_parcela + se3 -> e3_tipo , "E1_BASCOM1")
-	//     _wvalor    := fbuscacpo ("SE1", 1, xfilial ("SE1") + se3 -> e3_prefixo + se3 -> e3_num + se3 -> e3_parcela + se3 -> e3_tipo , "E1_VALOR")
-	//     if se3 -> e3_vend = _wvend1
-	//     	_wperc     := fbuscacpo ("SE1", 1, xfilial ("SE1") + se3 -> e3_prefixo + se3 -> e3_num + se3 -> e3_parcela + se3 -> e3_tipo , "E1_COMIS1")
-	//     elseif se3 -> e3_vend = _wvend2
-	//     	_wperc     := fbuscacpo ("SE1", 1, xfilial ("SE1") + se3 -> e3_prefixo + se3 -> e3_num + se3 -> e3_parcela + se3 -> e3_tipo , "E1_COMIS2")
-	//     endif
-	//     // monta data inicial e final para compor os valores de descontos, compensacoes e juros
-	//     w_dtini    := substr (dtos (se3 -> e3_emissao),1,6) + '01'
-	//     w_dtfim    := substr (dtos (se3 -> e3_emissao),1,6) + '31'
-	    
-	//     // busca dados da nota
-	//     _sQuery := ""
-	// 	_sQuery += " SELECT F2_VALBRUT  AS TOTAL_NF"
-	// 	_sQuery += "      , F2_VALIPI   AS IPI_NF"
-	// 	_sQuery += "      , F2_ICMSRET  AS ST_NF"
-	// 	_sQuery += " 	  , (SELECT ROUND(SUM(D2_TOTAL),2)
-	//     _sQuery += "           FROM SD2010 AS SD2
-	//     _sQuery += "       			INNER JOIN SF4010 AS SF4
-	//     _sQuery += "						ON (SF4.D_E_L_E_T_ = ''
-	// 	_sQuery += "							AND SF4.F4_CODIGO   = SD2.D2_TES
-	//     _sQuery += "							AND SF4.F4_MARGEM   = '3') 
-	//     _sQuery += "   		  WHERE SD2.D2_FILIAL  = SF2.F2_FILIAL"
-	//     _sQuery += "     		AND SD2.D2_DOC     = SF2.F2_DOC"
-	//     _sQuery += "     		AND SD2.D2_SERIE   = SF2.F2_SERIE"
-	//     _sQuery += "     		AND SD2.D2_CLIENTE = SF2.F2_CLIENTE"
-	//     _sQuery += "     		AND SD2.D2_LOJA    = SF2.F2_LOJA"
-	//     _sQuery += "     		AND SD2.D2_EMISSAO = SF2.F2_EMISSAO"
-	//     _sQuery += "  		 GROUP BY SD2.D2_FILIAL, SD2.D2_DOC, SD2.D2_SERIE) AS VLR_BONIFIC"
-	//     _sQuery += "      , F2_FRETE AS FRETE_NF"
-	//     _sQuery += "   FROM " +  RetSQLName ("SF2") + " AS SF2 "
-	// 	_sQuery += "  WHERE SF2.F2_FILIAL   = '" + xfilial ("SF2") + "'"
-	// 	_sQuery += "    AND SF2.D_E_L_E_T_  = ''"
-	// 	_sQuery += "    AND SF2.F2_DOC      =  '" + se3 -> e3_num + "'"
-	// 	_sQuery += "    AND SF2.F2_SERIE    =  '" + se3 -> e3_prefixo + "'"
-	// 	_sQuery += "    AND SF2.F2_CLIENTE  =  '" + se3 -> e3_codcli + "'"
-	// 	_sQuery += "    AND SF2.F2_LOJA     =  '" + se3 -> e3_loja + "'"
-	    
-	//     _Nota := U_Qry2Array(_sQuery)
-	//     If len(_Nota) > 0
-	//     	_brutoNota  = _Nota[1,1]
-	//     	_baseNota   = _Nota[1,1] - _Nota[1,2] - _Nota[1,3] - _Nota[1,4] - _Nota[1,5]
-	    	
-	//     	// se tem ST referenciada na nota - verifica se existi titulo sem separado para pagamento da mesma.
-	//     	if _Nota[1,3] > 0
-	//            	// verifica se a nota tem parcela separada de ST
-	// 			_sSQL := ""
-	// 		    _sSQL += " SELECT E1_VALOR"
-	// 		   	_sSQL += "   FROM " + RetSQLName ("SE1") + " AS SE1A " 
-	// 		   	_sSQL += "  WHERE SE1A.E1_FILIAL  = '" + xfilial ("SE1") + "'"
-	// 		   	_sSQL += "    AND SE1A.E1_PREFIXO = '" + se3 -> e3_prefixo + "'"
-	// 		   	_sSQL += "    AND SE1A.E1_NUM     = '" + se3 -> e3_num + "'"
-	// 		   	_sSQL += "    AND SE1A.E1_PARCELA = 'A' "
-	// 		   	_sSQL += "    AND SE1A.E1_NATUREZ = '110199' "
-	// 		   	_sSQL += "    AND SE1A.D_E_L_E_T_ = ''"
-	   	
-	//     		_parcST := U_Qry2Array(_sSQL)
-	// 	    	If len(_parcST) > 0
-	// 	    		_wparcST = _parcST[1,1]
-	// 	    	Endif
-	// 	    else
-	// 	    	_wparcST = 0
-	// 		endif
-	// 		// recalcula	    	
-	//     	_basePrev = (_baseNota * _wvalor) / (_brutoNota - _wparcST - _Nota[1,4] ) ///- _Nota[1,5])
-	//     else
-	// 	    _basePrev   = _wbasecom
-	//     endif
-	//      _wbasecom = _basePrev
-	     
-	//     // atualiza base de comissao no titulo
-	//     DbSelectArea("SE1")
-	//     DbSetOrder(1)
-	//     if DbSeek(xfilial ("SE1") + se3 -> e3_prefixo + se3 -> e3_num + se3 -> e3_parcela + se3 -> e3_tipo,.F.)
-	// 	    reclock("SE1", .F.)
-	// 			SE1->E1_BASCOM1     := _wbasecom  
-	// 	    MsUnLock()
-	// 	endif    
-	    
-	//      _wdesconto := 0
-	//     _sSQL := ""
-	//     _sSQL += " SELECT ROUND(SUM(E5_VALOR),2)"
-	//     _sSQL += "   FROM " + RetSQLName ("SE5")
-	//     _sSQL += "  WHERE E5_FILIAL   = '" + xfilial ("SE5") + "'"
-	//     _sSQL += "    AND E5_RECPAG   = 'R'"
-	//     _sSQL += "    AND E5_NUMERO   = '" + se3 -> e3_num + "'"
-	//     _sSQL += "    AND E5_PARCELA  = '" + se3 -> e3_parcela + "'"
-	//     _sSQL += "    AND E5_TIPODOC = 'DC'"
-	//     _sSQL += "    AND E5_PREFIXO  = '" + se3 -> e3_prefixo + "'"
-	//     _sSQL += "    AND D_E_L_E_T_ != '*'"
-	//     _sSQL += "    AND E5_SITUACA != 'C'"
-	//     _sSQL += "    AND E5_DATA BETWEEN '" + w_dtini + "' AND '" + w_dtfim + "'"
-	//     _sSQL += " GROUP BY E5_FILIAL, E5_RECPAG, E5_NUMERO, E5_PARCELA, E5_PREFIXO"
-	  
-	//     _Desconto := U_Qry2Array(_sSQL)
-	//     If len(_Desconto) > 0
-	//         _wdesconto = _Desconto[1,1]
-	//     Endif
-	    
-	//     _wcomp := 0
-	//     _sSQL := ""
-	//     _sSQL += " SELECT ROUND(SUM(E5_VALOR),2)"
-	//     _sSQL += "   FROM " + RetSQLName ("SE5")
-	//     _sSQL += "  WHERE E5_FILIAL   = '" + xfilial ("SE5") + "'"
-	//     _sSQL += "    AND E5_RECPAG   = 'R'"
-	//     _sSQL += "    AND E5_NUMERO   = '" + se3 -> e3_num + "'"
-	//     _sSQL += "    AND E5_PARCELA  = '" + se3 -> e3_parcela + "'"
-	//     _sSQL += "    AND E5_TIPODOC = 'CP'"
-	//     _sSQL += "    AND E5_PREFIXO  = '" + se3 -> e3_prefixo + "'"
-	//     _sSQL += "    AND D_E_L_E_T_ != '*'"
-	//     _sSQL += "    AND E5_SITUACA != 'C'"
-	//     _sSQL += "    AND E5_DOCUMEN NOT LIKE '% RA %'"    
-	//     _sSQL += "    AND E5_DATA BETWEEN '" + w_dtini + "' AND '" + w_dtfim + "'"
-	//     _sSQL += " GROUP BY E5_FILIAL, E5_RECPAG, E5_NUMERO, E5_PARCELA, E5_PREFIXO"
-	  
-	//     _wcomp := U_Qry2Array(_sSQL)
-	//     If len(_wcomp) > 0
-	//         _wcomp = _wcomp[1,1]
-	//     Endif
-	        
-	// 	_wjuros := 0
-	//     _sSQL := ""
-	//     _sSQL += " SELECT ROUND(SUM(E5_VALOR),2)"
-	//     _sSQL += "   FROM " + RetSQLName ("SE5")
-	//     _sSQL += "  WHERE E5_FILIAL  = '" + xfilial ("SE5") + "'"
-	//     _sSQL += "    AND E5_RECPAG  = 'R'"
-	//     _sSQL += "    AND E5_NUMERO  = '" + se3 -> e3_num + "'"
-	//     _sSQL += "    AND E5_PARCELA = '" + se3 -> e3_parcela + "'"
-	//     _sSQL += "    AND E5_TIPODOC = 'JR'"
-	//     _sSQL += "    AND E5_PREFIXO = '" + se3 -> e3_prefixo + "'"
-	//     _sSQL += "    AND D_E_L_E_T_ != '*'"
-	//     _sSQL += "    AND E5_SITUACA != 'C'"
-	//     _sSQL += "    AND E5_DATA BETWEEN '" + w_dtini + "' AND '" + w_dtfim + "'"
-	//     _sSQL += " GROUP BY E5_FILIAL, E5_RECPAG, E5_NUMERO, E5_PARCELA, E5_PREFIXO"
-	  
-	// 	_juros := U_Qry2Array(_sSQL)
-	//     If len(_juros) > 0
-	//         _wjuros = _juros[1,1]
-	//     Endif
-			        
-	//     _wrecebido := 0
-	//     _sSQL := ""
-	//     _sSQL += " SELECT ROUND(SUM(E5_VALOR),2)"
-	//     _sSQL += "   FROM " + RetSQLName ("SE5")
-	//     _sSQL += "  WHERE E5_FILIAL  = '" + xfilial ("SE5") + "'"
-	//     _sSQL += "    AND E5_RECPAG  = 'R'"
-	//     _sSQL += "    AND E5_NUMERO  = '" + se3 -> e3_num + "'"
-	//     _sSQL += "    AND E5_PARCELA = '" + se3 -> e3_parcela + "'"
-	//     _sSQL += "    AND (E5_TIPODOC = 'VL' OR (E5_TIPODOC = 'CP' AND E5_DOCUMEN LIKE '% RA %'))"
-	//     _sSQL += "    AND E5_PREFIXO = '" + se3 -> e3_prefixo + "'"
-	//     _sSQL += "    AND D_E_L_E_T_ != '*'"
-	//     _sSQL += "    AND E5_DATA BETWEEN '" + w_dtini + "' AND '" + w_dtfim + "'"
-	//     _sSQL += " GROUP BY E5_FILIAL, E5_RECPAG, E5_NUMERO, E5_PARCELA, E5_PREFIXO "
-	    
-	//     _recebido := U_Qry2Array(_sSQL)
-	//     If len(_recebido) > 0
-	//         _wrecebido = _recebido[1,1]
-	//     Endif
-	    
-	//     _westornado :=0
-	//     _sSQL := ""
-	//     _sSQL += " SELECT ROUND(SUM(E5_VALOR),2)"
-	//    	_sSQL += "   FROM " + RetSQLName ("SE5") + " AS SE5 "
-	//    	_sSQL += "  WHERE E5_FILIAL   = '" + xfilial ("SE5") + "'"
-	//    	_sSQL += "    AND D_E_L_E_T_ != '*'"
-	//    	_sSQL += "    AND E5_RECPAG   = 'P'"
-	//    	_sSQL += "    AND E5_NUMERO   = '" + se3 -> e3_num + "'"
-	//    	_sSQL += "    AND E5_TIPODOC  = 'ES'"
-	//    	_sSQL += "    AND E5_MOTBX   != 'CMP'"
-	//    	_sSQL += "    AND E5_PREFIXO  = '" + se3 -> e3_prefixo + "'"
-	//    	_sSQL += "    AND E5_PARCELA  = '" + se3 -> e3_parcela + "'"
-	//    	_sSQL += "    AND E5_DATA BETWEEN '"+ w_dtini + "' AND '" + w_dtfim + "'"
-	//    	_sSQL += " GROUP BY E5_FILIAL, E5_RECPAG, E5_NUMERO, E5_PARCELA, E5_PREFIXO "
-	    
-	//     _estornado := U_Qry2Array(_sSQL)
-	//     If len(_estornado) > 0
-	//         _westornado = _estornado[1,1]
-	//     Endif
-	        	
-	// 	U_ML_SRArea (_aAreaAnt)
-		        	
-	// 	// tem que desconsiderar os juros recebidos e tem que considerar se teve estorno
-	//     _wrecebido = _wrecebido - (_westornado + _wjuros )
-	    
-	//     // com base no E1 recalcula os valores de base e valor de comissao do E3 
-	//     // recalcula campo novo considerando E1 e descontos concedidos
-	//     // considerando descontos concedidos e fazendo a proporcionalidade 
-	//     // base de comissao do E1 X recebido liquido / total titulo
-	    
-	//     _nNovaBase := ROUND(_wrecebido * _wbasecom / _wvalor , 2)
-	//     _nNovaComi := ROUND(_nNovaBase * _wperc / 100 , 2)
-	    
-	//     // Grava valores calculados nos campos padrao do sistema
-	//     se3 -> e3_base  = _nNovaBase
-	//     se3 -> e3_comis = _nNovaComi
-	//     se3 -> e3_porc  = _wperc
-	
-	// 	u_logFim ()
-		
+//
+// ---------------------------------------------------------------------------------------
+// Busca		
+Static Function BuscaQtdComissao(_sFilial, _sNum, _sPrefixo, _sParcela, _sCliente, _sLoja)
+	Local _nQtdCom := 0
+	Local _aQtdCom := {}
+	Local _x       := 0
 
-	
-	
-	// EndIf
-//Return
+	_sQuery := ""
+	_sQuery += " SELECT
+	_sQuery += " 	COUNT(E3_SEQ) AS QTD
+	_sQuery += " FROM SE3010
+	_sQuery += " WHERE D_E_L_E_T_ = ''
+	_sQuery += " AND E3_FILIAL  = '" + _sFilial  + "'"
+	_sQuery += " AND E3_NUM     = '" + _sNum     + "'"
+	_sQuery += " AND E3_SERIE   = '" + _sPrefixo + "'"
+	_sQuery += " AND E3_PARCELA = '" + _sParcela + "'"
+	_sQuery += " AND E3_CODCLI  = '" + _sCliente + "'"
+	_sQuery += " AND E3_LOJA    = '" + _sLoja    + "'"
+	_aQtdCom := U_Qry2Array(_sQuery)
+
+	For _x:= 1 to Len(_aQtdCom)
+		_nQtdCom := _aQtdCom[_x, 1]
+	Next
+
+Return _nQtdCom
