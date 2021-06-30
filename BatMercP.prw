@@ -44,7 +44,8 @@
 // 22/06/2020 - Robert - Funcao U_LkSrvMer() renomeada para U_LsServer().
 // 06/11/2020 - Robert - Quando nao tiver o TES no Mercanet, usa do zc5_TipVen para alimentar o TES inteligente.
 // 10/11/2020 - Robert - Passa a desconsiderar o TES que vem do Mercanet e usa apenas o zc5_TipVen para alimentar o TES inteligente (GLPI 8785).
-// 14/02/2021 - Robert  - Incluidas chamadas da funcao U_PerfMon para testes de monitoramento de performance (GLPI 9409)
+// 14/02/2021 - Robert - Incluidas chamadas da funcao U_PerfMon para testes de monitoramento de performance (GLPI 9409)
+// 30/06/2021 - Robert - Criado teste "Para informar motivo de bonificacao, o pedido deve ser do tipo bonificado."
 //
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -333,7 +334,11 @@ static function _LePed ()
 						aadd (_aLinhaSC6, {"C6_ITEMPC", strzero (len (_aAutoSC6) + 1, tamsx3 ("C6_ITEMPC")[1]), NIL})
 					endif
 					if ! empty ((_sAliasQ) -> zc6_bonific)
-						aadd (_aLinhaSC6, {"C6_BONIFIC", (_sAliasQ) -> zc6_bonific, NIL})
+						if (_sAliasQ) -> zc5_TipVen != 'B'
+							_sMsgErro += "Para informar motivo de bonificacao, o pedido deve ser do tipo bonificado."
+						else
+							aadd (_aLinhaSC6, {"C6_BONIFIC", (_sAliasQ) -> zc6_bonific, NIL})
+						endif
 					endif
 					aadd (_aLinhaSC6, {"C6_COMIS1",  (_sAliasQ) -> zc6_comis1, NIL})
 					
