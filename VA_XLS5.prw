@@ -80,6 +80,8 @@
 // 13/10/2020 - Cláudia - Incluidas colunas na versao resumida, conforme GLPI: 8642
 // 09/12/2020 - Cláudia - Alterada busca de promotor. GLPI: 8880
 // 21/05/2020 - Claudia - Incluida a gravação e exclusão de parametros na SXK. GLPI: 10071
+// 02/07/2021 - Claudia - Incluido campo CNAE. GLPI: 10354
+// 02/07/2021 - Claudia - Incluido valor do funrural. GLPI: 10177
 //
 // ---------------------------------------------------------------------------------------------------------------
 User Function VA_XLS5 (_lAutomat)
@@ -201,7 +203,7 @@ Static Function _Opcoes (_sTipo)
 		aadd (_aOpcoes, {.F., "NF",                       "V.DOC AS NF"})
 		aadd (_aOpcoes, {.F., "Emissao",                  "SUBSTRING (V.EMISSAO, 7, 2) + '/' + SUBSTRING (V.EMISSAO, 5, 2) + '/' + SUBSTRING (V.EMISSAO, 1, 4) AS EMISSAO"})
 		aadd (_aOpcoes, {.F., "Mes/ano emissao",          "SUBSTRING (V.EMISSAO, 5, 2) + '/' + SUBSTRING (V.EMISSAO, 1, 4) AS MES_EMIS"})
-		aadd (_aOpcoes, {.F., "Serie",                    "SERIE"})
+		aadd (_aOpcoes, {.F., "Serie",                    "V.SERIE"})
 		aadd (_aOpcoes, {.F., "Pedido",                   "PEDVENDA"})
 		aadd (_aOpcoes, {.F., "Fat/bonif",                "CASE WHEN V.F4_MARGEM='1' THEN 'FATURADO' WHEN V.F4_MARGEM='2' THEN 'DEVOLUCAO' WHEN V.F4_MARGEM='3' THEN 'BONIFICADO' WHEN V.F4_MARGEM='4' THEN 'COMODATO' WHEN V.F4_MARGEM='5' THEN 'RET.COMODATO' WHEN V.F4_MARGEM='6' THEN 'FRETE' WHEN V.F4_MARGEM='7' THEN 'SERVICOS' WHEN V.F4_MARGEM='8' THEN 'USO E CONSUMO' WHEN V.F4_MARGEM='9' THEN 'NAO SE APLICA' ELSE V.F4_MARGEM END AS FAT_BONIF"})
 		aadd (_aOpcoes, {.F., "Cod.cliente",              "V.CLIENTE AS CODCLI"})
@@ -281,6 +283,8 @@ Static Function _Opcoes (_sTipo)
 		aadd (_aOpcoes, {.F., "Ato cooperativo/não coop.","CASE WHEN (B1_VAATO = 'S')  THEN  'Cooperativo' ELSE 'Nao Cooperativo' END AS ATO"})
 		aadd (_aOpcoes, {.F., "Linha de envase",          "RTRIM (ISNULL ((SELECT H1_DESCRI FROM " + RetSqlName ("SH1") + " WHERE D_E_L_E_T_ <> '*' AND H1_FILIAL = '" + xfilial ("sh1") + "' AND H1_CODIGO = B1_VALINEN), '')) AS LINHA_ENVASE"})
 		aadd (_aOpcoes, {.F., "Valor NET",                "VALOR_NET * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALOR_NET"})
+		aadd (_aOpcoes, {.F., "Cód CNAE ",                "SA1.A1_CNAE AS CNAE"})
+		aadd (_aOpcoes, {.F., "Vlr. Funrural ",           "IIF(SAFRA.VLR_FUNRURAL > 0, SAFRA.VLR_FUNRURAL, 0) AS VLR_FUNRURAL"})
 	endif
 	// Pre-seleciona opcoes cfe. conteudo anterior.
 	for _nOpcao = 1 to len (_aOpcoes)
@@ -394,7 +398,13 @@ Static Function _Gera()
 	_sQuery +=            " left join " + RetSQLName ("SF4") + " SF4 "
 	_sQuery +=                 " on (SF4.D_E_L_E_T_ != '*'"
 	_sQuery +=                 " and SF4.F4_FILIAL   = '" + xfilial ("SF4") + "'"
-	_sQuery +=                 " and SF4.F4_CODIGO   = V.TES)"                            
+	_sQuery +=                 " and SF4.F4_CODIGO   = V.TES)"     
+	_sQuery +=            "	 LEFT JOIN VA_VNOTAS_SAFRA SAFRA "
+	_sQuery +=            "		 ON (SAFRA.FILIAL = V.FILIAL"
+	_sQuery +=            "		 AND SAFRA.DOC = V.DOC"
+	_sQuery +=            "		 AND SAFRA.SERIE = V.SERIE"
+	_sQuery +=            "		 AND SAFRA.ASSOCIADO = V.CLIENTE"
+	_sQuery +=            "		 AND SAFRA.LOJA_ASSOC = V.LOJA)"                       
     if "C5_" $ upper (_sQuery) .or. "C6_" $ upper (_sQuery)
 		// Fazer teste se estes campos foram selecionados para efetivamente incluir o teste
 		_sQuery +=            " left join " + RetSQLName ("SC5") + " SC5 "
