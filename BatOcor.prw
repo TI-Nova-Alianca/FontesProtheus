@@ -99,7 +99,7 @@ user function BatOcor ()
 	_oBatch:Mensagens += cvaltochar (_nQtArqImp) + ' arq.lidos; ' + cvaltochar (_nQtArqDup) + ' arq.ja importados; ' + cvaltochar (_nQtArqErr) + ' arq.c/probl.'
 
 	U_ML_SRArea (_aAreaAnt)
-return (_oBatch:Retorno == 'N')
+return (_oBatch:Retorno == 'S')
 
 
 

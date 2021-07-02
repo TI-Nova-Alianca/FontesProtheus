@@ -54,6 +54,7 @@
 // 25/02/2021 - Robert  - Verificacao 78 passa a usar a view VISAO_GERAL_ACESSOS.
 // 04/03/2021 - Robert  - Consulta 69 passa a usar tabelas padrao do sistema (agora usuarios estao no banco de dados).
 // 12/03/2021 - Robert  - Ignorar usuario robert_teste na verificacao 78
+// 02/07/2021 - Robert  - Consultas 77 e 79 deixam de usar a view VA_VUSR_PROTHEUS_X_METADADOS.
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -3039,13 +3040,11 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Setores    = 'INF'
 			::Descricao  = 'Pessoa do Metadados referenciando mais de um usuario no Protheus'
 			::Query := "SELECT *"
-			::Query +=  " FROM " + U_LkServer ("TI") + ".VA_VUSR_PROTHEUS_X_METADADOS"
-			::Query += " WHERE PESSOA IN (SELECT PESSOA"
-			::Query +=                    " FROM " + U_LkServer ("TI") + ".VA_VUSR_PROTHEUS_X_METADADOS"
-			::Query +=                   " WHERE USR_MSBLQL != '1'"
-			::Query +=                   " GROUP BY PESSOA"
-			::Query +=                  " HAVING COUNT (*) > 1)"
-			::Query += " ORDER BY USR_CARGO"
+			::Query +=  " FROM LKSRV_PROTHEUS.protheus.dbo.SYS_USR U"
+			::Query += " WHERE U.D_E_L_E_T_ = ''"
+			::Query +=   " AND (select count (*) from LKSRV_SIRH.SIRH.dbo.VA_VFUNCIONARIOS M"
+			::Query +=         " where U.USR_CARGO LIKE 'Pessoa ' + cast (M.PESSOA as varchar (max)) + '%' COLLATE DATABASE_DEFAULT"
+			::Query +=        ") > 1"
 
 		case ::Numero == 78
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
@@ -3076,10 +3075,13 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Setores    = 'INF'
 			::Descricao  = 'Pessoas demitidas cujo usuario nao foi bloqueado no Protheus'
 			::Query := "SELECT *"
-			::Query +=  " FROM " + U_LkServer ("TI") + ".VA_VUSR_PROTHEUS_X_METADADOS"
-			::Query += " WHERE USR_MSBLQL != '1'"
-			::Query +=   " AND SITUACAO in ('3', '4')"
-			::Query += " ORDER BY USR_ID"
+			::Query +=  " FROM LKSRV_PROTHEUS.protheus.dbo.SYS_USR U"
+			::Query += " WHERE U.D_E_L_E_T_ = ''"
+			::Query +=   " and USR_MSBLQL != '1'"
+			::Query +=   " AND exists (select *"
+			::Query +=                 " FROM LKSRV_SIRH.SIRH.dbo.VA_VFUNCIONARIOS M"
+			::Query +=                " WHERE U.USR_CARGO LIKE 'Pessoa ' + CAST(M.PESSOA AS VARCHAR(MAX)) + '%' COLLATE DATABASE_DEFAULT"
+			::Query +=                  " and M.SITUACAO = 4)"
 
 		otherwise
 			::UltMsg = "Verificacao numero " + cvaltochar (::Numero) + " nao definida."

@@ -16,6 +16,7 @@
 // 11/11/2019 - Robert - Desabilitado pack tabelas CV3 e CTK cfe. GLPI 6772 e chamado Totvs 7124121.
 // 24/10/2020 - Robert - Adicionada tabela SC0
 //                     - Inseridas tags para catalogo de programas.
+// 30/06/2021 - Robert - Limpeza do ZZ6 para nao-repetitivos reduzida de 180 para 90 dias.
 //
 
 // ----------------------------------------------------------------
@@ -107,7 +108,8 @@ static function _LimpaZZ6 ()
 
 	if _lContinua
 		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := "DELETE " + RetSQLName ('ZZ6') + " WHERE ZZ6_PERIOD != 'R' AND ZZ6_RODADO = 'S' AND ZZ6_DTINC <= '" + dtos (date () - 180) + "' AND ZZ6_DFUEXE <= '" + dtos (date () - 180) + "'"
+	//	_oSQL:_sQuery := "DELETE " + RetSQLName ('ZZ6') + " WHERE ZZ6_PERIOD != 'R' AND ZZ6_RODADO = 'S' AND ZZ6_DTINC <= '" + dtos (date () - 180) + "' AND ZZ6_DFUEXE <= '" + dtos (date () - 180) + "'"
+		_oSQL:_sQuery := "DELETE " + RetSQLName ('ZZ6') + " WHERE ZZ6_PERIOD != 'R' AND ZZ6_RODADO = 'S' AND ZZ6_DTINC <= '" + dtos (date () -  90) + "' AND ZZ6_DFUEXE <= '" + dtos (date () -  90) + "'"
 		_oSQL:Log ()
 		if ! _oSQL:Exec ()
 			_oBatch:Mensagens += _oSQL:UltMsg
