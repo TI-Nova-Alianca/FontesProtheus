@@ -76,6 +76,8 @@ Static Function _BuscaRecebiveis(dDataIni, dDataFin)
             _dDtAcres    := IIF(Empty(oJSON[i]["accrual_date"]),STOD('19000101'),_CastData(oJSON[i]["accrual_date"]))
             _dDtCriacao  := IIF(Empty(oJSON[i]["date_created"]),STOD('19000101'),_CastData(oJSON[i]["date_created"]))
 
+            _sParcPro := _BuscaParcProtheus(_nParcela)
+
             aadd (aParcela,{    _nId            ,; //  1
 					            _sStatus        ,; //  2
 					            _nVlrBrtPar     ,; //  3
@@ -89,7 +91,8 @@ Static Function _BuscaRecebiveis(dDataIni, dDataFin)
                                 _sTipo          ,; // 11
                                 _sMetodoPgto    ,; // 12
                                 _dDtAcres       ,; // 13
-                                _dDtCriacao     }) // 14
+                                _dDtCriacao     ,; // 14
+                                _sParcPro       }) // 15
 
             aTrans := _BuscaTransacao(_sIdTransacao)
 
@@ -208,6 +211,7 @@ Static Function _GravaZB3(aTrans, aParcela)
                 ZB3->ZB3_METPGT := aParcela[1,12]
                 ZB3->ZB3_DTAACR := aParcela[1,13]
                 ZB3->ZB3_DTACRI := aParcela[1,14]
+                ZB3->ZB3_PARPRO := aParcela[1,15]
                 ZB3->ZB3_STATRN := aTrans[1, 1]
                 ZB3->ZB3_MOTREC := aTrans[1, 2]
                 ZB3->ZB3_STAAGE := aTrans[1, 3]
@@ -227,7 +231,7 @@ Static Function _GravaZB3(aTrans, aParcela)
                 ZB3->ZB3_BOLCOD := aTrans[1,17]
                 ZB3->ZB3_BOLDTA := aTrans[1,18]
                 ZB3->ZB3_STAIMP := 'I'
-                //ZB3->ZB3_DTABAI := 
+                //ZB3->ZB3_DTABAI := ""
 			ZB3->(MsUnlock())
         Else
             _lRet := .F.
@@ -274,6 +278,38 @@ Static Function _CastData(_sDt)
     _dDt  := STOD(_sAno + _sMes + _sDia)
 
 Return _dDt
+
+Static Function _BuscaParcProtheus(_nParcela)
+    Local _sParcPro := ""
+
+    Do Case
+        Case _nParcela == 1
+            _sParcPro := 'A'
+        Case _nParcela == 2
+            _sParcPro := 'B'
+        Case _nParcela == 3
+            _sParcPro := 'C'
+        Case _nParcela == 4
+            _sParcPro := 'D'
+        Case _nParcela == 5
+            _sParcPro := 'E'
+        Case _nParcela == 6
+            _sParcPro := 'F'
+        Case _nParcela == 7
+            _sParcPro := 'G'
+        Case _nParcela == 8
+            _sParcPro := 'H'
+        Case _nParcela == 9
+            _sParcPro := 'I'
+        Case _nParcela == 10
+            _sParcPro := 'J'
+        Case _nParcela == 11
+            _sParcPro := 'K'
+        Case _nParcela == 12
+            _sParcPro := 'L'
+
+    EndCase
+Return _sParcPro
 //
 // -------------------------------------------------------------------------
 // Cria Perguntas no SX1
