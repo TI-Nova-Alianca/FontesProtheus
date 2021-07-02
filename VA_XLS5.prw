@@ -284,6 +284,7 @@ Static Function _Opcoes (_sTipo)
 		aadd (_aOpcoes, {.F., "Linha de envase",          "RTRIM (ISNULL ((SELECT H1_DESCRI FROM " + RetSqlName ("SH1") + " WHERE D_E_L_E_T_ <> '*' AND H1_FILIAL = '" + xfilial ("sh1") + "' AND H1_CODIGO = B1_VALINEN), '')) AS LINHA_ENVASE"})
 		aadd (_aOpcoes, {.F., "Valor NET",                "VALOR_NET * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALOR_NET"})
 		aadd (_aOpcoes, {.F., "Cód CNAE ",                "SA1.A1_CNAE AS CNAE"})
+		aadd (_aOpcoes, {.F., "Desc. CNAE ",              "CC3.CC3_DESC AS CNAE_DESC"})
 		aadd (_aOpcoes, {.F., "Vlr. Funrural ",           "IIF(SAFRA.VLR_FUNRURAL > 0, SAFRA.VLR_FUNRURAL, 0) AS VLR_FUNRURAL"})
 	endif
 	// Pre-seleciona opcoes cfe. conteudo anterior.
@@ -351,11 +352,14 @@ Static Function _Gera()
 	_sQuery +=                 " on (SA1BASE.D_E_L_E_T_ != '*'"
 	_sQuery +=                 " and SA1BASE.A1_FILIAL   = SA1.A1_FILIAL"
 	_sQuery +=                 " and SA1BASE.A1_COD      = SA1.A1_VACBASE"
-	_sQuery +=                 " and SA1BASE.A1_LOJA     = SA1.A1_VALBASE),"
+	_sQuery +=                 " and SA1BASE.A1_LOJA     = SA1.A1_VALBASE)"
+	_sQuery +=            " LEFT JOIN " + RetSQLName ("CC3") + " CC3 "
+	_sQuery +=                 " ON(CC3.D_E_L_E_T_=''"
+	_sQuery +=                 " AND CC3.CC3_COD = SA1.A1_CNAE)"
     if "ZB_" $ upper (_sQuery)
     	_sQuery +=              RetSQLName ("SZB") + " SZB,"
 	endif
-	_sQuery +=            " BI_ALIANCA.dbo.VA_FATDADOS as V "
+	_sQuery +=            " ,BI_ALIANCA.dbo.VA_FATDADOS as V "
     if "A3_" $ upper (_sQuery)
 		_sQuery +=            " left join " + RetSQLName ("SA3") + " SA3 "
 		_sQuery +=                 " on (SA3.D_E_L_E_T_ != '*'"
