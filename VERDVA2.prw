@@ -9,7 +9,8 @@
 // #PalavasChave      #inscricao_estadual #validação
 // #TabelasPrincipais #SA2 
 // #Modulos   		  #CON 
-
+//
+// -------------------------------------------------------------------------
 #include "rwmake.ch"
 
 User Function Verdva2()
