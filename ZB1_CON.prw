@@ -27,6 +27,7 @@
 // 20/04/2021 - Claudia - Incluida a chamada para o relatorio de diferenças no 
 //                        final da conciliação. GLPI: 9835
 // 18/05/2021 - Claudia - Incluida chamada para conciliaçao de NF loja. GLPI: 10039
+// 05/07/2021 - Claudia - Incluido status 02. GLPI: 10399
 //
 // -----------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -95,7 +96,7 @@ User Function ZB1_CON(_sConciliar)
 		_oSQL:_sQuery += " FROM " + RetSQLName ("ZB1") 
 		_oSQL:_sQuery += " WHERE ZB1_FILIAL = '" + cFilAnt + "'"
 		_oSQL:_sQuery += " AND D_E_L_E_T_ = ''" 
-		_oSQL:_sQuery += " AND ZB1_STAPGT = '01'" 		 //-- PAGO
+		_oSQL:_sQuery += " AND ZB1_STAPGT IN ('01','02')"//-- PAGO/ENVIADO PARA O BANCO
 		_oSQL:_sQuery += " AND ZB1_STAIMP = 'I' "        //-- APENAS OS IMPORTADOS
 		_oSQL:_sQuery += " AND ZB1_ARQUIV LIKE'%CIELO%'" //-- APENAS ARQUIVOS DA CIELO
 		If !empty(mv_par01)
