@@ -157,6 +157,8 @@ static function _LeCli (_sLinkSrv)
 	local _sSimpNac  := ""
 	local _sEMail    := ""
 	LOCAL _sStatMerc := ""
+	Local _AI0Cli    := ""
+	Local _AI0Loj    := ""
 	private _sErroAuto := ""  // Deixar private para ser vista por rotinas automaticas, etc.
 	
 	oModel := FWLoadModel("MATA030")
@@ -476,13 +478,21 @@ static function _LeCli (_sLinkSrv)
 				    	u_log('GRAVOU', SA1->A1_COD)
 				        lDeuCerto := .T.
 
+						_AI0Cli := SA1->A1_COD
+						_AI0Loj := SA1->A1_LOJA
+
+						dbSelectArea("AI0")
+                        dbSetOrder(1) // filial + cliente + loja
+                        dbGoTop()
 						// Gravou Cliente-> grava complemento dos clientes
-						If dbSeek(xFilial("AI0") + SA1->A1_COD + SA1->A1_LOJA )  
+						If dbSeek(xFilial("AI0") + _AI0Cli + _AI0Loj)  
 							Reclock("AI0",.F.)
 							AI0->AI0_VALOGC := _sRet216
 							AI0->AI0_VALOGT := _sRet217
 							AI0->AI0_VALOGE := _sRet218
 							AI0->(MsUnlock())
+
+							u_log('Alterou AI0', _AI0Cli +"/"+ _AI0Loj)
 						Else
 							Reclock("AI0",.T.)
 							AI0->AI0_CODCLI := SA1->A1_COD
@@ -491,6 +501,8 @@ static function _LeCli (_sLinkSrv)
 							AI0->AI0_VALOGT := _sRet217
 							AI0->AI0_VALOGE := _sRet218
 							AI0->(MsUnlock())
+
+							u_log('Incluiu AI0', _AI0Cli +"/"+ _AI0Loj)
 						EndIf
 
 				    //Se não deu certo, altera a variável para false
