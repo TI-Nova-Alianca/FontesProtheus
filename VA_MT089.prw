@@ -18,6 +18,7 @@
 //                      - Inseridas tags para catalogo de programas.
 // 30/11/2020 - Claudia - Incluidos novos campos conforme GLPI: 8809
 // 01/02/2021 - Cláudia - Incluida coluna de filial. GLPI:9288
+// 05/07/2021 - Claudia - Retirada a obrigatoriedade da coluna filial. GLPI: 10396
 //
 //-------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -254,10 +255,10 @@ User Function MT89LOK ()
 	Endif
 	
 	If _lRet .and. ! GDDeleted ()
-		If empty(GDFieldGet("FM_FILIAL"))
-			u_help("Campo Filial é obrigatório",, .t.)
-			_lRet := .F.
-		EndIf
+		// If empty(GDFieldGet("FM_FILIAL"))
+		// 	u_help("Campo Filial é obrigatório",, .t.)
+		// 	_lRet := .F.
+		// EndIf
 		If empty(GDFieldGet("FM_TIPO"))
 			u_help("Campo Tipo de operação é obrigatório",, .t.)
 			_lRet := .F.
@@ -320,10 +321,10 @@ User Function MT89TudOk()
 	Local _lRet := .T.
 	
 	If _lRet 
-		If empty(M -> FM_FILIAL)
-			u_help("Campo Filial é obrigatório")
-			_lRet := .F.
-		EndIf
+		// If empty(M -> FM_FILIAL)
+		// 	u_help("Campo Filial é obrigatório")
+		// 	_lRet := .F.
+		// EndIf
 
 		If empty(M -> FM_TIPO)
 			u_help("Campo Tipo de operação é obrigatório")
