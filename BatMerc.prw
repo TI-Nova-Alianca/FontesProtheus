@@ -44,6 +44,7 @@
 // 29/06/2021 - Claudia - Incluidos dados logisticos. GLPI: 10320
 // 29/06/2021 - Claudia - Adicionado campo email XML. GLPI: 10320
 // 29/06/2021 - Claudia - Ramo de atividade. GLPI:10351
+// 07/07/2021 - Claudia - Incluido atributo de nome de banco. GLPI: 10355
 //
 // ------------------------------------------------------------------------------------------------------------------------
 user function BatMerc (_sQueFazer)
@@ -256,6 +257,7 @@ static function _LeCli (_sLinkSrv)
 				_sRet208 := ""
 				_sRet209 := ""
 				_sRet210 := ""
+				_sRet211 := ""
 				_sRet212 := ""
 				_sRet213 := ""
 				_sRet214 := ""
@@ -299,6 +301,18 @@ static function _LeCli (_sLinkSrv)
 				_aAtrRet := aclone (_oSQL:Qry2Array (.F., .F.))
 				if len (_aAtrRet)
 					_sRet210 := _aAtrRet[1,1]
+				endif
+
+				// Nome do banco
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := " SELECT "
+				_oSQL:_sQuery += " 		db_clia_valor "
+				_oSQL:_sQuery += " FROM " + _sLinkSrv + ".DB_CLIENTE_ATRIB "
+				_oSQL:_sQuery += " WHERE db_clia_atrib = 211 "
+				_oSQL:_sQuery += " AND db_clia_codigo = '" + (_sAliasQ) -> ZA1_CGC + "'"
+				_aAtrRet := aclone (_oSQL:Qry2Array (.F., .F.))
+				if len (_aAtrRet)
+					_sRet211 := _aAtrRet[1,1]
 				endif
 
 				// Banco 
@@ -487,6 +501,7 @@ static function _LeCli (_sLinkSrv)
 						// Gravou Cliente-> grava complemento dos clientes
 						If dbSeek(xFilial("AI0") + _AI0Cli + _AI0Loj)  
 							Reclock("AI0",.F.)
+							AI0->AI0_BCODES := _sRet211
 							AI0->AI0_VALOGC := _sRet216
 							AI0->AI0_VALOGT := _sRet217
 							AI0->AI0_VALOGE := _sRet218
@@ -497,6 +512,7 @@ static function _LeCli (_sLinkSrv)
 							Reclock("AI0",.T.)
 							AI0->AI0_CODCLI := SA1->A1_COD
 							AI0->AI0_LOJA   := SA1->A1_LOJA
+							AI0->AI0_BCODES := _sRet211
 							AI0->AI0_VALOGC := _sRet216
 							AI0->AI0_VALOGT := _sRet217
 							AI0->AI0_VALOGE := _sRet218
