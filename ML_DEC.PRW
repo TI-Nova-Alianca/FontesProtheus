@@ -79,6 +79,7 @@
 // 19/03/2021 - Robert - Tratamento para exportar NF de safra tipo C na safra 2021 (GLPI 9660).
 // 05/04/2021 - Robert - Melhorada msg de aviso quando fornecedor nao tem registro no MA informado.
 // 06/05/2021 - Robert - Inserida mensagem de aviso quando codigo CR zerado no reg. tipo 21 (GLPI 9987)
+// 07/07/2021 - Robert - Desconsidera entradas de produtos oriundos de outros paises (GLPI 10436).
 //
 
 // --------------------------------------------------------------------------
@@ -608,6 +609,15 @@ Static Function _Tipo20D ()
 
 			// Outro pais.
 			if _sDestino == "EX" .or. empty (_sDestino)
+
+				// Movimentacoes de produtos oriundos de outros paises nao sao consideradas pelo SISDEVIN (GLPI 10436)
+				do while ! (_sNF20E) -> (eof ()) .AND. (_sNF20E) -> D1_DOC == _sNF .AND. (_sNF20E) -> D1_SERIE == _sSerie .and. (_sNF20E) -> f1_est == 'EX'
+					_Aviso ('Desconsiderando NF ' + (_sNF20E) -> D1_DOC + ' (entrada de outro pais).')
+					(_sNF20E) -> (dbskip ())
+				enddo
+				loop
+
+
 				u_log ('vou buscar pais para nf',(_sNF20E) -> D1_DOC)
 				if (_sNF20E) -> D1_TIPO $ "D/B"
 					_sDestino = _DestOri ("C", (_sNF20E) -> F1_FORNECE, (_sNF20E) -> F1_LOJA, (_sNF20E) -> D1_DOC, (_sNF20E) -> D1_TIPO)
@@ -1035,6 +1045,19 @@ Static Function _Tipo30E ()
 
 		// Outro pais.
 		if _sDestino == "EX"
+
+
+			// Movimentacoes de produtos oriundos de outros paises nao sao consideradas pelo SISDEVIN (GLPI 10436)
+			do while ! (_sAliasQ) -> (eof ()) .and. (_sAliasQ) -> f1_doc == _sDoc ;
+					.and. (_sAliasQ) -> f1_serie == _sSerie ;
+					.and. (_sAliasQ) -> f1_fornece == _sFornec ;
+					.and. (_sAliasQ) -> f1_loja == _sLoja
+				_Aviso ('Desconsiderando NF ' + (_sAliasQ) -> f1_DOC + ' (entrada de outro pais).')
+				(_sAliasQ) -> (dbskip ())
+			enddo
+			loop
+
+
 			u_log ('vou buscar pais para nf',(_sAliasQ) -> f1_doc) 
 			if (_sNF20E) -> D1_TIPO $ "D/B"
 				_sDestino = _DestOri ("C", (_sNF20E) -> F1_FORNECE, (_sNF20E) -> F1_LOJA, (_sNF20E) -> D1_DOC, (_sNF20E) -> D1_TIPO)
