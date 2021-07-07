@@ -27,6 +27,7 @@
 // 08/08/2018 - Robert - Exige TM=010 (ver comentario no local).
 // 31/05/2019 - Robert - Impede apontamento se tiver empenho do mesmo item da OP.
 // 07/06/2019 - Robert - Exige preenchimento dos campos D3_DADTPRD e D3_VATURNO.
+// 07/07/2021 - Robert - Validacao do campo D3_VADTPRD passa a aceitar ateh D+4 (GLPI 10430).
 //
 
 // --------------------------------------------------------------------------
@@ -36,8 +37,9 @@ user function mt250tok ()
 	
 	//u_logIni ()
 	
-	if _lRet .and. (empty (m->d3_vadtprd) .or. m->d3_vadtprd > date ())
-		u_help ('Data real de producao nao pode ser vazia nem futura.')
+//	if _lRet .and. (empty (m->d3_vadtprd) .or. m->d3_vadtprd > date ())
+	if _lRet .and. (empty (m->d3_vadtprd) .or. m->d3_vadtprd > date () + 4)  // GLPI 10430
+		u_help ('Data real de producao nao pode ser vazia nem futura (descontando feriadoes)')
 		_lRet = .F.
 	endif
 	if _lRet .and. empty (m->d3_vaturno)
