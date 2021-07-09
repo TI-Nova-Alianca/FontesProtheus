@@ -35,6 +35,7 @@
 // 26/10/2020 - Robert - Passa a bloquear almoxarifados com base no parametro VA_ALMZAG.
 // 04/12/2020 - Robert - Aceita transferencia de um codigo para outro (msg.Harry Potter) quando solicitacao vem da classe ClsTrEstq e usuario tem acesso pelo ZZU.
 // 16/12/2020 - Robert - Aceita transf. de liquidos sem laudo quando solicitacao vem da classe ClsTrEstq (GLPI 9051)
+// 09/07/2021 - Robert - Criada chamada da funcao U_ConsEst (GLPI 10464).
 //
 
 // ------------------------------------------------------------------------------------
@@ -248,6 +249,14 @@ user function ma261Lin ()
 					U_help ("Ja existe o lote '" + _sLoteDest + "' para o produto '" + alltrim (_sProdDest),, .t.)
 					_lRet = .F.
 				endif
+		endif
+	endif
+
+	// Verifica se tem alguma mensagem de inconsistencia entre tabelas de estoque.
+	if _lRet
+		_lRet = U_ConsEstq (xfilial ("SD3"), _sProdOrig, _sAlmOrig)
+		if _lRet
+			_lRet = U_ConsEstq (xfilial ("SD3"), _sProdDest, _sAlmDest)
 		endif
 	endif
 

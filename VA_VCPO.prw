@@ -141,6 +141,7 @@
 // 14/02/2021 - Robert  - Validacoes do D3_COD para programa MATA242 passadas para U_MTA242V e MT242LOk (GLPI 9388)
 //                      - Melhoria envio de avisos para TI.
 // 12/04/2021 - Robert  - Incluida chamada da procedure VA_SP_VERIFICA_ESTOQUES (testes iniciais) para validacao do D3_COD.
+// 09/07/2021 - Robert  - Removida chamada da procedure VA_SP_VERIFICA_ESTOQUES (cada tela vai chamar seus ptos.entrada) - GLPI 10464.
 //
 
 // --------------------------------------------------------------------------
@@ -970,17 +971,6 @@ user function VA_VCpo (_sCampo)
 			Endif
 			*/
 
-			// Por enquanto vou apenas dar uma monitorada. A intencao eh bloquear depois. Robert, 12/04/2021.
-			if IsInCallStack ("MATA241")
-				_oSQL := ClsSQL ():New ()
-				_oSQL:_sQuery := "EXEC VA_SP_VERIFICA_ESTOQUES '" + cFilAnt + "', '" + m->d3_cod + "', '" + GDFieldGet ("D3_LOCAL") + "'"
-				// _oSQL:Log ()
-				_sErrEstq = alltrim (_oSQL:RetQry (11, .F.))
-				if ! empty (_sErrEstq)
-					_sMsg = "Foram encontradas inconsistencias de estoque para o produto/almoxarifado " + alltrim (m->d3_cod) + "/" + GDFieldGet ("D3_LOCAL") + ": " + _sErrEstq
-					U_Log2 ('aviso', _sMsg)
-				endif
-			endif
 
 
 		case _sCampo $ "M->D3_EMISSAO"
