@@ -46,6 +46,7 @@
 // 10/11/2020 - Robert - Passa a desconsiderar o TES que vem do Mercanet e usa apenas o zc5_TipVen para alimentar o TES inteligente (GLPI 8785).
 // 14/02/2021 - Robert - Incluidas chamadas da funcao U_PerfMon para testes de monitoramento de performance (GLPI 9409)
 // 30/06/2021 - Robert - Criado teste "Para informar motivo de bonificacao, o pedido deve ser do tipo bonificado."
+// 09/07/2021 - Sandra - Criado tratamento para cliente 10005 - GLPI 10456.
 //
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -209,6 +210,9 @@ static function _LePed ()
 					case (_sAliasQ) -> zc5_client == '010006' .and. (_sAliasQ) -> zc5_lojacl == '01'
 						_sCliente = '10006 '
 						_sLojaCli = '01'
+					case (_sAliasQ) -> zc5_client == '010005' .and. (_sAliasQ) -> zc5_lojacl == '01'
+						_sCliente = '10005 '
+						_sLojaCli = '01'	
 					otherwise
 						_sMsgErro += "Cliente '" + (_sAliasQ) -> zc5_client + '/' + (_sAliasQ) -> zc5_lojacl + "' informado no pedido tem CNPJ '" + _aCNPJ [1, 2] + "' no Mercanet e '" + sa1 -> a1_cgc + "' no Protheus. Verifique viabilidade/necessidade de criar tratamento no programa " + procname ()
 					endcase
