@@ -9,6 +9,7 @@
 // 08/03/2021 - Cláudia - Incluida coluna e parametro de status. GLPI 9571
 // 08/03/2021 - Claudia - Ajuste da nomenclatura "cod. associado" para "cod cliente".
 // 30/04/2021 - Sandra  - Ajuste para ordenar por codigo do vale.
+// 08/07/2021 - Sandra  - Incluso coluna deletado. GLPI 10400.
 //
 // ------------------------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -44,13 +45,14 @@ Static Function ReportDef()
 	
 	TRCell():New(oSection1,"COLUNA1", 	"" ,"Cód.Cliente"   ,	    				, 8,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA2", 	"" ,"Associado"		,       				,40,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA3", 	"" ,"Loja"			,       				,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA3", 	"" ,"Loja"			,       				,5,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA4", 	"" ,"Nº Vale"   	,						,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA5", 	"" ,"Vlr Vale"		, "@E 999,999,999.99"   ,30,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA5", 	"" ,"Vlr Vale"		, "@E 999,999,999.99"   ,10,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA6", 	"" ,"Ini Vigência"	,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA7", 	"" ,"Fim Vigência"	,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA8", 	"" ,"Status"		,       				,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	
+	TRCell():New(oSection1,"COLUNA8", 	"" ,"Status"		,       				,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA9", 	"" ,"Deletado"		,       				,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+
 Return(oReport)
 //
 // -------------------------------------------------------------------------
@@ -68,6 +70,10 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += "    ,MDD_DTINI AS INI_VIGENCIA"  
 	_oSQL:_sQuery += "    ,MDD_DTFIM AS FIM_VIGENCIA"
 	_oSQL:_sQuery += "    ,MDD_STATUS AS STATUS"
+	_oSQL:_sQuery += "	  ,CASE "
+	_oSQL:_sQuery += "  	 WHEN MDD010.D_E_L_E_T_ = '*' THEN 'Deletado' "
+	_oSQL:_sQuery += "  	 WHEN MDD010.D_E_L_E_T_ = '' THEN ' ' "
+	_oSQL:_sQuery += "  	    END AS DELETADO "	
 	_oSQL:_sQuery += " FROM MDD010, SA1010 " 
 	_oSQL:_sQuery += " WHERE MDD_CLIV = A1_COD "
     _oSQL:_sQuery += " AND MDD_LJCLIV = A1_LOJA "
@@ -76,8 +82,8 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " AND MDD_CLIV BETWEEN '" + mv_par03 + "' AND '" + mv_par05 + "'"
 	_oSQL:_sQuery += " AND MDD_CODIGO BETWEEN '" + mv_par07 + "' AND '" + mv_par08 + "'"
 	_oSQL:_sQuery += " AND MDD_LJCLIV BETWEEN '" + mv_par04 + "' AND '" + mv_par06 + "'"
-    _oSQL:_sQuery += " AND MDD010.D_E_L_E_T_ = '' "
-	_oSQL:_sQuery += " AND SA1010.D_E_L_E_T_ = '' "
+    //_oSQL:_sQuery += " AND MDD010.D_E_L_E_T_ = '' "
+	//_oSQL:_sQuery += " AND SA1010.D_E_L_E_T_ = '' "
 	//_oSQL:_sQuery += " ORDER BY MDD_CODIGO "
 	Do Case 
 		Case mv_par09 == 2
@@ -123,6 +129,7 @@ Static Function PrintReport(oReport)
 		oSection1:Cell("COLUNA6")	:SetBlock   ({|| Stod((_sAliasQ)-> Ini_Vigencia)})
 		oSection1:Cell("COLUNA7")	:SetBlock   ({|| Stod((_sAliasQ)-> Fim_Vigencia)})
 		oSection1:Cell("COLUNA8")	:SetBlock   ({|| _sStatus                	    })
+		oSection1:Cell("COLUNA9")	:SetBlock   ({||(_sAliasQ) -> Deletado     	    })
 
 		oSection1:PrintLine()
 		
