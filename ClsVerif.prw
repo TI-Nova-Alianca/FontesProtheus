@@ -55,6 +55,7 @@
 // 04/03/2021 - Robert  - Consulta 69 passa a usar tabelas padrao do sistema (agora usuarios estao no banco de dados).
 // 12/03/2021 - Robert  - Ignorar usuario robert_teste na verificacao 78
 // 02/07/2021 - Robert  - Consultas 77 e 79 deixam de usar a view VA_VUSR_PROTHEUS_X_METADADOS.
+// 09/07/2021 - Robert  - Consulta 68 tinha a data fixa de B9_DATA=31/08/2019 e tambem B2_FILIAL=01 (GLPI 10457).
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -2859,7 +2860,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			
 		case ::Numero == 68
 			::Setores    = 'CUS'
-			::Descricao  = 'Quantidade para fechamento diferente do final do kardex' 	
+			::Descricao  = 'Quantidade para fechamento diferente do final do kardex'
 			::Query := " WITH C"
 			::Query += " AS"
 			::Query += " (SELECT"
@@ -2873,7 +2874,8 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query += " 			AND ANT.B9_FILIAL = SB2.B2_FILIAL"
 			::Query += " 			AND ANT.B9_COD = SB2.B2_COD"
 			::Query += " 			AND ANT.B9_LOCAL = SB2.B2_LOCAL"
-			::Query += " 			AND ANT.B9_DATA = '20190831')"
+	//		::Query += " 			AND ANT.B9_DATA = '20190831')"
+			::Query += " 			AND ANT.B9_DATA = '" + dtos (stod (::MesAtuEstq + '01') - 1) + "')"
 			::Query += " 		, 0) AS QT_MES_ANT"
 			::Query += " 	   ,ISNULL((SELECT"
 			::Query += " 				SUM(QT_ENTRADA)"
@@ -2896,7 +2898,8 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query += " 	   ,B2_QFIM AS QT_PREV_FECHTO"
 			::Query += " 	FROM " + RetSQLName ("SB2") + " SB2"
 			::Query += " 	WHERE SB2.D_E_L_E_T_ = ''"
-			::Query += " 	AND SB2.B2_FILIAL = '01')"
+		//	::Query += " 	AND SB2.B2_FILIAL = '01')"
+			::Query += " 	AND SB2.B2_FILIAL = '" + xfilial ("SB2") + "')"
 			::Query += " SELECT"
 			::Query += " 	'Quantidade para fechamento diferente do final do kardex' AS PROBLEMA"
 			::Query += "    ,*"
