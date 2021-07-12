@@ -135,7 +135,9 @@
 //						  Incluida verificação se campos do SC5 estao preenchidos para gravar na SE1
 // 24/10/2020 - Robert  - Desabilitada gravacao SC0 (reservas) cfe. campo C5_VARESER (nao usamos mais desde 2014).
 // 10/12/2020 - Claudia - Gravação do campo ID transação do pagar.me em títulos. GLPI: 9012
+// 12/07/2021 - Robert  - Representante 328 nao quer que seja impresso seu nome nos dados adicionais (GLPI 10472).
 //
+
 // -------------------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -387,7 +389,8 @@ static function _DadosAdic ()
     endif
 
 	// Vendedor, pedido, carga(OMS) e ordem de compra
-	if ! empty (sf2 -> f2_vend1)
+//	if ! empty (sf2 -> f2_vend1)
+	if ! empty (sf2 -> f2_vend1) .and. sf2 -> f2_vend1 != '328'  // Este representante nao quer a mensagem.
 		_SomaMsg (@_sMsgContr, "Repr.: " + alltrim (sf2 -> f2_vend1) + "-" + alltrim (fBuscaCpo ("SA3", 1, xfilial ("SA3") + sf2 -> f2_vend1, "A3_NREDUZ")))
 	endif
 	_SomaMsg (@_sMsgContr, "Pedido: " + alltrim (sc5 -> c5_num))
