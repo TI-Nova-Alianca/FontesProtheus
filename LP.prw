@@ -57,7 +57,9 @@
 // 21/07/2020 - Cláudia -  Ajustada as contas para o LPAD: 500. Conform GLPI: 8094
 // 23/10/2020 - Robert  - Tratamento para tipo IA no lpad 666/008
 // 23/06/2021 - Claudia - Ajuste no lançamento 520 002. GLPI:10294
+// 13/07/2021 - Robert  - Tratamento LP 530 resgate cota capital (GLPI 10481)
 //
+
 // --------------------------------------------------------------------------------------------------------------------------------
 // Informar numero e sequencia do lancamento padrao, seguido do campo a ser retornado.
 User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
@@ -245,6 +247,8 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 
 	case _sLPad == '530' .and. _sSeq='001' .and. _sQueRet == 'CDEB' // baixa titulo contas a pagar - define conta a debito
 		do case
+			case se2 -> e2_prefixo = 'RCC'  // GLPI 10481
+				_xRet = '201030102001'
 			case IsInCallStack("U_SZI") .and. type('_SZI_Deb')=='C'
 				_xRet = _SZI_Deb
 			case SE2->E2_TIPO=="NDF" 
