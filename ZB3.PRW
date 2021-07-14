@@ -11,6 +11,7 @@
 // #Modulos   		  #FIN 
 //
 // Historico de alteracoes:
+// 12/07/2021 - Cláudia - Incluido estatus recusado/devolvido
 //
 // --------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -32,26 +33,25 @@ User Function ZB3()
 	endif
 
 	If _lContinua
-		AADD(aRotina, {"&Visualizar" 	     , "AxVisual"        , 0, 1})
-		AADD(aRotina, {"Importar manual."    , "U_BatPagar('1')" , 0, 4})
-		AADD(aRotina, {"Conciliar "          , "U_ZB3_CON()"     , 0, 4})
-		AADD(aRotina, {"&Legenda"        	 , "U_ZB3LGD (.F.)"  , 0 ,5})
-		AADD(aRotina, {"Relatorio importação", "U_ZB3REL()"      , 0, 6})
-		AADD(aRotina, {"Fechar Registro"     , "U_ZB3_FEC()"     , 0, 6})
+		AADD(aRotina, {"&Visualizar" 	     , "AxVisual"        , 0, 1 })
+		AADD(aRotina, {"Importar manual."    , "U_BatPagar('2')" , 0, 4 })
+		AADD(aRotina, {"Conciliar "          , "U_ZB3CON()"      , 0, 4 })
+		AADD(aRotina, {"&Legenda"        	 , "U_ZB3LGD(.F.)"   , 0 ,5 })
+		AADD(aRotina, {"Relatorio importação", "U_ZB3REL()"      , 0, 6 })
+		AADD(aRotina, {"Fechar Registro"     , "U_ZB3FEC()"      , 0, 6 })
 
 		AADD(_aCores,{ "ZB3_STAIMP == 'I'", 'BR_VERMELHO' }) // importado
 		AADD(_aCores,{ "ZB3_STAIMP == 'C'", 'BR_VERDE'    }) // conciliado
 		AADD(_aCores,{ "ZB3_STAIMP == 'F'", 'BR_PRETO'    }) // fechado
+		AADD(_aCores,{ "ZB3_STAIMP == 'R'", 'BR_AMARELO'  }) // devolvido/recusado
                       
 		dbSelectArea ("ZB3")
 		dbSetOrder (3)
-		//_sFiltrTop := "ZB3_FILIAL ='" + cFilAnt +"'"
-		//mBrowse(,,,,"ZB3",,,,,,_aCores,,,,,,,,_sFiltrTop)
+
 		mBrowse(,,,,"ZB3",,,,,,_aCores,,,,,,,,)
 	EndIf
-
 Return
-
+//
 // --------------------------------------------------------------------------
 // Retorna Legenda
 User function ZB3LGD (_lRetCores)
@@ -59,9 +59,10 @@ User function ZB3LGD (_lRetCores)
 	local aCores2 := {}
 	local _i       := 0
 	
-	aadd (aCores, {"ZB3->ZB3_STAIMP=='I'", 'BR_VERMELHO' , 'Reg.Importados'	})
-	aadd (aCores, {"ZB3->ZB3_STAIMP=='C'", 'BR_VERDE'	 , 'Reg.Baixados'	})
-	aadd (aCores, {"ZB3->ZB3_STAIMP=='F'", 'BR_PRETO'	 , 'Reg.Fechados'	})
+	aadd (aCores, {"ZB3->ZB3_STAIMP=='I'", 'BR_VERMELHO' , 'Importados'			})
+	aadd (aCores, {"ZB3->ZB3_STAIMP=='C'", 'BR_VERDE'	 , 'Baixados'			})
+	aadd (aCores, {"ZB3->ZB3_STAIMP=='F'", 'BR_PRETO'	 , 'Fechados'			})
+	aadd (aCores, {"ZB3->ZB3_STAIMP=='R'", 'BR_AMARELO'	 , 'Devolvido/recusado'	})
 
 	if ! _lRetCores
 		for _i = 1 to len (aCores)
@@ -74,8 +75,7 @@ User function ZB3LGD (_lRetCores)
 		next
 		return aCores
 	endif
-	
-return
+Return
 
 
 

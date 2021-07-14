@@ -29,6 +29,7 @@ User Function BatPagar(_sTipo)
         dDataFin := mv_par02
     EndIf
 
+    u_log2('aviso', 'Pagar.me:' + DTOC(mv_par01) +" até "+ DTOC(mv_par02))
     _BuscaRecebiveis(dDataIni, dDataFin)  
 
 Return
@@ -56,6 +57,7 @@ Static Function _BuscaRecebiveis(dDataIni, dDataFin)
 
     nNumReg := len(oJSON)
 
+    u_log2('aviso', 'Pagar.me: Qnt. registros:' + alltrim(Str(nNumReg)))
     If nNumReg > 0
         For i := 1 to nNumReg
             aParcela    := {}
@@ -101,13 +103,14 @@ Static Function _BuscaRecebiveis(dDataIni, dDataFin)
             _lRetGrv := _GravaZB3(aTrans, aParcela)
 
             If _lRetGrv == .T.
-               // u_help("Registro " + _sIdTransacao + " gravado com sucesso!")
+                u_log2('aviso', "Registro " + _sIdTransacao + " gravado com sucesso!")
             Else
-              //  u_help("Registro " + _sIdTransacao + " não gravado!")
+                u_log2('aviso', "Registro " + _sIdTransacao + " não gravado!")
             EndIf
         Next
     Else
-       u_help("Sem registros")
+        u_log2('aviso', 'Pagar.me: Sem registros')
+        u_help("Sem registros")
     Endif
 
 Return
@@ -195,7 +198,12 @@ Static Function _GravaZB3(aTrans, aParcela)
 		dbGoTop()
 		
 		If !dbSeek(sId)
-		
+            If alltrim(aTrans[1, 1]) == 'refunded'
+                _sStaTrans := 'R'
+            Else
+                _sStaTrans := 'I'
+            EndIf
+
 			Reclock("ZB3",.T.)
 				ZB3->ZB3_RECID  := aParcela[1, 1]
                 ZB3->ZB3_STAPAR := aParcela[1, 2]
@@ -230,7 +238,7 @@ Static Function _GravaZB3(aTrans, aParcela)
                 ZB3->ZB3_BOLURL := aTrans[1,16]
                 ZB3->ZB3_BOLCOD := aTrans[1,17]
                 ZB3->ZB3_BOLDTA := aTrans[1,18]
-                ZB3->ZB3_STAIMP := 'I'
+                ZB3->ZB3_STAIMP := _sStaTrans
                 //ZB3->ZB3_DTABAI := ""
 			ZB3->(MsUnlock())
         Else
@@ -249,23 +257,25 @@ Static Function MontaLinkReceb(dDataIni, dDataFin)
     Local _sDt01 := ""
     Local _sDt02 := ""
 
-    _sDia := PADL(alltrim(str(Day(dDataIni))),2,'0')
-    _sMes := PADL(alltrim(str(Month(dDataIni))),2,'0')
-    _sAno := alltrim(str(Year(dDataIni)))
-    _sDt01 := _sAno + "-" + _sMes + "-" + _sDia
+    _sDia   := PADL(alltrim(str(Day(dDataIni))),2,'0')
+    _sMes   := PADL(alltrim(str(Month(dDataIni))),2,'0')
+    _sAno   := alltrim(str(Year(dDataIni)))
+    _sDt01  := _sAno + "-" + _sMes + "-" + _sDia
 
-    _sDia := PADL(alltrim(str(Day(dDataFin))),2,'0')
-    _sMes := PADL(alltrim(str(Month(dDataFin))),2,'0')
-    _sAno := alltrim(str(Year(dDataFin)))
-    _sDt02 := _sAno +"-"+_sMes+"-" + _sDia
+    _sDia   := PADL(alltrim(str(Day(dDataFin))),2,'0')
+    _sMes   := PADL(alltrim(str(Month(dDataFin))),2,'0')
+    _sAno   := alltrim(str(Year(dDataFin)))
+    _sDt02  := _sAno +"-"+_sMes+"-" + _sDia
+    _sAkKey := GETMV("VA_PAGARME")//ak_live_ZueJ4a7bDptKUEQTFwOWSz9DG2OjHj
 
-    _sLink := 'https://api.pagar.me/1/payables?count=500&created_at=%3E=' + _sDt01 + 'T00:00:00.000Z&created_at=%3C=' + _sDt02 + 'T23:59:59.999Z&status=paid&api_key=ak_live_k8T65JZ22Vungpm1J6Q43VU3KwJcrO'
+    _sLink := 'https://api.pagar.me/1/payables?count=500&created_at=%3E=' + _sDt01 + 'T00:00:00.000Z&created_at=%3C=' + _sDt02 + 'T23:59:59.999Z&status=paid&api_key=' + alltrim(_sAkKey)
 Return _sLink
 //
 // -----------------------------------------------------------------------------------
 // Cria o link de transações
 Static Function MontaLinkTrans(_sIdTransacao)
-    _sLink := 'https://api.pagar.me/1/transactions/' + _sIdTransacao + '?api_key=ak_live_k8T65JZ22Vungpm1J6Q43VU3KwJcrO'
+    _sAkKey := GETMV("VA_PAGARME")
+    _sLink  := 'https://api.pagar.me/1/transactions/' + _sIdTransacao + '?api_key=' + alltrim(_sAkKey)
 Return _sLink
 //
 // -----------------------------------------------------------------------------------
