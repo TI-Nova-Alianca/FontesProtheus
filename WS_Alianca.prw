@@ -56,6 +56,7 @@
 // 21/05/2021 - Robert  - Melhorado metodo de gravacao e criado metodo de exclusao de eventos da tabela SZN (GLPI 10072)
 // 28/05/2021 - Cláudia - Comentariado o if conforme GLPI: 9161
 // 22/06/2021 - Robert  - Criada acao AgendaEntregaFaturamento (GLPI 10219).
+// 12/07/2021 - Robert  - Criado acao ApontarProducao (GLPI 10479).
 //
 
 // ----------------------------------------------------------------------------------------------------------
@@ -196,6 +197,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 				_ExecCapAssoc ()
 			case _sAcao == 'AgendaEntregaFaturamento'
 				_AgEntFat ()
+			case _sAcao == 'ApontarProducao'
+				_ApontProd ()
 			otherwise
 				_sErros += "A acao especificada no XML eh invalida: " + _sAcao
 		endcase
@@ -1667,6 +1670,97 @@ Static function _AgEntFat ()
 			sf2 -> f2_vadagen = _dDtAgend
 			msunlock ()
 			_sMsgRetWS = 'Registro atualizado.' 
+		endif
+	endif
+return
+
+
+// --------------------------------------------------------------------------
+// Gera apontamento de producao.
+static function _ApontProd ()
+	local _sOPApont  := ''
+	local _sEtqApont := ''
+	local _dDtProd   := ctod ('')
+	local _sTnoProd  := ''
+	local _aAutoSD3  := {}
+	local _sMotProd  := ''
+
+	if empty (_sErros) ; _sOPApont  = _ExtraiTag ("_oXML:_WSAlianca:_OP", .F., .F.) ; endif
+	if empty (_sErros) ; _sEtqApont = _ExtraiTag ("_oXML:_WSAlianca:_Etiq", .F., .F.) ; endif
+	if empty (_sErros) ; _dDtProd   = stod (_ExtraiTag ("_oXML:_WSAlianca:_DtProd", .T., .T.)) ; endif
+	if empty (_sErros) ; _sTnoProd  = _ExtraiTag ("_oXML:_WSAlianca:_Turno", .T., .F.) ; endif
+	if empty (_sErros) ; _sMotProd  = _ExtraiTag ("_oXML:_WSAlianca:_Motivo", .F., .F.) ; endif
+	_sOPApont = U_TamFixo (alltrim (_sOPApont), 14, ' ')  // Deixa com o mesmo tamanho do D3_OP
+
+	if empty (_sErros) .and. empty (_sEtqApont) .and. empty (_sOPApont)
+		_sErros += "Deve ser informada OP ou numero da etiqueta."
+	endif
+
+	// A maioria das chamadas deve vir acompanhada de um numero de etiqueta.
+	if empty (_sErros) .and. ! empty (_sEtqApont)
+		za1 -> (dbsetorder (1))  // ZA1_FILIAL, ZA1_CODIGO, R_E_C_N_O_, D_E_L_E_T_
+		if ! za1 -> (dbseek (xfilial ("ZA1") + _sEtqApont, .F.))
+			_sErros += "Etiqueta '" + _sEtqApont + "' nao encontrada."
+		else
+			if za1 -> za1_apont == 'S'
+				_sErros += "Essa etiqueta ja gerou apontamento de producao."
+			endif
+			if za1 -> za1_apont == 'E'
+				_sErros += "Essa etiqueta ja foi apontada e ESTORNADA. Gere nova etiqueta."
+			endif
+			if za1 -> za1_impres != 'S'
+				_sErros += "Etiqueta ainda nao impressa."
+			endif
+			if empty (za1 -> za1_op)
+				_sErros += "Etiqueta '" + _sEtqApont + "' nao relacionada com nenhuma OP."
+			else
+				if ! empty (_sOPApont)
+					if za1 -> za1_op != _sOPApont
+						_sErros += "Etiqueta '" + _sEtqApont + "' relacionada com a OP '" + alltrim (za1 -> za1_op) + "'. Nao confere com a OP informada (" + alltrim (_sOPApont) + ")."
+					endif
+				else
+					_sOPApont = za1 -> za1_op
+				endif
+			endif
+		endif
+	endif
+
+	if ! empty (_sErros) .and. ! empty (_sOPApont)
+		sc2 -> (dbsetorder (1))  // C2_FILIAL, C2_NUM, C2_ITEM, C2_SEQUEN, C2_ITEMGRD, R_E_C_N_O_, D_E_L_E_T_
+		if ! sc2 -> (dbseek (xfilial ("SC2") + _sOPApont, .F.))
+			_sErro += "OP '" + alltrim (_sOPApont) + "' nao localizada."
+		else
+			if ! empty (sc2 -> c2_datrf)
+				_sErro += "OP '" + alltrim (_sOPApont) + "' ja encontra-se encerrada."
+			endif
+		endif
+	endif
+
+	if empty (_sErros)
+		aadd (_aAutoSD3, {"D3_OP",      _sOPApont,  NIL})
+		aadd (_aAutoSD3, {"D3_VAETIQ",  _sEtqApont, NIL})
+		aadd (_aAutoSD3, {"D3_VADTPRD", _dDtProd,   NIL})
+		aadd (_aAutoSD3, {"D3_VATURNO", _sTnoProd,  NIL})
+		if ! empty (_sMotProd)
+			aadd (_aAutoSD3, {"D3_VAMOTIV", _sMotProd,  NIL})
+		endif
+		aadd (_aAutoSD3, {"ATUEMP",     "T",        NIL})  // Para que sempre seja feita a baixa dos empenhos.
+		_aAutoSD3 := aclone (U_OrdAuto (_aAutoSD3))
+		U_Log2 ('debug', _aAutoSD3)
+		lMsErroAuto  := .F.
+		_sErroAuto := ''
+		U_Log2 ('info', 'Executando MATA250')
+		MATA250 (_aAutoSD3, 3)
+		If lMsErroAuto
+			if ! empty (_sErroAuto)
+				_sErros += _sErroAuto + '; '
+			endif
+			if ! empty (NomeAutoLog ())
+				_sErros += U_LeErro (memoread (NomeAutoLog ())) + '; '
+			endif
+			u_log2 ('erro', 'Rotina automatica retornou erro: ' + _sErros)
+		else
+			_sMsgRetWS += "Apontamento gerado com sucesso (seq." + sd3 -> d3_numseq + ")"
 		endif
 	endif
 return

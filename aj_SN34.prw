@@ -43,10 +43,11 @@ static function _Gera (_sCodBase, _sItem)
 	incproc ()
 	
 	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := "EXEC SP_AJUSTA_DEPR_SN3_SN4 '0000003905', '   0'" // + _sCodBase + "', '" + _sItem + "'"
+	_oSQL:_sQuery := "EXEC SP_AJUSTA_DEPR_SN3_SN4 '" + _sCodBase + "', '" + _sItem + "'"
 	_oSQL:Log ()
 	_aRetProc = aclone (_oSQL:Qry2Array (.F., .F.))
 	U_Log2 ('debug', _aRetProc)
+	u_showarray (_aRetProc)
 return
 
 
@@ -56,8 +57,8 @@ return
 Static Function _ValidPerg ()
 	local _aRegsPerg := {}
 
-	//                     PERGUNT                           TIPO TAM DEC VALID F3  Opcoes Help
-	aadd (_aRegsPerg, {01, "Codigo base                   ", "C", 10, 0,  "",   "", {},    ""})
-	aadd (_aRegsPerg, {02, "Item                          ", "C", 4,  0,  "",   "", {},    ""})
+	//                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes Help
+	aadd (_aRegsPerg, {01, "Codigo base                   ", "C", 10, 0,  "",   "SN3", {},    ""})
+	aadd (_aRegsPerg, {02, "Item                          ", "C", 4,  0,  "",   "   ", {},    ""})
 	U_ValPerg (cPerg, _aRegsPerg)
 Return

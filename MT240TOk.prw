@@ -12,6 +12,7 @@
 // 03/02/2021 - Cláudia - Vinculação Itens C ao movimento 573 - GLPI: 9163
 // 13/04/2021 - Claudia - Validação Centro de Custo X Conta Contábil - GLPI: 9120
 // 15/06/2021 - Claudia - Incluida novas validações C.custo X C.contabil. GLPI: 10224
+// 09/07/2021 - Robert  - Criada chamada da funcao U_ConsEst (GLPI 10464).
 //
 // -----------------------------------------------------------------------------------------------------
 user function MT240TOk ()
@@ -90,5 +91,11 @@ user function MT240TOk ()
 		// endif
 		// endif
 	endif
+
+	// Verifica se tem alguma mensagem de inconsistencia de estoque.
+	if _lRet
+		_lRet := U_ConsEstq (xfilial ("SD3"), m->d3_cod, m->d3_local)
+	endif
+
 	U_ML_SRArea (_aAreaAnt)
 return _lRet
