@@ -34,6 +34,8 @@
 // 18/11/2019 - Robert  - Desabilitado tratamento verbas via bonificacao. Nao usamos mais. GLPI 7001
 // 24/02/2020 - Robert  - Alimenta lista de notas geradas, para posterior envio para a SEFAZ.
 // 17/05/2021 - Claudia - Gravação da data prevista. GLPI: 9885
+// 14/07/2021 - Claudia - Incluida a gravação produto x fornecedor de transferencias 
+//                        entre filiais. GLPI: 10213
 //
 // --------------------------------------------------------------------------------------------------
 user function M460Fim ()
@@ -41,7 +43,6 @@ user function M460Fim ()
 
 	// Parece que estah chegando aqui sem nenhum alias().
 	dbselectarea ("SF2")
-
 
 	// Baca para gravar a transportadora na nota, pois na atualizacao fiscal para 01/01/2016
 	// comecou a deixar o F2_TRANSP em branco quando fatura por carga.
@@ -69,6 +70,9 @@ user function M460Fim ()
 	if type ("_aNComSono") == "A"
 		aadd (_aNComSono, {sf2 -> f2_doc, .F.})
 	endif
+
+	// grava produto x fornecedor para transferencias
+	_ProdXForneceFil(sf2->f2_filial, sf2->f2_doc, sf2->f2_serie, sf2->f2_cliente, sf2->f2_loja)
 
 	U_ML_SRArea (_aAreaAnt)
 return
@@ -116,7 +120,6 @@ Static Function _VerDispenser()
 		_sMsg = _oSQL:Qry2HTM ("DISPENSERS MOVIMENTADOS - Saida: " + dtoc(sf2 -> f2_emissao), _aCols, "", .F.)
 		U_ZZUNU ({'044'}, "DISPENSERS MOVIMENTADOS - Saida: " + dtoc(sf2 -> f2_emissao), _sMsg, .F. ) // Responsavel pelos dispenser
 	endif
-	
 Return
 //
 // --------------------------------------------------------------------------
@@ -212,3 +215,96 @@ Static Function _BuscaEntrega(_sFilial, _sNumero, _sCliente, _sLoja, _sEst, _dtE
 	_dDtPrevista := DaySum(_dtEmissao,_nDias)
 
 Return _dDtPrevista
+//
+// --------------------------------------------------------------------------
+// Verifica se é transferencia entre filiais e 
+// busca Código de fornecedor, do emissor da NF de saida
+Static Function _ProdXForneceFil(_sFilial, _sDoc, _sSerie, _sCliente, _sLoja)
+	Local _sCGC := POSICIONE("SA1",1,XFILIAL("SA1") + _sCliente + _sLoja,"A1_CGC")  
+	Local _x    := 0
+
+	If '88612486' $ _sCGC
+		// Busca o codigo da filial de envio, para buscar codigo de fornecedor e gravar
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT "
+		_oSQL:_sQuery += " 		M0_CGC "
+		_oSQL:_sQuery += " FROM VA_SM0 "
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " AND M0_CODFIL    = '" + _sFilial + "'"
+		_aCGCM0 := aclone (_oSQL:Qry2Array ())
+
+		For _x:=1 to Len(_aCGCM0)
+			_sCGCFornec := _aCGCM0[_x, 1]
+		Next
+		// Busca código de fornecedor do emissões da NF saida, para dar entrana no importador XML
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT "
+		_oSQL:_sQuery += " 		A2_COD "
+		_oSQL:_sQuery += "     ,A2_LOJA "
+		_oSQL:_sQuery += "     ,A2_NOME "
+		_oSQL:_sQuery += " FROM " + RetSQLName ("SA2") 
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " AND A2_CGC = '" + _sCGCFornec + "' "
+		_aCGCA2 := aclone (_oSQL:Qry2Array ())
+
+		For _x:=1 to Len(_aCGCA2)
+			_sCodForn := _aCGCA2[_x, 1]
+			_sLojForn := _aCGCA2[_x, 2]
+			_sNomForn := _aCGCA2[_x, 3]
+		Next
+		_GravaProdXFornc(_sFilial,_sDoc,_sSerie,_sCliente,_sLoja,_sCodForn,_sLojForn,_sNomForn)
+	EndIf
+Return
+//
+// --------------------------------------------------------------------------
+// Grava Fornecedor X produto
+Static Function _GravaProdXFornc(_sFilial,_sDoc,_sSerie,_sCliente,_sLoja,_sCodForn,_sLojForn,_sNomForn)
+	Local _aProd := {}
+	Local _x     := 0
+
+	// Busca produto para gravação
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 		D2_COD "
+	_oSQL:_sQuery += " FROM SD2010 "
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " AND D2_FILIAL    = '" + _sFilial  + "' "
+	_oSQL:_sQuery += " AND D2_DOC       = '" + _sDoc     + "' "
+	_oSQL:_sQuery += " AND D2_SERIE     = '" + _sSerie   + "' "
+	_oSQL:_sQuery += " AND D2_CLIENTE   = '" + _sCliente + "' "
+	_oSQL:_sQuery += " AND D2_LOJA      = '" + _sLoja    + "' "
+	_aProd := aclone (_oSQL:Qry2Array ())
+
+	For _x:=1 to Len(_aProd)
+		_sProduto := _aProd[_x, 1]
+		_sProdDesc := POSICIONE("SB1",1,XFILIAL("SB1") + _sProduto,"B1_DESC")  
+
+		dbSelectArea("SA5")
+		dbSetOrder(1) // A5_FILIAL+A5_FORNECE+A5_LOJA+A5_PRODUTO
+		dbGoTop()
+
+		If !dbSeek(xFilial("SA5") + _sCodForn + _sLojForn + _sProduto)  // registro novo
+			Reclock("SA5",.T.)
+				SA5->A5_FILIAL  := ''
+				SA5->A5_FORNECE := _sCodForn
+				SA5->A5_LOJA    := _sLojForn
+				SA5->A5_NOMEFOR := _sNomForn
+				SA5->A5_PRODUTO := _sProduto
+				SA5->A5_NOMPROD := _sProdDesc
+			SA5->(MsUnlock())
+
+			_oEvento := ClsEvent():New ()
+			_oEvento:Alias     = 'SA5'
+			_oEvento:Texto     = " Inclusão de produto X fornecedor" + chr (13) + chr (10) + ;
+								 " Produto: " + alltrim(_sProduto) + chr (13) + chr (10) + ;
+								 " Fornecedor: "+ alltrim(_sCodForn) + "-" + alltrim(_sLojForn) + " "
+			_oEvento:CodEven   = "SA5010"
+			_oEvento:Produto   = alltrim(_sProduto)
+			_oEvento:Grava()
+		EndIf
+		
+	Next
+Return
