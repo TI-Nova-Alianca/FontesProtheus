@@ -1728,10 +1728,10 @@ static function _ApontProd ()
 	if ! empty (_sErros) .and. ! empty (_sOPApont)
 		sc2 -> (dbsetorder (1))  // C2_FILIAL, C2_NUM, C2_ITEM, C2_SEQUEN, C2_ITEMGRD, R_E_C_N_O_, D_E_L_E_T_
 		if ! sc2 -> (dbseek (xfilial ("SC2") + _sOPApont, .F.))
-			_sErro += "OP '" + alltrim (_sOPApont) + "' nao localizada."
+			_sErros += "OP '" + alltrim (_sOPApont) + "' nao localizada."
 		else
 			if ! empty (sc2 -> c2_datrf)
-				_sErro += "OP '" + alltrim (_sOPApont) + "' ja encontra-se encerrada."
+				_sErros += "OP '" + alltrim (_sOPApont) + "' ja encontra-se encerrada."
 			endif
 		endif
 	endif
