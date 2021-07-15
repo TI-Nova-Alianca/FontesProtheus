@@ -72,6 +72,7 @@ user function M460Fim ()
 	endif
 
 	// grava produto x fornecedor para transferencias
+	u_log2 ('info', 'Produto X fornecedor - transferencia entre filial')
 	_ProdXForneceFil(sf2->f2_filial, sf2->f2_doc, sf2->f2_serie, sf2->f2_cliente, sf2->f2_loja)
 
 	U_ML_SRArea (_aAreaAnt)
@@ -223,6 +224,7 @@ Static Function _ProdXForneceFil(_sFilial, _sDoc, _sSerie, _sCliente, _sLoja)
 	Local _sCGC := POSICIONE("SA1",1,XFILIAL("SA1") + _sCliente + _sLoja,"A1_CGC")  
 	Local _x    := 0
 
+	u_log2 ('info', 'CNPJ ' + _sCGC)
 	If '88612486' $ _sCGC
 		// Busca o codigo da filial de envio, para buscar codigo de fornecedor e gravar
 		_oSQL := ClsSQL ():New ()
@@ -237,6 +239,7 @@ Static Function _ProdXForneceFil(_sFilial, _sDoc, _sSerie, _sCliente, _sLoja)
 		For _x:=1 to Len(_aCGCM0)
 			_sCGCFornec := _aCGCM0[_x, 1]
 		Next
+		u_log2 ('info', 'CNPJ Fornecedor ' + _sCGCFornec)
 		// Busca código de fornecedor do emissões da NF saida, para dar entrana no importador XML
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
@@ -264,6 +267,7 @@ Static Function _GravaProdXFornc(_sFilial,_sDoc,_sSerie,_sCliente,_sLoja,_sCodFo
 	Local _aProd := {}
 	Local _x     := 0
 
+	u_log2 ('info', 'Gravação Produto X Fornecedor ' + _sFilial+'-'+_sDoc+'-'+_sSerie+'-'+_sCliente+'-'+_sLoja+'-'+_sCodForn+'-'+_sLojForn+'-'+_sNomForn)
 	// Busca produto para gravação
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
@@ -304,7 +308,11 @@ Static Function _GravaProdXFornc(_sFilial,_sDoc,_sSerie,_sCliente,_sLoja,_sCodFo
 			_oEvento:CodEven   = "SA5010"
 			_oEvento:Produto   = alltrim(_sProduto)
 			_oEvento:Grava()
+
+			u_log2 ('info', 'Gravação: Produto: ' + alltrim(_sProduto) + 'Fornecedor: '+ alltrim(_sCodForn) + "-" + alltrim(_sLojForn) )
+		Else
+			u_log2 ('info', 'NÃO gravou: Produto: ' + alltrim(_sProduto) + 'Fornecedor: '+ alltrim(_sCodForn) + "-" + alltrim(_sLojForn) )	
+
 		EndIf
-		
 	Next
 Return
