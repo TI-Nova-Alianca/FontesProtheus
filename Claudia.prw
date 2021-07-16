@@ -2,17 +2,19 @@
 #include 'parmtype.ch'
 
 User Function claudia ()
-	u_help("Nada para executar")
+	//u_help("Nada para executar")
 	//u_help("CIELO")
 	//Cielo()
 	//u_help("ALMOX1")
 	//Almox1()
-	//u_help("ALMOX2")
-	//Almox2()
+	u_help("ALMOX2")
+	Almox2()
 	// u_help('Solicitante')
 	// Solicitante()
 	//u_help("Coordenadores")
 	//Coordenadores()
+	//u_help("Teste de baixa")
+	//BaixaAut()
 Return
 //
 // ------------------------------------------------------------------
@@ -39,29 +41,125 @@ Return
 // Return
 //
 // ------------------------------------------------------------------
-// Static Function Almox2()
-// 	local _x := 0
+Static Function Almox2()
+	local _x := 0
 
-// 	U_help("Exec Almox 2 ITENS Varios")
-// 	_oSQL := ClsSQL():New ()
+	U_help("Exec Almox 2 14/07/2021")
+	_oSQL := ClsSQL():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 	  SB1.B1_COD "
+	_oSQL:_sQuery += " FROM SB1010 SB1 "
+	_oSQL:_sQuery += " INNER JOIN SB2010 SB2 "
+	_oSQL:_sQuery += " 	ON SB2.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " 		AND B2_COD = B1_COD "
+	_oSQL:_sQuery += " 		AND SB2.B2_QATU > 0
+	_oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += "  AND SB1.B1_COD IN ('602129','606305','606317','606320','606321','606322','606323','606325','606327','606328','606329','606331','606332')"
+	_oSQL:_sQuery += " AND SB1.B1_TIPO in ('MM','MC')  "
+	_oSQL:Log ()
+	_aSB1:= _oSQL:Qry2Array ()
+	
+	For _x := 1 to Len(_aSB1)
+		CriaSB2 (_aSB1[_x, 1], '02')
+	Next
+
+Return
+//
+// ------------------------------------------------------------------
+// Static Function BaixaAut()
+// 	Local x := 0
+
+// 	// Busca dados do título para fazer a baixa
+// 	_oSQL:= ClsSQL ():New ()
 // 	_oSQL:_sQuery := ""
 // 	_oSQL:_sQuery += " SELECT "
-// 	_oSQL:_sQuery += " 	  SB1.B1_COD "
-// 	_oSQL:_sQuery += " FROM SB1010 SB1 "
-// 	_oSQL:_sQuery += " INNER JOIN SB2010 SB2 "
-// 	_oSQL:_sQuery += " 	ON SB2.D_E_L_E_T_ = '' "
-// 	_oSQL:_sQuery += " 		AND B2_COD = B1_COD "
-// 	_oSQL:_sQuery += " 		AND SB2.B2_QATU > 0
-// 	_oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = '' "
-// 	_oSQL:_sQuery += "  AND SB1.B1_COD IN('604532','604537','604538','604539','604540')""
-// 	_oSQL:_sQuery += " AND SB1.B1_TIPO in ('MM','MC')  "
+// 	_oSQL:_sQuery += " 	   SE1.E1_FILIAL"	// 01
+// 	_oSQL:_sQuery += "    ,SE1.E1_PREFIXO"	// 02
+// 	_oSQL:_sQuery += "    ,SE1.E1_NUM"		// 03
+// 	_oSQL:_sQuery += "    ,SE1.E1_PARCELA"	// 04
+// 	_oSQL:_sQuery += "    ,SE1.E1_VALOR"	// 05
+// 	_oSQL:_sQuery += "    ,SE1.E1_CLIENTE"	// 06
+// 	_oSQL:_sQuery += "    ,SE1.E1_LOJA"		// 07
+// 	_oSQL:_sQuery += "    ,SE1.E1_EMISSAO"	// 08
+// 	_oSQL:_sQuery += "    ,SE1.E1_TIPO"		// 09
+// 	_oSQL:_sQuery += "    ,SE1.E1_BAIXA"	// 10
+// 	_oSQL:_sQuery += "    ,SE1.E1_SALDO"	// 11
+// 	_oSQL:_sQuery += "    ,SE1.E1_STATUS "	// 12
+// 	_oSQL:_sQuery += "    ,SE1.E1_ADM "	    // 13
+// 	_oSQL:_sQuery += " FROM " + RetSQLName ("SE1") + " AS SE1 "
+// 	_oSQL:_sQuery += " WHERE SE1.D_E_L_E_T_ = ''"
+// 	_oSQL:_sQuery += " AND SE1.E1_FILIAL  = '10'"
+// 	_oSQL:_sQuery += " AND SE1.E1_BAIXA   = ''"
+// 	_oSQL:_sQuery += " AND SE1.E1_EMISSAO ='20210614'"
+// 	_oSQL:_sQuery += " AND SE1.E1_TIPO IN ('CC','CD')"
 // 	_oSQL:Log ()
-// 	_aSB1:= _oSQL:Qry2Array ()
-	
-// 	For _x := 1 to Len(_aSB1)
-// 		CriaSB2 (_aSB1[_x, 1], '02')
-// 	Next
 
+// 	_aTitulo := aclone (_oSQL:Qry2Array ())
+
+// 	If len(_aTitulo) <= 0
+// 		u_log("TÍTULO NÃO ENCONTRADO")
+// 	Else
+// 		For x:=1 to len(_aTitulo)	
+// 			lMsErroAuto := .F.				
+// 			// Cupom lojas e NF Lojas
+// 			_sMotBaixa := 'DEBITO CC' 
+// 			_sHist     := 'Baixa Cielo'	
+// 			_nVlrLiq   := _aTitulo[x,5]
+// 			//_nVlrAcr   := 0.01
+// 			//_nVlrDec   := 0
+// 			_sBanco    := '041'
+// 			_sAgencia  := '0568 '
+// 			_sConta    := '0606136809'
+
+
+// 			//executar a rotina de baixa automatica do SE1 gerando o SE5 - DO VALOR LÍQUIDO
+// 			_aAutoSE1 := {}
+// 			aAdd(_aAutoSE1, {"E1_FILIAL" 	, _aTitulo[x,1]	    				, Nil})
+// 			aAdd(_aAutoSE1, {"E1_PREFIXO" 	, _aTitulo[x,2]	    				, Nil})
+// 			aAdd(_aAutoSE1, {"E1_NUM"     	, _aTitulo[x,3]	    				, Nil})
+// 			aAdd(_aAutoSE1, {"E1_PARCELA" 	, _aTitulo[x,4]	    				, Nil})
+// 			aAdd(_aAutoSE1, {"E1_CLIENTE" 	, _aTitulo[x,6] 					, Nil})
+// 			aAdd(_aAutoSE1, {"E1_LOJA"    	, _aTitulo[x,7] 					, Nil})
+// 			aAdd(_aAutoSE1, {"E1_TIPO"    	, _aTitulo[x,9] 					, Nil})
+// 			AAdd(_aAutoSE1, {"AUTMOTBX"		, _sMotBaixa  						, Nil})
+// 			AAdd(_aAutoSE1, {"AUTBANCO"  	, _sBanco 							, Nil})  	
+// 			AAdd(_aAutoSE1, {"AUTAGENCIA"   , _sAgencia	    				    , Nil})  
+// 			AAdd(_aAutoSE1, {"AUTCONTA"  	, _sConta							, Nil})
+// 			AAdd(_aAutoSE1, {"AUTDTBAIXA"	, dDataBase   		 				, Nil})
+// 			AAdd(_aAutoSE1, {"AUTDTCREDITO"	, dDataBase		 					, Nil})
+// 			AAdd(_aAutoSE1, {"AUTHIST"   	, _sHist    					    , Nil})
+// 			AAdd(_aAutoSE1, {"AUTJUROS"  	, 0         						, Nil})
+// 			AAdd(_aAutoSE1, {"AUTDESCONT"	, 0         					    , Nil})
+// 		    AAdd(_aAutoSE1, {"AUTMULTA"  	, 0         						, Nil})
+// 			//AAdd(_aAutoSE1, {"AUTACRESC" 	, _nVlrAcr							, Nil})
+// 	        //AAdd(_aAutoSE1, {"AUTDECRESC" 	, _nVlrDec							, Nil})
+// 			AAdd(_aAutoSE1, {"AUTVALREC"  	, _nVlrLiq							, Nil})
+		
+// 			_aAutoSE1 := aclone (U_OrdAuto (_aAutoSE1))  // orderna conforme dicionário de dados
+
+// 			 cPerg = 'FIN070'
+// 			 _aBkpSX1 = U_SalvaSX1 (cPerg)  // Salva parametros da rotina.
+// 			 U_GravaSX1 (cPerg, "01", 1)    // testar mostrando o lcto contabil depois pode passar para nao
+// 			 U_GravaSX1 (cPerg, "04", 1)    // esse movimento tem que contabilizar
+// 			 U_GravaSXK (cPerg, "01", "1", 'G' )
+// 			 U_GravaSXK (cPerg, "04", "1", 'G' )
+
+// 			MSExecAuto({|x,y| Fina070(x,y)},_aAutoSE1,3,.F.,5) // rotina automática para baixa de títulos
+
+// 			If lMsErroAuto
+// 				u_log(memoread (NomeAutoLog ()))
+// 				u_log("IMPORTAÇÃO NÃO REALIZADA")
+// 			Else
+// 				u_log("IMPORTAÇÃO REALIZADA")
+// 			Endif
+			
+// 			U_GravaSXK (cPerg, "01", "1", 'D' )
+// 			U_GravaSXK (cPerg, "04", "1", 'D' )
+
+// 			U_SalvaSX1 (cPerg, _aBkpSX1)  // Restaura parametros da rotina  
+// 		Next
+// 	EndIf
 // Return
 //
 // ------------------------------------------------------------------
