@@ -3,7 +3,6 @@
 // Data.......: 14/07/2021
 // Descricao..: Fechamento de registros de pagamentos sem conciliação - Pagar-me
 //
-//
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Atualizacao
 // #Descricao         #Fechamento de registros de pagamentos sem conciliação - Pagar-me

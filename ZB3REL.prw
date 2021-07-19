@@ -64,15 +64,17 @@ Return(oReport)
 // -------------------------------------------------------------------------
 // Impressão
 Static Function PrintReport(oReport)
-    Local oSection1  := oReport:Section(1)	
-    Local _aDados    := {}
-    Local i          := 0
-    //Local _nVlrTotPg := 0
-    Local _nVlrParPg := 0
-    Local _nVlrTaxPg := 0
-    //Local _nVlrTotDv := 0
-    Local _nVlrParDv := 0
-    Local _nVlrTaxDv := 0
+    Local oSection1   := oReport:Section(1)	
+    Local _aDados     := {}
+    Local i           := 0
+    Local _nVlrParPg  := 0
+    Local _nVlrTaxPg  := 0
+    Local _nVlrParDv  := 0
+    Local _nVlrTaxDv  := 0
+    Local _nVlrSParPg := 0
+    Local _nVlrSTaxPg := 0
+    Local _nVlrSParDv := 0
+    Local _nVlrSTaxDv := 0
 
     _oSQL:= ClsSQL ():New ()
     _oSQL:_sQuery := ""
@@ -104,6 +106,7 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "			WHEN ZB3.ZB3_METPGT = 'pix' THEN 'PIX' "
     _oSQL:_sQuery += "		END AS TP_PGTO "
     _oSQL:_sQuery += "	   ,UPPER(ZB3.ZB3_ADMNOM) AS OPERADORA "
+    _oSQL:_sQuery += "     ,ZB3.ZB3_STAIMP AS STAIMP"
     _oSQL:_sQuery += "	FROM " + RetSQLName ("ZB3") + " AS ZB3 "
     _oSQL:_sQuery += "	LEFT JOIN " + RetSQLName ("SE1") + " AS SE1 "
     _oSQL:_sQuery += "		ON SE1.D_E_L_E_T_ = '' "
@@ -144,43 +147,75 @@ Static Function PrintReport(oReport)
         oSection1:Cell("COLUNA16")	:SetBlock   ({|| _aDados[i,16]      })
         //oSection1:Cell("COLUNA17")	:SetBlock   ({|| _aDados[i,17]  })
 
-        If alltrim(_aDados[i,13]) == 'PAGO'
-            //_nVlrTotPg += _aDados[i,10] 
-            _nVlrParPg += _aDados[i,11] 
-            _nVlrTaxPg += _aDados[i,12] 
+        If alltrim(_titulo) != "-" // apenas titulos encontrados
+            If alltrim(_aDados[i,18]) == 'I' // Itens não recusados
+                _nVlrParPg += _aDados[i,11] 
+                _nVlrTaxPg += _aDados[i,12] 
+            Else
+                _nVlrParDv += _aDados[i,11] 
+                _nVlrTaxDv += _aDados[i,12] 
+            EndIf
         Else
-            //_nVlrTotDv += _aDados[i,10] 
-            _nVlrParDv += _aDados[i,11] 
-            _nVlrTaxDv += _aDados[i,12] 
+            If alltrim(_aDados[i,18]) == 'I' // Itens não recusados
+                _nVlrSParPg += _aDados[i,11] 
+                _nVlrSTaxPg += _aDados[i,12] 
+            Else
+                _nVlrSParDv += _aDados[i,11] 
+                _nVlrSTaxDv += _aDados[i,12] 
+            EndIf
         EndIf
-        
         oSection1:PrintLine()
 	Next
 
+    // valores com titulos
     oReport:ThinLine()
-	oReport:SkipLine(1)
+    oReport:SkipLine(1)
+    oReport:PrintText("VALORES COM TITULOS ENCONTRADOS:" ,, 100)
+    oReport:SkipLine(2)
+
 	_nLinha:= _PulaFolha(_nLinha)
-	oReport:PrintText("VALORES PAGOS:" ,, 100)
+	oReport:PrintText("*** VALORES PAGOS:" ,, 100)
 	_nLinha:= _PulaFolha(_nLinha)
 	oReport:PrintText("Valor total das parcelas:" ,, 100)
 	oReport:PrintText(PADL('R$' + Transform(_nVlrParPg, "@E 999,999,999.99"),20,' '),, 900)
 	oReport:PrintText("Valor total das Taxas:" ,, 100)
 	oReport:PrintText(PADL('R$' + Transform(_nVlrTaxPg, "@E 999,999,999.99"),20,' '),, 900)
-	oReport:SkipLine(1)
+	oReport:SkipLine(2)
 
-    oReport:ThinLine()
-	oReport:SkipLine(1)
 	_nLinha:= _PulaFolha(_nLinha)
-	oReport:PrintText("VALORES DEVOLVIDOS/REJEITADOS:" ,, 100)
+	oReport:PrintText("*** VALORES DEVOLVIDOS/REJEITADOS:" ,, 100)
 	_nLinha:= _PulaFolha(_nLinha)
 	oReport:PrintText("Valor total das parcelas:" ,, 100)
 	oReport:PrintText(PADL('R$' + Transform(_nVlrParDv, "@E 999,999,999.99"),20,' '),, 900)
 	oReport:PrintText("Valor total das Taxas:" ,, 100)
 	oReport:PrintText(PADL('R$' + Transform(_nVlrTaxDv, "@E 999,999,999.99"),20,' '),, 900)
-	oReport:SkipLine(1)
+	oReport:SkipLine(2)
 
     oSection1:Finish()
 
+    // valores sem titulos
+     oReport:ThinLine()
+    oReport:SkipLine(1)
+    oReport:PrintText("VALORES SEM TITULOS ENCONTRADOS:" ,, 100)
+    oReport:SkipLine(2)
+
+	_nLinha:= _PulaFolha(_nLinha)
+	oReport:PrintText("*** VALORES PAGOS:" ,, 100)
+	_nLinha:= _PulaFolha(_nLinha)
+	oReport:PrintText("Valor total das parcelas:" ,, 100)
+	oReport:PrintText(PADL('R$' + Transform(_nVlrSParPg, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:PrintText("Valor total das Taxas:" ,, 100)
+	oReport:PrintText(PADL('R$' + Transform(_nVlrSTaxPg, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:SkipLine(2)
+
+	_nLinha:= _PulaFolha(_nLinha)
+	oReport:PrintText("*** VALORES DEVOLVIDOS/REJEITADOS:" ,, 100)
+	_nLinha:= _PulaFolha(_nLinha)
+	oReport:PrintText("Valor total das parcelas:" ,, 100)
+	oReport:PrintText(PADL('R$' + Transform(_nVlrSParDv, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:PrintText("Valor total das Taxas:" ,, 100)
+	oReport:PrintText(PADL('R$' + Transform(_nVlrSTaxDv, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:SkipLine(2)
 Return
 //
 // --------------------------------------------------------------------------
