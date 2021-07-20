@@ -1361,6 +1361,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Setores    = 'PCP'
 			::Descricao  = "Empenho do endereco (tabela SBF) inconsistente com a composicao do empenho (tabela SDC)."
 			::Sugestao   = "Execute rotina de 'Refaz acumulados'; Verifique necessidade de ajustar o campo BF_EMPENHO manualmente."
+			::ViaBatch   = .T.
 			::Query := "WITH C AS ("
 			::Query += " SELECT SBF.BF_FILIAL AS FILIAL, SBF.BF_LOCAL AS ALMOX, SBF.BF_LOCALIZ AS ENDERECO,"
 			::Query +=        " SBF.BF_PRODUTO AS PRODUTO, RTRIM (SB1.B1_DESC) AS DESCRICAO, SBF.BF_LOTECTL AS LOTE,"
@@ -1391,6 +1392,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Setores    = 'PCP'
 			::Descricao  = "Empenho do lote (tabela SB8) inconsistente com a composicao do empenho (tabela SDC)."
 			::Sugestao   = "Execute rotina de 'Refaz acumulados'; Verifique necessidade de ajustar o campo B8_EMPENHO manualmente."
+			::ViaBatch   = .T.
 			::Query := "WITH C AS ("
 			::Query += " SELECT SB8.B8_FILIAL AS FILIAL, SB8.B8_LOCAL AS ALMOX, "
 			::Query +=        " SB8.B8_PRODUTO AS PRODUTO, RTRIM (SB1.B1_DESC) AS DESCRICAO, SB8.B8_LOTECTL AS LOTE,"
@@ -1567,6 +1569,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Setores    = 'PCP'
 			::Descricao  = "Empenho (tabela SDC) relacionado a OP inexistente ou ja encerrada."
 			::Sugestao   = "Execute rotina de 'Refaz acumulados'; Verifique necessidade de ajustar o campo DC_QUANT manualmente."
+			::ViaBatch   = .T.
 			::Query := " SELECT SDC.DC_FILIAL,"
 			::Query +=        " SDC.DC_PRODUTO,"
 			::Query +=        " SDC.DC_LOCAL,"
