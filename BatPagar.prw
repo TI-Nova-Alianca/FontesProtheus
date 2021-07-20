@@ -44,8 +44,8 @@ Static Function _BuscaRecebiveis(dDataIni, dDataFin)
     local cHeaderGet := ""
     local cRetorno   := ""
     local i          := 1
-    local aTrans    := {}
-    local aParcela  := {}
+    local aTrans     := {}
+    local aParcela   := {}
     local oJSON
 
     cUrlReceb := MontaLinkReceb(dDataIni, dDataFin) // Monta Link Recebiveis
