@@ -21,19 +21,22 @@
 // 15/06/2015 - Catia   - alterado status de utilizacao - testando pelo saldo da verba
 // 10/07/2019 - Catia   - ajuste para que nao abra tela de descontos quando executa integracao com cartao de credito
 // 10/10/2019 - Robert  - Nao permite desconto maior que o saldo da verba (GLPI 6800).
-// 11/08/2020 - Cláudia - Limpar os dados digitados na tela em caso de cancelamento, evitando inclusao de verbas improprias.GLPI:8099
+// 11/08/2020 - Cláudia - Limpar os dados digitados na tela em caso de cancelamento, evitando inclusao 
+//                        de verbas improprias.GLPI:8099
 // 03/09/2020 - Cláudia - Não permitir a chamada da tela de descontos nas baixas automaticas da cielo.
 //                        A taxa cielo será emitida como um desconto.
 // 24/09/2020 - Cláudia - Não permitir a chamada da tela de descontos nas baixas de rapel. GLPI: 8367
+// 19/07/2021 - Cláudia - Não permitir a chamada da tela de descontos nas baixas automaticas do pagar.me.
+//                        A taxa pagar.me será emitida como um desconto.
 //
-// ----------------------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
 User Function F070Desc ()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _lRet     := .T.
 	
-	If !IsInCallStack("U_ZB2_CON") .and. !IsInCallStack("U_ZB1_CON") .and. !IsInCallStack("U_VA_040BRAP") // Não chama tela de descontos qndo realizada a baixa de titulos cielo e baixa do rapel
+	If !IsInCallStack("U_ZB2_CON") .and. !IsInCallStack("U_ZB1_CON") .and. !IsInCallStack("U_ZB3CON") .and. !IsInCallStack("U_VA_040BRAP") // Não chama tela de descontos qndo realizada a baixa de titulos cielo e baixa do rapel
 	    _lRet = _Compos ()
 	EndIf
 

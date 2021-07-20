@@ -13,6 +13,7 @@
 // Historico de alteracoes:
 // 29/03/2021 - Cláudia - Incluido logs de execução
 // 05/05/2021 - Claudia - Incluida msg de resumo de lançamentos no mes. GLPI: 9983
+// 16/07/2021 - Cláudia - Incluido e-mail da vanessa para recebimento
 //
 // ----------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -31,14 +32,6 @@ User Function BatZB5Mail()
 
     u_logIni ()
 	u_log ("Iniciando em", date (), time ())
-
-    // _nDiaSemana := Dow(date())
-
-    // If _nDiaSemana == 2
-    //     _dDate := DaySub(date(), 3)
-    // Else
-    //     _dDate := DaySub(date(), 1)
-    // EndIf
 
     _dDate := DaySub(date(), 1)
     
@@ -158,7 +151,7 @@ User Function BatZB5Mail()
                             ' '         })
 
         _sMsg := '<H1 align="center"></H1>'
-       // _sMsg += '<H2 align="center">TRANSFERENCIA DE VALORES ENTRE FILIAIS</H1>' + chr (13) + chr (10)
+        _sMsg += '<H2 align="center">TRANSFERENCIA DE VALORES ENTRE FILIAIS</H1>' + chr (13) + chr (10)
 		_sMsg += '<H3 align="center">DATA DE PROCESSAMENTO ' + dtoc (date ()) + ' DATA DE ENTRADA CTB ' + dtoc (_dDate) +'</H2>' + chr (13) + chr (10)
 
         For _x:=1 to Len(_aRetorno)
@@ -173,7 +166,7 @@ User Function BatZB5Mail()
                             
         _oAUtil := ClsAUtil():New (_aRetorno)
 		_sMsg += _oAUtil:ConvHTM ("", _aCols, 'width="80%" border="1" cellspacing="0" cellpadding="3" align="center"', .T.)
-        _sDestin := 'claudia.lionco@novaalianca.coop.br;charlene.baldez@novaalianca.coop.br'
+        _sDestin := 'claudia.lionco@novaalianca.coop.br;charlene.baldez@novaalianca.coop.br;vanessa.frasson@novaalianca.coop.br'
         //_sDestin := 'claudia.lionco@novaalianca.coop.br'
 
 		U_SendMail (_sDestin, "Transferencias de valores entre filiais", _sMsg, {})
@@ -209,7 +202,7 @@ User Function BatZB5Mail()
                             
         _oAUtil := ClsAUtil():New (_aResumo)
 		_sMsg += _oAUtil:ConvHTM ("", _aCols, 'width="80%" border="1" cellspacing="0" cellpadding="3" align="center"', .F.)
-        _sDestin := 'claudia.lionco@novaalianca.coop.br;charlene.baldez@novaalianca.coop.br'
+        _sDestin := 'claudia.lionco@novaalianca.coop.br;charlene.baldez@novaalianca.coop.br;vanessa.frasson@novaalianca.coop.br'
         //_sDestin := 'claudia.lionco@novaalianca.coop.br'
 
 		U_SendMail (_sDestin, "Transf.de valores entre filiais MENSAL", _sMsg, {})
