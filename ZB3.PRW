@@ -34,8 +34,8 @@ User Function ZB3()
 
 	If _lContinua
 		AADD(aRotina, {"&Visualizar" 	     , "AxVisual"        , 0, 1 })
-		AADD(aRotina, {"Importar manual."    , "U_BatPagar('2')" , 0, 4 })
 		AADD(aRotina, {"Conciliar "          , "U_ZB3CON()"      , 0, 4 })
+		AADD(aRotina, {"Importar"            , "U_BatPagar('2')" , 0, 4 })
 		AADD(aRotina, {"&Legenda"        	 , "U_ZB3LGD(.F.)"   , 0 ,5 })
 		AADD(aRotina, {"Relatorio importação", "U_ZB3REL()"      , 0, 6 })
 		AADD(aRotina, {"Fechar Registro"     , "U_ZB3FEC()"      , 0, 6 })
