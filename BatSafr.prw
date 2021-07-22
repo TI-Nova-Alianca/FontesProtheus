@@ -26,6 +26,7 @@
 //                     - Implementada geracao do SZI e verificacao de inconsistencias SZI x SE2 (GLPI 9592).
 // 03/04/2021 - Robert - Recalcula saldo do SZI antes de enviar aviso de diferenca com o SE2.
 // 07/05/2021 - Robert - Removidas algumas linhas comentariadas.
+// 20/07/2021 - Robert - Removido e-mail paulo.dullius e inserido monica.rodrigues
 //
 
 // --------------------------------------------------------------------------
@@ -468,7 +469,8 @@ static function _MailAcomp ()
 
 		// Internos - agronomia
 		_sDest += "leonardo.reffatti@novaalianca.coop.br;"
-		_sDest += "paulo.dullius@novaalianca.coop.br;"
+		// _sDest += "paulo.dullius@novaalianca.coop.br;"
+		_sDest += "monica.rodrigues@novaalianca.coop.br;"
 		_sDest += "waldir.schu@novaalianca.coop.br;"
 		_sDest += "odinei.cardoso@novaalianca.coop.br;"
 		_sDest += "alex.cervinski@novaalianca.coop.br;"

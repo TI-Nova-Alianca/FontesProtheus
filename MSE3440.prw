@@ -32,6 +32,7 @@
 // 05/04/2021 - Robert  - Incluidas chamadas da funcao PerfMon para monitoramento de tempos na emissao de cupom (GLPI 9573).
 // 05/05/2021 - Cláudia - Adicionado valor de frete + seguro + despesas acessorias. GLPI: 9895
 // 02/06/2021 - Claudia - Ajuste de descontos de ST e IPI. GLPI: 10051
+// 22/07/2021 - Claudia - Incluida a divisão das parcelas para ST/IPI no "IPI distribuídos nas "N" parcelas".GLPI: 10539
 //
 // -----------------------------------------------------------------------------------------------------------------------------------
 /*
@@ -74,7 +75,7 @@ User Function MSE3440 ()
 
 	// busca dados do vendedor que esta lendo no SE3
 	If _lContinua
-		If se3->e3_num == '000187281'
+		If se3->e3_num == '000189441'
 			u_help("Nota")
 		EndIf
 		_vend1     := se1 -> e1_vend1   
@@ -415,8 +416,8 @@ User Function MSE3440 ()
 						_nQtdCom := BuscaQtdComissao(se3->e3_filial, se3->e3_num, se3->e3_prefixo, se3->e3_parcela, se3->e3_codcli, se3->e3_loja)
 
 						If _nQtdCom == 0 
-							_vlrIpi := _ipiNota
-							_vlrST  := _stNota
+							_vlrIpi := _ipiNota/_qtdParc
+							_vlrST  := _stNota/_qtdParc
 						Else
 							_vlrIpi := 0
 							_vlrST  := 0
@@ -521,7 +522,7 @@ Static Function BuscaQtdComissao(_sFilial, _sNum, _sPrefixo, _sParcela, _sClient
 	_sQuery += " SELECT
 	_sQuery += " 	COUNT(E3_SEQ) AS QTD
 	_sQuery += " FROM SE3010
-	_sQuery += " WHERE D_E_L_E_T_ = ''
+	_sQuery += " WHERE D_E_L_E_T_ = ''"
 	_sQuery += " AND E3_FILIAL  = '" + _sFilial  + "'"
 	_sQuery += " AND E3_NUM     = '" + _sNum     + "'"
 	_sQuery += " AND E3_SERIE   = '" + _sPrefixo + "'"
