@@ -27,7 +27,7 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '03' modulo 'FIN'
+		prepare environment empresa '01' filial '01' modulo 'FIN'
 		private cModulo   := 'FIN'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -73,7 +73,7 @@ static function _AndaLogo ()
 //	local _nDado     := 0
 //	local _aCargas   := {}
 //	local _nCarga    := 0
-	local _i         := 0
+//	local _i         := 0
 //	local _sError    := ''
 //	local _sWarning  := ''
 //	local _oCtaCorr  := NIL
@@ -84,9 +84,97 @@ static function _AndaLogo ()
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
-//	u_help ('Nada definido.')
+	//u_help ('Nada definido.')
 //return
 
+	// Testes inclusao adto conta corrente
+	_oCtaCorr := ClsCtaCorr():New ()
+	_oCtaCorr:Assoc    = '000161'
+	_oCtaCorr:Loja     = '01'
+	_oCtaCorr:TM       = '07'
+	_oCtaCorr:DtMovto  = dDataBase
+	_oCtaCorr:Valor    = 1
+	_oCtaCorr:Usuario  = cUserName
+	_oCtaCorr:Histor   = 'teste inclusao adtos - GLPI 10494'
+	_oCtaCorr:MesRef   = strzero(month(_oCtaCorr:DtMovto),2)+strzero(year(_oCtaCorr:DtMovto),4)
+	_oCtaCorr:Doc      = 'GLPI10494'
+	_oCtaCorr:Serie    = 'ADT'
+	_oCtaCorr:Parcela  = '3'
+	_oCtaCorr:Origem   = 'GLPI10494'
+	_oCtaCorr:FormPag  = '3'  // 1=Cheque;2=Dinheiro;3=Depos.conta do associado;4=Deposito conta terceiros
+	_oCtaCorr:Banco    = '001'
+	_oCtaCorr:Agencia  = '3412 '
+	_oCtaCorr:NumCon   = '32972     '
+	if _oCtaCorr:PodeIncl ()
+		if ! _oCtaCorr:Grava (.F., .F.)
+			U_help (_oCtaCorr:UltMsg,, .t.)
+		else
+			u_log ('gravou')
+		endif
+	else
+		U_help ("Gravacao do SZI nao permitida:" + _oCtaCorr:UltMsg,, .T.)
+	endif
+return
+*/
+
+/*	// Teste inclusao de PA
+	private _SZI_Bco   := '001'   // Inicializador padrao do campo A6_COD
+	private _SZI_Age   := '3412'  // Inicializador padrao do campo A6_AGENCIA
+	private _SZI_Cta   := '32972' // Inicializador padrao do campo A6_NUMCON
+
+	_aAutoSE2 := {}
+	aadd (_aAutoSE2, {"E2_PREFIXO", 'TST',           NIL})
+	aadd (_aAutoSE2, {"E2_NUM"    , 'GLPI10494',             Nil})
+	aadd (_aAutoSE2, {"E2_TIPO"   , 'PA',        Nil})
+	aadd (_aAutoSE2, {"E2_FORNECE", '000161',           Nil})
+	aadd (_aAutoSE2, {"E2_LOJA"   , '01',            Nil})
+	aadd (_aAutoSE2, {"E2_EMISSAO", date (),         Nil})
+	aadd (_aAutoSE2, {"E2_VENCTO" , date (),          Nil})
+	aadd (_aAutoSE2, {"E2_VENCREA", date (),    Nil})
+	aadd (_aAutoSE2, {"E2_VALOR"  , 1,           Nil})
+	aadd (_aAutoSE2, {"E2_HIST"   , 'teste geracao automatica PA',          Nil})
+	aadd (_aAutoSE2, {"E2_PARCELA", '1',         Nil})
+	aadd (_aAutoSE2, {"E2_VACHVEX", 'GLPI10494',           Nil})
+	aadd (_aAutoSE2, {"E2_ORIGEM" , "FINA050" ,        Nil})
+	aadd (_aAutoSE2, {"AUTBANCO"  , "001" ,        Nil})
+	aadd (_aAutoSE2, {"AUTAGENCIA", "3412" ,        Nil})
+	aadd (_aAutoSE2, {"AUTCONTA"  , "32972" ,        Nil})
+	lMsErroAuto	:=	.f.
+	lMsHelpAuto	:=	.f.
+	dbselectarea ("SE2")
+	dbsetorder (1)
+	MsExecAuto({ | x,y,z | Fina050(x,y,z) }, _aAutoSE2,, 3)
+	if lMsErroAuto
+		MostraErro ()
+	endif
+return
+*/
+/*
+	// Testes verificacoes genericas.
+	// _oVerif := ClsVerif():New (25)
+	// _oVerif:SetParam ('01', '2017')
+	// _oVerif:SetParam ('02', '')
+	// _oVerif:SetParam ('03', 'zz')
+	// _oVerif:SetParam ('04', '30 ')
+	// _oVerif:SetParam ('05', '028')
+	// _oVerif:SetParam ('06', '077')
+	// _oVerif:SetParam ('07', '000017')
+	// _oVerif := ClsVerif():New (24)
+	// _oVerif:SetParam ('01', '09189201001  ')
+	// _oVerif:SetParam ('02', '09189201001  ')
+	// _oVerif:SetParam ('03', '')
+	// _oVerif:SetParam ('04', 'z')
+	_oVerif := ClsVerif():New (79)
+	if _oVerif:Executa ()
+		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
+		u_log2 ('debug', _oVerif:Result)
+	else
+		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
+	endif
+return
+*/
+
+/*
 	// Ajusta cadastro produtos em lote
 	sb1 -> (dbsetorder (1))
 	sb5 -> (dbsetorder (1))
@@ -159,13 +247,13 @@ static function _AndaLogo ()
 	sf4 -> (dbsetorder (1))
 	sf4 -> (dbgotop ())
 	do while ! sf4 -> (eof ())
-		if sf4 -> f4_codigo $ '310/311/312' .and. (sf4->F4_CONTSOC != '1' .or. sf4->F4_ALSENAR != 0.2 .or. sf4->F4_BSRURAL != '2')
+		if sf4 -> f4_codigo $ '310/311/312/313/314' .and. (sf4->F4_CONTSOC != '1' .or. sf4->F4_ALSENAR != 0 .or. sf4->F4_BSRURAL != '2')
 			u_log2 ('info', 'Verificando TES ' + sf4 -> f4_codigo)
 				
 			// Cria variaveis para uso na gravacao do evento de alteracao
 			regtomemory ("SF4", .F., .F.)
 			m->F4_CONTSOC = '1'
-			m->F4_ALSENAR = 0.2
+			m->F4_ALSENAR = 0
 			m->F4_BSRURAL = '2'
 				
 			// Grava evento de alteracao
@@ -208,7 +296,8 @@ static function _AndaLogo ()
 		endif
 		sed -> (dbskip ())
 	enddo
-
+return
+/*
 	_sArqLog := 'VA_GNF2_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 	Private cPerg   := "VAGNF2"
 	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
@@ -671,30 +760,6 @@ return
 		(_sAliasQ) -> (dbskip ())
 	enddo
 	u_acolsxls (_aprev)
-return
-*/
-/*
-	// Testes verificacoes genericas.
-	// _oVerif := ClsVerif():New (25)
-	// _oVerif:SetParam ('01', '2017')
-	// _oVerif:SetParam ('02', '')
-	// _oVerif:SetParam ('03', 'zz')
-	// _oVerif:SetParam ('04', '30 ')
-	// _oVerif:SetParam ('05', '028')
-	// _oVerif:SetParam ('06', '077')
-	// _oVerif:SetParam ('07', '000017')
-	// _oVerif := ClsVerif():New (24)
-	// _oVerif:SetParam ('01', '09189201001  ')
-	// _oVerif:SetParam ('02', '09189201001  ')
-	// _oVerif:SetParam ('03', '')
-	// _oVerif:SetParam ('04', 'z')
-	_oVerif := ClsVerif():New (69)
-	if _oVerif:Executa ()
-		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
-		u_log2 ('debug', _oVerif:Result)
-	else
-		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
-	endif
 return
 */
 /*

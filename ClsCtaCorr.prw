@@ -87,6 +87,7 @@
 //                     - Metodo TransFil passa a aceitar data para baixa contra transitoria; melhorados logs.
 // 23/03/2021 - Robert - Criados atributos Safra e GrpPgSafra, com respectiva leitura e gravacao (GLPI 9592).
 // 11/06/2021 - Robert - Nao gravava campo E2_VASAFRA no metodo GeraSE2 (GLPI 10208)
+// 20/07/2021 - Robert - Novo tratamento para passar bco/ag/cta na geracao do SE2 (variaveis AUTBANCO, ...) (GLPI 10494)
 //
 
 // ------------------------------------------------------------------------------------
@@ -805,11 +806,12 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _lCtOnLine) class ClsCtaCorr
 		if empty (::Banco) .or. empty (::Agencia) .or. empty (::NumCon)
 			::UltMsg += "Banco/agencia/conta devem ser informados para geracao do arquivo SE2 quando tipo PA."
 			_lContinua = .F.
-		else
-			// Alimenta variaveis private usadas em inicializadores de campos, gatilhos, etc.
-			_SZI_Bco = ::Banco
-			_SZI_Age = ::Agencia
-			_SZI_Cta = ::NumCon
+//		else
+//			// Alimenta variaveis private usadas em inicializadores de campos, gatilhos, etc.
+//			private _SZI_Bco   := ::Banco    // Inicializador padrao do campo A6_COD
+//			private _SZI_Age   := ::Agencia  // Inicializador padrao do campo A6_AGENCIA
+//			private _SZI_Cta   := ::NumCon   // Inicializador padrao do campo A6_NUMCON
+//			private _aDadosBco := {::Banco, ::Agencia, ::NumCon}  // Parece que funciona somente no modulo 43
 		endif
 	endif
 
@@ -857,8 +859,17 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _lCtOnLine) class ClsCtaCorr
 		aadd (_aAutoSE2, {"E2_VACHVEX", _sChvEx,           Nil})
 		aadd (_aAutoSE2, {"E2_ORIGEM" , "FINA050" ,        Nil})
 		aadd (_aAutoSE2, {"E2_VASAFRA", ::Safra,           Nil})
+		if ! empty (::Banco)
+			aadd (_aAutoSE2, {"AUTBANCO"  , ::Banco,       Nil})
+		endif
+		if ! empty (::Agencia)
+			aadd (_aAutoSE2, {"AUTAGENCIA", ::Agencia,     Nil})
+		endif
+		if ! empty (::NumCon)
+			aadd (_aAutoSE2, {"AUTCONTA",   ::NumCon,      Nil})
+		endif
 		_aAutoSE2 := aclone (U_OrdAuto (_aAutoSE2))
-//		u_log (_aAutoSE2)
+		u_log2 ('debug', _aAutoSE2)
 
 		// Ajusta parametros da rotina.
 		cPerg = 'FIN050    '
@@ -869,6 +880,7 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _lCtOnLine) class ClsCtaCorr
 		lMsHelpAuto	:=	.f.
 		dbselectarea ("SE2")
 		dbsetorder (1)
+		U_Log2 ('info', 'Executando FINA050')
 		MsExecAuto({ | x,y,z | Fina050(x,y,z) }, _aAutoSE2,, 3)
 		if lMsErroAuto
 
@@ -929,9 +941,9 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _lCtOnLine) class ClsCtaCorr
 		_oSQL:_sQuery +=    " AND E5_PARCELA = '" + se2 -> e2_parcela + "'"
 		_oSQL:_sQuery +=    " AND E5_CLIFOR  = '" + se2 -> e2_fornece + "'"
 		_oSQL:_sQuery +=    " AND E5_LOJA    = '" + se2 -> e2_loja    + "'"
-		_oSQL:_sQuery +=    " AND E5_BANCO   = '" + _SZI_Bco + "'"
-		_oSQL:_sQuery +=    " AND E5_AGENCIA = '" + _SZI_Age + "'"
-		_oSQL:_sQuery +=    " AND E5_CONTA   = '" + _SZI_Cta + "'"
+		_oSQL:_sQuery +=    " AND E5_BANCO   = '" + ::Banco   + "'"
+		_oSQL:_sQuery +=    " AND E5_AGENCIA = '" + ::Agencia + "'"
+		_oSQL:_sQuery +=    " AND E5_CONTA   = '" + ::NumCon  + "'"
 		_oSQL:_sQuery +=    " AND E5_RECPAG  = 'P'"
 		_oSQL:_sQuery +=    " AND E5_TIPO    = 'PA'"
 		_oSQL:_sQuery +=    " AND E5_TIPODOC IN ('PA','BA')"  // Mesmo que jah esteja PA, preciso atualizar os demais campos.
@@ -1112,7 +1124,8 @@ METHOD Grava (_lSZIGrav, _lMemoGrav) Class ClsCtaCorr
 			u_log ("Deletando memo")
 			msmm (szi -> zi_CodMemo,,,, 2,,, "SZI", "ZI_CODMEMO")
 		endif
-		u_log ("Deletando registro no SZI")
+//		u_log ("Deletando registro no SZI")
+		U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + '] Deletando registro no SZI devido a algum erro nas gravacoes adicionais.')
 		
 		reclock ("SZI", .F.)
 		szi -> (dbdelete ())
