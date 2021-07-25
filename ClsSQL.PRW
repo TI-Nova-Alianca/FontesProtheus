@@ -47,6 +47,7 @@
 // 23/02/2021 - Robert - Criado atributo QtLinRet.
 // 09/04/2021 - Robert - Criado atributo PerfMon e implementado tratamento para mostrar tempos no log quando .T. (GLPI 9797)
 // 05/05/2021 - Robert - Adequacao p/usar FWTemporaryTable e nao mais o driver ISAM por exigencia novas releases (GLPI 9973).
+// 25/07/2021 - Robert - Metodo Copy2Trb() passa a receber parametro com nome do alias a gerar.
 //
 
 #include "protheus.ch"
@@ -148,7 +149,7 @@ return _sRet
 
 // --------------------------------------------------------------------------
 // Copia o resultado da query para um arquivo de trabalho real.
-METHOD Copy2Trb (_lSetField, _nDecFixo) Class ClsSQL
+METHOD Copy2Trb (_lSetField, _nDecFixo, _sAliasTrb) Class ClsSQL
 //	local _sArqTrb   := ""
 	local _nCampo    := 0
 	local _nQtCampos := 0
@@ -157,6 +158,7 @@ METHOD Copy2Trb (_lSetField, _nDecFixo) Class ClsSQL
 	local _oTempTbl := NIL
 
 	_lSetField = iif (_lSetField == NIL, .T., _lSetField)
+	_sAliasTrb = iif (_sAliasTrb == NIL, '_trb', _sAliasTrb)
 	::_sAliasQry = ::Qry2Trb (_lSetField)
 	_aEstrut = (::_sAliasQry) -> (dbstruct ())
 
@@ -176,28 +178,29 @@ METHOD Copy2Trb (_lSetField, _nDecFixo) Class ClsSQL
 		u_help ("Rotina de geracao de arquivos temporarios nao permite campo com nome R_E_C_N_O_",, .T.)
 	else
 	
-	//	_sArqTrb = CriaTrab (_aEstrut, .T.)
-		_oTempTbl := FWTemporaryTable():New ('_trb')
+	//	_oTempTbl := FWTemporaryTable():New ('_trb')
+		_oTempTbl := FWTemporaryTable():New (_sAliasTrb)
 		_oTempTbl:SetFields (_aEstrut)
 		_oTempTbl:Create ()
 
 		_nQtCampos = (::_sAliasQry) -> (fcount ())
-	//	use (_sArqTrb) exclusive new alias '_trb'
 		(::_sAliasQry) -> (dbgotop ())
 		do while ! (::_sAliasQry) -> (eof ())
-			reclock ('_trb', .T.)
+	//		reclock ('_trb', .T.)
+			reclock (_sAliasTrb, .T.)
 			for _nCampo = 1 to _nQtCampos
-				_trb -> &(fieldname (_nCampo)) = (::_sAliasQry) -> &(fieldname (_nCampo))
+		//		_trb -> &(fieldname (_nCampo)) = (::_sAliasQry) -> &(fieldname (_nCampo))
+				(_sAliasTrb) -> &(fieldname (_nCampo)) = (::_sAliasQry) -> &(fieldname (_nCampo))
 			next
 			msunlock ()
 			(::_sAliasQry) -> (dbskip ())
 		enddo
-//		_trb -> (dbgotop ())
 	endif
 
 	(::_sAliasQry) -> (dbclosearea ())
 	U_ML_SRArea (_aAreaAnt)
-return '_trb'
+//return '_trb'
+return _sAliasTrb
 
 
 
