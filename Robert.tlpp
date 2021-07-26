@@ -84,9 +84,64 @@ static function _AndaLogo ()
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
-	//u_help ('Nada definido.')
-//return
+	u_help ('Nada definido.')
+return
+/*
+	// Gera arq. Sisdeclara.
+	cPerg := "ML_DEC"
+	U_GravaSX1 (cPerg, "01", stod ("20210701"))
+	U_GravaSX1 (cPerg, "02", stod ("20210701"))
+	U_GravaSX1 (cPerg, "03", 1)  // 1=mov.mensal;2=entradas uvas
+	U_GravaSX1 (cPerg, "04", 'ALCEU DALLEMOLLE')
+	U_GravaSX1 (cPerg, "05", '????????')  // '05404198' = Hugo    '05403148' = Flavio
+	U_GravaSX1 (cPerg, "06", 'c:\temp\sisdeclara' + cFilAnt + '.txt')
+	U_GravaSX1 (cPerg, "07", 'robert.koch@novaalianca.coop.br')
+	U_GravaSX1 (cPerg, "08", 2)  // Gera arq conferencia (s/n)
+	U_GravaSX1 (cPerg, "09", 2)  // Exporta guias? (s/n)
+	U_GravaSX1 (cPerg, "10", '11422401/11128701')  // Lotes de PA a ignorar
+	U_ML_DEC (.t.)
+return
+*/
+/*
+	// Ajusta cadastro produtos em lote
+	sb1 -> (dbsetorder (1))
+	sb5 -> (dbsetorder (1))
+	sb1 -> (dbgotop ())
+	do while ! sb1 -> (eof ())
+		if sb1 -> b1_tipo $ 'MC/MM'
+			if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
+				u_log ('ERRO: Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
+			else
+				u_log ('Verificando item', sb1 -> b1_cod, SB1 -> B1_DESC)
+				if sb5 -> b5_vasisde = 'S'
+				
+					// Cria variaveis para uso na gravacao do evento de alteracao
+					regtomemory ("SB1", .F., .F.)
+					regtomemory ("SB5", .F., .F.)
+					//m->B1_CONTSOC = 'S'
+					//m->B1_INSS    = 'S'
+					m->b5_vasisde = 'N'
+					
+					// Grava evento de alteracao
+					_oEvento := ClsEvent():new ()
+					_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 10573 - Itens de manut.nao devem ir para SISDEVIN', .F.)
 
+					reclock ("SB1", .f.)
+					//sb1 -> B1_CONTSOC = m->B1_CONTSOC
+					//sb1 -> B1_INSS    = m->B1_INSS
+					msunlock ()
+					reclock ("SB5", .f.)
+					sb5->b5_vasisde = m->b5_vasisde
+					msunlock ()
+					//exit
+				endif
+			endif
+		endif
+		sb1 -> (dbskip ())
+	enddo
+return
+*/
+/*
 	// Testes inclusao adto conta corrente
 	_oCtaCorr := ClsCtaCorr():New ()
 	_oCtaCorr:Assoc    = '000161'
@@ -173,42 +228,7 @@ return
 	endif
 return
 */
-
 /*
-	// Ajusta cadastro produtos em lote
-	sb1 -> (dbsetorder (1))
-	sb5 -> (dbsetorder (1))
-	sb1 -> (dbgotop ())
-	do while ! sb1 -> (eof ())
-		if sb1 -> b1_GRUPO = '0400' .AND. (sb1 -> B1_CONTSOC != 'S' .or. sb1 -> B1_INSS != 'S')
-			if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
-				u_log ('ERRO: Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
-			else
-				u_log ('Verificando item', sb1 -> b1_cod, SB1 -> B1_DESC)
-				
-				// Cria variaveis para uso na gravacao do evento de alteracao
-				regtomemory ("SB1", .F., .F.)
-				regtomemory ("SB5", .F., .F.)
-				m->B1_CONTSOC = 'S'
-				m->B1_INSS    = 'S'
-				//m->b5_alttrib = '1'
-				
-				// Grava evento de alteracao
-				_oEvento := ClsEvent():new ()
-				_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 10007 - Calcular FUNRURAL', .F.)
-
-				reclock ("SB1", .f.)
-				sb1 -> B1_CONTSOC = m->B1_CONTSOC
-				sb1 -> B1_INSS    = m->B1_INSS
-				msunlock ()
-				//reclock ("SB5", .f.)
-				//msunlock ()
-				//exit
-			endif
-		endif
-		sb1 -> (dbskip ())
-	enddo
-
 	// Ajusta cadastro fornecedores em lote
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
@@ -4175,21 +4195,6 @@ return
 		u_log ('')
 		(_sAliasQ) -> (dbskip ())
 	enddo
-return
-*/
-/*
-	// Gera arq. Sisdeclara.
-	cPerg := "ML_DEC"
-	U_GravaSX1 (cPerg, "01", stod ("20181101"))
-	U_GravaSX1 (cPerg, "02", stod ("20181105"))
-	U_GravaSX1 (cPerg, "03", 1)  // 1=mov.mensal;2=entradas uvas
-	U_GravaSX1 (cPerg, "04", 'ALCEU DALLEMOLLE')
-	U_GravaSX1 (cPerg, "05", '????????')  // '05404198' = Hugo    '05403148' = Flavio
-	U_GravaSX1 (cPerg, "06", 'c:\temp\sisdeclara' + cFilAnt + '.txt')
-	U_GravaSX1 (cPerg, "07", 'robert.koch@novaalianca.coop.br')
-	U_GravaSX1 (cPerg, "08", 1)  // Gera arq conferencia (s/n)
-	U_GravaSX1 (cPerg, "09", 2)  // Exporta guias? (s/n)
-	U_ML_DEC (.t.)
 return
 */
 /*
