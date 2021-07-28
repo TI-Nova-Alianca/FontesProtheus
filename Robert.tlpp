@@ -87,6 +87,24 @@ static function _AndaLogo ()
 	u_help ('Nada definido.')
 return
 /*
+	// Testes correcao monetaria associados
+	_sArqLog := 'SZI_CM2_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+	U_GravaSX1 ("SZI_CM2", '01', 2)  // Calcular / Descalcular {"Calcular", "Descalcular"}
+	U_GravaSX1 ("SZI_CM2", '02', '062021')  // Mes/ano de referencia (MMAAAA)
+	U_GravaSX1 ("SZI_CM2", '03', 1.0)  // Taxa % correcao valores baixos
+	U_GravaSX1 ("SZI_CM2", '04', 1.0)  // Taxa % correcao valores altos 
+	U_GravaSX1 ("SZI_CM2", '05', 999)  // Limite valores baixos         
+	U_GravaSX1 ("SZI_CM2", '06', 1)  // Tipo de correcao a gerar {'A debito', 'A credito', 'Ambas'}
+	U_GravaSX1 ("SZI_CM2", '07', '003184')  // Associado inicial             
+	U_GravaSX1 ("SZI_CM2", '08', '')  // Loja associado inicial        
+	U_GravaSX1 ("SZI_CM2", '09', 'z')  // Associado final               
+	U_GravaSX1 ("SZI_CM2", '10', 'Z')  // Loja associado final          
+	u_szi_cm2 (.t.)
+	U_GravaSX1 ("SZI_CM2", '01', 1)  // Calcular / Descalcular {"Calcular", "Descalcular"}
+	u_szi_cm2 (.t.)
+return
+*/
+/*
 	// Gera arq. Sisdeclara.
 	cPerg := "ML_DEC"
 	U_GravaSX1 (cPerg, "01", stod ("20210701"))
@@ -461,24 +479,6 @@ return
 		// removido --> u_gravasx1 ('SZI_LCS', '20', '')  // Nucleos(SG/FC/...) bco=todos
 		u_szi_lcs (.t., 3)
 	next
-return
-*/
-/*
-	// Testes correcao monetaria associados
-	_sArqLog := 'SZI_CM2_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-	U_GravaSX1 ("SZI_CM2", '01', 2)  // Calcular / Descalcular {"Calcular", "Descalcular"}
-	U_GravaSX1 ("SZI_CM2", '02', '032021')  // Mes/ano de referencia (MMAAAA)
-	U_GravaSX1 ("SZI_CM2", '03', 1.0)  // Taxa % correcao valores baixos
-	U_GravaSX1 ("SZI_CM2", '04', 1.0)  // Taxa % correcao valores altos 
-	U_GravaSX1 ("SZI_CM2", '05', 999)  // Limite valores baixos         
-	U_GravaSX1 ("SZI_CM2", '06', 1)  // Tipo de correcao a gerar {'A debito', 'A credito', 'Ambas'}
-	U_GravaSX1 ("SZI_CM2", '07', '')  // Associado inicial             
-	U_GravaSX1 ("SZI_CM2", '08', '')  // Loja associado inicial        
-	U_GravaSX1 ("SZI_CM2", '09', 'z')  // Associado final               
-	U_GravaSX1 ("SZI_CM2", '10', 'Z')  // Loja associado final          
-	u_szi_cm2 (.t.)
-	U_GravaSX1 ("SZI_CM2", '01', 1)  // Calcular / Descalcular {"Calcular", "Descalcular"}
-	u_szi_cm2 (.t.)
 return
 */
 /*

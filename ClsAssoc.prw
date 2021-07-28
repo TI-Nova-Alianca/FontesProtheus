@@ -100,6 +100,7 @@
 // 21/05/2021 - Robert  - Nao calculava correcao para ex associados (GLPI 10075).
 // 28/07/2021 - Robert  - Continuar mostrando data de associacao na consulta de capital, quando assoc. desligado (GLPI 8763).
 //                      - Incluida msg. de LGPD na consulta de cota capital (GLPI 10139).
+//                      - Ajuste corr.mon. (desconsiderava NF vcto futuro que jah sofreram baixas) - GLPI 10306.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -660,6 +661,7 @@ METHOD CalcCM (_sMesRef, _nTaxaVl1, _nTaxaVl2, _nLimVl1, _lGerarD, _lGerarC) Cla
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " SELECT E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VASAFRA, E2_VENCREA, E2_VALOR, E2_SALDO"
 
+		// GLPI 10306
 		// Existem casos em que nem todo o valor do titulo foi usado na geracao de uma fatura.
 		// Por exemplo quando parte foi compensada e apenas o saldo restante virou fatura.
 		// Ex.: título 000021485/30 -D do fornecedor 000643. Foi compensado R$ 3.066,09 e o saldo (R$ 1028,71) foi gerada a fatura 202000051.
@@ -673,6 +675,7 @@ METHOD CalcCM (_sMesRef, _nTaxaVl1, _nTaxaVl2, _nLimVl1, _lGerarD, _lGerarC) Cla
 		_oSQL:_sQuery +=                              " AND FK2.FK2_IDDOC  = FK7.FK7_IDDOC"
 		_oSQL:_sQuery +=                              " AND FK2.FK2_MOTBX  = 'FAT'"
 		_oSQL:_sQuery +=                              " AND FK2.FK2_TPDOC != 'ES'"  // ES=Movimento de estorno
+		_oSQL:_sQuery +=                              " AND FK2.FK2_DATA  <= '" + dtos (_dDtLimite) + "'"
 		_oSQL:_sQuery +=                              " AND dbo.VA_FESTORNADO_FK2 (FK2.FK2_FILIAL, FK2.FK2_IDFK2) = 0"
 		_oSQL:_sQuery +=                        "), 0) AS SLDNADATA "
 		_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI, "
@@ -695,8 +698,8 @@ METHOD CalcCM (_sMesRef, _nTaxaVl1, _nTaxaVl2, _nLimVl1, _lGerarD, _lGerarC) Cla
 		_sAliasQ := _oSQL:Qry2Trb (.f.)
 		do while ! (_sAliasQ) -> (eof ())
 			//_sMemCalc += "Abater NF safra " + (_sAliasQ) -> e2_prefixo + '/' + (_sAliasQ) -> e2_num + '-' + (_sAliasQ) -> e2_parcela + '  vcto: ' + dtoc (stod ((_sAliasQ) -> e2_vencrea)) + '  sld:' + GetMv ('MV_SIMB1') + transform ((_sAliasQ) -> e2_saldo, "@E 999,999.99") + chr (13) + chr (10)
-			_sMemCalc += "Abater NF safra " + (_sAliasQ) -> e2_prefixo + '/' + (_sAliasQ) -> e2_num + '-' + (_sAliasQ) -> e2_parcela + '  vcto: ' + dtoc (stod ((_sAliasQ) -> e2_vencrea)) + '  sld:' + " R$ " + transform ((_sAliasQ) -> e2_saldo, "@E 999,999.99") + chr (13) + chr (10)
-			_nSldNFSaf += (_sAliasQ) -> e2_saldo
+			_sMemCalc += "Abater NF safra " + (_sAliasQ) -> e2_prefixo + '/' + (_sAliasQ) -> e2_num + '-' + (_sAliasQ) -> e2_parcela + '  vcto: ' + dtoc (stod ((_sAliasQ) -> e2_vencrea)) + '  sld.na data:' + " R$ " + transform ((_sAliasQ) -> SldNaData, "@E 999,999.99") + chr (13) + chr (10)
+			_nSldNFSaf += (_sAliasQ) -> SldNaData
 			(_sAliasQ) -> (dbskip ())
 		enddo
 	endif
