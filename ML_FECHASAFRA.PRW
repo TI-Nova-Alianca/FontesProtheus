@@ -47,6 +47,7 @@ User Function ML_FECHASAFRA (_lAutomat)
 	cDesc2  := " "
 	cDesc3  := " "
 	tamanho := "G"
+	limite   := 120
 	aReturn := {"Zebrado", 1,"Administracao", 1, 2, 1, "",1}
 	aLinha  := {}
 	nLastKey:= 0
@@ -143,6 +144,11 @@ Static Function RptDetail()
 	li    := 80
 	m_pag := 1
 
+	IF m_pag >1
+			_roda ()
+	endif
+
+
 	cabec1:="FILIAL  NF/SERIE  DT EMISSAO   PRODUTO (UVA)                          GRAU/CLAS           PESO    VLR UNIT         VLR TOTAL  OBSERVACOES"
 	cabec2:=""
 
@@ -225,6 +231,9 @@ Static Function RptDetail()
 		IF _vAnt + _VAntLj  != (_sAliasQ) -> ASSOCIADO + (_sAliasQ) -> LOJA_ASSOC
 			IF _aTotTp[2] = 0
 				If li>63
+				IF m_pag >1
+					_roda ()
+				endif
 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 				Endif
 
@@ -234,7 +243,11 @@ Static Function RptDetail()
 			endif			   	 
 			if _aTotTp[2] > 0
 				// imprime por tipo de nota
+					
 				If li>63
+				IF m_pag >1
+					_roda ()
+				endif
 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 				Endif 
 				       
@@ -254,6 +267,10 @@ Static Function RptDetail()
 				
 				// imprime totais do associado
 				If li+6 > 63
+				IF m_pag >1
+					_roda()
+				endif
+
 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 				Endif
 				
@@ -277,7 +294,12 @@ Static Function RptDetail()
 				
 				// previsao de pagamento
 				// le as variadades e monta valor das parcelas previstas
+				
+						
 				If li+6 > 63
+				IF m_pag >1
+					_roda()
+				endif
 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 				Endif        
 					
@@ -345,8 +367,11 @@ Static Function RptDetail()
 						li++		 
 					endif	
 				endif
-					
+
 				If li+3 > 63
+				IF m_pag >1
+					_roda()
+				endif
 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 				Endif
 				
@@ -392,6 +417,11 @@ Static Function RptDetail()
 						@li,  00 PSAY "Valor Efetivo por Variedade/Grau:"
 						for i=1 to len(_aDados)
 							If li + len(_aDados) > 63
+
+							IF m_pag >1
+								_roda()
+							endif
+
 								cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 							Endif        
 							
@@ -440,6 +470,10 @@ Static Function RptDetail()
 							_wvalor = _aSld [i,6]
 				
 							If li>63
+							IF m_pag >1
+								_roda()
+							endif
+
 								cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 							Endif        
 								
@@ -470,6 +504,10 @@ Static Function RptDetail()
 				// salta pagina
 				li := 80
 				If li>63
+
+				IF m_pag >1
+					_roda()
+				endif
 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 					li ++
 					@ li, 00 PSAY "Associado: " + (_sAliasQ) -> ASSOCIADO + '-' + ALLTRIM((_sAliasQ) -> NOME_ASSOC)
@@ -486,8 +524,7 @@ Static Function RptDetail()
 					_wsaldo     := 0
 					_wfilial      := ""
 					_wcomplemento := ""
-					
-					
+									
 				endif    
 				endif				
 			endif
@@ -495,6 +532,10 @@ Static Function RptDetail()
 			IF  _wtipoNFant != (_sAliasQ) -> TIPO_NF .and. _aTotTp[2] > 0
 				// imprime totais
 				If li>63
+				IF m_pag >1
+					_roda()
+				endif
+
 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 				Endif        
 				if _wtipoNFant = 'E'
@@ -516,6 +557,10 @@ Static Function RptDetail()
 			
 			if  _wtipoNFant != (_sAliasQ) -> TIPO_NF 
 				If li>63
+				IF m_pag >1
+					_roda()
+				endif
+
 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 				Endif
 				if (_sAliasQ) -> TIPO_NF = 'E'
@@ -532,9 +577,12 @@ Static Function RptDetail()
 					li ++
 				endif
 			endif
-			
-					
+								
 			If li>63
+			IF m_pag >1
+				_roda()
+			endif
+
 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 			Endif
 
@@ -670,6 +718,10 @@ Static Function RptDetail()
 		IF _aTotTp[2] > 0
 		// imprime por tipo de nota
 		If li>63
+		IF m_pag >1
+			_roda()
+		endif
+
 			cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 		Endif        
 		if _wtipoNFant = 'E'
@@ -689,6 +741,10 @@ Static Function RptDetail()
 
 	// imprime totais do associado
 	If li+6 > 63
+	IF m_pag >1
+		_roda()
+	endif
+
 		cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 	Endif
 
@@ -714,6 +770,10 @@ Static Function RptDetail()
 	// previsao de pagamento
 	// le as variadades e monta valor das parcelas previstas
 	If li+6 > 63
+	IF m_pag >1
+		_roda()
+	endif
+
 		cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 	Endif        
 	
@@ -779,6 +839,10 @@ Static Function RptDetail()
 	endif
 		
 	If li+3 > 63
+	IF m_pag >1
+		_roda()
+	endif
+
 		cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 	Endif        
 		
@@ -821,6 +885,10 @@ Static Function RptDetail()
 			@li,  00 PSAY "Valor Efetivo por Variedade/Grau:"
 			for i=1 to len(_aDados)
 				If li + len(_aDados) > 63
+				IF m_pag >1
+					_roda()
+				endif
+
 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 				Endif      
 				@li,  31 PSAY ALLTRIM( _aDados [i,1])  + ' - ' + ALLTRIM(_aDados [i,2])
@@ -869,6 +937,10 @@ Static Function RptDetail()
 				_wvalor = _aSld [i,6]
 				
 				If li > 63
+				IF m_pag >1
+					_roda()
+				endif
+
 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 				Endif  
 					
@@ -894,7 +966,15 @@ Static Function RptDetail()
 			
 			li ++
 		endif
-	endif		
+	endif	
+
+
+	IF m_pag >1
+		_roda()
+	endif
+return
+
+return	
 return
 
 
@@ -1006,6 +1086,10 @@ static function _Modelo2 (_lSohCompr)
 			loop
 		endif
 
+		IF m_pag >1
+			_roda()
+		endif
+
 		cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 		@ li, 00 PSAY "Associado: " + _oAssoc:Codigo + '-' + _oAssoc:Loja + ' ' + _oAssoc:Nome
 		li += 2
@@ -1020,6 +1104,10 @@ static function _Modelo2 (_lSohCompr)
 		//if type ('_oXMLFech:_assocFechSafra:_nfEntrada:_nfEntradaItem') == 'A'  // Array com mais de uma nota
 		If _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
 			If li > _nMaxLin - 4
+			IF m_pag >1
+				_roda()
+			endif
+
 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 			Endif
 			@li, 09 PSAY "NF's de ENTREGA de Uva"
@@ -1047,6 +1135,9 @@ static function _Modelo2 (_lSohCompr)
 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_nfProdPropria:_nfProdPropriaItem')
 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
 			If li > _nMaxLin - 4
+			IF m_pag >1
+				_roda()
+			endif
 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 			Endif
 			@li, 09 PSAY "NF's de PRODUCAO PROPRIA de Uva"
@@ -1074,6 +1165,9 @@ static function _Modelo2 (_lSohCompr)
 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_nfCompra:_nfCompraItem')
 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
 			If li > _nMaxLin - 4
+			IF m_pag >1
+				_roda()
+			endif
 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 			Endif
 			@li, 09 PSAY "NF's de COMPRA de Uva"
@@ -1101,6 +1195,9 @@ static function _Modelo2 (_lSohCompr)
 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_nfComplemento:_nfComplementoItem')
 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
 			If li > _nMaxLin - 4
+			IF m_pag >1
+				_roda()
+			endif
 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 			Endif
 			@li, 09 PSAY "NF's de COMPLEMENTO Vlr"
@@ -1140,18 +1237,24 @@ static function _Modelo2 (_lSohCompr)
 		_aTGerCom [2] += _aTAsCom [2]
 		_aTGerCpl [1] += _aTAsCpl [1]
 		_aTGerCpl [2] += _aTAsCpl [2]
-
-
+		
+		
 		// Verifica se tem este tipo de tag no XML
 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem') 
 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
 			If li > _nMaxLin - 4
+			IF m_pag >1
+				_roda()
+			endif
 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 			Endif
 			@li, 0 PSAY 'Previsao de pagamento:                FATURA             VENCIMENTO              VALOR              SALDO  HISTORICO'
 			li ++
 			for _nFatPag = 1 to len (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem)
 				If li > _nMaxLin
+				IF m_pag >1
+					_roda()
+				endif
 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 				Endif
 				_sLinImp := ''
@@ -1180,12 +1283,18 @@ static function _Modelo2 (_lSohCompr)
 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem')
 		if _ValType == 'A'  // Enquanto tivermos mais de um grupo de pagamentos, vai funcionar...
 			If li > _nMaxLin - 4
+			IF m_pag >1
+				_roda()
+			endif
 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 			Endif
 			@li, 0 PSAY 'Regras para pagamento:'
 			li ++
 			for _nRegraPag = 1 to len (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem)
 				If li > _nMaxLin
+				IF m_pag >1
+					_roda()
+				endif
 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 				Endif
 				_sLinImp := space (35)
@@ -1201,12 +1310,18 @@ static function _Modelo2 (_lSohCompr)
 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem')
 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
 			If li > _nMaxLin - 4
+			IF m_pag >1
+				_roda()
+			endif
 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 			Endif
 			@li, 0 PSAY 'Valores efetivos:                                GRAU/CLAS              PESO    VLR UNIT         VLR TOTAL'
 			li ++
 			for _nVlEfetiv = 1 to len (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem)
 				If li > _nMaxLin
+				IF m_pag >1
+					_roda()
+				endif
 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 				Endif
 				_sLinImp := space (7)
@@ -1228,6 +1343,9 @@ static function _Modelo2 (_lSohCompr)
 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem')
 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 titulo + 1 linha de totais)
 			If li > _nMaxLin - 4
+			IF m_pag >1
+				_roda()
+			endif
 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 			Endif
 			li ++
@@ -1235,6 +1353,9 @@ static function _Modelo2 (_lSohCompr)
 			li ++
 			for _nFatPag = 1 to len (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem)
 				If li > _nMaxLin
+				IF m_pag >1
+					_roda()
+				endif
 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 				Endif
 				_sLinImp := ''
@@ -1263,6 +1384,9 @@ static function _Modelo2 (_lSohCompr)
 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem')
 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
 			If li > _nMaxLin - 4
+			IF m_pag >1
+				_roda()
+			endif
 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 			Endif
 			// @li, 0 PSAY 'Lctos conta corrente:'
@@ -1270,6 +1394,9 @@ static function _Modelo2 (_lSohCompr)
 			li ++
 			for _nLctoCC = 1 to len (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem)
 				If li > _nMaxLin
+				IF m_pag >1
+					_roda()
+				endif
 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 				Endif
 				if _oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_doc:TEXT != 'TOTAIS'
@@ -1288,15 +1415,23 @@ static function _Modelo2 (_lSohCompr)
 				li ++
 			next
 			li ++
+
+
 		endif
 	next
 
+
+	IF m_pag >1
+		_roda()
+	endif
 	cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 	_ImprTot ('TOTAIS GERAIS', _aTGerEnt, _aTGerPro, _aTGerCom, _aTGerCpl)
 	li ++
 return
 
-
+IF m_pag >1
+			_roda()
+		endif
 
 // --------------------------------------------------------------------------
 // Imprime valores de contranotas formatados.
@@ -1304,6 +1439,9 @@ static function _ImprNota (_sTipoNota, _sNFFilial, _sNFDoc, _sNFEmis, _sNFProd, 
 	local _sLinImp := ''
 
 	If li > _nMaxLin
+	IF m_pag >1
+		_roda()
+	endif
 		cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 	Endif
 	if _sNFDoc != 'TOTAIS'
@@ -1343,11 +1481,18 @@ static function _ImprNota (_sTipoNota, _sNFFilial, _sNFDoc, _sNFEmis, _sNFProd, 
 return
 
 
+	IF m_pag >1
+		_roda()
+	endif
+return
 
 // --------------------------------------------------------------------------
 // Imprime totais (por associado ou gerais) formatados.
 static function _ImprTot (_sTitTot, _aEntradas, _aPropria, _aCompra, _aComplem)
 	If li > _nMaxLin - 4
+	IF m_pag >1
+		_roda()
+	endif
 		cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 	Endif
 	@ li, 0 psay U_TamFixo (_sTitTot, 72, ' ') + 'Entrega          ' + transform (_aEntradas [1], "@E 9,999,999,999.99") + '             ' + transform (_aEntradas [2], "@E 9,999,999,999.99")
@@ -1363,9 +1508,14 @@ static function _ImprTot (_sTitTot, _aEntradas, _aPropria, _aCompra, _aComplem)
 	li ++
 	@ li, 0 psay space (72) + 'Total a receber                               ' + transform (_aCompra [2] + _aComplem [2], "@E 9,999,999,999.99")
 	li += 2
+
+	IF m_pag >1
+			_roda()
+		endif
+
 Return
 
-
+return
 
 // --------------------------------------------------------------------------
 // Retorno do type - type em looling nao é permitido da R25 
@@ -1463,6 +1613,9 @@ static function _Modelo3 (_lSohCompr)
 			loop
 		endif
 
+		IF m_pag >1
+		_roda()
+		endif
 		cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 		@ li, 00 PSAY "Associado: " + _oAssoc:Codigo + '-' + _oAssoc:Loja + ' ' + _oAssoc:Nome
 		li += 2
@@ -1504,6 +1657,9 @@ static function _Modelo3 (_lSohCompr)
 			li ++
 			for _nVaried = 1 to len (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem)
 				If li > _nMaxLin - 4
+				IF m_pag >1
+					_roda()
+				endif
 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 				endif
 				if _oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_varied:TEXT != 'TOTAIS'
@@ -1526,10 +1682,15 @@ static function _Modelo3 (_lSohCompr)
 			next
 		endif
 
+
 		// Verifica se tem este tipo de tag no XML
 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem') 
 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 nota/fatura + 1 linha de totais)
 			If li > _nMaxLin - 4
+		IF m_pag >1
+			_roda()
+		endif
+
 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 			Endif
 			@li, 0 PSAY 'Resumo pagamento:      Mes/ano                 Valor             Saldo'
@@ -1554,6 +1715,9 @@ static function _Modelo3 (_lSohCompr)
 			_aTotResP = {0, 0}
 			for _nResPag = 1 to len (_aResPag)
 				If li > _nMaxLin - 4
+				IF m_pag >1
+					_roda()
+				endif
 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 				endif
 				_sLinImp = space (23)
@@ -1571,16 +1735,23 @@ static function _Modelo3 (_lSohCompr)
 			li += 2
 		endif
 
+
 		// Verifica se tem este tipo de tag no XML
 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem')
 		if _ValType == 'A'  // Enquanto tivermos mais de um grupo de pagamentos, vai funcionar...
 			If li > _nMaxLin - 4
+			IF m_pag >1
+				_roda()
+			endif
 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 			Endif
 			@li, 0 PSAY 'Regras para pagamento:'
 			li ++
 			for _nRegraPag = 1 to len (_oXMLFech:_assocFechSafra:_regraPagamento:_regraPagamentoItem)
 				If li > _nMaxLin
+				IF m_pag >1
+					_roda()
+				endif
 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 				Endif
 				_sLinImp := space (35)
@@ -1595,6 +1766,9 @@ static function _Modelo3 (_lSohCompr)
 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem')
 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
 			If li > _nMaxLin - 4
+			IF m_pag >1
+				_roda()
+			endif
 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 			Endif
 			@li, 0 PSAY 'Descontos em aberto:   Data        Historico                                                    Saldo'
@@ -1602,7 +1776,10 @@ static function _Modelo3 (_lSohCompr)
 			_nTotDesc = 0
 			for _nLctoCC = 1 to len (_oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem)
 				If li > _nMaxLin
-					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+				IF m_pag >1
+					_roda()
+				endif
+				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 				Endif
 				if _oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_doc:TEXT != 'TOTAIS' .and. _oXMLFech:_assocFechSafra:_lctoCC:_lctoCCItem[_nLctoCC]:_dc:TEXT == 'D'
 					_sLinImp := space (23)
@@ -1625,7 +1802,30 @@ static function _Modelo3 (_lSohCompr)
 		endif
 
 	next
+
+	IF m_pag >1
+		_roda()
+	endif
 return
+
+return
+
+
+// Rodapé
+static function _roda ()
+
+	@ li, 0 psay __PrtfatLine ()
+	li ++
+	@ li, 20 psay Padc ('**** DOCUMENTO CONFIDENCIAL ****', limite,' ') 
+	li ++ 
+	@ li, 0 psay __PrtfatLine ()
+	li ++
+return
+
+IF m_pag >1
+		_roda()
+	endif
+
 
 //
 // --------------------------------------------------------------------------
@@ -1643,3 +1843,6 @@ Static Function _ValidPerg ()
 	
 	U_ValPerg (cPerg, _aRegsPerg)
 Return
+
+	
+
