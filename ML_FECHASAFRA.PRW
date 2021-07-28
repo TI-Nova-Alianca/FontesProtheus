@@ -33,6 +33,7 @@
 //                      - Novos parametros metodo ClsAssoc:FechSafra() - GLPI 9318
 // 08/03/2021 - Robert  - Resumo por variedade/grau medio passa a listar graus abertos (GLPI 9572)
 //                      - Novos parametros metodo ClsAssoc:FechSafra()
+//28/07/2021 - Sandra  - Incluso rodapé com nomenclatura 'Documento Sigiloso" GLPI 10139
 //
 
 #include "protheus.ch"
