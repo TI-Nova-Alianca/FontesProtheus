@@ -82,7 +82,10 @@
 // 21/05/2020 - Claudia - Incluida a gravação e exclusão de parametros na SXK. GLPI: 10071
 // 02/07/2021 - Claudia - Incluido campo CNAE. GLPI: 10354
 // 02/07/2021 - Claudia - Incluido valor do funrural. GLPI: 10177
+// 27/07/2021 - Robert  - Incluida coluna NCM (B1_POSIPI) do produto (GLPI 10591).
+//                      - Passa a somar a coluna D2_VALFRE no "Valor bruto" e "Valor total NF" (GLPI 10579).
 //
+
 // ---------------------------------------------------------------------------------------------------------------
 User Function VA_XLS5 (_lAutomat)
 	Local cCadastro  := "Exportacao geral de dados de faturamento para planilha"
@@ -223,7 +226,8 @@ Static Function _Opcoes (_sTipo)
 		aadd (_aOpcoes, {.F., "Municipio",                "RTRIM (SA1.A1_MUN) MUNICIPIO"})
 		aadd (_aOpcoes, {.F., "Nome Representante 1",     "RTRIM (A3_NOME) AS REPRES"})
 		aadd (_aOpcoes, {.F., "Valor mercadoria",         _sSelVlMer + " * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALMERC"})
-		aadd (_aOpcoes, {.F., "Valor bruto",              "(V.TOTAL + V.VALIPI + V.SEGURO + V.DESPESA + V.PVCOND + V.ICMSRET) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALBRUT"})
+	//	aadd (_aOpcoes, {.F., "Valor bruto",              "(V.TOTAL + V.VALIPI + V.SEGURO + V.DESPESA + V.PVCOND + V.ICMSRET) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALBRUT"})
+		aadd (_aOpcoes, {.F., "Valor bruto",              "(V.TOTAL + V.VALIPI + V.SEGURO + V.DESPESA + V.PVCOND + V.ICMSRET + V.D2_VALFRE) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALBRUT"})
 		aadd (_aOpcoes, {.F., "Valor ICMS",               "V.VALICM * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS ICMS"})
 		aadd (_aOpcoes, {.F., "Valor IPI",                "V.VALIPI * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS IPI"})
 		aadd (_aOpcoes, {.F., "Valor PIS",                "V.VALPIS * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS PIS"})
@@ -259,7 +263,8 @@ Static Function _Opcoes (_sTipo)
 		aadd (_aOpcoes, {.F., "CNPJ cliente",             "dbo.VA_FORMATA_CGC (SA1.A1_CGC) AS CNPJ_CLI"})
 		aadd (_aOpcoes, {.F., "Valor frete paletizacao",  "V.FRETEPALET * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS FRTPALETIZ"})
 		aadd (_aOpcoes, {.F., "PVCond",                   "V.PVCOND * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END as PVCOND"})
-		aadd (_aOpcoes, {.F., "Valor total NF",           "(" + _sSelVlMer + " - V.PVCOND + V.VALIPI + V.ICMSRET) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VL_TOT_NF"})
+	//	aadd (_aOpcoes, {.F., "Valor total NF",           "(" + _sSelVlMer + " - V.PVCOND + V.VALIPI + V.ICMSRET) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VL_TOT_NF"})
+		aadd (_aOpcoes, {.F., "Valor total NF",           "(" + _sSelVlMer + " - V.PVCOND + V.VALIPI + V.ICMSRET + D2_VALFRE) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VL_TOT_NF"})
 		aadd (_aOpcoes, {.F., "Msg Adicionais",           "RTRIM(C5_MENNOTA) AS MSGADIC"})
 		aadd (_aOpcoes, {.F., "Numero de Serie",          "RTRIM(C6_VANSER) AS NUMSER"})
 		aadd (_aOpcoes, {.F., "Obs do Pedido",            "REPLACE(ISNULL(REPLACE (REPLACE ( REPLACE ( CAST(RTRIM (CAST (C5_OBS AS VARBINARY (8000))) AS VARCHAR (8000)) , char(13), ''), char(10), ''), char(14), ''),''),char(34),' ') AS OBSPED"})
@@ -286,6 +291,7 @@ Static Function _Opcoes (_sTipo)
 		aadd (_aOpcoes, {.F., "Cód CNAE ",                "SA1.A1_CNAE AS CNAE"})
 		aadd (_aOpcoes, {.F., "Desc. CNAE ",              "CC3.CC3_DESC AS CNAE_DESC"})
 		aadd (_aOpcoes, {.F., "Vlr. Funrural ",           "IIF(SAFRA.VLR_FUNRURAL > 0, SAFRA.VLR_FUNRURAL, 0) AS VLR_FUNRURAL"})
+		aadd (_aOpcoes, {.F., "NCM",                      "SB1.B1_POSIPI"})
 	endif
 	// Pre-seleciona opcoes cfe. conteudo anterior.
 	for _nOpcao = 1 to len (_aOpcoes)
