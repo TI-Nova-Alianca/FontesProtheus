@@ -1654,7 +1654,8 @@ static function _Modelo3 (_lSohCompr)
 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem')
 		u_log2 ('debug', _ValType)
 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 nota + 1 linha de totais)
-			@ li, 0 psay 'Producao:              Codigo          Variedade                       Grau  Clas     Kg total        Vlr.total'
+//			@ li, 0 psay 'Producao:              Codigo          Variedade                       Grau  Clas     Kg total        Vlr.total'
+			@ li, 0 psay 'Producao:              Codigo          Variedade                       Grau  Clas     Kg total     Vlr.unit.        Vlr.total'
 			li ++
 			for _nVaried = 1 to len (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem)
 				If li > _nMaxLin - 4
@@ -1669,15 +1670,19 @@ static function _Modelo3 (_lSohCompr)
 					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_desc:TEXT, 30) + ' '
 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_grau:TEXT), '@E 999.9') + '  '
 					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_clas:TEXT, 2) + '  '
-					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_peso:TEXT), _sMascPeso) + ' '
+					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_peso:TEXT), _sMascPeso) + '    '
+
+					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_valTotal:TEXT) / val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_peso:TEXT), _sMascVUni) + ' '
+
 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_valTotal:TEXT), _sMascVTot)
 					@ li, 0 psay _sLinImp
 					li ++
 				else
 
-					@ li, 0 psay '                                                                                --------------    -------------'
+					@ li, 0 psay '                                                                                --------------                  -------------'
 					li ++
-					@ li, 0 psay '                                                                                 ' + transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_peso:TEXT), _sMascPeso) + ' ' + transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_valTotal:TEXT), _sMascVTot)
+			//		@ li, 0 psay '                                                                                 ' + transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_peso:TEXT), _sMascPeso) + ' ' + transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_valTotal:TEXT), _sMascVTot)
+					@ li, 0 psay '                                                                                 ' + transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_peso:TEXT), _sMascPeso) + '               ' + transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_valTotal:TEXT), _sMascVTot)
 					li += 2
 				endif
 			next
