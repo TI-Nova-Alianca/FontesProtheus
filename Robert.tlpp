@@ -87,6 +87,25 @@ static function _AndaLogo ()
 	u_help ('Nada definido.')
 return
 /*
+	// Testes recontabilizacao NF e titulos
+	cPerg = "ML_LCNF"
+	_sArqLog := 'VA_LCNF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+	U_GravaSX1 (cPerg, '01', 3)  // Recontabilizar o que           [NF Entrada, NF Saida, Movto.bancario]
+	U_GravaSX1 (cPerg, '02', stod ('20210730'))  // Data inicial
+	U_GravaSX1 (cPerg, '03', stod ('20210730'))  // Data final
+	U_GravaSX1 (cPerg, '04', '202103281')  // Nro (docto/NF/titulo) inicial
+	U_GravaSX1 (cPerg, '05', '202103281')  // Nro (docto/NF/titulo) final
+	U_GravaSX1 (cPerg, '06', '')   // Banco (quando mov.banc)inicial
+	U_GravaSX1 (cPerg, '07', 'z')  // Banco (quando mov.banc)final
+	U_GravaSX1 (cPerg, '08', '')   // Agen. (quando mov.banc)inicial
+	U_GravaSX1 (cPerg, '09', 'z')  // Agen. (quando mov.banc)final
+	U_GravaSX1 (cPerg, '10', '')   // Conta (quando mov.banc)inicial
+	U_GravaSX1 (cPerg, '11', 'z')  // Conta (quando mov.banc)final
+	U_GravaSX1 (cPerg, '12', 1)    // Apenas CNAB (quando mov.banc) [So CNAB, Exceto CNAB, Todos]
+	U_GravaSX1 (cPerg, '13', 2)    // Simular ou Executar           [Simular, Executar]
+	u_va_lcnf (.t.)
+return
+/*
 	// Ajusta cadastro produtos em lote
 	sb1 -> (dbsetorder (1))
 	sb5 -> (dbsetorder (1))
