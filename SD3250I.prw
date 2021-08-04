@@ -14,6 +14,7 @@
 // 20/07/2018 - Robert - Passa a gravar a etiqueta em funcao externa.
 //                     - Geracao de laudo do produto acabado com base nos laudos dos produtos consumidos.
 // 04/09/2018 - Robert - Grava za1_apont=S (estava no EnvEtFul.prw)
+// 04/08/2021 - Robert - Removidas chamadas de logs desnecessarias.
 //
 
 // ------------------------------------------------------------------------------------

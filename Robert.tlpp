@@ -87,6 +87,41 @@ static function _AndaLogo ()
 	u_help ('Nada definido.')
 return
 /*
+	// Ajusta cadastro produtos em lote
+	sb1 -> (dbsetorder (1))
+	sb5 -> (dbsetorder (1))
+	sb1 -> (dbgotop ())
+	do while ! sb1 -> (eof ())
+		if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
+			u_log ('ERRO: Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
+		else
+			if sb1 -> b1_tipo == 'MC' .and. sb1 -> b1_agregcu != '1'
+				u_log ('Verificando item', sb1 -> b1_cod, SB1 -> B1_DESC)
+				
+				// Cria variaveis para uso na gravacao do evento de alteracao
+				regtomemory ("SB1", .F., .F.)
+				regtomemory ("SB5", .F., .F.)
+				m->B1_agregcu    = '1'
+				//m->b5_vasisde = 'N'
+
+				// Grava evento de alteracao
+				_oEvento := ClsEvent():new ()
+				_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 10610 - Alterar B1_AGREGCU itens tipo MC', .F.)
+
+				reclock ("SB1", .f.)
+				sb1 -> B1_agregcu = m->B1_agregcu
+				msunlock ()
+				//reclock ("SB5", .f.)
+				//sb5->b5_vasisde = m->b5_vasisde
+				//msunlock ()
+				//exit
+			endif
+		endif
+		sb1 -> (dbskip ())
+	enddo
+return
+*/
+/*
 	// Testes correcao monetaria associados
 	_sArqLog := 'SZI_CM2_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 	U_GravaSX1 ("SZI_CM2", '01', 2)  // Calcular / Descalcular {"Calcular", "Descalcular"}
@@ -118,45 +153,6 @@ return
 	U_GravaSX1 (cPerg, "09", 2)  // Exporta guias? (s/n)
 	U_GravaSX1 (cPerg, "10", '11422401/11128701')  // Lotes de PA a ignorar
 	U_ML_DEC (.t.)
-return
-*/
-/*
-	// Ajusta cadastro produtos em lote
-	sb1 -> (dbsetorder (1))
-	sb5 -> (dbsetorder (1))
-	sb1 -> (dbgotop ())
-	do while ! sb1 -> (eof ())
-		if sb1 -> b1_tipo $ 'MC/MM'
-			if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
-				u_log ('ERRO: Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
-			else
-				u_log ('Verificando item', sb1 -> b1_cod, SB1 -> B1_DESC)
-				if sb5 -> b5_vasisde = 'S'
-				
-					// Cria variaveis para uso na gravacao do evento de alteracao
-					regtomemory ("SB1", .F., .F.)
-					regtomemory ("SB5", .F., .F.)
-					//m->B1_CONTSOC = 'S'
-					//m->B1_INSS    = 'S'
-					m->b5_vasisde = 'N'
-					
-					// Grava evento de alteracao
-					_oEvento := ClsEvent():new ()
-					_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 10573 - Itens de manut.nao devem ir para SISDEVIN', .F.)
-
-					reclock ("SB1", .f.)
-					//sb1 -> B1_CONTSOC = m->B1_CONTSOC
-					//sb1 -> B1_INSS    = m->B1_INSS
-					msunlock ()
-					reclock ("SB5", .f.)
-					sb5->b5_vasisde = m->b5_vasisde
-					msunlock ()
-					//exit
-				endif
-			endif
-		endif
-		sb1 -> (dbskip ())
-	enddo
 return
 */
 /*
