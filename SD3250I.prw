@@ -20,8 +20,6 @@
 User Function SD3250I()
 	Local _aAreaAnt := U_ML_SRArea ()
 	
-	u_logIni ()
-	
 	// Atualiza etiqueta e envia para FullWMS
 	if ! empty (M->D3_VAETIQ)
 		za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP
@@ -40,7 +38,6 @@ User Function SD3250I()
 	processa ({|| _AtuLaudo ()})
 
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
 Return
 
 
@@ -85,7 +82,6 @@ static function _AtuLaudo ()
 	local _aLaudos := {}
 	local _sLaudo := ""
 
-	u_logIni ()
 	procregua (100)
 	incproc ("Atualizando laudos laboratoriais.")
 	 
@@ -122,5 +118,4 @@ static function _AtuLaudo ()
 	U_ZAFM (_aLaudos, sd3 -> d3_cod, sd3 -> d3_op, sd3 -> d3_lotectl, sd3 -> d3_local, 'Ensaio gerado pelo apontamento da OP ' + sd3 -> d3_op)
 
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
 return

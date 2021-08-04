@@ -57,6 +57,7 @@
 // 28/05/2021 - Cláudia - Comentariado o if conforme GLPI: 9161
 // 22/06/2021 - Robert  - Criada acao AgendaEntregaFaturamento (GLPI 10219).
 // 12/07/2021 - Robert  - Criado acao ApontarProducao (GLPI 10479).
+// 03/08/2021 - Robert  - Apontamento de producao passa a aceitar mais de uma etiqueta na mesma chamada (GLPI 10633)
 //
 
 // ----------------------------------------------------------------------------------------------------------
@@ -1678,89 +1679,124 @@ return
 // --------------------------------------------------------------------------
 // Gera apontamento de producao.
 static function _ApontProd ()
-	local _sOPApont  := ''
 	local _sEtqApont := ''
 	local _dDtProd   := ctod ('')
 	local _sTnoProd  := ''
 	local _aAutoSD3  := {}
 	local _sMotProd  := ''
+	local _sSeqEtiq  := ''
+	local _lEtiqOK   := .T.
+	local _sMsgEtiq  := ''
 
-	if empty (_sErros) ; _sOPApont  = _ExtraiTag ("_oXML:_WSAlianca:_OP", .F., .F.) ; endif
-	if empty (_sErros) ; _sEtqApont = _ExtraiTag ("_oXML:_WSAlianca:_Etiq", .F., .F.) ; endif
-	if empty (_sErros) ; _dDtProd   = stod (_ExtraiTag ("_oXML:_WSAlianca:_DtProd", .T., .T.)) ; endif
 	if empty (_sErros) ; _sTnoProd  = _ExtraiTag ("_oXML:_WSAlianca:_Turno", .T., .F.) ; endif
+	if empty (_sErros) ; _dDtProd   = stod (_ExtraiTag ("_oXML:_WSAlianca:_DtProd", .T., .T.)) ; endif
 	if empty (_sErros) ; _sMotProd  = _ExtraiTag ("_oXML:_WSAlianca:_Motivo", .F., .F.) ; endif
-	_sOPApont = U_TamFixo (alltrim (_sOPApont), 14, ' ')  // Deixa com o mesmo tamanho do D3_OP
 
-	if empty (_sErros) .and. empty (_sEtqApont) .and. empty (_sOPApont)
-		_sErros += "Deve ser informada OP ou numero da etiqueta."
-	endif
-
-	// A maioria das chamadas deve vir acompanhada de um numero de etiqueta.
-	if empty (_sErros) .and. ! empty (_sEtqApont)
-		za1 -> (dbsetorder (1))  // ZA1_FILIAL, ZA1_CODIGO, R_E_C_N_O_, D_E_L_E_T_
-		if ! za1 -> (dbseek (xfilial ("ZA1") + _sEtqApont, .F.))
-			_sErros += "Etiqueta '" + _sEtqApont + "' nao encontrada."
-		else
-			if za1 -> za1_apont == 'S'
-				_sErros += "Essa etiqueta ja gerou apontamento de producao."
-			endif
-			if za1 -> za1_apont == 'E'
-				_sErros += "Essa etiqueta ja foi apontada e ESTORNADA. Gere nova etiqueta."
-			endif
-			if za1 -> za1_impres != 'S'
-				_sErros += "Etiqueta ainda nao impressa."
-			endif
-			if empty (za1 -> za1_op)
-				_sErros += "Etiqueta '" + _sEtqApont + "' nao relacionada com nenhuma OP."
+	// Loop de repeticao para o caso de haver mais de uma OP ou mais de uma etiqueta.
+	_sSeqEtiq = '01'
+	do while _sSeqEtiq <= '99'  // Mais que isso jah tah de brincadeira, neh ?
+		U_Log2 ('debug', 'Iniciando com _sSeqEtiq = ' + _sSeqEtiq)
+		_lEtiqOK  = .T.
+		_sMsgEtiq = ''
+		if empty (_sErros)
+			_sEtqApont = _ExtraiTag ("_oXML:_WSAlianca:_Etiq" + _sSeqEtiq, .F., .F.)
+		endif
+		U_Log2 ('debug', '_sEtqApont = ' + _sEtqApont)
+		if empty (_sErros) .and. empty (_sEtqApont)
+			// Se eu ainda estava na primeira etiqueta e a tag encontra-se vazia, eh por que nao veio nenhuma etiqueta.
+			if _sSeqEtiq == '01'
+				_sErros += "Nao foi informado nenhum numero de etiqueta."
+				exit
 			else
-				if ! empty (_sOPApont)
-					if za1 -> za1_op != _sOPApont
-						_sErros += "Etiqueta '" + _sEtqApont + "' relacionada com a OP '" + alltrim (za1 -> za1_op) + "'. Nao confere com a OP informada (" + alltrim (_sOPApont) + ")."
-					endif
+				// Jah processei todas as etiquetas e posso sair do loop
+				U_Log2 ('debug', 'Jah processei todas as etiquetas e posso sair do loop')
+				exit
+			endif
+		endif
+
+		// Validacoes etiqueta.
+		if empty (_sErros) .and. ! empty (_sEtqApont)
+			za1 -> (dbsetorder (1))  // ZA1_FILIAL, ZA1_CODIGO, R_E_C_N_O_, D_E_L_E_T_
+			if ! za1 -> (dbseek (xfilial ("ZA1") + _sEtqApont, .F.))
+				_sMsgEtiq += "Etiqueta '" + _sEtqApont + "' nao encontrada."
+				_lEtiqOK = .F.
+			else
+				if za1 -> za1_apont == 'S'
+					_sMsgEtiq += "Etiqueta '" + _sEtqApont + "' ja gerou apontamento de producao."
+					_lEtiqOK = .F.
+				endif
+				if za1 -> za1_apont == 'E'
+					_sMsgEtiq += "Etiqueta '" + _sEtqApont + "' ja foi apontada e ESTORNADA. Nao pode ser apontada novamente. Gere nova etiqueta."
+					_lEtiqOK = .F.
+				endif
+				if za1 -> za1_impres != 'S'
+					_sMsgEtiq += "Etiqueta '" + _sEtqApont + "' ainda nao impressa."
+					_lEtiqOK = .F.
+				endif
+				if empty (za1 -> za1_op)
+					_sMsgEtiq += "Etiqueta '" + _sEtqApont + "' nao relacionada com nenhuma OP."
+					_lEtiqOK = .F.
 				else
-					_sOPApont = za1 -> za1_op
+					sc2 -> (dbsetorder (1))  // C2_FILIAL, C2_NUM, C2_ITEM, C2_SEQUEN, C2_ITEMGRD, R_E_C_N_O_, D_E_L_E_T_
+					if ! sc2 -> (dbseek (xfilial ("SC2") + za1 -> za1_op, .F.))
+						_sMsgEtiq += "OP '" + alltrim (za1 -> za1_op) + "' (relacionada com a etiqueta '" + _sEtqApont + "') nao foi localizada."
+						_lEtiqOK = .F.
+					else
+						if ! empty (sc2 -> c2_datrf)
+							_sMsgEtiq += "OP '" + alltrim (za1 -> za1_op) + "' (relacionada com a etiqueta '" + _sEtqApont + "') ja encontra-se encerrada."
+							_lEtiqOK = .F.
+						endif
+					endif
 				endif
 			endif
 		endif
-	endif
 
-	if ! empty (_sErros) .and. ! empty (_sOPApont)
-		sc2 -> (dbsetorder (1))  // C2_FILIAL, C2_NUM, C2_ITEM, C2_SEQUEN, C2_ITEMGRD, R_E_C_N_O_, D_E_L_E_T_
-		if ! sc2 -> (dbseek (xfilial ("SC2") + _sOPApont, .F.))
-			_sErros += "OP '" + alltrim (_sOPApont) + "' nao localizada."
-		else
-			if ! empty (sc2 -> c2_datrf)
-				_sErros += "OP '" + alltrim (_sOPApont) + "' ja encontra-se encerrada."
+		if _lEtiqOK
+			if empty (_sErros)
+				_aAutoSD3 = {}
+				aadd (_aAutoSD3, {"D3_OP",      za1 -> za1_op,  NIL})
+				aadd (_aAutoSD3, {"D3_VAETIQ",  za1 -> za1_codigo, NIL})
+				aadd (_aAutoSD3, {"D3_VADTPRD", _dDtProd,   NIL})
+				aadd (_aAutoSD3, {"D3_VATURNO", _sTnoProd,  NIL})
+				if ! empty (_sMotProd)
+					aadd (_aAutoSD3, {"D3_VAMOTIV", _sMotProd,  NIL})
+				endif
+				aadd (_aAutoSD3, {"ATUEMP",     "T",        NIL})  // Para que sempre seja feita a baixa dos empenhos.
+				_aAutoSD3 := aclone (U_OrdAuto (_aAutoSD3))
+				U_Log2 ('debug', _aAutoSD3)
+				lMsErroAuto  := .F.
+				_sErroAuto := ''
+				U_Log2 ('info', 'Executando MATA250')
+				MATA250 (_aAutoSD3, 3)
+				If lMsErroAuto
+					if ! empty (_sErroAuto)
+						_sMsgEtiq += _sErroAuto + '; '
+						_lEtiqOK = .F.
+					endif
+					if ! empty (NomeAutoLog ())
+						_sMsgEtiq += U_LeErro (memoread (NomeAutoLog ())) + '; '
+						_lEtiqOK = .F.
+					endif
+					u_log2 ('erro', 'Rotina automatica retornou erro: ' + _sErros)
+					// Se a variavel _sErros tiver dados, o processo vai ser abortado.
+					// Vou limpar por garantia, por que ela eh atualizada dentro da funcao U_Help, que muitas vezes eh
+					// usada em pontos de entrada e validacoes de campo.
+					_sErros = ''
+				else
+					_sMsgEtiq += "Apontamento gerado com sucesso (seq." + sd3 -> d3_numseq + ")"
+				endif
 			endif
 		endif
-	endif
 
-	if empty (_sErros)
-		aadd (_aAutoSD3, {"D3_OP",      _sOPApont,  NIL})
-		aadd (_aAutoSD3, {"D3_VAETIQ",  _sEtqApont, NIL})
-		aadd (_aAutoSD3, {"D3_VADTPRD", _dDtProd,   NIL})
-		aadd (_aAutoSD3, {"D3_VATURNO", _sTnoProd,  NIL})
-		if ! empty (_sMotProd)
-			aadd (_aAutoSD3, {"D3_VAMOTIV", _sMotProd,  NIL})
-		endif
-		aadd (_aAutoSD3, {"ATUEMP",     "T",        NIL})  // Para que sempre seja feita a baixa dos empenhos.
-		_aAutoSD3 := aclone (U_OrdAuto (_aAutoSD3))
-		U_Log2 ('debug', _aAutoSD3)
-		lMsErroAuto  := .F.
-		_sErroAuto := ''
-		U_Log2 ('info', 'Executando MATA250')
-		MATA250 (_aAutoSD3, 3)
-		If lMsErroAuto
-			if ! empty (_sErroAuto)
-				_sErros += _sErroAuto + '; '
-			endif
-			if ! empty (NomeAutoLog ())
-				_sErros += U_LeErro (memoread (NomeAutoLog ())) + '; '
-			endif
-			u_log2 ('erro', 'Rotina automatica retornou erro: ' + _sErros)
-		else
-			_sMsgRetWS += "Apontamento gerado com sucesso (seq." + sd3 -> d3_numseq + ")"
-		endif
-	endif
+		U_Log2 ('debug', _sMsgEtiq)
+
+		// Monta trecho da mensagem de retorno referente a etiqueta atual.
+		_sMsgRetWS += '<resultetiq' + _sSeqEtiq + '>'
+		_sMsgRetWS += '<etiq>' + _sEtqApont + '</etiq>'
+		_sMsgRetWS += '<result>' + iif (_lEtiqOK, 'OK', 'ERRO') + '</result>'
+		_sMsgRetWS += '<msg>' + _sMsgEtiq + '</msg>'
+		_sMsgRetWS += '</resultetiq' + _sSeqEtiq + '>'
+
+		_sSeqEtiq = soma1 (_sSeqEtiq)
+	enddo
 return
