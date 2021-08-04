@@ -11,6 +11,8 @@
 // #Modulos           #ATF
 
 // Historico de alteracoes:
+// 30/07/2021 - Robert - Compilado em producao (GLPI 10239)
+//                     - Grava evento para posterior consulta (GLPI 10239)
 //
 
 // --------------------------------------------------------------------------
@@ -38,6 +40,8 @@ return
 static function _Gera (_sCodBase, _sItem)
 	local _oSQL     := NIL
 	local _aRetProc := {}
+	local _nRetProc := 0
+	local _oEvento  := NIL
 
 	procregua (10)
 	incproc ()
@@ -47,6 +51,20 @@ static function _Gera (_sCodBase, _sItem)
 	_oSQL:Log ()
 	_aRetProc = aclone (_oSQL:Qry2Array (.F., .F.))
 	U_Log2 ('debug', _aRetProc)
+	
+	// Grava evento para posterior consulta
+	_oEvento := ClsEvent ():New ()
+	_oEvento:Texto := 'Ajuste tabelas SN3 e SN4 (programa ' + funname () + ')' + chr (13) + chr (10)
+	_oEvento:Texto += _oSQL:_sQuery + chr (13) + chr (10)
+	_oEvento:Texto += 'Resultado:' + chr (13) + chr (10)
+	for _nRetProc = 1 to len (_aRetProc)
+		_oEvento:Texto += alltrim (_aRetProc [_nRetProc, 1]) + ' ' + alltrim (_aRetProc [_nRetProc, 2]) + chr (13) + chr (10)
+	next
+	_oEvento:CodEven = 'SN3001'
+	_oEvento:Alias   = 'SN3'
+	_oEvento:Chave   = _sCodBase + '/' + _sItem
+	_oEvento:Grava ()
+
 	u_showarray (_aRetProc)
 return
 
