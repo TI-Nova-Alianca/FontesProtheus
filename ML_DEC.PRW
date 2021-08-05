@@ -81,6 +81,7 @@
 // 06/05/2021 - Robert - Inserida mensagem de aviso quando codigo CR zerado no reg. tipo 21 (GLPI 9987)
 // 07/07/2021 - Robert - Desconsidera entradas de produtos oriundos de outros paises (GLPI 10436).
 // 26/07/2021 - Robert - Criado parametro para informar lotes (PA) a desconsiderar (GLPI 10436).
+// 05/08/2021 - Robert - Campo LT_IGNORAR (GLPI 10436) nao havia sido criado para as filiais (GLPI 10653).
 //
 
 // --------------------------------------------------------------------------
@@ -345,6 +346,8 @@ Static Function _Tipo20N ()
 			_oSQL:_sQuery +=      " AND SF2.F2_CARGA = SUBSTRING (tb_wms_lotes.documento_id, 6, 6)"  // coluna saida_id segue definicao da view v_wms_pedido.
 			_oSQL:_sQuery +=      " AND tb_wms_lotes.cod_item = SD2.D2_COD"
 			_oSQL:_sQuery +=   "), 0) AS LT_IGNORAR"
+		else
+			_oSQL:_sQuery +=   ",0 AS LT_IGNORAR"
 		endif
 
 		_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD2") + " SD2 "
