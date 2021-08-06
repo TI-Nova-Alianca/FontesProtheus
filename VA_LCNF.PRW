@@ -134,13 +134,15 @@ Static Function _Gera()
 					loop
 				endif
 				if mv_par13 == 2  // Executar
-					_oEvento := ClsEvent():new ()
-					_oEvento:CodEven   = "SE5001"
-					_oEvento:Texto     = "Limpando campo E5_LA"
-					_oEvento:Recno     = se5 -> (recno ())
-					_oEvento:Alias     = 'SE5'
-					_oEvento:CodAlias  = se5 -> e5_prefixo + se5 -> e5_numero + se5 -> e5_parcela
-					_oEvento:Grava ()
+					if ! "TESTE" $ upper (GetEnvServer ())  // Por questao de performance
+						_oEvento := ClsEvent():new ()
+						_oEvento:CodEven   = "SE5001"
+						_oEvento:Texto     = "Limpando campo E5_LA"
+						_oEvento:Recno     = se5 -> (recno ())
+						_oEvento:Alias     = 'SE5'
+						_oEvento:CodAlias  = se5 -> e5_prefixo + se5 -> e5_numero + se5 -> e5_parcela
+						_oEvento:Grava ()
+					endif
 					reclock ("SE5", .F.)
 					se5 -> e5_la = ""
 					msunlock ()
@@ -153,13 +155,15 @@ Static Function _Gera()
 					if fk2 -> (dbseek (xfilial ("FK2") + se5 -> e5_idorig, .F.))
 						if mv_par13 == 2  // Executar
 							U_Log2 ('debug', 'Encontrei FK2')
-							_oEvento := ClsEvent():new ()
-							_oEvento:CodEven   = "FK2001"
-							_oEvento:Texto     = "Limpando campo FK2_LA"
-							_oEvento:Recno     = fk2 -> (recno ())
-							_oEvento:Alias     = 'FK2'
-							_oEvento:CodAlias  = fk2 -> fk2_idfk2
-							_oEvento:Grava ()
+							if ! "TESTE" $ upper (GetEnvServer ())  // Por questao de performance
+								_oEvento := ClsEvent():new ()
+								_oEvento:CodEven   = "FK2001"
+								_oEvento:Texto     = "Limpando campo FK2_LA"
+								_oEvento:Recno     = fk2 -> (recno ())
+								_oEvento:Alias     = 'FK2'
+								_oEvento:CodAlias  = fk2 -> fk2_idfk2
+								_oEvento:Grava ()
+							endif
 							reclock ("FK2", .f.)
 							fk2 -> fk2_la = ''
 							msunlock ()
@@ -178,13 +182,15 @@ Static Function _Gera()
 									if fk5 -> (dbseek (xfilial ("FK5") + fka -> fka_idorig, .F.))
 										U_Log2 ('debug', 'Encontrei FK5')
 										if mv_par13 == 2  // Executar
-											_oEvento := ClsEvent():new ()
-											_oEvento:CodEven   = "FK5001"
-											_oEvento:Texto     = "Limpando campo FK5_LA"
-											_oEvento:Recno     = fk5 -> (recno ())
-											_oEvento:Alias     = 'FK5'
-											_oEvento:CodAlias  = fk5 -> fk5_idmov
-											_oEvento:Grava ()
+											if ! "TESTE" $ upper (GetEnvServer ())  // Por questao de performance
+												_oEvento := ClsEvent():new ()
+												_oEvento:CodEven   = "FK5001"
+												_oEvento:Texto     = "Limpando campo FK5_LA"
+												_oEvento:Recno     = fk5 -> (recno ())
+												_oEvento:Alias     = 'FK5'
+												_oEvento:CodAlias  = fk5 -> fk5_idmov
+												_oEvento:Grava ()
+											endif
 											reclock ("FK5", .f.)
 											fk5 -> fk5_la = ''
 											msunlock ()

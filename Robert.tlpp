@@ -86,15 +86,87 @@ static function _AndaLogo ()
 	incproc ()
 	u_help ('Nada definido.')
 return
+
 /*
-	// Testes recontabilizacao NF e titulos
+	// Tivemos um grupo de titulos que nao recontabiliza por que ficou gravado numero de CNAB (GLPI 10644)
+	_sArqLog := 'GLPI_10644.log'
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "select SE5.R_E_C_N_O_"
+	_oSQL:_sQuery += " FROM SE5010 SE5"
+	_oSQL:_sQuery += " WHERE SE5.D_E_L_E_T_ = '' AND E5_FILIAL = '01' AND E5_DATA = '20210730' AND SE5.E5_PREFIXO = '30 ' AND SE5.E5_RECPAG = 'P'"
+	_oSQL:_sQuery += " AND NOT EXISTS (SELECT * FROM CT2010 CT2 "
+	_oSQL:_sQuery +=                  " WHERE CT2.D_E_L_E_T_ = '' AND CT2.CT2_FILIAL = SE5.E5_FILIAL AND CT2.CT2_DATA = SE5.E5_DATA AND CT2.CT2_KEY LIKE SE5.E5_FILIAL + SE5.E5_TIPODOC + SE5.E5_PREFIXO + SE5.E5_NUMERO + SE5.E5_PARCELA + SE5.E5_TIPO + SE5.E5_DATA)"
+	_aDados = ACLONE (_oSQL:Qry2Array (.f., .f.))
+	for _nDado = 1 to len (_aDados)
+		se5 -> (dbgoto (_aDados [_nDado, 1]))
+		U_Log2 ('debug', SE5 -> E5_NUMERO + ' ' + SE5 -> E5_BENEF)
+		_oEvento := ClsEvent():new ()
+		_oEvento:CodEven   = "SE5001"
+		_oEvento:Texto     = "Limpando campo E5_LA e E5_DOCUMEN (GLPI 10644)"
+		_oEvento:Recno     = se5 -> (recno ())
+		_oEvento:Alias     = 'SE5'
+		_oEvento:CodAlias  = se5 -> e5_prefixo + se5 -> e5_numero + se5 -> e5_parcela
+		_oEvento:Grava ()
+		reclock ("SE5", .F.)
+		se5 -> e5_documen = ''
+		se5 -> e5_la = ""
+		msunlock ()
+		if ! empty (se5 -> e5_idorig)
+			fk2 -> (dbsetorder (1))  // FK2_FILIAL, FK2_IDFK2, R_E_C_N_O_, D_E_L_E_T_
+			if fk2 -> (dbseek (xfilial ("FK2") + se5 -> e5_idorig, .F.))
+				U_Log2 ('debug', 'Encontrei FK2')
+				_oEvento := ClsEvent():new ()
+				_oEvento:CodEven   = "FK2001"
+				_oEvento:Texto     = "Limpando campo FK2_LA e FK2_DOC (GLPI 10644)"
+				_oEvento:Recno     = fk2 -> (recno ())
+				_oEvento:Alias     = 'FK2'
+				_oEvento:CodAlias  = fk2 -> fk2_idfk2
+				_oEvento:Grava ()
+				reclock ("FK2", .f.)
+				fk2 -> fk2_la = ''
+				fk2 -> fk2_doc = ''
+				msunlock ()
+				fka -> (dbsetorder (3))  // FKA_FILIAL, FKA_TABORI, FKA_IDORIG, R_E_C_N_O_, D_E_L_E_T_
+				if fka -> (dbseek (xfilial ("FKA") + 'FK2' + fk2 -> fk2_idfk2, .F.))
+					U_Log2 ('debug', 'Encontrei FKA')
+					_sIdFKA = fka -> fka_idproc
+					fka -> (dbsetorder (2))  // FKA_FILIAL, FKA_IDPROC, FKA_IDORIG, FKA_TABORI, R_E_C_N_O_, D_E_L_E_T_
+					fka -> (dbseek (xfilial ("FKA") + _sIdFKA, .T.))
+					do while ! fka -> (eof ()) .and. fka -> fka_filial == xfilial ("FKA") .and. fka -> fka_idproc == _sIdFKA
+						if fka -> fka_tabori == 'FK5'
+							U_Log2 ('debug', 'Procurando FK5 com ID = ' + fka -> fka_idorig)
+							fk5 -> (dbsetorder (1))  // FK5_FILIAL, FK5_IDMOV, R_E_C_N_O_, D_E_L_E_T_
+							if fk5 -> (dbseek (xfilial ("FK5") + fka -> fka_idorig, .F.))
+								U_Log2 ('debug', 'Encontrei FK5')
+								_oEvento := ClsEvent():new ()
+								_oEvento:CodEven   = "FK5001"
+								_oEvento:Texto     = "Limpando campo FK5_LA e FK5_DOC (GLPI 10644)"
+								_oEvento:Recno     = fk5 -> (recno ())
+								_oEvento:Alias     = 'FK5'
+								_oEvento:CodAlias  = fk5 -> fk5_idmov
+								_oEvento:Grava ()
+								reclock ("FK5", .f.)
+								fk5 -> fk5_la = ''
+								fk5 -> fk5_doc = ''
+								msunlock ()
+							endif
+						endif
+						fka -> (dbskip ())
+					enddo
+				endif
+			endif
+		endif
+	next
+return
+/*
+	// Testes recontabilizacao NF e titulos.
 	cPerg = "ML_LCNF"
 	_sArqLog := 'VA_LCNF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 	U_GravaSX1 (cPerg, '01', 3)  // Recontabilizar o que           [NF Entrada, NF Saida, Movto.bancario]
 	U_GravaSX1 (cPerg, '02', stod ('20210730'))  // Data inicial
 	U_GravaSX1 (cPerg, '03', stod ('20210730'))  // Data final
-	U_GravaSX1 (cPerg, '04', '202103281')  // Nro (docto/NF/titulo) inicial
-	U_GravaSX1 (cPerg, '05', '202103281')  // Nro (docto/NF/titulo) final
+	U_GravaSX1 (cPerg, '04', '')  // Nro (docto/NF/titulo) inicial
+	U_GravaSX1 (cPerg, '05', '')  // Nro (docto/NF/titulo) final
 	U_GravaSX1 (cPerg, '06', '')   // Banco (quando mov.banc)inicial
 	U_GravaSX1 (cPerg, '07', 'z')  // Banco (quando mov.banc)final
 	U_GravaSX1 (cPerg, '08', '')   // Agen. (quando mov.banc)inicial
@@ -105,6 +177,7 @@ return
 	U_GravaSX1 (cPerg, '13', 2)    // Simular ou Executar           [Simular, Executar]
 	u_va_lcnf (.t.)
 return
+*/
 /*
 	// Ajusta cadastro produtos em lote
 	sb1 -> (dbsetorder (1))
