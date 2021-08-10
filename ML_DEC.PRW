@@ -80,6 +80,8 @@
 // 05/04/2021 - Robert - Melhorada msg de aviso quando fornecedor nao tem registro no MA informado.
 // 06/05/2021 - Robert - Inserida mensagem de aviso quando codigo CR zerado no reg. tipo 21 (GLPI 9987)
 // 07/07/2021 - Robert - Desconsidera entradas de produtos oriundos de outros paises (GLPI 10436).
+// 26/07/2021 - Robert - Criado parametro para informar lotes (PA) a desconsiderar (GLPI 10436).
+// 05/08/2021 - Robert - Campo LT_IGNORAR (GLPI 10436) nao havia sido criado para as filiais (GLPI 10653).
 //
 
 // --------------------------------------------------------------------------
@@ -92,7 +94,6 @@ User Function ml_dec (_lAutomat)
 	private _lAuto    := iif (_lAutomat == NIL, .F., _lAutomat)
 	private _sGranel  := ""
 	private _sSOper   := ""
-	U_LogId ()
 
 	Private cPerg   := "ML_DEC"
 	_ValidPerg ()
@@ -203,12 +204,9 @@ Static Function GeraTxt()
 	_Tipo11 ()  // Dados complementares da empresa
 	if mv_par03 == 1  // Movto. mensal
 		_Tipo20N ()  // Notas de venda de engarrafados
-		u_log ('_xTotLit apos tipo 20N:', _xtotlit)
 		_Tipo20D ()  // Notas de devolucao de engarrafados
-		u_log ('_xTotLit apos tipo 20D:', _xtotlit)
 		if mv_par09 == 1
 			_Tipo30S  ()  // Movimentacao a granel Saidas.
-			u_log ('_xTotLit apos tipo 30S:', _xtotlit)
 			_Tipo30E  ()  // Movimentacao a granel Entradas.
 		endif
 	elseif mv_par03 == 2  // Entradas de uvas
@@ -270,7 +268,8 @@ Static Function GeraTxt()
 	u_ArqTrb ("FechaTodos",,,, @_aArqTrb)
 	if empty (_sErros)
 		if !empty (_aTotOper)
-			u_log ("Resumo com Totais por Operacao:", _aTotOper)
+			u_log2 ('info', "Resumo com Totais por Operacao:")
+			u_log2 ('info', _aTotOper)
 			if ! _lAuto
 				u_showarray (_aTotOper, "Resumo com Totais por Operacao ")
 			endif
@@ -320,115 +319,150 @@ Return
 // --------------------------------------------------------------------------
 Static Function _Tipo20N ()
 	local _sTipoDocF := ''
-	local _sQry20    := ''
-	//local _sQry20T   := ''
+//	local _sQry20    := ''
 	local _sPos      := ''
 	local _vTotLit   := 0
 	local _lContinua := .T.
 	local _sDestino  := ""
+	local _nQtTotNF  := 0
+	local _nReg20S   := 0
+	//local _sNF20S    := NIL
+	local _oSQL      := NIL
 
-	u_logIni ()
 	incproc ('Registro(s) ' + procname ())
 
 	if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT  D2_DOC, D2_SERIE, D2_EMISSAO, F4_VASISEN, F2_EST, B1_COD, D2_UM, D2_QUANT, B1_LITROS, F2_DOC, D2_TIPO, "
+		_oSQL:_sQuery +=        "  D2_COD, D2_TES, F2_CLIENTE, F2_LOJA, B1_DESC, ISNULL(B8_VACRSIS, '') AS CODCRSIS, D2_LOTECTL "
 
-		_sQry20 := ""
-		_sQry20 += " SELECT  D2_DOC, D2_SERIE, D2_EMISSAO, F4_VASISEN, F2_EST, B1_COD, D2_UM, D2_QUANT, B1_LITROS, F2_DOC, D2_TIPO, "
-		_sQry20 +=        "  D2_COD, D2_TES, F2_CLIENTE, F2_LOJA, B1_DESC, ISNULL(B8_VACRSIS, '') AS CODCRSIS, D2_LOTECTL "
-		_sQry20 +=   " FROM " + RetSQLName ("SD2") + " SD2 "
-		_sQry20 +=   "	LEFT JOIN " + RetSQLName ("SB8") + " SB8 "
-		_sQry20 +=   "		ON (SB8.D_E_L_E_T_ = ''"
-		_sQry20 +=   "			AND SB8.B8_FILIAL  = SD2.D2_FILIAL"
-		_sQry20 +=   "			AND SB8.B8_PRODUTO = SD2.D2_COD"
-		_sQry20 +=   "			AND SB8.B8_LOCAL   = SD2.D2_LOCAL"
-		_sQry20 +=   "			AND SB8.B8_LOTECTL = SD2.D2_LOTECTL),"
-		_sQry20 +=              RetSQLName ("SB1") + " SB1, "
-		_sQry20 +=              RetSQLName ("SB5") + " SB5, "
-		_sQry20 +=              RetSQLName ("SF4") + " SF4, "
-		_sQry20 +=              RetSQLName ("SF2") + " SF2 "
-		_sQry20 +=  " WHERE SF4.D_E_L_E_T_ = '' "
-		_sQry20 +=    " AND SD2.D2_EMISSAO BETWEEN '" + dtos (mv_par01) + "' AND '" + dtos (mv_par02) + "' "
-		_sQry20 +=    " AND SB1.D_E_L_E_T_ = '' "
-		_sQry20 +=    " AND SB5.D_E_L_E_T_ = '' "
-		_sQry20 +=    " AND SF2.D_E_L_E_T_ = '' "
-		_sQry20 +=    " AND SD2.D_E_L_E_T_ = '' "
-		_sQry20 +=    " AND SB5.B5_COD     = SB1.B1_COD "
-		_sQry20 +=    " AND SB5.B5_VASISDE = 'S' "
-		_sQry20 +=    " AND SB1.B1_GRPEMB  <> '18' "  // DIFERENTE DE GRANEL, POIS O GRANEL VAI PELAS GUIAS DE LIVRE TRANSITO.
-		_sQry20 +=    " AND SF2.F2_FILIAL  = '" + xfilial ("SF2") + "' "
-		_sQry20 +=    " AND SD2.D2_FILIAL  = '" + xfilial ("SD2") + "' "
-		_sQry20 +=    " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "' "
-		_sQry20 +=    " AND SB5.B5_FILIAL  = '" + xfilial ("SB5") + "' "
-		_sQry20 +=    " AND SF2.F2_TIPO NOT IN ('C', 'I', 'P') "
-		_sQry20 +=    " AND SD2.D2_COD     = SB1.B1_COD "
-		_sQry20 +=    " AND SD2.D2_DOC     = SF2.F2_DOC "
-		_sQry20 +=    " AND SD2.D2_SERIE   = SF2.F2_SERIE "
-		_sQry20 +=    " AND SD2.D2_TES     = SF4.F4_CODIGO "
-		_sQry20 +=    " AND SF4.F4_VASISEN <> '99' "
-
-		// Notas de dez/2019 que continham apenas suco e cujas guias foram digitadas diretamente no site do Sisdevin
-		//u_log (cFilAnt, mv_par01, mv_par02)
-		if cFilAnt == '01' .and. month (mv_par01) == 12 .and. year (mv_par01) == 2019 .and. month (mv_par02) == 12 .and. year (mv_par02) == 2019
-			_sQry20 +=    " AND D2_DOC NOT IN ('000168332','000168347','000168351','000168352','000168353','000168355','000168356','000168357','000168367','000168378','000168397','000168420','000168425','000168429','000168430','000168439')"
-			_sQry20 +=    " AND D2_DOC NOT IN ('000168450','000168459','000168460','000168492','000168505','000168508','000168529','000168530','000168541','000168545','000168546','000168554','000168555','000168556','000168564','000168565')"
-			_sQry20 +=    " AND D2_DOC NOT IN ('000168575','000168584','000168588','000168591','000168597','000168601','000168606','000168608','000168609','000168624','000168625','000168640','000168645','000168646','000168649','000168651')"
-			_sQry20 +=    " AND D2_DOC NOT IN ('000168653','000168657','000168670','000168685','000168688','000168705','000168708','000168716','000168723','000168727','000168732','000168741','000168749','000168750','000168761','000168763')"
-			_sQry20 +=    " AND D2_DOC NOT IN ('000168771','000168772','000168778','000168779','000168780','000168782','000168786','000168789','000168793','000168794','000168812','000168813','000168819','000168820','000168823','000168824')"
-			_sQry20 +=    " AND D2_DOC NOT IN ('000168828','000168830','000168832','000168837','000168842','000168845','000168848','000168849','000168852','000168864','000168865','000168870','000168877','000168878','000168879','000168885')"
-			_sQry20 +=    " AND D2_DOC NOT IN ('000168886','000168887','000168888','000168889','000168890','000168891','000168892','000168893','000168900','000168901','000168902','000168903','000168904','000168906','000168908','000168924')"
-			_sQry20 +=    " AND D2_DOC NOT IN ('000168925','000168927','000168928','000168930','000168931','000168936','000168937','000168938','000168939','000168941','000168953','000168954','000168955','000168956','000168957','000168958')"
-			_sQry20 +=    " AND D2_DOC NOT IN ('000168959','000168961','000168976','000168977','000168982','000168983','000168984','000168985','000168986','000168987','000168988','000169001','000169002','000169007','000169013','000169015')"
-			_sQry20 +=    " AND D2_DOC NOT IN ('000169016','000169018','000169019','000169020','000169021','000169022','000169023','000169024','000169026','000169027','000169036','000169037','000169038','000169043','000169051','000169054')"
-			_sQry20 +=    " AND D2_DOC NOT IN ('000169091','000169092','000169093','000169094','000169095','000169100','000169103','000169105','000169109','000169110','000169111','000169113','000169115','000169123','000169132','000169134')"
-			_sQry20 +=    " AND D2_DOC NOT IN ('000169139','000169145','000169146','000169148','000169150','000169152','000169184','000169193','000169194','000169196','000169197','000169204','000169205','000169207','000169208','000169210')"
-			_sQry20 +=    " AND D2_DOC NOT IN ('000169212','000169213','000169216','000169217','000169218','000169219','000169220','000169221','000169222','000169223','000169227','000169228','000169233','000169234','000169235','000169238')"
-			_sQry20 +=    " AND D2_DOC NOT IN ('000169239','000169240','000169242','000169244','000169246','000169247','000169254','000169255','000169256','000169258','000169261','000169262','000169266','000169274','000169293','000169296')"
-			_sQry20 +=    " AND D2_DOC NOT IN ('000169306','000169307','000169310','000169334','000169346','000169351','000169359','000169365','000169367','000169369','000169375','000169386','000169390','000169399','000169401','000169402')"
-			_sQry20 +=    " AND D2_DOC NOT IN ('000169406','000169408','000169409','000169410','000169411','000169412','000169414','000169419','000169420','000169421','000169422','000169423','000169424','000169425','000169426','000169427')"
-			_sQry20 +=    " AND D2_DOC NOT IN ('000169434','000169435','000169436','000169437','000169438','000169439','000169440','000169441','000169442','000169443','000169444','000169450','000169456','000169459','000169475','000169476')"
-			_sQry20 +=    " AND D2_DOC NOT IN ('000169477','000169478','000169479','000169480','000169481','000169482','000169483','000169484','000169485','000169487','000169490','000169491','000169492','000169502','000169503','000169507')"
-			_sQry20 +=    " AND D2_DOC NOT IN ('000169508','000169512','000169519','000169520','000169523','000169527','000169529','000169530','000169531','000169532','000169533','000169534','000169535','000169536','000169537','000169538')"
-			_sQry20 +=    " AND D2_DOC NOT IN ('000169539','000169540','000169542','000169544','000169549','000169552','000169560','000169561','000169562','000169563','000169564','000169565','00016956')"
+		// Alguns lotes de produtos envasados devem ser desconsiderados, por exemplo produtos com origem internacional (GLPI 10436)
+		// Para isso, busco no FullWMS se foi feita separacao de algum desses lotes e ignoro essa nota.
+		if cFilAnt == '01' .and. ! empty (mv_par10)  // Soh temos FullWMS na filial 01.
+			_oSQL:_sQuery += " ,ISNULL ((SELECT SUM (qtde)"
+			_oSQL:_sQuery +=     " FROM tb_wms_lotes "
+			_oSQL:_sQuery +=    " WHERE tb_wms_lotes.lote in " + FormatIn (alltrim (mv_par10), '/')
+			_oSQL:_sQuery +=      " AND SF2.F2_CARGA = SUBSTRING (tb_wms_lotes.documento_id, 6, 6)"  // coluna saida_id segue definicao da view v_wms_pedido.
+			_oSQL:_sQuery +=      " AND tb_wms_lotes.cod_item = SD2.D2_COD"
+			_oSQL:_sQuery +=   "), 0) AS LT_IGNORAR"
+		else
+			_oSQL:_sQuery +=   ",0 AS LT_IGNORAR"
 		endif
 
-//		_sQry20 +=    " AND SD2.D2_QUANT * SB1.B1_LITROS >= 1"  // Para evitar quantidades muito pequenas (remessas simbolicas, etc)
-		_sQry20 += " ORDER BY SF2.F2_DOC, SF2.F2_SERIE, SD2.D2_COD"
-		u_log (_sQry20)
-		_sNF20S = GetNextAlias ()
+		_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD2") + " SD2 "
+		_oSQL:_sQuery +=   "	LEFT JOIN " + RetSQLName ("SB8") + " SB8 "
+		_oSQL:_sQuery +=   "		ON (SB8.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   "			AND SB8.B8_FILIAL  = SD2.D2_FILIAL"
+		_oSQL:_sQuery +=   "			AND SB8.B8_PRODUTO = SD2.D2_COD"
+		_oSQL:_sQuery +=   "			AND SB8.B8_LOCAL   = SD2.D2_LOCAL"
+		_oSQL:_sQuery +=   "			AND SB8.B8_LOTECTL = SD2.D2_LOTECTL),"
+		_oSQL:_sQuery +=              RetSQLName ("SB1") + " SB1, "
+		_oSQL:_sQuery +=              RetSQLName ("SB5") + " SB5, "
+		_oSQL:_sQuery +=              RetSQLName ("SF4") + " SF4, "
+		_oSQL:_sQuery +=              RetSQLName ("SF2") + " SF2 "
+		_oSQL:_sQuery +=  " WHERE SF4.D_E_L_E_T_ = '' "
+		_oSQL:_sQuery +=    " AND SD2.D2_EMISSAO BETWEEN '" + dtos (mv_par01) + "' AND '" + dtos (mv_par02) + "' "
+		_oSQL:_sQuery +=    " AND SB1.D_E_L_E_T_ = '' "
+		_oSQL:_sQuery +=    " AND SB5.D_E_L_E_T_ = '' "
+		_oSQL:_sQuery +=    " AND SF2.D_E_L_E_T_ = '' "
+		_oSQL:_sQuery +=    " AND SD2.D_E_L_E_T_ = '' "
+		_oSQL:_sQuery +=    " AND SB5.B5_COD     = SB1.B1_COD "
+		_oSQL:_sQuery +=    " AND SB5.B5_VASISDE = 'S' "
+		_oSQL:_sQuery +=    " AND SB1.B1_GRPEMB  <> '18' "  // DIFERENTE DE GRANEL, POIS O GRANEL VAI PELAS GUIAS DE LIVRE TRANSITO.
+		_oSQL:_sQuery +=    " AND SF2.F2_FILIAL  = '" + xfilial ("SF2") + "' "
+		_oSQL:_sQuery +=    " AND SD2.D2_FILIAL  = '" + xfilial ("SD2") + "' "
+		_oSQL:_sQuery +=    " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "' "
+		_oSQL:_sQuery +=    " AND SB5.B5_FILIAL  = '" + xfilial ("SB5") + "' "
+		_oSQL:_sQuery +=    " AND SF2.F2_TIPO NOT IN ('C', 'I', 'P') "
+		_oSQL:_sQuery +=    " AND SD2.D2_COD     = SB1.B1_COD "
+		_oSQL:_sQuery +=    " AND SD2.D2_DOC     = SF2.F2_DOC "
+		_oSQL:_sQuery +=    " AND SD2.D2_SERIE   = SF2.F2_SERIE "
+		_oSQL:_sQuery +=    " AND SD2.D2_TES     = SF4.F4_CODIGO "
+		_oSQL:_sQuery +=    " AND SF4.F4_VASISEN <> '99' "
 
-		DbUseArea(.t.,'TOPCONN',TcGenQry(,,_sQry20), _sNF20S,.F.,.F.)
+		// Notas de dez/2019 que continham apenas suco e cujas guias foram digitadas diretamente no site do Sisdevin
+		if cFilAnt == '01' .and. month (mv_par01) == 12 .and. year (mv_par01) == 2019 .and. month (mv_par02) == 12 .and. year (mv_par02) == 2019
+			_oSQL:_sQuery +=    " AND D2_DOC NOT IN ('000168332','000168347','000168351','000168352','000168353','000168355','000168356','000168357','000168367','000168378','000168397','000168420','000168425','000168429','000168430','000168439')"
+			_oSQL:_sQuery +=    " AND D2_DOC NOT IN ('000168450','000168459','000168460','000168492','000168505','000168508','000168529','000168530','000168541','000168545','000168546','000168554','000168555','000168556','000168564','000168565')"
+			_oSQL:_sQuery +=    " AND D2_DOC NOT IN ('000168575','000168584','000168588','000168591','000168597','000168601','000168606','000168608','000168609','000168624','000168625','000168640','000168645','000168646','000168649','000168651')"
+			_oSQL:_sQuery +=    " AND D2_DOC NOT IN ('000168653','000168657','000168670','000168685','000168688','000168705','000168708','000168716','000168723','000168727','000168732','000168741','000168749','000168750','000168761','000168763')"
+			_oSQL:_sQuery +=    " AND D2_DOC NOT IN ('000168771','000168772','000168778','000168779','000168780','000168782','000168786','000168789','000168793','000168794','000168812','000168813','000168819','000168820','000168823','000168824')"
+			_oSQL:_sQuery +=    " AND D2_DOC NOT IN ('000168828','000168830','000168832','000168837','000168842','000168845','000168848','000168849','000168852','000168864','000168865','000168870','000168877','000168878','000168879','000168885')"
+			_oSQL:_sQuery +=    " AND D2_DOC NOT IN ('000168886','000168887','000168888','000168889','000168890','000168891','000168892','000168893','000168900','000168901','000168902','000168903','000168904','000168906','000168908','000168924')"
+			_oSQL:_sQuery +=    " AND D2_DOC NOT IN ('000168925','000168927','000168928','000168930','000168931','000168936','000168937','000168938','000168939','000168941','000168953','000168954','000168955','000168956','000168957','000168958')"
+			_oSQL:_sQuery +=    " AND D2_DOC NOT IN ('000168959','000168961','000168976','000168977','000168982','000168983','000168984','000168985','000168986','000168987','000168988','000169001','000169002','000169007','000169013','000169015')"
+			_oSQL:_sQuery +=    " AND D2_DOC NOT IN ('000169016','000169018','000169019','000169020','000169021','000169022','000169023','000169024','000169026','000169027','000169036','000169037','000169038','000169043','000169051','000169054')"
+			_oSQL:_sQuery +=    " AND D2_DOC NOT IN ('000169091','000169092','000169093','000169094','000169095','000169100','000169103','000169105','000169109','000169110','000169111','000169113','000169115','000169123','000169132','000169134')"
+			_oSQL:_sQuery +=    " AND D2_DOC NOT IN ('000169139','000169145','000169146','000169148','000169150','000169152','000169184','000169193','000169194','000169196','000169197','000169204','000169205','000169207','000169208','000169210')"
+			_oSQL:_sQuery +=    " AND D2_DOC NOT IN ('000169212','000169213','000169216','000169217','000169218','000169219','000169220','000169221','000169222','000169223','000169227','000169228','000169233','000169234','000169235','000169238')"
+			_oSQL:_sQuery +=    " AND D2_DOC NOT IN ('000169239','000169240','000169242','000169244','000169246','000169247','000169254','000169255','000169256','000169258','000169261','000169262','000169266','000169274','000169293','000169296')"
+			_oSQL:_sQuery +=    " AND D2_DOC NOT IN ('000169306','000169307','000169310','000169334','000169346','000169351','000169359','000169365','000169367','000169369','000169375','000169386','000169390','000169399','000169401','000169402')"
+			_oSQL:_sQuery +=    " AND D2_DOC NOT IN ('000169406','000169408','000169409','000169410','000169411','000169412','000169414','000169419','000169420','000169421','000169422','000169423','000169424','000169425','000169426','000169427')"
+			_oSQL:_sQuery +=    " AND D2_DOC NOT IN ('000169434','000169435','000169436','000169437','000169438','000169439','000169440','000169441','000169442','000169443','000169444','000169450','000169456','000169459','000169475','000169476')"
+			_oSQL:_sQuery +=    " AND D2_DOC NOT IN ('000169477','000169478','000169479','000169480','000169481','000169482','000169483','000169484','000169485','000169487','000169490','000169491','000169492','000169502','000169503','000169507')"
+			_oSQL:_sQuery +=    " AND D2_DOC NOT IN ('000169508','000169512','000169519','000169520','000169523','000169527','000169529','000169530','000169531','000169532','000169533','000169534','000169535','000169536','000169537','000169538')"
+			_oSQL:_sQuery +=    " AND D2_DOC NOT IN ('000169539','000169540','000169542','000169544','000169549','000169552','000169560','000169561','000169562','000169563','000169564','000169565','00016956')"
+		endif
 
-		dbSelectArea(_sNF20S)
-		(_sNF20S) -> (dbgotop ())
+		_oSQL:_sQuery += " ORDER BY SF2.F2_DOC, SF2.F2_SERIE, SD2.D2_COD"
+		_oSQL:Log ()
+//		_sNF20S = _oSQL:Qry2Trb (.F.)
+		_oSQL:Copy2Trb (.F., NIL, '_trb20S')
 
-		do while ! (_sNF20S) -> (eof ())
+		dbSelectArea ('_trb20S')
+		_trb20S -> (dbgotop ())
+		do while ! _trb20S -> (eof ())
 
-			dbSelectArea(_sNF20S)
+			_sNF    := _trb20S -> D2_DOC
+			_sSerie := _trb20S -> D2_SERIE
 
-			_sNF    := (_sNF20S) -> D2_DOC
-			_sSerie := (_sNF20S) -> D2_SERIE
-			_sOper  := (_sNF20S) -> F4_VASISEN
-			_sTipoDocF  = _TipoDocF ((_sNF20S) -> D2_SERIE)
-			_sDestino := (_sNF20S) -> F2_EST
+			// Varre todos os itens desta nota abatendo possiveis lotes a desconsiderar, e verifica se ainda sobrou alguma quantidade a exportar.
+			_nQtTotNF = 0
+			_nReg20S = _trb20S -> (recno ())
+//			U_Log2 ('debug', 'guardando recno ' + cvaltochar (_nReg20S))
+			do while (! _trb20S -> (eof ()) .AND. _sNF  == _sNF .AND. _sSerie == _sSerie)
+				_nQtTotNF += _trb20S->D2_QUANT - _trb20S->LT_IGNORAR
+				_trb20S -> (dbskip ())
+			enddo
+			//
+			// Se a quantidade total da nota ficou zerada ou negativa, eh pr que toda a nota foi formada por lotes que devem ser ignorados.
+			// Nesse caso, jah terminei de passar por ela e basta deixar seguir para a proxima.
+			// Caso contrario, reposiciono no primeiro item da nota, para que seja exportada.
+			if _nQtTotNF <= 0
+				U_Log2 ('aviso', 'A quantidade total da NF ' + _sNF + ' ficou ' + cvaltochar (_nQtTotNF) + ' e, portanto, essa nota vai ser desconsiderada.')
+			else
+//				U_Log2 ('debug', 'voltando para recno ' + cvaltochar (_nReg20S))
+				_trb20S -> (dbgoto (_nReg20S))
+//				U_Log2 ('debug', 'posicionei no recno ' + cvaltochar (_trb20S -> (recno ())))
+			endif
+
+			dbSelectArea ('_trb20S')
+
+			_sNF    := _trb20S -> D2_DOC
+			_sSerie := _trb20S -> D2_SERIE
+			_sOper  := _trb20S -> F4_VASISEN
+			_sTipoDocF  = _TipoDocF (_trb20S -> D2_SERIE)
+			_sDestino := _trb20S -> F2_EST
 
 			// Outro pais.
 			if _sDestino == "EX" .or. empty (_sDestino)
-				u_log ('vou buscar pais para nf',(_sNF20S) -> D2_DOC)
-				if (_sNF20S) -> D2_TIPO $ "B/D"
-					_sDestino = _DestOri ("F", (_sNF20S) -> F2_CLIENTE, (_sNF20S) -> F2_LOJA, (_sNF20S) -> D2_DOC, (_sNF20S) -> D2_TIPO)
+				u_log2 ('info', 'vou buscar pais para nf ' + _trb20S -> D2_DOC)
+				if _trb20S -> D2_TIPO $ "B/D"
+					_sDestino = _DestOri ("F", _trb20S -> F2_CLIENTE, _trb20S -> F2_LOJA, _trb20S -> D2_DOC, _trb20S -> D2_TIPO)
 					if empty (_sDestino)
-						_Erro ("Nao foi possivel definir o 'destino'. Verifique o pais no cadastro do cliente " + (_sNF20S) -> F2_CLIENTE + '/' + (_sNF20S) -> F2_LOJA)
+						_Erro ("Nao foi possivel definir o 'destino'. Verifique o pais no cadastro do cliente " + _trb20S -> F2_CLIENTE + '/' + _trb20S -> F2_LOJA)
 					endif
 				else
-					_sDestino = _DestOri ("C", (_sNF20S) -> F2_CLIENTE, (_sNF20S) -> F2_LOJA, (_sNF20S) -> D2_DOC, (_sNF20S) -> D2_TIPO)
+					_sDestino = _DestOri ("C", _trb20S -> F2_CLIENTE, _trb20S -> F2_LOJA, _trb20S -> D2_DOC, _trb20S -> D2_TIPO)
 					if empty (_sDestino)
-						_Erro ("Nao foi possivel definir o 'destino'. Verifique o pais no cadastro do fornecedor " + (_sNF20S) -> F2_CLIENTE + '/' + (_sNF20S) -> F2_LOJA)
+						_Erro ("Nao foi possivel definir o 'destino'. Verifique o pais no cadastro do fornecedor " + _trb20S -> F2_CLIENTE + '/' + _trb20S -> F2_LOJA)
 					endif
 				endif
-				u_log ('destino retornado:', _sDestino)
+				u_log2 ('info', 'destino retornado: ' + _sDestino)
 			endif
 			if empty (_sDestino)
-				_Erro ("Nao foi possivel definir o 'destino' (UF) na NF de saida " + (_sNF20S) -> D2_DOC)
+				_Erro ("Nao foi possivel definir o 'destino' (UF) na NF de saida " + _trb20S -> D2_DOC)
 			endif
 
 			// -------------------------------
@@ -438,50 +472,57 @@ Static Function _Tipo20N ()
 
 			cLin := cLin + "20" + left(SM0->M0_CGC,14)
 
-			_sMes :=  substr((_sNF20S)-> D2_EMISSAO, 5,2)
-			_sAno :=  substr((_sNF20S)-> D2_EMISSAO, 1,4)
+			_sMes :=  substr(_trb20S-> D2_EMISSAO, 5,2)
+			_sAno :=  substr(_trb20S-> D2_EMISSAO, 1,4)
 
 			cLin += _sMes
 			cLin += _sAno
-			cLin +=  (_sNF20S) -> F4_VASISEN
-			cLin +=  strzero(val((_sNF20S) -> D2_DOC),10)
+			cLin +=  _trb20S -> F4_VASISEN
+			cLin +=  strzero(val(_trb20S -> D2_DOC),10)
 			cLin +=  _sDestino
 			cLin +=  _sTipoDocF
-			cLin +=  (_sNF20S) -> D2_SERIE
+			cLin +=  _trb20S -> D2_SERIE
 			cLin +=  SPACE(120)
 
 			_GravaLin ('20', cLin)
-			//u_log ('D2_DOC ', (_sNF20S) -> D2_DOC, 'Gerando linha --> ', cLin)
 			
-			_sNFI    := (_sNF20S) -> D2_DOC
-			_sSerieI := (_sNF20S) -> D2_SERIE
-			_sOperI  := (_sNF20S) -> F4_VASISEN
-			_sCodCR	 :=	(_sNF20S) -> CODCRSIS
+			_sNFI    := _trb20S -> D2_DOC
+			_sSerieI := _trb20S -> D2_SERIE
+			_sOperI  := _trb20S -> F4_VASISEN
+			_sCodCR	 :=	_trb20S -> CODCRSIS
 			
-			do while (! (_sNF20S) -> (eof ()) .AND. _sNF  == _sNFI .AND. _sSerie == _sSerieI .AND. _sOper == _sOperI)
+			do while (! _trb20S -> (eof ()) .AND. _sNF  == _sNFI .AND. _sSerie == _sSerieI .AND. _sOper == _sOperI)
+
+				// Se nao sobrou litragem deste item (pode ter sido vendido um lote que deve ser ignorado), entao nem continuarei processando-o.
+				if _trb20S->LT_IGNORAR >= _trb20S->D2_QUANT
+					_Aviso ('O item ' + alltrim (_trb20S -> d2_cod) + ' vai ser desconsiderado na NF ' + _trb20S -> d2_doc + ' por que foi vendido um lote que deve ser ignorado.')
+					_trb20S -> (dbskip ())
+					loop
+				endif
+
 				if empty (_sCodCR)
-					_oSisDec := ClsSisd ():New ((_sNF20S) -> d2_cod, 'SB5', cFilAnt)
+					_oSisDec := ClsSisd ():New (_trb20S -> d2_cod, 'SB5', cFilAnt)
 					x_CODPRD := _oSisDec:CodSisd
 				else
 					x_CODPRD := _sCodCR
 				endif
 				if empty (x_CODPRD)
-					_Erro ("Produto '" + alltrim ((_sNF20S) -> d2_cod) + "'(" + alltrim ((_sNF20S) -> b1_desc) + ") sem codigo no Sisdeclara.")
+					_Erro ("Produto '" + alltrim (_trb20S -> d2_cod) + "'(" + alltrim (_trb20S -> b1_desc) + ") sem codigo no Sisdeclara.")
 				endif
 				if left (x_CODPRD, 10) = '0000000000'
-					_Aviso ("Produto '" + alltrim ((_sNF20S) -> d2_cod) + "'(" + alltrim ((_sNF20S) -> b1_desc) + ") parece ter codigo CR invalido (zerado).")
+					_Aviso ("Produto '" + alltrim (_trb20S -> d2_cod) + "'(" + alltrim (_trb20S -> b1_desc) + ") parece ter codigo CR invalido (zerado).")
 				endif
-				x_UNID   := (_sNF20S) -> D2_UM
-				x_LITROS := STRZERO(((_sNF20S)->D2_QUANT * (_sNF20S)->B1_LITROS)*100,10)
-
-				if val (x_Litros) == 0
-					_Erro ("Produto '" + alltrim ((_sNF20S) -> D2_COD) + "' (cod. sisdeclara '" + x_CODPRD + "') nao tem litragem informada no cadastro, ou a NF de Saida '" + (_sNF20S) -> D2_DOC + "' esta' com quantidade zerada.")
+				if _trb20S->B1_LITROS == 0
+					_Erro ("Produto '" + alltrim (_trb20S -> D2_COD) + "' (cod. sisdeclara '" + x_CODPRD + "') nao tem litragem informada no cadastro.")
 				endif
-				if empty ((_sNF20S) -> F4_VASISEN)
-					_Erro ("Campo '" + alltrim (RetTitle ("F4_VASISEN")) + "' nao informado no TES " + (_sNF20S) -> D2_TES + ". Entre em contato com o setor fiscal.")
+		//		x_LITROS := STRZERO((_trb20S->D2_QUANT * _trb20S->B1_LITROS)*100,10)
+				x_LITROS := STRZERO(((_trb20S->D2_QUANT - _trb20S->LT_IGNORAR) * _trb20S->B1_LITROS)*100,10)
+				
+				x_UNID   := _trb20S -> D2_UM
+				if empty (_trb20S -> F4_VASISEN)
+					_Erro ("Campo '" + alltrim (RetTitle ("F4_VASISEN")) + "' nao informado no TES " + _trb20S -> D2_TES + ". Entre em contato com o setor fiscal.")
 				endif
 				
-
 				_xTotLit += val (x_LITROS)
 
 				// Somatorio para mostrar no final total por operação
@@ -504,16 +545,16 @@ Static Function _Tipo20N ()
 				_trb -> dados = cLin
 				if mv_par08 == 1
 					_trb -> origem    = 'NF_SAIDA'
-					_trb -> dtmovto   = stod ((_sNF20S)-> D2_EMISSAO)
-					_trb -> nf        = (_sNF20S)-> D2_doc
-					_trb -> serie     = (_sNF20S)-> D2_serie
-					_trb -> TES       = (_sNF20S)-> D2_tes
+					_trb -> dtmovto   = stod (_trb20S-> D2_EMISSAO)
+					_trb -> nf        = _trb20S-> D2_doc
+					_trb -> serie     = _trb20S-> D2_serie
+					_trb -> TES       = _trb20S-> D2_tes
 					_trb -> guia      = ''
-					_trb -> cli_for   = (_sNF20S)-> f2_cliente
-					_trb -> loja      = (_sNF20S)-> f2_loja
-					_trb -> nome      = iif ((_sNF20S)-> D2_tipo $ 'B/D', fBuscaCpo ("SA2", 1, xfilial ("SA2") + (_sNF20S)-> f2_cliente + (_sNF20S)-> f2_loja, "A2_NOME"), fBuscaCpo ("SA1", 1, xfilial ("SA1") + (_sNF20S)-> f2_cliente + (_sNF20S)-> f2_loja, "A1_NOME"))
-					_trb -> produto   = (_sNF20S)-> D2_cod
-					_trb -> descricao = (_sNF20S)-> b1_desc
+					_trb -> cli_for   = _trb20S-> f2_cliente
+					_trb -> loja      = _trb20S-> f2_loja
+					_trb -> nome      = iif (_trb20S-> D2_tipo $ 'B/D', fBuscaCpo ("SA2", 1, xfilial ("SA2") + _trb20S-> f2_cliente + _trb20S-> f2_loja, "A2_NOME"), fBuscaCpo ("SA1", 1, xfilial ("SA1") + _trb20S-> f2_cliente + _trb20S-> f2_loja, "A1_NOME"))
+					_trb -> produto   = _trb20S-> D2_cod
+					_trb -> descricao = _trb20S-> b1_desc
 					_trb -> CR        = x_CODPRD
 					_trb -> litros    = val (x_LITROS)
 				endif
@@ -521,19 +562,21 @@ Static Function _Tipo20N ()
 				_xTotLin ++
 
 				// Alimenta lista de produtos para posterior exportacao
-				if ascan (_aProdutos, (_sNF20S)->D2_COD) == 0
-					aadd (_aProdutos, (_sNF20S)->D2_COD)
+				if ascan (_aProdutos, _trb20S->D2_COD) == 0
+					aadd (_aProdutos, _trb20S->D2_COD)
 				endif
 
-				(_sNF20S) -> (dbskip ())
-				_sNFi    := (_sNF20S) -> D2_DOC
-				_sSeriei := (_sNF20S) -> D2_SERIE
-				_sOperI  := (_sNF20S) -> F4_VASISEN
+				_trb20S -> (dbskip ())
+				_sNFi    := _trb20S -> D2_DOC
+				_sSeriei := _trb20S -> D2_SERIE
+				_sOperI  := _trb20S -> F4_VASISEN
 
 			Enddo
 		Enddo
-	endif   // l_Continua
-	u_logFim ()
+		_trb20S -> (dbclosearea ())
+		dbselectarea ('SB1')
+
+	endif
 Return
 
 
@@ -548,7 +591,6 @@ Static Function _Tipo20D ()
 	local _lContinua := .T.
 	local _sDestino  := ""
 
-	u_logIni ()
 	incproc ('Registro(s) ' + procname ())
 
 	if _lContinua
@@ -588,7 +630,7 @@ Static Function _Tipo20D ()
 		_sQry20 +=    " AND SD1.D1_TES     = SF4.F4_CODIGO "
 		_sQry20 +=    " AND SF4.F4_VASISEN <> '99'"
 		_sQry20 += " ORDER BY SF1.F1_DOC, SF1.F1_SERIE, SD1.D1_COD"
-		u_log (_sQry20)
+		u_log2 ('debug', _sQry20)
 		_sNF20E = GetNextAlias ()
 
 		DbUseArea(.t.,'TOPCONN',TcGenQry(,,_sQry20), _sNF20E,.F.,.F.)
@@ -618,7 +660,7 @@ Static Function _Tipo20D ()
 				loop
 
 
-				u_log ('vou buscar pais para nf',(_sNF20E) -> D1_DOC)
+				u_log2 ('info', 'vou buscar pais para nf ' + (_sNF20E) -> D1_DOC)
 				if (_sNF20E) -> D1_TIPO $ "D/B"
 					_sDestino = _DestOri ("C", (_sNF20E) -> F1_FORNECE, (_sNF20E) -> F1_LOJA, (_sNF20E) -> D1_DOC, (_sNF20E) -> D1_TIPO)
 					if empty (_sDestino)
@@ -630,7 +672,7 @@ Static Function _Tipo20D ()
 						_Erro ("Nao foi possivel definir o 'destino'. Verifique o pais no cadastro do fornecedor " + (_sNF20E) -> F1_FORNECE + '/' + (_sNF20E) -> F1_LOJA)
 					endif
 				endif
-				u_log ('destino retornado:', _sDestino)
+				u_log2 ('info', 'destino retornado: ' + _sDestino)
 			endif
 			if empty (_sDestino)
 				_Erro ("Nao foi possivel definir o 'destino' (UF) na NF de entrada " + (_sNF20E) -> D1_DOC)
@@ -656,7 +698,6 @@ Static Function _Tipo20D ()
 			cLin += SPACE(120)
 
 			_GravaLin ('20', cLin)
-			//u_log ('D1_DOC ', (_sNF20E) -> D1_DOC, 'Gerando linha --> ', cLin)
 
 			_sNFI    := (_sNF20E) -> D1_DOC
 			_sSerieI := (_sNF20E) -> D1_SERIE
@@ -697,8 +738,6 @@ Static Function _Tipo20D ()
 				// -------------------------------
 				cLin:=""
 				cLin:= cLin + "21" + SM0->M0_CGC + x_CODPRD + _oSisdec:Embalagem + x_LITROS +SPACE(117)
-//				_GravaLin ('20', cLin)
-//				u_log ('D1_COD ', (_sNF20E) -> d1_cod, 'Gerando linha --> ', cLin)
 				reclock ("_trb", .T.)
 				_trb -> grupo = '20'
 				_trb -> dados = cLin
@@ -733,7 +772,6 @@ Static Function _Tipo20D ()
 			Enddo
 		Enddo
 	endif
-	u_logFim ()
 Return
 
 
@@ -753,7 +791,6 @@ Static Function _Tipo30S ()
 	local x_LITROS   := 0
 	local _sGuia     := ""
 
-	u_logIni ()
 	incproc ('Registro(s) ' + procname ())
 
 	_sQuery := ""
@@ -819,7 +856,7 @@ Static Function _Tipo30S ()
 	_sQuery +=             "))"
 
 	_sQuery += " ORDER BY SF2.F2_VAGUIA, SF2.F2_DOC, SF2.F2_SERIE, SD2.D2_COD"
-	u_log (_squery)
+	u_log2 ('debug', _squery)
 	_sAliasQ = GetNextAlias ()
 	DbUseArea(.t.,'TOPCONN',TcGenQry(,,_sQuery), _sAliasQ,.F.,.F.)
 	(_sAliasQ) -> (dbgotop ())
@@ -836,13 +873,13 @@ Static Function _Tipo30S ()
 
 		// Outro pais.
 		if _sDestino == "EX"
-			u_log ('vou buscar pais para nf',(_sNF20S) -> f2_DOC) 
+			u_log2 ('info', 'vou buscar pais para nf ' + (_sNF20S) -> f2_DOC) 
 			if (_sNF20S) -> D2_TIPO $ "B/D"
 				_sDestino = _DestOri ("F", (_sNF20S) -> F2_CLIENTE, (_sNF20S) -> F2_LOJA, (_sNF20S) -> D2_DOC, (_sNF20S) -> D2_TIPO)
 			else
 				_sDestino = _DestOri ("C", (_sNF20S) -> F2_CLIENTE, (_sNF20S) -> F2_LOJA, (_sNF20S) -> D2_DOC, (_sNF20S) -> D2_TIPO)
 			endif
-			u_log ('destino retornado:', _sDestino)
+			u_log2 ('info', 'destino retornado: ' + _sDestino)
 		endif
 
 		if empty ((_sAliasQ) -> REG_MA)
@@ -878,7 +915,7 @@ Static Function _Tipo30S ()
 		cLin += (_sAliasQ) -> F2_SERIE
 		cLin += space (48)
 		_GravaLin ('30', cLin)
-		u_log ('NF/serie = ' + _sDoc + '/' + _sSerie, 'Linha gerada = ' + cLin)
+		u_log2 ('debug', 'NF/serie = ' + _sDoc + '/' + _sSerie + ' Linha gerada = ' + cLin)
 
 		// Processa os itens da nota
 		do while ! (_sAliasQ) -> (eof ()) .and. (_sAliasQ) -> f2_doc == _sDoc .and. (_sAliasQ) -> f2_serie == _sSerie
@@ -903,8 +940,6 @@ Static Function _Tipo30S ()
 			//cLin += strzero (round ((_sAliasQ) -> Litros * 100, 0), 10)
 			cLin += strzero (round (x_LITROS * 100, 0), 10)
 			cLin += space (117)
-//			_GravaLin ('30', cLin)
-//			u_log ('D2_COD = ' + (_sAliasQ) -> d2_cod, 'Linha gerada = ' + cLin)
 			reclock ("_trb", .T.)
 			_trb -> grupo = '30'
 			_trb -> dados = cLin
@@ -943,7 +978,6 @@ Static Function _Tipo30S ()
 		enddo
 	enddo
 
-	u_logFim ()
 return
 
 
@@ -962,7 +996,6 @@ Static Function _Tipo30E ()
 	local x_LITROS   := 0
 	local _sGuia     := ""
 
-	u_logIni ()
 	incproc ('Registro(s) ' + procname ())
 
 	_sQuery := ""
@@ -1028,7 +1061,7 @@ Static Function _Tipo30E ()
 
 	_sQuery += " ORDER BY SF1.F1_DOC, SF1.F1_SERIE, SD1.D1_COD, SF1.F1_FORNECE, SF1.F1_LOJA "
 
-	u_log (_squery)
+	u_log2 ('debug', _squery)
 	_sAliasQ = GetNextAlias ()
 	DbUseArea(.t.,'TOPCONN',TcGenQry(,,_sQuery), _sAliasQ,.F.,.F.)
 	(_sAliasQ) -> (dbgotop ())
@@ -1058,13 +1091,13 @@ Static Function _Tipo30E ()
 			loop
 
 
-			u_log ('vou buscar pais para nf',(_sAliasQ) -> f1_doc) 
+			u_log2 ('info', 'vou buscar pais para nf ' + (_sAliasQ) -> f1_doc) 
 			if (_sNF20E) -> D1_TIPO $ "D/B"
 				_sDestino = _DestOri ("C", (_sNF20E) -> F1_FORNECE, (_sNF20E) -> F1_LOJA, (_sNF20E) -> D1_DOC, (_sNF20E) -> D1_TIPO)
 			else
 				_sDestino = _DestOri ("F", (_sNF20E) -> F1_FORNECE, (_sNF20E) -> F1_LOJA, (_sNF20E) -> D1_DOC, (_sNF20E) -> D1_TIPO)
 			endif
-			u_log ('destino retornado:', _sDestino)
+			u_log2 ('info', 'destino retornado: ' + _sDestino)
 		endif
 
 		if empty ((_sAliasQ) -> REG_MA)
@@ -1089,7 +1122,7 @@ Static Function _Tipo30E ()
 		cLin += (_sAliasQ) -> F1_SERIE
 		cLin += space (48)
 		_GravaLin ('30', cLin)
-		u_log ('NF/serie = ' + _sDoc + '/' + _sSerie, 'forn:', _sFornec, 'Linha gerada = ' + cLin)
+		u_log2 ('info', 'NF/serie = ' + _sDoc + '/' + _sSerie +  ' forn: ' + _sFornec + 'Linha gerada = ' + cLin)
 
 		// Processa os itens da nota
 		do while ! (_sAliasQ) -> (eof ()) .and. (_sAliasQ) -> f1_doc == _sDoc ;
@@ -1098,7 +1131,6 @@ Static Function _Tipo30E ()
 				.and. (_sAliasQ) -> f1_loja == _sLoja
 			incproc ()
 
-			// u_logtrb (_sAliasQ, .F.)
 			if (_sAliasQ) -> Litros < 0.01
 				_Erro ("Litragem zerada para o produto '" + alltrim ((_sAliasQ) -> d1_cod) + "'. Verifique se o campo '" + alltrim (RetTitle ("B1_LITROS")) + "' esta informado em seu cadastro.")
 			endif
@@ -1122,8 +1154,6 @@ Static Function _Tipo30E ()
 			//cLin += strzero (round ((_sAliasQ) -> Litros * 100, 0), 10)
 			cLin += strzero (round (x_LITROS * 100, 0), 10)
 			cLin += space (117)
-//			_GravaLin ('30', cLin)
-//			u_log ('NF/serie = ' + _sDoc + '/' + _sSerie, 'forn:', _sFornec, 'Linha gerada = ' + cLin)
 			reclock ("_trb", .T.)
 			_trb -> grupo = '30'
 			_trb -> dados = cLin
@@ -1162,7 +1192,6 @@ Static Function _Tipo30E ()
 		enddo
 	enddo
 
-	u_logFim ()
 return
 
 
@@ -1186,7 +1215,6 @@ Static Function _Tipo60 ()
 	local _sDoc      := ""
 	local _sSerie    := ""
 
-	u_logIni ()
 	incproc ('Registro(s) ' + procname ())
 	cLin:=""
 
@@ -1280,7 +1308,7 @@ Static Function _Tipo60 ()
 	_oSQL:_sQuery += ")"
 	_oSQL:_sQuery += " SELECT * FROM C"
 	_oSQL:_sQuery +=  " ORDER BY ORIGEM, DATA, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, PRODUTO"
-	u_log (_oSQL:_sQuery)
+	_oSQL:Log ()
 	_sAliasQ = _oSQL:Qry2Trb ()
 	procregua ((_sAliasQ) -> (reccount ()))
 	(_sAliasQ) -> (dbgotop ())
@@ -1420,7 +1448,6 @@ Static Function _Tipo60 ()
 		Enddo
 	Enddo
 	(_sAliasQ) -> (dbclosearea ())
-	u_logFim ()
 Return
 
 
@@ -1460,7 +1487,7 @@ Static Function _TipoDocF (_sSerie)
 // --------------------------------------------------------------------------
 static function _Aviso (_sMsg)
 	if ! _sMsg $ _sAvisos
-		u_log ('Aviso:', _sMsg)
+		u_log2 ('aviso', _sMsg)
 		_sAvisos += _sMsg + chr (13) + chr (10)
 	endif
 return
@@ -1470,7 +1497,7 @@ return
 // --------------------------------------------------------------------------
 static function _Erro (_sMsg)
 	if ! _sMsg $ _sErros
-		u_log ('Erro:', _sMsg)
+		u_log2 ('erro', _sMsg)
 		_sErros += _sMsg + chr (13) + chr (10)
 	endif
 return
@@ -1482,8 +1509,6 @@ return
 static function _DestOri (_sOnde, _sCod, _sLoja, _sNF, _sTipoNF)
 	local _sRet  := "  "
 	local _sPais := ""
-	u_logIni ()
-	u_log (_sOnde, _sCod, _sLoja)
 
 	if _sOnde == "C"
 		_sPais = fBuscaCpo ("SA1", 1, xfilial ("SA1") + _sCod + _sLoja, "A1_CODPAIS")
@@ -1508,7 +1533,6 @@ static function _DestOri (_sOnde, _sCod, _sLoja, _sNF, _sTipoNF)
 			endif
 		endif
 	endif
-	u_logFim ()
 return _sRet
 
 
@@ -1529,14 +1553,15 @@ Static Function _ValidPerg ()
 	local _aRegsPerg := {}
 
 //                         PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                                  Help
-	aadd (_aRegsPerg, {01, "Emissao NF de                 ", "D", 8,  0,  "",   "     ", {},    ""})
-	aadd (_aRegsPerg, {02, "Emissao NF ate                ", "D", 8,  0,  "",   "     ", {},    ""})
+	aadd (_aRegsPerg, {01, "Emissao NF de                 ", "D", 8,  0,  "",   "     ", {},             ""})
+	aadd (_aRegsPerg, {02, "Emissao NF ate                ", "D", 8,  0,  "",   "     ", {},             ""})
 	aadd (_aRegsPerg, {03, "O que exportar                ", "N", 1,  0,  "",   "     ", {"Movto.mensal", "Entradas de uva"},    ""})
-	aadd (_aRegsPerg, {04, "Nome diretor da empresa       ", "C", 30, 0,  "",   "     ", {},    ""})
+	aadd (_aRegsPerg, {04, "Nome diretor da empresa       ", "C", 30, 0,  "",   "     ", {},             ""})
 	aadd (_aRegsPerg, {05, "CRQ/CREA responsavel tecnico  ", "C", 10, 0,  "U_ExistZX5 ('20', mv_par05)", "ZX520", {},    ""})
-	aadd (_aRegsPerg, {06, "Arquivo destino               ", "C", 60, 0,  "",   "     ", {},    ""})
-	aadd (_aRegsPerg, {07, "E-mail para contato           ", "C", 40, 0,  "",   "     ", {},    ""})
-	aadd (_aRegsPerg, {08, "Gerar arq.para conferencia    ", "N", 1,  0,  "",   "     ", {"Sim", "Nao"},    ""})
-	aadd (_aRegsPerg, {09, "Exportar guias livre transito?", "N", 1,  0,  "",   "     ", {"Sim", "Nao"},    ""})
+	aadd (_aRegsPerg, {06, "Arquivo destino               ", "C", 60, 0,  "",   "     ", {},             ""})
+	aadd (_aRegsPerg, {07, "E-mail para contato           ", "C", 40, 0,  "",   "     ", {},             ""})
+	aadd (_aRegsPerg, {08, "Gerar arq.para conferencia    ", "N", 1,  0,  "",   "     ", {"Sim", "Nao"}, ""})
+	aadd (_aRegsPerg, {09, "Exportar guias livre transito?", "N", 1,  0,  "",   "     ", {"Sim", "Nao"}, ""})
+	aadd (_aRegsPerg, {10, "Lotes(PA) a desconsid.(sep. /)", "C", 60, 0,  "",   "     ", {},             ""})
 	U_ValPerg (cPerg, _aRegsPerg)
 Return

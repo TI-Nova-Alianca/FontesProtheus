@@ -32,6 +32,7 @@
 // 07/12/2020 - Robert - Desabilitada gravacao do campo E2_ORIGEM como 'U_METAFI' para que os titulos possam ser excluidos manualmente pelo financeiro, caso necessario.
 // 01/02/2021 - Robert - Passa a usar a funcao LkServer para acesso ao Meadados.
 //                     - Envia e-mail de notificacao em caso de erro na importacao (GLPI 9273).
+// 09/08/2021 - Robert - Passa a usar a view VA_VTITULOS_CPAGAR (GLPI 10667)
 //
 
 // ------------------------------------------------------------------------------------
@@ -105,6 +106,7 @@ static function _Incluir ()
 		_aBkpSX1 = U_SalvaSX1 (cPerg)  // Salva parametros da rotina.
 		U_GravaSX1 (cPerg, "04", 2)  // Contabiliza online = nao
 
+/*
 		// Monta uma string com a query principal para ser usada em mais de um local.
 		_sCTE := ""
 		_sCTE += "WITH CTE AS ("
@@ -169,18 +171,24 @@ static function _Incluir ()
 //		_sCTE +=   " AND C.TIPOITEMCONTAPAGAR != '04'"  // DARF IRF s/ salarios: queremos por filial.
 //		_sCTE +=   " AND C.TIPOITEMCONTAPAGAR != '10'"  // DARF IRF s/ autonomos: queremos por filial.
 		_sCTE += ")"
+*/
+		// Monta uma string com a query principal para ser usada em mais de um local.
+		_sCTE += "WITH CTE AS ("
+		_sCTE +=  " SELECT *"
+		_sCTE +=  " FROM " + _sLkSrvRH + ".VA_VTITULOS_CPAGAR"
+		_sCTE += " )"
 
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := _sCTE
 		_oSQL:_sQuery += " SELECT CTE.*"
 		_oSQL:_sQuery +=   " FROM CTE"
 		_oSQL:_sQuery +=  " WHERE FILIAL = '" + cFilAnt + "'"
+		_oSQL:_sQuery +=    " AND STATUSREG IN ('02', '10')"  // A processar e provisionado (para casos de multifilial).
 
 		// Para os casos de titulos que o Metadados gera aglutinados por empresa, mas a Alianca deseja importar por filial,
 		// marco-os como '10' (provisionado) no Metadados, e vou controlando se jah foram gerados para cada filial
 		// atraves do arquivo de historicos. Por isso, nao mexer no texto do historico.
 		_oSQL:_sQuery +=    " AND NOT EXISTS (SELECT *"
-		// _oSQL:_sQuery +=                      " FROM LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHISTLOG"
 		_oSQL:_sQuery +=                      " FROM " + _sLkSrvRH + ".RHCONTASPAGARHISTLOG"
 		_oSQL:_sQuery +=                     " WHERE NROSEQUENCIAL = CTE.NROSEQUENCIAL"
 		_oSQL:_sQuery +=                       " AND DESCRICAOMEMO LIKE 'Filial ' + CTE.FILIAL + ': Titulo gerado%')"
@@ -199,7 +207,7 @@ static function _Incluir ()
 				_oSQL := ClsSQL ():New ()
 				// _oSQL:_sQuery := "UPDATE LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST"
 				_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
-				_oSQL:_sQuery +=   " SET STATUSREGISTRO = '08'"
+				_oSQL:_sQuery +=   " SET STATUSREGISTRO = '08'"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
 				_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar ((_sAliasQ) -> NroSequencial)
 				_oSQL:Log ()
 				_lContinua = _oSQL:Exec ()
@@ -350,7 +358,7 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 		_oSQL := ClsSQL ():New ()
 		// _oSQL:_sQuery := "UPDATE LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST"
 		_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
-		_oSQL:_sQuery +=   " SET STATUSREGISTRO = '08'"
+		_oSQL:_sQuery +=   " SET STATUSREGISTRO = '08'"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
 		_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeqMeta)
 		_oSQL:Log ()
 		_lContinua = _oSQL:Exec ()
@@ -404,7 +412,7 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 		// Muda status da sequencia no Metadados.
 		// _oSQL:_sQuery := "UPDATE LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST"
 		_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
-		_oSQL:_sQuery +=   " SET STATUSREGISTRO          = '" + _sStatReg + "',"
+		_oSQL:_sQuery +=   " SET STATUSREGISTRO          = '" + _sStatReg + "',"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
 		_oSQL:_sQuery +=       " DATAACEITACAOLIBERACAO  = cast ('" + dtos (date ()) + " " + time () + "' as datetime),"
 		_oSQL:_sQuery +=       " CHAVEOUTROSISTEMATITULO = " + se2 -> e2_num + ","
 		_oSQL:_sQuery +=       " NUMEROTITULO            = " + se2 -> e2_num + ","
@@ -482,7 +490,7 @@ static function _Excluir ()
 				// Muda status da sequencia no Metadados.
 				// _oSQL:_sQuery := "UPDATE LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST"
 				_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
-				_oSQL:_sQuery +=   " SET STATUSREGISTRO          = '" + iif (lMsErroAuto, "05", "06") + "'"
+				_oSQL:_sQuery +=   " SET STATUSREGISTRO          = '" + iif (lMsErroAuto, "05", "06") + "'"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
 				_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar ((_sAliasQ) -> NroSequencial)
 				_oSQL:Log ()
 				_oSQL:Exec ()

@@ -98,6 +98,9 @@
 // 03/05/2021 - Robert - Ajuste calculo correcao monetaria para abater notas de compra de safra pela data de vencimento dos titulos correspondentes (GLPI 9841).
 // 07/05/2021 - Claudia - Substituido o GetMv ('MV_SIMB1') devido ao erro em looping, da R27. GLPI:8825
 // 21/05/2021 - Robert  - Nao calculava correcao para ex associados (GLPI 10075).
+// 28/07/2021 - Robert  - Continuar mostrando data de associacao na consulta de capital, quando assoc. desligado (GLPI 8763).
+//                      - Incluida msg. de LGPD na consulta de cota capital (GLPI 10139).
+//                      - Ajuste corr.mon. (desconsiderava NF vcto futuro que jah sofreram baixas) - GLPI 10306.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -653,9 +656,28 @@ METHOD CalcCM (_sMesRef, _nTaxaVl1, _nTaxaVl2, _nLimVl1, _lGerarD, _lGerarC) Cla
 	// compras sao geradas durante ou logo apos a safra, mas o associado tem 'direito' ao valor, em si, somente
 	// a partir da data de vencimento de cada parcela dessas notas.
 	if _lContinua
+		U_Log2 ('info', 'Buscando NF compra safra com vctos futuros')
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " SELECT E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VASAFRA, E2_VENCREA, E2_VALOR, E2_SALDO"
+
+		// GLPI 10306
+		// Existem casos em que nem todo o valor do titulo foi usado na geracao de uma fatura.
+		// Por exemplo quando parte foi compensada e apenas o saldo restante virou fatura.
+		// Ex.: título 000021485/30 -D do fornecedor 000643. Foi compensado R$ 3.066,09 e o saldo (R$ 1028,71) foi gerada a fatura 202000051.
+		// Devo descontar do valor do titulo somente a parte que foi consumida na geracao da fatura.
+		_oSQL:_sQuery += " ,E2_VALOR - ISNULL ((SELECT SUM (FK2_VALOR)"
+		_oSQL:_sQuery +=                       " FROM " + RetSQLName ("FK7") + " FK7, "
+		_oSQL:_sQuery +=                                  RetSQLName ("FK2") + " FK2 "
+		_oSQL:_sQuery +=                            " WHERE FK7.D_E_L_E_T_ = '' AND FK7.FK7_FILIAL = SE2.E2_FILIAL AND FK7.FK7_ALIAS = 'SE2' AND FK7.FK7_CHAVE = SE2.E2_FILIAL + '|' + SE2.E2_PREFIXO + '|' + SE2.E2_NUM + '|' + SE2.E2_PARCELA + '|' + SE2.E2_TIPO + '|' + SE2.E2_FORNECE + '|' + SE2.E2_LOJA"
+		_oSQL:_sQuery +=                              " AND FK2.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=                              " AND FK2.FK2_FILIAL = FK7.FK7_FILIAL"
+		_oSQL:_sQuery +=                              " AND FK2.FK2_IDDOC  = FK7.FK7_IDDOC"
+		_oSQL:_sQuery +=                              " AND FK2.FK2_MOTBX  = 'FAT'"
+		_oSQL:_sQuery +=                              " AND FK2.FK2_TPDOC != 'ES'"  // ES=Movimento de estorno
+		_oSQL:_sQuery +=                              " AND FK2.FK2_DATA  <= '" + dtos (_dDtLimite) + "'"
+		_oSQL:_sQuery +=                              " AND dbo.VA_FESTORNADO_FK2 (FK2.FK2_FILIAL, FK2.FK2_IDFK2) = 0"
+		_oSQL:_sQuery +=                        "), 0) AS SLDNADATA "
 		_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI, "
 		_oSQL:_sQuery +=              RetSQLName ("SE2") + " SE2 "
 		_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
@@ -672,40 +694,12 @@ METHOD CalcCM (_sMesRef, _nTaxaVl1, _nTaxaVl2, _nLimVl1, _lGerarD, _lGerarC) Cla
 		_oSQL:_sQuery +=    " AND SE2.E2_PARCELA  = SZI.ZI_PARCELA"
 		_oSQL:_sQuery +=    " AND SE2.E2_VENCREA >  '" + dtos (_dDtLimite) + "'"
 		_oSQL:_sQuery +=  " ORDER BY E2_PREFIXO, E2_NUM, E2_PARCELA"
-
-/* ACHO QUE VOU PRECISAR DE ALGUMA COISA ASSIM PRA CALCULAR O SALDO DO TITULO 'NA DATA'
-		// Existem casos em que nem todo o valor do titulo foi usado na geracao de uma fatura.
-		// Por exemplo quando parte foi compensada e apenas o saldo restante virou fatura.
-		// Ex.: título 000021485/30 -D do fornecedor 000643. Foi compensado R$ 3.066,09 e o saldo (R$ 1028,71) foi gerada a fatura 202000051.
-		// Devo descontar do valor do titulo somente a parte que foi consumida na geracao da fatura.
-		_oSQL:_sQuery += " E2_VALOR - ISNULL ((SELECT SUM (FK2_VALOR)"
-		_oSQL:_sQuery +=                       " FROM " + RetSQLName ("FK7") + " FK7, "
-		_oSQL:_sQuery +=                                  RetSQLName ("FK2") + " FK2 "
-		_oSQL:_sQuery +=                            " WHERE FK7.D_E_L_E_T_ = '' AND FK7.FK7_FILIAL = SE2.E2_FILIAL AND FK7.FK7_ALIAS = 'SE2' AND FK7.FK7_CHAVE = SE2.E2_FILIAL + '|' + SE2.E2_PREFIXO + '|' + SE2.E2_NUM + '|' + SE2.E2_PARCELA + '|' + SE2.E2_TIPO + '|' + SE2.E2_FORNECE + '|' + SE2.E2_LOJA"
-		_oSQL:_sQuery +=                              " AND FK2.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=                              " AND FK2.FK2_FILIAL = FK7.FK7_FILIAL"
-		_oSQL:_sQuery +=                              " AND FK2.FK2_IDDOC  = FK7.FK7_IDDOC"
-		_oSQL:_sQuery +=                              " AND FK2.FK2_MOTBX  = 'FAT'"
-		_oSQL:_sQuery +=                              " AND FK2.FK2_TPDOC != 'ES'"  // ES=Movimento de estorno
-		_oSQL:_sQuery +=                              " AND dbo.VA_FESTORNADO_FK2 (FK2.FK2_FILIAL, FK2.FK2_IDFK2) = 0"
-		_oSQL:_sQuery +=                        "), 0) AS E2_VALOR, "
-		_oSQL:_sQuery +=       " E2_SALDO, E2_HIST"
-		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE2") + " SE2 "
-		_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND E2_FILIAL  = '01'"  // Pagamentos sao feitos sempre pela matriz.
-		_oSQL:_sQuery +=   " AND E2_FORNECE = '" + ::Codigo + "'"
-		_oSQL:_sQuery +=   " AND E2_LOJA    = '" + ::Loja + "'"
-		_oSQL:_sQuery +=   " AND E2_PREFIXO in ('30 ', '31 ')"  // Serie usada para notas e faturas de safra
-		_oSQL:_sQuery +=   " AND E2_TIPO IN ('NF', 'DP', 'FAT')"  // NF quando compra original da matriz; DP quando saldo transferido de outra filial; FAT quando agrupados em uma fatura.
-		_oSQL:_sQuery +=   " AND E2_EMISSAO >= '" + _sSafra + "0101'"
-*/
-
 		_oSQL:Log ()
 		_sAliasQ := _oSQL:Qry2Trb (.f.)
 		do while ! (_sAliasQ) -> (eof ())
 			//_sMemCalc += "Abater NF safra " + (_sAliasQ) -> e2_prefixo + '/' + (_sAliasQ) -> e2_num + '-' + (_sAliasQ) -> e2_parcela + '  vcto: ' + dtoc (stod ((_sAliasQ) -> e2_vencrea)) + '  sld:' + GetMv ('MV_SIMB1') + transform ((_sAliasQ) -> e2_saldo, "@E 999,999.99") + chr (13) + chr (10)
-			_sMemCalc += "Abater NF safra " + (_sAliasQ) -> e2_prefixo + '/' + (_sAliasQ) -> e2_num + '-' + (_sAliasQ) -> e2_parcela + '  vcto: ' + dtoc (stod ((_sAliasQ) -> e2_vencrea)) + '  sld:' + " R$ " + transform ((_sAliasQ) -> e2_saldo, "@E 999,999.99") + chr (13) + chr (10)
-			_nSldNFSaf += (_sAliasQ) -> e2_saldo
+			_sMemCalc += "Abater NF safra " + (_sAliasQ) -> e2_prefixo + '/' + (_sAliasQ) -> e2_num + '-' + (_sAliasQ) -> e2_parcela + '  vcto: ' + dtoc (stod ((_sAliasQ) -> e2_vencrea)) + '  sld.na data:' + " R$ " + transform ((_sAliasQ) -> SldNaData, "@E 999,999.99") + chr (13) + chr (10)
+			_nSldNFSaf += (_sAliasQ) -> SldNaData
 			(_sAliasQ) -> (dbskip ())
 		enddo
 	endif
@@ -2077,10 +2071,16 @@ METHOD SldQuotCap (_dDataRef, _lUltSafra) Class ClsAssoc
 		// Monta mensagem para retorno em formato texto.
 		_sRetTXT := ""
 		_sRetTXT += "Associado " + ::Codigo + '/' + ::Loja + ' - ' + ::Nome + _sCRLF + _sCRLF
-	//	_sRetTXT += "Associado " + ::Codigo + '/' + ::Loja + ' - ' + alltrim (::Nome) + '   Posicao em ' + dtoc (_dDataRef) + _sCRLF + _sCRLF
 		_sRetTXT += "Data de nascimento..: " + dtoc (::DtNascim) + "     falecimento...: " + dtoc (::DtFalecim) + _sCRLF
-		_sRetTXT += "Data de associacao..: " + dtoc (::DtEntrada (_dDataRef)) + "     desligamento..: " + dtoc (::DtSaida (_dDataRef)) + _sCRLF
-//		_sRetTXT += "Coop. de origem.....: " + ::CoopOrigem + _sCRLF  + _sCRLF 
+//		_sRetTXT += "Data de associacao..: " + dtoc (::DtEntrada (_dDataRef)) + "     desligamento..: " + dtoc (::DtSaida (_dDataRef)) + _sCRLF
+		
+		// Se encontra-se desligado na data de referencia, mostra data de entrada anterior, a titulo de historico (GLPI 8763)
+		if ! empty (::DtSaida (_dDataRef))
+			_sRetTXT += "Data de associacao..: " + dtoc (::DtEntrada (::DtSaida (_dDataRef)-1)) + "     desligamento..: " + dtoc (::DtSaida (_dDataRef)) + _sCRLF
+		else
+			_sRetTXT += "Data de associacao..: " + dtoc (::DtEntrada (_dDataRef)) + "     desligamento..: " + dtoc (::DtSaida (_dDataRef)) + _sCRLF
+		endif
+		
 		_sRetTXT += "Coop. de origem.....: " + ::CoopOrigem + iif (_lUltSafra, "             ultima safra..: " + _sUltSafra, '') + _sCRLF
 		_sRetTXT += "Ativo...............: " + iif (_lAtivo , 'sim', 'nao (' + alltrim (::MotInativ) + ")") + _sCRLF + _sCRLF
 		if ! empty (_sObsAli)
@@ -2104,7 +2104,10 @@ METHOD SldQuotCap (_dDataRef, _lUltSafra) Class ClsAssoc
 		_sRetTXT += "---------------------------------" + _sCRLF
 		_sRetTXT += "Resgates efetuados................................: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapSaldoResgatadoQuandoExSocio],         "@E 999,999,999.99") + _sCRLF
 		_sRetTXT += "Pedidos resgate em aberto.........................: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapResgatesEmAbertoQuandoExSocio],       "@E 999,999,999.99") + _sCRLF
-		_sRetTXT += "Integralizacoes de sobras.........................: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapIntegralizacaoSobrasEnquantoExSocio], "@E 999,999,999.99") + _sCRLF
+		_sRetTXT += "Integralizacoes de sobras.........................: " + GetMV ("MV_SIMB1") + " " + transform (_aRet [.QtCapIntegralizacaoSobrasEnquantoExSocio], "@E 999,999,999.99") + _sCRLF + _sCRLF
+		_sRetTXT += "---------------------------------------------------------------------" + _sCRLF
+		_sRetTXT += "                  **** Documento sigiloso ****" + _sCRLF
+		_sRetTXT += "---------------------------------------------------------------------" + _sCRLF
 		_aRet [.QtCapRetTXT] = _sRetTXT
 
 

@@ -27,7 +27,7 @@
 	"ClsSQL:New":        {"prefix": "new",        "body": ["New ())"]},
 	"ClsSQL:Array2In":   {"prefix": "Array2In" ,  "body": ["Array2In (_aArray)"]},
 	"ClsSQL:CaseX3CBox": {"prefix": "CaseX3CBox", "body": ["CaseX3CBox (_sCampo)"]},
-	"ClsSQL:Copy2Trb":   {"prefix": "Copy2Trb" ,  "body": ["Copy2Trb (_lSetField, _nDecFixo)"]},
+	"ClsSQL:Copy2Trb":   {"prefix": "Copy2Trb" ,  "body": ["Copy2Trb (_lSetField, _nDecFixo, _sAliasTrb)"]},
 	"ClsSQL:Exec":       {"prefix": "Exec"     ,  "body": ["Exec ()"]},
 	"ClsSQL:F3Array":    {"prefix": "F3Array"  ,  "body": ["F3Array (_sMsgTit, _lSempre)"]},
 	"ClsSQL:FormatIn":   {"prefix": "FormatIn" ,  "body": ["FormatIn ()"]},

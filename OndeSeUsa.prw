@@ -10,6 +10,7 @@
 // 02/05/2018 - Robert - Portado para WS_Alianca
 // 03/11/2018 - Robert - Portado de volta para user function, para poder chamar do menu.
 // 04/05/2021 - Robert - Portado para SQL (R25 nao permite mais acessar dic.dados - GLPI 8784)
+// 28/07/2021 - Robert - Ajuste msg quando encontrava no VA_USOROT
 //
 
 // --------------------------------------------------------------------------
@@ -298,7 +299,7 @@ static function _AndaLogo (_sCampo)
 	_oSQL:_sQuery +=  " FROM VA_USOROT"
 	_oSQL:_sQuery += " WHERE ROTINA LIKE '%" + alltrim (upper (_sCampo)) + "%'"
 	if _oSQL:RetQry () > 0
-		_sResult += " Encontrado em VA_USOROT " + _aBatch [_nBatch, 1] + '; '
+		_sResult += " Encontrado em VA_USOROT; '
 	endif
 
 	u_help (_sResult)

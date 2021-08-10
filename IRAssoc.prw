@@ -19,6 +19,8 @@
 // 13/03/2020 - Claudia - Criado parametros de associado e nucleo. GLPI 7660
 // 03/03/2021 - Robert  - Separados trechos de leitura de rendimentos de producao, por safra (GLPI 9535)
 // 16/04/2021 - Claudia - Retirado o Movimento 29. GLPI: 9844
+// 26/07/2021 - Sandra  - Incluso rodapé com nomenclatura 'Documento Sigiloso" GLPI 10139
+//				Robert
 //
 // -----------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
@@ -115,7 +117,7 @@ return _aRet
 
 // --------------------------------------------------------------------------
 static function _Imprime ()
-	local _nMaxLin   := 60
+	local _nMaxLin   := 58
 	local _oSQL      := NIL
 	local _aAssoc    := {}
 	local _nAssoc    := 0
@@ -129,6 +131,8 @@ static function _Imprime ()
 	local _sAliasQ   := ''
 	local _sCodLoja  := ''
 	local _nCodLoja	 := 0
+	//local nCntImpr
+	
 
 	// Nao aceita filtro por que precisaria inserir na query.
 	If !Empty(aReturn[7])
@@ -183,6 +187,10 @@ static function _Imprime ()
 		incproc (sa2 -> a2_nome)
 		
 		// Quebra pagina por associado.
+		IF m_pag >1
+			_roda ()
+		endif
+
 		cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
 
 		// Lista dados cadastrais
@@ -230,6 +238,9 @@ static function _Imprime ()
 			_nVlrSaude = _aExtrat [_nExtrat, 3] - _oCtaCorr:SaldoEm (stod (mv_par03 + '1231'))
 			if _nVlrSaude > 0  
 				if li > _nMaxLin - 2
+					IF m_pag >1
+						_roda ()
+					endif
 					cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
 				endif
 
@@ -407,6 +418,9 @@ static function _Imprime ()
 			li ++
 			do while ! (_sAliasQ) -> (eof ())
 				if li > _nMaxLin - 1
+					IF m_pag >1
+						_roda ()
+					endif
 					cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
 				endif
 				@ li, 16 psay (_sAliasQ) -> e2_filial + '       ' + (_sAliasQ) -> e2_num + '-' + (_sAliasQ) -> e2_parcela + '  ' + dtoc ((_sAliasQ) -> e2_emissao) + '  ' + dtoc ((_sAliasQ) -> e2_vencrea) + transform ((_sAliasQ) -> e2_valor, "@E 999,999,999.99")
@@ -422,15 +436,39 @@ static function _Imprime ()
 		endif
 		@ li, 12 psay 'TOTAL RENDIMENTOS PRODUCAO RECEBIDOS EM ' + mv_par03 + ':   ' + transform (_nRendProd, "@E 999,999,999.99")
 		li += 2
+		
 	next
 
 	// Imprime parametros usados na geracao do relatorio
 	li ++
 	if li > _nMaxLin - 5
+		IF m_pag >1
+			_roda ()
+		endif
 		cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
 	endif
 	U_ImpParam (_nMaxLin)
+	
+
+	IF m_pag >1
+		_roda()
+	endif
 return
+
+// --------------------------------------------------------------------------
+// Rodapé
+static function _roda ()
+
+	@ li, 0 psay __PrtfatLine ()
+	li ++
+	@ li, 0 psay Padc ('**** DOCUMENTO SIGILOSO ****', limite,' ') 
+	li ++ 
+	@ li, 0 psay __PrtfatLine ()
+	li ++
+return
+
+
+
 
 
 

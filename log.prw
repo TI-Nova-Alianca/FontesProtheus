@@ -54,7 +54,9 @@
 // 29/05/2020 - Robert  - Passa a gravar logs em diretorio especifico fora do SIGAADV.
 // 09/06/2020 - Robert  - Funcao ShowLog() nao buscava no diretorio de logs.
 // 11/05/2021 - Claudia - Ajustada a chamada para tabela SX1 devido a R27. GLPI: 8825
+// 04/08/2021 - Robert  - Nao trazia o descritivo das perguntas no LogSX1().
 //
+
 // -------------------------------------------------------------------------------------------------------------------------------
 user function Log (_xDado1, _xDado2, _xDado3, _xDado4, _xDado5, _xDado6, _xDado7, _xDado8, _xDado9, _xDado10, _xDado11, _xDado12, _xDado13, _xDado14, _xDado15, _xDado16, _xDado17, _xDado18, _xDado19, _xDado20)
 	local  _nHdl     := 0
@@ -292,6 +294,13 @@ user function LogSX1 (_sPerg)
 	local _sRet 	:= ""
 	local cPicture 	:= ""
 	local _x		:= ""
+	local _sX1_GRUPO   := ''
+	local _sX1_ORDEM   := ''
+	local _sX1_GSC     := ''
+	local _nX1_TAMANHO := ''
+	local _nX1_DECIMAL := ''
+	local _nX1_TIPO    := ''
+	local _sX1_PERG    := ''
 
 	if _sPerg == NIL
 		if type ("cPerg") == "C"
@@ -309,11 +318,13 @@ user function LogSX1 (_sPerg)
 	_oSQL:_sQuery += "    ,X1_TAMANHO"
 	_oSQL:_sQuery += "    ,X1_DECIMAL"
 	_oSQL:_sQuery += "    ,X1_TIPO"
+	_oSQL:_sQuery += "    ,X1_PERGUNT"
 	_oSQL:_sQuery += " FROM SX1010 "
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 	_oSQL:_sQuery += " AND X1_GRUPO     = '" + alltrim(_sPerg) +"'"
+//	_oSQL:Log ()
 	_aSX1  = aclone (_oSQL:Qry2Array ())	
-
+//	U_Log2 ('debug', _aSX1)
 	For _x:= 1 to Len(_aSX1)
 		_sX1_GRUPO	 := _aSX1[_x, 1]
 		_sX1_ORDEM   := _aSX1[_x, 2]
@@ -321,9 +332,11 @@ user function LogSX1 (_sPerg)
 		_nX1_TAMANHO := _aSX1[_x, 4]
 		_nX1_DECIMAL := _aSX1[_x, 5]
 		_nX1_TIPO    := _aSX1[_x, 6]
+		_sX1_PERG    := _aSX1[_x, 7]
 
 		_sVar := "MV_PAR"+StrZero(Val(_sX1_ORDEM),2,0)
-		_sMsg := "Grp.perg. " + _sPerg + " - param. " + _sX1_ORDEM + ": "+ X1Pergunt() + " "
+//		_sMsg := "Grp.perg. " + _sPerg + " mv_par" + _sX1_ORDEM + ": "+ X1Pergunt() + " "
+		_sMsg := "Grp.perg. " + _sPerg + " mv_par" + _sX1_ORDEM + ": "+ _sX1_PERG + ": "
 		
 		If _sX1_GSC == "C"
 			_sMsg += cValToChar (&(_sVar)) + " (" 

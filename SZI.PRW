@@ -56,6 +56,7 @@
 // 23/10/2020 - Claudia - Ajuste de visualização do cadastro de fornecedores. GLPI: 8683
 // 11/01/2021 - Robert  - Melhorada msg. na rotina de transferencia de saldo para outra filial.
 // 25/03/2021 - Robert  - Criada funcao _Pergunte para ler parametros de rotinas automaticas (GLPI 9697)
+// 27/07/2021 - Robert  - Valida data base antes de chamar GeraSE2().
 //
 
 // --------------------------------------------------------------------------------------------------
@@ -393,12 +394,16 @@ User Function SZIR (_nQual)
 
 	case _nQual == 97  // Gera SE2 - Especifico para manutencoes e testes.
 		if U_MsgNoYes ("Esta rotina vai gerar SE2 para o registro atual do SZI. Usar quando deu algum problema na gravacao do SE2. Deseja continuar?")
-			_oCtaCorr := ClsCtaCorr ():New (szi -> (recno ()))
-			//u_log2 ('debug', _oCtaCorr)
-			if ! _oCtaCorr:GeraSE2 (_oCtaCorr:OQueGera (), _oCtaCorr:DtMovto, .F.)
-				u_help (_oCtaCorr:UltMsg,, .t.)
+			if dDataBase != szi -> zi_data
+				u_help ("Use data base igual a data do SZI.")
 			else
-				u_help ('SE2 gerado.' + _oCtaCorr:UltMsg)
+				_oCtaCorr := ClsCtaCorr ():New (szi -> (recno ()))
+				//u_log2 ('debug', _oCtaCorr)
+				if ! _oCtaCorr:GeraSE2 (_oCtaCorr:OQueGera (), _oCtaCorr:DtMovto, .F.)
+					u_help (_oCtaCorr:UltMsg,, .t.)
+				else
+					u_help ('SE2 gerado.' + _oCtaCorr:UltMsg)
+				endif
 			endif
 		endif
 
