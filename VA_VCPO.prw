@@ -1,15 +1,15 @@
-// Programa:  VA_VCpo
-// Autor:     Robert Koch
-// Data:      23/07/2008
-// Descricao: Validacoes diversas para campos do sistema.
-
+// Programa..: VA_VCpo
+// Autor.....: Robert Koch
+// Data......: 23/07/2008
+// Descricao.: Validacoes diversas para campos do sistema.
+//
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #validacao_de_campo
 // #Descricao         #Velidacoes de campos diversas
 // #PalavasChave      #validacao
 // #TabelasPrincipais 
 // #Modulos           
-
+//
 // Historico de alteracoes:
 // 28/07/2008 - Robert - Incluidas validacoes para os campos do DA1.
 // 27/08/2008 - Robert - Incluida validacao para o campo C5_PEDCLI.
@@ -73,7 +73,8 @@
 // 09/05/2016 - Robert  - Valida duplicidade do campo A1_CGC.
 // 19/05/2016 - Robert  - Valida campo A2_VASUBNU.
 // 01/09/2016 - Robert  - Valida campo ZX5_08ATIV.
-// 11/11/2016 - Robert  - Msg.sugestao qt.OP cfe. lt. mult. do produto passa a verif. tambem lote da revisao componente, quando for o caso.
+// 11/11/2016 - Robert  - Msg.sugestao qt.OP cfe. lt. mult. do produto passa a verif. 
+//                        tambem lote da revisao componente, quando for o caso.
 // 14/11/2016 - Catia   - Validacao com E4_CODIGO - nao pode conter letras
 // 16/11/2016 - Catia   - Validacao com E4_CODIGO - tem que ter sempre 3 digitos
 // 25/11/2016 - Robert  - Msg.sugestao qt.OP melhorada e migrada para funcao especifica.
@@ -88,14 +89,17 @@
 // 05/04/2017 - Robert  - Validacoes A2_VALATIT e A2_VALONGI.
 // 14/04/2017 - Robert  - Nao permite mais reapontar etiqueta (D3_VAETIQ)
 // 27/04/2017 - Julio   - Validacao campo NG_INDUSTR.
-// 23/06/2017 - Robert  - Permite duplicar C5_PEDCLI quando via rot.automatica pois vai gerar evento posteriormente (GLPI 2728)
-// 31/07/2017 - Robert  - Permite alterar C5_CONDPAG quando pedido importado do Mercanet (pelo menos no inicio da implantacao).
+// 23/06/2017 - Robert  - Permite duplicar C5_PEDCLI quando via rot.automatica pois vai gerar evento 
+//                        posteriormente (GLPI 2728)
+// 31/07/2017 - Robert  - Permite alterar C5_CONDPAG quando pedido importado do Mercanet 
+//                        (pelo menos no inicio da implantacao).
 // 17/08/2017 - Robert  - Nao permite mais alterar o campo C2_VAOPESP quando OP ja liberada para producao.
 // 02/09/2017 - Robert  - Validacao campos A2_VACAVIS e A2_VALAVIS
 // 05/09/2017 - Robert  - Validacao campos C6_VAPBRUT, C6_VAPLIQ, C6_VAQTVOL.
 // 11/09/2017 - Robert  - Ajuste validacao campos C6_VAPBRUT, C6_VAPLIQ, C6_VAQTVOL.
 // 09/10/2017 - Robert  - Validacao DA261DATA
-// 30/11/2017 - Robert  - Permite alterar C5_TPFRETE quando pedido importado do Mercanet (pelo menos no inicio da implantacao).
+// 30/11/2017 - Robert  - Permite alterar C5_TPFRETE quando pedido importado do Mercanet 
+//                        (pelo menos no inicio da implantacao).
 // 06/12/2017 - Robert  - Validacao desconto venda assistida: 5% para associados ateh 31/12/17.
 // 21/12/2017 - Robert  - Passa a aceitar movimento 560 para itens do tipo MM (solic. Fernanda Rosa)
 // 31/01/2018 - Robert  - Desconsiderava o campo ze_snfprod no teste de duplicidade do ze_nfprod.
@@ -110,41 +114,57 @@
 // 12/12/2018 - Robert  - Validacao do B1_CODPAI passa a apenas avisar quando jah tem vinculo com outro item.
 // 08/01/2019 - Andre   - Validacao dos campos TL_DTINICI e TL_DTFIM
 // 21/01/2019 - Robert  - Permite alterar o campo C5_BANCO quando o campo C5_CONDPAG contiver '097'.
-// 05/02/2019 - Andre   - Removido o produto MANUTENCAO da validacao de estrutura. Necessario para O.S de manutencao.
+// 05/02/2019 - Andre   - Removido o produto MANUTENCAO da validacao de estrutura. 
+//                        Necessario para O.S de manutencao.
 // 01/03/2019 - Robert  - Campo ZF_PRREAL nao pode ser igual ao ZF_PRODUTO
 // 31/05/2019 - Robert  - Valida C2_PRODUTO, D4_COD e D4_OP (GLPI 5690).
 // 04/07/2019 - Catia   - tirado o tratamento do campo B1 _ SITUACA
-// 26/07/2019 - Robert  - Desabilitadas verificacoes B1_VAEANUN e B1_VADUNCX (vamos usar campos padrao do sistema) - GLPI 6335.
+// 26/07/2019 - Robert  - Desabilitadas verificacoes B1_VAEANUN e B1_VADUNCX 
+//                        (vamos usar campos padrao do sistema) - GLPI 6335.
 // 27/08/2019 - Cláudia - Incluida validação de produto na desmontagem (MATA242) (GLPI 4931)
-// 17/09/2019 - Robert  - Liberado movimento 020 na validacao do D3_TM ateh termos definicao de geracao de estoque de borra seca (GLPI 6688).
+// 17/09/2019 - Robert  - Liberado movimento 020 na validacao do D3_TM ateh termos definicao 
+//                        de geracao de estoque 
+//                        de borra seca (GLPI 6688).
 // 03/10/2019 - Robert  - Bloqueado novamente o TM 020 no D3_TM cfe. resolucao final do chamado 6688.
 // 12/11/2019 - Robert  - Tratamento para casos de 'For variable is not Local'
 //                      - Validacao campo C5_VAPDFAT
 // 03/01/2020 - Robert  - Pega o nome do campo a validar via parametro, caso seja informado.
-//                      - Novo parametro na funcao U_Help () que permite identificar se eh erro ou aviso (usado inicialmente nas cargas de safra - arquivos SZE e SZF).
+//                      - Novo parametro na funcao U_Help () que permite identificar se eh erro ou aviso 
+//                        (usado inicialmente nas cargas de safra - arquivos SZE e SZF).
 // 11/03/2020 - Andre   - Validacao do campo C7_DATPRF
 // 12/03/2020 - Robert  - Corta decimais da sugestao de quantidade da OP com base no lote do VD (GLPI 7649).
 // 21/03/2020 - Robert  - Removidos tratamentos tabela SZ7.
-// 27/03/2020 - Andre   - Alterada validação para requisicao de movimento 560. Incluida pergunta se deseja ou não movimentar.
+// 27/03/2020 - Andre   - Alterada validação para requisicao de movimento 560. Incluida pergunta se 
+//                        deseja ou não movimentar.
 // 14/04/2020 - Robert  - Desfeita alteracao de 12/03 (decimais C2_QUANT)
 // 06/05/2020 - Claudia - Incluída validação de desmontagem de componentes. GLPI 7883
-// 13/06/2020 - Robert  - Ajustes validacao desmontagem: permite pelo B1_CODPAI somente quando ambos itens forem tipo PA.
-// 19/06/2020 - Robert  - Validacao desmontagem: criado grupo 098 do ZZU para validar quem pode desmontar itens nao relacionados.
-// 20/07/2020 - Robert  - Verificacao de acesso para saldos iniciais COM QUANTIDADE: passa a validar acesso 108 e nao mais 069.
-//                      - Verificacao de acesso de req. para CC de produtos que nao sao de consumo: passa a validar acesso 109 e nao mais 069.
+// 13/06/2020 - Robert  - Ajustes validacao desmontagem: permite pelo B1_CODPAI somente quando ambos 
+//                        itens forem tipo PA.
+// 19/06/2020 - Robert  - Validacao desmontagem: criado grupo 098 do ZZU para validar quem pode 
+//                        desmontar itens nao relacionados.
+// 20/07/2020 - Robert  - Verificacao de acesso para saldos iniciais COM QUANTIDADE: passa a validar 
+//                        acesso 108 e nao mais 069.
+//                      - Verificacao de acesso de req. para CC de produtos que nao sao de consumo: passa a 
+//                        validar acesso 109 e nao mais 069.
 //                      - Inseridas tags para catalogacao de fontes
 // 21/07/2020 - Robert  - Removidas validacoes campos tabela ZZ3 (composicao fretes - em desuso).
 // 26/08/2020 - Robert  - Liberacao temporaria validacao C6_QTDVEN cfe. GLPI 8375
 // 03/09/2020 - Robert  - Liberado movimentar retroativo quando tipo MO (para quando nao havia MO em alguma OP)
-// 06/11/2020 - Robert  - Nao valida mais D3_TM '550/560/561/562/563/564/565/566/567/568/569' x grupo 069 do ZZU (agora temos cadastro de usuarios x TM)
-// 12/01/2021 - Claudia - Retirado programa de criação de saldos por endereço (MATA805) da validação de campo DB_LOCALIZ/DB_QUANT. GLPI: 9122
+// 06/11/2020 - Robert  - Nao valida mais D3_TM '550/560/561/562/563/564/565/566/567/568/569' x grupo 069 do ZZU 
+//                        (agora temos cadastro de usuarios x TM)
+// 12/01/2021 - Claudia - Retirado programa de criação de saldos por endereço (MATA805) da validação de campo 
+//                        DB_LOCALIZ/DB_QUANT. GLPI: 9122
 // 14/02/2021 - Robert  - Validacoes do D3_COD para programa MATA242 passadas para U_MTA242V e MT242LOk (GLPI 9388)
 //                      - Melhoria envio de avisos para TI.
-// 12/04/2021 - Robert  - Incluida chamada da procedure VA_SP_VERIFICA_ESTOQUES (testes iniciais) para validacao do D3_COD.
-// 09/07/2021 - Robert  - Removida chamada da procedure VA_SP_VERIFICA_ESTOQUES (cada tela vai chamar seus ptos.entrada) - GLPI 10464.
+// 12/04/2021 - Robert  - Incluida chamada da procedure VA_SP_VERIFICA_ESTOQUES (testes iniciais) 
+//                        para validacao do D3_COD.
+// 09/07/2021 - Robert  - Removida chamada da procedure VA_SP_VERIFICA_ESTOQUES 
+//                        (cada tela vai chamar seus ptos.entrada) - GLPI 10464.
+// 10/08/2021 - Cláudia - Incluida validação na transferencia, para que crie a movimentação de produtos 
+//                        de manutençao no AX 02. GLPI: 10379
 //
+// -------------------------------------------------------------------------------------------------------------------
 
-// --------------------------------------------------------------------------
 user function VA_VCpo (_sCampo)
 	local _lRet      := .T.
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -156,100 +176,97 @@ user function VA_VCpo (_sCampo)
 	local _sMsg      := ""
 	local _oAviso    := NIL
 	local _aRetSQL   := {}
-	//local _aArray	 := {}
-	//local _x         := 0
+	local _x         := 0
 	
 	// Verifica a melhor forma de obter o nome do campo a ser validado.
 	if _sCampo == NIL
-//		u_log ('vou pegar pelo readvar ()')
 		_sCampo = alltrim (ReadVar ())
 	else
-//		u_log ('vou pegar pelo parametro:', _sCampo)
 		_sCampo = upper (_sCampo)
 	endif
 
 	do case
 
 		case _sCampo $ "CNFISCAL/CSERIE/CA100FOR/CLOJA"  // Cabecalho docto. entrada
-		if ! empty (CNFISCAL) .and. ! empty (CA100FOR) .and. ! empty (CLOJA)
-			_sQuery := ""
-			_sQuery += " SELECT COUNT (*)"
-			_sQuery +=   " FROM " + RetSQLName ("ZZX") + " ZZX "
-			_sQuery +=  " WHERE D_E_L_E_T_ = ''"
-			_sQuery +=    " AND ZZX_FILIAL = '" + xfilial ("ZZX") + "'"
-			_sQuery +=    " AND ZZX_CLIFOR = '" + ca100For + "'"
-			_sQuery +=    " AND ZZX_LOJA   = '" + cLoja   + "'"
-			_sQuery +=    " AND ZZX_DOC    like '%" + cNFiscal + "'"
-			_sQuery +=    " AND ZZX_SERIE  = '" + cSerie  + "'"
-			_sQuery +=    " AND ZZX_TIPONF = '" + cTipo + "'"
-			if U_RetSQL (_sQuery) == 0
-				_lRet = U_msgYesNo ("O arquivo XML correspondente a este documento ainda nao foi importado no sistema. Deseja continuar assim mesmo?")
+			if ! empty (CNFISCAL) .and. ! empty (CA100FOR) .and. ! empty (CLOJA)
+				_sQuery := ""
+				_sQuery += " SELECT COUNT (*)"
+				_sQuery +=   " FROM " + RetSQLName ("ZZX") + " ZZX "
+				_sQuery +=  " WHERE D_E_L_E_T_ = ''"
+				_sQuery +=    " AND ZZX_FILIAL = '" + xfilial ("ZZX") + "'"
+				_sQuery +=    " AND ZZX_CLIFOR = '" + ca100For + "'"
+				_sQuery +=    " AND ZZX_LOJA   = '" + cLoja   + "'"
+				_sQuery +=    " AND ZZX_DOC    like '%" + cNFiscal + "'"
+				_sQuery +=    " AND ZZX_SERIE  = '" + cSerie  + "'"
+				_sQuery +=    " AND ZZX_TIPONF = '" + cTipo + "'"
+				if U_RetSQL (_sQuery) == 0
+					_lRet = U_msgYesNo ("O arquivo XML correspondente a este documento ainda nao foi importado no sistema. Deseja continuar assim mesmo?")
+				endif
 			endif
-		endif
 
 		case _sCampo == "M->A1_CGC"
-		if ! empty (M->A1_CGC)
-			_sQuery := ""
-			_sQuery += " select  A1_COD + '/' + A1_LOJA + ' - ' + A1_NOME"
-			_sQuery += "   from  " + RetSQLName ("SA1")
-			_sQuery += "  where  D_E_L_E_T_ = ''"
-			_sQuery += "    and  A1_FILIAL  = '" + xfilial ("SA1") + "'"
-			_sQuery += "    and  A1_CGC     = '" + M->A1_CGC + "'"
-			_sQuery += "    and  D_E_L_E_T_ = ''"
-			_sQuery += "    and (A1_COD    != '" + M->A1_cod   + "'"
-			_sQuery += "     or  A1_LOJA   != '" + M->A1_loja  + "')"
-			_sRetSQL = U_RetSQL (_sQuery)
-			if ! empty (_sRetSQL)
-				U_Help ("Este CNPJ ja se encontra associado ao cliente " + _sRetSQL)
-				_lRet = .F.
+			if ! empty (M->A1_CGC)
+				_sQuery := ""
+				_sQuery += " select  A1_COD + '/' + A1_LOJA + ' - ' + A1_NOME"
+				_sQuery += "   from  " + RetSQLName ("SA1")
+				_sQuery += "  where  D_E_L_E_T_ = ''"
+				_sQuery += "    and  A1_FILIAL  = '" + xfilial ("SA1") + "'"
+				_sQuery += "    and  A1_CGC     = '" + M->A1_CGC + "'"
+				_sQuery += "    and  D_E_L_E_T_ = ''"
+				_sQuery += "    and (A1_COD    != '" + M->A1_cod   + "'"
+				_sQuery += "     or  A1_LOJA   != '" + M->A1_loja  + "')"
+				_sRetSQL = U_RetSQL (_sQuery)
+				if ! empty (_sRetSQL)
+					U_Help ("Este CNPJ ja se encontra associado ao cliente " + _sRetSQL)
+					_lRet = .F.
+				endif
 			endif
-		endif
 
 		case _sCampo $ "M->A1_EMAIL/M->A1_VAMDANF/M->A2_EMAIL/M->A2_VAMDANF/M->A2_VAMAIL2/M->A3_EMAIL/M->RA_EMAIL/M->U5_EMAIL"
-		_lRet = U_MailOk (&(_sCampo))
+			_lRet = U_MailOk (&(_sCampo))
 
 		case _sCampo $ "M->A1_TEL/M->A2_TEL/M->A1_FAX/M->A2_FAX/M->A2_VACELUL"
-		_lRet = _VerTel (&(_sCampo))
+			_lRet = _VerTel (&(_sCampo))
 
 		case _sCampo == "M->A1_VAEAN"
-		if ! empty (M->A1_VAEAN)
-			_sQuery := ""
-			_sQuery += " select  A1_COD + '/' + A1_LOJA + ' - ' + A1_NOME"
-			_sQuery += "   from  " + RetSQLName ("SA1")
-			_sQuery += "  where  D_E_L_E_T_ = ''"
-			_sQuery += "    and  A1_FILIAL  = '" + xfilial ("SA1") + "'"
-			_sQuery += "    and  A1_VAEAN   = '" + m->A1_VAEAN + "'"
-			_sQuery += "    and  D_E_L_E_T_ = ''"
-			_sQuery += "    and (A1_COD    != '" + m->A1_cod   + "'"
-			_sQuery += "     or  A1_LOJA   != '" + m->A1_loja  + "')"
-			_sRetSQL = U_RetSQL (_sQuery)
-			if ! empty (_sRetSQL)
-				_lRet = U_MsgNoYes ("Este codigo EAN ja' se encontra associado ao cliente '" + _sRetSQL + "'. Confirma?")
+			if ! empty (M->A1_VAEAN)
+				_sQuery := ""
+				_sQuery += " select  A1_COD + '/' + A1_LOJA + ' - ' + A1_NOME"
+				_sQuery += "   from  " + RetSQLName ("SA1")
+				_sQuery += "  where  D_E_L_E_T_ = ''"
+				_sQuery += "    and  A1_FILIAL  = '" + xfilial ("SA1") + "'"
+				_sQuery += "    and  A1_VAEAN   = '" + m->A1_VAEAN + "'"
+				_sQuery += "    and  D_E_L_E_T_ = ''"
+				_sQuery += "    and (A1_COD    != '" + m->A1_cod   + "'"
+				_sQuery += "     or  A1_LOJA   != '" + m->A1_loja  + "')"
+				_sRetSQL = U_RetSQL (_sQuery)
+				if ! empty (_sRetSQL)
+					_lRet = U_MsgNoYes ("Este codigo EAN ja' se encontra associado ao cliente '" + _sRetSQL + "'. Confirma?")
+				endif
 			endif
-		endif
 
 		case _sCampo == "M->A1_VAFRNEG"
-		_lRet = .T.
-		if ascan (UsrRetGrp (__cUserId), '000052') == 0
-			u_help ("Campo restrito ao grupo 000052 - Logistica")
-			_lRet = .F.
-		endif
+			_lRet = .T.
+			if ascan (UsrRetGrp (__cUserId), '000052') == 0
+				u_help ("Campo restrito ao grupo 000052 - Logistica")
+				_lRet = .F.
+			endif
 
 		case _sCampo $ "M->A2_AGENCIA"
-		if ! empty(m->a2_agencia)
-			if len(alltrim(m->a2_agencia)) < 5
-				u_help ("Deve ser preenchido com zeros a esquerda. Tamanho total de 5 digitos.")
-				_lRet = .F.
+			if ! empty(m->a2_agencia)
+				if len(alltrim(m->a2_agencia)) < 5
+					u_help ("Deve ser preenchido com zeros a esquerda. Tamanho total de 5 digitos.")
+					_lRet = .F.
+				endif
 			endif
-		endif
 
 		case _sCampo $ "M->A2_NUMCON"
-		if ! empty(m->a2_numcon)
-			if '-'$ m->a2_numcon
-				u_help ("Caraceter invalido.")
-				_lRet = .F.
+			if ! empty(m->a2_numcon)
+				if '-'$ m->a2_numcon
+					u_help ("Caraceter invalido.")
+					_lRet = .F.
+				endif
 			endif
-		endif
 
 //		case _sCampo $ "M->A2_VACAVIS/M->A2_VALAVIS"
 //		if empty (m->a2_vaCAvis) .and. ! empty (m->a2_vaLAvis)
@@ -274,80 +291,73 @@ user function VA_VCpo (_sCampo)
 //		endif
 
 		case _sCampo $ "M->A2_VACBASE/M->A2_VALBASE"
-		if m->a2_vaCBase != m->a2_cod .or. m->a2_vaLBase != m->a2_loja
-			if empty (m->a2_vaCBase) .and. ! empty (m->a2_vaLBase)
-				u_help ("Codigo deve ser informado antes da loja.")
-				_lRet = .F.
-			endif
-			sa2 -> (dbsetorder (1))
-			if _lRet .and. ! sa2 -> (dbseek (xfilial ("SA2") + m->a2_vaCBase, .F.))
-				u_help ("Fornecedor '" + m->a2_vaCBase + "' nao cadastrado!")
-				_lRet = .F.
-			endif
-			if _lRet .and. ! empty (m->a2_vaLBase)
-				if ! sa2 -> (dbseek (xfilial ("SA2") + m->a2_vaCBase + m->a2_vaLBase, .F.))
-					u_help ("Fornecedor/loja '" + m->a2_vaCBase + '/' + m->a2_vaLBase + "' nao cadastrado!")
+			if m->a2_vaCBase != m->a2_cod .or. m->a2_vaLBase != m->a2_loja
+				if empty (m->a2_vaCBase) .and. ! empty (m->a2_vaLBase)
+					u_help ("Codigo deve ser informado antes da loja.")
 					_lRet = .F.
-				else
-					if sa2 -> a2_cgc != m->a2_cgc
-						u_help ("CNPJ/CPF do fornecedor/loja '" + m->a2_vaCBase + '/' + m->a2_vaLBase + "' (" + alltrim (sa2 -> a2_cgc) + ") e´ diferente do fornecedor atual (" + alltrim (sa2 -> a2_cgc) + "). Entendo que nao se trate da mesma pessoa.")
+				endif
+				sa2 -> (dbsetorder (1))
+				if _lRet .and. ! sa2 -> (dbseek (xfilial ("SA2") + m->a2_vaCBase, .F.))
+					u_help ("Fornecedor '" + m->a2_vaCBase + "' nao cadastrado!")
+					_lRet = .F.
+				endif
+				if _lRet .and. ! empty (m->a2_vaLBase)
+					if ! sa2 -> (dbseek (xfilial ("SA2") + m->a2_vaCBase + m->a2_vaLBase, .F.))
+						u_help ("Fornecedor/loja '" + m->a2_vaCBase + '/' + m->a2_vaLBase + "' nao cadastrado!")
 						_lRet = .F.
+					else
+						if sa2 -> a2_cgc != m->a2_cgc
+							u_help ("CNPJ/CPF do fornecedor/loja '" + m->a2_vaCBase + '/' + m->a2_vaLBase + "' (" + alltrim (sa2 -> a2_cgc) + ") e´ diferente do fornecedor atual (" + alltrim (sa2 -> a2_cgc) + "). Entendo que nao se trate da mesma pessoa.")
+							_lRet = .F.
+						endif
 					endif
 				endif
 			endif
-		endif
 
 		case _sCampo $ "M->A2_VALATIT/M->A2_VALONGI"
-		for _i = 1 to len (alltrim (&(_sCampo)))
-			if ! substr (&(_sCampo), _i, 1) $ '1234567890-.'
-				u_help ("Informar somente numeros. O caracter '" + substr (&(_sCampo), _i, 1) + "' nao e´ valido.")
-				_lRet = .F.
-				exit
-			endif
-		next
+			for _i = 1 to len (alltrim (&(_sCampo)))
+				if ! substr (&(_sCampo), _i, 1) $ '1234567890-.'
+					u_help ("Informar somente numeros. O caracter '" + substr (&(_sCampo), _i, 1) + "' nao e´ valido.")
+					_lRet = .F.
+					exit
+				endif
+			next
 
 		case _sCampo == "M->A4_CGC"
-		if ! empty(M->A4_CGC)
-			_sQuery := ""
-			_sQuery += " select  A4_COD + ' - ' + A4_NOME"
-			_sQuery += "   from  " + RetSQLName("SA4")
-			_sQuery += "  where  D_E_L_E_T_ = ''"
-			_sQuery += "    and  A4_FILIAL  = '" + xFilial("SA4") + "'"
-			_sQuery += "    and  A4_CGC     = '" + M->A4_CGC + "'"
-			_sQuery += "    and  A4_COD    <> '" + M->A4_COD + "'"
-			_sRetSQL = U_RetSQL (_sQuery)
-			if ! empty(_sRetSQL)
-				U_Help ("Este CNPJ ja´ se encontra associado a transportadora '" + AllTrim(_sRetSQL))
-				_lRet = .F.
+			if ! empty(M->A4_CGC)
+				_sQuery := ""
+				_sQuery += " select  A4_COD + ' - ' + A4_NOME"
+				_sQuery += "   from  " + RetSQLName("SA4")
+				_sQuery += "  where  D_E_L_E_T_ = ''"
+				_sQuery += "    and  A4_FILIAL  = '" + xFilial("SA4") + "'"
+				_sQuery += "    and  A4_CGC     = '" + M->A4_CGC + "'"
+				_sQuery += "    and  A4_COD    <> '" + M->A4_COD + "'"
+				_sRetSQL = U_RetSQL (_sQuery)
+				if ! empty(_sRetSQL)
+					U_Help ("Este CNPJ ja´ se encontra associado a transportadora '" + AllTrim(_sRetSQL))
+					_lRet = .F.
+				endif
 			endif
-		endif
 
 		case _sCampo == "M->A5_CODPRF"
-		if empty(M->A5_CODPRF)
-			U_Help ("Deve ser informado o codigo do produto do fornecedor.")
-			_lRet = .F.
-		endif
+			if empty(M->A5_CODPRF)
+				U_Help ("Deve ser informado o codigo do produto do fornecedor.")
+				_lRet = .F.
+			endif
 
 		case _sCampo == "M->TL_DTINICI"
-		if _lRet .and. (M->TL_DTINICI < Date() -3 .or. dDataBase > date ())
-			U_Help ("Data inicial nao pode ser menor do que 3 dias da data de hoje.")
-			_lRet = .F.
-		endif
+			if _lRet .and. (M->TL_DTINICI < Date() -3 .or. dDataBase > date ())
+				U_Help ("Data inicial nao pode ser menor do que 3 dias da data de hoje.")
+				_lRet = .F.
+			endif
 
 		case _sCampo == "M->TL_DTFIM"
-		if _lRet .and. (M->TL_DTFIM < Date() -3 .or. dDataBase > date ())
-			U_Help ("Data final nao pode ser menor do que 3 dias da data de hoje.")
-			_lRet = .F.
-		endif
+			if _lRet .and. (M->TL_DTFIM < Date() -3 .or. dDataBase > date ())
+				U_Help ("Data final nao pode ser menor do que 3 dias da data de hoje.")
+				_lRet = .F.
+			endif
 		
 		case _sCampo == "M->ACL_CODPRO" .and. ! GDDeleted ()
-	//		for N = 1 to len (aCols)
-	//			if ! GDDeleted () .and. ! empty (GDFieldGet ("ACL_VALIPR"))
-	//				U_Help ("Ja' existe alguma linha de produto informada. Uma mesma campanha nao pode trabalhar com produtos e com linhas de produtos ao mesmo tempo.")
-	//				_lRet = .F.
-	//				exit
-	//			endif
-	//		next
 			for _i = 1 to len (aCols)
 				if ! GDDeleted (_i) .and. ! empty (GDFieldGet ("ACL_VALIPR", _i))
 					U_Help ("Ja' existe alguma linha de produto informada. Uma mesma campanha nao pode trabalhar com produtos e com linhas de produtos ao mesmo tempo.")
@@ -357,13 +367,6 @@ user function VA_VCpo (_sCampo)
 			next
 
 		case _sCampo == "M->ACL_VALIPR" .and. ! GDDeleted ()
-//			for N = 1 to len (aCols)
-//				if ! GDDeleted () .and. ! empty (GDFieldGet ("ACL_CODPRO"))
-//					U_Help ("Ja' existe algum codigo de produto informado. Uma mesma campanha nao pode trabalhar com produtos e com linhas de produtos ao mesmo tempo.")
-//					_lRet = .F.
-//					exit
-//				endif
-//			next
 			for _i = 1 to len (aCols)
 				if ! GDDeleted (_i) .and. ! empty (GDFieldGet ("ACL_CODPRO", _i))
 					U_Help ("Ja' existe algum codigo de produto informado. Uma mesma campanha nao pode trabalhar com produtos e com linhas de produtos ao mesmo tempo.")
@@ -373,132 +376,91 @@ user function VA_VCpo (_sCampo)
 			next
 
 		case _sCampo == "M->ADB_TES" .and. ! GDDeleted ()
-		if fBuscaCpo ("SF4", 1, xfilial ("SF4") + M->ADB_TES, "F4_ESTOQUE") != 'S' .or. fBuscaCpo ("SF4", 1, xfilial ("SF4") + M->ADB_TES, "F4_DUPLIC") != 'N'
-			U_Help ("Venda para entrega futura: TES de remessa deve atualizar estoque e nao deve gerar duplicata.")
-			_lRet = .F.
-		endif
+			if fBuscaCpo ("SF4", 1, xfilial ("SF4") + M->ADB_TES, "F4_ESTOQUE") != 'S' .or. fBuscaCpo ("SF4", 1, xfilial ("SF4") + M->ADB_TES, "F4_DUPLIC") != 'N'
+				U_Help ("Venda para entrega futura: TES de remessa deve atualizar estoque e nao deve gerar duplicata.")
+				_lRet = .F.
+			endif
 
 		case _sCampo == "M->ADB_TESCOB" .and. ! GDDeleted ()
-		if fBuscaCpo ("SF4", 1, xfilial ("SF4") + M->ADB_TESCOB, "F4_ESTOQUE") == 'S' .or. fBuscaCpo ("SF4", 1, xfilial ("SF4") + M->ADB_TESCOB, "F4_DUPLIC") == 'N'
-			U_Help ("Venda para entrega futura: TES de cobranca nao deve atualizar estoque e deve gerar duplicata.")
-			_lRet = .F.
-		endif
+			if fBuscaCpo ("SF4", 1, xfilial ("SF4") + M->ADB_TESCOB, "F4_ESTOQUE") == 'S' .or. fBuscaCpo ("SF4", 1, xfilial ("SF4") + M->ADB_TESCOB, "F4_DUPLIC") == 'N'
+				U_Help ("Venda para entrega futura: TES de cobranca nao deve atualizar estoque e deve gerar duplicata.")
+				_lRet = .F.
+			endif
 
 		case _sCampo == "M->B1_CODPAI"
-		if ! empty (M->B1_CODPAI) .and. M->B1_GRUPO != '0400'  // Uvas tem mais de um pai (organ/bordadura, etc.)
-			_sQuery := ""
-			_sQuery += " select TOP 1 B1_COD"
-			_sQuery += "   from " + RetSQLName ("SB1")
-			_sQuery += "  where D_E_L_E_T_  = ''"
-			_sQuery += "    and B1_FILIAL   = '" + xfilial ("SB1") + "'"
-			_sQuery += "    and B1_CODPAI   = '" + m->B1_CODPAI + "'"
-			_sQuery += "    and B1_COD     != '" + m->B1_COD + "'"
-			_sRetSQL = alltrim (U_RetSQL (_sQuery))
-			if ! empty (_sRetSQL)
-				_lRet = U_MsgNoYes ("Este codigo pai ja' se encontra associado ao(s) produto(s) '" + alltrim (_sRetSQL) + "'. Confirma assim mesmo?")
+			if ! empty (M->B1_CODPAI) .and. M->B1_GRUPO != '0400'  // Uvas tem mais de um pai (organ/bordadura, etc.)
+				_sQuery := ""
+				_sQuery += " select TOP 1 B1_COD"
+				_sQuery += "   from " + RetSQLName ("SB1")
+				_sQuery += "  where D_E_L_E_T_  = ''"
+				_sQuery += "    and B1_FILIAL   = '" + xfilial ("SB1") + "'"
+				_sQuery += "    and B1_CODPAI   = '" + m->B1_CODPAI + "'"
+				_sQuery += "    and B1_COD     != '" + m->B1_COD + "'"
+				_sRetSQL = alltrim (U_RetSQL (_sQuery))
+				if ! empty (_sRetSQL)
+					_lRet = U_MsgNoYes ("Este codigo pai ja' se encontra associado ao(s) produto(s) '" + alltrim (_sRetSQL) + "'. Confirma assim mesmo?")
+				endif
 			endif
-		endif
 
 		case _sCampo $ "M->B1_VACSDAL/M->B1_VACSDLV/M->B1_VACSDJC/M->B1_VACSDSP/M->B1_VACSDSA"
-		_sQuery := ""
-		_sQuery += " select count (ZX5_FILIAL)"
-		_sQuery += "   from " + RetSQLName ("ZX5")
-		_sQuery += "  where D_E_L_E_T_ = ''"
-		_sQuery += "    and ZX5_FILIAL = (SELECT CASE ZX5_MODO WHEN 'C' THEN '  ' ELSE '" + cFilAnt + "' END"
-		_sQuery +=                        " FROM " + RetSQLName ("ZX5")
-		_sQuery +=                       " WHERE D_E_L_E_T_ = ''"
-		_sQuery +=                         " AND ZX5_FILIAL = '  '"
-		_sQuery +=                         " AND ZX5_TABELA = '00'"
-		_sQuery +=                         " AND ZX5_CHAVE  = '12')"
-		_sQuery += "    and ZX5_TABELA = '12'"
-		// Campo excluido --> _sQuery += "    and ZX5_12COOP = '" + right (alltrim (_sCampo), 2) + "'"
-		_sQuery += "    and ZX5_12COD = '" + &(_sCampo) + "'"
-		if U_RetSQL (_sQuery) == 0
-			U_Help ("Codigo do Sisdeclara nao cadastrado para esta filial. Verifique tabela 12 das tabelas genericas.")
-			_lRet = .F.
-		endif
-
-/*		case _sCampo == "M->B1_VADUNCX"
-		if ! empty (M->B1_VADUNCX) .and. left (m->B1_COD, 1) != "8"
 			_sQuery := ""
-			_sQuery += " select count (B1_FILIAL)"
-			_sQuery += "   from " + RetSQLName ("SB1")
-			_sQuery += "  where D_E_L_E_T_  = ''"
-			_sQuery += "    and B1_FILIAL   = '" + xfilial ("SB1") + "'"
-			_sQuery += "    and B1_VADUNCX  = '" + m->B1_VADUNCX + "'"
-			_sQuery += "    and B1_COD     != '" + m->B1_COD + "'"
-			if U_RetSQL (_sQuery) > 0
-				_lRet = U_MsgNoYes ("Este codigo DUN ja' se encontra associado a outro produto. Confirma assim mesmo?")
-			endif
-		endif
-
-
-		case _sCampo == "M->B1_VAEANUN"
-		if ! empty (M->B1_VAEANUN)
-			if len (alltrim (M->B1_VAEANUN)) <> 12
-				u_help ("Devem ser informadas 12 posicoes (o calculo de digito verificador do codigo EAN sera feito automaticamente).")
+			_sQuery += " select count (ZX5_FILIAL)"
+			_sQuery += "   from " + RetSQLName ("ZX5")
+			_sQuery += "  where D_E_L_E_T_ = ''"
+			_sQuery += "    and ZX5_FILIAL = (SELECT CASE ZX5_MODO WHEN 'C' THEN '  ' ELSE '" + cFilAnt + "' END"
+			_sQuery +=                        " FROM " + RetSQLName ("ZX5")
+			_sQuery +=                       " WHERE D_E_L_E_T_ = ''"
+			_sQuery +=                         " AND ZX5_FILIAL = '  '"
+			_sQuery +=                         " AND ZX5_TABELA = '00'"
+			_sQuery +=                         " AND ZX5_CHAVE  = '12')"
+			_sQuery += "    and ZX5_TABELA = '12'"
+			// Campo excluido --> _sQuery += "    and ZX5_12COOP = '" + right (alltrim (_sCampo), 2) + "'"
+			_sQuery += "    and ZX5_12COD = '" + &(_sCampo) + "'"
+			if U_RetSQL (_sQuery) == 0
+				U_Help ("Codigo do Sisdeclara nao cadastrado para esta filial. Verifique tabela 12 das tabelas genericas.")
 				_lRet = .F.
 			endif
-			if _lRet .and. substr (m->b1_vaeanun, 9, 4) >= "9980" .and. substr (m->b1_vaeanun, 9, 4) <= "9999"
-				U_Help ("A sequencia 9980 a 9999 (posicoes 9 a 12 do codigo EAN) esta' reservada para codigos EAN de localizacao das filiais (usados inicialmente para arquivos de EDI).")
-				_lRet = .F.
-			endif
-			if _lRet
-				_oSQL := ClsSQL():New ()
-				_oSQL:_sQuery := ""
-				_oSQL:_sQuery += " SELECT DISTINCT RTRIM (B1_COD) + '-' + RTRIM (B1_DESC)"
-				_oSQL:_sQuery +=   " FROM " + RetSQLName ("SB1") + " SB1 "
-				_oSQL:_sQuery +=  " WHERE SB1.D_E_L_E_T_ = ''"
-				_oSQL:_sQuery +=    " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
-				_oSQL:_sQuery +=    " AND SB1.B1_VAEANUN = '" + m->B1_VAEANUN + "'"
-				_oSQL:_sQuery +=    " AND SB1.B1_COD    != '" + m->B1_COD + "'"
-				_sMsg = _oSQL:Qry2Str (1, chr (13) + chr (10))
-				if ! empty (_sMsg)
-					_lRet = U_MsgNoYes ("Codigo EAN ja informado para o(s) seguinte(s) produto (s):" + chr (13) + chr (10) + _sMsg + chr (13) + chr (10) + "Confirma assim mesmo?")
-				endif
-			endif
-		endif
-*/
+
 		case _sCampo $ "M->B1_VARMAAL"
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " select count (*)"
-		_oSQL:_sQuery += "   from " + RetSQLName ("ZX5")
-		_oSQL:_sQuery += "  where D_E_L_E_T_ = ''"
-		_oSQL:_sQuery += "    and ZX5_FILIAL = (SELECT CASE ZX5_MODO WHEN 'C' THEN '  ' ELSE '" + cFilAnt + "' END"
-		_oSQL:_sQuery +=                        " FROM " + RetSQLName ("ZX5")
-		_oSQL:_sQuery +=                       " WHERE D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=                         " AND ZX5_FILIAL = '  '"
-		_oSQL:_sQuery +=                         " AND ZX5_TABELA = '00'"
-		_oSQL:_sQuery +=                         " AND ZX5_CHAVE  = '08')"
-		_oSQL:_sQuery += "    and ZX5_TABELA = '08'"
-		_oSQL:_sQuery += "    and ZX5_08ATIV = 'S'"
-		_oSQL:_sQuery += "    and ZX5_08MARC = '" + m->b1_varmaal + "'"
-		if _oSQL:RetQry () == 0
-			_lRet = U_MsgNoYes ("Registro nao encontrado ou inativo (tabela 08 do arquivo ZX5). Confirma assim mesmo?")
-		endif
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " select count (*)"
+			_oSQL:_sQuery += "   from " + RetSQLName ("ZX5")
+			_oSQL:_sQuery += "  where D_E_L_E_T_ = ''"
+			_oSQL:_sQuery += "    and ZX5_FILIAL = (SELECT CASE ZX5_MODO WHEN 'C' THEN '  ' ELSE '" + cFilAnt + "' END"
+			_oSQL:_sQuery +=                        " FROM " + RetSQLName ("ZX5")
+			_oSQL:_sQuery +=                       " WHERE D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=                         " AND ZX5_FILIAL = '  '"
+			_oSQL:_sQuery +=                         " AND ZX5_TABELA = '00'"
+			_oSQL:_sQuery +=                         " AND ZX5_CHAVE  = '08')"
+			_oSQL:_sQuery += "    and ZX5_TABELA = '08'"
+			_oSQL:_sQuery += "    and ZX5_08ATIV = 'S'"
+			_oSQL:_sQuery += "    and ZX5_08MARC = '" + m->b1_varmaal + "'"
+			if _oSQL:RetQry () == 0
+				_lRet = U_MsgNoYes ("Registro nao encontrado ou inativo (tabela 08 do arquivo ZX5). Confirma assim mesmo?")
+			endif
 
 		case _sCampo $ "M->BE_LOCALIZ/M->BE_LOCAL"
-		if m->be_vatanq == 'S'
-			if left(m->be_localiz,3)!="T"+cFilAnt
-				u_help ("Para tanques deve ser usado o padrao Txx<numero_tanque> onde xx = codigo filial.")
-				_lRet = .F.
-			endif
-			if _lRet .and. ! empty (M->BE_LOCALIZ) .and. ! empty (M->BE_LOCAL)
-				_oSQL := ClsSQL ():New ()
-				_oSQL:_sQuery := ""
-				_oSQL:_sQuery += " SELECT COUNT (*)"
-				_oSQL:_sQuery +=   " FROM " + RetSQLName ("SBE")
-				_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
-				_oSQL:_sQuery +=    " AND BE_FILIAL  = '" + xfilial ("SBE") + "'"
-				_oSQL:_sQuery +=    " AND BE_LOCALIZ = '" + m->be_localiz + "'"
-				_oSQL:_sQuery +=    " AND BE_LOCAL  != '" + m->be_local + "'"
-				if _oSQL:RetQry (1, .f.) > 0
-					u_help ("Este codigo de tanque ja existe em outro almoxarifado.")
+			if m->be_vatanq == 'S'
+				if left(m->be_localiz,3)!="T"+cFilAnt
+					u_help ("Para tanques deve ser usado o padrao Txx<numero_tanque> onde xx = codigo filial.")
 					_lRet = .F.
 				endif
+				if _lRet .and. ! empty (M->BE_LOCALIZ) .and. ! empty (M->BE_LOCAL)
+					_oSQL := ClsSQL ():New ()
+					_oSQL:_sQuery := ""
+					_oSQL:_sQuery += " SELECT COUNT (*)"
+					_oSQL:_sQuery +=   " FROM " + RetSQLName ("SBE")
+					_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
+					_oSQL:_sQuery +=    " AND BE_FILIAL  = '" + xfilial ("SBE") + "'"
+					_oSQL:_sQuery +=    " AND BE_LOCALIZ = '" + m->be_localiz + "'"
+					_oSQL:_sQuery +=    " AND BE_LOCAL  != '" + m->be_local + "'"
+					if _oSQL:RetQry (1, .f.) > 0
+						u_help ("Este codigo de tanque ja existe em outro almoxarifado.")
+						_lRet = .F.
+					endif
+				endif
 			endif
-		endif
 
 		case _sCampo $ "M->C2_PRODUTO/M->DA1_CODPRO"
 			if alltrim (&(_sCampo)) != 'MANUTENCAO' //necessario para O.S de manutencao.
@@ -516,267 +478,244 @@ user function VA_VCpo (_sCampo)
 		case _sCampo == "M->C2_QUANT"
 			_lRet = _ValQtLote ()
 
-
 		case _sCampo == "M->C2_VAOPESP"
-		if altera
-			if sc2 -> c2_valibpr == 'S'
-				u_help ("OP ja liberada para producao. Alteracao nao permitida.")
-				_lRet = .F.
-			endif
-			if sc2 -> c2_quje != 0
-				u_help ("OP ja teve apontamentos. Alteracao nao permitida.")
-				_lRet = .F.
-			endif
-			if _lRet .and. sc2 -> c2_vaopesp $ 'E/T'
-				_oSQL := ClsSQL ():New ()
-				_oSQL:_sQuery := " SELECT COUNT (*)"
-				_oSQL:_sQuery +=   " FROM " + RetSqlName ("SD1") + " SD1"
-				_oSQL:_sQuery +=  " WHERE SD1.D_E_L_E_T_ != '*'"
-				_oSQL:_sQuery +=    " AND SD1.D1_FILIAL   = '" + xFilial ("SD1") + "'"
-				_oSQL:_sQuery +=    " AND SD1.D1_OP       = '" + m->c2_num + m->c2_item + m->c2_sequen + m->c2_itemgrd + "'"
-				if _oSQL:RetQry () > 0
-					u_help ("OP envolvendo servicos em / para terceiros: ja´ existe movimentacao de NF de entrada associada a esta OP.")
+			if altera
+				if sc2 -> c2_valibpr == 'S'
+					u_help ("OP ja liberada para producao. Alteracao nao permitida.")
 					_lRet = .F.
 				endif
-			endif
-			if _lRet .and. sc2 -> c2_vaopesp $ 'E/T'
-				_oSQL := ClsSQL ():New ()
-				_oSQL:_sQuery := " SELECT COUNT (*)"
-				_oSQL:_sQuery +=   " FROM " + RetSqlName ("SD2") + " SD2"
-				_oSQL:_sQuery +=  " WHERE SD2.D_E_L_E_T_ != '*'"
-				_oSQL:_sQuery +=    " AND SD2.D2_FILIAL   = '" + xFilial ("SD2") + "'"
-				_oSQL:_sQuery +=    " AND SD2.D2_VAOPT    = '" + m->c2_num + m->c2_item + m->c2_sequen + m->c2_itemgrd + "'"
-				if _oSQL:RetQry () > 0
-					u_help ("OP envolvendo servicos em / para terceiros: ja´ existe movimentacao de NF de saida associada a esta OP.")
+				if sc2 -> c2_quje != 0
+					u_help ("OP ja teve apontamentos. Alteracao nao permitida.")
 					_lRet = .F.
 				endif
+				if _lRet .and. sc2 -> c2_vaopesp $ 'E/T'
+					_oSQL := ClsSQL ():New ()
+					_oSQL:_sQuery := " SELECT COUNT (*)"
+					_oSQL:_sQuery +=   " FROM " + RetSqlName ("SD1") + " SD1"
+					_oSQL:_sQuery +=  " WHERE SD1.D_E_L_E_T_ != '*'"
+					_oSQL:_sQuery +=    " AND SD1.D1_FILIAL   = '" + xFilial ("SD1") + "'"
+					_oSQL:_sQuery +=    " AND SD1.D1_OP       = '" + m->c2_num + m->c2_item + m->c2_sequen + m->c2_itemgrd + "'"
+					if _oSQL:RetQry () > 0
+						u_help ("OP envolvendo servicos em / para terceiros: ja´ existe movimentacao de NF de entrada associada a esta OP.")
+						_lRet = .F.
+					endif
+				endif
+				if _lRet .and. sc2 -> c2_vaopesp $ 'E/T'
+					_oSQL := ClsSQL ():New ()
+					_oSQL:_sQuery := " SELECT COUNT (*)"
+					_oSQL:_sQuery +=   " FROM " + RetSqlName ("SD2") + " SD2"
+					_oSQL:_sQuery +=  " WHERE SD2.D_E_L_E_T_ != '*'"
+					_oSQL:_sQuery +=    " AND SD2.D2_FILIAL   = '" + xFilial ("SD2") + "'"
+					_oSQL:_sQuery +=    " AND SD2.D2_VAOPT    = '" + m->c2_num + m->c2_item + m->c2_sequen + m->c2_itemgrd + "'"
+					if _oSQL:RetQry () > 0
+						u_help ("OP envolvendo servicos em / para terceiros: ja´ existe movimentacao de NF de saida associada a esta OP.")
+						_lRet = .F.
+					endif
+				endif
 			endif
-		endif
 
 		case _sCampo == "M->C2_VAREVVD"
-		sg5 -> (dbsetorder (1))  // G5_FILIAL+G5_PRODUTO+G5_REVISAO+DTOS(G5_DATAREV)
-		if ! sg5 -> (dbseek (xfilial ("SG5") + m->c2_vacodvd + m->c2_varevvd, .F.))
-			u_help ("Revisao '" + m->c2_varevvd + "' nao cadastrada para o produto '" + alltrim (m->c2_vacodvd) + "'.")
-			_lRet = .F.
-		else
-			if sg5 -> g5_msblql == '1'
-				u_help ("Produto '" + alltrim (m->c2_vacodvd) + "': a revisao '" + m->c2_varevvd + "' encontra-se bloqueada.")
+			sg5 -> (dbsetorder (1))  // G5_FILIAL+G5_PRODUTO+G5_REVISAO+DTOS(G5_DATAREV)
+			if ! sg5 -> (dbseek (xfilial ("SG5") + m->c2_vacodvd + m->c2_varevvd, .F.))
+				u_help ("Revisao '" + m->c2_varevvd + "' nao cadastrada para o produto '" + alltrim (m->c2_vacodvd) + "'.")
 				_lRet = .F.
-			endif
-		endif
-
-		case _sCampo == "M->C5_BANCO"
-		_lRet = _ValMNet ()
-
-		case _sCampo == "M->C5_CLIENTE"
-		if type ("_sCodRep") == "C"
-			if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->c5_cliente, "A1_VEND") != _sCodRep  // Representante
-				if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->c5_cliente, "A1_VEND2") != _sCodRep  // Gerente
-					U_Help ("Cliente nao pertence a este representante.")
+			else
+				if sg5 -> g5_msblql == '1'
+					u_help ("Produto '" + alltrim (m->c2_vacodvd) + "': a revisao '" + m->c2_varevvd + "' encontra-se bloqueada.")
 					_lRet = .F.
 				endif
 			endif
-		endif
+
+		case _sCampo == "M->C5_BANCO"
+			_lRet = _ValMNet ()
+
+		case _sCampo == "M->C5_CLIENTE"
+			if type ("_sCodRep") == "C"
+				if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->c5_cliente, "A1_VEND") != _sCodRep  // Representante
+					if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->c5_cliente, "A1_VEND2") != _sCodRep  // Gerente
+						U_Help ("Cliente nao pertence a este representante.")
+						_lRet = .F.
+					endif
+				endif
+			endif
 
 		case _sCampo $ "M->C5_COMIS1/M->C5_COMIS2/M->C5_COMIS3/M->C5_COMIS4/M->C5_COMIS5"
-		_lRet = _ValMNet ()
+			_lRet = _ValMNet ()
 
 		case _sCampo == "M->C5_CONDPAG"
-		// desabilitado no inicio da implantacao		_lRet = _ValMNet ()
+			// desabilitado no inicio da implantacao		_lRet = _ValMNet ()
 
 		case _sCampo == "M->C5_EMISSAO"
-		_lRet = _ValMNet ()
+			_lRet = _ValMNet ()
 
 		case _sCampo == "M->C5_PEDCLI"
-		if ! empty (m->c5_cliente)
-			_sQuery := ""
-			_sQuery += " select count (C5_FILIAL)"
-			_sQuery += "   from " + RetSQLName ("SC5")
-			_sQuery += "  where D_E_L_E_T_ = ''"
-			_sQuery += "    and C5_FILIAL  = '" + xfilial ("SC5") + "'"
-			_sQuery += "    and C5_CLIENTE = '" + m->c5_cliente + "'"
-			_sQuery += "    and C5_LOJACLI = '" + m->c5_lojacli + "'"
-			_sQuery += "    and C5_PEDCLI  = '" + m->c5_pedcli  + "'"
-			if U_RetSQL (_sQuery) > 0
-				//				if type ("oMainWnd") == "O"  // Se tem interface com o usuario
-				_lRet = U_MsgNoYes ("Ordem de compra '" + alltrim (m->c5_pedcli) + "' ja' existe para este cliente. Confirma mesmo assim?", .T.)
-				//				else
-				//					U_Help ("Ordem de compra '" + alltrim (m->c5_pedcli) + "' ja' existe para este cliente.")
-				//					_lRet = .F.
-				//				endif
+			if ! empty (m->c5_cliente)
+				_sQuery := ""
+				_sQuery += " select count (C5_FILIAL)"
+				_sQuery += "   from " + RetSQLName ("SC5")
+				_sQuery += "  where D_E_L_E_T_ = ''"
+				_sQuery += "    and C5_FILIAL  = '" + xfilial ("SC5") + "'"
+				_sQuery += "    and C5_CLIENTE = '" + m->c5_cliente + "'"
+				_sQuery += "    and C5_LOJACLI = '" + m->c5_lojacli + "'"
+				_sQuery += "    and C5_PEDCLI  = '" + m->c5_pedcli  + "'"
+				if U_RetSQL (_sQuery) > 0
+					_lRet = U_MsgNoYes ("Ordem de compra '" + alltrim (m->c5_pedcli) + "' ja' existe para este cliente. Confirma mesmo assim?", .T.)
+				endif
 			endif
-		endif
 
 		case _sCampo == "M->C5_TIPO"
-		_lRet = _ValMNet ()
+			_lRet = _ValMNet ()
 
 		case _sCampo == "M->C5_TPFRETE"
-		// desabilitado no inicio da implantacao				_lRet = _ValMNet ()
+			// desabilitado no inicio da implantacao				_lRet = _ValMNet ()
 
 		case _sCampo == "M->C5_VADCO"
-		zz8 -> (dbsetorder (1))
-		if ! zz8 -> (dbseek (xfilial ("ZZ8") + M->C5_VADCO, .F.))
-			U_Help ("DCO nao cadastrado.")
-			_lRet = .F.
-		endif
-		if _lRet .and. ! zz8 -> zz8_status == "F"
-			U_Help ("DCO nao se encontra em fase de faturamento.")
-			_lRet = .F.
-		endif
+			zz8 -> (dbsetorder (1))
+			if ! zz8 -> (dbseek (xfilial ("ZZ8") + M->C5_VADCO, .F.))
+				U_Help ("DCO nao cadastrado.")
+				_lRet = .F.
+			endif
+			if _lRet .and. ! zz8 -> zz8_status == "F"
+				U_Help ("DCO nao se encontra em fase de faturamento.")
+				_lRet = .F.
+			endif
 
 		case _sCampo == "M->C5_VAFEMB"
-
-		// 20130712 - para colocar na variavel todas as filiais que sao depositos (04/14/15/...)
-		_empdeps := ''
-		DbSelectArea('SX5')
-		DbSeek(xFilial('SX5') + 'ZS',.f.)
-		Do While !eof() .and. xFilial('SX5') + 'ZS' == SX5->X5_FILIAL + SX5->X5_TABELA
-			_empdeps += '01'+alltrim(SX5->X5_CHAVE) + '/'
+			// 20130712 - para colocar na variavel todas as filiais que sao depositos (04/14/15/...)
+			_empdeps := ''
 			DbSelectArea('SX5')
-			DbSkip()
-		EndDo
+			DbSeek(xFilial('SX5') + 'ZS',.f.)
+			Do While !eof() .and. xFilial('SX5') + 'ZS' == SX5->X5_FILIAL + SX5->X5_TABELA
+				_empdeps += '01'+alltrim(SX5->X5_CHAVE) + '/'
+				DbSelectArea('SX5')
+				DbSkip()
+			EndDo
 
-		if ! IsInCallStack ("U_VA_GNF5")
-			_lRet = .F.
-			if ! cEmpAnt + m->c5_vaFEmb $ "0101/0103/0105/0106/0107/0108/0109/0110/0111/0112/0113/0114/0201/1001"
-				u_help ("Combinacao invalida de de empresa + filial de embarque.")
-			elseif cEmpAnt == '01' .and. ! cEmpAnt + m->c5_vaFEmb $ "0101/"+alltrim(_empdeps)
-				u_help ("Filial selecionada deve ser 01 ou 14")
-			elseif aviso ("Alteracao de filial de embarque", ;
-			"Alterando a filial de embarque, a liberacao do pedido devera´ ser refeita. Confirma?", ;
-			{"Confirma", "Cancelar"}, ;
-			3, ;
-			"Alteracao de filial de embarque") == 1
-				U_GrvLibPV (.F.)
-				_lRet = .T.
+			if ! IsInCallStack ("U_VA_GNF5")
+				_lRet = .F.
+				if ! cEmpAnt + m->c5_vaFEmb $ "0101/0103/0105/0106/0107/0108/0109/0110/0111/0112/0113/0114/0201/1001"
+					u_help ("Combinacao invalida de de empresa + filial de embarque.")
+				elseif cEmpAnt == '01' .and. ! cEmpAnt + m->c5_vaFEmb $ "0101/"+alltrim(_empdeps)
+					u_help ("Filial selecionada deve ser 01 ou 14")
+				elseif aviso ("Alteracao de filial de embarque", ;
+				"Alterando a filial de embarque, a liberacao do pedido devera´ ser refeita. Confirma?", ;
+				{"Confirma", "Cancelar"}, ;
+				3, ;
+				"Alteracao de filial de embarque") == 1
+					U_GrvLibPV (.F.)
+					_lRet = .T.
+				endif
 			endif
-		endif
 
 		case _sCampo $ "M->C5_VEND1/M->C5_VEND2/M->C5_VEND3/M->C5_VEND4/M->C5_VEND5"
-		// 	    if fBuscaCpo ("SA3", 1, xfilial ("SA3") + M->C5_VEND1, "A3_ATIVO") != "S"  // Representante deve estar ativo
-		if fBuscaCpo ("SA3", 1, xfilial ("SA3") + &(_sCampo), "A3_ATIVO") != "S"  // Representante deve estar ativo
-			U_Help ("Representante nao esta´ ativo, verifique!")
-			_lRet = .F.
-		endif
-		if _lRet
-			_lRet = _ValMNet ()
-		endif
+			if fBuscaCpo ("SA3", 1, xfilial ("SA3") + &(_sCampo), "A3_ATIVO") != "S"  // Representante deve estar ativo
+				U_Help ("Representante nao esta´ ativo, verifique!")
+				_lRet = .F.
+			endif
+			if _lRet
+				_lRet = _ValMNet ()
+			endif
 
 		case _sCampo $ "M->C6_COMIS1/M->C6_COMIS2/M->C6_COMIS3/M->C6_COMIS4/M->C6_COMIS5"
-		_lRet = _ValMNet ()
+			_lRet = _ValMNet ()
 
 		case _sCampo == "M->C6_PRCVEN"
-		_lRet = _ValMNet ()
+			_lRet = _ValMNet ()
 
 		case _sCampo == "M->C6_PRODUTO"
-		sb1 -> (dbsetorder (1))
-		if ! sb1 -> (dbseek (xfilial ("SB1") + M->C6_PRODUTO, .F.))
-			U_Help ("Produto nao cadastrado.")
-			_lRet = .F.
-		endif
+			sb1 -> (dbsetorder (1))
+			if ! sb1 -> (dbseek (xfilial ("SB1") + M->C6_PRODUTO, .F.))
+				U_Help ("Produto nao cadastrado.")
+				_lRet = .F.
+			endif
 		
-		if _lRet
-			_lRet = _ValMNet ()
-		endif
+			if _lRet
+				_lRet = _ValMNet ()
+			endif
 
 		case _sCampo == "M->C6_QTDVEN"
-			
-			// Validacao desabilitada para atender ruptura de estoque
-		//	u_help (dtoc (stod ('20200826')))
-		//	u_help (dtoc (stod ('20200904')))
-		//	u_help (cvaltochar (date () >= stod ('20200826') .and. date () <= stod ('20200904')))
 			if date () >= stod ('20200826') .and. date () <= stod ('20200904')
-		//		u_help ('periodo liberado')
 				_lRet = .T.
 			else
 				_lRet = _ValMNet ()
 			endif
 
 		case _sCampo == "M->C6_VAOPT"
-		sc2 -> (dbsetorder (1))
-		if ! sc2 -> (dbseek (xfilial ("SC2") + M->C6_VAOPT, .F.))
-			U_Help ("OP nao cadastrada.")
-			_lRet = .F.
-		else
-			if ! sc2 -> c2_vaOPEsp $ 'E/T'
-				u_help ("OP nao tem finalidade de terceirizacao.")
+			sc2 -> (dbsetorder (1))
+			if ! sc2 -> (dbseek (xfilial ("SC2") + M->C6_VAOPT, .F.))
+				U_Help ("OP nao cadastrada.")
 				_lRet = .F.
-			endif
-		endif
-		if _lRet
-			_lRet = _ValMNet ()
-		endif
-
-		case _sCampo $ "M->C6_VAPLIQ/M->C6_VAPBRU"
-		if left (GDFieldGet ('C6_PRODUTO'), 1) != '8' .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ('C6_PRODUTO'), "B1_TIPO") $ 'PA/'
-			u_help ("Informacao manual de pesos nao permitida para este tipo de produto.")
-			_lRet = .F.
-		else
-			if ! GDFieldGet ("C6_VAALTVP") $ 'AP'
-				_lRet = u_msgyesno ("Se voce informar este campo manualmente, os pesos deste item nao serao mais calculados automaticamente. Confirma?", .T.)
-			endif
-		endif
-
-		case _sCampo $ "M->C6_VAQTVOL"
-		if left (GDFieldGet ('C6_PRODUTO'), 1) != '8' .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ('C6_PRODUTO'), "B1_TIPO") $ 'PA/'
-			u_help ("Informacao manual de volumes nao permitida para este tipo de produto.")
-			_lRet = .F.
-		else
-			if ! GDFieldGet ("C6_VAALTVP") $ 'AV'
-				_lRet = u_msgyesno ("Se voce informar este campo manualmente, os volumes deste item nao serao mais calculados automaticamente. Confirma?", .T.)
-			endif
-		endif
-
-		case _sCampo == "M->C7_PRECO"
-		if ! empty (CA120Forn) .and. ! empty (gdfieldget("C7_PRODUTO")) .and. m->c7_preco != 0
-			_aPreco := {}
-			_aQuery := {}
-			_sQuery := ""
-			_msg	:= ""
-			_lRet 	:= .T.
-
-			_sQuery += "SELECT TOP 2 C7_PRECO, C7_NUM, C7_FORNECE, C7_LOJA "
-			_sQuery += "FROM " + RetSQLName ("SC7") + " SC7 "
-			_sQuery += "WHERE D_E_L_E_T_ = '' "
-			_sQuery += "AND C7_PRODUTO = '" + gdfieldget("C7_PRODUTO",n) + "' "
-			_sQuery += "ORDER BY C7_EMISSAO DESC"
-
-			_aQuery := U_Qry2Array (_sQuery)
-
-			if len(_aQuery) > 1
-//				for _x = 1 to len(_aQuery)
-//					if M->C7_PRECO > _aQuery[_x][1]
-//						_cNomFor := Posicione("SA2",1,xFilial("SA2")+_aQuery[_x][3]+_aQuery[_x][4],"A2_NREDUZ")
-//						aadd(_aPreco,{_aQuery[_x][1], _aQuery[_x][2], _cNomFor})
-//					endif
-//				next _x
-				for _i = 1 to len(_aQuery)
-					if M->C7_PRECO > _aQuery[_i][1]
-						_cNomFor := Posicione("SA2",1,xFilial("SA2")+_aQuery[_i][3]+_aQuery[_i][4],"A2_NREDUZ")
-						aadd(_aPreco,{_aQuery[_i][1], _aQuery[_i][2], _cNomFor})
-					endif
-				next _i
-			endif
-
-			if len(_aPreco) > 1
-				_msg := 'Preco unitario do produto "' + alltrim(gdfieldget("C7_PRODUTO",n)) + '" nas duas ultimas compras foi menor do que o digitado, conforme segue abaixo. Deseja continuar com esse preco ? ' + chr(13) + chr(10)
-				_msg += chr(13) + chr(10)
-//				for _x = 1 to len(_aPreco)
-//					_msg += "Pedido: " + alltrim(_aPreco[_x][2]) + "     Preco: " + alltrim(transform (_aPreco[_x][1], "@E 9,999,999.99")) + "     Fornecedor: " + alltrim(_cNomFor) + chr(13) + chr(10)
-//				next
-				for _i = 1 to len(_aPreco)
-					_msg += "Pedido: " + alltrim(_aPreco[_i][2]) + "     Preco: " + alltrim(transform (_aPreco[_i][1], "@E 9,999,999.99")) + "     Fornecedor: " + alltrim(_cNomFor) + chr(13) + chr(10)
-				next
-			endif
-
-			if len(_aPreco) > 1
-				if U_MsgYesNo(_msg)
-					_lRet := .T.
-				else
-					_lRet := .F.
+			else
+				if ! sc2 -> c2_vaOPEsp $ 'E/T'
+					u_help ("OP nao tem finalidade de terceirizacao.")
+					_lRet = .F.
 				endif
 			endif
-		endif
+			if _lRet
+				_lRet = _ValMNet ()
+			endif
+
+		case _sCampo $ "M->C6_VAPLIQ/M->C6_VAPBRU"
+			if left (GDFieldGet ('C6_PRODUTO'), 1) != '8' .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ('C6_PRODUTO'), "B1_TIPO") $ 'PA/'
+				u_help ("Informacao manual de pesos nao permitida para este tipo de produto.")
+				_lRet = .F.
+			else
+				if ! GDFieldGet ("C6_VAALTVP") $ 'AP'
+					_lRet = u_msgyesno ("Se voce informar este campo manualmente, os pesos deste item nao serao mais calculados automaticamente. Confirma?", .T.)
+				endif
+			endif
+
+		case _sCampo $ "M->C6_VAQTVOL"
+			if left (GDFieldGet ('C6_PRODUTO'), 1) != '8' .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ('C6_PRODUTO'), "B1_TIPO") $ 'PA/'
+				u_help ("Informacao manual de volumes nao permitida para este tipo de produto.")
+				_lRet = .F.
+			else
+				if ! GDFieldGet ("C6_VAALTVP") $ 'AV'
+					_lRet = u_msgyesno ("Se voce informar este campo manualmente, os volumes deste item nao serao mais calculados automaticamente. Confirma?", .T.)
+				endif
+			endif
+
+		case _sCampo == "M->C7_PRECO"
+			if ! empty (CA120Forn) .and. ! empty (gdfieldget("C7_PRODUTO")) .and. m->c7_preco != 0
+				_aPreco := {}
+				_aQuery := {}
+				_sQuery := ""
+				_msg	:= ""
+				_lRet 	:= .T.
+
+				_sQuery += "SELECT TOP 2 C7_PRECO, C7_NUM, C7_FORNECE, C7_LOJA "
+				_sQuery += "FROM " + RetSQLName ("SC7") + " SC7 "
+				_sQuery += "WHERE D_E_L_E_T_ = '' "
+				_sQuery += "AND C7_PRODUTO = '" + gdfieldget("C7_PRODUTO",n) + "' "
+				_sQuery += "ORDER BY C7_EMISSAO DESC"
+
+				_aQuery := U_Qry2Array (_sQuery)
+
+				if len(_aQuery) > 1
+					for _i = 1 to len(_aQuery)
+						if M->C7_PRECO > _aQuery[_i][1]
+							_cNomFor := Posicione("SA2",1,xFilial("SA2")+_aQuery[_i][3]+_aQuery[_i][4],"A2_NREDUZ")
+							aadd(_aPreco,{_aQuery[_i][1], _aQuery[_i][2], _cNomFor})
+						endif
+					next _i
+				endif
+
+				if len(_aPreco) > 1
+					_msg := 'Preco unitario do produto "' + alltrim(gdfieldget("C7_PRODUTO",n)) + '" nas duas ultimas compras foi menor do que o digitado, conforme segue abaixo. Deseja continuar com esse preco ? ' + chr(13) + chr(10)
+					_msg += chr(13) + chr(10)
+					for _i = 1 to len(_aPreco)
+						_msg += "Pedido: " + alltrim(_aPreco[_i][2]) + "     Preco: " + alltrim(transform (_aPreco[_i][1], "@E 9,999,999.99")) + "     Fornecedor: " + alltrim(_cNomFor) + chr(13) + chr(10)
+					next
+				endif
+
+				if len(_aPreco) > 1
+					if U_MsgYesNo(_msg)
+						_lRet := .T.
+					else
+						_lRet := .F.
+					endif
+				endif
+			endif
 
 		case _sCampo == "CA120FORN"  // Fornecedor no pedido de compras.
 			if nTipoPed != 2  // Ped. compra
@@ -906,13 +845,14 @@ user function VA_VCpo (_sCampo)
 				U_Help ("Motivo de devolucao nao cadastrado ou inativo.")
 				_lRet = .F.
 			endif
-
+			
 		case _sCampo $ "M->D3_COD"
 			sb1 -> (dbsetorder (1))
 			if ! sb1 -> (dbseek (xfilial ("SB1") + M->d3_cod, .F.))
 				U_Help ("Produto nao cadastrado.")
 				_lRet = .F.
 			endif
+
 			if _lRet .and. sb1 -> b1_msblql == "1"
 				U_Help ("Produto bloqueado.")
 				_lRet = .F.
@@ -921,6 +861,7 @@ user function VA_VCpo (_sCampo)
 			if _lRet .and. sb1 -> b1_vaForaL == "S"
 				_lRet = U_MsgYesNo ("Produto fora de linha. Confirma a digitacao?")
 			endif
+
 			if _lRet .and. IsInCallStack ("MATA241") .and. cTM == '560'
 				if u_zzuvl ('109', __cUserId, .F.)
 					if ! sb1 -> b1_tipo $ 'CL/MT/MB/II/MA/EP/MM/MR'
@@ -931,6 +872,27 @@ user function VA_VCpo (_sCampo)
 						_lRet = U_MsgNoYes ("Requisicao para CC nao permitida para este tipo de produto. Confirma assim mesmo?")
 					endif
 				endif
+			endif
+
+			if _lRet .and. (IsInCallStack ("MATA261") .or. IsInCallStack ("MATA260"))
+				_oSQL := ClsSQL():New ()
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += " SELECT "
+				_oSQL:_sQuery += " 	  SB1.B1_COD "
+				_oSQL:_sQuery += " FROM " + RetSQLName ("SB1") + " AS SB1 "
+				_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SB2") + " AS SB2 "
+				_oSQL:_sQuery += " 	ON SB2.D_E_L_E_T_ = '' "
+				_oSQL:_sQuery += " 		AND B2_COD = B1_COD "
+				_oSQL:_sQuery += " 		AND SB2.B2_QATU > 0
+				_oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = '' "
+				_oSQL:_sQuery += "  AND SB1.B1_COD = '" + m->d3_cod + "'"
+				_oSQL:_sQuery += " AND SB1.B1_TIPO in ('MM','MC')  "
+				_oSQL:Log ()
+				_aSB1:= _oSQL:Qry2Array ()
+				
+				For _x := 1 to Len(_aSB1)
+					CriaSB2 (_aSB1[_x, 1], '02')
+				Next
 			endif
 			
 			/* Passado para MT242LOk.prw
@@ -976,15 +938,6 @@ user function VA_VCpo (_sCampo)
 		case _sCampo $ "M->D3_EMISSAO"
 			_lRet = .T.
 			if M->D3_EMISSAO != date ()
-//				if funname () != 'MATA685'  // Apontamento de perdas
-//					_sMsg = "Uso de data retroativa bloqueado para esta rotina."
-//					if U_ZZUVL ('084', __cUserId, .F.)
-//						_lRet = U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
-//					else
-//						u_help (_sMsg)
-//						_lRet = .F.
-//					endif
-//				endif
 				if funname () = 'MATA685'  // Tem validacao posterior pelo P.E. MT685TOK.
 				elseif funname () = 'MATA241' .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + m->d3_cod, 'B1_TIPO') == 'MO'  // Para nao de obra pode movimentar retroativo.
 				else
@@ -1004,12 +957,6 @@ user function VA_VCpo (_sCampo)
 				U_Help ("Tipo de movimento nao liberado para esta rotina.")
 				_lRet = .F.
 			endif
-
-//			if ! &(ReadVar ()) $ '550/560/561/562/563/564/565/566/567/568/569' .and. ! U_ZZUVL ('069', __cUserId, .F.)
-//				u_help ("Usuario nao tem permissao para este movimento.")
-//				_lRet = .F.
-//			endif
-
 
 		case _sCampo == "M->D3_VAETIQ"
 			za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP
@@ -1035,14 +982,6 @@ user function VA_VCpo (_sCampo)
 			_aQuery := {}
 			_aPal := {}
 
-			// verifica se o endereco ja existe no acols
-//			for i = 1 to len(aCols)
-//				if alltrim (M->DB_LOCALIZ) == alltrim(acols[i][3]) ;
-//					.and. empty (GDFieldGet ("DB_ESTORNO", i)) ;
-//					.and. fBuscaCpo ("SBE", 1, xfilial ("SBE") + m->da_local + GDFieldGet ("DB_LOCALIZ", i), "BE_VAPROUN") != 'S'	//			   .AND. GDFieldGet ("DB_LOCALIZ", i) != '999999'  //20140516 - Ajuste para permitir enderecamento no 999999 - generico
-//					_lRet = U_MsgNoYes ("Endereco ja informado anteriormente. Confirma assim mesmo?")
-//				endif
-//			next i
 			for _i = 1 to len(aCols)
 				if alltrim (M->DB_LOCALIZ) == alltrim(acols[_i][3]) ;
 					.and. empty (GDFieldGet ("DB_ESTORNO", _i)) ;
@@ -1114,17 +1053,6 @@ user function VA_VCpo (_sCampo)
 				u_help ("Componente nao pode ser igual ao produto final da OP.")
 				_lRet = .F.
 			endif
-// Nao validou no MATA381
-//			if IsInCallStack ("MATA381")
-//				for _i = 1 to len (aCols)
-//					if ! GDDeleted () .and. GDFieldGet ("D4_COD") == fBuscaCpo ("SC2", 1, xfilial ("SC2") + cOP, "C2_PRODUTO")
-//						u_help ("Linha " + cvaltochar (_i) + ": componente '" + GDFieldGet ("D4_COD") + "' nao pode ser igual ao produto final da OP.")
-//						_lRet = .F.
-//						exit
-//					endif
-//				next
-//			endif
-
 
 		case _sCampo $ "M->F4_VASISDE"
 			if M->F4_TIPO == "E" .AND. !M->F4_VASISDE $ "05/10/11/14/18/23/99"
@@ -1216,148 +1144,143 @@ user function VA_VCpo (_sCampo)
 			endIf
 
 		case _sCampo $ "M->N1_VAZX544"
-		if empty(M->N1_VAZX544)
-			_sQuery := ""
-			_sQuery += " select count (ZAH_FILIAL)"
-			_sQuery += "   from " + RetSQLName ("ZAH")
-			_sQuery += "  where D_E_L_E_T_ = ''"
-			_sQuery += "    and ZAH_FILIAL = '" + xFilial("ZAH") + "'"
-			_sQuery += "    and ZAH_CELCOD = '" + AllTrim(M->N1_CBASE) + "'"
-			_sRetSQL = U_RetSQL (_sQuery)
-			if ! empty(_sRetSQL)
-				U_Help ("Ativo/Maquina " + AllTrim(M->N1_CBASE) + " vinculada a Celula(s) de Producao. Informacao nao pode ser apagada.")
-				_lRet = .F.
-			endif
-		else
-			_lRet := U_ExistZX5("44",M->N1_VAZX544)
-		endIf
+			if empty(M->N1_VAZX544)
+				_sQuery := ""
+				_sQuery += " select count (ZAH_FILIAL)"
+				_sQuery += "   from " + RetSQLName ("ZAH")
+				_sQuery += "  where D_E_L_E_T_ = ''"
+				_sQuery += "    and ZAH_FILIAL = '" + xFilial("ZAH") + "'"
+				_sQuery += "    and ZAH_CELCOD = '" + AllTrim(M->N1_CBASE) + "'"
+				_sRetSQL = U_RetSQL (_sQuery)
+				if ! empty(_sRetSQL)
+					U_Help ("Ativo/Maquina " + AllTrim(M->N1_CBASE) + " vinculada a Celula(s) de Producao. Informacao nao pode ser apagada.")
+					_lRet = .F.
+				endif
+			else
+				_lRet := U_ExistZX5("44",M->N1_VAZX544)
+			endIf
 
 		case _sCampo $ "M->NG_INDUSTR"
-		if M->NG_INDUSTR == "N"
-			_sQuery := ""
-			_sQuery += " select count(N1_GRUPO)"
-			_sQuery += "   from " + RetSQLName ("SN1")
-			_sQuery += "  where D_E_L_E_T_ = ''"
-			_sQuery += "    and N1_FILIAL  = '" + xFilial("SN1") + "'"
-			_sQuery += "    and N1_GRUPO   = '" + AllTrim(M->NG_GRUPO) + "'"
-			_sRetSQL = U_RetSQL (_sQuery)
-			if ! empty(_sRetSQL)
-				U_Help ("Grupo " + AllTrim(M->NG_GRUPO) + " vinculado a Ativos utilizados pelo industrial. Informacao nao pode ser modificada/apagada.")
-				_lRet = .F.
+			if M->NG_INDUSTR == "N"
+				_sQuery := ""
+				_sQuery += " select count(N1_GRUPO)"
+				_sQuery += "   from " + RetSQLName ("SN1")
+				_sQuery += "  where D_E_L_E_T_ = ''"
+				_sQuery += "    and N1_FILIAL  = '" + xFilial("SN1") + "'"
+				_sQuery += "    and N1_GRUPO   = '" + AllTrim(M->NG_GRUPO) + "'"
+				_sRetSQL = U_RetSQL (_sQuery)
+				if ! empty(_sRetSQL)
+					U_Help ("Grupo " + AllTrim(M->NG_GRUPO) + " vinculado a Ativos utilizados pelo industrial. Informacao nao pode ser modificada/apagada.")
+					_lRet = .F.
+				endif
 			endif
-		endif
 
 		case _sCampo $ "M->Z2_INCRA"
-		_sQuery := ""
-		_sQuery += " select Z2_CADVITI"
-		_sQuery += "   from " + RetSQLName ("SZ2")
-		_sQuery += "  where D_E_L_E_T_  = ''"
-		_sQuery += "    and Z2_FILIAL   = '" + xfilial ("SZ2") + "'"
-		_sQuery += "    and Z2_CADVITI != '" + m->z2_cadviti + "'"
-		_sQuery += "    and Z2_INCRA    = '" + m->Z2_incra + "'"
-		_sRetSQL = U_RetSQL (_sQuery)
-		if ! empty (_sRetSQL)
-			U_Help ("Numero do INCRA ja consta no cadastro viticola '" + _sRetSQL + "'.")
-			_lRet = .F.
-		endif
+			_sQuery := ""
+			_sQuery += " select Z2_CADVITI"
+			_sQuery += "   from " + RetSQLName ("SZ2")
+			_sQuery += "  where D_E_L_E_T_  = ''"
+			_sQuery += "    and Z2_FILIAL   = '" + xfilial ("SZ2") + "'"
+			_sQuery += "    and Z2_CADVITI != '" + m->z2_cadviti + "'"
+			_sQuery += "    and Z2_INCRA    = '" + m->Z2_incra + "'"
+			_sRetSQL = U_RetSQL (_sQuery)
+			if ! empty (_sRetSQL)
+				U_Help ("Numero do INCRA ja consta no cadastro viticola '" + _sRetSQL + "'.")
+				_lRet = .F.
+			endif
 
 
 		case _sCampo $ "M->ZA4_CLI"
-		if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za4_cli, "A1_MSBLQL") = '1'
-			U_Help ("Cliente Bloqueado.")
-			_lRet = .F.
-		endif
-		if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za4_cli, "A1_VERBA") != '1'
-			U_Help ("Cliente nao controla verbas.")
-			_lRet = .F.
-		endif
-		if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za4_cli, "A1_VERBA") = '1'
-			if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za4_cli, "A1_VACBASE") = ""
-				U_Help ("Cliente nao tem codigo MATRIZ associado")
+			if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za4_cli, "A1_MSBLQL") = '1'
+				U_Help ("Cliente Bloqueado.")
 				_lRet = .F.
 			endif
-			if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za4_cli, "A1_VALBASE") = ""
-				U_Help ("Cliente nao tem codigo LOJA MATRIZ associado")
+			if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za4_cli, "A1_VERBA") != '1'
+				U_Help ("Cliente nao controla verbas.")
 				_lRet = .F.
 			endif
-		endif
+			if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za4_cli, "A1_VERBA") = '1'
+				if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za4_cli, "A1_VACBASE") = ""
+					U_Help ("Cliente nao tem codigo MATRIZ associado")
+					_lRet = .F.
+				endif
+				if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za4_cli, "A1_VALBASE") = ""
+					U_Help ("Cliente nao tem codigo LOJA MATRIZ associado")
+					_lRet = .F.
+				endif
+			endif
 
 		case _sCampo $ "M->ZA6_CLI"
-		if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za6_cli, "A1_MSBLQL") = '1'
-			U_Help ("Cliente Bloqueado.")
-			_lRet = .F.
-		endif
-		if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za6_cli, "A1_VERBA") != '1'
-			U_Help ("Cliente nao controla verbas.")
-			_lRet = .F.
-		endif
-		if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za6_cli, "A1_VERBA") = '1'
-			if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za6_cli, "A1_VACBASE") = ""
-				U_Help ("Cliente nao tem codigo MATRIZ associado")
+			if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za6_cli, "A1_MSBLQL") = '1'
+				U_Help ("Cliente Bloqueado.")
 				_lRet = .F.
 			endif
-			if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za6_cli, "A1_VALBASE") = ""
-				U_Help ("Cliente nao tem codigo LOJA MATRIZ associado")
+			if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za6_cli, "A1_VERBA") != '1'
+				U_Help ("Cliente nao controla verbas.")
 				_lRet = .F.
 			endif
-		endif
+			if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za6_cli, "A1_VERBA") = '1'
+				if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za6_cli, "A1_VACBASE") = ""
+					U_Help ("Cliente nao tem codigo MATRIZ associado")
+					_lRet = .F.
+				endif
+				if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za6_cli, "A1_VALBASE") = ""
+					U_Help ("Cliente nao tem codigo LOJA MATRIZ associado")
+					_lRet = .F.
+				endif
+			endif
 
 		case _sCampo $ "M->ZA8_COD"
-		sz2 -> (dbsetorder (1))  // Z2_FILIAL+Z2_CADVITI
-		if ! sz2 -> (dbseek (xfilial ("SZ2") + M->ZA8_COD, .F.))
-			u_help ("Nao e' permitido cadastrar propriedades rurais sem que haja um cadastro viticola de mesmo codigo.")
-			_lRet = .F.
-		endif
+			sz2 -> (dbsetorder (1))  // Z2_FILIAL+Z2_CADVITI
+			if ! sz2 -> (dbseek (xfilial ("SZ2") + M->ZA8_COD, .F.))
+				u_help ("Nao e' permitido cadastrar propriedades rurais sem que haja um cadastro viticola de mesmo codigo.")
+				_lRet = .F.
+			endif
 
 		case _sCampo $ "M->ZA9_CLI"
-		if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za9_cli, "A1_MSBLQL") = '1'
-			U_Help ("Cliente bloqueado.")
-			_lRet = .F.
-		endif
+			if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za9_cli, "A1_MSBLQL") = '1'
+				U_Help ("Cliente bloqueado.")
+				_lRet = .F.
+			endif
 
-		if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za9_cli, "A1_COD") = ' '
-			U_Help ("Cliente nao cadastrado.")
-			_lRet = .F.
-		endif
+			if fBuscaCpo ("SA1", 1, xfilial ("SA1") + m->za9_cli, "A1_COD") = ' '
+				U_Help ("Cliente nao cadastrado.")
+				_lRet = .F.
+			endif
 
-		if fBuscaCpo ("ZA9", 1, xfilial ("ZA9") + _sCodRep + m->za9_cli, "ZA9_PERATE") > '0'
-			U_Help ("Dados ja informados para este cliente.")
-			_lRet = .F.
-		endif
+			if fBuscaCpo ("ZA9", 1, xfilial ("ZA9") + _sCodRep + m->za9_cli, "ZA9_PERATE") > '0'
+				U_Help ("Dados ja informados para este cliente.")
+				_lRet = .F.
+			endif
 
 		case _sCampo == "M->ZAH_BEMCOD"
-		SN1 -> (dbsetorder (1))
-		if ! SN1 -> (dbseek (xfilial ("SN1") + M->ZAH_BEMCOD, .F.))
-			U_Help ("Ativo/Maquina " + AllTrim(M->ZAH_BEMCOD) + " nao cadastrada.")
-			_lRet = .F.
-		else
-			//if Empty(SN1->N1_VAZX541) .or.Empty(SN1->N1_VAZX542) .or. Empty(SN1->N1_VAZX543) .or. Empty(SN1->N1_VAZX544)
-			//	U_Help ("Ativo/Maquina " + AllTrim(M->ZAH_BEMCOD) + " nao configurada.")
-			//	_lRet = .F.
-			//else
-			if ! SNG -> (dbseek (xfilial ("SNG") + SN1->N1_GRUPO, .F.))
-				U_Help ("Grupo de Bens " + AllTrim(SN1->N1_GRUPO) + " nao cadastrado.")
+			SN1 -> (dbsetorder (1))
+			if ! SN1 -> (dbseek (xfilial ("SN1") + M->ZAH_BEMCOD, .F.))
+				U_Help ("Ativo/Maquina " + AllTrim(M->ZAH_BEMCOD) + " nao cadastrada.")
 				_lRet = .F.
 			else
-				if SNG->NG_INDUSTR != "S"
-					U_Help ("Grupo " + AllTrim(SN1->N1_GRUPO) + " nao utilizado no industrial.")
+				if ! SNG -> (dbseek (xfilial ("SNG") + SN1->N1_GRUPO, .F.))
+					U_Help ("Grupo de Bens " + AllTrim(SN1->N1_GRUPO) + " nao cadastrado.")
 					_lRet = .F.
 				else
-					_sQuery := ""
-					_sQuery += " SELECT N3_CUSTBEM"
-					_sQuery += "   FROM " + RetSQLName ("SN3")
-					_sQuery += "   WHERE D_E_L_E_T_ = ''"
-					_sQuery += "   AND N3_CBASE   = " + M->ZAH_BEMCOD
-					_sQuery += "   AND N3_TIPO    = '10'"
-					_sRetSQL = U_RetSQL(_sQuery)
-					if _sRetSQL != _sCenCus
-						U_Help ("Maquina pertence ao Centro de Custo '" + _sRetSQL + "'.")
+					if SNG->NG_INDUSTR != "S"
+						U_Help ("Grupo " + AllTrim(SN1->N1_GRUPO) + " nao utilizado no industrial.")
 						_lRet = .F.
+					else
+						_sQuery := ""
+						_sQuery += " SELECT N3_CUSTBEM"
+						_sQuery += "   FROM " + RetSQLName ("SN3")
+						_sQuery += "   WHERE D_E_L_E_T_ = ''"
+						_sQuery += "   AND N3_CBASE   = " + M->ZAH_BEMCOD
+						_sQuery += "   AND N3_TIPO    = '10'"
+						_sRetSQL = U_RetSQL(_sQuery)
+						if _sRetSQL != _sCenCus
+							U_Help ("Maquina pertence ao Centro de Custo '" + _sRetSQL + "'.")
+							_lRet = .F.
+						endif
 					endif
 				endif
 			endif
-			//endif
-		endif
 
 		case _sCampo $ "M->ZD_CPF"
 		szd -> (dbsetorder (1))  // ZD_FILIAL+ZD_FORNECE+ZD_LOJAFOR+ZD_CPF
@@ -1451,188 +1374,165 @@ user function VA_VCpo (_sCampo)
 			endif
 
 		case _sCampo $ "M->ZI_ASSOC"
-		sa2 -> (dbsetorder (1))
-		if ! sa2 -> (dbseek (xfilial ("SA2") + M->zi_assoc, .F.))
-			U_Help ("Fornecedor nao cadastrado.")
-			_lRet = .F.
-		endif
-
-		/*	case _sCampo $ "M->ZI_TM"
-		_sQuery := ""
-		_sQuery += " select count (ZX5_FILIAL)"
-		_sQuery += "   from " + RetSQLName ("ZX5")
-		_sQuery += "  where D_E_L_E_T_ = ''"
-		_sQuery += "    and ZX5_FILIAL = (SELECT CASE ZX5_MODO WHEN 'C' THEN '  ' ELSE '" + cFilAnt + "' END"
-		_sQuery +=                        " FROM " + RetSQLName ("ZX5")
-		_sQuery +=                       " WHERE D_E_L_E_T_ = ''"
-		_sQuery +=                         " AND ZX5_FILIAL = '  '"
-		_sQuery +=                         " AND ZX5_TABELA = '00'"
-		_sQuery +=                         " AND ZX5_CHAVE  = '10')"
-		_sQuery += "    and ZX5_TABELA = '10'"
-		_sQuery += "    and ZX5_10COD  = '" + m->zi_tm + "'"
-		if U_RetSQL (_sQuery) == 0
-		U_Help ("Tipo de movimento nao cadastrado.")
-		_lRet = .F.
-		endif
-		*/
+			sa2 -> (dbsetorder (1))
+			if ! sa2 -> (dbseek (xfilial ("SA2") + M->zi_assoc, .F.))
+				U_Help ("Fornecedor nao cadastrado.")
+				_lRet = .F.
+			endif
 
 		case _sCampo == "M->ZU_VEND"
-		sa3 -> (dbsetorder (1))
-		if ! sa3 -> (dbseek (xfilial ("SA3") + &(_sCampo), .F.))
-			U_Help ("Vendedor nao cadastrado.")
-			_lRet = .F.
-		else
-			if sa3 -> a3_ativo != "S"
-				_lRet = U_MsgYesNo ("Vendedor inativo. Deseja usar assim mesmo?")
+			sa3 -> (dbsetorder (1))
+			if ! sa3 -> (dbseek (xfilial ("SA3") + &(_sCampo), .F.))
+				U_Help ("Vendedor nao cadastrado.")
+				_lRet = .F.
+			else
+				if sa3 -> a3_ativo != "S"
+					_lRet = U_MsgYesNo ("Vendedor inativo. Deseja usar assim mesmo?")
+				endif
 			endif
-		endif
 
 		case _sCampo == "M->ZV_PRODUTO"
-		sb1 -> (dbsetorder (1))
-		if ! sb1 -> (dbseek (xfilial ("SB1") + &(_sCampo), .F.))
-			U_Help ("Produto nao cadastrado.")
-			_lRet = .F.
-		else
-			if sb1 -> b1_vaForaL == "S"
-				_lRet = U_MsgYesNo ("Produto fora de linha. Deseja usar assim mesmo?")
-			endif
-			if _lRet .and. sb1 -> b1_vaGrLp == "99"
-				_lRet = U_MsgYesNo ("No cadastro do produto consta grupo para lista de preco (campo '" + alltrim (RetTitle ("B1_VAGRLP")) + "') informado como 'outros'. Deseja usar assim mesmo?")
-			endif
-			if _lRet .and. empty (sb1 -> b1_vaGrLp)
-				U_Help ("Produto nao possui grupo para lista de preco informado no seu cadastro (campo '" + alltrim (RetTitle ("B1_VAGRLP")) + "').")
+			sb1 -> (dbsetorder (1))
+			if ! sb1 -> (dbseek (xfilial ("SB1") + &(_sCampo), .F.))
+				U_Help ("Produto nao cadastrado.")
 				_lRet = .F.
+			else
+				if sb1 -> b1_vaForaL == "S"
+					_lRet = U_MsgYesNo ("Produto fora de linha. Deseja usar assim mesmo?")
+				endif
+				if _lRet .and. sb1 -> b1_vaGrLp == "99"
+					_lRet = U_MsgYesNo ("No cadastro do produto consta grupo para lista de preco (campo '" + alltrim (RetTitle ("B1_VAGRLP")) + "') informado como 'outros'. Deseja usar assim mesmo?")
+				endif
+				if _lRet .and. empty (sb1 -> b1_vaGrLp)
+					U_Help ("Produto nao possui grupo para lista de preco informado no seu cadastro (campo '" + alltrim (RetTitle ("B1_VAGRLP")) + "').")
+					_lRet = .F.
+				endif
 			endif
-		endif
 
 		case _sCampo == "M->ZX5_17PROD"
-		if ! empty(M->ZX5_17PROD)
-			// verifica se o B1_GRUPO eh 0400 (0400 = uva)
-			_sQuery := ""
-			_sQuery += " SELECT B1_COD"
-			_sQuery += "   FROM  " + RetSQLName ("SB1")
-			_sQuery += "  WHERE  D_E_L_E_T_ = ''"
-			_sQuery += "    AND  B1_COD   = '" + M->ZX5_17PROD + "'"
-			_sQuery += "    AND  B1_GRUPO = '0400' "
-			_sRetSQL = U_RetSQL (_sQuery)
-			if empty (_sRetSQL)
-				U_Help ("Este Produto nao e uma uva (grupo diferente de 0400)")
-				_lRet = .F.
-			endif
-
-			if _lRet
-				// verifica se a uva eh fina B1_VARUVA = "F"
+			if ! empty(M->ZX5_17PROD)
+				// verifica se o B1_GRUPO eh 0400 (0400 = uva)
 				_sQuery := ""
 				_sQuery += " SELECT B1_COD"
 				_sQuery += "   FROM  " + RetSQLName ("SB1")
 				_sQuery += "  WHERE  D_E_L_E_T_ = ''"
 				_sQuery += "    AND  B1_COD   = '" + M->ZX5_17PROD + "'"
-				_sQuery += "    AND  B1_VARUVA = 'F' "
+				_sQuery += "    AND  B1_GRUPO = '0400' "
 				_sRetSQL = U_RetSQL (_sQuery)
 				if empty (_sRetSQL)
-					_lRet = U_msgnoyes ("Este Produto nao e uva fina/vinifera. Confirma? ")
+					U_Help ("Este Produto nao e uma uva (grupo diferente de 0400)")
+					_lRet = .F.
+				endif
+
+				if _lRet
+					// verifica se a uva eh fina B1_VARUVA = "F"
+					_sQuery := ""
+					_sQuery += " SELECT B1_COD"
+					_sQuery += "   FROM  " + RetSQLName ("SB1")
+					_sQuery += "  WHERE  D_E_L_E_T_ = ''"
+					_sQuery += "    AND  B1_COD   = '" + M->ZX5_17PROD + "'"
+					_sQuery += "    AND  B1_VARUVA = 'F' "
+					_sRetSQL = U_RetSQL (_sQuery)
+					if empty (_sRetSQL)
+						_lRet = U_msgnoyes ("Este Produto nao e uva fina/vinifera. Confirma? ")
+					endif
 				endif
 			endif
-		endif
 
 		case _sCampo == "_ZZ2COD"
-		if ! empty (fBuscaCpo ("ZZ2", 2, xfilial ("ZZ2") + _ZZ2Cod, "ZZ2_COD"))
-			U_Help ("Codigo ja' cadastrado.")
-			_lRet = .F.
-		endif
+			if ! empty (fBuscaCpo ("ZZ2", 2, xfilial ("ZZ2") + _ZZ2Cod, "ZZ2_COD"))
+				U_Help ("Codigo ja' cadastrado.")
+				_lRet = .F.
+			endif
 
 		case _sCampo == "_ZZ2FILI"
-		for _i = 3 to len (alltrim (_zz2Fili)) step 3
-			if substr (_ZZ2Fili, _i, 1) != "/"
-				U_Help ("Codigos das filiais devem ter 2 posicoes e ser separados por barras (/).")
-				_lRet = .F.
-			endif
-		next
+			for _i = 3 to len (alltrim (_zz2Fili)) step 3
+				if substr (_ZZ2Fili, _i, 1) != "/"
+					U_Help ("Codigos das filiais devem ter 2 posicoes e ser separados por barras (/).")
+					_lRet = .F.
+				endif
+			next
 
 		case _sCampo == "M->ZZ5_CODLOJ"
-		sb1 -> (dbsetorder (1))
-		if ! sb1 -> (dbseek (xfilial ("SB1") + M->zz5_codloj, .F.))
-			U_Help ("Produto nao cadastrado.")
-			_lRet = .F.
-		else
-			if sb1 -> b1_vaForaL == "S"
-				U_Help ("Produto fora de linha.")
+			sb1 -> (dbsetorder (1))
+			if ! sb1 -> (dbseek (xfilial ("SB1") + M->zz5_codloj, .F.))
+				U_Help ("Produto nao cadastrado.")
 				_lRet = .F.
 			else
-				//				if sb1 -> b1_uenprod != "0004"
-				//					U_Help ("Produto nao pertence `a UEN Loja.")
-				//					_lRet = .F.
-				//				else
-				if empty (sb1 -> b1_codpai)
-					U_Help ("Produto nao possui codigo pai informado (campo '" + alltrim (RetTitle ("B1_CODPAI")) + "').")
+				if sb1 -> b1_vaForaL == "S"
+					U_Help ("Produto fora de linha.")
 					_lRet = .F.
-				ENDIF
-				//				endif
+				else
+					if empty (sb1 -> b1_codpai)
+						U_Help ("Produto nao possui codigo pai informado (campo '" + alltrim (RetTitle ("B1_CODPAI")) + "').")
+						_lRet = .F.
+					ENDIF
+					//				endif
+				endif
 			endif
-		endif
 
 		case _sCampo == "M->ZZ5_QTLOJA"
-		sb1 -> (dbsetorder (1))
-		if ! sb1 -> (dbseek (xfilial ("SB1") + M->zz5_codpai, .F.))
-			U_Help ("Produto pai nao cadastrado.")
-			_lRet = .F.
-		else
-			if sb1 -> b1_qtdemb == 0
-				U_Help ("Quantidade por embalagem nao informada no produto pai (campo '" + alltrim (RetTitle ("B1_QTDEMB")) + "').")
+			sb1 -> (dbsetorder (1))
+			if ! sb1 -> (dbseek (xfilial ("SB1") + M->zz5_codpai, .F.))
+				U_Help ("Produto pai nao cadastrado.")
 				_lRet = .F.
+			else
+				if sb1 -> b1_qtdemb == 0
+					U_Help ("Quantidade por embalagem nao informada no produto pai (campo '" + alltrim (RetTitle ("B1_QTDEMB")) + "').")
+					_lRet = .F.
+				endif
 			endif
-		endif
 
 		case _sCampo $ "M->ZZK_ASSOC/M->ZZK_LOJA"
-		if m->zzk_ano == '2012'
-			if ! empty (m->zzk_assoc) .and. ! empty (m->zzk_loja) .and. fBuscaCpo ("SA2", 1, xfilial ("SA2") + m->zzk_assoc + m->zzk_loja, "A2_VASTDAP") != "C"
-				u_help ("Associado deve ter DAP para este ano.")
-				_lRet = .F.
+			if m->zzk_ano == '2012'
+				if ! empty (m->zzk_assoc) .and. ! empty (m->zzk_loja) .and. fBuscaCpo ("SA2", 1, xfilial ("SA2") + m->zzk_assoc + m->zzk_loja, "A2_VASTDAP") != "C"
+					u_help ("Associado deve ter DAP para este ano.")
+					_lRet = .F.
+				endif
 			endif
-		endif
 
 		case _sCampo $ "M->ZZT_PESENT/M->ZZT_PESSAI"
-		if ! empty (m->zzt_safra) .and. ! empty (m->zzt_carga)
-			sze -> (dbsetorder (1))  // ZE_FILIAL+ZE_SAFRA+ZE_CARGA
-			if sze -> (dbseek (xfilial ("SZE") + m->zzt_safra + m->zzt_carga, .F.))
-				if ! empty (sze -> ze_nfger)
-					u_help ("A carga ligada a este ticket ja tem contranota gerada.")
-					_lRet = .F.
-				endif
-				if sze -> ze_pesotar != 0
-					u_help ("A carga ligada a este ticket ja tem peso tara informado. Zere, antes, o peso tara da carga.")
-					_lRet = .F.
+			if ! empty (m->zzt_safra) .and. ! empty (m->zzt_carga)
+				sze -> (dbsetorder (1))  // ZE_FILIAL+ZE_SAFRA+ZE_CARGA
+				if sze -> (dbseek (xfilial ("SZE") + m->zzt_safra + m->zzt_carga, .F.))
+					if ! empty (sze -> ze_nfger)
+						u_help ("A carga ligada a este ticket ja tem contranota gerada.")
+						_lRet = .F.
+					endif
+					if sze -> ze_pesotar != 0
+						u_help ("A carga ligada a este ticket ja tem peso tara informado. Zere, antes, o peso tara da carga.")
+						_lRet = .F.
+					endif
 				endif
 			endif
-		endif
 
 		case _sCampo $ "M->E4_CODIGO"
-		_wcond = ALLTRIM(M->E4_CODIGO)
-		if len (_wcond) !=  3
-			U_Help ("Obrigatoriamente usar codigo com 3 digitos")
-			_lRet = .F.
-		endif
-
-		do case
-			case substring(M->E4_CODIGO,1,1) $ "A/B/C/D/E/F/G/H/I/J/K/L/M/N/O/P/Q/R/S/T/U/V/X/W/Y/Z/"
-			U_Help ("Nao e´mais permitido cadastrar condicoes de pagamento contendo LETRAS.")
-			_lRet = .F.
-			case substring(M->E4_CODIGO,2,1) $ "A/B/C/D/E/F/G/H/I/J/K/L/M/N/O/P/Q/R/S/T/U/V/X/W/Y/Z/"
-			U_Help ("Nao e´ mais permitido cadastrar condicoes de pagamento contendo LETRAS.")
-			_lRet = .F.
-			case substring(M->E4_CODIGO,3,1) $ "A/B/C/D/E/F/G/H/I/J/K/L/M/N/O/P/Q/R/S/T/U/V/X/W/Y/Z/"
-			U_Help ("Nao e´ mais permitido cadastrar condicoes de pagamento contendo LETRAS.")
-			_lRet = .F.
-
-		endcase
-
-		case _sCampo $ "M->E4_MSBLQL"
-		if m->e4_msblql != '1'  // Usuario estah desbloqueando. Cond.pag. com letras foram todas bloqueadas no inicio do projeto de implantacao do Mercanet, pois este nao aceita letras.
-			if isalpha (substring(M->E4_CODIGO,1,1)) .or. isalpha (substring(M->E4_CODIGO,2,1)) .or. isalpha (substring(M->E4_CODIGO,3,1))
-				u_help ("Integracao com Mercanet: nao sera mais permitido uso de letras no codigo da condicao de pagamento.")
+			_wcond = ALLTRIM(M->E4_CODIGO)
+			if len (_wcond) !=  3
+				U_Help ("Obrigatoriamente usar codigo com 3 digitos")
 				_lRet = .F.
 			endif
-		endif
+
+			do case
+				case substring(M->E4_CODIGO,1,1) $ "A/B/C/D/E/F/G/H/I/J/K/L/M/N/O/P/Q/R/S/T/U/V/X/W/Y/Z/"
+					U_Help ("Nao e´mais permitido cadastrar condicoes de pagamento contendo LETRAS.")
+					_lRet = .F.
+				case substring(M->E4_CODIGO,2,1) $ "A/B/C/D/E/F/G/H/I/J/K/L/M/N/O/P/Q/R/S/T/U/V/X/W/Y/Z/"
+					U_Help ("Nao e´ mais permitido cadastrar condicoes de pagamento contendo LETRAS.")
+					_lRet = .F.
+				case substring(M->E4_CODIGO,3,1) $ "A/B/C/D/E/F/G/H/I/J/K/L/M/N/O/P/Q/R/S/T/U/V/X/W/Y/Z/"
+					U_Help ("Nao e´ mais permitido cadastrar condicoes de pagamento contendo LETRAS.")
+					_lRet = .F.
+
+			endcase
+
+		case _sCampo $ "M->E4_MSBLQL"
+			if m->e4_msblql != '1'  // Usuario estah desbloqueando. Cond.pag. com letras foram todas bloqueadas no inicio do projeto de implantacao do Mercanet, pois este nao aceita letras.
+				if isalpha (substring(M->E4_CODIGO,1,1)) .or. isalpha (substring(M->E4_CODIGO,2,1)) .or. isalpha (substring(M->E4_CODIGO,3,1))
+					u_help ("Integracao com Mercanet: nao sera mais permitido uso de letras no codigo da condicao de pagamento.")
+					_lRet = .F.
+				endif
+			endif
 
 		otherwise
 			//U_AvisaTI ("Campo '" + _sCampo + "' nao previsto na rotina " + procname ())
@@ -1645,11 +1545,9 @@ user function VA_VCpo (_sCampo)
 			_oAviso:Grava ()
 
 	endcase
-//	CursorArrow ()
 
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
-//	u_logFim ()
 return _lRet
 
 // --------------------------------------------------------------------------
