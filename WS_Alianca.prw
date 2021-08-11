@@ -58,6 +58,7 @@
 // 22/06/2021 - Robert  - Criada acao AgendaEntregaFaturamento (GLPI 10219).
 // 12/07/2021 - Robert  - Criado acao ApontarProducao (GLPI 10479).
 // 03/08/2021 - Robert  - Apontamento de producao passa a aceitar mais de uma etiqueta na mesma chamada (GLPI 10633)
+// 11/08/2021 - Robert  - Removidos logs desnecessarios; ajuste tags retorno apontamento producao (GLPI 10633)
 //
 
 // ----------------------------------------------------------------------------------------------------------
@@ -232,49 +233,27 @@ static function _AtuEstru ()
 	local   _sFilAppen := ''
 	private _sErroAuto := ""  // Variavel alimentada pela funcao U_Help
 
-	u_logIni ()
 	if empty (_sErros)
 		_sTabela   = _ExtraiTag ("_oXML:_WSAlianca:_Tabela", .T., .F.)
 		_sFilAppen = _ExtraiTag ("_oXML:_WSAlianca:_FiltroAppend", .F., .F.)
 	endif
 
 	if empty (_sErros)
-		u_log ('Tabela:', _sTabela)
+		u_log2 ('info', 'Tentando atualizar estrutura da tabela ', _sTabela)
 		if ! U_AtuEstru (_sTabela, _sFilAppen)
 			_sErros = _sErroAuto
 		else
 			_sMsgRetWS = _sErroAuto
 		endif
 	endif
-
-	u_logFim ()
 Return
 
-/*
-// --------------------------------------------------------------------------
-static function _ExtraiTag (_sTag, _lObrig)
-	local _sRet := ""
-	//u_logIni ()
-	//u_log ('Procurando tag', _sTag)
-	if type (_sTag) != "O"
-		if _lObrig
-			_sErros += "XML invalido: Tag '" + _sTag + "' nao encontrada."
-		endif
-	else
-		_sRet = &(_sTag + ":TEXT")
-	endif
-	//u_log ('_sRet = ', _sRet)
-	//u_logFim ()
-return _sRet
-*/
 // --------------------------------------------------------------------------
 static function _ExtraiTag (_sTag, _lObrig, _lValData)
 	local _sRet    := ""
 	local _lDataOK := .T.
 	local _nPos    := 0
 
-	//u_logIni ()
-	//u_log ('Procurando tag', _sTag)
 	if type (_sTag) != "O"
 		if _lObrig
 			_sErros += "XML invalido: Tag '" + _sTag + "' nao encontrada."
@@ -299,10 +278,9 @@ static function _ExtraiTag (_sTag, _lObrig, _lValData)
 			endif
 		endif
 	endif
-	//u_log ('_sRet = ', _sRet)
-	//u_logFim ()
 return _sRet
-//
+
+
 // --------------------------------------------------------------------------
 static function _ExecBatch ()
 	local _sSeqBatch := ""
