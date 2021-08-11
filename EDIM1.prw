@@ -644,6 +644,7 @@ Static Function _Erro (_sSeqPed, _sErro, _sCompleto)
 	if _lAuto
 		U_Help ("Erro durante a importacao do arquivo " + _sArqTXT + chr (13) + char (10) + "Pedido/ordem de compra de sequencia " + _sSeqPed + ":" + chr (13) + chr (10) + _sErro,, .t.)
 
+		_sDescCli := ""
 		If alltrim(sa1 -> a1_cod) == '000000'
 			_sDescCli := sa1 -> a1_cod + '/' + sa1 -> a1_loja 
 		else
