@@ -1693,7 +1693,6 @@ static function _ApontProd ()
 	if empty (_sErros) ; _sMotProd  = _ExtraiTag ("_oXML:_WSAlianca:_Motivo", .F., .F.) ; endif
 
 	_sMsgRetWS += '<ApontaProd>'
-	_sMsgRetWS += '<ApontaProdItem>'
 
 	// Loop de repeticao para o caso de haver mais de uma OP ou mais de uma etiqueta.
 	_sSeqEtiq = '01'
@@ -1794,14 +1793,13 @@ static function _ApontProd ()
 		U_Log2 ('debug', _sMsgEtiq)
 
 		// Monta trecho da mensagem de retorno referente a etiqueta atual.
-		_sMsgRetWS += '<Itens>'
-		_sMsgRetWS += '<etiq>' + _sEtqApont + '</etiq>'
+		_sMsgRetWS += '<ApontaProdtem>'
+		_sMsgRetWS += '<Etiq>' + _sEtqApont + '</Etiq>'
 		_sMsgRetWS += '<result>' + iif (_lEtiqOK, 'OK', 'ERRO') + '</result>'
 		_sMsgRetWS += '<msg>' + _sMsgEtiq + '</msg>'
-		_sMsgRetWS += '</Itens>'
+		_sMsgRetWS += '</ApontaProdtem>'
 
 		_sSeqEtiq = soma1 (_sSeqEtiq)
 	enddo
-	_sMsgRetWS += '</ApontaProdItem>'
 	_sMsgRetWS += '</ApontaProd>'
 return

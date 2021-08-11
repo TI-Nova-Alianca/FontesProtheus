@@ -2914,22 +2914,6 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 			::Setores    = 'INF'
 			::Descricao  = 'Grupos: Acesso repetido (deveria estar apenas no grupo GERAL)'
-/*			::Query := " SELECT GR.TIPO_GRUPO, GR.ID_GRUPO, RTRIM (GR.DESCRICAO) AS DESCR_GRUPO"
-			::Query +=      " , AG.TIPO_ACESSO, AG.ACESSO, RTRIM (LA.DESCRICAO) AS DESCR_ACESSO"
-			::Query +=   " FROM VA_USR_GRUPOS GR,"
-			::Query +=        " VA_USR_ACESSOS_POR_GRUPO AG"
-			::Query +=        " LEFT JOIN VA_USR_ACESSOS LA"
-			::Query +=           " ON (LA.TIPO = AG.TIPO_ACESSO"
-			::Query +=          " AND LA.ACESSO = AG.ACESSO)"
-			::Query += " WHERE GR.TIPO_GRUPO = AG.TIPO_ACESSO"
-			::Query +=   " AND GR.ID_GRUPO = AG.ID_GRUPO"
-			::Query +=   " AND UPPER (GR.GRUPO) like 'FUNCAO%'"
-			::Query +=   " AND EXISTS (SELECT * FROM VA_USR_ACESSOS_POR_GRUPO GRUPO_GERAL"
-			::Query +=                " WHERE GRUPO_GERAL.ID_GRUPO = '000102'"
-			::Query +=                  " AND GRUPO_GERAL.TIPO_ACESSO = LA.TIPO"
-			::Query +=                  " AND GRUPO_GERAL.ACESSO = LA.ACESSO)"
-			::Query += " ORDER BY AG.ACESSO"
-*/
 			::Query := " WITH C AS ("
 			::Query += " SELECT GR.GR__ID, GR.GR__CODIGO, GR.GR__NOME, AG.GR__CODACESSO, AG.GR__DESCACESSO"
 			::Query +=   " FROM SYS_GRP_GROUP GR"
