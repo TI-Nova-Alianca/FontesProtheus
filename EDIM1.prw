@@ -54,7 +54,7 @@
 // 28/10/2019 - Robert  - Passa a validar retorno da funcao U_ArqTrb().
 // 14/08/2020 - Cláudia - Ajuste de Api em loop, conforme solicitação da versao 25 protheus. GLPI: 7339
 // 10/11/2020 - Robert  - Passa a alimentar o campo C6_VAPOER para gerar TES via gatilhos do TES inteligente (GLPI 8785).
-//
+// 11/08/2021 - Claudia - Validação de nome do cliente, conforme GLPI: 10710
 
 // --------------------------------------------------------------------------
 User Function EDIM1 (_lAutomat, _sArq, _nRegZZS)
@@ -643,10 +643,18 @@ Static Function _Erro (_sSeqPed, _sErro, _sCompleto)
 	endif
 	if _lAuto
 		U_Help ("Erro durante a importacao do arquivo " + _sArqTXT + chr (13) + char (10) + "Pedido/ordem de compra de sequencia " + _sSeqPed + ":" + chr (13) + chr (10) + _sErro,, .t.)
+
+		_sDescCli := ""
+		If alltrim(sa1 -> a1_cod) == '000000'
+			_sDescCli := sa1 -> a1_cod + '/' + sa1 -> a1_loja 
+		else
+			_sDescCli := sa1 -> a1_cod + '/' + sa1 -> a1_loja + ' - ' + alltrim (sa1 -> a1_nome)
+		EndIf
+
 		U_ZZUNU ('001', ;
 		            "Importacao EDI Mercador - ERRO(S)", ;
 		            "Erro durante a importacao do arquivo " + _sArqTXT + chr (13) + char (10) + ;
-		            "Cliente: " + sa1 -> a1_cod + '/' + sa1 -> a1_loja + ' - ' + alltrim (sa1 -> a1_nome) + chr (13) + chr (10) + ;
+		            "Cliente: " + _sDescCli + chr (13) + chr (10) + ;
 		            "Pedido/ordem de compra de sequencia " + _sSeqPed + ":" + chr (13) + chr (10) + ;
 		            _sErro + chr (13) + chr (10) + ;
 		            _sCompleto)

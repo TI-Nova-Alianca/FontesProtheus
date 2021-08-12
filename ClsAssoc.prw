@@ -101,6 +101,7 @@
 // 28/07/2021 - Robert  - Continuar mostrando data de associacao na consulta de capital, quando assoc. desligado (GLPI 8763).
 //                      - Incluida msg. de LGPD na consulta de cota capital (GLPI 10139).
 //                      - Ajuste corr.mon. (desconsiderava NF vcto futuro que jah sofreram baixas) - GLPI 10306.
+// 11/08/2021 - Robert  - View VA_VASSOC_GRP_FAM migrada do database do Protheus para o NaWeb (GLPI 10673).
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -189,7 +190,6 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 	local _oSQL      := NIL
 	local _aCodigos  := {}
 	local _nCodigo   := 0
-	// local _sLinkSrv  := U_LkServer ('NAWEB')
 	local _aGrpFam   := {}
 
 	::UltMsg    = ""
@@ -288,7 +288,8 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 				_oSQL:_sQuery += "SELECT CCAssociadoGrpFamCod       as grpfam "
 				_oSQL:_sQuery +=      ", CCAssociadoGrpFamNucleo    as nucleo"
 				_oSQL:_sQuery +=      ", CCAssociadoGrpFamSubNucleo as subnucleo"
-				_oSQL:_sQuery +=  " FROM VA_VASSOC_GRP_FAM"
+			//	_oSQL:_sQuery +=  " FROM VA_VASSOC_GRP_FAM"
+				_oSQL:_sQuery +=  " FROM " + U_LkServer ('NAWEB') + ".VA_VASSOC_GRP_FAM"
 				_oSQL:_sQuery += " WHERE CCAssociadoCod  = '" + ::Codigo + "'"
 				_oSQL:_sQuery +=   " AND CCAssociadoLoja = '" + ::Loja + "'"
 

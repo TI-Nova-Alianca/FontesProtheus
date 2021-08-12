@@ -17,6 +17,7 @@
 // 15/04/2020 - Robert - Acrescentadas colunas CLAS_LATADA e SIST_CONDUCAO
 // 25/02/2021 - Robert - Passa a buscar grupo familiar na view VA_VASSOC_GRP_FAM (GLPI 8804).
 //                     - Abertos parametros para selecionar se vai exportar cada tipo de contranota (GLPI 9489).
+// 11/08/2021 - Robert - View VA_VASSOC_GRP_FAM migrada do database do Protheus para o NaWeb (GLPI 10673).
 //
 
 // --------------------------------------------------------------------------
@@ -183,7 +184,8 @@ Static Function _Gera()
 	// _oSQL:_sQuery +=                           " AND ZAK.ZAK_LOJA = C.LOJA), '')) AS GRP_FAMILIAR, "
 
 	_oSQL:_sQuery +=        " RTRIM (ISNULL ((SELECT TOP 1 CCAssociadoGrpFamCod + '-' + CCAssociadoGrpFam" // TOP 1 PARA EVITAR POSSIVEL CASO DO ASSOCIADO ESTAR LIGADO A MAIS DE UM GRUPO FAMILIAR"
-	_oSQL:_sQuery +=                          " FROM VA_VASSOC_GRP_FAM"
+//	_oSQL:_sQuery +=                          " FROM VA_VASSOC_GRP_FAM"
+	_oSQL:_sQuery +=                          " FROM " + U_LkServer ('NAWEB') + ".VA_VASSOC_GRP_FAM"
 	_oSQL:_sQuery +=                         " WHERE CCAssociadoCod  = C.ASSOCIADO"
 	_oSQL:_sQuery +=                           " AND CCAssociadoLoja = C.LOJA), '')) AS GRP_FAMILIAR, "
 

@@ -136,12 +136,12 @@
 // 24/10/2020 - Robert  - Desabilitada gravacao SC0 (reservas) cfe. campo C5_VARESER (nao usamos mais desde 2014).
 // 10/12/2020 - Claudia - Gravação do campo ID transação do pagar.me em títulos. GLPI: 9012
 // 12/07/2021 - Robert  - Representante 328 nao quer que seja impresso seu nome nos dados adicionais (GLPI 10472).
+// 11/08/2021 - Robert  - Grava obs do pedido na cta.corrente associados, quando compra de mudas (GLPI 10673).
 //
 
 // -------------------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
 	local _aAreaAnt  := U_ML_SRArea ()
-//	local _xCHAVSF3  := SF2->F2_CLIENTE+SF2->F2_LOJA+SF2->F2_DOC+SF2->F2_SERIE
 	local _nPJurBol  := 0
 	local _wtotrapel := 0
 	local _sSQL      := ""
@@ -298,18 +298,9 @@ User Function sf2460i ()
 		_VerDev ()
 	endif
 	
-	// Atualiza conta corrente de associados, quando for o caso.
-	//_AtuSZI ()
-
 	// Atualiza conta corrente de associados - para compra de mudas
 	_AtuSZIMudas ()
 
-	// Tratamento para transferencias entre filiais.
-	// _TransFil () --- desabilitado agora faz pela importacao do XML
-	
-	// Retira reserva (SC0) dos produtos faturados
-// Nao usamos mais desde 2014 -->	_ExcResrv()
-	
 	// grava evento para histórico de NF
 	if !sf2 -> f2_TIPO $ "B/D"
 		_HistNf ()
@@ -317,6 +308,8 @@ User Function sf2460i ()
 
 	U_ML_SRArea (_aAreaAnt)
 Return
+
+
 // --------------------------------------------------------------------------
 // Grava dados adicionais para posterior uso na impressao da nota / envio para NF eletronica.
 static function _DadosAdic ()
@@ -334,7 +327,6 @@ static function _DadosAdic ()
 	local _lInfAdZF  := GetNewPar("MV_INFADZF",.F.)
 	local _oSQL      := NIL
 	local _nFormula	 := 0
-//	local _aICMUFD   := {}
 	local _nNFOri	 := 0
 
 	if sf2 -> f2_icmsret != 0
@@ -389,25 +381,11 @@ static function _DadosAdic ()
     endif
 
 	// Vendedor, pedido, carga(OMS) e ordem de compra
-//	if ! empty (sf2 -> f2_vend1)
 	if ! empty (sf2 -> f2_vend1) .and. sf2 -> f2_vend1 != '328'  // Este representante nao quer a mensagem.
 		_SomaMsg (@_sMsgContr, "Repr.: " + alltrim (sf2 -> f2_vend1) + "-" + alltrim (fBuscaCpo ("SA3", 1, xfilial ("SA3") + sf2 -> f2_vend1, "A3_NREDUZ")))
 	endif
 	_SomaMsg (@_sMsgContr, "Pedido: " + alltrim (sc5 -> c5_num))
-/*
-	_sQuery := ""
-	_sQuery += " SELECT TOP 1 C9_CARGA"  // A principio nao vejo possibilidade de uma nota pertencer a mais de uma carga...
-	_sQuery +=   " FROM " + RETSQLName ("SC9") + " SC9 "
-	_sQuery +=  " WHERE SC9.C9_FILIAL  = '" + xFilial ("SC9") + "'"
-	_sQuery +=    " AND SC9.D_E_L_E_T_ = ' '"
-	_sQuery +=    " AND SC9.C9_NFISCAL = '" + sf2 -> f2_doc + "'"
-	_sQuery +=    " AND SC9.C9_SERIENF = '" + sf2 -> f2_serie + "'"
-	_sQuery +=    " AND SC9.C9_CARGA  != ''"
-	_sCargaOMS = U_RetSQL (_sQuery)
-	if ! empty (_sCargaOMS)
-		_SomaMsg (@_sMsgContr, "Carga: " + _sCargaOMS)
-	endif
-*/
+
 	if ! empty (sf2 -> f2_carga)
 		_SomaMsg (@_sMsgContr, "Carga: " + sf2 -> f2_carga)
 	endif
@@ -540,16 +518,19 @@ static function _DadosAdic ()
 
 	U_ML_SRArea (_aAreaAnt)
 return
+
+
 // --------------------------------------------------------------------------
 // Acrescenta texto `a mensagem.
 static function _SomaMsg (_sVariav, _sTexto)
 	_sVariav += iif (! empty (_sVariav), "; ", "") + alltrim (_sTexto)
 return
+
+
 // --------------------------------------------------------------------------
 // Envia e-mail de notificacao em determinadas condicoes.
 static function _Notifica ()
 	local _sMsg   := ""
-//	local _sQuery := ""
 
 	if cFilAnt == '01' .and. sf2 -> f2_est $ "ES/DF/MA/RO/AC/AM/RR/PA/AP/TO/PI/CE/RN/PB/PE/AL/MS/MT/GO/SE/BA" 
 		_sMsg = "NF " + sf2 -> f2_doc + " emitida para " + sf2 -> f2_est + " Verifique GUIA/ST"
@@ -561,11 +542,12 @@ static function _Notifica ()
  		U_ZZUNU ({'003'}, _sMsg, _sMsg)
 	endif
 return
+
+
 // --------------------------------------------------------------------------
 // Verificacoes no pedido de venda.
 static function _VerPed ()
 	local _sQuery    := ""
-//	local _sMsg      := ""
 
 	_sQuery := ""
 	_sQuery += " SELECT COUNT (DISTINCT D2_PEDIDO)"
@@ -594,14 +576,14 @@ static function _VerPed ()
 		u_help ("A nota fiscal '" + sf2 -> f2_doc + "' NAO faturou todos os itens do pedido. Se isso estiver correto, apenas ignore esta mensagem.")
 	endif
 return
+
+
 // --------------------------------------------------------------------------
 // Verifica devolucao de compra.
 static function _VerDev ()
-//	local _sQuery    := ""
 	local _sMsg      := ""
 
 	// Avisa interessados sobre devolucoes de compras.
-
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " select distinct D2_COD, D2_DESC, D2_QUANT, D2_UM"
@@ -618,13 +600,12 @@ static function _VerDev ()
 		U_ZZUNU ({"072"}, "NF devolucao de compra", _sMsg, .F., cEmpAnt, cFilAnt)
 	endif
 return
+
+
 // --------------------------------------------------------------------------
 // Atualiza conta corrente de associados, quando for o caso.
 static function _AtuSZIMudas ()
-//	local _sQuery    := ""
-//	local _sAliasQ   := ""
 	local _lContinua := .T.
-//	local _nVlrTit   := 0
 	local _oCtaCorr  := NIL
 	local _oAssoc    := NIL
 	Local i          := 0
@@ -690,6 +671,7 @@ static function _AtuSZIMudas ()
 						_oCtaCorr:Serie    = _aSE1[i,2]
 						_oCtaCorr:Parcela  = _aSE1[i,4]
 						_oCtaCorr:Origem   = 'SF2460I'
+						_oCtaCorr:Obs      = alltrim (sc5 -> c5_obs)
 						if _oCtaCorr:PodeIncl ()
 							if ! _oCtaCorr:Grava (.F., .F.)
 								U_AvisaTI ("Erro na atualizacao da conta corrente de associados ao gerar a NF '" + sf2 -> f2_doc + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
@@ -700,222 +682,12 @@ static function _AtuSZIMudas ()
 					next
 				endif
 				
-//				if len(_aSE1) > 0 
-//					for i=1 to len(_aSE1)	
-//						lMsErroAuto := .F.
-//						// executar a rotina de baixa automatica do SE1 gerando o SE5
-//						_aAutoSE1 := {}
-//						aAdd(_aAutoSE1, {"E1_FILIAL" 	, _aSE1[i,1]	    					, Nil})
-//						aAdd(_aAutoSE1, {"E1_PREFIXO" 	, _aSE1[i,2]	    					, Nil})
-//						aAdd(_aAutoSE1, {"E1_NUM"     	, _aSE1[i,3]	    					, Nil})
-//						aAdd(_aAutoSE1, {"E1_PARCELA" 	, _aSE1[i,4]	    					, Nil})
-//						aAdd(_aAutoSE1, {"E1_CLIENTE" 	, _aSE1[i,6] 							, Nil})
-//						aAdd(_aAutoSE1, {"E1_LOJA"    	, _aSE1[i,7] 							, Nil})
-//						AAdd(_aAutoSE1, {"AUTMOTBX"		, 'NORMAL'  							, Nil})
-//						AAdd(_aAutoSE1, {"AUTBANCO"  	, 'CX1'		    						, Nil})
-//						AAdd(_aAutoSE1, {"AUTAGENCIA"  	, 'CX1' 		    					, Nil})
-//						AAdd(_aAutoSE1, {"AUTCONTA"  	, 'CX1'     					 		, Nil})
-//						AAdd(_aAutoSE1, {"AUTDTBAIXA"	, _aSE1[i,8]							, Nil})
-//						AAdd(_aAutoSE1, {"AUTDTCREDITO"	, _aSE1[i,8]							, Nil})
-//						AAdd(_aAutoSE1, {"AUTHIST"   	, 'Valor receb. s/Titulo - Mudas Uva'	, Nil})
-//						AAdd(_aAutoSE1, {"AUTDESCONT"	, 0         							, Nil})
-//						AAdd(_aAutoSE1, {"AUTMULTA"  	, 0         							, Nil})
-//						AAdd(_aAutoSE1, {"AUTJUROS"  	, 0         							, Nil})
-//						AAdd(_aAutoSE1, {"AUTVALREC"  	, _aSE1[i,5] 							, Nil})
-//						
-//					   _aAutoSE1 := aclone (U_OrdAuto (_aAutoSE1))  // orderna conforme dicionário de dados
-//					   
-//					   cPerg = 'FIN070'
-//					   _aBkpSX1 = U_SalvaSX1 (cPerg)  // Salva parametros da rotina.
-//					   U_GravaSX1 (cPerg, "01", 2)
-//					   U_GravaSX1 (cPerg, "04", 2)
-//						
-//			           MSExecAuto({|x,y| Fina070(x,y)},_aAutoSE1,3,.F.,5) // rotina automática para baixa de títulos
-//						
-//			           If lMsErroAuto
-//			           		MostraErro()
-//						    Return()
-//					   Else 
-//					   		// -------------------------------------------------------
-//					   		// Lança na conta corrente associados
-//					   		_oCtaCorr := ClsCtaCorr():New ()
-//							_oCtaCorr:Assoc    = _sFornec
-//							_oCtaCorr:Loja     = _sLojFor
-//							_oCtaCorr:TM       = '24'
-//							_oCtaCorr:DtMovto  = _aSE1[i,8]
-//							_oCtaCorr:Valor    = _aSE1[i,5]
-//							_oCtaCorr:SaldoAtu = _aSE1[i,5]
-//							_oCtaCorr:Usuario  = cUserName
-//							_oCtaCorr:Histor   = 'VENDA MUDAS DE UVA CFE.NF.' + _aSE1[i,3] +'/'+ _aSE1[i,2]
-//							_oCtaCorr:MesRef   = strzero(month(_aSE1[i,5]),2)+strzero(year(_aSE1[i,5]),4)
-//							_oCtaCorr:Doc      = _aSE1[i,3]
-//							_oCtaCorr:Serie    = _aSE1[i,2]
-//							_oCtaCorr:Parcela  = _aSE1[i,4]
-//							_oCtaCorr:Origem   = 'SF2460I'
-//							if _oCtaCorr:PodeIncl ()
-//								if ! _oCtaCorr:Grava (.F., .F.)
-//									U_AvisaTI ("Erro na atualizacao da conta corrente de associados ao gerar a NF '" + sf2 -> f2_doc + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
-//								endif
-//							else
-//								U_AvisaTI ("Gravacao do SZI nao permitida na atualizacao da conta corrente de associados ao gerar a NF '" + sf2 -> f2_doc + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
-//							endif
-//					   
-//					   Endif  
-//						
-//					   U_SalvaSX1 (cPerg, _aBkpSX1)  // Restaura parametros da rotina
-//					   
-//					next
-//				endif
 			endif
 		endif
 	endif
 return
-//// --------------------------------------------------------------------------
-//// Atualiza conta corrente de associados, quando for o caso.
-//static function _AtuSZIMudas ()
-//	local _sQuery    := ""
-//	local _sAliasQ   := ""
-//	local _lContinua := .T.
-//	local _nVlrTit   := 0
-//	local _oCtaCorr  := NIL
-//	local _oAssoc    := NIL
-//
-//	// Verifica se o cliente eh um associado
-//	if _lContinua .and. sf2 -> f2_tipo == 'B'  // Utiliza fornecedor
-//		sa2 -> (dbsetorder (1))
-//		if sa2 -> (dbseek (xfilial ("SA2") + sf2 -> f2_cliente + sf2 -> f2_loja, .F.))
-//			_oAssoc := ClsAssoc():New (sf2 -> f2_cliente, sf2 -> f2_loja)
-//			if valtype (_oAssoc) == "O" .and. _oAssoc:EhSocio ()
-//				
-//				// Tambem nao busca valor  do SE1 por que notas tipo 'B' nao geram contas a receber.
-//				_sQuery := ""                                                                                            
-//				_sQuery += " select sum (D2_TOTAL)"
-//				_sQuery += " from " + RetSQLName ("SD2") + " SD2, "
-//				_sQuery +=            RetSQLName ("SF4") + " SF4 "
-//				_sQuery += " where SD2.D_E_L_E_T_ != '*'"
-//				_sQuery += "   and SD2.D2_FILIAL   = '" + xfilial ("SD2") + "'"
-//				_sQuery += "   and SD2.D2_DOC      = '" + sf2 -> f2_doc   + "'"
-//				_sQuery += "   and SD2.D2_SERIE    = '" + sf2 -> f2_serie + "'"
-//				_sQuery += "   and SD2.D2_COD      in ('7206','7207')" // MUDAS DE VIDEIRAS
-//				_sQuery += "   and SF4.D_E_L_E_T_ != '*'"
-//				_sQuery += "   and SF4.F4_FILIAL   = '" + xfilial ("SF4") + "'"
-//				_sQuery += "   and SF4.F4_CODIGO   = SD2.D2_TES"
-//				_sQuery += "   and SF4.F4_DUPLIC  != 'S'"
-//				_nValTit = U_RetSQL (_sQuery)
-//				
-//				// Gera registro no SZI (conta corrente associados)
-//				if _nValTit > 0
-//					_oCtaCorr := ClsCtaCorr():New ()
-//					_oCtaCorr:Assoc    = sa2 -> a2_cod
-//					_oCtaCorr:Loja     = sa2 -> a2_loja
-//					_oCtaCorr:TM       = '24'
-//					_oCtaCorr:DtMovto  = sf2 -> f2_emissao
-//					_oCtaCorr:Valor    = _nValTit
-//					_oCtaCorr:SaldoAtu = _nValTit
-//					_oCtaCorr:Usuario  = cUserName
-//					_oCtaCorr:Histor   = 'VENDA MUDAS DE UVA CFE.NF.' + sf2 -> f2_doc
-//					_oCtaCorr:MesRef   = strzero(month(sf2 -> f2_emissao),2)+strzero(year(sf2 -> f2_emissao),4)
-//					_oCtaCorr:Doc      = sf2 -> f2_doc
-//					_oCtaCorr:Serie    = sf2 -> f2_serie
-//					_oCtaCorr:Parcela  = '1'
-//					_oCtaCorr:Origem   = 'SF2460I'
-//					if _oCtaCorr:PodeIncl ()
-//						if ! _oCtaCorr:Grava (.F., .F.)
-//							U_AvisaTI ("Erro na atualizacao da conta corrente de associados ao gerar a NF '" + sf2 -> f2_doc + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
-//						endif
-//					else
-//						U_AvisaTI ("Gravacao do SZI nao permitida na atualizacao da conta corrente de associados ao gerar a NF '" + sf2 -> f2_doc + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
-//					endif
-//				endif
-//			endif
-//		endif
-//	endif
-//return
-////// --------------------------------------------------------------------------
-//// Atualiza conta corrente de associados, quando for o caso.
-//static function _AtuSZI ()
-//	local _sQuery    := ""
-//	local _sAliasQ   := ""
-//	local _lContinua := .T.
-//	local _nVlrTit   := 0
-//	local _oCtaCorr  := NIL
-//	local _oAssoc    := NIL
-//
-//	// Verifica se o cliente eh um associado
-//	if _lContinua .and. sf2 -> f2_tipo == 'B'  // Utiliza fornecedor
-//		sa2 -> (dbsetorder (1))
-//		if sa2 -> (dbseek (xfilial ("SA2") + sf2 -> f2_cliente + sf2 -> f2_loja, .F.))
-//			_oAssoc := ClsAssoc():New (sf2 -> f2_cliente, sf2 -> f2_loja)
-//			if valtype (_oAssoc) == "O" .and. _oAssoc:EhSocio ()
-//				
-//				// Nao busca valor total do SF2 por que pode haver produto com TES que nao gera duplicatas.
-//				// Tambem nao busca valor do SE1 por que notas tipo 'B' nao geram contas a receber.
-//				_sQuery := ""                                                                                            
-//				_sQuery += " select sum (D2_TOTAL)"
-//				_sQuery += " from " + RetSQLName ("SD2") + " SD2, "
-//				_sQuery +=            RetSQLName ("SF4") + " SF4 "
-//				_sQuery += " where SD2.D_E_L_E_T_ != '*'"
-//				_sQuery += "   and SD2.D2_FILIAL   = '" + xfilial ("SD2") + "'"
-//				_sQuery += "   and SD2.D2_DOC      = '" + sf2 -> f2_doc   + "'"
-//				_sQuery += "   and SD2.D2_SERIE    = '" + sf2 -> f2_serie + "'"
-//				_sQuery += "   and SF4.D_E_L_E_T_ != '*'"
-//				_sQuery += "   and SF4.F4_FILIAL   = '" + xfilial ("SF4") + "'"
-//				_sQuery += "   and SF4.F4_CODIGO   = SD2.D2_TES"
-//				_sQuery += "   and SF4.F4_DUPLIC   = 'S'"
-//				_nValTit = U_RetSQL (_sQuery)
-//				
-//				// Gera registro no SZI (conta corrente associados)
-//				if _nValTit > 0
-//					_oCtaCorr := ClsCtaCorr():New ()
-//					_oCtaCorr:Assoc    = sa2 -> a2_cod
-//					_oCtaCorr:Loja     = sa2 -> a2_loja
-//					_oCtaCorr:TM       = '04'
-//					_oCtaCorr:DtMovto  = sf2 -> f2_emissao
-//					_oCtaCorr:Valor    = _nValTit
-//					_oCtaCorr:SaldoAtu = _nValTit
-//					_oCtaCorr:Usuario  = cUserName
-//					_oCtaCorr:Histor   = 'VENDA DE PRODUTOS CFE.NF.' + sf2 -> f2_doc
-//					_oCtaCorr:MesRef   = strzero(month(sf2 -> f2_emissao),2)+strzero(year(sf2 -> f2_emissao),4)
-//					_oCtaCorr:Doc      = sf2 -> f2_doc
-//					_oCtaCorr:Serie    = sf2 -> f2_serie
-//					if _oCtaCorr:PodeIncl ()
-//						if ! _oCtaCorr:Grava (.F., .F.)
-//							U_AvisaTI ("Erro na atualizacao da conta corrente de associados ao gerar a NF '" + sf2 -> f2_doc + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
-//						endif
-//					else
-//						U_AvisaTI ("Gravacao do SZI nao permitida na atualizacao da conta corrente de associados ao gerar a NF '" + sf2 -> f2_doc + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
-//					endif
-//				endif
-//			endif
-//		endif
-//	endif
-//return
 
-/* Nao usamos mais desde 2014
-// --------------------------------------------------------------------------
-// 20130621 - Retira reserva (SC0) dos produtos faturados
-Static Function _ExcResrv()
-	
-	dbselectarea("SC0")
-	dbsetorder(3)
-	dbseek(sf2->F2_VAFEMB + SC5->C5_NUM)
-	if found()
-		While !EOF() .and. SC0->C0_VAPEDID == SC5->C5_NUM
-			dbselectarea("SB2")
-			dbsetorder(1)
-			dbseek(sf2->f2_VAFEMB + SC0->C0_PRODUTO)
-			reclock("SB2")
-			Replace SB2->B2_RESERVA With SB2->B2_RESERVA - SC0->C0_QUANT 
-			msunlock()
-			reclock ("SC0", .F.)
-			SC0 -> (dbdelete ())
-			msunlock ()
-			dbselectarea("SC0")
-			dbskip()
-		enddo
-	endif
-return
-*/
+
 // --------------------------------------------------------------------------
 Static Function _HistNf()
 	_oEvento := ClsEvent():new ()
