@@ -4,16 +4,18 @@
 // Descricao..: P.E. para atualizar dados adicionais da NF entrada apos ler dados do pedido.
 //
 // Historico de alteracoes:
-// 22/06/2012 - Robert - Avisa usuario para ajustar natureza quando pedido da obra planta nova.
-// 12/09/2014 - Robert - Busca qualquer campo (antes desconsiderava virtuais e padrao do sistema).
-// 19/09/2014 - Robert - Volta a considerar campos virtuais e padrao do sistema.
-// 29/06/2018 - Robert - Copia especificamente o campo C7_DESCRI para D1_DESCRI.
+// 22/06/2012 - Robert         - Avisa usuario para ajustar natureza quando pedido da obra planta nova.
+// 12/09/2014 - Robert         - Busca qualquer campo (antes desconsiderava virtuais e padrao do sistema).
+// 19/09/2014 - Robert         - Volta a considerar campos virtuais e padrao do sistema.
+// 29/06/2018 - Robert         - Copia especificamente o campo C7_DESCRI para D1_DESCRI.
+// 12/08/2021 - Claudia/Sandra - Incluiu posição do item GLPI 10499
 //
 
 // --------------------------------------------------------------------------
 User Function MT103IPC()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _nItem    := Paramixb[1]    // numero do item do acols
+	local oGetDad
 	//local _lObra    := .F.
 
 	// Varre campos do SC7 e atualiza no SD1 os que tiverem nomes iguais.
@@ -46,6 +48,17 @@ User Function MT103IPC()
 
 	// Copia a descricao do pedido para a nota.
 	GDFieldPut ("D1_DESCRI", sc7 -> c7_descri, _nItem)
-	
+	GDFieldPut ("D1_TEC", FBUSCACPO ('SB1',1,XFILIAL('SB1')+SC7 -> C7_PRODUTO, 'B1_POSIPI'), _nItem)
+
+
+	 SYSREFRESH()
+
+
+
 	U_ML_SRArea (_aAreaAnt)
 Return
+
+GETDREFRESH()
+     SetFocus(oGetDad:oBrowse:hWnd) // Atualizacao por linha
+     oGetDad:Refresh()
+     MATA121(oGetDad)
