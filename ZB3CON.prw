@@ -84,16 +84,13 @@ User Function ZB3CON()
     _oSQL:_sQuery += "				OR (TRIM(SE1.E1_PARCELA) = '' "
     _oSQL:_sQuery += "					AND ZB3.ZB3_PARPRO = 'A')) "
     _oSQL:_sQuery += "	WHERE ZB3.D_E_L_E_T_ = '' "
-    _oSQL:_sQuery += "  AND ZB3_FILIAL BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'"
+    //_oSQL:_sQuery += "  AND ZB3_FILIAL BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'"
     //_oSQL:_sQuery += "	AND ZB3_DTAPGT BETWEEN '" + DTOS(mv_par01) + "' AND '" + DTOS(mv_par02) + "'"
     _oSQL:_sQuery += "	AND SE1.E1_NUM    <> '' "  // títulos encontrados
     _oSQL:_sQuery += "	AND SE1.E1_BAIXA   = '' "  // títulos não baixados
     _oSQL:_sQuery += "	AND ZB3.ZB3_STAIMP = 'I'"  // títulos com status importado
-    If !empty(mv_par03)
-        _oSQL:_sQuery += "	AND ZB3.ZB3_NSUCOD = '" + mv_par03 + "' " // FILTRA POR NSU
-    EndIf
-    If !empty(mv_par04) 
-        _oSQL:_sQuery += "	AND ZB3.ZB3_AUTCOD = '" + mv_par04 + "' " // FILTRA PELO CÓDIGO DE AUTORIZAÇÃO
+    If !empty(mv_par01)
+        _oSQL:_sQuery += "	AND ZB3.ZB3_IDTRAN = '" + alltrim(str(mv_par01)) + "' " // FILTRA POR ID TRANSAÇÃO
     EndIf
     _oSQL:_sQuery += "	ORDER BY SE1.E1_NUM "              
     _oSQL:Log ()
@@ -115,8 +112,12 @@ User Function ZB3CON()
             _nVlrPar := _aZB3[i,20]                 // ZB3_VLRPAR
             _nVlrTax := _aZB3[i,21]                 // ZB3_VLRTAX
 
+            _dDtaEmis := STOD(_aZB3[i,8]) 
             _dDtaPgto := STOD(_aZB3[i,18])          // data de recebimento do valor no banco
             _sAdm     := _aZB3[i,13]                // E1_ADM
+
+            _nDecres := 0
+            _nAcresc := 0
 
             // Baixa
             _sMotBaixa  := 'NORMAL' 
@@ -129,7 +130,15 @@ User Function ZB3CON()
                 _nDif := _nVlrTit - _nVlrPar
 
                 If _nDif >= -0.05 .and. _nDif <= 0.05 // se a diferença for 5 centavos, é arredondamento
-                    _nVlrLiq := _nVlrTit - _nVlrTax
+                    If _nDif > 0 // decrescimo
+                        _nDecres := _nDif
+                    Else         // acrescimo
+                        _nAcresc := _nDif
+                    EndIf
+
+                    GravaAcrDes(_nAcresc, _nDecres, _aZB3[i,1], _aZB3[i,2], _aZB3[i,3], _aZB3[i,4], _aZB3[i,6], _aZB3[i,7])
+
+                    //_nVlrLiq := _nVlrTit - _nVlrTax
                     _lContinua := .T.
                     u_log("ENCONTRADA DIFERENÇA DE: " + alltrim(str(_nDif))+ " Registro RECID + IDTRAN:" + _sIdRec +"/"+ _sIdTran + ", mas processo continua!")
                 Else
@@ -141,9 +150,9 @@ User Function ZB3CON()
                 _lContinua := .T.  // se n for diferente, tudo certo
                 u_log("SEM DIFERENÇA. Registro RECID + IDTRAN:" + _sIdRec +"/"+ _sIdTran)
             EndIf
-                
-            If _lContinua == .T.
 
+            If _lContinua == .T.
+                //u_help(_sBanco)
                 // executar a rotina de baixa automatica do SE1 gerando o SE5 - DO VALOR LÍQUIDO
                 lMsErroAuto := .F.
                 _aAutoSE1   := {}
@@ -155,9 +164,12 @@ User Function ZB3CON()
                 aAdd(_aAutoSE1, {"E1_LOJA"    	, _aZB3[i, 7]  		, Nil})
                 aAdd(_aAutoSE1, {"E1_TIPO"    	, _aZB3[i, 9] 		, Nil})
                 AAdd(_aAutoSE1, {"AUTMOTBX"		, _sMotBaixa  		, Nil})
-                AAdd(_aAutoSE1, {"CBANCO"  		, _sBanco	    	, Nil})  	
-                AAdd(_aAutoSE1, {"CAGENCIA"   	, _sAgencia		    , Nil})  
-                AAdd(_aAutoSE1, {"CCONTA"  		, _sConta			, Nil})
+                AAdd(_aAutoSE1, {"AUTBANCO"  	, _sBanco           , Nil})  	
+                AAdd(_aAutoSE1, {"AUTAGENCIA"   , _sAgencia         , Nil})  
+                AAdd(_aAutoSE1, {"AUTCONTA"  	, _sConta           , Nil})
+                //AAdd(_aAutoSE1, {"CBANCO"  		, _sBanco           , Nil})  	
+                //AAdd(_aAutoSE1, {"CAGENCIA"   	, _sAgencia         , Nil})  
+                //AAdd(_aAutoSE1, {"CCONTA"  		, _sConta           , Nil})                
                 AAdd(_aAutoSE1, {"AUTDTBAIXA"	, _dDtaPgto		 	, Nil})
                 AAdd(_aAutoSE1, {"AUTDTCREDITO"	, _dDtaPgto		 	, Nil})
                 AAdd(_aAutoSE1, {"AUTHIST"   	, _sHist    		, Nil})
@@ -197,22 +209,7 @@ User Function ZB3CON()
                                     _sNSUCod  ,; // NSU
                                     _sErro    }) // status
 
-                Else
-                    _oSQL:= ClsSQL ():New ()
-                    _oSQL:_sQuery := ""
-                    _oSQL:_sQuery += " UPDATE " + RetSQLName ("SE5") + " SET E5_BANCO = '"+ alltrim(_sBanco) + "', E5_AGENCIA = '"+ alltrim(_sAgencia) +"',"
-                    _oSQL:_sQuery += " E5_CONTA = '" + alltrim(_sConta) + "', E5_ADM = '" + _sAdm + "'"
-                    _oSQL:_sQuery += " WHERE D_E_L_E_T_=''"
-                    _oSQL:_sQuery += " AND E5_FILIAL  ='" + _aZB3[i,1] + "'"
-                    _oSQL:_sQuery += " AND E5_PREFIXO ='" + _aZB3[i,2] + "'"
-                    _oSQL:_sQuery += " AND E5_NUMERO  ='" + _aZB3[i,3] + "'"
-                    _oSQL:_sQuery += " AND E5_PARCELA ='" + _aZB3[i,4] + "'"
-                    _oSQL:_sQuery += " AND E5_CLIFOR  ='" + _aZB3[i,6] + "'"
-                    _oSQL:_sQuery += " AND E5_LOJA    ='" + _aZB3[i,7] + "'"
-                    _oSQL:_sQuery += " AND E5_TIPO    ='" + _aZB3[i,9] + "'"
-                    _oSQL:Log ()
-                    _oSQL:Exec ()
-                    
+                Else                   
                     // Salva dados para impressão
                     aadd(_aRelImp,{ _aZB3[i,1],; // filial
                                     _aZB3[i,2],; // prefixo
@@ -260,6 +257,30 @@ User Function ZB3CON()
 	
 	u_logFim ("Fim Conciliação pagar.me " + DTOS(date()) )
 
+Return
+//
+// --------------------------------------------------------------------------
+// Relatorio de registros importados
+Static Function GravaAcrDes(_nAcresc, _nDecres, _sFilial, _sPrefixo, _sTitulo, _sParcela, _sCliente, _sLoja)
+
+    u_log("Gravação de acrescimo/decrescimo do título:" + _sFilial +"/"+ _sPrefixo +"/"+ _sTitulo +"/"+ _sParcela +"/"+ _sCliente +"/"+ _sLoja)
+    dbSelectArea("SE1")
+    dbSetOrder(2) // E1_FILIAL+E1_CLIENTE+E1_LOJA+E1_PREFIXO+E1_NUM+E1_PARCELA+E1_TIPO
+    dbGoTop()
+
+    If DbSeek(xFilial("SE1") + _sCliente + _sLoja + _sPrefixo + _sTitulo + _sParcela)
+        RecLock("SE1",.F.)
+            SE1-> E1_ACRESC  := _nAcresc
+            SE1-> E1_DECRESC := _nDecres
+        MsUnLock()
+
+        If _nDecres <> 0
+            u_log("Decrescimo de : " + alltrim(str(_nDecres)))
+        EndIf
+        If _nAcresc <> 0
+            u_log("Acrescimo de : " + alltrim(str(_nAcresc)))
+        EndIf
+    EndIf
 Return
 //
 // --------------------------------------------------------------------------
@@ -385,10 +406,8 @@ Return
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT                TIPO TAM DEC VALID F3     Opcoes  
-    aadd (_aRegsPerg, {01, "Filial Inicial     ", "C", 2, 0,  "", "   ", {},                         		""})
-    aadd (_aRegsPerg, {02, "Filial Final       ", "C", 2, 0,  "", "   ", {},                         		""})                    		
-    aadd (_aRegsPerg, {03, "NSU                ", "C", 9, 0,  "", "   ", {},                         		""})
-    aadd (_aRegsPerg, {04, "Cod.Autorização    ", "C", 6, 0,  "", "   ", {},                         		""})
+    aadd (_aRegsPerg, {01, "Id Transação       ", "N", 9, 0,  "", "   ", {},                         		""})
+
     U_ValPerg (cPerg, _aRegsPerg)
 Return
  

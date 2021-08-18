@@ -2,65 +2,69 @@
 // Autor....: Robert Koch - TCX021
 // Data.....: 10/03/2011
 // Descricao: Execblock generico para lancamentos padronizados.
-
+//
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Processamento
 // #Descricao         #Execblock auxiliar para uso em lancamentos padronizados da contabilidade.
 // #PalavasChave      #lancamento_padrao
 // #TabelasPrincipais 
 // #Modulos           #CTB
-
+//
 // Historico de alteracoes:
-// 28/03/2011 - Robert - Tratamento para ZI_TM = '03'.
-// 24/05/2011 - Robert - tratamento para LPad 678.
-// 10/08/2011 - Robert - Tratamento para novos movtos. conta corrente associados.
-// 16/08/2011 - Robert - Tratamento para novos movtos. conta corrente associados (compensacoes).
-// 18/11/2011 - Robetr - Tratamento para retornar CRED no LPad. 678/015.
-//                     - Tratamento para retornar CCD no LPad. 678/000.
-// 06/03/2012 - Robert - Tratamento para compensacao com mov. 16 da conta corrente.
-// 13/04/2012 - Robert - Lanc.padrao 530/004 tinha conta 1110299 fixa.
-// 03/01/2012 - Robert - Tratamento para l.pad. 597/004 (comp.adt.obra)
-// 13/10/2014 - Catia  - l.pad. 597/005 - acertado para que trate OBRA, ASSOCIADO e Fornecedor NORMAL
-// 27/10/2014 - Catia  - l.pad. 597/005 - acertado ASSOCIADO para que trate as contas setadas no SZI
-// 07/11/2014 - Catia  - tirado um msgalert que tinha ficado esquecido.
-// 05/05/2015 - Catia  - lançamento padrao 510/200 - tratamento prefixo que deve zerar o valor para nao contabilizar.
-// 15/06/2015 - Catia  - feito tratamento para contabilização das NCC de verbas de clientes - 500/004
-// 25/06/2015 - Catia  - tratamento para o lancamento padrao 530/001 - buscar a conta debito nos titulos de impostos da natureza financeira 
-// 02/09/2015 - Catia  - lançamento padrao 510/200 - tratamento prefixo IND
-// 01/10/2015 - Robert - Criado tratamento para o campo A3_vaTpCon.
-//                     - Ajustes para novos centros de custos.
-// 20/10/2015 - Robert - Como os novos CC estao demorando a serem habilitados, separei o programa em "novos CC" e "velhos CC"
-// 29/10/2015 - Catia  - l.pad. 520 (021 e 022) - estorno provisao de rapel e comissao - rotina para montar o valor
-// 29/10/2015 - Catia  - l.pad. 521 (021 e 022) - estorno provisao de rapel e comissao - rotina para montar o valor
-// 30/10/2015 - Catia  - l.pad. 596 (002 e 003) - estorno provisao de rapel e comissao - rotina para montar o valor
-// 03/11/2015 - Robert - Alteracoes diversas para contemplar novos CC entram no ar agora.
-// 04/11/2015 - Catia  - Desconsiderar o vendedor 240 nos lctos 520/521/596
-// 26/01/2016 - Catia  - 520/521 seq 021 - alltrim(e1_vend1)
-// 27/01/2016 - Robert - Novo parametro funcao U_LP2.
-// 04/02/2016 - Catia  - Lcto 510/200 - tratamento dos PR estava errado
-// 17/03/2016 - Robert - Criado tratamento para lpad/seq 666/005.
-// 26/04/2016 - Robert - Funcao U_Help alterada para U_AvisaTI para nao parar processos grandes como a contabilizacao do medio.
-// 24/05/2016 - Robert - Recebe doc e serie por parametro.
-// 13/07/2016 - Robert - Tratamento para LPAD 521 e 522 remodelado para atender tambem o 524.
-// 14/07/2016 - Robert - Ajustado retorno do LPAD 596 (que estraguei na manutencao feita ontem).
-// 31/08/2016 - Catia  - Lcto 530/004/CRED - estava trazendo no primeiro lcto a conta caixa e deveria ser a conta contabil do banco
-// 19/10/2016 - Catia  - Alterado teste de vendedores diretos por parametro $GETMV("MV_VENDDIR")
-// 13/12/2016 - Robert - Tratamento para LPAD 666/008
-// 13/01/2017 - Catia  - Tratamento para LPAD 666/008 - dava erro quando nao retornava a conta - alterei para que retorno em branco
-// 13/06/2017 - Catia  - Tratamento para rapel, que busque direto do E1_VARAPEL
-// 01/02/2018 - Catia  - LP de baixa de titulos a pagar com PREFIXO ALE
-// 13/03/2018 - Catia  - desabilitado o lcto de estorno de rapel - nao deve ser feito estorno pra rapel apenas pra comissão
-// 23/04/2018 - Robert - LP 510/200 retornar valor zerado para prefixo FRS (auxilio frete safra a associados).
-// 27/09/2018 - Robert - Ajuste tratamento erro para o LPad 666005.
-// 18/10/2018 - Catia  - LP 631/000 - cupons fiscais
-// 30/10/2019 - Robert - diferenciava CC coml/adm/indl usando LEFT em vez de SUBSTR (posicao 3) no LPAD 666/008
+// 28/03/2011 - Robert  - Tratamento para ZI_TM = '03'.
+// 24/05/2011 - Robert  - tratamento para LPad 678.
+// 10/08/2011 - Robert  - Tratamento para novos movtos. conta corrente associados.
+// 16/08/2011 - Robert  - Tratamento para novos movtos. conta corrente associados (compensacoes).
+// 18/11/2011 - Robetr  - Tratamento para retornar CRED no LPad. 678/015.
+//                      - Tratamento para retornar CCD no LPad. 678/000.
+// 06/03/2012 - Robert  - Tratamento para compensacao com mov. 16 da conta corrente.
+// 13/04/2012 - Robert  - Lanc.padrao 530/004 tinha conta 1110299 fixa.
+// 03/01/2012 - Robert  - Tratamento para l.pad. 597/004 (comp.adt.obra)
+// 13/10/2014 - Catia   - l.pad. 597/005 - acertado para que trate OBRA, ASSOCIADO e Fornecedor NORMAL
+// 27/10/2014 - Catia   - l.pad. 597/005 - acertado ASSOCIADO para que trate as contas setadas no SZI
+// 07/11/2014 - Catia   - tirado um msgalert que tinha ficado esquecido.
+// 05/05/2015 - Catia   - lançamento padrao 510/200 - tratamento prefixo que deve zerar o valor para nao contabilizar.
+// 15/06/2015 - Catia   - feito tratamento para contabilização das NCC de verbas de clientes - 500/004
+// 25/06/2015 - Catia   - tratamento para o lancamento padrao 530/001 - buscar a conta debito nos titulos de 
+//                        impostos da natureza financeira 
+// 02/09/2015 - Catia   - lançamento padrao 510/200 - tratamento prefixo IND
+// 01/10/2015 - Robert  - Criado tratamento para o campo A3_vaTpCon.
+//                      - Ajustes para novos centros de custos.
+// 20/10/2015 - Robert  - Como os novos CC estao demorando a serem habilitados, separei o programa em "novos CC" e "velhos CC"
+// 29/10/2015 - Catia   - l.pad. 520 (021 e 022) - estorno provisao de rapel e comissao - rotina para montar o valor
+// 29/10/2015 - Catia   - l.pad. 521 (021 e 022) - estorno provisao de rapel e comissao - rotina para montar o valor
+// 30/10/2015 - Catia   - l.pad. 596 (002 e 003) - estorno provisao de rapel e comissao - rotina para montar o valor
+// 03/11/2015 - Robert  - Alteracoes diversas para contemplar novos CC entram no ar agora.
+// 04/11/2015 - Catia   - Desconsiderar o vendedor 240 nos lctos 520/521/596
+// 26/01/2016 - Catia   - 520/521 seq 021 - alltrim(e1_vend1)
+// 27/01/2016 - Robert  - Novo parametro funcao U_LP2.
+// 04/02/2016 - Catia   - Lcto 510/200 - tratamento dos PR estava errado
+// 17/03/2016 - Robert  - Criado tratamento para lpad/seq 666/005.
+// 26/04/2016 - Robert  - Funcao U_Help alterada para U_AvisaTI para nao parar processos grandes como a contabilizacao do medio.
+// 24/05/2016 - Robert  - Recebe doc e serie por parametro.
+// 13/07/2016 - Robert  - Tratamento para LPAD 521 e 522 remodelado para atender tambem o 524.
+// 14/07/2016 - Robert  - Ajustado retorno do LPAD 596 (que estraguei na manutencao feita ontem).
+// 31/08/2016 - Catia   - Lcto 530/004/CRED - estava trazendo no primeiro lcto a conta caixa e deveria 
+//                        ser a conta contabil do banco
+// 19/10/2016 - Catia   - Alterado teste de vendedores diretos por parametro $GETMV("MV_VENDDIR")
+// 13/12/2016 - Robert  - Tratamento para LPAD 666/008
+// 13/01/2017 - Catia   - Tratamento para LPAD 666/008 - dava erro quando nao retornava a conta - 
+//                        alterei para que retorno em branco
+// 13/06/2017 - Catia   - Tratamento para rapel, que busque direto do E1_VARAPEL
+// 01/02/2018 - Catia   - LP de baixa de titulos a pagar com PREFIXO ALE
+// 13/03/2018 - Catia   - desabilitado o lcto de estorno de rapel - nao deve ser feito estorno pra rapel 
+//                        apenas pra comissão
+// 23/04/2018 - Robert  - LP 510/200 retornar valor zerado para prefixo FRS (auxilio frete safra a associados).
+// 27/09/2018 - Robert  - Ajuste tratamento erro para o LPad 666005.
+// 18/10/2018 - Catia   - LP 631/000 - cupons fiscais
+// 30/10/2019 - Robert  - diferenciava CC coml/adm/indl usando LEFT em vez de SUBSTR (posicao 3) no LPAD 666/008
 // 21/07/2020 - Cláudia -  Ajustada as contas para o LPAD: 500. Conform GLPI: 8094
 // 23/10/2020 - Robert  - Tratamento para tipo IA no lpad 666/008
 // 23/06/2021 - Claudia - Ajuste no lançamento 520 002. GLPI:10294
 // 13/07/2021 - Robert  - Tratamento LP 530 resgate cota capital (GLPI 10481)
+// 16/08/2021 - Claudia - Incluida rotina ZB3(Pagar-me) na conta de credito de cartões. GLPI: 9026
 //
-
-// --------------------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------
 // Informar numero e sequencia do lancamento padrao, seguido do campo a ser retornado.
 User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 	local _aAreaAnt := U_ML_SRArea ()
@@ -68,6 +72,7 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 	local _sQuery   := ""
 	local _aRetQry  := {}
 	local _oSQL     := NIL
+	//local _x        := 0
 
  	_sQueRet = alltrim (upper (_sQueRet))
  	do case
@@ -82,20 +87,6 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 					else
 						_xRet = "403010401007" 
 					endif
-//					do case
-//						case _wtipo ='1'
-//							_xRet = "403010401005" // encartes/ponto extra
-//						case _wtipo ='2'
-//							_xRet = "403010401008" // feiras
-//						case _wtipo ='3'
-//							_xRet = "403010401002" // fretes
-//						case _wtipo ='4'
-//							_xRet = "403010401007" // campanha de vendas
-//						case _wtipo ='5'
-//							_xRet = "403010401006" // abertura/reinauguracao lojas
-//						case _wtipo ='6'
-//							_xRet = "403010201031" // multa contratual
-//					endcase
 	    		endif
 
 	     		if _sQueRet == 'HIST'
@@ -144,7 +135,8 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 
 		case _sLPad == '520' .and. _sSeq='002'
 			if _sQueRet == 'CRED'
-				if (alltrim(SE5->E5_ORIGEM) =='ZB1' .or. alltrim(SE5->E5_ORIGEM) =='FINA740') .and. alltrim(SE5->E5_TIPO) $ 'CC/CD' 				
+				// cielo 
+				if (alltrim(SE5->E5_ORIGEM) =='ZB1' .or. alltrim(SE5->E5_ORIGEM) =='FINA740') .and. alltrim(SE5->E5_TIPO) $ 'CC/CD'				
 					if !empty(SE5->E5_ADM) 
 						do case
 							case SE5->E5_ADM == "100" .or. SE5->E5_ADM =="101"
@@ -173,24 +165,33 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 						endcase
 					endif
 				else
-					_xRet := "101020201001"
-				endif  
-				// if alltrim(SE5->E5_ORIGEM)=='ZB1'
-				// 	do case
-				// 		case SE5->E5_ADM == "100" .or. SE5->E5_ADM =="101"
-				// 			_xRet:= "101021101002"
-				// 		case SE5->E5_ADM == "200" .or. SE5->E5_ADM =="201"
-				// 			_xRet:= "101021101001"
-				// 		case SE5->E5_ADM == "300" .or. SE5->E5_ADM =="301"
-				// 			_xRet:= "101021101003"
-				// 		case SE5->E5_ADM == "400" .or. SE5->E5_ADM =="401"
-				// 			_xRet:= "101021101004"
-				// 		otherwise
-				// 			_xRet:= "101021101005"
-				// 	endcase
-				// else
-				// 	_xRet := "101020201001"
-				// endif     
+					// pagar-me
+					if alltrim(SE5->E5_ORIGEM) == 'ZB3'
+						Do Case
+							Case !empty(SE1->E1_ADM) // cartão
+								do case
+									case SE1->E1_ADM == "100" .or. SE1->E1_ADM =="101"
+										_xRet:= "101021101002"
+									case SE1->E1_ADM == "200" .or. SE1->E1_ADM =="201"
+										_xRet:= "101021101001"
+									case SE1->E1_ADM == "300" .or. SE1->E1_ADM =="301"
+										_xRet:= "101021101003"
+									case SE1->E1_ADM == "400" .or. SE1->E1_ADM =="401"
+										_xRet:= "101021101004"
+									otherwise
+										_xRet:= "101021101005"
+								endcase
+
+							Case empty(SE1->E1_ADM) 	// boleto
+								_xRet := "101020201001" // conta clientes	
+
+							Otherwise
+								_xRet := "101020201001" // conta clientes							
+						EndCase
+					else
+						_xRet := "101020201001"
+					endif
+				endif  				
 			endif
 
 	case _sLpad+_sseq $ ('520002/521002/527002') // ESX - tratamento baixa e cancelamento da baixa para venda futura
@@ -206,15 +207,16 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 			AND D2_DOC = %exp:SE1->E1_NUM%
 			AND D2_SERIE = %exp:SE1->E1_PREFIXO%
 		endsql 
+
 		do case
-		case alltrim(_sQueRet) $ 'CRED/DEB' 
-			if  _qd2->(eof())
-				_xret := '101020201001'
-			else
-				_xret := '101020201003'
-			endif
-		endcase
-		_qd2->(dbclosearea())
+			case alltrim(_sQueRet) $ 'CRED/DEB' 
+				if  _qd2->(eof())
+					_xret := '101020201001'
+				else
+					_xret := '101020201003'
+				endif
+			endcase
+			_qd2->(dbclosearea())
 
 	case _sLPad + _sSeq $ '520003'
 		u_help (SE1->E1_TIPO)
@@ -222,7 +224,6 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 		u_help (SE5->E5_VADOUTR)
 
 	case _sLPad + _sSeq $ '520021/521021/524021' .and. _sQueRet == 'VL' // descontos - estorna provisao de comissao
-		//if SE1->E1_TIPO<>"NCC" .AND. SE5->E5_VLDESCO > 0 .and. SE1->E1_COMIS1>0 .AND. ! alltrim(SE1->E1_VEND1) $ '001/060/135/186/240'
 		if SE1->E1_TIPO<>"NCC" .AND. SE5->E5_VLDESCO > 0 .and. SE1->E1_COMIS1>0 .AND. ! alltrim(SE1->E1_VEND1) $ GETMV("MV_VENDDIR")
 			// acha a base de comissao do titulo - não da pra considerar a do SE1, por conta do recalculo
 			_xbaseComTit = _BComis (SE1->E1_NUM, SE1->E1_PREFIXO, SE1->E1_CLIENTE,SE1->E1_LOJA, SE1->E1_VALOR)
@@ -235,15 +236,23 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 		endif						
     
 	case _sLPad + _sSeq $ '520022/521022/524022' .and. _sQueRet == 'VL' // descontos - estorna provisao de rapel
-		_xRet = 0
-		//if SE1->E1_TIPO<>"NCC" .AND. SE5->E5_VLDESCO > 0
-			//_wrapelPREV = SE1->E1_VARAPEL
-			// se o desconto não eh referente a rapel - estorna a conta de provisao de rapel
-			// se o lançamento do desconto não eh rapel 
-			//if SE5->E5_VLDESCO <> SE5->E5_VARAPEL
-				//_xret = _Rapel (SE1->E1_NUM, SE1->E1_PARCELA, SE1->E1_CLIENTE, SE1->E1_LOJA, SE5->E5_VLDESCO, _wrapelPREV )
-			//endif							
-		//endif				
+		_xRet = 0			
+
+	case _sLPad == '520' .and. _sSeq='026'
+		if _sQueRet == 'CDEB'
+			if alltrim(SE5->E5_ORIGEM) == 'ZB3'
+				Do Case
+					Case !empty(SE1->E1_ADM) 	// cartão
+						_xRet := "403010201052"   
+
+					Case empty(SE1->E1_ADM) 	// boleto e pix
+						_xRet := "403010201021" 
+
+					Otherwise
+						_xRet := "101020201001" // conta clientes							
+				EndCase
+			endif
+		endif
 
 	case _sLPad == '530' .and. _sSeq='001' .and. _sQueRet == 'CDEB' // baixa titulo contas a pagar - define conta a debito
 		do case
@@ -291,7 +300,6 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 		if SE5->E5_MOTBX="CMP"
 			do case
 				case _sSeq='002' .and. _sQueRet == 'VL' // descontos - estorna provisao de comissao
-					//if  SE1->E1_COMIS1>0 .AND. ! SE1->E1_VEND1 $ '001/060/135/186/240'
 					if  SE1->E1_COMIS1>0 .AND. ! SE1->E1_VEND1 $ GETMV("MV_VENDDIR")
 						// acha a base de comissao do titulo - não da pra considerar a do SE1, por conta do recalculo
 						_xbaseComTit = _BComis (SE1->E1_NUM, SE1->E1_PREFIXO, SE1->E1_CLIENTE,SE1->E1_LOJA, SE1->E1_VALOR)
@@ -304,8 +312,7 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 					_wrapelPREV = SE1->E1_VARAPEL
 					_xret = _Rapel (SE1->E1_NUM, SE1->E1_PARCELA, SE1->E1_CLIENTE, SE1->E1_LOJA, SE5->E5_VALOR, _wrapelPREV )
 			endcase
-		endif				
-				
+		endif		
 		
 	case _sLPad == '597' .and. _sSeq='005' // Compensacao contas a pagar
 	   _wtipo := "NORMAL
@@ -428,7 +435,6 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 		endcase
 
 
-
 	case _sLPad + _sSeq == '666008'  // Custeio requisicoes por CC.
 		if _sQueRet = "CDEB"
 			_xRet   = ""
@@ -452,55 +458,52 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 		endif
 
 
-
 	case _sLPad + _sSeq == '678000'  // CPV DESPESA
 		do case
-		case _sQueRet = "CRED"
-			_xRet   = ""
-			do case
-			case SD2->D2_TP=="MP" ; _xRet = "101030101014"
-			case SD2->D2_TP=="ME" ; _xRet = "101030101016"
-			case SD2->D2_TP=="PA" ; _xRet = "101030101011"
-			case SD2->D2_TP=="PS" ; _xRet = "101030101015"
-			case SD2->D2_TP=="VD" ; _xRet = "101030101013"
-			case SD2->D2_TP=="PI" ; _xRet = "101030101012"
-			otherwise
-				U_AvisaTI ("Tipo '" + sd2 -> d2_tp + "' sem tratamento no LPad/seq '" + _sLPad + _sSeq + "'")
+			case _sQueRet = "CRED"
+				_xRet   = ""
+				do case
+				case SD2->D2_TP=="MP" ; _xRet = "101030101014"
+				case SD2->D2_TP=="ME" ; _xRet = "101030101016"
+				case SD2->D2_TP=="PA" ; _xRet = "101030101011"
+				case SD2->D2_TP=="PS" ; _xRet = "101030101015"
+				case SD2->D2_TP=="VD" ; _xRet = "101030101013"
+				case SD2->D2_TP=="PI" ; _xRet = "101030101012"
+				otherwise
+					U_AvisaTI ("Tipo '" + sd2 -> d2_tp + "' sem tratamento no LPad/seq '" + _sLPad + _sSeq + "'")
+				endcase
+
+			case _sQueRet = "CCD"  // Cfe. prog. antigo 'vendacc.prw':
+				// Acho que estamos chamando esta contabilizacao indevidamente...
+				if empty (fBuscaCpo ("SF2", 1, xfilial ("SF2") + _sDoc + _sSerie, "F2_VEND1"))
+					u_avisaTI ("Vendedor em branco para doc/serie '" + _sDoc + '/' + _sSerie + "' no LPAD " + _sLPad + _sSeq + _sQueRet) 
+				endif
+				
+				// Nao deu para chamar o programa LP2 direto no lcto padrao por que o arquivo SF2 nao encontra-se posicionado para este lcto padrao.
+				_xRet = U_LP2 ('CTA_TP_VEND',, fBuscaCpo ("SF2", 1, xfilial ("SF2") + _sDoc + _sSerie, "F2_VEND1"),, _sLPad + _sSeq)
 			endcase
-
-		case _sQueRet = "CCD"  // Cfe. prog. antigo 'vendacc.prw':
-
-
-			// Acho que estamos chamando esta contabilizacao indevidamente...
-			if empty (fBuscaCpo ("SF2", 1, xfilial ("SF2") + _sDoc + _sSerie, "F2_VEND1"))
-				u_avisaTI ("Vendedor em branco para doc/serie '" + _sDoc + '/' + _sSerie + "' no LPAD " + _sLPad + _sSeq + _sQueRet) 
-			endif
-			
-			// Nao deu para chamar o programa LP2 direto no lcto padrao por que o arquivo SF2 nao encontra-se posicionado para este lcto padrao.
-			_xRet = U_LP2 ('CTA_TP_VEND',, fBuscaCpo ("SF2", 1, xfilial ("SF2") + _sDoc + _sSerie, "F2_VEND1"),, _sLPad + _sSeq)
-		endcase
 
 	case _sLPad + _sSeq == '678001'  // REMESSA DE BONIFICACAO
 		do case
-		case _sQueRet = "CCD"  // Cfe. prog. antigo 'vendacc.prw':
+			case _sQueRet = "CCD"  // Cfe. prog. antigo 'vendacc.prw':
 
-			// Nao deu para chamar o programa LP2 direto no lcto padrao por que o arquivo SF2 nao encontra-se posicionado para este lcto padrao.
-			_xRet = U_LP2 ('CTA_TP_VEND',, fBuscaCpo ("SF2", 1, xfilial ("SF2") + sd2 -> d2_doc + sd2 -> d2_serie, "F2_VEND1"),, _sLPad + _sSeq)
-		endcase
+				// Nao deu para chamar o programa LP2 direto no lcto padrao por que o arquivo SF2 nao encontra-se posicionado para este lcto padrao.
+				_xRet = U_LP2 ('CTA_TP_VEND',, fBuscaCpo ("SF2", 1, xfilial ("SF2") + sd2 -> d2_doc + sd2 -> d2_serie, "F2_VEND1"),, _sLPad + _sSeq)
+			endcase
 
 
 	case _sLPad + _sSeq == '678015'  // Remessa entrega futura
 		do case
-		case _sQueRet = "CCD"
-			
-			// Acho que estamos chamando esta contabilizacao indevidamente...
-			if empty (fBuscaCpo ("SF2", 1, xfilial ("SF2") + _sDoc + _sSerie, "F2_VEND1"))
-				u_avisaTI ("Vendedor em branco para doc/serie '" + _sDoc + '/' + _sSerie + "' no LPAD " + _sLPad + _sSeq + _sQueRet) 
-			endif
+			case _sQueRet = "CCD"
+				
+				// Acho que estamos chamando esta contabilizacao indevidamente...
+				if empty (fBuscaCpo ("SF2", 1, xfilial ("SF2") + _sDoc + _sSerie, "F2_VEND1"))
+					u_avisaTI ("Vendedor em branco para doc/serie '" + _sDoc + '/' + _sSerie + "' no LPAD " + _sLPad + _sSeq + _sQueRet) 
+				endif
 
-			// Nao deu para chamar o programa LP2 direto no lcto padrao por que o arquivo SF2 nao encontra-se posicionado para este lcto padrao.
-			_xRet = U_LP2 ('CTA_TP_VEND',, fBuscaCpo ("SF2", 1, xfilial ("SF2") + _sDoc + _sSerie, "F2_VEND1"),, _sLPad + _sSeq)
-		endcase
+				// Nao deu para chamar o programa LP2 direto no lcto padrao por que o arquivo SF2 nao encontra-se posicionado para este lcto padrao.
+				_xRet = U_LP2 ('CTA_TP_VEND',, fBuscaCpo ("SF2", 1, xfilial ("SF2") + _sDoc + _sSerie, "F2_VEND1"),, _sLPad + _sSeq)
+			endcase
 	endcase
 
 	// Tenta dar um tratamento para o caso de nao ter encontrado nada a retornar.
@@ -510,15 +513,15 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 		           "' no programa " + procname () + ;
 		           ". Pilha de chamadas:" + _Pcham ())
 		do case
-		case _sQueRet $ "HIST/CRED/DEB/CCC/CCD/ITCTAD"
-			_xRet = ""
-		case _sQueRet $ "VL/"
-			_xRet = 0
+			case _sQueRet $ "HIST/CRED/DEB/CCC/CCD/ITCTAD"
+				_xRet = ""
+			case _sQueRet $ "VL/"
+				_xRet = 0
 		endcase
 	endif
 	U_ML_SRArea (_aAreaAnt)
 return _xRet
-
+//
 // --------------------------------------------------------------------------
 // Verifica se eh um titulo referente a pagamentos da obra unidade Flores.
 static function _EhObra ()
@@ -553,7 +556,7 @@ static function _EhObra ()
 		endif
 	endif
 return _lRet
-
+//
 // --------------------------------------------------------------------------
 // Faz exportacao da pilha de chamadas para uma string.
 static function _PCham ()
@@ -564,7 +567,9 @@ static function _PCham ()
 		_i++
 	enddo
 return _sPilha
-
+//
+// --------------------------------------------------------------------------
+// Função rapel
 static function _Rapel (_wnum, _wparcela, _wcliente, _wloja, _wvlrdesco, _wrapelPREV)
 	_xvlr :=0
 	// busca o valor do rapel ja lançado no titulo/parcela
@@ -598,7 +603,8 @@ static function _Rapel (_wnum, _wparcela, _wcliente, _wloja, _wvlrdesco, _wrapel
 		endif										
 	endif
 return _xvlr		
-
+//
+// --------------------------------------------------------------------------
 static function _BComis (_wnf, _wserie, _wcliente, _wloja, _wvalor)
 	_wbaseCom := 0
 	

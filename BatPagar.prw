@@ -58,6 +58,10 @@ Static Function _BuscaRecebiveis(dDataIni, dDataFin)
     nNumReg := len(oJSON)
 
     u_log2('aviso', 'Pagar.me: Qnt. registros:' + alltrim(Str(nNumReg)))
+    If nNumReg == 0
+        u_log2('aviso', 'Verifique a chave API')
+    EndIf
+    
     If nNumReg > 0
         For i := 1 to nNumReg
             aParcela    := {}
@@ -205,6 +209,7 @@ Static Function _GravaZB3(aTrans, aParcela)
             EndIf
 
 			Reclock("ZB3",.T.)
+                //ZB3->ZB3_FILIAL := cFilAnt
 				ZB3->ZB3_RECID  := aParcela[1, 1]
                 ZB3->ZB3_STAPAR := aParcela[1, 2]
                 ZB3->ZB3_VLRPAR := aParcela[1, 3]
@@ -266,7 +271,7 @@ Static Function MontaLinkReceb(dDataIni, dDataFin)
     _sMes   := PADL(alltrim(str(Month(dDataFin))),2,'0')
     _sAno   := alltrim(str(Year(dDataFin)))
     _sDt02  := _sAno +"-"+_sMes+"-" + _sDia
-    _sAkKey := GETMV("VA_PAGARME")//ak_live_ZueJ4a7bDptKUEQTFwOWSz9DG2OjHj
+    _sAkKey := GETMV("VA_PAGARME")//ak_live_NibpfgedhX5VM3nyFWTo5hiBF6TleD
 
     _sLink := 'https://api.pagar.me/1/payables?count=500&created_at=%3E=' + _sDt01 + 'T00:00:00.000Z&created_at=%3C=' + _sDt02 + 'T23:59:59.999Z&status=paid&api_key=' + alltrim(_sAkKey)
 Return _sLink
