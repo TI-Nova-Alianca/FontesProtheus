@@ -30,6 +30,7 @@
 //                     - Melhorados logs.
 // 06/05/2021 - Robert - Filtrada somente F2_SERIE='10' para envio, pois existem outras series que nao sao de faturamento (GLPI 9984)
 //                     - Melhoradas mensagens de retorno.
+// 19/08/2021 - Robert - Ignorar NF de numero '00126.498' existente no SF1 (SQL nao converte para INT).
 //
 
 // --------------------------------------------------------------------------
@@ -178,7 +179,8 @@ user function BatMercN (_nQtDias)
 		_oSQL:_sQuery +=      " WHERE F1_DTDIGIT >= '20180101'"  // Data em que comecamos a exportar notas para o Mercanet
 		_oSQL:_sQuery +=        " AND F1_ESPECIE not in ('ND')"
 		_oSQL:_sQuery +=        " AND F1_FILIAL = '" + xfilial ("SF1") + "'"
-		_oSQL:_sQuery +=        " AND F1_DOC    != '000038/23'"  // Nota-monstro que o SQL nao converet para INT.
+		_oSQL:_sQuery +=        " AND F1_DOC    != '000038/23'"  // Nota-monstro que o SQL nao converte para INT.
+		_oSQL:_sQuery +=        " AND F1_DOC    != '00126.498'"  // Nota-monstro que o SQL nao converte para INT.
 		_oSQL:_sQuery += " )"
 		_oSQL:_sQuery += " SELECT R_E_C_N_O_ "
 		_oSQL:_sQuery +=   " FROM LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_NOTA_FISCAL, SF1"
