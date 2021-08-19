@@ -15,6 +15,7 @@
 // 03/10/2019 - Cláudia - Alterada busca de verificações de <Campo D3_NUMSEQ não pode ter repetição> e <Recursividade>
 // 13/02/2020 - Robert  - Eliminadas filiais 05 e 06; acrescentada filial 16.
 // 22/05/2020 - Robert  - Parametro 'apagar estornos' mudado de S para N
+// 13/08/2021 - Robert  - Alterado parametro 'mov.int.valorizados' de 'depois' para 'antes'.
 //
 
 // --------------------------------------------------------------------------
@@ -102,7 +103,7 @@ user function BatCMed ()
 		U_GravaSX1 (cPerg, "15", 1)	// recalc.niveis estrut: s/n
 		U_GravaSX1 (cPerg, "16", 1)	// mostra seq. calculo: nao/medio/fifo
 		U_GravaSX1 (cPerg, "17", 2)	// seq.processam. fifo: data+seq/medio
-		U_GravaSX1 (cPerg, "18", 2)	// mov.int.valorizados:antes/depois
+		U_GravaSX1 (cPerg, "18", 1)	// mov.int.valorizados:antes/depois
 		U_GravaSX1 (cPerg, "19", 2)	// recalc.custos transportes: s/n (aplica-se a conh.frete, para atualizar o custo do produto comprado).
 		U_GravaSX1 (cPerg, "20", 3)	// recalc.custos por: todas filiais/corrente/seleciona
 		U_GravaSX1 (cPerg, "21", 2)	// custo em partes: s/n
