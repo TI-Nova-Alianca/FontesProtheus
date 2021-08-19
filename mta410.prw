@@ -11,76 +11,76 @@
 // #Modulos 		  #faturamento #FAT
 
 // Historico de alteracoes:
-// 03/06/2008 - Robert - Passa a avisar quando tem item do grupo ML_CARTU sem qt. volumes.
-// 11/06/2008 - Robert - Aviso sobre volumes passa a ser apenas em pedidos do tipo 'normal'.
-// 18/06/2008 - Robert - Chama verificacao de dados para NFe.
-// 10/07/2008 - Robert - Verificacao de dados para NFe passa a bloquear a gravacao do pedido.
-// 25/08/2008 - Robert - Nao verifica fretes quando for geracao de pedidos por EDI.
-// 02/09/2008 - Robert - Na validacao de CFO nao considerava tipo do pedido.
-// 17/09/2008 - Robert - Criadas validacoes para campanhas de venda.
-// 19/11/2008 - Robert - Verifica estoque quando informada a quantidade liberada.
-// 02/03/2009 - Robert - Vendas para SP com geracao de ST bloqueadas temporariamente.
-// 04/03/2009 - Robert - Criados tratamentos para que o armazem geral possa ser representado tambem por fornecedor e nao somente cliente.
-// 19/08/2009 - Robert - Revisao para nao mostrar nada em tela quando executar sem interface com o usuario.
-// 16/09/2009 - Robert - Pedidos com frete FOB passam a ser permitidos em DCOs.
-// 22/09/2009 - Robert - Produtos a granel passam a ser permitidos nos DCOs.
-// 22/10/2009 - Robert - Passa a usar tabela 03 do ZX5 em lugar da tabela 77 do SX5.
-// 16/12/2009 - Robert - Removidas validacoes por DCO
-// 10/06/2010 - Robert - Criadas validacoes para representantes externos.
-// 17/10/2010 - Robert - Criadas validacoes para deposito fechado (filial 04).
-//                     - Nao consiste volumes para geracao via batch.
-// 29/10/2010 - Robert - Passa a usar a funcao VerEstq para verificacao de estoques.
-// 01/11/2010 - Robert - Verificacao de TES X Filial de embarque
-// 05/11/2010 - Robert - Novos parametros funcao VerEstq.
-// 16/11/2010 - Robert - Ignora alguns testes quando chamado pela rotina de retorno simbolico do deposito para a matriz.
-// 15/12/2010 - Robert - Criado tratamento para campo ZX5_MODO.
-// 06/07/2011 - Robert - Nao permite vendedor inativo.
-// 11/08/2011 - Robert - Criadas consistencias ref. transferencias entre filiais (usar custo medio).
-// 08/09/2011 - Robert - Avisa usuario para usar pedido tipo 'B' em caso de venda para associados.
-// 17/10/2011 - Robert - Valida preenchimento de volume2 em qualquer tipo de pedido (antes era soh para tipo N).
-// 16/12/2011 - Robert - Funcao VerEstq passa a receber parametro de endereco de estoque.
-// 02/01/2012 - Robert - Transferencias feitas pela matriz voltam a ser pelo custo medio e nao mais pelo de reposicao.
-// 14/01/2012 - Robert - Verificacao de envio de bags para dispenser sem os copos descartaveis.
-// 01/03/2012 - Robert - Verificacao especifica para pedidos importados via EDI (por enquanto, apenas itens com e sem ST).
-// 10/05/2012 - Robert - Verificacao de venda para associado passa a usar a classe ClsAssoc.
-// 24/10/2012 - Robert - Nao permite mais filial embarque inconsistente com TES de embarque no deposito (antes apenas avisava).
-// 22/11/2012 - Elaine - Incluir tratamento para tabela de preco - validar tipo de frete CIF/FOB com o tipo de frete do pedido
-// 05/02/2013 - Elaine - Nao permitir incluir pedido se informar cfop de transferência e o cliente não for uma das filiais da Alianca
-// 21/05/2013 - Robert - Tratamento da variavel _sErroEDI desabilitado, pois a funcao U_Help passa a ter tratamento para rot.automaticas.
-// 27/07/2013 - Robert - Passa a buscar preco de custo na funcao U_PrcCust().
-// 14/08/2013 - Robert - Verifica remessa para deposito embarcando em filial diferente da matriz.
-// 25/03/2014 - Robert - Verifica pedido embarcado pela filial 13 (temporario).
-// 21/05/2014 - Robert - Verifica se houve liberacao parcial do pedido.
-// 23/05/2014 - Robert - Verifica consistencias quanto a utilizar ou nao as cargas do OMS.
-// 11/07/2014 - Robert - Verifica almoxarifado dos produtos quando utiliza carga.
-// 06/08/2014 - Robert - Bloqueia uso de TES que nao movimenta estoque em pedido que utiliza carga do OMS.
-// 22/08/2014 - Robert - Funcao U_PrcCust parametrizada para buscar valor no SB2 e nao mais do SB9.
-// 16/11/2014 - Robert - Exige endereco quando usa carga=Nao e poduto controla localizacao.
-// 01/12/2014 - Robert - Verificacoes para integracao com Fullsoft.
-// 17/09/2015 - Robert - Volta a verificar se pedidos importador via EDI contem itens com e sem ST (desab. quando migramos para ST padrao do sistema).
-// 19/09/2015 - Robert - Funcao CalcST4 passa a aceitar cliente/loja como parametros.
-// 23/10/2015 - Robert - Parametros novos (quantidade e TES) na funcao CalcST4().
-// 17/05/2016 - Robert - Verificacoes para DCO eliminadas (nao usamos mais leiloes da CONAB e, de qquer forma, sao especificos para cada ano).
-// 01/06/2016 - Robert - Funcao U_PrcCust nao tem mais opcao de buscar do SB9.
-// 14/06/2016 - Catia  - Se condicao 097 AVISTA que o banco deve ser CX1
-// 14/06/2016 - Catia  - Se condicao 098 BONIFICACAO que o TES nao deve gerar FINANCEIRO
-// 28/10/2016 - Robert - Exige preco de custo para o TES 697
-// 02/12/2016 - Robert - Melhoria geral nas mensagens de aviso.
-// 23/12/2016 - Catia  - Exige preco de custo para o TES 630
-// 29/03/2017 - Catia  - Itens com eliminação de Resíduo - ainda estava tentando liberar no estoque
-// 11/04/2017 - Catia  - Resolvido GAP nas validações de rastreabilidade - so deve obrigar a digitacao do endereço se o TES movimenta estoque
-// 28/04/2017 - Robert - Passa tambem o lote do produto e o pedido para a funcao VerEstq().
-// 25/09/2017 - Catia  - Valida C6_NUMPCOM e C6_ITEMPC - se o A1_VAOC estiver como 1 (SIM) - obriga informar o nro da OC
-// 07/11/2017 - Robert - Passa a validar o parametro AL_TESPCUS para itens que devem sair a preco de custo.
-//                     - Recalcula (mesmo que o pedido nao tenha sido liberado) valor previsto 
-//                       para a nota fiscal e margem por que ficam persistidos em campos do SC5 que sao consultados fora desta tela. 
-// 22/10/2018 - Andre  - testes do vendedor ativo
-// 17/04/2019 - Catia  - incluido mais um IF do tipo do pedido no teste do vendedor ativo 
-// 17/04/2019 - Andre  - Incluida validacao para item 2325 questionar para quantidade (C6_QTDVEN) diferente de multiplo de 1.000
-// ??/09/2019 - Robert - Permite pedido usando carga fora do AX.01, mediante confirmacao do usuario.
-// 16/09/2019 - Andre  - Nao testa pedido usando carga fora do AX.01, quando importacao do Mercanet.
-// 12/12/2019 - Robert - Transferencias para a filial 16 precisam usar tabela de precos e nao custo. GLPI 7208.
-// 13/01/2020 - Andre  - Desabilistada chamada da função _VerSTEDI.
+// 03/06/2008 - Robert  - Passa a avisar quando tem item do grupo ML_CARTU sem qt. volumes.
+// 11/06/2008 - Robert  - Aviso sobre volumes passa a ser apenas em pedidos do tipo 'normal'.
+// 18/06/2008 - Robert  - Chama verificacao de dados para NFe.
+// 10/07/2008 - Robert  - Verificacao de dados para NFe passa a bloquear a gravacao do pedido.
+// 25/08/2008 - Robert  - Nao verifica fretes quando for geracao de pedidos por EDI.
+// 02/09/2008 - Robert  - Na validacao de CFO nao considerava tipo do pedido.
+// 17/09/2008 - Robert  - Criadas validacoes para campanhas de venda.
+// 19/11/2008 - Robert  - Verifica estoque quando informada a quantidade liberada.
+// 02/03/2009 - Robert  - Vendas para SP com geracao de ST bloqueadas temporariamente.
+// 04/03/2009 - Robert  - Criados tratamentos para que o armazem geral possa ser representado tambem por fornecedor e nao somente cliente.
+// 19/08/2009 - Robert  - Revisao para nao mostrar nada em tela quando executar sem interface com o usuario.
+// 16/09/2009 - Robert  - Pedidos com frete FOB passam a ser permitidos em DCOs.
+// 22/09/2009 - Robert  - Produtos a granel passam a ser permitidos nos DCOs.
+// 22/10/2009 - Robert  - Passa a usar tabela 03 do ZX5 em lugar da tabela 77 do SX5.
+// 16/12/2009 - Robert  - Removidas validacoes por DCO
+// 10/06/2010 - Robert  - Criadas validacoes para representantes externos.
+// 17/10/2010 - Robert  - Criadas validacoes para deposito fechado (filial 04).
+//                      - Nao consiste volumes para geracao via batch.
+// 29/10/2010 - Robert  - Passa a usar a funcao VerEstq para verificacao de estoques.
+// 01/11/2010 - Robert  - Verificacao de TES X Filial de embarque
+// 05/11/2010 - Robert  - Novos parametros funcao VerEstq.
+// 16/11/2010 - Robert  - Ignora alguns testes quando chamado pela rotina de retorno simbolico do deposito para a matriz.
+// 15/12/2010 - Robert  - Criado tratamento para campo ZX5_MODO.
+// 06/07/2011 - Robert  - Nao permite vendedor inativo.
+// 11/08/2011 - Robert  - Criadas consistencias ref. transferencias entre filiais (usar custo medio).
+// 08/09/2011 - Robert  - Avisa usuario para usar pedido tipo 'B' em caso de venda para associados.
+// 17/10/2011 - Robert  - Valida preenchimento de volume2 em qualquer tipo de pedido (antes era soh para tipo N).
+// 16/12/2011 - Robert  - Funcao VerEstq passa a receber parametro de endereco de estoque.
+// 02/01/2012 - Robert  - Transferencias feitas pela matriz voltam a ser pelo custo medio e nao mais pelo de reposicao.
+// 14/01/2012 - Robert  - Verificacao de envio de bags para dispenser sem os copos descartaveis.
+// 01/03/2012 - Robert  - Verificacao especifica para pedidos importados via EDI (por enquanto, apenas itens com e sem ST).
+// 10/05/2012 - Robert  - Verificacao de venda para associado passa a usar a classe ClsAssoc.
+// 24/10/2012 - Robert  - Nao permite mais filial embarque inconsistente com TES de embarque no deposito (antes apenas avisava).
+// 22/11/2012 - Elaine  - Incluir tratamento para tabela de preco - validar tipo de frete CIF/FOB com o tipo de frete do pedido
+// 05/02/2013 - Elaine  - Nao permitir incluir pedido se informar cfop de transferência e o cliente não for uma das filiais da Alianca
+// 21/05/2013 - Robert  - Tratamento da variavel _sErroEDI desabilitado, pois a funcao U_Help passa a ter tratamento para rot.automaticas.
+// 27/07/2013 - Robert  - Passa a buscar preco de custo na funcao U_PrcCust().
+// 14/08/2013 - Robert  - Verifica remessa para deposito embarcando em filial diferente da matriz.
+// 25/03/2014 - Robert  - Verifica pedido embarcado pela filial 13 (temporario).
+// 21/05/2014 - Robert  - Verifica se houve liberacao parcial do pedido.
+// 23/05/2014 - Robert  - Verifica consistencias quanto a utilizar ou nao as cargas do OMS.
+// 11/07/2014 - Robert  - Verifica almoxarifado dos produtos quando utiliza carga.
+// 06/08/2014 - Robert  - Bloqueia uso de TES que nao movimenta estoque em pedido que utiliza carga do OMS.
+// 22/08/2014 - Robert  - Funcao U_PrcCust parametrizada para buscar valor no SB2 e nao mais do SB9.
+// 16/11/2014 - Robert  - Exige endereco quando usa carga=Nao e poduto controla localizacao.
+// 01/12/2014 - Robert  - Verificacoes para integracao com Fullsoft.
+// 17/09/2015 - Robert  - Volta a verificar se pedidos importador via EDI contem itens com e sem ST (desab. quando migramos para ST padrao do sistema).
+// 19/09/2015 - Robert  - Funcao CalcST4 passa a aceitar cliente/loja como parametros.
+// 23/10/2015 - Robert  - Parametros novos (quantidade e TES) na funcao CalcST4().
+// 17/05/2016 - Robert  - Verificacoes para DCO eliminadas (nao usamos mais leiloes da CONAB e, de qquer forma, sao especificos para cada ano).
+// 01/06/2016 - Robert  - Funcao U_PrcCust nao tem mais opcao de buscar do SB9.
+// 14/06/2016 - Catia   - Se condicao 097 AVISTA que o banco deve ser CX1
+// 14/06/2016 - Catia   - Se condicao 098 BONIFICACAO que o TES nao deve gerar FINANCEIRO
+// 28/10/2016 - Robert  - Exige preco de custo para o TES 697
+// 02/12/2016 - Robert  - Melhoria geral nas mensagens de aviso.
+// 23/12/2016 - Catia   - Exige preco de custo para o TES 630
+// 29/03/2017 - Catia   - Itens com eliminação de Resíduo - ainda estava tentando liberar no estoque
+// 11/04/2017 - Catia   - Resolvido GAP nas validações de rastreabilidade - so deve obrigar a digitacao do endereço se o TES movimenta estoque
+// 28/04/2017 - Robert  - Passa tambem o lote do produto e o pedido para a funcao VerEstq().
+// 25/09/2017 - Catia   - Valida C6_NUMPCOM e C6_ITEMPC - se o A1_VAOC estiver como 1 (SIM) - obriga informar o nro da OC
+// 07/11/2017 - Robert  - Passa a validar o parametro AL_TESPCUS para itens que devem sair a preco de custo.
+//                      - Recalcula (mesmo que o pedido nao tenha sido liberado) valor previsto 
+//                        para a nota fiscal e margem por que ficam persistidos em campos do SC5 que sao consultados fora desta tela. 
+// 22/10/2018 - Andre   - testes do vendedor ativo
+// 17/04/2019 - Catia   - incluido mais um IF do tipo do pedido no teste do vendedor ativo 
+// 17/04/2019 - Andre   - Incluida validacao para item 2325 questionar para quantidade (C6_QTDVEN) diferente de multiplo de 1.000
+// ??/09/2019 - Robert  - Permite pedido usando carga fora do AX.01, mediante confirmacao do usuario.
+// 16/09/2019 - Andre   - Nao testa pedido usando carga fora do AX.01, quando importacao do Mercanet.
+// 12/12/2019 - Robert  - Transferencias para a filial 16 precisam usar tabela de precos e nao custo. GLPI 7208.
+// 13/01/2020 - Andre   - Desabilistada chamada da função _VerSTEDI.
 // 07/04/2020 - Claudia - Busca de parametro fora de laço de repetição, conforme R25. GLPI: 7339
 // 09/04/2020 - Claudia - Retirado o controle de endereço da linha do pedido de venda, conforme GLPI: 7765
 // 14/05/2020 - Robert  - Passa a enviar o parametro de 'erro=.T.' nas chamadas da funcao u_help().
@@ -91,6 +91,8 @@
 // 18/01/2021 - Claudia - GLPI: 8966 - Incluida validação de forma de pagamento CC e CD
 // 25/01/2021 - Robert  - Melhorada msg. de cond.pag. bonificacao com TES gerando financeiro (GLPI 9128).
 // 10/03/2021 - Claudia - Alterado o parametro da função VA_McPed para calcular frete. GLPI: 9581
+// 19/08/2021 - Robert  - Desabilitado UPDATE SC9010 SET C9_BLCRED = '01' por que tinha sintaxe incorreta e nunca executou.
+//
 
 // ---------------------------------------------------------------------------------------------------------------------------
 User Function MTA410 ()
@@ -125,7 +127,7 @@ User Function MTA410 ()
 			u_help ("Para condicao A VISTA, informar banco CX1 (caixa).",, .t.)
 			_lRet = .F.
 		endif
-		
+	/*	
 		// se condicao de pagamento A VISTA - pedido entra como bloqueado
 		if m->c5_condpag = '097' .and. m->c5_banco = 'CX1'
 			_sSql  = " " 
@@ -135,7 +137,7 @@ User Function MTA410 ()
 		   	_sSql += "    	AND C9_NUM = M->C5_PEDIDO"
 		   	TCSQLExec (_sSQL)
 		endif
-		
+	*/	
 /*		// se condição diferente de a vista banco não pode ser CX1 AGUARDAR RETORNO DA ALINE
 		if m->c5_condpag != '097' .and. m->c5_banco = 'CX1' 
 			u_help ("Para condicao A PRAZO, informar banco diferente de CX1 (caixa).",, .t.)
