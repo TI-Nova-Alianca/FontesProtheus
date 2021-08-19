@@ -1,4 +1,4 @@
-//  Programa...: ZB1RTIT
+//  Programa...: ZB1REL
 //  Autor......: Cláudia Lionço
 //  Data.......: 08/12/2020
 //  Cliente....: Alianca
@@ -14,6 +14,7 @@
 // 05/03/2021 - Claudia - Ajuste dos totalizadores para nao incluir os débitos. GLPI:9369
 // 09/03/2021 - Cláudia - Incluido Valor Total(Parcela - Taxa)
 // 29/03/2021 - Claudia - Incluida filial 13. GLPI: 9710
+// 19/08/2021 - Cláudia - Retirado log do SQL.
 //
 // --------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -130,7 +131,7 @@ Static Function PrintReport(oReport)
 			_oSQL:_sQuery += " AND SE1.E1_PARCELA   = '" + _sParc + "'"
 		EndIf
 		_oSQL:_sQuery += " AND SE1.E1_TIPO   IN ('CC','CD')"
-		u_showmemo(_oSQL:_sQuery )
+		//u_showmemo(_oSQL:_sQuery )
 		_aTitulo := aclone (_oSQL:Qry2Array ())
 
 		If len(_aTitulo) > 0

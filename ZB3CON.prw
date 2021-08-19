@@ -11,7 +11,7 @@
 // #Modulos   		  #FIN 
 //
 // Historico de alteracoes:
-//
+// 
 // -----------------------------------------------------------------------------------
 #Include "Protheus.ch"
 #Include "totvs.ch"
@@ -139,6 +139,7 @@ User Function ZB3CON()
                     GravaAcrDes(_nAcresc, _nDecres, _aZB3[i,1], _aZB3[i,2], _aZB3[i,3], _aZB3[i,4], _aZB3[i,6], _aZB3[i,7])
 
                     //_nVlrLiq := _nVlrTit - _nVlrTax
+                    _nVlrLiq := _nVlrPar - _nVlrTax
                     _lContinua := .T.
                     u_log("ENCONTRADA DIFERENÇA DE: " + alltrim(str(_nDif))+ " Registro RECID + IDTRAN:" + _sIdRec +"/"+ _sIdTran + ", mas processo continua!")
                 Else
@@ -146,7 +147,8 @@ User Function ZB3CON()
                     u_log("ENCONTRADA DIFERENÇA DE: " + alltrim(str(_nDif))+ " Registro RECID + IDTRAN:" + _sIdRec +"/"+ _sIdTran + ", PROCESSO CANCELADO!")
                 EndIf
             Else
-                _nVlrLiq := _nVlrTit - _nVlrTax
+                //_nVlrLiq := _nVlrTit - _nVlrTax
+                _nVlrLiq := _nVlrPar - _nVlrTax
                 _lContinua := .T.  // se n for diferente, tudo certo
                 u_log("SEM DIFERENÇA. Registro RECID + IDTRAN:" + _sIdRec +"/"+ _sIdTran)
             EndIf
@@ -260,7 +262,7 @@ User Function ZB3CON()
 Return
 //
 // --------------------------------------------------------------------------
-// Relatorio de registros importados
+// Função para gravação de acrescimo/decrescimo
 Static Function GravaAcrDes(_nAcresc, _nDecres, _sFilial, _sPrefixo, _sTitulo, _sParcela, _sCliente, _sLoja)
 
     u_log("Gravação de acrescimo/decrescimo do título:" + _sFilial +"/"+ _sPrefixo +"/"+ _sTitulo +"/"+ _sParcela +"/"+ _sCliente +"/"+ _sLoja)
@@ -271,7 +273,7 @@ Static Function GravaAcrDes(_nAcresc, _nDecres, _sFilial, _sPrefixo, _sTitulo, _
     If DbSeek(xFilial("SE1") + _sCliente + _sLoja + _sPrefixo + _sTitulo + _sParcela)
         RecLock("SE1",.F.)
             SE1-> E1_ACRESC  := _nAcresc
-            SE1-> E1_DECRESC := _nDecres
+            SE1-> E1_DECRESC := (_nDecres) * -1
         MsUnLock()
 
         If _nDecres <> 0
