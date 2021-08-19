@@ -86,17 +86,16 @@ static function _AndaLogo ()
 	incproc ()
 	u_help ('Nada definido.')
 return
-// Testes batches em geral
+
+/*	// Testes batches em geral
+//	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batocor ()
 //	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batmetaf ()
-//	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	U_batOcor ()
 //	_sArqLog := 'U_BatFunAtlz_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batfunatlz ()
 //	_sArqLog := 'U_BatBlUsr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batBlUsr ()
-//	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batocor ()
 //	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batsafr ('1')  // cargas sem contranota
 //	u_batsafr ('3')  // conferencia geracao das parcelas financeiro
@@ -114,8 +113,66 @@ return
 //	_sArqLog := 'U_BatMercN_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batMercN (5)
 //	u_log2 ('info', _oBatch:Mensagens)
-//return
+return
+*/
+/*
+	// Ajusta cadastro produtos em lote
+	sb1 -> (dbsetorder (1))
+	sb5 -> (dbsetorder (1))
+	sb1 -> (dbgotop ())
+	do while ! sb1 -> (eof ())
+		if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
+			u_log ('ERRO: Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
+		else
+			if sb1 -> b1_apropri == 'I'
+				u_log ('Verificando item', sb1 -> b1_cod, SB1 -> B1_DESC)
+				
+				// Cria variaveis para uso na gravacao do evento de alteracao
+				regtomemory ("SB1", .F., .F.)
+				regtomemory ("SB5", .F., .F.)
+				m->B1_APROPRI   = 'D'
+				//m->b5_vasisde = 'N'
 
+				// Grava evento de alteracao
+				_oEvento := ClsEvent():new ()
+				_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 8356 - Alterar B1_APROPRI para D', .F.)
+
+				reclock ("SB1", .f.)
+				sb1 -> B1_apropri = m->B1_apropri
+				msunlock ()
+				//reclock ("SB5", .f.)
+				//sb5->b5_vasisde = m->b5_vasisde
+				//msunlock ()
+				//exit
+			endif
+		endif
+		sb1 -> (dbskip ())
+	enddo
+return
+*/
+/*
+	Private cPerg   := "VAXLS30"
+	U_GravaSX1 (cPerg, '01', '000161')  // assoc 
+	U_GravaSX1 (cPerg, '02', '')  // loja
+	U_GravaSX1 (cPerg, '03', '000161')  // assoc 
+	U_GravaSX1 (cPerg, '04', 'z')  // loja
+	U_GravaSX1 (cPerg, '05', '2021')  // safra
+	U_GravaSX1 (cPerg, '06', '')  // filial
+	U_GravaSX1 (cPerg, '07', 'zz')  // filial
+	U_GravaSX1 (cPerg, '08', '')  // carga
+	U_GravaSX1 (cPerg, '09', 'z')  // carga
+	U_GravaSX1 (cPerg, '10', 3)  // comum/fina/ambas
+	U_GravaSX1 (cPerg, '11', '')  // nf produtor ini
+	U_GravaSX1 (cPerg, '12', 'z')  // nf produtor fim
+	U_GravaSX1 (cPerg, '13', stod ('20210101'))  // data contranota inicial
+	U_GravaSX1 (cPerg, '14', stod ('20210223'))  // data contranota final
+	U_GravaSX1 (cPerg, '15', 1)  // notas de entrada [S/N]
+	U_GravaSX1 (cPerg, '16', 1)  // notas de prod.propria [S/N]
+	U_GravaSX1 (cPerg, '17', 1)  // notas de compra [S/N]
+	U_GravaSX1 (cPerg, '18', 1)  // notas de complemento valor [S/N]
+	u_va_xls30 (.T.)
+return
+*/
 /*
 	// GLPI 10637 - cria relacionamento produtos manutencao com o AX 02
 	sb1 -> (dbgotop ())
@@ -220,41 +277,6 @@ return
 	U_GravaSX1 (cPerg, '12', 1)    // Apenas CNAB (quando mov.banc) [So CNAB, Exceto CNAB, Todos]
 	U_GravaSX1 (cPerg, '13', 2)    // Simular ou Executar           [Simular, Executar]
 	u_va_lcnf (.t.)
-return
-*/
-/*
-	// Ajusta cadastro produtos em lote
-	sb1 -> (dbsetorder (1))
-	sb5 -> (dbsetorder (1))
-	sb1 -> (dbgotop ())
-	do while ! sb1 -> (eof ())
-		if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
-			u_log ('ERRO: Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
-		else
-			if sb1 -> b1_tipo == 'MC' .and. sb1 -> b1_agregcu != '1'
-				u_log ('Verificando item', sb1 -> b1_cod, SB1 -> B1_DESC)
-				
-				// Cria variaveis para uso na gravacao do evento de alteracao
-				regtomemory ("SB1", .F., .F.)
-				regtomemory ("SB5", .F., .F.)
-				m->B1_agregcu    = '1'
-				//m->b5_vasisde = 'N'
-
-				// Grava evento de alteracao
-				_oEvento := ClsEvent():new ()
-				_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 10610 - Alterar B1_AGREGCU itens tipo MC', .F.)
-
-				reclock ("SB1", .f.)
-				sb1 -> B1_agregcu = m->B1_agregcu
-				msunlock ()
-				//reclock ("SB5", .f.)
-				//sb5->b5_vasisde = m->b5_vasisde
-				//msunlock ()
-				//exit
-			endif
-		endif
-		sb1 -> (dbskip ())
-	enddo
 return
 */
 /*
@@ -900,29 +922,6 @@ return
 		_oAssoc := ClsAssoc():New (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
 		u_log (_oAssoc:Codigo, _oAssoc:Loja, _oAssoc:Nome, _oAssoc:GrpFam, _oAssoc:Nucleo, _oAssoc:Subnucleo)
 	next
-return
-*/
-/*
-	Private cPerg   := "VAXLS30"
-	U_GravaSX1 (cPerg, '01', '')  // assoc 
-	U_GravaSX1 (cPerg, '02', '')  // loja
-	U_GravaSX1 (cPerg, '03', 'z')  // assoc 
-	U_GravaSX1 (cPerg, '04', 'z')  // loja
-	U_GravaSX1 (cPerg, '05', '2021')  // safra
-	U_GravaSX1 (cPerg, '06', '')  // filial
-	U_GravaSX1 (cPerg, '07', 'zz')  // filial
-	U_GravaSX1 (cPerg, '08', '')  // carga
-	U_GravaSX1 (cPerg, '09', 'z')  // carga
-	U_GravaSX1 (cPerg, '10', 3)  // comum/fina/ambas
-	U_GravaSX1 (cPerg, '11', '')  // nf produtor ini
-	U_GravaSX1 (cPerg, '12', 'z')  // nf produtor fim
-	U_GravaSX1 (cPerg, '13', stod ('20210101'))  // data contranota inicial
-	U_GravaSX1 (cPerg, '14', stod ('20210223'))  // data contranota final
-	U_GravaSX1 (cPerg, '15', 1)  // notas de entrada [S/N]
-	U_GravaSX1 (cPerg, '16', 1)  // notas de prod.propria [S/N]
-	U_GravaSX1 (cPerg, '17', 1)  // notas de compra [S/N]
-	U_GravaSX1 (cPerg, '18', 1)  // notas de complemento valor [S/N]
-	u_va_xls30 (.T.)
 return
 */
 /*

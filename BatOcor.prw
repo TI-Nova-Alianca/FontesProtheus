@@ -19,6 +19,7 @@
 //                     - Importa observacoes e texto livre, caso informado (GLPI 5735).
 //                     - Criadas tags para catalogo de fontes.
 // 20/04/2021 - Robert - Campo F2_DtEntr (padrao, mas atualmente vazio) substitui o campo customizado F2_vaDtEntr (GLPI 9884).
+// 19/08/2021 - Robert - Gravava F2_DtEntr quando transp.redespacho. O correto eh aguardar entrega final (GLPI 10578).
 //
 
 // --------------------------------------------------------------------------
@@ -247,11 +248,15 @@ Static Function _Grava (_aDados)
 				else
 					// if _sOcor == '01' .and. empty (sf2 -> f2_vaDtEnt)
 					if _sOcor == '01' .and. empty (sf2 -> f2_DtEntr)
-						// U_Log2 ('debug', 'atualizando f2_vaDtEnt')
-						reclock ("SF2", .f.)
-						// sf2 -> f2_vaDtEnt = _dDATA
-						sf2 -> f2_DtEntr = _dDATA
-						msunlock ()
+						U_Log2 ('debug', 'Vou comparar f2_redesp >>' + sf2 -> f2_redesp + '<< com _sTransp >>' + _sTransp + '<<')
+						if ! empty (sf2 -> f2_redesp) .and. _sTransp != sf2 -> f2_redesp
+							U_Log2 ('info', 'Ocorrencia de entrega, mas a NF ' + sf2 -> f2_doc + ' tem transportadora de redespacho (' + sf2 -> f2_redesp + ') e, no momento, estou processando a transportadora ' + _sTransp + '. Entendo que nao seja a entrega definitiva.')
+						else
+							U_Log2 ('debug', 'atualizando f2_vaDtEnt')
+							reclock ("SF2", .f.)
+							sf2 -> f2_DtEntr = _dDATA
+							msunlock ()
+						endif
 					endif
 
 					// Posiciona SD2 para buscar numero do pedido.
