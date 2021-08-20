@@ -5,6 +5,7 @@
 //
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #web_service
+// #Descricao         #Disponibilizacao de Web Services em geral
 // #PalavasChave      #web_service #generico #integracoes #naweb
 // #TabelasPrincipais #SD1 #SD2 #SD3
 // #Modulos           
@@ -42,26 +43,34 @@
 //                      - Melhoria nos logs.
 // 11/02/2020 - Robert  - Melhorias consulta de orcamentos 'modelo 2020'.
 // 24/02/2020 - Robert  - Implementada consulta ao 'monitor' do sistema.
-// 11/03/2020 - Claudia - Ajuste de fonte conforme solicitação de versão 12.1.25 - Comentariada a rotina _ExportTbl ()
+// 11/03/2020 - Claudia - Ajuste de fonte conforme solicitação de versão 12.1.25 - 
+//                        Comentariada a rotina _ExportTbl ()
 // 01/04/2020 - Robert  - Criado tratamento para tag FiltroAppend na rotina AtuEstru.
 // 13/07/2020 - Robert  - Inseridas tags para catalogacao de fontes.
 // 10/08/2020 - Robert  - Inseridas chamadas da funcao UsoRot().
 // 18/11/2020 - Sandra/Robert  - Alteração campo A1_GRPTRIB DE 002 para 003
 // 04/12/2020 - Robert  - Tags novas na geracao de cargas de safra
-//                      - Criada tag <FP> na consulta de orcamentos a ser retornada para o NaWeb (GLPI 8900).
-// 07/12/2020 - Robert  - Criadas tags <REA_MES> na consulta de orcamentos a ser retornada para o NaWeb (GLPI 8893).
-// 11/01/2021 - Robert  - Preenche cadastro viticola com zeros a esquerda na geracao de cargas de safra.
-// 15/01/2021 - Robert  - Acao 'RetTicketCargaSafra' migrada para ws_namob (preciso acessar das filiais)
+//                      - Criada tag <FP> na consulta de orcamentos a ser retornada 
+//                        para o NaWeb (GLPI 8900).
+// 07/12/2020 - Robert  - Criadas tags <REA_MES> na consulta de orcamentos a ser 
+//                        retornada para o NaWeb (GLPI 8893).
+// 11/01/2021 - Robert  - Preenche cadastro viticola com zeros a esquerda na 
+//                        geracao de cargas de safra.
+// 15/01/2021 - Robert  - Acao 'RetTicketCargaSafra' migrada para ws_namob 
+//                        (preciso acessar das filiais)
 // 15/03/2021 - Claudia - Incluida a ação 'CapitalSocialAssoc'.GLPI: 8824
-// 21/05/2021 - Robert  - Melhorado metodo de gravacao e criado metodo de exclusao de eventos da tabela SZN (GLPI 10072)
+// 21/05/2021 - Robert  - Melhorado metodo de gravacao e criado metodo de exclusao de 
+//                        eventos da tabela SZN (GLPI 10072)
 // 28/05/2021 - Cláudia - Comentariado o if conforme GLPI: 9161
 // 22/06/2021 - Robert  - Criada acao AgendaEntregaFaturamento (GLPI 10219).
 // 12/07/2021 - Robert  - Criado acao ApontarProducao (GLPI 10479).
-// 03/08/2021 - Robert  - Apontamento de producao passa a aceitar mais de uma etiqueta na mesma chamada (GLPI 10633)
-// 11/08/2021 - Robert  - Removidos logs desnecessarios; ajuste tags retorno apontamento producao (GLPI 10633)
+// 03/08/2021 - Robert  - Apontamento de producao passa a aceitar mais de uma etiqueta 
+//                        na mesma chamada (GLPI 10633)
+// 11/08/2021 - Robert  - Removidos logs desnecessarios; ajuste tags retorno apontamento 
+//                        producao (GLPI 10633)
+// 20/08/2021 - Cláudia - Alterado o MSExecAuto MATA030 descontinuado para MVC. GLPI: 10617
 //
-
-// ----------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
 #INCLUDE "PROTHEUS.CH"
 #include "tbiconn.ch"
@@ -909,21 +918,18 @@ Return Nil
 // --------------------------------------------------------------------------
 // Inclui novo cliente (cadastro em tela simplificada do NaWeb)
 static function _IncCli ()
-	local _aCliente := {}
-	local _wnome := ""
-	local _wtipo := ""
-	local _wcgc := ""
-	local _wtel := ""
-	local _wemail := ""
-	local _west := ""
-	local _wcidade := ""
-	local _wbairro := ""
-	local _wend := ""
-	local _wcep := ""
-	local _wcodmun := ""
+	local _wnome 	:= ""
+	local _wtipo 	:= ""
+	local _wcgc 	:= ""
+	local _wtel 	:= ""
+	local _wemail 	:= ""
+	local _west 	:= ""
+	local _wcidade 	:= ""
+	local _wbairro 	:= ""
+	local _wend 	:= ""
+	local _wcep 	:= ""
+	local _wcodmun 	:= ""
 	local _wcodmun2 := ""
-	local _wregiao := ""
-	local _nreduz := ""
 
 	u_logIni ()
 
@@ -940,76 +946,200 @@ static function _IncCli ()
 		_wCEP    = _ExtraiTag ("_oXML:_WSAlianca:_CEP",          .T., .F.)
 		_wcodMun = _ExtraiTag ("_oXML:_WSAlianca:_CodMun",       .T., .F.)
 		_wcodMun2= _ExtraiTag ("_oXML:_WSAlianca:_CodMun2",      .T., .F.)
-		_wregiao = _ExtraiTag ("_oXML:_WSAlianca:_Regiao",       .T., .F.)
-		_nreduz  = _ExtraiTag ("_oXML:_WSAlianca:_NomeReduzido", .T., .F.)
+		//_wregiao = _ExtraiTag ("_oXML:_WSAlianca:_Regiao",       .T., .F.)
+		//_nreduz  = _ExtraiTag ("_oXML:_WSAlianca:_NomeReduzido", .T., .F.)
 	endif
 
 	if empty (_sErros)
+		oModel := FWLoadModel("MATA030")
+		oModel:SetOperation(3)
+		oModel:Activate()
 
-		// Cria variavel para receber possiveis erros da funcao U_Help().
-		private _sErroAuto := ""
+		//Monta array de dados para inclusao do cadastro.
+		oSA1Mod:= oModel:getModel("MATA030_SA1")
+		oSA1Mod:SetValue("A1_NOME"		, _wnome 			)	
+		oSA1Mod:SetValue("A1_PESSOA"	, _wtipo 			)	
+		oSA1Mod:SetValue("A1_TIPO"		, "F"				)	
+		oSA1Mod:SetValue("A1_NREDUZ"	, _wnome			)	
+		oSA1Mod:SetValue("A1_END"		, _wend 			)			
+		oSA1Mod:SetValue("A1_EST"		, _west				)
+		oSA1Mod:SetValue("A1_MUN"		, _wcidade			)
+		oSA1Mod:SetValue("A1_COD_MUN"	, _wcodmun			)
+		oSA1Mod:SetValue("A1_CMUN"		, _wcodmun2			)
+		oSA1Mod:SetValue("A1_BAIRRO"	, _wbairro			)
+		oSA1Mod:SetValue("A1_CEP"		, _wcep				)
+		oSA1Mod:SetValue("A1_TEL"		, _wtel				)
+		oSA1Mod:SetValue("A1_REGIAO"	, "SUL"				)
+		oSA1Mod:SetValue("A1_LOJA"		, "01"				)
+		oSA1Mod:SetValue("A1_VEND"		, "001"				)
+		oSA1Mod:SetValue("A1_MALA"		, "S"				)
+		oSA1Mod:SetValue("A1_CGC"		, _wcgc				)	
+		oSA1Mod:SetValue("A1_BCO1"		, "CX1"				)
+		oSA1Mod:SetValue("A1_RISCO"		, "E"				)
+		oSA1Mod:SetValue("A1_PAIS"		, "105"				)
+		oSA1Mod:SetValue("A1_SATIV1"	, "08.04"			)
+		oSA1Mod:SetValue("A1_FORMA"		, "2"				)
+		oSA1Mod:SetValue("A1_EMAIL"		, _wemail			)
+		oSA1Mod:SetValue("A1_VAMDANF"	, _wemail			)
+		oSA1Mod:SetValue("A1_CODPAIS"	, "01058"			)
+		oSA1Mod:SetValue("A1_MSBLQL"	, "2"				)			
+		oSA1Mod:SetValue("A1_SIMPNAC"	, "2"				)
+		oSA1Mod:SetValue("A1_VABARAP"	, "0"				)
+		oSA1Mod:SetValue("A1_CONTA"		, "101020201001" 	)
+		oSA1Mod:SetValue("A1_COND"		, "097" 			)
+		oSA1Mod:SetValue("A1_VAUEXPO"	, ddatabase 		)
+		oSA1Mod:SetValue("A1_IENCONT"	, "2"				)
+		oSA1Mod:SetValue("A1_CONTRIB"	, "2"				)
+		oSA1Mod:SetValue("A1_CNAE"		, "0000-0/00"		)
+		oSA1Mod:SetValue("A1_GRPTRIB"	, "003"				)
+		oSA1Mod:SetValue("A1_FORMA"		, "3"				)
+		oSA1Mod:SetValue("A1_LOJAS"		, "S"				)
+		oSA1Mod:SetValue("A1_VADTINC"	, date()			)	
+		oSA1Mod:SetValue("A1_VAEMLF"	, _wemail			)  		
+		oSA1Mod:SetValue("A1_VACGCFI"	, _wcgc				) 
 
-		_aCliente :={	 {"A1_NOME"   , _wnome                 ,Nil},;
-		{"A1_PESSOA" , _wtipo                 ,Nil},;
-		{"A1_END"    , _wend                  ,Nil},;
-		{"A1_BAIRRO" , _wbairro               ,Nil},;
-		{"A1_EST"    , _west                  ,Nil},;
-		{"A1_CEP"    , _wcep                  ,Nil},;
-		{"A1_MUN"    , _wcidade               ,Nil},;
-		{"A1_TEL"    , _wtel                  ,Nil},;
-		{"A1_EMAIL"  , _wemail                ,Nil},;
-		{"A1_CGC"    , _wcgc                  ,Nil},;
-		{"A1_COD_MUN", _wcodmun               ,Nil},;
-		{"A1_CMUN"   , _wcodmun2              ,Nil},;
-		{"A1_REGIAO" , "SUL"                  ,Nil},;
-		{"A1_NREDUZ" , _nreduz                ,Nil},;
-		{"A1_LOJA"   , "01"                   ,Nil},;
-		{"A1_VEND"   , "001"                  ,Nil},;
-		{"A1_MALA"   , "S"                    ,Nil},;
-		{"A1_TIPO"   , "F"                    ,Nil},;
-		{"A1_BCO1"   , "CX1"                  ,Nil},;
-		{"A1_RISCO"  , "E"                    ,Nil},;
-		{"A1_PAIS"   , "105"                  ,Nil},;
-		{"A1_SATIV1" , "08.04"                ,Nil},;
-		{"A1_VAMDANF", _wemail                ,Nil},;
-		{"A1_CODPAIS", "01058"                ,Nil},;
-		{"A1_MSBLQL" , "2"                    ,Nil},;
-		{"A1_SIMPNAC", "2"                    ,Nil},;
-		{"A1_VABARAP", "0"                    ,Nil},;
-		{"A1_CONTA"  , "101020201001"         ,Nil},;
-		{"A1_COND"   , "097"				  ,Nil},;
-		{"A1_VAUEXPO", ddatabase			  ,Nil},;
-		{"A1_VERBA"  , "2"					  ,Nil},;
-		{"A1_GRPTRIB", "003"			      ,Nil},;
-		{"A1_FORMA"  , "3"                    ,Nil},;
-		{"A1_LOJAS"  , "S"                    ,Nil},;
-		{"A1_CNAE"   , "0"                    ,Nil},;
-		{"A1_CONTRIB", "2"                    ,Nil},;
-		{"A1_VADTINC", date()                 ,Nil},;
-		{"A1_IENCONT", "2"                    ,Nil} }
+		If oModel:VldData() 	// Tenta realizar o Commit
+			If oModel:CommitData()
+				u_log('GRAVOU')
+			Else
+				u_log('NÃO GRAVOU')
 
-		// Ordena campos cfe. dicionario de dados.
-		_aCliente = aclone (U_OrdAuto (_aCliente))
-
-		u_log (_aCliente)
-
-		lMsErroAuto := .F.
-		MSExecAuto({|x,y| Mata030(x,y)},_aCliente,3)
-		If lMsErroAuto
-			u_log ('Erro na rotina automatica')
-			if ! empty (_sErroAuto)
-				_sErros += _sErroAuto
-			endif
-			if ! empty (NomeAutoLog ())
-				_sErros += U_LeErro (memoread (NomeAutoLog ()))
-			endif
-		else
-			u_log ('rotina automatica OK')
-			_sMsgRetWS = 'Cliente criado codigo ' + sa1 -> a1_cod + '/' + sa1 -> a1_loja
-		endif
+				aErro := oModel:GetErrorMessage()
+				
+				//Monta o Texto que será mostrado na tela
+				u_log("Id do formulário de origem:"  + ' [' + AllToChar(aErro[01]) + ']')
+				u_log("Id do campo de origem: "      + ' [' + AllToChar(aErro[02]) + ']')
+				u_log("Id do formulário de erro: "   + ' [' + AllToChar(aErro[03]) + ']')
+				u_log("Id do campo de erro: "        + ' [' + AllToChar(aErro[04]) + ']')
+				u_log("Id do erro: "                 + ' [' + AllToChar(aErro[05]) + ']')
+				u_log("Mensagem do erro: "           + ' [' + AllToChar(aErro[06]) + ']')
+				u_log("Mensagem da solução: "        + ' [' + AllToChar(aErro[07]) + ']')
+				u_log("Valor atribuído: "            + ' [' + AllToChar(aErro[08]) + ']')
+				u_log("Valor anterior: "             + ' [' + AllToChar(aErro[09]) + ']')
+			EndIf			      
+		Else 					// Se não conseguir validar as informações, altera a variável para false
+			u_log('Erro na rotina automatica')
+			aErro := oModel:GetErrorMessage()
+				
+			//Monta o Texto que será mostrado na tela
+			u_log("Id do formulário de origem:"  + ' [' + AllToChar(aErro[01]) + ']')
+			u_log("Id do campo de origem: "      + ' [' + AllToChar(aErro[02]) + ']')
+			u_log("Id do formulário de erro: "   + ' [' + AllToChar(aErro[03]) + ']')
+			u_log("Id do campo de erro: "        + ' [' + AllToChar(aErro[04]) + ']')
+			u_log("Id do erro: "                 + ' [' + AllToChar(aErro[05]) + ']')
+			u_log("Mensagem do erro: "           + ' [' + AllToChar(aErro[06]) + ']')
+			u_log("Mensagem da solução: "        + ' [' + AllToChar(aErro[07]) + ']')
+			u_log("Valor atribuído: "            + ' [' + AllToChar(aErro[08]) + ']')
+			u_log("Valor anterior: "             + ' [' + AllToChar(aErro[09]) + ']')
+		EndIf
 	endif
 	u_logFim ()
 return
+// //
+// // --------------------------------------------------------------------------
+// // Inclui novo cliente (cadastro em tela simplificada do NaWeb)
+// static function _IncCli ()
+// 	local _aCliente := {}
+// 	local _wnome := ""
+// 	local _wtipo := ""
+// 	local _wcgc := ""
+// 	local _wtel := ""
+// 	local _wemail := ""
+// 	local _west := ""
+// 	local _wcidade := ""
+// 	local _wbairro := ""
+// 	local _wend := ""
+// 	local _wcep := ""
+// 	local _wcodmun := ""
+// 	local _wcodmun2 := ""
+// 	local _wregiao := ""
+// 	local _nreduz := ""
+
+// 	u_logIni ()
+
+// 	if empty (_sErros)
+// 		_wNome   = _ExtraiTag ("_oXML:_WSAlianca:_Nome",         .T., .F.)
+// 		_wTipo   = _ExtraiTag ("_oXML:_WSAlianca:_Pessoa",       .T., .F.)
+// 		_wCGC    = _ExtraiTag ("_oXML:_WSAlianca:_CGC",          .T., .F.)
+// 		_wTel    = _ExtraiTag ("_oXML:_WSAlianca:_Tel",          .T., .F.)
+// 		_wEMail  = _ExtraiTag ("_oXML:_WSAlianca:_EMail",        .T., .F.)
+// 		_wEst    = _ExtraiTag ("_oXML:_WSAlianca:_Est",          .T., .F.)
+// 		_wCidade = _ExtraiTag ("_oXML:_WSAlianca:_Cidade",       .T., .F.)
+// 		_wBairro = _ExtraiTag ("_oXML:_WSAlianca:_Bairro",       .T., .F.)
+// 		_wEnd    = _ExtraiTag ("_oXML:_WSAlianca:_End",          .T., .F.)
+// 		_wCEP    = _ExtraiTag ("_oXML:_WSAlianca:_CEP",          .T., .F.)
+// 		_wcodMun = _ExtraiTag ("_oXML:_WSAlianca:_CodMun",       .T., .F.)
+// 		_wcodMun2= _ExtraiTag ("_oXML:_WSAlianca:_CodMun2",      .T., .F.)
+// 		_wregiao = _ExtraiTag ("_oXML:_WSAlianca:_Regiao",       .T., .F.)
+// 		_nreduz  = _ExtraiTag ("_oXML:_WSAlianca:_NomeReduzido", .T., .F.)
+// 	endif
+
+// 	if empty (_sErros)
+
+// 		// Cria variavel para receber possiveis erros da funcao U_Help().
+// 		private _sErroAuto := ""
+
+// 		_aCliente :={	 {"A1_NOME"   , _wnome                 ,Nil},;
+// 		{"A1_PESSOA" , _wtipo                 ,Nil},;
+// 		{"A1_END"    , _wend                  ,Nil},;
+// 		{"A1_BAIRRO" , _wbairro               ,Nil},;
+// 		{"A1_EST"    , _west                  ,Nil},;
+// 		{"A1_CEP"    , _wcep                  ,Nil},;
+// 		{"A1_MUN"    , _wcidade               ,Nil},;
+// 		{"A1_TEL"    , _wtel                  ,Nil},;
+// 		{"A1_EMAIL"  , _wemail                ,Nil},;
+// 		{"A1_CGC"    , _wcgc                  ,Nil},;
+// 		{"A1_COD_MUN", _wcodmun               ,Nil},;
+// 		{"A1_CMUN"   , _wcodmun2              ,Nil},;
+// 		{"A1_REGIAO" , "SUL"                  ,Nil},;
+// 		{"A1_NREDUZ" , _nreduz                ,Nil},;
+// 		{"A1_LOJA"   , "01"                   ,Nil},;
+// 		{"A1_VEND"   , "001"                  ,Nil},;
+// 		{"A1_MALA"   , "S"                    ,Nil},;
+// 		{"A1_TIPO"   , "F"                    ,Nil},;
+// 		{"A1_BCO1"   , "CX1"                  ,Nil},;
+// 		{"A1_RISCO"  , "E"                    ,Nil},;
+// 		{"A1_PAIS"   , "105"                  ,Nil},;
+// 		{"A1_SATIV1" , "08.04"                ,Nil},;
+// 		{"A1_VAMDANF", _wemail                ,Nil},;
+// 		{"A1_CODPAIS", "01058"                ,Nil},;
+// 		{"A1_MSBLQL" , "2"                    ,Nil},;
+// 		{"A1_SIMPNAC", "2"                    ,Nil},;
+// 		{"A1_VABARAP", "0"                    ,Nil},;
+// 		{"A1_CONTA"  , "101020201001"         ,Nil},;
+// 		{"A1_COND"   , "097"				  ,Nil},;
+// 		{"A1_VAUEXPO", ddatabase			  ,Nil},;
+// 		{"A1_VERBA"  , "2"					  ,Nil},;
+// 		{"A1_GRPTRIB", "003"			      ,Nil},;
+// 		{"A1_FORMA"  , "3"                    ,Nil},;
+// 		{"A1_LOJAS"  , "S"                    ,Nil},;
+// 		{"A1_CNAE"   , "0"                    ,Nil},;
+// 		{"A1_CONTRIB", "2"                    ,Nil},;
+// 		{"A1_VADTINC", date()                 ,Nil},;
+// 		{"A1_IENCONT", "2"                    ,Nil} }
+
+// 		// Ordena campos cfe. dicionario de dados.
+// 		_aCliente = aclone (U_OrdAuto (_aCliente))
+
+// 		u_log (_aCliente)
+
+// 		lMsErroAuto := .F.
+// 		MSExecAuto({|x,y| Mata030(x,y)},_aCliente,3)
+// 		If lMsErroAuto
+// 			u_log ('Erro na rotina automatica')
+// 			if ! empty (_sErroAuto)
+// 				_sErros += _sErroAuto
+// 			endif
+// 			if ! empty (NomeAutoLog ())
+// 				_sErros += U_LeErro (memoread (NomeAutoLog ()))
+// 			endif
+// 		else
+// 			u_log ('rotina automatica OK')
+// 			_sMsgRetWS = 'Cliente criado codigo ' + sa1 -> a1_cod + '/' + sa1 -> a1_loja
+// 		endif
+// 	endif
+// 	u_logFim ()
+// return
 //
 // --------------------------------------------------------------------------
 // Altera cliente (cadastro em tela simplificada do NaWeb)

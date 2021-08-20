@@ -1,12 +1,20 @@
-// Programa:   ALTCLI
-// Autor:      Andre Alves
-// Data:       Março 2019
-// Descricao:  Altera tabela de clientes.
+// Programa.: ALTCLI
+// Autor....: Andre Alves
+// Data.....: Março 2019
+// Descricao: Altera tabela de clientes.
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #processo
+// #Descricao         #Altera tabela de clientes.
+// #PalavasChave      #tabela_de_preço #tabela_de_clientes 
+// #TabelasPrincipais #SA1 
+// #Modulos           #FAT
 //
 // Historico de alteracoes:
 // 20/03/2019 - Andre  - Criado para alterar tabelas dos clientes conforme necessidade.
 // 25/03/2019 - Andre  - criado filtro por estado
 // 08/04/2019 - Catia  - include TbiConn.ch 
+//
 // ------------------------------------------------------------------------------------
 #include "colors.ch"
 #Include "Protheus.ch"
@@ -22,6 +30,7 @@ User Function ALTCLI (_lAutomat)
 	private _lAuto    := iif (_lAutomat == NIL, .F., _lAutomat)
 	private _sGranel  := ""
 	private _sSOper   := ""
+
 	U_LogId ()
 
 	Private cPerg   := "ALTCLI"
@@ -44,16 +53,10 @@ User Function ALTCLI (_lAutomat)
 		Endif
 	endif
 return
-
+//
 // --------------------------------------------------------------------------
+// Gera arquivo txt
 Static Function GeraTxt()
-	//local _aArqTrb := {}
-	//local _aTipos  := {}
-	//local _nTipo   := 0
-	//local _oSisDec  := NIL
-	//local _nErro    := 0
-	//local _nAviso   := 0
-	//local _aCampos  := {}
 	private _aProdutos := {}
 	private _aMarcas   := {}
 	private _sErros    := ""
@@ -76,31 +79,8 @@ Static Function GeraTxt()
 			if SA1 -> A1_VEND = _sVend .and. SA1 -> A1_EST = _sUF .and. SA1 -> A1_TABELA = _Tab1 .and. SA1 -> A1_MSBLQL = '2'
 				u_log ('Vou atualizar Vendedor', SA1 -> A1_vend)
 
-/*		//		Não foi possivel usar rotina automatica, pois muitos campos obrigatorios nao estao preenchidos.								
-				_aAutoSA1 := {}
-				aadd (_aAutoSA1, {"A1_COD",     SA1 -> A1_cod, NIL})
-				aadd (_aAutoSA1, {"A1_LOJA",    SA1 -> A1_loja, NIL})
-				aadd (_aAutoSA1, {"A1_TABELA",  _Tab2, NIL})
-				_aAutoSA1 := aclone (U_OrdAuto (_aAutoSA1))
-				lMSErroAuto := .F.
-				private _sErroAuto  := ""
-				MSExecAuto ({|_x, _y| MATA030 (_x, _y)}, _aAutoSA1, 4)
-				if lMSErroAuto
-					_sErro := memoread (NomeAutoLog ())
-					u_log ('Erro:', _sErro)
-				else
-					if ! empty (_sErroAuto)
-						u_log (_sErroAuto)
-					else
-						_oEvento := ClsEvent():new ()
-						_oEvento:Cliente = SA1 -> a1_cod
-						_oEvento:LojaCli = SA1 -> a1_loja
-						_oEvento:AltCadast ("SA1", SA1 -> a1_cod + SA1 -> a1_loja, sa1 -> (recno ()))
-					endif
-				endif
-*/
 				reclock ('SA1', .F.)
-				SA1 -> A1_TABELA = _Tab2
+					SA1 -> A1_TABELA = _Tab2
 				msunlock ()
 				_oEvento := ClsEvent():new ()
 				_oEvento:Cliente = SA1 -> a1_cod
@@ -112,7 +92,7 @@ Static Function GeraTxt()
 		enddo
 	endif
 return
-	
+//	
 // --------------------------------------------------------------------------
 // Valida o TudoOk do Processamento
 Static Function _TudoOk()
@@ -120,8 +100,7 @@ Static Function _TudoOk()
 	Local _lRet     := .T.
 	RestArea(_aArea)
 Return (_lRet)
-
-	
+//	
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
@@ -133,5 +112,5 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {03, "Tabela original               ", "C", 3,  0,  "",   "DA0  ", {},    ""})
 	aadd (_aRegsPerg, {04, "Tabela destino                ", "C", 3,  0,  "",   "DA0  ", {},    ""})
 
-U_ValPerg (cPerg, _aRegsPerg)
+	U_ValPerg (cPerg, _aRegsPerg)
 Return
