@@ -2973,11 +2973,6 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 			::Setores    = 'INF'
 			::Descricao  = 'Usuarios: Usuario nao deveria ter acesso a configurar data base. Deve ser um acesso dos grupos.'
-			// ::Query := "SELECT ID_USR, NOME"
-			// ::Query +=  " FROM VA_USR_USUARIOS"
-			// ::Query += " WHERE CONFIGURA_DATA_BASE = 'S'"
-			// ::Query +=   " AND BLOQUEADO != 'S'"
-			// ::Query += " ORDER BY ID_USR"
 			::Query := "SELECT USR_ID, USR_CODIGO"
 			::Query +=  " FROM SYS_USR"
 			::Query += " WHERE USR_DTBASE  = '1'"
@@ -3072,6 +3067,22 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=                 " FROM LKSRV_SIRH.SIRH.dbo.VA_VFUNCIONARIOS M"
 			::Query +=                " WHERE U.USR_CARGO LIKE 'Pessoa ' + CAST(M.PESSOA AS VARCHAR(MAX)) + '%' COLLATE DATABASE_DEFAULT"
 			::Query +=                  " and M.SITUACAO = 4)"
+
+		case ::Numero == 80
+			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+			::Setores    = 'INF'
+			::Descricao  = 'Ninguem deveria ter ACESSO A TODAS AS EMP/FILIAIS setado no configurador. Usar para isso os grupos FILIAL_'
+			::Query := " SELECT 'GRUPO ' + GR__ID AS CODIGO, GR__CODIGO, GR__NOME"
+			::Query +=   " FROM SYS_GRP_GROUP"
+			::Query +=  " WHERE D_E_L_E_T_ = ''"
+			::Query +=    " AND GR__MSBLQL != '1'"
+			::Query +=    " AND GR__ALLEMP = '1'"
+			::Query +=  " UNION ALL"
+			::Query += " SELECT 'USER ' + USR_ID AS CODIGO, USR_CODIGO, USR_NOME"
+			::Query +=   " FROM SYS_USR"
+			::Query +=  " WHERE D_E_L_E_T_ = ''"
+			::Query +=    " AND USR_MSBLQL != '1'"
+			::Query +=    " AND USR_ALLEMP = '1'"
 
 		otherwise
 			::UltMsg = "Verificacao numero " + cvaltochar (::Numero) + " nao definida."
