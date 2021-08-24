@@ -56,6 +56,7 @@
 // 12/03/2021 - Robert  - Ignorar usuario robert_teste na verificacao 78
 // 02/07/2021 - Robert  - Consultas 77 e 79 deixam de usar a view VA_VUSR_PROTHEUS_X_METADADOS.
 // 09/07/2021 - Robert  - Consulta 68 tinha a data fixa de B9_DATA=31/08/2019 e tambem B2_FILIAL=01 (GLPI 10457).
+// 23/08/2021 - Robert  - Criada verificacao 81.
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -198,7 +199,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	do case
 		case ::Numero == 1
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
-			::Setores   = 'PCP'
+			::Setores   = 'PCP/ENG'
 			::Descricao = 'Produto deveria ter revisao padrao no cadastro'
 			::Sugestao  = "Revise o campo '" + alltrim (RetTitle ("B1_REVATU")) + "' cadastro do produto"
 			::Query := "WITH REVISOES AS (SELECT DISTINCT G1_COD, G1_REVINI, G1_REVFIM
@@ -3083,6 +3084,28 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=  " WHERE D_E_L_E_T_ = ''"
 			::Query +=    " AND USR_MSBLQL != '1'"
 			::Query +=    " AND USR_ALLEMP = '1'"
+
+		case ::Numero == 81
+			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+			::Setores    = 'INF'
+			::Descricao  = 'Ninguem deveria ter acesso a filiais setado no configurador. Usar para isso os grupos FILIAL_'
+			::Query := " SELECT 'GRUPO ' + SYS_GRP_FILIAL.GR__ID AS CODIGO, SYS_GRP_GROUP.GR__CODIGO, SYS_GRP_GROUP.GR__NOME, CAST (STRING_AGG (RTRIM (SYS_GRP_FILIAL.GR__FILIAL), ',') AS VARCHAR (50)) AS FILIAIS"
+			::Query +=   " FROM SYS_GRP_FILIAL, SYS_GRP_GROUP"
+			::Query +=  " WHERE SYS_GRP_FILIAL.D_E_L_E_T_ = ''"
+			::Query +=    " AND SYS_GRP_GROUP.D_E_L_E_T_ = ''"
+			::Query +=    " AND SYS_GRP_GROUP.GR__ID = SYS_GRP_FILIAL.GR__ID"
+			::Query +=    " AND GR__CODIGO NOT LIKE 'Filia%'"  // GRUPOS CUJA FUNCAO EH, JUSTAMENTE, DAR ACESSO A CADA FILIAL
+			::Query +=    " AND GR__MSBLQL != '1'"
+			::Query +=  " GROUP BY SYS_GRP_FILIAL.GR__ID, SYS_GRP_GROUP.GR__CODIGO, SYS_GRP_GROUP.GR__NOME"
+			::Query +=  " UNION ALL"
+			::Query += " SELECT 'USUARIO ' + SYS_USR.USR_ID AS CODIGO, SYS_USR.USR_CODIGO, SYS_USR.USR_NOME, CAST (STRING_AGG (RTRIM (USR_FILIAL), ',') AS VARCHAR (50)) AS FILIAIS"
+			::Query +=   " FROM SYS_USR_FILIAL, SYS_USR"
+			::Query +=  " WHERE SYS_USR_FILIAL.D_E_L_E_T_ = ''"
+			::Query +=    " AND SYS_USR.D_E_L_E_T_ = ''"
+			::Query +=    " AND SYS_USR.USR_ID = SYS_USR_FILIAL.USR_ID"
+			::Query +=    " AND SYS_USR.USR_MSBLQL != '1'"
+			::Query +=    " AND SYS_USR.USR_GRPRULE = '3'"  // REGRA DE ACESSO POR GRUPOS = 'SOMAR'
+			::Query +=  " GROUP BY SYS_USR.USR_ID, SYS_USR.USR_CODIGO, SYS_USR.USR_NOME"
 
 		otherwise
 			::UltMsg = "Verificacao numero " + cvaltochar (::Numero) + " nao definida."
