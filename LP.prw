@@ -355,6 +355,8 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
                   // usa essa, senão usa "Adiantamentos Associados"
                   // essas contas são setadas no SZI
                   _xRet = iif( type ("_SZI_Cred") == 'C', _SZI_Cred, "101020101002" )
+				  // Aqui deveria levar em consideracao o tipo de movimento da conta corrente (ou seja, so quero movtos originados via cta corrente associados. Compra de lenha nao entra aqui)
+				  // Seria bom abrir um lcto padrao separado do 'fornecedores normais'
                endif
           case _wtipo = "NORMAL"
                if _sQueRet == 'CDEB'
