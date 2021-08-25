@@ -56,7 +56,7 @@
 // 01/07/2020 - Cláudia - Inclusão de filial 16 para banco do brasil. GLPI: 8103
 // 24/02/2021 - Claudia - Criada rotina para gravar titulos que terão transf. de valores enter filiais. GLPI: 9059
 // 05/05/2021 - Claudia - Incluida gravação de novos campos na ZB5. GLPI: 9983
-// 19/08/2021 - Robert  - Passa a validar tamanho da variável cNumTit para saber se precisa inserir o prefixo (GLPI 10697).
+// 19/08/2021 - Robert  - (compilado em 25/08) Passa a validar tamanho da variável cNumTit para saber se precisa inserir o prefixo (GLPI 10697).
 //
 
 // -------------------------------------------------------------------------------------------------------------------------------------------
