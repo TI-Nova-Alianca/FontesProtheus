@@ -107,6 +107,7 @@
 // 24/08/2020 - Cláudia - Ajuste na validação de quantidades. GLPI: 8358
 // 28/09/2020 - Robert  - Nao localizava NF de venda pela chave pois o sistema padrao mudou a ordem dos indices (GLPI 8569).
 // 05/05/2021 - Robert  - Alterada regra geracao TES entrada transf.filiais tipo prod.RE do TES 234 para 151 (GLPI 7916).
+// 25/08/2021 - Robert  - Manda uma copia do XML para o importador da TRS (GLPI projeto 15).
 //
 
 // ----------------------------------------------------------------------------------------------------------------------------------
@@ -1583,6 +1584,10 @@ user function ZZXI (_sArqImp, _sXML)
 				if ! file (_sArqOrig)
 					u_help ("Arquivo '" + _sArqOrig + "' nao encontrado.")
 				else
+
+					// Manda uma copia para o importador da TRS (por enquanto... a intencao eh ficar somente o da TRS) Robert, 24/08/2021
+					_CopiaTRS (_sArqOrig)
+
 					// Leitura trocada de MemoRead () para FT_ReadLn () por que a memoread limita-se a 64Kb.
 					_ZZXXML = ""
 					FT_FUSE(_sArqOrig)
@@ -1640,6 +1645,23 @@ user function ZZXI (_sArqImp, _sXML)
 return _lContinua
 
 
+// ------------------------------------------------------------------------------------------------------
+// Manda uma copia para o importador da TRS (por enquanto... a intencao eh ficar somente o da TRS) Robert, 24/08/2021
+static function _CopiaTRS (_sArqTRS)
+	local _sDrvRmt := ""
+	local _sDirRmt := ""
+	local _sArqRmt := ""
+	local _sExtRmt := ""
+	local _sDestTRS := ''
+
+	// Separa drive, diretorio, nome e extensao.
+	SplitPath (_sArqTRS, @_sDrvRmt, @_sDirRmt, @_sArqRmt, @_sExtRmt )
+	_sDestTRS = '\\192.168.1.3\Siga\Protheus12\protheus_data\xmlnfe\' + _sArqRmt + _sExtRmt
+
+	// Copia o arquivo e depois deleta do local original.
+	U_Log2 ('debug', 'Copiando para TRS: de >>' + _sDrvRmt + _sDirRmt + _sArqRmt + _sExtRmt + '<< para >>' + _sDestTRS + '<<')
+	copy file (_sDrvRmt + _sDirRmt + _sArqRmt + _sExtRmt) to (_sDestTRS)
+return
 
 // ------------------------------------------------------------------------------------------------------
 // Grava dados no arquivo ZZX.

@@ -62,17 +62,17 @@ User Function RBatch (_sEmp, _sFil)
 	_sArqEmpFi = 'Batches_ultima_empresa_filial.txt'
 	_aUltEmpFi = {}
 	aadd (_aUltEmpFi, '0101')
-	aadd (_aUltEmpFi, '0103')
-	aadd (_aUltEmpFi, '0105')
-	aadd (_aUltEmpFi, '0106')
-	aadd (_aUltEmpFi, '0107')
-	aadd (_aUltEmpFi, '0108')
-	aadd (_aUltEmpFi, '0109')
-	aadd (_aUltEmpFi, '0110')
-	aadd (_aUltEmpFi, '0111')
+	aadd (_aUltEmpFi, '0103') ; aadd (_aUltEmpFi, '0101')  // Inclui sempre a matriz apos cada filial, pois tem muitos batches a mais.
+	aadd (_aUltEmpFi, '0105') ; aadd (_aUltEmpFi, '0101')  // Inclui sempre a matriz apos cada filial, pois tem muitos batches a mais.
+	aadd (_aUltEmpFi, '0106') ; aadd (_aUltEmpFi, '0101')  // Inclui sempre a matriz apos cada filial, pois tem muitos batches a mais.
+	aadd (_aUltEmpFi, '0107') ; aadd (_aUltEmpFi, '0101')  // Inclui sempre a matriz apos cada filial, pois tem muitos batches a mais.
+	aadd (_aUltEmpFi, '0108') ; aadd (_aUltEmpFi, '0101')  // Inclui sempre a matriz apos cada filial, pois tem muitos batches a mais.
+	aadd (_aUltEmpFi, '0109') ; aadd (_aUltEmpFi, '0101')  // Inclui sempre a matriz apos cada filial, pois tem muitos batches a mais.
+	aadd (_aUltEmpFi, '0110') ; aadd (_aUltEmpFi, '0101')  // Inclui sempre a matriz apos cada filial, pois tem muitos batches a mais.
+	aadd (_aUltEmpFi, '0111') ; aadd (_aUltEmpFi, '0101')  // Inclui sempre a matriz apos cada filial, pois tem muitos batches a mais.
 	//aadd (_aUltEmpFi, '0112')
-	aadd (_aUltEmpFi, '0113')
-	aadd (_aUltEmpFi, '0116')
+	aadd (_aUltEmpFi, '0113') ; aadd (_aUltEmpFi, '0101')  // Inclui sempre a matriz apos cada filial, pois tem muitos batches a mais.
+	aadd (_aUltEmpFi, '0116') ; aadd (_aUltEmpFi, '0101')  // Inclui sempre a matriz apos cada filial, pois tem muitos batches a mais.
 
 	if file (_sArqEmpFi)
 		_nUltEmpFi = val(alltrim (memoread (_sArqEmpFi)))

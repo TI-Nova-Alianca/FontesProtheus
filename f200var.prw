@@ -56,10 +56,11 @@
 // 01/07/2020 - Cláudia - Inclusão de filial 16 para banco do brasil. GLPI: 8103
 // 24/02/2021 - Claudia - Criada rotina para gravar titulos que terão transf. de valores enter filiais. GLPI: 9059
 // 05/05/2021 - Claudia - Incluida gravação de novos campos na ZB5. GLPI: 9983
+// 19/08/2021 - Robert  - (compilado em 25/08) Passa a validar tamanho da variável cNumTit para saber se precisa inserir o prefixo (GLPI 10697).
 //
+
 // -------------------------------------------------------------------------------------------------------------------------------------------
 User Function F200VAR()
-
 	Local _aArea    := GetArea()
 	Local _aAreaSE1 := SE1->(GetArea())
 	Local _aAreaSA1 := SA1->(GetArea())
@@ -70,6 +71,7 @@ User Function F200VAR()
 	local _aAux     := {}
 	local _nValOri  := 0
 	local _sTitulo  := ""
+	local _sTit2    := ""
 
 	// Verifica se foi chamado a partir do P.E. F650Var (FINR650 - relatorio do CNAB)
 	if len (_aValores) == 14
@@ -97,8 +99,9 @@ User Function F200VAR()
 		_aAux [16] = _aValores [14]
 		_aValores  = aclone (_aAux)
 	endif
-	
-	//u_showarray (_aValores)
+
+//	U_Log2 ('debug', 'Array de valores recebidos:')
+//	U_Log2 ('debug', _aValores)
 
 	// Posicoes dos dados na array:
 	// aValores[01] - Numero do titulo
@@ -118,28 +121,42 @@ User Function F200VAR()
 	// aValores[15] - Motivo da baixa
 	// aValores[16] - Linha Inteira
 
+//	_sTitulo = cNumTit
 	// Logs para depuracao
-	//	u_log ("cBanco = ", cbanco)
-	//	u_log ("_aValores:", {_avalores})
-	//	u_log ("nValRec: ",   nValRec)
-	//	u_log ("nJuros: ",    nJuros)
-	//	u_log ("nAbatim: ",   nAbatim)
-	//	u_log ("nDescont: ",  nDescont)
-	//	u_log ("nDespes: ",   nDespes)
-	//	u_log ("nMulta: ",    nMulta)
-	//	u_log ("nOutrDesp: ", nOutrDesp)
-	//	u_log ("nValCC: ",    nValCC)
+	u_log2 ('debug', "cNumTit  : "+ cNumTit)
+	u_log2 ('debug', "cBanco   : "+ cbanco)
+	u_log2 ('debug', "nValRec  : "+ cvaltochar (nValRec))
+	// u_log2 ('debug', "nJuros   : "+ cvaltochar (nJuros))
+	// u_log2 ('debug', "nAbatim  : "+ cvaltochar (nAbatim))
+	// u_log2 ('debug', "nDescont : "+ cvaltochar (nDescont))
+	// u_log2 ('debug', "nDespes  : "+ cvaltochar (nDespes))
+	// u_log2 ('debug', "nMulta   : "+ cvaltochar (nMulta))
+	// u_log2 ('debug', "nOutrDesp: "+ cvaltochar (nOutrDesp))
+	// u_log2 ('debug', "nValCC   : "+ cvaltochar (nValCC))
+//	U_Log2 ('debug', '_sTitulo : >>' + _sTitulo + '<<')
 
 	// Verifica qual banco estah sendo processado. Verifica diferentes variaveis por que este
 	// ponto de entrada eh executado na impressao de relatorio e na importacao do arquivo de retorno.
 
 	//If upper (GetEnvServer ()) $ "TESTE/TESTECLAUDIA" 
 		if IsInCallStack ("FINA200") .and.  xFilial("SE1") <> '01'
-			if substr(cNumTit,1,3) == '000'
-				_sTit = '10 ' + cNumTit
+	// teste 18/08/21			if substr(cNumTit,1,3) == '000'
+	// teste 18/08/21				_sTit2 = '10 ' + cNumTit
+	// teste 18/08/21			else
+	// teste 18/08/21				_sTiT2 = 'FAT' + cNumTit
+	// teste 18/08/21			endif
+			if len (cNumTit) > 10  // Se vier com mais de 10 posicoes, eh por que jah tem o prefixo junto.
+				_sTit2 = cNumTit
 			else
-				_sTiT = 'FAT' + cNumTit
+				if substr(cNumTit,1,3) == '000'
+					_sTit2 = '10 ' + cNumTit
+				else
+					_sTiT2 = 'FAT' + cNumTit
+				endif
 			endif
+			U_Log2 ('debug', 'Saindo do 1o teste com _sTit2 >>' + _sTit2 + '<<')
+
+
 
 			_sQuery := " "
 			_sQuery += " SELECT "
@@ -161,7 +178,8 @@ User Function F200VAR()
 			_sQuery += " 		AND ZB4.ZB4_CONTA  = E1_CONTA "
 			_sQuery += " WHERE SE1.D_E_L_E_T_ = '' "
 			_sQuery += " AND SE1.E1_FILIAL    = '"+ xFilial("SE1") + "'"
-			_sQuery += " AND SE1.E1_PREFIXO + SE1.E1_NUM + SE1.E1_PARCELA = '"+ _sTiT + "'"
+			_sQuery += " AND SE1.E1_PREFIXO + SE1.E1_NUM + SE1.E1_PARCELA = '"+ _sTit2 + "'"
+			U_Log2 ('debug', _sQuery)
 			_aSE1 := U_Qry2Array(_sQuery)
 
 			if len(_aSE1) > 0
@@ -223,19 +241,29 @@ User Function F200VAR()
 					_oEvento:Grava()
 
 				endif
-				End Transaction			
+				End Transaction
 			endif
 		endif
 	//EndIf
-	
+
 	// TRATAMENTO DO CNAB A RECEBER
 	if IsInCallStack ("FINA200") .or. (IsInCallStack ("FINR650") .and. mv_par07= 1) 
-	
-		if substr(cNumTit,1,3) == '000'
-			_sTitulo = '10 ' + cNumTit
+
+	// teste 18/08/21		if substr(cNumTit,1,3) == '000'
+	// teste 18/08/21			_sTitulo = '10 ' + cNumTit
+	// teste 18/08/21		else
+	// teste 18/08/21			_sTitulo = 'FAT' + cNumTit
+	// teste 18/08/21		endif
+		if len (cNumTit) > 10  // Se vier com mais de 10 posicoes, eh por que jah tem o prefixo junto.
+			_sTitulo = cNumTit
 		else
-			_sTitulo = 'FAT' + cNumTit
+			if substr(cNumTit,1,3) == '000'
+				_sTitulo = '10 ' + cNumTit
+			else
+				_sTitulo = 'FAT' + cNumTit
+			endif
 		endif
+		U_Log2 ('debug', 'Saindo do 2o teste com _sTitulo >>' + _sTitulo + '<<')
 
 		if cBanco == '104' .and. xFilial("SE1") = '01'
 			if len(cNumTit) = 10 
@@ -243,24 +271,24 @@ User Function F200VAR()
 				_wnnro = '14' + _aValores [4]
 				
 				_sQuery := " "
-	    		_sQuery += " SELECT E1_IDCNAB"
-	  			_sQuery += "   FROM SE1010"
-	 			_sQuery += "  WHERE E1_FILIAL = '01'"
-	   			_sQuery += "    AND E1_PORTADO = '104'"
-	   			_sQuery += "    AND E1_EMISSAO > '20180501'"
-	   			_sQuery += "    AND E1_NUMBCO LIKE '%"+ _wnnro + "%'"  // tem que ser com like pq falta um digito no final ainda em alguns casos
-	   			_awnnro := U_Qry2Array(_sQuery)
+				_sQuery += " SELECT E1_IDCNAB"
+				_sQuery += "   FROM SE1010"
+				_sQuery += "  WHERE E1_FILIAL = '01'"
+				_sQuery += "    AND E1_PORTADO = '104'"
+				_sQuery += "    AND E1_EMISSAO > '20180501'"
+				_sQuery += "    AND E1_NUMBCO LIKE '%"+ _wnnro + "%'"  // tem que ser com like pq falta um digito no final ainda em alguns casos
+				_awnnro := U_Qry2Array(_sQuery)
 				if len(_awnnro) = 1
-					cNumTit = _awnnro[1,1]				
+					cNumTit = _awnnro[1,1]
 				endif
 			else 
 				if xFilial("SE1") = '01' 
 					cNumTit = fBuscaCpo ("SE1", 1, xfilial ("SE1") + _sTitulo, "E1_IDCNAB")
-				endif					
- 			endif 
+				endif
+			endif 
 		endif
 		
-    	if cBanco == '422' .or. cBanco == '748' .or. cBanco == '399' .or. cBanco == '033' .or. cBanco == '237' .or. cBanco == '341' 
+		if cBanco == '422' .or. cBanco == '748' .or. cBanco == '399' .or. cBanco == '033' .or. cBanco == '237' .or. cBanco == '341' 
 			if xFilial("SE1") = '01'
 				cNumTit = fBuscaCpo ("SE1", 1, xfilial ("SE1") + _sTitulo, "E1_IDCNAB")
 			endif	
@@ -276,20 +304,20 @@ User Function F200VAR()
 				if _widcnab != cNumTit 
 					// se nao veio no arquivo o IDCNAB busca o IDCNAB pelo numero do titulo
 				cNumTit = fBuscaCpo ("SE1", 1, xfilial ("SE1") + _sTitulo, "E1_IDCNAB")
-			    endif
+				endif
 			endif
 		endif	
 		
 		if cBanco == '041'
 			if xFilial("SE1") = '01' .or. xFilial("SE1") = '13' .or. xFilial("SE1") = '10' .or. xFilial("SE1") = '08'
-		    	cNumTit = fBuscaCpo ("SE1", 1, xfilial ("SE1") + _sTitulo, "E1_IDCNAB")
+				cNumTit = fBuscaCpo ("SE1", 1, xfilial ("SE1") + _sTitulo, "E1_IDCNAB")
 			endif	
 		endif
 			
 		// não eh relatorio - eh processamento do retorno
 		if ! _l650
-		   // Armazena o Codigo do Sacado na Cooperativa Cedente ou seja, codigo do cliente no Sicredi
-	    	DbSelectArea("SE1")
+			// Armazena o Codigo do Sacado na Cooperativa Cedente ou seja, codigo do cliente no Sicredi
+			DbSelectArea("SE1")
 			DbSetOrder(1)
 			DbSeek(xFilial("SE1")+_aValores[01])
 			If Found()
@@ -308,139 +336,139 @@ User Function F200VAR()
 		
 		// ACOES ESPECIFICAS se BANCO DO BRASIL
 		if cBanco == "001"
-		    if (alltrim (_aValores [14]) == "98" .or. alltrim (_aValores [14]) == "23" .or. alltrim (_aValores [14]) == "12")
-		    	if  _aValores [10] > 0
-		           nDespes := nDespes + _aValores [10]
+			if (alltrim (_aValores [14]) == "98" .or. alltrim (_aValores [14]) == "23" .or. alltrim (_aValores [14]) == "12")
+				if  _aValores [10] > 0
+					nDespes := nDespes + _aValores [10]
 				endif
 				if  _aValores [11] > 0
 					nDespes := nDespes + _aValores [11]
-		        endif
-		        if  _aValores [12] > 0
+				endif
+				if  _aValores [12] > 0
 					nDespes := nDespes + _aValores [12]
-		        endif
-	        endif    
+				endif
+			endif    
 			if alltrim (_aValores [14]) == "06" .and. nDescont > 0
-			    // Zera 'descontos' quando baixa normal - controle de R A P E L
-	           nDescont = 0
-	           // não eh relatorio - eh processamento do retorno
-	           if ! _l650
-	              // Grava evento no sistema
-	               _oEvento := ClsEvent():new ()
-	               _oEvento:CodEven   = "SE1001"
-	               _oEvento:Texto     = "Descontos ($ " + alltrim (cvaltochar (_aValores [6])) + ") zerados no retorno CNAB banco " + cBanco
-	               _oEvento:NFSaida   = substr (_aValores [1], 4, 6)
-	               _oEvento:SerieSaid = substr (_aValores [1], 1, 3)
-	               _oEvento:Grava ()
-	           endif
-	    	endif
+				// Zera 'descontos' quando baixa normal - controle de R A P E L
+				nDescont = 0
+				// não eh relatorio - eh processamento do retorno
+				if ! _l650
+					// Grava evento no sistema
+					_oEvento := ClsEvent():new ()
+					_oEvento:CodEven   = "SE1001"
+					_oEvento:Texto     = "Descontos ($ " + alltrim (cvaltochar (_aValores [6])) + ") zerados no retorno CNAB banco " + cBanco
+					_oEvento:NFSaida   = substr (_aValores [1], 4, 6)
+					_oEvento:SerieSaid = substr (_aValores [1], 1, 3)
+					_oEvento:Grava ()
+				endif
+			endif
 		endif                                                                       
 		
 		// ACOES ESPECIFICAS se BANRISUL
-	    if cBanco == "041" 
-	       // Considerar juros no total recebido
-	       if nJuros > 0 
-	           nValrec := nValrec +  nJuros
-	       end if
-	       // Zera 'descontos' quando baixa normal - controle de R A P E L
-	       if alltrim (_aValores [14]) == "06" .or. alltrim (_aValores [14]) == "30" 
-	           if nDescont > 0
-	              nDescont = 0
-	              // não eh relatorio - eh processamento do retorno
-	              if ! _l650
-	                 // Grava evento no sistema
-	                 _oEvento := ClsEvent():new ()
-	                 _oEvento:CodEven   = "SE1001"
-	                 _oEvento:Texto     = "Descontos ($ " + alltrim (cvaltochar (_aValores [6])) + ") zerados no retorno CNAB banco " + cBanco
-	                 _oEvento:NFSaida   = substr (_aValores [1], 4, 6)
-	                 _oEvento:SerieSaid = substr (_aValores [1], 1, 3)
-	                 _oEvento:Grava ()
-	              endif
-	          endif
-	       end if
-	       if alltrim (_aValores [14]) != "15"
-	            // manipula valor despesas de cobranca
-	            if (_aValores [12] > 0)
-	              // soma despesas de cartorio nas despesas de cobranca
-	                nDespes := nDespes + _aValores [12]
-	                // soma outras despesas no valor recebido
-	                nValrec := nValrec + _aValores [12]
-	                nValCc = 0
-	            endif
-	            // manipula outras despesas de cobranca
-	            if _aValores [11] > 0
-	                // soma outras despesas nas despesas de cobranca
-	                nDespes := nDespes + _aValores [11]
-	                // soma outras despesas no valor recebido
-	                nValrec := nValrec + _aValores [11]
-	                nValCc = 0
-	            endif
-	        endif            
-	    endif     
-	
+		if cBanco == "041" 
+			// Considerar juros no total recebido
+			if nJuros > 0 
+				nValrec := nValrec +  nJuros
+			end if
+			// Zera 'descontos' quando baixa normal - controle de R A P E L
+			if alltrim (_aValores [14]) == "06" .or. alltrim (_aValores [14]) == "30" 
+				if nDescont > 0
+					nDescont = 0
+					// não eh relatorio - eh processamento do retorno
+					if ! _l650
+						// Grava evento no sistema
+						_oEvento := ClsEvent():new ()
+						_oEvento:CodEven   = "SE1001"
+						_oEvento:Texto     = "Descontos ($ " + alltrim (cvaltochar (_aValores [6])) + ") zerados no retorno CNAB banco " + cBanco
+						_oEvento:NFSaida   = substr (_aValores [1], 4, 6)
+						_oEvento:SerieSaid = substr (_aValores [1], 1, 3)
+						_oEvento:Grava ()
+					endif
+				endif
+			end if
+			if alltrim (_aValores [14]) != "15"
+				// manipula valor despesas de cobranca
+				if (_aValores [12] > 0)
+					// soma despesas de cartorio nas despesas de cobranca
+					nDespes := nDespes + _aValores [12]
+					// soma outras despesas no valor recebido
+					nValrec := nValrec + _aValores [12]
+					nValCc = 0
+				endif
+				// manipula outras despesas de cobranca
+				if _aValores [11] > 0
+					// soma outras despesas nas despesas de cobranca
+					nDespes := nDespes + _aValores [11]
+					// soma outras despesas no valor recebido
+					nValrec := nValrec + _aValores [11]
+					nValCc = 0
+				endif
+			endif
+		endif
+
 		// PARA O SICREDI - Zera 'valor recebido' quando ocorrencia = tarifa
 		if cBanco == "748" 
-		   if alltrim (_aValores [14]) == "28"
-	   	  	    nDespes = _aValores [08]
-	   	  	    nMulta  :=0
-                nValrec :=0
-                nJuros  :=0
-                nValCc  :=0
-		   endif
-		   // Se valor recebido a maior, joga diferenca na coluna de juros
-	       if alltrim (_aValores [14]) == "06"
-		        _nValOri = fBuscaCpo ("SE1", 31, xfilial ("SE1") + _aValores [4], "E1_VALOR")
-		        
-	            //nJuros = nValRec - _nValOri
-	            if _nValOri > nValRec
-	           		nDescont = _nValOri - nValRec
-	            endif
-	           
-	            if _nValOri < nValRec
-	           		nJuros = nValRec - _nValOri 
-			    endif
-		   endif
+			if alltrim (_aValores [14]) == "28"
+				nDespes = _aValores [08]
+				nMulta  :=0
+				nValrec :=0
+				nJuros  :=0
+				nValCc  :=0
+			endif
+			// Se valor recebido a maior, joga diferenca na coluna de juros
+			if alltrim (_aValores [14]) == "06"
+				_nValOri = fBuscaCpo ("SE1", 31, xfilial ("SE1") + _aValores [4], "E1_VALOR")
+				
+				//nJuros = nValRec - _nValOri
+				if _nValOri > nValRec
+					nDescont = _nValOri - nValRec
+				endif
+				
+				if _nValOri < nValRec
+					nJuros = nValRec - _nValOri 
+				endif
+			endif
 		endif
-    
-	    // PARA O SANTANDER
+
+		// PARA O SANTANDER
 		if cBanco == "033" .or. cBanco == "353"
 			if alltrim (_aValores [14]) == "24"
 				// manipula valor de multas
-		    	if nMulta > 0
-		           // não sei pq o santander manda na coluna de multas as custas de cartorio
-		           nDespes = nDespes + nMulta
-		           nMulta  = 0           
-		        endif
-			endif	        
-	    endif
-	    
-	    // PARA O BRADESCO
+				if nMulta > 0
+					// não sei pq o santander manda na coluna de multas as custas de cartorio
+					nDespes = nDespes + nMulta
+					nMulta  = 0
+				endif
+			endif
+		endif
+		
+		// PARA O BRADESCO
 		if cBanco == "237"
 			if alltrim (_aValores [14]) == "23" .or. alltrim (_aValores [14]) == "28" 
 				// manipula valor de multas
-		    	if nMulta > 0
-		           // não sei pq o santander manda na coluna de multas as custas de cartorio
-		           nDespes = nDespes + nMulta
-		           nMulta  = 0           
-		        endif
-			endif	        
-	    endif
-    
-	    // PARA O SAFRA - Zera 'valor recebido' quando ocorrencia = tarifa
+				if nMulta > 0
+					// não sei pq o santander manda na coluna de multas as custas de cartorio
+					nDespes = nDespes + nMulta
+					nMulta  = 0
+				endif
+			endif
+		endif
+
+		// PARA O SAFRA - Zera 'valor recebido' quando ocorrencia = tarifa
 		if cBanco == "422" 
-	    	if alltrim (_aValores [14]) == "06" .and. nDescont > 0
-			    // Zera 'descontos' quando baixa normal - controle de R A P E L 
-	           nDescont = 0
-	           // não eh relatorio - eh processamento do retorno
-	           if ! _l650
-	              // Grava evento no sistema
-	               _oEvento := ClsEvent():new ()
-	               _oEvento:CodEven   = "SE1001"
-	               _oEvento:Texto     = "Descontos ($ " + alltrim (cvaltochar (_aValores [6])) + ") zerados no retorno CNAB banco " + cBanco
-	               _oEvento:NFSaida   = substr (_aValores [1], 4, 6)
-	               _oEvento:SerieSaid = substr (_aValores [1], 1, 3)
-	               _oEvento:Grava ()
-	           endif
-	    	endif
+			if alltrim (_aValores [14]) == "06" .and. nDescont > 0
+				// Zera 'descontos' quando baixa normal - controle de R A P E L 
+				nDescont = 0
+				// não eh relatorio - eh processamento do retorno
+				if ! _l650
+					// Grava evento no sistema
+					_oEvento := ClsEvent():new ()
+					_oEvento:CodEven   = "SE1001"
+					_oEvento:Texto     = "Descontos ($ " + alltrim (cvaltochar (_aValores [6])) + ") zerados no retorno CNAB banco " + cBanco
+					_oEvento:NFSaida   = substr (_aValores [1], 4, 6)
+					_oEvento:SerieSaid = substr (_aValores [1], 1, 3)
+					_oEvento:Grava ()
+				endif
+			endif
 		endif
 		
 		// PARA O ITAU - zera o valor de juros quando ocorrencia de confirmação de entrada
@@ -452,40 +480,37 @@ User Function F200VAR()
 			
 			if alltrim (_aValores [14]) = "06" // liquidação normal
 				// o valor recebido vem deduzindo o valor das despesas de cobrança
-	            if (_aValores [5] > 0)
-	              	// soma o valor das despesas no valor recebido
-	                nValrec := nValrec + _aValores [5]
-	            endif
-	            if  nDescont > 0
-			   	    // Zera 'descontos' quando baixa normal - controle de R A P E L 
-	           		nDescont = 0
-				endif	           		
-	        endif
-	        
-	        if alltrim (_aValores [14]) = "08" // liquidação emc artorio
+				if (_aValores [5] > 0)
+					// soma o valor das despesas no valor recebido
+					nValrec := nValrec + _aValores [5]
+				endif
+				if  nDescont > 0
+					// Zera 'descontos' quando baixa normal - controle de R A P E L 
+					nDescont = 0
+				endif
+			endif
+			
+			if alltrim (_aValores [14]) = "08" // liquidação emc artorio
 				// o valor recebido vem deduzindo o valor das despesas de cartorio
-	            if (_aValores [5] > 0)
-	              	// soma o valor das despesas no valor recebido
-	                nValrec := nValrec + _aValores [5]
-	            endif
-	        endif
-	        
-	        if alltrim (_aValores [14]) = "09" // baixa de titulo
+				if (_aValores [5] > 0)
+					// soma o valor das despesas no valor recebido
+					nValrec := nValrec + _aValores [5]
+				endif
+			endif
+			
+			if alltrim (_aValores [14]) = "09" // baixa de titulo
 				// o valor da despesa esta vindo no valor recebido
-	            if (_aValores [5] > 0)
-	              	// soma o valor das despesas no valor recebido
-	              	if nValrec > 0
-	                	nValrec := nValrec - _aValores [5]
-					endif	                	
-	            endif
-	        endif	            
-	       
+				if (_aValores [5] > 0)
+					// soma o valor das despesas no valor recebido
+					if nValrec > 0
+						nValrec := nValrec - _aValores [5]
+					endif
+				endif
+			endif
+
 		endif
 		RestArea(_aAreaSE1)
 		RestArea(_aAreaSA1)
-	
-	endif		
-	
+	endif
 	RestArea(_aArea)
-		
-Return(_lRet)
+Return _lRet
