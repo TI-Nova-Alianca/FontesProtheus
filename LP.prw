@@ -223,7 +223,7 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 		u_help (SE5->E5_VLDESCO)
 		u_help (SE5->E5_VADOUTR)
 
-	case _sLPad + _sSeq $ '520021/521021/524021' .and. _sQueRet == 'VL' // descontos - estorna provisao de comissao
+	case _sLPad + _sSeq $ '520021/521021/524021' .and. _sQueRet == 'VL' .and. !alltrim(SE5->E5_ORIGEM) $ 'ZB1/ZB3'// descontos - estorna provisao de comissao
 		if SE1->E1_TIPO<>"NCC" .AND. SE5->E5_VLDESCO > 0 .and. SE1->E1_COMIS1>0 .AND. ! alltrim(SE1->E1_VEND1) $ GETMV("MV_VENDDIR")
 			// acha a base de comissao do titulo - não da pra considerar a do SE1, por conta do recalculo
 			_xbaseComTit = _BComis (SE1->E1_NUM, SE1->E1_PREFIXO, SE1->E1_CLIENTE,SE1->E1_LOJA, SE1->E1_VALOR)
@@ -247,6 +247,60 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 
 					Case empty(SE1->E1_ADM) 	// boleto e pix
 						_xRet := "403010201021" 
+
+					Otherwise
+						_xRet := "101020201001" // conta clientes							
+				EndCase
+			endif
+		endif
+
+	case _sLPad == '520' .and. _sSeq='027'
+		if _sQueRet == 'CDEB'
+			if alltrim(SE5->E5_ORIGEM) $'ZB1/ZB3'
+				Do Case
+					Case !empty(SE1->E1_ADM) // cartão
+						do case
+							case SE1->E1_ADM == "100" .or. SE1->E1_ADM =="101"
+								_xRet:= "101021101002"
+							case SE1->E1_ADM == "200" .or. SE1->E1_ADM =="201"
+								_xRet:= "101021101001"
+							case SE1->E1_ADM == "300" .or. SE1->E1_ADM =="301"
+								_xRet:= "101021101003"
+							case SE1->E1_ADM == "400" .or. SE1->E1_ADM =="401"
+								_xRet:= "101021101004"
+							otherwise
+								_xRet:= "101021101005"
+						endcase
+
+					Case empty(SE1->E1_ADM) 	// boleto
+						_xRet := "101020201001" // conta clientes	
+
+					Otherwise
+						_xRet := "101020201001" // conta clientes							
+				EndCase
+			endif
+		endif
+		
+	case _sLPad == '520' .and. _sSeq='028'
+		if _sQueRet == 'CCRED'
+			if alltrim(SE5->E5_ORIGEM) $'ZB1/ZB3'
+				Do Case
+					Case !empty(SE1->E1_ADM) // cartão
+						do case
+							case SE1->E1_ADM == "100" .or. SE1->E1_ADM =="101"
+								_xRet:= "101021101002"
+							case SE1->E1_ADM == "200" .or. SE1->E1_ADM =="201"
+								_xRet:= "101021101001"
+							case SE1->E1_ADM == "300" .or. SE1->E1_ADM =="301"
+								_xRet:= "101021101003"
+							case SE1->E1_ADM == "400" .or. SE1->E1_ADM =="401"
+								_xRet:= "101021101004"
+							otherwise
+								_xRet:= "101021101005"
+						endcase
+
+					Case empty(SE1->E1_ADM) 	// boleto
+						_xRet := "101020201001" // conta clientes	
 
 					Otherwise
 						_xRet := "101020201001" // conta clientes							
