@@ -1,39 +1,48 @@
 // Programa...: FrtSelFr
 // Autor......: Robert Koch
 // Data.......: 06/05/2008
-// Descricao..: Tela para usuario selecionar as notas de venda `as quais o conhecimento digitado se refere.
+// Descricao..: Tela para usuario selecionar as notas de venda as quais o conhecimento digitado se refere.
 //              Inicialmente vai ser chamado pelo P.E. MA103But.
 //
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Atualizacao
+// #Descricao         #Tela para usuario selecionar as notas de venda as quais o conhecimento digitado se refere
+// #PalavasChave      #frete #conhecimento_de_frete 
+// #TabelasPrincipais #SZH #SD1 #SF1 #SF2 #SD2
+// #Modulos   		  #COM 
+//
 // Historico de alteracoes:
-// 22/07/2008 - Robert - Ordena browse por numero de NF de venda.
-// 29/07/2008 - Robert - Incluida visualizacao do numero do conhecimento nas telas (util
+// 22/07/2008 - Robert  - Ordena browse por numero de NF de venda.
+// 29/07/2008 - Robert  - Incluida visualizacao do numero do conhecimento nas telas (util
 //                       na importacao de conhecimentos)
-//                     - Se o prog. de import. de conhecimentos disponibilizar, jah traz a NF original selecionada.
-// 19/08/2008 - Robert - Selecao de NFs de venda previstas e nao previstas passa a ser nesta mesma tela.
-//                     - Deficicao do D1_CC trazida do MT100GRV para ca.
-// 27/08/2008 - Robert - Criado tratamento para redespacho.
-// 23/01/2009 - Robert - Quando nao for inclusao, consulta dados do SZH.
-// 29/01/2009 - Robert - Criadas mais algumas validacoes de 'tudo ok'.
-// 24/02/2010 - Robert - Quando NF tipo B ou D, passa a buscar nome do destinatario no SA2.
-//                     - Marcando uma nota na parte de cima, digitando-a e deletando-a na parte de
-//                       baixo, o sistema ignorava a nota. Agora nao deixa mais digitar.
-//                     - Nao lista (por default) previsoes de fretes com mais de 2 meses de idade.
-//                     - Criado tratamento para fretes sobre devolucoes de vendas (campo ZH_DEVVD)
-// 20/03/2012 - Robert - Criado tratamento para o campo ZZ6_TPDES (posterior ZH_TPDESP).
-//                     - Nao busca fretes previstos quando for conhecimento de paletizacao.
-// 26/03/2012 - Robert - Nao exige mais CTR, basta que seja um item do VA_PRODCIF.
-// 11/09/2012 - Robert - Corrigida leitura do aCols e N nas validacoes do browse de fretes nao previstos.
+//                      - Se o prog. de import. de conhecimentos disponibilizar, jah traz a NF original selecionada.
+// 19/08/2008 - Robert  - Selecao de NFs de venda previstas e nao previstas passa a ser nesta mesma tela.
+//                      - Deficicao do D1_CC trazida do MT100GRV para ca.
+// 27/08/2008 - Robert  - Criado tratamento para redespacho.
+// 23/01/2009 - Robert  - Quando nao for inclusao, consulta dados do SZH.
+// 29/01/2009 - Robert  - Criadas mais algumas validacoes de 'tudo ok'.
+// 24/02/2010 - Robert  - Quando NF tipo B ou D, passa a buscar nome do destinatario no SA2.
+//                      - Marcando uma nota na parte de cima, digitando-a e deletando-a na parte de
+//                        baixo, o sistema ignorava a nota. Agora nao deixa mais digitar.
+//                      - Nao lista (por default) previsoes de fretes com mais de 2 meses de idade.
+//                      - Criado tratamento para fretes sobre devolucoes de vendas (campo ZH_DEVVD)
+// 20/03/2012 - Robert  - Criado tratamento para o campo ZZ6_TPDES (posterior ZH_TPDESP).
+//                      - Nao busca fretes previstos quando for conhecimento de paletizacao.
+// 26/03/2012 - Robert  - Nao exige mais CTR, basta que seja um item do VA_PRODCIF.
+// 11/09/2012 - Robert  - Corrigida leitura do aCols e N nas validacoes do browse de fretes nao previstos.
 // 12/04/2013 - Leandro DWT - Preparacao para gravacao da tabela ZZN
-// 11/09/2015 - Robert - Buscava nome do fornecedor incorretamente quando consultando conhecimento de frete.
-// 18/03/2016 - Catia  - Alterada a forma de buscar as notas amarradas a fretes - busca tudo da SZH
-// 16/06/2016 - Robert - Desabilitada a definicao do D1_CC. Passa a buscar padrao do cadastro do produto.
-// 19/10/2016 - Catia  - tirado comentarios alguns bloco comentados
-// 14/01/2020 - Andre  - Alterada query para mostrar dados especie CTE, CTR e tipo de produto iniciado com 'FR' 
-
+// 11/09/2015 - Robert  - Buscava nome do fornecedor incorretamente quando consultando conhecimento de frete.
+// 18/03/2016 - Catia   - Alterada a forma de buscar as notas amarradas a fretes - busca tudo da SZH
+// 16/06/2016 - Robert  - Desabilitada a definicao do D1_CC. Passa a buscar padrao do cadastro do produto.
+// 19/10/2016 - Catia   - tirado comentarios alguns bloco comentados
+// 14/01/2020 - Andre   - Alterada query para mostrar dados especie CTE, CTR e tipo de produto iniciado com 'FR' 
+// 26/08/2021 - Claudia - Incluida validação que quando estiver classificando a pré nota de entrada, 
+//                        não realize a busca no SZH. GLPI: 10833
+//
+// -------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 #include "VA_Inclu.prw"
 
-// --------------------------------------------------------------------------
 User Function FrtSelFr ()
 	local _aAmbAnt   := U_SalvaAmb ()
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -44,7 +53,7 @@ User Function FrtSelFr ()
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
 return
-
+//
 // --------------------------------------------------------------------------
 static function _AndaLogo (_lPaletiz)
 	local _lContinua  := .T.
@@ -56,7 +65,6 @@ static function _AndaLogo (_lPaletiz)
 	local _aSize      := {}  // Para posicionamento de objetos em tela
 	local _oDlg       := NIL
 	local _aSZH       := {} 
-	//local _aSF8		  := {}
 	local _aCols      := {}
 	local _nTotFret   := 0
 	local _sProdCIF   := alltrim (GetMv('VA_PRODCIF'))
@@ -82,7 +90,7 @@ static function _AndaLogo (_lPaletiz)
 	
 	// Se nao for inclusao, visualiza os dados do SZH e cai fora da rotina.
 	
-	if ! inclui
+	if !inclui .and. !l103Class  // Estou classificando uma pre-nota de entrada
 	
 		_sQuery := ""
 		_sQuery += " SELECT DISTINCT SZH.ZH_NFSAIDA, SZH.ZH_SERNFS, SZH.ZH_DATA"
@@ -135,27 +143,28 @@ static function _AndaLogo (_lPaletiz)
 			_sQuery += "    and SZH.ZH_CLIFOR  = '" + sf1 -> f1_fornece + "'"
 			_sQuery += "    and SZH.ZH_LJCLIFO = '" + sf1 -> f1_loja    + "'"
 		endif
-					
+	
 		_aSZH = aclone (U_Qry2Array (_sQuery))
+
+		_aCols = {}
+		aadd (_aCols, { 1, "NF saida"          , 50, "@!"})
+		aadd (_aCols, { 2, "Serie"             , 30, "@!"})
+		aadd (_aCols, { 3, "Data"              , 50, "@!"})
+		aadd (_aCols, { 4, "Frete Sobre"       , 60, "@!"})
+		aadd (_aCols, { 5, "NF entrada"        , 60, "@!"})
+		aadd (_aCols, { 6, "Serie"             , 30, "@!"})
+		aadd (_aCols, { 7, "Cliente/Fornecedor", 60, "@!"})
+		aadd (_aCols, { 8, "Loja"              , 20, "@!"})
+		aadd (_aCols, { 9, "Razao Social"      ,100, "@!"})
+		aadd (_aCols, {10, "Conhecimento"      , 60, "@!"})
+		aadd (_aCols, {11, "Serie"             , 30, "@!"})
 		
-			_aCols = {}
-			aadd (_aCols, { 1, "NF saida"          , 50, "@!"})
-			aadd (_aCols, { 2, "Serie"             , 30, "@!"})
-			aadd (_aCols, { 3, "Data"              , 50, "@!"})
-			aadd (_aCols, { 4, "Frete Sobre"       , 60, "@!"})
-			aadd (_aCols, { 5, "NF entrada"        , 60, "@!"})
-			aadd (_aCols, { 6, "Serie"             , 30, "@!"})
-			aadd (_aCols, { 7, "Cliente/Fornecedor", 60, "@!"})
-			aadd (_aCols, { 8, "Loja"              , 20, "@!"})
-			aadd (_aCols, { 9, "Razao Social"      ,100, "@!"})
-			aadd (_aCols, {10, "Conhecimento"      , 60, "@!"})
-			aadd (_aCols, {11, "Serie"             , 30, "@!"})
-			
-			if alltrim(sf1 -> f1_especie) == 'CTE' .or. alltrim(sf1 -> f1_especie) == 'CTR'
-				U_F3Array (_aSZH, "Conhecimento X Notas", _aCols, NIL, NIL, "Notas amarradas a este conhecimento de frete", "", .T.)
-			else
-				U_F3Array (_aSZH, "Notas x Conhecimentos", _aCols, NIL, NIL, "Conhecimentos amarradas a este nota", "", .T.)
-			endif				
+		if alltrim(sf1 -> f1_especie) == 'CTE' .or. alltrim(sf1 -> f1_especie) == 'CTR'
+			U_F3Array (_aSZH, "Conhecimento X Notas", _aCols, NIL, NIL, "Notas amarradas a este conhecimento de frete", "", .T.)
+		else
+			U_F3Array (_aSZH, "Notas x Conhecimentos", _aCols, NIL, NIL, "Conhecimentos amarradas a este nota", "", .T.)
+		endif		
+
 		_lContinua = .F.
 	endif
 	
@@ -211,23 +220,23 @@ static function _AndaLogo (_lPaletiz)
 
 			// Monta uma getdados para o usuario informar notas nao previstas / reentregas, etc.
 			@ _oDlg:nClientHeight / 4 + 50, 10 say "Notas nao previstas / reentregas e outros."
-			_oGetD := MsNewGetDados ():New (_oDlg:nClientHeight / 4 + 60, ;                    // Limite superior
-	                                10, ;                     // Limite esquerdo
-	                                _oDlg:nClientHeight / 2 - 20, ;                     // Limite inferior
-	                                _oDlg:nClientWidth / 2 - 10, ;                     // Limite direito    // _oDlg:nClientWidth / 5 - 5, ;                     // Limite direito
-                                    GD_INSERT + GD_UPDATE + GD_DELETE, ;  // [ nStyle ]
-                                    "U_FrtSelF1 ()", ;  // [ uLinhaOk ]
-                                    "AllwaysTrue ()", ;  //[ uTudoOk ]
-                                    NIL, ; //[cIniCpos]
-                                    NIL,; //[ aAlter ]
-                                    NIL,; // [ nFreeze ]
-                                    NIL,; // [ nMax ]
-                                    NIL,; // [ cFieldOk ]
-                                    NIL,; // [ uSuperDel ]
-                                    NIL,; // [ uDelOk ]
-                                    _oDlg, ; // [ oWnd ]
-                                    aHeader, ;
-                                    aCols)
+			_oGetD := MsNewGetDados ():New (_oDlg:nClientHeight / 4 + 60	, ; // Limite superior
+	                                10										, ; // Limite esquerdo
+	                                _oDlg:nClientHeight / 2 - 20			, ; // Limite inferior
+	                                _oDlg:nClientWidth / 2 - 10				, ; // Limite direito    // _oDlg:nClientWidth / 5 - 5, ;                     // Limite direito
+                                    GD_INSERT + GD_UPDATE + GD_DELETE		, ; // [ nStyle ]
+                                    "U_FrtSelF1 ()"							, ; // [ uLinhaOk ]
+                                    "AllwaysTrue ()"						, ; // [ uTudoOk ]
+                                    NIL										, ; // [cIniCpos]
+                                    NIL										, ; // [ aAlter ]
+                                    NIL										, ; // [ nFreeze ]
+                                    NIL										, ; // [ nMax ]
+                                    NIL										, ; // [ cFieldOk ]
+                                    NIL										, ; // [ uSuperDel ]
+                                    NIL										, ; // [ uDelOk ]
+                                    _oDlg									, ; // [ oWnd ]
+                                    aHeader									, ;
+                                    aCols                                     )
 
 		// Define botoes para a barra de ferramentas
 		_bBotaoOK  = {|| iif (U_FrtSelF1 () .and. U_FrtSelF2 (_oBmpOk, _nTotFret), (_lPressOK := .T., _oDlg:End ()), NIL)}
@@ -268,14 +277,12 @@ static function _AndaLogo (_lPaletiz)
 			_oClsFrtFr := NIL
 		endif
 	endif
-
 return
-
+//
 // --------------------------------------------------------------------------
 // Leitura dos fretes previstos para a transportadora atual.
 static Function _LePrev (_lTodos, _lPaletiz)
 	local _sQuery := ""
-	//local _aRet   := {}
 	local _nFrete := 0
 
 	// Para paletizacoes nao traz fretes previstos. Isso apenas para evitar que o conhecimento de
@@ -320,14 +327,6 @@ static Function _LePrev (_lTodos, _lPaletiz)
 			if _aFretes [_nFrete, 15] $ "BD"
 				_aFretes [_nFrete, 6] = fBuscaCpo ("SA2", 1, xfilial ("SA2") + _aFretes [_nFrete, 4] + _aFretes [_nFrete, 5], "A2_NOME")
 			endif
-	
-			// Se esta rotina estiver sendo chamada a partir da importacao de conhecimentos
-			// de frete e a rotina de importacao tiver especificado o numero da NF original,
-			// jah posso deixar essa nota marcada.
-			// Acho que usarei isto na importacao de XML de CT-e.
-			//if funname () == "IMPCONH" .and. type ("_xNFCFORI") == "C" .and. _aFretes [_nFrete, 2] $ _xNFCFORI
-			//	_aFretes [_nFrete, 1] = _oBmpOk
-			//endif
 		next
 	endif
 
@@ -338,7 +337,7 @@ static Function _LePrev (_lTodos, _lPaletiz)
 		_oLbx:bLDblClick := {|| _aFretes [_oLbx:nAt, 1] := iif (_aFretes [_oLbx:nAt, 1] == _oBmpOk, _oBmpNo, _oBmpOk), _oLbx:Refresh()}
 	endif
 return
-
+//
 // --------------------------------------------------------------------------
 // Valida 'linha OK' da GetDados.
 User Function FrtSelF1 ()
@@ -392,7 +391,7 @@ User Function FrtSelF1 ()
 
 	N := _n
 return _lRet
-
+//
 // --------------------------------------------------------------------------
 // Valida 'tudo OK' da tela
 User Function FrtSelF2 (_oBmpOk, _nTotFret)
