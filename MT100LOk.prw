@@ -77,6 +77,7 @@
 // 13/05/2020 - Robert  - Habilitada novamente validacao de safra, pois passaram notas sem sist.conducao, classificacao, etc. nesta safra.
 // 19/06/2020 - Robert  - Na validacao de safra, quando espaldeira, exigia D1_PRM99 e nao atendia caso especifico de uva bordo em espaldeira.
 // 10/05/2021 - Claudia - Retirada a chamada o programa MATA119. GLPI: 9996
+// 25/08/2021 - Claudia - Incluido validação para a chamada do programa FBTRS006.GLPI: 10802
 //
 // -------------------------------------------------------------------------------------------------------------------------
 User Function MT100LOK()
@@ -211,8 +212,12 @@ static function _ValNFOri ()
 		_sQuery +=    " and D2_ITEM    = '" + GDFieldGet ("D1_ITEMORI") + "'"
 		_aNfOri = aclone (U_Qry2Array (_sQuery))
 		
-		if len (_aNFOri) == 0
-			_lRet = U_MsgNoYes ("NF origem - Nao foi encontrada a nota fiscal original numero '" + GDFieldGet ("D1_NFORI") + "' para o cliente/fornecedor '" + ca100For + "/" + cLoja + "'." + chr (13) + chr (10) + "Verifique preenchimento dos seguintes campos: " + alltrim (RetTitle ("D1_COD")) + ", " + alltrim (RetTitle ("D1_NFORI")) + ", " + alltrim (RetTitle ("D1_SERIORI")) + ", " + alltrim (RetTitle ("D1_ITEMORI")) + chr (13) + chr (10) + chr (13) + chr (10) + "Confirma mesmo assim?")
+		if len (_aNFOri) == 0 
+			If !ISINCALLSTACK("U_FBTRS006")
+				_lRet = U_MsgNoYes ("NF origem - Nao foi encontrada a nota fiscal original numero '" + GDFieldGet ("D1_NFORI") + "' para o cliente/fornecedor '" + ca100For + "/" + cLoja + "'." + chr (13) + chr (10) + "Verifique preenchimento dos seguintes campos: " + alltrim (RetTitle ("D1_COD")) + ", " + alltrim (RetTitle ("D1_NFORI")) + ", " + alltrim (RetTitle ("D1_SERIORI")) + ", " + alltrim (RetTitle ("D1_ITEMORI")) + chr (13) + chr (10) + chr (13) + chr (10) + "Confirma mesmo assim?")
+			else
+				_lRet = .T.
+			EndIf
 		endif
 		
 		if _lRet .and. len (_aNFOri) > 0 .and. GDFieldGet ("D1_VUNIT") != _aNfOri [1, 2]
