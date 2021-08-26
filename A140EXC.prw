@@ -14,21 +14,31 @@
 // 15/05/2018 - Maurício C. Dani - TOTVS RS - Importação XML TOTVS
 // 24/02/2021 - Claudia - Ajustes conforme GLPI: 9481
 // 29/03/2021 - Robert  - Variavel _lRet estava com nome lRet cfe. importador XML da TRS.
+// 25/08/2021 - Robert  - Nova versao de ciencia e manifesto da TRS (GLPI 10822)
 //
 
-#Include 'protheus.ch'
+//#Include 'protheus.ch'
 
 // --------------------------------------------------------------------------
 User Function A140EXC()
-
 	Local _aAreaAnt := U_ML_SRArea ()
-	Local aZone		:= GetArea()
-	Local _lRet 		:= .F.
-	Local lImpXml   := SuperGetMV('VA_XMLIMP', .F., .F.)
-	Private _aRet 	:= {}
-	Private _cTabMAN:= AllTrim(SuperGetMv("009_TABMAN"  ,.F.,"" ))
+//	Local aZone		:= GetArea()
+	Local _lRet 		:= .T.
+//	Local lImpXml   := SuperGetMV('VA_XMLIMP', .F., .F.)
+//	Private _aRet 	:= {}
+//	Private _cTabMAN:= AllTrim(SuperGetMv("009_TABMAN"  ,.F.,"" ))
 
-	If lImpXml // Importador XML TOTVS
+	zzx -> (dbsetorder (4))
+	if zzx -> (dbseek (SF1->F1_CHVNFE, .F.))
+		If reclock ("ZZX", .F.)
+			ZZX->ZZX_STATUS := '3'
+			msunlock ()
+		endif			
+	Endif
+
+//	If lImpXml // Importador XML TOTVS
+//	if SuperGetMV('VA_XMLIMP', .F., .F.)  // Se o importador de XML da TRS estiver ativo
+/* Versao inicial quando fazia download pelo proprio importador
 		_lRet 	:= .F.
 
 		If !SuperGetMV('009_USAMAN', .F., .F.)
@@ -45,19 +55,16 @@ User Function A140EXC()
 
 		_lRet := U_fTelaManif()
 		RestArea(aZone)
+*/
+//	else
+		U_Log2 ('debug', 'Importador XML da TRS habilitado. Chamando rotinas de ciencia e manifesto.')
+		Private _aRet 	:= {}
 
-	else
-		_lRet 	:= .T.
-
-		zzx -> (dbsetorder (4))
-		if zzx -> (dbseek (SF1->F1_CHVNFE, .F.))
-			If reclock ("ZZX", .F.)
-				ZZX->ZZX_STATUS := '3'
-				msunlock ()
-			endif			
-		Endif
-	endif
+		//Realiza ciência
+		U_FBTRS101({SF1->F1_CHVNFE}, 4, '')
+		//Abre tela do manifesto
+		U_FBTRS102(.F.)
+//	endif
 
 	U_ML_SRArea (_aAreaAnt)
-	RestArea(aZone)
 Return _lRet
