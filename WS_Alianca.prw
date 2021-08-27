@@ -69,7 +69,9 @@
 // 11/08/2021 - Robert  - Removidos logs desnecessarios; ajuste tags retorno apontamento 
 //                        producao (GLPI 10633)
 // 20/08/2021 - Cláudia - Alterado o MSExecAuto MATA030 descontinuado para MVC. GLPI: 10617
+// 27/08/2021 - Robert  - Ordem 3 passa a ser ignorada na consulta de orcamentos (GLPI 10849)
 //
+
 // -----------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
 #INCLUDE "PROTHEUS.CH"
@@ -1240,6 +1242,7 @@ Static function _ExecConsOrc()
 	endif
 	If empty(_sErros)
 		_oSQL := ClsSQL():New ()
+		/*
 		if _sModelo == '2019'
 			_oSQL:_sQuery := ""
 			_oSQL:_sQuery += "with C AS ("
@@ -1262,6 +1265,7 @@ Static function _ExecConsOrc()
 			_oSQL:_sQuery +=  " GROUP BY ORDEM, DESC_N1, DESC_N2, CHAVE_ORDENACAO_1, CHAVE_ORDENACAO_2, CONTA, DESCRICAO, FILIAL, CC"
 			_oSQL:_sQuery +=  " ORDER BY CHAVE_ORDENACAO_1, CHAVE_ORDENACAO_2, CONTA"
 		elseif _sModelo == '2020'
+		*/
 			_oSQL:_sQuery += "with C AS ("
 			_oSQL:_sQuery +=  " SELECT ORDEM, DESC_N1, DESC_N2, NIVEL, CONTA, DESCRICAO,"
 			_oSQL:_sQuery +=         " SUM (ORC_ANO)    AS ORC_ANO,"
@@ -1287,13 +1291,14 @@ Static function _ExecConsOrc()
 			_oSQL:_sQuery +=   ",'" + substr (_wDataInicial, 5, 2) + "'"
 			_oSQL:_sQuery +=   ",'" + substr (_wDataFinal, 5, 2) + "'"
 			_oSQL:_sQuery +=   "," + _aPerfNA [1] + "," + _aPerfNA [2] + "," + _aPerfNA [3] + "," + _aPerfNA [4] + "," + _aPerfNA [5] + ")"
+			_oSQL:_sQuery += " WHERE ORDEM != 3"  // Nao queremos mais visualizar esta ordem, mas ela eh usada nos calculos.
 			_oSQL:_sQuery += " GROUP BY ORDEM,DESC_N1,DESC_N2,NIVEL,CONTA,DESCRICAO, DESTACAR, FILTRACC"
 			_oSQL:_sQuery += ")"
 			_oSQL:_sQuery += " SELECT * FROM C"		
 			_oSQL:_sQuery += " ORDER BY ORDEM, DESC_N1, DESC_N2, 999999999999999 - SUM(REA_PER) OVER (PARTITION BY DESC_N1, DESC_N2), CONTA"
-		else
-			_sErros += "Modelo de orcamento '" + _sModelo + "' desconhecido ou sem tratamento no web service."
-		endif
+		//else
+		//	_sErros += "Modelo de orcamento '" + _sModelo + "' desconhecido ou sem tratamento no web service."
+		//endif
 		_oSQL:Log ()
 	endif
 
