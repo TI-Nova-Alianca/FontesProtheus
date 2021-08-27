@@ -13,12 +13,25 @@
 //
 // Historico de alteracoes:
 // 24/02/2021 - Claudia - Ajustes conforme GLPI: 9481
+// 25/08/2021 - Robert  - Nova versao de ciencia e manifesto da TRS (GLPI 10822)
 //
+
 // --------------------------------------------------------------------------
-
-#Include 'Protheus.ch'
-
 User Function MT103FIM()
+	local _aAreaAnt := U_ML_SRArea ()
+
+//	if SuperGetMV('VA_XMLIMP', .F., .F.)  // Se o importador de XML da TRS estiver ativo
+		U_Log2 ('debug', 'Importador XML da TRS habilitado. Chamando rotinas de ciencia e manifesto.')
+		//Realiza ciência
+		U_FBTRS101({SF1->F1_CHVNFE}, 4, '')
+		//Abre tela do manifesto
+		U_FBTRS102(.T.)
+//	endif
+
+	U_ML_SRArea (_aAreaAnt)
+Return
+
+/* Versao inicial quando fazia download pelo proprio importador
 	//Local lRet:= .T.
 	Local aArea         := GetArea()
     Local lImpXml       := SuperGetMV('VA_XMLIMP', .F., .F.)
@@ -77,3 +90,4 @@ Static Function fConfManif()
 	EndIf
 
 Return
+*/
