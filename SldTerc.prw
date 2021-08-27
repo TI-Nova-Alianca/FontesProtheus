@@ -15,24 +15,25 @@
 // 05/03/2020 - Claudia - Ajuste de fonte conforme solicitação de versão 12.1.25 - Pergunte em Loop 
 // 05/02/2021 - Claudia - Alteração do campo descrição, conforme view VA_VSALDOS_TERCEIROS. GLPI: 9297
 // 08/03/2021 - Cláudia - GLPI: 9427 - Preço unitário VLR_UNIT
+// 27/08/2021 - Robert  - Inserido aviso de que a tela vai ser descontinuada (GLPI 9297).
 //
+
 // --------------------------------------------------------------------------------------------------
 User Function SldTerc ()
 	local _aAreaAnt   := U_ML_SRArea ()
 	local _aAmbAnt    := U_SalvaAmb ()
+	local _dDeadLine  := stod ('20210930')
 	private cPerg     := "SLDTERC"
-	private _sArqLog  := U_NomeLog ()
-	u_logId ()
-	u_logIni ()
 
-	_ValidPerg ()
-	Pergunte (cPerg, .T.)
-	
-	Processa ({|| _Tela ()})
+	u_help ("ATENCAO: A partir de " + dtoc (_dDeadLine) + " esta consulta vai estar disponivel somente no sistema NaWeb.")
+	if date () < _dDeadLine
+		_ValidPerg ()
+		Pergunte (cPerg, .T.)
+		Processa ({|| _Tela ()})
+	endif
 
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
 Return
 //
 // --------------------------------------------------------------------------
