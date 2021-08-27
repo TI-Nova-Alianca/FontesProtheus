@@ -47,9 +47,11 @@
 // 12/06/2015 - Catia   - Tirado parametro de considerar devolucoes - vai considerar SEMPRE
 // 12/06/2015 - Catia   - alterada a forma de identificar o que eh cupom fiscal
 // 19/06/2015 - Catia   - fechamento com os relatorios do faturamento - analise comercial e analise de saidas
-//                      - passa a considerar sempre os CUPONS FISCAIS,VALBRUT nao estava considerando ST, tirada coluna VENDA LIQUIDA
+//                      - passa a considerar sempre os CUPONS FISCAIS,VALBRUT nao estava considerando ST, 
+//                        tirada coluna VENDA LIQUIDA
 //	                    - VALMERC quando era uma devolução nao estava negativando, tirada coluna DESCONTO_NF
-// 09/07/2015 - Robert  - Tratamento para remover ';' dos campos de mensagem e observacoes, pois causa confusao ao exportar para CSV.
+// 09/07/2015 - Robert  - Tratamento para remover ';' dos campos de mensagem e observacoes, pois causa 
+//                        confusao ao exportar para CSV.
 // 03/08/2015 - Robert  - Incluida coluna VEND1
 // 07/06/2016 - Robert  - Campo PRODPAI em desuso. Passa a usar apenas o campo PRODUTO da view VA_VFAT.
 // 25/07/2016 - Catia   - incluida a opcao de gerar o motivo de devolução MOTDEV
@@ -57,7 +59,8 @@
 // 23/12/2016 - Júlio   - Alterada a leitura da tabela SX5_88 para a tabela ZX5_39.  
 // 23/12/2016 - Júlio   - Alterada a leitura da tabela SX5_Z7 para a tabela ZX5_40.  
 // 06/02/2017 - Robert  - Ajuste descricao colunas LINHA e MARCA.
-// 27/02/2017 - Catia   - Desabilitado da seleção o campo C5_PEDCLI, na maioria dos registros esta em branco, normalmente não eh usado 
+// 27/02/2017 - Catia   - Desabilitado da seleção o campo C5_PEDCLI, na maioria dos registros esta em branco, 
+//                        normalmente não eh usado 
 //						  e estava dando erro pq nem sempre faz o join no SC5 e SC6
 // 23/10/2017 - Robert  - Testa se alguns campos serao usados na query, do contrario nem inclui os joins das respectivas tabelas.
 // 02/03/2018 - Catia   - Incluida coluna codigo do supervidor - A3_VAGEREN
@@ -84,8 +87,9 @@
 // 02/07/2021 - Claudia - Incluido valor do funrural. GLPI: 10177
 // 27/07/2021 - Robert  - Incluida coluna NCM (B1_POSIPI) do produto (GLPI 10591).
 //                      - Passa a somar a coluna D2_VALFRE no "Valor bruto" e "Valor total NF" (GLPI 10579).
+// 27/08/2021 - Cláudia - Incluida as colunas Id pagar-me e NSU pagarme e link cielo. GLPI 10830
 //
-
+//
 // ---------------------------------------------------------------------------------------------------------------
 User Function VA_XLS5 (_lAutomat)
 	Local cCadastro  := "Exportacao geral de dados de faturamento para planilha"
@@ -292,6 +296,8 @@ Static Function _Opcoes (_sTipo)
 		aadd (_aOpcoes, {.F., "Desc. CNAE ",              "CC3.CC3_DESC AS CNAE_DESC"})
 		aadd (_aOpcoes, {.F., "Vlr. Funrural ",           "IIF(SAFRA.VLR_FUNRURAL > 0, SAFRA.VLR_FUNRURAL, 0) AS VLR_FUNRURAL"})
 		aadd (_aOpcoes, {.F., "NCM",                      "SB1.B1_POSIPI"})
+		aadd (_aOpcoes, {.F., "Id Pagar-me",              "C5_VAIDT"})
+		aadd (_aOpcoes, {.F., "NSU Pagar-me/Link Cielo",  "C5_VANSU"})
 	endif
 	// Pre-seleciona opcoes cfe. conteudo anterior.
 	for _nOpcao = 1 to len (_aOpcoes)
@@ -442,7 +448,7 @@ Static Function _Gera()
     _sQuery +=    " and V.TIPONFSAID      != 'D'"  // Devolucao de compra
    	if mv_par23 == 1  // Apenas fatur.e bonif 
    	   	_sQuery +=" AND (V.F4_MARGEM = '2' AND V.ORIGEM='SD1' AND V.TIPONFENTR='D' OR (V.ORIGEM='SD2' AND V.F4_MARGEM IN ('1','3') ) )"
-  	 endif      
+  	endif      
  	_sQuery +=    " and V.EMPRESA         between '" + mv_par01 + "' and '" + mv_par02 + "'"
 	_sQuery +=    " and SA1.A1_REGIAO     between '" + mv_par03 + "' and '" + mv_par04 + "'"
 	_sQuery +=    " and V.EST             between '" + mv_par05 + "' and '" + mv_par06 + "'"
@@ -495,7 +501,6 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {21, "Vendedor 2 Final             ?", "C", 06, 0,  "",   "SA3  ", {},             ""})
 	aadd (_aRegsPerg, {22, "Uso interno da rotina         ", "C", 60, 0,  "",   "     ", {},             ""})
 	aadd (_aRegsPerg, {23, "Apenas fatur.e bonif          ", "N", 01, 0,  "",   "     ", {"Sim", "Nao"}, ""})
-	//aadd (_aRegsPerg, {24, "Considera Cupons Fiscais      ", "S", 01, 0,  "",   "      ", {"Sim", "Nao"}, ""})
 
 	aadd (_aDefaults, {"20", ''})
 	aadd (_aDefaults, {"21", 'zzzzzz'})
