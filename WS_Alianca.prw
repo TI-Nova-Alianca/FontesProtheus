@@ -70,6 +70,7 @@
 //                        producao (GLPI 10633)
 // 20/08/2021 - Cláudia - Alterado o MSExecAuto MATA030 descontinuado para MVC. GLPI: 10617
 // 27/08/2021 - Robert  - Ordem 3 passa a ser ignorada na consulta de orcamentos (GLPI 10849)
+// 30/08/2021 - Robert  - Tag ReaMes alterada para RealizadoNoMes na consulta de orcamentos (GLPI 8893)
 //
 
 // -----------------------------------------------------------------------------------------------
@@ -1291,7 +1292,7 @@ Static function _ExecConsOrc()
 			_oSQL:_sQuery +=   ",'" + substr (_wDataInicial, 5, 2) + "'"
 			_oSQL:_sQuery +=   ",'" + substr (_wDataFinal, 5, 2) + "'"
 			_oSQL:_sQuery +=   "," + _aPerfNA [1] + "," + _aPerfNA [2] + "," + _aPerfNA [3] + "," + _aPerfNA [4] + "," + _aPerfNA [5] + ")"
-			_oSQL:_sQuery += " WHERE ORDEM != 3"  // Nao queremos mais visualizar esta ordem, mas ela eh usada nos calculos.
+			//_oSQL:_sQuery += " WHERE ORDEM != 3"  // Nao queremos mais visualizar esta ordem, mas ela eh usada nos calculos.
 			_oSQL:_sQuery += " GROUP BY ORDEM,DESC_N1,DESC_N2,NIVEL,CONTA,DESCRICAO, DESTACAR, FILTRACC"
 			_oSQL:_sQuery += ")"
 			_oSQL:_sQuery += " SELECT * FROM C"		
@@ -1314,6 +1315,7 @@ Static function _ExecConsOrc()
 
 		Do While ! (_sAliasQ) -> (EOF ()) .and. empty (_sErros)
 			_XmlRet += 		"<OrcamentoItem>"
+			/*
 			if _sModelo == '2019'
 				_XmlRet += 			"<Ordem>" 		 + IIf(Empty(alltrim((_sAliasQ) -> ordem))			,'-' 		, alltrim((_sAliasQ) -> ordem))			+ "</Ordem>"
 				_XmlRet += 			"<DescN1>"		 + IIf(Empty(alltrim((_sAliasQ) -> desc_n1))		,'-' 		, alltrim((_sAliasQ) -> desc_n1))		+ "</DescN1>"
@@ -1327,6 +1329,7 @@ Static function _ExecConsOrc()
 				_XmlRet += 			"<Realizado>"	 + IIf(Empty(alltrim(str((_sAliasQ) -> rea)))		,'0' 		, alltrim(str((_sAliasQ) -> rea)))		+ "</Realizado>"
 				_XmlRet += 			"<RealizadoAnt>" + IIf(Empty(alltrim(str((_sAliasQ) -> rea_ant)))   ,'0' 		, alltrim(str((_sAliasQ) -> rea_ant)))	+ "</RealizadoAnt>"
 			elseif _sModelo == '2020'
+			*/
 				_XmlRet += 			"<Ordem>" 			 + IIf(Empty(alltrim((_sAliasQ) -> ordem))				,'-' 	, alltrim((_sAliasQ) -> ordem))				+ "</Ordem>"
 				_XmlRet += 			"<DescN1>"			 + IIf(Empty(alltrim((_sAliasQ) -> desc_n1))			,'-' 	, alltrim((_sAliasQ) -> desc_n1))			+ "</DescN1>"
 				_XmlRet += 			"<DescN2>"			 + IIf(Empty(alltrim((_sAliasQ) -> desc_n2))			,'-' 	, alltrim((_sAliasQ) -> desc_n2))			+ "</DescN2>"
@@ -1338,9 +1341,9 @@ Static function _ExecConsOrc()
 				_XmlRet += 			"<Orcado>"			 + alltrim (Transform (                                                 (_sAliasQ) -> orc_per,     "999999999999.99")) + "</Orcado>"
 				_XmlRet += 			"<OrcadoFP>"		 +                                                                      (_sAliasQ) -> orc_per_fp                       + "</OrcadoFP>"
 				_XmlRet += 			"<OrcadoAV>"		 + alltrim (Transform (iif (abs ((_sAliasQ) -> orc_per_AV) > 999999, 0, (_sAliasQ) -> orc_per_AV), "999999999999.99")) + "</OrcadoAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
-				_XmlRet += 			"<ReaMes>"			 + alltrim (Transform (                                                 (_sAliasQ) -> rea_mes,     "999999999999.99")) + "</ReaMes>"
-				_XmlRet += 			"<ReaMesFP>"		 +                                                                      (_sAliasQ) -> rea_mes_fp                       + "</ReaMesFP>"
-				_XmlRet += 			"<ReaMesAV>"		 + alltrim (Transform (iif (abs ((_sAliasQ) -> rea_mes_AV) > 999999, 0, (_sAliasQ) -> rea_mes_AV), "999999999999.99")) + "</ReaMesAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
+				_XmlRet += 			"<RealizadoNoMes>"	 + alltrim (Transform (                                                 (_sAliasQ) -> rea_mes,     "999999999999.99")) + "</RealizadoNoMes>"
+				_XmlRet += 			"<RealizadoNoMesFP>" +                                                                      (_sAliasQ) -> rea_mes_fp                       + "</RealizadoNoMesFP>"
+				_XmlRet += 			"<RealizadoNoMesAV>" + alltrim (Transform (iif (abs ((_sAliasQ) -> rea_mes_AV) > 999999, 0, (_sAliasQ) -> rea_mes_AV), "999999999999.99")) + "</RealizadoNoMesAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
 				_XmlRet += 			"<Realizado>"		 + alltrim (Transform (                                                 (_sAliasQ) -> rea_per,     "999999999999.99")) + "</Realizado>"
 				_XmlRet += 			"<RealizadoFP>"		 +                                                                      (_sAliasQ) -> rea_per_fp                       + "</RealizadoFP>"
 				_XmlRet += 			"<RealizadoAV>"		 + alltrim (Transform (iif (abs ((_sAliasQ) -> rea_per_AV) > 999999, 0, (_sAliasQ) -> rea_per_AV), "999999999999.99")) + "</RealizadoAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
@@ -1349,9 +1352,9 @@ Static function _ExecConsOrc()
 				_XmlRet += 			"<RealizadoAntAV>"	 + alltrim (Transform (iif (abs ((_sAliasQ) -> rea_ant_AV) > 999999, 0, (_sAliasQ) -> rea_ant_AV), "999999999999.99")) + "</RealizadoAntAV>"  // Trunca para um valor fixo em caso de valores de percentuais exorbitantes.
 				_XmlRet += 			"<Destacar>"		 + (_sAliasQ) -> destacar + "</Destacar>"
 				_XmlRet += 			"<FilCC>"			 + alltrim ((_sAliasQ) -> FiltraCC) + "</FilCC>"
-			else
-				_sErros += "Modelo de orcamento '" + _sModelo + "' desconhecido ou sem tratamento na montagem do XML"
-			endif
+			//else
+			//	_sErros += "Modelo de orcamento '" + _sModelo + "' desconhecido ou sem tratamento na montagem do XML"
+			//endif
 			_XmlRet += 		"</OrcamentoItem>"
 
 			(_sAliasQ) -> (dbskip ())
