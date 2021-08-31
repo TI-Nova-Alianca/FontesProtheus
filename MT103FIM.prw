@@ -14,19 +14,20 @@
 // Historico de alteracoes:
 // 24/02/2021 - Claudia - Ajustes conforme GLPI: 9481
 // 25/08/2021 - Robert  - Nova versao de ciencia e manifesto da TRS (GLPI 10822)
+// 30/08/2021 - Robert  - Passa a fazer manifesto somente se o usuario confirmou a tela.
 //
 
 // --------------------------------------------------------------------------
 User Function MT103FIM()
 	local _aAreaAnt := U_ML_SRArea ()
+	Local _lConf    := PARAMIXB[2]==1
 
-//	if SuperGetMV('VA_XMLIMP', .F., .F.)  // Se o importador de XML da TRS estiver ativo
-		U_Log2 ('debug', 'Importador XML da TRS habilitado. Chamando rotinas de ciencia e manifesto.')
+	if _lConf  // Usuario confirmou a tela
 		//Realiza ciência
 		U_FBTRS101({SF1->F1_CHVNFE}, 4, '')
 		//Abre tela do manifesto
 		U_FBTRS102(.T.)
-//	endif
+	endif
 
 	U_ML_SRArea (_aAreaAnt)
 Return
