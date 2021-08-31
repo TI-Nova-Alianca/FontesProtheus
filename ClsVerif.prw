@@ -58,6 +58,7 @@
 // 09/07/2021 - Robert  - Consulta 68 tinha a data fixa de B9_DATA=31/08/2019 e tambem B2_FILIAL=01 (GLPI 10457).
 // 23/08/2021 - Robert  - Criada verificacao 81.
 // 30/08/2021 - Robert  - Ajustadas ou desabilitadas verificacoes que usavam as tabelas VA_USR*
+// 31/08/2021 - Robert  - Criado atributo UltVerif para ajudar em loops que executam todas as validacoes (GLPI 10876)
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -95,6 +96,7 @@ CLASS ClsVerif
 	data Setores     // String com os setores da empresa que teriam interesse na verificacao.
 	data Sugestao    // Sugestao de correcao a ser mostrada para o usuario.
 	data UltMsg      // Ultima mensagem de erro
+	data UltVerif    // Numero da ultima verificacao. Deve ser atualizado sempre que for criada uma nova verificacao.
 	data ViaBatch    // Indica se esta verificacao deve ser executada via batch ou apenas manualmente. 
 
 	// Declaracao dos Metodos da Classe
@@ -133,8 +135,11 @@ METHOD New (_nQual) Class ClsVerif
 	_nQual = iif (valtype (_nQual) == 'N', _nQual, 0)
 	::Numero  = _nQual
 	::GeraQry (.T.)
+	::UltVerif = 81  // Atualizar sempre que criar uma nova verificacao.
 
 Return ::Self
+
+
 // --------------------------------------------------------------------------------------------------
 // Converte o resultado para formato HTML.
 METHOD ConvHTM (_nMaxLin) Class ClsVerif
@@ -189,10 +194,10 @@ METHOD Executa () Class ClsVerif
 		::aHeader := aclone (_oSQL:aHeader)
 		CursorArrow ()
 	endif
-
 	U_ML_SRArea (_aAreaAnt)
-
 return _lContinua
+
+
 // --------------------------------------------------------------------------
 // Gera a query para a consulta.
 METHOD GeraQry (_lDefault) Class ClsVerif
@@ -3010,11 +3015,22 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 			::Setores    = 'INF'
 			::Descricao  = 'Usuarios: Usuario nao deveria ter ACESSOS ligados a ele. Os ACESSOS deveriam ser dados aos grupos.'
+/*
 			::Query := "SELECT ID_USR, NOME, ORIGEM_ACESSO"
 			::Query +=  " FROM VA_VUSR_ACESSOS_USUARIO"
 			::Query += " WHERE REGRA_GRUPO = 'S'"
 			::Query +=   " AND UPPER (ORIGEM_ACESSO) LIKE '%ACESSOS DO USUARIO%'"
 			::Query += " ORDER BY ID_USR"
+*/
+			::Query := "SELECT A.USR_ID, U.USR_CODIGO, A.USR_CODACESSO"
+			::Query +=  " FROM SYS_USR_ACCESS A, SYS_USR U"
+			::Query += " WHERE A.D_E_L_E_T_ = ''"
+			::Query +=   " AND U.D_E_L_E_T_ = ''"
+			::Query +=   " AND U.USR_ID = A.USR_ID"
+			::Query +=   " AND U.USR_MSBLQL != '1'"
+			::Query +=   " AND A.USR_ACESSO = 'T'"
+			::Query +=   " AND A.USR_ID NOT IN ('000000')"
+			::Query += " ORDER BY A.USR_ID"
 
 		case ::Numero == 75
 			::Ativa     = .F.  // Temos apenas 1 grupo generico por enquanto. Robert, 30/08/2021
