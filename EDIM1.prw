@@ -55,6 +55,8 @@
 // 14/08/2020 - Cláudia - Ajuste de Api em loop, conforme solicitação da versao 25 protheus. GLPI: 7339
 // 10/11/2020 - Robert  - Passa a alimentar o campo C6_VAPOER para gerar TES via gatilhos do TES inteligente (GLPI 8785).
 // 11/08/2021 - Claudia - Validação de nome do cliente, conforme GLPI: 10710
+// 01/09/2021 - Robert - Criado tratamento para campo C5_INDPRES: sempre 5=venda com entrega fora do estabelecimento (GLPI 10085)
+//
 
 // --------------------------------------------------------------------------
 User Function EDIM1 (_lAutomat, _sArq, _nRegZZS)
@@ -388,6 +390,7 @@ Static Function _GeraPed (_sSeqPed)
 		aadd (_aAutoSC5, {"C5_TIPO",    "N", NIL})
 		aadd (_aAutoSC5, {"C5_VAUSER",  "EDI", NIL})
 		aadd (_aAutoSC5, {"C5_MENNOTA", "ENTREGAR ATE " + dtoc (stod (left (_cabec -> DtHrFimPE, 8))), NIL})
+		aadd (_aAutoSC5, {"C5_INDPRES", '5', NIL})  // 5=venda com entrega fora do estabelecimento (GLPI 10085)
 
 		// Ordena campos cfe. dicionario de dados.
 		_aAutoSC5 = aclone (U_OrdAuto (_aAutoSC5))
