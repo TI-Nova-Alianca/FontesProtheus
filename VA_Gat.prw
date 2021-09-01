@@ -125,6 +125,7 @@
 // 02/02/2021 - Robert  - Mudanca de u_log para u_log2.
 // 08/04/2021 - Robert  - Desabilitado gatilho do C6_PRODUTO para C6_TES por que migramos para TES inteligente (GLPI 9784)
 // 23/04/2021 - Claudia - Ajustes para versão R25.
+// 31/08/2021 - Claudia - Desabilitada validacao do 'custo para transferencia' quando chamado a partir do MATA310. GLPI: 8077
 //
 // ----------------------------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
@@ -299,13 +300,15 @@ user function VA_Gat (_sParCpo, _sParSeq)
 		case (_sCampo == "M->C6_TES" .and. _sCDomin == "C6_PRCVEN") .or. (_sCampo == "M->C6_OPER" .and. _sCDomin == "C6_PRCVEN")
 			_xRet = GDFieldGet ("C6_PRCVEN")  // Se nao encontrar nada, deixa o valor original pronto para retorno.
 
-			// Para a filial 16 precisamos usar tabela de precos (legislacao...) GLPI 7208
-			if m->c5_cliente != '025023'
+			if ! IsInCallStack ("MATA310")  // Tela padrao transf. entre filiais
+				// Para a filial 16 precisamos usar tabela de precos (legislacao...) GLPI 7208
+				if m->c5_cliente != '025023'
 
-				// Se for TES de remessa para deposito, busca o custo do produto.
-				if (_sCampo == "M->C6_TES" .and. m->c6_tes $ GetMv ("AL_TESPCUS")) ;
-					.or. (_sCampo == "M->C6_OPER" .and. GDFieldGet ("C6_TES") $ GetMv ("AL_TESPCUS"))
-					_xRet = U_PrcCust (GDFieldGet ("C6_PRODUTO"), GDFieldGet ("C6_LOCAL"))
+					// Se for TES de remessa para deposito, busca o custo do produto.
+					if (_sCampo == "M->C6_TES" .and. m->c6_tes $ GetMv ("AL_TESPCUS")) ;
+						.or. (_sCampo == "M->C6_OPER" .and. GDFieldGet ("C6_TES") $ GetMv ("AL_TESPCUS"))
+						_xRet = U_PrcCust (GDFieldGet ("C6_PRODUTO"), GDFieldGet ("C6_LOCAL"))
+					endif
 				endif
 			endif
 
