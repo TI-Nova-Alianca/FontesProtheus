@@ -47,6 +47,7 @@
 // 14/02/2021 - Robert - Incluidas chamadas da funcao U_PerfMon para testes de monitoramento de performance (GLPI 9409)
 // 30/06/2021 - Robert - Criado teste "Para informar motivo de bonificacao, o pedido deve ser do tipo bonificado."
 // 09/07/2021 - Sandra - Criado tratamento para cliente 10005 - GLPI 10456.
+// 01/09/2021 - Robert - Criado tratamento para campo C5_INDPRES: sempre 5=venda com entrega fora do estabelecimento (GLPI 10085)
 //
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -309,6 +310,7 @@ static function _LePed ()
 				else
 					aadd (_aAutoSC5, {"C5_TRANSP",  '', NIL})
 				endif
+				aadd (_aAutoSC5, {"C5_INDPRES",  '5', NIL})  // 5=venda com entrega fora do estabelecimento (GLPI 10085)
 
 				// Ordena campos cfe. dicionario de dados.
 				_aAutoSC5 = aclone (U_OrdAuto (_aAutoSC5))
