@@ -16,7 +16,7 @@
 #include "rwmake.ch"  
 #include "protheus.ch"
 
-User Function _Mata310
+User Function _Mata310()
     // Chamada do Processo de transferencia
     MATA310()
 
