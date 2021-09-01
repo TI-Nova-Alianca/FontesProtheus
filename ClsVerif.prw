@@ -57,6 +57,8 @@
 // 02/07/2021 - Robert  - Consultas 77 e 79 deixam de usar a view VA_VUSR_PROTHEUS_X_METADADOS.
 // 09/07/2021 - Robert  - Consulta 68 tinha a data fixa de B9_DATA=31/08/2019 e tambem B2_FILIAL=01 (GLPI 10457).
 // 23/08/2021 - Robert  - Criada verificacao 81.
+// 30/08/2021 - Robert  - Ajustadas ou desabilitadas verificacoes que usavam as tabelas VA_USR*
+// 31/08/2021 - Robert  - Criado atributo UltVerif para ajudar em loops que executam todas as validacoes (GLPI 10876)
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -94,6 +96,7 @@ CLASS ClsVerif
 	data Setores     // String com os setores da empresa que teriam interesse na verificacao.
 	data Sugestao    // Sugestao de correcao a ser mostrada para o usuario.
 	data UltMsg      // Ultima mensagem de erro
+	data UltVerif    // Numero da ultima verificacao. Deve ser atualizado sempre que for criada uma nova verificacao.
 	data ViaBatch    // Indica se esta verificacao deve ser executada via batch ou apenas manualmente. 
 
 	// Declaracao dos Metodos da Classe
@@ -132,8 +135,11 @@ METHOD New (_nQual) Class ClsVerif
 	_nQual = iif (valtype (_nQual) == 'N', _nQual, 0)
 	::Numero  = _nQual
 	::GeraQry (.T.)
+	::UltVerif = 81  // Atualizar sempre que criar uma nova verificacao.
 
 Return ::Self
+
+
 // --------------------------------------------------------------------------------------------------
 // Converte o resultado para formato HTML.
 METHOD ConvHTM (_nMaxLin) Class ClsVerif
@@ -188,10 +194,10 @@ METHOD Executa () Class ClsVerif
 		::aHeader := aclone (_oSQL:aHeader)
 		CursorArrow ()
 	endif
-
 	U_ML_SRArea (_aAreaAnt)
-
 return _lContinua
+
+
 // --------------------------------------------------------------------------
 // Gera a query para a consulta.
 METHOD GeraQry (_lDefault) Class ClsVerif
@@ -2934,31 +2940,54 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		case ::Numero == 70
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 			::Setores    = 'INF'
-			::Descricao  = 'Usuarios: Diretorio impressao errado, ou ambiente nao estah como cliente'
+			::Descricao  = 'Usuarios: Diretorio impressao errado, ambiente != cliente ou destino != arquivo'
+			/*
 			::Query := " SELECT TIPO_GRUPO, ID_GRUPO, RTRIM (DESCRICAO) AS DESCR_GRUPO,"
 			::Query +=        " DIRETORIO_IMPRESSAO, TIPO_IMPRESSAO, AMBIENTE_IMPRESSAO"
 			::Query +=  " FROM VA_USR_GRUPOS"
 			::Query +=  " WHERE TIPO_GRUPO = 'CFG'"
 			::Query +=    " AND (DIRETORIO_IMPRESSAO != 'C:\TEMP\SPOOL_PROTHEUS\' OR AMBIENTE_IMPRESSAO != 'CLIENTE')"
 			::Query +=  " ORDER BY ID_GRUPO"
+			*/
+			::Query := " SELECT P.USR_ID, U.USR_CODIGO, P.USR_DIRIMP"
+			::Query +=       ", P.USR_TIPOIMP + '-' + CASE P.USR_TIPOIMP WHEN '1' THEN 'EM DISCO' WHEN '2' THEN 'VIA WINDOWS' WHEN '3' THEN 'DIRETO NA PORTA' ELSE '' END AS TIPO_IMPRESSAO"
+			::Query +=       ", P.USR_ENVIMP + '-' + CASE P.USR_ENVIMP WHEN '1' THEN 'SERVIDOR' WHEN '2' THEN 'CLIENTE' ELSE '' END AS AMBIENTE_IMPRESSAO"
+			::Query +=   " FROM SYS_USR_PRINTER P, SYS_USR U"
+			::Query +=  " WHERE P.D_E_L_E_T_ = ''"
+			::Query +=    " AND U.D_E_L_E_T_ = ''"
+			::Query +=    " AND U.USR_ID = P.USR_ID"
+			::Query +=    " AND U.USR_MSBLQL != '1'"
+			::Query +=    " AND (UPPER (P.USR_DIRIMP) != 'C:\TEMP\SPOOL_PROTHEUS\' OR P.USR_ENVIMP != '2' OR P.USR_TIPOIMP != '1')"
+			::Query +=  " ORDER BY P.USR_ID"
 
 		case ::Numero == 71
-			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
-			::Setores    = 'INF'
-			::Descricao  = 'Grupos: Grupo deve fornecer apenas acesso a modulos e nao a funcionalidades'
-			::Query := "SELECT TIPO_ACESSO, G.ID_GRUPO, RTRIM (G.DESCRICAO) AS DESCR_GRUPO, ACESSO"
-			::Query +=  " FROM VA_USR_ACESSOS_POR_GRUPO AG"
-			::Query +=      " JOIN VA_USR_GRUPOS G"
-			::Query +=        " ON (G.ID_GRUPO = AG.ID_GRUPO"
-			::Query +=        " AND G.TIPO_GRUPO = AG.TIPO_ACESSO)"
-			::Query += " WHERE AG.TIPO_ACESSO = 'CFG'"
-			::Query +=   " AND G.GRUPO LIKE 'Modulos%'"
-			::Query += " ORDER BY G.ID_GRUPO"
+			::Ativa     = .F.  // Grupos agora representam funcoes (das pessoas) e nao mais modulos. Robert, 30/08/2021
+			//::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+			//::Setores    = 'INF'
+			//::Descricao  = 'Grupos: Grupo deve fornecer apenas acesso a modulos e nao a funcionalidades'
+			//::Query := "SELECT TIPO_ACESSO, G.ID_GRUPO, RTRIM (G.DESCRICAO) AS DESCR_GRUPO, ACESSO"
+			//::Query +=  " FROM VA_USR_ACESSOS_POR_GRUPO AG"
+			//::Query +=      " JOIN VA_USR_GRUPOS G"
+			//::Query +=        " ON (G.ID_GRUPO = AG.ID_GRUPO"
+			//::Query +=        " AND G.TIPO_GRUPO = AG.TIPO_ACESSO)"
+			//::Query += " WHERE AG.TIPO_ACESSO = 'CFG'"
+			//::Query +=   " AND G.GRUPO LIKE 'Modulos%'"
+			//::Query += " ORDER BY G.ID_GRUPO"
 
 		case ::Numero == 72
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 			::Setores    = 'INF'
 			::Descricao  = 'Grupos: Nenhum grupo deveria ter este acesso'
+			::Query += " SELECT G.GR__NOME, GA.GR__CODACESSO, GA.GR__DESCACESSO"
+			::Query +=   " FROM SYS_GRP_ACCESS GA, SYS_GRP_GROUP G"
+			::Query +=  " WHERE GA.D_E_L_E_T_ = ''"
+			::Query +=    " AND G.D_E_L_E_T_ = ''"
+			::Query +=    " AND G.GR__ID = GA.GR__ID"
+			::Query +=    " AND G.GR__MSBLQL != '1'"
+			::Query +=    " AND GR__CODACESSO IN ('121', '169', '190', '024', '164')"
+			::Query +=    " AND GR__ACESSO = 'T'"
+			::Query += " ORDER BY GA.GR__ID, GA.GR__CODACESSO"
+			/*
 			::Query := "SELECT AG.TIPO_ACESSO, AG.ID_GRUPO, rtrim (G.DESCRICAO) AS DESCR_GRUPO, AG.ACESSO, RTRIM (A.DESCRICAO) AS DESCR_ACESSO"
 			::Query +=  " FROM VA_USR_ACESSOS_POR_GRUPO AG"
 			::Query +=     " JOIN VA_USR_ACESSOS A"
@@ -2969,6 +2998,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=       " AND G.ID_GRUPO = AG.ID_GRUPO)"
 			::Query +=  " WHERE AG.TIPO_ACESSO = 'CFG' AND AG.ACESSO IN ('121', '169', '190', '024', '164')"
 			::Query +=  " ORDER BY AG.ID_GRUPO, AG.ACESSO"
+			*/
 
 		case ::Numero == 73
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
@@ -2985,26 +3015,38 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 			::Setores    = 'INF'
 			::Descricao  = 'Usuarios: Usuario nao deveria ter ACESSOS ligados a ele. Os ACESSOS deveriam ser dados aos grupos.'
+/*
 			::Query := "SELECT ID_USR, NOME, ORIGEM_ACESSO"
 			::Query +=  " FROM VA_VUSR_ACESSOS_USUARIO"
 			::Query += " WHERE REGRA_GRUPO = 'S'"
 			::Query +=   " AND UPPER (ORIGEM_ACESSO) LIKE '%ACESSOS DO USUARIO%'"
 			::Query += " ORDER BY ID_USR"
+*/
+			::Query := "SELECT A.USR_ID, U.USR_CODIGO, A.USR_CODACESSO"
+			::Query +=  " FROM SYS_USR_ACCESS A, SYS_USR U"
+			::Query += " WHERE A.D_E_L_E_T_ = ''"
+			::Query +=   " AND U.D_E_L_E_T_ = ''"
+			::Query +=   " AND U.USR_ID = A.USR_ID"
+			::Query +=   " AND U.USR_MSBLQL != '1'"
+			::Query +=   " AND A.USR_ACESSO = 'T'"
+			::Query +=   " AND A.USR_ID NOT IN ('000000')"
+			::Query += " ORDER BY A.USR_ID"
 
 		case ::Numero == 75
-			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
-			::Setores    = 'INF'
-			::Descricao  = 'Grupos: Todos os grupos genericos deveriam ter estes acessos.'
-			::Query := "SELECT G.TIPO_GRUPO, G.ID_GRUPO, G.GRUPO, G.DESCRICAO"
-			::Query +=  " FROM VA_USR_GRUPOS G"
-			::Query += " WHERE G.TIPO_GRUPO = 'CFG'"
-			::Query +=   " AND G.ID_GRUPO = '000102'"  // Por enquanto este eh o unico grupo geral, ao qual todos pertencem.
-			::Query +=   " AND NOT EXISTS (SELECT *"
-			::Query +=                     " FROM VA_USR_ACESSOS_POR_GRUPO AG"
-			::Query +=                    " WHERE AG.TIPO_ACESSO = 'CFG'"
-			::Query +=                      " AND AG.ID_GRUPO = G.ID_GRUPO"
-			::Query +=                      " AND AG.ACESSO in ('108', '150'))"  // Por enquanto estes sao os unicos acessos que entendo que todos precisariam ter.
-			::Query += " ORDER BY G.ID_GRUPO"
+			::Ativa     = .F.  // Temos apenas 1 grupo generico por enquanto. Robert, 30/08/2021
+			// ::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+			// ::Setores    = 'INF'
+			// ::Descricao  = 'Grupos: Todos os grupos genericos deveriam ter estes acessos.'
+			// ::Query := "SELECT G.TIPO_GRUPO, G.ID_GRUPO, G.GRUPO, G.DESCRICAO"
+			// ::Query +=  " FROM VA_USR_GRUPOS G"
+			// ::Query += " WHERE G.TIPO_GRUPO = 'CFG'"
+			// ::Query +=   " AND G.ID_GRUPO = '000102'"  // Por enquanto este eh o unico grupo geral, ao qual todos pertencem.
+			// ::Query +=   " AND NOT EXISTS (SELECT *"
+			// ::Query +=                     " FROM VA_USR_ACESSOS_POR_GRUPO AG"
+			// ::Query +=                    " WHERE AG.TIPO_ACESSO = 'CFG'"
+			// ::Query +=                      " AND AG.ID_GRUPO = G.ID_GRUPO"
+			// ::Query +=                      " AND AG.ACESSO in ('108', '150'))"  // Por enquanto estes sao os unicos acessos que entendo que todos precisariam ter.
+			// ::Query += " ORDER BY G.ID_GRUPO"
 
 		case ::Numero == 76
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 

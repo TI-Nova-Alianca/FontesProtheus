@@ -18,6 +18,7 @@
 // 23/01/2018 - Catia  - Geração do titulo de indenizacao de comissoes
 // 08/04/2019 - Catia  - include TbiConn.ch 
 // 19/02/2021 - Robert - Inclusao de chamadas da funcao U_PerfMon() para metricas de performance (GLPI 9409).
+// 31/08/2021 - Robert - Passa a gerar titulos de indenizacao (comissoes) tambem para notas tipo SPED.
 //
 
 // ------------------------------------------------------------------------------------
@@ -41,7 +42,8 @@ User Function MT100Agr ()
 		endif
 		
 		// Se for nota de compra normal - verifica e atualiza ativo fixo
-		if sf1 -> f1_tipo = "N" .and. sf1 -> f1_especie != 'SPED' .and. sf1 -> f1_especie != 'CTE' .and. sf1 -> f1_especie != 'CTR'
+//		if sf1 -> f1_tipo = "N" .and. sf1 -> f1_especie != 'SPED' .and. sf1 -> f1_especie != 'CTE' .and. sf1 -> f1_especie != 'CTR'
+		if sf1 -> f1_tipo = "N" .and. sf1 -> f1_especie != 'CTE' .and. sf1 -> f1_especie != 'CTR'
 			_Geraind()
 		endif
 

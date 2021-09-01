@@ -8,6 +8,21 @@
 // https://tdn.engpro.totvs.com.br/display/tec/LogMsg
 // https://tdn.engpro.totvs.com.br/display/tec/Log+Management
 // ParamBox()  http://www.blacktdn.com.br/2012/05/para-quem-precisar-desenvolver-uma.html
+/*
+DECLARE @TIPO_OBJETO VARCHAR (MAX) = 'FUNCTION';
+declare @NOME_OBJETO VARCHAR (MAX) = 'VA_FCONS_ORCAMENTO_525';
+IF NOT EXISTS(SELECT * FROM sysobjects
+              WHERE name = @NOME_OBJETO -- 'VA_FCONS_ORCAMENTO_525_2'
+   --           AND type = 'TF'  -- Tabled-Values Function
+              AND uid = '1')
+BEGIN
+    DECLARE @CMD_CRIA_VAZIO NVARCHAR(MAX) = 'CREATE ' + @TIPO_OBJETO + ' ' + @NOME_OBJETO + '() RETURNS VARCHAR (20) AS BEGIN RETURN ''AINDA NAO IMPLEMENTADA'' END'
+    PRINT @CMD_CRIA_VAZIO
+    EXEC sp_executesql @CMD_CRIA_VAZIO
+END
+GO
+*/
+
 
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Processamento
@@ -87,7 +102,6 @@ static function _AndaLogo ()
 	incproc ()
 	u_help ('Nada definido.')
 return
-
 /*
 	// Testes batches em geral
 //	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
@@ -108,8 +122,8 @@ return
 //	u_batsafr ('9')  // Transfere (das filiais para a matriz) os titulos de nao associados.
 // 	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 // 	u_batmercp ()
-//	_sArqLog := 'U_BatVerif_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batVerif ()
+	_sArqLog := 'U_BatVerif_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+	u_batVerif ()
 //	_sArqLog := 'U_BatEDIM_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batedim ("I")
 //	_sArqLog := 'U_BatMercN_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
@@ -134,7 +148,7 @@ return
 	// _oVerif:SetParam ('02', '09189201001  ')
 	// _oVerif:SetParam ('03', '')
 	// _oVerif:SetParam ('04', 'z')
-	_oVerif := ClsVerif():New (81)
+	_oVerif := ClsVerif():New (72)
 	if _oVerif:Executa ()
 		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
 		u_log2 ('debug', _oVerif:Result)
