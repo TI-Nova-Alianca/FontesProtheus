@@ -30,6 +30,6 @@ User Function M310CABEC
 	   	_sTransp = U_Get ("Informe a transportadora:", "C", 6, "", "SA4", sc5 -> c5_transp, .F., '.t.')
 	   	aadd(aCabec,{'C5_TRANSP', _sTransp,Nil})
 
-		aadd(aCabec,{'C5_INDPRES', '5',Nil})
+		aadd(aCabec,{'C5_INDPRES', '1',Nil})
 	endif
 Return(aCabec)
