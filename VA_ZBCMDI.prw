@@ -2,13 +2,21 @@
 // Autor......: Cláudia Lionço
 // Data.......: 27/12/2019 
 // Descricao..: Relatório de materias no planejamento de produção - Por dia
-// GLPI.......: 7260
-// ------------------------------------------------------------------------------------------------
 //
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Relatorio
+// #Descricao         #Relatório de materias no planejamento de produção - Por dia
+// #PalavasChave      #materiais #planejamento_de_produção #por_dia
+// #TabelasPrincipais #ZBC
+// #Modulos   		  #PCP 
+//
+// Historico de alteracoes:
+//
+// ------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
 
-user function VA_ZBCMDI()
+User Function VA_ZBCMDI()
 	Private oReport
 	Private cPerg   := "VA_ZBCMDI"
 	
@@ -19,6 +27,7 @@ user function VA_ZBCMDI()
 	oReport:PrintDialog()
 return
 //
+// ------------------------------------------------------------------------------------------------
 Static Function ReportDef()
 	Local oReport  := Nil
 
@@ -30,6 +39,7 @@ Static Function ReportDef()
 	
 Return(oReport)
 //
+// ------------------------------------------------------------------------------------------------
 Static Function PrintReport(oReport)
 	Local oSection1 := Nil
 	Local cQuery    := ""	
@@ -43,7 +53,7 @@ Static Function PrintReport(oReport)
 	Local _lContinua:= .T.
 	Private sDesc
 	Private sTipo
-	//
+	
 	// Converte datas do mes selecionado
 	sMes   := PADL(mv_par01,2,'0')
 	sAno   := mv_par02
@@ -51,9 +61,7 @@ Static Function PrintReport(oReport)
 	dDtIni := STOD(sDtIni)
 	dDtFim := lastDate(dDtIni)
 	sDtFim := DTOS(dDtFim)
-	//
-	//u_help("dtini:"+sDtIni+" Dtfin:"+sDtFim)
-	//
+
 	_aSC := {}
 	_aPC := {}
 	_aTC := {}
@@ -69,7 +77,7 @@ Static Function PrintReport(oReport)
 	Else
 		nPar09 := mv_par09
 	EndIf
-	//
+	
 	If _lContinua == .T.
 		oSection1 := TRSection():New(oReport,,{}, , , , , ,.T.,.F.,.F.) 
 		
@@ -113,7 +121,6 @@ Static Function PrintReport(oReport)
 		TRCell():New(oSection1,"COLUNA8", 	"" ,"SC"			,	,15,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 		TRCell():New(oSection1,"COLUNA9", 	"" ,"Pedido"		,	,15,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 		TRCell():New(oSection1,"COLUNA10", 	"" ,"Terceiros"		,	,15,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
-
 
 		cQuery := " SELECT"
 		cQuery += " 	COMPONENTE"
@@ -159,8 +166,9 @@ Static Function PrintReport(oReport)
 		oSection1:SetHeaderSection(.T.)	
 	
 		While TRA->(!Eof())
-			_BuscaDescProduto (TRA -> COMPONENTE, @sDesc, @sTipo)
-	
+			//_BuscaDescProduto (TRA -> COMPONENTE, @sDesc, @sTipo)
+			sDesc := _BuscaDescProduto (TRA -> COMPONENTE)
+
 			If alltrim(sTipo) == 'MO'
 				nAlx02 := 0
 				nAlx07 := 0
@@ -312,11 +320,12 @@ Static Function PrintReport(oReport)
 				oSection4:PrintLine()
 			Next
 			oSection4:Finish()
-		EndIf // If mv_par07 == 2
+		EndIf 
 		
 		_ImpFiltros()
 	EndIf
 Return
+//
 // ----------------------------------------------------------------------------------
 // Imprime os filtros utilizados
 Static Function _ImpFiltros()
@@ -324,7 +333,7 @@ Static Function _ImpFiltros()
 	oReport:PrintText("",,50)
 	oReport:FatLine() 
 	oReport:PrintText("",,50)
-	//
+	
 	// Filtros
 	sTexto := "Período de " + DTOC(dDtIni)+ " até " + DTOC(dDtFim) 
 	oReport:PrintText(sTexto,,50)
@@ -333,14 +342,14 @@ Static Function _ImpFiltros()
 	sTexto := "Nível da estrutura " + alltrim(mv_par08)
 	oReport:PrintText(sTexto,,50)
 Return
+//
 // ----------------------------------------------------------------------------------
 // Busca descrição do componente
 Static Function _BuscaDescProduto(sComp)
-	//Local sDesPro := ""
 	Local cQuery5 := ""
 	
 	cQuery5 += " SELECT "
-	cQuery5 += " 	B1_DESC AS DESC_PRO"
+	cQuery5 += " 	 B1_DESC AS DESC_PRO"
 	cQuery5 += " 	,B1_TIPO AS TIPO"
 	cQuery5 += " FROM " + RetSqlName("SB1")
 	cQuery5 += " WHERE B1_COD = '" + sComp + "'"
@@ -354,9 +363,10 @@ Static Function _BuscaDescProduto(sComp)
 		dbskip()
 	Enddo
 	TRF->(DbCloseArea())
-Return 
+Return sDesc
 //
-//---------------------- PERGUNTAS
+// ----------------------------------------------------------------------------------
+// Perguntas
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT           TIPO TAM DEC VALID F3     Opcoes                      				Help
@@ -369,6 +379,6 @@ Static Function _ValidPerg ()
     aadd (_aRegsPerg, {07, "Tipo            	", "N", 1, 0,  "",  "   ", {"Sintético","Analítico"}				,""})
     aadd (_aRegsPerg, {08, "Nivel estrutura de  ", "C", 1, 0,  "",  "   ", {}										,""})
     aadd (_aRegsPerg, {09, "Nivel estrutura ate ", "C", 1, 0,  "",  "   ", {}										,""})
-   // aadd (_aRegsPerg, {10, "Imprime mensal  	", "N", 1, 0,  "",  "   ", {"Não","Sim"}							,""})
+
      U_ValPerg (cPerg, _aRegsPerg)
 Return

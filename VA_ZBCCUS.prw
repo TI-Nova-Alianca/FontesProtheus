@@ -2,12 +2,21 @@
 // Autor......: Cláudia Lionço
 // Data.......: 30/12/2019 
 // Descricao..: Relatório de custo de materias do planejamento.
-// ------------------------------------------------------------------------------------------------
 //
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Relatorio
+// #Descricao         #Relatório de custo de materias do planejamento.
+// #PalavasChave      #materiais #planejamento_de_produção 
+// #TabelasPrincipais #ZBC
+// #Modulos   		  #PCP 
+//
+// Historico de alteracoes:
+//
+// ----------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
 
-user function VA_ZBCCUS()
+User Function VA_ZBCCUS()
 	Private oReport
 	Private cPerg   := "VA_ZBCCUS"
 	
@@ -18,6 +27,7 @@ user function VA_ZBCCUS()
 	oReport:PrintDialog()
 return
 //
+// ----------------------------------------------------------------------------------
 Static Function ReportDef()
 	Local oReport  := Nil
 
@@ -28,20 +38,11 @@ Static Function ReportDef()
 	oReport:ShowHeader()
 	
 Return(oReport)
-
+//
+// ----------------------------------------------------------------------------------
 Static Function PrintReport(oReport)
 	Local oSection1 := Nil
-	//Local oSection2 := Nil
-	//Local oSection3 := Nil
-	//Local oSection4 := Nil
 	Local cQuery    := ""	
-	//Local nAlx02 	:= 0
-	//Local nAlx07 	:= 0
-	//Local nAlx08 	:= 0
-	//Local nAlx90 	:= 0
-	//Local x			:= 0
-	//Local y			:= 0
-	//Local z		    := 0
 	Local _lContinua:= .T.
 	Private sDesc
 	Private sTipo
@@ -78,7 +79,7 @@ Static Function PrintReport(oReport)
 		TRCell():New(oSection1,"COLUNA2", 	"" ,"Descrição"		,   ,30,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 		If mv_par10 == 1 // total
 			TRCell():New(oSection1,"COLUNA3", 	"" ,"Custo Total"		,	,15,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-		Else // mensal
+		Else 			 // mensal
 			TRCell():New(oSection1,"COL01", 	"" ,"Jan"		,	,15,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 			TRCell():New(oSection1,"COL02", 	"" ,"Fev"		,	,15,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 			TRCell():New(oSection1,"COL03", 	"" ,"Mar"		,	,15,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
@@ -153,7 +154,8 @@ Static Function PrintReport(oReport)
 		oSection1:SetHeaderSection(.T.)	
 	
 		While TRA->(!Eof())
-			_BuscaDescProduto (TRA -> COMPONENTE, @sDesc, @sTipo)
+			//_BuscaDescProduto (TRA -> COMPONENTE, @sDesc, @sTipo)
+			sDesc := _BuscaDescProduto (TRA -> COMPONENTE)
 			
 			oSection1:Cell("COLUNA1")	:SetBlock   ({|| TRA->COMPONENTE })
 			oSection1:Cell("COLUNA2")	:SetBlock   ({|| sDesc 	 		 })
@@ -185,6 +187,7 @@ Static Function PrintReport(oReport)
 		_ImpFiltros()
 	EndIf
 Return
+//
 // ----------------------------------------------------------------------------------
 // Imprime os filtros utilizados
 Static Function _ImpFiltros()
@@ -192,7 +195,7 @@ Static Function _ImpFiltros()
 	oReport:PrintText("",,50)
 	oReport:FatLine() 
 	oReport:PrintText("",,50)
-	//
+
 	// Filtros
 	sTexto := "Período de " + DTOC(mv_par01)+ " até " + DTOC(mv_par02) 
 	oReport:PrintText(sTexto,,50)
@@ -201,10 +204,10 @@ Static Function _ImpFiltros()
 	sTexto := "Nível da estrutura " + alltrim(mv_par08)
 	oReport:PrintText(sTexto,,50)
 Return
+//
 // ----------------------------------------------------------------------------------
 // Busca descrição do componente
 Static Function _BuscaDescProduto(sComp)
-	//Local sDesPro := ""
 	Local cQuery5 := ""
 	
 	cQuery5 += " SELECT "
@@ -222,9 +225,10 @@ Static Function _BuscaDescProduto(sComp)
 		dbskip()
 	Enddo
 	TRF->(DbCloseArea())
-Return 
+Return sDesc
 //
-//---------------------- PERGUNTAS
+// ----------------------------------------------------------------------------------
+// Perguntas
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT           TIPO TAM DEC VALID F3     Opcoes                      				Help

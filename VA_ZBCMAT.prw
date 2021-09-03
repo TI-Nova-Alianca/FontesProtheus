@@ -2,8 +2,17 @@
 // Autor......: Cláudia Lionço
 // Data.......: 18/12/2019 
 // Descricao..: Relatório de materias no planejamento de produção.
-// ------------------------------------------------------------------------------------------------
 //
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Relatorio
+// #Descricao         #Relatório de materias no planejamento de produção.
+// #PalavasChave      #materiais #planejamento_de_produção 
+// #TabelasPrincipais #ZBC
+// #Modulos   		  #PCP 
+//
+// Historico de alteracoes:
+//
+// ------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
 
@@ -17,11 +26,10 @@ User Function VA_ZBCMAT()
 	oReport := ReportDef()
 	oReport:PrintDialog()
 Return
-
+//
+// ------------------------------------------------------------------------------------------------
 Static Function ReportDef()
 	Local oReport  := Nil
-	//Local oFunction
-	//Local oBreak1
 	
 	oReport := TReport():New("VA_ZBCMAT","Relação de materiais do planejamento",cPerg,{|oReport| PrintReport(oReport)},"Relação de materiais do planejamento")
 	
@@ -30,7 +38,8 @@ Static Function ReportDef()
 	oReport:ShowHeader()
 	
 Return(oReport)
-
+//
+// ------------------------------------------------------------------------------------------------
 Static Function PrintReport(oReport)
 	Local oSection1 := Nil
 	Local oSection2 := Nil
@@ -310,6 +319,7 @@ Static Function PrintReport(oReport)
 		_ImpFiltros()
 	EndIf
 Return
+//
 // ----------------------------------------------------------------------------------
 // Imprime os filtros utilizados
 Static Function _ImpFiltros()
@@ -326,6 +336,7 @@ Static Function _ImpFiltros()
 	sTexto := "Nível da estrutura " + alltrim(mv_par08)
 	oReport:PrintText(sTexto,,50)
 Return
+//
 // ----------------------------------------------------------------------------------
 // Busca o saldo nos almoxarifados correspondentes
 User Function ZBCBSaldo(sComp, sAlx)
@@ -356,6 +367,7 @@ User Function ZBCBSaldo(sComp, sAlx)
 	TRB->(DbCloseArea())
 	
 Return nQtdAlx
+//
 // ----------------------------------------------------------------------------------
 // Busca o saldo das solicitações de compras
 User Function ZBCBSC(sComp)
@@ -390,6 +402,7 @@ User Function ZBCBSC(sComp)
 	Enddo
 	TRC->(DbCloseArea())
 Return nQtdSC
+//
 // ----------------------------------------------------------------------------------
 // Busca o saldo dos pedidos de compras
 User Function ZBCBPC(sComp)
@@ -423,6 +436,7 @@ User Function ZBCBPC(sComp)
 	Enddo
 	TRD->(DbCloseArea())
 Return nQtdPC
+//
 // ----------------------------------------------------------------------------------
 // Busca saldo de terceiros
 User Function ZBCBTer(sComp)
@@ -452,10 +466,10 @@ User Function ZBCBTer(sComp)
 	Enddo
 	TRE->(DbCloseArea())
 Return nQtdTerc
+//
 // ----------------------------------------------------------------------------------
 // Busca descrição do componente
 Static Function _BuscaDescProduto(sComp,sDesc,sTipo)
-	//Local sDesPro := ""
 	Local cQuery5 := ""
 	
 	cQuery5 += " SELECT "
@@ -475,7 +489,8 @@ Static Function _BuscaDescProduto(sComp,sDesc,sTipo)
 	TRF->(DbCloseArea())
 Return 
 //
-//---------------------- PERGUNTAS
+// ------------------------------------------------------------------------------------------------
+// Perguntas
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT           TIPO TAM DEC VALID F3     Opcoes                      				Help

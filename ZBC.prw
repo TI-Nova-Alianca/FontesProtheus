@@ -3,12 +3,20 @@
 // Data.......: 15/10/2019
 // Descricao..: Tela de manutenção de eventos produtivos
 //
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Atualizacao
+// #Descricao         #Tela de manutenção de eventos produtivos
+// #PalavasChave      #manutencao_eventos_produtivos #eventos_produtivos 
+// #TabelasPrincipais #ZBC
+// #Modulos   		  #PCP 
+//
 // Historico de alteracoes:
 // 05/11/2019 - Claudia - Desenvolvido relatório de eventos produtivos
 //						  Incluida validação de acesso de usuário e controle de semáforo
 // 12/12/2019 - Claudia - Ajustes conforme GLPI 7187
 // 30/12/2019 - Claudia - Incluido relatório de materiais diário no menu. GLPI: 7260
 // 13/01/2020 - Claudia - Inclusão da função <ArqTrb> (exigencia release 12.1.25 do Protheus)
+//
 // -------------------------------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
@@ -39,6 +47,7 @@ User Function ZBC()
 		EndIf
 	EndIf
 Return
+//
 // --------------------------------------------------------------------------
 // Liberação de rotina
 static function _LibRotina ()
@@ -49,6 +58,7 @@ static function _LibRotina ()
 		_lRet = .F.
 	endif
 return _lRet
+//
 // --------------------------------------------------------------------------
 // Planejamento de produção
 User Function VA_PLJPRD(_sZBCFilial, _sZBCCod, _sZBCAno)
@@ -84,11 +94,13 @@ User Function VA_PLJPRD(_sZBCFilial, _sZBCCod, _sZBCAno)
 			
 	mBrowse(,,,,"SHC",aCabTela,,,,,,,,,,,,,_sPreFiltr)
 Return
+//
 // --------------------------------------------------------------------------
 // Incluir AxCadastro
 User Function PLJI()
 	AxInclui("SHC",,,,,,"U_PLJITOk()")
 Return
+//
 // --------------------------------------------------------------------------
 // Rotina Tudo OK tabela SHC
 User Function PLJITOk()
@@ -117,6 +129,7 @@ User Function PLJITOk()
 		EndIf	
 	EndIf
 Return _lRet
+//
 // --------------------------------------------------------------------------
 // Valida 'Tudo OK'
 User Function ValidaZBC()
@@ -128,11 +141,6 @@ User Function ValidaZBC()
 		msgalert ("Código deve ser preenchido!")
 		_lRet = .F.
 	EndIf
-	// Testa código com 3 dígito
-//	If _lRet .and. (len(M -> ZBC_COD)!= 3)
-//		msgalert ("Código deve possuir 3 dígitos!")
-//		_lRet = .F.
-//	EndIf
 	// Testa descrição preenchida
 	If _lRet .and. empty(M -> ZBC_DESC)
 		msgalert ("Informar a descrição do evento! ")
@@ -149,6 +157,7 @@ User Function ValidaZBC()
 	
 	U_ML_SRArea (_aAreaAnt)
 Return _lRet
+//
 // --------------------------------------------------------------------------
 // Excluir registros da ZBC e filhos: SHC - ZBD
 User Function ZBCEXC()
@@ -205,12 +214,12 @@ User Function ZBCEXC()
 
 	U_ML_SRArea (_aAreaAnt)
 Return _lRet
+//
 // --------------------------------------------------------------------------
 // Visualizacao, Alteracao, Exclusao
 User Function PLJA (_nOpcao, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr)
 	local _lContinua  := .T.
 	local _aCampos    := {}
-	//local _sFiltro    := ""
 	local _n		  := 1
 	local aButtons 	  := {}
 	private _sModo    := ""
@@ -330,6 +339,7 @@ User Function PLJA (_nOpcao, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr)
 	SHC -> (dbgotop ())
 	u_logFim ()
 Return
+//
 // --------------------------------------------------------------------------
 // Adiciona campos no grid
 User Function PLMCpos()
@@ -353,6 +363,7 @@ User Function PLMCpos()
 	aadd (_aCampos, "ZZZ_RECNO") 	// Adiciona sempre o campo RECNO para posterior uso em gravacoes.
 
 Return _aCampos   
+//
 // --------------------------------------------------------------------------
 // Valida 'Linha OK' da getdados
 User Function PLMLOK ()
@@ -390,6 +401,7 @@ User Function PLMLOK ()
 		EndIf
 	EndIf
 Return _lRet
+//
 // --------------------------------------------------------------------------
 // Busca a sequencia dos itens. (Usado no campo HC_ITEM)
 User Function BuscaSequencial(_sFilial,_sDocumento,_sAnoEve)
@@ -411,13 +423,13 @@ User Function BuscaSequencial(_sFilial,_sDocumento,_sAnoEve)
 	_sItem := SOMA1(_sIt) 
 	  
 Return _sItem 
+//
 // --------------------------------------------------------------------------
 // Seleciona Opcionais
 User Function ZBCSelOpc(_opc)   
 	Local _stru		:= {}
 	Local aCpoBro 	:= {}
 	Local _cQuery 	:= ""
-	//Local _aResult	:= {}
 	Local _sRet     := ""
 	Local _sProd    := ""
 	Local _sRev     := ""
@@ -428,7 +440,6 @@ User Function ZBCSelOpc(_opc)
 	lOCAL _nQnt		:= 0
 	Local _aArqTrb  := {}
 	Local _aAreaAnt := U_ML_SRArea ()
-	//Local aCores 	:= {}
 	Private lInverte:= .F.
 	Private cMark   := GetMark()   
 	Private oMark
@@ -461,8 +472,6 @@ User Function ZBCSelOpc(_opc)
 	AADD(_stru,{"ITEDESC" 	,"C"	,30		,0		})
 	AADD(_stru,{"COMP" 		,"C"	,15		,0		})
 
-	//	cArq := Criatrab(_stru,.T.)
-	//	DbUseArea(.t.,,carq,"TTRB")//Alimenta o arquivo de apoio com os registros do cadastro de clientes (SA1)
 	U_ArqTrb ("Cria", "TTRB", _stru, {}, @_aArqTrb)	
 
 	_cQuery := " SELECT DISTINCT "
@@ -528,18 +537,16 @@ User Function ZBCSelOpc(_opc)
 	
 	u_arqtrb ("FechaTodos",,,, @_aArqTrb) 
 	
-	//IIf(File(cArq + GetDBExtension()),FErase(cArq  + GetDBExtension()) ,Nil)
-	
 	// Verifica gravação de grupo iguais
 	_VerifZBD(_sFilial, _sEvento, _sProd, _sData,_sAno)
 	
 	U_ML_SRArea (_aAreaAnt)
 Return _sRet
+//
 // --------------------------------------------------------------------------
 // Funcao executada ao Marcar/Desmarcar um registro.   
 Static Function _MarcaOpc()
 	Local _aAreaAnt := U_ML_SRArea ()
-	//Local _AntItem  := ""
 	
 	RecLock("TTRB",.F.)
 
@@ -554,14 +561,13 @@ Static Function _MarcaOpc()
 	
 	U_ML_SRArea (_aAreaAnt)
 Return
+//
 // --------------------------------------------------------------------------
 // Funcao executada ao Marcar/Desmarcar um registro   
 Static Function _GrvOpc(_sFilial, _sEvento, _sProd, _sData, _nQnt, _sItem, _sAno)
 	Local _aAreaAnt  := U_ML_SRArea ()
 	Local _opcionais := ""
 	Local _cQuery    := ""
-	//Local _x         := 1
-	//Local _Dif       := 0 
 
 	dbSelectArea("TTRB")
 	dbGotop()
@@ -609,7 +615,8 @@ Static Function _GrvOpc(_sFilial, _sEvento, _sProd, _sData, _nQnt, _sItem, _sAno
 	U_ML_SRArea (_aAreaAnt)
 Return _opcionais
 //
-//
+// --------------------------------------------------------------------------
+// Verifica ZBD
 Static Function _VerifZBD(_sFilial, _sEvento, _sProd, _sData,_sAno)
 	Local _cQuery  := ""
 	Local _cQuery1 := ""
@@ -644,6 +651,7 @@ Static Function _VerifZBD(_sFilial, _sEvento, _sProd, _sData,_sAno)
 	    Endif 
 	EndIf
 Return
+//
 // --------------------------------------------------------------------------
 // Filtro da revisão    
 User Function ZBCSG5()
@@ -653,7 +661,8 @@ User Function ZBCSG5()
 	Else
 		_sProd := GDFieldGet("HC_PRODUTO")   
 	EndIf            
-Return(_sProd)      
+Return(_sProd)  
+//    
 // --------------------------------------------------------------------------
 // Filtro da grupo opcionais    
 User Function ZBCSGA()
@@ -702,18 +711,20 @@ User Function ZBCSGA()
 			EndIf
 		Next
 	EndIf
-	
 Return (_sFiltro)
+//
 // --------------------------------------------------------------------------
 // Lista de opcionais  
 User Function ZBDOpc()
 
 	AxCadastro("ZBD", "Opcionais", ".T.", "", , , , , , , , , , ) 
 Return
+//
 // -----------------------------------------------------------------------------
 // Deleta registros de opcionais no grid
 Static Function _DelZBDGrid(_sFilial,_sEvento,_sProd,_sData,_sAno)
 	Local lRet := .T.
+
 	// deleta registros já gravados do evento/produto e data selecionado
 	_cQuery := " UPDATE " + RetSqlName("ZBD") 
 	_cQuery += " SET D_E_L_E_T_ = '*' "
@@ -729,6 +740,7 @@ Static Function _DelZBDGrid(_sFilial,_sEvento,_sProd,_sData,_sAno)
 		Return
     Endif 
 Return lRet
+//
 // --------------------------------------------------------------------------
 // Relatório de planejamento   
 User Function VA_RPLJPRD()
@@ -741,7 +753,8 @@ User Function VA_RPLJPRD()
 	oReport := ReportDef()
 	oReport:PrintDialog()
 Return
- 
+//
+// --------------------------------------------------------------------------
 Static Function ReportDef()
 	Local oReport  := Nil
 	Local oSection1:= Nil
@@ -769,17 +782,16 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA9", 	"" ,"Opcionais"			,    ,30,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA10", 	"" ,"Obs"				,    ,30,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 Return(oReport)
-
+//
+// --------------------------------------------------------------------------
 Static Function PrintReport(oReport)
 	Local oSection1  := oReport:Section(1)
 	Local cQuery     := ""	
 	Local cQuery1    := ""
 	Local cQuery2    := ""
 	Local aZBC       := {}
-	//Local aOpc		 := {}
 	Local cTituloRel := ""
 	Local x			 := 0
-	//Local y			 := 0
 	
 		If mv_par09 == 1
 			nHandle := FCreate("c:\temp\VA_RPLJPRD.CSV")
@@ -864,9 +876,6 @@ Static Function PrintReport(oReport)
 						vColuna10 := TRA->OBS 				
 			
 					Else
-						//aOpc := StrTokArr( TRA->OPC , ";")
-						
-						//If Len(aOpc) > 1 // se tem opcionais
 						If !empty(TRA->GRP)
 														 
 							cQuery2 := " SELECT"
@@ -966,8 +975,7 @@ Static Function PrintReport(oReport)
 							vColuna10 := TRA->OBS
 						EndIf					
 					EndIf
-					
-					//If Len(aOpc)= 0
+
 					If empty(TRA->GRP)
 						oSection1:Cell("COLUNA0")	:SetBlock   ({|| vColuna0	})
 						oSection1:Cell("COLUNA1")	:SetBlock   ({|| vColuna1	})
@@ -1004,11 +1012,11 @@ Static Function PrintReport(oReport)
 			FClose(nHandle)  
 		EndIf  
 Return
+//
 //-------------------------------------------------
 // Busca a descrição do dia da semana
 Static Function _BuscaDiaSemana(_cDt)
 	Local cDescDt := ""
-	//Local cDt     := 0
 	
 	nDt := DOW(STOD(_cDt))
 	
@@ -1030,6 +1038,7 @@ Static Function _BuscaDiaSemana(_cDt)
 	EndCase
 	
 Return cDescDt
+//
 //-------------------------------------------------
 // Busca a qnt. em litros
 Static Function _BuscaQTDLitros (_cProd, _cRev)
@@ -1104,7 +1113,9 @@ Static Function _BuscaQTDLitros (_cProd, _cRev)
 	
 	TRB->(DbCloseArea())
 Return _qtdLt
-//---------------------- PERGUNTAS
+//
+// --------------------------------------------------------------------------
+// Perguntas
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT                TIPO TAM DEC VALID F3     Opcoes                      				Help
