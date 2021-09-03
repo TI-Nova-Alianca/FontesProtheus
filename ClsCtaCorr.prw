@@ -457,7 +457,7 @@ METHOD Desassoc () Class ClsCtaCorr
 						_oParc:Serie      = zx5 -> zx5_10Pref
 						_oParc:MesRef     = strzero(month(_oParc:DtMovto),2)+strzero(year(_oParc:DtMovto),4)
 						_oParc:Histor     = "RESG.CTA.CAP." + cvaltochar (_nParc) + "/" + cvaltochar (len (_oAUtil:_aArray)) + " " + alltrim (_oAssoc:Nome)
-						_oParc:Valor      = _oAUtil:_aArray [_nParc, 2]
+						_oParc:Valor      = _oAUtil:_aArray [_nParc, 2]	
 						_oParc:Obs        = _sJustif
 						_oParc:Parcela    = cvaltochar (_nParc)
 						if _oParc:PodeIncl ()
@@ -603,6 +603,10 @@ METHOD Exclui () Class ClsCtaCorr
 
 		// Gera uma lista de registros relacionados em outras tabelas.
 		_aRegRelac = aclone (::RegRelac ())
+
+		// A principio pode ter SE2 e SE5. Ordena de forma decrescente para tentar limpar antes a tabela SE5.
+		_aRegRelac = asort (_aRegRelac,,, {|_x, _y| _x [1] > _y [1]})
+
 		U_Log2 ('debug', _aRegRelac)
 		begin transaction
 		for _nRegRelac = 1 to len (_aRegRelac)
@@ -1973,26 +1977,27 @@ METHOD RegRelac () Class ClsCtaCorr
 			aadd (_aRRelac, {"SE2", se2 -> (recno ()), se2 -> e2_tipo})
 			se2 -> (dbskip ())
 		enddo
-		U_Log2 ('debug', 'leitura 1 do SE2:')
-		U_Log2 ('debug', _aRRelac)
+		//U_Log2 ('debug', 'leitura 1 do SE2:')
+		//U_Log2 ('debug', _aRRelac)
 
 		// Em tempos antigos, a chave nao era completa (nao tinha o campo ZI_PARCELA) entao era usado o campo E2_VACHVEX.
 		// Vou pesquisar por ele tambem para contemplar todas as situacoes.
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "SELECT 'SE2', R_E_C_N_O_ E2_TIPO"
+		_oSQL:_sQuery += "SELECT 'SE2', R_E_C_N_O_, E2_TIPO"
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE2") + " SE2"
 		_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND SE2.E2_FILIAL  = '" + xfilial ("SE2") + "'"
-		_oSQL:_sQuery +=   " AND SE2.E2_VACHVEX = '" + ChaveExt () + "'"
+		_oSQL:_sQuery +=   " AND SE2.E2_VACHVEX = '" + ::ChaveExt () + "'"
+		_oSQL:Log ()
 		_aRegAux = aclone (_oSQL:Qry2Array (.F., .F.))
 		for _nRegAux = 1 to len (_aRegAux)
 			if ascan (_aRRelac, {|_aVal| _aVal [1] == 'SE2' .and. _aVal [2] == _aRegAux [_nRegAux, 2]}) == 0
-				aadd (_aRRelac, aclone (_aRegAux [_nRegAux, 1]))
+				aadd (_aRRelac, aclone (_aRegAux [_nRegAux]))
 			endif
 		next
-		U_Log2 ('debug', 'leitura 2 do SE2:')
-		U_Log2 ('debug', _aRRelac)
+		//U_Log2 ('debug', 'leitura 2 do SE2:')
+		//U_Log2 ('debug', _aRRelac)
 	endif
 
 	if ::OQueGera () $ 'DP+SE5_R/NDF+DP_Forn'
@@ -2018,19 +2023,22 @@ METHOD RegRelac () Class ClsCtaCorr
 */
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "SELECT 'SE5', R_E_C_N_O_ E5_TIPO"
+		_oSQL:_sQuery += "SELECT 'SE5', R_E_C_N_O_, E5_TIPO"
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE5") + " SE5"
 		_oSQL:_sQuery += " WHERE SE5.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND SE5.E5_FILIAL  = '" + xfilial ("SE5") + "'"
-		_oSQL:_sQuery +=   " AND SE5.E5_VACHVEX = '" + ChaveExt () + "'"
+		_oSQL:_sQuery +=   " AND SE5.E5_VACHVEX = '" + ::ChaveExt () + "'"
+		//_oSQL:Log ()
 		_aRegAux = aclone (_oSQL:Qry2Array (.F., .F.))
+		//U_Log2 ('debug', _aRegAux)
 		for _nRegAux = 1 to len (_aRegAux)
+			//U_Log2 ('debug', _aRegAux [_nRegAux])
 			if ascan (_aRRelac, {|_aVal| _aVal [1] == 'SE5' .and. _aVal [2] == _aRegAux [_nRegAux, 2]}) == 0
-				aadd (_aRRelac, aclone (_aRegAux [_nRegAux, 1]))
+				aadd (_aRRelac, aclone (_aRegAux [_nRegAux]))
 			endif
 		next
-		U_Log2 ('debug', 'leitura 2 do SE5:')
-		U_Log2 ('debug', _aRRelac)
+		//U_Log2 ('debug', 'leitura 2 do SE5:')
+		//U_Log2 ('debug', _aRRelac)
 	endif
 	U_ML_SRArea (_aAreaAnt)
 return _aRRelac
