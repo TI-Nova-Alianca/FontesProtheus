@@ -1679,7 +1679,7 @@ If cTipo == "1"
 							SE1.E1_FILIAL = %Exp:cFilTit% AND
 							SE1.E1_PREFIXO = %Exp:cPrfTit% AND 
 							SE1.E1_NUM = %Exp:cNumDupl% AND 
-							((SE1.E1_TIPO = %Exp:MVNOTAFIS%) OR (SE1.E1_TIPO = 'DP ' ) OR (SE1.E1_TIPO = 'CC ' ) OR (SE1.E1_TIPO = 'CD ' ) OR
+							((SE1.E1_TIPO = %Exp:MVNOTAFIS%) OR (SE1.E1_TIPO = 'DP ' ) OR
 							 ((SE1.E1_ORIGEM IN ('LOJA701','FATA701','LOJA010')) AND SE1.E1_TIPO IN (%Exp:cWhere%))) AND
 							SE1.%NotDel%
 							ORDER BY %Order:SE1%
@@ -1865,7 +1865,7 @@ If cTipo == "1"
 								SELECT D2_FILIAL,D2_SERIE,D2_DOC,D2_CLIENTE,D2_LOJA,D2_COD,D2_TES,D2_NFORI,D2_SERIORI,D2_ITEMORI,D2_TIPO,D2_ITEM,D2_CF,
 								D2_QUANT,D2_TOTAL,D2_DESCON,D2_VALFRE,D2_SEGURO,D2_PEDIDO,D2_ITEMPV,D2_DESPESA,D2_VALBRUT,D2_VALISS,D2_PRUNIT,
 								D2_CLASFIS,D2_PRCVEN,D2_IDENTB6,D2_CODISS,D2_DESCZFR,D2_PREEMB,D2_DESCZFC,D2_DESCZFP,D2_LOTECTL,D2_NUMLOTE,D2_ICMSRET,D2_VALPS3,
-								D2_ORIGLAN,D2_VALCF3,D2_VALIPI,D2_VALACRS,D2_PICM,D2_PDV,D2_BRICMSO,D2_ICMRETO,D2_BRICMSD,D2_ICMRETD %Exp:cField% 
+								D2_ORIGLAN,D2_VALCF3,D2_VALIPI,D2_VALACRS,D2_PICM,D2_PDV,D2_BRICMSO,D2_ICMRETO,D2_BRICMSD,D2_ICMRETD,D2_CSOSN %Exp:cField% 
 								// Alianca: Campos adicionados para customizacoes
 								,D2_UM,D2_VACLIOR, D2_VALOJOR, D2_BRICMS
 								FROM %Table:SD2% SD2
@@ -2542,6 +2542,7 @@ If cTipo == "1"
 						//		aadd(aVeiculo,DA3->DA3_PLACA)
 						//		aadd(aVeiculo,DA3->DA3_ESTPLA)
 						//		aadd(aVeiculo,Iif(DA3->(FieldPos("DA3_RNTC")) > 0 ,DA3->DA3_RNTC,iif(!Empty(cAnttRntrc),cAnttRntrc,"")))//RNTC				
+						//		aadd(aVeiculo,DA3_TIPTRA)
 						//	EndIf
 						//EndIf
 						//O campo F4_FORINFC é um substituto do F4_FORMULA, e através do parâmetro MV_NFEMSF4 se determina se o conteúdo da formula devera compor a mensagem do cliente (="C") ou do fisco (="F"). 				
@@ -7359,6 +7360,9 @@ DEFAULT nvBCUFDest		:= 0
 DEFAULT nTotProd		:= 0
 DEFAULT nItProd			:= 0
 DEFAULT nValDifer		:= 0
+
+U_Log2 ('debug', 'aICMS na entrada da funcao NFEItem:')
+U_Log2 ('debug', aICMS)
 
 cVerAmb     := PARAMIXB[2]
 cAmbiente	:= PARAMIXB[3]
