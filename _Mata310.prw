@@ -17,9 +17,11 @@
 #include "protheus.ch"
 
 User Function _Mata310()
-    // Chamada do Processo de transferencia
-    MATA310()
+        // Chamada do Processo de transferencia
+        MATA310()
 
-    // Transmissao.
-    SpedNFeRe2(SD1->D1_SERIE, SD1->D1_DOC, SD1->D1_DOC) 
+        // Transmissao.
+    	// Variaveis usadas pelas rotinas da NFe
+        U_SpedAut ('S', sf2 -> f2_serie, sf2 -> f2_doc, sf2 -> f2_doc)
+
 Return
