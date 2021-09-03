@@ -138,7 +138,9 @@
 // 02/02/2020 - Robert - Baixado fonte padrao e reaplicadas as customizacoes (projeto melhorias fiscal 2020).
 // 12/02/2020 - Claudia - Retirado o tratamento de para nota sobre Cupom. A Frase nas obs imprimia duas vezes. GLPI: 7010
 // 09/12/2020 - Claudia - Ajuste Impressão de titulos na Danfe tipo CC e CD - GLPI 8990.
+// 03/09/2021 - Robert  - Aplicadas nossas customizacoes na versao atualizada da Totvs (GLPI 10085).
 //
+
 // --------------------------------------------------------------------------
 User Function XmlNfeSef(cTipo,cSerie,cNota,cClieFor,cLoja,cNotaOri,cSerieOri)
 
@@ -7360,9 +7362,6 @@ DEFAULT nvBCUFDest		:= 0
 DEFAULT nTotProd		:= 0
 DEFAULT nItProd			:= 0
 DEFAULT nValDifer		:= 0
-
-U_Log2 ('debug', 'aICMS na entrada da funcao NFEItem:')
-U_Log2 ('debug', aICMS)
 
 cVerAmb     := PARAMIXB[2]
 cAmbiente	:= PARAMIXB[3]
