@@ -15,14 +15,16 @@
 // #Modulos           #todos
 //
 // Historico de alteracoes:
-// 16/12/2010 - Robert - Criado tratamento para o campo ZX5_MODO.
-// 06/01/2011 - Robert - Criado parametro para receber expressao para filtragem de registros.
-// 11/08/2012 - Robert - Criado parametro para receber array com nomes de campos para ordenacao do browse.
+// 16/12/2010 - Robert  - Criado tratamento para o campo ZX5_MODO.
+// 06/01/2011 - Robert  - Criado parametro para receber expressao para filtragem de registros.
+// 11/08/2012 - Robert  - Criado parametro para receber array com nomes de campos para ordenacao do browse.
 // 12/05/2021 - Claudia - Ajustada a chamada SX5 para R27. GLPI: 8825
+// 01/09/2021 - Robert  - Leitura do SX3 nao filtrava registros deletados.
 //
-// -----------------------------------------------------------------------------------
+
 #include "rwmake.ch"
 
+// -----------------------------------------------------------------------------------
 User Function F3ZX5 (_sTabela, _sFiltro, _aCposOrd)
 	local _aOpcoes  := {}
 	local _nOpcao   := 0
@@ -112,8 +114,10 @@ User Function F3ZX5 (_sTabela, _sFiltro, _aCposOrd)
 		_oSQL:_sQuery += " 	   X3_TITULO  "
 		_oSQL:_sQuery += "    ,X3_TAMANHO "
 		_oSQL:_sQuery += "    ,X3_PICTURE "
-		_oSQL:_sQuery += " FROM SX3010 "
-		_oSQL:_sQuery += " WHERE X3_CAMPO = '" + _aCpos[_x] + "'"
+	//	_oSQL:_sQuery += " FROM SX3010 "
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SX3")
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND X3_CAMPO = '" + _aCpos[_x] + "'"
 		_aSX3 := aclone (_oSQL:Qry2Array ())
 
 		For _i:=1 to Len(_aSX3)
