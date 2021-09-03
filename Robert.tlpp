@@ -103,6 +103,56 @@ static function _AndaLogo ()
 	u_help ('Nada definido.')
 return
 /*
+	// Testes geracao XML
+	paramixb := array (3, 7)
+	_aNotas = {}
+	//              Tipo  Serie    NF        CliFor    Loja
+	// aadd (_aNotas, {'2', '10 ',   '000059408', '012732', '01', '', ''})  // F01 - Saida tipo I
+	// aadd (_aNotas, {'2', '10 ',   '000059248', '014381', '01', '', ''})  // F01 - Exportacao
+	//aadd (_aNotas, {'1', '10 ',   '000092506', '008478', '01', '', ''})  // F01 - Saida com ST para UF=MG
+	//aadd (_aNotas, {'1', '10 ',   '000094484', '009830', '01', '', ''})  // F01 - Saida com ST para UF=PR
+	//aadd (_aNotas, {'1', '10 ',   '000093720', '013301', '01', '', ''})  // F01 - Saida com ST para UF=PR
+	//aadd (_aNotas, {'1', '10 ',   '000093920', '007492', '01', '', ''})  // F01 - Saida com ST para UF=RJ
+	//aadd (_aNotas, {'1', '10 ',   '000087045', '005780', '01', '', ''})  // F01 - Saida com ST para UF=RS
+	//aadd (_aNotas, {'1', '10 ',   '000094403', '015085', '01', '', ''})  // F01 - Saida com ST para UF=RS
+	//aadd (_aNotas, {'1', '10 ',   '000094408', '002086', '01', '', ''})  // F01 - Saida com ST para UF=SC
+	//aadd (_aNotas, {'1', '10 ',   '000093852', '010810', '01', '', ''})  // F01 - Saida com ST para UF=SC
+	//aadd (_aNotas, {'1', '10 ',   '000087040', '014978', '01', '', ''})  // F01 - Saida com ST para UF=SP
+	//aadd (_aNotas, {'1', '10 ',   '000094379', '016674', '01', '', ''})  // F01 - Saida com ST para UF=SP
+	//aadd (_aNotas, {'2', '10 ',   '000004108', '015225', '01', '', ''})  // F03 - Entrada consignacao com ST
+//	aadd (_aNotas, {'2', '10 ',   '000097924', '003882', '01', '', ''})  // F01 - Importacao
+//	aadd (_aNotas, {'1', '10 ',   '000009508', '017469', '01', '', ''})  // F10 - Saida com impostos.
+//	aadd (_aNotas, {'1', '10 ',   '000102422', '004478', '01', '', ''})  // F01 - Saida tipo B.
+//	aadd (_aNotas, {'1', '10 ',   '000106732', '002942', '01', '', ''})  // F01 - Saida com fundo erradicacao pobreza.
+//	aadd (_aNotas, {'1', '10 ',   '000105551', '014639', '01', '', ''})  // F01 - Saida com fundo erradicacao pobreza.
+//	aadd (_aNotas, {'1', '10 ',   '000125643', '009189', '01', '', ''})  // F01 - Saida com transp. redespacho
+//	aadd (_aNotas, {'1', '10 ',   '000125646', '009189', '01', '', ''})  // F01 - Saida com transp. redespacho
+//	aadd (_aNotas, {'1', '10 ',   '000159196', '005410', '01', '', ''})  // F01 - Saida com dados adicionais do contribuinte e do fisco.
+//	aadd (_aNotas, {'1', '10 ',   '000160432', '024238', '01', '', ''})  // F01 - Saida com dados adicionais do contribuinte e do fisco + redespacho.
+//	aadd (_aNotas, {'1', '10 ',   '000160414', '023635', '01', '', ''})  // F01 - Entrada
+//	aadd (_aNotas, {'1', '10 ',   '000160473', '005116', '01', '', ''})  // F01 - Saida com AMPARA
+//	aadd (_aNotas, {'1', '10 ',   '000195265', '005026', '01', '', ''})  // F01 - Saida para SP com tag do intermediador - emissao 03/09/2021
+//	aadd (_aNotas, {'1', '001',   '048515   ', '000000', '01', '', ''})  // F13 - Cupom com pagto.cartao de credito - emissao 03/09/2021
+//	aadd (_aNotas, {'2', '10 ',   '000193785', '018465', '01', '', ''})  // F01 - Entrada da BA c/formul.proprio - emissao 02/08/2021
+	aadd (_aNotas, {'1', '10 ',   '000194467', '035012', '01', '', ''})  // F01 - Saida com endereco e complemento no cliente - emissao 08/2021
+	aadd (_aNotas, {'1', '10 ',   '000193892', '034057', '01', '', ''})  // F01 - Saida com endereco e complemento no cliente - emissao 08/2021
+	
+	for _nDado = 1 to len (_aNotas)
+		u_logIni (_aNotas [_nDado, 3])
+		PARAMIXB[1,1] = _anotas [_nDado, 1]
+		PARAMIXB[1,3] = _anotas [_nDado, 2]
+		PARAMIXB[1,4] = _anotas [_nDado, 3]
+		PARAMIXB[1,5] = _anotas [_nDado, 4]
+		PARAMIXB[1,6] = _anotas [_nDado, 5]
+		PARAMIXB[1,7] = ''
+		PARAMIXB[2] = "3.10"
+		PARAMIXB[3] = '1'  // 1=producao, 2=homologacao
+		U_XmlNfeSEF (_aNotas [_nDado, 1], _aNotas [_nDado, 2], _aNotas [_nDado, 3], _aNotas [_nDado, 4], _aNotas [_nDado, 5], _aNotas [_nDado, 6], _aNotas [_nDado, 7])
+		u_logFim (_aNotas [_nDado, 3])
+	next
+return
+*/
+/*
 	// Testes batches em geral
 //	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batocor ()
@@ -120,10 +170,10 @@ return
 //	u_batsafr ('7')  // gera SZI a partir das parcelas
 //	u_batsafr ('8')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
 //	u_batsafr ('9')  // Transfere (das filiais para a matriz) os titulos de nao associados.
-// 	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-// 	u_batmercp ()
-	_sArqLog := 'U_BatVerif_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-	u_batVerif ()
+//	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batmercp ()
+//	_sArqLog := 'U_BatVerif_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batVerif ()
 //	_sArqLog := 'U_BatEDIM_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batedim ("I")
 //	_sArqLog := 'U_BatMercN_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
@@ -2950,50 +3000,6 @@ return
 	U_GravaSX1 (cPerg, '12', stod (''))  // data
 	U_GravaSX1 (cPerg, '13', stod ('20201231'))  // data
 	u_va_xls41 (.T.)
-return
-*/
-/*
-	// Testes geracao XML
-	paramixb := array (3, 7)
-	_aNotas = {}
-	//              Tipo  Serie    NF        CliFor    Loja
-	// aadd (_aNotas, {'2', '10 ',   '000059408', '012732', '01', '', ''})  // F01 - Saida tipo I
-	// aadd (_aNotas, {'2', '10 ',   '000059248', '014381', '01', '', ''})  // F01 - Exportacao
-	//aadd (_aNotas, {'1', '10 ',   '000092506', '008478', '01', '', ''})  // F01 - Saida com ST para UF=MG
-	//aadd (_aNotas, {'1', '10 ',   '000094484', '009830', '01', '', ''})  // F01 - Saida com ST para UF=PR
-	//aadd (_aNotas, {'1', '10 ',   '000093720', '013301', '01', '', ''})  // F01 - Saida com ST para UF=PR
-	//aadd (_aNotas, {'1', '10 ',   '000093920', '007492', '01', '', ''})  // F01 - Saida com ST para UF=RJ
-	//aadd (_aNotas, {'1', '10 ',   '000087045', '005780', '01', '', ''})  // F01 - Saida com ST para UF=RS
-	//aadd (_aNotas, {'1', '10 ',   '000094403', '015085', '01', '', ''})  // F01 - Saida com ST para UF=RS
-	//aadd (_aNotas, {'1', '10 ',   '000094408', '002086', '01', '', ''})  // F01 - Saida com ST para UF=SC
-	//aadd (_aNotas, {'1', '10 ',   '000093852', '010810', '01', '', ''})  // F01 - Saida com ST para UF=SC
-	//aadd (_aNotas, {'1', '10 ',   '000087040', '014978', '01', '', ''})  // F01 - Saida com ST para UF=SP
-	// aadd (_aNotas, {'1', '10 ',   '000094379', '016674', '01', '', ''})  // F01 - Saida com ST para UF=SP
-	//aadd (_aNotas, {'2', '10 ',   '000004108', '015225', '01', '', ''})  // F03 - Entrada consignacao com ST
-	aadd (_aNotas, {'2', '10 ',   '000097924', '003882', '01', '', ''})  // F01 - Importacao
-	//aadd (_aNotas, {'1', '10 ',   '000009508', '017469', '01', '', ''})  // F10 - Saida com impostos.
-	aadd (_aNotas, {'1', '10 ',   '000102422', '004478', '01', '', ''})  // F01 - Saida tipo B.
-	aadd (_aNotas, {'1', '10 ',   '000106732', '002942', '01', '', ''})  // F01 - Saida com fundo erradicacao pobreza.
-	aadd (_aNotas, {'1', '10 ',   '000105551', '014639', '01', '', ''})  // F01 - Saida com fundo erradicacao pobreza.
-	aadd (_aNotas, {'1', '10 ',   '000125643', '009189', '01', '', ''})  // F01 - Saida com transp. redespacho
-	aadd (_aNotas, {'1', '10 ',   '000125646', '009189', '01', '', ''})  // F01 - Saida com transp. redespacho
-	aadd (_aNotas, {'1', '10 ',   '000159196', '005410', '01', '', ''})  // F01 - Saida com dados adicionais do contribuinte e do fisco.
-	aadd (_aNotas, {'1', '10 ',   '000160432', '024238', '01', '', ''})  // F01 - Saida com dados adicionais do contribuinte e do fisco + redespacho.
-	aadd (_aNotas, {'1', '10 ',   '000160414', '023635', '01', '', ''})  // F01 - Entrada
-	aadd (_aNotas, {'1', '10 ',   '000160473', '005116', '01', '', ''})  // F01 - Saida com AMPARA
-	for _nDado = 1 to len (_aNotas)
-		u_logIni (_aNotas [_nDado, 3])
-		PARAMIXB[1,1] = _anotas [_nDado, 1]
-		PARAMIXB[1,3] = _anotas [_nDado, 2]
-		PARAMIXB[1,4] = _anotas [_nDado, 3]
-		PARAMIXB[1,5] = _anotas [_nDado, 4]
-		PARAMIXB[1,6] = _anotas [_nDado, 5]
-		PARAMIXB[1,7] = ''
-		PARAMIXB[2] = "3.10"
-		PARAMIXB[3] = '1'  // 1=producao, 2=homologacao
-		U_XmlNfeSEF (_aNotas [_nDado, 1], _aNotas [_nDado, 2], _aNotas [_nDado, 3], _aNotas [_nDado, 4], _aNotas [_nDado, 5], _aNotas [_nDado, 6], _aNotas [_nDado, 7])
-		u_logFim (_aNotas [_nDado, 3])
-	next
 return
 */
 /*

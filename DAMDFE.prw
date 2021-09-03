@@ -3,12 +3,13 @@
 #INCLUDE "COLORS.CH"
 #INCLUDE "RPTDEF.CH"
 #INCLUDE "FWPrintSetup.ch"
+#INCLUDE "XMLXFUN.CH"
 
 #DEFINE IMP_SPOOL     2				
 #DEFINE MAXMENLIN   200				// Máximo de caracteres por linha de dados adicionais
 #DEFINE MAXLINOBS   018             // Máximo de linhas nas observaçoes.
-#DEFINE MAXLINREP	550				// Máximo de linhas relatório.
-#DEFINE HALFLINREP	(MAXLINREP/2)	// Metade de linhas do relatório.
+#DEFINE MAXLINREP	550				// Máximo de linhas relatório.	
+#DEFINE HALFLINREP	(MAXLINREP/2)	// Metade de linhas do relatório.						
 
 User Function DAMDFE(cIdEnt,oDamdfe,oSetup,cFilePrint)
 
@@ -149,8 +150,8 @@ Local oNfe
 					If (!Empty(cAutoriza) .Or. Alltrim(aXML[nX][4]) $ "2")					
 						cAviso 	:= ""
 						cErro  	:= ""
-						oNfe 	:= XmlParser(aXML[nX][2],"_",@cAviso,@cErro)					
-						
+						oNfe 	:= XmlParser(aXML[nX][2],"_",@cAviso,@cErro)
+
 						If Empty(cAviso) .And. Empty(cErro)
 							ImpDet(@oDamdfe,oNfe,cAutoriza,cModalidade,aXML[nX][5],aXML[nX][6])																	
 							lExistMDfe := .T.
@@ -243,6 +244,12 @@ Local nCont	:= 1
 Local nLin	:= 0
 Local aCab	:= {}
 
+private cTipModal := "1"
+	
+If Type("oNfe:_MDFE:_INFMDFE:_IDE:_MODAL") <> "U"
+	cTipModal	:= oNfe:_MDFE:_INFMDFE:_IDE:_MODAL:TEXT	
+EndIf
+
 	aAdd(aCab, {;
 				AllTrim(oNfe:_MDFE:_INFMDFE:_IDE:_nMDF:TEXT),;
 				AllTrim(oNfe:_MDFE:_INFMDFE:_IDE:_SERIE:TEXT),;
@@ -259,7 +266,11 @@ Local aCab	:= {}
 
 	oDamdfe:StartPage()
 		DamdfeCab( @oDamdfe, aCab[nCont], @nLin ) //Cabeçalho
-		DamdfeVCP( @oDamdfe, @nLin ) 			  //Veiculo - Condutor - Pedagio
+		If cTipModal == "1"
+			DamdfeVCP( @oDamdfe, @nLin ) 			  //Veiculo - Condutor - Pedagio
+		Else
+			DamdfeAVA( @oDamdfe, @nLin ) 			  //Aeronave - Voo - Aérodromo
+		EndIf
 		DamdfeCCar(@oDamdfe, @nLin ) 			  //Informações da Composição da Carga
 		DamdfeObs( @oDamdfe, @nLin ) 			  //Observação
 		fPrintCObs(oDamdfe, @nLin)
@@ -284,7 +295,7 @@ Impressao do Cabeçalho da DANFE
 Static Function DamdfeCab(oDamdfe, aCab, nLin)
 
 Local cStartPath	:= GetSrvProfString("Startpath","")
-Local cLogoTp		:= cStartPath + cEmpAnt + cFilAnt + "logodamdfe.bmp"				//Insira o caminho do Logo da empresa, na variavel cLogoTp.
+Local cLogoTp		:= cStartPath + alltrim(cEmpAnt) + alltrim(cFilAnt) + "logodamdfe.bmp"				//Insira o caminho do Logo da empresa, na variavel cLogoTp.
 Local cCodEst       := ""
 Local cUFDescarr	:= ""
 Local cAux			:= ""
@@ -383,10 +394,10 @@ Local nLinQrChav	:= 0
 	nLin += 10
 
 	// Dados  Modelo / Serie / Numero / FL / Data e Hora de Emissão / UF Carregamento / UF Descarregamento
-	oDamdfe:Say(nLin-nPosIniCtg, 0007, "58", oFont13) //Modelo
-	oDamdfe:Say(nLin-nPosIniCtg, 0047, cValtoChar( Val(aCab[2]) ), oFont13) //Serie
-	oDamdfe:Say(nLin-nPosIniCtg, 0090, cValtoChar( Val(aCab[1]) ), oFont13) //Numero
-	oDamdfe:Say(nLin-nPosIniCtg, 0150, AllTrim(Str(nFolhAtu)) + "/" + AllTrim(Str(nFolhas)), oFont13) //FL
+	oDamdfe:Say(nLin-nPosIniCtg, 0007, "58", oFont13N) //Modelo
+	oDamdfe:Say(nLin-nPosIniCtg, 0047, cValtoChar( Val(aCab[2]) ), oFont13N) //Serie
+	oDamdfe:Say(nLin-nPosIniCtg, 0090, cValtoChar( Val(aCab[1]) ), oFont13N) //Numero
+	oDamdfe:Say(nLin-nPosIniCtg, 0150, AllTrim(Str(nFolhAtu)) + "/" + AllTrim(Str(nFolhas)), oFont13N) //FL
 	nFolhAtu++
 	oDamdfe:Say(nLin-nPosIniCtg, 0190, SubStr(AllTrim(aCab[3]), 7, 2) + '/'   +;
 							SubStr(AllTrim(aCab[3]), 5, 2) + "/"   +;
@@ -397,8 +408,13 @@ Local nLinQrChav	:= 0
 	oDamdfe:Say(nLin-nPosIniCtg, 0382, cUFDescarr, oFont13N) //UF Descarregamento
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 	nLin += 30
-	
-	oDamdfe:Say(nLin-nPosIniCtg, 0005, "Modelo Rodoviário de Carga", oFont14N) //Title Modelo Rodoviário de Carga
+
+	If cTipModal == "1"
+		oDamdfe:Say(nLin-nPosIniCtg, 0005, "Modelo Rodoviário de Carga", oFont14N) //Title Modelo Rodoviário de Carga
+	else
+		oDamdfe:Say(nLin-nPosIniCtg, 0005, "Modelo Aéreo de Carga", oFont14N) //Title Modelo Aéreo de Carga
+	EndIf
+
 	nLin += 10
 			
 	// Box  Qtd.Cte / Qtd.NFe / Peso Total (Kg) 
@@ -412,7 +428,7 @@ Local nLinQrChav	:= 0
 	EndIf
 	oDamdfe:Box(nLin-nPosIniCtg, 0078, 0260-nPosIniCtg, 0143) //Qtd.NFe
 
-	nQCarga		:= oNfe:_MDFE:_INFMDFE:_TOT:_QCARGA:TEXT
+	nQCarga := val(oNfe:_MDFE:_INFMDFE:_TOT:_QCARGA:TEXT)
 	oDamdfe:Box(nLin-nPosIniCtg, 0151, 0260-nPosIniCtg, 0300) //Peso Total (Kg)
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 	nLin += 15
@@ -427,7 +443,7 @@ Local nLinQrChav	:= 0
 	// Dados  Qtd.Cte / Qtd.NFe / Peso Total (Kg) 
 	oDamdfe:Say(nLin-nPosIniCtg, 0007, cValtoChar( nQCTE ), oFont13N) //Qtd.Cte	
 	oDamdfe:Say(nLin-nPosIniCtg, 0080, cValtoChar( nQNFE ), oFont13N) //Qtd.NFe
-	oDamdfe:Say(nLin-nPosIniCtg, 0153, cValtoChar(nQCarga), oFont13N) //Peso Total (Kg)
+	oDamdfe:Say(nLin-nPosIniCtg, 0153, allTrim(Transform(nQCarga,"@E 99,999,999,999.9999")), oFont13N) //Peso Total (Kg)
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 	nLin += 35 //285
 
@@ -471,9 +487,11 @@ Static Function DamdfeVCP(oDamdfe, nLin )
 	Local nLinTit	:= nLin
 	Local nLinSTit	:= nLinTit + 15
 	Local nLinSep	:= nLinSTit + 5
-
 	Local nLinVeic	:= 0
 	Local nLinCond	:= 0
+	local nQtdLoop	:= 0
+	
+	private aValePed	:= {}
 
 	oDamdfe:Say(nLinTit-nPosIniCtg, 0005, "Veículo", oFont14N)
 	oDamdfe:Say(nLinSTit-nPosIniCtg, 0005, "Placa", oFont11)
@@ -560,13 +578,125 @@ Static Function DamdfeVCP(oDamdfe, nLin )
 	//--- Vale Pedagio
 	oDamdfe:Say(nLin-nPosIniCtg, 0005, "Vale Pedágio", oFont14N)
 	nLin += 12
-	oDamdfe:Say(nLin-nPosIniCtg, 0005, "Responsável CNPJ", oFont11N)
-	oDamdfe:Say(nLin-nPosIniCtg, 0105, "Fornecedor CNPJ", oFont11N)
-	oDamdfe:Say(nLin-nPosIniCtg, 0205, "Nro Comprovante", oFont11N)
+	oDamdfe:Say(nLin-nPosIniCtg, 0005, "Responsável CNPJ", oFont11)
+	oDamdfe:Say(nLin-nPosIniCtg, 0105, "Fornecedor CNPJ", oFont11)
+	oDamdfe:Say(nLin-nPosIniCtg, 0205, "Nro Comprovante", oFont11)
 	nLin += 5
 	oDamdfe:FillRect({nLin-nPosIniCtg, 0005, (nLin + 3) - nPosIniCtg, 300}, oBrush1)
 
+	if type("oNfe:_MDFE:_INFMDFE:_INFMODAL:_RODO:_INFANTT:_VALEPED:_DISP") <> "U"
+		aValePed := oNfe:_MDFE:_INFMDFE:_INFMODAL:_RODO:_INFANTT:_VALEPED:_DISP
+		aValePed := iif(type("aValePed")=="A",aValePed,{aValePed})
+		
+		nQtdLoop := min(Len( aValePed ), 10) //limita a impressao de vale pedagio em 10
+
+		For nCount := 1 To nQtdLoop
+			nLin += 10
+			
+			cCGC := ""
+			If ValAtrib( "aValePed[" + Alltrim(Str(nCount)) + "]:_CPFPg" ) == "O" .And. !empty(aValePed[nCount]:_CPFPg:TEXT)
+				cCGC := aValePed[nCount]:_CPFPg:TEXT
+			elseIf ValAtrib( "aValePed[" + Alltrim(Str(nCount)) + "]:_CNPJPg" ) == "O" .And. !empty(aValePed[nCount]:_CNPJPg:TEXT)
+				cCGC := aValePed[nCount]:_CNPJPg:TEXT
+			endIf
+			//Responsável CNPJ
+			oDamdfe:Say(nLin-nPosIniCtg, 0005,  Padr(Transform(cCGC, iif(Len(cCGC) > 11,"@R 99.999.999/9999-99","@R 999.999.999-99") ),18) , oFont10N)
+
+			//Fornecedor CNPJ
+			oDamdfe:Say(nLin-nPosIniCtg, 0105,  Padr(Transform(aValePed[nCount]:_CNPJForn:TEXT, "@R 99.999.999/9999-99" ),18) , oFont10N)
+			
+			//Nro Comprovante
+			oDamdfe:Say(nLin-nPosIniCtg, 0205,  aValePed[nCount]:_nCompra:TEXT , oFont10N)
+			
+		Next nCount
+	endIf
+
 	nLin += 20
+Return
+
+//-----------------------------------------------------------------------
+/*/{Protheus.doc} DamdfeAVA
+Impressao de Dados da Aeronave, Voo e Aerodromo.
+
+@author Valter Silva
+@since 08/07/2021
+@version 1.0 
+
+@param	oDamdfe 		Objeto gráfico da FWMSPrinter 
+		nLin	 		Linha referencia para impressão
+@return Nil
+/*/
+//-----------------------------------------------------------------------
+Static Function DamdfeAVA(oDamdfe, nLin )
+
+	Local nLinTit	:= nLin
+	Local nLinSTit	:= nLinTit + 15
+	Local nLinSep	:= nLinSTit + 5
+	Local nLinVeic	:= 0
+	Local nLinCond	:= 0
+
+	private aValePed	:= {}
+
+	oDamdfe:Say(nLinTit-nPosIniCtg, 0005, "Aeronave", oFont14N)
+	oDamdfe:Say(nLinSTit-nPosIniCtg, 0005, "Marca de Nacionalidade", oFont11)
+	oDamdfe:Say(nLinSTit-nPosIniCtg, 0120, "Marca de Matrícula", oFont11)
+		
+	oDamdfe:FillRect({nLinSep-nPosIniCtg,0005,(nLinSep + 5)-nPosIniCtg,0300},oBrush1)
+			
+	oDamdfe:Say(nLinTit-nPosIniCtg, 0332, "Voo", oFont14N)
+	oDamdfe:Say(nLinSTit-nPosIniCtg, 0332, "Número", oFont11)
+	oDamdfe:Say(nLinSTit-nPosIniCtg, 0440, "Data", oFont11)
+		
+	oDamdfe:FillRect({nLinSep-nPosIniCtg,0332,(nLinSep + 5)-nPosIniCtg,800}, oBrush1)
+
+	//-- Dados do Aéronave
+	nLin := nLinSep + 10 //0380	
+	If Type( "oNfe:_MDFE:_INFMDFE:_INFMODAL:_AEREO" ) <> "A"
+		
+		oDamdfe:Say(nLin-nPosIniCtg, 0005, AllTrim(oNfe:_MDFE:_INFMDFE:_INFMODAL:_AEREO:_NAC:TEXT), oFont10N)
+
+		If Type('oNfe:_MDFE:_INFMDFE:_INFMODAL:_AEREO:_MATR') <> 'U'
+			oDamdfe:Say(nLin-nPosIniCtg, 0120, AllTrim(oNfe:_MDFE:_INFMDFE:_INFMODAL:_AEREO:_MATR:TEXT), oFont10N)
+		EndIf
+
+		//--- Dados Voo
+		If Type( "oNfe:_MDFE:_INFMDFE:_INFMODAL:_AEREO:_NVOO" ) <> "A"
+			oDamdfe:Say(nLin-nPosIniCtg, 0332, AllTrim(oNfe:_MDFE:_INFMDFE:_INFMODAL:_AEREO:_NVOO:TEXT), oFont10N)
+		EndIf
+
+		If Type( "oNfe:_MDFE:_INFMDFE:_INFMODAL:_AEREO:_DVOO" ) <> "A"
+			cDatVoo := AllTrim(oNfe:_MDFE:_INFMDFE:_INFMODAL:_AEREO:_DVOO:TEXT)
+			If !empty(cDatVoo)
+				cDatVoo := substr(cDatVoo,9,2)+'/'+substr(cDatVoo,6,2)+'/'+substr(cDatVoo,1,4)
+				oDamdfe:Say(nLin-nPosIniCtg, 0440, cDatVoo, oFont10N)
+			endIf
+		endIf	
+	
+	EndIf
+
+	nLin :=	IIF( (nLinVeic + nLinCond) > 0, Max(nLinVeic, nLinCond), nLin)
+	
+	nLin += 25
+
+	//--- Aeródromo
+	oDamdfe:Say(nLin-nPosIniCtg, 0005, "Aeródromo", oFont14N)
+	nLin += 02
+	oDamdfe:FillRect({nLin-nPosIniCtg, 0005, (nLin + 3) - nPosIniCtg, 300}, oBrush1)
+	nLin += 10
+	oDamdfe:Say(nLin-nPosIniCtg, 0005, "Embarque", oFont11)
+	oDamdfe:Say(nLin-nPosIniCtg, 0205, "Destino", oFont11)
+	nLin += 15 
+    
+	//Embarque/Destino
+	If Type( "oNfe:_MDFE:_INFMDFE:_INFMODAL:_AEREO:_CAERDES" ) <> "A"
+		oDamdfe:Say(nLin-nPosIniCtg, 0005,oNfe:_MDFE:_INFMDFE:_INFMODAL:_AEREO:_CAERDES:TEXT, oFont10N)
+	EndIf
+    
+	If Type( "oNfe:_MDFE:_INFMDFE:_INFMODAL:_AEREO:_CAEREMB" ) <> "A"
+		oDamdfe:Say(nLin-nPosIniCtg, 0205,oNfe:_MDFE:_INFMDFE:_INFMODAL:_AEREO:_CAEREMB:TEXT , oFont10N)
+	EndIf
+	
+	nLin += 15
 Return
 
 //-----------------------------------------------------------------------
@@ -868,7 +998,6 @@ Local nDtHrRec1		:= 0
 Local nX			:= 0
 Local nY			:= 0
 Local nZ			:= 1
-//Local nCount		:= 0
 Local oWS
 
 Private oNFeRet
@@ -974,8 +1103,8 @@ Default lUsacolab	:= .F.
 					dDtRecib  := SToD(StrTran(SubStr(cDtHrRec,1,AT("T",cDtHrRec)-1),"-",""))
 				EndIf						
 			EndIf
-			//Altero o cRetorno para o XML padrão que foi enviado.
-			cRetorno := oDoc:cXml
+
+			cRetorno := getInfoTag( cRetorno )
 
 			aRetorno[1][1] := cProtocolo 
 			aRetorno[1][2] := cRetorno
@@ -1111,3 +1240,45 @@ ocorrencia indevida pelo SonarQube.
 //-----------------------------------------------------------------------
 static Function ValAtrType(atributo)
 Return (ValType(atributo) )
+
+/*/{Protheus.doc} getInfoTag
+Função que recebe um xml, aplica o parse, pega o conteúdo das tags <MDFe></MDFe>
+transforma pra string e retorna para função chamadora.
+
+@type 		function
+
+@author		Ruan Rebouças
+@since		28/04/2021
+@version	12.1.27
+
+@param 		cXML, xml de retorno da NeoGrid
+
+@return		cXMLRet, xml compreendido entre as tags <MDFe></MDFe>
+/*/
+//-----------------------------------------------------------------------
+static function getInfoTag( cXML )
+
+local cAviso  := ""
+local cErro   := ""
+local cXMLRet := cXML
+
+PRIVATE oXML  := nil
+
+default cXML  := ""
+
+if !empty( cXML )
+
+	oXML := XmlParser( cXML ,"_", @cAviso, @cErro )
+
+	if empty( cAviso ) .and. empty( cErro ) .and. type( "oXml:_MDFEPROC:_MDFE" ) <> "U"
+
+		SAVE oXml:_MDFEPROC:_MDFE XMLSTRING cXMLRet
+		cXMLRet := '<MDFe' + cXMLRet + '</MDFe>'
+
+	endIf
+
+	FWFreeObj( oXml )
+
+endIf
+
+return cXMLRet
