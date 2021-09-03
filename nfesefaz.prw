@@ -7058,6 +7058,9 @@ DEFAULT nTotProd		:= 0
 DEFAULT nItProd			:= 0
 DEFAULT nValDifer		:= 0
 
+U_Log2 ('debug', 'aICMS na entrada da funcao NFEItem:')
+U_Log2 ('debug', aICMS)
+
 cVerAmb     := PARAMIXB[2]
 cAmbiente	:= PARAMIXB[3]
 cF2Tipo	:= IIF(!Empty(aNota[5]),aNota[5], "N")
