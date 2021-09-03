@@ -8956,6 +8956,8 @@ cString += '<vBC>'+ConvType(nBicm, 15,2)+'</vBC>'
 
 If nVIcmDif > 0
 	cString += '<vICMS>'+ConvType(nVicm-nVIcmDif,15,2)+'</vICMS>'
+Else
+	cString += '<vICMS>'+ConvType(nVicm,15,2)+'</vICMS>'
 EndIf
 
 cString += '<vBCST>'+ConvType(nBicmst,15,2)+'</vBCST>'
