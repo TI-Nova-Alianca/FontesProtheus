@@ -18,6 +18,7 @@
 // 25/02/2021 - Robert - Passa a buscar grupo familiar na view VA_VASSOC_GRP_FAM (GLPI 8804).
 //                     - Abertos parametros para selecionar se vai exportar cada tipo de contranota (GLPI 9489).
 // 11/08/2021 - Robert - View VA_VASSOC_GRP_FAM migrada do database do Protheus para o NaWeb (GLPI 10673).
+// 08/09/2021 - Robert - Incluida coluna de FUNRURAL.
 //
 
 // --------------------------------------------------------------------------
@@ -115,11 +116,7 @@ Static Function _Gera()
 	_oSQL:_sQuery += " ,NOTAS.CAD_VITIC"
 	_oSQL:_sQuery += " ,SUM(NOTAS.PESO_LIQ) AS PESO_LIQ"
 	_oSQL:_sQuery += " ,NOTAS.VALOR_UNIT AS VALOR_UNIT
-	if U_ZZUVL ('051', __cUserID, .F.)//, cEmpAnt, cFilAnt)
-		_oSQL:_sQuery += " ,NOTAS.VALOR_TOTAL"
-	else
-		_oSQL:_sQuery += " ,0 AS VALOR_TOTAL"
-	endif
+	_oSQL:_sQuery += " ,NOTAS.VALOR_TOTAL"
 	_oSQL:_sQuery += " ,NOTAS.DOC AS CONTRANOTA, TIPO_ORGANICO"
 	_oSQL:_sQuery += " ,dbo.VA_DTOC(NOTAS.DATA) AS DATA,"
 	_oSQL:_sQuery += " ISNULL((SELECT TOP 1 CARGA"  // BUSCA CARGA COM 'TOP' POR QUE PODE HAVER MAIS DE UM PRODUTO NA MESMA CARGA.
@@ -139,6 +136,7 @@ Static Function _Gera()
 	_oSQL:_sQuery +=            " AND CARGAS.LOJA_ASSOC = NOTAS.LOJA_ASSOC"
 	_oSQL:_sQuery +=            " AND CARGAS.CONTRANOTA = NOTAS.DOC"
 	_oSQL:_sQuery +=            " AND CARGAS.SERIE_CONTRANOTA = NOTAS.SERIE) , '') AS NF_PRODUTOR"
+	_oSQL:_sQuery += " , SUM (VLR_FUNRURAL) as VLR_FUNRURAL"
 	_oSQL:_sQuery += " FROM VA_VNOTAS_SAFRA NOTAS"
 	_oSQL:_sQuery += " WHERE SAFRA = '" + mv_par05 + "'"
 	if mv_par15 == 2
@@ -196,7 +194,8 @@ Static Function _Gera()
 	_oSQL:_sQuery +=                           " WHEN 'E' THEN 'EM CONVERSAO' "
 	_oSQL:_sQuery +=                           " WHEN 'B' THEN 'BORDADURA' "
 	_oSQL:_sQuery +=                           " WHEN 'O' THEN 'ORGANICA' "
-	_oSQL:_sQuery +=        " END AS TIPO_ORGANICO "
+	_oSQL:_sQuery +=        " END AS TIPO_ORGANICO, "
+	_oSQL:_sQuery +=        " VLR_FUNRURAL"
 	_oSQL:_sQuery += " FROM	C,"
 	_oSQL:_sQuery +=        RetSQLName ("SA2") + " SA2"
 	_oSQL:_sQuery += " WHERE CARGA BETWEEN '" + mv_par08 + "' AND '" + mv_par09 + "'"
@@ -231,7 +230,7 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {12, "NF produtor final             ", "C", 9,             0,            "",   "   ",  {},                               ""})
 	aadd (_aRegsPerg, {13, "Data contranota inicial       ", "D", 8,             0,            "",   "   ",  {},                               ""})
 	aadd (_aRegsPerg, {14, "Data contranota final         ", "D", 8,             0,            "",   "   ",  {},                               ""})
-	aadd (_aRegsPerg, {15, "Notas de entrada?             ", "N", 1,             0,            "",   "   ",  {"Sim", "Nao"},                   ""})
+	aadd (_aRegsPerg, {15, "Notas de entrada/recebimento? ", "N", 1,             0,            "",   "   ",  {"Sim", "Nao"},                   ""})
 	aadd (_aRegsPerg, {16, "Notas de producao propria?    ", "N", 1,             0,            "",   "   ",  {"Sim", "Nao"},                   ""})
 	aadd (_aRegsPerg, {17, "Notas de compra?              ", "N", 1,             0,            "",   "   ",  {"Sim", "Nao"},                   ""})
 	aadd (_aRegsPerg, {18, "Notas de complemento de valor?", "N", 1,             0,            "",   "   ",  {"Sim", "Nao"},                   ""})
