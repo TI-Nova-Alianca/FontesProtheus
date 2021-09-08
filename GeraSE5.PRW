@@ -24,8 +24,8 @@ user function GeraSE5 (_sOQueGera, _dData, _nValor, _sHistor, _sBanco, _sAgencia
 
 	_sMsgRet := iif (_sMsgRet == NIL, '', cvaltochar (_sMsgRet))
 	
-	u_logIni ()
-	u_log ("Parametros:", _sOQueGera, _dData, _nValor, _sHistor, _sBanco, _sAgencia, _sNumCon, _sChvEx, _sMsgRet, _lCtOnLine, _sNatureza)
+//	u_logIni ()
+//	u_log ("Parametros:", _sOQueGera, _dData, _nValor, _sHistor, _sBanco, _sAgencia, _sNumCon, _sChvEx, _sMsgRet, _lCtOnLine, _sNatureza)
 	
 	if _lContinua
 		do case
@@ -44,7 +44,7 @@ user function GeraSE5 (_sOQueGera, _dData, _nValor, _sHistor, _sBanco, _sAgencia
 			aadd (_aAutoSE5, {"E5_VACHVEX", _sChvEx,    nil})
 			aadd (_aAutoSE5, {"E5_VASZIFP", _sFormPag,  nil})
 			_aAutoSE5 = aclone (U_OrdAuto (_aAutoSE5))
-			u_log (_aAutoSE5)
+			u_log2 ('DEBUG', _aAutoSE5)
 	
 			// Ajusta parametros da rotina.
 			cPerg = 'AFI100'
@@ -78,7 +78,7 @@ user function GeraSE5 (_sOQueGera, _dData, _nValor, _sHistor, _sBanco, _sAgencia
 			aadd (_aAutoSE5, {"E5_VACHVEX", _sChvEx,    nil})
 			aadd (_aAutoSE5, {"E5_VASZIFP", _sFormPag,  nil})
 			_aAutoSE5 = aclone (U_OrdAuto (_aAutoSE5))
-			u_log (_aAutoSE5)
+			u_log2 ('debug', _aAutoSE5)
 	
 			// Ajusta parametros da rotina.
 			cPerg = 'AFI100'
@@ -115,5 +115,5 @@ user function GeraSE5 (_sOQueGera, _dData, _nValor, _sHistor, _sBanco, _sAgencia
 
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
+//	u_logFim ()
 return _lContinua

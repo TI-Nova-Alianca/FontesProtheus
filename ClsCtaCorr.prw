@@ -88,6 +88,9 @@
 // 23/03/2021 - Robert - Criados atributos Safra e GrpPgSafra, com respectiva leitura e gravacao (GLPI 9592).
 // 11/06/2021 - Robert - Nao gravava campo E2_VASAFRA no metodo GeraSE2 (GLPI 10208)
 // 20/07/2021 - Robert - Novo tratamento para passar bco/ag/cta na geracao do SE2 (variaveis AUTBANCO, ...) (GLPI 10494)
+// 08/09/2021 - Robert - Criado tratamento para TM=32 (GLPI 
+//                     - Nao gravava campos ZI_FORNECE e ZI_LOJAFOR no metodo :Grava()
+//                     - Implementado metodo :RegRelac()
 //
 
 // ------------------------------------------------------------------------------------
@@ -151,8 +154,10 @@ CLASS ClsCtaCorr
 	METHOD ChaveExt ()
 	METHOD Desassoc ()
 	METHOD Exclui ()
+	METHOD ExcluiSE5 ()
 	METHOD GeraAtrib ()
 	METHOD GeraSE2 ()
+	METHOD GeraSE5 ()
 	METHOD GeraSeq ()
 	METHOD Grava ()
 	METHOD HistBaixas ()
@@ -202,7 +207,7 @@ METHOD AtuParcel (_sParc) Class ClsCtaCorr
 			_lContinua = .F.
 		else
 			if szi -> zi_parcela != ::Parcela
-				u_log ('[' + GetClassName (::Self) + '.' + procname () + '] Alterando parcela de', szi -> zi_parcela, 'para', ::Parcela)
+				u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + '] Alterando parcela de ' + szi -> zi_parcela + ' para ' + ::Parcela)
 				reclock ("SZI", .F.)
 				szi -> zi_parcela = ::Parcela
 				msunlock ()
@@ -607,7 +612,9 @@ METHOD Exclui () Class ClsCtaCorr
 		// A principio pode ter SE2 e SE5. Ordena de forma decrescente para tentar limpar antes a tabela SE5.
 		_aRegRelac = asort (_aRegRelac,,, {|_x, _y| _x [1] > _y [1]})
 
+		U_Log2 ('debug', 'Lista de registros relacionados:')
 		U_Log2 ('debug', _aRegRelac)
+
 		begin transaction
 		for _nRegRelac = 1 to len (_aRegRelac)
 			do case
@@ -621,23 +628,27 @@ METHOD Exclui () Class ClsCtaCorr
 				aadd (_aAutoSE2, {"E2_FORNECE", se2 -> e2_fornece, Nil})
 				aadd (_aAutoSE2, {"E2_LOJA"   , se2 -> e2_loja,    Nil})
 				_aAutoSE2 := aclone (U_OrdAuto (_aAutoSE2))
-				//u_log (_aAutoSE2)
+				u_log (_aAutoSE2)
 				lMsErroAuto	:=	.f.
 				lMsHelpAuto	:=	.f.
 				dbselectarea ("SE2")
 				dbsetorder (1)
+				U_Log2 ('debug', 'Chamando exclusao do SE2 (FINA050)')
 				Processa({|| MsExecAuto({ | x,y,z | Fina050(x,y,z) }, _aAutoSE2,, 5)},"Excluindo titulo correspondente no financeiro.")
 				if lMsErroAuto
 					::UltMsg += U_LeErro (memoread (NomeAutoLog ())) + "; Este lancamento nao sera' excluido, pois o titulo relacionado a este movimento no modulo financeiro continua existindo."
 					u_help (::UltMsg,, .t.)
 					_lContinua = .F.
 					exit
+				else
+					U_Log2 ('debug', 'SE2 excluido com sucesso')
 				endif
 
 			case _aRegRelac [_nRegRelac, 1] == 'SE5'
 				se5 -> (dbgoto (_aRegRelac [_nRegRelac, 2]))
-				u_log ('vou gerar cancelamento do SE5 a receber')
-				if ! U_GeraSE5 ("CR", se5 -> e5_data, se5 -> e5_valor, se5 -> e5_histor, se5 -> e5_banco, se5 -> e5_agencia, se5 -> e5_conta, se5 -> e5_vachvex, @::UltMsg, .T., se5 -> e5_naturez, se5 -> e5_vaszifp)
+				U_Log2 ('debug', 'Vou gerar cancelamento do SE5')
+			//	if ! U_GeraSE5 ("CR", se5 -> e5_data, se5 -> e5_valor, se5 -> e5_histor, se5 -> e5_banco, se5 -> e5_agencia, se5 -> e5_conta, se5 -> e5_vachvex, @::UltMsg, .T., se5 -> e5_naturez, se5 -> e5_vaszifp)
+				if ! ::ExcluiSE5 ()
 					::UltMsg += "Erro no estorno do movimento financeiro a receber. Este registro nao sera' excluido."
 					_lContinua = .F.
 					exit
@@ -672,6 +683,48 @@ METHOD Exclui () Class ClsCtaCorr
 	endif
 
 	//u_logFim (GetClassName (::Self) + '.' + procname ())
+return _lContinua
+
+
+
+// --------------------------------------------------------------------------
+// Exclui movimento bancario.
+METHOD ExcluiSE5 () Class ClsCtaCorr
+	local _lContinua  := .T.
+	local _aAutoSE5   := {}
+	local _aAreaAnt   := U_ML_SRArea ()
+
+	_aAutoSE5 = {}
+	aadd (_aAutoSE5, {"E5_DATA",    se5 -> e5_data,     nil})
+	aadd (_aAutoSE5, {"E5_MOEDA",   se5 -> e5_moeda,       nil})
+	aadd (_aAutoSE5, {"E5_VALOR",   se5 -> e5_valor,    nil})
+	aadd (_aAutoSE5, {"E5_BANCO",   se5 -> e5_banco,    nil})
+	aadd (_aAutoSE5, {"E5_AGENCIA", se5 -> e5_agencia,  nil})
+	aadd (_aAutoSE5, {"E5_CONTA",   se5 -> e5_conta,   nil})
+	aadd (_aAutoSE5, {"E5_NATUREZ", se5 -> e5_naturez, nil})
+	aadd (_aAutoSE5, {"E5_HISTOR",  se5 -> e5_histor,   nil})
+	_aAutoSE5 = aclone (U_OrdAuto (_aAutoSE5))
+	u_log2 ('debug', _aAutoSE5)
+
+	lMsErroAuto	:=	.f.
+	lMsHelpAuto	:=	.f.
+	dbselectarea ("SE5")
+	dbsetorder (1)
+	U_Log2 ('debug', 'Chamando cancelamento do mov.bancario (FINA100)')
+	MSExecAuto({|x,y,z| FinA100(x,y,z)},0,_aAutoSE5,6)  // exclusao nao funcionou. Usando cancelamento.
+	if lMsErroAuto
+		::UltMsg += "Erro na rotina automatica de cancelamento de movimento bancario: " + U_LeErro (memoread (NomeAutoLog ()))
+		_lContinua = .F.
+	else
+		// No cancelamento alguns campos adicionais nao sao gravados.
+		reclock ("SE5", .F.)
+		if empty (se5 -> e5_vachvex) ; se5 -> e5_vachvex = ::ChaveExt () ; endif
+		if empty (se5 -> e5_vauser)  ; se5 -> e5_vauser  = cUserName ; endif
+		if empty (se5 -> e5_vaSZIFp) ; se5 -> e5_vaSZIFp = ::FormPag ; endif
+		msunlock ()
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
 return _lContinua
 
 
@@ -841,6 +894,7 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _lCtOnLine, _sFornSE2, _sLojaSE2) class C
 	// Ha casos em que preciso gerar SE2 para outro fornecedor (nao o associado em questao)
 	_sFornSE2 = iif (empty (_sFornSE2), ::Assoc, _sFornSE2)
 	_sLojaSE2 = iif (empty (_sLojaSE2), ::Loja, _sLojaSE2)
+	U_Log2 ('debug', 'Assumindo que devo gerar SE2 para o forn/loja ' + _sFornSE2 + '/' + _sLojaSE2)
 	
 	// A rotina FINA050 soh funciona dentro destes modulos.
 	If _lContinua .and. !(AmIIn(5,6,7,11,12,14,41,97,17))           // Somente Fin,GPE, Vei, Loja , Ofi, Pecas e Esp, EIC
@@ -1023,6 +1077,46 @@ return _lContinua
 
 
 // --------------------------------------------------------------------------
+// Gera registro na tabela de movimento bancario.
+METHOD GeraSE5 () Class ClsCtaCorr
+	local _aAreaAnt   := U_ML_SRArea ()
+	local _lContinua  := .T.
+	local _aAutoSE5   := {}
+
+	_aAutoSE5 = {}
+	aadd (_aAutoSE5, {"E5_NUMERO",  ::Doc,         nil})
+	aadd (_aAutoSE5, {"E5_PREFIXO", ::Serie,       nil})
+	aadd (_aAutoSE5, {"E5_PARCELA", ::Parcela,     nil})
+	aadd (_aAutoSE5, {"E5_DATA",    ::DtMovto,     nil})
+	aadd (_aAutoSE5, {"E5_MOEDA",   'M1',          nil})
+	aadd (_aAutoSE5, {"E5_VALOR",   ::Valor,       nil})
+	aadd (_aAutoSE5, {"E5_BANCO",   ::Banco,       nil})
+	aadd (_aAutoSE5, {"E5_AGENCIA", ::Agencia,     nil})
+	aadd (_aAutoSE5, {"E5_CONTA",   ::NumCon,      nil})
+	aadd (_aAutoSE5, {"E5_NATUREZ", '110104',      nil})
+	aadd (_aAutoSE5, {"E5_HISTOR",  ::Histor,      nil})
+	aadd (_aAutoSE5, {"E5_VACHVEX", ::ChaveExt (), nil})
+	aadd (_aAutoSE5, {"E5_VASZIFP", ::FormPag,     nil})
+	_aAutoSE5 = aclone (U_OrdAuto (_aAutoSE5))
+	u_log2 ('DEBUG', _aAutoSE5)
+
+	lMsErroAuto	:=	.f.
+	lMsHelpAuto	:=	.f.
+	dbselectarea ("SE5")
+	dbsetorder (1)
+	U_Log2 ('debug', 'Chamando inclusao do movimento bancario (FINA100)')
+	MSExecAuto({|x,y,z| FinA100(x,y,z)},0,_aAutoSE5,4)
+	if lMsErroAuto
+		::UltMsg += "Erro na rotina automatica de inclusao de movimento bancario: " + U_LeErro (memoread (NomeAutoLog ()))
+		_lContinua = .F.
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
+return _lContinua
+
+
+
+// --------------------------------------------------------------------------
 // Gera sequencial para o registro atual do SZI.
 METHOD GeraSeq () Class ClsCtaCorr
 	local _nLock     := 0
@@ -1122,6 +1216,8 @@ METHOD Grava (_lSZIGrav, _lMemoGrav) Class ClsCtaCorr
 			szi -> zi_Parcela = ::Parcela
 			szi -> zi_safra   = ::Safra
 			szi -> zi_gpsaf   = ::GrpPgSafra
+			szi -> zi_fornece = ::Fornece
+			szi -> zi_lojafor = ::LojaFor
 			msunlock ()
 			_lSZIGrav = .T.
 			::RegSZI = szi -> (recno ())
@@ -1136,6 +1232,7 @@ METHOD Grava (_lSZIGrav, _lMemoGrav) Class ClsCtaCorr
 			endif
 
 			// Gera demais dados.
+			U_Log2 ('debug', 'OQueGera: ' = ::OQueGera ())
 			if ! empty (::OQueGera ())
 				do case
 				case ::OQueGera () $ "DP/NDF/PA/PR"
@@ -1153,8 +1250,9 @@ METHOD Grava (_lSZIGrav, _lMemoGrav) Class ClsCtaCorr
 				case ::OQueGera () == "DP+SE5_R"
 					_lContinua = ::GeraSE2 ('DP', szi -> zi_data, .F.)
 					if _lContinua
-						u_log ('vou gerar SE5 a receber')
-						if ! U_GeraSE5 ("IR", ::DtMovto, ::Valor, ::Histor, ::Banco, ::Agencia, ::NumCon, ::ChaveExt (), @::UltMsg, iif (type ('_lCtOnLine') == 'L', _lCtOnLine, .F.), '110104', ::FormPag)
+						u_log2 ('info', 'Vou gerar SE5 a receber')
+					//	if ! U_GeraSE5 ("IR", ::DtMovto, ::Valor, ::Histor, ::Banco, ::Agencia, ::NumCon, ::ChaveExt (), @::UltMsg, iif (type ('_lCtOnLine') == 'L', _lCtOnLine, .F.), '110104', ::FormPag)
+						if ! ::GeraSE5 ()
 							::UltMsg += "Erro na atualizacao do financeiro (SE5). Este registro nao sera' mantido."
 							_lContinua = .F.
 						endif
@@ -1163,11 +1261,13 @@ METHOD Grava (_lSZIGrav, _lMemoGrav) Class ClsCtaCorr
 				case ::OQueGera () == "NDF+DP_Forn"  // Gera titulo tipo NDF para o associado + titulo tipo DP para o fornecedor (campo ZI_FORNECE)
 					_lContinua = ::GeraSE2 ('NDF', szi -> zi_data, .F.)  // A contabilizacao vai ser feita na titulo DP
 					if _lContinua
-						u_log ('vou gerar DP para o fornecedor relacionado.')
-						if ! U_GeraSE2 ("DP", szi -> zi_data, .T., szi -> zi_fornece, szi -> zi_lojafor)
+						u_log2 ('info', 'Vou gerar DP para o fornecedor relacionado.')
+						if ! ::GeraSE2 ("DP", szi -> zi_data, .T., szi -> zi_fornece, szi -> zi_lojafor)
 							::UltMsg += "Erro na atualizacao do financeiro (geracao titulo DP para fornecedor " + szi -> zi_fornece + "). Este registro nao sera' mantido."
 							_lContinua = .F.
 						endif
+					else
+						U_Log2 ('erro', 'Problemas na gravacao do titulo NDF para o associado. Abortando gravacao do titulo DP para o fornecedor relacionado.')
 					endif
 
 				otherwise
@@ -1568,7 +1668,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 		_lContinua = .F.
 	endif
 
-	if _lContinua .and. ! zx5 -> zx5_10geri $ '0123456'
+	if _lContinua .and. ! zx5 -> zx5_10geri $ '01234567'
 		::UltMsg += "Falta tratamento para campo ZX5_10GERI com conteudo '" + zx5 -> zx5_10geri + "' no metodo " + procname () + _sCRLF
 		_lContinua = .F.
 	endif
@@ -1899,9 +1999,9 @@ METHOD PodeIncl () Class ClsCtaCorr
 	endif
 
 	// Projetos com ART: paga para o fornecedor (geralmente CREA) e desconta do associado.
-	if _lContinua .and. ! ::TM == '32'
+	if _lContinua .and. ::TM == '32'
 		if empty (::Fornece) .or. empty (::LojaFor)
-			::UltMsg += "Para inclusao de movimento tipo " + ::TM + " deve ser informado o fornecedor para o qual sera´ feito o pagamento."
+			::UltMsg += "Movimento tipo " + ::TM + ": a cooperativa paga o fornecedor e depois cobra do associado (ou desconta da safra). Por isso, deve ser informado o fornecedor para o qual a cooperativa vai fazer o pagamento."
 			_lContinua = .F.
 		endif
 	endif
