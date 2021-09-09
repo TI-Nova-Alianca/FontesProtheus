@@ -88,7 +88,7 @@
 // 23/03/2021 - Robert - Criados atributos Safra e GrpPgSafra, com respectiva leitura e gravacao (GLPI 9592).
 // 11/06/2021 - Robert - Nao gravava campo E2_VASAFRA no metodo GeraSE2 (GLPI 10208)
 // 20/07/2021 - Robert - Novo tratamento para passar bco/ag/cta na geracao do SE2 (variaveis AUTBANCO, ...) (GLPI 10494)
-// 08/09/2021 - Robert - Criado tratamento para TM=32 (GLPI 
+// 08/09/2021 - Robert - Criado tratamento para TM=32 (GLPI 10803)
 //                     - Nao gravava campos ZI_FORNECE e ZI_LOJAFOR no metodo :Grava()
 //                     - Implementado metodo :RegRelac()
 //
@@ -883,7 +883,7 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _lCtOnLine, _sFornSE2, _sLojaSE2) class C
 	local _sSQL       := ""
 	local _aAreaAnt   := U_ML_SRArea ()
 	local _aAmbAnt    := U_SalvaAmb ()
-	local _aBkpSX1    := {}
+//	local _aBkpSX1    := {}
 	local _oSQL       := NIL
 	local _sChvEx     := ::ChaveExt ()
 	local _aRetParc   := {}
@@ -984,9 +984,11 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _lCtOnLine, _sFornSE2, _sLojaSE2) class C
 		u_log2 ('debug', _aAutoSE2)
 
 		// Ajusta parametros da rotina.
-		cPerg = 'FIN050    '
-		_aBkpSX1 = U_SalvaSX1 (cPerg)  // Salva parametros da rotina.
-		U_GravaSX1 (cPerg, "04", iif (_lCtOnLine, 1, 2))
+		//cPerg = 'FIN050    '
+		pergunte ('FIN050    ', .f.)
+		//u_logsx1 ('FIN050    ')
+		//_aBkpSX1 = U_SalvaSX1 (cPerg)  // Salva parametros da rotina.
+		//U_GravaSX1 (cPerg, "04", iif (_lCtOnLine, 1, 2))
 
 		lMsErroAuto	:=	.f.
 		lMsHelpAuto	:=	.f.
@@ -1022,7 +1024,7 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _lCtOnLine, _sFornSE2, _sLojaSE2) class C
 		if _lContinua
 			_lContinua = ::AtuParcel (se2 -> e2_parcela)
 		endif
-		U_SalvaSX1 (cPerg, _aBkpSX1)  // Restaura parametros da rotina.
+//		U_SalvaSX1 (cPerg, _aBkpSX1)  // Restaura parametros da rotina.
 	endif
 	
 	// Verifica se a chave externa foi gravada.
@@ -2169,8 +2171,8 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 	local _nSaldo    := 0
 	local _oSQL      := NIL
 	local _aBanco    := {}
-	local _aBkpSX1   := {}
-	local cPerg      := "          "
+//	local _aBkpSX1   := {}
+//	local cPerg      := "          "
 	Private lMsErroAuto := .F.
 	
 	u_log2 ('info', 'Iniciando ' + GetClassName (::Self) + '.' + procname ())
@@ -2264,9 +2266,11 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 		//u_log2 ('debug', _atit)
 
 		// Ajusta parametros de contabilizacao para NAO, pois a rotina automatica nao aceita.
-		cPerg = 'FIN090'
-		_aBkpSX1 = U_SalvaSX1 (cPerg)
-		U_GravaSX1 (cPerg, "03", 2)  // Contabiliza online = nao
+		//cPerg = 'FIN090'
+		pergunte ('FIN090    ', .f.)
+
+//		_aBkpSX1 = U_SalvaSX1 (cPerg)
+//		U_GravaSX1 (cPerg, "03", 2)  // Contabiliza online = nao
 		
 		lMsErroAuto = .F.
 		MSExecAuto({|x,y| Fina090(x,y)},3,_aTit)
@@ -2277,7 +2281,7 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 		endif
 
 		// Ajusta parametros da rotina automatica.
-		U_SalvaSX1 (cPerg, _aBkpSX1)
+		//U_SalvaSX1 (cPerg, _aBkpSX1)
 	endif
 
 	// Se fez a baixa, ajusta historico do movimento bancario.

@@ -104,13 +104,17 @@ static function _AndaLogo ()
 //return
 
 	// Testes inclusao conta corrente
-	_aMovCC := {} // TM   SERIE   DOCTO     ASSOC    LOJA    bco    ag       cta
-//	aadd (_aMovCC, {'32', 'ART', 'robert04', '000161', '01', '',    '',      ''})
-//	aadd (_aMovCC, {'07', 'ADT', 'robert02', '000161', '01', '',    '',      ''})
-//	aadd (_aMovCC, {'01', 'UNI', 'robert03', '000161', '01', '',    '',      ''})
-//	aadd (_aMovCC, {'21', 'OUT', 'robert05', '000161', '01', '001', '3412 ', '32972     '})
-//	aadd (_aMovCC, {'25', 'MUD', 'robert06', '000161', '01', '',    '',      ''})
-	aadd (_aMovCC, {'26', 'MUL', 'robert26', '000161', '01', '',    '',      ''})
+	_aMovCC := {} // TM   SERIE   DOCTO                       ASSOC    LOJA  bco    ag       cta
+	aadd (_aMovCC, {'32', 'ART', strtran (time (), ':', ''), '000161', '01', '',    '',      ''})
+	aadd (_aMovCC, {'07', 'ADT', strtran (time (), ':', ''), '000161', '01', '001', '3412 ', '32972     '})
+	aadd (_aMovCC, {'01', 'UNI', strtran (time (), ':', ''), '000161', '01', '',    '',      ''})
+	aadd (_aMovCC, {'21', 'OUT', strtran (time (), ':', ''), '000161', '01', '001', '3412 ', '32972     '})
+	aadd (_aMovCC, {'25', 'MUD', strtran (time (), ':', ''), '000161', '01', '',    '',      ''})
+	aadd (_aMovCC, {'26', 'MUL', strtran (time (), ':', ''), '000161', '01', '',    '',      ''})
+	aadd (_aMovCC, {'15', 'CM ', strtran (time (), ':', ''), '000161', '01', '',    '',      ''})
+	aadd (_aMovCC, {'12', 'INT', strtran (time (), ':', ''), '000161', '01', '',    '',      ''})
+	aadd (_aMovCC, {'20', 'INT', strtran (time (), ':', ''), '000161', '01', '',    '',      ''})
+	aadd (_aMovCC, {'11', 'RCC', strtran (time (), ':', ''), '000161', '01', '',    '',      ''})
 	for _nMovCC = 1 to len (_aMovCC)
 		U_Log2 ('debug', '#####################################')
 		U_Log2 ('info', 'Tentando incluir TM/serie/doc ' + _aMovCC [_nMovCC, 1] + '/' + _aMovCC [_nMovCC, 2] + '/' + _aMovCC [_nMovCC, 3])

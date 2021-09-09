@@ -110,8 +110,9 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 
 	case _sLPad == '510' .and. _sSeq='200' // Inclusao contas a pagar
 		_xRet = SE2->E2_VALOR 
-		IF SE2->E2_PREFIXO=="ALE" .OR. SE2->E2_PREFIXO=="COM" .OR. SE2->E2_PREFIXO=="IND" .OR. SE2->E2_PREFIXO=="UNI" .OR. SE2->E2_PREFIXO=="CEL" .OR. SE2->E2_PREFIXO=="ANS" .OR. SE2->E2_PREFIXO=="SEM" .OR. SE2->E2_PREFIXO=="FRS" .OR. SE2->E2_PREFIXO=="DEL" 
-			_xRet = 0						
+//		IF SE2->E2_PREFIXO=="ALE" .OR. SE2->E2_PREFIXO=="COM" .OR. SE2->E2_PREFIXO=="IND" .OR. SE2->E2_PREFIXO=="UNI" .OR. SE2->E2_PREFIXO=="CEL" .OR. SE2->E2_PREFIXO=="ANS" .OR. SE2->E2_PREFIXO=="SEM" .OR. SE2->E2_PREFIXO=="FRS" .OR. SE2->E2_PREFIXO=="DEL" 
+		IF SE2->E2_PREFIXO=="COM" .OR. SE2->E2_PREFIXO=="IND" .OR. SE2->E2_PREFIXO=="FRS" .OR. SE2->E2_PREFIXO=="DEL" 
+			_xRet = 0
 		ENDIF
 		IF SE2->E2_TIPO=="PR " .OR. SE2->E2_TIPO=="PRI" // tem que ficar assim com espaço - nao tirar
 			_xRet = 0
