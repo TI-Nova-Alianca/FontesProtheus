@@ -55,6 +55,7 @@
 // 09/06/2020 - Robert  - Funcao ShowLog() nao buscava no diretorio de logs.
 // 11/05/2021 - Claudia - Ajustada a chamada para tabela SX1 devido a R27. GLPI: 8825
 // 04/08/2021 - Robert  - Nao trazia o descritivo das perguntas no LogSX1().
+// 08/09/2021 - Robert  - Nao trazia o significado de respostas tipo combo no LogSX1().
 //
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -287,13 +288,13 @@ return _sPilha
 // --------------------------------------------------------------------------
 // Faz exportacao dos parametros do grupo de perguntas informado.
 user function LogSX1 (_sPerg)
-	local _aAreaSX1  := U_ML_SRArea ()
-	local _sVar 	:= ""
-	local _sMsg 	:= ""
-	local _uVar 	:= NIL
-	local _sRet 	:= ""
-	local cPicture 	:= ""
-	local _x		:= ""
+	local _aAreaSX1    := U_ML_SRArea ()
+	local _sVar        := ""
+	local _sMsg        := ""
+	local _uVar        := NIL
+	local _sRet        := ""
+	local cPicture     := ""
+	local _x           := ""
 	local _sX1_GRUPO   := ''
 	local _sX1_ORDEM   := ''
 	local _sX1_GSC     := ''
@@ -319,6 +320,11 @@ user function LogSX1 (_sPerg)
 	_oSQL:_sQuery += "    ,X1_DECIMAL"
 	_oSQL:_sQuery += "    ,X1_TIPO"
 	_oSQL:_sQuery += "    ,X1_PERGUNT"
+	_oSQL:_sQuery += "    ,X1_DEF01"
+	_oSQL:_sQuery += "    ,X1_DEF02"
+	_oSQL:_sQuery += "    ,X1_DEF03"
+	_oSQL:_sQuery += "    ,X1_DEF04"
+	_oSQL:_sQuery += "    ,X1_DEF05"
 	_oSQL:_sQuery += " FROM SX1010 "
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 	_oSQL:_sQuery += " AND X1_GRUPO     = '" + alltrim(_sPerg) +"'"
@@ -339,6 +345,7 @@ user function LogSX1 (_sPerg)
 		_sMsg := "Grp.perg. " + _sPerg + " mv_par" + _sX1_ORDEM + ": "+ _sX1_PERG + ": "
 		
 		If _sX1_GSC == "C"
+			/*
 			_sMsg += cValToChar (&(_sVar)) + " (" 
 			If ( cvaltochar (&(_sVar))=="1" )
 				_sMsg += alltrim (X1Def01 ())
@@ -352,6 +359,8 @@ user function LogSX1 (_sPerg)
 				_sMsg += alltrim (X1Def05 ())
 			EndIf
 			_sMsg += ")"
+			*/
+			_sMsg += '(' + alltrim (_aSX1[_x, 7 + &(_sVar)]) + ')'
 		Else
 			_uVar := &(_sVar)
 			if _nX1_TIPO == 'N'
