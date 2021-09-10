@@ -168,7 +168,7 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 					_lWSDL_OK = .F.
 					_oBatch:Retorno = 'N'
 				else
-					U_LOG2 ('INFO', 'Conectando ' + zz4 -> zz4_wsdl)
+					U_LOG2 ('INFO', 'Criando objeto WSDL para ' + zz4 -> zz4_wsdl)
 
 					// Cria o objeto para acesso ao web service
 					_oWSDL := TWsdlManager():New()
@@ -193,7 +193,11 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 					_oWSDL:cSSLKeyFile    := "\\192.168.1.3\siga\TSS\certs\000021_key.pem"
 					_oWsdl:lSSLInsecure   := .T.
 
+					U_LOG2 ('INFO', 'Realizando parse --> ' + zz4 -> zz4_wsdl)
 					_oWSDL:ParseURL (alltrim (zz4 -> zz4_wsdl))
+					if _lDebug
+						U_Log2 ('debug', 'Parse finalizado')
+					endif
 					if len (_oWSDL:ListOperations()) == 0
 						_Evento ("ERRO na consulta WSDL. Confira o certificado digital e/ou tente novamente mais tarde. " + _oWSDL:cError, .T.)
 						_lWSDL_OK = .F.
