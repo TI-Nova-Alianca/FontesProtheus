@@ -92,8 +92,8 @@
 // 25/01/2021 - Robert  - Melhorada msg. de cond.pag. bonificacao com TES gerando financeiro (GLPI 9128).
 // 10/03/2021 - Claudia - Alterado o parametro da função VA_McPed para calcular frete. GLPI: 9581
 // 19/08/2021 - Robert  - Desabilitado UPDATE SC9010 SET C9_BLCRED = '01' por que tinha sintaxe incorreta e nunca executou.
+// 10/09/2021 - Claudia - Não permitir vender mudas de uva e açucar no mesmo pedido para associados. GLPI: 10916
 //
-
 // ---------------------------------------------------------------------------------------------------------------------------
 User Function MTA410 ()
 	local _lRet      := .T.
@@ -278,6 +278,37 @@ User Function MTA410 ()
 			endif
 		endif
 	endif
+
+	// validação de pedido de associado com mudas + açucar
+	If _lRet
+		// Verifica se o cliente eh um associado
+		_sCGC    :=  fbuscacpo("SA1",1,xfilial("SA1")+ m->c5_cliente + m->c5_lojacli ,"A1_CGC") // busca cpf para localizar o associado na A2
+		_sFornec :=  fbuscacpo("SA2",3,xfilial("SA2") + _sCGC ,"A2_COD")  // busca por cnpj/cpf
+		_sLojFor :=  fbuscacpo("SA2",3,xfilial("SA2") + _sCGC ,"A2_LOJA") // busca por cnpj/cpf
+
+		_oAssoc := ClsAssoc():New (_sFornec, _sLoj For) 
+		if valtype (_oAssoc) == "O" .and. _oAssoc:EhSocio ()
+			_sMuda   := 'N'
+			_sAcucar := 'N'
+
+			for _N = 1 to len (aCols)
+				N := _N
+				if ! GDDeleted ()
+					if alltrim (GDFieldGet ("C6_PRODUTO")) $ '7206/7207'// mudinhas
+						_sMuda := 'S'					
+					endif
+					if alltrim (GDFieldGet ("C6_PRODUTO")) $ '5446' 	// açucar
+						_sAcucar := 'S'					
+					endif
+				endif
+			next
+
+			If _sMuda == 'S' .and. _sAcucar == 'S'
+				_lRet := .F.
+				u_help("Não é permitido vender mudas e açúcar mascavo para associados no mesmo pedido. Verifique!")
+			EndIf			
+		endif
+	EndIf
 
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)

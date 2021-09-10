@@ -2,13 +2,14 @@
 // Autor.....: Jeferson Rech
 // Data......: Maio/2004
 // Descricao.: P.E. no final da geracao da NF de saida, mas ainda dentro da transacao.
-
+//
 // Tags de localização
 // #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #P.E. no final da geracao da NF de saida, mas ainda dentro da transacao
 // #PalavasChave      #PE #NF #notadesaida 
 // #TabelasPrincipais #SF2 #SD2 
 // #Modulos 		  #faturamento #FAT
-
+//
 // Historico de alteracoes:
 // 15/02/2008 - Robert - Ajustes calculo subst.trib. estado de MG
 // 18/02/2008 - Robert - Criado tratamento generico para subst.trib. (independente da UF)
@@ -137,9 +138,9 @@
 // 10/12/2020 - Claudia - Gravação do campo ID transação do pagar.me em títulos. GLPI: 9012
 // 12/07/2021 - Robert  - Representante 328 nao quer que seja impresso seu nome nos dados adicionais (GLPI 10472).
 // 11/08/2021 - Robert  - Grava obs do pedido na cta.corrente associados, quando compra de mudas (GLPI 10673).
+// 10/09/2021 - Claudia - Gravação de conta corrente para venda de açucar mascavo para associados. GLPI: 10916
 //
-
-// -------------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _nPJurBol  := 0
@@ -308,8 +309,7 @@ User Function sf2460i ()
 
 	U_ML_SRArea (_aAreaAnt)
 Return
-
-
+//
 // --------------------------------------------------------------------------
 // Grava dados adicionais para posterior uso na impressao da nota / envio para NF eletronica.
 static function _DadosAdic ()
@@ -518,15 +518,13 @@ static function _DadosAdic ()
 
 	U_ML_SRArea (_aAreaAnt)
 return
-
-
+//
 // --------------------------------------------------------------------------
 // Acrescenta texto `a mensagem.
 static function _SomaMsg (_sVariav, _sTexto)
 	_sVariav += iif (! empty (_sVariav), "; ", "") + alltrim (_sTexto)
 return
-
-
+//
 // --------------------------------------------------------------------------
 // Envia e-mail de notificacao em determinadas condicoes.
 static function _Notifica ()
@@ -542,8 +540,7 @@ static function _Notifica ()
  		U_ZZUNU ({'003'}, _sMsg, _sMsg)
 	endif
 return
-
-
+//
 // --------------------------------------------------------------------------
 // Verificacoes no pedido de venda.
 static function _VerPed ()
@@ -576,8 +573,7 @@ static function _VerPed ()
 		u_help ("A nota fiscal '" + sf2 -> f2_doc + "' NAO faturou todos os itens do pedido. Se isso estiver correto, apenas ignore esta mensagem.")
 	endif
 return
-
-
+//
 // --------------------------------------------------------------------------
 // Verifica devolucao de compra.
 static function _VerDev ()
@@ -600,8 +596,7 @@ static function _VerDev ()
 		U_ZZUNU ({"072"}, "NF devolucao de compra", _sMsg, .F., cEmpAnt, cFilAnt)
 	endif
 return
-
-
+//
 // --------------------------------------------------------------------------
 // Atualiza conta corrente de associados, quando for o caso.
 static function _AtuSZIMudas ()
@@ -609,6 +604,7 @@ static function _AtuSZIMudas ()
 	local _oCtaCorr  := NIL
 	local _oAssoc    := NIL
 	Local i          := 0
+	Local x          := 0
 
 	// Verifica se o cliente eh um associado
 	if _lContinua 
@@ -619,21 +615,40 @@ static function _AtuSZIMudas ()
 		_oAssoc := ClsAssoc():New (_sFornec, _sLojFor) 
 		if valtype (_oAssoc) == "O" .and. _oAssoc:EhSocio ()
 			
-			// verifica se tem os produtos na NF
+			// verifica se tem as mudas/açucar produtos na NF 
 			_oSQL    := ClsSQL ():New ()  
 			_oSQL:_sQuery := ""                                                                                        
-			_oSQL:_sQuery += " SELECT D2_FILIAL, D2_DOC, D2_SERIE"
+			_oSQL:_sQuery += " SELECT D2_FILIAL, D2_DOC, D2_SERIE, D2_COD"
 			_oSQL:_sQuery += " FROM " + RetSQLName ("SD2") + " SD2 "
 			_oSQL:_sQuery += " WHERE SD2.D_E_L_E_T_ != '*'"
 			_oSQL:_sQuery += "   and SD2.D2_FILIAL   = '" + xfilial ("SD2") + "'"
 			_oSQL:_sQuery += "   and SD2.D2_DOC      = '" + sf2 -> f2_doc   + "'"
 			_oSQL:_sQuery += "   and SD2.D2_SERIE    = '" + sf2 -> f2_serie + "'"
-			_oSQL:_sQuery += "   and SD2.D2_COD      in ('7206','7207')" // MUDAS DE VIDEIRAS
-			_aProdOK = aclone (_oSQL:Qry2Array ())
+			_oSQL:_sQuery += "   and SD2.D2_COD      in ('7206','7207','5446')" 
+			_aProdOK := aclone (_oSQL:Qry2Array ())
 			
+			_sTProd := '0'
+			_sHist  := ""
 			if len(_aProdOK) > 0
+				For x:= 1 to Len(_aProdOK)
+					If alltrim(_aProdOK[x,4]) $ '5446' 	// açucar
+						_sTProd := '1'
+					Else
+						_sTProd := '2' 					// mudinhas
+					EndIf
+				Next
+
+				If _sTProd == '1' 	// açucar
+					_sTM   := '23'
+					_sHist := 'VENDA AÇÚCAR MASCAVO CFE.NF.'
+					_sSerie:= 'INS'
+				Else				// mudinhas
+					_sTM   := '24'
+					_sHist := 'VENDA MUDAS DE UVA CFE.NF.'
+					_sSerie:= 'MUD'
+				EndIf
 			
-				_oSQL    := ClsSQL ():New ()
+				_oSQL:= ClsSQL ():New ()
 				_oSQL:_sQuery := ""
 				_oSQL:_sQuery += " SELECT"
 				_oSQL:_sQuery += "     SE1.E1_FILIAL"
@@ -651,24 +666,24 @@ static function _AtuSZIMudas ()
 				_oSQL:_sQuery += " AND SE1.E1_PREFIXO = '" + sf2 -> f2_serie   + "'"
 				_oSQL:_sQuery += " AND SE1.E1_CLIENTE = '" + sf2 -> f2_cliente + "'"
 				_oSQL:_sQuery += " AND SE1.E1_LOJA    = '" + sf2 -> f2_loja    + "'"
-				_aSE1= aclone (_oSQL:Qry2Array ())
+				_aSE1:= aclone (_oSQL:Qry2Array ())
 				
 				if len(_aSE1)> 0
-					for i=1 to len(_aSE1)	
+					for i:=1 to len(_aSE1)	
 						// -------------------------------------------------------
 				   		// Lança na conta corrente associados
 				   		_oCtaCorr := ClsCtaCorr():New ()
 						_oCtaCorr:Assoc    = _sFornec
 						_oCtaCorr:Loja     = _sLojFor
-						_oCtaCorr:TM       = '24'
+						_oCtaCorr:TM       = _sTM
 						_oCtaCorr:DtMovto  = _aSE1[i,8]
 						_oCtaCorr:Valor    = _aSE1[i,5]
 						_oCtaCorr:SaldoAtu = _aSE1[i,5]
 						_oCtaCorr:Usuario  = cUserName
-						_oCtaCorr:Histor   = 'VENDA MUDAS DE UVA CFE.NF.' + _aSE1[i,3] +'/'+ _aSE1[i,2]
+						_oCtaCorr:Histor   = _sHist + _aSE1[i,3] +'/'+ _aSE1[i,2]
 						_oCtaCorr:MesRef   = strzero(month(_oCtaCorr:DtMovto),2)+strzero(year(_oCtaCorr:DtMovto),4)
 						_oCtaCorr:Doc      = _aSE1[i,3]
-						_oCtaCorr:Serie    = _aSE1[i,2]
+						_oCtaCorr:Serie    = _sSerie // _aSE1[i,2]
 						_oCtaCorr:Parcela  = _aSE1[i,4]
 						_oCtaCorr:Origem   = 'SF2460I'
 						_oCtaCorr:Obs      = alltrim (sc5 -> c5_obs)
@@ -681,14 +696,13 @@ static function _AtuSZIMudas ()
 						endif
 					next
 				endif
-				
-			endif
+			endif	
 		endif
 	endif
 return
-
-
+//
 // --------------------------------------------------------------------------
+// Histórico NF
 Static Function _HistNf()
 	_oEvento := ClsEvent():new ()
 	_oEvento:CodEven   = "SZN001"
