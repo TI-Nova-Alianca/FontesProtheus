@@ -16,6 +16,7 @@
 // 12/12/2019 - Claudia - Ajustes conforme GLPI 7187
 // 30/12/2019 - Claudia - Incluido relatório de materiais diário no menu. GLPI: 7260
 // 13/01/2020 - Claudia - Inclusão da função <ArqTrb> (exigencia release 12.1.25 do Protheus)
+// 09/09/2021 - Claudia - Incluidas as rotinas de exportação e importação de dados de eventos. GLPI: 10807
 //
 // -------------------------------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -23,6 +24,7 @@
 
 User Function ZBC()
 	Local aRotAdic   := {}
+	Local aButtons   := {}
 	Local _lRet      := .T.
 	Local _lContinua := .T.
 	
@@ -37,13 +39,14 @@ User Function ZBC()
 		_lRet = _LibRotina ()
 		
 		If _lRet == .T.
-			Aadd(aRotAdic,{ "Planejamento"		,"U_VA_PLJPRD(ZBC->ZBC_FILIAL,ZBC->ZBC_COD,ZBC->ZBC_ANO)", 0 , 6 })
-			Aadd(aRotAdic,{ "Rel.Planejamento"	,"U_VA_RPLJPRD()", 0 , 6 })
-			Aadd(aRotAdic,{ "Rel.Materiais"		,"U_VA_ZBCMAT()" , 0 , 6 }) //Aadd(aRotAdic,{ "Rel.Materiais"		,"U_VA_PLMMAT()" , 0 , 6 })
-			Aadd(aRotAdic,{ "Rel.Mat.Diário"	,"U_VA_ZBCMDI()" , 0 , 6 })
-			Aadd(aRotAdic,{ "Rel.Custos"	    ,"U_VA_ZBCCUS()" , 0 , 6 })
+			Aadd(aRotAdic,{ "Planejamento"		,"U_VA_PLJPRD(ZBC->ZBC_FILIAL,ZBC->ZBC_COD,ZBC->ZBC_ANO)", 0, 6 })
+			Aadd(aRotAdic,{ "Rel.Planejamento"	,"U_VA_RPLJPRD()", 0, 6 })
+			Aadd(aRotAdic,{ "Rel.Materiais"		,"U_VA_ZBCMAT()" , 0, 6 }) 
+			Aadd(aRotAdic,{ "Rel.Mat.Diário"	,"U_VA_ZBCMDI()" , 0, 6 })
+			Aadd(aRotAdic,{ "Rel.Custos"	    ,"U_VA_ZBCCUS()" , 0, 6 })
 		
-			AxCadastro("ZBC", "Manutenção de eventos produtivos", "U_ZBCEXC()", "U_ValidaZBC()",aRotAdic , , , , , , , , , )  
+			//( [ cAlias ] [ cTitle ] [ cDel ] [ cOk ] [ aRotAdic ] [ bPre ] [ bOK ] [ bTTS ] [ bNoTTS ] [ aAuto ] [ nOpcAuto ] [ aButtons ] [ aACS ] [ cTela ] )
+			AxCadastro("ZBC", "Manutenção de eventos produtivos", "U_ZBCEXC(ZBC->ZBC_FILIAL,ZBC->ZBC_COD,ZBC->ZBC_ANO)", "U_ValidaZBC()",aRotAdic , , , , , , , aButtons, , )  
 		EndIf
 	EndIf
 Return
@@ -67,12 +70,13 @@ User Function VA_PLJPRD(_sZBCFilial, _sZBCCod, _sZBCAno)
 	
 	_sPreFiltr := "HC_FILIAL ='" + alltrim(_sZBCFilial) + "' AND HC_VAEVENT='" + alltrim(_sZBCCod) + "' AND HC_ANO='" + alltrim(_sZBCAno) + "'"
 	
-	AADD( aRotina, {"Pesquisar"  ,"AxPesqui" 	,0,1})
-	AADD( aRotina, {"Visualizar" ,"U_PLJA(2)"  	,0,2})
-	AADD( aRotina, {"Incluir"    ,"U_PLJI()"  	,0,3})
-	AADD( aRotina, {"Alterar"    ,"U_PLJA(4, 	'allwaystrue ()', 'allwaystrue ()', .T., _sPreFiltr)"  	,0,4})
-	AADD( aRotina, {"Legenda"    ,"U_PLJLEG(6)" ,0,6})
-	
+	AADD( aRotina, {"Pesquisar"  		,"AxPesqui" 	,0,1})
+	AADD( aRotina, {"Visualizar" 		,"U_PLJA(2)"  	,0,2})
+	AADD( aRotina, {"Incluir"    		,"U_PLJI()"  	,0,3})
+	AADD( aRotina, {"Alterar"    		,"U_PLJA(4, 	'allwaystrue ()', 'allwaystrue ()', .T., _sPreFiltr, '" + _sZBCCod +"')"  	,0,4})
+	AADD( aRotina, {"Exportar .CSV"    	,"U_PLJEXP('"+ _sZBCFilial + "','"+  _sZBCCod + "','" + _sZBCAno + "')" ,0,6})
+	AADD( aRotina, {"Importar .CSV"    	,"U_PLJIMP('"+ _sZBCFilial + "','"+  _sZBCCod + "','" + _sZBCAno + "')" ,0,6})
+
 	dbSelectArea("SHC")
 	dbSetOrder(5)
 	dbGoTop()
@@ -104,29 +108,56 @@ Return
 // --------------------------------------------------------------------------
 // Rotina Tudo OK tabela SHC
 User Function PLJITOk()
-	Local _lRet := .T.
-	
-	If _lRet 
-		If empty(M -> HC_FILIAL)
-			u_help("Campo <Filial> é obrigatório!")
-			_lRet := .F.
-		EndIf
-		If empty(M -> HC_PRODUTO)
-			u_help("Campo <Produto> é obrigatório!")
-			_lRet := .F.
-		EndIf
-		If empty(M -> HC_DATA)
-			u_help("Campo <Data> é obrigatório!")
-			_lRet := .F.
-		EndIf
-		If empty(M -> HC_QUANT)
-			u_help("Campo <Quantidade> é obrigatório!")
-			_lRet := .F.
-		EndIf
-		If empty(M -> HC_VAEVENT)
-			u_help("Campo <Evento> é obrigatório!")
-			_lRet := .F.
-		EndIf	
+	Local _lRet   := .T.
+	Local _oSQL   := ClsSQL ():New ()
+	local _nLinha := 0
+	Local _x      := 0
+
+	If !inclui
+		For _nLinha := 1 to len(aCols)
+			If ! GDDeleted (_nLinha)
+				If empty(GDFieldGet ("HC_FILIAL" , _nLinha))
+					u_help("Campo <Filial> é obrigatório!")
+					_lRet := .F.
+				EndIf
+				If empty(GDFieldGet ("HC_PRODUTO", _nLinha))
+					u_help("Campo <Produto> é obrigatório!")
+					_lRet := .F.
+				EndIf
+				If empty(GDFieldGet ("HC_DATA"   , _nLinha))
+					u_help("Campo <Data> é obrigatório!")
+					_lRet := .F.
+				EndIf
+				If empty(GDFieldGet ("HC_QUANT"  , _nLinha)) .or. GDFieldGet ("HC_QUANT", _nLinha) == 0
+					u_help("Campo <Quantidade> é obrigatório!")
+					_lRet := .F.
+				EndIf
+				If empty(GDFieldGet ("HC_VAEVENT", _nLinha))
+					u_help("Campo <Evento> é obrigatório!")
+					_lRet := .F.
+				EndIf
+				
+				// verifica se produto existe e esta desbloqueado
+				_sProduto := GDFieldGet ("HC_PRODUTO", _nLinha)
+
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += " SELECT "
+				_oSQL:_sQuery += " 	COUNT(*) "
+				_oSQL:_sQuery += " FROM SB1010 "
+				_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+				_oSQL:_sQuery += " AND B1_COD    = '" + _sProduto + "' "
+				_oSQL:_sQuery += " AND B1_MSBLQL = '2' "
+				_aSB1 := aclone (_oSQL:Qry2Array ())
+				For _x:= 1 to Len(_aSB1)
+					_nVlr := _aSB1[_x,1]
+
+					If _nVlr == 0
+						u_help("Campo <Produto> inválido!")
+						_lRet := .F.
+					EndIf
+				Next
+			Endif
+		Next
 	EndIf
 Return _lRet
 //
@@ -164,60 +195,46 @@ User Function ZBCEXC()
 	Local _lRet 	:= .T.
 	Local _aAreaAnt := U_ML_SRArea ()
 	Local _cQuery   := ""
-	Local _cQuery1  := ""
-	Local _cQuery2  := ""
+	Local _aItem    := ""
+	Local _x        := 0
 	
 	// busca itens para verificar opcionais anexados
-	_cQuery := " SELECT HC_FILIAL, HC_VAEVENT, HC_PRODUTO, HC_DATA "
+	_cQuery := " SELECT HC_FILIAL, HC_VAEVENT, HC_ANO, HC_PRODUTO  "
 	_cQuery += " FROM " + RetSqlName("SHC")
 	_cQuery += " WHERE D_E_L_E_T_ = '' "
 	_cQuery += " AND HC_FILIAL    = '" + alltrim(ZBC -> ZBC_FILIAL) + "'"
 	_cQuery += " AND HC_VAEVENT   = '" + ZBC -> ZBC_COD + "'"
 	_cQuery += " AND HC_ANO       = '" + ZBC -> ZBC_ANO + "'"
-	dbUseArea(.T., "TOPCONN", TCGenQry(,,_cQuery), "TRA", .F., .T.)
-	TRA->(DbGotop())	
+	_aItem := U_Qry2Array(_cQuery)
 	
-	// Deleta virtualmente registros de opcionais ZBD
-	While  TRA->(!Eof())	
-		_cQuery1 := " UPDATE " + RetSqlName("ZBD") 
-		_cQuery1 += " SET D_E_L_E_T_ = '*' "
-		_cQuery1 += " WHERE ZBD_FILIAL = '" + TRA -> HC_FILIAL  + "'"
-		_cQuery1 += " AND ZBD_VAEVE    = '" + TRA -> HC_VAEVENT + "'"
-		_cQuery1 += " AND ZBD_PROD     = '" + TRA -> HC_PRODUTO + "'"
-		_cQuery1 += " AND ZBD_DATA     = '" + TRA -> HC_DATA    + "'"
-
-		If TCSQLExec (_cQuery1) < 0
-			u_help(" Não foi possível deletar registros de opcionais!")
-			_lRet := .F.
-			u_showmemo(_cQuery1)
-			Return
-	    Endif   
-		TRA->(DbSkip())
-	Enddo
-	TRA->(DbCloseArea())
+	// Deleta  registros de opcionais ZBD
+	For _x:= 1 to Len(_aItem)		
+		dbSelectArea("ZBD")
+		ZBD -> (dbsetorder (1))  // ZBD_FILIAL + ZBD_VAEVE + ZBD_ANO + ZBD_PROD + ZBD_DATA
+		If dbseek (_aItem[_x, 1] + _aItem[_x, 2] + _aItem[_x, 3] + _aItem[_x, 4], .F.)
+			RecLock("ZBD", .F.)
+				ZBD -> (dbdelete ())
+			MSUnlock()
+		EndIf
+	Next
 	
-	// Deleta virtualmente registros dos eventos produtivos SHC
-	If _lRet == .T. //se opcionais ok
-		_cQuery2 := " UPDATE " + RetSqlName("SHC")
-		_cQuery2 += " SET D_E_L_E_T_ = '*' "
-		_cQuery2 += " WHERE D_E_L_E_T_ = '' "
-		_cQuery2 += " AND HC_FILIAL    = '" + alltrim(ZBC -> ZBC_FILIAL) + "'"
-		_cQuery2 += " AND HC_VAEVENT   = '" + ZBC -> ZBC_COD + "'"
-		_cQuery2 += " AND HC_ANO       = '" + ZBC -> ZBC_ANO + "'"
-		If TCSQLExec (_cQuery2) < 0
-			u_help(" Não foi possível deletar registros de eventos produtivos!")
-			_lRet := .F.
-			u_showmemo(_cQuery2)
-			Return
-	    Endif   
-	EndIf
+	// Deleta eventos produtivos
+	For _x:= 1 to Len(_aItem)	
+		dbSelectArea("SHC")
+		SHC -> (dbsetorder (6))  // HC_FILIAL + HC_VAEVENT + HC_ANO
+		If dbseek(_aItem[_x, 1] + _aItem[_x, 2] + _aItem[_x, 3], .F.)
+			RecLock("SHC", .F.)
+				SHC -> (dbdelete ())
+			MSUnlock()
+		EndIf
+	Next
 
 	U_ML_SRArea (_aAreaAnt)
 Return _lRet
 //
 // --------------------------------------------------------------------------
 // Visualizacao, Alteracao, Exclusao
-User Function PLJA (_nOpcao, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr)
+User Function PLJA (_nOpcao, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr, _sCodEvento)
 	local _lContinua  := .T.
 	local _aCampos    := {}
 	local _n		  := 1
@@ -228,7 +245,7 @@ User Function PLJA (_nOpcao, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr)
 	private nOpc      := _nOpcao
 	private N		  := 1
 	
-	_sCodEvento := ZBC->ZBC_COD
+	//_sCodEvento := ZBC->ZBC_COD
 	u_logIni ()
 	DbSelectArea("SHC")
 	SHC -> (dbsetorder (5))
@@ -267,7 +284,7 @@ User Function PLJA (_nOpcao, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr)
 		                 aCGD			,;  // Coordenadas da getdados
 		                 nOpc			,;  // nOPC
 		                 "U_PLMLOK ()"	,;  // Linha OK
-		                 _sTudoOK		,;  // Tudo OK
+		                 "U_PLJITOk()"	,;  // Tudo OK
 										,;  // Gets editaveis
 										,;  // bloco codigo para tecla F4
 										,;  // Campos inicializados
@@ -1113,6 +1130,192 @@ Static Function _BuscaQTDLitros (_cProd, _cRev)
 	
 	TRB->(DbCloseArea())
 Return _qtdLt
+//
+// --------------------------------------------------------------------------
+// Exporta arquivo
+User Function PLJEXP(_sZBCFilial, _sZBCCod, _sZBCAno)
+	Local _oSQL  	:= ClsSQL ():New ()
+	Local cLocalDir := ''
+	Local cMascara  := '.CSV|*.CSV'
+	Local cTitulo   := 'Local do arquivo'
+	Local nMascpad  := 0
+	Local cDirIni   := '\'
+	Local lSalvar   := .F.
+	Local nOpcoes   := GETF_LOCALHARD
+	Local lArvore   := .F. /*.T. = apresenta o árvore do servidor || .F. = não apresenta*/
+	Local _i         := 0
+	
+	cLocalDir := cGetFile( cMascara, cTitulo, nMascpad, cDirIni, lSalvar, nOpcoes, lArvore)
+
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 	   HC_FILIAL "
+	_oSQL:_sQuery += "    ,HC_DOC "
+	_oSQL:_sQuery += "    ,HC_VAEVENT "
+	_oSQL:_sQuery += "    ,HC_ANO "
+	_oSQL:_sQuery += "    ,HC_ITEM "
+	_oSQL:_sQuery += "    ,HC_PRODUTO "
+	_oSQL:_sQuery += "    ,B1_DESC "
+	_oSQL:_sQuery += "    ,HC_DATA "
+	_oSQL:_sQuery += "    ,HC_QUANT "
+	_oSQL:_sQuery += "    ,HC_REVISAO "
+	_oSQL:_sQuery += "    ,G5_OBS AS DESCREV "
+	_oSQL:_sQuery += "    ,HC_GRPOPC "
+	_oSQL:_sQuery += "    ,HC_OPCITEM "
+	_oSQL:_sQuery += "    ,HC_TPOPRD "
+	_oSQL:_sQuery += "    ,ZX5_45DESC "
+	_oSQL:_sQuery += " FROM " + RetSQLName ("SHC") + " SHC "
+	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SB1") + " SB1 "
+	_oSQL:_sQuery += " 		ON (SB1.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " 			AND SB1.B1_COD = SHC.HC_PRODUTO) "
+	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SG5") + " SG5 "
+	_oSQL:_sQuery += " 		ON (SG5.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " 			AND SG5.G5_PRODUTO = SHC.HC_PRODUTO "
+	_oSQL:_sQuery += " 			AND SG5.G5_REVISAO = SHC.HC_REVISAO) "
+	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("ZX5") + " ZX5 "
+	_oSQL:_sQuery += "  	ON (ZX5.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += "  		AND ZX5_TABELA = '45' "
+	_oSQL:_sQuery += "  		AND ZX5_45COD = HC_TPOPRD) "
+	_oSQL:_sQuery += " WHERE SHC.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " AND HC_FILIAL    = '" + _sZBCFilial + "'"
+	_oSQL:_sQuery += " AND HC_VAEVENT   = '" + _sZBCCod   + "'"
+	_oSQL:_sQuery += " AND HC_ANO       = '" + _sZBCAno    + "'"
+	_aSHC := aclone (_oSQL:Qry2Array ())
+
+	If Len(_aSHC) > 0
+		nHandle := FCreate(cLocalDir)
+
+		For _i:= 1 to Len(_aSHC)
+			cTexto := ""
+			cTexto += _aSHC[_i, 1] + "|"
+			cTexto += _aSHC[_i, 2] + "|"
+			cTexto += _aSHC[_i, 3] + "|"
+			cTexto += _aSHC[_i, 4] + "|"
+			cTexto += _aSHC[_i, 5] + "|"
+			cTexto += _aSHC[_i, 6] + "|"
+			cTexto += _aSHC[_i, 7] + "|"
+			cTexto += DTOS(_aSHC[_i, 8])         + "|"
+			cTexto += alltrim(str(_aSHC[_i, 9])) + "|"
+			cTexto += _aSHC[_i,10] + "|"
+			cTexto += _aSHC[_i,11] + "|"
+			cTexto += _aSHC[_i,12] + "|"
+			cTexto += _aSHC[_i,13] + "|"
+			cTexto += _aSHC[_i,14] + "|"
+			cTexto += _aSHC[_i,15] + CHR(13)+CHR(10) 
+			
+			FWrite(nHandle, cTexto)
+		Next
+
+		FClose(nHandle)
+
+		u_help(" Arquivo salvo em:" + cLocalDir)
+	Else
+		u_help(" Sem dados para gerar o aquivo")
+	EndIf	
+Return
+// --------------------------------------------------------------------------
+// Importa arquivo
+User Function PLJIMP(_sZBCFilial, _sZBCCod, _sZBCAno)
+	Local _oSQL  	  := ClsSQL ():New ()
+	Local cArq        := ""
+	Local cMascara    := ".CSV|*.CSV"
+	Local cTitulo     := "Importar arquivo"
+	Local nMascpad    := 0
+	Local cDirIni     := "\"
+	Local lSalvar     := .T.
+	Local nOpcoes     := GETF_LOCALHARD
+	Local lArvore     := .F. /*.T. = apresenta o árvore do servidor || .F. = não apresenta*/
+	Local cLinha  	  := ""
+	Local aDados  	  := {}
+	Local _x		  := 1
+	Local _y          := 1
+	local aOpc        := {}
+	private _sModo    := ""
+	private aHeader   := {}
+	private aCols     := {}
+	private nOpc      := 4 // alterar
+	private N		  := 1
+	
+	cArq := cGetFile( cMascara, cTitulo, nMascpad, cDirIni, lSalvar, nOpcoes, lArvore)
+
+	If !File(cArq)
+		MsgStop("O arquivo '" + cArq + "' não foi encontrado. Importação não realizada!","ATENCAO")
+		Return
+	EndIf
+
+	FT_FUSE(cArq)
+	ProcRegua(FT_FLASTREC())
+	FT_FGOTOP()
+
+	While !FT_FEOF()
+		cLinha := FT_FREADLN()
+		AADD(aDados,Separa(cLinha,"|",.T.))
+		FT_FSKIP()		
+	EndDo  
+
+	If U_MsgYesNo ("Deseja reimportar os arquivos?")
+
+		// Limpa os registros eventos
+		_oSQL:_sQuery += " DELETE FROM SHC010 "
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " AND HC_FILIAL    = '" + _sZBCFilial + "'"
+		_oSQL:_sQuery += " AND HC_VAEVENT   = '" + _sZBCCod    + "'"
+		_oSQL:_sQuery += " AND HC_ANO       = '" + _sZBCAno    + "'"
+		_oSQL:Exec ()
+
+		// Limpa registros opcionais
+		_oSQL:_sQuery += " DELETE FROM ZBD010 "
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " AND ZBD_FILIAL   = '" + _sZBCFilial + "'"
+		_oSQL:_sQuery += " AND ZBD_VAEVE    = '" + _sZBCCod    + "'"
+		_oSQL:_sQuery += " AND ZBD_ANO      = '" + _sZBCAno    + "'"
+		_oSQL:Exec ()
+		
+		For _x:= 1 to Len(aDados)
+
+			RecLock("SHC", .T.)
+				SHC -> HC_FILIAL 	:= iif(!empty(aDados[_x, 1]),PADL(aDados[_x, 1],2,'0'),"01")
+				SHC -> HC_DOC 		:= iif(!empty(aDados[_x, 2]),upper(aDados[_x, 2]), upper(_sZBCCod))
+				SHC -> HC_VAEVENT 	:= iif(!empty(aDados[_x, 3]),upper(aDados[_x, 3]), upper(_sZBCCod))
+				SHC -> HC_ANO 		:= iif(!empty(aDados[_x, 4]),aDados[_x, 4],_sZBCAno)
+				SHC -> HC_ITEM 		:= iif(!empty(aDados[_x, 5]),PADL(aDados[_x, 5],2,'0')," ")
+				SHC -> HC_PRODUTO 	:= iif(!empty(aDados[_x, 6]),aDados[_x, 6]," ")
+				SHC -> HC_DATA 		:= iif(!empty(aDados[_x, 8]),STOD(aDados[_x, 8]),date())   
+				SHC -> HC_QUANT 	:= iif(!empty(aDados[_x, 8]), val(aDados[_x, 9]),0)     
+				SHC -> HC_REVISAO 	:= iif(!empty(aDados[_x,10]),PADL(aDados[_x,10],3,'0')," ")
+				SHC -> HC_GRPOPC 	:= iif(!empty(aDados[_x,12]),PADL(aDados[_x,12],3,'0')," ")
+				SHC -> HC_OPCITEM 	:= iif(!empty(aDados[_x,13]),aDados[_x,13]," ")
+				SHC -> HC_TPOPRD 	:= iif(!empty(aDados[_x,14]),aDados[_x,14]," ")
+			MsUnlock("SHC")	
+
+			// separa opcionais
+			aOpc := {}
+			AADD(aOpc,Separa(aDados[_x,13],";",.T.))
+
+			For _y:=1 to Len(aOpc[1])
+				_sGrp := iif(!empty(aDados[_x,12]),PADL(aDados[_x,12],3,'0')," ")
+				_sOpc := aOpc[1,_y]
+
+				If !empty(_sOpc)
+					RecLock("ZBD", .T.)
+						ZBD -> ZBD_FILIAL := iif(!empty(aDados[_x, 1]),PADL(aDados[_x, 1],2,'0'),"01")
+						ZBD -> ZBD_VAEVE  := iif(!empty(aDados[_x, 3]),upper(aDados[_x, 3]), upper(_sZBCCod))
+						ZBD -> ZBD_ANO    := iif(!empty(aDados[_x, 4]),aDados[_x, 4],_sZBCAno)
+						ZBD -> ZBD_PROD   := iif(!empty(aDados[_x, 6]),aDados[_x, 6]," ")
+						ZBD -> ZBD_DATA   := iif(!empty(aDados[_x, 8]),STOD(aDados[_x, 8]),date())   
+						ZBD -> ZBD_QUANT  := iif(!empty(aDados[_x, 8]), val(aDados[_x, 9]),0)   
+						ZBD -> ZBD_ITEM   := iif(!empty(aDados[_x, 5]),PADL(aDados[_x, 5],2,'0')," ")
+						ZBD -> ZBD_GRPOPC := _sGrp
+						ZBD -> ZBD_OPCITE := _sOpc
+						ZBD -> ZBD_CODOPC := Posicione("SGA",1,xfilial("SGA") + _sGrp + _sOpc,"GA_DESCOPC")  // GA_FILIAL + GA_GROPC + GA_OPC
+					MsUnlock("ZBD")	
+				Endif			
+			Next
+		Next  
+
+		U_PLJA(4, 'allwaystrue ()', 'allwaystrue ()', .T., _sPreFiltr, _sZBCCod)
+	EndIf
+return
 //
 // --------------------------------------------------------------------------
 // Perguntas
