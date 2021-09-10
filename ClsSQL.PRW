@@ -519,6 +519,7 @@ METHOD Qry2XLS (_lSetField, _lFixaChar, _lSemEspac) Class ClsSQL
 
 	// Executa a query.
 	_ExecQry (::self)
+	U_Log2 ('debug', 'Query executada. Iniciando exportacao de dados para CSV.')
 	
 	// Altera tipo de campos data cfe. dicionario de dados.
 	if _lSetField

@@ -8,6 +8,7 @@
 //                     - Filtra uma OP da filial 09 que teve erro de apontamento.
 // 24/08/2018 - Robert - Ignora NF 000016150 (transf.indevida filial 07 para 01).
 // 20/02/2020 - Robert - Desabilitada leitura de talhao de terra quando NF de entrada de safra.
+// 09/09/2021 - Robert - Nas NF de entrada, passa a desconsiderar retornos de industrializacao (GLPI 10913)
 //
 
 // --------------------------------------------------------------------------
@@ -221,7 +222,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 				endif
 		
 
-				// Busca possiveis entradas via NF (Ignora transferencias de filiais).
+				// Busca possiveis entradas via NF.
 				if _nNivel <= 0 .and. sb1 -> b1_rastro == 'L'
 					_oSQL := ClsSQL ():New ()
 					_oSQL:_sQuery := "SELECT D1_DOC, D1_LOTEFOR, SUM (D1_QUANT), D1_UM,"
@@ -248,7 +249,13 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 					_oSQL:_sQuery +=   " AND SD1.D1_COD     = '" + _sProduto + "'"
 					_oSQL:_sQuery +=   " AND SD1.D1_LOTECTL = '" + _sLote + "'"
 					_oSQL:_sQuery +=   " AND SD1.D1_QUANT   > 0"
+
+					// Ignora retornos de remessa para industrializacao
+					_oSQL:_sQuery +=   " AND NOT (SD1.D1_NFORI != '' AND SF4.F4_PODER3 IN ('R', 'D'))"
+
+					// Ignora transferencias de filiais
 					_oSQL:_sQuery +=   " AND SD1.D1_FORNECE NOT IN ('000021','001094','001369','003150','003402','003114','003209','003111','003108','003266','003195','004565','004734')"
+
 					_oSQL:_sQuery += " GROUP BY D1_DOC, D1_LOTEFOR, D1_UM, CASE WHEN D1_TIPO IN ('D', 'B') THEN A1_NOME ELSE A2_NOME END, D1_SERIE"
 					_oSQL:Log ()
 					_aSD1 = aclone (_oSQL:Qry2Array (.F., .F.))
