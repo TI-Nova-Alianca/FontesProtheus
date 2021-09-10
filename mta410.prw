@@ -286,7 +286,7 @@ User Function MTA410 ()
 		_sFornec :=  fbuscacpo("SA2",3,xfilial("SA2") + _sCGC ,"A2_COD")  // busca por cnpj/cpf
 		_sLojFor :=  fbuscacpo("SA2",3,xfilial("SA2") + _sCGC ,"A2_LOJA") // busca por cnpj/cpf
 
-		_oAssoc := ClsAssoc():New (_sFornec, _sLoj For) 
+		_oAssoc := ClsAssoc():New (_sFornec, _sLojFor) 
 		if valtype (_oAssoc) == "O" .and. _oAssoc:EhSocio ()
 			_sMuda   := 'N'
 			_sAcucar := 'N'
