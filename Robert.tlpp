@@ -103,6 +103,37 @@ static function _AndaLogo ()
 	u_help ('Nada definido.')
 return
 /*
+	// Testes batches em geral
+//	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batocor ()
+//	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batmetaf ()
+//	_sArqLog := 'U_BatFunAtlz_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batfunatlz ()
+//	_sArqLog := 'U_BatBlUsr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batBlUsr ()
+//	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batsafr ('1')  // cargas sem contranota
+//	u_batsafr ('3')  // conferencia geracao das parcelas financeiro
+//	u_batsafr ('4')  // contranotas sem carga
+//	u_batsafr ('5')  // conferencia fretes
+//	u_batsafr ('7')  // gera SZI a partir das parcelas
+//	u_batsafr ('8')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
+//	u_batsafr ('9')  // Transfere (das filiais para a matriz) os titulos de nao associados.
+//	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batmercp ()
+//	_sArqLog := 'U_BatVerif_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batVerif ()
+//	_sArqLog := 'U_BatEDIM_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batedim ("I")
+//	_sArqLog := 'U_BatMercN_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batMercN (5)
+//	u_log2 ('info', _oBatch:Mensagens)
+//	_sArqLog := 'U_BatXML_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	U_BatXML("\\192.168.1.3\Siga\Protheus12\protheus_data\xml_NFe\", 1, .F.)
+return
+*/
+/*
 	// Testes geracao XML
 	paramixb := array (3, 7)
 	_aNotas = {}
@@ -150,37 +181,6 @@ return
 		U_XmlNfeSEF (_aNotas [_nDado, 1], _aNotas [_nDado, 2], _aNotas [_nDado, 3], _aNotas [_nDado, 4], _aNotas [_nDado, 5], _aNotas [_nDado, 6], _aNotas [_nDado, 7])
 		u_logFim (_aNotas [_nDado, 3])
 	next
-return
-*/
-/*
-	// Testes batches em geral
-//	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batocor ()
-//	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batmetaf ()
-//	_sArqLog := 'U_BatFunAtlz_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batfunatlz ()
-//	_sArqLog := 'U_BatBlUsr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batBlUsr ()
-//	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batsafr ('1')  // cargas sem contranota
-//	u_batsafr ('3')  // conferencia geracao das parcelas financeiro
-//	u_batsafr ('4')  // contranotas sem carga
-//	u_batsafr ('5')  // conferencia fretes
-//	u_batsafr ('7')  // gera SZI a partir das parcelas
-//	u_batsafr ('8')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
-//	u_batsafr ('9')  // Transfere (das filiais para a matriz) os titulos de nao associados.
-//	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batmercp ()
-//	_sArqLog := 'U_BatVerif_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batVerif ()
-//	_sArqLog := 'U_BatEDIM_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batedim ("I")
-//	_sArqLog := 'U_BatMercN_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batMercN (5)
-//	u_log2 ('info', _oBatch:Mensagens)
-//	_sArqLog := 'U_BatXML_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	U_BatXML("\\192.168.1.3\Siga\Protheus12\protheus_data\xml_NFe\", 1, .F.)                          
 return
 */
 /*
