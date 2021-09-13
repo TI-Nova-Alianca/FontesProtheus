@@ -33,12 +33,21 @@
 // 01/07/2019 - Andre   - Criado parametro VA_GRPSB1 contendo grupos de produto.
 // 03/05/2021 - Claudia - Validação de centro de custo X filial. GLPI 9945
 // 15/06/2021 - Claudia - Incluida novas validações C.custo X C.contabil. GLPI: 10224
+// 13/09/2021 - Robert  - Valida B1_TIPO MM/MC x grupo 131 (GLPI 10651).
 //
+
 // ----------------------------------------------------------------------------------------------------------------------------
 user function mt110lok ()
 	local _lRet     := .T.
 	local _aAreaAnt := U_ML_SRArea ()
 	local _aAmbAnt  := U_SalvaAmb ()
+
+	// Deixa o SB1 posicionado para validacoes posteriores.
+	sb1 -> (dbsetorder (1))
+	if ! sb1 -> (dbseek (xfilial ("SB1") + GDFieldGet ("C1_PRODUTO"), .F.))
+		u_help ("Produto '" + GDFieldGet ("C1_PRODUTO") + "' nao encontrado no cadastro!")
+		_lRet = .F.
+	endif
 
 	if _lRet .and. ! GDDeleted () .and. GDFieldGet ("C1_VAENCAM") == "S"
 		if _lRet .and. empty (GDFieldGet ("C1_VAJENC"))
@@ -77,17 +86,13 @@ user function mt110lok ()
 	// obriga informacao do centro de custo
 	if _lRet .and. ! GDDeleted () .and. empty (GDFieldGet ("C1_CC"))
 		_wtpprod = fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("C1_PRODUTO"), 'B1_TIPO' )
-		//if ! _wtpprod $ 'MR/MP/PS/ME/PP/PI/VD/PA/SP/MA/UC/EP/ML/MX/MB/MT/CL/II'
-		//if ! _wtpprod $ GetMV ("VA_GRPSB1")
-			//if _wtpprod = 'GG' .and. alltrim(GDFieldGet ("C1_PRODUTO")) $'7103/7110/7082/7087/7066/7159/7012/7013/7050/7048/7122/7061'
-			if ! substr(alltrim(GDFieldGet ("C1_CONTA")),1,1) $ "4/7"
-				// produtos considerados excessao - chamado 
-				_lRet = .T.	
-			else 
-				u_help ("Obrigatório informar centro de custo para este item.")
-				_lRet = .F.
-			endif				
-		//endif
+		if ! substr(alltrim(GDFieldGet ("C1_CONTA")),1,1) $ "4/7"
+			// produtos considerados excessao - chamado 
+			_lRet = .T.	
+		else 
+			u_help ("Obrigatório informar centro de custo para este item.")
+			_lRet = .F.
+		endif
 	endif
 
 
@@ -98,13 +103,8 @@ user function mt110lok ()
 			_lRet = .F.
 		endif
 	endif
-	// Valida o cadastro produto x fornecedor
-/*	if ! empty (GDFieldGet ("C1_FORNECE")) .and. empty (GDFieldGet ("C1_CODPRF")) 
-	/*	msgalert ("Preencher cadastro Produto x Fornecedor - Entrar em contato com departamento de Compras") 
-		_lRet = .F.
-	endif  
-*/	
-// realiza a validação de amarração centro de custo x conta contábil
+
+	// realiza a validação de amarração centro de custo x conta contábil
 	if GetMv("VA_CUSXCON") == 'S' .and. _lRet // parametro para realizar as validações
 		_sConta := GDFieldGet("C1_CONTA")
 		_sCC    := GDFieldGet("C1_CC")
@@ -124,12 +124,16 @@ user function mt110lok ()
 			u_help("Conta contábil iniciada em 1, não é necessário a informação do centro de custo! Retire o Centro de custo.")
 			_lRet = .F.
 		endif
-		// if !empty(GDFieldGet("C1_CC")) .and. !empty(GDFieldGet("C1_CONTA"))
-		// if _lRet .and. alltrim(_sConta) != alltrim(_sCC)
-		// 	u_help ("Divergencia no cadastro de Amarração C.Custo X C.Contabil. Grupo C.Custo:" + alltrim(_sCC) + " Grupo C.Contabil:" + alltrim(_sConta))
-		// 	_lRet = .F.
-		// endif
-		// endif
+	endif
+
+	// Valida se o usuario pode solicitar compra deste tipo de material.
+	if _lRet .and. ! GDDeleted ()
+		if sb1 -> b1_tipo $ 'MC/MM'
+			if ! U_ZZUVL ('131', __cUserID, .T.)
+				u_help ("Solicitacao de compra de itens tipo '" + sb1 -> b1_tipo + "' restrita ao pessoal de manutencao e relacionados.")
+				_lRet = .F.
+			endif
+		endif
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
