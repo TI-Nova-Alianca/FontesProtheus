@@ -37,7 +37,9 @@
 // 26/03/2021 - Robert  - Nao tinha tratamento para cidades com [til] no nome (GLPI 9706).
 // 11/06/2021 - Robert  - Pequena melhoria na geracao de logs.
 // 03/09/2021 - Claudia - Incluido campos obrigatorios na gravação do cliente. GLPI: 10819
+// 13/09/2021 - Robert  - Limitados tamanhos de alguns campos do SA1 (acusava erro "String or binary data would be truncated" no SQL/DBAccess).
 //
+
 // -----------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
 #Include "Protheus.ch"
@@ -135,6 +137,10 @@ User function BATFUNATLZ()
 				_wcodmun2  := _BuscaDadosMun(_wcodmun, _west, '1')
 				_wDescMun  := _BuscaDadosMun(_wcodmun, _west, '2')
 
+				if empty(_wemail)
+					U_Log2 ('erro', 'E-mail nao informado no cadastro de ' + _wnome)
+					loop
+				endif
 				if empty(_wcgc)
 					_wcgc := "lixo@novaalianca.coop.br"
 				endif
@@ -170,11 +176,11 @@ User function BATFUNATLZ()
 					
 					oSA1Mod:setValue("A1_NOME"		, _wnome								)
 					oSA1Mod:setValue("A1_PESSOA"	, _wtipo								)
-					oSA1Mod:setValue("A1_END"		, _wend									)
+					oSA1Mod:setValue("A1_END"		, left (_wend, tamsx3 ("A1_END")[1])	)
 					oSA1Mod:setValue("A1_BAIRRO"	, _wbairro								)
 					oSA1Mod:setValue("A1_EST"		, _west									)
-					oSA1Mod:setValue("A1_CEP"		, _wcep									)
-					oSA1Mod:setValue("A1_TEL"		, _wtel									)
+					oSA1Mod:setValue("A1_CEP"		, left (_wcep, tamsx3 ("A1_CEP")[1])	)
+					oSA1Mod:setValue("A1_TEL"		, left (_wtel, tamsx3 ("A1_TEL")[1])	)
 					oSA1Mod:setValue("A1_EMAIL"		, _wemail								)
 					oSA1Mod:setValue("A1_CGC"		, _wcgc									)
 					oSA1Mod:setValue("A1_COD_MUN"	, _wcodmun								)
@@ -265,15 +271,15 @@ User function BATFUNATLZ()
 					if _wintegra = 2  // SO ATUALIZA FUNCIONARIOS - VER DEPOIS SOBRE ASSOCIADOS
 				        _sSQL += "      , A1_NOME    = '" + _wnome + "'"
 			            _sSQL += "      , A1_PESSOA  = '" + _wtipo + "'"
-			            _sSQL += "      , A1_END     = '" + _wend + "'"
+			            _sSQL += "      , A1_END     = '" + left (_wend, tamsx3 ("A1_END")[1]) + "'"
 			            _sSQL += "      , A1_BAIRRO  = '" + _wbairro + "'"
 			            _sSQL += "      , A1_EST 	 = '" + _west + "'"
-			            _sSQL += "      , A1_CEP     = '" + _wcep + "'"
-			            _sSQL += "      , A1_TEL     = '" + _wtel + "'"
+			            _sSQL += "      , A1_CEP     = '" + left (_wcep, tamsx3 ("A1_CEP")[1]) + "'"
+			            _sSQL += "      , A1_TEL     = '" + left (_wtel, tamsx3 ("A1_TEL")[1]) + "'"
 						_sSQL += "      , A1_EMAIL   = '" + _wemail + "'"  
 						_sSQL += "      , A1_COD_MUN = '" + _wcodmun + "'"
 						_sSQL += "      , A1_REGIAO  = '" + _wregiao + "'"
-						_sSQL += "      , A1_NREDUZ  = '" + _wnome + "'"
+						_sSQL += "      , A1_NREDUZ  = '" + left (_wnome, tamsx3 ("A1_NREDUZ")[1]) + "'"
 						_sSQL += "      , A1_VAMDANF = '" + _wemail + "'"
 			        endif 
 			        _sSQL += "      , A1_LOJAS   = '" + _wlojas + "'"
@@ -281,6 +287,7 @@ User function BATFUNATLZ()
 			        _sSQL += "  WHERE D_E_L_E_T_ = ''"
 					_sSQL += "    AND A1_COD     = '" + _wcodcli  + "'"
 					_sSQL += "    AND A1_LOJA    = '" + _wlojacli + "'"
+					//_sSQL += "    AND A1_VAUEXPO < '" + dtos(ddatabase) + "'"  // Apenas 1 vez por dia
 					u_log2 ('info', _sSQL)
 					TCSQLExec (_sSQL)
 				endif
@@ -368,7 +375,7 @@ Static Function _Exe2Query()
 	_sQuery += " 			ON (SZB.D_E_L_E_T_  = ''"
 	_sQuery += " 				AND SZB.ZB_COD  = CC2.CC2_VA_SZB)"
 	_sQuery += " ORDER BY NOME"
-	u_log2 ('info', _sQuery)
+	//u_log2 ('info', _sQuery)
 return
 //
 // --------------------------------------------------------------------------
@@ -385,7 +392,7 @@ Static Function  _BuscaDadosMun(_wcodmun, _west, _wTipo)
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " AND CC2_CODMUN   = '" + _wcodmun + "'"
 	_oSQL:_sQuery += " AND CC2_EST      = '" + _west    + "'"
-	u_log2 ('info', _oSQL:_sQuery)
+	//u_log2 ('info', _oSQL:_sQuery)
 	_aMun := aclone (_oSQL:Qry2Array ())
 
 	If len(_aMun) > 0
