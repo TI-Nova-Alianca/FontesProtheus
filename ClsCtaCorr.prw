@@ -88,6 +88,9 @@
 // 23/03/2021 - Robert - Criados atributos Safra e GrpPgSafra, com respectiva leitura e gravacao (GLPI 9592).
 // 11/06/2021 - Robert - Nao gravava campo E2_VASAFRA no metodo GeraSE2 (GLPI 10208)
 // 20/07/2021 - Robert - Novo tratamento para passar bco/ag/cta na geracao do SE2 (variaveis AUTBANCO, ...) (GLPI 10494)
+// 13/09/2021 - Robert - Criado tratamento para TM=32 (GLPI 10803)
+//                     - Nao gravava campos ZI_FORNECE e ZI_LOJAFOR no metodo :Grava()
+//                     - Implementados atributo :RegRelac e metodo :RegRelac()
 //
 
 // ------------------------------------------------------------------------------------
@@ -125,6 +128,7 @@ CLASS ClsCtaCorr
 	data Origem
 	data Parcela
 	data RegSZI
+	data RegRelac
 	data SaldoAtu
 	data Safra
 	data SeqOrig
@@ -141,6 +145,7 @@ CLASS ClsCtaCorr
 	data Agencia
 	data NumCon
 	data VctoSE2
+	data VctoSE2For
 
 	// Declaracao dos Metodos da classe
 	METHOD New ()
@@ -151,8 +156,10 @@ CLASS ClsCtaCorr
 	METHOD ChaveExt ()
 	METHOD Desassoc ()
 	METHOD Exclui ()
+	METHOD ExcluiSE5 ()
 	METHOD GeraAtrib ()
 	METHOD GeraSE2 ()
+	METHOD GeraSE5 ()
 	METHOD GeraSeq ()
 	METHOD Grava ()
 	METHOD HistBaixas ()
@@ -161,6 +168,7 @@ CLASS ClsCtaCorr
 	METHOD PodeExcl ()
 	METHOD PodeIncl ()
 	METHOD RecnoSE2 ()
+	METHOD RegRelac ()
 	METHOD SaldoEm ()
 	METHOD TransFil ()
 	METHOD VerifUser ()
@@ -201,7 +209,7 @@ METHOD AtuParcel (_sParc) Class ClsCtaCorr
 			_lContinua = .F.
 		else
 			if szi -> zi_parcela != ::Parcela
-				u_log ('[' + GetClassName (::Self) + '.' + procname () + '] Alterando parcela de', szi -> zi_parcela, 'para', ::Parcela)
+				u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + '] Alterando parcela de ' + szi -> zi_parcela + ' para ' + ::Parcela)
 				reclock ("SZI", .F.)
 				szi -> zi_parcela = ::Parcela
 				msunlock ()
@@ -366,7 +374,6 @@ METHOD Desassoc () Class ClsCtaCorr
 			_lContinua = .F.
 		endif
 	endif
-//	if _lContinua
 
 	// Gera lctos de resgate somente para o codigo/loja base
 	if _lContinua .and. (_oAssoc:Codigo + _oAssoc:Loja == _oAssoc:CodBase + _oAssoc:LojaBase)
@@ -456,7 +463,7 @@ METHOD Desassoc () Class ClsCtaCorr
 						_oParc:Serie      = zx5 -> zx5_10Pref
 						_oParc:MesRef     = strzero(month(_oParc:DtMovto),2)+strzero(year(_oParc:DtMovto),4)
 						_oParc:Histor     = "RESG.CTA.CAP." + cvaltochar (_nParc) + "/" + cvaltochar (len (_oAUtil:_aArray)) + " " + alltrim (_oAssoc:Nome)
-						_oParc:Valor      = _oAUtil:_aArray [_nParc, 2]
+						_oParc:Valor      = _oAUtil:_aArray [_nParc, 2]	
 						_oParc:Obs        = _sJustif
 						_oParc:Parcela    = cvaltochar (_nParc)
 						if _oParc:PodeIncl ()
@@ -487,6 +494,8 @@ return _lContinua
 METHOD Exclui () Class ClsCtaCorr
 	local _lContinua := .T.
 	local _aAutoSE2  := {}
+//	local _aRegRelac := {}
+	local _nRegRelac := 0
 
 	//u_logIni (GetClassName (::Self) + '.' + procname ())
 	::UltMsg = ""
@@ -523,7 +532,8 @@ METHOD Exclui () Class ClsCtaCorr
 		endif
 	endif
 
-	// Exclui movimentacao do SE2, caso exista.
+	// Exclui movimentacao relacionada no financeiro, caso exista.
+	/*
 	if _lContinua
 		if ! U_TemNick ("SE2", "E2_VACHVEX")
 			_lContinua = .F.
@@ -549,9 +559,6 @@ METHOD Exclui () Class ClsCtaCorr
 					endif
 				else
 
-					//u_help ("Este movimento gerou um titulo no financeiro e, para finalizar sua exclusao, confirme, antes, a exclusao do financeiro na tela a seguir.")
-					//fina050 (NIL, NIL, 5)
-
 					_aAutoSE2 := {}
 					aadd (_aAutoSE2, {"E2_PREFIXO", se2 -> e2_prefixo, NIL})
 					aadd (_aAutoSE2, {"E2_NUM"    , se2 -> e2_num,     Nil})
@@ -573,7 +580,7 @@ METHOD Exclui () Class ClsCtaCorr
 					endif
 				endif
 			endif
-		endif
+		//endif
 	endif
 
 	// Estorna movimentacao do SE5, caso exista.
@@ -594,6 +601,67 @@ METHOD Exclui () Class ClsCtaCorr
 				endif
 			endif
 		endif
+	endif
+	*/
+
+	// Exclui movimentacao relacionada no financeiro, caso exista.
+	if _lContinua
+
+		// Gera uma lista de registros relacionados em outras tabelas.
+		::RegRelac = aclone (::RegRelac ())
+
+		// A principio pode ter SE2 e SE5. Ordena de forma decrescente para tentar limpar antes a tabela SE5.
+		::RegRelac = asort (::RegRelac,,, {|_x, _y| _x [1] > _y [1]})
+
+		U_Log2 ('debug', 'Lista de registros relacionados:')
+		U_Log2 ('debug', ::RegRelac)
+
+		begin transaction
+		for _nRegRelac = 1 to len (::RegRelac)
+			do case
+			case ::RegRelac [_nRegRelac, 1] == 'SE2'
+				se2 -> (dbgoto (::RegRelac [_nRegRelac, 2]))
+				_aAutoSE2 := {}
+				aadd (_aAutoSE2, {"E2_PREFIXO", se2 -> e2_prefixo, NIL})
+				aadd (_aAutoSE2, {"E2_NUM"    , se2 -> e2_num,     Nil})
+				aadd (_aAutoSE2, {"E2_PARCELA", se2 -> e2_parcela, Nil})
+				aadd (_aAutoSE2, {"E2_TIPO"   , se2 -> e2_tipo,    Nil})
+				aadd (_aAutoSE2, {"E2_FORNECE", se2 -> e2_fornece, Nil})
+				aadd (_aAutoSE2, {"E2_LOJA"   , se2 -> e2_loja,    Nil})
+				_aAutoSE2 := aclone (U_OrdAuto (_aAutoSE2))
+				u_log (_aAutoSE2)
+				lMsErroAuto	:=	.f.
+				lMsHelpAuto	:=	.f.
+				dbselectarea ("SE2")
+				dbsetorder (1)
+				U_Log2 ('debug', 'Chamando exclusao do SE2 (FINA050)')
+				Processa({|| MsExecAuto({ | x,y,z | Fina050(x,y,z) }, _aAutoSE2,, 5)},"Excluindo titulo correspondente no financeiro.")
+				if lMsErroAuto
+					::UltMsg += U_LeErro (memoread (NomeAutoLog ())) + "; Este lancamento nao sera' excluido, pois o titulo relacionado a este movimento no modulo financeiro continua existindo."
+					u_help (::UltMsg,, .t.)
+					_lContinua = .F.
+					exit
+				else
+					U_Log2 ('debug', 'SE2 excluido com sucesso')
+				endif
+
+			case ::RegRelac [_nRegRelac, 1] == 'SE5'
+				se5 -> (dbgoto (::RegRelac [_nRegRelac, 2]))
+				U_Log2 ('debug', 'Vou gerar cancelamento do SE5')
+			//	if ! U_GeraSE5 ("CR", se5 -> e5_data, se5 -> e5_valor, se5 -> e5_histor, se5 -> e5_banco, se5 -> e5_agencia, se5 -> e5_conta, se5 -> e5_vachvex, @::UltMsg, .T., se5 -> e5_naturez, se5 -> e5_vaszifp)
+				if ! ::ExcluiSE5 ()
+					::UltMsg += "Erro no estorno do movimento financeiro a receber. Este registro nao sera' excluido."
+					_lContinua = .F.
+					exit
+				endif
+
+			otherwise
+				::UltMsg += "Sem tratamento para exclusao de registros da tabela '" + ::RegRelac [_nRegRelac, 1] + "' relacionados a este lcto."
+				_lContinua = .F.
+				exit
+			endcase
+		next
+		end transaction
 	endif
 
 	// Se deu algum problema na exclusao dos dados relacionados, recupera o registro no SZI e notifica o usuario.
@@ -621,12 +689,55 @@ return _lContinua
 
 
 // --------------------------------------------------------------------------
+// Exclui movimento bancario.
+METHOD ExcluiSE5 () Class ClsCtaCorr
+	local _lContinua  := .T.
+	local _aAutoSE5   := {}
+	local _aAreaAnt   := U_ML_SRArea ()
+
+	_aAutoSE5 = {}
+	aadd (_aAutoSE5, {"E5_DATA",    se5 -> e5_data,     nil})
+	aadd (_aAutoSE5, {"E5_MOEDA",   se5 -> e5_moeda,       nil})
+	aadd (_aAutoSE5, {"E5_VALOR",   se5 -> e5_valor,    nil})
+	aadd (_aAutoSE5, {"E5_BANCO",   se5 -> e5_banco,    nil})
+	aadd (_aAutoSE5, {"E5_AGENCIA", se5 -> e5_agencia,  nil})
+	aadd (_aAutoSE5, {"E5_CONTA",   se5 -> e5_conta,   nil})
+	aadd (_aAutoSE5, {"E5_NATUREZ", se5 -> e5_naturez, nil})
+	aadd (_aAutoSE5, {"E5_HISTOR",  se5 -> e5_histor,   nil})
+	_aAutoSE5 = aclone (U_OrdAuto (_aAutoSE5))
+	u_log2 ('debug', _aAutoSE5)
+
+	lMsErroAuto	:=	.f.
+	lMsHelpAuto	:=	.f.
+	dbselectarea ("SE5")
+	dbsetorder (1)
+	U_Log2 ('debug', 'Chamando cancelamento do mov.bancario (FINA100)')
+	MSExecAuto({|x,y,z| FinA100(x,y,z)},0,_aAutoSE5,6)  // exclusao nao funcionou. Usando cancelamento.
+	if lMsErroAuto
+		::UltMsg += "Erro na rotina automatica de cancelamento de movimento bancario: " + U_LeErro (memoread (NomeAutoLog ()))
+		_lContinua = .F.
+	else
+		// No cancelamento alguns campos adicionais nao sao gravados.
+		reclock ("SE5", .F.)
+		if empty (se5 -> e5_vachvex) ; se5 -> e5_vachvex = ::ChaveExt () ; endif
+		if empty (se5 -> e5_vauser)  ; se5 -> e5_vauser  = cUserName ; endif
+		if empty (se5 -> e5_vaSZIFp) ; se5 -> e5_vaSZIFp = ::FormPag ; endif
+		msunlock ()
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
+return _lContinua
+
+
+
+// --------------------------------------------------------------------------
 // Alimenta os atributos da classe.
 METHOD GeraAtrib (_sOrigem) Class ClsCtaCorr
-	local _aAreaAnt := U_ML_SRArea ()
-	local _sQuery   := ""
-	local _oSQL     := NIL
-	local _nRetSQL  := 0
+	local _aAreaAnt  := U_ML_SRArea ()
+	local _sQuery    := ""
+//	local _oSQL      := NIL
+	local _nRetSQL   := 0
+	local _nRegRelac := 0
 
 	// Defaults
 	::Filial     = xfilial ("SZI")
@@ -661,34 +772,36 @@ METHOD GeraAtrib (_sOrigem) Class ClsCtaCorr
 	::NumCon     = ''
 	::Parcela    = ''
 	::VctoSE2    = ctod ('')
+	::VctoSE2For = ctod ('')
 	::Safra      = ''
 	::GrpPgSafra = ''
 
 	if _sOrigem == 'M'  // Variaveis M->
-		::Filial   = xfilial ("SZI")
-		::Assoc    = m->zi_assoc
-		::Loja     = m->zi_lojasso
-		::SeqSZI   = m->zi_seq
-		::Fornece  = m->zi_fornece
-		::LojaFor  = m->zi_lojafor
-		::TM       = m->zi_tm
-		::DtMovto  = m->zi_data
-		::Valor    = m->zi_valor
-		::SaldoAtu = m->zi_saldo
-		::Usuario  = m->zi_user
-		::Histor   = m->zi_histor
-		::MesRef   = m->zi_mesref
-		::Doc      = m->zi_doc
-		::SeqOrig  = ''  // Campo nao existe na tabela.
-		::Serie    = m->zi_serie
-		::Obs      = m->zi_obs
-		::FilOrig  = m->zi_filorig
-		::FormPag  = m->zi_FormPag
-		::Banco    = m->zi_banco
-		::Agencia  = m->zi_agencia
-		::NumCon   = m->zi_numcon
-		::Origem   = m->zi_origem
-		::Parcela  = m->zi_parcela
+		::Filial     = xfilial ("SZI")
+		::Assoc      = m->zi_assoc
+		::Loja       = m->zi_lojasso
+		::SeqSZI     = m->zi_seq
+		::Fornece    = m->zi_fornece
+		::LojaFor    = m->zi_lojafor
+		::TM         = m->zi_tm
+		::DtMovto    = m->zi_data
+		::Valor      = m->zi_valor
+		::SaldoAtu   = m->zi_saldo
+		::Usuario    = m->zi_user
+		::Histor     = m->zi_histor
+		::MesRef     = m->zi_mesref
+		::Doc        = m->zi_doc
+		::SeqOrig    = ''  // Campo nao existe na tabela.
+		::Serie      = m->zi_serie
+		::Obs        = m->zi_obs
+		::FilOrig    = m->zi_filorig
+		::FormPag    = m->zi_FormPag
+		::Banco      = m->zi_banco
+		::Agencia    = m->zi_agencia
+		::NumCon     = m->zi_numcon
+		::Origem     = m->zi_origem
+		::Parcela    = m->zi_parcela
+		::VctoSE2For = m->zi_vctoFor
 	elseif _sOrigem == "SZI"
 		::Filial   = szi -> zi_filial
 		::RegSZI   = szi -> (recno ())
@@ -721,18 +834,31 @@ METHOD GeraAtrib (_sOrigem) Class ClsCtaCorr
 		::GrpPgSafra = szi -> zi_gpsaf
 		
 		// Busca dados do SE2, caso exista (nem todos os movimentos geram SE2).
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""                                                                                            
-		_oSQL:_sQuery += " SELECT TOP 1 E2_VENCTO"  // Soh deveria encontrar uma ocorrencia, mas usei TOP 1 para garantir.
-		_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2 "
-		_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ != '*'"
-		_oSQL:_sQuery +=    " AND SE2.E2_FILIAL   = '" + xfilial ("SE2")   + "'"
-		_oSQL:_sQuery +=    " AND SE2.E2_FORNECE  = '" + szi -> zi_assoc   + "'"
-		_oSQL:_sQuery +=    " AND SE2.E2_LOJA     = '" + szi -> zi_lojasso + "'"
-		_oSQL:_sQuery +=    " AND SE2.E2_NUM      = '" + szi -> zi_doc     + "'"
-		_oSQL:_sQuery +=    " AND SE2.E2_PREFIXO  = '" + szi -> zi_serie   + "'"
-		_oSQL:_sQuery +=    " AND SE2.E2_PARCELA  = '" + szi -> zi_parcela + "'"
-		::VctoSE2 = _oSQL:RetQry ()
+		// _oSQL := ClsSQL ():New ()
+		// _oSQL:_sQuery := ""                                                                                            
+		// _oSQL:_sQuery += " SELECT TOP 1 E2_VENCTO"  // Soh deveria encontrar uma ocorrencia, mas usei TOP 1 para garantir.
+		// _oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2 "
+		// _oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ != '*'"
+		// _oSQL:_sQuery +=    " AND SE2.E2_FILIAL   = '" + xfilial ("SE2")   + "'"
+		// _oSQL:_sQuery +=    " AND SE2.E2_FORNECE  = '" + szi -> zi_assoc   + "'"
+		// _oSQL:_sQuery +=    " AND SE2.E2_LOJA     = '" + szi -> zi_lojasso + "'"
+		// _oSQL:_sQuery +=    " AND SE2.E2_NUM      = '" + szi -> zi_doc     + "'"
+		// _oSQL:_sQuery +=    " AND SE2.E2_PREFIXO  = '" + szi -> zi_serie   + "'"
+		// _oSQL:_sQuery +=    " AND SE2.E2_PARCELA  = '" + szi -> zi_parcela + "'"
+		// ::VctoSE2 = _oSQL:RetQry ()
+
+		::RegRelac = aclone (::RegRelac ())
+		for _nRegRelac = 1 to len (::RegRelac)
+			if ::RegRelac [_nRegRelac, 1] == 'SE2'
+				se2 -> (dbgoto (::RegRelac [_nRegRelac, 2]))
+				if se2 -> e2_fornece == ::Assoc .and. se2 -> e2_loja == ::Loja  // Titulo do proprio associado
+					::VctoSE2 = se2 -> e2_vencto
+				elseif se2 -> e2_fornece == ::Fornece .and. se2 -> e2_loja == ::LojaFor  // Titulo do fornecedor relacionado
+					::VctoSE2For = se2 -> e2_vencto
+				endif
+			endif
+		next
+
 	endif
 
 	// Define se o tipo de movimento eh considerado a debito ou a credito.
@@ -767,20 +893,37 @@ return
 
 
 // --------------------------------------------------------------------------
-METHOD GeraSE2 (_sOQueGera, _dEmissao, _lCtOnLine) class ClsCtaCorr
+METHOD GeraSE2 (_sOQueGera, _dEmissao, _sFornSE2, _sLojaSE2) class ClsCtaCorr
 	local _lContinua  := .T.
 	local _aAutoSE2   := {}
 	local _sParcela   := ""
 	local _sSQL       := ""
 	local _aAreaAnt   := U_ML_SRArea ()
 	local _aAmbAnt    := U_SalvaAmb ()
-	local _aBkpSX1    := {}
+//	local _aBkpSX1    := {}
 	local _oSQL       := NIL
 	local _sChvEx     := ::ChaveExt ()
 	local _aRetParc   := {}
 	local _dDtVenc    := ctod ('')
 
 	//u_logIni (GetClassName (::Self) + '.' + procname ())
+
+	// Ha casos em que preciso gerar SE2 para outro fornecedor (nao o associado em questao)
+	_sFornSE2 = iif (empty (_sFornSE2), ::Assoc, _sFornSE2)
+	_sLojaSE2 = iif (empty (_sLojaSE2), ::Loja, _sLojaSE2)
+	
+	// Se estou gerando titulo para o fornecedor relacionado...
+	if _sFornSE2 + _sLojaSE2 != ::Assoc + ::Loja
+		_dDtVenc = ::VctoSE2For
+	else
+		_dDtVenc = ::VctoSE2
+	endif
+
+	// Vencimento nao pode ser menor que a data base
+	if ! empty (_dDtVenc) .and. _dDtVenc < dDataBase
+		_dDtVenc = dDataBase
+	endif
+	_dDtVenc = iif (! empty (_dDtVenc), _dDtVenc, ::DtMovto)
 	
 	// A rotina FINA050 soh funciona dentro destes modulos.
 	If _lContinua .and. !(AmIIn(5,6,7,11,12,14,41,97,17))           // Somente Fin,GPE, Vei, Loja , Ofi, Pecas e Esp, EIC
@@ -806,12 +949,6 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _lCtOnLine) class ClsCtaCorr
 		if empty (::Banco) .or. empty (::Agencia) .or. empty (::NumCon)
 			::UltMsg += "Banco/agencia/conta devem ser informados para geracao do arquivo SE2 quando tipo PA."
 			_lContinua = .F.
-//		else
-//			// Alimenta variaveis private usadas em inicializadores de campos, gatilhos, etc.
-//			private _SZI_Bco   := ::Banco    // Inicializador padrao do campo A6_COD
-//			private _SZI_Age   := ::Agencia  // Inicializador padrao do campo A6_AGENCIA
-//			private _SZI_Cta   := ::NumCon   // Inicializador padrao do campo A6_NUMCON
-//			private _aDadosBco := {::Banco, ::Agencia, ::NumCon}  // Parece que funciona somente no modulo 43
 		endif
 	endif
 
@@ -824,8 +961,10 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _lCtOnLine) class ClsCtaCorr
 		_oSQL:_sQuery +=   " from " + RetSQLName ("SE2") + " SE2 "
 		_oSQL:_sQuery +=  " where SE2.D_E_L_E_T_ != '*'"
 		_oSQL:_sQuery +=    " and SE2.E2_FILIAL   = '" + xfilial ("SE2")   + "'"
-		_oSQL:_sQuery +=    " and SE2.E2_FORNECE  = '" + ::Assoc + "'"
-		_oSQL:_sQuery +=    " and SE2.E2_LOJA     = '" + ::Loja  + "'"
+//		_oSQL:_sQuery +=    " and SE2.E2_FORNECE  = '" + ::Assoc + "'"
+//		_oSQL:_sQuery +=    " and SE2.E2_LOJA     = '" + ::Loja  + "'"
+		_oSQL:_sQuery +=    " and SE2.E2_FORNECE  = '" + _sFornSE2 + "'"
+		_oSQL:_sQuery +=    " and SE2.E2_LOJA     = '" + _sLojaSE2  + "'"
 		_oSQL:_sQuery +=    " and SE2.E2_NUM      = '" + ::Doc   + "'"
 		_oSQL:_sQuery +=    " and SE2.E2_PREFIXO  = '" + ::Serie + "'"
 		_aRetParc = aclone (_oSQL:Qry2Array ())
@@ -837,19 +976,15 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _lCtOnLine) class ClsCtaCorr
 			u_log2 ('aviso', '[' + procname () + '] Alterando da parcela desejada (' + ::Parcela + ') para: ' + _sParcela)
 		endif
 
-		// Vencimento nao pode ser menor que a data base
-		if ! empty (::VctoSE2) .and. ::VctoSE2 < dDataBase
-			::VctoSE2 = dDataBase
-		endif
-		_dDtVenc = iif (! empty (::VctoSE2), ::VctoSE2, ::DtMovto)
-
 		// Gera titulo no contas a pagar.
 		_aAutoSE2 := {}
 		aadd (_aAutoSE2, {"E2_PREFIXO", ::Serie,           NIL})
 		aadd (_aAutoSE2, {"E2_NUM"    , ::Doc,             Nil})
 		aadd (_aAutoSE2, {"E2_TIPO"   , _sOQueGera,        Nil})
-		aadd (_aAutoSE2, {"E2_FORNECE", ::Assoc,           Nil})
-		aadd (_aAutoSE2, {"E2_LOJA"   , ::Loja,            Nil})
+//		aadd (_aAutoSE2, {"E2_FORNECE", ::Assoc,           Nil})
+//		aadd (_aAutoSE2, {"E2_LOJA"   , ::Loja,            Nil})
+		aadd (_aAutoSE2, {"E2_FORNECE", _sFornSE2,         Nil})
+		aadd (_aAutoSE2, {"E2_LOJA"   , _sLojaSE2,         Nil})
 		aadd (_aAutoSE2, {"E2_EMISSAO", _dEmissao,         Nil})
 		aadd (_aAutoSE2, {"E2_VENCTO" , _dDtVenc,          Nil})
 		aadd (_aAutoSE2, {"E2_VENCREA", DataValida (_dDtVenc),    Nil})
@@ -872,9 +1007,7 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _lCtOnLine) class ClsCtaCorr
 		u_log2 ('debug', _aAutoSE2)
 
 		// Ajusta parametros da rotina.
-		cPerg = 'FIN050    '
-		_aBkpSX1 = U_SalvaSX1 (cPerg)  // Salva parametros da rotina.
-		U_GravaSX1 (cPerg, "04", iif (_lCtOnLine, 1, 2))
+		pergunte ('FIN050    ', .f.)
 
 		lMsErroAuto	:=	.f.
 		lMsHelpAuto	:=	.f.
@@ -893,8 +1026,10 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _lCtOnLine) class ClsCtaCorr
 			_oSQL:_sQuery +=    " AND E2_PREFIXO = '" + ::Serie   + "'"
 			_oSQL:_sQuery +=    " AND E2_NUM     = '" + ::Doc     + "'"
 			_oSQL:_sQuery +=    " AND E2_PARCELA = '" + _sParcela + "'"
-			_oSQL:_sQuery +=    " AND E2_FORNECE = '" + ::Assoc   + "'"
-			_oSQL:_sQuery +=    " AND E2_LOJA    = '" + ::Loja    + "'"
+//			_oSQL:_sQuery +=    " AND E2_FORNECE = '" + ::Assoc   + "'"
+//			_oSQL:_sQuery +=    " AND E2_LOJA    = '" + ::Loja    + "'"
+			_oSQL:_sQuery +=    " AND E2_FORNECE = '" + _sFornSE2 + "'"
+			_oSQL:_sQuery +=    " AND E2_LOJA    = '" + _sLojaSE2 + "'"
 			_oSQL:_sQuery +=    " AND D_E_L_E_T_ = ''"
 			_oSQL:Log ()
 			if _oSQL:RetQry () == 0
@@ -908,7 +1043,7 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _lCtOnLine) class ClsCtaCorr
 		if _lContinua
 			_lContinua = ::AtuParcel (se2 -> e2_parcela)
 		endif
-		U_SalvaSX1 (cPerg, _aBkpSX1)  // Restaura parametros da rotina.
+//		U_SalvaSX1 (cPerg, _aBkpSX1)  // Restaura parametros da rotina.
 	endif
 	
 	// Verifica se a chave externa foi gravada.
@@ -958,6 +1093,46 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _lCtOnLine) class ClsCtaCorr
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
 	//u_logFim (GetClassName (::Self) + '.' + procname ())
+return _lContinua
+
+
+
+// --------------------------------------------------------------------------
+// Gera registro na tabela de movimento bancario.
+METHOD GeraSE5 () Class ClsCtaCorr
+	local _aAreaAnt   := U_ML_SRArea ()
+	local _lContinua  := .T.
+	local _aAutoSE5   := {}
+
+	_aAutoSE5 = {}
+	aadd (_aAutoSE5, {"E5_NUMERO",  ::Doc,         nil})
+	aadd (_aAutoSE5, {"E5_PREFIXO", ::Serie,       nil})
+	aadd (_aAutoSE5, {"E5_PARCELA", ::Parcela,     nil})
+	aadd (_aAutoSE5, {"E5_DATA",    ::DtMovto,     nil})
+	aadd (_aAutoSE5, {"E5_MOEDA",   'M1',          nil})
+	aadd (_aAutoSE5, {"E5_VALOR",   ::Valor,       nil})
+	aadd (_aAutoSE5, {"E5_BANCO",   ::Banco,       nil})
+	aadd (_aAutoSE5, {"E5_AGENCIA", ::Agencia,     nil})
+	aadd (_aAutoSE5, {"E5_CONTA",   ::NumCon,      nil})
+	aadd (_aAutoSE5, {"E5_NATUREZ", '110104',      nil})
+	aadd (_aAutoSE5, {"E5_HISTOR",  ::Histor,      nil})
+	aadd (_aAutoSE5, {"E5_VACHVEX", ::ChaveExt (), nil})
+	aadd (_aAutoSE5, {"E5_VASZIFP", ::FormPag,     nil})
+	_aAutoSE5 = aclone (U_OrdAuto (_aAutoSE5))
+	u_log2 ('DEBUG', _aAutoSE5)
+
+	lMsErroAuto	:=	.f.
+	lMsHelpAuto	:=	.f.
+	dbselectarea ("SE5")
+	dbsetorder (1)
+	U_Log2 ('debug', 'Chamando inclusao do movimento bancario (FINA100)')
+	MSExecAuto({|x,y,z| FinA100(x,y,z)},0,_aAutoSE5,4)
+	if lMsErroAuto
+		::UltMsg += "Erro na rotina automatica de inclusao de movimento bancario: " + U_LeErro (memoread (NomeAutoLog ()))
+		_lContinua = .F.
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
 return _lContinua
 
 
@@ -1062,6 +1237,8 @@ METHOD Grava (_lSZIGrav, _lMemoGrav) Class ClsCtaCorr
 			szi -> zi_Parcela = ::Parcela
 			szi -> zi_safra   = ::Safra
 			szi -> zi_gpsaf   = ::GrpPgSafra
+			szi -> zi_fornece = ::Fornece
+			szi -> zi_lojafor = ::LojaFor
 			msunlock ()
 			_lSZIGrav = .T.
 			::RegSZI = szi -> (recno ())
@@ -1076,6 +1253,7 @@ METHOD Grava (_lSZIGrav, _lMemoGrav) Class ClsCtaCorr
 			endif
 
 			// Gera demais dados.
+			U_Log2 ('debug', 'OQueGera: ' = ::OQueGera ())
 			if ! empty (::OQueGera ())
 				do case
 				case ::OQueGera () $ "DP/NDF/PA/PR"
@@ -1088,16 +1266,42 @@ METHOD Grava (_lSZIGrav, _lMemoGrav) Class ClsCtaCorr
 						_dEmiSE2 = szi -> zi_data
 					endif
 
-					_lContinua = ::GeraSE2 (::OQueGera (), _dEmiSE2, iif (type ('_lCtOnLine') == 'L', _lCtOnLine, .F.))
+					_lContinua = ::GeraSE2 (::OQueGera (), _dEmiSE2)
+
 				case ::OQueGera () == "DP+SE5_R"
-					_lContinua = ::GeraSE2 ('DP', szi -> zi_data, .F.)
+					_lContinua = ::GeraSE2 ('DP', szi -> zi_data)
 					if _lContinua
-						u_log ('vou gerar SE5 a receber')
-						if ! U_GeraSE5 ("IR", ::DtMovto, ::Valor, ::Histor, ::Banco, ::Agencia, ::NumCon, ::ChaveExt (), @::UltMsg, iif (type ('_lCtOnLine') == 'L', _lCtOnLine, .F.), '110104', ::FormPag)
+						u_log2 ('info', 'Vou gerar SE5 a receber')
+					//	if ! U_GeraSE5 ("IR", ::DtMovto, ::Valor, ::Histor, ::Banco, ::Agencia, ::NumCon, ::ChaveExt (), @::UltMsg, iif (type ('_lCtOnLine') == 'L', _lCtOnLine, .F.), '110104', ::FormPag)
+						if ! ::GeraSE5 ()
 							::UltMsg += "Erro na atualizacao do financeiro (SE5). Este registro nao sera' mantido."
 							_lContinua = .F.
 						endif
 					endif
+
+				case ::OQueGera () == "NDF+DP_Forn"  // Gera titulo tipo NDF para o associado + titulo tipo DP para o fornecedor (campo ZI_FORNECE)
+					
+					do while empty (::VctoSE2For)
+						::VctoSE2For = U_Get ('Data p/vcto duplicata a pagar p/fornecedor ' + szi -> zi_fornece + '/' + szi -> zi_lojafor, 'D', 8, '@D', '', dDataBase, .F., '.t.')
+						if empty (::VctoSE2For) .or. ::VctoSE2For < dDataBase
+							u_help ("Data de vencimento da duplicata a ser gerada para o fornecedor nao pode ficar em branco e nem ser ser retroativa.")
+						else
+							exit
+						endif
+					enddo
+					U_Log2 ('debug', ::VctoSE2For)
+
+					_lContinua = ::GeraSE2 ('NDF', szi -> zi_data)
+					if _lContinua
+						u_log2 ('info', 'Vou gerar DP para o fornecedor relacionado.')
+						if ! ::GeraSE2 ("DP", szi -> zi_data, szi -> zi_fornece, szi -> zi_lojafor)
+							::UltMsg += "Erro na atualizacao do financeiro (geracao titulo DP para fornecedor " + szi -> zi_fornece + "). Este registro nao sera' mantido."
+							_lContinua = .F.
+						endif
+					else
+						U_Log2 ('erro', 'Problemas na gravacao do titulo NDF para o associado. Abortando gravacao do titulo DP para o fornecedor relacionado.')
+					endif
+
 				otherwise
 					::UltMsg += "Metodo " + procname () + " sem tratamento para '" + zx5 -> zx5_10GerI + "' no campo ZX5_10GERI. Avise setor de informatica."
 					U_AvisaTI (::UltMsg)
@@ -1135,8 +1339,8 @@ METHOD Grava (_lSZIGrav, _lMemoGrav) Class ClsCtaCorr
 
 	// Atualiza saldo do Associado
 	if _lContinua
-       ::AtuSldAsso ()                                              
-	endif                                          
+		::AtuSldAsso ()
+	endif
 
 	if ! _lContinua .and. ! empty (::UltMsg)
 		u_help (::UltMsg,, .t.)
@@ -1281,6 +1485,8 @@ METHOD OQueGera () Class ClsCtaCorr
 				_sRet = ""  // Nao gera nada
 			case zx5 -> zx5_10GerI == '6'
 				_sRet = "PR"
+			case zx5 -> zx5_10GerI == '7'
+				_sRet = "NDF+DP_Forn"
 			otherwise
 				::UltMsg += "Metodo " + procname () + " sem definicao do que deve ser gerado para '" + zx5 -> zx5_10GerI + "' no campo ZX5_GERI. Avise setor de informatica."
 				U_AvisaTI (::UltMsg)
@@ -1494,7 +1700,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 		_lContinua = .F.
 	endif
 
-	if _lContinua .and. ! zx5 -> zx5_10geri $ '0123456'
+	if _lContinua .and. ! zx5 -> zx5_10geri $ '01234567'
 		::UltMsg += "Falta tratamento para campo ZX5_10GERI com conteudo '" + zx5 -> zx5_10geri + "' no metodo " + procname () + _sCRLF
 		_lContinua = .F.
 	endif
@@ -1517,8 +1723,6 @@ METHOD PodeIncl () Class ClsCtaCorr
 			::UltMsg += "Nao consta como associado nem como ex-associado nesta data." + _sCRLF
 			_lContinua = .F.
 		endif
-//		if _lContinua .and. empty (::FilOrig) .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_FTSAFRA") .and. ! IsInCallStack ("U_FTSAFRA1") .and. ! IsInCallStack ("U_ROBERT")  // habilitado por causa de um baca em 2018
-//		if _lContinua .and. empty (::FilOrig) .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_FTSAFRA") .and. ! IsInCallStack ("U_FTSAFRA1") .and. ! IsInCallStack ("U_VA_RUSN")
 		if _lContinua .and. empty (::FilOrig) .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_FTSAFRA") .and. ! IsInCallStack ("U_FTSAFRA1") .and. ! (IsInCallStack ("U_BATSAFR") .and. IsInCallStack ("_GERASZI"))
 			::UltMsg += "Movimento de compra de safra: so' pode ser incluido por rotinas especificas, ou manualmente quando tratar-se de titulo transferido de outra filial. Informe filial de origem." + _sCRLF
 			_lContinua = .F.
@@ -1706,7 +1910,6 @@ METHOD PodeIncl () Class ClsCtaCorr
 
 
 	// Emprestimos.
-//	if _lContinua .and. ::TM == '07' .and. empty (::FormPag)
 	if _lContinua .and. ::TM $ '07/31' .and. empty (::FormPag)
 		::UltMsg += "Para emprestimos/adiantamentos de safra deve ser informada a forma de pagamento." + _sCRLF
 		_lContinua = .F.
@@ -1718,7 +1921,6 @@ METHOD PodeIncl () Class ClsCtaCorr
 		_lContinua = .F.
 	endif
 	if _lContinua .and. ! _oAssoc:EhSocio (::DtMovto)
-//		if ::TM $ '07' .and. !empty (_oAssoc:DtSaida (::DtMovto))  // Ex-associado
 		if ::TM $ '07/31' .and. !empty (_oAssoc:DtSaida (::DtMovto))  // Ex-associado
 			if ! msgnoyes ("Codigo/loja '" + ::Assoc + '/' + ::Loja + "' consta como EX-ASSOCIADO em " + dtoc (::DtMovto) + ". Confirma a inclusao deste registro?")
 				::UltMsg += "Codigo/loja '" + ::Assoc + '/' + ::Loja + "' consta como ex-associado em " + dtoc (::DtMovto)
@@ -1727,12 +1929,10 @@ METHOD PodeIncl () Class ClsCtaCorr
 		else
 			if ! ::TM $ '11/08/13/19'
 				if ::TM == '16'
-//					IF ! (DTOS (DATE ()) = '20210224' .AND. ISiNCALLSTACK ('U_ROBERT'))  // REMOVER DEPOIS... NESTA DATA ESTOU GERANDO PREMIO SAFRA 2020 (GLPI 9515)
-						if ! u_msgnoyes ("Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data informada. Confirma a inclusao deste registro?")
-							::UltMsg += "Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data informada."
-							_lContinua = .F.
-						endif
-//					ENDIF
+					if ! u_msgnoyes ("Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data informada. Confirma a inclusao deste registro?")
+						::UltMsg += "Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data informada."
+						_lContinua = .F.
+					endif
 				else
 					if empty (::FilOrig)  // Aceita movto. de ex associados quando tratar-se de transferencia de outra filial.
 						if alltrim (::OQueGera ()) $ "NDF/" .and. msgnoyes ("Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data de " + dtoc (::DtMovto) + ". Confirma a inclusao deste registro?")
@@ -1813,13 +2013,6 @@ METHOD PodeIncl () Class ClsCtaCorr
 		endif
 	endif	
 
-	
-	// // Estou gerando atrasado, e conferi com a Cris que o TM 13 nao influencia na correcao mon por que ela rodou somente corr a debito.
-	// if (date () == stod ('20210321') .or. date () == stod ('20210322')) ;
-	//  	.and. ::TM = '13' ;
-	// 	.and. (IsInCallStack ("U_BATSAFR") .OR. IsInCallStack ("U_BATTRSZI"))
-	// 	// hoje vou aceitar
-	// else
 	// Verifica periodo fechado (correcao monetaria jah calculada) - independente de filial.
 	if _lContinua .and. ! ::TM $ '19/'
 		_sQuery := ""
@@ -1836,7 +2029,18 @@ METHOD PodeIncl () Class ClsCtaCorr
 			_lContinua = .F.
 		endif
 	endif
-	// endif
+
+	// Projetos com ART: paga para o fornecedor (geralmente CREA) e desconta do associado.
+	if _lContinua .and. ::TM == '32'
+		if empty (::Fornece) .or. empty (::LojaFor)
+			::UltMsg += "Movimento tipo " + ::TM + ": a cooperativa paga o fornecedor e depois cobra do associado (ou desconta da safra). Por isso, deve ser informado o fornecedor para o qual a cooperativa vai fazer o pagamento."
+			_lContinua = .F.
+		endif
+		if empty (::VctoSE2For)
+			::UltMsg += "Para este tipo de movimento deve ser informada uma data de vencimento para o titulo a pagar que vai ser gerado em nome do fornecedor relacionado."
+			_lContinua = .F.
+		endif
+	endif
 
 	if ! _lContinua .and. ! empty (::UltMsg)
 		u_help (::UltMsg,, .t.)
@@ -1888,6 +2092,98 @@ return _nRet
 
 
 // --------------------------------------------------------------------------
+// Retorna array com alias e recno() de tabelas relacionadas a este movimento.
+METHOD RegRelac () Class ClsCtaCorr
+	local _aRRelac  := {}
+	local _oSQL     := NIL
+	local _aRegAux  := {}
+	local _nRegAux  := 0
+	local _aAreaAnt := U_ML_SRArea ()
+
+	if ::OQueGera () $ 'DP/NDF/PA/DP+SE5_R/PR/NDF+DP_Forn'
+		se2 -> (dbsetorder (6))  // E2_FILIAL, E2_FORNECE, E2_LOJA, E2_PREFIXO, E2_NUM, E2_PARCELA, E2_TIPO, R_E_C_N_O_, D_E_L_E_T_
+		se2 -> (dbseek (::Filial + ::Assoc + ::Loja + ::Serie + ::Doc + ::Parcela, .T.))
+		do while ! se2 -> (eof ()) ;
+			.and. se2 -> e2_filial  == ::Filial ;
+			.and. se2 -> e2_fornece == ::Assoc ;
+			.and. se2 -> e2_loja    == ::Loja ;
+			.and. se2 -> e2_prefixo == ::Serie ;
+			.and. se2 -> e2_num     == ::Doc ;
+			.and. se2 -> e2_parcela == ::Parcela
+			aadd (_aRRelac, {"SE2", se2 -> (recno ()), se2 -> e2_tipo})
+			se2 -> (dbskip ())
+		enddo
+		//U_Log2 ('debug', 'leitura 1 do SE2:')
+		//U_Log2 ('debug', _aRRelac)
+
+		// Em tempos antigos, a chave nao era completa (nao tinha o campo ZI_PARCELA) entao era usado o campo E2_VACHVEX.
+		// Vou pesquisar por ele tambem para contemplar todas as situacoes.
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT 'SE2', R_E_C_N_O_, E2_TIPO, E2_VENCREA"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE2") + " SE2"
+		_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SE2.E2_FILIAL  = '" + xfilial ("SE2") + "'"
+		_oSQL:_sQuery +=   " AND SE2.E2_VACHVEX = '" + ::ChaveExt () + "'"
+		_oSQL:Log ()
+		_aRegAux = aclone (_oSQL:Qry2Array (.F., .F.))
+		for _nRegAux = 1 to len (_aRegAux)
+			_aRegAux [_nRegAux, 4] = stod (_aRegAux [_nRegAux,4])  // Converte para formato de data.
+			if ascan (_aRRelac, {|_aVal| _aVal [1] == 'SE2' .and. _aVal [2] == _aRegAux [_nRegAux, 2]}) == 0
+				aadd (_aRRelac, aclone (_aRegAux [_nRegAux]))
+			endif
+		next
+		//U_Log2 ('debug', 'leitura 2 do SE2:')
+		//U_Log2 ('debug', _aRRelac)
+	endif
+
+	if ::OQueGera () $ 'DP+SE5_R/NDF+DP_Forn'
+/*
+		se5 -> (dbsetorder (7))  // E5_FILIAL, E5_PREFIXO, E5_NUMERO, E5_PARCELA, E5_TIPO, E5_CLIFOR, E5_LOJA, E5_SEQ, R_E_C_N_O_, D_E_L_E_T_
+		se5 -> (dbseek (::Filial + ::Serie + ::Doc + ::Parcela + 'DP ' + ::Assoc + ::Loja, .T.))
+		do while ! se5 -> (eof ()) ;
+			.and. se5 -> e5_filial  == ::Filial ;
+			.and. se5 -> e5_prefixo == ::Serie ;
+			.and. se5 -> e5_numero  == ::Doc ;
+			.and. se5 -> e5_parcela == ::Parcela
+			.and. se5 -> e5_tipo    == 'DP '
+			.and. se5 -> e5_clifor  == ::Assoc ;
+			.and. se5 -> e5_loja    == ::Loja
+			aadd (_aRRelac, {"SE5", se5 -> (recno ()), se5 -> e5_tipo})
+			se5 -> (dbskip ())
+		enddo
+		U_Log2 ('debug', 'leitura 1 do SE5:'')
+		U_Log2 ('debug', _aRRelac)
+
+		// Em tempos antigos, a chave nao era completa (nao tinha o campo ZI_PARCELA) entao era usado o campo E5_VACHVEX.
+		// Vou pesquisar por ele tambem para contemplar todas as situacoes.
+*/
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT 'SE5', R_E_C_N_O_, E5_TIPO, E5_DATA"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE5") + " SE5"
+		_oSQL:_sQuery += " WHERE SE5.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SE5.E5_FILIAL  = '" + xfilial ("SE5") + "'"
+		_oSQL:_sQuery +=   " AND SE5.E5_VACHVEX = '" + ::ChaveExt () + "'"
+		//_oSQL:Log ()
+		_aRegAux = aclone (_oSQL:Qry2Array (.F., .F.))
+		//U_Log2 ('debug', _aRegAux)
+		for _nRegAux = 1 to len (_aRegAux)
+			//U_Log2 ('debug', _aRegAux [_nRegAux])
+			_aRegAux [_nRegAux, 4] = stod (_aRegAux [_nRegAux,4])  // Converte para formato de data.
+			if ascan (_aRRelac, {|_aVal| _aVal [1] == 'SE5' .and. _aVal [2] == _aRegAux [_nRegAux, 2]}) == 0
+				aadd (_aRRelac, aclone (_aRegAux [_nRegAux]))
+			endif
+		next
+		//U_Log2 ('debug', 'leitura 2 do SE5:')
+		//U_Log2 ('debug', _aRRelac)
+	endif
+	U_ML_SRArea (_aAreaAnt)
+return _aRRelac
+
+
+
+// --------------------------------------------------------------------------
 // Calcula o saldo do lancamento em determinada data.
 METHOD SaldoEm (_dData) Class ClsCtaCorr
 	local _nSaldo    := 0
@@ -1911,14 +2207,18 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 	local _nSaldo    := 0
 	local _oSQL      := NIL
 	local _aBanco    := {}
-	local _aBkpSX1   := {}
-	local cPerg      := "          "
+//	local _aBkpSX1   := {}
+//	local cPerg      := "          "
 	Private lMsErroAuto := .F.
 	
 	u_log2 ('info', 'Iniciando ' + GetClassName (::Self) + '.' + procname ())
 	
 	if alltrim (::OQueGera ()) $ "PA/DP+SE5_R"
 		::UltMsg += "Transferencia de saldo que gerou movimento bancario nao permitida, pois nao tenho o mesmo bco/ag/cta na filial destino. Baixe o movimento manualmente na filial origem e digite lcto correspondente na filiai destino."
+		_lContinua = .F.
+	endif
+	if alltrim (::OQueGera ()) == "NDF+DP_Forn"
+		::UltMsg += "Transferencia de saldo que gerou titulo para fornecedor externo ainda nao implementada."
 		_lContinua = .F.
 	endif
 	if _lContinua .and. ::SaldoAtu <= 0
@@ -2002,9 +2302,11 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 		//u_log2 ('debug', _atit)
 
 		// Ajusta parametros de contabilizacao para NAO, pois a rotina automatica nao aceita.
-		cPerg = 'FIN090'
-		_aBkpSX1 = U_SalvaSX1 (cPerg)
-		U_GravaSX1 (cPerg, "03", 2)  // Contabiliza online = nao
+		//cPerg = 'FIN090'
+		pergunte ('FIN090    ', .f.)
+
+//		_aBkpSX1 = U_SalvaSX1 (cPerg)
+//		U_GravaSX1 (cPerg, "03", 2)  // Contabiliza online = nao
 		
 		lMsErroAuto = .F.
 		MSExecAuto({|x,y| Fina090(x,y)},3,_aTit)
@@ -2015,7 +2317,7 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 		endif
 
 		// Ajusta parametros da rotina automatica.
-		U_SalvaSX1 (cPerg, _aBkpSX1)
+		//U_SalvaSX1 (cPerg, _aBkpSX1)
 	endif
 
 	// Se fez a baixa, ajusta historico do movimento bancario.

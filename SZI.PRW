@@ -731,7 +731,8 @@ User Function SZII ()
 		CursorWait ()
 		_oCtaCorr := ClsCtaCorr():New ()
 		_oCtaCorr:GeraAtrib ('SZI')
-		_oCtaCorr:Obs = m->zi_obs  // Os demais atributos jah estavam gravados no SZI.
+		_oCtaCorr:VctoSE2For = m->zi_vctoFor  // Campo virtual.
+		_oCtaCorr:Obs        = m->zi_obs      // Os demais atributos jah estavam gravados no SZI.
 		_lRet = _oCtaCorr:Grava (.T., .F.)
 		CursorArrow ()
 	endif
@@ -753,51 +754,12 @@ User Function SZI1 ()
 	local _lRet     := .T.
 	local _aBcos    := {}
 	local _aNaoBcos := {}
-//	local _sQuery   := ""
-//	local _sRetQry  := ""
-//	local _dAniver  := ctod ("")
-//	local _oDUtil   := NIL
-//	local _oAssoc   := NIL
-//	local _lEhSocio := .F.
 	local _oCtaCorr := NIL
 
 	if _lRet .and. m->zi_tm == '04'
 		u_help ("Este tipo de movimento deve ser gerado via nota fiscal.")
 		_lRet = .F.
 	endif
-
-//	_oAssoc := ClsAssoc():New (m->zi_assoc, m->zi_lojasso)
-//	_lEhSocio := _oAssoc:EhSocio (m->zi_data)
-
-/* MIGRADO para ClsCtaCorr em 28/11/2017
-	// Verifica periodo fechado (correcao monetaria jah calculada).
-	if _lRet
-		_sQuery := ""
-		_sQuery += "SELECT COUNT (*)"
-		_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI"
-		_sQuery += " WHERE D_E_L_E_T_ = ''"
-		_sQuery +=   " AND ZI_FILIAL  = '" + xfilial ("SZI") + "'"  // O calculo eh feito separadamente por filial.
-		_sQuery +=   " AND ZI_TM      IN " + FormatIn (_sTMCorrC + "/" + _sTMCorrD, '/')
-		_sQuery +=   " AND ZI_DATA    > '" + dtos (m->zi_data) + "'"  // Eh gerada no dia 1 do mes subsequente.
-		_sQuery +=   " AND ZI_FILORIG = ''"  // Transferencias de saldos recebidas de outras filiais nao sao consideradas como 'calculado nesta filial'.
-		u_log (_squery)
-		if U_RetSQL (_sQuery) > 0
-			u_help ("Ja' existe calculo de correcao monetaria para este mes (ou posterior).")
-			_lRet = .F.
-		endif
-	endif
-*/
-	// Associar / desassociar.
-//	if _lRet .and. m->zi_tm $ '08/09'
-//		if m->zi_tm == '08' .and. _lEhSocio
-//			u_help ("Ja' consta como associado nesta data.")
-//			_lRet = .F.
-//		endif
-//		if m->zi_tm == '09' .and. ! _lEhSocio
-//			u_help ("Nao consta como associado nesta data.")
-//			_lRet = .F.
-//		endif
-//	endif
 
 	// Validacoes estao sendo passadas para a classe de conta corrente.
 	if _lRet

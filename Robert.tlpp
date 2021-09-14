@@ -103,6 +103,96 @@ static function _AndaLogo ()
 	u_help ('Nada definido.')
 return
 /*
+	// Testes inclusao conta corrente
+	_aMovCC := {} // TM   SERIE   DOCTO                       ASSOC    LOJA  bco    ag       cta
+	aadd (_aMovCC, {'32', 'ART', strtran (time (), ':', ''), '000161', '01', '',    '',      ''})
+	aadd (_aMovCC, {'07', 'ADT', strtran (time (), ':', ''), '000161', '01', '001', '3412 ', '32972     '})
+	aadd (_aMovCC, {'01', 'UNI', strtran (time (), ':', ''), '000161', '01', '',    '',      ''})
+	aadd (_aMovCC, {'21', 'OUT', strtran (time (), ':', ''), '000161', '01', '001', '3412 ', '32972     '})
+	aadd (_aMovCC, {'25', 'MUD', strtran (time (), ':', ''), '000161', '01', '',    '',      ''})
+	aadd (_aMovCC, {'26', 'MUL', strtran (time (), ':', ''), '000161', '01', '',    '',      ''})
+	aadd (_aMovCC, {'15', 'CM ', strtran (time (), ':', ''), '000161', '01', '',    '',      ''})
+	aadd (_aMovCC, {'12', 'INT', strtran (time (), ':', ''), '000161', '01', '',    '',      ''})
+	aadd (_aMovCC, {'20', 'INT', strtran (time (), ':', ''), '000161', '01', '',    '',      ''})
+	aadd (_aMovCC, {'11', 'RCC', strtran (time (), ':', ''), '000161', '01', '',    '',      ''})
+	for _nMovCC = 1 to len (_aMovCC)
+		U_Log2 ('debug', '#####################################')
+		U_Log2 ('info', 'Tentando incluir TM/serie/doc ' + _aMovCC [_nMovCC, 1] + '/' + _aMovCC [_nMovCC, 2] + '/' + _aMovCC [_nMovCC, 3])
+		_oCtaCorr := ClsCtaCorr():New ()
+		_oCtaCorr:TM       = _aMovCC [_nMovCC, 1]
+		_oCtaCorr:Serie    = _aMovCC [_nMovCC, 2]
+		_oCtaCorr:Doc      = _aMovCC [_nMovCC, 3]
+		_oCtaCorr:Assoc    = _aMovCC [_nMovCC, 4]
+		_oCtaCorr:Loja     = _aMovCC [_nMovCC, 5]
+		_oCtaCorr:Banco    = _aMovCC [_nMovCC, 6]
+		_oCtaCorr:Agencia  = _aMovCC [_nMovCC, 7]
+		_oCtaCorr:NumCon   = _aMovCC [_nMovCC, 8]
+		_oCtaCorr:DtMovto  = dDataBase
+		_oCtaCorr:Valor    = 1
+		_oCtaCorr:Usuario  = cUserName
+		_oCtaCorr:Histor   = 'teste inclusao szi TM ' + _aMovCC [_nMovCC, 1]
+		_oCtaCorr:MesRef   = strzero(month(_oCtaCorr:DtMovto),2)+strzero(year(_oCtaCorr:DtMovto),4)
+		_oCtaCorr:Parcela  = '0'
+		_oCtaCorr:Origem   = 'robert'
+		_oCtaCorr:FormPag  = '3'  // 1=Cheque;2=Dinheiro;3=Depos.conta do associado;4=Deposito conta terceiros
+		_oCtaCorr:Fornece  = '000131'
+		_oCtaCorr:LojaFor  = '01'
+		_oCtaCorr:VctoSE2For = date () + 1
+		if _oCtaCorr:PodeIncl ()
+			if ! _oCtaCorr:Grava (.F., .F.)
+				U_help (_oCtaCorr:UltMsg,, .t.)
+			else
+				u_log2 ('debug', 'gravou a conta corrente com sucesso.')
+			endif
+		else
+			U_help ("Gravacao do SZI nao permitida:" + _oCtaCorr:UltMsg,, .T.)
+		endif
+	next
+//return
+
+	// Testes exclusao conta corrnete associados.
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT top 10 R_E_C_N_O_"
+	_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
+	_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
+	_oSQL:_sQuery +=    " AND SZI.ZI_FILIAL = '" + xfilial ("SZI") + "'"
+	_oSQL:_sQuery +=    " AND SZI.ZI_TM IN ('19','21', '32','25')"
+	//_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC = '002960'"
+	_oSQL:_sQuery +=    " AND SZI.ZI_SALDO = ZI_VALOR"
+	_oSQL:_sQuery +=    " AND SZI.ZI_DATA  = '" + dtos (date ()) + "'"
+//	_oSQL:_sQuery +=    " AND EXISTS (SELECT *"
+//	_oSQL:_sQuery +=                  " FROM " + RetSQLName ("SA2") + " SA2 "
+//	_oSQL:_sQuery +=                 " WHERE SA2.D_E_L_E_T_ = ''"
+//	_oSQL:_sQuery +=                   " AND SA2.A2_FILIAL  = '" + xfilial ("SA2") + "'"
+//	_oSQL:_sQuery +=                   " AND SA2.A2_COD     = SZI.ZI_ASSOC"
+//	_oSQL:_sQuery +=                   " AND SA2.A2_LOJA    = SZI.ZI_LOJASSO"
+//	_oSQL:_sQuery +=                   " AND SA2.A2_VACBASE = SA2.A2_COD"
+//	_oSQL:_sQuery +=                   " AND SA2.A2_VALBASE = SA2.A2_LOJA)"  // Somente codigo/loja base
+//	_oSQL:_sQuery +=    " AND NOT EXISTS (SELECT * FROM ZZM010 WHERE D_E_L_E_T_ = '' AND ZZM_ASSOC = ZI_ASSOC AND ZZM_LOJA = ZI_LOJASSO AND ZZM_DATA = '20171231')"
+	//_oSQL:_sQuery +=    " AND EXISTS (SELECT * FROM SE5010 SE5 WHERE SE5.D_E_L_E_T_ = '' AND E5_FORNECE = ZI_ASSOC AND E5_DATA > '20180706')"
+	_oSQL:_sQuery +=  " ORDER BY ZI_ASSOC, ZI_LOJASSO, ZI_FILIAL, ZI_SEQ"
+	_oSQL:Log ()
+	_aDados = _oSQL:Qry2Array ()
+	for _nDado = 1 to len (_aDados)
+		szi -> (dbgoto (_aDados [_nDado, 1]))
+		U_Log2 ('debug', '#####################################')
+		U_Log2 ('debug', 'Tentando excluir SZI forn/loja ' + szi -> zi_assoc + '/' + szi -> zi_lojasso + ' doc/serie/parc ' + szi -> zi_doc + '/' + szi -> zi_serie + '/' + szi -> zi_parcela + ' TM ' + szi -> zi_tm)
+		//_nSaldoAnt = szi -> zi_saldo
+		//u_log2 ('info', szi -> zi_assoc + '/' + szi -> zi_lojasso + ' seq.' + szi -> zi_seq + ' ' + szi -> zi_histor)
+		_oCtaCorr := ClsCtaCorr ():New (szi -> (recno ()))
+		if _oCtaCorr:PodeExcl ()
+			_oCtaCorr:Exclui ()
+		endif
+		U_Log2 ('debug', _oCtaCorr:UltMsg)
+		//_oCtaCorr:AtuSaldo ()
+		//if szi -> zi_saldo != _nSaldoAnt
+		//	u_log2 ('aviso', szi -> zi_assoc + '/' + szi -> zi_lojasso + ' seq.' + szi -> zi_seq + ' sld ant:' + transform (_nSaldoAnt, "@E 999,999,999.99") + ' novo:' +  transform (szi -> zi_saldo, "@E 999,999,999.99") + ' ' + _oCtaCorr:UltMsg)
+		//endif
+	next
+return
+*/
+/*
 	// Testes batches em geral
 //	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batocor ()
@@ -405,37 +495,6 @@ return
 	U_ML_DEC (.t.)
 return
 */
-/*
-	// Testes inclusao adto conta corrente
-	_oCtaCorr := ClsCtaCorr():New ()
-	_oCtaCorr:Assoc    = '000161'
-	_oCtaCorr:Loja     = '01'
-	_oCtaCorr:TM       = '07'
-	_oCtaCorr:DtMovto  = dDataBase
-	_oCtaCorr:Valor    = 1
-	_oCtaCorr:Usuario  = cUserName
-	_oCtaCorr:Histor   = 'teste inclusao adtos - GLPI 10494'
-	_oCtaCorr:MesRef   = strzero(month(_oCtaCorr:DtMovto),2)+strzero(year(_oCtaCorr:DtMovto),4)
-	_oCtaCorr:Doc      = 'GLPI10494'
-	_oCtaCorr:Serie    = 'ADT'
-	_oCtaCorr:Parcela  = '3'
-	_oCtaCorr:Origem   = 'GLPI10494'
-	_oCtaCorr:FormPag  = '3'  // 1=Cheque;2=Dinheiro;3=Depos.conta do associado;4=Deposito conta terceiros
-	_oCtaCorr:Banco    = '001'
-	_oCtaCorr:Agencia  = '3412 '
-	_oCtaCorr:NumCon   = '32972     '
-	if _oCtaCorr:PodeIncl ()
-		if ! _oCtaCorr:Grava (.F., .F.)
-			U_help (_oCtaCorr:UltMsg,, .t.)
-		else
-			u_log ('gravou')
-		endif
-	else
-		U_help ("Gravacao do SZI nao permitida:" + _oCtaCorr:UltMsg,, .T.)
-	endif
-return
-*/
-
 /*	// Teste inclusao de PA
 	private _SZI_Bco   := '001'   // Inicializador padrao do campo A6_COD
 	private _SZI_Age   := '3412'  // Inicializador padrao do campo A6_AGENCIA
@@ -2029,40 +2088,6 @@ return
 		next
 		end transaction
 	endif
-return
-*/
-/*
-	// Recalcula saldos conta corrente associados
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT R_E_C_N_O_"
-	_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
-	_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
-	_oSQL:_sQuery +=    " AND SZI.ZI_FILIAL = '" + xfilial ("SZI") + "'"
-	_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC = '002960'"
-	_oSQL:_sQuery +=    " AND SZI.ZI_DATA >= '20200301'"
-//	_oSQL:_sQuery +=    " AND EXISTS (SELECT *"
-//	_oSQL:_sQuery +=                  " FROM " + RetSQLName ("SA2") + " SA2 "
-//	_oSQL:_sQuery +=                 " WHERE SA2.D_E_L_E_T_ = ''"
-//	_oSQL:_sQuery +=                   " AND SA2.A2_FILIAL  = '" + xfilial ("SA2") + "'"
-//	_oSQL:_sQuery +=                   " AND SA2.A2_COD     = SZI.ZI_ASSOC"
-//	_oSQL:_sQuery +=                   " AND SA2.A2_LOJA    = SZI.ZI_LOJASSO"
-//	_oSQL:_sQuery +=                   " AND SA2.A2_VACBASE = SA2.A2_COD"
-//	_oSQL:_sQuery +=                   " AND SA2.A2_VALBASE = SA2.A2_LOJA)"  // Somente codigo/loja base
-//	_oSQL:_sQuery +=    " AND NOT EXISTS (SELECT * FROM ZZM010 WHERE D_E_L_E_T_ = '' AND ZZM_ASSOC = ZI_ASSOC AND ZZM_LOJA = ZI_LOJASSO AND ZZM_DATA = '20171231')"
-	//_oSQL:_sQuery +=    " AND EXISTS (SELECT * FROM SE5010 SE5 WHERE SE5.D_E_L_E_T_ = '' AND E5_FORNECE = ZI_ASSOC AND E5_DATA > '20180706')"
-	_oSQL:_sQuery +=  " ORDER BY ZI_ASSOC, ZI_LOJASSO, ZI_FILIAL, ZI_SEQ"
-	_aDados = _oSQL:Qry2Array ()
-	for _nDado = 1 to len (_aDados)
-		szi -> (dbgoto (_aDados [_nDado, 1]))
-		_nSaldoAnt = szi -> zi_saldo
-		u_log2 ('info', szi -> zi_assoc + '/' + szi -> zi_lojasso + ' seq.' + szi -> zi_seq + ' ' + szi -> zi_histor)
-		_oCtaCorr := ClsCtaCorr ():New (szi -> (recno ()))
-		_oCtaCorr:AtuSaldo ()
-		if szi -> zi_saldo != _nSaldoAnt
-			u_log2 ('aviso', szi -> zi_assoc + '/' + szi -> zi_lojasso + ' seq.' + szi -> zi_seq + ' sld ant:' + transform (_nSaldoAnt, "@E 999,999,999.99") + ' novo:' +  transform (szi -> zi_saldo, "@E 999,999,999.99") + ' ' + _oCtaCorr:UltMsg)
-		endif
-	next
 return
 */
 	// teste de uso de memoria
