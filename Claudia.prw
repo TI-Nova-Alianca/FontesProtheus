@@ -2,13 +2,16 @@
 #include 'parmtype.ch'
 
 User Function claudia ()
-	//u_help("Nada para executar")
+	u_help("Nada para executar")
+
+	//u_help("isento")
+	//_AtuISENTO()
 	//u_help("CIELO")
 	//Cielo()
 	//u_help("ALMOX1")
 	//Almox1()
-	u_help("ALMOX2")
-	Almox2()
+	//u_help("ALMOX2")
+	//Almox2()
 	// u_help('Solicitante')
 	// Solicitante()
 	//u_help("Coordenadores")
@@ -41,30 +44,30 @@ Return
 // Return
 //
 // ------------------------------------------------------------------
-Static Function Almox2()
-	local _x := 0
+// Static Function Almox2()
+// 	local _x := 0
 
-	U_help("Exec Almox 2 14/07/2021")
-	_oSQL := ClsSQL():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT "
-	_oSQL:_sQuery += " 	  SB1.B1_COD "
-	_oSQL:_sQuery += " FROM SB1010 SB1 "
-	_oSQL:_sQuery += " INNER JOIN SB2010 SB2 "
-	_oSQL:_sQuery += " 	ON SB2.D_E_L_E_T_ = '' "
-	_oSQL:_sQuery += " 		AND B2_COD = B1_COD "
-	_oSQL:_sQuery += " 		AND SB2.B2_QATU > 0
-	_oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = '' "
-	_oSQL:_sQuery += "  AND SB1.B1_COD IN ('602129','606305','606317','606320','606321','606322','606323','606325','606327','606328','606329','606331','606332')"
-	_oSQL:_sQuery += " AND SB1.B1_TIPO in ('MM','MC')  "
-	_oSQL:Log ()
-	_aSB1:= _oSQL:Qry2Array ()
+// 	U_help("Exec Almox 2 14/07/2021")
+// 	_oSQL := ClsSQL():New ()
+// 	_oSQL:_sQuery := ""
+// 	_oSQL:_sQuery += " SELECT "
+// 	_oSQL:_sQuery += " 	  SB1.B1_COD "
+// 	_oSQL:_sQuery += " FROM SB1010 SB1 "
+// 	_oSQL:_sQuery += " INNER JOIN SB2010 SB2 "
+// 	_oSQL:_sQuery += " 	ON SB2.D_E_L_E_T_ = '' "
+// 	_oSQL:_sQuery += " 		AND B2_COD = B1_COD "
+// 	_oSQL:_sQuery += " 		AND SB2.B2_QATU > 0
+// 	_oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = '' "
+// 	_oSQL:_sQuery += "  AND SB1.B1_COD IN ('602129','606305','606317','606320','606321','606322','606323','606325','606327','606328','606329','606331','606332')"
+// 	_oSQL:_sQuery += " AND SB1.B1_TIPO in ('MM','MC')  "
+// 	_oSQL:Log ()
+// 	_aSB1:= _oSQL:Qry2Array ()
 	
-	For _x := 1 to Len(_aSB1)
-		CriaSB2 (_aSB1[_x, 1], '02')
-	Next
+// 	For _x := 1 to Len(_aSB1)
+// 		CriaSB2 (_aSB1[_x, 1], '02')
+// 	Next
 
-Return
+// Return
 //
 // ------------------------------------------------------------------
 // Static Function BaixaAut()
@@ -841,5 +844,37 @@ Return
 //	enddo
 //
 //Return
+//-------------------------------------------------------------------------------------------------
+// Static function _AtuISENTO ()
 
+// 	u_help ("Alterar ISENTO")
+// 	sa1 -> (dbsetorder (1))
+// 	sa1 -> (dbgotop ())
+// 	//
+// 	do while ! sa1 -> (eof ())
+// 		u_log ('Verificando item', sa1 -> a1_inscr)
+// 		if alltrim(sa1 -> a1_inscr) == 'ISENTO' .or. alltrim(sa1 -> a1_inscr) == 'ISENTA'
+// 			// Cria variaveis para uso na gravacao do evento de alteracao
+// 			regtomemory ("SA1", .F., .F.)
+			
+// 			// Grava evento de alteracao
+// 			_oEvento := ClsEvent():new ()
+// 			_oEvento:AltCadast ("SA1", "ISENTO", sa1 -> (recno ()), '', .F.)
+// 			_oEvento:Grava()
+			
+// 			U_AtuMerc ("SA1", sa1 -> (recno ()))
+			
+// 			reclock ("SA1", .f.)
+// 				sa1 -> a1_inscr = ''
+// 			msunlock ()
+			
+// 			u_log ('alterado')
+			
+// 			//exit
+// 		else
+// 			u_log ('Nada a alterar')
+// 		endif
+// 		sa1 -> (dbskip ())
+// 	enddo
+// Return
 //-----------------------------------------------------------------------------------
