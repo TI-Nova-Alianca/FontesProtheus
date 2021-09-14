@@ -100,9 +100,9 @@ static function _AndaLogo ()
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
-//	u_help ('Nada definido.')
-//return
-
+	u_help ('Nada definido.')
+return
+/*
 	// Testes inclusao conta corrente
 	_aMovCC := {} // TM   SERIE   DOCTO                       ASSOC    LOJA  bco    ag       cta
 	aadd (_aMovCC, {'32', 'ART', strtran (time (), ':', ''), '000161', '01', '',    '',      ''})
@@ -137,18 +137,19 @@ static function _AndaLogo ()
 		_oCtaCorr:FormPag  = '3'  // 1=Cheque;2=Dinheiro;3=Depos.conta do associado;4=Deposito conta terceiros
 		_oCtaCorr:Fornece  = '000131'
 		_oCtaCorr:LojaFor  = '01'
+		_oCtaCorr:VctoSE2For = date () + 1
 		if _oCtaCorr:PodeIncl ()
 			if ! _oCtaCorr:Grava (.F., .F.)
 				U_help (_oCtaCorr:UltMsg,, .t.)
 			else
-				u_log2 ('debug', 'gravou a cnta corrente com sucesso.')
+				u_log2 ('debug', 'gravou a conta corrente com sucesso.')
 			endif
 		else
 			U_help ("Gravacao do SZI nao permitida:" + _oCtaCorr:UltMsg,, .T.)
 		endif
 	next
-return
-/*
+//return
+
 	// Testes exclusao conta corrnete associados.
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""

@@ -63,7 +63,9 @@
 // 23/06/2021 - Claudia - Ajuste no lançamento 520 002. GLPI:10294
 // 13/07/2021 - Robert  - Tratamento LP 530 resgate cota capital (GLPI 10481)
 // 16/08/2021 - Claudia - Incluida rotina ZB3(Pagar-me) na conta de credito de cartões. GLPI: 9026
+// 14/09/2021 - Robert  - Eliminados alguns tratamentos ref.cta.corrente associados (GLPI 10503)
 //
+
 // -----------------------------------------------------------------------------------------------------------------
 // Informar numero e sequencia do lancamento padrao, seguido do campo a ser retornado.
 User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
@@ -104,8 +106,8 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 						case _wtipo ='6'
 							_xRet = "VERBAS - MULTA CONTRATUAL - VERBA NRO/CLIENTE:" + SE1->E1_NUM + ' / ' + SE1->E1_NOMCLI // multa contratual
 					endcase
-	    		endif
-			ENDIF	    	
+				endif
+			ENDIF
 
 
 	case _sLPad == '510' .and. _sSeq='200' // Inclusao contas a pagar
@@ -117,7 +119,7 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 		IF SE2->E2_TIPO=="PR " .OR. SE2->E2_TIPO=="PRI" // tem que ficar assim com espaço - nao tirar
 			_xRet = 0
 		ENDIF
-		
+
 
 	case _sLPad == '510' .and. _sSeq == '202' // Inclusao titulos indenizacao
 		do case

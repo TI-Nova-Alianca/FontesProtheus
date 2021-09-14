@@ -733,10 +733,11 @@ return _lContinua
 // --------------------------------------------------------------------------
 // Alimenta os atributos da classe.
 METHOD GeraAtrib (_sOrigem) Class ClsCtaCorr
-	local _aAreaAnt := U_ML_SRArea ()
-	local _sQuery   := ""
-	local _oSQL     := NIL
-	local _nRetSQL  := 0
+	local _aAreaAnt  := U_ML_SRArea ()
+	local _sQuery    := ""
+//	local _oSQL      := NIL
+	local _nRetSQL   := 0
+	local _nRegRelac := 0
 
 	// Defaults
 	::Filial     = xfilial ("SZI")
@@ -776,30 +777,31 @@ METHOD GeraAtrib (_sOrigem) Class ClsCtaCorr
 	::GrpPgSafra = ''
 
 	if _sOrigem == 'M'  // Variaveis M->
-		::Filial   = xfilial ("SZI")
-		::Assoc    = m->zi_assoc
-		::Loja     = m->zi_lojasso
-		::SeqSZI   = m->zi_seq
-		::Fornece  = m->zi_fornece
-		::LojaFor  = m->zi_lojafor
-		::TM       = m->zi_tm
-		::DtMovto  = m->zi_data
-		::Valor    = m->zi_valor
-		::SaldoAtu = m->zi_saldo
-		::Usuario  = m->zi_user
-		::Histor   = m->zi_histor
-		::MesRef   = m->zi_mesref
-		::Doc      = m->zi_doc
-		::SeqOrig  = ''  // Campo nao existe na tabela.
-		::Serie    = m->zi_serie
-		::Obs      = m->zi_obs
-		::FilOrig  = m->zi_filorig
-		::FormPag  = m->zi_FormPag
-		::Banco    = m->zi_banco
-		::Agencia  = m->zi_agencia
-		::NumCon   = m->zi_numcon
-		::Origem   = m->zi_origem
-		::Parcela  = m->zi_parcela
+		::Filial     = xfilial ("SZI")
+		::Assoc      = m->zi_assoc
+		::Loja       = m->zi_lojasso
+		::SeqSZI     = m->zi_seq
+		::Fornece    = m->zi_fornece
+		::LojaFor    = m->zi_lojafor
+		::TM         = m->zi_tm
+		::DtMovto    = m->zi_data
+		::Valor      = m->zi_valor
+		::SaldoAtu   = m->zi_saldo
+		::Usuario    = m->zi_user
+		::Histor     = m->zi_histor
+		::MesRef     = m->zi_mesref
+		::Doc        = m->zi_doc
+		::SeqOrig    = ''  // Campo nao existe na tabela.
+		::Serie      = m->zi_serie
+		::Obs        = m->zi_obs
+		::FilOrig    = m->zi_filorig
+		::FormPag    = m->zi_FormPag
+		::Banco      = m->zi_banco
+		::Agencia    = m->zi_agencia
+		::NumCon     = m->zi_numcon
+		::Origem     = m->zi_origem
+		::Parcela    = m->zi_parcela
+		::VctoSE2For = m->zi_vctoFor
 	elseif _sOrigem == "SZI"
 		::Filial   = szi -> zi_filial
 		::RegSZI   = szi -> (recno ())
@@ -846,7 +848,6 @@ METHOD GeraAtrib (_sOrigem) Class ClsCtaCorr
 		// ::VctoSE2 = _oSQL:RetQry ()
 
 		::RegRelac = aclone (::RegRelac ())
-		local _nRegRelac := 0
 		for _nRegRelac = 1 to len (::RegRelac)
 			if ::RegRelac [_nRegRelac, 1] == 'SE2'
 				se2 -> (dbgoto (::RegRelac [_nRegRelac, 2]))
@@ -1280,17 +1281,15 @@ METHOD Grava (_lSZIGrav, _lMemoGrav) Class ClsCtaCorr
 
 				case ::OQueGera () == "NDF+DP_Forn"  // Gera titulo tipo NDF para o associado + titulo tipo DP para o fornecedor (campo ZI_FORNECE)
 					
-					/*::VctoSE2 = ctod ('')
-					do while empty (::VctoSE2)
-						::VctoSE2 = U_Get ('Data p/vcto duplicata a pagar p/fornecedor ' + szi -> zi_fornece + '/' + szi -> zi_lojafor, 'D', 8, '@D', '', dDataBase, .F., '.t.')
-						if empty (::VctoSE2) .or. ::VctoSE2 < dDataBase
+					do while empty (::VctoSE2For)
+						::VctoSE2For = U_Get ('Data p/vcto duplicata a pagar p/fornecedor ' + szi -> zi_fornece + '/' + szi -> zi_lojafor, 'D', 8, '@D', '', dDataBase, .F., '.t.')
+						if empty (::VctoSE2For) .or. ::VctoSE2For < dDataBase
 							u_help ("Data de vencimento da duplicata a ser gerada para o fornecedor nao pode ficar em branco e nem ser ser retroativa.")
 						else
 							exit
 						endif
 					enddo
-					U_Log2 ('debug', ::VctoSE2)
-					*/
+					U_Log2 ('debug', ::VctoSE2For)
 
 					_lContinua = ::GeraSE2 ('NDF', szi -> zi_data)
 					if _lContinua
@@ -2037,7 +2036,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 			::UltMsg += "Movimento tipo " + ::TM + ": a cooperativa paga o fornecedor e depois cobra do associado (ou desconta da safra). Por isso, deve ser informado o fornecedor para o qual a cooperativa vai fazer o pagamento."
 			_lContinua = .F.
 		endif
-		if empty (::VctoSE2)
+		if empty (::VctoSE2For)
 			::UltMsg += "Para este tipo de movimento deve ser informada uma data de vencimento para o titulo a pagar que vai ser gerado em nome do fornecedor relacionado."
 			_lContinua = .F.
 		endif
