@@ -22,10 +22,17 @@ User Function Verdva1()
     cEstado := M->A1_EST
     cIsento := rtrim(M->A1_INSCR)
 
-    If alltrim(cIsento) == "ISENTO" .or. alltrim(cIsento) == "" .or. alltrim(cIsento) == "ISENTA" 
-        Return(_lRet)
-    Else
-        _lRet := IE(cIsento,cEstado,.T.)
-    Endif
-
+    Do Case
+        Case alltrim(cIsento) == "ISENTO" .or. alltrim(cIsento) == "ISENTA"
+            _lRet := .F.
+        Case alltrim(cIsento) == "" 
+            _lRet := .T.
+        Otherwise
+            _lRet := IE(cIsento,cEstado,.T.)
+    EndCase
+    // If alltrim(cIsento) == "ISENTO" .or. alltrim(cIsento) == "" .or. alltrim(cIsento) == "ISENTA" 
+    //     Return(_lRet)
+    // Else
+    //     _lRet := IE(cIsento,cEstado,.T.)
+    // Endif
 Return(_lRet)
