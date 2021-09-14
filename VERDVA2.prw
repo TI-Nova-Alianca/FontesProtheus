@@ -10,6 +10,9 @@
 // #TabelasPrincipais #SA2 
 // #Modulos   		  #CON 
 //
+// Historico de alteracoes:
+// 13/09/2021 - Claudia - Tratamento para A1_INSCR. GLPI: 10797
+//
 // -------------------------------------------------------------------------
 #include "rwmake.ch"
 
@@ -18,9 +21,9 @@ User Function Verdva2()
     cEstado := M->A2_EST
     cIsento := rtrim(M->A2_INSCR)
 
-    If cIsento == "ISENTO"
-    Return(_lRet)
+    If alltrim(cIsento) == "ISENTO" .or. alltrim(cIsento) == "" .or. alltrim(cIsento) == "ISENTA" 
+        Return(_lRet)
     Else
-    _lRet := IE(cIsento,cEstado,.T.)
+        _lRet := IE(cIsento,cEstado,.T.)
     Endif
 Return(_lRet)

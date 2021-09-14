@@ -45,6 +45,7 @@
 // 29/06/2021 - Claudia - Adicionado campo email XML. GLPI: 10320
 // 29/06/2021 - Claudia - Ramo de atividade. GLPI:10351
 // 07/07/2021 - Claudia - Incluido atributo de nome de banco. GLPI: 10355
+// 13/09/2021 - Claudia - Tratamento para A1_INSCR. GLPI: 10797
 //
 // ------------------------------------------------------------------------------------------------------------------------
 user function BatMerc (_sQueFazer)
@@ -413,56 +414,60 @@ static function _LeCli (_sLinkSrv)
 			endif
 	
 			if _lContinua
+				_sIE := (_sAliasQ) -> ZA1_INSCR
+				If alltrim(_sIE) == 'ISENTO' .or. alltrim(_sIE) == 'ISENTA'
+					_sIE := ''
+				EndIf
+
 				oModel:Activate()
 				// Monta array de dados para inclusao do cadastro.
 				oSA1Mod:= oModel:getModel("MATA030_SA1")
-				oSA1Mod:SetValue("A1_NOME",		_NoAcento ((_sAliasQ) -> za1_nome))	
-				oSA1Mod:SetValue("A1_PESSOA",	(_sAliasQ) -> ZA1_PESSOA)	
-				oSA1Mod:SetValue("A1_TIPO",		'S')	
-				oSA1Mod:SetValue("A1_NREDUZ",	_NoAcento ((_sAliasQ) -> ZA1_NREDUZ))	
-				oSA1Mod:SetValue("A1_END",		_NoAcento ((_sAliasQ) -> ZA1_END))	
-				oSA1Mod:SetValue("A1_EST",		(_sAliasQ) -> ZA1_EST)
-				oSA1Mod:SetValue("A1_COD_MUN",	(_sAliasQ) -> ZA1_COD_MU)
-				oSA1Mod:SetValue("A1_BAIRRO",	_NoAcento ((_sAliasQ) -> ZA1_BAIRRO))
-				oSA1Mod:SetValue("A1_CEP",		(_sAliasQ) -> ZA1_CEP)	
-				oSA1Mod:SetValue("A1_TEL",		strtran (strtran (strtran (alltrim ((_sAliasQ) -> ZA1_TEL), '-'), '.'), ' '))
-				oSA1Mod:SetValue("A1_FAX",		(_sAliasQ) -> ZA1_FAX)
-				oSA1Mod:SetValue("A1_CONTATO",	'')
-				oSA1Mod:SetValue("A1_CGC",		(_sAliasQ) -> ZA1_CGC)
-				oSA1Mod:SetValue("A1_INSCR",	(_sAliasQ) -> ZA1_INSCR)		
-				oSA1Mod:SetValue("A1_VEND",		sa3 -> a3_cod)
+				oSA1Mod:SetValue("A1_NOME"		,_NoAcento ((_sAliasQ) -> za1_nome))	
+				oSA1Mod:SetValue("A1_PESSOA"	,(_sAliasQ) -> ZA1_PESSOA)	
+				oSA1Mod:SetValue("A1_TIPO"		,'S')	
+				oSA1Mod:SetValue("A1_NREDUZ"	,_NoAcento ((_sAliasQ) -> ZA1_NREDUZ))	
+				oSA1Mod:SetValue("A1_END"		,_NoAcento ((_sAliasQ) -> ZA1_END))	
+				oSA1Mod:SetValue("A1_EST"		,(_sAliasQ) -> ZA1_EST)
+				oSA1Mod:SetValue("A1_COD_MUN"	,(_sAliasQ) -> ZA1_COD_MU)
+				oSA1Mod:SetValue("A1_BAIRRO"	,_NoAcento ((_sAliasQ) -> ZA1_BAIRRO))
+				oSA1Mod:SetValue("A1_CEP"		,(_sAliasQ) -> ZA1_CEP)	
+				oSA1Mod:SetValue("A1_TEL"		,strtran (strtran (strtran (alltrim ((_sAliasQ) -> ZA1_TEL), '-'), '.'), ' '))
+				oSA1Mod:SetValue("A1_FAX"		,(_sAliasQ) -> ZA1_FAX)
+				oSA1Mod:SetValue("A1_CONTATO"	,'')
+				oSA1Mod:SetValue("A1_CGC"		,(_sAliasQ) -> ZA1_CGC)
+				oSA1Mod:SetValue("A1_INSCR"		,_sIE)		
+				oSA1Mod:SetValue("A1_VEND"		,sa3 -> a3_cod)
 				if empty ((_sAliasQ) -> ZA1_BCO1)
-					oSA1Mod:SetValue("A1_BCO1",	'CX1')
-					oSA1Mod:SetValue("A1_FORMA",'2')
+					oSA1Mod:SetValue("A1_BCO1"	,'CX1')
+					oSA1Mod:SetValue("A1_FORMA"	,'2')
 				else
-					oSA1Mod:SetValue("A1_BCO1",	(_sAliasQ) -> ZA1_BCO1)
-					oSA1Mod:SetValue("A1_FORMA",'1')
+					oSA1Mod:SetValue("A1_BCO1"	,(_sAliasQ) -> ZA1_BCO1)
+					oSA1Mod:SetValue("A1_FORMA"	,'1')
 				endif
-				oSA1Mod:SetValue("A1_ULTVIS",	stod (substr ((_sAliasQ) -> ZA1_ULTVIS, 5, 4) + substr ((_sAliasQ) -> ZA1_ULTVIS, 3, 2) + substr ((_sAliasQ) -> ZA1_ULTVIS, 1, 2)))
-				oSA1Mod:SetValue("A1_CXPOSTA",	(_sAliasQ) -> ZA1_CXPOST)
+				oSA1Mod:SetValue("A1_ULTVIS"	,stod (substr ((_sAliasQ) -> ZA1_ULTVIS, 5, 4) + substr ((_sAliasQ) -> ZA1_ULTVIS, 3, 2) + substr ((_sAliasQ) -> ZA1_ULTVIS, 1, 2)))
+				oSA1Mod:SetValue("A1_CXPOSTA"	,(_sAliasQ) -> ZA1_CXPOST)
 				if ! empty ((_sAliasQ) -> ZA1_ENDCOB)
-					oSA1Mod:SetValue("A1_ENDCOB",	(_sAliasQ) -> ZA1_ENDCOB)
-					oSA1Mod:SetValue("A1_BAIRROC",	_NoAcento ((_sAliasQ) -> ZA1_BAIRRC))
-					oSA1Mod:SetValue("A1_CEPC",		(_sAliasQ) -> ZA1_CEPC)
-					oSA1Mod:SetValue("A1_MUNC",		_NoAcento ((_sAliasQ) -> ZA1_MUNC))
-					oSA1Mod:SetValue("A1_ESTC",		(_sAliasQ) -> ZA1_ESTC)
+					oSA1Mod:SetValue("A1_ENDCOB" ,(_sAliasQ) -> ZA1_ENDCOB)
+					oSA1Mod:SetValue("A1_BAIRROC",_NoAcento ((_sAliasQ) -> ZA1_BAIRRC))
+					oSA1Mod:SetValue("A1_CEPC"	 ,(_sAliasQ) -> ZA1_CEPC)
+					oSA1Mod:SetValue("A1_MUNC"   ,_NoAcento ((_sAliasQ) -> ZA1_MUNC))
+					oSA1Mod:SetValue("A1_ESTC"   ,(_sAliasQ) -> ZA1_ESTC)
 				endif
-				oSA1Mod:SetValue("A1_EMAIL",	left(_sEMail,tamSX3('A1_EMAIL')[1]))
-				oSA1Mod:SetValue("A1_VAMDANF",	left(_sEMail,tamSX3('A1_VAMDANF')[1]))		
-				oSA1Mod:SetValue("A1_HPAGE",	(_sAliasQ) -> ZA1_HPAGE)		
-				oSA1Mod:SetValue("A1_VAUSER",	left(_NoAcento (sa3 -> a3_nome),tamSX3('A1_VAUSER')[1]))
-				oSA1Mod:SetValue("A1_VACANAL",	left(_sCanal,tamSX3('A1_VACANAL')[1]))
-				//oSA1Mod:SetValue("A1_SATIV1",	_sSativ)
-				oSA1Mod:SetValue("A1_SATIV1",	"01.02")
-				oSA1Mod:SetValue("A1_SIMPNAC",	_sSimpNac)
-				oSA1Mod:SetValue("A1_VABARAP",	'0')
-				oSA1Mod:SetValue("A1_VADTINC",	DATE())
+				oSA1Mod:SetValue("A1_EMAIL"		,left(_sEMail,tamSX3('A1_EMAIL')[1]))
+				oSA1Mod:SetValue("A1_VAMDANF"	,left(_sEMail,tamSX3('A1_VAMDANF')[1]))		
+				oSA1Mod:SetValue("A1_HPAGE"		,(_sAliasQ) -> ZA1_HPAGE)		
+				oSA1Mod:SetValue("A1_VAUSER"	,left(_NoAcento (sa3 -> a3_nome),tamSX3('A1_VAUSER')[1]))
+				oSA1Mod:SetValue("A1_VACANAL"	,left(_sCanal,tamSX3('A1_VACANAL')[1]))
+				oSA1Mod:SetValue("A1_SATIV1"	,"01.02")
+				oSA1Mod:SetValue("A1_SIMPNAC"	,_sSimpNac)
+				oSA1Mod:SetValue("A1_VABARAP"	,'0')
+				oSA1Mod:SetValue("A1_VADTINC"	,DATE())
 				if (_sAliasQ) -> ZA1_INSCR != 'ISENTO' .or. !empty ((_sAliasQ) -> ZA1_INSCR)
-					oSA1Mod:SetValue("A1_IENCONT",	'1')
-					oSA1Mod:SetValue("A1_CONTRIB",	'1')
+					oSA1Mod:SetValue("A1_IENCONT",'1')
+					oSA1Mod:SetValue("A1_CONTRIB",'1')
 				else
-					oSA1Mod:SetValue("A1_IENCONT",	'2')
-					oSA1Mod:SetValue("A1_CONTRIB",	'2')
+					oSA1Mod:SetValue("A1_IENCONT",'2')
+					oSA1Mod:SetValue("A1_CONTRIB",'2')
 				endif
 				oSA1Mod:SetValue("A1_CNAE",	'0000-0/00')
 				// dados financeiros

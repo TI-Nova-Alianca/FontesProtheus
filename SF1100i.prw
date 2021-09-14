@@ -104,8 +104,8 @@
 // 17/02/2021 - CLáudia - Incluida cópia de laudo para transferencias entre filiais. GLPI:5592
 // 07/05/2021 - Robert  - Incluida gravacao do campo E2_VASAFRA (GLPI 9891)
 // 17/05/2021 - Robert  - Nas parcelas de safra, se o ano+mes previsto jah passou (ocorre por exemplo quando gera-se nota de complemento de preco apos a safra), nao adianta gerar com data retroativa (GLPI 9891)
+// 13/09/2021 - Claudia - Tratamento para A1_INSCR. GLPI: 10797
 //
-
 // ------------------------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
@@ -732,8 +732,9 @@ static function _DadosAdic ()
 		sf1 -> f1_vaPlVei = _sPlaca
 		msunlock ()
 		
+		_sInsIE := upper(fBuscaCpo("SA2", 1, xfilial ("SA2") + sf1 -> f1_fornece + sf1 -> f1_loja, "A2_INSCR"))
 		// Nao eh o lugar certo para esta verificacao, mas deve ajudar...
-		if ! empty (sf1 -> f1_vaNfPro) .and. alltrim (upper (fBuscaCpo ("SA2", 1, xfilial ("SA2") + sf1 -> f1_fornece + sf1 -> f1_loja, "A2_INSCR"))) $ "ISENTO"
+		if ! empty (sf1 -> f1_vaNfPro) .and. (alltrim(_sInsIE) == "ISENTO" .or. alltrim(_sInsIE) == "")
 			u_help ("A T E N C A O: Produtor rural deveria ter inscricao estadual. Verifique!")
 		endif
 	endif

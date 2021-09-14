@@ -14,8 +14,9 @@
 // 08/01/2020 - Andre   - Ajustado tamanho da tela, não estava aparecendo os botões.
 //						  Acrescentado a seleção de filial.
 // 06/05/2021 - Claudia - Incluido tags de customizações
+// 13/09/2021 - Claudia - Tratamento para A1_INSCR. GLPI: 10797
 //
-// --------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------
 User Function ML_RICM2()
 
 	cPerg   := "ML_RICM2"
@@ -51,9 +52,9 @@ User Function ML_RICM2()
 		_sSQL +=   " and SD2.D2_TIPO   != 'B'"
 		_sSQL +=   " and SD2.D2_CF     != '5151'"  // Transf. entre filiais
 		_sSQL +=   " and SB1.B1_VAGCPI = '" + cvaltochar (mv_par06) + "'"
-		_sSQL +=   " and SA1.A1_INSCR  != ''"
+		//_sSQL +=   " and SA1.A1_INSCR  != ''"
 		if mv_par07 == 2
-			_sSQL +=   " and SA1.A1_INSCR  != 'ISENTO'"
+			_sSQL +=   " and (SA1.A1_INSCR != 'ISENTO' OR SA1.A1_INSCR != '')"
 		endif
 		_sSQL +=   " ORDER BY D2_FILIAL, D2_EMISSAO, D2_DOC, D2_COD"
 		   

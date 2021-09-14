@@ -19,7 +19,7 @@
 // 01/09/2009 - Robert  - Ignora transf. entre filiais.
 // 04/11/2015 - Robert  - Selecao de produtos passa a ser pelo campo B1_VAGCPI e nao mais pelo B1_PROD.
 // 06/05/2021 - Claudia - Incluido tags de customizações
-//
+// 13/09/2021 - Claudia - Tratamento para A1_INSCR. GLPI: 10797
 //
 // --------------------------------------------------------------------------
 User Function ML_RICM()
@@ -86,17 +86,19 @@ Static Function RptDetail()
 	_sQuery +=   " and SD2.D2_TIPO   != 'B'"
 	_sQuery +=   " and SD2.D2_CF     != '5151'"  // Transf. entre filiais
 	_sQuery +=   " and SB1.B1_VAGCPI = '" + cvaltochar (mv_par04) + "'"
-	_sQuery +=   " and SA1.A1_INSCR  != ''"
+	//_sQuery +=   " and SA1.A1_INSCR  != ''"
 	if mv_par05 == 2
-		_sQuery +=   " and SA1.A1_INSCR  != 'ISENTO'"
+		_sQuery +=   " and (SA1.A1_INSCR != 'ISENTO' OR SA1.A1_INSCR != '')"
 	endif
 	_sQuery +=   " ORDER BY D2_EMISSAO, D2_DOC, D2_COD"
 
 	_sAliasQ = GetNextAlias ()
 	DbUseArea(.t.,'TOPCONN',TcGenQry(,,_sQuery), _sAliasQ,.F.,.F.)
 	TCSetField (alias (), "D2_EMISSAO", "D")
+
 	procregua ((_sAliasQ) -> (reccount ()))
 	(_sAliasQ) -> (dbgotop ())
+	
 	do while ! (_sAliasQ) -> (eof ())
 		If li>58
 			cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)

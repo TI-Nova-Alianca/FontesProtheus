@@ -1,9 +1,9 @@
-// Programa:   VerNFe
-// Autor:      Robert Koch
-// Data:       18/06/2008
+// Programa.:  VerNFe
+// Autor....:  Robert Koch
+// Data.....:  18/06/2008
 // Descricao:  Verificacoes para envio de NF eletronica.
 //             A intencao eh detectar alguns problemas antes do envio para a SEFAZ.
-
+//
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Validacao
 // #Descricao         #Validacoes diversas de campos de cadastro que costumar dar problema para autorizar notas na SEFAZ.
@@ -34,72 +34,63 @@
 // 19/10/2020 - Robert - Desabilitada validacao de endereco quando cliente do exterior.
 //                     - Incluidas tags para catalogo de fontes.
 //
-
 // --------------------------------------------------------------------------
 user function VerNFe (_sOnde)
 	local _lRet      := .T.
-//	local _lContinua := .T.
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aAmbAnt   := U_SalvaAmb ()
-//	local _sCliente  := ""
-//	local _sLoja     := ""
-//	local _sProduto  := ""
-//	local _sTES      := ""
 	local _nLinCols  := 0
 	private _sMsg    := ""
 	
 	do case
-	case _sOnde == "PV"  // Pedido de venda
-		if m->c5_tipo $ "DB"
-			_VerSA2 (m->c5_cliente, m->c5_lojacli)
-		else
-			_VerSA1 (m->c5_cliente, m->c5_lojacli)
-		endif
-		for _nLinCols = 1 to len (aCols)
-			if ! GDDeleted (_nLinCols)
-				_VerSB1 (GDFieldGet ("C6_PRODUTO", _nLinCols))
-				_VerSF4 (GDFieldGet ("C6_TES", _nLinCols))
+		case _sOnde == "PV"  // Pedido de venda
+			if m->c5_tipo $ "DB"
+				_VerSA2 (m->c5_cliente, m->c5_lojacli)
+			else
+				_VerSA1 (m->c5_cliente, m->c5_lojacli)
 			endif
-		next
-		if ! empty (m->c5_transp)
-			_VerSA4 (m->c5_transp)
-		endif
-	case _sOnde == "NFS"  // NF saida
-		if sf2 -> f2_tipo $ "BD"
-			_VerSA2 (sf2 -> f2_cliente, sf2 -> f2_loja)
-		else
-			_VerSA1 (sf2 -> f2_cliente, sf2 -> f2_loja)
-		endif
-		_sChaveSD2 := SF2->F2_DOC+SF2->F2_SERIE+SF2->F2_CLIENTE+SF2->F2_LOJA
-		sd2 -> (DbSetOrder(3))
-		sd2 -> (DbSeek(xFilial("SD2")+_sChaveSD2))
-		Do While !sd2 -> (Eof()) .And. xFilial("SD2")==SD2->D2_FILIAL .And. _sChaveSD2 == SD2->D2_DOC+SD2->D2_SERIE+SD2->D2_CLIENTE+SD2->D2_LOJA
-			_VerSB1 (sd2 -> d2_cod)
-			_VerSF4 (sd2 -> d2_tes)
-			_VerSD2 ()
-			sd2 -> (DbSkip())
-		Enddo
+			for _nLinCols = 1 to len (aCols)
+				if ! GDDeleted (_nLinCols)
+					_VerSB1 (GDFieldGet ("C6_PRODUTO", _nLinCols))
+					_VerSF4 (GDFieldGet ("C6_TES", _nLinCols))
+				endif
+			next
+			if ! empty (m->c5_transp)
+				_VerSA4 (m->c5_transp)
+			endif
+		case _sOnde == "NFS"  // NF saida
+			if sf2 -> f2_tipo $ "BD"
+				_VerSA2 (sf2 -> f2_cliente, sf2 -> f2_loja)
+			else
+				_VerSA1 (sf2 -> f2_cliente, sf2 -> f2_loja)
+			endif
+			_sChaveSD2 := SF2->F2_DOC+SF2->F2_SERIE+SF2->F2_CLIENTE+SF2->F2_LOJA
+			sd2 -> (DbSetOrder(3))
+			sd2 -> (DbSeek(xFilial("SD2")+_sChaveSD2))
+			Do While !sd2 -> (Eof()) .And. xFilial("SD2")==SD2->D2_FILIAL .And. _sChaveSD2 == SD2->D2_DOC+SD2->D2_SERIE+SD2->D2_CLIENTE+SD2->D2_LOJA
+				_VerSB1 (sd2 -> d2_cod)
+				_VerSF4 (sd2 -> d2_tes)
+				_VerSD2 ()
+				sd2 -> (DbSkip())
+			Enddo
 	endcase
 	
 	if ! empty (_sMsg)
 		_lRet = .F.
 		u_help ("Verificacao para NF-e:" + chr (13) + chr (10) + _sMsg, procname (), .t.)
-//		if _sOnde == "NFS"
-//			U_SendMail ("liane.lenzi@novaalianca.coop.br", "Verificacao NF-e " + sf2 -> f2_doc, _sMsg)
-//		endif
 	endif
 	
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
 return _lRet
-
-
-
+//
 // --------------------------------------------------------------------------
 // Verifica cadastro do cliente
 static function _VerSA1 (_sCliente, _sLoja)
 	local _sEMail := ""
+
 	sa1 -> (dbsetorder (1))
+
 	if sa1 -> (dbseek (xfilial ("SA1") + _sCliente + _sLoja, .F.))
 		if empty (sa1 -> a1_bairro) .or. alltrim (sa1 -> a1_bairro) == "."
 			_sMsg += "Bairro nao informado ou invalido no cliente. (CNPJ: " + sa1 -> a1_cgc + ")" + chr (13) + chr (10)
@@ -133,17 +124,6 @@ static function _VerSA1 (_sCliente, _sLoja)
 				_sMsg += "Inscricao estadual NAO DEVE ser informada para cliente do exterior. (Cod.cli.: " + sa1 -> a1_cod + ")" + chr (13) + chr (10)
 			endif
 		endif	
-		//else
-//			if empty (sa1 -> a1_inscr) .and. sa1 -> a1_tipo != 'F' 
-//			if empty (sa1 -> a1_inscr) .and. sa1 -> a1_tipo != 'F' .and. sa1 -> a1_vamei != 'S'
- 			//if empty (sa1 -> a1_inscr)
-				//_sMsg += "Inscricao estadual nao informada no cliente. (CNPJ: " + sa1 -> a1_cgc + ")" 
-			//endif
-			//if "ISE" $ alltrim(sa1 -> a1_inscr) .and. alltrim(sa1 -> a1_inscr) != "ISENTA"  
-				//_sMsg += "Inscricao estadual invalida no cliente. (CNPJ: " + sa1 -> a1_cgc + ")"
-			//endif
-			
-		//endif
 		if empty (sa1 -> a1_pais)
 			_sMsg += "Codigo de pais nao informado ou invalido no cliente. (CNPJ: " + sa1 -> a1_cgc + ")" + chr (13) + chr (10)
 		endif
@@ -156,14 +136,14 @@ static function _VerSA1 (_sCliente, _sLoja)
 		endif
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Verifica cadastro do fornecedor
 static function _VerSA2 (_sCliente, _sLoja)
 	local _sEMail := ""
+
 	sa2 -> (dbsetorder (1))
+
 	if sa2 -> (dbseek (xfilial ("sa2") + _sCliente + _sLoja, .F.))
 		if empty (sa2 -> a2_bairro) .or. alltrim (sa2 -> a2_bairro) == "."
 			_sMsg += "Bairro nao informado ou invalido no fornecedor." + chr (13) + chr (10)
@@ -205,32 +185,27 @@ static function _VerSA2 (_sCliente, _sLoja)
 		endif
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Verifica cadastro da transportadora.
 static function _VerSA4 (_sTransp)
-//	local _sEMail := ""
+
 	sa4 -> (dbsetorder (1))
+
 	if sa4 -> (dbseek (xfilial ("SA4") + _sTransp, .F.))
-		//_sEMail = iif (empty (sa4 -> a4_vamdanf), SA4->A4_EMAIL, sa4 -> a4_vamdanf)
-		//if ! U_MailOk (_sEMail)
-			//_sMsg += "E-Mail '" + _sEMail + "' invalido na transportadora '" + sa4 -> a4_cod + "'." + chr (13) + chr (10)
-		//endif
 		if "&" $ sa4 -> a4_nome .or. "&" $ sa4 -> a4_bairro .or. "&" $ sa4 -> a4_end
 			_sMsg += "Cadastro de transportadoras: O caracter '&' nao deve ser usado. Verifique campos como NOME, BAIRRO, ENDERECO, etc." + chr (13) + chr (10)
 		endif
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
+// Verifica telefone
 static function _VerTel (_sTel)
-//	local _lErroTel := .F.
 	local _i := 0
+
 	_sTel = rtrim (_sTel)
+
 	if len (_sTel) < 6 .or. len (_sTel) > 14
 		_sMsg += "Telefone invalido: '" + _sTel + "'. O mesmo deve ter entre 6 e 14 digitos" + chr (13) + chr (10)
 	endif
@@ -241,34 +216,27 @@ static function _VerTel (_sTel)
 		endif
 	next
 return
-
-
-
+//
 // --------------------------------------------------------------------------
+// Verifica produto
 static function _VerSB1 (_sProduto)
 	sb1 -> (dbsetorder (1))
 	if sb1 -> (dbseek (xfilial ("SB1") + _sProduto, .F.))
 		if empty (sb1 -> b1_origem)
 			_sMsg += "Origem nao informada no produto " + sb1 -> b1_cod + chr (13) + chr (10)
 		endif
-//		if empty (sb1 -> b1_vaEANUn)
-//			_sMsg += "Codigo de barras EAN da unidade nao informado ou invalido no produto " + sb1 -> b1_cod + chr (13) + chr (10)
-//		else
-//			if alltrim (sb1 -> b1_vaEANUn) != U_ML_DVEAN (left (sb1 -> B1_VAEANUN, 12), .T.)
-//				_sMsg += "Codigo de barras '" + alltrim (sb1 -> b1_vaEANUn) + "' invalido no produto " + sb1 -> b1_cod + chr (13) + chr (10)
-//			endif
-//		endif
 		if empty (sb1 -> b1_posipi)
 			_sMsg += "Posicao de IPI nao informada no produto " + sb1 -> b1_cod + chr (13) + chr (10)
 		endif
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
+// Verifica TES
 static function _VerSF4 (_sTES)
+
 	sf4 -> (dbsetorder (1))
+
 	if sf4 -> (dbseek (xfilial ("SF4") + _sTES, .F.))
 		if empty (sf4 -> f4_sittrib)
 			_sMsg += "Situacao trib. ICMS nao informada no TES " + sf4 -> f4_codigo + chr (13) + chr (10)
@@ -284,10 +252,9 @@ static function _VerSF4 (_sTES)
 		endif
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
+// Verifica Itens da nota
 static function _VerSD2 ()
 	if len (alltrim (sd2 -> d2_clasfis)) < 3
 		_sMsg += "Situacao trib. ICMS ficou incompleta para o produto " + sd2 -> d2_cod + chr (13) + chr (10)
