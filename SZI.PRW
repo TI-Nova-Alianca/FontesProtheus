@@ -57,6 +57,7 @@
 // 11/01/2021 - Robert  - Melhorada msg. na rotina de transferencia de saldo para outra filial.
 // 25/03/2021 - Robert  - Criada funcao _Pergunte para ler parametros de rotinas automaticas (GLPI 9697)
 // 27/07/2021 - Robert  - Valida data base antes de chamar GeraSE2().
+// 14/09/2021 - Robert  - Tratamentos para campo ZI_VCTOFOR (GLPI 10803).
 //
 
 // --------------------------------------------------------------------------------------------------
