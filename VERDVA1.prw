@@ -25,6 +25,7 @@ User Function Verdva1()
     Do Case
         Case alltrim(cIsento) == "ISENTO" .or. alltrim(cIsento) == "ISENTA"
             _lRet := .F.
+            u_help("Não deve ser preenchida a inscrição estadual com ISENTO ou ISENTA. Deve-se deixar em branco.")
         Case alltrim(cIsento) == "" 
             _lRet := .T.
         Otherwise
