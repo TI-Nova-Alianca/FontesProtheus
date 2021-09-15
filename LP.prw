@@ -64,6 +64,7 @@
 // 13/07/2021 - Robert  - Tratamento LP 530 resgate cota capital (GLPI 10481)
 // 16/08/2021 - Claudia - Incluida rotina ZB3(Pagar-me) na conta de credito de cartões. GLPI: 9026
 // 14/09/2021 - Robert  - Eliminados alguns tratamentos ref.cta.corrente associados (GLPI 10503)
+// 15/09/2021 - Robert  - Voltadas alteracoes feitas ontem.
 //
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -112,8 +113,7 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 
 	case _sLPad == '510' .and. _sSeq='200' // Inclusao contas a pagar
 		_xRet = SE2->E2_VALOR 
-//		IF SE2->E2_PREFIXO=="ALE" .OR. SE2->E2_PREFIXO=="COM" .OR. SE2->E2_PREFIXO=="IND" .OR. SE2->E2_PREFIXO=="UNI" .OR. SE2->E2_PREFIXO=="CEL" .OR. SE2->E2_PREFIXO=="ANS" .OR. SE2->E2_PREFIXO=="SEM" .OR. SE2->E2_PREFIXO=="FRS" .OR. SE2->E2_PREFIXO=="DEL" 
-		IF SE2->E2_PREFIXO=="COM" .OR. SE2->E2_PREFIXO=="IND" .OR. SE2->E2_PREFIXO=="FRS" .OR. SE2->E2_PREFIXO=="DEL" 
+		IF SE2->E2_PREFIXO=="ALE" .OR. SE2->E2_PREFIXO=="COM" .OR. SE2->E2_PREFIXO=="IND" .OR. SE2->E2_PREFIXO=="UNI" .OR. SE2->E2_PREFIXO=="CEL" .OR. SE2->E2_PREFIXO=="ANS" .OR. SE2->E2_PREFIXO=="SEM" .OR. SE2->E2_PREFIXO=="FRS" .OR. SE2->E2_PREFIXO=="DEL" 
 			_xRet = 0
 		ENDIF
 		IF SE2->E2_TIPO=="PR " .OR. SE2->E2_TIPO=="PRI" // tem que ficar assim com espaço - nao tirar
