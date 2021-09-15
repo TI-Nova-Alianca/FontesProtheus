@@ -3,10 +3,18 @@
 // Data.......: 02/12/2019 
 // Descricao..: Relatório de materias no planejamento de produção.
 //
-// ------------------------------------------------------------------------------------------------
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Relatorio
+// #Descricao         #Relatório de materias no planejamento de produção.
+// #PalavasChave      #materiais #planejamento_de_produção 
+// #TabelasPrincipais #ZBC
+// #Modulos   		  #PCP 
+//
 // Historico de alteracoes:
 // 09/12/2019 - Cláudia - Ajuste da consulta para considerar componentes filhos. 
 //						  A revisão listada será a contida no cadastro do produto
+// 15/09/2021 - Claudia - Ajuste do b1_desc para descricao. GLPI: 10943
+//
 // ------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
@@ -21,15 +29,14 @@ User Function VA_PLMMAT()
 	oReport := ReportDef()
 	oReport:PrintDialog()
 Return
-
+//
+// ------------------------------------------------------------------------------------------------
 Static Function ReportDef()
 	Local oReport  := Nil
 	Local oSection1:= Nil
 	Local oSection2:= Nil
 	Local oSection3:= Nil
 	Local oSection4:= Nil
-	//Local oFunction
-	//Local oBreak1
 	
 	oReport := TReport():New("VA_PLMMAT","Relação de materiais - sintético",cPerg,{|oReport| PrintReport(oReport)},"Relação de materiais - sintético")
 	
@@ -95,14 +102,13 @@ Static Function ReportDef()
 		TRCell():New(oSection4,"COLUNA7", 	"" ,"Saldo"			,	,20,/*lPixel*/,{||  },"RIGHT",,"RIGHT",,,,,,.F.)
 	EndIf
 Return(oReport)
-
+// ------------------------------------------------------------------------------------------------
 Static Function PrintReport(oReport)
 	Local oSection1 := oReport:Section(1)
 	Local oSection2 := oReport:Section(2)
 	Local oSection3 := oReport:Section(3)
 	Local oSection4 := oReport:Section(4)
 	Local cQuery    := ""
-	//Local cQuery2   := ""		
 	Local nAlx02 	:= 0
 	Local nAlx07 	:= 0
 	Local nAlx08 	:= 0
@@ -123,13 +129,13 @@ Static Function PrintReport(oReport)
 	Local nOut		:= 0
 	Local nNov		:= 0
 	Local nDez		:= 0
-	//Local oBreak1
 	Private sDesc
 	Private sTipo
 	
 	_aSC := {}
 	_aPC := {}
 	_aTC := {}
+
 	If alltrim(mv_par08) == ''
 		nPar08 := '0'
 	Else
@@ -141,61 +147,6 @@ Static Function PrintReport(oReport)
 	Else
 		nPar09 := mv_par09
 	EndIf
-	
-//	cQuery += " WITH ESTRUT (CODIGO, COD_PAI, COD_COMP, QTD, DT_INI, DT_FIM, NIVEL, REVINI, REVFIM)"
-//	cQuery += " AS"
-//	cQuery += " (SELECT"
-//	cQuery += " 		G1_COD PAI"
-//	cQuery += " 	   ,G1_COD"
-//	cQuery += " 	   ,G1_COMP"
-//	cQuery += " 	   ,G1_QUANT"
-//	cQuery += " 	   ,G1_INI"
-//	cQuery += " 	   ,G1_FIM"
-//	cQuery += " 	   ,1 AS NIVEL"
-//	cQuery += " 	   ,G1_REVINI"
-//	cQuery += " 	   ,G1_REVFIM"
-//	cQuery += " 	FROM " + RetSqlName("SG1") + " SG1 "
-//	cQuery += " 	WHERE SG1.D_E_L_E_T_ = '' " 
-//	cQuery += " 	AND G1_FILIAL = '" + xfilial ("SG1") + "'"        
-//	cQuery += " 	AND SG1.G1_INI <= '" + dtos(mv_par01) + "'"
-//	cQuery += " 	AND SG1.G1_FIM >= '" + dtos(mv_par02) + "'"
-//	cQuery += " 	UNION ALL"
-//	cQuery += " 	SELECT"
-//	cQuery += " 		CODIGO"
-//	cQuery += " 	   ,G1_COD"
-//	cQuery += " 	   ,G1_COMP"
-//	cQuery += " 	   ,QTD * G1_QUANT"
-//	cQuery += " 	   ,G1_INI"
-//	cQuery += " 	   ,G1_FIM"
-//	cQuery += " 	   ,NIVEL + 1"
-//	cQuery += " 	   ,G1_REVINI"
-//	cQuery += " 	   ,G1_REVFIM"
-//	cQuery += " 	FROM " + RetSqlName("SG1") + " SG1 "
-//	cQuery += " 	INNER JOIN ESTRUT EST"
-//	cQuery += " 		ON G1_COD = COD_COMP"
-//	cQuery += " 	WHERE SG1.D_E_L_E_T_ = ''"
-//	cQuery += " 	AND SG1.G1_FILIAL = '" + xfilial ("SG1") + "'"  
-//	cQuery += " 	AND SG1.G1_INI <= '" + dtos(mv_par01) + "'"
-//	cQuery += " 	AND SG1.G1_FIM >= '" + dtos(mv_par02) + "')"
-//	cQuery += " SELECT"
-//	cQuery += " 	E1.COD_COMP AS COMPONENTE"
-//	cQuery += "     ,SUM(SHC.HC_QUANT) AS QTD_PLANEJ"
-//	cQuery += "     ,SUM(E1.QTD) AS QTD_EST"
-//	cQuery += "		,SUM(E1.QTD * SHC.HC_QUANT) AS QNT_PROD"
-//	cQuery += " FROM ESTRUT E1"
-//	cQuery += " 	," + RetSqlName("SB1") + " SB1 "
-//	cQuery += " 	," + RetSqlName("SHC") + " SHC "
-//	cQuery += " WHERE SB1.D_E_L_E_T_ = ''"
-//	cQuery += " AND SHC.D_E_L_E_T_ = ''"
-//	cQuery += " AND SB1.B1_COD = COD_PAI"
-//	cQuery += " AND E1.REVINI <= SB1.B1_REVATU"
-//	cQuery += " AND E1.REVFIM >= SB1.B1_REVATU"
-//	cQuery += " AND SHC.HC_PRODUTO = CODIGO"
-//	cQuery += " AND SHC.HC_DATA BETWEEN '" + dtos(mv_par01) + "' AND '" + dtos(mv_par02) + "'"
-//	cQuery += " AND SHC.HC_DOC BETWEEN '" + mv_par03 + "' AND '" + mv_par04 + "'"
-//	cQuery += " AND SHC.HC_ANO BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
-//	cQuery += " AND E1.NIVEL BETWEEN '" + npar08 +"' AND '" + npar09 + "'"
-//	cQuery += " GROUP BY E1.COD_COMP"
 
    	cQuery += " WITH ESTRUT (CODIGO, COD_PAI, COD_COMP, QTD, DT_INI, DT_FIM, NIVEL, REVINI, REVFIM, GRPOPC)"
 	cQuery += " AS"
@@ -235,8 +186,6 @@ Static Function PrintReport(oReport)
 	cQuery += " 	AND SG1.G1_FIM >= '" + dtos(mv_par02) + "')"
 	cQuery += " SELECT"
 	cQuery += " 	E1.COD_COMP AS COMPONENTE"
-	//cQuery += "    ,MONTH(SHC.HC_DATA) AS MES"
-	//cQuery += "    ,YEAR(SHC.HC_DATA) AS ANO"
 	cQuery += "    ,SUM(SHC.HC_QUANT) AS QTD_PLANEJ"
 	cQuery += "    ,SUM(E1.QTD) AS QTD_EST"
 	cQuery += "    ,SUM(E1.QTD * SHC.HC_QUANT) AS QNT_PROD"
@@ -255,13 +204,9 @@ Static Function PrintReport(oReport)
 	cQuery += " AND E1.NIVEL BETWEEN '" + npar08 +"' AND '" + npar09 + "'"
 	cQuery += " AND E1.GRPOPC = ''"
 	cQuery += " GROUP BY E1.COD_COMP"
-	//cQuery += " 		,MONTH(SHC.HC_DATA)"
-	//cQuery += " 		,YEAR(SHC.HC_DATA)"
 	cQuery += " UNION ALL"
 	cQuery += " SELECT"
 	cQuery += " 	ZBD.ZBD_CODOPC AS COMPONENTE"
-	//cQuery += "    ,MONTH(SHC.HC_DATA) AS MES"
-	//cQuery += "    ,YEAR(SHC.HC_DATA) AS ANO
 	cQuery += "    ,SUM(SHC.HC_QUANT) AS QTD_PLANEJ"
 	cQuery += "    ,SUM(SG1.G1_QUANT) AS QTD_EST"
 	cQuery += "    ,SUM(SG1.G1_QUANT * SHC.HC_QUANT) AS QNT_PROD"
@@ -287,22 +232,19 @@ Static Function PrintReport(oReport)
 	cQuery += " AND ZBD.ZBD_VAEVE BETWEEN '" + mv_par03 + "' AND '" + mv_par04 + "'"
 	cQuery += " AND ZBD.ZBD_ANO BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
 	cQuery += " GROUP BY ZBD.ZBD_CODOPC"
-	//cQuery += " 		,MONTH(SHC.HC_DATA)"
-	//cQuery += " 		,YEAR(SHC.HC_DATA)"
-	cQuery += " ORDER BY COMPONENTE"//, ANO, MES"
+	cQuery += " ORDER BY COMPONENTE"
    
 	DbUseArea(.T., "TOPCONN", TCGenQry(,,cQuery), "TRA", .F., .T.)
 	TRA->(DbGotop())
 
-nHandle := FCreate("c:\temp\va_plmmat.txt")
-FWrite(nHandle,cQuery )
-FClose(nHandle)
+	nHandle := FCreate("c:\temp\va_plmmat.txt")
+	FWrite(nHandle,cQuery )
+	FClose(nHandle)
 
 	oSection1:Init()
 	oSection1:SetHeaderSection(.T.)	
 
 	While TRA->(!Eof())
-
 		nQtdPro:= TRA->QNT_PROD 
 		_BuscaDescProduto (TRA -> COMPONENTE, @sDesc, @sTipo)
 
@@ -454,12 +396,11 @@ FClose(nHandle)
 			oSection2:PrintLine()
 		Next
 		oSection2:Finish()
-		//
+		
 		oReport:PrintText(" ",,100)
 		oReport:PrintText(" ",,100)
 		oReport:PrintText("------------------------------------- PEDIDOS DE COMPRA ",,5)
 		oSection3:Init()
-		//oSection2:PrintHeader( .T. ,.F.)
 		
 		For y:=1 to len(_aPC)
 			oSection3:Cell("COLUNA1"):SetBlock({|| _aPC[y,1]})
@@ -474,8 +415,7 @@ FClose(nHandle)
 		Next
 		
 		oSection4:Finish()
-		//
-		//
+
 		oReport:PrintText(" ",,100)
 		oReport:PrintText(" ",,100)
 		oReport:PrintText("------------------------------------- EM TERCEIROS ",,5)
@@ -504,7 +444,7 @@ Static Function _ImpFiltros()
 	oReport:PrintText("",,50)
 	oReport:FatLine() 
 	oReport:PrintText("",,50)
-	//
+	
 	// Filtros
 	sTexto := "Período de " + DTOC(mv_par01)+ " até " + DTOC(mv_par02) 
 	oReport:PrintText(sTexto,,50)
@@ -513,6 +453,7 @@ Static Function _ImpFiltros()
 	sTexto := "Nível da estrutura " + alltrim(mv_par08)
 	oReport:PrintText(sTexto,,50)
 Return
+//
 // ----------------------------------------------------------------------------------
 // Busca o saldo nos almoxarifados correspondentes
 Static Function _BuscaSaldo(sComp, sAlx)
@@ -543,6 +484,7 @@ Static Function _BuscaSaldo(sComp, sAlx)
 	TRB->(DbCloseArea())
 	
 Return nQtdAlx
+//
 // ----------------------------------------------------------------------------------
 // Busca o saldo das solicitações de compras
 Static Function _BuscaSC(sComp)
@@ -577,6 +519,7 @@ Static Function _BuscaSC(sComp)
 	Enddo
 	TRC->(DbCloseArea())
 Return nQtdSC
+//
 // ----------------------------------------------------------------------------------
 // Busca o saldo dos pedidos de compras
 Static Function _BuscaPC(sComp)
@@ -610,6 +553,7 @@ Static Function _BuscaPC(sComp)
 	Enddo
 	TRD->(DbCloseArea())
 Return nQtdPC
+//
 // ----------------------------------------------------------------------------------
 // Busca saldo de terceiros
 Static Function _BuscaTerc(sComp)
@@ -621,7 +565,7 @@ Static Function _BuscaTerc(sComp)
     cQuery4 += " 	,B6_DOC AS NF"
     cQuery4 += " 	,B6_SERIE AS SERIE"
     cQuery4 += " 	,B6_PRODUTO AS PRODUTO"
-    cQuery4 += " 	,V.B1_DESC AS DESCRICAO"
+    cQuery4 += " 	,V.DESCRICAO AS DESCRICAO"
     cQuery4 += " 	,dbo.VA_DTOC(B6_EMISSAO) AS EMISSAO"
     cQuery4 += " 	,B6_SALDO AS SALDO"
 	cQuery4 += " FROM dbo.VA_VSALDOS_TERCEIROS V"
@@ -639,10 +583,10 @@ Static Function _BuscaTerc(sComp)
 	Enddo
 	TRE->(DbCloseArea())
 Return nQtdTerc
+//
 // ----------------------------------------------------------------------------------
 // Busca descrição do componente
 Static Function _BuscaDescProduto(sComp,sDesc,sTipo)
-	//Local sDesPro := ""
 	Local cQuery5 := ""
 	
 	cQuery5 += " SELECT "
@@ -661,67 +605,13 @@ Static Function _BuscaDescProduto(sComp,sDesc,sTipo)
 	Enddo
 	TRF->(DbCloseArea())
 Return 
+//
 // ----------------------------------------------------------------------------------
 // Busca Quantidade por mes do componente
 Static Function _BuscaQtdMes(sComp, sMes, sAno, nPar08, nPar09)
 	Local nQtdMes := 0
 	Local cQuery6 := ""
 	
-//	cQuery6 += " WITH ESTRUT (CODIGO, COD_PAI, COD_COMP, QTD, DT_INI, DT_FIM, NIVEL, REVINI, REVFIM)"
-//	cQuery6 += " AS"
-//	cQuery6 += " (SELECT"
-//	cQuery6 += " 		G1_COD PAI"
-//	cQuery6 += " 	   ,G1_COD"
-//	cQuery6 += " 	   ,G1_COMP"
-//	cQuery6 += " 	   ,G1_QUANT"
-//	cQuery6 += " 	   ,G1_INI"
-//	cQuery6 += " 	   ,G1_FIM"
-//	cQuery6 += " 	   ,1 AS NIVEL"
-//	cQuery6 += " 	   ,G1_REVINI"
-//	cQuery6 += " 	   ,G1_REVFIM"
-//	cQuery6 += " 	FROM " + RetSqlName("SG1") + " SG1 "
-//	cQuery6 += " 	WHERE SG1.D_E_L_E_T_ = '' " 
-//	cQuery6 += " 	AND G1_FILIAL = '" + xfilial ("SG1") + "'"        
-//	cQuery6 += " 	AND SG1.G1_INI <= '" + sDatIni + "'"
-//	cQuery6 += " 	AND SG1.G1_FIM >= '" + sDatFin + "'"
-//	cQuery6 += " 	UNION ALL"
-//	cQuery6 += " 	SELECT"
-//	cQuery6 += " 		CODIGO"
-//	cQuery6 += " 	   ,G1_COD"
-//	cQuery6 += " 	   ,G1_COMP"
-//	cQuery6 += " 	   ,QTD * G1_QUANT"
-//	cQuery6 += " 	   ,G1_INI"
-//	cQuery6 += " 	   ,G1_FIM"
-//	cQuery6 += " 	   ,NIVEL + 1"
-//	cQuery6 += " 	   ,G1_REVINI"
-//	cQuery6 += " 	   ,G1_REVFIM"
-//	cQuery6 += " 	FROM " + RetSqlName("SG1") + " SG1 "
-//	cQuery6 += " 	INNER JOIN ESTRUT EST"
-//	cQuery6 += " 		ON G1_COD = COD_COMP"
-//	cQuery6 += " 	WHERE SG1.D_E_L_E_T_ = ''"
-//	cQuery6 += " 	AND SG1.G1_FILIAL = '" + xfilial ("SG1") + "'"  
-//	cQuery6 += " 	AND SG1.G1_INI <= '" + sDatIni + "'"
-//	cQuery6 += " 	AND SG1.G1_FIM >= '" + sDatFin + "')"
-//	cQuery6 += " SELECT"
-//	cQuery6 += " 	E1.COD_COMP AS COMPONENTE"
-//	cQuery6 += "     ,SUM(SHC.HC_QUANT) AS QTD_PLANEJ"
-//	cQuery6 += "     ,SUM(E1.QTD) AS QTD_EST"
-//	cQuery6 += "		,SUM(E1.QTD * SHC.HC_QUANT) AS QNT_PROD"
-//	cQuery6 += " FROM ESTRUT E1"
-//	cQuery6 += " 	," + RetSqlName("SB1") + " SB1 "
-//	cQuery6 += " 	," + RetSqlName("SHC") + " SHC "
-//	cQuery6 += " WHERE SB1.D_E_L_E_T_ = ''"
-//	cQuery6 += " AND SHC.D_E_L_E_T_ = ''"
-//	cQuery6 += " AND SB1.B1_COD = COD_PAI"
-//	cQuery6 += " AND E1.REVINI <= SB1.B1_REVATU"
-//	cQuery6 += " AND E1.REVFIM >= SB1.B1_REVATU"
-//	cQuery6 += " AND SHC.HC_PRODUTO = CODIGO"
-//	cQuery6 += " AND SHC.HC_DATA BETWEEN '" + sDatIni + "' AND '" + sDatFin + "'"
-//	cQuery6 += " AND SHC.HC_DOC BETWEEN '" + mv_par03 + "' AND '" + mv_par04 + "'"
-//	cQuery6 += " AND SHC.HC_ANO BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
-//	cQuery6 += " AND E1.COD_COMP = '" + sComp + "'"
-//	cQuery6 += " AND E1.NIVEL BETWEEN '" + npar08 +"' AND '" + npar09 + "'"
-//	cQuery6 += " GROUP BY E1.COD_COMP"
 	cQuery6 += " WITH ESTRUT (CODIGO, COD_PAI, COD_COMP, QTD, DT_INI, DT_FIM, NIVEL, REVINI, REVFIM, GRPOPC)"
 	cQuery6 += " AS"
 	cQuery6 += " (SELECT"
@@ -826,7 +716,8 @@ Static Function _BuscaQtdMes(sComp, sMes, sAno, nPar08, nPar09)
 
 Return nQtdMes
 //
-//---------------------- PERGUNTAS
+// ----------------------------------------------------------------------------------
+// Perguntas
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT           TIPO TAM DEC VALID F3     Opcoes                      				Help
@@ -840,5 +731,6 @@ Static Function _ValidPerg ()
     aadd (_aRegsPerg, {08, "Nivel estrutura de  ", "C", 1, 0,  "",  "   ", {}										,""})
     aadd (_aRegsPerg, {09, "Nivel estrutura ate ", "C", 1, 0,  "",  "   ", {}										,""})
     aadd (_aRegsPerg, {10, "Imprime mensal  	", "N", 1, 0,  "",  "   ", {"Não","Sim"}							,""})
-     U_ValPerg (cPerg, _aRegsPerg)
+    
+	U_ValPerg (cPerg, _aRegsPerg)
 Return

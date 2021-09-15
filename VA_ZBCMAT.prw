@@ -11,6 +11,7 @@
 // #Modulos   		  #PCP 
 //
 // Historico de alteracoes:
+// 15/09/2021 - Claudia - Ajuste do b1_desc para descricao. GLPI: 10943
 //
 // ------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -28,6 +29,7 @@ User Function VA_ZBCMAT()
 Return
 //
 // ------------------------------------------------------------------------------------------------
+//
 Static Function ReportDef()
 	Local oReport  := Nil
 	
@@ -40,6 +42,7 @@ Static Function ReportDef()
 Return(oReport)
 //
 // ------------------------------------------------------------------------------------------------
+//
 Static Function PrintReport(oReport)
 	Local oSection1 := Nil
 	Local oSection2 := Nil
@@ -258,7 +261,7 @@ Static Function PrintReport(oReport)
 				oSection2:PrintLine()
 			Next
 			oSection2:Finish()
-			//
+			
 			// PEDIDO DE COMPRAS
 			oSection3 := TRSection():New(oReport,,{}, , , , , ,.F.,.F.,.F.) 
 			TRCell():New(oSection3,"COLUNA1", 	"" ,"Filial"		,	,10,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
@@ -286,7 +289,7 @@ Static Function PrintReport(oReport)
 				oSection3:PrintLine()
 			Next	
 			oSection3:Finish()
-			//
+			
 			// EM TERCEIROS
 			oSection4 := TRSection():New(oReport,,{}, , , , , ,.F.,.F.,.F.) 
 			TRCell():New(oSection4,"COLUNA1", 	"" ,"Filial"		,	,10,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
@@ -314,7 +317,7 @@ Static Function PrintReport(oReport)
 				oSection4:PrintLine()
 			Next
 			oSection4:Finish()
-		EndIf // If mv_par07 == 2
+		EndIf
 		
 		_ImpFiltros()
 	EndIf
@@ -327,7 +330,7 @@ Static Function _ImpFiltros()
 	oReport:PrintText("",,50)
 	oReport:FatLine() 
 	oReport:PrintText("",,50)
-	//
+	
 	// Filtros
 	sTexto := "Período de " + DTOC(mv_par01)+ " até " + DTOC(mv_par02) 
 	oReport:PrintText(sTexto,,50)
@@ -448,7 +451,7 @@ User Function ZBCBTer(sComp)
     cQuery4 += " 	,B6_DOC AS NF"
     cQuery4 += " 	,B6_SERIE AS SERIE"
     cQuery4 += " 	,B6_PRODUTO AS PRODUTO"
-    cQuery4 += " 	,V.B1_DESC AS DESCRICAO"
+    cQuery4 += " 	,V.DESCRICAO AS DESCRICAO"
     cQuery4 += " 	,dbo.VA_DTOC(B6_EMISSAO) AS EMISSAO"
     cQuery4 += " 	,B6_SALDO AS SALDO"
 	cQuery4 += " FROM dbo.VA_VSALDOS_TERCEIROS V"
