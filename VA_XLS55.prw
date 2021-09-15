@@ -2,18 +2,18 @@
 // Autor......: Sandra Sugari / Robert Koch
 // Data.......: 19/05/2021
 // Descricao..: Exporta Planilha CST/FISCAL.
-
+//
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #exporta_planilha
 // #Descricao         #Exporta Planilha CST/FISCAL
 // #PalavasChave      #CST #Arquivos_Fiscais
 // #TabelasPrincipais #SD2 #SFT #SA1
 // #Modulos 		  #FIS
-
-// Historico de alteracoes:
-// 19/05/2021 - Sandra Criado Exporta Planilha CST/FISCAL - GLPI 10037
 //
-
+// Historico de alteracoes:
+// 19/05/2021 - Sandra  - Criado Exporta Planilha CST/FISCAL - GLPI 10037
+// 15/09/2021 - Cláudia - Incluido os tipos D e B no relatorio. GLPI: 10942
+//
 // --------------------------------------------------------------------------
 User Function VA_XLS55 (_lAutomat)
 	Local cCadastro := "Exporta Planilha CST/FISCAL"
@@ -42,18 +42,15 @@ User Function VA_XLS55 (_lAutomat)
 		Endif
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // 'Tudo OK' do FormBatch.
 Static Function _TudoOk()
 	Local _lRet     := .T.
 Return _lRet
-
-
-
+//
 // --------------------------------------------------------------------------
+// Gera arquivo
 Static Function _Gera()
 	local _oSQL   := NIL
 
@@ -157,13 +154,12 @@ Static Function _Gera()
 	_oSQL:_sQuery += 		" AND SB1.B1_COD = SD2.D2_COD) "
 	_oSQL:_sQuery += " WHERE SD2.D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += 		" AND SD2.D2_EMISSAO BETWEEN '"+ DTOS(mv_par01) +"' AND '"+ DTOS(mv_par02) +"' "
-	_oSQL:_sQuery += 		" AND SD2.D2_TIPO NOT IN ('B', 'D') "
+	//_oSQL:_sQuery += 		" AND SD2.D2_TIPO NOT IN ('B', 'D') "
 	_oSQL:_sQuery += " ORDER BY EMISSAO, NF, PRODUTO "
 	_oSQL:Log ()
 	_oSQL:Qry2Xls (.F., .F., .F.)
 return
-
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
