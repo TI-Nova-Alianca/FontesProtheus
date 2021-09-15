@@ -21,7 +21,8 @@
 //                         chamado GLPI 7962.
 // 14/09/2021 - Claudia -  Incluso campos local e usuário grupo 042 - GLPI 10652
 // 15/09/2021 - Claudia -  Incluida busca de registros das notas de saida, movimentos e transferencias 
-//                         de produtos da manutenção. GLPI 7962.
+//                         de produtos da manutenção. GLPI 10652.
+// 15/09/2021 - Claudia -  Inclusão campo Entrada/Saida tipos de movimentos GLPI 10652.
 //
 // -----------------------------------------------------------------------------------------------------
 user function BatRecebidos (_sQueFazer)
@@ -111,18 +112,19 @@ user function BatRecebidos (_sQueFazer)
        
        	if _lContinua
 			_aCols = {}
-			aadd (_aCols, {'Dt.Entrega'  ,    'left' ,  ''})
-			aadd (_aCols, {'Tipo'        ,    'left' ,  ''})
-			aadd (_aCols, {'Cli/for'     ,    'left' ,  ''})
-			aadd (_aCols, {'Nome'        ,    'left' ,  ''})
-			aadd (_aCols, {'Documento'   ,    'left' ,  ''})
-			aadd (_aCols, {'Produto'     ,    'left' ,  ''})
-			aadd (_aCols, {'Descrição'   ,    'left' ,  ''})
-			aadd (_aCols, {'Tipo'   	 ,    'right',  ''})
-			aadd (_aCols, {'UN'          ,    'left' ,  ''})
-			aadd (_aCols, {'Local'       ,    'left' ,  ''})
-			aadd (_aCols, {'Usuario'     ,    'left' ,  ''})
-			aadd (_aCols, {'Quantidade'  ,    'right',  ''})
+			aadd (_aCols, {'Dt.Entrega'   ,    'left' ,  ''})
+			aadd (_aCols, {'Tipo'         ,    'left' ,  ''})
+			aadd (_aCols, {'Entrada/Saida',    'left' ,  ''})
+			aadd (_aCols, {'Cli/for'      ,    'left' ,  ''})
+			aadd (_aCols, {'Nome'         ,    'left' ,  ''})
+			aadd (_aCols, {'Documento'    ,    'left' ,  ''})
+			aadd (_aCols, {'Produto'      ,    'left' ,  ''})
+			aadd (_aCols, {'Descrição'    ,    'left' ,  ''})
+			aadd (_aCols, {'Tipo'   	  ,    'right',  ''})
+			aadd (_aCols, {'UN'           ,    'left' ,  ''})
+			aadd (_aCols, {'Local'        ,    'left' ,  ''})
+			aadd (_aCols, {'Usuario'      ,    'left' ,  ''})
+			aadd (_aCols, {'Quantidade'   ,    'right',  ''})
 			
 
 			// le todas as notas que entraram no dia anterior
@@ -130,7 +132,8 @@ user function BatRecebidos (_sQueFazer)
 			_oSQL:_sQuery := ""
 			_oSQL:_sQuery += " SELECT "
 			_oSQL:_sQuery += " 		SD1.D1_DTDIGIT AS DT "
-			_oSQL:_sQuery += " 		,'NF ENTRADA' AS TP "
+			_oSQL:_sQuery += " 		,'NF' AS TP "
+			_oSQL:_sQuery += "      ,'ENTRADA' AS ENTSAI " 
 			_oSQL:_sQuery += " 		,SD1.D1_FORNECE AS CLIFOR "
 			_oSQL:_sQuery += " 		,SA2.A2_NOME AS NOME "
 			_oSQL:_sQuery += " 		,SD1.D1_DOC AS DOCUMENTO "
@@ -175,7 +178,8 @@ user function BatRecebidos (_sQueFazer)
 
 			_oSQL:_sQuery += " SELECT "
 			_oSQL:_sQuery += " 		SD2.D2_EMISSAO AS DT "
-			_oSQL:_sQuery += " 		,'NF SAIDA' AS TP "
+			_oSQL:_sQuery += " 		,'NF' AS TP "
+			_oSQL:_sQuery += "      ,'SAIDA' AS ENTSAI "
 			_oSQL:_sQuery += " 		,SD2.D2_CLIENTE AS CLIFOR "
 			_oSQL:_sQuery += " 		,SA1.A1_NOME AS NOME "
 			_oSQL:_sQuery += " 		,SD2.D2_DOC AS DOCUMENTO "
@@ -221,6 +225,10 @@ user function BatRecebidos (_sQueFazer)
 			_oSQL:_sQuery += " SELECT "
 			_oSQL:_sQuery += " 		SD3.D3_EMISSAO AS DT "
 			_oSQL:_sQuery += " 		,'MOV./TRANSF.' AS TP "
+			_oSQL:_sQuery += " 		,CASE "
+            _oSQL:_sQuery += "   		WHEN D3_CF = 'DE4' THEN 'ENTRADA' "
+            _oSQL:_sQuery += " 			ELSE 'SAIDA' "
+            _oSQL:_sQuery += " 		END AS ENTSAI " 
 			_oSQL:_sQuery += " 		,'-' AS CLIFOR "
 			_oSQL:_sQuery += " 		,'-' AS NOME "
 			_oSQL:_sQuery += " 		,SD3.D3_DOC AS DOCUMENTO "
