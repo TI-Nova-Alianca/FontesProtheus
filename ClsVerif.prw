@@ -59,6 +59,7 @@
 // 23/08/2021 - Robert  - Criada verificacao 81.
 // 30/08/2021 - Robert  - Ajustadas ou desabilitadas verificacoes que usavam as tabelas VA_USR*
 // 31/08/2021 - Robert  - Criado atributo UltVerif para ajudar em loops que executam todas as validacoes (GLPI 10876)
+// 16/09/2021 - Robert  - Ajustes verif. 73 e 80 (desconsiderar deletados e usr.bloqueados).
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -3007,6 +3008,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query := "SELECT USR_ID, USR_CODIGO"
 			::Query +=  " FROM SYS_USR"
 			::Query += " WHERE USR_DTBASE  = '1'"
+			::Query +=   " AND D_E_L_E_T_  = ''"
 			::Query +=   " AND USR_ID     != '000000'"  // Administrador
 			::Query +=   " AND USR_MSBLQL != '1'"
 			::Query += " ORDER BY USR_CODIGO"
@@ -3120,12 +3122,14 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=  " WHERE D_E_L_E_T_ = ''"
 			::Query +=    " AND GR__MSBLQL != '1'"
 			::Query +=    " AND GR__ALLEMP = '1'"
+			::Query +=    " AND GR__ID != '000000'"
 			::Query +=  " UNION ALL"
 			::Query += " SELECT 'USER ' + USR_ID AS CODIGO, USR_CODIGO, USR_NOME"
 			::Query +=   " FROM SYS_USR"
 			::Query +=  " WHERE D_E_L_E_T_ = ''"
 			::Query +=    " AND USR_MSBLQL != '1'"
 			::Query +=    " AND USR_ALLEMP = '1'"
+			::Query +=    " AND USR_ID != '000000'"
 
 		case ::Numero == 81
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
