@@ -9,6 +9,7 @@
 // 03/01/2016 - Robert - Metodo AtuSaldo() da conta corrente nao recebe mais o saldo como parametro.
 // 14/09/2017 - Robert - Nao grava mais o campo E5_VACHVEX pois agora jah vem do P.E. SE5FI080.
 // 26/09/2017 - Robert - Volta a gravar o E5_VACHVEX por que o P.E. SE5FI080 me deixou na mao com tipo NDF.
+// 16/09/2021 - Robert - Melhorados logs (GLPI 10502)
 //
 
 // --------------------------------------------------------------------------
@@ -17,13 +18,11 @@ user function fina080 ()
 	local _aAmbAnt  := U_SalvaAmb ()
 	local _oCtaCorr := NIL
 
-//	u_logIni ()
-//	u_logPCham ()
+	U_Log2 ('debug', 'Iniciando ' + procname ())
 
-//	u_log ('SE2:', se2 -> e2_num, se2 -> e2_prefixo, se2 -> e2_parcela, SE2 -> E2_VACHVEX)
-	
 	// Atualiza saldo da conta corrente de associados, quando for o caso.
 	if ! IsInCallStack ("EVALGENERIC")  // Este P.E. eh chamado duas vezes, entao evito a chamada generica.
+		U_Log2 ('debug', '[' + procname () + '] fora da chamada generica')
 		if left (se2 -> e2_vachvex, 3) == 'SZI'
 
 			// Grava E5_VACHVEX para compatibilidade com versao original do extrato de conta corrente.
@@ -49,14 +48,11 @@ user function fina080 ()
 				endif
 			endif
 			if ! se5 -> (eof ())
-				u_log ('Vou atualizar SE5 (chvex contem:', se5 -> e5_vachvex,')')
-				//u_log ('SE2:', se2 -> e2_num, se2 -> e2_prefixo, se2 -> e2_parcela, SE2 -> E2_VACHVEX)
-				//u_log ('SE5:', se5 -> e5_numero, se5 -> e5_prefixo, se5 -> e5_parcela, se5 -> e5_vachvex, se5 -> e5_seq)
 				reclock ("SE5", .F.)
 				se5 -> e5_vachvex = se2 -> e2_vachvex
 				SE5 -> E5_VAUSER := alltrim(cUserName)
 				msunlock ()
-				u_log ('Atualizei F5')
+				u_log2 ('info', 'Atualizei SE5')
 			endif
 			
 			szi -> (dbsetorder (2))  // ZI_FILIAL+ZI_ASSOC+ZI_LOJASSO+ZI_SEQ
@@ -65,9 +61,10 @@ user function fina080 ()
 				_oCtaCorr:AtuSaldo ()
 			endif
 		endif
+	else
+		U_Log2 ('debug', '[' + procname () + '] dentro da chamada generica')
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
-//	u_logFim ()
 return
