@@ -3,17 +3,17 @@
 //  Data.......: 08/02/2018
 //  Descricao..: Gera titulos no conta corrente / financeiro referente a compra de associados nas lojas
 //
-// Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #batch
-// #Descricao         #Gera titulos no conta corrente / financeiro referente a compra de associados nas lojas
-// #PalavasChave      #associados #venda #conta_corrente 
-// #TabelasPrincipais #SA2 #SL1 
-// #Modulos 		  #LOJA 
+//  Tags para automatizar catalogo de customizacoes:
+//  #TipoDePrograma    #batch
+//  #Descricao         #Gera titulos no conta corrente / financeiro referente a compra de associados nas lojas
+//  #PalavasChave      #associados #venda #conta_corrente 
+//  #TabelasPrincipais #SA2 #SL1 
+//  #Modulos 		  #LOJA 
 //
 //  Historico de alteracoes:
-// 25/11/2020 - Claudia - Ajustada consulta conforme GLPI:
+//  16/19/2021 - Claudia - Alterado o TM de 23 para 04. GLPI: 10948
 //
-//---------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------
 
 #include "rwmake.ch"
 
@@ -62,7 +62,7 @@ User function BATCOMPASSOC()
 			_oCtaCorr := ClsCtaCorr():New ()
 			_oCtaCorr:Assoc    = _aTitger[i,1]
 			_oCtaCorr:Loja     = _aTitger[i,2]
-			_oCtaCorr:TM       = '23'
+			_oCtaCorr:TM       = '04'
 			_oCtaCorr:DtMovto  = _aTitger[i,3]
 			_oCtaCorr:Valor    = _aTitger[i,4]
 			_oCtaCorr:SaldoAtu = _aTitger[i,4]
