@@ -34,6 +34,7 @@
 // 03/05/2021 - Claudia - Validação de centro de custo X filial. GLPI 9945
 // 15/06/2021 - Claudia - Incluida novas validações C.custo X C.contabil. GLPI: 10224
 // 13/09/2021 - Robert  - Valida B1_TIPO MM/MC x grupo 131 (GLPI 10651).
+// 17/09/2021 - Robert  - Valida B1_TIPO MM/MC x grupo 131 somente para filial 01 (GLPI 10651).
 //
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -127,7 +128,8 @@ user function mt110lok ()
 	endif
 
 	// Valida se o usuario pode solicitar compra deste tipo de material.
-	if _lRet .and. ! GDDeleted ()
+//	if _lRet .and. ! GDDeleted ()
+	if _lRet .and. cFilAnt == '01' .and. ! GDDeleted ()
 		if sb1 -> b1_tipo $ 'MC/MM'
 			if ! U_ZZUVL ('131', __cUserID, .T.)
 				u_help ("Solicitacao de compra de itens tipo '" + sb1 -> b1_tipo + "' restrita ao pessoal de manutencao e relacionados.")

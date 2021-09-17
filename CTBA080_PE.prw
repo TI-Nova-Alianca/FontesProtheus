@@ -21,7 +21,7 @@ User Function CTBA080()
 	If aParam <> NIL
 		//oObj := aParam[1]
 		_sIdPonto := aParam[2]
-		u_log (_sIdPonto)
+		//u_log (_sIdPonto)
 		//cIdModel := aParam[3]
 		//lIsGrid := ( oObj:ClassName()=="FWFORMGRID" )   //.F. //( Len( aParam ) == 5 .And. aParam[5] != NIL )
 		
