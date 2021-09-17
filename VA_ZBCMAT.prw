@@ -12,6 +12,7 @@
 //
 // Historico de alteracoes:
 // 15/09/2021 - Claudia - Ajuste do b1_desc para descricao. GLPI: 10943
+// 17/09/2021 - Claudia - Incluido tipo de produto e escondido o cabeçalho. GLPI: 10950
 //
 // ------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -37,7 +38,8 @@ Static Function ReportDef()
 	
 	oReport:SetTotalInLine(.F.)
 	oReport:SetPortrait()
-	oReport:ShowHeader()
+	//oReport:ShowHeader()
+	oReport:HideHeader() 
 	
 Return(oReport)
 //
@@ -90,6 +92,7 @@ Static Function PrintReport(oReport)
 		
 		TRCell():New(oSection1,"COLUNA1", 	"" ,"Componente"	,	,15,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
 		TRCell():New(oSection1,"COLUNA2", 	"" ,"Descrição"		,   ,30,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"COLUNA2_1", "" ,"Tipo"		    ,   ,05,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 		If mv_par10 == 1 // total
 			TRCell():New(oSection1,"COLUNA3", 	"" ,"Qtd.Total"		,	,15,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 		Else // mensal
@@ -116,7 +119,7 @@ Static Function PrintReport(oReport)
 		If mv_par10 == 1 // total
 			TRCell():New(oSection1,"COLUNA11", 	"" ,"Final"			,	,15,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 		EndIf
-		
+
 		If mv_par10 == 1 // total
 			cQuery := " WITH C (COMPONENTE, QTD_PLANEJ, QTD_ESTRUT, QNT_PROD)"
 			cQuery += " AS"
@@ -137,14 +140,22 @@ Static Function PrintReport(oReport)
 			cQuery += " 	GROUP BY COMPONENTE)"
 			cQuery += " SELECT"
 			cQuery += " 	COMPONENTE"
+			cQuery += "    ,SB1.B1_TIPO AS TIPOPROD "
+			cQuery += "    ,SB1.B1_DESC AS DESCPROD "
 			cQuery += "    ,SUM(QTD_PLANEJ) AS QTD_PLANEJ"
 			cQuery += "    ,SUM(QTD_ESTRUT) AS QTD_ESTRUT"
 			cQuery += "    ,SUM(QNT_PROD) AS QNT_PROD"
 			cQuery += " FROM C"
-			cQuery += " GROUP BY COMPONENTE"
-			cQuery += " ORDER BY COMPONENTE"
+			cQuery += " INNER JOIN " + RetSQLName ("SB1") + " AS SB1 "
+			cQuery += " 	ON (SB1.D_E_L_E_T_ = '' "
+			cQuery += " 		AND B1_COD = COMPONENTE "
+			cQuery += " 		AND B1_TIPO BETWEEN '"+ mv_par11 + "' AND '" + mv_par12 +"' "
+			cQuery += " 		)"
+			cQuery += " GROUP BY COMPONENTE, SB1.B1_TIPO, SB1.B1_DESC "
+			cQuery += " ORDER BY COMPONENTE, SB1.B1_TIPO"
 		Else // mensal
-			cQuery := " SELECT"
+			cQuery := " WITH C AS ("
+			cQuery += " SELECT"
 			cQuery += " 	COMPONENTE"
 			cQuery += "    ,MES01 = SUM(CASE WHEN MES = 1 THEN QNT_PROD ELSE 0 END)"
 			cQuery += "    ,MES02 = SUM(CASE WHEN MES = 2 THEN QNT_PROD ELSE 0 END)"
@@ -160,9 +171,20 @@ Static Function PrintReport(oReport)
 			cQuery += "    ,MES12 = SUM(CASE WHEN MES = 12 THEN QNT_PROD ELSE 0 END)"
 			cQuery += " FROM dbo.VA_ZBCMAT('"+ DTOS(mv_par01) +"', '"+ DTOS(mv_par02) + "', '"+ mv_par03 +"', '"+ mv_par04 +"', '"+ mv_par05 +"', '"+mv_par06+"', '"+nPar08+"', '"+nPar09+"')"
 			cQuery += " GROUP BY COMPONENTE"
+			cQuery += " ) "
+			cQuery += " SELECT "
+			cQuery += " 	* "
+			cQuery += " 	,SB1.B1_TIPO AS TIPOPROD "
+			cQuery += "     ,SB1.B1_DESC AS DESCPROD "
+			cQuery += " FROM C "
+			cQuery += " INNER JOIN SB1010 SB1 "
+			cQuery += " 	ON (SB1.D_E_L_E_T_ = '' "
+			cQuery += " 		AND SB1.B1_COD = COMPONENTE "
+			cQuery += " 		AND B1_TIPO BETWEEN '" + mv_par11 + "' AND '" + mv_par12 + "'"
+			cQuery += " )"
 			cQuery += " ORDER BY COMPONENTE"
 		EndIf
-		
+
 		DbUseArea(.T., "TOPCONN", TCGenQry(,,cQuery), "TRA", .F., .T.)
 		TRA->(DbGotop())
 	
@@ -170,9 +192,7 @@ Static Function PrintReport(oReport)
 		oSection1:SetHeaderSection(.T.)	
 	
 		While TRA->(!Eof())
-			_BuscaDescProduto (TRA -> COMPONENTE, @sDesc, @sTipo)
-	
-			If alltrim(sTipo) == 'MO'
+			If alltrim(TRA->TIPOPROD) == 'MO'
 				nAlx02 := 0
 				nAlx07 := 0
 				nAlx08 := 0
@@ -197,7 +217,8 @@ Static Function PrintReport(oReport)
 			EndIf
 			
 			oSection1:Cell("COLUNA1")	:SetBlock   ({|| TRA->COMPONENTE })
-			oSection1:Cell("COLUNA2")	:SetBlock   ({|| sDesc 	 		 })
+			oSection1:Cell("COLUNA2")	:SetBlock   ({|| TRA->DESCPROD	 })
+			oSection1:Cell("COLUNA2_1")	:SetBlock   ({|| TRA->TIPOPROD 	 })
 			If mv_par10 == 1 // total
 				oSection1:Cell("COLUNA3")	:SetBlock   ({|| TRA->QNT_PROD	 })
 			Else
@@ -318,26 +339,7 @@ Static Function PrintReport(oReport)
 			Next
 			oSection4:Finish()
 		EndIf
-		
-		_ImpFiltros()
 	EndIf
-Return
-//
-// ----------------------------------------------------------------------------------
-// Imprime os filtros utilizados
-Static Function _ImpFiltros()
-	
-	oReport:PrintText("",,50)
-	oReport:FatLine() 
-	oReport:PrintText("",,50)
-	
-	// Filtros
-	sTexto := "Período de " + DTOC(mv_par01)+ " até " + DTOC(mv_par02) 
-	oReport:PrintText(sTexto,,50)
-	sTexto := "Evento de " + alltrim(mv_par03) + " até " + alltrim(mv_par04)
-	oReport:PrintText(sTexto,,50)
-	sTexto := "Nível da estrutura " + alltrim(mv_par08)
-	oReport:PrintText(sTexto,,50)
 Return
 //
 // ----------------------------------------------------------------------------------
@@ -470,42 +472,23 @@ User Function ZBCBTer(sComp)
 	TRE->(DbCloseArea())
 Return nQtdTerc
 //
-// ----------------------------------------------------------------------------------
-// Busca descrição do componente
-Static Function _BuscaDescProduto(sComp,sDesc,sTipo)
-	Local cQuery5 := ""
-	
-	cQuery5 += " SELECT "
-	cQuery5 += " 	B1_DESC AS DESC_PRO"
-	cQuery5 += " 	,B1_TIPO AS TIPO"
-	cQuery5 += " FROM " + RetSqlName("SB1")
-	cQuery5 += " WHERE B1_COD = '" + sComp + "'"
-	dbUseArea(.T., "TOPCONN", TCGenQry(,,cQuery5), "TRF", .F., .T.)
-	TRF->(DbGotop())
-	
-	While TRF->(!Eof())	
-		sDesc := TRF -> DESC_PRO
-		sTipo := TRF -> TIPO
-		DBSelectArea("TRF")
-		dbskip()
-	Enddo
-	TRF->(DbCloseArea())
-Return 
-//
 // ------------------------------------------------------------------------------------------------
 // Perguntas
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT           TIPO TAM DEC VALID F3     Opcoes                      				Help
-    aadd (_aRegsPerg, {01, "Data de      		", "D", 8, 0,  "",  "   ", {}                         				,""})
-    aadd (_aRegsPerg, {02, "Data até    		", "D", 8, 0,  "",  "   ", {}                         				,""})
-    aadd (_aRegsPerg, {03, "Evento de       	", "C", 3, 0,  "",  "   ", {}                         				,""})
-    aadd (_aRegsPerg, {04, "Evento até      	", "C", 3, 0,  "",  "   ", {}                         				,""})
-    aadd (_aRegsPerg, {05, "Ano de           	", "C", 4, 0,  "",  "   ", {}                         				,""})
-    aadd (_aRegsPerg, {06, "Ano até           	", "C", 4, 0,  "",  "   ", {}                         				,""})   
-    aadd (_aRegsPerg, {07, "Tipo            	", "N", 1, 0,  "",  "   ", {"Sintético","Analítico"}				,""})
-    aadd (_aRegsPerg, {08, "Nivel estrutura de  ", "C", 1, 0,  "",  "   ", {}										,""})
-    aadd (_aRegsPerg, {09, "Nivel estrutura ate ", "C", 1, 0,  "",  "   ", {}										,""})
-    aadd (_aRegsPerg, {10, "Imprime mensal  	", "N", 1, 0,  "",  "   ", {"Não","Sim"}							,""})
-     U_ValPerg (cPerg, _aRegsPerg)
+    aadd (_aRegsPerg, {01, "Data de      	", "D", 8, 0,    "",  "   ", {}                         				,""})
+    aadd (_aRegsPerg, {02, "Data até    	", "D", 8, 0,    "",  "   ", {}                         				,""})
+    aadd (_aRegsPerg, {03, "Evento de       ", "C", 3, 0,    "",  "   ", {}                         				,""})
+    aadd (_aRegsPerg, {04, "Evento até      ", "C", 3, 0,    "",  "   ", {}                         				,""})
+    aadd (_aRegsPerg, {05, "Ano de          ", "C", 4, 0,    "",  "   ", {}                         				,""})
+    aadd (_aRegsPerg, {06, "Ano até         ", "C", 4, 0,    "",  "   ", {}                         				,""})   
+    aadd (_aRegsPerg, {07, "Tipo Rel.       ", "N", 1, 0,    "",  "   ", {"Sintético","Analítico"}					,""})
+    aadd (_aRegsPerg, {08, "Nivel estr. de  ", "C", 1, 0,    "",  "   ", {}											,""})
+    aadd (_aRegsPerg, {09, "Nivel estr. ate ", "C", 1, 0,    "",  "   ", {}											,""})
+    aadd (_aRegsPerg, {10, "Imprime mensal  ", "N", 1, 0,    "",  "   ", {"Não","Sim"}								,""})
+	aadd (_aRegsPerg, {11, "Tipo prod.de    ", "C", 2, 0,    "",  "02", {}                         					,""})
+	aadd (_aRegsPerg, {12, "Tipo prod.ate   ", "C", 2, 0,    "",  "02", {}                         					,""})
+    
+	U_ValPerg (cPerg, _aRegsPerg)
 Return

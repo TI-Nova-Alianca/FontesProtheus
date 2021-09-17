@@ -11,6 +11,7 @@
 // #Modulos   		  #PCP 
 //
 // Historico de alteracoes:
+// 17/09/2021 - Claudia - Incluido tipo de produto e escondido o cabeçalho. GLPI: 10950
 //
 // ------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -35,7 +36,8 @@ Static Function ReportDef()
 	
 	oReport:SetTotalInLine(.F.)
 	oReport:SetPortrait()
-	oReport:ShowHeader()
+	//oReport:ShowHeader()
+	oReport:HideHeader() 
 	
 Return(oReport)
 //
@@ -82,38 +84,39 @@ Static Function PrintReport(oReport)
 		oSection1 := TRSection():New(oReport,,{}, , , , , ,.T.,.F.,.F.) 
 		
 		TRCell():New(oSection1,"COLUNA1", 	"" ,"Componente"	,	,15,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"COLUNA2", 	"" ,"Descrição"		,   ,30,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)	
-		TRCell():New(oSection1,"DIA01", 	"" ,"01"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA02", 	"" ,"02"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA03", 	"" ,"03"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA04", 	"" ,"04"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA05", 	"" ,"05"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA06", 	"" ,"06"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA07", 	"" ,"07"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA08", 	"" ,"08"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA09", 	"" ,"09"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA10", 	"" ,"10"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA11", 	"" ,"11"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA12", 	"" ,"12"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA13", 	"" ,"13"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA14", 	"" ,"14"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA15", 	"" ,"15"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA16", 	"" ,"16"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA17", 	"" ,"17"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA18", 	"" ,"18"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA19", 	"" ,"19"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA20", 	"" ,"20"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA21", 	"" ,"21"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA22", 	"" ,"22"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA23", 	"" ,"23"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA24", 	"" ,"24"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA25", 	"" ,"25"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA26", 	"" ,"26"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA27", 	"" ,"27"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA28", 	"" ,"28"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA29", 	"" ,"29"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA30", 	"" ,"30"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-		TRCell():New(oSection1,"DIA31", 	"" ,"31"		,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"COLUNA2", 	"" ,"Descrição"		,   ,30,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"COLUNA2_1", "" ,"Tipo"			,   ,05,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)	
+		TRCell():New(oSection1,"DIA01", 	"" ,"01"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA02", 	"" ,"02"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA03", 	"" ,"03"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA04", 	"" ,"04"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA05", 	"" ,"05"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA06", 	"" ,"06"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA07", 	"" ,"07"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA08", 	"" ,"08"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA09", 	"" ,"09"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA10", 	"" ,"10"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA11", 	"" ,"11"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA12", 	"" ,"12"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA13", 	"" ,"13"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA14", 	"" ,"14"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA15", 	"" ,"15"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA16", 	"" ,"16"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA17", 	"" ,"17"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA18", 	"" ,"18"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA19", 	"" ,"19"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA20", 	"" ,"20"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA21", 	"" ,"21"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA22", 	"" ,"22"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA23", 	"" ,"23"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA24", 	"" ,"24"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA25", 	"" ,"25"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA26", 	"" ,"26"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA27", 	"" ,"27"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA28", 	"" ,"28"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA29", 	"" ,"29"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA30", 	"" ,"30"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+		TRCell():New(oSection1,"DIA31", 	"" ,"31"			,   ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 		TRCell():New(oSection1,"COLUNA4", 	"" ,"Alx.02"		,	,10,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 		TRCell():New(oSection1,"COLUNA5", 	"" ,"Alx.07"		,	,15,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 		TRCell():New(oSection1,"COLUNA6", 	"" ,"Alx.08"		,	,15,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
@@ -122,7 +125,8 @@ Static Function PrintReport(oReport)
 		TRCell():New(oSection1,"COLUNA9", 	"" ,"Pedido"		,	,15,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 		TRCell():New(oSection1,"COLUNA10", 	"" ,"Terceiros"		,	,15,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 
-		cQuery := " SELECT"
+		cQuery := " WITH C AS ("
+		cQuery += " SELECT"
 		cQuery += " 	COMPONENTE"
 		cQuery += "    ,DIA01 = SUM(CASE WHEN DAY(DTPLANEJ)  =  1 THEN QNT_PROD ELSE 0 END)"
 		cQuery += "    ,DIA02 = SUM(CASE WHEN DAY(DTPLANEJ)  =  2 THEN QNT_PROD ELSE 0 END)"
@@ -157,6 +161,17 @@ Static Function PrintReport(oReport)
 		cQuery += "    ,DIA31 = SUM(CASE WHEN DAY(DTPLANEJ)  = 31 THEN QNT_PROD ELSE 0 END)"
 		cQuery += " FROM dbo.VA_ZBCMAT('"+ DTOS(dDtIni) +"', '"+ DTOS(dDtFim) + "', '"+ mv_par03 +"', '"+ mv_par04 +"', '"+ mv_par05 +"', '"+mv_par06+"', '"+nPar08+"', '"+nPar09+"')"
 		cQuery += " GROUP BY COMPONENTE"
+		cQuery += " ) "
+		cQuery += " SELECT "
+		cQuery += " 	* "
+		cQuery += " 	,SB1.B1_TIPO AS TIPOPROD "
+		cQuery += "     ,SB1.B1_DESC AS DESCPROD "
+		cQuery += " FROM C "
+		cQuery += " INNER JOIN SB1010 SB1 "
+		cQuery += " 	ON (SB1.D_E_L_E_T_ = '' "
+		cQuery += " 		AND SB1.B1_COD = COMPONENTE "
+		cQuery += " 		AND B1_TIPO BETWEEN '" + mv_par10 + "' AND '" + mv_par11 + "'"
+		cQuery += " )"
 		cQuery += " ORDER BY COMPONENTE"
 		
 		DbUseArea(.T., "TOPCONN", TCGenQry(,,cQuery), "TRA", .F., .T.)
@@ -166,10 +181,7 @@ Static Function PrintReport(oReport)
 		oSection1:SetHeaderSection(.T.)	
 	
 		While TRA->(!Eof())
-			//_BuscaDescProduto (TRA -> COMPONENTE, @sDesc, @sTipo)
-			sDesc := _BuscaDescProduto (TRA -> COMPONENTE)
-
-			If alltrim(sTipo) == 'MO'
+			If alltrim(TRA->TIPOPROD) == 'MO'
 				nAlx02 := 0
 				nAlx07 := 0
 				nAlx08 := 0
@@ -188,7 +200,8 @@ Static Function PrintReport(oReport)
 			EndIf
 			
 			oSection1:Cell("COLUNA1")	:SetBlock   ({|| TRA->COMPONENTE })
-			oSection1:Cell("COLUNA2")	:SetBlock   ({|| sDesc 	 		 })
+			oSection1:Cell("COLUNA2")	:SetBlock   ({|| TRA->DESCPROD	 })
+			oSection1:Cell("COLUNA2_1")	:SetBlock   ({|| TRA->TIPOPROD	 })
 			oSection1:Cell("DIA01")		:SetBlock   ({|| TRA->DIA01 	 })
 			oSection1:Cell("DIA02")		:SetBlock   ({|| TRA->DIA02 	 })
 			oSection1:Cell("DIA03")		:SetBlock   ({|| TRA->DIA03 	 })
@@ -321,49 +334,8 @@ Static Function PrintReport(oReport)
 			Next
 			oSection4:Finish()
 		EndIf 
-		
-		_ImpFiltros()
 	EndIf
 Return
-//
-// ----------------------------------------------------------------------------------
-// Imprime os filtros utilizados
-Static Function _ImpFiltros()
-	
-	oReport:PrintText("",,50)
-	oReport:FatLine() 
-	oReport:PrintText("",,50)
-	
-	// Filtros
-	sTexto := "Período de " + DTOC(dDtIni)+ " até " + DTOC(dDtFim) 
-	oReport:PrintText(sTexto,,50)
-	sTexto := "Evento de " + alltrim(mv_par03) + " até " + alltrim(mv_par04)
-	oReport:PrintText(sTexto,,50)
-	sTexto := "Nível da estrutura " + alltrim(mv_par08)
-	oReport:PrintText(sTexto,,50)
-Return
-//
-// ----------------------------------------------------------------------------------
-// Busca descrição do componente
-Static Function _BuscaDescProduto(sComp)
-	Local cQuery5 := ""
-	
-	cQuery5 += " SELECT "
-	cQuery5 += " 	 B1_DESC AS DESC_PRO"
-	cQuery5 += " 	,B1_TIPO AS TIPO"
-	cQuery5 += " FROM " + RetSqlName("SB1")
-	cQuery5 += " WHERE B1_COD = '" + sComp + "'"
-	dbUseArea(.T., "TOPCONN", TCGenQry(,,cQuery5), "TRF", .F., .T.)
-	TRF->(DbGotop())
-	
-	While TRF->(!Eof())	
-		sDesc := TRF -> DESC_PRO
-		sTipo := TRF -> TIPO
-		DBSelectArea("TRF")
-		dbskip()
-	Enddo
-	TRF->(DbCloseArea())
-Return sDesc
 //
 // ----------------------------------------------------------------------------------
 // Perguntas
@@ -379,6 +351,8 @@ Static Function _ValidPerg ()
     aadd (_aRegsPerg, {07, "Tipo            	", "N", 1, 0,  "",  "   ", {"Sintético","Analítico"}				,""})
     aadd (_aRegsPerg, {08, "Nivel estrutura de  ", "C", 1, 0,  "",  "   ", {}										,""})
     aadd (_aRegsPerg, {09, "Nivel estrutura ate ", "C", 1, 0,  "",  "   ", {}										,""})
+	aadd (_aRegsPerg, {10, "Tipo prod.de    	", "C", 2, 0,  "",   "02", {}                         				,""})
+	aadd (_aRegsPerg, {11, "Tipo prod.ate   	", "C", 2, 0,  "",   "02", {}                         				,""})
 
      U_ValPerg (cPerg, _aRegsPerg)
 Return

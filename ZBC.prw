@@ -1307,7 +1307,7 @@ User Function PLJIMP(_sZBCFilial, _sZBCCod, _sZBCAno)
 						ZBD -> ZBD_ITEM   := iif(!empty(aDados[_x, 5]),PADL(aDados[_x, 5],2,'0')," ")
 						ZBD -> ZBD_GRPOPC := _sGrp
 						ZBD -> ZBD_OPCITE := _sOpc
-						ZBD -> ZBD_CODOPC := Posicione("SGA",1,xfilial("SGA") + _sGrp + _sOpc,"GA_DESCOPC")  // GA_FILIAL + GA_GROPC + GA_OPC
+						ZBD -> ZBD_CODOPC := Posicione("SGA",1,xfilial("SGA") + _sGrp + _sOpc,"GA_VACODOP")  // GA_FILIAL + GA_GROPC + GA_OPC
 					MsUnlock("ZBD")	
 				Endif			
 			Next
