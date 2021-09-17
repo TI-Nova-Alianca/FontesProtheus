@@ -4,10 +4,11 @@
 // Descricao..: Envia pedido de compras por e-mail na procura
 //
 // Historico de alteracoes:
-// 18/06/2016 - Robert - Envia mensagem de nova razao social durante algum tempo.
-// 13/04/2018 - Julio  - Incluido o processamento da lista de anexos cadastrados no NAWeb.
-// 05/09/2018 - Andre  - Atualiza flag de 'e-mail enviado' no pedido de compra.
-// 25/03/2019 - Andre  - Alterada rotina de envio de e-mail.
+// 18/06/2016 - Robert  - Envia mensagem de nova razao social durante algum tempo.
+// 13/04/2018 - Julio   - Incluido o processamento da lista de anexos cadastrados no NAWeb.
+// 05/09/2018 - Andre   - Atualiza flag de 'e-mail enviado' no pedido de compra.
+// 25/03/2019 - Andre   - Alterada rotina de envio de e-mail.
+// 17/09/2021 - Sandra  - Alteração função  pswret e sEmailR fixado no programa e-mail compras@novaalianca.coop.br
 //
 
 #INCLUDE "dialog.ch"
@@ -27,7 +28,8 @@ User Function ENVPED(caminho)
 	_oDlg       := NIL
 
 	_sEMailD   	:= Posicione("SA2",1,xfilial("SA2")+SC7->C7_FORNECE+SC7->C7_LOJA,"A2_EMAIL") + Space(100)
-	_sEMailR	:= pswret()[1,14] + Space(100)
+	//_sEMailR	:= pswret()[1,14] + Space(100)
+	_sEMailR	:= 'compras@novaalianca.coop.br'
 	_sEMailD2	:= Posicione("SA2",1,xfilial("SA2")+SC7->C7_FORNECE+SC7->C7_LOJA,"A2_VAMAIL2") + Space(100)
 	_lEnviaR	:= .F.
 	_lSalva		:= .F.
@@ -141,7 +143,8 @@ user Function envmail(caminho)
 		cBody += "Nova razao social: " + sm0 -> m0_nomecom + chr(13) + chr(10)
 	endif
 
-	cFrom       := alltrim(_sEMailR)
+	//cFrom       := alltrim(_sEMailR)
+	cFrom       := alltrim("compras@novaalianca.coop.br")
 	cServer     := AllTrim(GetNewPar("MV_RELSERV"," ")) 	                                                                                                                                                                                                                                        
 	cAccount    := AllTrim(GetNewPar("MV_RELACNT"," ")) 	//Space(50)   //wf     /
 	cPassword   := AllTrim(GetNewPar("MV_RELPSW" ," "))  	//Space(50)   //workflow   //654321
@@ -154,7 +157,8 @@ user Function envmail(caminho)
 	
 	u_logdh (SC7 -> C7_NUM + "Iniciando envio")
 	if _lEnviaR
-		cCO		:= alltrim(_sEMailR)
+		//cCO		:= alltrim(_sEMailR)
+		  cCO		:= alltrim("compras@novaalianca.coop.br")
 	else
 		cCO		:= ''
 	endif

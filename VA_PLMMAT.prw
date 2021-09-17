@@ -43,6 +43,7 @@ Static Function ReportDef()
 	oReport:SetTotalInLine(.F.)
 	oReport:SetPortrait()
 	oReport:ShowHeader()
+	oReport:HideHeader() 
 	
 	oSection1 := TRSection():New(oReport,,{}, , , , , ,.T.,.F.,.F.) 
 	
