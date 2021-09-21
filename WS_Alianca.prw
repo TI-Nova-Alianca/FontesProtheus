@@ -71,9 +71,10 @@
 // 20/08/2021 - Cláudia - Alterado o MSExecAuto MATA030 descontinuado para MVC. GLPI: 10617
 // 27/08/2021 - Robert  - Ordem 3 passa a ser ignorada na consulta de orcamentos (GLPI 10849)
 // 30/08/2021 - Robert  - Tag ReaMes alterada para RealizadoNoMes na consulta de orcamentos (GLPI 8893)
-//
-
-// -----------------------------------------------------------------------------------------------
+// 21/09/2021 - Claudia - Incluida a ação "BuscaPedidosBloqueados". GLPI: 7792
+// 21/09/2021 - Claudia - Incluida a ação "GravaBloqueioGerencial". GLPI: 7792
+// 
+// --------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
 #INCLUDE "PROTHEUS.CH"
 #include "tbiconn.ch"
@@ -119,7 +120,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 
 	// Validacoes gerais e extracoes de dados basicos.
 	U_ValReqWS (GetClassName (::Self), ::XmlRcv, @_sErros, @_sWS_Empr, @_sWS_Filia, @_sAcao)
-	//u_log2 ('DEBUG', 'Apos ValReqWS tenho _sWS_Filia = ' + _sWS_Filia)
+	
 	if empty (_sErros)
 		_aUsuario = {__cUserId, cUserName}  // Guarda para uso posterior, pois o PREPARE ENVIRONMENT limpa essas variaveis.
 	endif
@@ -137,7 +138,6 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	if empty (_sErros)
 		__cUserId = _aUsuario [1]
 		cUserName = _aUsuario [2]
-		//u_log ('setei cUserName=', cusername)
 	endif
 
 	// Converte novamente a string recebida para XML, pois a criacao do ambiente parece apagar o XML.
@@ -213,6 +213,11 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 				_AgEntFat ()
 			case _sAcao == 'ApontarProducao'
 				_ApontProd ()
+			case _sAcao == 'BuscaPedidosBloqueados'
+				_PedidosBloq ()
+			case _sAcao == 'GravaBloqueioGerencial'
+				_GrvLibPed ()
+							
 			otherwise
 				_sErros += "A acao especificada no XML eh invalida: " + _sAcao
 		endcase
@@ -259,8 +264,9 @@ static function _AtuEstru ()
 		endif
 	endif
 Return
-
+//
 // --------------------------------------------------------------------------
+// Extrair tag
 static function _ExtraiTag (_sTag, _lObrig, _lValData)
 	local _sRet    := ""
 	local _lDataOK := .T.
@@ -291,9 +297,9 @@ static function _ExtraiTag (_sTag, _lObrig, _lValData)
 		endif
 	endif
 return _sRet
-
-
+//
 // --------------------------------------------------------------------------
+// Executa batch
 static function _ExecBatch ()
 	local _sSeqBatch := ""
 	private _oBatch    := ClsBatch ():New ()
@@ -436,6 +442,7 @@ static function _GrvInsp ()
 Return
 //
 // --------------------------------------------------------------------------
+// RastrearLote
 static function _RastLt ()
 	local _sProduto  := ""
 	local _sLote     := ""
@@ -531,6 +538,7 @@ static function _SaldoAtu ()
 Return
 //
 // --------------------------------------------------------------------------
+// ZAM
 static function _ZAM ()
 	local _sFILIAL := ""
 	local _sDATAPT := ""
@@ -740,9 +748,7 @@ static function _IncEvt ()
 	endif
 	U_Log2 ('info', 'Finalizando ' + procname ())
 Return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Interface para deletar eventos genericos
 static function _DelEvt ()
@@ -761,7 +767,7 @@ static function _DelEvt ()
 		_oEvento:Exclui ()
 	endif
 Return
-
+//
 // --------------------------------------------------------------------------
 // Interface para a classe de transferencias de estoque.
 static function _TrEstq (_sQueFazer)
@@ -1038,111 +1044,6 @@ static function _IncCli ()
 	endif
 	u_logFim ()
 return
-// //
-// // --------------------------------------------------------------------------
-// // Inclui novo cliente (cadastro em tela simplificada do NaWeb)
-// static function _IncCli ()
-// 	local _aCliente := {}
-// 	local _wnome := ""
-// 	local _wtipo := ""
-// 	local _wcgc := ""
-// 	local _wtel := ""
-// 	local _wemail := ""
-// 	local _west := ""
-// 	local _wcidade := ""
-// 	local _wbairro := ""
-// 	local _wend := ""
-// 	local _wcep := ""
-// 	local _wcodmun := ""
-// 	local _wcodmun2 := ""
-// 	local _wregiao := ""
-// 	local _nreduz := ""
-
-// 	u_logIni ()
-
-// 	if empty (_sErros)
-// 		_wNome   = _ExtraiTag ("_oXML:_WSAlianca:_Nome",         .T., .F.)
-// 		_wTipo   = _ExtraiTag ("_oXML:_WSAlianca:_Pessoa",       .T., .F.)
-// 		_wCGC    = _ExtraiTag ("_oXML:_WSAlianca:_CGC",          .T., .F.)
-// 		_wTel    = _ExtraiTag ("_oXML:_WSAlianca:_Tel",          .T., .F.)
-// 		_wEMail  = _ExtraiTag ("_oXML:_WSAlianca:_EMail",        .T., .F.)
-// 		_wEst    = _ExtraiTag ("_oXML:_WSAlianca:_Est",          .T., .F.)
-// 		_wCidade = _ExtraiTag ("_oXML:_WSAlianca:_Cidade",       .T., .F.)
-// 		_wBairro = _ExtraiTag ("_oXML:_WSAlianca:_Bairro",       .T., .F.)
-// 		_wEnd    = _ExtraiTag ("_oXML:_WSAlianca:_End",          .T., .F.)
-// 		_wCEP    = _ExtraiTag ("_oXML:_WSAlianca:_CEP",          .T., .F.)
-// 		_wcodMun = _ExtraiTag ("_oXML:_WSAlianca:_CodMun",       .T., .F.)
-// 		_wcodMun2= _ExtraiTag ("_oXML:_WSAlianca:_CodMun2",      .T., .F.)
-// 		_wregiao = _ExtraiTag ("_oXML:_WSAlianca:_Regiao",       .T., .F.)
-// 		_nreduz  = _ExtraiTag ("_oXML:_WSAlianca:_NomeReduzido", .T., .F.)
-// 	endif
-
-// 	if empty (_sErros)
-
-// 		// Cria variavel para receber possiveis erros da funcao U_Help().
-// 		private _sErroAuto := ""
-
-// 		_aCliente :={	 {"A1_NOME"   , _wnome                 ,Nil},;
-// 		{"A1_PESSOA" , _wtipo                 ,Nil},;
-// 		{"A1_END"    , _wend                  ,Nil},;
-// 		{"A1_BAIRRO" , _wbairro               ,Nil},;
-// 		{"A1_EST"    , _west                  ,Nil},;
-// 		{"A1_CEP"    , _wcep                  ,Nil},;
-// 		{"A1_MUN"    , _wcidade               ,Nil},;
-// 		{"A1_TEL"    , _wtel                  ,Nil},;
-// 		{"A1_EMAIL"  , _wemail                ,Nil},;
-// 		{"A1_CGC"    , _wcgc                  ,Nil},;
-// 		{"A1_COD_MUN", _wcodmun               ,Nil},;
-// 		{"A1_CMUN"   , _wcodmun2              ,Nil},;
-// 		{"A1_REGIAO" , "SUL"                  ,Nil},;
-// 		{"A1_NREDUZ" , _nreduz                ,Nil},;
-// 		{"A1_LOJA"   , "01"                   ,Nil},;
-// 		{"A1_VEND"   , "001"                  ,Nil},;
-// 		{"A1_MALA"   , "S"                    ,Nil},;
-// 		{"A1_TIPO"   , "F"                    ,Nil},;
-// 		{"A1_BCO1"   , "CX1"                  ,Nil},;
-// 		{"A1_RISCO"  , "E"                    ,Nil},;
-// 		{"A1_PAIS"   , "105"                  ,Nil},;
-// 		{"A1_SATIV1" , "08.04"                ,Nil},;
-// 		{"A1_VAMDANF", _wemail                ,Nil},;
-// 		{"A1_CODPAIS", "01058"                ,Nil},;
-// 		{"A1_MSBLQL" , "2"                    ,Nil},;
-// 		{"A1_SIMPNAC", "2"                    ,Nil},;
-// 		{"A1_VABARAP", "0"                    ,Nil},;
-// 		{"A1_CONTA"  , "101020201001"         ,Nil},;
-// 		{"A1_COND"   , "097"				  ,Nil},;
-// 		{"A1_VAUEXPO", ddatabase			  ,Nil},;
-// 		{"A1_VERBA"  , "2"					  ,Nil},;
-// 		{"A1_GRPTRIB", "003"			      ,Nil},;
-// 		{"A1_FORMA"  , "3"                    ,Nil},;
-// 		{"A1_LOJAS"  , "S"                    ,Nil},;
-// 		{"A1_CNAE"   , "0"                    ,Nil},;
-// 		{"A1_CONTRIB", "2"                    ,Nil},;
-// 		{"A1_VADTINC", date()                 ,Nil},;
-// 		{"A1_IENCONT", "2"                    ,Nil} }
-
-// 		// Ordena campos cfe. dicionario de dados.
-// 		_aCliente = aclone (U_OrdAuto (_aCliente))
-
-// 		u_log (_aCliente)
-
-// 		lMsErroAuto := .F.
-// 		MSExecAuto({|x,y| Mata030(x,y)},_aCliente,3)
-// 		If lMsErroAuto
-// 			u_log ('Erro na rotina automatica')
-// 			if ! empty (_sErroAuto)
-// 				_sErros += _sErroAuto
-// 			endif
-// 			if ! empty (NomeAutoLog ())
-// 				_sErros += U_LeErro (memoread (NomeAutoLog ()))
-// 			endif
-// 		else
-// 			u_log ('rotina automatica OK')
-// 			_sMsgRetWS = 'Cliente criado codigo ' + sa1 -> a1_cod + '/' + sa1 -> a1_loja
-// 		endif
-// 	endif
-// 	u_logFim ()
-// return
 //
 // --------------------------------------------------------------------------
 // Altera cliente (cadastro em tela simplificada do NaWeb)
@@ -1736,7 +1637,7 @@ Static function _MonitProt ()
 return
 //
 // -------------------------------------------------------------------------------------------------
-// // Associados - retorna texto do capital social
+// Associados - retorna texto do capital social
 Static Function _ExecCapAssoc ()
 	Local   _sAssoc    := ""
 	Local   _sLoja     := ""
@@ -1766,8 +1667,7 @@ Static Function _ExecCapAssoc ()
 	endif
 	//u_logFim ()
 Return _sMsgRetWS
-
-
+//
 // --------------------------------------------------------------------------
 // Grava agendamento de entrega de faturamento.
 Static function _AgEntFat ()
@@ -1790,8 +1690,7 @@ Static function _AgEntFat ()
 		endif
 	endif
 return
-
-
+//
 // --------------------------------------------------------------------------
 // Gera apontamento de producao.
 static function _ApontProd ()
@@ -1919,3 +1818,174 @@ static function _ApontProd ()
 	enddo
 	_sMsgRetWS += '</ApontaProd>'
 return
+//
+// --------------------------------------------------------------------------
+// Realiza bloqueio/desbloqueio de pedidos
+Static Function _PedidosBloq()
+	local _oSQL     := NIL
+	local _sAliasQ  := ""
+	local _XmlRet   := ""
+	local _aPed     := {}
+	local _aItem    := {}
+	local _x        := 0
+	local _y        := 0
+	local _nMCPed1  := GetMv ("VA_MCPED1")
+	local _nMCPed2  := GetMv ("VA_MCPED2")
+	local _lGrp004  := iif(U_ZZUVL ('004',,.F.) == .T., 'T', 'F')
+	local _lGrp081  := iif(U_ZZUVL ('081',,.F.) == .T., 'T', 'F')
+	local _lGrp082  := iif(U_ZZUVL ('082',,.F.) == .T., 'T', 'F')
+
+	u_logIni ()
+
+	_oSQL := ClsSQL():New ()  
+	_oSQL:_sQuery := ""		
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 	   C5_FILIAL "
+	_oSQL:_sQuery += "    ,C5_NUM "
+	_oSQL:_sQuery += "    ,C5_EMISSAO "
+	_oSQL:_sQuery += "    ,C5_CLIENTE "
+	_oSQL:_sQuery += "    ,C5_LOJACLI "
+	_oSQL:_sQuery += "    ,A1_NOME "
+	_oSQL:_sQuery += "    ,A1_EST "
+	_oSQL:_sQuery += "    ,C5_VAVLFAT "
+	_oSQL:_sQuery += "    ,C5_VAMCONT "
+	_oSQL:_sQuery += "    ,C5_VAPRPED "
+	_oSQL:_sQuery += "    ,C5_STATUS "
+	_oSQL:_sQuery += "    ,C5_VABLOQ "
+	_oSQL:_sQuery += "    ,C5_VEND1 "
+	_oSQL:_sQuery += "    ,C5_VAUSER "
+	_oSQL:_sQuery += " FROM " + RetSQLName ("SC5") + " SC5 "
+	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA1") + " SA1 "
+	_oSQL:_sQuery += " 	ON SA1.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " 		AND A1_COD = C5_CLIENTE "
+	_oSQL:_sQuery += " 		AND A1_LOJA = C5_LOJACLI "
+	_oSQL:_sQuery += " WHERE SC5.D_E_L_E_T_   = '' "
+	_oSQL:_sQuery += " AND C5_VABLOQ  != ''	 "		// Pedido com bloqueio
+	_oSQL:_sQuery += " AND C5_LIBEROK != ''	 "		// Pedido com 'liberacao comercial (SC9 gerado)
+	_oSQL:_sQuery += " AND C5_NOTA != 'XXXXXXXXX' " // Residuo eliminado (nao sei por que as vezes grava com 9 posicoes)
+	_oSQL:_sQuery += " AND C5_NOTA != 'XXXXXX'  " 	// Residuo eliminado (nao sei por que as vezes grava com 6 posicoes)
+	_oSQL:Log ()
+	_aPed := aclone (_oSQL:Qry2Array ())
+
+	_XmlRet += "<BuscaPedidosBloqueados>"
+
+	For _x:= 1 to Len(_aPed)
+		_XmlRet += "	<Registro>"
+		_XmlRet += "		<Filial>"			+ _aPed [_x, 1] + "</Filial>"
+		_XmlRet += "		<Pedido>"			+ _aPed [_x, 2] + "</Pedido>"
+		_XmlRet += "		<Emissao>"			+ _aPed [_x, 3] + "</Emissao>"
+		_XmlRet += "		<Cliente>"			+ _aPed [_x, 4] + "</Cliente>"
+		_XmlRet += "		<Loja>"				+ _aPed [_x, 5] + "</Loja>"
+		_XmlRet += "		<Nome>"				+ _aPed [_x, 6] + "</Nome>"
+		_XmlRet += "		<Uf>"				+ _aPed [_x, 7] + "</Uf>"
+		_XmlRet += "		<ValorFaturamento>"	+ _aPed [_x, 8] + "</ValorFaturamento>"
+		_XmlRet += "		<MargemContr>"		+ _aPed [_x, 9] + "</MargemContr>"
+		_XmlRet += "		<VarPrcAnt>"		+ _aPed [_x,10] + "</VarPrcAnt>"
+		_XmlRet += "		<Status>"			+ _aPed [_x,11] + "</Status>"
+		_XmlRet += "		<Bloqueio>"			+ _aPed [_x,12] + "</Bloqueio>"
+		_XmlRet += "		<Vendedor>"			+ _aPed [_x,13] + "</Vendedor>"
+		_XmlRet += "		<Usuario>"			+ _aPed [_x,14] + "</Usuario>"
+		_XmlRet += "		<McPed1>"			+ _nMCPed1 		+ "</McPed1>"
+		_XmlRet += "		<McPed2>"			+ _nMCPed2 		+ "</McPed2>"
+		_XmlRet += "		<lGrp004>"			+ _lGrp004 		+ "</lGrp004>"
+		_XmlRet += "		<lGrp081>"			+ _lGrp081 		+ "</lGrp081>"
+		_XmlRet += "		<lGrp082>"			+ _lGrp082 		+ "</lGrp082>"
+
+		_oSQL := ClsSQL():New ()  
+		_oSQL:_sQuery := ""		
+		_oSQL:_sQuery += " SELECT "
+		_oSQL:_sQuery += " 	   C6_FILIAL "
+		_oSQL:_sQuery += "    ,C6_ITEM "
+		_oSQL:_sQuery += "    ,C6_PRODUTO "
+		_oSQL:_sQuery += "    ,C6_DESCRI "
+		_oSQL:_sQuery += "    ,C6_UM "
+		_oSQL:_sQuery += "    ,C6_QTDVEN "
+		_oSQL:_sQuery += "    ,C6_PRCVEN "
+		_oSQL:_sQuery += "    ,C6_PRUNIT "
+		_oSQL:_sQuery += "    ,C6_VALOR "
+		_oSQL:_sQuery += "    ,C6_TES "
+		_oSQL:_sQuery += " FROM " + RetSQLName ("SC6") + " SC6 "
+		_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA1") + " SA1 "
+		_oSQL:_sQuery += " 	ON SA1.D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " 		AND A1_COD = C5_CLIENTE "
+		_oSQL:_sQuery += " 		AND A1_LOJA = C5_LOJACLI "
+		_oSQL:_sQuery += " WHERE SC6.D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " AND SC6.C6_FILIAL = '" + _aPed[_x, 1] + "'"
+		_oSQL:_sQuery += " AND SC6.C6_NUM    = '" + _aPed[_x, 2] + "'"
+		_oSQL:_sQuery += " AND SC6.C6_CLI    = '" + _aPed[_x, 4] + "'"
+		_oSQL:_sQuery += " AND SC6.C6_LOJA   = '" + _aPed[_x, 5] + "'"
+		_oSQL:Log ()
+		_aItem := aclone (_oSQL:Qry2Array ())
+
+		For _y:= 1 to Len(_aItem)
+			_XmlRet += "		<RegistroItem>"
+			_XmlRet += "			<Filial>"		+ _aItem[_y, 1] + "</Filial>"
+			_XmlRet += "			<Item>"			+ _aItem[_y, 2] + "</Item>"
+			_XmlRet += "			<Produto>"		+ _aItem[_y, 3] + "</Produto>"
+			_XmlRet += "			<Descricao>"	+ _aItem[_y, 4] + "</Descricao>"
+			_XmlRet += "			<Unidade>"		+ _aItem[_y, 5] + "</Unidade>"
+			_XmlRet += "			<QtdVendida>"	+ _aItem[_y, 6] + "</QtdVendida>"
+			_XmlRet += "			<PrcVenda>"		+ _aItem[_y, 7] + "</PrcVenda>"
+			_XmlRet += "			<PrcUnitario>"	+ _aItem[_y, 8] + "</PrcUnitario>"
+			_XmlRet += "			<Valor>"		+ _aItem[_y, 9] + "</Valor>"
+			_XmlRet += "			<Tes>"			+ _aItem[_y,10] + "</Tes>"
+			_XmlRet += "		</RegistroItem>"
+		Next
+		_XmlRet += "	</Registro>"		
+	Next
+	_XmlRet += "</BuscaPedidosBloqueados>"
+
+	_sMsgRetWS := _XmlRet
+	u_logFim ()
+Return
+//
+// --------------------------------------------------------------------------
+// Grava retorno da liberaçao degencial de pedidos
+Static Function _GrvLibPed ()
+	local _wFilial 	 := ""
+	local _wPedido	 := ""
+	local _wCliente  := ""
+	local _wLoja 	 := ""
+	local _wLibera   := "" // S = sim  N = não
+	local _wBloqueio := "" // C5_VABLOQ  - Bloqueio
+	local _wMargem   := "" // C5_VAMCONT - MargemContr
+
+	u_logIni ()
+
+	If empty(_sErros)
+		_wFilial   := _ExtraiTag ("_oXML:_WSAlianca:_Filial"	, .T., .F.)
+		_wPedido   := _ExtraiTag ("_oXML:_WSAlianca:_Pedido"	, .T., .F.)
+		_wCliente  := _ExtraiTag ("_oXML:_WSAlianca:_Cliente"	, .T., .F.)
+		_wLoja     := _ExtraiTag ("_oXML:_WSAlianca:_Loja"		, .T., .F.)
+		_wLibera   := _ExtraiTag ("_oXML:_WSAlianca:_Libera"	, .T., .F.)
+		_wBloqueio := _ExtraiTag ("_oXML:_WSAlianca:_Bloqueio"	, .T., .F.)
+		_wMargem   := _ExtraiTag ("_oXML:_WSAlianca:_Margem"	, .T., .F.)
+	EndIf
+
+	If empty(_sErros)
+		sc5 -> (dbsetorder(3)) // C5_FILIAL+C5_CLIENTE+C5_LOJACLI+C5_NUM
+		DbSelectArea("SC5")
+
+		If dbseek(xfilial ("SC5") + _wCliente + _wLoja + _wPedido, .F.)
+			If _wLibera == 'N' 		// Não esta liberado
+				reclock ("SC5", .F.)
+					sc5->c5_vaBloq = iif ('X' $ _wBloqueio, _wBloqueio, alltrim(_wBloqueio) + 'X')
+				msunlock ()
+			Else
+				_oEvento := ClsEvent():new ()
+				_oEvento:CodEven   = "SC5003"
+				_oEvento:Texto     = "Liberado bloqueio gerencial tipo '" + _wBloqueio + "'" + iif (('M' $ _wBloqueio .or. 'N' $ _wBloqueio), " c/margem " + alltrim(transform(_wMargem, "@E 999,999,999.99")), "")
+				_oEvento:Cliente   = _wCliente
+				_oEvento:LojaCli   = _wLoja
+				_oEvento:PedVenda  = _wPedido
+				_oEvento:Grava ()
+
+				reclock ("SC5", .F.)
+					sc5 -> c5_vabloq = ''
+				msunlock ()
+			EndIf
+		EndIf
+	EndIf
+
+	u_logFim ()
+Return
