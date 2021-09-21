@@ -2366,7 +2366,7 @@ static function _LinDig104 ()
 	_sCampo3 += _DvDig104 (_sCampo3)
 	_sCampo4 := substr(CB_RN [1],5,1)
 	_sCampo5 := substr(CB_RN [1],6,4) + substr(CB_RN [1],10,10)
-	_sRet := Transform (_sCampo1 + _sCampo2 + _sCampo3 + _sCampo4 + _sCampo5,'@R 9999999999 99999999999 99999999999 9 99999999999999')
+	_sRet := Transform (_sCampo1 + _sCampo2 + _sCampo3 + _sCampo4 + _sCampo5,'@R 99999.99999 99999.999999 99999.999999 9 99999999999999')
 return _sRet
 //
 // --------------------------------------------------------------------------
@@ -2770,11 +2770,11 @@ Static Function _Impress(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
 			80								  )  // Altura
 		endif
 		
-		if _cBcoBol == '104' 
-			oPrn:Say(_nLinIni+0034 , 2020 ,"Recibo do Sacado"	,oFont10)
-		else
+		//if _cBcoBol == '104' 
+		//	oPrn:Say(_nLinIni+0034 , 2020 ,"Recibo do Sacado"	,oFont10)
+		//else
 			oPrn:Say(_nLinIni+0034 , 2020 ,"Recibo do Pagador"	,oFont10)
-		endif				
+		//endif				
 		
 		// Define numero de compensacao a ser impresso em negrito ao lado do logotipo do banco.
 		do case
@@ -3092,20 +3092,20 @@ Static Function _Impress(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
 		oPrn:Say(_nLinIni+1285 , 1910 ,"(-)Valor Cobrado"                          ,oFont8 )
 		
 		oPrn:Line(_nLinIni+1350 , 0100 ,_nLinIni+1350 , 2300)
-		if _cBcoBol = '104'
-			oPrn:Say(_nLinIni+1355 , 0100 , "Sacado"                       ,oFont8 )
-		else
+		//if _cBcoBol = '104'
+		//	oPrn:Say(_nLinIni+1355 , 0100 , "Sacado"                       ,oFont8 )
+		//else
 			oPrn:Say(_nLinIni+1355 , 0100 , "Pagador"                      ,oFont8 )
-		endif		
+		//endif		
 		
 		oPrn:Say(_nLinIni+1355 , 0350 ,aDatSacado[1]+" ("+aDatSacado[2]+")"+SPACE(15)+aDatSacado[7] ,oFont10)
 		oPrn:Say(_nLinIni+1395 , 0350 ,aDatSacado[3]                                                ,oFont10)
 		oPrn:Say(_nLinIni+1435 , 0350 ,aDatSacado[4]+" - "+aDatSacado[5]                            ,oFont10)
 		oPrn:Say(_nLinIni+1475 , 0350 ,aDatSacado[6]                                                ,oFont10)
 		
-		if _cBcoBol = '422' .or. _cBcoBol = 'RED' 
-		    oPrn:Say(_nLinIni+1510 , 0100 , "Sacador/Avalista"            ,oFont8 )
-			oPrn:Say(_nLinIni+1512 , 0350 ,aDadosEmp[1]                             ,oFont10)
+		if _cBcoBol = '422' .or. _cBcoBol = 'RED' .or. _cBcoBol = '104' 
+		    oPrn:Say(_nLinIni+1510 , 0100 , "Sacador/Avalista"            			,oFont8 )
+			oPrn:Say(_nLinIni+1512 , 0350 , aDadosEmp[1]                            ,oFont10)
 		endif		
 		oPrn:Line(_nLinIni+1550 , 0100 ,_nLinIni+1550 , 2300)
 		
