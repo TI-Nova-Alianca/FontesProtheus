@@ -18,7 +18,7 @@
 User Function BatPagar(_sTipo)
     Private cPerg := "BatPagar"
 	
-    _sTipo := '2'
+   // _sTipo := '2'
     If _sTipo == '1' // Bat
         dDataIni := DaySub(Date(),1)
         dDataFin := DaySub(Date(),1)
@@ -108,13 +108,21 @@ Static Function _BuscaRecebiveis(dDataIni, dDataFin)
 
             If _lRetGrv == .T.
                 u_log2('aviso', "Registro " + _sIdTransacao + " gravado com sucesso!")
+                If _sTipo == '2'
+                    u_help("Registro " + _sIdTransacao + " gravado com sucesso!")
+                EndIf
             Else
                 u_log2('aviso', "Registro " + _sIdTransacao + " não gravado!")
+                If _sTipo == '2'
+                    u_help("Registro " + _sIdTransacao + " não gravado!")
+                EndIf
             EndIf
         Next
     Else
         u_log2('aviso', 'Pagar.me: Sem registros')
-        u_help("Sem registros")
+        If _sTipo == '2'
+            u_help("Sem registros")
+        EndIf
     Endif
 
 Return
