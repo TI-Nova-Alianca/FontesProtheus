@@ -1823,7 +1823,6 @@ return
 // Realiza bloqueio/desbloqueio de pedidos
 Static Function _PedidosBloq()
 	local _oSQL     := NIL
-	local _sAliasQ  := ""
 	local _XmlRet   := ""
 	local _aPed     := {}
 	local _aItem    := {}
