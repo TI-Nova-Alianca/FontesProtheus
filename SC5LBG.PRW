@@ -35,11 +35,11 @@ User Function SC5LBG ()
 	local _sFiltrTop  := ""
 	local _aCpoBrw    := {}
 	private aRotina   := {}
-	private _nMCPed1  := GetMv ("VA_MCPED1")
-	private _nMCPed2  := GetMv ("VA_MCPED2")
-	private _lGrp004  := U_ZZUVL ('004',,.F.)
-	private _lGrp081  := U_ZZUVL ('081',,.F.)
-	private _lGrp082  := U_ZZUVL ('082',,.F.)
+	//private _nMCPed1  := GetMv ("VA_MCPED1")
+	//private _nMCPed2  := GetMv ("VA_MCPED2")
+	//private _lGrp004  := U_ZZUVL ('004',,.F.)
+	//private _lGrp081  := U_ZZUVL ('081',,.F.)
+	//private _lGrp082  := U_ZZUVL ('082',,.F.)
 
 	AAdd (_aCpoBrw, {"Bloqueio",   {|| iif('X'$sc5->c5_vabloq,'Lib.negada',iif('P'$sc5->c5_vabloq,'Preco ','')+iif('M'$sc5->c5_vabloq,'Margem ','')+iif('A'$sc5->c5_vabloq,'Reajuste ','')+iif('F'$sc5->c5_vabloq,'Bonif.s/fat. ',''))}, "C", 15, 0, "" } )
 	AAdd (_aCpoBrw, {"Vlr.produtos", {|| sc5 -> c5_vavlfat}, "N", 12, 2, "@E 9,999,999.99" } )
@@ -91,15 +91,23 @@ user function SC5LBGLG (_lRetCores)
 return
 //
 // --------------------------------------------------------------------------
+// Realiza validações para liberar ou não o pedido
 User Function SC5LBGL ()
+	local _aAmbAnt   := U_SalvaAmb()
+	local _aAreaAnt  := U_ML_SRArea()
 	local _oEvento   := NIL
 	local _lContinua := .T.
+	local _nMCPed1   := GetMv("VA_MCPED1")
+	local _nMCPed2   := GetMv("VA_MCPED2")
+	local _lGrp004   := U_ZZUVL('004',,.F.)
+	local _lGrp081   := U_ZZUVL('081',,.F.)
+	local _lGrp082   := U_ZZUVL('082',,.F.)
 
 	procregua (10)
 
 	if _lContinua .and. ('M' $ sc5 -> C5_VABLOQ .or. 'N' $ sc5 -> C5_VABLOQ)
 		if (sc5 -> c5_vaMCont < _nMCPed1 .and. ! _lGrp081) .or. (sc5 -> c5_vaMCont < _nMCPed2 .and. ! _lGrp082)
-			u_help ("Bloqueio por margem de contribuicao (" + cvaltochar (sc5 -> c5_vaMCont) + "%). Usuario sem alcada.")
+			u_help ("Bloqueio por margem de contribuicao (" + cvaltochar (sc5 -> c5_vaMCont) + "%). Usuario sem alcada.",,.T.)
 			_lContinua = .F.
 		endif
 	endif
@@ -107,19 +115,19 @@ User Function SC5LBGL ()
 	if _lContinua .and. ('P' $ sc5 -> C5_VABLOQ .or. 'A' $ sc5 -> C5_VABLOQ)
 		if sc5 -> c5_vaPrPed > 0 .and. sc5 -> c5_vaPrPed <= 5 //1
 			if ! _lGrp004
-				u_help ("Bloqueio por reducao de precos ate 5% em relacao ao pedido anterior. Usuario sem alcada.")
+				u_help ("Bloqueio por reducao de precos ate 5% em relacao ao pedido anterior. Usuario sem alcada.",,.T.)
 				_lContinua = .F.
 			endif
 		else
 			if sc5 -> c5_vaPrPed > 1 .and. sc5 -> c5_vaPrPed <= 5
 				if ! _lGrp081
-					u_help ("Bloqueio por reducao de precos acima de " + cvaltochar (sc5 -> c5_vaPrPed) + "% em relacao ao pedido anterior. Usuario sem alcada.")
+					u_help ("Bloqueio por reducao de precos acima de " + cvaltochar (sc5 -> c5_vaPrPed) + "% em relacao ao pedido anterior. Usuario sem alcada.",,.T.)
 					_lContinua = .F.
 				endif
 			else
 				if sc5 -> c5_vaPrPed > 5
 					if ! _lGrp082
-						u_help ("Bloqueio por reducao de precos acima de " + cvaltochar (sc5 -> c5_vaPrPed) + "% em relacao ao pedido anterior. Usuario sem alcada.")
+						u_help ("Bloqueio por reducao de precos acima de " + cvaltochar (sc5 -> c5_vaPrPed) + "% em relacao ao pedido anterior. Usuario sem alcada.",,.T.)
 						_lContinua = .F.
 					endif
 				endif
@@ -131,7 +139,7 @@ User Function SC5LBGL ()
 		if _lGrp082 .or. _lGrp004 .or. _lGrp081
 			_lContinua = .T.
 		else
-			u_help ("Bloqueio por bonificação. Usuario sem alcada para liberação.")
+			u_help ("Bloqueio por bonificação. Usuario sem alcada para liberação.",,.T.)
 			_lContinua = .F.
 		endif
 	endif
@@ -147,20 +155,30 @@ User Function SC5LBGL ()
 		_oEvento:Grava ()
 
 		reclock ("SC5", .F.)
-		sc5 -> c5_vabloq = ''
+			sc5 -> c5_vabloq = ''
 		msunlock ()
+
 		CursorArrow ()
-		u_help ("Liberacao efetuada com sucesso.")
+
+		u_help ("Liberacao efetuada com sucesso.",,.F.)
 	endif
+
+	U_ML_SRArea(_aAreaAnt)
+	U_SalvaAmb(_aAmbAnt)
 return
 //
 // --------------------------------------------------------------------------
 // Negar liberacao (para tirar deste browse e 'devolver' ao comercial).
 User Function SC5LBGN ()
+	local _aAmbAnt   := U_SalvaAmb()
+	local _aAreaAnt  := U_ML_SRArea()
 
 	CursorWait ()
 	reclock ("SC5", .F.)
 		sc5->c5_vaBloq = iif ('X' $ sc5->c5_vaBloq, sc5->c5_vaBloq, alltrim (sc5->c5_vaBloq) + 'X')
 	msunlock ()
 	CursorArrow ()
+
+	U_ML_SRArea(_aAreaAnt)
+	U_SalvaAmb(_aAmbAnt)
 return

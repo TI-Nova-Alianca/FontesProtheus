@@ -1828,11 +1828,11 @@ Static Function _PedidosBloq()
 	local _aItem    := {}
 	local _x        := 0
 	local _y        := 0
-	local _nMCPed1  := GetMv ("VA_MCPED1")
-	local _nMCPed2  := GetMv ("VA_MCPED2")
-	local _lGrp004  := iif(U_ZZUVL ('004',,.F.) == .T., 'T', 'F')
-	local _lGrp081  := iif(U_ZZUVL ('081',,.F.) == .T., 'T', 'F')
-	local _lGrp082  := iif(U_ZZUVL ('082',,.F.) == .T., 'T', 'F')
+	//local _nMCPed1  := GetMv ("VA_MCPED1")
+	//local _nMCPed2  := GetMv ("VA_MCPED2")
+	//local _lGrp004  := iif(U_ZZUVL ('004',,.F.) == .T., 'T', 'F')
+	//local _lGrp081  := iif(U_ZZUVL ('081',,.F.) == .T., 'T', 'F')
+	//local _lGrp082  := iif(U_ZZUVL ('082',,.F.) == .T., 'T', 'F')
 
 	u_logIni ()
 
@@ -1884,11 +1884,11 @@ Static Function _PedidosBloq()
 		_XmlRet += "		<Bloqueio>"			+ _aPed [_x,12] + "</Bloqueio>"
 		_XmlRet += "		<Vendedor>"			+ _aPed [_x,13] + "</Vendedor>"
 		_XmlRet += "		<Usuario>"			+ _aPed [_x,14] + "</Usuario>"
-		_XmlRet += "		<McPed1>"			+ _nMCPed1 		+ "</McPed1>"
-		_XmlRet += "		<McPed2>"			+ _nMCPed2 		+ "</McPed2>"
-		_XmlRet += "		<lGrp004>"			+ _lGrp004 		+ "</lGrp004>"
-		_XmlRet += "		<lGrp081>"			+ _lGrp081 		+ "</lGrp081>"
-		_XmlRet += "		<lGrp082>"			+ _lGrp082 		+ "</lGrp082>"
+		//_XmlRet += "		<McPed1>"			+ _nMCPed1 		+ "</McPed1>"
+		//_XmlRet += "		<McPed2>"			+ _nMCPed2 		+ "</McPed2>"
+		//_XmlRet += "		<lGrp004>"			+ _lGrp004 		+ "</lGrp004>"
+		//_XmlRet += "		<lGrp081>"			+ _lGrp081 		+ "</lGrp081>"
+		//_XmlRet += "		<lGrp082>"			+ _lGrp082 		+ "</lGrp082>"
 
 		_oSQL := ClsSQL():New ()  
 		_oSQL:_sQuery := ""		
@@ -1945,9 +1945,9 @@ Static Function _GrvLibPed ()
 	local _wPedido	 := ""
 	local _wCliente  := ""
 	local _wLoja 	 := ""
-	local _wLibera   := "" // S = sim  N = não
-	local _wBloqueio := "" // C5_VABLOQ  - Bloqueio
-	local _wMargem   := "" // C5_VAMCONT - MargemContr
+	//local _wLibera   := "" // S = sim  N = não
+	//local _wBloqueio := "" // C5_VABLOQ  - Bloqueio
+	//local _wMargem   := "" // C5_VAMCONT - MargemContr
 
 	u_logIni ()
 
@@ -1956,34 +1956,22 @@ Static Function _GrvLibPed ()
 		_wPedido   := _ExtraiTag ("_oXML:_WSAlianca:_Pedido"	, .T., .F.)
 		_wCliente  := _ExtraiTag ("_oXML:_WSAlianca:_Cliente"	, .T., .F.)
 		_wLoja     := _ExtraiTag ("_oXML:_WSAlianca:_Loja"		, .T., .F.)
-		_wLibera   := _ExtraiTag ("_oXML:_WSAlianca:_Libera"	, .T., .F.)
-		_wBloqueio := _ExtraiTag ("_oXML:_WSAlianca:_Bloqueio"	, .T., .F.)
-		_wMargem   := _ExtraiTag ("_oXML:_WSAlianca:_Margem"	, .T., .F.)
+		_wBloqLib  := _ExtraiTag ("_oXML:_WSAlianca:_BloqLib"	, .T., .F.) // Retorna L - libera / B - Bloqueia
 	EndIf
 
 	If empty(_sErros)
 		sc5 -> (dbsetorder(3)) // C5_FILIAL+C5_CLIENTE+C5_LOJACLI+C5_NUM
 		DbSelectArea("SC5")
 
-		If dbseek(xfilial ("SC5") + _wCliente + _wLoja + _wPedido, .F.)
-			If _wLibera == 'N' 		// Não esta liberado
-				reclock ("SC5", .F.)
-					sc5->c5_vaBloq = iif ('X' $ _wBloqueio, _wBloqueio, alltrim(_wBloqueio) + 'X')
-				msunlock ()
+		If dbseek(_wFilial + _wCliente + _wLoja + _wPedido, .F.)
+			If alltrim(_wBloqLib) == 'L'    	// Libera pedido
+				U_SC5LBGL()
 			Else
-				_oEvento := ClsEvent():new ()
-				_oEvento:CodEven   = "SC5003"
-				_oEvento:Texto     = "Liberado bloqueio gerencial tipo '" + _wBloqueio + "'" + iif (('M' $ _wBloqueio .or. 'N' $ _wBloqueio), " c/margem " + alltrim(transform(_wMargem, "@E 999,999,999.99")), "")
-				_oEvento:Cliente   = _wCliente
-				_oEvento:LojaCli   = _wLoja
-				_oEvento:PedVenda  = _wPedido
-				_oEvento:Grava ()
-
-				reclock ("SC5", .F.)
-					sc5 -> c5_vabloq = ''
-				msunlock ()
+				If alltrim(_wBloqLib) == 'B'	// Bloqueia pedido
+					U_SC5LBGN()
+				EndIf
 			EndIf
-		EndIf
+		EndIf		
 	EndIf
 
 	u_logFim ()
