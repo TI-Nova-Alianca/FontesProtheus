@@ -2,8 +2,16 @@
 // Autor:     Robert Koch
 // Data:      27/07/2017
 // Descricao: Exporta alguns dados para o modulo TAF para evitar digitacao.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Gera arquivo TXT para importacao no modulo TAF
+// #PalavasChave      #exportacao #TXT #TAF
+// #TabelasPrincipais #SZI
+// #Modulos           #CTB #TAF
+
 // Historico de alteracoes:
+// 24/09/2021 - Revisao de layout/novos campos do tipo 111 para exercicio 2021 (GLPI 10463).
 //
 
 #include "VA_INCLU.prw"
@@ -47,7 +55,7 @@ return .T.
 
 // --------------------------------------------------------------------------
 Static Function _GeraTxt()
-	private _sErros    := ""
+	private _sErrETAF  := ""
 	private _sAvisos   := ""
 	private _nHdl      := 0
 
@@ -61,16 +69,13 @@ Static Function _GeraTxt()
 	ProcRegua(10)
 
 	// Uma funcao para gerar cada tipo de registro.
-	_T001 ()
+//	_T001 ()
 	_T111 ()
 	fClose(_nHdl)
 
-	if ! empty (_sErros)
+	if ! empty (_sErrETAF)
 		delete file (alltrim (mv_par01))
-		U_Help ("#################" + chr (13) + char (10) + ;
-		        "ERROS ENCONTRADOS" + chr (13) + char (10) + ;
-		        "#################" + chr (13) + char (10) + ;
-		        "Foram encontrados erros que impedem a execucao do processo.", _sErros)
+		U_Help ("Foram encontrados erros que impedem a execucao do processo.", _sErrETAF)
 	else
 		if ! empty (_sAvisos)
 			u_help ("Arquivo '" + alltrim (mv_par01) + "' gerado, mas com os seguintes avisos:", _sAvisos)
@@ -82,16 +87,16 @@ return
 
 
 
-// -------------------------------------------------------------------------
-static function _T001 ()
-	local _sLinha := ""
-	_sLinha += "|T001|0101"
-	_sLinha += "|alianca@novaalianca.coop.br"
-	_sLinha += "||1|T"
-	_sLinha += "|" + alltrim (sm0 -> m0_nomecom)
-	_sLinha += "|||"
-	fwrite (_nHdl, _sLinha + chr (13) + chr (10))
-return
+// // -------------------------------------------------------------------------
+// static function _T001 ()
+// 	local _sLinha := ""
+// 	_sLinha += "|T001|0101"
+// 	_sLinha += "|alianca@novaalianca.coop.br"
+// 	_sLinha += "||1|T"
+// 	_sLinha += "|" + alltrim (sm0 -> m0_nomecom)
+// 	_sLinha += "|||"
+// 	fwrite (_nHdl, _sLinha + chr (13) + chr (10))
+// return
 
 
 
@@ -118,7 +123,8 @@ static function _T111 ()
 	_oSQL:_sQuery +=   " AND SA2.A2_COD     = SA2.A2_VACBASE"  // PEGA APENAS O CODIGO E LOJA BASE PARA NAO REPETIR O MESMO ASSOCIADO.
 	_oSQL:_sQuery +=   " AND SA2.A2_LOJA    = SA2.A2_VALBASE"
 	
-	// Testes:  	_oSQL:_sQuery += " AND SA2.A2_COD <= '000161'"
+	// Testes:
+	//_oSQL:_sQuery += " AND SA2.A2_COD <= '000161'"
 	
 	_oSQL:_sQuery += " AND EXISTS (SELECT *"
 	_oSQL:_sQuery +=               " FROM " + RetSQLName ("SZI") + " SZI"
@@ -167,11 +173,18 @@ static function _T111 ()
 		_sLinha += "|" + iif (len (alltrim (_aAssoc [_nAssoc, 4])) > 11, "2", "1")  // Qualificacao: 1=PF;2=PJ;3=Fundo de investimento
 		_sLinha += "|" + _aAssoc [_nAssoc, 4]  // CPF ou CNPJ
 		_sLinha += "|" + alltrim (_aAssoc [_nAssoc, 3])  // Nome
-		_sLinha += "|" + iif (len (alltrim (_aAssoc [_nAssoc, 4])) > 11, "03", "01")  // Qualificacao
+		_sLinha += "|" + iif (len (alltrim (_aAssoc [_nAssoc, 4])) > 11, "03", "02")  // Qualificacao
 		_sLinha += "|" + cvaltochar (_aAssoc [_nAssoc, 8])  // Percentual sobre o total de capital
 		_sLinha += "|" + cvaltochar (_aAssoc [_nAssoc, 8])  // Percentual sobre o total votante
 		_sLinha += "|"  // CPF do representante legal
-		_sLinha += "||"  // Qualificacao do representante legal
+		_sLinha += "|"  // Qualificacao do representante legal (6=outros)
+		_sLinha += "|"  // Valor da Remuneração do Trabalho
+		_sLinha += "|"  // Valor dos Lucros e Dividendos
+		_sLinha += "|"  // Juros Sobre Capital Próprio
+		_sLinha += "|"  // Demais Rendimentos
+		_sLinha += "|"  // IR Retido na Fonte
+		_sLinha += "|"  // Final de registro
+
 		fwrite (_nHdl, _sLinha + chr (13) + chr (10))
 	next
 Return
