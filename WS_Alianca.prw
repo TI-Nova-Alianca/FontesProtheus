@@ -1960,17 +1960,31 @@ Static Function _GrvLibPed ()
 	EndIf
 
 	If empty(_sErros)
-		sc5 -> (dbsetorder(3)) // C5_FILIAL+C5_CLIENTE+C5_LOJACLI+C5_NUM
+		sa1 -> (dbsetorder(1)) // A1_FILIAL + A1_COD + A1_LOJA
+		DbSelectArea("SA1")
+		If ! dbseek(xFilial("SA1") + _wCliente + _wLoja, .F.)
+			_sErros := " Cliente " + _wCliente +"/"+ _wLoja +" não encontrado. Verifique!"
+		EndIf
+	EndIf
+
+	If empty(_sErros)
+		sc5 -> (dbsetorder(3)) // C5_FILIAL + C5_CLIENTE + C5_LOJACLI + C5_NUM
 		DbSelectArea("SC5")
 
 		If dbseek(_wFilial + _wCliente + _wLoja + _wPedido, .F.)
-			If alltrim(_wBloqLib) == 'L'    	// Libera pedido
-				U_SC5LBGL()
+			If empty(sc5 -> c5_vabloq)
+				_sErros := " Pedido já liberado!"
 			Else
-				If alltrim(_wBloqLib) == 'B'	// Bloqueia pedido
-					U_SC5LBGN()
+				If alltrim(_wBloqLib) == 'L'    	// Libera pedido
+					U_SC5LBGL()
+				Else
+					If alltrim(_wBloqLib) == 'B'	// Bloqueia pedido
+						U_SC5LBGN()
+					EndIf
 				EndIf
 			EndIf
+		Else
+			_sErros := "Pedido " + _wPedido + " não encontrado para o cliente "	+ _wCliente +"/"+ _wLoja 		
 		EndIf		
 	EndIf
 

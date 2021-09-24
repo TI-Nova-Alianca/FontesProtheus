@@ -182,8 +182,7 @@ user function GrvLibPV (_lLiberar)
 		for _nLinha = 1 to len (aCols)
 			N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
 
-			if ! GDDeleted ()
-                                                        
+			if ! GDDeleted()                                                        
 				// Busca quantidade jah entregue (possivel faturamento parcial)
 				if inclui
 					_nQtdEnt = 0
@@ -227,56 +226,56 @@ user function GrvLibPV (_lLiberar)
 					_sQuery += " WHERE SD2.D_E_L_E_T_  = ''"
 					_sQuery +=   " AND SD2.D2_CLIENTE  = '" + m->c5_cliente + "'"
 					_sQuery +=   " AND SD2.D2_LOJA     = '" + m->c5_lojacli + "'"
-					_sQuery +=   " AND SD2.D2_TIPO     = '" + m->c5_tipo + "'"
+					_sQuery +=   " AND SD2.D2_TIPO     = '" + m->c5_tipo    + "'"
 					_sQuery +=   " AND SD2.D2_COD      = '" + GDFieldGet ("C6_PRODUTO") + "'"
 					_sQuery += " ORDER BY D2_EMISSAO DESC"
 					_aRetQry = aclone (U_Qry2Array (_sQuery, .F., .F.))
 					if len (_aRetQry) > 0 .and. round (_aRetQry [1, 1], 2) > round (GDFieldGet ("C6_PRCVEN"), 2)
 
-						aadd (_aUltPrc, {alltrim (GDFieldGet ("C6_PRODUTO")), ;
-							alltrim (GDFieldGet ("C6_DESCRI")), ;
-							GDFieldGet ("C6_PRCVEN"), ; //alltrim (transform (GDFieldGet ("C6_PRCVEN"), "@E 999,999,999.99")), ;
-							_aRetQry [1, 1], ; // alltrim (transform (_aRetQry [1, 1], "@E 999,999,999.99")), ;
-							_aRetQry [1, 2], ;
-							dtoc (stod (_aRetQry [1, 3])), ;
-							_aRetQry [1, 4], ;
-							_aRetQry [1, 5]})
+						aadd (_aUltPrc, {	alltrim (GDFieldGet ("C6_PRODUTO"))	, ;
+											alltrim (GDFieldGet ("C6_DESCRI"))	, ;
+											GDFieldGet ("C6_PRCVEN")			, ; 
+											_aRetQry [1, 1]						, ; 
+											_aRetQry [1, 2]						, ;
+											dtoc (stod (_aRetQry [1, 3]))		, ;
+											_aRetQry [1, 4]						, ;
+											_aRetQry [1, 5]						 })
 					endif
 	
 					if len (_aRetQry) > 0 .and. round (GDFieldGet ("C6_PRCVEN"), 2) < round (_aRetQry [1, 1]+(_aRetQry [1, 1]*_wpercreajuste/100), 2) // substituir por parametros
 						if  _aRetQry [1, 3] <= _wdtreajuste  // substituir pelo parametro
-							aadd (_aUltPrc, {alltrim (GDFieldGet ("C6_PRODUTO")), ;
-							alltrim (GDFieldGet ("C6_DESCRI")), ;
-							GDFieldGet ("C6_PRCVEN"), ; //alltrim (transform (GDFieldGet ("C6_PRCVEN"), "@E 999,999,999.99")), ;
-							round (_aRetQry [1, 1]+(_aRetQry [1, 1]*_wpercreajuste/100), 2), ; // alltrim (transform (_aRetQry [1, 1], "@E 999,999,999.99")), ;
-							_aRetQry [1, 2], ;
-							dtoc (stod (_aRetQry [1, 3])), ;
-							_aRetQry [1, 4], ;
-							_aRetQry [1, 5]})
+
+							aadd (_aUltPrc, {	alltrim (GDFieldGet ("C6_PRODUTO"))								, ;
+												alltrim (GDFieldGet ("C6_DESCRI"))								, ;
+												GDFieldGet ("C6_PRCVEN")										, ; 
+												round (_aRetQry [1, 1]+(_aRetQry [1, 1]*_wpercreajuste/100), 2)	, ;
+												_aRetQry [1, 2]													, ;
+												dtoc (stod (_aRetQry [1, 3]))									, ;
+												_aRetQry [1, 4]													, ;
+												_aRetQry [1, 5]													 })
 						endif						
 					endif
 					
 					if m->c5_tabela == "151"  // Se for tabela 151 e o preco informado for menor que da tabela, deve ser bloqueado
 						_sQuery := ""
 						_sQuery += " SELECT DA1_PRCVEN, DA1_FILIAL "
-						_sQuery +=  " FROM " + RetSQLName ("DA1") + " DA1 "
-						_sQuery += " WHERE DA1.D_E_L_E_T_  = ''"
+						_sQuery +=   " FROM " + RetSQLName ("DA1") + " DA1 "
+						_sQuery +=   " WHERE DA1.D_E_L_E_T_  = ''"
 						_sQuery +=   " AND DA1_CODTAB = '151' "
 						_sQuery +=   " AND DA1_CODPRO = '" + alltrim (GDFieldGet ("C6_PRODUTO")) + "'"
 						_sQuery +=   " AND DA1_FILIAL = '" + xfilial ("DA1")  + "'"
 						_aRetQry = aclone (U_Qry2Array (_sQuery, .F., .F.))
-        
 
 						if len (_aRetQry) > 0 .and. round (_aRetQry [1, 1], 2) > round (GDFieldGet ("C6_PRCVEN"), 2)
 
-							aadd (_aUltPrc, {alltrim (GDFieldGet ("C6_PRODUTO")), ;
-								alltrim (GDFieldGet ("C6_DESCRI")), ;
-								GDFieldGet ("C6_PRCVEN"), ; // alltrim (transform (GDFieldGet ("C6_PRCVEN"), "@E 999,999,999.99")), ;
-								_aRetQry [1, 1], ; // alltrim (transform (_aRetQry [1, 1], "@E 999,999,999.99")), ;
-								_aRetQry [1, 2], ;
-								dtoc(date()), ;
-								"TAB PRC", ;
-								"151"})
+							aadd (_aUltPrc, {	alltrim (GDFieldGet ("C6_PRODUTO"))	, ;
+												alltrim (GDFieldGet ("C6_DESCRI"))	, ;
+												GDFieldGet ("C6_PRCVEN")			, ; 
+												_aRetQry [1, 1]						, ; 
+												_aRetQry [1, 2]						, ;
+												dtoc(date())						, ;
+												"TAB PRC"							, ;
+												"151"								 })
 						endif
 					endif
 				endif
@@ -366,8 +365,7 @@ user function GrvLibPV (_lLiberar)
 		endif
 
 		// Valida margem de contribuicao.
-		if _lLiberar //.and. empty (m->c5_vaBloq) 
-
+		if _lLiberar 
 			N = _n
 			if _lFaturado .and. ! _lSoGranel  // Ignora bloqueio de margem para pedidos de granel
 
@@ -431,148 +429,6 @@ user function GrvLibPV (_lLiberar)
 				m->c5_vaBloq = iif ('B' $ m->c5_vaBloq, m->c5_vaBloq, alltrim (m->c5_vaBloq) + 'B')
 			EndIf
 		EndIf
-				
-		//      // nao usamos mais por esta rotina. GLPI 7001
-		// 		// Validacoes controle de verbas
-		// 		If _lLiberar
-		// 			_wverbas = fBuscaCpo ('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_VERBA")
-		// 			if _wverbas = '1'
-		// 				_wmatriz = fBuscaCpo ('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_VACBASE")
-		// 				_wljmatriz = fBuscaCpo ('SA1', 1, xfilial('SA1') + m->c5_cliente + m->c5_lojacli, "A1_VALBASE")
-		// 				if _wmatriz=''
-		// 					_sErro += "Cliente sem codigo MATRIZ informado"
-		// 					_lLiberar = .F.
-		// 				endif
-		// 				if _wljmatriz=''
-		// 					_sErro += "Cliente sem codigo LOJA MATRIZ informado"
-		// 					_lLiberar = .F.
-		// 				endif
-								
-		// 				// se o cliente controla verbas - verifica se tem bonificacao nesse pedido
-		// 				if _lLiberar
-		// 					for _nLinha = 1 to len (aCols)
-		// 						N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
-		// 						if ! GDDeleted ()
-		// 							if alltrim (GDFieldGet ("C6_BLQ")) != "R"
-		// 								if alltrim (GDFieldGet ("C6_BONIFIC")) != ""
-		// 									// busca na ZX5 se este tipo de bonificacao abate do saldo de verbas
-		// 									//if fBuscaCpo ('ZX5', 1, xfilial('ZX5') + '22' + GDFieldGet ("C6_BONIFIC"), "ZX5_22CONT") = 'S'
-		// 									if u_RetZX5 ('22', GDFieldGet ("C6_BONIFIC"), "ZX5_22CONT") = 'S'   
-		// 										_wbonif = .T.
-		// 										exit
-		// 									endif
-		// 								endif
-		// 							endif								
-		// 						endif
-		// 					next
-		// 					// se tem bonificacao no pedido atual - verifica saldo a bonificar
-		// 					if _wbonif
-		// 						_wSldBonif = 0
-		// 						// busca saldo a bonificar
-		// 						_sQuery := ""
-		// 						_sQuery += " SELECT SUM(ZA4.ZA4_VLR) - ISNULL( ( SELECT SUM(ZA5_VLR)"
-		// 						_sQuery += "         			      		       FROM ZA5010"
-		// 						_sQuery += "       				  		          WHERE D_E_L_E_T_ = ''"
-		// 						// eu QUERO todas as filiais para compor o saldo da verba --> _oSQL:_sQuery +=    " AND ZA5.ZA5_FILIAL = '" + xfilial ("ZA5") + "'"
-		// 						_sQuery += "       				  		            AND ZA5_TLIB = '1'"
-		// 						_sQuery += "         						        AND ZA5_CLI  = ZA4.ZA4_CLI
-		// 						_sQuery += "                                        AND ZA5_LOJA = ZA4.ZA4_LOJA) ,0)"
-		// 						_sQuery += "  FROM ZA4010 AS ZA4"
-		// 						_sQuery += " WHERE ZA4.D_E_L_E_T_ = ''
-		// 						_sQuery +=   " AND ZA4.ZA4_FILIAL = '" + xfilial ("ZA4") + "'"
-		// 						_sQuery += "   AND ZA4.ZA4_CLI    = '" + _wmatriz + "'"
-		// 						_sQuery += "   AND ZA4.ZA4_TLIB   = '1'"
-		// 						_sQuery += " GROUP BY ZA4.ZA4_CLI, ZA4.ZA4_LOJA"
-		// 						u_log (_sQuery)
-		// 						_aDados := U_Qry2Array(_sQuery)
-		// 						if len(_aDados) > 0
-		// 							_wSldBonif = _aDados[1,1]
-		// 						endif
-								
-		// 						//msgalert(_wSldBonif)
-								
-		// 						if _wSldBonif =0
-		// 							_sErro += "Cliente sem saldo a bonificar"
-		// 							_lLiberar = .F.
-		// 						endif
-				
-		// 						// monta total a bonifica neste pedido (todos os itens)
-		// 						_wTotBonPed = 0
-		// 						_wipiprod = 0
-		// 						if _lLiberar
-		// 							// inicializa MAFISINI para poder bucar o valor da ST
-		// 							MaFisIni(M->C5_CLIENTE,;						// 1-Codigo Cliente/Fornecedor
-		// 							M->C5_LOJACLI,;						// 2-Loja do Cliente/Fornecedor
-		// 							IIf(M->C5_TIPO$'DB',"F","C"),;			// 3-C:Cliente , F:Fornecedor
-		// 							M->C5_TIPO,;							// 4-Tipo da NF
-		// 							M->C5_TIPOCLI,;						// 5-Tipo do Cliente/Fornecedor
-		// 							MaFisRelImp("MTR700",{"SC5","SC6"}),;	// 6-Relacao de Impostos que suportados no arquivo
-		// 							,;						   				// 7-Tipo de complemento
-		// 							,;										// 8-Permite Incluir Impostos no Rodape .T./.F.
-		// 							"SB1",;								// 9-Alias do Cadastro de Produtos - ("SBI" P/ Front Loja)
-		// 							"MTR700")								// 10-Nome da rotina que esta utilizando a funcao
-
-		// 							// tem que ler todos os itens do pedido
-		// 							_lTes = .F.
-		// 							_nQtItens = 0
-		// 							for _nLinha = 1 to len (aCols)
-		// 								N := _nLinha  // No R23 nao permite mais usar variavel nao-local como contador no FOR.
-		// 								if ! GDDeleted ()
-		// 									if alltrim (GDFieldGet ("C6_BONIFIC")) != ""
-		// 										// le todos os itens do pedido e calcula total a bonificar no pedido
-		// 										//if fBuscaCpo ('ZX5', 1, xfilial('ZX5') + '22' + GDFieldGet ("C6_BONIFIC"), "ZX5_22CONT") = 'S'
-		// 										if u_RetZX5 ('22', GDFieldGet ("C6_BONIFIC"), "ZX5_22CONT") = 'S'
-		// 											// busca IPI do item
-		// 											MaFisAdd( GDFieldGet ("C6_PRODUTO"),;
-		// 												GDFieldGet ("C6_TES"),;
-		// 												GDFieldGet ("C6_QTDVEN"),;
-		// 												GDFieldGet ("C6_PRCVEN"),;
-		// 												0,;
-		// 												"",;
-		// 												"",;
-		// 												"",;
-		// 												0,;
-		// 												0,;
-		// 												0,;
-		// 												0,;
-		// 												( GDFieldGet ("C6_QTDVEN")* GDFieldGet ("C6_PRCVEN") ),;
-		// 												0,;
-		// 												0,;
-		// 												0)
-		// 											_nQtItens ++
-													
-		// 											_nValSol := MaFisRet(_nQtItens, "IT_VALSOL")
-		// 											_nValIpi := MaFisRet(_nQtItens, "IT_VALIPI")
-		// 											_wTotBonPed = _wTotBonPed + GDFieldGet ("C6_VALOR") + _nValSol + _nValIPI 
-		// 										endif
-		// 									endif
-		// //									if GDFieldGet ("C6_TES") $ '630/657'
-		// //										lTes = .T.
-		// //									endif
-		// 								endif
-		// 							next
-		// 							_wSldOutBon = 0
-		// 							//msgalert("SALDO OUTROS PEDIDOS")
-		// 							//msgalert(_wSldOutBon)
-		// 							//msgalert("SALDO A BONIFICAR")
-		// 							//msgalert(_wSldBonif)
-		// 							//msgalert("TOTAL A BONIFICAR NO PEDIDO")
-		// 							//msgalert(_wTotBonPed)
-								
-		// 							if _lLiberar 
-		// 								if  _wSldBonif < (_wTotBonPed + _wSldOutBon)
-		// 									_sErro += "Saldo a bonificar é insuficiente para liberação dos itens bonificados. Verifique!"
-		// 									_lLiberar = .F.
-		// 								else
-		// 									u_help ("Pedido com itens a bonificar, irá abater saldo em verbas." )
-		// 									_lLiberar = .T.
-		// 								endif
-		// 							endif								
-		// 						endif
-		// 					endif
-		// 				endif
-		// 			endif
-		// 		endif
 
 		// Se alguma das linhas tinha problemas, nao libera nenhuma.
 		if ! empty (_sErro)
@@ -585,7 +441,6 @@ user function GrvLibPV (_lLiberar)
 			next
 		endif
 		CursorArrow ()
-		
 
 	else  // Remover liberacao
 		if ! empty (_sErro)

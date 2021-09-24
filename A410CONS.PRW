@@ -3,6 +3,13 @@
 // Data.......: out/2006
 // Descricao..: P.E. para criar botoes adicionais na tela do pedido de venda.
 //
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #Ponto de entrada para criar botoes adicionais na tela do pedido de venda.
+// #PalavasChave      #pedido_venda #botoes
+// #TabelasPrincipais #SC5 #SC6
+// #Modulos           #FAT
+//
 // Historico de alteracoes:
 // 17/04/2008 - Robert  - Inclusao botao para selecao de frete.
 // 23/07/2008 - Robert  - Leitura em loop no botao de margem de contribuicao.
@@ -25,23 +32,15 @@
 //                      - Funcao Va_McPed() tem novos parametros
 // 10/08/2020 - Robert  - Eliminadas linhas comentariadas, melhoria historico alteracoes.
 //                      - Inseridas tags para catalogacao de fontes.
-
-// Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #ponto_de_entrada
-// #Descricao         #Ponto de entrada para criar botoes adicionais na tela do pedido de venda.
-// #PalavasChave      #pedido_venda #botoes
-// #TabelasPrincipais #SC5 #SC6
-// #Modulos           #FAT
-
+//
 // --------------------------------------------------------------------------
 User Function A410CONS()
 	Local _aRet := {}
 	aadd( _aRet, {"LANDSCAPE",  {|| _Menu ()}, "Especificos"})
 Return(_aRet)
-
-
-
+//
 // --------------------------------------------------------------------------
+// Menu
 static function _Menu ()
 	local _aF3      := {}
 	local _nF3      := 0
@@ -74,43 +73,42 @@ static function _Menu ()
 	_nF3 = U_F3Array (_aF3, "Opcoes", _aCols, oMainWnd:nClientWidth / 3, oMainWnd:nClientHeight / 1.5, "", "", .F.)
 
 	do case
-	case _nF3 != 0 .and. _aF3 [_nF3, 2] == "MCont"
-	//	U_VA_McPed (.T., inclui .or. altera)
-		processa ({|| U_VA_McPed (.T., .T.), "Calculando margem de contribuicao"})
-		
+		case _nF3 != 0 .and. _aF3 [_nF3, 2] == "MCont"
+			processa ({|| U_VA_McPed (.T., .T.), "Calculando margem de contribuicao"})
+			
 
-	case _nF3 != 0 .and. _aF3 [_nF3, 2] == "Liberar"
-		U_GrvLibPV (.T.)
-		_aColsLib := aclone (aCols)
+		case _nF3 != 0 .and. _aF3 [_nF3, 2] == "Liberar"
+			U_GrvLibPV (.T.)
+			_aColsLib := aclone (aCols)
 
-	case _nF3 != 0 .and. _aF3 [_nF3, 2] == "SaldoCli"
-		U__SldLimite(M->C5_CLIENTE,M->C5_LOJACLI,M->C5_TIPO)
+		case _nF3 != 0 .and. _aF3 [_nF3, 2] == "SaldoCli"
+			U__SldLimite(M->C5_CLIENTE,M->C5_LOJACLI,M->C5_TIPO)
 
-	case _nF3 != 0 .and. _aF3 [_nF3, 2] == "Eventos"
-		U_VA_SZNC ("PedVenda", m->c5_num)
+		case _nF3 != 0 .and. _aF3 [_nF3, 2] == "Eventos"
+			U_VA_SZNC ("PedVenda", m->c5_num)
 
-	case _nF3 != 0 .and. _aF3 [_nF3, 2] == "DANFe"
-		_aNotas = {}
-		if ! inclui
-			_sQuery := "SELECT DISTINCT D2_DOC + '/' + D2_SERIE, D2_DOC, D2_SERIE"
-			_sQuery +=  " FROM " + RetSQLName ("SD2")
-			_sQuery += " WHERE D_E_L_E_T_ = ''"
-			_sQuery +=   " AND D2_FILIAL  = '" + xfilial ("SD2") + "'"
-			_sQuery +=   " AND D2_PEDIDO  = '" + m->c5_num + "'"
-			_aNotas = aclone (U_Qry2Array (_sQuery))
-		endif
-		if len (_aNotas) == 0
-			u_help ("Nao encontrei nota fiscal gerada para este pedido.")
-		else
-			if len (_aNotas) > 1
-				_nNota = U_F3Array (_aNotas, "Notas geradas por este pedido", _aCols, oMainWnd:nClientWidth / 4, oMainWnd:nClientHeight / 3, "Pedido gerou mais de uma nota", "", .F.)
+		case _nF3 != 0 .and. _aF3 [_nF3, 2] == "DANFe"
+			_aNotas = {}
+			if ! inclui
+				_sQuery := "SELECT DISTINCT D2_DOC + '/' + D2_SERIE, D2_DOC, D2_SERIE"
+				_sQuery +=  " FROM " + RetSQLName ("SD2")
+				_sQuery += " WHERE D_E_L_E_T_ = ''"
+				_sQuery +=   " AND D2_FILIAL  = '" + xfilial ("SD2") + "'"
+				_sQuery +=   " AND D2_PEDIDO  = '" + m->c5_num + "'"
+				_aNotas = aclone (U_Qry2Array (_sQuery))
+			endif
+			if len (_aNotas) == 0
+				u_help ("Nao encontrei nota fiscal gerada para este pedido.")
 			else
-				_nNota = 1
+				if len (_aNotas) > 1
+					_nNota = U_F3Array (_aNotas, "Notas geradas por este pedido", _aCols, oMainWnd:nClientWidth / 4, oMainWnd:nClientHeight / 3, "Pedido gerou mais de uma nota", "", .F.)
+				else
+					_nNota = 1
+				endif
+				if _nNota != 0  // Usuario pode ter cancelado a escolha da nota
+					U_ImpDanfe ('2', _aNotas [_nNota, 2], _aNotas [_nNota, 2], _aNotas [_nNota, 3])
+				endif
 			endif
-			if _nNota != 0  // Usuario pode ter cancelado a escolha da nota
-				U_ImpDanfe ('2', _aNotas [_nNota, 2], _aNotas [_nNota, 2], _aNotas [_nNota, 3])
-			endif
-		endif
 	endcase
 
 	U_ML_SRArea (_aAreaAnt)
@@ -121,21 +119,17 @@ static function _Menu ()
 		aCols := aclone (_aColsLib)
 	endif
 return
-	
-
-
-
-//旼컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴커
-//� Funcao que Processa o Saldo Limite Cliente                   �
-//읕컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴켸
+//
+// --------------------------------------------------------------------------
+// Funcao que Processa o Saldo Limite Cliente                   
 User Function _SldLimite(_xCLIENTE,_xLOJA,_xTIPO)
-	Local _aArea    := GetArea()
-	Local _aAreaSA1 := SA1->(GetArea())
-	Local _aAreaSE1 := SE1->(GetArea())
-	Local _xTOTSALDO:= 0
-	Local _xQUANT   := 0
-	Local _xFim     := chr(13)+chr(10)
-	Local _aOpc     := { "Sair" }
+	Local _aArea     := GetArea()
+	Local _aAreaSA1  := SA1->(GetArea())
+	Local _aAreaSE1  := SE1->(GetArea())
+	Local _xTOTSALDO := 0
+	Local _xQUANT    := 0
+	Local _xFim      := chr(13)+chr(10)
+	Local _aOpc      := { "Sair" }
 	
 	If Empty(_xCLIENTE+_xLOJA)
 		Return
@@ -156,8 +150,8 @@ User Function _SldLimite(_xCLIENTE,_xLOJA,_xTIPO)
 	DbSetOrder(2)
 	DbSeek(xFilial("SE1")+_xCLIENTE+_xLOJA)
 	bWhile := {|| !Eof() .And. xFilial("SE1") == SE1->E1_FILIAL .And.;
-	_xCLIENTE  == SE1->E1_CLIENTE .And.;
-	_xLOJA     == SE1->E1_LOJA }
+								   _xCLIENTE  == SE1->E1_CLIENTE .And.;
+						           _xLOJA     == SE1->E1_LOJA }
 	
 	Do While ( Eval(bWhile) )
 		If SubStr(SE1->E1_TIPO,3,1)!="-"
@@ -170,12 +164,12 @@ User Function _SldLimite(_xCLIENTE,_xLOJA,_xTIPO)
 		dbSkip()
 	EndDo
 	
-	nOpc := Aviso("Saldo Limite",;
-	"Cliente           "+SA1->A1_COD+"/"+SA1->A1_LOJA+" - "+SA1->A1_NOME+_xFim+;
-	"Limite de Credito "+Transf(SA1->A1_LC,"@E 999,999,999.99")+_xFim+;
-	"Titulos em Aberto "+Transf(_xTOTSALDO,"@E 999,999,999.99")+_xFim+;
-	"Saldo Limite      "+Transf(SA1->A1_LC-_xTOTSALDO,"@E 999,999,999.99");
-	,_aOpc,3)
+	nOpc := Aviso(  "Saldo Limite"	,;
+					"Cliente           " + SA1->A1_COD + "/" + SA1->A1_LOJA + " - " + SA1->A1_NOME + _xFim +	;
+					"Limite de Credito " + Transf(SA1->A1_LC,"@E 999,999,999.99") + _xFim +						;
+					"Titulos em Aberto " + Transf(_xTOTSALDO,"@E 999,999,999.99") + _xFim +						;
+					"Saldo Limite      " + Transf(SA1->A1_LC-_xTOTSALDO,"@E 999,999,999.99")					;
+					,_aOpc,3)
 	
 	RestArea(_aAreaSE1)
 	RestArea(_aAreaSA1)

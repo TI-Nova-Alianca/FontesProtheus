@@ -11,24 +11,24 @@
 // #Modulos           
 
 // Historico de alteracoes:
-// 19/01/2010 - Robert - Testa variavel oMainWnd para ver se existe interf. com usuario,
-//                       pois a funcao IsBlind () nao atendeu rotinas automaticas.
-// 26/10/2012 - Robert - Possibilidade de mostrar dados adicionais.
-// 21/05/2013 - Robert - Criado tratamento para alimentar a variavel _sErroAuto, caso exista.
-// 12/09/2014 - Robert - Criado tratamento para modulo ACD.
-// 09/08/2015 - Robert - Passa a usar cValToChar () quando concatenar dados, pois nao se sabe o que vai ser recebido.
-// 26/10/2015 - Robert - Gravava os dados adicionais antes da mensagem (no arquivo de log).
-// 04/01/2016 - Robert - Grava na console somente quendo nao puder gerar arquivo de log.
-// 24/05/2016 - Robert - Grava mensagem no objeto _oBatch, caso exista.
-// 07/05/2019 - Robert - Concatena mensagem no objeto _oBatch somente se ainda nao constar no mesmo.
-// 03/01/2020 - Robert - Novo parametro _lErro usado para alimentar variaveis private. 
-// 13/01/2020 - Robert - Melhoria tratamento erros.
-// 19/05/2020 - Robert - Quebra texto quando muito long, para caber em tela.
-// 09/06/2020 - Robert - Tratamento para usar a funcao U_Log2.
-// 09/07/2020 - Robert - Desabilitadas chamadas da funcao U_LOG().
-// 21/07/2020 - Robert - Passa a gravar log e console sempre.
+// 19/01/2010 - Robert  - Testa variavel oMainWnd para ver se existe interf. com usuario,
+//                        pois a funcao IsBlind () nao atendeu rotinas automaticas.
+// 26/10/2012 - Robert  - Possibilidade de mostrar dados adicionais.
+// 21/05/2013 - Robert  - Criado tratamento para alimentar a variavel _sErroAuto, caso exista.
+// 12/09/2014 - Robert  - Criado tratamento para modulo ACD.
+// 09/08/2015 - Robert  - Passa a usar cValToChar () quando concatenar dados, pois nao se sabe o que vai ser recebido.
+// 26/10/2015 - Robert  - Gravava os dados adicionais antes da mensagem (no arquivo de log).
+// 04/01/2016 - Robert  - Grava na console somente quendo nao puder gerar arquivo de log.
+// 24/05/2016 - Robert  - Grava mensagem no objeto _oBatch, caso exista.
+// 07/05/2019 - Robert  - Concatena mensagem no objeto _oBatch somente se ainda nao constar no mesmo.
+// 03/01/2020 - Robert  - Novo parametro _lErro usado para alimentar variaveis private. 
+// 13/01/2020 - Robert  - Melhoria tratamento erros.
+// 19/05/2020 - Robert  - Quebra texto quando muito long, para caber em tela.
+// 09/06/2020 - Robert  - Tratamento para usar a funcao U_Log2.
+// 09/07/2020 - Robert  - Desabilitadas chamadas da funcao U_LOG().
+// 21/07/2020 - Robert  - Passa a gravar log e console sempre.
+// 24/09/2021 - Claudia - Incluido o tratamento para retorno de mensagem WS.
 //
-
 // --------------------------------------------------------------------------
 user function Help (_sMsg, _sDAdic, _lHlpErro)
 	local _nQuebra := 0
@@ -54,6 +54,11 @@ user function Help (_sMsg, _sDAdic, _lHlpErro)
 		//ConOut ("Dados adicionais: " + _sDAdic)
 	endif
 
+	if ! _lHlpErro
+		if type('_sMsgRetWS') == 'C'
+			_sMsgRetWS := cValToChar(_sMsg)
+		endif
+	endif
 	// Tratamentos em caso de mensagem de erro.
 	_lHlpErro := iif (_lHlpErro == NIL, .F., _lHlpErro)
 	if _lHlpErro != NIL .and. _lHlpErro
