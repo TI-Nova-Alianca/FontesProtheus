@@ -58,6 +58,7 @@ Static Function _BuscaRecebiveis(dDataIni, dDataFin)
     nNumReg := len(oJSON)
 
     u_log2('aviso', 'Pagar.me: Qnt. registros:' + alltrim(Str(nNumReg)))
+    
     If nNumReg == 0
         u_log2('aviso', 'Verifique a chave API')
     EndIf
@@ -124,7 +125,9 @@ Static Function _BuscaRecebiveis(dDataIni, dDataFin)
             u_help("Sem registros")
         EndIf
     Endif
-
+    If _sTipo == '2'
+        u_help("Processo finalizado")
+    EndIf
 Return
 //
 // -----------------------------------------------------------------------------------
@@ -279,9 +282,14 @@ Static Function MontaLinkReceb(dDataIni, dDataFin)
     _sMes   := PADL(alltrim(str(Month(dDataFin))),2,'0')
     _sAno   := alltrim(str(Year(dDataFin)))
     _sDt02  := _sAno +"-"+_sMes+"-" + _sDia
-    _sAkKey := GETMV("VA_PAGARME")//ak_live_NibpfgedhX5VM3nyFWTo5hiBF6TleD
+    _sAkKey := GETMV("VA_PAGARME")//ak_live_W71d1IXZYVxHRMAUPJhdUmuvTH3Iwl
 
-    _sLink := 'https://api.pagar.me/1/payables?count=500&created_at=%3E=' + _sDt01 + 'T00:00:00.000Z&created_at=%3C=' + _sDt02 + 'T23:59:59.999Z&status=paid&api_key=' + alltrim(_sAkKey)
+    // Documentação API: https://docs.pagar.me/v4/reference#status-dos-receb%C3%ADveis
+    _sLink := 'https://api.pagar.me/1/payables?api_key=' + alltrim(_sAkKey) + '&payment_date=>='+ _sDt01 +'T00:00:01.582Z&payment_date=<='+ _sDt02 +'T23:59:59.582Z&status=paid'
+
+
+    //_sLink := 'https://api.pagar.me/1/payables?api_key=' + alltrim(_sAkKey) + '&created_at=>='+ _sDt01 +'T00:00:01.582Z&created_at=<='+ _sDt02 +'T23:59:59.582Z&status=paid'
+    //_sLink := 'https://api.pagar.me/1/payables?count=500&created_at=%3E=' + _sDt01 + 'T00:00:00.000Z&created_at=%3C=' + _sDt02 + 'T23:59:59.999Z&status=paid&api_key=' + alltrim(_sAkKey)
 Return _sLink
 //
 // -----------------------------------------------------------------------------------
