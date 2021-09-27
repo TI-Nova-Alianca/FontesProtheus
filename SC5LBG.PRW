@@ -70,7 +70,7 @@ user function SC5LBGLG (_lRetCores)
 	local _i       := 0
 
 	aadd (_aCores, {"'X'$sc5->c5_vabloq", 'BR_PRETO',    'Liberacao negada'})
-	aadd (_aCores, {"!'X'$sc5->c5_vabloq.and.'M'$sc5->c5_vabloq.and.'p'$sc5->c5_vabloq"	, 'BR_LARANJA'	, 'Bloq.por margem e preco'	})
+	aadd (_aCores, {"!'X'$sc5->c5_vabloq.and.'M'$sc5->c5_vabloq.and.'P'$sc5->c5_vabloq"	, 'BR_LARANJA'	, 'Bloq.por margem e preco'	})
 	aadd (_aCores, {"!'X'$sc5->c5_vabloq.and.'F'$sc5->c5_vabloq"						, 'BR_MARRON'	, 'Bonif.sem faturamento'	})
 	aadd (_aCores, {"!'X'$sc5->c5_vabloq.and.'P'$sc5->c5_vabloq"						, 'BR_VERMELHO'	, 'Bloq.por preco'			})
 	aadd (_aCores, {"!'X'$sc5->c5_vabloq.and.'M'$sc5->c5_vabloq"						, 'BR_AMARELO'	, 'Bloq.por margem'			})
