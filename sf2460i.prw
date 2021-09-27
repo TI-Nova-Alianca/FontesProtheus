@@ -139,6 +139,7 @@
 // 12/07/2021 - Robert  - Representante 328 nao quer que seja impresso seu nome nos dados adicionais (GLPI 10472).
 // 11/08/2021 - Robert  - Grava obs do pedido na cta.corrente associados, quando compra de mudas (GLPI 10673).
 // 10/09/2021 - Claudia - Gravação de conta corrente para venda de açucar mascavo para associados. GLPI: 10916
+// 27/09/2021 - Claudia - Ajustadas validações para envio de email. GLPI: 10927
 //
 // ---------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
@@ -528,18 +529,71 @@ return
 // --------------------------------------------------------------------------
 // Envia e-mail de notificacao em determinadas condicoes.
 static function _Notifica ()
-	local _sMsg   := ""
+	Local _oSQL     := ClsSQL ():New ()
+	Local _sMsg     := ""
+	Local _aDados   := {}
+	Local _x        := 0
+	Local _nVfcpdif := 0
+	Local _nDifal   := 0
+	Local _nIcmsRet := 0
 
-	if cFilAnt == '01' .and. sf2 -> f2_est $ "ES/DF/MA/RO/AC/AM/RR/PA/AP/TO/PI/CE/RN/PB/PE/AL/MS/MT/GO/SE/BA" 
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 	   F3_VFCPDIF "
+	_oSQL:_sQuery += "    ,F3_DIFAL "
+	_oSQL:_sQuery += "    ,F3_ICMSRET "
+	_oSQL:_sQuery += " FROM " + RetSQLName ("SF2") + " AS SF2 "
+	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SF3") + " AS SF3 "
+	_oSQL:_sQuery += " 		ON SF3.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " 			AND SF3.F3_FILIAL  = SF2.F2_FILIAL "
+	_oSQL:_sQuery += " 			AND SF3.F3_NFISCAL = SF2.F2_DOC "
+	_oSQL:_sQuery += " 			AND SF3.F3_SERIE   = SF2.F2_SERIE "
+	_oSQL:_sQuery += " 			AND SF3.F3_CLIEFOR = SF2.F2_CLIENTE "
+	_oSQL:_sQuery += " 			AND SF3.F3_LOJA    = SF2.F2_LOJA "
+	_oSQL:_sQuery += " WHERE SF2.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " AND SF2.F2_EST NOT IN ('RS', 'RJ', 'PR', 'SC', 'MG', 'SP') "
+	_oSQL:_sQuery += " AND SF2.F2_FILIAL  = '" + sf2 -> f2_filial  + "'"
+	_oSQL:_sQuery += " AND SF2.F2_DOC     = '" + sf2 -> f2_doc     + "'"
+	_oSQL:_sQuery += " AND SF2.F2_SERIE   = '" + sf2 -> f2_serie   + "'"
+	_oSQL:_sQuery += " AND SF2.F2_CLIENTE = '" + sf2 -> f2_cliente + "'"
+	_oSQL:_sQuery += " AND SF2.F2_LOJA    = '" + sf2 -> f2_loja    + "'"
+	_aDados := aclone (_oSQL:Qry2Array ())
+
+	For _x := 1 to Len(_aDados)
+		If _aDados[_x, 1] > 0
+			_nVfcpdif += 1
+		EndIf
+
+		If _aDados[_x, 2] > 0
+			_nDifal += 1
+		EndIf
+
+		If _aDados[_x, 3] > 0
+			_nIcmsRet += 1
+		EndIf
+	Next
+
+	If _nVfcpdif > 0 .or. _nDifal > 0 .or. _nIcmsRet > 0 
 		_sMsg = "NF " + sf2 -> f2_doc + " emitida para " + sf2 -> f2_est + " Verifique GUIA/ST"
  		U_ZZUNU ({'003'}, _sMsg, _sMsg)
-	endif
+	EndIf
+Return
+// //
+// // --------------------------------------------------------------------------
+// // Envia e-mail de notificacao em determinadas condicoes.
+// static function _Notifica ()
+// 	local _sMsg   := ""
+
+// 	if cFilAnt == '01' .and. sf2 -> f2_est $ "ES/DF/MA/RO/AC/AM/RR/PA/AP/TO/PI/CE/RN/PB/PE/AL/MS/MT/GO/SE/BA" 
+// 		_sMsg = "NF " + sf2 -> f2_doc + " emitida para " + sf2 -> f2_est + " Verifique GUIA/ST"
+//  		U_ZZUNU ({'003'}, _sMsg, _sMsg)
+// 	endif
 	
-	if cFilAnt == '07/08/09/10/13' .and. sf2 -> f2_est $ "AC / AM / RR / PA / AP / TO / MA / PI / CE / RN / PB / PE / AL / SE / BA / MG / ES / RJ / SP / PR / SC / RS / MS / MT / G0" 
-		_sMsg = "NF " + sf2 -> f2_doc + " emitida para " + sf2 -> f2_est + " Verifique GUIA/ST"
- 		U_ZZUNU ({'003'}, _sMsg, _sMsg)
-	endif
-return
+// 	if cFilAnt == '07/08/09/10/13' .and. sf2 -> f2_est $ "AC / AM / RR / PA / AP / TO / MA / PI / CE / RN / PB / PE / AL / SE / BA / MG / ES / RJ / SP / PR / SC / RS / MS / MT / G0" 
+// 		_sMsg = "NF " + sf2 -> f2_doc + " emitida para " + sf2 -> f2_est + " Verifique GUIA/ST"
+//  		U_ZZUNU ({'003'}, _sMsg, _sMsg)
+// 	endif
+// return
 //
 // --------------------------------------------------------------------------
 // Verificacoes no pedido de venda.
