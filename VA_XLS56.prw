@@ -11,6 +11,7 @@
 // #Modulos 		  #FIS
 //
 // Historico de alteracoes:
+// 27/09/2021 - Claudia - Adicionado campo F4_CSTPIS
 //
 // --------------------------------------------------------------------------
 User Function VA_XLS56 ()
@@ -138,6 +139,7 @@ Static Function _Gera()
     _oSQL:_sQuery += " 	    END AS IND_NAT_FRET "
     _oSQL:_sQuery += "    ,F4_CODBCC AS CODBC "
     _oSQL:_sQuery += "    ,D1_CONTA AS CONTA "
+    _oSQL:_sQuery += "    ,F4_CSTPIS AS SITITRBPIS "
     _oSQL:_sQuery += " FROM " + RetSQLName ("SD1") + " SD1 "
     _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA2") + " SA2 "
     _oSQL:_sQuery += " 	ON (SA2.D_E_L_E_T_ = '' "
