@@ -1870,26 +1870,27 @@ Static Function _PedidosBloq()
 	_aPed := aclone (_oSQL:Qry2Array ())
 
 	_XmlRet += "<BuscaPedidosBloqueados>"
+	_XmlRet += "	<Registro>"
 
 	For _x:= 1 to Len(_aPed)
-		_XmlRet += "	<Registro>"
-		_XmlRet += "		<Filial>"			+ _aPed [_x, 1] + "</Filial>"
-		_XmlRet += "		<Pedido>"			+ _aPed [_x, 2] + "</Pedido>"
-		_XmlRet += "		<Emissao>"			+ _aPed [_x, 3] + "</Emissao>"
-		_XmlRet += "		<Cliente>"			+ _aPed [_x, 4] + "</Cliente>"
-		_XmlRet += "		<Loja>"				+ _aPed [_x, 5] + "</Loja>"
-		_XmlRet += "		<Nome>"				+ _aPed [_x, 6] + "</Nome>"
-		_XmlRet += "		<Uf>"				+ _aPed [_x, 7] + "</Uf>"
-		_XmlRet += "		<ValorFaturamento>"	+ _aPed [_x, 8] + "</ValorFaturamento>"
-		_XmlRet += "		<MargemContr>"		+ _aPed [_x, 9] + "</MargemContr>"
-		_XmlRet += "		<VarPrcAnt>"		+ _aPed [_x,10] + "</VarPrcAnt>"
-		_XmlRet += "		<Status>"			+ _aPed [_x,11] + "</Status>"
-		_XmlRet += "		<Bloqueio>"			+ _aPed [_x,12] + "</Bloqueio>"
-		_XmlRet += "		<Vendedor>"			+ _aPed [_x,13] + "</Vendedor>"
-		_XmlRet += "		<Usuario>"			+ _aPed [_x,14] + "</Usuario>"
-		_XmlRet += "		<TipoPed>"			+ _aPed [_x,15] + "</TipoPed>"
-		_XmlRet += "		<TipoFrete>"		+ _aPed [_x,16] + "</TipoFrete>"
-		_XmlRet += "		<PedidoCliente>"	+ _aPed [_x,17] + "</PedidoCliente>"
+		_XmlRet += "		<RegistroItem>"
+		_XmlRet += "			<Filial>"			+ _aPed [_x, 1] + "</Filial>"
+		_XmlRet += "			<Pedido>"			+ _aPed [_x, 2] + "</Pedido>"
+		_XmlRet += "			<Emissao>"			+ _aPed [_x, 3] + "</Emissao>"
+		_XmlRet += "			<Cliente>"			+ _aPed [_x, 4] + "</Cliente>"
+		_XmlRet += "			<Loja>"				+ _aPed [_x, 5] + "</Loja>"
+		_XmlRet += "			<Nome>"				+ _aPed [_x, 6] + "</Nome>"
+		_XmlRet += "			<Uf>"				+ _aPed [_x, 7] + "</Uf>"
+		_XmlRet += "			<ValorFaturamento>"	+ _aPed [_x, 8] + "</ValorFaturamento>"
+		_XmlRet += "			<MargemContr>"		+ _aPed [_x, 9] + "</MargemContr>"
+		_XmlRet += "			<VarPrcAnt>"		+ _aPed [_x,10] + "</VarPrcAnt>"
+		_XmlRet += "			<Status>"			+ _aPed [_x,11] + "</Status>"
+		_XmlRet += "			<Bloqueio>"			+ _aPed [_x,12] + "</Bloqueio>"
+		_XmlRet += "			<Vendedor>"			+ _aPed [_x,13] + "</Vendedor>"
+		_XmlRet += "			<Usuario>"			+ _aPed [_x,14] + "</Usuario>"
+		_XmlRet += "			<TipoPed>"			+ _aPed [_x,15] + "</TipoPed>"
+		_XmlRet += "			<TipoFrete>"		+ _aPed [_x,16] + "</TipoFrete>"
+		_XmlRet += "			<PedidoCliente>"	+ _aPed [_x,17] + "</PedidoCliente>"
 		//_XmlRet += "		<McPed1>"			+ _nMCPed1 		+ "</McPed1>"
 		//_XmlRet += "		<McPed2>"			+ _nMCPed2 		+ "</McPed2>"
 		//_XmlRet += "		<lGrp004>"			+ _lGrp004 		+ "</lGrp004>"
@@ -1922,8 +1923,10 @@ Static Function _PedidosBloq()
 		_oSQL:Log ()
 		_aItem := aclone (_oSQL:Qry2Array ())
 
+		_XmlRet += "		<ItensPedido>"
 		For _y:= 1 to Len(_aItem)
-			_XmlRet += "		<RegistroItem>"
+			
+			_XmlRet += "		<ItensPedidoItem> "
 			_XmlRet += "			<Filial>"		+ _aItem[_y, 1] + "</Filial>"
 			_XmlRet += "			<Item>"			+ _aItem[_y, 2] + "</Item>"
 			_XmlRet += "			<Produto>"		+ _aItem[_y, 3] + "</Produto>"
@@ -1934,11 +1937,15 @@ Static Function _PedidosBloq()
 			_XmlRet += "			<PrcUnitario>"	+ _aItem[_y, 8] + "</PrcUnitario>"
 			_XmlRet += "			<Valor>"		+ _aItem[_y, 9] + "</Valor>"
 			_XmlRet += "			<Tes>"			+ _aItem[_y,10] + "</Tes>"
-			_XmlRet += "		</RegistroItem>"
+			_XmlRet += "		</ItensPedidoItem> "
 		Next
-		_XmlRet += "	</Registro>"		
+		_XmlRet += "		</ItensPedido>"	
+		_XmlRet += "		</RegistroItem>"	
 	Next
+	_XmlRet += "	</Registro>"
 	_XmlRet += "</BuscaPedidosBloqueados>"
+
+	u_log2 ('info', _XmlRet)
 
 	_sMsgRetWS := _XmlRet
 	u_logFim ()
