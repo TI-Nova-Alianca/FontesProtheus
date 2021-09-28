@@ -108,6 +108,7 @@ user function BatSafr (_sQueFazer, _lAjustar)
 		_MailAcomp ()
 	
 	// Gera titulos na conta corrente referentes as notas de compra (a partir de 2021 geramos direto como compra) - GLPI 9592
+	// Esses titulos nao sao gerados no momento de emissao da contranota por que fica muito demorado.
 	elseif _sQueFazer == '7'
 		_GeraSZI ()
 

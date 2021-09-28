@@ -60,6 +60,7 @@
 // 30/08/2021 - Robert  - Ajustadas ou desabilitadas verificacoes que usavam as tabelas VA_USR*
 // 31/08/2021 - Robert  - Criado atributo UltVerif para ajudar em loops que executam todas as validacoes (GLPI 10876)
 // 16/09/2021 - Robert  - Ajustes verif. 73 e 80 (desconsiderar deletados e usr.bloqueados).
+// 27/09/2021 - Robert  - Adicionada verificacao de modulos na verificacao 74
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -3018,12 +3019,6 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Setores    = 'INF'
 			::Descricao  = 'Usuarios: Usuario nao deveria ter ACESSOS ligados a ele. Os ACESSOS deveriam ser dados aos grupos.'
 /*
-			::Query := "SELECT ID_USR, NOME, ORIGEM_ACESSO"
-			::Query +=  " FROM VA_VUSR_ACESSOS_USUARIO"
-			::Query += " WHERE REGRA_GRUPO = 'S'"
-			::Query +=   " AND UPPER (ORIGEM_ACESSO) LIKE '%ACESSOS DO USUARIO%'"
-			::Query += " ORDER BY ID_USR"
-*/
 			::Query := "SELECT A.USR_ID, U.USR_CODIGO, A.USR_CODACESSO"
 			::Query +=  " FROM SYS_USR_ACCESS A, SYS_USR U"
 			::Query += " WHERE A.D_E_L_E_T_ = ''"
@@ -3033,6 +3028,29 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=   " AND A.USR_ACESSO = 'T'"
 			::Query +=   " AND A.USR_ID NOT IN ('000000')"
 			::Query += " ORDER BY A.USR_ID"
+*/
+			::Query := "WITH C AS (
+			::Query += "SELECT A.USR_ID, U.USR_CODIGO, CAST (A.USR_CODACESSO AS VARCHAR (20)) AS CODACESSO"
+			::Query +=  " FROM SYS_USR_ACCESS A, SYS_USR U"
+			::Query += " WHERE A.D_E_L_E_T_ = ''"
+			::Query +=   " AND U.D_E_L_E_T_ = ''"
+			::Query +=   " AND U.USR_ID = A.USR_ID"
+			::Query +=   " AND U.USR_MSBLQL != '1'"
+			::Query +=   " AND A.USR_ACESSO = 'T'"
+			::Query +=   " AND A.USR_ID NOT IN ('000000')"
+			::Query += " UNION ALL"
+			::Query += " SELECT SUM.USR_ID, SU.USR_CODIGO, SUM.USR_CODMOD"
+			::Query += " FROM SYS_USR_MODULE SUM, SYS_USR SU"
+			::Query += " WHERE SU.D_E_L_E_T_ = ''"
+			::Query += " AND SU.USR_ID = SUM.USR_ID"
+			::Query += " AND SU.USR_MSBLQL != '1'"
+			::Query += " AND SUM.D_E_L_E_T_ = ''"
+			::Query += " AND USR_ACESSO = 'T'"
+			::Query += " AND SUM.USR_ID NOT IN ('000000')"
+			::Query += " )"
+			::Query += " SELECT *"
+			::Query += " FROM C"
+			::Query += " ORDER BY USR_ID, CODACESSO"
 
 		case ::Numero == 75
 			::Ativa     = .F.  // Temos apenas 1 grupo generico por enquanto. Robert, 30/08/2021
