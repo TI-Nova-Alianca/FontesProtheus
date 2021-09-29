@@ -1946,6 +1946,7 @@ Static Function _PedidosBloq()
 	_XmlRet += "</BuscaPedidosBloqueados>"
 
 	u_log2 ('info', _XmlRet)
+	u_log (_XmlRet)
 
 	_sMsgRetWS := _XmlRet
 	u_logFim ()
