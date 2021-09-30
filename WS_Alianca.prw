@@ -73,7 +73,8 @@
 // 30/08/2021 - Robert  - Tag ReaMes alterada para RealizadoNoMes na consulta de orcamentos (GLPI 8893)
 // 21/09/2021 - Claudia - Incluida a ação "BuscaPedidosBloqueados". GLPI: 7792
 // 21/09/2021 - Claudia - Incluida a ação "GravaBloqueioGerencial". GLPI: 7792
-// 
+// 30/09/2021 - Claudia - Ajustes nos campos da rotina "BuscaPedidosBloqueados". GLPI: 7792
+//
 // --------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
 #INCLUDE "PROTHEUS.CH"
@@ -1828,11 +1829,6 @@ Static Function _PedidosBloq()
 	local _aItem    := {}
 	local _x        := 0
 	local _y        := 0
-	//local _nMCPed1  := GetMv ("VA_MCPED1")
-	//local _nMCPed2  := GetMv ("VA_MCPED2")
-	//local _lGrp004  := iif(U_ZZUVL ('004',,.F.) == .T., 'T', 'F')
-	//local _lGrp081  := iif(U_ZZUVL ('081',,.F.) == .T., 'T', 'F')
-	//local _lGrp082  := iif(U_ZZUVL ('082',,.F.) == .T., 'T', 'F')
 
 	u_logIni ()
 
@@ -1867,38 +1863,33 @@ Static Function _PedidosBloq()
 	_oSQL:_sQuery += " AND C5_NOTA != 'XXXXXXXXX' " // Residuo eliminado (nao sei por que as vezes grava com 9 posicoes)
 	_oSQL:_sQuery += " AND C5_NOTA != 'XXXXXX'  " 	// Residuo eliminado (nao sei por que as vezes grava com 6 posicoes)
 	_oSQL:Log ()
-	_aPed := aclone (_oSQL:Qry2Array ())
+	_aPed := aclone(_oSQL:Qry2Array ())
 
 	_XmlRet += "<BuscaPedidosBloqueados>"
 	_XmlRet += "	<Registro>"
 
 	For _x:= 1 to Len(_aPed)
 		_XmlRet += "		<RegistroItem>"
-		_XmlRet += "			<Filial>"			+ _aPed [_x, 1] + "</Filial>"
-		_XmlRet += "			<Pedido>"			+ _aPed [_x, 2] + "</Pedido>"
-		_XmlRet += "			<Emissao>"			+ _aPed [_x, 3] + "</Emissao>"
-		_XmlRet += "			<Cliente>"			+ _aPed [_x, 4] + "</Cliente>"
-		_XmlRet += "			<Loja>"				+ _aPed [_x, 5] + "</Loja>"
-		_XmlRet += "			<Nome>"				+ _aPed [_x, 6] + "</Nome>"
-		_XmlRet += "			<Uf>"				+ _aPed [_x, 7] + "</Uf>"
-		_XmlRet += "			<ValorFaturamento>"	+ _aPed [_x, 8] + "</ValorFaturamento>"
-		_XmlRet += "			<MargemContr>"		+ _aPed [_x, 9] + "</MargemContr>"
-		_XmlRet += "			<VarPrcAnt>"		+ _aPed [_x,10] + "</VarPrcAnt>"
-		_XmlRet += "			<Status>"			+ _aPed [_x,11] + "</Status>"
-		_XmlRet += "			<Bloqueio>"			+ _aPed [_x,12] + "</Bloqueio>"
-		_XmlRet += "			<Vendedor>"			+ _aPed [_x,13] + "</Vendedor>"
-		_XmlRet += "			<Usuario>"			+ _aPed [_x,14] + "</Usuario>"
-		_XmlRet += "			<TipoPed>"			+ _aPed [_x,15] + "</TipoPed>"
-		_XmlRet += "			<TipoFrete>"		+ _aPed [_x,16] + "</TipoFrete>"
-		_XmlRet += "			<PedidoCliente>"	+ _aPed [_x,17] + "</PedidoCliente>"
-		//_XmlRet += "		<McPed1>"			+ _nMCPed1 		+ "</McPed1>"
-		//_XmlRet += "		<McPed2>"			+ _nMCPed2 		+ "</McPed2>"
-		//_XmlRet += "		<lGrp004>"			+ _lGrp004 		+ "</lGrp004>"
-		//_XmlRet += "		<lGrp081>"			+ _lGrp081 		+ "</lGrp081>"
-		//_XmlRet += "		<lGrp082>"			+ _lGrp082 		+ "</lGrp082>"
+		_XmlRet += "			<Filial>"			+ _aPed[_x, 1] + "</Filial>"
+		_XmlRet += "			<Pedido>"			+ _aPed[_x, 2] + "</Pedido>"
+		_XmlRet += "			<Emissao>"			+ DTOS(_aPed[_x, 3]) + "</Emissao>"
+		_XmlRet += "			<Cliente>"			+ _aPed[_x, 4] + "</Cliente>"
+		_XmlRet += "			<Loja>"				+ _aPed[_x, 5] + "</Loja>"
+		_XmlRet += "			<Nome>"				+ _aPed[_x, 6] + "</Nome>"
+		_XmlRet += "			<Uf>"				+ _aPed[_x, 7] + "</Uf>"
+		_XmlRet += "			<ValorFaturamento>"	+ alltrim(str(_aPed[_x, 8])) + "</ValorFaturamento>"
+		_XmlRet += "			<MargemContr>"		+ alltrim(str(_aPed[_x, 9])) + "</MargemContr>"
+		_XmlRet += "			<VarPrcAnt>"		+ alltrim(str(_aPed [_x,10])) + "</VarPrcAnt>"
+		_XmlRet += "			<Status>"			+ _aPed[_x,11] + "</Status>"
+		_XmlRet += "			<Bloqueio>"			+ _aPed[_x,12] + "</Bloqueio>"
+		_XmlRet += "			<Vendedor>"			+ _aPed[_x,13] + "</Vendedor>"
+		_XmlRet += "			<Usuario>"			+ _aPed[_x,14] + "</Usuario>"
+		_XmlRet += "			<TipoPed>"			+ _aPed[_x,15] + "</TipoPed>"
+		_XmlRet += "			<TipoFrete>"		+ _aPed[_x,16] + "</TipoFrete>"
+		_XmlRet += "			<PedidoCliente>"	+ _aPed[_x,17] + "</PedidoCliente>"
 
 		_oSQL := ClsSQL():New ()  
-		_oSQL:_sQuery := ""		
+		_oSQL:_sQuery := "" 		
 		_oSQL:_sQuery += " SELECT "
 		_oSQL:_sQuery += " 	   C6_FILIAL "
 		_oSQL:_sQuery += "    ,C6_ITEM "
@@ -1913,8 +1904,8 @@ Static Function _PedidosBloq()
 		_oSQL:_sQuery += " FROM " + RetSQLName ("SC6") + " SC6 "
 		_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA1") + " SA1 "
 		_oSQL:_sQuery += " 	ON SA1.D_E_L_E_T_ = '' "
-		_oSQL:_sQuery += " 		AND A1_COD = C5_CLIENTE "
-		_oSQL:_sQuery += " 		AND A1_LOJA = C5_LOJACLI "
+		_oSQL:_sQuery += " 		AND A1_COD  = SC6.C6_CLI "
+		_oSQL:_sQuery += " 		AND A1_LOJA = SC6.C6_LOJA "
 		_oSQL:_sQuery += " WHERE SC6.D_E_L_E_T_ = '' "
 		_oSQL:_sQuery += " AND SC6.C6_FILIAL = '" + _aPed[_x, 1] + "'"
 		_oSQL:_sQuery += " AND SC6.C6_NUM    = '" + _aPed[_x, 2] + "'"
@@ -1925,17 +1916,16 @@ Static Function _PedidosBloq()
 
 		_XmlRet += "		<ItensPedido>"
 		For _y:= 1 to Len(_aItem)
-			
 			_XmlRet += "		<ItensPedidoItem> "
 			_XmlRet += "			<Filial>"		+ _aItem[_y, 1] + "</Filial>"
 			_XmlRet += "			<Item>"			+ _aItem[_y, 2] + "</Item>"
 			_XmlRet += "			<Produto>"		+ _aItem[_y, 3] + "</Produto>"
 			_XmlRet += "			<Descricao>"	+ _aItem[_y, 4] + "</Descricao>"
 			_XmlRet += "			<Unidade>"		+ _aItem[_y, 5] + "</Unidade>"
-			_XmlRet += "			<QtdVendida>"	+ _aItem[_y, 6] + "</QtdVendida>"
-			_XmlRet += "			<PrcVenda>"		+ _aItem[_y, 7] + "</PrcVenda>"
-			_XmlRet += "			<PrcUnitario>"	+ _aItem[_y, 8] + "</PrcUnitario>"
-			_XmlRet += "			<Valor>"		+ _aItem[_y, 9] + "</Valor>"
+			_XmlRet += "			<QtdVendida>"	+ alltrim(str(_aItem[_y, 6])) + "</QtdVendida>"
+			_XmlRet += "			<PrcVenda>"		+ alltrim(str(_aItem[_y, 7])) + "</PrcVenda>"
+			_XmlRet += "			<PrcUnitario>"	+ alltrim(str(_aItem[_y, 8])) + "</PrcUnitario>"
+			_XmlRet += "			<Valor>"		+ alltrim(str(_aItem[_y, 9])) + "</Valor>"
 			_XmlRet += "			<Tes>"			+ _aItem[_y,10] + "</Tes>"
 			_XmlRet += "		</ItensPedidoItem> "
 		Next
@@ -1946,22 +1936,18 @@ Static Function _PedidosBloq()
 	_XmlRet += "</BuscaPedidosBloqueados>"
 
 	u_log2 ('info', _XmlRet)
-	u_log (_XmlRet)
 
 	_sMsgRetWS := _XmlRet
 	u_logFim ()
 Return
 //
 // --------------------------------------------------------------------------
-// Grava retorno da liberaçao degencial de pedidos
+// Grava retorno da liberaçao gerencial de pedidos
 Static Function _GrvLibPed ()
 	local _wFilial 	 := ""
 	local _wPedido	 := ""
 	local _wCliente  := ""
 	local _wLoja 	 := ""
-	//local _wLibera   := "" // S = sim  N = não
-	//local _wBloqueio := "" // C5_VABLOQ  - Bloqueio
-	//local _wMargem   := "" // C5_VAMCONT - MargemContr
 
 	u_logIni ()
 
