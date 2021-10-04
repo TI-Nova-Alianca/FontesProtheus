@@ -44,6 +44,7 @@
 // 17/08/2020 - Robert  - Passa a buscar percentuais de frete na tabela GU9 (regioes fretes) e nao mais no E-Sales, 
 //                        nem historico do cliente (GLPI 8180).
 // 17/05/2021 - Claudia - Ajuste no calculo de margem frete. GLPI: 9883
+// 04/10/2021 - Claudia - Alterada a função _CalcFrt, conforme GLPI: 11009
 //
 // ------------------------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
@@ -528,6 +529,7 @@ static function _CalcFrt ()
 	local _aGUL      := {}
 	local _aGU9      := {}
 	local _nFrete    := 0
+	local _nOkGUL    := 0
 
 	_sFilial := m->c5_filial
 	_sEst    := m->c5_vaest
@@ -547,46 +549,52 @@ static function _CalcFrt ()
 	If len(_aGUL) > 0
 		For _x := 1 to Len(_aGUL)
 			_nFrete := _aGUL[_x, 1]
+			_sTxtEvent += "Usado % de frete para CEP '"+ _sCEP +"' "
+			_nOkGUL := 1
 		Next
-
-		If _nFrete == 0
-			// Se não existir na GUL, busca da GU9 -> 2º opção
-			_oSQL := ClsSQL ():New ()
-			_oSQL:_sQuery := ""
-			_oSQL:_sQuery += " SELECT "
-			_oSQL:_sQuery += " 		GU9_VAPFRE "
-			_oSQL:_sQuery += " FROM " + RetSQLName ("GU9") 
-			_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-			_oSQL:_sQuery += " AND GU9_FILIAL   = '" + _sFilial + "'"
-			_oSQL:_sQuery += " AND GU9_CDUF     = '" + _sEst    + "'"
-			_oSQL:_sQuery += " AND GU9_SIT      = '1'"
-			_aGU9 := aclone (_oSQL:Qry2Array ())
-
-			For _x:=1 to Len(_aGU9)
-				_nFrete := _aGU9[_x, 1]
-			Next
-		EndIf
 	EndIf
 
-	If len(_aGUL) == 0 .or. len(_aGU9) == 0
-		_sTxtEvent += "Nao encontrei percentual de frete para a UF '" + _sEst +  "' e/ou CEP '"+ _sCEP +"' na tabela de regioes de fretes (GUL/GU9)."
-		u_help (_sTxtEvent,, .t.)
-	
-	ElseIf len(_aGUL) > 1 .or. len(_aGU9) > 1
-		_sTxtEvent += "Existe mais de um percentual de frete para a UF '" + _sEst +  "' e/ou CEP '"+ _sCEP +"' na tabela de regioes de fretes (GUL/GU9)."
-		u_help (_sTxtEvent,, .t.)
-	else
-		for _nLinCols = 1 to len (aCols)
-			u_log2 ('debug', GDFieldGet ("C6_VALOR", _nLinCols))
-			if ! GDDeleted (_nLinCols) .and. empty (GDFieldGet ("C6_BLOQ", _nLinCols))
-				_nVlProdut += GDFieldGet ("C6_VALOR", _nLinCols)
-			endif
-		next
+	// Se não existir na GUL ou se for zerado, busca da GU9 -> 2º opção
+	If _nFrete == 0
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT "
+		_oSQL:_sQuery += " 		GU9_VAPFRE "
+		_oSQL:_sQuery += " FROM " + RetSQLName ("GU9") 
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery += " AND GU9_FILIAL   = '" + _sFilial + "'"
+		_oSQL:_sQuery += " AND GU9_CDUF     = '" + _sEst    + "'"
+		_oSQL:_sQuery += " AND GU9_SIT      = '1'"
+		_aGU9 := aclone (_oSQL:Qry2Array ())
 
-		u_log2 ('debug', 'vl prod:' + cvaltochar (_nVlProdut))
-		u_log2 ('debug', 'm->c5_vaVlFat:' + cvaltochar (m->c5_vaVlFat))
-		_nRetFrt = _nVlProdut * _nFrete / 100
-	endif
+		For _x:=1 to Len(_aGU9)
+			_nFrete := _aGU9[_x, 1]
+			_sTxtEvent += "Usado % de frete para UF '"+ _sEst +"' "
+			//u_help (_sTxtEvent,, .t.)
+		Next
+	EndIf
+
+	Do Case
+		Case len(_aGUL) == 0 .and. len(_aGU9) == 0 
+			_sTxtEvent += "Nao encontrado percentual de frete para a UF '" + _sEst +  "' e/ou CEP '"+ _sCEP +"' na tabela de regioes de fretes (GUL/GU9)."
+			u_help (_sTxtEvent,, .t.)
+
+		Case len(_aGUL) > 1 .or. len(_aGU9) > 1
+			_sTxtEvent += "Existe mais de um percentual de frete para a UF '" + _sEst +  "' e/ou CEP '"+ _sCEP +"' na tabela de regioes de fretes (GUL/GU9)."
+			u_help (_sTxtEvent,, .t.)
+
+		otherwise
+			for _nLinCols = 1 to len (aCols)
+				u_log2 ('debug', GDFieldGet ("C6_VALOR", _nLinCols))
+				if ! GDDeleted (_nLinCols) .and. empty (GDFieldGet ("C6_BLOQ", _nLinCols))
+					_nVlProdut += GDFieldGet ("C6_VALOR", _nLinCols)
+				endif
+			next
+
+			u_log2 ('debug', 'vl prod:' + cvaltochar (_nVlProdut))
+			u_log2 ('debug', 'm->c5_vaVlFat:' + cvaltochar (m->c5_vaVlFat))
+			_nRetFrt = _nVlProdut * _nFrete / 100
+	EndCase
 
 	if _nFrete > 0
 		_sTxtEvent += "% frete p/" + cvaltochar (m->c5_vaest) + " e/ou " + _sCEP + " cfe.tabela regioes frete: " + cvaltochar (_nFrete) + " -> valor frete: " + alltrim (GetMv ('MV_SIMB1')) + " " + alltrim (transform (_nRetFrt, "@E 999,999,999.99"))
@@ -626,79 +634,4 @@ return _nRetFrt
 Static Function _RetType(_var)
 	_type := type(_var)
 Return _type
-//
-//
-//
-//
-// static function _CalcFrt ()
-// 	local _nRetFrt   := 0
-// 	local _oSQL      := NIL
-// 	local _aFrtUF    := {}
-// 	local _oEvtAnt   := NIL
-// 	local _nRegSZN   := 0
-// 	local _sTxtEvent := ''
-// 	local _nVlProdut := 0
-// 	local _nLinCols  := 0
-
-// 	_oSQL := ClsSQL ():New ()
-// 	_oSQL:_sQuery := ""
-// 	_oSQL:_sQuery += "select GU9_VAPFRE"
-// 	_oSQL:_sQuery += "  from " + RetSQLName ("GU9") + " GU9 "
-// 	_oSQL:_sQuery += " where D_E_L_E_T_ != '*'"
-// 	_oSQL:_sQuery +=   " and GU9_FILIAL  = '" + xfilial ("GU9") + "'"
-// 	_oSQL:_sQuery +=   " and GU9_CDUF    = '" + m->c5_vaest + "'"
-// 	_oSQL:_sQuery +=   " and GU9_SIT     = '1'"  // 1=ativo;2=inativo
-// 	_oSQL:Log ()
-// 	_aFrtUF = aclone (_oSQL:Qry2Array (.F., .F.))
-// 	if len (_aFrtUF) == 0
-// 		_sTxtEvent += "Nao encontrei percentual de frete para a UF '" + m->c5_vaest +  "' na tabela de regioes de fretes (GU9)."
-// 		u_help (_sTxtEvent,, .t.)
-// 	elseif len (_aFrtUF) > 1
-// 		_sTxtEvent += "Encontrei mais de um percentual de frete para a UF '" + m->c5_vaest +  "' na tabela de regioes de fretes (GU9)."
-// 		u_help (_sTxtEvent,, .t.)
-// 	else
-
-// 		for _nLinCols = 1 to len (aCols)
-// 			u_log2 ('debug', GDFieldGet ("C6_VALOR", _nLinCols))
-// 			if ! GDDeleted (_nLinCols) .and. empty (GDFieldGet ("C6_BLOQ", _nLinCols))
-// 				_nVlProdut += GDFieldGet ("C6_VALOR", _nLinCols)
-// 			endif
-// 		next
-// 		//_nRetFrt = m->c5_vaVlFat * _aFrtUF [1, 1] / 100
-// 		u_log2 ('debug', 'vl prod:' + cvaltochar (_nVlProdut))
-// 		u_log2 ('debug', 'm->c5_vaVlFat:' + cvaltochar (m->c5_vaVlFat))
-// 		_nRetFrt = _nVlProdut * _aFrtUF [1, 1] / 100
-// 	endif
-// 	if len (_aFrtUF) == 1
-// 		_sTxtEvent += "Percent.frete p/" + cvaltochar (m->c5_vaest) + " cfe.tabela regioes frete: " + cvaltochar (_aFrtUF [1, 1]) + " -> valor frete: " + alltrim (GetMv ('MV_SIMB1')) + " " + alltrim (transform (_nRetFrt, "@E 999,999,999.99"))
-// 	endif
-
-// 	if ! empty (_sTxtEvent)
-// 		_oEventoCF = ClsEvent ():New ()
-// 		_oEventoCF:Texto = _sTxtEvent
-// 		_oEventoCF:CodEven = 'SC5008'
-// 		_oEventoCF:PedVenda = m->c5_num
-// 		_oEventoCF:Cliente = m->c5_cliente
-// 		_oEventoCF:LojaCli = m->c5_lojacli
-
-// 		// Elimina evento anterior, se houver
-// 		_oSQL := ClsSQL ():New ()
-// 		_oSQL:_sQuery := "SELECT R_E_C_N_O_"
-// 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZN") + " SZN "
-// 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-// 		_oSQL:_sQuery +=   " AND ZN_FILIAL  = '" + xfilial ("SZN") + "'"
-// 		_oSQL:_sQuery +=   " AND ZN_PEDVEND = '" + m->c5_num + "'"
-// 		_oSQL:_sQuery +=   " AND ZN_CODEVEN = 'SC5008'"
-// 		_nRegSZN = _oSQL:RetQry (1, .F.)
-// 		if _nRegSZN > 0
-// 			_oEvtAnt := ClsEvent ():New ()
-// 			_oEvtAnt:RecnoSZN = _nRegSZN
-// 			_oEvtAnt:Exclui ()
-// 		endif
-		
-// 		// Grava o novo evento
-// 		_oEventoCF:Grava()
-// 	endif
-
-// return _nRetFrt
 
