@@ -22,9 +22,12 @@
 //                      - Antes de permitir a exclusao, verifica se o item existe no Mercanet, FullWMS e NaWeb.
 //                      - Eliminados logs desnecessarios.
 // 20/01/2021 - Cláudia - GLPI:8921 - Incluida verificação de caracteres especiais.
-// 12/02/2021 - Robert  - Incluidas chamadas da funcao U_PerfMon para testes de monitoramento de performance (GLPI 9409)
-// 02/03/2021 - Sandra  - Comentariado Altera campos do modelo de dados adicionais (tabela SA5) foi retirada do parametro mv_cadprod GLPI 8987
+// 12/02/2021 - Robert  - Incluidas chamadas da funcao U_PerfMon para testes de monitoramento de 
+//                        performance (GLPI 9409)
+// 02/03/2021 - Sandra  - Comentariado Altera campos do modelo de dados adicionais (tabela SA5) 
+//                        foi retirada do parametro mv_cadprod GLPI 8987
 // 22/06/2021 - Claudia - Carregado o campo B1_VARMAAL com 000000000 na cópia de produto. GLPI: 10276
+// 04/10/2021 - Claudia - Incluida validação de usuario manutenção. GLPI: 10968
 //
 //---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
@@ -244,6 +247,24 @@ static function _A010TOk ()
 			if m->b1_vlr_ipi != 0 .and. m->b1_ipi != 0
 				u_help ("IPI deve ser informado somente por aliquota (campo '" + alltrim (RetTitle ("B1_IPI")) + "') ou por valor absoluto (campo '" + alltrim (RetTitle ("B1_VLR_IPI")) + "'), mas nao ambos.")
 				_lRet = .F.
+			endif
+		endif
+
+		if _lRet
+			if m->b1_tipo != 'MM' .and. m->b1_tipo != 'MC'
+				_oSQL:= ClsSQL ():New ()
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += " SELECT "
+				_oSQL:_sQuery += " 		SETOR "
+				_oSQL:_sQuery += " FROM VA_FUNCIONARIO_SETOR('" + __CUSERID + "')"
+				_sDados := aclone(_oSQL:Qry2Array ())
+
+				if Len(_sDados)> 0
+					if alltrim(_sDados[1, 1]) == '2008'
+						u_help("Usuário sem permição para alterar produto tipo " + m->b1_tipo)
+						_lRet := .F.
+					endif
+				endif
 			endif
 		endif
 
