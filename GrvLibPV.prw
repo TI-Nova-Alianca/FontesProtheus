@@ -1,6 +1,6 @@
-// Programa:   GrvLibPV
-// Autor:      Robert Koch
-// Data:       21/06/2010
+// Programa.:  GrvLibPV
+// Autor....:  Robert Koch
+// Data.....:  21/06/2010
 // Descricao:  Chamado por botao na tela de pedido de vendas. Grava campo C6_QTDLIB no aCols.
 //
 // Tags para automatizar catalogo de customizacoes:
@@ -26,15 +26,18 @@
 // 16/03/2012 - Robert - Passa a gravar o campo C5_VABLOQ.
 // 15/05/2012 - Robert - Se o pedido jah tinha bloqueio gerencial, o bloqueio nunca mais era removido.
 // 31/05/2012 - Robert - Nao restringe mais a leitura do ultimo pedido a 31/03/12 para bloqueio gerencial.
-// 29/05/2013 - Elaine DWT  - Inclui tratamento para bloqueio gerencial caso o pedido for da tabela 151 e o preco informado estiver abaixo da mesma
+// 29/05/2013 - Elaine DWT  - Inclui tratamento para bloqueio gerencial caso o pedido for da tabela 151 e o preco 
+//                            informado estiver abaixo da mesma
 // 21/08/2013 - Leandro DWT - Inclusão de validação para que somente os usuários do parâmetro possam liberar o pedido de venda
 // 02/06/2015 - Catia   - Validação saldo em verbas a bonificar.
 // 06/07/2015 - Catia   - Alterado para buscar a ST pela rotina MaFisRet na hora de somar o total do pedido
 // 04/08/2015 - Robert  - Nao valida mais o preco da ultima compra para pedidos tipo D/B
-// 23/09/2015 - Robert  - Quando misturava motivos de bonificao com e sem controle de verbas, nem todos os itens eram adicionados no MaFisAdd.
+// 23/09/2015 - Robert  - Quando misturava motivos de bonificao com e sem controle de verbas, nem todos os 
+//                        itens eram adicionados no MaFisAdd.
 // 13/10/2015 - Catia   - Dava mensagem de que o cliente nao tinha saldo e bonificar mas mesmo assim liberava o pedido
 // 22/10/2015 - Catia   - Alterado para no calculo do item bonificado - busque o IPI valor da planilia do MATFISRET
-// 11/07/2016 - Robert  - Chama consulta de margem de contribuicao e deixa campo C5_VABLOQ setado com 'M' caso esteja abaixo da margem minima.
+// 11/07/2016 - Robert  - Chama consulta de margem de contribuicao e deixa campo C5_VABLOQ setado com 'M' 
+//                        caso esteja abaixo da margem minima.
 // 25/10/2016 - Robert  - Dados da ultima venda (preco menor) passa a ser em TXT e nao mais em HTML.
 // 29/03/2017 - Catia   - Itens com eliminação de Resíduo - ainda estava tentando liberar no estoque
 // 28/04/2017 - Robert  - Passa tambem o lote do produto e o pedido para a funcao VerEstq().
@@ -49,23 +52,28 @@
 // 03/07/2018 - Robert  - Funcao Va_McPed() tem novos parametros
 //                      - Cotacao de frete passa a ser chamada diretamente pela funcao de calculo de margem de contribuicao.
 // 17/08/2018 - Catia   - teste de caracteres especiais nas observações
-// 14/11/2018 - Andre   - Adicionado verificação dos campos A1_VAMDANF e A2_VAMDANF para não liberar pedido com email LIXO@NOVAALIANCA.COOP.BR
-// 04/12/2018 - Andre   - Adicionado validação nos CAMPOS A1_EMAIL e A2_EMAIL. Bloqueado inclusão neste campos para conteudo LIXO@NOVA OU NOVALIANCA.
+// 14/11/2018 - Andre   - Adicionado verificação dos campos A1_VAMDANF e A2_VAMDANF para não liberar pedido 
+//                        com email LIXO@NOVAALIANCA.COOP.BR
+// 04/12/2018 - Andre   - Adicionado validação nos CAMPOS A1_EMAIL e A2_EMAIL. Bloqueado inclusão neste campos 
+//                        para conteudo LIXO@NOVA OU NOVALIANCA.
 // 10/12/2018 - Andre   - Validacao para que itens com TES 630 e 657 apenas usuários dos grupos 069 e 066 possam liberar.
 // 25/01/2019 - Andre   - Pesquisa ZX5 alterada de FBUSCACPO para U_RETZX5.
 // 22/05/2019 - Robert  - Liberados caracteres especiais no C5_OBS apenas em base teste (GLPI 5961)
 // 27/05/2019 - Catia   - estava dando erro linha 418 e 427 _lTes 
 // 28/05/2019 - Sandra  - Não valida mais caracteres especias no campo de observacoes conforme GLPI 5961
-// 11/11/2019 - Robert  - Revisado tratamento campo ZA5_FILIAL (tabela passar de compartilhada para exclusiva). GLPI 6987.
+// 11/11/2019 - Robert  - Revisado tratamento campo ZA5_FILIAL (tabela passar de compartilhada para exclusiva). 
+//                        GLPI 6987.
 //                      - Passa a validar campo ZA4_FILIAL na query.
 // 18/11/2019 - Robert  - Iniciadas melhorias bloqueio pedido bonificado sem pedido faturado correspondente
 // 09/04/2020 - Claudia - Incluido o controle de endereço da linha do pedido de venda, conforme GLPI: 7765
-// 20/07/2020 - Robert  - Permissao para liberar pedido de baixa de estoque para ajustes passa a validar acesso 101 e nao mais 069+066.
+// 20/07/2020 - Robert  - Permissao para liberar pedido de baixa de estoque para ajustes passa a validar 
+//                        acesso 101 e nao mais 069+066.
 //                      - Inseridas tags para catalogacao de fontes
-// 09/03/2021 - Claudia - BLoqueio de bonificação. GLPI: 9070
+// 09/03/2021 - Claudia - Bloqueio de bonificação. GLPI: 9070
 // 12/03/2021 - Claudia - Retirado caracteres especiais " e ' da gravação da OBS. GLPI: 9634
+// 05/10/2021 - Claudia - Incluida validação para não permitir liberara pedido sem gravar antes. GLPI: 11009
 //
-// --------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
 user function GrvLibPV (_lLiberar)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _n         := N
@@ -85,6 +93,23 @@ user function GrvLibPV (_lLiberar)
 	local _wdtreajuste   := dtos(GetMv ("VA_DTREAJ"))
 	local _wpercreajuste := GetMv ("VA_PERCREA")
 	local _nLinha    := 0
+
+	// verifica se o pedido esta salvo antes de fazer a liberação
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := " SELECT "
+	_oSQL:_sQuery += " 		C5_NUM "
+	_oSQL:_sQuery += " FROM " + RetSQLName ("SC5")
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " AND C5_FILIAL    = '" + m->c5_filial  + "'"
+	_oSQL:_sQuery += " AND C5_NUM       = '" + m->c5_num     + "'"
+	_oSQL:_sQuery += " AND C5_CLIENTE   = '" + m->c5_cliente + "'"
+	_oSQL:_sQuery += " AND C5_LOJACLI   = '" + m->c5_lojacli + "'"
+	_aPedido := aclone (_oSQL:Qry2Array ())
+
+	if Len(_aPedido) <= 0
+		_lLiberar := .F.
+		u_help("A liberação deve ocorrer após a gravação do pedido!")
+	endif
 
 	if _lLiberar .and. empty (m->c5_vaFEmb)
 		u_help ("Antes de liberar o pedido, o campo '" + alltrim (RetTitle ("C5_VAFEMB")) + "' deve ser informado.")
