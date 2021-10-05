@@ -141,6 +141,7 @@
 // 10/09/2021 - Claudia - Gravação de conta corrente para venda de açucar mascavo para associados. GLPI: 10916
 // 27/09/2021 - Claudia - Ajustadas validações para envio de email. GLPI: 10927
 // 29/09/2021 - Claudia - Tratamento para venda de milho. GLPI: 10994
+// 05/10/2021 - Claudia - Criado novo grupo para email de guia/st grupo 132. GLPI: 11028 
 //
 // ---------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
@@ -576,7 +577,7 @@ static function _Notifica ()
 
 	If _nVfcpdif > 0 .or. _nDifal > 0 .or. _nIcmsRet > 0 
 		_sMsg = "NF " + sf2 -> f2_doc + " emitida para " + sf2 -> f2_est + " Verifique GUIA/ST"
- 		U_ZZUNU ({'003'}, _sMsg, _sMsg)
+ 		U_ZZUNU ({'132'}, _sMsg, _sMsg)
 	EndIf
 Return
 // //
@@ -587,12 +588,12 @@ Return
 
 // 	if cFilAnt == '01' .and. sf2 -> f2_est $ "ES/DF/MA/RO/AC/AM/RR/PA/AP/TO/PI/CE/RN/PB/PE/AL/MS/MT/GO/SE/BA" 
 // 		_sMsg = "NF " + sf2 -> f2_doc + " emitida para " + sf2 -> f2_est + " Verifique GUIA/ST"
-//  		U_ZZUNU ({'003'}, _sMsg, _sMsg)
+//  		U_ZZUNU ({'132'}, _sMsg, _sMsg)
 // 	endif
 	
 // 	if cFilAnt == '07/08/09/10/13' .and. sf2 -> f2_est $ "AC / AM / RR / PA / AP / TO / MA / PI / CE / RN / PB / PE / AL / SE / BA / MG / ES / RJ / SP / PR / SC / RS / MS / MT / G0" 
 // 		_sMsg = "NF " + sf2 -> f2_doc + " emitida para " + sf2 -> f2_est + " Verifique GUIA/ST"
-//  		U_ZZUNU ({'003'}, _sMsg, _sMsg)
+//  		U_ZZUNU ({'132'}, _sMsg, _sMsg)
 // 	endif
 // return
 //
