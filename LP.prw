@@ -65,6 +65,8 @@
 // 16/08/2021 - Claudia - Incluida rotina ZB3(Pagar-me) na conta de credito de cartões. GLPI: 9026
 // 14/09/2021 - Robert  - Eliminados alguns tratamentos ref.cta.corrente associados (GLPI 10503)
 // 15/09/2021 - Robert  - Voltadas alteracoes feitas ontem.
+// 04/10/2021 - Robert  - Ajustado LPAD 666/005 para considerar os CC de final 1409 e 1410 (GLPI 10917)
+//                      - Ajustado LPAD 666/008 para diferencial req.mat.MM entre indl.X adm/coml
 //
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -483,6 +485,8 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 			case substr (SD3->D3_COD, 4, 6) == cFilAnt + '1404' ; _xRet = "701011001041"
 			case substr (SD3->D3_COD, 4, 6) == cFilAnt + '1405' ; _xRet = "701011001042"
 			case substr (SD3->D3_COD, 4, 6) == cFilAnt + '1406' ; _xRet = "701011001043"
+			case substr (SD3->D3_COD, 4, 6) == cFilAnt + '1409' ; _xRet = "701011001049"
+			case substr (SD3->D3_COD, 4, 6) == cFilAnt + '1410' ; _xRet = "701011001047"
 			otherwise
 				//U_AvisaTI ("Sem tratamento para CC '" + substr (SD3->D3_COD, 4, 6) + "' sem tratamento no LPad/seq '" + _sLPad + _sSeq + "' para esta filial. RECNO SD3:" + cvaltochar (sd3 -> (recno ()))
 			endcase
@@ -508,7 +512,11 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 			case SD3->D3_TIPO $ 'II/MA' .and. sd3 -> d3_grupo == '5002'; _xRet = '701010301018'  // Mat.aux.producao - acondicionamento (filme, etc.)
 			case SD3->D3_TIPO == 'EP' .and. substr (sd3 -> d3_cc, 3, 1) $ '1/2' ; _xRet = '701010201008'
 			case SD3->D3_TIPO == 'EP' .and. substr (sd3 -> d3_cc, 3,1) $ '3/4' ; _xRet = '403010101007'
-			case SD3->D3_TIPO == 'MM' ; _xRet = '701010301011'
+
+			// case SD3->D3_TIPO == 'MM' ; _xRet = '701010301011'
+			case SD3->D3_TIPO == 'MM' .and. substr (sd3 -> d3_cc, 3, 1) $ '1/2' ; _xRet = '701010301011'
+			case SD3->D3_TIPO == 'MM' .and. substr (sd3 -> d3_cc, 3,1) $ '3/4' ; _xRet = '403010201049'
+
 			case SD3->D3_TIPO == 'MR' ; _xRet = '403010401010'
 			case SD3->D3_TIPO == 'IA' ; _xRet = '701010301017'
 			otherwise
