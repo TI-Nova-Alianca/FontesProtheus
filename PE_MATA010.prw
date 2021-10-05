@@ -28,6 +28,7 @@
 //                        foi retirada do parametro mv_cadprod GLPI 8987
 // 22/06/2021 - Claudia - Carregado o campo B1_VARMAAL com 000000000 na cópia de produto. GLPI: 10276
 // 04/10/2021 - Claudia - Incluida validação de usuario manutenção. GLPI: 10968
+// 05/10/2021 - CLaudia - Incluida a validação do docigo GNRE para PA e MR. GLPI: 11017
 //
 //---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
@@ -282,7 +283,6 @@ static function _A010TOk ()
 
 		// Marca flag como 'jah passou por este local' por que o P.E. eh chamado duas vezes.
 		_lJahPassou = .T.
-	else
 
 	endif
 	
@@ -296,6 +296,14 @@ static function _A010TOk ()
 		_lRet = CaracEsp(m->b1_cod)
 	EndIf
 	
+	if _lRet
+		if m->b1_tipo == 'PA' .or. m->b1_tipo == 'MR' 
+			if empty(m->b5_codgnre)
+				u_help("Para produtos PA e/ou MR, é obrigatório inserir o Cod.Prod (Código GNRE)")
+				_lRet := .F.
+			endif 
+		endif
+	endif
 return _lRet
 //
 // --------------------------------------------------------------------------

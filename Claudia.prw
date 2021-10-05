@@ -4,6 +4,9 @@
 User Function claudia ()
 	u_help("Nada para executar")
 
+	//U_HELP("GNRE")
+	//_AtuGNRE()
+
 	//u_help("isento")
 	//_AtuISENTO()
 	//u_help("CIELO")
@@ -19,6 +22,51 @@ User Function claudia ()
 	//u_help("Teste de baixa")
 	//BaixaAut()
 Return
+
+// //
+// // ------------------------------------------------------------------
+// Static Function _AtuGNRE()
+// 	Local _x    := 0
+// 	Local _aSB5 := {}
+
+// 	_oSQL := ClsSQL():New ()
+// 	_oSQL:_sQuery := ""
+// 	_oSQL:_sQuery += "	SELECT "
+// 	_oSQL:_sQuery += "		 B1_COD AS PRODUTO "
+// 	_oSQL:_sQuery += "		,B1_GRTRIB AS GRTRIB "
+// 	_oSQL:_sQuery += "		,B1_TIPO AS TIPO "
+// 	_oSQL:_sQuery += "		,CASE "
+// 	_oSQL:_sQuery += "				WHEN B1_GRTRIB IN ('005', '006', '007') THEN 68 "
+// 	_oSQL:_sQuery += "				WHEN B1_GRTRIB IN ('001', '002', '003', '004', '008', '009', '010', '011', '012', '013', '014', '015', '016', '017') THEN 81 "
+// 	_oSQL:_sQuery += "				ELSE " 
+// 	_oSQL:_sQuery += "				'' "
+// 	_oSQL:_sQuery += "			END AS CODGNRE "
+// 	_oSQL:_sQuery += "		FROM SB1010 SB1 "
+// 	_oSQL:_sQuery += "		LEFT JOIN SB5010 SB5 "
+// 	_oSQL:_sQuery += "			ON SB5.D_E_L_E_T_ = '' "
+// 	_oSQL:_sQuery += "				AND SB5.B5_COD = B1_COD "
+// 	_oSQL:_sQuery += "		WHERE SB1.D_E_L_E_T_ = '' "
+// 	_oSQL:_sQuery += "		AND B1_TIPO IN ('PA', 'MR') "
+// 	_oSQL:Log ()
+// 	_aSB5:= _oSQL:Qry2Array ()
+	
+	
+//  	nHandle := FCreate("c:\temp\GNRE_SB5.txt")
+// 	DbSelectArea("SB5")
+// 	DbSetOrder(1)
+//  	For _x := 1 to Len(_aSB5)
+//  		if DbSeek(xFilial("SB5") + _aSB5[_x, 1])	
+// 			reclock("SB5", .F.)
+// 				SB5->B5_CODGNRE := _aSB5[_x, 4]
+// 			MsUnLock()
+// 			_sTexto := "Produto: "+ _aSB5[_x, 1] + " Cod GNRE: " + str(_aSB5[_x, 4]) + Chr(13) + Chr(10)
+// 			FWrite(nHandle,_sTexto )
+// 		endif
+//  	Next
+// 	FClose(nHandle)
+// Return
+
+
 //
 // ------------------------------------------------------------------
 // Static Function Almox1()
