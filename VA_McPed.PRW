@@ -529,12 +529,12 @@ static function _CalcFrt ()
 	local _aGUL      := {}
 	local _aGU9      := {}
 	local _nFrete    := 0
-	local _nOkGUL    := 0
 
 	_sFilial := m->c5_filial
 	_sEst    := m->c5_vaest
 	_sCEP    := Posicione("SA1",1, xFilial("SA1") + m->c5_cliente, "A1_CEP")
 
+	u_log2 ('info', "FRETE: "+_sFilial+" - "+ _sEst + " - "+ _sCEP)
 	_oSQL  := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT "
@@ -550,8 +550,8 @@ static function _CalcFrt ()
 		For _x := 1 to Len(_aGUL)
 			_nFrete := _aGUL[_x, 1]
 			_sTxtEvent += "Usado % de frete para CEP '"+ _sCEP +"' "
-			_nOkGUL := 1
 		Next
+		u_log2 ('info', "FRETE: GUL")
 	EndIf
 
 	// Se não existir na GUL ou se for zerado, busca da GU9 -> 2º opção
@@ -566,11 +566,13 @@ static function _CalcFrt ()
 		_oSQL:_sQuery += " AND GU9_CDUF     = '" + _sEst    + "'"
 		_oSQL:_sQuery += " AND GU9_SIT      = '1'"
 		_aGU9 := aclone (_oSQL:Qry2Array ())
-
+		u_log2 ('info', "FRETE: GU9 1")
+		
 		For _x:=1 to Len(_aGU9)
 			_nFrete := _aGU9[_x, 1]
 			_sTxtEvent += "Usado % de frete para UF '"+ _sEst +"' "
 			//u_help (_sTxtEvent,, .t.)
+			u_log2 ('info', "FRETE: GU9 2")
 		Next
 	EndIf
 
