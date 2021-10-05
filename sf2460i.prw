@@ -140,6 +140,7 @@
 // 11/08/2021 - Robert  - Grava obs do pedido na cta.corrente associados, quando compra de mudas (GLPI 10673).
 // 10/09/2021 - Claudia - Gravação de conta corrente para venda de açucar mascavo para associados. GLPI: 10916
 // 27/09/2021 - Claudia - Ajustadas validações para envio de email. GLPI: 10927
+// 29/09/2021 - Claudia - Tratamento para venda de milho. GLPI: 10994
 //
 // ---------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
@@ -678,29 +679,37 @@ static function _AtuSZIMudas ()
 			_oSQL:_sQuery += "   and SD2.D2_FILIAL   = '" + xfilial ("SD2") + "'"
 			_oSQL:_sQuery += "   and SD2.D2_DOC      = '" + sf2 -> f2_doc   + "'"
 			_oSQL:_sQuery += "   and SD2.D2_SERIE    = '" + sf2 -> f2_serie + "'"
-			_oSQL:_sQuery += "   and SD2.D2_COD      in ('7206','7207','5446')" 
+			_oSQL:_sQuery += "   and SD2.D2_COD      in ('7206','7207','5446','5456')" 
 			_aProdOK := aclone (_oSQL:Qry2Array ())
 			
 			_sTProd := '0'
 			_sHist  := ""
 			if len(_aProdOK) > 0
 				For x:= 1 to Len(_aProdOK)
-					If alltrim(_aProdOK[x,4]) $ '5446' 	// açucar
-						_sTProd := '1'
-					Else
-						_sTProd := '2' 					// mudinhas
-					EndIf
+					Do Case
+						Case alltrim(_aProdOK[x,4]) $ '5446' 		// açucar
+							_sTProd := '1'
+						Case alltrim(_aProdOK[x,4]) $ '7206/7207' 	// mudinha  
+							_sTProd := '2' 
+						Case alltrim(_aProdOK[x,4]) $  '5456' 		// milho
+							_sTProd := '3' 
+					EndCase
 				Next
 
-				If _sTProd == '1' 	// açucar
-					_sTM   := '23'
-					_sHist := 'VENDA AÇÚCAR MASCAVO CFE.NF.'
-					_sSerie:= 'INS'
-				Else				// mudinhas
-					_sTM   := '24'
-					_sHist := 'VENDA MUDAS DE UVA CFE.NF.'
-					_sSerie:= 'MUD'
-				EndIf
+				Do Case
+					Case _sTProd == '1'		// açucar
+						_sTM   := '23'
+						_sHist := 'VENDA AÇÚCAR MASCAVO CFE.NF.'
+						_sSerie:= 'INS'
+					Case _sTProd := '2' 	// mudinha  						
+						_sTM   := '24'
+						_sHist := 'VENDA MUDAS DE UVA CFE.NF.'
+						_sSerie:= 'MUD'
+					Case _sTProd := '3'		// milho
+						_sTM   := '23'
+						_sHist := 'VENDA MILHO CFE.NF.'
+						_sSerie:= 'INS'
+				EndCase
 			
 				_oSQL:= ClsSQL ():New ()
 				_oSQL:_sQuery := ""

@@ -93,6 +93,7 @@
 // 10/03/2021 - Claudia - Alterado o parametro da função VA_McPed para calcular frete. GLPI: 9581
 // 19/08/2021 - Robert  - Desabilitado UPDATE SC9010 SET C9_BLCRED = '01' por que tinha sintaxe incorreta e nunca executou.
 // 10/09/2021 - Claudia - Não permitir vender mudas de uva e açucar no mesmo pedido para associados. GLPI: 10916
+// 29/09/2021 - Claudia - Tratamento para venda de milho. GLPI: 10994
 //
 // ---------------------------------------------------------------------------------------------------------------------------
 User Function MTA410 ()
@@ -300,13 +301,20 @@ User Function MTA410 ()
 					if alltrim (GDFieldGet ("C6_PRODUTO")) $ '5446' 	// açucar
 						_sAcucar := 'S'					
 					endif
+					if alltrim (GDFieldGet ("C6_PRODUTO")) $ '5456' 	// milho
+						_sMilho := 'S'					
+					endif 
 				endif
 			next
 
-			If _sMuda == 'S' .and. _sAcucar == 'S'
+			If (_sMuda == 'S' .and. _sAcucar == 'S') 
 				_lRet := .F.
 				u_help("Não é permitido vender mudas e açúcar mascavo para associados no mesmo pedido. Verifique!")
-			EndIf			
+			EndIf	
+			If (_sMuda == 'S' .and. _sMilho == 'S') 
+				_lRet := .F.
+				u_help("Não é permitido vender mudas e milho para associados no mesmo pedido. Verifique!")
+			EndIf		
 		endif
 	EndIf
 

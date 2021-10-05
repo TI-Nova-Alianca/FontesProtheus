@@ -39,7 +39,7 @@ user function BATTITBAI()
 	_oSQL:_sQuery += " FROM " + RetSQLName ("SE1") + " AS SE1 "
 	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SD2") + " AS SD2 "
 	_oSQL:_sQuery += " 	ON (SD2.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery += " 			AND D2_COD IN ('7206', '7207')"
+	_oSQL:_sQuery += " 			AND D2_COD IN ('7206', '7207','5446','5456')"
 	_oSQL:_sQuery += " 			AND D2_FILIAL  = SE1.E1_FILIAL"
 	_oSQL:_sQuery += " 			AND D2_DOC     = SE1.E1_NUM"
 	_oSQL:_sQuery += " 			AND D2_SERIE   = SE1.E1_PREFIXO"
@@ -83,6 +83,8 @@ user function BATTITBAI()
 		   _aBkpSX1 = U_SalvaSX1 (cPerg)  // Salva parametros da rotina.
 		   U_GravaSX1 (cPerg, "01", 2)
 		   U_GravaSX1 (cPerg, "04", 2)
+		   U_GravaSXK (cPerg, "01", "2", 'G' )
+		   U_GravaSXK (cPerg, "04", "2", 'G' )
 			
            MSExecAuto({|x,y| Fina070(x,y)},_aAutoSE1,3,.F.,5) // rotina automática para baixa de títulos
 			
@@ -90,8 +92,9 @@ user function BATTITBAI()
 //           		MostraErro()
 //           		Return()
 //		   Endif  
-			
-		   U_SalvaSX1 (cPerg, _aBkpSX1)  // Restaura parametros da rotina
+			U_GravaSXK (cPerg, "01", "2", 'D' )
+			U_GravaSXK (cPerg, "04", "2", 'D' )
+		    U_SalvaSX1 (cPerg, _aBkpSX1)  // Restaura parametros da rotina
 		   
 		Next
 	Endif			
