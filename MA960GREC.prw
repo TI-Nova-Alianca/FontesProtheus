@@ -13,6 +13,7 @@
 //
 // Historico de alteracoes:
 // 27/08/2021 - Claudia - Incluida novas validações. GLPI: 10838 e 10839
+// 06/10/2021 - Claudia - Incluido novos estados. GLPI: 11030
 //
 //---------------------------------------------------------------------------------
 #include "protheus.ch" 
@@ -66,6 +67,25 @@ User Function MA960GREC()
                 _sTexto := "2"
                 FWrite(nHandle,_sTexto )    
             EndIf 
+
+        Case Alltrim(cReceita) $ '100099/100102/100129' .and. cUF == 'AM'    
+            aParam := {22, '2', '', 81, ''}  
+
+        Case Alltrim(cReceita) $ '100099/100102/100129' .and. cUF == 'MA' 
+            Do Case
+                Case Alltrim(cReceita) == '100099'
+                    aParam := {10, '1', '', 81, ''}  
+
+                Case Alltrim(cReceita) $'100102/100129'
+                    aParam := {10, '1', '', 89, ''}  
+
+            EndCase   
+
+        Case Alltrim(cReceita) $ '100102/100129' .and. cUF $ 'PB' 
+             aParam := {24, '2', '', 0, ''}  
+
+        Case Alltrim(cReceita) $ '100099/100102' .and. cUF $ 'SC' 
+             aParam := {24, '2', '', 0, ''}    
 
         Otherwise   
             aParam := {10, '1', '', 0, ''}                      // Retorna os campos F6_TIPOGNU, F6_DOCORIG, F6_DETRECE, F6_CODPROD e F6_CODAREA de acordo com o código de receita e sigla da UF da guia atual.
