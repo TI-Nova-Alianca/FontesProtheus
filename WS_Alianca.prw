@@ -74,6 +74,7 @@
 // 21/09/2021 - Claudia - Incluida a ação "BuscaPedidosBloqueados". GLPI: 7792
 // 21/09/2021 - Claudia - Incluida a ação "GravaBloqueioGerencial". GLPI: 7792
 // 30/09/2021 - Claudia - Ajustes nos campos da rotina "BuscaPedidosBloqueados". GLPI: 7792
+// 06/10/2021 - Claudia - Incluida a rotina _EnvMargem. GLPI: 7792
 //
 // --------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
@@ -218,6 +219,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 				_PedidosBloq ()
 			case _sAcao == 'GravaBloqueioGerencial'
 				_GrvLibPed ()
+			case _sAcao == 'BuscaMargemContrib'
+				_EnvMargem ()
 							
 			otherwise
 				_sErros += "A acao especificada no XML eh invalida: " + _sAcao
@@ -1988,5 +1991,72 @@ Static Function _GrvLibPed ()
 		EndIf		
 	EndIf
 
+	u_logFim ()
+Return
+//
+// --------------------------------------------------------------------------
+// Grava retorno da margem contribuicao
+Static Function _EnvMargem ()
+	local _wFilial 	 := ""
+	local _wPedido	 := ""
+	local _wCliente  := ""
+	local _wLoja 	 := ""
+	local _aNaWeb    := {}
+	local _XmlRet    := ""
+	local _x         := 0
+
+	u_logIni ()
+
+	If empty(_sErros)
+		_wFilial   := _ExtraiTag ("_oXML:_WSAlianca:_Filial"	, .T., .F.)
+		_wPedido   := _ExtraiTag ("_oXML:_WSAlianca:_Pedido"	, .T., .F.)
+		_wCliente  := _ExtraiTag ("_oXML:_WSAlianca:_Cliente"	, .T., .F.)
+		_wLoja     := _ExtraiTag ("_oXML:_WSAlianca:_Loja"		, .T., .F.)
+	EndIf
+
+	If empty(_sErros)
+		sa1 -> (dbsetorder(1)) // A1_FILIAL + A1_COD + A1_LOJA
+		DbSelectArea("SA1")
+		If ! dbseek(xFilial("SA1") + _wCliente + _wLoja, .F.)
+			_sErros := " Cliente " + _wCliente +"/"+ _wLoja +" não encontrado. Verifique!"
+		Else
+			_wNomeCli := sa1->a1_nome
+		EndIf
+	EndIf
+
+	If empty(_sErros)
+		sc5 -> (dbsetorder(3)) // C5_FILIAL + C5_CLIENTE + C5_LOJACLI + C5_NUM
+		DbSelectArea("SC5")
+
+		If dbseek(_wFilial + _wCliente + _wLoja + _wPedido, .F.)
+			_aNaWeb := U_VA_McPed (.F., .F., .T.)
+
+			_XmlRet := "<BuscaItensPedBloq>"
+			For _x:=1 to Len(_aNaWeb)
+				_XmlRet += "<BuscaItensPedBloqItem>"
+				_XmlRet += "	<Filial>"        + _wFilial 	  + "</Filial>"
+				_XmlRet += "	<Pedido>"		 + _wPedido       + "</Pedido>"
+				_XmlRet += "	<Cliente>" 		 + _wCliente 	  + "</Cliente>" 
+				_XmlRet += "	<Nome>"			 + _wNomeCli	  +"</Nome>"   
+				_XmlRet += "	<Loja>"			 + _wLoja 		  + "</Loja>"	 
+				_XmlRet += "	<Produto>" 		 + _aNaWeb[_x, 1] + "</Produto>"
+				_XmlRet += "	<Quantidade>" 	 + _aNaWeb[_x, 2] + "</Quantidade>"
+				_XmlRet += "	<PrcVenda>" 	 + _aNaWeb[_x, 3] + "</PrcVenda>"
+				_XmlRet += "	<PrcCusto>" 	 + _aNaWeb[_x, 4] + "</PrcCusto>"
+				_XmlRet += "	<Comissao>" 	 + _aNaWeb[_x, 5] + "</Comissao>"
+				_XmlRet += "	<ICMS>" 		 + _aNaWeb[_x, 6] + "</ICMS>"
+				_XmlRet += "	<PISCOF>" 		 + _aNaWeb[_x, 7] + "</PISCOF>"
+				_XmlRet += "	<Rapel>" 		 + _aNaWeb[_x, 8] + "</Rapel>"
+				_XmlRet += "	<Frete>" 		 + _aNaWeb[_x, 9] + "</Frete>"
+				_XmlRet += "	<Financeiro>" 	 + _aNaWeb[_x, 10] + "</Financeiro>"
+				_XmlRet += "	<MargemVlr>" 	 + _aNaWeb[_x, 11] + "</MargemVlr>"
+				_XmlRet += "	<MargemPercent>" + _aNaWeb[_x, 12] + "</MargemPercent>"
+				_XmlRet += "</BuscaItensPedBloqItem>"
+			Next
+			_XmlRet := "</BuscaItensPedBloq>"
+		Else
+			_sErros := "Pedido " + _wPedido + " não encontrado para o cliente "	+ _wCliente +"/"+ _wLoja 		
+		EndIf		
+	EndIf
 	u_logFim ()
 Return

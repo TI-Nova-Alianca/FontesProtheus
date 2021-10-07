@@ -45,12 +45,13 @@
 //                        nem historico do cliente (GLPI 8180).
 // 17/05/2021 - Claudia - Ajuste no calculo de margem frete. GLPI: 9883
 // 04/10/2021 - Claudia - Alterada a função _CalcFrt, conforme GLPI: 11009
+// 06/10/2021 - Claudia - Incluido o parametro _lNAWeb para carregar ou nao o array de dados da margem. GLPI: 7792
 //
 // ------------------------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
 #include "rwmake.ch"
 
-User function VA_McPed (_lComTela, _lAtuFrt)
+User function VA_McPed (_lComTela, _lAtuFrt, _lNaWeb)
 	local _aAmbAnt  := U_SalvaAmb ()
 	local _aAreaAnt := U_ML_SRArea ()
 	
@@ -58,14 +59,14 @@ User function VA_McPed (_lComTela, _lAtuFrt)
 	
 	_lComTela = iif (_lComTela == NIL, .T., _lComTela)
 
-	_AndaLogo (_lComTela, _lAtuFrt)
+	_AndaLogo (_lComTela, _lAtuFrt, _lNaWeb)
 
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
 Return
 //
 // --------------------------------------------------------------------------
-static function _AndaLogo (_lMostra, _lAtuFrt)
+static function _AndaLogo (_lMostra, _lAtuFrt, _lNaWeb)
 	local _nValor     := 0
 	local _nQuant     := 0
 	local _ncusto     := 0
@@ -81,6 +82,7 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 	local _aArqTrb    := {}
 	local _aCampos    := {}
 	local _aCpos      := {}
+	local _aNaWeb     := {}
 	Local _nPosValor  := aScan(aHeader, {|x| AllTrim(x[2])=="C6_VALOR"})
 	Local _nPosTes    := aScan(aHeader, {|x| AllTrim(x[2])=="C6_TES"})
 	Local _nPosprd    := aScan(aHeader, {|x| AllTrim(x[2])=="C6_PRODUTO"})
@@ -371,6 +373,7 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 						_trb -> c6_imp     = _trb -> c6_preco * _nPISCOF / 100
 						_trb -> c6_imp2    = transform (c6_imp, "@E 999999.99") + ' (' + alltrim (transform (_nPISCOF, "@E 99.9")) + '%)'
 						
+					
 						// -- alterado para buscar o percentual conforme a nova regra de rapel por cliente/linha/item
 						_txrapel = 0
 						if val(_wbaserapel) > 0   /// 0= nao tem rapel 1= total da nota   2 = total da mercadoria
@@ -403,6 +406,22 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 						_trb -> c6_total2  = transform (c6_total, "@E 999,999.99")
 						_trb -> c6_mper    = (_trb-> c6_total / _trb -> c6_preco) * 100
 						_trb -> c6_mper2   = transform (c6_mper, "@E 999999.99")
+
+						if _lNaWeb
+							aadd(_aNaWeb, { _trb -> c6_produto	,;
+											_trb -> c6_quant2	,;
+											_trb -> c6_preco2 	,;
+											_trb -> c6_custo2	,;
+											_trb -> c6_comis2	,;
+											_trb -> c6_icm2		,;
+											_trb -> c6_imp2		,;
+											_trb -> c6_rapel2	,;
+											_trb -> c6_frete2	,;
+											_trb -> c6_Finan2	,;
+											_trb -> c6_total2 	,;
+											_trb -> c6_mper2	})
+						endif
+						
 						msunlock()
 						_nValor	+= _trb -> c6_preco
 						_nQuant	+= _trb -> c6_quant
@@ -463,6 +482,21 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 	_trb -> c6_mper2   = transform (c6_mper, "@E 99,999.99")
 	msunlock ()
 	
+	if _lNaWeb
+		aadd(_aNaWeb, { "Total Pedido"		,;
+						_trb -> c6_quant2	,;
+						_trb -> c6_preco2 	,;
+						_trb -> c6_custo2	,;
+						_trb -> c6_comis2	,;
+						_trb -> c6_icm2		,;
+						_trb -> c6_imp2		,;
+						_trb -> c6_rapel2	,;
+						_trb -> c6_frete2	,;
+						_trb -> c6_Finan2	,;
+						_trb -> c6_total2 	,;
+						_trb -> c6_mper2	})
+	endif
+				
 	// bonificacao
 	reclock ("_trb", .T.)
 	_trb -> c6_produto = "Bonificacao"
@@ -471,6 +505,21 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 	_trb -> c6_mper    = (_xtotbonif / _nvalor)*100
 	_trb -> c6_mper2   = transform (c6_mper, "@E 99,999.99")
 	msunlock ()
+
+	if _lNaWeb
+		aadd(_aNaWeb, { "Bonificacao"		,;
+						" "					,;
+						" "					,;
+						" "					,;
+						" "					,;
+						" "					,;
+						" "					,;
+						" "					,;
+						" "					,;
+						" "					,;
+						_trb -> c6_total2 	,;
+						_trb -> c6_mper2	})
+	endif
 	
 	_xtotFrete :=0
 	
@@ -483,6 +532,21 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 	_nTotMrg := ((_ntotal - (_xtotbonif + _xtotFrete)) / _nvalor)*100 
 	_trb -> c6_mper2   = transform (c6_mper, "@E 99,999.99")
 	msunlock ()
+
+	if _lNaWeb
+		aadd(_aNaWeb, { "Total"				,;
+						" "					,;
+						" "					,;
+						" "					,;
+						" "					,;
+						" "					,;
+						" "					,;
+						" "					,;
+						" "					,;
+						" "					,;
+						_trb -> c6_total2 	,;
+						_trb -> c6_mper2	})
+	endif
 	
 	// Define titulos das colunas
 	aadd (_aCpos, {"c6_Produto", "Produto"})
@@ -513,7 +577,7 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 	endif
 	
 	U_ArqTrb ("fechatodos", ,,, @_aArqTrb)
-return
+return _aNaWeb
 //
 // --------------------------------------------------------------------------
 // Calcula valor do frete para posterior uso no calculo da margem de contribuicao.
