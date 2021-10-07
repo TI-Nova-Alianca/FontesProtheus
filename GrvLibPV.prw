@@ -447,25 +447,25 @@ user function GrvLibPV (_lLiberar)
     			endif
 			endif
 
-			// // verifica a vigencia de contrato e contrato
-			// _sCodBase  := fBuscaCpo ('SA1', 1, xfilial('SA1') + M->C5_CLIENTE + M->C5_LOJACLI, "A1_VACBASE")
-			// _sLojaBase := fBuscaCpo ('SA1', 1, xfilial('SA1') + M->C5_CLIENTE + M->C5_LOJACLI, "A1_VALBASE")
+			// verifica a vigencia de contrato e contrato
+			_sCodBase  := fBuscaCpo ('SA1', 1, xfilial('SA1') + M->C5_CLIENTE + M->C5_LOJACLI, "A1_VACBASE")
+			_sLojaBase := fBuscaCpo ('SA1', 1, xfilial('SA1') + M->C5_CLIENTE + M->C5_LOJACLI, "A1_VALBASE")
 
-			// _sQuery := ""
-			// _sQuery += " SELECT
-			// _sQuery += " 	ZA7_CONT"
-			// _sQuery += " FROM ZA7010"
-			// _sQuery += " WHERE D_E_L_E_T_ = ''"
-			// _sQuery += " AND ZA7_CLI      = '" + _sCodBase          + "'"
-			// _sQuery += " AND ZA7_LOJA     = '" + _sLojaBase         + "'"
-			// _sQuery += " AND ZA7_VINI    <= '" + DTOS(m->c5_emissao) + "'"
-			// _sQuery += " AND ZA7_VFIM    >= '" + DTOS(m->c5_emissao) + "'"
-			// aContrato := U_Qry2Array(_sQuery)
+			_sQuery := ""
+			_sQuery += " SELECT
+			_sQuery += " 	ZA7_CONT"
+			_sQuery += " FROM ZA7010"
+			_sQuery += " WHERE D_E_L_E_T_ = ''"
+			_sQuery += " AND ZA7_CLI      = '" + _sCodBase          + "'"
+			_sQuery += " AND ZA7_LOJA     = '" + _sLojaBase         + "'"
+			_sQuery += " AND ZA7_VINI    <= '" + DTOS(m->c5_emissao) + "'"
+			_sQuery += " AND ZA7_VFIM    >= '" + DTOS(m->c5_emissao) + "'"
+			aContrato := U_Qry2Array(_sQuery)
 
-			// if Len(aContrato) <= 0
-			// 	u_help ("Cliente sem contrato e/ou contrato válido. Verifique!")
-			// 	_lLiberar = .F.
-			// endif
+			if Len(aContrato) <= 0
+				u_help ("Cliente sem contrato e/ou contrato válido. Verifique!")
+				_lLiberar = .F.
+			endif
 		endif
 
 		// se pedido é bonificação
