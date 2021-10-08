@@ -262,7 +262,7 @@ static function _A010TOk ()
 
 				if Len(_sDados)> 0
 					if alltrim(_sDados[1, 1]) == '2008'
-						u_help("Usuário sem permição para alterar produto tipo " + m->b1_tipo)
+						u_help("Usuário sem permissão para alterar produto tipo " + m->b1_tipo)
 						_lRet := .F.
 					endif
 				endif
