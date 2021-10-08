@@ -2004,19 +2004,14 @@ Static Function _EnvMargem ()
 	local _aNaWeb    := {}
 	local _XmlRet    := ""
 	local _x         := 0
+	local _y         := 0
 
 	u_logIni ()
 
 	If empty(_sErros)
-		_wFilial   := _ExtraiTag ("_oXML:_WSAlianca:_Filial"	, .T., .F.)
-		_wPedido   := _ExtraiTag ("_oXML:_WSAlianca:_Pedido"	, .T., .F.)
-		_wCliente  := _ExtraiTag ("_oXML:_WSAlianca:_Cliente"	, .T., .F.)
-		_wLoja     := _ExtraiTag ("_oXML:_WSAlianca:_Loja"		, .T., .F.)
-	EndIf
-
-	If empty(_sErros)
-		sa1 -> (dbsetorder(1)) // A1_FILIAL + A1_COD + A1_LOJA
+		sa1 -> (dbsetorder(1)) 		// A1_FILIAL + A1_COD + A1_LOJA
 		DbSelectArea("SA1")
+		
 		If ! dbseek(xFilial("SA1") + _wCliente + _wLoja, .F.)
 			_sErros := " Cliente " + _wCliente +"/"+ _wLoja +" não encontrado. Verifique!"
 		Else
@@ -2027,33 +2022,49 @@ Static Function _EnvMargem ()
 	If empty(_sErros)
 		sc5 -> (dbsetorder(3)) // C5_FILIAL + C5_CLIENTE + C5_LOJACLI + C5_NUM
 		DbSelectArea("SC5")
-
+		
 		If dbseek(_wFilial + _wCliente + _wLoja + _wPedido, .F.)
-			_aNaWeb := U_VA_McPed (.F., .F., .T.)
+			_oSQL := ClsSQL():New ()  
+			_oSQL:_sQuery := "" 		
+			_oSQL:_sQuery += " SELECT "
+			_oSQL:_sQuery += " 	 	DESCRITIVO "
+			_oSQL:_sQuery += " FROM VA_VEVENTOS "
+			_oSQL:_sQuery += " WHERE CODEVENTO  = 'SC5009' "
+			_oSQL:_sQuery += " AND FILIAL       = '" + _wFilial  + "' "
+			_oSQL:_sQuery += " AND CLIENTE      = '" + _wCliente + "' "
+			_oSQL:_sQuery += " AND LOJA_CLIENTE = '" + _wLoja    + "' "
+			_oSQL:_sQuery += " AND PEDVENDA     = '" + _wPedido  + "' "
+			_oSQL:_sQuery += " ORDER BY HORA, DESCRITIVO" 
+			_aItem := aclone (_oSQL:Qry2Array ())
 
 			_XmlRet := "<BuscaItensPedBloq>"
-			For _x:=1 to Len(_aNaWeb)
-				_XmlRet += "<BuscaItensPedBloqItem>"
-				_XmlRet += "	<Filial>"        + _wFilial 	  + "</Filial>"
-				_XmlRet += "	<Pedido>"		 + _wPedido       + "</Pedido>"
-				_XmlRet += "	<Cliente>" 		 + _wCliente 	  + "</Cliente>" 
-				_XmlRet += "	<Nome>"			 + _wNomeCli	  +"</Nome>"   
-				_XmlRet += "	<Loja>"			 + _wLoja 		  + "</Loja>"	 
-				_XmlRet += "	<Produto>" 		 + _aNaWeb[_x, 1] + "</Produto>"
-				_XmlRet += "	<Quantidade>" 	 + _aNaWeb[_x, 2] + "</Quantidade>"
-				_XmlRet += "	<PrcVenda>" 	 + _aNaWeb[_x, 3] + "</PrcVenda>"
-				_XmlRet += "	<PrcCusto>" 	 + _aNaWeb[_x, 4] + "</PrcCusto>"
-				_XmlRet += "	<Comissao>" 	 + _aNaWeb[_x, 5] + "</Comissao>"
-				_XmlRet += "	<ICMS>" 		 + _aNaWeb[_x, 6] + "</ICMS>"
-				_XmlRet += "	<PISCOF>" 		 + _aNaWeb[_x, 7] + "</PISCOF>"
-				_XmlRet += "	<Rapel>" 		 + _aNaWeb[_x, 8] + "</Rapel>"
-				_XmlRet += "	<Frete>" 		 + _aNaWeb[_x, 9] + "</Frete>"
-				_XmlRet += "	<Financeiro>" 	 + _aNaWeb[_x, 10] + "</Financeiro>"
-				_XmlRet += "	<MargemVlr>" 	 + _aNaWeb[_x, 11] + "</MargemVlr>"
-				_XmlRet += "	<MargemPercent>" + _aNaWeb[_x, 12] + "</MargemPercent>"
-				_XmlRet += "</BuscaItensPedBloqItem>"
+			For _x:=1 to Len(_aItem)
+				_aNaWeb := STRTOKARR(_aItem[_x,1],"|")
+
+				For _y:=1 to Len(_aNaWeb)
+					_XmlRet += "<BuscaItensPedBloqItem>"
+					_XmlRet += "	<Filial>"        + _wFilial 	  + "</Filial>"
+					_XmlRet += "	<Pedido>"		 + _wPedido       + "</Pedido>"
+					_XmlRet += "	<Cliente>" 		 + _wCliente 	  + "</Cliente>" 
+					_XmlRet += "	<Nome>"			 + _wNomeCli	  + "</Nome>"   
+					_XmlRet += "	<Loja>"			 + _wLoja 		  + "</Loja>"	 
+					_XmlRet += "	<Produto>" 		 + _aNaWeb[ 2] + "</Produto>"
+					_XmlRet += "	<Quantidade>" 	 + _aNaWeb[ 3] + "</Quantidade>"
+					_XmlRet += "	<PrcVenda>" 	 + _aNaWeb[ 4] + "</PrcVenda>"
+					_XmlRet += "	<PrcCusto>" 	 + _aNaWeb[ 5] + "</PrcCusto>"
+					_XmlRet += "	<Comissao>" 	 + _aNaWeb[ 6] + "</Comissao>"
+					_XmlRet += "	<ICMS>" 		 + _aNaWeb[ 7] + "</ICMS>"
+					_XmlRet += "	<PISCOF>" 		 + _aNaWeb[ 8] + "</PISCOF>"
+					_XmlRet += "	<Rapel>" 		 + _aNaWeb[ 9] + "</Rapel>"
+					_XmlRet += "	<Frete>" 		 + _aNaWeb[10] + "</Frete>"
+					_XmlRet += "	<Financeiro>" 	 + _aNaWeb[11] + "</Financeiro>"
+					_XmlRet += "	<MargemVlr>" 	 + _aNaWeb[12] + "</MargemVlr>"
+					_XmlRet += "	<MargemPercent>" + _aNaWeb[13] + "</MargemPercent>"
+					_XmlRet += "</BuscaItensPedBloqItem>"
+				Next
 			Next
-			_XmlRet := "</BuscaItensPedBloq>"
+			_XmlRet += "</BuscaItensPedBloq>"
+			u_log2 ('info', _XmlRet)
 		Else
 			_sErros := "Pedido " + _wPedido + " não encontrado para o cliente "	+ _wCliente +"/"+ _wLoja 		
 		EndIf		
