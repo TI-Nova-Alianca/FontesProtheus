@@ -20,6 +20,7 @@
 //                      - Incluidas tags para catalogo de fontes.
 // 03/03/2021 - Robert  - Desabilitado gravação do Evento
 // 05/10/2021 - Robert  - Desabilitado contorno que permitia ao grupo 029 estornar apont.de etiq.jah vista pelço FullWMS (o pessoal estorna producao sem se importar em fazer o ajuste na integracao com FullWMS).
+// 08/10/2021 - Robert  - Nao considerava status_protheus = 'C' na validacao da integracao com FullWMS (GLPI 10041).
 //
 
 // ----------------------------------------------------------------
@@ -49,7 +50,7 @@ static function _VerFull ()
 	local _lRet      := .T.
 	local _oSQL      := NIL
 	local _sMsg      := ""
-	local _sJustif   := ""
+//	local _sJustif   := ""
 	public _oEvtEstF := NIL
 
 	if _lRet
@@ -59,6 +60,7 @@ static function _VerFull ()
 		_oSQL:_sQuery +=   " from tb_wms_entrada"
 		_oSQL:_sQuery +=  " where nrodoc = '" + sd3 -> d3_doc + "'"
 		_oSQL:_sQuery +=    " and status != '9'"
+		_oSQL:_sQuery +=    " and status_protheus != 'C'"
 		if _oSQL:RetQry () > 0
 			_lRet = .F.
 			_sMsg := "Esta entrada de estoque ja foi aceita pelo FullWMS. Para estornar esta producao exclua do Fullsoft, antes, a tarefa de recebimento (ou cancele operacao de guarda da etiqueta)." + chr (13) + chr (10) + chr (13) + chr (10)
