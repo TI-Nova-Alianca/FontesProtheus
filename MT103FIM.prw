@@ -22,7 +22,8 @@ User Function MT103FIM()
 	local _aAreaAnt := U_ML_SRArea ()
 	Local _lConf    := PARAMIXB[2]==1
 
-	if _lConf  // Usuario confirmou a tela
+//	if _lConf  // Usuario confirmou a tela
+	if alltrim (cEspecie) == 'SPED' .and. _lConf  // Usuario confirmou a tela
 		//Realiza ciência
 		U_FBTRS101({SF1->F1_CHVNFE}, 4, '')
 		//Abre tela do manifesto
@@ -52,6 +53,7 @@ Return
         If nOpcao != 4
             Return
         EndIf 
+
 
         If !SuperGetMV('009_USAMAN', .F., .F.)
             Return .T.

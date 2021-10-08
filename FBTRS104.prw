@@ -28,6 +28,7 @@ User Function FBTRS104(cXmlReceb,cIdEnt,cUrl,aRetorno,cModel)
 		EndIf
 		
 		If oWs:RemessaEvento()
+			U_Log2 ('debug', '[' + procname () + '] oWs:RemessaEvento() = .t.')
 			If Type("oWS:oWsRemessaEventoResult:cString") <> "U"
 				If Type("oWS:oWsRemessaEventoResult:cString") <> "A"
 					aRetorno:={oWS:oWsRemessaEventoResult:cString}
