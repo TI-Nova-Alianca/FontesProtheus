@@ -508,15 +508,15 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 	msunlock ()
 
 	aadd(_aNaWeb, { "Bonificacao"		,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
 					_trb -> c6_total2 	,;
 					_trb -> c6_mper2	})
 
@@ -534,15 +534,15 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 	msunlock ()
 
 	aadd(_aNaWeb, { "Total"				,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
 					_trb -> c6_total2 	,;
 					_trb -> c6_mper2	})
 
