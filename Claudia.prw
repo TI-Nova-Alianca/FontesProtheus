@@ -29,14 +29,14 @@ Return
 // // Grava retorno da margem contribuicao
 // User Function EnvMargem ()
 // 	local _wFilial 	 := "01"
-// 	local _wPedido	 := "921182"
-// 	local _wCliente  := "010958"
+// 	local _wPedido	 := "279710"
+// 	local _wCliente  := "017532"
 // 	local _wLoja 	 := "01"
 // 	local _aNaWeb    := {}
 // 	local _sErros    := ""
 // 	local _XmlRet    := ""
 // 	local _x         := 0
-// 	local _y         := 0
+// 	//local _y         := 0
 
 // 	u_logIni ()
 
@@ -49,13 +49,11 @@ Return
 // 			_wNomeCli := sa1->a1_nome
 // 		EndIf
 // 	EndIf
-
 // 	If empty(_sErros)
 // 		sc5 -> (dbsetorder(3)) // C5_FILIAL + C5_CLIENTE + C5_LOJACLI + C5_NUM
 // 		DbSelectArea("SC5")
 		
 // 		If dbseek(_wFilial + _wCliente + _wLoja + _wPedido, .F.)
-
 // 			_oSQL := ClsSQL():New ()  
 // 			_oSQL:_sQuery := "" 		
 // 			_oSQL:_sQuery += " SELECT "
@@ -73,27 +71,25 @@ Return
 // 			For _x:=1 to Len(_aItem)
 // 				_aNaWeb := STRTOKARR(_aItem[_x,1],"|")
 
-// 				For _y:=1 to Len(_aNaWeb)
-// 					_XmlRet += "<BuscaItensPedBloqItem>"
-// 					_XmlRet += "	<Filial>"        + _wFilial 	  + "</Filial>"
-// 					_XmlRet += "	<Pedido>"		 + _wPedido       + "</Pedido>"
-// 					_XmlRet += "	<Cliente>" 		 + _wCliente 	  + "</Cliente>" 
-// 					_XmlRet += "	<Nome>"			 + _wNomeCli	  + "</Nome>"   
-// 					_XmlRet += "	<Loja>"			 + _wLoja 		  + "</Loja>"	 
-// 					_XmlRet += "	<Produto>" 		 + _aNaWeb[ 2] + "</Produto>"
-// 					_XmlRet += "	<Quantidade>" 	 + _aNaWeb[ 3] + "</Quantidade>"
-// 					_XmlRet += "	<PrcVenda>" 	 + _aNaWeb[ 4] + "</PrcVenda>"
-// 					_XmlRet += "	<PrcCusto>" 	 + _aNaWeb[ 5] + "</PrcCusto>"
-// 					_XmlRet += "	<Comissao>" 	 + _aNaWeb[ 6] + "</Comissao>"
-// 					_XmlRet += "	<ICMS>" 		 + _aNaWeb[ 7] + "</ICMS>"
-// 					_XmlRet += "	<PISCOF>" 		 + _aNaWeb[ 8] + "</PISCOF>"
-// 					_XmlRet += "	<Rapel>" 		 + _aNaWeb[ 9] + "</Rapel>"
-// 					_XmlRet += "	<Frete>" 		 + _aNaWeb[10] + "</Frete>"
-// 					_XmlRet += "	<Financeiro>" 	 + _aNaWeb[11] + "</Financeiro>"
-// 					_XmlRet += "	<MargemVlr>" 	 + _aNaWeb[12] + "</MargemVlr>"
-// 					_XmlRet += "	<MargemPercent>" + _aNaWeb[13] + "</MargemPercent>"
-// 					_XmlRet += "</BuscaItensPedBloqItem>"
-// 				Next
+// 				_XmlRet += "<BuscaItensPedBloqItem>"
+// 				_XmlRet += "<Filial>"        + _wFilial 	  + "</Filial>"
+// 				_XmlRet += "<Pedido>"		 + _wPedido       + "</Pedido>"
+// 				_XmlRet += "<Cliente>" 		 + _wCliente 	  + "</Cliente>" 
+// 				_XmlRet += "<Nome>"			 + _wNomeCli	  + "</Nome>"   
+// 				_XmlRet += "<Loja>"			 + _wLoja 		  + "</Loja>"	 
+// 				_XmlRet += "<Produto>" 		 + alltrim(_aNaWeb[ 2]) + "</Produto>"
+// 				_XmlRet += "<Quantidade>" 	 + alltrim(_aNaWeb[ 3]) + "</Quantidade>"
+// 				_XmlRet += "<PrcVenda>" 	 + alltrim(_aNaWeb[ 4]) + "</PrcVenda>"
+// 				_XmlRet += "<PrcCusto>" 	 + alltrim(_aNaWeb[ 5]) + "</PrcCusto>"
+// 				_XmlRet += "<Comissao>" 	 + alltrim(_aNaWeb[ 6]) + "</Comissao>"
+// 				_XmlRet += "<ICMS>" 		 + alltrim(_aNaWeb[ 7]) + "</ICMS>"
+// 				_XmlRet += "<PISCOF>" 		 + alltrim(_aNaWeb[ 8]) + "</PISCOF>"
+// 				_XmlRet += "<Rapel>" 		 + alltrim(_aNaWeb[ 9]) + "</Rapel>"
+// 				_XmlRet += "<Frete>" 		 + alltrim(_aNaWeb[10]) + "</Frete>"
+// 				_XmlRet += "<Financeiro>" 	 + alltrim(_aNaWeb[11]) + "</Financeiro>"
+// 				_XmlRet += "<MargemVlr>" 	 + alltrim(_aNaWeb[12]) + "</MargemVlr>"
+// 				_XmlRet += "<MargemPercent>" + alltrim(_aNaWeb[13]) + "</MargemPercent>"
+// 				_XmlRet += "</BuscaItensPedBloqItem>"
 // 			Next
 // 			_XmlRet += "</BuscaItensPedBloq>"
 // 			u_log2 ('info', _XmlRet)
@@ -101,6 +97,10 @@ Return
 // 			_sErros := "Pedido " + _wPedido + " não encontrado para o cliente "	+ _wCliente +"/"+ _wLoja 		
 // 		EndIf		
 // 	EndIf
+// 	 nHandle := FCreate("c:\temp\logXML.txt")
+// 	FWrite(nHandle,_XmlRet )
+// 	FClose(nHandle)
+
 // 	u_logFim ()
 // Return
 // //

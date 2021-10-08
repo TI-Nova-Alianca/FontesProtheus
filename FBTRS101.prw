@@ -21,6 +21,7 @@ User Function FBTRS101(aChaves, nTpEvento, cJustific)
 	Local cRetorno		:= ""
 	Local nX 			:= 0
 	Local nZ 			:= 0
+	Local _nN           := 0
 	Local aJust 		:= {}
 	Local cDescEvent	:= ''
 	Private oWs			:= NIL

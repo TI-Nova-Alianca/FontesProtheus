@@ -508,15 +508,15 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 	msunlock ()
 
 	aadd(_aNaWeb, { "Bonificacao"		,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
 					_trb -> c6_total2 	,;
 					_trb -> c6_mper2	})
 
@@ -534,15 +534,15 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 	msunlock ()
 
 	aadd(_aNaWeb, { "Total"				,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
-					"-"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
+					"0"					,;
 					_trb -> c6_total2 	,;
 					_trb -> c6_mper2	})
 
@@ -592,17 +592,17 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 				_sX := PADL(alltrim(str(_x)),2,'0') 
 
 				_sTxtEvent := _sX + "|" + alltrim(_aNaWeb[_x, 1])
-				_sTxtEvent += _sX + "|" + alltrim(_aNaWeb[_x, 2]) 
-				_sTxtEvent += _sX + "|" + alltrim(_aNaWeb[_x, 3]) 
-				_sTxtEvent += _sX + "|" + alltrim(_aNaWeb[_x, 4]) 
-				_sTxtEvent += _sX + "|" + alltrim(_aNaWeb[_x, 5]) 
-				_sTxtEvent += _sX + "|" + alltrim(_aNaWeb[_x, 6]) 
-				_sTxtEvent += _sX + "|" + alltrim(_aNaWeb[_x, 7]) 
-				_sTxtEvent += _sX + "|" + alltrim(_aNaWeb[_x, 8]) 
-				_sTxtEvent += _sX + "|" + alltrim(_aNaWeb[_x, 9])
-				_sTxtEvent += _sX + "|" + alltrim(_aNaWeb[_x,10]) 
-				_sTxtEvent += _sX + "|" + alltrim(_aNaWeb[_x,11]) 
-				_sTxtEvent += _sX + "|" + alltrim(_aNaWeb[_x,12]) 
+				_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 2]) 
+				_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 3]) 
+				_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 4]) 
+				_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 5]) 
+				_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 6]) 
+				_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 7]) 
+				_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 8]) 
+				_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 9])
+				_sTxtEvent += "|" + alltrim(_aNaWeb[_x,10]) 
+				_sTxtEvent += "|" + alltrim(_aNaWeb[_x,11]) 
+				_sTxtEvent += "|" + alltrim(_aNaWeb[_x,12]) 
 
 				_GravaNaWeb(_sTxtEvent)
 			Next 
