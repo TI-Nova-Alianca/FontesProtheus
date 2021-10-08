@@ -46,12 +46,13 @@
 // 17/05/2021 - Claudia - Ajuste no calculo de margem frete. GLPI: 9883
 // 04/10/2021 - Claudia - Alterada a função _CalcFrt, conforme GLPI: 11009
 // 06/10/2021 - Claudia - Incluido o parametro _lNAWeb para carregar ou nao o array de dados da margem. GLPI: 7792
+// 07/10/2021 - Claudia - Incluida gravação dos registros nos eventos, para busca no NaWeb. GLPI 7792
 //
 // ------------------------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
 #include "rwmake.ch"
 
-User function VA_McPed (_lComTela, _lAtuFrt, _lNaWeb)
+User function VA_McPed (_lComTela, _lAtuFrt)
 	local _aAmbAnt  := U_SalvaAmb ()
 	local _aAreaAnt := U_ML_SRArea ()
 	
@@ -59,14 +60,14 @@ User function VA_McPed (_lComTela, _lAtuFrt, _lNaWeb)
 	
 	_lComTela = iif (_lComTela == NIL, .T., _lComTela)
 
-	_AndaLogo (_lComTela, _lAtuFrt, _lNaWeb)
+	_AndaLogo (_lComTela, _lAtuFrt)
 
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
 Return
 //
 // --------------------------------------------------------------------------
-static function _AndaLogo (_lMostra, _lAtuFrt, _lNaWeb)
+static function _AndaLogo (_lMostra, _lAtuFrt)
 	local _nValor     := 0
 	local _nQuant     := 0
 	local _ncusto     := 0
@@ -103,6 +104,7 @@ static function _AndaLogo (_lMostra, _lAtuFrt, _lNaWeb)
 	local _lFrtNegoc  := .F.
 	local _nPISCOF    := 9.25  // A cooperativa tem reducao de base de calculo. // Era 3.2
 	local _pfrete     := 0
+	local _x          := 0
 	private _oEventoCF := NIL  // Deixar private. Para gravar dados da cotacao de frete, caso necessario.
 
 	u_log2 ('debug', 'Atualizar frete: ' + cvaltochar (_lAtuFrt))
@@ -407,20 +409,19 @@ static function _AndaLogo (_lMostra, _lAtuFrt, _lNaWeb)
 						_trb -> c6_mper    = (_trb-> c6_total / _trb -> c6_preco) * 100
 						_trb -> c6_mper2   = transform (c6_mper, "@E 999999.99")
 
-						if _lNaWeb
-							aadd(_aNaWeb, { _trb -> c6_produto	,;
-											_trb -> c6_quant2	,;
-											_trb -> c6_preco2 	,;
-											_trb -> c6_custo2	,;
-											_trb -> c6_comis2	,;
-											_trb -> c6_icm2		,;
-											_trb -> c6_imp2		,;
-											_trb -> c6_rapel2	,;
-											_trb -> c6_frete2	,;
-											_trb -> c6_Finan2	,;
-											_trb -> c6_total2 	,;
-											_trb -> c6_mper2	})
-						endif
+						aadd(_aNaWeb, { _trb -> c6_produto	,;
+										_trb -> c6_quant2	,;
+										_trb -> c6_preco2 	,;
+										_trb -> c6_custo2	,;
+										_trb -> c6_comis2	,;
+										_trb -> c6_icm2		,;
+										_trb -> c6_imp2		,;
+										_trb -> c6_rapel2	,;
+										_trb -> c6_frete2	,;
+										_trb -> c6_Finan2	,;
+										_trb -> c6_total2 	,;
+										_trb -> c6_mper2	})
+
 						
 						msunlock()
 						_nValor	+= _trb -> c6_preco
@@ -482,20 +483,20 @@ static function _AndaLogo (_lMostra, _lAtuFrt, _lNaWeb)
 	_trb -> c6_mper2   = transform (c6_mper, "@E 99,999.99")
 	msunlock ()
 	
-	if _lNaWeb
-		aadd(_aNaWeb, { "Total Pedido"		,;
-						_trb -> c6_quant2	,;
-						_trb -> c6_preco2 	,;
-						_trb -> c6_custo2	,;
-						_trb -> c6_comis2	,;
-						_trb -> c6_icm2		,;
-						_trb -> c6_imp2		,;
-						_trb -> c6_rapel2	,;
-						_trb -> c6_frete2	,;
-						_trb -> c6_Finan2	,;
-						_trb -> c6_total2 	,;
-						_trb -> c6_mper2	})
-	endif
+
+	aadd(_aNaWeb, { "Total Pedido"		,;
+					_trb -> c6_quant2	,;
+					_trb -> c6_preco2 	,;
+					_trb -> c6_custo2	,;
+					_trb -> c6_comis2	,;
+					_trb -> c6_icm2		,;
+					_trb -> c6_imp2		,;
+					_trb -> c6_rapel2	,;
+					_trb -> c6_frete2	,;
+					_trb -> c6_Finan2	,;
+					_trb -> c6_total2 	,;
+					_trb -> c6_mper2	})
+
 				
 	// bonificacao
 	reclock ("_trb", .T.)
@@ -506,20 +507,19 @@ static function _AndaLogo (_lMostra, _lAtuFrt, _lNaWeb)
 	_trb -> c6_mper2   = transform (c6_mper, "@E 99,999.99")
 	msunlock ()
 
-	if _lNaWeb
-		aadd(_aNaWeb, { "Bonificacao"		,;
-						" "					,;
-						" "					,;
-						" "					,;
-						" "					,;
-						" "					,;
-						" "					,;
-						" "					,;
-						" "					,;
-						" "					,;
-						_trb -> c6_total2 	,;
-						_trb -> c6_mper2	})
-	endif
+	aadd(_aNaWeb, { "Bonificacao"		,;
+					"-"					,;
+					"-"					,;
+					"-"					,;
+					"-"					,;
+					"-"					,;
+					"-"					,;
+					"-"					,;
+					"-"					,;
+					"-"					,;
+					_trb -> c6_total2 	,;
+					_trb -> c6_mper2	})
+
 	
 	_xtotFrete :=0
 	
@@ -533,20 +533,19 @@ static function _AndaLogo (_lMostra, _lAtuFrt, _lNaWeb)
 	_trb -> c6_mper2   = transform (c6_mper, "@E 99,999.99")
 	msunlock ()
 
-	if _lNaWeb
-		aadd(_aNaWeb, { "Total"				,;
-						" "					,;
-						" "					,;
-						" "					,;
-						" "					,;
-						" "					,;
-						" "					,;
-						" "					,;
-						" "					,;
-						" "					,;
-						_trb -> c6_total2 	,;
-						_trb -> c6_mper2	})
-	endif
+	aadd(_aNaWeb, { "Total"				,;
+					"-"					,;
+					"-"					,;
+					"-"					,;
+					"-"					,;
+					"-"					,;
+					"-"					,;
+					"-"					,;
+					"-"					,;
+					"-"					,;
+					_trb -> c6_total2 	,;
+					_trb -> c6_mper2	})
+
 	
 	// Define titulos das colunas
 	aadd (_aCpos, {"c6_Produto", "Produto"})
@@ -575,6 +574,41 @@ static function _AndaLogo (_lMostra, _lAtuFrt, _lNaWeb)
 		@ (_oDlg2:nClientHeight / 2 - 30), (_oDlg2:nClientWidth / 2 - 40) button "OK"                 action (close (_oDlg2))
 		activate msdialog _oDlg2 centered
 	endif
+
+	If Len(_aNaWeb) > 0
+		// Deleta registros já gravados
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := " 	DELETE FROM VA_VEVENTOS "
+		_oSQL:_sQuery += " 	WHERE CODEVENTO      = 'SC5009'"
+		_oSQL:_sQuery += " 		AND DATA         = '" + DTOS(m->c5_emissao) + "'"
+		_oSQL:_sQuery += " 		AND CLIENTE      = '" + m->c5_cliente       + "'"
+		_oSQL:_sQuery += " 		AND LOJA_CLIENTE = '" + m->c5_lojacli       + "'"
+		_oSQL:_sQuery += " 		AND PEDVENDA     = '" + m->c5_num           + "'"		
+		_oSQL:Log ()
+		if !_oSQL:Exec ()
+			_lCont := .F.
+		else
+			For _x:=1 to Len(_aNaWeb)
+				_sX := PADL(alltrim(str(_x)),2,'0') 
+
+				_sTxtEvent := _sX + "|" + alltrim(_aNaWeb[_x, 1])
+				_sTxtEvent += _sX + "|" + alltrim(_aNaWeb[_x, 2]) 
+				_sTxtEvent += _sX + "|" + alltrim(_aNaWeb[_x, 3]) 
+				_sTxtEvent += _sX + "|" + alltrim(_aNaWeb[_x, 4]) 
+				_sTxtEvent += _sX + "|" + alltrim(_aNaWeb[_x, 5]) 
+				_sTxtEvent += _sX + "|" + alltrim(_aNaWeb[_x, 6]) 
+				_sTxtEvent += _sX + "|" + alltrim(_aNaWeb[_x, 7]) 
+				_sTxtEvent += _sX + "|" + alltrim(_aNaWeb[_x, 8]) 
+				_sTxtEvent += _sX + "|" + alltrim(_aNaWeb[_x, 9])
+				_sTxtEvent += _sX + "|" + alltrim(_aNaWeb[_x,10]) 
+				_sTxtEvent += _sX + "|" + alltrim(_aNaWeb[_x,11]) 
+				_sTxtEvent += _sX + "|" + alltrim(_aNaWeb[_x,12]) 
+
+				_GravaNaWeb(_sTxtEvent)
+			Next 
+		endif
+	EndIf
+	
 	
 	U_ArqTrb ("fechatodos", ,,, @_aArqTrb)
 return _aNaWeb
@@ -700,4 +734,18 @@ return _nRetFrt
 Static Function _RetType(_var)
 	_type := type(_var)
 Return _type
+//
+// --------------------------------------------------------------------------
+// GRava registros de margem para NaWeb
+Static Function _GravaNaWeb(_sTxtEvent)
 
+	_oEvento = ClsEvent ():New () 
+	_oEvento:Texto    = _sTxtEvent
+	_oEvento:CodEven  = 'SC5009'
+	_oEvento:PedVenda = m->c5_num
+	_oEvento:Cliente  = m->c5_cliente
+	_oEvento:LojaCli  = m->c5_lojacli
+	_oEvento:DtEvento = m->c5_emissao
+	_oEvento:HrEvento = time()
+	_oEvento:Grava ()
+Return
