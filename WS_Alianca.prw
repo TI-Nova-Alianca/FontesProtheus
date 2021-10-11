@@ -1873,30 +1873,33 @@ Static Function _PedidosBloq()
 	_XmlRet += "	<Registro>"
 
 	For _x:= 1 to Len(_aPed)
+		_sBloq := _aPed[_x,12]
 		Do Case
-			Case 'X'$sc5->c5_vabloq
+			Case 'X'$_sBloq
 				_sDescLgd := 'Liberacao negada'
 
-			Case !'X'$sc5->c5_vabloq.and.'M'$sc5->c5_vabloq.and.'P'$sc5->c5_vabloq
+			Case !'X'$_sBloq.and.'M'$_sBloq.and.'P'$_sBloq
 				_sDescLgd := 'Bloq.por margem e preco'
 
-			Case !'X'$sc5->c5_vabloq.and.'F'$sc5->c5_vabloq 
+			Case !'X'$_sBloq.and.'F'$_sBloq 
 				_sDescLgd := 'Bonif.sem faturamento'
 
-			Case !'X'$sc5->c5_vabloq.and.'P'$sc5->c5_vaBloq
+			Case !'X'$_sBloq.and.'P'$_sBloq
 				_sDescLgd := 'Bloq.por preco'		
 
-			Case !'X'$sc5->c5_vabloq.and.'M'$sc5->c5_vabloq						
+			Case !'X'$_sBloq.and.'M'$_sBloq					
 				_sDescLgd := 'Bloq.por margem'	
 
-			Case !'X'$sc5->c5_vabloq.and.'A'$sc5->c5_vaBloq
+			Case !'X'$_sBloq.and.'A'$_sBloq
 				_sDescLgd := 'Bloq.%reajuste'	
 					
-			Case !'X'$sc5->c5_vabloq.and.'B'$sc5->c5_vabloq					
+			Case !'X'$_sBloq.and.'B'$_sBloq				
 				_sDescLgd := 'Bloq.bonificação'	
 			otherwise
 				_sDescLgd := " "
 		EndCase
+
+		_sNome := strtran(U_NoAcento(_aPed[_x, 6]), '&', 'e')
 
 		_XmlRet += "		<RegistroItem>"
 		_XmlRet += "			<Filial>"			+ _aPed[_x, 1] 					+ "</Filial>"
@@ -1904,7 +1907,7 @@ Static Function _PedidosBloq()
 		_XmlRet += "			<Emissao>"			+ DTOS(_aPed[_x, 3]) 			+ "</Emissao>"
 		_XmlRet += "			<Cliente>"			+ _aPed[_x, 4] 					+ "</Cliente>"
 		_XmlRet += "			<Loja>"				+ _aPed[_x, 5] 					+ "</Loja>"
-		_XmlRet += "			<Nome>"				+ _aPed[_x, 6] 					+ "</Nome>"
+		_XmlRet += "			<Nome>"				+ _sNome     					+ "</Nome>"
 		_XmlRet += "			<Uf>"				+ _aPed[_x, 7] 					+ "</Uf>"
 		_XmlRet += "			<ValorFaturamento>"	+ alltrim(str(_aPed[_x, 8])) 	+ "</ValorFaturamento>"
 		_XmlRet += "			<MargemContr>"		+ alltrim(str(_aPed[_x, 9])) 	+ "</MargemContr>"
