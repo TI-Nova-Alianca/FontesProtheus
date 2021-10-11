@@ -28,38 +28,39 @@
 // 24/11/2019 - Robert  - Campo C5_VABLOQ passa a ter mais de uma posicao (GLPI 7000).
 // 09/03/2021 - Claudia - Criada legenda para bloq. de bonificação. GLPI: 9070
 // 22/04/2021 - Claudia - GLPI: 9886 - Bloqueio de pedidos de bonificação
+// 11/10/2021 - Claudia - Criado parametro para bloqueio/liberação da rotina no Protheus. GLPI: 11051
 //
-// --------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
 User Function SC5LBG ()
 	local _aCores     := U_SC5LBGLG (.T.)
 	local _sFiltrTop  := ""
 	local _aCpoBrw    := {}
 	private aRotina   := {}
-	//private _nMCPed1  := GetMv ("VA_MCPED1")
-	//private _nMCPed2  := GetMv ("VA_MCPED2")
-	//private _lGrp004  := U_ZZUVL ('004',,.F.)
-	//private _lGrp081  := U_ZZUVL ('081',,.F.)
-	//private _lGrp082  := U_ZZUVL ('082',,.F.)
 
-	AAdd (_aCpoBrw, {"Bloqueio",   {|| iif('X'$sc5->c5_vabloq,'Lib.negada',iif('P'$sc5->c5_vabloq,'Preco ','')+iif('M'$sc5->c5_vabloq,'Margem ','')+iif('A'$sc5->c5_vabloq,'Reajuste ','')+iif('F'$sc5->c5_vabloq,'Bonif.s/fat. ',''))}, "C", 15, 0, "" } )
-	AAdd (_aCpoBrw, {"Vlr.produtos", {|| sc5 -> c5_vavlfat}, "N", 12, 2, "@E 9,999,999.99" } )
-	AAdd (_aCpoBrw, {"Marg.contr", {|| sc5 -> c5_vaMCont}, "N", 12, 2, "@E 9,999,999.99" } )
+	If alltrim(GetMv("VA_SC5LBG")) == 'N'
+		u_help("Rotina descontinuada no Protheus e disponibilizada no NaWeb!")
 
-	aRotina = {}
-	aadd (aRotina, {"&Pesquisar"      , "AxPesqui"								, 0, 1})
-	aadd (aRotina, {"&Visualizar"     , "A410Visual"							, 0, 2})
-	aadd (aRotina, {"Li&berar"        , "processa ({||U_SC5LBGL ()})"			, 0, 4})
-	aadd (aRotina, {"&Negar liberacao", "processa ({||U_SC5LBGN ()})"			, 0, 4})
-	aadd (aRotina, {"&Legenda"        , "U_SC5LBGLG (.F.)"						, 0, 5})
-	aadd (aRotina, {"Even&tos"        , "U_VA_SZNC ('PedVenda', sc5->c5_num)"	, 0, 5})
+	Else
+		AAdd (_aCpoBrw, {"Bloqueio",   {|| iif('X'$sc5->c5_vabloq,'Lib.negada',iif('P'$sc5->c5_vabloq,'Preco ','')+iif('M'$sc5->c5_vabloq,'Margem ','')+iif('A'$sc5->c5_vabloq,'Reajuste ','')+iif('F'$sc5->c5_vabloq,'Bonif.s/fat. ',''))}, "C", 15, 0, "" } )
+		AAdd (_aCpoBrw, {"Vlr.produtos", {|| sc5 -> c5_vavlfat}, "N", 12, 2, "@E 9,999,999.99" } )
+		AAdd (_aCpoBrw, {"Marg.contr", {|| sc5 -> c5_vaMCont}, "N", 12, 2, "@E 9,999,999.99" } )
 
-	private cCadastro := "Liberacao bloqueio gerencial pedidos de venda"
+		aRotina = {}
+		aadd (aRotina, {"&Pesquisar"      , "AxPesqui"								, 0, 1})
+		aadd (aRotina, {"&Visualizar"     , "A410Visual"							, 0, 2})
+		aadd (aRotina, {"Li&berar"        , "processa ({||U_SC5LBGL ()})"			, 0, 4})
+		aadd (aRotina, {"&Negar liberacao", "processa ({||U_SC5LBGN ()})"			, 0, 4})
+		aadd (aRotina, {"&Legenda"        , "U_SC5LBGLG (.F.)"						, 0, 5})
+		aadd (aRotina, {"Even&tos"        , "U_VA_SZNC ('PedVenda', sc5->c5_num)"	, 0, 5})
 
-	_sFiltrTop := "C5_VABLOQ != ''"  				// Pedido com bloqueio
-	_sFiltrTop += " AND C5_LIBEROK != ''"  			// Pedido com 'liberacao comercial (SC9 gerado)
-	_sFiltrTop += " AND C5_NOTA != 'XXXXXXXXX'" 	// Residuo eliminado (nao sei por que as vezes grava com 9 posicoes)
-	_sFiltrTop += " AND C5_NOTA != 'XXXXXX'"  		// Residuo eliminado (nao sei por que as vezes grava com 6 posicoes)
-	mBrowse(,,,,"SC5", _aCpoBrw,,,,2,_aCores,,,,,,,,_sFiltrTop)
+		private cCadastro := "Liberacao bloqueio gerencial pedidos de venda"
+
+		_sFiltrTop := "C5_VABLOQ != ''"  				// Pedido com bloqueio
+		_sFiltrTop += " AND C5_LIBEROK != ''"  			// Pedido com 'liberacao comercial (SC9 gerado)
+		_sFiltrTop += " AND C5_NOTA != 'XXXXXXXXX'" 	// Residuo eliminado (nao sei por que as vezes grava com 9 posicoes)
+		_sFiltrTop += " AND C5_NOTA != 'XXXXXX'"  		// Residuo eliminado (nao sei por que as vezes grava com 6 posicoes)
+		mBrowse(,,,,"SC5", _aCpoBrw,,,,2,_aCores,,,,,,,,_sFiltrTop)
+	EndIf
 return
 //
 // --------------------------------------------------------------------------
