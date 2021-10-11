@@ -17,6 +17,7 @@
 // 30/12/2019 - Claudia - Incluido relatório de materiais diário no menu. GLPI: 7260
 // 13/01/2020 - Claudia - Inclusão da função <ArqTrb> (exigencia release 12.1.25 do Protheus)
 // 09/09/2021 - Claudia - Incluidas as rotinas de exportação e importação de dados de eventos. GLPI: 10807
+// 11/10/2021 - Claudia - Incluida rotina para geração de materiais no menu do outras ações. GLPI: 11035
 //
 // -------------------------------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -44,6 +45,7 @@ User Function ZBC()
 			Aadd(aRotAdic,{ "Rel.Materiais"		,"U_VA_ZBCMAT()" , 0, 6 }) 
 			Aadd(aRotAdic,{ "Rel.Mat.Diário"	,"U_VA_ZBCMDI()" , 0, 6 })
 			Aadd(aRotAdic,{ "Rel.Custos"	    ,"U_VA_ZBCCUS()" , 0, 6 })
+			Aadd(aRotAdic,{ "Gera Materiais"	,"U_VA_ZBCBI()" , 0, 6 })
 		
 			//( [ cAlias ] [ cTitle ] [ cDel ] [ cOk ] [ aRotAdic ] [ bPre ] [ bOK ] [ bTTS ] [ bNoTTS ] [ aAuto ] [ nOpcAuto ] [ aButtons ] [ aACS ] [ cTela ] )
 			AxCadastro("ZBC", "Manutenção de eventos produtivos", "U_ZBCEXC(ZBC->ZBC_FILIAL,ZBC->ZBC_COD,ZBC->ZBC_ANO)", "U_ValidaZBC()",aRotAdic , , , , , , , aButtons, , )  
