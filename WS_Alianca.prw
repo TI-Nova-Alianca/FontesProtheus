@@ -75,6 +75,7 @@
 // 21/09/2021 - Claudia - Incluida a ação "GravaBloqueioGerencial". GLPI: 7792
 // 30/09/2021 - Claudia - Ajustes nos campos da rotina "BuscaPedidosBloqueados". GLPI: 7792
 // 06/10/2021 - Claudia - Incluida a rotina _EnvMargem. GLPI: 7792
+// 11/10/2021 - Claudia - Criada nova tag <DescBloqueio> na rotina GravaBloqueioGerencial. GLPI: 7792
 //
 // --------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
@@ -1872,24 +1873,50 @@ Static Function _PedidosBloq()
 	_XmlRet += "	<Registro>"
 
 	For _x:= 1 to Len(_aPed)
+		Do Case
+			Case 'X'$sc5->c5_vabloq
+				_sDescLgd := 'Liberacao negada'
+
+			Case !'X'$sc5->c5_vabloq.and.'M'$sc5->c5_vabloq.and.'P'$sc5->c5_vabloq
+				_sDescLgd := 'Bloq.por margem e preco'
+
+			Case !'X'$sc5->c5_vabloq.and.'F'$sc5->c5_vabloq 
+				_sDescLgd := 'Bonif.sem faturamento'
+
+			Case !'X'$sc5->c5_vabloq.and.'P'$sc5->c5_vaBloq
+				_sDescLgd := 'Bloq.por preco'		
+
+			Case !'X'$sc5->c5_vabloq.and.'M'$sc5->c5_vabloq						
+				_sDescLgd := 'Bloq.por margem'	
+
+			Case !'X'$sc5->c5_vabloq.and.'A'$sc5->c5_vaBloq
+				_sDescLgd := 'Bloq.%reajuste'	
+					
+			Case !'X'$sc5->c5_vabloq.and.'B'$sc5->c5_vabloq					
+				_sDescLgd := 'Bloq.bonificação'	
+			otherwise
+				_sDescLgd := " "
+		EndCase
+
 		_XmlRet += "		<RegistroItem>"
-		_XmlRet += "			<Filial>"			+ _aPed[_x, 1] + "</Filial>"
-		_XmlRet += "			<Pedido>"			+ _aPed[_x, 2] + "</Pedido>"
-		_XmlRet += "			<Emissao>"			+ DTOS(_aPed[_x, 3]) + "</Emissao>"
-		_XmlRet += "			<Cliente>"			+ _aPed[_x, 4] + "</Cliente>"
-		_XmlRet += "			<Loja>"				+ _aPed[_x, 5] + "</Loja>"
-		_XmlRet += "			<Nome>"				+ _aPed[_x, 6] + "</Nome>"
-		_XmlRet += "			<Uf>"				+ _aPed[_x, 7] + "</Uf>"
-		_XmlRet += "			<ValorFaturamento>"	+ alltrim(str(_aPed[_x, 8])) + "</ValorFaturamento>"
-		_XmlRet += "			<MargemContr>"		+ alltrim(str(_aPed[_x, 9])) + "</MargemContr>"
-		_XmlRet += "			<VarPrcAnt>"		+ alltrim(str(_aPed [_x,10])) + "</VarPrcAnt>"
-		_XmlRet += "			<Status>"			+ _aPed[_x,11] + "</Status>"
-		_XmlRet += "			<Bloqueio>"			+ _aPed[_x,12] + "</Bloqueio>"
-		_XmlRet += "			<Vendedor>"			+ _aPed[_x,13] + "</Vendedor>"
-		_XmlRet += "			<Usuario>"			+ _aPed[_x,14] + "</Usuario>"
-		_XmlRet += "			<TipoPed>"			+ _aPed[_x,15] + "</TipoPed>"
-		_XmlRet += "			<TipoFrete>"		+ _aPed[_x,16] + "</TipoFrete>"
-		_XmlRet += "			<PedidoCliente>"	+ _aPed[_x,17] + "</PedidoCliente>"
+		_XmlRet += "			<Filial>"			+ _aPed[_x, 1] 					+ "</Filial>"
+		_XmlRet += "			<Pedido>"			+ _aPed[_x, 2] 					+ "</Pedido>"
+		_XmlRet += "			<Emissao>"			+ DTOS(_aPed[_x, 3]) 			+ "</Emissao>"
+		_XmlRet += "			<Cliente>"			+ _aPed[_x, 4] 					+ "</Cliente>"
+		_XmlRet += "			<Loja>"				+ _aPed[_x, 5] 					+ "</Loja>"
+		_XmlRet += "			<Nome>"				+ _aPed[_x, 6] 					+ "</Nome>"
+		_XmlRet += "			<Uf>"				+ _aPed[_x, 7] 					+ "</Uf>"
+		_XmlRet += "			<ValorFaturamento>"	+ alltrim(str(_aPed[_x, 8])) 	+ "</ValorFaturamento>"
+		_XmlRet += "			<MargemContr>"		+ alltrim(str(_aPed[_x, 9])) 	+ "</MargemContr>"
+		_XmlRet += "			<VarPrcAnt>"		+ alltrim(str(_aPed [_x,10])) 	+ "</VarPrcAnt>"
+		_XmlRet += "			<Status>"			+ _aPed[_x,11] 					+ "</Status>"
+		_XmlRet += "			<Bloqueio>"			+ _aPed[_x,12] 					+ "</Bloqueio>"
+		_XmlRet += "			<Vendedor>"			+ _aPed[_x,13] 					+ "</Vendedor>"
+		_XmlRet += "			<Usuario>"			+ _aPed[_x,14] 					+ "</Usuario>"
+		_XmlRet += "			<TipoPed>"			+ _aPed[_x,15] 					+ "</TipoPed>"
+		_XmlRet += "			<TipoFrete>"		+ _aPed[_x,16] 					+ "</TipoFrete>"
+		_XmlRet += "			<PedidoCliente>"	+ _aPed[_x,17] 					+ "</PedidoCliente>"
+		_XmlRet += "			<DescBloqueio>"	    + _sDescLgd    					+ "</DescBloqueio>"
 
 		_oSQL := ClsSQL():New ()  
 		_oSQL:_sQuery := "" 		
@@ -1920,16 +1947,16 @@ Static Function _PedidosBloq()
 		_XmlRet += "		<ItensPedido>"
 		For _y:= 1 to Len(_aItem)
 			_XmlRet += "		<ItensPedidoItem> "
-			_XmlRet += "			<Filial>"		+ _aItem[_y, 1] + "</Filial>"
-			_XmlRet += "			<Item>"			+ _aItem[_y, 2] + "</Item>"
-			_XmlRet += "			<Produto>"		+ _aItem[_y, 3] + "</Produto>"
-			_XmlRet += "			<Descricao>"	+ _aItem[_y, 4] + "</Descricao>"
-			_XmlRet += "			<Unidade>"		+ _aItem[_y, 5] + "</Unidade>"
-			_XmlRet += "			<QtdVendida>"	+ alltrim(str(_aItem[_y, 6])) + "</QtdVendida>"
-			_XmlRet += "			<PrcVenda>"		+ alltrim(str(_aItem[_y, 7])) + "</PrcVenda>"
-			_XmlRet += "			<PrcUnitario>"	+ alltrim(str(_aItem[_y, 8])) + "</PrcUnitario>"
-			_XmlRet += "			<Valor>"		+ alltrim(str(_aItem[_y, 9])) + "</Valor>"
-			_XmlRet += "			<Tes>"			+ _aItem[_y,10] + "</Tes>"
+			_XmlRet += "			<Filial>"		+ _aItem[_y, 1] 				+ "</Filial>"
+			_XmlRet += "			<Item>"			+ _aItem[_y, 2] 				+ "</Item>"
+			_XmlRet += "			<Produto>"		+ _aItem[_y, 3] 				+ "</Produto>"
+			_XmlRet += "			<Descricao>"	+ _aItem[_y, 4] 				+ "</Descricao>"
+			_XmlRet += "			<Unidade>"		+ _aItem[_y, 5] 				+ "</Unidade>"
+			_XmlRet += "			<QtdVendida>"	+ alltrim(str(_aItem[_y, 6])) 	+ "</QtdVendida>"
+			_XmlRet += "			<PrcVenda>"		+ alltrim(str(_aItem[_y, 7])) 	+ "</PrcVenda>"
+			_XmlRet += "			<PrcUnitario>"	+ alltrim(str(_aItem[_y, 8])) 	+ "</PrcUnitario>"
+			_XmlRet += "			<Valor>"		+ alltrim(str(_aItem[_y, 9])) 	+ "</Valor>"
+			_XmlRet += "			<Tes>"			+ _aItem[_y,10] 				+ "</Tes>"
 			_XmlRet += "		</ItensPedidoItem> "
 		Next
 		_XmlRet += "		</ItensPedido>"	
