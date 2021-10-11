@@ -13,6 +13,7 @@
 // Historico de alteracoes:
 // 15/09/2021 - Claudia - Ajuste do b1_desc para descricao. GLPI: 10943
 // 17/09/2021 - Claudia - Incluido tipo de produto e escondido o cabeçalho. GLPI: 10950
+// 11/10/2021 - Claudia - Incluida coluna do almox 03. GLPI: 11036
 //
 // ------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -110,6 +111,7 @@ Static Function PrintReport(oReport)
 			TRCell():New(oSection1,"COL12", 	"" ,"Dez"		,	,15,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 		EndIf
 		TRCell():New(oSection1,"COLUNA4", 	"" ,"Alx.02"		,	,10,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
+		TRCell():New(oSection1,"COLUNA4_1", "" ,"Alx.03"		,	,10,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 		TRCell():New(oSection1,"COLUNA5", 	"" ,"Alx.07"		,	,15,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 		TRCell():New(oSection1,"COLUNA6", 	"" ,"Alx.08"		,	,15,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 		TRCell():New(oSection1,"COLUNA7", 	"" ,"Alx.90"		,	,15,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
@@ -194,6 +196,7 @@ Static Function PrintReport(oReport)
 		While TRA->(!Eof())
 			If alltrim(TRA->TIPOPROD) == 'MO'
 				nAlx02 := 0
+				nAlx03 := 0
 				nAlx07 := 0
 				nAlx08 := 0
 				nAlx90 := 0
@@ -205,6 +208,7 @@ Static Function PrintReport(oReport)
 				EndIf
 			Else
 				nAlx02 := U_ZBCBSaldo(TRA -> COMPONENTE ,'02')
+				nAlx03 := U_ZBCBSaldo(TRA -> COMPONENTE ,'03')
 				nAlx07 := U_ZBCBSaldo(TRA -> COMPONENTE ,'07')
 				nAlx08 := U_ZBCBSaldo(TRA -> COMPONENTE ,'08')
 				nAlx90 := U_ZBCBSaldo(TRA -> COMPONENTE ,'90')
@@ -236,6 +240,7 @@ Static Function PrintReport(oReport)
 				oSection1:Cell("COL12")	:SetBlock   ({|| TRA->MES12			 })
 			EndIf
 			oSection1:Cell("COLUNA4")	:SetBlock   ({|| nAlx02			 })
+			oSection1:Cell("COLUNA4_1")	:SetBlock   ({|| nAlx03			 })
 			oSection1:Cell("COLUNA5")	:SetBlock   ({|| nAlx07 		 })
 			oSection1:Cell("COLUNA6")	:SetBlock   ({|| nAlx08 		 })
 			oSection1:Cell("COLUNA7")	:SetBlock   ({|| nAlx90 		 })
