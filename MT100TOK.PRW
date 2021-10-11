@@ -58,6 +58,7 @@
 //                      - Eliminadas algumas declaracoes de variaveis nao usadas.
 // 06/01/2021 - Robert  - Desabilitada chamada do U_FrtNFe quando estao sendo usadas rotinas de safra.
 // 03/02/2021 - Robert  - Para saber se estava gerando contranota de safra, testava rotina U_VA_RUS. Passa a testar U_VA_RUSN.
+// 08/10/2021 - Robert  - Desabilitados alguns logs desnecessarios.
 //
 
 // -----------------------------------------------------------------------------------------------------------------------
@@ -77,19 +78,19 @@ User Function MT100TOK()
 //	u_logIni ()
 
     if ISINCALLSTACK("MATA920") // Nota fiscal manual de saida
-    	u_log ('NF manual saida')
+    	u_log ('[' + procname () + '] estou em NF manual saida')
 		u_logFim ()
 		return(.T.)
 	endif  
    
 	if ISINCALLSTACK("LJCANCNFCE") // esse teste foi feito pq estava dando erro no JOB do CUPOM - não entendi pq o executa este ponto de entrada mas resolveu
-    	u_log ('LJCancNFCE')
+    	u_log ('[' + procname () + '] estou em LJCancNFCE')
 		u_logFim ()
 	   return(.T.)
 	endif
 	
 	if ISINCALLSTACK("SPEDINUT") // esse teste foi feito pq estava dando erro no SPED ao transmitir uma inutilizacao
-    	u_log ('SPEDINUT')
+    	u_log ('[' + procname () + '] estou em SPEDINUT')
 		u_logFim ()
 	   return(.T.)
 	endif	   
@@ -101,7 +102,7 @@ User Function MT100TOK()
 	if ISINCALLSTACK("ZZX") // possibilitar abrir a tela de nota e pre nota sem as validacoes - quando for salvar o documento ai ele vai fazer as validacoes
 		// preciso testar se eh a pre-nota
 		if ISINCALLSTACK("MATA140")
-			u_log ('pre-nota')
+			u_log ('[' + procname () + '] estou em pre-nota')
 			u_logFim ()
 			return(.T.)
 		endif	
@@ -236,10 +237,10 @@ static function _ValParc ()
 			//_xTES     := GDFieldGet( "D1_TES"     , _nLinha )
 			//_xCF      := GDFieldGet( "D1_CF"      , _nLinha )
 			if ! empty (GDFIELDGET('D1_PEDIDO',_nLinha))
-				u_log ('linha', _nLinha, 'd1_pedido+d1_itempc:', GDFIELDGET('D1_PEDIDO',_nLinha) + GDFIELDGET('D1_ITEMPC',_nLinha))
+			//	u_log ('linha', _nLinha, 'd1_pedido+d1_itempc:', GDFIELDGET('D1_PEDIDO',_nLinha) + GDFIELDGET('D1_ITEMPC',_nLinha))
 				SC7->(DBSETORDER(1))
 				if SC7->(DBSEEK(xfilial('SC7') + GDFIELDGET('D1_PEDIDO',_nLinha) + GDFIELDGET('D1_ITEMPC',_nLinha)))
-					u_log('c7_num:', SC7->C7_NUM, 'c7_cond:', SC7->C7_COND)
+			//		u_log('c7_num:', SC7->C7_NUM, 'c7_cond:', SC7->C7_COND)
 					if ! alltrim (cCondicao) = alltrim(SC7->C7_COND)
 						_sMsg = "Linha " + cvaltochar (_nLinha) + ": condicao de pagamento nao pode ser diferente da condicao do pedido de compra (" + sc7 -> c7_cond + ")."
 						exit

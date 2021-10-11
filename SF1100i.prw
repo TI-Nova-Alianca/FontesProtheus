@@ -105,6 +105,7 @@
 // 07/05/2021 - Robert  - Incluida gravacao do campo E2_VASAFRA (GLPI 9891)
 // 17/05/2021 - Robert  - Nas parcelas de safra, se o ano+mes previsto jah passou (ocorre por exemplo quando gera-se nota de complemento de preco apos a safra), nao adianta gerar com data retroativa (GLPI 9891)
 // 13/09/2021 - Claudia - Tratamento para A1_INSCR. GLPI: 10797
+// 08/10/2021 - Robert  - Desabilitados alguns logs desnecessarios.
 //
 // ------------------------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
@@ -195,7 +196,7 @@ User Function SF1100i ()
 	endif
 	
 	U_ML_SRArea (_aAreaAnt)
-	U_Log2 ('info', 'Finalizando ' + procname ())
+	//U_Log2 ('info', 'Finalizando ' + procname ())
 return
 // 
 // -----------------------------------------------------------------------------------------------------
