@@ -252,6 +252,24 @@ static function _A010TOk ()
 			endif
 		endif
 
+		if _lRet
+			if m->b1_tipo != 'MM' .and. m->b1_tipo != 'MC'
+				_oSQL:= ClsSQL ():New ()
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += " SELECT "
+				_oSQL:_sQuery += " 		SETOR "
+				_oSQL:_sQuery += " FROM VA_FUNCIONARIO_SETOR('" + __CUSERID + "')"
+				_sDados := aclone(_oSQL:Qry2Array ())
+
+				if Len(_sDados)> 0
+					if alltrim(_sDados[1, 1]) == '2008'
+						u_help("Usuário sem permissão para alterar produto tipo " + m->b1_tipo)
+						_lRet := .F.
+					endif
+				endif
+			endif
+		endif
+
 		if _lRet .and. paramixb [1]:nOperation == 4  // Se estou alterando um cadastro, gero evento de alteracao.
 			_aAreaSB1 := sb1 -> (getarea ())
 			sb1 -> (dbsetorder (1))
@@ -285,24 +303,6 @@ static function _A010TOk ()
 				u_help("Para produtos PA e/ou MR, é obrigatório inserir o Cod.Prod (Código GNRE)")
 				_lRet := .F.
 			endif 
-		endif
-	endif
-
-	if _lRet
-		if m->b1_tipo != 'MM' .and. m->b1_tipo != 'MC'
-			_oSQL:= ClsSQL ():New ()
-			_oSQL:_sQuery := ""
-			_oSQL:_sQuery += " SELECT "
-			_oSQL:_sQuery += " 		SETOR "
-			_oSQL:_sQuery += " FROM VA_FUNCIONARIO_SETOR('" + __CUSERID + "')"
-			_sDados := aclone(_oSQL:Qry2Array ())
-
-			if Len(_sDados)> 0
-				if alltrim(_sDados[1, 1]) == '2008'
-					u_help("Usuário sem permição para alterar produto tipo " + m->b1_tipo)
-					_lRet := .F.
-				endif
-			endif
 		endif
 	endif
 
