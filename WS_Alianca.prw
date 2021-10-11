@@ -1899,7 +1899,8 @@ Static Function _PedidosBloq()
 				_sDescLgd := " "
 		EndCase
 
-		_sNome := strtran(U_NoAcento(_aPed[_x, 6]), '&', 'e')
+		_sNome    := strtran(U_NoAcento(_aPed[_x, 6]), '&', 'e')
+		_sUsuario := strtran(U_NoAcento(_aPed[_x,14]), '&', 'e')  
 
 		_XmlRet += "		<RegistroItem>"
 		_XmlRet += "			<Filial>"			+ _aPed[_x, 1] 					+ "</Filial>"
@@ -1915,7 +1916,7 @@ Static Function _PedidosBloq()
 		_XmlRet += "			<Status>"			+ _aPed[_x,11] 					+ "</Status>"
 		_XmlRet += "			<Bloqueio>"			+ _aPed[_x,12] 					+ "</Bloqueio>"
 		_XmlRet += "			<Vendedor>"			+ _aPed[_x,13] 					+ "</Vendedor>"
-		_XmlRet += "			<Usuario>"			+ _aPed[_x,14] 					+ "</Usuario>"
+		_XmlRet += "			<Usuario>"			+ _sUsuario  					+ "</Usuario>"
 		_XmlRet += "			<TipoPed>"			+ _aPed[_x,15] 					+ "</TipoPed>"
 		_XmlRet += "			<TipoFrete>"		+ _aPed[_x,16] 					+ "</TipoFrete>"
 		_XmlRet += "			<PedidoCliente>"	+ _aPed[_x,17] 					+ "</PedidoCliente>"
