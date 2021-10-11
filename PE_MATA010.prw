@@ -29,6 +29,7 @@
 // 22/06/2021 - Claudia - Carregado o campo B1_VARMAAL com 000000000 na cópia de produto. GLPI: 10276
 // 04/10/2021 - Claudia - Incluida validação de usuario manutenção. GLPI: 10968
 // 05/10/2021 - CLaudia - Incluida a validação do docigo GNRE para PA e MR. GLPI: 11017
+// 08/10/2021 - Claudia - Incluida a validação para itens MC, conforme GLPI: 10845
 //
 //---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
@@ -251,24 +252,6 @@ static function _A010TOk ()
 			endif
 		endif
 
-		if _lRet
-			if m->b1_tipo != 'MM' .and. m->b1_tipo != 'MC'
-				_oSQL:= ClsSQL ():New ()
-				_oSQL:_sQuery := ""
-				_oSQL:_sQuery += " SELECT "
-				_oSQL:_sQuery += " 		SETOR "
-				_oSQL:_sQuery += " FROM VA_FUNCIONARIO_SETOR('" + __CUSERID + "')"
-				_sDados := aclone(_oSQL:Qry2Array ())
-
-				if Len(_sDados)> 0
-					if alltrim(_sDados[1, 1]) == '2008'
-						u_help("Usuário sem permição para alterar produto tipo " + m->b1_tipo)
-						_lRet := .F.
-					endif
-				endif
-			endif
-		endif
-
 		if _lRet .and. paramixb [1]:nOperation == 4  // Se estou alterando um cadastro, gero evento de alteracao.
 			_aAreaSB1 := sb1 -> (getarea ())
 			sb1 -> (dbsetorder (1))
@@ -303,6 +286,38 @@ static function _A010TOk ()
 				_lRet := .F.
 			endif 
 		endif
+	endif
+
+	if _lRet
+		if m->b1_tipo != 'MM' .and. m->b1_tipo != 'MC'
+			_oSQL:= ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " SELECT "
+			_oSQL:_sQuery += " 		SETOR "
+			_oSQL:_sQuery += " FROM VA_FUNCIONARIO_SETOR('" + __CUSERID + "')"
+			_sDados := aclone(_oSQL:Qry2Array ())
+
+			if Len(_sDados)> 0
+				if alltrim(_sDados[1, 1]) == '2008'
+					u_help("Usuário sem permição para alterar produto tipo " + m->b1_tipo)
+					_lRet := .F.
+				endif
+			endif
+		endif
+	endif
+
+	if _lRet 
+		_sCaracter := SUBSTR(alltrim(m->b1_cod), -1, 1) 
+
+		If _sCaracter == 'C' .and. m->b1_tipo <> 'MC'
+			u_help("Produto com final C deve ser obrigatoriamente do tipo MC.")
+			_lRet := .F.
+		else
+			if _sCaracter <> 'C' .and. m->b1_tipo == 'MC'
+				u_help("Produto do tipo MC deve ter obrigatoriamente C no seu final.")
+				_lRet := .F.
+			endif
+		endif	
 	endif
 return _lRet
 //
