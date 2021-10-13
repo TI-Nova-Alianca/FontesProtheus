@@ -145,14 +145,12 @@ User Function VA_ZBCBI()
 
                 _oSQL := ClsSQL ():New ()
                 _oSQL:_sQuery := " INSERT INTO BI_ALIANCA.dbo.VA_MATERIAIS "
-                _oSQL:_sQuery += "      (EVENTO,ANO,COMPONENTE,DESCRICAO ,TIPO,JANEIRO,FEVEREIRO,MARCO,ABRIL,MAIO,JUNHO"
+                _oSQL:_sQuery += "      (EVENTO,ANO,COMPONENTE,JANEIRO,FEVEREIRO,MARCO,ABRIL,MAIO,JUNHO"
                 _oSQL:_sQuery += "      ,JULHO,AGOSTO,SETEMBRO,OUTUBRO,NOVEMBRO,DEZEMBRO,ALMOX02,ALMOX03,ALMOX07,ALMOX08,ALMOX90,SOLICIT_COMPRA,PEDIDO,TERCEIROS)"
                 _oSQL:_sQuery += " VALUES "
                 _oSQL:_sQuery += "	    ('" + mv_par03           + "'"
                 _oSQL:_sQuery += "      ,'" + mv_par04           + "'"
                 _oSQL:_sQuery += "      ,'" + TRA->COMPONENTE    + "'"
-                _oSQL:_sQuery += "      ,'" + TRA->DESCPROD      + "'"
-                _oSQL:_sQuery += "      ,'" + TRA->TIPOPROD      + "'"
                 _oSQL:_sQuery += "      ," + cvaltochar(round(TRA->MES01,2)) 
                 _oSQL:_sQuery += "      ," + cvaltochar(round(TRA->MES02,2)) 
                 _oSQL:_sQuery += "      ," + cvaltochar(round(TRA->MES03,2)) 
