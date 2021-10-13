@@ -2045,13 +2045,13 @@ Static Function _EnvMargem ()
 		_wLoja     := _ExtraiTag ("_oXML:_WSAlianca:_Loja"		, .T., .F.)
 	EndIf
 
-	u_log2 ('info', "Pedido:"+ _wPedido + " Cliente:" + _wCliente + "-" + _wLoja)
+	u_log2 ('info', "Pedido:"+ _wPedido + " Cliente:" + PADR(_wCliente, 6,' ') + "-" + _wLoja)
 
 	If empty(_sErros)
 		sa1 -> (dbsetorder(1)) 		// A1_FILIAL + A1_COD + A1_LOJA
 		DbSelectArea("SA1")
 		
-		If ! dbseek(xFilial("SA1") + _wCliente + _wLoja, .F.)
+		If ! dbseek(xFilial("SA1") + PADR(_wCliente, 6,' ') + _wLoja, .F.)
 			_sErros := " Cliente " + _wCliente +"/"+ _wLoja +" não encontrado. Verifique!"
 		Else
 			_wNomeCli := sa1->a1_nome

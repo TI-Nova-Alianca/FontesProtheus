@@ -38,7 +38,7 @@ User Function SC5LBG ()
 	private aRotina   := {}
 
 	If alltrim(GetMv("VA_SC5LBG")) == 'N'
-		u_help("Rotina descontinuada no Protheus e disponibilizada no NaWeb!")
+		u_help("Rotina descontinuada no Protheus e disponibilizada no NaWeb! Disponivel em: Menu faturamento >> consultas >> liberação gerencial de pedidos")
 
 	Else
 		AAdd (_aCpoBrw, {"Bloqueio",   {|| iif('X'$sc5->c5_vabloq,'Lib.negada',iif('P'$sc5->c5_vabloq,'Preco ','')+iif('M'$sc5->c5_vabloq,'Margem ','')+iif('A'$sc5->c5_vabloq,'Reajuste ','')+iif('F'$sc5->c5_vabloq,'Bonif.s/fat. ',''))}, "C", 15, 0, "" } )
