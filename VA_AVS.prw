@@ -89,6 +89,11 @@ Static Function _Gera()
 	_oSQL:_sQuery +=                   " AND SZI.ZI_SERIE   = SE2.E2_PREFIXO"
 	_oSQL:_sQuery +=                   " AND SZI.ZI_PARCELA = SE2.E2_PARCELA"
 	_oSQL:_sQuery +=                   " AND SZI.ZI_TM      = '13')"
+
+	if u_msgnoyes ('Deseja buscar somente associados da planilha do Leonardo (out/2021) ?')
+		_oSQL:_sQuery +=  " AND RTRIM(A2_CGC) IN (select cgc from GLPI11084)"
+	endif
+
 	_oSQL:_sQuery +=  " ORDER BY E2_NOMFOR, E2_NUM"
 	_oSQL:Log ()
 	_aTit := _oSQL:Qry2Array ()
