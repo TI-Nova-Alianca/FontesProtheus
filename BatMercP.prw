@@ -233,7 +233,7 @@ static function _LePed ()
 				_oSQL:_sQuery +=   " SET ZC5_DTINI  = '',"
 				_oSQL:_sQuery +=       " ZC5_HRINI  = '',"
 //				_oSQL:_sQuery +=       " ZC5_ERRO   = 'Filiais não são iguais.'"
-				_oSQL:_sQuery +=       " ZC5_ERRO   = 'Cliente configurado para ser atendido por outra filial. Pedido nao vai ser processado nesta filial.'"
+				_oSQL:_sQuery +=       " ZC5_ERRO   = 'Cliente configurado para ser atendido pela filial " + sa1 -> a1_vafilat + "'"
 				_oSQL:_sQuery += " WHERE ZC5_FILA   = '" + _sFila + "'"
 				_oSQL:_sQuery +=   " AND ZC5_PEDMER = '" + _sPedMer + "'"
 				_oSQL:_sQuery +=   " AND ZC5_FILIAL = 1"
