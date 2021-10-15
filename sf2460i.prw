@@ -142,7 +142,9 @@
 // 27/09/2021 - Claudia - Ajustadas validações para envio de email. GLPI: 10927
 // 29/09/2021 - Claudia - Tratamento para venda de milho. GLPI: 10994
 // 05/10/2021 - Claudia - Criado novo grupo para email de guia/st grupo 132. GLPI: 11028 
+// 15/10/2021 - Robert  - Ajuste sintaxe teste NF venda milho p/ associados (estava assim --> case _sTProd := '2')
 //
+
 // ---------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -702,11 +704,11 @@ static function _AtuSZIMudas ()
 						_sTM   := '23'
 						_sHist := 'VENDA AÇÚCAR MASCAVO CFE.NF.'
 						_sSerie:= 'INS'
-					Case _sTProd := '2' 	// mudinha  						
+					Case _sTProd == '2' 	// mudinha
 						_sTM   := '24'
 						_sHist := 'VENDA MUDAS DE UVA CFE.NF.'
 						_sSerie:= 'MUD'
-					Case _sTProd := '3'		// milho
+					Case _sTProd == '3'		// milho
 						_sTM   := '23'
 						_sHist := 'VENDA MILHO CFE.NF.'
 						_sSerie:= 'INS'
