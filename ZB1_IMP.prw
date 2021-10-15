@@ -16,6 +16,7 @@
 // 06/01/2020 - Claudia - Incluido totalizador e coluna de status de titulo. GLPI: 9079
 // 05/03/2021 - Claudia - Ajuste dos totalizadores para nao incluir os débitos. GLPI:9369
 // 29/03/2021 - Claudia - Incluida filial 13. GLPI: 9710
+// 15/10/2021 - Claudia - Incluido totalizadores de filials. GLPI: 11055
 //
 // --------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -552,6 +553,18 @@ Static Function PrintReport(oReport)
 	Local _nTotTax   := 0
 	Local _nTotDVenda:= 0
 	Local _nTotDTax  := 0
+	Local _nTot01V   := 0
+	Local _nTot01T   := 0
+	Local _nTot10V   := 0
+	Local _nTot10T   := 0
+	Local _nTot13V   := 0
+	Local _nTot13T   := 0
+	Local _nTotD01V  := 0
+	Local _nTotD01T  := 0
+	Local _nTotD10V  := 0
+	Local _nTotD10T  := 0
+	Local _nTotD13V  := 0
+	Local _nTotD13T  := 0
 	Local _sStaTitulo:= "-"
 
 	oSection1:Init()
@@ -644,12 +657,39 @@ Static Function PrintReport(oReport)
 		If alltrim(_aRel[i,12]) == 'I' .and. _aRel[i,13] == '+'
 			_nTotVenda += _aRel[i,3]
 			_nTotTax   += _aRel[i,5] 
+			Do Case
+				Case alltrim(_aRel[i,1]) == '01'
+					_nTot01V += _aRel[i,3]
+					_nTot01T += _aRel[i,5]
+
+				Case alltrim(_aRel[i,1]) == '10'
+					_nTot10V += _aRel[i,3]
+					_nTot10T += _aRel[i,5]
+
+				Case alltrim(_aRel[i,1]) == '13'
+					_nTot13V += _aRel[i,3]
+					_nTot13T += _aRel[i,5]
+			EndCase
 		Else
 			If alltrim(_aRel[i,12]) == 'D' .and. _aRel[i,13] == '+'
 				_nTotDVenda += _aRel[i,3]
 				_nTotDTax   += _aRel[i,5] 
+				Do Case
+					Case alltrim(_aRel[i,1]) == '01'
+						_nTotD01V += _aRel[i,3]
+						_nTotD01T += _aRel[i,5]
+
+					Case alltrim(_aRel[i,1]) == '10'
+						_nTotD10V += _aRel[i,3]
+						_nTotD10T += _aRel[i,5]
+
+					Case alltrim(_aRel[i,1]) == '13'
+						_nTotD13V += _aRel[i,3]
+						_nTotD13T += _aRel[i,5]
+				EndCase
 			EndIf
 		EndIf
+
 		oSection1:PrintLine()
 	Next
 
@@ -671,6 +711,48 @@ Static Function PrintReport(oReport)
 	oReport:PrintText(PADL('R$' + Transform(_nTotDVenda, "@E 999,999,999.99"),20,' '),, 900)
 	oReport:PrintText("Valor da Taxa:" ,, 100)
 	oReport:PrintText(PADL('R$' + Transform(_nTotDTax, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:SkipLine(1)
+	oReport:ThinLine()
+
+	_nLinha:= _PulaFolha(_nLinha)
+	oReport:PrintText("TOTAL FILIAL 01" ,, 100)
+	_nLinha:= _PulaFolha(_nLinha)
+	oReport:PrintText("Valor da Parcela:" ,, 100)
+	_vTPar := _nTot01V - _nTotD01V 
+	oReport:PrintText(PADL('R$' + Transform(_vTPar, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:PrintText("Valor da Taxa:" ,, 100)
+	_vTTax := _nTot01T - _nTotD01T
+	oReport:PrintText(PADL('R$' + Transform(_vTTax, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:PrintText("Valor Total(Parcela - Taxa):" ,, 100)
+	oReport:PrintText(PADL('R$' + Transform(_vTPar - _vTTax, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:SkipLine(1)
+	oReport:ThinLine()
+
+	_nLinha:= _PulaFolha(_nLinha)
+	oReport:PrintText("TOTAL FILIAL 10" ,, 100)
+	_nLinha:= _PulaFolha(_nLinha)
+	oReport:PrintText("Valor da Parcela:" ,, 100)
+	_vTPar := _nTot10V - _nTotD10V 
+	oReport:PrintText(PADL('R$' + Transform(_vTPar, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:PrintText("Valor da Taxa:" ,, 100)
+	_vTTax := _nTot10T - _nTotD10T
+	oReport:PrintText(PADL('R$' + Transform(_vTTax, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:PrintText("Valor Total(Parcela - Taxa):" ,, 100)
+	oReport:PrintText(PADL('R$' + Transform(_vTPar - _vTTax, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:SkipLine(1)
+	oReport:ThinLine()
+
+	_nLinha:= _PulaFolha(_nLinha)
+	oReport:PrintText("TOTAL FILIAL 13" ,, 100)
+	_nLinha:= _PulaFolha(_nLinha)
+	oReport:PrintText("Valor da Parcela:" ,, 100)
+	_vTPar := _nTot13V - _nTotD13V 
+	oReport:PrintText(PADL('R$' + Transform(_vTPar, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:PrintText("Valor da Taxa:" ,, 100)
+	_vTTax := _nTot13T - _nTotD13T
+	oReport:PrintText(PADL('R$' + Transform(_vTTax, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:PrintText("Valor Total(Parcela - Taxa):" ,, 100)
+	oReport:PrintText(PADL('R$' + Transform(_vTPar - _vTTax, "@E 999,999,999.99"),20,' '),, 900)
 	oReport:SkipLine(1)
 	oReport:ThinLine()
 
