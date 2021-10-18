@@ -15,6 +15,7 @@
 // 27/11/2020 - Robert  - Quando existir etiqueta relacionada, tenta inutiliza-la automaticamente.
 //                      - Transf. envolvendo o AX01 (FullWMS) liberadas, momentaneamente, para aceitar liberacao manual (sem ser o Full).
 // 04/12/2020 - RObert  - Criado tratamento para produto destino diferente do produto origem.
+// 18/10/2021 - Sandra  - Ajuste da mensagem "Transferencia ainda nao gravada na tabela ZZG" para "Transferencia ainda nao gravada na tabela ZAG"
 //
 
 // ------------------------------------------------------------------------------------
@@ -256,7 +257,7 @@ METHOD Executa (_lMensagem) Class ClsTrEstq
 //	u_logIni (GetClassName (::Self) + '.' + procname ())
 
 	if _lContinua .and. ::RegZAG == 0
-		_sMsgInt += "Transferencia ainda nao gravada na tabela ZZG"
+		_sMsgInt += "Transferencia ainda nao gravada na tabela ZAG"
 		_lContinua = .F.
 	endif
 	if _lContinua .and. ::Executado == 'S'
