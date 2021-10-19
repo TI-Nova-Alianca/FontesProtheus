@@ -47,6 +47,7 @@
 // 04/10/2021 - Claudia - Alterada a função _CalcFrt, conforme GLPI: 11009
 // 06/10/2021 - Claudia - Incluido o parametro _lNAWeb para carregar ou nao o array de dados da margem. GLPI: 7792
 // 07/10/2021 - Claudia - Incluida gravação dos registros nos eventos, para busca no NaWeb. GLPI 7792
+// 19/10/2021 - Claudia - Alterado o modo de gravação do evento SC5009.
 //
 // ------------------------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
@@ -577,36 +578,44 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 
 	If Len(_aNaWeb) > 0
 		// Deleta registros já gravados
+		// Elimina evento anterior, se houver
 		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := " 	DELETE FROM VA_VEVENTOS "
-		_oSQL:_sQuery += " 	WHERE CODEVENTO      = 'SC5009'"
-		_oSQL:_sQuery += " 		AND DATA         = '" + DTOS(m->c5_emissao) + "'"
-		_oSQL:_sQuery += " 		AND CLIENTE      = '" + m->c5_cliente       + "'"
-		_oSQL:_sQuery += " 		AND LOJA_CLIENTE = '" + m->c5_lojacli       + "'"
-		_oSQL:_sQuery += " 		AND PEDVENDA     = '" + m->c5_num           + "'"		
-		_oSQL:Log ()
-		if !_oSQL:Exec ()
-			_lCont := .F.
-		else
-			For _x:=1 to Len(_aNaWeb)
-				_sX := PADL(alltrim(str(_x)),2,'0') 
+		_oSQL:_sQuery := " SELECT R_E_C_N_O_"
+		_oSQL:_sQuery += " 		FROM " + RetSQLName ("SZN") + " SZN "
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery += " AND ZN_FILIAL  = '" + xfilial ("SZN")     + "'"
+		_oSQL:_sQuery += " AND ZN_DATA    = '" + DTOS(m->c5_emissao) + "'"
+		_oSQL:_sQuery += " AND ZN_PEDVEND = '" + m->c5_num           + "'"
+		_oSQL:_sQuery += " AND ZN_CLIENTE = '" + m->c5_cliente       + "'"
+		_oSQL:_sQuery += " AND ZN_LOJACLI = '" + m->c5_lojacli       + "'"
+		_oSQL:_sQuery += " AND ZN_CODEVEN = 'SC5009'"
+		_nRegSZN = _oSQL:RetQry (1, .F.)
 
-				_sTxtEvent := _sX + "|" + alltrim(_aNaWeb[_x, 1])
-				_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 2]) 
-				_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 3]) 
-				_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 4]) 
-				_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 5]) 
-				_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 6]) 
-				_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 7]) 
-				_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 8]) 
-				_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 9])
-				_sTxtEvent += "|" + alltrim(_aNaWeb[_x,10]) 
-				_sTxtEvent += "|" + alltrim(_aNaWeb[_x,11]) 
-				_sTxtEvent += "|" + alltrim(_aNaWeb[_x,12]) 
-
-				_GravaNaWeb(_sTxtEvent)
-			Next 
+		if _nRegSZN > 0
+			_oEvtAnt := ClsEvent ():New ()
+			_oEvtAnt:RecnoSZN = _nRegSZN
+			_oEvtAnt:Exclui ()
 		endif
+
+		For _x:=1 to Len(_aNaWeb)
+			_sX := PADL(alltrim(str(_x)),2,'0') 
+
+			_sTxtEvent := _sX + "|" + alltrim(_aNaWeb[_x, 1])
+			_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 2]) 
+			_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 3]) 
+			_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 4]) 
+			_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 5]) 
+			_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 6]) 
+			_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 7]) 
+			_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 8]) 
+			_sTxtEvent += "|" + alltrim(_aNaWeb[_x, 9])
+			_sTxtEvent += "|" + alltrim(_aNaWeb[_x,10]) 
+			_sTxtEvent += "|" + alltrim(_aNaWeb[_x,11]) 
+			_sTxtEvent += "|" + alltrim(_aNaWeb[_x,12]) 
+
+			_GravaNaWeb(_sTxtEvent)
+		Next 
+
 	EndIf
 	
 	
