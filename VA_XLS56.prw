@@ -12,6 +12,7 @@
 //
 // Historico de alteracoes:
 // 27/09/2021 - Claudia - Adicionado campo F4_CSTPIS
+// 19/10/2021 - Claudia - Alterada a data de emissão para data de digitação.
 //
 // --------------------------------------------------------------------------
 User Function VA_XLS56 ()
@@ -57,7 +58,7 @@ Static Function _Gera()
 
     _oSQL:_sQuery += " SELECT "
     _oSQL:_sQuery += " 	   D1_FILIAL AS FILIAL "
-    _oSQL:_sQuery += "    ,dbo.VA_DTOC(D1_EMISSAO) AS EMISSAO "
+    _oSQL:_sQuery += "    ,dbo.VA_DTOC(D1_DTDIGIT) AS DTDIGIT "
     _oSQL:_sQuery += "    ,D1_DOC AS NF "
     _oSQL:_sQuery += "    ,D1_SERIE AS SERIE "
     _oSQL:_sQuery += "    ,SD1.D1_FORNECE AS COD_FORNECE "
@@ -155,14 +156,14 @@ Static Function _Gera()
     _oSQL:_sQuery += " 	ON (SF4.D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " 			AND SF4.F4_CODIGO = D1_TES) "
     _oSQL:_sQuery += " WHERE SD1.D_E_L_E_T_ = '' "
-    _oSQL:_sQuery += " AND SD1.D1_EMISSAO BETWEEN '"+ DTOS(mv_par01) +"' AND '"+ DTOS(mv_par02) +"' "
+    _oSQL:_sQuery += " AND SD1.D1_DTDIGIT BETWEEN '"+ DTOS(mv_par01) +"' AND '"+ DTOS(mv_par02) +"' "
     _oSQL:_sQuery += " AND SD1.D1_TIPO <> 'D' "
 
     _oSQL:_sQuery += " UNION ALL "
     
     _oSQL:_sQuery += " SELECT "
     _oSQL:_sQuery += " 	   D1_FILIAL AS FILIAL "
-    _oSQL:_sQuery += "    ,dbo.VA_DTOC(D1_EMISSAO) AS EMISSAO "
+    _oSQL:_sQuery += "    ,dbo.VA_DTOC(D1_DTDIGIT) AS DTDIGIT "
     _oSQL:_sQuery += "    ,D1_DOC AS NF "
     _oSQL:_sQuery += "    ,D1_SERIE AS SERIE "
     _oSQL:_sQuery += "    ,SD1.D1_FORNECE AS COD_FORNECE "
@@ -260,9 +261,9 @@ Static Function _Gera()
     _oSQL:_sQuery += " 	ON (SF4.D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " 			AND SF4.F4_CODIGO = D1_TES) "
     _oSQL:_sQuery += " WHERE SD1.D_E_L_E_T_ = '' "
-    _oSQL:_sQuery += " AND SD1.D1_EMISSAO BETWEEN '"+ DTOS(mv_par01) +"' AND '"+ DTOS(mv_par02) +"' "
+    _oSQL:_sQuery += " AND SD1.D1_DTDIGIT BETWEEN '"+ DTOS(mv_par01) +"' AND '"+ DTOS(mv_par02) +"' "
     _oSQL:_sQuery += " AND SD1.D1_TIPO = 'D' "
-    _oSQL:_sQuery += " ORDER BY EMISSAO, NF, PRODUTO  "
+    _oSQL:_sQuery += " ORDER BY DTDIGIT, NF, PRODUTO  "
 
 	_oSQL:Log ()
 	_oSQL:Qry2Xls (.F., .F., .F.)
