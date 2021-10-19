@@ -207,7 +207,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	do case
 		case ::Numero == 1
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
-			::Setores   = 'PCP/ENG'
+			::Setores   = 'PCP'
 			::Descricao = 'Produto deveria ter revisao padrao no cadastro'
 			::Sugestao  = "Revise o campo '" + alltrim (RetTitle ("B1_REVATU")) + "' cadastro do produto"
 			::Query := "WITH REVISOES AS (SELECT DISTINCT G1_COD, G1_REVINI, G1_REVFIM
@@ -2943,14 +2943,6 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 			::Setores    = 'INF'
 			::Descricao  = 'Usuarios: Diretorio impressao errado, ambiente != cliente ou destino != arquivo'
-			/*
-			::Query := " SELECT TIPO_GRUPO, ID_GRUPO, RTRIM (DESCRICAO) AS DESCR_GRUPO,"
-			::Query +=        " DIRETORIO_IMPRESSAO, TIPO_IMPRESSAO, AMBIENTE_IMPRESSAO"
-			::Query +=  " FROM VA_USR_GRUPOS"
-			::Query +=  " WHERE TIPO_GRUPO = 'CFG'"
-			::Query +=    " AND (DIRETORIO_IMPRESSAO != 'C:\TEMP\SPOOL_PROTHEUS\' OR AMBIENTE_IMPRESSAO != 'CLIENTE')"
-			::Query +=  " ORDER BY ID_GRUPO"
-			*/
 			::Query := " SELECT P.USR_ID, U.USR_CODIGO, P.USR_DIRIMP"
 			::Query +=       ", P.USR_TIPOIMP + '-' + CASE P.USR_TIPOIMP WHEN '1' THEN 'EM DISCO' WHEN '2' THEN 'VIA WINDOWS' WHEN '3' THEN 'DIRETO NA PORTA' ELSE '' END AS TIPO_IMPRESSAO"
 			::Query +=       ", P.USR_ENVIMP + '-' + CASE P.USR_ENVIMP WHEN '1' THEN 'SERVIDOR' WHEN '2' THEN 'CLIENTE' ELSE '' END AS AMBIENTE_IMPRESSAO"
@@ -2959,6 +2951,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=    " AND U.D_E_L_E_T_ = ''"
 			::Query +=    " AND U.USR_ID = P.USR_ID"
 			::Query +=    " AND U.USR_MSBLQL != '1'"
+			::Query +=    " AND U.USR_ID != '000000'"
 			::Query +=    " AND (UPPER (P.USR_DIRIMP) != 'C:\TEMP\SPOOL_PROTHEUS\' OR P.USR_ENVIMP != '2' OR P.USR_TIPOIMP != '1')"
 			::Query +=  " ORDER BY P.USR_ID"
 
