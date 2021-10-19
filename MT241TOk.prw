@@ -1,15 +1,15 @@
-// Programa:  MT241TOk
-// Autor:     Robert Koch
-// Data:      24/09/2016
+// Programa.: MT241TOk
+// Autor....: Robert Koch
+// Data.....: 24/09/2016
 // Descricao: P.E. 'Tudo OK' na tela de movimentos internos mod.II.
-
+//
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #ponto_de_entrada
 // #Descricao         #Valida a tela inteira de movimentacoes internas modelo II (multiplas).
 // #PalavasChave      #validacao #movimentacoes_internas #modelo_II #tudo_ok
 // #TabelasPrincipais #SD3
 // #Modulos           #EST
-
+//
 // Historico de alteracoes:
 // 14/03/2018 - Robert  - Data nao pode mais ser diferente de date().
 // 02/04/2018 - Robert  - Movimentacao retroativa habilitada para o grupo 084.
@@ -19,8 +19,9 @@
 // 03/02/2021 - Cláudia - Vinculação Itens C ao movimento 573 - GLPI: 9163
 // 13/04/2021 - Claudia - Validação Centro de Custo X Conta Contábil - GLPI: 9120
 // 15/06/2021 - Claudia - Incluida novas validações C.custo X C.contabil. GLPI: 10224
+// 15/10/2021 - Claudia - Validação MC ao movimento 573. GLPI: 10765
 //
-// -----------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------
 user function MT241TOk ()
 	local _lRet     := .T.
 	local _aAreaAnt := U_ML_SRArea ()
@@ -74,6 +75,20 @@ user function MT241TOk ()
 		endif
 	endif
 
+	// movimentações de produtos MC apenas pela TM 573
+	if _lRet
+		_nPos := aScan(aHeader,{|x| Alltrim(x[2]) == "D3_COD" }) // produto
+
+		for _x:=1 to len(aCols)
+			_sTipo := fbuscacpo("SB1",1,xfilial("SB1") + aCols[_x,_nPos],"B1_TIPO")
+
+	        if alltrim(cTM) != '573' .and. _sTipo $ ('MC') .and. !GDDeleted (_x)
+	        	_lRet = .F.
+				u_help ("Itens tipo MC só podem ser movimentados com movimento 573.",, .t.)
+	        EndIf
+		next
+	endif 
+
 	if _lRet 
 		_nPos := aScan(aHeader,{|x| Alltrim(x[2]) == "D3_COD" })
 		for _x:=1 to len(aCols)
@@ -81,11 +96,9 @@ user function MT241TOk ()
 			_sTipo  := fbuscacpo("SB1",1,xfilial("SB1")+aCols[_x,_nPos],"B1_TIPO")
 	        if alltrim(_sProdC) == 'C' .and. alltrim(CTM) != '573' .and. _sTipo $ ('MM/BN/MC/CL') .and. !GDDeleted (_x)
 	        	_lRet = .F.
+				u_help ("Itens da manutenção com final C só podem ser movimentados com movimento 573.",, .t.)
 	        EndIf
 		next
-		if _lRet = .F.
-			u_help ("Itens da manutenção com final C só podem ser movimentados com movimento 573.",, .t.)
-		endif
 	endIf
 
 	// realiza a validação de amarração centro de custo x conta contábil
@@ -112,17 +125,6 @@ user function MT241TOk ()
 				u_help("Conta contábil iniciada em 1, não é necessário a informação do centro de custo! Retire o Centro de custo.")
 				_lRet = .F.
 			endif
-			// if !empty(cCC) .and. !empty(aCols[_x,_nPos])
-			// _sConta := U_VA_CUSXCON(aCols[_x,_nPos],'1')
-			// _sCC    := U_VA_CUSXCON(cCC,'2')
-
-			// if !empty(_sConta) .and. !empty(_sCC)
-			// 	if alltrim(_sConta) !=alltrim(_sCC)
-			// 		u_help ("Divergencia no cadastro de Amarração C.Custo X C.Contabil. Grupo C.Custo:" + alltrim(_sCC) + " Grupo C.Contabil:" + alltrim(_sConta))
-			// 		_lRet = .F.
-			// 	endif
-			// endif
-			// endif
 		next	
 	endif
 

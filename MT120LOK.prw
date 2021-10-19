@@ -14,6 +14,7 @@
 // 27/03/2020 - Andre   - Adicionada validação para data de entrega não ser menor que data atual.
 // 12/04/2021 - Claudia - Validação Centro de Custo X Conta Contábil - GLPI: 9120
 // 15/06/2021 - Claudia - Incluida novas validações C.custo X C.contabil. GLPI: 10224
+// 15/10/2021 - Claudia - Validação MC da tetra pak. GLPI: 10765
 //
 // -----------------------------------------------------------------------------------------------------
 User Function MT120LOk ()
@@ -74,6 +75,17 @@ User Function MT120LOk ()
 			u_help ("Obrigatório informar centro de custo da filial logada!")
 			_lRet = .F.
 		endif	
+	endif
+
+	// verifica item MC que deve ser comprado do fornecedore tetra
+	if _lRet .and. ! GDDeleted ()
+		_sTpProd  := fBuscaCpo ("SB1", 1, xfilial("SB1") + GDFieldGet("C7_PRODUTO"), 'B1_TIPO' )
+		_sNomeFor := fBuscaCpo ("SA2", 1, xfilial("SA2") + CA120FORN + CA120LOJ, 'A2_NOME')
+
+		if alltrim(_sTpProd) == 'MC' .and. !('TETRA PAK' $ alltrim(_sNomeFor))
+			u_help ("Itens do tipo MC devem ser adquiridos do fornecedor Tetra Pak!")
+			_lRet = .F.
+		endif		
 	endif
 	
 	U_ML_SRArea (_aAreaAnt)

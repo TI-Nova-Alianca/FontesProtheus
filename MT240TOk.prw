@@ -1,8 +1,14 @@
-// Programa:  
-
-// Autor:     Robert Koch
-// Data:      24/09/2016
+// Programa.: MT240TOk
+// Autor....: Robert Koch
+// Data.....: 24/09/2016
 // Descricao: P.E. 'Tudo OK' na tela de movimentos internos.
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #P.E. 'Tudo OK' na tela de movimentos internos.
+// #PalavasChave      #validacao #movimentacoes_internas #modelo_II #tudo_ok
+// #TabelasPrincipais #SD3
+// #Modulos           #EST
 //
 // Historico de alteracoes:
 // 14/03/2018 - Robert  - dDataBase nao pode mais ser diferente de date().
@@ -13,6 +19,7 @@
 // 13/04/2021 - Claudia - Validação Centro de Custo X Conta Contábil - GLPI: 9120
 // 15/06/2021 - Claudia - Incluida novas validações C.custo X C.contabil. GLPI: 10224
 // 09/07/2021 - Robert  - Criada chamada da funcao U_ConsEst (GLPI 10464).
+// 15/10/2021 - Claudia - Validação MC ao movimento 573. GLPI: 10765
 //
 // -----------------------------------------------------------------------------------------------------
 user function MT240TOk ()
@@ -49,6 +56,16 @@ user function MT240TOk ()
 		u_help ("Este tipo de movimento foi parametrizado para exigir a inclusão do número da OP.")
 		_lRet = .F.
 	endif
+
+	// movimentações de produtos MC apenas pela TM 573
+	if _lRet  
+		_sTipo  := fbuscacpo("SB1",1,xfilial("SB1") + m->d3_cod,"B1_TIPO")
+
+		if alltrim(m->d3_tm) != '573' .and. _sTipo $ ('MC') 
+			u_help ("Itens tipo MC só podem ser movimentados com movimento 573.",, .t.)
+			_lRet = .F.
+		endif
+	endIf
 
 	if _lRet  
 		_ProdC := RIGHT(alltrim(m->d3_cod), 1)  
