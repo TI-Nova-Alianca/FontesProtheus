@@ -13,6 +13,7 @@
 //                       faixa de numeracao, com a possibilidade de ter notas inutilizadas ou de entrada (formulário próprio) no meio.
 // 31/07/2020 - Robert - Melhorados avisos e logs.
 //                     - Inseridas tags para catalogacao de fontes
+// 20/10/2021 - Robert  - Variavel _sSerie passa a ser lida na array _aNComSono (GLPI 11112)
 //
 
 // Tags para automatizar catalogo de customizacoes:
@@ -29,14 +30,11 @@ user function _Mta460B ()
 	//local _sQuery    := ""
 	local _sNFIni    := ""
 	local _sNFFim    := ""
-	local _sSerie    := "10 "
+	local _sSerie    := ''  //"10 "
 	local _lContinua := .T.
 	local _nLock     := 0
 	local _nNComSono := 0
 	private _aNComSono := {}  // Deixar como private para ser vista por outros P.E. (lista de notas a ser transmitida para a SEFAZ)
-
-	u_logId ()
-	u_logIni ()
 
 	if _lContinua
 		_nLock := U_Semaforo ('faturamento' + cEmpAnt + xfilial ("SC9"))
@@ -53,34 +51,11 @@ user function _Mta460B ()
 
 	if _lContinua
 			
-/*		// Guarda numero da ultima NF gerada, para posterior envio das NF-e para o SPED.
-		_sQuery := ""
-		_sQuery += " SELECT MAX (F2_DOC)"
-		_sQuery +=   " FROM " + RETSQLName ("SF2") + " SF2 "
-		_sQuery +=  " WHERE F2_FILIAL  = '" + xFilial ("SF2") + "'"
-		_sQuery +=    " AND D_E_L_E_T_ = ' '"
-		_sQuery +=    " AND F2_SERIE   = '" + _sSerie + "'"
-		_sQuery +=    " AND F2_EMISSAO >= '" + dtos (dDataBase - 10) + "'"
-		u_log (_sQuery)
-		_sNFIni = soma1 (U_RetSQL (_sQuery))
-*/		
 		// Tela padrao de preparacao de doctos.
 		u_log ('Chamando MATA460B')
 		MATA460B ()
 		u_log ('Retornou do MATA460B')
 
-/*		// Guarda numero da ultima NF gerada, para posterior envio das NF-e para o SPED.
-		_sQuery := ""
-		_sQuery += " SELECT MAX (F2_DOC)"
-		_sQuery +=   " FROM " + RETSQLName ("SF2") + " SF2 "
-		_sQuery +=  " WHERE F2_FILIAL   = '" + xFilial ("SF2") + "'"
-		_sQuery +=    " AND D_E_L_E_T_  = ' '"
-		_sQuery +=    " AND F2_SERIE    = '" + _sSerie + "'"
-		_sQuery +=    " AND F2_EMISSAO  = '" + dtos (dDataBase) + "'"
-		u_log (_sQuery)
-		_sNFFim = U_RetSQL (_sQuery)
-		u_log ("NF ini:", _sNFIni, "NF fim:", _snffim)
-*/
 		// Libera semaforo
 		U_Semaforo (_nLock)
 
@@ -110,8 +85,10 @@ user function _Mta460B ()
 			do while .t.  //_nNComSono <= len (_aNComSono)
 				_sNFIni = _aNComSono [_nNComSono, 1]
 				_sNFFim = _aNComSono [_nNComSono, 1]
+				_sSerie = _aNComSono [_nNComSono, 3]
 				do while .t. //_nNComSono <= len (_aNComSono)
 					_sNFFim = _aNComSono [_nNComSono, 1]
+					_sSerie = _aNComSono [_nNComSono, 3]
 					if _aNComSono [_nNComSono, 2] == .T.  // A proxima nota vai ter lacuna na numeracao.
 						u_log ('Processar:', _sNFIni, _sNFFim)
 						U_SPEDAut ('S', _sSerie, _sNFIni, _sNFFim)

@@ -51,7 +51,10 @@
 // 22/03/2021 - Cláudia - Validação para pedidos com bloqueio gerencial. GLPI: 9666
 // 26/03/2021 - Robert  - Validacao bloq.gerencial lia todos os pedidos e nao apenas os marcados.
 // 06/05/2021 - Claudia - Retirado a chamada do prohrama U_ML_Senha. GLPI 9988
+// 20/10/2021 - Robert  - Variavel _sSerie passa a ser lida na array _aNComSono (GLPI 11112)
+//                      - Incluidas chamadas da funcao PerfMon para monitoramento de performance.
 //
+
 // --------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"  // Deixar este include para aparecerem os botoes da tela de acompanhamento do SPED
 #include "PROTHEUS.ch"
@@ -77,7 +80,7 @@ user function _Mata460 ()
 	local _nLock      := 0
 	local _sNFIni     := ""
 	local _sNFFim     := ""
-	local _sSerie     := "10 "
+	local _sSerie     := ''  // "10 "
 	local _oSQL       := NIL
 	local _sPerg      := "MT461A"
 	local _aBkpSX1    := {}
@@ -146,18 +149,6 @@ user function _Mata460 ()
 				U_SalvaSX1 (_sPerg, _aBkpSX1)
 			endif
 
-			/*
-			// Guarda numero da ultima NF gerada, para posterior envio das NF-e para o SPED.
-			_sQuery := ""
-			_sQuery += " SELECT MAX (F2_DOC)"
-			_sQuery +=   " FROM " + RETSQLName ("SF2") + " SF2 "
-			_sQuery +=  " WHERE F2_FILIAL   = '" + xFilial ("SF2") + "'"
-			_sQuery +=    " AND D_E_L_E_T_  = ' '"
-			_sQuery +=    " AND F2_SERIE    = '" + _sSerie + "'"
-			_sQuery +=    " AND F2_EMISSAO  = '" + dtos (dDataBase) + "'"
-			_sNFFim = U_RetSQL (_sQuery)
-			*/
-
 			// Libera semaforo
 			U_Semaforo (_nLock)
 
@@ -187,8 +178,10 @@ user function _Mata460 ()
 				do while .t.  //_nNComSono <= len (_aNComSono)
 					_sNFIni = _aNComSono [_nNComSono, 1]
 					_sNFFim = _aNComSono [_nNComSono, 1]
+					_sSerie = _aNComSono [_nNComSono, 3]
 					do while .t. //_nNComSono <= len (_aNComSono)
 						_sNFFim = _aNComSono [_nNComSono, 1]
+						_sSerie = _aNComSono [_nNComSono, 3]
 						if _aNComSono [_nNComSono, 2] == .T.  // A proxima nota vai ter lacuna na numeracao.
 							U_SPEDAut ('S', _sSerie, _sNFIni, _sNFFim)
 							U_BolAuto (_sSerie, _sNFIni, _sNFFim)
@@ -252,6 +245,7 @@ static function _Filtra ()
 
 	// Monta uma lista dos pedidos em aberto.
 	if _lContinua
+		U_PerfMon ('I', 'FiltraPedFaturar')  // Para metricas de performance
 		_sQuery := ""
 		_sQuery += " SELECT DISTINCT ' ', "
 		_sQuery +=                  " C5_VAFEMB, "
@@ -284,6 +278,7 @@ static function _Filtra ()
 		_sQuery += " ORDER BY C5_VAFEMB, C5_VAPRIOR, C9_PEDIDO"
 		//u_log (_sQuery)
 		_aPedAux = aclone (U_Qry2Array (_sQuery))
+		U_PerfMon ('F', 'FiltraPedFaturar')  // Para metricas de performance
 		if len (_aPedAux) == 0
 			u_help ("Nao foram encontrados pedidos em aberto.",, .t.)
 			_lContinua = .F.

@@ -36,7 +36,9 @@
 // 17/05/2021 - Claudia - Gravação da data prevista. GLPI: 9885
 // 14/07/2021 - Claudia - Incluida a gravação produto x fornecedor de transferencias 
 //                        entre filiais. GLPI: 10213
+// 20/10/2021 - Robert  - Passa a gravar a serie na array _aNComSono (GLPI 11112).
 //
+
 // --------------------------------------------------------------------------------------------------
 user function M460Fim ()
 	local _aAreaAnt := U_ML_SRArea ()
@@ -68,7 +70,8 @@ user function M460Fim ()
 	// Alimenta lista de notas geradas, para posterior envio para a SEFAZ.
 	// A variavel jah deve estar previamente declarada.
 	if type ("_aNComSono") == "A"
-		aadd (_aNComSono, {sf2 -> f2_doc, .F.})
+	//	aadd (_aNComSono, {sf2 -> f2_doc, .F.})
+		aadd (_aNComSono, {sf2 -> f2_doc, .F., sf2 -> f2_serie})
 	endif
 
 	// grava produto x fornecedor para transferencias
