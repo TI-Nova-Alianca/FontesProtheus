@@ -48,6 +48,7 @@
 // 09/04/2021 - Robert - Criado atributo PerfMon e implementado tratamento para mostrar tempos no log quando .T. (GLPI 9797)
 // 05/05/2021 - Robert - Adequacao p/usar FWTemporaryTable e nao mais o driver ISAM por exigencia novas releases (GLPI 9973).
 // 25/07/2021 - Robert - Metodo Copy2Trb() passa a receber parametro com nome do alias a gerar.
+// 21/10/2021 - Robert - Criado atributo ArqDestXLS e tratamento no metodo Qry2XLS (GLPI 11034)
 //
 
 #include "protheus.ch"
@@ -61,6 +62,7 @@ CLASS ClsSQL
 	DATA _xRetQry
 	DATA _aSetField
 	DATA _sAliasQry
+	DATA ArqDestXLS
 	DATA UltMsg
 	DATA lGeraHead
 	DATA aHeader
@@ -99,6 +101,7 @@ METHOD New () Class ClsSQL
 	::_xRetQry   := NIL
 	::_aSetField := {}
 	::_sAliasQry := ""
+	::ArqDestXLS := ''
 	::UltMsg     := ""
 	::PerfMon    := .F.
 Return Self
@@ -500,8 +503,10 @@ return ::_sAliasQry
 //             _lSemEspac: Executa 'alltrim()' nos campos.
 METHOD Qry2XLS (_lSetField, _lFixaChar, _lSemEspac) Class ClsSQL
 	local _aAreaAnt  := U_ML_SRArea ()
-	local _sNomeArq  := CriaTrab ({}, .F.)
-	local _sArq      := MsDocPath () + "\" + _sNomeArq
+//	local _sNomeArq  := CriaTrab ({}, .F.)
+//	local _sArq      := MsDocPath () + "\" + _sNomeArq
+	local _sNomeArq  := ''
+	local _sArq      := ''
 	local _sTmpPath  := AllTrim (GetTempPath ())
 	local _oExcelApp := NIL
 	local _nCampo    := 0
@@ -516,6 +521,14 @@ METHOD Qry2XLS (_lSetField, _lFixaChar, _lSemEspac) Class ClsSQL
 	_lSetField := iif (_lSetField == NIL, .T., _lSetField)
 	_lFixaChar := iif (_lFixaChar == NIL, .F., _lFixaChar)
 	_lSemEspac := iif (_lSemEspac == NIL, .F., _lSemEspac)
+
+	// Definicao do nome do arquivo de destino: se nao especificado na chamada, gera nome aleatorio
+	if empty (::ArqDestXLS)
+		_sNomeArq = CriaTrab ({}, .F.)
+	else
+		_sNomeArq = alltrim (::ArqDestXLS) + '_' + dtos (date ()) + '_' + strtran (strtran (TimeFull (), ':', ''), '.', '')
+	endif
+	_sArq = MsDocPath () + "\" + _sNomeArq
 
 	// Executa a query.
 	_ExecQry (::self)
