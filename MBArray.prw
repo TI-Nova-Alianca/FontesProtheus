@@ -2,8 +2,14 @@
 // Autor......: Robert Koch
 // Data.......: 07/12/2004
 // Descricao..: MarkBrowse para arrays
-// Cliente....: Generico
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Interface_usuario
+// #Descricao         #Gera tela de marcacao com base em array, semelhante a funcao MarkBrowse do sistema.
+// #PalavasChave      #auxiliar #uso_generico
+// #TabelasPrincipais 
+// #Modulos           #todos_modulos
+
 // Historico de alteracoes:
 // 23/04/2005 - Robert - Melhorias gerais
 // 24/10/2006 - Robert - Ajustes posicionamento botoes para versao 'Flat'
@@ -12,6 +18,7 @@
 //                     - Criado botao de 'inverte selecao'.
 // 17/04/2009 - Robert - Criado parametro de validacao de 'Linha OK'
 // 29/11/2010 - Robert - Nao usa mais a tela cheia por default.
+// 22/10/2021 - Robert - Criado botao de exportacao para planilha (melhoria para GLPI 11084)
 //
 
 #include "rwmake.ch"
@@ -117,6 +124,8 @@ user function MbArray (_aArray, _sTitulo, _aCols, _nColMarca, _nLarg, _nAltur, _
 			aadd (_aCabec, "Col." + alltrim (str (_nCol)))
 		next
 	endif
+	U_Log2 ('debug', '_aCabec:')
+	U_Log2 ('debug', _aCabec)
 	
 	define msdialog _oDlgMbA title _sTitulo from 0, 0 to _nAltur, _nLarg of oMainWnd pixel
 	_oLbx := TWBrowse ():New (15, ;  // Linha
@@ -133,9 +142,10 @@ user function MbArray (_aArray, _sTitulo, _aCols, _nColMarca, _nLarg, _nAltur, _
 	_oLbx:bLDblClick := {|| _aMBArrayV [2] := _oLbx:nAt, _aMBArrayV [3] := (_aOpcoes [_oLbx:nAt, 1] == _oBmpOk), iif (&(_sLinhaOK), (_aOpcoes [_oLbx:nAt, 1] := iif (_aOpcoes [_oLbx:nAt, 1] == _oBmpOk, _oBmpNo, _oBmpOk), _oLbx:Refresh()), NIL)}
 	@ _oDlgMbA:nClientHeight / 2 - 40, _oDlgMbA:nClientWidth / 2 - 90 bmpbutton type 1 action (_lBotaoOK  := .T., _oDlgMbA:End ())
 	@ _oDlgMbA:nClientHeight / 2 - 40, _oDlgMbA:nClientWidth / 2 - 40 bmpbutton type 2 action (_oDlgMbA:End ())
-	@ _oDlgMbA:nClientHeight / 2 - 40, 10 button "Inverte selecao" action (_aMBArrayV [1] := aclone (_aArray), _Inverte (@_aOpcoes, _oBmpOk, _oBmpNo, _sLinhaOK), _oLbx:Refresh())
+	@ _oDlgMbA:nClientHeight / 2 - 40,  10 button "Inverte selecao" action (_aMBArrayV [1] := aclone (_aArray), _Inverte (@_aOpcoes, _oBmpOk, _oBmpNo, _sLinhaOK), _oLbx:Refresh())
+	@ _oDlgMbA:nClientHeight / 2 - 40, 150 button "Export.planilha" action (_ExpPlan (_aOpcoes, _oBmpOK, _aCabec))
 	activate dialog _oDlgMbA centered
-	
+
 	if _lBotaoOK
 		// Verifica opcoes selecionadas conforme parametro
 		_aRet = {}
@@ -180,4 +190,35 @@ static function _Inverte (_aOpcoes, _oBmpOk, _oBmpNo, _sLinhaOK)
 		endif
 	next
 	CursorArrow ()
+return
+
+
+
+// --------------------------------------------------------------------------
+// Inverte a marcacao no browse.
+static function _ExpPlan (_aOpcoes, _oBmpOK, _aCabec)
+	local _aArrExp := {}
+	local _nOpcao  := 0
+	local _nCabec  := 0
+	private aHeader := {}
+
+	// Gera um aHeader 'fake' apenas para levar os nomes das colunas
+	for _nCabec = 1 to len (_aCabec)
+		aadd (aHeader, {_aCabec [_nCabec], _aCabec [_nCabec]})
+	next
+
+	if aviso ("O que exportar", "Deseja exportar somente os selecionados ou todos os registros?", {"Selecionados", "Todos"}) == 1
+		for _nOpcao = 1 to len (_aOpcoes)
+			if _aOpcoes [_nOpcao, 1] == _oBmpOK
+				aadd (_aArrExp, aclone (_aOpcoes [_nOpcao]))
+				_aArrExp [len (_aArrExp), 1] = 'X'
+			endif
+		next
+	else
+		for _nOpcao = 1 to len (_aOpcoes)
+			aadd (_aArrExp, aclone (_aOpcoes [_nOpcao]))
+			_aArrExp [len (_aArrExp), 1] = iif (_aOpcoes [_nOpcao, 1] == _oBmpOK, 'X', '')
+		next
+	endif
+	U_AColsXLS (_aArrExp, .T.)
 return

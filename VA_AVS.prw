@@ -10,17 +10,19 @@
 // 18/06/2015 - Robert - View VA_NOTAS_SAFRA renomeada para VA_VNOTAS_SAFRA
 // 15/06/2016 - Robert - Passa a buscar dados direto do SE2 + SZI.
 //                     - Passa a usar browse com marcacao para selacao do usuario.
+// 22/10/2021 - Robert - Passa a permitir filtro adicional por nome do fornecedor (GLPI 11084)
 //
 
 // --------------------------------------------------------------------------
 User Function VA_AVS (_lAuto)
-	Local cCadastro  := "Altera data de vencimento das parcelas pendentes de pagamento da safra"
-	Local aSays      := {}
-	Local aButtons   := {}
-	Local nOpca      := 0
-	Local lPerg      := .F.
-//	private _sArqLog := U_NomeLog ()
-	Private cPerg    := "VA_AVS"
+	Local cCadastro   := "Altera data de vencimento das parcelas pendentes de pagamento da safra"
+	Local aSays       := {}
+	Local aButtons    := {}
+	Local nOpca       := 0
+	Local lPerg       := .F.
+//	private _sArqLog  := U_NomeLog ()
+	Private cPerg     := "VA_AVS"
+
 	_ValidPerg()
 	Pergunte(cPerg,.F.)
 
@@ -30,9 +32,9 @@ User Function VA_AVS (_lAuto)
 		AADD(aSays, "Este programa tem como objetivo alterar a data de vencimento das")
 		AADD(aSays, "parcelas pendentes de pagamento da safra.")
 
-		AADD(aButtons, { 5,.T.,{|| lPerg := Pergunte(cPerg,.T. ) } } )
-		AADD(aButtons, { 1,.T.,{|| nOpca := If(( lPerg .Or. Pergunte(cPerg,.T.)) .And. _TudoOk() , 1, 2 ), If( nOpca == 1, FechaBatch(), Nil ) }})
-		AADD(aButtons, { 2,.T.,{|| FechaBatch() }} )
+		AADD(aButtons, { 5,  .T., {|| lPerg := Pergunte(cPerg,.T. ) } } )
+		AADD(aButtons, { 1,  .T., {|| nOpca := If(( lPerg .Or. Pergunte(cPerg,.T.)) .And. _TudoOk() , 1, 2 ), If( nOpca == 1, FechaBatch(), Nil ) }})
+		AADD(aButtons, { 2,  .T., {|| FechaBatch() }} )
 		
 		FormBatch( cCadastro, aSays, aButtons )
 		
@@ -48,25 +50,27 @@ return
 Static Function _TudoOk()
 	Local _lRet     := .T.
 Return _lRet
-	
-	
-	
+
+
+
 // --------------------------------------------------------------------------
 Static Function _Gera()
-	//local _lContinua := .T.
-	local _oEvento   := NIL
-	local _nAlter    := 0
-	local _oSQL      := NIL
-	local _aTit := {}
-	local _nTit := 0
-	local _aCols := {}
+	local _oEvento := NIL
+	local _nAlter  := 0
+	local _oSQL    := NIL
+	local _aTit    := {}
+	local _nTit    := 0
+	local _aTitAux := {}
+	local _aCols   := {}
+	local _aSelFor := {}
+	local _nSelFor := 0
 
 	procregua (10)
 	incproc ('Lendo dados...')
 
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT SE2.R_E_C_N_O_, '' AS OK, E2_NUM, E2_PREFIXO, E2_PARCELA, E2_NOMFOR, E2_VALOR, E2_SALDO, E2_EMISSAO, E2_VENCTO, "
+	_oSQL:_sQuery += " SELECT SE2.R_E_C_N_O_, '' AS OK, E2_NUM, E2_PREFIXO, E2_PARCELA, E2_FORNECE, E2_LOJA, E2_NOMFOR, E2_VALOR, E2_SALDO, E2_EMISSAO, E2_VENCTO, "
 	_oSQL:_sQuery +=        " A2_BANCO, A2_AGENCIA, A2_NUMCON"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2, "
 	_oSQL:_sQuery +=              RetSQLName ("SA2") + " SA2 "
@@ -95,22 +99,57 @@ Static Function _Gera()
 	if len (_aTit) == 0
 		u_help ("Nao foram encontrados titulos dentro dos parametros informados.")
 	else
+		// Marca todos os titulos como .F. e alimenta lista de nomes de fornecedores.
 		for _nTit = 1 to len (_aTit)
 			_aTit [_nTit, 2] = .F.
+
+			_nSelFor = ascan (_aSelFor, {|_aVal| _aVal [2] == _aTit [_nTit, 6] .and. _aVal [3] == _aTit [_nTit, 7]})
+			if _nSelFor == 0
+				aadd (_aSelFor, {.T., _aTit [_nTit, 6], _aTit [_nTit, 7], _aTit [_nTit, 8], 0})
+				_nSelFor = len (_aSelFor)
+			endif
+			_aSelFor [_nSelFor, 5] += _aTit [_nTit, 9]
 		next
 	
+		// Usuario pode, se quiser, filtrar por nome de fornecedor
+		if u_msgyesno ("Foram encontrados " + cvaltochar (len (_aTit)) + " titulos de " + cvaltochar (len (_aSelFor)) + " fornecedores. Deseja fazer uma selecao manual por nome de fornecedor?")
+			_aSelFor = asort (_aSelFor,,, {|_x, _y| _x [4] < _y [4]})
+			_aCols = {}
+			aadd (_aCols, {2,  'Fornecedor',   6, ''})
+			aadd (_aCols, {3,  'Loja',         2, ''})
+			aadd (_aCols, {4,  'Nome',       120, ''})
+			aadd (_aCols, {5,  'Valor total', 70, '@E 999,999,999.99'})
+			U_MbArray (@_aSelFor, 'Selecione fornecedores', _aCols, 1, NIL, NIL, '.T.')
+			U_Log2 ('info', 'Fornecedores selecionados manualmente:')
+			u_log2 ('info', _aSelFor)
+
+			// Gera nova array de titulos, somente com os titulos dos fornecedores selecionados.
+			_aTitAux = {}
+			for _nTit = 1 to len (_aTit)
+				// Encontra o fornecedor na array de selecao de fornecedores e verifica se ele estah habilitado.
+				if ascan (_aSelFor, {|_aVal| _aVal [1] == .T. .and. _aVal [2] == _aTit [_nTit, 6] .and. _aVal [3] == _aTit [_nTit, 7]})
+					aadd (_aTitAux, aclone (_aTit [_nTit]))
+				endif
+			next
+			_aTit = aclone (_aTitAux)
+
+		endif
+
+		// Markbrowse para o usuario selecionar os titulos.
 		_aCols = {}
-		aadd (_aCols, {3,  'Numero',  50, ''})
-		aadd (_aCols, {4,  'Pref',    30, ''})
-		aadd (_aCols, {5,  'Parc',    15, ''})
-		aadd (_aCols, {6,  'Nome',   120, ''})
-		aadd (_aCols, {7,  'Valor',   70, '@E 999,999,999.99'})
-		aadd (_aCols, {8,  'Saldo',   70, '@E 999,999,999.99'})
-		aadd (_aCols, {9,  'Emissao', 40, '@D'})
-		aadd (_aCols, {10, 'Vencto',  40, '@D'})
-		aadd (_aCols, {11, 'Banco',   30, ''})
-		aadd (_aCols, {12, 'Agencia', 40, ''})
-		aadd (_aCols, {13, 'Conta',   50, ''})
+		aadd (_aCols, {3,  'Numero',    50, ''})
+		aadd (_aCols, {4,  'Pref',      30, ''})
+		aadd (_aCols, {5,  'Parc',      15, ''})
+		aadd (_aCols, {6,  'Fornecedor', 6, ''})
+		aadd (_aCols, {7,  'Loja',       2, ''})
+		aadd (_aCols, {8,  'Nome',     120, ''})
+		aadd (_aCols, {9,  'Valor',     70, '@E 999,999,999.99'})
+		aadd (_aCols, {10, 'Saldo',     70, '@E 999,999,999.99'})
+		aadd (_aCols, {11, 'Emissao',   40, '@D'})
+		aadd (_aCols, {12, 'Vencto',    40, '@D'})
+		aadd (_aCols, {13, 'Banco',     30, ''})
+		aadd (_aCols, {14, 'Agencia',   40, ''})
+		aadd (_aCols, {15, 'Conta',     50, ''})
 		U_MbArray (@_aTit, 'Selecione titulos', _aCols, 2, NIL, NIL, '.T.')
 		u_log (_aTit)
 		procregua (len (_aTit))
@@ -118,7 +157,7 @@ Static Function _Gera()
 			if _aTit [_nTit, 2]
 				incproc (_aTit [_nTit, 6])
 				se2 -> (dbgoto (_aTit [_nTit, 1]))
-				u_logtrb ('se2')
+//					u_logtrb ('se2')
 				_oEvento := ClsEvent():new ()
 				_oEvento:CodEven   = "SE2001"
 				_oEvento:Texto     = "Pg.safra parc.'" + se2 -> e2_parcela + "' vcto.alterado de " + dtoc (se2 -> e2_vencrea) + " para " + dtoc (mv_par07)
