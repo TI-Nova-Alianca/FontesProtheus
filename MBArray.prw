@@ -11,14 +11,15 @@
 // #Modulos           #todos_modulos
 
 // Historico de alteracoes:
-// 23/04/2005 - Robert - Melhorias gerais
-// 24/10/2006 - Robert - Ajustes posicionamento botoes para versao 'Flat'
-// 21/05/2008 - Robert - Mesmo se o usuario clicasse em 'cancelar', retornava itens marcados.
-// 08/07/2008 - Robert - Melhorado posicionamento em tela.
-//                     - Criado botao de 'inverte selecao'.
-// 17/04/2009 - Robert - Criado parametro de validacao de 'Linha OK'
-// 29/11/2010 - Robert - Nao usa mais a tela cheia por default.
-// 22/10/2021 - Robert - Criado botao de exportacao para planilha (melhoria para GLPI 11084)
+// 23/04/2005 - Robert  - Melhorias gerais
+// 24/10/2006 - Robert  - Ajustes posicionamento botoes para versao 'Flat'
+// 21/05/2008 - Robert  - Mesmo se o usuario clicasse em 'cancelar', retornava itens marcados.
+// 08/07/2008 - Robert  - Melhorado posicionamento em tela.
+//                      - Criado botao de 'inverte selecao'.
+// 17/04/2009 - Robert  - Criado parametro de validacao de 'Linha OK'
+// 29/11/2010 - Robert  - Nao usa mais a tela cheia por default.
+// 22/10/2021 - Robert  - Criado botao de exportacao para planilha (melhoria para GLPI 11084)
+// 25/10/2021 - Claudia - AJuste de posição e tamanho dos botões da tela. GLPI: 11140
 //
 
 #include "rwmake.ch"
@@ -142,8 +143,10 @@ user function MbArray (_aArray, _sTitulo, _aCols, _nColMarca, _nLarg, _nAltur, _
 	_oLbx:bLDblClick := {|| _aMBArrayV [2] := _oLbx:nAt, _aMBArrayV [3] := (_aOpcoes [_oLbx:nAt, 1] == _oBmpOk), iif (&(_sLinhaOK), (_aOpcoes [_oLbx:nAt, 1] := iif (_aOpcoes [_oLbx:nAt, 1] == _oBmpOk, _oBmpNo, _oBmpOk), _oLbx:Refresh()), NIL)}
 	@ _oDlgMbA:nClientHeight / 2 - 40, _oDlgMbA:nClientWidth / 2 - 90 bmpbutton type 1 action (_lBotaoOK  := .T., _oDlgMbA:End ())
 	@ _oDlgMbA:nClientHeight / 2 - 40, _oDlgMbA:nClientWidth / 2 - 40 bmpbutton type 2 action (_oDlgMbA:End ())
-	@ _oDlgMbA:nClientHeight / 2 - 40,  10 button "Inverte selecao" action (_aMBArrayV [1] := aclone (_aArray), _Inverte (@_aOpcoes, _oBmpOk, _oBmpNo, _sLinhaOK), _oLbx:Refresh())
-	@ _oDlgMbA:nClientHeight / 2 - 40, 150 button "Export.planilha" action (_ExpPlan (_aOpcoes, _oBmpOK, _aCabec))
+	//@ _oDlgMbA:nClientHeight / 2 - 40,  10 button "Inverte selecao" action (_aMBArrayV [1] := aclone (_aArray), _Inverte (@_aOpcoes, _oBmpOk, _oBmpNo, _sLinhaOK), _oLbx:Refresh())
+	//@ _oDlgMbA:nClientHeight / 2 - 40, 150 button "Export.planilha" action (_ExpPlan (_aOpcoes, _oBmpOK, _aCabec))
+	@ _oDlgMbA:nClientHeight / 2 - 40,  10 button "Inverte selecao" SIZE 080, 010 action (_aMBArrayV [1] := aclone (_aArray), _Inverte (@_aOpcoes, _oBmpOk, _oBmpNo, _sLinhaOK), _oLbx:Refresh())
+	@ _oDlgMbA:nClientHeight / 2 - 40,  100 button "Planilha" SIZE 050, 010 action (_ExpPlan (_aOpcoes, _oBmpOK, _aCabec))
 	activate dialog _oDlgMbA centered
 
 	if _lBotaoOK
