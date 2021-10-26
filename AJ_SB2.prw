@@ -15,8 +15,10 @@
 // 05/03/2020 - Claudia - Ajuste de fonte conforme solicitação de versão 12.1.25 - Pergunte em Loop 
 // 20/07/2020 - Robert  - Permissao de acesso passa a validar acesso 105 e nao mais 069.
 //                      - Inseridas tags para catalogacao de fontes
+// 26/10/2021 - Claudia - Incluido o loop para solicitar mais produtos. (Não houve erro na versão)
+//                        GLPI: 10530
 //
-// --------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------------
 user function Aj_SB2 ()
 	local _oEvento   := NIL
 	local _nCustoAnt := 0
@@ -28,35 +30,35 @@ user function Aj_SB2 ()
 
 	_ValidPerg()
 	pergunte (cPerg, .T.)
-//	do while pergunte (cPerg, .T.)
-	if empty (mv_par01) .or. empty (mv_par02) .or. empty (mv_par03)
-		u_help ("Todos os parametros devem ser informados.")
-	else
-		sb2 -> (dbsetorder (1))  // B2_FILIAL+B2_COD+B2_LOCAL
-		if ! sb2 -> (dbseek (xfilial ("SB2") + mv_par01 + mv_par02, .F.))
-			u_help ("Produto / almox. nao encontrado na tabela SB2.")
+	do while pergunte (cPerg, .T.)
+		if empty (mv_par01) .or. empty (mv_par02) .or. empty (mv_par03)
+			u_help ("Todos os parametros devem ser informados.")
 		else
-			_nCustoAnt = sb2 -> b2_vacustr //0
+			sb2 -> (dbsetorder (1))  // B2_FILIAL+B2_COD+B2_LOCAL
+			if ! sb2 -> (dbseek (xfilial ("SB2") + mv_par01 + mv_par02, .F.))
+				u_help ("Produto / almox. nao encontrado na tabela SB2.")
+			else
+				_nCustoAnt = sb2 -> b2_vacustr //0
 
-			reclock ("SB2", .F.)
-			sb2 -> b2_vacustr = mv_par03
-			msunlock ()
-			
-			_oEvento := ClsEvent ():New ()
-			_oEvento:CodEven   = "SB2001"
-			_oEvento:Texto     = "Custo p/transf alterado de " + cvaltochar (_nCustoAnt) + " para " + cvaltochar (mv_par03) + " no alm. " + sb2 -> b2_local
-			_oEvento:Produto   = sb2 -> b2_cod
-			_oEvento:Alias     = 'SB2'
-			_oEvento:CodAlias  = sb2 -> b2_cod + sb2 -> b2_local
-			_oEvento:Recno     = sb2 -> (recno ())
-			_oEvento:Grava ()
+				reclock ("SB2", .F.)
+				sb2 -> b2_vacustr = mv_par03
+				msunlock ()
+				
+				_oEvento := ClsEvent ():New ()
+				_oEvento:CodEven   = "SB2001"
+				_oEvento:Texto     = "Custo p/transf alterado de " + cvaltochar (_nCustoAnt) + " para " + cvaltochar (mv_par03) + " no alm. " + sb2 -> b2_local
+				_oEvento:Produto   = sb2 -> b2_cod
+				_oEvento:Alias     = 'SB2'
+				_oEvento:CodAlias  = sb2 -> b2_cod + sb2 -> b2_local
+				_oEvento:Recno     = sb2 -> (recno ())
+				_oEvento:Grava ()
 
+			endif
 		endif
-	endif
-//		if ! U_MsgYesNo ("Deseja alterar outro produto?")
-//			exit
-//		endif
-//	enddo
+		if ! U_MsgYesNo ("Deseja alterar outro produto?")
+			exit
+		endif
+	enddo
 return
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
