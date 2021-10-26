@@ -1,33 +1,40 @@
-// Programa:  VA_LPR
-// Autor:     Robert Koch
-// Data:      07/03/2008
+// Programa.: VA_LPR
+// Autor....: Robert Koch
+// Data.....: 07/03/2008
 // Descricao: Geracao de listas de precos de venda.
 //
-// Historico de alteracoes:
-// 02/04/2008 - Robert - Criados parametros de vendedor de...ate.
-//                     - Soh imprime listas ativas.
-// 07/04/2008 - Robert - Cria variavel private para filtro por vendedor.
-// 15/04/2008 - Robert - Valida amarracao vendedor X tabela no SZY.
-// 16/04/2008 - Robert - Imprime campo memo de instrucoes
-// 20/06/2008 - Robert - Alterado titulo da coluna de preco.
-// 24/07/2008 - Robert - Criada opcao de listar o campo B1_IPINOVO.
-// 12/09/2008 - Robert - Diminuida altura da pagina
-// 01/04/2009 - Robert - Criado parametro de selecao de cod.barras / valor unitario na ultima coluna.
-// 22/04/2010 - Robert - Campo B1_IPINOVO excluido da base de dados.
-// 08/03/2012 - Robert - Tratamento para impressao do campo DA1_VAST.
-// 10/01/2013 - Elaine - Passa a tratar consulta padrao das listas de preços pelo F3_DA0
-// 04/06/2013 - Robert - Se usuario for representante, obriga a parametrizar para seu codigo de representante.
-// 30/01/2015 - Catia  - Incluida a coluna de UF
-// 02/02/2015 - Catia  - Incluido intervalo de CLIENTE/LOJA
-// 03/02/2015 - Catia  - Alterado o F3 da consulta da lista de preços
-// 28/09/2015 - Robert - Nao somava a ST na coluna "valor final unidade"
-// 02/12/2015 - Robert - Tratamento para IPI por aliquota e por valor absoluto.
-// 13/07/2016 - Robert - Desabilitada impressao do final de vigencia, lista de vendedores e de clientes.
-// 05/09/2016 - Robert - Tabela 81 trocada pela tabela 38 do ZX5.
-// 11/04/2019 - Robert - Tabela 98 trocada pela tabela 50 do ZX5.
-// 29/07/2019 - Andre  - Campo B1_VAEANUN substituido pelo campo B5_2CODBAR.
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Relatorio
+// #Descricao         #Geracao de listas de precos de venda.
+// #PalavasChave      #lista_de_preco 
+// #TabelasPrincipais #DA0 #DA1
+// #Modulos           #FAT
 //
-
+// Historico de alteracoes:
+// 02/04/2008 - Robert  - Criados parametros de vendedor de...ate.
+//                      - Soh imprime listas ativas.
+// 07/04/2008 - Robert  - Cria variavel private para filtro por vendedor.
+// 15/04/2008 - Robert  - Valida amarracao vendedor X tabela no SZY.
+// 16/04/2008 - Robert  - Imprime campo memo de instrucoes
+// 20/06/2008 - Robert  - Alterado titulo da coluna de preco.
+// 24/07/2008 - Robert  - Criada opcao de listar o campo B1_IPINOVO.
+// 12/09/2008 - Robert  - Diminuida altura da pagina
+// 01/04/2009 - Robert  - Criado parametro de selecao de cod.barras / valor unitario na ultima coluna.
+// 22/04/2010 - Robert  - Campo B1_IPINOVO excluido da base de dados.
+// 08/03/2012 - Robert  - Tratamento para impressao do campo DA1_VAST.
+// 10/01/2013 - Elaine  - Passa a tratar consulta padrao das listas de preços pelo F3_DA0
+// 04/06/2013 - Robert  - Se usuario for representante, obriga a parametrizar para seu codigo de representante.
+// 30/01/2015 - Catia   - Incluida a coluna de UF
+// 02/02/2015 - Catia   - Incluido intervalo de CLIENTE/LOJA
+// 03/02/2015 - Catia   - Alterado o F3 da consulta da lista de preços
+// 28/09/2015 - Robert  - Nao somava a ST na coluna "valor final unidade"
+// 02/12/2015 - Robert  - Tratamento para IPI por aliquota e por valor absoluto.
+// 13/07/2016 - Robert  - Desabilitada impressao do final de vigencia, lista de vendedores e de clientes.
+// 05/09/2016 - Robert  - Tabela 81 trocada pela tabela 38 do ZX5.
+// 11/04/2019 - Robert  - Tabela 98 trocada pela tabela 50 do ZX5.
+// 29/07/2019 - Andre   - Campo B1_VAEANUN substituido pelo campo B5_2CODBAR.
+// 26/10/2021 - Claudia - Inclusao das tags de pesquisa.
+//
 // --------------------------------------------------------------------------
 user function VA_LPR ()
 
@@ -51,24 +58,22 @@ user function VA_LPR ()
 	cPerg    := "VA_LPR"
 	_ValidPerg ()
 
-    // Caso seja um representante, grava seu codigo nos parametros.
-    if !empty(_sCodRep)
-    	U_GravaSX1 (cPerg, '03', _sCodRep) 
-    	U_GravaSX1 (cPerg, '04', _sCodRep)
-    endif
+	// Caso seja um representante, grava seu codigo nos parametros.
+	if !empty(_sCodRep)
+		U_GravaSX1 (cPerg, '03', _sCodRep) 
+		U_GravaSX1 (cPerg, '04', _sCodRep)
+	endif
 
 	if pergunte (cPerg, .T.)
-
-	    // Caso seja um representante, inibe parametrizacao para outros codigos de representantes.
-	    if !empty(_sCodRep)
-	    	mv_par03 = _sCodRep
-	    	mv_par04 = _sCodRep
-	    endif
-
+		// Caso seja um representante, inibe parametrizacao para outros codigos de representantes.
+		if !empty(_sCodRep)
+			mv_par03 = _sCodRep
+			mv_par04 = _sCodRep
+		endif
 		processa ({|| _AndaLogo ()})
 	endif
 return
-
+//
 // --------------------------------------------------------------------------
 // Geracao do arquivo de trabalho p/ impressao
 static function _AndaLogo ()
@@ -77,8 +82,6 @@ static function _AndaLogo ()
 	local _oImpGr    := NIL
 	local _oPrn      := NIL
 	local _lVendOK   := .T.
-	//local _aVend     := {}
-	//local _nVend     := 0
 	local _sAvisos   := ""
 	local _sInstr    := ""
 	local _aInstr    := {}
@@ -130,8 +133,8 @@ static function _AndaLogo ()
 	da1 -> (dbsetorder (1))  // DA1_FILIAL+DA1_CODTAB+DA1_CODPRO+DA1_INDLOT+DA1_ITEM
 	da0 -> (dbsetorder (1))  // DA0_FILIAL+DA0_CODTAB
 	da0 -> (dbseek (xfilial ("DA0") + mv_par01, .T.))
-	do while ! da0 -> (eof ()) .and. da0 -> da0_filial == xfilial ("DA0") .and. da0 -> da0_codtab <= mv_par02
 
+	do while ! da0 -> (eof ()) .and. da0 -> da0_filial == xfilial ("DA0") .and. da0 -> da0_codtab <= mv_par02
 		if (da0 -> da0_ativo != "1" .and. mv_par07 = 1) .or. (da0 -> da0_ativo != "2" .and. mv_par07 = 2)
 			da0 -> (dbskip ())
 			loop
@@ -181,7 +184,6 @@ static function _AndaLogo ()
 			endif
 
 			if sb1 -> (dbseek (xfilial ("SB1") + da1 -> da1_codpro, .F.))
-//				if empty (sb1 -> b1_vaGrLp) .or. ! sx5 -> (dbseek (xfilial ("SX5") + "81" + sb1 -> b1_vaGrLp, .F.))
 				if empty (sb1 -> b1_vaGrLp) .or. empty (U_RetZX5("38", sb1 -> b1_vaGrLp, "ZX5_38G1"))
 					_sAvisos += "Produto '" + alltrim (da1 -> da1_codpro) + "' tem campo '" + alltrim (RetTitle ("B1_VAGRLP")) + "' vazio ou invalido e vai ser impresso fora de ordem." + chr (13) + chr (10)
 				else
@@ -199,12 +201,9 @@ static function _AndaLogo ()
 					_trb -> Grupo2     = substr (sb1 -> b1_vaGrLp, 2, 1)
 					_trb -> NomeGrupo1 = U_RetZX5("38", sb1 -> b1_vaGrLp, "ZX5_38G1")  // sx5 -> x5_descri
 					_trb -> NomeGrupo2 = U_RetZX5("38", sb1 -> b1_vaGrLp, "ZX5_38G2")  // sx5 -> x5_descSpa
-					//_trb -> ipi        = sb1 -> b1_vlr_ipi
 					_trb -> ipi        = iif (sb1 -> b1_vlr_ipi > 0, sb1 -> b1_vlr_ipi, da1 -> da1_prcven * sb1 -> b1_ipi / 100)
 					_trb -> ValST      = da1 -> da1_vast
-//					_trb -> ean        = sb1 -> b1_vaEanUn
 					_trb -> ean        = POSICIONE("SB5",1,XFILIAL("SB5")+SB1->B1_COD,"B5_2CODBAR")
-//					_trb -> b1_grpemb  = Tabela ("98", sb1 -> b1_grpemb)
 					_trb -> b1_grpemb  = U_RetZX5 ("50", sb1 -> b1_grpemb, "ZX5_50DESC")
 					_trb -> QtdEmb     = sb1 -> b1_QtdEmb
 					_trb -> Estado     = da1 -> da1_estado
@@ -241,37 +240,10 @@ static function _AndaLogo ()
 		_oPrn:Say (_oImpGr:_nMargsup + _oImpGr:_nLinAtual, _oImpGr:_nMargEsq, _sLinhaImp, _oCour16N, 100)
 		_oImpGr:IncLinha (2)
 
-//		_sLinhaImp := "Vigencia: de " + dtoc (_trb -> da0_DatDe) + " a " + dtoc (_trb -> da0_DatAte)
-		_sLinhaImp := "Inicio da vigencia: " + dtoc (_trb -> da0_DatDe)// + " a " + dtoc (_trb -> da0_DatAte)
+		_sLinhaImp := "Inicio da vigencia: " + dtoc (_trb -> da0_DatDe)
 		_oPrn:Say (_oImpGr:_nMargsup + _oImpGr:_nLinAtual, _oImpGr:_nMargEsq + 1200, _sLinhaImp, _oCour10N, 100)
 		_oImpGr:IncLinha ()
-		/*
-		_sLinhaImp := "Desconto maximo: " + transform (_trb -> da0_desc, "@E 999.99%")
-		_oPrn:Say (_oImpGr:_nMargsup + _oImpGr:_nLinAtual, _oImpGr:_nMargEsq + 1200, _sLinhaImp, _oCour10N, 100)
-		_oImpGr:IncLinha ()
-		_sLinhaImp := "Vendedores:"
-		_oPrn:Say (_oImpGr:_nMargsup + _oImpGr:_nLinAtual, _oImpGr:_nMargEsq + 1200, _sLinhaImp, _oCour10N, 100)
-		_oImpGr:IncLinha ()
-		if mv_par10 != ''
-			// isso nao ta muito certo, mas tem urgencia e quando esse programa entrar em manutencao tem que ser acertado
-			_sLinhaImp := "Cliente:" + LEFT(fbuscacpo ("SA1", 1, xfilial ("SA1") + mv_par10 + '01',  "A1_NOME"),35)
-			_oPrn:Say (_oImpGr:_nMargsup + _oImpGr:_nLinAtual, _oImpGr:_nMargEsq + 1200, _sLinhaImp, _oCour10N, 100)
-			_oImpGr:IncLinha ()
-		endif
 
- 		// Lista os vendedores associados a esta tabela.
- 		_aVend = U_SZYVen (_trb -> da0_codtab, .F.)
- 		for _nVend = 1 to len (_aVend)
-	 		
-	 		// Soh lista os vendedores que estiverem dentro dos parametros.
-	 		if _aVend [_nVend, 1] >= mv_par03 .and. _aVend [_nVend, 1] <= mv_par04
-		 		_sLinhaImp = alltrim (_aVend [_nVend, 1]) + "  " + left (_aVend [_nVend, 2], 30)
-				_oPrn:Say (_oImpGr:_nMargsup + _oImpGr:_nLinAtual, _oImpGr:_nMargEsq + 1500, _sLinhaImp, _oCour10N, 100)
-	 			_oImpGr:IncLinha ()
-	 		endif
-	 	next
- 		_oImpGr:IncLinha ()
-*/
 		// Busca campo memo do DA0
 		_sInstr = MSMM (_trb -> da0_vacmem,,,,3)
 
@@ -330,7 +302,6 @@ static function _AndaLogo ()
 					if mv_par06 == 1
 						_sLinhaImp += _trb -> ean
 					else
-//						_sLinhaImp += transform ((_trb -> da1_prcven + _trb -> ipi) / _trb -> qtdemb, "@E 999,999.99")
 						_sLinhaImp += transform ((_trb -> da1_prcven + _trb -> ipi + _trb -> ValST) / _trb -> qtdemb, "@E 999,999.99")
 					endif
 					_oPrn:Say (_oImpGr:_nMargsup + _oImpGr:_nLinAtual, _oImpGr:_nMargEsq + 100, _sLinhaImp, _oCour8N, 100)
@@ -340,7 +311,6 @@ static function _AndaLogo ()
 				_oImpGr:IncLinha ()
 			enddo
 			_oImpGr:IncLinha ()
-
 		enddo
 
  		// Lista campo memo do DA0 no final da tabela.
@@ -356,19 +326,16 @@ static function _AndaLogo ()
 		 		_oImpGr:IncLinha ()
 		 	next
 		endif
-
 	enddo
 	
 	U_ArqTrb ("FechaTodos",,,, @_aArqTrb)
 	
 	_oPrn:Preview()       // Visualiza antes de imprimir
 	_oPrn:End()
-
 return
-
-
-
+//
 // --------------------------------------------------------------------------
+// Pergunte
 static function _ValidPerg ()
 	local _aRegsPerg  := {}
 	local _aHelpPerg  := {}
@@ -387,7 +354,6 @@ static function _ValidPerg ()
 	aadd (_aRegsPerg, {11, "Cliente ate                   ", "C", 6,  0,  "",   "SA1", {},                        "Cliente Final"})
 	aadd (_aRegsPerg, {12, "Loja de                       ", "C", 2,  0,  "",   "   ", {},                        "Loja Inicial"})
 	aadd (_aRegsPerg, {13, "Loja ate                      ", "C", 2,  0,  "",   "   ", {},                        "Loja Final"})
-	
 	
 	U_ValPerg (cPerg, _aRegsPerg, _aHelpPerg)
 return
