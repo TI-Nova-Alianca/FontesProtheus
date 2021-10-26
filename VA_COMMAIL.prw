@@ -19,6 +19,7 @@
 //  07/05/2021 - Claudia - Retirado _mvsim1:= GetMv ("MV_SIMB1") devido a erros R27. 
 //  07/06/2021 - Claudia - Inicializado o parametro de nome de vendedor com vazio, para casos onde 
 //                         vendedro não possua notas no mes, mas está ativo.
+//  26/10/2021 - Claudia - Realizado ajuste quando tem dois vendedores. GLPI: 11124
 //
 // ----------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -50,7 +51,7 @@ User Function VA_COMMAIL()
 
 	_ValidPerg()
 	Pergunte(cPerg,.T.)
-	    
+
 	If ! u_zzuvl ('046', __cUserId, .T.)
 		return
 	Else
@@ -226,7 +227,7 @@ Static Function _GeraPDF_Email()
 			// Imprime itens da nota
 			If mv_par08 == 2 
 				
-				_aItens = U_VA_COMITNF(_sFilial, _sNota, _sSerie, _nBaseComis, _nVlrComis, _nBaseNota)
+				_aItens = U_VA_COMITNF(_sFilial, _sNota, _sSerie, _nBaseComis, _nVlrComis, _nBaseNota, _sVend)
 
 				For _y := 1 to len(_aItens)
 				
@@ -704,7 +705,7 @@ Static Function _GeraPDF_Email()
 
 		_sMailDest := 'andressa.brugnera@novaalianca.coop.br'
 		U_SendMail (_sMailDest, "Relatorio de Comissões - Envio automatico", "", {cDestino + _cFile + ".PDF"}, _sCtaMail)
-		// // copia
+	
 		_sMailDest := 'envio.comissoes@novaalianca.coop.br'
 		U_SendMail (_sMailDest, "Relatorio de Comissões - Envio automatico", "", {cDestino + _cFile + ".PDF"}, _sCtaMail)
 

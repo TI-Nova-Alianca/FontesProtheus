@@ -14,7 +14,7 @@
 //  08/01/2021 - Claudia - Alterada a indenização, pegando direto o Total da comissão
 //		         e dividindo por 12. GLPI: 9099
 //  05/05/2021 - Cláudia - Adicionado valor de frete + seguro + despesas acessorias. GLPI: 9895
-//
+//  26/10/2021 - Claudia - Realizado ajuste quando tem dois vendedores. GLPI: 11124
 //
 // --------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -217,7 +217,7 @@ Static Function PrintReport(oReport)
 				// Imprime itens da nota
 				If mv_par08 == 2 .and. mv_par07 == 1 
 					
-					_aItens = U_VA_COMITNF(_sFilial, _sNota, _sSerie, _nBaseComis, _nVlrComis, _nBaseNota)
+					_aItens = U_VA_COMITNF(_sFilial, _sNota, _sSerie, _nBaseComis, _nVlrComis, _nBaseNota, _sVend)
 					
 					oSection2:Init()
 					oSection2:SetHeaderSection(.F.)

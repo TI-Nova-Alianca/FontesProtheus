@@ -12,8 +12,9 @@
 // Historico de alteracoes:
 // 14/04/2021 - Cláudia - Melhoria na consulta com o plano de execução estimado (SQL)
 // 05/05/2021 - Cláudia - Adicionado valor de frete + seguro + despesas acessorias. GLPI: 9895
+// 26/10/2021 - Claudia - Realizado ajuste quando tem dois vendedores. GLPI: 11124
 //
-// -------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------
 
 #include 'protheus.ch'
 #include 'parmtype.ch'
@@ -235,23 +236,55 @@ Return _sAliasQ
 // ---------------------------------------------------------------------------------------------------------------
 // Consulta de itens das notas principal para relatorio/email de comissões
 //
-User Function VA_COMITNF(_sFilial, _sNota, _sSerie, _nBaseComis, _nVlrComis, _nBaseNota)
+User Function VA_COMITNF(_sFilial, _sNota, _sSerie, _nBaseComis, _nVlrComis, _nBaseNota, _sVend)
 	Local _oSQL    := ClsSQL ():New ()
 	Local _aItens  := {}
+	Local _aFat    := {}
 	Local i        := 0
 
 	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT SD2.D2_COD, SB1.B1_DESC, SD2.D2_COMIS1, SD2.D2_TOTAL"
-	_oSQL:_sQuery += " FROM SD2010 AS SD2"
-	_oSQL:_sQuery += " 	  INNER JOIN SB1010 AS SB1"
-	_oSQL:_sQuery += " 		 ON (SB1.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery += " 			 AND SB1.B1_COD = SD2.D2_COD)"
-	_oSQL:_sQuery += " WHERE SD2.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery += " AND SD2.D2_FILIAL  = '" + _sFilial + "'"
-	_oSQL:_sQuery += " AND SD2.D2_DOC     = '" + _sNota   + "'"  
-	_oSQL:_sQuery += " AND SD2.D2_SERIE   = '" + _sSerie  + "'"
-	_oSQL:_sQuery += " ORDER BY SD2.D2_COD "
-	_aDados := aclone (_oSQL:Qry2Array ())
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 	   F2_VEND1 "
+	_oSQL:_sQuery += "    ,F2_VEND2 "
+	_oSQL:_sQuery += " FROM SF2010 "
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " AND F2_FILIAL = '" + _sFilial + "'"
+	_oSQL:_sQuery += " AND F2_DOC    = '" + _sNota   + "'"  
+	_oSQL:_sQuery += " AND F2_SERIE  = '" + _sSerie  + "'"
+	_aFat := aclone (_oSQL:Qry2Array ())
+
+	For i=1 to len(_aFat)
+		_sVend1 := _aFat[i, 1]
+		_sVend2 := _aFat[i, 2]
+	Next 
+
+	If alltrim(_sVend) == alltrim(_sVend1)
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT SD2.D2_COD, SB1.B1_DESC, SD2.D2_COMIS1, SD2.D2_TOTAL"
+		_oSQL:_sQuery += " FROM SD2010 AS SD2"
+		_oSQL:_sQuery += " 	  INNER JOIN SB1010 AS SB1"
+		_oSQL:_sQuery += " 		 ON (SB1.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery += " 			 AND SB1.B1_COD = SD2.D2_COD)"
+		_oSQL:_sQuery += " WHERE SD2.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery += " AND SD2.D2_FILIAL  = '" + _sFilial + "'"
+		_oSQL:_sQuery += " AND SD2.D2_DOC     = '" + _sNota   + "'"  
+		_oSQL:_sQuery += " AND SD2.D2_SERIE   = '" + _sSerie  + "'"
+		_oSQL:_sQuery += " ORDER BY SD2.D2_COD "
+		_aDados := aclone (_oSQL:Qry2Array ())
+	Else
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT SD2.D2_COD, SB1.B1_DESC, SD2.D2_COMIS2, SD2.D2_TOTAL"
+		_oSQL:_sQuery += " FROM SD2010 AS SD2"
+		_oSQL:_sQuery += " 	  INNER JOIN SB1010 AS SB1"
+		_oSQL:_sQuery += " 		 ON (SB1.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery += " 			 AND SB1.B1_COD = SD2.D2_COD)"
+		_oSQL:_sQuery += " WHERE SD2.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery += " AND SD2.D2_FILIAL  = '" + _sFilial + "'"
+		_oSQL:_sQuery += " AND SD2.D2_DOC     = '" + _sNota   + "'"  
+		_oSQL:_sQuery += " AND SD2.D2_SERIE   = '" + _sSerie  + "'"
+		_oSQL:_sQuery += " ORDER BY SD2.D2_COD "
+		_aDados := aclone (_oSQL:Qry2Array ())
+	EndIf
 	
 	If len (_aDados) > 0
 		_nBaseArred := _nBaseComis
