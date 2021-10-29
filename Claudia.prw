@@ -2,7 +2,10 @@
 #include 'parmtype.ch'
 
 User Function claudia ()
-	u_help("Nada para executar")
+	//u_help("Nada para executar")
+
+	//u_help("Executa Margens")
+	//U_BATMARDAT()
 
 	//u_help("Tela")
 	//TelaTeste()
