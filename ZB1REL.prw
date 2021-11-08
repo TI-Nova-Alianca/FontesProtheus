@@ -15,6 +15,7 @@
 // 09/03/2021 - Cláudia - Incluido Valor Total(Parcela - Taxa)
 // 29/03/2021 - Claudia - Incluida filial 13. GLPI: 9710
 // 19/08/2021 - Cláudia - Retirado log do SQL.
+// 04/11/2021 - Claudia - Ajustado para importar somente venda de link cielo. GLPI 11145
 //
 // --------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -120,13 +121,13 @@ Static Function PrintReport(oReport)
 		_oSQL:_sQuery += " FROM " + RetSQLName ("SE1") + " AS SE1 "
 		_oSQL:_sQuery += " WHERE SE1.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery += " AND SE1.E1_FILIAL  = '" + _aZB1[i, 1] + "'"
-		If alltrim(_aZB1[i, 1]) <> '01'
-			_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aZB1[i,7] + "'" // Loja salva cod.aut no campo NSU
-			//_oSQL:_sQuery += " AND SE1.E1_EMISSAO = '" + DTOS(_aZB1[i,5]) + "'"
-		Else
+		// If alltrim(_aZB1[i, 1]) <> '01'
+		// 	_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aZB1[i,7] + "'" // Loja salva cod.aut no campo NSU
+		// 	//_oSQL:_sQuery += " AND SE1.E1_EMISSAO = '" + DTOS(_aZB1[i,5]) + "'"
+		// Else
 			_oSQL:_sQuery += " AND SE1.E1_CARTAUT = '" + _aZB1[i,7] + "'"
 			_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aZB1[i,8] + "'"
-		EndIf
+		//EndIf
 		If alltrim(_sParc) <> ''
 			_oSQL:_sQuery += " AND SE1.E1_PARCELA   = '" + _sParc + "'"
 		EndIf

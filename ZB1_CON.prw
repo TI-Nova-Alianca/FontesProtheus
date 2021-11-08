@@ -28,6 +28,7 @@
 //                        final da conciliação. GLPI: 9835
 // 18/05/2021 - Claudia - Incluida chamada para conciliaçao de NF loja. GLPI: 10039
 // 05/07/2021 - Claudia - Incluido status 02. GLPI: 10399
+// 04/11/2021 - Claudia - Ajustado para importar somente venda de link cielo. GLPI 11145
 //
 // -----------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -44,22 +45,22 @@ User Function ZB1_CON(_sConciliar)
 	Private _aRelImp  := {}
 	Private _aRelErr  := {}
 	
-	u_logIni ("Inicio Conciliação Cielo LOJAS" + DTOS(date()) )
+	u_logIni ("Inicio Conciliação Cielo Link" + DTOS(date()) )
 
-	If cFilAnt == '01' .and. _sConciliar == '1' // conciliação das lojas
-		u_help("Empresa matriz não pode efetuar baixa pelo menu Conciliar Cielo Loja")
-		_lcont := .F.
-	EndIf
+	// If cFilAnt == '01' .and. _sConciliar == '1' // conciliação das lojas
+	// 	u_help("Empresa matriz não pode efetuar baixa pelo menu Conciliar Cielo Loja")
+	// 	_lcont := .F.
+	// EndIf
 
-	If (cFilAnt == '10' .or. cFilAnt == '13') .and. _sConciliar == '2' // conciliação link
-		u_help("Baixas pelo Conciliar Cielo Link efetuadas apenas na empresa matriz")
-		_lcont := .F.
-	EndIf
+	// If (cFilAnt == '10' .or. cFilAnt == '13') .and. _sConciliar == '2' // conciliação link
+	// 	u_help("Baixas pelo Conciliar Cielo Link efetuadas apenas na empresa matriz")
+	// 	_lcont := .F.
+	// EndIf
 
-	If cFilAnt == '01' .and. _sConciliar == '3' // NF loja
-		u_help("Baixas pelo Conciliar NF Loja efetuadas apenas nas filiais-lojas")
-		_lcont := .F.
-	EndIf
+	// If cFilAnt == '01' .and. _sConciliar == '3' // NF loja
+	// 	u_help("Baixas pelo Conciliar NF Loja efetuadas apenas nas filiais-lojas")
+	// 	_lcont := .F.
+	// EndIf
 
 	If _lcont == .T.
 		cPerg   := "ZB1_CON"
@@ -142,13 +143,13 @@ User Function ZB1_CON(_sConciliar)
 				_oSQL:_sQuery += " FROM " + RetSQLName ("SE1") + " AS SE1 "
 				_oSQL:_sQuery += " WHERE SE1.D_E_L_E_T_ = ''"
 				_oSQL:_sQuery += " AND SE1.E1_FILIAL  = '" + _aZB1[i, 1] + "'"
-				If _sConciliar == '1' // Conciliar Cielo Loja
-					_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aZB1[i,17] + "'" // Loja salva cod.aut no campo NSU
-					_oSQL:_sQuery += " AND SE1.E1_EMISSAO = '" + DTOS(_aZB1[i,16]) + "'"
-				Else 				 // conciliação link e NF lojas
+				// If _sConciliar == '1' // Conciliar Cielo Loja
+				// 	_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aZB1[i,17] + "'" // Loja salva cod.aut no campo NSU
+				// 	_oSQL:_sQuery += " AND SE1.E1_EMISSAO = '" + DTOS(_aZB1[i,16]) + "'"
+				// Else 				 // conciliação link e NF lojas
 					_oSQL:_sQuery += " AND SE1.E1_CARTAUT = '" + _aZB1[i,17] + "'"
 					_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aZB1[i,18] + "'"
-				EndIf
+				//EndIf
 				_oSQL:_sQuery += " AND SE1.E1_BAIXA   = ''"
 				If alltrim(_sParc) <> ''
 					_oSQL:_sQuery += " AND SE1.E1_PARCELA   = '" + _sParc + "'"
@@ -206,13 +207,13 @@ User Function ZB1_CON(_sConciliar)
 						If _lContinua == .T.
 
 							lMsErroAuto := .F.
-							If _sConciliar == '2' 	// link
+							//If _sConciliar == '2' 	// link
 								_sMotBaixa := 'NORMAL' 
 								_sHist     := 'Baixa Link'
-							Else 					// Cupom lojas e NF Lojas
-								_sMotBaixa := 'DEBITO CC' 
-								_sHist     := 'Baixa Cielo'	
-							EndIf
+							//Else 					// Cupom lojas e NF Lojas
+							//	_sMotBaixa := 'DEBITO CC' 
+							//	_sHist     := 'Baixa Cielo'	
+							//EndIf
 
 							// executar a rotina de baixa automatica do SE1 gerando o SE5 - DO VALOR LÍQUIDO
 							_aAutoSE1 := {}
@@ -266,11 +267,11 @@ User Function ZB1_CON(_sConciliar)
 
 							Else
 								// Atualiza banco e administradora
-								if alltrim(_aTitulo[x,1]) == '01' // matriz - link
+								//if alltrim(_aTitulo[x,1]) == '01' // matriz - link
 									_sAdm := alltrim(_aTitulo[x,13]) 
-								else
-									_sAdm := alltrim(_aTitulo[x,6]) 
-								endif
+								//else
+								//	_sAdm := alltrim(_aTitulo[x,6]) 
+								//endif
 
 								_oSQL:= ClsSQL ():New ()
 								_oSQL:_sQuery := ""
