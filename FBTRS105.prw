@@ -11,7 +11,7 @@
 //Não utilizada ainda, será utilizada caso queiram um painel para monitorar o status;
 User Function FBTRS105(aChave, cAmbiente, cIdEnt, cUrl)
 	Local aMonDoc	:={}
-	Local nZ := 0
+	//Local nZ := 0
 	Local nY := 0
 
 		oWs :=WSMANIFESTACAODESTINATARIO():New()
