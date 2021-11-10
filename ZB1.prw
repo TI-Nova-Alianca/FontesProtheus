@@ -16,6 +16,7 @@
 // 29/03/2021 - Claudia - Incluida filial 13. GLPI: 9710
 // 19/04/2021 - Claudia - Incluido relatorio de diferenças de valores. GLPI: 9835
 // 18/05/2021 - Claudia - Incluida chamada para conciliaçao de NF loja. GLPI: 10039
+// 04/11/2021 - Claudia - Ajustado para importar somente venda de link cielo. GLPI 11145
 //
 // ----------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -39,9 +40,9 @@ User Function ZB1()
 	If _lContinua
 		AADD(aRotina, {"&Visualizar" 	     , "AxVisual"      , 0, 1})
 		AADD(aRotina, {"Importar"    	     , "U_ZB1_IMP()"   , 0, 4})
-		AADD(aRotina, {"Conciliar Cielo Loja", "U_ZB1_CON('1')", 0, 4})
+		//AADD(aRotina, {"Conciliar Cielo Loja", "U_ZB1_CON('1')", 0, 4})
 		AADD(aRotina, {"Conciliar Cielo Link", "U_ZB1_CON('2')", 0, 4})
-		AADD(aRotina, {"Conciliar NF's Lojas", "U_ZB1_CON('3')", 0, 4})
+		//AADD(aRotina, {"Conciliar NF's Lojas", "U_ZB1_CON('3')", 0, 4})
 		AADD(aRotina, {"&Legenda"        	 , "U_ZB1LGD (.F.)", 0 ,5})
 		AADD(aRotina, {"Relatorio titulos"   , "U_ZB1RTIT()"   , 0, 6})
 		AADD(aRotina, {"Relatorio importação", "U_ZB1REL()"    , 0, 6})

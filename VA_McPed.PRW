@@ -47,7 +47,7 @@
 // 04/10/2021 - Claudia - Alterada a função _CalcFrt, conforme GLPI: 11009
 // 06/10/2021 - Claudia - Incluido o parametro _lNAWeb para carregar ou nao o array de dados da margem. GLPI: 7792
 // 07/10/2021 - Claudia - Incluida gravação dos registros nos eventos, para busca no NaWeb. GLPI 7792
-// 19/10/2021 - Claudia - Alterado o modo de gravação do evento SC5009.
+// 26/10/2021 - Claudia - Alterado o modo de gravação do evento SC5009.
 //
 // ------------------------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
@@ -580,8 +580,7 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 		// Deleta registros já gravados
 		// Elimina evento anterior, se houver
 		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := " SELECT R_E_C_N_O_"
-		_oSQL:_sQuery += " 		FROM " + RetSQLName ("SZN") + " SZN "
+		_oSQL:_sQuery := " DELETE FROM " + RetSQLName ("SZN") 
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 		_oSQL:_sQuery += " AND ZN_FILIAL  = '" + xfilial ("SZN")     + "'"
 		_oSQL:_sQuery += " AND ZN_DATA    = '" + DTOS(m->c5_emissao) + "'"
@@ -589,13 +588,7 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 		_oSQL:_sQuery += " AND ZN_CLIENTE = '" + m->c5_cliente       + "'"
 		_oSQL:_sQuery += " AND ZN_LOJACLI = '" + m->c5_lojacli       + "'"
 		_oSQL:_sQuery += " AND ZN_CODEVEN = 'SC5009'"
-		_nRegSZN = _oSQL:RetQry (1, .F.)
-
-		if _nRegSZN > 0
-			_oEvtAnt := ClsEvent ():New ()
-			_oEvtAnt:RecnoSZN = _nRegSZN
-			_oEvtAnt:Exclui ()
-		endif
+		_oSQL:Exec ()
 
 		For _x:=1 to Len(_aNaWeb)
 			_sX := PADL(alltrim(str(_x)),2,'0') 

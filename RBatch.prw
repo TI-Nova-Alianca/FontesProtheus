@@ -27,6 +27,9 @@
 //
 
 #include "tbiconn.ch"
+#include 'protheus.ch'
+#include "totvs.ch"
+#include "report.ch"
 
 // --------------------------------------------------------------------------
 User Function RBatch (_sEmp, _sFil)

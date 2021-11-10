@@ -13,8 +13,8 @@ User Function FBTRS106(aRet, lShowMsg, lCompleta)
 	Local aArea 		:= GetArea()
 	Local aChaveNfe 	:= {}
 	Local lRetManif		:= .F.
-	Local cIdEnt   		:= U_FBTRS103()
-	Local cURL    		:= PadR(GetNewPar("MV_SPEDURL","http://"), 250)
+	//Local cIdEnt   		:= U_FBTRS103()
+	//Local cURL    		:= PadR(GetNewPar("MV_SPEDURL","http://"), 250)
 	Local aMsg 			:= {}
 	Local lMsg 			:= .F.
 

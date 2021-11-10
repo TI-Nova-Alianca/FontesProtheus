@@ -5,10 +5,13 @@
 //  Descricao..: Relatório de Rapel Pago por Período
 //
 //  Alterações:
-//  19/10/2015 - Catia - criada opcao por REDE para facilitar na conciliação
-//  12/06/2017 - Catia - alterações rapel para valor e para buscar direto do SE1 e nao do SF2
-//  22/06/2018 - Catia - criada opcao de buscar por data de emissao ou vencimento 
-//             - Catia - Alterado o nome do relatorio para relatorio para Rapel Previsto x Realizado
+//  19/10/2015 - Catia   - criada opcao por REDE para facilitar na conciliação
+//  12/06/2017 - Catia   - alterações rapel para valor e para buscar direto do SE1 e nao do SF2
+//  22/06/2018 - Catia   - criada opcao de buscar por data de emissao ou vencimento 
+//             - Catia   - Alterado o nome do relatorio para relatorio para Rapel Previsto x Realizado
+//  29/10/2021 - Claudia - Alterado o totalizador do relatorio, pois estava dando estouro de campo. 
+//
+// ----------------------------------------------------------------------------------------------------
 
 #include "rwmake.ch"
 #IFNDEF WINDOWS
@@ -41,7 +44,6 @@ private _sArqLog := procname () + "_" + alltrim (cUserName) + ".log"
    				u_help("Na opção por REDE, os parametros inicial e final de cliente devem ser iguais.")   			
    			endif
    		endif
-	
     	
     	titulo  := "Rapel Previsto x Realizado"
     
@@ -57,9 +59,10 @@ private _sArqLog := procname () + "_" + alltrim (cUserName) + ".log"
 		
 		RptStatus({|| RptDetail()})     		
 	endif    	
-
 return
-
+//
+//
+// ------------------------------------------------------------------------------------
 Static Function RptDetail()
 
     SetRegua(LastRec())
@@ -212,12 +215,21 @@ Static Function RptDetail()
             cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
         Endif        
         li++
+			
         @ li,  00 PSAY "TOTAL GERAL --> "
-        @ li,  95 PSAY _aTotGer [1]  Picture "@E 99,999,999.99"
-        @ li, 112 PSAY _aTotGer [2]  Picture "@E 9999,999.99"
-       	@ li, 148 PSAY _aTotGer [3]  Picture "@E 9999,999.99"
-       	li++
-       	
+		@ li, 110 PSAY "VALOR DO TITULO"
+       	@ li, 148 PSAY _aTotGer [1]  Picture "@E 9999,999,999,999.99"
+		li++
+		@ li, 110 PSAY "RAPEL PREVISTO"
+       	@ li, 148 PSAY _aTotGer [2]  Picture "@E 9999,999,999,999.99"
+		li++
+		@ li, 110 PSAY "RAPEL RELIZADO"
+       	@ li, 148 PSAY _aTotGer [3]  Picture "@E 9999,999,999,999.99"
+
+       	nHandle := FCreate("c:\temp\log.txt")
+		   _sTexto := str(_aTotGer [1]) + "/" + str(_aTotGer [2]) + "/" + str(_aTotGer [3]) 
+		FWrite(nHandle,_sTexto )
+		FClose(nHandle)
      Endif
      
      U_ImpParam (58)
@@ -229,11 +241,9 @@ Static Function RptDetail()
            dbcommitAll()
            ourspool(wnrel)
      Endif
-
      MS_FLUSH() // Libera fila de relatorios em spool (Tipo Rede Netware)
-
 return
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
@@ -252,7 +262,6 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {11, "Vendedor ate           ?", "C", 6, 0,  "",   "SA3", {},                        "Vendedor Final"})
 	aadd (_aRegsPerg, {12, "Usar data              ?", "N", 1,  0,  "",   "   ", {"Emissao","Vencimento","Pagamento"},   ""})
 	aadd (_aRegsPerg, {13, "Gerar Planilha         ?", "N", 1,  0,  "",   "   ", {"Não","Sim"},   ""})
-    
     
     U_ValPerg (cPerg, _aRegsPerg)
 Return

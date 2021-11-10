@@ -53,7 +53,7 @@ Local lPergunte	:= .T.
 Local lRet		:= .T.
 local lVerPerg	:= .T.
 local lJob		:= .F.
-local cProg		:= iif(existBlock("DANFEProc"),"U_DANFEProc","DANFEProc")
+//local cProg		:= iif(existBlock("DANFEProc"),"U_DANFEProc","DANFEProc")
 
 Default lIsLoja	:= .F.	//indica se foi chamado de alguma rotina do SIGALOJA
 Default nTipo	:= 0
@@ -203,9 +203,9 @@ Local cAutoriza  := ""
 Local cModalidade:= ""
 Local cChaveSFT  := ""
 Local cAliasSFT  := "SFT"
-Local cCondicao	 := ""
+//Local cCondicao	 := ""
 Local cIndex	 := ""
-Local cChave	 := ""
+//Local cChave	 := ""
 Local lQuery     := .F.
 Local nX         := 0
 Local nI		 := 0
@@ -958,7 +958,7 @@ Static Function ImpDet(	oDanfe		, oNfe			, cCodAutSef	, cModalidade	,;
 						oNfeDPEC	, cCodAutDPEC	, cDtHrRecCab	, dDtReceb		,;
 						aNota		, lImpSimp		, nTipo			, cMsgRet)
 
-local cProg		:= iif(existBlock("IMPDNFLJ"),"U_IMPDNFLJ","IMPDNFLJ")
+//local cProg		:= iif(existBlock("IMPDNFLJ"),"U_IMPDNFLJ","IMPDNFLJ")
 
 DEFAULT lImpSimp	:= .F.
 Default nTipo		:= 0
@@ -5601,7 +5601,7 @@ Chama a função do Loja para impressão da Danfe Simplificado na Impressora Não-Fi
 //-----------------------------------------------------------------------
 User Function IMPDNFLJ(oNFE, cCodAutSef, dDtReceb, cDtHrRecCab)
 
-local cProg		:= iif(existBlock("LJDNFNFE"),"U_LJDNFNFE","LJDNFNFE")
+//local cProg		:= iif(existBlock("LJDNFNFE"),"U_LJDNFNFE","LJDNFNFE")
 
 &cProg.(oNFE, cCodAutSef, dDtReceb, cDtHrRecCab)
 

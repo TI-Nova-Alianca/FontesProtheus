@@ -82,6 +82,7 @@
 #INCLUDE "PROTHEUS.CH"
 #include "tbiconn.ch"
 #include "VA_INCLU.prw"
+#include "totvs.ch"
 
 // Estrutura de retorno de dados
 WSSTRUCT RetornoWS

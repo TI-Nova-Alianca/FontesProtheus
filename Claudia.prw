@@ -2,7 +2,13 @@
 #include 'parmtype.ch'
 
 User Function claudia ()
-	u_help("Nada para executar")
+	//u_help("Nada para executar")
+
+	//u_help("Executa Margens")
+	//U_BATMARDAT()
+
+	//u_help("Tela")
+	//TelaTeste()
 
 	//u_help("envMargem")
 	//u_envMargem()
@@ -24,6 +30,21 @@ User Function claudia ()
 	//u_help("Teste de baixa")
 	//BaixaAut()
 Return
+
+// Static Function TelaTeste()
+// 		_aBoletos := {}
+// 		aadd (_aBoletos, {.T.,"teste","3333","44444"})
+
+
+// 		_aColunas = {}
+// 		aadd (_aColunas, {2, "Serie",  45, "@!"})
+// 		aadd (_aColunas, {3, "Numero", 65, "@!"})
+// 		aadd (_aColunas, {4, "Banco",  45, "@!"})
+		
+// 		// Markbrowse para o usuario selecionar os boletos
+// 		U_MBArray (@_aBoletos, "Selecione boletos a imprimir", _aColunas, 1, 600, 400)
+		
+// Return
 // //
 // // --------------------------------------------------------------------------
 // // Grava retorno da margem contribuicao

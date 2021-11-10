@@ -3,16 +3,23 @@
 // Data.......: 13/08/2019
 // Descricao..: Ajustas datas de limites de credito de clientes - Desativa Clientes e altera o Risco para 'E'
 //
-// Historico de alteracoes:
-// 19/08/2019 - Robert - Nao bloqueia funcionarios ativos/afastados.
-// 26/08/2019 - Robert - Ignora campo A1_ULTCOM por que o mesmo desconsidera notas de bonificacao.
-// 04/09/2019 - Robert - Nao bloqueia associados ativos e nem clientes ativados recentemente.
-// 11/10/2019 - Robert - Nao chamava AtuMerc() apos as alteracoes do SA1.
-// 15/10/2019 - Andre  - Adicionado validação para clientes com codigo base diferentes.
-// 23/10/2019 - Robert - Nao bloqueia operadoras de cartao (codigo com 3 posicoes).
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #batch
+// #Descricao         #Ajustas datas de limites de credito de clientes - Desativa Clientes e altera o Risco para 'E'
+// #PalavasChave      #bloqueio #clientes #limite_de_credito 
+// #TabelasPrincipais #SA1
+// #Modulos           #FAT
 //
-
-// --------------------------------------------------------------------------
+// Historico de alteracoes:
+// 19/08/2019 - Robert  - Nao bloqueia funcionarios ativos/afastados.
+// 26/08/2019 - Robert  - Ignora campo A1_ULTCOM por que o mesmo desconsidera notas de bonificacao.
+// 04/09/2019 - Robert  - Nao bloqueia associados ativos e nem clientes ativados recentemente.
+// 11/10/2019 - Robert  - Nao chamava AtuMerc() apos as alteracoes do SA1.
+// 15/10/2019 - Andre   - Adicionado validação para clientes com codigo base diferentes.
+// 23/10/2019 - Robert  - Nao bloqueia operadoras de cartao (codigo com 3 posicoes).
+// 26/10/2021 - Claudia - Aumentado de 180 para 365 dias o bloqueio de clientes. GLPI: 11133
+//
+// --------------------------------------------------------------------------------------------------
 user function BatLimCr ()
 	local _oSQL      := NIL
 	local _aRegSA1   := {}
@@ -63,7 +70,7 @@ user function BatLimCr ()
 	next
 
 
-	// Bloqueia clientes sem compra nos ultimos 180 dias.
+	// Bloqueia clientes sem compra nos ultimos 365 dias.
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := " "
 	_oSQL:_sQuery += "SELECT R_E_C_N_O_"
@@ -76,8 +83,8 @@ user function BatLimCr ()
 	_oSQL:_sQuery +=       ") AS SA1"
 	_oSQL:_sQuery += " WHERE SA1.A1_CGC NOT LIKE '%88612486%'" // desprezar os codigos de clientes que sao as nossas filiais
 	_oSQL:_sQuery +=   " AND LEN (A1_CGC) > 3"  // Desprezar operadoras de cartao
-	_oSQL:_sQuery +=   " AND ((ULTCOM != '' AND ULTCOM <= '" + dtos (date () - 180) + "')"
-	_oSQL:_sQuery +=     " OR (ULTCOM  = '' AND SA1.A1_VADTINC <= '" + dtos (date () - 180) + "'))"
+	_oSQL:_sQuery +=   " AND ((ULTCOM != '' AND ULTCOM <= '" + dtos (date () - 365) + "')"
+	_oSQL:_sQuery +=     " OR (ULTCOM  = '' AND SA1.A1_VADTINC <= '" + dtos (date () - 365) + "'))"
 
 	// Se for um "codigo base", somente poderah ser bloqueado se tiver todos os codigos filhos ja bloqueados.
 	_oSQL:_sQuery += " AND NOT EXISTS (SELECT *"
