@@ -22,28 +22,30 @@
 // 04/01/2021 - Cláudia - Incluida a filial 16 para oas observações financeiras. GLPI: 9069
 // 03/02/2021 - Cláudia - Ajuste para visualização das OBS nas demais filiais. GLPI: 9263
 // 21/06/2021 - Claudia - Grava supervisor do representante no supervisor do cliente. GLPI: 8655
+// 10/11/2021 - Robert  - Executava a funcao _ma030tok() mesmo quando se tratava de exclusao.
 //
+
 // -------------------------------------------------------------------------------------------------------------
 #include "protheus.ch"
 #include "parmtype.ch"
 
 User Function CRMA980()
-    Local aParam := PARAMIXB
-    Local xRet := .T.
-    Local oObj := "" 
-    Local cIdPonto := ""
-    Local cIdModel := ""
-    Local lIsGrid := .F.
-    Local nOper := 0
- 
-    If aParam <> NIL
-        oObj := aParam[1]
-        cIdPonto := aParam[2]
-        cIdModel := aParam[3]
-        lIsGrid := (Len(aParam) > 3)
- 
-        If cIdPonto == "MODELPOS"
-        	nOper := oObj:nOperation
+	Local aParam := PARAMIXB
+	Local xRet := .T.
+	Local oObj := "" 
+	Local cIdPonto := ""
+	Local cIdModel := ""
+	Local lIsGrid := .F.
+	Local nOper := 0
+
+	If aParam <> NIL
+		oObj := aParam[1]
+		cIdPonto := aParam[2]
+		cIdModel := aParam[3]
+		lIsGrid := (Len(aParam) > 3)
+
+		If cIdPonto == "MODELPOS"
+			nOper := oObj:nOperation
 
 			if nOper == 4
 				u_log ('')
@@ -53,53 +55,55 @@ User Function CRMA980()
 				u_log ('M:', m->a1_nome)
 				u_log ('SA1:', sa1->a1_nome)
 
-        	    _GeraLog ()
-        		U_AtuMerc ('SA1', sa1 -> (recno ()))
-        	endif
-        	xRet := _ma030tok()
+				_GeraLog ()
+				U_AtuMerc ('SA1', sa1 -> (recno ()))
+			endif
+			If nOper != 5  // Se nao for exclusao
+				xRet := _ma030tok()
+			endif
 
-        ElseIf cIdPonto == "MODELVLDACTIVE"
-            nOper := oObj:nOperation
-            //Se for Exclusão, não permite abrir a tela
-            If nOper == 5  // Exclusao
+		ElseIf cIdPonto == "MODELVLDACTIVE"
+			nOper := oObj:nOperation
+			//Se for Exclusão, não permite abrir a tela
+			If nOper == 5  // Exclusao
 				u_help ("Nenhum registro de cliente pode ser excluído em função da integração com o software Mercanet.")
 				xRet = .F.
 			EndIf
 
-        ElseIf cIdPonto == "FORMPOS"
-            xRet := NIL
+		ElseIf cIdPonto == "FORMPOS"
+			xRet := NIL
 
-        ElseIf cIdPonto == "FORMLINEPRE"
-        	xRet := .T.
+		ElseIf cIdPonto == "FORMLINEPRE"
+			xRet := .T.
 
-        ElseIf cIdPonto == "FORMLINEPOS"
-            xRet := .T.
+		ElseIf cIdPonto == "FORMLINEPOS"
+			xRet := .T.
 
-        ElseIf cIdPonto == "MODELCOMMITTTS" // altera
+		ElseIf cIdPonto == "MODELCOMMITTTS" // altera
 			AtuSuper(sa1->a1_vend, sa1->a1_cod, sa1->a1_loja)
-        	xRet := .T.
+			xRet := .T.
 
-        ElseIf cIdPonto == "MODELCOMMITNTTS"
-        	nOper := oObj:nOperation
-        	//Se for inclusão
-            If nOper == 3
-                _M030INC()
-            EndIf
+		ElseIf cIdPonto == "MODELCOMMITNTTS"
+			nOper := oObj:nOperation
+			//Se for inclusão
+			If nOper == 3
+				_M030INC()
+			EndIf
 
-        ElseIf cIdPonto == "FORMCOMMITTTSPRE"
-        	xRet := .T.
+		ElseIf cIdPonto == "FORMCOMMITTTSPRE"
+			xRet := .T.
 
-        ElseIf cIdPonto == "FORMCOMMITTTSPOS"
-        	xRet := .T.
+		ElseIf cIdPonto == "FORMCOMMITTTSPOS"
+			xRet := .T.
 
-        ElseIf cIdPonto == "MODELCANCEL"
-            xRet := .T.
+		ElseIf cIdPonto == "MODELCANCEL"
+			xRet := .T.
 
-        ElseIf cIdPonto == "BUTTONBAR"
+		ElseIf cIdPonto == "BUTTONBAR"
 			xRet := {{"Obs.Financeiro", "Obs.Financeiro", {||U_VA_OBSFIN('1')}}}
 
-        EndIf
-    EndIf
+		EndIf
+	EndIf
 
 Return xRet
 //
