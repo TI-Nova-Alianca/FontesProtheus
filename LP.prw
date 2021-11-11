@@ -67,7 +67,7 @@
 // 15/09/2021 - Robert  - Voltadas alteracoes feitas ontem.
 // 04/10/2021 - Robert  - Ajustado LPAD 666/005 para considerar os CC de final 1409 e 1410 (GLPI 10917)
 //                      - Ajustado LPAD 666/008 para diferencial req.mat.MM entre indl.X adm/coml
-//
+// 11/11/2021 - Claudia - Incluso contabilizacao venda cupons PIX lançamento padrão 520 015
 
 // -----------------------------------------------------------------------------------------------------------------
 // Informar numero e sequencia do lancamento padrao, seguido do campo a ser retornado.
@@ -227,6 +227,18 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 		u_help (SE1->E1_TIPO)
 		u_help (SE5->E5_VLDESCO)
 		u_help (SE5->E5_VADOUTR)
+
+	case _sLPad + _sSeq $ '520015'
+		Do Case
+			Case SE1->E1_TIPO == "PIX"
+				_xret := 0
+		    
+			Case (SE1->E1_TIPO<>"NCC" .OR.!SE5->E5_MOTBX$"STB/STD")
+				_xret := SE5->E5_VADOUTR
+				
+			OTHERWISE
+				_xret := 0
+		EndCase	
 
 	case _sLPad + _sSeq $ '520021/521021/524021' .and. _sQueRet == 'VL' .and. !alltrim(SE5->E5_ORIGEM) $ 'ZB1/ZB3'// descontos - estorna provisao de comissao
 		if SE1->E1_TIPO<>"NCC" .AND. SE5->E5_VLDESCO > 0 .and. SE1->E1_COMIS1>0 .AND. ! alltrim(SE1->E1_VEND1) $ GETMV("MV_VENDDIR")
@@ -434,6 +446,8 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
      			_xRet = "101010101002" // conta caixa
      		case _wtipo == 'VP'	
      			_xRet = "403010401004" // conta bonificacoes
+			case _wtipo == 'PIX'	
+     			_xRet = "101020201001" // conta clientes	 
      		otherwise
      			// se a forma de pagamento nao foi dinheiro - contabiliza usando a conta cliente do titulo
      			// pq no financeiro - o cliente fica a administradora de cartao e la deve estar associada a conta correta
