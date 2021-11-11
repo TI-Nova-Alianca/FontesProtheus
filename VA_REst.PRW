@@ -21,6 +21,7 @@
 // 05/10/2020 - Robert - Implementado tratamento para reabertura de OP (por enquanto, apenas 1 parte e moeda 01) - GLPI 8599
 //                     - Melhorados nomes dos arquivos de bkp.
 // 05/05/2021 - Robert - Passa a exportar backups em formato CSV por que novas releases nao permitem mais uso de criver ISAM (GLPI 9973).
+// 11/11/2021 - Robert - Quando ambiente de testes, permite pular a etapa de backup dos dados anteriores.
 //
 
 // --------------------------------------------------------------------------
@@ -30,7 +31,6 @@ User Function VA_REst ()
 	// Somente uma estacao por vez.
 	_nLock := U_Semaforo (procname (), .T.)
 	if _nLock == 0
-	//	u_help ("Nao foi possivel obter acesso exclusivo a esta rotina.")
 		return
 	endif
 
@@ -45,8 +45,9 @@ User Function VA_REst ()
 		U_Semaforo (_nLock)
 	endif
 return
-	
-	
+
+
+
 // --------------------------------------------------------------------------
 Static Function _AiQueMedo ()
 	local _lContinua  := .T.
@@ -145,14 +146,14 @@ Static Function _AiQueMedo ()
 
 	if _lContinua
 		procregua (10)
-		incproc ("Gerando backup SB9")
+		incproc ("")
 		
 		// Monta filtros separadamente, para posterior uso na delecao dos registros.
 		_sWhereSB9 := " WHERE D_E_L_E_T_ = '' AND B9_FILIAL  = '" + xfilial ("SB9") + "' AND B9_DATA = '" + dtos (_dDataSB9) + "'"
 		_sWhereSBJ := " WHERE D_E_L_E_T_ = '' AND BJ_FILIAL  = '" + xfilial ("SBJ") + "' AND BJ_DATA = '" + dtos (_dDataSBJ) + "'"
 		_sWhereSBK := " WHERE D_E_L_E_T_ = '' AND BK_FILIAL  = '" + xfilial ("SBK") + "' AND BK_DATA = '" + dtos (_dDataSBK) + "'"
-		
-		// Exporta backup para DBF
+			
+		// Exporta backup
 		_oSQLSB9 := ClsSQL ():New ()
 		_oSQLSBJ := ClsSQL ():New ()
 		_oSQLSBK := ClsSQL ():New ()
@@ -167,25 +168,24 @@ Static Function _AiQueMedo ()
 		// Cria diretorio para os arquivos de backup
 		_sDirLogs = '\backups\'
 		makedir (_sDirLogs)
+			
+		if "TESTE" $ upper (GetEnvServer()) .and. U_MsgNoYes ('Parece que estamos em ambiente de testes. Deseja ignorar a etapa de backup dos dados?')
+			U_Log2 ('aviso', 'Ignorando a etapa de backup dos dados anteriores')
+		else
+			u_log2 ('info', 'Gerando backup no arquivo ' + _sBkpSB9 + ' a partir de: ' + _oSQLSB9:_sQuery)
+			_sAliasQ := _oSQLSB9:Qry2Trb (.T.)
+			U_Trb2XLS (_sAliasQ, .F., .F., .F., _sBkpSB9 + '.csv')
+
+			if GetMV ("MV_RASTRO") == "S"
+				u_log2 ('info', 'Gerando backup no arquivo ' + _sBkpSBJ + ' a partir de: ' + _oSQLSBJ:_sQuery)
+				_sAliasQ := _oSQLSBJ:Qry2Trb (.T.)
+				U_Trb2XLS (_sAliasQ, .F., .F., .F., _sBkpSBJ + '.csv')
 		
-		incproc ("Gerando backups...")
-		u_log2 ('info', 'Gerando backup no arquivo ' + _sBkpSB9 + ' a partir de: ' + _oSQLSB9:_sQuery)
-		_sAliasQ := _oSQLSB9:Qry2Trb (.T.)
-		//copy to (_sBkpSB9)
-		U_Trb2XLS (_sAliasQ, .F., .F., .F., _sBkpSB9 + '.csv')
-
-		if GetMV ("MV_RASTRO") == "S"
-			u_log2 ('info', 'Gerando backup no arquivo ' + _sBkpSBJ + ' a partir de: ' + _oSQLSBJ:_sQuery)
-			_sAliasQ := _oSQLSBJ:Qry2Trb (.T.)
-//			copy to (_sBkpSBJ)
-			U_Trb2XLS (_sAliasQ, .F., .F., .F., _sBkpSBJ + '.csv')
-	
-			u_log2 ('info', 'Gerando backup no arquivo ' + _sBkpSBK + ' a partir de: ' + _oSQLSBK:_sQuery)
-			_sAliasQ := _oSQLSBK:Qry2Trb (.T.)
-			//copy to (_sBkpSBK)
-			U_Trb2XLS (_sAliasQ, .F., .F., .F., _sBkpSBK + '.csv')
+				u_log2 ('info', 'Gerando backup no arquivo ' + _sBkpSBK + ' a partir de: ' + _oSQLSBK:_sQuery)
+				_sAliasQ := _oSQLSBK:Qry2Trb (.T.)
+				U_Trb2XLS (_sAliasQ, .F., .F., .F., _sBkpSBK + '.csv')
+			endif
 		endif
-
 	endif
 
 	if _lContinua

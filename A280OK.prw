@@ -7,6 +7,7 @@
 // Historico de alteracoes:
 // 16/06/2020 - Robert - Incluido backup da tabela CT5.
 // 06/07/2020 - Robert - Grava evento.
+// 11/11/2021 - Robert - Melhorada (de horas pra minutos... eita!) a performance da leitura de OPs que precisam de backup
 //
 
 // --------------------------------------------------------------------------
@@ -44,6 +45,7 @@ static function _GodSaveMe ()
 	// pois em caso de reabertura de periodo, os campos de acumulados precisam ser ajustados.
 	incproc ('Gerando backup Ordens de Producao')
 	_sNomeBkp = 'SC2' + _sNome2
+/*
 	_oSQL:_sQuery := "SELECT * INTO " + _sNomeBkp
 	_oSQL:_sQuery +=  " FROM " + RetSQLName ('SC2')
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
@@ -67,6 +69,32 @@ static function _GodSaveMe ()
 	_oSQL:_sQuery +=                       " AND PROXIMO.D3_EMISSAO  > '" + DTOS (paramixb [1]) + "'"
 	_oSQL:_sQuery +=                   " )"
 	_oSQL:_sQuery += " )"
+*/
+	// Leitura do SC2 com base nos SD3 que tinham movimento fora do mes ficou muuuuuito lenta. Vou gerar antes a lista
+	// das OPs e depois buscar o SC2.
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " WITH P AS ("  // Monta lista das OPs com movimentacao no proximo mes (devem ser poucas)
+	_oSQL:_sQuery +=      " SELECT DISTINCT D3_OP"
+	_oSQL:_sQuery +=        " FROM " + RetSQLName ("SD3") + " PROXIMO "
+	_oSQL:_sQuery +=      " WHERE PROXIMO.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=        " AND PROXIMO.D3_FILIAL = '" + xfilial ("SD3") + "'"
+	_oSQL:_sQuery +=        " AND PROXIMO.D3_OP != ''"
+	_oSQL:_sQuery +=        " AND PROXIMO.D3_ESTORNO != 'S'"
+	_oSQL:_sQuery +=        " AND PROXIMO.D3_EMISSAO > '" + DTOS (paramixb [1]) + "'"
+	_oSQL:_sQuery += " ), M AS ("
+	_oSQL:_sQuery +=    " SELECT DISTINCT SD3.D3_OP"  // Das OPs que tem movimento no proximo mes, verifica quais tem movimento no mes que estah sendo fechado.
+	_oSQL:_sQuery +=      " FROM " + RetSQLName ('SD3') + " SD3, P"
+	_oSQL:_sQuery +=     " WHERE SD3.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=       " AND SD3.D3_FILIAL = '" + xfilial ("SD3") + "'"
+	_oSQL:_sQuery +=       " AND SD3.D3_ESTORNO != 'S'"
+	_oSQL:_sQuery +=       " AND SD3.D3_EMISSAO BETWEEN '" + DTOS (firstday (paramixb [1])) + "' AND '" + DTOS (paramixb [1]) + "'"
+	_oSQL:_sQuery +=       " AND SD3.D3_OP = P.D3_OP"
+	_oSQL:_sQuery += " )"
+	_oSQL:_sQuery += " SELECT * INTO " + _sNomeBkp
+	_oSQL:_sQuery +=   " FROM " + RetSQLName ('SC2')
+	_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=    " AND C2_FILIAL = '" + xfilial ("SC2") + "'"
+	_oSQL:_sQuery +=    " AND C2_NUM + C2_ITEM + C2_SEQUEN + C2_ITEMGRD IN (SELECT D3_OP FROM M)"
 	u_log2 ('info', _oSQL:_sQuery)
 	if ! _oSQL:Exec ()
 		u_help ('Erro ao criar backup: ' + _sNomeBkp,, .t.)
