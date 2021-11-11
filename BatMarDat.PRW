@@ -15,7 +15,6 @@
 // 9=Outros   
 //
 // Historico de alteracoes:
-// 28/10/2021 - claudia - Criado para ser executado em caso de falha de execução do BATMARGEM
 //
 // -----------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -24,8 +23,6 @@
 User Function BatMarDat(_nTipo)
 	local _oSQL   := NIL
 	Private cPerg := "BatMarDat"
-
-	_nTipo  := 2
 	
     If _nTipo != 1
 		If ! u_zzuvl ('097', __cUserId, .T.)
@@ -41,15 +38,21 @@ User Function BatMarDat(_nTipo)
 		Return
 	Endif
 	
-    _ValidPerg()
-    If Pergunte(cPerg,.T.)
-        _dDtIni := DTOS(mv_par01)
-        _dDtFin := DTOS(mv_par02)
-    Else
-        Return
-    EndIf
+	If _nTipo == 1
+		//_QtdDias := 45
+		_dDtIni  := '20170101' //DTOS(DaySub( Date() , _QtdDias))
+		_dDtFin  := DTOS(Date())
+		
+	Else
+		_ValidPerg()
+		If Pergunte(cPerg,.T.)
+			_dDtIni := DTOS(mv_par01)
+			_dDtFin := DTOS(mv_par02)
+		Else
+			Return
+		EndIf
+	EndIf
 
-	
 	u_logIni ()
 	
 	_oSQL := ClsSQL ():New ()

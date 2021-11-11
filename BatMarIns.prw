@@ -1,6 +1,6 @@
-// Programa...: BatMargem
-// Autor......: Andre Alves
-// Data.......: 19/02/2020
+// Programa...: BatMarIns
+// Autor......: claudia Lionço
+// Data.......: 11/11/2021
 // Descricao..: Bat criada para gerar tabela VA_RENTABILIDADE para consulta no Mercanet.
 //
 // Tipos de margem 
@@ -15,22 +15,25 @@
 // 9=Outros   
 //
 // Historico de alteracoes:
-// 13/04/2020 - Cláudia - Incluido o TIPO A para controle de verbas utilizadas
-//						  Incluido o indice 3 - emissao/supervisor	
-// 15/04/2020 - Cláudia - Incluido o campo de data da ZA4 na data de emissao do TIPO A	  
-// 21/05/2020 - Claudia - Acrescentada nova coluna CODMUN, conforme GLPI: 7957
-// 05/08/2020 - Cláudia - Ajuste vendedor verba e vendedor NF nos tipos 6 e A. GLPI: 8268
-// 01/09/2020 - Cláudia - Ajuste no tipo 6, passando a pesquisar o supervisor pelo vendedor da verba. 
-//				          GLPI: 8403
-// 11/12/2020 - Cláudia - Incluido o campo PROMOTOR. GLPI: 8882
+// 28/10/2021 - claudia - Criado para ser executado em caso de falha de execução do BATMARGEM
 //
 // -----------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
 
-User Function BatMargem(_nTipo)
-	local _oSQL      := NIL
+User Function BatMarIns(_nTipo)
+local _oSQL      := NIL
+	local _sSQL 	 := ""
+	Private cPerg    := "BatMar"
 	
+	If _nTipo != 1
+	u_help("Atualiza tabela VA_RENTABILIDADE")
+		If ! u_zzuvl ('097', __cUserId, .T.)
+			u_help ("Usuário sem permissão para usar estar rotina")
+			Return
+		Endif
+	EndIf
+
 	// Somente uma estacao por vez, pois a rotina eh pesada e certos usuarios derrubam o client na estacao e mandam rodar novamente...
 	_nLock := U_Semaforo (procname ())
 	If _nLock == 0
@@ -38,17 +41,43 @@ User Function BatMargem(_nTipo)
 		Return
 	Endif
 	
-	u_logIni ()
+	If _nTipo == 1
+		_QtdDias := 45
+		_dDtIni  := DTOS(DaySub( Date() , _QtdDias))
+		_dDtFin  := DTOS( Date() )
+		
+	Else
+		_ValidPerg()
+		If Pergunte(cPerg,.T.)
+			_dDtIni := DTOS(mv_par01)
+			_dDtFin := DTOS(mv_par02)
+		Else
+			Return
+		EndIf
+	EndIf
 	
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := " EXEC ('DROP TABLE IF EXISTS VA_RENTABILIDADE') AT LKSRV_BI_ALIANCA "
-	_oSQL:Log()
-	If ! _oSQL:Exec()
-		_oBatch:Mensagens += 'Erro ao limpar tabela VA_RENTABILIDADE'
-		_oBatch:Retorno = 'N'
-	else
-		_oSQL:_sQuery := " WITH C "
-		_oSQL:_sQuery += " AS "
+	
+	u_logIni ()
+	_sErroAuto := ''  // Para a funcao u_help gravar mensagens
+	
+	_sSQL := " DELETE FROM BI_ALIANCA.dbo.VA_RENTABILIDADE" 
+	_sSQL += " WHERE EMISSAO BETWEEN '"+ _dDtIni +"' AND '"+ _dDtFin +"'"
+	u_log (_sSQL)
+    If TCSQLExec (_sSQL) < 0
+		if type ('_oBatch') == 'O'
+			_oBatch:Mensagens += 'Erro ao limpar tabela VA_RENTABILIDADE'
+			_oBatch:Retorno = 'N'  // "Executou OK?" --> S=Sim;N=Nao;I=Iniciado;C=Cancelado;E=Encerrado automaticamente
+		else
+			u_help ('Erro ao limpar tabela VA_RENTABILIDADE',, .t.)
+		endif
+	Else
+
+        _oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := " 		INSERT INTO BI_ALIANCA.dbo.VA_RENTABILIDADE "
+        _oSQL:_sQuery += " (TIPO,FILIAL,CLIENTE,LOJA,C_BASE,L_BASE,NOTA,SERIE,EMISSAO,ESTADO,VENDEDOR,LINHA,PRODUTO "
+		_oSQL:_sQuery += " ,CUSTO_PREV,CUSTO_REAL,NF_QUANT,NF_VLRUNIT,NF_VLRPROD,NF_VALIPI,NF_ICMSRET,NF_VLR_BRT "
+		_oSQL:_sQuery += " ,NF_ICMS,NF_COFINS,NF_PIS,VLR_COMIS_PREV,VLR_COMIS_REAL,TOTPROD_NF,FRETE_PREVISTO "
+		_oSQL:_sQuery += " ,FRETE_REALIZADO,RAPEL_PREVISTO,RAPEL_REALIZADO,SUPER,VERBAS_UTIL,VERBAS_LIB,CODMUN,PROMOTOR) "
 		_oSQL:_sQuery += " (SELECT "
 		_oSQL:_sQuery += " 	SF4.F4_MARGEM AS TIPO "
 		_oSQL:_sQuery += "    ,SD2.D2_FILIAL AS FILIAL "
@@ -147,6 +176,7 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 			AND SC5.C5_NUM = SD2.D2_PEDIDO "
 		_oSQL:_sQuery += " 			AND SC5.C5_FILIAL = SD2.D2_FILIAL) "
 		_oSQL:_sQuery += " WHERE SD2.D_E_L_E_T_ = '' "
+        _oSQL:_sQuery += " AND SD2.D2_EMISSAO BETWEEN '" + _dDtIni + "' AND '" + _dDtFin + "'"
 		_oSQL:_sQuery += " GROUP BY SF4.F4_MARGEM "
 		_oSQL:_sQuery += " 		,SD2.D2_FILIAL "
 		_oSQL:_sQuery += " 		,SD2.D2_CLIENTE "
@@ -178,7 +208,6 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 	   ,SD1.D1_LOJA AS LOJA "
 		_oSQL:_sQuery += " 	   ,SA1.A1_VACBASE AS C_BASE "
 		_oSQL:_sQuery += " 	   ,SA1.A1_VALBASE AS L_BASE "
-		//_oSQL:_sQuery += " 	   ,SD1.D1_COD AS NOTA "
 		_oSQL:_sQuery += " 	   ,SD1.D1_DOC AS NOTA "
 		_oSQL:_sQuery += " 	   ,SD1.D1_SERIE AS SERIE "
 		_oSQL:_sQuery += " 	   ,SD1.D1_DTDIGIT AS DIGITACAO "
@@ -260,6 +289,7 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 		AND SZH.ZH_LOJA = SD1.D1_LOJA "
 		_oSQL:_sQuery += " 		AND SZH.ZH_ITNFE = SUBSTRING(SD1.D1_ITEM, 3, 2)) "
 		_oSQL:_sQuery += " 	WHERE SD1.D_E_L_E_T_ = '' "
+        _oSQL:_sQuery += "  AND SD1.D1_EMISSAO BETWEEN '" + _dDtIni + "' AND '" + _dDtFin + "'"
 		_oSQL:_sQuery += " 	GROUP BY SF4.F4_MARGEM  "
 		_oSQL:_sQuery += " 			,SD1.D1_FILIAL "
 		_oSQL:_sQuery += " 			,SD1.D1_FORNECE "
@@ -357,6 +387,7 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 		AND SC5.C5_NUM = SD2.D2_PEDIDO "
 		_oSQL:_sQuery += " 		AND SC5.C5_FILIAL = SD2.D2_FILIAL) "
 		_oSQL:_sQuery += " 	WHERE SD2.D_E_L_E_T_ = '' "
+        _oSQL:_sQuery += "  AND SD2.D2_EMISSAO BETWEEN '" + _dDtIni + "' AND '" + _dDtFin + "'"
 		_oSQL:_sQuery += " 	GROUP BY SF4.F4_MARGEM "
 		_oSQL:_sQuery += " 			,SD2.D2_CLIENTE "
 		_oSQL:_sQuery += " 			,SD2.D2_LOJA "
@@ -396,7 +427,6 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 	   ,ZA5.ZA5_SERIE AS SERIE "
 		_oSQL:_sQuery += " 	   ,ZA5.ZA5_DTA AS EMISSAO "
 		_oSQL:_sQuery += " 	   ,SA1.A1_EST AS ESTADO "
-		//_oSQL:_sQuery += " 	   ,ISNULL(SE1.E1_VEND1, SA1.A1_VEND) AS VENDEDOR "
 		_oSQL:_sQuery += " 	   ,ZA5.ZA5_VENVER AS VENDEDOR "
 		_oSQL:_sQuery += " 	   ,'' AS LINHA "
 		_oSQL:_sQuery += " 	   ,'VERBA' AS PRODUTO "
@@ -418,7 +448,6 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 	   ,0 AS FRETE_REALIZADO "
 		_oSQL:_sQuery += " 	   ,0 AS RAPEL_PREVISTO "
 		_oSQL:_sQuery += " 	   ,0 AS RAPEL_REALIZADO "
-		//_oSQL:_sQuery += " 	   ,IIF(SE1.E1_VEND1 != '', SA3T.A3_VAGEREN, SA3C.A3_VAGEREN) AS SUPER "
 		_oSQL:_sQuery += " 	   ,SA3T.A3_VAGEREN AS SUPER"
 		_oSQL:_sQuery += " 	   ,SUM(ZA5.ZA5_VLR) AS VERBAS_UTIL "
 		_oSQL:_sQuery += "     ,0 AS VERBAS_LIB "
@@ -444,13 +473,8 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 	LEFT JOIN " + RetSQLName ("SA3") + " SA3T "
 		_oSQL:_sQuery += " 		ON (SA3T.D_E_L_E_T_ = '' "
 		_oSQL:_sQuery += " 		AND SA3T.A3_COD = ZA5.ZA5_VENVER) "
-		// _oSQL:_sQuery += " 	LEFT JOIN " + RetSQLName ("SA3") + " SA3T "
-		// _oSQL:_sQuery += " 		ON (SA3T.D_E_L_E_T_ = '' "
-		// _oSQL:_sQuery += " 		AND SA3T.A3_COD = SE1.E1_VEND1) "
-		// _oSQL:_sQuery += " 	LEFT JOIN " + RetSQLName ("SA3") + " SA3C "
-		// _oSQL:_sQuery += " 		ON (SA3C.D_E_L_E_T_ = '' "
-		// _oSQL:_sQuery += " 		AND SA3C.A3_COD = SA1.A1_VEND) "
 		_oSQL:_sQuery += " 	WHERE ZA5.D_E_L_E_T_ = '' "
+        _oSQL:_sQuery += "  AND ZA5.ZA5_DTA BETWEEN '" + _dDtIni + "' AND '" + _dDtFin + "'"
 		_oSQL:_sQuery += " 	AND ZA5.ZA5_TLIB NOT IN ('1', '9') "
 		_oSQL:_sQuery += " 	GROUP BY ZA5.ZA5_CLI "
 		_oSQL:_sQuery += " 			,ZA5.ZA5_FILIAL "
@@ -462,7 +486,6 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 			,ZA5.ZA5_LOJA "
 		_oSQL:_sQuery += " 			,SA1.A1_EST "
 		_oSQL:_sQuery += " 			,SA3T.A3_VAGEREN "
-		//_oSQL:_sQuery += " 			,SA3C.A3_VAGEREN "
 		_oSQL:_sQuery += " 			,SE1.E1_VEND1 "
 		_oSQL:_sQuery += " 			,SA1.A1_VEND "
 		_oSQL:_sQuery += " 			,ZA5.ZA5_VENVER "
@@ -479,7 +502,6 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += "    ,'' AS SERIE"
 		_oSQL:_sQuery += "    ,ZA4.ZA4_DLIB AS EMISSAO"
 		_oSQL:_sQuery += "    ,SA1.A1_EST AS ESTADO"
-		//_oSQL:_sQuery += "    ,SA1.A1_VEND AS VENDEDOR"
 		_oSQL:_sQuery += "    ,ZA4_VEND AS VENDEDOR"
 		_oSQL:_sQuery += "    ,'' AS LINHA"
 		_oSQL:_sQuery += "    ,'VERBA_LIB' AS PRODUTO"
@@ -516,6 +538,7 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 			AND SA3.A3_COD = SA1.A1_VEND)"
 		_oSQL:_sQuery += " WHERE ZA4.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery += " AND ZA4.ZA4_TLIB != '1'"
+        _oSQL:_sQuery += " AND ZA4.ZA4_DGER BETWEEN '" + _dDtIni + "' AND '" + _dDtFin + "'"
 		_oSQL:_sQuery += " GROUP BY ZA4.ZA4_FILIAL"
 		_oSQL:_sQuery += " 		,ZA4.ZA4_CLI"
 		_oSQL:_sQuery += " 		,ZA4.ZA4_LOJA"
@@ -529,35 +552,27 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += "      ,SA1.A1_COD_MUN "
 		_oSQL:_sQuery += "      ,SA1.A1_VAPROMO "
 		_oSQL:_sQuery += "       )"
-		_oSQL:_sQuery += " SELECT * INTO LKSRV_BI_ALIANCA.BI_ALIANCA.dbo.VA_RENTABILIDADE FROM C "
 		_oSQL:Log()
-		If ! _oSQL:Exec()
-			_oBatch:Mensagens += 'Erro ao criar tabela VA_RENTABILIDADE'
-			_oBatch:Retorno = 'N'
-		else
-			_oSQL:_sQuery := " EXEC ('use BI_ALIANCA create clustered index IDX1 on dbo.VA_RENTABILIDADE(EMISSAO,VENDEDOR)') at LKSRV_BI_ALIANCA "
-			_oSQL:Log()
-			If ! _oSQL:Exec()
-				_oBatch:Mensagens += 'Erro ao criar Indice 1'
-				_oBatch:Retorno = 'N'
-			else
-				_oSQL:_sQuery := " EXEC ('use BI_ALIANCA create nonclustered index IDX2 on dbo.VA_RENTABILIDADE(VENDEDOR, EMISSAO)') at LKSRV_BI_ALIANCA "
-				_oSQL:Log()
-				If ! _oSQL:Exec()
-					_oBatch:Mensagens += 'Erro ao criar Indice 2'
-					_oBatch:Retorno = 'N'
-				else
-					_oSQL:_sQuery := " EXEC ('use BI_ALIANCA create nonclustered index IDX3 on dbo.VA_RENTABILIDADE(EMISSAO, SUPER)') at LKSRV_BI_ALIANCA "
-					_oSQL:Log()
-					If ! _oSQL:Exec()
-						_oBatch:Mensagens += 'Erro ao criar Indice 3'
-						_oBatch:Retorno = 'N'
-					endif
-				endif		
-			endif
-		endif
-	endif
+
+		nHandle := FCreate("c:\temp\log.txt")
+		FWrite(nHandle,_oSQL:_sQuery)
+		FClose(nHandle)
+
+        _oSQL:Exec ()
+    EndIf
+
+    If _nTipo != 1
+		u_help("Processo finalizado com sucesso")
+	EndIf
+Return
+// --------------------------------------------------------------------------
+// Cria Perguntas no SX1
+Static Function _ValidPerg ()
+	local _aRegsPerg := {}
 	
-	u_logFim ()
-	
+	//                     PERGUNT         TIPO TAM DEC VALID F3     Opcoes             Help
+	aadd (_aRegsPerg, {01, "Data inicial ", "D", 08, 0,  "",   "   ", {},                ""})
+	aadd (_aRegsPerg, {02, "Data final   ", "D", 08, 0,  "",   "   ", {},                ""})
+
+	 U_ValPerg (cPerg, _aRegsPerg)
 Return
