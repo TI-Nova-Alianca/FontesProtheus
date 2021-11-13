@@ -13,6 +13,13 @@
 //                U_ML_SRAREA (_aArea)
 //             return
 // 
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Auxiliar
+// #Descricao         #Salva e restaura area de trabalho (arquivos, indices, etc.)
+// #PalavasChave      #salva #restaura #backup #Area_de_trabalho
+// #TabelasPrincipais #
+// #Modulos           #Todos
+
 // Historico de alteracoes:
 // 26/02/2004 - Robert - Passa a testar se o arquivo ainda esta aberto antes de restaurar seu alias.
 // 27/05/2005 - Robert - Opcoes 'SALVA' e 'RESTAURA' trocadas por 'S' e 'R'
