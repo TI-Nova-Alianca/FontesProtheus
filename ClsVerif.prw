@@ -3108,6 +3108,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=   " AND upper (PROTHEUS_USER) != 'BALANCA.SP'"
 			::Query +=   " AND upper (PROTHEUS_USER) != 'SIGALOJA'"
 			::Query +=   " AND upper (PROTHEUS_USER) != 'ROBERT_TESTE'"
+			::Query +=   " AND upper (PROTHEUS_USER) != 'CAROLINA.ROCHA'"  // Terceirizada quiosque POA
 			::Query +=   " AND upper (PROTHEUS_USER) NOT LIKE 'CUPOM%'"  // Usuarios 'caixa' para emissao de cupom fiscal nas lojas
 			::Query += " ORDER BY PROTHEUS_USER"
 
