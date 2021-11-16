@@ -25,6 +25,7 @@
 #include 'parmtype.ch'
 #Include "RwMake.ch"
 #Include "TbiConn.ch"
+#Include "totvs.ch"
 
 User Function VA_AUTINV ()
 	local _lContinua   := .T.
