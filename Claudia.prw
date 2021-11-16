@@ -4,6 +4,8 @@
 User Function claudia ()
 	//u_help("Nada para executar")
 
+	u_help("associados")
+	U_BatFunAssoc()
 	//u_help("Executa Margens")
 	//U_BATMARDAT()
 
