@@ -44,6 +44,7 @@
 // 20/07/2020 - Robert - Cancelamento de guarda de etiqueta passa a validar acesso 100 e nao mais 069.
 //                     - Inseridas tags para catalogacao de fontes
 // 14/12/2020 - Robert - Rotina de inutilizacao (EtqPllIn) migrada para fonte proprio.
+// 22/11/2021 - Robert - Verifica se tem campos B1_VAFULLW e B1_CODBAR antes de gerar etiquetas por OP.
 //
 
 // Tags para automatizar catalogo de customizacoes:
@@ -260,15 +261,31 @@ User Function EtqPllGO (_sProduto, _sOP, _nQuant, _dData)
 	if _lContinua .and. cEmpAnt + cFilAnt != '0101'
 		_lContinua = .F.
 	endif
-	if _lContinua .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + _sProduto, "B1_TIPO") != 'PA'
-		_lContinua = U_MsgNoYes ("Produto desta OP não é do tipo PA. Confirma a geração das etiquetas assim mesmo?")
-	endif
 	if _lContinua
 		sc2 -> (dbsetorder (1))
 		if ! sc2 -> (dbseek (xfilial ("SC2") + _sOP, .F.))
 			u_help ("OP '" + _sOP + "' não cadastrada.")
 			_lContinua = .F.
 		endif
+	endif
+//	if _lContinua .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + _sProduto, "B1_TIPO") != 'PA'
+	if _lContinua
+		sb1 -> (dbsetorder (1))
+		if ! sb1 -> (dbseek (xfilial ("SB1") + _sProduto, .F.))
+			u_help ("Produto '" + alltrim (_sProduto) + "' nao localidado no cadastro. Etiquetas nao serao geradas.")
+			_lContinua = .F.
+		endif
+	endif
+	if _lContinua .and. sb1 -> b1_tipo != 'PA'
+		_lContinua = U_MsgNoYes ("Produto '" + alltrim (_sProduto) + "' não é do tipo PA. Confirma a geração das etiquetas assim mesmo?")
+	endif
+	if _lContinua .and. sb1 -> b1_vafullw != 'S'
+		u_help ("Produto '" + alltrim (_sProduto) + "' nao configurado para integracao com FullWMS. Etiquetas nao serao geradas.")
+		_lContinua = .F.
+	endif
+	if _lContinua .and. empty (sb1 -> b1_codbar)
+		u_help ("Produto '" + alltrim (_sProduto) + "' nao tem codigo de barras informado no campo '" + alltrim (RetTitle ("B1_CODBAR")) + "'. Etiquetas nao serao geradas.")
+		_lContinua = .F.
 	endif
 	if _lContinua
 
@@ -640,11 +657,8 @@ User Function EtqPllGN ()
 	local _nEtiq     := 0
 	local _oSQL      := NIL
 	local _aCols     := {}
-//	local _nQuant    := 0
 	local _nQtPorPal := 0
-//	local _Msg       := ""
 	local _aPal      := {}
-//	local _nPal      := 0
 	local _lContinua := .T.
 	local _i         := 0
 	local _dDataIni  := date () - 7

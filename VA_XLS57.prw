@@ -11,7 +11,10 @@
 // #Modulos 		  #CTB
 //
 // Historico de alteracoes:
+// 23/11/2021 - Robert - Acrescentado filtro CQ2_LP != 'Z'
+//                     - Criados parametros de conta e CC de... ate.
 //
+
 // --------------------------------------------------------------------------
 User Function VA_XLS57 (_lAutomat)
 	Local cCadastro := "Exporta planilha com saldos por conta contabil x CC"
@@ -59,7 +62,6 @@ Static Function _Gera()
 	incproc ("Buscando dados")
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
-
 	_oSQL:_sQuery += " SELECT CQ2_FILIAL AS FILIAL"
 	_oSQL:_sQuery +=       ", SUBSTRING (CQ2_DATA, 1, 4) AS ANO"
 	_oSQL:_sQuery +=       ", SUBSTRING (CQ2_DATA, 5, 2) AS MES"
@@ -81,8 +83,11 @@ Static Function _Gera()
 	_oSQL:_sQuery +=        " AND CTT_CUSTO = CQ2_CCUSTO)"
 	_oSQL:_sQuery += " WHERE CQ2.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=   " AND CQ2_DATA       between '" + dtos (mv_par01) + "' and '" + dtos (mv_par02) + "'"
+	_oSQL:_sQuery +=   " AND CQ2_CONTA      between '" + mv_par03 + "' and '" + mv_par04 + "'"
+	_oSQL:_sQuery +=   " AND CQ2_CCUSTO     between '" + mv_par05 + "' and '" + mv_par06 + "'"
 	_oSQL:_sQuery +=   " AND CQ2_TPSALD     = '1'"
 	_oSQL:_sQuery +=   " AND CQ2_MOEDA      = '01'"
+	_oSQL:_sQuery +=   " AND CQ2.CQ2_LP    != 'Z'"  // Para nao pegar movimentos de zeramento (final de exercicio)
 	_oSQL:_sQuery +=   " ORDER BY CQ2_DATA, CQ2_FILIAL, CQ2_CONTA, CQ2_CCUSTO"
 	_oSQL:ArqDestXLS = 'VA_XLS57'
 	_oSQL:Log ()
@@ -96,8 +101,12 @@ Static Function _ValidPerg ()
 	local _aRegsPerg := {}
 	local _aDefaults := {}
 
-	//                 Ordem Descri                          tipo tam           dec          valid    F3     opcoes (combo)                                 help
-	aadd (_aRegsPerg, {01, "Data Inicial ", "D", 8,  0,  "",   "   ", {},                   	""})
-	aadd (_aRegsPerg, {02, "Data Final   ", "D", 8,  0,  "",   "   ", {},                   	""})
+	//                 Ordem Descri                          tipo tam  dec valid  F3     opcoes (combo)       help
+	aadd (_aRegsPerg, {01, "Data Inicial                  ", "D", 8,   0,  "",   "   ", {},                   ""})
+	aadd (_aRegsPerg, {02, "Data Final                    ", "D", 8,   0,  "",   "   ", {},                   ""})
+	aadd (_aRegsPerg, {03, "Conta inicial                 ", "C", 20,  0,  "",   "CT1", {},                   ""})
+	aadd (_aRegsPerg, {04, "Conta final                   ", "C", 20,  0,  "",   "CT1", {},                   ""})
+	aadd (_aRegsPerg, {05, "Centro custo inicial          ", "C", 9,   0,  "",   "CTT", {},                   ""})
+	aadd (_aRegsPerg, {06, "Centro custo final            ", "C", 9,   0,  "",   "CTT", {},                   ""})
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 Return
