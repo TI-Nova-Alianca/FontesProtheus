@@ -15,18 +15,12 @@
 // 24/02/2021 - Claudia - Ajustes conforme GLPI: 9481
 // 29/03/2021 - Robert  - Variavel _lRet estava com nome lRet cfe. importador XML da TRS.
 // 25/08/2021 - Robert  - Nova versao de ciencia e manifesto da TRS (GLPI 10822)
+// 23/11/2021 - Claudia - Gerar manifesto apenas para SPED. GLPI: 11183
 //
-
-//#Include 'protheus.ch'
-
-// --------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------
 User Function A140EXC()
 	Local _aAreaAnt := U_ML_SRArea ()
-//	Local aZone		:= GetArea()
-	Local _lRet 		:= .T.
-//	Local lImpXml   := SuperGetMV('VA_XMLIMP', .F., .F.)
-//	Private _aRet 	:= {}
-//	Private _cTabMAN:= AllTrim(SuperGetMv("009_TABMAN"  ,.F.,"" ))
+	Local _lRet     := .T.
 
 	zzx -> (dbsetorder (4))
 	if zzx -> (dbseek (SF1->F1_CHVNFE, .F.))
@@ -36,35 +30,15 @@ User Function A140EXC()
 		endif			
 	Endif
 
-//	If lImpXml // Importador XML TOTVS
-//	if SuperGetMV('VA_XMLIMP', .F., .F.)  // Se o importador de XML da TRS estiver ativo
-/* Versao inicial quando fazia download pelo proprio importador
-		_lRet 	:= .F.
+	U_Log2 ('debug', 'Importador XML da TRS habilitado. Chamando rotinas de ciencia e manifesto.')
+	Private _aRet 	:= {}
 
-		If !SuperGetMV('009_USAMAN', .F., .F.)
-			Return .T.
-		EndIf
-
-		(_cTabMAN)->(dbSetOrder(1))
-
-		// Posiciona na ZTB(Manifesto) para verificar se a nota foi baixada via manifesto eletrônico
-		If !(_cTabMAN)->(MsSeek(xFilial(_cTabMAN) + SF1->F1_CHVNFE))
-			// MsgInfo("Não foi possível localizar essa nota ou ela não teve download realizado via manifesto eletrônico!")
-			Return .T.
-		EndIf
-
-		_lRet := U_fTelaManif()
-		RestArea(aZone)
-*/
-//	else
-		U_Log2 ('debug', 'Importador XML da TRS habilitado. Chamando rotinas de ciencia e manifesto.')
-		Private _aRet 	:= {}
-
+	If alltrim(SF1->F1_ESPECIE) == 'SPED'
 		//Realiza ci�ncia
 		U_FBTRS101({SF1->F1_CHVNFE}, 4, '')
 		//Abre tela do manifesto
 		U_FBTRS102(.F.)
-//	endif
+	EndIf
 
 	U_ML_SRArea (_aAreaAnt)
 Return _lRet
