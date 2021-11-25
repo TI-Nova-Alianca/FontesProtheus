@@ -264,7 +264,7 @@ user function VA_ZZ6Ex ()
 			else
 
 				// Endereca monitor
-				PtInternal (1, "Emp :"+cEmpAnt+"/"+cFIlAnt+" - " + _sComando)
+				//PtInternal (1, "Emp :"+cEmpAnt+"/"+cFIlAnt+" - " + _sComando)
 
 				_lExecOK = (&_sComando)
 				_lExecOk = iif (valtype (_lExecOk) != "L", .T., _lExecOk)

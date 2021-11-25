@@ -120,7 +120,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	set century on
 
 	// Alimenta coluna de observacoes no monitor do sistema.
-	PtInternal (1, 'WS_Alianca')
+	//PtInternal (1, 'WS_Alianca')
 
 	// Validacoes gerais e extracoes de dados basicos.
 	U_ValReqWS (GetClassName (::Self), ::XmlRcv, @_sErros, @_sWS_Empr, @_sWS_Filia, @_sAcao)
@@ -167,7 +167,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	// Executa a acao especificada no XML.
 	if empty (_sErros)
 		u_log2 ('info', 'Acao solicitada ao web service: ' + _sAcao)
-		PtInternal (1, _sAcao)
+		//PtInternal (1, _sAcao)
 		U_UsoRot ('I', _sAcao, '')
 
 		do case

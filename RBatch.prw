@@ -28,8 +28,8 @@
 
 #include "tbiconn.ch"
 #include 'protheus.ch'
-#include "totvs.ch"
 #include "report.ch"
+#include 'totvs.ch'
 
 // --------------------------------------------------------------------------
 User Function RBatch (_sEmp, _sFil)
@@ -130,7 +130,7 @@ User Function RBatch (_sEmp, _sFil)
 		set century on
 	endif
 //	u_log2 ('debug', '[' + procname () + '] ambiente preparado para emp/filial ' + _sEmp + _sFil)
-	PtInternal (1, 'Iniciando emp/filial ' + _sEmp + _sFil)
+	//PtInternal (1, 'Iniciando emp/filial ' + _sEmp + _sFil)
 
 	// Gera log soh depois de inicializar ambiente.
 //	u_log2 ('info', 'Iniciando execucao de batches para emp_filial ' + _sEmp + _sFil + ' Thread ' + cvaltochar (ThreadId ()))
@@ -216,7 +216,7 @@ User Function RBatch (_sEmp, _sFil)
 				if ! empty (_sExprMnt)
 
 					// Endereca monitor
-					PtInternal (1, "Emp :"+cEmpAnt+"/"+cFilAnt+" - " + _sExprMnt)
+					//PtInternal (1, "Emp :"+cEmpAnt+"/"+cFilAnt+" - " + _sExprMnt)
 
 					// Grava log de uso de rotinas
 					U_UsoRot ('I', _sExprMnt, '')

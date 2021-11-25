@@ -74,7 +74,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_NaMob
 	// Executa a acao especificada no XML.
 	if empty (_sErros)
 		u_log ('Acao:', _sAcao)
-		PtInternal (1, _sAcao)
+		//PtInternal (1, _sAcao)
 		do case
 			case _sAcao == 'ConsultaFechamentoSafraAssoc'
 				_AsFecSaf ()
