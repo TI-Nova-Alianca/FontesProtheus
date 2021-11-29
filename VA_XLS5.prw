@@ -369,7 +369,7 @@ Static Function _Gera()
 	_sQuery +=                 " ON(CC3.D_E_L_E_T_=''"
 	_sQuery +=                 " AND CC3.CC3_COD = SA1.A1_CNAE)"
     if "ZB_" $ upper (_sQuery)
-    	_sQuery +=              RetSQLName ("SZB") + " SZB,"
+    	_sQuery +=             ","+ RetSQLName ("SZB") + " SZB"
 	endif
 	_sQuery +=            " ,BI_ALIANCA.dbo.VA_FATDADOS as V "
     if "A3_" $ upper (_sQuery)
