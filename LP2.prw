@@ -61,12 +61,12 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 				_xRet = ''
 			else
 				do case
-				case sa3 -> a3_vaTpCon == "1" ; _xRet = cFilAnt + "4001"
-				case sa3 -> a3_vaTpCon == "2" ; _xRet = cFilAnt + "4006"
-				case sa3 -> a3_vaTpCon == "3" ; _xRet = cFilAnt + "4003"
-				otherwise
-					U_AvisaTI ("Campo '" + alltrim (RetTitle ("A3_VATPCON")) + "' nao informado no vendedor '" + sa3 -> a3_cod + "'. LPAD = " + cvaltochar (_sLPad))
-					_xRet = ''
+					case sa3 -> a3_vaTpCon == "1" ; _xRet = cFilAnt + "4001"
+					case sa3 -> a3_vaTpCon == "2" ; _xRet = cFilAnt + "4006"
+					case sa3 -> a3_vaTpCon == "3" ; _xRet = cFilAnt + "4003"
+					otherwise
+						U_AvisaTI ("Campo '" + alltrim (RetTitle ("A3_VATPCON")) + "' nao informado no vendedor '" + sa3 -> a3_cod + "'. LPAD = " + cvaltochar (_sLPad))
+						_xRet = ''
 				endcase
 
 				// CC deve estar ativo. Caso contrario, assume coml.interno.
