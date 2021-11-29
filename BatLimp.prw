@@ -17,20 +17,20 @@
 // 24/10/2020 - Robert - Adicionada tabela SC0
 //                     - Inseridas tags para catalogo de programas.
 // 30/06/2021 - Robert - Limpeza do ZZ6 para nao-repetitivos reduzida de 180 para 90 dias.
+// 29/11/2021 - Robert - Criada rotina de compactacao (no SQL) de algumas tabelas especificas.
 //
 
 // ----------------------------------------------------------------
 user function BatLimp ()
-	u_logIni ()
-	u_logDH ()
-	
+	U_Log2 ('info', 'Iniciando ' + procname ())
+
 	// Arquivos com sufixo _UNQ sao registros duplicados encontrados pela rotina CheckDupl e 'eliminados' pela mesma.
 	// Limpar filial XX
 
 	processa ({|| _Pack ()})
 	processa ({|| _LimpaZZ6 ()})
 	processa ({|| _LimpaZAB ()})
-	u_logFim ()
+	processa ({|| _Compact ()})
 return
 
 
@@ -129,7 +129,6 @@ static function _LimpaZAB ()
 	local _oSQL    := NIL
 	local _lContinua := .T.
 
-	
 	// Apaga avisos cuja validade jah expirou
 	if _lContinua
 		_oSQL := ClsSQL ():New ()
@@ -140,6 +139,47 @@ static function _LimpaZAB ()
 			_lContinua = .F.
 		endif
 	endif
+
+	if _lContinua
+		_oBatch:Mensagens += procname () + " ok. "
+	endif
+return
+
+
+
+// --------------------------------------------------------------------------
+// Aplica compactacao do SQL em algumas tabelas do sistema, para as quais jah fiz um estudo
+// e achei que vale a pena (ex: EXEC sp_estimate_data_compression_savings 'dbo', 'MPMENU_ITEM', 1, NULL, 'PAGE')
+// A compactacao do SQL eh eliminada a cada vez que se roda um UPDDISTR ou se cria campos no configurador, etc.
+static function _Compact ()
+	local _oSQL      := NIL
+	local _lContinua := .T.
+	local _aArqComp  := {}
+	local _nArqComp  := 0
+
+	aadd (_aArqComp, 'XAM010')  // Configuracao de campos (dados sensiveis) para LGPD
+	aadd (_aArqComp, 'MPMENU_I18N')
+	aadd (_aArqComp, 'MPMENU_ITEM')
+	aadd (_aArqComp, 'SE2010')  // Verifiquei reducao de metade do tempo de execucao do extrato de conta corrente
+	aadd (_aArqComp, 'SE5010')  // Verifiquei reducao de metade do tempo de execucao do extrato de conta corrente
+	aadd (_aArqComp, 'SZI010')  // Verifiquei reducao de metade do tempo de execucao do extrato de conta corrente
+
+	for _nArqComp = 1 to len (_aArqComp)
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "select p.data_compression_desc"
+		_oSQL:_sQuery +=  " from sys.partitions p"
+		_oSQL:_sQuery += " where index_id = 1"
+		_oSQL:_sQuery +=   " and p.object_id = (select object_id from sys.tables where name = '" + _aArqComp [_nArqComp] + "')"
+		_oSQL:Log ()
+		if alltrim (_oSQL:RetQry (1, .F.)) == 'NONE'  // Tabela nao encontra-se compactada
+			_oSQL:_sQuery := "ALTER TABLE [dbo].[" + _aArqComp [_nArqComp] + "] REBUILD PARTITION = ALL WITH (DATA_COMPRESSION = PAGE)"
+			_oSQL:Log ()
+			if ! _oSQL:Exec ()
+				_oBatch:Mensagens += _oSQL:UltMsg
+				_lContinua = .F.
+			endif
+		endif
+	next
 
 	if _lContinua
 		_oBatch:Mensagens += procname () + " ok. "
