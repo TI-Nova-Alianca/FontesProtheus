@@ -11,12 +11,12 @@
 // #Modulos           #COOP #CTB
 
 // Historico de alteracoes:
-// 25/01/2021 - Robert - Adicionada loja 02 do fornecedor 001369 como producao propria.
-// 27/01/2021 - Robert - Alteracao geral: deixa de ler view de notas e passa a buscar do SD1 (GLPI 9198).
-// 17/09/2021 - Robert - Exporta sucos concentrados apenas se forem de uva. (posterior encerramento GLPI 9198).
+// 25/01/2021 - Robert  - Adicionada loja 02 do fornecedor 001369 como producao propria.
+// 27/01/2021 - Robert  - Alteracao geral: deixa de ler view de notas e passa a buscar do SD1 (GLPI 9198).
+// 17/09/2021 - Robert  - Exporta sucos concentrados apenas se forem de uva. (posterior encerramento GLPI 9198).
+// 02/12/2021 - Claudia - Retirado os cfops de retorno de terceiros, transf.entre filiais e frete. GLPI: 11150
 //
-
-// --------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------------------
 User Function VA_XLS50 (_lAutomat)
 	Local cCadastro := "Exporta com entradas de MP/VD para classificacao entre ato cooperativo e nao cooperativo."
 	Local aSays     := {}
@@ -49,21 +49,17 @@ User Function VA_XLS50 (_lAutomat)
 		Endif
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // 'Tudo OK' do FormBatch.
 Static Function _TudoOk()
 	Local _lRet     := .T.
 Return _lRet
-
-
-
+//
 // --------------------------------------------------------------------------
+// Geraqção
 Static Function _Gera()
 	local _oSQL   := NIL
-//	local _sSafra := ''
 
 	procregua (10)
 	incproc ("Gerando arquivo de exportacao")
@@ -187,6 +183,7 @@ Static Function _Gera()
 	_oSQL:_sQuery += " WHERE SD1.D1_DTDIGIT BETWEEN '" + dtos (mv_par01) + "' AND '" + dtos (mv_par02) + "'"
 	_oSQL:_sQuery +=   " AND SD1.D1_TP IN ('MP', 'VD')"
 	_oSQL:_sQuery +=   " AND SD1.D1_TIPO NOT IN ('B', 'D')"
+	_oSQL:_sQuery +=   " AND SD1.D1_CF NOT IN ('1902','1925','1151','2151','1352','1903','2903')"
 	_oSQL:_sQuery +=   " AND NOT (SD1.D1_GRUPO = '4000' AND SD1.D1_DESCRI NOT LIKE '%UVA%')"  // Se forem concentrados, quero apenas de uva.
 	_oSQL:Log ()
 	_oSQL:Qry2Xls ()
