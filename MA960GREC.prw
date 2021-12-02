@@ -24,13 +24,6 @@ User Function MA960GREC()
     Local cReceita := PARAMIXB[1]           // Código de Receita da guia atual
     Local cUF      := PARAMIXB[2]           // Sigla da UF da guia atual
 
-    nHandle := FCreate("c:\temp\logGNRE.txt")
-    _sTexto := "receita " + cReceita
-    FWrite(nHandle,_sTexto )
-
-    _sTexto := "UF " + cUF
-    FWrite(nHandle,_sTexto )
-
     Do Case
         Case Alltrim(cReceita) $ '100099/100102/100110/100129' .and. cUF == 'MT'    
             Do Case
@@ -52,20 +45,11 @@ User Function MA960GREC()
             aParam := {24, '2', '', 0, ''} 
 
         Case  Alltrim(cReceita) $ '100099/100102/100110/100129' .and. cUF == 'MG' 
-            _sTexto := cUF
-            FWrite(nHandle,_sTexto )  
-
-            _sTexto := "RECEITA: " + Alltrim(cReceita)
-            FWrite(nHandle,_sTexto )  
 
             If Alltrim(cReceita) == '100129'
                 aParam := {10, '1', '000051', 0, ''} 
-                _sTexto := "1"
-                FWrite(nHandle,_sTexto )
             Else  
                 aParam := {10, '1', '', 0, ''} 
-                _sTexto := "2"
-                FWrite(nHandle,_sTexto )    
             EndIf 
 
         Case Alltrim(cReceita) $ '100099/100102/100129' .and. cUF == 'AM'    
@@ -78,7 +62,6 @@ User Function MA960GREC()
 
                 Case Alltrim(cReceita) $'100102/100129'
                     aParam := {10, '1', '', 89, ''}  
-
             EndCase   
 
         Case Alltrim(cReceita) $ '100102/100129' .and. cUF $ 'PB' 
@@ -89,9 +72,6 @@ User Function MA960GREC()
 
         Otherwise   
             aParam := {10, '1', '', 0, ''}                      // Retorna os campos F6_TIPOGNU, F6_DOCORIG, F6_DETRECE, F6_CODPROD e F6_CODAREA de acordo com o código de receita e sigla da UF da guia atual.
-            _sTexto := "Otherwise"
-            FWrite(nHandle,_sTexto )    
     EndCase
 
-    FClose(nHandle)
 Return aParam
