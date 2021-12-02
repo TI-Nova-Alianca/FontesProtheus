@@ -63,7 +63,7 @@ user function robert ()
 		if U_Semaforo (procname ()) == 0
 			u_help ('Bloqueio de semaforo na funcao ' + procname (),, .t.)
 		else
-			PtInternal (1, 'U_Robert')
+			//PtInternal (1, 'U_Robert')
 			U_UsoRot ('I', procname (), '')
 			processa ({|| _AndaLogo ()})
 			u_log2 ('info', 'Processo finalizado')
