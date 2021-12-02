@@ -24,7 +24,9 @@
 // 18/02/2011 - Robert  - Verificacao de nota jah transmitida para a SEFAZ passada para o programa U_VerSqNF.
 // 06/08/2015 - Robert  - Passa a buscar a serie da nota do SX5 (antes estava fixo '10 ').
 // 12/02/2021 - Cláudia - Validação de cliente bloqueado. GLPI: 7982
+// 02/12/2021 - Robert  - Logs para depuracao (nao estava gerando nota na filial 08, mas era falta de acesso de usuario)
 //
+
 // ------------------------------------------------------------------------------------------------------------
 User Function m460mark ()
 	local _lRet      := .T.
@@ -33,11 +35,13 @@ User Function m460mark ()
 	// Verifica se todos os itens dos pedidos foram marcados.
 	if _lRet
 		_lRet = _VerMarc ()
+		U_Log2 ('info', '[' + procname () + '] Verificacao de marcacao dos itens: ' + cvaltochar (_lRet))
 	endif
 
 	// Verifica se o cliente não está bloqueado
 	if _lRet
 		_lRet = _VerCliente ()
+		U_Log2 ('info', '[' + procname () + '] Verificacao do cliente: ' + cvaltochar (_lRet))
 	endif
 
 
@@ -45,6 +49,7 @@ User Function m460mark ()
 	// Verifica se o contrato tem nota faturamento
 	if _lRet
 		_lRet = _ContBloq ()
+		U_Log2 ('info', '[' + procname () + '] Verificacao do contrato: ' + cvaltochar (_lRet))
 	endif
 
 
@@ -53,6 +58,7 @@ User Function m460mark ()
 	// Verifica geracao de nota fora de sequencia
 	if _lRet //.and. cEmpAnt == "01"
 		_lRet = _VerNumNF ()
+		U_Log2 ('info', '[' + procname () + '] Verificacao de numeracao de seq. das notas: ' + cvaltochar (_lRet))
 	endif
 	
 	U_ML_SRAREA (_aAreaAnt)

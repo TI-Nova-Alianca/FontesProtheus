@@ -28,6 +28,7 @@
 // 15/07/2019 - Andre  - Adicionado tabela com perdas de produção. SX5 tabela 43.
 // 29/07/2019 - Andre  - Campo B1_VAEANUN substituido pelo campo B5_2CODBAR.
 // 16/08/2019 - Robert - Campo B1_VADUNCX substituido pelo campo B1_CODBAR.
+// 02/12/2021 - Robert - Acrescentados logs para depuracao de empenhos.
 //
 
 // para pensar: ler saldo empenho do SDC ?
@@ -148,6 +149,7 @@ static function _AndaLogo ()
 		// OP de retrabalho nao deve ter empenhos. Serao listados os componentes
 		// da estrutura apenas para orientar o operador sobre quais itens ele deve revisar.
 		if sc2 -> c2_vaOpEsp == "R"
+			U_Log2 ('info', 'OP de retrabalho nao costuma ter empenhos. Serao listados os componentes da estrutura apenas para orientar o operador sobre quais itens ele deve revisar.')
 			_oSQL := ClsSQL ():New ()
 			_oSQL:_sQuery := ""
 			_oSQL:_sQuery += " SELECT B1_COD, '(Revisao) ' + B1_DESC,"
@@ -166,6 +168,7 @@ static function _AndaLogo ()
 			_oSQL:_sQuery +=    " AND SB1.B1_COD     = SG1.G1_COMP"
 			_oSQL:_sQuery +=    " AND SB1.B1_TIPO    NOT IN ('MO', 'BN')"
 			_oSQL:_sQuery +=  " ORDER BY G1_COMP"
+			_oSQL:Log ()
 			_aFant := aclone (_oSQL:Qry2Array ())
 			for _nFant = 1 to len (_aFant)
 				if ascan (_aCompon, {| _aVal | _aVal [1] == _aFant [_nFant, 1]}) == 0
@@ -337,7 +340,7 @@ static function _AndaLogo ()
 		_oSQL:_sQuery +=    " AND G2_PRODUTO = '" + sc2 -> c2_produto + "'"
 		_oSQL:_sQuery +=    " AND G2_CODIGO  = '" + sc2 -> c2_roteiro + "'"
 		_oSQL:_sQuery +=  " ORDER BY G2_OPERAC"
-		//u_log (_oSQL:_sQuery)
+		_oSQL:Log ()
 		_aOper := aclone (_oSQL:Qry2Array ())
 		//U_LOG (_aOper)
 
