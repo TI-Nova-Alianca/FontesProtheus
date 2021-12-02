@@ -57,8 +57,8 @@
 // 24/02/2021 - Claudia - Criada rotina para gravar titulos que terão transf. de valores enter filiais. GLPI: 9059
 // 05/05/2021 - Claudia - Incluida gravação de novos campos na ZB5. GLPI: 9983
 // 19/08/2021 - Robert  - (compilado em 25/08) Passa a validar tamanho da variável cNumTit para saber se precisa inserir o prefixo (GLPI 10697).
+// 02/12/2021 - Claudia - Incluido novo tipo Juros para realizar transferencia entre filiais. GLPI: 11149.
 //
-
 // -------------------------------------------------------------------------------------------------------------------------------------------
 User Function F200VAR()
 	Local _aArea    := GetArea()
@@ -100,9 +100,6 @@ User Function F200VAR()
 		_aValores  = aclone (_aAux)
 	endif
 
-//	U_Log2 ('debug', 'Array de valores recebidos:')
-//	U_Log2 ('debug', _aValores)
-
 	// Posicoes dos dados na array:
 	// aValores[01] - Numero do titulo
 	// aValores[02] - Data da baixa
@@ -121,139 +118,120 @@ User Function F200VAR()
 	// aValores[15] - Motivo da baixa
 	// aValores[16] - Linha Inteira
 
-//	_sTitulo = cNumTit
 	// Logs para depuracao
 	u_log2 ('debug', "cNumTit  : "+ cNumTit)
 	u_log2 ('debug', "cBanco   : "+ cbanco)
 	u_log2 ('debug', "nValRec  : "+ cvaltochar (nValRec))
-	// u_log2 ('debug', "nJuros   : "+ cvaltochar (nJuros))
-	// u_log2 ('debug', "nAbatim  : "+ cvaltochar (nAbatim))
-	// u_log2 ('debug', "nDescont : "+ cvaltochar (nDescont))
-	// u_log2 ('debug', "nDespes  : "+ cvaltochar (nDespes))
-	// u_log2 ('debug', "nMulta   : "+ cvaltochar (nMulta))
-	// u_log2 ('debug', "nOutrDesp: "+ cvaltochar (nOutrDesp))
-	// u_log2 ('debug', "nValCC   : "+ cvaltochar (nValCC))
-//	U_Log2 ('debug', '_sTitulo : >>' + _sTitulo + '<<')
 
 	// Verifica qual banco estah sendo processado. Verifica diferentes variaveis por que este
 	// ponto de entrada eh executado na impressao de relatorio e na importacao do arquivo de retorno.
 
-	//If upper (GetEnvServer ()) $ "TESTE/TESTECLAUDIA" 
-		if IsInCallStack ("FINA200") .and.  xFilial("SE1") <> '01'
-	// teste 18/08/21			if substr(cNumTit,1,3) == '000'
-	// teste 18/08/21				_sTit2 = '10 ' + cNumTit
-	// teste 18/08/21			else
-	// teste 18/08/21				_sTiT2 = 'FAT' + cNumTit
-	// teste 18/08/21			endif
-			if len (cNumTit) > 10  // Se vier com mais de 10 posicoes, eh por que jah tem o prefixo junto.
-				_sTit2 = cNumTit
+	if IsInCallStack ("FINA200") .and.  xFilial("SE1") <> '01'
+		if len (cNumTit) > 10  // Se vier com mais de 10 posicoes, eh por que jah tem o prefixo junto.
+			_sTit2 = cNumTit
+		else
+			if substr(cNumTit,1,3) == '000'
+				_sTit2 = '10 ' + cNumTit
 			else
-				if substr(cNumTit,1,3) == '000'
-					_sTit2 = '10 ' + cNumTit
-				else
-					_sTiT2 = 'FAT' + cNumTit
-				endif
-			endif
-			U_Log2 ('debug', 'Saindo do 1o teste com _sTit2 >>' + _sTit2 + '<<')
-
-
-
-			_sQuery := " "
-			_sQuery += " SELECT "
-			_sQuery += " 	 SE1.E1_FILIAL "
-			_sQuery += "    ,SE1.E1_PREFIXO "
-			_sQuery += "    ,SE1.E1_NUM "
-			_sQuery += "    ,SE1.E1_PARCELA "
-			_sQuery += "    ,SE1.E1_CLIENTE "
-			_sQuery += "    ,SE1.E1_LOJA "
-			_sQuery += "    ,SE1.E1_PORTADO "
-			_sQuery += "    ,SE1.E1_AGEDEP "
-			_sQuery += "    ,SE1.E1_CONTA "
-			_sQuery += " FROM " + RetSQLName ("SE1") + " AS SE1 "
-			_sQuery += " INNER JOIN " + RetSQLName ("ZB4") + " AS ZB4 "
-			_sQuery += " 	ON ZB4.D_E_L_E_T_ = '' "
-			_sQuery += " 		AND ZB4.ZB4_FILIAL = E1_FILIAL "
-			_sQuery += " 		AND ZB4.ZB4_BANCO  = E1_PORTADO "
-			_sQuery += " 		AND ZB4.ZB4_AGEN   = E1_AGEDEP "
-			_sQuery += " 		AND ZB4.ZB4_CONTA  = E1_CONTA "
-			_sQuery += " WHERE SE1.D_E_L_E_T_ = '' "
-			_sQuery += " AND SE1.E1_FILIAL    = '"+ xFilial("SE1") + "'"
-			_sQuery += " AND SE1.E1_PREFIXO + SE1.E1_NUM + SE1.E1_PARCELA = '"+ _sTit2 + "'"
-			U_Log2 ('debug', _sQuery)
-			_aSE1 := U_Qry2Array(_sQuery)
-
-			if len(_aSE1) > 0
-				Begin Transaction
-
-				_cFil	 := _aSE1[1,1]
-				_cSerie  := _aSE1[1,2]
-				_cNum    := _aSE1[1,3]
-				_cParc   := _aSE1[1,4]
-				_cCli    := _aSE1[1,5]
-				_cLoja   := _aSE1[1,6]
-				_cBanco  := _aSE1[1,7]
-				_cAgen   := _aSE1[1,8]
-				_cConta  := _aSE1[1,9]
-				_nVlrRec := _aValores[8]
-				_nVlrDes := _aValores[5]
-				_cStatus := 'A'
-				_dDtBai  := _aValores[02]
-				_dDtPro  := date()
-				_dDtBase := dDataBase 
-				
-				If _nVlrRec > 0
-					_cTipo := 'VL'
-				EndIf
-				If _nVlrDes > 0
-					_cTipo := 'TX'
-				EndIf
-				
-				dbSelectArea("ZB5")
-				dbSetOrder(1) // ZB5_FILIAL+ZB5_SERIE+ ZB5_NUM + ZB5_PARC + ZB5_CLI + ZB5_LOJA + ZB5_TIPO + ZB5_DTAPRO
-				dbGoTop()
-				
-				if !dbSeek(_cFil + _cSerie + _cNum + _cParc + _cCli + _cLoja + _cTipo + DTOS(_dDtPro))
-				
-					Reclock("ZB5",.T.)
-						ZB5->ZB5_FILIAL := _cFil
-						ZB5->ZB5_SERIE 	:= _cSerie
-						ZB5->ZB5_NUM 	:= _cNum
-						ZB5->ZB5_PARC 	:= _cParc
-						ZB5->ZB5_CLI 	:= _cCli
-						ZB5->ZB5_LOJA 	:= _cLoja
-						ZB5->ZB5_TIPO 	:= _cTipo
-						ZB5->ZB5_BANCO  := _cBanco
-						ZB5->ZB5_AGEN 	:= _cAgen
-						ZB5->ZB5_CONTA  := _cConta
-						ZB5->ZB5_VLRREC := _nVlrRec
-						ZB5->ZB5_VLRDES := _nVlrDes
-						ZB5->ZB5_STATUS := _cStatus
-						ZB5->ZB5_DTABAI := _dDtBai
-						ZB5->ZB5_DTAPRO := _dDtPro
-						ZB5->ZB5_DTABAS := _dDtBase
-							
-					ZB5->(MsUnlock())
-
-					_oEvento := ClsEvent():New ()
-					_oEvento:Alias     = 'ZB5'
-					_oEvento:Texto     = "INCLUSÃO DE REGISTRO DE TÍTULO:" + _cFil +'-'+ _cSerie +'-'+ _cNum +'-'+ _cParc +'-'+ _cCli +'-'+ _cLoja + '-'+ _cTipo
-					_oEvento:CodEven   = "ZB5001"
-					_oEvento:Grava()
-
-				endif
-				End Transaction
+				_sTiT2 = 'FAT' + cNumTit
 			endif
 		endif
-	//EndIf
+		U_Log2 ('debug', 'Saindo do 1o teste com _sTit2 >>' + _sTit2 + '<<')
 
+		_sQuery := " "
+		_sQuery += " SELECT "
+		_sQuery += " 	 SE1.E1_FILIAL "
+		_sQuery += "    ,SE1.E1_PREFIXO "
+		_sQuery += "    ,SE1.E1_NUM "
+		_sQuery += "    ,SE1.E1_PARCELA "
+		_sQuery += "    ,SE1.E1_CLIENTE "
+		_sQuery += "    ,SE1.E1_LOJA "
+		_sQuery += "    ,SE1.E1_PORTADO "
+		_sQuery += "    ,SE1.E1_AGEDEP "
+		_sQuery += "    ,SE1.E1_CONTA "
+		_sQuery += " FROM " + RetSQLName ("SE1") + " AS SE1 "
+		_sQuery += " INNER JOIN " + RetSQLName ("ZB4") + " AS ZB4 "
+		_sQuery += " 	ON ZB4.D_E_L_E_T_ = '' "
+		_sQuery += " 		AND ZB4.ZB4_FILIAL = E1_FILIAL "
+		_sQuery += " 		AND ZB4.ZB4_BANCO  = E1_PORTADO "
+		_sQuery += " 		AND ZB4.ZB4_AGEN   = E1_AGEDEP "
+		_sQuery += " 		AND ZB4.ZB4_CONTA  = E1_CONTA "
+		_sQuery += " WHERE SE1.D_E_L_E_T_ = '' "
+		_sQuery += " AND SE1.E1_FILIAL    = '"+ xFilial("SE1") + "'"
+		_sQuery += " AND SE1.E1_PREFIXO + SE1.E1_NUM + SE1.E1_PARCELA = '"+ _sTit2 + "'"
+		U_Log2 ('debug', _sQuery)
+		_aSE1 := U_Qry2Array(_sQuery)
+
+		if len(_aSE1) > 0
+			Begin Transaction
+
+			_cFil	 := _aSE1[1,1]
+			_cSerie  := _aSE1[1,2]
+			_cNum    := _aSE1[1,3]
+			_cParc   := _aSE1[1,4]
+			_cCli    := _aSE1[1,5]
+			_cLoja   := _aSE1[1,6]
+			_cBanco  := _aSE1[1,7]
+			_cAgen   := _aSE1[1,8]
+			_cConta  := _aSE1[1,9]
+			_nVlrRec := _aValores[8]
+			_nVlrJur := _aValores[9]
+			_nVlrDes := _aValores[5]
+			_cStatus := 'A'
+			_dDtBai  := _aValores[02]
+			_dDtPro  := date()
+			_dDtBase := dDataBase 
+			
+			Do Case
+				Case _nVlrRec > 0
+					_cTipo := 'VL'
+				Case _nVlrDes > 0
+					_cTipo := 'TX'
+				Case _nVlrJur > 0
+					_cTipo := 'TX'
+				OTHERWISE
+					_cTipo := 'NI' // Não identificado
+			EndCase
+			
+			dbSelectArea("ZB5")
+			dbSetOrder(1) // ZB5_FILIAL+ZB5_SERIE+ ZB5_NUM + ZB5_PARC + ZB5_CLI + ZB5_LOJA + ZB5_TIPO + ZB5_DTAPRO
+			dbGoTop()
+			
+			if !dbSeek(_cFil + _cSerie + _cNum + _cParc + _cCli + _cLoja + _cTipo + DTOS(_dDtPro)) .and. _cTipo <> 'NI'
+			
+				Reclock("ZB5",.T.)
+					ZB5->ZB5_FILIAL := _cFil
+					ZB5->ZB5_SERIE 	:= _cSerie
+					ZB5->ZB5_NUM 	:= _cNum
+					ZB5->ZB5_PARC 	:= _cParc
+					ZB5->ZB5_CLI 	:= _cCli
+					ZB5->ZB5_LOJA 	:= _cLoja
+					ZB5->ZB5_TIPO 	:= _cTipo
+					ZB5->ZB5_BANCO  := _cBanco
+					ZB5->ZB5_AGEN 	:= _cAgen
+					ZB5->ZB5_CONTA  := _cConta
+					ZB5->ZB5_VLRREC := _nVlrRec
+					ZB5->ZB5_VLRDES := _nVlrDes
+					ZB5->ZB5_STATUS := _cStatus
+					ZB5->ZB5_DTABAI := _dDtBai
+					ZB5->ZB5_DTAPRO := _dDtPro
+					ZB5->ZB5_DTABAS := _dDtBase
+						
+				ZB5->(MsUnlock())
+
+				_oEvento := ClsEvent():New ()
+				_oEvento:Alias     = 'ZB5'
+				_oEvento:Texto     = "INCLUSÃO DE REGISTRO DE TÍTULO:" + _cFil +'-'+ _cSerie +'-'+ _cNum +'-'+ _cParc +'-'+ _cCli +'-'+ _cLoja + '-'+ _cTipo
+				_oEvento:CodEven   = "ZB5001"
+				_oEvento:Grava()
+
+			endif
+			End Transaction
+		endif
+	endif
+	//
 	// TRATAMENTO DO CNAB A RECEBER
 	if IsInCallStack ("FINA200") .or. (IsInCallStack ("FINR650") .and. mv_par07= 1) 
-
-	// teste 18/08/21		if substr(cNumTit,1,3) == '000'
-	// teste 18/08/21			_sTitulo = '10 ' + cNumTit
-	// teste 18/08/21		else
-	// teste 18/08/21			_sTitulo = 'FAT' + cNumTit
-	// teste 18/08/21		endif
 		if len (cNumTit) > 10  // Se vier com mais de 10 posicoes, eh por que jah tem o prefixo junto.
 			_sTitulo = cNumTit
 		else
@@ -384,7 +362,7 @@ User Function F200VAR()
 						_oEvento:Grava ()
 					endif
 				endif
-			end if
+			endif
 			if alltrim (_aValores [14]) != "15"
 				// manipula valor despesas de cobranca
 				if (_aValores [12] > 0)
