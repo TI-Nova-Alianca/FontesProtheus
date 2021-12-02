@@ -437,6 +437,20 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
                endif
         endcase
 
+	// Teste
+	// case _sLPad + _sSeq == '610031' 
+
+	// 	u_log('610031' + ALLTRIM(SD2->D2_COD))
+	// 	u_log('610031' + alltrim(str(SD2->D2_TOTAL)))
+
+	// 	If ALLTRIM(SD2->D2_COD)$"7209/7210"
+	// 		_xRet:= SD2->D2_TOTAL
+	// 		u_log('610031 - entrou no total')
+	// 	Else
+	// 		_xRet:= 0
+	// 		u_log('610031 - zerado')
+	// 	endif                                                                                                                                                                                                                                          
+
     case _sLPad + _sSeq == '631000'  // contabilizacao venda cupons
     	_xRet   = ""
      	if _sQueRet == 'CDEB'
