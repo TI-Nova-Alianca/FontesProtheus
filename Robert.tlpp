@@ -3,11 +3,23 @@
 // Data:      ??/??/????
 // Descricao: Ajustes e testes diversos
 
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Generico
+// #Descricao         #Testes e ajustes diversos / temporarios
+// #PalavasChave      #generico
+// #TabelasPrincipais #
+// #Modulos           #Todos
+
 // Para estudar...
 // http://www.universoadvpl.com/2015/03/21-advpl-i-x31updtable-sincronizar-base/
 // https://tdn.engpro.totvs.com.br/display/tec/LogMsg
 // https://tdn.engpro.totvs.com.br/display/tec/Log+Management
 // ParamBox()  http://www.blacktdn.com.br/2012/05/para-quem-precisar-desenvolver-uma.html
+// https://tdn.totvs.com/display/tec/Monitoramento+de+memoria+por+arquivo+CSV
+// https://tdn.totvs.com/pages/viewpage.action?pageId=552580433  (servico de monitoramento)
+// https://tdn.totvs.com/display/tec/SQLite+-+Como+fazer+backup+dos+arquivos+.db
+// https://centraldeatendimento.totvs.com/hc/pt-br/articles/360021146311-MP-ADVPL-SETPRINT-VIA-JOB-O-usu%C3%A1rio-possui-restri%C3%A7%C3%A3o-de-hor%C3%A1rio-de-acesso
+// depurar mais de uma thread: https://devforum.totvs.com.br/1066-debugar-multiplas-threads-no-vscode
 /*
 DECLARE @TIPO_OBJETO VARCHAR (MAX) = 'FUNCTION';
 declare @NOME_OBJETO VARCHAR (MAX) = 'VA_FCONS_ORCAMENTO_525';
@@ -22,14 +34,6 @@ BEGIN
 END
 GO
 */
-
-
-// Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #Processamento
-// #Descricao         #Rotinas diversas de testes, ajustes e automacoes.
-// #PalavasChave      #auxiliar #uso_generico
-// #TabelasPrincipais 
-// #Modulos           #todos_modulos
 
 // Historico de alteracoes:
 //
@@ -63,7 +67,7 @@ user function robert ()
 		if U_Semaforo (procname ()) == 0
 			u_help ('Bloqueio de semaforo na funcao ' + procname (),, .t.)
 		else
-			PtInternal (1, 'U_Robert')
+		//	PtInternal (1, 'U_Robert')
 			U_UsoRot ('I', procname (), '')
 			processa ({|| _AndaLogo ()})
 			u_log2 ('info', 'Processo finalizado')
@@ -102,6 +106,130 @@ static function _AndaLogo ()
 	incproc ()
 	u_help ('Nada definido.')
 return
+/*
+	// Ajusta cadastro produtos em lote
+	sb1 -> (dbsetorder (1))
+	sb5 -> (dbsetorder (1))
+	sb1 -> (dbgotop ())
+	do while ! sb1 -> (eof ())
+		if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
+			u_log ('ERRO: Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
+		else
+			if left (sb1 -> b1_COD, 2) == '60' .and. sb1 -> b1_localiz != 'S'
+				u_log ('Verificando item', sb1 -> b1_cod, SB1 -> B1_DESC)
+
+				// Cria variaveis para uso na gravacao do evento de alteracao
+				regtomemory ("SB1", .F., .F.)
+				regtomemory ("SB5", .F., .F.)
+				m->B1_localiz = 'S'
+				//m->b5_vasisde = 'N'
+
+				// Grava evento de alteracao
+				_oEvento := ClsEvent():new ()
+				_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 11210 - Ativar localizacao itens de manut.', .F.)
+
+				reclock ("SB1", .f.)
+				sb1 -> B1_localiz = m->B1_localiz
+				msunlock ()
+				//reclock ("SB5", .f.)
+				//sb5->b5_vasisde = m->b5_vasisde
+				//msunlock ()
+				//exit
+			endif
+		endif
+		sb1 -> (dbskip ())
+	enddo
+return
+*/
+/* Nao vamos usar agora
+User Function STMenu()
+	Local _aRetMPDV := {}
+	AAdd (_aRetMPDV, {"Alianca-Tabela precos", "U_STMenuTP ()"})
+	//aRet[1][1] - Se Refere: ao Nome no Menu mostrado ao usuário
+	//aRet[1][2] - Se Refere: à função que sera executada
+Return _aRetMPDV
+user function STMenuTP ()
+	local _aTabPrc   := {}
+	local _aCols     := {}
+	public _nTabPrPDV  := 0
+	aadd (_aTabPrc, {1, 'Gondola'})
+	aadd (_aTabPrc, {2, 'Caixa fechada'})
+	aadd (_aTabPrc, {3, 'Funcionarios / associados'})
+	aadd (_aTabPrc, {5, 'Feirinha'})
+	aadd (_aTabPrc, {7, 'Promocoes'})
+	aadd (_aCols, {1, 'Tabela', 30, ''})
+	aadd (_aCols, {2, 'Descricao', 100, ''})
+	_nTabPrPDV = u_F3Array (_aTabPrc, 'Selecione tabela de precos', _aCols, 400, 300)
+	if _nTabPrPDV > 0
+		// Preciso pegar o numero da lista de precos que encontra-se na primeira coluna da array de opcoes mostradas ao usuario.
+		_nTabPrPDV = _aTabPrc [_nTabPrPDV, 1]
+	endif
+	U_Log2 ('debug', 'Tabela de preco a ser usada: ' + cvaltochar (_nTabPrPDV))
+return
+*/
+
+//	Private cPerg   := "VAXLS57"
+//	U_GravaSX1 (cPerg, '01', stod ('20210101'))
+//	U_GravaSX1 (cPerg, '02', stod ('20210930'))
+//	u_va_xls57 (.T.)
+//return
+
+/*
+	// Testes verificacoes genericas.
+	// _oVerif := ClsVerif():New (25)
+	// _oVerif:SetParam ('01', '2017')
+	// _oVerif:SetParam ('02', '')
+	// _oVerif:SetParam ('03', 'zz')
+	// _oVerif:SetParam ('04', '30 ')
+	// _oVerif:SetParam ('05', '028')
+	// _oVerif:SetParam ('06', '077')
+	// _oVerif:SetParam ('07', '000017')
+	// _oVerif := ClsVerif():New (24)
+	// _oVerif:SetParam ('01', '09189201001  ')
+	// _oVerif:SetParam ('02', '09189201001  ')
+	// _oVerif:SetParam ('03', '')
+	// _oVerif:SetParam ('04', 'z')
+	_oVerif := ClsVerif():New (70)
+	if _oVerif:Executa ()
+		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
+		u_log2 ('debug', _oVerif:Result)
+	else
+		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
+	endif
+return
+*/
+/*
+	// Testes batches em geral
+	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+	u_batocor ()
+//	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batmetaf ()
+//	_sArqLog := 'U_BatFunAtlz_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batfunatlz ()
+//	_sArqLog := 'U_BatBlUsr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batBlUsr ()
+//	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batsafr ('1')  // cargas sem contranota
+//	u_batsafr ('3')  // conferencia geracao das parcelas financeiro
+//	u_batsafr ('4')  // contranotas sem carga
+//	u_batsafr ('5')  // conferencia fretes
+//	u_batsafr ('7')  // gera SZI a partir das parcelas
+//	u_batsafr ('8')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
+//	u_batsafr ('9')  // Transfere (das filiais para a matriz) os titulos de nao associados.
+//	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batmercp ()
+//	_sArqLog := 'U_BatVerif_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batVerif ()
+//	_sArqLog := 'U_BatEDIM_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batedim ("I")
+//	_sArqLog := 'U_BatMercN_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batMercN (5)
+//	u_log2 ('info', _oBatch:Mensagens)
+//	_sArqLog := 'U_BatXML_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	U_BatXML("\\192.168.1.3\Siga\Protheus12\protheus_data\xml_NFe\", 1, .F.)
+return
+*/
+
 /*
 	// Testes inclusao conta corrente
 	_aMovCC := {} // TM   SERIE   DOCTO                       ASSOC    LOJA  bco    ag       cta
@@ -193,37 +321,6 @@ return
 return
 */
 /*
-	// Testes batches em geral
-//	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batocor ()
-//	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batmetaf ()
-//	_sArqLog := 'U_BatFunAtlz_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batfunatlz ()
-//	_sArqLog := 'U_BatBlUsr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batBlUsr ()
-//	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batsafr ('1')  // cargas sem contranota
-//	u_batsafr ('3')  // conferencia geracao das parcelas financeiro
-//	u_batsafr ('4')  // contranotas sem carga
-//	u_batsafr ('5')  // conferencia fretes
-//	u_batsafr ('7')  // gera SZI a partir das parcelas
-//	u_batsafr ('8')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
-//	u_batsafr ('9')  // Transfere (das filiais para a matriz) os titulos de nao associados.
-//	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batmercp ()
-//	_sArqLog := 'U_BatVerif_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batVerif ()
-//	_sArqLog := 'U_BatEDIM_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batedim ("I")
-//	_sArqLog := 'U_BatMercN_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batMercN (5)
-//	u_log2 ('info', _oBatch:Mensagens)
-//	_sArqLog := 'U_BatXML_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	U_BatXML("\\192.168.1.3\Siga\Protheus12\protheus_data\xml_NFe\", 1, .F.)
-return
-*/
-/*
 	// Testes geracao XML
 	paramixb := array (3, 7)
 	_aNotas = {}
@@ -271,65 +368,6 @@ return
 		U_XmlNfeSEF (_aNotas [_nDado, 1], _aNotas [_nDado, 2], _aNotas [_nDado, 3], _aNotas [_nDado, 4], _aNotas [_nDado, 5], _aNotas [_nDado, 6], _aNotas [_nDado, 7])
 		u_logFim (_aNotas [_nDado, 3])
 	next
-return
-*/
-/*
-	// Testes verificacoes genericas.
-	// _oVerif := ClsVerif():New (25)
-	// _oVerif:SetParam ('01', '2017')
-	// _oVerif:SetParam ('02', '')
-	// _oVerif:SetParam ('03', 'zz')
-	// _oVerif:SetParam ('04', '30 ')
-	// _oVerif:SetParam ('05', '028')
-	// _oVerif:SetParam ('06', '077')
-	// _oVerif:SetParam ('07', '000017')
-	// _oVerif := ClsVerif():New (24)
-	// _oVerif:SetParam ('01', '09189201001  ')
-	// _oVerif:SetParam ('02', '09189201001  ')
-	// _oVerif:SetParam ('03', '')
-	// _oVerif:SetParam ('04', 'z')
-	_oVerif := ClsVerif():New (72)
-	if _oVerif:Executa ()
-		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
-		u_log2 ('debug', _oVerif:Result)
-	else
-		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
-	endif
-return
-*/
-/*
-	// Ajusta cadastro produtos em lote
-	sb1 -> (dbsetorder (1))
-	sb5 -> (dbsetorder (1))
-	sb1 -> (dbgotop ())
-	do while ! sb1 -> (eof ())
-		if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
-			u_log ('ERRO: Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
-		else
-			if sb1 -> b1_apropri == 'I'
-				u_log ('Verificando item', sb1 -> b1_cod, SB1 -> B1_DESC)
-				
-				// Cria variaveis para uso na gravacao do evento de alteracao
-				regtomemory ("SB1", .F., .F.)
-				regtomemory ("SB5", .F., .F.)
-				m->B1_APROPRI   = 'D'
-				//m->b5_vasisde = 'N'
-
-				// Grava evento de alteracao
-				_oEvento := ClsEvent():new ()
-				_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 8356 - Alterar B1_APROPRI para D', .F.)
-
-				reclock ("SB1", .f.)
-				sb1 -> B1_apropri = m->B1_apropri
-				msunlock ()
-				//reclock ("SB5", .f.)
-				//sb5->b5_vasisde = m->b5_vasisde
-				//msunlock ()
-				//exit
-			endif
-		endif
-		sb1 -> (dbskip ())
-	enddo
 return
 */
 /*
@@ -1196,7 +1234,7 @@ return
 	_oSQL:_sQuery +=    " AND ASSOCIADO not IN ('001847','000640','000255','006455','004379','002870','003059','002933','002699','004266','000251','001071','004825','002768','002779','002717','003114','000568','002080','002081','003393','000564','003399','003383','002113','002533','002656','002748','010694','004364','002949','010569','002725','001130','003029','004611','012814','002937','002925','002988','002916','002283','001885','002500','012718','000236','010261','003853','006164','002567','002663','000977','000289','004625','002615','002714','002728','002734','002860','004556','003002','002732','003241','002635')"
 	// Desconsiderar uvas viniferas em espaldeira
 	_oSQL:_sQuery +=    " AND NOT (B1_VARUVA = 'F' AND SIST_CONDUCAO = 'E')"
-	// Viníferas: apenas moscatos
+	// Vinï¿½feras: apenas moscatos
 	_oSQL:_sQuery +=    " AND NOT (B1_VARUVA = 'F' AND B1_DESC NOT LIKE '%MOSCATO%')"
 	// Desconsiderar uvas organicas
 	_oSQL:_sQuery +=    " AND B1_VAORGAN = 'C'"

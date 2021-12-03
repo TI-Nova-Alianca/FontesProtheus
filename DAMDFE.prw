@@ -606,7 +606,9 @@ Static Function DamdfeVCP(oDamdfe, nLin )
 			oDamdfe:Say(nLin-nPosIniCtg, 0105,  Padr(Transform(aValePed[nCount]:_CNPJForn:TEXT, "@R 99.999.999/9999-99" ),18) , oFont10N)
 			
 			//Nro Comprovante
-			oDamdfe:Say(nLin-nPosIniCtg, 0205,  aValePed[nCount]:_nCompra:TEXT , oFont10N)
+			if ValAtrib( "aValePed[" + Alltrim(Str(nCount)) + "]:_nCompra" ) == "O" .And. !empty(aValePed[nCount]:_nCompra:TEXT)
+				oDamdfe:Say(nLin-nPosIniCtg, 0205,  aValePed[nCount]:_nCompra:TEXT , oFont10N)
+			endIf
 			
 		Next nCount
 	endIf
