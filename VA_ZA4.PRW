@@ -32,6 +32,7 @@
 //  12/08/2020 - Cláudia - Edição/alteração de verbas. GLPI: 8210
 //  19/08/2020 - Cláudia - Ajuste de exclusão de verbas tipo boleto/depósito. GLPI: 8350 
 //  15/09/2020 - Cláudia - Alteração de verbas tipo boleto/deposito. GLPI: 8479
+//  03/12/2021 - Claudia - BLoqueada a rotina para incluir verbas nas filiais. GLPI:11306
 //
 // ---------------------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
@@ -50,19 +51,23 @@ User Function VA_ZA4()
 	
     u_logId ()
 	
-	// Menu principal
-	aadd (aRotina, {"&Pesquisar"          , "AxPesqui"		, 0,1})
-	aadd (aRotina, {"&Visualizar"         , "AxVisual"		, 0,2})
-	aadd (aRotina, {"&Acordos Isolados"   , "U_ZA4_I('2')" 	, 0,3})
-    aadd (aRotina, {"&Eventuais Contratos", "U_ZA4_I('1')" 	, 0,3})
-	aadd (aRotina, {"&Liberar"            , "U_ZA4_L" 		, 0,4})
-	aadd (aRotina, {"&Estornar"           , "U_ZA4_EL" 		, 0,4})
-	aadd (aRotina, {"&Excluir"            , "U_ZA4_EX" 		, 0,4})
-	aadd (aRotina, {"&Alterar"            , "U_ZA4_AL"   	, 0,4})
-    
-	dbselectarea (cString)
-    dbSetOrder (1)
-    mBrowse(,,,,cString,,,,,2)
+	If cFilAnt <> '01'
+		u_help("Não é permitido incluir verbas em filiais, apenas na matriz. Operação cancelada!")
+	Else
+		// Menu principal
+		aadd (aRotina, {"&Pesquisar"          , "AxPesqui"		, 0,1})
+		aadd (aRotina, {"&Visualizar"         , "AxVisual"		, 0,2})
+		aadd (aRotina, {"&Acordos Isolados"   , "U_ZA4_I('2')" 	, 0,3})
+		aadd (aRotina, {"&Eventuais Contratos", "U_ZA4_I('1')" 	, 0,3})
+		aadd (aRotina, {"&Liberar"            , "U_ZA4_L" 		, 0,4})
+		aadd (aRotina, {"&Estornar"           , "U_ZA4_EL" 		, 0,4})
+		aadd (aRotina, {"&Excluir"            , "U_ZA4_EX" 		, 0,4})
+		aadd (aRotina, {"&Alterar"            , "U_ZA4_AL"   	, 0,4})
+		
+		dbselectarea (cString)
+		dbSetOrder (1)
+		mBrowse(,,,,cString,,,,,2)
+	EndIf
     
 Return
 //
