@@ -42,7 +42,8 @@
 // 06/09/2012 - Elaine  - Alteracao na rotina _ValidPerg para tratar o tamanho do campo
 //                        do Titulo com a funcao TamSX3 (ref mudancas do tamanho do campo da NF de 6 p/9 posicoes) 
 // 04/10/2012 - Elaine  - Alterada mensagem quando nao encontra o banco no VA_BCOBOL - na mensagem dizia que era o MV_BCOBOL
-// 17/12/2012 - Elaine  - Incluida funcao de filtro do SE1 dentro da rotina montarel() pois no P11 ele perde o filtro já realizado
+// 17/12/2012 - Elaine  - Incluida funcao de filtro do SE1 dentro da rotina montarel() pois no P11 ele perde o 
+//                        filtro já realizado
 //                        na _Gera - assim mandava imprimir todos boletos, não somente os filtrados
 // 30/10/2014 - Catia   - Liberar para imprimir boletos na filial 13
 // 10/12/2014 - Catia   - Boleto do banco SAFRA - correspondente BRADECO
@@ -59,31 +60,36 @@
 // 26/06/2017 - Catia   - Ajustes boleto Caixa
 // 29/06/2017 - Catia   - Ajustes porque nao estava imprimindo o valor de juros quando FAT (e1_vapjuro)
 // 09/08/2017 - Catia   - Boleto Banrisul - Filial 08
-// 22/08/2017 - Catia   - Boleto Banrisul - Filial 08 - No recibo do pagador, imprimir o endereço completo com cidade estado e cep
+// 22/08/2017 - Catia   - Boleto Banrisul - Filial 08 - No recibo do pagador, imprimir o endereço completo com 
+//                        cidade estado e cep
 // 22/08/2017 - Catia   - Boleto Caixa - estava gerando o nosso numero com 1 digito a mais e mandava cortado pro banco
 // 20/11/2017 - Robert  - Ajustes campo livre do codigo de barras da Caixa (bco.104) e formatacao da linha digitavel.
 // 17/01/2018 - Robert  - Ajuste calculo DV geral cod barras bco 104 (ficava com valor 10 quando deveria alterar para 1).
 // 11/07/2018 - Sandra  - Deabilitado o e-mail de aviso de reimpressão de boletos.
 // 13/09/2018 - Sandra  - Deabilitado o e-mail de aviso de impressão de boletos.
-// 25/09/2018 - Catia   - Criada opcao de imprimir boletos a partir da tela do funcoes do contas a receber - manipula a funcao gera
+// 25/09/2018 - Catia   - Criada opcao de imprimir boletos a partir da tela do funcoes do contas a receber 
+//                      - manipula a funcao gera
 // 20/11/2018 - Sandra  - Alterado e-mail de aline.trentin@novaalianca.coop.br para financeiro@novaalianca.coop.br
 // 10/12/2018 - Catia   - Boletos para o "banco"  RED - RED ASSET - cobranca do bradesco 
 // 03/05/2019 - Catia   - Boletos para o do brasil - novo convenio da MATRIZ
 // 06/09/2019 - Claudia - Novo layout para boletos banco 422 - Safra
-// 02/12/2019 - Robert  - Declaradas variaveis locais para for...next - tratamento para mensagem [For variable is not Local]
+// 02/12/2019 - Robert  - Declaradas variaveis locais para for...next - tratamento para mensagem 
+//                        [For variable is not Local]
 // 02/12/2019 - Cláudia - Retirada a opção de imprimir boleto do banco 422 com modelo bradesco
 // 27/03/2020 - Andre   - Validação de "nosso numero" para boletos de todos os bancos.
-// 25/06/2020 - Claudia - Incluída validação para banco do brasil onde as filiais definidas terão CNPJ e endereço da matriz.
-//						  GLPI: 8103
+// 25/06/2020 - Claudia - Incluída validação para banco do brasil onde as filiais definidas terão CNPJ 
+//                        e endereço da matriz. GLPI: 8103
 // 26/06/2020 - Claudia - Definida as filiais para banco do brasil, conforme GLPI: 8103
 // 02/09/2020 - Robert  - Buscava cod.empresa fixo '01571' ao gerar 'nosso numero' para Sicredi.
 //                      - Inseridas tags para catalogo de fontes.
 // 17/09/2020 - Sandra  - Alterado Agencia banco 104 de 2515 para 4312.
 // 21/09/2020 - Claudia - Acrescentado para o banco sicredi, a filtragem de banco/agencia e conta 
 //						  para busca de nosso numero duplicado. GLPI: 8413
-// 13/05/2021 - Claudia - Criada uam variavel para o parametro VA_PJURBOL, para solucionar erro R27. GLPI: 8825
+// 13/05/2021 - Claudia - Criada uma variavel para o parametro VA_PJURBOL, para solucionar erro R27. GLPI: 8825
+// 06/12/2021 - Claudia - Criada validação para nao permitir impressão de boleto quando tiver algum erro. 
+//                        GLPI: 11283
 //
-// ------------------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------
 User Function ML_BOLLSR (_aBoletos)
     local _nBoleto := 0
     
@@ -713,17 +719,22 @@ Static Function MontaRel()
 		aAdd(aDatSacado, _xCGCCPF)											// CNPJ
 		aAdd(aDatSacado, _nDescFin)  										// Desconto financeiro.
 	
-		_Impress(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
+		// --------- IMPRESSÃO DO BOLETO ----------
+		If _lContinua == .T.
+			_Impress(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
+				
+			// Marca titulo como 'boleto jah impresso'.
+			RecLock("SE1",.F.)
+			SE1->E1_BOLIMP :="S"
+			MsUnLock()
 			
-		// Marca titulo como 'boleto jah impresso'.
-		RecLock("SE1",.F.)
-		SE1->E1_BOLIMP :="S"
-		MsUnLock()
-		
-		// Manda aviso para o setor financeiro, especifico para cliente que quer os boletos por e-mail.
-		if aDatSacado [2] $ "007496/010944/008783/011687/009309/006558"
-			U_SendMail ("financeiro@novaalianca.coop.br", "Boleto " + se1 -> e1_prefixo + "/" + se1 -> e1_num + se1 -> e1_parcela + " emitido para cliente " + alltrim (aDatSacado [1]), "", {}, "")
-		endif
+			// Manda aviso para o setor financeiro, especifico para cliente que quer os boletos por e-mail.
+			if aDatSacado [2] $ "007496/010944/008783/011687/009309/006558"
+				U_SendMail ("financeiro@novaalianca.coop.br", "Boleto " + se1 -> e1_prefixo + "/" + se1 -> e1_num + se1 -> e1_parcela + " emitido para cliente " + alltrim (aDatSacado [1]), "", {}, "")
+			endif
+		Else
+			u_help("Boleto não impresso!")
+		EndIf
 
 		// Retorna Parametros Originais
 		RestArea (_aAreaSA6)
