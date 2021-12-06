@@ -29,9 +29,8 @@
 // 29/07/2019 - Andre  - Campo B1_VAEANUN substituido pelo campo B5_2CODBAR.
 // 16/08/2019 - Robert - Campo B1_VADUNCX substituido pelo campo B1_CODBAR.
 // 02/12/2021 - Robert - Acrescentados logs para depuracao de empenhos.
+// 06/11/2016 - Robert - Ajustado (nas OP de reprocesso) para validar G1_REVINI e G1_REVFIM com C2_REVISAO, e nao mais G1_TRT (GLPI 11310)
 //
-
-// para pensar: ler saldo empenho do SDC ?
 
 // --------------------------------------------------------------------------
 user function ImpOP (_sOPIni, _sOPFim)
@@ -160,7 +159,11 @@ static function _AndaLogo ()
 			_oSQL:_sQuery +=  " WHERE SG1.D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=    " AND SG1.G1_FILIAL  = '" + xfilial ("SG1") + "'"
 			_oSQL:_sQuery +=    " AND SG1.G1_COD     = '" + SC2 -> C2_PRODUTO + "'"
-			_oSQL:_sQuery +=    " AND SG1.G1_TRT     = '" + SC2 -> C2_revisao + "'"
+
+//			_oSQL:_sQuery +=    " AND SG1.G1_TRT     = '" + SC2 -> C2_revisao + "'"
+			_oSQL:_sQuery +=    " AND SG1.G1_REVINI <= '" + sc2 -> c2_revisao + "'"
+			_oSQL:_sQuery +=    " AND SG1.G1_REVFIM >= '" + sc2 -> c2_revisao + "'"
+
 			_oSQL:_sQuery +=    " AND SG1.G1_INI    <= '" + dtos (sc2 -> c2_emissao) + "'"
 			_oSQL:_sQuery +=    " AND SG1.G1_FIM    >= '" + dtos (sc2 -> c2_emissao) + "'"
 			_oSQL:_sQuery +=    " AND SB1.D_E_L_E_T_ = ''"
