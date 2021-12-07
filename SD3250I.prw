@@ -3,21 +3,29 @@
 // Data.......: 11/12/2013
 // Descricao..: Ponto de entrada após a confirmação da produção (apontamento de OP)
 //
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #Ponto de entrada após a confirmação da produção (apontamento de OP)
+// #PalavasChave      #ponto_de_entrada #apontamento_de_OP 
+// #TabelasPrincipais #ZA1 #SD3
+// #Modulos           
+//
 // Historico de alteracoes:
 // 03/09/2015 - Robert - Nao endereca mais automaticamente os produtos.
 //                     - Transfere produtos para almox. de integracao com FullWMS quando OP de reprocesso.
 // 01/08/2017 - Robert - Passa a gravar a tabela tb_wms_etiquetas (era feito logo apos a impressao das etiquetas).
 // 18/08/2017 - Robert - Valid.produto na gravacao de etiquetas para FullWMS (tb_wms_etiquetas) - GLPI 2981
 //                          - Quando OP de reprocesso assume dt valid do lote original (C2_VADVORI), cfe informada pelo usuario.
-//                          - Quando OP normal, calculava dt.valid.=ZA1_DATA+B1_PRVALID. Alterado para C2_DATPRI+B1_PRVALID para manter consistencia com a impressao da OP.
+//                          - Quando OP normal, calculava dt.valid.=ZA1_DATA+B1_PRVALID. Alterado para C2_DATPRI+B1_PRVALID 
+//                            para manter consistencia com a impressao da OP.
 // 25/08/2017 - Robert - Passa a gravar a data de validade como C2_DATPRF+B1_PRVALID nas etiquetas.
 // 20/07/2018 - Robert - Passa a gravar a etiqueta em funcao externa.
 //                     - Geracao de laudo do produto acabado com base nos laudos dos produtos consumidos.
 // 04/09/2018 - Robert - Grava za1_apont=S (estava no EnvEtFul.prw)
 // 04/08/2021 - Robert - Removidas chamadas de logs desnecessarias.
+// 04/10/2021 - Claudia - Alterada a rotina _AtuReproc. GLPI: 9674
 //
-
-// ------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------------------------
 User Function SD3250I()
 	Local _aAreaAnt := U_ML_SRArea ()
 	
@@ -40,39 +48,70 @@ User Function SD3250I()
 
 	U_ML_SRArea (_aAreaAnt)
 Return
-
-
-
+//
 // ------------------------------------------------------------------------------------
 // Atualizacoes para OP de reprocessamento.
-static function _AtuReproc ()
+Static Function _AtuReproc ()
 	local _sAlmRetr := GetMv ("VA_ALMREPR")
 	local _sAlmFull := GetMv ("VA_ALMFULP",, '')
-	local _aRet260  := {}
-
+	
 	if fBuscaCpo ("SC2", 1, xfilial ("SC2") + m->d3_op, "C2_VAOPESP") == 'R'
-		u_log ('Eh op de reproc.')
-		begin transaction
-		_aRet260 := aclone (U_A260Proc (m->d3_cod, _sAlmRetr, m->d3_perda, m->d3_emissao, m->d3_cod, _sAlmFull, NIL, NIL, NIL, NIL, NIL))
-		u_log ('Recnos gerados:', _aRet260)
-		if len (_aRet260) == 2
-			_oSQL := ClsSQL ():New ()
-			_oSQL:_sQuery := " UPDATE " + RetSQLName ("SD3")
-			_oSQL:_sQuery += " SET D3_VAMOTIV = 'Disponibilizar pallet reprocessado p/ Full', "
-			_oSQL:_sQuery +=     " D3_VAETIQ  = '" + alltrim (m->d3_vaetiq) + "', "
-			_oSQL:_sQuery +=     " D3_VACHVEX = 'SD3" + alltrim (m->d3_doc) + "' "  // Util para caso de precisar estornar.
-			_oSQL:_sQuery += " WHERE R_E_C_N_O_ IN (" + cvaltochar (_aRet260 [1]) + " , " + cvaltochar (_aRet260 [2]) + ")"
-			u_log (_oSQL:_sQuery )
-			_oSQL:Exec ()
+		_oTrEstq := ClsTrEstq ():New ()
+		_oTrEstq:FilOrig  := cFilAnt
+		_oTrEstq:FilDest  := cFilAnt
+		_oTrEstq:ProdOrig := m->d3_cod
+		_oTrEstq:ProdDest := m->d3_cod
+		_oTrEstq:AlmOrig  := _sAlmRetr
+		_oTrEstq:AlmDest  := _sAlmFull
+		_oTrEstq:LoteOrig := ""
+		_oTrEstq:LoteDest := ""
+		_oTrEstq:EndOrig  := ""
+		_oTrEstq:EndDest  := ""
+		_oTrEstq:QtdSolic := m->d3_perda
+		_oTrEstq:Motivo   := "Disponibilizar pallet reprocessado p/ Full"     
+		_oTrEstq:ImprEtq  := ""   		 
+		_oTrEstq:UsrIncl  := cUserName
+		_oTrEstq:DtEmis   := m->d3_emissao
+		_oTrEstq:Etiqueta := alltrim(m->d3_vaetiq) 
+		//_oTrEstq:Docto    := alltrim(m->d3_doc) 
+
+		if _oTrEstq:Grava ()
+			u_log2 ('INFO', 'Gravou ZAG. ' + _oTrEstq:UltMsg)
+		else
+			u_log2 ('erro', 'Nao gravou ZAG. ' + _oTrEstq:UltMsg)
 		endif
-		end transaction
-//	else
-//		u_log ('Nao eh op de reproc.')
 	endif
 return
-
-
-
+//
+// // ------------------------------------------------------------------------------------
+// // Atualizacoes para OP de reprocessamento.
+// static function _AtuReproc ()
+// 	local _sAlmRetr := GetMv ("VA_ALMREPR")
+// 	local _sAlmFull := GetMv ("VA_ALMFULP",, '')
+// 	local _aRet260  := {}
+//
+// 	if fBuscaCpo ("SC2", 1, xfilial ("SC2") + m->d3_op, "C2_VAOPESP") == 'R'
+// 		u_log ('Eh op de reproc.')
+// 		begin transaction
+// 		                             //(_sProdOri, _sAlmOri, _nQuant,            _dData, _sProdDest, _sAlmDest, _aRecnEst, _sLoteOri, _sLoteDest, _sEndOri, _sEndDest, _sMotivo, _sChvEx)
+// 		_aRet260 := aclone (U_A260Proc (m->d3_cod, _sAlmRetr, m->d3_perda, m->d3_emissao, m->d3_cod, _sAlmFull, NIL, NIL, NIL, NIL, NIL))
+// 		u_log ('Recnos gerados:', _aRet260)
+// 		if len (_aRet260) == 2
+// 			_oSQL := ClsSQL ():New ()
+// 			_oSQL:_sQuery := " UPDATE " + RetSQLName ("SD3")
+// 			_oSQL:_sQuery += " SET D3_VAMOTIV = 'Disponibilizar pallet reprocessado p/ Full', "
+// 			_oSQL:_sQuery +=     " D3_VAETIQ  = '" + alltrim (m->d3_vaetiq) + "', "
+// 			_oSQL:_sQuery +=     " D3_VACHVEX = 'SD3" + alltrim (m->d3_doc) + "' "  // Util para caso de precisar estornar.
+// 			_oSQL:_sQuery += " WHERE R_E_C_N_O_ IN (" + cvaltochar (_aRet260 [1]) + " , " + cvaltochar (_aRet260 [2]) + ")"
+// 			u_log (_oSQL:_sQuery )
+// 			_oSQL:Exec ()
+// 		endif
+// 		end transaction
+// //	else
+// //		u_log ('Nao eh op de reproc.')
+// 	endif
+// return
+//
 // ------------------------------------------------------------------------------------
 // Atualiza laudos/ensaios de laboratorio
 static function _AtuLaudo ()
