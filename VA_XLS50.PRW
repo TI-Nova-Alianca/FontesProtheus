@@ -97,7 +97,7 @@ Static Function _Gera()
 	_oSQL:_sQuery += " 	ON (SB1.D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " 			AND SB1.B1_FILIAL = '" + xfilial ("SB1") + "'"
 	_oSQL:_sQuery += " 			AND SB1.B1_COD    = SD1.D1_COD) "
-	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SB5") + " SB5 "
+	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SB5") + " SB5 "
 	_oSQL:_sQuery += " 	ON (SB5.D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " 			AND SB5.B5_FILIAL  = SB1.B1_FILIAL "
 	_oSQL:_sQuery += " 			AND SB5.B5_COD     = SB1.B1_COD "
@@ -111,6 +111,7 @@ Static Function _Gera()
 	_oSQL:_sQuery += " AND SD1.D1_TP IN ('MP', 'VD') "
 	_oSQL:_sQuery += " AND SD1.D1_TIPO NOT IN ('B', 'D') "
 	_oSQL:_sQuery += " AND SD1.D1_CF NOT IN ('1902', '1925', '1151', '2151', '1352', '1903', '2903') "
+	//_oSQL:_sQuery += " AND NOT (SD1.D1_GRUPO = '4000' AND SD1.D1_DESCRI NOT LIKE '%UVA%') "
 
 	_oSQL:Log ()
 	_oSQL:Qry2Xls ()
