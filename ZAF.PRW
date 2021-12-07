@@ -11,6 +11,7 @@
 //                                        - recebe observacao por parametro.
 // 30/09/2019 - Robert - Acrescentados logs para depuracao na funcao de 'merge' de ensaios.
 // 31/03/2021 - Robert - Alteracao logs.
+// 06/12/2021 - Robert - Pequena melhoria nos logs de laudos para fazer merge.
 //
 
 // --------------------------------------------------------------------------
@@ -225,8 +226,12 @@ User Function ZAFM (_aLaudos, _sProduto, _sOP, _sLote, _sAlmox, _sObs)
 
 	// Pega antes os laudos de maior volume.
 	asort (_aLaudos,,, {|_x, _y| _x [2] > _y [2]})
-	u_log2 ('info', 'Laudos para fazer merge:')
-	u_log2 ('info', _aLaudos)
+	if len (_aLaudos) == 0
+		u_log2 ('info', '[' + procname () + '] Nao ha laudos para fazer merge')
+	else
+		u_log2 ('info', '[' + procname () + '] Laudos para fazer merge:')
+		u_log2 ('info', _aLaudos)
+	endif
 
 	_aEnsOri = {}
 	_aSafras = {}

@@ -56,6 +56,7 @@
 // 11/05/2021 - Claudia - Ajustada a chamada para tabela SX1 devido a R27. GLPI: 8825
 // 04/08/2021 - Robert  - Nao trazia o descritivo das perguntas no LogSX1().
 // 08/09/2021 - Robert  - Nao trazia o significado de respostas tipo combo no LogSX1().
+// 06/12/2021 - Robert  - LogPCham() passa a usar U_Log2() para gravar os dados.
 //
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -281,7 +282,8 @@ user function LogPCham ()
 		_sPilha += "   =>   " + procname (_i)
 		_i++
 	enddo
-	u_log ("Pilha de chamadas: " + _sPilha)
+	//u_log ("Pilha de chamadas: " + _sPilha)
+	U_Log2 ('info', 'Pilha de chamadas: ' + _sPilha)
 
 return _sPilha
 //
