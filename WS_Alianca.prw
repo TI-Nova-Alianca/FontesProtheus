@@ -1786,7 +1786,7 @@ static function _ApontProd ()
 				endif
 				aadd (_aAutoSD3, {"ATUEMP",     "T",        NIL})  // Para que sempre seja feita a baixa dos empenhos.
 				_aAutoSD3 := aclone (U_OrdAuto (_aAutoSD3))
-				U_Log2 ('debug', _aAutoSD3)
+				//U_Log2 ('debug', _aAutoSD3)
 				lMsErroAuto  := .F.
 				_sErroAuto := ''
 				U_Log2 ('info', 'Executando MATA250')

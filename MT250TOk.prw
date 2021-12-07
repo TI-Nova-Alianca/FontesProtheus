@@ -29,6 +29,7 @@
 // 07/06/2019 - Robert - Exige preenchimento dos campos D3_DADTPRD e D3_VATURNO.
 // 07/07/2021 - Robert - Validacao do campo D3_VADTPRD passa a aceitar ateh D+4 (GLPI 10430).
 // 13/07/2021 - Robert - Eliminadas perguntas simples e melhorados helps para execucao via web service (GLPI 10479)
+// 06/12/2021 - Robert - Valida se o empenho jah foi enderecado (para evitar que o sistema requisite de onde quiser). GLPI 11076
 //
 
 // --------------------------------------------------------------------------
@@ -36,9 +37,6 @@ user function mt250tok ()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _lRet     := .T.
 	
-	//u_logIni ()
-	
-//	if _lRet .and. (empty (m->d3_vadtprd) .or. m->d3_vadtprd > date ())
 	if _lRet .and. (empty (m->d3_vadtprd) .or. m->d3_vadtprd > date () + 4)  // GLPI 10430
 		u_help ('Data real de producao nao pode ser vazia nem avancar muitos dias (descontando feriadoes)',, .t.)
 		_lRet = .F.
@@ -104,7 +102,6 @@ user function mt250tok ()
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-	//u_logFim ()
 return _lRet
 
 
@@ -224,6 +221,7 @@ static function _VerEmpenh ()
 	local _aRetQry  := {}
 	local _nRetQry  := 0
 	local _sMsg     := ""
+	local _sEmpEnd  := ''
 
 	if _lRet
 		sc2 -> (dbsetorder (1))
@@ -325,6 +323,34 @@ static function _VerEmpenh ()
 		_oSQL:_sQuery +=   " AND SD4.D4_COD     = '" + fBuscaCpo ("SC2", 1, xfilial ("SC2") + m->d3_op, "C2_PRODUTO") + "'"
 		if _oSQL:RetQry () > 0
 			u_Help ("Encontrei empenho do item '" + fBuscaCpo ("SC2", 1, xfilial ("SC2") + m->d3_op, "C2_PRODUTO") + "' (mesmo item a ser produzido pela OP). Remova esse empenho antes de apontar a OP para evitar recursividade.",, .t.)
+			_lRet = .F.
+		endif
+	endif
+
+	if _lRet
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery += "SELECT STRING_AGG (RTRIM (D4_COD), ', ')"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD4") + " SD4 "
+		_oSQL:_sQuery += " WHERE SD4.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SD4.D4_FILIAL  = '" + xfilial ("SD4") + "'"
+		_oSQL:_sQuery +=   " AND SD4.D4_OP      = '" + M->D3_OP + "'"
+		_oSQL:_sQuery +=   " AND SD4.D4_QUANT   > 0"
+		_oSQL:_sQuery +=   " AND EXISTS (SELECT *"
+		_oSQL:_sQuery +=         " FROM " + RetSQLName ("SB1") + " SB1 "
+		_oSQL:_sQuery +=        " WHERE SB1.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=          " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+		_oSQL:_sQuery +=          " AND SB1.B1_COD     = SD4.D4_COD"
+		_oSQL:_sQuery +=          " AND SB1.B1_LOCALIZ = 'S'"
+		_oSQL:_sQuery +=          " AND ISNULL ((SELECT SUM (DC_QTDORIG)"
+		_oSQL:_sQuery +=                         " FROM " + RetSQLName ("SDC") + " SDC "
+		_oSQL:_sQuery +=                        " WHERE SDC.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=                          " AND SDC.DC_FILIAL  = SD4.D4_FILIAL"
+		_oSQL:_sQuery +=                          " AND SDC.DC_PRODUTO = SD4.D4_COD"
+		_oSQL:_sQuery +=                          " AND SDC.DC_OP      = SD4.D4_OP), 0) < SD4.D4_QTDEORI)"
+		_oSQL:Log ()
+		_sEmpEnd := alltrim (_oSQL:RetQry ())
+		if ! empty (_sEmpEnd)
+			u_Help ("O(s) seguinte(s) item(s) controlam enderecamento: " + _sEmpEnd + ". Ainda nao foi definido o endereco desse(s) item(s) nos empenhos da OP '" + alltrim (m->d3_op) + "'. Apontamento nao permitido.",, .t.)
 			_lRet = .F.
 		endif
 	endif
