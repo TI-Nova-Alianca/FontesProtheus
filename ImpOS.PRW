@@ -150,6 +150,7 @@ static Function _RW675Imp(oPrint,cDEPLANO,cATEPLANO,aMATOS,nRecOS)
 
 	Private aBenseP		:= {}
 	Private li			:= 4000 ,m_pag := 1
+	//Private lin         := 0
 	Private nINDSTQ		:= 1
 	Private cSEQWHI		:= If(lSEQSTL,"STL->TL_SEQRELA = '0  '","STL->TL_SEQUENC = 0")
 	Private cSEQSTL		:= If(lSEQSTL,"0  ",Str(0,2))
