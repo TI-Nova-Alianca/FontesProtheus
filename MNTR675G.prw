@@ -17,7 +17,7 @@
 #include "totvs.ch"
 
 User Function MNTR675G()
-    lin:= 0
+    //lin:= 0
 	oFonTPN := TFont():New("Courier New",10,10,,.T.,,,,.F.,.F.)
 	oFonTMN := TFont():New("Courier New",13,13,,.T.,,,,.F.,.F.)
 

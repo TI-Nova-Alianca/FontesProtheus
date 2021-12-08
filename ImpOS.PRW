@@ -150,7 +150,7 @@ static Function _RW675Imp(oPrint,cDEPLANO,cATEPLANO,aMATOS,nRecOS)
 
 	Private aBenseP		:= {}
 	Private li			:= 4000 ,m_pag := 1
-	//Private lin         := 0
+	Private lin         := 0
 	Private nINDSTQ		:= 1
 	Private cSEQWHI		:= If(lSEQSTL,"STL->TL_SEQRELA = '0  '","STL->TL_SEQUENC = 0")
 	Private cSEQSTL		:= If(lSEQSTL,"0  ",Str(0,2))
@@ -578,6 +578,7 @@ static Function _RW675Imp(oPrint,cDEPLANO,cATEPLANO,aMATOS,nRecOS)
 			EndIf  
 			
 			If lMNTR675G //Parâmetro {1} indica que o relatório é do MNTR675
+				lin := li
 				ExecBlock("MNTR675G",.F.,.F.,{1})
 				oPrint:EndPage()
 			EndIf
