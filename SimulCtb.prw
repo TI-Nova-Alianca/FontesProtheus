@@ -4,7 +4,9 @@
 // Descricao: Simula a execucao de lancamentos padronizados para ver como vai ficar a contabilizacao.
 //
 // Historico de alteracoes:
-// 01/12/2016 - Robert - 
+// 01/12/2016 - Robert -
+// 08/12/2021 - Robert - Ajustes contabilizacoes SD1
+//
 
 // --------------------------------------------------------------------------
 user function SimulCtb (_lAuto)
@@ -77,7 +79,10 @@ static function _FujaLouco ()
 			exit
 		endif
 		_sTabMovto = {'SD1','SD2','SD3'}[_nTabMovto]
-
+		if ! _sTabMovto $ mv_par04
+			U_Log2 ('aviso', 'Tabela ' + _sTabMovto + ' nao vai ser lida, pois nao consta nos parametros.')
+			loop
+		endif
 		u_log2 ('info', 'Iniciando tabela ' + _sTabMovto)
 
 		// Monta lista dos registros da tabela de movimentos a serem verificados
@@ -130,7 +135,9 @@ static function _FujaLouco ()
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND CT5_FILIAL = '" + xfilial ("CT5") + "'"
 		_oSQL:_sQuery +=   " AND CT5_STATUS = '1'"  // Ativo
-		
+		if ! empty (mv_par03)
+			_oSQL:_sQuery +=   " AND CT5_LANPAD in " + FormatIn (alltrim (mv_par03), '/')
+		endif
 		do case
 		case _sTabMovto == 'SD1'
 			_oSQL:_sQuery +=   " AND CT5_VLR01 LIKE '%D1$_%' ESCAPE '$'"
@@ -160,6 +167,7 @@ static function _FujaLouco ()
 			incproc ()
 			
 			// Posiciona no registro de movimento a ser contabilizado.
+			U_Log2 ('info', 'Posicionando ' + _sTabMovto + ' no recno ' + cvaltochar (_aRegMovto [_nRegMovto, 1]))
 			(_sTabMovto) -> (dbgoto (_aRegMovto [_nRegMovto, 1]))
 			
 			// Deixa arquivos adicionais posicionados para o caso do LPAD precisar.
@@ -175,6 +183,16 @@ static function _FujaLouco ()
 			// Varre todos os lpad que fazem referencia a esta tabela de movtos.
 			for _nRegCT5 = 1 to len (_aRegCT5)
 				ct5 -> (dbgoto (_aRegCT5 [_nRegCT5, 1]))
+
+				if _sTabMovto == 'SD1' .and. ct5 -> ct5_lanpad == '640' .and. ! sd1 -> d1_tipo $ 'D/B'  // Este LPAD roda apenas para devolucoes
+					//U_Log2 ('info', "LPAD '" + ct5 -> ct5_lanpad + "' aplica-se para NF de entrada somente quando utiliza cliente.")
+					loop
+				endif
+				if left (ct5 -> ct5_moedas, 1) != '1'
+					U_Log2 ('aviso', "LPAD '" + ct5 -> ct5_lanpad + "' nao configurado para gerar valor na moeda 1.")
+					loop
+				endif
+
 				for _nPar12 = 1 to iif ('MV_PAR12' $ upper (ct5 -> ct5_vlr01), 3, 1)
 					
 					// Deixa a variavel pronta para ser interpretada pela regra do lcto padrao.
@@ -281,8 +299,8 @@ Static Function _ValidPerg ()
 //	aadd (_aRegsPerg, {01, "Arquivo de movimentos         ", "N", 1,  0,  "",   "", {"SD1", 'SD2', 'SD3'}, ""})
 	aadd (_aRegsPerg, {01, "Data inicial                  ", "D", 8,  0,  "",   "", {},                    ""})
 	aadd (_aRegsPerg, {02, "Data final                    ", "D", 8,  0,  "",   "", {},                    ""})
-//	aadd (_aRegsPerg, {04, "LPADs a considerar(sep.barras)", "C", 60, 0,  "",   "", {},                    ""})
-//	aadd (_aRegsPerg, {05, "Seq.de LPAD a considerar      ", "C", 60, 0,  "",   "", {},                    ""})
+	aadd (_aRegsPerg, {03, "LPADs a considerar(bco=todos) ", "C", 60, 0,  "",   "", {},                    ""})
+	aadd (_aRegsPerg, {04, "Tabelas (SD1/SD2/...)         ", "C", 60, 0,  "",   "", {},                    ""})
 //	aadd (_aRegsPerg, {06, "D3_CF a considerar(sep.barras)", "C", 60, 0,  "",   "", {},                    ""})
 //	aadd (_aRegsPerg, {07, "TES a considerar(sep.barras)  ", "C", 60, 0,  "",   "", {},                    ""})
 

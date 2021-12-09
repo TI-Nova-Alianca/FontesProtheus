@@ -7,8 +7,9 @@
 //
 // Historico de alteracoes:
 // 17/06/2020 - Robert - Passa a validar codigo do aviso, para manter consistencia.
-// 14/02/2021 - Robert - Atrbuto ::Destinatar substituido por ::DestinAvis
+// 14/02/2021 - Robert - Atributo ::Destinatar substituido por ::DestinAvis
 //                     - Nao grava mais para GrpTI qunto tipo 'Erro'.
+// 08/12/2021 - Robert - Gera log quando tipo de aviso invalido.
 //
 
 #include "protheus.ch"
@@ -60,12 +61,16 @@ METHOD Grava () Class ClsAviso
 	local _aCodAvis  := {}
 	local _nDestAvis := 0
 
+	if ! ::Tipo $ 'E/A'
+		u_log2 ('erro', "Tipo de aviso invalido: '" + cvaltochar (::Tipo) + "'")
+	endif
+
 	if empty (::DestinAvis)  // ateh eliminar o atributo antigo
 		::DestinAvis = U_SeparaCpo (::Destinatar, ';')
 	endif
 
 	for _nDestAvis = 1 to len (::DestinAvis)
-		u_log2 (iif (::Tipo == 'A', 'info', 'erro'), '[' + GetClassName (::Self) + '.' + procname () + '] ' + iif (::Tipo == 'A', 'Aviso', 'Notificacao de erro') + ' para ' + ::DestinAvis [_nDestAvis] + ': ' + ::Texto)
+		u_log2 (iif (::Tipo == 'A', 'info', 'erro'), '[' + GetClassName (::Self) + '.' + procname () + '] ' + iif (::Tipo == 'A', 'Aviso', 'Notif.erro') + ' p/ ' + ::DestinAvis [_nDestAvis] + ': ' + ::Texto)
 	next
 
 	if empty (::CodAviso)	
@@ -87,6 +92,7 @@ METHOD Grava () Class ClsAviso
 	aadd (_aCodAvis, {'012', 'Ajustado custo negativo no B2_VATU'})
 	aadd (_aCodAvis, {'013', 'Erro atualizacao SE5 na compensacao de contas a pagar'})
 	aadd (_aCodAvis, {'014', 'Tamanho chave medicao performance excedido'})
+	aadd (_aCodAvis, {'015', 'Problemas para gerar contabilizacao'})
 
 	if ascan (_aCodAVis, {|_aVal| _aVal [1] == ::CodAviso}) == 0
 		u_log2 ('erro', "Codigo de aviso '" + ::CodAviso + "' nao cadastrado na classe " + GetClassName (::Self))
