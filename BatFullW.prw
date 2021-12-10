@@ -37,6 +37,7 @@
 // 24/09/2019 - Robert - Passa a tratar tambem as saidas do Full (para quando o AX 02 alimenta a producao)
 // 06/05/2020 - Robert - Ajuste nome variavel _sChaveEx em msg de aviso.
 // 07/08/2020 - Robert - Melhorados logs e mensagens de erro.
+// 10/12/2021 - Robert - Nao atualizava status_protheus quando nao tinha quantidade executada nem movimentada na tb_wns_entrada.
 //
 
 #Include "Protheus.ch"
@@ -100,6 +101,7 @@ static function _Entradas ()
 
 		if (_sAliasQ) -> qtde_exec == 0 .and. (_sAliasQ) -> qtde_mov == 0
 			u_log2 ('aviso', 'Chave ' + _sChaveEx + ': sem quantidade executada nem movimentada')
+			_AtuEntr ((_sAliasQ) -> entrada_id, '4')  // Atualiza a tabela do Fullsoft como 'diferenca na quantidade'
 			(_sAliasQ) -> (dbskip ())
 			loop
 		endif
