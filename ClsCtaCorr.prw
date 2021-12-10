@@ -91,7 +91,8 @@
 // 13/09/2021 - Robert - Criado tratamento para TM=32 (GLPI 10803)
 //                     - Nao gravava campos ZI_FORNECE e ZI_LOJAFOR no metodo :Grava()
 //                     - Implementados atributo :RegRelac e metodo :RegRelac()
-//
+// 07/12/2021 - Robert - Na geracao dos titulos de resgate de cotas (apos desligamento) passa a gerar E2_EMISSAO = dDataBase e nao mais na data do vcto.
+// 08/12/2021 - Robert - Validacoes para gravacao de TM=33 (GLPI 
 
 // ------------------------------------------------------------------------------------
 #include "colors.ch"
@@ -458,7 +459,9 @@ METHOD Desassoc () Class ClsCtaCorr
 						_oParc:Assoc      = ::Assoc
 						_oParc:Loja       = ::Loja
 						_oParc:TM         = '11'
-						_oParc:DtMovto    = _oAUtil:_aArray [_nParc, 1]
+					//	_oParc:DtMovto    = _oAUtil:_aArray [_nParc, 1]
+						_oParc:DtMovto    = dDataBase
+						_oParc:VctoSE2    = _oAUtil:_aArray [_nParc, 1]
 						_oParc:Doc        = ::Doc
 						_oParc:Serie      = zx5 -> zx5_10Pref
 						_oParc:MesRef     = strzero(month(_oParc:DtMovto),2)+strzero(year(_oParc:DtMovto),4)
@@ -1643,6 +1646,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 	local _dAniver   := ctod ('')
 	local _oDUtil    := NIL
 	local _sCRLF     := chr (13) + chr (10)
+	local _oSQL      := NIL
 
 //	u_logIni (GetClassName (::Self) + '.' + procname ())
 
@@ -2042,6 +2046,30 @@ METHOD PodeIncl () Class ClsCtaCorr
 		endif
 	endif
 
+	// Restituicao (cobranca) de FUNRURAL
+	if _lContinua .and. ::TM == '33'
+		if empty (::Safra)
+			::UltMsg += "Para movimento de restituicao de FUNRURAL deve ser informada a safra de referencia."
+			_lContinua = .F.
+		else
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += "SELECT COUNT (*)"
+			_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI"
+			_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND ZI_ASSOC   = '" + ::Assoc + "'"
+			_oSQL:_sQuery +=   " AND ZI_LOJASSO = '" + ::Loja + "'"
+			_oSQL:_sQuery +=   " AND ZI_TM      = '33'"
+			_oSQL:_sQuery +=   " AND ZI_SAFRA   = '" + ::Safra + "'"
+			_oSQL:Log ()
+			if U_RetSQL (_sQuery) > 0
+				::UltMsg += "Ja' existe movimento de restituicao de FUNRURAL para o associado '" + ::Assoc + '/' + ::Loja + "' referente safra '" + ::Safra + "'."
+				_lContinua = .F.
+			endif
+		endif
+	endif
+
+	// Se chegou aqui com mensagem de erro, mostra para o usuario.
 	if ! _lContinua .and. ! empty (::UltMsg)
 		u_help (::UltMsg,, .t.)
 	endif

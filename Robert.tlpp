@@ -107,6 +107,75 @@ static function _AndaLogo ()
 	u_help ('Nada definido.')
 return
 /*
+	// Simula contabilizacoes
+	cPerg := "SIMULCTB"
+	U_GravaSX1 (cPerg, '01', stod ('20211116'))  // Data inicial
+	U_GravaSX1 (cPerg, '02', stod ('20211116'))  // Data final
+	U_GravaSX1 (cPerg, '03', '')  // Quais LPAD (bco=todos)
+	U_GravaSX1 (cPerg, '04', 'SD1')  // Quais tabelas ex: SD1/SD2/SD3
+	U_SimulCTB ()
+return
+*/
+/*
+	// Testes recontabilizacao NF e titulos.
+	cPerg = "ML_LCNF"
+	_sArqLog := 'VA_LCNF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+	U_GravaSX1 (cPerg, '01', 2)  // Recontabilizar o que           [NF Entrada, NF Saida, Movto.bancario]
+	U_GravaSX1 (cPerg, '02', stod ('20211116'))  // Data inicial
+	U_GravaSX1 (cPerg, '03', stod ('20211116'))  // Data final
+	U_GravaSX1 (cPerg, '04', '508789')  // Nro (docto/NF/titulo) inicial
+	U_GravaSX1 (cPerg, '05', '508789')  // Nro (docto/NF/titulo) final
+	U_GravaSX1 (cPerg, '06', '')   // Banco (quando mov.banc)inicial
+	U_GravaSX1 (cPerg, '07', 'z')  // Banco (quando mov.banc)final
+	U_GravaSX1 (cPerg, '08', '')   // Agen. (quando mov.banc)inicial
+	U_GravaSX1 (cPerg, '09', 'z')  // Agen. (quando mov.banc)final
+	U_GravaSX1 (cPerg, '10', '')   // Conta (quando mov.banc)inicial
+	U_GravaSX1 (cPerg, '11', 'z')  // Conta (quando mov.banc)final
+	U_GravaSX1 (cPerg, '12', 1)    // Apenas CNAB (quando mov.banc) [So CNAB, Exceto CNAB, Todos]
+	U_GravaSX1 (cPerg, '13', 2)    // Simular ou Executar           [Simular, Executar]
+	u_va_lcnf (.t.)
+return
+*/
+
+U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO())),,'640005','')
+U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO())),,'640009','')
+U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO())),,'641001','')
+U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO())),,'641002','')
+U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO())),,'640011','')
+U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO())),,'640003','')
+U_LP2('VEND_NF_ORI',,,SD1->(RECNO()),'640003','')
+
+U_LP2('VEND_NF_ORI',,,SD1->(RECNO()),'640003','')
+U_LP2('VEND_NF_ORI',,,SD1->(RECNO()),'640003','')
+U_LP2('VEND_NF_ORI',,,SD1->(RECNO()),'640005','')
+U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO()),,'640005',''),,'640005','')
+U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO()),,'640009',''),,'640009','')
+U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO()),,'641001',''),,'641001','')
+U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO()),,'641002',''),,'641002','')
+U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO()),,'640011',''),,'640011','')
+U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO()),'640003',''),,'640003','')
+/*
+	// Teste geracao avisos
+	_oAviso := ClsAviso ():New ()
+	_oAviso:Tipo       = 'A'
+	_oAviso:Destinatar = 'robert'
+	_oAviso:Texto      = 'teste robert'
+	_oAviso:Origem     = procname ()
+	_oAviso:DiasDeVida = 3
+	_oAviso:CodAviso   = '010'
+	_oAviso:Grava ()
+	//
+	_oAviso := ClsAviso ():New ()
+	_oAviso:Tipo       = 'E'
+	_oAviso:Destinatar = 'robert'
+	_oAviso:Texto      = 'teste robert'
+	_oAviso:Origem     = procname ()
+	_oAviso:DiasDeVida = 3
+	_oAviso:CodAviso   = '010'
+	_oAviso:Grava ()
+return
+*/
+/*
 	// Ajusta cadastro produtos em lote
 	sb1 -> (dbsetorder (1))
 	sb5 -> (dbsetorder (1))
@@ -115,26 +184,26 @@ return
 		if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
 			u_log ('ERRO: Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
 		else
-			if left (sb1 -> b1_COD, 2) == '60' .and. sb1 -> b1_localiz != 'S'
+			if sb1 -> b1_grupo = '0400' .and. sb5 -> b5_vasisde != 'S'
 				u_log ('Verificando item', sb1 -> b1_cod, SB1 -> B1_DESC)
 
 				// Cria variaveis para uso na gravacao do evento de alteracao
 				regtomemory ("SB1", .F., .F.)
 				regtomemory ("SB5", .F., .F.)
-				m->B1_localiz = 'S'
-				//m->b5_vasisde = 'N'
+				//m->B1_localiz = 'S'
+				m->b5_vasisde = 'S'
 
 				// Grava evento de alteracao
 				_oEvento := ClsEvent():new ()
-				_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 11210 - Ativar localizacao itens de manut.', .F.)
+				_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 11150 - B5_VASISDE=S para uvas', .F.)
 
-				reclock ("SB1", .f.)
-				sb1 -> B1_localiz = m->B1_localiz
-				msunlock ()
-				//reclock ("SB5", .f.)
-				//sb5->b5_vasisde = m->b5_vasisde
+				//reclock ("SB1", .f.)
+				//sb1 -> B1_localiz = m->B1_localiz
 				//msunlock ()
-				//exit
+				reclock ("SB5", .f.)
+				sb5->b5_vasisde = m->b5_vasisde
+				msunlock ()
+			//	exit
 			endif
 		endif
 		sb1 -> (dbskip ())
@@ -479,26 +548,6 @@ return
 		endif
 	next
 return
-/*
-	// Testes recontabilizacao NF e titulos.
-	cPerg = "ML_LCNF"
-	_sArqLog := 'VA_LCNF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-	U_GravaSX1 (cPerg, '01', 3)  // Recontabilizar o que           [NF Entrada, NF Saida, Movto.bancario]
-	U_GravaSX1 (cPerg, '02', stod ('20210730'))  // Data inicial
-	U_GravaSX1 (cPerg, '03', stod ('20210730'))  // Data final
-	U_GravaSX1 (cPerg, '04', '')  // Nro (docto/NF/titulo) inicial
-	U_GravaSX1 (cPerg, '05', '')  // Nro (docto/NF/titulo) final
-	U_GravaSX1 (cPerg, '06', '')   // Banco (quando mov.banc)inicial
-	U_GravaSX1 (cPerg, '07', 'z')  // Banco (quando mov.banc)final
-	U_GravaSX1 (cPerg, '08', '')   // Agen. (quando mov.banc)inicial
-	U_GravaSX1 (cPerg, '09', 'z')  // Agen. (quando mov.banc)final
-	U_GravaSX1 (cPerg, '10', '')   // Conta (quando mov.banc)inicial
-	U_GravaSX1 (cPerg, '11', 'z')  // Conta (quando mov.banc)final
-	U_GravaSX1 (cPerg, '12', 1)    // Apenas CNAB (quando mov.banc) [So CNAB, Exceto CNAB, Todos]
-	U_GravaSX1 (cPerg, '13', 2)    // Simular ou Executar           [Simular, Executar]
-	u_va_lcnf (.t.)
-return
-*/
 /*
 	// Testes correcao monetaria associados
 	_sArqLog := 'SZI_CM2_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
@@ -907,14 +956,6 @@ RETURN
 // user function MTA650EMP ()
 // 	u_help (procname ())
 // return
-/*
-	// Simula contabilizacoes
-	cPerg := "SIMULCTB"
-	U_GravaSX1 (cPerg, '01', stod ('20210209'))
-	U_GravaSX1 (cPerg, '02', stod ('20210209'))
-	U_SimulCTB ()
-return
-*/
 
 /* conferencia 4 falecidos que ficaram de fora na vez anterior
 	// Gera pre-notas de complemento de safra 2020 apos atualizacao de tabelas de precos (glpi 9415)
@@ -2398,27 +2439,6 @@ return
 		(_sAliasQ) -> (dbskip ())
 		//exit  // teste
 	enddo
-return
-*/
-/*
-	// Teste geracao avisos
-	_oAviso := ClsAviso ():New ()
-	_oAviso:Tipo       = 'A'
-	_oAviso:Destinatar = 'robert'
-	_oAviso:Texto      = 'teste robert'
-	_oAviso:Origem     = procname ()
-	_oAviso:DiasDeVida = 3
-	_oAviso:CodAviso   = '010'
-	_oAviso:Grava ()
-	//
-	_oAviso := ClsAviso ():New ()
-	_oAviso:Tipo       = 'E'
-	_oAviso:Destinatar = 'robert'
-	_oAviso:Texto      = 'teste robert'
-	_oAviso:Origem     = procname ()
-	_oAviso:DiasDeVida = 3
-	_oAviso:CodAviso   = '010'
-	_oAviso:Grava ()
 return
 */
 /*
