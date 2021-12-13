@@ -26,7 +26,9 @@
 // 13/12/2019 - Robert  - Faltavam parametros na visualizacao e dava erro.
 // 04/01/2021 - Robert  - Criado botao adicional para exportar para planilha.
 // 11/05/2021 - Claudia - Ajustada a chamada para tabela SX3 devido a R27. GLPI: 8825
+// 13/12/2021 - Robert  - Ao ler SX3 para montar aCols, nao estava fazendo ordenacao.
 //
+
 // ------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
@@ -311,6 +313,8 @@ User Function ZX5Cpos (_sTabela)
 		_oSQL:_sQuery += " FROM SX3010 "
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_='' "
 		_oSQL:_sQuery += " AND X3_ARQUIVO='ZX5' "
+		_oSQL:_sQuery += " ORDER BY X3_ARQUIVO, X3_ORDEM"
+		_oSQL:Log ()
 		_aZX5  = aclone (_oSQL:Qry2Array ())
 
 		For _x:= 1 to Len(_aZX5)
@@ -326,4 +330,4 @@ User Function ZX5Cpos (_sTabela)
 	// Adiciona sempre o campo RECNO para posterior uso em gravacoes.
 	aadd (_aCampos, "ZZZ_RECNO")
 
-return _aCampos       
+return _aCampos

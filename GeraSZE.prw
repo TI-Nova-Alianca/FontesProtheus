@@ -188,31 +188,36 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 			GDFieldPut ("ZF_HRRECEB", left (time (), 5))
 			GDFieldPut ("ZF_IDZA8",   _aItensCar [_nItemCar, 1])  // Por enquanto ainda eh igual ao cadastro viticola
 			GDFieldPut ("ZF_OBS",     _sObs)
+			U_Log2 ('debug', 'conteudo do aCols:')
 			u_logACols ()
 
 			// Executa a validacao de linha
 			if ! U_VA_RUS2L ()
 				_sErros += 'Erro na validacao do item ' + cvaltochar (_nItemCar)
 				exit
+			else
+				U_Log2 ('debug', 'U_VA_RUS2L() retornou .T.')
 			endif
 		next
 	//	u_log (aHeader)
 	//	u_log (aCols)
 	//	u_logACols ()
 	endif
+	U_Log2 ('debug', '_sErros ateh o momento: ' + _sErros)
 
 	// Validacoes do programa original.
 	if empty (_sErros)  // Variavel private do web service
 		if U_VA_RUS2T ()
-			//u_log ('Tudo ok')
+			u_log ('U_VA_RUS2T() ok')
 			//_sCargaGer = CriaVar ("ZE_CARGA")
-			//u_log ('Tentando gravar carga')
+			u_log ('Tentando gravar carga')
 			
 			// Deixa criara variavel para retorno
 			private _RetGrvSZE := ""
 			
 			 // Gravacao pelo programa original.
 			if U_VA_RUS2G ()
+				u_log ('U_VA_RUS2G() ok')
 				_sCargaGer = _RetGrvSZE
 			else
 				_sCargaGer = ''

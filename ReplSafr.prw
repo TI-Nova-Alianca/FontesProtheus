@@ -97,10 +97,9 @@ Static Function _Opcoes ()
 
 	// Monta array de opcoes.
 	_aOpcoes = {}
-//	aadd (_aOpcoes, {.F., "Tabela de nao conformidades uvas",      "ZX5_11"})
-	aadd (_aOpcoes, {.F., "Grupos de uvas p/tabela precos",        "ZX5_13"})
-	aadd (_aOpcoes, {.F., "Faixas grau uvas viniferas espaldeira", "ZX5_17"})
-	aadd (_aOpcoes, {.F., "Faixas grau uvas viniferas latadas",    "ZX5_52"})
+	aadd (_aOpcoes, {.F., "Grupos de uvas p/tabela precos", "ZX5_13"})
+	aadd (_aOpcoes, {.F., "Faixas grau uvas espaldeira",    "ZX5_17"})
+	aadd (_aOpcoes, {.F., "Faixas grau uvas latadas",       "ZX5_52"})
 
 	// Pre-seleciona opcoes cfe. conteudo anterior
 	for _nOpcao = 1 to len (_aOpcoes)

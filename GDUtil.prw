@@ -34,7 +34,9 @@
 // 26/04/2013 - Robert  - Funcao GeraCols parra a receber filtro adicional como parametro.
 // 05/05/2013 - Robert  - Criado tratamento para campo ZZZ_RECNO.
 // 13/05/2021 - Claudia - Ajuste da tabela SX3 devido a R27. GLPI: 8825
+// 13/12/2021 - Robert  - Ao ler SX3 para montar aCols, nao estava fazendo ordenacao.
 //
+
 // ------------------------------------------------------------------------------------------------------------------
 //
 // Gera aHeader do arquivo especificado.
@@ -87,6 +89,8 @@ user function GeraHead (_sAlias, _lNew, _aCposNao, _aCposSim, _lSohEstes)
 			_oSQL:_sQuery += " FROM SX3010"
 			_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 			_oSQL:_sQuery += " AND X3_CAMPO     = '" + _aCposSim [_nCampo] + "'"
+			_oSQL:_sQuery += " ORDER BY X3_ARQUIVO, X3_ORDEM"
+			_oSQL:Log ()
 			_aSX3  = aclone (_oSQL:Qry2Array ())	
 
 			for _x:= 1 to Len(_aSX3)
@@ -138,6 +142,8 @@ user function GeraHead (_sAlias, _lNew, _aCposNao, _aCposSim, _lSohEstes)
 		_oSQL:_sQuery += " FROM SX3010"
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 		_oSQL:_sQuery += " AND X3_ARQUIVO   = '" + _sAlias + "'"
+		_oSQL:_sQuery += " ORDER BY X3_ARQUIVO, X3_ORDEM"
+		_oSQL:Log ()
 		_aSX3  = aclone (_oSQL:Qry2Array ())	
 
 		for _x:= 1 to Len(_aSX3)
