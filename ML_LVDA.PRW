@@ -21,9 +21,9 @@
 // 18/03/2010 - Robert  - TES 603 (venda sucata) retorna valor zerado.
 // 20/11/2020 - Claudia - Incluida validações para notas do e-commerce 
 // 05/04/2021 - Claudia - Acrescentado valor de frete para LPAD 610 000 e 610 001. GLPI: 9753
-// 02/12/2021 - Claudia - Incluida validação para produtos 7209/7210. GLPI:
+// 02/12/2021 - Claudia - Incluida validação para produtos 7209/7210. GLPI: 11136
 //
-// -------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
 User Function ML_LVDA(_nEcomm)
