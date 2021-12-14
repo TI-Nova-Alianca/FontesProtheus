@@ -59,6 +59,7 @@
 // 06/01/2021 - Robert  - Desabilitada chamada do U_FrtNFe quando estao sendo usadas rotinas de safra.
 // 03/02/2021 - Robert  - Para saber se estava gerando contranota de safra, testava rotina U_VA_RUS. Passa a testar U_VA_RUSN.
 // 08/10/2021 - Robert  - Desabilitados alguns logs desnecessarios.
+// 13/12/2021 - Robert  - Pequena melhoria msg. alter.vlr.unit em relacao ao pedido de compra.
 //
 
 // -----------------------------------------------------------------------------------------------------------------------
@@ -247,7 +248,7 @@ static function _ValParc ()
 					endif
 					//Permite ajustar diferenca de valor unitário
 					if ABS ((GDFIELDGET('D1_VUNIT',_nLinha) - SC7->C7_PRECO) * 100 / SC7->C7_PRECO) > 5
-						_sMsg = "Alteração de valor unitario acima do permitido."
+						_sMsg = "Alteração de valor unitario (em relacao ao pedido de compra) acima do percentual permitido."
 						exit
 					endif
 				endif
