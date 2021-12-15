@@ -18,6 +18,7 @@
 // 29/03/2021 - Claudia - Incluida filial 13. GLPI: 9710
 // 15/10/2021 - Claudia - Incluido totalizadores de filials. GLPI: 11055
 // 04/11/2021 - Claudia - Ajustado para importar somente venda de link cielo. GLPI 11145
+// 13/12/2021 - Claudia - Incluido totalizador conforme solicitado. GLPI: 11345
 //
 // --------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -384,8 +385,7 @@ Static Function Buscabanco(_sEmpresa,_sTipo)
 					_sRet := '0873'
 				Case _sTipo == 'C' // conta
 					_sRet := '0619710901'
-			EndCase
-			
+			EndCase	
 	EndCase
 	
 Return _sRet
@@ -543,9 +543,6 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA13", 	"" ,"Cre/Deb"		,	    					,15,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA14", 	"" ,"Sta.Titulo"	,	    					,20,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 
-	//TRFunction():New(oSection1:Cell("COLUNA5")	,,"SUM"	, , "Total parcela ", "@E 999,999,999.99", NIL, .F., .T.)
-	//TRFunction():New(oSection1:Cell("COLUNA7")	,,"SUM"	, , "Total taxa "   , "@E 999,999,999.99", NIL, .F., .T.)
-	
 Return(oReport)
 //
 // -------------------------------------------------------------------------
@@ -557,18 +554,6 @@ Static Function PrintReport(oReport)
 	Local _nTotTax   := 0
 	Local _nTotDVenda:= 0
 	Local _nTotDTax  := 0
-	// Local _nTot01V   := 0
-	// Local _nTot01T   := 0
-	// Local _nTot10V   := 0
-	// Local _nTot10T   := 0
-	// Local _nTot13V   := 0
-	// Local _nTot13T   := 0
-	// Local _nTotD01V  := 0
-	// Local _nTotD01T  := 0
-	// Local _nTotD10V  := 0
-	// Local _nTotD10T  := 0
-	// Local _nTotD13V  := 0
-	// Local _nTotD13T  := 0
 	Local _sStaTitulo:= "-"
 
 	oSection1:Init()
@@ -592,13 +577,9 @@ Static Function PrintReport(oReport)
 		_oSQL:_sQuery += " FROM " + RetSQLName ("SE1") + " AS SE1 "
 		_oSQL:_sQuery += " WHERE SE1.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery += " AND SE1.E1_FILIAL  = '" + _aRel[i, 1] + "'"
-		//If alltrim(_aRel[i, 1]) <> '01'
-		//	_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aRel[i,8] + "'" // Loja salva cod.aut no campo NSU
-		//	_oSQL:_sQuery += " AND SE1.E1_EMISSAO = '" + DTOS(_aRel[i,6]) + "'"
-		//Else
 		_oSQL:_sQuery += " AND SE1.E1_CARTAUT = '" + _aRel[i,8] + "'"
 		_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aRel[i,9] + "'"
-		//EndIf
+
 		If alltrim(_sParc) <> ''
 			_oSQL:_sQuery += " AND SE1.E1_PARCELA   = '" + _sParc + "'"
 		EndIf
@@ -661,36 +642,12 @@ Static Function PrintReport(oReport)
 		If alltrim(_aRel[i,12]) == 'I' .and. _aRel[i,13] == '+'
 			_nTotVenda += _aRel[i,3]
 			_nTotTax   += _aRel[i,5] 
-			// Do Case
-			// 	Case alltrim(_aRel[i,1]) == '01'
-			// 		_nTot01V += _aRel[i,3]
-			// 		_nTot01T += _aRel[i,5]
 
-			// 	// Case alltrim(_aRel[i,1]) == '10'
-			// 	// 	_nTot10V += _aRel[i,3]
-			// 	// 	_nTot10T += _aRel[i,5]
-
-			// 	// Case alltrim(_aRel[i,1]) == '13'
-			// 	// 	_nTot13V += _aRel[i,3]
-			// 	// 	_nTot13T += _aRel[i,5]
-			// EndCase
 		Else
 			If alltrim(_aRel[i,12]) == 'D' .and. _aRel[i,13] == '+'
 				_nTotDVenda += _aRel[i,3]
 				_nTotDTax   += _aRel[i,5] 
-				// Do Case
-				// 	Case alltrim(_aRel[i,1]) == '01'
-				// 		_nTotD01V += _aRel[i,3]
-				// 		_nTotD01T += _aRel[i,5]
-
-				// 	Case alltrim(_aRel[i,1]) == '10'
-				// 		_nTotD10V += _aRel[i,3]
-				// 		_nTotD10T += _aRel[i,5]
-
-				// 	Case alltrim(_aRel[i,1]) == '13'
-				// 		_nTotD13V += _aRel[i,3]
-				// 		_nTotD13T += _aRel[i,5]
-				// EndCase
+	
 			EndIf
 		EndIf
 
@@ -718,61 +675,19 @@ Static Function PrintReport(oReport)
 	oReport:SkipLine(1)
 	oReport:ThinLine()
 
-	// _nLinha:= _PulaFolha(_nLinha)
-	// oReport:PrintText("TOTAL FILIAL 01" ,, 100)
-	// _nLinha:= _PulaFolha(_nLinha)
-	// oReport:PrintText("Valor da Parcela:" ,, 100)
-	// _vTPar := _nTot01V - _nTotD01V 
-	// oReport:PrintText(PADL('R$' + Transform(_vTPar, "@E 999,999,999.99"),20,' '),, 900)
-	// oReport:PrintText("Valor da Taxa:" ,, 100)
-	// _vTTax := _nTot01T - _nTotD01T
-	// oReport:PrintText(PADL('R$' + Transform(_vTTax, "@E 999,999,999.99"),20,' '),, 900)
-	// oReport:PrintText("Valor Total(Parcela - Taxa):" ,, 100)
-	// oReport:PrintText(PADL('R$' + Transform(_vTPar - _vTTax, "@E 999,999,999.99"),20,' '),, 900)
-	// oReport:SkipLine(1)
-	// oReport:ThinLine()
-
-	// _nLinha:= _PulaFolha(_nLinha)
-	// oReport:PrintText("TOTAL FILIAL 10" ,, 100)
-	// _nLinha:= _PulaFolha(_nLinha)
-	// oReport:PrintText("Valor da Parcela:" ,, 100)
-	// _vTPar := _nTot10V - _nTotD10V 
-	// oReport:PrintText(PADL('R$' + Transform(_vTPar, "@E 999,999,999.99"),20,' '),, 900)
-	// oReport:PrintText("Valor da Taxa:" ,, 100)
-	// _vTTax := _nTot10T - _nTotD10T
-	// oReport:PrintText(PADL('R$' + Transform(_vTTax, "@E 999,999,999.99"),20,' '),, 900)
-	// oReport:PrintText("Valor Total(Parcela - Taxa):" ,, 100)
-	// oReport:PrintText(PADL('R$' + Transform(_vTPar - _vTTax, "@E 999,999,999.99"),20,' '),, 900)
-	// oReport:SkipLine(1)
-	// oReport:ThinLine()
-
-	// _nLinha:= _PulaFolha(_nLinha)
-	// oReport:PrintText("TOTAL FILIAL 13" ,, 100)
-	// _nLinha:= _PulaFolha(_nLinha)
-	// oReport:PrintText("Valor da Parcela:" ,, 100)
-	// _vTPar := _nTot13V - _nTotD13V 
-	// oReport:PrintText(PADL('R$' + Transform(_vTPar, "@E 999,999,999.99"),20,' '),, 900)
-	// oReport:PrintText("Valor da Taxa:" ,, 100)
-	// _vTTax := _nTot13T - _nTotD13T
-	// oReport:PrintText(PADL('R$' + Transform(_vTTax, "@E 999,999,999.99"),20,' '),, 900)
-	// oReport:PrintText("Valor Total(Parcela - Taxa):" ,, 100)
-	// oReport:PrintText(PADL('R$' + Transform(_vTPar - _vTTax, "@E 999,999,999.99"),20,' '),, 900)
-	// oReport:SkipLine(1)
-	// oReport:ThinLine()
-
-	// _nLinha:= _PulaFolha(_nLinha)
-	// oReport:PrintText("TOTAL GERAL" ,, 100)
-	// _nLinha:= _PulaFolha(_nLinha)
-	// oReport:PrintText("Valor da Parcela:" ,, 100)
-	// _vTPar := _nTotVenda - _nTotDVenda 
-	// oReport:PrintText(PADL('R$' + Transform(_vTPar, "@E 999,999,999.99"),20,' '),, 900)
-	// oReport:PrintText("Valor da Taxa:" ,, 100)
-	// _vTTax := _nTotTax - _nTotDTax
-	// oReport:PrintText(PADL('R$' + Transform(_vTTax, "@E 999,999,999.99"),20,' '),, 900)
-	// oReport:PrintText("Valor Total(Parcela - Taxa):" ,, 100)
-	// oReport:PrintText(PADL('R$' + Transform(_vTPar - _vTTax, "@E 999,999,999.99"),20,' '),, 900)
-	// oReport:SkipLine(1)
-	// oReport:ThinLine()
+	_nLinha:= _PulaFolha(_nLinha)
+	oReport:PrintText("TOTAL GERAL" ,, 100)
+	_nLinha:= _PulaFolha(_nLinha)
+	oReport:PrintText("Valor da Parcela:" ,, 100)
+	_vTPar := _nTotVenda - _nTotDVenda 
+	oReport:PrintText(PADL('R$' + Transform(_vTPar, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:PrintText("Valor da Taxa:" ,, 100)
+	_vTTax := _nTotTax - _nTotDTax
+	oReport:PrintText(PADL('R$' + Transform(_vTTax, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:PrintText("Valor Total(Parcela - Taxa):" ,, 100)
+	oReport:PrintText(PADL('R$' + Transform(_vTPar - _vTTax, "@E 999,999,999.99"),20,' '),, 900)
+	oReport:SkipLine(1)
+	oReport:ThinLine()
 
 	oSection1:Finish()
 Return
