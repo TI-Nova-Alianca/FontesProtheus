@@ -4,6 +4,7 @@
 // Descricao: Relatorio Financeiro de vendas
 //
 // Historico de alteracoes:
+// 14/12/2021 - Claudia - Incluida colunas CEP e BAIRRO.
 //
 // ---------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -28,7 +29,7 @@ Static Function ReportDef()
 	oReport := TReport():New("VA_FIN","Relatorio Financeiro",cPerg,{|oReport| PrintReport(oReport)},"Relatorio Financeiro")
 	
 	oReport:SetTotalInLine(.F.)
-	oReport:SetPortrait()
+	oReport:SetLandscape()
 	oReport:ShowHeader()
 	
 	oSection1 := TRSection():New(oReport,,{}, , , , , ,.T.,.F.,.F.) 
@@ -40,6 +41,8 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA5", 	"" ,"Endereço"	    ,	    				    ,45,/*lPixel*/,{||	},"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA6", 	"" ,"Municipio"	    ,	    				    ,20,/*lPixel*/,{||	},"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA7", 	"" ,"UF"	        ,	    				    ,05,/*lPixel*/,{||	},"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA7_1", "" ,"CEP"	        ,	    				    ,15,/*lPixel*/,{||	},"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA7_2", "" ,"Bairro"	    ,	    				    ,30,/*lPixel*/,{||	},"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA8", 	"" ,"Banco"	        ,	    				    ,20,/*lPixel*/,{||	},"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA9", 	"" ,"Emissão"	    ,	    				    ,16,/*lPixel*/,{||	},"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA10", 	"" ,"Vencimento"	,	    				    ,16,/*lPixel*/,{||	},"LEFT",,,,,,,,.F.)
@@ -73,6 +76,8 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "    ,SF2.F2_EMISSAO AS EMISSAO"
     _oSQL:_sQuery += "    ,SE1.E1_VENCTO AS VENCIMENTO"
     _oSQL:_sQuery += "    ,SE1.E1_VALOR AS VALOR"
+    _oSQL:_sQuery += "    ,SA1.A1_CEP AS CEP"
+    _oSQL:_sQuery += "    ,SA1.A1_BAIRRO AS BAIRRO"
     _oSQL:_sQuery += " FROM  " + RetSQLName ("SE1") + " SE1 "
     _oSQL:_sQuery += " INNER JOIN  " + RetSQLName ("SF2") + " SF2 "
     _oSQL:_sQuery += " 	ON (SF2.D_E_L_E_T_ = ''"
@@ -121,6 +126,8 @@ Static Function PrintReport(oReport)
         oSection1:Cell("COLUNA5")	:SetBlock   ({|| TRA->ENDERECO          })
         oSection1:Cell("COLUNA6")	:SetBlock   ({|| TRA->MUNICIPIO 	    })
         oSection1:Cell("COLUNA7")	:SetBlock   ({|| TRA->UF 	            })
+        oSection1:Cell("COLUNA7_1")	:SetBlock   ({|| TRA->CEP 	            })
+        oSection1:Cell("COLUNA7_2")	:SetBlock   ({|| TRA->BAIRRO 	        })
         oSection1:Cell("COLUNA8")	:SetBlock   ({|| _sBanco  	            })
         oSection1:Cell("COLUNA9")	:SetBlock   ({|| STOD(TRA->EMISSAO)     })
         oSection1:Cell("COLUNA10")	:SetBlock   ({|| STOD(TRA->VENCIMENTO)  })
