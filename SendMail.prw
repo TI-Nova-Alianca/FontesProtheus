@@ -36,7 +36,9 @@
 // 22/06/2020 - Robert  - Passa a usar a funcao U_LOG2 em vez da U_LOG.
 // 16/07/2021 - Claudia - Retirado trecho de "texto recebido tem quebras de linha" 
 //                        devido a má formação da tabela no html
+// 14/12/2021 - Robert  - Verifica se eh ambiente R33 (testes release) e pede confirmacao para envio do e-mail.
 //
+
 // ----------------------------------------------------------------------------------------------
 User Function SendMail (_sTo, _sSubject, _sBody, _aArq, _sCtaMail, _sGrupoZZU)
 	local _lContinua := .T.
@@ -60,7 +62,7 @@ User Function SendMail (_sTo, _sSubject, _sBody, _aArq, _sCtaMail, _sGrupoZZU)
 		endif
 	endif
 
-	if _lContinua .and. ("TESTE" $ upper (GetEnvServer()) .or. "23" $ upper (GetEnvServer()))
+	if _lContinua .and. ("TESTE" $ upper (GetEnvServer()) .or. "R33" $ upper (GetEnvServer()))
 		if type ("oMainWnd") == "O"  // Se tem interface com o usuario
 			_lContinua = U_msgnoyes ("Ambiente de TESTE. Confirme se deseja enviar a mensagem abaixo:" + chr (13) + chr (10) + chr (13) + chr (10) + alltrim (_sSubject))
 		else

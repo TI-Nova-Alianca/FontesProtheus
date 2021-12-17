@@ -648,6 +648,8 @@ user function VA_Gat (_sParCpo, _sParSeq)
 				_xRet = U_ClUva20 (GDFieldGet ("ZF_PRODUTO"), val (m->zf_grau), GDFieldGet ("ZF_CONDUC"), 0, 0, 0, 0, 0) [1]
 			elseif m->ze_safra == '2021'
 				_xRet = U_ClUva21 (GDFieldGet ("ZF_PRODUTO"), val (m->zf_grau), GDFieldGet ("ZF_CONDUC"), 0, 0, 0, 0, 0) [1]
+			elseif m->ze_safra == '2022'
+				_xRet = U_ClUva22 (GDFieldGet ("ZF_PRODUTO"), val (m->zf_grau), GDFieldGet ("ZF_CONDUC"), 0, 0, 0, 0, 0) [1]
 			else
 				u_help ("Sem tratamento para gerar o campo '" + _sCDomin + "' para esta safra.",, .T.)
 			endif

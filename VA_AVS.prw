@@ -11,6 +11,7 @@
 // 15/06/2016 - Robert - Passa a buscar dados direto do SE2 + SZI.
 //                     - Passa a usar browse com marcacao para selacao do usuario.
 // 22/10/2021 - Robert - Passa a permitir filtro adicional por nome do fornecedor (GLPI 11084)
+// 15/12/2021 - Robert - Busca A2_NOME em vez do E2_NOMFOR.
 //
 
 // --------------------------------------------------------------------------
@@ -70,7 +71,7 @@ Static Function _Gera()
 
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT SE2.R_E_C_N_O_, '' AS OK, E2_NUM, E2_PREFIXO, E2_PARCELA, E2_FORNECE, E2_LOJA, E2_NOMFOR, E2_VALOR, E2_SALDO, E2_EMISSAO, E2_VENCTO, "
+	_oSQL:_sQuery += " SELECT SE2.R_E_C_N_O_, '' AS OK, E2_NUM, E2_PREFIXO, E2_PARCELA, E2_FORNECE, E2_LOJA, A2_NOME, E2_VALOR, E2_SALDO, E2_EMISSAO, E2_VENCTO, "
 	_oSQL:_sQuery +=        " A2_BANCO, A2_AGENCIA, A2_NUMCON"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2, "
 	_oSQL:_sQuery +=              RetSQLName ("SA2") + " SA2 "
@@ -93,7 +94,7 @@ Static Function _Gera()
 	_oSQL:_sQuery +=                   " AND SZI.ZI_SERIE   = SE2.E2_PREFIXO"
 	_oSQL:_sQuery +=                   " AND SZI.ZI_PARCELA = SE2.E2_PARCELA"
 	_oSQL:_sQuery +=                   " AND SZI.ZI_TM      = '13')"
-	_oSQL:_sQuery +=  " ORDER BY E2_NOMFOR, E2_NUM"
+	_oSQL:_sQuery +=  " ORDER BY A2_NOME, E2_NUM"
 	_oSQL:Log ()
 	_aTit := _oSQL:Qry2Array ()
 	if len (_aTit) == 0
