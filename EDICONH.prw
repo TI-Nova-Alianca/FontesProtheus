@@ -818,7 +818,7 @@ Static Function _Importa(_xArq1, _XnomTransp1)
 	                  RecLock("SF1",.F.)
 	                  	SF1->F1_VAFLAG   := 'S' // Flag Importacao
 	                  MsUnLock()
-	                  
+                   
 	              Endif
 	        End Transaction
 		else

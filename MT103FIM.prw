@@ -16,11 +16,19 @@
 // 25/08/2021 - Robert  - Nova versao de ciencia e manifesto da TRS (GLPI 10822)
 // 30/08/2021 - Robert  - Passa a fazer manifesto somente se o usuario confirmou a tela.
 // 23/11/2021 - Claudia - Gerar manifesto apenas para SPED. GLPI: 11183
+// 14/12/2021 - Robert  - Nao grava o campo FT_ITEM quando executa MATA103 via rotina automatica (GLPI 11360)
 //
+
 // ------------------------------------------------------------------------------------
 User Function MT103FIM()
 	local _aAreaAnt := U_ML_SRArea ()
 	Local _lConf    := PARAMIXB[2]==1
+
+	// Ajusta tabela SFT quando necessario.
+	if alltrim (cEspecie) == 'CTE' .and. _lConf  // Usuario confirmou a tela
+		U_Log2 ('debug', 'vou ajustar sft')
+		_AjSFT ()
+	endif
 
 	if alltrim (cEspecie) == 'SPED' .and. _lConf  // Usuario confirmou a tela
 		//Realiza ciência
@@ -31,3 +39,27 @@ User Function MT103FIM()
 
 	U_ML_SRArea (_aAreaAnt)
 Return
+
+
+// ------------------------------------------------------------------------------------
+static function _AjSFT ()
+	local _oSQL      := NIL
+
+	// Rotina automatica nao grava o FT_ITEM = D1_ITEM
+	// Problema parece bem antigo, cfe. comentario no ZZX.PRW: "erro no produto - porem o suporte nao reproduziu e por isso nao vai corrigir"
+	// Testado na release33 (14/12/2021) e permanece com problema.
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "UPDATE " + RetSQLName ("SFT")
+	_oSQL:_sQuery +=   " SET FT_ITEM = '0001'"
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=   " AND FT_FILIAL  = '" + xfilial ("SFT")   + "'"
+	_oSQL:_sQuery +=   " AND FT_TIPOMOV = 'E'"
+	_oSQL:_sQuery +=   " AND FT_NFISCAL = '" + sf1 -> f1_doc     + "'"
+	_oSQL:_sQuery +=   " AND FT_SERIE   = '" + sf1 -> f1_serie   + "'"
+	_oSQL:_sQuery +=   " AND FT_CLIEFOR = '" + sf1 -> f1_fornece + "'"
+	_oSQL:_sQuery +=   " AND FT_LOJA    = '" + sf1 -> f1_loja    + "'"
+	_oSQL:_sQuery +=   " AND FT_ESPECIE = '" + sf1 -> f1_especie + "'"
+	_oSQL:_sQuery +=   " AND FT_ITEM    = ''"
+	_oSQL:Log ()
+	_oSQL:Exec ()
+return

@@ -2,11 +2,20 @@
 // Autor......: Catia Cardoso
 // Data.......: 08/02/2016
 // Descricao..: P.E. para validar pasta duplicatas na entrada da nota fiscal.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #Validar dados da pasta duplicatas na entrada da nota fiscal.
+// #PalavasChave      #faturas #validar #nf_entrada
+// #TabelasPrincipais #SF1
+// #Modulos           #EST #COM
+
 // Historico de alteracoes:
 // 02/10/2019 - Andre  - Adicionado validação para datas e valores das notas de entrada que possuem pedidos.
 // 04/10/2019 - Andre  - Permitido alterar datas das parcelas em 2 dias para mais ou menos.
+// 14/12/2021 - Robert - Novos parametros funcao U_Help(); tags para catalogo de customizacoes.
 //
+
 // --------------------------------------------------------------------------
 User Function MT103FIN()
 	local _aAreaAnt := U_ML_SRArea ()
@@ -29,7 +38,7 @@ User Function MT103FIN()
    	Next
    	
    	if _werro = 1 
-   		u_help ("Data de Vencimento Inválida. Vencimento deve ser no minimo data atual + 1")
+   		u_help ("Data de Vencimento Inválida. Vencimento deve ser no minimo data atual + 1",, .t.)
 		_lretOK      := .F.
 	endif
 	
@@ -50,15 +59,15 @@ User Function MT103FIN()
 	   _aVctos = aclone (Condicao (_wValor, ccondicao,, ddemissao ))
 				
 	   if  ! Len(_aDupCols) = Len(_aVctos)
-	   		u_help('Quantidade de parcelas diferente da condição de pagamento')
+	   		u_help('Quantidade de parcelas diferente da condição de pagamento',, .t.)
 		 	_lretOK := .F.
 	   else
-	   u_log(_aDupCols)
-	   u_log(_aVctos)
+//	   u_log(_aDupCols)
+//	   u_log(_aVctos)
 	   		For _wx := 1 to Len(_aDupCols)
 	   			//if ! _aDupCols[_wx][2] = _aVctos[_wx][1]
 				if _aDupCols[_wx][2] < Daysub(_aVctos[_wx][1],3) .or. _aDupCols[_wx][2] > Daysum(_aVctos[_wx][1],3)  
-				 	u_help('Não se deve alterar datas de vencimento com variação maior do que 3 dias para notas com pedido.')
+				 	u_help('Não se deve alterar datas de vencimento com variação maior do que 3 dias para notas com pedido.',, .t.)
 				 	_lretOK := .F.
 				 	EXIT
 				endif
