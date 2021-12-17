@@ -76,7 +76,9 @@
 // 30/09/2021 - Claudia - Ajustes nos campos da rotina "BuscaPedidosBloqueados". GLPI: 7792
 // 06/10/2021 - Claudia - Incluida a rotina _EnvMargem. GLPI: 7792
 // 11/10/2021 - Claudia - Criada nova tag <DescBloqueio> na rotina GravaBloqueioGerencial. GLPI: 7792
+// 16/12/2021 - Robert  - Novo formato de retorno da funcao U_GeraSZE()
 //
+
 // --------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
 #INCLUDE "PROTHEUS.CH"
@@ -242,8 +244,10 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	// Volta log para o nome original, apenas para 'fechar' a tag de inicio de execucao
 	_sArqLog = _sArqLgOld
 	u_log2 ('debug', 'Retornando web service com o seguinte resultado: ' + ::Retorno:Resultado)
+	u_log2 ('debug', ::Retorno:Mensagens)
 
-	// Encerra ambiente. Ficou um pouco mais lento, mas resolveu problema que estava dando de, a cada execucao, trazer um cFilAnt diferente. Robert, 09/01/2020.
+	// Encerra ambiente. Ficou um pouco mais lento, mas resolveu problema que estava dando de,
+	// a cada execucao, trazer um cFilAnt diferente. Robert, 09/01/2020.
 	// dica em: https://centraldeatendimento.totvs.com/hc/pt-br/articles/360027855031-MP-ADVPL-FINAL-GERA-EXCE%C3%87%C3%83O
 	RPCClearEnv ()
 
@@ -1395,7 +1399,10 @@ static function _IncCarSaf ()
 		if len (_aItensCar) == 0
 			_sErros += "Nenhum item informado para gerar carga."
 		else
-			_sMsgRetWS = U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sImpTkCar)
+			// Estamos tentando implementar um retorno em XML com novas tags.
+			//_sMsgRetWS = U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sImpTkCar)
+			
+			U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sImpTkCar)
 		endif
 	endif
 

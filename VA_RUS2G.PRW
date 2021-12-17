@@ -8,6 +8,7 @@
 // 20/02/2020 - Robert - Desabilitada gravacao do talhao na descricao do ZZA.
 // 21/02/2020 - Robert - Alteracoes na tabela ZZA passam a ser feitas em rotina externa (U_AtuZZA).
 // 16/02/2021 - Robert - Implementada simulacao de geracao de contranota (GLPI 9420)
+// 16/12/2021 - Robert  - Novo formato de retorno da funcao U_GeraSZE()
 //
 
 #include "totvs.ch"
@@ -57,9 +58,13 @@ user Function VA_RUS2G (_nOpc)
 		endif
 
 		// Variavel para retorno do numero da carga para a funcao de geracao automatica.
-		if type ("_RetGrvSZE") == 'C'
-			_RetGrvSZE = sze -> ze_carga
-			u_log2 ('debug', '_RetGrvSZE: ' + cvaltochar (_RetGrvSZE))
+//		if type ("_RetGrvSZE") == 'C'
+//			_RetGrvSZE = sze -> ze_carga
+//			u_log2 ('debug', '_RetGrvSZE: ' + cvaltochar (_RetGrvSZE))
+//		endif
+		if type ("_sRetSZECG") == 'C'
+			_sRetSZECG = sze -> ze_carga
+			u_log2 ('debug', '[' + procname () + '] _sRetSZECG: ' + cvaltochar (_sRetSZECG))
 		endif
 	
 		msunlock ("SZE")

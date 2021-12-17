@@ -97,6 +97,7 @@ User Function va_rusN (_lSimulNF)
 //	private _oAssoc  := NIL
 	local _oAssocN   := NIL
 	local _nRetMem   := 0
+	local _lSemPadVi := .F.
 	private _aParPgSaf := {}  // Parcelas pre calculadas. Deixar PRIVATE para ser lida pelo ponto de entrada MTCOLSE2().
 
 	u_Log2 ('info', 'Iniciando ' + procname ())
@@ -436,6 +437,11 @@ User Function va_rusN (_lSimulNF)
 				_sSivibe += iif (empty (_sSivibe), '', ',') + alltrim (szf -> zf_sivibe)
 			endif
 
+			// Verifica se vai ter necessidade de mensagem de 'uva sem padrao para vinificacao'.
+			if (sb1 -> b1_vacor $ 'B/R' .and. val (szf -> zf_grau) < GetMv ('VA_GMUVAB')) .or. (sb1 -> b1_vacor == 'T' .and. val (szf -> zf_grau) < GetMv ('VA_GMUVAT'))
+				_lSemPadVi = .T.
+			endif
+
 			// Lista cada nao conformidade uma unica vez, independente de quantos itens a tenham
 			for _nNaoConf = 1 to 4  // Aumentar aqui se forem criados novos campos.
 				_sDescNC = alltrim (U_RetZX5 ('11', sze -> ze_safra + szf -> &('zf_nconf' + strzero (_nNaoConf, 2)), 'ZX5_11DESC'))
@@ -522,7 +528,6 @@ User Function va_rusN (_lSimulNF)
 		_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Peso tara:" + cvaltochar (sze -> ze_pesotar) + 'Kg'
 
 
-	//	_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Cad.vitic:" + _sVitic
 		if empty (_sSivibe)  // Se tiver codigo SIVIBE, eu prefiro.
 			_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Cad.vitic:" + _sVitic
 		else
@@ -535,6 +540,11 @@ User Function va_rusN (_lSimulNF)
 		endif
 		if ! empty (sze -> ze_obs)
 			_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Obs:" + alltrim (sze -> ze_obs)
+		endif
+
+		// Verifica se tem uvas fora de padrao para vinificacao
+		if _lSemPadVi
+			_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Carga contem uvas sem padrao para vinificacao, com preco a definir."
 		endif
 
 		// Verifica se ha cargas aglutinadas

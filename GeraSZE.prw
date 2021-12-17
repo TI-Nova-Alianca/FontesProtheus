@@ -8,17 +8,21 @@
 // 26/02/2020 - Robert - Campo ze_senhade passa a ser do tipo caracter.
 // 26/01/2021 - Robert - Testes iniciais impressora ticket F07
 // 05/02/2021 - Robert - Se receber serie/NF produtor zeradas, grava vazio.
+// 16/12/2021 - Robert - Novo formato de retorno (em XML); Passa a considerar impr.ticket cfe.solicitado pelo prog.inspecao.
 //
 
 #include "VA_INCLU.prw"
 
 // --------------------------------------------------------------------------
 user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sIdImpr)
-	local _sCargaGer := ''
-	local _nItemCar  := 0
-	local _nLock     := 0
-	local _oSQL      := NIL
-	local _aEspum := {}
+	local _sCargaGer  := ''
+	local _nItemCar   := 0
+	local _nLock      := 0
+	local _oSQL       := NIL
+	local _aEspum     := {}
+	private _sRetSZECG := ''  // Numero da carga gerada. Para compor, depois, o XML de retorno. Deixar private para ser vista por demais rotinas.
+	private _sRetSZEAv := ''  // Avisos para usuario.    Para compor, depois, o XML de retorno. Deixar private para ser vista por demais rotinas.
+	private _sRetSZEOb := ''  // Observacoes em geral.   Para compor, depois, o XML de retorno. Deixar private para ser vista por demais rotinas.
 	u_log2 ('info', 'Iniciando ' + procname ())
 
 	// Este programa foi criado para ser chamado via web service, que jah deve
@@ -84,7 +88,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		private _zx509orga    := U_RetZX5 ("09", _sSafra + _sBalanca, 'ZX5_09ORGA')
 	endif
 
-
+/*
 	// Define impressora de ticket.
 	do case
 	case _sBalanca == 'LB'
@@ -101,6 +105,21 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 	u_log2 ('debug', '_sPortTick:' + _sPortTick)
 	if ! empty (_sPortTick)
 		_lImpTick = .T.
+	endif
+*/
+	u_log2 ('debug', '_sIdImpr: ' + _sIdImpr)
+	if empty (_sIdImpr)
+		_sRetSZEAv += 'Impressora de ticket nao foi informada. Nao vou solicitar impressao do ticket.'
+		U_Log2 ('aviso', _sRetSZEAv)
+	else
+		_sPortTick = U_RetZX5 ('49', _sIdImpr, 'ZX5_49CAM')
+		u_log2 ('debug', '_sPortTick: ' + _sPortTick)
+		if empty (_sPortTick)
+			_sRetSZEAv += "ID de impressora '" + _sIdImpr + "' nao retornou nenhum 'caminho' ou porta para envio do ticket. Nao vou solicitar impressao do ticket."
+			U_Log2 ('erro', _sRetSZEAv)
+		else
+			_lImpTick = .T.
+		endif
 	endif
 
 
@@ -203,7 +222,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 	//	u_log (aCols)
 	//	u_logACols ()
 	endif
-	U_Log2 ('debug', '_sErros ateh o momento: ' + _sErros)
+//	U_Log2 ('debug', '_sErros ateh o momento: ' + _sErros)
 
 	// Validacoes do programa original.
 	if empty (_sErros)  // Variavel private do web service
@@ -212,16 +231,33 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 			//_sCargaGer = CriaVar ("ZE_CARGA")
 			u_log ('Tentando gravar carga')
 			
-			// Deixa criara variavel para retorno
-			private _RetGrvSZE := ""
-			
-			 // Gravacao pelo programa original.
+//			// Deixa criada variavel para retorno
+//			private _RetGrvSZE := ""
+//			
+//			// Gravacao pelo programa original.
+//			if U_VA_RUS2G ()
+//				u_log ('U_VA_RUS2G() ok')
+//				_sCargaGer = _RetGrvSZE
+//			else
+//				_sCargaGer = ''
+//			endif
+
+			// Gravacao pelo programa original.
 			if U_VA_RUS2G ()
-				u_log ('U_VA_RUS2G() ok')
-				_sCargaGer = _RetGrvSZE
+				u_log2 ('info', 'U_VA_RUS2G() ok')
 			else
-				_sCargaGer = ''
+				u_log2 ('erro', 'U_VA_RUS2G() retornou erro.')
 			endif
+
+			// Monta XML para retorno.
+			_sMsgRetWS := ''
+			_sMsgRetWS += '<RetornoCarga>'
+			_sMsgRetWS +=    '<Item>'
+			_sMsgRetWS +=       '<cargaGerada>' + _sRetSZECG + '</cargaGerada>'
+			_sMsgRetWS +=       '<avisos>' + _sRetSZEAv + '</avisos>'
+			_sMsgRetWS +=       '<obs>' + _sRetSZEOb + '</obs>'
+			_sMsgRetWS +=    '</Item>'
+			_sMsgRetWS += '</RetornoCarga>'
 		endif
 	endif
 
