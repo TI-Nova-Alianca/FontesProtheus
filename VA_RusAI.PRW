@@ -34,7 +34,7 @@ user function va_rusAI (_sStatDe, _sStatPara)
 			_oSQL:Log ()
 			_oSQL:Exec ()
 		else
-			u_log2 ('info', 'Nao vou alterar a situacao da inspecao para ' + _sStatPara + ' por que encontra-se com situacao ' + _aRusInsp [.InspecoesSafraSituacao] + ' (na chamada da funcao foi especificado que somente devo alterar se for ' + _sStatDe + ').')
+			u_log2 ('info', '[' + procname () + '] Nao vou alterar a situacao da inspecao para ' + _sStatPara + ' por que encontra-se com situacao ' + _aRusInsp [.InspecoesSafraSituacao] + ' (na chamada da funcao foi especificado que somente devo alterar se for ' + _sStatDe + ').')
 		endif
 	endif
 
