@@ -69,6 +69,7 @@
 // 10/08/2020 - Cláudia - Não permitir a inclusão de pedidos com problemas de TES que calcula IPI pelo 
 //						  processo manual do BatMercP. GLPI: 8284
 // 18/06/2021 - Sandra  - Desabilitado linha /M->C5_ESPECI1 := 'VOLUMES', para notas de exportação GLPI 10196
+// 02/12/2021 - Claudia - Desabilitada a validação de motivo de bonificação. GLPI: 10580
 //
 // ----------------------------------------------------------------------------------------------------------------
 User Function M410LIOK()
@@ -183,14 +184,12 @@ User Function M410LIOK()
 				_XSF4BON  := ""
 			Endif
 
-			IF _xSF4BON  == "3"   // BONIFICACAO
-				// Verifica o se foi informado o tipo de bonificacao
-				If empty(_xBONIFIC)
-					U_Help(" Informe  o tipo de bonificação.",, .t.)
-					_lRet := .F.
-					linha:=.T.
-				Endif
-			Endif
+			// IF _xSF4BON  == "3"   // BONIFICACAO
+			// 	// Verifica o se foi informado o tipo de bonificacao
+			// 	U_Help(" Informe  o tipo de bonificação.",, .t.)
+			// 	_lRet := .F.
+			// 	linha:=.T.
+			// Endif
 		Endif
 	endif
 
