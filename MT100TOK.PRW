@@ -60,23 +60,18 @@
 // 03/02/2021 - Robert  - Para saber se estava gerando contranota de safra, testava rotina U_VA_RUS. Passa a testar U_VA_RUSN.
 // 08/10/2021 - Robert  - Desabilitados alguns logs desnecessarios.
 // 13/12/2021 - Robert  - Pequena melhoria msg. alter.vlr.unit em relacao ao pedido de compra.
+// 23/12/2021 - Claudia - Incluida validação de almox 11. GLPI: 7665
 //
-
 // -----------------------------------------------------------------------------------------------------------------------
 User Function MT100TOK()
 	local _aAmbAnt   := U_SalvaAmb ()
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _lRet      := ParamIxb[1]
-//	local _xFim      := chr(13)+chr(10)
-//	local _sQuery    := ""
-//	local _nRetQry   := 0
 	local _nLinha	 := 0
 	Private _aMatriz := {}
 	Public _nRegZZX  := 0  // Deixar como 'public' para ser vista em outros pontos de entrada.
     Public _vVlrTot  := 0
     Public _vVlrMerc := 0
-
-//	u_logIni ()
 
     if ISINCALLSTACK("MATA920") // Nota fiscal manual de saida
     	u_log ('[' + procname () + '] estou em NF manual saida')
@@ -166,7 +161,6 @@ User Function MT100TOK()
 	
 	// Testes ref. controle de fretes.
 	if _lRet .and. ! cTipo $ "BD" .and. cNumEmp == "0101"
-//		if ! IsInCallStack ("U_VA_RUS")  // Nao precisa perder tempo com contranotas de safra.
 		if ! IsInCallStack ("U_VA_RUSN")  // Nao precisa perder tempo com contranotas de safra.
 			_lRet = U_FrtNFE ("V")
 		endif
@@ -219,10 +213,16 @@ User Function MT100TOK()
 		_lRet = _ValNfOri ()
 	endif
 
+	// valida local de estoque 11
+	if _lRet
+		_lRet = _ValAlmox11()
+	endif
+
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
-//	u_logFim ()
+
 Return(_lRet)
+//
 // --------------------------------------------------------------------------
 //validacao da condicao de pagamento
 static function _ValParc ()
@@ -233,15 +233,9 @@ static function _ValParc ()
 	For _nLinha := 1 to Len(aCols)
 		// Valida se a Linha Nao estiver deletada
 		If !GDDeleted( _nLinha ) .And. _lRet
-			//_xCOD     := GDFieldGet( "D1_COD"     , _nLinha )
-			//_xQUANT   := GDFieldGet( "D1_QUANT"   , _nLinha )
-			//_xTES     := GDFieldGet( "D1_TES"     , _nLinha )
-			//_xCF      := GDFieldGet( "D1_CF"      , _nLinha )
 			if ! empty (GDFIELDGET('D1_PEDIDO',_nLinha))
-			//	u_log ('linha', _nLinha, 'd1_pedido+d1_itempc:', GDFIELDGET('D1_PEDIDO',_nLinha) + GDFIELDGET('D1_ITEMPC',_nLinha))
 				SC7->(DBSETORDER(1))
 				if SC7->(DBSEEK(xfilial('SC7') + GDFIELDGET('D1_PEDIDO',_nLinha) + GDFIELDGET('D1_ITEMPC',_nLinha)))
-			//		u_log('c7_num:', SC7->C7_NUM, 'c7_cond:', SC7->C7_COND)
 					if ! alltrim (cCondicao) = alltrim(SC7->C7_COND)
 						_sMsg = "Linha " + cvaltochar (_nLinha) + ": condicao de pagamento nao pode ser diferente da condicao do pedido de compra (" + sc7 -> c7_cond + ")."
 						exit
@@ -264,6 +258,7 @@ static function _ValParc ()
 		endif
 	endif
 return _lRet
+//
 // --------------------------------------------------------------------------
 // Verifica preenchimento da chave NFe.
 static function _ValCtrPF ()
@@ -291,29 +286,19 @@ static function _ValCtrPF ()
 	endif 
 
 return _lRet
-
-
-
+//
 // --------------------------------------------------------------------------
 // Verifica preenchimento da chave NFe.
 static function _ValChvNFe ()
-//	local _i         := 0
 	local _lRet      := .T.
 	local _oSQL      := NIL
-//	local _aUF       := {}
 	local _sChvNFe   := iif (type ("aNFeDANFe") == "A", aNFeDANFe [13], "")
 	local _sCNPJ     := ""
 	local _nTamDoc   := tamsx3 ("F1_DOC")[1]
 	local _sNumNF    := ""
 	local _lDeveTer  := .F.
-	//local _oNFe      := NIL
-	//local _aRetSEFAZ := {}
-	//local _lAutSEFAZ := .F.
 	local _sCGCEmit  := ''
-	//local _sFilOri   := ''
 
-	//u_showarray (aNFeDANFe)
-	
 	// Verifica se esta nota deve ou nao ter a chave informada.
 	if _lRet
 		if cFormul == "S" .or. ! alltrim (cEspecie) $ "SPED/CTE"
@@ -470,11 +455,8 @@ static function _ValChvNFe ()
 			endif
 		endif 
 	endif
-//	u_logFim ()
 return _lRet
-
-
-
+//
 // --------------------------------------------------------------------------
 // Verifica dados no XML do fornecedor, caso esteja disponivel.
 static function _ValXML ()
@@ -637,12 +619,10 @@ static function _ValXML ()
 	endif
 
 	if _lContinua .and. valtype (_oXml) == NIL
-//		u_log ("Nao foi possivel extrair dados suficientes do XML na rotina " + procname () + ". As validacoes do XML nao poderao ser feitas.")
 		_lContinua = .F.
 	endif
 
 	if _lContinua .and. zzx -> zzx_TipoNF == "D"
-//		u_log ("Leitura de devolucoes ainda nao implementada. As validacoes do XML nao poderao ser feitas.")
 		_lContinua = .F.
 	endif
 
@@ -724,21 +704,6 @@ static function _ValXML ()
  		      		_lRet := .F.		
 		   		endif
 			endif		   			
-			// valida tota das mercadorias  	
-			/*
-			if _vVlrMerc != val (_oXml:_total:_ICMSTot:_vProd:TEXT) 
-           		if ! GetMv("VA_VALXML")
-              		_lRet2 = msgnoyes ("Total das Mercadorias: no XML consta " + cvaltochar (val (_oXml:_total:_ICMSTot:_vProd:TEXT)) + ". Deseja continuar assim mesmo?")
-			  		if _lRet .AND. !_lRet2 
-			     		_lRet := .F.		
-			  		endif
-		   		else
-               		u_help ("Total das Mercadorias: no XML consta " + cvaltochar (val (_oXml:_total:_ICMSTot:_vProd:TEXT)) + ". Verifique!")
- 		      		u_help ("Total das Mercadorias: no sistema    " + cvaltochar (_vVlrMerc))
- 		      		_lRet := .F.
-		   		endif
-			endif
-			*/
 		endif
 		
 	elseif _lContinua .and. upper (alltrim (zzx -> zzx_Layout)) $ 'PROCCTE/CTE'
@@ -757,8 +722,7 @@ static function _ValXML ()
    			u_help ("Total do CTE: no XML consta " + cvaltochar (val (_oXml:_vPrest:_vTPrest:TEXT)) + ". Verifique!")
       		u_help ("Total do CTE: no sistema    " + cvaltochar (_vVlrTot))
       		_lRet := .F.		
-   		endif		   			
-		
+   		endif		   				
 	endif
                                                             
     if ! GetMv("VA_VALXML")
@@ -778,10 +742,10 @@ static function _ValXML ()
   	      _lRet = .F. 
   	   endif   
     endif
-//	u_logFim ()
 return _lRet
 //
 // --------------------------------------------------------------------------
+// Valida NF Origem
 static function _ValNfOri ()
 	local _lRet   := .T.
 	local _nLinha := 0
@@ -800,4 +764,21 @@ static function _ValNfOri ()
 			endif
 		next
 	endif
+return _lRet
+//
+// --------------------------------------------------------------------------
+// Valida Almox 11
+static function _ValAlmox11()
+	Local _x    := 0
+	Local _lRet := .T.
+
+	for _x := 1 to Len(aCols)
+		// Valida se a Linha Nao estiver deletada
+		if !GDDeleted(_x) .and. _lRet 
+			if alltrim(GDFIELDGET('D1_LOCAL',_x)) == '11'
+				u_help("Não é permitida a utilização do almoxarifado 11!")
+				_lRet := .F.
+			endif
+		endif
+	next
 return _lRet
