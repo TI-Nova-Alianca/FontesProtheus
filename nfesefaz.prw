@@ -140,8 +140,8 @@
 // 09/12/2020 - Claudia - Ajuste Impressão de titulos na Danfe tipo CC e CD - GLPI 8990.
 // 03/09/2021 - Robert  - Aplicadas nossas customizacoes na versao atualizada da Totvs (GLPI 10085).
 // 03/12/2021 - Robert  - Compatibilizacao com versao padrao da Totvs
+// 03/01/2021 - Claudia - Ajustado para permitir desconto no cabeçalho da NF. GLPI: 11370
 //
-
 // --------------------------------------------------------------------------
 User Function XmlNfeSef(cTipo,cSerie,cNota,cClieFor,cLoja,cNotaOri,cSerieOri)
 
@@ -2822,11 +2822,13 @@ If cTipo == "1"
 								EndIf
 							EndIf
 			            Else 
-							nDesconto := (cAliasSD2)->D2_DESCON            	
-
-
-							// Alianca: NAO queremos destacar o desconto na nota.
 							nDesconto := 0
+							  
+							// Quando nota de exportação, permite realizar o desconto
+							_sCliEst := fBuscaCpo("SA1",1,xFilial("SA1")+(cAliasSD2)->D2_CLIENTE+(cAliasSD2)->D2_LOJA,"A1_EST")
+							If alltrim(_sCliEst) == 'EX'
+								nDesconto := (cAliasSD2)->D2_DESCON  
+							EndIf
 							
 							If  (cAliasSD2)->D2_VRDICMS > 0  .and. nDesconto >= (cAliasSD2)->D2_VRDICMS 
 								nDesVrIcms := (cAliasSD2)->D2_VRDICMS

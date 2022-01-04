@@ -72,6 +72,7 @@
 // 09/03/2021 - Claudia - Bloqueio de bonificação. GLPI: 9070
 // 12/03/2021 - Claudia - Retirado caracteres especiais " e ' da gravação da OBS. GLPI: 9634
 // 05/10/2021 - Claudia - Incluida validação para não permitir liberara pedido sem gravar antes. GLPI: 11009
+// 03/01/2021 - Claudia - Ajustado para permitir desconto no cabeçalho da NF. GLPI: 11370
 //
 // ----------------------------------------------------------------------------------------------------------------
 user function GrvLibPV (_lLiberar)
@@ -504,6 +505,15 @@ user function GrvLibPV (_lLiberar)
 
 	endif
 
+	// Verifica se é pedido exportação e se pode dar desconto no cabeçalho 
+	If _lLiberar
+		_sCliEst  := fBuscaCpo('SA1', 1, xfilial('SA1') + M->C5_CLIENTE + M->C5_LOJACLI, "A1_EST")
+
+		If alltrim(_sCliEst) <> 'EX' .and. !Empty(m->c5_descont)
+			u_help("Desconto <indenização> só pode ser usado para clientes de exportação!")
+			_lLiberar := .F.
+		EndIf
+	EndIf
 	N := _n
 	if type ("oGetDad") == "O"
 		oGetDad:oBrowse:Refresh ()
