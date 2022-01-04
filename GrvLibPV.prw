@@ -73,8 +73,9 @@
 // 12/03/2021 - Claudia - Retirado caracteres especiais " e ' da gravação da OBS. GLPI: 9634
 // 05/10/2021 - Claudia - Incluida validação para não permitir liberara pedido sem gravar antes. GLPI: 11009
 // 03/01/2021 - Claudia - Ajustado para permitir desconto no cabeçalho da NF. GLPI: 11370
+// 04/01/2021 - Claudia - Incluida validação para ser obrigatorio informar NSU e Id Pagar-me em pedidos e-commerce.
 //
-// ----------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 user function GrvLibPV (_lLiberar)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _n         := N
@@ -514,6 +515,21 @@ user function GrvLibPV (_lLiberar)
 			_lLiberar := .F.
 		EndIf
 	EndIf
+
+	// Obriga a informar NSU e Id Pagar-me em pedidos e-commerce
+	If _lLiberar
+		If !Empty(M->C5_PEDECOM)
+			If Empty(M->C5_VANSU)
+				u_help("Para pedidos e-commerce, informar NSU!")
+				_lLiberar := .F.
+			EndIf
+			If Empty(M->C5_VAIDT)
+				u_help("Para pedidos e-commerce, informar Id Pagar-me!")
+				_lLiberar := .F.
+			EndIf
+		EndIf
+	EndIf
+
 	N := _n
 	if type ("oGetDad") == "O"
 		oGetDad:oBrowse:Refresh ()
