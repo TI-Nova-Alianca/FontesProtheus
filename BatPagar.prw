@@ -30,13 +30,13 @@ User Function BatPagar(_sTipo)
     EndIf
 
     u_log2('aviso', 'Pagar.me:' + DTOC(mv_par01) +" até "+ DTOC(mv_par02))
-    _BuscaRecebiveis(dDataIni, dDataFin)  
+    _BuscaRecebiveis(dDataIni, dDataFin, _sTipo)  
 
 Return
 //
 // -----------------------------------------------------------------------------------
 // Acessa o link de recebiveis do dia anterior =  Recebiveis são as parcelas recebidas
-Static Function _BuscaRecebiveis(dDataIni, dDataFin)
+Static Function _BuscaRecebiveis(dDataIni, dDataFin, _sTipo)
     local cUrlReceb  := ""
     local cGetParms  := ""
     local nTimeOut   := 200
@@ -78,7 +78,7 @@ Static Function _BuscaRecebiveis(dDataIni, dDataFin)
             _sIdTransacao:= Alltrim(str(_nIdTransacao))
             _dDtPgto     := IIF(Empty(oJSON[i]["payment_date"]),STOD('19000101'),_CastData(oJSON[i]["payment_date"]))
             _dDtPgtoOri  := IIF(Empty(oJSON[i]["original_payment_date"]),STOD('19000101'),_CastData(oJSON[i]["original_payment_date"]))
-            _sTipo       := IIF(Empty(oJSON[i]["type"]), "", oJSON[i]["type"])
+            _sTp         := IIF(Empty(oJSON[i]["type"]), "", oJSON[i]["type"])
             _sMetodoPgto := IIF(Empty(oJSON[i]["payment_method"]), "", oJSON[i]["payment_method"])
             _dDtAcres    := IIF(Empty(oJSON[i]["accrual_date"]),STOD('19000101'),_CastData(oJSON[i]["accrual_date"]))
             _dDtCriacao  := IIF(Empty(oJSON[i]["date_created"]),STOD('19000101'),_CastData(oJSON[i]["date_created"]))
@@ -95,7 +95,7 @@ Static Function _BuscaRecebiveis(dDataIni, dDataFin)
                                 _nIdTransacao   ,; //  8
                                 _dDtPgto        ,; //  9
                                 _dDtPgtoOri     ,; // 10
-                                _sTipo          ,; // 11
+                                _sTp            ,; // 11
                                 _sMetodoPgto    ,; // 12
                                 _dDtAcres       ,; // 13
                                 _dDtCriacao     ,; // 14
@@ -282,7 +282,7 @@ Static Function MontaLinkReceb(dDataIni, dDataFin)
     _sMes   := PADL(alltrim(str(Month(dDataFin))),2,'0')
     _sAno   := alltrim(str(Year(dDataFin)))
     _sDt02  := _sAno +"-"+_sMes+"-" + _sDia
-    _sAkKey := GETMV("VA_PAGARME")//ak_live_W71d1IXZYVxHRMAUPJhdUmuvTH3Iwl
+    _sAkKey := GETMV("VA_PAGARME")//ak_live_GbJjxzCJpvQ1ygjqFO3ILFOeCW1Ll4
 
     // Documentação API: https://docs.pagar.me/v4/reference#status-dos-receb%C3%ADveis
     _sLink := 'https://api.pagar.me/1/payables?api_key=' + alltrim(_sAkKey) + '&payment_date=>='+ _sDt01 +'T00:00:01.582Z&payment_date=<='+ _sDt02 +'T23:59:59.582Z&status=paid'
