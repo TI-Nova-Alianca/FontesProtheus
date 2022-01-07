@@ -102,6 +102,7 @@
 //                      - Incluida msg. de LGPD na consulta de cota capital (GLPI 10139).
 //                      - Ajuste corr.mon. (desconsiderava NF vcto futuro que jah sofreram baixas) - GLPI 10306.
 // 11/08/2021 - Robert  - View VA_VASSOC_GRP_FAM migrada do database do Protheus para o NaWeb (GLPI 10673).
+// 05/01/2022 - Robert  - Regras para pagamento (grupos A/B/C) para safra 2022 permanecem iguais ao ano de 2021 no metodo FechSafra.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -1331,7 +1332,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 			_sRetFechS += '<perc01>10</perc01><perc02>4</perc02><perc03>4</perc03><perc04>4</perc04><perc05>4</perc05><perc06>11.4</perc06><perc07>11.4</perc07><perc08>11.4</perc08><perc09>11.4</perc09><perc10>14.2</perc10><perc11>14.2</perc11>'
 			_sRetFechS += '<descComParc>C-Demais variedades.....: 10+4+4+4+4+11.4+11.4+11.4+11.4+14.2+14.2</descComParc>'
 			_sRetFechS += '</regraPagamentoItem>'
-		elseif _sSafra == '2021'
+		elseif _sSafra == '2021' .or. _sSafra == '2022'
 			_sRetFechS += '<regraPagamentoItem>'
 			_sRetFechS += '<grupo>A</grupo>'
 			_sRetFechS += '<descricao>Bordo,niagara,concord e organicas - 6 vezes</descricao>'

@@ -7,6 +7,7 @@
 // Historico de alteracoes:
 // 29/01/2020 - Robert - Bloqueia cadastro viticula nao recebido fisicamente apos outubro do ano anterior.
 // 20/02/2020 - Robert - Desabilitada validacao de chave duplicada no ZF_IDSZ9 (cadastros estao desatualizados, nao ajuda em nada. Vai ser passado para NaWeb)
+// 05/01/2022 - Robert - Eliminados campos ZF_NCONF03 e ZF_NCONF04.
 //
 
 #include "totvs.ch"
@@ -111,7 +112,8 @@ user function VA_RUS2L ()
 
 	// Verifica linhas duplicadas
 	if _lRet .and. (inclui .or. altera) .and. ! GDDeleted ()
-		_lRet = GDCheckKey ({"ZF_CADVITI", "ZF_PRODUTO", "ZF_GRAU", "ZF_PRM02", "ZF_PRM03", "ZF_PRM04", "ZF_PRM05", "ZF_PRM99", "ZF_CLASABD", "ZF_NCONF01", "ZF_NCONF02", "ZF_NCONF03", "ZF_NCONF04", "ZF_IDZA8"}, 4)
+	//	_lRet = GDCheckKey ({"ZF_CADVITI", "ZF_PRODUTO", "ZF_GRAU", "ZF_PRM02", "ZF_PRM03", "ZF_PRM04", "ZF_PRM05", "ZF_PRM99", "ZF_CLASABD", "ZF_NCONF01", "ZF_NCONF02", "ZF_NCONF03", "ZF_NCONF04", "ZF_IDZA8"}, 4)
+		_lRet = GDCheckKey ({"ZF_CADVITI", "ZF_PRODUTO", "ZF_GRAU", "ZF_PRM02", "ZF_PRM03", "ZF_PRM04", "ZF_PRM05", "ZF_PRM99", "ZF_CLASABD", "ZF_NCONF01", "ZF_NCONF02", "ZF_IDZA8"}, 4)
 
 		// Gera retorno de erro em caso de chamada via web service
 		if ! _lRet
@@ -185,12 +187,16 @@ user function VA_RUS2L ()
 		_lRet = .F.
 	endif
 	if _lRet .and. (inclui .or. altera) .and. ! GDDeleted ()
-		if (! empty (GDFieldGet ("ZF_NCONF01")) .and. GDFieldGet ("ZF_NCONF01") == GDFieldGet ("ZF_NCONF02")) ;
-			.or. (! empty (GDFieldGet ("ZF_NCONF01")) .and. GDFieldGet ("ZF_NCONF01") == GDFieldGet ("ZF_NCONF03")) ;
-			.or. (! empty (GDFieldGet ("ZF_NCONF01")) .and. GDFieldGet ("ZF_NCONF01") == GDFieldGet ("ZF_NCONF04")) ;
-			.or. (! empty (GDFieldGet ("ZF_NCONF02")) .and. GDFieldGet ("ZF_NCONF02") == GDFieldGet ("ZF_NCONF03")) ;
-			.or. (! empty (GDFieldGet ("ZF_NCONF02")) .and. GDFieldGet ("ZF_NCONF02") == GDFieldGet ("ZF_NCONF04")) ;
-			.or. (! empty (GDFieldGet ("ZF_NCONF03")) .and. GDFieldGet ("ZF_NCONF03") == GDFieldGet ("ZF_NCONF04"))
+//		if (! empty (GDFieldGet ("ZF_NCONF01")) .and. GDFieldGet ("ZF_NCONF01") == GDFieldGet ("ZF_NCONF02")) ;
+//			.or. (! empty (GDFieldGet ("ZF_NCONF01")) .and. GDFieldGet ("ZF_NCONF01") == GDFieldGet ("ZF_NCONF03")) ;
+//			.or. (! empty (GDFieldGet ("ZF_NCONF01")) .and. GDFieldGet ("ZF_NCONF01") == GDFieldGet ("ZF_NCONF04")) ;
+//			.or. (! empty (GDFieldGet ("ZF_NCONF02")) .and. GDFieldGet ("ZF_NCONF02") == GDFieldGet ("ZF_NCONF03")) ;
+//			.or. (! empty (GDFieldGet ("ZF_NCONF02")) .and. GDFieldGet ("ZF_NCONF02") == GDFieldGet ("ZF_NCONF04")) ;
+//			.or. (! empty (GDFieldGet ("ZF_NCONF03")) .and. GDFieldGet ("ZF_NCONF03") == GDFieldGet ("ZF_NCONF04"))
+//			u_help ("Nao conformidades repetidas.",, .t.)
+//			_lRet = .F.
+//		endif
+		if ! empty (GDFieldGet ("ZF_NCONF01")) .and. GDFieldGet ("ZF_NCONF01") == GDFieldGet ("ZF_NCONF02")
 			u_help ("Nao conformidades repetidas.",, .t.)
 			_lRet = .F.
 		endif
