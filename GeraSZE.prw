@@ -9,6 +9,7 @@
 // 26/01/2021 - Robert - Testes iniciais impressora ticket F07
 // 05/02/2021 - Robert - Se receber serie/NF produtor zeradas, grava vazio.
 // 16/12/2021 - Robert - Novo formato de retorno (em XML); Passa a considerar impr.ticket cfe.solicitado pelo prog.inspecao.
+// 17/12/2021 - Robert - Voltamos para o retorno original em texto.
 //
 
 #include "VA_INCLU.prw"
@@ -88,25 +89,26 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		private _zx509orga    := U_RetZX5 ("09", _sSafra + _sBalanca, 'ZX5_09ORGA')
 	endif
 
-/*
+
 	// Define impressora de ticket.
 	do case
 	case _sBalanca == 'LB'
-		_sIdImpr = '14' //'07'  // LAB SAFRA MATRIZ
+		_sIdImpr = '11' // LAB SAFRA MATRIZ
 		_sPortTick = U_RetZX5 ('49', _sIdImpr, 'ZX5_49CAM')
 	case _sBalanca == 'JC'
 		_sIdImpr = '08' // balanca JC
 		_sPortTick = U_RetZX5 ('49', _sIdImpr, 'ZX5_49CAM')
 	otherwise
 		_sIdImpr = ''
-		u_log ("Impressora de ticket nao definida para a balanca '" + _sBalanca + "'. Nao vou solicitar impressao.")
+		u_log2 ('aviso', "Impressora de ticket nao definida para a balanca '" + _sBalanca + "'. Nao vou solicitar impressao.")
 	endcase
 	u_log2 ('debug', '_sIdImpr:' + _sIdImpr)
 	u_log2 ('debug', '_sPortTick:' + _sPortTick)
 	if ! empty (_sPortTick)
 		_lImpTick = .T.
 	endif
-*/
+
+/*
 	u_log2 ('debug', '_sIdImpr: ' + _sIdImpr)
 	if empty (_sIdImpr)
 		_sRetSZEAv += 'Impressora de ticket nao foi informada. Nao vou solicitar impressao do ticket.'
@@ -121,7 +123,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 			_lImpTick = .T.
 		endif
 	endif
-
+*/
 
 	// Verifica se o associado tem alguma restricao
 	if empty (_sErros)
@@ -250,14 +252,16 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 			endif
 
 			// Monta XML para retorno.
-			_sMsgRetWS := ''
-			_sMsgRetWS += '<RetornoCarga>'
-			_sMsgRetWS +=    '<Item>'
-			_sMsgRetWS +=       '<cargaGerada>' + _sRetSZECG + '</cargaGerada>'
-			_sMsgRetWS +=       '<avisos>' + _sRetSZEAv + '</avisos>'
-			_sMsgRetWS +=       '<obs>' + _sRetSZEOb + '</obs>'
-			_sMsgRetWS +=    '</Item>'
-			_sMsgRetWS += '</RetornoCarga>'
+			// Retorno em XML deu problema. Deixemos para outra hora...
+			//_sMsgRetWS := ''
+			//_sMsgRetWS += '<RetornoCarga>'
+			//_sMsgRetWS +=    '<Item xmlns="">'
+			//_sMsgRetWS +=       '<cargaGerada>' + _sRetSZECG + '</cargaGerada>'
+			//_sMsgRetWS +=       '<avisos>' + iif (empty (_sRetSZEAv), '.', _sRetSZEAv) + '</avisos>'
+			//_sMsgRetWS +=       '<obs>' + iif (empty (_sRetSZEOb), '.', _sRetSZEOb) + '</obs>'
+			//_sMsgRetWS +=    '</Item>'
+			//_sMsgRetWS += '</RetornoCarga>'
+			_sMsgRetWS = _sRetSZECG
 		endif
 	endif
 

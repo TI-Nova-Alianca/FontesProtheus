@@ -6,6 +6,7 @@
 // Historico de alteracoes:
 // 28/04/2017 - Robert - Passa a verificar etiquetas pendentes usando a classe ClsVerif.
 // 15/05/2017 - Robert - Passa a verificar etiquetas pendentes somente para filial 01 e a partir de 01/05/2017.
+// 05/01/2021 - Robert - Desabilitados logs desnecessarios.
 //
 
 // --------------------------------------------------------------------------
@@ -13,7 +14,7 @@ user function A250EnOk ()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _lRet     := .T.
 
-	u_logIni ()
+//	u_logIni ()
 
 	// Verifica consistencia com etiquetas, quando usadas.
 	if _lRet
@@ -21,7 +22,7 @@ user function A250EnOk ()
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
+//	u_logFim ()
 return _lRet
 
 
@@ -45,9 +46,9 @@ static function _VerEtiq ()
 			_oVerif:SetParam ('03', SD3->D3_COD)
 			_oVerif:SetParam ('04', SD3->D3_COD)
 			_oVerif:Executa ()
-			u_log (_oVerif:Result)
+		//	u_log (_oVerif:Result)
 			_oEtiq := ClsAUtil ():New (_oVerif:Result)
-			u_log (_oEtiq:_aArray)
+		//	u_log (_oEtiq:_aArray)
 			
 			// Ignora etiquetas cuja transferencia tenha sido canelada manualmente.
 			for _nEtiq = len (_oEtiq:_aArray) to 1 step -1
@@ -55,7 +56,7 @@ static function _VerEtiq ()
 					_oEtiq:Del (_nEtiq)
 				endif
 			next
-			u_log (_oEtiq:_aArray)
+		//	u_log (_oEtiq:_aArray)
 			if len (_oEtiq:_aArray) > 1  // Primeira linha contem os cabecalhos de colunas.
 				_lRet = .F.
 				_sMsgSup = "As seguintes etiquetas geraram apontamentos para esta OP, mas ainda nao foram guardadas (transferidas do almoxarifado " + sd3 -> d3_local + "):"

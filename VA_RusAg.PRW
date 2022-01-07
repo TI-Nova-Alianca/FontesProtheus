@@ -1,4 +1,4 @@
-// Programa...: VA_RuaAg
+// Programa...: VA_RusaAg
 // Autor......: Robert Koch
 // Data.......: 05/02/2021 (criado com base num backup de 2018 onde constava dentro do VA_RUS2.PRW)
 // Descricao..: Funcao de aglutinacao de cargas de safra. Utilizada quando tem mais de uma
@@ -6,6 +6,7 @@
 //              e deseja junta-las no final do dia, emitindo uma so nota de produtor (GLPI 9336).
 //
 // Historico de alteracoes:
+// 05/01/2022 - Robert - Eliminados campos ZF_NCONF03 e ZF_NCONF04.
 //
 
 // --------------------------------------------------------------------------
@@ -154,8 +155,6 @@ User Function va_rusAg ()
 			u_log2 ('debug', GDFieldPos ("ZF_CLASABD"))
 			u_log2 ('debug', GDFieldPos ("ZF_NCONF01"))
 			u_log2 ('debug', GDFieldPos ("ZF_NCONF02"))
-			u_log2 ('debug', GDFieldPos ("ZF_NCONF03"))
-			u_log2 ('debug', GDFieldPos ("ZF_NCONF04"))
 			u_log2 ('debug', GDFieldPos ("ZF_IDZA8") )
 			u_log2 ('debug', GDFieldPos ("ZF_IDSZ9") )
 			u_log2 ('debug', GDFieldPos ("ZF_CONDUC"))
@@ -172,11 +171,11 @@ User Function va_rusAg ()
 			                     .and. _aVal [GDFieldPos ("ZF_PRM04")]   == (_sAliasQ) -> zf_prm04 ;
 			                     .and. _aVal [GDFieldPos ("ZF_PRM05")]   == (_sAliasQ) -> zf_prm05 ;
 			                     .and. _aVal [GDFieldPos ("ZF_PRM99")]   == (_sAliasQ) -> zf_prm99 ;
-			                     .and. _aVal [GDFieldPos ("ZF_CLASABD")] == (_sAliasQ) -> zf_clasabd ;//			                     .and. _aVal [GDFieldPos ("ZF_NCONF01")] == (_sAliasQ) -> zf_nconf01 ;			                     .and. _aVal [GDFieldPos ("ZF_NCONF02")] == (_sAliasQ) -> zf_nconf02 ;			                     .and. _aVal [GDFieldPos ("ZF_NCONF03")] == (_sAliasQ) -> zf_nconf03 ;			                     .and. _aVal [GDFieldPos ("ZF_NCONF04")] == (_sAliasQ) -> zf_nconf04 ;
+			                     .and. _aVal [GDFieldPos ("ZF_CLASABD")] == (_sAliasQ) -> zf_clasabd ;
 			                     .and. _aVal [GDFieldPos ("ZF_IDZA8")]   == (_sAliasQ) -> zf_idZA8 ;
-			                     .and. _aVal [GDFieldPos ("ZF_IDSZ9")]   == (_sAliasQ) -> zf_idSZ9 ;  //.and. _aVal [GDFieldPos ("ZF_CADCPO")]  == (_sAliasQ) -> zf_cadcpo ;
+			                     .and. _aVal [GDFieldPos ("ZF_IDSZ9")]   == (_sAliasQ) -> zf_idSZ9 ;
 			                     .and. _aVal [GDFieldPos ("ZF_CONDUC")]  == (_sAliasQ) -> zf_conduc ;
-			                     .and. _aVal [GDFieldPos ("ZF_SIVIBE")]  == (_sAliasQ) -> zf_sivibe})  //			                     .and. _aVal [GDFieldPos ("ZF_OBS")]     == (_sAliasQ) -> zf_obs})   // Se for criado novo campo, acrescentar aqui.
+			                     .and. _aVal [GDFieldPos ("ZF_SIVIBE")]  == (_sAliasQ) -> zf_sivibe})
 			if N == 0
 				u_log ('criando linha no aCols')
 				aadd (aCols, aclone (U_LinVazia (aHeader)))
@@ -195,10 +194,6 @@ User Function va_rusAg ()
 				GDFieldPut ("ZF_CLASABD", (_sAliasQ) -> zf_clasabd)
 				GDFieldPut ("ZF_QTEMBAL", (_sAliasQ) -> zf_qtembal)
 				GDFieldPut ("ZF_PESO",    (_sAliasQ) -> zf_peso)
-				// GDFieldPut ("ZF_NCONF01", (_sAliasQ) -> zf_nconf01)
-				// GDFieldPut ("ZF_NCONF02", (_sAliasQ) -> zf_nconf02)
-				// GDFieldPut ("ZF_NCONF03", (_sAliasQ) -> zf_nconf03)
-				// GDFieldPut ("ZF_NCONF04", (_sAliasQ) -> zf_nconf04)
 				GDFieldPut ("ZF_IDZA8",   (_sAliasQ) -> zf_idZA8)
 				GDFieldPut ("ZF_IDSZ9",   (_sAliasQ) -> zf_idSZ9)
 				GDFieldPut ("ZF_CADCPO",  (_sAliasQ) -> zf_cadcpo)
