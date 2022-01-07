@@ -4,8 +4,8 @@
 User Function claudia ()
 	//u_help("Nada para executar")
 
-	u_help("associados")
-	U_BatFunAssoc()
+	//u_help("associados")
+	//U_BatFunAssoc()
 	//u_help("Executa Margens")
 	//U_BATMARDAT()
 
@@ -31,6 +31,76 @@ User Function claudia ()
 	//Coordenadores()
 	//u_help("Teste de baixa")
 	//BaixaAut()
+
+	// Atualiza clientes inativos
+	//u_help("Atualiza clientes ativos")
+	//ClientesInativos()
+
+	// Atualiza representantes inativos
+	u_help("Representantes Inativos")
+	RepInativos()
+Return
+//
+// Atualiza representantes inativos
+Static Function RepInativos()
+	Local _aDados := {}
+	Local _x      := 0
+
+	_oSQL := ClsSQL():New ()  
+	_oSQL:_sQuery := "" 		
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 		SA3.R_E_C_N_O_ "
+	_oSQL:_sQuery += " FROM SA3010 SA3 "
+	_oSQL:_sQuery += " LEFT JOIN LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_TB_REPRES REP "
+	_oSQL:_sQuery += " 		ON DB_TBREP_CODORIG = A3_COD "
+	_oSQL:_sQuery += " WHERE SA3.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " AND SA3.A3_ATIVO = 'N' "  // BLOQUEADOS
+	_oSQL:_sQuery += " AND DB_TBREP_SIT_VENDA<>2 " // 1 = ATIVO/ 2 = INATIVO
+	_oSQL:_sQuery += " ORDER BY A3_COD "
+
+	_aDados := aclone (_oSQL:Qry2Array ())
+
+	For _x := 1 to Len(_aDados)
+		U_AtuMerc ("SA3", _aDados[_x,1])
+	Next
+
+Return
+//
+// Atualiza clientes inativos protheus-> Mercanet
+Static Function ClientesInativos()
+	Local _aDados := {}
+	Local _x      := 0
+
+	_oSQL := ClsSQL():New ()  
+	_oSQL:_sQuery := "" 		
+	_oSQL:_sQuery += " WITH C "
+	_oSQL:_sQuery += " AS "
+	_oSQL:_sQuery += " (SELECT "
+	_oSQL:_sQuery += " 		SA1.R_E_C_N_O_ "
+	_oSQL:_sQuery += " 	   ,A1_COD AS COD_PROTHEUS "
+	_oSQL:_sQuery += " 	   ,A1_NOME AS NOME_PROTHEUS "
+	_oSQL:_sQuery += " 	   ,A1_CGC AS CGC_PROTHEUS "
+	_oSQL:_sQuery += " 	   ,A1_MSBLQL AS SITUACAO_PROTHEUS "
+	_oSQL:_sQuery += " 	   ,DB_CLI_CODIGO AS COD_MERC "
+	_oSQL:_sQuery += " 	   ,DB_CLI_NOME AS NOME_MERC "
+	_oSQL:_sQuery += " 	   ,DB_CLI_CGCMF AS CGC_MERC "
+	_oSQL:_sQuery += " 	   ,DB_CLI_SITUACAO AS SITUACAO_MERC "
+	_oSQL:_sQuery += " 	FROM SA1010 SA1 "
+	_oSQL:_sQuery += " 	LEFT JOIN LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_CLIENTE CLI "
+	_oSQL:_sQuery += " 		ON CLI.DB_CLI_CGCMF COLLATE Latin1_General_CI_AI = A1_CGC COLLATE Latin1_General_CI_AI "
+	_oSQL:_sQuery += " 	WHERE SA1.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " 	AND A1_MSBLQL <> '1') "
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 	* "
+	_oSQL:_sQuery += " FROM C "
+	_oSQL:_sQuery += " WHERE SITUACAO_MERC = 3 "
+	_oSQL:_sQuery += " ORDER BY COD_PROTHEUS "
+	_aDados := aclone (_oSQL:Qry2Array ())
+
+	For _x := 1 to Len(_aDados)
+		U_AtuMerc ("SA1", _aDados[_x,1])
+	Next
+
 Return
 
 // Static Function TelaTeste()
