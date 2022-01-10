@@ -3,6 +3,12 @@
 // Data.......: nov/2004
 // Descricao..: P.E. 'Tudo OK' da tela de notas de entrada.
 //
+//  #TipoDePrograma    #ponto_de_entrada
+//  #Descricao         #P.E. 'Tudo OK' da tela de notas de entrada.
+//  #PalavasChave      #notas_de_entrada #tudo_ok 
+//  #TabelasPrincipais #SD1 #SF1
+//  #Modulos 		   #FAT
+//
 // Historico de alteracoes:
 // 12/05/2008 - Robert  - Incluidas validacoes para tratamento de controle de fretes.
 // 19/05/2008 - Robert  - Ajustada logica de retorno em caso de erros.
