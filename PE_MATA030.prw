@@ -23,8 +23,10 @@
 // 03/02/2021 - Cláudia - Ajuste para visualização das OBS nas demais filiais. GLPI: 9263
 // 21/06/2021 - Claudia - Grava supervisor do representante no supervisor do cliente. GLPI: 8655
 // 10/11/2021 - Robert  - Executava a funcao _ma030tok() mesmo quando se tratava de exclusao.
+// 11/01/2022 - Claudia - Criada validação para não permitir cvadastramento de clientes que estao no cadastro 
+//                        de prospect. GLPI: 11421
 //
-
+//
 // -------------------------------------------------------------------------------------------------------------
 #include "protheus.ch"
 #include "parmtype.ch"
@@ -231,6 +233,21 @@ static Function _ma030tok()
 			u_help ("CNPJ / CPF ja cadastrado para o cliente/loja '" + _oSQL:_xRetQry + "'. Bloqueie um dos dois!")
 			_lRet = .F.
 		endif
+	endif
+
+	if _lRet
+		_oSQL:= ClsSQL():New ()  
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "	SELECT "
+		_oSQL:_sQuery += "		US_CGC "
+		_oSQL:_sQuery += "	FROM " + RetSQLName ("SUS") 
+		_oSQL:_sQuery += "	WHERE US_CGC = '" + M->A1_CGC + "' "
+		_aSUS := aclone (_oSQL:Qry2Array ())
+
+		If Len(_aSUS) > 0
+			u_help("CNPJ/CPF ja existe no cadastro de Prospect! Cadastro não permitido")
+			_lRet = .F.
+		EndIf
 	endif
 	
 	U_ML_SRArea (_aAreaAnt)
