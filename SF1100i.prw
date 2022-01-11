@@ -106,7 +106,9 @@
 // 17/05/2021 - Robert  - Nas parcelas de safra, se o ano+mes previsto jah passou (ocorre por exemplo quando gera-se nota de complemento de preco apos a safra), nao adianta gerar com data retroativa (GLPI 9891)
 // 13/09/2021 - Claudia - Tratamento para A1_INSCR. GLPI: 10797
 // 08/10/2021 - Robert  - Desabilitados alguns logs desnecessarios.
+// 08/01/2022 - Robert  - Tratamento para campo A2_VAAGE05 (associados que naoo devem receber FUNRURAL)
 //
+
 // ------------------------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
@@ -588,6 +590,7 @@ static function _AjSE2 ()
 				_oSQL:_sQuery +=      ", E2_VALOR"
 				_oSQL:_sQuery +=      ", dbo.VA_FTIPO_FORNECEDOR_UVA ('" + se2 -> E2_FORNECE + "', '" + se2 -> E2_LOJA + "', '" + dtos (se2-> E2_EMISSAO) + "')"
 				_oSQL:_sQuery +=      ", A2_TIPO"
+				_oSQL:_sQuery +=      ", A2_VAAGE05"
 				_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE2") + " SE2,"
 				_oSQL:_sQuery +=             RetSQLName ("SA2") + " SA2"
 				_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_  = ''"
@@ -606,28 +609,32 @@ static function _AjSE2 ()
 					// Se for associado, nao quero descontar dele o FUNRURAL.
 					if alltrim (upper (_aRetFUNRU [1, 3])) == 'ASSOCIADO' .or. alltrim (upper (_aRetFUNRU [1, 3])) == 'EX ASSOCIADO'
 						if alltrim (upper (_aRetFUNRU [1, 4])) == 'F'  // Somente associados 'pessoa fisica'. Colleoni, maio/2021
-							// Com o valor do FUNRURAL, soma o valor ao titulo original.
-							begin transaction
+							if alltrim (upper (_aRetFUNRU [1, 5])) != 'S'  // Fornecedor nao pode ter um X marcado nas costas.
+								// Com o valor do FUNRURAL, soma o valor ao titulo original.
+								begin transaction
 
-							reclock ("SE2", .F.)
-							se2 -> e2_valor  += _aRetFUNRU [1, 2]
-							se2 -> e2_saldo  += _aRetFUNRU [1, 2]
-							se2 -> e2_vlcruz += _aRetFUNRU [1, 2]
-							msunlock ()
+								reclock ("SE2", .F.)
+								se2 -> e2_valor  += _aRetFUNRU [1, 2]
+								se2 -> e2_saldo  += _aRetFUNRU [1, 2]
+								se2 -> e2_vlcruz += _aRetFUNRU [1, 2]
+								msunlock ()
 
-							// Grava evento para posterior consulta.
-							_oEvento := ClsEvent ():New ()
-							_oEvento:Alias = 'SE2'
-							_oEvento:Texto = 'Acrescentando vlr.FUNRURAL ($' + cvaltochar (_aRetFUNRU [1, 2]) + ') ao vlr.orig.por que nao queremos descontar do associado.'
-							_oEvento:NFEntrada = se2 -> e2_num
-							_oEvento:SerieEntr = se2 -> e2_prefixo
-							_oEvento:CodEven   = 'SE2003'
-							_oEvento:Fornece   = se2 -> e2_fornece
-							_oEvento:LojaFor   = se2 -> e2_loja
-							_oEvento:ParcTit   = se2 -> e2_parcela
-							_oEvento:Grava ()
+								// Grava evento para posterior consulta.
+								_oEvento := ClsEvent ():New ()
+								_oEvento:Alias = 'SE2'
+								_oEvento:Texto = 'Acrescentando vlr.FUNRURAL ($' + cvaltochar (_aRetFUNRU [1, 2]) + ') ao vlr.orig.por que nao queremos descontar do associado.'
+								_oEvento:NFEntrada = se2 -> e2_num
+								_oEvento:SerieEntr = se2 -> e2_prefixo
+								_oEvento:CodEven   = 'SE2003'
+								_oEvento:Fornece   = se2 -> e2_fornece
+								_oEvento:LojaFor   = se2 -> e2_loja
+								_oEvento:ParcTit   = se2 -> e2_parcela
+								_oEvento:Grava ()
 
-							end transaction
+								end transaction
+							else
+								U_Log2 ('info', 'Fornecedor eh associado, mas tem restricao cfe. clausula 05 da AGE maio/21. Vou deixar o desconto do FUNRURAL.')
+							endif
 						else
 							U_Log2 ('info', 'Fornecedor eh associado, mas nao eh pessoa fisica. Vou deixar o desconto do FUNRURAL.')
 						endif

@@ -154,21 +154,21 @@ User Function va_rus ()
 
 		// Submenu para Outros.
 		_aMenuOut = {}
-		aadd (_aMenuOut, {"&Parametros",         "U_VA_RUSLP (.T.)", 0,4})
-		aadd (_aMenuOut, {"&Ticket 1a.pesag",    "U_VA_RUSTk (1, _sPortTick, _nQViasTk1, {}, 'Bematech', .t.)",0,4})
-		aadd (_aMenuOut, {"&Ticket 2a.pesag",    "U_VA_RUSTk (2, _sPortTick, _nQViasTk2, {}, 'Bematech', .t.)",0,4})
-		aadd (_aMenuOut, {"&Impr.Recibo",        "U_VA_RUSR ()", 0,4})
-		aadd (_aMenuOut, {"&Cons.Aglutinacoes",  "U_VA_RUSCA (1, .F.)",0,4})
-		aadd (_aMenuOut, {"&Fila descarga",      "U_VA_RUSMF ()", 0,4})
-		aadd (_aMenuOut, {"&Redirecionar",       "U_VA_RUSRD ()", 0,4})
-		aadd (_aMenuOut, {"&Reenviar p/grau",    "U_VA_RUSRG ()", 0,4})
-		aadd (_aMenuOut, {"&Rastrear estoque",   "U_VA_RUSRC ()", 0,4})
-		aadd (_aMenuOut, {"&NF remessa coop",    "U_VA_RUSNR ('A')", 0,4})
-		aadd (_aMenuOut, {"Controle Portaria",   "U_VA_CPORT ()", 0,4})
-		aadd (_aMenuOut, {"Medicoes do grau",    "U_VA_XLS54 (sze -> ze_filial, sze -> ze_safra, sze -> ze_carga)", 0,4})
+		aadd (_aMenuOut, {"&Parametros",            "U_VA_RUSLP (.T.)", 0,4})
+		aadd (_aMenuOut, {"&Ticket 1a.pesag",       "U_VA_RUSTk (1, _sPortTick, _nQViasTk1, {}, 'Bematech', .t.)",0,4})
+		aadd (_aMenuOut, {"&Ticket 2a.pesag",       "U_VA_RUSTk (2, _sPortTick, _nQViasTk2, {}, 'Bematech', .t.)",0,4})
+		aadd (_aMenuOut, {"&Impr.Recibo",           "U_VA_RUSR ()", 0,4})
+		aadd (_aMenuOut, {"&Cons.Aglutinacoes",     "U_VA_RUSCA (1, .F.)",0,4})
+		aadd (_aMenuOut, {"&Fila descarga",         "U_VA_RUSMF ()", 0,4})
+		aadd (_aMenuOut, {"&Redirecionar",          "U_VA_RUSRD ()", 0,4})
+		aadd (_aMenuOut, {"&Reenviar p/grau",       "U_VA_RUSRG ()", 0,4})
+		aadd (_aMenuOut, {"&Rastrear estoque",      "U_VA_RUSRC ()", 0,4})
+		aadd (_aMenuOut, {"&NF remessa coop",       "U_VA_RUSNR ('A')", 0,4})
+		aadd (_aMenuOut, {"Controle Portaria",      "U_VA_CPORT ()", 0,4})
+		aadd (_aMenuOut, {"Medicoes do grau",       "U_VA_XLS54 (sze -> ze_filial, sze -> ze_safra, sze -> ze_carga)", 0,4})
+		aadd (_aMenuOut, {"Enderecar uva(estoque)", "U_VA_RusEn (sze -> ze_nfger, sze -> ze_serie, sze -> ze_assoc, sze -> ze_Lojasso)", 0,4})  // Apenas para ver nova simulacao no arquivo de log.
 		if upper (alltrim (cUserName)) == 'ROBERT.KOCH'
 			aadd (_aMenuOut, {"Simular frete (Robert)",  "U_VA_RusCF (.F.)", 0,4})  // Apenas para ver nova simulacao no arquivo de log.
-			aadd (_aMenuOut, {"Enderecar uva (Robert)",  "U_VA_RusEn (sze -> ze_nfger, sze -> ze_serie, sze -> ze_assoc, sze -> ze_Lojasso)", 0,4})  // Apenas para ver nova simulacao no arquivo de log.
 		endif
 
 		// Menu principal
@@ -209,8 +209,6 @@ static function _LeAssoc ()
 	
 	sa2 -> (dbsetorder (1))
 	_oSQL := ClsSQL ():New ()
-//	_oSQL:_sQuery := "SELECT DISTINCT GRPFAM, ASSOCIADO, LOJA_ASSOC, NOME_ASSOC, RESTRICAO "
-//	_oSQL:_sQuery +=  " FROM VA_VAGENDA_SAFRA"
 	_oSQL:_sQuery += "SELECT DISTINCT GX0001_GRUPO_CODIGO as grpfam"
 	_oSQL:_sQuery +=      ", GX0001_ASSOCIADO_CODIGO as associado"
 	_oSQL:_sQuery +=      ", GX0001_ASSOCIADO_LOJA as loja_assoc"

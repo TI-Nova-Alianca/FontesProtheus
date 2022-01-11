@@ -1,11 +1,10 @@
 // Programa...: FrtSaf22
 // Autor......: Robert Koch
-// Data.......: 05/01/2022
+// Data.......: 10/01/2022
 // Descricao..: Calcula valor de frete de entrega de safra, a ser pago aos associados, para a safra 2022.
 //              Criado com base no FrtSaf21.prw
 //
 // Historico de alteracoes:
-// 05/01/2022 - Robert - Retorno passa a ser em formato array com dados adicionais.
 //
 
 // ------------------------------------------------------------------------------------
@@ -79,7 +78,7 @@ User Function FrtSaf22 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor, _sFilCa
 		_nValFre = 0.07 * _nPesoFrt
 	else
 		_sMetodo = 'D-Caso geral (valor X ton X distancia)'
-		_nValFre = 0.2 * _nPesoFrt / 1000 * _nDist
+		_nValFre = 0.3 * _nPesoFrt / 1000 * _nDist
 	endif
 	_nValFre = round (_nValFre, 2)
 

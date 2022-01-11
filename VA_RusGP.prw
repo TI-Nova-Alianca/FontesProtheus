@@ -58,7 +58,7 @@ User Function VA_RusGP (_sSafra, _sVaried, _sConduc)
 				_sRetGrpPg = 'C'
 			endif
 
-		case _sSafra == '2021'
+		case _sSafra == '2021' .or. _sSafra == '2022'
 			// Nao tenho muitas opcoes alem de fazer alguns testes com codigos fixos...
 			if alltrim (sb1 -> b1_cod) $ '9925/9904/9922/9855'  // bordo, niagara, concord
 				_sRetGrpPg = 'A'

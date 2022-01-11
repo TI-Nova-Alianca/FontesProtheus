@@ -238,13 +238,13 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	::Retorno := WSClassNew ("RetornoWS")
 	::Retorno:Resultado = iif (empty (_sErros), "OK", "ERRO")
 	::Retorno:Mensagens = _sErros + _sMsgRetWS
-	u_log2 ('info', '::Retorno:Resultado = ' + ::Retorno:Resultado)
-	u_log2 ('info', '::Retorno:Mensagens = ' + ::Retorno:Mensagens)
+//	u_log2 ('info', '::Retorno:Resultado = ' + ::Retorno:Resultado)
+//	u_log2 ('info', '::Retorno:Mensagens = ' + ::Retorno:Mensagens)
 
 	// Volta log para o nome original, apenas para 'fechar' a tag de inicio de execucao
 	_sArqLog = _sArqLgOld
 	u_log2 ('debug', 'Retornando web service com o seguinte resultado: ' + ::Retorno:Resultado)
-	u_log2 ('debug', ::Retorno:Mensagens)
+//	u_log2 ('debug', ::Retorno:Mensagens)
 
 	// Encerra ambiente. Ficou um pouco mais lento, mas resolveu problema que estava dando de,
 	// a cada execucao, trazer um cFilAnt diferente. Robert, 09/01/2020.

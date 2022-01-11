@@ -4,6 +4,7 @@
 // Descricao..: Endereca (no estoque) os lotes de uva gerados pela contranota de entrada (GLPI 8779)
 //
 // Historico de alteracoes:
+// 09/01/2022 - Robert - Rotina automatica passou a pedir o campo DB_ITEM.
 //
 
 // ------------------------------------------------------------------------------------
@@ -42,7 +43,7 @@ User Function VA_RusEn (_sDoc, _sSerie, _sFornece, _sLoja)
 	_oSQL:Log ()
 	_aRegSDA = _oSQL:Qry2Array (.F., .F.)
 	if len (_aRegSDA) == 0
-		u_help ("Nenhum produto a enderecar para esta carga/contranota.")
+		u_help ("Nenhum produto com saldo a enderecar para esta carga/contranota.")
 	endif
 	for _nRegSDA = 1 to len (_aRegSDA)
 		sda -> (dbgoto (_aRegSDA [_nRegSDA, 1]))
@@ -55,6 +56,7 @@ User Function VA_RusEn (_sDoc, _sSerie, _sFornece, _sLoja)
 
 		_aAutoSDB = {}
 		_aLinhaSDB = {}
+		aadd (_aLinhaSDB, {"DB_ITEM", '0001', nil})
 		if cFilAnt == '01'
 			aadd (_aLinhaSDB, {"DB_LOCALIZ", 'T01PCP03       ', nil})
 		elseif cFilAnt == '03'

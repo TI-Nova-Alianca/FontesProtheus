@@ -229,9 +229,9 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 	// Validacoes do programa original.
 	if empty (_sErros)  // Variavel private do web service
 		if U_VA_RUS2T ()
-			u_log ('U_VA_RUS2T() ok')
+			u_log2 ('debug', 'U_VA_RUS2T() ok')
 			//_sCargaGer = CriaVar ("ZE_CARGA")
-			u_log ('Tentando gravar carga')
+			u_log2 ('debug', 'Tentando gravar carga')
 			
 //			// Deixa criada variavel para retorno
 //			private _RetGrvSZE := ""

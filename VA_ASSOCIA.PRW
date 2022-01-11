@@ -140,11 +140,6 @@ User Function AssocOut (_nQual)
 
 		case _nQual == 4  // Variedades esperadas / liberadas para recebimento na safra
 			_oSQL := ClsSQL ():New ()
-			// _oSQL:_sQuery := "SELECT *"
-			// _oSQL:_sQuery += " FROM VA_VAGENDA_SAFRA"
-			// _oSQL:_sQuery += " WHERE ASSOCIADO  = '" + _oAssoc:Codigo + "'"
-			// _oSQL:_sQuery +=   " AND LOJA_ASSOC = '" + _oAssoc:Loja   + "'"
-			// _oSQL:_sQuery += " ORDER BY GRPFAM, CAD_VITIC, DESCRICAO"
 			_oSQL:_sQuery += "SELECT *"
 			_oSQL:_sQuery +=  " FROM GX0001_AGENDA_SAFRA"
 			_oSQL:_sQuery += " WHERE GX0001_ASSOCIADO_CODIGO = '" + _oAssoc:Codigo + "'"

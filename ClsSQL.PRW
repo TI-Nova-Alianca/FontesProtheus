@@ -630,8 +630,7 @@ METHOD RetFixo (_nRetFixo, _sMsgFixo, _lMsgTela) Class ClsSQL
 		if _lMsgTela
 			u_help (_sErrRetFx, ::_sQuery, .T.)
 		else
-			U_Log2 ('aviso', _sErrRetFx)
-			U_Log2 ('aviso', ::_sQuery)
+			U_Log2 ('aviso', _sErrRetFx + ' - '+ ::_sQuery)
 			if type ("_sErroAuto") == "C"  // Variavel private (customizada) para retorno de erros em rotinas automaticas.
 				_sErroAuto += iif (empty (_sErroAuto), '', '; ') + _sErrRetFx
 			endif

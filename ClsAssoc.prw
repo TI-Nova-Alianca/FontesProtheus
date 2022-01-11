@@ -303,9 +303,9 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 					::GrpFam    = ''
 					::Nucleo    = ''
 					::SubNucleo = ''
-					u_log2 ('aviso', 'Associado ' + ::Codigo + '/' + ::Loja + ' nao vinculado a nenhum grupo familiar.')
+					u_log2 ('aviso', 'Problemas para determinar o grupo familiado do associado ' + ::Codigo + '/' + ::Loja + '.')
 					if type ("_sErros") == 'C'
-						_sErros += 'Associado ' + ::Codigo + '/' + ::Loja + 'nao vinculado a nenhum grupo familiar'
+						_sErros += 'Problemas para determinar o grupo familiado do associado ' + ::Codigo + '/' + ::Loja + '.'
 					endif
 				endif
 
@@ -484,57 +484,6 @@ Return
 // --------------------------------------------------------------------------
 // Busca os dados de cadastros viticolas ligados ao associado.
 METHOD CadVitic () Class ClsAssoc
-	/*
-	local _oSQL    := NIL
-	local _aRetQry := {}
-	local _aRet    := {}
-	local _nLinha  := 0
-
-	_oSQL := ClsSQL():New ()
-	_oSQL:_sQuery := ""
-	// _oSQL:_sQuery += "SELECT CAD_VITIC, GRPFAM, DESCR_GRPFAM, PRODUTO, DESCRICAO, TIPO_ORGANICO, RECADAST_VITIC, FINA_COMUM, DESCR_MUN, AMOSTRA, RECEB_FISICO_VITIC, SIST_CONDUCAO"
-	// _oSQL:_sQuery +=  " FROM VA_VASSOC_CAD_VITIC2 V"
-	// _oSQL:_sQuery += " WHERE V.ASSOCIADO  = '" + ::Codigo + "'"
-	// _oSQL:_sQuery +=   " AND V.LOJA_ASSOC = '" + ::Loja   + "'"
-	// _oSQL:_sQuery += " ORDER BY CAD_VITIC, GRPFAM, PRODUTO"
-	_oSQL:_sQuery += "SELECT GX0001_PROPRIEDADE_CODIGO"    // 1
-	_oSQL:_sQuery +=      ", GX0001_GRUPO_CODIGO"          // 2
-	_oSQL:_sQuery +=      ", GX0001_GRUPO_DESCRICAO"       // 3
-	_oSQL:_sQuery +=      ", GX0001_PRODUTO_CODIGO"        // 4
-	_oSQL:_sQuery +=      ", GX0001_PRODUTO_DESCRICAO"     // 5
-	_oSQL:_sQuery +=      ", GX0001_TIPO_ORGANICO"         // 6
-	_oSQL:_sQuery +=      ", GX0001_VITICOLA_RECADASTRO"   // 7
-	_oSQL:_sQuery +=      ", GX0001_FINA_COMUM"            // 8
-	_oSQL:_sQuery +=      ", GX0001_VITICOLA_FISICO"       // 9
-	_oSQL:_sQuery +=      ", GX0001_SISTEMA_CONDUCAO"      // 10
-	_oSQL:_sQuery +=      ", GX0001_SIVIBE_CODIGO"         // 11
-	_oSQL:_sQuery +=  " FROM GX0001_AGENDA_SAFRA V"
-	_oSQL:_sQuery += " WHERE GX0001_ASSOCIADO_CODIGO = '" + ::Codigo + "'"
-	_oSQL:_sQuery +=   " AND GX0001_ASSOCIADO_LOJA   = '" + ::Loja   + "'"
-	_oSQL:_sQuery += " ORDER BY GX0001_PROPRIEDADE_CODIGO, GX0001_GRUPO_CODIGO, GX0001_PRODUTO_CODIGO"
-	_oSQL:Log ()
-
-	// Poderia simplesmente pegar o retorno da query, mas usando os includes facilito
-	// futuras pesquisas em fontes para saber onde estes dados sao usados.
-	_aRetQry = aclone (_oSQL:Qry2Array ())
-	u_log (_aRetQry)
-	aRet = {}
-	for _nLinha = 1 to len (_aRetQry)
-		aadd (_aRet, array (.CadVitQtColunas))
-		_aRet [_nLinha, .CadVitCodigo]      = _aRetQry [_nLinha, 1]
-		_aRet [_nLinha, .CadVitCodGrpFam]   = _aRetQry [_nLinha, 2]
-		_aRet [_nLinha, .CadVitNomeGrpFam]  = _aRetQry [_nLinha, 3]
-		_aRet [_nLinha, .CadVitProduto]     = _aRetQry [_nLinha, 4]
-		_aRet [_nLinha, .CadVitDescPro]     = _aRetQry [_nLinha, 5]
-		_aRet [_nLinha, .CadVitOrganico]    = _aRetQry [_nLinha, 6]
-		_aRet [_nLinha, .CadVitSafrVit]     = _aRetQry [_nLinha, 7]
-		_aRet [_nLinha, .CadVitVarUva]      = _aRetQry [_nLinha, 8]
-		_aRet [_nLinha, .CadVitRecebFisico] = stod (_aRetQry [_nLinha, 9])
-		_aRet [_nLinha, .CadVitSistCond]    = _aRetQry [_nLinha, 10]
-		_aRet [_nLinha, .CadVitSivibe]      = _aRetQry [_nLinha, 11]
-	next
-return _aRet
-*/
 return U_VA_RusCV (::Codigo, ::Loja)
 
 
