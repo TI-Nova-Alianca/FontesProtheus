@@ -80,7 +80,7 @@ user function ClUva22 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAspe
 		_oSQL:_sQuery +=   " AND PRODUTO = '" + _sVaried + "'"
 		_oSQL:Log ()
 		_aGrupo52 := aclone (_oSQL:Qry2Array (.F., .F.))
-		U_log ('faixas de grau:', _aGrupo52)
+		U_log2 ('debug', 'faixas de grau:', _aGrupo52)
 		if len (_aGrupo52) == 0
 			u_help ("Produto '" + alltrim (_sVaried) + "' nao encontrado na view VA_VFAIXAS_GRAU_UVAS para a safra '" + _sSafraCl + "'", _oSQL:_sQuery, .t.)
 			_lContinua = .F.

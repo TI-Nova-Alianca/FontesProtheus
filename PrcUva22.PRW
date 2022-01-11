@@ -70,7 +70,7 @@ user function PrcUva22 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	// Viniferas tem tratamento diferenciado conforme a filial onde sao recebidas, podendo inclusive
 	// ser precificadas como outra variedade.
 	if _lContinua
-		u_log2 ('info', 'Varied: ' + alltrim (_sProduto) + '-' + alltrim (sb1 -> b1_desc) + ' gr: ' + cvaltochar (_nGrau))
+		u_log2 ('info', '[' + procname () + '] Calculando preco uva ' + alltrim (_sProduto) + '-' + alltrim (sb1 -> b1_desc) + ' gr: ' + cvaltochar (_nGrau) + ' entregue na filial ' + _sFilial)
 		if sb1 -> b1_varuva == 'F'
 			if _sFilial $ '01/09'
 				_lIsabel = .T.
@@ -192,7 +192,7 @@ user function PrcUva22 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 				_oSQL:_sQuery += " AND ZX5_13.ZX5_13GRUP like '2%'"
 			endif
 		endif
-		_oSQL:Log ()
+//		_oSQL:Log ()
 		_aGrupo := aclone (_oSQL:Qry2Array (.F., .F.))
 	//	U_log2 ('debug', _aGrupo)
 		if len (_aGrupo) == 0
@@ -283,7 +283,7 @@ user function PrcUva22 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 					_nPerAgAli = 5
 				elseif int (_nGBaseAli) - int (_nAux) <= 2
 					_nPerAgAli = 10
-				else //if int (_nGBaseAli) - int (_nAux) <= 3
+				else
 					_nPerAgAli = 15
 				endif
 			elseif _nAux > _nGBaseAli  // Verifica quantos graus encontra-se acima do grau base
@@ -291,7 +291,7 @@ user function PrcUva22 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 					_nPerAgAli = 5
 				elseif _nAux - _nGBaseAli <= 2
 					_nPerAgAli = 10
-				else //if _nAux - _nGBaseAli <= 3
+				else
 					_nPerAgAli = 15
 				endif
 			//	u_log2 ('debug', 'para grau ' + cvaltochar (_nAux) +  ' definiu _nPerAgAli=' + cvaltochar (_nPerAgAli))
@@ -307,14 +307,14 @@ user function PrcUva22 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 				elseif int (_nGBaseMOC) - _nAux <= 2
 					_nPerAgMOC = 15
 				elseif int (_nGBaseMOC) - _nAux <= 3
-					_nPerAgMOC = 30  // Ateh 14/05/2020 estava com 25
-				elseif int (_nGBaseMOC) - _nAux <= 4
-					_nPerAgMOC = 50  // Ateh 14/05/2020 estava com 30
-				elseif int (_nGBaseMOC) - _nAux <= 5
-					_nPerAgMOC = 55  // Ateh 14/05/2020 estava com 50
+					_nPerAgMOC = 30
 
-				// Os percentuais abaixo nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao,
+				// Os percentuais a seguir nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao,
 				// mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				elseif int (_nGBaseMOC) - _nAux <= 4
+					_nPerAgMOC = 50
+				elseif int (_nGBaseMOC) - _nAux <= 5
+					_nPerAgMOC = 55
 				elseif int (_nGBaseMOC) - _nAux <= 6
 					_nPerAgMOC = 60
 				elseif int (_nGBaseMOC) - _nAux <= 7
@@ -340,27 +340,27 @@ user function PrcUva22 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 					_nPerAgMOC = 35
 				elseif _nAux - _nGBaseMOC <= 5
 					_nPerAgMOC = 45
-
-				// Os percentuais abaixo nao constam no MOC por que a CONAB nao especificou,
-				// mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
 				elseif _nAux - _nGBaseMOC <= 6
-					_nPerAgMOC = 50
-				elseif _nAux - _nGBaseMOC <= 7
 					_nPerAgMOC = 55
-				elseif _nAux - _nGBaseMOC <= 8
-					_nPerAgMOC = 60
-				elseif _nAux - _nGBaseMOC <= 9
+				elseif _nAux - _nGBaseMOC <= 7
 					_nPerAgMOC = 65
-				elseif _nAux - _nGBaseMOC <= 10
-					_nPerAgMOC = 70
-				elseif _nAux - _nGBaseMOC <= 11
+				elseif _nAux - _nGBaseMOC <= 8
 					_nPerAgMOC = 75
+				elseif _nAux - _nGBaseMOC <= 9
+					_nPerAgMOC = 85
+				elseif _nAux - _nGBaseMOC <= 10
+					_nPerAgMOC = 95
+
+				// Os percentuais a seguir nao constam no MOC por que a CONAB nao especificou,
+				// mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				elseif _nAux - _nGBaseMOC <= 11
+					_nPerAgMOC = 105
 				elseif _nAux - _nGBaseMOC <= 12
-					_nPerAgMOC = 80
+					_nPerAgMOC = 115
 
 				endif
 			endif
-		//	u_log ('para grau', _nAux, 'definiu _nPerAgMOC=', _nPerAgMOC)
+//			u_log2 ('debug', 'para grau ' + cvaltochar (_nAux) +  ' definiu _nPerAgMOC = ' + cvaltochar (_nPerAgMOC))
 
 			aadd (_aGraus, afill (array (.PrcUvaQtColunas), 0))
 			_aGraus [len (_aGraus), .PrcUvaColGrau]            = _nAux
@@ -506,9 +506,6 @@ user function PrcUva22 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 			if _sConducao == 'E'  // Espaldeira
 				do case
 				case alltrim (_sClassif) == "PR" .or. alltrim (_sClassif) == "AA"// Nao testar alltrim (_sClassif) $ "PR/AA" por que vai abocanhar a classe 'A' junto!
-					// Complemento abr/2021 aumentamos preco grau base e pagaremos apenas 20% de agio no PR e AA (GLPI 9891)
-					// _nPrcRec *= 1.4
-					// _nPrcCom *= 1.4
 					_nPrcRec *= 1.2
 					_nPrcCom *= 1.2
 				case alltrim (_sClassif) == "A"
@@ -604,6 +601,6 @@ user function PrcUva22 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 //	u_log ('Preco entrada:', _aRet [1])
 //	u_log ('Preco compra :', _aRet [2])
 //	u_log ('Preco MOC    :', _aRet [5])
-	u_log2 ('info', _aRet [3])
+// comentarios -->	u_log2 ('info', _aRet [3])
 	U_ML_SRArea (_aAreaAnt)
 return _aRet

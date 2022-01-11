@@ -372,6 +372,8 @@ User Function va_rusN (_lSimulNF)
 				_nVlUni = U_PrcUva20 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F.)[5]  // pos.5=preco MOC
 			elseif szf -> zf_safra == '2021'
 				_nVlUni = U_PrcUva21 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[2]  // pos.2 = preco de compra
+			elseif szf -> zf_safra == '2022'
+				_nVlUni = U_PrcUva22 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[5]  // pos.5 = preco MOC
 			else
 				u_help ("Sem tratamento para leitura de precos para esta safra.")
 				_lContinua = .F.
@@ -443,7 +445,7 @@ User Function va_rusN (_lSimulNF)
 			endif
 
 			// Lista cada nao conformidade uma unica vez, independente de quantos itens a tenham
-			for _nNaoConf = 1 to 4  // Aumentar aqui se forem criados novos campos.
+			for _nNaoConf = 1 to 2  //4  // Aumentar aqui se forem criados novos campos.
 				_sDescNC = alltrim (U_RetZX5 ('11', sze -> ze_safra + szf -> &('zf_nconf' + strzero (_nNaoConf, 2)), 'ZX5_11DESC'))
 				if ! empty (_sDescNC)
 					u_log ('nao conf', _nnaoconf, ':', szf -> &('zf_nconf' + strzero (_nNaoConf, 2)), _sDescNC)
@@ -508,15 +510,23 @@ User Function va_rusN (_lSimulNF)
 		enddo
 	endif
 
-		u_help ("em 2021, por estar usando o ponto de entrada MTCOLSE2, foram geradas duplicatas independente do TES mandar gerar duplicatas. AJUSTAR!")
-		_lContinua = .F.
+//	u_help ("em 2021, por estar usando o ponto de entrada MTCOLSE2, foram geradas duplicatas independente do TES mandar gerar duplicatas. TESTAR COMO FICOU!")
+//	_lContinua = .F.
+
+//	u_help ("testar tratamento para verificar se a cooperativa paga o funrural deste produtor (feito no SF1100I)")
+//	_lContinua = .F.
 
 	// Prepara valores e datas das parcelas do financeiro, para ser lida pelo P.E. MTColSE2
 	if _lContinua
-		_aParPgSaf := aclone (U_VA_RusPP (sze -> ze_safra, _sGrpPgSaf, _nVlrUvas, _nVlFrete, dDataBase))
-		if len (_aParPgSaf) == 0
-			_lContinua = .F.
-		endif
+		if fBuscaCpo ("SF4", 1, xfilial ("SF4") + _sTES, "F4_DUPLIC") == 'S'
+			_aParPgSaf := aclone (U_VA_RusPP (sze -> ze_safra, _sGrpPgSaf, _nVlrUvas, _nVlFrete, dDataBase))
+			if len (_aParPgSaf) == 0
+				_lContinua = .F.
+			endif
+		else
+			U_Log2 ('debug', 'O TES usado (' + _sTES + ') nao gera duplicatas. Vou deixar a variavel _aParPgSaf vazia.')
+			_aParPgSaf = {}
+		end
 	endif
 
 	// Prepara dados adicionais

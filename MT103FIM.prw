@@ -17,6 +17,7 @@
 // 30/08/2021 - Robert  - Passa a fazer manifesto somente se o usuario confirmou a tela.
 // 23/11/2021 - Claudia - Gerar manifesto apenas para SPED. GLPI: 11183
 // 14/12/2021 - Robert  - Nao grava o campo FT_ITEM quando executa MATA103 via rotina automatica (GLPI 11360)
+// 09/01/2022 - Robert  - Contranotas de safra estavam chamando tela do manifesto.
 //
 
 // ------------------------------------------------------------------------------------
@@ -30,11 +31,13 @@ User Function MT103FIM()
 		_AjSFT ()
 	endif
 
-	if alltrim (cEspecie) == 'SPED' .and. _lConf  // Usuario confirmou a tela
-		//Realiza ciência
-		U_FBTRS101({SF1->F1_CHVNFE}, 4, '')
-		//Abre tela do manifesto
-		U_FBTRS102(.T.)
+	if cFormul != 'S'  // Contranotas de safra estavam chamando tela do manifesto
+		if alltrim (cEspecie) == 'SPED' .and. _lConf  // Usuario confirmou a tela
+			//Realiza ciência
+			U_FBTRS101({SF1->F1_CHVNFE}, 4, '')
+			//Abre tela do manifesto
+			U_FBTRS102(.T.)
+		endif
 	endif
 
 	U_ML_SRArea (_aAreaAnt)

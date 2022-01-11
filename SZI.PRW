@@ -308,24 +308,13 @@ User Function SZIR (_nQual)
 		endif
 
 	case _nQual == 9
-		// Verifica se existe titulo correspondente no financeiro.
-//		if ! U_TemNick ("SE2", "E2_VACHVEX")
-//			u_help ("Problema nos indices de arquivos. Acione suporte.")
-//			U_AvisaTI ("Falta indice para pesquisa de movto da conta corrente de associados na rotina " + procname ())
-//		else
-//			se2 -> (dbOrderNickName ("E2_VACHVEX"))  // E2_FILIAL+E2_VACHVEX
-//			if se2 -> (dbseek (xfilial ("SE2") + &(_sChave), .F.))
-
 		se2 -> (dbsetorder (6))  // E2_FILIAL, E2_FORNECE, E2_LOJA, E2_PREFIXO, E2_NUM, E2_PARCELA, E2_TIPO, R_E_C_N_O_, D_E_L_E_T_
 		u_log2 ('debug', 'pesquisando SE2 com >>' + xfilial ("SE2") + szi -> zi_assoc + szi -> zi_lojasso + szi -> zi_serie + szi -> zi_doc + szi -> zi_parcela + '<<')
 		if ! se2 -> (dbseek (xfilial ("SE2") + szi -> zi_assoc + szi -> zi_lojasso + szi -> zi_serie + szi -> zi_doc + szi -> zi_parcela, .F.))
-			u_help ("Nao localizar nenhum titulo no contas a pagar com este prefixo / numero / parcela.",, .t.)
+			u_help ("Nao consegui localizar nenhum titulo no contas a pagar com este prefixo / numero / parcela.",, .t.)
 		else
 				FC050Con ()
-//			else
-//				u_help ("Nao foi encontrado titulo correspondente no contas a pagar.",, .t.)
 		endif
-//		endif
 
 	case _nQual == 10
 		CursorWait ()
@@ -354,7 +343,6 @@ User Function SZIR (_nQual)
 			_sQuery += "    ,E2_TIPO"
 			_sQuery += "    ,E2_EMIS1"
 			_sQuery += "    ,E2_VENCREA"
-			//_sQuery += " 	,E2_VALOR "
 			_sQuery += "    ,ISNULL((SELECT"
 			_sQuery += " 			SUM(FK2_VALOR)"
 			_sQuery += " 		FROM " + RetSQLName ("FK7") + " AS FK7 "
@@ -1134,7 +1122,7 @@ static function _SZIRS2 (_nQual)
 			endif
 		endif
 	elseif _nQual == 3  // Atualiza saldo de cada lcto deste associado
-		_dDataIni = U_Get ('Data inicial para recalculo', 'D', 8, '@D', '', date (), .F., '.T.')
+		_dDataIni = U_Get ('Data emissao inicial para recalculo', 'D', 8, '@D', '', date (), .F., '.T.')
 		if ! empty (_dDataIni)
 			u_log2 ('info', 'Recalculando saldo de cada lcto.do associado ' + szi -> zi_assoc + '/' + szi -> zi_lojasso)
 			_oSQL := ClsSQL ():New ()
