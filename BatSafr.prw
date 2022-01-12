@@ -27,6 +27,7 @@
 // 03/04/2021 - Robert - Recalcula saldo do SZI antes de enviar aviso de diferenca com o SE2.
 // 07/05/2021 - Robert - Removidas algumas linhas comentariadas.
 // 20/07/2021 - Robert - Removido e-mail paulo.dullius e inserido monica.rodrigues
+// 12/01/2022 - Robert - Melhorias nomes arquivos de log, e-mail caompanhamento.
 //
 
 // --------------------------------------------------------------------------
@@ -36,13 +37,20 @@ user function BatSafr (_sQueFazer, _lAjustar)
 	local _sMsg      := ""
 	local _aCols     := {}
 	local _aSemNota  := {}
-	//local _sDestin   := ""
 	local _oSQL      := NIL
+	local _sArqLgOld := ''
+	local _sArqLog2  := ''
 
 	_sQueFazer = iif (_sQueFazer == NIL, '', _sQueFazer)
 	_lAjustar = iif (_lAjustar == NIL, .F., _lAjustar)
 
 	U_Log2 ('info', 'Iniciando ' + procname () + ' com _sQueFazer=' + _sQueFazer)
+
+	// Como esta funcao faz diversas tarefas, vou gerar log em arquivos separados.
+	_sArqLgOld = _sArqLog
+	_sArqLog2 = procname () + '_opcao' + _sQueFazer + '_' + alltrim (cUserName) + "_" + dtos (date ()) + ".log"
+	u_log2 ('info', 'Log da thread ' + cValToChar (ThreadID ()) + ' prossegue em outro arquivo: ' + _sArqLog2)
+	_sArqLog = _sArqLog2
 
 	// Procura cargas sem contranota.
 	if _sQueFazer == '1'
@@ -65,12 +73,15 @@ user function BatSafr (_sQueFazer, _lAjustar)
 			_sMsg += _oAUtil:ConvHTM ("", _aCols, 'width="80%" border="1" cellspacing="0" cellpadding="3" align="center"', .F.)
 			U_Log2 ('aviso', _sMsg)
 			U_ZZUNU ({'045', '047'}, "Inconsistencias cargas safra", _sMsg)
+		else
+			U_Log2 ('info', 'Nenhuma inconsistencia encontrada.')
 		endif
 
 	// Verifica contranotas com cadastro viticola desatualizado
 	// Em desuso. A partir de 2021 trabalha-se com codigo SIVIBE e os cadastros de propriedades
 	// rurais (antigos cad.viticolas) estao no NaWeb
 	elseif _sQueFazer == '2'
+		U_Log2 ('aviso', 'Verificacao em desuso!')
 
 	// Verifica composicao das parcelas das notas. Em 2021 jah estamos fazendo 'compra' durante a safra.
 	// Como as primeiras notas sairam erradas, optei por fazer esta rotina de novo a identifica-las
@@ -97,6 +108,8 @@ user function BatSafr (_sQueFazer, _lAjustar)
 			_sMsg += _oAUtil:ConvHTM ("", _aCols, 'width="80%" border="1" cellspacing="0" cellpadding="3" align="center"', .F.)
 			u_log (_smsg)
 			U_ZZUNU ({'999'}, "Contranotas sem carga", _sMsg)
+		else
+			U_Log2 ('info', 'Nenhuma inconsistencia encontrada.')
 		endif
 
 	// Verifica frete
@@ -124,6 +137,9 @@ user function BatSafr (_sQueFazer, _lAjustar)
 		u_help ("Sem definicao para o que fazer quando parametro = '" + _sQueFazer + "'.",, .T.)
 		//_oBatch:Retorno += "Sem definicao para verificacao '" + _sQueFazer + "'."
 	endif
+
+	// Volta log para o nome original, apenas para 'fechar' o processo.
+	_sArqLog = _sArqLgOld
 
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
@@ -418,7 +434,7 @@ static function _MailAcomp ()
 
 	_sMsg = _oSQL:Qry2HTM ("Acompanhamento cargas safra " + _sSafra, _aCols, "", .T., .F.)
 	if len (_oSQL:_xRetQry) > 1
-		u_log (_sMsg)
+		u_log2 ('debug', _sMsg)
 		_sDest := ""
 
 		// Internos - direcao
@@ -426,7 +442,7 @@ static function _MailAcomp ()
 		_sDest += "joel.panizzon@novaalianca.coop.br;"
 		_sDest += "jocemar.dalcorno@novaalianca.coop.br;"
 		_sDest += "rodrigo.colleoni@novaalianca.coop.br;"
-
+/*
 		// Conselho administracao titulares
 		_sDest += "diegowaiss@hotmail.com;"
 		_sDest += "gilbertoverdi@gmail.com;"
@@ -453,9 +469,9 @@ static function _MailAcomp ()
 		// Conselho fiscal suplentes
 		_sDest += "carloscbusetti@hotmail.com;"
 		_sDest += "fernandoantoniogiordani@gmail.com;"
-
+*/
 		// Internos - gestores
-		_sDest += "evandro.marcon@novaalianca.coop.br;"
+//		_sDest += "evandro.marcon@novaalianca.coop.br;"
 		_sDest += "rodimar.vizentin@novaalianca.coop.br;"
 
 		// Internos - tecnico / enologia / operacao
@@ -463,6 +479,7 @@ static function _MailAcomp ()
 		_sDest += "eliane.lopes@novaalianca.coop.br;"
 		_sDest += "pedro.toniolo@novaalianca.coop.br;"
 		_sDest += "anderson.felten@novaalianca.coop.br;"
+		_sDest += "alex.cervinski@novaalianca.coop.br;"
 		_sDest += "eduardo.guarche@novaalianca.coop.br;"
 		_sDest += "renan.mascarello@novaalianca.coop.br;"
 		_sDest += "sergio.pereira@novaalianca.coop.br;"
@@ -474,7 +491,6 @@ static function _MailAcomp ()
 		_sDest += "monica.rodrigues@novaalianca.coop.br;"
 		_sDest += "waldir.schu@novaalianca.coop.br;"
 		_sDest += "odinei.cardoso@novaalianca.coop.br;"
-		_sDest += "alex.cervinski@novaalianca.coop.br;"
 
 		// Internos - TI (monitoramento)
 		_sDest += "sandra.sugari@novaalianca.coop.br;"
@@ -564,6 +580,7 @@ static function _GeraSZI ()
 				// Se gerei conta corrente numa filial, preciso transferir esse lcto para a matriz, pois todos os pagamentos sao centralizados.
 				if cFilAnt != '01' //.and. 'TESTE' $ upper (getenvserver ())  // por enqto apenas na base teste
 					_oCtaCorr:FilDest = '01'
+					U_Log2 ('info', 'Solicitando transferencia do saldo deste movimento para a matriz.')
 					if ! _oCtaCorr:TransFil (_oCtaCorr:DtMovto)
 						u_help ("A transferencia para outra filial nao foi possivel. " + _oCtaCorrT:UltMsg,, .T.)
 					endif
@@ -591,6 +608,7 @@ static function _ConfSZI ()
 	// local _nRegSZI   := 0
 	local _sSafrComp := strzero (year (dDataBase), 4)
 	local _oCtaCorr  := NIL
+	local _nQtErros  := 0
 
 	U_Log2 ('info', 'Iniciando ' + procname ())
 
@@ -673,16 +691,14 @@ static function _ConfSZI ()
 		endif
 
 		if ! empty (_sMsg)
+			_nQtErros ++
 			U_Log2 ('erro', 'Inconsistencia SZI x SE2 safra - filial: ' + (_sAliasQ) -> e2_filial + ' NF: ' + (_sAliasQ) -> e2_num + ' forn: ' + (_sAliasQ) -> e2_fornece)
 			U_Log2 ('erro', _sMsg)
 			u_zzunu ({'999'}, 'Inconsistencia SZI x SE2 safra - filial: ' + (_sAliasQ) -> e2_filial + ' NF: ' + (_sAliasQ) -> e2_num + ' forn: ' + (_sAliasQ) -> e2_fornece, _sMsg)
-
-			// cai fora no primeiro erro encontrado (estou ainda ajustando)
-			// EXIT   // REMOVER DEPOIS !!!!!!!!!!!!!!!!!
-
 		endif
 		(_sAliasQ) -> (dbskip ())
 	enddo
+	U_Log2 ('info', 'Quantidade de inconsistencias encontradas: ' + cvaltochar (_nQtErros))
 	U_Log2 ('info', 'Finalizando ' + procname ())
 return
 

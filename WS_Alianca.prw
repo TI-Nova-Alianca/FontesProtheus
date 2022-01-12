@@ -241,7 +241,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 //	u_log2 ('info', '::Retorno:Resultado = ' + ::Retorno:Resultado)
 //	u_log2 ('info', '::Retorno:Mensagens = ' + ::Retorno:Mensagens)
 
-	// Volta log para o nome original, apenas para 'fechar' a tag de inicio de execucao
+	// Volta log para o nome original, apenas para 'fechar' o processo.
 	_sArqLog = _sArqLgOld
 	u_log2 ('debug', 'Retornando web service com o seguinte resultado: ' + ::Retorno:Resultado)
 //	u_log2 ('debug', ::Retorno:Mensagens)
