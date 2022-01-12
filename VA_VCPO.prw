@@ -162,7 +162,9 @@
 //                        (cada tela vai chamar seus ptos.entrada) - GLPI 10464.
 // 10/08/2021 - Cláudia - Incluida validação na transferencia, para que crie a movimentação de produtos 
 //                        de manutençao no AX 02. GLPI: 10379
+// 11/01/2022 - Robert  - Criada validacao campo C1_VANF
 //
+
 // -------------------------------------------------------------------------------------------------------------------
 
 user function VA_VCpo (_sCampo)
@@ -461,6 +463,22 @@ user function VA_VCpo (_sCampo)
 					endif
 				endif
 			endif
+
+
+		case _sCampo $ "M->C1_VANF"
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " SELECT STRING_AGG (C1_NUM, ',')"
+			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SC1")
+			_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=    " AND C1_FILIAL  = '" + xfilial ("SC1") + "'"
+			_oSQL:_sQuery +=    " AND C1_FORNECE = '" + GDFieldGet ("C1_FORNECE") + "'"
+			_oSQL:_sQuery +=    " AND C1_VANF    = '" + m->c1_vanf + "'"
+			_sRetSQL := alltrim (_oSQL:RetQry ())
+			if ! empty (_sRetSQL)
+				_lRet = U_MsgNoYes ("Este numero de NF ja foi informado nas seguintes solicitacoes: " + alltrim (_sRetSQL) + ". Confirma assim mesmo?")
+			endif
+
 
 		case _sCampo $ "M->C2_PRODUTO/M->DA1_CODPRO"
 			if alltrim (&(_sCampo)) != 'MANUTENCAO' //necessario para O.S de manutencao.
