@@ -2,44 +2,44 @@
 // Autor......: Robert Koch
 // Data.......: 10/09/2014
 // Descricao..: P.E. 'Linha OK' na tela MATA261 (transferencias de estoque mod.II)
-
+//
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #ponto_de_entrada
 // #Descricao         #Ponto de entrada para validar transferencias de estoque.
 // #PalavasChave      #validacao #transferencias_estoque
 // #TabelasPrincipais #SD3
 // #Modulos           #EST
-
-// Historico de alteracoes:
-// 12/12/2014 - Robert - Verificacoes integracao Fullsoft.
-// 15/01/2015 - Robert - Passa a chamar a funcao U_PodeMov () para validar troca de produtos.
-// 27/01/2015 - Robert - Passa a validar parametros VA_ALMFULP, VA_ALMFULT, VA_ALMFULT
-// 18/05/2016 - Robert - Novos parametros funcao LaudoEm().
-// 03/06/2017 - Robert - Impede a transf. quando lote destino ja existir.
-// 29/06/2017 - Robert - Impede a transf. quando lote destino ja existir e LoteDest != LoteOrig
-// 16/01/2018 - Robert - Nao impede a transf. quando lote destino ja existir e LoteDest != LoteOrig e lote dest nao tiver saldo.
-// 15/03/2018 - Robert - Data nao pode mais ser diferente de date().
-// 02/04/2018 - Robert - Movimentacao retroativa habilitada para o grupo 084.
-// 09/05/2018 - Robert - Ignora casos como mosto dessulfitado que volta para sulfitado, etc. (parametro VA_PRDTRAN)
-// 14/05/2018 - Robert - Transf.entre produtos: exige lote dest.diferente do origem, para que seja gerado novo lote.
-// 29/05/2018 - Robert - Leitura do parametro VA_PRDTRAN substituida pelo campo B1_VATROUT
-// 29/10/2018 - Robert - Aceita transf. de itens do FullWMS quando chamada pela rotina de integracao (BatFullW)
-// 27/03/2019 - Robert - Bloqueia transf.manual de alguns almoxarifados (iniciando pelo 66)
-// 12/04/2019 - Robert - Nao pede confirmacao dos almox. do Fullsoft quando chamado a partir da classe ClsTrEstq.
-// 25/04/2019 - Robert - Liberado (apenas para mim) transferir para um lote ja existente (GLPI 5769).
-// 31/05/2019 - Robert - Liberado para grupo 069 transferir para um lote ja existente (GLPI 5769).
-// 07/11/2019 - Robert - Bloqueia transf. AX 66 apenas na matriz por enqto
-// 20/07/2020 - Robert - Acesso a transferir lote de estoque para outro lote jah existente passa a validar acesso 107 e nao mais 069.
-//                     - Inseridas tags para catalogacao de fontes
-// 07/08/2020 - Robert - Bloqueio transf. AX 66 e itens '4191/9998' (pallets) no AX 02
-// 26/10/2020 - Robert - Passa a bloquear almoxarifados com base no parametro VA_ALMZAG.
-// 04/12/2020 - Robert - Aceita transferencia de um codigo para outro (msg.Harry Potter) quando solicitacao vem da classe ClsTrEstq e usuario tem acesso pelo ZZU.
-// 16/12/2020 - Robert - Aceita transf. de liquidos sem laudo quando solicitacao vem da classe ClsTrEstq (GLPI 9051)
-// 09/07/2021 - Robert - Criada chamada da funcao U_ConsEst (GLPI 10464).
 //
-
+// Historico de alteracoes:
+// 12/12/2014 - Robert  - Verificacoes integracao Fullsoft.
+// 15/01/2015 - Robert  - Passa a chamar a funcao U_PodeMov () para validar troca de produtos.
+// 27/01/2015 - Robert  - Passa a validar parametros VA_ALMFULP, VA_ALMFULT, VA_ALMFULT
+// 18/05/2016 - Robert  - Novos parametros funcao LaudoEm().
+// 03/06/2017 - Robert  - Impede a transf. quando lote destino ja existir.
+// 29/06/2017 - Robert  - Impede a transf. quando lote destino ja existir e LoteDest != LoteOrig
+// 16/01/2018 - Robert  - Nao impede a transf. quando lote destino ja existir e LoteDest != LoteOrig e lote dest nao tiver saldo.
+// 15/03/2018 - Robert  - Data nao pode mais ser diferente de date().
+// 02/04/2018 - Robert  - Movimentacao retroativa habilitada para o grupo 084.
+// 09/05/2018 - Robert  - Ignora casos como mosto dessulfitado que volta para sulfitado, etc. (parametro VA_PRDTRAN)
+// 14/05/2018 - Robert  - Transf.entre produtos: exige lote dest.diferente do origem, para que seja gerado novo lote.
+// 29/05/2018 - Robert  - Leitura do parametro VA_PRDTRAN substituida pelo campo B1_VATROUT
+// 29/10/2018 - Robert  - Aceita transf. de itens do FullWMS quando chamada pela rotina de integracao (BatFullW)
+// 27/03/2019 - Robert  - Bloqueia transf.manual de alguns almoxarifados (iniciando pelo 66)
+// 12/04/2019 - Robert  - Nao pede confirmacao dos almox. do Fullsoft quando chamado a partir da classe ClsTrEstq.
+// 25/04/2019 - Robert  - Liberado (apenas para mim) transferir para um lote ja existente (GLPI 5769).
+// 31/05/2019 - Robert  - Liberado para grupo 069 transferir para um lote ja existente (GLPI 5769).
+// 07/11/2019 - Robert  - Bloqueia transf. AX 66 apenas na matriz por enqto
+// 20/07/2020 - Robert  - Acesso a transferir lote de estoque para outro lote jah existente passa a validar acesso 107 e nao mais 069.
+//                      - Inseridas tags para catalogacao de fontes
+// 07/08/2020 - Robert  - Bloqueio transf. AX 66 e itens '4191/9998' (pallets) no AX 02
+// 26/10/2020 - Robert  - Passa a bloquear almoxarifados com base no parametro VA_ALMZAG.
+// 04/12/2020 - Robert  - Aceita transferencia de um codigo para outro (msg.Harry Potter) quando solicitacao vem da classe ClsTrEstq e usuario tem acesso pelo ZZU.
+// 16/12/2020 - Robert  - Aceita transf. de liquidos sem laudo quando solicitacao vem da classe ClsTrEstq (GLPI 9051)
+// 09/07/2021 - Robert  - Criada chamada da funcao U_ConsEst (GLPI 10464).
+// 23/12/2021 - Claudia - Incluida validação de almox 11. GLPI: 7665
+//
 // ------------------------------------------------------------------------------------
-user function ma261Lin ()
+User Function MA261LIN ()
 	local _lRet      := .T.
 	local _sProdOrig := ""
 	local _sProdDest := ""
@@ -113,7 +113,6 @@ user function ma261Lin ()
 
 	if _lRet
 		if _sProdOrig != _sProdDest
-
 			// Ignora casos como mosto desulfitado que volta para sulfitado.
 			u_log2 ('debug', 'Produto origem: ' + _sProdOrig)
 			If Posicione ("SB1", 1, xfilial("SB1") + _sProdOrig, "B1_VATROUT") != "S"
@@ -179,7 +178,6 @@ user function ma261Lin ()
 	endif
 
 	if _lRet .and. ! empty (_sEndDest) .and. sbe -> be_estfis $ '000001/000002'
-
 		// Calcula quantidade final que vai ficar no endereco.
 		_nQtFinal = _nQuant
 		for _nOcup = 1 to len (_aOcup)
@@ -203,8 +201,6 @@ user function ma261Lin ()
 	endif
 
 	// Validacoes integracao com Fullsoft
-//	if _lRet .and. cEmpAnt == '01' .and. cFilAnt == '01' .and. ! IsInCallStack ("U_BATFULLW")
-	//u_log ('tipo da variavel:', type ("_lClsTrEst"))
 	if type ("_lClsTrEst") == 'L' .and. _lClsTrEst == .T.  // Se estah sendo chamado de dentro dessa classe, vou assumir que as devidas verificacoes jah foram feitas.
 		// Pode passar
 		u_log2 ('info', 'aceitando transferencia por que vem de uma chamada da classe ClsTrEstq.')
@@ -260,10 +256,16 @@ user function ma261Lin ()
 		endif
 	endif
 
+	// Valida Almox 11
+	if _lRet
+		if _sAlmDest == '11'
+			u_help("Não é permitida a utilização do almoxarifado 11!")
+			_lRet := .F.
+		endif
+	endif
+
 return _lRet
-
-
-
+//
 // -------------------------------------------------------------------
 // Encontra campos no aHeader
 static function _AchaCol (_sCampo, _nQual)
