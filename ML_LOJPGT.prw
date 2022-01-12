@@ -14,7 +14,8 @@
 // 23/09/2019 - Claudia - Incluidas alterações conforme GLPI 6312
 // 25/09/2019 - Claudia - Incluida opção sintética do relatório
 // 10/12/2019 - Claudia - Incluido filtro de itens deletados e cancelados na tabela SE5
-// 22/02/2021 - Cláudia - GLPI: 9444 - Incluido todos tipos de NF's
+// 22/02/2021 - Cláudia - Incluido todos tipos de NF's. GLPI: 9444
+// 12/01/2022 - Claudia - Separada as notas de e-commerce das demais. GLPI: 11440
 //
 // -----------------------------------------------------------------------------------------------
 
@@ -47,6 +48,8 @@ Static Function ReportDef()
 	Local oSection6:= Nil
 	Local oSection7:= Nil
 	Local oSection8:= Nil
+	Local oSection9:= Nil
+	Local oSection10:= Nil
 
 	oReport := TReport():New("ML_LOJPGT","Movimentos diários",cPerg,{|oReport| PrintReport(oReport)},"Movimentos diários")
 	
@@ -99,22 +102,19 @@ Static Function ReportDef()
 		TRCell():New(oSection5,"COLUNA2", 	" ","Natureza"     	,					,20,/*lPixel*/,{|| },"LEFT",,,,,,,,.F.)
 		TRCell():New(oSection5,"COLUNA3", 	" ","Descrição"		,					,40,/*lPixel*/,{|| },"LEFT",,,,,,,,.F.)
 		TRCell():New(oSection5,"COLUNA4", 	" ","Valor"		    ,"@E 99,999,999.99" ,30,/*lPixel*/,{|| },"RIGHT",,"RIGHT",,,,,,.F.)
-		//TRFunction():New(oSection5:Cell("COLUNA4"),,"SUM"	,,"Total dos depósitos" , "@E 99,999,999.99", NIL, .F., .T.)
 	EndIf		
 
 	//SESSÃO 6 NOTAS
 	oSection6 := TRSection():New(oReport,,{}, , , , , ,.F.,.F.,.F.) 
 	
 	oSection6:SetTotalInLine(.F.)	
-	TRCell():New(oSection6,"COLUNA1", 	" ","Título"			,	    			, 8,/*lPixel*/,{||	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection6,"COLUNA1", 	" ","Título"			,	    			,20,/*lPixel*/,{||	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection6,"COLUNA2", 	" ","Série"				,       			, 6,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection6,"COLUNA3", 	" ","Emissão"			,    				,12,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection6,"COLUNA4", 	" ","Valor Total"		,"@E 99,999,999.99" ,30,/*lPixel*/,{||  },"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection6,"COLUNA5", 	" ","NSU"				,    				,12,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection6,"COLUNA6", 	" ","Autorização"		,    				,12,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection6,"COLUNA7", 	" ","Tipo"				,    				,12,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	//oSection6:SetPageBreak(.T.)
-	//oSection6:SetTotalText(" ")	
 
 	//SESSÃO 7 - TOTAIS NOTAS
 	oSection7 := TRSection():New(oReport," ",{""}, , , , , ,.F.,.F.,.F.) 
@@ -128,6 +128,25 @@ Static Function ReportDef()
 	oSection8:SetTotalInLine(.F.)
 	TRCell():New(oSection8,"COLUNA1", 	" ","Forma de Pagamento"     	,					,30,/*lPixel*/,{|| },"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection8,"COLUNA2", 	" ","Valor total"		        ,"@E 99,999,999.99"	,30,/*lPixel*/,{|| },"RIGHT",,"RIGHT",,,,,,.F.)
+
+	//SESSÃO 9 NOTAS E-COMMERCE
+	oSection9 := TRSection():New(oReport,,{}, , , , , ,.F.,.F.,.F.) 
+	
+	oSection9:SetTotalInLine(.F.)	
+	TRCell():New(oSection9,"COLUNA1", 	" ","Título"			,	    			,20,/*lPixel*/,{||	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection9,"COLUNA2", 	" ","Série"				,       			, 6,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection9,"COLUNA3", 	" ","Emissão"			,    				,12,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection9,"COLUNA4", 	" ","Valor Total"		,"@E 99,999,999.99" ,30,/*lPixel*/,{||  },"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection9,"COLUNA5", 	" ","NSU"				,    				,12,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection9,"COLUNA6", 	" ","Autorização"		,    				,12,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection9,"COLUNA7", 	" ","Tipo"				,    				,12,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+
+	//SESSÃO 10 - TOTAIS NOTAS E-COMMERCE
+	oSection10 := TRSection():New(oReport," ",{""}, , , , , ,.F.,.F.,.F.) 
+	oSection10:SetTotalInLine(.F.)
+	TRCell():New(oSection10,"COLUNA1", 	" "," "							,					,15,/*lPixel*/,{|| },"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection10,"COLUNA2", 	" ","Forma de Pagamento"     	,					,30,/*lPixel*/,{|| },"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection10,"COLUNA3", 	" ","Valor total"		        ,"@E 99,999,999.99"	,30,/*lPixel*/,{|| },"RIGHT",,"RIGHT",,,,,,.F.)	
 Return(oReport)
 //
 // -----------------------------------------------------------------------------------------------
@@ -140,6 +159,8 @@ Static Function PrintReport(oReport)
 	Local oSection6 := oReport:Section(6)
 	Local oSection7 := oReport:Section(7)
 	Local oSection8 := oReport:Section(8)
+	Local oSection9 := oReport:Section(9)
+	Local oSection10 := oReport:Section(10)
 	Local cQuery    := ""		
 	Local cQuery2   := ""
 	Local cQuery3   := ""
@@ -472,7 +493,7 @@ Static Function PrintReport(oReport)
 
 
 	// ------------------------------------------------------------------------------------------------------------
-	// imprime notas fiscais
+	// imprime notas fiscais - SEM NF ECOMMERCE
 	oReport:SkipLine(3) 
 	oReport:PrintText(" *** NOTAS FISCAIS ***",,1000)
 	oReport:SkipLine(1) 
@@ -493,8 +514,7 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " 			AND SC5.C5_FILIAL = SF2.F2_FILIAL"
 	_oSQL:_sQuery += " 			AND SC5.C5_NOTA = SF2.F2_DOC"
 	_oSQL:_sQuery += " 			AND SC5.C5_SERIE = SF2.F2_SERIE"
-	//_oSQL:_sQuery += " 			AND SC5.C5_VATIPO <> ''"
-	//_oSQL:_sQuery += " 			AND SC5.C5_VATIPO IN ('CC', 'CD', 'R$','BOL')"
+	_oSQL:_sQuery += " 			AND SC5.C5_PEDECOM = ''"
 	_oSQL:_sQuery += " 		)"
 	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SE1") + " AS SE1"
 	_oSQL:_sQuery += " 	ON (SE1.D_E_L_E_T_ = ''"
@@ -553,8 +573,7 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " 			AND SC5.C5_FILIAL = SF2.F2_FILIAL"
 	_oSQL:_sQuery += " 			AND SC5.C5_NOTA = SF2.F2_DOC"
 	_oSQL:_sQuery += " 			AND SC5.C5_SERIE = SF2.F2_SERIE"
-	//_oSQL:_sQuery += " 			AND SC5.C5_VATIPO <> ''"
-	//_oSQL:_sQuery += " 			AND SC5.C5_VATIPO IN ('CC', 'CD', 'R$','BOL')"
+	_oSQL:_sQuery += " 			AND SC5.C5_PEDECOM = ''"
 	_oSQL:_sQuery += " 		)"
 	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SE1") + " AS SE1"
 	_oSQL:_sQuery += " 	ON (SE1.D_E_L_E_T_ = ''"
@@ -588,6 +607,123 @@ Static Function PrintReport(oReport)
 		oReport:SkipLine(1) 
 		oSection7:Finish()
 	EndIf
+
+	// ------------------------------------------------------------------------------------------------------------
+	// imprime notas fiscais E-COMMERCE
+	oReport:SkipLine(3) 
+	oReport:PrintText(" *** NOTAS FISCAIS E-COMMERCE ***",,1000)
+	oReport:SkipLine(1) 
+
+	_oSQL:= ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " 	SELECT"
+	_oSQL:_sQuery += " 	SF2.F2_DOC AS TITULO"
+	_oSQL:_sQuery += "    ,SF2.F2_SERIE AS SERIE"
+	_oSQL:_sQuery += "    ,SF2.F2_EMISSAO AS DTEMISSAO"
+	_oSQL:_sQuery += "    ,SUM(SE1.E1_VALOR) AS VALOR"
+	_oSQL:_sQuery += "    ,SE1.E1_NSUTEF AS NSU"
+	_oSQL:_sQuery += "    ,SE1.E1_CARTAUT AS AUT"
+	_oSQL:_sQuery += "    ,SE1.E1_TIPO AS TIPO"
+	_oSQL:_sQuery += " FROM " + RetSQLName ("SF2") + " AS SF2"
+	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SC5") + " AS SC5"
+	_oSQL:_sQuery += " 	ON (SC5.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " 			AND SC5.C5_FILIAL = SF2.F2_FILIAL"
+	_oSQL:_sQuery += " 			AND SC5.C5_NOTA = SF2.F2_DOC"
+	_oSQL:_sQuery += " 			AND SC5.C5_SERIE = SF2.F2_SERIE"
+	_oSQL:_sQuery += " 			AND SC5.C5_PEDECOM <> ''"
+	_oSQL:_sQuery += " 		)"
+	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SE1") + " AS SE1"
+	_oSQL:_sQuery += " 	ON (SE1.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " 			AND SE1.E1_FILIAL = SF2.F2_FILIAL"
+	_oSQL:_sQuery += " 			AND SE1.E1_NUM = SF2.F2_DOC"
+	_oSQL:_sQuery += " 			AND SE1.E1_PREFIXO = SF2.F2_SERIE"
+	_oSQL:_sQuery += " 		)"
+	_oSQL:_sQuery += " WHERE SF2.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " AND SF2.F2_FILIAL = '" + xFilial("SF2") +"'"
+	_oSQL:_sQuery += " AND SF2.F2_EMISSAO BETWEEN '"+ dtos(mv_par01) +"' AND '"+ dtos(mv_par02) +"'"
+	_oSQL:_sQuery += " GROUP BY SF2.F2_DOC"
+	_oSQL:_sQuery += " 		,SF2.F2_SERIE"
+	_oSQL:_sQuery += " 		,SF2.F2_EMISSAO"
+	_oSQL:_sQuery += " 		,SE1.E1_CARTAUT"
+	_oSQL:_sQuery += " 		,SE1.E1_NSUTEF"
+	_oSQL:_sQuery += " 		,SE1.E1_TIPO "
+	Do Case
+		Case mv_par12 == 1
+			_oSQL:_sQuery += " ORDER BY SF2.F2_DOC, SF2.F2_SERIE, SF2.F2_EMISSAO" 
+		Case mv_par12 == 2
+			_oSQL:_sQuery += " ORDER BY SE1.E1_TIPO ,SF2.F2_DOC, SF2.F2_SERIE, SF2.F2_EMISSAO"
+		Case mv_par12 == 3
+			_oSQL:_sQuery += " ORDER BY SF2.F2_SERIE, SF2.F2_DOC, SF2.F2_EMISSAO" 
+	EndCase
+	aNFs := aclone (_oSQL:Qry2Array ())
+
+	For i:=1 to Len(aNFs)
+		oSection9:init()
+		oSection9:Cell("COLUNA1"):SetValue(aNFs[i,1])
+		oSection9:Cell("COLUNA2"):SetValue(aNFs[i,2])	
+		oSection9:Cell("COLUNA3"):SetValue(STOD(aNFs[i,3]))	
+		oSection9:Cell("COLUNA4"):SetValue(aNFs[i,4])	
+		oSection9:Cell("COLUNA5"):SetValue(aNFs[i,5])
+		oSection9:Cell("COLUNA6"):SetValue(aNFs[i,6])
+		oSection9:Cell("COLUNA7"):SetValue(aNFs[i,7])	
+
+		oSection9:Printline()
+	Next
+	If Len(aNFs) > 0
+		oSection9:Finish()
+	EndIf
+
+	// imprime TOTAIS notas fiscais E-COMMERCE
+	oReport:SkipLine(3) 
+	oReport:PrintText("TOTAIS - NOTAS FISCAIS E-COMMERCE",,50)
+	oReport:SkipLine(1) 
+
+	_oSQL:= ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " 	SELECT"
+	_oSQL:_sQuery += " 	   SE1.E1_TIPO AS TIPO"
+	_oSQL:_sQuery += "    ,SUM(SE1.E1_VALOR) AS VALOR"
+	_oSQL:_sQuery += " FROM " + RetSQLName ("SF2") + " AS SF2"
+	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SC5") + " AS SC5"
+	_oSQL:_sQuery += " 	ON (SC5.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " 			AND SC5.C5_FILIAL = SF2.F2_FILIAL"
+	_oSQL:_sQuery += " 			AND SC5.C5_NOTA = SF2.F2_DOC"
+	_oSQL:_sQuery += " 			AND SC5.C5_SERIE = SF2.F2_SERIE"
+	_oSQL:_sQuery += " 			AND SC5.C5_PEDECOM <> ''"
+	_oSQL:_sQuery += " 		)"
+	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SE1") + " AS SE1"
+	_oSQL:_sQuery += " 	ON (SE1.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " 			AND SE1.E1_FILIAL = SF2.F2_FILIAL"
+	_oSQL:_sQuery += " 			AND SE1.E1_NUM = SF2.F2_DOC"
+	_oSQL:_sQuery += " 			AND SE1.E1_PREFIXO = SF2.F2_SERIE"
+	_oSQL:_sQuery += " 		)"
+	_oSQL:_sQuery += " WHERE SF2.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " AND SF2.F2_FILIAL = '" + xFilial("SF2") +"'"
+	_oSQL:_sQuery += " AND SF2.F2_EMISSAO BETWEEN '"+ dtos(mv_par01) +"' AND '"+ dtos(mv_par02) +"'"
+	_oSQL:_sQuery += " GROUP BY  SE1.E1_TIPO "
+	_oSQL:Log ()
+
+	aTNFs := aclone (_oSQL:Qry2Array ())
+
+	If Len(aTNFs) > 0
+		oSection10:init()
+		nTotNF := 0
+	EndIf
+
+	For i:=1 to Len(aTNFs)
+		oSection10:Cell("COLUNA1"):SetValue(" ")
+		oSection10:Cell("COLUNA2"):SetValue(aTNFs[i,1])	
+		oSection10:Cell("COLUNA3"):SetValue(aTNFs[i,2])	
+		nTotNF += aTNFs[i,2]
+		oSection10:Printline()
+	Next
+	If Len(aTNFs) > 0
+		oReport:PrintText(" " ,,50)
+		oReport:PrintText("TOTAL DE NOTAS FISCAIS E-COMMERCE: R$ "+ alltrim(str(nTotNF)) ,,50)
+		oReport:SkipLine(1) 
+		oSection10:Finish()
+	EndIf
+
 	//
 	// Totais gerais --------------------------------------------------------------------------------
 	_oSQL:= ClsSQL ():New ()
@@ -631,8 +767,7 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " 			AND SC5.C5_FILIAL = SF2.F2_FILIAL"
 	_oSQL:_sQuery += " 			AND SC5.C5_NOTA = SF2.F2_DOC"
 	_oSQL:_sQuery += " 			AND SC5.C5_SERIE = SF2.F2_SERIE"
-	//_oSQL:_sQuery += " 			AND SC5.C5_VATIPO <> ''"
-	//_oSQL:_sQuery += " 			AND SC5.C5_VATIPO IN ('CC', 'CD', 'R$', 'BOL')"
+	_oSQL:_sQuery += " 			AND SC5.C5_PEDECOM = ''"
 	_oSQL:_sQuery += " 			)"
 	_oSQL:_sQuery += " 		INNER JOIN " + RetSQLName ("SE1") + " AS SE1"
 	_oSQL:_sQuery += " 			ON (SE1.D_E_L_E_T_ = ''"
@@ -657,7 +792,7 @@ Static Function PrintReport(oReport)
 		oReport:ThinLine()
 		oReport:ThinLine()
 		oReport:PrintText(" " ,,50)
-		oReport:PrintText("TOTAIS GERAIS (CUPONS + NOTAS):" ,,50)
+		oReport:PrintText("TOTAIS GERAIS (CUPONS + NOTAS - NOTAS E-COMMERCE):" ,,50)
 		oReport:PrintText(" " ,,50)
 		oReport:ThinLine()
 

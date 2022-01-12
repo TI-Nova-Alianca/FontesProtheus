@@ -1,19 +1,25 @@
-// Programa:  M410STTS
-// Autor:     Jeferson Rech
-// Data:      jul/2005
+// Programa.: M410STTS
+// Autor....: Jeferson Rech
+// Data.....: jul/2005
 // Descricao: P.E. Executado apos a atualizacao do pedido de venda.
 //
-// Historico de alteracoes:
-// 27/02/2009 - Robert - Pedidos jah nascem liberados de estoque na Vinicola
-// 05/10/2009 - Robert - Nao libera mais o estoque dos pedidos da Vinicola.
-// 09/07/2015 - Robert - Desabilitada exclusao do cliente 000001 e tratamento de banco/vendedor
-//                     - Limpa tabela ZZS quando pedido gerado pelo EDI.
-// 09/07/2016 - Robert - Envia e-mails de aviso de bloqueio de preco / margem.
-// 27/06/2017 - Robert - Gera evento se duplicar C5_PEDCLI (GLPI 2728).
-// 24/11/2019 - Robert - Campo C5_VABLOQ passa a ter mais de uma posicao (GLPI 7000).
+// Tags de localização
+// #TipoDePrograma    #Ponto_De_Entrada
+// #PalavasChave      #PE #pontodeentrada #pedido #venda #pedidosdevendas #TudoOK
+// #TabelasPrincipais #SC5 #SC6 
+// #Modulos 		  #faturamento #FAT
 //
-
-// --------------------------------------------------------------------------
+// Historico de alteracoes:
+// 27/02/2009 - Robert  - Pedidos jah nascem liberados de estoque na Vinicola
+// 05/10/2009 - Robert  - Nao libera mais o estoque dos pedidos da Vinicola.
+// 09/07/2015 - Robert  - Desabilitada exclusao do cliente 000001 e tratamento de banco/vendedor
+//                      - Limpa tabela ZZS quando pedido gerado pelo EDI.
+// 09/07/2016 - Robert  - Envia e-mails de aviso de bloqueio de preco / margem.
+// 27/06/2017 - Robert  - Gera evento se duplicar C5_PEDCLI (GLPI 2728).
+// 24/11/2019 - Robert  - Campo C5_VABLOQ passa a ter mais de uma posicao (GLPI 7000).
+// 11/01/2022 - Claudia - Incluida validação para liberação de credito p/ ped.ecommerce. GLPI: 11270
+//
+// --------------------------------------------------------------------------------------------------
 User Function M410STTS()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _aAmbAnt := U_SalvaAmb ()
@@ -28,13 +34,17 @@ User Function M410STTS()
 	// Verifica se houve duplicidade de ordem de compra.
 	_VerOC ()
 
+	// Libera pedidos de ecommerce
+	if !empty(m->c5_pedecom)
+		_LibCredEcommerce()
+	endif
+
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
 Return
-
-
-
+//
 // --------------------------------------------------------------------------
+// Limpa ZZS
 static function _LimpaZZS ()
 	zzs -> (dbsetorder (3))  // ZZS_FILIAL+ZZS_NUMPED
 	if zzs -> (dbseek (xfilial ("ZZS") + sc5 -> c5_num, .F.))
@@ -44,15 +54,13 @@ static function _LimpaZZS ()
 		msunlock ()
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
+// Verifica necessidade de envio de e-mails de avisos.
 static function _MailAviso ()
 	local _sMsg    := ""
 
 	if inclui .or. (altera .and. !Empty (sc5 -> C5_LIBEROK) .And. Empty (sc5 -> C5_BLQ))
-//		if m->c5_vaBloq = 'P'  // Bloqueio por preco
 		if 'P' $ m->c5_vaBloq  // Bloqueio por preco
 			if type ("_sMsgPUltV") == "C"  // Variavel publica que deve ter sido criada pelo programa GrvLibPV 
 				_sMsg += chr (13) + chr (10) + _sMsgPUltV
@@ -60,7 +68,6 @@ static function _MailAviso ()
 			U_ZZUNU ('006', "Pedido de venda '" + m->c5_num + "' liberado por " + alltrim (cUserName) + " com precos menores que a ultima venda.", _sMsg) 
 		endif
 
-//		if m->c5_vaBloq = 'M'  // Bloqueio por margem
 		if 'M' $ m->c5_vaBloq  // Bloqueio por margem
 			_sMsg := "Pedido...:" + m->c5_num + chr (13) + chr (10)
 			_sMsg += "Cliente..:" + m->c5_cliente + '/' + m->c5_lojacli + ' - '
@@ -74,17 +81,12 @@ static function _MailAviso ()
 			U_ZZUNU ('006', "Pedido de venda '" + m->c5_num + "' liberado por " + alltrim (cUserName) + " abaixo da margem minima", _sMsg)
 		endif
 	endif
-
 return
-
-
-
+//
 // --------------------------------------------------------------------------
-// Verifica se houve repeticao de ordem de compra.
+// Verifica se houve repeticao de ordem de compra
 static function _VerOC ()
-//	local _sMsg     := ""
 	local _oSQL     := NIL
-//	local _aRetSQL  := {}
 	local _nLinha   := 0
 	local _sCodEven := 'SC5007'
 	local _oEvento  := {}
@@ -108,8 +110,8 @@ static function _VerOC ()
 		_oSQL:_sQuery +=                      " AND ZN_PEDVEND = C5_NUM" 
 		_oSQL:_sQuery +=                      " AND ZN_CODEVEN = '" + _sCodEven + "'" 
 		_oSQL:_sQuery +=                  " )"
-//		_oSQL:Log ()
 		_aRetQry := aclone (_oSQL:Qry2Array (.F., .F.))
+
 		if len (_aRetQry) > 0
 			_oEvento := ClsEvent ():New ()
 			_oEvento:CodEven   = _sCodEven
@@ -123,4 +125,17 @@ static function _VerOC ()
 			_oEvento:Grava ()
 		endif
 	endif
+return
+//
+// --------------------------------------------------------------------------
+// Libera pedidos de ecommerce
+static function _LibCredEcommerce()
+	Local _oSQL := ClsSQL ():New ()
+
+	_oSQL:_sQuery := " UPDATE  SC9010 SET C9_BLCRED = '' "
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ =''"
+	_oSQL:_sQuery += " AND C9_FILIAL    ='"+ m->c5_filial   +"'"
+	_oSQL:_sQuery += " AND C9_PEDIDO    ='"+ m->c5_num      +"'"
+	_oSQL:Log ()
+	_oSQL:Exec ()
 return
