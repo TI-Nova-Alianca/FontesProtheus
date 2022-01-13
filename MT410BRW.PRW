@@ -4,6 +4,13 @@
 // Descricao..: P.E. antes de mostrar o MBrowse no programa de pedidos de venda
 //              Criado inicialmente para adicionar item no menu.
 //
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #P.E. antes de mostrar o MBrowse no programa de pedidos de venda
+// #PalavasChave      #pedido_de_venda #ultima_venda 
+// #TabelasPrincipais #SC5 
+// #Modulos   		  #FAT
+//
 // Historico de alteracoes:
 // 27/09/2013 - Robert - Criado submenu de rotinas especificas.
 // 23/10/2014 - Robert - Incluida chamada para rotina de aglutinacao de lotes do pedido.
@@ -12,17 +19,18 @@
 // 08/03/2017 - Robert - Criado botao para (re)exportar registro para o mercanet.
 // 22/06/2017 - Robert - Criado botao para alterar observacoes do pedido (GLPI 2729).
 // 12/11/2019 - Robert - Removido botao de inclusao manual de eventos.
+// 13/01/2022 - Claudia - Incluido botão de ultima venda. GLPI: 6102
 //
-
-// --------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------
 user function MT410Brw ()
 	local _aRotAdic := {}
 
-	aadd (_aRotAdic, {"Imprimir",       "U__MATR730()", 0, 2})
-	aadd (_aRotAdic, {"Alt.transp.",    "U_VA_ATPV()", 0, 2}) 
-	aadd (_aRotAdic, {"Vis.Eventos",    "U_VA_SZNC ('PedVenda', sc5->c5_num)", 0, 2})
-	aadd (_aRotAdic, {"Enviar p/ Mercanet", "U_AtuMerc ('SC5', sc5 -> (recno ()))", 0, 2})
-	aadd (_aRotAdic, {"Alt.observ.",    "U_VA_ATOPV()", 0, 2}) 
+	aadd (_aRotAdic, {"Imprimir"			, "U__MATR730()"																	, 0, 2})
+	aadd (_aRotAdic, {"Alt.transp."			, "U_VA_ATPV()"																		, 0, 2}) 
+	aadd (_aRotAdic, {"Vis.Eventos"			, "U_VA_SZNC('PedVenda', sc5->c5_num)"												, 0, 2})
+	aadd (_aRotAdic, {"Enviar p/ Mercanet"	, "U_AtuMerc('SC5', sc5 -> (recno ()))"												, 0, 2})
+	aadd (_aRotAdic, {"Alt.observ."			, "U_VA_ATOPV()"																	, 0, 2}) 
+	aadd (_aRotAdic, {"Última Venda"		, "U_VA_ULTVEN(sc5->c5_filial, sc5->c5_num, sc5->c5_cliente,sc5->c5_lojacli)"	    , 0, 2}) 
 
 	if u_zzuvl ('036', __cUserId, .F.)
 		aadd (_aRotAdic, {"Altera Banco", "U_VA_ALTBCO(sc5->c5_num)", 0, 2})
