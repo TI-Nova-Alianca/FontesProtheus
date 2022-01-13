@@ -20,6 +20,7 @@
 //  07/06/2021 - Claudia - Inicializado o parametro de nome de vendedor com vazio, para casos onde 
 //                         vendedro não possua notas no mes, mas está ativo.
 //  26/10/2021 - Claudia - Realizado ajuste quando tem dois vendedores. GLPI: 11124
+//  12/01/2022 - Claudia - Criada nova validação para indenização. GLPI: 11361
 //
 // ----------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -94,6 +95,7 @@ Static Function _GeraPDF_Email()
 	_oSQL:_sQuery += "  SELECT DISTINCT(SE3.E3_VEND) AS VENDEDOR"
 	_oSQL:_sQuery += "       , SA3.A3_EMAIL          AS EMAIL"
 	_oSQL:_sQuery += "       , SA3.A3_INDENIZ        AS INDENIZ"
+	_oSQL:_sQuery += "       , SA3.A3_INDEBKP        AS INDENIZ_BKP"
 	_oSQL:_sQuery += "       , SA2.A2_SIMPNAC        AS SIMPLES"
 	_oSQL:_sQuery += "       , SE3.E3_DATA           AS DTPAG"
 	_oSQL:_sQuery += "       , SA2.A2_BANCO          AS BANCO"
@@ -173,6 +175,7 @@ Static Function _GeraPDF_Email()
 			_sDataVenc  := STOD((_sAliasQ) -> VENCIMENTO)
 			_nSimples   := (_sAliasQ) -> SIMPLES
 			_sTipIndeniz:= (_sAliasQ) -> INDENIZ
+			_sTipIndBKP := (_sAliasQ) -> INDENIZ_BKP
 			_sBanco     := (_sAliasQ) -> BANCO
 			_sNomeBanco := (_sAliasQ) -> NOMEBANCO
 			_nAgencia   := (_sAliasQ) -> AGENCIA
@@ -504,13 +507,20 @@ Static Function _GeraPDF_Email()
 		// Indenização
 		//_nTotalInde := _nTotComis - _nVlrTVerbas - _nTotDev// Sem IR
 		_nTotalInde:=_nVlrCom // alterado para pegar ja direta a comissão total
+
+		If dtos(mv_par02) < '20220101'
+			_sTpInd := _sTipIndBKP 
+		else
+			_sTpInd := _sTipIndeniz
+		EndIf
+
 		_nIndeniz = ROUND(_nTotalInde /12 , 2)
 
-		oPrint:Say(nLinha,0150,  "VLR INDENIZAÇÃO 1/12 " + IIF (_sTipIndeniz ='S', 'PAGA', 'PROVISIONADA')	+":" ,oFont12n)
+		oPrint:Say(nLinha,0150,  "VLR INDENIZAÇÃO 1/12 " + IIF (_sTpInd ='S', 'PAGA', 'PROVISIONADA')	+":" ,oFont12n)
 		oPrint:Say(nLinha,0900,  PADL('R$' + Transform(_nIndeniz, "@E 999,999,999.99"),20,' ')   		 ,oFont12n)
 		nLinha += 100
 
-		If _sTipIndeniz ='S' 
+		If _sTpInd ='S' 
 			_vIRind := 0
 			If _nSimples != '1'
 				_vIRind = ROUND(_nIndeniz * 15 /100 , 2)
@@ -535,7 +545,7 @@ Static Function _GeraPDF_Email()
 		oPrint:Box( nLinha - 30	, 400, nLinha + 30 , 1300)
 		oPrint:Say( nLinha		, 550, OemToAnsi('DADOS PARA EMISSAO NOTA FISCAL')		,oFont13)
 		
-		If _sTipIndeniz ='S'
+		If _sTpInd ='S'
 			oPrint:Box( nLinha - 30	,   1600, nLinha + 30, 2500)
 			oPrint:Say( nLinha, 		1750, OemToAnsi('DADOS INDENIZAÇÃO 1/2 AVOS')	,oFont13)
 		Endif
@@ -544,7 +554,7 @@ Static Function _GeraPDF_Email()
 		oPrint:Box( nLinha - 30, 400, nLinha + 30, 1300)
 		oPrint:Say( nLinha, 	 450, OemToAnsi('VALOR COMISSÃO                       ' + TransForm( _nVlrCom, '@E  9,999,999.99'))		,oFont13)
 		
-		If _sTipIndeniz ='S'
+		If _sTpInd ='S'
 			oPrint:Box( nLinha - 30 , 1600, nLinha + 30	, 2500)
 			oPrint:Say(nLinha		, 1650, OemToAnsi('VALOR                                ' + TransForm( _nIndeniz , '@E  9,999,999.99')) ,oFont13)
 		Endif
@@ -554,7 +564,7 @@ Static Function _GeraPDF_Email()
 		oPrint:Box( nLinha - 30 , 400, nLinha + 30	, 1300)
 		oPrint:Say( nLinha		, 450, OemToAnsi('VALOR IR                             '      + TransForm( _nVlrIR    , '@E  9,999,999.99'))	,oFont13)
 		
-		If _sTipIndeniz ='S' .and. _nSimples != '1'
+		If _sTpInd ='S' .and. _nSimples != '1'
 			oPrint:Box( nLinha - 30 , 1600, nLinha + 30	, 2500)
 			oPrint:Say( nLinha		, 1650, OemToAnsi('VALOR IR                             ' + TransForm( _vIRind , '@E  9,999,999.99'))	,oFont13)
 		Endif
@@ -562,32 +572,32 @@ Static Function _GeraPDF_Email()
 		
 		oPrint:Box( nLinha - 30 , 400, nLinha + 30	, 1300)
 		oPrint:Say( nLinha		, 450, OemToAnsi('VALOR LIQUIDO COMISSÃO               ' + TransForm( _nVlrCom - _nVlrIR , '@E 9,999,999.99')),oFont13)
-		If _sTipIndeniz ='S'
+		If _sTpInd ='S'
 			oPrint:Box( nLinha - 30 , 1600, nLinha + 30	, 2500)
 			oPrint:Say( nLinha		, 1650, OemToAnsi('VALOR LIQUIDO                        ' + TransForm( _nIndeniz - _vIRind, '@E 9,999,999.99')),oFont13)
 		Endif
 		nLinha += 50
 		
 		oPrint:Box( nLinha - 30 , 400, nLinha + 30	, 1300)
-		If _sTipIndeniz ='S'
+		If _sTpInd ='S'
 			oPrint:Box( nLinha - 30 , 1600, nLinha + 30	, 2500)
 		Endif
 		nLinha += 50
 		
 		oPrint:Box( nLinha - 30, 400, nLinha + 30 , 1300)
-		If _sTipIndeniz ='S'
+		If _sTpInd ='S'
 			oPrint:Box( nLinha - 30, 1600, nLinha + 30 , 2500)
 		Endif
 
 		oPrint:Say(nLinha, 450,OemToAnsi('DADOS DO PAGAMENTO'  ),oFont13)
-		If _sTipIndeniz ='S'
+		If _sTpInd ='S'
 			oPrint:Say(nLinha, 1650,OemToAnsi('DADOS DO PAGAMENTO'  ),oFont13)
 		Endif
 		nLinha += 50
 		
 		oPrint:Box( nLinha - 30,  400, nLinha + 30 , 1300)
 		oPrint:Say(nLinha, 450, OemToAnsi('DATA                               '  + dtoc( _dDtaPgto) + '  *' ),oFont13)
-		If _sTipIndeniz ='S'
+		If _sTpInd ='S'
 			oPrint:Box( nLinha - 30,  1600, nLinha + 30 , 2500)
 			oPrint:Say(nLinha, 1650,OemToAnsi('DATA                               '  + dtoc(_dDtaPgto) + '  *' ),oFont13)
 		Endif
@@ -595,7 +605,7 @@ Static Function _GeraPDF_Email()
 		
 		oPrint:Box( nLinha - 30,  400, nLinha + 30 , 1300)
 		oPrint:Say(nLinha, 450,OemToAnsi('BANCO                ' + alltrim(_sBanco) + " - " + alltrim(_sNomeBanco)),oFont13)
-		If _sTipIndeniz ='S'
+		If _sTpInd ='S'
 			oPrint:Box( nLinha - 30,  1600, nLinha + 30 , 2500)
 			oPrint:Say(nLinha, 1650,OemToAnsi('BANCO            ' + alltrim(_sBanco) + " - " + alltrim(_sNomeBanco)),oFont13)
 		Endif
@@ -603,7 +613,7 @@ Static Function _GeraPDF_Email()
 		
 		oPrint:Box( nLinha - 30,  400, nLinha + 30 , 1300)
 		oPrint:Say(nLinha, 450,OemToAnsi('AGENCIA                                ' + _nAgencia),oFont13)
-		If _sTipIndeniz ='S'
+		If _sTpInd ='S'
 			oPrint:Box( nLinha - 30,  1600, nLinha + 30 , 2500)
 			oPrint:Say(nLinha, 1650,OemToAnsi('AGENCIA                                ' + _nAgencia),oFont13)
 		Endif
@@ -611,7 +621,7 @@ Static Function _GeraPDF_Email()
 		
 		oPrint:Box( nLinha - 30,  400, nLinha + 30 , 1300)
 		oPrint:Say(nLinha, 450,OemToAnsi('CONTA                                  ' + _nConta),oFont13)
-		If _sTipIndeniz ='S'
+		If _sTpInd ='S'
 			oPrint:Box( nLinha - 30,  1600, nLinha + 30 , 2500)
 			oPrint:Say(nLinha, 1650,OemToAnsi('CONTA                                  ' + _nConta ),oFont13)
 		Endif
@@ -619,7 +629,7 @@ Static Function _GeraPDF_Email()
 		
 		nLinha += 50 
 		oPrint:Say(nLinha, 300,OemToAnsi('* Pagamento via depósito, mediante recebimento da NF por email.'),oFont13)
-		If _sTipIndeniz ='S'
+		If _sTpInd ='S'
 			oPrint:Say(nLinha, 1650,OemToAnsi('* Pagamento via depósito.'),oFont13)
 		Endif
 		nLinha += 50
@@ -630,7 +640,7 @@ Static Function _GeraPDF_Email()
 		// ----------------------------------------------------------------------------------------------------------
 		// Monta o recibo se for indenizacao paga no mes
 			
-		If _sTipIndeniz ='S'
+		If _sTpInd ='S'
 			_oCour14N  := TFont():New("Courier New",,14,,.T.,,,,,.F.)
 			_oCour16   := TFont():New("Courier New",,16,,.F.,,,,,.F.)
 			_oCour16N  := TFont():New("Courier New",,16,,.T.,,,,,.F.)

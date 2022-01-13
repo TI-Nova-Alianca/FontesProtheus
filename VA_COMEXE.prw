@@ -13,6 +13,7 @@
 // 14/04/2021 - Cláudia - Melhoria na consulta com o plano de execução estimado (SQL)
 // 05/05/2021 - Cláudia - Adicionado valor de frete + seguro + despesas acessorias. GLPI: 9895
 // 26/10/2021 - Claudia - Realizado ajuste quando tem dois vendedores. GLPI: 11124
+// 12/01/2022 - Claudia - Criada nova validação para indenização. GLPI: 11361
 //
 // -----------------------------------------------------------------------------------------------
 
@@ -105,6 +106,7 @@ User Function VA_COMEXE(_dtaIni, _dtaFin, _sVend, _nLibPg)
 	_oSQL:_sQuery += "    ,E3_PORC AS PERCENTUAL"
 	_oSQL:_sQuery += "    ,E3_COMIS AS VLR_COMIS"
 	_oSQL:_sQuery += "    ,A3_INDENIZ AS INDENIZ"
+	_oSQL:_sQuery += "    ,A3_INDEBKP AS INDENIZ_BKP"
 	_oSQL:_sQuery += "    ,E3_LOJA AS LOJA"
 	_oSQL:_sQuery += "    ,E1_BAIXA AS BAIXA"
 	_oSQL:_sQuery += "    ,E1_SALDO AS SALDO"
