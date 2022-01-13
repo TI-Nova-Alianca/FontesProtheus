@@ -15,6 +15,7 @@
 //		         e dividindo por 12. GLPI: 9099
 //  05/05/2021 - Cláudia - Adicionado valor de frete + seguro + despesas acessorias. GLPI: 9895
 //  26/10/2021 - Claudia - Realizado ajuste quando tem dois vendedores. GLPI: 11124
+//  12/01/2022 - Claudia - Criada nova validação para indenização. GLPI: 11361
 //
 // --------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -164,6 +165,7 @@ Static Function PrintReport(oReport)
 				_sDtaPgto   := STOD((_sAliasQ) ->DT_COMIS)
 				_nSimples   := (_sAliasQ) -> SIMPLES
 				_sTipIndeniz:= (_sAliasQ) -> INDENIZ
+				_sTipIndBKP := (_sAliasQ) -> INDENIZ_BKP
 				_sBanco     := (_sAliasQ) -> BANCO
 				_sNomeBanco := (_sAliasQ) -> NOMEBANCO
 	       		_nAgencia   := (_sAliasQ) -> AGENCIA
@@ -468,16 +470,22 @@ Static Function PrintReport(oReport)
 			// ----------------------------------------------------------------------------------------------------------
 			// Indenização
 			//_nTotalInde := _nTotComis - _nVlrTVerbas - _nTotDev //_nVlrCom // Sem IR
+			If dtos(mv_par02) < '20220101'
+				_sTpInd := _sTipIndBKP 
+			else
+				_sTpInd := _sTipIndeniz
+			EndIf
+
 			_nTotalInde := _nVlrCom // alterado para pegar ja direta a comissão total
 			_nIndeniz = ROUND(_nTotalInde /12 , 2)
 
 			_nLinha :=  oReport:Row()
 			_nLinha:= _PulaFolha(_nLinha)
-			oReport:PrintText("VLR INDENIZAÇÃO 1/12 " + IIF (_sTipIndeniz ='S', 'PAGA', 'PROVISIONADA')	+":" ,_nLinha,100)
+			oReport:PrintText("VLR INDENIZAÇÃO 1/12 " + IIF (_sTpInd ='S', 'PAGA', 'PROVISIONADA')	+":" ,_nLinha,100)
 			oReport:PrintText(PADL('R$' + Transform(_nIndeniz, "@E 999,999,999.99"),20,' '),_nLinha, 900)
 			oReport:SkipLine(1) 
 
-			If _sTipIndeniz ='S' 
+			If _sTpInd ='S' 
 				_vIRind := 0
 				If _nSimples != '1'
 					_vIRind = ROUND(_nIndeniz * 15 /100 , 2)
