@@ -7,6 +7,7 @@
 // Historico de alteracoes:
 // 05/01/2022 - Robert - Tratamento para safra 2022, novo tipo de retorno da funcao de calculo do frete.
 //                     - Gravacao campo ZF_KMFRT.
+// 13/01/2021 - Robert - Inicializacao variavel _aFrtSaf.
 //
 
 // ------------------------------------------------------------------------------------
@@ -17,7 +18,7 @@ User Function va_rusCF (_lRegrav)
 	local _nFrtItem  := 0
 	local _lFrtSafOK := .T.
 	local _oAssoc    := NIL
-	local _aFrtSaf   := {}
+	local _aFrtSaf   := {0, 0, ''}
 
 	// Nao permite duas sessoes alterando a mesma carga. Usa a funcao SoftLock para que mostre a mensagem 'registro em uso por fulano'
 	if _lContinua
@@ -82,10 +83,6 @@ User Function va_rusCF (_lRegrav)
 				elseif sze -> ze_safra == '2022'
 					_aFrtSaf = aclone (U_FrtSaf22 (_oAssoc:Nucleo, szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor))
 					_nFrtItem = _aFrtSaf [1]
-
-					// Simulacao para analise gerencial. Desabilitar depois!
-//					aadd (_aHisFrSaf, {sze -> ze_filial, sze -> ze_carga, sze -> ze_nfger, _oAssoc:Codigo, _oAssoc:Loja, alltrim (_oAssoc:Nome), _oAssoc:Nucleo, szf -> zf_cadviti, szf -> zf_produto, alltrim (fBuscaCpo ("SB1", 1, xfilial ("SB1") + szf -> zf_produto, "B1_DESC")), szf -> zf_grau, szf -> zf_peso, sb1 -> b1_vacor, szf -> zf_valfret, _aFrtSaf [1], _aFrtSaf [2], _aFrtSaf [3]})
-
 				else
 					_nFrtItem = 0
 					u_help ("[" + procname () + "] Sem tratamento de calculo de frete para esta safra.",, .t.)

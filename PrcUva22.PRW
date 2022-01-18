@@ -11,6 +11,7 @@
 // #Modulos           #COOP
 
 // Historico de alteracoes:
+// 14/01/2022 - Robert - Desabilitado teste que, para 2021, somente desclassificava moscatos quando abaixo de 9 graus (mas nao foi compilado nesta data).
 //
 
 #include "VA_INCLU.prw"
@@ -95,13 +96,13 @@ user function PrcUva22 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 				endif
 			endif
 
-			// Complemento gerado em abril 2021 (GLPI 9891) - moscatos, riesling e procecco, trebiano
-			if alltrim (sb1 -> b1_cod) $ '9845/9854/9911/9932/9920/9928/9912' .and. _sConducao == 'L'
-				if _nGrau >= 9
-					_lIsabel = .F.
-					_sComent = "Compl.2021 desclassifica moscatos so abaixo de 9 graus."
-				endif
-			endif
+//			// Complemento gerado em abril 2021 (GLPI 9891) - moscatos, riesling e procecco, trebiano
+//			if alltrim (sb1 -> b1_cod) $ '9845/9854/9911/9932/9920/9928/9912' .and. _sConducao == 'L'
+//				if _nGrau >= 9
+//					_lIsabel = .F.
+//					_sComent = "Compl.2021 desclassifica moscatos so abaixo de 9 graus."
+//				endif
+//			endif
 
 			if _lIsabel
 				_sClassif = ''
@@ -121,7 +122,7 @@ user function PrcUva22 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	endif
 
 
-	// Se for para espumante, organica ou em conversao, preciso buscar o produto base (uva convencional)
+	// Se for organica ou em conversao, preciso buscar o produto base (uva convencional)
 	// para depois aplicar % em cima desta.
 	if _lContinua
 		sb1 -> (dbsetorder (1))
@@ -145,7 +146,7 @@ user function PrcUva22 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 				
 				_sProdBase = sb1 -> b1_codpai
 				if empty (_sProdBase)
-					_sComent += "Uva '" + alltrim (_sProduto) + "': por tratar-se de organica/em conversao (ou para espumante), preciso ter o codigo base (convencional) informada no campo '" + alltrim (RetTitle ('B1_CODPAI')) + "' para calculo de preco."
+					_sComent += "Uva '" + alltrim (_sProduto) + "': por tratar-se de organica/em conversao, preciso ter o codigo base (convencional) informada no campo '" + alltrim (RetTitle ('B1_CODPAI')) + "' para calculo de preco."
 					_lContinua = .F.
 				endif
 			endif

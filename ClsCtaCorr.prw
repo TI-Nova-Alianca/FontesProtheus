@@ -1542,8 +1542,14 @@ METHOD PodeExcl () Class ClsCtaCorr
 	endif
 
 	if _lContinua .and. ::TM $ '04'
-		::UltMsg += "Este tipo de movimentacao so pode ser excluido atraves da exclusao da NF de venda que o gerou."
-		_lContinua = .F.
+		::UltMsg += "Este tipo de movimentacao encontra-se vinculado a uma NF ou cupom fiscal e nao deve ser excluido manualmente."
+		
+		// Gerei uns na filial errada durante os testes e terei que excluir manualmente... que vergonha!
+		if alltrim (upper (cUserName)) == 'ROBERT.KOCH'
+			_lContinua = U_MsgNoYes (::UltMsg + " Confirma assim mesmo?")
+		else
+			_lContinua = .F.
+		endif
 	endif
 
 	// Compra de safra

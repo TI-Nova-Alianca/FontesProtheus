@@ -133,7 +133,7 @@ User Function va_rus1 ()
 					endif
 				endif
 			else
-				u_help ("Nenhum fornecedor encontrado com inscricao '" + _sInscr + "'")
+				u_help ("Nenhum fornecedor encontrado com inscricao '" + _sInscr + "'",, .t.)
 				_lContinua = .F.
 			endif
 		endif
