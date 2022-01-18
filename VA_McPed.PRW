@@ -48,6 +48,7 @@
 // 06/10/2021 - Claudia - Incluido o parametro _lNAWeb para carregar ou nao o array de dados da margem. GLPI: 7792
 // 07/10/2021 - Claudia - Incluida gravação dos registros nos eventos, para busca no NaWeb. GLPI 7792
 // 26/10/2021 - Claudia - Alterado o modo de gravação do evento SC5009.
+// 18/01/2022 - CLaudia - Retirada busca de frete negociado, conforme GLPI: 11482
 //
 // ------------------------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
@@ -152,15 +153,15 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 		if _lAtuFrt
 			
 			// Se tiver frete negociado no cliente, nem faz cotacao no entregou.com
-			_pFrete = FBuscaCpo("SA1",1,XFILIAL("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_VAFRNEG")
-			if _pFrete > 0
-				_lFrtNegoc = .T.
-				_oEventoCF:Texto += 'Assumindo percentual de frete negociado (' + cvaltochar (_pfrete) + ') conforme cadastro do cliente (campo ' + alltrim (RetTitle ("A1_VAFRNEG")) + ')' + chr (13) + chr (10)
-			else			
+			//_pFrete = FBuscaCpo("SA1",1,XFILIAL("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_VAFRNEG")
+			//if _pFrete > 0
+			//	_lFrtNegoc = .T.
+			//	_oEventoCF:Texto += 'Assumindo percentual de frete negociado (' + cvaltochar (_pfrete) + ') conforme cadastro do cliente (campo ' + alltrim (RetTitle ("A1_VAFRNEG")) + ')' + chr (13) + chr (10)
+			//else			
 				// estamos migrando para tabela fixa de fretes cfe GLPI 8180 --->	m->c5_mvfre = _CalcFrete ()
 				m->c5_mvfre = _CalcFrt ()
 				u_log2 ('debug', 'm->c5_mvfre apos _CalcFrete(): ' + cvaltochar (m->c5_mvfre))
-			endif
+			//endif
 		else
 			_oSQL := ClsSQL ():New ()
 			_oSQL:_sQuery := "SELECT TOP 1 R_E_C_N_O_"
