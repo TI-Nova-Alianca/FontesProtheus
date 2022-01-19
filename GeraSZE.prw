@@ -24,7 +24,9 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 	private _sRetSZECG := ''  // Numero da carga gerada. Para compor, depois, o XML de retorno. Deixar private para ser vista por demais rotinas.
 	private _sRetSZEAv := ''  // Avisos para usuario.    Para compor, depois, o XML de retorno. Deixar private para ser vista por demais rotinas.
 	private _sRetSZEOb := ''  // Observacoes em geral.   Para compor, depois, o XML de retorno. Deixar private para ser vista por demais rotinas.
+
 	u_log2 ('info', 'Iniciando ' + procname ())
+	U_PerfMon ('I', 'GeraSZE_validacoes')  // Para metricas de performance
 
 	// Este programa foi criado para ser chamado via web service, que jah deve
 	// deixar a variavel _sErros criada, mas, para garantir...
@@ -244,9 +246,13 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 //				_sCargaGer = ''
 //			endif
 
+			U_PerfMon ('F', 'GeraSZE_validacoes')  // Para metricas de performance
+
 			// Gravacao pelo programa original.
+			U_PerfMon ('I', 'GeraSZE_gravacao')  // Para metricas de performance
 			if U_VA_RUS2G ()
 				u_log2 ('info', 'U_VA_RUS2G() ok')
+				U_PerfMon ('F', 'GeraSZE_gravacao')  // Para metricas de performance
 			else
 				u_log2 ('erro', 'U_VA_RUS2G() retornou erro.')
 			endif
