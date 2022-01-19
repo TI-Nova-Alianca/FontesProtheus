@@ -16,6 +16,7 @@
 //  25/06/2020 - Cláudia - Incluida coluna de placa e alterado o nome do cliente/fornecedor para nome reduzido. GLPI:8027
 //  10/07/2020 - Cláudia - Voltada a alteração pois Segundo a Deise mesmo com a alteração não vai ajudar no processo.
 //  18/02/2021 - Cláudia - Incluida colunas referentes ao laudo. GLPI: 9283
+//  19/01/2022 - Claudia - Incluido novos campos de brix e solidos. GLPI: 11490
 //
 // --------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
@@ -56,11 +57,16 @@ User function VA_COPERPORT()
     	_sQuery += "      , SD1.D1_QUANT - IIF (SF1.F1_VADENS>0,(ZZT.ZZT_PESENT - ZZT.ZZT_PESSAI) / SF1.F1_VADENS,0) AS DIFERENCA"
 		_sQuery += "      , ZAF.ZAF_EXTRSE AS EXTRATO_SECO"
 		_sQuery += "      , ZAF.ZAF_BRIX AS BRIX"
+		_sQuery += "      , ZAF.ZAF_BRIX1 AS BRIX1"
+		_sQuery += "      , ZAF.ZAF_BRIX2 AS BRIX2"
 		_sQuery += "      , ZAF.ZAF_COR AS COR"
 		_sQuery += "      , ZAF.ZAF_COR420 AS COR420"
 		_sQuery += "      , ZAF.ZAF_COR520 AS COR520"
 		_sQuery += "      , ZAF.ZAF_COR620 AS COR620"
 		_sQuery += "      , ZAF.ZAF_DENSID AS DENSIDADE_LAUDO"
+		_sQuery += "      , ZAF.ZAF_SOLID AS SOLIDO"
+		_sQuery += "      , ZAF.ZAF_SOLID1 AS SOLIDO1"
+		_sQuery += "      , ZAF.ZAF_SOLID2 AS SOLIDO2"
     	_sQuery += "   FROM SD1010 AS SD1"
     	_sQuery += " 		INNER JOIN SF1010 AS SF1"
 		_sQuery += " 			ON (SF1.D_E_L_E_T_ = ''"
@@ -132,17 +138,21 @@ User function VA_COPERPORT()
 		    	aadd (_aCols, {15, "Peso Bruto"    	   ,  50,  "@E 9,999,999.9999"})
 		    	aadd (_aCols, {16, "Tara"    	       ,  50,  "@E 9,999,999.9999"})
 		    	aadd (_aCols, {17, "Peso Liquido"      ,  50,  "@E 9,999,999.9999"})
-		    	aadd (_aCols, {18, "Densidade NF"      ,  20,  "@E 9.9999"})
+		    	aadd (_aCols, {18, "Densidade NF"      ,  20,  "@E 9.9999"		  })
 		    	aadd (_aCols, {19, "Volume"   	       ,  50,  "@E 9,999,999.9999"})
 		    	aadd (_aCols, {20, "Diferença" 	       ,  50,  "@E 9,999,999.9999"})
 				aadd (_aCols, {21, "Extrato Seco" 	   ,  50,  "@E 9,999,999.9999"})
 				aadd (_aCols, {22, "Brix" 	       	   ,  50,  "@E 9,999,999.9999"})
-				aadd (_aCols, {23, "Cor" 	           ,  50,  "@E 9,999,999.9999"})
-				aadd (_aCols, {24, "Cor 420nm" 	       ,  50,  "@E 9,999,999.9999"})
-				aadd (_aCols, {25, "Cor 520nm" 	       ,  50,  "@E 9,999,999.9999"})
-				aadd (_aCols, {26, "Cor 620nm" 	       ,  50,  "@E 9,999,999.9999"})
-				aadd (_aCols, {27, "Densidade Laudo"   ,  50,  "@E 9,999,999.9999"})
-		    	
+				aadd (_aCols, {23, "Brix 2" 	       ,  50,  "@E 9,999,999.9999"})
+				aadd (_aCols, {24, "Brix 3" 	       ,  50,  "@E 9,999,999.9999"})
+				aadd (_aCols, {25, "Cor" 	           ,  50,  "@E 9,999,999.9999"})
+				aadd (_aCols, {26, "Cor 420nm" 	       ,  50,  "@E 9,999,999.9999"})
+				aadd (_aCols, {27, "Cor 520nm" 	       ,  50,  "@E 9,999,999.9999"})
+				aadd (_aCols, {28, "Cor 620nm" 	       ,  50,  "@E 9,999,999.9999"})
+				aadd (_aCols, {29, "Densidade Laudo"   ,  50,  "@E 9,999,999.9999"})
+				aadd (_aCols, {30, "Solido"   		   ,  50,  "@E 9,999,999.9999"})
+				aadd (_aCols, {31, "Solido 2"          ,  50,  "@E 9,999,999.9999"})
+				aadd (_aCols, {32, "Solido 3"          ,  50,  "@E 9,999,999.9999"})
 		        
 		    	_wlinha = U_F3Array (_aDados, "Consulta X Guias Transito", _aCols, oMainWnd:nClientWidth - 50, oMainWnd:nClientHeight -15 , "", "", .T., 'C' )
 		    	

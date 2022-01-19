@@ -1,23 +1,29 @@
 // Programa...: ZAF
 // Autor......: Robert Koch
 // Data.......: 23/07/2016
-// Descricao..: Tela de manutencao de laudos tecnicos.
+// Descricao..: Manutencao de laudos tecnicos.
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #cadastro
+// #Descricao         #Manutencao de laudos tecnicos.
+// #PalavasChave      #laudos_tecnicos
+// #TabelasPrincipais #ZAF
+// #Modulos   		  #COOP 
 //
 // Historico de alteracoes:
-// 27/05/2017 - Robert - Inclusao de laudos passa a ter controle de semaforo.
-// 14/03/2018 - Robert - Validacao da composicao de safras (deve somar 100%).
-// 04/11/2018 - Robert - Merge de laudos: - assume maior validade entre os laudos envolvidos.
-//                                        - assume finalidade se for igual em todos os laudos envolvidos.
-//                                        - recebe observacao por parametro.
-// 30/09/2019 - Robert - Acrescentados logs para depuracao na funcao de 'merge' de ensaios.
-// 31/03/2021 - Robert - Alteracao logs.
-// 06/12/2021 - Robert - Pequena melhoria nos logs de laudos para fazer merge.
+// 27/05/2017 - Robert  - Inclusao de laudos passa a ter controle de semaforo.
+// 14/03/2018 - Robert  - Validacao da composicao de safras (deve somar 100%).
+// 04/11/2018 - Robert  - Merge de laudos: - assume maior validade entre os laudos envolvidos.
+//                                         - assume finalidade se for igual em todos os laudos envolvidos.
+//                                         - recebe observacao por parametro.
+// 30/09/2019 - Robert  - Acrescentados logs para depuracao na funcao de 'merge' de ensaios.
+// 31/03/2021 - Robert  - Alteracao logs.
+// 06/12/2021 - Robert  - Pequena melhoria nos logs de laudos para fazer merge.
+// 19/01/2022 - Claudia - Incluido novos campos de brix e solidos. GLPI: 11490
 //
-
-// --------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------
 User Function ZAF ()
 	local _aCores      := U_ZAFLG (.T.)
-	//local _aRotAdic    := {}
 	private cString    := "ZAF"
 	private cCadastro  := "Controle laudos / ensaios"
 	private aRotina    := {}
@@ -206,6 +212,11 @@ User Function ZAFM (_aLaudos, _sProduto, _sOP, _sLote, _sAlmox, _sObs)
 	local _nSO2Liv   := 0
 	local _nSO2Tot   := 0
 	local _nBrix     := 0
+	local _nBrix2    := 0
+	local _nBrix3    := 0
+	local _nSolid    := 0
+	local _nSolid2   := 0
+	local _nSolid3   := 0
 	local _nPH       := 0
 	local _nTurbid   := 0
 	local _nCor420   := 0
@@ -249,6 +260,11 @@ User Function ZAFM (_aLaudos, _sProduto, _sOP, _sLote, _sAlmox, _sObs)
 			_nSO2Liv += zaf -> zaf_so2liv
 			_nSO2Tot += zaf -> zaf_so2tot
 			_nBrix   += zaf -> zaf_brix
+			_nBrix2  += zaf -> zaf_brix1
+			_nBrix3  += zaf -> zaf_brix2
+			_nSolid  += zaf -> zaf_solid
+			_nSolid2 += zaf -> zaf_solid1
+			_nSolid3 += zaf -> zaf_solid2
 			_nPH     += zaf -> zaf_ph
 			_nTurbid += zaf -> zaf_turbid
 			_nCor420 += zaf -> zaf_cor420
@@ -334,6 +350,11 @@ User Function ZAFM (_aLaudos, _sProduto, _sOP, _sLote, _sAlmox, _sObs)
 				zaf -> zaf_so2liv = _nSO2Liv / _nQtLaudos
 				zaf -> zaf_so2tot = _nSO2Tot / _nQtLaudos
 				zaf -> zaf_brix   = _nBrix   / _nQtLaudos
+				zaf -> zaf_brix1  = _nBrix2  / _nQtLaudos
+				zaf -> zaf_brix2  = _nBrix3  / _nQtLaudos
+				zaf -> zaf_solid  = _nSolid  / _nQtLaudos
+				zaf -> zaf_solid1 = _nSolid2 / _nQtLaudos
+				zaf -> zaf_solid2 = _nSolid3 / _nQtLaudos
 				zaf -> zaf_ph     = _nPH     / _nQtLaudos
 				zaf -> zaf_turbid = _nTurbid / _nQtLaudos
 				zaf -> zaf_cor420 = _nCor420 / _nQtLaudos
