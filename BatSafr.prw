@@ -7,7 +7,7 @@
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #batch
 // #Descricao         #Verificacoes e processamentos diversos durante periodo de safra
-// #PalavasChave      #safra
+// #PalavasChave      #safra0
 // #TabelasPrincipais #SF1 SD1 $SZE #SZF
 // #Modulos           #COOP
 
@@ -27,7 +27,9 @@
 // 03/04/2021 - Robert - Recalcula saldo do SZI antes de enviar aviso de diferenca com o SE2.
 // 07/05/2021 - Robert - Removidas algumas linhas comentariadas.
 // 20/07/2021 - Robert - Removido e-mail paulo.dullius e inserido monica.rodrigues
-// 12/01/2022 - Robert - Melhorias nomes arquivos de log, e-mail caompanhamento.
+// 12/01/2022 - Robert - Melhorias nomes arquivos de log, e-mail acompanhamento.
+// 17/01/2022 - Robert - Ajuste nomes conselheiros.
+// 19/01/2022 - Robert - Ajuste nomes e e-mail conselheiros.
 //
 
 // --------------------------------------------------------------------------
@@ -442,36 +444,35 @@ static function _MailAcomp ()
 		_sDest += "joel.panizzon@novaalianca.coop.br;"
 		_sDest += "jocemar.dalcorno@novaalianca.coop.br;"
 		_sDest += "rodrigo.colleoni@novaalianca.coop.br;"
-/*
+
 		// Conselho administracao titulares
+		_sDest += "boldrindarci@gmail.com;"
 		_sDest += "diegowaiss@hotmail.com;"
 		_sDest += "gilbertoverdi@gmail.com;"
 		_sDest += "joel.caldart@hotmail.com;"
-		_sDest += "linojoaopan@hotmail.com;"
 		_sDest += "marciogirelli.st@gmail.com;"
 		_sDest += "marcioferrar@gmail.com;"
 		_sDest += "rodrigovdebona@gmail.com;"
 		_sDest += "romildowferrari@hotmail.com;"
 
 		// Conselho administracao suplentes
-		_sDest += "darci.boldrin@novaalianca.coop.br;"
-		_sDest += "drcioato@hotmail.com;"
-		_sDest += "ledacioato@hotmail.com;"
 		_sDest += "juninhosalton@outlook.com;"
 		_sDest += "marcosparisotto6@gmail.com;"
 		_sDest += "roberto.pagliarin@novaalianca.coop.br;"
+		_sDest += "drcioato@hotmail.com;"
+		_sDest += "ledacioato@hotmail.com;"
 
 		// Conselho fiscal titulares
-		_sDest += "sidimarfleck@gmail.com;"
-		_sDest += "ivanortoscan276@gmail.com;"
 		_sDest += "daniederbof@hotmail.com;"
+		_sDest += "leandrochiarani@hotmail.com;"  // Gilmar Chiarani recebe no e-mail 'leandrochiarani@hotmail.com'
+		_sDest += "kleitonguareze@gmail.com;"
 
 		// Conselho fiscal suplentes
-		_sDest += "carloscbusetti@hotmail.com;"
-		_sDest += "fernandoantoniogiordani@gmail.com;"
-*/
+		_sDest += "cesardegregori47@gmail.com;"
+		_sDest += "robertocbusetti@hotmail.com;"
+		_sDest += "leandrobassani@hotmail.com;"  // Vitorino Sganzerla recebe no e-mail 'leandrobassani@hotmail.com'
+
 		// Internos - gestores
-//		_sDest += "evandro.marcon@novaalianca.coop.br;"
 		_sDest += "rodimar.vizentin@novaalianca.coop.br;"
 
 		// Internos - tecnico / enologia / operacao
@@ -487,7 +488,6 @@ static function _MailAcomp ()
 
 		// Internos - agronomia
 		_sDest += "leonardo.reffatti@novaalianca.coop.br;"
-		// _sDest += "paulo.dullius@novaalianca.coop.br;"
 		_sDest += "monica.rodrigues@novaalianca.coop.br;"
 		_sDest += "waldir.schu@novaalianca.coop.br;"
 		_sDest += "odinei.cardoso@novaalianca.coop.br;"
