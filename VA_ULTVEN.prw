@@ -79,7 +79,8 @@ User Function VA_ULTVEN(_sFilial, _sPedido, _sCliente, _sLoja)
         _oSQL:_sQuery += " AND C5_NUM    <> '" + _sPedido  + "' "
         _oSQL:_sQuery += " AND C5_CLIENTE = '" + _sCliente + "' "
         _oSQL:_sQuery += " AND C5_LOJACLI = '" + _sLoja    + "' "
-        //u_log (_oSQL:_squery)
+        _oSQL:_sQuery += " ORDER BY SC5.R_E_C_N_O_ DESC "
+        u_log (_oSQL:_squery)
         _aProd := aclone (_oSQL:Qry2Array ())
 
         For _i:=1 to Len(_aProd)
