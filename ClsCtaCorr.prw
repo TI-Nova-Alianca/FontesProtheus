@@ -93,6 +93,8 @@
 //                     - Implementados atributo :RegRelac e metodo :RegRelac()
 // 07/12/2021 - Robert - Na geracao dos titulos de resgate de cotas (apos desligamento) passa a gerar E2_EMISSAO = dDataBase e nao mais na data do vcto.
 // 08/12/2021 - Robert - Validacoes para gravacao de TM=33 (GLPI 
+// 19/01/2022 - Robert - Nao inicializava atributo ::Safra quando chamado via tela de manutencao da conta corrente.
+//
 
 // ------------------------------------------------------------------------------------
 #include "colors.ch"
@@ -805,6 +807,8 @@ METHOD GeraAtrib (_sOrigem) Class ClsCtaCorr
 		::Origem     = m->zi_origem
 		::Parcela    = m->zi_parcela
 		::VctoSE2For = m->zi_vctoFor
+		::Safra      = m->zi_safra
+		::GrpPgSafra = m->zi_gpsaf
 	elseif _sOrigem == "SZI"
 		::Filial   = szi -> zi_filial
 		::RegSZI   = szi -> (recno ())

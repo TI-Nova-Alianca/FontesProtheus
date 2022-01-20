@@ -144,10 +144,10 @@ user Function VA_RUS2G (_nOpc)
 		// Verifica se deve imprimir ticket em impressora termica.
 		if _lImpTick
 			if inclui
-			//	u_log2 ('debug', 'vou mandar imprimir ticket de inclusao')
+				U_PerfMon ('I', 'Impr_ticket1_safra')  // Para metricas de performance
 				U_VA_RUSTk (1, _sPortTick, _nQViasTk1, {}, 'Bematech', .t.)
+				U_PerfMon ('F', 'Impr_ticket1_safra')  // Para metricas de performance
 			elseif altera
-			//	u_log2 ('debug', 'vou mandar imprimir ticket de alteracao')
 				U_VA_RUSTk (2, _sPortTick, _nQViasTk2, {}, 'Bematech', .t.)
 			endif
 		endif

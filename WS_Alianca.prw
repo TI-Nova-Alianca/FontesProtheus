@@ -1310,7 +1310,8 @@ static function _IncCarSaf ()
 	local _sEspumant := ''
 
 	u_log2 ('info', 'Iniciando web service de geracao de carga.')
-	u_log2 ('debug', 'cFilAnt:' + cFilAnt)
+	U_PerfMon ('I', 'WSGerarCargaSafra')  // Para metricas de performance
+
 	if empty (_sErros) ; _sSafra    = _ExtraiTag ("_oXML:_WSAlianca:_Safra",             .T., .F.) ; endif
 	if empty (_sErros) ; _sBalanca  = _ExtraiTag ("_oXML:_WSAlianca:_Balanca",           .T., .F.) ; endif
 	if empty (_sErros) ; _sAssoc    = _ExtraiTag ("_oXML:_WSAlianca:_Associado",         .T., .F.) ; endif
@@ -1406,6 +1407,7 @@ static function _IncCarSaf ()
 		endif
 	endif
 
+	U_PerfMon ('F', 'WSGerarCargaSafra')  // Para metricas de performance
 	u_log2 ('info', 'Finalizando web service de geracao de carga.')
 Return
 //
