@@ -47,6 +47,9 @@
 // 19/02/2021 - Robert - Inclusao de chamadas da funcao U_PerfMon() para metricas de performance (GLPI 9409).
 // 29/03/2021 - Robert - Novo parametro funcao VA_RusPP (GLPI 9592).
 // 22/04/2021 - Robert - Passa a usar a funcao U_TESSafra() para definicao do TES a usar (GLPI 9891)
+// 11/01/2022 - Robert - Ajustes safra 2022
+// 17/01/2022 - Robert - Ajustes precos safra 2022
+// 22/01/2022 - Robert - Permitia seguir sem testar se a funcao VA_RusMV tinha dado erro.
 //
 
 // ------------------------------------------------------------------------------------
@@ -262,6 +265,10 @@ User Function va_rusN (_lSimulNF)
 	// por que quero saber apenas qual a de menor valor comercial.
 	if _lContinua
 		_sMenorVlr = U_VA_RusMV ()
+		if valtype (_sMenorVlr) == 'U'
+			u_help ('Erro na funcao de verificacao de variedade com menor valor.',, .t.)
+			_lContinua = .F.
+		endif
 	endif
 
 	// Calcula valor do frete a ser incluido na nota. Roda em funcao separada por que eh comum precisar recalcular depois da safra.

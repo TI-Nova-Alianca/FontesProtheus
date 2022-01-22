@@ -136,7 +136,8 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		_oSQL:_sQuery += " WHERE GX0001_ASSOCIADO_CODIGO = '" + _oAssoc:Codigo + "'"
 		_oSQL:_sQuery +=   " AND GX0001_ASSOCIADO_LOJA   = '" + _oAssoc:Loja   + "'"
 		_oSQL:_sQuery +=   " AND GX0001_ASSOCIADO_RESTRICAO != ''"
-		_oSQL:Log ()
+	//	_oSQL:Log ()
+		_oSQL:PerfMon = .T.  // Para monitoramento de performance - desabilitar depois
 		_sRestri = _oSQL:RetQry ()
 		if ! empty (_sRestri)
 			_sErros += "Associado com restricoes: " + _sRestri
@@ -145,7 +146,9 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 
 	// Gera array com os cadastros viticolas vinculados ao associado. Deve ser mantido, aqui, o mesmo formato gerado pela classe ClsAssoc.
 	if empty (_sErros)
+		U_PerfMon ('I', 'GeraSZE_RUSCV')  // Para metricas de performance
 		_aCadVitic = aclone (U_VA_RusCV (_oAssoc:Codigo, _oAssoc:Loja))
+		U_PerfMon ('F', 'GeraSZE_RUSCV')  // Para metricas de performance
 		if len (_aCadVitic) == 0
 			_sErros += "Nao ha nenhuma variedade de uva ligada ao associado."
 		endif
@@ -215,10 +218,12 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 			u_logACols ()
 
 			// Executa a validacao de linha
+			U_PerfMon ('I', 'GeraSZE_RUS2L')  // Para metricas de performance
 			if ! U_VA_RUS2L ()
 				_sErros += 'Erro na validacao do item ' + cvaltochar (_nItemCar)
 				exit
 			else
+				U_PerfMon ('F', 'GeraSZE_RUS2L')  // Para metricas de performance
 				U_Log2 ('debug', 'U_VA_RUS2L() retornou .T.')
 			endif
 		next
@@ -230,7 +235,9 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 
 	// Validacoes do programa original.
 	if empty (_sErros)  // Variavel private do web service
+		U_PerfMon ('I', 'GeraSZE_RUS2T')  // Para metricas de performance
 		if U_VA_RUS2T ()
+			U_PerfMon ('F', 'GeraSZE_RUS2T')  // Para metricas de performance
 			u_log2 ('debug', 'U_VA_RUS2T() ok')
 			//_sCargaGer = CriaVar ("ZE_CARGA")
 			u_log2 ('debug', 'Tentando gravar carga')
