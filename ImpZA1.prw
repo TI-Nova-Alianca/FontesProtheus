@@ -9,6 +9,7 @@
 // 22/08/2019 - Robert  - Se o produto nao controla via FullWMS, imprimia o cod.do produto nas barras. Agora nao vai imprimir nada.
 // 30/08/2019 - Claudia - Alterado campo b1_p_brt para b1_pesbru.
 // 02/10/2019 - Claudia - Criação da rotina de impressão de etiquetas de OP na impressora DATAMAX
+// 24/01/2022 - Robert  - Vamos usar etiquetas no AX02, mesmo sem integracao com FullWMS (GLPI 11515).
 //
 
 // ----------------------------------------------------------------
@@ -23,8 +24,6 @@ user function ImpZA1 (_sCodigo, _sIdImpr)
 	static _sPortaImp := ""  // Tipo STATIC para que o programa abra as perguntas apenas na primeira execucao.
 	static _nModelImp := 0   // Tipo STATIC para que o programa abra as perguntas apenas na primeira execucao.
 
-	u_logIni ()
-	
 	// Se recebi a identificacao da impressora, nao preciso perguntar ao usuario.
 	if ! empty (_sIdImpr)
 		_sPortaImp = U_RetZX5 ('49', _sIdImpr, 'ZX5_49CAM')
@@ -44,7 +43,7 @@ user function ImpZA1 (_sCodigo, _sIdImpr)
 	
 	if _lContinua
 		if empty (_sPortaImp) .or. empty (_nModelImp)
-			u_help ("Impressora '" + _sIdImpr + "' nao cadastrada ou sem caminho / linguagem informados.")
+			u_help ("Impressora '" + _sIdImpr + "' nao cadastrada ou sem caminho / linguagem informados.",, .t.)
 			_lContinua = .F.
 		endif
 	endif
@@ -52,7 +51,7 @@ user function ImpZA1 (_sCodigo, _sIdImpr)
 	if _lContinua
 		za1 -> (dbsetorder(1))
 		if ! za1 -> (dbseek(xFilial("ZA1") + _sCodigo, .F.))
-			u_help ("Etiqueta '" + _sCodigo + "' nao encontrada!")
+			u_help ("Etiqueta '" + _sCodigo + "' nao encontrada!",, .t.)
 			_lContinua = .F.
 		endif
 	endif
@@ -60,7 +59,7 @@ user function ImpZA1 (_sCodigo, _sIdImpr)
 	if _lContinua
 		sb1 -> (dbsetorder(1))
 		if ! sb1 -> (dbseek (xFilial("SB1") + za1 -> za1_prod, .F.))
-			u_help ("Produto da etiqueta ('" + za1 -> za1_prod + "') nco cadastrado.")
+			u_help ("Produto da etiqueta ('" + za1 -> za1_prod + "') nco cadastrado.",, .t.)
 			_lContinua = .F.
 		endif
 	endif
@@ -160,13 +159,13 @@ user function ImpZA1 (_sCodigo, _sIdImpr)
 		elseif ! empty (ZA1 -> ZA1_DOCE)
 			_ImpNF ()
 		else
-			u_help ("Sem tratamento para este tipo de etiqueta no programa " + procname ())
+			u_help ("Sem tratamento para este tipo de etiqueta no programa " + procname (),, .t.)
 		endif
 
 		fclose (_nHdl)
-//		u_log (memoread (_sArq))
+		u_log2 ('debug', memoread (_sArq))
 		copy file (_sArq) to (_sPortaImp)
-		u_log ('copiei etiq para ', _sPortaImp)
+		u_log2 ('debug', 'copiei etiq para ' + _sPortaImp)
 		delete file (_sArq)
 
 		// Etiquetas (quando necessario) sao enviadas para o Full somente depois de impressas
@@ -176,19 +175,14 @@ user function ImpZA1 (_sCodigo, _sIdImpr)
 	endif
 		
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
 Return
 
 
 
 // --------------------------------------------------------------------------
 static function _ImpZAG ()
-	//local _sOP        := ""
 	local _sDoc       := ""
-	//local _sData      := ""
-	//local _sDataF     := ""
 	local _sDataV     := ""
-	//local _sLote      := ""
 	local _sUM        := ""
 	local _sDescri1   := ""
 	local _sDescri2   := ""
@@ -199,8 +193,6 @@ static function _ImpZAG ()
 	local _sObs1      := ''
 	local _sObs2      := ''
 	
-	u_logIni ()
-
 	zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
 	if ! zag -> (dbseek (xfilial ("ZAG") + za1 -> za1_idZAG, .F.))
 		u_help ("Documento de transferencia '" + za1 -> za1_idZAG + "' nao encontrado.")
@@ -354,10 +346,10 @@ static function _ImpZAG ()
 			za1 -> za1_impres = 'S'
 			msunlock ()
 		else
-			u_help ("Etiqueta nao disponivel para o modelo de impressora '" + cvaltochar (_nModelImp) + "'")
+//			u_help ("Etiqueta nao disponivel para o modelo de impressora '" + cvaltochar (_nModelImp) + "'")
+			u_help ("Impossivel imprimir etiqueta '" + za1 -> za1_codigo + "': formato nao disponivel para o modelo de impressora '" + cvaltochar (_nModelImp) + "'",, .t.)
 		endif
 	endif
-	u_logFim ()
 return
 
 
@@ -366,25 +358,15 @@ return
 static function _ImpOP ()
 	local _sOP        := ""
 	local _sPbrt      := ""
-	//local _sDoc       := ""
 	local _sData      := ""
-	//local _sDataF     := ""
-	//local _sDataV     := ""
 	local _sLote      := ""
 	local _sUM        := ""
 	local _sDescri1   := ""
 	local _sDescri2   := ""
 	local _sDescri3   := ""
-	//local _sNome1     := ""
-	//local _sNome2     := ""
-	//local _sLoteF	  := "" 
-	//local _sLoteI	  := ""				
 	local _sSeqEtq    := ""
 	local _lContinua  := .T.
-	//local _sMargEsq   := ""
 
-	u_logIni ()
-	
 	if _lContinua .and. ! empty (ZA1 -> ZA1_OP)
 		sc2 -> (dbsetorder (1))
 		if ! sc2 -> (dbseek (xfilial ("SC2") + ZA1 -> ZA1_OP, .F.))
@@ -586,10 +568,10 @@ static function _ImpOP ()
 				msunlock ()
 			
 			Otherwise
-			u_help ("Etiqueta nao disponivel para o modelo de impressora '" + cvaltochar (_nModelImp) + "'")
+//			u_help ("Etiqueta nao disponivel para o modelo de impressora '" + cvaltochar (_nModelImp) + "'")
+			u_help ("Impossivel imprimir etiqueta '" + za1 -> za1_codigo + "': formato nao disponivel para o modelo de impressora '" + cvaltochar (_nModelImp) + "'",, .t.)
 		EndCase
 	endif
-	u_logFim ()
 return
 
 
@@ -597,10 +579,8 @@ return
 // --------------------------------------------------------------------------
 static function _ImpNF ()
 	local _sDoc       := ""
-	//local _sData      := ""
 	local _sDataF     := ""
 	local _sDataV     := ""
-	//local _sLote      := ""
 	local _sUM        := ""
 	local _sDescri1   := ""
 	local _sDescri2   := ""
@@ -609,31 +589,22 @@ static function _ImpNF ()
 	local _sNome2     := ""
 	local _sLoteF	  := "" 
 	local _sLoteI	  := ""				
-//	local _sSeqEtq    := ""
 	local _lContinua  := .T.
 	local _sMargEsq   := ""
 
-	u_logIni ()
-	
 	if _lContinua
 		// Prepara dados para impressao.
 		_sProd := Alltrim(ZA1->ZA1_PROD)
 		_sQtd  := Alltrim(cvaltochar(ZA1->ZA1_QUANT)) 
 		_sCod  := Alltrim(ZA1->ZA1_CODIGO)
 		
-//		if sc2 -> c2_vaqtetq != 0 .and. za1 -> za1_seq != 0
-//			_sSeqEtq = padc (alltrim (str (za1 -> za1_seq)) + '/' + alltrim (str (sc2 -> c2_vaqtetq)), 9, ' ')
-//		else
-//			_sSeqEtq = ''
-//		endif
-
 		// Prepara dados para impressao.
 		_sDoc := Alltrim(za1 -> za1_doce) + '/' + alltrim (za1 -> za1_seriee)
 		SA2 -> (dbsetorder (1))
 		SA2 -> (dbseek (xfilial ("SA2") + ZA1->ZA1_FORNEC + ZA1->ZA1_LOJAF, .F.))
 		SD1 -> (dbsetorder (1))  // D1_FILIAL+D1_DOC+D1_SERIE+D1_FORNECE+D1_LOJA+D1_COD+D1_ITEM
 		if ! SD1 -> (dbseek (xfilial ("SD1") + ZA1->ZA1_DOCE + ZA1->ZA1_SERIEE + ZA1->ZA1_FORNEC + ZA1->ZA1_LOJAF + ZA1->ZA1_PROD + ZA1->ZA1_ITEM, .F.))
-			u_help ("Item nao encontrado na NF")
+			u_help ("Item nao encontrado na NF",, .t.)
 			_lContinua = .F.
 		endif
 	endif
@@ -790,6 +761,9 @@ static function _ImpNF ()
 			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                               // Define fonte (espacamento, largura, altura e tipo)
 			fwrite (_nHdl, _Esc + '$=' + 'ASS.: ____________________' + _Enter) // Informacao a ser impressa
 
+			fwrite (_nHdl, _Esc + 'Q1' + _Enter)		 	// Define quantidade
+			fwrite (_nHdl, _Esc + 'Z'  + _Enter)  	 		// Finaliza etiqueta
+
 			reclock ("ZA1", .F.)
 			za1 -> za1_impres = 'S'
 			msunlock ()
@@ -835,10 +809,9 @@ static function _ImpNF ()
 			za1 -> za1_impres = 'S'
 			msunlock ()
 		else
-			u_help ("Etiqueta nao disponivel para o modelo de impressora '" + cvaltochar (_nModelImp) + "'")
+			u_help ("Impossivel imprimir etiqueta '" + za1 -> za1_codigo + "': formato nao disponivel para o modelo de impressora '" + cvaltochar (_nModelImp) + "'",, .t.)
 		endif
 	endif
-	u_logFim ()
 return
 
 
