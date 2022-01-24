@@ -27,6 +27,7 @@
 // 20/08/2020 - Robert - Envia para o Full somente se o item existir na view v_wms_item.
 //                     - Inseridas tags para catalogar fontes.
 // 10/11/2020 - Robert - Valida dados logisticos no Full (qt.pallet e regiao de armazenagem) antes de enviar a etiqueta (GLPI 8790)
+// 24/01/2022 - Robert - Vamos usar etiquetas no AX02, mesmo sem integracao com FullWMS (GLPI 11515).
 //
 
 // ------------------------------------------------------------------------------------
@@ -46,7 +47,7 @@ User Function EnvEtFul (_sEtiq, _lMsg)
 			_lContinua = .F.
 		endif
 	endif
-	
+
 	if _lContinua .and. left (_sEtiq, 1) == '0'
 		u_log2 ('aviso', "Etiquetas iniciadas por '0' sao geradas diretamente pelo FullWMS. Nao vou gerar tb_wms_etiquetas.")
 		_lContinua = .F.
@@ -58,6 +59,11 @@ User Function EnvEtFul (_sEtiq, _lMsg)
 			u_Help ("Produto '" + alltrim (za1 -> za1_prod) + "' (informado na etiqueta) nao cadastrado.",, .t.)
 			_lContinua = .F.
 		endif
+	endif
+
+	if _lContinua .and. sb1 -> b1_vafullw != 'S'
+		U_Log2 ('info', "Produto '" + sb1 -> b1_cod + "' nao eh controlado pelo FullWMS. Nao ha necessidade de enviar etiqueta para o Full.")
+		_lContinua = .F.
 	endif
 
 	if _lContinua .and. ! empty (za1 -> za1_op)
@@ -85,7 +91,7 @@ User Function EnvEtFul (_sEtiq, _lMsg)
 			_oSQL:_sQuery +=   " AND D3_OP      = '" + za1 -> za1_op     + "'"
 			_oSQL:_sQuery +=   " AND D3_VAETIQ  = '" + za1 -> za1_codigo + "'"
 			_oSQL:_sQuery +=   " AND D3_CF      LIKE 'PR%'"
-			_oSQL:Log ()
+		//	_oSQL:Log ()
 			if _oSQL:RetQry () == 1
 				u_log2 ('debug', 'Encontrei o apontamento')
 				if sc2 -> c2_vaopesp == 'R'  // OP de reprocesso assume dt valid do lote original, cfe informada pelo usuario.
@@ -97,7 +103,7 @@ User Function EnvEtFul (_sEtiq, _lMsg)
 				_GravaEtq ('01', substr (za1 -> za1_op, 1, 8), _dValid)  // Sempre empresa 01 pois os produtos envasados devem ir para a logistica.
 			else
 				if _lMsg
-					u_help ("Nao encontrei apontamento de producao correspondente. Nao vou exportar esta etiqueta para o FullWMS.",, .t.)
+					u_help ("Nao encontrei apontamento de producao correspondente. Nao vou exportar esta etiqueta para o FullWMS.", _oSQL:_sQuery, .t.)
 				endif
 			endif
 		elseif ! empty (za1 -> za1_doce)  // Etiqueta gerada por entrada de NF
@@ -128,40 +134,43 @@ User Function EnvEtFul (_sEtiq, _lMsg)
 				u_log2 ('debug', 'Encontrei a nota')
 				_GravaEtq ('02', _aLoteNF [1, 1], _aLoteNF [1, 2])  // Sempre 02 pois as notas de compra devem ir para o almox.02.
 			elseif len (_aLoteNF) > 1
-				u_help ("Encontrei mais de uma NF relacionada a esta etiqueta.",, .t.)
+				u_help ("Encontrei mais de uma NF relacionada a esta etiqueta.", _oSQL:_sQuery, .t.)
 				_lContinua = .F.
 			endif
+		
 		elseif ! empty (za1 -> za1_idZAG)  // Etiqueta gerada por solicitacao manual de transferencia.
-			_oSQL := ClsSQL ():New ()
-			_oSQL:_sQuery := "SELECT ZAG_LOTORI, B8_DTVALID, ZAG_ALMDST"
-			_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZAG") + " ZAG "
-			_oSQL:_sQuery +=  " LEFT JOIN " + RetSQLName ("SB8") + " SB8 "
-			_oSQL:_sQuery +=       " ON (SB8.D_E_L_E_T_ = ''"
-			_oSQL:_sQuery +=       " AND SB8.B8_FILIAL  = ZAG.ZAG_FILORI"
-			_oSQL:_sQuery +=       " AND SB8.B8_LOTECTL = ZAG.ZAG_LOTORI"
-			_oSQL:_sQuery +=       " AND SB8.B8_LOCAL   = ZAG.ZAG_ALMORI"
-			_oSQL:_sQuery +=       " AND SB8.B8_PRODUTO = ZAG.ZAG_PRDORI"
-			_oSQL:_sQuery +=       ")"
-			_oSQL:_sQuery += " WHERE ZAG.D_E_L_E_T_ = ''"
-			_oSQL:_sQuery +=   " AND ZAG.ZAG_FILIAL = '" + xfilial ("ZAG") + "'"
-			_oSQL:_sQuery +=   " AND ZAG.ZAG_DOC    = '" + za1 -> za1_idZAG + "'"
-			_oSQL:Log ()
-			_aLoteZAG = aclone (_oSQL:Qry2Array ())
-			if len (_aLoteZAG) == 0
-				u_help ("Nao encontrei a solicitacao de transferencia '" + za1 -> za1_idZAG + "' relacionada a esta etiqueta.",, .t.)
-				_lContinua = .F.
-			elseif len (_aLoteZAG) == 1
-				u_log2 ('debug', 'Encontrei o ZAG e o SB8')
-//				if _aLoteZAG [1, 3] == '02'  // Destina-se ao almox.02 (embalagens/insumos)
-//					_GravaEtq ('02', _aLoteZAG [1, 1], _aLoteZAG [1, 2])
-				if _aLoteZAG [1, 3] == '01'  // Destina-se ao almox.01 (logistica)
-					_GravaEtq ('01', _aLoteZAG [1, 1], _aLoteZAG [1, 2])
-				else
-					u_log2 ('info', 'Nao ha necessidade de enviar esta etiqueta para o FullWMS, pois nao tem lote informado no ZAG e/ou ax destino nao opera pelo FullWMS.')
+			if .f.  // Implantacao do FullWMS no AX 02 foi suspensa indefinidamente. Robert, 24/01/2022
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := "SELECT ZAG_LOTORI, B8_DTVALID, ZAG_ALMDST"
+				_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZAG") + " ZAG "
+				_oSQL:_sQuery +=  " LEFT JOIN " + RetSQLName ("SB8") + " SB8 "
+				_oSQL:_sQuery +=       " ON (SB8.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=       " AND SB8.B8_FILIAL  = ZAG.ZAG_FILORI"
+				_oSQL:_sQuery +=       " AND SB8.B8_LOTECTL = ZAG.ZAG_LOTORI"
+				_oSQL:_sQuery +=       " AND SB8.B8_LOCAL   = ZAG.ZAG_ALMORI"
+				_oSQL:_sQuery +=       " AND SB8.B8_PRODUTO = ZAG.ZAG_PRDORI"
+				_oSQL:_sQuery +=       ")"
+				_oSQL:_sQuery += " WHERE ZAG.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=   " AND ZAG.ZAG_FILIAL = '" + xfilial ("ZAG") + "'"
+				_oSQL:_sQuery +=   " AND ZAG.ZAG_DOC    = '" + za1 -> za1_idZAG + "'"
+				_oSQL:Log ()
+				_aLoteZAG = aclone (_oSQL:Qry2Array ())
+				if len (_aLoteZAG) == 0
+					u_help ("Nao encontrei a solicitacao de transferencia '" + za1 -> za1_idZAG + "' relacionada a esta etiqueta.",, .t.)
+					_lContinua = .F.
+				elseif len (_aLoteZAG) == 1
+					u_log2 ('debug', 'Encontrei o ZAG e o SB8')
+	//				if _aLoteZAG [1, 3] == '02'  // Destina-se ao almox.02 (embalagens/insumos)
+	//					_GravaEtq ('02', _aLoteZAG [1, 1], _aLoteZAG [1, 2])
+					if _aLoteZAG [1, 3] == '01'  // Destina-se ao almox.01 (logistica)
+						_GravaEtq ('01', _aLoteZAG [1, 1], _aLoteZAG [1, 2])
+					else
+						u_log2 ('aviso', 'Nao ha necessidade de enviar esta etiqueta para o FullWMS, pois nao tem lote informado no ZAG e/ou ax destino nao opera pelo FullWMS.')
+					endif
+				elseif len (_aLoteZAG) > 1
+					u_help ("Encontrei mais de uma solicitacao de transferencia (ou mais de um lote) relacionada a esta etiqueta.", _oSQL:_sQuery, .t.)
+					_lContinua = .F.
 				endif
-			elseif len (_aLoteZAG) > 1
-				u_help ("Encontrei mais de uma solicitacao de transferencia (ou mais de um lote) relacionada a esta etiqueta.",, .t.)
-				_lContinua = .F.
 			endif
 		endif
 	endif
@@ -240,8 +249,6 @@ static function _GravaEtq (_sEmprWMS, _sLote, _dValid)
 		if _lEnviar
 			_oSQL := ClsSQL ():New ()
 			_oSQL:_sQuery := ""
-	// criada verificacao em separado acima		_oSQL:_sQuery += " if not exists (SELECT * FROM tb_wms_etiquetas WHERE id = '" + cvaltochar (za1 -> za1_codigo) + "')"  // Etiqueta ja deve existir
-	// criada verificacao em separado acima		_oSQL:_sQuery += " and exists (select * from v_wms_item where coditem = '" + alltrim (za1 -> za1_prod) + "')"  // Item ja deve existir
 			_oSQL:_sQuery += " insert into tb_wms_etiquetas (id, coditem, lote, qtde, validade, empresa, cd, status)"
 			_oSQL:_sQuery += " values (" + cvaltochar (za1 -> za1_codigo) + ","
 			_oSQL:_sQuery +=          "'" + alltrim (za1 -> za1_prod) + "',"

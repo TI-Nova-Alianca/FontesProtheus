@@ -2,7 +2,13 @@
 // Autor......: Leandro Perondi (DWT)
 // Data.......: 11/12/2013
 // Descricao..: Cadastro de etiquetas para os pallets
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Atualizacao
+// #PalavasChave      #etiquetas #pallets
+// #TabelasPrincipais #ZA1
+// #Modulos           #PCP
+
 // Historico de alteracoes:
 // 14/07/2014 - Robert - Criada opcao de regerar grupo de etiquetas (por OP, inicialmente).
 //                     - Criada funcao EtqPllGO para ser chamada a partir de P.E. na geracao de O.P.
@@ -45,13 +51,9 @@
 //                     - Inseridas tags para catalogacao de fontes
 // 14/12/2020 - Robert - Rotina de inutilizacao (EtqPllIn) migrada para fonte proprio.
 // 22/11/2021 - Robert - Verifica se tem campos B1_VAFULLW e B1_CODBAR antes de gerar etiquetas por OP.
+// 24/01/2022 - Robert - Vamos usar etiquetas no AX02, mesmo sem integracao com FullWMS (GLPI 11515).
+//                     - Funcao EtqPllGN (interna) migrada para fonte externo ZA1GN.
 //
-
-// Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #Atualizacao
-// #PalavasChave      #etiquetas #pallets
-// #TabelasPrincipais #ZA1
-// #Modulos           #PCP
 
 #include "rwmake.ch"
 
@@ -73,10 +75,10 @@ User Function VA_ETQPLL()
 	aadd(aRotina, {"Imprimir - Avulso"  , "U_ImpZA1 (ZA1->ZA1_CODIGO)", 0, 2})
 	aadd(aRotina, {"Imprimir - Grupo"   , "U_EtqPlltG(za1 -> za1_op, za1 -> za1_doce, za1 -> za1_seriee, za1 -> za1_fornec, za1 -> za1_lojaf, 'I')", 0, 2})
 	aadd(aRotina, {"Enviar para FullWMS", "processa ({||U_EnvEtFul (za1 -> za1_codigo, .T.)})", 0, 4})
-	aadd(aRotina, {"Gera Etq NF entrada", "processa ({||U_EtqPllGN ()})", 0, 3})
+//	aadd(aRotina, {"Gera Etq NF entrada", "processa ({||U_EtqPllGN ()})", 0, 3})
+	aadd(aRotina, {"Gera Etq NF entrada", "U_ZA1GN ()", 0, 3})
 	aadd(aRotina, {"Regerar Grupo"      , "U_EtqPllRG()", 0, 3})
 	aadd(aRotina, {"Excluir Grupo"      , "U_EtqPlltG(za1 -> za1_op, za1 -> za1_doce, za1 -> za1_seriee, za1 -> za1_fornec, za1 -> za1_lojaf, 'E')", 0, 2})
-//	aadd(aRotina, {"Inutilizar"         , "U_EtqPllIn(ZA1->ZA1_CODIGO,.T.)", 0, 2})
 	aadd(aRotina, {"Inutilizar"         , "U_ZA1In (ZA1->ZA1_CODIGO, .T.)", 0, 2})
 	aAdd(aRotina, {"Excluir"            , "U_EtqPlltE (.T.)", 0, 5})
 	aAdd(aRotina, {"Cancela transf.Full", "U_EtqPllCT (ZA1->ZA1_CODIGO)", 0, 5})
@@ -87,7 +89,7 @@ User Function VA_ETQPLL()
 	mBrowse(,,,,cString,,,,,2,_aCores)
 Return
 
-//
+// --------------------------------------------------------------------------
 // Mostra legenda ou retorna array de cores, conforme o caso.
 user function ZA1LG (_lRetCores)
 	local _aCores  := {}
@@ -650,6 +652,7 @@ User Function EtqPllIn (_sCodigo, _bMostraMsg)
 return _lContinua
 */
 
+/* migrada para fonte separado
 // --------------------------------------------------------------------------
 // Gera etique a partir da NF de Entrada
 User Function EtqPllGN ()
@@ -677,49 +680,49 @@ User Function EtqPllGN ()
 		_oSQL := ClsSQl ():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += "select " 
-		_oSQL:_sQuery += "	' ' as OK, " 
-		_oSQL:_sQuery += "	D1_DOC     as NotaFiscal, " 
-		_oSQL:_sQuery += "	dbo.VA_DTOC(D1_EMISSAO) as Emissao, "
-		_oSQL:_sQuery += "	A2_NOME    as Fornecedor, "
-		_oSQL:_sQuery += "	D1_ITEM    as Linha, "
-		_oSQL:_sQuery += "	D1_LOTEFOR as LoteFor, "
-		_oSQL:_sQuery += "	D1_LOTECTL as Lote, "
-		_oSQL:_sQuery += "	B1_COD     as Codigo, " 
-		_oSQL:_sQuery += "	B1_DESC    as Item, "
-		_oSQL:_sQuery += "	B1_UM      as UM, "
-		_oSQL:_sQuery += "	D1_QUANT   as Quantidade, " 
-		_oSQL:_sQuery += "	A2_COD     as CodFornec, " 
-		_oSQL:_sQuery += "	A2_LOJA    as Loja, " 
-		_oSQL:_sQuery += "	D1_SERIE   as Serie " 
+		_oSQL:_sQuery += " ' ' as OK, " 
+		_oSQL:_sQuery += " D1_DOC     as NotaFiscal, " 
+		_oSQL:_sQuery += " dbo.VA_DTOC(D1_EMISSAO) as Emissao, "
+		_oSQL:_sQuery += " A2_NOME    as Fornecedor, "
+		_oSQL:_sQuery += " D1_ITEM    as Linha, "
+		_oSQL:_sQuery += " D1_LOTEFOR as LoteFor, "
+		_oSQL:_sQuery += " D1_LOTECTL as Lote, "
+		_oSQL:_sQuery += " B1_COD     as Codigo, " 
+		_oSQL:_sQuery += " B1_DESC    as Item, "
+		_oSQL:_sQuery += " B1_UM      as UM, "
+		_oSQL:_sQuery += " D1_QUANT   as Quantidade, " 
+		_oSQL:_sQuery += " A2_COD     as CodFornec, " 
+		_oSQL:_sQuery += " A2_LOJA    as Loja, " 
+		_oSQL:_sQuery += " D1_SERIE   as Serie " 
 		_oSQL:_sQuery += "from "
-		_oSQL:_sQuery += "	" + RetSQLName ("SD1") + " as SD1, " 
-		_oSQL:_sQuery += "	" + RetSQLName ("SB1") + " as SB1, "
-		_oSQL:_sQuery += "	" + RetSQLName ("SA2") + " as SA2, "
-		_oSQL:_sQuery += "	" + RetSQLName ("SF4") + " as SF4 "
+		_oSQL:_sQuery += " " + RetSQLName ("SD1") + " as SD1, " 
+		_oSQL:_sQuery += " " + RetSQLName ("SB1") + " as SB1, "
+		_oSQL:_sQuery += " " + RetSQLName ("SA2") + " as SA2, "
+		_oSQL:_sQuery += " " + RetSQLName ("SF4") + " as SF4 "
 		_oSQL:_sQuery += "where "
-		_oSQL:_sQuery += "	D1_COD    = B1_COD     and "
-		_oSQL:_sQuery += "	A2_FILIAL = '" + xfilial ("SA2") + "' and "
-		_oSQL:_sQuery += "	A2_LOJA   = D1_LOJA    and "
-		_oSQL:_sQuery += "	A2_COD    = D1_FORNECE and "
-		_oSQL:_sQuery += "	B1_FILIAL = '" + xfilial ("SB1") + "' and "
-		_oSQL:_sQuery += "	B1_UM <> 'LT'                 and "
-		_oSQL:_sQuery += "	B1_GRUPO != '0400'            and "  // Uvas
-		// Inicialmente nao vamos exigir rastreabilidade no Protheus --> _oSQL:_sQuery += "	B1_RASTRO = 'L'               and "
-		// Inicialmente nao vamos exigir rastreabilidade no Protheus --> _oSQL:_sQuery += "	D1_LOTECTL <> ''              and "
-		_oSQL:_sQuery += "	D1_FILIAL = '" + xfilial ("SD1") + "' and "
-		_oSQL:_sQuery += "	D1_QUANT  > 0                 and "
-		_oSQL:_sQuery += "	D1_DTDIGIT >= '" + dtos (_dDataIni) + "' and "
-		_oSQL:_sQuery += "	F4_CODIGO = D1_TES     and "
-		_oSQL:_sQuery += "	F4_ESTOQUE = 'S'              and "
-		_oSQL:_sQuery += "	B1_COD not in (select ZA1_PROD from ZA1010 where ZA1_FILIAL = D1_FILIAL and ZA1_DOCE = D1_DOC and ZA1_SERIEE = D1_SERIE and ZA1_PROD = D1_COD and ZA1_APONT <> 'I' and D1_ITEM = ZA1_ITEM and ZA1010.D_E_L_E_T_ = '') and "
-		_oSQL:_sQuery += "	EXISTS (SELECT * FROM v_wms_item I WHERE I.coditem = B1_COD) and"
-		_oSQL:_sQuery += "	SD1.D_E_L_E_T_ = '' and "
-		_oSQL:_sQuery += "	SB1.D_E_L_E_T_ = '' and "
-		_oSQL:_sQuery += "	SA2.D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " D1_COD    = B1_COD     and "
+		_oSQL:_sQuery += " A2_FILIAL = '" + xfilial ("SA2") + "' and "
+		_oSQL:_sQuery += " A2_LOJA   = D1_LOJA    and "
+		_oSQL:_sQuery += " A2_COD    = D1_FORNECE and "
+		_oSQL:_sQuery += " B1_FILIAL = '" + xfilial ("SB1") + "' and "
+		_oSQL:_sQuery += " B1_UM <> 'LT'                 and "  // Granel nao interessa ainda (eventalmente optemos por etiquetas os tanques ?)
+		_oSQL:_sQuery += " B1_GRUPO != '0400'            and "  // Uvas
+		_oSQL:_sQuery += " B1_RASTRO = 'L'               and "
+		_oSQL:_sQuery += " D1_LOTECTL <> ''              and "
+		_oSQL:_sQuery += " D1_FILIAL = '" + xfilial ("SD1") + "' and "
+		_oSQL:_sQuery += " D1_QUANT  > 0                 and "
+		_oSQL:_sQuery += " D1_DTDIGIT >= '" + dtos (_dDataIni) + "' and "
+		_oSQL:_sQuery += " F4_CODIGO = D1_TES     and "
+		_oSQL:_sQuery += " F4_ESTOQUE = 'S'              and "
+		_oSQL:_sQuery += " B1_COD not in (select ZA1_PROD from ZA1010 where ZA1_FILIAL = D1_FILIAL and ZA1_DOCE = D1_DOC and ZA1_SERIEE = D1_SERIE and ZA1_PROD = D1_COD and ZA1_APONT <> 'I' and D1_ITEM = ZA1_ITEM and ZA1010.D_E_L_E_T_ = '') and "
+		// Nao vamos integrar com FullWMS ainda ---> _oSQL:_sQuery += "	EXISTS (SELECT * FROM v_wms_item I WHERE I.coditem = B1_COD) and"
+		_oSQL:_sQuery += " SD1.D_E_L_E_T_ = '' and "
+		_oSQL:_sQuery += " SB1.D_E_L_E_T_ = '' and "
+		_oSQL:_sQuery += " SA2.D_E_L_E_T_ = '' "
 		_oSQL:_sQuery += "Order By "
-		_oSQL:_sQuery += "	D1_FILIAL, " 
-		_oSQL:_sQuery += "	D1_EMISSAO, "
-		_oSQL:_sQuery += "	D1_DOC "
+		_oSQL:_sQuery += " D1_FILIAL, " 
+		_oSQL:_sQuery += " D1_EMISSAO, "
+		_oSQL:_sQuery += " D1_DOC "
 		_oSQL:Log ()
 		
 		_aEtiq = aclone(_oSQL:Qry2Array ())
@@ -759,11 +762,11 @@ User Function EtqPllGN ()
 				else
 					_nQtPorPal = sa5 -> a5_vaqtpal
 				endif
-				u_log ('_nQtPorPal', _nQtPorPal)
+				u_log2 ('debug', '_nQtPorPal:' + cvaltochar (_nQtPorPal))
 
 				// Usa a funcao padrao de palletizacao para manter compatibilidade com outras rotinas.
 				_aPal := aclone (U_VA_QTDPAL (_aEtiq [_nEtiq, 8], _aEtiq [_nEtiq, 11], _nQtPorPal))
-				u_log ('_aPal:', _aPal)
+				u_log2 ('debug', _aPal)
 
 				if U_MsgYesNo ("Serao geradas " + cvaltochar (len (_aPal)) + " etiquetas (" + cvaltochar (_nQtPorPal) + " cada) para este item. Confirma?")
 					procregua (len (_aPal))
@@ -771,15 +774,15 @@ User Function EtqPllGN ()
 						incproc ("Gerando etiqueta " + cvaltochar (_i) + " de " + cvaltochar (len (_aPal)))
 						U_IncEtqPll (_aEtiq [_nEtiq, 8], '', _aPal[_i, 2], _aEtiq [_nEtiq, 12], _aEtiq [_nEtiq, 13], _aEtiq [_nEtiq, 2], _aEtiq [_nEtiq, 14], date(), _aEtiq [_nEtiq, 5], '')
 					next
-					u_log ('etiq.geradas')
+					u_log2 ('debug', 'etiq.geradas')
 					U_EtqPlltG ('', _aEtiq [_nEtiq, 2], _aEtiq [_nEtiq, 14], _aEtiq [_nEtiq, 12], _aEtiq [_nEtiq, 13], 'I')
-					u_log ('retornou do U_EtqPlltG')
+					u_log2 ('debug', 'retornou do U_EtqPlltG')
 				endif
 			endif
 		next
 	endif
 return
-
+*/
 
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1

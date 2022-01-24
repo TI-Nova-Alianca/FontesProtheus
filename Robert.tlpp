@@ -91,8 +91,8 @@ static function _AndaLogo ()
 //	local _lContinua := .T.
 //	local _aDados    := {}
 //	local _nDado     := 0
-	local _aCargas   := {}
-	local _nCarga    := 0
+//	local _aCargas   := {}
+//	local _nCarga    := 0
 //	local _i         := 0
 //	local _sError    := ''
 //	local _sWarning  := ''
@@ -106,7 +106,289 @@ static function _AndaLogo ()
 	incproc ()
 	u_help ('Nada definido.')
 return
+/*
+	// Varre safra anterior simulando precos da nova safra, para ver se ficaria algum caso sem tratamento.
+	_sPreNF := U_RetSQL ("SELECT MAX (ZZ9_PRE_NF) FROM ZZ9010 WHERE ZZ9_SAFRA = '2022'")
+	_aPrecos := {}
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT *"
+	_oSQL:_sQuery +=   " FROM VA_VNOTAS_SAFRA V"
+	_oSQL:_sQuery +=  " WHERE SAFRA = '2022'"
+	_oSQL:_sQuery +=  " ORDER BY PRODUTO, GRAU"
+	_oSQL:Log ()
+	_sAliasQ = _oSQL:Qry2Trb ()
+	do while ! (_sAliasQ) -> (eof ())
+		if (_sAliasQ) -> sist_conducao == 'E'
+			_sClasFina = (_sAliasQ) -> clas_final
+		elseif (_sAliasQ) -> sist_conducao == 'L'
+			_sClasFina = (_sAliasQ) -> clas_abd
+		endif
+		_nPrcNovo = U_PrcUva22 ((_sAliasQ) -> filial, (_sAliasQ) -> produto, val ((_sAliasQ) -> grau), _sClasFina, (_sAliasQ) -> SIST_CONDUCAO, .F.)[2]
+		U_Log2 ('info', transform ((_sAliasQ) -> VALOR_UNIT, "@E 999.9999") + '  ' + transform (_nPrcNovo, "@E 999.9999"))
+		if _nPrcNovo != (_sAliasQ) -> VALOR_UNIT
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += "SELECT SZE.R_E_C_N_O_"
+			_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZE") + " SZE"
+			_oSQL:_sQuery += " WHERE SZE.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND SZE.ZE_FILIAL  = '" + (_sAliasQ) -> filial + "'"
+			_oSQL:_sQuery +=   " AND SZE.ZE_SAFRA   = '" + (_sAliasQ) -> safra + "'"
+			_oSQL:_sQuery +=   " AND SZE.ZE_ASSOC   = '" + (_sAliasQ) -> associado + "'"
+			_oSQL:_sQuery +=   " AND SZE.ZE_LOJASSO = '" + (_sAliasQ) -> loja_assoc + "'"
+			_oSQL:_sQuery +=   " AND SZE.ZE_NFGER   = '" + (_sAliasQ) -> doc + "'"
+			_oSQL:_sQuery +=   " AND SZE.ZE_SERIE   = '" + (_sAliasQ) -> serie + "'"
+			_oSQL:_sQuery +=   " AND (SELECT COUNT (DISTINCT ZF_PRODUTO)"
+			_oSQL:_sQuery +=          " FROM " + RetSQLName ("SZF") + " SZF"
+			_oSQL:_sQuery +=         " WHERE SZF.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=           " AND SZF.ZF_FILIAL  = SZE.ZE_FILIAL"
+			_oSQL:_sQuery +=           " AND SZF.ZF_SAFRA   = SZE.ZE_SAFRA"
+			_oSQL:_sQuery +=           " AND SZF.ZF_CARGA   = SZE.ZE_CARGA) > 1"
+			_nRegSZE := _oSQL:RetQry (1, .f.)
+			if _nRegSZE > 0
+				sze -> (dbgoto (_nRegSZE))
+				U_Log2 ('aviso', 'Carga com mistura: ' + sze -> ze_carga)
+				if ! empty (sze -> ze_obs)
+					U_Log2 ('aviso', sze -> ze_obs)
+				endif
+			endif
+			aadd (_aPrecos, {(_sAliasQ) -> filial, (_sAliasQ) -> associado, (_sAliasQ) -> loja_assoc, (_sAliasQ) -> doc, (_sAliasQ) -> serie, (_sAliasQ) -> data, (_sAliasQ) -> produto, val ((_sAliasQ) -> grau), _sClasFina, (_sAliasQ) -> SIST_CONDUCAO, (_sAliasQ) -> VALOR_UNIT, _nPrcNovo})
 
+			reclock ("ZZ9", .T.)
+			zz9 -> zz9_filial = (_sAliasQ) -> filial
+			zz9 -> zz9_safra  = (_sAliasQ) -> safra
+			zz9 -> zz9_grupo  = (_sAliasQ) -> grupo_pagto
+			zz9 -> zz9_parcel = 'A'
+			zz9 -> zz9_fornec = (_sAliasQ) -> associado
+			zz9 -> zz9_loja   = (_sAliasQ) -> loja_assoc
+			zz9 -> zz9_pre_nf = _sPreNF
+			zz9 -> zz9_TipoNF = "C"
+			zz9 -> zz9_produt = (_sAliasQ) -> produto
+			zz9 -> zz9_grau   = (_sAliasQ) -> grau
+			zz9 -> zz9_classe = (_sAliasQ) -> clas_final
+			zz9 -> zz9_clabd  = (_sAliasQ) -> clas_abd
+			zz9 -> zz9_conduc = (_sAliasQ) -> sist_conducao
+			zz9 -> zz9_vunold = (_sAliasQ) -> VALOR_UNIT
+			zz9 -> zz9_vunit2 = _nPrcNovo
+			zz9 -> zz9_quant  = 0
+			zz9 -> zz9_vunit  = (_nPrcNovo - (_sAliasQ) -> VALOR_UNIT) * (_sAliasQ) -> PESO_LIQ
+			zz9 -> zz9_obs    = ''
+			zz9 -> zz9_nfori  = (_sAliasQ) -> doc
+			zz9 -> zz9_serior = (_sAliasQ) -> serie
+			zz9 -> zz9_itemor = (_sAliasQ) -> item_nota
+			zz9 -> zz9_mistu1 = ''
+			zz9 -> zz9_mistu2 = ''
+			zz9 -> zz9_mistu3 = ''
+			zz9 -> zz9_msgNF  = 'Compl.safra 2022'
+			zz9 -> zz9_TES    = U_TESSafra ('2022', (_sAliasQ) -> associado, (_sAliasQ) -> loja_assoc, 'V')
+			msunlock ()
+			_sPreNF = soma1 (soma1 (soma1 (soma1 (soma1 (_sPreNF)))))
+		endif
+		(_sAliasQ) -> (dbskip ())
+	enddo
+	U_Log2 ('debug', _aPrecos)
+	u_acolsxls (_aPrecos)
+return
+*/
+/* conferencia 4 falecidos que ficaram de fora na vez anterior
+	// Gera pre-notas de complemento de safra 2020 apos atualizacao de tabelas de precos (glpi 9415)
+	aHeader := {}
+	aadd (aHeader, {"Nome"   , 'Nome'     , "", 30, 0, "", "", "C"})
+	aadd (aHeader, {"Varied" , 'Variedade', "", 15, 0, "", "", "C"})
+	aadd (aHeader, {"Descr"  , 'Descricao', "", 50, 0, "", "", "C"})
+	aadd (aHeader, {"Peso"   , 'Peso_liq' , "", 9, 2, "", "", "N"})
+	aadd (aHeader, {"Grau"   , 'Grau'     , "", 5, 0, "", "", "C"})
+	aadd (aHeader, {"ClasEsp", 'Cl_espald', "", 2, 0, "", "", "C"})
+	aadd (aHeader, {"ClasLat", 'Cl_latada', "", 2, 0, "", "", "C"})
+	aadd (aHeader, {"VUnEfet", 'Vun_pago' , "", 9, 4, "", "", "N"})
+	aadd (aHeader, {"VlNovo" , 'Vun_novo' , "", 9, 4, "", "", "N"})
+	aadd (aHeader, {"VlClas" , 'Acr_clas' , "", 9, 2, "", "", "N"})
+	aadd (aHeader, {"Obs"    , 'Obs'      , "", 100, 0, "", "", "C"})
+	_sPreNF := U_RetSQL ("SELECT MAX (ZZ9_PRE_NF) FROM ZZ9010 WHERE ZZ9_SAFRA = '2020'")
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT V.*, B1_VARUVA, A2_NOME" //, ZZ9_NFCOMP, ZZ9_MISTU1, ZZ9_MISTU2, ZZ9_MISTU3, ZZ9_MSGNF"
+	_oSQL:_sQuery +=      ", ISNULL (
+	_oSQL:_sQuery +=       " (select top 1 R_E_C_N_O_"  // Busca ZZ9 para ter dados de mistura de variedades, por isso ordena-o para trazer as misturas antes.
+	_oSQL:_sQuery +=          " FROM ZZ9010 ZZ9"
+	_oSQL:_sQuery +=         " WHERE ZZ9.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=           " AND ZZ9.ZZ9_FILIAL = V.FILIAL"
+	_oSQL:_sQuery +=           " AND ZZ9.ZZ9_SAFRA  = V.SAFRA"
+	_oSQL:_sQuery +=           " AND ZZ9.ZZ9_NFCOMP != ''"
+	_oSQL:_sQuery +=           " AND ZZ9.ZZ9_FORNEC = V.ASSOCIADO"
+	_oSQL:_sQuery +=           " AND ZZ9.ZZ9_LOJA   = V.LOJA_ASSOC"
+	_oSQL:_sQuery +=           " AND ZZ9.ZZ9_NFCOMP = V.DOC"
+	_oSQL:_sQuery +=           " AND ZZ9.ZZ9_SERCOM = V.SERIE"
+	_oSQL:_sQuery +=           " AND ZZ9.ZZ9_PRODUT = V.PRODUTO"
+	_oSQL:_sQuery +=           " AND ZZ9.ZZ9_GRAU   = V.GRAU"
+	_oSQL:_sQuery +=           " AND ZZ9.ZZ9_CLASSE = V.CLAS_FINAL"
+	_oSQL:_sQuery +=           " AND ZZ9.ZZ9_CLABD  = V.CLAS_ABD"
+	_oSQL:_sQuery +=         " ORDER BY ZZ9_FILIAL, ZZ9_SAFRA,ZZ9_FORNEC,ZZ9_LOJA,ZZ9_NFCOMP,ZZ9_SERCOM,ZZ9_PRODUT,ZZ9_CLASSE,ZZ9_CLABD, ZZ9_MISTU1 desc, ZZ9_MISTU2 desc, ZZ9_MISTU3 desc, ZZ9_MSGNF desc"
+	_oSQL:_sQuery +=        "), 0) AS REGZZ9"
+	_oSQL:_sQuery +=   " FROM SB1010 SB1, SA2010 SA2, VA_VPRECO_EFETIVO_SAFRA V"
+	_oSQL:_sQuery +=  " WHERE SAFRA = '2020'"
+	_oSQL:_sQuery +=   " AND ASSOCIADO IN ('002779','002533','002714','002635')
+
+	_oSQL:_sQuery +=    " AND SB1.D_E_L_E_T_ = '' AND B1_FILIAL = '  ' AND B1_COD = V.PRODUTO"
+	_oSQL:_sQuery +=    " AND SA2.D_E_L_E_T_ = '' AND A2_FILIAL = '  ' AND A2_COD = V.ASSOCIADO AND A2_LOJA = V.LOJA_ASSOC"
+	_oSQL:_sQuery +=  " ORDER BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, PRODUTO, DESCRICAO, GRAU, CLAS_FINAL, CLAS_ABD, SIST_CONDUCAO, GRUPO_PAGTO"
+	_oSQL:Log ()
+	_sAliasQ = _oSQL:Qry2Trb ()
+	_aPrev = {}
+	do while ! (_sAliasQ) -> (eof ())
+		_nVlClas = 0
+		_sObs = ''
+		if (_sAliasQ) -> regZZ9 = 0
+			U_Log2 ('erro', 'Nao achei ZZ9 para filial/doc ' + (_sAliasQ) -> filial + '/' + (_sAliasQ) -> doc)
+		else
+			zz9 -> (dbgoto ((_sAliasQ) -> regZZ9))
+			_sMistu1 = zz9 -> zz9_mistu1
+			_sMistu2 = zz9 -> zz9_mistu2
+			_sMistu3 = zz9 -> zz9_mistu3
+
+			if (_sAliasQ) -> sist_conducao == 'E'
+				_sClasFina = (_sAliasQ) -> clas_final
+			elseif (_sAliasQ) -> sist_conducao == 'L'
+				_sClasFina = (_sAliasQ) -> clas_abd
+			endif
+
+			// Verifica se teve mistura de variedades.
+			_nPreco = U_PrcUva20 ((_sAliasQ) -> filial, (_sAliasQ) -> produto, val ((_sAliasQ) -> grau), _sClasFina, (_sAliasQ) -> SIST_CONDUCAO, .F.)[2]
+			if ! empty (_sMistu1)
+				_nPrecoM1 = U_PrcUva20 ((_sAliasQ) -> filial, _sMistu1, val ((_sAliasQ) -> grau), _sClasFina, (_sAliasQ) -> SIST_CONDUCAO, .F.)[2]
+				if _nPrecoM1 < _nPreco
+					_nPreco = _nPrecoM1
+					_sObs = 'Mist.varied1-Precificando como ' + alltrim (fBuscaCpo ("SB1", 1, xFilial ("SB1") + _sMistu1, 'B1_DESC'))
+				endif
+			endif
+			if ! empty (_sMistu2)
+				_nPrecoM2 = U_PrcUva20 ((_sAliasQ) -> filial, _sMistu2, val ((_sAliasQ) -> grau), _sClasFina, (_sAliasQ) -> SIST_CONDUCAO, .F.)[2]
+				if _nPrecoM2 < _nPreco
+					_nPreco = _nPrecoM2
+					_sObs = 'Mist.varied2-Precificando como ' + alltrim (fBuscaCpo ("SB1", 1, xFilial ("SB1") + _sMistu2, 'B1_DESC'))
+				endif
+			endif
+			if ! empty (_sMistu3)
+				_nPrecoM3 = U_PrcUva20 ((_sAliasQ) -> filial, _sMistu3, val ((_sAliasQ) -> grau), _sClasFina, (_sAliasQ) -> SIST_CONDUCAO, .F.)[2]
+				if _nPrecoM3 < _nPreco
+					_nPreco = _nPrecoM3
+					_sObs = 'Mist.varied3-Precificando como ' + alltrim (fBuscaCpo ("SB1", 1, xFilial ("SB1") + _sMistu3, 'B1_DESC'))
+				endif
+			endif
+
+			// Premiacao/incentivo por qualidade
+			if (_sAliasQ) -> b1_varuva == 'C'
+
+				// Solicitado por Rodrigo (e-mail) em 22/02/2021: Moscato Embrapa nao ganha classificacao.
+				if ! alltrim ((_sAliasQ) -> produto) $ '9918/9838/9837/9836'
+
+					if alltrim ((_sAliasQ) -> clas_abd) == 'A'
+						_nVlClas = 0.05
+					elseif alltrim ((_sAliasQ) -> clas_abd) == 'B'
+						_nVlClas = 0.02  //0.03
+					endif
+				endif
+			endif
+
+			aadd (_aPrev, {(_sAliasQ) -> a2_nome,;
+						(_sAliasQ) -> produto,;
+						(_sAliasQ) -> descricao,;
+						(_sAliasQ) -> peso_liq,;
+						(_sAliasQ) -> grau,;
+						(_sAliasQ) -> clas_final,;
+						(_sAliasQ) -> clas_abd,;
+						(_sAliasQ) -> vunit_efetivo,;
+						_nPreco,;
+						_nVlClas,;
+						_sObs})
+
+			// Gera somente se tiver valor a pagar
+			_nAPagar = (_sAliasQ) -> peso_liq * (_nPreco + _nVlClas) - (_sAliasQ) -> peso_liq * (_sAliasQ) -> vunit_efetivo
+			//	U_Log (left ((_sAliasQ) -> a2_nome, 30) + (_sAliasQ) -> produto + (_sAliasQ) -> descricao + (_sAliasQ) -> grau + (_sAliasQ) -> clas_final + (_sAliasQ) -> clas_abd + transform ((_sAliasQ) -> vunit_efetivo, '@E 999.9999') + transform (_nPreco, '@E 999.9999') + transform ((_sAliasQ) -> peso_liq * _nPreco, '@E 999,999.99'))
+
+			if (_sAliasQ) -> grupo_pagto != U_VA_RusGP ((_sAliasQ) -> safra, (_sAliasQ) -> produto, (_sAliasQ) -> sist_conducao)
+				U_Log2 ('erro', 'grupo ant: ' + (_sAliasQ) -> grupo_pagto + ' novo: ' + U_VA_RusGP ((_sAliasQ) -> safra, (_sAliasQ) -> produto, (_sAliasQ) -> sist_conducao))
+			endif
+
+			// reclock ("ZZ9", .T.)
+			// zz9 -> zz9_filial = (_sAliasQ) -> filial
+			// zz9 -> zz9_safra  = (_sAliasQ) -> safra
+			// zz9 -> zz9_grupo  = (_sAliasQ) -> grupo_pagto
+			// zz9 -> zz9_parcel = 'K'
+			// zz9 -> zz9_fornec = (_sAliasQ) -> associado
+			// zz9 -> zz9_loja   = (_sAliasQ) -> loja_assoc
+			// zz9 -> zz9_pre_nf = _sPreNF
+			// zz9 -> zz9_TipoNF = "C"
+			// zz9 -> zz9_produt = (_sAliasQ) -> produto
+			// zz9 -> zz9_grau   = (_sAliasQ) -> grau
+			// zz9 -> zz9_classe = (_sAliasQ) -> clas_final
+			// zz9 -> zz9_clabd  = (_sAliasQ) -> clas_abd
+			// zz9 -> zz9_conduc = (_sAliasQ) -> sist_conducao
+			// zz9 -> zz9_vunold = (_sAliasQ) -> vunit_efetivo
+			// zz9 -> zz9_quant  = 0
+			// zz9 -> zz9_vunit  = _nAPagar
+			// zz9 -> zz9_vunit2 = _nPreco  // para facilitar na planilha de conferencia
+			// zz9 -> zz9_vunit3 = _nVlClas  // para facilitar na planilha de conferencia
+			// zz9 -> zz9_obs    = _sObs
+			// zz9 -> zz9_nfori  = (_sAliasQ) -> doc
+			// zz9 -> zz9_serior = (_sAliasQ) -> serie
+			// zz9 -> zz9_itemor = (_sAliasQ) -> item_nota
+			// zz9 -> zz9_mistu1 = _sMistu1
+			// zz9 -> zz9_mistu2 = _sMistu2
+			// zz9 -> zz9_mistu3 = _sMistu3
+			// zz9 -> zz9_msgNF  = 'Compl.safra 2020'
+			// zz9 -> zz9_TES    = '312'
+			// msunlock ()
+			// _sPreNF = soma1 (soma1 (soma1 (soma1 (soma1 (_sPreNF)))))
+		endif
+		(_sAliasQ) -> (dbskip ())
+	enddo
+	u_acolsxls (_aprev)
+return
+*/
+/*
+	Private cPerg   := "VAXLS40"
+	U_GravaSX1 (cPerg, '01', '2022')  // safra
+	U_GravaSX1 (cPerg, '02', 1)  // 'Comuns', 'Finas espaldeira', 'Finas latadas', 'Finas SC'
+	U_GravaSX1 (cPerg, '03', 2)  // Entrada/Compra/MOC
+	U_GravaSX1 (cPerg, '04', 1)  // Todos(decimais) / Apenas inteiros
+	U_GravaSX1 (cPerg, '05', 2)  // Descricao completa/resumida
+	u_va_xls40 (.T.)
+return
+/*
+	// Testes batches em geral
+//	_sArqLog := 'U_BatCompAssoc_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batCompAssoc ()
+//	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batsafr ('1')  // cargas sem contranota
+//	u_batsafr ('3')  // conferencia geracao das parcelas financeiro
+//	u_batsafr ('4')  // contranotas sem carga
+//	u_batsafr ('5')  // conferencia fretes
+//	u_batsafr ('6')  // e-mail diario de acompanhamento de safra
+//	u_batsafr ('7')  // gera SZI a partir das parcelas
+//	u_batsafr ('8')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
+//	u_batsafr ('9')  // Transfere (das filiais para a matriz) os titulos de nao associados.
+//	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batocor ()
+//	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batmetaf ()
+//	_sArqLog := 'U_BatFunAtlz_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batfunatlz ()
+//	_sArqLog := 'U_BatBlUsr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batBlUsr ()
+//	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batmercp ()
+//	_sArqLog := 'U_BatVerif_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batVerif ()
+//	_sArqLog := 'U_BatEDIM_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batedim ("I")
+//	_sArqLog := 'U_BatMercN_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batMercN (5)
+//	u_log2 ('info', _oBatch:Mensagens)
+//	_sArqLog := 'U_BatXML_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	U_BatXML("\\192.168.1.3\Siga\Protheus12\protheus_data\xml_NFe\", 1, .F.)
+return
+*/
 /*
 	// Recalcula frete safra e compara com conteudo jah gravado.
 	private _aHisFrSaf := {}  // Para poder gerar, no final, uma planilha com todos os valores.
@@ -132,29 +414,6 @@ return
 	next
 	//U_Log2 ('debug', _aHisFrSaf)
 	u_acolsXLS (_aHisFrSaf)
-return
-*/
-/*
-	// Varre safra anterior simulando precos da nova safra, para ver se ficaria algum caso sem tratamento.
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT top 5 V.*"
-	_oSQL:_sQuery +=   " FROM VA_VNOTAS_SAFRA V"
-	_oSQL:_sQuery +=  " WHERE SAFRA = '2021'"
-	_oSQL:_sQuery +=  " ORDER BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, PRODUTO, DESCRICAO, GRAU, CLAS_FINAL, CLAS_ABD, SIST_CONDUCAO, GRUPO_PAGTO"
-	_oSQL:Log ()
-	_sAliasQ = _oSQL:Qry2Trb ()
-	do while ! (_sAliasQ) -> (eof ())
-		if (_sAliasQ) -> sist_conducao == 'E'
-			_sClasFina = (_sAliasQ) -> clas_final
-		elseif (_sAliasQ) -> sist_conducao == 'L'
-			_sClasFina = (_sAliasQ) -> clas_abd
-		endif
-		_nPrcAnt  = U_PrcUva21 ((_sAliasQ) -> filial, (_sAliasQ) -> produto, val ((_sAliasQ) -> grau), _sClasFina, (_sAliasQ) -> SIST_CONDUCAO, .F.)[2]
-		_nPrcNovo = U_PrcUva22 ((_sAliasQ) -> filial, (_sAliasQ) -> produto, val ((_sAliasQ) -> grau), _sClasFina, (_sAliasQ) -> SIST_CONDUCAO, .F.)[2]
-		U_Log2 ('info', transform (_nPrcAnt, "@E 999.9999") + '  ' + transform (_nPrcNovo, "@E 999.9999"))
-		(_sAliasQ) -> (dbskip ())
-	enddo
 return
 */
 
@@ -188,24 +447,6 @@ return
 	u_va_lcnf (.t.)
 return
 */
-
-U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO())),,'640005','')
-U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO())),,'640009','')
-U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO())),,'641001','')
-U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO())),,'641002','')
-U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO())),,'640011','')
-U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO())),,'640003','')
-U_LP2('VEND_NF_ORI',,,SD1->(RECNO()),'640003','')
-
-U_LP2('VEND_NF_ORI',,,SD1->(RECNO()),'640003','')
-U_LP2('VEND_NF_ORI',,,SD1->(RECNO()),'640003','')
-U_LP2('VEND_NF_ORI',,,SD1->(RECNO()),'640005','')
-U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO()),,'640005',''),,'640005','')
-U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO()),,'640009',''),,'640009','')
-U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO()),,'641001',''),,'641001','')
-U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO()),,'641002',''),,'641002','')
-U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO()),,'640011',''),,'640011','')
-U_LP2('CTA_TP_VEND',,U_LP2('VEND_NF_ORI',,,SD1->(RECNO()),'640003',''),,'640003','')
 /*
 	// Teste geracao avisos
 	_oAviso := ClsAviso ():New ()
@@ -319,38 +560,6 @@ return
 	endif
 return
 */
-/*
-	// Testes batches em geral
-	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-	u_batocor ()
-//	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batmetaf ()
-//	_sArqLog := 'U_BatFunAtlz_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batfunatlz ()
-//	_sArqLog := 'U_BatBlUsr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batBlUsr ()
-//	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batsafr ('1')  // cargas sem contranota
-//	u_batsafr ('3')  // conferencia geracao das parcelas financeiro
-//	u_batsafr ('4')  // contranotas sem carga
-//	u_batsafr ('5')  // conferencia fretes
-//	u_batsafr ('7')  // gera SZI a partir das parcelas
-//	u_batsafr ('8')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
-//	u_batsafr ('9')  // Transfere (das filiais para a matriz) os titulos de nao associados.
-//	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batmercp ()
-//	_sArqLog := 'U_BatVerif_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batVerif ()
-//	_sArqLog := 'U_BatEDIM_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batedim ("I")
-//	_sArqLog := 'U_BatMercN_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batMercN (5)
-//	u_log2 ('info', _oBatch:Mensagens)
-//	_sArqLog := 'U_BatXML_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	U_BatXML("\\192.168.1.3\Siga\Protheus12\protheus_data\xml_NFe\", 1, .F.)
-return
-*/
-
 /*
 	// Testes inclusao conta corrente
 	_aMovCC := {} // TM   SERIE   DOCTO                       ASSOC    LOJA  bco    ag       cta
@@ -1003,167 +1212,6 @@ return
 //	U_BatXML("\\192.168.1.2\Siga\Protheus11\protheus_data\xml_NFe\", 200, .F.)
 //	U_BatXML("\\192.168.1.2\Siga\Protheus11\protheus_data\xml_NFe\CT-e\", 100, .F.)
 RETURN
-*/
-
-// user function MTA650EMP ()
-// 	u_help (procname ())
-// return
-
-/* conferencia 4 falecidos que ficaram de fora na vez anterior
-	// Gera pre-notas de complemento de safra 2020 apos atualizacao de tabelas de precos (glpi 9415)
-	aHeader := {}
-	aadd (aHeader, {"Nome"   , 'Nome'     , "", 30, 0, "", "", "C"})
-	aadd (aHeader, {"Varied" , 'Variedade', "", 15, 0, "", "", "C"})
-	aadd (aHeader, {"Descr"  , 'Descricao', "", 50, 0, "", "", "C"})
-	aadd (aHeader, {"Peso"   , 'Peso_liq' , "", 9, 2, "", "", "N"})
-	aadd (aHeader, {"Grau"   , 'Grau'     , "", 5, 0, "", "", "C"})
-	aadd (aHeader, {"ClasEsp", 'Cl_espald', "", 2, 0, "", "", "C"})
-	aadd (aHeader, {"ClasLat", 'Cl_latada', "", 2, 0, "", "", "C"})
-	aadd (aHeader, {"VUnEfet", 'Vun_pago' , "", 9, 4, "", "", "N"})
-	aadd (aHeader, {"VlNovo" , 'Vun_novo' , "", 9, 4, "", "", "N"})
-	aadd (aHeader, {"VlClas" , 'Acr_clas' , "", 9, 2, "", "", "N"})
-	aadd (aHeader, {"Obs"    , 'Obs'      , "", 100, 0, "", "", "C"})
-	_sPreNF := U_RetSQL ("SELECT MAX (ZZ9_PRE_NF) FROM ZZ9010 WHERE ZZ9_SAFRA = '2020'")
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT V.*, B1_VARUVA, A2_NOME" //, ZZ9_NFCOMP, ZZ9_MISTU1, ZZ9_MISTU2, ZZ9_MISTU3, ZZ9_MSGNF"
-	_oSQL:_sQuery +=      ", ISNULL (
-	_oSQL:_sQuery +=       " (select top 1 R_E_C_N_O_"  // Busca ZZ9 para ter dados de mistura de variedades, por isso ordena-o para trazer as misturas antes.
-	_oSQL:_sQuery +=          " FROM ZZ9010 ZZ9"
-	_oSQL:_sQuery +=         " WHERE ZZ9.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=           " AND ZZ9.ZZ9_FILIAL = V.FILIAL"
-	_oSQL:_sQuery +=           " AND ZZ9.ZZ9_SAFRA  = V.SAFRA"
-	_oSQL:_sQuery +=           " AND ZZ9.ZZ9_NFCOMP != ''"
-	_oSQL:_sQuery +=           " AND ZZ9.ZZ9_FORNEC = V.ASSOCIADO"
-	_oSQL:_sQuery +=           " AND ZZ9.ZZ9_LOJA   = V.LOJA_ASSOC"
-	_oSQL:_sQuery +=           " AND ZZ9.ZZ9_NFCOMP = V.DOC"
-	_oSQL:_sQuery +=           " AND ZZ9.ZZ9_SERCOM = V.SERIE"
-	_oSQL:_sQuery +=           " AND ZZ9.ZZ9_PRODUT = V.PRODUTO"
-	_oSQL:_sQuery +=           " AND ZZ9.ZZ9_GRAU   = V.GRAU"
-	_oSQL:_sQuery +=           " AND ZZ9.ZZ9_CLASSE = V.CLAS_FINAL"
-	_oSQL:_sQuery +=           " AND ZZ9.ZZ9_CLABD  = V.CLAS_ABD"
-	_oSQL:_sQuery +=         " ORDER BY ZZ9_FILIAL, ZZ9_SAFRA,ZZ9_FORNEC,ZZ9_LOJA,ZZ9_NFCOMP,ZZ9_SERCOM,ZZ9_PRODUT,ZZ9_CLASSE,ZZ9_CLABD, ZZ9_MISTU1 desc, ZZ9_MISTU2 desc, ZZ9_MISTU3 desc, ZZ9_MSGNF desc"
-	_oSQL:_sQuery +=        "), 0) AS REGZZ9"
-	_oSQL:_sQuery +=   " FROM SB1010 SB1, SA2010 SA2, VA_VPRECO_EFETIVO_SAFRA V"
-	_oSQL:_sQuery +=  " WHERE SAFRA = '2020'"
-	_oSQL:_sQuery +=   " AND ASSOCIADO IN ('002779','002533','002714','002635')
-
-	_oSQL:_sQuery +=    " AND SB1.D_E_L_E_T_ = '' AND B1_FILIAL = '  ' AND B1_COD = V.PRODUTO"
-	_oSQL:_sQuery +=    " AND SA2.D_E_L_E_T_ = '' AND A2_FILIAL = '  ' AND A2_COD = V.ASSOCIADO AND A2_LOJA = V.LOJA_ASSOC"
-	_oSQL:_sQuery +=  " ORDER BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, PRODUTO, DESCRICAO, GRAU, CLAS_FINAL, CLAS_ABD, SIST_CONDUCAO, GRUPO_PAGTO"
-	_oSQL:Log ()
-	_sAliasQ = _oSQL:Qry2Trb ()
-	_aPrev = {}
-	do while ! (_sAliasQ) -> (eof ())
-		_nVlClas = 0
-		_sObs = ''
-		if (_sAliasQ) -> regZZ9 = 0
-			U_Log2 ('erro', 'Nao achei ZZ9 para filial/doc ' + (_sAliasQ) -> filial + '/' + (_sAliasQ) -> doc)
-		else
-			zz9 -> (dbgoto ((_sAliasQ) -> regZZ9))
-			_sMistu1 = zz9 -> zz9_mistu1
-			_sMistu2 = zz9 -> zz9_mistu2
-			_sMistu3 = zz9 -> zz9_mistu3
-
-			if (_sAliasQ) -> sist_conducao == 'E'
-				_sClasFina = (_sAliasQ) -> clas_final
-			elseif (_sAliasQ) -> sist_conducao == 'L'
-				_sClasFina = (_sAliasQ) -> clas_abd
-			endif
-
-			// Verifica se teve mistura de variedades.
-			_nPreco = U_PrcUva20 ((_sAliasQ) -> filial, (_sAliasQ) -> produto, val ((_sAliasQ) -> grau), _sClasFina, (_sAliasQ) -> SIST_CONDUCAO, .F.)[2]
-			if ! empty (_sMistu1)
-				_nPrecoM1 = U_PrcUva20 ((_sAliasQ) -> filial, _sMistu1, val ((_sAliasQ) -> grau), _sClasFina, (_sAliasQ) -> SIST_CONDUCAO, .F.)[2]
-				if _nPrecoM1 < _nPreco
-					_nPreco = _nPrecoM1
-					_sObs = 'Mist.varied1-Precificando como ' + alltrim (fBuscaCpo ("SB1", 1, xFilial ("SB1") + _sMistu1, 'B1_DESC'))
-				endif
-			endif
-			if ! empty (_sMistu2)
-				_nPrecoM2 = U_PrcUva20 ((_sAliasQ) -> filial, _sMistu2, val ((_sAliasQ) -> grau), _sClasFina, (_sAliasQ) -> SIST_CONDUCAO, .F.)[2]
-				if _nPrecoM2 < _nPreco
-					_nPreco = _nPrecoM2
-					_sObs = 'Mist.varied2-Precificando como ' + alltrim (fBuscaCpo ("SB1", 1, xFilial ("SB1") + _sMistu2, 'B1_DESC'))
-				endif
-			endif
-			if ! empty (_sMistu3)
-				_nPrecoM3 = U_PrcUva20 ((_sAliasQ) -> filial, _sMistu3, val ((_sAliasQ) -> grau), _sClasFina, (_sAliasQ) -> SIST_CONDUCAO, .F.)[2]
-				if _nPrecoM3 < _nPreco
-					_nPreco = _nPrecoM3
-					_sObs = 'Mist.varied3-Precificando como ' + alltrim (fBuscaCpo ("SB1", 1, xFilial ("SB1") + _sMistu3, 'B1_DESC'))
-				endif
-			endif
-
-			// Premiacao/incentivo por qualidade
-			if (_sAliasQ) -> b1_varuva == 'C'
-
-				// Solicitado por Rodrigo (e-mail) em 22/02/2021: Moscato Embrapa nao ganha classificacao.
-				if ! alltrim ((_sAliasQ) -> produto) $ '9918/9838/9837/9836'
-
-					if alltrim ((_sAliasQ) -> clas_abd) == 'A'
-						_nVlClas = 0.05
-					elseif alltrim ((_sAliasQ) -> clas_abd) == 'B'
-						_nVlClas = 0.02  //0.03
-					endif
-				endif
-			endif
-
-			aadd (_aPrev, {(_sAliasQ) -> a2_nome,;
-						(_sAliasQ) -> produto,;
-						(_sAliasQ) -> descricao,;
-						(_sAliasQ) -> peso_liq,;
-						(_sAliasQ) -> grau,;
-						(_sAliasQ) -> clas_final,;
-						(_sAliasQ) -> clas_abd,;
-						(_sAliasQ) -> vunit_efetivo,;
-						_nPreco,;
-						_nVlClas,;
-						_sObs})
-
-			// Gera somente se tiver valor a pagar
-			_nAPagar = (_sAliasQ) -> peso_liq * (_nPreco + _nVlClas) - (_sAliasQ) -> peso_liq * (_sAliasQ) -> vunit_efetivo
-			//	U_Log (left ((_sAliasQ) -> a2_nome, 30) + (_sAliasQ) -> produto + (_sAliasQ) -> descricao + (_sAliasQ) -> grau + (_sAliasQ) -> clas_final + (_sAliasQ) -> clas_abd + transform ((_sAliasQ) -> vunit_efetivo, '@E 999.9999') + transform (_nPreco, '@E 999.9999') + transform ((_sAliasQ) -> peso_liq * _nPreco, '@E 999,999.99'))
-
-			if (_sAliasQ) -> grupo_pagto != U_VA_RusGP ((_sAliasQ) -> safra, (_sAliasQ) -> produto, (_sAliasQ) -> sist_conducao)
-				U_Log2 ('erro', 'grupo ant: ' + (_sAliasQ) -> grupo_pagto + ' novo: ' + U_VA_RusGP ((_sAliasQ) -> safra, (_sAliasQ) -> produto, (_sAliasQ) -> sist_conducao))
-			endif
-
-			// reclock ("ZZ9", .T.)
-			// zz9 -> zz9_filial = (_sAliasQ) -> filial
-			// zz9 -> zz9_safra  = (_sAliasQ) -> safra
-			// zz9 -> zz9_grupo  = (_sAliasQ) -> grupo_pagto
-			// zz9 -> zz9_parcel = 'K'
-			// zz9 -> zz9_fornec = (_sAliasQ) -> associado
-			// zz9 -> zz9_loja   = (_sAliasQ) -> loja_assoc
-			// zz9 -> zz9_pre_nf = _sPreNF
-			// zz9 -> zz9_TipoNF = "C"
-			// zz9 -> zz9_produt = (_sAliasQ) -> produto
-			// zz9 -> zz9_grau   = (_sAliasQ) -> grau
-			// zz9 -> zz9_classe = (_sAliasQ) -> clas_final
-			// zz9 -> zz9_clabd  = (_sAliasQ) -> clas_abd
-			// zz9 -> zz9_conduc = (_sAliasQ) -> sist_conducao
-			// zz9 -> zz9_vunold = (_sAliasQ) -> vunit_efetivo
-			// zz9 -> zz9_quant  = 0
-			// zz9 -> zz9_vunit  = _nAPagar
-			// zz9 -> zz9_vunit2 = _nPreco  // para facilitar na planilha de conferencia
-			// zz9 -> zz9_vunit3 = _nVlClas  // para facilitar na planilha de conferencia
-			// zz9 -> zz9_obs    = _sObs
-			// zz9 -> zz9_nfori  = (_sAliasQ) -> doc
-			// zz9 -> zz9_serior = (_sAliasQ) -> serie
-			// zz9 -> zz9_itemor = (_sAliasQ) -> item_nota
-			// zz9 -> zz9_mistu1 = _sMistu1
-			// zz9 -> zz9_mistu2 = _sMistu2
-			// zz9 -> zz9_mistu3 = _sMistu3
-			// zz9 -> zz9_msgNF  = 'Compl.safra 2020'
-			// zz9 -> zz9_TES    = '312'
-			// msunlock ()
-			// _sPreNF = soma1 (soma1 (soma1 (soma1 (soma1 (_sPreNF)))))
-		endif
-		(_sAliasQ) -> (dbskip ())
-	enddo
-	u_acolsxls (_aprev)
-return
 */
 /*
 	// Testes metodos associados.
@@ -3112,15 +3160,6 @@ return
 	U_GravaSX1 (cPerg, '12', stod (''))  // data
 	U_GravaSX1 (cPerg, '13', stod ('20201231'))  // data
 	u_va_xls41 (.T.)
-return
-*/
-/*
-	Private cPerg   := "VAXLS40"
-	U_GravaSX1 (cPerg, '01', '2020')  // safra
-	U_GravaSX1 (cPerg, '02', 3)  // 'Comuns', 'Finas espaldeira', 'Finas latadas', 'Finas SC'
-	U_GravaSX1 (cPerg, '03', 3)  // Entrada/Compra/MOC
-	U_GravaSX1 (cPerg, '04', 1)  // Todos(decimais) / Apenas inteiros
-	u_va_xls40 (.T.)
 return
 */
 /*

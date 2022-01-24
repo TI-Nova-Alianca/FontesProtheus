@@ -27,6 +27,7 @@
 // 04/01/2021 - Robert  - Criado botao adicional para exportar para planilha.
 // 11/05/2021 - Claudia - Ajustada a chamada para tabela SX3 devido a R27. GLPI: 8825
 // 13/12/2021 - Robert  - Ao ler SX3 para montar aCols, nao estava fazendo ordenacao.
+// 24/01/2022 - Robert  - Pequena melhoria ordenacao aCols.
 //
 
 // ------------------------------------------------------------------------------------------------------------
@@ -84,12 +85,6 @@ User Function ZX5A (_nOpcao, _sCodTab, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr
 	local _lContinua  := .T.
 	local _sFilial    := ""
 	local _sFiltro    := ""
-//	local _aCampos    := {}
-//	local _sSort1     := ''
-//	local _sSort2     := ''
-//	local _bSort      := NIL
-//	local _nCpoOrd    := 0
-//	local _nPosCpo    := 0
 	local _nLinha     := 0
 	local _aButtons   := {}
 	private _sModo    := ""
@@ -126,53 +121,17 @@ User Function ZX5A (_nOpcao, _sCodTab, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr
 		endif
 	endif
 
+	// Algumas tabelas genericas nao possuem uma user function apenas para elas, entao dei um tratamento
+	// local para ordenacao e ajudar um pouco o usuario (normanmente, eu mesmo, hehe)
+	if _lContinua .and. _aCposOrd == NIL
+		do case
+		case _sCodTab == '54'  // eventos (customizados) - vulgo 'Dedo duro'
+			_aCposOrd = {'ZX5_54COD'}
+		endcase
+	endif
+
 	if _lContinua
 		MsgRun ("Lendo dados", "Aguarde", {|| _LeDados (_sFiltro, _aCposOrd)})
-		/*
-		_sTabela  = iif (zx5 -> zx5_tabela == "00", zx5 -> zx5_chave, zx5 -> zx5_tabela)
-		_sModo    = zx5 -> zx5_modo
-		_sFilial  = iif (_sModo == "C", "  ", cFilAnt)
-		_sNomeTab = fBuscaCpo ("ZX5", 1, xfilial ("ZX5") + "00" + _sTabela, "ZX5_DESCRI")
-		_aCampos  = U_ZX5Cpos (_sTabela)
-		aHeader := aclone (U_GeraHead (""		, ;  // Arquivo
-		                               .F.		, ;  // Para MSNewGetDados, informar .T.
-		                               {}		, ;  // Campos a nao incluir
-		                               _aCampos	, ;  // Campos a incluir
-		                               .T.		))   // Apenas os campos informados.
-		
-		aCols := aclone (U_GeraCols ("ZX5"				, ; // Alias
-		                             1					, ; // Indice
-		                             _sFilial + _sTabela, ; // Seek inicial
-		                             "zx5_filial == '" + _sFilial + "' .and. zx5_tabela == '" + _sTabela + "'", ;  // While
-		                             aHeader			, ; // aHeader
-		                             .F.				, ; // Nao executa gatilhos
-		                             altera				, ; // Gera linha vazia, se nao encontrar dados.
-		                             .T.				, ; // Trava registros
-		                             _sFiltro			))  // Expressao para filtro adicional
-		
-
-		// Se recebeu array com campos para ordenacao do aCols, aplica-os
-		if valtype (_aCposOrd) == 'A'
-
-			// Monta string com expressao de ordenacao, para ser transformado em 'codeblock'
-			_sSort1 = ''
-			_sSort2 = ''
-
-			for _nCpoOrd = 1 to len (_aCposOrd)
-				_nPosCpo = ascan (aHeader, {|_aVal| upper (alltrim (_aVal [2])) == upper (alltrim (_aCposOrd [_nCpoOrd]))})
-				if _nPosCpo > 0
-					_sSort1 += "cvaltochar(_x[" + alltrim (str (_nPosCpo)) + "])"
-					_sSort2 += "cvaltochar(_y[" + alltrim (str (_nPosCpo)) + "])"
-					if _nCpoOrd < len (_aCposOrd)
-						_sSort1 += '+'
-						_sSort2 += '+'
-					endif
-				endif
-			next
-			_bSort = "{|_x, _y|" + _sSort1 + "<" + _sSort2 + "}"
-			aCols = asort (aCols,,, &(_bSort))
-		endif
-*/
 
 		// Define botoes adicionais
 		aadd (_aButtons, {"Export.planilha", {|| U_AColsXLS ()}, "Export.planilha", "Export.planilha" , {|| .T.}} ) 
