@@ -447,12 +447,12 @@ static function _MailAcomp ()
 
 		// Conselho administracao titulares
 		_sDest += "boldrindarci@gmail.com;"
-		_sDest += "diegowaiss@hotmail.com;"
+		_sDest += "diegowaiss@hotmail.com;"  // reclamou
 		_sDest += "gilbertoverdi@gmail.com;"
 		_sDest += "joel.caldart@hotmail.com;"
 		_sDest += "marciogirelli.st@gmail.com;"
 		_sDest += "marcioferrar@gmail.com;"
-		_sDest += "rodrigovdebona@gmail.com;"
+		_sDest += "rodrigovdebona@gmail.com;"  // reclamou que nao recebe XML
 		_sDest += "romildowferrari@hotmail.com;"
 
 		// Conselho administracao suplentes
@@ -485,6 +485,7 @@ static function _MailAcomp ()
 		_sDest += "renan.mascarello@novaalianca.coop.br;"
 		_sDest += "sergio.pereira@novaalianca.coop.br;"
 		_sDest += "deise.demori@novaalianca.coop.br;"
+		_sDest += "cristina.stringhi@novaalianca.coop.br;"
 
 		// Internos - agronomia
 		_sDest += "leonardo.reffatti@novaalianca.coop.br;"

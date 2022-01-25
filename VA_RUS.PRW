@@ -166,7 +166,8 @@ User Function va_rus ()
 		aadd (_aMenuOut, {"&NF remessa coop",       "U_VA_RUSNR ('A')", 0,4})
 		aadd (_aMenuOut, {"Controle Portaria",      "U_VA_CPORT ()", 0,4})
 		aadd (_aMenuOut, {"Medicoes do grau",       "U_VA_XLS54 (sze -> ze_filial, sze -> ze_safra, sze -> ze_carga)", 0,4})
-		aadd (_aMenuOut, {"Enderecar uva(estoque)", "U_VA_RusEn (sze -> ze_nfger, sze -> ze_serie, sze -> ze_assoc, sze -> ze_Lojasso)", 0,4})  // Apenas para ver nova simulacao no arquivo de log.
+		aadd (_aMenuOut, {"Enderecar uva(estoque)", "U_VA_RusEn (sze -> ze_nfger, sze -> ze_serie, sze -> ze_assoc, sze -> ze_Lojasso, .f.)", 0,4})
+		aadd (_aMenuOut, {"Estornar enderecamento", "U_VA_RusEn (sze -> ze_nfger, sze -> ze_serie, sze -> ze_assoc, sze -> ze_Lojasso, .t.)", 0,4})
 		if upper (alltrim (cUserName)) == 'ROBERT.KOCH'
 			aadd (_aMenuOut, {"Simular frete (Robert)",  "U_VA_RusCF (.F.)", 0,4})  // Apenas para ver nova simulacao no arquivo de log.
 		endif
