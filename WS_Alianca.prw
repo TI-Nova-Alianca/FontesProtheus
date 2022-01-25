@@ -787,20 +787,20 @@ static function _TrEstq (_sQueFazer)
 	do case
 		case _sQueFazer == 'I'  // Inserir
 		_oTrEstq := ClsTrEstq ():New ()
-		if empty (_sErros) ; _oTrEstq:FilOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialOrigem",    .T., .F.), 2) ;     endif
-		if empty (_sErros) ; _oTrEstq:FilDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialDestino",   .T., .F.), 2) ;    endif
-		if empty (_sErros) ; _oTrEstq:ProdOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_ProdutoOrigem",   .T., .F.), 15) ;   endif
-		if empty (_sErros) ; _oTrEstq:ProdDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_ProdutoDestino",  .T., .F.), 15) ;  endif
-		if empty (_sErros) ; _oTrEstq:AlmOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_AlmoxOrigem",     .T., .F.), 2) ;      endif
-		if empty (_sErros) ; _oTrEstq:AlmDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_AlmoxDestino",    .T., .F.), 2) ;     endif
-		if empty (_sErros) ; _oTrEstq:LoteOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_LoteOrigem",      .T., .F.), 10) ;      endif
-		if empty (_sErros) ; _oTrEstq:LoteDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_LoteDestino",     .T., .F.), 10) ;     endif
-		if empty (_sErros) ; _oTrEstq:EndOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_EnderecoOrigem",  .T., .F.), 15) ;  endif
+		if empty (_sErros) ; _oTrEstq:FilOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialOrigem",    .T., .F.), 2) ;  endif
+		if empty (_sErros) ; _oTrEstq:FilDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialDestino",   .T., .F.), 2) ;  endif
+		if empty (_sErros) ; _oTrEstq:ProdOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_ProdutoOrigem",   .T., .F.), 15) ; endif
+		if empty (_sErros) ; _oTrEstq:ProdDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_ProdutoDestino",  .T., .F.), 15) ; endif
+		if empty (_sErros) ; _oTrEstq:AlmOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_AlmoxOrigem",     .T., .F.), 2) ;  endif
+		if empty (_sErros) ; _oTrEstq:AlmDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_AlmoxDestino",    .T., .F.), 2) ;  endif
+		if empty (_sErros) ; _oTrEstq:LoteOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_LoteOrigem",      .T., .F.), 10) ; endif
+		if empty (_sErros) ; _oTrEstq:LoteDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_LoteDestino",     .T., .F.), 10) ; endif
+		if empty (_sErros) ; _oTrEstq:EndOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_EnderecoOrigem",  .T., .F.), 15) ; endif
 		if empty (_sErros) ; _oTrEstq:EndDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_EnderecoDestino", .T., .F.), 15) ; endif
-		if empty (_sErros) ; _oTrEstq:QtdSolic = val  (_ExtraiTag ("_oXML:_WSAlianca:_QtdSolic",        .T., .F.)) ;            endif
-		if empty (_sErros) ; _oTrEstq:Motivo   =       _ExtraiTag ("_oXML:_WSAlianca:_Motivo",          .T., .F.) ;               endif
-		if empty (_sErros) ; _oTrEstq:OP       = padr (_ExtraiTag ("_oXML:_WSAlianca:_OP",              .T., .F.), 14) ;              endif
-		if empty (_sErros) ; _oTrEstq:ImprEtq  =       _ExtraiTag ("_oXML:_WSAlianca:_Impressora",      .F., .F.) ;           endif
+		if empty (_sErros) ; _oTrEstq:QtdSolic = val  (_ExtraiTag ("_oXML:_WSAlianca:_QtdSolic",        .T., .F.)) ;     endif
+		if empty (_sErros) ; _oTrEstq:Motivo   =       _ExtraiTag ("_oXML:_WSAlianca:_Motivo",          .T., .F.) ;      endif
+		if empty (_sErros) ; _oTrEstq:OP       = padr (_ExtraiTag ("_oXML:_WSAlianca:_OP",              .T., .F.), 14) ; endif
+		if empty (_sErros) ; _oTrEstq:ImprEtq  =       _ExtraiTag ("_oXML:_WSAlianca:_Impressora",      .F., .F.) ;      endif
 		if empty (_sErros)
 			_oTrEstq:UsrIncl = cUserName
 			_oTrEstq:DtEmis  = date ()

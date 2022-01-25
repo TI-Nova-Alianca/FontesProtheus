@@ -2645,7 +2645,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 				
 		case ::Numero == 64
 			::Setores    = 'CUS'
-			::Descricao  = "Litragem inconsistente"
+			::Descricao  = "OP com litragem inconsistente"
 			::Query := " WITH C"
 			::Query += " AS"
 			::Query += " (SELECT"

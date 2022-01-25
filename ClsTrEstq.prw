@@ -16,6 +16,7 @@
 //                      - Transf. envolvendo o AX01 (FullWMS) liberadas, momentaneamente, para aceitar liberacao manual (sem ser o Full).
 // 04/12/2020 - RObert  - Criado tratamento para produto destino diferente do produto origem.
 // 18/10/2021 - Sandra  - Ajuste da mensagem "Transferencia ainda nao gravada na tabela ZZG" para "Transferencia ainda nao gravada na tabela ZAG"
+// 25/01/2022 - Robert  - Gera etiqueta quando o prod.controla lote, mesmo nao tendo integracao com FullWMS.
 //
 
 // ------------------------------------------------------------------------------------
@@ -436,6 +437,7 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 		_sMsg += "Registro ainda nao gravado na tabela ZAG. Etiqueta nao vai ser gerada."
 		_lContinua = .F.
 	endif
+/*
 	if _lContinua .and. ! ::AlmUsaFull (::AlmDest)
 		_sMsg += "Almoxarifado destino nao controlado pelo FullWMS. Etiqueta nao deve ser gerada."
 		_lContinua = .F.
@@ -444,6 +446,12 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 		_sMsg += "Produto destino '" + alltrim (::ProdDest) + "' nao controlado pelo FullWMS. Etiqueta nao pode ser gerada."
 		_lContinua = .F.
 	endif
+*/
+	if _lContinua .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + ::ProdDest, "B1_RASTRO") != "L"
+		_sMsg += "Produto destino '" + alltrim (::ProdDest) + "' nao controla lotes. Etiqueta nao pode ser gerada."
+		_lContinua = .F.
+	endif
+
 	if _lContinua
 		// Usa mesma rotina de etiquetas dos pallets de producao.
 		_sEtiq = U_IncEtqPll (::ProdDest, '', ::QtdSolic, '', '', '', '', date (), '', ::Docto)
@@ -451,6 +459,7 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 			::UltMsg += 'Etiqueta gerada:' + _sEtiq + '.'
 		
 			// Se tem impressora informada, jah faz a impressao da etiqueta.
+			U_Log2 ('debug', 'Impressora para etiqueta: ' + ::ImprEtq)
 			if ! empty (::ImprEtq)
 				U_ImpZA1 (_sEtiq, ::ImprEtq)
 			endif

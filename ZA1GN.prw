@@ -89,7 +89,6 @@ User Function ZA1GN (_sNF, _sSerie, _sFornece, _sLoja)
 		_oSQL:_sQuery +=                " AND ZA1_FILIAL = SD1.D1_FILIAL"
 		_oSQL:_sQuery +=                " AND ZA1_DOCE   = SD1.D1_DOC"
 		_oSQL:_sQuery +=                " AND ZA1_SERIEE = SD1.D1_SERIE"
-		_oSQL:_sQuery +=                " AND ZA1_SERIEE = SD1.D1_SERIE"
 		_oSQL:_sQuery +=                " AND ZA1_FORNEC = SD1.D1_FORNECE"
 		_oSQL:_sQuery +=                " AND ZA1_LOJAF  = SD1.D1_LOJA"
 		_oSQL:_sQuery +=                " AND ZA1_ITEM   = SD1.D1_ITEM"
