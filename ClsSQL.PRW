@@ -49,6 +49,7 @@
 // 05/05/2021 - Robert - Adequacao p/usar FWTemporaryTable e nao mais o driver ISAM por exigencia novas releases (GLPI 9973).
 // 25/07/2021 - Robert - Metodo Copy2Trb() passa a receber parametro com nome do alias a gerar.
 // 21/10/2021 - Robert - Criado atributo ArqDestXLS e tratamento no metodo Qry2XLS (GLPI 11034)
+// 25/01/2022 - Robert - Metodo Copy2Trb() passa a aceitar lista de indices para criar.
 //
 
 #include "protheus.ch"
@@ -152,16 +153,20 @@ return _sRet
 
 // --------------------------------------------------------------------------
 // Copia o resultado da query para um arquivo de trabalho real.
-METHOD Copy2Trb (_lSetField, _nDecFixo, _sAliasTrb) Class ClsSQL
+METHOD Copy2Trb (_lSetField, _nDecFixo, _sAliasTrb, _aIndices) Class ClsSQL
 //	local _sArqTrb   := ""
 	local _nCampo    := 0
 	local _nQtCampos := 0
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aEstrut   := {}
-	local _oTempTbl := NIL
+	local _oTempTbl  := NIL
+	local _nIndice   := 0
+	local _sIndice   := ''
+	local _lContinua := .T.
 
-	_lSetField = iif (_lSetField == NIL, .T., _lSetField)
+	_lSetField = iif (_lSetField == NIL, .T.,    _lSetField)
 	_sAliasTrb = iif (_sAliasTrb == NIL, '_trb', _sAliasTrb)
+	_aIndices  = iif (_aIndices  == NIL, {},     _aIndices)
 	::_sAliasQry = ::Qry2Trb (_lSetField)
 	_aEstrut = (::_sAliasQry) -> (dbstruct ())
 
@@ -179,20 +184,38 @@ METHOD Copy2Trb (_lSetField, _nDecFixo, _sAliasTrb) Class ClsSQL
 	// Classe FWTemporaryTable nao aceita campo R_E_C_N_O_ (imagino que a propria classe crie seu campo).
 	if ascan (_aEstrut, {|_aVal| _aVal [1] == 'R_E_C_N_O_'}) > 0
 		u_help ("Rotina de geracao de arquivos temporarios nao permite campo com nome R_E_C_N_O_",, .T.)
+		_lContinua = .F.
 	else
 	
 	//	_oTempTbl := FWTemporaryTable():New ('_trb')
 		_oTempTbl := FWTemporaryTable():New (_sAliasTrb)
 		_oTempTbl:SetFields (_aEstrut)
+
+		// Transforma a lista de indices (campos concatenados com '+') para o formato exigido pela classe.
+		for _nIndice = 1 to len (_aIndices)
+		//	u_log ('adicionando indice:', _aIndices [_nIndice])
+			_sIndice = strtran (_aIndices [_nIndice], ' ', '')  // Remove espacos
+
+			// Se tiver funcoes aplicadas (DTOS, ALLTRIM, SUBSTRING, ...) tem que remover no programa chamador.
+			if '(' $ _sIndice .or. ')' $ _sIndice
+				u_help ('Erro ' + procname () + ': Nao eh suportado o uso de funcoes na definicao dos indices. Revisar: ' + _sIndice,, .t.)
+				_lContinua = .F.
+			else
+				_aIndAux = StrTokArr (_sIndice, '+')
+				_oTempTbl:AddIndex (strzero (_nIndice, 2), _aIndAux)
+			endif
+		next
+	endif
+
+	if _lContinua
 		_oTempTbl:Create ()
 
+		// Passa os dados para o arquivo de trabalho.
 		_nQtCampos = (::_sAliasQry) -> (fcount ())
 		(::_sAliasQry) -> (dbgotop ())
 		do while ! (::_sAliasQry) -> (eof ())
-	//		reclock ('_trb', .T.)
 			reclock (_sAliasTrb, .T.)
 			for _nCampo = 1 to _nQtCampos
-		//		_trb -> &(fieldname (_nCampo)) = (::_sAliasQry) -> &(fieldname (_nCampo))
 				(_sAliasTrb) -> &(fieldname (_nCampo)) = (::_sAliasQry) -> &(fieldname (_nCampo))
 			next
 			msunlock ()
@@ -202,7 +225,6 @@ METHOD Copy2Trb (_lSetField, _nDecFixo, _sAliasTrb) Class ClsSQL
 
 	(::_sAliasQry) -> (dbclosearea ())
 	U_ML_SRArea (_aAreaAnt)
-//return '_trb'
 return _sAliasTrb
 
 
