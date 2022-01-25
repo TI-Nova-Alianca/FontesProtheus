@@ -1,45 +1,52 @@
-// Programa:   VA_CPORT
-// Autor:      Leandro - DWT
-// Data:       11/09/2013
-// Descricao:  Controle de portaria, para emitir tickets na entrada e saï¿½da de cargas
-
+// Programa.:  VA_CPORT
+// Autor....:  Leandro - DWT
+// Data.....:  11/09/2013
+// Descricao:  Controle de portaria, para emitir tickets na entrada e saida de cargas
+//
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Atualizacao
 // #Descricao         #Rotina de controle de portaria
 // #PalavasChave      #controle_de_portaria #pesagem #veiculos #motoristas
 // #TabelasPrincipais #ZZT
 // #Modulos           #COOP
-
+//
 // Historico de alteracoes:
-// 28/04/2014 - Marcelo DWT - Grava codigo do ticket na carga selecionada pelo usuï¿½rio.
+// 28/04/2014 - Marcelo DWT - Grava codigo do ticket na carga selecionada pelo usuario
 // 30/04/2014 - Robert  - Gravacao de eventos e conf.embarque migrado para dentro de controle de transacao.
-// 19/05/2014 - Marcelo DWT - Exclui o vinculo do ticket com a carga quando o ticket e excluï¿½do.
+// 19/05/2014 - Marcelo DWT - Exclui o vinculo do ticket com a carga quando o ticket e excluido.
 // 18/11/2015 - Robert  - Melhorias e validacoes diversas para entradas para coleta.
 //                      - Vincula a carga do OMS na saida e nao mais na entrada.
 // 18/01/2016 - Robert  - Melhoria ticket safra - nao conformidades
 // 17/02/2016 - Robert  - Removida impressao de 2 cabecalhos no ticket de safra, pois nao era usado.
 // 10/05/2016 - Catia   - teste conforme motivo, 3=entrega obriga documento e fornecedor  5= outros obriga obs 
 // 19/07/2016 - Robert  - Nova rotina de leitura de peso (U_LeBalan2) adequada para Protheus 12.
-// 24/07/2017 - Robert  - Ignora verificacao de CNPJ x chave NF-e para series "890#891#892#893#894#895#896#897#898#899"
+// 24/07/2017 - Robert  - Ignora verificacao de CNPJ x chave NF-e para series 
+//                        "890#891#892#893#894#895#896#897#898#899"
 // 12/01/2018 - Robert  - Avaliacoes passam a ser feitas pelo NaWeb.
 //                      - Passa a verificar na view VA_VAGENDA_SAFRA se precisa coletar amostra da uva.
 // 18/01/2019 - Robert  - Tickets de safra passam a buscar dados no VA_RUSTK.prw
-// 25/01/2018 - Robert  - Abertura de ticket safra (1a.pesagem) chama VA_RUSLI() para validar se tudo Ok com inspecoes.
-// 06/03/2019 - Robert  - Ajustes cod.barras ticket - novo firmware impressora - royalties para Fabiano Fernandes
+// 25/01/2018 - Robert  - Abertura de ticket safra (1a.pesagem) chama VA_RUSLI() para validar 
+//                        se tudo Ok com inspecoes.
+// 06/03/2019 - Robert  - Ajustes cod.barras ticket - novo firmware impressora 
+//                      - royalties para Fabiano Fernandes
 //                      - Migrada impressao ticket para U_ImpZZT ()
 //                      - Eliminados parametros desnecessarios.
 // 30/08/2019 - Claudia - Alterado campo b1_p_brt para b1_pesbru.
 // 20/12/2019 - Claudia - Incluida na menu a rotina ZZX 
-// 01/02/2020 - Robert  - Removido controle de transacao na inclusao por que impedia atualizacao externa (NaWeb).
+// 01/02/2020 - Robert  - Removido controle de transacao na inclusao por que impedia atualizacao 
+//                        externa (NaWeb).
 // 03/02/2020 - Robert  - Funcao de leitura de peso passada de U_LeBalan2 para U_LeBalan3 (via SQL).
 // 21/02/2020 - Robert  - Alteracoes na tabela ZZA passam a ser feitas em rotina externa (U_AtuZZA).
 // 07/08/2020 - Robert  - Incluidas tags para catalogacao de fontes
-//                      - Melhorados logs e mensagens de erro; ajuste paravras acentuadas e caracteres com erro de conversao para UTF8
+//                      - Melhorados logs e mensagens de erro; ajuste paravras acentuadas e 
+//                        caracteres com erro de conversao para UTF8
 //                      - Liberado uso em todas as filiais (antes era restito para a matriz)
 // 03/02/2021 - Robert  - Chamada do fechamento de safra apos fechar entrada de portaria (GLPI 9319)
-// 08/02/2021 - Robert  - Nao alimentava as variaveis _zx509fina e _zx509orga na chamada da tela de fechamento de safra (GLPI 9319)
+// 08/02/2021 - Robert  - Nao alimentava as variaveis _zx509fina e _zx509orga na chamada da tela de 
+//                        fechamento de safra (GLPI 9319)
+// 25/01/2022 - Claudia - Incluida rotina para exportar dados em planilha. GLPI: 10771.
 // 
-
+// ----------------------------------------------------------------------------------------------------------------
 #Include "PROTHEUS.CH"
 
 #XTranslate .CargasOK         => 1
@@ -53,7 +60,6 @@
 #XTranslate .CargasUsuario    => 9
 #XTranslate .CargasQtColunas  => 9
 
-// --------------------------------------------------------------------------
 User Function VA_CPORT ()
 	local _aCores       := U_ZZTLG (.T.)
 	local _nPCham       := 0
@@ -86,6 +92,7 @@ User Function VA_CPORT ()
 	aadd (_aRotAdic, {"Pre-nota"		, "MATA140 ()"		, 0, 4})
 	aadd (_aRotAdic, {"Cargas OMS"		, "U_ZT_COMS()"		, 0, 1})
 	aadd (_aRotAdic, {"Receb.uva safra"	, "U_VA_RUS()"		, 0, 4})
+	aadd (_aRotAdic, {"Exporta dados"	, "U_VA_ZZTCON()"	, 0, 4})
 
 	aRotina = {}
 	aadd (aRotina, {"Pesquisar"		, "AxPesqui"					,0,1})
@@ -104,15 +111,18 @@ User Function VA_CPORT ()
 
 	mBrowse(,,,,"ZZT",,,,,,_aCores ,,,,,,,,cExprFilTop)
 Return
+//
 // --------------------------------------------------------------------------
 // Mostra legenda ou retorna array de cores, cfe. o caso.
 user function ZZTLG (_lRetCores)
 	local _i       := 0
 	local _aCores  := {}
 	local _aCores2 := {}
+
 	aadd (_aCores, {"zzt->zzt_blqpes$'NL '.and.!empty(zzt->zzt_dtent).and.!empty(zzt->zzt_dtsai)", 'BR_VERMELHO', 'Finalizado'})
 	aadd (_aCores, {"zzt->zzt_blqpes$'NL '.and. empty(zzt->zzt_dtent) .or. empty(zzt->zzt_dtsai)", 'BR_VERDE',    'Pendente'})
 	aadd (_aCores, {"zzt->zzt_blqpes=='B'",                                                        'BR_PRETO',    'Bloqueio diferenca peso'})
+	
 	if ! _lRetCores
 		for _i = 1 to len (_aCores)
 			aadd (_aCores2, {_aCores [_i, 2], _aCores [_i, 3]})
@@ -125,9 +135,7 @@ user function ZZTLG (_lRetCores)
 		return _aCores
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Libera saida com diferenca de peso.
 user function ZT_LPS ()
@@ -138,9 +146,7 @@ user function ZT_LPS ()
 		msunlock ()
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Lista cargas do OMS relacionadas a este ticket
 User Function ZT_COMS ()
@@ -175,9 +181,7 @@ User Function ZT_COMS ()
 	//_oSQL:Log ()
 	_oSQL:F3Array ("Cargas OMS relacionadas a este ticket")
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Função para deletar registro
 User Function DelZZT()
@@ -192,6 +196,7 @@ User Function DelZZT()
 				u_help ("Este ticket refere-se `a carga '" + zzt -> zzt_carga + "' da safra '" + zzt -> zzt_safra + "'. Essa carga gerou a contranota '" + sze -> ze_nfger + "'. Para excluir o ticket cancele, antes, a contranota da carga.",, .t.)
 				_lContinua = .F.
 			endif
+
 			if _lContinua
 				_oSQL := ClsSQL():New ()
 				_oSQL:_sQuery += "SELECT COUNT (*)"
@@ -233,19 +238,6 @@ User Function DelZZT()
 						sze -> ze_pesobru = 0
 						msunlock ()
 				
-/*						// Bloqueia medicao de grau.
-						zza -> (dbsetorder (1))  // ZZA_FILIAL+ZZA_SAFRA+ZZA_CARGA+ZZA_PRODUT
-						zza -> (dbseek (xfilial ("ZZA") + zzt -> zzt_safra + zzt -> zzt_carga, .T.))
-						do while ! zza -> (eof ()) ;
-								.and. zza -> zza_filial == xfilial ("ZZA") ;
-								.and. zza -> zza_safra  == zzt -> zzt_safra ;
-								.and. zza -> zza_carga  == zzt -> zzt_carga
-							reclock ("ZZA", .F.)
-							zza -> zza_status = '0'
-							msunlock ()
-							zza -> (dbskip ())
-						enddo
-						*/
 						// Atualiza tabela de comunicacao com leitor de grau.
 						U_AtuZZA (sze -> ze_safra, sze -> ze_carga)
 					endif
@@ -254,9 +246,7 @@ User Function DelZZT()
 		end transaction
 	endif
 Return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Função para manutenção dos tickets (entrada ou saida)
 User Function ZT_Tick(_sOpcao)
@@ -271,7 +261,7 @@ User Function ZT_Tick(_sOpcao)
 	local _aCols   := {}
 	private _sOperPort  := ''  // Deixar private para ser vista por inicializadores de campos, getilhos, etc.
 
-//	set key 119 to U_PesaZZT()  // tecla F8
+	//	set key 119 to U_PesaZZT()  // tecla F8
 	SetKey(VK_F8, {|| U_PesaZZT()})
 	aadd(_aBotAdic,{"BALANCA",{|| U_PesaZZT()},"Pesagem"})
 
@@ -281,20 +271,21 @@ User Function ZT_Tick(_sOpcao)
 		_aCols = {}
 		aadd (_aCols, {1, 'Operacao', 100, ''})
 		_aOpcoes = {}
-		aadd (_aOpcoes, {"1 - Nova entrada"})
-		aadd (_aOpcoes, {"2 - Nova saida"})
-		aadd (_aOpcoes, {"3 - Fechar entrada"})
-		aadd (_aOpcoes, {"4 - Fechar saida"})
-		aadd (_aOpcoes, {"5 - Cancelar"})
-		_sOperPort = alltrim (str (U_F3Array (_aOpcoes, ;  // Opcoes
-		"Controle de portaria", ;  // Titulo
-		_aCols, ;  // Colunas a mostrar
-		500, ; //NIL, ;  // Largura
-		300, ; //NIL, ;  // Altura
-		'Selecione a operacao a realizar', ;  // Texto acima
-		'', ;  // Texto abaixo
-		.F., ;  // Mostra botao 'exportar para planilha'
-		'')))  // Tipo de pesquisa
+		aadd (_aOpcoes, {"1 - Nova entrada"		})
+		aadd (_aOpcoes, {"2 - Nova saida"		})
+		aadd (_aOpcoes, {"3 - Fechar entrada"	})
+		aadd (_aOpcoes, {"4 - Fechar saida"		})
+		aadd (_aOpcoes, {"5 - Cancelar"			})
+
+		_sOperPort = alltrim (str(U_F3Array(_aOpcoes	, ;  // Opcoes
+								  "Controle de portaria", ;  // Titulo
+												 _aCols	, ;  // Colunas a mostrar
+													500	, ;  // Largura
+													300 , ;  // Altura
+					   'Selecione a operacao a realizar', ;  // Texto acima
+		                                              '', ;  // Texto abaixo
+		                                             .F., ;  // Mostra botao 'exportar para planilha'
+		                                              '')))  // Tipo de pesquisa
 	else
 		_sOperPort = _sOpcao
 	endif
@@ -392,9 +383,7 @@ User Function ZT_Tick(_sOpcao)
 
 	set key 119 to
 Return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Chama tela de segunda pesagem de safra para fechamento da carga.
 static function _SegPesSZE ()
@@ -429,22 +418,23 @@ static function _SegPesSZE ()
 			private _zx509fina := U_RetZX5 ("09", zzt -> zzt_safra + _sBalanca, 'ZX5_09FINA')
 			private _zx509orga := U_RetZX5 ("09", zzt -> zzt_safra + _sBalanca, 'ZX5_09ORGA')
 			private _lIntPort  := ""  // Deixar private para ser vista por outras rotinas.
-			aadd (aRotina, {"&Pesquisar"        , "AxPesqui",      0,1})
-			aadd (aRotina, {"&Visualizar"       , "U_VA_RUS2 (2, .F.)", 0,2})
-			aadd (aRotina, {"Incluir"           , "U_VA_RUS1",     0,3})
-			aadd (aRotina, {"&1a pesagem"       , "U_VA_RUS1P ()", 0,4})
-			aadd (aRotina, {"&2a pesagem"       , "U_VA_RUS2 (4, .F.)", 0,4})
+
+			aadd (aRotina, {"&Pesquisar"        , "AxPesqui"			, 0,1})
+			aadd (aRotina, {"&Visualizar"       , "U_VA_RUS2 (2, .F.)"	, 0,2})
+			aadd (aRotina, {"Incluir"           , "U_VA_RUS1"			, 0,3})
+			aadd (aRotina, {"&1a pesagem"       , "U_VA_RUS1P ()"		, 0,4})
+			aadd (aRotina, {"&2a pesagem"       , "U_VA_RUS2 (4, .F.)"	, 0,4})
+
 			U_VA_RUSLP (.F.)  // Releitura de parametros do programa de safra
 			U_VA_Rus2 (4, .T.)  // Segunda pesagem: opcao4=alteracao; .t.=a partir do fechamento de uma entrada no contr.portaria
 			U_SalvaAmb (_aAmbPort)
 			U_ML_SRArea (_aAreaPort)
+
 			U_Log2 ('info', '[' + procname () + '] Retornou da tela de segunda pesagem de safra.')
 		endif
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Atualiza numero do ticket nas cargas.
 static function _AtuCargas (_aCargas)
@@ -475,16 +465,13 @@ static function _AtuCargas (_aCargas)
 		endif
 	next
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Valida inclusao e alteracao.
 User Function ZZT_TOk ()
 	local _lRet    := .T.
 	local _sJahTem := ""
 
-	
 	if _lRet .and. m->zzt_motivo == '2'  // coleta
 		if _sOperPort == '1' .and. empty (m->zzt_pesent)
 			u_help ("Para coletas informe o peso de entrada.",, .t.)
@@ -737,9 +724,7 @@ User Function ZZT_TOk ()
 		
 	endif
 return _lRet
-
-
-
+//
 // --------------------------------------------------------------------------
 // Funcao chamada antes da alteracao.
 User Function ZZT_AA ()
@@ -758,9 +743,7 @@ User Function ZZT_AA ()
 		m->zzt_usrfec = cUserName
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Cria tela de selecao de cargas (da logistica) que podem ser vinculadas ao ticket da portaria.
 static function _SelCarg ()
@@ -829,7 +812,6 @@ static function _SelCarg ()
 	aadd (_aCols, {.CargasDescri,     'Descricao',    60, ''})
 	U_MbArray (@_aCargas, "Selecione a(s) carga(s) embarcada(s)", _aCols, 1)
 
-
 	// Busca o peso das notas das cargas selecionadas.
 	m->zzt_pesonf = 0
 	//
@@ -888,9 +870,7 @@ static function _SelCarg ()
 
 	m->zzt_usrfec = cUserName
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Funcao para coletar informacao de peso da balanca e jogar nos campos de peso entrada ou peso saida
 User function PesaZZT()
@@ -906,5 +886,131 @@ User function PesaZZT()
 		M->ZZT_PESSAI :=  _nPLidoBal
 		RunTrigger (1, nil, nil,, "ZZT_PESSAI")  // Executa gatilhos do campo.
 	endif
-
 return
+//
+// --------------------------------------------------------------------------
+// Consulta de dados controle de portaria
+User Function VA_ZZTCON()
+    Local _aCols  := {}
+    Local _aDados := {} 
+
+    cPerg   := "VA_ZZTCON"
+	_ValidPerg()
+	
+    If Pergunte(cPerg,.T.)
+        _oSQL:= ClsSQL():New ()
+        _oSQL:_sQuery := ""
+        _oSQL:_sQuery += " SELECT "
+        _oSQL:_sQuery += "      ZZT_FILIAL"
+        _oSQL:_sQuery += " 	   ,CASE "
+        _oSQL:_sQuery += " 		    WHEN ZZT_ENTSAI = 'E' THEN 'ENTRADA' "
+        _oSQL:_sQuery += " 		    ELSE 'SAIDA' "
+        _oSQL:_sQuery += " 	   END TIPO "
+        _oSQL:_sQuery += "    ,CASE "
+        _oSQL:_sQuery += " 		WHEN ZZT_MOTIVO = '1' THEN 'VISITA' "
+        _oSQL:_sQuery += " 		WHEN ZZT_MOTIVO = '2' THEN 'COLETA' "
+        _oSQL:_sQuery += " 		WHEN ZZT_MOTIVO = '3' THEN 'ENTREGA' "
+        _oSQL:_sQuery += " 		WHEN ZZT_MOTIVO = '4' THEN 'SAFRA' "
+        _oSQL:_sQuery += " 		WHEN ZZT_MOTIVO = '5' THEN 'OUTROS' "
+        _oSQL:_sQuery += " 		WHEN ZZT_MOTIVO = '6' THEN 'RECEB.DEVOLUCOES' "
+        _oSQL:_sQuery += " 		WHEN ZZT_MOTIVO = '7' THEN 'AGUA' "
+        _oSQL:_sQuery += " 		WHEN ZZT_MOTIVO = '8' THEN 'TRANSFERENCIA' "
+        _oSQL:_sQuery += " 	   END MOTIVO "
+        _oSQL:_sQuery += "    ,ZZT_DTENT "
+        _oSQL:_sQuery += "    ,ZZT_HRENT "
+        _oSQL:_sQuery += "    ,ZZT_DTSAI "
+        _oSQL:_sQuery += "    ,ZZT_HRSAI "
+        _oSQL:_sQuery += "    ,ZZT_PESENT "
+        _oSQL:_sQuery += "    ,ZZT_PESSAI "
+        _oSQL:_sQuery += "    ,ZZT_PESLIQ "
+        _oSQL:_sQuery += "    ,ZZT_QPCISP "
+        _oSQL:_sQuery += "    ,ZZT_QTPBR "
+        _oSQL:_sQuery += "    ,ZZT_QCHTEX "
+        _oSQL:_sQuery += "    ,ZZT_PESPAL "
+        _oSQL:_sQuery += "    ,ZZT_PESONF "
+        _oSQL:_sQuery += "    ,ZZT_DIFPES "
+        _oSQL:_sQuery += "    ,ZZT_CARGA "
+        _oSQL:_sQuery += "    ,ZZT_PLACA "
+        _oSQL:_sQuery += "    ,ZZT_PCARRO "
+        _oSQL:_sQuery += "    ,ZZT_TRANSP "
+        _oSQL:_sQuery += "    ,ZZT_MOTOR "
+        _oSQL:_sQuery += "    ,ZZT_NOME "
+        _oSQL:_sQuery += "    ,ZZT_CHVNFE "
+        _oSQL:_sQuery += "    ,ZZT_NF "
+        _oSQL:_sQuery += "    ,ZZT_FORN "
+        _oSQL:_sQuery += "    ,ZZT_LOJF "
+        _oSQL:_sQuery += "    ,ZZT_CLIENT "
+        _oSQL:_sQuery += "    ,ZZT_LOJAC "
+        _oSQL:_sQuery += " FROM ZZT010 "
+        _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+        _oSQL:_sQuery += " AND ZZT_COD BETWEEN   '" + mv_par01 + "' AND '"+ mv_par02 + "'"
+		if !empty(mv_par03)
+        	_oSQL:_sQuery += " AND ZZT_DTENT BETWEEN '" + dtos(mv_par03) + "' AND '"+ dtos(mv_par04) + "'"
+		endif
+		if !empty(mv_par05)
+        	_oSQL:_sQuery += " AND ZZT_DTSAI BETWEEN '" + dtos(mv_par05) + "' AND '"+ dtos(mv_par06) + "'"
+		endif
+		If !empty(mv_par07)
+        	_oSQL:_sQuery += " AND ZZT_PLACA       = '" + mv_par07       + "'"
+		EndIf
+        If mv_par08 == 2 // com diferença
+            _oSQL:_sQuery += " AND ZZT_DIFPES  < 0 " 
+        else
+            if mv_par08 == 3 // sem diferença
+                _oSQL:_sQuery += " AND ZZT_DIFPES  > 0 " 
+            endif
+        endif
+        u_log (_oSQL:_squery)
+        _aDados := aclone (_oSQL:Qry2Array ())
+
+        aadd (_aCols, {01, "Filial"  	   	    ,  10,  "@!"})
+        aadd (_aCols, {02, "Tipo"       	    ,  15,  "@!"})
+        aadd (_aCols, {03, "Motivo"             ,  20,  "@!"})
+        aadd (_aCols, {04, "Dt.Entrada" 	    ,  10,  "@D"})
+        aadd (_aCols, {05, "Hr.Entrada"         ,  10,  "@!"})
+        aadd (_aCols, {06, "Dt.Saida"           ,  10,  "@D"})
+        aadd (_aCols, {07, "Hr.Saida"           ,  10,  "@!"})
+        aadd (_aCols, {08, "Peso Entrada"       ,  15,  "@E 9,999,999.99"})
+        aadd (_aCols, {09, "Peso Saida"         ,  15,  "@E 9,999,999.99"})
+        aadd (_aCols, {10, "Peso Liquido"       ,  20,  "@E 9,999,999.99"})
+        aadd (_aCols, {11, "Qt.pallets Cisper"  ,  20,  "@E 9,999,999.99"})
+        aadd (_aCols, {12, "Qt pallets PBR"     ,  20,  "@E 9,999,999.99"})
+        aadd (_aCols, {13, "Qt.chapatex"        ,  20,  "@E 9,999,999.99"})
+        aadd (_aCols, {14, "Peso pallets"       ,  20,  "@E 9,999,999.99"})
+        aadd (_aCols, {15, "Peso NF saida"      ,  20,  "@E 9,999,999.99"})
+        aadd (_aCols, {16, "Diferenca peso"     ,  20,  "@E 9,999,999.99"})
+        aadd (_aCols, {17, "Carga Safra"       	,  20,  "@!"})
+        aadd (_aCols, {18, "Placa veiculo"      ,  20,  "@!"})
+        aadd (_aCols, {19, "Placa carroceria"   ,  20,  "@!"})
+        aadd (_aCols, {20, "Transportadora"     ,  20,  "@!"})
+        aadd (_aCols, {21, "Cod.Motorista"      ,  20,  "@!"})
+        aadd (_aCols, {22, "Nome Motorista"     ,  40,  "@!"})
+        aadd (_aCols, {23, "Chave NF "      	,  50,  "@!"})
+        aadd (_aCols, {24, "Nota Fiscal"       	,  20,  "@!"})
+        aadd (_aCols, {25, "Fornecedor"       	,  20,  "@!"})
+        aadd (_aCols, {26, "Loja"       	    ,  10,  "@!"})
+        aadd (_aCols, {27, "Cliente"       	    ,  20,  "@!"})
+        aadd (_aCols, {28, "Loja"       	    ,  10,  "@!"})
+        
+        U_F3Array (_aDados, "Controle de portaria", _aCols, oMainWnd:nClientWidth - 50, oMainWnd:nClientHeight - 40 , "", "", .T., 'C' )
+    else
+        u_help("Não foram encontrados dados para consulta")
+    EndIf 
+Return
+//
+// --------------------------------------------------------------------------
+// Cria Perguntas no SX1
+Static Function _ValidPerg ()
+    local _aRegsPerg := {}
+    //                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                      Help
+    aadd (_aRegsPerg, {01, "Ticket de       ", "C", 9, 0,  "",   "ZZT", {},  ""})
+    aadd (_aRegsPerg, {02, "Ticket até      ", "C", 9, 0,  "",   "ZZT", {},  ""})
+    aadd (_aRegsPerg, {03, "Dt.entrada de   ", "D", 8, 0,  "",     " ", {},  ""})
+	aadd (_aRegsPerg, {04, "Dt.entrada até  ", "D", 8, 0,  "",     " ", {},  ""})
+    aadd (_aRegsPerg, {05, "Dt.saída de     ", "D", 8, 0,  "",     " ", {},  ""})
+	aadd (_aRegsPerg, {06, "Dt.saída até    ", "D", 8, 0,  "",     " ", {},  ""})
+    aadd (_aRegsPerg, {07, "Placa           ", "C", 8, 0,  "",     " ", {},  ""})
+    aadd (_aRegsPerg, {08, "Peso            ", "N", 1, 0,  "",     " ", {"Ambos", "Com difer.", "Sem difer."},,  ""})
+	
+    U_ValPerg (cPerg, _aRegsPerg)
+Return
