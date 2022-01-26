@@ -132,6 +132,7 @@ Static Function _Gera()
 	_oSQL:_sQuery +=    " AND V.SAFRA        = '" + mv_par01 + "'"
 	_oSQL:_sQuery +=    " AND V.FILIAL       BETWEEN '" + mv_par02 + "' AND '" + mv_par03 + "'"
 	_oSQL:_sQuery +=    " AND V.DATA         between '" + dtos (mv_par04) + "' AND '" + dtos (mv_par05) + "'"
+	_oSQL:_sQuery +=    " AND V.TIPO_NF      in ('E', 'C')"
 	if mv_par06 == 1  // Lotes com saldo
 		_oSQL:_sQuery +=  " AND EXISTS (SELECT *"
 		_oSQL:_sQuery +=                " FROM " + RetSQLName ("SB8") + " SB8 "
@@ -141,8 +142,6 @@ Static Function _Gera()
 		_oSQL:_sQuery +=                 " AND SB8.B8_LOTECTL = SD1.D1_LOTECTL"
 		_oSQL:_sQuery +=                 " AND SB8.B8_SALDO > 0)"
 	endif
-	u_showmemo(_oSQL:_sQuery)
-
 	_oSQL:Log ()
 	_oSQL:Qry2XLS (.F., .F., .F.)
 return
