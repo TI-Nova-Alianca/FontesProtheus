@@ -18,7 +18,9 @@
 // 05/01/2017 - Catia   - estava buscando sempre na serie 10 pra ver se existia a nota 
 // 19/10/2017 - Robert  - Evita validar o SF1 contra notas antigas de 6 digitos.
 // 09/03/2020 - Claudia - Ajuste de fonte conforme solicitação de versão 12.1.25 - parametro em looping
+// 26/01/2022 - Robert  - Pequena melhoria logs e mensagens.
 //
+
 // --------------------------------------------------------------------------
 user function VerSqNf (_sEntSai, _sSerie, _sNF, _dData, _sCliFor, _sLoja, _sPedVenda, _sProduto, _sTipoNF)
 	local _lRet       := .T.
@@ -26,8 +28,6 @@ user function VerSqNf (_sEntSai, _sSerie, _sNF, _dData, _sCliFor, _sLoja, _sPedV
 	local _sAviso     := ""
 	local _lAntCanc   := .F.
 	local _oSQL       := NIL
-
-	//	u_logIni ()
 
 	// Os testes vao pesando mais gradativamente, para evitar o uso de indices extras e filtros.
 	//
@@ -46,7 +46,7 @@ user function VerSqNf (_sEntSai, _sSerie, _sNF, _dData, _sCliFor, _sLoja, _sPedV
 		if cEmpAnt == '01'
 			_oSQL:_sQuery +=   " AND len (rtrim (F2_DOC)) = " + cvaltochar (tamsx3 ("F2_DOC") [1])
 		endif
-		u_log (_oSQL:_sQuery)
+	//	_oSQL:Log ()
 
 		if _oSQL:RetQry (1, .f.) > 0
 			if type ("oMainWnd") == "O"  // Se tem interface com o usuario
@@ -56,7 +56,7 @@ user function VerSqNf (_sEntSai, _sSerie, _sNF, _dData, _sCliFor, _sLoja, _sPedV
 					_lRet = .F.
 				endif
 			else
-				u_help ("Ja existe(m) no sistema nota(s) de saida com serie '" + _sSerie + "' e com numeracao igual ou acima da informada.")
+				u_help ("Ja existe(m) no sistema nota(s) de saida com serie '" + _sSerie + "' e com numeracao igual ou acima da informada.",, .t.)
 				_lRet = .F.
 			endif
 		endif
@@ -72,7 +72,6 @@ user function VerSqNf (_sEntSai, _sSerie, _sNF, _dData, _sCliFor, _sLoja, _sPedV
 			
 			do while ! sf2 -> (eof ()) .and. sf2 -> f2_filial == xfilial ("SF2") .and. sf2 -> f2_emissao > _dData
 				if sf2 -> f2_serie == _sSerie
-					//if type ("oMainWnd") == "O"  // Se tem interface com o usuario
 					If alltrim(_MainWnd) == "O"  // Se tem interface com o usuario
 						if aviso ("Numero NF fora de sequencia", "Ja existe(m) no sistema nota(s) de saida da serie '" + _sSerie + "' com data de emissao maior que a data informada. Tem certeza que deseja usar este numero?", {"Sim", "Nao"}) == 1
 							if _Libera ()
@@ -84,7 +83,7 @@ user function VerSqNf (_sEntSai, _sSerie, _sNF, _dData, _sCliFor, _sLoja, _sPedV
 							_lRet = .F.
 						endif
 					else
-						u_help ("Ja existe(m) no sistema nota(s) de saida da serie '" + _sSerie + "' com data de emissao maior que a data informada.")
+						u_help ("Ja existe(m) no sistema nota(s) de saida da serie '" + _sSerie + "' com data de emissao maior que a data informada.",, .t.)
 						_lRet = .F.
 					endif
 					exit
@@ -96,9 +95,7 @@ user function VerSqNf (_sEntSai, _sSerie, _sNF, _dData, _sCliFor, _sLoja, _sPedV
 
 	if _lRet .and. _sEntSai == "E"
 		dbselectarea ("SF1")
-//		set filter to &('F1_FILIAL=="' + xFilial("SF1") + '".And.F1_formul=="S".and.f1_serie=="' + _sSerie + '"')
-                                   
-		//u_log("Dentro if nota de entrada a testar se já existe NF no meio da sequencia")
+
 		// Verifica se estah sendo gerada uma NF no meio da sequencia jah existente (entradas).
 		if _lRet
 			_oSQL := ClsSQL():New ()
@@ -117,20 +114,16 @@ user function VerSqNf (_sEntSai, _sSerie, _sNF, _dData, _sCliFor, _sLoja, _sPedV
 				_oSQL:_sQuery +=   " AND len (rtrim (F1_DOC)) = " + cvaltochar (tamsx3 ("F1_DOC") [1])
 			endif
 
-            //u_log("Query do Teste")
-			//u_log (_oSQL:_sQuery)
-	
 			if _oSQL:RetQry (1, .f.) > 0
 				if type ("oMainWnd") == "O"  // Se tem interface com o usuario
 					if aviso ("Numero NF fora de sequencia", "Ja existe(m) no sistema nota(s) de entrada com serie '" + _sSerie + "' e com numeracao igual ou acima da informada. Tem certeza que deseja usar este numero?", {"Sim", "Nao"}) == 1
 						_sAviso += " Usuario confirmou geracao de nota mesmo existindo notas com numeracao maior na mesma serie."
-                       u_log("if aviso nf fora de seq ")
+						U_Log2 ('aviso', _sAviso)
 					else
-                        u_log("else do aviso nf fora de seq ")
 						_lRet = .F.
 					endif
 				else
-					u_help ("Ja existe(m) no sistema nota(s) de entrada com serie '" + _sSerie + "' e com numeracao igual ou acima da informada.")
+					u_help ("Ja existe(m) no sistema nota(s) de entrada com serie '" + _sSerie + "' e com numeracao igual ou acima da informada.", _oSQL:_sQuery, .t.)
 					_lRet = .F.
 				endif
 			endif
@@ -145,17 +138,16 @@ user function VerSqNf (_sEntSai, _sSerie, _sNF, _dData, _sCliFor, _sLoja, _sPedV
 				
 				do while ! sf1 -> (eof ()) .and. sf1 -> f1_filial == xfilial ("SF1") .and. sf1 -> f1_emissao > _dData
 					if sf1 -> f1_serie == _sSerie
-						// if type ("oMainWnd") == "O"  // Se tem interface com o usuario
 						if alltrim(_MainWnd) == "O"  // Se tem interface com o usuario
 
 							if aviso ("Numero NF fora de sequencia", "Ja existe(m) no sistema nota(s) da serie '" + _sSerie + "' com data de emissao maior que a data informada. Tem certeza que deseja usar este numero?", {"Sim", "Nao"}) == 1
 								_sAviso += " Usuario confirmou a geracao de NF mesmo com outra(s) existentes em datas posteriores."
+								U_Log2 ('aviso', _sAviso)
 							else
 								_lRet = .F.
 							endif
 						else
-							u_help ("Ja existe(m) no sistema nota(s) da serie '" + _sSerie + "' com data de emissao maior que a data informada.")
-
+							u_help ("Ja existe(m) no sistema nota(s) da serie '" + _sSerie + "' com data de emissao maior que a data informada.",, .t.)
 							_lRet = .F.
 						endif
 						exit
@@ -165,7 +157,6 @@ user function VerSqNf (_sEntSai, _sSerie, _sNF, _dData, _sCliFor, _sLoja, _sPedV
 			endif
 		endif
 		dbselectarea ("SF1")
- //		set filter to
 	endif
 
 	// Verifica se estah sendo deixada lacuna na numeracao.
@@ -189,11 +180,12 @@ user function VerSqNf (_sEntSai, _sSerie, _sNF, _dData, _sCliFor, _sLoja, _sPedV
 						if type ("oMainWnd") == "O"  // Se tem interface com o usuario
 							if aviso ("Numero NF fora de sequencia", "Nao foi encontrada na serie '" + _sSerie + "' a NF anterior `a nota(s) informada. Esta movimentacao deixaria uma lacuna na sequencia de notas. Tem certeza que deseja usar este numero?", {"Sim", "Nao"}) == 1
 								_sAviso += " Usuario confirmou geracao de nota mesmo deixando lacuna na numeracao."
+								U_Log2 ('aviso', _sAviso)
 							else
 								_lRet = .F.
 							endif
 						else
-							u_help ("Nao foi encontrada na serie '" + _sSerie + "' a NF anterior `a nota(s) informada. Esta movimentacao deixaria uma lacuna na sequencia de notas.")
+							u_help ("Nao foi encontrada na serie '" + _sSerie + "' a NF anterior `a nota(s) informada. Esta movimentacao deixaria uma lacuna na sequencia de notas.",, .t.)
 							_lRet = .F.
 						endif
 					endif
@@ -211,7 +203,6 @@ user function VerSqNf (_sEntSai, _sSerie, _sNF, _dData, _sCliFor, _sLoja, _sPedV
 		_oEvento := ClsEvent():new ()
 		_oEvento:Texto     = _sAviso
 		_oEvento:Produto   = _sProduto
-		//_oEvento:MailTo    = "liane.lenzi@novaalianca.coop.br"
 		_oEvento:MailToZZU   = {'050'}
 		if _sEntSai == "S"
 			_oEvento:CodEven   = "SF2008"
@@ -241,10 +232,9 @@ user function VerSqNf (_sEntSai, _sSerie, _sNF, _dData, _sCliFor, _sLoja, _sPedV
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-
-//	u_log ('retornando', _lRet)
-//	u_logFim ()
 return _lRet
+
+
 // --------------------------------------------------------------------------
 // Verifica geracao de NF eletronica com numeracao jah existente na SEFAZ
 static function _VerSEFAZ (_sSerie, _sNF)
@@ -311,9 +301,9 @@ static function _VerSEFAZ (_sSerie, _sNF)
 			Next nX
 		EndIf
 	endif
-//	u_log ('retornando', _lRet)
-//	u_logFim ()
 Return _lRet
+
+
 // --------------------------------------------------------------------------
 // Exige liberacao via senha.
 static function _Libera ()

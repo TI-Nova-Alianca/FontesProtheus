@@ -1346,6 +1346,7 @@ METHOD Grava (_lSZIGrav, _lMemoGrav) Class ClsCtaCorr
 
 	// Atualiza saldo do Associado
 	if _lContinua
+		U_Log2 ('debug', 'vou chamar AtuSldAsso')
 		::AtuSldAsso ()
 	endif
 

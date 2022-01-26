@@ -730,7 +730,7 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 		u_log2 ('info', 'Chamando MATA103 para gerar a nota ' + _sNF)
 		MsExecAuto({|x,y,z|MATA103(x,y,z)},_aAutoSF1,_aAutoSD1,3)
 		If lMsErroAuto
-			u_help (_sErroAuto + chr (13) + chr (10) + U_LeErro (memoread (NomeAutoLog ())))
+			u_help (_sErroAuto, iif (!empty (NomeAutoLog ()), U_LeErro (memoread (NomeAutoLog ())), ''), .t.)
 			_lContinua = .F.
 		else
 			U_LOG2 ('info', "NF " + sf1 -> f1_doc + " gerada")
@@ -843,7 +843,7 @@ return _lContinua
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
 	local _aRegsPerg := {}
-	
+
 	//                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                               Help
 	aadd (_aRegsPerg, {01, "Produtor inicial              ", "C", 6,  0,  "",   "SA2", {},                                  "Codigo do produtor (fornecedor) inicial para geracao das notas."})
 	aadd (_aRegsPerg, {02, "Loja produtor inicial         ", "C", 2,  0,  "",   "SA2", {},                                  "Loja do produtor (fornecedor) inicial para geracao das notas."})
@@ -858,6 +858,6 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {11, "Cond.pagto a usar             ", "C", 3,  0,  "",   "SE4", {},                                  ""})
 	aadd (_aRegsPerg, {12, "Apenas as varied (separ.por /)", "C", 60, 0,  "",   "   ", {},                                  ""})
 	aadd (_aRegsPerg, {13, "Exceto as varied (separ.por /)", "C", 60, 0,  "",   "   ", {},                                  ""})
-	
+
 	U_ValPerg (cPerg, _aRegsPerg)
 return

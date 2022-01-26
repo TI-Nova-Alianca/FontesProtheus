@@ -107,6 +107,36 @@ static function _AndaLogo ()
 	u_help ('Nada definido.')
 return
 /*
+	_sArqLog := 'VA_GNF2_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+	Private cPerg   := "VAGNF2"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2022') // Safra referencia
+	U_GravaSX1 (cPerg, '06', 'A')    // Parcelas sep.barras (bco=todas)
+	U_GravaSX1 (cPerg, '07', 'A')    // Grupo pagto
+	U_GravaSX1 (cPerg, '08', 3)      // Geracao por DCO: {"Com DCO", "Sem DCO", "Todos"}
+	U_GravaSX1 (cPerg, '09', 3)      // fina/comum: {"Comum", "Fina", "Todas"}
+	U_GravaSX1 (cPerg, '10', 2)      // tipo NF: {"Normais", "Compl.preco"}
+	U_GravaSX1 (cPerg, '11', '801')     // Cond pagto
+	U_GravaSX1 (cPerg, '12', '')     // Apenas estas variedades
+	U_GravaSX1 (cPerg, '13', '')     // Exceto estas variedades
+	u_va_gnf2 (.t.)
+return
+*/
+/*
+	Private cPerg   := "VAXLS37"
+	U_GravaSX1 (cPerg, '01', stod ('20201231'))  // data inicial
+	U_GravaSX1 (cPerg, '02', 2)  // qt meses
+	U_GravaSX1 (cPerg, '03', '0150')  // prod inicial
+	U_GravaSX1 (cPerg, '04', '0150')  // prod final
+	U_GravaSX1 (cPerg, '05', 'MO/AP/')  // tipos ignorar
+	U_GravaSX1 (cPerg, '06', 1)  // [qt;custo]
+	u_va_xls37 (.T.)
+return
+*/
+/*
 	// Varre safra anterior simulando precos da nova safra, para ver se ficaria algum caso sem tratamento.
 	_sPreNF := U_RetSQL ("SELECT MAX (ZZ9_PRE_NF) FROM ZZ9010 WHERE ZZ9_SAFRA = '2022'")
 	_aPrecos := {}
@@ -964,26 +994,7 @@ return
 		sed -> (dbskip ())
 	enddo
 return
-/*
-	_sArqLog := 'VA_GNF2_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-	Private cPerg   := "VAGNF2"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2021') // Safra referencia
-	U_GravaSX1 (cPerg, '06', 'B')     // Parcelas sep.barras (bco=todas)
-	U_GravaSX1 (cPerg, '07', 'B')    // Grupo pagto
-	U_GravaSX1 (cPerg, '08', 3)      // Geracao por DCO: {"Com DCO", "Sem DCO", "Todos"}
-	U_GravaSX1 (cPerg, '09', 3)      // fina/comum: {"Comum", "Fina", "Todas"}
-	U_GravaSX1 (cPerg, '10', 2)      // tipo NF: {"Normais", "Compl.preco"}
-	U_GravaSX1 (cPerg, '11', '801')     // Cond pagto
-	U_GravaSX1 (cPerg, '12', '')     // Apenas estas variedades
-	U_GravaSX1 (cPerg, '13', '')     // Exceto estas variedades
-	u_va_gnf2 (.t.)
-return
 */
-
 /*
 	Private cPerg   := "VAXLS38"
 	U_GravaSX1 (cPerg, '01', stod ('20210401'))  // data inicial
