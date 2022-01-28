@@ -3,27 +3,30 @@
 //  Data.......: 13/04/2015
 //  Descricao..: Controle de Verbas - Movimentação de Verbas
 //
-// Tags para automatizar catalogo de customizacoes:
+// Tags para automatizar catalogo de customizacoes:>
 // #TipoDePrograma    #atualizacao #manutencao_de_registros
 // #Descricao         #Controle de Verbas - Movimentação de Verbas
 // #PalavasChave      #verbas #manutencao_de_verbas
 // #TabelasPrincipais #ZA4 #ZA5
 // #Modulos 		  #FAT 
 //
-//  28/04/2015 - Catia - estava validando o nro do documento sempre
-//  14/05/2015 - Catia - criada opcao de verbas eventuais e acordos comerciais
-//  10/06/2015 - Catia - na geracao da NCC - gravar o vencimento e o historico que nao estava gravando
-//  10/06/2015 - Catia - ao digitar verbas eventuais previstas em contrato nao estava validando correto o nro de lojas
-//  15/06/2015 - Catia - forçar a contabilização na liberacao por boleto/deposito quando gera a NCC
-//  22/06/2015 - Catia - nao estava gravando corretamente o indicador de contabilização
-//  09/07/2015 - Catia - restrição para aceitar no codigo do carrefour a verba de campanha de vendas maior que o nro de lojas
-//  23/07/2015 - Catia - caso das verbas de campanha do carrefour - que tem todo mes pra todas as lojas 
-//				 e que pode ter mais de uma campanha de vendas.
-//  09/10/2015 - Catia - tirado o teste de cliente ativo para contas as lojas do cliente
-//  08/02/2016 - Catia - verifica se eh uma verba do tipo multa - ai nao limita ao nro de lojas
-//  21/06/2016 - Catia - validar para que so sejam incluidas verbas para o cliente matriz ou cliente base
+//  28/04/2015 - Catia  - estava validando o nro do documento sempre
+//  14/05/2015 - Catia  - criada opcao de verbas eventuais e acordos comerciais
+//  10/06/2015 - Catia  - na geracao da NCC - gravar o vencimento e o historico que nao estava gravando
+//  10/06/2015 - Catia  - ao digitar verbas eventuais previstas em contrato nao estava 
+//                        validando correto o nro de lojas
+//  15/06/2015 - Catia  - forçar a contabilização na liberacao por boleto/deposito quando gera a NCC
+//  22/06/2015 - Catia  - nao estava gravando corretamente o indicador de contabilização
+//  09/07/2015 - Catia  - restrição para aceitar no codigo do carrefour a verba de campanha 
+//                       de vendas maior que o nro de lojas
+//  23/07/2015 - Catia  - caso das verbas de campanha do carrefour - que tem todo mes pra todas as lojas 
+//				          e que pode ter mais de uma campanha de vendas.
+//  09/10/2015 - Catia  - tirado o teste de cliente ativo para contas as lojas do cliente
+//  08/02/2016 - Catia  - verifica se eh uma verba do tipo multa - ai nao limita ao nro de lojas
+//  21/06/2016 - Catia  - validar para que so sejam incluidas verbas para o cliente matriz ou cliente base
 //  15/12/2017 - Robert - Criada opcao de recalcular saldos (ajusta status) da verba.
-//  09/08/2018 - Catia  - teste se eh possivel colocar uma verba num codigo de cliente que nao seja o codigo matriz
+//  09/08/2018 - Catia  - teste se eh possivel colocar uma verba num codigo de cliente 
+//                        que nao seja o codigo matriz
 //  08/04/2019 - Catia  - include TbiConn.ch
 //  09/05/2019 - Catia  - solicitar tipo de liberacao e data de vencimento ainda na inclusao
 //             - Catia  - liberação por permissao agora so o coordenador e o gerente comercial liberarm 
@@ -33,8 +36,11 @@
 //  19/08/2020 - Cláudia - Ajuste de exclusão de verbas tipo boleto/depósito. GLPI: 8350 
 //  15/09/2020 - Cláudia - Alteração de verbas tipo boleto/deposito. GLPI: 8479
 //  03/12/2021 - Claudia - BLoqueada a rotina para incluir verbas nas filiais. GLPI:11306
+//  27/01/2022 - Claudia - Incluida validação de usuário para excluir verbas e retirada 
+//                         rotina de alteração. GLPI: 11537
 //
-// ---------------------------------------------------------------------------------------------------------------------------
+//
+// ------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
 #Include "Protheus.ch"
 #Include "RwMake.ch"
@@ -62,7 +68,7 @@ User Function VA_ZA4()
 		aadd (aRotina, {"&Liberar"            , "U_ZA4_L" 		, 0,4})
 		aadd (aRotina, {"&Estornar"           , "U_ZA4_EL" 		, 0,4})
 		aadd (aRotina, {"&Excluir"            , "U_ZA4_EX" 		, 0,4})
-		aadd (aRotina, {"&Alterar"            , "U_ZA4_AL"   	, 0,4})
+		//aadd (aRotina, {"&Alterar"            , "U_ZA4_AL"   	, 0,4})
 		
 		dbselectarea (cString)
 		dbSetOrder (1)
@@ -74,7 +80,6 @@ Return
 // -------------------------------------------------------------------------
 // Inclusao
 User Function ZA4_I (_wtipoinclusao)
-//	local _oCtaCorr  := NIL
     private altera   := .F.
     private inclui   := .T.
     private aGets    := {}
@@ -297,31 +302,35 @@ Return
 // --------------------------------------------------------------------------
 // Excluir
 User Function ZA4_EX()
-//	local  _aDados   := {}
     private altera   := .F.
     private inclui   := .F.
     private aGets    := {}
     private aTela    := {}
     
-    u_logIni ()
-    RegToMemory ("ZA4", inclui, .T.)
+	if U_ZZUVL ("A93", __cUserID, .T.)
+		u_logIni ()
+		RegToMemory ("ZA4", inclui, .T.)
 
-    // so é permitido exclusao de verba manual e que nao tenha sido liberada ainda.
-    If !empty(m->za4_dlib)
-       u_help ("Verba já liberada! Não pode ser excluida.")
-    Else
-        if m->za4_sger='1'
-            u_help ("Verba gerada por contrato. Não pode ser excluida.")
-        else   
-            _lContinua := U_ZA4_VE (2)
-            If _lContinua == .T.
-             	AxDeleta ("ZA4", za4 -> (recno ()), 5)
-            Else
-            	u_help("A verba não pode ser excluída!")
-            EndIf
-        endif    
-    Endif
-    u_logFim ()
+		// so é permitido exclusao de verba manual e que nao tenha sido liberada ainda.
+		If !empty(m->za4_dlib)
+			u_help ("Verba já liberada! Não pode ser excluida.")
+		Else
+			if m->za4_sger='1'
+				u_help ("Verba gerada por contrato. Não pode ser excluida.")
+			else   
+				_lContinua := U_ZA4_VE (2)
+				If _lContinua == .T.
+					AxDeleta ("ZA4", za4 -> (recno ()), 5)
+				Else
+					u_help("A verba não pode ser excluída!")
+				EndIf
+			endif    
+		Endif
+	else
+		u_help("Usuário sem permissões para excluir verbas!")
+	endif
+
+	u_logFim ()
 Return
 //
 // --------------------------------------------------------------------------
