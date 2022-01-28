@@ -40,7 +40,6 @@ Static Function ReportDef()
 	
 	//oReport:ShowParamPage() // imprime parametros
 	oReport:SetTotalInLine(.F.)
-	//oReport:SetLandScape(.T.)
 	oReport:SetPortrait()
 	oReport:ShowHeader()
 	
@@ -72,15 +71,15 @@ Static Function PrintReport(oReport)
 
     _oSQL:= ClsSQL ():New ()
     _oSQL:_sQuery := ""
-    _oSQL:_sQuery += " WITH C
+    _oSQL:_sQuery += " WITH C "
     _oSQL:_sQuery += " AS "
     _oSQL:_sQuery += " (SELECT "
     _oSQL:_sQuery += " 		SE3.E3_VEND AS COD_VEND "
     _oSQL:_sQuery += " 	   ,SA3.A3_NOME AS COD_NOME "
     _oSQL:_sQuery += " 	   ,SE3.E3_FILIAL AS FILIAL "
-    _oSQL:_sQuery += " 	   ,SE3.E3_EMISSAO AS EMISSAO "
+    _oSQL:_sQuery += " 	   ,SE3.E3_DATA AS DATAPGTO "
     _oSQL:_sQuery += " 	   ,CASE "
-    _oSQL:_sQuery += " 			WHEN SE3.E3_EMISSAO < '20220101' THEN SA3.A3_INDENIZ "
+    _oSQL:_sQuery += " 			WHEN SE3.E3_DATA < '20220101' THEN SA3.A3_INDENIZ "
     _oSQL:_sQuery += " 			ELSE SA3.A3_INDEBKP "
     _oSQL:_sQuery += " 		END AS INDENIZACAO "
     _oSQL:_sQuery += " 	   ,SUM(SE3.E3_COMIS) AS COMISSAO "
@@ -95,18 +94,30 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += " 	GROUP BY SE3.E3_FILIAL "
     _oSQL:_sQuery += " 			,SE3.E3_VEND "
     _oSQL:_sQuery += " 			,SA3.A3_NOME "
-    _oSQL:_sQuery += " 			,SE3.E3_EMISSAO "
+    _oSQL:_sQuery += " 			,SE3.E3_DATA "
     _oSQL:_sQuery += " 			,SA3.A3_INDENIZ "
     _oSQL:_sQuery += " 			,SA3.A3_INDEBKP) "
     _oSQL:_sQuery += " SELECT "
-    _oSQL:_sQuery += " 	* "
+    _oSQL:_sQuery += " 	   COD_VEND "
+    _oSQL:_sQuery += "    ,COD_NOME "
+    _oSQL:_sQuery += "    ,FILIAL "
+    _oSQL:_sQuery += "    ,DATAPGTO "
+    _oSQL:_sQuery += "    ,INDENIZACAO "
+    _oSQL:_sQuery += "    ,SUM(COMISSAO) "
+    _oSQL:_sQuery += "    ,AVOS_1_2 "
     _oSQL:_sQuery += " FROM C "
-    If (mv_par03 == 1)
+    If (mv_par03 == 2)
         _oSQL:_sQuery += " WHERE INDENIZACAO = 'S' "
     else
         _oSQL:_sQuery += " WHERE INDENIZACAO = 'N' "
     EndIf
-    _oSQL:_sQuery += " ORDER BY FILIAL, COD_VEND, EMISSAO DESC"
+    _oSQL:_sQuery += " GROUP BY COD_VEND "
+    _oSQL:_sQuery += " 		,COD_NOME "
+    _oSQL:_sQuery += " 		,FILIAL "
+    _oSQL:_sQuery += " 		,DATAPGTO "
+    _oSQL:_sQuery += " 		,INDENIZACAO "
+    _oSQL:_sQuery += " 		,AVOS_1_2 "
+    _oSQL:_sQuery += " ORDER BY FILIAL, COD_VEND, DATAPGTO DESC "
     _aDados := aclone (_oSQL:Qry2Array ())
 
 	For _x:=1 to Len(_aDados)
@@ -122,12 +133,14 @@ Static Function PrintReport(oReport)
 		_n12Avos    := _nComisPaga/12
 
         If mv_par02 == 1
+            _sDt := substr(_aDados[_x, 4],1, 6) + '01'
+
             _oSQL:= ClsSQL ():New ()
             _oSQL:_sQuery := ""
             _oSQL:_sQuery += " SELECT "
             _oSQL:_sQuery += " 	    ZAI_INPC "
             _oSQL:_sQuery += " FROM " + RetSqlName("ZAI") 
-            _oSQL:_sQuery += " WHERE ZAI_DATA > '"+ _aDados[_x, 4] +"'"
+            _oSQL:_sQuery += " WHERE ZAI_DATA >= '" + _sDt + "'"
             _oSQL:_sQuery += " ORDER BY ZAI_DATA ""
             _aINPC := aclone (_oSQL:Qry2Array ())
 
