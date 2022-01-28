@@ -30,6 +30,8 @@
 // 28/09/2020 - Cláudia - Liberada a impressão dos dados adicionais para todos os tipos de produtos/serviços. GLPI: 8539
 // 20/01/2021 - Sandra  - Alterado texto do campo Recebimento de Mercadorias do pedido de compra conforme chamado 9160.
 // 25/02/2021 - Claudia - Observações para pedidos de serviço. GLPI: 7846
+// 27/01/2022 - Sandra  - Alterado notas comforme chamado GLPI: 11541.
+// 27/01/2022 - Sandra  - Incluso linhas conforme chamado GLPI: 11544.
 //
 // ------------------------------------------------------------------------------------------------------------------------
 #include 'topconn.ch'
@@ -484,19 +486,25 @@ Static Function xPrintRel()
 	nLinha += 080
 	// quadro das observções na parte inferior no final do pedido de compra
 	oPrint:Line(nLinha,030,nLinha,2150) //linha superior
-	oPrint:Line(nLinha,030,nLinha+380,030) //barra inicial
-	oPrint:Line(nLinha,2150,nLinha+380,2150) //barra final
-	oPrint:Line(nLinha+380,030,nLinha+380,2150)// linha inferior 
+	oPrint:Line(nLinha,030,nLinha+420,030) //barra inicial
+	oPrint:Line(nLinha,2150,nLinha+420,2150) //barra final
+	oPrint:Line(nLinha+415,030,nLinha+415,2150)// linha inferior 
 
  	nLinha += 40
 	oPrint:Say(nLinha,0060,'NOTAS: - Favor mencionar o número deste pedido de compras na nota fiscal, caso este não estiver',oFont14n)
 	nLinha += 40
 	oPrint:Say(nLinha,0060,'         expresso na nota fiscal a mesma será recusada.',oFont14n)
 	nLinha += 40
-	oPrint:Say(nLinha,0060,'       - Não efetuamos pagamentos nas sexta-feiras, caso o vencimento ocorrer na sexta-feira, a',oFont14)
+	//oPrint:Say(nLinha,0060,'       - Não efetuamos pagamentos nas sexta-feiras, caso o vencimento ocorrer na sexta-feira, a',oFont14)
+	//nLinha += 40
+	//oPrint:Say(nLinha,0060,'         data efetiva do mesmo deverá ser deslocada para o próximo dia útil.',oFont14)
+	//nLinha += 40
+	oPrint:Say(nLinha,0060,'       - Laudos dos produtos devem ser enviados para: laudos@novaalianca.coop.br',oFont14n)
 	nLinha += 40
-	oPrint:Say(nLinha,0060,'         data efetiva do mesmo deverá ser deslocada para o próximo dia útil.',oFont14)
+	oPrint:Say(nLinha,0060,'       - O nº do Pedido de Compra, Lote e data de Validade do Produto devem ser preenchidos',oFont14n) 
 	nLinha += 40
+	oPrint:Say(nLinha,0060,'          no campo Específico do XML, dúvidas contatar.',oFont14n)
+	nLinha += 40                                 
 	oPrint:Say(nLinha,0060,'       - Efetuamos pagamento somente via boleto bancário.',oFont14n)
 	nLinha += 40
 	oPrint:Say(nLinha,0060,'       - Não negociamos com Factoring.',oFont14n)
