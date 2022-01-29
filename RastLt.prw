@@ -2,13 +2,22 @@
 // Autor....: Robert Koch
 // Data.....: 09/05/2017 (inicio)
 // Descricao: Gera consulta de rastreabilidade de lote de produto.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Consulta
+// #Descricao         #Gera arvore de consulta de rastreabilidade
+// #PalavasChave      #rastreabilidade
+// #TabelasPrincipais #SD1 #SD2 #SD3
+// #Modulos           #EST
+
 // Historico de alteracoes:
 // 15/08/2018 - Robert - Verifica o tamanho da string de retorno antes de fazer as chamadas recursivas.
 //                     - Filtra uma OP da filial 09 que teve erro de apontamento.
 // 24/08/2018 - Robert - Ignora NF 000016150 (transf.indevida filial 07 para 01).
 // 20/02/2020 - Robert - Desabilitada leitura de talhao de terra quando NF de entrada de safra.
 // 09/09/2021 - Robert - Nas NF de entrada, passa a desconsiderar retornos de industrializacao (GLPI 10913)
+// 28/01/2022 - Robert - Ajuste na busca das cargas de safra.
+//                     - Alimenta variavel _aLtXLS58 para relatorio CENECOOP (GLPI 11514)
 //
 
 // --------------------------------------------------------------------------
@@ -16,7 +25,6 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 	local _sDescri  := ""
 	local _sAliasQ  := ""
 	local _sRet     := ""
-//	local _aDet     := {}
 	local _aOP      := {}
 	local _nOP      := 0
 	local _aReqOP   := {}
@@ -78,7 +86,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 				// - Senao, assume o numero da OP como sendo o lote. Quando a rastreabilidade for completa pelo Protheus, isso vai ser desnecessario.
 				if _nNivel <= 0 .and. (sb1 -> b1_rastro == 'L' .or. (sb1 -> b1_rastro == 'N' .and. sb1 -> b1_tipo == 'PA'))  
 					_oSQL := ClsSQL ():New ()
-					_oSQL:_sQuery := "SELECT D3_OP, SUM (D3_QUANT), D3_UM" //, MAX (D3_EMISSAO)"
+					_oSQL:_sQuery := "SELECT D3_OP, SUM (D3_QUANT), D3_UM, MAX (D3_EMISSAO)"
 					_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD3") + " SD3 "
 					_oSQL:_sQuery += " WHERE SD3.D_E_L_E_T_ = ''"
 					_oSQL:_sQuery +=   " AND SD3.D3_FILIAL  = '" + _sFilial + "'"
@@ -100,6 +108,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 					for _nOP = 1 to len (_aOP)
 						_sID = soma1 (_sID)
 						_sDescri := 'O.P. ' + alltrim (_aOP [_nOP, 1]) + _sQuebra
+						_sDescri += dtoc (stod (_aOP [_nOP, 4])) + _sQuebra
 						_sDescri += _FmtQt (_aOP [_nOP, 2], _aOP [_nOP, 3]) + _sQuebra
 						_sRet += '<node BACKGROUND_COLOR="#cccc00" CREATED="1493031071766" ' + iif (abs (_nNivel) >= _nNivFold, 'FOLDED="true" ', '') + 'ID="' + _sID + '" POSITION="left" TEXT="' + _sDescri + '">'
 					
@@ -115,6 +124,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 						_oSQL:_sQuery +=   " AND SD3.D3_FILIAL  = '" + _sFilial + "'"
 						_oSQL:_sQuery +=   " AND SD3.D3_CF      LIKE 'RE%'"
 						_oSQL:_sQuery +=   " AND SD3.D3_QUANT   > 0"
+						_oSQL:_sQuery +=   " AND SD3.D3_ESTORNO != 'S'"
 						_oSQL:_sQuery +=   " AND SD3.D3_TIPO    NOT IN ('MO','AP','GF')"
 						_oSQL:_sQuery +=   " AND SD3.D3_OP      = '" + _aOP [_nOP, 1] + "'"
 						_oSQL:_sQuery += " GROUP BY D3_COD, D3_LOTECTL, D3_UM, B1_DESC"
@@ -225,9 +235,9 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 				// Busca possiveis entradas via NF.
 				if _nNivel <= 0 .and. sb1 -> b1_rastro == 'L'
 					_oSQL := ClsSQL ():New ()
-					_oSQL:_sQuery := "SELECT D1_DOC, D1_LOTEFOR, SUM (D1_QUANT), D1_UM,"
+					_oSQL:_sQuery := "SELECT D1_DOC, D1_LOTEFOR, D1_QUANT, D1_UM,"
 					_oSQL:_sQuery +=  " RTRIM (CASE WHEN D1_TIPO IN ('D', 'B') THEN A1_NOME ELSE A2_NOME END), "
-					_oSQL:_sQuery +=  " D1_SERIE"
+					_oSQL:_sQuery +=  " D1_SERIE, D1_FORNECE, D1_LOJA, D1_ITEM"
 					_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD1") + " SD1 "
 					_oSQL:_sQuery +=     " LEFT JOIN " + RetSQLName ("SA1") + " SA1 "
 					_oSQL:_sQuery +=        " ON (SA1.D_E_L_E_T_ = ''"
@@ -256,7 +266,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 					// Ignora transferencias de filiais
 					_oSQL:_sQuery +=   " AND SD1.D1_FORNECE NOT IN ('000021','001094','001369','003150','003402','003114','003209','003111','003108','003266','003195','004565','004734')"
 
-					_oSQL:_sQuery += " GROUP BY D1_DOC, D1_LOTEFOR, D1_UM, CASE WHEN D1_TIPO IN ('D', 'B') THEN A1_NOME ELSE A2_NOME END, D1_SERIE"
+				//	_oSQL:_sQuery += " GROUP BY D1_DOC, D1_LOTEFOR, D1_UM, CASE WHEN D1_TIPO IN ('D', 'B') THEN A1_NOME ELSE A2_NOME END, D1_SERIE, D1_FORNECE, D1_LOJA"
 					_oSQL:Log ()
 					_aSD1 = aclone (_oSQL:Qry2Array (.F., .F.))
 					for _nSD1 = 1 to len (_aSD1)
@@ -274,20 +284,32 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 						// Se for contranota de entrada de safra, busca dados da carga.
 						if sb1 -> b1_grupo == '0400' .and. _aSD1 [_nSD1, 6] == '30 '
 							_oSQL := ClsSQL ():New ()
-							_oSQL:_sQuery := "SELECT CARGA, DATA, HORA, CAD_VITIC, GRAU, PROPR_RURAL" //, TALHAO"
-							_oSQL:_sQuery +=  " FROM VA_VCARGAS_SAFRA"
+							_oSQL:_sQuery := "SELECT CARGA, DATA, CAD_VITIC, GRAU, NF_PRODUTOR"
+							_oSQL:_sQuery +=  " FROM VA_VNOTAS_SAFRA"
 							_oSQL:_sQuery += " WHERE FILIAL     = '" + _sFilial + "'"
-							_oSQL:_sQuery +=   " AND CONTRANOTA = '" + _aSD1 [_nSD1, 1] + "'"
+							_oSQL:_sQuery +=   " AND DOC        = '" + _aSD1 [_nSD1, 1] + "'"
+							_oSQL:_sQuery +=   " AND SERIE      = '" + _aSD1 [_nSD1, 6] + "'"
+							_oSQL:_sQuery +=   " AND ASSOCIADO  = '" + _aSD1 [_nSD1, 7] + "'"
+							_oSQL:_sQuery +=   " AND LOJA_ASSOC = '" + _aSD1 [_nSD1, 8] + "'"
+							_oSQL:_sQuery +=   " AND ITEM_NOTA  = '" + _aSD1 [_nSD1, 9] + "'"
 							_oSQL:_sQuery +=   " AND PRODUTO    = '" + _sProduto + "'"
-							_oSQL:_sQuery +=   " AND CARGA      = '" + substr (_sLote, 3, 4) + "'"
-							_oSQL:_sQuery +=   " AND ITEMCARGA  = '" + substr (_sLote, 7, 2) + "'"
 							_oSQL:Log ()
 							_aCarga = aclone (_oSQL:Qry2Array ())
-							if len (_aCarga) == 1
-								_sDescri += 'Carga uva ' + _aCarga [1, 1] + ' de ' + dtoc (stod (_aCarga [1, 2])) + ' ' + _aCarga [1, 3] + _sQuebra
-								_sDescri += 'Cad.vitic: ' + _aCarga [1, 4] + ' Grau da uva: ' + _aCarga [1, 5] + _sQuebra
-							//	_sDescri += 'Propr.rural: ' + _aCarga [1, 6] + ' Talhao: ' + _aCarga [1, 7] + _sQuebra
-								_sDescri += 'Propr.rural: ' + _aCarga [1, 6] + _sQuebra
+							if len (_aCarga) == 1  // Nao deveria encontrar mais de um registro
+						//		_sDescri += 'Carga safra: ' + _aCarga [1, 1] + ' de ' + dtoc (stod (_aCarga [1, 2])) + _sQuebra
+								_sDescri += 'Carga: ' + _aCarga [1, 1] + '  Grau: ' + _aCarga [1, 4] + _sQuebra
+								_sDescri += 'NF produtor: ' + _aCarga [1, 5] + _sQuebra
+
+								// Alimenta array private da rotina chamadora com os dados de cargas de safra.
+								// Especifico para relatorio de envio de mosto para a CENECOOP
+								if type ('_aLtXLS58') == 'A'
+									aadd (_aLtXLS58, {_sProduto, ;  // Codigo do produto
+													  _sLote, ;  // Nosso lote interno
+													  _aSD1 [_nSD1, 3], ;  // Quantidade
+													   _aCarga [1, 1], ;  // Numero da carga ('numero da pesagem')
+													   _aCarga [1, 2], ;  // Data da carga
+													   _aCarga [1, 4]})  // Grau da uva
+								endif
 							endif
 						endif
 						
