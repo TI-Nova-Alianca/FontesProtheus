@@ -30,6 +30,7 @@
 // 12/01/2022 - Robert - Melhorias nomes arquivos de log, e-mail acompanhamento.
 // 17/01/2022 - Robert - Ajuste nomes conselheiros.
 // 19/01/2022 - Robert - Ajuste nomes e e-mail conselheiros.
+// 28/01/2022 - Robert - E-mail de acompanhamento de safra passa a enviar para lista de distribuicao acomp.safra@novaalianca.coop.br
 //
 
 // --------------------------------------------------------------------------
@@ -437,7 +438,8 @@ static function _MailAcomp ()
 	_sMsg = _oSQL:Qry2HTM ("Acompanhamento cargas safra " + _sSafra, _aCols, "", .T., .F.)
 	if len (_oSQL:_xRetQry) > 1
 		u_log2 ('debug', _sMsg)
-		_sDest := ""
+
+/*		_sDest := ""
 
 		// Internos - direcao
 		_sDest += "alceu.dallemolle@novaalianca.coop.br;"
@@ -451,8 +453,8 @@ static function _MailAcomp ()
 		_sDest += "gilbertoverdi@gmail.com;"
 		_sDest += "joel.caldart@hotmail.com;"
 		_sDest += "marciogirelli.st@gmail.com;"
-		_sDest += "marcioferrar@gmail.com;"
-		_sDest += "rodrigovdebona@gmail.com;"  // reclamou que nao recebe XML
+		_sDest += "marcioferrar@gmail.com;"  // reclamou
+		_sDest += "rodrigovdebona@gmail.com;"  // reclamou tambem que nao recebe XML
 		_sDest += "romildowferrari@hotmail.com;"
 
 		// Conselho administracao suplentes
@@ -485,7 +487,6 @@ static function _MailAcomp ()
 		_sDest += "renan.mascarello@novaalianca.coop.br;"
 		_sDest += "sergio.pereira@novaalianca.coop.br;"
 		_sDest += "deise.demori@novaalianca.coop.br;"
-		_sDest += "cristina.stringhi@novaalianca.coop.br;"
 
 		// Internos - agronomia
 		_sDest += "leonardo.reffatti@novaalianca.coop.br;"
@@ -496,8 +497,12 @@ static function _MailAcomp ()
 		// Internos - TI (monitoramento)
 		_sDest += "sandra.sugari@novaalianca.coop.br;"
 		_sDest += "robert.koch@novaalianca.coop.br;"
+*/
+//		U_SendMail (_sDest, "Acompanhamento cargas safra", _sMsg)
 
-		U_SendMail (_sDest, "Acompanhamento cargas safra", _sMsg)
+		// Envia para o contato principal dos associados (atualmente a Cris) e os demais como copia oculta.
+		U_SendMail ("cristina.stringhi@novaalianca.coop.br", "Acompanhamento cargas safra", _sMsg, {}, NIL, NIL, 'acomp.safra@novaalianca.coop.br;informatica@novaalianca.coop.br')
+
 	endif
 return
 

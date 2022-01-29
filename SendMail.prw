@@ -37,10 +37,11 @@
 // 16/07/2021 - Claudia - Retirado trecho de "texto recebido tem quebras de linha" 
 //                        devido a má formação da tabela no html
 // 14/12/2021 - Robert  - Verifica se eh ambiente R33 (testes release) e pede confirmacao para envio do e-mail.
+// 28/01/2022 - Robert  - Criada opcao de envio em copia oculta.
 //
 
 // ----------------------------------------------------------------------------------------------
-User Function SendMail (_sTo, _sSubject, _sBody, _aArq, _sCtaMail, _sGrupoZZU)
+User Function SendMail (_sTo, _sSubject, _sBody, _aArq, _sCtaMail, _sGrupoZZU, _sBCC)
 	local _lContinua := .T.
 	local _oHtml     := NIL
 	local _oProcess  := NIL
@@ -55,6 +56,7 @@ User Function SendMail (_sTo, _sSubject, _sBody, _aArq, _sCtaMail, _sGrupoZZU)
 		_sSubject  := iif (_sSubject  == NIL, "", _sSubject)
 		_sBody     := iif (_sBody     == NIL, "", _sBody)
 		_sGrupoZZU := iif (_sGrupoZZU == NIL, "", _sGrupoZZU)
+		_sBCC      := iif (_sBCC      == NIL, "", _sBCC)
 
 		if empty (_sTo)
 			u_help ("[" + procname () + "]: Nao foi especificado destinatario do e-mail",, .t.)
@@ -137,7 +139,8 @@ User Function SendMail (_sTo, _sSubject, _sBody, _aArq, _sCtaMail, _sGrupoZZU)
 			_oHtml:ValByName ("Rotina", FunName ())
 			_oHtml:ValByName ("Environment", GetEnvServer () + " Emp/filial: " + sm0 -> m0_codigo + '/' + sm0 -> m0_codfil)
 			_oHtml:ValByName ("GrupoZZU", _sGrupoZZU)
-			_oProcess:cTo = _sTo
+			_oProcess:cTo  = _sTo
+			_oProcess:cBCC = _sBCC
 			_sArqMail = _oProcess:Start()
 		endif
 		_oProcess:Free()
@@ -145,7 +148,7 @@ User Function SendMail (_sTo, _sSubject, _sBody, _aArq, _sCtaMail, _sGrupoZZU)
 		// Se nao for a conta padrao do sistema, os e-mails nao sao enviados automaticamente.
 		StartJob( "WFLauncher", GetEnvServer(), .f., { "WFSndMsg", { cEmpAnt, cFilAnt, AllTrim( _sCtaMail ), .t. } } )
 
-		u_log2 ('info', "[" + procname () + "] e-mail enviado para '" + _sTo + "': " + _sSubject)
+		u_log2 ('info', "[" + procname () + "] e-mail enviado para '" + _sTo + "': " + _sSubject + iif (! empty (_sBCC), ' BCC: ' + _sBCC, ''))
 	endif
 
 	if ! empty (_sMsgErro)
