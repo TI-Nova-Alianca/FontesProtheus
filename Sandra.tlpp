@@ -1,0 +1,67 @@
+// Programa:  U_Sandra
+// Autor:     Robert Koch
+// Data:      31/01/2022
+// Descricao: Ajustes e testes diversos
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Generico
+// #Descricao         #Testes e ajustes diversos / temporarios
+// #PalavasChave      #generico
+// #TabelasPrincipais #
+// #Modulos           #Todos
+
+// --------------------------------------------------------------------------
+user function sandra ()
+	if ! alltrim(upper(cusername)) $ 'SANDRA.SUGARI/ADMINISTRADOR'
+		msgalert ('Nao te conheco, nao gosto de ti e nao vou te deixar continuar. Vai pra casa.', procname ())
+		return
+	endif
+	if U_Semaforo (procname ()) == 0
+		u_help ('Bloqueio de semaforo na funcao ' + procname (),, .t.)
+	else
+		U_UsoRot ('I', procname (), '')
+		processa ({|| _AndaLogo ()})
+		U_UsoRot ('F', procname (), '')
+	endif
+return
+
+
+
+// --------------------------------------------------------------------------
+static function _AndaLogo ()
+	local _nReg := 0
+	local _aDados := {}
+
+	// Ajusta cadastro fornecedores em lote
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT SA2.R_E_C_N_O_"
+	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SA2") + " SA2 "
+	_oSQL:_sQuery +=  " WHERE SA2.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=    " AND SA2.A2_FILIAL = '" + xfilial ("SA2") + "'"
+	_oSQL:_sQuery +=    " AND A2_CONTA IN ('201010101002','201010101003','201010101004','201010101005')"
+	_oSQL:_sQuery +=  " ORDER BY A2_COD"
+	_oSQL:Log ()
+	_aDados = _oSQL:Qry2Array ()
+	for _nReg = 1 to len (_aDados)
+		sa2 -> (dbgoto (_aDados [_nReg, 1]))
+		u_log2 ('info', 'Verificando forn ' + sa2 -> a2_cod + ' ' + Sa2 -> a2_nome)
+
+		// Cria variaveis para uso na gravacao do evento de alteracao
+		// Criar sempre uma variavel para cada campo que for alterar.
+		regtomemory ("SA2", .F., .F.)
+		m->A2_CONTA = '201010101001'
+
+		// Grava evento de alteracao
+		_oEvento := ClsEvent():new ()
+		_oEvento:AltCadast ("SA2", m->a2_cod + m->a2_loja, sa2 -> (recno ()), 'GLPI 11536 - Novas contas fornecedores', .F.)
+
+		// Efetiva a alteracao no banco de dados. Usar sempre as mesmas variaveis M-> criadas mais acima.
+		reclock ("SA2", .f.)
+		sa2 -> a2_conta = m->a2_conta
+		msunlock ()
+		
+		// Para executar apenas um registro e cair fora (durante testes) pode-se deixar o comando EXIT habilitado.
+		exit
+	next
+return
