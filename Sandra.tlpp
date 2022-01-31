@@ -13,7 +13,7 @@
 // --------------------------------------------------------------------------
 user function sandra ()
 	if ! alltrim(upper(cusername)) $ 'SANDRA.SUGARI/ADMINISTRADOR'
-		msgalert ('Nao te conheco, nao gosto de ti e nao vou te deixar continuar. Vai pra casa.', procname ())
+		msgalert ('Nao te conheco e nao vou te deixar continuar. A não ser que role uns bombos!!!.', procname ())
 		return
 	endif
 	if U_Semaforo (procname ()) == 0
