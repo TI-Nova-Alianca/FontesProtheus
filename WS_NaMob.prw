@@ -15,6 +15,7 @@
 // 15/01/2021 - Robert - Acao 'RetTicketCargaSafra' migrada do ws_alianca para ca (preciso acessar das filiais)
 // 12/02/2021 - Robert - Novos parametros metodo ClsAssoc:FechSafra() - GLPI 9318
 // 08/03/2021 - Robert - Novos parametros metodo ClsAssoc:FechSafra (GLPI 9572)
+// 31/01/2022 - Robert - Acao 'RetTicketCargaSafra' removida, pois nao se aplica diretamente a associados.
 //
 
 // ------------------------------------------------------------------------------------------------
@@ -82,8 +83,6 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_NaMob
 				_AsCapSoc ()
 			case _sAcao == 'ConsultaExtratoCCAssoc'
 				_AsExtrCC ()
-			case _sAcao == 'RetTicketCargaSafra'  // Implementado neste web service por que o ws_alianca nao estah publicado na internet.
-				_RTkCarSaf ()
 			otherwise
 				_sErros += "A acao especificada no XML eh invalida: " + _sAcao
 		endcase
@@ -254,7 +253,7 @@ static function _ExtraiTag (_sTag, _lObrig, _lValData)
 return _sRet
 
 
-
+/*
 // --------------------------------------------------------------------------
 // Retorna texto ticket carga safra
 static function _RTkCarSaf ()
@@ -314,3 +313,4 @@ static function _RTkCarSaf ()
 	endif
 	U_Log2 ('info', 'Finalizando ' + procname ())
 Return
+*/

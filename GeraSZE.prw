@@ -91,8 +91,9 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		private _zx509orga    := U_RetZX5 ("09", _sSafra + _sBalanca, 'ZX5_09ORGA')
 	endif
 
-
-	// Define impressora de ticket.
+	// Define impressora de ticket e alimenta as respectivas variaveis (que jah devem ter escopo PRIVATE).
+	U_VA_RusDI (cFilAnt)
+/*
 	do case
 	case _sBalanca == 'LB'
 		_sIdImpr = '11' // LAB SAFRA MATRIZ
@@ -109,7 +110,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 	if ! empty (_sPortTick)
 		_lImpTick = .T.
 	endif
-
+*/
 /*
 	u_log2 ('debug', '_sIdImpr: ' + _sIdImpr)
 	if empty (_sIdImpr)
