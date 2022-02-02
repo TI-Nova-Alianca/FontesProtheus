@@ -13,15 +13,17 @@
 // --------------------------------------------------------------------------
 user function sandra ()
 	if ! alltrim(upper(cusername)) $ 'SANDRA.SUGARI/ADMINISTRADOR'
-		msgalert ('Nao te conheco e nao vou te deixar continuar. A não ser que role uns bombos!!!.', procname ())
+		msgalert ('Nao te conheco e nao vou te deixar continuar. A não ser que role uns bombons!!!.', procname ())
 		return
 	endif
 	if U_Semaforo (procname ()) == 0
 		u_help ('Bloqueio de semaforo na funcao ' + procname (),, .t.)
 	else
+		u_help(" Começou processo!!!")
 		U_UsoRot ('I', procname (), '')
 		processa ({|| _AndaLogo ()})
 		U_UsoRot ('F', procname (), '')
+		u_help(" Finalizou processo!!!")
 	endif
 return
 
@@ -62,6 +64,6 @@ static function _AndaLogo ()
 		msunlock ()
 		
 		// Para executar apenas um registro e cair fora (durante testes) pode-se deixar o comando EXIT habilitado.
-		exit
+		//exit
 	next
 return
