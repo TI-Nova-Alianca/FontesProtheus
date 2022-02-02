@@ -18,7 +18,7 @@
 // Como tem muitas colunas na array, vou usar nomes mais amigaveis.
 #XTranslate .OK        => 1
 #XTranslate .NF        => 2
-#XTranslate .Emissao   => 3
+#XTranslate .DtDigit   => 3
 #XTranslate .NomeFor   => 4
 #XTranslate .ItemNF    => 5
 #XTranslate .LoteFor   => 6
@@ -69,7 +69,7 @@ static function _AndaLogo (_sNF, _sSerie, _sFornece, _sLoja)
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += "select ' '        AS OK,"  // Manter a mesma ordem dos campos que foi definida nos includes XTranslate mais acima
 		_oSQL:_sQuery +=       " D1_DOC     as NotaFiscal," 
-		_oSQL:_sQuery +=       " dbo.VA_DTOC(D1_EMISSAO) as Emissao,"
+		_oSQL:_sQuery +=       " dbo.VA_DTOC(D1_DTDIGIT) as DtDigit,"
 		_oSQL:_sQuery +=       " A2_NOME    as Fornecedor,"
 		_oSQL:_sQuery +=       " D1_ITEM    as Linha,"
 		_oSQL:_sQuery +=       " D1_LOTEFOR as LoteFor,"
@@ -81,7 +81,8 @@ static function _AndaLogo (_sNF, _sSerie, _sFornece, _sLoja)
 		_oSQL:_sQuery +=       " A2_COD     as CodFornec,"
 		_oSQL:_sQuery +=       " A2_LOJA    as Loja,"
 		_oSQL:_sQuery +=       " D1_SERIE   as Serie,"
-		_oSQL:_sQuery +=       " dbo.VA_DTOC (D1_DFABRIC) as DtFabric,"
+	//	_oSQL:_sQuery +=       " dbo.VA_DTOC (D1_DFABRIC) as DtFabric,"
+		_oSQL:_sQuery +=       " dbo.VA_DTOC (B8_DFABRIC) as DtFabric,"
 		_oSQL:_sQuery +=       " dbo.VA_DTOC (B8_DTVALID) as DtValid,"
 		_oSQL:_sQuery +=       " ISNULL (SA5.A5_VAQTPAL, 0),"
 		_oSQL:_sQuery +=       " ISNULL (SA5.A5_CODPRF, ''),"
@@ -157,7 +158,7 @@ static function _AndaLogo (_sNF, _sSerie, _sFornece, _sLoja)
 
 		_aCols = {}
 		aadd (_aCols, {.NF,        'Nota Fiscal',       40, ''})
-		aadd (_aCols, {.Emissao,   'Emissão',           40, ''})
+		aadd (_aCols, {.DtDigit,   'Emissão',           40, ''})
 		aadd (_aCols, {.NomeFor,   'Nome fornecedor',   60, ''})
 	//	aadd (_aCols, {.ItemNF,    'Linha',             30, ''})
 		aadd (_aCols, {.LoteFor,   'Lote Forn.',        40, ''})
