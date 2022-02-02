@@ -4,10 +4,11 @@
 // Descricao..: Retorna almoxarifado a ser usado para integracao com FullWMS, conforme a situacao.
 //
 // Historico de alteracoes:
-// 29/03/2019 - Robert - Criado tratamento para entrada de tipo PI no AX.01.
+// 29/03/2019 - Robert  - Criado tratamento para entrada de tipo PI no AX.01.
+// 01/02/2022 - Claudia - Alterado Entrada de transferencia de outra filial 
+//                        PA de 11 para 91, conforme GLPI:
 //
-
-// --------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 user function AlmFull (_sProduto, _sSituaca)
 	local _aArea := {}
 	local _sRet := ""
@@ -28,7 +29,7 @@ user function AlmFull (_sProduto, _sSituaca)
 				case sb1 -> b1_tipo == 'PA' .and. _sSituaca == 'DV'  // Devolucao de venda
 					_sRet = '91/93'  // Um dos almox eh para quando vai refaturar, outro nao.
 				case sb1 -> b1_tipo == 'PA' .and. _sSituaca == 'TF'  // Entrada de transferencia de outra filial
-					_sRet = '11'
+					_sRet = '91'//_sRet = '11'
 				case sb1 -> b1_tipo == 'ME' .and. _sSituaca == 'NE'  // Entrada por NF
 					_sRet = '22'
 				case sb1 -> b1_tipo == 'ME' .and. _sSituaca == 'TF'  // Entrada de transferencia de outra filial
