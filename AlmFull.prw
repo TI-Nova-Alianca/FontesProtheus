@@ -6,7 +6,7 @@
 // Historico de alteracoes:
 // 29/03/2019 - Robert  - Criado tratamento para entrada de tipo PI no AX.01.
 // 01/02/2022 - Claudia - Alterado Entrada de transferencia de outra filial 
-//                        PA de 11 para 91, conforme GLPI:
+//                        PA de 11 para 91, conforme GLPI: 11577
 //
 // ---------------------------------------------------------------------------------------
 user function AlmFull (_sProduto, _sSituaca)
