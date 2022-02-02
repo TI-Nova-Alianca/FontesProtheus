@@ -34,8 +34,8 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 	_nQtVias := iif (_nQtVias == NIL, 1, _nQtVias)
 	_sModelImp = upper (_sModelImp)
 	
-	u_Log2 ('info', 'Iniciando ' + procname ())
-	u_log2 ('debug', '   Qual ticket......: ' + cvaltochar (_nQual) + "   Porta: " + cvaltochar (_sPorta))
+//	u_Log2 ('info', 'Iniciando ' + procname ())
+//	u_log2 ('debug', '   Qual ticket......: ' + cvaltochar (_nQual) + "   Porta: " + cvaltochar (_sPorta))
 //	u_log2 ('debug', '   Modelo impressora: ' + cvaltochar (_sModelImp))
 
 	if type ("_lImpTick") == "L" .and. ! _lImpTick
@@ -137,7 +137,7 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 			_aAmost = {}
 
 			// Se for uma carga nao conforme, solicita amostra de todas as variedades.
-			U_LOG2 ('debug', 'ZE_SEGREG: ' + sze->ze_segreg + '   ZE_AMOSTRA: ' + SZE -> ZE_AMOSTRA)
+		//	U_LOG2 ('debug', 'ZE_SEGREG: ' + sze->ze_segreg + '   ZE_AMOSTRA: ' + SZE -> ZE_AMOSTRA)
 			if sze->ze_segreg == 'S' .or. SZE -> ZE_AMOSTRA == 'S'  //(type ("_lColAmCar") == 'L' .and. _lColAmCar)
 				for _nItem = 1 to len (_aItens)
 					if ascan (_aAmost, {|_aVal| _aVal [1] == _aItens [_nItem, 1]}) == 0
@@ -225,7 +225,7 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 		_nHdl = fcreate (_sArq, 0)
 		fwrite (_nHdl, _sTicket)
 		fclose (_nHdl)
-		u_log2 ('debug', '   Copiando ticket para a porta ' + alltrim (_sPorta))
+		u_log2 ('debug', '[' + procname () + ']Copiando ticket para a porta ' + alltrim (_sPorta))
 		for _nVia = 1 to _nQtVias
 			copy file (_sArq) to (alltrim (_sPorta))
 		next
