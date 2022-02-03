@@ -10,6 +10,7 @@
 // 30/08/2019 - Claudia - Alterado campo b1_p_brt para b1_pesbru.
 // 02/10/2019 - Claudia - Criação da rotina de impressão de etiquetas de OP na impressora DATAMAX
 // 24/01/2022 - Robert  - Vamos usar etiquetas no AX02, mesmo sem integracao com FullWMS (GLPI 11515).
+// 02/02/2021 - Robert  - Imprime B8_DFABRIC e nao mais D1_DFABRIC como data de fabricacao nas etiq. de NF de entrada.
 //
 
 // ----------------------------------------------------------------
@@ -623,7 +624,8 @@ static function _ImpNF ()
 			_sDataV := DTOC(ctod (''))
 		endif
 					
-		_sDataF := DTOC(SD1->D1_DFABRIC)
+	//	_sDataF := DTOC(SD1->D1_DFABRIC)
+		_sDataF := DTOC(SD1->B8_DFABRIC)
 
 		if _nModelImp == 1  // Impressora Sato
 
