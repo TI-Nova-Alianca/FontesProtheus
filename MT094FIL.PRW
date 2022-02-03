@@ -11,6 +11,7 @@
 // 02/04/2020 - Robert 			- Novo username de Fernando Matana.
 // 17/09/2021 - Robert/Sandra	- Incluso msg 'SEM DEFINIÇÃO DE FILTRO PARA ESSE USUÁRIO, PROGRAMA ' +PROCNAME()) GLPI 10931
 // 17/09/2021 - Robert/Sandra	- Incluso nome do Joel Dossin no filtro. GLPI 10931
+// 03/02/2022 - Sandra          - Ajustes dos acessos conforme GLPI 11585
 //
 
 // --------------------------------------------------------------------------
@@ -19,7 +20,7 @@ USER FUNCTION MT094FIL()
 
 	//Regra para ADMINISTRATIVO
 	DO CASE 
-	CASE alltrim(upper(cusername)) $ 'RITA.CORREA/RODRIGO.COLLEONI'
+	CASE alltrim(upper(cusername)) $ 'RODRIGO.COLLEONI'
 		
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery += " SELECT STRING_AGG(RTRIM(CR_NUM),'/') "
@@ -27,7 +28,7 @@ USER FUNCTION MT094FIL()
 		_oSQL:_sQuery += "		WHERE D_E_L_E_T_ = '' "
 		_oSQL:_sQuery += "		AND CR_FILIAL = '" + xfilial ("SCR") + "'"
 		_oSQL:_sQuery += "		AND CR_USER = '" + __cUserID + "' " 
-		_oSQL:_sQuery += "		AND (substring(CR_CC,3,4) IN ('2009','2010','2011','3001','3002') OR (CR_CC = '' AND CR_TIPOPRO IN ('AI','EP','GG','II','MA','MB','ME','MP','MT','PA','PI','PP','PS','VC','VA','VD','BN','UC'))) "
+		_oSQL:_sQuery += "		AND (substring(CR_CC,3,4) IN ('2009','2010','2011','3001','3002','3003') OR (CR_CC = '' AND CR_TIPOPRO IN ('AI','EP','GG','II','MA','MB','ME','MP','MT','PA','PI','PP','PS','VC','VA','VD','BN','UC','ML','MX','PS','AN','AT','SG','SL'))) "
 		_oSQL:_sQuery += "		AND CR_USERLIB = '' "
 		_sAliasQ = _oSQL:RetQry ()
 		
@@ -60,7 +61,7 @@ USER FUNCTION MT094FIL()
 		_oSQL:_sQuery += "		WHERE D_E_L_E_T_ = '' "
 //		_oSQL:_sQuery += "		AND CR_FILIAL = '" + xfilial ("SCR") + "'"
 		_oSQL:_sQuery += "		AND CR_USER = '" + __cUserID + "' " 
-		_oSQL:_sQuery += "		AND (substring(CR_CC,3,4) IN ('1101','1102','1201','1202','1301','1302','1303','1304','1401','1402','1403','1404','1405','1406','1410','1901','2001','2002','2003','2004','2005','2006','2007','2008','2012','2013','2014','2015','2016','2017','2018','2019','2020','2021','2022','2023','2024','2027','2999') OR (CR_CC= '' AND CR_TIPOPRO IN ('MM','AP','CL','GF','IA','MO','RE'))) "
+		_oSQL:_sQuery += "		AND (substring(CR_CC,3,4) IN ('1101','1102','1201','1202','1301','1302','1303','1304','1401','1402','1403','1404','1405','1406','1410','1901','2001','2002','2003','2004','2005','2006','2007','2008','2012','2013','2014','2015','2016','2017','2018','2019','2020','2021','2022','2023','2024','2027','2999','1408','1409') OR (CR_CC= '' AND CR_TIPOPRO IN ('MM','AP','CL','GF','IA','MO','RE','SM','SP','MC'))) "
 		_oSQL:_sQuery += "		AND CR_USERLIB = '' "
 		_sAliasQ = _oSQL:RetQry ()
 		
