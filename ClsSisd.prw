@@ -135,23 +135,29 @@ METHOD ValProd () Class ClsSisd
 		if empty (::Especie)
 			aadd (::Erros, "Especie no Sisdeclara (campo '" + alltrim (RetTitle ("B5_VAEPSIS")) + "') deve ser informado quando o produto for considerado no Sisdeclara.")
 		endif
-		if ! ::Tipo $ '01/02/03/05/12/13/31/32/33/35/51/52' .and. ::Especie != '000-0'
+//		if ! ::Tipo $ '01/02/03/05/12/13/31/32/33/35/51/52' .and. ::Especie != '000-0'
+		if ! alltrim (::Tipo) $ '01/02/03/05/12/13/31/32/33/35/51/52' .and. ::Especie != '000-0'
 			aadd (::Erros, "Especie (campo '" + alltrim (RetTitle ("B5_VAEPSIS")) + "') nao deve ser informada para produtos do tipo '" + ::Tipo + "' (campo '" + alltrim (RetTitle ("B5_VACPSIS")) + "').")
 		endif
-		if ::Tipo $ '01/02/03/05/12/13/31/32/33/35/51/52' .and. ::Especie == '000-0'
+//		if ::Tipo $ '01/02/03/05/12/13/31/32/33/35/51/52' .and. ::Especie == '000-0'
+		if alltrim (::Tipo) $ '01/02/03/05/12/13/31/32/33/35/51/52' .and. ::Especie == '000-0'
 			aadd (::Erros, "Especie (campo '" + alltrim (RetTitle ("B5_VAEPSIS")) + "') deve ser informada para produtos do tipo '" + ::Tipo + "' (campo '" + alltrim (RetTitle ("B5_VACPSIS")) + "').")
 		endif
 
-		if ::Tipo $ '01/' .and. ::Percent == 0
+//		if ::Tipo $ '01/' .and. ::Percent == 0
+		if alltrim (::Tipo) $ '01/' .and. ::Percent == 0
 			aadd (::Erros, "Percentual (campo '" + alltrim (RetTitle ("B5_VAPPSIS")) + "') deve ser informado para produtos do tipo '" + ::Tipo + "' (campo '" + alltrim (RetTitle ("B5_VACPSIS")) + "').")
 		endif
-		if ::Tipo $ '08' .and. ::Classe == '11' .and. ::Percent == 0
+//		if ::Tipo $ '08' .and. ::Classe == '11' .and. ::Percent == 0
+		if alltrim (::Tipo) $ '08' .and. ::Classe == '11' .and. ::Percent == 0
 	 		aadd (::Erros, "Suco concentrado: o brix deve ser informado no campo '" + alltrim (RetTitle ("B5_VAPPSIS")) + "').")
 		endif
-		if ::Tipo $ '01/02/03/12/13/31/32/33/35/51/52' .and. ::Percent == 0
+//		if ::Tipo $ '01/02/03/12/13/31/32/33/35/51/52' .and. ::Percent == 0
+		if alltrim (::Tipo) $ '01/02/03/12/13/31/32/33/35/51/52' .and. ::Percent == 0
 	 		aadd (::Erros, "Percentual (campo '" + alltrim (RetTitle ("B5_VAPPSIS")) + "') deve ser informado para produtos do tipo '" + ::Tipo + "' (campo '" + alltrim (RetTitle ("B5_VACPSIS")) + "').")
 		endif
-		if ! ::Tipo $ '01/02/03/08/12/13/31/32/33/35/51/52' .and. ::Percent > 0
+//		if ! ::Tipo $ '01/02/03/08/12/13/31/32/33/35/51/52' .and. ::Percent > 0
+		if ! alltrim (::Tipo) $ '01/02/03/08/12/13/31/32/33/35/51/52' .and. ::Percent > 0
 	 		aadd (::Erros, "Percentual (campo '" + alltrim (RetTitle ("B5_VAPPSIS")) + "') nao deve ser informado para produtos do tipo '" + ::Tipo + "' (campo '" + alltrim (RetTitle ("B5_VACPSIS")) + "').")
 		endif
 		if left (::Especie, 3) == '150' .and. ::Percent != 100
@@ -159,32 +165,40 @@ METHOD ValProd () Class ClsSisd
 		endif
 		
 		// Validacoes de cor.
-		if ! empty (::Cor) .and. ::Tipo $ '19/22/23/24/25/30/34/36/37/40/49/50/53/99'
+//		if ! empty (::Cor) .and. ::Tipo $ '19/22/23/24/25/30/34/36/37/40/49/50/53/99'
+		if ! empty (::Cor) .and. alltrim (::Tipo) $ '19/22/23/24/25/30/34/36/37/40/49/50/53/99'
 			aadd (::Erros, "Cor NAO deve ser informada no campo '" + alltrim (RetTitle ("B1_VACOR")) + "' do cadastro de produtos, quando tipo de produto no Sisdeclara = '" + ::Tipo + "'.")
 		endif
-		if ::Tipo $ '31/33' .and. ! ::Cor $ 'B/R'
+//		if ::Tipo $ '31/33' .and. ! ::Cor $ 'B/R'
+		if alltrim (::Tipo) $ '31/33' .and. ! ::Cor $ 'B/R'
 			aadd (::Erros, "Cor deve ser 'branco' ou 'rosado' no campo '" + alltrim (RetTitle ("B1_VACOR")) + "' do cadastro de produtos, quando tipo de produto no Sisdeclara = '" + ::Tipo + "'.")
 		endif
-		if empty (::Cor) .and. ::Tipo $ '01/02/03/04/05/06/07/08/09/12/13/14/15/16/17/18/28/29/32/35/41/42/43/44/45/46/47/48/51/52'
+//		if empty (::Cor) .and. ::Tipo $ '01/02/03/04/05/06/07/08/09/12/13/14/15/16/17/18/28/29/32/35/41/42/43/44/45/46/47/48/51/52'
+		if empty (::Cor) .and. alltrim (::Tipo) $ '01/02/03/04/05/06/07/08/09/12/13/14/15/16/17/18/28/29/32/35/41/42/43/44/45/46/47/48/51/52'
 			aadd (::Erros, "Cor (campo '" + alltrim (RetTitle ("B1_VACOR")) + "' do cadastro de produtos) deve ser informada para produtos do tipo '" + ::Tipo + "'.")
 		endif
 		//if ::Tipo $ '25/30/36/37/40/41'
 		//	aadd (::Avisos, "Provavel inconsistencia entre tipo de produto (campo '" + alltrim (RetTitle ("B5_VATPSIS")) + "') e cor (campo '" + alltrim (RetTitle ("B1_VACOR")) + "'). Verifique possiveis erros no validador do SIsdeclara.")
 		//endif
 		
-		if ::Tipo == '12' .and. ::Classe != '12'  // Mosto
+//		if ::Tipo == '12' .and. ::Classe != '12'  // Mosto
+		if alltrim (::Tipo) == '12' .and. ::Classe != '12'  // Mosto
 			aadd (::Erros, "Classe no Sisdeclara deve ser '12' no campo '" + alltrim (RetTitle ("B5_VACPSIS")) + "' quando tipo = '" + ::Tipo + "'.")
 		endif
-		if ::Tipo == '31' .and. ::Classe != '07'  // Moscatel
+//		if ::Tipo == '31' .and. ::Classe != '07'  // Moscatel
+		if alltrim (::Tipo) == '31' .and. ::Classe != '07'  // Moscatel
 			aadd (::Erros, "Classe no Sisdeclara deve ser '07' no campo '" + alltrim (RetTitle ("B5_VACPSIS")) + "' quando tipo = '" + ::Tipo + "'.")
 		endif
-		if ::Tipo $ '01/08' .and. val (::Classe) == 0
+//		if ::Tipo $ '01/08' .and. val (::Classe) == 0
+		if (::Tipo) $ '01/08' .and. val (::Classe) == 0
 			aadd (::Erros, "Classe no Sisdeclara deve ser informada no campo '" + alltrim (RetTitle ("B5_VACPSIS")) + "' quando tipo = '" + ::Tipo + "'.")
 		endif
-		if ::Classe == '12' .and. ! ::Tipo $ '12/13'  // Mosto
+//		if ::Classe == '12' .and. ! ::Tipo $ '12/13'  // Mosto
+		if ::Classe == '12' .and. ! alltrim (::Tipo) $ '12/13'  // Mosto
 			aadd (::Erros, "Tipo de produto para Sisdeclara (campo '" + alltrim (RetTitle ("B5_VATPSIS")) + "') incoerente com a classe '12' (mosto).")
 		endif
-		if ::Tipo $ '07/14/16/17/18/19/20/22/23/24/25/28/30/34/36/37/40/41/42/43/44/45/46/47/48/49/50/53/99' .and. ::Classe != '00'
+//		if ::Tipo $ '07/14/16/17/18/19/20/22/23/24/25/28/30/34/36/37/40/41/42/43/44/45/46/47/48/49/50/53/99' .and. ::Classe != '00'
+		if alltrim (::Tipo) $ '07/14/16/17/18/19/20/22/23/24/25/28/30/34/36/37/40/41/42/43/44/45/46/47/48/49/50/53/99' .and. ::Classe != '00'
 			aadd (::Erros, "Classe (campo '" + alltrim (RetTitle ("B5_VACPSIS")) + "') nao deve ser informada para produtos do tipo '" + ::Tipo + "' (campo '" + alltrim (RetTitle ("B5_VACPSIS")) + "').")
 		endif
 		if empty (::Embalagem) .or. ::Embalagem == '99'
