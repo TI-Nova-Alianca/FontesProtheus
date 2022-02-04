@@ -4,6 +4,13 @@
 // Funcao..: PE 'Linha OK' na manutencao de pedidos de compra / autorizacoes de entrega.
 //           Criado inicialmente para validacoes ref. obra Flores da Cunha.
 //
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         # PE 'Linha OK' na manutencao de pedidos de compra
+// #PalavasChave      #compras #pedido_de_compras #ponto_de_entrada 
+// #TabelasPrincipais #SA5
+// #Modulos   		  #COM 
+//
 // Historico de alteracoes:
 // 06/09/2012 - Robert  - Considerava duas vezes o item atual na verificacao de saldos PIF.
 // 03/12/2015 - Robert  - Validacoes de CC com campo B1_VARATEI.
