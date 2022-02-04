@@ -6,14 +6,15 @@
 // Historico de alteracoes:
 // 05/03/2019 - Andre   - Acrescentado Peso nas etiquetas de O.P
 // 15/08/2019 - Robert  - Imprime B1_CODBAR e nao mais B1_VADUNCX no codigo de barras do produto.
-// 22/08/2019 - Robert  - Se o produto nao controla via FullWMS, imprimia o cod.do produto nas barras. Agora nao vai imprimir nada.
+// 22/08/2019 - Robert  - Se o produto nao controla via FullWMS, imprimia o cod.do produto nas barras. 
+//                        Agora nao vai imprimir nada.
 // 30/08/2019 - Claudia - Alterado campo b1_p_brt para b1_pesbru.
 // 02/10/2019 - Claudia - Criação da rotina de impressão de etiquetas de OP na impressora DATAMAX
 // 24/01/2022 - Robert  - Vamos usar etiquetas no AX02, mesmo sem integracao com FullWMS (GLPI 11515).
-// 02/02/2021 - Robert  - Imprime B8_DFABRIC e nao mais D1_DFABRIC como data de fabricacao nas etiq. de NF de entrada.
+// 02/02/2022 - Robert  - Imprime B8_DFABRIC e nao mais D1_DFABRIC como data de fabricacao nas etiq. de NF de entrada.
+// 03/02/2022 - Claudia - Ajustada linha 628 de DTOC(SD1->B8_DFABRIC) para DTOC(SB8->B8_DFABRIC)
 //
-
-// ----------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------
 user function ImpZA1 (_sCodigo, _sIdImpr)
 	local _aAreaAnt   := U_ML_SRArea ()
 	local _lContinua  := .T.
@@ -625,7 +626,7 @@ static function _ImpNF ()
 		endif
 					
 	//	_sDataF := DTOC(SD1->D1_DFABRIC)
-		_sDataF := DTOC(SD1->B8_DFABRIC)
+		_sDataF := DTOC(SB8->B8_DFABRIC)
 
 		if _nModelImp == 1  // Impressora Sato
 
