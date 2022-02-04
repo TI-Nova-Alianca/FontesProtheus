@@ -1821,8 +1821,8 @@ Static Function _PedidosBloq()
 	local _aItem    := {}
 	local _x        := 0
 	local _y        := 0
-
-	u_logIni ()
+	
+//	u_logIni ()
 
 	_oSQL := ClsSQL():New ()  
 	_oSQL:_sQuery := ""		
@@ -1960,7 +1960,7 @@ Static Function _PedidosBloq()
 	u_log2 ('info', _XmlRet)
 
 	_sMsgRetWS := _XmlRet
-	u_logFim ()
+//	u_logFim ()
 Return
 //
 // --------------------------------------------------------------------------
