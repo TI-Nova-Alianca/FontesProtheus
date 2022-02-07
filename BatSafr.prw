@@ -51,12 +51,12 @@ user function BatSafr (_sQueFazer, _lAjustar)
 
 	// Como esta funcao faz diversas tarefas, vou gerar log em arquivos separados.
 	_sArqLgOld = _sArqLog
-	_sArqLog2 = procname () + '_opcao' + _sQueFazer + '_' + alltrim (cUserName) + "_" + dtos (date ()) + ".log"
+	_sArqLog2 = procname () + '_' + _sQueFazer + '_' + alltrim (cUserName) + "_" + dtos (date ()) + ".log"
 	u_log2 ('info', 'Log da thread ' + cValToChar (ThreadID ()) + ' prossegue em outro arquivo: ' + _sArqLog2)
 	_sArqLog = _sArqLog2
 
 	// Procura cargas sem contranota.
-	if _sQueFazer == '1'
+	if _sQueFazer == 'CargasSemContranota'  //'1'
 		_aSemNota = {}
 		dbselectarea ("SZE")
 //		set filter to &('ZE_FILIAL=="' + xFilial("SZE") + '".And.ze_safra=="'+cvaltochar (year (date ()))+'".and.ze_coop$"000021".and.empty(ze_nfger).and.dtos(ze_data)<"' + dtos (ddatabase) + '".and.ze_aglutin!="O".and.ze_assoc!="003114"')
@@ -89,11 +89,12 @@ user function BatSafr (_sQueFazer, _lAjustar)
 	// Verifica composicao das parcelas das notas. Em 2021 jah estamos fazendo 'compra' durante a safra.
 	// Como as primeiras notas sairam erradas, optei por fazer esta rotina de novo a identifica-las
 	// e manter monitoramento.
-	elseif _sQueFazer == '3' .and. year (date ()) >= 2021
+//	elseif _sQueFazer == '3' .and. year (date ()) >= 2021
+	elseif _sQueFazer == 'ConferirParcelamento' .and. year (date ()) >= 2021
 		_ConfParc (_lAjustar)
 
 	// Verifica contranotas "sem carga". Isso indica possivel problema nas amarracoes entre tabelas.
-	elseif _sQueFazer == '4'
+	elseif _sQueFazer == 'ContranotasSemCarga'  //'4'
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " SELECT DISTINCT 'Filial:' + FILIAL + ' Assoc:' + ASSOCIADO + '-' + RTRIM (NOME_ASSOC) + ' Contranota:' + DOC"
@@ -116,26 +117,29 @@ user function BatSafr (_sQueFazer, _lAjustar)
 		endif
 
 	// Verifica frete
-	elseif _sQueFazer == '5'
+	elseif _sQueFazer == 'ConferirFrete' //'5'
 		_ConfFrt ()
 	
 	// Envia e-mail de acompanhamento de totais de safra
-	elseif _sQueFazer == '6'
+	elseif _sQueFazer == 'MailAcompanhamento' //'6'
 		_MailAcomp ()
 	
 	// Gera titulos na conta corrente referentes as notas de compra (a partir de 2021 geramos direto como compra) - GLPI 9592
 	// Esses titulos nao sao gerados no momento de emissao da contranota por que fica muito demorado.
-	elseif _sQueFazer == '7'
+	elseif _sQueFazer == 'GerarSZI'  //'7'
 		_GeraSZI ()
 
 	// Confere conta corrente (SZI) x titulos referentes as notas de compra (a partir de 2021 geramos direto como compra) - GLPI 9592
-	elseif _sQueFazer == '8'
+	elseif _sQueFazer == 'ConferirSZI' //'8'
 		_ConfSZI ()
 
 	// Transfere (das filiais para a matriz) os titulos de nao associados.
-	elseif _sQueFazer == '9'
+	elseif _sQueFazer == 'TransfTitNaoAssocParaMatriz'  //'9'
 		_TransFil ()
 	
+	elseif _sQueFazer == 'TransfSZIParaMatriz' //'8'
+		_TrSZIMat ()
+
 	else
 		u_help ("Sem definicao para o que fazer quando parametro = '" + _sQueFazer + "'.",, .T.)
 		//_oBatch:Retorno += "Sem definicao para verificacao '" + _sQueFazer + "'."
@@ -368,7 +372,7 @@ return
 // --------------------------------------------------------------------------
 static function _MailAcomp ()
 	local _sMsg   := ""
-	local _sDest  := ""
+//	local _sDest  := ""
 	local _oSQL   := NIL
 	local _sSafra := U_IniSafra ()
 	local _aCols  := {}
@@ -588,7 +592,7 @@ static function _GeraSZI ()
 					_oCtaCorr:FilDest = '01'
 					U_Log2 ('info', 'Solicitando transferencia do saldo deste movimento para a matriz.')
 					if ! _oCtaCorr:TransFil (_oCtaCorr:DtMovto)
-						u_help ("A transferencia para outra filial nao foi possivel. " + _oCtaCorrT:UltMsg,, .T.)
+						u_help ("A transferencia para outra filial nao foi possivel. " + _oCtaCorr:UltMsg,, .T.)
 					endif
 				endif
 			endif
@@ -898,5 +902,70 @@ static function _TransFil ()
 			(_sAliasQ) -> (dbskip ())
 		enddo
 	endif
+	U_Log2 ('info', 'Finalizando ' + procname ())
+return
+
+
+
+// --------------------------------------------------------------------------
+// Transfere para a matriz os registros do SZI que ainda tiverem saldo.
+// Teoricamente isso jah foi feito quando o SZI foi gerado, mas pode ter sobrado alguma coisa.
+static function _TrSZIMat ()
+	local _oSQL      := NIL
+	local _aRegSZI   := {}
+	local _nRegSZI   := 0
+	local _sSafrComp := strzero (year (dDataBase), 4)
+	local _oCtaCorr  := NIL
+
+	U_Log2 ('info', 'Iniciando ' + procname ())
+	if cFilAnt == '01'
+		U_Log2 ('aviso', 'Nao ha necessidade de executar esta rotina na matriz.')
+	else
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT SZI.R_E_C_N_O_"
+		_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2, "
+		_oSQL:_sQuery +=              RetSQLName ("SZI") + " SZI "
+		_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '" + xfilial ("SE2") + "'"
+		_oSQL:_sQuery +=    " AND SE2.E2_FILIAL != '01'"  // Nao adianta olhar na matriz
+		
+		// Nao quero pegar as de hoje para evitar transferir enquanto tem alguem gerando contranota, ou o outro batch gerando SZI.
+		_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO < '" + dtos (date () - 1) + "'"
+		
+		_oSQL:_sQuery +=    " AND SZI.ZI_FILIAL  = SE2.E2_FILIAL"
+		_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC   = SE2.E2_FORNECE"
+		_oSQL:_sQuery +=    " AND SZI.ZI_LOJASSO = SE2.E2_LOJA"
+		_oSQL:_sQuery +=    " AND SZI.ZI_SERIE   = SE2.E2_PREFIXO"
+		_oSQL:_sQuery +=    " AND SZI.ZI_DOC     = SE2.E2_NUM"
+		_oSQL:_sQuery +=    " AND SZI.ZI_PARCELA = SE2.E2_PARCELA"
+		_oSQL:_sQuery +=    " AND SZI.ZI_TM      = '13'"
+		_oSQL:_sQuery +=    " AND SZI.ZI_SALDO   > 0"
+		_oSQL:_sQuery +=    " AND EXISTS (SELECT *"  // Precisa ser nota de safra
+		_oSQL:_sQuery +=                  " FROM VA_VNOTAS_SAFRA V"
+		_oSQL:_sQuery +=                 " WHERE V.SAFRA       = '" + _sSafrComp + "'"
+		_oSQL:_sQuery +=                   " AND V.FILIAL      = SE2.E2_FILIAL"
+		_oSQL:_sQuery +=                   " AND V.ASSOCIADO   = SE2.E2_FORNECE"
+		_oSQL:_sQuery +=                   " AND V.LOJA_ASSOC  = SE2.E2_LOJA"
+		_oSQL:_sQuery +=                   " AND V.SERIE       = SE2.E2_PREFIXO"
+		_oSQL:_sQuery +=                   " AND V.DOC         = SE2.E2_NUM"
+		_oSQL:_sQuery +=                   " AND V.TIPO_NF     IN ('C', 'V')"
+		_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC = 'ASSOCIADO'"
+		_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC = 'ASSOCIADO')"
+		_oSQL:_sQuery +=  " ORDER BY SE2.E2_FORNECE, SE2.E2_LOJA, SE2.E2_NUM, SE2.E2_PREFIXO, SE2.E2_PARCELA"
+		_oSQL:Log ()
+		_aRegSZI = _oSQL:Qry2Array (.f., .f.)
+		procregua (len (_aRegSZI))
+		for _nRegSZI = 1 to len (_aRegSZI)
+			_oCtaCorr := ClsCtaCorr():New (_aRegSZI [_nRegSZI, 1])
+			_oCtaCorr:FilDest = '01'
+			U_Log2 ('info', 'Solicitando transferencia do saldo do docto ' + _oCtaCorr:Doc + '/' + _oCtaCorr:Parcela + ' para a matriz.')
+			if ! _oCtaCorr:TransFil (_oCtaCorr:DtMovto)
+				u_help ("A transferencia para outra filial nao foi possivel. " + _oCtaCorr:UltMsg,, .T.)
+			endif
+			FreeObj (_oCtaCorr)
+		next
+	endif
+
 	U_Log2 ('info', 'Finalizando ' + procname ())
 return
