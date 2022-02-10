@@ -106,7 +106,8 @@
 // 17/05/2021 - Robert  - Nas parcelas de safra, se o ano+mes previsto jah passou (ocorre por exemplo quando gera-se nota de complemento de preco apos a safra), nao adianta gerar com data retroativa (GLPI 9891)
 // 13/09/2021 - Claudia - Tratamento para A1_INSCR. GLPI: 10797
 // 08/10/2021 - Robert  - Desabilitados alguns logs desnecessarios.
-// 08/01/2022 - Robert  - Tratamento para campo A2_VAAGE05 (associados que naoo devem receber FUNRURAL)
+// 08/01/2022 - Robert  - Tratamento para campo A2_VAAGE05 (associados que nao devem receber FUNRURAL)
+// 09/02/2022 - Robert  - Na validacao de NF de produtor jah apresentada, olhava a nota contra ela mesma (no caso estaria na rotina de 'classificar').
 //
 
 // ------------------------------------------------------------------------------------------------------------------------------
@@ -727,6 +728,10 @@ static function _DadosAdic ()
 				_oSQL:_sQuery +=    " AND F1_LOJA    = '" + sf1 -> f1_loja + "'"
 				_oSQL:_sQuery +=    " AND F1_VANFPRO = '" + _sNPRODU + "'"
 				_oSQL:_sQuery +=    " AND F1_VASEPRO = '" + _sSNPRODU + "'"
+				
+				// Nao adianta validar a nota contra ela mesma (no caso estaria na rotina de 'classificar'.
+				_oSQL:_sQuery +=    " AND NOT (F1_DOC   = '" + sf1 -> f1_doc + "'"
+				_oSQL:_sQuery +=         " AND F1_SERIE = '" + sf1 -> f1_serie + "')"
 				if empty (_oSQL:RetQry ())
 					exit
 				else
