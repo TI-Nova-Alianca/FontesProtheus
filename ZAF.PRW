@@ -20,7 +20,9 @@
 // 31/03/2021 - Robert  - Alteracao logs.
 // 06/12/2021 - Robert  - Pequena melhoria nos logs de laudos para fazer merge.
 // 19/01/2022 - Claudia - Incluido novos campos de brix e solidos. GLPI: 11490
+// 09/02/2022 - Robert  - Passa a validar acessos de alteracao cfe. grupo 133 do ZZU.
 //
+
 // ----------------------------------------------------------------------------------------------------------
 User Function ZAF ()
 	local _aCores      := U_ZAFLG (.T.)
@@ -31,10 +33,12 @@ User Function ZAF ()
 	// Menu principal
 	aadd (aRotina, {"&Pesquisar",      "AxPesqui",      				0, 1})
 	aadd (aRotina, {"&Visualizar",     "AxVisual",      				0, 2})
-	aadd (aRotina, {"&Incluir",        "U_ZAFI",        				0, 3})
-	aadd (aRotina, {"&Alterar",        "U_ZAFA",        				0, 4})
-	aadd (aRotina, {"&Excluir",        "U_ZAFE",        				0, 5})
-	aadd (aRotina, {"&Imprime Laudo",  "U_VARCOOP01(ZAF->ZAF_ENSAIO)", 	0, 4})
+	if u_zzuvl ('133', __cUserId, .f.)
+		aadd (aRotina, {"&Incluir",        "U_ZAFI",        				0, 3})
+		aadd (aRotina, {"&Alterar",        "U_ZAFA",        				0, 4})
+		aadd (aRotina, {"&Excluir",        "U_ZAFE",        				0, 5})
+		aadd (aRotina, {"&Imprime Laudo",  "U_VARCOOP01(ZAF->ZAF_ENSAIO)", 	0, 4})
+	endif
 	aadd (aRotina, {"&Legenda",        "U_ZAFLG (.F.)",       			0, 5})
 
 	DbSelectArea(cString)
