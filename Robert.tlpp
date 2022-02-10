@@ -20,8 +20,8 @@
 // https://tdn.totvs.com/display/tec/SQLite+-+Como+fazer+backup+dos+arquivos+.db
 // https://centraldeatendimento.totvs.com/hc/pt-br/articles/360021146311-MP-ADVPL-SETPRINT-VIA-JOB-O-usu%C3%A1rio-possui-restri%C3%A7%C3%A3o-de-hor%C3%A1rio-de-acesso
 // depurar mais de uma thread: https://devforum.totvs.com.br/1066-debugar-multiplas-threads-no-vscode
-	// Linguagem TL++: https://tdn.totvs.com/pages/viewpage.action?pageId=334340072
-	// local varJson := { "teste" : { "var1" : "oioi", "var2": "oioi2", "var3": "oioi3" }}  https://tdn.totvs.com/display/tec/Json
+// Linguagem TL++: https://tdn.totvs.com/pages/viewpage.action?pageId=334340072
+// local varJson := { "teste" : { "var1" : "oioi", "var2": "oioi2", "var3": "oioi3" }}  https://tdn.totvs.com/display/tec/Json
 
 #include "protheus.ch"
 //#include "rwmake.ch"
@@ -32,7 +32,7 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '01' modulo 'FIN'
+		prepare environment empresa '01' filial '07' modulo 'FIN'
 		private cModulo   := 'FIN'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -91,36 +91,20 @@ static function _AndaLogo ()
 	incproc ()
 	u_help ('Nada definido.')
 return
-
 /*
-	// Testes arvore de rastreabilidade
-	private _aLtXLS58 := {}  // Deixar PRIVATE para ser alimentada pelo U_RastLT().
-	_sMapa := U_RastLT (cFilAnt, U_TamFixo ('2203', 15, ' '), '12074301', 0, NIL)
-	_sArq := 'c:\temp\rast.mm'
-	delete file (_sArq)
-	if file (_sArq)
-		_nHdl = fopen(_sArq, 1)
-	else
-		_nHdl = fcreate(_sArq, 0)
-	endif
-	fwrite (_nHdl, _sMapa)
-	fclose (_nHdl)
-	ShellExecute ("Open", _sArq, "", "", 1)
-	u_log (_aLtXLS58)
-return
-
 // Testes batches em geral
 //	_sArqLog := 'U_BatCompAssoc_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batCompAssoc ()
-//	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batsafr ('1')  // cargas sem contranota
-//	u_batsafr ('3')  // conferencia geracao das parcelas financeiro
-//	u_batsafr ('4')  // contranotas sem carga
-//	u_batsafr ('5')  // conferencia fretes
-//	u_batsafr ('6')  // e-mail diario de acompanhamento de safra
-//	u_batsafr ('7')  // gera SZI a partir das parcelas
-//	u_batsafr ('8')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
-//	u_batsafr ('9')  // Transfere (das filiais para a matriz) os titulos de nao associados.
+	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batsafr ('CargasSemContranota')  // cargas sem contranota
+	u_batsafr ('ConferirParcelamento')  // conferencia geracao das parcelas financeiro
+//	u_batsafr ('ContranotasSemCarga')  // contranotas sem carga
+//	u_batsafr ('ConferirFrete')  // conferencia fretes
+//	u_batsafr ('MailAcompanhamento')  // e-mail diario de acompanhamento de safra
+//	u_batsafr ('GerarSZI')  // gera SZI a partir das parcelas
+//	u_batsafr ('ConferirSZI')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
+//	u_batsafr ('TransfTitNaoAssocParaMatriz')  // Transfere (das filiais para a matriz) os titulos de nao associados.
+//	u_batsafr ('TransfSZIParaMatriz')  // Transfere SZI para a matriz (normalmente ao gerar o SZI jah faz isso, mas para garantir...)
 //	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batocor ()
 //	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
@@ -140,6 +124,92 @@ return
 //	u_log2 ('info', _oBatch:Mensagens)
 //	_sArqLog := 'U_BatXML_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	U_BatXML("\\192.168.1.3\Siga\Protheus12\protheus_data\xml_NFe\", 1, .F.)
+return
+*/
+/*
+	// Testes gravacao ElasticSearch - https://tdn.totvs.com/display/framework/FWRest
+	oRestClient := NIL
+ 	oRestClient := FWRest():New("http://192.168.1.2:9200")
+	oRestClient:setPath("/robert2/elasticsearch")
+	_aHeadStr := {}
+	aadd (_aHeadStr, 'ContentType: application/json')
+	_sParPost := '{"aplicacao":"teste_local", "usr":"robert.koch"}'
+	oRestClient:SetPostParams(_sParPost)
+	if oRestClient:Post(_aHeadStr)
+		U_Log2 ('info', oRestClient:GetResult())
+	else
+		U_Log2 ('erro', oRestClient:GetLastError())
+	endif
+return
+*/
+/*
+	// Tentativa de encher a memoria do servico
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "SELECT TOP 1000 * FROM SD1010"
+	_a1 := aclone (_oSQL:Qry2Array ())
+	_a2 := {}
+	do while .t.
+		// pior que sobe a memoria mesmo!!! aadd (_a2, aclone (_a1))
+		sleep (1000)
+		u_log2 ('debug', cvaltochar (len (_a2)))
+	enddo
+return
+*/
+/*
+	// Gera arq. Sisdeclara.
+	cPerg := "ML_DEC"
+	U_GravaSX1 (cPerg, "01", stod ("20220101"))
+	U_GravaSX1 (cPerg, "02", stod ("20220131"))
+	U_GravaSX1 (cPerg, "03", 1)  // 1=mov.mensal;2=entradas uvas
+	U_GravaSX1 (cPerg, "04", 'teste robert')
+	U_GravaSX1 (cPerg, "05", '????????')  // '05404198' = Hugo    '05403148' = Flavio
+	U_GravaSX1 (cPerg, "06", 'c:\temp\sisdeclara' + cFilAnt + '.txt')
+	U_GravaSX1 (cPerg, "07", 'robert.koch@novaalianca.coop.br')
+	U_GravaSX1 (cPerg, "08", 2)  // Gera arq conferencia (s/n)
+	U_GravaSX1 (cPerg, "09", 2)  // Exporta guias? (s/n)
+	U_GravaSX1 (cPerg, "10", '11422401/11128701')  // Lotes de PA a ignorar
+	U_ML_DEC (.t.)
+return
+*/
+/*
+	// Ajusta cadastro de representantes em lote
+	sa3 -> (dbsetorder (1))
+	sa3 -> (dbgotop ())
+	do while ! sa3 -> (eof ())
+		if sa3 -> a3_ativo == 'S' .and. sa3 -> a3_indeniz == 'S'
+			u_log2 ('info', 'Verificando codigo ' + sa3 -> a3_cod)
+				
+			// Cria variaveis para uso na gravacao do evento de alteracao
+			regtomemory ("SA3", .F., .F.)
+			m->A3_INDENIZ = 'N'
+
+			// Grava evento de alteracao
+			_oEvento := ClsEvent():new ()
+			_oEvento:AltCadast ("SA3", m->a3_cod, sa3 -> (recno ()), 'GLPI 11583 - Desab. 1/12 comissao', .F.)
+
+			reclock ("SA3", .f.)
+			sa3->A3_indeniz = m->A3_INDENIZ
+			msunlock ()
+		endif
+		sa3 -> (dbskip ())
+	enddo
+return
+*/
+/*
+	// Testes arvore de rastreabilidade
+	private _aLtXLS58 := {}  // Deixar PRIVATE para ser alimentada pelo U_RastLT().
+	_sMapa := U_RastLT (cFilAnt, U_TamFixo ('2203', 15, ' '), '12074301', 0, NIL)
+	_sArq := 'c:\temp\rast.mm'
+	delete file (_sArq)
+	if file (_sArq)
+		_nHdl = fopen(_sArq, 1)
+	else
+		_nHdl = fcreate(_sArq, 0)
+	endif
+	fwrite (_nHdl, _sMapa)
+	fclose (_nHdl)
+	ShellExecute ("Open", _sArq, "", "", 1)
+	u_log (_aLtXLS58)
 return
 */
 /*
@@ -858,22 +928,6 @@ return
 	u_szi_cm2 (.t.)
 	U_GravaSX1 ("SZI_CM2", '01', 1)  // Calcular / Descalcular {"Calcular", "Descalcular"}
 	u_szi_cm2 (.t.)
-return
-*/
-/*
-	// Gera arq. Sisdeclara.
-	cPerg := "ML_DEC"
-	U_GravaSX1 (cPerg, "01", stod ("20210701"))
-	U_GravaSX1 (cPerg, "02", stod ("20210701"))
-	U_GravaSX1 (cPerg, "03", 1)  // 1=mov.mensal;2=entradas uvas
-	U_GravaSX1 (cPerg, "04", 'ALCEU DALLEMOLLE')
-	U_GravaSX1 (cPerg, "05", '????????')  // '05404198' = Hugo    '05403148' = Flavio
-	U_GravaSX1 (cPerg, "06", 'c:\temp\sisdeclara' + cFilAnt + '.txt')
-	U_GravaSX1 (cPerg, "07", 'robert.koch@novaalianca.coop.br')
-	U_GravaSX1 (cPerg, "08", 2)  // Gera arq conferencia (s/n)
-	U_GravaSX1 (cPerg, "09", 2)  // Exporta guias? (s/n)
-	U_GravaSX1 (cPerg, "10", '11422401/11128701')  // Lotes de PA a ignorar
-	U_ML_DEC (.t.)
 return
 */
 /*	// Teste inclusao de PA

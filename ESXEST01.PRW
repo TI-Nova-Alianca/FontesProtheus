@@ -380,6 +380,7 @@ Static Function _esxest01a ()
 				U_Log2 ('debug', 'CC ' + _aCC [_nCC, .CCCodigo] + ' vai gerar valores por OP de safra')
 				// Como no inicio deste processo (final de 2020/inicio de 2021) estamos gerando retroativo
 				// para testes e as OPs de safra nao tinham mao de obra, gero registros, caso nao existam.
+				// Para ser honesto, acho que acabarei gerando essa mao de obra sempre automaticamente...
 				_VerMOSaf (_aCC [_nCC, .CCCodigo], _aOPSafra, _sChaveSD3)
 
 			// Para casos de apropriacoes 'por item' significa que sao CC que nao possuem requisicao
@@ -467,7 +468,7 @@ Return
 //
 // --------------------------------------------------------------------------
 // No momento em que estou implementando esta rotina, queremos aplicar retroativamente para jan/2020
-// e sei que naquela safra nao havia mao de obra nas OP de safra. ntao implementei essa verificacao
+// e sei que naquela safra nao havia mao de obra nas OP de safra. Entao implementei essa verificacao
 // jah com a funcionalidade de incluir um registro de requisicao de MMM. A intencao, depois, eh ter
 // essas MMM jah na estrutura das OP de safra.
 static function _VerMOSaf (_sCC, _aOP, _sChaveSD3)
@@ -508,6 +509,7 @@ static function _VerMOSaf (_sCC, _aOP, _sChaveSD3)
 			_oSQL:Log ()
 			_sAliasQ = (_oSQL:Qry2Trb (.T.))
 
+			// Se a OP jah tem requisicao deste CC, nao preciso criar registro novo.
 			if (_sAliasQ) -> (eof ())
 				U_Log2 ('aviso', 'Nao encontrei requisicao do CC desejado (' + _sCC + ') na OP ' + alltrim (_aOP [_nOP, 1]) + '. Vou pegar uma outra requisicao de mao de obra para replicar.')
 
