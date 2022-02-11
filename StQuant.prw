@@ -11,10 +11,11 @@
 User Function STQUANT()
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aAmbAnt   := U_SalvaAmb ()
+	local _aRetQtVlr := {PARAMIXB[1], 0}  // Inicializa array de retorno jah com a quantidade
+/*
 	local _nQualPrc  := 0
 //	local _lFunAssoc := .F.
 //	local _lCxFechad := .F.
-	local _aRetQtVlr := {0, 0}
 	local _aTabPrc   := {}
 	local _aCols     := {}
 
@@ -25,8 +26,9 @@ User Function STQUANT()
 
 	// Nao pretendo mexer com a quantidade.
 	_aRetQtVlr [1] = PARAMIXB[1]
+*/
 
-/* Por enquanto vamos mostrar todas as opcoes
+/* Por enquanto vamos mostrar todas as opcoes NEM ENTROU NO AR...
 	// Verificar se eh funcionario ou associado
 	_lFuncAssoc = .F.
 	ai0 -> (dbsetorder (1))  // AI0_FILIAL, AI0_CODCLI, AI0_LOJA, R_E_C_N_O_, D_E_L_E_T_
@@ -39,7 +41,7 @@ User Function STQUANT()
 	endif
 */
 
-/* Por enquanto vamos mostrar todas as opcoes
+/* Por enquanto vamos mostrar todas as opcoes NEM ENTROU NO AR...
 	// Verifica a quantidade por caixa pra ver se deve ser considerada 'caixa fechada'
 	_lCxFechad = .F.
 	if empty (sb1 -> b1_codpai)
@@ -65,6 +67,7 @@ User Function STQUANT()
 	sb1 -> (dbseek (xfilial ("SB1") + PARAMIXB[4], .F.))
 */
 
+/*
 	// SA1 jah vem posicionado
 	U_Log2 ('debug', 'tipo da variavel _lTumelero: ' + type ('_lTumelero'))
 	if type ('_lTumelero') == 'L' .and. _lTumelero  // Tumelero (parceiro de vendas).
@@ -108,6 +111,29 @@ User Function STQUANT()
 		endif
 	endif
 	U_Log2 ('debug', 'Preco a ser retornado: ' + cvaltochar (_aRetQtVlr [2]))
+*/
+
+
+	// Variavel deve vir alimentada a partir do ponto de entrada STMenu.
+	if type ('_nTabPrPDV') != 'N'
+		msgalert ("Tabela de precos nao definida. Use a opcao 'Alianca - Tabela precos' no menu principal.", 'erro')
+		_aRetQtVlr [1] = 0
+		_aRetQtVlr [2] = 0
+	else
+		U_Log2 ('debug', '[' + procname () + ']Qual tabela de preco devo usar: ' + cvaltochar (_nTabPrPDV))
+		sb0 -> (dbsetorder (1))  // B0_FILIAL, B0_COD, R_E_C_N_O_, D_E_L_E_T_
+		if ! sb0 -> (dbseek (xfilial ("SB0") + PARAMIXB[4], .F.))
+			msgalert ("Produto '" + alltrim (PARAMIXB[4]) + "' nao encontrado na tabela de precos (SB0).", 'erro')
+			_aRetQtVlr [1] = 0
+			_aRetQtVlr [2] = 0
+		else
+			_aRetQtVlr [2] = sb0 -> &('b0_prv' + cvaltochar (_nTabPrPDV))
+
+			// Adiciona ao 'log' da sessao, para ajudar o operador a rastrear alguma duvida.
+			STFMessage("TabelaPrecos", "STOP", '[' + procname () + ']Prd.' + alltrim (sb0 -> b0_cod) + ' prc.' + cvaltochar (_nTabPrPDV) + ': R$ ' + cvaltochar (_aRetQtVlr [2]))
+		endif
+	endif
+	U_Log2 ('debug', '[' + procname () + ']Valor unit. a ser retornado: ' + cvaltochar (_aRetQtVlr [2]))
 
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
