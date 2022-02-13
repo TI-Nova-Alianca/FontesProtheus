@@ -13,7 +13,10 @@
 // 24/01/2022 - Robert  - Vamos usar etiquetas no AX02, mesmo sem integracao com FullWMS (GLPI 11515).
 // 02/02/2022 - Robert  - Imprime B8_DFABRIC e nao mais D1_DFABRIC como data de fabricacao nas etiq. de NF de entrada.
 // 03/02/2022 - Claudia - Ajustada linha 628 de DTOC(SD1->B8_DFABRIC) para DTOC(SB8->B8_DFABRIC)
+// 11/02/2022 - Robert  - Posicionava SB8 pelo D1_LOTEFOR. Alterado para posicionar pelo ZA1_PROD + D1_LOTECTL.
+// (a compilar) - Robert  - Posiciona o SB8 via query por que nao tem indice por produto+lote+local.
 //
+
 // -------------------------------------------------------------------------------------------------------------------
 user function ImpZA1 (_sCodigo, _sIdImpr)
 	local _aAreaAnt   := U_ML_SRArea ()
@@ -155,24 +158,26 @@ user function ImpZA1 (_sCodigo, _sIdImpr)
 
 		// Verifica o tipo de etiqueta
 		if ! empty (ZA1 -> ZA1_IdZAG)
-			_ImpZAG ()
+			_lContinua = _ImpZAG ()
 		elseif ! empty (ZA1 -> ZA1_OP)
-			_ImpOP ()
+			_lContinua = _ImpOP ()
 		elseif ! empty (ZA1 -> ZA1_DOCE)
-			_ImpNF ()
+			_lContinua = _ImpNF ()
 		else
 			u_help ("Sem tratamento para este tipo de etiqueta no programa " + procname (),, .t.)
 		endif
 
-		fclose (_nHdl)
-		u_log2 ('debug', memoread (_sArq))
-		copy file (_sArq) to (_sPortaImp)
-		u_log2 ('debug', 'copiei etiq para ' + _sPortaImp)
-		delete file (_sArq)
+		if _lContinua
+			fclose (_nHdl)
+			u_log2 ('debug', memoread (_sArq))
+			copy file (_sArq) to (_sPortaImp)
+			u_log2 ('debug', 'copiei etiq para ' + _sPortaImp)
+			delete file (_sArq)
 
-		// Etiquetas (quando necessario) sao enviadas para o Full somente depois de impressas
-		if za1 -> za1_impres == 'S'
-			U_EnvEtFul (za1 -> za1_codigo, .F.)
+			// Etiquetas (quando necessario) sao enviadas para o Full somente depois de impressas
+			if za1 -> za1_impres == 'S'
+				U_EnvEtFul (za1 -> za1_codigo, .F.)
+			endif
 		endif
 	endif
 		
@@ -213,146 +218,152 @@ static function _ImpZAG ()
 		_sObs2  := left (zag -> zag_motivo, 25)
 		
 		// Quando mexer aqui, ajustar tambem o fonte que exporta para o WMS (EnvEtFul.prw)
-		SB8 -> (dbsetorder (4))  // FILIAL+LOTEFOR+PRODUTO+LOCAL
-		if SB8 -> (dbseek (xfilial ("SB8") + zag -> zag_lotori + ZA1 -> ZA1_PROD, .T.))
+//		SB8 -> (dbsetorder (4))  // FILIAL+LOTEFOR+PRODUTO+LOCAL
+//		if SB8 -> (dbseek (xfilial ("SB8") + zag -> zag_lotori + ZA1 -> ZA1_PROD, .T.))
+//			_sDataV := DTOC(SB8->B8_DTVALID)
+//		else
+//			_sDataV := DTOC(ctod (''))
+//		endif
+		// Quando mexer aqui, ajustar tambem o fonte que exporta para o WMS (EnvEtFul.prw)
+		if ! _AchaSB8 (ZA1 -> ZA1_PROD, zag -> zag_lotori, zag -> zag_almori)
+			u_help ("Lote '" + zag -> zag_lotori + "' do produto '" + za1 -> za1_prod + "' referenciado pela solicitacao de transferencia '" + zag -> zag_IdZAG + "' nao foi localizado na tabela SB8",, .t.)
+			_lContinua = .F.
+		else
 			_sDataV := DTOC(SB8->B8_DTVALID)
-		else
-			_sDataV := DTOC(ctod (''))
-		endif
-					
-		if _nModelImp == 1  // Impressora Sato
-
-			_sDescri1 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 1, 25)
-			_sDescri2 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 26, 25)
-			_sDescri3 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 51, 25)
-
-			fwrite (_nHdl, _Esc + 'A'   + _Enter + _Esc + 'CS6' + _Enter + _Esc + 'Z'   + _Enter)  // Velocidade
-			fwrite (_nHdl, _Esc + 'A'   + _Enter + _Esc + '#E1' + _Enter + _Esc + 'Z'   + _Enter)  // Claridade
-			fwrite (_nHdl, _Esc + 'A' + _Enter)      // Inicializa etiqueta
-			fwrite (_nHdl, _Esc + 'PC03,0' + _Enter) // Velocidade
-			fwrite (_nHdl, _Esc + 'PC09,2' + _Enter) // Darkness
-			fwrite (_nHdl, _Esc + '%1' + _Enter)     // Rotacao
-			
-			// Produto em mais de uma linha
-			fwrite (_nHdl, _Esc + 'H0050')		 		      // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		      // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		  // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + _sDescri1 + _Enter ) // Informacao a ser impressa
-					
-			fwrite (_nHdl, _Esc + 'H0075')		 		      // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		      // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		  // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + _sDescri2 + _Enter ) // Informacao a ser impressa
-			
-			fwrite (_nHdl, _Esc + 'H0100')		 		      // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		      // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		  // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + _sDescri3 + _Enter ) // Informacao a ser impressa
-			
-			fwrite (_nHdl, _Esc + 'H0150')		 		                              // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		                              // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                          // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + 'Doc: ' + Alltrim(_sDoc) + _Enter ) // Informacao a ser impressa
-			
-			// Observacoes - linha 1
-			fwrite (_nHdl, _Esc + 'H0200')		 		      // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		      // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		  // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + _sObs1 + _Enter ) // Informacao a ser impressa
-					
-			// Observacoes - linha 2
-			fwrite (_nHdl, _Esc + 'H0225')		 		      // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		      // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		  // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + _sObs2 + _Enter ) // Informacao a ser impressa
-
-			fwrite (_nHdl, _Esc + 'H0300')		 		                                   // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		                                   // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                               // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + 'Lote: ' + AllTrim(_sLoteI) + _Enter) // Informacao a ser impressa
-
-			fwrite (_nHdl, _Esc + 'H0325')		 		                                                                       // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		                                                                       // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                                                                   // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + 'Qtd: ' + Alltrim(_sQtd) + ' ' + AllTrim(_sUM) + _Enter) // Informacao a ser impressa
-
-			fwrite (_nHdl, _Esc + 'H0400')		 		                                                                       // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		                                                                       // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                                                                   // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + 'Validade: ' + AllTrim(_sDataV) + _Enter) // Informacao a ser impressa
-
-			fwrite (_nHdl, _Esc + 'H0425')		 		                                   // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		                                   // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                               // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + 'Etq: ' + AllTrim(_sCod) + _Enter) // Informacao a ser impressa
-
-			// Codigo de barras com o numero da etiqueta.
-			fwrite (_nHdl, _Esc + 'H0475')		 		// Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		// Define ponto vertical
-			fwrite (_nHdl, _Esc + 'BG02110')	 			// Define ccdigo de barras (tipo, tamanho, altura)
-			fwrite (_nHdl, '>G' + AllTrim(_sCod) + _Enter )			// Informacao a ser impressa no ccdigo de barras (estilo, dado)
-
-			fwrite (_nHdl, _Esc + 'H0650')		 		                                   // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		                                   // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                               // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + 'DATA: ____________________' + _Enter) // Informacao a ser impressa
-
-			fwrite (_nHdl, _Esc + 'H0700')		 		                                   // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		                                   // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                               // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + 'RESP: ____________________' + _Enter) // Informacao a ser impressa
-			
-			fwrite (_nHdl, _Esc + 'H0750')		 		                                   // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		                                   // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                               // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + 'ASS.: ____________________' + _Enter) // Informacao a ser impressa
-
-			fwrite (_nHdl, _Esc + 'Q1' + _Enter)		 	// Define quantidade
-			fwrite (_nHdl, _Esc + 'Z'  + _Enter)  	 		// Finaliza etiqueta
-
-			reclock ("ZA1", .F.)
-			za1 -> za1_impres = 'S'
-			msunlock ()
-
-		elseif _nModelImp == 2  // Impressora Argox/Datamax
-			
-			_sDescri1 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 1, 20)
-			_sDescri2 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 21, 28)
-			_sDescri3 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 49, 28)
-
-			_sMargEsq = '070'
-			fwrite (_nHdl, chr (2) + 'f220' + _Enter)  //  STX - inicio de etiqueta
-			fwrite (_nHdl, chr (1) + 'D' + _Enter)  // SOH - inicio de header
-			fwrite (_nHdl, chr (2) + 'n' + _Enter)
-			fwrite (_nHdl, chr (2) + 'L' + _Enter)
-			fwrite (_nHdl, 'D11' + _Enter)
-			fwrite (_nHdl, 'H13' + _Enter)  // Temperatura
-			fwrite (_nHdl, 'PC' + _Enter)  // Velocidade
-			fwrite (_nHdl, '431100000' + _sMargEsq + '050' + _sDescri1 + _Enter)
-			fwrite (_nHdl, '421100000' + _sMargEsq + '065' + _sDescri2 + _Enter)
-			fwrite (_nHdl, '421100000' + _sMargEsq + '080' + _sDescri3 + _Enter)
-			fwrite (_nHdl, '431100000' + _sMargEsq + '105' + 'Doc: ' + Alltrim(_sDoc) + _Enter)
-			fwrite (_nHdl, '421100000' + _sMargEsq + '120' + _sObs1 + _Enter)
-			fwrite (_nHdl, '421100000' + _sMargEsq + '135' + _sObs2 + _Enter)
-			fwrite (_nHdl, '431100000' + _sMargEsq + '175' + 'Lote:' + _sLoteI + _Enter)
-			fwrite (_nHdl, '431100000' + _sMargEsq + '200' + 'Qtd:' + transform (ZA1->ZA1_QUANT, '@E 999,999,999.99') + ' ' + _sUM + _Enter)
-			fwrite (_nHdl, '431100000' + _sMargEsq + '240' + 'Validade:   ' + _sDataV + _Enter)
-			fwrite (_nHdl, '431100000' + _sMargEsq + '270' + 'Etiqueta:   ' + ZA1->ZA1_CODIGO + _Enter)
-			fwrite (_nHdl, '4e5200000' + _sMargEsq + '320' + ZA1->ZA1_CODIGO + _Enter)  // cod barras
-			fwrite (_nHdl, '431100000' + _sMargEsq + '350' + 'DATA: _______________' + _Enter)
-			fwrite (_nHdl, '431100000' + _sMargEsq + '375' + 'RESP: _______________' + _Enter)
-			fwrite (_nHdl, '431100000' + _sMargEsq + '400' + 'ASS.: _______________' + _Enter)
-			fwrite (_nHdl, 'Q0001' + _Enter)
-			fwrite (_nHdl, 'E' + _Enter)
-			reclock ("ZA1", .F.)
-			za1 -> za1_impres = 'S'
-			msunlock ()
-		else
-//			u_help ("Etiqueta nao disponivel para o modelo de impressora '" + cvaltochar (_nModelImp) + "'")
-			u_help ("Impossivel imprimir etiqueta '" + za1 -> za1_codigo + "': formato nao disponivel para o modelo de impressora '" + cvaltochar (_nModelImp) + "'",, .t.)
 		endif
 	endif
-return
+
+	if _lContinua .and. _nModelImp == 1  // Impressora Sato
+		_sDescri1 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 1, 25)
+		_sDescri2 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 26, 25)
+		_sDescri3 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 51, 25)
+
+		fwrite (_nHdl, _Esc + 'A'   + _Enter + _Esc + 'CS6' + _Enter + _Esc + 'Z'   + _Enter)  // Velocidade
+		fwrite (_nHdl, _Esc + 'A'   + _Enter + _Esc + '#E1' + _Enter + _Esc + 'Z'   + _Enter)  // Claridade
+		fwrite (_nHdl, _Esc + 'A' + _Enter)      // Inicializa etiqueta
+		fwrite (_nHdl, _Esc + 'PC03,0' + _Enter) // Velocidade
+		fwrite (_nHdl, _Esc + 'PC09,2' + _Enter) // Darkness
+		fwrite (_nHdl, _Esc + '%1' + _Enter)     // Rotacao
+		
+		// Produto em mais de uma linha
+		fwrite (_nHdl, _Esc + 'H0050')		 		      // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		      // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		  // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + _sDescri1 + _Enter ) // Informacao a ser impressa
+				
+		fwrite (_nHdl, _Esc + 'H0075')		 		      // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		      // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		  // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + _sDescri2 + _Enter ) // Informacao a ser impressa
+		
+		fwrite (_nHdl, _Esc + 'H0100')		 		      // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		      // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		  // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + _sDescri3 + _Enter ) // Informacao a ser impressa
+		
+		fwrite (_nHdl, _Esc + 'H0150')		 		                              // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		                              // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                          // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + 'Doc: ' + Alltrim(_sDoc) + _Enter ) // Informacao a ser impressa
+		
+		// Observacoes - linha 1
+		fwrite (_nHdl, _Esc + 'H0200')		 		      // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		      // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		  // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + _sObs1 + _Enter ) // Informacao a ser impressa
+				
+		// Observacoes - linha 2
+		fwrite (_nHdl, _Esc + 'H0225')		 		      // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		      // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		  // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + _sObs2 + _Enter ) // Informacao a ser impressa
+
+		fwrite (_nHdl, _Esc + 'H0300')		 		                                   // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		                                   // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                               // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + 'Lote: ' + AllTrim(_sLoteI) + _Enter) // Informacao a ser impressa
+
+		fwrite (_nHdl, _Esc + 'H0325')		 		                                                                       // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		                                                                       // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                                                                   // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + 'Qtd: ' + Alltrim(_sQtd) + ' ' + AllTrim(_sUM) + _Enter) // Informacao a ser impressa
+
+		fwrite (_nHdl, _Esc + 'H0400')		 		                                                                       // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		                                                                       // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                                                                   // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + 'Validade: ' + AllTrim(_sDataV) + _Enter) // Informacao a ser impressa
+
+		fwrite (_nHdl, _Esc + 'H0425')		 		                                   // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		                                   // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                               // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + 'Etq: ' + AllTrim(_sCod) + _Enter) // Informacao a ser impressa
+
+		// Codigo de barras com o numero da etiqueta.
+		fwrite (_nHdl, _Esc + 'H0475')		 		// Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		// Define ponto vertical
+		fwrite (_nHdl, _Esc + 'BG02110')	 			// Define ccdigo de barras (tipo, tamanho, altura)
+		fwrite (_nHdl, '>G' + AllTrim(_sCod) + _Enter )			// Informacao a ser impressa no ccdigo de barras (estilo, dado)
+
+		fwrite (_nHdl, _Esc + 'H0650')		 		                                   // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		                                   // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                               // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + 'DATA: ____________________' + _Enter) // Informacao a ser impressa
+
+		fwrite (_nHdl, _Esc + 'H0700')		 		                                   // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		                                   // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                               // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + 'RESP: ____________________' + _Enter) // Informacao a ser impressa
+		
+		fwrite (_nHdl, _Esc + 'H0750')		 		                                   // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		                                   // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                               // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + 'ASS.: ____________________' + _Enter) // Informacao a ser impressa
+
+		fwrite (_nHdl, _Esc + 'Q1' + _Enter)		 	// Define quantidade
+		fwrite (_nHdl, _Esc + 'Z'  + _Enter)  	 		// Finaliza etiqueta
+
+		reclock ("ZA1", .F.)
+		za1 -> za1_impres = 'S'
+		msunlock ()
+
+	elseif _nModelImp == 2  // Impressora Argox/Datamax
+		
+		_sDescri1 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 1, 20)
+		_sDescri2 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 21, 28)
+		_sDescri3 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 49, 28)
+
+		_sMargEsq = '070'
+		fwrite (_nHdl, chr (2) + 'f220' + _Enter)  //  STX - inicio de etiqueta
+		fwrite (_nHdl, chr (1) + 'D' + _Enter)  // SOH - inicio de header
+		fwrite (_nHdl, chr (2) + 'n' + _Enter)
+		fwrite (_nHdl, chr (2) + 'L' + _Enter)
+		fwrite (_nHdl, 'D11' + _Enter)
+		fwrite (_nHdl, 'H13' + _Enter)  // Temperatura
+		fwrite (_nHdl, 'PC' + _Enter)  // Velocidade
+		fwrite (_nHdl, '431100000' + _sMargEsq + '050' + _sDescri1 + _Enter)
+		fwrite (_nHdl, '421100000' + _sMargEsq + '065' + _sDescri2 + _Enter)
+		fwrite (_nHdl, '421100000' + _sMargEsq + '080' + _sDescri3 + _Enter)
+		fwrite (_nHdl, '431100000' + _sMargEsq + '105' + 'Doc: ' + Alltrim(_sDoc) + _Enter)
+		fwrite (_nHdl, '421100000' + _sMargEsq + '120' + _sObs1 + _Enter)
+		fwrite (_nHdl, '421100000' + _sMargEsq + '135' + _sObs2 + _Enter)
+		fwrite (_nHdl, '431100000' + _sMargEsq + '175' + 'Lote:' + _sLoteI + _Enter)
+		fwrite (_nHdl, '431100000' + _sMargEsq + '200' + 'Qtd:' + transform (ZA1->ZA1_QUANT, '@E 999,999,999.99') + ' ' + _sUM + _Enter)
+		fwrite (_nHdl, '431100000' + _sMargEsq + '240' + 'Validade:   ' + _sDataV + _Enter)
+		fwrite (_nHdl, '431100000' + _sMargEsq + '270' + 'Etiqueta:   ' + ZA1->ZA1_CODIGO + _Enter)
+		fwrite (_nHdl, '4e5200000' + _sMargEsq + '320' + ZA1->ZA1_CODIGO + _Enter)  // cod barras
+		fwrite (_nHdl, '431100000' + _sMargEsq + '350' + 'DATA: _______________' + _Enter)
+		fwrite (_nHdl, '431100000' + _sMargEsq + '375' + 'RESP: _______________' + _Enter)
+		fwrite (_nHdl, '431100000' + _sMargEsq + '400' + 'ASS.: _______________' + _Enter)
+		fwrite (_nHdl, 'Q0001' + _Enter)
+		fwrite (_nHdl, 'E' + _Enter)
+		reclock ("ZA1", .F.)
+		za1 -> za1_impres = 'S'
+		msunlock ()
+	elseif _lContinua
+		u_help ("Impossivel imprimir etiqueta '" + za1 -> za1_codigo + "': formato nao disponivel para o modelo de impressora '" + cvaltochar (_nModelImp) + "'",, .t.)
+		_lContinua = .F.
+	endif
+return _lContinua
 
 
 
@@ -572,9 +583,10 @@ static function _ImpOP ()
 			Otherwise
 //			u_help ("Etiqueta nao disponivel para o modelo de impressora '" + cvaltochar (_nModelImp) + "'")
 			u_help ("Impossivel imprimir etiqueta '" + za1 -> za1_codigo + "': formato nao disponivel para o modelo de impressora '" + cvaltochar (_nModelImp) + "'",, .t.)
+			_lContinua = .F.
 		EndCase
 	endif
-return
+return _lContinua
 
 
 
@@ -613,209 +625,233 @@ static function _ImpNF ()
 
 	if _lContinua
 		_sLoteF	:= SD1->D1_LOTEFOR 
-		_sLoteI	:= SD1->D1_LOTECTL				
+		_sLoteI	:= SD1->D1_LOTECTL
 		_sQtd   := Alltrim(cvaltochar(ZA1->ZA1_QUANT)) 
 		_sUM    := sb1 -> b1_um
 		
 		// Quando mexer aqui, ajustar tambem o fonte que exporta para o WMS (EnvEtFul.prw)
-		SB8 -> (dbsetorder (4))  // FILIAL+LOTEFOR+PRODUTO+LOCAL
-		if SB8 -> (dbseek (xfilial ("SB8") + SD1->D1_LOTEFOR + ZA1 -> ZA1_PROD, .T.))
+		if ! _AchaSB8 (ZA1 -> ZA1_PROD, sd1 -> d1_lotectl, sd1 -> d1_local)
+			u_help ("Lote '" + sd1 -> d1_lotectl + "' do produto '" + za1 -> za1_prod + "' referenciado pela nota '" + sd1 -> d1_doc + "' nao foi localizado na tabela SB8",, .t.)
+			_lContinua = .F.
+		else
 			_sDataV := DTOC(SB8->B8_DTVALID)
-		else
-			_sDataV := DTOC(ctod (''))
-		endif
-					
-	//	_sDataF := DTOC(SD1->D1_DFABRIC)
-		_sDataF := DTOC(SB8->B8_DFABRIC)
-
-		if _nModelImp == 1  // Impressora Sato
-
-			_sDescri1 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 1, 25)
-			_sDescri2 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 26, 25)
-			_sDescri3 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 51, 25)
-			_sNome1 := substr (alltrim (SA2 -> a2_cod) + ' - ' + SA2 -> A2_nome, 1, 25)
-			_sNome2 := substr (alltrim (SA2 -> a2_cod) + ' - ' + SA2 -> A2_nome, 26, 25)
-
-			// configuracao de velocidade
-			fwrite (_nHdl, _Esc + 'A'   + _Enter)
-			fwrite (_nHdl, _Esc + 'CS6' + _Enter)
-			fwrite (_nHdl, _Esc + 'Z'   + _Enter)
-			
-			// configuracao de claridade
-			fwrite (_nHdl, _Esc + 'A'   + _Enter)
-			fwrite (_nHdl, _Esc + '#E1' + _Enter)
-			fwrite (_nHdl, _Esc + 'Z'   + _Enter)
-			
-			// impressco das etiquetas
-			fwrite (_nHdl, _Esc + 'A' + _Enter)      // Inicializa etiqueta
-			fwrite (_nHdl, _Esc + 'PC03,0' + _Enter) // Velocidade
-			fwrite (_nHdl, _Esc + 'PC09,2' + _Enter) // Darkness
-			fwrite (_nHdl, _Esc + '%1' + _Enter)     // Rotacao
-			
-			// codigo e descricao do produto - linha 1
-			fwrite (_nHdl, _Esc + 'H0050')		 		      // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		      // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		  // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + _sDescri1 + _Enter ) // Informacao a ser impressa
-					
-			// codigo e descricao do produto - linha 2
-			fwrite (_nHdl, _Esc + 'H0075')		 		      // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		      // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		  // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + _sDescri2 + _Enter ) // Informacao a ser impressa
-			
-			// codigo e descricao do produto - linha 3
-			fwrite (_nHdl, _Esc + 'H0100')		 		      // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		      // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		  // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + _sDescri3 + _Enter ) // Informacao a ser impressa
-			
-			// H0125 (linha em branco)
-
-			// linha legivel com o numero da nota.
-			fwrite (_nHdl, _Esc + 'H0150')		 		                              // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		                              // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                          // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + 'NF: ' + Alltrim(_sDoc) + _Enter ) // Informacao a ser impressa
-			
-			// H0175 (linha em branco)
-			
-			// codigo e nome do fornecedor - linha 1
-			fwrite (_nHdl, _Esc + 'H0200')		 		      // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		      // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		  // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + _sNome1 + _Enter ) // Informacao a ser impressa
-					
-			// codigo e nome do fornecedor - linha 2
-			fwrite (_nHdl, _Esc + 'H0225')		 		      // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		      // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		  // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + _sNome2 + _Enter ) // Informacao a ser impressa
-
-			// H0250 (linha em branco)
-
-			// linha legivel com o lote do fornecedor.
-			fwrite (_nHdl, _Esc + 'H0275')		 		                                    // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		                                    // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                                // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + 'LOTE FORN: ' + AllTrim(_sLoteF) + _Enter) // Informacao a ser impressa
-
-			// linha legivel com o lote interno.
-			fwrite (_nHdl, _Esc + 'H0300')		 		                                   // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		                                   // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                               // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + 'LOTE INT: ' + AllTrim(_sLoteI) + _Enter) // Informacao a ser impressa
-
-			// linha legivel da quantidade.
-			fwrite (_nHdl, _Esc + 'H0325')		 		                                                                       // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		                                                                       // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                                                                   // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + 'QTD: ' + Alltrim(_sQtd) + ' ' + AllTrim(_sUM) + _Enter) // Informacao a ser impressa
-
-			// H0350 (linha em branco)
-			
-			// linha legivel da fabricacao.
-			fwrite (_nHdl, _Esc + 'H0375')		 		                                                                       // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		                                                                       // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                                                                   // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + 'FABRICACAO: ' + AllTrim(_sDataF) + _Enter) // Informacao a ser impressa
-
-			// linha legivel do vencimento.
-			fwrite (_nHdl, _Esc + 'H0400')		 		                                                                       // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		                                                                       // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                                                                   // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + 'VALIDADE: ' + AllTrim(_sDataV) + _Enter) // Informacao a ser impressa
-
-			// linha legivel com o lote interno.
-			fwrite (_nHdl, _Esc + 'H0425')		 		                                   // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		                                   // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                               // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + 'ETQ: ' + AllTrim(_sCod) + _Enter) // Informacao a ser impressa
-
-			// H0450 (linha em branco)
-			
-			// Codigo de barras com o numero da etiqueta.
-			fwrite (_nHdl, _Esc + 'H0475')		 		// Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		// Define ponto vertical
-			fwrite (_nHdl, _Esc + 'BG02110')	 			// Define ccdigo de barras (tipo, tamanho, altura)
-			fwrite (_nHdl, '>G' + AllTrim(_sCod) + _Enter )			// Informacao a ser impressa no ccdigo de barras (estilo, dado)
-
-			// H0550 (linha em branco)
-
-			// linha legivel com o lote interno.
-			fwrite (_nHdl, _Esc + 'H0650')		 		                                   // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		                                   // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                               // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + 'DATA: ____________________' + _Enter) // Informacao a ser impressa
-
-			// H0600 (linha em branco)
-
-			// linha legivel com o lote interno.
-			fwrite (_nHdl, _Esc + 'H0700')		 		                                   // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		                                   // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                               // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + 'RESP: ____________________' + _Enter) // Informacao a ser impressa
-			
-			// H0650 (linha em branco)
-
-			// linha legivel com o lote interno.
-			fwrite (_nHdl, _Esc + 'H0750')		 		                                   // Define ponto horizontal
-			fwrite (_nHdl, _Esc + 'V0440')		 		                                   // Define ponto vertical
-			fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                               // Define fonte (espacamento, largura, altura e tipo)
-			fwrite (_nHdl, _Esc + '$=' + 'ASS.: ____________________' + _Enter) // Informacao a ser impressa
-
-			fwrite (_nHdl, _Esc + 'Q1' + _Enter)		 	// Define quantidade
-			fwrite (_nHdl, _Esc + 'Z'  + _Enter)  	 		// Finaliza etiqueta
-
-			reclock ("ZA1", .F.)
-			za1 -> za1_impres = 'S'
-			msunlock ()
-
-		elseif _nModelImp == 2  // Impressora Argox/Datamax
-			
-			_sDescri1 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 1, 20)
-			_sDescri2 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 21, 28)
-			_sDescri3 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 49, 28)
-			_sNome1 := substr ('FORN:' + SA2 -> a2_cod + '/' + sa2 -> a2_loja + ' - ' + SA2 -> A2_nome, 1, 28)
-			_sNome2 := substr ('FORN:' + SA2 -> a2_cod + '/' + sa2 -> a2_loja + ' - ' + SA2 -> A2_nome, 29, 28)
-
-			_sMargEsq = '070'
-			fwrite (_nHdl, chr (2) + 'f220' + _Enter)  //  STX - inicio de etiqueta
-			fwrite (_nHdl, chr (1) + 'D' + _Enter)  // SOH - inicio de header
-			fwrite (_nHdl, chr (2) + 'n' + _Enter)
-			fwrite (_nHdl, chr (2) + 'L' + _Enter)
-			fwrite (_nHdl, 'D11' + _Enter)
-			fwrite (_nHdl, 'H13' + _Enter)  // Temperatura
-			fwrite (_nHdl, 'PC' + _Enter)  // Velocidade
-			fwrite (_nHdl, '431100000' + _sMargEsq + '050' + _sDescri1 + _Enter)
-			fwrite (_nHdl, '421100000' + _sMargEsq + '065' + _sDescri2 + _Enter)
-			fwrite (_nHdl, '421100000' + _sMargEsq + '080' + _sDescri3 + _Enter)
-			fwrite (_nHdl, '431100000' + _sMargEsq + '105' + 'NF: ' + Alltrim(_sDoc) + _Enter)
-			fwrite (_nHdl, '421100000' + _sMargEsq + '120' + _sNome1 + _Enter)
-			fwrite (_nHdl, '421100000' + _sMargEsq + '135' + _sNome2 + _Enter)
-		
-		//	fwrite (_nHdl, '431100000' + _sMargEsq + '155' + 'Lt.for:' + _sLoteF + _Enter)
-			fwrite (_nHdl, '421100000' + _sMargEsq + '155' + 'Lt.for:' + _sLoteF + _Enter)
-			
-			fwrite (_nHdl, '431100000' + _sMargEsq + '175' + 'Lt.int:' + _sLoteI + _Enter)
-			fwrite (_nHdl, '431100000' + _sMargEsq + '200' + 'Qtd:' + transform (ZA1->ZA1_QUANT, '@E 999,999,999.99') + ' ' + _sUM + _Enter)
-			fwrite (_nHdl, '431100000' + _sMargEsq + '220' + 'FABRICACAO: ' + _sDataF + _Enter)
-			fwrite (_nHdl, '431100000' + _sMargEsq + '240' + 'VALIDADE:   ' + _sDataV + _Enter)
-			fwrite (_nHdl, '431100000' + _sMargEsq + '270' + 'ETIQUETA:   ' + ZA1->ZA1_CODIGO + _Enter)
-			fwrite (_nHdl, '4e5200000' + _sMargEsq + '320' + ZA1->ZA1_CODIGO + _Enter)  // cod barras
-			fwrite (_nHdl, '431100000' + _sMargEsq + '350' + 'DATA: _______________' + _Enter)
-			fwrite (_nHdl, '431100000' + _sMargEsq + '375' + 'RESP: _______________' + _Enter)
-			fwrite (_nHdl, '431100000' + _sMargEsq + '400' + 'ASS.: _______________' + _Enter)
-			fwrite (_nHdl, 'Q0001' + _Enter)
-			fwrite (_nHdl, 'E' + _Enter)
-			reclock ("ZA1", .F.)
-			za1 -> za1_impres = 'S'
-			msunlock ()
-		else
-			u_help ("Impossivel imprimir etiqueta '" + za1 -> za1_codigo + "': formato nao disponivel para o modelo de impressora '" + cvaltochar (_nModelImp) + "'",, .t.)
+			_sDataF := DTOC(SB8->B8_DFABRIC)
 		endif
 	endif
-return
+
+	if _lContinua .and. _nModelImp == 1  // Impressora Sato
+
+		_sDescri1 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 1, 25)
+		_sDescri2 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 26, 25)
+		_sDescri3 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 51, 25)
+		_sNome1 := substr (alltrim (SA2 -> a2_cod) + ' - ' + SA2 -> A2_nome, 1, 25)
+		_sNome2 := substr (alltrim (SA2 -> a2_cod) + ' - ' + SA2 -> A2_nome, 26, 25)
+
+		// configuracao de velocidade
+		fwrite (_nHdl, _Esc + 'A'   + _Enter)
+		fwrite (_nHdl, _Esc + 'CS6' + _Enter)
+		fwrite (_nHdl, _Esc + 'Z'   + _Enter)
+		
+		// configuracao de claridade
+		fwrite (_nHdl, _Esc + 'A'   + _Enter)
+		fwrite (_nHdl, _Esc + '#E1' + _Enter)
+		fwrite (_nHdl, _Esc + 'Z'   + _Enter)
+		
+		// impressco das etiquetas
+		fwrite (_nHdl, _Esc + 'A' + _Enter)      // Inicializa etiqueta
+		fwrite (_nHdl, _Esc + 'PC03,0' + _Enter) // Velocidade
+		fwrite (_nHdl, _Esc + 'PC09,2' + _Enter) // Darkness
+		fwrite (_nHdl, _Esc + '%1' + _Enter)     // Rotacao
+		
+		// codigo e descricao do produto - linha 1
+		fwrite (_nHdl, _Esc + 'H0050')		 		      // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		      // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		  // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + _sDescri1 + _Enter ) // Informacao a ser impressa
+				
+		// codigo e descricao do produto - linha 2
+		fwrite (_nHdl, _Esc + 'H0075')		 		      // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		      // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		  // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + _sDescri2 + _Enter ) // Informacao a ser impressa
+		
+		// codigo e descricao do produto - linha 3
+		fwrite (_nHdl, _Esc + 'H0100')		 		      // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		      // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		  // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + _sDescri3 + _Enter ) // Informacao a ser impressa
+		
+		// H0125 (linha em branco)
+
+		// linha legivel com o numero da nota.
+		fwrite (_nHdl, _Esc + 'H0150')		 		                              // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		                              // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                          // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + 'NF: ' + Alltrim(_sDoc) + _Enter ) // Informacao a ser impressa
+		
+		// H0175 (linha em branco)
+		
+		// codigo e nome do fornecedor - linha 1
+		fwrite (_nHdl, _Esc + 'H0200')		 		      // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		      // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		  // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + _sNome1 + _Enter ) // Informacao a ser impressa
+				
+		// codigo e nome do fornecedor - linha 2
+		fwrite (_nHdl, _Esc + 'H0225')		 		      // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		      // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		  // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + _sNome2 + _Enter ) // Informacao a ser impressa
+
+		// H0250 (linha em branco)
+
+		// linha legivel com o lote do fornecedor.
+		fwrite (_nHdl, _Esc + 'H0275')		 		                                    // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		                                    // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                                // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + 'LOTE FORN: ' + AllTrim(_sLoteF) + _Enter) // Informacao a ser impressa
+
+		// linha legivel com o lote interno.
+		fwrite (_nHdl, _Esc + 'H0300')		 		                                   // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		                                   // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                               // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + 'LOTE INT: ' + AllTrim(_sLoteI) + _Enter) // Informacao a ser impressa
+
+		// linha legivel da quantidade.
+		fwrite (_nHdl, _Esc + 'H0325')		 		                                                                       // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		                                                                       // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                                                                   // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + 'QTD: ' + Alltrim(_sQtd) + ' ' + AllTrim(_sUM) + _Enter) // Informacao a ser impressa
+
+		// H0350 (linha em branco)
+		
+		// linha legivel da fabricacao.
+		fwrite (_nHdl, _Esc + 'H0375')		 		                                                                       // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		                                                                       // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                                                                   // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + 'FABRICACAO: ' + AllTrim(_sDataF) + _Enter) // Informacao a ser impressa
+
+		// linha legivel do vencimento.
+		fwrite (_nHdl, _Esc + 'H0400')		 		                                                                       // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		                                                                       // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                                                                   // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + 'VALIDADE: ' + AllTrim(_sDataV) + _Enter) // Informacao a ser impressa
+
+		// linha legivel com o lote interno.
+		fwrite (_nHdl, _Esc + 'H0425')		 		                                   // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		                                   // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                               // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + 'ETQ: ' + AllTrim(_sCod) + _Enter) // Informacao a ser impressa
+
+		// H0450 (linha em branco)
+		
+		// Codigo de barras com o numero da etiqueta.
+		fwrite (_nHdl, _Esc + 'H0475')		 		// Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		// Define ponto vertical
+		fwrite (_nHdl, _Esc + 'BG02110')	 			// Define ccdigo de barras (tipo, tamanho, altura)
+		fwrite (_nHdl, '>G' + AllTrim(_sCod) + _Enter )			// Informacao a ser impressa no ccdigo de barras (estilo, dado)
+
+		// H0550 (linha em branco)
+
+		// linha legivel com o lote interno.
+		fwrite (_nHdl, _Esc + 'H0650')		 		                                   // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		                                   // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                               // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + 'DATA: ____________________' + _Enter) // Informacao a ser impressa
+
+		// H0600 (linha em branco)
+
+		// linha legivel com o lote interno.
+		fwrite (_nHdl, _Esc + 'H0700')		 		                                   // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		                                   // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                               // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + 'RESP: ____________________' + _Enter) // Informacao a ser impressa
+		
+		// H0650 (linha em branco)
+
+		// linha legivel com o lote interno.
+		fwrite (_nHdl, _Esc + 'H0750')		 		                                   // Define ponto horizontal
+		fwrite (_nHdl, _Esc + 'V0440')		 		                                   // Define ponto vertical
+		fwrite (_nHdl, _Esc + '$B,025,028,0')	 		                               // Define fonte (espacamento, largura, altura e tipo)
+		fwrite (_nHdl, _Esc + '$=' + 'ASS.: ____________________' + _Enter) // Informacao a ser impressa
+
+		fwrite (_nHdl, _Esc + 'Q1' + _Enter)		 	// Define quantidade
+		fwrite (_nHdl, _Esc + 'Z'  + _Enter)  	 		// Finaliza etiqueta
+
+		reclock ("ZA1", .F.)
+		za1 -> za1_impres = 'S'
+		msunlock ()
+
+	elseif _lContinua .and. _nModelImp == 2  // Impressora Argox/Datamax
+		
+		_sDescri1 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 1, 20)
+		_sDescri2 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 21, 28)
+		_sDescri3 := substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 49, 28)
+		_sNome1 := substr ('FORN:' + SA2 -> a2_cod + '/' + sa2 -> a2_loja + ' - ' + SA2 -> A2_nome, 1, 28)
+		_sNome2 := substr ('FORN:' + SA2 -> a2_cod + '/' + sa2 -> a2_loja + ' - ' + SA2 -> A2_nome, 29, 28)
+
+		_sMargEsq = '070'
+		fwrite (_nHdl, chr (2) + 'f220' + _Enter)  //  STX - inicio de etiqueta
+		fwrite (_nHdl, chr (1) + 'D' + _Enter)  // SOH - inicio de header
+		fwrite (_nHdl, chr (2) + 'n' + _Enter)
+		fwrite (_nHdl, chr (2) + 'L' + _Enter)
+		fwrite (_nHdl, 'D11' + _Enter)
+		fwrite (_nHdl, 'H13' + _Enter)  // Temperatura
+		fwrite (_nHdl, 'PC' + _Enter)  // Velocidade
+		fwrite (_nHdl, '431100000' + _sMargEsq + '050' + _sDescri1 + _Enter)
+		fwrite (_nHdl, '421100000' + _sMargEsq + '065' + _sDescri2 + _Enter)
+		fwrite (_nHdl, '421100000' + _sMargEsq + '080' + _sDescri3 + _Enter)
+		fwrite (_nHdl, '431100000' + _sMargEsq + '105' + 'NF: ' + Alltrim(_sDoc) + _Enter)
+		fwrite (_nHdl, '421100000' + _sMargEsq + '120' + _sNome1 + _Enter)
+		fwrite (_nHdl, '421100000' + _sMargEsq + '135' + _sNome2 + _Enter)
+
+		fwrite (_nHdl, '421100000' + _sMargEsq + '155' + 'Lt.for:' + _sLoteF + _Enter)
+		
+		fwrite (_nHdl, '431100000' + _sMargEsq + '175' + 'Lt.int:' + _sLoteI + _Enter)
+		fwrite (_nHdl, '431100000' + _sMargEsq + '200' + 'Qtd:' + transform (ZA1->ZA1_QUANT, '@E 999,999,999.99') + ' ' + _sUM + _Enter)
+		fwrite (_nHdl, '431100000' + _sMargEsq + '220' + 'FABRICACAO: ' + _sDataF + _Enter)
+		fwrite (_nHdl, '431100000' + _sMargEsq + '240' + 'VALIDADE:   ' + _sDataV + _Enter)
+		fwrite (_nHdl, '431100000' + _sMargEsq + '270' + 'ETIQUETA:   ' + ZA1->ZA1_CODIGO + _Enter)
+		fwrite (_nHdl, '4e5200000' + _sMargEsq + '320' + ZA1->ZA1_CODIGO + _Enter)  // cod barras
+		fwrite (_nHdl, '431100000' + _sMargEsq + '350' + 'DATA: _______________' + _Enter)
+		fwrite (_nHdl, '431100000' + _sMargEsq + '375' + 'RESP: _______________' + _Enter)
+		fwrite (_nHdl, '431100000' + _sMargEsq + '400' + 'ASS.: _______________' + _Enter)
+		fwrite (_nHdl, 'Q0001' + _Enter)
+		fwrite (_nHdl, 'E' + _Enter)
+		reclock ("ZA1", .F.)
+		za1 -> za1_impres = 'S'
+		msunlock ()
+	elseif _lContinua
+		u_help ("Impossivel imprimir etiqueta '" + za1 -> za1_codigo + "': formato nao disponivel para o modelo de impressora '" + cvaltochar (_nModelImp) + "'",, .t.)
+		_lContinua = .F.
+	endif
+return _lContinua
+
+
+
+// --------------------------------------------------------------------------
+// Posiciona tabela SB8 no registro referente ao lote solicitado.
+static function _AchaSB8 (_sProduto, _sLote, _sAlmox)
+	local _lRet    := .T.
+	local _nRegSB8 := 0
+	local _oSQL    := NIL
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery := "SELECT ISNULL (SB8.R_E_C_N_O_, 0)"
+	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB8") + " SB8"
+	_oSQL:_sQuery += " WHERE SB8.D_E_L_E_T_  = ''"
+	_oSQL:_sQuery +=   " AND SB8.B8_FILIAL   = '" + xfilial ("SB8") + "'"
+	_oSQL:_sQuery +=   " AND SB8.B8_PRODUTO  = '" + _sProduto + "'"
+	_oSQL:_sQuery +=   " AND SB8.B8_LOTECTL  = '" + _sLote    + "'"
+	_oSQL:_sQuery +=   " AND SB8.B8_LOCAL    = '" + _sAlmox   + "'"
+	_nRegSB8 = _oSQL:RetQry (1, .f.)
+	if _nRegSB8 == 0
+		_lRet = .F.
+	else
+		sb8 -> (dbgoto (_nRegSB8))
+	endif
+return _lRet
 
 
 

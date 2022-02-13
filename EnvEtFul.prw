@@ -28,6 +28,7 @@
 //                     - Inseridas tags para catalogar fontes.
 // 10/11/2020 - Robert - Valida dados logisticos no Full (qt.pallet e regiao de armazenagem) antes de enviar a etiqueta (GLPI 8790)
 // 24/01/2022 - Robert - Vamos usar etiquetas no AX02, mesmo sem integracao com FullWMS (GLPI 11515).
+// 11/02/2022 - Robert - Desabilitado envio para Full quando etiq. de NF de entrada (nunca chegamos a usar).
 //
 
 // ------------------------------------------------------------------------------------
@@ -106,39 +107,44 @@ User Function EnvEtFul (_sEtiq, _lMsg)
 					u_help ("Nao encontrei apontamento de producao correspondente. Nao vou exportar esta etiqueta para o FullWMS.", _oSQL:_sQuery, .t.)
 				endif
 			endif
-		elseif ! empty (za1 -> za1_doce)  // Etiqueta gerada por entrada de NF
-			_oSQL := ClsSQL ():New ()
-			_oSQL:_sQuery := "SELECT D1_LOTECTL, B8_DTVALID"
-			_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD1") + " SD1 "
-			_oSQL:_sQuery +=  " LEFT JOIN " + RetSQLName ("SB8") + " SB8 "
-			_oSQL:_sQuery +=       " ON (SB8.D_E_L_E_T_ = ''"
-			_oSQL:_sQuery +=       " AND SB8.B8_FILIAL  = SD1.D1_FILIAL"
-			_oSQL:_sQuery +=       " AND SB8.B8_LOTECTL = SD1.D1_LOTECTL"
-			_oSQL:_sQuery +=       " AND SB8.B8_LOTEFOR = SD1.D1_LOTEFOR"
-			_oSQL:_sQuery +=       " AND SB8.B8_PRODUTO = SD1.D1_COD"
-			_oSQL:_sQuery +=       ")"
-			_oSQL:_sQuery += " WHERE SD1.D_E_L_E_T_ = ''"
-			_oSQL:_sQuery +=   " AND D1_FILIAL  = '" + za1 -> za1_filial + "'"
-			_oSQL:_sQuery +=   " AND D1_DOC     = '" + za1 -> za1_doce   + "'"
-			_oSQL:_sQuery +=   " AND D1_SERIE   = '" + za1 -> za1_seriee + "'"
-			_oSQL:_sQuery +=   " AND D1_FORNECE = '" + za1 -> za1_fornec + "'"
-			_oSQL:_sQuery +=   " AND D1_LOJA    = '" + za1 -> za1_lojaf  + "'"
-			_oSQL:_sQuery +=   " AND D1_ITEM    = '" + za1 -> za1_item   + "'"
-			_oSQL:_sQuery +=   " AND D1_COD     = '" + za1 -> za1_prod   + "'"
-			_oSQL:Log ()
-			_aLoteNF = aclone (_oSQL:Qry2Array ())
-			if len (_aLoteNF) == 0
-				u_help ("Nao encontrei a NF relacionada a esta etiqueta.",, .t.)
-				_lContinua = .F.
-			elseif len (_aLoteNF) == 1
-				u_log2 ('debug', 'Encontrei a nota')
-				_GravaEtq ('02', _aLoteNF [1, 1], _aLoteNF [1, 2])  // Sempre 02 pois as notas de compra devem ir para o almox.02.
-			elseif len (_aLoteNF) > 1
-				u_help ("Encontrei mais de uma NF relacionada a esta etiqueta.", _oSQL:_sQuery, .t.)
-				_lContinua = .F.
-			endif
 		
-		elseif ! empty (za1 -> za1_idZAG)  // Etiqueta gerada por solicitacao manual de transferencia.
+		// Etiqueta gerada por entrada de NF
+		elseif ! empty (za1 -> za1_doce)
+			if .F. // Por enquanto nao estamos integrando NF de entrada com o Fullsoft. Na verdade da verdade, nunca usamos... Robert, 11/02/2022.
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := "SELECT D1_LOTECTL, B8_DTVALID"
+				_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD1") + " SD1 "
+				_oSQL:_sQuery +=  " LEFT JOIN " + RetSQLName ("SB8") + " SB8 "
+				_oSQL:_sQuery +=       " ON (SB8.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=       " AND SB8.B8_FILIAL  = SD1.D1_FILIAL"
+				_oSQL:_sQuery +=       " AND SB8.B8_LOTECTL = SD1.D1_LOTECTL"
+				_oSQL:_sQuery +=       " AND SB8.B8_LOTEFOR = SD1.D1_LOTEFOR"
+				_oSQL:_sQuery +=       " AND SB8.B8_PRODUTO = SD1.D1_COD"
+				_oSQL:_sQuery +=       ")"
+				_oSQL:_sQuery += " WHERE SD1.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=   " AND D1_FILIAL  = '" + za1 -> za1_filial + "'"
+				_oSQL:_sQuery +=   " AND D1_DOC     = '" + za1 -> za1_doce   + "'"
+				_oSQL:_sQuery +=   " AND D1_SERIE   = '" + za1 -> za1_seriee + "'"
+				_oSQL:_sQuery +=   " AND D1_FORNECE = '" + za1 -> za1_fornec + "'"
+				_oSQL:_sQuery +=   " AND D1_LOJA    = '" + za1 -> za1_lojaf  + "'"
+				_oSQL:_sQuery +=   " AND D1_ITEM    = '" + za1 -> za1_item   + "'"
+				_oSQL:_sQuery +=   " AND D1_COD     = '" + za1 -> za1_prod   + "'"
+				_oSQL:Log ()
+				_aLoteNF = aclone (_oSQL:Qry2Array ())
+				if len (_aLoteNF) == 0
+					u_help ("Nao encontrei a NF relacionada a esta etiqueta.",, .t.)
+					_lContinua = .F.
+				elseif len (_aLoteNF) == 1
+					u_log2 ('debug', 'Encontrei a nota')
+					_GravaEtq ('02', _aLoteNF [1, 1], _aLoteNF [1, 2])  // Sempre 02 pois as notas de compra devem ir para o almox.02.
+				elseif len (_aLoteNF) > 1
+					u_help ("Encontrei mais de uma NF relacionada a esta etiqueta.", _oSQL:_sQuery, .t.)
+					_lContinua = .F.
+				endif
+			endif
+
+		// Etiqueta gerada por solicitacao manual de transferencia.
+		elseif ! empty (za1 -> za1_idZAG)
 			if .f.  // Implantacao do FullWMS no AX 02 foi suspensa indefinidamente. Robert, 24/01/2022
 				_oSQL := ClsSQL ():New ()
 				_oSQL:_sQuery := "SELECT ZAG_LOTORI, B8_DTVALID, ZAG_ALMDST"
