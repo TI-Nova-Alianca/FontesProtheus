@@ -91,6 +91,7 @@ static function _AndaLogo ()
 	incproc ()
 	u_help ('Nada definido.')
 return
+//	U_ImpZA1 ('9000240221', '98')
 /*
 // Testes batches em geral
 //	_sArqLog := 'U_BatCompAssoc_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"

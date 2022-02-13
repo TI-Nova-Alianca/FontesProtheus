@@ -239,7 +239,7 @@ static function _ConfParc (_lAjustar)
 		if empty ((_sAliasQ) -> grupo_pagto)
 			_sMsg += 'Contranota safra sem grupo para pagamento - Filial: ' + (_sAliasQ) -> filial + ' NF: ' + (_sAliasQ) -> doc + chr (13) + chr (10)
 		else
-			
+
 			// Gera array de parcelas reais (SE2)
 			_aParcReal = {}
 			_nSomaSE2 = 0
@@ -280,18 +280,12 @@ static function _ConfParc (_lAjustar)
 				// apenas verifica
 				for _nParc = 1 to len (_aParcReal)
 
-					// bah em 2021 gerei dia 30/03 em vez de 31/03!!!
-					if _aParcReal [_nParc, 1] = stod ('20210330') .and. _aParcPrev [_nParc, 2] == stod ('20210331')
-						// deixa quieto...
-					else
-						if _aParcReal [_nParc, 1] != _aParcPrev [_nParc, 2]
-							_sMsg += "Diferenca nas datas - linha " + cvaltochar (_nParc) + chr (13) + chr (10)
-							_sMsg += "Real: " + dtoc (_aParcReal [_nParc, 1]) + ' X prev: ' + dtoc (_aParcPrev [_nParc, 2]) + chr (13) + chr (10)
-						endif
+					if _aParcReal [_nParc, 1] != _aParcPrev [_nParc, 2]
+						_sMsg += "Diferenca nas datas - linha " + cvaltochar (_nParc) + " Real: " + dtoc (_aParcReal [_nParc, 1]) + ' X prev: ' + dtoc (_aParcPrev [_nParc, 2])
 					endif
+
 					if round (_aParcReal [_nParc, 3], 2) != round (_aParcPrev [_nParc, 4], 2)
-						_sMsg += "Diferenca nos valores de uva - linha " + cvaltochar (_nParc) + chr (13) + chr (10)
-						_sMsg += "Parcela real: " + cvaltochar (round (_aParcReal [_nParc, 3], 2)) + " prevista: " + cvaltochar (round (_aParcPrev [_nParc, 4], 2)) + chr (13) + chr (10)
+						_sMsg += "Diferenca nos valores de uva - linha " + cvaltochar (_nParc) + " Parcela real: " + cvaltochar (round (_aParcReal [_nParc, 3], 2)) + " prevista: " + cvaltochar (round (_aParcPrev [_nParc, 4], 2))
 					endif
 				next
 
@@ -351,14 +345,16 @@ static function _ConfParc (_lAjustar)
 			endif
 		endif
 		if ! empty (_sMsg)
-			U_Log2 ('erro', 'Inconsistencia parcelamento safra - filial: ' + (_sAliasQ) -> filial + ' NF: ' + (_sAliasQ) -> doc + ' forn: ' + (_sAliasQ) -> associado)
-			U_Log2 ('erro', _sMsg)
+			U_Log2 ('erro', 'Inconsistencia parcelamento safra - filial: ' + (_sAliasQ) -> filial + ' NF: ' + (_sAliasQ) -> doc + ' forn: ' + (_sAliasQ) -> associado + ':' + _sMsg)
+			U_Log2 ('aviso', 'como estah no SE2:')
+			U_Log2 ('aviso', _aParcReal)
 			U_Log2 ('aviso', 'como deveria estar no SE2:')
 			U_Log2 ('aviso', _aParcPrev)
-			u_zzunu ({'999'}, 'Inconsistencia parcelamento safra - F.' + (_sAliasQ) -> filial + ' NF: ' + (_sAliasQ) -> doc + ' forn: ' + (_sAliasQ) -> associado, _sMsg)
+			
+			//u_zzunu ({'999'}, 'Inconsistencia parcelamento safra - F.' + (_sAliasQ) -> filial + ' NF: ' + (_sAliasQ) -> doc + ' forn: ' + (_sAliasQ) -> associado, _sMsg)
 
 			// cai fora no primeiro erro encontrado (estou ainda ajustando)
-			EXIT   // REMOVER DEPOIS !!!!!!!!!!!!!!!!!
+		//	EXIT   // REMOVER DEPOIS !!!!!!!!!!!!!!!!!
 
 		endif
 //		U_Log2 ('info', 'Finalizando F' + (_sAliasQ) -> filial + ' NF' + (_sAliasQ) -> doc)
@@ -619,12 +615,13 @@ static function _ConfSZI ()
 	local _sSafrComp := strzero (year (dDataBase), 4)
 	local _oCtaCorr  := NIL
 	local _nQtErros  := 0
+	local _nRegE2Mat := 0
 
 	U_Log2 ('info', 'Iniciando ' + procname ())
 
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT E2_FILIAL, E2_FORNECE, E2_LOJA, E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VALOR, E2_HIST,E2_SALDO"
+	_oSQL:_sQuery += " SELECT E2_FILIAL, E2_FORNECE, E2_LOJA, E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VALOR, E2_HIST, E2_SALDO, E2_VENCREA"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2"
 	_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '" + xfilial ("SE2") + "'"
@@ -646,6 +643,8 @@ static function _ConfSZI ()
 	do while ! (_sAliasQ) -> (eof ())
 		_sMsg = ''
 
+		U_Log2 ('info', 'Verificando titulo ' + (_sAliasQ) -> e2_num)
+
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := " SELECT R_E_C_N_O_ "
 		_oSQL:_sQuery +=   " FROM " + RetSQLName ("SZI") + " SZI "
@@ -656,16 +655,16 @@ static function _ConfSZI ()
 		_oSQL:_sQuery +=    " AND SZI.ZI_DOC     = '" + (_sAliasQ) -> e2_num + "'"
 		_oSQL:_sQuery +=    " AND SZI.ZI_PARCELA = '" + (_sAliasQ) -> e2_parcela + "'"
 		_oSQL:_sQuery +=    " AND SZI.ZI_TM      = '13'"
-		// _oSQL:Log ()
+		//_oSQL:Log ()
 		_aRegSZI = _oSQL:RetFixo (1, 'Procurando registro no SZI ref. titulo NF compra safra', .F.)
 		if len (_aRegSZI) == 0
-			_sMsg += "Nao localizado registro na tabela SZI para parcela da nota de compra." + chr (13) + chr (10)
+			_sMsg += "Nao localizado registro na tabela SZI para parcela da nota de compra: " + _oSQL:_sQuery + chr (13) + chr (10)
 			_sMsg += _oSQL:_sQuery
 		else
 			szi -> (dbgoto (_aRegSZI [1,1]))
 		//	U_Log2 ('info', "Verificando SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela)
 			if szi -> zi_valor != (_sAliasQ) -> e2_valor
-				_sMsg += "Valor do SZI (" + cvaltochar (szi -> zi_valor) + ") diferente do SE2 (" + cvaltochar ((_sAliasQ) -> e2_valor) + ")." + chr (13) + chr (10)
+				_sMsg += "SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela + " Valor do SZI (" + cvaltochar (szi -> zi_valor) + ") diferente do SE2 (" + cvaltochar ((_sAliasQ) -> e2_valor) + ")." + chr (13) + chr (10)
 				_sMsg += _oSQL:_sQuery
 			endif
 			if szi -> zi_saldo != (_sAliasQ) -> e2_saldo
@@ -673,7 +672,7 @@ static function _ConfSZI ()
 				_oCtaCorr := ClsCtaCorr ():New (szi -> (recno ()))
 				_oCtaCorr:AtuSaldo ()
 				if szi -> zi_saldo != (_sAliasQ) -> e2_saldo
-					_sMsg += "Saldo do SZI (" + cvaltochar (szi -> zi_saldo) + ") diferente do SE2 (" + cvaltochar ((_sAliasQ) -> e2_saldo) + ")." + chr (13) + chr (10)
+					_sMsg += "SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela + " Saldo do SZI (" + cvaltochar (szi -> zi_saldo) + ") diferente do SE2 (" + cvaltochar ((_sAliasQ) -> e2_saldo) + ")." + chr (13) + chr (10)
 					_sMsg += _oSQL:_sQuery
 				endif
 			endif
@@ -694,7 +693,31 @@ static function _ConfSZI ()
 					_oSQL:_sQuery +=    " AND SZI.ZI_TM      = '13'"
 					// _oSQL:Log ()
 					if _oSQL:RetQry (1, .f.) == 0
-						_sMsg += "SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela + " transferencia nao apareceu na matriz." + chr (13) + chr (10)
+						_sMsg += "SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela + " transferencia nao apareceu no SZI da matriz." + chr (13) + chr (10)
+					else
+						_oSQL := ClsSQL ():New ()
+						_oSQL:_sQuery := " SELECT R_E_C_N_O_ "
+						_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2 "
+						_oSQL:_sQuery +=  " WHERE SE2.E2_FILIAL  = '01'"
+						_oSQL:_sQuery +=    " AND SE2.E2_FORNECE = '" + szi -> zi_assoc + "'"
+						_oSQL:_sQuery +=    " AND SE2.E2_LOJA    = '" + szi -> zi_lojasso + "'"
+						_oSQL:_sQuery +=    " AND SE2.E2_PREFIXO = '" + szi -> zi_serie + "'"
+						_oSQL:_sQuery +=    " AND SE2.E2_NUM     = '" + szi -> zi_doc + "'"
+						_oSQL:_sQuery +=    " AND SE2.E2_PARCELA = '" + szi -> zi_parcela + "'"
+				//		_oSQL:Log ()
+						_nRegE2Mat = _oSQL:RetQry (1, .f.)
+						if _nRegE2Mat == 0
+							_sMsg += "SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela + " transferencia nao apareceu no SE2 da matriz." + chr (13) + chr (10)
+						else
+				//			U_Log2 ('debug', '[' + procname () + ']Posicionando SE2 no reg. ' + cvaltochar (_nRegE2Mat))
+							se2 -> (dbgoto (_nRegE2Mat))
+							if se2 -> e2_valor != (_sAliasQ) -> e2_valor
+								_sMsg += "SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela + " transferencia apareceu no SE2 com valor diferente! Na filial: " + cvaltochar ((_sAliasQ) -> e2_valor) + ' na matriz: ' + cvaltochar (se2 -> e2_valor) + chr (13) + chr (10)
+							endif
+							if se2 -> e2_vencrea != (_sAliasQ) -> e2_vencrea
+								_sMsg += "SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela + " transferencia apareceu no SE2 com dt.vencto diferente! Na filial: " + dtoc ((_sAliasQ) -> e2_vencrea) + ' na matriz: ' + dtoc ((se2 -> e2_vencrea)) + chr (13) + chr (10)
+							endif
+						endif
 					endif
 				endif
 			endif
@@ -702,9 +725,9 @@ static function _ConfSZI ()
 
 		if ! empty (_sMsg)
 			_nQtErros ++
-			U_Log2 ('erro', 'Inconsistencia SZI x SE2 safra - filial: ' + (_sAliasQ) -> e2_filial + ' NF: ' + (_sAliasQ) -> e2_num + ' forn: ' + (_sAliasQ) -> e2_fornece)
+//			U_Log2 ('erro', 'Inconsistencia SZI x SE2 safra - filial: ' + (_sAliasQ) -> e2_filial + ' NF: ' + (_sAliasQ) -> e2_num + ' forn: ' + (_sAliasQ) -> e2_fornece)
 			U_Log2 ('erro', _sMsg)
-			u_zzunu ({'999'}, 'Inconsistencia SZI x SE2 safra - filial: ' + (_sAliasQ) -> e2_filial + ' NF: ' + (_sAliasQ) -> e2_num + ' forn: ' + (_sAliasQ) -> e2_fornece, _sMsg)
+	//		u_zzunu ({'999'}, 'Inconsistencia SZI x SE2 safra - filial: ' + (_sAliasQ) -> e2_filial + ' NF: ' + (_sAliasQ) -> e2_num + ' forn: ' + (_sAliasQ) -> e2_fornece, _sMsg)
 		endif
 		(_sAliasQ) -> (dbskip ())
 	enddo
