@@ -10,6 +10,7 @@
 // #Modulos 		  #FAT 
 //
 // Historico de alteracoes:
+// 14/02/2022 - Claudia - Incluida quantidade proporcionalizada. GLPI: 11624
 //
 // --------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -72,6 +73,7 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "    ,SD2.D2_EMISSAO AS EMISSAO"
     _oSQL:_sQuery += "    ,SD2.D2_COD AS PRODUTO "
     _oSQL:_sQuery += "    ,SD2.D2_LOTECTL AS LOTE"
+    _oSQL:_sQuery += "    ,SD2.D2_QUANT AS QUANT "
     _oSQL:_sQuery += " FROM " + RetSQLName ("SF2") + " SF2 "
     _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA1") + " SA1 "
     _oSQL:_sQuery += " 	ON SA1.D_E_L_E_T_   = '' "
@@ -96,7 +98,7 @@ Static Function PrintReport(oReport)
 
     For _x:=1 to Len(_aNf)
         // Busca dados na função do robert
-		_sMapa := U_RastLT (_aNf[_x,1], U_TamFixo (_aNf[_x,8], 15, ' '), alltrim(_aNf[_x,9]), 0, NIL)
+		_sMapa := U_RastLT (_aNf[_x,1], U_TamFixo (_aNf[_x,8], 15, ' '), alltrim(_aNf[_x,9]), 0, NIL, alltrim(_aNf[_x,10]))
         // _sArq  := 'c:\temp\rast.mm'
          
         // delete file (_sArq)
@@ -122,7 +124,7 @@ Static Function PrintReport(oReport)
             oSection1:Cell("COLUNA2")	:SetBlock   ({||  _aLtXLS58[_i, 4]	            })  // carga
             oSection1:Cell("COLUNA3")	:SetBlock   ({||  alltrim(_aLtXLS58[_i, 1])     })  // variedade
             oSection1:Cell("COLUNA4")	:SetBlock   ({||  _sVari                        })  // descrição
-            oSection1:Cell("COLUNA5")	:SetBlock   ({||  _aLtXLS58[_i, 3] 	            })  // kg
+            oSection1:Cell("COLUNA5")	:SetBlock   ({||  _aLtXLS58[_i, 7] 	            })  // kg
             oSection1:Cell("COLUNA6")	:SetBlock   ({||  _aLtXLS58[_i, 6]              })  // grau
             oSection1:Cell("COLUNA7")	:SetBlock   ({||  _aLtXLS58[_i, 2]              })  // lote carga
             oSection1:Cell("COLUNA8")	:SetBlock   ({||  _aNf[_x, 9]                   })  // lote nota
