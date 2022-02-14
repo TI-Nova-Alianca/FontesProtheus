@@ -461,15 +461,18 @@ static function _RastLt ()
 	local _sMapa     := ""
 	local _oSQL      := NIL
 	local _sChave    := ""
+	local _nQtBase   := 0
 
 	// u_logIni ()
 	if empty (_sErros)
 		_sProduto  = _ExtraiTag ("_oXML:_WSAlianca:_Produto", .T., .F.)
 		_sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote", .T., .F.)
+		_nQtBase   = _ExtraiTag ("_oXML:_WSAlianca:_QtBase", .F., .F.)
+		_nQtBase = iif (empty (_nQtBase), 1, _nQtBase)
 	endif
 
 	if empty (_sErros)
-		_sMapa = U_RastLt (_sWS_Filia, _sProduto, _sLote, 0, NIL)
+		_sMapa = U_RastLt (_sWS_Filia, _sProduto, _sLote, 0, NIL, _nQtBase)
 		u_log ('')
 		u_log (_sMapa)
 		_sChave = 'RAST' + dtos (date ()) + strtran (time (), ':', '')

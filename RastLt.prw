@@ -18,10 +18,12 @@
 // 09/09/2021 - Robert - Nas NF de entrada, passa a desconsiderar retornos de industrializacao (GLPI 10913)
 // 28/01/2022 - Robert - Ajuste na busca das cargas de safra.
 //                     - Alimenta variavel _aLtXLS58 para relatorio CENECOOP (GLPI 11514)
+// 14/02/2022 - Robert - Criado calculo de proporcionalizacao de quantidades entre niveis (GLPI 11514)
+//                     - Transferencias entre lotes desconsideravam casos de outro item com mesmo numero de lote (GLPI 11620)
 //
 
 // --------------------------------------------------------------------------
-user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
+user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 	local _sDescri  := ""
 	local _sAliasQ  := ""
 	local _sRet     := ""
@@ -31,7 +33,8 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 	local _nReqOP   := 0
 	local _aCons    := {}
 	local _nCons    := 0
-	local _aTrLt    := {}
+	local _aEntTrLt := {}
+	local _aSaiTrLt := {}
 	local _nTrLt    := 0
 	local _aSD1     := {}
 	local _nSD1     := 0
@@ -43,7 +46,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 	local _aCarga   := ""
 	static _sID     := '0000'  // Criado como STATIC para gerar sempre IDs unicos, mesmo com chamadas recursivas.
 
-	u_logIni (procname () + ' ' + _sFilial + _sProduto + _sLote + ' nivel ' + cvaltochar (_nNivel))
+	U_Log2 ('info', 'Iniciando ' + _sFilial + _sProduto + _sLote + ' nivel ' + cvaltochar (_nNivel))
 	_aHist := iif (_aHist == NIL, {}, _aHist)
 
 	if _nNivel == 0
@@ -71,7 +74,8 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 					_sID = soma1 (_sID)
 					_sDescri := ""
 					_sDescri += alltrim (_sProduto) + '-' + U_NoAcento (alltrim (sb1 -> b1_desc)) + _sQuebra
-					_sDescri += 'Filial ' + _sFilial + ' - Lote ' + _sLote
+					_sDescri += 'Filial ' + _sFilial + ' - Lote ' + _sLote + _sQuebra
+					_sDescri += 'Qt. base: ' + alltrim (transform (_nQtProp, '@E 999,999,999,999.99')) + ' ' + sb1 -> b1_um
 					_sRet := ""
 					_sRet += '<map version="1.0.1">'
 					_sRet += '<node CREATED="1493030990433" ID="' + _sID + '" STYLE="bubble" TEXT="' + _sDescri + '">'
@@ -106,10 +110,14 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 					_oSQL:Log ()
 					_aOP := aclone (_oSQL:Qry2Array (.F., .F.))
 					for _nOP = 1 to len (_aOP)
+
+						// Calcula a quantidade proporcional para ser passada na chamada recursiva.
+						_nQtProp2 = _nQtProp  // Aqui trata-se da quantidade final produzida pela OP (de 1 para 1)
+
 						_sID = soma1 (_sID)
 						_sDescri := 'O.P. ' + alltrim (_aOP [_nOP, 1]) + _sQuebra
 						_sDescri += dtoc (stod (_aOP [_nOP, 4])) + _sQuebra
-						_sDescri += _FmtQt (_aOP [_nOP, 2], _aOP [_nOP, 3]) + _sQuebra
+						_sDescri += _FmtQt (_aOP [_nOP, 2], _aOP [_nOP, 3], _nQtProp2) + _sQuebra
 						_sRet += '<node BACKGROUND_COLOR="#cccc00" CREATED="1493031071766" ' + iif (abs (_nNivel) >= _nNivFold, 'FOLDED="true" ', '') + 'ID="' + _sID + '" POSITION="left" TEXT="' + _sDescri + '">'
 					
 						// Busca requisicoes da OP.
@@ -132,13 +140,17 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 						_oSQL:Log ()
 						_aCons := aclone (_oSQL:Qry2Array (.F., .F.))
 						for _nCons = 1 to len (_aCons)
+
+							// Calcula a quantidade proporcional para ser passada na chamada recursiva.
+							_nQtProp2 = (_nQtProp * _aCons [_nCons, 3]) / _aOP [_nOP, 2]
+							
 							_sID = soma1 (_sID)
 							_sDescri = ''
 							_sDescri += alltrim (_aCons [_nCons, 1]) + '-' + U_NoAcento (alltrim (left (_aCons [_nCons, 5], 40))) + _sQuebra
 							if ! empty (_aCons [_nCons, 2])
 								_sDescri += 'Lote ' + alltrim (_aCons [_nCons, 2]) + _sQuebra
 							endif
-							_sDescri += _FmtQt (_aCons [_nCons, 3], _aCons [_nCons, 4])
+							_sDescri += _FmtQt (_aCons [_nCons, 3], _aCons [_nCons, 4], _nQtProp2)
 							_sRet += '<node BACKGROUND_COLOR="#ffffcc" CREATED="1493031071766" ID="' + _sID + '" POSITION="left" TEXT="' + _sDescri + '">'
 					
 							// Adiciona rastreabilidade do produto consumido.
@@ -146,7 +158,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 								if len (_sRet) > 30000  // Antes que alcance o tamanho maximo de uma string, vou parar a busca.
 									_sRet += '<node BACKGROUND_COLOR="#ff00cc" CREATED="1493031071766" ID="MAXNIVEIS" POSITION="left" TEXT="(...) limite de memoria excedido"></node>'
 								else
-									_sRet += U_RastLt (_sFilial, _aCons [_nCons, 1], _aCons [_nCons, 2], _nNivel - 1, _aHist)
+									_sRet += U_RastLt (_sFilial, _aCons [_nCons, 1], _aCons [_nCons, 2], _nNivel - 1, _aHist, _nQtProp2)
 								endif
 							endif
 					
@@ -161,16 +173,17 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 				// Busca entradas por transferencia entre lotes.
 				if _nNivel <= 0 .and. sb1 -> b1_rastro == 'L'
 					_oSQL := ClsSQL ():New ()
-					_oSQL:_sQuery := "SELECT CONTRAPARTIDA.D3_LOTECTL AS LOTEORI,"
-					_oSQL:_sQuery +=       " SUM (SD3.D3_QUANT) AS QUANT" //, SD3.D3_EMISSAO"
+					_oSQL:_sQuery := "SELECT CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL AS LOTEORI,"
+					_oSQL:_sQuery +=       " SUM (CONTRAPARTIDA.D3_QUANT) AS QUANT"
 					_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD3") + " SD3 "
 					_oSQL:_sQuery +=  " INNER JOIN " + RetSQLName ("SD3") + " CONTRAPARTIDA "  // ORIGEM/DESTINO, QUANDO FOR TRANSFERENCIA
 					_oSQL:_sQuery +=       " ON (CONTRAPARTIDA.D_E_L_E_T_ != '*'"
 					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_FILIAL   = SD3.D3_FILIAL"
 					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_ESTORNO != 'S'"
 					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_NUMSEQ   = SD3.D3_NUMSEQ"
-					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_COD      = SD3.D3_COD"
-					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_LOTECTL != SD3.D3_LOTECTL"
+//					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_COD      = SD3.D3_COD"
+//					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_LOTECTL != SD3.D3_LOTECTL"
+					_oSQL:_sQuery +=       " AND NOT (CONTRAPARTIDA.D3_COD = SD3.D3_COD AND CONTRAPARTIDA.D3_LOTECTL = SD3.D3_LOTECTL)"  // transferencia de endereco
 					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_CF       = 'RE4'"
 					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.R_E_C_N_O_ != SD3.R_E_C_N_O_)"
 					_oSQL:_sQuery += " WHERE SD3.D_E_L_E_T_  = ''"
@@ -181,21 +194,31 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 					_oSQL:_sQuery +=   " AND SD3.D3_QUANT   > 0"
 					_oSQL:_sQuery +=   " AND SD3.D3_COD      = '" + _sProduto + "'"
 					_oSQL:_sQuery +=   " AND SD3.D3_LOTECTL  = '" + _sLote + "'"
-					_oSQL:_sQuery += " 	GROUP BY CONTRAPARTIDA.D3_LOTECTL"//, SD3.D3_EMISSAO"
-					_oSQL:_sQuery += " 	ORDER BY CONTRAPARTIDA.D3_LOTECTL"//, SD3.D3_EMISSAO"
+					_oSQL:_sQuery += " 	GROUP BY CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL"
+					_oSQL:_sQuery += " 	ORDER BY CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL"
 					_oSQL:Log ()
-					_aTrLt = aclone (_oSQL:Qry2Array (.F., .F.))
-					for _nTrLt = 1 to len (_aTrLt)
+					_aEntTrLt = aclone (_oSQL:Qry2Array (.F., .F.))
+					dbselectarea ("SD3")  // Por algum motivo estah chegando aqui sem nenhum 'alias'.
+					for _nTrLt = 1 to len (_aEntTrLt)
+
+						// Calcula a quantidade proporcional para ser passada na chamada recursiva.
+						_nQtProp2 = _nQtProp  // Transferencia eh sempre de 1 para 1
+
 						_sID = soma1 (_sID)
-						_sDescri := 'Tr.do Lote ' + _aTrLt [_nTrLt, 1] + _sQuebra
-						_sDescri += _FmtQt (_aTrLt [_nTrLt, 2], sb1 -> b1_um)
+						if _aEntTrLt [_nTrLt, 1] == _sProduto
+							_sDescri := 'Tr.do Lote ' + _aEntTrLt [_nTrLt, 2] + _sQuebra
+						else
+							_sDescri := 'Tr.do item ' + alltrim (_aEntTrLt [_nTrLt, 1]) + ' - ' + alltrim (fBuscaCpo ("SB1", 1, xfilial ("SB1") + _aEntTrLt [_nTrLt, 1] , 'B1_DESC')) + _sQuebra
+							_sDescri += 'Lote origem ' + _aEntTrLt [_nTrLt, 2] + _sQuebra
+						endif
+						_sDescri += _FmtQt (_aEntTrLt [_nTrLt, 3], sb1 -> b1_um, _nQtProp2)
 						_sRet += '<node BACKGROUND_COLOR="#ffcccc" CREATED="1493031071766" ' + iif (abs (_nNivel) >= _nNivFold, 'FOLDED="true" ', '') + 'ID="' + _sID + '" POSITION="left" TEXT="' + _sDescri + '">'
 						
 						// Chamada recursiva para buscar a 'origem do lote de origem'
 						if len (_sRet) > 30000  // Antes que alcance o tamanho maximo de uma string, vou parar a busca.
 							_sRet += '<node BACKGROUND_COLOR="#ff00cc" CREATED="1493031071766" ID="MAXNIVEIS" POSITION="left" TEXT="(...) limite de memoria excedido"></node>'
 						else
-							_sRet += U_RastLt (_sFilial, _sProduto, _aTrLt [_nTrLt, 1], _nNivel - 1, _aHist)
+							_sRet += U_RastLt (_sFilial, _aEntTrLt [_nTrLt, 1], _aEntTrLt [_nTrLt, 2], _nNivel - 1, _aHist, _nQtProp2)
 						endif
 						
 						_sRet += '</node>'
@@ -221,9 +244,13 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 					_oSQL:Log ()
 					_sAliasQ = _oSQL:Qry2Trb (.F.)
 					do while ! (_sAliasQ) -> (eof ())
+
+						// Calcula a quantidade proporcional para ser passada na chamada recursiva.
+						_nQtProp2 = _nQtProp  // Movimentacao por entrada normal eh sempre de 1 para 1
+
 						_sID = soma1 (_sID)
 						_sDescri = 'Mov.interno doc ' + (_sAliasQ) -> d3_doc + _sQuebra
-						_sDescri += _FmtQt ((_sAliasQ) -> d3_quant, (_sAliasQ) -> d3_um)
+						_sDescri += _FmtQt ((_sAliasQ) -> d3_quant, (_sAliasQ) -> d3_um, _nQtProp2)
 						_sRet += '<node BACKGROUND_COLOR="#669900" CREATED="1493031071766" ' + iif (abs (_nNivel) >= _nNivFold, 'FOLDED="true" ', '') + 'ID="' + _sID + '" POSITION="left" TEXT="' + _sDescri + '">'
 						_sRet += '</node>'
 						(_sAliasQ) -> (dbskip ())
@@ -270,10 +297,14 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 					_oSQL:Log ()
 					_aSD1 = aclone (_oSQL:Qry2Array (.F., .F.))
 					for _nSD1 = 1 to len (_aSD1)
+
+						// Calcula a quantidade proporcional para ser passada na chamada recursiva.
+						_nQtProp2 = _nQtProp  // Movimentacao por NF eh sempre de 1 para 1
+
 						_sID = soma1 (_sID)
 						_sDescri := 'NF entr.' + alltrim (_aSD1 [_nSD1, 1]) + ' de ' + alltrim (_aSD1 [_nSD1, 5]) + _sQuebra
 						_sDescri += 'Lote forn:' + alltrim (_aSD1 [_nSD1, 2]) + _sQuebra
-						_sDescri += _FmtQt (_aSD1 [_nSD1, 3], _aSD1 [_nSD1, 4]) + _sQuebra
+						_sDescri += _FmtQt (_aSD1 [_nSD1, 3], _aSD1 [_nSD1, 4], _nQtProp2) + _sQuebra
 						if ! empty (_sLote)
 							_sLaudo = U_LaudoEm (_sProduto, _sLote, stod (_aSD1 [_nSD1, 5]))
 							if ! empty (_sLaudo)
@@ -308,7 +339,8 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 													  _aSD1 [_nSD1, 3], ;  // Quantidade
 													   _aCarga [1, 1], ;  // Numero da carga ('numero da pesagem')
 													   _aCarga [1, 2], ;  // Data da carga
-													   _aCarga [1, 4]})  // Grau da uva
+													   _aCarga [1, 4], ;  // Grau da uva
+													   _nQtProp})  // Quantidade proporcional a quantidade original vendida na NF
 								endif
 							endif
 						endif
@@ -349,6 +381,10 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 					_aSD1 = aclone (_oSQL:Qry2Array (.F., .F.))
 					//u_log (_aSD1)
 					for _nSD1 = 1 to len (_aSD1)
+
+						// Calcula a quantidade proporcional para ser passada na chamada recursiva.
+						_nQtProp2 = _nQtProp  // Aqui nao ha conversao de quantidades como numa OP ou numa desmontagem.
+
 						_sID = soma1 (_sID)
 	
 						// NF lancada com problemas e que deve ser ignorada.
@@ -358,7 +394,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 						else
 							_sDescri := 'Transf. da filial ' + _aSD1 [_nSD1, 5] + ' - NF ' + alltrim (_aSD1 [_nSD1, 1]) + _sQuebra
 							_sDescri += 'Lote fornec:' + alltrim (_aSD1 [_nSD1, 2]) + _sQuebra
-							_sDescri += _FmtQt (_aSD1 [_nSD1, 3], _aSD1 [_nSD1, 4]) + _sQuebra
+							_sDescri += _FmtQt (_aSD1 [_nSD1, 3], _aSD1 [_nSD1, 4], _nQtProp2) + _sQuebra
 							if ! empty (_sLote)
 								_sLaudo = U_LaudoEm (_sProduto, _sLote, stod (_aSD1 [_nSD1, 5]))
 								if ! empty (_sLaudo)
@@ -371,7 +407,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 							if len (_sRet) > 30000  // Antes que alcance o tamanho maximo de uma string, vou parar a busca.
 								_sRet += '<node BACKGROUND_COLOR="#ff00cc" CREATED="1493031071766" ID="MAXNIVEIS" POSITION="left" TEXT="(...) limite de memoria excedido"></node>'
 							else
-								_sRet += U_RastLt (_aSD1 [_nSD1, 5], _sProduto, _aSD1 [_nSD1, 2], _nNivel - 1, _aHist)
+								_sRet += U_RastLt (_aSD1 [_nSD1, 5], _sProduto, _aSD1 [_nSD1, 2], _nNivel - 1, _aHist, _nQtProp2)
 							endif
 							_sRet += '</node>'
 						endif
@@ -389,7 +425,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 				// Busca saidas por consumo em OP
 				if _nNivel >= 0 .and. sb1 -> b1_rastro == 'L'
 					_oSQL := ClsSQL ():New ()
-					_oSQL:_sQuery := "SELECT D3_OP, SUM (D3_QUANT + D3_PERDA), D3_UM, C2_PRODUTO, B1_DESC"//, D3_EMISSAO"
+					_oSQL:_sQuery := "SELECT D3_OP, SUM (D3_QUANT + D3_PERDA), D3_UM, C2_PRODUTO, B1_DESC, SUM (C2_QUJE + C2_PERDA)"
 					_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD3") + " SD3, "
 					_oSQL:_sQuery +=             RetSQLName ("SC2") + " SC2, "
 					_oSQL:_sQuery +=             RetSQLName ("SB1") + " SB1 "
@@ -411,19 +447,23 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 					_oSQL:_sQuery +=   " AND SD3.D3_CF      like 'RE%'"
 					_oSQL:_sQuery +=   " AND SD3.D3_COD     = '" + _sProduto + "'"
 					_oSQL:_sQuery +=   " AND SD3.D3_LOTECTL = '" + _sLote + "'"
-					_oSQL:_sQuery += " GROUP BY D3_OP, D3_UM, C2_PRODUTO, B1_DESC"//, D3_EMISSAO"
+					_oSQL:_sQuery += " GROUP BY D3_OP, D3_UM, C2_PRODUTO, B1_DESC"
 					_oSQL:Log ()
 					_aReqOP := aclone (_oSQL:Qry2Array (.F., .F.))
 					for _nReqOP = 1 to len (_aReqOP)
+
+						// Calcula a quantidade proporcional para ser passada na chamada recursiva.
+						_nQtProp2 = (_nQtProp * _aReqOP [_nReqOP, 2]) / _aReqOP [_nReqOP, 6]
+
 						_sID = soma1 (_sID)
 						_sDescri := 'Consumo na OP ' + alltrim (_aReqOP [_nReqOP, 1]) + _sQuebra
-						_sDescri += _FmtQt (_aReqOP [_nReqOP, 2], _aReqOP [_nReqOP, 3]) + _sQuebra
+						_sDescri += _FmtQt (_aReqOP [_nReqOP, 2], _aReqOP [_nReqOP, 3], _nQtProp2) + _sQuebra
 						_sDescri += 'Prod.final: ' + alltrim (_aReqOP [_nReqOP, 4]) + '-' + alltrim (left (_aReqOP [_nReqOP, 5], 40))
 						_sRet += '<node BACKGROUND_COLOR="#cccc00" CREATED="1493031071766" ' + iif (abs (_nNivel) >= _nNivFold, 'FOLDED="true" ', '') + 'ID="' + _sID + '" POSITION="right" TEXT="' + _sDescri + '">'
 						if len (_sRet) > 30000  // Antes que alcance o tamanho maximo de uma string, vou parar a busca.
 							_sRet += '<node BACKGROUND_COLOR="#ff00cc" CREATED="1493031071766" ID="MAXNIVEIS" POSITION="left" TEXT="(...) limite de memoria excedido"></node>'
 						else
-							_sRet += U_RastLt (_sFilial, _aReqOP [_nReqOP, 4], left (_aReqOP [_nReqOP, 1], 8), _nNivel + 1, _aHist)
+							_sRet += U_RastLt (_sFilial, _aReqOP [_nReqOP, 4], left (_aReqOP [_nReqOP, 1], 8), _nNivel + 1, _aHist, _nQtProp2)
 						endif
 						_sRet += '</node>'
 					next
@@ -461,9 +501,13 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 					_oSQL:Log ()
 					_aSD2 = aclone (_oSQL:Qry2Array (.F., .F.))
 					for _nSD2 = 1 to len (_aSD2)
+
+						// Calcula a quantidade proporcional para ser passada na chamada recursiva.
+						_nQtProp2 = _nQtProp  // Movimentacao por NF eh sempre de 1 para 1
+
 						_sID = soma1 (_sID)
 						_sDescri := 'NF saida ' + alltrim (_aSD2 [_nSD2, 1]) + ' p/ ' + _aSD2 [_nSD2, 5] + '-' + alltrim (left (_aSD2 [_nSD2, 4], 30)) + _sQuebra
-						_sDescri += _FmtQt (_aSD2 [_nSD2, 2], _aSD2 [_nSD2, 3]) + _sQuebra
+						_sDescri += _FmtQt (_aSD2 [_nSD2, 2], _aSD2 [_nSD2, 3], _nQtProp2) + _sQuebra
 						if ! empty (_sLote)
 							_sLaudo = U_LaudoEm (_sProduto, _sLote, stod (_aSD2 [_nSD2, 5]))
 							if ! empty (_sLaudo)
@@ -522,6 +566,10 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 					_oSQL:Log ()
 					_aSD2 = aclone (_oSQL:Qry2Array (.F., .F.))
 					for _nSD2 = 1 to len (_aSD2)
+
+						// Calcula a quantidade proporcional para ser passada na chamada recursiva.
+						_nQtProp2 = _nQtProp  // Transferencia eh sempre de 1 para 1
+
 						_sID = soma1 (_sID)
 						_sDescri := 'Transf. para filial ' + _aSD2 [_nSD2, 4] + ' - NF ' + alltrim (_aSD2 [_nSD2, 1]) + _sQuebra
 						if ! empty (_sLote)
@@ -530,7 +578,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 								_sDescri += 'Laudo labor:' + _sLaudo + _sQuebra
 							endif
 						endif
-						_sDescri += _FmtQt (_aSD2 [_nSD2, 2], _aSD2 [_nSD2, 3]) + _sQuebra
+						_sDescri += _FmtQt (_aSD2 [_nSD2, 2], _aSD2 [_nSD2, 3], _nQtProp2) + _sQuebra
 						_sDescri += 'Lote gerado na filial:' + alltrim (_aSD2 [_nSD2, 5]) + _sQuebra
 						_sRet += '<node BACKGROUND_COLOR="#009999" CREATED="1493031071766" ' + iif (abs (_nNivel) >= _nNivFold, 'FOLDED="true" ', '') + 'ID="' + _sID + '" POSITION="right" TEXT="' + _sDescri + '">'
 
@@ -538,7 +586,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 						if len (_sRet) > 30000  // Antes que alcance o tamanho maximo de uma string, vou parar a busca.
 							_sRet += '<node BACKGROUND_COLOR="#ff00cc" CREATED="1493031071766" ID="MAXNIVEIS" POSITION="left" TEXT="(...) limite de memoria excedido"></node>'
 						else
-							_sRet += U_RastLt (_aSD2 [_nSD2, 4], _sProduto, _aSD2 [_nSD2, 5], _nNivel + 1, _aHist)
+							_sRet += U_RastLt (_aSD2 [_nSD2, 4], _sProduto, _aSD2 [_nSD2, 5], _nNivel + 1, _aHist, _nQtProp2)
 						endif
 
 						_sRet += '</node>'
@@ -549,16 +597,17 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 				// Busca saidas por transferencia entre lotes.
 				if _nNivel >= 0 .and. sb1 -> b1_rastro == 'L'
 					_oSQL := ClsSQL ():New ()
-					_oSQL:_sQuery := "SELECT CONTRAPARTIDA.D3_LOTECTL AS LOTEORI,"
-					_oSQL:_sQuery +=       " SUM (SD3.D3_QUANT) AS QUANT"//, SD3.D3_EMISSAO"
+					_oSQL:_sQuery := "SELECT CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL AS LOTEORI,"
+					_oSQL:_sQuery +=       " SUM (SD3.D3_QUANT) AS QUANT"
 					_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD3") + " SD3 "
 					_oSQL:_sQuery +=  " INNER JOIN " + RetSQLName ("SD3") + " CONTRAPARTIDA "  // ORIGEM/DESTINO, QUANDO FOR TRANSFERENCIA
 					_oSQL:_sQuery +=       " ON (CONTRAPARTIDA.D_E_L_E_T_ != '*'"
 					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_FILIAL   = SD3.D3_FILIAL"
 					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_ESTORNO != 'S'"
 					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_NUMSEQ   = SD3.D3_NUMSEQ"
-					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_COD      = SD3.D3_COD"
-					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_LOTECTL != SD3.D3_LOTECTL"
+//					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_COD      = SD3.D3_COD"
+//					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_LOTECTL != SD3.D3_LOTECTL"
+					_oSQL:_sQuery +=       " AND NOT (CONTRAPARTIDA.D3_COD = SD3.D3_COD AND CONTRAPARTIDA.D3_LOTECTL = SD3.D3_LOTECTL)"  // transferencia de endereco
 					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_CF       = 'DE4'"
 					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.R_E_C_N_O_ != SD3.R_E_C_N_O_)"
 					_oSQL:_sQuery += " WHERE SD3.D_E_L_E_T_  = ''"
@@ -569,21 +618,31 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 					_oSQL:_sQuery +=   " AND SD3.D3_QUANT   > 0"
 					_oSQL:_sQuery +=   " AND SD3.D3_COD      = '" + _sProduto + "'"
 					_oSQL:_sQuery +=   " AND SD3.D3_LOTECTL  = '" + _sLote + "'"
-					_oSQL:_sQuery += " 	GROUP BY CONTRAPARTIDA.D3_LOTECTL"//, SD3.D3_EMISSAO"
-					_oSQL:_sQuery += " 	ORDER BY CONTRAPARTIDA.D3_LOTECTL"//, SD3.D3_EMISSAO"
+					_oSQL:_sQuery += " 	GROUP BY CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL"
+					_oSQL:_sQuery += " 	ORDER BY CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL"
 					_oSQL:Log ()
-					_aTrLt = aclone (_oSQL:Qry2Array (.F., .F.))
-					for _nTrLt = 1 to len (_aTrLt)
+					_aSaiTrLt = aclone (_oSQL:Qry2Array (.F., .F.))
+					for _nTrLt = 1 to len (_aSaiTrLt)
+
+						// Calcula a quantidade proporcional para ser passada na chamada recursiva.
+						_nQtProp2 = _nQtProp  // Transferencia eh sempre de 1 para 1
+
 						_sID = soma1 (_sID)
-						_sDescri := 'Tr.para o lote ' + _aTrLt [_nTrLt, 1] + _sQuebra
-						_sDescri += _FmtQt (_aTrLt [_nTrLt, 2], sb1 -> b1_um)
+//						_sDescri := 'Tr.para o lote ' + _aSaiTrLt [_nTrLt, 2] + _sQuebra
+						if _aSaiTrLt [_nTrLt, 1] == _sProduto
+							_sDescri := 'Tr.para o Lote ' + _aSaiTrLt [_nTrLt, 2] + _sQuebra
+						else
+							_sDescri := 'Tr.para o item ' + alltrim (_aSaiTrLt [_nTrLt, 1]) + ' - ' + alltrim (fBuscaCpo ("SB1", 1, xfilial ("SB1") + _aSaiTrLt [_nTrLt, 1] , 'B1_DESC')) + _sQuebra
+							_sDescri += 'Lote destino ' + _aSaiTrLt [_nTrLt, 2] + _sQuebra
+						endif
+						_sDescri += _FmtQt (_aSaiTrLt [_nTrLt, 3], sb1 -> b1_um, _nQtProp2)
 						_sRet += '<node BACKGROUND_COLOR="#ffcccc" CREATED="1493031071766" ' + iif (abs (_nNivel) >= _nNivFold, 'FOLDED="true" ', '') + 'ID="' + _sID + '" POSITION="left" TEXT="' + _sDescri + '">'
 						
 						// Chamada recursiva para buscar a 'origem do lote de origem'
 						if len (_sRet) > 30000  // Antes que alcance o tamanho maximo de uma string, vou parar a busca.
 							_sRet += '<node BACKGROUND_COLOR="#ff00cc" CREATED="1493031071766" ID="MAXNIVEIS" POSITION="left" TEXT="(...) limite de memoria excedido"></node>'
 						else
-							_sRet += U_RastLt (_sFilial, _sProduto, _aTrLt [_nTrLt, 1], _nNivel + 1, _aHist)
+							_sRet += U_RastLt (_sFilial, _aSaiTrLt [_nTrLt, 1], _aSaiTrLt [_nTrLt, 2], _nNivel + 1, _aHist, _nQtProp2)
 						endif
 						
 						_sRet += '</node>'
@@ -616,12 +675,13 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist)
 	endif
 */
 
-	u_logFim (procname () + ' ' + _sFilial + _sProduto + _sLote + ' nivel ' + cvaltochar (_nNivel))
+	U_Log2 ('info', 'Finalizando ' + _sFilial + _sProduto + _sLote + ' nivel ' + cvaltochar (_nNivel))
 return _sRet
 
 
 
 // --------------------------------------------------------------------------
-// Formata quantidade
-static function _FmtQt (_nValor, _sUM)
-return 'Qt: ' + alltrim (transform (_nValor, '@E 999,999,999,999.99')) + ' ' + _sUM
+// Formata quantidades
+static function _FmtQt (_nValor, _sUM, _nQtProp)
+//return 'Qt: ' + alltrim (transform (_nValor, '@E 999,999,999,999.99')) + ' ' + _sUM
+return 'Qt: ' + alltrim (transform (_nValor, '@E 999,999,999,999.99')) + ' ' + _sUM + iif (empty (_nQtProp), '', ' (qt.proporcional: ' + alltrim (transform (_nQtProp, '@E 999,999,999,999.9999')) + ')')
