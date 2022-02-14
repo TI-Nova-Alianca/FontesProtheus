@@ -109,14 +109,8 @@ Static Function _BuscaRecebiveis(dDataIni, dDataFin, _sTipo)
 
             If _lRetGrv == .T.
                 u_log2('aviso', "Registro " + _sIdTransacao + " gravado com sucesso!")
-                If _sTipo == '2'
-                    u_help("Registro " + _sIdTransacao + " gravado com sucesso!")
-                EndIf
             Else
                 u_log2('aviso', "Registro " + _sIdTransacao + " não gravado!")
-                If _sTipo == '2'
-                    u_help("Registro " + _sIdTransacao + " não gravado!")
-                EndIf
             EndIf
         Next
     Else
@@ -287,6 +281,7 @@ Static Function MontaLinkReceb(dDataIni, dDataFin)
     // Documentação API: https://docs.pagar.me/v4/reference#status-dos-receb%C3%ADveis
     _sLink := 'https://api.pagar.me/1/payables?api_key=' + alltrim(_sAkKey) + '&payment_date=>='+ _sDt01 +'T00:00:01.582Z&payment_date=<='+ _sDt02 +'T23:59:59.582Z&status=paid'
 
+    u_log2("Aviso", _sLink)
 
     //_sLink := 'https://api.pagar.me/1/payables?api_key=' + alltrim(_sAkKey) + '&created_at=>='+ _sDt01 +'T00:00:01.582Z&created_at=<='+ _sDt02 +'T23:59:59.582Z&status=paid'
     //_sLink := 'https://api.pagar.me/1/payables?count=500&created_at=%3E=' + _sDt01 + 'T00:00:00.000Z&created_at=%3C=' + _sDt02 + 'T23:59:59.999Z&status=paid&api_key=' + alltrim(_sAkKey)
@@ -297,6 +292,7 @@ Return _sLink
 Static Function MontaLinkTrans(_sIdTransacao)
     _sAkKey := GETMV("VA_PAGARME")
     _sLink  := 'https://api.pagar.me/1/transactions/' + _sIdTransacao + '?api_key=' + alltrim(_sAkKey)
+    u_log2("Aviso", _sLink)
 Return _sLink
 //
 // -----------------------------------------------------------------------------------
