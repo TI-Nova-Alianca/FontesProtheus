@@ -198,6 +198,7 @@ User Function ZB3CON()
                     u_log("IMPORTAÇÃO NÃO REALIZADA: Registro RECID + IDTRAN:" + _sIdRec +"/"+ _sIdTran)
                     
                     // Salva dados para impressão
+                    _nTot := _nVlrLiq + _nVlrTax
                     _sErro := ALLTRIM(memoread (NomeAutoLog ()))
                     aadd(_aRelErr,{ _aZB3[i,1],; // filial
                                     _aZB3[i,2],; // prefixo
@@ -207,11 +208,13 @@ User Function ZB3CON()
                                     _aZB3[i,7],; // loja
                                     _nVlrLiq  ,; // valor recebido
                                     _nVlrTax  ,; // taxa
+                                    _nTot     ,; // recebido + taxa
                                     _sAutCod  ,; // autorização
                                     _sNSUCod  ,; // NSU
                                     _sErro    }) // status
 
-                Else                   
+                Else               
+                    _nTot := _nVlrLiq + _nVlrTax     
                     // Salva dados para impressão
                     aadd(_aRelImp,{ _aZB3[i,1],; // filial
                                     _aZB3[i,2],; // prefixo
@@ -221,6 +224,7 @@ User Function ZB3CON()
                                     _aZB3[i,7],; // loja
                                     _nVlrLiq  ,; // valor recebido
                                     _nVlrTax  ,; // taxa
+                                    _nTot     ,; // recebido + taxa
                                     _sAutCod  ,; // autorização
                                     _sNSUCod  ,; // NSU
                                     'BAIXADO' }) // status
@@ -314,12 +318,14 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA3", 	"" ,"Cliente"		,       					,35,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA4", 	"" ,"Vlr.Recebido"	, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA5", 	"" ,"Vlr.Taxa"		, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA6", 	"" ,"Autoriz."		,							,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA7", 	"" ,"NSU"			,	    					,10,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA8", 	"" ,"Status"		,	    					,20,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA6", 	"" ,"Total"		    , "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA7", 	"" ,"Autoriz."		,							,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA8", 	"" ,"NSU"			,	    					,10,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA9", 	"" ,"Status"		,	    					,20,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 	
 	TRFunction():New(oSection1:Cell("COLUNA4")	,,"SUM"	, , "Total recebido " , "@E 999,999,999.99", NIL, .T., .F.)
 	TRFunction():New(oSection1:Cell("COLUNA5")	,,"SUM"	, , "Total taxa "	  , "@E 999,999,999.99", NIL, .T., .F.)
+    TRFunction():New(oSection1:Cell("COLUNA6")	,,"SUM"	, , "Total      "	  , "@E 999,999,999.99", NIL, .T., .F.)
 
 	oSection2 := TRSection():New(oReport,,{}, , , , , ,.F.,.F.,.F.) 
 	
@@ -328,12 +334,14 @@ Static Function ReportDef()
 	TRCell():New(oSection2,"COLUNA3", 	"" ,"Cliente"		,       					,35,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection2,"COLUNA4", 	"" ,"Vlr.Recebido"	, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection2,"COLUNA5", 	"" ,"Vlr.Taxa"		, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection2,"COLUNA6", 	"" ,"Autoriz."		,							,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection2,"COLUNA7", 	"" ,"NSU"			,	    					,10,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection2,"COLUNA8", 	"" ,"Status"		,	    					,20,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
+    TRCell():New(oSection2,"COLUNA6", 	"" ,"Total"		    , "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection2,"COLUNA7", 	"" ,"Autoriz."		,							,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection2,"COLUNA8", 	"" ,"NSU"			,	    					,10,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection2,"COLUNA9", 	"" ,"Status"		,	    					,20,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 	
 	TRFunction():New(oSection2:Cell("COLUNA4")	,,"SUM"	, , "Total recebido " , "@E 999,999,999.99", NIL, .T., .F.)
 	TRFunction():New(oSection2:Cell("COLUNA5")	,,"SUM"	, , "Total taxa "	  , "@E 999,999,999.99", NIL, .T., .F.)
+    TRFunction():New(oSection2:Cell("COLUNA6")	,,"SUM"	, , "Total     "	  , "@E 999,999,999.99", NIL, .T., .F.)
 Return(oReport)
 //
 // -------------------------------------------------------------------------
@@ -364,6 +372,7 @@ Static Function PrintReport(oReport)
 			oSection1:Cell("COLUNA6")	:SetBlock   ({|| _aRelImp[i,9]  })
 			oSection1:Cell("COLUNA7")	:SetBlock   ({|| _aRelImp[i,10] })
 			oSection1:Cell("COLUNA8")	:SetBlock   ({|| _aRelImp[i,11] })
+            oSection1:Cell("COLUNA9")	:SetBlock   ({|| _aRelImp[i,12] })
 			
 			oSection1:PrintLine()
 		Next
@@ -395,6 +404,7 @@ Static Function PrintReport(oReport)
 			oSection2:Cell("COLUNA6")	:SetBlock   ({|| _aRelErr[i,9]  })
 			oSection2:Cell("COLUNA7")	:SetBlock   ({|| _aRelErr[i,10] })
 			oSection2:Cell("COLUNA8")	:SetBlock   ({|| _aRelErr[i,11] })
+            oSection2:Cell("COLUNA8")	:SetBlock   ({|| _aRelErr[i,12] })
 			
 			oSection2:PrintLine()
 		Next
