@@ -11,8 +11,9 @@
 //
 // Historico de alteracoes:
 // 14/02/2022 - Claudia - Incluida quantidade proporcionalizada. GLPI: 11624
+// 16/02/2022 - Claudia - Limpeza do array a cada chamada da rotina de rastreabilidade. GLPI: 11624
 //
-// --------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
 #include 'totvs.ch'
@@ -85,7 +86,9 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += " 	ON SD2.D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " 		AND SD2.D2_FILIAL  = SF2.F2_FILIAL "
     _oSQL:_sQuery += " 		AND SD2.D2_DOC     = SF2.F2_DOC "
+    _oSQL:_sQuery += "      AND SD2.D2_SERIE   = SF2.F2_SERIE ""
     _oSQL:_sQuery += " 		AND SD2.D2_CLIENTE = SF2.F2_CLIENTE "
+    _oSQL:_sQuery += "      AND SD2.D2_LOJA    = SF2.F2_LOJA "
     _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SB1") + " SB1 "
 	_oSQL:_sQuery += "  ON SB1.D_E_L_E_T_   = '' "
 	_oSQL:_sQuery += " 	    AND SB1.B1_COD  = SD2.D2_COD "
@@ -98,7 +101,8 @@ Static Function PrintReport(oReport)
 
     For _x:=1 to Len(_aNf)
         // Busca dados na função do robert
-		_sMapa := U_RastLT (_aNf[_x,1], U_TamFixo (_aNf[_x,8], 15, ' '), alltrim(_aNf[_x,9]), 0, NIL, alltrim(_aNf[_x,10]))
+        _aLtXLS58 :={}
+		_sMapa := U_RastLT (_aNf[_x,1], U_TamFixo (_aNf[_x,8], 15, ' '), alltrim(_aNf[_x,9]), 0, NIL, _aNf[_x,10])
         // _sArq  := 'c:\temp\rast.mm'
          
         // delete file (_sArq)
