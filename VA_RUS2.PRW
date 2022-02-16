@@ -34,6 +34,7 @@
 // 20/01/2020 - Robert - Novos parametros chamada geracao ticket safra.
 // 01/12/2020 - Robert - Passa a buscar dados de cadastro viticola na view GX0001_AGENDA_SAFRA e nao mais na VA_VASSOC_CAD_VITIC2
 // 05/02/2021 - Robert - Funcao de aglutinacao de cargas, removida ha uns 2 anos, foi reativada (GLPI 9336)
+// 16/02/2022 - Robert - Tratamentos para cancelamento de cargas chamado via web service (GLPI 11634)
 //
 
 #include "totvs.ch"
@@ -48,9 +49,6 @@ User Function va_rus2 (_nOpc, _lFechPort)
 	local _lContinua   := .T.
 	local _oSQL        := NIL
 	local _nLock       := 0
-//	local _oAvisos     := NIL
-//	local _oCour24     := TFont():New("Courier New",,18,,.T.,,,,,.F.)
-//	local _sTxtAviso   := ""
 	local _nVitNC      := 0
 	local _nLinha      := 0
 	private _aRusInsp  := {}  // Deixar private para ser vista e alimentada por outras rotinas.
@@ -72,39 +70,39 @@ User Function va_rus2 (_nOpc, _lFechPort)
 	u_Log2 ('info', 'Iniciando ' + procname () + ' Carga: ' + sze -> ze_carga + '   inclui: ' + cvaltochar (inclui) + '   altera: ' + cvaltochar (altera) + '   _nOpc: ' + cvaltochar (_nOpc))
 
 	if _lContinua .and. _nOpc >= 4 .and. sze -> ze_status == "N"
-		u_help ("Nota fiscal (" + sze -> ze_nfger + ") ja gerada para esta carga. Alteracao / exclusao nao permitidas. Exclua, antes, a nota fiscal.")
+		u_help ("Nota fiscal (" + sze -> ze_nfger + ") ja gerada para esta carga. Alteracao / exclusao nao permitidas. Exclua, antes, a nota fiscal.",, .t.)
 		_lContinua = .F.
 	endif
 	if _lContinua .and. _nOpc != 2  .and. _nOpc != 3 .and. sze -> ze_status == "C"
-		u_help ("Carga cancelada.")
+		u_help ("Nenhuma manutencao pode ser feita nesta carga, pois encontra-se cancelada.",, .t.)
 		_lContinua = .F.
 	endif
 	if _lContinua .and. sze -> ze_status == "D" .and. _nOpc != 2
-		if type ('_sErros') == 'C' ; _sErros += 'Carga redirecionada para outra filial.' ; endif
-		u_help ("Carga redirecionada para outra filial.")
+		u_help ("Carga redirecionada para outra filial.",, .t.)
 		_lContinua = .F.
 	endif
 	if _lContinua .and. _nOpc >= 4 .and. sze -> ze_status == "R"
 		_lContinua = u_msgnoyes ("Recibo ja impresso para esta carga. Deseja continuar mesmo assim?")
 	endif
 	if _lContinua .and. altera .and. sze -> ze_aglutin $ "D/O"
-		_lContinua = u_msgnoyes ("Cargas aglutinadas / aglutinadoras nao passam pela segunda pesagem.")
+		_lContinua = u_msgnoyes ("Cargas aglutinadas / aglutinadoras nao passam pela segunda pesagem.",, .t.)
 	endif
 	if _lContinua .and. _nOpc == 5 .and. sze -> ze_aglutin == "D"
 		_lContinua = u_msgnoyes ("Esta carga foi gerada aglutinando outras. As cargas aglutinadas voltarao a ficar em aberto. Confirma?")
 	endif
 	if _lContinua .and. _nOpc == 5 .and. sze -> ze_aglutin == "O"
-		u_help ("Esta carga foi aglutinada com outras e so� podera� ser excluida/cancelada depois da carga aglutinadora. Consulte aglutinacoes para mais detalhes.")
+		u_help ("Esta carga foi aglutinada com outras e somente pode ser excluida/cancelada depois da carga aglutinadora. Consulte aglutinacoes para mais detalhes.",, .t.)
 		_lContinua = .F.
 	endif
 	if _lContinua .and. _nOpc == 4 .and. sze -> ze_local != _sBalanca
-		u_help ("Carga gerada na balanca '" + sze -> ze_local + "'. Deve ser finalizada na mesma balanca.")
+		u_help ("Carga gerada na balanca '" + sze -> ze_local + "'. Deve ser finalizada na mesma balanca.",, .t.)
 		_lContinua = .F.
 	endif
 	if _lContinua .and. _nOpc == 4 .and. sze -> ze_pesobru == 0
-		u_help ("Esta carga ainda nao contem o peso bruto. Execute a primeira pesagem.")
+		u_help ("Esta carga ainda nao contem o peso bruto. Execute a primeira pesagem.",, .t.)
 		_lContinua = .F.
 	endif
+
 	// Nao permite duas sessoes alterando a mesma carga.
 	if _lContinua .and. altera
 		_nLock := U_Semaforo (procname () + cEmpAnt + cFilAnt + sze -> ze_safra + sze -> ze_carga, .T.)
@@ -229,98 +227,81 @@ User Function va_rus2 (_nOpc, _lFechPort)
 		endif
 	endif
 	
-/*
-    // Prepara mensagens de aviso.
 	if _lContinua
-		_sTxtAviso = ""
 
-		do case
-		case ascan (_aCadVitic, {|_aVal| _aVal [.CadVitOrganico] $ "O/E/B"}) > 0
-			_sTxtAviso += 'Tem uvas organicas / em conversao / bordadura'
-		case ascan (_aCadVitic, {|_aVal| _aVal [.CadVitOrganico] $ "E/B"}) > 0
-			_sTxtAviso += 'Tem uvas em conversao para organica / bordadura'
-		case ascan (_aCadVitic, {|_aVal| _aVal [.CadVitOrganico] $ "B"}) > 0
-			_sTxtAviso += 'Tem uvas de bordadura'
-		endcase
-	endif
-*/
-	if _lContinua
-		
-		// Monta tela para o usuario fazer as manutencoes
-		N = 1
-		define msDialog _oDlg from 0,0 to oMainWnd:nClientHeight - 50 , oMainWnd:nClientwidth - 4 of oMainWnd pixel title cCadastro
-		
-		// Enchoice para visualizacao do arquivo.
-		_oEnch1 := MsMGet():New("SZE", ;  // Alias
-		1, ;      // nReg
-		_nOpc, ;  // Opcao do aRotina
-		NIL, ;
-		NIL, ;
-		NIL, ;
-		NIL, ;    // Array com nomes de campos a exibir (pra mim nao funcionou)
-		{30, 2, _oDlg:nClientHeight / 3.5 - 5, _oDlg:nClientWidth / 2 - 10}, ;  // Posicionamento na tela  //{15, 2, _oDlg:nClientHeight / 3.5 - 5, _oDlg:nClientWidth / 2 - 10}, ;  // Posicionamento na tela
-		NIL, ;    // Array com nomes de campos editaveis (pra mim trancou todos)
-		NIL, ;    // 3
-		NIL, ;
-		NIL, ;
-		NIL, ;    // "A415VldTOk"
-		_oDlg, ;  // Dialogo onde vai ser criada
-		NIL, ;    // logico
-		NIL, ;    // lMemory
-		.F., ;    // .T. = todos os campos em uma unica coluna
-		NIL, ;    // "aSvATela"
-		.T., ;
-		NIL)      // lProperty
-		
-		// Objeto de texto por cima da enchoice, para exibicao de eventuais avisos.
-		//                       Lin                        Col bTxt oWnd   pict oFont     ?    ?    ?    pixel corTxt   corBack larg                         altura
-//		_oAvisos := tSay ():New (_oDlg:nClientHeight / 3.5, 2,  NIL, _oDlg, NIL, _oCour24, NIL, NIL, NIL, .T.,  CLR_RED, NIL,    _oDlg:nClientWidth / 2 - 10, 15)
-//		if ! empty (_sTxtAviso)
-//			_oAvisos:SetText ("ATENCAO: " + _sTxtAviso)
-//		endif
-
-		// Itens
-		_oGetD := MSGetDados ():New (_oDlg:nClientHeight / 3.5 + 15, ;       // Limite superior
-		                             2, ;                                 // Limite esquerdo
-		                             _oDlg:nClientHeight / 2 - 45, ;      // Limite inferior
-		                             _oDlg:nClientWidth / 2 - 10, ;       // Limite direito
-		                             _nOpc, ;                             // opcao do mbrowse (aRotina)
-		                             "U_VA_RUS2L ()", ;                   // Linha ok
-		                             "allwaystrue ()", ;                  // Tudo ok
-		                             , ;                                  // Campos com incremento automatico
-		                             inclui .or. altera, ;                // Permite deletar linhas
-		                             , ;                                  // Vetor de campos que podem ser alterados
-		                             , ;                                  // Reservado
-		                             .F., ;                               // Se .T., a primeira coluna nunca pode ficar vazia
-		                             999, ;                               // Maximo de linhas permitido
-		                             "allwaystrue ()", ;                  // Executada na validacao de campos, mesmo os que nao estao na MSGetDados
-		                             "allwaystrue ()", ;                  // Executada ao teclar CTRL + DEL
-		                             , ;                                  // Reservado
-		                             "allwaystrue ()", ;                  // Executada para validar delecao de uma linha
-		                             _oDlg)                               // Objeto onde serah criada
-		
-		// Define botoes da barra de ferramentas.
-		_bBotaoOK  = {|| iif (U_VA_RUS2T (_nOpc), (_lDlgOK := .T., _oDlg:End ()), NIL)}
-		_bBotaoCan = {|| _oDlg:End ()}
-		_aBotAdic  = {}
-		if ! inclui
-			aadd (_aBotAdic, {"S4WB005N", {|| _CopyCarga ()}, "Copiar"})
-			if _lIntPort
-				aadd (_aBotAdic, {"S4WB005N", {|| _LePortar ()}, "Portaria"})
-			endif
-		endif
-		if inclui
-			aadd (_aBotAdic, {"S4WB005N", {|| U_VA_RusAG ()}, "Aglutinar"})
-		endif
-		if (inclui .or. altera) .and. _lBalEletr
-		//	set key 119 to _LePeso ()  // tecla F8
-			SetKey(VK_F8, {|| _LePeso ()})
-			aadd (_aBotAdic, {"BALANCA", {|| _LePeso ()}, "[F8] Peso"})
-		endif
-		if _lFechPort
-			activate dialog _oDlg on init (EnchoiceBar (_oDlg, _bBotaoOK, _bBotaoCan,, _aBotAdic), _LePortar (), _oEnch1:Refresh (), _oGetD:Refresh ())
+		// Posso estar fazendo uma exclusao/cancelamento de carga chamada a partir do web service, entao nao posso abrir tela.
+		if _nOpc == 5 .and. IsInCallStack ("_CanCarSaf")
+			U_Log2 ('debug', '[' + procname () + ']Cancelando carga a partir do WS')
+			_lDlgOK := .T.  // Simula 'botao OK'
 		else
-			activate dialog _oDlg on init EnchoiceBar (_oDlg, _bBotaoOK, _bBotaoCan,, _aBotAdic)
+			// Monta tela para o usuario fazer as manutencoes
+			N = 1
+			define msDialog _oDlg from 0,0 to oMainWnd:nClientHeight - 50 , oMainWnd:nClientwidth - 4 of oMainWnd pixel title cCadastro
+			
+			// Enchoice para visualizacao do arquivo.
+			_oEnch1 := MsMGet():New("SZE", ;  // Alias
+			1, ;      // nReg
+			_nOpc, ;  // Opcao do aRotina
+			NIL, ;
+			NIL, ;
+			NIL, ;
+			NIL, ;    // Array com nomes de campos a exibir (pra mim nao funcionou)
+			{30, 2, _oDlg:nClientHeight / 3.5 - 5, _oDlg:nClientWidth / 2 - 10}, ;  // Posicionamento na tela  //{15, 2, _oDlg:nClientHeight / 3.5 - 5, _oDlg:nClientWidth / 2 - 10}, ;  // Posicionamento na tela
+			NIL, ;    // Array com nomes de campos editaveis (pra mim trancou todos)
+			NIL, ;    // 3
+			NIL, ;
+			NIL, ;
+			NIL, ;    // "A415VldTOk"
+			_oDlg, ;  // Dialogo onde vai ser criada
+			NIL, ;    // logico
+			NIL, ;    // lMemory
+			.F., ;    // .T. = todos os campos em uma unica coluna
+			NIL, ;    // "aSvATela"
+			.T., ;
+			NIL)      // lProperty
+			
+			// Itens
+			_oGetD := MSGetDados ():New (_oDlg:nClientHeight / 3.5 + 15, ;       // Limite superior
+										2, ;                                 // Limite esquerdo
+										_oDlg:nClientHeight / 2 - 45, ;      // Limite inferior
+										_oDlg:nClientWidth / 2 - 10, ;       // Limite direito
+										_nOpc, ;                             // opcao do mbrowse (aRotina)
+										"U_VA_RUS2L ()", ;                   // Linha ok
+										"allwaystrue ()", ;                  // Tudo ok
+										, ;                                  // Campos com incremento automatico
+										inclui .or. altera, ;                // Permite deletar linhas
+										, ;                                  // Vetor de campos que podem ser alterados
+										, ;                                  // Reservado
+										.F., ;                               // Se .T., a primeira coluna nunca pode ficar vazia
+										999, ;                               // Maximo de linhas permitido
+										"allwaystrue ()", ;                  // Executada na validacao de campos, mesmo os que nao estao na MSGetDados
+										"allwaystrue ()", ;                  // Executada ao teclar CTRL + DEL
+										, ;                                  // Reservado
+										"allwaystrue ()", ;                  // Executada para validar delecao de uma linha
+										_oDlg)                               // Objeto onde serah criada
+			
+			// Define botoes da barra de ferramentas.
+			_bBotaoOK  = {|| iif (U_VA_RUS2T (_nOpc), (_lDlgOK := .T., _oDlg:End ()), NIL)}
+			_bBotaoCan = {|| _oDlg:End ()}
+			_aBotAdic  = {}
+			if ! inclui
+				aadd (_aBotAdic, {"S4WB005N", {|| _CopyCarga ()}, "Copiar"})
+				if _lIntPort
+					aadd (_aBotAdic, {"S4WB005N", {|| _LePortar ()}, "Portaria"})
+				endif
+			endif
+			if inclui
+				aadd (_aBotAdic, {"S4WB005N", {|| U_VA_RusAG ()}, "Aglutinar"})
+			endif
+			if (inclui .or. altera) .and. _lBalEletr
+				SetKey(VK_F8, {|| _LePeso ()})
+				aadd (_aBotAdic, {"BALANCA", {|| _LePeso ()}, "[F8] Peso"})
+			endif
+			if _lFechPort
+				activate dialog _oDlg on init (EnchoiceBar (_oDlg, _bBotaoOK, _bBotaoCan,, _aBotAdic), _LePortar (), _oEnch1:Refresh (), _oGetD:Refresh ())
+			else
+				activate dialog _oDlg on init EnchoiceBar (_oDlg, _bBotaoOK, _bBotaoCan,, _aBotAdic)
+			endif
 		endif
 	endif
 
@@ -335,7 +316,6 @@ User Function va_rus2 (_nOpc, _lFechPort)
 	endif
 
 	set key 119 to
-	
 return
 
 

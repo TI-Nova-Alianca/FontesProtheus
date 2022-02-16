@@ -8,7 +8,8 @@
 // 20/02/2020 - Robert - Desabilitada gravacao do talhao na descricao do ZZA.
 // 21/02/2020 - Robert - Alteracoes na tabela ZZA passam a ser feitas em rotina externa (U_AtuZZA).
 // 16/02/2021 - Robert - Implementada simulacao de geracao de contranota (GLPI 9420)
-// 16/12/2021 - Robert  - Novo formato de retorno da funcao U_GeraSZE()
+// 16/12/2021 - Robert - Novo formato de retorno da funcao U_GeraSZE()
+// 16/02/2022 - Robert - Tratamentos para cancelamento de cargas chamado via web service (GLPI 11634)
 //
 
 #include "totvs.ch"
@@ -64,7 +65,7 @@ user Function VA_RUS2G (_nOpc)
 //		endif
 		if type ("_sRetSZECG") == 'C'
 			_sRetSZECG = sze -> ze_carga
-			u_log2 ('debug', '[' + procname () + '] _sRetSZECG: ' + cvaltochar (_sRetSZECG))
+//			u_log2 ('debug', '[' + procname () + '] _sRetSZECG: ' + cvaltochar (_sRetSZECG))
 		endif
 	
 		msunlock ("SZE")
@@ -129,7 +130,7 @@ user Function VA_RUS2G (_nOpc)
 				// Muda o status das cargas aglutinadas.
 				sze -> (dbsetorder (1))  // ZE_FILIAL+ZE_SAFRA+ZE_CARGA
 				if ! sze -> (dbseek (xfilial ("SZE") + zzd -> zzd_Safra + zzd -> zzd_CarOri, .F.))
-					u_help ("Erro na atualizacao da carga aglutinada '" + zzd -> zzd_CarOri + "'. Solicite manutencao do programa!")
+					u_help ("Erro na atualizacao da carga aglutinada '" + zzd -> zzd_CarOri + "'. Solicite manutencao do programa!",, .t.)
 				else
 					reclock ("SZE", .F.)
 					sze -> ze_aglutin = 'O'
@@ -195,9 +196,16 @@ user Function VA_RUS2G (_nOpc)
 		endif
 
 		if _lContinua
-			_sMotCanc = space (TamSX3("ZE_MOVCANC")[1])
-			_sMotCanc = U_Get ('Motivo do cancelamento', 'C', len (_sMotCanc), '@!', '', _sMotCanc, .F., '.T.')
-			_lContinua = ! empty (_sMotCanc)
+			if type ('_sMotCanWS') == 'C'
+				_sMotCanc = left (_sMotCanWS, TamSX3("ZE_MOVCANC")[1])
+			else
+				_sMotCanc = space (TamSX3("ZE_MOVCANC")[1])
+				_sMotCanc = U_Get ('Motivo do cancelamento', 'C', len (_sMotCanc), '@!', '', _sMotCanc, .F., '.T.')
+			endif
+			if empty (_sMotCanc)
+				u_help ("Deve ser informado um motivo para cancelamento da carga.",, .t.)
+				_lContinua = .F.
+			endif
 		endif
 
 		if _lContinua
@@ -208,8 +216,12 @@ user Function VA_RUS2G (_nOpc)
 
 			// Atualiza tabela de comunicacao com leitor de grau.
 			U_AtuZZA (sze -> ze_safra, sze -> ze_carga)
+
+			if type ('_sMsgRetWS') == 'C'  // Variavel publica que estah disponivel quando execucao via web service.
+				_sMsgRetWS += "Carga cancelada."
+			endif
 		else
-			u_help ('O cancelamento nao foi efetuado.') 
+			u_help ('O cancelamento nao foi efetuado.',, .t.)
 		endif
 
 	endif

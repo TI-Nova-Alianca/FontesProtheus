@@ -78,6 +78,8 @@
 // 11/10/2021 - Claudia - Criada nova tag <DescBloqueio> na rotina GravaBloqueioGerencial. GLPI: 7792
 // 16/12/2021 - Robert  - Novo formato de retorno da funcao U_GeraSZE()
 // 01/02/2022 - Robert  - Reimpressao de ticket carga safra.
+// 16/02/2022 - Robert  - Criada acao _CanCarSaf - cancelamento de cargas de safra (GLPI 11634)
+//                      - Estava permitindo continuar em alguns casos mesmo com tags obrigatorias vazias.
 //
 
 // --------------------------------------------------------------------------------------------------------
@@ -210,6 +212,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 				_ExecConsOrc ()
 			case _sAcao == 'IncluiCargaSafra'
 				_IncCarSaf ()
+			case _sAcao == 'CancelaCargaSafra'
+				_CanCarSaf ()
 			case _sAcao == 'ConsultaKardex'
 				_ExecKardex ()
 			case _sAcao == 'MonitorProtheus'
@@ -284,12 +288,18 @@ static function _ExtraiTag (_sTag, _lObrig, _lValData)
 	local _lDataOK := .T.
 	local _nPos    := 0
 
+//	U_Log2 ('debug', '[' + procname () + ']Tentando ler a tag ' + _sTag)
+//	U_Log2 ('debug', '[' + procname () + ']Type:' + type (_sTag))
 	if type (_sTag) != "O"
 		if _lObrig
 			_sErros += "XML invalido: Tag '" + _sTag + "' nao encontrada."
 		endif
 	else
 		_sRet = &(_sTag + ":TEXT")
+//		U_Log2 ('debug', '[' + procname () + ']Li a tag ' + _sTag + ' e obtive: ' + _sRet)
+		if empty (_sRet) .and. _lObrig
+			_sErros += "XML invalido: valor da tag '" + _sTag + "' deve ser informado."
+		endif
 		if _lValData  // Preciso validar formato da data
 			if ! empty (_sRet)
 				if len (_sRet) != 8
@@ -1285,7 +1295,8 @@ Static function _ExecConsOrc()
 	EndIf
 //	u_logFim ()
 Return 
-//
+
+
 // --------------------------------------------------------------------------
 // Inclusao de cargas de recebimento de uva durante a safra.
 static function _IncCarSaf ()
@@ -1416,6 +1427,30 @@ static function _IncCarSaf ()
 	u_log2 ('info', 'Finalizando web service de geracao de carga.')
 Return
 //
+
+
+// --------------------------------------------------------------------------
+// Cancelamento de cargas de recebimento de uva durante a safra.
+static function _CanCarSaf ()
+	local _sSafra    := ''
+	local _sCarga    := ''
+	private _sMotCanWS := ''  // Deixar PRIVATE para ser vista pelo programa de gravacao do cancelamento.
+	private _ZFEMBALAG    := 'GRANEL'  // Deixar private para ser vista por outras rotinas.
+
+	u_log2 ('info', 'Iniciando web service de cancelamento de carga de safra.')
+
+	if empty (_sErros) ; _sSafra    = _ExtraiTag ("_oXML:_WSAlianca:_Safra",  .T., .F.) ; endif
+	if empty (_sErros) ; _sCarga    = _ExtraiTag ("_oXML:_WSAlianca:_Carga",  .T., .F.) ; endif
+	if empty (_sErros) ; _sMotCanWS = _ExtraiTag ("_oXML:_WSAlianca:_MotivoCancCarga", .T., .F.) ; endif
+	if empty (_sErros)
+		sze -> (dbsetorder (1))  // ZE_FILIAL, ZE_SAFRA, ZE_CARGA, R_E_C_N_O_, D_E_L_E_T_
+		if ! sze -> (dbseek (xfilial ("SZE") + _sSafra + _sCarga, .F.))
+			_sErros += "Carga '" + _sCarga + "' nao encontrada para a safra '" + _sSafra + "' na filial '" + xfilial ("SZE") + "'."
+		else
+			U_VA_RUS2 (5, .F.)
+		endif
+	endif
+Return
 
 
 // --------------------------------------------------------------------------

@@ -27,6 +27,7 @@
 //                     - Passa a usar a funcao U_MsgYesNo em lugar da MsgYesNo, de forma que sempre poderia ser chamado com _lComTela=.T.
 // 07/10/2020 - Robert - Inseridas tags para catalogo de fontes
 //                     - Melhorados logs.
+// 16/02/2022 - Robert - Passa a usar funcao U_MsgNoYes em vez de U_MsgYesNo por que a primeira alimenta variaveis publicas de tratamento de erros.
 //
 
 #include "fileio.ch"
@@ -89,7 +90,7 @@ User Function Semaforo (_xParam, _lComTela)
 				_sMsg += "Porta serv: " + alltrim (fReadStr (_nHdl, _nTamDado)) + chr (13) + chr (10)
 				_sMsg += chr (13) + chr (10)
 				if _lComTela
-					_lTenta = U_MsgYesNo (_sMsg + "Deseja tentar novamente?")
+					_lTenta = U_MsgNoYes (_sMsg + "Deseja tentar novamente?")
 				else
 					u_log2 ('aviso', _sMsg)
 					_lTenta = .F.
