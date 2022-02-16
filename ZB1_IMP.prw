@@ -19,6 +19,8 @@
 // 15/10/2021 - Claudia - Incluido totalizadores de filials. GLPI: 11055
 // 04/11/2021 - Claudia - Ajustado para importar somente venda de link cielo. GLPI 11145
 // 13/12/2021 - Claudia - Incluido totalizador conforme solicitado. GLPI: 11345
+// 14/02/2022 - Claudia - Gravada a taxa calculada.
+// 16/02/2022 - Claudia - Gtavado campo ZB1_VLRTAR calculado.
 //
 // --------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -265,7 +267,7 @@ Static Function GravaZB1(_aHeader, _aRO, _aCV, _aRel )
 					ZB1->ZB1_ADMDES := _aRO[1,15] 
 					ZB1->ZB1_NUMRO  := _aRO[1,16]  
 					ZB1->ZB1_PERTAX := _aRO[1,17]  
-					ZB1->ZB1_VLRTAR := _aRO[1,18]  
+					ZB1->ZB1_VLRTAR := ROUND((_aCV[1,3] * _aRO[1,17])/100,2) //_aRO[1,18] 
 					ZB1->ZB1_CARTAO := _aCV[1,1] 
 					ZB1->ZB1_DTAVEN := _aCV[1,2]  
 					ZB1->ZB1_VLRPAR := _aCV[1,3]  

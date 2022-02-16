@@ -29,38 +29,24 @@
 // 18/05/2021 - Claudia - Incluida chamada para conciliaçao de NF loja. GLPI: 10039
 // 05/07/2021 - Claudia - Incluido status 02. GLPI: 10399
 // 04/11/2021 - Claudia - Ajustado para importar somente venda de link cielo. GLPI 11145
+// 15/02/2022 - Claudia - Criada rotina para gravação de diferenças de arredondamento. GLPI: 11622
 //
 // -----------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
 #Include "totvs.ch"
 
 User Function ZB1_CON(_sConciliar)
-	Local _oSQL  	:= ClsSQL ():New ()
-	Local _aZB1  	:= {}
-	Local _aTitulo  := {}
-	Local _lcont    := .T.
-	Local i		 	:= 0
-	Local x      	:= 0
-	Local y         := 0
-	Private _aRelImp  := {}
-	Private _aRelErr  := {}
+	Local _oSQL  	 := ClsSQL ():New ()
+	Local _aZB1  	 := {}
+	Local _aTitulo   := {}
+	Local _lcont     := .T.
+	Local i		 	 := 0
+	Local x      	 := 0
+	Local y          := 0
+	Private _aRelImp := {}
+	Private _aRelErr := {}
 	
 	u_logIni ("Inicio Conciliação Cielo Link" + DTOS(date()) )
-
-	// If cFilAnt == '01' .and. _sConciliar == '1' // conciliação das lojas
-	// 	u_help("Empresa matriz não pode efetuar baixa pelo menu Conciliar Cielo Loja")
-	// 	_lcont := .F.
-	// EndIf
-
-	// If (cFilAnt == '10' .or. cFilAnt == '13') .and. _sConciliar == '2' // conciliação link
-	// 	u_help("Baixas pelo Conciliar Cielo Link efetuadas apenas na empresa matriz")
-	// 	_lcont := .F.
-	// EndIf
-
-	// If cFilAnt == '01' .and. _sConciliar == '3' // NF loja
-	// 	u_help("Baixas pelo Conciliar NF Loja efetuadas apenas nas filiais-lojas")
-	// 	_lcont := .F.
-	// EndIf
 
 	If _lcont == .T.
 		cPerg   := "ZB1_CON"
@@ -143,13 +129,8 @@ User Function ZB1_CON(_sConciliar)
 				_oSQL:_sQuery += " FROM " + RetSQLName ("SE1") + " AS SE1 "
 				_oSQL:_sQuery += " WHERE SE1.D_E_L_E_T_ = ''"
 				_oSQL:_sQuery += " AND SE1.E1_FILIAL  = '" + _aZB1[i, 1] + "'"
-				// If _sConciliar == '1' // Conciliar Cielo Loja
-				// 	_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aZB1[i,17] + "'" // Loja salva cod.aut no campo NSU
-				// 	_oSQL:_sQuery += " AND SE1.E1_EMISSAO = '" + DTOS(_aZB1[i,16]) + "'"
-				// Else 				 // conciliação link e NF lojas
-					_oSQL:_sQuery += " AND SE1.E1_CARTAUT = '" + _aZB1[i,17] + "'"
-					_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aZB1[i,18] + "'"
-				//EndIf
+				_oSQL:_sQuery += " AND SE1.E1_CARTAUT = '" + _aZB1[i,17] + "'"
+				_oSQL:_sQuery += " AND SE1.E1_NSUTEF  = '" + _aZB1[i,18] + "'"
 				_oSQL:_sQuery += " AND SE1.E1_BAIXA   = ''"
 				If alltrim(_sParc) <> ''
 					_oSQL:_sQuery += " AND SE1.E1_PARCELA   = '" + _sParc + "'"
@@ -174,7 +155,7 @@ User Function ZB1_CON(_sConciliar)
 
 						_nVlrTit    := _aTitulo[x,05] 		// E1_VALOR
 						_nVlrLiq    := _aZB1[i,07]  		// ZB1_VLRLIQ
-						_nVlrPar    := _aZB1[i,08]          // ZB1_VLRPAR
+						_nVlrPar    := _aZB1[i,08]          // ZB1_VLRPAR (valor liq +)
 						_nVlrTax    := _nVlrTit - _nVlrLiq  // valor da taxa calculada
 						_nTaxCielo  := _aZB1[i,03]  		// ZB1_VLRTAX cielo
 					
@@ -182,6 +163,8 @@ User Function ZB1_CON(_sConciliar)
 							_nDif := _nVlrTax - _nTaxCielo
 
 							If _nDif >= -0.5 .and. _nDif <= 0.5
+								//GravaDiferenca(_sDtPro,_sNSUCod,_sAutCod,_nDif)
+
 								_nVlrLiq := _nVlrTit - _nVlrTax
 								_lContinua := .T.
 								u_log("DIFERENÇA DE ARREDONDAMENTO TAXA:Registro NSU+AUT:" + _sNSUCod + _sAutCod + " Valor com diferença de arredondameto. Diferença:" + alltrim(str(_nDif)))
@@ -207,13 +190,8 @@ User Function ZB1_CON(_sConciliar)
 						If _lContinua == .T.
 
 							lMsErroAuto := .F.
-							//If _sConciliar == '2' 	// link
-								_sMotBaixa := 'NORMAL' 
-								_sHist     := 'Baixa Link'
-							//Else 					// Cupom lojas e NF Lojas
-							//	_sMotBaixa := 'DEBITO CC' 
-							//	_sHist     := 'Baixa Cielo'	
-							//EndIf
+							_sMotBaixa := 'NORMAL' 
+							_sHist     := 'Baixa Link'
 
 							// executar a rotina de baixa automatica do SE1 gerando o SE5 - DO VALOR LÍQUIDO
 							_aAutoSE1 := {}
@@ -233,7 +211,7 @@ User Function ZB1_CON(_sConciliar)
 							AAdd(_aAutoSE1, {"AUTHIST"   	, _sHist    					    , Nil})
 							AAdd(_aAutoSE1, {"AUTDESCONT"	, _nVlrTax         					, Nil})
 							AAdd(_aAutoSE1, {"AUTMULTA"  	, 0         						, Nil})
-							AAdd(_aAutoSE1, {"AUTJUROS"  	, 0         						, Nil})
+							AAdd(_aAutoSE1, {"AUTJUROS"  	, 0         			            , Nil})
 							AAdd(_aAutoSE1, {"AUTVALREC"  	, _nVlrLiq							, Nil})
 						
 							_aAutoSE1 := aclone (U_OrdAuto (_aAutoSE1))  // orderna conforme dicionário de dados
@@ -267,11 +245,7 @@ User Function ZB1_CON(_sConciliar)
 
 							Else
 								// Atualiza banco e administradora
-								//if alltrim(_aTitulo[x,1]) == '01' // matriz - link
-									_sAdm := alltrim(_aTitulo[x,13]) 
-								//else
-								//	_sAdm := alltrim(_aTitulo[x,6]) 
-								//endif
+								_sAdm := alltrim(_aTitulo[x,13]) 
 
 								_oSQL:= ClsSQL ():New ()
 								_oSQL:_sQuery := ""
@@ -340,7 +314,7 @@ User Function ZB1_CON(_sConciliar)
 
 	//U_ZB1DIF('2')
 Return
-
+//
 // --------------------------------------------------------------------------
 // Busca Parcelas
 Static Function BuscaParcela(_sParcela)
@@ -375,6 +349,21 @@ Static Function BuscaParcela(_sParcela)
 			_sParc:=''
 	EndCase
 Return _sParc
+// //
+// // --------------------------------------------------------------------------
+// // Grava diferença de valores entre cielo e protheus (arredondamento)
+// Static Function GravaDiferenca(_sDtPro,_sNSUCod,_sAutCod,_nDif)
+
+// 	dbSelectArea("ZB1")
+// 	dbSetOrder(4) // ZB1_NUMNSU + ZB1_CODAUT + DTA PROCESSAMENTO
+// 	dbGoTop()
+			
+// 	If dbSeek(_sDtPro + PADR(_sNSUCod ,8,' ') +_sAutCod + '+')
+// 		Reclock("ZB1",.F.)
+// 			ZB1->ZB1_DIFERE := _nDif
+// 		ZB1->(MsUnlock())
+// 	EndIf
+// Return
 //
 // --------------------------------------------------------------------------
 // Relatorio de registros importados
