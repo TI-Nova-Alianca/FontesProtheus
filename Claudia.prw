@@ -2,7 +2,12 @@
 #include 'parmtype.ch'
 
 User Function claudia ()
-	//u_help("Nada para executar")
+	if ! alltrim(upper(cusername)) $ 'CLAUDIA.LIONCO/ADMINISTRADOR'
+		msgalert ('Daqui vc nao passa :P', procname ())
+		return
+	endif
+
+	u_help("Nada para executar")
 
 	//u_help("associados")
 	//U_BatFunAssoc()
@@ -37,8 +42,12 @@ User Function claudia ()
 	//ClientesInativos()
 
 	// Atualiza representantes inativos
-	u_help("Representantes Inativos")
-	RepInativos()
+	//u_help("Representantes Inativos")
+	//RepInativos()
+
+	// atualiza CGC PDV - SL1
+	//u_help("Atualiza CGC PDV - SL1")
+	//U_BatLojCGC()
 Return
 //
 // Atualiza representantes inativos
