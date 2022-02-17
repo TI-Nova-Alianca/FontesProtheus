@@ -4,12 +4,13 @@
 // Descricao..: Exporta planilha com mapa de tanques (estoque / endereco / laudo)
 //
 // Historico de alteracoes:
-// 17/10/2017 - Robert  - Ajustados nomes de colunas (entendia g/ml como uma formula, eu acho).
-// 14/03/2018 - Robert  - Incluida coluna de composicao de safras do laudo
-// 28/08/2019 - Cláudia - Incluída a coluna CODIGO_CR, campo B8_VACRSIS
-// 13/11/2019 - Robert  - Melhorados titulos das colunas.
-// 30/01/2020 - Cláudia - Incluida coluna de saldo de pedidos, conforme GLPI 7423
-// 04/02/2020 - Claudia - Incluida a soma do saldo dos pedidos.
+// 17/10/2017 - Robert         - Ajustados nomes de colunas (entendia g/ml como uma formula, eu acho).
+// 14/03/2018 - Robert         - Incluida coluna de composicao de safras do laudo
+// 28/08/2019 - Cláudia        - Incluída a coluna CODIGO_CR, campo B8_VACRSIS
+// 13/11/2019 - Robert         - Melhorados titulos das colunas.
+// 30/01/2020 - Cláudia        - Incluida coluna de saldo de pedidos, conforme GLPI 7423
+// 04/02/2020 - Claudia        - Incluida a soma do saldo dos pedidos.
+// 17/02/2022 - Claudia/Sandra - Incluso campo validade, conforme chamado CLPI 11510
 // 
 // --------------------------------------------------------------------------
 User Function VA_XLS31 (_lAutomat)
@@ -63,7 +64,7 @@ Static Function _Gera()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " WITH C AS ("
 	_oSQL:_sQuery += " SELECT BF_FILIAL AS FILIAL, BF_LOCAL AS ALMOX, BF_LOCALIZ AS TANQUE,"
-	_oSQL:_sQuery +=        " BF_PRODUTO AS PRODUTO, RTRIM (B1_DESC) AS DESCRICAO, BF_LOTECTL AS LOTE,"
+	_oSQL:_sQuery +=        " BF_PRODUTO AS PRODUTO, RTRIM (B1_DESC) AS DESCRICAO, BF_LOTECTL AS LOTE, B8_DTVALID AS VALIDADE,"
 	_oSQL:_sQuery +=        " BF_QUANT AS [ESTQ_ATUAL_TANQUE],"
 	_oSQL:_sQuery +=        _oSQL:CaseX3CBox ("BE_STATUS") + " AS [STATUS_TANQUE], "
 	_oSQL:_sQuery +=        " ISNULL (" + _oSQL:CaseX3CBox ("B8_VADESTI") + ", '') AS [DESTINACAO_LOTE], "
@@ -120,6 +121,7 @@ Static Function _Gera()
 	_oSQL:_sQuery +=        " C.PRODUTO,"
 	_oSQL:_sQuery +=        " C.DESCRICAO,"
 	_oSQL:_sQuery +=        " C.LOTE,"
+	_oSQL:_sQuery +=        " CONVERT(VARCHAR, SUBSTRING(C.VALIDADE, 7, 2) + '/' + SUBSTRING(C.VALIDADE, 5, 2) + '/' + LEFT(C.VALIDADE, 4), 110) AS VALIDADE,"
 	_oSQL:_sQuery +=        " C.ESTQ_ATUAL_TANQUE,"
 	_oSQL:_sQuery +=        " SUM(ISNULL(C6_QTDVEN - C6_QTDENT,0)) AS [SALDO_PEDVENDAS],"
 	_oSQL:_sQuery +=        " C.STATUS_TANQUE,"
@@ -173,7 +175,7 @@ Static Function _Gera()
 	_oSQL:_sQuery +=        " AND SC6.C6_LOTECTL = LOTE"
 	_oSQL:_sQuery +=        " AND SC6.C6_LOCALIZ = TANQUE
 	_oSQL:_sQuery +=        " AND SC6.C6_BLQ = '')"
-	_oSQL:_sQuery += " GROUP BY C.FILIAL,C.ALMOX,C.TANQUE,C.PRODUTO,C.DESCRICAO,C.LOTE,C.ESTQ_ATUAL_TANQUE,C.STATUS_TANQUE,C.DESTINACAO_LOTE,C.STATUS_VENDA_LOTE,C.CLIENTE,C.CODIGO_CR,C.ENSAIO"
+	_oSQL:_sQuery += " GROUP BY C.FILIAL,C.ALMOX,C.TANQUE,C.PRODUTO,C.DESCRICAO,C.LOTE, C.VALIDADE,C.ESTQ_ATUAL_TANQUE,C.STATUS_TANQUE,C.DESTINACAO_LOTE,C.STATUS_VENDA_LOTE,C.CLIENTE,C.CODIGO_CR,C.ENSAIO"
     _oSQL:_sQuery += " ,ZAF_DATA,ZAF_ESTQ,ZAF_ACTOT,ZAF_ACVOL,ZAF_ACRED,ZAF_ALCOOL,ZAF_DENSID,ZAF_EXTRSE,ZAF_SO2LIV,ZAF_SO2TOT,ZAF_BRIX,ZAF_PH,ZAF_TURBID,ZAF_COR420,ZAF_COR520"
     _oSQL:_sQuery += " ,ZAF_COR620,ZAF_COR420,ZAF_BOLOR,ZAF_COLIF,ZAF_COR,ZAF_SABOR,ZAF_AROMA,ZAF_CRQRES,ZAF_VALID,ZAF_OBS,ZAF_SAFRA1,ZAF_PSAFR1,ZAF_SAFRA2,ZAF_PSAFR2,ZAF_SAFRA3"
     _oSQL:_sQuery += " ,ZAF_PSAFR3,ZAF_SAFRA4,ZAF_PSAFR4,ZAF_STOPER,ZAF_CLASS,ZAF_PADRAO,ZAF_ACETAL"

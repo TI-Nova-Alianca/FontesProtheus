@@ -280,46 +280,8 @@ static function _AtuEstru ()
 		endif
 	endif
 Return
-//
-// --------------------------------------------------------------------------
-// Extrair tag
-static function _ExtraiTag (_sTag, _lObrig, _lValData)
-	local _sRet    := ""
-	local _lDataOK := .T.
-	local _nPos    := 0
 
-//	U_Log2 ('debug', '[' + procname () + ']Tentando ler a tag ' + _sTag)
-//	U_Log2 ('debug', '[' + procname () + ']Type:' + type (_sTag))
-	if type (_sTag) != "O"
-		if _lObrig
-			_sErros += "XML invalido: Tag '" + _sTag + "' nao encontrada."
-		endif
-	else
-		_sRet = &(_sTag + ":TEXT")
-//		U_Log2 ('debug', '[' + procname () + ']Li a tag ' + _sTag + ' e obtive: ' + _sRet)
-		if empty (_sRet) .and. _lObrig
-			_sErros += "XML invalido: valor da tag '" + _sTag + "' deve ser informado."
-		endif
-		if _lValData  // Preciso validar formato da data
-			if ! empty (_sRet)
-				if len (_sRet) != 8
-					_lDataOK = .F.
-				else
-					for _nPos = 1 to len (_sRet)
-						if ! IsDigit (substr (_sRet, _nPos, 1))
-							_lDataOK = .F.
-							exit
-						endif
-					next
-				endif
-				if ! _lDataOK
-					_sErros += "Data deve ser informada no formato AAAAMMDD"
-				endif
-			endif
-		endif
-	endif
-return _sRet
-//
+
 // --------------------------------------------------------------------------
 // Executa batch
 static function _ExecBatch ()
@@ -808,13 +770,13 @@ static function _TrEstq (_sQueFazer)
 		if empty (_sErros) ; _oTrEstq:ProdDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_ProdutoDestino",  .T., .F.), 15) ; endif
 		if empty (_sErros) ; _oTrEstq:AlmOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_AlmoxOrigem",     .T., .F.), 2) ;  endif
 		if empty (_sErros) ; _oTrEstq:AlmDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_AlmoxDestino",    .T., .F.), 2) ;  endif
-		if empty (_sErros) ; _oTrEstq:LoteOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_LoteOrigem",      .T., .F.), 10) ; endif
-		if empty (_sErros) ; _oTrEstq:LoteDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_LoteDestino",     .T., .F.), 10) ; endif
-		if empty (_sErros) ; _oTrEstq:EndOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_EnderecoOrigem",  .T., .F.), 15) ; endif
-		if empty (_sErros) ; _oTrEstq:EndDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_EnderecoDestino", .T., .F.), 15) ; endif
+		if empty (_sErros) ; _oTrEstq:LoteOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_LoteOrigem",      .F., .F.), 10) ; endif
+		if empty (_sErros) ; _oTrEstq:LoteDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_LoteDestino",     .F., .F.), 10) ; endif
+		if empty (_sErros) ; _oTrEstq:EndOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_EnderecoOrigem",  .F., .F.), 15) ; endif
+		if empty (_sErros) ; _oTrEstq:EndDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_EnderecoDestino", .F., .F.), 15) ; endif
 		if empty (_sErros) ; _oTrEstq:QtdSolic = val  (_ExtraiTag ("_oXML:_WSAlianca:_QtdSolic",        .T., .F.)) ;     endif
 		if empty (_sErros) ; _oTrEstq:Motivo   =       _ExtraiTag ("_oXML:_WSAlianca:_Motivo",          .T., .F.) ;      endif
-		if empty (_sErros) ; _oTrEstq:OP       = padr (_ExtraiTag ("_oXML:_WSAlianca:_OP",              .T., .F.), 14) ; endif
+		if empty (_sErros) ; _oTrEstq:OP       = padr (_ExtraiTag ("_oXML:_WSAlianca:_OP",              .F., .F.), 14) ; endif
 		if empty (_sErros) ; _oTrEstq:ImprEtq  =       _ExtraiTag ("_oXML:_WSAlianca:_Impressora",      .F., .F.) ;      endif
 		if empty (_sErros)
 			_oTrEstq:UsrIncl = cUserName
@@ -1330,14 +1292,14 @@ static function _IncCarSaf ()
 
 	if empty (_sErros) ; _sSafra    = _ExtraiTag ("_oXML:_WSAlianca:_Safra",             .T., .F.) ; endif
 	if empty (_sErros) ; _sBalanca  = _ExtraiTag ("_oXML:_WSAlianca:_Balanca",           .T., .F.) ; endif
-	if empty (_sErros) ; _sAssoc    = _ExtraiTag ("_oXML:_WSAlianca:_Associado",         .T., .F.) ; endif
-	if empty (_sErros) ; _sLoja     = _ExtraiTag ("_oXML:_WSAlianca:_Loja",              .T., .F.) ; endif
+	if empty (_sErros) ; _sAssoc    = _ExtraiTag ("_oXML:_WSAlianca:_Associado",         .F., .F.) ; endif
+	if empty (_sErros) ; _sLoja     = _ExtraiTag ("_oXML:_WSAlianca:_Loja",              .F., .F.) ; endif
 	if empty (_sErros) ; _sCPFCarg  = _ExtraiTag ("_oXML:_WSAlianca:_CPF",               .F., .F.) ; endif
 	if empty (_sErros) ; _sInscCarg = _ExtraiTag ("_oXML:_WSAlianca:_IE",                .F., .F.) ; endif
 	if empty (_sErros) ; _sImpTkCar = _ExtraiTag ("_oXML:_WSAlianca:_ImprTk",            .F., .F.) ; endif
 	if empty (_sErros) ; _sSerieNF  = _ExtraiTag ("_oXML:_WSAlianca:_SerieNFProdutor",   .T., .F.) ; endif
 	if empty (_sErros) ; _sNumNF    = _ExtraiTag ("_oXML:_WSAlianca:_NumeroNFProdutor",  .T., .F.) ; endif
-	if empty (_sErros) ; _sChvNFPe  = _ExtraiTag ("_oXML:_WSAlianca:_ChaveNFPe",         .T., .F.) ; endif
+	if empty (_sErros) ; _sChvNFPe  = _ExtraiTag ("_oXML:_WSAlianca:_ChaveNFPe",         .F., .F.) ; endif
 	if empty (_sErros) ; _sPlacaVei = _ExtraiTag ("_oXML:_WSAlianca:_PlacaVeiculo",      .T., .F.) ; endif
 	if empty (_sErros) ; _sTombador = _ExtraiTag ("_oXML:_WSAlianca:_Tombador",          .T., .F.) ; endif
 	if empty (_sErros) ; _lAmostra  = (upper (_ExtraiTag ("_oXML:_WSAlianca:_ColetarAmostra",    .T., .F.)) == 'S') ; endif
@@ -1383,7 +1345,7 @@ static function _IncCarSaf ()
 	// Leitura dos itens de forma repetitiva (tentei ler em array mas nao funcionou e tenho pouco tempo pra ficar testando...)
 	if empty (_sErros) ; _sCadVit   = strzero (val (_ExtraiTag ("_oXML:_WSAlianca:_cadastroViticola1", .T., .F.)), 5) ; endif
 	if empty (_sErros) ; _sVaried   = _ExtraiTag ("_oXML:_WSAlianca:_variedade1",        .T., .F.) ; endif
-	if empty (_sErros) ; _sEmbalag  = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem1",        .T., .F.) ; endif
+	if empty (_sErros) ; _sEmbalag  = _ExtraiTag ("_oXML:_WSAlianca:_Embalagem1",        .F., .F.) ; endif
 	if empty (_sErros) ; _sLote     = _ExtraiTag ("_oXML:_WSAlianca:_Lote1",             .F., .F.) ; endif
 	if empty (_sErros) ; _sSivibe   = _ExtraiTag ("_oXML:_WSAlianca:_Sivibe1",           .F., .F.) ; endif
 	if empty (_sErros) ; _sEspumant = _ExtraiTag ("_oXML:_WSAlianca:_Espumante1",        .F., .F.) ; endif
@@ -2135,3 +2097,43 @@ Static Function _EnvMargem ()
 	_sMsgRetWS := _XmlRet
 	u_logFim ()
 Return
+
+
+// --------------------------------------------------------------------------
+// Extrair tag do XML original
+static function _ExtraiTag (_sTag, _lObrig, _lValData)
+	local _sRet    := ""
+	local _lDataOK := .T.
+	local _nPos    := 0
+
+//	U_Log2 ('debug', '[' + procname () + ']Tentando ler a tag ' + _sTag)
+//	U_Log2 ('debug', '[' + procname () + ']Type:' + type (_sTag))
+	if type (_sTag) != "O"
+		if _lObrig
+			_sErros += "XML invalido: Tag '" + _sTag + "' nao encontrada."
+		endif
+	else
+		_sRet = &(_sTag + ":TEXT")
+//		U_Log2 ('debug', '[' + procname () + ']Li a tag ' + _sTag + ' e obtive: ' + _sRet)
+		if empty (_sRet) .and. _lObrig
+			_sErros += "XML invalido: valor da tag '" + _sTag + "' deve ser informado."
+		endif
+		if _lValData  // Preciso validar formato da data
+			if ! empty (_sRet)
+				if len (_sRet) != 8
+					_lDataOK = .F.
+				else
+					for _nPos = 1 to len (_sRet)
+						if ! IsDigit (substr (_sRet, _nPos, 1))
+							_lDataOK = .F.
+							exit
+						endif
+					next
+				endif
+				if ! _lDataOK
+					_sErros += "Data deve ser informada no formato AAAAMMDD"
+				endif
+			endif
+		endif
+	endif
+return _sRet
