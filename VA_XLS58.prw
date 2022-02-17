@@ -12,6 +12,7 @@
 // Historico de alteracoes:
 // 14/02/2022 - Claudia - Incluida quantidade proporcionalizada. GLPI: 11624
 // 16/02/2022 - Claudia - Limpeza do array a cada chamada da rotina de rastreabilidade. GLPI: 11624
+// 17/02/2022 - Claudia - Criada novas colunas para linha. GLPI: 11624
 //
 // ------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -37,7 +38,7 @@ Static Function ReportDef()
 	oReport := TReport():New("VA_XLS58","Planilha informativa Cenecoop",cPerg,{|oReport| PrintReport(oReport)},"Planilha informativa Cenecoop")
 	
 	oReport:SetTotalInLine(.F.)
-	oReport:SetPortrait()
+	oReport:SetLandscape()
 	oReport:ShowHeader()
 	
 	oSection1 := TRSection():New(oReport,,{}, , , , , ,.T.,.F.,.F.) 
@@ -46,7 +47,9 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA2", 	"" ,"Num.Carga"         ,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA3", 	"" ,"Variedade"		    ,       				,12,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA4", 	"" ,"Descrição"		    ,       				,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA5", 	"" ,"Kg"	            , "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA4_1", "" ,"Linha"		        ,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA4_2", "" ,"Linha desc."		,       				,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA5", 	"" ,"Kg"	            , "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
     TRCell():New(oSection1,"COLUNA6", 	"" ,"Babo"	            ,                       ,15,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA7", 	"" ,"Lote carga"	    ,       		        ,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA8", 	"" ,"Lote produto"	    ,       		        ,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
@@ -119,7 +122,9 @@ Static Function PrintReport(oReport)
         u_log (_aLtXLS58)
 
         For _i:=1 to Len(_aLtXLS58)
-            _sVari := POSICIONE("SB1",1,XFILIAL("SB1") + _aLtXLS58[_i, 1],"B1_DESC")  
+            _sDesc    := POSICIONE("SB1",1,XFILIAL("SB1") + _aLtXLS58[_i, 1],"B1_DESC")  
+            _sLinha   := POSICIONE("SB1",1,XFILIAL("SB1") + _aLtXLS58[_i, 1],"B1_VALINEN")
+            _sLinDesc := POSICIONE("SH1",1,XFILIAL("SH1") + _sLinha         ,"H1_DESCRI")  
 
             // Imprimir os dados
             oSection1:Init()
@@ -127,7 +132,9 @@ Static Function PrintReport(oReport)
             oSection1:Cell("COLUNA1")	:SetBlock   ({||  _aNf[_x,2] +"/" + _aNf[_x,3]  })  // nota
             oSection1:Cell("COLUNA2")	:SetBlock   ({||  _aLtXLS58[_i, 4]	            })  // carga
             oSection1:Cell("COLUNA3")	:SetBlock   ({||  alltrim(_aLtXLS58[_i, 1])     })  // variedade
-            oSection1:Cell("COLUNA4")	:SetBlock   ({||  _sVari                        })  // descrição
+            oSection1:Cell("COLUNA4")	:SetBlock   ({||  _sDesc                        })  // descrição
+            oSection1:Cell("COLUNA4_1")	:SetBlock   ({||  _sLinha                       })  // linha
+            oSection1:Cell("COLUNA4_2")	:SetBlock   ({||  _sLinDesc                     })  // linha descrição
             oSection1:Cell("COLUNA5")	:SetBlock   ({||  _aLtXLS58[_i, 7] 	            })  // kg
             oSection1:Cell("COLUNA6")	:SetBlock   ({||  _aLtXLS58[_i, 6]              })  // grau
             oSection1:Cell("COLUNA7")	:SetBlock   ({||  _aLtXLS58[_i, 2]              })  // lote carga
@@ -138,7 +145,6 @@ Static Function PrintReport(oReport)
 
             oSection1:PrintLine()
         Next
-
     Next
     oSection1:Finish()
     TRA->(DbCloseArea())
