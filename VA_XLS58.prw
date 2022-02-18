@@ -47,8 +47,8 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA2", 	"" ,"Num.Carga"         ,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA3", 	"" ,"Variedade"		    ,       				,12,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA4", 	"" ,"Descrição"		    ,       				,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA4_1", "" ,"Linha"		        ,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA4_2", "" ,"Linha desc."		,       				,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA4_1", "" ,"Produto"		    ,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA4_2", "" ,"Descrição "		,       				,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA5", 	"" ,"Kg"	            , "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
     TRCell():New(oSection1,"COLUNA6", 	"" ,"Babo"	            ,                       ,15,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA7", 	"" ,"Lote carga"	    ,       		        ,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
@@ -122,9 +122,9 @@ Static Function PrintReport(oReport)
         u_log (_aLtXLS58)
 
         For _i:=1 to Len(_aLtXLS58)
-            _sDesc    := POSICIONE("SB1",1,XFILIAL("SB1") + _aLtXLS58[_i, 1],"B1_DESC")  
-            _sLinha   := POSICIONE("SB1",1,XFILIAL("SB1") + _aLtXLS58[_i, 1],"B1_VALINEN")
-            _sLinDesc := POSICIONE("SH1",1,XFILIAL("SH1") + _sLinha         ,"H1_DESCRI")  
+            _sDesc    := POSICIONE("SB1",1,XFILIAL("SB1") + _aLtXLS58[_i, 1] ,"B1_DESC")  
+            _sDescProd:= POSICIONE("SB1",1,XFILIAL("SB1") + _aNf[_x,8]       ,"B1_DESC")
+
 
             // Imprimir os dados
             oSection1:Init()
@@ -133,8 +133,8 @@ Static Function PrintReport(oReport)
             oSection1:Cell("COLUNA2")	:SetBlock   ({||  _aLtXLS58[_i, 4]	            })  // carga
             oSection1:Cell("COLUNA3")	:SetBlock   ({||  alltrim(_aLtXLS58[_i, 1])     })  // variedade
             oSection1:Cell("COLUNA4")	:SetBlock   ({||  _sDesc                        })  // descrição
-            oSection1:Cell("COLUNA4_1")	:SetBlock   ({||  _sLinha                       })  // linha
-            oSection1:Cell("COLUNA4_2")	:SetBlock   ({||  _sLinDesc                     })  // linha descrição
+            oSection1:Cell("COLUNA4_1")	:SetBlock   ({||  _aNf[_x,8]                    })  // Produto
+            oSection1:Cell("COLUNA4_2")	:SetBlock   ({||  _sDescProd                    })  // produto descrição
             oSection1:Cell("COLUNA5")	:SetBlock   ({||  _aLtXLS58[_i, 7] 	            })  // kg
             oSection1:Cell("COLUNA6")	:SetBlock   ({||  _aLtXLS58[_i, 6]              })  // grau
             oSection1:Cell("COLUNA7")	:SetBlock   ({||  _aLtXLS58[_i, 2]              })  // lote carga
