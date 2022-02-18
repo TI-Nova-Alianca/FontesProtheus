@@ -61,6 +61,7 @@
 // 31/08/2021 - Robert  - Criado atributo UltVerif para ajudar em loops que executam todas as validacoes (GLPI 10876)
 // 16/09/2021 - Robert  - Ajustes verif. 73 e 80 (desconsiderar deletados e usr.bloqueados).
 // 27/09/2021 - Robert  - Adicionada verificacao de modulos na verificacao 74
+// 18/02/2022 - Robert  - Adicionada verificacao de itens de mao de obra x CC (GLPI 11650).
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -3163,6 +3164,19 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=    " AND SYS_USR.USR_MSBLQL != '1'"
 			::Query +=    " AND SYS_USR.USR_GRPRULE = '3'"  // REGRA DE ACESSO POR GRUPOS = 'SOMAR'
 			::Query +=  " GROUP BY SYS_USR.USR_ID, SYS_USR.USR_CODIGO, SYS_USR.USR_NOME"
+
+		case ::Numero == 82
+			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+			::Setores    = 'CUS'
+			::Descricao  = 'Itens de mao de obra devem estar amarrados ao CC correspondente'
+			::Query := "" 
+			::Query += "SELECT 'Item de mao de obra amarrado a CC errado' as PROBLEMA, B1_COD, B1_CCCUSTO, B1_GCCUSTO, B1_DESC"
+			::Query +=  " FROM " + RetSQLName ("SB1")
+			::Query += " WHERE D_E_L_E_T_ = ''"
+			::Query +=   " AND SUBSTRING (B1_COD, 1, 3) IN ('AP-', 'MO-', 'GF-')"
+			::Query +=   " AND B1_CCCUSTO != SUBSTRING (B1_COD, 4, 11)"
+			::Query += " ORDER BY B1_COD"
+
 
 		otherwise
 			::UltMsg = "Verificacao numero " + cvaltochar (::Numero) + " nao definida."
