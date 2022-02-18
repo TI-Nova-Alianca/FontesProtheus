@@ -307,7 +307,7 @@ User Function ZA4_EX()
     private aGets    := {}
     private aTela    := {}
     
-	if U_ZZUVL ("A93", __cUserID, .T.)
+	//if U_ZZUVL ("A93", __cUserID, .T.)
 		u_logIni ()
 		RegToMemory ("ZA4", inclui, .T.)
 
@@ -326,9 +326,9 @@ User Function ZA4_EX()
 				EndIf
 			endif    
 		Endif
-	else
-		u_help("Usuário sem permissões para excluir verbas!")
-	endif
+	//else
+	//	u_help("Usuário sem permissões para excluir verbas!")
+	//endif
 
 	u_logFim ()
 Return
@@ -515,7 +515,8 @@ User Function ZA4_VE (_nTipo)
 	local _x	:= 0
 	local _lRet := .T.
     
-    if ! u_zzuvl ('037', __cUserId, .T.)
+    //if ! u_zzuvl ('037', __cUserId, .T.)
+	if ! u_zzuvl ('A93', __cUserId, .T.)
     	_lRet := .F.
     	return
 	endif
