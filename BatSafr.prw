@@ -31,6 +31,7 @@
 // 17/01/2022 - Robert - Ajuste nomes conselheiros.
 // 19/01/2022 - Robert - Ajuste nomes e e-mail conselheiros.
 // 28/01/2022 - Robert - E-mail de acompanhamento de safra passa a enviar para lista de distribuicao acomp.safra@novaalianca.coop.br
+// 18/02/2022 - Robert - Passa a dar 2 dias antes de transferir titulos para a matriz (para necessidades de cancelar alguma nota recente).
 //
 
 // --------------------------------------------------------------------------
@@ -351,10 +352,10 @@ static function _ConfParc (_lAjustar)
 			U_Log2 ('aviso', 'como deveria estar no SE2:')
 			U_Log2 ('aviso', _aParcPrev)
 			
-			//u_zzunu ({'999'}, 'Inconsistencia parcelamento safra - F.' + (_sAliasQ) -> filial + ' NF: ' + (_sAliasQ) -> doc + ' forn: ' + (_sAliasQ) -> associado, _sMsg)
+			u_zzunu ({'999'}, 'Inconsistencia parcelamento safra - F.' + (_sAliasQ) -> filial + ' NF: ' + (_sAliasQ) -> doc + ' forn: ' + (_sAliasQ) -> associado, _sMsg)
 
 			// cai fora no primeiro erro encontrado (estou ainda ajustando)
-		//	EXIT   // REMOVER DEPOIS !!!!!!!!!!!!!!!!!
+			EXIT   // REMOVER DEPOIS !!!!!!!!!!!!!!!!!
 
 		endif
 //		U_Log2 ('info', 'Finalizando F' + (_sAliasQ) -> filial + ' NF' + (_sAliasQ) -> doc)
@@ -583,14 +584,15 @@ static function _GeraSZI ()
 					msunlock ()
 				endif
 
-				// Se gerei conta corrente numa filial, preciso transferir esse lcto para a matriz, pois todos os pagamentos sao centralizados.
-				if cFilAnt != '01' //.and. 'TESTE' $ upper (getenvserver ())  // por enqto apenas na base teste
-					_oCtaCorr:FilDest = '01'
-					U_Log2 ('info', 'Solicitando transferencia do saldo deste movimento para a matriz.')
-					if ! _oCtaCorr:TransFil (_oCtaCorr:DtMovto)
-						u_help ("A transferencia para outra filial nao foi possivel. " + _oCtaCorr:UltMsg,, .T.)
-					endif
-				endif
+			// Implementada funcao separada
+			//	// Se gerei conta corrente numa filial, preciso transferir esse lcto para a matriz, pois todos os pagamentos sao centralizados.
+			//	if cFilAnt != '01' //.and. 'TESTE' $ upper (getenvserver ())  // por enqto apenas na base teste
+			//		_oCtaCorr:FilDest = '01'
+			//		U_Log2 ('info', 'Solicitando transferencia do saldo deste movimento para a matriz.')
+			//		if ! _oCtaCorr:TransFil (_oCtaCorr:DtMovto)
+			//			u_help ("A transferencia para outra filial nao foi possivel. " + _oCtaCorr:UltMsg,, .T.)
+			//		endif
+			//	endif
 			endif
 		else
 			U_help ("Gravacao do SZI nao permitida na atualizacao da conta corrente para o associado '" + (_sAliasQ) -> e2_fornece + '/' + (_sAliasQ) -> e2_loja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
@@ -727,7 +729,7 @@ static function _ConfSZI ()
 			_nQtErros ++
 //			U_Log2 ('erro', 'Inconsistencia SZI x SE2 safra - filial: ' + (_sAliasQ) -> e2_filial + ' NF: ' + (_sAliasQ) -> e2_num + ' forn: ' + (_sAliasQ) -> e2_fornece)
 			U_Log2 ('erro', _sMsg)
-	//		u_zzunu ({'999'}, 'Inconsistencia SZI x SE2 safra - filial: ' + (_sAliasQ) -> e2_filial + ' NF: ' + (_sAliasQ) -> e2_num + ' forn: ' + (_sAliasQ) -> e2_fornece, _sMsg)
+			u_zzunu ({'999'}, 'Inconsistencia SZI x SE2 safra - filial: ' + (_sAliasQ) -> e2_filial + ' NF: ' + (_sAliasQ) -> e2_num + ' forn: ' + (_sAliasQ) -> e2_fornece, _sMsg)
 		endif
 		(_sAliasQ) -> (dbskip ())
 	enddo
@@ -801,6 +803,11 @@ static function _TransFil ()
 		_oSQL:_sQuery +=                   " AND V.TIPO_NF     IN ('C', 'V')"
 		_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC = 'NAO ASSOCIADO')"
 		_oSQL:_sQuery +=    " AND SE2.E2_SALDO = E2_VALOR"
+
+		// Nao quero pegar as de hoje para evitar transferir enquanto tem alguem gerando contranota, ou o outro batch gerando SZI.
+		// Alem disso, deixo um tempo para o pessoal cancelar alguma nota recente se precisarem.
+		_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO < '" + dtos (date () - 2) + "'"
+
 		_oSQL:_sQuery +=  " ORDER BY SE2.E2_FORNECE, SE2.E2_LOJA, SE2.E2_NUM, SE2.E2_PREFIXO, SE2.E2_PARCELA"
 		_oSQL:Log ()
 		_sAliasQ = _oSQL:Qry2Trb (.T.)
@@ -954,7 +961,8 @@ static function _TrSZIMat ()
 		_oSQL:_sQuery +=    " AND SE2.E2_FILIAL != '01'"  // Nao adianta olhar na matriz
 		
 		// Nao quero pegar as de hoje para evitar transferir enquanto tem alguem gerando contranota, ou o outro batch gerando SZI.
-		_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO < '" + dtos (date () - 1) + "'"
+		// Alem disso, deixo um tempo para o pessoal cancelar alguma nota recente se precisarem.
+		_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO < '" + dtos (date () - 2) + "'"
 		
 		_oSQL:_sQuery +=    " AND SZI.ZI_FILIAL  = SE2.E2_FILIAL"
 		_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC   = SE2.E2_FORNECE"

@@ -35,6 +35,7 @@
 // 01/12/2020 - Robert - Passa a buscar dados de cadastro viticola na view GX0001_AGENDA_SAFRA e nao mais na VA_VASSOC_CAD_VITIC2
 // 05/02/2021 - Robert - Funcao de aglutinacao de cargas, removida ha uns 2 anos, foi reativada (GLPI 9336)
 // 16/02/2022 - Robert - Tratamentos para cancelamento de cargas chamado via web service (GLPI 11634)
+// 20/02/2022 - Robert - Variavel _sErros (publica do web service) renomeada para _sErroWS
 //
 
 #include "totvs.ch"
@@ -204,13 +205,13 @@ User Function va_rus2 (_nOpc, _lFechPort)
 			if m->ze_coop $ '00136901/00002101'
 				_aCadVitic := aclone (_oAssoc:CadVitic ())
 				if len (_aCadVitic) == 0
-					if type ('_sErros') == 'C' ; _sErros += 'Nao ha nenhuma variedade de uva ligada ao associado ' ; endif
+//					if type ('_sErros') == 'C' ; _sErros += 'Nao ha nenhuma variedade de uva ligada ao associado ' ; endif
 					u_help ("Nao ha nenhuma variedade de uva ligada ao associado '" + _oAssoc:Codigo + "/" + _oAssoc:Loja + "'." + chr (13) + chr (10) + ;
 					        "Verifique:" + chr (13) + chr (10) + ;
 					        "- Amarracao do associado/loja com grupos familiares" + chr (13) + chr (10) + ;
 					        "- Cadastros viticolas" + chr (13) + chr (10) + ;
 					        "- Propriedades rurais (equivale a cadastros viticolas) do grupo familiar" + chr (13) + chr (10) + ;
-					        "- Amarracao de variedades de uvas com cadastros viticolas")
+					        "- Amarracao de variedades de uvas com cadastros viticolas",, .t.)
 					_lContinua = .F.
 				endif
 			

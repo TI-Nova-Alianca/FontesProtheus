@@ -32,7 +32,7 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '07' modulo 'FIN'
+		prepare environment empresa '01' filial '01' modulo 'FIN'
 		private cModulo   := 'FIN'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -91,6 +91,71 @@ static function _AndaLogo ()
 	incproc ()
 	u_help ('Nada definido.')
 return
+/*
+	// Testes verificacoes genericas.
+	// _oVerif := ClsVerif():New (25)
+	// _oVerif:SetParam ('01', '2017')
+	// _oVerif:SetParam ('02', '')
+	// _oVerif:SetParam ('03', 'zz')
+	// _oVerif:SetParam ('04', '30 ')
+	// _oVerif:SetParam ('05', '028')
+	// _oVerif:SetParam ('06', '077')
+	// _oVerif:SetParam ('07', '000017')
+	// _oVerif := ClsVerif():New (24)
+	// _oVerif:SetParam ('01', '09189201001  ')
+	// _oVerif:SetParam ('02', '09189201001  ')
+	// _oVerif:SetParam ('03', '')
+	// _oVerif:SetParam ('04', 'z')
+	_oVerif := ClsVerif():New (82)
+	if _oVerif:Executa ()
+		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
+		u_log2 ('debug', _oVerif:Result)
+	else
+		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
+	endif
+return
+*/
+
+/*
+	// Testes arvore de rastreabilidade
+	private _aLtXLS58 := {}  // Deixar PRIVATE para ser alimentada pelo U_RastLT().
+	//_sMapa := U_RastLT (cFilAnt, U_TamFixo ('3630', 15, ' '), '12101401', 0, NIL, 14660)  // item 2580 lote 12101401 transformado em 3630 (mesmo lote) em 28/01/2022 na filial 01.
+	//_sMapa := U_RastLT (cFilAnt, U_TamFixo ('1274', 15, ' '), 'AUTO009215', 0, NIL, 1)  // enzima (arvore grande)
+
+	// lado 1 do par --> _sMapa := U_RastLT ('01', U_TamFixo ('2444', 15, ' '), 'AUTO009238', 0, NIL, 24200)
+	// lado 2 do par -->
+	_sMapa := U_RastLT ('09', U_TamFixo ('2444', 15, ' '), '4123', 0, NIL, 24200)
+
+	//_sMapa := U_RastLT (cFilAnt, U_TamFixo ('9959', 15, ' '), '2201028401', 0, NIL, 1)  // enzima (arvore grande)
+	_sArq := 'c:\temp\rast.mm'
+	delete file (_sArq)
+	if file (_sArq)
+		_nHdl = fopen(_sArq, 1)
+	else
+		_nHdl = fcreate(_sArq, 0)
+	endif
+	fwrite (_nHdl, _sMapa)
+	fclose (_nHdl)
+	ShellExecute ("Open", _sArq, "", "", 1)
+	u_log (_aLtXLS58)
+	_oLtXLS58 := CLsAUtil ():New ()
+	_oLtXLS58:_aArray := aclone (_aLtXLS58)
+	U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (_oLtXLS58:TotCol (7)))
+return
+*/
+/*
+	// Tentativa de encher a memoria do servico
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "SELECT TOP 1000 * FROM SD1010"
+	_a1 := aclone (_oSQL:Qry2Array ())
+	_a2 := {}
+	do while .t.
+		// pior que sobe a memoria mesmo!!!  --> aadd (_a2, aclone (_a1))
+		sleep (1000)
+		u_log2 ('debug', cvaltochar (len (_a2)))
+	enddo
+return
+*/
 //	U_ImpZA1 ('9000240221', '98')
 /*
 // Testes batches em geral
@@ -144,19 +209,6 @@ return
 return
 */
 /*
-	// Tentativa de encher a memoria do servico
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := "SELECT TOP 1000 * FROM SD1010"
-	_a1 := aclone (_oSQL:Qry2Array ())
-	_a2 := {}
-	do while .t.
-		// pior que sobe a memoria mesmo!!! aadd (_a2, aclone (_a1))
-		sleep (1000)
-		u_log2 ('debug', cvaltochar (len (_a2)))
-	enddo
-return
-*/
-/*
 	// Gera arq. Sisdeclara.
 	cPerg := "ML_DEC"
 	U_GravaSX1 (cPerg, "01", stod ("20220101"))
@@ -194,23 +246,6 @@ return
 		endif
 		sa3 -> (dbskip ())
 	enddo
-return
-*/
-/*
-	// Testes arvore de rastreabilidade
-	private _aLtXLS58 := {}  // Deixar PRIVATE para ser alimentada pelo U_RastLT().
-	_sMapa := U_RastLT (cFilAnt, U_TamFixo ('2203', 15, ' '), '12074301', 0, NIL)
-	_sArq := 'c:\temp\rast.mm'
-	delete file (_sArq)
-	if file (_sArq)
-		_nHdl = fopen(_sArq, 1)
-	else
-		_nHdl = fcreate(_sArq, 0)
-	endif
-	fwrite (_nHdl, _sMapa)
-	fclose (_nHdl)
-	ShellExecute ("Open", _sArq, "", "", 1)
-	u_log (_aLtXLS58)
 return
 */
 /*
@@ -640,30 +675,6 @@ return
 //	u_va_xls57 (.T.)
 //return
 
-/*
-	// Testes verificacoes genericas.
-	// _oVerif := ClsVerif():New (25)
-	// _oVerif:SetParam ('01', '2017')
-	// _oVerif:SetParam ('02', '')
-	// _oVerif:SetParam ('03', 'zz')
-	// _oVerif:SetParam ('04', '30 ')
-	// _oVerif:SetParam ('05', '028')
-	// _oVerif:SetParam ('06', '077')
-	// _oVerif:SetParam ('07', '000017')
-	// _oVerif := ClsVerif():New (24)
-	// _oVerif:SetParam ('01', '09189201001  ')
-	// _oVerif:SetParam ('02', '09189201001  ')
-	// _oVerif:SetParam ('03', '')
-	// _oVerif:SetParam ('04', 'z')
-	_oVerif := ClsVerif():New (70)
-	if _oVerif:Executa ()
-		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
-		u_log2 ('debug', _oVerif:Result)
-	else
-		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
-	endif
-return
-*/
 /*
 	// Testes inclusao conta corrente
 	_aMovCC := {} // TM   SERIE   DOCTO                       ASSOC    LOJA  bco    ag       cta
@@ -1589,17 +1600,6 @@ return
 	
 	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,      .F.,      .t.))
 	u_log (_oAssoc:FechSafra ('2021',  .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,      .t.,      .t.))
-return
-*/
-/*
-	// Testes inclusao de carga safra via web service
-	private _sErros := ''
-	_oAssoc := ClsAssoc():New ('000161', '01')
-	_aItensCar = {}
-	aadd (_aItensCar, {'13386', U_TamFixo ('9901', 15), 'G', 'lote1', 'siviRe', 'N'})
-	aadd (_aItensCar, {'13386', U_TamFixo ('9904', 15), 'G', 'lote1', 'siviRe', 'N'})
-	u_log ('retorno do U_GeraZZE:', U_GeraSZE (_oAssoc,'2021','LB', '000', '000000000', 'chave_nfe', 'abc1x34', '1', 'teste robert',_aItensCar, .T., '789000', '99'))
-	u_log ('Msg de problemas:', _sErros)
 return
 */
 /*

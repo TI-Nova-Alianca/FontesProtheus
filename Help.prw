@@ -28,7 +28,9 @@
 // 09/07/2020 - Robert  - Desabilitadas chamadas da funcao U_LOG().
 // 21/07/2020 - Robert  - Passa a gravar log e console sempre.
 // 24/09/2021 - Claudia - Incluido o tratamento para retorno de mensagem WS.
+// 20/02/2022 - Robert  - Variavel _sErros (publica do web service) renomeada para _sErroWS
 //
+
 // --------------------------------------------------------------------------
 user function Help (_sMsg, _sDAdic, _lHlpErro)
 	local _nQuebra := 0
@@ -65,8 +67,8 @@ user function Help (_sMsg, _sDAdic, _lHlpErro)
 		if type ("_sErroAuto") == "C"  // Variavel private (customizada) para retorno de erros em rotinas automaticas.
 			_sErroAuto += iif (empty (_sErroAuto), '', '; ') + cValToChar (_sMsg) + iif (valtype (_sDAdic) == "C", _sDAdic, "")
 		endif
-		if type ('_sErros') == 'C'  // Variavel private (customizada) geralmente usada em chamadas via web service.
-			_sErros += iif (empty (_sErros), '', '; ') + cValToChar (_sMsg)
+		if type ('_sErroWS') == 'C'  // Variavel private (customizada) geralmente usada em chamadas via web service.
+			_sErroWS += iif (empty (_sErroWS), '', '; ') + cValToChar (_sMsg)
 		endif
 	endif
 

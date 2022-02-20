@@ -50,6 +50,7 @@
 // 25/07/2021 - Robert - Metodo Copy2Trb() passa a receber parametro com nome do alias a gerar.
 // 21/10/2021 - Robert - Criado atributo ArqDestXLS e tratamento no metodo Qry2XLS (GLPI 11034)
 // 25/01/2022 - Robert - Metodo Copy2Trb() passa a aceitar lista de indices para criar.
+// 20/02/2022 - Robert - Variavel _sErros (publica do web service) renomeada para _sErroWS
 //
 
 #include "protheus.ch"
@@ -656,8 +657,8 @@ METHOD RetFixo (_nRetFixo, _sMsgFixo, _lMsgTela) Class ClsSQL
 			if type ("_sErroAuto") == "C"  // Variavel private (customizada) para retorno de erros em rotinas automaticas.
 				_sErroAuto += iif (empty (_sErroAuto), '', '; ') + _sErrRetFx
 			endif
-			if type ('_sErros') == 'C'  // Variavel private (customizada) geralmente usada em chamadas via web service.
-				_sErros += iif (empty (_sErros), '', '; ') + _sErrRetFx
+			if type ('_sErroWS') == 'C'  // Variavel private (customizada) geralmente usada em chamadas via web service.
+				_sErroWS += iif (empty (_sErroWS), '', '; ') + _sErrRetFx
 			endif
 		endif
 	endif

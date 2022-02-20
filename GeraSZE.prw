@@ -11,6 +11,7 @@
 // 16/12/2021 - Robert - Novo formato de retorno (em XML); Passa a considerar impr.ticket cfe.solicitado pelo prog.inspecao.
 // 17/12/2021 - Robert - Voltamos para o retorno original em texto.
 // 18/02/2022 - Robert - Criado tratamento para 'carga compartilhada' (GLPI 11633).
+// 20/02/2022 - Robert - Variavel _sErros (publica do web service) renomeada para _sErroWS
 //
 
 #include "VA_INCLU.prw"
@@ -30,18 +31,18 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 	U_PerfMon ('I', 'GeraSZE_validacoes')  // Para metricas de performance
 
 	// Este programa foi criado para ser chamado via web service, que jah deve
-	// deixar a variavel _sErros criada, mas, para garantir...
-	if type ("_sErros") != 'C'
-		private _sErros := ""
+	// deixar a variavel _sErroWS criada, mas, para garantir...
+	if type ("_sErroWS") != 'C'
+		private _sErroWS := ""
 	endif
 
 	// Apenas uma sessao por vez.
 	_nLock = U_semaforo (procname () + cEmpAnt + cFilAnt, .F.)
 	if _nLock == 0
-		_sErros += "Bloqueio de semaforo. Verifique se existe outra sessao gerando carga e tente novamente."
+		_sErroWS += "Bloqueio de semaforo. Verifique se existe outra sessao gerando carga e tente novamente."
 	endif
 
-	if empty (_sErros)
+	if empty (_sErroWS)
 
 		// Algumas variaveis que devem estar prontas para as validacoes dos programas originais.
 		private _lLeitBar  := .F.
@@ -101,7 +102,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 	U_VA_RusDI (cFilAnt)
 
 	// Verifica se o associado tem alguma restricao
-	if empty (_sErros)
+	if empty (_sErroWS)
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += "SELECT GX0001_ASSOCIADO_RESTRICAO as restricao"
@@ -113,24 +114,24 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		_oSQL:PerfMon = .T.  // Para monitoramento de performance - desabilitar depois
 		_sRestri = _oSQL:RetQry ()
 		if ! empty (_sRestri)
-			_sErros += "Associado com restricoes: " + _sRestri
+			_sErroWS += "Associado com restricoes: " + _sRestri
 		endif
 	endif
 
 	// Gera array com os cadastros viticolas vinculados ao associado. Deve ser mantido, aqui, o mesmo formato gerado pela classe ClsAssoc.
-	if empty (_sErros)
+	if empty (_sErroWS)
 		U_PerfMon ('I', 'GeraSZE_RUSCV')  // Para metricas de performance
 		_aCadVitic = aclone (U_VA_RusCV (_oAssoc:Codigo, _oAssoc:Loja))
 		U_PerfMon ('F', 'GeraSZE_RUSCV')  // Para metricas de performance
 		if len (_aCadVitic) == 0
-			_sErros += "Nao ha nenhuma variedade de uva ligada ao associado."
+			_sErroWS += "Nao ha nenhuma variedade de uva ligada ao associado."
 		endif
 	endif
 	//u_log2 ('info', '_aCadVitic ficou assim:')
 	//u_log2 ('info', _aCadVitic)
 
 	// Cria aHeader e aCols para poder usar as validacoes do VA_RUS2.PRW
-	if empty (_sErros)  // Variavel private do web service
+	if empty (_sErroWS)  // Variavel private do web service
 		sb1 -> (dbsetorder (1))
 		private aHeader := aclone (U_GeraHead ("SZF", .F., {}, {}, .F.))
 		private aCols := {}
@@ -142,12 +143,12 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 			//u_log2 ('debug', 'Pesquisando ' + _aItensCar [_nItemCar, 2])
 			_nItemVit = ascan (_aCadVitic, {|_aVal| alltrim (_aVal [.CadVitProduto]) == alltrim (_aItensCar [_nItemCar, 2])})
 			if _nItemVit == 0
-				_sErros += "Variedade " + alltrim (_aItensCar [_nItemCar, 2]) + " nao vinculada com a propriedade rural " + _aItensCar [_nItemCar, 1] + ' / SIVIBE ' + _aItensCar [_nItemCar, 5]
+				_sErroWS += "Variedade " + alltrim (_aItensCar [_nItemCar, 2]) + " nao vinculada com a propriedade rural " + _aItensCar [_nItemCar, 1] + ' / SIVIBE ' + _aItensCar [_nItemCar, 5]
 				exit
 			endif
 
 			if ! sb1 -> (dbseek (xfilial ("SB1") + _aItensCar [_nItemCar, 2], .F.))
-				_sErros += "Variedade '" + _aItensCar [_nItemCar, 2] + "' nao encontrada no cadastro de itens."
+				_sErroWS += "Variedade '" + _aItensCar [_nItemCar, 2] + "' nao encontrada no cadastro de itens."
 				exit
 			endif
 
@@ -160,14 +161,14 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 				_oSQL:_sQuery += " WHERE COD_BASE = '" + _aItensCar [_nItemCar, 2] + "'"
 				_aEspum = aclone (_oSQL:Qry2Array (.F., .F.))
 				if len (_aEspum) == 0
-					_sErros += "Nao encontrei codigo para espumante relacionado com a variedade " + _aItensCar [_nItemCar, 2]
+					_sErroWS += "Nao encontrei codigo para espumante relacionado com a variedade " + _aItensCar [_nItemCar, 2]
 					exit
 				elseif len (_aEspum) > 1
-					_sErros += "Encontrei mais de um codigo para espumante relacionado com a variedade " + _aItensCar [_nItemCar, 2]
+					_sErroWS += "Encontrei mais de um codigo para espumante relacionado com a variedade " + _aItensCar [_nItemCar, 2]
 					exit
 				else
 					if ! sb1 -> (dbseek (xfilial ("SB1") + _aEspum [1, 1], .F.))
-						_sErros += "Variedade para espumante '" + _aEspum [1, 1] + "' nao encontrada no cadastro de itens."
+						_sErroWS += "Variedade para espumante '" + _aEspum [1, 1] + "' nao encontrada no cadastro de itens."
 						exit
 					endif
 				endif
@@ -193,7 +194,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 			// Executa a validacao de linha
 			U_PerfMon ('I', 'GeraSZE_RUS2L')  // Para metricas de performance
 			if ! U_VA_RUS2L ()
-				_sErros += 'Erro na validacao do item ' + cvaltochar (_nItemCar)
+				_sErroWS += 'Erro na validacao do item ' + cvaltochar (_nItemCar)
 				exit
 			else
 				U_PerfMon ('F', 'GeraSZE_RUS2L')  // Para metricas de performance
@@ -204,10 +205,10 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 	//	u_log (aCols)
 	//	u_logACols ()
 	endif
-//	U_Log2 ('debug', '_sErros ateh o momento: ' + _sErros)
+//	U_Log2 ('debug', '_sErroWS ateh o momento: ' + _sErroWS)
 
 	// Validacoes do programa original.
-	if empty (_sErros)  // Variavel private do web service
+	if empty (_sErroWS)  // Variavel private do web service
 		U_PerfMon ('I', 'GeraSZE_RUS2T')  // Para metricas de performance
 		if U_VA_RUS2T ()
 			U_PerfMon ('F', 'GeraSZE_RUS2T')  // Para metricas de performance

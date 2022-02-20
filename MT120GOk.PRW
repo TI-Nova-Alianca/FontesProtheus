@@ -40,8 +40,6 @@ user function MT120GOk ()
 	local _oSQL     := NIL
 	local _nOpcao   := 0
 	
-	u_logini()
-	
 	if (_lInclui .or. _lAltera) //.and. msgyesno ("Deseja enviar este pedido / aut.entrega por e-mail para o fornecedor?")
 		_nOpcao = aviso ("Envio do pedido para o fornecedor", ;
 		                 "Selecione o formato para envio do pedido para o fornecedor", ;// {"HTML", "PDF", "Nao enviar"}, ;
@@ -104,7 +102,6 @@ user function MT120GOk ()
 
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
-	u_logfim()
 return
 //
 // --------------------------------------------------------------------------
@@ -141,4 +138,7 @@ static function _AtuSCR ()
 	u_log(sc7 -> c7_num)
 	u_log(sc7 -> c7_cc)
 	u_log(sc7 -> C7_PRODUTO)
+
+// to com duvida se o campo eh no SC7 ou SCR. Robert --->	U_Log2 ('debug', '[' + procname () + ']Ped.' + sc7 -> c7_num + '/' + sc7 -> c7_item + ' estah com CR_TIPOPRO = ' + )
+
 return

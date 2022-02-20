@@ -9,6 +9,7 @@
 // 16/06/2015 - Robert - Passa a gravar a resposta (retorno) no arquivo de log.
 // 06/07/2020 - Robert - Passa a usar U_LOG2(). Tambem passa a gravar log sempre (antes era apenas na falta de interface com o usuario).
 // 16/02/2022 - Robert - Se existir a variavel _sErros, alimenta-a.
+// 20/02/2022 - Robert - Variavel _sErros (publica do web service) renomeada para _sErroWS
 //
 
 // ---------------------------------------------------------------------------
@@ -28,8 +29,8 @@ User function MsgNoYes (_sMsg, _lDefault)
 	endif
 
 	// Se esta variavel estiver definida, eh por que estah sendo executada alguma rotina via web service, e a mensagem deve ser retornada atraves dela.
-	if ! _lRet .and. type ("_sErros") == "C"
-		_sErros += '[' + procname () + '] [' + cValToChar (_lRet) + '] ' + strtran (_sMsg, chr (10) + chr (13), ' ')
+	if ! _lRet .and. type ("_sErroWS") == "C"
+		_sErroWS += '[' + procname () + '] [' + cValToChar (_lRet) + '] ' + strtran (_sMsg, chr (10) + chr (13), ' ')
 	endif
 
 	if ExistBlock ("LOG2")  // Se pode gerar arquivo de log

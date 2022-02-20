@@ -12,6 +12,7 @@
 
 // Historico de alteracoes:
 // 14/01/2022 - Robert - Desabilitado teste que, para 2021, somente desclassificava moscatos quando abaixo de 9 graus (mas nao foi compilado nesta data).
+// 20/02/2022 - Robert - Alimentacao de erros em variaveis publicas como _sErros e _oBatch passam a ser feitas pela funcao u_help().
 //
 
 #include "VA_INCLU.prw"
@@ -583,6 +584,7 @@ user function PrcUva22 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 			u_help (_sComent,, .t.)
 		else
 
+			/*
 			// Gravacoes que seriam feitas pela funcao u_help.
 			u_log2 ('erro', _sComent)
 			if type ("_sErroAuto") == "C"  // Variavel private (customizada) para retorno de erros em rotinas automaticas.
@@ -594,6 +596,8 @@ user function PrcUva22 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 			if type ("_oBatch") == "O"
 				_oBatch:Mensagens += iif (alltrim (_sComent) $ _oBatch:Mensagens, '', '; ' + alltrim (_sComent))
 			endif
+			*/
+			U_help (_sComent,, .t.)
 		endif
 
 		_aRet = {0, 0, _sComent, _aGrausInt, 0}

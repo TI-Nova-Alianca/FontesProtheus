@@ -103,6 +103,7 @@
 //                      - Ajuste corr.mon. (desconsiderava NF vcto futuro que jah sofreram baixas) - GLPI 10306.
 // 11/08/2021 - Robert  - View VA_VASSOC_GRP_FAM migrada do database do Protheus para o NaWeb (GLPI 10673).
 // 05/01/2022 - Robert  - Regras para pagamento (grupos A/B/C) para safra 2022 permanecem iguais ao ano de 2021 no metodo FechSafra.
+// 20/02/2022 - Robert  - Variavel _sErros (publica do web service) renomeada para _sErroWS
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -202,8 +203,8 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 		_aAreaAnt := sa2 -> (getarea ())
 		sa2 -> (dbsetorder (1))
 		if _lContinua .and. ! sa2 -> (dbseek (xfilial ("SA2") + _sCodigo + _sLoja, .F.))
-			if type ('_sErros') == 'C'
-				_sErros += "Impossivel instanciar classe ClsAssoc. Codigo/loja '" + _sCodigo + "/" + _sLoja + "' nao cadastrado como fornecedor."
+			if type ('_sErroWS') == 'C'
+				_sErroWS += "Impossivel instanciar classe ClsAssoc. Codigo/loja '" + _sCodigo + "/" + _sLoja + "' nao cadastrado como fornecedor."
 			endif
 			u_log ("Impossivel instanciar classe ClsAssoc. Codigo/loja '" + _sCodigo + "/" + _sLoja + "' nao cadastrado como fornecedor.",, .t.)
 			_lContinua = .F.
@@ -214,8 +215,8 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 			if type ("_sErroAuto") == "C"  // Variavel private (customizada) para retorno de erros em rotinas automaticas.
 				_sErroAuto += iif (empty (_sErroAuto), '', '; ') + "Associado '" + _sCodigo + '/' + _sLoja + "' sem codigo/loja base no cadastro."
 			endif
-			if type ('_sErros') == 'C'  // Variavel private (customizada) geralmente usada em chamadas via web service.
-				_sErros += iif (empty (_sErros), '', '; ') + "Associado '" + _sCodigo + '/' + _sLoja + "' sem codigo/loja base no cadastro."
+			if type ('_sErroWS') == 'C'  // Variavel private (customizada) geralmente usada em chamadas via web service.
+				_sErroWS += iif (empty (_sErroWS), '', '; ') + "Associado '" + _sCodigo + '/' + _sLoja + "' sem codigo/loja base no cadastro."
 			endif
 			_lContinua = .F.
 		endif
@@ -304,8 +305,8 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 					::Nucleo    = ''
 					::SubNucleo = ''
 					u_log2 ('aviso', 'Problemas para determinar o grupo familiado do associado ' + ::Codigo + '/' + ::Loja + '.')
-					if type ("_sErros") == 'C'
-						_sErros += 'Problemas para determinar o grupo familiado do associado ' + ::Codigo + '/' + ::Loja + '.'
+					if type ("_sErroWS") == 'C'
+						_sErroWS += 'Problemas para determinar o grupo familiado do associado ' + ::Codigo + '/' + ::Loja + '.'
 					endif
 				endif
 

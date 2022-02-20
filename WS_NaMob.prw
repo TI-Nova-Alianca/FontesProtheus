@@ -16,6 +16,8 @@
 // 12/02/2021 - Robert - Novos parametros metodo ClsAssoc:FechSafra() - GLPI 9318
 // 08/03/2021 - Robert - Novos parametros metodo ClsAssoc:FechSafra (GLPI 9572)
 // 31/01/2022 - Robert - Acao 'RetTicketCargaSafra' removida, pois nao se aplica diretamente a associados.
+// 20/02/2022 - Robert - Variavel _sErros renomeada para _sErroWS
+//                     - Funcao _ExtraiTag() migrada para U_ExTagXML().
 //
 
 // ------------------------------------------------------------------------------------------------
@@ -48,7 +50,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_NaMob
 	private _sWS_Empr  := ""
 	private _sWS_Filia := ""
 	private _oXML      := NIL
-	private _sErros    := ""
+	private _sErroWS  := ""
 	private _sMsgRetWS := ""
 	private _sAcao     := ""
 	private _sArqLog   := GetClassName (::Self) + "_" + dtos (date ()) + ".log"
@@ -57,10 +59,10 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_NaMob
 	u_logDH ()
 
 	// Validacoes gerais e extracoes de dados basicos.
-	U_ValReqWS (GetClassName (::Self), ::XmlRcv, @_sErros, @_sWS_Empr, @_sWS_Filia, @_sAcao)
+	U_ValReqWS (GetClassName (::Self), ::XmlRcv, @_sErroWS, @_sWS_Empr, @_sWS_Filia, @_sAcao)
 	
 	// Prepara o ambiente conforme empresa e filial solicitadas.
-	if empty (_sErros)
+	if empty (_sErroWS)
 		prepare environment empresa _sWS_Empr filial _sWS_Filia
 		private __RelDir  := "c:\temp\spool_protheus\"
 		set century on
@@ -68,12 +70,12 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_NaMob
 
 	// Converte novamente a string recebida para XML, pois a criacao do ambiente parece apagar o XML.
 	// Nao vou tratar erros do parser pois teoricamente jah foram tratador na funcao VarReqWS
-	if empty (_sErros)
+	if empty (_sErroWS)
 		_oXML := XmlParser(::XmlRcv, "_", @_sError, @_sWarning)
 	endif
 	
 	// Executa a acao especificada no XML.
-	if empty (_sErros)
+	if empty (_sErroWS)
 		u_log ('Acao:', _sAcao)
 		//PtInternal (1, _sAcao)
 		do case
@@ -84,16 +86,16 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_NaMob
 			case _sAcao == 'ConsultaExtratoCCAssoc'
 				_AsExtrCC ()
 			otherwise
-				_sErros += "A acao especificada no XML eh invalida: " + _sAcao
+				_sErroWS += "A acao especificada no XML eh invalida: " + _sAcao
 		endcase
 	else
-		u_log (_sErros)
+		u_log (_sErroWS)
 	endif
 
 	// Cria a instância de retorno
 	::Retorno := WSClassNew ("RetWSNaMob")
-	::Retorno:Resultado = iif (empty (_sErros), "OK", "ERRO")
-	::Retorno:Mensagens = _sErros + _sMsgRetWS
+	::Retorno:Resultado = iif (empty (_sErroWS), "OK", "ERRO")
+	::Retorno:Mensagens = _sErroWS + _sMsgRetWS
 	u_log ('::Retorno:Resultado =', ::Retorno:Resultado)
 	u_log ('::Retorno:Mensagens =', ::Retorno:Mensagens)
 
@@ -112,18 +114,18 @@ static function _AsCapSoc ()
 	private _sErroAuto := ""  // Variavel alimentada pela funcao U_Help
 
 	u_logIni ()
-	if empty (_sErros) ; _sAssoc = _ExtraiTag ("_oXML:_WSAlianca:_Assoc", .T., .F.) ; endif
-	if empty (_sErros) ; _sLoja  = _ExtraiTag ("_oXML:_WSAlianca:_Loja", .T., .F.)  ; endif
-	if empty (_sErros)
+	if empty (_sErroWS) ; _sAssoc = U_ExTagXML ("_oXML:_WSAlianca:_Assoc", .T., .F.) ; endif
+	if empty (_sErroWS) ; _sLoja  = U_ExTagXML ("_oXML:_WSAlianca:_Loja", .T., .F.)  ; endif
+	if empty (_sErroWS)
 		_oAssoc := ClsAssoc ():New (_sAssoc, _sLoja)
 		if valtype (_oAssoc) != 'O'
-			_sErros += "Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto
+			_sErroWS += "Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto
 		endif
 	endif
-	if empty (_sErros)
+	if empty (_sErroWS)
 		_sRet = _oAssoc:SldQuotCap (date ()) [.QtCapRetXML]
 		if empty (_sRet)
-			_sErros += "Retorno invalido metodo SldQuotCap " + _oAssoc:UltMsg
+			_sErroWS += "Retorno invalido metodo SldQuotCap " + _oAssoc:UltMsg
 		else
 			_sMsgRetWS = _sRet
 		endif
@@ -145,18 +147,18 @@ static function _AsExtrCC ()
 	private _sErroAuto := ""  // Variavel alimentada pela funcao U_Help
 
 	u_logIni ()
-	if empty (_sErros) ; _sAssoc   = _ExtraiTag ("_oXML:_WSAlianca:_Assoc",   .T., .F.) ; endif
-	if empty (_sErros) ; _sLoja    = _ExtraiTag ("_oXML:_WSAlianca:_Loja",    .T., .F.) ; endif
-	if empty (_sErros) ; _dDataIni = _ExtraiTag ("_oXML:_WSAlianca:_DataIni", .T., .T.) ; endif
-	if empty (_sErros) ; _dDataFim = _ExtraiTag ("_oXML:_WSAlianca:_DataFim", .T., .T.) ; endif
+	if empty (_sErroWS) ; _sAssoc   = U_ExTagXML ("_oXML:_WSAlianca:_Assoc",   .T., .F.) ; endif
+	if empty (_sErroWS) ; _sLoja    = U_ExTagXML ("_oXML:_WSAlianca:_Loja",    .T., .F.) ; endif
+	if empty (_sErroWS) ; _dDataIni = U_ExTagXML ("_oXML:_WSAlianca:_DataIni", .T., .T.) ; endif
+	if empty (_sErroWS) ; _dDataFim = U_ExTagXML ("_oXML:_WSAlianca:_DataFim", .T., .T.) ; endif
 
-	if empty (_sErros)
+	if empty (_sErroWS)
 		_oAssoc := ClsAssoc ():New (_sAssoc, _sLoja)
 		if valtype (_oAssoc) != 'O'
-			_sErros += "Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto
+			_sErroWS += "Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto
 		endif
 	endif
-	if empty (_sErros)
+	if empty (_sErroWS)
 		_oExtr := ClsExtrCC ():New ()
 		_oExtr:Cod_assoc   = _oAssoc:Codigo
 		_oExtr:Loja_assoc  = _oAssoc:Loja
@@ -172,7 +174,7 @@ static function _AsExtrCC ()
 		u_log (_oExtr:UltMsg)
 		u_log ('Extrato retornado:', _oExtr:Resultado)
 		if empty (_oExtr:Resultado)
-			_sErros += "Retorno invalido objeto ExtrCC " + _oAssoc:UltMsg
+			_sErroWS += "Retorno invalido objeto ExtrCC " + _oAssoc:UltMsg
 		else
 			_sMsgRetWS = _oExtr:Resultado
 		endif
@@ -193,21 +195,21 @@ static function _AsFecSaf ()
 	private _sErroAuto := ""  // Variavel alimentada pela funcao U_Help
 
 	u_logIni ()
-	if empty (_sErros) ; _sAssoc = _ExtraiTag ("_oXML:_WSAlianca:_Assoc", .T., .F.) ; endif
-	if empty (_sErros) ; _sLoja  = _ExtraiTag ("_oXML:_WSAlianca:_Loja", .T., .F.)  ; endif
-	if empty (_sErros) ; _sSafra = _ExtraiTag ("_oXML:_WSAlianca:_Safra", .T., .F.) ; endif
-	if empty (_sErros)
+	if empty (_sErroWS) ; _sAssoc = U_ExTagXML ("_oXML:_WSAlianca:_Assoc", .T., .F.) ; endif
+	if empty (_sErroWS) ; _sLoja  = U_ExTagXML ("_oXML:_WSAlianca:_Loja", .T., .F.)  ; endif
+	if empty (_sErroWS) ; _sSafra = U_ExTagXML ("_oXML:_WSAlianca:_Safra", .T., .F.) ; endif
+	if empty (_sErroWS)
 		_oAssoc := ClsAssoc ():New (_sAssoc, _sLoja)
 		if valtype (_oAssoc) != 'O'
-			_sErros += "Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto
+			_sErroWS += "Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto
 		endif
 	endif
-	if empty (_sErros)
+	if empty (_sErroWS)
 		//                         _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC
 		_sRet = _oAssoc:FechSafra (_sSafra, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,        .t.,      .t.,      .f.)
 //		_sRet = _oAssoc:FechSafra (_sSafra, .F., .T.)
 		if empty (_sRet)
-			_sErros += "Retorno invalido metodo FechSafra " + _oAssoc:UltMsg
+			_sErroWS += "Retorno invalido metodo FechSafra " + _oAssoc:UltMsg
 		else
 			_sMsgRetWS = _sRet
 		endif
@@ -216,7 +218,7 @@ static function _AsFecSaf ()
 return
 
 
-
+/*
 // --------------------------------------------------------------------------
 static function _ExtraiTag (_sTag, _lObrig, _lValData)
 	local _sRet    := ""
@@ -226,7 +228,7 @@ static function _ExtraiTag (_sTag, _lObrig, _lValData)
 	//u_log ('Procurando tag', _sTag)
 	if type (_sTag) != "O"
 		if _lObrig
-			_sErros += "XML invalido: Tag '" + _sTag + "' nao encontrada."
+			_sErroWS += "XML invalido: Tag '" + _sTag + "' nao encontrada."
 		endif
 	else
 		_sRet = &(_sTag + ":TEXT")
@@ -243,7 +245,7 @@ static function _ExtraiTag (_sTag, _lObrig, _lValData)
 					next
 				endif
 				if ! _lDataOK
-					_sErros += "Data deve ser informada no formato AAAAMMDD"
+					_sErroWS += "Data deve ser informada no formato AAAAMMDD"
 				endif
 			endif
 		endif
@@ -251,7 +253,7 @@ static function _ExtraiTag (_sTag, _lObrig, _lValData)
 	//u_log ('_sRet = ', _sRet)
 	//u_logFim ()
 return _sRet
-
+*/
 
 /*
 // --------------------------------------------------------------------------
@@ -265,13 +267,13 @@ static function _RTkCarSaf ()
 	local _dDataFim  := ctod ('')
 
 	U_Log2 ('info', 'Iniciando ' + procname ())
-	if empty (_sErros) ; _sSafra    = _ExtraiTag ("_oXML:_WSAlianca:_Safra",                  .T., .F.) ; endif
-	if empty (_sErros) ; _sBalanca  = _ExtraiTag ("_oXML:_WSAlianca:_Balanca",                .T., .F.) ; endif
-	if empty (_sErros) ; _sCargaIni = _ExtraiTag ("_oXML:_WSAlianca:_CargaIni",               .T., .F.) ; endif
-	if empty (_sErros) ; _sCargaFim = _ExtraiTag ("_oXML:_WSAlianca:_CargaFim",               .T., .F.) ; endif
-	if empty (_sErros) ; _dDataIni  = _ExtraiTag ("_oXML:_WSAlianca:_DataIni",                .T., .T.) ; endif
-	if empty (_sErros) ; _dDataFim  = _ExtraiTag ("_oXML:_WSAlianca:_DataFim",                .T., .T.) ; endif
-	if empty (_sErros)
+	if empty (_sErroWS) ; _sSafra    = U_ExTagXML ("_oXML:_WSAlianca:_Safra",                  .T., .F.) ; endif
+	if empty (_sErroWS) ; _sBalanca  = U_ExTagXML ("_oXML:_WSAlianca:_Balanca",                .T., .F.) ; endif
+	if empty (_sErroWS) ; _sCargaIni = U_ExTagXML ("_oXML:_WSAlianca:_CargaIni",               .T., .F.) ; endif
+	if empty (_sErroWS) ; _sCargaFim = U_ExTagXML ("_oXML:_WSAlianca:_CargaFim",               .T., .F.) ; endif
+	if empty (_sErroWS) ; _dDataIni  = U_ExTagXML ("_oXML:_WSAlianca:_DataIni",                .T., .T.) ; endif
+	if empty (_sErroWS) ; _dDataFim  = U_ExTagXML ("_oXML:_WSAlianca:_DataFim",                .T., .T.) ; endif
+	if empty (_sErroWS)
 		private _lImpTick  := .T.         // Variavel usada pelo programa de impressao do ticket
 		sze -> (dbsetorder (1))  // ZE_FILIAL+ZE_SAFRA+ZE_CARGA
 		sze -> (dbseek (xfilial ("SZE") + _sSafra + _sCargaIni, .T.))
