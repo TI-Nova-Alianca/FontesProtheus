@@ -16,7 +16,7 @@ User Function va_rusCV (_sFornCV, _sLojaCV)
 	local _aEspum   := {}
 	local _aAreaAnt := U_ML_SRArea ()
 
-	u_Log2 ('info', 'Iniciando ' + procname ())
+	// u_Log2 ('info', 'Iniciando ' + procname ())
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery += "SELECT GX0001_VITICOLA_CODIGO cadvit, GX0001_GRUPO_CODIGO grpfam, GX0001_GRUPO_DESCRICAO descgrp"
 	_oSQL:_sQuery +=      ", GX0001_PRODUTO_CODIGO produto, GX0001_PRODUTO_DESCRICAO descprod, GX0001_TIPO_ORGANICO tipo_organ"

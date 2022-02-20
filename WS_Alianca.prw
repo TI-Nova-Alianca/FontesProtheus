@@ -80,6 +80,7 @@
 // 01/02/2022 - Robert  - Reimpressao de ticket carga safra.
 // 16/02/2022 - Robert  - Criada acao _CanCarSaf - cancelamento de cargas de safra (GLPI 11634)
 //                      - Estava permitindo continuar em alguns casos mesmo com tags obrigatorias vazias.
+// 18/02/2022 - Robert  - Novas tags de 'carga compartilhada' na geracao de cargas de safra (GLPI 11633).
 //
 
 // --------------------------------------------------------------------------------------------------------
@@ -1286,25 +1287,29 @@ static function _IncCarSaf ()
 	local _aRegSA2   := {}
 	local _sSivibe   := ''
 	local _sEspumant := ''
+	local _sCargaC1  := ''
+	local _sCargaC2  := ''
 
 	u_log2 ('info', 'Iniciando web service de geracao de carga.')
 	U_PerfMon ('I', 'WSGerarCargaSafra')  // Para metricas de performance
 
-	if empty (_sErros) ; _sSafra    = _ExtraiTag ("_oXML:_WSAlianca:_Safra",             .T., .F.) ; endif
-	if empty (_sErros) ; _sBalanca  = _ExtraiTag ("_oXML:_WSAlianca:_Balanca",           .T., .F.) ; endif
-	if empty (_sErros) ; _sAssoc    = _ExtraiTag ("_oXML:_WSAlianca:_Associado",         .F., .F.) ; endif
-	if empty (_sErros) ; _sLoja     = _ExtraiTag ("_oXML:_WSAlianca:_Loja",              .F., .F.) ; endif
-	if empty (_sErros) ; _sCPFCarg  = _ExtraiTag ("_oXML:_WSAlianca:_CPF",               .F., .F.) ; endif
-	if empty (_sErros) ; _sInscCarg = _ExtraiTag ("_oXML:_WSAlianca:_IE",                .F., .F.) ; endif
-	if empty (_sErros) ; _sImpTkCar = _ExtraiTag ("_oXML:_WSAlianca:_ImprTk",            .F., .F.) ; endif
-	if empty (_sErros) ; _sSerieNF  = _ExtraiTag ("_oXML:_WSAlianca:_SerieNFProdutor",   .T., .F.) ; endif
-	if empty (_sErros) ; _sNumNF    = _ExtraiTag ("_oXML:_WSAlianca:_NumeroNFProdutor",  .T., .F.) ; endif
-	if empty (_sErros) ; _sChvNFPe  = _ExtraiTag ("_oXML:_WSAlianca:_ChaveNFPe",         .F., .F.) ; endif
-	if empty (_sErros) ; _sPlacaVei = _ExtraiTag ("_oXML:_WSAlianca:_PlacaVeiculo",      .T., .F.) ; endif
-	if empty (_sErros) ; _sTombador = _ExtraiTag ("_oXML:_WSAlianca:_Tombador",          .T., .F.) ; endif
-	if empty (_sErros) ; _lAmostra  = (upper (_ExtraiTag ("_oXML:_WSAlianca:_ColetarAmostra",    .T., .F.)) == 'S') ; endif
-	if empty (_sErros) ; _sObs      = _ExtraiTag ("_oXML:_WSAlianca:_Obs",               .F., .F.) ; endif
-	if empty (_sErros) ; _sSenhaOrd = _ExtraiTag ("_oXML:_WSAlianca:_Senha",             .F., .F.) ; endif
+	if empty (_sErros) ; _sSafra    = _ExtraiTag ("_oXML:_WSAlianca:_Safra",                  .T., .F.) ; endif
+	if empty (_sErros) ; _sBalanca  = _ExtraiTag ("_oXML:_WSAlianca:_Balanca",                .T., .F.) ; endif
+	if empty (_sErros) ; _sAssoc    = _ExtraiTag ("_oXML:_WSAlianca:_Associado",              .F., .F.) ; endif
+	if empty (_sErros) ; _sLoja     = _ExtraiTag ("_oXML:_WSAlianca:_Loja",                   .F., .F.) ; endif
+	if empty (_sErros) ; _sCPFCarg  = _ExtraiTag ("_oXML:_WSAlianca:_CPF",                    .F., .F.) ; endif
+	if empty (_sErros) ; _sInscCarg = _ExtraiTag ("_oXML:_WSAlianca:_IE",                     .F., .F.) ; endif
+	if empty (_sErros) ; _sImpTkCar = _ExtraiTag ("_oXML:_WSAlianca:_ImprTk",                 .F., .F.) ; endif
+	if empty (_sErros) ; _sSerieNF  = _ExtraiTag ("_oXML:_WSAlianca:_SerieNFProdutor",        .T., .F.) ; endif
+	if empty (_sErros) ; _sNumNF    = _ExtraiTag ("_oXML:_WSAlianca:_NumeroNFProdutor",       .T., .F.) ; endif
+	if empty (_sErros) ; _sChvNFPe  = _ExtraiTag ("_oXML:_WSAlianca:_ChaveNFPe",              .F., .F.) ; endif
+	if empty (_sErros) ; _sTombador = _ExtraiTag ("_oXML:_WSAlianca:_Tombador",               .T., .F.) ; endif
+	if empty (_sErros) ; _sPlacaVei = _ExtraiTag ("_oXML:_WSAlianca:_PlacaVeiculo",           .T., .F.) ; endif
+	if empty (_sErros) ; _lAmostra  = (upper (_ExtraiTag ("_oXML:_WSAlianca:_ColetarAmostra", .T., .F.)) == 'S') ; endif
+	if empty (_sErros) ; _sObs      = _ExtraiTag ("_oXML:_WSAlianca:_Obs",                    .F., .F.) ; endif
+	if empty (_sErros) ; _sSenhaOrd = _ExtraiTag ("_oXML:_WSAlianca:_Senha",                  .F., .F.) ; endif
+	if empty (_sErros) ; _sCargaC1  = _ExtraiTag ("_oXML:_WSAlianca:_CargaCompartilhada1",    .f., .F.) ; endif
+	if empty (_sErros) ; _sCargaC2  = _ExtraiTag ("_oXML:_WSAlianca:_CargaCompartilhada2",    .f., .F.) ; endif
 
 	// A partir de 2021 o app de safra manda tambem CPF e inscricao, para os casos em que foi gerado 'lote de entrega'
 	// pelo caderno de campo, e lah identifica apenas o grupo familiar. A inscricao e o CPF serao conhecidos somente
@@ -1381,7 +1386,7 @@ static function _IncCarSaf ()
 			// Estamos tentando implementar um retorno em XML com novas tags.
 			//_sMsgRetWS = U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sImpTkCar)
 			
-			U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sImpTkCar)
+			U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sImpTkCar, _sCargaC1, _sCargaC2)
 		endif
 	endif
 

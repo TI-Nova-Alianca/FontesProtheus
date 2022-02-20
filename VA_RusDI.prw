@@ -29,11 +29,10 @@ User Function VA_RUSDI (_sFilial)
 		_lImpTick = .T.
 	endif
 
-	
-	
-	// durante TESTES. apagar depois!
-//	_sPortTick := '\\192.168.1.3\siga\ticket.txt'
-
-
+	// Se for base teste, evita enviar para a impressora padrao para nao causar confusao com a safra normal.
+	if ("TESTE" $ upper (GetEnvServer()) .or. "R33" $ upper (GetEnvServer()))
+		U_Log2 ('aviso', "Ambiente de TESTE. Vou redirecionar o ticket para arquivo.")
+		_sPortTick := '\\192.168.1.3\siga\ticket.txt'
+	endif
 
 return

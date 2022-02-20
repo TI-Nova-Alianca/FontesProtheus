@@ -10,12 +10,13 @@
 // 05/02/2021 - Robert - Se receber serie/NF produtor zeradas, grava vazio.
 // 16/12/2021 - Robert - Novo formato de retorno (em XML); Passa a considerar impr.ticket cfe.solicitado pelo prog.inspecao.
 // 17/12/2021 - Robert - Voltamos para o retorno original em texto.
+// 18/02/2022 - Robert - Criado tratamento para 'carga compartilhada' (GLPI 11633).
 //
 
 #include "VA_INCLU.prw"
 
 // --------------------------------------------------------------------------
-user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sIdImpr)
+user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sIdImpr, _sCargaC1, _sCargaC2)
 	local _sCargaGer  := ''
 	local _nItemCar   := 0
 	local _nLock      := 0
@@ -69,20 +70,19 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		private _ZECPFTERC := ''
 		private _ZENOMTERC := ''
 		private _ZEPATRIAR := ''
-		// private _ZESNFPROD := _sSerieNF
-		// private _ZENFPROD  := _sNumNF
 		private _ZESNFPROD := iif (val (_sSerieNF) == 0, '', _sSerieNF)  // Para casos em que o app de safra mandar 000
 		private _ZENFPROD  := iif (val (_sNumNF) == 0, '', _sNumNF)  // Para casos em que o app de safra mandar 000000000
-		private _ZFQTEMBAL    := 1
-		private _ZFEMBALAG    := 'GRANEL'
-		private inclui        := .T.
-		private altera        := .F.
+		private _ZFQTEMBAL := 1
+		private _ZFEMBALAG := 'GRANEL'
+		private inclui     := .T.
+		private altera     := .F.
 		RegToMemory ("SZE", inclui, inclui)  // Cria variaveis M->... para simular uma enchoice
-	//	U_Log2 ('debug', m->ze_carga)
 		private m->ZE_PLACA   := _sPlacaVei
 		private m->ZE_locdesc := _sTombador
 		private m->ZE_amostra := IIF (_lAmostra, 'S', 'N')
 		private m->ze_senhade := _sSenhaOrd
+		private m->ze_cargac1 := _sCargaC1
+		private m->ze_cargac2 := _sCargaC2
 		private N             := 1
 		private _aCadVitic    := {}  // Variavel usada pelos outros programas.
 		private lMSErroAuto   := .F.  // Para mostrar erros das rotinas padrao.
@@ -91,42 +91,14 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		private _zx509orga    := U_RetZX5 ("09", _sSafra + _sBalanca, 'ZX5_09ORGA')
 	endif
 
+	U_Log2 ('debug', '[' + procname () + ']_sCargaC1 = ' + _sCargaC1)
+	U_Log2 ('debug', '[' + procname () + ']_sCargaC2 = ' + _sCargaC2)
+	U_Log2 ('debug', '[' + procname () + ']M->ZE_CARGAC1 = ' + m->ze_cargaC1)
+	U_Log2 ('debug', '[' + procname () + ']M->ZE_CARGAC2 = ' + m->ze_cargaC2)
+	U_Log2 ('debug', '[' + procname () + ']M->ZE_PLACA   = ' + m->ze_placa)
+
 	// Define impressora de ticket e alimenta as respectivas variaveis (que jah devem ter escopo PRIVATE).
 	U_VA_RusDI (cFilAnt)
-/*
-	do case
-	case _sBalanca == 'LB'
-		_sIdImpr = '11' // LAB SAFRA MATRIZ
-		_sPortTick = U_RetZX5 ('49', _sIdImpr, 'ZX5_49CAM')
-	case _sBalanca == 'JC'
-		_sIdImpr = '08' // balanca JC
-		_sPortTick = U_RetZX5 ('49', _sIdImpr, 'ZX5_49CAM')
-	otherwise
-		_sIdImpr = ''
-		u_log2 ('aviso', "Impressora de ticket nao definida para a balanca '" + _sBalanca + "'. Nao vou solicitar impressao.")
-	endcase
-	u_log2 ('debug', '_sIdImpr:' + _sIdImpr)
-	u_log2 ('debug', '_sPortTick:' + _sPortTick)
-	if ! empty (_sPortTick)
-		_lImpTick = .T.
-	endif
-*/
-/*
-	u_log2 ('debug', '_sIdImpr: ' + _sIdImpr)
-	if empty (_sIdImpr)
-		_sRetSZEAv += 'Impressora de ticket nao foi informada. Nao vou solicitar impressao do ticket.'
-		U_Log2 ('aviso', _sRetSZEAv)
-	else
-		_sPortTick = U_RetZX5 ('49', _sIdImpr, 'ZX5_49CAM')
-		u_log2 ('debug', '_sPortTick: ' + _sPortTick)
-		if empty (_sPortTick)
-			_sRetSZEAv += "ID de impressora '" + _sIdImpr + "' nao retornou nenhum 'caminho' ou porta para envio do ticket. Nao vou solicitar impressao do ticket."
-			U_Log2 ('erro', _sRetSZEAv)
-		else
-			_lImpTick = .T.
-		endif
-	endif
-*/
 
 	// Verifica se o associado tem alguma restricao
 	if empty (_sErros)
@@ -155,19 +127,19 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		endif
 	endif
 	//u_log2 ('info', '_aCadVitic ficou assim:')
-	u_log2 ('info', _aCadVitic)
+	//u_log2 ('info', _aCadVitic)
 
 	// Cria aHeader e aCols para poder usar as validacoes do VA_RUS2.PRW
 	if empty (_sErros)  // Variavel private do web service
 		sb1 -> (dbsetorder (1))
 		private aHeader := aclone (U_GeraHead ("SZF", .F., {}, {}, .F.))
 		private aCols := {}
-		u_log2 ('debug', '_aItensCar:')
-		u_log2 ('debug', _aItensCar)
+		//u_log2 ('debug', '_aItensCar:')
+		//u_log2 ('debug', _aItensCar)
 		for _nItemCar = 1 to len (_aItensCar)
 
 			// Verifica em qual das linhas da array de cadastros viticolas encontra-se esta variedade.
-			u_log2 ('debug', 'Pesquisando ' + _aItensCar [_nItemCar, 2])
+			//u_log2 ('debug', 'Pesquisando ' + _aItensCar [_nItemCar, 2])
 			_nItemVit = ascan (_aCadVitic, {|_aVal| alltrim (_aVal [.CadVitProduto]) == alltrim (_aItensCar [_nItemCar, 2])})
 			if _nItemVit == 0
 				_sErros += "Variedade " + alltrim (_aItensCar [_nItemCar, 2]) + " nao vinculada com a propriedade rural " + _aItensCar [_nItemCar, 1] + ' / SIVIBE ' + _aItensCar [_nItemCar, 5]
@@ -260,6 +232,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 			U_PerfMon ('I', 'GeraSZE_gravacao')  // Para metricas de performance
 			if U_VA_RUS2G ()
 				u_log2 ('info', 'U_VA_RUS2G() ok')
+				u_log2 ('info', 'Carga gerada: ' + sze -> ze_carga)
 				U_PerfMon ('F', 'GeraSZE_gravacao')  // Para metricas de performance
 			else
 				u_log2 ('erro', 'U_VA_RUS2G() retornou erro.')
