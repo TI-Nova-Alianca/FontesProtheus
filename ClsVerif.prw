@@ -62,6 +62,7 @@
 // 16/09/2021 - Robert  - Ajustes verif. 73 e 80 (desconsiderar deletados e usr.bloqueados).
 // 27/09/2021 - Robert  - Adicionada verificacao de modulos na verificacao 74
 // 18/02/2022 - Robert  - Adicionada verificacao de itens de mao de obra x CC (GLPI 11650).
+// 23/02/2022 - Robert  - Adicionada verificacao 83 (Empenho SD4 relacionado a OP/OS inexistente ou ja encerrada)
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -385,7 +386,6 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=                   " AND NF_DEVOLUCAO  = ''"
 			::Query +=                   " AND AGLUTINACAO  != 'O'"
 			::Query +=                   " AND STATUS       != 'C'"
-//			::Query +=                   " AND TIPO_FORNEC  != 'P'"
 			::Query +=                   " AND TIPO_FORNEC  != 'PROD_PROPRIA'"
 			::Query +=                 " GROUP BY FILIAL"
 			::Query +=                "),"
@@ -569,7 +569,6 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=    " AND F1_LOJA = D1_LOJA"
 			::Query +=    " AND F1_DOC = D1_DOC"
 			::Query +=    " AND F1_SERIE = D1_SERIE"
-		//	::Query +=    " AND D1_TES = '" + ::Param05 + "'"
 			::Query +=    " AND D1_TES in " + FormatIn (ALLTRIM (::Param05), '/')
 			::Query +=    " AND D1_SERIE = '" + ::Param04 + "'"
 			::Query +=    " AND D1_COD NOT IN ('1180' ,'1182')" // SOMENTE UVAS (COMPRAS DE VINHO DOS ASSOCIADOS, POR EXEMPLO, NAO INTERESSAM AQUI)"
@@ -685,7 +684,6 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query += " )"
 			::Query +=  " WHERE  SD1.D_E_L_E_T_ = ''"
 			::Query +=    " AND SD1.D1_FILIAL BETWEEN '" + ::Param02 + "' AND '" + ::Param03 + "'"
-		//	::Query +=    " AND D1_TES = '" + ::Param05 + "'"
 			::Query +=    " AND D1_TES in " + FormatIn (alltrim (::Param05), '/')
 			::Query +=    " AND D1_TP = 'MP'"  // COD NOT IN ('1180', '1182') -- SOMENTE UVAS (COMPRAS DE VINHO DOS ASSOCIADOS, POR EXEMPLO, NAO INTERESSAM AQUI)"
 			::Query +=    " AND SUBSTRING(SD1.D1_EMISSAO, 1, 4) = '" + ::Param01 + "'"
@@ -1205,14 +1203,12 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=          " END AS STATUS_PROTHEUS"
 			::Query +=  " FROM " + RetSQLName ("SD3") + " APONT "
 			::Query +=         " LEFT JOIN tb_wms_entrada t"
-		//	::Query +=                " ON (t.entrada_id = 'SD3' + D3_FILIAL + D3_DOC + D3_OP + D3_COD + D3_NUMSEQ),"
 			::Query +=                " on (t.entrada_id = 'ZA1' + APONT.D3_FILIAL + APONT.D3_VAETIQ),"
 			::Query +=             RetSQLName ("SB1") + " SB1 "
 			::Query += " WHERE APONT.D_E_L_E_T_ = ''"
 			::Query +=   " AND APONT.D3_FILIAL  = '" + xfilial ("SD3") + "'"
 			::Query +=   " AND APONT.D3_OP      between '" + ::Param01 + "' AND '" + ::Param02 + "'"
 			::Query +=   " AND APONT.D3_COD     between '" + ::Param03 + "' AND '" + ::Param04 + "'"
-//			::Query +=   " AND APONT.D3_EMISSAO >= '" + dtos (date () - 7) + "'"  // Nao adianta olhar muito antigas. 
 			::Query +=   " AND APONT.D3_CF      like 'PR%'"
 			::Query +=   " AND APONT.D3_ESTORNO != 'S'"
 			::Query +=   " AND NOT EXISTS (SELECT *"
@@ -1258,36 +1254,6 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Setores   = 'PCP/CUS/CTB'
 			::Descricao = 'Diferenca saldo estq do produto X lotes X enderecos'
 			::Sugestao  = 'Reprocesse saldo atual; possivelmente nao tenha sido gerado lote inicial (telas MATA805 ou MATA390); verifique fechamento (SB9 x SBJ x SBK); verifique movimentacao.'
-/*
-			::Query := "WITH C AS ("
-			::Query += " SELECT B1_COD, SB1.B1_DESC, SB1.B1_RASTRO, SB1.B1_LOCALIZ,"
-			::Query +=        " ISNULL((SELECT SUM(B2_QATU - SB2.B2_QACLASS)"
-			::Query +=                  " FROM " + RetSQLName ("SB2") + " SB2 "
-			::Query +=                 " WHERE SB2.D_E_L_E_T_ = ''"
-			::Query +=                   " AND SB2.B2_FILIAL  = '" + xfilial ("SB2") + "'"
-			::Query +=                   " AND SB2.B2_COD     = SB1.B1_COD), 0) AS SALDO_PRODUTO,"
-			::Query +=        " ISNULL((SELECT SUM(BF_QUANT)"
-			::Query +=                  " FROM " + RetSQLName ("SBF") + " SBF "
-			::Query +=                 " WHERE SBF.D_E_L_E_T_ = ''"
-			::Query +=                   " AND SBF.BF_FILIAL  = '" + xfilial ("SBF") + "'"
-			::Query +=                   " AND SBF.BF_PRODUTO = SB1.B1_COD), 0) AS SALDO_ENDERECOS,"
-			::Query +=        " ISNULL((SELECT SUM(B8_SALDO)"
-			::Query +=                  " FROM " + RetSQLName ("SB8") + " SB8 "
-			::Query +=                 " WHERE SB8.D_E_L_E_T_ = ''"
-			::Query +=                   " AND SB8.B8_FILIAL  = '" + xfilial ("SB8") + "'"
-			::Query +=                   " AND SB8.B8_PRODUTO = SB1.B1_COD), 0) AS SALDO_LOTES"
-			::Query +=  " FROM " + RetSQLName ("SB1") + " SB1 "  
-			::Query += " WHERE SB1.D_E_L_E_T_ = ''"
-			::Query +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
-			::Query +=   " AND (SB1.B1_RASTRO = 'L' OR SB1.B1_LOCALIZ = 'S')"
-			::Query += ")"
-			::Query += " SELECT B1_COD AS PRODUTO, RTRIM (B1_DESC) AS DESCRICAO," 
-			::Query +=   " CAST (CAST (SALDO_PRODUTO   AS DECIMAL (" + cvaltochar (TamSX3 ("B2_QATU")[1])  + "," + cvaltochar (TamSX3 ("B2_QATU")[2]) + ")) AS VARCHAR) AS SALDO_PRODUTO, " 
-			::Query +=   " CAST (CAST (SALDO_ENDERECOS AS DECIMAL (" + cvaltochar (TamSX3 ("BF_QUANT")[1]) + "," + cvaltochar (TamSX3 ("BF_QUANT")[2]) + ")) AS VARCHAR) AS SALDO_ENDERECOS, " 
-			::Query +=   " CAST (CAST (SALDO_LOTES     AS DECIMAL (" + cvaltochar (TamSX3 ("B8_SALDO")[1]) + "," + cvaltochar (TamSX3 ("B8_SALDO")[2]) + ")) AS VARCHAR) AS SALDO_LOTES " 
-			::Query +=   " FROM C"
-			::Query +=  " WHERE ROUND (SALDO_PRODUTO, 4) != ROUND (SALDO_ENDERECOS, 4) OR ROUND (SALDO_PRODUTO, 4) != ROUND (SALDO_LOTES, 4) OR ROUND (SALDO_ENDERECOS, 4) != ROUND (SALDO_LOTES, 4)"
-*/
 			::Query := "exec VA_SP_VERIFICA_ESTOQUES '" + cFilAnt + "', null, null"
 
 
@@ -1533,51 +1499,10 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query += " WHERE ROUND (QT_SBJ, 4) != ROUND (QT_SB9, 4) OR ROUND (QT_SBK, 4) != ROUND (QT_SB9, 4)"
 			::Query += " ORDER BY B9_COD, B9_LOCAL"
 
-/*
-		case ::Numero == 36
-			::Setores    = 'CUS'
-			::Descricao  = 'Item sem custo que foi usado na OP: sugere-se incluir na estrutura do produto final'
-			::Sugestao   = 'Revise OP e estrutura. Para o custo medio eh interessante ter o item na estrutura, MESMO QUE FORA DA VALIDADE.'
-			::ViaBatch   = .F.
-			::QuandoUsar = "Apos rodar o custo medio."
-			::Dica       = 'Item podem ficar sem custo se o sequenciamento do calculo ficar errado por considerar saidas antes de entradas. Sugere-se incluir o item na estrutura do produto final para ajudar no sequenciamento. Pode ser ate fora da data de validade.'
-			::Query := "SELECT DISTINCT D3_FILIAL AS FILIAL, D3_OP AS OP, D3_COD AS COMPONENTE,"
-			::Query +=       " dbo.VA_DTOC (D3_EMISSAO) AS DATA, RTRIM (SB1_COMP.B1_DESC) AS DESCRI_COMPONENTE, RTRIM (SB1_PAI.B1_DESC) AS DESCRI_PAI "
-			::Query +=  " FROM " + RetSQLName ("SD3") + " SD3, "
-			::Query +=             RetSQLName ("SC2") + " SC2, "
-			::Query +=             RetSQLName ("SB1") + " SB1_COMP, "
-			::Query +=             RetSQLName ("SB1") + " SB1_PAI "
-			::Query += " WHERE SD3.D_E_L_E_T_ = ''"
-			::Query +=   " AND SD3.D3_FILIAL  = '" + xfilial ("SD3") + "'"
-			::Query +=   " AND SD3.D3_EMISSAO BETWEEN '" + ::MesAtuEstq + "01' AND '" + dtos (lastday (stod (::MesAtuEstq + '01'))) + "'"
-			::Query +=   " AND SD3.D3_CF      LIKE 'RE%'"
-			::Query +=   " AND SD3.D3_ESTORNO != 'S'"
-			::Query +=   " AND SD3.D3_CUSTO1   = 0"
-			::Query +=   " AND SD3.D3_COD NOT LIKE 'AO-%'"
-			::Query +=   " AND SD3.D3_COD NOT LIKE 'AP-%'"
-			::Query +=   " AND SD3.D3_COD NOT LIKE 'GF-%'"
-			::Query +=   " AND SD3.D3_COD NOT LIKE 'MMM%'"
-			::Query +=   " AND NOT EXISTS (SELECT *"
-			::Query +=                     " FROM " + RetSQLName ("SG1") + " SG1 "
-			::Query +=                    " WHERE SG1.D_E_L_E_T_ = ''"
-			::Query +=                      " AND SG1.G1_FILIAL  = '" + xfilial ("SG1") + "'"
-			::Query +=                      " AND SG1.G1_COD     = SC2.C2_PRODUTO"
-			::Query +=                      " AND SG1.G1_COMP    = SD3.D3_COD)"
-			::Query +=   " AND SC2.D_E_L_E_T_ = ''"
-			::Query +=   " AND SC2.C2_FILIAL  = SD3.D3_FILIAL"
-			::Query +=   " AND SC2.C2_NUM + SC2.C2_ITEM + SC2.C2_SEQUEN + SC2.C2_ITEMGRD = SD3.D3_OP"
-			::Query +=   " AND SB1_COMP.D_E_L_E_T_ = ''"
-			::Query +=   " AND SB1_COMP.B1_FILIAL  = '" + xfilial ("SB1") + "'"
-			::Query +=   " AND SB1_COMP.B1_COD     = SD3.D3_COD"
-			::Query +=   " AND SB1_PAI.D_E_L_E_T_ = ''"
-			::Query +=   " AND SB1_PAI.B1_FILIAL  = '" + xfilial ("SB1") + "'"
-			::Query +=   " AND SB1_PAI.B1_COD     = SC2.C2_PRODUTO"
-			::Query += " ORDER BY SD3.D3_FILIAL, SD3.D3_COD"
-*/
 
 		case ::Numero == 36
 			::Setores    = 'PCP'
-			::Descricao  = "Empenho (tabela SDC) relacionado a OP inexistente ou ja encerrada."
+			::Descricao  = "Empenho lote/endereco (tabela SDC) relacionado a OP inexistente ou ja encerrada."
 			::Sugestao   = "Execute rotina de 'Refaz acumulados'; Verifique necessidade de ajustar o campo DC_QUANT manualmente."
 			::ViaBatch   = .T.
 			::Query := " SELECT SDC.DC_FILIAL,"
@@ -2191,7 +2116,6 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 				::Query += " 	    AND ((D3_FILIAL  = '03' AND SUBSTRING (D3_COD, 4, 3) != '502')"
 				::Query += " 	    OR (D3_FILIAL != '03' AND SUBSTRING (D3_COD, 4, 3)  = '502'))"
 			else
-				//::Query += " AND SUBSTRING(D3_COD, 4, 2) != '01'"
 				::Query += " AND SUBSTRING(D3_COD, 4, 2) != '" + cFilAnt + "'"
 			endif
 			::Query += " ORDER BY D3_OP"
@@ -2795,7 +2719,6 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query += " SELECT"
 			::Query += " 	'LPAD ' + CT5_LANPAD + '/' + CT5_SEQUEN + ': CAMPO ORIGEM INCONSISTENTE: ' + CT5_ORIGEM AS PROBLEMA"
 			::Query += " FROM C2"
-//			::Query += " WHERE CT5_ORIGEM <> ' + '' + LPAD ' + CT5_LANPAD + ' ' + CT5_SEQUEN + ' + '' + '"
 			::Query += " WHERE CT5_ORIGEM not like '%LPAD ' + CT5_LANPAD + ' ' + CT5_SEQUEN + '%'"
 			::Query += " UNION ALL"
 			::Query += " SELECT"
@@ -2886,7 +2809,6 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query += " 			AND ANT.B9_FILIAL = SB2.B2_FILIAL"
 			::Query += " 			AND ANT.B9_COD = SB2.B2_COD"
 			::Query += " 			AND ANT.B9_LOCAL = SB2.B2_LOCAL"
-	//		::Query += " 			AND ANT.B9_DATA = '20190831')"
 			::Query += " 			AND ANT.B9_DATA = '" + dtos (stod (::MesAtuEstq + '01') - 1) + "')"
 			::Query += " 		, 0) AS QT_MES_ANT"
 			::Query += " 	   ,ISNULL((SELECT"
@@ -2910,7 +2832,6 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query += " 	   ,B2_QFIM AS QT_PREV_FECHTO"
 			::Query += " 	FROM " + RetSQLName ("SB2") + " SB2"
 			::Query += " 	WHERE SB2.D_E_L_E_T_ = ''"
-		//	::Query += " 	AND SB2.B2_FILIAL = '01')"
 			::Query += " 	AND SB2.B2_FILIAL = '" + xfilial ("SB2") + "')"
 			::Query += " SELECT"
 			::Query += " 	'Quantidade para fechamento diferente do final do kardex' AS PROBLEMA"
@@ -2957,17 +2878,17 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 		case ::Numero == 71
 			::Ativa     = .F.  // Grupos agora representam funcoes (das pessoas) e nao mais modulos. Robert, 30/08/2021
-			//::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
-			//::Setores    = 'INF'
-			//::Descricao  = 'Grupos: Grupo deve fornecer apenas acesso a modulos e nao a funcionalidades'
-			//::Query := "SELECT TIPO_ACESSO, G.ID_GRUPO, RTRIM (G.DESCRICAO) AS DESCR_GRUPO, ACESSO"
-			//::Query +=  " FROM VA_USR_ACESSOS_POR_GRUPO AG"
-			//::Query +=      " JOIN VA_USR_GRUPOS G"
-			//::Query +=        " ON (G.ID_GRUPO = AG.ID_GRUPO"
-			//::Query +=        " AND G.TIPO_GRUPO = AG.TIPO_ACESSO)"
-			//::Query += " WHERE AG.TIPO_ACESSO = 'CFG'"
-			//::Query +=   " AND G.GRUPO LIKE 'Modulos%'"
-			//::Query += " ORDER BY G.ID_GRUPO"
+			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+			::Setores    = 'INF'
+			::Descricao  = 'Grupos: Grupo deve fornecer apenas acesso a modulos e nao a funcionalidades'
+			::Query := "SELECT TIPO_ACESSO, G.ID_GRUPO, RTRIM (G.DESCRICAO) AS DESCR_GRUPO, ACESSO"
+			::Query +=  " FROM VA_USR_ACESSOS_POR_GRUPO AG"
+			::Query +=      " JOIN VA_USR_GRUPOS G"
+			::Query +=        " ON (G.ID_GRUPO = AG.ID_GRUPO"
+			::Query +=        " AND G.TIPO_GRUPO = AG.TIPO_ACESSO)"
+			::Query += " WHERE AG.TIPO_ACESSO = 'CFG'"
+			::Query +=   " AND G.GRUPO LIKE 'Modulos%'"
+			::Query += " ORDER BY G.ID_GRUPO"
 
 		case ::Numero == 72
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
@@ -2982,18 +2903,6 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=    " AND GR__CODACESSO IN ('121', '169', '190', '024', '164')"
 			::Query +=    " AND GR__ACESSO = 'T'"
 			::Query += " ORDER BY GA.GR__ID, GA.GR__CODACESSO"
-			/*
-			::Query := "SELECT AG.TIPO_ACESSO, AG.ID_GRUPO, rtrim (G.DESCRICAO) AS DESCR_GRUPO, AG.ACESSO, RTRIM (A.DESCRICAO) AS DESCR_ACESSO"
-			::Query +=  " FROM VA_USR_ACESSOS_POR_GRUPO AG"
-			::Query +=     " JOIN VA_USR_ACESSOS A"
-			::Query +=       " ON (A.TIPO = AG.TIPO_ACESSO"
-			::Query +=       " AND A.ACESSO = AG.ACESSO)"
-			::Query +=     " JOIN VA_USR_GRUPOS G"
-			::Query +=       " ON (G.TIPO_GRUPO = AG.TIPO_ACESSO"
-			::Query +=       " AND G.ID_GRUPO = AG.ID_GRUPO)"
-			::Query +=  " WHERE AG.TIPO_ACESSO = 'CFG' AND AG.ACESSO IN ('121', '169', '190', '024', '164')"
-			::Query +=  " ORDER BY AG.ID_GRUPO, AG.ACESSO"
-			*/
 
 		case ::Numero == 73
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
@@ -3011,17 +2920,6 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 			::Setores    = 'INF'
 			::Descricao  = 'Usuarios: Usuario nao deveria ter ACESSOS ligados a ele. Os ACESSOS deveriam ser dados aos grupos.'
-/*
-			::Query := "SELECT A.USR_ID, U.USR_CODIGO, A.USR_CODACESSO"
-			::Query +=  " FROM SYS_USR_ACCESS A, SYS_USR U"
-			::Query += " WHERE A.D_E_L_E_T_ = ''"
-			::Query +=   " AND U.D_E_L_E_T_ = ''"
-			::Query +=   " AND U.USR_ID = A.USR_ID"
-			::Query +=   " AND U.USR_MSBLQL != '1'"
-			::Query +=   " AND A.USR_ACESSO = 'T'"
-			::Query +=   " AND A.USR_ID NOT IN ('000000')"
-			::Query += " ORDER BY A.USR_ID"
-*/
 			::Query := "WITH C AS (
 			::Query += "SELECT A.USR_ID, U.USR_CODIGO, CAST (A.USR_CODACESSO AS VARCHAR (20)) AS CODACESSO"
 			::Query +=  " FROM SYS_USR_ACCESS A, SYS_USR U"
@@ -3047,19 +2945,19 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 		case ::Numero == 75
 			::Ativa     = .F.  // Temos apenas 1 grupo generico por enquanto. Robert, 30/08/2021
-			// ::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
-			// ::Setores    = 'INF'
-			// ::Descricao  = 'Grupos: Todos os grupos genericos deveriam ter estes acessos.'
-			// ::Query := "SELECT G.TIPO_GRUPO, G.ID_GRUPO, G.GRUPO, G.DESCRICAO"
-			// ::Query +=  " FROM VA_USR_GRUPOS G"
-			// ::Query += " WHERE G.TIPO_GRUPO = 'CFG'"
-			// ::Query +=   " AND G.ID_GRUPO = '000102'"  // Por enquanto este eh o unico grupo geral, ao qual todos pertencem.
-			// ::Query +=   " AND NOT EXISTS (SELECT *"
-			// ::Query +=                     " FROM VA_USR_ACESSOS_POR_GRUPO AG"
-			// ::Query +=                    " WHERE AG.TIPO_ACESSO = 'CFG'"
-			// ::Query +=                      " AND AG.ID_GRUPO = G.ID_GRUPO"
-			// ::Query +=                      " AND AG.ACESSO in ('108', '150'))"  // Por enquanto estes sao os unicos acessos que entendo que todos precisariam ter.
-			// ::Query += " ORDER BY G.ID_GRUPO"
+			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+			::Setores    = 'INF'
+			::Descricao  = 'Grupos: Todos os grupos genericos deveriam ter estes acessos.'
+			::Query := "SELECT G.TIPO_GRUPO, G.ID_GRUPO, G.GRUPO, G.DESCRICAO"
+			::Query +=  " FROM VA_USR_GRUPOS G"
+			::Query += " WHERE G.TIPO_GRUPO = 'CFG'"
+			::Query +=   " AND G.ID_GRUPO = '000102'"  // Por enquanto este eh o unico grupo geral, ao qual todos pertencem.
+			::Query +=   " AND NOT EXISTS (SELECT *"
+			::Query +=                     " FROM VA_USR_ACESSOS_POR_GRUPO AG"
+			::Query +=                    " WHERE AG.TIPO_ACESSO = 'CFG'"
+			::Query +=                      " AND AG.ID_GRUPO = G.ID_GRUPO"
+			::Query +=                      " AND AG.ACESSO in ('108', '150'))"  // Por enquanto estes sao os unicos acessos que entendo que todos precisariam ter.
+			::Query += " ORDER BY G.ID_GRUPO"
 
 		case ::Numero == 76
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
@@ -3176,6 +3074,33 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=   " AND SUBSTRING (B1_COD, 1, 3) IN ('AP-', 'MO-', 'GF-')"
 			::Query +=   " AND B1_CCCUSTO != SUBSTRING (B1_COD, 4, 11)"
 			::Query += " ORDER BY B1_COD"
+
+
+		case ::Numero == 83
+			::Setores    = 'PCP/MNT'
+			::Descricao  = "Empenho item (tabela SD4) relacionado a OP/OS inexistente ou ja encerrada."
+			::Sugestao   = "Execute rotina de 'Refaz acumulados'; Verifique necessidade de ajustar o campo D4_QUANT manualmente."
+			::ViaBatch   = .T.
+			::Query := " SELECT SD4.D4_FILIAL,"
+			::Query +=        " SD4.D4_COD,"
+			::Query +=        " SB1.B1_DESC,"
+			::Query +=        " SD4.D4_LOCAL,"
+			::Query +=        " SD4.D4_OP,"
+			::Query +=        " SD4.D4_QUANT"
+			::Query +=   " FROM " + RetSQLName ("SD4") + " SD4, "
+			::Query +=              RetSQLName ("SB1") + " SB1 "
+			::Query +=  " WHERE SB1.D_E_L_E_T_ = ''"
+			::Query +=    " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+			::Query +=    " AND SB1.B1_COD     = SD4.D4_COD"
+			::Query +=    " AND SD4.D_E_L_E_T_ = ''"
+			::Query +=    " AND SD4.D4_FILIAL  = '" + xfilial ("SD4") + "'"
+			::Query +=    " AND SD4.D4_QUANT  != 0"
+			::Query +=    " AND NOT EXISTS (SELECT *"
+			::Query +=                      " FROM " + RetSQLName ("SC2") + " SC2 "
+			::Query +=                     " WHERE SC2.D_E_L_E_T_ = ''"
+			::Query +=                       " AND SC2.C2_FILIAL = SD4.D4_FILIAL"
+			::Query +=                       " AND SC2.C2_NUM + SC2.C2_ITEM + SC2.C2_SEQUEN + SC2.C2_ITEMGRD = SD4.D4_OP"
+			::Query +=                       " AND SC2.C2_DATRF = '')"
 
 
 		otherwise
