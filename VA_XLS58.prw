@@ -7,13 +7,15 @@
 // #Descricao         #Planilha informativa Cenecoop
 // #PalavasChave      #cenecoop #vendas_cenecoop
 // #TabelasPrincipais #SD2 #SD1 #SD3 #SZE 
-// #Modulos 		  #FAT 
+// #Modulos           #FAT
 //
 // Historico de alteracoes:
 // 14/02/2022 - Claudia - Incluida quantidade proporcionalizada. GLPI: 11624
 // 16/02/2022 - Claudia - Limpeza do array a cada chamada da rotina de rastreabilidade. GLPI: 11624
 // 17/02/2022 - Claudia - Criada novas colunas para linha. GLPI: 11624
+// 23/02/2022 - Robert  - Incluidas colunas filial e safra (GLPI 11664).
 //
+
 // ------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
@@ -45,6 +47,8 @@ Static Function ReportDef()
 	
 	TRCell():New(oSection1,"COLUNA1", 	"" ,"Nota Fiscal"	    ,	    				,20,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA2", 	"" ,"Num.Carga"         ,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA2_1", "" ,"Filial"            ,       				,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA2_2", "" ,"Safra"             ,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA3", 	"" ,"Variedade"		    ,       				,12,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA4", 	"" ,"Descrição"		    ,       				,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA4_1", "" ,"Produto"		    ,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
@@ -131,6 +135,8 @@ Static Function PrintReport(oReport)
             oSection1:SetHeaderSection(.T.)
             oSection1:Cell("COLUNA1")	:SetBlock   ({||  _aNf[_x,2] +"/" + _aNf[_x,3]  })  // nota
             oSection1:Cell("COLUNA2")	:SetBlock   ({||  _aLtXLS58[_i, 4]	            })  // carga
+            oSection1:Cell("COLUNA2_1")	:SetBlock   ({||  _aLtXLS58[_i, 8]              })  // filial da carga
+            oSection1:Cell("COLUNA2_2")	:SetBlock   ({||  _aLtXLS58[_i, 9]              })  // safra da carga
             oSection1:Cell("COLUNA3")	:SetBlock   ({||  alltrim(_aLtXLS58[_i, 1])     })  // variedade
             oSection1:Cell("COLUNA4")	:SetBlock   ({||  _sDesc                        })  // descrição
             oSection1:Cell("COLUNA4_1")	:SetBlock   ({||  _aNf[_x,8]                    })  // Produto

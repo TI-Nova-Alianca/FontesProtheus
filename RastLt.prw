@@ -23,8 +23,8 @@
 //                     - Tabela VA_SM0 (customizada) trocada para SYS_COMPANY.
 //                     - Limite de tamanho para a string de retorno aumentado de 30000 para 50000 caracteres.
 //                     - Passa a buscar transf. entre filiais na view VA_VTRANSF_ENTRE_FILIAIS (GLPI 11620)
+// 23/02/2022 - Robert - Lista de cargas de safra (usada pelo VA_XLS58) passa a incluir filial e safra (GLPI 11664)
 //
-
 
 // --------------------------------------------------------------------------
 user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
@@ -52,7 +52,11 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 	static _sID     := '0000'  // Criado como STATIC para gerar sempre IDs unicos, mesmo com chamadas recursivas.
 
 	U_Log2 ('info', 'Iniciando ' + _sFilial + _sProduto + _sLote + ' nivel ' + cvaltochar (_nNivel))
+	U_Log2 ('debug', '[' + procname () + ']Alias() = ' + alias ())
 	_aHist := iif (_aHist == NIL, {}, _aHist)
+
+	// Com tantas chamadas recursivas, parece que chega um momento em que fico sem ALIAS() e tenho problemas com funcoes como FBuscaCpo().
+	dbselectarea ("SB1")
 
 	if _nNivel == 0
 		procregua (1000)
@@ -173,6 +177,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_sRet += '</node>'
 					next
 				endif
+				U_Log2 ('debug', '[' + procname () + ']Apos entradas em OP temos Alias() = ' + alias ())
 
 
 				// Busca entradas por transferencia entre lotes.
@@ -229,6 +234,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_sRet += '</node>'
 					next
 				endif
+				U_Log2 ('debug', '[' + procname () + ']Apos entradas por transf.entre lotes temos Alias() = ' + alias ())
 
 
 				// Busca outras entradas por movimentos internos.
@@ -262,6 +268,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 					enddo	
 					(_sAliasQ) -> (dbclosearea ())
 				endif
+				U_Log2 ('debug', '[' + procname () + ']Apos entradas por mov.internos temos Alias() = ' + alias ())
 		
 
 				// Busca possiveis entradas via NF.
@@ -320,7 +327,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						// Se for contranota de entrada de safra, busca dados da carga.
 						if sb1 -> b1_grupo == '0400' .and. _aSD1 [_nSD1, 6] == '30 '
 							_oSQL := ClsSQL ():New ()
-							_oSQL:_sQuery := "SELECT CARGA, DATA, CAD_VITIC, GRAU, NF_PRODUTOR"
+							_oSQL:_sQuery := "SELECT CARGA, DATA, CAD_VITIC, GRAU, NF_PRODUTOR, SAFRA"
 							_oSQL:_sQuery +=  " FROM VA_VNOTAS_SAFRA"
 							_oSQL:_sQuery += " WHERE FILIAL     = '" + _sFilial + "'"
 							_oSQL:_sQuery +=   " AND DOC        = '" + _aSD1 [_nSD1, 1] + "'"
@@ -345,7 +352,11 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 													   _aCarga [1, 1], ;  // Numero da carga ('numero da pesagem')
 													   _aCarga [1, 2], ;  // Data da carga
 													   _aCarga [1, 4], ;  // Grau da uva
-													   _nQtProp})  // Quantidade proporcional a quantidade original vendida na NF
+													   _nQtProp, ;  // Quantidade proporcional a quantidade original vendida na NF
+													   _sFilial, ;  // Filial onde foi recebida a carga
+													   _aCarga [1, 6]})  // Safra referente a carga
+									U_Log2 ('debug', '[' + procname () + ']_aLtXLS58 ficou assim:')
+									U_Log2 ('debug', _aLtXLS58)
 								endif
 							endif
 						endif
@@ -354,36 +365,12 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_sRet += '</node>'
 					next
 				endif
+				U_Log2 ('debug', '[' + procname () + ']Apos entradas por NF temos Alias() = ' + alias ())
 		
 
 				// Busca entradas por transferencias de filiais
 				if _nNivel <= 0 .and. sb1 -> b1_rastro == 'L'
 					_oSQL := ClsSQL ():New ()
-					/*
-					_oSQL:_sQuery := "SELECT D1_DOC, D1_LOTEFOR, SUM (D1_QUANT), D1_UM, ISNULL (SM0.M0_CODFIL, '')"
-					_oSQL:_sQuery += " FROM " + RetSQLName ("SD1") + " SD1, "
-					_oSQL:_sQuery +=            RetSQLName ("SF4") + " SF4, "
-					_oSQL:_sQuery +=            RetSQLName ("SA2") + " SA2 "
-					_oSQL:_sQuery +=     " LEFT JOIN SYS_COMPANY SM0
-					_oSQL:_sQuery +=        " ON (SM0.D_E_L_E_T_ = ''"
-					_oSQL:_sQuery +=        " AND SM0.M0_CODIGO  = '" + cEmpAnt + "'"
-					_oSQL:_sQuery +=        " AND SM0.M0_CGC     = SA2.A2_CGC)"
-					_oSQL:_sQuery += " WHERE SF4.D_E_L_E_T_ = ''"
-					_oSQL:_sQuery +=   " AND SF4.F4_FILIAL  = '" + xfilial ("SF4") + "'"
-					_oSQL:_sQuery +=   " AND SF4.F4_CODIGO  = SD1.D1_TES"
-					_oSQL:_sQuery +=   " AND SF4.F4_ESTOQUE = 'S'"
-					_oSQL:_sQuery +=   " AND SD1.D_E_L_E_T_ = ''"
-					_oSQL:_sQuery +=   " AND SD1.D1_FILIAL  = '" + _sFilial + "'"
-					_oSQL:_sQuery +=   " AND SD1.D1_COD     = '" + _sProduto + "'"
-					_oSQL:_sQuery +=   " AND SD1.D1_LOTECTL = '" + _sLote + "'"
-					_oSQL:_sQuery +=   " AND SD1.D1_QUANT   > 0"
-					_oSQL:_sQuery +=   " AND SD1.D1_FORNECE IN ('000021','001094','001369','003150','003402','003114','003209','003111','003108','003266','003195','004565','004734')"
-					_oSQL:_sQuery +=   " AND SA2.D_E_L_E_T_ = ''"
-					_oSQL:_sQuery +=   " AND SA2.A2_FILIAL  = '" + xfilial ("SA2") + "'"
-					_oSQL:_sQuery +=   " AND SA2.A2_COD     = SD1.D1_FORNECE"
-					_oSQL:_sQuery +=   " AND SA2.A2_LOJA    = SD1.D1_LOJA"
-					_oSQL:_sQuery += " GROUP BY D1_DOC, D1_LOTEFOR, D1_UM, SM0.M0_CODFIL"
-					*/
 					_oSQL:_sQuery := "SELECT D1_DOC, D2_LOTECTL, SUM (D1_QUANT), FILORIG"
 					_oSQL:_sQuery +=  " FROM VA_VTRANSF_ENTRE_FILIAIS V"
 					_oSQL:_sQuery += " WHERE FILDEST    = '" + _sFilial  + "'"
@@ -393,7 +380,6 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 					_oSQL:_sQuery += " GROUP BY D1_DOC, D2_LOTECTL, FILORIG"
 					_oSQL:Log ()
 					_aSD1 = aclone (_oSQL:Qry2Array (.F., .F.))
-					//u_log (_aSD1)
 					for _nSD1 = 1 to len (_aSD1)
 
 						// Calcula a quantidade proporcional para ser passada na chamada recursiva.
@@ -427,6 +413,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						endif
 					next
 				endif
+				U_Log2 ('debug', '[' + procname () + ']Apos entradas por tr.filiais temos Alias() = ' + alias ())
 
 
 				// ------------------------------------------------------ Fim entradas
@@ -482,6 +469,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_sRet += '</node>'
 					next
 				endif
+				U_Log2 ('debug', '[' + procname () + ']Apos saidas por consumo em OP temos Alias() = ' + alias ())
 
 
 				// Busca saidas por NF (ignora filiais)
@@ -532,53 +520,12 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_sRet += '</node>'
 					next
 				endif
+				U_Log2 ('debug', '[' + procname () + ']Apos saidas por NF temos Alias() = ' + alias ())
 
 
 				// Busca saidas por NF (transferencia para filiais)
 				if _nNivel >= 0 .and. sb1 -> b1_rastro == 'L'
 					_oSQL := ClsSQL ():New ()
-/*
-					_oSQL:_sQuery := "SELECT D2_DOC, SUM (D2_QUANT), D2_UM, DST.M0_CODFIL, D1_LOTECTL"
-					_oSQL:_sQuery += " FROM " + RetSQLName ("SD1") + " SD1, "
-					_oSQL:_sQuery +=            RetSQLName ("SD2") + " SD2, "
-					_oSQL:_sQuery +=            RetSQLName ("SF4") + " SF4, "
-					_oSQL:_sQuery +=            RetSQLName ("SA1") + " SA1, "
-					_oSQL:_sQuery +=            RetSQLName ("SA2") + " SA2, "
-					_oSQL:_sQuery +=          " SYS_COMPANY DST,"
-					_oSQL:_sQuery +=          " SYS_COMPANY ORI"
-					_oSQL:_sQuery += " WHERE ORI.D_E_L_E_T_ = ''"
-					_oSQL:_sQuery +=   " AND ORI.M0_CODIGO  = '" + cEmpAnt + "'"
-					_oSQL:_sQuery +=   " AND ORI.M0_CODFIL  = '" + _sFilial + "'"
-					_oSQL:_sQuery +=   " AND DST.D_E_L_E_T_ = ''"
-					_oSQL:_sQuery +=   " AND DST.M0_CODIGO  = '" + cEmpAnt + "'"
-					_oSQL:_sQuery +=   " AND DST.M0_CGC     = SA1.A1_CGC"
-					_oSQL:_sQuery +=   " AND SD1.D_E_L_E_T_ = ''"
-					_oSQL:_sQuery +=   " AND SD1.D1_FILIAL  = DST.M0_CODFIL"
-					_oSQL:_sQuery +=   " AND SD1.D1_DOC     = SD2.D2_DOC"
-					_oSQL:_sQuery +=   " AND SD1.D1_SERIE   = SD2.D2_SERIE"
-					_oSQL:_sQuery +=   " AND SD1.D1_FORNECE = SA2.A2_COD"
-					_oSQL:_sQuery +=   " AND SD1.D1_LOJA    = SA2.A2_LOJA"
-					_oSQL:_sQuery +=   " AND SD1.D1_COD     = SD2.D2_COD"
-					_oSQL:_sQuery +=   " AND SD1.D1_LOTEFOR = SD2.D2_LOTECTL"
-					_oSQL:_sQuery +=   " AND SF4.D_E_L_E_T_ = ''"
-					_oSQL:_sQuery +=   " AND SF4.F4_FILIAL  = '" + xfilial ("SF4") + "'"
-					_oSQL:_sQuery +=   " AND SF4.F4_CODIGO  = SD2.D2_TES"
-					_oSQL:_sQuery +=   " AND SF4.F4_ESTOQUE = 'S'"
-					_oSQL:_sQuery +=   " AND SD2.D_E_L_E_T_ = ''"
-					_oSQL:_sQuery +=   " AND SD2.D2_FILIAL  = '" + _sFilial + "'"
-					_oSQL:_sQuery +=   " AND SD2.D2_COD     = '" + _sProduto + "'"
-					_oSQL:_sQuery +=   " AND SD2.D2_LOTECTL = '" + _sLote + "'"
-					_oSQL:_sQuery +=   " AND SD2.D2_QUANT   > 0"
-					_oSQL:_sQuery +=   " AND SD2.D2_CLIENTE IN ('002940','006164','007811','011863','012553','012717','012558','012675','012542','012528','012707','012855','015446','015165')"
-					_oSQL:_sQuery +=   " AND SA1.D_E_L_E_T_ = ''"
-					_oSQL:_sQuery +=   " AND SA1.A1_FILIAL  = '" + xfilial ("SA1") + "'"
-					_oSQL:_sQuery +=   " AND SA1.A1_COD     = SD2.D2_CLIENTE"
-					_oSQL:_sQuery +=   " AND SA1.A1_LOJA    = SD2.D2_LOJA"
-					_oSQL:_sQuery +=   " AND SA2.D_E_L_E_T_ = ''"
-					_oSQL:_sQuery +=   " AND SA2.A2_FILIAL  = '" + xfilial ("SA2") + "'"
-					_oSQL:_sQuery +=   " AND SA2.A2_CGC     = ORI.M0_CGC"
-					_oSQL:_sQuery += " GROUP BY D2_DOC, D2_UM, DST.M0_CODFIL, D1_LOTECTL"
-*/
 					_oSQL:_sQuery := "SELECT D2_DOC, SUM (D2_QUANT), FILDEST, D1_LOTECTL"
 					_oSQL:_sQuery +=  " FROM VA_VTRANSF_ENTRE_FILIAIS V"
 					_oSQL:_sQuery += " WHERE FILORIG    = '" + _sFilial  + "'"
@@ -609,6 +556,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_sRet += '</node>'
 					next
 				endif
+				U_Log2 ('debug', '[' + procname () + ']Apos saidas por tr.filiais temos Alias() = ' + alias ())
 
 
 				// Busca saidas por transferencia entre lotes.
@@ -665,6 +613,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_sRet += '</node>'
 					next
 				endif
+				U_Log2 ('debug', '[' + procname () + ']Apos saidas por tr.internas temos Alias() = ' + alias ())
 
 
 				// Chamada inicial: preciso finalizar o arquivo de saida.
