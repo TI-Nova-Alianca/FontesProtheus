@@ -19,6 +19,7 @@
 //                     - Abertos parametros para selecionar se vai exportar cada tipo de contranota (GLPI 9489).
 // 11/08/2021 - Robert - View VA_VASSOC_GRP_FAM migrada do database do Protheus para o NaWeb (GLPI 10673).
 // 08/09/2021 - Robert - Incluida coluna de FUNRURAL.
+// 23/02/2022 - Robert - Incluida coluna VALOR_FRETE (GLPI 11665)
 //
 
 // --------------------------------------------------------------------------
@@ -137,6 +138,7 @@ Static Function _Gera()
 	_oSQL:_sQuery +=            " AND CARGAS.CONTRANOTA = NOTAS.DOC"
 	_oSQL:_sQuery +=            " AND CARGAS.SERIE_CONTRANOTA = NOTAS.SERIE) , '') AS NF_PRODUTOR"
 	_oSQL:_sQuery += " , SUM (VLR_FUNRURAL) as VLR_FUNRURAL"
+	_oSQL:_sQuery += " , SUM (VALOR_FRETE) as VALOR_FRETE"
 	_oSQL:_sQuery += " FROM VA_VNOTAS_SAFRA NOTAS"
 	_oSQL:_sQuery += " WHERE SAFRA = '" + mv_par05 + "'"
 	if mv_par15 == 2
@@ -195,7 +197,8 @@ Static Function _Gera()
 	_oSQL:_sQuery +=                           " WHEN 'B' THEN 'BORDADURA' "
 	_oSQL:_sQuery +=                           " WHEN 'O' THEN 'ORGANICA' "
 	_oSQL:_sQuery +=        " END AS TIPO_ORGANICO, "
-	_oSQL:_sQuery +=        " VLR_FUNRURAL"
+	_oSQL:_sQuery +=        " VLR_FUNRURAL,"
+	_oSQL:_sQuery +=        " VALOR_FRETE"
 	_oSQL:_sQuery += " FROM	C,"
 	_oSQL:_sQuery +=        RetSQLName ("SA2") + " SA2"
 	_oSQL:_sQuery += " WHERE CARGA BETWEEN '" + mv_par08 + "' AND '" + mv_par09 + "'"
