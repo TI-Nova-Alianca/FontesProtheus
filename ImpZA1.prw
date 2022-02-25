@@ -14,7 +14,8 @@
 // 02/02/2022 - Robert  - Imprime B8_DFABRIC e nao mais D1_DFABRIC como data de fabricacao nas etiq. de NF de entrada.
 // 03/02/2022 - Claudia - Ajustada linha 628 de DTOC(SD1->B8_DFABRIC) para DTOC(SB8->B8_DFABRIC)
 // 11/02/2022 - Robert  - Posicionava SB8 pelo D1_LOTEFOR. Alterado para posicionar pelo ZA1_PROD + D1_LOTECTL.
-// (a compilar) - Robert  - Posiciona o SB8 via query por que nao tem indice por produto+lote+local.
+//                      - Posiciona o SB8 via query por que nao tem indice por produto+lote+local.
+// 25/02/2022 - Robert  - Ajustes nas margens da etiq. de NF na impressora Argox/Datamax.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -790,7 +791,7 @@ static function _ImpNF ()
 		_sNome1 := substr ('FORN:' + SA2 -> a2_cod + '/' + sa2 -> a2_loja + ' - ' + SA2 -> A2_nome, 1, 28)
 		_sNome2 := substr ('FORN:' + SA2 -> a2_cod + '/' + sa2 -> a2_loja + ' - ' + SA2 -> A2_nome, 29, 28)
 
-		_sMargEsq = '070'
+		_sMargEsq = '200' //'070'
 		fwrite (_nHdl, chr (2) + 'f220' + _Enter)  //  STX - inicio de etiqueta
 		fwrite (_nHdl, chr (1) + 'D' + _Enter)  // SOH - inicio de header
 		fwrite (_nHdl, chr (2) + 'n' + _Enter)
@@ -805,17 +806,22 @@ static function _ImpNF ()
 		fwrite (_nHdl, '421100000' + _sMargEsq + '120' + _sNome1 + _Enter)
 		fwrite (_nHdl, '421100000' + _sMargEsq + '135' + _sNome2 + _Enter)
 
-		fwrite (_nHdl, '421100000' + _sMargEsq + '155' + 'Lt.for:' + _sLoteF + _Enter)
+		fwrite (_nHdl, '421100000' + _sMargEsq + '155' + 'Lt.forn:' + _sLoteF + _Enter)
 		
 		fwrite (_nHdl, '431100000' + _sMargEsq + '175' + 'Lt.int:' + _sLoteI + _Enter)
 		fwrite (_nHdl, '431100000' + _sMargEsq + '200' + 'Qtd:' + transform (ZA1->ZA1_QUANT, '@E 999,999,999.99') + ' ' + _sUM + _Enter)
 		fwrite (_nHdl, '431100000' + _sMargEsq + '220' + 'FABRICACAO: ' + _sDataF + _Enter)
 		fwrite (_nHdl, '431100000' + _sMargEsq + '240' + 'VALIDADE:   ' + _sDataV + _Enter)
-		fwrite (_nHdl, '431100000' + _sMargEsq + '270' + 'ETIQUETA:   ' + ZA1->ZA1_CODIGO + _Enter)
-		fwrite (_nHdl, '4e5200000' + _sMargEsq + '320' + ZA1->ZA1_CODIGO + _Enter)  // cod barras
-		fwrite (_nHdl, '431100000' + _sMargEsq + '350' + 'DATA: _______________' + _Enter)
-		fwrite (_nHdl, '431100000' + _sMargEsq + '375' + 'RESP: _______________' + _Enter)
-		fwrite (_nHdl, '431100000' + _sMargEsq + '400' + 'ASS.: _______________' + _Enter)
+	//	fwrite (_nHdl, '431100000' + _sMargEsq + '270' + 'ETIQUETA:   ' + ZA1->ZA1_CODIGO + _Enter)
+		fwrite (_nHdl, '431100000' + _sMargEsq + '267' + 'ETIQUETA:   ' + ZA1->ZA1_CODIGO + _Enter)
+	//	fwrite (_nHdl, '4e5200000' + _sMargEsq + '320' + ZA1->ZA1_CODIGO + _Enter)  // cod barras
+		fwrite (_nHdl, '4e5200000' + _sMargEsq + '310' + ZA1->ZA1_CODIGO + _Enter)  // cod barras
+	//	fwrite (_nHdl, '431100000' + _sMargEsq + '350' + 'DATA: _______________' + _Enter)
+		fwrite (_nHdl, '431100000' + _sMargEsq + '330' + 'DATA: _______________' + _Enter)
+	//	fwrite (_nHdl, '431100000' + _sMargEsq + '375' + 'RESP: _______________' + _Enter)
+		fwrite (_nHdl, '431100000' + _sMargEsq + '350' + 'RESP: _______________' + _Enter)
+	//	fwrite (_nHdl, '431100000' + _sMargEsq + '400' + 'ASS.: _______________' + _Enter)
+		fwrite (_nHdl, '431100000' + _sMargEsq + '370' + 'ASS.: _______________' + _Enter)
 		fwrite (_nHdl, 'Q0001' + _Enter)
 		fwrite (_nHdl, 'E' + _Enter)
 		reclock ("ZA1", .F.)
