@@ -92,6 +92,80 @@ static function _AndaLogo ()
 	u_help ('Nada definido.')
 return
 /*
+	// Gera conta 'PREMIACAO QUALIDADE' na corrente ref. safra 2021 (GLPI 11661)
+	_sArqLog := 'GLPI11661_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+	_sSafra := '2021'
+	_nVlrKg := 0.02
+	_sTM := '16'
+	_sOrigSZI := 'GLPI11661'
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += "SELECT N.ASSOCIADO, N.LOJA_ASSOC, FILIAL, N.DOC, N.NOME_ASSOC, N.PRODUTO, N.DESCRICAO, N.GRAU, N.CLAS_ABD, SUM (N.PESO_LIQ) AS PESO_LIQ"
+	_oSQL:_sQuery +=      ", SUM (N.VALOR_TOTAL) / SUM (N.PESO_LIQ) AS VL_UNIT_JA_COM_COMPLEMENTOS"
+	_oSQL:_sQuery +=      ", SUM (N.PESO_LIQ) * " + cvaltochar (_nVlrKg) + " AS PREVISTO"
+	_oSQL:_sQuery +=  " FROM VA_VNOTAS_SAFRA N"
+	_oSQL:_sQuery += " WHERE N.SAFRA = '" + _sSafra + "'"
+	_oSQL:_sQuery +=   " AND N.FINA_COMUM = 'C'"
+	_oSQL:_sQuery +=   " and N.TIPO_ORGANICO != 'O'"
+	_oSQL:_sQuery +=   " AND N.CLAS_ABD = 'A'"
+	_oSQL:_sQuery +=   " AND NOT EXISTS (SELECT *" // Para nao gerar em duplicidade
+	_oSQL:_sQuery +=                     " FROM " + RetSQLName ("SZI") + " SZI "
+	_oSQL:_sQuery +=                    " WHERE D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=                      " AND ZI_ASSOC   = N.ASSOCIADO"
+	_oSQL:_sQuery +=                      " AND ZI_LOJASSO = N.LOJA_ASSOC"
+	_oSQL:_sQuery +=                      " AND ZI_TM      = '" + _sTM + "'"
+	_oSQL:_sQuery +=                      " AND ZI_ORIGEM  = '" + _sOrigSZI + "')"
+	_oSQL:_sQuery += " GROUP BY N.ASSOCIADO, N.LOJA_ASSOC, FILIAL, N.NOME_ASSOC, DOC, N.PRODUTO, N.DESCRICAO, N.GRAU, N.CLAS_ABD"
+	_oSQL:_sQuery += " ORDER BY N.ASSOCIADO, N.LOJA_ASSOC, FILIAL, N.NOME_ASSOC, DOC, N.PRODUTO, N.DESCRICAO, N.GRAU, N.CLAS_ABD"
+	_oSQL:Log ()
+	_sAliasQ := _oSQL:Qry2Trb (.F.)
+	U_Log2 ('debug', _oSQL:QtLinRet)
+	do while ! (_sAliasQ) -> (eof ())
+		_sFornece = (_sAliasQ) -> associado
+		_sLoja = (_sAliasQ) -> loja_assoc
+		u_log2 ('debug', 'iniciando forn/loja ' + _sFornece + _sLoja)
+		_nTotForn = 0
+		_sHistCpl = "Premiacao qualidade R$" + cvaltochar (_nVlrKg) + " por Kg ref:" + chr (13) + chr (10)
+		do while ! (_sAliasQ) -> (eof ()) .and. (_sAliasQ) -> associado == _sFornece .and. (_sAliasQ) -> loja_assoc == _sLoja
+			_nTotForn += (_sAliasQ) -> previsto
+			_sLinHist = 'Fil/doc ' + (_sAliasQ) -> filial + '/' + (_sAliasQ) -> doc + " " + alltrim ((_sAliasQ) -> descricao) + ' gr.' + (_sAliasQ) -> grau + ' (' + cvaltochar ((_sAliasQ) -> peso_liq) + ' Kg)' + chr (13) + chr (10)
+			if ! _sLinHist $ _sHistCpl
+				_sHistCpl += _sLinHist
+			endif
+			(_sAliasQ) -> (dbskip ())
+		enddo
+		U_Log2 ('debug', _sHistCpl)
+		_oCtaCorr := ClsCtaCorr():New ()
+		_oCtaCorr:Assoc    = _sFornece
+		_oCtaCorr:Loja     = _sLoja
+		_oCtaCorr:TM       = _sTM
+		_oCtaCorr:Safra    = _sSafra
+		_oCtaCorr:DtMovto  = dDataBase
+		_oCtaCorr:Valor    = _nTotForn
+		_oCtaCorr:SaldoAtu = _nTotForn
+		_oCtaCorr:Usuario  = cUserName
+		_oCtaCorr:Histor   = 'PREMIACAO QUALIDADE SAFRA ' + _sSafra
+		_oCtaCorr:MesRef   = strzero(month(_oCtaCorr:DtMovto),2)+strzero(year(_oCtaCorr:DtMovto),4)
+		_oCtaCorr:Doc      = _sSafra + '11661'  // safra + numero chamado. Eu sou mesmo criativo, neh?
+		_oCtaCorr:Serie    = 'OUT'
+		_oCtaCorr:Parcela  = '1'
+		_oCtaCorr:Origem   = _sOrigSZI
+		_oCtaCorr:Obs      = _sHistCpl
+		_oCtaCorr:VctoSE2  = stod ('20220228')
+		if _oCtaCorr:PodeIncl ()
+			if ! _oCtaCorr:Grava (.F., .F.)
+				U_help ("Erro na atualizacao da conta corrente para o associado '" + _sFornece + '/' + _sLoja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg,, .t.)
+			endif
+		else
+			U_help ("Gravacao do SZI nao permitida na atualizacao da conta corrente para o associado '" + _sFornece + '/' + _sLoja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg,, .T.)
+		endif
+		FreeObj (_oCtaCorr)
+		//EXIT  // por enquanto quero gerar apenas um
+	enddo
+	FreeObj (_oSQL)
+return
+*/
+/*
 	// Testes verificacoes genericas.
 	// _oVerif := ClsVerif():New (25)
 	// _oVerif:SetParam ('01', '2017')
@@ -106,7 +180,7 @@ return
 	// _oVerif:SetParam ('02', '09189201001  ')
 	// _oVerif:SetParam ('03', '')
 	// _oVerif:SetParam ('04', 'z')
-	_oVerif := ClsVerif():New (82)
+	_oVerif := ClsVerif():New (83)
 	if _oVerif:Executa ()
 		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
 		u_log2 ('debug', _oVerif:Result)
@@ -115,18 +189,15 @@ return
 	endif
 return
 */
-
 /*
 	// Testes arvore de rastreabilidade
 	private _aLtXLS58 := {}  // Deixar PRIVATE para ser alimentada pelo U_RastLT().
 	//_sMapa := U_RastLT (cFilAnt, U_TamFixo ('3630', 15, ' '), '12101401', 0, NIL, 14660)  // item 2580 lote 12101401 transformado em 3630 (mesmo lote) em 28/01/2022 na filial 01.
 	//_sMapa := U_RastLT (cFilAnt, U_TamFixo ('1274', 15, ' '), 'AUTO009215', 0, NIL, 1)  // enzima (arvore grande)
-
 	// lado 1 do par --> _sMapa := U_RastLT ('01', U_TamFixo ('2444', 15, ' '), 'AUTO009238', 0, NIL, 24200)
-	// lado 2 do par -->
-	_sMapa := U_RastLT ('09', U_TamFixo ('2444', 15, ' '), '4123', 0, NIL, 24200)
-
+	// lado 2 do par --> _sMapa := U_RastLT ('09', U_TamFixo ('2444', 15, ' '), '4123', 0, NIL, 24200)
 	//_sMapa := U_RastLT (cFilAnt, U_TamFixo ('9959', 15, ' '), '2201028401', 0, NIL, 1)  // enzima (arvore grande)
+	_sMapa := U_RastLT (cFilAnt, U_TamFixo ('2203', 15, ' '), 'AUTO00956f', 0, NIL, 1)  // dava erro 
 	_sArq := 'c:\temp\rast.mm'
 	delete file (_sArq)
 	if file (_sArq)

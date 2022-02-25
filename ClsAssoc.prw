@@ -304,9 +304,9 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 					::GrpFam    = ''
 					::Nucleo    = ''
 					::SubNucleo = ''
-					u_log2 ('aviso', 'Problemas para determinar o grupo familiado do associado ' + ::Codigo + '/' + ::Loja + '.')
+					u_log2 ('aviso', 'Problemas para determinar o grupo familiar do associado ' + ::Codigo + '/' + ::Loja + '.')
 					if type ("_sErroWS") == 'C'
-						_sErroWS += 'Problemas para determinar o grupo familiado do associado ' + ::Codigo + '/' + ::Loja + '.'
+						_sErroWS += 'Problemas para determinar o grupo familiar do associado ' + ::Codigo + '/' + ::Loja + '.'
 					endif
 				endif
 

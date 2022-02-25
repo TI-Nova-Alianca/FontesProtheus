@@ -94,6 +94,7 @@
 // 07/12/2021 - Robert - Na geracao dos titulos de resgate de cotas (apos desligamento) passa a gerar E2_EMISSAO = dDataBase e nao mais na data do vcto.
 // 08/12/2021 - Robert - Validacoes para gravacao de TM=33 (GLPI 
 // 19/01/2022 - Robert - Nao inicializava atributo ::Safra quando chamado via tela de manutencao da conta corrente.
+// 23/02/2022 - Robert - Ordenados por tipo de movimento alguns blocos de codigo no metodo PodeIncl().
 //
 
 // ------------------------------------------------------------------------------------
@@ -1346,7 +1347,7 @@ METHOD Grava (_lSZIGrav, _lMemoGrav) Class ClsCtaCorr
 
 	// Atualiza saldo do Associado
 	if _lContinua
-		U_Log2 ('debug', 'vou chamar AtuSldAsso')
+		//U_Log2 ('debug', 'vou chamar AtuSldAsso')
 		::AtuSldAsso ()
 	endif
 
@@ -1680,6 +1681,17 @@ METHOD PodeIncl () Class ClsCtaCorr
 		_lContinua = .F.
 	endif
 	
+	if _lContinua .and. (empty (_oAssoc:CodBase) .or. empty (_oAssoc:LojaBase))
+		::UltMsg += "Codigo/loja base nao informados no cadastro do associado." + _sCRLF
+		_lContinua = .F.
+	endif
+
+	// Esta validacao eh soh por que sou enjoado e quero o cadastro preenchido. A principio nao preciso para nada em especial.
+	if _lContinua .and. empty (_oAssoc:CoopOrigem)
+		::UltMsg += "Cooperativa de origem nao informada no cadastro do associado." + _sCRLF
+		_lContinua = .F.
+	endif
+
 	// Se estou associando ele agora, o objeto ainda nao tem nenhum dado.
 	if ::TM == '08'
 		sa2 -> (dbsetorder (1))
@@ -1730,51 +1742,34 @@ METHOD PodeIncl () Class ClsCtaCorr
 		endif
 	endif
 
-	// Inclusao manual de NF de compra de safra: por enquanto, somente em casos de transf. entre filiais.
-	if _lContinua .and. ::TM == '13'
+	// Emprestimos.
+	if _lContinua .and. ::TM == '07' .and. empty (::FormPag)
+		::UltMsg += "Para emprestimos deve ser informada a forma de pagamento." + _sCRLF
+		_lContinua = .F.
+	endif
 
-		// Ex-associado pode ainda ter a safra para receber.
-		if !_oAssoc:EhSocio (::DtMovto) .and. empty (_oAssoc:DtSaida (::DtMovto))
-			::UltMsg += "Nao consta como associado nem como ex-associado nesta data." + _sCRLF
+	// Associar.
+	if _lContinua .and. ::TM == '08'
+		if _lContinua .and. ::DtMovto < _oAssoc:DtNascim
+			::UltMsg += "Trabalhar pelo cooperativismo eh bom, mas associar-se antes de nascer eh demais... Data de nascimento deste fornecedor: " + dtoc (_oAssoc:DtNascim) + _sCRLF
 			_lContinua = .F.
 		endif
-		if _lContinua .and. empty (::FilOrig) .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_FTSAFRA") .and. ! IsInCallStack ("U_FTSAFRA1") .and. ! (IsInCallStack ("U_BATSAFR") .and. IsInCallStack ("_GERASZI"))
-			::UltMsg += "Movimento de compra de safra: so' pode ser incluido por rotinas especificas, ou manualmente quando tratar-se de titulo transferido de outra filial. Informe filial de origem." + _sCRLF
+		if _lContinua .and. _oAssoc:EhSocio (::DtMovto)
+			::UltMsg += "Jah consta como associado nesta data." + _sCRLF
 			_lContinua = .F.
-		endif
-		if _lContinua .and. ! empty (::FilOrig)
-			if empty (::SeqOrig)
-				::UltMsg += "Inclusao de transferencia de outra filial: sequencia original nao informada (o movimento correspondente deve existir na filial origem). Verifique campos Associado, Loja, Data, Tipo movto., Documento, Serie e Mes ref." + _sCRLF
-				_lContinua = .F.
-			else
-				// Para ficar mais correto, a query abaixo deveria abater transferencias jah realizadas, pois
-				// como estah permite fazer a transferencia mais de uma vez.
-				_sQuery := ""
-				_sQuery += " SELECT ISNULL (SUM (E5_VALOR), 0)"
-				_sQuery +=   " FROM " + RetSQLName ("SE5") + " SE5,"
-				_sQuery +=              RetSQLName ("SA6") + " SA6"
-				_sQuery +=  " WHERE SE5.E5_FILIAL   = '" + ::FilOrig + "'"
-				_sQuery +=    " AND SE5.E5_VACHVEX  = 'SZI" + ::Assoc + ::Loja + ::SeqOrig + "'"
-				_sQuery +=    " AND SE5.E5_SITUACA != 'C'"
-				_sQuery +=    " AND SE5.D_E_L_E_T_  = ''"
-				_sQuery +=    " AND SE5.E5_FILORIG  = '" + ::FilOrig + "'"
-				_sQUery +=    " AND SE5.E5_DATA    <= '" + dtos (::DtMovto) + "'"
-				_sQuery +=    " AND SE5.E5_BANCO    = A6_COD"
-				_sQuery +=    " AND SE5.E5_AGENCIA  = A6_AGENCIA"
-				_sQuery +=    " AND SE5.E5_CONTA    = A6_NUMCON"
-				_sQuery +=    " AND SA6.D_E_L_E_T_  = ''"
-				_sQuery +=    " AND SA6.A6_FILIAL   = '" + ::FilOrig + "'"
-				_sQuery +=    " AND SA6.A6_CONTA    = '101010201099'"  // Conta transitoria entre filiais na contabilidade.
-				//u_log (_squery)
-				_nBxTrans = U_RetSQL (_sQuery)
-				if ::Valor > _nBxTrans
-					::UltMsg += "Inclusao de transferencia de compra de safra de outra filial: o valor esta limitado a R$ " + alltrim (transform (_nBxTrans, "@E 999,999,999.99")) + " (total baixado via conta transitoria na filial de origem nesta data)." + _sCRLF
-					_lContinua = .F.
-				endif
-			endif
 		endif
 	endif
 
+	// Desassociar.
+	if _lContinua .and. ::TM == '09'
+		if ::DtMovto < date ()
+			_lContinua = U_MsgNoYes ("Confirma o uso de data retroativa?", .F.)
+		endif
+		if _lContinua .and. ! _oAssoc:EhSocio (::DtMovto)
+			::UltMsg += "Nao consta como associado em " + dtoc (::DtMovto) + _sCRLF
+			_lContinua = .F.
+		endif
+	endif
 
 	// Implantacao de saldo de quota capital: somente uma vez na vida, independente de filial.
 	if _lContinua .and. ::TM == '10'
@@ -1799,7 +1794,6 @@ METHOD PodeIncl () Class ClsCtaCorr
 			endif
 		endif
 	endif
-
 
 	// Resgate parcial da quota capital.
 	if _lContinua .and. ::TM == '11'
@@ -1852,26 +1846,48 @@ METHOD PodeIncl () Class ClsCtaCorr
 		endif
 	endif
 
-	// Associar.
-	if _lContinua .and. ::TM == '08'
-		if _lContinua .and. ::DtMovto < _oAssoc:DtNascim
-			::UltMsg += "Trabalhar pelo cooperativismo eh bom, mas associar-se antes de nascer eh demais... Data de nascimento deste fornecedor: " + dtoc (_oAssoc:DtNascim) + _sCRLF
-			_lContinua = .F.
-		endif
-		if _lContinua .and. _oAssoc:EhSocio (::DtMovto)
-			::UltMsg += "Jah consta como associado nesta data." + _sCRLF
-			_lContinua = .F.
-		endif
-	endif
+	// Inclusao manual de NF de compra de safra: por enquanto, somente em casos de transf. entre filiais.
+	if _lContinua .and. ::TM == '13'
 
-	// Desassociar.
-	if _lContinua .and. ::TM == '09'
-		if ::DtMovto < date ()
-			_lContinua = U_MsgNoYes ("Confirma o uso de data retroativa?", .F.)
-		endif
-		if _lContinua .and. ! _oAssoc:EhSocio (::DtMovto)
-			::UltMsg += "Nao consta como associado em " + dtoc (::DtMovto) + _sCRLF
+		// Ex-associado pode ainda ter a safra para receber.
+		if !_oAssoc:EhSocio (::DtMovto) .and. empty (_oAssoc:DtSaida (::DtMovto))
+			::UltMsg += "Nao consta como associado nem como ex-associado nesta data." + _sCRLF
 			_lContinua = .F.
+		endif
+		if _lContinua .and. empty (::FilOrig) .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_FTSAFRA") .and. ! IsInCallStack ("U_FTSAFRA1") .and. ! (IsInCallStack ("U_BATSAFR") .and. IsInCallStack ("_GERASZI"))
+			::UltMsg += "Movimento de compra de safra: so' pode ser incluido por rotinas especificas, ou manualmente quando tratar-se de titulo transferido de outra filial. Informe filial de origem." + _sCRLF
+			_lContinua = .F.
+		endif
+		if _lContinua .and. ! empty (::FilOrig)
+			if empty (::SeqOrig)
+				::UltMsg += "Inclusao de transferencia de outra filial: sequencia original nao informada (o movimento correspondente deve existir na filial origem). Verifique campos Associado, Loja, Data, Tipo movto., Documento, Serie e Mes ref." + _sCRLF
+				_lContinua = .F.
+			else
+				// Para ficar mais correto, a query abaixo deveria abater transferencias jah realizadas, pois
+				// como estah permite fazer a transferencia mais de uma vez.
+				_sQuery := ""
+				_sQuery += " SELECT ISNULL (SUM (E5_VALOR), 0)"
+				_sQuery +=   " FROM " + RetSQLName ("SE5") + " SE5,"
+				_sQuery +=              RetSQLName ("SA6") + " SA6"
+				_sQuery +=  " WHERE SE5.E5_FILIAL   = '" + ::FilOrig + "'"
+				_sQuery +=    " AND SE5.E5_VACHVEX  = 'SZI" + ::Assoc + ::Loja + ::SeqOrig + "'"
+				_sQuery +=    " AND SE5.E5_SITUACA != 'C'"
+				_sQuery +=    " AND SE5.D_E_L_E_T_  = ''"
+				_sQuery +=    " AND SE5.E5_FILORIG  = '" + ::FilOrig + "'"
+				_sQUery +=    " AND SE5.E5_DATA    <= '" + dtos (::DtMovto) + "'"
+				_sQuery +=    " AND SE5.E5_BANCO    = A6_COD"
+				_sQuery +=    " AND SE5.E5_AGENCIA  = A6_AGENCIA"
+				_sQuery +=    " AND SE5.E5_CONTA    = A6_NUMCON"
+				_sQuery +=    " AND SA6.D_E_L_E_T_  = ''"
+				_sQuery +=    " AND SA6.A6_FILIAL   = '" + ::FilOrig + "'"
+				_sQuery +=    " AND SA6.A6_CONTA    = '101010201099'"  // Conta transitoria entre filiais na contabilidade.
+				//u_log (_squery)
+				_nBxTrans = U_RetSQL (_sQuery)
+				if ::Valor > _nBxTrans
+					::UltMsg += "Inclusao de transferencia de compra de safra de outra filial: o valor esta limitado a R$ " + alltrim (transform (_nBxTrans, "@E 999,999,999.99")) + " (total baixado via conta transitoria na filial de origem nesta data)." + _sCRLF
+					_lContinua = .F.
+				endif
+			endif
 		endif
 	endif
 
@@ -1886,11 +1902,11 @@ METHOD PodeIncl () Class ClsCtaCorr
 			_lContinua = .F.
 		endif
 	endif
+
 	if _lContinua .and. ::TM == '18' .and. ! _oAssoc:EhSocio (::DtMovto)
 		::UltMsg += _oAssoc:Nome + " nao consta como associado nesta data." + _sCRLF
 		_lContinua = .F.
 	endif
-
 
 	// Distribuicao de sobras: somente uma vez por ano.
 	if _lContinua .and. ::TM == '19'
@@ -1923,18 +1939,54 @@ METHOD PodeIncl () Class ClsCtaCorr
 		endif
 	endif
 
+	if _lContinua .and. ::TM == '27'
+		if ::Valor > _oAssoc:SldQuotCap (::DtMovto) [.QtCapSaldoNaData]
+			::UltMsg += "Valor do movimento nao pode ser maior que o saldo do capital social nesta data ($ " + cvaltochar (_oAssoc:SldQuotCap (::DtMovto) [.QtCapSaldoNaData]) + ")"
+			_lContinua = .F.
+		endif
+	endif	
 
-	// Emprestimos.
-	if _lContinua .and. ::TM $ '07/31' .and. empty (::FormPag)
-		::UltMsg += "Para emprestimos/adiantamentos de safra deve ser informada a forma de pagamento." + _sCRLF
+	// Adiantamentos de safra
+	if _lContinua .and. ::TM == '31' .and. empty (::FormPag)
+		::UltMsg += "Para adiantamentos de safra deve ser informada a forma de pagamento." + _sCRLF
 		_lContinua = .F.
 	endif
 
-	// Esta validacao eh soh por que sou enjoado e quero o cadastro preenchido. A principio nao preciso para nada em especial.
-	if _lContinua .and. empty (_oAssoc:CoopOrigem)
-		::UltMsg += "Cooperativa de origem nao informada no cadastro do associado." + _sCRLF
-		_lContinua = .F.
+	// Projetos com ART: paga para o fornecedor (geralmente CREA) e desconta do associado.
+	if _lContinua .and. ::TM == '32'
+		if empty (::Fornece) .or. empty (::LojaFor)
+			::UltMsg += "Movimento tipo " + ::TM + ": a cooperativa paga o fornecedor e depois cobra do associado (ou desconta da safra). Por isso, deve ser informado o fornecedor para o qual a cooperativa vai fazer o pagamento."
+			_lContinua = .F.
+		endif
+		if empty (::VctoSE2For)
+			::UltMsg += "Para este tipo de movimento deve ser informada uma data de vencimento para o titulo a pagar que vai ser gerado em nome do fornecedor relacionado."
+			_lContinua = .F.
+		endif
 	endif
+
+	// Restituicao (cobranca) de FUNRURAL
+	if _lContinua .and. ::TM == '33'
+		if empty (::Safra)
+			::UltMsg += "Para movimento de restituicao de FUNRURAL deve ser informada a safra de referencia."
+			_lContinua = .F.
+		else
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += "SELECT COUNT (*)"
+			_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI"
+			_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND ZI_ASSOC   = '" + ::Assoc + "'"
+			_oSQL:_sQuery +=   " AND ZI_LOJASSO = '" + ::Loja + "'"
+			_oSQL:_sQuery +=   " AND ZI_TM      = '33'"
+			_oSQL:_sQuery +=   " AND ZI_SAFRA   = '" + ::Safra + "'"
+			_oSQL:Log ()
+			if U_RetSQL (_sQuery) > 0
+				::UltMsg += "Ja' existe movimento de restituicao de FUNRURAL para o associado '" + ::Assoc + '/' + ::Loja + "' referente safra '" + ::Safra + "'."
+				_lContinua = .F.
+			endif
+		endif
+	endif
+
 	if _lContinua .and. ! _oAssoc:EhSocio (::DtMovto)
 		if ::TM $ '07/31' .and. !empty (_oAssoc:DtSaida (::DtMovto))  // Ex-associado
 			if ! msgnoyes ("Codigo/loja '" + ::Assoc + '/' + ::Loja + "' consta como EX-ASSOCIADO em " + dtoc (::DtMovto) + ". Confirma a inclusao deste registro?")
@@ -1960,11 +2012,6 @@ METHOD PodeIncl () Class ClsCtaCorr
 				endif
 			endif
 		endif
-	endif
-
-	if _lContinua .and. (empty (_oAssoc:CodBase) .or. empty (_oAssoc:LojaBase))
-		::UltMsg += "Codigo/loja base nao informados no cadastro do associado." + _sCRLF
-		_lContinua = .F.
 	endif
 
 	// Outros creditos sem entrada de valor.
@@ -2021,13 +2068,6 @@ METHOD PodeIncl () Class ClsCtaCorr
 		endif
 	endif
 
-	if _lContinua .and. ::TM == '27'
-		if ::Valor > _oAssoc:SldQuotCap (::DtMovto) [.QtCapSaldoNaData]
-			::UltMsg += "Valor do movimento nao pode ser maior que o saldo do capital social nesta data ($ " + cvaltochar (_oAssoc:SldQuotCap (::DtMovto) [.QtCapSaldoNaData]) + ")"
-			_lContinua = .F.
-		endif
-	endif	
-
 	// Verifica periodo fechado (correcao monetaria jah calculada) - independente de filial.
 	if _lContinua .and. ! ::TM $ '19/'
 		_sQuery := ""
@@ -2045,46 +2085,11 @@ METHOD PodeIncl () Class ClsCtaCorr
 		endif
 	endif
 
-	// Projetos com ART: paga para o fornecedor (geralmente CREA) e desconta do associado.
-	if _lContinua .and. ::TM == '32'
-		if empty (::Fornece) .or. empty (::LojaFor)
-			::UltMsg += "Movimento tipo " + ::TM + ": a cooperativa paga o fornecedor e depois cobra do associado (ou desconta da safra). Por isso, deve ser informado o fornecedor para o qual a cooperativa vai fazer o pagamento."
-			_lContinua = .F.
-		endif
-		if empty (::VctoSE2For)
-			::UltMsg += "Para este tipo de movimento deve ser informada uma data de vencimento para o titulo a pagar que vai ser gerado em nome do fornecedor relacionado."
-			_lContinua = .F.
-		endif
-	endif
-
-	// Restituicao (cobranca) de FUNRURAL
-	if _lContinua .and. ::TM == '33'
-		if empty (::Safra)
-			::UltMsg += "Para movimento de restituicao de FUNRURAL deve ser informada a safra de referencia."
-			_lContinua = .F.
-		else
-			_oSQL := ClsSQL ():New ()
-			_oSQL:_sQuery := ""
-			_oSQL:_sQuery += "SELECT COUNT (*)"
-			_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI"
-			_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-			_oSQL:_sQuery +=   " AND ZI_ASSOC   = '" + ::Assoc + "'"
-			_oSQL:_sQuery +=   " AND ZI_LOJASSO = '" + ::Loja + "'"
-			_oSQL:_sQuery +=   " AND ZI_TM      = '33'"
-			_oSQL:_sQuery +=   " AND ZI_SAFRA   = '" + ::Safra + "'"
-			_oSQL:Log ()
-			if U_RetSQL (_sQuery) > 0
-				::UltMsg += "Ja' existe movimento de restituicao de FUNRURAL para o associado '" + ::Assoc + '/' + ::Loja + "' referente safra '" + ::Safra + "'."
-				_lContinua = .F.
-			endif
-		endif
-	endif
-
 	// Se chegou aqui com mensagem de erro, mostra para o usuario.
 	if ! _lContinua .and. ! empty (::UltMsg)
 		u_help (::UltMsg,, .t.)
 	endif
-	
+
 	//u_log ('Retornando', _lContinua)
 //	u_logFim (GetClassName (::Self) + '.' + procname ())
 return _lContinua
@@ -2246,8 +2251,6 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 	local _nSaldo    := 0
 	local _oSQL      := NIL
 	local _aBanco    := {}
-//	local _aBkpSX1   := {}
-//	local cPerg      := "          "
 	Private lMsErroAuto := .F.
 	
 	u_log2 ('info', 'Iniciando ' + GetClassName (::Self) + '.' + procname ())
@@ -2294,7 +2297,6 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 	// MV_CT105MS = N
 	// MV_ALTLCTO = N
 
-
 	// Verifica se existe titulo correspondente no financeiro e guarda seu RECNO.
 	if _lContinua
 		_aTit [1] = {::RecnoSE2 ()}  // Formato de array por que pode baixar mais de um titulo por vez.
@@ -2338,25 +2340,18 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 
 	//	_aTit [8] = dDataBase
 		_aTit [8] = iif (empty (_dDtBxTran), dDataBase, _dDtBxTran)
-		//u_log2 ('debug', _atit)
 
 		// Ajusta parametros de contabilizacao para NAO, pois a rotina automatica nao aceita.
-		//cPerg = 'FIN090'
 		pergunte ('FIN090    ', .f.)
 
-//		_aBkpSX1 = U_SalvaSX1 (cPerg)
-//		U_GravaSX1 (cPerg, "03", 2)  // Contabiliza online = nao
-		
 		lMsErroAuto = .F.
-		MSExecAuto({|x,y| Fina090(x,y)},3,_aTit)
+//		MSExecAuto({|x,y| Fina090(x,y)},3,_aTit)
+		MSExecAuto({|x,y| Fina091(x,y)},3,_aTit)
 		If lMsErroAuto
 			_lContinua = .F.
 			::UltMsg += u_LeErro (memoread (NomeAutoLog ()))
 			MostraErro()
 		endif
-
-		// Ajusta parametros da rotina automatica.
-		//U_SalvaSX1 (cPerg, _aBkpSX1)
 	endif
 
 	// Se fez a baixa, ajusta historico do movimento bancario.
