@@ -91,6 +91,31 @@ static function _AndaLogo ()
 	incproc ()
 	u_help ('Nada definido.')
 return
+//	U_ImpZA1 ('9000240912', '14')
+/*
+	// Testes verificacoes genericas.
+	// _oVerif := ClsVerif():New (25)
+	// _oVerif:SetParam ('01', '2017')
+	// _oVerif:SetParam ('02', '')
+	// _oVerif:SetParam ('03', 'zz')
+	// _oVerif:SetParam ('04', '30 ')
+	// _oVerif:SetParam ('05', '028')
+	// _oVerif:SetParam ('06', '077')
+	// _oVerif:SetParam ('07', '000017')
+	// _oVerif := ClsVerif():New (24)
+	// _oVerif:SetParam ('01', '09189201001  ')
+	// _oVerif:SetParam ('02', '09189201001  ')
+	// _oVerif:SetParam ('03', '')
+	// _oVerif:SetParam ('04', 'z')
+	_oVerif := ClsVerif():New (84)
+	if _oVerif:Executa ()
+		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
+		u_log2 ('debug', _oVerif:Result)
+	else
+		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
+	endif
+return
+*/
 /*
 	// Gera conta 'PREMIACAO QUALIDADE' na corrente ref. safra 2021 (GLPI 11661)
 	_sArqLog := 'GLPI11661_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
@@ -166,30 +191,6 @@ return
 return
 */
 /*
-	// Testes verificacoes genericas.
-	// _oVerif := ClsVerif():New (25)
-	// _oVerif:SetParam ('01', '2017')
-	// _oVerif:SetParam ('02', '')
-	// _oVerif:SetParam ('03', 'zz')
-	// _oVerif:SetParam ('04', '30 ')
-	// _oVerif:SetParam ('05', '028')
-	// _oVerif:SetParam ('06', '077')
-	// _oVerif:SetParam ('07', '000017')
-	// _oVerif := ClsVerif():New (24)
-	// _oVerif:SetParam ('01', '09189201001  ')
-	// _oVerif:SetParam ('02', '09189201001  ')
-	// _oVerif:SetParam ('03', '')
-	// _oVerif:SetParam ('04', 'z')
-	_oVerif := ClsVerif():New (83)
-	if _oVerif:Executa ()
-		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
-		u_log2 ('debug', _oVerif:Result)
-	else
-		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
-	endif
-return
-*/
-/*
 	// Testes arvore de rastreabilidade
 	private _aLtXLS58 := {}  // Deixar PRIVATE para ser alimentada pelo U_RastLT().
 	//_sMapa := U_RastLT (cFilAnt, U_TamFixo ('3630', 15, ' '), '12101401', 0, NIL, 14660)  // item 2580 lote 12101401 transformado em 3630 (mesmo lote) em 28/01/2022 na filial 01.
@@ -227,7 +228,7 @@ return
 	enddo
 return
 */
-//	U_ImpZA1 ('9000240221', '98')
+
 /*
 // Testes batches em geral
 //	_sArqLog := 'U_BatCompAssoc_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"

@@ -3080,7 +3080,6 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Setores    = 'PCP/MNT'
 			::Descricao  = "Empenho item (tabela SD4) relacionado a OP/OS inexistente ou ja encerrada."
 			::Sugestao   = "Execute rotina de 'Refaz acumulados'; Verifique necessidade de ajustar o campo D4_QUANT manualmente."
-			::ViaBatch   = .T.
 			::Query := " SELECT SD4.D4_FILIAL,"
 			::Query +=        " SD4.D4_COD,"
 			::Query +=        " SB1.B1_DESC,"
@@ -3102,6 +3101,33 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=                       " AND SC2.C2_NUM + SC2.C2_ITEM + SC2.C2_SEQUEN + SC2.C2_ITEMGRD = SD4.D4_OP"
 			::Query +=                       " AND SC2.C2_DATRF = '')"
 
+
+		case ::Numero == 84
+			::Setores    = 'CUS/CTB/INF'
+			::Descricao  = "Inconsistencia virada saldos estoque"
+			::Sugestao   = "Revise se a virada de saldos foi finalizada corretamente."
+			::GrupoPerg = "U_VALID007"
+			::ValidPerg (_lDefault)
+			::Query := ""
+			::Query += " WITH C AS ("
+			::Query += " SELECT CASE WHEN MV_ULMES != dbo.VA_DTOC(ULT_FECHTO_SB9) THEN 'PARAMETRO MV_ULMES UNCONSISTENTE COM A TABELA SB9'"
+			::Query +=             " ELSE CASE WHEN ULT_FECHTO_SBJ != '' AND ULT_FECHTO_SBJ != ULT_FECHTO_SB9 THEN 'ULTIMO BJ_DATA INCONSISTENTE COM ULTIMO B9_DATA'"
+			::Query +=                 " ELSE CASE WHEN ULT_FECHTO_SBK != '' AND ULT_FECHTO_SBK != ULT_FECHTO_SB9 THEN 'ULTIMO BK_DATA INCONSISTENTE COM ULTIMO B9_DATA'"
+			::Query +=                 " ELSE ''"
+			::Query +=                 " END"
+			::Query +=             " END"
+			::Query +=         " END AS PROBLEMA"
+			::Query +=     " ,*"
+			::Query +=  " FROM VA_VSTATUS_CUSTO_MEDIO"
+			::Query += " WHERE EMPRESA = '" + cEmpAnt + "'"
+			::Query +=   " AND FILIAL  BETWEEN '" + ::Param02 + "' AND '" + ::Param03 + "'"
+			::Query += " )"
+			::Query += " SELECT *"
+			::Query += " FROM C"
+			if ::Param01 == 1
+				::Query += " WHERE PROBLEMA != ''"
+			endif
+			::Query += " ORDER BY EMPRESA, FILIAL"
 
 		otherwise
 			::UltMsg = "Verificacao numero " + cvaltochar (::Numero) + " nao definida."
@@ -3216,9 +3242,7 @@ METHOD ValidPerg (_lDefault) Class ClsVerif
 				::Param02 = cFilAnt  // Deixa um valor default para poder gerar a query inicial.
 				::Param03 = cFilAnt  // Deixa um valor default para poder gerar a query inicial.
 				::Param04 = '30 '  // Deixa um valor default para poder gerar a query inicial.
-			//	::Param05 = '028'  // Deixa um valor default para poder gerar a query inicial.
 				::Param05 = '028/057/128'  // Deixa um valor default para poder gerar a query inicial.
-			//	::Param06 = '077'  // Deixa um valor default para poder gerar a query inicial.
 				::Param06 = '077/188/107/192'  // Deixa um valor default para poder gerar a query inicial.
 			endif
 
@@ -3233,6 +3257,17 @@ METHOD ValidPerg (_lDefault) Class ClsVerif
 				::Param03 = 'z'  // Deixa um valor default para poder gerar a query inicial.
 			endif	
 				
+		case ::GrupoPerg == "U_VALID007"
+			//                     PERGUNT                           TIPO TAM DEC VALID F3        Opcoes                               Help
+			aadd (_aRegsPerg, {01, "Mostrar apenas os problemas?  ", "C", 1,  0,  "",   "      ", {'Apenas problemas', 'Tudo'},        ""})
+			aadd (_aRegsPerg, {02, "Filial inicial                ", "C", 2,  0,  "",   "SM0   ", {},                                  ""})
+			aadd (_aRegsPerg, {03, "Filial final                  ", "C", 2,  0,  "",   "SM0   ", {},                                  ""})
+			if _lDefault
+				::Param01 = 1  // Deixa um valor default para poder gerar a query inicial.
+				::Param02 = cFilAnt  // Deixa um valor default para poder gerar a query inicial.
+				::Param03 = cFilAnt  // Deixa um valor default para poder gerar a query inicial.
+			endif	
+
 		case ::GrupoPerg == "U_VALID046"
 			//                     PERGUNT                           TIPO TAM DEC VALID F3        Opcoes                               Help
 			aadd (_aRegsPerg, {01, "Data de  ", "D", 8,  0,  "",   "      ", {},                                  	""})
@@ -3242,6 +3277,7 @@ METHOD ValidPerg (_lDefault) Class ClsVerif
 			::Param01 = stod (::MesAntEstq + '01') - 1  		// Deixa um valor default para poder gerar a query inicial.
 			::Param02 = lastday (stod (::MesAntEstq + '01'))    // Deixa um valor default para poder gerar a query inicial.
 			::Param03 = '51'
+
 		case ::GrupoPerg == "U_VALID056"
 			//                     PERGUNT                           TIPO TAM DEC VALID F3        Opcoes                               Help
 			aadd (_aRegsPerg, {01, "Almoxarifado simbólico ", "C", 2,  0,  "",   "      ", {},                                  	""})
