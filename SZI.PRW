@@ -60,7 +60,7 @@
 // 14/09/2021 - Robert  - Tratamentos para campo ZI_VCTOFOR (GLPI 10803).
 // 16/09/2021 - Robert  - Criado submenu para chamar parametros de rotinas do financeiro (GLPI 10502).
 //                      - Eliminado parametro 'contabiliza online' (passa a ler de cada rotina financeira)
-//
+// 27/02/2022 - Robert  - Adicionada coluna HIST na consulta de titulos agrupados numa fatura (GLPI 11678)
 
 #include "colors.ch"
 #Include "Protheus.ch"
@@ -360,24 +360,29 @@ User Function SZIR (_nQual)
 			_sQuery += " 	, 0) AS E2_VALOR"
 			_sQuery += "    ,E2_SALDO"
 			_sQuery += "    ,E2_FATURA"
+			_sQuery +=    " ,E2_HIST"
 			_sQuery += " FROM " + RetSQLName ("SE2") + " AS SE2 "
 			_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
 			_sQuery += " AND SE2.E2_FILIAL   = '" + szi -> zi_filial  + "'" 
 			_sQuery += " AND SE2.E2_FORNECE  = '" + szi -> zi_assoc   + "'"
 			_sQuery += " AND SE2.E2_LOJA     = '" + szi -> zi_lojasso + "'"
 			_sQuery += " AND SE2.E2_FATURA   = '" + szi -> zi_doc     + "'"
+			_sQuery += " ORDER BY E2_PREFIXO, E2_NUM"
+			U_Log2 ('debug', '[' + procname () + ']' + _sQuery)
 			_aDados := U_Qry2Array(_sQuery)
 			
 			if len(_aDados) > 0 
 				_aCols = {}
-				aadd (_aCols, {1, "PREFIXO"       	   ,  30,  "@!"})
-				aadd (_aCols, {2, "NUMERO"         	   ,  50,  "@!"})
-				aadd (_aCols, {3, "PARCELA"            ,  20,  "@!"})
-				aadd (_aCols, {4, "TIPO"               ,  20,  "@!"})
-				aadd (_aCols, {5, "EMISSAO"        	   ,  30,  "@D"})
-				aadd (_aCols, {6, "VENCIMENTO"         ,  30,  "@D"})
-				aadd (_aCols, {7, "VALOR"              ,  50,  "@E 999,999.99"})
-				aadd (_aCols, {8, "SALDO"              ,  50,  "@E 999,999.99"})
+				aadd (_aCols, {1,  "PREFIXO"   ,  30,  "@!"})
+				aadd (_aCols, {2,  "NUMERO"    ,  50,  "@!"})
+				aadd (_aCols, {3,  "PARCELA"   ,  20,  "@!"})
+				aadd (_aCols, {4,  "TIPO"      ,  20,  "@!"})
+				aadd (_aCols, {5,  "EMISSAO"   ,  30,  "@D"})
+				aadd (_aCols, {6,  "VENCIMENTO",  30,  "@D"})
+				aadd (_aCols, {7,  "VALOR"     ,  50,  "@E 999,999.99"})
+				aadd (_aCols, {8,  "SALDO"     ,  50,  "@E 999,999.99"})
+				aadd (_aCols, {9,  "FATURA"    ,  40,  ""})
+				aadd (_aCols, {10, "HIST"      ,  140, ""})
 				U_F3Array (_aDados, "Titulos agrupados na fatura " + szi -> zi_doc , _aCols, oMainWnd:nClientWidth - 50, NIL, "" )
 			else
 				u_help ("Nao foram encontrados titulos relacionados a essa fatura.")

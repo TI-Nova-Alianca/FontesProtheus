@@ -18,6 +18,7 @@
 // 24/07/2020 - Robert - Verifica se existem faturas com NOTFAT (ficariam fora do processo) e confirma com o usuario.
 //                     - Inseridas tags para catalogacao de fontes
 // 29/03/2021 - Robert - Gravacao atributo :Safra na conta corrente (GLPI 9592)
+// 26/02/2022 - Robert - Gravacao do campo E2_VASAFRA (GLPI 11678)
 //
 
 // Tags para automatizar catalogo de customizacoes:
@@ -252,6 +253,7 @@ static function _Gera ()
 					if dbseek(xfilial ("SE2") + '30 ' + _wnumero)
 						reclock("SE2", .F.)
 						SE2->E2_HIST := 'FAT.PAG.SAFRA ' + _sSafra // Quando juntava parcela A com B dava confusao --->  + '(' + SE2 -> E2_PARCELA + ')'
+						SE2->E2_vaSafra = _sSafra
 						MsUnLock()
 						_nTotGer += se2 -> e2_valor
 						_CriaSZI (_sSafra)

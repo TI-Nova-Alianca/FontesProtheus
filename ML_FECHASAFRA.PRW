@@ -35,6 +35,8 @@
 //                      - Novos parametros metodo ClsAssoc:FechSafra()
 // 28/07/2021 - Sandra  - Incluso rodapé com nomenclatura 'Documento Sigiloso" GLPI 10139
 // 30/07/2021 - Robert  - Valores efetivos por variedade, na opcao resumido, nao tinha coluna de valor unitario (GLPI 10625)
+// 27/02/2022 - Robert  - Melhoria coluna historico nas previsoes de pagamento (GLPI 11678)
+//
 
 #include "protheus.ch"
 #include "tbiconn.ch"
@@ -1548,6 +1550,7 @@ static function _Modelo3 (_lSohCompr)
 	local _nLctoCC   := 0
 	local _sMesPagto := ''
 	local _nTotDesc  := 0
+	local _sFtPgHist := ''
 	private _sMascPeso := "@E 9,999,999,999"
 	private _sMascVUni := "@E 9,999.9999"
 	private _sMascVTot := "@E 9,999,999,999.99"
@@ -1622,39 +1625,9 @@ static function _Modelo3 (_lSohCompr)
 		li += 2
 
 		// Verifica se tem este tipo de nota no XML
-/* glpi 9572: mudar de 'grau medio' para 'graus abertos'
-		_ValType := _RetType('_oXMLFech:_assocFechSafra:_resumoVariedade:_resumoVariedadeItem')
-		u_log2 ('debug', _ValType)
-		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 nota + 1 linha de totais)
-			@ li, 0 psay 'Producao:              Codigo          Variedade                           Kg total  Grau medio   Vlr.medio        Vlr.total'
-			li ++
-			for _nVaried = 1 to len (_oXMLFech:_assocFechSafra:_resumoVariedade:_resumoVariedadeItem)
-				If li > _nMaxLin - 4
-					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-				endif
-				if _oXMLFech:_assocFechSafra:_resumoVariedade:_resumoVariedadeItem[_nVaried]:_varied:TEXT != 'TOTAIS'
-					_sLinImp = space (23)
-					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_resumoVariedade:_resumoVariedadeItem[_nVaried]:_varied:TEXT, 15) + ' '
-					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_resumoVariedade:_resumoVariedadeItem[_nVaried]:_desc:TEXT, 30) + ' '
-					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVariedade:_resumoVariedadeItem[_nVaried]:_peso:TEXT), _sMascPeso) + '       '
-					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVariedade:_resumoVariedadeItem[_nVaried]:_grauMedio:TEXT), '@E 999.9') + '  '
-					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVariedade:_resumoVariedadeItem[_nVaried]:_valMedio:TEXT), _sMascVUni) + ' '
-					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVariedade:_resumoVariedadeItem[_nVaried]:_valTotal:TEXT), _sMascVTot)
-					@ li, 0 psay _sLinImp
-					li ++
-				else
-					@ li, 0 psay '                                                                     --------------                            -------------'
-					li ++
-					@ li, 0 psay '                                                                      ' + transform (val (_oXMLFech:_assocFechSafra:_resumoVariedade:_resumoVariedadeItem[_nVaried]:_peso:TEXT), _sMascPeso) + '                         ' + transform (val (_oXMLFech:_assocFechSafra:_resumoVariedade:_resumoVariedadeItem[_nVaried]:_valTotal:TEXT), _sMascVTot)
-					li += 2
-				endif
-			next
-		endif
-*/
 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem')
 		u_log2 ('debug', _ValType)
 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 nota + 1 linha de totais)
-//			@ li, 0 psay 'Producao:              Codigo          Variedade                       Grau  Clas     Kg total        Vlr.total'
 			@ li, 0 psay 'Producao:              Codigo          Variedade                       Grau  Clas     Kg total     Vlr.unit.        Vlr.total'
 			li ++
 			for _nVaried = 1 to len (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem)
@@ -1671,17 +1644,13 @@ static function _Modelo3 (_lSohCompr)
 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_grau:TEXT), '@E 999.9') + '  '
 					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_clas:TEXT, 2) + '  '
 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_peso:TEXT), _sMascPeso) + '    '
-
 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_valTotal:TEXT) / val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_peso:TEXT), _sMascVUni) + ' '
-
 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_valTotal:TEXT), _sMascVTot)
 					@ li, 0 psay _sLinImp
 					li ++
 				else
-
 					@ li, 0 psay '                                                                                --------------                  -------------'
 					li ++
-			//		@ li, 0 psay '                                                                                 ' + transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_peso:TEXT), _sMascPeso) + ' ' + transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_valTotal:TEXT), _sMascVTot)
 					@ li, 0 psay '                                                                                 ' + transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_peso:TEXT), _sMascPeso) + '               ' + transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_valTotal:TEXT), _sMascVTot)
 					li += 2
 				endif
@@ -1699,7 +1668,7 @@ static function _Modelo3 (_lSohCompr)
 
 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 			Endif
-			@li, 0 PSAY 'Resumo pagamento:      Mes/ano                 Valor             Saldo'
+			@li, 0 PSAY 'Resumo pagamento:      Mes/ano                 Valor             Saldo  Obs.'
 			li ++
 			// Monta array resumida, acumulando os pagamentos de cada mes. Nao posso aproveitar a linha
 			// de totais que vem no XML por que vou agrupar as faturas por mes.
@@ -1709,11 +1678,18 @@ static function _Modelo3 (_lSohCompr)
 					_sMesPagto = substr (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_vencto:TEXT, 4)
 					_nResPag = ascan (_aResPag, {|_aVal| _aVal [1] == _sMesPagto})
 					if _nResPag == 0
-						aadd (_aResPag, {_sMesPagto, 0, 0})
+						aadd (_aResPag, {_sMesPagto, 0, 0, ''})
 						_nResPag = len (_aResPag)
 					endif
 					_aResPag [_nResPag, 2] += val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_valor:TEXT)
 					_aResPag [_nResPag, 3] += val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_saldo:TEXT)
+					
+					// Concatena historicos para ajudar a explicar, por exemplo, casos em que tenho complemento gerado
+					// em forma de 'premiacao de qualidade' e, portanto, nao consta na lista das notas de producao.
+					_sFtPgHist = alltrim (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_hist:TEXT)
+					if ! _sFtPgHist $ _aResPag [_nResPag, 4]
+						_aResPag [_nResPag, 4] += _sFtPgHist + '; '
+					endif
 				endif
 			next
 
@@ -1721,15 +1697,16 @@ static function _Modelo3 (_lSohCompr)
 			_aTotResP = {0, 0}
 			for _nResPag = 1 to len (_aResPag)
 				If li > _nMaxLin - 4
-				IF m_pag >1
-					_roda()
-				endif
+					IF m_pag >1
+						_roda()
+					endif
 					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 				endif
 				_sLinImp = space (23)
 				_sLinImp += _aResPag [_nResPag, 1] + '      '
 				_sLinImp += transform (_aResPag [_nResPag, 2], _sMascVTot) + '  '
-				_sLinImp += transform (_aResPag [_nResPag, 3], _sMascVTot)
+				_sLinImp += transform (_aResPag [_nResPag, 3], _sMascVTot) + '  '
+				_sLinImp += left (_aResPag [_nResPag, 4], 148)
 				_aTotResP [1] += _aResPag [_nResPag, 2]
 				_aTotResP [2] += _aResPag [_nResPag, 3]
 				@ li, 0 psay _sLinImp
