@@ -7,6 +7,7 @@
 // Historico de alteracoes:
 // 30/10/2017 - Robert - Chama rotina de selecao de frete somente para frete tipo CIF.
 // 18/07/2018 - Robert - Parametro de 'Com tela'.
+// 01/03/2022 - Robert - Removido nome fixo do arquivo de log.
 //
 
 // --------------------------------------------------------------------------
@@ -18,10 +19,10 @@ user function BatPFret (_sCliIni, _sCliFim, _lComTela)
 	local _nMediaCli := 0
 	local _sAliasQ   := ""
 	local _sMsg      := ""
-	local _sArqLog2  := iif (type ("_sArqLog") == "C", _sArqLog, "")
-	_sArqLog := U_NomeLog (.t., .f.)
+//	local _sArqLog2  := iif (type ("_sArqLog") == "C", _sArqLog, "")
+//	_sArqLog := U_NomeLog (.t., .f.)
 
-	u_logIni ()
+//	u_logIni ()
 
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
@@ -110,7 +111,7 @@ user function BatPFret (_sCliIni, _sCliFim, _lComTela)
 
 				if sa1 -> a1_vapfre != (_sAliasQ) -> P_CLI_12M
 					_sMsg = 'Atualizando media frete cliente ' + (_sAliasQ) -> d2_cliente + '/' + (_sAliasQ) -> d2_loja + ' de ' + cvaltochar (sa1 -> a1_vapfre) + ' para ' + cvaltochar (_nMediaCli) + '  (media 6 meses = ' + cvaltochar ((_sAliasQ) -> P_CLI_6M) + '   media 12 meses = ' + cvaltochar ((_sAliasQ) -> P_CLI_12M) + ')'
-					u_log (_sMsg)
+					u_log2 ('info', _sMsg)
 					if _lComTela
 						u_help (_sMsg)
 					endif
@@ -128,6 +129,6 @@ user function BatPFret (_sCliIni, _sCliFim, _lComTela)
 		enddo
 	enddo
 	(_sAliasQ) -> (dbclosearea ())
-	u_logFim ()
-	_sArqLog = _sArqLog2
+//	u_logFim ()
+//	_sArqLog = _sArqLog2
 return

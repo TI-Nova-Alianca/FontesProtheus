@@ -258,7 +258,7 @@ User Function MA261LIN ()
 
 	// Valida Almox 11
 	if _lRet
-		if _sAlmDest == '11'
+		if _sAlmDest == '11' .and. ! _lClsTrEst
 			u_help("Não é permitida a utilização do almoxarifado 11!")
 			_lRet := .F.
 		endif

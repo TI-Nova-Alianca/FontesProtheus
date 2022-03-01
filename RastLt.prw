@@ -24,6 +24,7 @@
 //                     - Limite de tamanho para a string de retorno aumentado de 30000 para 50000 caracteres.
 //                     - Passa a buscar transf. entre filiais na view VA_VTRANSF_ENTRE_FILIAIS (GLPI 11620)
 // 23/02/2022 - Robert - Lista de cargas de safra (usada pelo VA_XLS58) passa a incluir filial e safra (GLPI 11664)
+// 01/03/2022 - Robert - Comentariados logs das queries.
 //
 
 // --------------------------------------------------------------------------
@@ -116,7 +117,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_oSQL:_sQuery +=   " AND SD3.D3_OP      like '" + _sLote + "%'"
 					endif
 					_oSQL:_sQuery += " GROUP BY D3_OP, D3_UM"
-					_oSQL:Log ()
+					// _oSQL:Log ()
 					_aOP := aclone (_oSQL:Qry2Array (.F., .F.))
 					for _nOP = 1 to len (_aOP)
 
@@ -146,7 +147,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_oSQL:_sQuery +=   " AND SD3.D3_OP      = '" + _aOP [_nOP, 1] + "'"
 						_oSQL:_sQuery += " GROUP BY D3_COD, D3_LOTECTL, D3_UM, B1_DESC"
 						_oSQL:_sQuery += " ORDER BY D3_COD, D3_LOTECTL"
-						_oSQL:Log ()
+						// _oSQL:Log ()
 						_aCons := aclone (_oSQL:Qry2Array (.F., .F.))
 						for _nCons = 1 to len (_aCons)
 
@@ -206,7 +207,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 					_oSQL:_sQuery +=   " AND SD3.D3_LOTECTL  = '" + _sLote + "'"
 					_oSQL:_sQuery += " 	GROUP BY CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL"
 					_oSQL:_sQuery += " 	ORDER BY CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL"
-					_oSQL:Log ()
+					// _oSQL:Log ()
 					_aEntTrLt = aclone (_oSQL:Qry2Array (.F., .F.))
 					dbselectarea ("SD3")  // Por algum motivo estah chegando aqui sem nenhum 'alias'.
 					for _nTrLt = 1 to len (_aEntTrLt)
@@ -252,7 +253,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 					_oSQL:_sQuery +=   " AND SD3.D3_COD      = '" + _sProduto + "'"
 					_oSQL:_sQuery +=   " AND SD3.D3_LOTECTL  = '" + _sLote + "'"
 					_oSQL:_sQuery += " 	ORDER BY D3_DOC"
-					_oSQL:Log ()
+					// _oSQL:Log ()
 					_sAliasQ = _oSQL:Qry2Trb (.F.)
 					do while ! (_sAliasQ) -> (eof ())
 
@@ -306,7 +307,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 					_oSQL:_sQuery +=   " AND SD1.D1_FORNECE NOT IN ('000021','001094','001369','003150','003402','003114','003209','003111','003108','003266','003195','004565','004734')"
 
 				//	_oSQL:_sQuery += " GROUP BY D1_DOC, D1_LOTEFOR, D1_UM, CASE WHEN D1_TIPO IN ('D', 'B') THEN A1_NOME ELSE A2_NOME END, D1_SERIE, D1_FORNECE, D1_LOJA"
-					_oSQL:Log ()
+					// _oSQL:Log ()
 					_aSD1 = aclone (_oSQL:Qry2Array (.F., .F.))
 					for _nSD1 = 1 to len (_aSD1)
 
@@ -378,7 +379,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 					_oSQL:_sQuery +=   " AND D1_LOTECTL = '" + _sLote    + "'"
 					_oSQL:_sQuery +=   " AND D1_QUANT   > 0"
 					_oSQL:_sQuery += " GROUP BY D1_DOC, D2_LOTECTL, FILORIG"
-					_oSQL:Log ()
+					// _oSQL:Log ()
 					_aSD1 = aclone (_oSQL:Qry2Array (.F., .F.))
 					for _nSD1 = 1 to len (_aSD1)
 
@@ -449,7 +450,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 					_oSQL:_sQuery +=   " AND SD3.D3_COD     = '" + _sProduto + "'"
 					_oSQL:_sQuery +=   " AND SD3.D3_LOTECTL = '" + _sLote + "'"
 					_oSQL:_sQuery += " GROUP BY D3_OP, D3_UM, C2_PRODUTO, B1_DESC"
-					_oSQL:Log ()
+					// _oSQL:Log ()
 					_aReqOP := aclone (_oSQL:Qry2Array (.F., .F.))
 					for _nReqOP = 1 to len (_aReqOP)
 
@@ -500,7 +501,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 					_oSQL:_sQuery +=   " AND SD2.D2_LOTECTL = '" + _sLote + "'"
 					_oSQL:_sQuery +=   " AND SD2.D2_QUANT   > 0"
 					_oSQL:_sQuery +=   " AND SD2.D2_CLIENTE NOT IN ('002940','006164','007811','011863','012553','012717','012558','012675','012542','012528','012707','012855','015446','015165')"
-					_oSQL:Log ()
+					// _oSQL:Log ()
 					_aSD2 = aclone (_oSQL:Qry2Array (.F., .F.))
 					for _nSD2 = 1 to len (_aSD2)
 
@@ -533,7 +534,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 					_oSQL:_sQuery +=   " AND D2_LOTECTL = '" + _sLote    + "'"
 					_oSQL:_sQuery +=   " AND D1_QUANT   > 0"
 					_oSQL:_sQuery += " GROUP BY D2_DOC, FILDEST, D1_LOTECTL"
-					_oSQL:Log ()
+					// _oSQL:Log ()
 					_aSD2 = aclone (_oSQL:Qry2Array (.F., .F.))
 					for _nSD2 = 1 to len (_aSD2)
 
@@ -585,7 +586,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 					_oSQL:_sQuery +=   " AND SD3.D3_LOTECTL  = '" + _sLote + "'"
 					_oSQL:_sQuery += " 	GROUP BY CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL"
 					_oSQL:_sQuery += " 	ORDER BY CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL"
-					_oSQL:Log ()
+					// _oSQL:Log ()
 					_aSaiTrLt = aclone (_oSQL:Qry2Array (.F., .F.))
 					for _nTrLt = 1 to len (_aSaiTrLt)
 
