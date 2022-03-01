@@ -12,6 +12,7 @@
 // 06/06/2018 - Robert - Envio da tabela 46 do ZX5.
 // 19/06/2018 - Robert - Envio da tabela 46 do ZX5 direcionada para codigo 8111 do Mercanet (estava indo para 8101).
 // 22/06/2020 - Robert - Melhorada gravacao de logs.
+// 01/03/2021 - Robert - Envia SB1 somente se for B1_TIPO = 'PA' (GLPI 11687)
 //
 
 // --------------------------------------------------------------------------
@@ -45,8 +46,12 @@ user function AtuMerc (_sAlias, _nRecno)
 				_nTipo = 8020
 				_sChave1 = sa4 -> a4_cod
 			case _sAlias == 'SB1'
-				_nTipo = 40
-				_sChave1 = sb1 -> b1_cod
+				if sb1 -> b1_tipo == 'PA'  // A principio nao temos intencao de vender outros tipos de itens.
+					_nTipo = 40
+					_sChave1 = sb1 -> b1_cod
+				else
+					_lContinua = .F.
+				endif
 			case _sAlias == 'SE4'
 				_nTipo = 8012
 				_sChave1 = se4 -> e4_codigo

@@ -1,0 +1,75 @@
+// Programa:   BatEMerc
+// Autor:      Robert Koch
+// Data:       01/03/2022
+// Descricao:  Envia diversos cadastros para o Mercanet, independente de terrm tido alteracao (GLPI 11687)
+//             Isso para evitar que algum registro fique desatualizado por ter sido alterado via APSDU por exemplo.
+//             Criado para ser executado via batch (semanalmente, por exemplo)
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #batch
+// #Descricao         #Envia diversos cadastros para o Mercanet, independente de terrm tido alteracao
+// #PalavasChave      #mercanet
+// #TabelasPrincipais #SB1 #SA1 #SA2 #SF4 #SB5 #SA3
+// #Modulos           #FAT
+
+// Historico de alteracoes:
+//
+
+// --------------------------------------------------------------------------
+user function BatEMerc (_sAlias)
+
+	if empty (_sAlias) .or. _sAlias == 'DA0'
+		da0 -> (dbsetorder (1))
+		da0 -> (dbgotop ())
+		do while ! da0 -> (eof ())
+			U_AtuMerc ("DA0", da0 -> (recno ()))
+			da0 -> (dbskip ())
+		enddo
+	endif
+
+	if empty (_sAlias) .or. _sAlias == 'SB1'
+		sb1 -> (dbsetorder (1))
+		sb1 -> (dbgotop ())
+		do while ! sb1 -> (eof ())
+			U_AtuMerc ("SB1", sb1 -> (recno ()))
+			sb1 -> (dbskip ())
+		enddo
+	endif
+
+	if empty (_sAlias) .or. _sAlias == 'SA1'
+		sa1 -> (dbsetorder (1))
+		sa1 -> (dbgotop ())
+		do while ! sa1 -> (eof ())
+			U_AtuMerc ("SA1", sa1 -> (recno ()))
+			sa1 -> (dbskip ())
+		enddo
+	endif
+
+	if empty (_sAlias) .or. _sAlias == 'SA3'
+		sa3 -> (dbsetorder (1))
+		sa3 -> (dbgotop ())
+		do while ! sa3 -> (eof ())
+			U_AtuMerc ("SA3", sa3 -> (recno ()))
+			sa3 -> (dbskip ())
+		enddo
+	endif
+
+	if empty (_sAlias) .or. _sAlias == 'SE4'
+		se4 -> (dbsetorder (1))
+		se4 -> (dbgotop ())
+		do while ! se4 -> (eof ())
+			U_AtuMerc ("SE4", se4 -> (recno ()))
+			se4 -> (dbskip ())
+		enddo
+	endif
+
+	if empty (_sAlias) .or. _sAlias == 'SF4'
+		sf4 -> (dbsetorder (1))
+		sf4 -> (dbgotop ())
+		do while ! sf4 -> (eof ())
+			U_AtuMerc ("SF4", sf4 -> (recno ()))
+			sf4 -> (dbskip ())
+		enddo
+	endif
+
+return
