@@ -83,6 +83,7 @@
 // 20/02/2022 - Robert  - Novas tags de 'carga compartilhada' na geracao de cargas de safra (GLPI 11633).
 //                      - Variavel _sErros renomeada para _sErroWS
 //                      - Funcao _ExtraiTag() migrada para U_ExTagXML().
+// 02/03/3033 - Robert  - Criada acao EntregaFaturamento (GLPI 11698).
 //
 
 // --------------------------------------------------------------------------------------------------------
@@ -225,6 +226,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 				_ExecCapAssoc ()
 			case _sAcao == 'AgendaEntregaFaturamento'
 				_AgEntFat ()
+			case _sAcao == 'EntregaFaturamento'
+				_DtEntFat ()
 			case _sAcao == 'ApontarProducao'
 				_ApontProd ()
 			case _sAcao == 'BuscaPedidosBloqueados'
@@ -2104,6 +2107,31 @@ Static Function _EnvMargem ()
 	_sMsgRetWS := _XmlRet
 	u_logFim ()
 Return
+
+
+// --------------------------------------------------------------------------
+// Grava data de entrega da nota de venda.
+// A ideia eh importar do Entregou, mas alguns casos podem precisar atualizacao manual.
+Static function _DtEntFat ()
+	local _sNF     := ''
+	local _sSerie  := ''
+	local _dDtEntr := ctod ('')
+
+	if empty (_sErroWS) ; _sNF     = _ExtraiTag ("_oXML:_WSAlianca:_NF", .T., .F.) ; endif
+	if empty (_sErroWS) ; _sSerie  = _ExtraiTag ("_oXML:_WSAlianca:_Serie", .T., .F.) ; endif
+	if empty (_sErroWS) ; _dDtEntr = stod (_ExtraiTag ("_oXML:_WSAlianca:_DtEntrega", .T., .T.)) ; endif
+	if empty (_sErroWS)
+		sf2 -> (dbsetorder (1))
+		if ! sf2 -> (dbseek (xfilial ("SF2") + _sNf + _sSerie, .F.))
+			_sErroWS += "NF/serie " + _sNF + '/' + _sSerie + ' de saida nao localizada.'
+		else
+			reclock ("SF2", .F.)
+			sf2 -> f2_DtEntr = _dDtEntr
+			msunlock ()
+			_sMsgRetWS = 'Registro atualizado.' 
+		endif
+	endif
+return
 
 
 // --------------------------------------------------------------------------
