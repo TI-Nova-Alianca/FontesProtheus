@@ -18,6 +18,7 @@
 // 20/01/2021 - Robert - Melhorada exportacao: transforma tudo em array e lista todas as linhas num unico processo fopnen...fclose
 // 01/02/2021 - Robert - Aumentado limite de log de texto, de 2000 para 20000 caracteres.
 // 29/03/2021 - Robert - Iniciado tratamento para objetos JSON.
+// 01/03/2022 - Robert - Renomeia o arquivo quando ficar muito grande (inicialmente 10 MB).
 //
 
 // --------------------------------------------------------------------------
@@ -28,6 +29,8 @@ user function Log2 (_sTipo, _xDadoOri, _xExtra)
 	local _sDataLog  := dtos (date ())
 	local _aTxtLog   := {}
 	local _nTxtLog   := 0
+	local _nTamArq   := 0
+	local _sSeqNome  := ''
 
 	// Prepara 'tags' para o inicio de linha
 	_sTipo = cvaltochar (_sTipo)
@@ -61,9 +64,27 @@ user function Log2 (_sTipo, _xDadoOri, _xExtra)
 	// Grava log em diretorio especifico. Se ainda nao existir, cria-o.
 	_sDirLogs = '\logs\'
 	makedir (_sDirLogs)
+
+	// O programa chamador pode especificar o nome para o arquivo, se quiser.
 	if type ("_sArqLog") != "C"
-		_sArqLog = alltrim (funname (1)) + "_" + iif (type ("cUserName") == "C", alltrim (cUserName), "") + "_" + dtos (date ()) + ".log"
+	//	_sArqLog = alltrim (funname (1)) + "_" + iif (type ("cUserName") == "C", alltrim (cUserName), "") + "_" + dtos (date ()) + ".log"
+		_sArqLog = alltrim (funname (1)) + "_" + iif (type ("cUserName") == "C", alltrim (cUserName), "") + ".log"
 	endif
+
+	// Se o arquivo jah existir e for muito grande, renomeia-o e gera um novo
+	if file (_sDirLogs + _sArqLog)
+		_nTamArq = directory (_sDirLogs + _sArqLog) [1, 2]
+	//	u_log ('tam.arq.=',_nTamArq)
+		if _nTamArq > 10000000  // Inicialmente acho que 10 mega tah bom...
+			_sSeqNome = '001'
+			do while file (_sDirLogs + _sArqLog + _sSeqNome)
+		//		u_log ('seq:', _sSeqNome)
+				_sSeqNome = soma1 (_sSeqNome)
+			enddo
+			fRename (_sDirLogs + _sArqLog, _sDirLogs + _sArqLog + _sSeqNome, NIL, .f.)
+		endif
+	endif
+
 	if file (_sDirLogs + _sArqLog)
 		_nHdl = fopen(_sDirLogs + _sArqLog, 1)
 		fseek (_nHdl, 0, 2)  // Encontra final do arquivo

@@ -44,7 +44,7 @@ user function robert ()
 		return
 	endif
 
-	private _sArqLog := procname () + "_" + alltrim (cUserName) + cEmpAnt + ".log"
+	private _sArqLog := procname () + "_" + alltrim (cUserName) + ".log"
 	delete file ('\logs\' + _sArqLog)
 	if ! empty (GetSrvProfString ("IXBLOG", ""))
 		u_help ("Parametro IXBLOG ativo no appserver.ini")
@@ -89,9 +89,10 @@ static function _AndaLogo ()
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
-//	u_help ('Nada definido.')
-//return
+	u_help ('Nada definido.')
+return
 
+/*
 	// Ajusta cadastro produtos em lote
 	sb1 -> (dbsetorder (1))
 	sb5 -> (dbsetorder (1))
@@ -119,10 +120,10 @@ static function _AndaLogo ()
 //					reclock ("SB1", .f.)
 //					sb1 -> B1_ipi = m->b1_ipi
 //					msunlock ()
+//					U_AtuMerc ("SB1", sb1 -> (recno ()))
 					//reclock ("SB5", .f.)
 					//sb5->b5_vasisde = m->b5_vasisde
 					//msunlock ()
-					
 					// Cai fora no primeiro, para testes.
 					//exit
 				endif
@@ -155,6 +156,7 @@ return
 				reclock ("SYD", .f.)
 				syd -> yd_per_ipi = m->yd_per_ipi
 				msunlock ()
+				U_AtuMerc ("SYD", syd -> (recno ()))
 				
 				// Cai fora no primeiro, para testes.
 				//exit
@@ -474,6 +476,7 @@ return
 			reclock ("SA3", .f.)
 			sa3->A3_indeniz = m->A3_INDENIZ
 			msunlock ()
+			U_AtuMerc ("SA3", sa3 -> (recno ()))
 		endif
 		sa3 -> (dbskip ())
 	enddo
@@ -1202,6 +1205,7 @@ return
 		sa2 -> A2_TPESSOA = m->A2_TPESSOA
 		sa2 -> A2_TIPORUR = m->A2_TIPORUR
 		msunlock ()
+		U_AtuMerc ("SA2", sa2 -> (recno ()))
 		//exit
 	next
 
@@ -1227,6 +1231,7 @@ return
 			SF4->F4_ALSENAR = m->F4_ALSENAR
 			SF4->F4_BSRURAL = m->F4_BSRURAL
 			msunlock ()
+			U_AtuMerc ("SF4", sF4 -> (recno ()))
 		endif
 		sf4 -> (dbskip ())
 	enddo
@@ -1255,6 +1260,7 @@ return
 			sed->ED_BASEINS = m->ED_BASEINS
 			sed->ED_DEDINSS = m->ED_DEDINSS
 			msunlock ()
+			U_AtuMerc ("SED", sed -> (recno ()))
 		endif
 		sed -> (dbskip ())
 	enddo
@@ -3615,6 +3621,7 @@ return
 		reclock ("SA1", .f.)
 		sa1 -> a1_varege = m->a1_varege
 		msunlock ()
+		U_AtuMerc ("SA1", sa1 -> (recno ()))
 		//exit
 	next
 return
@@ -3652,6 +3659,7 @@ return
 					sb1 -> b1_codgtin = m->b1_codgtin
 					sb1 -> b1_codbar = m->b1_codbar
 					msunlock ()
+					U_AtuMerc ("SB1", sb1 -> (recno ()))
 					reclock ("SB5", .f.)
 					sb5 -> b5_2codbar = m->b5_2codbar
 					sb5 -> b5_convdip = m->b5_convdip
@@ -3699,6 +3707,7 @@ return
 						sb1 -> b1_codgtin = m->b1_codgtin
 						sb1 -> b1_codbar = m->b1_codbar
 						msunlock ()
+						U_AtuMerc ("SB1", sb1 -> (recno ()))
 						reclock ("SB5", .f.)
 						sb5 -> b5_2codbar = m->b5_2codbar
 						sb5 -> b5_convdip = m->b5_convdip

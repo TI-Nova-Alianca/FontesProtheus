@@ -30,6 +30,9 @@ User Function VA_GNF3 (_lAuto)
 		return
 	endif
 
+	u_help ('em 2021 usei TES que movimentava estoque. verificar!')
+	return
+
 	_ValidPerg()
 	Pergunte(cPerg,.F.)      // Pergunta no SX1
 
