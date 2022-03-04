@@ -41,6 +41,7 @@
 // 29/03/2021 - Robert - Novo parametro funcao VA_RusPP (GLPI 9592).
 // 07/05/2021 - Robert - Gravacao campo ZI_SAFRA (GLPI 9891).
 // 18/05/2021 - Robert - Melhorias diversas FUNRURAL e complemento safra 2021 (GLPI 9891 e 10007).
+// 04/03/2022 - Robert - Valida se o TES de complemento estah atualizando estoque (GLPI 11708).
 //
 
 #XTranslate .ItensProduto    => 1
@@ -674,6 +675,14 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 				_nQuant = 0
 				_nVlUni = 0
 				_nVlTot = round (_aItens [_nItem, .ItensValorTotal], 2)
+			endif
+
+			if _sTipoNota == 'C'
+				if fBuscaCpo ("SF4", 1, xfilial ("SF4") + _aItens [_nItem, .ItensTES], "F4_ESTOQUE") == 'S'
+					u_help ("Para notas de complemento, o TES (" + _aItens [_nItem, .ItensTES] + ") nao deve atualizar estoque, pois afeta o custo medio. Como eh comum gerarmos complemento depois que a uva nao tem mais estoque, usa-se uma funcao customizada para jogar o complemento de safra nos itens de granel.",, .t.)
+					_lContinua = .F.
+					exit
+				endif
 			endif
 
 			// Prepara array com o item para a nota

@@ -126,7 +126,9 @@
 // 08/04/2021 - Robert  - Desabilitado gatilho do C6_PRODUTO para C6_TES por que migramos para TES inteligente (GLPI 9784)
 // 23/04/2021 - Claudia - Ajustes para versão R25.
 // 31/08/2021 - Claudia - Desabilitada validacao do 'custo para transferencia' quando chamado a partir do MATA310. GLPI: 8077
+// 04/03/2022 - Robert  - Gatilho para campo ZZ9_SAFRA (GLPI 11708).
 //
+
 // ----------------------------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
 
@@ -688,6 +690,7 @@ user function VA_Gat (_sParCpo, _sParSeq)
 			endif
 			_xRet = Soma1 (_xRet)
 
+
 		case _sCampo $ "M->ZZ7_CONTAT/M->ZZ7_DATA" .and. _sCDomin == "ZZ7_SEQ"
 			// Se nao encontrar nada, deixa o valor pronto para retorno.
 			_xRet = 0
@@ -704,6 +707,21 @@ user function VA_Gat (_sParCpo, _sParSeq)
 				_xRet = strzero (0, tamsx3 ("ZZ7_SEQ")[1])
 			endif
 			_xRet = Soma1 (_xRet)
+
+
+		case _sCampo $ "M->ZZ9_SAFRA/" .and. _sCDomin == "ZZ9_PRE_NF"
+			_xRet = ''  // Se nao encontrar nada, deixa o valor pronto para retorno.
+			_sQuery := " select max (ZZ9_PRE_NF)"
+			_sQuery +=  " from " + RETSQLNAME ("ZZ9") + " ZZ9  "
+			_sQuery += " where ZZ9.D_E_L_E_T_ != '*'"
+			_sQuery +=   " and ZZ9.ZZ9_FILIAL = '" + xfilial ("ZZ9")  + "'"
+			_sQuery +=   " and ZZ9.ZZ9_SAFRA  = '" + M->ZZ9_SAFRA + "'"
+			_xRet = U_RetSQL (_sQuery)
+			if empty (_xRet)
+				_xRet = strzero (0, tamsx3 ("ZZ7_PRE_NF")[1])
+			endif
+			_xRet = soma1 (soma1 (soma1 (soma1 (soma1 (_xRet)))))
+
 
 		case _sCampo == "M->ZZT_MOTIVO" .and. _sCDomin == "ZZT_CARGA"
 			_xRet = ""
