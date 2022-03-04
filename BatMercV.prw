@@ -11,6 +11,9 @@
 //  #Modulos 		   #
 //
 // Historico de alteracoes:
+// 04/03/2022 - Sandra  - Alteração do grupo A10 para 134 GLPI 11712
+//						  U_ZZUNU ({'A10'}, "Verificações Mercanet - Clientes"
+//						  U_ZZUNU ({'A10'}, "Verificações Mercanet - Representantes"
 //
 // -------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -115,7 +118,7 @@ Static Function ClientesInativos()
 
 		_sMsg = _oSQL:Qry2HTM ("Clientes com status divergentes. Data de verificacao: " + dtoc(date()-1), _aCols, "", .F.)
 		u_log (_sMsg)
-		U_ZZUNU ({'A10'}, "Verificações Mercanet - Clientes", _sMsg, .F., cEmpAnt, cFilAnt, "") // CLientes
+		U_ZZUNU ({'134'}, "Verificações Mercanet - Clientes", _sMsg, .F., cEmpAnt, cFilAnt, "") // CLientes
 	endif
 Return
 //
@@ -171,7 +174,7 @@ Static Function RepInativos()
 
 		_sMsg = _oSQL:Qry2HTM ("Representantes com status divergentes. Data de verificacao: " + dtoc(date()-1), _aCols, "", .F.)
 		u_log (_sMsg)
-		U_ZZUNU ({'A10'}, "Verificações Mercanet - Representantes", _sMsg, .F., cEmpAnt, cFilAnt, "") // CLientes
+		U_ZZUNU ({'134'}, "Verificações Mercanet - Representantes", _sMsg, .F., cEmpAnt, cFilAnt, "") // CLientes
 	endif
 Return
 
