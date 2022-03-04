@@ -90,10 +90,36 @@ static function _AndaLogo ()
 	procregua (100)
 	incproc ()
 	u_help ('Nada definido.')
+//	u_BatDocCanc ('OC', 30)
 return
-
+/*
+	// Testes arvore de rastreabilidade
+	private _aLtXLS58 := {}  // Deixar PRIVATE para ser alimentada pelo U_RastLT().
+	//_sMapa := U_RastLT (cFilAnt, U_TamFixo ('3630', 15, ' '), '12101401', 0, NIL, 14660)  // item 2580 lote 12101401 transformado em 3630 (mesmo lote) em 28/01/2022 na filial 01.
+	//_sMapa := U_RastLT (cFilAnt, U_TamFixo ('1274', 15, ' '), 'AUTO009215', 0, NIL, 1)  // enzima (arvore grande)
+	// lado 1 do par --> _sMapa := U_RastLT ('01', U_TamFixo ('2444', 15, ' '), 'AUTO009238', 0, NIL, 24200)
+	// lado 2 do par --> _sMapa := U_RastLT ('09', U_TamFixo ('2444', 15, ' '), '4123', 0, NIL, 24200)
+	//_sMapa := U_RastLT (cFilAnt, U_TamFixo ('9959', 15, ' '), '2201028401', 0, NIL, 1)  // enzima (arvore grande)
+	_sMapa := U_RastLT (cFilAnt, U_TamFixo ('2776', 15, ' '), '11310701', 0, NIL, 1)  // gera mais de 15 niveis de rastro.
+	_sArq := 'c:\temp\rast.mm'
+	delete file (_sArq)
+	if file (_sArq)
+		_nHdl = fopen(_sArq, 1)
+	else
+		_nHdl = fcreate(_sArq, 0)
+	endif
+	fwrite (_nHdl, _sMapa)
+	fclose (_nHdl)
+	ShellExecute ("Open", _sArq, "", "", 1)
+	u_log (_aLtXLS58)
+	_oLtXLS58 := CLsAUtil ():New ()
+	_oLtXLS58:_aArray := aclone (_aLtXLS58)
+	U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (_oLtXLS58:TotCol (7)))
+return
+*/
 /*
 	// Ajusta cadastro produtos em lote
+	_sArqLog := 'GLPI11682_SYD_para_SB1.log'
 	sb1 -> (dbsetorder (1))
 	sb5 -> (dbsetorder (1))
 	syd -> (dbsetorder (1))  // YD_FILIAL, YD_TEC, YD_EX_NCM, YD_EX_NBM, YD_DESTAQU, R_E_C_N_O_, D_E_L_E_T_
@@ -114,16 +140,17 @@ return
 					//m->b5_vasisde = 'S'
 					m->b1_ipi = syd -> yd_per_ipi
 					U_Log2 ('info', sb1 -> b1_posipi + ' alterando de ' + transform (sb1->b1_ipi, "@E 999.99") + ' para ' + transform (m->b1_ipi, "@E 999.99") + ' ' + ' ' + sb1 -> b1_cod + ' ' + sb1 -> b1_desc)
+					
 					// Grava evento de alteracao
-//					_oEvento := ClsEvent():new ()
-//					_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 11681 - novas aliq.IPI', .F.)
-//					reclock ("SB1", .f.)
-//					sb1 -> B1_ipi = m->b1_ipi
-//					msunlock ()
-//					U_AtuMerc ("SB1", sb1 -> (recno ()))
+					_oEvento := ClsEvent():new ()
+					_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 11682 - ajustar B1_IPI pelo SYD', .F.)
+					reclock ("SB1", .f.)
+					sb1 -> B1_ipi = m->b1_ipi
+					msunlock ()
 					//reclock ("SB5", .f.)
 					//sb5->b5_vasisde = m->b5_vasisde
 					//msunlock ()
+					
 					// Cai fora no primeiro, para testes.
 					//exit
 				endif
@@ -133,6 +160,35 @@ return
 	enddo
 return
 */
+/*
+	_sArqLog := 'GLPI11682_geral.log'
+	syd -> (dbsetorder (1))
+	_aDados = U_LeCSV ('\robert\tipi.csv', ';')
+	for _nDado = 1 to len (_aDados)
+		if ! syd -> (dbseek (xfilial ("SYD") + padl (_aDados [_nDado, 1], 8, '0'), .F.))
+			U_Log2 ('erro', _aDados [_nDado, 1] + ' nao encontrado')
+		else
+			_nPerc = val (strtran (_aDados [_nDado, 3], ',', '.'))
+			if syd -> yd_per_ipi != _nPerc
+				U_Log2 ('debug', syd -> yd_tec + ' ' + U_TamFixo (syd -> yd_desc_p, 40) + ' ' + transform (syd -> yd_per_ipi, "@E 999.99") + ' -> ' + transform (_nPerc, "@E 999.99"))
+				regtomemory ("SYD", .F., .F.)
+				m->yd_per_ipi = _nPerc
+
+				// Grava evento de alteracao
+				_oEvento := ClsEvent():new ()
+				_oEvento:AltCadast ("SYD", m->yd_tec, syd -> (recno ()), 'GLPI 11682 - Revisao geral TIPI', .F.)
+
+				reclock ("SYD", .f.)
+				syd -> yd_per_ipi = m->yd_per_ipi
+				msunlock ()
+				
+				// Cai fora no primeiro, para testes.
+				//exit
+			endif
+		endif
+	next
+return
+/*
 /*
 	// Ajusta cadastro de TIPI em lote
 	syd -> (dbsetorder (1))
@@ -385,31 +441,6 @@ return
 		//EXIT  // por enquanto quero gerar apenas um
 	enddo
 	FreeObj (_oSQL)
-return
-*/
-/*
-	// Testes arvore de rastreabilidade
-	private _aLtXLS58 := {}  // Deixar PRIVATE para ser alimentada pelo U_RastLT().
-	//_sMapa := U_RastLT (cFilAnt, U_TamFixo ('3630', 15, ' '), '12101401', 0, NIL, 14660)  // item 2580 lote 12101401 transformado em 3630 (mesmo lote) em 28/01/2022 na filial 01.
-	//_sMapa := U_RastLT (cFilAnt, U_TamFixo ('1274', 15, ' '), 'AUTO009215', 0, NIL, 1)  // enzima (arvore grande)
-	// lado 1 do par --> _sMapa := U_RastLT ('01', U_TamFixo ('2444', 15, ' '), 'AUTO009238', 0, NIL, 24200)
-	// lado 2 do par --> _sMapa := U_RastLT ('09', U_TamFixo ('2444', 15, ' '), '4123', 0, NIL, 24200)
-	//_sMapa := U_RastLT (cFilAnt, U_TamFixo ('9959', 15, ' '), '2201028401', 0, NIL, 1)  // enzima (arvore grande)
-	_sMapa := U_RastLT (cFilAnt, U_TamFixo ('2203', 15, ' '), 'AUTO00956f', 0, NIL, 1)  // dava erro 
-	_sArq := 'c:\temp\rast.mm'
-	delete file (_sArq)
-	if file (_sArq)
-		_nHdl = fopen(_sArq, 1)
-	else
-		_nHdl = fcreate(_sArq, 0)
-	endif
-	fwrite (_nHdl, _sMapa)
-	fclose (_nHdl)
-	ShellExecute ("Open", _sArq, "", "", 1)
-	u_log (_aLtXLS58)
-	_oLtXLS58 := CLsAUtil ():New ()
-	_oLtXLS58:_aArray := aclone (_aLtXLS58)
-	U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (_oLtXLS58:TotCol (7)))
 return
 */
 /*

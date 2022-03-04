@@ -97,7 +97,8 @@ User Function RBatch (_sEmp, _sFil)
 	fclose (_nHdl)
 
 
-	private _sArqLog := procname () + '_' + dtos (date ()) + ".log"
+//	private _sArqLog := procname () + '_' + dtos (date ()) + ".log"
+	private _sArqLog := procname () + ".log"
 
 	// Como alguns batches exigem ser executados em determinados modulos, na primeira tentativa de execucao
 	// em modulo diferente eles vao gerar um arquivo contendo o modulo que precisam. Assim, na proxima

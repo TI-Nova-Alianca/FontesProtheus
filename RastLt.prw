@@ -24,7 +24,9 @@
 //                     - Limite de tamanho para a string de retorno aumentado de 30000 para 50000 caracteres.
 //                     - Passa a buscar transf. entre filiais na view VA_VTRANSF_ENTRE_FILIAIS (GLPI 11620)
 // 23/02/2022 - Robert - Lista de cargas de safra (usada pelo VA_XLS58) passa a incluir filial e safra (GLPI 11664)
-// 01/03/2022 - Robert - Comentariados logs das queries.
+// 02/03/2022 - Robert - Melhoria logs diversos.
+//                     - Aumentado nivel maximo de 10 para 11
+//                     - Aumentado tamanho maximo da string de retorno de 50000 para 60000 caracteres.
 //
 
 // --------------------------------------------------------------------------
@@ -49,11 +51,11 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 	local _nNivFold := 10  // A partir deste nivel gera os nodos 'compactados' para nao ficar grande demais na visualizacao inicial.
 	local _sQuebra  := "&#xa;"  // Representacao de uma quebra de linha na visualizacao do FreeMind
 	local _aCarga   := ""
-	local _nMaxStr  := 50000  // Limite para o tamanho da string de retorno (pelo que sei, o maximo eh 64K)
+	local _nMaxStr  := 60000  // Limite para o tamanho da string de retorno (pelo que sei, o maximo eh 64K)
 	static _sID     := '0000'  // Criado como STATIC para gerar sempre IDs unicos, mesmo com chamadas recursivas.
 
-	U_Log2 ('info', 'Iniciando ' + _sFilial + _sProduto + _sLote + ' nivel ' + cvaltochar (_nNivel))
-	U_Log2 ('debug', '[' + procname () + ']Alias() = ' + alias ())
+	U_Log2 ('info', 'Iniciando filial: ' + _sFilial + ' produto: ' + _sProduto + ' lote: ' + _sLote + ' nivel: ' + cvaltochar (_nNivel))
+//	U_Log2 ('debug', '[' + procname () + ']Alias() = ' + alias ())
 	_aHist := iif (_aHist == NIL, {}, _aHist)
 
 	// Com tantas chamadas recursivas, parece que chega um momento em que fico sem ALIAS() e tenho problemas com funcoes como FBuscaCpo().
@@ -66,12 +68,14 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 	endif
 
 	// Limita a 'profundidade' de pesquisa.
-	if abs (_nNivel) > 10
+	if abs (_nNivel) > 15  // 10
+		U_Log2 ('aviso', "Limite de 'profundidade de pesquisa' atingido.")
 		_sRet += '<node BACKGROUND_COLOR="#ff00cc" CREATED="1493031071766" ID="MAXNIVEIS" POSITION="left" TEXT="(...) nivel maximo atingido"></node>'
 	else
 		
 		// Encontramos muitos casos onde um lote A foi transferido para o lote B, que novamente foi transferido para o lote A
 		if ascan (_aHist, _sFilial + _sProduto + _sLote)
+			U_Log2 ('aviso', 'Detectada recursividade na movimentacao para filial/produto/lote ' + _sFilial + _sProduto + _sLote)
 			_sDescri := "Recurs." + _sQuebra //Detectada recursividade na movimentacao" + _sQuebra
 			_sRet += '<node BACKGROUND_COLOR="#ff00cc" CREATED="1493031071766" ID="MAXNIVEIS" POSITION="left" TEXT="' + _sDescri + '"></node>'
 		else
@@ -178,7 +182,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_sRet += '</node>'
 					next
 				endif
-				U_Log2 ('debug', '[' + procname () + ']Apos entradas em OP temos Alias() = ' + alias ())
+				// U_Log2 ('debug', '[' + procname () + ']Apos entradas em OP temos Alias() = ' + alias ())
 
 
 				// Busca entradas por transferencia entre lotes.
@@ -235,7 +239,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_sRet += '</node>'
 					next
 				endif
-				U_Log2 ('debug', '[' + procname () + ']Apos entradas por transf.entre lotes temos Alias() = ' + alias ())
+				// U_Log2 ('debug', '[' + procname () + ']Apos entradas por transf.entre lotes temos Alias() = ' + alias ())
 
 
 				// Busca outras entradas por movimentos internos.
@@ -269,7 +273,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 					enddo	
 					(_sAliasQ) -> (dbclosearea ())
 				endif
-				U_Log2 ('debug', '[' + procname () + ']Apos entradas por mov.internos temos Alias() = ' + alias ())
+				// U_Log2 ('debug', '[' + procname () + ']Apos entradas por mov.internos temos Alias() = ' + alias ())
 		
 
 				// Busca possiveis entradas via NF.
@@ -366,7 +370,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_sRet += '</node>'
 					next
 				endif
-				U_Log2 ('debug', '[' + procname () + ']Apos entradas por NF temos Alias() = ' + alias ())
+				// U_Log2 ('debug', '[' + procname () + ']Apos entradas por NF temos Alias() = ' + alias ())
 		
 
 				// Busca entradas por transferencias de filiais
@@ -414,7 +418,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						endif
 					next
 				endif
-				U_Log2 ('debug', '[' + procname () + ']Apos entradas por tr.filiais temos Alias() = ' + alias ())
+				// U_Log2 ('debug', '[' + procname () + ']Apos entradas por tr.filiais temos Alias() = ' + alias ())
 
 
 				// ------------------------------------------------------ Fim entradas
@@ -470,7 +474,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_sRet += '</node>'
 					next
 				endif
-				U_Log2 ('debug', '[' + procname () + ']Apos saidas por consumo em OP temos Alias() = ' + alias ())
+				// U_Log2 ('debug', '[' + procname () + ']Apos saidas por consumo em OP temos Alias() = ' + alias ())
 
 
 				// Busca saidas por NF (ignora filiais)
@@ -521,7 +525,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_sRet += '</node>'
 					next
 				endif
-				U_Log2 ('debug', '[' + procname () + ']Apos saidas por NF temos Alias() = ' + alias ())
+				// U_Log2 ('debug', '[' + procname () + ']Apos saidas por NF temos Alias() = ' + alias ())
 
 
 				// Busca saidas por NF (transferencia para filiais)
@@ -557,7 +561,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_sRet += '</node>'
 					next
 				endif
-				U_Log2 ('debug', '[' + procname () + ']Apos saidas por tr.filiais temos Alias() = ' + alias ())
+				// U_Log2 ('debug', '[' + procname () + ']Apos saidas por tr.filiais temos Alias() = ' + alias ())
 
 
 				// Busca saidas por transferencia entre lotes.
@@ -614,7 +618,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_sRet += '</node>'
 					next
 				endif
-				U_Log2 ('debug', '[' + procname () + ']Apos saidas por tr.internas temos Alias() = ' + alias ())
+				// U_Log2 ('debug', '[' + procname () + ']Apos saidas por tr.internas temos Alias() = ' + alias ())
 
 
 				// Chamada inicial: preciso finalizar o arquivo de saida.

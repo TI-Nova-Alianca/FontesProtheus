@@ -36,7 +36,8 @@ user function Log2 (_sTipo, _xDadoOri, _xExtra)
 	_sTipo = cvaltochar (_sTipo)
 	_sTipo = Capital (_sTipo)
 	_sTagsLog += '[' + padc (_sTipo, 5, ' ') + ']'
-	_sTagsLog += '[' + cvaltochar (ThreadId ()) + ']'
+//	_sTagsLog += '[' + cvaltochar (ThreadId ()) + ']'
+	_sTagsLog += '[' + left (padl (cvaltochar (ThreadId ()), 6, ' '), 6) + ']'  // Jah vi casos de ThreadID() retornar menos que 6 caracteres.
 	_sTagsLog += '[' + substr (_sDataLog, 1, 4) + '' + substr (_sDataLog, 5, 2) + '' + substr (_sDataLog, 7, 2) + ' ' + strtran (TimeFull (), '.', ',') + ']'
 	_sTagsLog += '[' + GetEnvServer () + ']'
 	_sTagsLog += '[F' + iif (type ('cFilAnt') == 'C', cFilAnt, '  ') + ']'

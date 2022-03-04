@@ -12,11 +12,11 @@
 // 19/03/2020 - Robert - Nao validava corretamente o campo OP05.
 // 12/03/2021 - Robert - Passa a validar por codigo de 'pessoa' e nao mais por CPF.
 // 03/05/2021 - Robert - Passa a bloquear somente usuarios que nao autenticam pelo dominio.
+// 02/03/2022 - Robert - Pequena melhoria nos logs.
 //
 
 // -----------------------------------------------------------------------------------------------------------------
 user function BatBlUsr ()
-
 	local _oSQL      := NIL
 	local _aUsers    := {}
 	local _nUser     := 0
@@ -39,9 +39,9 @@ user function BatBlUsr ()
 	_oSQL:_sQuery += " ORDER BY NOME"
 	_oSQL:Log ()
 	_aPessoa := aclone (_oSQL:Qry2Array (.F., .F.))
-	u_log (_aPessoa)
+//	u_log (_aPessoa)
 	if len (_aPessoa) == 0
-		u_log ('Nao foi possivel ler as pessoas do Metadados')
+		u_log2 ('erro', 'Nao foi possivel ler as pessoas do Metadados')
 		_oBatch:Mensagens += 'Nao foi possivel ler as pessoas do Metadados'
 		_oBatch:Retorno = 'N'
 	else
@@ -82,13 +82,13 @@ user function BatBlUsr ()
 			endif
 
 			if ! PswSeek (_sIdUser, .T.)
-				u_log2 ('erro', 'ID de usuario nao localizado: ' + _sIdUser)
+				u_log2 ('aviso', 'ID de usuario nao localizado: ' + _sIdUser)
 				_oBatch:Mensagens += 'ID de usuario nao localizado: '+ _sIdUser
 				_oBatch:Retorno = 'N'
 				loop
 			endif
 
-			u_log ('')
+			u_log2 ('INFO', '---------------------------------------------------------------------------')
 			_aPswRet := PswRet ()
 			//u_log2 ('debug', _aPswRet)
 
@@ -109,7 +109,7 @@ user function BatBlUsr ()
 
 						// Define o que deve ser feito com este usuario, conforme CodigoComplementar:
 						// 1 = conforme situacao da folha (ativo/demitido/afastado/ferias/...)
-						// 2 = bloquear (vai ser demitido / encontra de atestado / ...)
+						// 2 = bloquear (vai ser demitido / encontra-se com atestado / ...)
 						// 3 = nunca bloquear (diretoria, etc.)
 						_sSitFol   = alltrim (_aPessoa [_nPessoa, 2])
 						_sEmFerias = alltrim (_aPessoa [_nPessoa, 3])

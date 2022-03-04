@@ -14,6 +14,7 @@
 // 16/02/2022 - Claudia - Limpeza do array a cada chamada da rotina de rastreabilidade. GLPI: 11624
 // 17/02/2022 - Claudia - Criada novas colunas para linha. GLPI: 11624
 // 23/02/2022 - Robert  - Incluidas colunas filial e safra (GLPI 11664).
+// 02/03/2022 - Robert  - Coluna 'Kg' (COLUNA5) passada para a frente da coluna 'Produto'.
 //
 
 // ------------------------------------------------------------------------------------------------
@@ -51,9 +52,9 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA2_2", "" ,"Safra"             ,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA3", 	"" ,"Variedade"		    ,       				,12,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA4", 	"" ,"Descrição"		    ,       				,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA5", 	"" ,"Kg"	            , "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA4_1", "" ,"Produto"		    ,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA4_2", "" ,"Descrição "		,       				,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA5", 	"" ,"Kg"	            , "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
     TRCell():New(oSection1,"COLUNA6", 	"" ,"Babo"	            ,                       ,15,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA7", 	"" ,"Lote carga"	    ,       		        ,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA8", 	"" ,"Lote produto"	    ,       		        ,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
