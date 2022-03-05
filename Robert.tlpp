@@ -92,6 +92,68 @@ static function _AndaLogo ()
 	u_help ('Nada definido.')
 //	u_BatDocCanc ('OC', 30)
 return
+
+/*
+// Testes batches em geral
+//	_sArqLog := 'U_BatCompAssoc_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batCompAssoc ()
+//	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batsafr ('CargasSemContranota')  // cargas sem contranota
+//	u_batsafr ('ConferirParcelamento')  // conferencia geracao das parcelas financeiro
+//	u_batsafr ('ContranotasSemCarga')  // contranotas sem carga
+//	u_batsafr ('ConferirFrete')  // conferencia fretes
+//	u_batsafr ('MailAcompanhamento')  // e-mail diario de acompanhamento de safra
+//	u_batsafr ('GerarSZI')  // gera SZI a partir das parcelas
+//	u_batsafr ('ConferirSZI')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
+//	u_batsafr ('TransfTitNaoAssocParaMatriz')  // Transfere (das filiais para a matriz) os titulos de nao associados.
+//	u_batsafr ('TransfSZIParaMatriz')  // Transfere SZI para a matriz (normalmente ao gerar o SZI jah faz isso, mas para garantir...)
+	_sArqLog := 'U_BatSZI_' + alltrim (cusername) + ".log"
+	u_batSZI (date () - 720, date ()-360)
+//	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batocor ()
+//	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batmetaf ()
+//	_sArqLog := 'U_BatFunAtlz_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batfunatlz ()
+//	_sArqLog := 'U_BatBlUsr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batBlUsr ()
+//	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batmercp ()
+//	_sArqLog := 'U_BatVerif_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batVerif ()
+//	_sArqLog := 'U_BatEDIM_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batedim ("I")
+//	_sArqLog := 'U_BatMercN_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batMercN (5)
+//	u_log2 ('info', _oBatch:Mensagens)
+//	_sArqLog := 'U_BatXML_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	U_BatXML("\\192.168.1.3\Siga\Protheus12\protheus_data\xml_NFe\", 1, .F.)
+return
+*/
+/*
+	// Testes verificacoes genericas.
+	// _oVerif := ClsVerif():New (25)
+	// _oVerif:SetParam ('01', '2017')
+	// _oVerif:SetParam ('02', '')
+	// _oVerif:SetParam ('03', 'zz')
+	// _oVerif:SetParam ('04', '30 ')
+	// _oVerif:SetParam ('05', '028')
+	// _oVerif:SetParam ('06', '077')
+	// _oVerif:SetParam ('07', '000017')
+	// _oVerif := ClsVerif():New (24)
+	// _oVerif:SetParam ('01', '09189201001  ')
+	// _oVerif:SetParam ('02', '09189201001  ')
+	// _oVerif:SetParam ('03', '')
+	// _oVerif:SetParam ('04', 'z')
+	_oVerif := ClsVerif():New (85)
+	if _oVerif:Executa ()
+		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
+		u_log2 ('debug', _oVerif:Result)
+	else
+		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
+	endif
+return
+*/
 /*
 	// Testes arvore de rastreabilidade
 	private _aLtXLS58 := {}  // Deixar PRIVATE para ser alimentada pelo U_RastLT().
@@ -223,41 +285,6 @@ return
 return
 */
 /*
-// Testes batches em geral
-//	_sArqLog := 'U_BatCompAssoc_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batCompAssoc ()
-	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-	u_batsafr ('CargasSemContranota')  // cargas sem contranota
-	u_batsafr ('ConferirParcelamento')  // conferencia geracao das parcelas financeiro
-	u_batsafr ('ContranotasSemCarga')  // contranotas sem carga
-	u_batsafr ('ConferirFrete')  // conferencia fretes
-//	u_batsafr ('MailAcompanhamento')  // e-mail diario de acompanhamento de safra
-	u_batsafr ('GerarSZI')  // gera SZI a partir das parcelas
-	u_batsafr ('ConferirSZI')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
-	u_batsafr ('TransfTitNaoAssocParaMatriz')  // Transfere (das filiais para a matriz) os titulos de nao associados.
-	u_batsafr ('TransfSZIParaMatriz')  // Transfere SZI para a matriz (normalmente ao gerar o SZI jah faz isso, mas para garantir...)
-//	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batocor ()
-//	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batmetaf ()
-//	_sArqLog := 'U_BatFunAtlz_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batfunatlz ()
-//	_sArqLog := 'U_BatBlUsr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batBlUsr ()
-//	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batmercp ()
-//	_sArqLog := 'U_BatVerif_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batVerif ()
-//	_sArqLog := 'U_BatEDIM_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batedim ("I")
-//	_sArqLog := 'U_BatMercN_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batMercN (5)
-//	u_log2 ('info', _oBatch:Mensagens)
-//	_sArqLog := 'U_BatXML_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	U_BatXML("\\192.168.1.3\Siga\Protheus12\protheus_data\xml_NFe\", 1, .F.)
-return
-*/
-/*
 	// Testes relatorios associados que devem trazer totais consistentes entre si
 	_aAssoc = {}
 	// aadd (_aAssoc, '003577')  // bastante movimento
@@ -345,30 +372,6 @@ return
 return
 */
 //	U_ImpZA1 ('9000240912', '14')
-/*
-	// Testes verificacoes genericas.
-	// _oVerif := ClsVerif():New (25)
-	// _oVerif:SetParam ('01', '2017')
-	// _oVerif:SetParam ('02', '')
-	// _oVerif:SetParam ('03', 'zz')
-	// _oVerif:SetParam ('04', '30 ')
-	// _oVerif:SetParam ('05', '028')
-	// _oVerif:SetParam ('06', '077')
-	// _oVerif:SetParam ('07', '000017')
-	// _oVerif := ClsVerif():New (24)
-	// _oVerif:SetParam ('01', '09189201001  ')
-	// _oVerif:SetParam ('02', '09189201001  ')
-	// _oVerif:SetParam ('03', '')
-	// _oVerif:SetParam ('04', 'z')
-	_oVerif := ClsVerif():New (84)
-	if _oVerif:Executa ()
-		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
-		u_log2 ('debug', _oVerif:Result)
-	else
-		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
-	endif
-return
-*/
 /*
 	// Gera conta 'PREMIACAO QUALIDADE' na corrente ref. safra 2021 (GLPI 11661)
 	_sArqLog := 'GLPI11661_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"

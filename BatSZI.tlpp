@@ -1,0 +1,46 @@
+// Programa:   BatSZI
+// Autor:      Robert Koch
+// Data:       04/03/2021
+// Descricao:  Reprocessa saldos envolvendo conta corrente de associados (GLPI 11714)
+//             Criado para ser executado via batch.
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #batch
+// #Descricao         #Reprocessa saldos envolvendo conta corrente de associados
+// #PalavasChave      #associasod #saldos #reprocessamento
+// #TabelasPrincipais #SZI #SZM
+// #Modulos           #COOP
+
+// Historico de alteracoes:
+//
+
+// --------------------------------------------------------------------------
+user function BatSZI (_dDtIni, _dDtFim)
+	local _oSQL    := NIL
+	local _aRegSZI := {}
+	local _nRegSZI := 0
+	local _nSldAnt := 0
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := " SELECT R_E_C_N_O_ "
+	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SZI") + " SZI "
+	_oSQL:_sQuery +=  " WHERE SZI.ZI_FILIAL  = '" + xfilial ("SZI") + "'"
+	_oSQL:_sQuery +=    " AND SZI.ZI_DATA    BETWEEN '" + dtos (_dDtIni) + "' AND '" + dtos (_dDtFim) + "'"
+	_oSQL:_sQuery +=  " ORDER BY ZI_DATA, ZI_ASSOC, ZI_LOJASSO, ZI_DOC, ZI_SERIE, ZI_PARCELA"
+	_oSQL:Log ()
+	_aRegSZI = _oSQL:Qry2Array (.f., .f.)
+	for _nRegSZI = 1 to len (_aRegSZI)
+		szi -> (dbgoto (_aRegSZI [_nRegSZI,1]))
+		U_Log2 ('debug', dtoc (szi -> zi_data) + ' ' + szi -> zi_assoc + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela)
+		_nSldAnt = szi -> zi_saldo
+		_oCtaCorr := ClsCtaCorr ():New (szi -> (recno ()))
+		_oCtaCorr:AtuSaldo ()
+		if szi -> zi_saldo != _nSldAnt
+			U_Log2 ('aviso', "SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela + " Saldo alterado de " + transform (_nSldAnt, "@E 999,999,999.99") + " para " + transform (szi -> zi_saldo, "@E 999,999,999.99"))
+			
+			// Cai fora no primeiro (ainda em teste)
+			//exit
+		endif
+	next
+	U_Log2 ('info', 'Finalizando ' + procname ())
+return

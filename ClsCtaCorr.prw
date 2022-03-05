@@ -303,7 +303,7 @@ METHOD AtuSaldo () Class ClsCtaCorr
 				//u_logtrb ('SE2')
 				_nSaldo = se2 -> e2_saldo
 			else
-				u_log ('Nao Encontrei SE2. Pegando saldo pelo metodo tradicional.')
+				u_log2 ('aviso', "Nao Encontrei SE2 com chave '" + xfilial ("SE2") + ::Assoc + ::Loja + ::Serie + ::Doc + ::Parcela + "'. Pegando saldo pelo metodo tradicional.")
 				_nSaldo = ::SaldoEm (date ())
 			endif
 			se2 -> (restarea (_aAreaSE2))
@@ -2169,7 +2169,7 @@ METHOD RegRelac () Class ClsCtaCorr
 		_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND SE2.E2_FILIAL  = '" + xfilial ("SE2") + "'"
 		_oSQL:_sQuery +=   " AND SE2.E2_VACHVEX = '" + ::ChaveExt () + "'"
-		_oSQL:Log ()
+		//_oSQL:Log ()
 		_aRegAux = aclone (_oSQL:Qry2Array (.F., .F.))
 		for _nRegAux = 1 to len (_aRegAux)
 			_aRegAux [_nRegAux, 4] = stod (_aRegAux [_nRegAux,4])  // Converte para formato de data.
