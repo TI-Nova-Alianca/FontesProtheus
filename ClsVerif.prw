@@ -63,6 +63,7 @@
 // 27/09/2021 - Robert  - Adicionada verificacao de modulos na verificacao 74
 // 18/02/2022 - Robert  - Adicionada verificacao de itens de mao de obra x CC (GLPI 11650).
 // 23/02/2022 - Robert  - Adicionada verificacao 83 (Empenho SD4 relacionado a OP/OS inexistente ou ja encerrada)
+// 05/03/2022 - Robert  - Adicionada verificacao 85 (inconsistencias etiq.producao) - GLPI 11486
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -3129,6 +3130,22 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			endif
 			::Query += " ORDER BY EMPRESA, FILIAL"
 
+
+		case ::Numero == 85
+			::Setores   = 'PCP/PROD/LOG'
+			::Descricao = 'Problemas em etiquetas de producao'
+			::Sugestao  = 'Verificar movimentacao da etiqueta. Possivelmente falte algum processo.'
+			::GrupoPerg = "U_VALID008"
+			::ValidPerg (_lDefault)
+			::Query := "exec VA_SP_VERIFICA_ETIQ_PRODUCAO '" + cFilAnt + "'"  // filial
+			::Query +=                                  "," + iif (empty (::Param01), "NULL", "'" + ::Param01        + "'")  // etiq
+			::Query +=                                  "," + iif (empty (::Param02), "NULL", "'" + ::Param02        + "'")  // produto
+			::Query +=                                  "," + iif (empty (::Param03), "NULL", "'" + dtos (::Param03) + "'")  // data ini
+			::Query +=                                  "," + iif (empty (::Param04), "NULL", "'" + dtos (::Param04) + "'")  // data ini
+			::Query +=                                  "," + iif (empty (::Param05), "NULL", "'" + ::Param05        + "'")  // OP ini
+			::Query +=                                  "," + iif (empty (::Param06), "NULL", "'" + ::Param06        + "'")  // OP fim
+
+
 		otherwise
 			::UltMsg = "Verificacao numero " + cvaltochar (::Numero) + " nao definida."
 	endcase
@@ -3159,10 +3176,11 @@ METHOD Pergunte (_lComTela) Class ClsVerif
 		::GeraQry ()
 	endif
 return _lRet
+
+
 // --------------------------------------------------------------------------
 // Altera o conteudo de um parametro.
 METHOD SetParam (_sParam, _xConteudo) Class ClsVerif
-//	u_logIni (GetClassName (::Self) + '.' + procname ())
 
 	// Ainda nao encontrei forma de acessar os atributos da classe com operador de macro, entao vai com CASE mesmo...
 	do case
@@ -3185,6 +3203,8 @@ METHOD SetParam (_sParam, _xConteudo) Class ClsVerif
 	::GeraQry (.F.)
 
 return
+
+
 // --------------------------------------------------------------------------
 // Cria perguntas no SX1.
 METHOD ValidPerg (_lDefault) Class ClsVerif
@@ -3266,7 +3286,24 @@ METHOD ValidPerg (_lDefault) Class ClsVerif
 				::Param01 = 1  // Deixa um valor default para poder gerar a query inicial.
 				::Param02 = cFilAnt  // Deixa um valor default para poder gerar a query inicial.
 				::Param03 = cFilAnt  // Deixa um valor default para poder gerar a query inicial.
-			endif	
+			endif
+
+		case ::GrupoPerg == "U_VALID008"
+			//                     PERGUNT                           TIPO TAM DEC VALID F3        Opcoes                               Help
+			aadd (_aRegsPerg, {01, "Etiqueta (vazio=todas)        ", "C", 10, 0,  "",   "ZA1   ", {},                                  ""})
+			aadd (_aRegsPerg, {02, "Produto (vazio=todos)         ", "C", 15, 0,  "",   "SB1   ", {},                                  ""})
+			aadd (_aRegsPerg, {03, "Data inicial                  ", "D", 8,  0,  "",   "      ", {},                                  ""})
+			aadd (_aRegsPerg, {04, "Data final                    ", "D", 8,  0,  "",   "      ", {},                                  ""})
+			aadd (_aRegsPerg, {05, "OP inicial                    ", "C", 14, 0,  "",   "SC2   ", {},                                  ""})
+			aadd (_aRegsPerg, {06, "OP final                      ", "C", 14, 0,  "",   "SC2   ", {},                                  ""})
+			if _lDefault
+				::Param01 = ''  // Deixa um valor default para poder gerar a query inicial.
+				::Param02 = ''  // Deixa um valor default para poder gerar a query inicial.
+				::Param03 = dDataBase  // Deixa um valor default para poder gerar a query inicial.
+				::Param04 = dDataBase  // Deixa um valor default para poder gerar a query inicial.
+				::Param05 = ''  // Deixa um valor default para poder gerar a query inicial.
+				::Param06 = 'z'  // Deixa um valor default para poder gerar a query inicial.
+			endif
 
 		case ::GrupoPerg == "U_VALID046"
 			//                     PERGUNT                           TIPO TAM DEC VALID F3        Opcoes                               Help
@@ -3293,6 +3330,8 @@ METHOD ValidPerg (_lDefault) Class ClsVerif
 		U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 	endif
 return
+
+
 // --------------------------------------------------------------------------------------------------
 // Verifica a consistencia dos parametros.
 METHOD VerifParam () Class ClsVerif
@@ -3306,6 +3345,22 @@ METHOD VerifParam () Class ClsVerif
 			if ::Param01 != lastday (::Param01) .or. ::Param02 != lastday (::Param02)
 				::UltMsg = "Datas devem ser os ultimos dias de cada mes (corresponde as datas de gravacao do arquivo SB9)."
 				_lRet = .F.
+			endif
+
+		case ::Numero == 85
+			if empty (::Param03) .or. empty (::Param04)
+				::UltMsg = "Verif. de etiq.producao eh muito pesada para rodar sem especificar um intervalo de datas."
+				_lRet = .F.
+			endif
+			if empty (::Param06)
+				::UltMsg = "OP final nao pode ficar em branco."
+				_lRet = .F.
+			endif
+			if empty (::Param01) .and. empty (::Param02)
+				if (::Param04 - ::Param03) > 31
+					::UltMsg = "Verif. de etiq.producao eh muito pesada para rodar mais de 30 dias sem especificar etiqueta ou produto."
+					_lRet = .F.
+				endif
 			endif
 	endcase
 return _lRet

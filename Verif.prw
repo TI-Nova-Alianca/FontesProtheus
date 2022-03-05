@@ -17,7 +17,7 @@ User Function Verif (_nQual, _aParam)
 	local _nVerif    := 0
 	local _nParam    := 0
 
-	u_logIni ()
+//	u_logIni ()
 
 	_nQual     := iif (_nQual == NIL, 0, _nQual)
 
@@ -71,8 +71,6 @@ User Function Verif (_nQual, _aParam)
 			_nVerif ++
 		enddo
 	
-		u_log (_aVerif)
-
 		// Executa em loop para poder fazer consultas repetidamente sem sair da tela.
 		do while .T.
 			_aCols = {}
@@ -80,6 +78,7 @@ User Function Verif (_nQual, _aParam)
 			aadd (_aCols, {3, "Areas interesse", 70, ""})
 			aadd (_aCols, {4, "Descricao",      150, ""})
 			U_MBArray (@_aVerif, "Selecione verificacoes a fazer", _aCols, 1)
+			u_log2 ('info', _aVerif)
 			for _nVerif = 1 to len (_aVerif)
 				if _aVerif [_nVerif, 1]
 					_oVerif = _aVerif [_nVerif, 5]
@@ -109,7 +108,7 @@ User Function Verif (_nQual, _aParam)
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
+//	u_logFim ()
 return _aRet
 
 
