@@ -163,6 +163,7 @@
 // 10/08/2021 - Cláudia - Incluida validação na transferencia, para que crie a movimentação de produtos 
 //                        de manutençao no AX 02. GLPI: 10379
 // 11/01/2022 - Robert  - Criada validacao campo C1_VANF
+// 07/03/2022 - Robert  - Melhorada validacao de etiq.jah apontada/estornada no campo D3_VAETIQ (antes olhava campo ZA1_APONT e agora faz query no SD3).
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -179,7 +180,8 @@ user function VA_VCpo (_sCampo)
 	local _oAviso    := NIL
 	local _aRetSQL   := {}
 	local _x         := 0
-	
+	local _aApontEtq := {}
+
 	// Verifica a melhor forma de obter o nome do campo a ser validado.
 	if _sCampo == NIL
 		_sCampo = alltrim (ReadVar ())
@@ -982,18 +984,38 @@ user function VA_VCpo (_sCampo)
 				u_help ("Etiqueta nao encontrada")
 				_lRet = .F.
 			endif
-			if _lRet .and. za1 -> za1_apont == 'S'
-				u_help ("Essa etiqueta ja gerou apontamento de producao.")
-				_lRet = .f.
-			endif
-			if _lRet .and. za1 -> za1_apont == 'E'
-				U_help ("Essa etiqueta ja foi apontada e ESTORNADA. Gere nova etiqueta.")
-				_lRet = .F.
-			endif
 			if _lRet .and. za1 -> za1_impres != 'S'
 				u_help ("Etiqueta ainda nao impressa.")
 				_lRet = .f.
-			endif'
+			endif
+//			if _lRet .and. za1 -> za1_apont == 'S'
+//				u_help ("Essa etiqueta ja gerou apontamento de producao.")
+//				_lRet = .f.
+//			endif
+//			if _lRet .and. za1 -> za1_apont == 'E'
+//				U_help ("Essa etiqueta ja foi apontada e ESTORNADA. Gere nova etiqueta.")
+//				_lRet = .F.
+//			endif
+			if _lRet
+				_oSQL := ClsSQL():New ()
+				_oSQL:_sQuery := "SELECT SUM (CASE WHEN D3_ESTORNO != 'S' THEN 1 ELSE 0 END) AS APONTAM"
+				_oSQL:_sQuery +=      ", SUM (CASE WHEN D3_ESTORNO  = 'S' THEN 1 ELSE 0 END) AS ESTORNO"
+				_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD3") + " SD3 "
+				_oSQL:_sQuery += " WHERE SD3.D_E_L_E_T_ = '' "
+				_oSQL:_sQuery +=   " AND SD3.D3_FILIAL  = '" + xfilial ("SD3") + "'"
+				_oSQL:_sQuery +=   " AND SD3.D3_VAETIQ  = '" + m->d3_vaetiq + "'"
+				_oSQL:_sQuery +=   " AND SD3.D3_CF LIKE 'PR%'"
+				_oSQL:Log ()
+				_aApontEtq = aclone (_oSQL:Qry2Array (.f., .f.))
+				if _aApontEtq [1, 1] > 0
+					u_help ("Essa etiqueta ja gerou apontamento de producao.")
+					_lRet = .f.
+				endif
+				if _aApontEtq [1, 2] > 0
+					U_help ("Essa etiqueta ja foi apontada e ESTORNADA. Gere nova etiqueta.")
+					_lRet = .F.
+				endif
+			endif
 
 
 		case _sCampo $ "M->DB_LOCALIZ/M->DB_QUANT" .and. funname () != 'MATA805' 

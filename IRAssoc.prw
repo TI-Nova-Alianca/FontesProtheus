@@ -20,8 +20,9 @@
 // 03/03/2021 - Robert  - Separados trechos de leitura de rendimentos de producao, por safra (GLPI 9535)
 // 16/04/2021 - Claudia - Retirado o Movimento 29. GLPI: 9844
 // 26/07/2021 - Sandra  - Incluso rodapé com nomenclatura 'Documento Sigiloso" GLPI 10139
-//				Robert
+// 07/03/2022 - Robert  - Acrescentado CNPJ da fonte pagadora.
 //
+
 // -----------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
 
@@ -50,7 +51,7 @@ User function IRAssoc (_lAutomat)
 	nTipo    := 18
 	m_pag    := 1
 	li       := 80
-	cCabec1  := ""
+	cCabec1  := left ('Fonte pagadora: CNPJ ' + transform (sm0 -> m0_cgc, "@R 99.999.999/9999-99") + '  ' + alltrim (sm0 -> m0_nomecom), limite)
  	cCabec2  := ""
 	aOrd     := {}
 	
@@ -140,7 +141,7 @@ static function _Imprime ()
 		return
 	EndIf	
 
-	Titulo += " - ano base " + mv_par03
+	Titulo = "Relatorio para fins de IR - ano base " + mv_par03
 	li = _nMaxLin + 1
 	procregua (3)
 
@@ -192,6 +193,11 @@ static function _Imprime ()
 		endif
 
 		cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
+
+//		@ li, 0 psay 'Fonte pagadora: ' + alltrim (sm0 -> m0_nomecom) + ' - CNPJ: ' + transform (sm0 -> m0_cgc, "@R 99.999.999/9999-99")
+//		li ++
+//		@ li, 0 psay __PrtThinLine ()
+//		li += 2
 
 		// Lista dados cadastrais
 		@ li, 0 psay 'Codigo/loja.....: ' + _oAssoc:CodBase + '/' + _oAssoc:LojaBase + ' - ' + _oAssoc:Nome

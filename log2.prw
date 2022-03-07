@@ -19,6 +19,7 @@
 // 01/02/2021 - Robert - Aumentado limite de log de texto, de 2000 para 20000 caracteres.
 // 29/03/2021 - Robert - Iniciado tratamento para objetos JSON.
 // 01/03/2022 - Robert - Renomeia o arquivo quando ficar muito grande (inicialmente 10 MB).
+// 07/03/2022 - Robert - Acumula em memoria o tamanho estimado do arquivo, para evitar repetidos acessos a disco.
 //
 
 // --------------------------------------------------------------------------
@@ -31,6 +32,8 @@ user function Log2 (_sTipo, _xDadoOri, _xExtra)
 	local _nTxtLog   := 0
 	local _nTamArq   := 0
 	local _sSeqNome  := ''
+	local _nLimTamLg := 1000000
+	static _nAcumLog := 0
 
 	// Prepara 'tags' para o inicio de linha
 	_sTipo = cvaltochar (_sTipo)
@@ -72,17 +75,28 @@ user function Log2 (_sTipo, _xDadoOri, _xExtra)
 		_sArqLog = alltrim (funname (1)) + "_" + iif (type ("cUserName") == "C", alltrim (cUserName), "") + ".log"
 	endif
 
+	// Se ainda nao tenho nada na variavel que acumula o tamanho do arquivo de log:
+	// - Pode ser a primeira chamada de log (arquivo ainda nao existe e, portanto, eh zero mesmo)
+	// - Pode estar sendo chamado um log para anexar a um arquivo que jah existia de execucoes anteriores.
+	if _nAcumLog == 0
+		if file (_sDirLogs + _sArqLog)
+			_nAcumLog = directory (_sDirLogs + _sArqLog) [1, 2]
+		endif
+	endif
+
 	// Se o arquivo jah existir e for muito grande, renomeia-o e gera um novo
-	if file (_sDirLogs + _sArqLog)
-		_nTamArq = directory (_sDirLogs + _sArqLog) [1, 2]
-	//	u_log ('tam.arq.=',_nTamArq)
-		if _nTamArq > 10000000  // Inicialmente acho que 10 mega tah bom...
-			_sSeqNome = '001'
-			do while file (_sDirLogs + _sArqLog + _sSeqNome)
-		//		u_log ('seq:', _sSeqNome)
-				_sSeqNome = soma1 (_sSeqNome)
-			enddo
-			fRename (_sDirLogs + _sArqLog, _sDirLogs + _sArqLog + _sSeqNome, NIL, .f.)
+	if _nAcumLog > _nLimTamLg
+		U_Log ('debug', '[' + procname () + ']Hora de verificar o tamanho do arquivo de log')
+		if file (_sDirLogs + _sArqLog)
+			_nTamArq = directory (_sDirLogs + _sArqLog) [1, 2]
+			if _nTamArq > _nLimTamLg  // Inicialmente acho que 10 mega tah bom...
+				_sSeqNome = '001'
+				do while file (_sDirLogs + _sArqLog + _sSeqNome)
+					_sSeqNome = soma1 (_sSeqNome)
+				enddo
+				fRename (_sDirLogs + _sArqLog, _sDirLogs + _sArqLog + _sSeqNome, NIL, .f.)
+				_nAcumLog = 0
+			endif
 		endif
 	endif
 
@@ -94,6 +108,9 @@ user function Log2 (_sTipo, _xDadoOri, _xExtra)
 	endif
 	for _nTxtLog = 1 to len (_aTxtLog)
 		fwrite (_nHdl, _sTagsLog + _aTxtLog [_nTxtLog] + chr (13) + chr (10))
+		
+		// Acumula o tamanho estimado jah gravado, para saber se precisa renomear o arquivo de log.
+		_nAcumLog += len (_aTxtLog [_nTxtLog])
 	next
 	fclose (_nHdl)
 return

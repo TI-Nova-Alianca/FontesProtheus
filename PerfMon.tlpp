@@ -58,7 +58,9 @@ user function PerfMon (_sQueFazer, _sChvPerf)
 				else
 					_aPerfMon [_nPosPerf, 3] = seconds () - _aPerfMon [_nPosPerf, 2]
 				endif
-			//	U_Log2 ('info', '[' + procname () + ']Tempo execucao chave ' + _sChvPerf + ': ' + cvaltochar (_aPerfMon [_nPosPerf, 3]) + ' segundos')
+				if _sQueFazer == 'L'
+					U_Log2 ('info', '[' + procname () + ']Tempo execucao chave ' + _sChvPerf + ': ' + cvaltochar (_aPerfMon [_nPosPerf, 3]) + ' segundos')
+				endif
 
 				if _sQueFazer == 'F'  // Vou persistir em disco
 					if len (_sChvPerf) > 25  // Deve estar de acordo com o campo CHAVE da tabela VA_PERFMON
