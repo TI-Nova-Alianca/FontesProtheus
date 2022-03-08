@@ -102,6 +102,7 @@ User Function va_rusN (_lSimulNF)
 	local _nRetMem   := 0
 	local _lSemPadVi := .F.
 	private _aParPgSaf := {}  // Parcelas pre calculadas. Deixar PRIVATE para ser lida pelo ponto de entrada MTCOLSE2().
+	private _sErroAuto := ''  // Deixar private para ser alimentada em subrotinas.
 
 	u_Log2 ('info', 'Iniciando ' + procname ())
 	
@@ -504,8 +505,13 @@ User Function va_rusN (_lSimulNF)
 			endif
 			AADD(_aLinha , {"D1_VACONDU" , szf -> zf_conduc   , Nil } )
 			AADD(_aLinha , {"D1_DESPESA" , szf -> zf_valfret  , Nil } )
+			
 			u_log2 ('info', _aLinha)
+			_sErroAuto = ''  // A funcao OrdAuto tambem faz algumas validacoes
 			AADD(_aAutoSD1, aClone (U_OrdAuto (_aLinha)))
+			if ! empty (_sErroAuto)
+				_lContinua = .F.
+			endif
 
 			// Atualiza array de previsao de nota
 			aadd (_aPrevia, {szf -> zf_produto, _sDescri, szf -> zf_peso, sb1 -> b1_um, szf -> zf_grau, iif (! empty (szf -> zf_prm99), szf -> zf_prm99, szf -> zf_clasABD), _nVlUni})
@@ -652,9 +658,25 @@ User Function va_rusN (_lSimulNF)
 		AADD( _aAutoSF1, { "F1_COND"     , _sCondPg,        Nil})
 
 		// Ordena campos cfe. SX3.
+		_sErroAuto = ''  // A funcao OrdAuto tambem faz algumas validacoes
 		_aAutoSF1 = aClone (U_OrdAuto (_aAutoSF1))
+		if ! empty (_sErroAuto)
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
 //		u_log2 ('info', _aAutoSF1)
 
+		// A partir de 07/03/2022 o sistema nao me permitiu mais gravar notas com diferenca entre
+		// o total da nota e a soma das duplicatas. Acredito ser por causa de uma atualizacao que
+		// apliquei ontem (pacote 22-02-09_ATUALIZACAO_12.1.27_BACKOFFICE_EXPEDICAO_CONTINUA).
+		// Descobri que consigo contornar isso aumentando o limite de tolerancia, que, infelismente,
+		// tem que ser feito num parametro do configurador. Robert, 07/03/2022.
+		U_Log2 ('aviso', '[' + procname () + ']Alterando MV_LIMPAG de ' + cvaltochar (GetMv ("MV_LIMPAG")) + ' para ' + cvaltochar (max (_nVlFrete, 0.09)))
+		PutMv ('MV_LIMPAG', max (_nVlFrete, 0.09)) // Valor original do parametro
+
+		_sErroAuto = ''
 		lMsHelpAuto := .F.  // se .t. direciona as mensagens de help
 		lMsErroAuto := .F.  // necessario a criacao
 		DbSelectArea ("SF1")
@@ -700,6 +722,8 @@ User Function va_rusN (_lSimulNF)
 		endif
 		end transaction
 		U_Log2 ('info', 'Fim da transacao de geracao da contranota.')
+
+		PutMv ('MV_LIMPAG', 0.09) // Valor original do parametro (ver comentario acima)
 
 		// Faz a transmissao da NF para a SEFAZ e posterior impressao.
 		if ! empty (sze -> ze_nfger)

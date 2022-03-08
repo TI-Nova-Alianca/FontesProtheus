@@ -90,9 +90,35 @@ static function _AndaLogo ()
 	procregua (100)
 	incproc ()
 	u_help ('Nada definido.')
-//	u_BatDocCanc ('OC', 30)
 return
-
+/*
+	// testes U_OrdAuto
+	_aLinha = {}
+	AADD(_aLinha , {"D1_COD"     , szf -> zf_produto    , Nil } )
+	AADD(_aLinha , {"D1_UM"      , sb1 -> B1_UM         , Nil } )
+	AADD(_aLinha , {"D1_TP"      , sb1 -> B1_TIPO       , Nil } )
+	AADD(_aLinha , {"D1_GRAU"    , szf -> zf_grau       , Nil } )
+	AADD(_aLinha , {"D1_PRM02"   , szf -> zf_prm02      , Nil } )
+	AADD(_aLinha , {"D1_PRM03"   , szf -> zf_prm03      , Nil } )
+	AADD(_aLinha , {"D1_PRM04"   , szf -> zf_prm04      , Nil } )
+	AADD(_aLinha , {"D1_PRM05"   , szf -> zf_prm05      , Nil } )
+	AADD(_aLinha , {"D1_PRM99"   , szf -> zf_prm99      , Nil } )
+	AADD(_aLinha , {"D1_VACLABD" , szf -> zf_clasabd    , Nil } )
+	AADD(_aLinha , {"D1_QUANT"   , szf -> zf_peso       , Nil } )
+	AADD(_aLinha , {"D1_VAVOLES" , szf -> zf_embalag    , Nil } )
+	AADD(_aLinha , {"D1_VAVOLQT" , szf -> zf_qtembal    , Nil } )
+	AADD(_aLinha , {"D1_VAVITIC" , szf -> zf_cadviti    , Nil } )
+	AADD(_aLinha , {"D1_LOTEFOR" , szf -> zf_idZA8,     Nil } )
+	AADD(_aLinha , {"D1_VACONDU" , szf -> zf_conduc   , Nil } )
+	AADD(_aLinha , {"D1_DESPESA" , szf -> zf_valfret  , Nil } )
+	_aLinha = aClone (U_OrdAuto (_aLinha))
+	u_log (_aLinha)
+return
+	// u_perfmon ('I', 'teste_log')
+	// for _i = 1 to 100000
+	// 	u_log2 ('info', 'teste log... 26/02/2021 002731 000026577/30 -J')
+	// next
+	// u_perfmon ('L', 'teste_log')
 /*
 // Testes batches em geral
 //	_sArqLog := 'U_BatCompAssoc_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
@@ -108,7 +134,9 @@ return
 //	u_batsafr ('TransfTitNaoAssocParaMatriz')  // Transfere (das filiais para a matriz) os titulos de nao associados.
 //	u_batsafr ('TransfSZIParaMatriz')  // Transfere SZI para a matriz (normalmente ao gerar o SZI jah faz isso, mas para garantir...)
 	_sArqLog := 'U_BatSZI_' + alltrim (cusername) + ".log"
-	u_batSZI (date () - 720, date ()-360)
+	if cFilAnt == '01'
+		u_batSZI (stod ('20200101'), stod ('20210228'))
+	endif
 //	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batocor ()
 //	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
