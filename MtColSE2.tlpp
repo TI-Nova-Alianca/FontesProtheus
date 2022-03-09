@@ -17,6 +17,7 @@
 // 15/02/2021 - Robert - Ajustes para atender rotina VA_GNF2 e notas de complemento de preco (GLPI 9389)
 // 08/10/2021 - Robert - Desabilitados alguns logs desnecessarios.
 // 07/03/2022 - Robert - Apos UPDDISTR este P.E. deixou de ser chamado de dentro do programa NFEFLDCHG (GLPI 11721)
+// 09/03/2022 - Robert - Nao tinha tratamento para variavel _aParPgSaf vazia (notas de prod.propria) - GLPI 11721
 //
 
 // --------------------------------------------------------------------------
@@ -31,18 +32,18 @@ user function MTColSE2 ()
 	local _nPosVlr  := 0
 	local _nPosINSS := 0
 
-	U_Log2 ('info', 'Iniciando ' + procname ())
+//	U_Log2 ('info', 'Iniciando ' + procname ())
 //	U_Log2 ('debug', _aColsE2)
 //	U_Log2 ('debug', _aColsE2[1])
 
 	// Este P.E. eh chamado 2 vezes: uma na gravacao da nota e outra na 'troca de pasta'.
 	// Parece que preciso ajustar no momento da troca de pasta, pois se fizer na segunda chamada, nao tem efeito.
 //	if IsInCallStack ("U_VA_RUSN") .and. IsInCallStack ("NFEFLDCHG")
-	U_Log2 ('debug', '[' + procname () + ']IsInCallStack ("U_VA_RUSN"): ' + CVALTOCHAR (IsInCallStack ("U_VA_RUSN")))	
-	U_Log2 ('debug', '[' + procname () + ']IsInCallStack ("U_VA_GNF2"): ' + CVALTOCHAR (IsInCallStack ("U_VA_GNF2")))	
-	U_Log2 ('debug', '[' + procname () + ']IsInCallStack ("NFEFLDCHG"): ' + CVALTOCHAR (IsInCallStack ("NFEFLDCHG")))	
-	U_Log2 ('debug', '[' + procname () + ']cTipo: ' + cTipo)
-	U_Log2 ('debug', '[' + procname () + ']cFormul: ' + cFormul)
+//	U_Log2 ('debug', '[' + procname () + ']IsInCallStack ("U_VA_RUSN"): ' + CVALTOCHAR (IsInCallStack ("U_VA_RUSN")))	
+//	U_Log2 ('debug', '[' + procname () + ']IsInCallStack ("U_VA_GNF2"): ' + CVALTOCHAR (IsInCallStack ("U_VA_GNF2")))	
+//	U_Log2 ('debug', '[' + procname () + ']IsInCallStack ("NFEFLDCHG"): ' + CVALTOCHAR (IsInCallStack ("NFEFLDCHG")))	
+//	U_Log2 ('debug', '[' + procname () + ']cTipo: ' + cTipo)
+//	U_Log2 ('debug', '[' + procname () + ']cFormul: ' + cFormul)
 //	U_Log2 ('debug', '[' + procname () + ']type ("_aParPgSaf"):' + type ("_aParPgSaf"))
 //	U_Log2 ('debug', '[' + procname () + ']type ("_aHeadSE2"):' + type ("_aHeadSE2"))
 
@@ -53,40 +54,45 @@ user function MTColSE2 ()
 			if type ('_aParPgSaf') != 'A'
 				u_help ("Nao tenho dados para distribuir as parcelas de pagamento da safra.",, .T.)
 			else
-				if type ('_aHeadSE2') != 'A'
-					U_help ('Este programa esperava encontrar a variavel _aHeadSE2 criada pelo P.E. MT103SE2',, .t.)
+				if len (_aParPgSaf) == 0
+					U_Log2 ('info', '[' + procname () + ']Variavel _aParPgSaf encontra-se vazia (provavelmente o TES usado nao gere duplicatas). Nao vou alterar a array de duplicatas recebida.')
+					_aRet := aclone (_aColsE2)  // Se nao alterar nada, retorna o original.
 				else
-					_nPosParc  = ascan (_aHeadSE2, {|_aVal| upper (alltrim (_aVal [2])) == 'E2_PARCELA'})
-					_nPosVcto  = ascan (_aHeadSE2, {|_aVal| upper (alltrim (_aVal [2])) == 'E2_VENCTO'})
-					_nPosVlr   = ascan (_aHeadSE2, {|_aVal| upper (alltrim (_aVal [2])) == 'E2_VALOR'})
-					_nPosINSS  = ascan (_aHeadSE2, {|_aVal| upper (alltrim (_aVal [2])) == 'E2_INSS'})
-					U_Log2 ('debug', _aHeadSE2)
-					U_Log2 ('info', 'Ajustando parcelas para NF de safra.')
-					_aColsE2 := aclone (paramixb [1])
-					for _nParc = 1 to len (_aColsE2)
-						_nTotParc += _aColsE2 [_nParc, 3]
-					next
+					if type ('_aHeadSE2') != 'A'
+						U_help ('Este programa esperava encontrar a variavel _aHeadSE2 criada pelo P.E. MT103SE2',, .t.)
+					else
+						_nPosParc  = ascan (_aHeadSE2, {|_aVal| upper (alltrim (_aVal [2])) == 'E2_PARCELA'})
+						_nPosVcto  = ascan (_aHeadSE2, {|_aVal| upper (alltrim (_aVal [2])) == 'E2_VENCTO'})
+						_nPosVlr   = ascan (_aHeadSE2, {|_aVal| upper (alltrim (_aVal [2])) == 'E2_VALOR'})
+						_nPosINSS  = ascan (_aHeadSE2, {|_aVal| upper (alltrim (_aVal [2])) == 'E2_INSS'})
+						U_Log2 ('debug', _aHeadSE2)
+						U_Log2 ('info', '[' + procname () + ']Ajustando parcelas para NF de safra.')
+						_aColsE2 := aclone (paramixb [1])
+						for _nParc = 1 to len (_aColsE2)
+							_nTotParc += _aColsE2 [_nParc, 3]
+						next
 
-					// Gera novas parcelas distribuindo o valor total conforme datas e percentuais especificados na _aParPgSaf.
-					for _nParc = 1 to len (_aParPgSaf)
-						aadd (_aRet, aclone (_aColsE2 [1]))
-						_aRet [_nParc, _nPosParc] = chr (64 + _nParc)  // Gera letras a partir do 'A'.
-						_aRet [_nParc, _nPosVcto] = _aParPgSaf [_nParc, 2]
-						_aRet [_nParc, _nPosVlr]  = _aParPgSaf [_nParc, 4]
+						// Gera novas parcelas distribuindo o valor total conforme datas e percentuais especificados na _aParPgSaf.
+						for _nParc = 1 to len (_aParPgSaf)
+							aadd (_aRet, aclone (_aColsE2 [1]))
+							_aRet [_nParc, _nPosParc] = chr (64 + _nParc)  // Gera letras a partir do 'A'.
+							_aRet [_nParc, _nPosVcto] = _aParPgSaf [_nParc, 2]
+							_aRet [_nParc, _nPosVlr]  = _aParPgSaf [_nParc, 4]
 
-						// A partir da segunda parcela nao deve restar nada de FUNRURAL
-						if _nParc > 1
-							U_Log2 ('debug', 'Zerando E2_INSS (FUNRURAL) da parcela ' + cvaltochar (_nParc) + ' pois deve constar apenas na primeira.')
-							_aRet [_nParc, _nPosINSS]  = 0
-						endif
+							// A partir da segunda parcela nao deve restar nada de FUNRURAL
+							if _nParc > 1
+								U_Log2 ('debug', '[' + procname () + ']Zerando E2_INSS (FUNRURAL) da parcela ' + cvaltochar (_nParc) + ' pois deve constar apenas na primeira.')
+								_aRet [_nParc, _nPosINSS]  = 0
+							endif
 
-					next
-				//	U_Log2 ('debug', _aRet)
+						next
+					//	U_Log2 ('debug', _aRet)
+					endif
 				endif
 			endif
 		endif
 	else
-		U_Log2 ('info', 'nao vou mexer nas parcelas neste momento (nao eh nota de safra, ou nao eh o momento correto).')
+		U_Log2 ('info', '[' + procname () + ']Nao vou mexer nas parcelas neste momento (nao eh nota de safra, ou nao eh o momento correto).')
 		_aRet := aclone (_aColsE2)  // Se nao alterar nada, retorna o original.
 	endif
 

@@ -3146,6 +3146,37 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=                                  "," + iif (empty (::Param06), "NULL", "'" + ::Param06        + "'")  // OP fim
 
 
+		case ::Numero == 86
+			::Filiais   = '01'  // Gero todas as filiais juntas.
+			::Setores   = 'SAF'
+			::Descricao = 'Inconsistencia frete safra'
+			::Sugestao  = 'Verificar calculo do frete (tabela SZF) e gravacao das tabelas SD1 e SF1.'
+			::GrupoPerg = "U_VALID009"
+			::ValidPerg (_lDefault)
+			::Query := ""
+			::Query += " WITH C AS ("
+			::Query += " SELECT SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, NOME_ASSOC, DOC, SERIE, dbo.VA_DTOC (DATA) AS DATA, SUM (VALOR_FRETE) AS ZF_VALFRET"
+			::Query +=   ", (SELECT F1_DESPESA
+			::Query +=       " FROM " + RetSQLName ("SF1") + " SF1"
+			::Query +=      " WHERE SF1.D_E_L_E_T_ = ''"
+			::Query +=        " AND SF1.F1_FILIAL  = V.FILIAL"
+			::Query +=        " AND SF1.F1_DOC     = V.DOC"
+			::Query +=        " AND SF1.F1_SERIE   = V.SERIE"
+			::Query +=        " AND SF1.F1_FORNECE = V.ASSOCIADO"
+			::Query +=        " AND SF1.F1_LOJA    = V.LOJA_ASSOC) AS F1_DESPESA"
+			::Query +=   " FROM VA_VNOTAS_SAFRA V"
+			::Query +=  " WHERE SAFRA   = '" + ::Param01 + "'"
+			::Query +=    " AND TIPO_NF = 'C'"
+//			::Query +=    " AND FILIAL  = '" + cFilAnt + "'"
+			::Query += " GROUP BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, NOME_ASSOC, DOC, SERIE, DATA"
+			::Query += ")"
+			::Query += "SELECT 'Soma frete(s) no ZF_VALFRET diferente do campo F1_DESPESA' as problema"
+			::Query +=      ", C.*"
+			::Query +=  " FROM C"
+			::Query += " WHERE round (ZF_VALFRET, 2) != round (F1_DESPESA, 2)"
+			::Query += " ORDER BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE"
+
+
 		otherwise
 			::UltMsg = "Verificacao numero " + cvaltochar (::Numero) + " nao definida."
 	endcase
@@ -3303,6 +3334,13 @@ METHOD ValidPerg (_lDefault) Class ClsVerif
 				::Param04 = dDataBase  // Deixa um valor default para poder gerar a query inicial.
 				::Param05 = ''  // Deixa um valor default para poder gerar a query inicial.
 				::Param06 = 'z'  // Deixa um valor default para poder gerar a query inicial.
+			endif
+
+		case ::GrupoPerg == "U_VALID009"
+			//                     PERGUNT                           TIPO TAM DEC VALID F3        Opcoes                               Help
+			aadd (_aRegsPerg, {01, "Safra                         ", "C", 4,  0,  "",   "      ", {},                                  ""})
+			if _lDefault
+				::Param01 = U_IniSafra ()  // Retorna o Ano da Safra atual. Deixa um valor default para poder gerar a query inicial.
 			endif
 
 		case ::GrupoPerg == "U_VALID046"

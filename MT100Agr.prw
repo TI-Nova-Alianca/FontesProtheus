@@ -19,6 +19,7 @@
 // 08/04/2019 - Catia  - include TbiConn.ch 
 // 19/02/2021 - Robert - Inclusao de chamadas da funcao U_PerfMon() para metricas de performance (GLPI 9409).
 // 31/08/2021 - Robert - Passa a gerar titulos de indenizacao (comissoes) tambem para notas tipo SPED.
+// 09/03/2022 - Robert - Desabilitado campo E2_VRETIR na rot.automatica do SE2, pois este campo nao existe (GLPI 11732)
 //
 
 // ------------------------------------------------------------------------------------
@@ -229,7 +230,7 @@ static function _GeraInd ()
 			aadd (_aAutoSE2, {"E2_VALOR"  , _wvalor 				        , Nil})
 			aadd (_aAutoSE2, {"E2_IRRF"   , _wvlrir						    , Nil})
 			aadd (_aAutoSE2, {"E2_VLIR"   , _wvlrir						    , Nil})
-			aadd (_aAutoSE2, {"E2_VRETIR" , _wvlrir						    , Nil})
+//este campo nao existe, mas nao acusa erro. Se nao precisou ateh hoje, vou desabilitar esta linha. Robert, 09/03/22			aadd (_aAutoSE2, {"E2_VRETIR" , _wvlrir						    , Nil})
 			if _wvlrir > 0
 				aadd (_aAutoSE2, {"E2_DIRF"   , '1'					 		 , Nil})
 			endif

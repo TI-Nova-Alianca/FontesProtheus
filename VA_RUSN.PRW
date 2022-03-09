@@ -538,7 +538,7 @@ User Function va_rusN (_lSimulNF)
 				_lContinua = .F.
 			endif
 		else
-			U_Log2 ('debug', 'O TES usado (' + _sTES + ') nao gera duplicatas. Vou deixar a variavel _aParPgSaf vazia.')
+			U_Log2 ('debug', '[' + procname () + ']O TES usado (' + _sTES + ') nao gera duplicatas. Vou deixar a variavel _aParPgSaf vazia.')
 			_aParPgSaf = {}
 		end
 	endif
@@ -624,9 +624,9 @@ User Function va_rusN (_lSimulNF)
 		// Apresenta Tela para7 Confirmar o Numero da Primeira NF a Ser Gerada
 		_lContinua = Sx5NumNota (@_sSerie)
 		if _lContinua
-			u_log2 ('info', 'confirmou proxima nota para a serie ' + _sSerie)
+			u_log2 ('info', '[' + procname () + ']Usr.confirmou proxima nota para a serie ' + _sSerie)
 		else
-			u_log2 ('aviso', 'Nao confirmou proxima nota')
+			u_log2 ('aviso', '[' + procname () + ']Usr. nao confirmou proxima nota')
 		endif
 	endif
 	
@@ -635,7 +635,7 @@ User Function va_rusN (_lSimulNF)
 
 		// Busca a Proxima NF da serie informada.
 		_sNF = NxtSX5Nota (_sSerie)
-		u_log2 ('info', '_sNF: ' + _sNF)
+		u_log2 ('info', '[' + procname () + ']Vou tentar gerar NF: ' + _sNF)
 
 		// Prepara campos do cabecalho da nota
 		_aAutoSF1 := {}
@@ -652,7 +652,6 @@ User Function va_rusN (_lSimulNF)
 		AADD( _aAutoSF1, { "F1_VASEPRO"  , sze->ze_SNFProd, Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
 		AADD( _aAutoSF1, { "F1_VAPLVEI"  , sze->ze_Placa,   Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
 		AADD( _aAutoSF1, { "F1_VASAFRA"  , sze->ze_safra,   Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
-//		AADD( _aAutoSF1, { "F1_FRETE"    , _nVlFrete,       Nil})
 		AADD( _aAutoSF1, { "F1_VAFLAG"   , 'G',             Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I. Indica 'nota ja gerada' para a rotina de manut. XML
 		AADD( _aAutoSF1, { "F1_VAGPSAF"  , _sGrpPgSaf,      Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
 		AADD( _aAutoSF1, { "F1_COND"     , _sCondPg,        Nil})
@@ -666,7 +665,6 @@ User Function va_rusN (_lSimulNF)
 	endif
 
 	if _lContinua
-//		u_log2 ('info', _aAutoSF1)
 
 		// A partir de 07/03/2022 o sistema nao me permitiu mais gravar notas com diferenca entre
 		// o total da nota e a soma das duplicatas. Acredito ser por causa de uma atualizacao que
@@ -680,7 +678,7 @@ User Function va_rusN (_lSimulNF)
 		lMsHelpAuto := .F.  // se .t. direciona as mensagens de help
 		lMsErroAuto := .F.  // necessario a criacao
 		DbSelectArea ("SF1")
-		u_log2 ('debug', 'chamando MATA103')
+		u_log2 ('debug', '[' + procname () + ']chamando MATA103')
 
 		begin transaction
 
@@ -698,10 +696,10 @@ User Function va_rusN (_lSimulNF)
 				u_log2 ('erro', memoread (NomeAutoLog ()))
 				MostraErro()
 			else
-				u_help ("Nao foi possivel ler o arquivo de log de erros.")
+				u_help ("Nao foi possivel ler o arquivo de log de erros.",, .t.)
 			endif
 		else
-			u_log2 ('info', 'Carga ' + sze -> ze_carga + ' gerou NF ' + sf1 -> f1_doc)
+			u_log2 ('info', '[' + procname () + ']Carga ' + sze -> ze_carga + ' gerou NF ' + sf1 -> f1_doc)
 
 			// Grava dados adicionais na nota.
 			if ! empty (_sMsgContr)
@@ -721,7 +719,7 @@ User Function va_rusN (_lSimulNF)
 			msunlock ()
 		endif
 		end transaction
-		U_Log2 ('info', 'Fim da transacao de geracao da contranota.')
+		U_Log2 ('info', '[' + procname () + ']Fim da transacao de geracao da contranota.')
 
 		PutMv ('MV_LIMPAG', 0.09) // Valor original do parametro (ver comentario acima)
 
@@ -743,7 +741,7 @@ User Function va_rusN (_lSimulNF)
 
 	endif
 
-	U_Log2 ('info', '############################## Final da rotina de geracao de contranota')
+	U_Log2 ('info', '[' + procname () + ']############################## Final da rotina de geracao de contranota')
 
 	_nRetMem := U_UsoMem ()
 	u_log2 ('info', 'Achei minha thread usando ' + transform (_nRetMem, "@E 999,999,999,999,999") + ' bytes de memoria')
@@ -752,85 +750,3 @@ User Function va_rusN (_lSimulNF)
 		Final ("Termino proposital para alivio de memoria")
 	endif
 return
-
-
-/*
-// --------------------------------------------------------------------------
-// Gera entrada na conta corrente do associado, com base nos titulos gerados no financeiro.
-static function _GravaSZI ()
-	local _sAliasQ   := ''
-	local _oCtaCorr  := NIL
-
-	procregua (10)
-	incproc ('Gravando conta corrente associado')
-	
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT E2_FILIAL, E2_FORNECE, E2_LOJA, E2_NOMFOR, E2_EMISSAO, E2_VENCREA, E2_NUM, E2_PREFIXO, E2_TIPO, E2_VALOR, E2_SALDO, E2_HIST, R_E_C_N_O_, E2_LA, E2_PARCELA,"
-	_oSQL:_sQuery +=        " ROW_NUMBER () OVER (ORDER BY E2_PARCELA) AS NUM_PARC"
-	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2")
-	_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=    " AND E2_TIPO    = 'NF'"
-	_oSQL:_sQuery +=    " AND E2_FORNECE = '" + sf1 -> f1_fornece + "'"
-	_oSQL:_sQuery +=    " AND E2_LOJA    = '" + sf1 -> f1_loja + "'"
-	_oSQL:_sQuery +=    " AND E2_PREFIXO = '" + sf1 -> f1_serie + "'"
-	_oSQL:_sQuery +=    " AND E2_NUM     = '" + sf1 -> f1_doc + "'"
-	_oSQL:_sQuery +=    " AND E2_VACHVEX = ''"
-	_oSQL:_sQuery +=    " AND E2_FILIAL  = '" + xfilial ("SE2") + "'"
-	_oSQL:_sQuery +=  " ORDER BY E2_PARCELA"
-	_oSQL:Log ()
-	_sAliasQ = _oSQL:Qry2Trb (.T.)
-	procregua ((_sAliasQ) -> (reccount ()))
-	(_sAliasQ) -> (dbgotop ())
-	do while ! (_sAliasQ) -> (eof ())
-		incproc ('Gravando cta.corr.assoc.')
-		//u_log ('Filial:' + (_sAliasQ) -> e2_filial, 'Forn:' + (_sAliasQ) -> e2_fornece + '/' + (_sAliasQ) -> e2_loja + ' ' + (_sAliasQ) -> e2_nomfor, 'Emis:', (_sAliasQ) -> e2_emissao, 'Vcto:', (_sAliasQ) -> e2_vencrea, 'Doc:', (_sAliasQ) -> e2_num+'/'+(_sAliasQ) -> e2_prefixo, 'Tipo:', (_sAliasQ) -> e2_tipo, 'Valor: ' + transform ((_sAliasQ) -> e2_valor, "@E 999,999,999.99"), 'Saldo: ' + transform ((_sAliasQ) -> e2_saldo, "@E 999,999,999.99"), (_sAliasQ) -> e2_hist)
-
-		_oCtaCorr := ClsCtaCorr():New ()
-		_oCtaCorr:Assoc    = (_sAliasQ) -> e2_fornece
-		_oCtaCorr:Loja     = (_sAliasQ) -> e2_loja
-		_oCtaCorr:TM       = '13'
-		_oCtaCorr:DtMovto  = (_sAliasQ) -> e2_EMISSAO
-		_oCtaCorr:Valor    = (_sAliasQ) -> e2_valor
-		_oCtaCorr:SaldoAtu = (_sAliasQ) -> e2_saldo
-		_oCtaCorr:Usuario  = cUserName
-		_oCtaCorr:Histor   = 'COMPRA SAFRA ' + sf1 -> f1_vasafra + " GRP." + sf1 -> f1_vagpsaf
-		_oCtaCorr:MesRef   = strzero(month(_oCtaCorr:DtMovto),2)+strzero(year(_oCtaCorr:DtMovto),4)
-		_oCtaCorr:Doc      = (_sAliasQ) -> e2_num
-		_oCtaCorr:Serie    = (_sAliasQ) -> e2_prefixo
-		_oCtaCorr:Parcela  = (_sAliasQ) -> e2_parcela
-		_oCtaCorr:Origem   = 'VA_RUS'
-		if _oCtaCorr:PodeIncl ()
-			if ! _oCtaCorr:Grava (.F., .F.)
-				U_help ("Erro na atualizacao da conta corrente para o associado '" + (_sAliasQ) -> e2_fornece + '/' + (_sAliasQ) -> e2_loja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
-				_lContinua = .F.
-			else
-				se2 -> (dbgoto ((_sAliasQ) -> r_e_c_n_o_))
-				if empty (se2 -> e2_vachvex)  // Soh pra garantir...
-					reclock ("SE2", .F.)
-					se2 -> e2_vachvex = _oCtaCorr:ChaveExt ()
-					msunlock ()
-				endif
-
-				// Se gerei conta corrente numa filial, preciso transferir esse lcto para a matriz, pois todos os pagamentos sao centralizados.
-				if sf1 -> f1_filial != '01' //.and. 'TESTE' $ upper (getenvserver ())  // por enqto apenas na base teste
-					_oCtaCorr:FilDest = '01'
-					_oCtaCorr:Origem  = FunName ()
-					if ! _oCtaCorr:TransFil (_oCtaCorr:Valor)
-						u_help ("A transferencia para outra filial nao foi possivel. " + _oCtaCorrT:UltMsg,, .T.)
-					endif
-				endif
-			endif
-
-		else
-			U_help ("Gravacao do SZI nao permitida na atualizacao da conta corrente para o associado '" + (_sAliasQ) -> e2_fornece + '/' + (_sAliasQ) -> e2_loja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
-			_lContinua = .F.
-		endif
-
-		(_sAliasQ) -> (dbskip ())
-	enddo
-	(_sAliasQ) -> (dbclosearea ())
-	dbselectarea ("SZE")
-return
-*/
-

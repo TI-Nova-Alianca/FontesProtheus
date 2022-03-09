@@ -169,11 +169,11 @@ static function _ConfFrt ()
 
 	_oSQL := ClsSQL():New ()
 	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, SUM (VALOR_FRETE) AS VLR_FRT"
+	_oSQL:_sQuery += " SELECT SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, dbo.VA_DTOC (DATA) AS DATA, SUM (VALOR_FRETE) AS VLR_FRT"
 	_oSQL:_sQuery +=   " FROM VA_VNOTAS_SAFRA V"
 	_oSQL:_sQuery +=  " WHERE SAFRA   = '" + cvaltochar (year (date ())) + "'"
 	_oSQL:_sQuery +=    " AND TIPO_NF = 'C'"
-	_oSQL:_sQuery +=    " AND FILIAL  = '" + cFilAnt + "'"
+//	_oSQL:_sQuery +=    " AND FILIAL  = '" + cFilAnt + "'"
 	_oSQL:_sQuery += " GROUP BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE"
 	_oSQL:_sQuery += " ORDER BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE"
 	_oSQL:Log ()

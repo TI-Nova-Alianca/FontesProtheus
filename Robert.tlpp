@@ -92,33 +92,30 @@ static function _AndaLogo ()
 	u_help ('Nada definido.')
 return
 /*
-	// testes U_OrdAuto
-	_aLinha = {}
-	AADD(_aLinha , {"D1_COD"     , szf -> zf_produto    , Nil } )
-	AADD(_aLinha , {"D1_UM"      , sb1 -> B1_UM         , Nil } )
-	AADD(_aLinha , {"D1_TP"      , sb1 -> B1_TIPO       , Nil } )
-	AADD(_aLinha , {"D1_GRAU"    , szf -> zf_grau       , Nil } )
-	AADD(_aLinha , {"D1_PRM02"   , szf -> zf_prm02      , Nil } )
-	AADD(_aLinha , {"D1_PRM03"   , szf -> zf_prm03      , Nil } )
-	AADD(_aLinha , {"D1_PRM04"   , szf -> zf_prm04      , Nil } )
-	AADD(_aLinha , {"D1_PRM05"   , szf -> zf_prm05      , Nil } )
-	AADD(_aLinha , {"D1_PRM99"   , szf -> zf_prm99      , Nil } )
-	AADD(_aLinha , {"D1_VACLABD" , szf -> zf_clasabd    , Nil } )
-	AADD(_aLinha , {"D1_QUANT"   , szf -> zf_peso       , Nil } )
-	AADD(_aLinha , {"D1_VAVOLES" , szf -> zf_embalag    , Nil } )
-	AADD(_aLinha , {"D1_VAVOLQT" , szf -> zf_qtembal    , Nil } )
-	AADD(_aLinha , {"D1_VAVITIC" , szf -> zf_cadviti    , Nil } )
-	AADD(_aLinha , {"D1_LOTEFOR" , szf -> zf_idZA8,     Nil } )
-	AADD(_aLinha , {"D1_VACONDU" , szf -> zf_conduc   , Nil } )
-	AADD(_aLinha , {"D1_DESPESA" , szf -> zf_valfret  , Nil } )
-	_aLinha = aClone (U_OrdAuto (_aLinha))
-	u_log (_aLinha)
+	// Testes verificacoes genericas.
+	// _oVerif := ClsVerif():New (25)
+	// _oVerif:SetParam ('01', '2017')
+	// _oVerif:SetParam ('02', '')
+	// _oVerif:SetParam ('03', 'zz')
+	// _oVerif:SetParam ('04', '30 ')
+	// _oVerif:SetParam ('05', '028')
+	// _oVerif:SetParam ('06', '077')
+	// _oVerif:SetParam ('07', '000017')
+	// _oVerif := ClsVerif():New (24)
+	// _oVerif:SetParam ('01', '09189201001  ')
+	// _oVerif:SetParam ('02', '09189201001  ')
+	// _oVerif:SetParam ('03', '')
+	// _oVerif:SetParam ('04', 'z')
+	_oVerif := ClsVerif():New (86)
+	if _oVerif:Executa ()
+		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
+		u_log2 ('debug', _oVerif:Result)
+		u_acolsxls (_oVerif:Result)
+	else
+		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
+	endif
 return
-	// u_perfmon ('I', 'teste_log')
-	// for _i = 1 to 100000
-	// 	u_log2 ('info', 'teste log... 26/02/2021 002731 000026577/30 -J')
-	// next
-	// u_perfmon ('L', 'teste_log')
+*/
 /*
 // Testes batches em geral
 //	_sArqLog := 'U_BatCompAssoc_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
@@ -156,30 +153,6 @@ return
 //	u_log2 ('info', _oBatch:Mensagens)
 //	_sArqLog := 'U_BatXML_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	U_BatXML("\\192.168.1.3\Siga\Protheus12\protheus_data\xml_NFe\", 1, .F.)
-return
-*/
-/*
-	// Testes verificacoes genericas.
-	// _oVerif := ClsVerif():New (25)
-	// _oVerif:SetParam ('01', '2017')
-	// _oVerif:SetParam ('02', '')
-	// _oVerif:SetParam ('03', 'zz')
-	// _oVerif:SetParam ('04', '30 ')
-	// _oVerif:SetParam ('05', '028')
-	// _oVerif:SetParam ('06', '077')
-	// _oVerif:SetParam ('07', '000017')
-	// _oVerif := ClsVerif():New (24)
-	// _oVerif:SetParam ('01', '09189201001  ')
-	// _oVerif:SetParam ('02', '09189201001  ')
-	// _oVerif:SetParam ('03', '')
-	// _oVerif:SetParam ('04', 'z')
-	_oVerif := ClsVerif():New (85)
-	if _oVerif:Executa ()
-		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
-		u_log2 ('debug', _oVerif:Result)
-	else
-		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
-	endif
 return
 */
 /*
