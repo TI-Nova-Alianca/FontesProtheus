@@ -49,6 +49,7 @@
 // 07/10/2021 - Claudia - Incluida gravação dos registros nos eventos, para busca no NaWeb. GLPI 7792
 // 26/10/2021 - Claudia - Alterado o modo de gravação do evento SC5009.
 // 18/01/2022 - CLaudia - Retirada busca de frete negociado, conforme GLPI: 11482
+// 08/03/2022 - Claudia - Alterada regra de % de acrescimo financeiro. GLPI: 11658
 //
 // ------------------------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
@@ -287,8 +288,17 @@ static function _AndaLogo (_lMostra, _lAtuFrt)
 		_nDataFim := _aVctos[Len(_aVctos),1]
 	endif
 	
-	if m->c5_condpag != '007' .and. _nDataIni >= DATE() + 30 
-		_nQtdDias = ((_nDataIni - DATE () + _nDataFim - DATE ()) / 2 )
+	if _DataInfo = 'N'
+		_nDias := _BuscaDiasMedio(m->c5_condpag)
+
+		if _nDias > 30
+			_nQtdDias = _nDias
+		endif
+
+	else
+		if m->c5_condpag != '007' .and. _nDataIni >= DATE() + 30 
+			_nQtdDias = ((_nDataIni - DATE () + _nDataFim - DATE ()) / 2 )
+		endif
 	endif
 	
 	// Se for uma consulta a partir da consulta de clientes, os calculos soh ficam corretos
@@ -739,7 +749,7 @@ Static Function _RetType(_var)
 Return _type
 //
 // --------------------------------------------------------------------------
-// GRava registros de margem para NaWeb
+// Grava registros de margem para NaWeb
 Static Function _GravaNaWeb(_sTxtEvent)
 
 	_oEvento = ClsEvent ():New () 
@@ -752,3 +762,23 @@ Static Function _GravaNaWeb(_sTxtEvent)
 	_oEvento:HrEvento = time()
 	_oEvento:Grava ()
 Return
+//
+// --------------------------------------------------------------------------
+// Calcula dias medios para pagamento
+Static Function _BuscaDiasMedio(_sCondPgto)
+	Local _aData := {}	
+	Local _x     := 0
+	Local _nSoma := 0
+
+	_sCond:= Posicione("SE4",1,'  ' + _sCondPgto,"E4_COND")
+	_aData := StrToKarr( _sCond , ',')
+
+	If Len(_aData) > 0
+		For _x:=1  to Len(_aData)
+			_nSoma += val(_aData[_x])
+		Next
+		_nDiasMedios := _nSoma/Len(_aData)
+	else
+		_nDiasMedios := 1
+	EndIf
+Return _nDiasMedios
