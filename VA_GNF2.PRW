@@ -42,6 +42,7 @@
 // 07/05/2021 - Robert - Gravacao campo ZI_SAFRA (GLPI 9891).
 // 18/05/2021 - Robert - Melhorias diversas FUNRURAL e complemento safra 2021 (GLPI 9891 e 10007).
 // 04/03/2022 - Robert - Valida se o TES de complemento estah atualizando estoque (GLPI 11708).
+// 07/03/2022 - Robert - Permite (mediante confirmacao) TES que atualiza estoque nos complementos (GLPI 11721)
 //
 
 #XTranslate .ItensProduto    => 1
@@ -679,9 +680,10 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 
 			if _sTipoNota == 'C'
 				if fBuscaCpo ("SF4", 1, xfilial ("SF4") + _aItens [_nItem, .ItensTES], "F4_ESTOQUE") == 'S'
-					u_help ("Para notas de complemento, o TES (" + _aItens [_nItem, .ItensTES] + ") nao deve atualizar estoque, pois afeta o custo medio. Como eh comum gerarmos complemento depois que a uva nao tem mais estoque, usa-se uma funcao customizada para jogar o complemento de safra nos itens de granel.",, .t.)
-					_lContinua = .F.
-					exit
+					_lContinua = u_msgnoyes ("Para notas de complemento, o TES (" + _aItens [_nItem, .ItensTES] + ") nao deve atualizar estoque, pois afeta o custo medio. Como eh comum gerarmos complemento depois que a uva nao tem mais estoque, usa-se uma funcao customizada para jogar o complemento de safra nos itens de granel. Confirma assim mesmo?")
+					if ! _lContinua
+						exit
+					endif
 				endif
 			endif
 
@@ -711,8 +713,15 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 				// Essa RONHA desse sistema nao aceita por que precisa 4 digitos, mas a mascara do campo tem 2... o jeito foi passar por cima da validacao padrao. -->  AADD(_aLinha , {"D1_ITEMORI", right (_aItens [_nItem, 9], tamsx3 ("D1_ITEMORI")[1]) , Nil } )
 				AADD(_aLinha , {"D1_ITEMORI", right (_aItens [_nItem, .ItensItemOri], tamsx3 ("D1_ITEMORI")[1]) , '.t.' } )
 			endif
-		//	U_LOG2 ('DEBUG', aClone (U_OrdAuto (_aLinha)))
-			AADD(_aAutoSD1, aClone (U_OrdAuto (_aLinha)))
+
+// nao ficou bom			// remover este teste depois de encerrar o chamado!
+// nao ficou bom			if alltrim (_sDCO) == 'GLPI11721'
+// nao ficou bom				AADD(_aLinha , {"D1_DESPESA", _nVlTot, NIL } )
+// nao ficou bom			endif
+
+			_aLinha = aClone (U_OrdAuto (_aLinha))
+			U_Log2 ('debug', _aLinha)
+			AADD(_aAutoSD1, _aLinha)
 
 			_nVlrUvas += _nVlTot
 		next
@@ -736,7 +745,7 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 		lMsErroAuto := .F.  // necessario a criacao
 		DbSelectArea("SF1")
 		dbsetorder (1)
-		u_log2 ('info', 'Chamando MATA103 para gerar a nota ' + _sNF)
+		u_log2 ('info', '[' + procname () + ']Chamando MATA103 para gerar a nota ' + _sNF)
 		MsExecAuto({|x,y,z|MATA103(x,y,z)},_aAutoSF1,_aAutoSD1,3)
 		If lMsErroAuto
 			u_help (_sErroAuto, iif (!empty (NomeAutoLog ()), U_LeErro (memoread (NomeAutoLog ())), ''), .t.)
@@ -860,7 +869,7 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {04, "Loja produtor final           ", "C", 2,  0,  "",   "SA2", {},                                  "Loja do produtor (fornecedor) final para geracao das notas."})
 	aadd (_aRegsPerg, {05, "Safra referencia              ", "C", 4,  0,  "",   "   ", {},                                  "Safra (ano) para a qual serao geradas as notas de compra."})
 	aadd (_aRegsPerg, {06, "Parcelas sep.barras(bco=todas)", "C", 30, 0,  "",   "   ", {},                                  "Parcelas. Geralmente para separar tintorias, organicas, etc. Ex.: A/B/F"})
-	aadd (_aRegsPerg, {07, "Grupo pagamento(bco=todos)    ", "C", 1,  0,  "",   "   ", {},                                  "Grupo de produtos (geralmente para gerar parcelamento)"})
+	aadd (_aRegsPerg, {07, "Grupo pagamento               ", "C", 1,  0,  "",   "   ", {},                                  "Grupo de produtos (geralmente para gerar parcelamento)"})
 	aadd (_aRegsPerg, {08, "Geracao por DCO               ", "C", 1,  0,  "",   "   ", {"Com DCO", "Sem DCO", "Todos"},     "Permite gerar separadamente as notas envolvidas em leilao da CONAB."})
 	aadd (_aRegsPerg, {09, "Variedade de uva              ", "N", 1,  0,  "",   "   ", {"Comum", "Fina", "Todas"},          "Permite gerar separadamente as notas por tipo de uva."})
 	aadd (_aRegsPerg, {10, "Tipo de nota a gerar          ", "N", 1,  0,  "",   "   ", {"Normais", "Compl.preco"},          "Compl.preco eh sobre as compras feitas a preco minimo do governo."})

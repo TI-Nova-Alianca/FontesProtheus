@@ -32,7 +32,7 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '01' modulo 'FIN'
+		prepare environment empresa '01' filial '07' modulo 'FIN'
 		private cModulo   := 'FIN'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -91,6 +91,65 @@ static function _AndaLogo ()
 	incproc ()
 	u_help ('Nada definido.')
 return
+/*
+	// Gera complemento de frete (ficamos dia 07/03/22 sem gravar o campo D1_DESPESA) safra 2022 (GLPI 
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""  // consulta baseada na verificacao numero 86
+	_oSQL:_sQuery += "WITH C AS ( SELECT SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, NOME_ASSOC, DOC, SERIE, dbo.VA_DTOC (DATA) AS DATA, SUM (VALOR_FRETE) AS ZF_VALFRET"
+	_oSQL:_sQuery +=                  ", GRUPO_PAGTO, PRODUTO, GRAU, CLAS_FINAL, CLAS_ABD, SIST_CONDUCAO, ITEM_NOTA"
+	_oSQL:_sQuery +=                  ", (SELECT D1_DESPESA"
+	_oSQL:_sQuery +=                      " FROM SD1010 SD1"
+	_oSQL:_sQuery +=                     " WHERE SD1.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=                       " AND SD1.D1_FILIAL  = V.FILIAL"
+	_oSQL:_sQuery +=                       " AND SD1.D1_DOC     = V.DOC"
+	_oSQL:_sQuery +=                       " AND SD1.D1_SERIE   = V.SERIE"
+	_oSQL:_sQuery +=                       " AND SD1.D1_FORNECE = V.ASSOCIADO"
+	_oSQL:_sQuery +=                       " AND SD1.D1_LOJA    = V.LOJA_ASSOC"
+	_oSQL:_sQuery +=                       " AND SD1.D1_ITEM    = V.ITEM_NOTA) AS D1_DESPESA"
+	_oSQL:_sQuery +=              " FROM VA_VNOTAS_SAFRA V WHERE SAFRA   = '2022' AND TIPO_NF = 'C'"
+	_oSQL:_sQuery +=             " GROUP BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, NOME_ASSOC, DOC, SERIE, DATA, GRUPO_PAGTO, PRODUTO, GRAU, CLAS_FINAL, CLAS_ABD, SIST_CONDUCAO, ITEM_NOTA)"
+	_oSQL:_sQuery +=  " SELECT C.* FROM C"
+	_oSQL:_sQuery +=  " WHERE round (ZF_VALFRET, 2) != round (D1_DESPESA, 2)"
+	_oSQL:_sQuery +=    " AND C.FILIAL = '" + cFilAnt + "'"
+	_oSQL:_sQuery +=  " ORDER BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, ITEM_NOTA"
+	_oSQL:Log ()
+	_sAliasQ := _oSQL:Qry2Trb (.f.)
+	_sPreNF := U_RetSQL ("SELECT MAX (ZZ9_PRE_NF) FROM ZZ9010 WHERE ZZ9_SAFRA = '2022' AND ZZ9_FILIAL = '" + cFilAnt + "'")
+	do while ! (_sAliasQ) -> (eof ())
+		reclock ("ZZ9", .T.)
+		zz9 -> zz9_filial = (_sAliasQ) -> filial
+		zz9 -> zz9_safra  = (_sAliasQ) -> safra
+		zz9 -> zz9_grupo  = (_sAliasQ) -> grupo_pagto
+		zz9 -> zz9_parcel = 'D'
+		zz9 -> zz9_fornec = (_sAliasQ) -> associado
+		zz9 -> zz9_loja   = (_sAliasQ) -> loja_assoc
+		zz9 -> zz9_pre_nf = _sPreNF
+		zz9 -> zz9_TipoNF = "C"
+		zz9 -> zz9_produt = (_sAliasQ) -> produto
+		zz9 -> zz9_grau   = (_sAliasQ) -> grau
+		zz9 -> zz9_classe = (_sAliasQ) -> clas_final
+		zz9 -> zz9_clabd  = (_sAliasQ) -> clas_abd
+		zz9 -> zz9_conduc = (_sAliasQ) -> sist_conducao
+		zz9 -> zz9_vunold = 0
+		zz9 -> zz9_vunit2 = 0
+		zz9 -> zz9_quant  = 0
+		zz9 -> zz9_vunit  = (_sAliasQ) -> ZF_VALFRET
+		zz9 -> zz9_obs    = 'NF orig.ficou sem frete (GLPI 11721)'
+		zz9 -> zz9_DCO    = 'GLPI11721'
+		zz9 -> zz9_nfori  = (_sAliasQ) -> doc
+		zz9 -> zz9_serior = (_sAliasQ) -> serie
+		zz9 -> zz9_itemor = (_sAliasQ) -> item_nota
+		zz9 -> zz9_mistu1 = ''
+		zz9 -> zz9_mistu2 = ''
+		zz9 -> zz9_mistu3 = ''
+		zz9 -> zz9_msgNF  = 'Compl.frt.safra 2022'
+		zz9 -> zz9_TES    = '310'  //TES que altera estoque por que quero somar no custo da uva, que ainda consta em estoque.  U_TESSafra ('2022', (_sAliasQ) -> associado, (_sAliasQ) -> loja_assoc, 'V')
+		msunlock ()
+		_sPreNF = soma1 (soma1 (soma1 (soma1 (soma1 (_sPreNF)))))
+		(_sAliasQ) -> (dbskip ())
+	enddo
+return
+*/
 /*
 	// Testes verificacoes genericas.
 	// _oVerif := ClsVerif():New (25)
