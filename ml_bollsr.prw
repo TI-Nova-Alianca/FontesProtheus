@@ -2872,7 +2872,7 @@ Static Function _Impress(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
 		endif
 		
 		if _cBcoBol == '041' .and. cNumEmp == '0108'  // dados de agencia/conta do beneficiario da filial 08 - banrisul
-			oPrn:Say(_nLinIni+0400 , 0400 ,  "0873 08856682 39"	,oFont10)
+			oPrn:Say(_nLinIni+0400 , 0400 ,  "0873 856682386"	,oFont10)
 			oPrn:Say(_nLinIni+0430 , 0930 ,"                                                                       SAC BANRISUL 0800 646 1515, OUVIDORIA BANRISUL 0800 644 2200",oFont8 )				
 		endif
 		
@@ -2977,7 +2977,7 @@ Static Function _Impress(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
 		ElseIf _cBcoBol == 'RED'
 			oPrn:Say(_nLinIni+0815 , 1960 ,"3391-0/0006332-0" 		,oFont10)	
 		ElseIf _cBcoBol == '041' .and. cNumEmp == '0108'  // dados de agencia/conta do beneficiario da filial 08 - banrisul 
-			oPrn:Say(_nLinIni+0815 , 1960 ,"0873 08856682 39"	,oFont10)
+			oPrn:Say(_nLinIni+0815 , 1960 ,"0873 856682386"	,oFont10)
 		Else
 			oPrn:Say(_nLinIni+0815 , 1960 ,_cAgeBol+"  /  "+_cCtaBol,oFont10)
 		EndiF
