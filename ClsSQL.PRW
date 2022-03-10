@@ -375,12 +375,12 @@ return
 
 // --------------------------------------------------------------------------
 // Grava query atual em arquivo de log para depuracao.
-METHOD Log (_lQuebra) Class ClsSQL
+METHOD Log (_sPrefixo, _lQuebra) Class ClsSQL
 	if _lQuebra != NIL .and. _lQuebra
-		u_logQry ('[' + procname (1) + '] ' + ::_sQuery)
+		u_logQry (iif (valtype (_sPrefixo) == 'C', _sPrefixo, '') + ::_sQuery)
 	else
 	//	u_log ('[' + procname (1) + '] ' + ::_sQuery)
-		u_log2 ('debug', ::_sQuery)
+		u_log2 ('debug', iif (valtype (_sPrefixo) == 'C', _sPrefixo, '') + ::_sQuery)
 	endif
 return
 

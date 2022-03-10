@@ -186,6 +186,9 @@ static function _LeDados (_sOQue, _sChave1, _sChave2, _sChave3, _sChave4, _sChav
 		case upper (_sOQue) == "CADASTROVITICOLA"
 			_sQuery += "   and ZN_ALIAS   = 'SZ2'"
 			_sQuery += "   and ZN_COD     = '" + _sChave1 + "'"
+		case upper (_sOQue) == "CARGASAFRA"
+			_sQuery += "   and ZN_ALIAS   = 'SZE'"
+			_sQuery += "   and ZN_COD     = '" + _sChave1 + "'"
 		otherwise
 			u_help ("Consulta desconhecida")
 			_lContinua = .F.

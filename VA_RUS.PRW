@@ -25,6 +25,8 @@
 // 03/02/2021 - Robert - Novos parametros funcao U_VA_Rus2().
 // 16/02/2021 - Robert - Implementada simulacao de geracao de contranota (GLPI 9420)
 // 23/02/2021 - Robert - Criada chamada para exportar planilha de medicoes de grau (GLPI 9454).
+// 10/03/2022 - Robert - Melhorados logs.
+//                     - Criado botao para consulta de eventos.
 //
 
 // --------------------------------------------------------------------------
@@ -139,7 +141,7 @@ User Function va_rus ()
 
 	// Monta menu para a rotina.
 	if _lContinua
-		u_log2 ('debug', 'vou montar o menu com porta de ticket >>' + _sPortTick + '<<')
+//		u_log2 ('debug', 'vou montar o menu com porta de ticket >>' + _sPortTick + '<<')
 
 		// Submenu para contranota.
 		_aMenuNFe = {}
@@ -168,7 +170,9 @@ User Function va_rus ()
 		aadd (_aMenuOut, {"Medicoes do grau",       "U_VA_XLS54 (sze -> ze_filial, sze -> ze_safra, sze -> ze_carga)", 0,4})
 		aadd (_aMenuOut, {"Enderecar uva(estoque)", "U_VA_RusEn (sze -> ze_nfger, sze -> ze_serie, sze -> ze_assoc, sze -> ze_Lojasso, .f.)", 0,4})
 		aadd (_aMenuOut, {"Estornar enderecamento", "U_VA_RusEn (sze -> ze_nfger, sze -> ze_serie, sze -> ze_assoc, sze -> ze_Lojasso, .t.)", 0,4})
+		aadd (_aMenuOut, {"Consultar eventos",      "U_VA_SZNC  ('CARGASAFRA', sze -> ze_safra + sze -> ze_carga)", 0,4})
 		if upper (alltrim (cUserName)) == 'ROBERT.KOCH'
+			aadd (_aMenuOut, {"Simular leitura inspecoes(Robert)", "U_VA_RusLI (iif (sze -> ze_status == '1', 1, 2), .t.)", 0,4})
 			aadd (_aMenuOut, {"Simular frete (Robert)",  "U_VA_RusCF (.F.)", 0,4})  // Apenas para ver nova simulacao no arquivo de log.
 		endif
 

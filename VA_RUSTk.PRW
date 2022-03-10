@@ -225,7 +225,7 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 		_nHdl = fcreate (_sArq, 0)
 		fwrite (_nHdl, _sTicket)
 		fclose (_nHdl)
-		u_log2 ('debug', '[' + procname () + ']Copiando ticket para a porta ' + alltrim (_sPorta))
+		u_log2 ('debug', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Copiando ticket para a porta ' + alltrim (_sPorta))
 		for _nVia = 1 to _nQtVias
 			copy file (_sArq) to (alltrim (_sPorta))
 		next

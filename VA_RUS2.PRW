@@ -36,6 +36,8 @@
 // 05/02/2021 - Robert - Funcao de aglutinacao de cargas, removida ha uns 2 anos, foi reativada (GLPI 9336)
 // 16/02/2022 - Robert - Tratamentos para cancelamento de cargas chamado via web service (GLPI 11634)
 // 20/02/2022 - Robert - Variavel _sErros (publica do web service) renomeada para _sErroWS
+// 10/03/2022 - Robert - Melhorados logs.
+//                     - Novos parametros funcao U_VA_RusLI().
 //
 
 #include "totvs.ch"
@@ -68,7 +70,11 @@ User Function va_rus2 (_nOpc, _lFechPort)
 	private _aAglut    := {}  // Deixar private para ser vista por outras rotinas.
 	private cArqMnu    := FWGetMnuFile()  //'COOPERATIVA.XNU'
 
-	u_Log2 ('info', 'Iniciando ' + procname () + ' Carga: ' + sze -> ze_carga + '   inclui: ' + cvaltochar (inclui) + '   altera: ' + cvaltochar (altera) + '   _nOpc: ' + cvaltochar (_nOpc))
+	if inclui
+		u_Log2 ('info', '[' + procname () + ']Iniciando com _nOpc = ' + cvaltochar (_nOpc))
+	else
+		u_Log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Iniciando com _nOpc = ' + cvaltochar (_nOpc))
+	endif
 
 	if _lContinua .and. _nOpc >= 4 .and. sze -> ze_status == "N"
 		u_help ("Nota fiscal (" + sze -> ze_nfger + ") ja gerada para esta carga. Alteracao / exclusao nao permitidas. Exclua, antes, a nota fiscal.",, .t.)
@@ -143,7 +149,7 @@ User Function va_rus2 (_nOpc, _lFechPort)
 					reclock ("SZF", .F.)
 					szf -> zf_grau = _FmtGrau (_oSQL:RetQry ())
 					msunlock ()
-					U_LOG2 ('info', 'Gravei grau com ' + szf -> zf_grau)
+					U_LOG2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Gravei zf_grau com ' + szf -> zf_grau)
 				endif
 				szf -> (dbskip ())
 			enddo
@@ -152,7 +158,7 @@ User Function va_rus2 (_nOpc, _lFechPort)
 
 	// Ao entrar na segunda pesagem, busca dados de inspecao no NaWeb
 	if _lContinua .and. _nOpc == 4
-		_lContinua = U_VA_RusLI (2)
+		_lContinua = U_VA_RusLI (2, .f.)
 	endif
 
 	if _lContinua
@@ -232,7 +238,7 @@ User Function va_rus2 (_nOpc, _lFechPort)
 
 		// Posso estar fazendo uma exclusao/cancelamento de carga chamada a partir do web service, entao nao posso abrir tela.
 		if _nOpc == 5 .and. IsInCallStack ("_CanCarSaf")
-			U_Log2 ('debug', '[' + procname () + ']Cancelando carga a partir do WS')
+			U_Log2 ('debug', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Cancelando carga por solicitacao recebida via web service.')
 			_lDlgOK := .T.  // Simula 'botao OK'
 		else
 			// Monta tela para o usuario fazer as manutencoes
@@ -335,7 +341,7 @@ static function _LePortar ()
 			m->ze_pesotar = zzt -> zzt_pessai
 
 			// Chama primeira pesagem de safra para atualizacoes adicionais
-			U_Log2 ('debug', 'Chamando VA_Rus1P de dentro do ' + procname ())
+			U_Log2 ('debug', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Chamando VA_Rus1P de dentro do ' + procname ())
 			U_VA_RUS1P (.T.)
 
 			// Distribui peso entre as caixas dos itens. Existe chamada semelhante nos gatilhos dos campos de peso.

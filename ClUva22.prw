@@ -11,10 +11,11 @@
 // #Modulos           #COOP
 
 // Historico de alteracoes:
+// 10/03/2022 - Robert - Melhorados logs.
 //
 
 // --------------------------------------------------------------------------
-user function ClUva22 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAsperg, _nPPodrAc, _nAcidVol)
+user function ClUva22 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAsperg, _nPPodrAc, _sAcidVol)
 	local _lContinua := .T.
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _oSQL      := NIL
@@ -28,7 +29,7 @@ user function ClUva22 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAspe
 	local _aGrupo52  := {}
 	local _sSafraCl  := '2022'  // Ajustar caso seja copiado para o proximo ano!
 
-	U_Log2 ('info', 'Iniciando ' + procname ())
+//	U_Log2 ('info', 'Iniciando ' + procname ())
 
 	if _lContinua
 		sb1 -> (dbsetorder (1))
@@ -39,15 +40,15 @@ user function ClUva22 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAspe
 	endif
 
 	if _lContinua
-		u_log2 ('info', '   Variedade..................:' + _sVaried + sb1 -> b1_desc)
-		u_log2 ('info', '   Grau.......................:' + cvaltochar (_nGrau))
-		u_log2 ('info', '   Sistema de conducao........:' + _sConduc)
-		u_log2 ('info', '   % botrytis.................:' + cvaltochar (_nPBotryt))
-		u_log2 ('info', '   % glomerella...............:' + cvaltochar (_nPGlomer))
-		u_log2 ('info', '   % aspergillus..............:' + cvaltochar (_nPAsperg))
-		u_log2 ('info', '   % podridao acida...........:' + cvaltochar (_nPPodrAc))
-		u_log2 ('info', '   % acidez volatil...........:' + cvaltochar (_nAcidVol))
-		u_log2 ('info', '   Soma das podridoes.........:' + cvaltochar (_nPBotryt + _nPGlomer + _nPAsperg + _nPPodrAc))
+		u_log2 ('info', '[' + procname () + ']Variedade..................:' + _sVaried + sb1 -> b1_desc)
+		u_log2 ('info', '[' + procname () + ']Grau.......................:' + cvaltochar (_nGrau))
+		u_log2 ('info', '[' + procname () + ']Sistema de conducao........:' + _sConduc)
+		u_log2 ('info', '[' + procname () + ']% botrytis.................:' + cvaltochar (_nPBotryt))
+		u_log2 ('info', '[' + procname () + ']% glomerella...............:' + cvaltochar (_nPGlomer))
+		u_log2 ('info', '[' + procname () + ']% aspergillus..............:' + cvaltochar (_nPAsperg))
+		u_log2 ('info', '[' + procname () + ']% podridao acida...........:' + cvaltochar (_nPPodrAc))
+		u_log2 ('info', '[' + procname () + ']% acidez volatil...........:' + _sAcidVol)
+		u_log2 ('info', '[' + procname () + ']Soma das podridoes.........:' + cvaltochar (_nPBotryt + _nPGlomer + _nPAsperg + _nPPodrAc))
 		if empty (_sConduc)
 			u_help ("Sistema de conducao nao informado. Impossivel determinar a classificacao da uva.",, .t.)
 			_lContinua = .F.
@@ -58,29 +59,13 @@ user function ClUva22 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAspe
 		
 		// Busca tabela de classificacao de uvas latadas X grau
 		_oSQL := ClsSQL ():New ()
-/*
-		_oSQL:_sQuery := "SELECT ZX5_52.ZX5_52GIA, ZX5_52.ZX5_52GIB, ZX5_52.ZX5_52GIC"
-		_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZX5") + " ZX5_52, "
-		_oSQL:_sQuery +=             RetSQLName ("ZX5") + " ZX5_53 "
-		_oSQL:_sQuery += " WHERE ZX5_52.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND ZX5_52.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
-		_oSQL:_sQuery +=   " AND ZX5_52.ZX5_TABELA = '52'"
-		_oSQL:_sQuery +=   " AND ZX5_52.ZX5_52SAFR = '" + _sSafraCl + "'"
-		_oSQL:_sQuery +=   " AND ZX5_53.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND ZX5_53.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
-		_oSQL:_sQuery +=   " AND ZX5_53.ZX5_TABELA = '53'"
-		_oSQL:_sQuery +=   " AND ZX5_53.ZX5_53SAFR = ZX5_52.ZX5_52SAFR"
-		_oSQL:_sQuery +=   " AND ZX5_53.ZX5_53GRUP = ZX5_52.ZX5_52GRUP"
-		_oSQL:_sQuery +=   " AND ZX5_53.ZX5_53PROD = '" + _sVaried + "'"
-*/
 		_oSQL:_sQuery := "SELECT LATADA_GRAU_MIN_A, LATADA_GRAU_MIN_B, LATADA_GRAU_MIN_C"
 		_oSQL:_sQuery +=  " FROM VA_VFAIXAS_GRAU_UVAS"
 		_oSQL:_sQuery += " WHERE SAFRA   = '" + _sSafraCl + "'"
 		_oSQL:_sQuery +=   " AND SIST_CONDUCAO = 'L'"
 		_oSQL:_sQuery +=   " AND PRODUTO = '" + _sVaried + "'"
-		_oSQL:Log ()
+		_oSQL:Log ('[' + procname () + ']')
 		_aGrupo52 := aclone (_oSQL:Qry2Array (.F., .F.))
-		U_log2 ('debug', 'faixas de grau:', _aGrupo52)
 		if len (_aGrupo52) == 0
 			u_help ("Produto '" + alltrim (_sVaried) + "' nao encontrado na view VA_VFAIXAS_GRAU_UVAS para a safra '" + _sSafraCl + "'", _oSQL:_sQuery, .t.)
 			_lContinua = .F.
@@ -100,7 +85,7 @@ user function ClUva22 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAspe
 		endif
 		
 		// Define classificacao por sanidade/conformidade.
-		_sPrm03 = _Prm03 (_sConduc, _nAcidVol, _nPBotryt, _nPPodrAc, _nPGlomer, _nPAsperg)
+		_sPrm03 = _Prm03 (_sConduc, _sAcidVol, _nPBotryt, _nPPodrAc, _nPGlomer, _nPAsperg)
 
 		// Nas latadas nao se considera uniformidade de maturacao
 		_sPrm04 = 'B'
@@ -113,21 +98,12 @@ user function ClUva22 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAspe
 	
 		// Verifica limites de grau para esta variedade.
 		_oSQL := ClsSQL ():New ()
-/*
-		_oSQL:_sQuery := "SELECT ZX5_17GIPR, ZX5_17GIAA, ZX5_17GIA, ZX5_17GIB, ZX5_17GIC, ZX5_17GID"
-		_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZX5") + " ZX5_17 "
-		_oSQL:_sQuery += " WHERE ZX5_17.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND ZX5_17.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
-		_oSQL:_sQuery +=   " AND ZX5_17.ZX5_TABELA = '17'"
-		_oSQL:_sQuery +=   " AND ZX5_17.ZX5_17SAFR = '" + _sSafraCl + "'"
-		_oSQL:_sQuery +=   " AND ZX5_17.ZX5_17PROD = '" + _sVaried + "'"
-*/
 		_oSQL:_sQuery := "SELECT ESPALD_GRAU_MIN_PR, ESPALD_GRAU_MIN_AA, ESPALD_GRAU_MIN_A, ESPALD_GRAU_MIN_B, ESPALD_GRAU_MIN_C, ESPALD_GRAU_MIN_D"
 		_oSQL:_sQuery +=  " FROM VA_VFAIXAS_GRAU_UVAS"
 		_oSQL:_sQuery += " WHERE SAFRA   = '" + _sSafraCl + "'"
 		_oSQL:_sQuery +=   " AND SIST_CONDUCAO = 'E'"
 		_oSQL:_sQuery +=   " AND PRODUTO = '" + _sVaried + "'"
-		_oSQL:Log ()
+		_oSQL:Log ('[' + procname () + ']')
 		_aTab17 = aclone (_oSQL:Qry2Array (.F., .F.))
 		u_log (_aTab17)
 		if len (_aTab17) == 0
@@ -150,18 +126,21 @@ user function ClUva22 (_sVaried, _nGrau, _sConduc, _nPBotryt, _nPGlomer, _nPAspe
 			else
 				_sPrm02 = 'DS'
 			endif
+			u_log2 ('info', '[' + procname () + ']Classificacao de acucar cfe.faixa de grau: ' + _sPrm02)
 		endif
 	
 		// Define classificacao por sanidade/conformidade.
-		_sPrm03 = _Prm03 (_sConduc, _nAcidVol, _nPBotryt, _nPPodrAc, _nPGlomer, _nPAsperg)
+		_sPrm03 = _Prm03 (_sConduc, _sAcidVol, _nPBotryt, _nPPodrAc, _nPGlomer, _nPAsperg)
 
 		// Define classificacao por uniformidade de maturacao.
 		_sPrm04 = _sPrm02  // Assume a mesma do acucar, pois eh o melhor parametro para indicar maturacao da uva.
+		u_log2 ('info', '[' + procname () + ']Classificacao por uniformidade de maturacao: ' + _sPrm04 + ' (assume a mesma do acucar, pois eh o melhor parametro para indicar maturacao da uva).')
 
 		// Define classificacao por presenca de materiais estranhos
 		// Conforme normas de safra: "Materiais estranhos não terão valor de enquadramento da uva nas classes, apenas deverá ser apontada a natureza do material"
 		// Portanto, deixarei PR para que nunca possa puxar as demais classificaoes para baixo.
 		_sPrm05 = 'PR'
+		u_log2 ('info', '[' + procname () + ']Classificacao por presenca de materiais estranhos: ' + _sPrm05 + ' (conforme normas de safra: "Materiais estranhos nao terao valor de enquadramento da uva nas classes, apenas devera ser apontada a natureza do material". Portanto, deixarei PR para que nunca possa puxar as demais classificaoes para baixo.')
 	endif
 
 	if _lContinua
@@ -185,40 +164,40 @@ return _aRetClUva
 
 
 // --------------------------------------------------------------------------
-static function _Prm03 (_sConduc, _nAcidVol, _nPBotryt, _nPPodrAc, _nPGlomer, _nPAsperg)
+static function _Prm03 (_sConduc, _sAcidVol, _nPBotryt, _nPPodrAc, _nPGlomer, _nPAsperg)
 	local _nSomaPerc := _nPBotryt + _nPGlomer + _nPAsperg + _nPPodrAc
 
-	if _nAcidVol > 10
+	if upper (_sAcidVol) = 'PRESENTE'  // > 10
 		_sRetP03 = 'DS'
-		U_Log2 ('info', "Classificacao de sanidade/conformidade = '" + _sRetP03 + "' cfe. acidez volatil (" + cvaltochar (_nAcidVol) + ' meq/L).')
+		U_Log2 ('info', '[' + procname (1) + "]Classificacao de sanidade/conformidade = '" + _sRetP03 + "' cfe. acidez volatil (" + _sAcidVol + ').')
 	else
 		if _nPBotryt > 12
 			_sRetP03 = 'DS'
-			U_Log2 ('info', "Classificacao de sanidade/conformidade = '" + _sRetP03 + "' cfe. botrytis (" + cvaltochar (_nPBotryt) + ' %).')
+			U_Log2 ('info', '[' + procname (1) + "]Classificacao de sanidade/conformidade = '" + _sRetP03 + "' cfe. botrytis (" + cvaltochar (_nPBotryt) + ' %).')
 		else
 			if _nPPodrAc > 12
 				_sRetP03 = 'DS'
-				U_Log2 ('info', "Classificacao de sanidade/conformidade = '" + _sRetP03 + "' cfe. podridao acide (" + cvaltochar (_nPPodrAc) + ' %).')
+				U_Log2 ('info', '[' + procname (1) + "]Classificacao de sanidade/conformidade = '" + _sRetP03 + "' cfe. podridao acida (" + cvaltochar (_nPPodrAc) + ' %).')
 			else
 				if _nPGlomer > 25
 					_sRetP03 = 'DS'
-					U_Log2 ('info', "Classificacao de sanidade/conformidade = '" + _sRetP03 + "' cfe. podridao de uva madura/glomerella (" + cvaltochar (_nPGlomer) + ' %).')
+					U_Log2 ('info', '[' + procname (1) + "]Classificacao de sanidade/conformidade = '" + _sRetP03 + "' cfe. podridao de uva madura/glomerella (" + cvaltochar (_nPGlomer) + ' %).')
 				else
 					if _nPAsperg > 6
 						_sRetP03 = 'DS'
-						U_Log2 ('info', "Classificacao de sanidade/conformidade = '" + _sRetP03 + "' cfe. podridao aspergillus (" + cvaltochar (_nPAsperg) + ' %).')
+						U_Log2 ('info', '[' + procname (1) + "]Classificacao de sanidade/conformidade = '" + _sRetP03 + "' cfe. podridao aspergillus (" + cvaltochar (_nPAsperg) + ' %).')
 					else
 
 						// Define classificacao por estado sanitario somando os demais indicadores
 						if _nSomaPerc > 12
 							_sRetP03 = 'DS'
-							U_Log2 ('info', "Classificacao de sanidade/conformidade = '" + _sRetP03 + "' cfe. estado sanitario (" + cvaltochar (_nSomaPerc) + ").")
+							U_Log2 ('info', '[' + procname (1) + "]Classificacao de sanidade/conformidade = '" + _sRetP03 + "' cfe. estado sanitario (" + cvaltochar (_nSomaPerc) + ").")
 						elseif _nSomaPerc >= 6
 							_sRetP03 = 'D '
-							U_Log2 ('info', "Classificacao de sanidade/conformidade = '" + _sRetP03 + "' cfe. estado sanitario (" + cvaltochar (_nSomaPerc) + ").")
+							U_Log2 ('info', '[' + procname (1) + "]Classificacao de sanidade/conformidade = '" + _sRetP03 + "' cfe. estado sanitario (" + cvaltochar (_nSomaPerc) + ").")
 						elseif _nSomaPerc >= 3
 							_sRetP03 = 'C '
-							U_Log2 ('info', "Classificacao de sanidade/conformidade = '" + _sRetP03 + "' cfe. estado sanitario (" + cvaltochar (_nSomaPerc) + ").")
+							U_Log2 ('info', '[' + procname (1) + "]Classificacao de sanidade/conformidade = '" + _sRetP03 + "' cfe. estado sanitario (" + cvaltochar (_nSomaPerc) + ").")
 						else
 							// Assume PR para nao puxar as demais classificacoes para baixo.
 							_sRetP03 = 'PR'
