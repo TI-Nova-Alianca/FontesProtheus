@@ -10,6 +10,7 @@
 // 16/02/2021 - Robert - Implementada simulacao de geracao de contranota (GLPI 9420)
 // 16/12/2021 - Robert - Novo formato de retorno da funcao U_GeraSZE()
 // 16/02/2022 - Robert - Tratamentos para cancelamento de cargas chamado via web service (GLPI 11634)
+// 11/03/2022 - Robert - Melhorados logs.
 //
 
 #include "totvs.ch"

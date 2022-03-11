@@ -4,7 +4,7 @@
 // Descricao..: Atualiza sistema de agenda/inspecoes (desmembrado do VA_RUS1P)
 //
 // Historico de alteracoes:
-// 10/03/2022 - Robert - Novos parametros funcao U_VA_RusLI().
+// 11/03/2022 - Robert - Novos parametros funcao U_VA_RusLI() - GLPI 11745.
 //
 
 #include "VA_Inclu.prw"

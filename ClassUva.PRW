@@ -5,6 +5,7 @@
 //            Royalties: Jeferson Rech
 //
 // Historico de alteracoes:
+// 11/03/2022 - Robert - Melhorados logs.
 //
 
 // --------------------------------------------------------------------------

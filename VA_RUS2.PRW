@@ -36,8 +36,7 @@
 // 05/02/2021 - Robert - Funcao de aglutinacao de cargas, removida ha uns 2 anos, foi reativada (GLPI 9336)
 // 16/02/2022 - Robert - Tratamentos para cancelamento de cargas chamado via web service (GLPI 11634)
 // 20/02/2022 - Robert - Variavel _sErros (publica do web service) renomeada para _sErroWS
-// 10/03/2022 - Robert - Melhorados logs.
-//                     - Novos parametros funcao U_VA_RusLI().
+// 11/03/2022 - Robert - Novos parametros funcao U_VA_RusLI() - GLPI 11745.
 //
 
 #include "totvs.ch"

@@ -13,7 +13,7 @@
 // Historico de alteracoes:
 // 02/02/2021 - Robert - Testa se o campo zza_status estah vazio antes de gravar status 1 (pois eh chamado tb a partir da 2a.pesagem)
 // 03/02/2021 - Robert - Ajuste gravacao ZZA_STATUS na primeira pesagem.
-// 10/03/2022 - Robert - Melhorados logs.
+// 11/03/2022 - Robert - Melhorados logs.
 //
 
 // Possiveis situacoes para o campo ZZA_STATUS:

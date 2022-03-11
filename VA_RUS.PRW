@@ -25,8 +25,7 @@
 // 03/02/2021 - Robert - Novos parametros funcao U_VA_Rus2().
 // 16/02/2021 - Robert - Implementada simulacao de geracao de contranota (GLPI 9420)
 // 23/02/2021 - Robert - Criada chamada para exportar planilha de medicoes de grau (GLPI 9454).
-// 10/03/2022 - Robert - Melhorados logs.
-//                     - Criado botao para consulta de eventos.
+// 13/03/2022 - Robert - Melhorados logs, criados botoes para consulta de eventos e simulacao de leitura de inspecoes.
 //
 
 // --------------------------------------------------------------------------

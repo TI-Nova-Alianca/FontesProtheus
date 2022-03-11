@@ -8,8 +8,9 @@
 // 13/12/2019 - Robert - Adequacoes iniciais para safra 2020.
 // 21/02/2020 - Robert - Eliminados alguns logs desnecessarios.
 // 01/02/2021 - Robert - Comentariadas linhas de log.
-// 10/03/2022 - Robert - Melhorados logs.
+// 11/03/2022 - Robert - Melhorados logs.
 //                     - Criada opcao de simular, para conferencias posteriores.
+//                     - Tratamento para dados lidos no NaWeb, que vem em formato caracter (GLPI 11745).
 //
 
 #include "VA_Inclu.prw"
@@ -108,12 +109,12 @@ user function va_rusLI (_nPesagem, _lSimular)
 			_aRusInsp [.InspecoesSafraAgendaOri]         = (_sAliasInsp) -> AgendaOri
 
 			// Se tem resultado na inspecao de tombador, melhor. Senao, pega a de patio.
-			_sInspBotr = iif (! empty ((_sAliasInsp) -> BotryT), (_sAliasInsp) -> BotryT, (_sAliasInsp) -> BotryP)
-			_sInspGlom = iif (! empty ((_sAliasInsp) -> GlomeT), (_sAliasInsp) -> GlomeT, (_sAliasInsp) -> GlomeP)
-			_sInspAspe = iif (! empty ((_sAliasInsp) -> AsperT), (_sAliasInsp) -> AsperT, (_sAliasInsp) -> AsperP)
-			_sInspPodr = iif (! empty ((_sAliasInsp) -> PodriT), (_sAliasInsp) -> PodriT, (_sAliasInsp) -> PodriP)
-			_sInspAcid = iif (! empty ((_sAliasInsp) -> AcVolT), (_sAliasInsp) -> AcVolT, (_sAliasInsp) -> AcVolP)
-			_sInspMEst = iif (! empty ((_sAliasInsp) -> MEstrT), (_sAliasInsp) -> MEstrT, (_sAliasInsp) -> MEstrP)
+			_sInspBotr = alltrim (iif (! empty ((_sAliasInsp) -> BotryT), (_sAliasInsp) -> BotryT, (_sAliasInsp) -> BotryP))
+			_sInspGlom = alltrim (iif (! empty ((_sAliasInsp) -> GlomeT), (_sAliasInsp) -> GlomeT, (_sAliasInsp) -> GlomeP))
+			_sInspAspe = alltrim (iif (! empty ((_sAliasInsp) -> AsperT), (_sAliasInsp) -> AsperT, (_sAliasInsp) -> AsperP))
+			_sInspPodr = alltrim (iif (! empty ((_sAliasInsp) -> PodriT), (_sAliasInsp) -> PodriT, (_sAliasInsp) -> PodriP))
+			_sInspAcid = alltrim (iif (! empty ((_sAliasInsp) -> AcVolT), (_sAliasInsp) -> AcVolT, (_sAliasInsp) -> AcVolP))
+			_sInspMEst = alltrim (iif (! empty ((_sAliasInsp) -> MEstrT), (_sAliasInsp) -> MEstrT, (_sAliasInsp) -> MEstrP))
 		endif
 		(_sAliasInsp) -> (dbclosearea ())
 		dbselectarea ("SZE")
@@ -205,7 +206,7 @@ user function va_rusLI (_nPesagem, _lSimular)
 				//		_aClasUva = aclone (U_ClUva21 (szf -> zf_produto, val (szf -> zf_grau), szf -> zf_conduc, val (_sInspBotr), val (_sInspGlom), val (_sInspAspe), val (_sInspPodr), val (_sInspAcid), _sInspMEst))
 						_aClasUva = aclone (eval (&("{||U_ClUva" + right (sze -> ze_safra, 2) + " (szf -> zf_produto, val (szf -> zf_grau), szf -> zf_conduc, val (_sInspBotr), val (_sInspGlom), val (_sInspAspe), val (_sInspPodr), val (_sInspAcid), _sInspMEst)}")))
 					elseif sze -> ze_safra == '2022'
-						_aClasUva = aclone (U_ClUva22 (szf -> zf_produto, val (szf -> zf_grau), szf -> zf_conduc, val (_sInspBotr), val (_sInspGlom), val (_sInspAspe), val (_sInspPodr), _sInspAcid))
+						_aClasUva = aclone (U_ClUva22 (szf -> zf_produto, val (szf -> zf_grau), szf -> zf_conduc, _sInspBotr, _sInspGlom, _sInspAspe, _sInspPodr, _sInspAcid))
 					else
 						// A chamada com EVAL rodou bem, mas uma pesquisa nos fontes por CLUVA21, por exemplo, nao retorna nada. ---> _aClasUva = aclone (eval (&("{||U_ClUva" + right (sze -> ze_safra, 2) + " (szf -> zf_produto, val (szf -> zf_grau), szf -> zf_conduc, val (_sInspBotr), val (_sInspGlom), val (_sInspAspe), val (_sInspPodr), val (_sInspAcid), _sInspMEst)}")))
 						u_help ("Sem tratamento para leitura de classificacao de uvas no programa " + procname ())

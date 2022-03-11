@@ -45,7 +45,7 @@
 // 08/02/2021 - Robert  - Nao alimentava as variaveis _zx509fina e _zx509orga na chamada da tela de 
 //                        fechamento de safra (GLPI 9319)
 // 25/01/2022 - Claudia - Incluida rotina para exportar dados em planilha. GLPI: 10771.
-// 10/03/2022 - Robert  - Novos parametros funcao U_VA_RusLI().
+// 11/03/2022 - Robert  - Novos parametros funcao U_VA_RusLI() - GLPI 11745.
 //
 
 // ----------------------------------------------------------------------------------------------------------------

@@ -10,6 +10,7 @@
 // 20/01/2020 - Robert - Melhorias para integracao com portaria.
 // 26/02/2020 - Robert - Campo ze_senhade passa a ser do tipo caracter.
 // 15/01/2021 - Robert - Grava campo ze_imptk no final da impressao.
+// 11/03/2022 - Robert - Melhorados logs.
 //
 
 // --------------------------------------------------------------------------

@@ -35,6 +35,7 @@
 // 05/05/2013 - Robert  - Criado tratamento para campo ZZZ_RECNO.
 // 13/05/2021 - Claudia - Ajuste da tabela SX3 devido a R27. GLPI: 8825
 // 13/12/2021 - Robert  - Ao ler SX3 para montar aCols, nao estava fazendo ordenacao.
+// 11/03/2022 - Robert  - Removidos logs desnecessarios.
 //
 
 // ------------------------------------------------------------------------------------------------------------------

@@ -9,8 +9,7 @@
 // 31/01/2020 - Robert - Atualiza sistema de agendamento com status de 'LIB' (significa que jah encontra-se 'pesado e liberado para descarga'.
 // 01/02/2020 - Robert - Sobreescrevia inspecoes quando chamado a partir da rotina de portaria.
 // 21/02/2020 - Robert - Alteracoes na tabela ZZA passam a ser feitas em rotina externa (U_AtuZZA).
-// 10/03/2022 - Robert - Melhorados logs.
-//                     - Novos parametros funcao U_VA_RusLI().
+// 11/03/2022 - Robert - Novos parametros funcao U_VA_RusLI() - GLPI 11745.
 //
 
 #include "VA_Inclu.prw"

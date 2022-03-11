@@ -9,6 +9,8 @@
 // 02/03/2006 - Robert - Nao aceitava campos que nao constam no SX3.
 // 07/03/2022 - Robert - Verifica nivel de acesso e se os campos encontram-se em uso (GLPI 11721)
 // 09/03/2022 - Robert - Verifica se o campo encontra-se usado pelo modulo atual 
+// 11/03/2022 - Robert - Erro de 'campo nao usado' aparecia em tela. Mudado para log de erro (causava panico desnecessario entre os usuarios)
+//
 
 // --------------------------------------------------------------------------
 user function OrdAuto (_aMatriz)
