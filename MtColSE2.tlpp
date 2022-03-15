@@ -48,9 +48,9 @@ user function MTColSE2 ()
 //	U_Log2 ('debug', '[' + procname () + ']type ("_aHeadSE2"):' + type ("_aHeadSE2"))
 
 	// to gerando complemento DE FRETE!!!
-	if GetEnvServer() == 'ROBERT' .and. cUserName == 'robert.koch' .and. date () = stod ('20220309')
-		_aRet := aclone (_aColsE2)  // Se nao alterar nada, retorna o original.
-	else
+//	if GetEnvServer() == 'ROBERT' .and. cUserName == 'robert.koch' .and. date () = stod ('20220309')
+//		_aRet := aclone (_aColsE2)  // Se nao alterar nada, retorna o original.
+//	else
 		//if (IsInCallStack ("U_VA_RUSN") .or. IsInCallStack ("U_VA_GNF2")) .and. IsInCallStack ("NFEFLDCHG")
 		if IsInCallStack ("U_VA_RUSN") .or. IsInCallStack ("U_VA_GNF2") //) .and. IsInCallStack ("NFEFLDCHG")
 			if cTipo $ "N/C" .and. cFormul == "S"
@@ -98,7 +98,7 @@ user function MTColSE2 ()
 			U_Log2 ('info', '[' + procname () + ']Nao vou mexer nas parcelas neste momento (nao eh nota de safra, ou nao eh o momento correto).')
 			_aRet := aclone (_aColsE2)  // Se nao alterar nada, retorna o original.
 		endif
-	endif
+//	endif
 
 	U_ML_SRArea (_aAreaAnt)
 return _aRet

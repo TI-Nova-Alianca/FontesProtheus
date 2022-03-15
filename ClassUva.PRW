@@ -19,7 +19,7 @@ user function ClassUva (_sConduc, _xPrm02, _xPrm03, _xPrm04, _xPrm05)
 
 	// Latada: gatilho direto no SX7.
 	if _sConduc == 'L'
-		u_log2 ('info', '[' + procname () + ']', 'Classif. p/latada: existe gatilho na tabela SX7.')
+		u_log2 ('info', '[' + procname () + ']Classif. p/latada: existe gatilho na tabela SX7.')
 
 	elseif _sConduc == 'E'
 		// Obs. Precisa ser nessa ordem os testes, pois vale sempre a menor classificacao

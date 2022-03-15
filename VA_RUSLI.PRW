@@ -255,10 +255,15 @@ user function va_rusLI (_nPesagem, _lSimular)
 					endif
 				endif
 			endif
+
+			if type ('_aNovaClas') == 'A'  // Estou reprocessando GLPI 11746
+				aadd (_aNovaClas, {szf -> zf_item, iif (szf -> zf_conduc == 'L', _aClasUva [1], _aClasUva [5])})
+			endif
+
 			szf -> (dbskip ())
 		enddo
 		if _lSimular
-			u_showarray (_aClasUva, 'Classificacoes encontradas')
+			//u_showarray (_aClasUva, 'Classificacoes encontradas')
 		endif
 	endif
 

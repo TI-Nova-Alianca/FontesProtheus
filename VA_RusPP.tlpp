@@ -11,6 +11,7 @@
 // 07/05/2021 - Robert - Criado tratamento para quando nao encontrar as regras para pagamento (GLPI 9891).
 // 17/05/2021 - Robert - Se o ano+mes previsto jah passou (ocorre por exemplo quando gera-se nota de complemento de preco apos a safra), nao adianta gerar com data retroativa (GLPI 9891)
 // 12/02/2022 - Robert - Ajuste no 'se ano+mes previsto jah passou' pois na vdd considerava apenas o mes! (GLPI 11619).
+// 14/03/2022 - Robert - Incluida coluna com a letra para parcela na array de retorno.
 //
 
 // ------------------------------------------------------------------------------------
@@ -39,18 +40,18 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 	// Ateh o momento, a forma de pagamento mais longa tem 11 parcelas. Acrescenta uma para o frete.
 	if _lContinua
 		_aParcel = {}
-		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
-		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
-		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
-		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
-		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
-		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
-		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
-		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
-		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
-		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
-		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
-		aadd (_aParcel, {0, ctod (''), 0, 0, ''})
+		aadd (_aParcel, {0, ctod (''), 0, 0, '', 'A'})
+		aadd (_aParcel, {0, ctod (''), 0, 0, '', 'B'})
+		aadd (_aParcel, {0, ctod (''), 0, 0, '', 'C'})
+		aadd (_aParcel, {0, ctod (''), 0, 0, '', 'D'})
+		aadd (_aParcel, {0, ctod (''), 0, 0, '', 'E'})
+		aadd (_aParcel, {0, ctod (''), 0, 0, '', 'F'})
+		aadd (_aParcel, {0, ctod (''), 0, 0, '', 'G'})
+		aadd (_aParcel, {0, ctod (''), 0, 0, '', 'H'})
+		aadd (_aParcel, {0, ctod (''), 0, 0, '', 'J'})
+		aadd (_aParcel, {0, ctod (''), 0, 0, '', 'K'})
+		aadd (_aParcel, {0, ctod (''), 0, 0, '', 'L'})
+		aadd (_aParcel, {0, ctod (''), 0, 0, '', 'M'})
 
 		// Aqui nao preciso de um associado especifico... preciso apenas ler as regras de pagamento.
 		_oAssocCP = ClsAssoc():New ('000161', '01')

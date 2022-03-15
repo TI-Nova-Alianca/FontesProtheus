@@ -182,7 +182,7 @@ METHOD Copy2Trb (_lSetField, _nDecFixo, _sAliasTrb, _aIndices) Class ClsSQL
 		next
 	endif
 
-	u_log2 ('debug', _aEstrut)
+	//u_log2 ('debug', _aEstrut)
 	// Classe FWTemporaryTable nao aceita campo R_E_C_N_O_ (imagino que a propria classe crie seu campo).
 	if ascan (_aEstrut, {|_aVal| _aVal [1] == 'R_E_C_N_O_'}) > 0
 		u_help ("Rotina de geracao de arquivos temporarios nao permite campo com nome R_E_C_N_O_",, .T.)

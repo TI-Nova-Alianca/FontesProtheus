@@ -64,7 +64,7 @@ user function ClUva22 (_sVaried, _nGrau, _sConduc, _sBotrytis, _sGlomer, _sAsper
 		_oSQL:_sQuery += " WHERE SAFRA   = '" + _sSafraCl + "'"
 		_oSQL:_sQuery +=   " AND SIST_CONDUCAO = 'L'"
 		_oSQL:_sQuery +=   " AND PRODUTO = '" + _sVaried + "'"
-		_oSQL:Log ('[' + procname () + ']')
+//		_oSQL:Log ('[' + procname () + ']' + _oSQL:_sQuery)
 		_aGrupo52 := aclone (_oSQL:Qry2Array (.F., .F.))
 		if len (_aGrupo52) == 0
 			u_help ("Produto '" + alltrim (_sVaried) + "' nao encontrado na view VA_VFAIXAS_GRAU_UVAS para a safra '" + _sSafraCl + "'", _oSQL:_sQuery, .t.)
@@ -103,7 +103,7 @@ user function ClUva22 (_sVaried, _nGrau, _sConduc, _sBotrytis, _sGlomer, _sAsper
 		_oSQL:_sQuery += " WHERE SAFRA   = '" + _sSafraCl + "'"
 		_oSQL:_sQuery +=   " AND SIST_CONDUCAO = 'E'"
 		_oSQL:_sQuery +=   " AND PRODUTO = '" + _sVaried + "'"
-		_oSQL:Log ('[' + procname () + ']')
+//		_oSQL:Log ('[' + procname () + ']' + _oSQL:_sQuery)
 		_aTab17 = aclone (_oSQL:Qry2Array (.F., .F.))
 		u_log (_aTab17)
 		if len (_aTab17) == 0
