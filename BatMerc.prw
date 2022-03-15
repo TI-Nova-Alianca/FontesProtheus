@@ -46,6 +46,7 @@
 // 29/06/2021 - Claudia - Ramo de atividade. GLPI:10351
 // 07/07/2021 - Claudia - Incluido atributo de nome de banco. GLPI: 10355
 // 13/09/2021 - Claudia - Tratamento para A1_INSCR. GLPI: 10797
+// 11/03/2022 - Claudia - Tratamento para código matriz. GLPI: 11635
 //
 // ------------------------------------------------------------------------------------------------------------------------
 user function BatMerc (_sQueFazer)
@@ -535,7 +536,7 @@ static function _LeCli (_sLinkSrv)
 				Else
 				    lDeuCerto := .F.
 				EndIf
-			  
+
 				//Se não deu certo a inclusão, mostra a mensagem de erro
 				If ! lDeuCerto
 				    //Busca o Erro do Modelo de Dados
@@ -562,9 +563,27 @@ static function _LeCli (_sLinkSrv)
 					_oEvento:MailToZZU = {'079'}
 					_oEvento:Grava ()
 					
+					// If !empty(_AI0Cli)
+					// 	_oSQL:= ClsSQL ():New ()
+					// 	_oSQL:_sQuery := ""
+					// 	_oSQL:_sQuery += "  UPDATE " + RetSQLName ("SA1") + " SET A1_VACBASE = '', A1_VALBASE =''"
+					// 	_oSQL:_sQuery += " 	WHERE D_E_L_E_T_ = ''"
+					// 	_oSQL:_sQuery += " 	AND A1_COD  = '" + _AI0Cli + "'"
+					// 	_oSQL:_sQuery += " 	AND A1_LOJA = '" + _AI0Loj + "'"
+					// 	_oSQL:Log ()
+					// 	_oSQL:Exec ()
+					// EndIf
+			  
+
 					//Mercanet não tem esse campo, forçado a passar zero, depois limpa para preenchimento adequado.
+					// Limpa o codigo base para obrigar a informar na liberação do cliente
+					// reclock ("SA1", .F.)
+					// SA1 -> A1_CNAE    = ''
+					// SA1 -> A1_VACBASE = '' 
+					// SA1 -> A1_VALBASE = ''
+					// MSUNLOCK ()
 					reclock ("SA1", .F.)
-					SA1 -> A1_CNAE = ''
+					SA1 -> A1_CNAE    = ''
 					MSUNLOCK ()
 					_oBatch:Mensagens += sa1 -> a1_cod + "/" + sa1 -> a1_loja + ' '
 				endif
