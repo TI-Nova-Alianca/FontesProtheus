@@ -5,6 +5,7 @@
 //            Royalties: Jeferson Rech
 //
 // Historico de alteracoes:
+// 11/03/2022 - Robert - Melhorados logs.
 //
 
 // --------------------------------------------------------------------------
@@ -17,10 +18,11 @@ user function ClassUva (_sConduc, _xPrm02, _xPrm03, _xPrm04, _xPrm05)
 	_xPrm05 = alltrim (_xPrm05)
 
 	// Latada: gatilho direto no SX7.
+	if _sConduc == 'L'
+		u_log2 ('info', '[' + procname () + ']', 'Classif. p/latada: existe gatilho na tabela SX7.')
 
-	// Obs. Precisa ser nessa ordem os testes, pois vale sempre a menor classificacao
-	if _sConduc == 'E'
-
+	elseif _sConduc == 'E'
+		// Obs. Precisa ser nessa ordem os testes, pois vale sempre a menor classificacao
 		If _xPrm02=="PR" .Or. _xPrm03=="PR" .Or. _xPrm04=="PR" .Or. _xPrm05=="PR"
 			_sRet = "PR"
 		Endif
@@ -42,10 +44,11 @@ user function ClassUva (_sConduc, _xPrm02, _xPrm03, _xPrm04, _xPrm05)
 		If _xPrm02=="DS" .Or. _xPrm03=="DS" .Or. _xPrm04=="DS" .Or. _xPrm05=="DS"
 			_sRet = "DS"
 		Endif
-
+		u_log2 ('info', '[' + procname () + ']Classif. em espaldeira: vale a pior classificacao entre {' + _xPrm02 + ',' + _xPrm03 + ',' + _xPrm04 + ',' + _xPrm05 + '} ---> ' + _sRet)
+	else
+		u_help ("Sem tratamento para sistema de conducao '" + _sConduc + "' no programa " + procname (),, .t.)
 	endif
 
-	//u_log ('[' + procname () + ']', _xPrm02, _xPrm03, _xPrm04, _xPrm05, '--->', _sRet)
 return _sRet
 
 /* versao ateh a safra 2019

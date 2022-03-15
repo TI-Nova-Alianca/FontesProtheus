@@ -10,6 +10,7 @@
 // 16/02/2021 - Robert - Implementada simulacao de geracao de contranota (GLPI 9420)
 // 16/12/2021 - Robert - Novo formato de retorno da funcao U_GeraSZE()
 // 16/02/2022 - Robert - Tratamentos para cancelamento de cargas chamado via web service (GLPI 11634)
+// 11/03/2022 - Robert - Melhorados logs.
 //
 
 #include "totvs.ch"
@@ -112,7 +113,7 @@ user Function VA_RUS2G (_nOpc)
 		enddo
 
 		// Atualiza tabela de comunicacao com leitor de grau.
-		U_Log2 ('debug', '[' + procname () + '] Gravei SZE e SZF e vou chamar a atualizacao do ZZA.')
+	//	U_Log2 ('debug', '[' + procname () + '] Gravei SZE e SZF e vou chamar a atualizacao do ZZA.')
 		U_AtuZZA (sze -> ze_safra, sze -> ze_carga)
 
 		// Grava relacionamento entre cargas de origem e de destino, em caso de aglutinacao de cargas.

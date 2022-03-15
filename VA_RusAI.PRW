@@ -4,6 +4,7 @@
 // Descricao..: Atualiza sistema de agenda/inspecoes (desmembrado do VA_RUS1P)
 //
 // Historico de alteracoes:
+// 11/03/2022 - Robert - Novos parametros funcao U_VA_RusLI() - GLPI 11745.
 //
 
 #include "VA_Inclu.prw"
@@ -20,7 +21,7 @@ user function va_rusAI (_sStatDe, _sStatPara)
 	if _lContinua
 		if type ("_aRusInsp") != 'A' .or. len (_aRusInsp) < .InspecoesSafraQtColunas
 			private _aRusInsp  := {}  // Deixar private para ser vista e alimentada por outras rotinas.
-			_lContinua = U_VA_RusLI (1)
+			_lContinua = U_VA_RusLI (1, .f.)
 		endif
 	endif
 

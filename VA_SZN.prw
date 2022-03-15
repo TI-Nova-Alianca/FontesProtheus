@@ -28,6 +28,7 @@
 // 19/11/2019 - Robert - Implementada leitura de eventos de cadastros viticolas.
 // 20/04/2021 - Robert - Campo F2_DtEntr (padrao, mas atualmente vazio) substitui o campo customizado F2_vaDtEntr (GLPI 9884).
 //                     - Incluidas tags para catalogo de fontes.
+// 11/03/2022 - Robert - Criado tratamento para consulta de logs de 'CARGASAFRA'.
 //
 
 #include "rwmake.ch"
@@ -185,6 +186,9 @@ static function _LeDados (_sOQue, _sChave1, _sChave2, _sChave3, _sChave4, _sChav
 			_sQuery += "   and ZN_OP      = '" + _sChave5 + "'"
 		case upper (_sOQue) == "CADASTROVITICOLA"
 			_sQuery += "   and ZN_ALIAS   = 'SZ2'"
+			_sQuery += "   and ZN_COD     = '" + _sChave1 + "'"
+		case upper (_sOQue) == "CARGASAFRA"
+			_sQuery += "   and ZN_ALIAS   = 'SZE'"
 			_sQuery += "   and ZN_COD     = '" + _sChave1 + "'"
 		otherwise
 			u_help ("Consulta desconhecida")

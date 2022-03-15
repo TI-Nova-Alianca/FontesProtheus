@@ -13,6 +13,7 @@
 // Historico de alteracoes:
 // 02/02/2021 - Robert - Testa se o campo zza_status estah vazio antes de gravar status 1 (pois eh chamado tb a partir da 2a.pesagem)
 // 03/02/2021 - Robert - Ajuste gravacao ZZA_STATUS na primeira pesagem.
+// 11/03/2022 - Robert - Melhorados logs.
 //
 
 // Possiveis situacoes para o campo ZZA_STATUS:
@@ -44,11 +45,11 @@ user function AtuZZA (_sSafra, _sCarga)
 			do while ! szf -> (eof ()) .and. szf -> zf_filial == xfilial ("SZF") .and. szf -> zf_safra == sze -> ze_safra .and. szf -> zf_carga == sze -> ze_carga
 //				U_Log2 ('debug', 'Chave busca ZZA: >>' + xfilial ("ZZA") + sze -> ze_safra + sze -> ze_carga + szf -> zf_item + '<<')
 				if ! zza -> (dbseek (xfilial ("ZZA") + sze -> ze_safra + sze -> ze_carga + szf -> zf_item, .F.))
-					u_log2 ('info', '[' + procname () + '] incluindo ZZA')
+					u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Incluindo ZZA')
 					reclock ("ZZA", .T.)
 				else
 //					u_logtrb ('ZZA', .F.)
-					u_log2 ('info', '[' + procname () + '] vou alterar ZZA (zza_status encontra-se com ' + zza -> zza_status + ')')
+					u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Vou alterar ZZA (zza_status encontra-se com ' + zza -> zza_status + ')')
 					reclock ("ZZA", .F.)
 				endif
 				zza -> zza_filial = xfilial ("ZZA")
@@ -63,15 +64,12 @@ user function AtuZZA (_sSafra, _sCarga)
 				elseif sze->ze_pesobru == 0
 					zza -> zza_status = '0'
 				elseif sze -> ze_pesotar > 0 .and. zza -> zza_status != '3' .and. val (szf -> zf_grau) > 0  // Jah fez a segunda pesagem, sem finalizar no BL01.
-					u_log2 ('aviso', '[' + procname () + '] Alterando ZZA_STATUS para M por que jah estah sendo feita a segunda pesagem, mesmo sem finalizar no programa do grau.')
+					u_log2 ('aviso', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Alterando ZZA_STATUS para M por que jah estah sendo feita a segunda pesagem, mesmo sem finalizar no programa do grau.')
 					zza -> zza_status = 'M'
-//				elseif sze -> ze_pesobru > 0 .and. sze -> ze_pesotar == 0
 				elseif sze -> ze_pesobru > 0 .and. sze -> ze_pesotar == 0
 					if empty (zza -> zza_status) .or. zza -> zza_status == '0'
-//						U_Log2 ('debug', 'Entendo que o ZZA estah vazio ou zero. Preciso gravar status 1')
 						zza -> zza_status = '1'
 					else
-//						U_Log2 ('debug', 'Entendo que rodou VA_Rus1P a partir da 2a.pesagem e nao preciso alterar zza_status')
 					endif
 				elseif sze -> ze_pesobru > 0 .and. sze -> ze_pesotar > 0 .and. zza -> zza_status == '3'  // Segunda pesagem OK
 //					u_log2 ('info', '[' + procname () + '] Nao preciso mudar o ZZA_STATUS')

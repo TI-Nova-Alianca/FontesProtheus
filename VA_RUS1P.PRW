@@ -8,7 +8,8 @@
 // 20/01/2020 - Robert - Novos parametros chamada geracao ticket safra.
 // 31/01/2020 - Robert - Atualiza sistema de agendamento com status de 'LIB' (significa que jah encontra-se 'pesado e liberado para descarga'.
 // 01/02/2020 - Robert - Sobreescrevia inspecoes quando chamado a partir da rotina de portaria.
-// 21/02/2020 - Robert  - Alteracoes na tabela ZZA passam a ser feitas em rotina externa (U_AtuZZA).
+// 21/02/2020 - Robert - Alteracoes na tabela ZZA passam a ser feitas em rotina externa (U_AtuZZA).
+// 11/03/2022 - Robert - Novos parametros funcao U_VA_RusLI() - GLPI 11745.
 //
 
 #include "VA_Inclu.prw"
@@ -19,8 +20,7 @@ user function va_rus1P (_lPortaria)
 	local _aAreaAnt    := U_ML_SRArea ()
 	private _nPLidoBal := 0  // Deixar private senao a funcao MsgRun nao altera.
 	
-	u_Log2 ('info', 'Iniciando ' + procname ())
-	u_log2 ('info', 'Filial: ' + sze -> ze_filial + '   Carga: ' + sze -> ze_carga + '   Assoc:' + sze -> ze_assoc + '/' + sze -> ze_lojasso)
+	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']   Assoc:' + sze -> ze_assoc + '/' + sze -> ze_lojasso)
 
 	_lPortaria = iif (_lPortaria == NIL, .F., _lPortaria)
 	
@@ -37,7 +37,7 @@ user function va_rus1P (_lPortaria)
 	// Verifica situacao do agendamento / inspecoes.
 	if _lContinua
 		if ! IsInCallStack ("U_VA_CPORT")  // Se chamado a partir da portaria, a leitura das inspecoes jah foi feita.
-			_lContinua = U_VA_RusLI (1)
+			_lContinua = U_VA_RusLI (1, .f.)
 		endif
 	endif
 
@@ -68,7 +68,7 @@ user function va_rus1P (_lPortaria)
 
 	// Atualiza itens da carga (SZF) e status para medicao de grau (ZZA).
 	if _lContinua
-		U_Log2 ('debug', 'Chamando AtuZZA de dentro do ' + procname ())
+		U_Log2 ('debug', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Chamando AtuZZA')
 		U_AtuZZA (sze -> ze_safra, sze -> ze_carga)
 	endif
 

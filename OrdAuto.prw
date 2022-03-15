@@ -9,6 +9,8 @@
 // 02/03/2006 - Robert - Nao aceitava campos que nao constam no SX3.
 // 07/03/2022 - Robert - Verifica nivel de acesso e se os campos encontram-se em uso (GLPI 11721)
 // 09/03/2022 - Robert - Verifica se o campo encontra-se usado pelo modulo atual 
+// 11/03/2022 - Robert - Erro de 'campo nao usado' aparecia em tela. Mudado para log de erro (causava panico desnecessario entre os usuarios)
+//
 
 // --------------------------------------------------------------------------
 user function OrdAuto (_aMatriz)
@@ -30,12 +32,14 @@ user function OrdAuto (_aMatriz)
 
 			// Em 07/03/2022 tive problema com campo que foi tirado de uso por um UPDDISTR (GLPI 11721)
 			if ! X3Uso (sx3 -> x3_usado)
-			//	U_Log2 ('aviso', "[" + procname () + "]Campo '" + _aMatriz [_nLinha, 1] + "' nao encontra-se 'usado' e pode nao ser considerado pela rotina automatica.")
-				U_Help ("Campo '" + _aMatriz [_nLinha, 1] + "' nao encontra-se 'usado' no dicionario de dados (ou, talvez, nao visivel para o modulo " + cModulo + ") e pode ser desconsiderado pela rotina automatica.",, .t.)
+				U_Log2 ('erro', "[" + procname () + "]Campo '" + _aMatriz [_nLinha, 1] + "' nao encontra-se 'usado' e pode nao ser considerado pela rotina automatica.")
+				u_logpcham ()
+			//	U_Help ("Campo '" + _aMatriz [_nLinha, 1] + "' nao encontra-se 'usado' no dicionario de dados (ou, talvez, nao visivel para o modulo " + cModulo + ") e pode ser desconsiderado pela rotina automatica.",, .t.)
 			endif
 			if cNivel < sx3 -> x3_nivel
-			//	U_Log2 ('aviso', "[" + procname () + "]Campo '" + _aMatriz [_nLinha, 1] + "' possiu nivel " + cvaltochar (sx3 -> x3_nivel) + ", mas o usuario atual possui nivel menor (" + cvaltochar (cNivel) + "). Campo pode nao ser considerado pela rotina automatica.")
-				U_Help ("Campo '" + _aMatriz [_nLinha, 1] + "' tem nivel " + cvaltochar (sx3 -> x3_nivel) + ", mas o usuario atual possui nivel menor (" + cvaltochar (cNivel) + "). Campo pode nao ser considerado pela rotina automatica.",, .t.)
+				U_Log2 ('erro', "[" + procname () + "]Campo '" + _aMatriz [_nLinha, 1] + "' possui nivel " + cvaltochar (sx3 -> x3_nivel) + ", mas o usuario atual possui nivel menor (" + cvaltochar (cNivel) + "). Campo pode nao ser considerado pela rotina automatica.")
+				u_logpcham ()
+			//	U_Help ("Campo '" + _aMatriz [_nLinha, 1] + "' tem nivel " + cvaltochar (sx3 -> x3_nivel) + ", mas o usuario atual possui nivel menor (" + cvaltochar (cNivel) + "). Campo pode nao ser considerado pela rotina automatica.",, .t.)
 			endif
 
 			_sOrdem = sx3 -> x3_ordem

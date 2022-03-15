@@ -51,6 +51,7 @@
 // 21/10/2021 - Robert - Criado atributo ArqDestXLS e tratamento no metodo Qry2XLS (GLPI 11034)
 // 25/01/2022 - Robert - Metodo Copy2Trb() passa a aceitar lista de indices para criar.
 // 20/02/2022 - Robert - Variavel _sErros (publica do web service) renomeada para _sErroWS
+// 11/03/2022 - Robert - Metodo :Log() passa a receber parametro 'prefixo'.
 //
 
 #include "protheus.ch"
@@ -375,12 +376,12 @@ return
 
 // --------------------------------------------------------------------------
 // Grava query atual em arquivo de log para depuracao.
-METHOD Log (_lQuebra) Class ClsSQL
+METHOD Log (_sPrefixo, _lQuebra) Class ClsSQL
 	if _lQuebra != NIL .and. _lQuebra
-		u_logQry ('[' + procname (1) + '] ' + ::_sQuery)
+		u_logQry (iif (valtype (_sPrefixo) == 'C', _sPrefixo, '') + ::_sQuery)
 	else
 	//	u_log ('[' + procname (1) + '] ' + ::_sQuery)
-		u_log2 ('debug', ::_sQuery)
+		u_log2 ('debug', iif (valtype (_sPrefixo) == 'C', _sPrefixo, '') + ::_sQuery)
 	endif
 return
 
