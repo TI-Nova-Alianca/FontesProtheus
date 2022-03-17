@@ -7,6 +7,7 @@
 // 21/06/2019 - Andre  - Adicionado validação de datas retroativas.
 // 07/04/2021 - Robert - Faltava declaracao variavel oParser (GLPI 9774)
 // 09/03/2022 - Robert - Instanciava objeto oWS sempre, mas parece que paramixb[2] muda conforme o caso.
+// 16/03/2022 - Robert - Filtro busca produtos mudado de tipo MM para MM e MC (GLPI 11296)
 //
 
 //  ---------------------------------------------------------------------------------------------------------------------
@@ -49,7 +50,8 @@ User Function MNTNG()
 		EndIf
 		
 	ElseIf cId == "FILTER_PRODUCT" //adiciona filtro para busca de produtos
-		Return  "AND B1_TIPO = 'MM'" 
+		//Return  "AND B1_TIPO = 'MM'" 
+		Return  "AND B1_TIPO IN ('MM','MC')" 
 	EndIf
 
 Return
