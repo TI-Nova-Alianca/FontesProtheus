@@ -23,11 +23,12 @@
 // 03/02/2021 - Cláudia - Ajuste para visualização das OBS nas demais filiais. GLPI: 9263
 // 21/06/2021 - Claudia - Grava supervisor do representante no supervisor do cliente. GLPI: 8655
 // 10/11/2021 - Robert  - Executava a funcao _ma030tok() mesmo quando se tratava de exclusao.
-// 11/01/2022 - Claudia - Criada validação para não permitir cvadastramento de clientes que estao no cadastro 
+// 11/01/2022 - Claudia - Criada validação para não permitir cadastramento de clientes que estao no cadastro 
 //                        de prospect. GLPI: 11421
+// 17/03/2022 - Claudia - Validação de cadastro de prospect apenas para inclusão de novos clientes. GLPI: 11774
 //
 //
-// -------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 #include "protheus.ch"
 #include "parmtype.ch"
 
@@ -61,7 +62,7 @@ User Function CRMA980()
 				U_AtuMerc ('SA1', sa1 -> (recno ()))
 			endif
 			If nOper != 5  // Se nao for exclusao
-				xRet := _ma030tok()
+				xRet := _ma030tok(nOper)
 			endif
 
 		ElseIf cIdPonto == "MODELVLDACTIVE"
@@ -123,7 +124,7 @@ return
 //
 //----------------------------------------------------------------------------------
 // Tudo OK
-static Function _ma030tok()
+static Function _ma030tok(nOper)
 	Local _aAreaAnt := U_ML_SRArea ()
 	Local _xFim     := chr(13)+chr(10)
 	Local _lRet     := .T.
@@ -236,17 +237,19 @@ static Function _ma030tok()
 	endif
 
 	if _lRet
-		_oSQL:= ClsSQL():New ()  
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "	SELECT "
-		_oSQL:_sQuery += "		US_CGC "
-		_oSQL:_sQuery += "	FROM " + RetSQLName ("SUS") 
-		_oSQL:_sQuery += "	WHERE US_CGC = '" + M->A1_CGC + "' "
-		_aSUS := aclone (_oSQL:Qry2Array ())
+		If nOper == 3
+			_oSQL:= ClsSQL():New ()  
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += "	SELECT "
+			_oSQL:_sQuery += "		US_CGC "
+			_oSQL:_sQuery += "	FROM " + RetSQLName ("SUS") 
+			_oSQL:_sQuery += "	WHERE US_CGC = '" + M->A1_CGC + "' "
+			_aSUS := aclone (_oSQL:Qry2Array ())
 
-		If Len(_aSUS) > 0
-			u_help("CNPJ/CPF ja existe no cadastro de Prospect! Cadastro não permitido")
-			_lRet = .F.
+			If Len(_aSUS) > 0
+				u_help("CNPJ/CPF ja existe no cadastro de Prospect! Cadastro não permitido")
+				_lRet = .F.
+			EndIf
 		EndIf
 	endif
 	
