@@ -47,6 +47,7 @@
 // 07/07/2021 - Claudia - Incluido atributo de nome de banco. GLPI: 10355
 // 13/09/2021 - Claudia - Tratamento para A1_INSCR. GLPI: 10797
 // 11/03/2022 - Claudia - Tratamento para código matriz. GLPI: 11635
+// 11/03/2022 - Claudia - Tratamento para cadastro prospect. GLPI:11757 
 //
 // ------------------------------------------------------------------------------------------------------------------------
 user function BatMerc (_sQueFazer)
@@ -162,6 +163,7 @@ static function _LeCli (_sLinkSrv)
 	LOCAL _sStatMerc := ""
 	Local _AI0Cli    := ""
 	Local _AI0Loj    := ""
+	Local _x         := 0
 	private _sErroAuto := ""  // Deixar private para ser vista por rotinas automaticas, etc.
 	
 	oModel := FWLoadModel("MATA030")
@@ -223,6 +225,26 @@ static function _LeCli (_sLinkSrv)
 					_sMsgErro = "CNPJ ja cadastrado com codigo " + sa1 -> a1_cod + "/" + sa1 -> a1_loja
 					_lContinua = .F.
 				endif
+			endif
+
+			// Verifica se o CNPJ ja eocontra-se cadastrado como prosperct.
+			if _lContinua
+				_oSQL:= ClsSQL ():New ()
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += " SELECT US_COD, US_LOJA "
+				_oSQL:_sQuery += " FROM " + RetSQLName ("SUS") 
+				_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+				_oSQL:_sQuery += " AND US_CGC  = '" + (_sAliasQ) -> ZA1_CGC + "' "
+				_oSQL:Log ()
+				_aDados := aclone (_oSQL:Qry2Array ())
+
+				If Len(_aDados) > 0
+					For _x:=1 to Len(_aDados)
+						_sStatMerc = 'PRO'
+						_sMsgErro  = "CNPJ ja cadastrado no cadastro de prospect com codigo " + _aDados[_x,1] + "/" + _aDados[_x,2] 
+						_lContinua = .F.
+					Next
+				EndIf
 			endif
 
 			if _lContinua
