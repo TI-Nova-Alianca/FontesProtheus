@@ -15,8 +15,9 @@
 // 17/02/2022 - Claudia - Criada novas colunas para linha. GLPI: 11624
 // 23/02/2022 - Robert  - Incluidas colunas filial e safra (GLPI 11664).
 // 02/03/2022 - Robert  - Coluna 'Kg' (COLUNA5) passada para a frente da coluna 'Produto'.
+// 21/03/2022 - Claudia - Incluido o codigo CR (sisdevin). GLPI: 11727
 //
-
+//
 // ------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
@@ -56,11 +57,12 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA4_1", "" ,"Produto"		    ,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA4_2", "" ,"Descrição "		,       				,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA6", 	"" ,"Babo"	            ,                       ,15,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA7", 	"" ,"Lote carga"	    ,       		        ,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA6_1", "" ,"Cód.CR"	        ,       		        ,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA7", 	"" ,"Lote carga"	    ,       		        ,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA8", 	"" ,"Lote produto"	    ,       		        ,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA9", 	"" ,"Emissão NF"	    ,       		        ,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA10", 	"" ,"Cod.Cliente"	    ,       		        ,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA11", 	"" ,"Nome"	            ,       		        ,60,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA11", 	"" ,"Nome"	            ,       		        ,40,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 Return(oReport)
 //
 // -------------------------------------------------------------------------
@@ -130,6 +132,7 @@ Static Function PrintReport(oReport)
             _sDesc    := POSICIONE("SB1",1,XFILIAL("SB1") + _aLtXLS58[_i, 1] ,"B1_DESC")  
             _sDescProd:= POSICIONE("SB1",1,XFILIAL("SB1") + _aNf[_x,8]       ,"B1_DESC")
 
+            _sCodCR := _BuscaCodCR(_aNf[_x,1], _aNf[_x,8])
 
             // Imprimir os dados
             oSection1:Init()
@@ -144,6 +147,7 @@ Static Function PrintReport(oReport)
             oSection1:Cell("COLUNA4_2")	:SetBlock   ({||  _sDescProd                    })  // produto descrição
             oSection1:Cell("COLUNA5")	:SetBlock   ({||  _aLtXLS58[_i, 7] 	            })  // kg
             oSection1:Cell("COLUNA6")	:SetBlock   ({||  _aLtXLS58[_i, 6]              })  // grau
+            oSection1:Cell("COLUNA6_1")	:SetBlock   ({||  _sCodCR                       })  // cod.CR
             oSection1:Cell("COLUNA7")	:SetBlock   ({||  _aLtXLS58[_i, 2]              })  // lote carga
             oSection1:Cell("COLUNA8")	:SetBlock   ({||  _aNf[_x, 9]                   })  // lote nota
             oSection1:Cell("COLUNA9")	:SetBlock   ({||  STOD(_aNf[_x, 7])             })  // emissao
@@ -156,6 +160,37 @@ Static Function PrintReport(oReport)
     oSection1:Finish()
     TRA->(DbCloseArea())
 Return
+//
+// -------------------------------------------------------------------------
+// Busca código CR
+Static Function _BuscaCodCR(_sFilial, _sProduto)
+    Local _sCodCR := ""
+
+    Do Case
+        Case _sFilial == '01'
+            _sCodCR := POSICIONE("SB5",1,XFILIAL("SB5") + _sProduto ,"B5_VACSD01")  
+        Case _sFilial == '03'
+            _sCodCR := POSICIONE("SB5",1,XFILIAL("SB5") + _sProduto ,"B5_VACSD03")  
+        Case _sFilial == '05'
+            _sCodCR := POSICIONE("SB5",1,XFILIAL("SB5") + _sProduto ,"B5_VACSD05")  
+        Case _sFilial == '06'
+            _sCodCR := POSICIONE("SB5",1,XFILIAL("SB5") + _sProduto ,"B5_VACSD06")  
+        Case _sFilial == '07'
+            _sCodCR := POSICIONE("SB5",1,XFILIAL("SB5") + _sProduto ,"B5_VACSD07")  
+        Case _sFilial == '08'
+            _sCodCR := POSICIONE("SB5",1,XFILIAL("SB5") + _sProduto ,"B5_VACSD08")  
+        Case _sFilial == '09'
+            _sCodCR := POSICIONE("SB5",1,XFILIAL("SB5") + _sProduto ,"B5_VACSD09")  
+        Case _sFilial == '10'
+            _sCodCR := POSICIONE("SB5",1,XFILIAL("SB5") + _sProduto ,"B5_VACSD10")  
+        Case _sFilial == '11'
+            _sCodCR := POSICIONE("SB5",1,XFILIAL("SB5") + _sProduto ,"B5_VACSD11")  
+        Case _sFilial == '12'
+            _sCodCR := POSICIONE("SB5",1,XFILIAL("SB5") + _sProduto ,"B5_VACSD12")  
+        Case _sFilial == '13'
+            _sCodCR := POSICIONE("SB5",1,XFILIAL("SB5") + _sProduto ,"B5_VACSD13")  
+    EndCase
+Return _sCodCR
 //
 // -------------------------------------------------------------------------
 // Perguntas
