@@ -83,7 +83,8 @@
 // 20/02/2022 - Robert  - Novas tags de 'carga compartilhada' na geracao de cargas de safra (GLPI 11633).
 //                      - Variavel _sErros renomeada para _sErroWS
 //                      - Funcao _ExtraiTag() migrada para U_ExTagXML().
-// 02/03/3033 - Robert  - Criada acao EntregaFaturamento (GLPI 11698).
+// 02/03/2022 - Robert  - Criada acao EntregaFaturamento (GLPI 11698).
+// 18/03/2022 - Robert  - Migradas consultas de fech.safra e cota capital da classe WS_NAMob para ca.
 //
 
 // --------------------------------------------------------------------------------------------------------
@@ -238,6 +239,10 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 				_EnvMargem ()
 			case _sAcao == 'ImprimeTicketCargaSafra'
 				_ITkCarSaf ()
+			case _sAcao == 'ConsultaFechamentoSafraAssoc'
+				_AsFecSaf ()
+			case _sAcao == 'ConsultaCapitalSocialAssoc'
+				_AsCapSoc ()
 			otherwise
 				_sErroWS += "A acao especificada no XML eh invalida: " + _sAcao
 		endcase
@@ -2129,6 +2134,64 @@ Static function _DtEntFat ()
 			sf2 -> f2_DtEntr = _dDtEntr
 			msunlock ()
 			_sMsgRetWS = 'Registro atualizado.' 
+		endif
+	endif
+return
+
+
+// --------------------------------------------------------------------------
+// Associados - consulta fechamento de safra.
+static function _AsFecSaf ()
+	local   _sAssoc    := ""
+	local   _sLoja     := ""
+	local   _sSafra    := ""
+	local   _oAssoc    := NIL
+	local   _sRet      := ''
+	private _sErroAuto := ""  // Variavel alimentada pela funcao U_Help
+
+	if empty (_sErroWS) ; _sAssoc = U_ExTagXML ("_oXML:_WSAlianca:_Assoc", .T., .F.) ; endif
+	if empty (_sErroWS) ; _sLoja  = U_ExTagXML ("_oXML:_WSAlianca:_Loja", .T., .F.)  ; endif
+	if empty (_sErroWS) ; _sSafra = U_ExTagXML ("_oXML:_WSAlianca:_Safra", .T., .F.) ; endif
+	if empty (_sErroWS)
+		_oAssoc := ClsAssoc ():New (_sAssoc, _sLoja)
+		if valtype (_oAssoc) != 'O'
+			_sErroWS += "Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto
+		endif
+	endif
+	if empty (_sErroWS)
+		//                         _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC
+		_sRet = _oAssoc:FechSafra (_sSafra, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,        .t.,      .t.,      .f.)
+		if empty (_sRet)
+			_sErroWS += "Retorno invalido metodo FechSafra " + _oAssoc:UltMsg
+		else
+			_sMsgRetWS = _sRet
+		endif
+	endif
+return
+
+
+// --------------------------------------------------------------------------
+// Associados - consulta capital social.
+static function _AsCapSoc ()
+	local   _sAssoc    := ""
+	local   _sLoja     := ""
+	local   _sRet      := ''
+	private _sErroAuto := ""  // Variavel alimentada pela funcao U_Help
+
+	if empty (_sErroWS) ; _sAssoc = U_ExTagXML ("_oXML:_WSAlianca:_Assoc", .T., .F.) ; endif
+	if empty (_sErroWS) ; _sLoja  = U_ExTagXML ("_oXML:_WSAlianca:_Loja", .T., .F.)  ; endif
+	if empty (_sErroWS)
+		_oAssoc := ClsAssoc ():New (_sAssoc, _sLoja)
+		if valtype (_oAssoc) != 'O'
+			_sErroWS += "Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto
+		endif
+	endif
+	if empty (_sErroWS)
+		_sRet = _oAssoc:SldQuotCap (date ()) [.QtCapRetXML]
+		if empty (_sRet)
+			_sErroWS += "Retorno invalido metodo SldQuotCap " + _oAssoc:UltMsg
+		else
+			_sMsgRetWS = _sRet
 		endif
 	endif
 return

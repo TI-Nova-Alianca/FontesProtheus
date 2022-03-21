@@ -18,6 +18,7 @@
 // 31/01/2022 - Robert - Acao 'RetTicketCargaSafra' removida, pois nao se aplica diretamente a associados.
 // 20/02/2022 - Robert - Variavel _sErros renomeada para _sErroWS
 //                     - Funcao _ExtraiTag() migrada para U_ExTagXML().
+// 18/03/2022 - Robert - Migradas consultas de fech.safra e cota capital para a classe WS_Alianca.
 //
 
 // ------------------------------------------------------------------------------------------------
@@ -79,10 +80,10 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_NaMob
 		u_log ('Acao:', _sAcao)
 		//PtInternal (1, _sAcao)
 		do case
-			case _sAcao == 'ConsultaFechamentoSafraAssoc'
-				_AsFecSaf ()
-			case _sAcao == 'ConsultaCapitalSocialAssoc'
-				_AsCapSoc ()
+//			case _sAcao == 'ConsultaFechamentoSafraAssoc'
+//				_AsFecSaf ()
+//			case _sAcao == 'ConsultaCapitalSocialAssoc'
+//				_AsCapSoc ()
 			case _sAcao == 'ConsultaExtratoCCAssoc'
 				_AsExtrCC ()
 			otherwise
@@ -104,6 +105,7 @@ Return .T.
 
 
 
+/* Migrado para WS_ALIANCA em 18/03/2022
 // --------------------------------------------------------------------------
 // Associados - consulta capital social.
 static function _AsCapSoc ()
@@ -132,7 +134,7 @@ static function _AsCapSoc ()
 	endif
 	u_logFim ()
 return
-
+*/
 
 
 // --------------------------------------------------------------------------
@@ -184,6 +186,7 @@ return
 
 
 
+/* Migrado para WS_ALIANCA em 18/03/22
 // --------------------------------------------------------------------------
 // Associados - consulta fechamento de safra.
 static function _AsFecSaf ()
@@ -216,6 +219,7 @@ static function _AsFecSaf ()
 	endif
 	u_logFim ()
 return
+*/
 
 
 /*
