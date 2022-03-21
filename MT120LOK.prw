@@ -15,6 +15,7 @@
 // 12/04/2021 - Claudia - Validação Centro de Custo X Conta Contábil - GLPI: 9120
 // 15/06/2021 - Claudia - Incluida novas validações C.custo X C.contabil. GLPI: 10224
 // 15/10/2021 - Claudia - Validação MC da tetra pak. GLPI: 10765
+// 21/03/2022 - Claudia - Ajustada a validação de obrigação do centro de custo. GLPI: 11780
 //
 // -----------------------------------------------------------------------------------------------------
 User Function MT120LOk ()
@@ -23,18 +24,18 @@ User Function MT120LOk ()
 	local _aAmbAnt  := U_SalvaAmb ()
 
 	// obriga informacao do centro de custo
-	if _lRet .and. ! GDDeleted () .and. empty (GDFieldGet ("C7_CC"))
-		_wtpprod = fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("C7_PRODUTO"), 'B1_TIPO' )
+	if _lRet .and. ! GDDeleted() .and. empty (GDFieldGet("C7_CC"))
+		_wtpprod = fBuscaCpo("SB1", 1, xfilial ("SB1") + GDFieldGet("C7_PRODUTO"), 'B1_TIPO' )
 
-		if ! substr(alltrim(GDFieldGet ("C1_CONTA")),1,1) $ "4/7"
+		if ! substr(alltrim(GDFieldGet("C7_CONTA")),1,1) $ "4/7"
 			_lRet = .T.		// produtos considerados excessao - chamado 
 		else 
 			u_help ("Obrigatório informar centro de custo para este item.")
 			_lRet = .F.
 		endif				
 	endif
-	
-	if _lRet .and. ! GDDeleted () .and. (GDFieldGet ("C7_DATPRF") < DATE()) .and. (GDFieldGet ("C7_ENCER") = 'E' )
+
+	if _lRet .and. ! GDDeleted() .and. (GDFieldGet("C7_DATPRF") < DATE()) .and. (GDFieldGet("C7_ENCER") = 'E' )
 		U_Help ("Data de entrega não pode ser menor que data atual.")
 		_lRet = .F.
 	endif
@@ -79,8 +80,8 @@ User Function MT120LOk ()
 
 	// verifica item MC que deve ser comprado do fornecedore tetra
 	if _lRet .and. ! GDDeleted ()
-		_sTpProd  := fBuscaCpo ("SB1", 1, xfilial("SB1") + GDFieldGet("C7_PRODUTO"), 'B1_TIPO' )
-		_sNomeFor := fBuscaCpo ("SA2", 1, xfilial("SA2") + CA120FORN + CA120LOJ, 'A2_NOME')
+		_sTpProd  := fBuscaCpo("SB1", 1, xfilial("SB1") + GDFieldGet("C7_PRODUTO"), 'B1_TIPO' )
+		_sNomeFor := fBuscaCpo("SA2", 1, xfilial("SA2") + CA120FORN + CA120LOJ, 'A2_NOME')
 
 		if alltrim(_sTpProd) == 'MC' .and. !('TETRA PAK' $ alltrim(_sNomeFor))
 			u_help ("Itens do tipo MC devem ser adquiridos do fornecedor Tetra Pak!")
