@@ -32,6 +32,7 @@
 // 25/02/2021 - Claudia - Observações para pedidos de serviço. GLPI: 7846
 // 27/01/2022 - Sandra  - Alterado notas comforme chamado GLPI: 11541.
 // 27/01/2022 - Sandra  - Incluso linhas conforme chamado GLPI: 11544.
+// 21/03/2022 - Claudia - Ajustada a impressão duplicada das informações adicionais. GLPI: 11779
 //
 // ------------------------------------------------------------------------------------------------------------------------
 #include 'topconn.ch'
@@ -53,6 +54,7 @@ User Function ML_PCPR()
 	Public  dDatPrf
 	Public  _cMSG      := ""
 	Public  _cNTRANSP  := ""
+	
 	sim := .f.
 	_ncontato  := ""
 	caminho := ""
@@ -384,14 +386,14 @@ Static Function xPrintRel()
 	//_obsTerceiros := {'TESTE TESTE TESTE TESTE'}
 	
 	aadd(_obsfull,U_QuebraTxt(alltrim(_sDadAdic),120))
-	if len(_obsfull) > 0
-		for i=1 to len(_obsfull[1])
-			xVerPag()
-			oPrint:Say(nLinha,0380,_obsfull[1][i],oFont10)
-			nLinha += 40
-			xPulaPag()
-		next
-	endif
+	// if len(_obsfull) > 0
+	// 	for i=1 to len(_obsfull[1])
+	// 		xVerPag()
+	// 		oPrint:Say(nLinha,0380,_obsfull[1][i],oFont10)
+	// 		nLinha += 40
+	// 		xPulaPag()
+	// 	next
+	// endif
 	nLinha += 50
 
 	_cQuery := " SELECT "
