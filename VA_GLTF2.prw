@@ -17,13 +17,13 @@
 // 13/10/2020 - Claudia - Ajuste nas consultas para somarquantidade para mesmo produto e mesma nota. GLPI: 8640
 // 20/11/2020 - Claudia - Retirado o botão filtro conforme GLPI: 8663
 // 19/02/2021 - Cláudia - Incluida validação para retorno vazio da guia. GLPI: 9445
+// 21/03/2022 - Claudia - Incluido o grupo 4000 e validação pelo campo  "Vai p/ sisdec" (B5_VASISDE). GLPI: 11769
 //
-// -------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
 User Function VA_GLTF2()  
 	Local _aCores     := U_GLTF2LG (.T.)
-	//Local cArqTRB     := ""
 	Local aStruct     := {}
 	Local aHead       := {}
 	Local _aArqTrb    := {}
@@ -64,22 +64,9 @@ User Function VA_GLTF2()
 		AAdd( aStruct, { "DIGITACAO"  , "C", 10, 0 } )
 
 		U_ArqTrb ("Cria", "TRB", aStruct, {"DOC + SERIE + CLIENTE"}, @_aArqTrb)
-						  
-		// cria arquivo de trabalho
-//		cArqTRB := CriaTrab( aStruct, .T. )
-//		dbUseArea( .T., __LocalDriver, cArqTRB, "TRB", .F., .F. )
-//		cInd1 := Left( cArqTRB, 1 ) + Left( cArqTRB, 2 ) + Left( cArqTRB, 3 ) + "1"
-//		IndRegua( "TRB", cInd1, "DOC + SERIE + CLIENTE", , , "Criando índices...")
-//		cInd2 :=  Left( cArqTRB, 3 ) + Left( cArqTRB, 1 ) + Left( cArqTRB, 2 ) + "2"
-//		IndRegua( "TRB", cInd2, "CLIENTE + DOC + SERIE", , , "Criando índices...")
-		
-//		dbClearIndex()
-//		dbSetIndex( cInd1 + OrdBagExt() )
-//		//dbSetIndex( cInd2 + OrdBagExt() )
 
 		// gera arquivo dados - carrega arquivo de trabalho
 		_sSQL := " " 
-		//_sSQL += " SELECT DISTINCT"
 		_sSQL += " SELECT "
 		_sSQL += " 	dbo.VA_DTOC(SD2.D2_EMISSAO) AS DT_EMISSAO"
 		_sSQL += "    ,SF2.F2_VAGUIA AS GUIA"
@@ -92,8 +79,8 @@ User Function VA_GLTF2()
 		_sSQL += "    ,SD2.D2_DOC AS NOTA"
 		_sSQL += "    ,SD2.D2_SERIE AS SERIE"
 		_sSQL += "    ,dbo.VA_DTOC(SD2.D2_DTDIGIT) AS DT_DIGIT"
-		_sSQL += " FROM SD2010 AS SD2"
-		_sSQL += " INNER JOIN SF2010 AS SF2"
+		_sSQL += " FROM " + RetSqlName( "SD2" ) + " SD2 "
+		_sSQL += " INNER JOIN " + RetSqlName( "SF2" ) + " SF2 "
 		_sSQL += " 	ON (SF2.D_E_L_E_T_ = ''"
 		_sSQL += " 			AND SF2.F2_FILIAL  = SD2.D2_FILIAL"
 		_sSQL += " 			AND SF2.F2_DOC     = SD2.D2_DOC"
@@ -107,20 +94,21 @@ User Function VA_GLTF2()
 		if mv_par02 == 3 //não informada
 			_sSQL += "     		AND SF2.F2_VAGUIA = '' "
 		endif
-		_sSQL += " INNER JOIN SB1010 AS SB1"
+		_sSQL += " INNER JOIN " + RetSqlName( "SB1" ) + " SB1 "
 		_sSQL += " 	ON (SB1.D_E_L_E_T_ = ''"
 		_sSQL += " 			AND SB1.B1_COD = SD2.D2_COD)"
-		_sSQL += " INNER JOIN SB5010 AS SB5"
+		_sSQL += " INNER JOIN " + RetSqlName( "SB5" ) + " SB5 "
 		_sSQL += " 	ON (SB5.D_E_L_E_T_ = ''"
 		if mv_par01 == 2 // acucar e borra seca
 			_sSQL += " 			AND SB5.B5_VATPSIS IN ('24', '40')"
 		endif
-		_sSQL += " 			AND SB5.B5_COD = SB1.B1_COD)"
-		_sSQL += " LEFT JOIN SA2010 AS SA2"
+		_sSQL += " 			AND SB5.B5_COD = SB1.B1_COD"
+		_sSQL += "          AND SB5.B5_VASISDE = 'S')"
+		_sSQL += " LEFT JOIN " + RetSqlName( "SA2" ) + " SA2 "
 		_sSQL += " 	ON (SA2.D_E_L_E_T_ = ''"
 		_sSQL += " 			AND SA2.A2_COD = SF2.F2_CLIENTE"
 		_sSQL += " 			AND SA2.A2_LOJA = SF2.F2_LOJA)"
-		_sSQL += " LEFT JOIN SA1010 AS SA1"
+		_sSQL += " LEFT JOIN " + RetSqlName( "SA1" ) + " SA1 "
 		_sSQL += " 	ON (SA1.D_E_L_E_T_ = ''"
 		_sSQL += " 			AND SA1.A1_COD = SF2.F2_CLIENTE"
 		_sSQL += " 			AND SA1.A1_LOJA = SF2.F2_LOJA)"
@@ -128,9 +116,9 @@ User Function VA_GLTF2()
 		_sSQL += " AND SD2.D2_FILIAL = '" + xFilial ("SD2") + "'"
 		_sSQL += " AND SD2.D2_EMISSAO > '" + dtos (date() - 90 ) + "'"
 		_sSQL += " AND SD2.D2_QUANT > 0"
-		if mv_par01 == 1 // granel
-			_sSQL += "     AND SD2.D2_GRUPO = '3000'"
-		else // acucar e borra seca
+		if mv_par01 == 1 // granel e concentrados
+			_sSQL += "     AND SD2.D2_GRUPO in ('3000','4000')"
+		else 			// acucar e borra seca
 			_sSQL += "     AND SD2.D2_GRUPO IN ('4001', '0603')"
 		endif	
 		_sSQL += " 	GROUP BY SD2.D2_EMISSAO"
@@ -286,7 +274,7 @@ return
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                      Help
-	aadd (_aRegsPerg, {01, "Lista Notas        ?", "N", 1, 0,  "",   "   ", {"Granel","Acuçar/Borra"}, ""})
+	aadd (_aRegsPerg, {01, "Lista Notas        ?", "N", 1, 0,  "",   "   ", {"Granel/concentrado","Acuçar/Borra"}, ""})
 	aadd (_aRegsPerg, {02, "Guia               :", "N", 1, 0,  "",   "   ", {"Ambas","Informada","Não informada"}, ""})
 	
 	U_ValPerg (_cPerg, _aRegsPerg)

@@ -28,7 +28,6 @@
 #include "rwmake.ch"
 
 User Function VA_GLTF1()  
-
 	Local _aCores     := U_GLTF1LG (.T.)
 	Local aStruct     := {}
 	Local aHead       := {}
@@ -73,7 +72,6 @@ User Function VA_GLTF1()
 
 		// gera arquivo dados - carrega arquivo de trabalho
 		_sSQL := "" 
-		//_sSQL += " SELECT DISTINCT "
 		_sSQL += " SELECT "
 		_sSQL += " 		 dbo.VA_DTOC(SD1.D1_EMISSAO) AS DT_EMISSAO"
 		_sSQL += "		,SF1.F1_VAGUIA AS GUIA"
@@ -86,8 +84,8 @@ User Function VA_GLTF1()
 		_sSQL += "		,SD1.D1_SERIE AS SERIE"
 		_sSQL += "		,dbo.VA_DTOC(SD1.D1_DTDIGIT) AS DT_DIGIT"	
 		_sSQL += " 		,SF1.F1_VADENS AS DENSIDADE"
-	    _sSQL += "   FROM SD1010 AS SD1"
-		_sSQL += "		INNER JOIN SF1010 AS SF1"
+	    _sSQL += "   FROM " + RetSqlName( "SD1" ) + " SD1 "
+		_sSQL += "		INNER JOIN " + RetSqlName( "SF1" ) + " SF1 "
 		_sSQL += "			ON (SF1.D_E_L_E_T_     = ''"
 		_sSQL += "				AND SF1.F1_FILIAL  = SD1.D1_FILIAL"
 		_sSQL += "				AND SF1.F1_DOC     = SD1.D1_DOC"
@@ -102,12 +100,12 @@ User Function VA_GLTF1()
 	    	_sSQL += "     		AND SF1.F1_VAGUIA = '' "
 	    endif
 		_sSQL += " )"
-		_sSQL += "		INNER JOIN SB1010 AS SB1"
+		_sSQL += "		INNER JOIN " + RetSqlName( "SB1" ) + " SB1 "
 		_sSQL += "			ON (SB1.D_E_L_E_T_ = ''"
 		_sSQL += "				AND SB1.B1_COD = SD1.D1_COD)"
-		_sSQL += "		INNER JOIN SB5010 AS SB5"
+		_sSQL += "		INNER JOIN " + RetSqlName( "SB5" ) + " SB5 "
 		_sSQL += "			ON (SB5.D_E_L_E_T_ = ''"
-		_sSQL += "           AND SB5.B5_VASISDE = 'S'" 
+		_sSQL += "          AND SB5.B5_VASISDE = 'S'" 
 		if mv_par01 == 2 // acucar e borra seca
 			_sSQL += "           AND SB5.B5_VATPSIS IN ('24','40') " 
 		endif
@@ -172,15 +170,14 @@ User Function VA_GLTF1()
 	    dbSelectArea("TRB")
 		dbSetOrder(1)
 	    	
-		//mBrowse( <nLinha1>, <nColuna1>, <nLinha2>, <nColuna2>, <cAlias>, <aFixe>, <cCpo>, <nPar>, <cCorFun>, <nClickDef>, <aColors>, 
-		//<cTopFun>, <cBotFun>, <nPar14>, <bInitBloc>, <lNoMnuFilter>, <lSeeAll>, <lChgAll>, <cExprFilTop>, <nInterval>, <uPar22>, <uPar23> )
 		mBrowse(6,1,22,75,"TRB",aHead,,,,2,_aCores,,,,,.T.)
 
 		TRB->(dbCloseArea())    
 		
 		u_arqtrb ("FechaTodos",,,, @_aArqTrb)            
 	endif	
-Return       
+Return   
+//    
 // --------------------------------------------------------------------------
 // Mostra legenda ou retorna array de cores, cfe. o caso.
 user function GLTF1LG (_lRetCores)
@@ -203,8 +200,10 @@ user function GLTF1LG (_lRetCores)
 		return _aCores
 	endif
 return
-
-// Funcao que trata a atualizacao do campo da Guia de Livre Transito (GLT) nas notas de entrada
+//    
+// --------------------------------------------------------------------------
+// Funcao que trata a atualizacao do campo da Guia de Livre Transito (GLT) 
+// nas notas de entrada
 User function AtuGuia()
     local _lRet := .T.
     if _lRet
@@ -237,8 +236,9 @@ User function AtuGuia()
 				Msunlock()
 			endif
 	    endif
-	 endif   	
- return
+	endif   	
+return
+//
 // --------------------------------------------------------------------------
 // Consulta detalhes da movimentacao.
 user function VerNF ()
@@ -255,12 +255,13 @@ user function VerNF ()
 		u_help ("NF '" + TRB->DOC + "' nao encontrada.")
 	endif
 return
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                      Help
-	aadd (_aRegsPerg, {01, "Lista Notas        ?", "N", 1, 0,  "",   "   ", {"Granel","Acuçar/Borra"}, ""})
+	aadd (_aRegsPerg, {01, "Lista Notas        ?", "N", 1, 0,  "",   "   ", {"Granel/concentrado","Acuçar/Borra"}, ""})
 	aadd (_aRegsPerg, {02, "Guia               :", "N", 1, 0,  "",   "   ", {"Ambas","Informada","Não informada"}, ""})
 	
 	U_ValPerg (_cPerg, _aRegsPerg)  
