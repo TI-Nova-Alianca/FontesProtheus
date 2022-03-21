@@ -85,6 +85,7 @@
 //                      - Funcao _ExtraiTag() migrada para U_ExTagXML().
 // 02/03/2022 - Robert  - Criada acao EntregaFaturamento (GLPI 11698).
 // 18/03/2022 - Robert  - Migradas consultas de fech.safra e cota capital da classe WS_NAMob para ca.
+// 21/03/2022 - Robert  - Novos parametros chamada metodo fechamento safra.
 //
 
 // --------------------------------------------------------------------------------------------------------
@@ -2160,7 +2161,8 @@ static function _AsFecSaf ()
 	endif
 	if empty (_sErroWS)
 		//                         _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC
-		_sRet = _oAssoc:FechSafra (_sSafra, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,        .t.,      .t.,      .f.)
+		_sRet = _oAssoc:FechSafra (_sSafra, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,        .t.,      .t.,      .t.)
+		U_Log2 ('debug', '[' + procname () + ']' + _sRet)
 		if empty (_sRet)
 			_sErroWS += "Retorno invalido metodo FechSafra " + _oAssoc:UltMsg
 		else
