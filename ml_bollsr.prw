@@ -89,6 +89,7 @@
 // 06/12/2021 - Claudia - Criada validação para nao permitir impressão de boleto quando tiver algum erro. 
 //                        GLPI: 11283
 // 25/02/2022 - Sandra  - Alterado agencia e conta do banco 041 para filial 08 GLPI 11638.
+// 18/02/2022 - Claudia - Criado modelo banrisul 240. GLPI: 11753
 //
 // --------------------------------------------------------------------------------------------------------------
 User Function ML_BOLLSR (_aBoletos)
@@ -2766,6 +2767,8 @@ Static Function _Impress(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
 	
 	if _cBcoBol == '422' //.and. mv_par12 = 1 // modelo novo safra
 		_Impress422(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
+	elseif _cBcoBol == '041' .and. cFilAnt == '08' 		// banrisul da filial 8 - 240 posições
+		_ImpLayout240(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
 	else
 		oPrn:StartPage()       // Inicia uma Nova Página
 		oPrn:Line(_nLinIni+0100 , 0100 , _nLinIni+0100 , 2300)
@@ -3312,6 +3315,230 @@ Static function _Impress422(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_R
 		EndIf
 	Endif
 	
+	oPrn:EndPage()       // Finaliza a página
+Return
+//
+// --------------------------------------------------------------------------
+// Impressão do boleto 240 posições - novo layout
+Static function _ImpLayout240(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
+	local _nLinIni  := 0
+	local _sNumComp := ""  // Numero de compensacao
+	local i 	    := 0
+	
+	aCoords1 := {2100,1900,2200,2300}
+	aCoords2 := {2370,1900,2440,2300}
+	
+	oPrn:StartPage()       // Inicia uma Nova Página
+	
+	//-------------------------------------- IMPRESSÃO DO RECIBO DO PAGADOR
+	// Logotipo canto esq. superior
+	_sArqLogo := alltrim (see -> ee_logobol)
+	if ! empty (_sArqLogo)
+		oPrn:SayBitMap (_nLinIni + 80	, ;  // Linha
+		100								, ;  // Coluna
+		_sArqLogo						, ;  // Arquivo
+		450								, ;  // Largura
+		80								  )  // Altura
+	endif
+		
+	// Define numero de compensacao a ser impresso em negrito ao lado do logotipo do banco.
+	do case
+		case _cBcoBol == '041'
+			_sNumComp = "041-8"
+		otherwise
+			u_help ("Sem definicao de numero de compensacao para este banco.")
+			return
+	endcase
+
+	_nLinIni := -500
+	oPrn:Line(_nLinIni+0700 , 100 ,_nLinIni+0700 , 2300)
+	oPrn:Line(_nLinIni+0620 , 550 ,_nLinIni+0700 , 0550)
+	oPrn:Line(_nLinIni+0620 , 800 ,_nLinIni+0700 , 0800)
+
+	oPrn:Say( _nLinIni+0620 ,  600 , _sNumComp   , oFont24)
+	_sSac    := "SAC BANRISUL: 0800 646 1515"
+	_sSac2   := "OUVIDORIA BANRISUL: 0800 644 2200"
+	_sRecibo := "RECIBO DO PAGADOR"
+	oPrn:Say( _nLinIni+0610 ,  850 , _sSac    ,oFont8)
+	oPrn:Say( _nLinIni+0650 ,  850 , _sSac2   ,oFont8)
+	oPrn:Say( _nLinIni+0640 , 2000 , _sRecibo ,oFont10)
+	oPrn:Line(_nLinIni+0780 , 0100 , _nLinIni+0780 , 2300)
+	oPrn:Line(_nLinIni+0860 , 0100 , _nLinIni+0860 , 2300)
+	oPrn:Line(_nLinIni+0930 , 0100 , _nLinIni+0930 , 2300)
+	oPrn:Line(_nLinIni+1000 , 0100 , _nLinIni+1000 , 2300)
+	
+	oPrn:Line(_nLinIni+0860 , 0500 , _nLinIni+0930 , 0500)
+	oPrn:Line(_nLinIni+0930 , 0750 , _nLinIni+1000 , 0750)
+	oPrn:Line(_nLinIni+0860 , 1000 , _nLinIni+1000 , 1000)
+	oPrn:Line(_nLinIni+0860 , 1350 , _nLinIni+0930 , 1350)
+	oPrn:Line(_nLinIni+0860 , 1550 , _nLinIni+1000 , 1550)
+	
+	oPrn:Say(_nLinIni+0705 , 0100 ,"Local de Pagamento"                         			,oFont8 )
+	oPrn:Say(_nLinIni+0735 , 0100 ,"PAGÁVEL PREFERENCIALMENTE NA REDE INTEGRADA BANRISUL" 	,oFont10)
+	oPrn:Say(_nLinIni+0705 , 1910 ,"Vencimento"                                     		,oFont8 )
+	oPrn:Say(_nLinIni+0735 , 2010 ,_Dtoc(aDadosTit[4])                          			,oFont10)
+	oPrn:Say(_nLinIni+0785 , 0100 ,"Beneficiáro"                            				,oFont8 )
+	oPrn:Say(_nLinIni+0815 , 0100 ,aDadosEmp[1] + '     ' + aDadosEmp[6]    				, oFont10)		
+	oPrn:Say(_nLinIni+0785 , 1910 ,"Agência/Código do Beneficiário"                    		,oFont8)		
+	
+	If _cBcoBol == '041' .and. cNumEmp == '0108'  // dados de agencia/conta do beneficiario da filial 08 - banrisul 
+		oPrn:Say(_nLinIni+0815 , 1960 ,"0873 856682386"	,oFont10)
+	Else
+		oPrn:Say(_nLinIni+0815 , 1960 ,_cAgeBol+"  /  "+_cCtaBol,oFont10)
+	EndiF
+	
+	oPrn:Say(_nLinIni+0865 , 0100 ,"Data do Documento"                         	,oFont8 )
+	oPrn:Say(_nLinIni+0895, 0100 ,_DTOC(aDadosTit[2])                          	,oFont10)
+	oPrn:Say(_nLinIni+0865 , 0505 ,"Nro.Documento"                             	,oFont8 )
+	oPrn:Say(_nLinIni+0895 , 0605 ,aDadosTit[1]                                	,oFont10)
+	oPrn:Say(_nLinIni+0865 , 1005 ,"Espécie Doc."                              	,oFont8 )
+	oPrn:Say(_nLinIni+0895 , 1105 ,"DM"    		                                ,oFont10)
+	oPrn:Say(_nLinIni+0865 , 1355 ,"Aceite"                                    	,oFont8 )
+	oPrn:Say(_nLinIni+0895 , 1455 ,"N" 		                                	,oFont10)
+	oPrn:Say(_nLinIni+0865 , 1555 ,"Data do Processamento"                     	,oFont8 )
+	oPrn:Say(_nLinIni+0895 , 1655 ,_Dtoc(aDadosTit[7])                         	,oFont10)
+	oPrn:Say(_nLinIni+0865 , 1910 ,"Nosso Número"                              	,oFont8 )		
+	oPrn:Say(_nLinIni+0895 , 1960 ,aDadosTit[6]                           	    ,oFont10)		
+	oPrn:Say(_nLinIni+0935 , 0100 ,"Uso do Banco"                              	,oFont8 )	
+	oPrn:Say(_nLinIni+0935 , 0755 ,"Espécie"                                   	,oFont8 )
+	oPrn:Say(_nLinIni+0965 , 0805 ,GetMv('MV_SIMB1')                            ,oFont10)
+	oPrn:Say(_nLinIni+0935 , 1005 ,"Quantidade"                                	,oFont8 )
+	oPrn:Say(_nLinIni+0935 , 1555 ,"Valor"                                     	,oFont8 )
+	oPrn:Say(_nLinIni+0935 , 1910 ,"(=)Valor do Documento"                     	,oFont8 )
+	oPrn:Say(_nLinIni+0965 , 2010 ,Transform(aDadosTit[5],"@E 9,999,999.99")   	,oFont10)
+	oPrn:Say(_nLinIni+1005 , 0100 ,"Informações de responsabilidade do beneficiário" ,oFont8 )
+	oPrn:Say(_nLinIni+1110 , 0100 ,"PROTESTAR " + cvaltochar (GetMv ("VA_PROTBOL")) + " DIAS DO VENCIMENTO",oFont12)
+	
+	oPrn:Say(_nLinIni+1230 , 0100 ,mv_par10                                 	,oFont12)
+	oPrn:Line(_nLinIni+0700 , 1900 ,_nLinIni+1350 , 1900)
+	oPrn:Line(_nLinIni+1070 , 1900 ,_nLinIni+1070 , 2300)
+	oPrn:Line(_nLinIni+1140 , 1900 ,_nLinIni+1140 , 2300)
+	oPrn:Line(_nLinIni+1210 , 1900 ,_nLinIni+1210 , 2300)
+	oPrn:Line(_nLinIni+1280 , 1900 ,_nLinIni+1280 , 2300)
+	
+	oPrn:Say(_nLinIni+1005 , 1910 ,"(-)Desconto/Abatimento"                    ,oFont8 )
+	oPrn:Say(_nLinIni+1035 , 2010 ,Transform(aDatSacado[8],"@EZ 9,999,999.99") ,oFont10)
+	oPrn:Say(_nLinIni+1075 , 1910 ,"(-)Outras Deduções"                        ,oFont8 )
+	oPrn:Say(_nLinIni+1145 , 1910 ,"(+)Mora/Multa"                             ,oFont8 )		
+	oPrn:Say(_nLinIni+1215 , 1910 ,"(+)Outros Acréscimos"                      ,oFont8 )
+	oPrn:Say(_nLinIni+1285 , 1910 ,"(-)Valor Cobrado"                          ,oFont8 )
+	oPrn:Line(_nLinIni+1350 , 0100 ,_nLinIni+1350 , 2300)
+	oPrn:Say(_nLinIni+1355 , 0100 , "Pagador"                      ,oFont8 )
+
+	oPrn:Say(_nLinIni+1355 , 0350 ,aDatSacado[1]+" ("+aDatSacado[2]+")"+SPACE(15)+aDatSacado[7] ,oFont10)
+	oPrn:Say(_nLinIni+1395 , 0350 ,aDatSacado[3]                                                ,oFont10)
+	oPrn:Say(_nLinIni+1435 , 0350 ,aDatSacado[4]+" - "+aDatSacado[5]                            ,oFont10)
+	oPrn:Say(_nLinIni+1475 , 0350 ,aDatSacado[6]                                                ,oFont10)
+		
+	oPrn:Line(_nLinIni+1550 , 0100 ,_nLinIni+1550 , 2300)
+	oPrn:Say(_nLinIni+1550 , 1580 ,"Autenticação Mecânica"                     ,oFont8 )
+
+	For i := 100 to 2300 step 50
+		oPrn:Line(_nLinIni+1800 ,i ,_nLinIni+1800 ,i+30)
+	Next i
+
+	//-------------------------------------- IMPRESSÃO DA FICHA DE COMPENSAÇÃO 
+	// Logotipo canto esq. superior
+	_nLinIni := 800
+
+	_sArqLogo := alltrim (see -> ee_logobol)
+	if ! empty (_sArqLogo)
+		oPrn:SayBitMap (_nLinIni +0600	, ;  // Linha
+		100								, ;  // Coluna
+		_sArqLogo						, ;  // Arquivo
+		450								, ;  // Largura
+		80								  )  // Altura
+	endif
+		
+	// Define numero de compensacao a ser impresso em negrito ao lado do logotipo do banco.
+	do case
+		case _cBcoBol == '041'
+			_sNumComp = "041-8"
+		otherwise
+			u_help ("Sem definicao de numero de compensacao para este banco.")
+			return
+	endcase
+
+	oPrn:Line(_nLinIni+0700 , 100 ,_nLinIni+0700 , 2300)
+	oPrn:Line(_nLinIni+0620 , 550 ,_nLinIni+0700 , 0550)
+	oPrn:Line(_nLinIni+0620 , 800 ,_nLinIni+0700 , 0800)
+
+	oPrn:Say( _nLinIni+0620 , 600 , _sNumComp, oFont24)
+	oPrn:Say(_nLinIni+0640 ,850 ,CB_RN[2]    ,oFont16n)
+	oPrn:Line(_nLinIni+0780 , 0100 , _nLinIni+0780 , 2300)
+	oPrn:Line(_nLinIni+0860 , 0100 , _nLinIni+0860 , 2300)
+	oPrn:Line(_nLinIni+0930 , 0100 , _nLinIni+0930 , 2300)
+	oPrn:Line(_nLinIni+1000 , 0100 , _nLinIni+1000 , 2300)
+	
+	oPrn:Line(_nLinIni+0860 , 0500 , _nLinIni+0930 , 0500)
+	oPrn:Line(_nLinIni+0930 , 0750 , _nLinIni+1000 , 0750)
+	oPrn:Line(_nLinIni+0860 , 1000 , _nLinIni+1000 , 1000)
+	oPrn:Line(_nLinIni+0860 , 1350 , _nLinIni+0930 , 1350)
+	oPrn:Line(_nLinIni+0860 , 1550 , _nLinIni+1000 , 1550)
+	
+	oPrn:Say(_nLinIni+0705 , 0100 ,"Local de Pagamento"                         			,oFont8 )
+	oPrn:Say(_nLinIni+0735 , 0100 ,"PAGÁVEL PREFERENCIALMENTE NA REDE INTEGRADA BANRISUL" 	,oFont10)
+	oPrn:Say(_nLinIni+0705 , 1910 ,"Vencimento"                                     		,oFont8 )
+	oPrn:Say(_nLinIni+0735 , 2010 ,_Dtoc(aDadosTit[4])                          			,oFont10)		
+	oPrn:Say(_nLinIni+0785 , 0100 ,"Beneficiáro"                            				,oFont8 )
+	oPrn:Say(_nLinIni+0815 , 0100 ,aDadosEmp[1] + '     ' + aDadosEmp[6]    				, oFont10)		
+	oPrn:Say(_nLinIni+0785 , 1910 ,"Agência/Código do Beneficiário"                    	,oFont8)		
+	
+	If _cBcoBol == '041' .and. cNumEmp == '0108'  // dados de agencia/conta do beneficiario da filial 08 - banrisul 
+		oPrn:Say(_nLinIni+0815 , 1960 ,"0873 856682386"	,oFont10)
+	Else
+		oPrn:Say(_nLinIni+0815 , 1960 ,_cAgeBol+"  /  "+_cCtaBol,oFont10)
+	EndiF
+	
+	oPrn:Say(_nLinIni+0865 , 0100 ,"Data do Documento"                         	,oFont8 )
+	oPrn:Say(_nLinIni+0895, 0100 ,_DTOC(aDadosTit[2])                          	,oFont10)
+	oPrn:Say(_nLinIni+0865 , 0505 ,"Nro.Documento"                             	,oFont8 )
+	oPrn:Say(_nLinIni+0895 , 0605 ,aDadosTit[1]                                	,oFont10)
+	oPrn:Say(_nLinIni+0865 , 1005 ,"Espécie Doc."                              	,oFont8 )
+	oPrn:Say(_nLinIni+0895 , 1105 ,"DM"    		                                ,oFont10)
+	oPrn:Say(_nLinIni+0865 , 1355 ,"Aceite"                                    	,oFont8 )
+	oPrn:Say(_nLinIni+0895 , 1455 ,"N" 		                                	,oFont10)
+	oPrn:Say(_nLinIni+0865 , 1555 ,"Data do Processamento"                     	,oFont8 )
+	oPrn:Say(_nLinIni+0895 , 1655 ,_Dtoc(aDadosTit[7])                         	,oFont10)
+	oPrn:Say(_nLinIni+0865 , 1910 ,"Nosso Número"                              	,oFont8 )		
+	oPrn:Say(_nLinIni+0895 , 1960 ,aDadosTit[6]                           	    ,oFont10)		
+	oPrn:Say(_nLinIni+0935 , 0100 ,"Uso do Banco"                              	,oFont8 )
+	oPrn:Say(_nLinIni+0935 , 0755 ,"Espécie"                                   	,oFont8 )
+	oPrn:Say(_nLinIni+0965 , 0805 ,GetMv('MV_SIMB1')                            ,oFont10)
+	oPrn:Say(_nLinIni+0935 , 1005 ,"Quantidade"                                	,oFont8 )
+	oPrn:Say(_nLinIni+0935 , 1555 ,"Valor"                                     	,oFont8 )
+	oPrn:Say(_nLinIni+0935 , 1910 ,"(=)Valor do Documento"                     	,oFont8 )
+	oPrn:Say(_nLinIni+0965 , 2010 ,Transform(aDadosTit[5],"@E 9,999,999.99")   	,oFont10)
+	oPrn:Say(_nLinIni+1005 , 0100 ,"Informações de responsabilidade do beneficiário" ,oFont8 )
+	oPrn:Say(_nLinIni+1110 , 0100 ,"PROTESTAR " + cvaltochar (GetMv ("VA_PROTBOL")) + " DIAS DO VENCIMENTO",oFont12)
+	oPrn:Say(_nLinIni+1230 , 0100 ,mv_par10                                 	,oFont12)
+	oPrn:Line(_nLinIni+0700 , 1900 ,_nLinIni+1350 , 1900)
+	oPrn:Line(_nLinIni+1070 , 1900 ,_nLinIni+1070 , 2300)
+	oPrn:Line(_nLinIni+1140 , 1900 ,_nLinIni+1140 , 2300)
+	oPrn:Line(_nLinIni+1210 , 1900 ,_nLinIni+1210 , 2300)
+	oPrn:Line(_nLinIni+1280 , 1900 ,_nLinIni+1280 , 2300)
+	oPrn:Say(_nLinIni+1005 , 1910 ,"(-)Desconto/Abatimento"                    ,oFont8 )
+	oPrn:Say(_nLinIni+1035 , 2010 ,Transform(aDatSacado[8],"@EZ 9,999,999.99")   	,oFont10)
+	oPrn:Say(_nLinIni+1075 , 1910 ,"(-)Outras Deduções"                        ,oFont8 )
+	oPrn:Say(_nLinIni+1145 , 1910 ,"(+)Mora/Multa"                             ,oFont8 )		
+	oPrn:Say(_nLinIni+1215 , 1910 ,"(+)Outros Acréscimos"                      ,oFont8 )
+	oPrn:Say(_nLinIni+1285 , 1910 ,"(-)Valor Cobrado"                          ,oFont8 )
+	oPrn:Line(_nLinIni+1350 , 0100 ,_nLinIni+1350 , 2300)
+	oPrn:Say(_nLinIni+1355 , 0100 , "Pagador"                      ,oFont8 )
+
+	oPrn:Say(_nLinIni+1355 , 0350 ,aDatSacado[1]+" ("+aDatSacado[2]+")"+SPACE(15)+aDatSacado[7] ,oFont10)
+	oPrn:Say(_nLinIni+1395 , 0350 ,aDatSacado[3]                                                ,oFont10)
+	oPrn:Say(_nLinIni+1435 , 0350 ,aDatSacado[4]+" - "+aDatSacado[5]                            ,oFont10)
+	oPrn:Say(_nLinIni+1475 , 0350 ,aDatSacado[6]                                                ,oFont10)
+		
+	oPrn:Line(_nLinIni+1550 , 0100 ,_nLinIni+1550 , 2300)
+	
+	oPrn:Say(_nLinIni+1550 , 1580 ,"Autenticação Mecânica"                     ,oFont8 )
+	oPrn:Say(_nLinIni+1550 , 1910 ,"Ficha de Compensação"                      ,oFont10)
+
+	// Código de barras
+	MSBAR("INT25",21.10,1.10,CB_RN[1],oPrn,.F.,,,0.02300,1.2,,,,.F.)
+
 	oPrn:EndPage()       // Finaliza a página
 Return
 //
