@@ -35,8 +35,8 @@
 // 15/06/2021 - Claudia - Incluida novas validações C.custo X C.contabil. GLPI: 10224
 // 13/09/2021 - Robert  - Valida B1_TIPO MM/MC x grupo 131 (GLPI 10651).
 // 17/09/2021 - Robert  - Valida B1_TIPO MM/MC x grupo 131 somente para filial 01 (GLPI 10651).
+// 21/03/2022 - Claudia - Ajustada a validação de obrigação do centro de custo. GLPI: 11780
 //
-
 // ----------------------------------------------------------------------------------------------------------------------------
 user function mt110lok ()
 	local _lRet     := .T.
@@ -96,6 +96,10 @@ user function mt110lok ()
 		endif
 	endif
 
+	if !empty(GDFieldGet ("C1_CC")) .and. empty(GDFieldGet ("C1_OBS"))
+		u_help ("Obrigatório informar a observação para este item.")
+		_lRet = .F.
+	endif
 
 	// valida data de necessidade que obrigatoriamente tem que ser maior ou igual a data do sistema
 	if _lRet .and. ! GDDeleted () .and. ! empty (GDFieldGet ("C1_DATPRF"))
