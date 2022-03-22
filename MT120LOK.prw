@@ -35,6 +35,11 @@ User Function MT120LOk ()
 		endif				
 	endif
 
+	if !empty(GDFieldGet ("C7_CC")) .and. empty(GDFieldGet ("C7_OBS"))
+		u_help ("Obrigatório informar a observação para este item.")
+		_lRet = .F.
+	endif
+
 	if _lRet .and. ! GDDeleted() .and. (GDFieldGet("C7_DATPRF") < DATE()) .and. (GDFieldGet("C7_ENCER") = 'E' )
 		U_Help ("Data de entrega não pode ser menor que data atual.")
 		_lRet = .F.
