@@ -70,6 +70,7 @@
 //						  processo manual do BatMercP. GLPI: 8284
 // 18/06/2021 - Sandra  - Desabilitado linha /M->C5_ESPECI1 := 'VOLUMES', para notas de exportação GLPI 10196
 // 02/12/2021 - Claudia - Desabilitada a validação de motivo de bonificação. GLPI: 10580
+// 22/03/2022 - Claudia - Criada validações de lote e localização. GLPI: 11590
 //
 // ----------------------------------------------------------------------------------------------------------------
 User Function M410LIOK()
@@ -229,6 +230,27 @@ User Function M410LIOK()
 	// Verifica tabela de precos
 	if _lRet
 		_lRet = _VerTbPrc ()
+	endif
+
+	// Quando item controla rastreabilidade, exigir lote e endereço 
+	if _lRet
+		_sProduto := GDFieldGet("C6_PRODUTO")
+		_sLote    := GDFieldGet("C6_LOTECTL")
+		_sLocaliz := GDFieldGet("C6_LOCALIZ")
+		_sCtrRastro := Posicione("SB1",1 ,xFilial("SB1") + _sProduto,"B1_RASTRO")
+		_sCtrLocal  := Posicione("SB1",1 ,xFilial("SB1") + _sProduto,"B1_LOCALIZ")
+
+		// exige lote
+		If _sCtrRastro == 'L' .and. empty(_sLote)
+			_lRet := .F.
+			u_help("Informar lote!")
+		EndIf
+
+		// exigir localização
+		If _sCtrLocal == 'S' .and. empty(_sLocaliz)
+			_lRet := .F.
+			u_help("Informar localização!")
+		EndIf
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
