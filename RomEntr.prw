@@ -17,6 +17,7 @@
 // 06/01/2020 - Claudia - Devido aos problemas de campos cortados, foi alterada a letra e layout de impressão do romaneio.
 // 08/01/2020 - Claudia - Ajuste das letras e configurações de layout devido a problemas de cortes nas colunas.
 // 26/02/2020 - Cláudia - Incluida coluna de lote interno
+// 22/03/2022 - Sandra  - Inclusão campos ordem manutenção, solicitação compra - GLPI 11763
 // -------------------------------------------------------------------------------------------------------------------------
 
 #include 'protheus.ch'
@@ -71,15 +72,17 @@ Static Function ReportDef()
 	//SESSÃO 1 CUPONS
 	oSection1 := TRSection():New(oReport,,{}, , , , , ,.T.,.F.,.F.) 
 
-	TRCell():New(oSection1,"COLUNA1", 	"" ,"Produto"	 ,	    				,18,/*lPixel*/,{||  },"LEFT",.t.,,,0,.f.,,,.f.)
-	TRCell():New(oSection1,"COLUNA2", 	"" ,"Descrição"	 ,	    				,35,/*lPixel*/,{||	},"LEFT",.t.,,,0,.f.,,,.f.)
-	TRCell():New(oSection1,"COLUNA3", 	"" ,"Quant."     ,"@E 999,999,999.99"   ,15,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,0,.f.,,,.f.)
-	TRCell():New(oSection1,"COLUNA4", 	"" ,"UM"		 ,    					, 4,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,0,.f.,,,.f.)
-	TRCell():New(oSection1,"COLUNA5", 	"" ,"Solicitante",       				,22,/*lPixel*/,{|| 	},"LEFT",.t.,,,0,.f.,,,.f.)
-	TRCell():New(oSection1,"COLUNA6", 	"" ,"Pedido" 	 ,						,22,/*lPixel*/,{|| 	},"LEFT",.t.,,,0,.f.,,,.f.)
-	TRCell():New(oSection1,"COLUNA7", 	"" ,"Lote M."	 ,						,10,/*lPixel*/,{|| 	},"RIGHT",.t.,"RIGHT",,0,.f.,,,.f.)
-	TRCell():New(oSection1,"COLUNA8", 	"" ,"Almox"		 ,						 ,6,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,0,.f.,,,.f.)
-	TRCell():New(oSection1,"COLUNA9", 	"" ,"Lote Int."	 ,						,10,/*lPixel*/,{|| 	},"RIGHT",.t.,"RIGHT",,0,.f.,,,.f.)
+	TRCell():New(oSection1,"COLUNA1", 	"" ,"Produto"	  ,	    				,18,/*lPixel*/,{||  },"LEFT",.t.,,,0,.f.,,,.f.)
+	TRCell():New(oSection1,"COLUNA2", 	"" ,"Descrição"	  ,	    				,35,/*lPixel*/,{||	},"LEFT",.t.,,,0,.f.,,,.f.)
+	TRCell():New(oSection1,"COLUNA3", 	"" ,"Quant."      ,"@E 999,999,999.99"   ,15,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,0,.f.,,,.f.)
+	TRCell():New(oSection1,"COLUNA4", 	"" ,"UM"		  ,    					, 4,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,0,.f.,,,.f.)
+	TRCell():New(oSection1,"COLUNA5", 	"" ,"Solicitante" ,       				,22,/*lPixel*/,{|| 	},"LEFT",.t.,,,0,.f.,,,.f.)
+	TRCell():New(oSection1,"COLUNA6", 	"" ,"Pedido" 	  ,						,22,/*lPixel*/,{|| 	},"LEFT",.t.,,,0,.f.,,,.f.)
+	TRCell():New(oSection1,"COLUNA7", 	"" ,"Lote M."	  ,						,10,/*lPixel*/,{|| 	},"RIGHT",.t.,"RIGHT",,0,.f.,,,.f.)
+	TRCell():New(oSection1,"COLUNA8", 	"" ,"Almox"		  ,						 ,6,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,0,.f.,,,.f.)
+	TRCell():New(oSection1,"COLUNA9", 	"" ,"Lote Int."	  ,						,10,/*lPixel*/,{|| 	},"RIGHT",.t.,"RIGHT",,0,.f.,,,.f.)
+    TRCell():New(oSection1,"COLUNA10", 	"" ,"Or. Serviço" ,						,10,/*lPixel*/,{|| 	},"RIGHT",.t.,"RIGHT",,0,.f.,,,.f.)
+    TRCell():New(oSection1,"COLUNA11", 	"" ,"Nº Solic"    ,						,10,/*lPixel*/,{|| 	},"RIGHT",.t.,"RIGHT",,0,.f.,,,.f.)
 
 Return(oReport)
 
@@ -95,7 +98,21 @@ Static Function PrintReport(oReport)
 	Else
 
 		cQuery := ""
-		cQuery += " SELECT D1_COD, D1_DESCRI, D1_QUANT, D1_UM, D1_VAVOLQT, D1_VAVOLES, D1_PEDIDO, D1_ITEMPC, SC1.C1_SOLICIT AS SOLICITANTE, SA5.A5_LOTEMUL AS LOTE_MULTIPLO, D1_LOCAL, D1_TP, D1_LOTECTL "
+		cQuery += " SELECT D1_COD "
+		cQuery += " , D1_DESCRI "
+		cQuery += " , D1_QUANT "	
+		cQuery += " , D1_UM "
+		cQuery += " , D1_VAVOLQT "
+		cQuery += " , D1_VAVOLES "
+		cQuery += " , D1_PEDIDO "
+		cQuery += " , D1_ITEMPC "
+		cQuery += " , CASE WHEN SC1.C1_SOLICIT <> '' THEN SC1.C1_SOLICIT ELSE SC7.C7_COMNOM END AS SOLICITANTE "
+		cQuery += " , SA5.A5_LOTEMUL AS LOTE_MULTIPLO "
+		cQuery += " , D1_LOCAL "
+		cQuery += " , D1_TP "
+		cQuery += " , D1_LOTECTL "
+		cQuery += " , SUBSTRING(C7_OP,1,6) AS OP"
+   		cQuery += " , C7_NUMSC "
 		cQuery += " FROM " + RetSQLName ("SD1") + " SD1"
 		cQuery += " LEFT JOIN SC1010 AS SC1"
 		cQuery += " 		ON (SC1.D_E_L_E_T_ = ''"
@@ -108,6 +125,13 @@ Static Function PrintReport(oReport)
 		cQuery += "			 AND SA5.A5_PRODUTO = SD1.D1_COD"
         cQuery += "			 AND SA5.A5_LOJA = SD1.D1_LOJA"
         cQuery += "			 AND SA5.D_E_L_E_T_ = '' )"
+		cQuery += "LEFT JOIN SC7010 AS SC7 "
+	    cQuery += "		ON ( SC7.D_E_L_E_T_ = '' "
+		cQuery += "			 AND  SC7.C7_NUM = SD1.D1_PEDIDO "
+		cQuery += "			 AND  SC7.C7_FILIAL = SD1.D1_FILIAL "
+		cQuery += "			 AND  SC7.C7_ITEM = SD1.D1_ITEMPC "
+		cQuery += "	         AND  SC7.C7_PRODUTO = SD1.D1_COD) "
+
 		cQuery += " WHERE SD1.D_E_L_E_T_ != '*'"
 		cQuery += "   AND SD1.D1_FILIAL   = '" + xfilial ("SD1") + "'"
 		cQuery += "   AND SD1.D1_FORNECE  = '" + mv_par01 + "'"
@@ -163,6 +187,8 @@ Static Function PrintReport(oReport)
 				oSection1:Cell("COLUNA7")	:SetBlock   ({|| TRA->LOTE_MULTIPLO   				})
 				oSection1:Cell("COLUNA8")	:SetBlock   ({|| TRA->D1_LOCAL    					})
 				oSection1:Cell("COLUNA9")	:SetBlock   ({|| TRA->D1_LOTECTL    				})
+				oSection1:Cell("COLUNA10")	:SetBlock   ({|| TRA->OP         			    	})
+				oSection1:Cell("COLUNA11")	:SetBlock   ({|| TRA->C7_NUMSC      				})
 				oSection1:PrintLine()
 				
 				DBSelectArea("TRA")
