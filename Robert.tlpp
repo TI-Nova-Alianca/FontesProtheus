@@ -32,7 +32,7 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '07' modulo 'FIN'
+		prepare environment empresa '01' filial '01' modulo 'FIN'
 		private cModulo   := 'FIN'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -46,6 +46,12 @@ user function robert ()
 
 	private _sArqLog := procname () + "_" + alltrim (cUserName) + ".log"
 	delete file ('\logs\' + _sArqLog)
+	delete file ('\logs\' + _sArqLog + '001')
+	delete file ('\logs\' + _sArqLog + '002')
+	delete file ('\logs\' + _sArqLog + '003')
+	delete file ('\logs\' + _sArqLog + '004')
+	delete file ('\logs\' + _sArqLog + '005')
+	delete file ('\logs\' + _sArqLog + '006')
 	if ! empty (GetSrvProfString ("IXBLOG", ""))
 		u_help ("Parametro IXBLOG ativo no appserver.ini")
 	else
@@ -78,6 +84,8 @@ static function _AndaLogo ()
 //	local _nDado     := 0
 //	local _aCargas   := {}
 //	local _nCarga    := 0
+//	local _nNovaClas := 0
+//	local _aResult   := {}
 //	local _i         := 0
 //	local _sError    := ''
 //	local _sWarning  := ''
@@ -86,11 +94,184 @@ static function _AndaLogo ()
 //	local _oAssoc    := NIL
 //	local _aAssoc := {}
 //	local _nAssoc := 0
+
+//	local _nParc := 0
+//	local _sCampo := ""
+//	local _nCampo := 0
+
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
 	u_help ('Nada definido.')
 return
+
+/*
+// Testes batches em geral
+//	_sArqLog := 'U_BatCompAssoc_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batCompAssoc ()
+//	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batsafr ('CargasSemContranota')  // cargas sem contranota
+//	u_batsafr ('ConferirParcelamento')  // conferencia geracao das parcelas financeiro
+//	u_batsafr ('ContranotasSemCarga')  // contranotas sem carga
+	u_batsafr ('ConferirFrete')  // conferencia fretes
+//	u_batsafr ('MailAcompanhamento')  // e-mail diario de acompanhamento de safra
+//	u_batsafr ('GerarSZI')  // gera SZI a partir das parcelas
+//	u_batsafr ('ConferirSZI')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
+//	u_batsafr ('TransfTitNaoAssocParaMatriz')  // Transfere (das filiais para a matriz) os titulos de nao associados.
+//	u_batsafr ('TransfSZIParaMatriz')  // Transfere SZI para a matriz (normalmente ao gerar o SZI jah faz isso, mas para garantir...)
+//	_sArqLog := 'U_BatSZI_' + alltrim (cusername) + ".log"
+//	if cFilAnt == '01'
+//		u_batSZI (stod ('20200101'), stod ('20210228'))
+//	endif
+//	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batocor ()
+//	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batmetaf ()
+//	_sArqLog := 'U_BatFunAtlz_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batfunatlz ()
+//	_sArqLog := 'U_BatBlUsr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batBlUsr ()
+//	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batmercp ()
+//	_sArqLog := 'U_BatVerif_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batVerif ()
+//	_sArqLog := 'U_BatEDIM_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batedim ("I")
+//	_sArqLog := 'U_BatMercN_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	u_batMercN (5)
+//	u_log2 ('info', _oBatch:Mensagens)
+//	_sArqLog := 'U_BatXML_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//	U_BatXML("\\192.168.1.3\Siga\Protheus12\protheus_data\xml_NFe\", 1, .F.)
+return
+*/
+/*
+	// Releitura inspecoes safra (GLPI 11746)
+	szf -> (dbsetorder (1))  // filial + safra + carga + item
+	private _aNovaClas := {}  // Para poder gerar, no final, uma planilha com todos os valores.
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "SELECT FILIAL, SAFRA, CARGA "
+	_oSQL:_sQuery +=  " FROM VA_VCARGAS_SAFRA"
+	_oSQL:_sQuery += " WHERE SAFRA = '2022'"
+	_oSQL:_sQuery +=   " and STATUS != 'C'"
+//	_oSQL:_sQuery +=   " and DATA <= '20220310'"
+	//_oSQL:_sQuery +=   " and ASSOCIADO = '000167'"
+	_oSQL:_sQuery +=   " and FILIAL = '" + cFilAnt + "'"
+	_oSQL:_sQuery += " ORDER BY CARGA"
+	_oSQL:Log ()
+	_aCargas = _oSQL:Qry2Array ()
+	for _nCarga = 1 to len (_aCargas)
+		u_log2 ('info', replicate ('-', 80))
+		u_log2 ('info', replicate ('-', 80))
+		sze -> (dbsetorder (1))
+		if sze -> (dbseek (_aCargas [_nCarga, 1] + _aCargas [_nCarga, 2] + _aCargas [_nCarga, 3], .T.))
+			_aNovaClas = {}
+			U_VA_RUSLI (2, .t.)
+		//	U_Log2 ('debug', _aNovaClas)
+			for _nNovaClas = 1 to len (_aNovaClas)
+				if ! szf -> (dbseek (xfilial ("SZF") + sze -> ze_safra + sze -> ze_carga + _aNovaClas [_nNovaClas, 1], .F.))
+					u_help ("SZF nao encontrado para filial/safra/carga/item " + xfilial ("SZF") + sze -> ze_safra + sze -> ze_carga + _aNovaClas [_nNovaClas, 1],, .t.)
+				else
+					aadd (_aResult, {_aCargas [_nCarga, 1], _aCargas [_nCarga, 2], _aCargas [_nCarga, 3], _aNovaClas [_nNovaClas, 1], iif (szf -> zf_conduc == 'L', szf -> zf_clasabd, szf -> zf_prm99), _aNovaClas [_nNovaClas, 2]})
+				endif
+			next
+		else
+			u_log2 ('erro', 'Carga nao encontrada com a seguinte chave: ' + _aCargas [_nCarga, 1] + _aCargas [_nCarga, 2] + _aCargas [_nCarga, 3])
+		endif
+	next
+	U_Log2 ('debug', _aResult)
+	U_acolsXLS (_aResult)
+return
+*/
+
+/*
+	// Ajustar parcelamento notas safra do dia 07/03/2022 (gerou uma apenas) - GLPI 11750
+	_oSQL := ClsSQL():New ()
+	_oSQL:_sQuery := "SELECT "
+	for _nCampo = 1 to SE2 -> (fcount ())
+		_sCampo = alltrim (SE2 -> (fieldname (_nCampo)))
+		_oSQL:_sQuery += _sCampo + iif (_nCampo < SE2 -> (fcount ()), ', ', '')
+	next
+	_oSQL:_sQuery += ", (SELECT MAX (GRUPO_PAGTO) FROM VA_VNOTAS_SAFRA V"  // Usei MAX por que pode ter mais de uma variedade na nota
+	_oSQL:_sQuery +=    " WHERE E2_FILIAL = V.FILIAL
+	_oSQL:_sQuery +=      " AND E2_NUM = V.DOC
+	_oSQL:_sQuery +=      " AND E2_PREFIXO = V.SERIE
+	_oSQL:_sQuery +=      " AND E2_FORNECE = V.ASSOCIADO
+	_oSQL:_sQuery +=      " AND E2_LOJA = V.LOJA_ASSOC) as GRPGT"
+	_oSQL:_sQuery += ", (SELECT SUM (VALOR_TOTAL) FROM VA_VNOTAS_SAFRA V"  // Usei SUM por que pode ter mais de uma variedade na nota
+	_oSQL:_sQuery +=    " WHERE E2_FILIAL = V.FILIAL
+	_oSQL:_sQuery +=      " AND E2_NUM = V.DOC
+	_oSQL:_sQuery +=      " AND E2_PREFIXO = V.SERIE
+	_oSQL:_sQuery +=      " AND E2_FORNECE = V.ASSOCIADO
+	_oSQL:_sQuery +=      " AND E2_LOJA = V.LOJA_ASSOC) as VLUVA"
+	_oSQL:_sQuery += " FROM SE2010 SE2 WHERE D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " AND E2_FILIAL  = '" + cFilAnt + "'"
+	_oSQL:_sQuery += " AND E2_SALDO   = E2_VALOR"
+	_oSQL:_sQuery += " AND E2_EMISSAO = '20220307'"
+//	_oSQL:_sQuery += " AND E2_NUM     IN ('000030884')"
+	_oSQL:_sQuery += " AND E2_PREFIXO = '30'"
+	_oSQL:_sQuery += " AND E2_PARCELA = ' '"
+	_oSQL:_sQuery += " AND NOT EXISTS (SELECT *"
+	_oSQL:_sQuery +=                   " FROM SE2010 JAH_TEM WHERE D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=                    " AND JAH_TEM.E2_FILIAL  = SE2.E2_FILIAL "
+	_oSQL:_sQuery +=                    " AND JAH_TEM.E2_NUM     = SE2.E2_NUM"
+	_oSQL:_sQuery +=                    " AND JAH_TEM.E2_PREFIXO = SE2.E2_PREFIXO"
+	_oSQL:_sQuery +=                    " AND JAH_TEM.E2_FORNECE = SE2.E2_FORNECE"
+	_oSQL:_sQuery +=                    " AND JAH_TEM.E2_LOJA    = SE2.E2_LOJA"
+	_oSQL:_sQuery +=                    " AND JAH_TEM.E2_PARCELA = 'A')"
+	_oSQL:_sQuery += " ORDER BY E2_NUM, E2_PARCELA"
+	_oSQL:Log ()
+	//_sAliasQ := _oSQL:Qry2Trb (.F.)
+	_oSQL:Copy2Trb (.t., .f., '_trb', {})
+	_trb -> (dbgotop ())
+	do while ! _trb -> (eof ())
+		U_Log2 ('debug', '[' + procname () + ']' + _trb -> e2_num + '-' + _trb -> e2_parcela + ' gr.pgt: ' + _trb -> GRPGT)
+		sf1 -> (dbsetorder (1))  // F1_FILIAL, F1_DOC, F1_SERIE, F1_FORNECE, F1_LOJA, F1_TIPO, R_E_C_N_O_, D_E_L_E_T_
+		if ! sf1 -> (dbseek (_trb -> e2_filial + _trb -> e2_num + _trb -> e2_prefixo + _trb -> e2_fornece + _trb -> e2_loja, .F.))
+			U_Log2 ('erro', 'Nao encontrei SF1')
+		else
+			_aParcPP := aclone (U_VA_RusPP ('2022', _trb -> GrPgt, _trb -> VlUva, sf1 -> f1_despesa, sf1 -> f1_emissao))
+			U_Log2 ('debug', _aParcPP)
+			for _nParc = 1 to len (_aParcPP)
+				_trb -> e2_parcela = _aParcPP [_nParc, 6]
+				_trb -> e2_hist    = _aParcPP [_nParc, 5]
+				_trb -> e2_vencto  = _aParcPP [_nParc, 2]
+				_trb -> e2_vencrea = _aParcPP [_nParc, 2]
+				_trb -> e2_vencori = _aParcPP [_nParc, 2]
+				_trb -> e2_valor   = _aParcPP [_nParc, 4]
+				_trb -> e2_saldo   = _aParcPP [_nParc, 4]
+				_trb -> e2_vlcruz  = _aParcPP [_nParc, 4]
+				_trb -> e2_vachvex = ''
+				U_Log2 ('debug', '[' + procname () + ']Criando parcela ' + _trb -> e2_parcela)
+				_CopiaReg ('_trb', 'SE2')
+			next
+		endif
+		_trb -> (dbskip ())
+
+	//	exit  // ainda em testes. vou rodar um apenas.
+	enddo
+return
+*/
+/*
+// --------------------------------------------------------------------------
+// Cria novo registro no alias destino e copia dados do registro atual do alias origem.
+static function _CopiaReg (_sOrig, _sDest)
+	local _sCampo := ""
+	local _nCampo := 0
+	local _xDado  := NIL
+	local _aAreaAnt := U_ML_SRArea ()
+
+ 	reclock (_sDest, .T.)
+	for _nCampo = 1 to (_sDest) -> (fcount ())
+		_sCampo = alltrim ((_sDest) -> (fieldname (_nCampo)))
+		if (_sOrig) -> (fieldpos (_sCampo)) > 0 .and. valtype ((_sOrig) -> &(_sCampo)) == valtype ((_sDest) -> &(_sCampo))
+			_xDado = (_sOrig) -> &(_sCampo)
+			(_sDest) -> &(_sCampo) = _xDado
+		endif
+	next
+	msunlock ()
+	U_ML_SRArea (_aAreaAnt)
+return
+*/
 /*
 	// Gera complemento de frete (ficamos dia 07/03/22 sem gravar o campo D1_DESPESA) safra 2022 (GLPI 
 	_oSQL := ClsSQL ():New ()
@@ -173,45 +354,6 @@ return
 	else
 		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
 	endif
-return
-*/
-/*
-// Testes batches em geral
-//	_sArqLog := 'U_BatCompAssoc_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batCompAssoc ()
-//	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batsafr ('CargasSemContranota')  // cargas sem contranota
-//	u_batsafr ('ConferirParcelamento')  // conferencia geracao das parcelas financeiro
-//	u_batsafr ('ContranotasSemCarga')  // contranotas sem carga
-//	u_batsafr ('ConferirFrete')  // conferencia fretes
-//	u_batsafr ('MailAcompanhamento')  // e-mail diario de acompanhamento de safra
-//	u_batsafr ('GerarSZI')  // gera SZI a partir das parcelas
-//	u_batsafr ('ConferirSZI')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
-//	u_batsafr ('TransfTitNaoAssocParaMatriz')  // Transfere (das filiais para a matriz) os titulos de nao associados.
-//	u_batsafr ('TransfSZIParaMatriz')  // Transfere SZI para a matriz (normalmente ao gerar o SZI jah faz isso, mas para garantir...)
-	_sArqLog := 'U_BatSZI_' + alltrim (cusername) + ".log"
-	if cFilAnt == '01'
-		u_batSZI (stod ('20200101'), stod ('20210228'))
-	endif
-//	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batocor ()
-//	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batmetaf ()
-//	_sArqLog := 'U_BatFunAtlz_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batfunatlz ()
-//	_sArqLog := 'U_BatBlUsr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batBlUsr ()
-//	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batmercp ()
-//	_sArqLog := 'U_BatVerif_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batVerif ()
-//	_sArqLog := 'U_BatEDIM_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batedim ("I")
-//	_sArqLog := 'U_BatMercN_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batMercN (5)
-//	u_log2 ('info', _oBatch:Mensagens)
-//	_sArqLog := 'U_BatXML_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	U_BatXML("\\192.168.1.3\Siga\Protheus12\protheus_data\xml_NFe\", 1, .F.)
 return
 */
 /*
@@ -5538,31 +5680,6 @@ return
 	//	U_AtuMerc ("SF2", sf2 -> (recno ()))
 	//	sf2 -> (dbskip ())
 	//enddo
-return
-*/
-
-/*
-// --------------------------------------------------------------------------
-// Cria novo registro no alias destino e copia dados do registro atual do alias origem.
-static function _CopiaReg (_sOrig, _sDest)
-	local _sCampo := ""
-	local _nCampo := 0
-	local _xDado  := NIL
-	local _aAreaAnt := U_ML_SRArea ()
-
-	//u_log ((_sDest) -> (fcount ()))
- 	reclock (_sDest, .T.)
-	for _nCampo = 1 to (_sDest) -> (fcount ())
-		_sCampo = alltrim ((_sDest) -> (fieldname (_nCampo)))
-		//u_log (_sCampo)
-		if (_sOrig) -> (fieldpos (_sCampo)) > 0 .and. valtype ((_sOrig) -> &(_sCampo)) == valtype ((_sDest) -> &(_sCampo))
-			_xDado = (_sOrig) -> &(_sCampo)
-			//u_log (_sCampo, _xDado)
-			(_sDest) -> &(_sCampo) = _xDado
-		endif
-	next
-	msunlock ()
-	U_ML_SRArea (_aAreaAnt)
 return
 */
 /*

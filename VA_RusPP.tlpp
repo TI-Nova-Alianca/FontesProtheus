@@ -185,7 +185,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 				// enviar ao banco.
 				// if month (dDataBase) == 3 .and. day (dDataBase) > 20
 				if month (_dEmissao) == 3 .and. day (_dEmissao) > 20
-//					U_Log2 ('info', 'Fora da data de corte. Movendo 1a.parcela para o mes de abril.')
+					U_Log2 ('AVISO', 'Fora da data de corte. Movendo 1a.parcela para o mes de abril.')
 					_sMesVcSaf = '04'
 				else
 					_sMesVcSaf = '03'

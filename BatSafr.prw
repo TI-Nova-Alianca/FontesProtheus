@@ -53,7 +53,7 @@ user function BatSafr (_sQueFazer, _lAjustar)
 
 	// Como esta funcao faz diversas tarefas, vou gerar log em arquivos separados.
 	_sArqLgOld = _sArqLog
-	_sArqLog2 = procname () + '_' + _sQueFazer + '_' + alltrim (cUserName) + "_" + dtos (date ()) + ".log"
+	_sArqLog2 = procname () + '_' + _sQueFazer + '_' + alltrim (cUserName) + ".log"
 	u_log2 ('info', 'Log da thread ' + cValToChar (ThreadID ()) + ' prossegue em outro arquivo: ' + _sArqLog2)
 	_sArqLog = _sArqLog2
 
@@ -174,7 +174,8 @@ static function _ConfFrt ()
 	_oSQL:_sQuery +=  " WHERE SAFRA   = '" + cvaltochar (year (date ())) + "'"
 	_oSQL:_sQuery +=    " AND TIPO_NF = 'C'"
 //	_oSQL:_sQuery +=    " AND FILIAL  = '" + cFilAnt + "'"
-	_oSQL:_sQuery += " GROUP BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE"
+	_oSQL:_sQuery +=    " AND DATA   != '20220307'"  // Nesse dia as notas sairam realmente sem frete, que foi complementado no dia 09.
+	_oSQL:_sQuery += " GROUP BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, DATA"
 	_oSQL:_sQuery += " ORDER BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE"
 	_oSQL:Log ()
 	_sAliasQ := _oSQL:Qry2Trb (.F.)
@@ -223,12 +224,19 @@ static function _ConfParc (_lAjustar)
 	_oSQL:_sQuery +=  " WHERE SAFRA   = '" + cvaltochar (year (date ())) + "'"
 	_oSQL:_sQuery +=    " AND TIPO_NF IN ('C', 'V')"
 	_oSQL:_sQuery +=    " AND FILIAL = '" + cFilAnt + "'"
+	_oSQL:_sQuery +=    " AND NOT (TIPO_NF = 'V' AND DATA = '20220309')"  // COMPLEMENTOS DE FRETE GLPI 11721
+
+//	_oSQL:_sQuery +=    " AND DATA = '20220307'"  // Dia em que as notas sairam sem frete (F1_DESPESA)
+
 
 	if _lAjustar  // Soh uso pra casos especiais
 		_oSQL:_sQuery +=    " and FILIAL = '01'"
 		_oSQL:_sQuery +=    " and ASSOCIADO = '002978'"
 		_oSQL:_sQuery +=    " and DOC = '000023832'"
 	endif
+
+				_oSQL:_sQuery +=    " and ASSOCIADO = '005567'"
+
 
 	_oSQL:_sQuery += " GROUP BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, GRUPO_PAGTO, DATA"
 	_oSQL:_sQuery += " ORDER BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, GRUPO_PAGTO"
@@ -241,126 +249,104 @@ static function _ConfParc (_lAjustar)
 			_sMsg += 'Contranota safra sem grupo para pagamento - Filial: ' + (_sAliasQ) -> filial + ' NF: ' + (_sAliasQ) -> doc + chr (13) + chr (10)
 		else
 
-			// Nao associados e pessoas juridicas: a coop nao paga o FUNRURAL
-			_lPagaFUNR = .T.
-			if fBuscaCpo ("SA2", 1, xfilial ("SA2") + (_sAliasQ) -> associado + (_sAliasQ) -> loja_assoc, "A2_TIPO") == 'J' .or. ! U_EhAssoc ((_sAliasQ) -> associado, (_sAliasQ) -> loja_assoc, stod ((_sAliasQ) -> emissao))
-				_lPagaFUNR = .F.
-				U_Log2 ('aviso', 'Fornecedor NAO recebe o FUNRURAL')
-			endif
-
-			// Gera array de parcelas reais (SE2)
-			_aParcReal = {}
-			_nSomaSE2 = 0
-			se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
-			se2 -> (dbseek ((_sAliasQ) -> filial + (_sAliasQ) -> associado + (_sAliasQ) -> loja_assoc + (_sAliasQ) -> serie + (_sAliasQ) -> doc, .T.))
-			do while ! se2 -> (eof ()) ;
-				.and. se2 -> e2_filial  == (_sAliasQ) -> filial ;
-				.and. se2 -> e2_fornece == (_sAliasQ) -> associado ;
-				.and. se2 -> e2_loja    == (_sAliasQ) -> loja_assoc ;
-				.and. se2 -> e2_prefixo == (_sAliasQ) -> serie ;
-				.and. se2 -> e2_num     == (_sAliasQ) -> doc
-
-				_nSomaSE2 += se2 -> e2_valor
-
-				if se2 -> e2_valor != se2 -> e2_vlcruz
-					_sMsg += 'Parcela ' + se2 -> e2_parcela + ' no SE2 diferenca entre e2_valor x e2_vlcruz' + chr (13) + chr (10)
-				endif
-
-				// Calcula o % de participacao de cada parcela sobre o total do valor das uvas
-				aadd (_aParcReal, {se2 -> e2_vencto, se2 -> e2_valor * 100 / (_sAliasQ) -> vlr_uvas, se2 -> e2_valor, se2 -> e2_parcela})
-				se2 -> (dbskip ())
-			enddo
-
-			// Gera array de parcelas previstas cfe. regras de pagamento.
-			_aParcPrev = U_VA_RusPP ((_sAliasQ) -> safra, (_sAliasQ) -> grupo_pagto, (_sAliasQ) -> vlr_uvas, (_sAliasQ) -> vlr_frt, stod ((_sAliasQ) -> emissao))
-			_nSomaPrev = 0
-			for _nParc = 1 to len (_aParcPrev)
-				_nSomaPrev += _aParcPrev [_nParc, 4]
-			next
-
-//			U_Log2 ('aviso', 'como estah no SE2:')
-//			U_Log2 ('aviso', _aParcReal)
-
-			if len (_aParcReal) != len (_aParcPrev)
-				_sMsg += 'Encontrei qt.diferente (' + cvaltochar (len (_aParcReal)) + ') de parcelas no SE2 do que o previsto (' + cvaltochar (len (_aParcPrev)) + ')' + chr (13) + chr (10)
-			else
-
-				// apenas verifica
-				for _nParc = 1 to len (_aParcReal)
-
-					if _aParcReal [_nParc, 1] != _aParcPrev [_nParc, 2]
-						_sMsg += "Diferenca nas datas - linha " + cvaltochar (_nParc) + " Real: " + dtoc (_aParcReal [_nParc, 1]) + ' X prev: ' + dtoc (_aParcPrev [_nParc, 2])
-					endif
-
-					// Em caso de nao associado ou pessoa juridica, vou ter a diferenca do valor do FUNRURAL, que nao pagaremos.
-					if ! _lPagaFUNR .and. _nParc == 1
-//						U_Log2 ('debug', '[' + procname () + ']comparando ' + cvaltochar (round (_aParcReal [_nParc, 3], 2)) + ' com ' + cvaltochar (round (_aParcPrev [_nParc, 4] - ((_sAliasQ) -> vlr_uvas + (_sAliasQ) -> vlr_frt) * 1.5 / 100, 2)))
-//						U_Log2 ('debug', '[' + procname () + ']' + cvaltochar ((_sAliasQ) -> vlr_uvas + (_sAliasQ) -> vlr_frt))
-						if round (_aParcReal [_nParc, 3], 2) != round (_aParcPrev [_nParc, 4] - ((_sAliasQ) -> vlr_uvas + (_sAliasQ) -> vlr_frt) * 1.5 / 100, 2)
-							_sMsg += "Diferenca nos valores de uva SEM FUNRURAL - linha " + cvaltochar (_nParc) + " Parcela real: " + cvaltochar (round (_aParcReal [_nParc, 3], 2)) + " prevista: " + cvaltochar (round (_aParcPrev [_nParc, 4], 2))
-						endif
-					else
-						if round (_aParcReal [_nParc, 3], 2) != round (_aParcPrev [_nParc, 4], 2)
-							_sMsg += "Diferenca nos valores de uva - linha " + cvaltochar (_nParc) + " Parcela real: " + cvaltochar (round (_aParcReal [_nParc, 3], 2)) + " prevista: " + cvaltochar (round (_aParcPrev [_nParc, 4], 2))
-						endif
-					endif
-				next
-
-				/* revisar caso deseje habilitar novamente, pois fiz algumas melhorias no teste com FUNRURAL
-				// Ajusta valores e datas. A safra 2021 iniciou usando cond.pagto.invalida, e tive
-				// diversas notas para ajustar. Espero nao precisar mais disto...
-				if _lAjustar
-					if cUserName != 'robert.koch'
-						u_help ("Ajuste liberado somente para o maluco que criou a rotina.",, .t.)
-					else
-						se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
-						for _nParc = 1 to len (_aParcReal)
-							// Posiciona SE2 para o caso de precisar mexer.
-							if ! se2 -> (dbseek ((_sAliasQ) -> filial + (_sAliasQ) -> associado + (_sAliasQ) -> loja_assoc + (_sAliasQ) -> serie + (_sAliasQ) -> doc + chr (64 + _nParc), .F.))  // Localiza a parcela somando 64 ao _nParc, pois as parcelas iniciam na letra 'A'.
-								U_Log2 ('aviso', 'Nao encontrei a parcela ' + chr (64 + _nParc) + ' para ajustar.')
-							else
-								if se2 -> e2_saldo != se2 -> e2_valor
-									u_help ("Saldo diferente do valor do titulo. Nao farei ajustes.",, .T.)
-								else
-									reclock ("SE2", .F.)
-									if se2 -> e2_valor != _aParcPrev [_nParc, 4]
-										u_log2 ('info', "Ajustando parcela " + se2 -> e2_parcela + ' de ' + cvaltochar (se2 -> e2_valor) + ' para ' + cvaltochar (_aParcPrev [_nParc, 4]))
-										se2 -> e2_valor = _aParcPrev [_nParc, 4]
-										se2 -> e2_saldo = _aParcPrev [_nParc, 4]
-										se2 -> e2_vlcruz = _aParcPrev [_nParc, 4]
-									endif
-									if ! alltrim (_aParcPrev [_nParc, 5]) $ se2 -> e2_hist
-										u_log2 ('info', "Ajustando parcela " + se2 -> e2_parcela + ' de ' + se2 -> e2_hist + ' para ' + _aParcPrev [_nParc, 5])
-										se2 -> e2_hist = alltrim (_aParcPrev [_nParc, 5])
-									endif
-									if se2 -> e2_vencto != _aParcPrev [_nParc, 2]
-										u_log2 ('info', "Ajustando parcela " + se2 -> e2_parcela + ' de ' + cvaltochar (se2 -> e2_vencto) + ' para ' + cvaltochar (_aParcPrev [_nParc, 2]))
-										se2 -> e2_vencto = _aParcPrev [_nParc, 2]
-										se2 -> e2_vencrea = _aParcPrev [_nParc, 2]
-									endif
-									msunlock ()
-								endif
-							endif
-						next
-					endif
-				endif
-				*/
-			endif
-
-			// Em caso de nao associado ou pessoa juridica, vou ter a diferenca do valor do FUNRURAL, que nao pagaremos.
-			if ! _lPagaFUNR
-				_nUvaFrt = round ((_sAliasQ) -> vlr_uvas + (_sAliasQ) -> vlr_frt - ((_sAliasQ) -> vlr_uvas + (_sAliasQ) -> vlr_frt) * 1.5 / 100, 2)
-			else
-				_nUvaFrt = round ((_sAliasQ) -> vlr_uvas + (_sAliasQ) -> vlr_frt, 2)
-			endif
-			if _nSomaSE2 != _nUvaFrt
-				_sMsg += "Soma dos titulos no SE2 (" + cvaltochar (_nSomaSE2) + ") diferente de valor das uvas + frete (" + cvaltochar (_nUvaFrt) + ") <br><br>"
-			endif
-
 			sf1 -> (dbsetorder (1))  // F1_FILIAL, F1_DOC, F1_SERIE, F1_FORNECE, F1_LOJA, F1_TIPO, R_E_C_N_O_, D_E_L_E_T_
 			if ! sf1 -> (dbseek ((_sAliasQ) -> filial + (_sAliasQ) -> doc + (_sAliasQ) -> serie + (_sAliasQ) -> associado + (_sAliasQ) -> loja_assoc, .F.))
 				_sMsg += "Arquivo SF1 nao localizado" + chr (13) + chr (10)
 			else
+				// Nao associados e pessoas juridicas: a coop nao paga o FUNRURAL
+				// _lPagaFUNR = .T.
+				// if fBuscaCpo ("SA2", 1, xfilial ("SA2") + (_sAliasQ) -> associado + (_sAliasQ) -> loja_assoc, "A2_TIPO") == 'J' .or. ! U_EhAssoc ((_sAliasQ) -> associado, (_sAliasQ) -> loja_assoc, stod ((_sAliasQ) -> emissao))
+				// 	_lPagaFUNR = .F.
+				// 	U_Log2 ('aviso', 'Fornecedor NAO recebe o FUNRURAL')
+				// endif
+				sa2 -> (dbsetorder (1))
+				sa2 -> (dbseek (xfilial ("SA2") + (_sAliasQ) -> associado + (_sAliasQ) -> loja_assoc, .F.))
+				_lPagaFUNR = .T.
+				_nAlqFunru = iif (sa2 -> a2_tipo == 'J', 1.5, 1.5)
+				if sa2 -> a2_tipo == 'J' .or. ! U_EhAssoc ((_sAliasQ) -> associado, (_sAliasQ) -> loja_assoc, stod ((_sAliasQ) -> emissao))
+					_lPagaFUNR = .F.
+					U_Log2 ('aviso', 'Fornecedor NAO recebe o FUNRURAL')
+				endif
+
+				// Gera array de parcelas reais (SE2)
+				_aParcReal = {}
+				_nSomaSE2 = 0
+				se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
+				se2 -> (dbseek ((_sAliasQ) -> filial + (_sAliasQ) -> associado + (_sAliasQ) -> loja_assoc + (_sAliasQ) -> serie + (_sAliasQ) -> doc, .T.))
+				do while ! se2 -> (eof ()) ;
+					.and. se2 -> e2_filial  == (_sAliasQ) -> filial ;
+					.and. se2 -> e2_fornece == (_sAliasQ) -> associado ;
+					.and. se2 -> e2_loja    == (_sAliasQ) -> loja_assoc ;
+					.and. se2 -> e2_prefixo == (_sAliasQ) -> serie ;
+					.and. se2 -> e2_num     == (_sAliasQ) -> doc
+
+					_nSomaSE2 += se2 -> e2_valor
+
+					if se2 -> e2_valor != se2 -> e2_vlcruz
+						_sMsg += 'Parcela ' + se2 -> e2_parcela + ' no SE2 diferenca entre e2_valor x e2_vlcruz' + chr (13) + chr (10)
+					endif
+
+					// Calcula o % de participacao de cada parcela sobre o total do valor das uvas
+					aadd (_aParcReal, {se2 -> e2_vencto, se2 -> e2_valor * 100 / (_sAliasQ) -> vlr_uvas, se2 -> e2_valor, se2 -> e2_parcela})
+					se2 -> (dbskip ())
+				enddo
+
+				// Gera array de parcelas previstas cfe. regras de pagamento.
+				_aParcPrev = U_VA_RusPP ((_sAliasQ) -> safra, (_sAliasQ) -> grupo_pagto, (_sAliasQ) -> vlr_uvas, sf1 -> f1_despesa, stod ((_sAliasQ) -> emissao))
+				_nSomaPrev = 0
+				for _nParc = 1 to len (_aParcPrev)
+					if ! _lPagaFUNR .and. _nParc == 1
+						_aParcPrev [_nParc, 4] -= round (((_sAliasQ) -> vlr_uvas + sf1 -> f1_despesa) * _nAlqFunru / 100, 2)
+					endif
+					_nSomaPrev += _aParcPrev [_nParc, 4]
+				next
+
+	//			U_Log2 ('aviso', 'como estah no SE2:')
+	//			U_Log2 ('aviso', _aParcReal)
+
+				if len (_aParcReal) != len (_aParcPrev)
+					_sMsg += 'Encontrei qt.diferente (' + cvaltochar (len (_aParcReal)) + ') de parcelas no SE2 do que o previsto (' + cvaltochar (len (_aParcPrev)) + ')' + chr (13) + chr (10)
+				else
+
+					// apenas verifica
+					for _nParc = 1 to len (_aParcReal)
+
+						if _aParcReal [_nParc, 1] != _aParcPrev [_nParc, 2]
+							_sMsg += "Diferenca nas datas - linha " + cvaltochar (_nParc) + " Real: " + dtoc (_aParcReal [_nParc, 1]) + ' X prev: ' + dtoc (_aParcPrev [_nParc, 2])
+						endif
+
+						// Em caso de nao associado ou pessoa juridica, vou ter a diferenca do valor do FUNRURAL, que nao pagaremos.
+						// if ! _lPagaFUNR .and. _nParc == 1
+						// 	if round (_aParcReal [_nParc, 3], 2) != round (_aParcPrev [_nParc, 4] - ((_sAliasQ) -> vlr_uvas + (_sAliasQ) -> vlr_frt) * 1.5 / 100, 2)
+						// 		_sMsg += "Diferenca nos valores de uva SEM FUNRURAL - linha " + cvaltochar (_nParc) + " Parcela real: " + cvaltochar (round (_aParcReal [_nParc, 3], 2)) + " prevista: " + cvaltochar (round (_aParcPrev [_nParc, 4], 2))
+						// 	endif
+						// else
+						// 	if round (_aParcReal [_nParc, 3], 2) != round (_aParcPrev [_nParc, 4], 2)
+						// 		_sMsg += "Diferenca nos valores de uva - linha " + cvaltochar (_nParc) + " Parcela real: " + cvaltochar (round (_aParcReal [_nParc, 3], 2)) + " prevista: " + cvaltochar (round (_aParcPrev [_nParc, 4], 2))
+						// 	endif
+						// endif
+						_nVlParcRe = round (_aParcReal [_nParc, 3], 2)
+						_nVlParcPr = round (_aParcPrev [_nParc, 4], 2)
+						//u_log (_nVlParcRe, _nVlParcPr)
+						//if ! _lPagaFUNR .and. _nParc == 1
+						//	_nVlParcPr -= round (((_sAliasQ) -> vlr_uvas + (_sAliasQ) -> vlr_frt) * _nAlqFunru / 100, 2)
+						//endif
+						if _nVlParcRe != _nVlParcPr
+							_sMsg += "Diferenca nos valores de uva " + iif (! _lPagaFUNR, 'SEM FUNRURAL ', '') + "- linha " + cvaltochar (_nParc) + " Parcela real: " + cvaltochar (_nVlParcRe) + " prevista: " + cvaltochar (_nVlParcPr) + '<br>'
+						endif
+					next
+				endif
+
+				// Em caso de nao associado ou pessoa juridica, vou ter a diferenca do valor do FUNRURAL, que nao pagaremos.
+				if ! _lPagaFUNR
+					_nUvaFrt = round ((_sAliasQ) -> vlr_uvas + sf1 -> f1_despesa - ((_sAliasQ) -> vlr_uvas + sf1 -> f1_despesa) * 1.5 / 100, 2)
+				else
+					_nUvaFrt = round ((_sAliasQ) -> vlr_uvas + sf1 -> f1_despesa, 2)
+				endif
+				if _nSomaSE2 != _nUvaFrt
+					_sMsg += "Soma dos titulos no SE2 (" + cvaltochar (_nSomaSE2) + ") diferente de valor das uvas + frete (" + cvaltochar (_nUvaFrt) + ") <br><br>"
+				endif
+
 				// Em caso de nao associado ou pessoa juridica, vou ter a diferenca do valor do FUNRURAL, que nao pagaremos.
 				if ! _lPagaFUNR
 					if round (_nSomaSE2, 2) != round (sf1 -> f1_valbrut - sf1 -> f1_valbrut * 1.5 / 100, 2)
@@ -373,27 +359,30 @@ static function _ConfParc (_lAjustar)
 				endif
 
 				if (_sAliasQ) -> vlr_frt != sf1 -> f1_despesa
-					_sMsg += "Frete no ZF_VALFRET (" + cvaltochar ((_sAliasQ) -> vlr_frt) + ") diferente do campo F1_DESPESA (" + cvaltochar (sf1 -> f1_despesa) + ")" + chr (13) + chr (10)
+					if dtos (sf1 -> f1_emissao) != '20220307'  // Dia que nao gerou frete nas notas. Foi complementado depois.
+						_sMsg += "Frete no ZF_VALFRET (" + cvaltochar ((_sAliasQ) -> vlr_frt) + ") diferente do campo F1_DESPESA (" + cvaltochar (sf1 -> f1_despesa) + ")" + chr (13) + chr (10)
+					endif
 				endif
 			endif
 		endif
 		if ! empty (_sMsg)
-			U_Log2 ('erro', 'Inconsistencia parcelamento safra - filial: ' + (_sAliasQ) -> filial + ' NF: ' + (_sAliasQ) -> doc + ' forn: ' + (_sAliasQ) -> associado + ':' + _sMsg)
+			U_Log2 ('erro', 'F' + (_sAliasQ) -> filial + ' NF: ' + (_sAliasQ) -> doc + ' forn: ' + (_sAliasQ) -> associado + ':')
+			U_Log2 ('erro', strtran (_sMsg, '<br', chr (13) + chr (10)))
 			U_Log2 ('aviso', 'como estah no SE2:')
 			U_Log2 ('aviso', _aParcReal)
 			U_Log2 ('aviso', 'como deveria estar no SE2:')
 			U_Log2 ('aviso', _aParcPrev)
 			_sMsgMail += 'Filial ' + (_sAliasQ) -> filial + ' NF: ' + (_sAliasQ) -> doc + ' forn: ' + (_sAliasQ) -> associado + ': ' + _sMsg + '<br><br>'
 			if len (_sMsgMail) > 30000
-				u_zzunu ({'999'}, 'Inconsistencia parcelamento safra', _sMsgMail)
+//				u_zzunu ({'999'}, 'Inconsistencia parcelamento safra', _sMsgMail)
 				_sMsgMail = ''
 			endif
 		endif
-//		U_Log2 ('info', 'Finalizando F' + (_sAliasQ) -> filial + ' NF' + (_sAliasQ) -> doc)
 		(_sAliasQ) -> (dbskip ())
 	enddo
 	if ! empty (_sMsgMail)
-		u_zzunu ({'999'}, 'Inconsistencia parcelamento safra', _sMsgMail)
+		U_Log2 ('erro', 'falta enviar o e-mail')
+//		u_zzunu ({'999'}, 'Inconsistencia parcelamento safra', _sMsgMail)
 	endif
 	U_Log2 ('info', 'Finalizando ' + procname ())
 return
