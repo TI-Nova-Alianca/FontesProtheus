@@ -18,6 +18,9 @@
 // 13/01/2020 - Claudia - Inclusão da função <ArqTrb> (exigencia release 12.1.25 do Protheus)
 // 09/09/2021 - Claudia - Incluidas as rotinas de exportação e importação de dados de eventos. GLPI: 10807
 // 11/10/2021 - Claudia - Incluida rotina para geração de materiais no menu do outras ações. GLPI: 11035
+// 22/03/2022 - Claudia - Ajuste da data invertida (AAAAMMDD) na exportação para planilha. GLPI: 11754
+// 22/03/2022 - Claudia - Ordenado por data a exportacao da planilha. GLPI: 11755
+// 22/03/2022 - Claudia - Validação de produto em linha. GLPI: 11767/11786
 //
 // -------------------------------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -154,7 +157,7 @@ User Function PLJITOk()
 					_nVlr := _aSB1[_x,1]
 
 					If _nVlr == 0
-						u_help("Campo <Produto> inválido!")
+						u_help("Campo <Produto> inválido! Produto:" + _sProduto)
 						_lRet := .F.
 					EndIf
 				Next
@@ -247,7 +250,9 @@ User Function PLJA (_nOpcao, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr, _sCodEve
 	private nOpc      := _nOpcao
 	private N		  := 1
 	
-	//_sCodEvento := ZBC->ZBC_COD
+	if empty(_sCodEvento)
+		_sCodEvento := ZBC->ZBC_COD
+	endif
 	u_logIni ()
 	DbSelectArea("SHC")
 	SHC -> (dbsetorder (5))
@@ -407,6 +412,8 @@ User Function PLMLOK ()
 		If empty(GDFieldGet("HC_PRODUTO"))
 			u_help("Campo <Produto> é obrigatório")
 			_lRet := .F.
+		else
+			_lRet := _ValidaProduto(GDFieldGet("HC_PRODUTO"))
 		EndIf
 		
 		If empty(GDFieldGet("HC_QUANT"))
@@ -1182,6 +1189,7 @@ User Function PLJEXP(_sZBCFilial, _sZBCCod, _sZBCAno)
 	_oSQL:_sQuery += " AND HC_FILIAL    = '" + _sZBCFilial + "'"
 	_oSQL:_sQuery += " AND HC_VAEVENT   = '" + _sZBCCod   + "'"
 	_oSQL:_sQuery += " AND HC_ANO       = '" + _sZBCAno    + "'"
+	_oSQL:_sQuery += " ORDER BY HC_FILIAL, HC_DATA, HC_DOC, HC_VAEVENT, HC_PRODUTO "
 	_aSHC := aclone (_oSQL:Qry2Array ())
 
 	If Len(_aSHC) > 0
@@ -1196,7 +1204,8 @@ User Function PLJEXP(_sZBCFilial, _sZBCCod, _sZBCAno)
 			cTexto += _aSHC[_i, 5] + "|"
 			cTexto += _aSHC[_i, 6] + "|"
 			cTexto += _aSHC[_i, 7] + "|"
-			cTexto += DTOS(_aSHC[_i, 8])         + "|"
+			//cTexto += DTOS(_aSHC[_i, 8])         + "|"
+			cTexto += DTOC(_aSHC[_i, 8])         + "|"
 			cTexto += alltrim(str(_aSHC[_i, 9])) + "|"
 			cTexto += _aSHC[_i,10] + "|"
 			cTexto += _aSHC[_i,11] + "|"
@@ -1215,6 +1224,7 @@ User Function PLJEXP(_sZBCFilial, _sZBCCod, _sZBCAno)
 		u_help(" Sem dados para gerar o aquivo")
 	EndIf	
 Return
+//
 // --------------------------------------------------------------------------
 // Importa arquivo
 User Function PLJIMP(_sZBCFilial, _sZBCCod, _sZBCAno)
@@ -1282,7 +1292,7 @@ User Function PLJIMP(_sZBCFilial, _sZBCCod, _sZBCAno)
 				SHC -> HC_ANO 		:= iif(!empty(aDados[_x, 4]),aDados[_x, 4],_sZBCAno)
 				SHC -> HC_ITEM 		:= iif(!empty(aDados[_x, 5]),PADL(aDados[_x, 5],2,'0')," ")
 				SHC -> HC_PRODUTO 	:= iif(!empty(aDados[_x, 6]),aDados[_x, 6]," ")
-				SHC -> HC_DATA 		:= iif(!empty(aDados[_x, 8]),STOD(aDados[_x, 8]),date())   
+				SHC -> HC_DATA 		:= iif(!empty(aDados[_x, 8]),CTOD(aDados[_x, 8]),date())   
 				SHC -> HC_QUANT 	:= iif(!empty(aDados[_x, 8]), val(aDados[_x, 9]),0)     
 				SHC -> HC_REVISAO 	:= iif(!empty(aDados[_x,10]),PADL(aDados[_x,10],3,'0')," ")
 				SHC -> HC_GRPOPC 	:= iif(!empty(aDados[_x,12]),PADL(aDados[_x,12],3,'0')," ")
@@ -1317,7 +1327,33 @@ User Function PLJIMP(_sZBCFilial, _sZBCCod, _sZBCAno)
 
 		U_PLJA(4, 'allwaystrue ()', 'allwaystrue ()', .T., _sPreFiltr, _sZBCCod)
 	EndIf
-return
+Return
+//
+// --------------------------------------------------------------------------
+// Valida Produto
+Static Function _ValidaProduto(_sProduto)
+	Local _lRetP  := .T.
+	Local _sBloq  := ""
+	Local _sTp    := ""
+
+	_sBloq  := Posicione("SB1",1 ,xFilial("SB1") + _sProduto,"B1_MSBLQL")
+	_sTp := Posicione("SB1",1 ,xFilial("SB1") + _sProduto,"B1_TIPO")
+
+	If empty(_sTp)
+		u_help("Produto não existe!")
+		_lRetP := .F.
+	EndIf
+
+	If !alltrim(_sTp) $ "PA/PI'"
+		u_help("Produto deve ser do tipo PA ou PI")
+		_lRetP := .F.
+	EndIf
+
+	If _sBloq <> '2'
+		u_help("Produto bloqueado para uso!")
+		_lRetP := .F.
+	EndIf
+Return _lRetP
 //
 // --------------------------------------------------------------------------
 // Perguntas
