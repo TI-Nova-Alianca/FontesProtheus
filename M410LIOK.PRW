@@ -71,6 +71,7 @@
 // 18/06/2021 - Sandra  - Desabilitado linha /M->C5_ESPECI1 := 'VOLUMES', para notas de exportação GLPI 10196
 // 02/12/2021 - Claudia - Desabilitada a validação de motivo de bonificação. GLPI: 10580
 // 22/03/2022 - Claudia - Criada validações de lote e localização. GLPI: 11590
+// 24/03/2022 - Claudia - Validação se item controla ou não estoque. GLPI: 11802
 //
 // ----------------------------------------------------------------------------------------------------------------
 User Function M410LIOK()
@@ -233,25 +234,29 @@ User Function M410LIOK()
 	endif
 
 	// Quando item controla rastreabilidade, exigir lote e endereço 
-	if _lRet
-		_sProduto := GDFieldGet("C6_PRODUTO")
-		_sLote    := GDFieldGet("C6_LOTECTL")
-		_sLocaliz := GDFieldGet("C6_LOCALIZ")
+	If _lRet
+		_sProduto   := GDFieldGet("C6_PRODUTO")
+		_sLote      := GDFieldGet("C6_LOTECTL")
+		_sLocaliz   := GDFieldGet("C6_LOCALIZ")
+		_sTES       := GDFieldGet("C6_TES")
+		_sCtrEstoq  := Posicione("SF4",1 ,xFilial("SF4") + alltrim(_sTES),"F4_ESTOQUE")
 		_sCtrRastro := Posicione("SB1",1 ,xFilial("SB1") + _sProduto,"B1_RASTRO")
 		_sCtrLocal  := Posicione("SB1",1 ,xFilial("SB1") + _sProduto,"B1_LOCALIZ")
 
-		// exige lote
-		If _sCtrRastro == 'L' .and. empty(_sLote)
-			_lRet := .F.
-			u_help("Informar lote!")
-		EndIf
+		If _sCtrEstoq == 'S' // controla estoque
+			// exige lote
+			If _sCtrRastro == 'L' .and. empty(_sLote)
+				_lRet := .F.
+				u_help("Informar lote!")
+			EndIf
 
-		// exigir localização
-		If _sCtrLocal == 'S' .and. empty(_sLocaliz)
-			_lRet := .F.
-			u_help("Informar localização!")
+			// exigir localização
+			If _sCtrLocal == 'S' .and. empty(_sLocaliz)
+				_lRet := .F.
+				u_help("Informar localização!")
+			EndIf
 		EndIf
-	endif
+	EndIf
 
 	U_ML_SRArea (_aAreaAnt)
 Return _lRet
