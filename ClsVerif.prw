@@ -64,6 +64,7 @@
 // 18/02/2022 - Robert  - Adicionada verificacao de itens de mao de obra x CC (GLPI 11650).
 // 23/02/2022 - Robert  - Adicionada verificacao 83 (Empenho SD4 relacionado a OP/OS inexistente ou ja encerrada)
 // 05/03/2022 - Robert  - Adicionada verificacao 85 (inconsistencias etiq.producao) - GLPI 11486
+// 23/03/2022 - Robert  - Verificacao 82 ajustado item 'MO-' para 'AO-'.
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -3072,7 +3073,8 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query += "SELECT 'Item de mao de obra amarrado a CC errado' as PROBLEMA, B1_COD, B1_CCCUSTO, B1_GCCUSTO, B1_DESC"
 			::Query +=  " FROM " + RetSQLName ("SB1")
 			::Query += " WHERE D_E_L_E_T_ = ''"
-			::Query +=   " AND SUBSTRING (B1_COD, 1, 3) IN ('AP-', 'MO-', 'GF-')"
+//			::Query +=   " AND SUBSTRING (B1_COD, 1, 3) IN ('AP-', 'MO-', 'GF-')"
+			::Query +=   " AND SUBSTRING (B1_COD, 1, 3) IN ('AP-', 'AO-', 'GF-')"
 			::Query +=   " AND B1_CCCUSTO != SUBSTRING (B1_COD, 4, 11)"
 			::Query += " ORDER BY B1_COD"
 

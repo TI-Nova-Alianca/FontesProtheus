@@ -2345,8 +2345,8 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 		pergunte ('FIN090    ', .f.)
 
 		lMsErroAuto = .F.
-//		MSExecAuto({|x,y| Fina090(x,y)},3,_aTit)
-		MSExecAuto({|x,y| Fina091(x,y)},3,_aTit)
+		MSExecAuto({|x,y| Fina090(x,y)},3,_aTit)
+// Pelo que eu sei, apesar da 'tela' do FINA090 ter sido desativada, a rotina automatica permanece. GLPI10615 e chamado Totvs 13693442 ---> MSExecAuto({|x,y| Fina091(x,y)},3,_aTit)
 		If lMsErroAuto
 			_lContinua = .F.
 			::UltMsg += u_LeErro (memoread (NomeAutoLog ()))
