@@ -3,12 +3,12 @@
 // Data.....:  11/11/2016
 // Descricao:  Verifica necessidade de integracoes com Mercanet.
 //             Criado para ser executado via batch.
-// 
-//  #TipoDePrograma    #Batch
-//  #Descricao         #Verifica necessidade de integracoes com Mercanet.
-//  #PalavasChave      #Mercanet #integracao 
-//  #TabelasPrincipais #ZA1 
-//  #Modulos 		   #FAT 
+//
+// #TipoDePrograma    #Batch
+// #Descricao         #Verifica necessidade de integracoes com Mercanet.
+// #PalavasChave      #Mercanet #integracao
+// #TabelasPrincipais #ZA1
+// #Modulos           #FAT
 //
 // Historico de alteracoes:
 // 01/03/2017 - Robert  - Chamada da funcao ConfirmSXC8() apos o MATA410 para tentar eliminar perda se 
@@ -48,41 +48,47 @@
 // 13/09/2021 - Claudia - Tratamento para A1_INSCR. GLPI: 10797
 // 11/03/2022 - Claudia - Tratamento para código matriz. GLPI: 11635
 // 11/03/2022 - Claudia - Tratamento para cadastro prospect. GLPI:11757 
+// 25/03/2022 - Robert  - Passa a buscar caminho do banco de dados via funcao U_LkServer() - GLPI 11770
 //
+
 // ------------------------------------------------------------------------------------------------------------------------
 user function BatMerc (_sQueFazer)
-	local _sArqLog2 := iif (type ("_sArqLog") == "C", _sArqLog, "")
+//	local _sArqLog2 := iif (type ("_sArqLog") == "C", _sArqLog, "")
 	local _sLinkSrv := ""
 
-	u_logDH ()
-	u_logIni ()
+//	u_logDH ()
+//	u_logIni ()
 
 	_oBatch:Retorno = 'S'
 
 	// Define se deve apontar para o banco de producao ou de homologacao.
-	if "TESTE" $ upper (GetEnvServer())
-		_sLinkSrv = "LKSRV_MERCANETHML.MercanetHML.dbo"
+	// if "TESTE" $ upper (GetEnvServer())
+	// 	_sLinkSrv = "LKSRV_MERCANETHML.MercanetHML.dbo"
+	// else
+	// 	_sLinkSrv = "LKSRV_MERCANETPRD.MercanetPRD.dbo"
+	// endif
+	_sLinkSrv = U_LkServer ('MERCANET')
+	if empty (_sLinkSrv)
+		u_help ("Sem definicao para comunicacao com banco de dados do Mercanet.",, .t.)
 	else
-		_sLinkSrv = "LKSRV_MERCANETPRD.MercanetPRD.dbo"
+
+		_sQueFazer = iif (_sQueFazer == NIL, '', _sQueFazer)
+		do case
+		case _sQueFazer == 'E'  // Enviar dados
+			_Envia (_sLinkSrv)
+		case _sQueFazer == 'P'  // Ler pedidos de venda
+			//_LePed (_sLinkSrv)
+			u_help ("Para importar pedidos use o agendamento do programa U_BatMercP()")
+		case _sQueFazer == 'C'  // Ler novos clientes
+			_LeCli (_sLinkSrv)
+		otherwise
+			U_Help ("Sem tratamento para opcao '" + _sQueFazer + "'")
+			_oBatch:Retorno = 'N'
+		endcase
 	endif
 
-	_sQueFazer = iif (_sQueFazer == NIL, '', _sQueFazer)
-	do case
-	case _sQueFazer == 'E'  // Enviar dados
-		_Envia (_sLinkSrv)
-	case _sQueFazer == 'P'  // Ler pedidos de venda
-		//_LePed (_sLinkSrv)
-		u_help ("Para importar pedidos use o agendamento do programa U_BatMercP()")
-	case _sQueFazer == 'C'  // Ler novos clientes
-		_LeCli (_sLinkSrv)
-	otherwise
-		U_Help ("Sem tratamento para opcao '" + _sQueFazer + "'")
-		_oBatch:Retorno = 'N'
-	endcase
-	
-	u_log ('Mensagens do batch:', _oBatch:Mensagens)
-	u_logFim ()
-	_sArqLog = _sArqLog2
+	u_log2 ('info', 'Mensagens do batch: ' + _oBatch:Mensagens)
+//	_sArqLog = _sArqLog2
 return .T.
 //
 // --------------------------------------------------------------------------

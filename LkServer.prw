@@ -18,6 +18,7 @@
 // 20/01/2021 - Robert - Tratamento para ambiente TesteMedio no acesso ao BI_ALIANCA (criado database temporario em separado)
 // 08/02/2021 - Robert - Criado tratamento para acessar o database TI (GLPI 9353)
 // 23/02/2021 - Robert - Adicionado database BL01 (GLPI 9454).
+// 25/03/2022 - Robert - Adicionado ambiente R33 (homologacao release33 do Protheus)
 //
 
 // --------------------------------------------------------------------------
@@ -26,7 +27,8 @@ user function LkServer (_sQualSrv)
 	local _lBaseTST := .F.
 	
 	// Define se deve apontar para o banco de producao ou de homologacao.
-	if "TESTE" $ upper (GetEnvServer())
+//	if "TESTE" $ upper (GetEnvServer())
+	if "TESTE" $ upper (GetEnvServer()) .or. "R33" $ upper (GetEnvServer())
 		_lBaseTST = .T.
 	endif
 
