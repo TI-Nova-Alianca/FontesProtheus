@@ -12,6 +12,7 @@
 //
 // Historico de alteracoes:
 // 11/10/2021 - Claudia - Criada rotina para geracao de dados de materiais. GLPI: 11035
+// 25/03/2022 - Claudia - Incluido novo filtro para valores por filial/todas filiais. GLPI: 11818
 //
 // ------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -133,14 +134,14 @@ User Function VA_ZBCBI()
                     nPC    := 0
                     nTerc  := 0
                 Else
-                    nAlx02 := U_ZBCBSaldo(TRA -> COMPONENTE ,'02')
-                    nAlx03 := U_ZBCBSaldo(TRA -> COMPONENTE ,'03')
-                    nAlx07 := U_ZBCBSaldo(TRA -> COMPONENTE ,'07')
-                    nAlx08 := U_ZBCBSaldo(TRA -> COMPONENTE ,'08')
-                    nAlx90 := U_ZBCBSaldo(TRA -> COMPONENTE ,'90')
-                    nSC    := U_ZBCBSC(TRA -> COMPONENTE)
-                    nPC    := U_ZBCBPC(TRA -> COMPONENTE)
-                    nTerc  := U_ZBCBTer(TRA -> COMPONENTE)
+                    nAlx02 := U_ZBCBSaldo(TRA -> COMPONENTE ,'02', mv_par09)
+                    nAlx03 := U_ZBCBSaldo(TRA -> COMPONENTE ,'03', mv_par09)
+                    nAlx07 := U_ZBCBSaldo(TRA -> COMPONENTE ,'07', mv_par09)
+                    nAlx08 := U_ZBCBSaldo(TRA -> COMPONENTE ,'08', mv_par09)
+                    nAlx90 := U_ZBCBSaldo(TRA -> COMPONENTE ,'90', mv_par09)
+                    nSC    := U_ZBCBSC(TRA -> COMPONENTE, mv_par09)
+                    nPC    := U_ZBCBPC(TRA -> COMPONENTE, mv_par09)
+                    nTerc  := U_ZBCBTer(TRA -> COMPONENTE, mv_par09)
                 EndIf
 
                 _oSQL := ClsSQL ():New ()
@@ -196,14 +197,14 @@ Return
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT           TIPO TAM DEC VALID F3     Opcoes                      				Help
-    aadd (_aRegsPerg, {01, "Data de      	", "D", 8, 0,    "",  "   ", {}                         				,""})
-    aadd (_aRegsPerg, {02, "Data até    	", "D", 8, 0,    "",  "   ", {}                         				,""})
-    aadd (_aRegsPerg, {03, "Evento          ", "C", 3, 0,    "",  "   ", {}                         				,""})
-    aadd (_aRegsPerg, {04, "Ano             ", "C", 4, 0,    "",  "   ", {}                         				,""}) 
-    aadd (_aRegsPerg, {05, "Nivel estr. de  ", "C", 1, 0,    "",  "   ", {}											,""})
-    aadd (_aRegsPerg, {06, "Nivel estr. ate ", "C", 1, 0,    "",  "   ", {}											,""})
-	aadd (_aRegsPerg, {07, "Tipo prod.de    ", "C", 2, 0,    "",  "02", {}                         					,""})
-	aadd (_aRegsPerg, {08, "Tipo prod.ate   ", "C", 2, 0,    "",  "02", {}                         					,""})
-    
+    aadd (_aRegsPerg, {01, "Data de      	   ", "D", 8, 0,    "",  "   ", {}                         				,""})
+    aadd (_aRegsPerg, {02, "Data até    	   ", "D", 8, 0,    "",  "   ", {}                         				,""})
+    aadd (_aRegsPerg, {03, "Evento             ", "C", 3, 0,    "",  "   ", {}                         				,""})
+    aadd (_aRegsPerg, {04, "Ano                ", "C", 4, 0,    "",  "   ", {}                         				,""}) 
+    aadd (_aRegsPerg, {05, "Nivel estr. de     ", "C", 1, 0,    "",  "   ", {}										,""})
+    aadd (_aRegsPerg, {06, "Nivel estr. ate    ", "C", 1, 0,    "",  "   ", {}										,""})
+	aadd (_aRegsPerg, {07, "Tipo prod.de       ", "C", 2, 0,    "",  "02" , {}                         				,""})
+	aadd (_aRegsPerg, {08, "Tipo prod.ate      ", "C", 2, 0,    "",  "02" , {}                         				,""})
+    aadd (_aRegsPerg, {09, "Agrupa vlrs.filial ", "N", 1, 0,    "",  "   ", {"Filial logada","Todas filiais"}		,""})
 	U_ValPerg (cPerg, _aRegsPerg)
 Return
