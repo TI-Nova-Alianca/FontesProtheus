@@ -14,6 +14,7 @@
 // 15/09/2021 - Claudia - Ajuste do b1_desc para descricao. GLPI: 10943
 // 17/09/2021 - Claudia - Incluido tipo de produto e escondido o cabeçalho. GLPI: 10950
 // 11/10/2021 - Claudia - Incluida coluna do almox 03. GLPI: 11036
+// 25/03/2022 - Claudia - Incluido novo filtro para valores por filial/todas filiais. GLPI: 11818
 //
 // ------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -207,14 +208,14 @@ Static Function PrintReport(oReport)
 					nFinal := 0
 				EndIf
 			Else
-				nAlx02 := U_ZBCBSaldo(TRA -> COMPONENTE ,'02')
-				nAlx03 := U_ZBCBSaldo(TRA -> COMPONENTE ,'03')
-				nAlx07 := U_ZBCBSaldo(TRA -> COMPONENTE ,'07')
-				nAlx08 := U_ZBCBSaldo(TRA -> COMPONENTE ,'08')
-				nAlx90 := U_ZBCBSaldo(TRA -> COMPONENTE ,'90')
-				nSC    := U_ZBCBSC(TRA -> COMPONENTE)
-				nPC    := U_ZBCBPC(TRA -> COMPONENTE)
-				nTerc  := U_ZBCBTer(TRA -> COMPONENTE)
+				nAlx02 := U_ZBCBSaldo(TRA -> COMPONENTE ,'02', mv_par13)
+				nAlx03 := U_ZBCBSaldo(TRA -> COMPONENTE ,'03', mv_par13)
+				nAlx07 := U_ZBCBSaldo(TRA -> COMPONENTE ,'07', mv_par13)
+				nAlx08 := U_ZBCBSaldo(TRA -> COMPONENTE ,'08', mv_par13)
+				nAlx90 := U_ZBCBSaldo(TRA -> COMPONENTE ,'90', mv_par13)
+				nSC    := U_ZBCBSC(TRA -> COMPONENTE, mv_par13)
+				nPC    := U_ZBCBPC(TRA -> COMPONENTE, mv_par13)
+				nTerc  := U_ZBCBTer(TRA -> COMPONENTE, mv_par13)
 				If mv_par10 == 1 // total
 					nFinal := (nAlx02 + nAlx07 + nAlx08 + nSC + nPC) - TRA->QNT_PROD
 				EndIf
@@ -349,7 +350,7 @@ Return
 //
 // ----------------------------------------------------------------------------------
 // Busca o saldo nos almoxarifados correspondentes
-User Function ZBCBSaldo(sComp, sAlx)
+User Function ZBCBSaldo(sComp, sAlx, _sParFil)
 	Local nQtdAlx := 0
 	Local cQuery1 := ""
 	
@@ -359,6 +360,9 @@ User Function ZBCBSaldo(sComp, sAlx)
 	cQuery1 += " 	   ,SUM(B2_QATU) AS QTD"
 	cQuery1 += " 	FROM " + RetSqlName("SB2")
 	cQuery1 += " 	WHERE D_E_L_E_T_ = ''"
+	If _sParFil == 1
+		cQuery1 += " 	AND B2_FILIAL = '" + xfilial ("SB2") + "'"
+	EndIf
 	cQuery1 += " 	AND B2_COD = '" + sComp + "'"
 	cQuery1 += " 	AND B2_LOCAL ='" + sAlx + "'"
 	cQuery1 += " 	GROUP BY B2_COD"
@@ -380,7 +384,7 @@ Return nQtdAlx
 //
 // ----------------------------------------------------------------------------------
 // Busca o saldo das solicitações de compras
-User Function ZBCBSC(sComp)
+User Function ZBCBSC(sComp, _sParFil)
 	Local nQtdSC  := 0
 	Local cQuery2 := ""
 	
@@ -396,6 +400,9 @@ User Function ZBCBSC(sComp)
     cQuery2 += " 	,(C1_QUANT - C1_QUJE) AS SALDO
 	cQuery2 += " FROM " + RetSqlName("SC1")
 	cQuery2 += " WHERE D_E_L_E_T_ = ''"
+	If _sParFil == 1
+		cQuery2 += " 	AND C1_FILIAL = '" + xfilial ("SC1") + "'"
+	EndIf
 	cQuery2 += " AND C1_PRODUTO = '" + sComp + "'"
 	cQuery2 += " AND (C1_QUANT - C1_QUJE) > 0"
 	cQuery2 += " AND C1_RESIDUO = ''"
@@ -415,7 +422,7 @@ Return nQtdSC
 //
 // ----------------------------------------------------------------------------------
 // Busca o saldo dos pedidos de compras
-User Function ZBCBPC(sComp)
+User Function ZBCBPC(sComp, _sParFil)
 	Local nQtdPC  := 0
 	Local cQuery3 := ""
 	
@@ -431,6 +438,9 @@ User Function ZBCBPC(sComp)
 	cQuery3 += " ,(C7_QUANT - C7_QUJE) AS SALDO"
 	cQuery3 += " FROM " + RetSqlName("SC7")
 	cQuery3 += " WHERE D_E_L_E_T_ = ''"
+	If _sParFil == 1
+		cQuery3 += " 	AND C7_FILIAL = '" + xfilial ("SC7") + "'"
+	EndIf
 	cQuery3 += " AND C7_PRODUTO = '" + sComp + "'"
 	cQuery3 += " AND (C7_QUANT - C7_QUJE) > 0"
 	cQuery3 += " AND C7_RESIDUO = ''"
@@ -449,7 +459,7 @@ Return nQtdPC
 //
 // ----------------------------------------------------------------------------------
 // Busca saldo de terceiros
-User Function ZBCBTer(sComp)
+User Function ZBCBTer(sComp, _sParFil)
 	Local nQtdTerc := 0
 	Local cQuery4  := ""
 	
@@ -463,6 +473,9 @@ User Function ZBCBTer(sComp)
     cQuery4 += " 	,B6_SALDO AS SALDO"
 	cQuery4 += " FROM dbo.VA_VSALDOS_TERCEIROS V"
 	cQuery4 += " WHERE B6_PRODUTO = '" + sComp + "'"
+	If _sParFil == 1
+		cQuery4 += " 	AND B6_FILIAL = '" + xfilial ("SB6") + "'"
+	EndIf
 	cQuery4 += " ORDER BY B6_EMISSAO, B6_DOC, B6_PRODUTO "
 	dbUseArea(.T., "TOPCONN", TCGenQry(,,cQuery4), "TRE", .F., .T.)
 	TRE->(DbGotop())
@@ -481,19 +494,20 @@ Return nQtdTerc
 // Perguntas
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
-    //                     PERGUNT           TIPO TAM DEC VALID F3     Opcoes                      				Help
-    aadd (_aRegsPerg, {01, "Data de      	", "D", 8, 0,    "",  "   ", {}                         				,""})
-    aadd (_aRegsPerg, {02, "Data até    	", "D", 8, 0,    "",  "   ", {}                         				,""})
-    aadd (_aRegsPerg, {03, "Evento de       ", "C", 3, 0,    "",  "   ", {}                         				,""})
-    aadd (_aRegsPerg, {04, "Evento até      ", "C", 3, 0,    "",  "   ", {}                         				,""})
-    aadd (_aRegsPerg, {05, "Ano de          ", "C", 4, 0,    "",  "   ", {}                         				,""})
-    aadd (_aRegsPerg, {06, "Ano até         ", "C", 4, 0,    "",  "   ", {}                         				,""})   
-    aadd (_aRegsPerg, {07, "Tipo Rel.       ", "N", 1, 0,    "",  "   ", {"Sintético","Analítico"}					,""})
-    aadd (_aRegsPerg, {08, "Nivel estr. de  ", "C", 1, 0,    "",  "   ", {}											,""})
-    aadd (_aRegsPerg, {09, "Nivel estr. ate ", "C", 1, 0,    "",  "   ", {}											,""})
-    aadd (_aRegsPerg, {10, "Imprime mensal  ", "N", 1, 0,    "",  "   ", {"Não","Sim"}								,""})
-	aadd (_aRegsPerg, {11, "Tipo prod.de    ", "C", 2, 0,    "",  "02", {}                         					,""})
-	aadd (_aRegsPerg, {12, "Tipo prod.ate   ", "C", 2, 0,    "",  "02", {}                         					,""})
+    //                     PERGUNT            TIPO TAM DEC VALID F3     Opcoes                      			     	Help
+    aadd (_aRegsPerg, {01, "Data de      	   ", "D", 8, 0,    "",  "   ", {}                         				,""})
+    aadd (_aRegsPerg, {02, "Data até    	   ", "D", 8, 0,    "",  "   ", {}                         				,""})
+    aadd (_aRegsPerg, {03, "Evento de          ", "C", 3, 0,    "",  "   ", {}                         				,""})
+    aadd (_aRegsPerg, {04, "Evento até         ", "C", 3, 0,    "",  "   ", {}                         				,""})
+    aadd (_aRegsPerg, {05, "Ano de             ", "C", 4, 0,    "",  "   ", {}                         				,""})
+    aadd (_aRegsPerg, {06, "Ano até            ", "C", 4, 0,    "",  "   ", {}                         				,""})   
+    aadd (_aRegsPerg, {07, "Tipo Rel.          ", "N", 1, 0,    "",  "   ", {"Sintético","Analítico"}				,""})
+    aadd (_aRegsPerg, {08, "Nivel estr. de     ", "C", 1, 0,    "",  "   ", {}										,""})
+    aadd (_aRegsPerg, {09, "Nivel estr. ate    ", "C", 1, 0,    "",  "   ", {}										,""})
+    aadd (_aRegsPerg, {10, "Imprime mensal     ", "N", 1, 0,    "",  "   ", {"Não","Sim"}							,""})
+	aadd (_aRegsPerg, {11, "Tipo prod.de       ", "C", 2, 0,    "",  "02" , {}                         				,""})
+	aadd (_aRegsPerg, {12, "Tipo prod.ate      ", "C", 2, 0,    "",  "02" , {}                         				,""})
+	aadd (_aRegsPerg, {13, "Agrupa vlrs.filial ", "N", 1, 0,    "",  "   ", {"Filial logada","Todas filiais"}		,""})
     
 	U_ValPerg (cPerg, _aRegsPerg)
 Return
