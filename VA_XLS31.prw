@@ -11,8 +11,9 @@
 // 30/01/2020 - Cláudia        - Incluida coluna de saldo de pedidos, conforme GLPI 7423
 // 04/02/2020 - Claudia        - Incluida a soma do saldo dos pedidos.
 // 17/02/2022 - Claudia/Sandra - Incluso campo validade, conforme chamado CLPI 11510
-// 
-// --------------------------------------------------------------------------
+// 25/03/2022 - Claudia        - Incluido campos de capacidade e capacidade real do tanque. GLPI: 11812
+//
+// -------------------------------------------------------------------------------------------------------
 User Function VA_XLS31 (_lAutomat)
 	Local cCadastro := "Exporta mapa de estoques a granel"
 	Local aSays     := {}
@@ -40,18 +41,15 @@ User Function VA_XLS31 (_lAutomat)
 		Endif
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // 'Tudo OK' do FormBatch.
 Static Function _TudoOk()
 	Local _lRet     := .T.
 Return _lRet
-
-
-
+//
 // --------------------------------------------------------------------------
+// Gera dados
 Static Function _Gera()
 	local _oSQL := NIL
 
@@ -85,7 +83,9 @@ Static Function _Gera()
 	_oSQL:_sQuery +=                                      " AND MAIS_RECENTE.ZAF_FILIAL = ZAF.ZAF_FILIAL"
 	_oSQL:_sQuery +=                                      " AND MAIS_RECENTE.ZAF_LOTE   = ZAF.ZAF_LOTE"
 	_oSQL:_sQuery +=                                      " AND MAIS_RECENTE.ZAF_ENSAIO > ZAF.ZAF_ENSAIO)"
-	_oSQL:_sQuery +=                  " ORDER BY ZAF.ZAF_ENSAIO DESC), '') AS ENSAIO"
+	_oSQL:_sQuery +=                  " ORDER BY ZAF.ZAF_ENSAIO DESC), '') AS ENSAIO,"
+	_oSQL:_sQuery +=                  " SBE.BE_CAPACID AS CAPACIDADE,"
+	_oSQL:_sQuery +=                  " SBE.BE_CAPREAL AS CAPACIDADE_REAL"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SBF") + " SBF, "
 	_oSQL:_sQuery +=              RetSQLName ("SB8") + " SB8 "
 	_oSQL:_sQuery +=              " LEFT JOIN " + RetSQLName ("SA1") + " SA1"
@@ -130,6 +130,8 @@ Static Function _Gera()
 	_oSQL:_sQuery +=        " C.CLIENTE,"
 	_oSQL:_sQuery +=        " C.CODIGO_CR,"
 	_oSQL:_sQuery +=        " C.ENSAIO,"
+	_oSQL:_sQuery +=        " C.CAPACIDADE,"
+	_oSQL:_sQuery +=        " C.CAPACIDADE_REAL,"
 	_oSQL:_sQuery +=        " dbo.VA_DTOC (ISNULL (ZAF_DATA, '')) AS [DATA_ENSAIO],"
 	_oSQL:_sQuery +=        " ISNULL (ZAF_ESTQ,   0) AS [ESTQ_ENSAIADO],"
 	_oSQL:_sQuery +=        " ISNULL (ZAF_ACTOT,  0) AS [ACIDEZ_TOTAL],"
@@ -175,7 +177,7 @@ Static Function _Gera()
 	_oSQL:_sQuery +=        " AND SC6.C6_LOTECTL = LOTE"
 	_oSQL:_sQuery +=        " AND SC6.C6_LOCALIZ = TANQUE
 	_oSQL:_sQuery +=        " AND SC6.C6_BLQ = '')"
-	_oSQL:_sQuery += " GROUP BY C.FILIAL,C.ALMOX,C.TANQUE,C.PRODUTO,C.DESCRICAO,C.LOTE, C.VALIDADE,C.ESTQ_ATUAL_TANQUE,C.STATUS_TANQUE,C.DESTINACAO_LOTE,C.STATUS_VENDA_LOTE,C.CLIENTE,C.CODIGO_CR,C.ENSAIO"
+	_oSQL:_sQuery += " GROUP BY C.FILIAL,C.ALMOX,C.TANQUE,C.PRODUTO,C.DESCRICAO,C.LOTE, C.VALIDADE,C.ESTQ_ATUAL_TANQUE,C.STATUS_TANQUE,C.DESTINACAO_LOTE,C.STATUS_VENDA_LOTE,C.CLIENTE,C.CODIGO_CR,C.ENSAIO,C.CAPACIDADE,C.CAPACIDADE_REAL"
     _oSQL:_sQuery += " ,ZAF_DATA,ZAF_ESTQ,ZAF_ACTOT,ZAF_ACVOL,ZAF_ACRED,ZAF_ALCOOL,ZAF_DENSID,ZAF_EXTRSE,ZAF_SO2LIV,ZAF_SO2TOT,ZAF_BRIX,ZAF_PH,ZAF_TURBID,ZAF_COR420,ZAF_COR520"
     _oSQL:_sQuery += " ,ZAF_COR620,ZAF_COR420,ZAF_BOLOR,ZAF_COLIF,ZAF_COR,ZAF_SABOR,ZAF_AROMA,ZAF_CRQRES,ZAF_VALID,ZAF_OBS,ZAF_SAFRA1,ZAF_PSAFR1,ZAF_SAFRA2,ZAF_PSAFR2,ZAF_SAFRA3"
     _oSQL:_sQuery += " ,ZAF_PSAFR3,ZAF_SAFRA4,ZAF_PSAFR4,ZAF_STOPER,ZAF_CLASS,ZAF_PADRAO,ZAF_ACETAL"
@@ -185,9 +187,7 @@ Static Function _Gera()
 
 //	_oSQL:Qry2XLS (.F., .F., .F.)
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
