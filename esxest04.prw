@@ -24,6 +24,7 @@
 // 04/01/2021 - Robert - Habilitado novamente o MMMSAFRA, melhorados logs.
 // 18/01/2021 - Robert - Verifica parametro MV_DBLQMOV antes de executar.
 // 08/02/2021 - Robert - Valida campo B1_CCCUSTO no cadastro dos itens tipo MO, AP, GF (GLPI 9356).
+// 25/03/2022 - Robert - Verifica cadastro dos itens AP-, AO- e GF- passa a ser feita pela classe ClsVerif()
 //
 
 // -------------------------------------------------------------------------------
@@ -60,7 +61,7 @@ Static function _Roda()
 	local _nNovo     := 0
 	local _nGerados  := 0
 	local _oEvento   := NIL
-	local _aErrSB1   := {}
+//	local _aErrSB1   := {}
 
 	if _lContinua .and. mv_par01 <= getmv('MV_ULMES',.F.,'20000101')
 		u_help ('Processo nao pode rodar em mes fechado (MV_ULMES)',, .T.)
@@ -75,7 +76,9 @@ Static function _Roda()
 		 _lContinua = U_msgyesno ('Este programa replica as requisicoes de produtos MMM em ordens de producao para AO, GF e AP, gerando movimentos ' + _sTM + ' para posterior custeio das OP. Confirma?')
 	endif
 
+	// Verifica cadastro dos itens AP-, AO- e GF-
 	if _lContinua
+		/*
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += "SELECT DISTINCT SB1.B1_COD, SB1.B1_DESC, B1_CCCUSTO"
@@ -94,6 +97,15 @@ Static function _Roda()
 		_aErrSB1 := _oSQL:Qry2Array (.T., .t.)
 		if len (_aErrSB1) > 1  // Primeira linha vai trazer os nomes dos campos
 			U_F3Array (_aErrSB1, 'Inconsistencia cadastro itens', NIL, NIL, NIL, 'Campo CCC PARA CUSTO inconsistente', "Campo CC PARA CUSTO deveria conter o mesmo CC que faz parte do codigo do produto (ou 999999 no caso de item MMM).", .F., "", NIL)
+			_lContinua = .F.
+		endif
+		*/
+		_oVerif := ClsVerif():New (82)
+		_oVerif:Executa ()
+		if len (_oVerif:Result) > 0
+			U_Log2 ('erro', _oVerif:Result)
+			u_help ("Foram encontrados itens de mao de obra amarrados a centro de custo indevido",, .t.)
+			U_F3Array (_oVerif:Result, "Problemas no cadastro de itens", , , , '', '', .T., 'C')
 			_lContinua = .F.
 		endif
 	endif
