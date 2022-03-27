@@ -30,6 +30,7 @@
 // 07/07/2021 - Robert - Validacao do campo D3_VADTPRD passa a aceitar ateh D+4 (GLPI 10430).
 // 13/07/2021 - Robert - Eliminadas perguntas simples e melhorados helps para execucao via web service (GLPI 10479)
 // 06/12/2021 - Robert - Valida se o empenho jah foi enderecado (para evitar que o sistema requisite de onde quiser). GLPI 11076
+// 27/03/2022 - Robert - Verificacao de etiquetas passada para funcao externa (GLPI 11825).
 //
 
 // --------------------------------------------------------------------------
@@ -82,8 +83,9 @@ user function mt250tok ()
 	endif
 
 	// Verifica consistencia com etiquetas, quando usadas.
-	if _lRet
-		_lRet = _VerEtiq ()
+	if _lRet .and. ! empty (m->d3_vaetiq)
+		//_lRet = _VerEtiq ()
+		_lRet = U_ZA1PAp (m->d3_vaetiq, m->d3_op, m->d3_cod, m->d3_quant, m->d3_perda, m->d3_parctot)
 	endif
 	
 	// Integracao com Fullsoft
@@ -105,7 +107,7 @@ user function mt250tok ()
 return _lRet
 
 
-
+/* Passado para u_ZA1PAp()
 // --------------------------------------------------------------------------
 // Consiste dados da etiqueta, quando informada.
 static function _VerEtiq ()
@@ -135,9 +137,9 @@ static function _VerEtiq ()
 		endif
 	endif
 return _lRet
+*/
 
 
-		
 // --------------------------------------------------------------------------
 // Consiste data do apontamento.
 static function _VerData ()
