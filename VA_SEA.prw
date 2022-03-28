@@ -12,7 +12,9 @@
 //
 // Historico de alteracoes:
 // 07/05/2021 - Claudia - Incluido tags de customizações
+// 28/03/2022 - Robert  - Eliminada funcionalidade de conversao para TXT (em alguns casos 'perdia' o relatorio).
 //
+
 // --------------------------------------------------------------------------
 user function VA_SEA (_lAutomat)
 	private _lAuto   := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
@@ -86,13 +88,7 @@ user function VA_SEA (_lAutomat)
 	MS_FLUSH ()
 	DbCommitAll ()
 
-	// Se era execucao via rotina automatica, converte o relatorio para TXT.
-	if _lAuto
-		_sErroConv = U_ML_R2T (__reldir + wnrel + ".##r", __reldir + wnrel + ".txt")
-		if ! empty (_sErroConv)
-			u_help (_sErroConv)
-		endif
-	else
+	if ! _lAuto
 		If aReturn [5] == 1
 			ourspool(wnrel)
 		Endif

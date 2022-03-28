@@ -8,6 +8,7 @@
 // 01/05/2019 - Robert - Passa a buscar dados na classe ClsExtrCC.
 // 03/05/2019 - Robert - Nao mostrava totais gerais.
 // 24/09/2019 - Robert - ClsExtrCC passa a ter novo atributo :FormaResult.
+// 28/03/2022 - Robert - Eliminada funcionalidade de conversao para TXT (em alguns casos 'perdia' o relatorio).
 //
 
 // Tags para automatizar catalogo de customizacoes:
@@ -97,9 +98,7 @@ user function SZI_Rel2 (_lAutomat)
 	DbCommitAll ()
 
 	// Se era execucao via rotina automatica, converte o relatorio para TXT.
-	if _lAuto
-		U_ML_R2T (__reldir + wnrel + ".##r", __reldir + wnrel + ".txt")
-	else
+	if !_lAuto
 		If aReturn [5] == 1
 			ourspool(wnrel)
 		Endif
