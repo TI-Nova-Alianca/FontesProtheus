@@ -104,13 +104,7 @@ User function VA_RCarg (_lAutomat, _sCarga, _dEmissao, _sTipo, _nSintet)
 	MS_FLUSH ()
 	DbCommitAll ()
 
-	// Se era execucao via rotina automatica, converte o relatorio para TXT.
-	if _lAuto
-		_sErroConv = U_ML_R2T (__reldir + wnrel + ".##r", __reldir + wnrel + ".txt")
-		if ! empty (_sErroConv)
-			u_help (_sErroConv)
-		endif
-	else
+	if ! _lAuto
 		If aReturn [5] == 1
 			ourspool(wnrel)
 		Endif

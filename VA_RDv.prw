@@ -19,7 +19,9 @@
 // 15/10/2019 - Andre   - Em caso de planilha adicionado colunas D1_EMISSAO, D1_LOTECTL.
 // 30/03/2020 - Claudia - Ajuste nos campos de ITEM, conforme GLPI: 7738
 // 02/04/2020 - Claudia - Voltada alteração GLPI: 7738
+// 28/03/2022 - Robert - Eliminada funcionalidade de conversao para TXT (em alguns casos 'perdia' o relatorio).
 //
+
 // --------------------------------------------------------------------------------------
 user function VA_RDV (_lAutomat, _lIndicad)
 	local _aRet     := {}
@@ -95,14 +97,8 @@ user function VA_RDV (_lAutomat, _lIndicad)
 	MS_FLUSH ()
 	DbCommitAll ()
 
-	// Se era execucao via rotina automatica, converte o relatorio para TXT.
 	if ! _lIndic
-		if _lAuto
-			_sErroConv = U_ML_R2T (__reldir + wnrel + ".##r", __reldir + wnrel + ".txt")
-			if ! empty (_sErroConv)
-				u_help (_sErroConv)
-			endif
-		else
+		if ! _lAuto
 			If aReturn [5] == 1
 				ourspool(wnrel)
 			Endif

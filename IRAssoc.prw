@@ -21,6 +21,7 @@
 // 16/04/2021 - Claudia - Retirado o Movimento 29. GLPI: 9844
 // 26/07/2021 - Sandra  - Incluso rodapé com nomenclatura 'Documento Sigiloso" GLPI 10139
 // 07/03/2022 - Robert  - Acrescentado CNPJ da fonte pagadora.
+// 28/03/2022 - Robert  - Eliminada funcionalidade de conversao para TXT (em alguns casos 'perdia' o relatorio).
 //
 
 // -----------------------------------------------------------------------------------------------------------
@@ -101,13 +102,7 @@ User function IRAssoc (_lAutomat)
 	MS_FLUSH ()
 	DbCommitAll ()
 
-	// Se era execucao via rotina automatica, converte o relatorio para TXT.
-	if _lAuto
-//		_sErroConv = U_ML_R2T (__reldir + wnrel + ".##r", __reldir + wnrel + ".txt")
-//		if ! empty (_sErroConv)
-//			u_help (_sErroConv)
-//		endif
-	else
+	if ! _lAuto
 		If aReturn [5] == 1
 			ourspool(wnrel)
 		Endif

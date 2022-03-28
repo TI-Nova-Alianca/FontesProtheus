@@ -12,6 +12,7 @@
 // 16/04/2015 - Robert - Tratamento da filial 03 (Livramento) passado para 13 (Caxias).
 // 20/10/2015 - Robert - Desconsidera OPs previstas.
 //                     - Se uma filial nao tivesse pedido/prev.venda/OP, nao olhava seu estoque.
+// 28/03/2022 - Robert - Eliminada funcionalidade de conversao para TXT (em alguns casos 'perdia' o relatorio).
 //
 
 #include "rwmake.ch"
@@ -92,13 +93,7 @@ user function VA_PJE (_lAutomat)
 	MS_FLUSH ()
 	DbCommitAll ()
 
-	// Se era execucao via rotina automatica, converte o relatorio para TXT.
-	if _lAuto
-		_sErroConv = U_ML_R2T (__reldir + wnrel + ".##r", __reldir + wnrel + ".txt")
-		if ! empty (_sErroConv)
-			u_help (_sErroConv)
-		endif
-	else
+	if ! _lAuto
 		If aReturn [5] == 1
 			ourspool(wnrel)
 		Endif
