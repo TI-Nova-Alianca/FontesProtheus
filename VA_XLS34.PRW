@@ -7,6 +7,7 @@
 // 23/02/2018 - Robert - Passa a usar a view VA_VNOTAS_SAFRA
 //                     - Criado parametro de safra
 //                     - Busca maior item da carga, para casos de mesmo produto (talhoes diferentes).
+// 28/03/2022 - Robert - Nao considerava contranotas de producao propria.
 //
 
 // --------------------------------------------------------------------------
@@ -132,7 +133,8 @@ Static Function _Gera()
 	_oSQL:_sQuery +=    " AND V.SAFRA        = '" + mv_par01 + "'"
 	_oSQL:_sQuery +=    " AND V.FILIAL       BETWEEN '" + mv_par02 + "' AND '" + mv_par03 + "'"
 	_oSQL:_sQuery +=    " AND V.DATA         between '" + dtos (mv_par04) + "' AND '" + dtos (mv_par05) + "'"
-	_oSQL:_sQuery +=    " AND V.TIPO_NF      in ('E', 'C')"
+//	_oSQL:_sQuery +=    " AND V.TIPO_NF      in ('E', 'C')"
+	_oSQL:_sQuery +=    " AND V.TIPO_NF      in ('E', 'C', 'P')"
 	if mv_par06 == 1  // Lotes com saldo
 		_oSQL:_sQuery +=  " AND EXISTS (SELECT *"
 		_oSQL:_sQuery +=                " FROM " + RetSQLName ("SB8") + " SB8 "
