@@ -1,0 +1,87 @@
+// Programa...: SB1PEF
+// Autor......: Robert Koch
+// Data.......: 27/03/2022
+// Descricao..: Verifica se pode enviar um produto para o FullWMS - GLPI 11825
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Verifica se pode enviar um produto (digamos que interessa mais saber se deve enviar etiquetas desse produto) para o FullWMS
+// #PalavasChave      #etiqueta #FullWMS
+// #TabelasPrincipais #SB1
+// #Modulos           #PCP
+
+// Historico de alteracoes
+//
+
+// ------------------------------------------------------------------------------------
+user function SB1PEF (_sProduto)
+	Local _aAreaAnt  := U_ML_SRArea ()
+	local _lContinua := .T.
+	local _oSQL      := NIL
+	local _sLinkSrv  := ""
+	local _aQryWMS   := {}
+
+	u_log2 ('info', 'Verificando se o produto ' + _sProduto + ' pode ser enviado para o FullWMS.')
+
+	if _lContinua
+		zb1 -> (dbsetorder (1))
+		if ! sb1 -> (dbseek (xfilial ("SB1") + _sProduto, .F.))
+			u_help ("Impossivel enviar produto '" + _sProduto + "' para o FullWMS: produto nao cadastrado!",, .t.)
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
+		if empty (sb1 -> b1_prvalid)
+			u_help ("Impossivel enviar produto '" + _sProduto + "' para o FullWMS: prazo de validade nao informado no cadastro do produto - campo B1_PRVALID (" + alltrim (RetTitle ("B1_PRVALID")) + ").",, .t.)
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "select count (*)"
+		_oSQL:_sQuery +=  " from v_wms_item"
+		_oSQL:_sQuery += " where coditem = '" + alltrim (_sProduto) + "'"
+//		_oSQL:Log ()
+		if _oSQL:RetQry (1, .f.) == 0
+			u_help ("Impossivel enviar produto '" + _sProduto + "' para o FullWMS: o mesmo nao consta na view de integracao v_wms_item.", _oSQL:_sQuery, .t.)
+			_lContinua = .F.
+		endif
+	endif
+
+	// Verifica alguns cadastros que costumam dar problema no FullWMS.
+	if _lContinua
+		// Busca o caminho do banco de dados do FullWMS
+		_sLinkSrv = U_LkServer ('FULLWMS_AX01')
+		if empty (_sLinkSrv)
+			u_help ("Impossivel enviar produto '" + _sProduto + "' para o FullWMS: nao consegui validar cadastros preliminares no Full por que nao ha definicao de linked server.",, .t.)
+			_lContinua = .F.
+		else
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := "SELECT REGIAO_ARMAZENAGEM, QTD_PALETE"
+			_oSQL:_sQuery += " FROM openquery (" + _sLinkSrv + ","
+			_oSQL:_sQuery += " 'select *"
+			_oSQL:_sQuery +=  " from V_WMS_DADOS_LOGISTICOS"
+			_oSQL:_sQuery += " where COD_ITEM = ''" + alltrim (_sProduto) + "''"
+			_oSQL:_sQuery += " ')"
+			_oSQL:Log ()
+			_aQryWMS = aclone (_oSQL:Qry2Array (.F., .F.))
+	//		u_log2 ('debug', _aQryWMS)
+			if len (_aQryWMS) == 0
+				u_help ("Impossivel enviar produto '" + _sProduto + "' para o FullWMS: Nao encontrei nenhum cadastro de dados logisticos para o item '" + alltrim (_sProduto) + "' no FullWMS.", _oSQL:_sQuery, .t.)
+				_lContinua = .F.
+			endif
+			if _lContinua .and. empty (_aQryWMS [1, 1])
+				u_help ("Impossivel enviar produto '" + _sProduto + "' para o FullWMS: Regiao de armazenagem nao informada para o item '" + alltrim (_sProduto) + "' no FullWMS.", _oSQL:_sQuery, .t.)
+				_lContinua = .F.
+			endif
+			if _lContinua .and. _aQryWMS [1, 2] < za1 -> za1_quant
+				u_help ("Impossivel enviar produto '" + _sProduto + "' para o FullWMS: Qtd.por pallet nos dados logisticos do FullWMS (" + cvaltochar (_aQryWMS [1, 2]) + "). Quantidade da etiqueta (" + cvaltochar (za1 -> za1_quant) + ") nao pode ser maior.", _oSQL:_sQuery, .t.)
+				_lContinua = .F.
+			endif
+		endif
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
+return _lContinua

@@ -164,6 +164,7 @@
 //                        de manutençao no AX 02. GLPI: 10379
 // 11/01/2022 - Robert  - Criada validacao campo C1_VANF
 // 07/03/2022 - Robert  - Melhorada validacao de etiq.jah apontada/estornada no campo D3_VAETIQ (antes olhava campo ZA1_APONT e agora faz query no SD3).
+// 25/03/2022 - Robert  - Validacoes do campo D3_VAETIQ passam a chamar a funcao U_ZA1PAp () - GLPI 11825
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -180,7 +181,7 @@ user function VA_VCpo (_sCampo)
 	local _oAviso    := NIL
 	local _aRetSQL   := {}
 	local _x         := 0
-	local _aApontEtq := {}
+//	local _aApontEtq := {}
 
 	// Verifica a melhor forma de obter o nome do campo a ser validado.
 	if _sCampo == NIL
@@ -979,6 +980,8 @@ user function VA_VCpo (_sCampo)
 			endif
 
 		case _sCampo == "M->D3_VAETIQ"
+			_lRet = U_ZA1PAp (M->D3_VAETIQ)
+			/*
 			za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP
 			if ! za1 -> (dbseek (xfilial ("ZA1") + m->d3_vaetiq, .F.))
 				u_help ("Etiqueta nao encontrada")
@@ -988,14 +991,6 @@ user function VA_VCpo (_sCampo)
 				u_help ("Etiqueta ainda nao impressa.")
 				_lRet = .f.
 			endif
-//			if _lRet .and. za1 -> za1_apont == 'S'
-//				u_help ("Essa etiqueta ja gerou apontamento de producao.")
-//				_lRet = .f.
-//			endif
-//			if _lRet .and. za1 -> za1_apont == 'E'
-//				U_help ("Essa etiqueta ja foi apontada e ESTORNADA. Gere nova etiqueta.")
-//				_lRet = .F.
-//			endif
 			if _lRet
 				_oSQL := ClsSQL():New ()
 				_oSQL:_sQuery := "SELECT SUM (CASE WHEN D3_ESTORNO != 'S' THEN 1 ELSE 0 END) AS APONTAM"
@@ -1016,7 +1011,7 @@ user function VA_VCpo (_sCampo)
 					_lRet = .F.
 				endif
 			endif
-
+*/
 
 		case _sCampo $ "M->DB_LOCALIZ/M->DB_QUANT" .and. funname () != 'MATA805' 
 			_aQuery := {}

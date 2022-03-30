@@ -235,7 +235,7 @@ static function _ConfParc (_lAjustar)
 		_oSQL:_sQuery +=    " and DOC = '000023832'"
 	endif
 
-				_oSQL:_sQuery +=    " and ASSOCIADO = '005567'"
+//				_oSQL:_sQuery +=    " and ASSOCIADO = '005567'"
 
 
 	_oSQL:_sQuery += " GROUP BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, GRUPO_PAGTO, DATA"
@@ -641,6 +641,7 @@ static function _ConfSZI ()
 	local _oCtaCorr  := NIL
 	local _nQtErros  := 0
 	local _nRegE2Mat := 0
+	local _sFornece  := ''
 
 	U_Log2 ('info', 'Iniciando ' + procname ())
 
@@ -668,7 +669,12 @@ static function _ConfSZI ()
 	(_sAliasQ) -> (dbgotop ())
 	do while ! (_sAliasQ) -> (eof ())
 		_sMsg = ''
-		U_Log2 ('info', 'Verificando titulo ' + (_sAliasQ) -> e2_num)
+		
+		// Gerar log a cada titulo fica bastante lento. Vou apenas gerar na troca de fornecedor.
+		if (_sAliasQ) -> e2_fornece != _sFornece
+			U_Log2 ('info', 'Verificando titulos do fornecedor ' + (_sAliasQ) -> e2_fornece)
+			_sFornece = (_sAliasQ) -> e2_fornece
+		endif
 
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := " SELECT R_E_C_N_O_ "

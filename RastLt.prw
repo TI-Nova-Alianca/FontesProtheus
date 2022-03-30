@@ -27,6 +27,7 @@
 // 02/03/2022 - Robert - Melhoria logs diversos.
 //                     - Aumentado nivel maximo de 10 para 11
 //                     - Aumentado tamanho maximo da string de retorno de 50000 para 60000 caracteres.
+// 29/03/2022 - Robert - Adicionado dbselectarea("SB1") no final (parece que muitas chamadas recursivas deixam sem ALIAS).
 //
 
 // --------------------------------------------------------------------------
@@ -360,8 +361,8 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 													   _nQtProp, ;  // Quantidade proporcional a quantidade original vendida na NF
 													   _sFilial, ;  // Filial onde foi recebida a carga
 													   _aCarga [1, 6]})  // Safra referente a carga
-									U_Log2 ('debug', '[' + procname () + ']_aLtXLS58 ficou assim:')
-									U_Log2 ('debug', _aLtXLS58)
+							//		U_Log2 ('debug', '[' + procname () + ']_aLtXLS58 ficou assim:')
+							//		U_Log2 ('debug', _aLtXLS58)
 								endif
 							endif
 						endif
@@ -645,6 +646,9 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 		endif
 	endif
 */
+
+	// Com tantas chamadas recursivas, parece que chega um momento em que fico sem ALIAS() e tenho problemas com funcoes como FBuscaCpo().
+	dbselectarea ("SB1")
 
 	U_Log2 ('info', 'Finalizando ' + _sFilial + _sProduto + _sLote + ' nivel ' + cvaltochar (_nNivel))
 return _sRet

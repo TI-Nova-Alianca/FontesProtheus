@@ -23,6 +23,7 @@
 // 18/02/2018 - Robert - Trazia deb/cred invertido quando TM=15 e transf.saldo para outra filial
 // 20/04/2018 - Robert - Melhora performance: substituido [SZI.ZI_SEQ = SUBSTRING (SE5.E5_VACHVEX, 12, 6)] por [SE5.E5_VACHVEX  = 'SZI' + ZI_ASSOC + ZI_LOJASSO + ZI_SEQ] na query.
 // 29/03/2021 - Robert - Buscava '' para simular E5_PARCELA por que nao tinha esse campo no SZI. Agora existe.
+// 28/03/2022 - Robert - Eliminada funcionalidade de conversao para TXT (em alguns casos 'perdia' o relatorio).
 //
 
 // Tags para automatizar catalogo de customizacoes:
@@ -114,9 +115,7 @@ user function SZI_Rel (_lAutomat, _nOrdem)
 	DbCommitAll ()
 
 	// Se era execucao via rotina automatica, converte o relatorio para TXT.
-	if _lAuto
-		U_ML_R2T (__reldir + wnrel + ".##r", __reldir + wnrel + ".txt")
-	else
+	if !_lAuto
 		If aReturn [5] == 1
 			ourspool(wnrel)
 		Endif

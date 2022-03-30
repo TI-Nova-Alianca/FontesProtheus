@@ -4,6 +4,7 @@
 // Descricao:  Relatorio controle selos de IPI 
 //
 // Historico de alteracoes:
+// 28/03/2022 - Robert - Eliminada funcionalidade de conversao para TXT (em alguns casos 'perdia' o relatorio).
 //
 
 // --------------------------------------------------------------------------
@@ -78,12 +79,7 @@ user function _MATR909 (_lAutomat)
 	DbCommitAll ()
 
 	// Se era execucao via rotina automatica, converte o relatorio para TXT.
-	if _lAuto
-		_sErroConv = U_ML_R2T (__reldir + wnrel + ".##r", __reldir + wnrel + ".txt")
-		if ! empty (_sErroConv)
-			u_help (_sErroConv)
-		endif
-	else
+	if ! _lAuto
 		If aReturn [5] == 1
 			ourspool(wnrel)
 		Endif
