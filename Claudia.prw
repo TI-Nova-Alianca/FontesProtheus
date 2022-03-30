@@ -9,6 +9,14 @@ User Function claudia ()
 
 	u_help("Nada para executar")
 
+	//u_help("BatFunAssoc")
+	//U_BatFunAssoc()
+
+	//u_help("BatTrbAss")
+	//U_BatTrbAss()
+
+
+
 	//u_help("associados")
 	//U_BatFunAssoc()
 	//u_help("Executa Margens")
