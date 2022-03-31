@@ -53,6 +53,7 @@
 // 22/11/2021 - Robert - Verifica se tem campos B1_VAFULLW e B1_CODBAR antes de gerar etiquetas por OP.
 // 24/01/2022 - Robert - Vamos usar etiquetas no AX02, mesmo sem integracao com FullWMS (GLPI 11515).
 //                     - Funcao EtqPllGN (interna) migrada para fonte externo ZA1GN.
+// 31/03/2022 - Sandra - Comentariado campo ZA1_HORA GLPI 11862
 //
 
 #include "rwmake.ch"
@@ -362,7 +363,7 @@ User Function IncEtqPll(_sCodPro, _sNumOP, _nQtd, _sFornece, _sLoja, _sNF, _sSer
 	za1 -> za1_lojaf  = _sLoja
 	za1 -> za1_seq    = _nSeqEtq
 	za1 -> za1_usrinc = cUserName
-	za1 -> za1_hora   = left (time (), 5)
+	//za1 -> za1_hora   = left (time (), 5)
 	za1 -> za1_idZAG  = _sIdZAG 
 	msunlock()
 	u_log2 ('info', 'Etiqueta ' + za1 -> za1_codigo + ' gravada. Produto: ' + alltrim (za1 -> za1_prod) + ' OP: ' + alltrim (za1 -> za1_op))
