@@ -110,4 +110,4 @@ User Function BatVenFun()
 
 	U_ML_SRArea (_aAreaAnt)
 	_sArqLog = _sArqLog2
-Return 
+Return .T.
