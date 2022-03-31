@@ -109,7 +109,7 @@ User Function BatTrbAss()
 
                 _oEvento := ClsEvent():New ()
                 _oEvento:Alias   = 'SA1'
-                _oEvento:Texto   = "Alteração no campo <A1_GRPTRIB> de " + _sGrpTribOld + " para " + _sGrpTrib
+                _oEvento:Texto   = "Alteracao no campo <A1_GRPTRIB> de " + _sGrpTribOld + " para " + _sGrpTrib
                 _oEvento:CodEven = "SA1006"
                 _oEvento:Cliente = alltrim(_aCliente[_x,1])
                 _oEvento:LojaCli = alltrim(_aCliente[_x,2])

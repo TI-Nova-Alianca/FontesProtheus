@@ -7,7 +7,7 @@ User Function claudia ()
 		return
 	endif
 
-	u_help("Nada para executar")
+	//u_help("Nada para executar")
 
 	//u_help("BatFunAssoc")
 	//U_BatFunAssoc()
