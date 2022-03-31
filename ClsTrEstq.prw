@@ -478,6 +478,7 @@ return
 METHOD Grava () Class ClsTrEstq
 	local _lContinua := .T.
 	local _lRet      := .F.
+	local _sMsgLog   := ''
 
 //	u_logIni (GetClassName (::Self) + '.' + procname ())
 	if ::RegZAG != 0
@@ -666,7 +667,24 @@ METHOD Grava () Class ClsTrEstq
 	
 	if _lContinua
 		::Docto = GetSXENum ("ZAG", "ZAG_DOC")
-		u_log2 ('info', "Gravando ZAG_DOC " + ::Docto + ' Prd.orig: ' + ::ProdOrig + ' ' + ::AlmOrig + '->' + ::AlmDest + ' Qt: ' + cvaltochar (::QtdSolic))
+
+		// Prepara mensagem bem 'cuti-cuti' para arquivo de log.
+		_sMsgLog := ''
+		_sMsgLog += '[' + GetClassName (::Self) + '.' + procname () + "]Gravando ZAG_DOC:" + ::Docto
+		_sMsgLog += " Prd:" + alltrim (::ProdOrig)
+		if ::ProdDest != ::ProdOrig
+			_sMsgLog += '->' + alltrim (::ProdDest)
+		endif
+		_sMsgLog += " ax:" + ::AlmOrig + '->' + ::AlmDest
+		if ! empty (::EndOrig) .or. ! empty (::EndDest)
+			_sMsgLog += " end:" + ::EndOrig + '->' + ::EndDest
+		endif
+		if ! empty (::LoteOrig) .or. ! empty (::LoteDest)
+			_sMsgLog += " lote:" + ::LoteOrig + '->' + ::LoteDest
+		endif
+		_sMsgLog += " Qt:" + cvaltochar (::QtdSolic)
+		u_log2 ('info', _sMsgLog)
+
 		reclock ("ZAG", .T.)
 		zag -> zag_filial = xfilial ("ZAG")
 		zag -> zag_FilOri = ::FilOrig

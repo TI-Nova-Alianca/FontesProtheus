@@ -31,6 +31,7 @@
 //                      - Removido tratamento por empresa (campo ZZU_EMP).
 // 05/10/2020 - Cláudia - Incluida variavel na função zzuvl para emitir/não emitir a mensagem de aviso.
 // 17/01/2021 - Robert  - Eliminadas algumas linhas comentariadas.
+// 31/03/2022 - Robert  - Melhoria logs.
 //
 
 // -------------------------------------------------------------------------------------------------------
@@ -321,6 +322,10 @@ user function ZZUVL (_sGrupoZZU, _sUser, _lComTela)  //, _sEmp, _sFil, _sTipos)
 				_oBatch:Mensagens += _sMsg
 			endif
 		endif
+	endif
+
+	if ! _lRet
+		U_Log2 ('aviso', '[' + procname () + ']Retornando ' + cvaltochar (_lRet) + ' para grupoZZU=' + _sGrupoZZU + ' e usr=' + _sUser)
 	endif
 
 	U_ML_SRArea (_aAreaAnt)

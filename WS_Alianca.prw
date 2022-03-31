@@ -86,6 +86,7 @@
 // 02/03/2022 - Robert  - Criada acao EntregaFaturamento (GLPI 11698).
 // 18/03/2022 - Robert  - Migradas consultas de fech.safra e cota capital da classe WS_NAMob para ca.
 // 21/03/2022 - Robert  - Novos parametros chamada metodo fechamento safra.
+// 31/03/2022 - Robert  - Nao usa mais data nos nomes do arquivos de log.
 //
 
 // --------------------------------------------------------------------------------------------------------
@@ -125,7 +126,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	private _sErroWS  := ""
 	private _sMsgRetWS := ""
 	private _sAcao     := ""
-	private _sArqLog   := GetClassName (::Self) + "_" + dtos (date ()) + ".log"
+//	private _sArqLog   := GetClassName (::Self) + "_" + dtos (date ()) + ".log"
+	private _sArqLog   := GetClassName (::Self) + ".log"
 
 	//WSDLDbgLevel(2)  // Ativa dados para debug no arquivo console.log
 	set century on
@@ -165,7 +167,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	if empty (_sErroWS)
 		//u_log ('vou mudar arqlog com cUserName=', cusername)
 		_sArqLgOld = _sArqLog
-		_sArqLog2 = 'WS_Alianca_' + alltrim (cUserName) + "_" + dtos (date ()) + ".log"
+	//	_sArqLog2 = 'WS_Alianca_' + alltrim (cUserName) + "_" + dtos (date ()) + ".log"
+		_sArqLog2 = 'WS_Alianca_' + alltrim (cUserName) + ".log"
 		u_log2 ('info', 'Log da thread ' + cValToChar (ThreadID ()) + ' prossegue em outro arquivo: ' + _sArqLog2)
 		_sArqLog = _sArqLog2
 		u_log2 ('info', '')

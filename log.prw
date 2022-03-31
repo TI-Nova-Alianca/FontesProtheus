@@ -57,6 +57,7 @@
 // 04/08/2021 - Robert  - Nao trazia o descritivo das perguntas no LogSX1().
 // 08/09/2021 - Robert  - Nao trazia o significado de respostas tipo combo no LogSX1().
 // 06/12/2021 - Robert  - LogPCham() passa a usar U_Log2() para gravar os dados.
+// 30/03/2022 - Robert  - LogObj() passa a usar U_Log2() para gravar os dados.
 //
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -716,10 +717,10 @@ user function LogObj (_oObj)
 	local _nDet     := 0
 	local _sRet     := ''
 
-	u_log ('')
-	u_log ("Dados da classe " + GetClassName (_oObj) + ':')
-	u_log (ClassDataArr (_oObj))
-	u_log ("Metodos da classe " + GetClassName (_oObj) + ':')
+	u_log2 ('debug', '')
+	u_log2 ('debug', "Dados da classe " + GetClassName (_oObj) + ':')
+	u_log2 ('debug', ClassDataArr (_oObj))
+	u_log2 ('debug', "Metodos da classe " + GetClassName (_oObj) + ':')
 
 	for _nMetodo = 1 to len (_aMetodos)
 		_aDet = aclone (ClassMethArr(_oObj)[_nMetodo])
@@ -728,7 +729,7 @@ user function LogObj (_oObj)
 			_sRet += alltrim (_aDet [2, _nDet]) + iif (_nDet < len (_aDet [2]), ', ', ')')
 		next
 		_sRet += iif (len (_aDet [2]) == 0, ')', '')
-		u_log (_sRet)
+		u_log2 ('debug', _sRet)
 		_sRet = ''
 	next
 return _sRet
@@ -753,7 +754,7 @@ user function LogQry (_sQry)
 			_sRet = substr (_sRet, 1, _nPos2) + chr (13) + chr (10) + substr (_sRet, _nPos2)
 		enddo
 	next
-	u_log (_sRet)
+	u_log2 ('debug', _sRet)
 return _sRet
 //
 // --------------------------------------------------------------------------
