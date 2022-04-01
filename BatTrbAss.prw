@@ -1,5 +1,5 @@
 // Programa...: BatTrbAss
-// Autor......: Cláudia Lionço
+// Autor......: Claudia Lion�o
 // Data.......: 30/03/2022
 // Descricao..: Bat para regra de tributação de associados
 //
@@ -117,4 +117,4 @@ User Function BatTrbAss()
             EndIf
         EndIf
     Next
-Return
+Return .T.

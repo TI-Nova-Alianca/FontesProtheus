@@ -56,6 +56,14 @@ User Function BatLojCGC()
                 SL1->L1_CGCCLI := _aCli[_x, 5]
             SL1->(MsUnlock())
             u_log("Ajustado cupom:" + _aCli[_x, 2] +" Cliente:" + _aCli[_x, 3] +"-"+ alltrim(_aCli[_x, 6]) + "CGC:" + _aCli[_x, 5])
+            
+            _oEvento := ClsEvent():New ()
+            _oEvento:Alias   = 'SL1'
+            _oEvento:Texto   = "Alt.Cupom:"+_aCli[_x, 2] + " CGC:" + _aCli[_x, 5]
+            _oEvento:CodEven = "AI0002"
+            _oEvento:Cliente = _aCli[_x, 3]
+            _oEvento:LojaCli = '01'
+            _oEvento:Grava()
         EndIf
     Next
-Return
+Return .T.

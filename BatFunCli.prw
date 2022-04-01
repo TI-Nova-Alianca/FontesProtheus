@@ -85,6 +85,14 @@ User Function BatFunCli()
                                     AI0->(MsUnlock())
 
                                     u_log ("ALTERACAO - Cliente " + _sCodCli+"/"+_sLoja + " alterado para funcionario! CPF:" + _sCPF)
+
+                                    _oEvento := ClsEvent():New ()
+                                    _oEvento:Alias   = 'AI0'
+                                    _oEvento:Texto   = "Alteracao no campo <AI0_CLIFUN> para 1 (funcionario) "
+                                    _oEvento:CodEven = "AI0002"
+                                    _oEvento:Cliente = _sCodCli
+                                    _oEvento:LojaCli = _sLoja
+                                    _oEvento:Grava()
                                 EndIf
                             Case _sSituacao != '1' .and. _sCliFun == '1' // usuário nao ativo e cliente funcionario
                                 If dbSeek(xFilial("AI0") + _sCodCli + _sLoja )  
@@ -93,6 +101,14 @@ User Function BatFunCli()
                                     AI0->(MsUnlock())
 
                                     u_log ("ALTERACAO - Cliente " + _sCodCli+"/"+_sLoja + " não eh mais funcionario! CPF:" + _sCPF)
+
+                                    _oEvento := ClsEvent():New ()
+                                    _oEvento:Alias   = 'AI0'
+                                    _oEvento:Texto   = "Alteracao no campo <AI0_CLIFUN> para 2 (nao e funcionario)"
+                                    _oEvento:CodEven = "AI0002"
+                                    _oEvento:Cliente = _sCodCli
+                                    _oEvento:LojaCli = _sLoja
+                                    _oEvento:Grava()
                                 EndIf
                         EndCase
                     EndIf
@@ -121,4 +137,4 @@ User Function BatFunCli()
         Next
     Next
     u_logFim ()
-Return
+Return .T.
