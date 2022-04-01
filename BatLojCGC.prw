@@ -38,7 +38,7 @@ User Function BatLojCGC()
     _oSQL:_sQuery += " 		AND SA1.A1_COD = SL1.L1_CLIENTE "
     _oSQL:_sQuery += " 		AND SA1.A1_LOJA = SL1.L1_LOJA "
     _oSQL:_sQuery += " WHERE SL1.D_E_L_E_T_ = '' "
-    _oSQL:_sQuery += " AND SL1.L1_EMISSAO BETWEEN '" + _dDtaIni + "' AND '" + dtos(_dDtaFin) + "'"
+    _oSQL:_sQuery += " AND SL1.L1_EMISSAO BETWEEN '" + dtos(_dDtaIni) + "' AND '" + dtos(_dDtaFin) + "'"
     _oSQL:_sQuery += " AND SL1.L1_CLIENTE <> '000000' "
     _oSQL:_sQuery += " AND (SL1.L1_VACGC = '' "
     _oSQL:_sQuery += " OR SL1.L1_CGCCLI = '') "

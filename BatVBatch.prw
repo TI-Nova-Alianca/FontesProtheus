@@ -23,6 +23,9 @@ User Function BatVBatch()
     Local _sMsg   := ""
     Local _sMsg1  := ""
 
+    u_logIni ()
+	u_log ("Iniciando BatPessoas em", date (), time ())
+
     // Executados
     _oSQL:= ClsSQL ():New ()
     _oSQL:_sQuery := ""
@@ -31,8 +34,9 @@ User Function BatVBatch()
     _oSQL:_sQuery += "    ,HORA "
     _oSQL:_sQuery += "    ,DESCRITIVO "
     _oSQL:_sQuery += " FROM VA_VEVENTOS "
-    _oSQL:_sQuery += " WHERE DATA = '" + dtos(date()-1) + "' "
+    _oSQL:_sQuery += " WHERE DATA = '" + dtos(date()) + "' "
     _oSQL:_sQuery += " AND CODEVENTO in ('BAT001') "
+    u_log(_oSQL:_sQuery)
     _aDados := aclone (_oSQL:Qry2Array ()) 
 
     For _x:=1 to Len(_aDados)

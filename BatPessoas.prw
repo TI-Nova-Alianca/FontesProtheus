@@ -73,19 +73,7 @@ User Function BatPessoas()
         _GravaLog(_sMsg, "BAT002")
     EndIf
 
-    // Bat para gravação de CPF de clientes em cupons do PDV
-    _lRet := U_BatLojCGC() 
-    If _lRet
-        _sMsg := "BatLojCGC executado com sucesso!"
-        u_log(_sMsg)
-        _GravaLog(_sMsg, "BAT001")    
-    else
-        _sMsg := "ERRO: BatLojCGC não executado!"
-        u_log(_sMsg)
-        _GravaLog(_sMsg, "BAT002")
-    EndIf
-
-    // Verificações de vendas para funcionários enviados para RH  
+   // Verificações de vendas para funcionários enviados para RH  
     _lExecuta := .F.
     _nDiaSem  := DOW(DATE()) // Retorna o número (entre 0 e 7) do dia da semana. Sendo, Domingo=1 e Sábado=7
     _nData    := Day(Date())
@@ -110,6 +98,18 @@ User Function BatPessoas()
             u_log(_sMsg)
             _GravaLog(_sMsg, "BAT002")
         EndIf
+    EndIf
+    
+    // Bat para gravação de CPF de clientes em cupons do PDV
+    _lRet := U_BatLojCGC() 
+    If _lRet
+        _sMsg := "BatLojCGC executado com sucesso!"
+        u_log(_sMsg)
+        _GravaLog(_sMsg, "BAT001")    
+    else
+        _sMsg := "ERRO: BatLojCGC não executado!"
+        u_log(_sMsg)
+        _GravaLog(_sMsg, "BAT002")
     EndIf
 Return
 //
