@@ -95,6 +95,7 @@
 // 08/12/2021 - Robert - Validacoes para gravacao de TM=33 (GLPI 
 // 19/01/2022 - Robert - Nao inicializava atributo ::Safra quando chamado via tela de manutencao da conta corrente.
 // 23/02/2022 - Robert - Ordenados por tipo de movimento alguns blocos de codigo no metodo PodeIncl().
+// 01/04/2022 - Robert - Ajuste teste se associado jah possui lcto restituicao FUNRURAL.
 //
 
 // ------------------------------------------------------------------------------------
@@ -1980,7 +1981,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 			_oSQL:_sQuery +=   " AND ZI_TM      = '33'"
 			_oSQL:_sQuery +=   " AND ZI_SAFRA   = '" + ::Safra + "'"
 			_oSQL:Log ()
-			if U_RetSQL (_sQuery) > 0
+			if _oSQL:RetQry (1, .f.) > 0
 				::UltMsg += "Ja' existe movimento de restituicao de FUNRURAL para o associado '" + ::Assoc + '/' + ::Loja + "' referente safra '" + ::Safra + "'."
 				_lContinua = .F.
 			endif
