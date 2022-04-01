@@ -1604,7 +1604,7 @@ static function _Modelo3 (_lSohCompr)
 		else
 			_sXmlFech = _oAssoc:FechSafra (mv_par01, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .f.,        .t.,      .t.,      .t.)
 		endif
-		u_log2 ('debug', _sXmlFech)
+		//u_log2 ('debug', _sXmlFech)
 		if empty (_sXmlFech)
 			u_help ("Associado ", _aAssoc [_nAssoc, 1] + '/' + _aAssoc [_nAssoc, 2] + ": Retorno vazio metodo FechSafra " + _oAssoc:UltMsg,, .t.)
 			loop
@@ -1662,10 +1662,9 @@ static function _Modelo3 (_lSohCompr)
 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem') 
 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 nota/fatura + 1 linha de totais)
 			If li > _nMaxLin - 4
-		IF m_pag >1
-			_roda()
-		endif
-
+				IF m_pag >1
+					_roda()
+				endif
 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 			Endif
 			@li, 0 PSAY 'Resumo pagamento:      Mes/ano                 Valor             Saldo  Obs.'
@@ -1674,6 +1673,7 @@ static function _Modelo3 (_lSohCompr)
 			// de totais que vem no XML por que vou agrupar as faturas por mes.
 			_aResPag = {}
 			for _nFatPag = 1 to len (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem)
+				//U_Log2 ('debug', '[' + procname () + ']Verificando linha ' + cvaltochar (_nFatPag) + ' do XML. DOC = ' + _oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_doc:TEXT)
 				if _oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_doc:TEXT != 'TOTAIS'
 					_sMesPagto = substr (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_vencto:TEXT, 4)
 					_nResPag = ascan (_aResPag, {|_aVal| _aVal [1] == _sMesPagto})

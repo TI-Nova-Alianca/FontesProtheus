@@ -106,6 +106,7 @@
 // 20/02/2022 - Robert  - Variavel _sErros (publica do web service) renomeada para _sErroWS
 // 27/02/2022 - Robert  - Passa a trazer historico do titulo na previsao de pagamentos no metodo FechSafr() - GLPI 11678.
 //                      - Passa a usar o camp E2_VASAFRA (acima de 2021) na previsao de pagamentos no metodo FechSafr() - GLPI 11678.
+// 31/03/2022 - Robert  - Nao busca mais premiacao safra 2021 em separado (agora tem o campo E2_VASAFRA preenchido).
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -1167,19 +1168,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 		// Por exemplo quando parte foi compensada e apenas o saldo restante virou fatura.
 		// Ex.: título 000021485/30 -D do fornecedor 000643. Foi compensado R$ 3.066,09 e o saldo (R$ 1028,71) foi gerada a fatura 202000051.
 		// Devo descontar do valor do titulo somente a parte que foi consumida na geracao da fatura.
-//		_oSQL:_sQuery += " E2_VALOR - ISNULL ((SELECT SUM (FK2_VALOR)"
-//		_oSQL:_sQuery +=                       " FROM " + RetSQLName ("FK7") + " FK7, "
-//		_oSQL:_sQuery +=                                  RetSQLName ("FK2") + " FK2 "
-//		_oSQL:_sQuery +=                            " WHERE FK7.D_E_L_E_T_ = '' AND FK7.FK7_FILIAL = SE2.E2_FILIAL AND FK7.FK7_ALIAS = 'SE2' AND FK7.FK7_CHAVE = SE2.E2_FILIAL + '|' + SE2.E2_PREFIXO + '|' + SE2.E2_NUM + '|' + SE2.E2_PARCELA + '|' + SE2.E2_TIPO + '|' + SE2.E2_FORNECE + '|' + SE2.E2_LOJA"
-//		_oSQL:_sQuery +=                              " AND FK2.D_E_L_E_T_ = ''"
-//		_oSQL:_sQuery +=                              " AND FK2.FK2_FILIAL = FK7.FK7_FILIAL"
-//		_oSQL:_sQuery +=                              " AND FK2.FK2_IDDOC  = FK7.FK7_IDDOC"
-//		_oSQL:_sQuery +=                              " AND FK2.FK2_MOTBX  = 'FAT'"
-//		_oSQL:_sQuery +=                              " AND FK2.FK2_TPDOC != 'ES'"  // ES=Movimento de estorno
-//		_oSQL:_sQuery +=                              " AND dbo.VA_FESTORNADO_FK2 (FK2.FK2_FILIAL, FK2.FK2_IDFK2) = 0"
-//		_oSQL:_sQuery +=                        "), 0) AS E2_VALOR, "
 		_oSQL:_sQuery += " E2_VALOR - dbo.VA_FSE2_CONSUMIDO_EM_FATURA (SE2.R_E_C_N_O_, 'z') AS E2_VALOR,
-
 		_oSQL:_sQuery +=       " E2_SALDO, "
 		_oSQL:_sQuery +=       " RTRIM (E2_HIST)"
 		_oSQL:_sQuery +=       " + CASE WHEN SE2.E2_FATURA != ''"
@@ -1195,7 +1184,6 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 		_oSQL:_sQuery +=                                    ") + ')'"
 		_oSQL:_sQuery +=              " ELSE ''"
 		_oSQL:_sQuery +=              " END AS E2_HIST"
-   
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE2") + " SE2 "
 		_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND E2_FILIAL  = '01'"  // Pagamentos sao feitos sempre pela matriz.
@@ -1225,7 +1213,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 		// Somar o premios de qualidade que foram gerados e pagos noas anos seguintes
 		// Safra 2020: GLPI 9530 e 9415
 		// Safra 2021: GLPI 11661
-		if _sSafra == '2020' .or. _sSafra == '2021'
+		if _sSafra == '2020' //.or. _sSafra == '2021'
 			_oSQL:_sQuery += " UNION ALL"
 			_oSQL:_sQuery += " SELECT E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VENCTO, E2_VALOR, E2_SALDO, E2_HIST"
 			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2 "
@@ -1236,9 +1224,9 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 			if _sSafra == '2020'
 				_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO like '202102%'"
 				_oSQL:_sQuery +=    " AND SE2.E2_VENCREA like '202102%'"
-			elseif _sSafra == '2021'
-				_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO = '20220223'"
-				_oSQL:_sQuery +=    " AND SE2.E2_VENCREA like '202202%'"
+			//elseif _sSafra == '2021'
+			//	_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO = '20220223'"
+			//	_oSQL:_sQuery +=    " AND SE2.E2_VENCREA like '202202%'"
 			endif
 			_oSQL:_sQuery +=    " AND SE2.E2_FORNECE = '" + ::Codigo + "'"
 			_oSQL:_sQuery +=    " AND SE2.E2_LOJA    = '" + ::Loja + "'"
