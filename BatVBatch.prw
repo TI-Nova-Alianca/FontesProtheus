@@ -40,7 +40,7 @@ User Function BatVBatch()
     _aDados := aclone (_oSQL:Qry2Array ()) 
 
     For _x:=1 to Len(_aDados)
-        _sMsg1 += "EXEC "+ _aDados[_x, 1] + " " + _aDados[_x,2] + " "+ _aDados[_x,3]  + chr (13) + chr (10) 
+        _sMsg1 += "<br>EXEC "+ dtoc(stod(_aDados[_x, 1])) + " " + _aDados[_x,2] + "</br>"+ _aDados[_x,3]  + chr (13) + chr (10) 
     Next
 
     // Erros
@@ -51,26 +51,22 @@ User Function BatVBatch()
     _oSQL:_sQuery += "    ,HORA "
     _oSQL:_sQuery += "    ,DESCRITIVO "
     _oSQL:_sQuery += " FROM VA_VEVENTOS "
-    _oSQL:_sQuery += " WHERE DATA = '" + dtos(date()-1) + "' "
+    _oSQL:_sQuery += " WHERE DATA = '" + dtos(date()) + "' "
     _oSQL:_sQuery += " AND CODEVENTO in ('BAT002') "
     _aDados := aclone (_oSQL:Qry2Array ()) 
 
     For _x:=1 to Len(_aDados)
-        _sMsg1 += " ERRO " + _aDados[_x, 1] + " " + _aDados[_x,2] + " "+ _aDados[_x,3]  + chr (13) + chr (10) 
+        _sMsg1 += "<br>ERRO " + dtoc(stod(_aDados[_x, 1])) + " " + _aDados[_x,2] + "</br>"+ _aDados[_x,3]  + chr (13) + chr (10) 
     Next
 
-    If Len(_aDados) > 0
-        // Mensagem para e-mail
-        _sMsg := "Batchs. Data de verificação:" + dtoc(date()-1) + chr (13) + chr (10) 
-        _sMsg += " " + chr (13) + chr (10) 
-        _sMsg += _sMsg1 + chr (13) + chr (10) 
+    // Mensagem para e-mail
+    _sMsg := "DATA DE VERIFICAÇÃO:" + dtoc(date()) + chr (13) + chr (10) 
+    _sMsg += "<br></br>"
+    _sMsg += _sMsg1 + chr (13) + chr (10) 
 
-        _oBatch:Mensagens += _sMsg
+    _oBatch:Mensagens += _sMsg
 
-        If type ("oMainWnd") == "O"  
-            u_help (_sMsg)
-        Else
-            U_ZZUNU ({'135'}, "Verificações Batchs " + cFilAnt, _sMsg)
-        EndIf
-    EndIf
+    U_ZZUNU ({'135'}, "Verificações Batchs", _sMsg, .F., cEmpAnt, cFilAnt, "")
+    u_log("Enviado e-mail para grupo 135")
+
 Return
