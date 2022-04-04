@@ -36,6 +36,7 @@ User Function BatVBatch()
     _oSQL:_sQuery += " FROM VA_VEVENTOS "
     _oSQL:_sQuery += " WHERE DATA = '" + dtos(date()) + "' "
     _oSQL:_sQuery += " AND CODEVENTO in ('BAT001') "
+    _oSQL:_sQuery += " ORDER BY DATA, HORA "
     u_log(_oSQL:_sQuery)
     _aDados := aclone (_oSQL:Qry2Array ()) 
 
@@ -53,6 +54,7 @@ User Function BatVBatch()
     _oSQL:_sQuery += " FROM VA_VEVENTOS "
     _oSQL:_sQuery += " WHERE DATA = '" + dtos(date()) + "' "
     _oSQL:_sQuery += " AND CODEVENTO in ('BAT002') "
+    _oSQL:_sQuery += " ORDER BY DATA, HORA "
     _aDados := aclone (_oSQL:Qry2Array ()) 
 
     For _x:=1 to Len(_aDados)
