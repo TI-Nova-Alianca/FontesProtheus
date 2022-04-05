@@ -164,7 +164,7 @@
 //                        de manutençao no AX 02. GLPI: 10379
 // 11/01/2022 - Robert  - Criada validacao campo C1_VANF
 // 07/03/2022 - Robert  - Melhorada validacao de etiq.jah apontada/estornada no campo D3_VAETIQ (antes olhava campo ZA1_APONT e agora faz query no SD3).
-// 25/03/2022 - Robert  - Validacoes do campo D3_VAETIQ passam a chamar a funcao U_ZA1PAp () - GLPI 11825
+// 25/03/2022 - Robert  - Validacoes adicionais do campos C2_PRODUTO e D3_VAETIQ - GLPI 11825.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -492,6 +492,12 @@ user function VA_VCpo (_sCampo)
 				if fBuscaCpo ("SB1", 1, xfilial ("SB1") + m->c2_produto, 'B1_GRUPO') == '3001'
 					u_help ('Itens do grupo de reprocesso nao devem ser produzidos por OP. Somente por transferencia')  // GLPI 5690
 					_lRet = .F.
+				endif
+				if _lRet .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + m->c2_produto, 'B1_VAFULLW') == 'S'
+					if ! U_SB1PEF (m->c2_produto)
+						u_help ('Produto foi configurado para integrar com FullWMS no campo B1_VAFULLW (' + alltrim (RetTitle ("B1_VAFULLW")) + '), mas ainda falta algum cadastro para poder enviar as etiquetas para o FullWMS.',, .t.)
+						_lRet = .F.
+					endif
 				endif
 			endif
 
@@ -980,17 +986,16 @@ user function VA_VCpo (_sCampo)
 			endif
 
 		case _sCampo == "M->D3_VAETIQ"
-			_lRet = U_ZA1PAp (M->D3_VAETIQ)
-			/*
 			za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP
 			if ! za1 -> (dbseek (xfilial ("ZA1") + m->d3_vaetiq, .F.))
-				u_help ("Etiqueta nao encontrada")
+				u_help ("Etiqueta nao encontrada.")
 				_lRet = .F.
 			endif
 			if _lRet .and. za1 -> za1_impres != 'S'
 				u_help ("Etiqueta ainda nao impressa.")
 				_lRet = .f.
 			endif
+/* O resto das validacoes foi para o programa ZA1PAP()
 			if _lRet
 				_oSQL := ClsSQL():New ()
 				_oSQL:_sQuery := "SELECT SUM (CASE WHEN D3_ESTORNO != 'S' THEN 1 ELSE 0 END) AS APONTAM"

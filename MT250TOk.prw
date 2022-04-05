@@ -30,7 +30,7 @@
 // 07/07/2021 - Robert - Validacao do campo D3_VADTPRD passa a aceitar ateh D+4 (GLPI 10430).
 // 13/07/2021 - Robert - Eliminadas perguntas simples e melhorados helps para execucao via web service (GLPI 10479)
 // 06/12/2021 - Robert - Valida se o empenho jah foi enderecado (para evitar que o sistema requisite de onde quiser). GLPI 11076
-// 27/03/2022 - Robert - Verificacao de etiquetas passada para funcao externa (GLPI 11825).
+// 27/03/2022 - Robert - Verificacao de etiquetas passada para classe ClsEtiq() - GLPI 11825.
 //
 
 // --------------------------------------------------------------------------
@@ -84,8 +84,8 @@ user function mt250tok ()
 
 	// Verifica consistencia com etiquetas, quando usadas.
 	if _lRet .and. ! empty (m->d3_vaetiq)
-		//_lRet = _VerEtiq ()
-		_lRet = U_ZA1PAp (m->d3_vaetiq, m->d3_op, m->d3_cod, m->d3_quant, m->d3_perda, m->d3_parctot)
+		_lRet = _VerEtiq ()
+//		_lRet = U_ZA1PAp (m->d3_vaetiq, m->d3_op, m->d3_cod, m->d3_quant, m->d3_perda, m->d3_parctot)
 	endif
 	
 	// Integracao com Fullsoft
@@ -107,37 +107,42 @@ user function mt250tok ()
 return _lRet
 
 
-/* Passado para u_ZA1PAp()
 // --------------------------------------------------------------------------
 // Consiste dados da etiqueta, quando informada.
 static function _VerEtiq ()
-	local _lRet     := .T.
+	local _lRet  := .T.
+	local _oEtiq := NIL
 
 	if ! empty (m->d3_vaetiq)
-		za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP
-		if ! za1 -> (dbseek (xfilial ("ZA1") + m->d3_vaetiq, .F.))
-			u_help ("Etiqueta '" + m->d3_vaetiq + "' nao localizada.",, .t.)
-			_lRet = .F.
-		endif
-		if _lRet .and. (m->d3_quant + m->d3_perda) != za1 -> za1_quant
-			u_help ("Quantidade produzida + perdida nao pode ser diferente da quantidade da etiqueta.",, .t.)
-			_lRet = .F.
-		endif
-		if _lRet .and. m->d3_op != za1 -> za1_op
-			u_help ("O.P. informada (" + m->d3_op + ") nao pode ser diferente da O.P. relacionada com a etiqueta (" + za1 -> za1_op + ").",, .t.)
-			_lRet = .F.
-		endif
-		if _lRet .and. m->d3_cod != za1 -> za1_prod
-			u_help ("Produto nao pode ser diferente do produto da etiqueta (" + za1 -> za1_prod + ").",, .t.)
-			_lRet = .F.
-		endif
+//		za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP
+//		if ! za1 -> (dbseek (xfilial ("ZA1") + m->d3_vaetiq, .F.))
+//			u_help ("Etiqueta '" + m->d3_vaetiq + "' nao localizada.",, .t.)
+//			_lRet = .F.
+//		endif
+//		if _lRet .and. (m->d3_quant + m->d3_perda) != za1 -> za1_quant
+//			u_help ("Quantidade produzida + perdida nao pode ser diferente da quantidade da etiqueta.",, .t.)
+//			_lRet = .F.
+//		endif
 		if _lRet .and. m->d3_parctot != 'P'
 			u_help ("Quando informada etiqueta, a producao deve ser sempre 'Parcial'. Para encerrar a OP use opcao 'Encerrar'.",, .t.)
 			_lRet = .F.
 		endif
+		if _lRet
+			_oEtiq := ClsEtiq ():New (m->d3_vaetiq)
+			if _lRet .and. m->d3_op != _oEtiq:OP
+				u_help ("O.P. informada (" + m->d3_op + ") nao pode ser diferente da O.P. relacionada com a etiqueta (" + _oEtiq:OP + ").",, .t.)
+				_lRet = .F.
+			endif
+			if _lRet .and. m->d3_cod != _oEtiq:Produto
+				u_help ("Produto nao pode ser diferente do produto da etiqueta (" + _oEtiq:Produto + ").",, .t.)
+				_lRet = .F.
+			endif
+			if _lRet
+				_lRet = _oEtiq:PodeApont (m->d3_quant, m->d3_perda)
+			endif
+		endif
 	endif
 return _lRet
-*/
 
 
 // --------------------------------------------------------------------------

@@ -52,6 +52,7 @@
 // 25/01/2022 - Robert - Metodo Copy2Trb() passa a aceitar lista de indices para criar.
 // 20/02/2022 - Robert - Variavel _sErros (publica do web service) renomeada para _sErroWS
 // 11/03/2022 - Robert - Metodo :Log() passa a receber parametro 'prefixo'.
+// 01/04/2022 - Robert - Programa fonte renomeado de .PRW para .TLPP (intencao usar posteriormente blocos try...catch)
 //
 
 #include "protheus.ch"
@@ -61,37 +62,37 @@
 CLASS ClsSQL
 
 	// Declaracao das propriedades da Classe
-	DATA _sQuery
-	DATA _xRetQry
-	DATA _aSetField
-	DATA _sAliasQry
-	DATA ArqDestXLS
-	DATA UltMsg
-	DATA lGeraHead
-	DATA aHeader
-	DATA QtLinRet
-	DATA PerfMon
+	public DATA _sQuery
+	public DATA _xRetQry
+	public DATA _aSetField
+	public DATA _sAliasQry
+	public DATA ArqDestXLS
+	public DATA UltMsg
+	public DATA lGeraHead
+	public DATA aHeader
+	public DATA QtLinRet
+	public DATA PerfMon
 
 	// Declaracao dos Metodos da Classe
-	/*public */ METHOD New ()
-	/*public */ METHOD Array2In ()
-	/*public */ METHOD CaseX3CBox ()
-	/*public */ METHOD Copy2Trb ()
-	/*public */ METHOD Exec ()
-	/*public */ METHOD F3Array ()
-	/*public */ METHOD FormatIn ()
-	/*public */ METHOD InsValues ()
-	/*public */ METHOD Log ()
-	/*private*/ METHOD MudaTipo ()  // Para uso interno.
-	/*public */ METHOD Qry2Array ()
-	/*public */ METHOD Qry2HTM ()
-	/*public */ METHOD Qry2Str ()
-	/*public */ METHOD Qry2Trb ()
-	/*public */ METHOD Qry2XLS ()
-	/*public */ METHOD RetFixo ()
-	/*public */ METHOD RetQry ()
-	/*public */ METHOD SetField ()  // Para uso externo: informar campo e para qual tipo deve ser convertido.
-	/*public */ METHOD SPExec ()
+	public  METHOD New ()
+	public  METHOD Array2In ()
+	public  METHOD CaseX3CBox ()
+	public  METHOD Copy2Trb ()
+	public  METHOD Exec ()
+	public  METHOD F3Array ()
+	public  METHOD FormatIn ()
+	public  METHOD InsValues ()
+	public  METHOD Log ()
+	private METHOD MudaTipo ()  // Para uso interno.
+	public  METHOD Qry2Array ()
+	public  METHOD Qry2HTM ()
+	public  METHOD Qry2Str ()
+	public  METHOD Qry2Trb ()
+	public  METHOD Qry2XLS ()
+	public  METHOD RetFixo ()
+	public  METHOD RetQry ()
+	public  METHOD SetField ()  // Para uso externo: informar campo e para qual tipo deve ser convertido.
+	public  METHOD SPExec ()
 ENDCLASS
 
 

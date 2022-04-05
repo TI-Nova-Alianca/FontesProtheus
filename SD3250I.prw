@@ -11,23 +11,26 @@
 // #Modulos           
 //
 // Historico de alteracoes:
-// 03/09/2015 - Robert - Nao endereca mais automaticamente os produtos.
-//                     - Transfere produtos para almox. de integracao com FullWMS quando OP de reprocesso.
-// 01/08/2017 - Robert - Passa a gravar a tabela tb_wms_etiquetas (era feito logo apos a impressao das etiquetas).
-// 18/08/2017 - Robert - Valid.produto na gravacao de etiquetas para FullWMS (tb_wms_etiquetas) - GLPI 2981
-//                          - Quando OP de reprocesso assume dt valid do lote original (C2_VADVORI), cfe informada pelo usuario.
-//                          - Quando OP normal, calculava dt.valid.=ZA1_DATA+B1_PRVALID. Alterado para C2_DATPRI+B1_PRVALID 
-//                            para manter consistencia com a impressao da OP.
-// 25/08/2017 - Robert - Passa a gravar a data de validade como C2_DATPRF+B1_PRVALID nas etiquetas.
-// 20/07/2018 - Robert - Passa a gravar a etiqueta em funcao externa.
-//                     - Geracao de laudo do produto acabado com base nos laudos dos produtos consumidos.
-// 04/09/2018 - Robert - Grava za1_apont=S (estava no EnvEtFul.prw)
-// 04/08/2021 - Robert - Removidas chamadas de logs desnecessarias.
+// 03/09/2015 - Robert  - Nao endereca mais automaticamente os produtos.
+//                      - Transfere produtos para almox. de integracao com FullWMS quando OP de reprocesso.
+// 01/08/2017 - Robert  - Passa a gravar a tabela tb_wms_etiquetas (era feito logo apos a impressao das etiquetas).
+// 18/08/2017 - Robert  - Valid.produto na gravacao de etiquetas para FullWMS (tb_wms_etiquetas) - GLPI 2981
+//                      - Quando OP de reprocesso assume dt valid do lote original (C2_VADVORI), cfe informada pelo usuario.
+//                      - Quando OP normal, calculava dt.valid.=ZA1_DATA+B1_PRVALID. Alterado para C2_DATPRI+B1_PRVALID 
+//                        para manter consistencia com a impressao da OP.
+// 25/08/2017 - Robert  - Passa a gravar a data de validade como C2_DATPRF+B1_PRVALID nas etiquetas.
+// 20/07/2018 - Robert  - Passa a gravar a etiqueta em funcao externa.
+//                      - Geracao de laudo do produto acabado com base nos laudos dos produtos consumidos.
+// 04/09/2018 - Robert  - Grava za1_apont=S (estava no EnvEtFul.prw)
+// 04/08/2021 - Robert  - Removidas chamadas de logs desnecessarias.
 // 04/10/2021 - Claudia - Alterada a rotina _AtuReproc. GLPI: 9674
+// 01/04/2022 - Robert  - Passa a usar a classe ClsEtiq() para envio da etiqueta para o FullWMS - GLPI 11825.
 //
+
 // -----------------------------------------------------------------------------------------------------------------------------------
 User Function SD3250I()
 	Local _aAreaAnt := U_ML_SRArea ()
+	local _oEtiq    := NIL
 	
 	// Atualiza etiqueta e envia para FullWMS
 	if ! empty (M->D3_VAETIQ)
@@ -36,7 +39,11 @@ User Function SD3250I()
 			reclock ("ZA1", .F.)
 			za1 -> za1_apont = 'S'
 			msunlock ()
-			U_EnvEtFul (M->D3_VAETIQ, .F.)
+//			U_EnvEtFul (M->D3_VAETIQ, .F.)
+			
+			// Envia etiqueta para o FullWMS
+			_oEtiq := ClsEtiq ():New (m->d3_vaetiq)
+			_oEtiq:EnviaFull (.f.)
 		endif
 	endif
 

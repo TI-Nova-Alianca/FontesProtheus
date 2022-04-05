@@ -16,6 +16,7 @@
 // 11/02/2022 - Robert  - Posicionava SB8 pelo D1_LOTEFOR. Alterado para posicionar pelo ZA1_PROD + D1_LOTECTL.
 //                      - Posiciona o SB8 via query por que nao tem indice por produto+lote+local.
 // 25/02/2022 - Robert  - Ajustes nas margens da etiq. de NF na impressora Argox/Datamax.
+// 01/04/2022 - Robert  - Nao envia para FullWMS se for ar=tiqueta de OP (envio vai ser feito noutro local) - GLPI 11825
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -170,14 +171,18 @@ user function ImpZA1 (_sCodigo, _sIdImpr)
 
 		if _lContinua
 			fclose (_nHdl)
-			u_log2 ('debug', memoread (_sArq))
+			//u_log2 ('debug', memoread (_sArq))
 			copy file (_sArq) to (_sPortaImp)
 			u_log2 ('debug', 'copiei etiq para ' + _sPortaImp)
 			delete file (_sArq)
 
+	// Penso que o fato de uma etiqueta estar impressa nao significa que jah precise
+	// ser enviada para o FullWMS. Vou deixar isso a cargo do ClsEtiq().
 			// Etiquetas (quando necessario) sao enviadas para o Full somente depois de impressas
 			if za1 -> za1_impres == 'S'
-				U_EnvEtFul (za1 -> za1_codigo, .F.)
+				if empty (za1 -> za1_op)  // Etiquetas de OP sao enviadas somente depois de apontadas (P.E. SD3250I)
+					U_EnvEtFul (za1 -> za1_codigo, .F.)
+				endif
 			endif
 		endif
 	endif
