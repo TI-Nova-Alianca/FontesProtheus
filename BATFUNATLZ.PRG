@@ -56,6 +56,9 @@ User function BATFUNATLZ()
 	local _tpMainWnd := type ("oMainWnd")
 	private _sQuery  := ''
 	
+	u_logIni()
+	u_log("Iniciando BATFUNATLZ em", date (), time ())
+
 	_sErroAuto := ''  		// Para a funcao u_help gravar mensagens.
 	_oBatch:Retorno = 'S'  	// "Executou OK?" --> S=Sim;N=Nao;I=Iniciado;C=Cancelado;E=Encerrado automaticamente
 
@@ -302,6 +305,8 @@ User function BATFUNATLZ()
 	else
 		_oBatch:Retorno = 'S'  // "Executou OK?" --> S=Sim;N=Nao;I=Iniciado;C=Cancelado;E=Encerrado automaticamente
 	endif
+
+	u_logFim()
 return .T.
 //
 // --------------------------------------------------------------------------

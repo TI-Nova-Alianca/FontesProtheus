@@ -25,8 +25,8 @@ User Function BatFunCli()
     Local _i        := 0
     Local _z        := 0
 
-    u_logIni ()
-	u_log ("Iniciando em", date (), time ())
+    u_logIni()
+	u_log("Iniciando em", date (), time ())
 
     // Busca funcionários
     _oSQL:= ClsSQL ():New ()
@@ -136,5 +136,6 @@ User Function BatFunCli()
             EndIf
         Next
     Next
-    u_logFim ()
+
+    u_logFim()
 Return .T.

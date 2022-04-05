@@ -21,6 +21,9 @@ User Function BatLojCGC()
     Local _x    := 0
     Local _aCli := {}
 
+    u_logIni()
+	u_log("Iniciando BatLojCGC em", date (), time ())
+
     _dDtaIni  := FirstDate(Date())
     _dDtaFin  := LastDate (Date())
 
@@ -66,4 +69,6 @@ User Function BatLojCGC()
             _oEvento:Grava()
         EndIf
     Next
+
+    u_logFim()
 Return .T.

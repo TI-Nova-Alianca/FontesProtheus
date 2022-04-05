@@ -24,8 +24,8 @@ User Function BatFunAssoc()
     Local _sSocio     := 'N'
     Local _dUltDiaMes := lastday (Date())
 
-    u_logIni ()
-	u_log ("Iniciando em", date (), time ())
+    u_logIni()
+	u_log("Iniciando em", date (), time ())
 
     _oSQL:= ClsSQL ():New ()
     _oSQL:_sQuery := ""
@@ -121,5 +121,5 @@ User Function BatFunAssoc()
         Next
     Next
    
-    u_logFim ()
+    u_logFim()
 Return .T.

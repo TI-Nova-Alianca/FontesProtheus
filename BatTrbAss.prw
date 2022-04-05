@@ -17,8 +17,8 @@ User Function BatTrbAss()
     Local _x        := 0
     Local _sGrpTrib := ""
 
-    u_logIni ()
-	u_log ("Iniciando em", date (), time ())
+    u_logIni()
+	u_log("Iniciando em", date (), time ())
 
     u_log("Fornecedores Associados")
 
@@ -117,4 +117,6 @@ User Function BatTrbAss()
             EndIf
         EndIf
     Next
+
+    u_logFim()
 Return .T.

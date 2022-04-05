@@ -22,8 +22,8 @@ User Function BatPessoas()
     Local _lRet  := .F.
     Local _sMsg  := ""
 
-    u_logIni ()
-	u_log ("Iniciando BatPessoas em", date (), time ())
+    u_logIni()
+	u_log("Iniciando BatPessoas em", date (), time ())
 
     // Grava Funcionarios e Associados como Clientes
     _lRet := U_BatFunAtlz()  
@@ -98,6 +98,10 @@ User Function BatPessoas()
             u_log(_sMsg)
             _GravaLog(_sMsg, "BAT002")
         EndIf
+    else
+        _sMsg := "Não é dia de executar o batch BatVenFun !"
+        u_log(_sMsg)
+        _GravaLog(_sMsg, "BAT001")    
     EndIf
     
     // Bat para gravação de CPF de clientes em cupons do PDV
@@ -111,6 +115,8 @@ User Function BatPessoas()
         u_log(_sMsg)
         _GravaLog(_sMsg, "BAT002")
     EndIf
+    
+    u_logFim()
 Return
 //
 // --------------------------------------------------------------------------

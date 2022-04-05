@@ -24,8 +24,10 @@ User Function BatVenFun()
 	Local _dDtFin   := Date()
 	
 	_sArqLog := U_NomeLog (.t., .f.)
-	u_logId()
 	u_logIni()
+	u_log("Iniciando BatVenFun em", date (), time ())
+
+	u_logId()
 
 	//u_help(DTOS(_dDtIni) + " - "+ DTOS(_dDtFin))
 
@@ -107,7 +109,8 @@ User Function BatVenFun()
 		U_ZZUNU ({'110'}, 'Notificação - Compra de funcionários. Período de ' + DTOC(_dDtIni) + ' até ' + DTOC(_dDtFin) , _sMsg, .F.)
 	EndIf
 
-
 	U_ML_SRArea (_aAreaAnt)
 	_sArqLog = _sArqLog2
+
+	u_logFim()
 Return .T.
