@@ -61,6 +61,8 @@
 // 16/09/2021 - Robert  - Criado submenu para chamar parametros de rotinas do financeiro (GLPI 10502).
 //                      - Eliminado parametro 'contabiliza online' (passa a ler de cada rotina financeira)
 // 27/02/2022 - Robert  - Adicionada coluna HIST na consulta de titulos agrupados numa fatura (GLPI 11678)
+// 05/04/2022 - Robert  - Verifica valor do SE2 antes do recalculo manual de saldos.
+//
 
 #include "colors.ch"
 #Include "Protheus.ch"
@@ -1105,14 +1107,28 @@ static function _SZIRS2 (_nQual)
 	local _oSQL      := NIL
 	local _aDados    := {}
 	local _nDado     := 0
+	local _nRegSE2   := 0
+	local _lContinua := .T.
 
-	if _nQual == 1  // Atualiza sando deste lcto.
+	if _nQual == 1  // Atualiza saldo deste lcto.
 		_oCtaCorr := ClsCtaCorr():New (szi -> (recno ()))
-		_nSaldoAnt = szi -> zi_saldo
-		_oCtaCorr:AtuSaldo ()
 
-		if _nSaldoAnt != szi -> zi_saldo
-			u_help ("Saldo deste lcto alterado de " + cvaltochar (_nSaldoAnt) + " para " + cvaltochar (szi -> zi_saldo))
+		// Jah peguei casos em que o valor (nao o saldo) estava diferente do SE2
+		_nRegSE2 := _oCtaCorr:RecnoSE2 ()
+		if _nRegSE2 > 0
+			se2 -> (dbgoto (_nRegSE2))
+			if se2 -> e2_valor != szi -> zi_valor
+				u_help ("Impossivel continuar: Verifiquei na tabela SE2 (contas a pagar) que o valor deste titulo encontra-se diferente (" + GetMv ('MV_SIMB1') + cvaltochar (se2 -> e2_valor) + ").",, .t.)
+				_lContinua = .F.
+			endif
+		endif
+		if _lContinua
+			_nSaldoAnt = szi -> zi_saldo
+			_oCtaCorr:AtuSaldo ()
+
+			if _nSaldoAnt != szi -> zi_saldo
+				u_help ("Saldo deste lcto alterado de " + cvaltochar (_nSaldoAnt) + " para " + cvaltochar (szi -> zi_saldo))
+			endif
 		endif
 
 	elseif _nQual == 2  // Atualiza saldo geral do associado.
