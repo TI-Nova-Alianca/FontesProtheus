@@ -247,6 +247,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 				_AsFecSaf ()
 			case _sAcao == 'ConsultaCapitalSocialAssoc'
 				_AsCapSoc ()
+			case _sAcao == 'AlteraDadosAssociado'
+				_AltAssoc ()
 			otherwise
 				_sErroWS += "A acao especificada no XML eh invalida: " + _sAcao
 		endcase
@@ -2198,6 +2200,42 @@ static function _AsCapSoc ()
 		else
 			_sMsgRetWS = _sRet
 		endif
+	endif
+return
+
+
+// --------------------------------------------------------------------------
+// Atualiza cadastro de associados
+static function _AltAssoc ()
+	local   _sAssoc    := ""
+	local   _sLoja     := ""
+	local   _sRet      := ''
+	private _sErroAuto := ""  // Variavel alimentada pela funcao U_Help
+
+	if empty (_sErroWS) ; _sCPF       = U_ExTagXML ("_oXML:_WSAlianca:_CPF",             .T., .F.) ; endif
+	if empty (_sErroWS) ; _sNome      = U_ExTagXML ("_oXML:_WSAlianca:_Nome",            .T., .F.) ; endif
+	if empty (_sErroWS) ; _sRG        = U_ExTagXML ("_oXML:_WSAlianca:_RG",              .F., .F.) ; endif
+	if empty (_sErroWS) ; _sTelPref   = U_ExTagXML ("_oXML:_WSAlianca:_telPreferencial", .F., .F.) ; endif
+	if empty (_sErroWS) ; _sTelefone2 = U_ExTagXML ("_oXML:_WSAlianca:_telefone2",       .F., .F.) ; endif
+	if empty (_sErroWS) ; _dDtNasc    = U_ExTagXML ("_oXML:_WSAlianca:_dtnasc",          .F., .T.) ; endif
+	if empty (_sErroWS) ; _sEMail     = U_ExTagXML ("_oXML:_WSAlianca:_email",           .F., .F.) ; endif
+	if empty (_sErroWS) ; _sEndereco  = U_ExTagXML ("_oXML:_WSAlianca:_endereco",        .T., .F.) ; endif
+	if empty (_sErroWS) ; _sCEP       = U_ExTagXML ("_oXML:_WSAlianca:_CEP",             .F., .F.) ; endif
+	if empty (_sErroWS) ; _sGenero    = U_ExTagXML ("_oXML:_WSAlianca:_Genero",          .F., .F.) ; endif
+	if empty (_sErroWS)
+		sa2 -> (dbsetorder (3)) // A2_FILIAL, A2_CGC, R_E_C_N_O_, D_E_L_E_T_
+		if ! sa2 -> (dbseek (xfilial ("SA2") + _sCPF, .F.))
+			_sErroWS += "Cadastro do associado nao encontrado pelo CPF informado."
+		else
+			_sErroWS += "Se tiver mais de 1 CPF, como saber qual deles?"
+			_oAssoc := ClsAssoc ():New (_sAssoc, _sLoja)
+			if valtype (_oAssoc) != 'O'
+				_sErroWS += "Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto
+			endif
+		endif
+	endif
+	if empty (_sErroWS)
+		_sMsgRetWS = _sRet
 	endif
 return
 
