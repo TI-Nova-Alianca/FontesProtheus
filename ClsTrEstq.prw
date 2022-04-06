@@ -17,6 +17,7 @@
 // 04/12/2020 - RObert  - Criado tratamento para produto destino diferente do produto origem.
 // 18/10/2021 - Sandra  - Ajuste da mensagem "Transferencia ainda nao gravada na tabela ZZG" para "Transferencia ainda nao gravada na tabela ZAG"
 // 25/01/2022 - Robert  - Gera etiqueta quando o prod.controla lote, mesmo nao tendo integracao com FullWMS.
+// 06/04/2022 - Robert  - Criado metodo :AlmUsaEtiq() e passa a ser validado antes de gerar etiqueta.
 //
 
 // ------------------------------------------------------------------------------------
@@ -72,6 +73,7 @@ CLASS ClsTrEstq
 
 	// Declaracao dos Metodos da classe
 	METHOD New ()
+	METHOD AlmUsaEtiq ()
 	METHOD AlmUsaFull ()
 	METHOD AtuZAG ()
 	METHOD Estorna ()
@@ -151,6 +153,13 @@ METHOD New (_nRecno) Class ClsTrEstq
 		zag -> (dbgoto (_nRegZAG))
 	endif
 Return ::self
+
+
+
+// --------------------------------------------------------------------------
+// Verifica se o almoxarifado usa etiquetas para entrada de material.
+METHOD AlmUsaEtiq (_sAlm) Class ClsTrEstq
+return (_sAlm $ '01/02')
 
 
 
@@ -447,6 +456,11 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 		_lContinua = .F.
 	endif
 */
+	if _lContinua .and. ! ::AlmUsaEtiq (::AlmDest)
+		_sMsg += "Almoxarifado destino nao faz entrada com etiqueta."
+		_lContinua = .F.
+	endif
+
 	if _lContinua .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + ::ProdDest, "B1_RASTRO") != "L"
 		_sMsg += "Produto destino '" + alltrim (::ProdDest) + "' nao controla lotes. Etiqueta nao pode ser gerada."
 		_lContinua = .F.

@@ -65,6 +65,7 @@
 // 23/02/2022 - Robert  - Adicionada verificacao 83 (Empenho SD4 relacionado a OP/OS inexistente ou ja encerrada)
 // 05/03/2022 - Robert  - Adicionada verificacao 85 (inconsistencias etiq.producao) - GLPI 11486
 // 23/03/2022 - Robert  - Verificacao 82 ajustado item 'MO-' para 'AO-'.
+// 05/04/2022 - Robert  - Consulta 82 passa a aceitar todas as filiais (para poder ser chamada de outras rotinas)
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -3066,7 +3067,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=  " GROUP BY SYS_USR.USR_ID, SYS_USR.USR_CODIGO, SYS_USR.USR_NOME"
 
 		case ::Numero == 82
-			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+			//::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 			::Setores    = 'CUS'
 			::Descricao  = 'Itens de mao de obra devem estar amarrados ao CC correspondente'
 			::Query := "" 
