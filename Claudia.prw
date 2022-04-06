@@ -9,13 +9,14 @@ User Function claudia ()
 
 	//u_help("Nada para executar")
 
+	u_help("AltIPI")
+	AltIPI()
+
 	//u_help("BatFunAssoc")
 	//U_BatFunAssoc()
 
 	//u_help("BatTrbAss")
 	//U_BatTrbAss()
-
-
 
 	//u_help("associados")
 	//U_BatFunAssoc()
@@ -56,6 +57,48 @@ User Function claudia ()
 	// atualiza CGC PDV - SL1
 	//u_help("Atualiza CGC PDV - SL1")
 	//U_BatLojCGC()
+Return
+//
+// Atualiza IPI
+Static Function AltIPI()
+    sb1 -> (dbsetorder (1))
+    sb1 -> (dbgotop ())
+    do while ! sb1 -> (eof ())
+        if alltrim (sb1 -> b1_posipi) $ '22042100/22041090/22043000/22021000/22042100/22060090/22082000'
+			u_log2 ('info', 'Verificando item ' + sb1 -> b1_cod + SB1 -> B1_DESC)
+
+			// Cria variaveis para uso na gravacao do evento de alteracao
+			regtomemory ("SB1", .F., .F.)
+			m->b1_ipi = sb1 -> b1_ipi
+			do case
+				case sb1 -> b1_posipi = '22042100' .and. sb1 -> b1_ipi != 7.5
+					m->b1_ipi = 7.5
+				case sb1 -> b1_posipi = '22041090' .and. sb1 -> b1_ipi != 7.5
+					m->b1_ipi = 7.5
+				case sb1 -> b1_posipi = '22043000' .and. sb1 -> b1_ipi != 7.5
+					m->b1_ipi = 7.5
+				case sb1 -> b1_posipi = '22021000' .and. sb1 -> b1_ipi != 3
+					m->b1_ipi = 3
+				case sb1 -> b1_posipi = '22042100' .and. sb1 -> b1_ipi != 7.5
+					m->b1_ipi = 7.5
+				case sb1 -> b1_posipi = '22060090' .and. sb1 -> b1_ipi != 7.5
+					m->b1_ipi = 7.5
+				case sb1 -> b1_posipi = '22082000' .and. sb1 -> b1_ipi != 22.5
+					m->b1_ipi = 22.5
+			endcase
+			if m->b1_ipi != sb1 -> b1_ipi
+				U_Log2 ('info', sb1 -> b1_posipi + ' alterando de ' + transform (sb1->b1_ipi, "@E 999.99") + ' para ' + transform (m->b1_ipi, "@E 999.99") + ' ' + ' ' + sb1 -> b1_cod + ' ' + sb1 -> b1_desc)
+				// Grava evento de alteracao
+				_oEvento := ClsEvent():new ()
+				_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 11681 - novas aliq.IPI', .F.)
+
+				reclock ("SB1", .f.)
+				sb1 -> B1_ipi = m->b1_ipi
+				msunlock ()
+			endif
+		endif
+        sb1 -> (dbskip ())
+    enddo
 Return
 //
 // Atualiza representantes inativos
