@@ -143,7 +143,10 @@ static lSpedCodOnu := nil
 // 03/09/2021 - Robert  - Aplicadas nossas customizacoes na versao atualizada da Totvs (GLPI 10085).
 // 03/12/2021 - Robert  - Compatibilizacao com versao padrao da Totvs
 // 03/01/2021 - Claudia - Ajustado para permitir desconto no cabeçalho da NF. GLPI: 11370
-// 30/03/2022 - Sandra/Claudia - Aplicadas nossas customizacoes na versao atualizada da Totvs (GLPI 11843). Compilado em 04/04/22
+// 30/03/2022 - Sandra
+//              Claudia - Aplicadas nossas customizacoes na versao atualizada da Totvs (GLPI 11843). Compilado em 04/04/22
+// 06/04/2022 - Sandra
+//              Claudia - Ajustada variaveis de erro para notas de consignação. GLPI:11887 
 //
 // --------------------------------------------------------------------------
 User Function XmlNfeSef(cTipo,cSerie,cNota,cClieFor,cLoja,cNotaOri,cSerieOri)
@@ -4140,13 +4143,21 @@ If cTipo == "1"
 		EndIf
 	Next
 Else
-							nDesconto := 0
-							  
-							// Quando nota de exportação, permite realizar o desconto
-							_sCliEst := fBuscaCpo("SA1",1,xFilial("SA1")+(cAliasSD2)->D2_CLIENTE+(cAliasSD2)->D2_LOJA,"A1_EST")
-							If alltrim(_sCliEst) == 'EX'
-								nDesconto := (cAliasSD2)->D2_DESCON  
-							EndIf
+
+	// Alianca: variaveis para NF de importacao, uma vez que nao temos o modulo de importacao.
+	_nTotPIS   := 0
+	_nTotCOF   := 0
+	_nCMoedImp := 0
+	_sDMoedImp := ""     // descricao moeda
+	_lMensDI   := .T.    // Para gerar msg. nos dados adicionais somente uma vez
+
+	nDesconto := 0
+		
+	// Quando nota de exportação, permite realizar o desconto
+	_sCliEst := fBuscaCpo("SA1",1,xFilial("SA1")+(cAliasSD2)->D2_CLIENTE+(cAliasSD2)->D2_LOJA,"A1_EST")
+	If alltrim(_sCliEst) == 'EX'
+		nDesconto := (cAliasSD2)->D2_DESCON  
+	EndIf
 
 
 	dbSelectArea("SF1")
