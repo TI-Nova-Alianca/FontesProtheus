@@ -25,6 +25,7 @@
 // 18/01/2021 - Robert - Verifica parametro MV_DBLQMOV antes de executar.
 // 08/02/2021 - Robert - Valida campo B1_CCCUSTO no cadastro dos itens tipo MO, AP, GF (GLPI 9356).
 // 25/03/2022 - Robert - Verifica cadastro dos itens AP-, AO- e GF- passa a ser feita pela classe ClsVerif()
+// 05/04/2022 - Robert - Verificacao numero 82 estava bloqueando prosseguimento da rotina. Alterado emergencialmente para mostrar erro, mas dar escolha ao usuario se quer prosseguir.
 //
 
 // -------------------------------------------------------------------------------
@@ -106,7 +107,7 @@ Static function _Roda()
 			U_Log2 ('erro', _oVerif:Result)
 			u_help ("Foram encontrados itens de mao de obra amarrados a centro de custo indevido",, .t.)
 			U_F3Array (_oVerif:Result, "Problemas no cadastro de itens", , , , '', '', .T., 'C')
-			_lContinua = .F.
+			_lContinua = U_MsgNoYes ("Deseja continuar mesmo assim?")
 		endif
 	endif
 
