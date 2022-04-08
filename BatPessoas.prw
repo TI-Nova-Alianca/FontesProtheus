@@ -73,13 +73,13 @@ User Function BatPessoas()
         _GravaLog(_sMsg, "BAT002")
     EndIf
 
-   // Verificações de vendas para funcionários enviados para RH  
+    // Verificações de vendas para funcionários enviados para RH  
     _lExecuta := .F.
     _nDiaSem  := DOW(DATE()) // Retorna o número (entre 0 e 7) do dia da semana. Sendo, Domingo=1 e Sábado=7
     _nData    := Day(Date())
     _nUltDt   := Day(LastDate(Date()))
 
-    If _nDiaSemana == 2 // Se é segunda - envia e-mail
+    If _nDiaSem == 2 // Se é segunda - envia e-mail
         _lExecuta := .T.
     EndIf
 
