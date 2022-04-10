@@ -1,0 +1,481 @@
+// Programa:  ClsEtiq
+// Autor:     Robert Koch
+// Data:      28/03/2022
+// Descricao: Declaracao de classe de representacao de etiquetas usadas na producao.
+//            Poderia trabalhar como uma include, mas prefiro declarar uma funcao de usuario
+//            apenas para poder incluir no projeto e manter na pasta dos fontes.
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Classe
+// #Descricao         #Representa etiquetas usadas para identificacao de produtos e movimentacoes de estoque / integracoes com FullWMS.
+// #PalavasChave      #etiquetas #integracao #FullWMS #producao
+// #TabelasPrincipais #ZA1
+// #Modulos           #ESQ #PCP
+
+// Historico de alteracoes:
+// 28/03/2022 - Robert - Criada a classe e iniciada migracao de diversos outros fontes para ca.
+//
+
+#Include "Protheus.ch"
+#Include "RwMake.ch"
+#Include "TbiConn.ch"
+
+
+// --------------------------------------------------------------------------
+// Funcao declarada apenas para poder compilar este arquivo fonte.
+user function ClsEtiq ()
+return
+
+
+// ==========================================================================
+CLASS ClsEtiq
+
+	// Declaracao das propriedades da Classe
+	data Apontada      // ZA1_APONT - Apontamento de producao ja executado (quando etiq. para OP)
+	data Codigo        // ZA1_CODIGO
+	data DocEntrForn   // ZA1_FORNEC - Quando refere-se a NF de entrada
+	data DocEntrItem   // ZA1_ITEM - Quando refere-se a NF de entrada
+	data DocEntrLoja   // ZA1_LOJAF - Quando refere-se a NF de entrada
+	data DocEntrNum    // ZA1_DOCE - Quando refere-se a NF de entrada
+	data DocEntrSerie  // ZA1_SERIEE - Quando refere-se a NF de entrada
+	data DtEmis        // ZA1_DATA
+	data Filial        // ZA1_FILIAL
+	data IdZAG         // ZA1_IDZAG - Identificador de registro da tabela ZAG
+	data Impressa      // ZA1_IMPRES - Jah impressa
+	data Inutilizada   // ZA1_APONT='I' - Indica que foi inutilizada manualmente
+	data LoteProduto
+	data OP            // ZA1_OP
+	data Produto       // ZA1_PROD
+	data QtApontada    // Quando relacionada a uma OP
+	data QtEstornada   // Quando relacionada a uma OP
+	data QtPerdida     // Quando relacionada a uma OP
+	data Quantidade    // ZA1_QUANT
+	data SeqNoGrupo    // ZA1_SEQ - Sequencia dentro do grupo, geralmente de OP. Ex.: 1 de 10, 2 de 10, ...
+	data UsrIncl       // ZA1_USRINC - Usuario que incluiu/gerou a etiqueta
+	data ValidadeLote
+
+	// Declaracao dos Metodos da classe
+	public METHOD New ()
+	public METHOD EnviaFull ()
+	public METHOD Inutiliza ()
+	public METHOD GeraAtrib ()
+	public METHOD PodeEnvFul ()
+	public METHOD PodeExcluir ()
+	public METHOD PodeApont ()
+ENDCLASS
+
+
+// --------------------------------------------------------------------------
+// Construtor.
+METHOD New (_xChave) Class ClsEtiq
+	::GeraAtrib ("")
+	
+	// Se receber numerico, eh por que se trata do numero de registro do ZA1.
+	if valtype (_xChave) == "N"
+		ZA1 -> (dbgoto (_xChave))
+		::GeraAtrib ("ZA1")
+
+	// Se receber caracter, eh por que se trata do codigo da etiqueta.
+	elseif valtype (_xChave) == "C"
+		za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP
+		if za1 -> (dbseek (xfilial ("ZA1") + _xChave, .F.))
+			::GeraAtrib ("ZA1")
+		else
+			U_Log2 ('debug', '[' + procname () + '] >>' + xfilial ("ZA1") + _xChave + '<<')
+			U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + "]Problema ao instanciar etiqueta: Nao localizei codigo de etiqueta '" + _xChave + "' para a filial atual na tabela ZA1.")
+		endif
+	endif
+Return ::self
+
+
+// --------------------------------------------------------------------------
+// Alimenta os atributos da classe.
+METHOD GeraAtrib (_sOrigem) Class ClsEtiq
+	local _aAreaAnt := U_ML_SRArea ()
+	local _oSQL     := NIL
+	local _aLoteVal := {}
+	local _aRetSD3  := {}
+
+	// Defaults
+	::Apontada     = 'N'
+	::Codigo       = ''
+	::DocEntrForn  = ''
+	::DocEntrItem  = ''
+	::DocEntrLoja  = ''
+	::DocEntrNum   = ''
+	::DocEntrSerie = ''
+	::DtEmis       = ctod ('')
+	::Filial       = xfilial ("ZA1")
+	::IdZAG        = ''
+	::Impressa     = 'N'
+	::Inutilizada  = .F.
+	::LoteProduto  = ''
+	::OP           = ''
+	::Produto      = ''
+	::QtApontada   = 0
+	::QtEstornada  = 0
+	::QtPerdida    = 0
+	::Quantidade   = 0
+	::SeqNoGrupo   = ''
+	::UsrIncl      = ''
+	::ValidadeLote = ctod ('')
+
+	if _sOrigem == 'M'  // Variaveis M->
+		::Apontada     = m->ZA1_APONT
+		::Codigo       = m->ZA1_CODIGO
+		::DocEntrForn  = m->ZA1_FORNEC
+		::DocEntrItem  = m->ZA1_ITEM
+		::DocEntrLoja  = m->ZA1_LOJAF
+		::DocEntrNum   = m->ZA1_DOCE
+		::DocEntrSerie = m->ZA1_SERIEE
+		::DtEmis       = m->ZA1_DATA
+		::Filial       = xfilial ("SZI")
+		::IdZAG        = m->ZA1_IDZAG
+		::Impressa     = m->ZA1_IMPRES
+		::Inutilizada  = (m->za1_apont == 'I')
+		::OP           = m->ZA1_OP
+		::Produto      = m->ZA1_PROD
+		::Quantidade   = m->ZA1_QUANT
+		::SeqNoGrupo   = m->ZA1_SEQ
+		::UsrIncl      = m->ZA1_USRINC
+
+	elseif _sOrigem == "ZA1"
+
+		::Apontada     = za1 -> ZA1_APONT
+		::Codigo       = za1 -> ZA1_CODIGO
+		::DocEntrForn  = za1 -> ZA1_FORNEC
+		::DocEntrItem  = za1 -> ZA1_ITEM
+		::DocEntrLoja  = za1 -> ZA1_LOJAF
+		::DocEntrNum   = za1 -> ZA1_DOCE
+		::DocEntrSerie = za1 -> ZA1_SERIEE
+		::DtEmis       = za1 -> ZA1_DATA
+		::Filial       = za1 -> za1_filial
+		::IdZAG        = za1 -> ZA1_IDZAG
+		::Impressa     = za1 -> ZA1_IMPRES
+		::Inutilizada  = (za1 -> za1_apont == 'I')
+		::OP           = za1 -> ZA1_OP
+		::Produto      = za1 -> ZA1_PROD
+		::Quantidade   = za1 -> ZA1_QUANT
+		::SeqNoGrupo   = za1 -> ZA1_SEQ
+		::UsrIncl      = za1 -> ZA1_USRINC
+	endif
+
+	// Alimenta lote e validade
+	if _sOrigem == 'M' .or. _sOrigem == "ZA1"
+		sb1 -> (dbsetorder (1))
+		if ! sb1 -> (dbseek (xfilial ("SB1") + ::Produto, .f.))
+			u_help ('[' + GetClassName (::Self) + '.' + procname () + "]Nao localizado cadastro do produto '" + ::Produto + "' relacionado `a etiqueta '" + ::Codigo + "'.",, .t.)
+		else
+			if ! empty (::OP)
+				::LoteProduto = substring (::OP, 1, 8)
+				sc2 -> (dbsetorder (1))
+				if ! sc2 -> (dbseek (xfilial ("SC2") + ::OP, .f.))
+					u_help ('[' + GetClassName (::Self) + '.' + procname () + "]Impossivel encontrar a OP '" + ::OP + "' relacionada `a etiqueta '" + ::Codigo + "'. Validade nao pode ser determinada.",, .t.)
+				else
+					if sc2 -> c2_vaopesp == 'R'  // OP de reprocesso assume dt valid do lote original, cfe informada pelo usuario.
+						if empty (sc2 -> c2_vadvori)
+							u_help ('[' + GetClassName (::Self) + '.' + procname () + "]Impossivel buscar a data de validade do lote  da etiqueta '" + ::Codigo + "': a OP referenciada (" + ::OP + ") eh uma OP de reprocesso, e nao foi informada a data de validade do lote original no campo C2_VADVORI (" + alltrim (rettitle ("C2_VADVORI")) + ").",, .t.)
+						else
+							::ValidadeLote = sc2 -> c2_vadvori
+						endif
+					else
+						::ValidadeLote = sc2 -> c2_datprf + sb1 -> b1_prvalid
+					endif
+
+					// Busca quantidades apontadas e perdidas
+					_oSQL := ClsSQL ():New ()
+					_oSQL:_sQuery := ""
+					_oSQL:_sQuery += "SELECT ISNULL (SUM (CASE WHEN D3_ESTORNO != 'S' AND D3_CF LIKE 'PR%' THEN D3_QUANT ELSE 0 END), 0) AS APONTAM"
+					_oSQL:_sQuery +=      ", ISNULL (SUM (CASE WHEN D3_ESTORNO != 'S' AND D3_CF LIKE 'PR%' THEN D3_PERDA ELSE 0 END), 0) AS PERDA"
+					_oSQL:_sQuery +=      ", ISNULL (SUM (CASE WHEN D3_ESTORNO  = 'S' AND D3_CF LIKE 'ER%' THEN D3_QUANT ELSE 0 END), 0) AS ESTORNO"
+					_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD3") + " SD3"
+					_oSQL:_sQuery += " WHERE SD3.D_E_L_E_T_ = ''"
+					_oSQL:_sQuery +=   " AND SD3.D3_FILIAL  = '" + xfilial ("SD3") + "'"
+					_oSQL:_sQuery +=   " AND SD3.D3_VAETIQ  = '" + ::Codigo + "'"
+					_oSQL:Log ()
+					_aRetSD3 := aclone (_oSQL:Qry2Array (.f., .f.))
+					::QtApontada  = _aRetSD3 [1 , 1]
+					::QtPerdida   = _aRetSD3 [1 , 2]
+					::QtEstornada = _aRetSD3 [1 , 3]
+				endif
+
+			elseif ! empty (::DocEntrNum)  // Etiqueta gerada por NF de entrada
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := "SELECT D1_LOTECTL, B8_DTVALID"
+				_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD1") + " SD1 "
+				_oSQL:_sQuery +=  " LEFT JOIN " + RetSQLName ("SB8") + " SB8 "
+				_oSQL:_sQuery +=       " ON (SB8.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=       " AND SB8.B8_FILIAL  = SD1.D1_FILIAL"
+				_oSQL:_sQuery +=       " AND SB8.B8_LOTECTL = SD1.D1_LOTECTL"
+				_oSQL:_sQuery +=       " AND SB8.B8_LOTEFOR = SD1.D1_LOTEFOR"
+				_oSQL:_sQuery +=       " AND SB8.B8_PRODUTO = SD1.D1_COD"
+				_oSQL:_sQuery +=       ")"
+				_oSQL:_sQuery += " WHERE SD1.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=   " AND D1_FILIAL  = '" + ::Filial       + "'"
+				_oSQL:_sQuery +=   " AND D1_DOC     = '" + ::DocEntrNum   + "'"
+				_oSQL:_sQuery +=   " AND D1_SERIE   = '" + ::DocEntrSerie + "'"
+				_oSQL:_sQuery +=   " AND D1_FORNECE = '" + ::DocEntrForn  + "'"
+				_oSQL:_sQuery +=   " AND D1_LOJA    = '" + ::DocEntrLoja  + "'"
+				_oSQL:_sQuery +=   " AND D1_ITEM    = '" + ::DocEntrItem  + "'"
+				_oSQL:_sQuery +=   " AND D1_COD     = '" + ::Produto      + "'"
+				_oSQL:Log ()
+				_aLoteVal = aclone (_oSQL:RetFixo (1, "ao consultar lote do produto da etiqueta '" + ::Codigo + "' na NF de entrada '" + ::DocEntrNum + "'.", .T.))
+				if len (_aLoteVal) == 1
+					::LoteProduto  = _aLoteVal [1, 1]
+					::ValidadeLote = _aLoteVal [1, 2]
+				endif
+
+			elseif ! empty (::IdZAG)
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := "SELECT ZAG_LOTORI, B8_DTVALID"
+				_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZAG") + " ZAG "
+				_oSQL:_sQuery +=  " LEFT JOIN " + RetSQLName ("SB8") + " SB8 "
+				_oSQL:_sQuery +=       " ON (SB8.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=       " AND SB8.B8_FILIAL  = ZAG.ZAG_FILIAL"
+				_oSQL:_sQuery +=       " AND SB8.B8_LOTECTL = ZAG.ZAG_LOTORI"
+				_oSQL:_sQuery +=       " AND SB8.B8_PRODUTO = ZAG.ZAG_PRDORI"
+				_oSQL:_sQuery +=       ")"
+				_oSQL:_sQuery += " WHERE ZAG.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=   " AND ZAG.ZAG_FILIAL = '" + ::Filial + "'"
+				_oSQL:_sQuery +=   " AND ZAG.ZAG_DOC    = '" + ::IdZAG + "'"
+				_oSQL:Log ()
+				_aLoteVal = aclone (_oSQL:RetFixo (1, "ao consultar lote do produto da etiqueta '" + ::Codigo + "' na solicitacao de transferencia numero '" + ::IdZAG + "'.", .T.))
+				if len (_aLoteVal) == 1
+					::LoteProduto  = _aLoteVal [1, 1]
+					::ValidadeLote = _aLoteVal [1, 2]
+				endif
+			endif
+		endif
+	endif
+	
+	U_ML_SRArea (_aAreaAnt)
+return
+
+
+// --------------------------------------------------------------------------
+// Verifica se pode ser feito apontamento de producao da etiqueta.
+METHOD PodeApont (_nQtApont, _nQtPerda) Class ClsEtiq
+	Local _aAreaAnt  := U_ML_SRArea ()
+	local _lContinua := .T.
+	local _nQtTot    := 0
+
+	if _lContinua .and. empty (::OP)
+		u_help ("Impossivel apontar producao da etiqueta '" + ::Codigo + "' pois nao encontra-se vinculada a nenhum OP.",, .t.)
+		_lContinua = .f.
+	endif
+	if _lContinua .and. ::Impressa != 'S'
+		u_help ("Impossivel apontar producao da etiqueta '" + ::Codigo + "': ainda nao impressa.",, .t.)
+		_lContinua = .f.
+	endif
+	if _lContinua .and. (::QtApontada + ::QtPerdida) > 0
+		u_help ("Impossivel apontar producao da etiqueta '" + ::Codigo + "': ja gerou apontamento de producao.",, .t.)
+		_lContinua = .f.
+	endif
+	if _lContinua .and. ::QtEstornada > 0
+		U_help ("Impossivel apontar producao da etiqueta '" + ::Codigo + "': ja foi apontada e ESTORNADA. Gere nova etiqueta.",, .t.)
+		_lContinua = .F.
+	endif
+	if _lContinua
+		_nQtTot = ::QtApontada + ::QtPerdida + _nQtApont + _nQtPerda
+		if _nQtTot != ::Quantidade
+			u_help ("Impossivel apontar producao da etiqueta '" + ::Codigo + "': Quantidade total produzida + perdida (" + cvaltochar (_nQtTot) + ") nao pode ser diferente da quantidade prevista da etiqueta (" + cvaltochar (::Quantidade) + ").",, .t.)
+			_lContinua = .F.
+		endif
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
+return _lContinua
+
+
+// --------------------------------------------------------------------------
+// Verifica se a etiqueta pode ser enviada para o FullWMS (quando tratar-se de integracao)
+METHOD PodeEnvFul () Class ClsEtiq
+	local _lContinua := .T.
+	Local _aAreaAnt  := U_ML_SRArea ()
+
+	if _lContinua .and. left (::Codigo, 1) == '0'
+		u_Help ("Impossivel enviar etiqueta '" + ::Codigo + "' para o FullWMS: Etiquetas iniciadas por '0' sao geradas diretamente pelo FullWMS.",, .t.)
+		_lContinua = .F.
+	endif
+	if _lContinua .and. ::Impressa != 'S'
+		u_help ("Etiqueta '" + ::Codigo + "' nao deve ser enviada para o FullWMS antes de estar impressa.",, .t.)
+		_lContinua = .f.
+	endif
+
+	// Se o produto nao pode ser enviado para o FulLWMS, nem adianta enviar a etiqueta.
+	if _lContinua
+		if ! empty (::OP)
+			if _lContinua .and. ::QtEstornada > 0
+				U_Log2 ('info', "Etiqueta '" + ::Codigo + "' teve sua quantidade estornada (" + cvaltochar (::QtEstornada) + "), entao nao ha utilidade em envia-la para o FullWMS.",, .t.)
+				_lContinua = .F.
+			endif
+			if _lContinua .and. (::QtApontada + ::QtPerdida) == 0
+				U_Log2 ('info', "Etiqueta '" + ::Codigo + "' refere-se a uma OP e, portanto, deve ser enviada somente depois que tiver producao/perda apontada.",, .t.)
+				_lContinua = .F.
+			endif
+		else
+
+			// Valida o produto por que pode nao ser etiqueta de OP, e essa validacao pode nao ter sido feita ainda.
+			if _lContinua .and. ! U_SB1PEF (::Produto)
+				u_log2 ('erro', 'Envio da etiqueta ' + ::Codigo + ' para o FullWMS nao vai ser permitido por que o produto da etiqueta nao encontra-se em condicoes de ser enviado para o FullWMS.')
+				_lContinua = .F.
+			endif
+		endif
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
+return _lContinua
+
+
+// --------------------------------------------------------------------------
+// Verifica se pode excluir a etiqueta.
+METHOD PodeExcluir (_lComTela) Class ClsEtiq
+	local _lContinua := .T.
+	Local _aAreaAnt  := U_ML_SRArea ()
+	local _oSQL      := NIL
+	local _sMsgNaoEx := ''
+
+	if ::QtApontada + ::QtPerdida + ::QtEstornada > 0
+		_sMsgNaoEx += "Etiqueta '" + ::Codigo + "' ja foi apontada e/ou estornada. Exclusao nao permitida."
+		_lContinua = .F.
+	endif
+	if ::Inutilizada
+		_sMsgNaoEx += "Etiqueta '" + ::Codigo + "' ja foi inutilizada. Exclusao nao permitida."
+		_lContinua = .F.
+	endif
+	if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := " select count (*)"
+		_oSQL:_sQuery +=   " from tb_wms_etiquetas"
+		_oSQL:_sQuery +=  " where id = '" + cvaltochar (::Codigo) + "'" 
+		_oSQL:_sQuery +=    " and status != 'N'" 
+		if _oSQL:RetQry () > 0
+			_sMsgNaoEx += "Etiqueta '" + ::Codigo + "' ja foi vista pelo FullWMS. Nao pode ser excluida. Exclua, antes, o recebimento dela no FullWMS. Query para verificacao: " + _oSQL:_sQuery
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lComTela
+		u_help (_sMsgNaoEx,, .t.)
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
+return _lContinua
+
+
+// --------------------------------------------------------------------------
+// Disponibiliza ('envia') a etiqueta para o FullWMS.
+METHOD EnviaFull (_lMsg) Class ClsEtiq
+	Local _aAreaAnt  := U_ML_SRArea ()
+	local _oSQL      := NIL
+	local _lContinua := .T.
+
+	_lMsg := iif (_lMsg == NIL, .T., _lMsg)
+
+	if _lContinua
+		_lContinua = ::PodeEnvFul ()
+	endif
+
+	if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "select count (*)"
+		_oSQL:_sQuery +=  " from tb_wms_etiquetas"
+		_oSQL:_sQuery += " where id = '" + cvaltochar (::Codigo) + "'"
+		_oSQL:Log ()
+		if _oSQL:RetQry () > 0
+			if _lMsg
+				u_help ("Impossivel enviar etiqueta '" + ::Codigo + "' para o FullWMS: Etiqueta jah existe na tabela tb_wms_etiquetas.", _oSQL:_sQuery, .t.)
+			else
+				U_Log2 ('aviso', '[' + procname () + "]Impossivel enviar etiqueta '" + ::Codigo + "' para o FullWMS: Etiqueta jah existe na tabela tb_wms_etiquetas.")
+			endif
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " insert into tb_wms_etiquetas (id, coditem, lote, qtde, validade, empresa, cd, status)"
+		_oSQL:_sQuery += " values (" + cvaltochar (::Codigo) + ","
+		_oSQL:_sQuery +=          "'" + alltrim (::Produto) + "',"
+		_oSQL:_sQuery +=          "'" + ::LoteProduto + "',"
+		_oSQL:_sQuery +=          cvaltochar (::Quantidade) + ","
+		_oSQL:_sQuery +=          "'" + dtos (::ValidadeLote) + "',"
+		_oSQL:_sQuery +=          "'01',"
+		_oSQL:_sQuery +=          "'" + ::Filial + "',"
+		_oSQL:_sQuery +=          "'N')"  // N=ainda nao lida pelo Full
+		_oSQL:Log ()
+		if ! _oSQL:Exec ()
+			U_help ("Erro ao enviar etiqueta para FullWMS: " + _oSQL:_sQuery,, .t.)
+			_lRetEnv = .F.
+		endif
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
+return _lContinua
+
+
+// --------------------------------------------------------------------------
+// Inutiliza a etiqueta.
+METHOD Inutiliza () Class ClsEtiq
+	local _lContinua := .T.
+	local _sMsgNaoIn := ''
+	local _oEvento   := NIL
+	
+	// Verifica se o usuario tem liberacao.
+	if ! empty (::OP) .and. ! U_ZZUVL ('073', __cUserID, .T.)
+		_sMsgNaoIn += "Usuario sem acesso a etiquetas de OP."
+		_lContinua = .F.
+	endif
+	if ! empty (::DocEntrNum) .and. ! U_ZZUVL ('074', __cUserID, .T.)
+		_sMsgNaoIn += "Usuario sem acesso a etiquetas de NF."
+		_lContinua = .F.
+	endif
+	if _lContinua .and. ! empty (::OP)
+		_sMsgNaoIn := "A etiqueta '" + ::Codigo + "' nao pode ser inutilizada por ser uma etiqueta de ordem de producao."
+		_lContinua := .F.
+	endif
+
+	if (ZA1 -> ZA1_APONT == 'I') .and. _lContinua
+		u_help ("A etiqueta '" + alltrim(ZA1 -> ZA1_CODIGO) + "' ja encontra-se inutilizada.",, .t.)
+		_lContinua := .F.
+	endif
+
+	if _lContinua
+		if _bMostraMsg
+			_lContinua = .F.
+			_lContinua = U_MsgNoYes ("Confirma a inutilização da etiqueta?")
+		endif
+		
+		if _lContinua
+			begin transaction
+				reclock ("ZA1", .f.)
+				za1 -> za1_apont = 'I'
+				msunlock ()
+
+				_oEvento := ClsEvent():new ()
+				_oEvento:CodEven   = "ZA1002"
+				_oEvento:Texto     = "Inutilizacao etiqueta " + za1 -> za1_codigo
+				_oEvento:Recno     = za1 -> (recno ())
+				_oEvento:Alias     = 'ZA1'
+				_oEvento:CodAlias  = za1 -> za1_codigo
+				_oEvento:Etiqueta  = za1 -> za1_codigo
+				if ! empty (za1 -> za1_doce)
+					_oEvento:NFEntrada = za1 -> za1_doce
+				endif
+				if ! empty (za1 -> za1_seriee)
+					_oEvento:SerieEntr = za1 -> za1_seriee
+				endif
+				if ! empty (za1 -> za1_fornec)
+					_oEvento:Fornece = za1 -> za1_fornec
+				endif
+				if ! empty (za1 -> za1_lojaf)
+					_oEvento:LojaFor = za1 -> za1_lojaf
+				endif
+				_oEvento:Grava ()
+			end transaction
+
+			u_help ("Etiqueta '" + alltrim(_sCodigo) + "' inutilizada!" + chr(13) + "(Remover do Recipiente)")
+		endif
+	endif
+return
