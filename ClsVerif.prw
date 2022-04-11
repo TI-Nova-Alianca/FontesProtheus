@@ -66,7 +66,7 @@
 // 05/03/2022 - Robert  - Adicionada verificacao 85 (inconsistencias etiq.producao) - GLPI 11486
 // 23/03/2022 - Robert  - Verificacao 82 ajustado item 'MO-' para 'AO-'.
 // 05/04/2022 - Robert  - Consulta 82 passa a aceitar todas as filiais (para poder ser chamada de outras rotinas)
-//
+// 11/04/2022 - Claudia - Excluido o usuario app.mntng da consulta 78.
 
 // --------------------------------------------------------------------------------------------------------------------
 #include "protheus.ch"
@@ -2997,20 +2997,21 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query += " WHERE PROTHEUS_USER IS NOT NULL"
 			::Query += " AND PROTHEUS_SITUACAO = 'ATIVO'"
 			::Query += " AND PESSOA_FOLHA IS NULL"
-			::Query +=   " AND upper (PROTHEUS_USER) NOT LIKE 'REP_%'"  // Representantes estao sendo migrados para o Mercanet
+			::Query +=   " AND upper (PROTHEUS_USER) NOT LIKE 'REP_%'"  	// Representantes estao sendo migrados para o Mercanet
 			::Query +=   " AND upper (PROTHEUS_USER) != 'ADMINISTRADOR'"
 			::Query +=   " AND upper (PROTHEUS_USER) != 'SUPORTE.TOTVS'"
-			::Query +=   " AND upper (PROTHEUS_USER) != 'SARA.CETOLIN'"  // pessoa juridica
-			::Query +=   " AND upper (PROTHEUS_USER) != 'KAREN.NUNES'"  // Menor aprendiz F03
-			::Query +=   " AND upper (PROTHEUS_USER) != 'TOBIAS.BEBBER'"  // Estagiario agronomia
+			::Query +=   " AND upper (PROTHEUS_USER) != 'SARA.CETOLIN'"  	// pessoa juridica
+			::Query +=   " AND upper (PROTHEUS_USER) != 'KAREN.NUNES'"  	// Menor aprendiz F03
+			::Query +=   " AND upper (PROTHEUS_USER) != 'TOBIAS.BEBBER'"  	// Estagiario agronomia
 			::Query +=   " AND upper (PROTHEUS_USER) != 'CONSAD'"
 			::Query +=   " AND upper (PROTHEUS_USER) != 'MANUTENCAO'"
-			::Query +=   " AND upper (PROTHEUS_USER) != 'SOL.MANUT'"  // Generico para o pessoal de fabrica abrir solicitacoes de manutencao.
+			::Query +=   " AND upper (PROTHEUS_USER) != 'SOL.MANUT'"  		// Generico para o pessoal de fabrica abrir solicitacoes de manutencao.
 			::Query +=   " AND upper (PROTHEUS_USER) != 'BALANCA.SP'"
 			::Query +=   " AND upper (PROTHEUS_USER) != 'SIGALOJA'"
 			::Query +=   " AND upper (PROTHEUS_USER) != 'ROBERT_TESTE'"
-			::Query +=   " AND upper (PROTHEUS_USER) != 'CAROLINA.ROCHA'"  // Terceirizada quiosque POA
-			::Query +=   " AND upper (PROTHEUS_USER) NOT LIKE 'CUPOM%'"  // Usuarios 'caixa' para emissao de cupom fiscal nas lojas
+			::Query +=   " AND upper (PROTHEUS_USER) != 'CAROLINA.ROCHA'"  	// Terceirizada quiosque POA
+			::Query +=   " AND upper (PROTHEUS_USER) NOT LIKE 'CUPOM%'"  	// Usuarios 'caixa' para emissao de cupom fiscal nas lojas
+			::Query +=   " AND upper (PROTHEUS_USER) != 'APP.MNTNG'"  		// Usuario app da manutenção
 			::Query += " ORDER BY PROTHEUS_USER"
 
 		case ::Numero == 79
