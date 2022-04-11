@@ -86,7 +86,7 @@ user function Log2 (_sTipo, _xDadoOri, _xExtra)
 
 	// Se o arquivo jah existir e for muito grande, renomeia-o e gera um novo
 	if _nAcumLog > _nLimTamLg
-		U_Log ('debug', '[' + procname () + ']Hora de verificar o tamanho do arquivo de log')
+		U_Log2 ('debug', '[' + procname () + ']Hora de verificar o tamanho do arquivo de log')
 		if file (_sDirLogs + _sArqLog)
 			_nTamArq = directory (_sDirLogs + _sArqLog) [1, 2]
 			if _nTamArq > _nLimTamLg  // Inicialmente acho que 10 mega tah bom...

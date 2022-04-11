@@ -8,7 +8,7 @@
 // 07/04/2021 - Robert - Faltava declaracao variavel _oObjMnt (GLPI 9774)
 // 09/03/2022 - Robert - Instanciava objeto oWS sempre, mas parece que paramixb[2] muda conforme o caso.
 // 16/03/2022 - Robert - Filtro busca produtos mudado de tipo MM para MM e MC (GLPI 11296)
-// 08/04/2022 - Robert - Criado filtro de OS conforme usuario (cada manutentor visualiza apenas as suas OS) - GLPI 11886
+// 08/04/2022 - Robert - Criado filtro de OS conforme usuario (cada manutentor visualiza zaapenas as suas OS) - GLPI 11886
 
 //  ---------------------------------------------------------------------------------------------------------------------
 

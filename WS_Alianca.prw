@@ -87,6 +87,7 @@
 // 18/03/2022 - Robert  - Migradas consultas de fech.safra e cota capital da classe WS_NAMob para ca.
 // 21/03/2022 - Robert  - Novos parametros chamada metodo fechamento safra.
 // 31/03/2022 - Robert  - Nao usa mais data nos nomes do arquivos de log.
+// 07/04/2022 - Robert  - Iniciada funcao de alteracao de dados de associados (GLPI 10138)
 //
 
 // --------------------------------------------------------------------------------------------------------
