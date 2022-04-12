@@ -13,8 +13,9 @@
 // Historico de alteracoes:
 // 27/09/2021 - Claudia - Adicionado campo F4_CSTPIS
 // 19/10/2021 - Claudia - Alterada a data de emissão para data de digitação.
+// 12/04/2022 - Claudia - Incluido novos campos. GLPI: 11904
 //
-// --------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------
 User Function VA_XLS56 ()
 	Local cCadastro := "Exporta CST/FISCAL-NFs Entrada"
 	Local aSays     := {}
@@ -22,6 +23,7 @@ User Function VA_XLS56 ()
 	Local nOpca     := 0
 	Local lPerg     := .F.
 	Private cPerg   := "VAXLS56"
+    
 	_ValidPerg()
 	Pergunte(cPerg,.F.)
 
@@ -120,7 +122,8 @@ Static Function _Gera()
     _oSQL:_sQuery += "    ,SD1.D1_VALIPI AS VALOR_IPI "
     _oSQL:_sQuery += "    ,CASE "
     _oSQL:_sQuery += " 		    WHEN (B1_VAATO = 'S') THEN 'Cooperativo' "
-    _oSQL:_sQuery += " 		    ELSE 'Nao coop' "
+    _oSQL:_sQuery += " 		    WHEN (B1_VAATO = 'N') THEN 'Nao coop' "
+    _oSQL:_sQuery += " 		    ELSE ' ' "
     _oSQL:_sQuery += " 	        END AS ATO "
     _oSQL:_sQuery += "    ,F4_PISCRED AS CRED_PIS_COF "
     _oSQL:_sQuery += "    ,CASE "
@@ -141,7 +144,19 @@ Static Function _Gera()
     _oSQL:_sQuery += "    ,F4_CODBCC AS CODBC "
     _oSQL:_sQuery += "    ,D1_CONTA AS CONTA "
     _oSQL:_sQuery += "    ,F4_CSTPIS AS SIT_TRIB_PIS "
-    _oSQL:_sQuery += "    ,F4_CSTCOF AS SIT_TRIB_COF
+    _oSQL:_sQuery += "    ,F4_CSTCOF AS SIT_TRIB_COF "
+    _oSQL:_sQuery += "    ,D1_CUSTO AS CUSTO "
+    _oSQL:_sQuery += "    ,F1_ESPECIE AS ESPECIE "
+    _oSQL:_sQuery += "    ,(SELECT "
+    _oSQL:_sQuery += " 			MAX(SE2.E2_NATUREZ) "
+    _oSQL:_sQuery += " 		FROM SE2010 SE2 "
+    _oSQL:_sQuery += " 		WHERE SE2.D_E_L_E_T_ = '' "
+    _oSQL:_sQuery += " 		AND SE2.E2_FILIAL    = SD1.D1_FILIAL "
+    _oSQL:_sQuery += " 		AND SE2.E2_PREFIXO   = SD1.D1_SERIE "
+    _oSQL:_sQuery += " 		AND SE2.E2_NUM       = SD1.D1_DOC "
+    _oSQL:_sQuery += " 		AND SE2.E2_FORNECE   = SD1.D1_FORNECE "
+    _oSQL:_sQuery += " 		AND SE2.E2_LOJA      = SD1.D1_LOJA) "
+    _oSQL:_sQuery += "  AS NATUREZA "
     _oSQL:_sQuery += " FROM " + RetSQLName ("SD1") + " SD1 "
     _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA2") + " SA2 "
     _oSQL:_sQuery += " 	ON (SA2.D_E_L_E_T_ = '' "
@@ -155,6 +170,13 @@ Static Function _Gera()
     _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SF4") + " SF4 "
     _oSQL:_sQuery += " 	ON (SF4.D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " 			AND SF4.F4_CODIGO = D1_TES) "
+    _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SF1") + " SF1 "
+	_oSQL:_sQuery += " ON (SF1.D_E_L_E_T_   = '' "
+	_oSQL:_sQuery += " 	        AND SF1.F1_FILIAL  = SD1.D1_FILIAL "
+	_oSQL:_sQuery += " 	        AND SF1.F1_DOC     = SD1.D1_DOC "
+	_oSQL:_sQuery += " 	        AND SF1.F1_SERIE   = SD1.D1_SERIE "
+	_oSQL:_sQuery += " 	        AND SF1.F1_FORNECE = SD1.D1_FORNECE "
+	_oSQL:_sQuery += " 	        AND SF1.F1_LOJA    = SD1.D1_LOJA) "
     _oSQL:_sQuery += " WHERE SD1.D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " AND SD1.D1_DTDIGIT BETWEEN '"+ DTOS(mv_par01) +"' AND '"+ DTOS(mv_par02) +"' "
     _oSQL:_sQuery += " AND SD1.D1_TIPO <> 'D' "
@@ -225,7 +247,8 @@ Static Function _Gera()
     _oSQL:_sQuery += "    ,SD1.D1_VALIPI AS VALOR_IPI "
     _oSQL:_sQuery += "    ,CASE "
     _oSQL:_sQuery += " 		    WHEN (B1_VAATO = 'S') THEN 'Cooperativo' "
-    _oSQL:_sQuery += " 		    ELSE 'Nao coop' "
+    _oSQL:_sQuery += " 		    WHEN (B1_VAATO = 'N') THEN 'Nao coop' "
+    _oSQL:_sQuery += " 		    ELSE ' ' "
     _oSQL:_sQuery += " 	        END AS ATO "
     _oSQL:_sQuery += "    ,F4_PISCRED AS CRED_PIS_COF "
     _oSQL:_sQuery += "    ,CASE "
@@ -247,6 +270,18 @@ Static Function _Gera()
     _oSQL:_sQuery += "    ,D1_CONTA AS CONTA "
     _oSQL:_sQuery += "    ,F4_CSTPIS AS SIT_TRIB_PIS "
     _oSQL:_sQuery += "    ,F4_CSTCOF AS SIT_TRIB_COF
+    _oSQL:_sQuery += "    ,D1_CUSTO AS CUSTO "
+    _oSQL:_sQuery += "    ,F1_ESPECIE AS ESPECIE "
+    _oSQL:_sQuery += "    ,(SELECT "
+    _oSQL:_sQuery += " 			MAX(SE2.E2_NATUREZ) "
+    _oSQL:_sQuery += " 		FROM SE2010 SE2 "
+    _oSQL:_sQuery += " 		WHERE SE2.D_E_L_E_T_ = '' "
+    _oSQL:_sQuery += " 		AND SE2.E2_FILIAL    = SD1.D1_FILIAL "
+    _oSQL:_sQuery += " 		AND SE2.E2_PREFIXO   = SD1.D1_SERIE "
+    _oSQL:_sQuery += " 		AND SE2.E2_NUM       = SD1.D1_DOC "
+    _oSQL:_sQuery += " 		AND SE2.E2_FORNECE   = SD1.D1_FORNECE "
+    _oSQL:_sQuery += " 		AND SE2.E2_LOJA      = SD1.D1_LOJA) "
+    _oSQL:_sQuery += "  AS NATUREZA "
     _oSQL:_sQuery += " FROM " + RetSQLName ("SD1") + " SD1 "
     _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA1") + " SA1 "
     _oSQL:_sQuery += " 	ON (SA1.D_E_L_E_T_ = '' "
@@ -260,6 +295,13 @@ Static Function _Gera()
     _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SF4") + " SF4 "
     _oSQL:_sQuery += " 	ON (SF4.D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " 			AND SF4.F4_CODIGO = D1_TES) "
+    _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SF1") + " SF1 "
+	_oSQL:_sQuery += " ON (SF1.D_E_L_E_T_   = '' "
+	_oSQL:_sQuery += " 	        AND SF1.F1_FILIAL  = SD1.D1_FILIAL "
+	_oSQL:_sQuery += " 	        AND SF1.F1_DOC     = SD1.D1_DOC "
+	_oSQL:_sQuery += " 	        AND SF1.F1_SERIE   = SD1.D1_SERIE "
+	_oSQL:_sQuery += " 	        AND SF1.F1_FORNECE = SD1.D1_FORNECE "
+	_oSQL:_sQuery += " 	        AND SF1.F1_LOJA    = SD1.D1_LOJA) "
     _oSQL:_sQuery += " WHERE SD1.D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " AND SD1.D1_DTDIGIT BETWEEN '"+ DTOS(mv_par01) +"' AND '"+ DTOS(mv_par02) +"' "
     _oSQL:_sQuery += " AND SD1.D1_TIPO = 'D' "
