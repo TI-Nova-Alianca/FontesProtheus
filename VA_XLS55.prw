@@ -13,8 +13,9 @@
 // Historico de alteracoes:
 // 19/05/2021 - Sandra  - Criado Exporta Planilha CST/FISCAL - GLPI 10037
 // 15/09/2021 - Cláudia - Incluido os tipos D e B no relatorio. GLPI: 10942
+// 12/04/2022 - Claudia - Incluido novos campos. GLPI: 11904
 //
-// --------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------
 User Function VA_XLS55 (_lAutomat)
 	Local cCadastro := "Exporta Planilha CST/FISCAL"
 	Local aSays     := {}
@@ -94,7 +95,6 @@ Static Function _Gera()
 	_oSQL:_sQuery += 		" ,SD2.D2_CLASFIS AS CST_ICMS "
 	_oSQL:_sQuery += 		" ,SD2.D2_BASEICM AS BASE_ICMS "
 	_oSQL:_sQuery += 		" ,SD2.D2_VALICM AS VALOR_ICMS "
-
 	_oSQL:_sQuery += " ,ISNULL((SELECT "
 	_oSQL:_sQuery += 		" FT_CSTPIS "
 	_oSQL:_sQuery += " FROM " + RetSQLName ("SFT") + " SFT "
@@ -124,7 +124,6 @@ Static Function _Gera()
 	_oSQL:_sQuery += 		" ,SD2.D2_ALQIMP5 AS ALIQ_COFINS "
 	_oSQL:_sQuery += 		" ,SD2.D2_VALIMP5 AS VALOR_COFINS "
 	_oSQL:_sQuery += 		" ,SD2.D2_ICMSRET AS ICMSRET "
-	
 	_oSQL:_sQuery += " ,ISNULL((SELECT "
 	_oSQL:_sQuery += 		" FT_CTIPI "
 	_oSQL:_sQuery += " FROM " + RetSQLName ("SFT") + " SFT "
@@ -140,8 +139,11 @@ Static Function _Gera()
 	_oSQL:_sQuery += 		" ,SD2.D2_VALIPI AS VALOR_IPI "
 	_oSQL:_sQuery += " ,CASE "
 	_oSQL:_sQuery += 		" WHEN (B1_VAATO = 'S') THEN 'Cooperativo' "
-	_oSQL:_sQuery += " ELSE 'Nao coop' "
+	_oSQL:_sQuery += 		" WHEN (B1_VAATO = 'N') THEN 'Nao coop' "
+	_oSQL:_sQuery += " ELSE ' ' "
 	_oSQL:_sQuery += 		" END AS ATO "
+	_oSQL:_sQuery +=        ",F2_ESPECIE AS ESPECIE "
+	_oSQL:_sQuery +=        ",D2_CUSTO1 AS CUSTO "
 	_oSQL:_sQuery += " FROM " + RetSQLName ("SD2") + " SD2 "
 	_oSQL:_sQuery += " JOIN SA1010 SA1 "
 	_oSQL:_sQuery += 		" ON (SA1.D_E_L_E_T_ = '' "
@@ -152,6 +154,13 @@ Static Function _Gera()
 	_oSQL:_sQuery += 		" ON (SB1.D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += 		" AND SB1.B1_FILIAL = ' ' "
 	_oSQL:_sQuery += 		" AND SB1.B1_COD = SD2.D2_COD) "
+	_oSQL:_sQuery += " JOIN SF2010 SF2 "
+	_oSQL:_sQuery += 		"   ON (SF2.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += 		" 	AND SF2.F2_FILIAL  = SD2.D2_FILIAL "
+	_oSQL:_sQuery += 		" 	AND SF2.F2_DOC     = SD2.D2_DOC "
+	_oSQL:_sQuery += 		" 	AND SF2.F2_SERIE   = SD2.D2_SERIE "
+	_oSQL:_sQuery += 		" 	AND SF2.F2_CLIENTE = SD2.D2_CLIENTE "
+	_oSQL:_sQuery += 		" 	AND SF2.F2_LOJA    = SD2.D2_LOJA) "
 	_oSQL:_sQuery += " WHERE SD2.D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += 		" AND SD2.D2_EMISSAO BETWEEN '"+ DTOS(mv_par01) +"' AND '"+ DTOS(mv_par02) +"' "
 	//_oSQL:_sQuery += 		" AND SD2.D2_TIPO NOT IN ('B', 'D') "
