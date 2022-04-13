@@ -16,7 +16,10 @@
 // 17/09/2021 - Robert  - Exporta sucos concentrados apenas se forem de uva. (posterior encerramento GLPI 9198).
 // 02/12/2021 - Claudia - Retirado os cfops de retorno de terceiros, transf.entre filiais e frete. GLPI: 11150
 // 03/12/2021 - Claudia - Incluida validação de busca apenas itens do sisdevin. GLPI: 11150
+// 13/04/2022 - Robert  - Nao desconsiderava registros deletados da tabela SD1.
+//                      - Definido nome para o arquivo de destino.
 //
+
 // ----------------------------------------------------------------------------------------------------------------------------
 User Function VA_XLS50 (_lAutomat)
 	Local cCadastro := "Exporta com entradas de MP/VD para classificacao entre ato cooperativo e nao cooperativo."
@@ -107,13 +110,14 @@ Static Function _Gera()
 	_oSQL:_sQuery += " 			AND SA2.A2_FILIAL = '" + xfilial ("SA2") + "'"
 	_oSQL:_sQuery += " 			AND SA2.A2_COD    = SD1.D1_FORNECE "
 	_oSQL:_sQuery += " 			AND SA2.A2_LOJA   = SD1.D1_LOJA) "
-	_oSQL:_sQuery += " WHERE SD1.D1_DTDIGIT BETWEEN '" + dtos (mv_par01) + "' AND '" + dtos (mv_par02) + "'"
+	_oSQL:_sQuery += " WHERE SD1.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " AND SD1.D1_DTDIGIT BETWEEN '" + dtos (mv_par01) + "' AND '" + dtos (mv_par02) + "'"
 	_oSQL:_sQuery += " AND SD1.D1_TP IN ('MP', 'VD') "
 	_oSQL:_sQuery += " AND SD1.D1_TIPO NOT IN ('B', 'D') "
 	_oSQL:_sQuery += " AND SD1.D1_CF NOT IN ('1902', '1925', '1151', '2151', '1352', '1903', '2903', '2352','1352' ) "
     _oSQL:_sQuery += " AND (SD1.D1_CF <> '1949' OR (SD1.D1_CF = '1949' AND SD1.D1_FILIAL='03' AND SD1.D1_FORNECE='001369')) "
-
 	_oSQL:Log ()
+	_oSQL:ArqDestXLS = 'VA_XLS50'
 	_oSQL:Qry2Xls ()
 return
 

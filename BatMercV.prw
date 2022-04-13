@@ -14,6 +14,7 @@
 // 04/03/2022 - Sandra  - Alteração do grupo A10 para 134 GLPI 11712
 //						  U_ZZUNU ({'A10'}, "Verificações Mercanet - Clientes"
 //						  U_ZZUNU ({'A10'}, "Verificações Mercanet - Representantes"
+// 11/04/2022 - Claudia - Retirado o CNPJ 18694748000105 da consulta. GLPI: 11899
 //
 // -------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -111,7 +112,7 @@ Static Function ClientesInativos()
 	_oSQL:_sQuery += " 		ELSE 'ATIVO' "
 	_oSQL:_sQuery += "    END AS STATUS_MERCANET "
 	_oSQL:_sQuery += " FROM C "
-	_oSQL:_sQuery += " WHERE CGC_PROTHEUS NOT IN ('92685460000119', '97944823587', '00213985000133') "
+	_oSQL:_sQuery += " WHERE CGC_PROTHEUS NOT IN ('92685460000119', '97944823587', '00213985000133','18694748000105') "
 
 	u_log (_oSQL:_sQuery)
 	if len (_oSQL:Qry2Array (.T., .F.)) > 0

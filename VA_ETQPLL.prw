@@ -54,6 +54,7 @@
 // 24/01/2022 - Robert - Vamos usar etiquetas no AX02, mesmo sem integracao com FullWMS (GLPI 11515).
 //                     - Funcao EtqPllGN (interna) migrada para fonte externo ZA1GN.
 // 31/03/2022 - Sandra - Comentariado campo ZA1_HORA GLPI 11862
+// 07/04/2022 - Robert - Verifica classe ClsEtiq para ver se pode excluir etiquetas (GLPI 11825)
 //
 
 #include "rwmake.ch"
@@ -141,10 +142,13 @@ return
 // Exclusão
 User Function EtqPlltE (_lComTela)
 	local _lContinua := .T.
+	local _oEtiq     := NIL
 	private altera   := .F.
 	private inclui   := .F.
 	private aGets    := {}
 	private aTela    := {}
+
+	_oEtiq := ClsEtiq ():New (za1 -> za1_codigo)
 
 	// Verifica se o usuario tem liberacao.
 	if ! empty (za1 -> za1_op) .and. ! IsInCallStack ("U_MTA650AE") .and. ! U_ZZUVL ('073', __cUserID, .T.)
@@ -155,7 +159,8 @@ User Function EtqPlltE (_lComTela)
 	endif
 
 	if _lContinua
-		_lContinua = _PodeExcl (_lComTela)
+//		_lContinua = _PodeExcl (_lComTela)
+		_lContinua = _oEtiq:PodeExcluir (_lComTela)
 	endif
 	
 	if ! empty (ZA1 -> ZA1_DOCE)
@@ -179,7 +184,7 @@ User Function EtqPlltE (_lComTela)
 			msunlock ()
 			_AtuFull ('E')
 		endif
-	endif                                                                                                          
+	endif
 return
 
 
@@ -387,6 +392,7 @@ User Function EtqPlltG (_sOP, _sNF, _sSerie, _sFornece, _sLoja, _sQueFazer)
 	local _aCols    := {}
 	local _bSegue   := .F.
 	local _bInutil  := .F.
+	local _oEtiq    := NIL
 	
 	u_logIni ()
 
@@ -459,14 +465,16 @@ User Function EtqPlltG (_sOP, _sNF, _sSerie, _sFornece, _sLoja, _sQueFazer)
 			if _bSegue
 				za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP
 				for _nEtiq = 1 to len (_aEtiq)
+					_oEtiq := ClsEtiq ():New (_aEtiq[_nEtiq, 2])
 					if _aEtiq [_nEtiq, 1] .and. _aEtiq [_nEtiq, 7] != ''
-						if _PodeExcl (.T.)
-						//	U_EtqPllIn(_aEtiq[_nEtiq, 2], .F.)
+		//				if _PodeExcl (.T.)
+						if _oEtiq:PodeExcluir (.T.)
 							U_ZA1In(_aEtiq[_nEtiq, 2], .F.)
 						endif
 					else
 						if _aEtiq [_nEtiq, 1] .and. za1 -> (dbseek (xfilial ("ZA1") + _aEtiq [_nEtiq, 2], .F.))
-							if _PodeExcl (.T.)
+//							if _PodeExcl (.T.)
+							if _oEtiq:PodeExcluir (.T.)
 								reclock ("ZA1", .F.)
 								za1 -> (dbdelete ())
 								msunlock ()
@@ -484,7 +492,7 @@ User Function EtqPlltG (_sOP, _sNF, _sSerie, _sFornece, _sLoja, _sQueFazer)
 return
 
 
-
+/*
 // --------------------------------------------------------------------------
 // Verifica se permite a exclusao da etiqueta.
 static function _PodeExcl (_lComTela)
@@ -512,7 +520,7 @@ static function _PodeExcl (_lComTela)
 		endif
 	endif
 return _lRet
-
+*/
 
 
 // --------------------------------------------------------------------------
