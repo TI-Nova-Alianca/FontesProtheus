@@ -169,6 +169,7 @@ Static Function RptDetail()
 	 		_sQuery += "   ORDER BY SE1.E1_VENCTO, E1_FILIAL, E1_NUM, E1_PARCELA"
 	 	ENDIF
    	ENDIF
+	u_log(_sQuery)
 	
     _sAliasQ = GetNextAlias ()
     DbUseArea(.t., 'TOPCONN', TcGenQry (,, _sQuery), _sAliasQ, .f., .t.)

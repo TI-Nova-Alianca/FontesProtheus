@@ -154,6 +154,7 @@ Static Function RptDetail()
  	_sQuery += " WHERE ROUND(C.VLR_ORIGINAL,2) > ROUND(C.VLR_RECEBIDO + C.VLR_DESCONTO + C.VLR_COMP,2)"
     _sQuery += " ORDER BY C.EMISSAO, C.NUMERO, C.PARCELA"
     
+	u_log(_sQuery)
     //u_showmemo(_sQuery)
         
     _sAliasQ = GetNextAlias ()

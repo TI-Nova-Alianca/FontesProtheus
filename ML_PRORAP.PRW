@@ -99,6 +99,7 @@ Static Function RptDetail()
 	_sQuery += " GROUP BY SD2.D2_EMISSAO, SD2.D2_DOC, SD2.D2_SERIE, SA1.A1_COD, SA1.A1_NOME"
     _sQuery += " ORDER BY SD2.D2_EMISSAO, SD2.D2_DOC, SD2.D2_SERIE"
   
+    u_log(_sQuery)
 	//u_showmemo(_sQuery)
         
     _sAliasQ = GetNextAlias ()
