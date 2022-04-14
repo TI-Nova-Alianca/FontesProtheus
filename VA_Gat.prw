@@ -127,8 +127,8 @@
 // 23/04/2021 - Claudia - Ajustes para versão R25.
 // 31/08/2021 - Claudia - Desabilitada validacao do 'custo para transferencia' quando chamado a partir do MATA310. GLPI: 8077
 // 04/03/2022 - Robert  - Gatilho para campo ZZ9_SAFRA (GLPI 11708).
+// 14/04/2022 - Claudia - Criado gatilhos de vendedor. GLPI: 10699
 //
-
 // ----------------------------------------------------------------------------------------------------------------------------
 #include "VA_Inclu.prw"
 
@@ -227,6 +227,44 @@ user function VA_Gat (_sParCpo, _sParSeq)
 			else
 				_xRet = fbuscacpo("SA1",1,xFilial("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_MUN")
 			endif
+
+		case _sCampo $ "M->C5_VEND1" .and. _sCDomin == "C5_COMIS1"
+			_sVend1 := fbuscacpo("SA1",1,xFilial("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_VEND")
+			_sVend2 := fbuscacpo("SA1",1,xFilial("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_VEND2")
+
+			If !empty(_sVend1) .or. !empty(_sVend2)
+				Do Case 
+					Case M->C5_VEND1 == _sVend1
+						_xRet := fbuscacpo("SA1",1,xFilial("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_COMIS")
+
+					Case M->C5_VEND1 == _sVend2
+						_xRet := fbuscacpo("SA1",1,xFilial("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_COMIS2")
+					
+					Otherwise
+						u_help("O Vendedor digitado não pertence ao cliente")
+				EndCase
+			else
+				_xRet := 0
+			EndIf
+
+		case _sCampo $ "M->C5_VEND1" .and. _sCDomin == "C5_TABELA"
+			_sVend1 := fbuscacpo("SA1",1,xFilial("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_VEND")
+			_sVend2 := fbuscacpo("SA1",1,xFilial("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_VEND2")
+
+			If !empty(_sVend1) .or. !empty(_sVend2)
+				Do Case 
+					Case M->C5_VEND1 == _sVend1
+						_xRet := fbuscacpo("SA1",1,xFilial("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_TABELA")
+
+					Case M->C5_VEND1 == _sVend2
+						_xRet := fbuscacpo("SA1",1,xFilial("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_TABELA2")
+					
+					Otherwise
+						u_help("O vendedor digitado não pertence ao cliente")
+				EndCase
+			else
+				_xRet := ''
+			EndIf
 
 		case _sCampo $ "M->C5_PBRUTO/M->C5_PESOL" .and. _sCDomin == "C5_VAALTVP"
 			_xRet = m->C5_VAALTVP  // Se nao encontrar nada, deixa valor pronto para retorno.

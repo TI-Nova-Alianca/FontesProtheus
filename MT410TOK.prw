@@ -1,18 +1,25 @@
-#include "protheus.ch"
-
 // Programa...: MT410TOK
 // Autor......: Bruno
 // Data.......: 24/03/20194
-// Descricao..: Função executa antes de confirmar a inclusão do Pedido de Venda
+// Descricao..: Ponto de entrada que executa antes de confirmar a inclusão do Pedido de Venda.
 //
-// --------------------------------------------------------------------------------------------------------------------
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #Ponto de entrada que executa antes de confirmar a inclusão do Pedido de Venda.
+// #PalavasChave      #ponto_de_entrada #tudo_ok #pedido_de_venda
+// #TabelasPrincipais #SC5 #SC6
+// #Modulos           #FAT
+//
 // Historico de alteracoes:
 // 24/03/2014 - Bruno        - Verifica se o campo A1_SATIV1 da tabela do Cliente selecionado está preenchido
 // 12/12/2018 - Andre/Sandra - Não Permite data fatura menor que a data atual no pedido de venda cond pagto tipo 9 
 // 11/12/2019 - Claudia      - Incluída rotina _VerifTranfil() para validação de transferencia entre filiais, 
 //							   Conforme GLPI 7164
-// --------------------------------------------------------------------------------------------------------------------
+// 14/04/2022 - Claudia      - Criada validações de vendedor. GLPI: 10699
 //
+// --------------------------------------------------------------------------------------------------------------------
+
+#include "protheus.ch"
 
 User Function MT410TOK()
 	Local _lRet := .T.
@@ -30,23 +37,12 @@ User Function MT410TOK()
 	
 	// verifica se a transferencia está sendo entre filiais
 	_lRet := _VerifTranfil()
-	
-	 /*	//valida as linhas verificando se precisa fazer o calculo de descontos
-recalculo:=0
-	For i:=1 to len(aCols)
-		if	GDFieldGet("C6_LINOK",i) ==.F.
-			recalculo:=recalculo+1
-			
-			RecalcD(M->C5_DESCVIS,M->C5_DESCFOB,GDFieldGet("C6_QTDVEN",i),GDFieldGet("C6_BKPVLR",i),GDFieldGet("C6_DESCONT",i),i)
-			
-		endif
-	Next
-	if recalculo>0
-		Alert("Uma ou mais linhas não foram calculadas manualmente. O sistema realizou o recalculo desses itens. Verifique!")
-		_lRet := .T.
-	endif  */
+
+	// Verifica se vendedor é valido no cadastro de cliente
+	_lRet := _VerifVend()
 
 Return _lRet
+//
 // -----------------------------------------------------------------------------
 // Verifica se a transferencia é entre filiais, conforme TES informada
 Static Function _VerifTranfil()
@@ -73,67 +69,25 @@ Static Function _VerifTranfil()
 			Exit
 		EndIf
 	Next nXi 
+
 Return lRet
+//
+// -----------------------------------------------------------------------------
+// Valida se o vendedor inserido é do cadastro de cliente
+Static Function _VerifVend()
+	local lRet  := .T.
 
+	_sVend1 := fbuscacpo("SA1",1,xFilial("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_VEND")
+	_sVend2 := fbuscacpo("SA1",1,xFilial("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_VEND2")
 
-/* *************************************************************************************************
-*****       FUNÇÃO DE RECALCULO DE DESCONTOS EM CASCATA NA GRAVAÇÃO DO PEDIDO DE VENDA         *****
-****************************************************************************************************
-***** 20/06/2014 	********************************************************************************
-***** nDescVista 	 % do desconto a vista (C5_DESCVIS)										   *****
-***** nDescFOB 		 % do desconto frete tipo FOB (C5_DESCFOB)								   *****
-***** nQnt 	 		 quantidade de produtos da linha (C6_QTDVEN)							   *****
-***** nPrcVenda		 preço de venda do produto salvo no campo de BKP (sem descontos)(C6_BKPVLR)*****
-***** nDescLin		 % de desconto na linha (C6_DESCONT)									   *****
-***** lin 			 linha posicionada no aCols												   *****
-****************************************************************************************************
-**************************************************************************************************** */
-/*
-Static Function RecalcD(nDescVista,nDescFOB,nQnt,nPrcVenda,nDescLin,lin)
-
-nValorTOT	:= 0
-nPerc		:= 0
-
-if nDescLin <> 0
-	nPerc:=(nPrcVenda * nDescLin)/100
-	nValorTOT:= nPrcVenda - nPerc
-	
-	GDFieldPut("C6_VALDESC ",nPerc,lin)
-	GDFieldPut("C6_PRCVEN",nValorTOT,lin)
-	GDFieldPut("C6_VAPRCVE",nValorTOT,lin)
-	
-endif
-
-nPrcVenda	:=GDFieldGet("C6_BKPVLR",lin) - GDFieldGet("C6_VALDESC",lin)
-
-//desconto FOB
-if nDescFOB <> 0
-	
-	nPerc:=(nPrcVenda * nDescFOB)/100
-	nValorTOT:= nPrcVenda - nPerc
-	
-	GDFieldPut("C6_DFOB ",nPerc,lin)
-	GDFieldPut("C6_PRCVEN",nValorTOT,lin)
-	GDFieldPut("C6_VAPRCVE",nValorTOT,lin)
-	
-endif
-
-nPrcVenda	:=GDFieldGet("C6_BKPVLR",lin) - GDFieldGet("C6_VALDESC",lin) - GDFieldGet("C6_DFOB",lin)
-
-//desconto à vista
-if nDescVista <> 0
-	nPerc:= (nPrcVenda*nDescVista)/100
-	nValorTOT:= nPrcVenda - nPerc
-	
-	GDFieldPut("C6_DVISTA",nPerc,lin)
-	GDFieldPut("C6_PRCVEN",nValorTOT,lin)
-	GDFieldPut("C6_VAPRCVE",nValorTOT,lin)
-endif
-
-//calculo do total
-nTotal:=ROUND(nQnt * GDFieldGet("C6_PRCVEN",lin),2)
-GDFieldPut("C6_VALOR",nTotal,lin)
-
-GDFieldPut("C6_LINOK",.T.,lin)
-Return 
-*/
+	If !empty(_sVend1) .or. !empty(_sVend2)
+		Do Case
+			Case M->C5_VEND1 <> _sVend1 .AND.  M->C5_VEND1 <> _sVend2
+				u_help("Vendedor " +  M->C5_VEND1 + " não cadastrado no cliente! Ele não pde ser utilizado.")
+				lRet := .F.
+			Case M->C5_VEND2 <> _sVend1 .AND.  M->C5_VEND2 <> _sVend2
+					u_help("Vendedor " +  M->C5_VEND2 + " não cadastrado no cliente! Ele não pde ser utilizado.")
+				lRet := .F.
+		EndCase		
+	EndIf
+Return lRet
