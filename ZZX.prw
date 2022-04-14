@@ -108,20 +108,20 @@
 // 28/09/2020 - Robert  - Nao localizava NF de venda pela chave pois o sistema padrao mudou a ordem dos indices (GLPI 8569).
 // 05/05/2021 - Robert  - Alterada regra geracao TES entrada transf.filiais tipo prod.RE do TES 234 para 151 (GLPI 7916).
 // 25/08/2021 - Robert  - Manda uma copia do XML para o importador da TRS (GLPI projeto 15).
+// 14/04/2022 - Claudia - Criado novo menu para exporta dados. GLPI: 11889
 //
-
 // ----------------------------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
 #Include "RwMake.ch"
 #Include "TbiConn.ch"
 #include "VA_INCLU.prw"
+
 User Function ZZX ()
 	local _aCores     := U_ZZXLEG(.T.)
 	local _aIndBrw    := {}
 	Private aRotina   := {}
 	private cCadastro := "Manutenção XML's"
 	Private cString   := "ZZX"
-//	private _sArqLog  := iif (type ("_sArqLog") == "C", _sArqLog, U_Nomelog ())
 	
 	// verifica parametros usados no programa para geracao de CTE's
 	_xTES_c_ICMS := GetMv("ML_CTRTCIC")   // TES c/ ICMS para CTE's
@@ -164,6 +164,7 @@ User Function ZZX ()
 	aadd (aRotina, {"&Dados Devolução - COM", "U_ZZXD (1)"      ,   0, 4})
 	aadd (aRotina, {"&Dados Devolução - LOG", "U_ZZXD (2)"      ,   0, 4})
 	aadd (aRotina, {"Imp.Dados Devolução"   , "U_ZZXIMP ()"     ,   0, 4})
+	aadd (aRotina, {"Exporta Dados"         , "U_ZZXEXP ()"     ,   0, 4})
 	aadd (aRotina, {"&Controle de Portaria ", "U_VA_CPORT ()"   ,   0, 4})
 	aadd (aRotina, {"&Legenda"              , "U_ZZXLEG(.F.)"   ,   0 ,5})
 
