@@ -20,6 +20,7 @@
 User function BatVerbas(_nTipo, _sFilial)
 	Local _aDados   := {}
 	Local _aVend    := {}
+	Local _sVend    := ""
 	Local _x		:= 0
 	Local _i		:= 0
 	Private cPerg   := "BatVerbas"
@@ -40,19 +41,15 @@ User function BatVerbas(_nTipo, _sFilial)
 		u_help("Essa rotina permite realizar o preenchimento da tabela de ajuste de comissões(ZB0) manualmente")
 	EndIf
 	
-	//_dDtaIni := STOD('20190101')//
-	//_dDtaFin  := LastDate ( _dDtaIni)//
-	
-	//While _dDtaIni <= STOD('20200801')//
 	If _nTipo == 1
 		_dDtaIni  := FirstDate ( Date())
 		_dDtaFin  := LastDate ( Date())
-		
 	Else
 		_ValidPerg()
 		If Pergunte(cPerg,.T.)
 			_dDtaIni := mv_par01
 			_dDtaFin := mv_par02
+			_sVend   := mv_par03
 		Else
 			Return
 		EndIf
@@ -85,7 +82,11 @@ User function BatVerbas(_nTipo, _sFilial)
 		_oSQL:_sQuery += " 			AND SA3.A3_ATIVO != 'N'
 		_oSQL:_sQuery += " 			AND SA3.A3_COD = SE3.E3_VEND)
 		_oSQL:_sQuery += " WHERE E3_FILIAL = '" + xFilial('SE3') + "' "   
-		_oSQL:_sQuery += " AND E3_VEND BETWEEN ' ' and 'ZZZ'"
+		If !empty(_sVend)
+			_oSQL:_sQuery += " AND E3_VEND = '" + _sVend + "'"
+		Else
+			_oSQL:_sQuery += " AND E3_VEND BETWEEN ' ' and 'ZZZ'"
+		EndIf
 		_oSQL:_sQuery += " AND E3_EMISSAO BETWEEN '" + dtos (_dDtaIni) + "' AND '" + dtos (_dDtaFin) + "'"
 		_oSQL:_sQuery += " AND E3_BAIEMI = 'B'
 		_oSQL:_sQuery += " AND SE3.D_E_L_E_T_ = ''
@@ -127,9 +128,7 @@ User function BatVerbas(_nTipo, _sFilial)
 			Next
 		Next
 	EndIf
-	//	_dDtaIni  := MonthSum(_dDtaIni,1)//
-	//	_dDtaFin  := LastDate(_dDtaIni)//
-	//EndDo //
+
 	If _nTipo != 1
 		u_help("Processo finalizado com sucesso")
 	EndIf
@@ -142,6 +141,7 @@ Static Function _ValidPerg ()
 	//                     PERGUNT         TIPO TAM DEC VALID F3     Opcoes             Help
 	aadd (_aRegsPerg, {01, "Data inicial ", "D", 08, 0,  "",   "   ", {},                ""})
 	aadd (_aRegsPerg, {02, "Data final   ", "D", 08, 0,  "",   "   ", {},                ""})
+	aadd (_aRegsPerg, {03, "Vendedor     ", "C", 03, 0,  "",   "   ", {},                ""})
 
 	 U_ValPerg (cPerg, _aRegsPerg)
 Return
