@@ -45,6 +45,9 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA1", 	"" ,"Filial"	    ,,10,/*lPixel*/,{|| },"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA2", 	"" ,"Documento"	    ,,20,/*lPixel*/,{|| },"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA3", 	"" ,"Serie"		    ,, 5,/*lPixel*/,{|| },"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA3_1", "" ,"Fornecedor"    ,,10,/*lPixel*/,{|| },"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA3_2", "" ,"Loja"		    ,, 5,/*lPixel*/,{|| },"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA3_3", "" ,"Emissão"		,,10,/*lPixel*/,{|| },"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA4", 	"" ,"CFOP"		    ,,10,/*lPixel*/,{|| },"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA5", 	"" ,"Desc.XML"	    ,,40,/*lPixel*/,{|| },"LEFT",,"",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA6", 	"" ,"Desc.Interno"	,,30,/*lPixel*/,{|| },"LEFT",,"",,,,,,.F.)
@@ -74,13 +77,20 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "    ,ZZX_DOC "
     _oSQL:_sQuery += "    ,ZZX_SERIE "
     _oSQL:_sQuery += "    ,ZZX_CODMEM "
+    _oSQL:_sQuery += "    ,ZZX_CLIFOR "
+    _oSQL:_sQuery += "    ,ZZX_LOJA "
+    _oSQL:_sQuery += "    ,ZZX_EMISSA "
     _oSQL:_sQuery += " FROM " + RetSQLName ("ZZX") 
     _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " AND ZZX_FILIAL BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'"
-    _oSQL:_sQuery += " AND ZZX_EMISSA BETWEEN '" + dtos(mv_par03) + "' AND '" + dtos(mv_par04) + "' "
-    _oSQL:_sQuery += " AND ZZX_CLIFOR BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
+    If mv_par03 == 1
+        _oSQL:_sQuery += " AND ZZX_DTIMP BETWEEN '" + dtos(mv_par04) + "' AND '" + dtos(mv_par05) + "' "
+    Else
+        _oSQL:_sQuery += " AND ZZX_EMISSA BETWEEN '" + dtos(mv_par06) + "' AND '" + dtos(mv_par07) + "' "
+    EndIf
+    _oSQL:_sQuery += " AND ZZX_CLIFOR BETWEEN '" + mv_par08 + "' AND '" + mv_par09 + "'"
     //if !empty(mv_par09)
-    //    _oSQL:_sQuery += " AND ZZX_DOC = '" + mv_par09 + "'"
+        _oSQL:_sQuery += " AND ZZX_DOC = '000215310'"
     //endif
     _oSQL:_sQuery += " ORDER BY ZZX_FILIAL,ZZX_DOC,ZZX_SERIE"
     _aDados := _oSQL:Qry2Array ()
@@ -104,6 +114,9 @@ Static Function PrintReport(oReport)
                     oSection1:Cell("COLUNA1")	:SetBlock   ({|| _aDados[_x, 1] }) 
                     oSection1:Cell("COLUNA2")	:SetBlock   ({|| _aDados[_x, 2] }) 
                     oSection1:Cell("COLUNA3")	:SetBlock   ({|| _aDados[_x, 3] }) 
+                    oSection1:Cell("COLUNA3_1")	:SetBlock   ({|| _aDados[_x, 5] }) 
+                    oSection1:Cell("COLUNA3_2")	:SetBlock   ({|| _aDados[_x, 6] }) 
+                    oSection1:Cell("COLUNA3_3")	:SetBlock   ({|| _aDados[_x, 7] }) 
                     oSection1:Cell("COLUNA4")	:SetBlock   ({|| _oXMLSEF:NFe:ItCFOP [_nItem] + ' - ' + Tabela ('13', _oXMLSEF:NFe:ItCFOP [_nItem]) }) 
                     oSection1:Cell("COLUNA5")	:SetBlock   ({|| _oXMLSEF:NFe:ItDescri [_nItem] }) 
                     oSection1:Cell("COLUNA6")	:SetBlock   ({|| fbuscacpo("SB1", 1, xfilial ("SB1") + _wcodpro,  "B1_DESC")  }) 
@@ -144,13 +157,13 @@ Static Function _ValidPerg ()
 	
     aadd (_aRegsPerg, {01, "Filial de     ", "C", 2, 0,  "",   "   ", {} , ""})
 	aadd (_aRegsPerg, {02, "Filial até    ", "C", 2, 0,  "",   "   ", {} , ""})
-	aadd (_aRegsPerg, {03, "Emissao de    ", "D", 8, 0,  "",   "   ", {} , ""})
-	aadd (_aRegsPerg, {04, "Emissao até   ", "D", 8, 0,  "",   "   ", {} , ""})
-	aadd (_aRegsPerg, {05, "Fornecedor de ", "C", 6, 0,  "",   "SA2", {} , "Código do Fornecedor"})
-	aadd (_aRegsPerg, {06, "Fornecedor ate", "C", 6, 0,  "",   "SA2", {} , "Código do Fornecedor"})
-    //aadd (_aRegsPerg, {07, "Produto de    ", "C",15, 0,  "",   "SB1", {} , "Código do Produto"})
-    //aadd (_aRegsPerg, {08, "Produto ate   ", "C",15, 0,  "",   "SB1", {} , "Código do Produto"})
-    //aadd (_aRegsPerg, {09, "Documento     ", "C", 9, 0,  "",   "", {} , ""})
+    aadd (_aRegsPerg, {03, "Por data de   ", "N", 1, 0,  "",   "   ", {"Digitação","Emissao"} , ""})
+    aadd (_aRegsPerg, {04, "Digitacao de  ", "D", 8, 0,  "",   "   ", {} , ""})
+    aadd (_aRegsPerg, {05, "Digitacao até ", "D", 8, 0,  "",   "   ", {} , ""})
+	aadd (_aRegsPerg, {06, "Emissao de    ", "D", 8, 0,  "",   "   ", {} , ""})
+	aadd (_aRegsPerg, {07, "Emissao até   ", "D", 8, 0,  "",   "   ", {} , ""})
+	aadd (_aRegsPerg, {08, "Fornecedor de ", "C", 6, 0,  "",   "SA2", {} , "Código do Fornecedor"})
+	aadd (_aRegsPerg, {09, "Fornecedor ate", "C", 6, 0,  "",   "SA2", {} , "Código do Fornecedor"})
 	
 	U_ValPerg (cPerg, _aRegsPerg)
 Return
