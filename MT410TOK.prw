@@ -39,7 +39,10 @@ User Function MT410TOK()
 	_lRet := _VerifTranfil()
 
 	// Verifica se vendedor é valido no cadastro de cliente
-	_lRet := _VerifVend()
+	If M->C5_TIPO == 'N'
+		_lRet := _VerifVend()
+	EndIf 
+
 
 Return _lRet
 //
