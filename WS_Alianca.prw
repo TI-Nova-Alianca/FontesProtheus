@@ -88,6 +88,7 @@
 // 21/03/2022 - Robert  - Novos parametros chamada metodo fechamento safra.
 // 31/03/2022 - Robert  - Nao usa mais data nos nomes do arquivos de log.
 // 07/04/2022 - Robert  - Iniciada funcao de alteracao de dados de associados (GLPI 10138)
+// 13/04/2022 - Robert  - Continuada funcao de alteracao de dados de associados (GLPI 10138)
 //
 
 // --------------------------------------------------------------------------------------------------------
@@ -2208,35 +2209,64 @@ return
 // --------------------------------------------------------------------------
 // Atualiza cadastro de associados
 static function _AltAssoc ()
-	local   _sAssoc    := ""
-	local   _sLoja     := ""
-	local   _sRet      := ''
+//	local   _sAssoc    := ""
+//	local   _sLoja     := ""
+	local   _oSQL      := NIL
+	local   _sMsgRet   := ''
+	local   _aRegSA2   := {}
+	local   _sCPF      := ''
+	local   _sCodigo   := ''
+	local   _sLoja     := ''
+	local   _sInscr    := ''
+	local   _sNome     := ''
+	local   _sRG       := ''
+	local   _sTelPref  := ''
+	local   _sTelef2   := ''
+	local   _dDtNasc   := ctod ('')
+	local   _sEMail    := ''
+	local   _sEndereco := ''
+	local   _sCEP      := ''
 	private _sErroAuto := ""  // Variavel alimentada pela funcao U_Help
 
 	if empty (_sErroWS) ; _sCPF       = U_ExTagXML ("_oXML:_WSAlianca:_CPF",             .T., .F.) ; endif
-	if empty (_sErroWS) ; _sNome      = U_ExTagXML ("_oXML:_WSAlianca:_Nome",            .T., .F.) ; endif
+	if empty (_sErroWS) ; _sCodigo    = U_ExTagXML ("_oXML:_WSAlianca:_CodProtheus",     .T., .F.) ; endif
+	if empty (_sErroWS) ; _sLoja      = U_ExTagXML ("_oXML:_WSAlianca:_Loja",            .T., .F.) ; endif
+	if empty (_sErroWS) ; _sInscr     = U_ExTagXML ("_oXML:_WSAlianca:_InscEstadual",    .T., .F.) ; endif
+	if empty (_sErroWS) ; _sNome      = U_ExTagXML ("_oXML:_WSAlianca:_Nome",            .F., .F.) ; endif
 	if empty (_sErroWS) ; _sRG        = U_ExTagXML ("_oXML:_WSAlianca:_RG",              .F., .F.) ; endif
 	if empty (_sErroWS) ; _sTelPref   = U_ExTagXML ("_oXML:_WSAlianca:_telPreferencial", .F., .F.) ; endif
-	if empty (_sErroWS) ; _sTelefone2 = U_ExTagXML ("_oXML:_WSAlianca:_telefone2",       .F., .F.) ; endif
+	if empty (_sErroWS) ; _sTelef2    = U_ExTagXML ("_oXML:_WSAlianca:_telefone2",       .F., .F.) ; endif
 	if empty (_sErroWS) ; _dDtNasc    = U_ExTagXML ("_oXML:_WSAlianca:_dtnasc",          .F., .T.) ; endif
 	if empty (_sErroWS) ; _sEMail     = U_ExTagXML ("_oXML:_WSAlianca:_email",           .F., .F.) ; endif
 	if empty (_sErroWS) ; _sEndereco  = U_ExTagXML ("_oXML:_WSAlianca:_endereco",        .T., .F.) ; endif
 	if empty (_sErroWS) ; _sCEP       = U_ExTagXML ("_oXML:_WSAlianca:_CEP",             .F., .F.) ; endif
-	if empty (_sErroWS) ; _sGenero    = U_ExTagXML ("_oXML:_WSAlianca:_Genero",          .F., .F.) ; endif
 	if empty (_sErroWS)
-		sa2 -> (dbsetorder (3)) // A2_FILIAL, A2_CGC, R_E_C_N_O_, D_E_L_E_T_
-		if ! sa2 -> (dbseek (xfilial ("SA2") + _sCPF, .F.))
-			_sErroWS += "Cadastro do associado nao encontrado pelo CPF informado."
-		else
-			_sErroWS += "Se tiver mais de 1 CPF, como saber qual deles?"
-			_oAssoc := ClsAssoc ():New (_sAssoc, _sLoja)
+		//U_Log2 ('debug', '[' + procname () + ']Pesquisando SA2 com o CPF >>' + _sCPF + '<<')
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT A2_COD, A2_LOJA"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SA2") + " SA2"
+		_oSQL:_sQuery += " WHERE SA2.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SA2.A2_FILIAL  = '" + xfilial ("SA2") + "'"
+		_oSQL:_sQuery +=   " AND SA2.A2_COD     = '" + _sCodigo + "'"
+		_oSQL:_sQuery +=   " AND SA2.A2_LOJA    = '" + _sLoja   + "'"
+		_oSQL:_sQuery +=   " AND SA2.A2_INSC    = '" + _sInscr  + "'"
+		_oSQL:_sQuery +=   " AND SA2.A2_VARG    = '" + _sCPF    + "'"
+		_oSQL:Log ()
+		_aRegSA2 := _oSQL:RetFixo (1, 'ao procurar associado pelo cod+loja+CPF+insc.est.', .F.)
+		if len (_aRegSA2) == 1
+			_oAssoc := ClsAssoc ():New (sa2 -> a2_cod, sa2 -> a2_loja)
 			if valtype (_oAssoc) != 'O'
 				_sErroWS += "Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto
+			else
+				u_logobj (_oAssoc)
 			endif
+		else
+			_sErroWS += "Impossivel identificar associado."
 		endif
 	endif
 	if empty (_sErroWS)
-		_sMsgRetWS = _sRet
+		_sMsgRetWS = _sMsgRet
 	endif
 return
 
