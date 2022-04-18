@@ -100,9 +100,9 @@ static function _AndaLogo ()
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
-//	u_help ('Nada definido.')
-//return
-
+	u_help ('Nada definido.')
+return
+/*
 	// Testes com etiquetas
 	_oEtiq := ClsEtiq ():New ('2000468623')
 	u_logobj (_oEtiq)

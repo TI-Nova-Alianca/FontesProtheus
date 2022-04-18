@@ -31,28 +31,28 @@ return
 CLASS ClsEtiq
 
 	// Declaracao das propriedades da Classe
-	data Apontada      // ZA1_APONT - Apontamento de producao ja executado (quando etiq. para OP)
-	data Codigo        // ZA1_CODIGO
-	data DocEntrForn   // ZA1_FORNEC - Quando refere-se a NF de entrada
-	data DocEntrItem   // ZA1_ITEM - Quando refere-se a NF de entrada
-	data DocEntrLoja   // ZA1_LOJAF - Quando refere-se a NF de entrada
-	data DocEntrNum    // ZA1_DOCE - Quando refere-se a NF de entrada
-	data DocEntrSerie  // ZA1_SERIEE - Quando refere-se a NF de entrada
-	data DtEmis        // ZA1_DATA
-	data Filial        // ZA1_FILIAL
-	data IdZAG         // ZA1_IDZAG - Identificador de registro da tabela ZAG
-	data Impressa      // ZA1_IMPRES - Jah impressa
-	data Inutilizada   // ZA1_APONT='I' - Indica que foi inutilizada manualmente
-	data LoteProduto
-	data OP            // ZA1_OP
-	data Produto       // ZA1_PROD
-	data QtApontada    // Quando relacionada a uma OP
-	data QtEstornada   // Quando relacionada a uma OP
-	data QtPerdida     // Quando relacionada a uma OP
-	data Quantidade    // ZA1_QUANT
-	data SeqNoGrupo    // ZA1_SEQ - Sequencia dentro do grupo, geralmente de OP. Ex.: 1 de 10, 2 de 10, ...
-	data UsrIncl       // ZA1_USRINC - Usuario que incluiu/gerou a etiqueta
-	data ValidadeLote
+	public data Apontada      // ZA1_APONT - Apontamento de producao ja executado (quando etiq. para OP)
+	public data Codigo        // ZA1_CODIGO
+	public data DocEntrForn   // ZA1_FORNEC - Quando refere-se a NF de entrada
+	public data DocEntrItem   // ZA1_ITEM - Quando refere-se a NF de entrada
+	public data DocEntrLoja   // ZA1_LOJAF - Quando refere-se a NF de entrada
+	public data DocEntrNum    // ZA1_DOCE - Quando refere-se a NF de entrada
+	public data DocEntrSerie  // ZA1_SERIEE - Quando refere-se a NF de entrada
+	public data DtEmis        // ZA1_DATA
+	public data Filial        // ZA1_FILIAL
+	public data IdZAG         // ZA1_IDZAG - Identificador de registro da tabela ZAG
+	public data Impressa      // ZA1_IMPRES - Jah impressa
+	public data Inutilizada   // ZA1_APONT='I' - Indica que foi inutilizada manualmente
+	public data LoteProduto
+	public data OP            // ZA1_OP
+	public data Produto       // ZA1_PROD
+	public data QtApontada    // Quando relacionada a uma OP
+	public data QtEstornada   // Quando relacionada a uma OP
+	public data QtPerdida     // Quando relacionada a uma OP
+	public data Quantidade    // ZA1_QUANT
+	public data SeqNoGrupo    // ZA1_SEQ - Sequencia dentro do grupo, geralmente de OP. Ex.: 1 de 10, 2 de 10, ...
+	public data UsrIncl       // ZA1_USRINC - Usuario que incluiu/gerou a etiqueta
+	public data ValidadeLote
 
 	// Declaracao dos Metodos da classe
 	public METHOD New ()
