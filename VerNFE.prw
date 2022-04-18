@@ -33,6 +33,7 @@
 // 06/05/2020 - Robert - Desabilitado envio de e-mail para liane.lenzi
 // 19/10/2020 - Robert - Desabilitada validacao de endereco quando cliente do exterior.
 //                     - Incluidas tags para catalogo de fontes.
+// 18/04/2022 - Claudia - Incluida exceção no endereço do cliente '44807036000157'.
 //
 // --------------------------------------------------------------------------
 user function VerNFe (_sOnde)
@@ -112,7 +113,7 @@ static function _VerSA1 (_sCliente, _sLoja)
 			_sMsg += "Codigo de municipio nao informado ou invalido no cliente. (CNPJ: " + sa1 -> a1_cgc + ")" + chr (13) + chr (10)
 		endif
 		if sa1 -> a1_est != "EX"
-			if empty (sa1 -> a1_end) .or. alltrim (sa1 -> a1_end) == "." .or. len (StrTokArr (alltrim (sa1 -> a1_end), ' ')) <= 1 .or. IsDigit (left (sa1 -> a1_end, 1))
+			if empty (sa1 -> a1_end) .or. alltrim (sa1 -> a1_end) == "." .or. len (StrTokArr (alltrim (sa1 -> a1_end), ' ')) <= 1 .or. IsDigit (left (sa1 -> a1_end, 1)) .and. alltrim(sa1 -> a1_cgc) != '44807036000157'
 				_sMsg += "Endereco nao informado ou invalido no cliente. (CNPJ: " + sa1 -> a1_cgc + "). Estaria faltando um espaco entre o nome da rua e o numero da casa?" + chr (13) + chr (10)
 			endif
 		endif
