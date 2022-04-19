@@ -25,6 +25,7 @@
 // 04/08/2021 - Robert  - Removidas chamadas de logs desnecessarias.
 // 04/10/2021 - Claudia - Alterada a rotina _AtuReproc. GLPI: 9674
 // 01/04/2022 - Robert  - Passa a usar a classe ClsEtiq() para envio da etiqueta para o FullWMS - GLPI 11825.
+// 18/04/2022 - Robert  - Incluida chamada para funcao PerfMon().
 //
 
 // -----------------------------------------------------------------------------------------------------------------------------------
@@ -52,6 +53,9 @@ User Function SD3250I()
 	
 	// Atualiza laudos/ensaios de laboratorio
 	processa ({|| _AtuLaudo ()})
+
+	// Finaliza registro (criado pelo P.E. MT250TOk) para medicao de tempo de apontamento de producao.
+	U_PerfMon ('F', 'GravacaoMATA250')
 
 	U_ML_SRArea (_aAreaAnt)
 Return
