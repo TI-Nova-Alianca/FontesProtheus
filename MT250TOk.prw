@@ -31,6 +31,7 @@
 // 13/07/2021 - Robert - Eliminadas perguntas simples e melhorados helps para execucao via web service (GLPI 10479)
 // 06/12/2021 - Robert - Valida se o empenho jah foi enderecado (para evitar que o sistema requisite de onde quiser). GLPI 11076
 // 27/03/2022 - Robert - Verificacao de etiquetas passada para classe ClsEtiq() - GLPI 11825.
+// 18/04/2022 - Robert - Incluida chamada para funcao PerfMon().
 //
 
 // --------------------------------------------------------------------------
@@ -101,6 +102,11 @@ user function mt250tok ()
 	// Verifica OP de retrabalho.
 	if _lRet
 		_lRet = _VerRetr ()
+	endif
+
+	// Deixa registro pronto (a ser 'fechado' pelo P.E. SD3250i) para medicao de tempo de apontamento de producao.
+	if _lRet
+		U_PerfMon ('I', 'GravacaoMATA250')
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
