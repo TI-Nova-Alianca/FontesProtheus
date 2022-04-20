@@ -16,6 +16,7 @@
 // 11/12/2019 - Claudia      - Incluída rotina _VerifTranfil() para validação de transferencia entre filiais, 
 //							   Conforme GLPI 7164
 // 14/04/2022 - Claudia      - Criada validações de vendedor. GLPI: 10699
+// 20/04/2022 - Claudia      - Ajustada a validação do vendedor. GLPI: 10699
 //
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -83,14 +84,17 @@ Static Function _VerifVend()
 	_sVend1 := fbuscacpo("SA1",1,xFilial("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_VEND")
 	_sVend2 := fbuscacpo("SA1",1,xFilial("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_VEND2")
 
-	If !empty(_sVend1) .or. !empty(_sVend2)
-		Do Case
-			Case M->C5_VEND1 <> _sVend1 .AND.  M->C5_VEND1 <> _sVend2
-				u_help("Vendedor " +  M->C5_VEND1 + " não cadastrado no cliente! Ele não pde ser utilizado.")
-				lRet := .F.
-			Case M->C5_VEND2 <> _sVend1 .AND.  M->C5_VEND2 <> _sVend2
-					u_help("Vendedor " +  M->C5_VEND2 + " não cadastrado no cliente! Ele não pde ser utilizado.")
-				lRet := .F.
-		EndCase		
+	If !empty(_sVend1) .and. !empty(M->C5_VEND1)
+		If alltrim(M->C5_VEND1) <> alltrim(_sVend1) .AND.  alltrim(M->C5_VEND1) <> alltrim(_sVend2)
+			u_help("Vendedor " +  M->C5_VEND1 + " não cadastrado no cliente! Ele não pode ser utilizado.")
+			lRet := .F.
+		EndIf
 	EndIf
+	If !empty(_sVend2) .and. !empty(M->C5_VEND2)
+		If alltrim(M->C5_VEND2) <> alltrim(_sVend1) .AND.  alltrim(M->C5_VEND2) <> alltrim(_sVend2)
+			u_help("Vendedor " +  M->C5_VEND2 + " não cadastrado no cliente! Ele não pode ser utilizado.")
+			lRet := .F.
+		EndIf
+	EndIf
+
 Return lRet
