@@ -4,6 +4,7 @@
 // Descricao..: Exportacao de dados contabeis para o SESCOOP.
 //
 // Historico de alteracoes:
+// 20/04/2022 - Robert - Filtra campos CQ0_LP != 'Z' e CQ2_LP != 'Z' para evitar lctos de zeramento.
 //
 
 // --------------------------------------------------------------------------
@@ -348,6 +349,7 @@ Static Function _Gera ()
 	_oSQL:_sQuery +=                            " WHERE CQ0.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=                              " AND CQ0.CQ0_CONTA = CT1_CONTA"
 	_oSQL:_sQuery +=                              " AND CQ0.CQ0_TPSALD = '1'"
+	_oSQL:_sQuery +=                              " AND CQ0.CQ0_LP != 'Z'"
 	_oSQL:_sQuery +=                              " AND CQ0.CQ0_DATA  <= '" + dtos (_dUltDiaMes) + "'), 0)"
 //	if month (_dUltDiaMes) > 1
 //		_dUDMesAnt  := lastday (stod (mv_par01 + tira1 (mv_par02) + '01'))  // Quando for janeiro, vai dar mes = '00' mas nesse caso nao devo passar por aqui...
@@ -365,6 +367,7 @@ Static Function _Gera ()
 	_oSQL:_sQuery +=                            " WHERE CQ2.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=                              " AND CQ2.CQ2_CONTA = CT1_CONTA"
 	_oSQL:_sQuery +=                              " AND CQ2.CQ2_TPSALD = '1'"
+	_oSQL:_sQuery +=                              " AND CQ2.CQ2_LP != 'Z'"
 	_oSQL:_sQuery +=                              " AND CQ2.CQ2_DATA   BETWEEN '" + mv_par01 + "0101' AND '" + dtos (_dUltDiaMes) + "'), 0)"
 //	_oSQL:_sQuery +=                              " AND CQ2.CQ2_DATA   BETWEEN '" + mv_par01 + mv_par02 + "01' AND '" + dtos (_dUltDiaMes) + "'), 0)"
 /*

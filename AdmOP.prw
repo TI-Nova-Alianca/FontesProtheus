@@ -2,7 +2,14 @@
 // Autor......: Robert Koch
 // Data.......: 21/10/2014
 // Descricao..: Tela de fechamento de ordem de producao.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Bancada de trabalho com atalhos para diversos programas relacionados a ordens de producao.
+// #PalavasChave      #ordens_de_producao #administrar
+// #TabelasPrincipais #SD2 #SD3
+// #Modulos           #PCP
+
 // Historico de alteracoes:
 // 31/01/2015 - Robert  - Mostra tipo de OP e de produto
 //                      - Componentes nao movimentados aparecem como linhas deletadas.
@@ -44,15 +51,8 @@
 // 20/07/2020 - Robert  - Reabertura de OP passa a validar acesso 099 e nao mais 009.
 //                      - Inseridas tags para catalogacao de fontes
 // 04/08/2020 - Robert  - Usuario deve pertencer ao grupo 117 do ZZU para permitir alteracoes (nao mais pelos grupos do configurador).
+// 20/04/2022 - Robert  - Removidos logs desnecessarios.
 //
-
-
-// Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #Processamento
-// #Descricao         #Bancada de trabalho com atalhos para diversos programas relacionados a ordens de producao.
-// #PalavasChave      #ordens_de_producao #administrar
-// #TabelasPrincipais #SD2 #SD3
-// #Modulos           #PCP
 
 #include "rwmake.ch"
 #include "colors.ch"
@@ -309,7 +309,7 @@ static function _LeDados ()
 	local _sAliasQ     := ""
 	local _aRetQry     := {}
 	local _nQtBase     := 0
-	u_logIni ()
+
 	procregua (10)
 	incproc ()
 
@@ -468,7 +468,7 @@ static function _LeDados ()
 
 	// Ordena aCols pela coluna do codigo do componente.
 	aCols = asort (aCols,,, {|_x, _y| _x [GDFieldPos ("ZZZ_08COD")] < _y [GDFieldPos ("ZZZ_08COD")]})
-	u_logFim ()
+
 return
 // --------------------------------------------------------------------------
 // Atualiza toda a tela. Chamada principalmente por gatilhos.

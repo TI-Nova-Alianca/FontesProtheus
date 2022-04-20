@@ -105,7 +105,8 @@ user function mt250tok ()
 	endif
 
 	// Deixa registro pronto (a ser 'fechado' pelo P.E. SD3250i) para medicao de tempo de apontamento de producao.
-	if _lRet
+	if _lRet .and. ! empty (m->d3_vaetiq)
+		U_Log2 ('debug', '[' + procname () + ']Criando entrada no PerfMon com chave GravacaoMATA250')
 		U_PerfMon ('I', 'GravacaoMATA250')
 	endif
 
