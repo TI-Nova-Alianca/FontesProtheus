@@ -11,6 +11,7 @@
 // #Modulos           #PCP
 
 // Historico de alteracoes
+// 20/04/2022 - Robert - Validava etiqueta (tabela ZA1), mas posso ainda nao ter etiqueta gerada.
 //
 
 // ------------------------------------------------------------------------------------
@@ -76,10 +77,10 @@ user function SB1PEF (_sProduto)
 				u_help ("Impossivel enviar produto '" + _sProduto + "' para o FullWMS: Regiao de armazenagem nao informada para o item '" + alltrim (_sProduto) + "' no FullWMS.", _oSQL:_sQuery, .t.)
 				_lContinua = .F.
 			endif
-			if _lContinua .and. _aQryWMS [1, 2] < za1 -> za1_quant
-				u_help ("Impossivel enviar produto '" + _sProduto + "' para o FullWMS: Qtd.por pallet nos dados logisticos do FullWMS (" + cvaltochar (_aQryWMS [1, 2]) + "). Quantidade da etiqueta (" + cvaltochar (za1 -> za1_quant) + ") nao pode ser maior.", _oSQL:_sQuery, .t.)
-				_lContinua = .F.
-			endif
+// ainda nao tenho a etiqueta			if _lContinua .and. _aQryWMS [1, 2] < za1 -> za1_quant
+// ainda nao tenho a etiqueta				u_help ("Impossivel enviar produto '" + _sProduto + "' para o FullWMS: Qtd.por pallet nos dados logisticos do FullWMS (" + cvaltochar (_aQryWMS [1, 2]) + "). Quantidade da etiqueta (" + cvaltochar (za1 -> za1_quant) + ") nao pode ser maior.", _oSQL:_sQuery, .t.)
+// ainda nao tenho a etiqueta				_lContinua = .F.
+// ainda nao tenho a etiqueta			endif
 		endif
 	endif
 
