@@ -225,7 +225,7 @@ User Function M410LIOK()
 
 	// Verifica comissao.
 	if _lRet
-		_lRet = _VerComis ()
+// desab por robert para um quebra galho		_lRet = _VerComis ()
 	endif
 
 	// Verifica tabela de precos

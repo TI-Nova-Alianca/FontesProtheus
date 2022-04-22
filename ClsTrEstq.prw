@@ -14,10 +14,11 @@
 // 26/09/2019 - Cláudia - Incluída validação de lote mínimo.
 // 27/11/2020 - Robert  - Quando existir etiqueta relacionada, tenta inutiliza-la automaticamente.
 //                      - Transf. envolvendo o AX01 (FullWMS) liberadas, momentaneamente, para aceitar liberacao manual (sem ser o Full).
-// 04/12/2020 - RObert  - Criado tratamento para produto destino diferente do produto origem.
+// 04/12/2020 - Robert  - Criado tratamento para produto destino diferente do produto origem.
 // 18/10/2021 - Sandra  - Ajuste da mensagem "Transferencia ainda nao gravada na tabela ZZG" para "Transferencia ainda nao gravada na tabela ZAG"
 // 25/01/2022 - Robert  - Gera etiqueta quando o prod.controla lote, mesmo nao tendo integracao com FullWMS.
 // 06/04/2022 - Robert  - Criado metodo :AlmUsaEtiq() e passa a ser validado antes de gerar etiqueta.
+// 22/04/2022 - Robert  - Considerar usr 'FULLW' e nao mais 'FULLWMS' (para caber no campo ZZU_USR) - GLPI 8194
 //
 
 // ------------------------------------------------------------------------------------
@@ -532,16 +533,16 @@ METHOD Grava () Class ClsTrEstq
 		// Verifica tamanhos de campos para evitar, por exemplo, uma chamada passando o produto com tamanho != 15
 		// Usa tamanhos fixos (nao busca n SX3) por questao de performance, jah que sao campos chave e dificilmente mudarao de tamanho.  
 		if _lContinua
-			if len (::FilOrig)  !=  2; ::UltMsg += "Filial origem deve ter tamanho 2"    ; _lContinua = .F.; endif
-			if len (::FilDest)  !=  2; ::UltMsg += "Filial destino deve ter tamanho 2"   ; _lContinua = .F.; endif
-			if len (::ProdOrig) != 15; ::UltMsg += "Produto origem deve ter tamanho 15"  ; _lContinua = .F.; endif
-			if len (::ProdDest) != 15; ::UltMsg += "Produto destino deve ter tamanho 15" ; _lContinua = .F.; endif
-			if len (::AlmOrig)  !=  2; ::UltMsg += "Alm.origem deve ter tamanho 2"       ; _lContinua = .F.; endif
-			if len (::AlmDest)  !=  2; ::UltMsg += "Alm.destino deve ter tamanho 2"      ; _lContinua = .F.; endif
-			if ! empty (::EndOrig)  .and. len (::EndOrig)  != 15; ::UltMsg += "Endereco origem deve ter tamanho 15" ; _lContinua = .F.; endif
-			if ! empty (::EndDest)  .and. len (::EndDest)  != 15; ::UltMsg += "Endereco destino deve ter tamanho 15"; _lContinua = .F.; endif
-			if ! empty (::LoteOrig) .and. len (::LoteOrig) != 10; ::UltMsg += "Lote origem deve ter tamanho 10"     ; _lContinua = .F.; endif
-			if ! empty (::loteDest) .and. len (::LoteDest) != 10; ::UltMsg += "Lote destino deve ter tamanho 10"    ; _lContinua = .F.; endif
+			if len (::FilOrig)  !=  2; ::UltMsg += "Filial origem deve ter tamanho 2."    ; _lContinua = .F.; endif
+			if len (::FilDest)  !=  2; ::UltMsg += "Filial destino deve ter tamanho 2."   ; _lContinua = .F.; endif
+			if len (::ProdOrig) != 15; ::UltMsg += "Produto origem deve ter tamanho 15."  ; _lContinua = .F.; endif
+			if len (::ProdDest) != 15; ::UltMsg += "Produto destino deve ter tamanho 15." ; _lContinua = .F.; endif
+			if len (::AlmOrig)  !=  2; ::UltMsg += "Alm.origem deve ter tamanho 2."       ; _lContinua = .F.; endif
+			if len (::AlmDest)  !=  2; ::UltMsg += "Alm.destino deve ter tamanho 2."      ; _lContinua = .F.; endif
+			if ! empty (::EndOrig)  .and. len (::EndOrig)  != 15; ::UltMsg += "Endereco origem deve ter tamanho 15." ; _lContinua = .F.; endif
+			if ! empty (::EndDest)  .and. len (::EndDest)  != 15; ::UltMsg += "Endereco destino deve ter tamanho 15."; _lContinua = .F.; endif
+			if ! empty (::LoteOrig) .and. len (::LoteOrig) != 10; ::UltMsg += "Lote origem deve ter tamanho 10."     ; _lContinua = .F.; endif
+			if ! empty (::loteDest) .and. len (::LoteDest) != 10; ::UltMsg += "Lote destino deve ter tamanho 10."    ; _lContinua = .F.; endif
 		endif
 	endif
 
@@ -778,11 +779,10 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 		//u_log2 ('debug', 'Testando com usuario ' + _sUserName)
 		if empty (::UsrAutOri) .and. alltrim (upper (_sUserName)) $ _aLib [1, 1]
 			u_log2 ('info', 'Usuario tem liberacao para o almox. origem')
-			/* Permitido ateh que a gente implemente integracao com o endereco 'avarias' do Full (GLPI 8914)
-			if ::FWProdOrig .and. ::AlmUsaFull (::AlmOrig) .and. _sUserName != 'FULLWMS'
+			if ::FWProdOrig .and. ::AlmUsaFull (::AlmOrig) .and. _sUserName != 'FULLW'
 				u_log2 ('info', '... mas o produto usa Full e o AX origem eh controlado pelo FullWMS')
 				_sMsg = "Produto '" + alltrim (::ProdOrig) + "' tem controle via FullWMS no AX '" + ::AlmOrig + "' e nao deve ser movimentado manualmente."
-				if U_ZZUVL ('029', __cUserId, .F.) .and. U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
+				if U_ZZUVL ('029', __cUserId, .F.) .and. U_MsgYesNo (_sMsg + " Confirma assim mesmo?")
 					if ::AtuZAG ("zag_UAutO", _sUserName)
 						::UsrAutOri = _sUserName
 						::UltMsg += iif (_lMsg, "AX orig.liberado. ", '')
@@ -792,22 +792,20 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 					::UltMsg += _sMsg
 				endif
 			else
-			*/
 				if ::AtuZAG ("zag_UAutO", _sUserName)
 					::UsrAutOri = _sUserName
 					::UltMsg += iif (_lMsg, "AX orig.liberado. ", '')
 					_lNenhuma = .F.
 				endif
-//			endif
+			endif
 		endif
 
 		if empty (::UsrAutDst) .and. alltrim (upper (_sUserName)) $ _aLib [1, 2]
 			u_log2 ('info', 'Usuario tem liberacao para o almox. destino')
-			/* Permitido ateh que a gente implemente integracao com o endereco 'avarias' do Full (GLPI 8914)
-			if ::FWProdDest .and. ::AlmUsaFull (::AlmDest) .and. _sUserName != 'FULLWMS'
+			if ::FWProdDest .and. ::AlmUsaFull (::AlmDest) .and. _sUserName != 'FULLW'
 				u_log ('info', '... mas o produto usa Full e o AX destino eh controlado pelo FullWMS')
 				_sMsg = "Produto '" + alltrim (::ProdDest) + "' tem controle via FullWMS no AX '" + ::AlmDest + "' e nao deve ser movimentado manualmente."
-				if U_ZZUVL ('029', __cUserId, .F.) .and. U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
+				if U_ZZUVL ('029', __cUserId, .F.) .and. U_MsgYesNo (_sMsg + " Confirma assim mesmo?")
 					if ::AtuZAG ("zag_UAutD", _sUserName)
 						::UsrAutDst = _sUserName
 						::UltMsg += iif (_lMsg, "AX dest.liberado. ", '')
@@ -817,13 +815,13 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 					::UltMsg += _sMsg
 				endif
 			else
-			*/
+
 				if ::AtuZAG ("zag_UAutD", _sUserName)
 					::UltMsg += iif (_lMsg, "AX dest.liberado. ", '')
 					::UsrAutDst = _sUserName
 					_lNenhuma = .F.
 				endif
-//			endif
+			endif
 		endif
 		
 		// Inicialmente a liberacao de PCP e qualidade vai ser automatica
