@@ -223,7 +223,7 @@ User Function M410LIOK()
 		_lRet = _VerMerc ()
 	endif
 
-	// Verifica comissao.
+	//Verifica comissao.
 	if _lRet
 		_lRet = _VerComis ()
 	endif

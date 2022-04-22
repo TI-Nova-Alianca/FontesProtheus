@@ -228,7 +228,7 @@ user function VA_Gat (_sParCpo, _sParSeq)
 				_xRet = fbuscacpo("SA1",1,xFilial("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_MUN")
 			endif
 
-		case _sCampo $ "M->C5_VEND1" .and. _sCDomin == "C5_COMIS1"
+		case _sCampo $ "M->C5_VEND1" .and. _sCDomin == "C5_COMIS1" .and. !m->c5_tipo $ "BD"
 			_sVend1 := fbuscacpo("SA1",1,xFilial("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_VEND")
 			_sVend2 := fbuscacpo("SA1",1,xFilial("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_VEND2")
 
@@ -247,7 +247,7 @@ user function VA_Gat (_sParCpo, _sParSeq)
 				_xRet := 0
 			EndIf
 
-		case _sCampo $ "M->C5_VEND1" .and. _sCDomin == "C5_TABELA"
+		case _sCampo $ "M->C5_VEND1" .and. _sCDomin == "C5_TABELA" .and. !m->c5_tipo $ "BD"
 			_sVend1 := fbuscacpo("SA1",1,xFilial("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_VEND")
 			_sVend2 := fbuscacpo("SA1",1,xFilial("SA1")+M->C5_CLIENTE+M->C5_LOJACLI,"A1_VEND2")
 
@@ -265,6 +265,14 @@ user function VA_Gat (_sParCpo, _sParSeq)
 			else
 				_xRet := ''
 			EndIf
+
+		case _sCampo $ "M->C5_CLIENTE" .and. _sCDomin == "C5_VEND1" 
+			If m->c5_tipo $ "BD"
+				_xRet := '001'
+			Else
+				_xRet := M->C5_VEND1
+			EndIf
+			
 
 		case _sCampo $ "M->C5_PBRUTO/M->C5_PESOL" .and. _sCDomin == "C5_VAALTVP"
 			_xRet = m->C5_VAALTVP  // Se nao encontrar nada, deixa valor pronto para retorno.

@@ -111,11 +111,11 @@ User Function MTA410 ()
  
 	if _lRet
 		if m->c5_tipo == 'N'
-			if fBuscaCpo ("SA3", 1, xfilial ("SA3") + m->c5_vend1, "A3_ATIVO") != "S"
+			if fBuscaCpo("SA3", 1, xfilial("SA3") + m->c5_vend1, "A3_ATIVO") != "S"
 				u_help ("Vendedor " + m->c5_vend1 + " nao consta como 'Ativo'",, .t.)
 				_lRet = .F.
 			endif
-			if ! empty (m->c5_vend2) .and. fBuscaCpo ("SA3", 1, xfilial ("SA3") + m->c5_vend2, "A3_ATIVO") != "S"
+			if ! empty(m->c5_vend2) .and. fBuscaCpo("SA3", 1, xfilial("SA3") + m->c5_vend2, "A3_ATIVO") != "S"
 				u_help ("Vendedor " + m->c5_vend2 + " nao consta como 'Ativo'",, .t.)
 				_lRet = .F.
 			endif
