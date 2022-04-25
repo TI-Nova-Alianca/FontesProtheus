@@ -75,26 +75,26 @@ User Function BatFullM ()
 			//_oTrEstq:EndDest  = 
 			_oTrEstq:QtdSolic = (_sAliasQ) -> qtde
 			_oTrEstq:Motivo   = 'Baixa avaria - ' + (_sAliasQ) -> obs
-			_oTrEstq:UsrIncl = cUserName
+			_oTrEstq:UsrIncl = 'FullWMS'  //cUserName
 			_oTrEstq:DtEmis  = stod ((_sAliasQ) -> dtemis)
 			if ! _oTrEstq:Grava ()
 				U_Log2 ('erro', '[' + procname () + ']' + _oTrEstq:UltMsg)
 				_AtuFull ((_sAliasQ) -> dthr, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
 			else
+				_AtuFull ((_sAliasQ) -> dthr, '3')  // Atualiza a tabela do Fullsoft como 'executado no ERP'
+		
 				// Chama a rotina de liberacao do docto. Se estiver em condicoes, a transferencia jah serah executada.
 				u_log2 ('debug', 'Chamando liberacao do ZAG')
 				_oTrEstq:Libera (.F., 'FULLW')
-				if _oTrEstq:Executado == 'S'
-					_AtuFull ((_sAliasQ) -> dthr, '3')  // Atualiza a tabela do Fullsoft como 'executado no ERP'
-				elseif _oTrEstq:Executado == 'E'
-					_AtuFull ((_sAliasQ) -> dthr, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
-				endif
 			endif
 		otherwise
 			u_help ("Sem tratamento para movimentos tipo '" + (_sAliasQ) -> tipo + "' lidos na tabela tb_wms_movimentacoes do FullWMS.", _oSQL:_sQuery, .t.)
 		endcase
 
 		(_sAliasQ) -> (dbskip ())
+
+		EXIT  // DURANTE TESTES, PARA RODAR 1 REGISTRO POR VEZ
+
 	enddo
 	(_sAliasQ) -> (dbclosearea ())
 	dbselectarea ("SB1")
