@@ -90,9 +90,10 @@ Static Function PrintReport(oReport)
     EndIf
     _oSQL:_sQuery += " AND ZZX_CLIFOR BETWEEN '" + mv_par08 + "' AND '" + mv_par09 + "'"
     //if !empty(mv_par09)
-        _oSQL:_sQuery += " AND ZZX_DOC = '000215310'"
+    //    _oSQL:_sQuery += " AND ZZX_DOC = '000014937'"
     //endif
     _oSQL:_sQuery += " ORDER BY ZZX_FILIAL,ZZX_DOC,ZZX_SERIE"
+    _oSQL:Log()
     _aDados := _oSQL:Qry2Array ()
 
     oSection1:Init()
@@ -107,44 +108,41 @@ Static Function PrintReport(oReport)
 			// Monta array com dados dos itens.
 			for _nItem := 1 to len(_oXMLSEF:NFe:ItCFOP)
 			    _wxmlpro := UPPER(_oXMLSEF:NFe:ItCprod [_nItem])
+				_wcodpro := fbuscacpo ("SA5", 14, xfilial ("SA5") + _aDados[_x, 5] + _aDados[_x, 6] + _wxmlpro,  "A5_PRODUTO") // codigo interno
 
-				_wcodpro = fbuscacpo ("SA5", 14, xfilial ("SA5") + zzx -> zzx_clifor + zzx -> zzx_loja + _wxmlpro,  "A5_PRODUTO") // codigo interno
-				//If _wcodpro >= mv_par07 .and. _wcodpro <= mv_par08
+                oSection1:Cell("COLUNA1")	:SetBlock   ({|| _aDados[_x, 1] }) 
+                oSection1:Cell("COLUNA2")	:SetBlock   ({|| _aDados[_x, 2] }) 
+                oSection1:Cell("COLUNA3")	:SetBlock   ({|| _aDados[_x, 3] }) 
+                oSection1:Cell("COLUNA3_1")	:SetBlock   ({|| _aDados[_x, 5] }) 
+                oSection1:Cell("COLUNA3_2")	:SetBlock   ({|| _aDados[_x, 6] }) 
+                oSection1:Cell("COLUNA3_3")	:SetBlock   ({|| _aDados[_x, 7] }) 
+                oSection1:Cell("COLUNA4")	:SetBlock   ({|| _oXMLSEF:NFe:ItCFOP [_nItem] + ' - ' + Tabela ('13', _oXMLSEF:NFe:ItCFOP [_nItem]) }) 
+                oSection1:Cell("COLUNA5")	:SetBlock   ({|| _oXMLSEF:NFe:ItDescri [_nItem] }) 
+                oSection1:Cell("COLUNA6")	:SetBlock   ({|| fbuscacpo("SB1", 1, xfilial ("SB1") + _wcodpro,  "B1_DESC")  }) 
+                oSection1:Cell("COLUNA7")	:SetBlock   ({|| _oXMLSEF:NFe:ItXPed  [_nItem] }) 
+                oSection1:Cell("COLUNA8")	:SetBlock   ({|| _oXMLSEF:NFe:ItQuant [_nItem] }) 
+                oSection1:Cell("COLUNA9")	:SetBlock   ({|| _oXMLSEF:NFe:ItVlTot [_nItem] }) 
+                oSection1:Cell("COLUNA10")	:SetBlock   ({|| _wxmlpro }) 
+                oSection1:Cell("COLUNA11")	:SetBlock   ({|| _wcodpro }) 
+                oSection1:Cell("COLUNA12")	:SetBlock   ({|| _oXMLSEF:NFe:ItuCom [_nItem] }) 
+                oSection1:Cell("COLUNA13")	:SetBlock   ({|| fbuscacpo("SB1", 1, xfilial ("SB1") + _wcodpro,  "B1_UM")  }) 
 
-                    oSection1:Cell("COLUNA1")	:SetBlock   ({|| _aDados[_x, 1] }) 
-                    oSection1:Cell("COLUNA2")	:SetBlock   ({|| _aDados[_x, 2] }) 
-                    oSection1:Cell("COLUNA3")	:SetBlock   ({|| _aDados[_x, 3] }) 
-                    oSection1:Cell("COLUNA3_1")	:SetBlock   ({|| _aDados[_x, 5] }) 
-                    oSection1:Cell("COLUNA3_2")	:SetBlock   ({|| _aDados[_x, 6] }) 
-                    oSection1:Cell("COLUNA3_3")	:SetBlock   ({|| _aDados[_x, 7] }) 
-                    oSection1:Cell("COLUNA4")	:SetBlock   ({|| _oXMLSEF:NFe:ItCFOP [_nItem] + ' - ' + Tabela ('13', _oXMLSEF:NFe:ItCFOP [_nItem]) }) 
-                    oSection1:Cell("COLUNA5")	:SetBlock   ({|| _oXMLSEF:NFe:ItDescri [_nItem] }) 
-                    oSection1:Cell("COLUNA6")	:SetBlock   ({|| fbuscacpo("SB1", 1, xfilial ("SB1") + _wcodpro,  "B1_DESC")  }) 
-                    oSection1:Cell("COLUNA7")	:SetBlock   ({|| _oXMLSEF:NFe:ItXPed  [_nItem] }) 
-                    oSection1:Cell("COLUNA8")	:SetBlock   ({|| _oXMLSEF:NFe:ItQuant [_nItem] }) 
-                    oSection1:Cell("COLUNA9")	:SetBlock   ({|| _oXMLSEF:NFe:ItVlTot [_nItem] }) 
-                    oSection1:Cell("COLUNA10")	:SetBlock   ({|| _wxmlpro }) 
-                    oSection1:Cell("COLUNA11")	:SetBlock   ({|| _wcodpro }) 
-                    oSection1:Cell("COLUNA12")	:SetBlock   ({|| _oXMLSEF:NFe:ItuCom [_nItem] }) 
-                    oSection1:Cell("COLUNA13")	:SetBlock   ({|| fbuscacpo("SB1", 1, xfilial ("SB1") + _wcodpro,  "B1_UM")  }) 
-
-                    if _oXMLSEF:NFe:ItuCom [_nItem] != fbuscacpo("SB1", 1, xfilial ("SB1") + _wcodpro,  "B1_UM") 
-                        _wfator =  fbuscacpo ("SB1", 1, xfilial ("SB1") + _wcodpro,  "B1_CONV") // fator de conversao
-                        if _wfator > 0 
-                            _wconversao := 'OK'
-                        else
-                            _wconversao := 'NAO INFORMADA'
-                        endif																	
+                if _oXMLSEF:NFe:ItuCom [_nItem] != fbuscacpo("SB1", 1, xfilial ("SB1") + _wcodpro,  "B1_UM") 
+                    _wfator =  fbuscacpo ("SB1", 1, xfilial ("SB1") + _wcodpro,  "B1_CONV") // fator de conversao
+                    if _wfator > 0 
+                        _wconversao := 'OK'
                     else
-                        _wconversao := "MESMA UNIDADE"
-                    endif
+                        _wconversao := 'NAO INFORMADA'
+                    endif																	
+                else
+                    _wconversao := "MESMA UNIDADE"
+                endif
 
-                    oSection1:Cell("COLUNA14")	:SetBlock   ({|| _wconversao }) 
-                    oSection1:Cell("COLUNA15")	:SetBlock   ({|| _oXMLSEF:NFe:ItNCM [_nItem] }) 
-                    oSection1:Cell("COLUNA16")	:SetBlock   ({|| fbuscacpo("SB1", 1, xfilial ("SB1") + _wcodpro,  "B1_POSIPI") }) 
+                oSection1:Cell("COLUNA14")	:SetBlock   ({|| _wconversao }) 
+                oSection1:Cell("COLUNA15")	:SetBlock   ({|| _oXMLSEF:NFe:ItNCM [_nItem] }) 
+                oSection1:Cell("COLUNA16")	:SetBlock   ({|| fbuscacpo("SB1", 1, xfilial ("SB1") + _wcodpro,  "B1_POSIPI") }) 
 
-                    oSection1:PrintLine()
-                //EndIf
+                oSection1:PrintLine()
 			Next
         EndIf
     Next

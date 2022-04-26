@@ -516,7 +516,7 @@ User Function ZA4_VE (_nTipo)
 	local _lRet := .T.
     
     //if ! u_zzuvl ('037', __cUserId, .T.)
-	if ! u_zzuvl ('A93', __cUserId, .T.)
+	if ! u_zzuvl ('136', __cUserId, .T.)
     	_lRet := .F.
     	return
 	endif
