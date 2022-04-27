@@ -1,0 +1,128 @@
+// Programa:  BatFullM
+// Autor:     Robert Koch
+// Data:      21/04/2022
+// Descricao: Batch de integracao com FullWMS - leitura de movimentacoes feitas no Full para replica-las no Protheus
+//            Devem ser observados os formatos de dados enviados para o Fullsoft nas views de integracao.
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Batch de integracao com FullWMS - leitura de movimentacoes feitas no Full para replica-las no Protheus
+// #PalavasChave      #batch #agendamento #automacao #integracao #fullsoft #fullwms
+// #TabelasPrincipais #SD3 #SD1 #SB2 #SB8
+// #Modulos           #EST
+
+// Historico de alteracoes:
+//
+
+#Include "Protheus.ch"
+#Include "TbiConn.ch"
+
+// ------------------------------------------------------------------------------------
+User Function BatFullM ()
+	local _aAreaAnt  := U_ML_SRArea ()
+	local _aAmbAnt   := U_SalvaAmb ()
+	local _oSQL      := NIL
+	local _oTrEstq   := nil
+	local _sAliasQ   := ""
+	local _lRet      := .T.
+
+	// Variavel para erros de rotinas automaticas. Deixar tipo 'private' para ser vista por outras rotinas.
+	if type ("_sErroAuto") != 'C'
+		private _sErroAuto := ""
+	endif
+
+	// Busca movimentos exportados pelo Fullsoft.
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " select *"
+	_oSQL:_sQuery +=      " , dbo.VA_DatetimeToVarchar (dthr) as dtemis"  // Para gravacao no Protheus
+	_oSQL:_sQuery +=      " , format (dthr, 'yyyy-MM-dd HH:mm:ss.fff') as PK"  // Nao estou muito confortavel com isto, mas foi o melhor que consegui para usar como 'PK'.
+	_oSQL:_sQuery +=   " from tb_wms_movimentacoes"
+	_oSQL:_sQuery +=  " where status_protheus != '3'"  // 3 = executado
+	_oSQL:_sQuery +=    " and status_protheus != 'C'"  // C = cancelado: por que jah foi acertado manualmente, ou jah foi inventariado, etc.
+	_oSQL:_sQuery +=    " and status_protheus != '5'"  // 5 = qtd.movimentada diferente qt.executada
+	_oSQL:_sQuery +=  " order by dthr"
+	_oSQL:Log ()
+	_sAliasQ := _oSQL:Qry2Trb ()
+	(_sAliasQ) -> (dbgotop ())
+	do while ! (_sAliasQ) -> (eof ())
+
+		sb1 -> (dbsetorder (1))
+		if ! sb1 -> (dbseek (xfilial ("SB1") + left (alltrim ((_sAliasQ) -> coditem) + space (15), 15), .F.))
+			U_Log2 ('erro', '[' + procname () + "]Item '" + alltrim ((_sAliasQ) -> coditem) + "' nao encontrado na tabela SB1.")
+			_AtuFull ((_sAliasQ) -> PK, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
+			(_sAliasQ) -> (dbskip ())
+			loop
+		endif
+		
+		do case
+
+		// Baixas de estoque do endereco de avarias: transferir para ax.94
+		// No ax.94 alguem vai fazer a baixa (via NF, requisicao, supressao, rede de flu, aparatar, entregar aos dementadores, sei la...)
+		case alltrim ((_sAliasQ) -> tipo) == '3'
+			U_Log2 ('debug', '[' + procname () + ']Processando mov.tipo 3 cod ' + alltrim ((_sAliasQ) -> coditem) + ' dthr ' + alltrim ((_sAliasQ) -> PK) + ' qt: ' + cvaltochar ((_sAliasQ) -> qtde) + ' lote: ' + (_sAliasQ) -> lote)
+		//	U_Log2 ('debug', '[' + procname () + ']' + substr ((_sAliasQ) -> PK, 1, 4) + substr ((_sAliasQ) -> PK, 6, 2) + substr ((_sAliasQ) -> PK, 9, 2))
+			_oTrEstq := ClsTrEstq ():New ()
+			_oTrEstq:FilOrig  = cFilAnt
+			_oTrEstq:FilDest  = cFilAnt
+			_oTrEstq:ProdOrig = left (alltrim ((_sAliasQ) -> coditem) + space (15), 15)
+			_oTrEstq:ProdDest = left (alltrim ((_sAliasQ) -> coditem) + space (15), 15)
+			_oTrEstq:AlmOrig  = '01'
+			_oTrEstq:AlmDest  = '94'
+			if sb1 -> b1_rastro == 'L'
+				_oTrEstq:LoteOrig = left (alltrim ((_sAliasQ) -> lote) + space (10), 10)
+				_oTrEstq:LoteDest = left (alltrim ((_sAliasQ) -> lote) + space (10), 10)
+			endif
+			//_oTrEstq:EndOrig  = 
+			//_oTrEstq:EndDest  = 
+			_oTrEstq:QtdSolic = (_sAliasQ) -> qtde
+			_oTrEstq:Motivo   = 'Baixa avaria - ' + (_sAliasQ) -> obs
+			_oTrEstq:UsrIncl = 'FullWMS'  //cUserName
+			_oTrEstq:DtEmis  = stod ((_sAliasQ) -> dtemis)
+			if ! _oTrEstq:Grava ()
+				U_Log2 ('erro', '[' + procname () + ']' + _oTrEstq:UltMsg)
+				_AtuFull ((_sAliasQ) -> PK, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
+			else
+				_AtuFull ((_sAliasQ) -> PK, '3')  // Atualiza a tabela do Fullsoft como 'executado no ERP'
+		
+				// Chama a rotina de liberacao do docto. Se estiver em condicoes, a transferencia jah serah executada.
+				u_log2 ('debug', 'Chamando liberacao do ZAG')
+				_oTrEstq:Libera (.F., 'FULLWMS')
+			endif
+		otherwise
+			u_help ("Sem tratamento para movimentos tipo '" + (_sAliasQ) -> tipo + "' lidos na tabela tb_wms_movimentacoes do FullWMS.", _oSQL:_sQuery, .t.)
+		endcase
+
+		(_sAliasQ) -> (dbskip ())
+
+		EXIT  // DURANTE TESTES, PARA RODAR 1 REGISTRO POR VEZ
+
+	enddo
+	(_sAliasQ) -> (dbclosearea ())
+	dbselectarea ("SB1")
+
+	U_SalvaAmb (_aAmbAnt)
+	U_ML_SRArea (_aAreaAnt)
+return _lRet
+
+
+
+// --------------------------------------------------------------------------------------------
+// Atualiza status no FullWMS.
+// Procurar manter, aqui, os mesmos codigos de status em todos os programas BatFull*, apesar de serem tabelas diferentes:
+// 1 = 'falta estoque para fazer a transferencia'
+// 2 = 'outro erro nao tratado na transferancia'
+// 3 = 'executado no ERP'
+// 4 = 'diferenca na quantidade'
+// 5 = 'qtde movimentada menor que executada' (no caso de recebimento de producao)
+// 9 = 'cancelado no ERP'
+static function _AtuFull (_sDtHr, _sStatus)
+	local _oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := " update tb_wms_movimentacoes"
+	_oSQL:_sQuery +=    " set status_protheus = '" + _sStatus + "'"
+	_oSQL:_sQuery +=  " where dthr = '" + alltrim (_sDtHr) + "'"  // Primary key
+	_oSQL:Log ()
+	_oSQL:Exec ()
+//	if _sStatus != '3'  // 3=executado ok
+//	endif
+return

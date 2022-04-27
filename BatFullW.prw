@@ -56,8 +56,8 @@ User Function BatFullW ()
 	u_log2 ('info', 'Iniciando processamento de saidas')
 	_Saidas ()
 	u_log2 ('info', 'Finalizou processamento de saidas')
-	u_log2 ('info', '')  // Apenas para gerar una linha vazia.
 
+	u_log2 ('info', '')  // Apenas para gerar una linha vazia.
 return _lRet
 
 
@@ -66,15 +66,11 @@ return _lRet
 static function _Entradas ()
 	local _oSQL      := NIL
 	local _sAliasQ   := ""
-//	local _aRet260   := {}
-//	local _sChaveSD1 := ""
 	local _nQtAUsar  := 0
 	local _dData     := ctod ('')
-//	local _Inspe     := ""
 	local _sEtiq     := ''
 	local _oTrEstq   := NIL
 	local _sChaveEx  := ""
-//	local _aRegsSD3  := {}
 	local _lRet      := .T.
 
 	// Variavel para erros de rotinas automaticas. Deixar tipo 'private'.
@@ -128,7 +124,7 @@ static function _Entradas ()
 					u_log2 ('info', 'Chamando liberacao do ZAG')
 					_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
 					_oTrEstq:Etiqueta = za1 -> za1_codigo
-					_oTrEstq:Libera (.F., 'FULLWMS')
+					_oTrEstq:Libera (.F., 'FULLW')
 					if _oTrEstq:Executado == 'S'
 						_AtuEntr ((_sAliasQ) -> entrada_id, '3')  // Atualiza a tabela do Fullsoft como 'executado no ERP'
 					elseif _oTrEstq:Executado == 'E'
@@ -194,7 +190,7 @@ static function _Entradas ()
 				loop
 			endif
 
-			/* desabilitado durante migracao database protheus
+			/* Nunca entrou em producao
 			// Verifica se necessita de inspecao
 			_Inspe = _VerInsp((_sAliasQ) -> coditem, (_sAliasQ) -> codfor)
 			If "ERRO" $ _Inspe
@@ -306,7 +302,7 @@ static function _Entradas ()
 				loop
 			endif
 
-			/* desabilitado durante migracao database protheus
+			/* Nunca entrou em producao
 			// Verifica se necessita de inspecao
 			_Inspe = _VerInsp((_sAliasQ) -> coditem, (_sAliasQ) -> codfor)
 			If "ERRO" $ _Inspe
@@ -405,7 +401,13 @@ return _lRet
 
 // --------------------------------------------------------------------------------------------
 // Atualiza status no FullWMS.
-// Status 5 = ESTORNADO. Setado pelo Ponto de Entrada SD3250E.
+// Procurar manter, aqui, os mesmos codigos de status em todos os programas BatFull*, apesar de serem tabelas diferentes:
+// 1 = 'falta estoque para fazer a transferencia'
+// 2 = 'outro erro nao tratado na transferancia'
+// 3 = 'executado no ERP'
+// 4 = 'diferenca na quantidade'
+// 5 = 'qtde movimentada menor que executada' (no caso de recebimento de producao)
+// 9 = 'cancelado no ERP'
 static function _AtuEntr (_sEntrada, _sStatus)
 	local _oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := " update tb_wms_entrada"
@@ -680,7 +682,7 @@ static function _Saidas ()
 
 										// Chama a rotina de liberacao do docto. Se estiver em condicoes, a transferencia jah serah executada.
 										u_log2 ('info', 'Chamando liberacao do ZAG')
-										_oTrEstq:Libera (.F., 'FULLWMS')
+										_oTrEstq:Libera (.F., 'FULLW')
 										if _oTrEstq:Executado == 'S'
 											_AtuSaid ((_sAliasQ) -> saida_id, '3')  // Atualiza a tabela do Fullsoft como 'executado no ERP'
 										elseif _oTrEstq:Executado == 'E'
@@ -709,7 +711,13 @@ return _lRet
 
 // --------------------------------------------------------------------------------------------
 // Atualiza status no FullWMS.
-// Status 5 = ESTORNADO. Setado pelo Ponto de Entrada SD3250E.
+// Procurar manter, aqui, os mesmos codigos de status em todos os programas BatFull*, apesar de serem tabelas diferentes:
+// 1 = 'falta estoque para fazer a transferencia'
+// 2 = 'outro erro nao tratado na transferancia'
+// 3 = 'executado no ERP'
+// 4 = 'diferenca na quantidade'
+// 5 = 'qtde movimentada menor que executada' (no caso de recebimento de producao)
+// 9 = 'cancelado no ERP'
 static function _AtuSaid (_sSaida, _sStatus)
 	local _oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := " update tb_wms_pedidos"
