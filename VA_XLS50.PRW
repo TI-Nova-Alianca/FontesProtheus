@@ -18,8 +18,8 @@
 // 03/12/2021 - Claudia - Incluida validação de busca apenas itens do sisdevin. GLPI: 11150
 // 13/04/2022 - Robert  - Nao desconsiderava registros deletados da tabela SD1.
 //                      - Definido nome para o arquivo de destino.
+// 27/04/2022 - Claudia - Retirada validação de grupo de usuario. GLPI: 11915
 //
-
 // ----------------------------------------------------------------------------------------------------------------------------
 User Function VA_XLS50 (_lAutomat)
 	Local cCadastro := "Exporta com entradas de MP/VD para classificacao entre ato cooperativo e nao cooperativo."
@@ -30,9 +30,9 @@ User Function VA_XLS50 (_lAutomat)
 	private _lAuto   := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
 
 	// Verifica se o usuario tem liberacao para uso desta rotina.
-	if ! U_ZZUVL ('045', __cUserID, .T.)
-		return
-	endif
+	//if ! U_ZZUVL ('045', __cUserID, .T.)
+	//	return
+	//endif
 
 	Private cPerg   := "VAXLS50"
 	_ValidPerg()
