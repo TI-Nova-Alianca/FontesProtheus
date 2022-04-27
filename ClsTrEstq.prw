@@ -19,6 +19,7 @@
 // 25/01/2022 - Robert  - Gera etiqueta quando o prod.controla lote, mesmo nao tendo integracao com FullWMS.
 // 06/04/2022 - Robert  - Criado metodo :AlmUsaEtiq() e passa a ser validado antes de gerar etiqueta.
 // 22/04/2022 - Robert  - Considerar usr 'FULLW' e nao mais 'FULLWMS' (para caber no campo ZZU_USR) - GLPI 8194
+// 27/04/2022 - Robert  - Voltado nome de usuario 'FULLW' para 'FULLWMS' pois optei por criar um usuario com esse nome no Protheus.
 //
 
 // ------------------------------------------------------------------------------------
@@ -779,7 +780,7 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 		//u_log2 ('debug', 'Testando com usuario ' + _sUserName)
 		if empty (::UsrAutOri) .and. alltrim (upper (_sUserName)) $ _aLib [1, 1]
 			u_log2 ('info', 'Usuario tem liberacao para o almox. origem')
-			if ::FWProdOrig .and. ::AlmUsaFull (::AlmOrig) .and. _sUserName != 'FULLW'
+			if ::FWProdOrig .and. ::AlmUsaFull (::AlmOrig) .and. _sUserName != 'FULLWMS'
 				u_log2 ('info', '... mas o produto usa Full e o AX origem eh controlado pelo FullWMS')
 				_sMsg = "Produto '" + alltrim (::ProdOrig) + "' tem controle via FullWMS no AX '" + ::AlmOrig + "' e nao deve ser movimentado manualmente."
 				if U_ZZUVL ('029', __cUserId, .F.) .and. U_MsgYesNo (_sMsg + " Confirma assim mesmo?")
@@ -802,7 +803,7 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 
 		if empty (::UsrAutDst) .and. alltrim (upper (_sUserName)) $ _aLib [1, 2]
 			u_log2 ('info', 'Usuario tem liberacao para o almox. destino')
-			if ::FWProdDest .and. ::AlmUsaFull (::AlmDest) .and. _sUserName != 'FULLW'
+			if ::FWProdDest .and. ::AlmUsaFull (::AlmDest) .and. _sUserName != 'FULLWMS'
 				u_log ('info', '... mas o produto usa Full e o AX destino eh controlado pelo FullWMS')
 				_sMsg = "Produto '" + alltrim (::ProdDest) + "' tem controle via FullWMS no AX '" + ::AlmDest + "' e nao deve ser movimentado manualmente."
 				if U_ZZUVL ('029', __cUserId, .F.) .and. U_MsgYesNo (_sMsg + " Confirma assim mesmo?")
