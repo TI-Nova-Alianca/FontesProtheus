@@ -14,7 +14,7 @@
 // 16/19/2021 - Claudia - Alterado o TM de 23 para 04. GLPI: 10948
 // 12/01/2022 - Robert  - Revisao da query (inclusao EXISTS SZI e teste de cod/loja base associado)
 //                      - Fixada parcela 'A' (antes gerava vazia)
-
+//
 //---------------------------------------------------------------------------------------------------------------
 User function BATCOMPASSOC()
 	Local _nTitGer   := 0
@@ -50,12 +50,9 @@ User function BATCOMPASSOC()
 		_oSQL:_sQuery += " 	ON (SA2.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery += " 			AND SA2.A2_FILIAL = '" + xfilial ("SA2") + "'"
 		_oSQL:_sQuery += " 			AND SA2.A2_CGC = SL1.L1_CGCCLI"
-		//    _oSQL:_sQuery += " 			AND SL1.L1_CGCCLI <> ''"
-		//    _oSQL:_sQuery += " 			AND SA2.A2_LOJA = SL1.L1_LOJA)"
 		_oSQL:_sQuery += " 			AND SA2.A2_COD = A2_VACBASE"  // EXECUTAR SEMPRE NO COD/LOJA BASE
 		_oSQL:_sQuery += " 			AND SA2.A2_LOJA = A2_VALBASE)"  // EXECUTAR SEMPRE NO COD/LOJA BASE
 		_oSQL:_sQuery += " WHERE SL1.D_E_L_E_T_ = ''"
-		//    _oSQL:_sQuery += " AND SL1.L1_EMISNF > '20190201'"
 		_oSQL:_sQuery += " AND SL1.L1_EMISNF >= '" + dtos (date () - 30) + "'"  // Ultimos dias, para nao gerar muito processamento.
 		_oSQL:_sQuery += " AND SL1.L1_DOC    != ''"
 		_oSQL:_sQuery += " AND SL1.L1_SERIE  != '999'"
@@ -72,8 +69,6 @@ User function BATCOMPASSOC()
 		_oSQL:_sQuery +=                    " AND ZI_TM      = '" + _sTMCAssoc + "')"
 		_oSQL:_sQuery += " ORDER BY L1_FILIAL, SL1.L1_EMISNF, L1_DOC"
 		_oSQL:Log ()
-
-		//	_atitger := U_Qry2Array(_oSQL:_sQuery)
 		_atitger := aclone (_oSQL:Qry2Array (.f., .f.))
 		for _nTitGer = 1 to len(_atitger)
 			// grava conta corrente e financeiro dos associados
@@ -103,13 +98,8 @@ User function BATCOMPASSOC()
 					MsUnLock()
 				endif
 			endif
-
-			
 			// cai fora no primeiro caso (excluir depois)
-			exit
-
-
-
+			//exit
 		next
 	endif
 return
