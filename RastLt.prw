@@ -28,39 +28,53 @@
 //                     - Aumentado nivel maximo de 10 para 11
 //                     - Aumentado tamanho maximo da string de retorno de 50000 para 60000 caracteres.
 // 29/03/2022 - Robert - Adicionado dbselectarea("SB1") no final (parece que muitas chamadas recursivas deixam sem ALIAS).
+// 29/04/2022 - Robert - Transf. lote p/outro proporcionalizava de 1 para 1, quando o correto eh usar a quantidade absoluta transferida - GLPI 11980
+//                     - Nao salvava area de trabalho entre as chamadas e, com isso, retornava com o SB1 desposicionado.
+//                     - Melhorado log, para identificacao de niveis.
 //
 
 // --------------------------------------------------------------------------
 user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
-	local _sDescri  := ""
-	local _sAliasQ  := ""
-	local _sRet     := ""
-	local _aOP      := {}
-	local _nOP      := 0
-	local _aReqOP   := {}
-	local _nReqOP   := 0
-	local _aCons    := {}
-	local _nCons    := 0
-	local _aEntTrLt := {}
-	local _aSaiTrLt := {}
-	local _nTrLt    := 0
-	local _aSD1     := {}
-	local _nSD1     := 0
-	local _aSD2     := {}
-	local _nSD2     := 0
-	local _sLaudo   := ''
-	local _nNivFold := 10  // A partir deste nivel gera os nodos 'compactados' para nao ficar grande demais na visualizacao inicial.
-	local _sQuebra  := "&#xa;"  // Representacao de uma quebra de linha na visualizacao do FreeMind
-	local _aCarga   := ""
-	local _nMaxStr  := 60000  // Limite para o tamanho da string de retorno (pelo que sei, o maximo eh 64K)
-	static _sID     := '0000'  // Criado como STATIC para gerar sempre IDs unicos, mesmo com chamadas recursivas.
+	local _aAreaAnt := U_ML_SRArea ()
+	local _sDescri   := ""
+	local _sAliasQ   := ""
+	local _sRet      := ""
+	local _aOP       := {}
+	local _nOP       := 0
+	local _aReqOP    := {}
+	local _nReqOP    := 0
+	local _aCons     := {}
+	local _nCons     := 0
+	local _aEntTrLt  := {}
+	local _aSaiTrLt  := {}
+	local _nTrLt     := 0
+	local _aSD1      := {}
+	local _nSD1      := 0
+	local _aSD2      := {}
+	local _nSD2      := 0
+	local _sLaudo    := ''
+	local _nNivFold  := 10  // A partir deste nivel gera os nodos 'compactados' para nao ficar grande demais na visualizacao inicial.
+	local _sQuebra   := "&#xa;"  // Representacao de uma quebra de linha na visualizacao do FreeMind
+	local _aCarga    := ""
+	local _nMaxStr   := 60000  // Limite para o tamanho da string de retorno (pelo que sei, o maximo eh 64K)
+	local _nLimNivel := 15  // Limite maximo de niveis de pesquisa
+	local _sStrLog   := ''
+	static _sID      := '0000'  // Criado como STATIC para gerar sempre IDs unicos, mesmo com chamadas recursivas.
 
-	U_Log2 ('info', 'Iniciando filial: ' + _sFilial + ' produto: ' + _sProduto + ' lote: ' + _sLote + ' nivel: ' + cvaltochar (_nNivel))
-//	U_Log2 ('debug', '[' + procname () + ']Alias() = ' + alias ())
+	// Prepara substring para manter padrao em todos os logs
+	_sStrLog := space (min (8, abs (_nNivel)))  // Se deixar muito espaco para todos os niveis, acabo usando a linha toda
+	_sStrLog += iif (_nNivel > 0, '+' + cvaltochar (abs (_nNivel)), iif (_nNivel < 0, '-' + cvaltochar (abs (_nNivel)), '0'))
+	_sStrLog  = U_TamFixo (_sStrLog, 11, ' ')
+	_sStrLog += ' F' + _sFilial
+	_sStrLog += ' Cod:' + _sProduto
+	_sStrLog += ' Lt:' + _sLote + ' '
+	U_Log2 ('info', _sStrLog)
+	
+	// Variavel para acumular o historico de lotes pelos quais jah passei, para detectar recursividade.
 	_aHist := iif (_aHist == NIL, {}, _aHist)
 
 	// Com tantas chamadas recursivas, parece que chega um momento em que fico sem ALIAS() e tenho problemas com funcoes como FBuscaCpo().
-	dbselectarea ("SB1")
+//	dbselectarea ("SB1")
 
 	if _nNivel == 0
 		procregua (1000)
@@ -69,14 +83,14 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 	endif
 
 	// Limita a 'profundidade' de pesquisa.
-	if abs (_nNivel) > 15  // 10
-		U_Log2 ('aviso', "Limite de 'profundidade de pesquisa' atingido.")
+	if abs (_nNivel) > _nLimNivel
+		U_Log2 ('aviso', _sStrLog + "Limite de 'profundidade de pesquisa' atingido.")
 		_sRet += '<node BACKGROUND_COLOR="#ff00cc" CREATED="1493031071766" ID="MAXNIVEIS" POSITION="left" TEXT="(...) nivel maximo atingido"></node>'
 	else
 		
 		// Encontramos muitos casos onde um lote A foi transferido para o lote B, que novamente foi transferido para o lote A
 		if ascan (_aHist, _sFilial + _sProduto + _sLote)
-			U_Log2 ('aviso', 'Detectada recursividade na movimentacao para filial/produto/lote ' + _sFilial + _sProduto + _sLote)
+			U_Log2 ('aviso', _sStrLog + 'Detectada recursividade na movimentacao')
 			_sDescri := "Recurs." + _sQuebra //Detectada recursividade na movimentacao" + _sQuebra
 			_sRet += '<node BACKGROUND_COLOR="#ff00cc" CREATED="1493031071766" ID="MAXNIVEIS" POSITION="left" TEXT="' + _sDescri + '"></node>'
 		else
@@ -183,22 +197,23 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_sRet += '</node>'
 					next
 				endif
-				// U_Log2 ('debug', '[' + procname () + ']Apos entradas em OP temos Alias() = ' + alias ())
 
 
 				// Busca entradas por transferencia entre lotes.
 				if _nNivel <= 0 .and. sb1 -> b1_rastro == 'L'
 					_oSQL := ClsSQL ():New ()
 					_oSQL:_sQuery := "SELECT CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL AS LOTEORI,"
-					_oSQL:_sQuery +=       " SUM (CONTRAPARTIDA.D3_QUANT) AS QUANT"
+					_oSQL:_sQuery +=       " SUM (CONTRAPARTIDA.D3_QUANT) AS QUANT, SB1_C.B1_DESC"
 					_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD3") + " SD3 "
 					_oSQL:_sQuery +=  " INNER JOIN " + RetSQLName ("SD3") + " CONTRAPARTIDA "  // ORIGEM/DESTINO, QUANDO FOR TRANSFERENCIA
+					_oSQL:_sQuery +=       " INNER JOIN " + RetSQLName ("SB1") + " SB1_C "
+					_oSQL:_sQuery +=          " ON (SB1_C.D_E_L_E_T_ != '*'"
+					_oSQL:_sQuery +=          " AND SB1_C.B1_FILIAL   = '" + xfilial ("SB1") + "'"
+					_oSQL:_sQuery +=          " AND SB1_C.B1_COD      = CONTRAPARTIDA.D3_COD)"
 					_oSQL:_sQuery +=       " ON (CONTRAPARTIDA.D_E_L_E_T_ != '*'"
 					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_FILIAL   = SD3.D3_FILIAL"
 					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_ESTORNO != 'S'"
 					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_NUMSEQ   = SD3.D3_NUMSEQ"
-//					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_COD      = SD3.D3_COD"
-//					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_LOTECTL != SD3.D3_LOTECTL"
 					_oSQL:_sQuery +=       " AND NOT (CONTRAPARTIDA.D3_COD = SD3.D3_COD AND CONTRAPARTIDA.D3_LOTECTL = SD3.D3_LOTECTL)"  // transferencia de endereco
 					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_CF       = 'RE4'"
 					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.R_E_C_N_O_ != SD3.R_E_C_N_O_)"
@@ -210,7 +225,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 					_oSQL:_sQuery +=   " AND SD3.D3_QUANT   > 0"
 					_oSQL:_sQuery +=   " AND SD3.D3_COD      = '" + _sProduto + "'"
 					_oSQL:_sQuery +=   " AND SD3.D3_LOTECTL  = '" + _sLote + "'"
-					_oSQL:_sQuery += " 	GROUP BY CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL"
+					_oSQL:_sQuery += " 	GROUP BY CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL, SB1_C.B1_DESC"
 					_oSQL:_sQuery += " 	ORDER BY CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL"
 					// _oSQL:Log ()
 					_aEntTrLt = aclone (_oSQL:Qry2Array (.F., .F.))
@@ -218,13 +233,15 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 					for _nTrLt = 1 to len (_aEntTrLt)
 
 						// Calcula a quantidade proporcional para ser passada na chamada recursiva.
-						_nQtProp2 = _nQtProp  // Transferencia eh sempre de 1 para 1
+					//	_nQtProp2 = _nQtProp  // Transferencia eh sempre de 1 para 1
+						_nQtProp2 = _aEntTrLt [_nTrLt, 3]  // Transferencia eh sempre a propria quantidade transferida.
 
 						_sID = soma1 (_sID)
 						if _aEntTrLt [_nTrLt, 1] == _sProduto
 							_sDescri := 'Tr.do Lote ' + _aEntTrLt [_nTrLt, 2] + _sQuebra
 						else
-							_sDescri := 'Tr.do item ' + alltrim (_aEntTrLt [_nTrLt, 1]) + ' - ' + alltrim (fBuscaCpo ("SB1", 1, xfilial ("SB1") + _aEntTrLt [_nTrLt, 1] , 'B1_DESC')) + _sQuebra
+							// _sDescri := 'Tr.do item ' + alltrim (_aEntTrLt [_nTrLt, 1]) + ' - ' + alltrim (fBuscaCpo ("SB1", 1, xfilial ("SB1") + _aEntTrLt [_nTrLt, 1] , 'B1_DESC')) + _sQuebra
+							_sDescri := 'Tr.do item ' + alltrim (_aEntTrLt [_nTrLt, 1]) + ' - ' + alltrim (_aEntTrLt [_nTrLt, 4]) + _sQuebra
 							_sDescri += 'Lote origem ' + _aEntTrLt [_nTrLt, 2] + _sQuebra
 						endif
 						_sDescri += _FmtQt (_aEntTrLt [_nTrLt, 3], sb1 -> b1_um, _nQtProp2)
@@ -240,7 +257,6 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_sRet += '</node>'
 					next
 				endif
-				// U_Log2 ('debug', '[' + procname () + ']Apos entradas por transf.entre lotes temos Alias() = ' + alias ())
 
 
 				// Busca outras entradas por movimentos internos.
@@ -274,7 +290,6 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 					enddo	
 					(_sAliasQ) -> (dbclosearea ())
 				endif
-				// U_Log2 ('debug', '[' + procname () + ']Apos entradas por mov.internos temos Alias() = ' + alias ())
 		
 
 				// Busca possiveis entradas via NF.
@@ -342,7 +357,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 							_oSQL:_sQuery +=   " AND LOJA_ASSOC = '" + _aSD1 [_nSD1, 8] + "'"
 							_oSQL:_sQuery +=   " AND ITEM_NOTA  = '" + _aSD1 [_nSD1, 9] + "'"
 							_oSQL:_sQuery +=   " AND PRODUTO    = '" + _sProduto + "'"
-							_oSQL:Log ()
+							//_oSQL:Log (_sStrLog)
 							_aCarga = aclone (_oSQL:Qry2Array ())
 							if len (_aCarga) == 1  // Nao deveria encontrar mais de um registro
 						//		_sDescri += 'Carga safra: ' + _aCarga [1, 1] + ' de ' + dtoc (stod (_aCarga [1, 2])) + _sQuebra
@@ -361,8 +376,6 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 													   _nQtProp, ;  // Quantidade proporcional a quantidade original vendida na NF
 													   _sFilial, ;  // Filial onde foi recebida a carga
 													   _aCarga [1, 6]})  // Safra referente a carga
-							//		U_Log2 ('debug', '[' + procname () + ']_aLtXLS58 ficou assim:')
-							//		U_Log2 ('debug', _aLtXLS58)
 								endif
 							endif
 						endif
@@ -371,7 +384,6 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_sRet += '</node>'
 					next
 				endif
-				// U_Log2 ('debug', '[' + procname () + ']Apos entradas por NF temos Alias() = ' + alias ())
 		
 
 				// Busca entradas por transferencias de filiais
@@ -395,7 +407,6 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 	
 						// NF lancada com problemas e que deve ser ignorada.
 						if alltrim (_aSD1 [_nSD1, 4]) == '07' .and. alltrim (_aSD1 [_nSD1, 1]) == '000016150' .and. alltrim (_aSD1 [_nSD1, 2]) == '00107501a'
-							//u_log ('ignorando nota 000016150')
 							_sRet += '<node BACKGROUND_COLOR="#ff00cc" CREATED="1493031071766" ID="MAXNIVEIS" POSITION="left" TEXT="(...) limite de memoria excedido"></node>'
 						else
 							_sDescri := 'Transf. da filial ' + _aSD1 [_nSD1, 4] + ' - NF ' + alltrim (_aSD1 [_nSD1, 1]) + _sQuebra
@@ -419,10 +430,16 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						endif
 					next
 				endif
-				// U_Log2 ('debug', '[' + procname () + ']Apos entradas por tr.filiais temos Alias() = ' + alias ())
 
 
-				// ------------------------------------------------------ Fim entradas
+				// ----------------------------------------------------------
+				// ----------------------------------------------------------
+				// ----------------------------------------------------------
+				// Fim da leitura das entradas
+				// ----------------------------------------------------------
+				// ----------------------------------------------------------
+				// ----------------------------------------------------------
+
 				// Fecha o nodo das entradas e abre o das saidas.
 				if _nNivel == 0
 					_sRet += '</node><node CREATED="1493030990433" ID="' + _sID + '" STYLE="bubble" TEXT="SAIDAS">'
@@ -475,10 +492,10 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_sRet += '</node>'
 					next
 				endif
-				// U_Log2 ('debug', '[' + procname () + ']Apos saidas por consumo em OP temos Alias() = ' + alias ())
 
 
 				// Busca saidas por NF (ignora filiais)
+			//	U_Log2 ('info', _sStrLog + 'Verificando se devo ler notas de saida. b1_cod = ' + sb1 -> b1_cod + ' b1_rastro = ' + sb1 -> b1_rastro)
 				if _nNivel >= 0 .and. sb1 -> b1_rastro == 'L'
 					_oSQL := ClsSQL ():New ()
 					_oSQL:_sQuery := "SELECT D2_DOC, D2_QUANT, D2_UM,"
@@ -506,7 +523,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 					_oSQL:_sQuery +=   " AND SD2.D2_LOTECTL = '" + _sLote + "'"
 					_oSQL:_sQuery +=   " AND SD2.D2_QUANT   > 0"
 					_oSQL:_sQuery +=   " AND SD2.D2_CLIENTE NOT IN ('002940','006164','007811','011863','012553','012717','012558','012675','012542','012528','012707','012855','015446','015165')"
-					// _oSQL:Log ()
+				//	_oSQL:Log (_sStrLog)
 					_aSD2 = aclone (_oSQL:Qry2Array (.F., .F.))
 					for _nSD2 = 1 to len (_aSD2)
 
@@ -526,7 +543,6 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_sRet += '</node>'
 					next
 				endif
-				// U_Log2 ('debug', '[' + procname () + ']Apos saidas por NF temos Alias() = ' + alias ())
 
 
 				// Busca saidas por NF (transferencia para filiais)
@@ -562,22 +578,23 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_sRet += '</node>'
 					next
 				endif
-				// U_Log2 ('debug', '[' + procname () + ']Apos saidas por tr.filiais temos Alias() = ' + alias ())
 
 
 				// Busca saidas por transferencia entre lotes.
 				if _nNivel >= 0 .and. sb1 -> b1_rastro == 'L'
 					_oSQL := ClsSQL ():New ()
 					_oSQL:_sQuery := "SELECT CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL AS LOTEORI,"
-					_oSQL:_sQuery +=       " SUM (SD3.D3_QUANT) AS QUANT"
+					_oSQL:_sQuery +=       " SUM (SD3.D3_QUANT) AS QUANT, SB1_C.B1_DESC"
 					_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD3") + " SD3 "
 					_oSQL:_sQuery +=  " INNER JOIN " + RetSQLName ("SD3") + " CONTRAPARTIDA "  // ORIGEM/DESTINO, QUANDO FOR TRANSFERENCIA
+					_oSQL:_sQuery +=       " INNER JOIN " + RetSQLName ("SB1") + " SB1_C "
+					_oSQL:_sQuery +=          " ON (SB1_C.D_E_L_E_T_ != '*'"
+					_oSQL:_sQuery +=          " AND SB1_C.B1_FILIAL   = '" + xfilial ("SB1") + "'"
+					_oSQL:_sQuery +=          " AND SB1_C.B1_COD      = CONTRAPARTIDA.D3_COD)"
 					_oSQL:_sQuery +=       " ON (CONTRAPARTIDA.D_E_L_E_T_ != '*'"
 					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_FILIAL   = SD3.D3_FILIAL"
 					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_ESTORNO != 'S'"
 					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_NUMSEQ   = SD3.D3_NUMSEQ"
-//					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_COD      = SD3.D3_COD"
-//					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_LOTECTL != SD3.D3_LOTECTL"
 					_oSQL:_sQuery +=       " AND NOT (CONTRAPARTIDA.D3_COD = SD3.D3_COD AND CONTRAPARTIDA.D3_LOTECTL = SD3.D3_LOTECTL)"  // transferencia de endereco
 					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.D3_CF       = 'DE4'"
 					_oSQL:_sQuery +=       " AND CONTRAPARTIDA.R_E_C_N_O_ != SD3.R_E_C_N_O_)"
@@ -589,7 +606,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 					_oSQL:_sQuery +=   " AND SD3.D3_QUANT   > 0"
 					_oSQL:_sQuery +=   " AND SD3.D3_COD      = '" + _sProduto + "'"
 					_oSQL:_sQuery +=   " AND SD3.D3_LOTECTL  = '" + _sLote + "'"
-					_oSQL:_sQuery += " 	GROUP BY CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL"
+					_oSQL:_sQuery += " 	GROUP BY CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL, SB1_C.B1_DESC"
 					_oSQL:_sQuery += " 	ORDER BY CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL"
 					// _oSQL:Log ()
 					_aSaiTrLt = aclone (_oSQL:Qry2Array (.F., .F.))
@@ -603,7 +620,8 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						if _aSaiTrLt [_nTrLt, 1] == _sProduto
 							_sDescri := 'Tr.para o Lote ' + _aSaiTrLt [_nTrLt, 2] + _sQuebra
 						else
-							_sDescri := 'Tr.para o item ' + alltrim (_aSaiTrLt [_nTrLt, 1]) + ' - ' + alltrim (fBuscaCpo ("SB1", 1, xfilial ("SB1") + _aSaiTrLt [_nTrLt, 1] , 'B1_DESC')) + _sQuebra
+							// _sDescri := 'Tr.para o item ' + alltrim (_aSaiTrLt [_nTrLt, 1]) + ' - ' + alltrim (fBuscaCpo ("SB1", 1, xfilial ("SB1") + _aSaiTrLt [_nTrLt, 1] , 'B1_DESC')) + _sQuebra
+							_sDescri := 'Tr.para o item ' + alltrim (_aSaiTrLt [_nTrLt, 1]) + ' - ' + alltrim (_aSaiTrLt [_nTrLt, 4]) + _sQuebra
 							_sDescri += 'Lote destino ' + _aSaiTrLt [_nTrLt, 2] + _sQuebra
 						endif
 						_sDescri += _FmtQt (_aSaiTrLt [_nTrLt, 3], sb1 -> b1_um, _nQtProp2)
@@ -619,7 +637,6 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 						_sRet += '</node>'
 					next
 				endif
-				// U_Log2 ('debug', '[' + procname () + ']Apos saidas por tr.internas temos Alias() = ' + alias ())
 
 
 				// Chamada inicial: preciso finalizar o arquivo de saida.
@@ -648,9 +665,10 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 */
 
 	// Com tantas chamadas recursivas, parece que chega um momento em que fico sem ALIAS() e tenho problemas com funcoes como FBuscaCpo().
-	dbselectarea ("SB1")
+//	dbselectarea ("SB1")
 
-	U_Log2 ('info', 'Finalizando ' + _sFilial + _sProduto + _sLote + ' nivel ' + cvaltochar (_nNivel))
+	U_ML_SRArea (_aAreaAnt)
+//	U_Log2 ('info', 'Nivel' + space (abs (_nNivel)) + cvaltochar (_nNivel) + ' F' + _sFilial + ' Prod: ' + _sProduto + ' lote: ' + _sLote + ' Finalizado.')
 return _sRet
 
 
