@@ -46,7 +46,7 @@ user function SB1PEF (_sProduto)
 		_oSQL:_sQuery += " where coditem = '" + alltrim (_sProduto) + "'"
 //		_oSQL:Log ('[' + procname () + ']')
 		if _oSQL:RetQry (1, .f.) == 0
-			u_help ("Impossivel enviar produto '" + _sProduto + "' para o FullWMS: o mesmo nao consta na view de integracao v_wms_item.", _oSQL:_sQuery, .t.)
+			u_help ("Impossivel enviar produto '" + _sProduto + "' para o FullWMS: o mesmo nao consta na view de integracao v_wms_item. Verifique seo produto encontra-se bloqueado ou sem dados de paletizacao.", _oSQL:_sQuery, .t.)
 			_lContinua = .F.
 		endif
 	endif

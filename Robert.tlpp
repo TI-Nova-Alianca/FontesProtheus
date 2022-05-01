@@ -97,16 +97,93 @@ static function _AndaLogo ()
 //	local _nParc := 0
 //	local _sCampo := ""
 //	local _nCampo := 0
+	local _aLotes := {}
+	local _nLote  := 0
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
 //	u_help ('Nada definido.')
 //return
-	
-	// Testes com transf. avarias Full
-	u_BatFullM ()
-return
 
+
+	// Testes arvore de rastreabilidade
+	private _aLtXLS58 := {}  // Deixar PRIVATE para ser alimentada pelo U_RastLT().
+	_aLotes := {}
+	aadd (_aLotes, {'01', U_TamFixo ('3630', 15, ' '), '12101401'  , 0, 14660})  // item 2580 lote 12101401 transformado em 3630 (mesmo lote) em 28/01/2022 na filial 01
+//	aadd (_aLotes, {'01', U_TamFixo ('1274', 15, ' '), 'AUTO009215', 0, 1})      // enzima (arvore grande)
+//	aadd (_aLotes, {'01', U_TamFixo ('2444', 15, ' '), 'AUTO009238', 0, 24200})  // lado 1 do par
+//	aadd (_aLotes, {'09', U_TamFixo ('2444', 15, ' '), '4123'      , 0, 24200})  // lado 2 do par
+//	aadd (_aLotes, {'01', U_TamFixo ('9959', 15, ' '), '2201028401', 0, 1})      // enzima (arvore grande)
+//	aadd (_aLotes, {'01', U_TamFixo ('2776', 15, ' '), '11310701'  , 0, 1})      // gera mais de 15 niveis de rastro.
+//	aadd (_aLotes, {'01', U_TamFixo ('3630', 15, ' '), '12107401A ', 0, 30000})  // NF 000202304 que foi para CENECOOP
+	for _nLote = 1 to len (_aLotes)
+		u_perfmon ('I', 'RastLt')
+		_sMapa := U_RastLT (_aLotes [_nLote, 1], _aLotes [_nLote, 2], _aLotes [_nLote, 3], _aLotes [_nLote, 4], NIL, _aLotes [_nLote, 5])
+		_nTmpExec = u_perfmon ('L', 'RastLt')
+		_sArq := 'c:\temp\rast_F' + _aLotes [_nLote, 1] + '_' + alltrim (_aLotes [_nLote, 2]) + '_' + alltrim (_aLotes [_nLote, 3]) + '_tempo' + cvaltochar (round (_nTmpExec, 0)) + 's.mm'
+		delete file (_sArq)
+		if file (_sArq)
+			_nHdl = fopen(_sArq, 1)
+		else
+			_nHdl = fcreate(_sArq, 0)
+		endif
+		fwrite (_nHdl, _sMapa)
+		fclose (_nHdl)
+		ShellExecute ("Open", _sArq, "", "", 1)
+		u_log (_aLtXLS58)
+		_oLtXLS58 := CLsAUtil ():New ()
+		_oLtXLS58:_aArray := aclone (_aLtXLS58)
+		U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (_oLtXLS58:TotCol (7)))
+	next
+return
+*/
+/*
+	// Ajusta cadastro produtos em lote
+	_sArqLog := 'GLPI11682_SYD_para_SB1.log'
+	sb1 -> (dbsetorder (1))
+	sb5 -> (dbsetorder (1))
+	syd -> (dbsetorder (1))  // YD_FILIAL, YD_TEC, YD_EX_NCM, YD_EX_NBM, YD_DESTAQU, R_E_C_N_O_, D_E_L_E_T_
+	sb1 -> (dbgotop ())
+	do while ! sb1 -> (eof ())
+		if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
+			u_log2 ('ERRO', 'Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
+		else
+			if ! syd -> (dbseek (xfilial ("SYD") + sb1 -> b1_posipi, .F.))
+				u_log2 ('ERRO', "Nao encontrei SYD '" + sb1 -> b1_posipi + "' para o produto " + sb1 -> b1_cod)
+			else
+				if sb1 -> b1_ipi != syd -> yd_per_ipi
+					//u_log2 ('info', 'Verificando item ' + sb1 -> b1_cod + SB1 -> B1_DESC)
+
+					// Cria variaveis para uso na gravacao do evento de alteracao
+					regtomemory ("SB1", .F., .F.)
+					//regtomemory ("SB5", .F., .F.)
+					//m->b5_vasisde = 'S'
+					m->b1_ipi = syd -> yd_per_ipi
+					U_Log2 ('info', sb1 -> b1_posipi + ' alterando de ' + transform (sb1->b1_ipi, "@E 999.99") + ' para ' + transform (m->b1_ipi, "@E 999.99") + ' ' + ' ' + sb1 -> b1_cod + ' ' + sb1 -> b1_desc)
+					
+					// Grava evento de alteracao
+					_oEvento := ClsEvent():new ()
+					_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 11682 - ajustar B1_IPI pelo SYD', .F.)
+					reclock ("SB1", .f.)
+					sb1 -> B1_ipi = m->b1_ipi
+					msunlock ()
+					//reclock ("SB5", .f.)
+					//sb5->b5_vasisde = m->b5_vasisde
+					//msunlock ()
+					
+					// Cai fora no primeiro, para testes.
+					//exit
+				endif
+			endif
+		endif
+		sb1 -> (dbskip ())
+	enddo
+return
+*/
+
+	// Testes com transf. avarias Full
+//	u_BatFullM ()
+//return
 /*
 	// Testes com etiquetas
 	_oEtiq := ClsEtiq ():New ('2000468623')
@@ -518,7 +595,6 @@ return
 		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
 	endif
 return
-*/
 /*
 	// Testes arvore de rastreabilidade
 	private _aLtXLS58 := {}  // Deixar PRIVATE para ser alimentada pelo U_RastLT().
@@ -542,49 +618,6 @@ return
 	_oLtXLS58 := CLsAUtil ():New ()
 	_oLtXLS58:_aArray := aclone (_aLtXLS58)
 	U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (_oLtXLS58:TotCol (7)))
-return
-*/
-/*
-	// Ajusta cadastro produtos em lote
-	_sArqLog := 'GLPI11682_SYD_para_SB1.log'
-	sb1 -> (dbsetorder (1))
-	sb5 -> (dbsetorder (1))
-	syd -> (dbsetorder (1))  // YD_FILIAL, YD_TEC, YD_EX_NCM, YD_EX_NBM, YD_DESTAQU, R_E_C_N_O_, D_E_L_E_T_
-	sb1 -> (dbgotop ())
-	do while ! sb1 -> (eof ())
-		if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
-			u_log2 ('ERRO', 'Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
-		else
-			if ! syd -> (dbseek (xfilial ("SYD") + sb1 -> b1_posipi, .F.))
-				u_log2 ('ERRO', "Nao encontrei SYD '" + sb1 -> b1_posipi + "' para o produto " + sb1 -> b1_cod)
-			else
-				if sb1 -> b1_ipi != syd -> yd_per_ipi
-					//u_log2 ('info', 'Verificando item ' + sb1 -> b1_cod + SB1 -> B1_DESC)
-
-					// Cria variaveis para uso na gravacao do evento de alteracao
-					regtomemory ("SB1", .F., .F.)
-					//regtomemory ("SB5", .F., .F.)
-					//m->b5_vasisde = 'S'
-					m->b1_ipi = syd -> yd_per_ipi
-					U_Log2 ('info', sb1 -> b1_posipi + ' alterando de ' + transform (sb1->b1_ipi, "@E 999.99") + ' para ' + transform (m->b1_ipi, "@E 999.99") + ' ' + ' ' + sb1 -> b1_cod + ' ' + sb1 -> b1_desc)
-					
-					// Grava evento de alteracao
-					_oEvento := ClsEvent():new ()
-					_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 11682 - ajustar B1_IPI pelo SYD', .F.)
-					reclock ("SB1", .f.)
-					sb1 -> B1_ipi = m->b1_ipi
-					msunlock ()
-					//reclock ("SB5", .f.)
-					//sb5->b5_vasisde = m->b5_vasisde
-					//msunlock ()
-					
-					// Cai fora no primeiro, para testes.
-					//exit
-				endif
-			endif
-		endif
-		sb1 -> (dbskip ())
-	enddo
 return
 */
 /*
