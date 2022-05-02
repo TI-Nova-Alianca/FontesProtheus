@@ -14,6 +14,7 @@
 // 16/19/2021 - Claudia - Alterado o TM de 23 para 04. GLPI: 10948
 // 12/01/2022 - Robert  - Revisao da query (inclusao EXISTS SZI e teste de cod/loja base associado)
 //                      - Fixada parcela 'A' (antes gerava vazia)
+// 02/05/2022 - Claudia - Comentado o "exit".
 //
 //---------------------------------------------------------------------------------------------------------------
 User function BATCOMPASSOC()

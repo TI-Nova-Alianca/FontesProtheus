@@ -12,7 +12,7 @@
 //
 // Historico de alteracoes:
 // 20/04/2022 - Claudia - Migrado o batch batcomfun (que contabilizada apenas funcionarios) 
-//                        para esse novo batch. GLPI: 
+//                        para esse novo batch. GLPI: 11689
 //
 // --------------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -21,7 +21,7 @@
 
 User Function BatCtbCom()
     Local _oSQL     := ClsSQL ():New ()
-    Local _nQtdDias := 30
+    Local _nQtdDias := 15
     Local _dDtIni   := dtos(DaySub(Date(), _nQtdDias))
     Local _dDtFim   := dtos(Date())
     Local _x         := 0
@@ -181,6 +181,8 @@ User Function BatCtbCom()
         _oSQL:_sQuery += "    ,SL1.L1_VACGC "
         _oSQL:_sQuery += "    ,SL1.L1_DOC "
         _oSQL:_sQuery += "    ,SL1.L1_NUM "
+        _oSQL:_sQuery += "    ,SA2.A2_NOME "
+        _oSQL:_sQuery += "    ,SL1.L1_INDCTB "
         _oSQL:_sQuery += " FROM " + RetSQLName ("SL1") + " SL1 "
         _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SL4") + " SL4 "
         _oSQL:_sQuery += " 	ON (SL4.D_E_L_E_T_ = '' "
@@ -194,24 +196,26 @@ User Function BatCtbCom()
         _oSQL:_sQuery += " 			AND SF2.F2_DOC     = L1_DOC "
         _oSQL:_sQuery += " 			AND SF2.F2_SERIE   = L1_SERIE "
         _oSQL:_sQuery += " 			AND SF2.F2_EMISSAO = L1_EMISNF) "
+        _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA2") + " SA2 "
+	    _oSQL:_sQuery += "  ON (SA2.D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += "  	AND SA2.A2_CGC = SL1.L1_VACGC) "
         _oSQL:_sQuery += " WHERE SL1.D_E_L_E_T_ = '' "
         _oSQL:_sQuery += " AND SL1.L1_FILIAL = '" + xFilial("SL1") + "'" 
         _oSQL:_sQuery += " AND SL1.L1_EMISNF BETWEEN '" + _dDtIni + "' AND '" + _dDtFim + "'"
         _oSQL:_sQuery += " AND SL1.L1_DOC != '' "
-        _oSQL:_sQuery += " AND SL1.L1_INDCTB = '' "
+        _oSQL:_sQuery += " AND SL1.L1_INDCTB = 'S' "
         _oSQL:_sQuery += " ORDER BY SL1.L1_EMISNF "
         _oSQL:Log()
         _aDados := aclone(_oSQL:Qry2Array ())
 
         If len(_aDados) > 0  
 	        For _x := 1 to len(_aDados)
-                _sFilAssoc:= '01' // só contabiliza na matriz
                 _sData    := _aDados[_x,2]
                 _nValor   := _aDados[_x,3]
-                _sHist    := "ADTO COMPRAS ASSOC.LOJA - " + _aDados[_x,5] 
+                _sHist    := "ADTO.COMPRAS ASSOC-" + _aDados[_x,8] 
                 _sDoc     := _aDados[_x,6]
                 _nNum     := _aDados[_x,7]
-                _sIndCtb  := 'N'
+                _sIndCtb  := _aDados[_x,9]
 
                 lMsErroAuto := .F.
                 lMsHelpAuto := .T.
@@ -226,7 +230,7 @@ User Function BatCtbCom()
                 AADD(_aAutoCT2C,  {'NTOTINFLOT'    ,0               , NIL} )
                 _aAutoCT2I := {}
                 _aLinhaCT2 := {}
-                AADD(_aLinhaCT2,  {'CT2_FILIAL'     , _sFilAssoc     , NIL})
+                AADD(_aLinhaCT2,  {'CT2_FILIAL'     , '01'           , NIL}) // só contabiliza na matriz
                 AADD(_aLinhaCT2,  {'CT2_LINHA'      , '001'          , NIL})
                 AADD(_aLinhaCT2,  {'CT2_MOEDLC'     , '01'           , NIL})
                 AADD(_aLinhaCT2,  {'CT2_DC'         , '3'            , NIL})
@@ -250,7 +254,7 @@ User Function BatCtbCom()
                     _oEvento:Grava()
                 Else
                     u_log ('lcto contabil gerado')
-                    _sIndCtb := 'S'
+                    _sIndCtb := 'C' // Quando S gerou na conta corrente, quando C gerou Ctb
 
                     _oEvento := ClsEvent():New ()
                     _oEvento:Alias   = "BAT"
