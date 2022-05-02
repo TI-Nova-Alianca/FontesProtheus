@@ -55,7 +55,7 @@ User Function BatCtbCom()
 	    _oSQL:_sQuery += "  ON (SA2.D_E_L_E_T_ = '' "
 		_oSQL:_sQuery += "  	AND SA2.A2_CGC = SL1.L1_VACGC) "
         _oSQL:_sQuery += " WHERE SL1.D_E_L_E_T_ = '' "
-        _oSQL:_sQuery += " AND SL1.L1_FILIAL = '" + xFilial("SL1") + "'" 
+        //_oSQL:_sQuery += " AND SL1.L1_FILIAL = '" + xFilial("SL1") + "'" 
         _oSQL:_sQuery += " AND SL1.L1_EMISNF BETWEEN '" + _dDtIni + "' AND '" + _dDtFim + "'"
         _oSQL:_sQuery += " AND SL1.L1_DOC != '' "
         _oSQL:_sQuery += " AND SL1.L1_INDCTB = 'S' "
@@ -86,7 +86,7 @@ User Function BatCtbCom()
                 AADD(_aAutoCT2C,  {'NTOTINFLOT'    ,0               , NIL} )
                 _aAutoCT2I := {}
                 _aLinhaCT2 := {}
-                AADD(_aLinhaCT2,  {'CT2_FILIAL'     , '01'           , NIL}) // só contabiliza na matriz
+                //AADD(_aLinhaCT2,  {'CT2_FILIAL'     , '01'           , NIL}) // só contabiliza na matriz
                 AADD(_aLinhaCT2,  {'CT2_LINHA'      , '001'          , NIL})
                 AADD(_aLinhaCT2,  {'CT2_MOEDLC'     , '01'           , NIL})
                 AADD(_aLinhaCT2,  {'CT2_DC'         , '3'            , NIL})
