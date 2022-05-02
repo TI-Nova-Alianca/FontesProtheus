@@ -116,7 +116,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 		_sRet += '<map version="1.0.1">'
 		_sRet += '<node CREATED="1493030990433" ID="' + _sID + '" STYLE="bubble" TEXT="' + _sDescri + '">'
 	endif
-
+/* ainda em construcao (aguarda melhorias na funcao va_fkardex_lote)
 	// Monta array com todos os movimentos do item/lote no nivel atual, a serem
 	// lidos posteriormente para gerar os nodos e, havendo necessidade, poderao
 	// ser expandidos recursivamente.
@@ -136,7 +136,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 		_oSQL:_sQuery += " GROUP BY D3_OP,"
 		_oSQL:Log (_sStrLog)
 	endif
-
+*/
 	if _lContinua .and. _nNivel == 0
 		// Abre o nodo das entradas
 		_sID = soma1 (_sID)

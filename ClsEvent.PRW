@@ -53,6 +53,7 @@
 // 17/05/2021 - Robert  - Grava ::Texto e nao mais _sTextoZN no arquivo de log.
 // 21/05/2021 - Robert  - Campo ZN_PILHA substituido pelo ZN_ORIGEM (GLPI 10072)
 // 19/08/2021 - Robert  - Inicializador para ::Origem, pois quando pilha de chamadas, excedia tamanho do campo (GLPI 10578).
+// 02/05/2022 - Robert  - Incluidas chamadas de U_PerfMon() para acompanhar tempo de gravacao.
 //
 
 #include "protheus.ch"
@@ -193,6 +194,9 @@ Return Self
 METHOD Grava () Class ClsEvent
 	local _aArea    := U_ML_SRArea ()
 	local _sTextoZN := ""
+
+	// Monitoramento de performance
+	U_PerfMon ('I', 'GravarSZN')
 	
 	// Se tem quebras de linha no texto, gravo soh a primeira linha no SZN e deixo o restante para o campo memo.
 	if chr (13) $ ::Texto
@@ -246,6 +250,8 @@ METHOD Grava () Class ClsEvent
 	// SZN -> zn_origem  = iif (empty (::Origem), _PCham (), ::Origem)
 	SZN -> zn_origem  = _Origem ()
 	msunlock ("SZN")
+
+	U_PerfMon ('F', 'GravarSZN')
 
 	// Envia evento por e-mail, se for o caso.
 	::Self:SendMail ()

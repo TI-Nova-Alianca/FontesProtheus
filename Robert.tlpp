@@ -97,15 +97,88 @@ static function _AndaLogo ()
 //	local _nParc := 0
 //	local _sCampo := ""
 //	local _nCampo := 0
-	local _aLotes := {}
-	local _nLote  := 0
+//	local _aLotes := {}
+//	local _nLote  := 0
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
-//	u_help ('Nada definido.')
-//return
+	u_help ('Nada definido.')
+return
+/*
+	// Ajusta cadastro produtos em lote
+	_sArqLog := 'GLPI11986_SYD_para_SB1.log'
+	sb1 -> (dbsetorder (1))
+	sb5 -> (dbsetorder (1))
+	syd -> (dbsetorder (1))  // YD_FILIAL, YD_TEC, YD_EX_NCM, YD_EX_NBM, YD_DESTAQU, R_E_C_N_O_, D_E_L_E_T_
+	sb1 -> (dbgotop ())
+	do while ! sb1 -> (eof ())
+		if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
+			u_log2 ('ERRO', 'Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
+		else
+			if ! syd -> (dbseek (xfilial ("SYD") + sb1 -> b1_posipi, .F.))
+				u_log2 ('ERRO', "Nao encontrei SYD '" + sb1 -> b1_posipi + "' para o produto " + sb1 -> b1_cod)
+			else
+				if sb1 -> b1_ipi != syd -> yd_per_ipi
+					//u_log2 ('info', 'Verificando item ' + sb1 -> b1_cod + SB1 -> B1_DESC)
 
+					// Cria variaveis para uso na gravacao do evento de alteracao
+					regtomemory ("SB1", .F., .F.)
+					//regtomemory ("SB5", .F., .F.)
+					//m->b5_vasisde = 'S'
+					m->b1_ipi = syd -> yd_per_ipi
+					U_Log2 ('info', sb1 -> b1_posipi + ' alterando de ' + transform (sb1->b1_ipi, "@E 999.99") + ' para ' + transform (m->b1_ipi, "@E 999.99") + ' ' + ' ' + sb1 -> b1_cod + ' ' + sb1 -> b1_desc)
 
+					// Grava evento de alteracao
+					_oEvento := ClsEvent():new ()
+					_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 11986 - ajustar B1_IPI pelo SYD', .F.)
+					reclock ("SB1", .f.)
+					sb1 -> B1_ipi = m->b1_ipi
+					msunlock ()
+					//reclock ("SB5", .f.)
+					//sb5->b5_vasisde = m->b5_vasisde
+					//msunlock ()
+					U_AtuMerc ("SB1", sb1 -> (recno ()))
+
+					// Cai fora no primeiro, para testes.
+					// exit
+				endif
+			endif
+		endif
+		sb1 -> (dbskip ())
+	enddo
+return
+*/
+/*
+	_sArqLog := 'GLPI11986_SYD.log'
+	syd -> (dbsetorder (1))
+	_aDados = U_LeCSV ('\robert\syd_35.csv', ';')
+	//u_log2 ('debug', _adados)
+	for _nDado = 1 to len (_aDados)
+		_aDados [_nDado, 1] = strtran (_aDados [_nDado, 1], '.', '')
+		if ! syd -> (dbseek (xfilial ("SYD") + padl (_aDados [_nDado, 1], 8, '0'), .F.))
+		//	U_Log2 ('erro', _aDados [_nDado, 1] + ' nao encontrado')
+		else
+			_nPerc = val (strtran (strtran (_aDados [_nDado, 4], '"', ''), ',', '.'))
+			if syd -> yd_per_ipi != _nPerc
+				U_Log2 ('debug', syd -> yd_tec + ' ' + U_TamFixo (syd -> yd_desc_p, 40) + ' ' + transform (syd -> yd_per_ipi, "@E 999.99") + ' -> ' + transform (_nPerc, "@E 999.99"))
+				regtomemory ("SYD", .F., .F.)
+				m->yd_per_ipi = _nPerc
+
+				// Grava evento de alteracao
+				_oEvento := ClsEvent():new ()
+				_oEvento:AltCadast ("SYD", m->yd_tec, syd -> (recno ()), 'GLPI 11986 - Revisao geral TIPI', .F.)
+
+				reclock ("SYD", .f.)
+				syd -> yd_per_ipi = m->yd_per_ipi
+				msunlock ()
+				// Cai fora no primeiro, para testes.
+				// exit
+			endif
+		endif
+	next
+return
+*/
+/*
 	// Testes arvore de rastreabilidade
 	private _aLtXLS58 := {}  // Deixar PRIVATE para ser alimentada pelo U_RastLT().
 	_aLotes := {}
@@ -138,61 +211,6 @@ static function _AndaLogo ()
 return
 */
 /*
-	// Ajusta cadastro produtos em lote
-	_sArqLog := 'GLPI11682_SYD_para_SB1.log'
-	sb1 -> (dbsetorder (1))
-	sb5 -> (dbsetorder (1))
-	syd -> (dbsetorder (1))  // YD_FILIAL, YD_TEC, YD_EX_NCM, YD_EX_NBM, YD_DESTAQU, R_E_C_N_O_, D_E_L_E_T_
-	sb1 -> (dbgotop ())
-	do while ! sb1 -> (eof ())
-		if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
-			u_log2 ('ERRO', 'Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
-		else
-			if ! syd -> (dbseek (xfilial ("SYD") + sb1 -> b1_posipi, .F.))
-				u_log2 ('ERRO', "Nao encontrei SYD '" + sb1 -> b1_posipi + "' para o produto " + sb1 -> b1_cod)
-			else
-				if sb1 -> b1_ipi != syd -> yd_per_ipi
-					//u_log2 ('info', 'Verificando item ' + sb1 -> b1_cod + SB1 -> B1_DESC)
-
-					// Cria variaveis para uso na gravacao do evento de alteracao
-					regtomemory ("SB1", .F., .F.)
-					//regtomemory ("SB5", .F., .F.)
-					//m->b5_vasisde = 'S'
-					m->b1_ipi = syd -> yd_per_ipi
-					U_Log2 ('info', sb1 -> b1_posipi + ' alterando de ' + transform (sb1->b1_ipi, "@E 999.99") + ' para ' + transform (m->b1_ipi, "@E 999.99") + ' ' + ' ' + sb1 -> b1_cod + ' ' + sb1 -> b1_desc)
-					
-					// Grava evento de alteracao
-					_oEvento := ClsEvent():new ()
-					_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 11682 - ajustar B1_IPI pelo SYD', .F.)
-					reclock ("SB1", .f.)
-					sb1 -> B1_ipi = m->b1_ipi
-					msunlock ()
-					//reclock ("SB5", .f.)
-					//sb5->b5_vasisde = m->b5_vasisde
-					//msunlock ()
-					
-					// Cai fora no primeiro, para testes.
-					//exit
-				endif
-			endif
-		endif
-		sb1 -> (dbskip ())
-	enddo
-return
-*/
-
-	// Testes com transf. avarias Full
-//	u_BatFullM ()
-//return
-/*
-	// Testes com etiquetas
-	_oEtiq := ClsEtiq ():New ('2000468623')
-	u_logobj (_oEtiq)
-	u_log (_oEtiq:PodeApont(80, 1))
-//	u_log (_oEtiq:PodeEnvFul())
-//	_oEtiq:EnviaFull()
-return
-*//*
 	// testes tratamento de erros
 	try
 		U_Log2 ('debug', '[' + procname () + ']logo apos TRY')
@@ -620,35 +638,6 @@ return
 	U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (_oLtXLS58:TotCol (7)))
 return
 */
-/*
-	_sArqLog := 'GLPI11682_geral.log'
-	syd -> (dbsetorder (1))
-	_aDados = U_LeCSV ('\robert\tipi.csv', ';')
-	for _nDado = 1 to len (_aDados)
-		if ! syd -> (dbseek (xfilial ("SYD") + padl (_aDados [_nDado, 1], 8, '0'), .F.))
-			U_Log2 ('erro', _aDados [_nDado, 1] + ' nao encontrado')
-		else
-			_nPerc = val (strtran (_aDados [_nDado, 3], ',', '.'))
-			if syd -> yd_per_ipi != _nPerc
-				U_Log2 ('debug', syd -> yd_tec + ' ' + U_TamFixo (syd -> yd_desc_p, 40) + ' ' + transform (syd -> yd_per_ipi, "@E 999.99") + ' -> ' + transform (_nPerc, "@E 999.99"))
-				regtomemory ("SYD", .F., .F.)
-				m->yd_per_ipi = _nPerc
-
-				// Grava evento de alteracao
-				_oEvento := ClsEvent():new ()
-				_oEvento:AltCadast ("SYD", m->yd_tec, syd -> (recno ()), 'GLPI 11682 - Revisao geral TIPI', .F.)
-
-				reclock ("SYD", .f.)
-				syd -> yd_per_ipi = m->yd_per_ipi
-				msunlock ()
-				
-				// Cai fora no primeiro, para testes.
-				//exit
-			endif
-		endif
-	next
-return
-/*
 /*
 	// Ajusta cadastro de TIPI em lote
 	syd -> (dbsetorder (1))
