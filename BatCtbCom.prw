@@ -210,6 +210,7 @@ User Function BatCtbCom()
 
         If len(_aDados) > 0  
 	        For _x := 1 to len(_aDados)
+                _sFilvend := _aDados[_x,1]
                 _sData    := _aDados[_x,2]
                 _nValor   := _aDados[_x,3]
                 _sHist    := "ADTO.COMPRAS ASSOC-" + _aDados[_x,8] 
