@@ -16,11 +16,13 @@
 // 15/06/2020 - Robert - Gravacao do __cUserID no campo USUARIO e criado campo NOME para o cUserName.
 // 07/08/2020 - Robert - Ajuste teste porta SigaLoja.
 // 22/06/2021 - Robert - Nao validava tamanho do campo ROTINA e podia dar erro no insert.
+// 28/04/2022 - Robert - Testa existencia da variavel __cUserId.
 //
 
 // --------------------------------------------------------------------------
 user function UsoRot (_sIniFim, _sRotina, _sOrigem)
 	local _oSQL     := ClsSQL ():New ()
+	local _sUserId  := iif (type ('__cUserId') == 'C', __cUserId, '')
 
 	// Criamos um servico em separado exclusivamente para as lojas usarem com os cupons, mas o pessoal comecou a
 	// usar para tudo, entao estou tentando evitar pelo menos que usem outros modulos. Robert, 24/10/2019.
@@ -74,7 +76,7 @@ user function UsoRot (_sIniFim, _sRotina, _sOrigem)
 		_oSQL:_sQuery +=           cValToChar (ThreadID ()) + ","
 //		_oSQL:_sQuery +=           " GETDATE (), "
 		_oSQL:_sQuery +=           " CURRENT_TIMESTAMP, "
-		_oSQL:_sQuery +=           "'" + __cUserId + "',"
+		_oSQL:_sQuery +=           "'" + _sUserID + "',"
 		_oSQL:_sQuery +=           "'" + alltrim (LEFT (upper (cUserName), 20)) + "',"
 		_oSQL:_sQuery +=           "'" + alltrim (LEFT (upper (GetEnvServer ()), 15)) + "',"
 		_oSQL:_sQuery +=           "'" + _sOrigem + "',"
@@ -91,7 +93,7 @@ user function UsoRot (_sIniFim, _sRotina, _sOrigem)
 		_oSQL:_sQuery += " WHERE SERVICO  = " + cvaltochar (GetServerPort ())
 		_oSQL:_sQuery +=   " AND THREAD   = " + cvaltochar (ThreadID ())
 	//	_oSQL:_sQuery +=   " AND USUARIO  = '" + alltrim (LEFT (upper (cUserName), 20)) + "'"
-		_oSQL:_sQuery +=   " AND USUARIO  = '" + __cUserId + "'"
+		_oSQL:_sQuery +=   " AND USUARIO  = '" + _sUserID + "'"
 		_oSQL:_sQuery +=   " AND AMBIENTE = '" + alltrim (LEFT (upper (GetEnvServer ()), 15)) + "'"
 		_oSQL:_sQuery +=   " AND SAIDA IS NULL"
 		_oSQL:_sQuery +=   " AND ENTRADA >= DATEADD (DAY, -1, GETDATE ())"

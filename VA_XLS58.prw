@@ -16,7 +16,7 @@
 // 23/02/2022 - Robert  - Incluidas colunas filial e safra (GLPI 11664).
 // 02/03/2022 - Robert  - Coluna 'Kg' (COLUNA5) passada para a frente da coluna 'Produto'.
 // 21/03/2022 - Claudia - Incluido o codigo CR (sisdevin). GLPI: 11727
-//
+// 27/04/2022 - Robert  - Criados parametros de NF de... ate
 //
 // ------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -106,6 +106,7 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += " WHERE SF2.D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " AND F2_FILIAL BETWEEN '"+ mv_par03 + "' AND '" + mv_par04 +"'"
     _oSQL:_sQuery += " AND F2_EMISSAO BETWEEN '"+ DTOS(mv_par01) + "' AND '" + DTOS(mv_par02) +"'"
+    _oSQL:_sQuery += " AND F2_DOC BETWEEN '"+ mv_par09 + "' AND '" + mv_par10 +"'"
     _oSQL:Log ()
     _aNf := aclone (_oSQL:Qry2Array (.F., .F.))
 
@@ -113,20 +114,21 @@ Static Function PrintReport(oReport)
         // Busca dados na função do robert
         _aLtXLS58 :={}
 		_sMapa := U_RastLT (_aNf[_x,1], U_TamFixo (_aNf[_x,8], 15, ' '), alltrim(_aNf[_x,9]), 0, NIL, _aNf[_x,10])
-        // _sArq  := 'c:\temp\rast.mm'
-         
-        // delete file (_sArq)
-        // if file (_sArq) 
-        //     _nHdl = fopen(_sArq, 1)
-        // else
-        //     _nHdl = fcreate(_sArq, 0)
-        // endif
 
-        // fwrite (_nHdl, _sMapa)
-        // fclose (_nHdl)
-        // ShellExecute ("Open", _sArq, "", "", 1)
-            
-        u_log (_aLtXLS58)
+		// Habilitar este trecho se precisar gerar a arvore de cada nota fiscal
+        _sArq  := 'c:\temp\rast_F' + _aNf[_x,1] + '_NF' + _aNf[_x,2] + '_Lt_' + alltrim(_aNf[_x,9]) + '.mm'
+        delete file (_sArq)
+        if file (_sArq) 
+            _nHdl = fopen(_sArq, 1)
+        else
+            _nHdl = fcreate(_sArq, 0)
+        endif
+        fwrite (_nHdl, _sMapa)
+        fclose (_nHdl)
+        ShellExecute ("Open", _sArq, "", "", 1)
+*/
+
+        u_log2 ('debug', _aLtXLS58)
 
         For _i:=1 to Len(_aLtXLS58)
             _sDesc    := POSICIONE("SB1",1,XFILIAL("SB1") + _aLtXLS58[_i, 1] ,"B1_DESC")  
@@ -197,13 +199,15 @@ Return _sCodCR
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT                TIPO TAM DEC VALID F3     Opcoes                      				Help
-    aadd (_aRegsPerg, {01, "Emissao de      	", "D", 8, 0,  "",  "   ", {},                         					""})
-    aadd (_aRegsPerg, {02, "Emissao até     	", "D", 8, 0,  "",  "   ", {},                         					""})
-    aadd (_aRegsPerg, {03, "Filial de        	", "C", 2, 0,  "",  "   ", {},                         					""})
-    aadd (_aRegsPerg, {04, "Filial até       	", "C", 2, 0,  "",  "   ", {},                         					""})
-    aadd (_aRegsPerg, {05, "Cliente de       	", "C", 6, 0,  "",  "SA1", {},                         					""})
-    aadd (_aRegsPerg, {06, "Cliente até       	", "C", 6, 0,  "",  "SA1", {},                         					""})
-    aadd (_aRegsPerg, {07, "Loja de         	", "C", 2, 0,  "",  "   ", {},                         					""})
-    aadd (_aRegsPerg, {08, "Loja até         	", "C", 2, 0,  "",  "   ", {},                         					""})
+    aadd (_aRegsPerg, {01, "Emissao de         ", "D", 8, 0,  "",  "   ", {},                         					""})
+    aadd (_aRegsPerg, {02, "Emissao até        ", "D", 8, 0,  "",  "   ", {},                         					""})
+    aadd (_aRegsPerg, {03, "Filial de          ", "C", 2, 0,  "",  "   ", {},                         					""})
+    aadd (_aRegsPerg, {04, "Filial até         ", "C", 2, 0,  "",  "   ", {},                         					""})
+    aadd (_aRegsPerg, {05, "Cliente de         ", "C", 6, 0,  "",  "SA1", {},                         					""})
+    aadd (_aRegsPerg, {06, "Cliente até        ", "C", 6, 0,  "",  "SA1", {},                         					""})
+    aadd (_aRegsPerg, {07, "Loja de            ", "C", 2, 0,  "",  "   ", {},                         					""})
+    aadd (_aRegsPerg, {08, "Loja até           ", "C", 2, 0,  "",  "   ", {},                         					""})
+    aadd (_aRegsPerg, {09, "NF de              ", "C", 9, 0,  "",  "   ", {},                         					""})
+    aadd (_aRegsPerg, {10, "NF até             ", "C", 9, 0,  "",  "   ", {},                         					""})
     U_ValPerg (cPerg, _aRegsPerg)
 Return

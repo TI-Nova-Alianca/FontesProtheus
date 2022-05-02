@@ -16,6 +16,7 @@
 // 08/04/2021 - Robert - Removidos logs de depuracao (GLPI 9409)
 // 09/04/2021 - Robert - Criada opcao 'L' para apenas gravar em log, sem persistir no banco de dados.
 // 03/05/2021 - Robert - Criado tratamento para quando virar a meia noite.
+// 01/05/2022 - Robert - Retorna o tempo total ao final do processo (caso a rotina chamadora queira usar).
 //
 
 // --------------------------------------------------------------------------
@@ -24,6 +25,7 @@ user function PerfMon (_sQueFazer, _sChvPerf)
 	local _oSQL     := NIL
 	local _oAviso   := NIL
 	local _aAreaAnt := U_ML_SRArea ()
+	local _nRetPerf := 0
 
 	if _sQueFazer == 'I'  // Inicio de contagem de tempo
 		//U_Log2 ('debug', 'Iniciando chave ' + _sChvPerf)
@@ -53,11 +55,11 @@ user function PerfMon (_sQueFazer, _sChvPerf)
 			else
 				// Se fim < inicio, entendo que o processo iniciou antes da meia noite e terminou depois.
 				if _aPerfMon [_nPosPerf, 2] > seconds ()
-					//U_Log2 ('aviso', 'Parece que virou a meia noite')
 					_aPerfMon [_nPosPerf, 3] = 86400 - _aPerfMon [_nPosPerf, 2] + seconds ()
 				else
 					_aPerfMon [_nPosPerf, 3] = seconds () - _aPerfMon [_nPosPerf, 2]
 				endif
+				_nRetPerf = _aPerfMon [_nPosPerf, 3]
 				if _sQueFazer == 'L'
 					U_Log2 ('info', '[' + procname () + ']Tempo execucao chave ' + _sChvPerf + ': ' + cvaltochar (_aPerfMon [_nPosPerf, 3]) + ' segundos')
 				endif
@@ -96,4 +98,4 @@ user function PerfMon (_sQueFazer, _sChvPerf)
 		endif
 	endif
 	U_ML_SRArea (_aAreaAnt)
-return
+return _nRetPerf
