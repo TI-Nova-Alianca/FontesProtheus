@@ -49,8 +49,8 @@
 // 11/03/2022 - Claudia - Tratamento para código matriz. GLPI: 11635
 // 11/03/2022 - Claudia - Tratamento para cadastro prospect. GLPI:11757 
 // 25/03/2022 - Robert  - Passa a buscar caminho do banco de dados via funcao U_LkServer() - GLPI 11770
+// 03/05/2022 - Claudia - Incluida a gravação do campo a1_savblq.GLPI: 11922
 //
-
 // ------------------------------------------------------------------------------------------------------------------------
 user function BatMerc (_sQueFazer)
 //	local _sArqLog2 := iif (type ("_sArqLog") == "C", _sArqLog, "")
@@ -508,6 +508,7 @@ static function _LeCli (_sLinkSrv)
 				oSA1Mod:SetValue("A1_VACTAFN"	, alltrim(_sRet214))  	
 				oSA1Mod:SetValue("A1_VACGCFI"	, alltrim(_sRet215)) 
 				oSA1Mod:SetValue("A1_VAMDANF"	, alltrim(_sRet219)) 
+				oSA1Mod:SetValue("A1_SAVBLQ"	, 'S') 
 
 				U_LOG (_aAutoSA1)
 								

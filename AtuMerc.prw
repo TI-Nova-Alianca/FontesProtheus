@@ -1,6 +1,6 @@
-// Programa:  AtuMerc
-// Autor:     Robert Koch
-// Data:      08/11/2016
+// Programa.: AtuMerc
+// Autor....: Robert Koch
+// Data.....: 08/11/2016
 // Descricao: Cria agendamento de envio de atualizacoes para sistema Mercanet.
 //            Nao grava diretamente na tabela de integracao do Mercanet por que essa
 //            tabela encontra-se em outro database. Qualquer erro de comunicacao faria
@@ -8,14 +8,17 @@
 //            de agendamentos e um processo posterior faz a gravacao no database da Mercanet.
 //
 // H/storico de alteracoes:
-// 24/08/2017 - Robert - Verifica se jah existe registro antes de inserir um igual.
-// 06/06/2018 - Robert - Envio da tabela 46 do ZX5.
-// 19/06/2018 - Robert - Envio da tabela 46 do ZX5 direcionada para codigo 8111 do Mercanet (estava indo para 8101).
-// 22/06/2020 - Robert - Melhorada gravacao de logs.
-// 01/03/2021 - Robert - Envia SB1 somente se for B1_TIPO = 'PA' (GLPI 11687)
+// 24/08/2017 - Robert  - Verifica se jah existe registro antes de inserir um igual.
+// 06/06/2018 - Robert  - Envio da tabela 46 do ZX5.
+// 19/06/2018 - Robert  - Envio da tabela 46 do ZX5 direcionada para codigo 8111 do Mercanet 
+//                        (estava indo para 8101).
+// 22/06/2020 - Robert  - Melhorada gravacao de logs.
+// 01/03/2021 - Robert  - Envia SB1 somente se for B1_TIPO = 'PA' (GLPI 11687)
+// 03/05/2022 - Claudia - Realiza envio de registro de cliente para mercanet 
+//                        quando a1_savblq <> 'N'. GLPI: 11922
 //
-
-// --------------------------------------------------------------------------
+//
+// --------------------------------------------------------------------------------------------
 user function AtuMerc (_sAlias, _nRecno)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _nTipo     := 0
@@ -33,9 +36,13 @@ user function AtuMerc (_sAlias, _nRecno)
 		(_sAlias) -> (dbgoto (_nRecno))
 		do case
 			case _sAlias == 'SA1'
-				_nTipo = 20
-				_sChave1 = sa1 -> a1_cod
-				_sChave2 = sa1 -> a1_loja
+				if sa1->a1_savblq == 'N'
+					_lContinua = .F.
+				else
+					_nTipo = 20
+					_sChave1 = sa1 -> a1_cod
+					_sChave2 = sa1 -> a1_loja
+				endif
 			case _sAlias == 'SA3'
 				_nTipo = 8005
 				_sChave1 = sa3 -> a3_cod

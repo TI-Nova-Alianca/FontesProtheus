@@ -37,9 +37,10 @@
 // 26/03/2021 - Robert  - Nao tinha tratamento para cidades com [til] no nome (GLPI 9706).
 // 11/06/2021 - Robert  - Pequena melhoria na geracao de logs.
 // 03/09/2021 - Claudia - Incluido campos obrigatorios na gravação do cliente. GLPI: 10819
-// 13/09/2021 - Robert  - Limitados tamanhos de alguns campos do SA1 (acusava erro "String or binary data would be truncated" no SQL/DBAccess).
+// 13/09/2021 - Robert  - Limitados tamanhos de alguns campos do SA1 (acusava erro 
+//                        "String or binary data would be truncated" no SQL/DBAccess).
+// 03/05/2022 - Claudia - Incluida a gravação do campo a1_savblq.GLPI: 11922
 //
-
 // -----------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
 #Include "Protheus.ch"
@@ -218,7 +219,8 @@ User function BATFUNATLZ()
 					oSA1Mod:SetValue("A1_VAEMLF"	, _wemail								)  		
 					oSA1Mod:SetValue("A1_VACGCFI"	, _wcgc									)  
 					oSA1Mod:SetValue("A1_MUN"		, _wDescMun								)
-					oSA1Mod:SetValue("A1_CMUN"		, _wcodmun2								)             
+					oSA1Mod:SetValue("A1_CMUN"		, _wcodmun2								)  
+					oSA1Mod:SetValue("A1_SAVBLQ"	, 'S'								    )             
 					
 					If oModel:VldData() 		// Se conseguir validar as informações
 					    If oModel:CommitData() 	// Tenta realizar o Commit

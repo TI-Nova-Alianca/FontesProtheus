@@ -1,26 +1,20 @@
-/*/
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
-±±³Programa  ³ M415tdOK ³ Autor ³    Adelar D. Minuzzo  ³ Data ³ abr/2007 ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descricao ³ Validacao Linhas do pre pedido (orcamentos)                ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Retorno   ³                                                            ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Utilizacao³ Especifico para Cooperativa Nova Alianca                   ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³   Data   ³ Programador   ³Manutencao Efetuada                         ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³          ³               ³                                            ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-/*/
-// Historico de alteracoes:
-// 18/09/2008 - Robert - Criadas validacoes para campanhas de venda.
+// Programa...: A415TDOK
+// Autor......: Adelar D. Minuzzo
+// Data.......: 04/2007
+// Descricao..: Validacao Linhas do pre pedido (orcamentos)
 //
-
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #Validacao Linhas do pre pedido (orcamentos)
+// #PalavasChave      #orcamento #pre_pedido
+// #TabelasPrincipais #SA1 #SF4
+// #Modulos   		  #FAT 
+//
+// Historico de alteracoes:
+// 18/09/2008 - Robert  - Criadas validacoes para campanhas de venda.
+// 03/05/2022 - Claudia - Retirada a gravação do campo A1_SAVBLQ. GLPI: 11922
+// 
+// ---------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
 User Function A415TDOK()
@@ -28,28 +22,24 @@ User Function A415TDOK()
 	local _aAmbAnt   := U_SalvaAmb ()
 	local _aAreaAnt  := U_ML_SRArea ()
 
-	// Retorna o conteudo do campo SA1->A1_MSBLQL salvo no ponto de
-	// entrada A415LIOK - caso o tiver bloquear no momento da inclusao
-	// volta a bloquear neste momento (foi desbloqueado para incluir o pre-pedido)
-	DbSelectArea("SA1")
-	RecLock("SA1",.F.)
-	SA1->A1_MSBLQL    := SA1->A1_SAVBLQ
-	SA1->A1_SAVBLQ    := ""
-	MsUnlock()                           
-
+	// // Retorna o conteudo do campo SA1->A1_MSBLQL salvo no ponto de
+	// // entrada A415LIOK - caso o tiver bloquear no momento da inclusao
+	// // volta a bloquear neste momento (foi desbloqueado para incluir o pre-pedido)
+	// DbSelectArea("SA1")
+	// RecLock("SA1",.F.)
+	// SA1->A1_MSBLQL    := SA1->A1_SAVBLQ
+	// SA1->A1_SAVBLQ    := ""
+	// MsUnlock()                           
 
 	// Consistencias referentes a campanhas promocionais.
 	if _lRet
 		_lRet = _Campanhas ()
 	endif
 
-
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
 Return _lRet
-
-
-
+//
 // --------------------------------------------------------------------------
 // Consistencias referentes a campanhas promocionais.
 static function _Campanhas ()
@@ -105,5 +95,4 @@ static function _Campanhas ()
 		endif
 
 	endif
-
 return _lRet

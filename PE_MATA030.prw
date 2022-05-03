@@ -26,6 +26,7 @@
 // 11/01/2022 - Claudia - Criada validação para não permitir cadastramento de clientes que estao no cadastro 
 //                        de prospect. GLPI: 11421
 // 17/03/2022 - Claudia - Validação de cadastro de prospect apenas para inclusão de novos clientes. GLPI: 11774
+// 03/05/2022 - Claudia - Incluida validação para o campo a1_savblq. GLPI: 11922
 //
 //
 // --------------------------------------------------------------------------------------------------------------------
@@ -251,6 +252,13 @@ static Function _ma030tok(nOper)
 				_lRet = .F.
 			EndIf
 		EndIf
+	endif
+
+	if _lRet
+		if m->a1_savblq == 'N'
+			u_help("Este cliente não pode ser ativado devido a duplicidade de códigos! Entre em contato com o administrador do sistema.")
+			_lRet = .F.
+		endif
 	endif
 	
 	U_ML_SRArea (_aAreaAnt)

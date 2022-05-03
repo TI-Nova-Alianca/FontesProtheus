@@ -89,8 +89,8 @@
 // 31/03/2022 - Robert  - Nao usa mais data nos nomes do arquivos de log.
 // 07/04/2022 - Robert  - Iniciada funcao de alteracao de dados de associados (GLPI 10138)
 // 13/04/2022 - Robert  - Continuada funcao de alteracao de dados de associados (GLPI 10138)
+// 03/05/2022 - Claudia - Incluida a gravação do campo a1_savblq.GLPI: 11922
 //
-
 // --------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
 #INCLUDE "PROTHEUS.CH"
@@ -1012,6 +1012,7 @@ static function _IncCli ()
 		oSA1Mod:SetValue("A1_VADTINC"	, date()			)	
 		oSA1Mod:SetValue("A1_VAEMLF"	, _wemail			)  		
 		oSA1Mod:SetValue("A1_VACGCFI"	, _wcgc				) 
+		oSA1Mod:SetValue("A1_SAVBLQ"	, 'S'				) 
 
 		If oModel:VldData() 	// Tenta realizar o Commit
 			If oModel:CommitData()
