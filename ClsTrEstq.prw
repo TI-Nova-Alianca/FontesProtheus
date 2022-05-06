@@ -20,6 +20,8 @@
 // 06/04/2022 - Robert  - Criado metodo :AlmUsaEtiq() e passa a ser validado antes de gerar etiqueta.
 // 22/04/2022 - Robert  - Considerar usr 'FULLW' e nao mais 'FULLWMS' (para caber no campo ZZU_USR) - GLPI 8194
 // 27/04/2022 - Robert  - Voltado nome de usuario 'FULLW' para 'FULLWMS' pois optei por criar um usuario com esse nome no Protheus.
+// 05/05/2022 - Robert  - Ateh definirmos melhor as integracoes, fica liberado transf.manualmente p/alm que usa Full.
+// 06/05/2022 - Robert  - Se a solicitacao foi gerada por integracao com FullWMS, limpa tambem da tabela de integracao (GLPI 8914).
 //
 
 // ------------------------------------------------------------------------------------
@@ -223,7 +225,9 @@ METHOD Exclui () Class ClsTrEstq
 		if zag -> (recno ()) != ::RegZAG
 			::UltMsg += "Nao foi possivel localizar o registro correspondente no arquivo ZAG. Exclusao nao sera' efetuada."
 			_lContinua = .F.
-		endif                   
+		else
+			::Docto = zag -> zag_doc
+		endif
 	endif
 	if _lContinua
 		_oSQL := ClsSQL ():New ()
@@ -242,6 +246,17 @@ METHOD Exclui () Class ClsTrEstq
 				_lContinua = .F.
 			endif
 		endif
+	endif
+
+	// Se foi gerado por integracao com FullWMS, limpa tambem da tabela de integracao.
+	if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "update tb_wms_movimentacoes"
+		_oSQL:_sQuery +=   " set status_protheus = ' '"
+		_oSQL:_sQuery +=      ", ZAG_DOC = ''"
+		_oSQL:_sQuery += " where ZAG_DOC = '" + ::Docto + "'"
+		_oSQL:Log ()
+		_lContinua = _oSQL:Exec ()
 	endif
 
 	if _lContinua
@@ -780,49 +795,51 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 		//u_log2 ('debug', 'Testando com usuario ' + _sUserName)
 		if empty (::UsrAutOri) .and. alltrim (upper (_sUserName)) $ _aLib [1, 1]
 			u_log2 ('info', 'Usuario tem liberacao para o almox. origem')
-			if ::FWProdOrig .and. ::AlmUsaFull (::AlmOrig) .and. _sUserName != 'FULLWMS'
-				u_log2 ('info', '... mas o produto usa Full e o AX origem eh controlado pelo FullWMS')
-				_sMsg = "Produto '" + alltrim (::ProdOrig) + "' tem controle via FullWMS no AX '" + ::AlmOrig + "' e nao deve ser movimentado manualmente."
-				if U_ZZUVL ('029', __cUserId, .F.) .and. U_MsgYesNo (_sMsg + " Confirma assim mesmo?")
-					if ::AtuZAG ("zag_UAutO", _sUserName)
-						::UsrAutOri = _sUserName
-						::UltMsg += iif (_lMsg, "AX orig.liberado. ", '')
-						_lNenhuma = .F.
-					endif
-				else
-					::UltMsg += _sMsg
-				endif
-			else
+			// desabilitado enquanto nao definirmos melhor as integracoes. Robert, 05/05/2022
+			//if ::FWProdOrig .and. ::AlmUsaFull (::AlmOrig) .and. _sUserName != 'FULLWMS'
+			//	u_log2 ('info', '... mas o produto usa Full e o AX origem eh controlado pelo FullWMS')
+			//	_sMsg = "Produto '" + alltrim (::ProdOrig) + "' tem controle via FullWMS no AX '" + ::AlmOrig + "' e nao deve ser movimentado manualmente."
+			//	if U_ZZUVL ('029', __cUserId, .F.) .and. U_MsgYesNo (_sMsg + " Confirma assim mesmo?")
+			//		if ::AtuZAG ("zag_UAutO", _sUserName)
+			//			::UsrAutOri = _sUserName
+			//			::UltMsg += iif (_lMsg, "AX orig.liberado. ", '')
+			//			_lNenhuma = .F.
+			//		endif
+			//	else
+			//		::UltMsg += _sMsg
+			//	endif
+			//else
 				if ::AtuZAG ("zag_UAutO", _sUserName)
 					::UsrAutOri = _sUserName
 					::UltMsg += iif (_lMsg, "AX orig.liberado. ", '')
 					_lNenhuma = .F.
 				endif
-			endif
+			//endif
 		endif
 
 		if empty (::UsrAutDst) .and. alltrim (upper (_sUserName)) $ _aLib [1, 2]
 			u_log2 ('info', 'Usuario tem liberacao para o almox. destino')
-			if ::FWProdDest .and. ::AlmUsaFull (::AlmDest) .and. _sUserName != 'FULLWMS'
-				u_log ('info', '... mas o produto usa Full e o AX destino eh controlado pelo FullWMS')
-				_sMsg = "Produto '" + alltrim (::ProdDest) + "' tem controle via FullWMS no AX '" + ::AlmDest + "' e nao deve ser movimentado manualmente."
-				if U_ZZUVL ('029', __cUserId, .F.) .and. U_MsgYesNo (_sMsg + " Confirma assim mesmo?")
-					if ::AtuZAG ("zag_UAutD", _sUserName)
-						::UsrAutDst = _sUserName
-						::UltMsg += iif (_lMsg, "AX dest.liberado. ", '')
-						_lNenhuma = .F.
-					endif
-				else
-					::UltMsg += _sMsg
-				endif
-			else
+			// desabilitado enquanto nao definirmos melhor as integracoes. Robert, 05/05/2022
+			//if ::FWProdDest .and. ::AlmUsaFull (::AlmDest) .and. _sUserName != 'FULLWMS'
+			//	u_log ('info', '... mas o produto usa Full e o AX destino eh controlado pelo FullWMS')
+			//	_sMsg = "Produto '" + alltrim (::ProdDest) + "' tem controle via FullWMS no AX '" + ::AlmDest + "' e nao deve ser movimentado manualmente."
+			//	if U_ZZUVL ('029', __cUserId, .F.) .and. U_MsgYesNo (_sMsg + " Confirma assim mesmo?")
+			//		if ::AtuZAG ("zag_UAutD", _sUserName)
+			//			::UsrAutDst = _sUserName
+			//			::UltMsg += iif (_lMsg, "AX dest.liberado. ", '')
+			//			_lNenhuma = .F.
+			//		endif
+			//	else
+			//		::UltMsg += _sMsg
+			//	endif
+			//else
 
 				if ::AtuZAG ("zag_UAutD", _sUserName)
 					::UltMsg += iif (_lMsg, "AX dest.liberado. ", '')
 					::UsrAutDst = _sUserName
 					_lNenhuma = .F.
 				endif
-			endif
+			//endif
 		endif
 		
 		// Inicialmente a liberacao de PCP e qualidade vai ser automatica

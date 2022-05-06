@@ -50,7 +50,7 @@ User Function BatFullM ()
 		sb1 -> (dbsetorder (1))
 		if ! sb1 -> (dbseek (xfilial ("SB1") + left (alltrim ((_sAliasQ) -> coditem) + space (15), 15), .F.))
 			U_Log2 ('erro', '[' + procname () + "]Item '" + alltrim ((_sAliasQ) -> coditem) + "' nao encontrado na tabela SB1.")
-			_AtuFull ((_sAliasQ) -> PK, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
+			_AtuFull ((_sAliasQ) -> PK, '2', '')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
 			(_sAliasQ) -> (dbskip ())
 			loop
 		endif
@@ -81,9 +81,9 @@ User Function BatFullM ()
 			_oTrEstq:DtEmis  = stod ((_sAliasQ) -> dtemis)
 			if ! _oTrEstq:Grava ()
 				U_Log2 ('erro', '[' + procname () + ']' + _oTrEstq:UltMsg)
-				_AtuFull ((_sAliasQ) -> PK, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
+				_AtuFull ((_sAliasQ) -> PK, '2', '')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
 			else
-				_AtuFull ((_sAliasQ) -> PK, '3')  // Atualiza a tabela do Fullsoft como 'executado no ERP'
+				_AtuFull ((_sAliasQ) -> PK, '3', _oTrEstq:Docto)  // Atualiza a tabela do Fullsoft como 'executado no ERP'
 		
 				// Chama a rotina de liberacao do docto. Se estiver em condicoes, a transferencia jah serah executada.
 				u_log2 ('debug', 'Chamando liberacao do ZAG')
@@ -95,7 +95,7 @@ User Function BatFullM ()
 
 		(_sAliasQ) -> (dbskip ())
 
-		EXIT  // DURANTE TESTES, PARA RODAR 1 REGISTRO POR VEZ
+		//EXIT  // DURANTE TESTES, PARA RODAR 1 REGISTRO POR VEZ
 
 	enddo
 	(_sAliasQ) -> (dbclosearea ())
@@ -116,10 +116,11 @@ return _lRet
 // 4 = 'diferenca na quantidade'
 // 5 = 'qtde movimentada menor que executada' (no caso de recebimento de producao)
 // 9 = 'cancelado no ERP'
-static function _AtuFull (_sDtHr, _sStatus)
+static function _AtuFull (_sDtHr, _sStatus, _sZAGDoc)
 	local _oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := " update tb_wms_movimentacoes"
 	_oSQL:_sQuery +=    " set status_protheus = '" + _sStatus + "'"
+	_oSQL:_sQuery +=      " , ZAG_DOC = '" + _sZAGDoc + "'"
 	_oSQL:_sQuery +=  " where dthr = '" + alltrim (_sDtHr) + "'"  // Primary key
 	_oSQL:Log ()
 	_oSQL:Exec ()

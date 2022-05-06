@@ -53,6 +53,7 @@
 // 20/02/2022 - Robert - Variavel _sErros (publica do web service) renomeada para _sErroWS
 // 11/03/2022 - Robert - Metodo :Log() passa a receber parametro 'prefixo'.
 // 01/04/2022 - Robert - Programa fonte renomeado de .PRW para .TLPP (intencao usar posteriormente blocos try...catch)
+// 05/05/2022 - Robert - Implementado metodo GetRealName() - GLPI 11980
 //
 
 #include "protheus.ch"
@@ -72,6 +73,7 @@ CLASS ClsSQL
 	public DATA aHeader
 	public DATA QtLinRet
 	public DATA PerfMon
+	private DATA TmpTblRealName
 
 	// Declaracao dos Metodos da Classe
 	public  METHOD New ()
@@ -81,6 +83,7 @@ CLASS ClsSQL
 	public  METHOD Exec ()
 	public  METHOD F3Array ()
 	public  METHOD FormatIn ()
+	public  METHOD GetRealName ()
 	public  METHOD InsValues ()
 	public  METHOD Log ()
 	private METHOD MudaTipo ()  // Para uso interno.
@@ -108,6 +111,7 @@ METHOD New () Class ClsSQL
 	::ArqDestXLS := ''
 	::UltMsg     := ""
 	::PerfMon    := .F.
+	::TmpTblRealName := ''
 Return Self
 
 
@@ -212,6 +216,7 @@ METHOD Copy2Trb (_lSetField, _nDecFixo, _sAliasTrb, _aIndices) Class ClsSQL
 
 	if _lContinua
 		_oTempTbl:Create ()
+		::TmpTblRealName = _oTempTbl:GetRealName ()
 
 		// Passa os dados para o arquivo de trabalho.
 		_nQtCampos = (::_sAliasQry) -> (fcount ())
@@ -314,6 +319,14 @@ METHOD FormatIn () Class ClsSQL
 	::_xRetQry = ::Qry2Str (1, '/')
 	
 return FormatIn (::_xRetQry, '/')
+
+
+
+// --------------------------------------------------------------------------
+// Retorna o nome real da tabela temporaria (quando fo criada) no TEMPDB (em
+// caso de SQL Server) do banco de dados, que poderia ser usada para queries.
+METHOD GetRealName (_nQual) Class ClsSQL
+return ::TmpTblRealName
 
 
 

@@ -104,6 +104,90 @@ static function _AndaLogo ()
 	incproc ()
 	u_help ('Nada definido.')
 return
+
+/*
+	// Testes classe transf.estq.
+	private _sErroAuto := ''
+	_oTrEstq := ClsTrEstq ():New ()
+	_oTrEstq:FilOrig = cFilAnt
+	_oTrEstq:FilDest = cFilAnt
+	_oTrEstq:DtEmis  = date ()
+	//_oTrEstq:OP = '1234561212312'
+	_oTrEstq:Motivo = 'teste robert (ZAG)' 
+	_oTrEstq:ProdOrig = '4072           '
+	_oTrEstq:ProdDest = '2626           '
+	_oTrEstq:AlmOrig = '02'
+	_oTrEstq:AlmDest = '08'
+	//_oTrEstq:EndOrig = 'a'
+	//_oTrEstq:EndDest = 'b'
+	//_oTrEstq:LoteOrig = '1'
+	//_oTrEstq:LoteDest = '2'
+	_oTrEstq:QtdSolic = 1 
+	_oTrEstq:UsrIncl  = 'robert.koch'
+	if _oTrEstq:Grava ()
+		u_log ('gravou!', _oTrEstq:UltMsg)
+		//u_logObj (_oTrEstq)
+		if _oTrEstq:Libera ()
+			u_log ('Liberou!', _oTrEstq:UltMsg)
+		else
+			u_help (_oTrEstq:UltMsg)
+		endif
+		if _oTrEstq:Exclui ()
+			u_log ('Excluiu!', _oTrEstq:UltMsg)
+		else
+			u_help (_oTrEstq:UltMsg)
+		endif
+	endif
+	//
+	_sDocZAG := '0000001594'
+	zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
+	if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
+		u_help ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG")
+	else
+		_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
+		_oTrEstq:Executa () //Libera ()
+	endif
+	//
+	//_oTrEstq:RegZAG = 1604
+	//if _oTrEstq:Exclui ()
+	//	u_log ('Excluiu!', _oTrEstq:UltMsg)
+	//else
+	//	u_help (_oTrEstq:UltMsg)
+	//endif
+return
+*/
+/*
+	// Testes arvore de rastreabilidade
+	private _aLtXLS58 := {}  // Deixar PRIVATE para ser alimentada pelo U_RastLT().
+	_aLotes := {}
+	aadd (_aLotes, {'01', U_TamFixo ('3630', 15, ' '), '12101401'  , 0, 14660})  // item 2580 lote 12101401 transformado em 3630 (mesmo lote) em 28/01/2022 na filial 01
+//	aadd (_aLotes, {'01', U_TamFixo ('1274', 15, ' '), 'AUTO009215', 0, 1})      // enzima (arvore grande)
+//	aadd (_aLotes, {'01', U_TamFixo ('2444', 15, ' '), 'AUTO009238', 0, 24200})  // lado 1 do par
+//	aadd (_aLotes, {'09', U_TamFixo ('2444', 15, ' '), '4123'      , 0, 24200})  // lado 2 do par
+//	aadd (_aLotes, {'01', U_TamFixo ('9959', 15, ' '), '2201028401', 0, 1})      // enzima (arvore grande)
+//	aadd (_aLotes, {'01', U_TamFixo ('2776', 15, ' '), '11310701'  , 0, 1})      // gera mais de 15 niveis de rastro.
+//	aadd (_aLotes, {'01', U_TamFixo ('3630', 15, ' '), '12107401A ', 0, 30000})  // NF 000202304 que foi para CENECOOP
+	for _nLote = 1 to len (_aLotes)
+		u_perfmon ('I', 'RastLt')
+		_sMapa := U_RastLT (_aLotes [_nLote, 1], _aLotes [_nLote, 2], _aLotes [_nLote, 3], _aLotes [_nLote, 4], NIL, _aLotes [_nLote, 5])
+		_nTmpExec = u_perfmon ('L', 'RastLt')
+		_sArq := 'c:\temp\rast_F' + _aLotes [_nLote, 1] + '_' + alltrim (_aLotes [_nLote, 2]) + '_' + alltrim (_aLotes [_nLote, 3]) + '_tempo' + cvaltochar (round (_nTmpExec, 0)) + 's.mm'
+		delete file (_sArq)
+		if file (_sArq)
+			_nHdl = fopen(_sArq, 1)
+		else
+			_nHdl = fcreate(_sArq, 0)
+		endif
+		fwrite (_nHdl, _sMapa)
+		fclose (_nHdl)
+		ShellExecute ("Open", _sArq, "", "", 1)
+		u_log (_aLtXLS58)
+		_oLtXLS58 := CLsAUtil ():New ()
+		_oLtXLS58:_aArray := aclone (_aLtXLS58)
+		U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (_oLtXLS58:TotCol (7)))
+	next
+return
+*/
 /*
 	// Ajusta cadastro produtos em lote
 	_sArqLog := 'GLPI11986_SYD_para_SB1.log'
@@ -175,38 +259,6 @@ return
 				// exit
 			endif
 		endif
-	next
-return
-*/
-/*
-	// Testes arvore de rastreabilidade
-	private _aLtXLS58 := {}  // Deixar PRIVATE para ser alimentada pelo U_RastLT().
-	_aLotes := {}
-	aadd (_aLotes, {'01', U_TamFixo ('3630', 15, ' '), '12101401'  , 0, 14660})  // item 2580 lote 12101401 transformado em 3630 (mesmo lote) em 28/01/2022 na filial 01
-//	aadd (_aLotes, {'01', U_TamFixo ('1274', 15, ' '), 'AUTO009215', 0, 1})      // enzima (arvore grande)
-//	aadd (_aLotes, {'01', U_TamFixo ('2444', 15, ' '), 'AUTO009238', 0, 24200})  // lado 1 do par
-//	aadd (_aLotes, {'09', U_TamFixo ('2444', 15, ' '), '4123'      , 0, 24200})  // lado 2 do par
-//	aadd (_aLotes, {'01', U_TamFixo ('9959', 15, ' '), '2201028401', 0, 1})      // enzima (arvore grande)
-//	aadd (_aLotes, {'01', U_TamFixo ('2776', 15, ' '), '11310701'  , 0, 1})      // gera mais de 15 niveis de rastro.
-//	aadd (_aLotes, {'01', U_TamFixo ('3630', 15, ' '), '12107401A ', 0, 30000})  // NF 000202304 que foi para CENECOOP
-	for _nLote = 1 to len (_aLotes)
-		u_perfmon ('I', 'RastLt')
-		_sMapa := U_RastLT (_aLotes [_nLote, 1], _aLotes [_nLote, 2], _aLotes [_nLote, 3], _aLotes [_nLote, 4], NIL, _aLotes [_nLote, 5])
-		_nTmpExec = u_perfmon ('L', 'RastLt')
-		_sArq := 'c:\temp\rast_F' + _aLotes [_nLote, 1] + '_' + alltrim (_aLotes [_nLote, 2]) + '_' + alltrim (_aLotes [_nLote, 3]) + '_tempo' + cvaltochar (round (_nTmpExec, 0)) + 's.mm'
-		delete file (_sArq)
-		if file (_sArq)
-			_nHdl = fopen(_sArq, 1)
-		else
-			_nHdl = fcreate(_sArq, 0)
-		endif
-		fwrite (_nHdl, _sMapa)
-		fclose (_nHdl)
-		ShellExecute ("Open", _sArq, "", "", 1)
-		u_log (_aLtXLS58)
-		_oLtXLS58 := CLsAUtil ():New ()
-		_oLtXLS58:_aArray := aclone (_aLtXLS58)
-		U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (_oLtXLS58:TotCol (7)))
 	next
 return
 */
@@ -317,50 +369,6 @@ return
 		//u_gravasx1 ('SZI_LCS', '18', stod ('20220331'))  // vencto fim
 		//u_szi_lcs (.t., 4)
 	next
-return
-*/
-/*
-	// Testes classe transf.estq.
-	private _sErroAuto := ''
-	_oTrEstq := ClsTrEstq ():New ()
-	_oTrEstq:FilOrig = cFilAnt
-	_oTrEstq:FilDest = cFilAnt
-	_oTrEstq:DtEmis  = date ()
-	//_oTrEstq:OP = '1234561212312'
-	_oTrEstq:Motivo = 'teste robert (ZAG)' 
-	_oTrEstq:ProdOrig = '4072           '
-	_oTrEstq:ProdDest = '2626           '
-	_oTrEstq:AlmOrig = '02'
-	_oTrEstq:AlmDest = '08'
-	//_oTrEstq:EndOrig = 'a'
-	//_oTrEstq:EndDest = 'b'
-	//_oTrEstq:LoteOrig = '1'
-	//_oTrEstq:LoteDest = '2'
-	_oTrEstq:QtdSolic = 1 
-	_oTrEstq:UsrIncl  = 'robert.koch'
-	if _oTrEstq:Grava ()
-		u_log ('gravou!', _oTrEstq:UltMsg)
-		//u_logObj (_oTrEstq)
-		if _oTrEstq:Libera ()
-			u_log ('Liberou!', _oTrEstq:UltMsg)
-		else
-			u_help (_oTrEstq:UltMsg)
-		endif
-		if _oTrEstq:Exclui ()
-			u_log ('Excluiu!', _oTrEstq:UltMsg)
-		else
-			u_help (_oTrEstq:UltMsg)
-		endif
-	endif
-
-	_sDocZAG := '0000001594'
-	zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
-	if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
-		u_help ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG")
-	else
-		_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
-		_oTrEstq:Executa () //Libera ()
-	endif
 return
 */
 /*
