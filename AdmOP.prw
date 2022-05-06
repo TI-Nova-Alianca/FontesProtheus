@@ -52,6 +52,7 @@
 //                      - Inseridas tags para catalogacao de fontes
 // 04/08/2020 - Robert  - Usuario deve pertencer ao grupo 117 do ZZU para permitir alteracoes (nao mais pelos grupos do configurador).
 // 20/04/2022 - Robert  - Removidos logs desnecessarios.
+// 04/05/2022 - Robert  - Desabilitado botao 'ajuste empenhos formulacao' (ninguem mais usa e nunca funcionou bem) - GLPI 11997
 //
 
 #include "rwmake.ch"
@@ -273,7 +274,7 @@ static function _Tela (_lAltera)
 		_aBotAdic  = {}
 		if _lAltera
 			aadd (_aBotAdic, {"", {|| processa ({|| U_LibOpPr (_sOP, _sOP)})},     "Liberar p/producao"})
-			aadd (_aBotAdic, {"", {|| U_AdmOPE3 (_sOP)},     "Emp.&Formulacao"})
+		//	aadd (_aBotAdic, {"", {|| U_AdmOPE3 (_sOP)},     "Emp.&Formulacao"})
 			aadd (_aBotAdic, {"", {|| U_AdmOPAE ()},         "&Empenhos"})
 			aadd (_aBotAdic, {"", {|| U_ImpOP (_sOP, _sOP)}, "&Imprime OP"})
 			aadd (_aBotAdic, {"", {|| U_AdmOPAP ()},         "&Perdas"})
@@ -772,7 +773,7 @@ user function AdmOPEM (_sOP)
 return
 
 
-
+/*
 // --------------------------------------------------------------------------
 // Ajuste empenhos por 'regra de 3' de acordo com a quantidade produzida.
 // Criado inicialmente para OPs de formulacao, onde a quantidade final dificilmente
@@ -894,7 +895,7 @@ user function AdmOPE3 (_sOP)
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
 return
-
+*/
 
 
 // --------------------------------------------------------------------------
@@ -915,7 +916,7 @@ user function ADMOPVQF ()
 return .T.
 
 
-
+/*
 // --------------------------------------------------------------------------
 static function _AjSD4 (_sOP)
 	local _aAutoSD4  := {}
@@ -1009,7 +1010,7 @@ static function _AjSD4 (_sOP)
 
 	N = _nBkpN
 return _lContinua
-
+*/
 
 
 // --------------------------------------------------------------------------
