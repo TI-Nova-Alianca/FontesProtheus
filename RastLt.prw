@@ -60,6 +60,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 	local _nLimNivel := 15  // Limite maximo de niveis de pesquisa
 	local _sStrLog   := ''
 	local _lContinua := .T.
+	local _sKardex   := ''
 	static _sID      := '0000'  // Criado como STATIC para gerar sempre IDs unicos, mesmo com chamadas recursivas.
 
 	// Prepara substring para manter padrao em todos os logs
@@ -116,7 +117,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 		_sRet += '<map version="1.0.1">'
 		_sRet += '<node CREATED="1493030990433" ID="' + _sID + '" STYLE="bubble" TEXT="' + _sDescri + '">'
 	endif
-/* ainda em construcao (aguarda melhorias na funcao va_fkardex_lote)
+
 	// Monta array com todos os movimentos do item/lote no nivel atual, a serem
 	// lidos posteriormente para gerar os nodos e, havendo necessidade, poderao
 	// ser expandidos recursivamente.
@@ -125,18 +126,21 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 	// esse total no momento de calcular proporcionalidade para outros niveis.
 	if _lContinua
 		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := "SELECT OP"
-		_oSQL:_sQuery :=      ", SUM (QT_ENTRADA) AS QT_ENTRADA"
-		_oSQL:_sQuery :=      ", SUM (QT_SAIDA) AS QT_SAIDA"
+		_oSQL:_sQuery := "SELECT DATA AS DTMOVTO, OP, QT_ENTRADA, QT_SAIDA"
 		_oSQL:_sQuery +=  " FROM VA_FKARDEX_LOTE ('" + _sFilial + "'"
 		_oSQL:_sQuery +=                        ",'" + _sProduto + "'"
 		_oSQL:_sQuery +=                        ",'" + _sLote + "'"
 		_oSQL:_sQuery +=                        ",''"  // Data inicial
 		_oSQL:_sQuery +=                        ",'z')"  // Data final
-		_oSQL:_sQuery += " GROUP BY D3_OP,"
 		_oSQL:Log (_sStrLog)
+		
+		// Gera um arquivo temporario que vai ser gravado na tabela TEMPDB do
+		// SQLServer, de modo que eu possa fazer queries nessa tabela.
+		_oSQL:Copy2Trb (.f., 4, '_kdx', {'OP'})
+		_kdx -> (dbclosearea ())
+		_sKardex = _oSQL:GetRealName ()
 	endif
-*/
+
 	if _lContinua .and. _nNivel == 0
 		// Abre o nodo das entradas
 		_sID = soma1 (_sID)
@@ -144,6 +148,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 	endif
 	
 	// Busca entradas por OP
+/*
 	// - Se o item controla rastreabilidade pelo Protheus, usa o campo do lote.
 	// - Senao, assume o numero da OP como sendo o lote. Quando a rastreabilidade for completa pelo Protheus, isso vai ser desnecessario.
 	if _lContinua .and. _nNivel <= 0 .and. (sb1 -> b1_rastro == 'L' .or. (sb1 -> b1_rastro == 'N' .and. sb1 -> b1_tipo == 'PA'))
@@ -165,7 +170,19 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 			_oSQL:_sQuery +=   " AND SD3.D3_OP      like '" + _sLote + "%'"
 		endif
 		_oSQL:_sQuery += " GROUP BY D3_OP, D3_UM"
+*/
+	if _lContinua .and. ! empty (_sKardex)
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "SELECT OP, SUM (QT_ENTRADA), '" + sb1 -> b1_um + "', MAX (DTMOVTO)"
+		_oSQL:_sQuery +=  " FROM " + _sKardex
+		_oSQL:_sQuery += " WHERE OP != ''"
+		_oSQL:_sQuery +=   " AND QT_ENTRADA > 0"
+		if _sFilial == '09'  // OP que teria jogado vinho dentro do mosto e deve ser desconsiderada
+			_oSQL:_sQuery +=   " AND OP != '00332501001'"
+		endif
+		_oSQL:_sQuery += " GROUP BY OP"
 		_oSQL:Log (_sStrLog)
+
 		_aOP := aclone (_oSQL:Qry2Array (.F., .F.))
 		for _nOP = 1 to len (_aOP)
 
