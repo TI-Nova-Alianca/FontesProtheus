@@ -53,6 +53,7 @@
 // 06/05/2021 - Claudia - Retirado a chamada do prohrama U_ML_Senha. GLPI 9988
 // 20/10/2021 - Robert  - Variavel _sSerie passa a ser lida na array _aNComSono (GLPI 11112)
 //                      - Incluidas chamadas da funcao PerfMon para monitoramento de performance.
+// 04/05/2022 - Robert  - Eliminada leitura do parametro VA_USRENF (atualmente grupo 050 do ZZU).
 //
 
 // --------------------------------------------------------------------------------------------------------
@@ -72,9 +73,9 @@
 #XTranslate .PedTransp         => 11
 
 user function _Mata460 ()
-	local _sParam     := "VA_USRENF"
-	local _sUserLib   := alltrim (upper (GetMV (_sParam, .F., "")))
-	local _sMsg       := ""
+//	local _sParam     := "VA_USRENF"
+//	local _sUserLib   := alltrim (upper (GetMV (_sParam, .F., "")))
+//	local _sMsg       := ""
 	//local _aLiber     := {.F.,,}
 	local _lContinua  := .T.
 	local _nLock      := 0
@@ -89,17 +90,17 @@ user function _Mata460 ()
 
 	u_log2 ('info', 'Iniciando processamento')
 
-	// Verifica geracao de nota com data muito antiga.
-	if _lContinua .and. (dDataBase + 59) < date ()
-		_sMsg = "Cfe.layout XML da SEFAZ, o prazo maximo eh 60 dias retroativos p/ emissao de NF normais."
-		if alltrim (upper (cUserName)) $ _sUserLib
-			_lContinua =  U_msgnoyes (_sMsg + " Continua assim mesmo?")
-		else
-			//_aLiber := U_ML_Senha ("Autorizacao exigida", _sMsg + " Liberacao conforme parametro '" + _sParam + "'", _sUserLib, .F.)
-			//_lContinua = _aLiber [1]
-			_lContinua :=.F.
-		endif
-	endif
+	// // Verifica geracao de nota com data muito antiga.
+	// if _lContinua .and. (dDataBase + 59) < date ()
+	// 	_sMsg = "Cfe.layout XML da SEFAZ, o prazo maximo eh 60 dias retroativos p/ emissao de NF normais."
+	// 	if alltrim (upper (cUserName)) $ _sUserLib
+	// 		_lContinua =  U_msgnoyes (_sMsg + " Continua assim mesmo?")
+	// 	else
+	// 		//_aLiber := U_ML_Senha ("Autorizacao exigida", _sMsg + " Liberacao conforme parametro '" + _sParam + "'", _sUserLib, .F.)
+	// 		//_lContinua = _aLiber [1]
+	// 		_lContinua :=.F.
+	// 	endif
+	// endif
 
 	// Controle de semaforo.
 	if _lContinua
