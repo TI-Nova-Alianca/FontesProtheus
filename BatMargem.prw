@@ -42,7 +42,7 @@ User Function BatMargem(_nTipo)
 	EndIf
 	
 	If _nTipo == 1
-		_QtdDias := 90
+		_QtdDias := 365
 		_dDtIni  := DTOS(DaySub( Date() , _QtdDias))
 		_dDtFin  := DTOS( Date() )
 	Else
