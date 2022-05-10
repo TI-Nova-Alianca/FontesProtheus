@@ -8,7 +8,7 @@
 // 15/08/2019 - Robert  - Imprime B1_CODBAR e nao mais B1_VADUNCX no codigo de barras do produto.
 // 22/08/2019 - Robert  - Se o produto nao controla via FullWMS, imprimia o cod.do produto nas barras. 
 //                        Agora nao vai imprimir nada.
-// 30/08/2019 - Claudia - Alterado campo b1_p_brt para b1_pesbru.
+// 30/08/2019 - Claudia - Alterado campo peso bruto para b1_pesbru.
 // 02/10/2019 - Claudia - Criação da rotina de impressão de etiquetas de OP na impressora DATAMAX
 // 24/01/2022 - Robert  - Vamos usar etiquetas no AX02, mesmo sem integracao com FullWMS (GLPI 11515).
 // 02/02/2022 - Robert  - Imprime B8_DFABRIC e nao mais D1_DFABRIC como data de fabricacao nas etiq. de NF de entrada.

@@ -27,7 +27,7 @@
 // 12/09/2018 - Robert - Criada verificacao 37.
 // 26/11/2018 - Andre  - Ajustado nome da tabela SG1
 // 18/06/2019 - Robert - Verificacao 29 passa a ser enviada tambem para o setor CML (comercial).
-// 30/08/2019 - Claudia - Alterado campo b1_p_brt para b1_pesbru.
+// 30/08/2019 - Claudia - Alterado campo de peso bruto para b1_pesbru.
 // 17/09/2019 - Claudia - Adicionada verificação 39. GLPI: 6673
 // 19/09/2019 - Claudia - Adicionada verificação 40. GLPI: 6673
 // 24/09/2019 - Cláudia - Migração de verificações para novo modelo. GLPI:6722

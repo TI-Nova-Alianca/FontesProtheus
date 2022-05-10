@@ -16,6 +16,7 @@
 //
 // Historico de alteracoes:
 // 09/05/2022 - Claudia - Ajustado para não dropar mais a tabela. GLPI: 11967
+// 10/05/2022 - Claudia - Alterado campo de peso bruto para B1_PESBRU. GLPI: 11822
 //
 // -----------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -115,7 +116,7 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += "    ,SF2.F2_VALMERC AS TOTPROD_NF "
 		_oSQL:_sQuery += "    ,ISNULL(CASE SF2.F2_PBRUTO "
 		_oSQL:_sQuery += " 		WHEN 0 THEN 0 "
-		_oSQL:_sQuery += " 		ELSE ROUND(SC5.C5_MVFRE * (SB1.B1_P_BRT * SD2.D2_QUANT) / SF2.F2_PBRUTO, 2) "
+		_oSQL:_sQuery += " 		ELSE ROUND(SC5.C5_MVFRE * (SB1.B1_PESBRU * SD2.D2_QUANT) / SF2.F2_PBRUTO, 2) "		
 		_oSQL:_sQuery += " 		END, 0) AS FRETE_PREVISTO "
 		_oSQL:_sQuery += "    ,ISNULL((SELECT "
 		_oSQL:_sQuery += " 			SUM(SZH.ZH_RATEIO) "
@@ -195,7 +196,7 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 		,SD2.D2_COD "
 		_oSQL:_sQuery += " 		,SF2.F2_PBRUTO "
 		_oSQL:_sQuery += " 		,SC5.C5_MVFRE "
-		_oSQL:_sQuery += " 		,SB1.B1_P_BRT "
+		_oSQL:_sQuery += " 		,SB1.B1_PESBRU "
 		_oSQL:_sQuery += " 		,SD2.D2_QUANT "
 		_oSQL:_sQuery += " 		,SF2.F2_PBRUTO "
 		_oSQL:_sQuery += "      ,SA1.A1_COD_MUN "
@@ -339,7 +340,7 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 	   ,SF2.F2_VALMERC AS TOTPROD_NF "
 		_oSQL:_sQuery += " 	   ,ISNULL(CASE SF2.F2_PBRUTO "
 		_oSQL:_sQuery += " 			WHEN 0 THEN 0 "
-		_oSQL:_sQuery += " 			ELSE ROUND(SC5.C5_MVFRE * (SB1.B1_P_BRT * SD2.D2_QUANT) / SF2.F2_PBRUTO, 2) "
+		_oSQL:_sQuery += " 			ELSE ROUND(SC5.C5_MVFRE * (SB1.B1_PESBRU * SD2.D2_QUANT) / SF2.F2_PBRUTO, 2) "
 		_oSQL:_sQuery += " 			END, 0) AS FRETE_PREVISTO "
 		_oSQL:_sQuery += " 	   ,(SELECT "
 		_oSQL:_sQuery += " 				SUM(SZH.ZH_RATEIO) "
@@ -411,7 +412,7 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 			,SD2.D2_LOJA "
 		_oSQL:_sQuery += " 			,SF2.F2_PBRUTO "
 		_oSQL:_sQuery += " 			,SC5.C5_MVFRE "
-		_oSQL:_sQuery += " 			,SB1.B1_P_BRT "
+		_oSQL:_sQuery += " 			,SB1.B1_PESBRU "
 		_oSQL:_sQuery += " 			,SD2.D2_QUANT "
 		_oSQL:_sQuery += "          ,SA1.A1_COD_MUN "
 		_oSQL:_sQuery += "          ,SA1.A1_VAPROMO "

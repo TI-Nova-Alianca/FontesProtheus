@@ -3,11 +3,18 @@
 // Data.......: 16/07/2008
 // Descricao..: Rotina de impressao de ordens de ordens de embarque.
 //
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #relatorio
+// #Descricao         #Rotina de impressao de ordens de ordens de embarque.
+// #PalavasChave      #impressao #ordens_de_embarque
+// #TabelasPrincipais #SD2 #SF2 #SB1 
+// #Modulos   		  #FAT
+//
 // Historico de alteracoes:
 // 18/07/2008 - Robert  - Nao agrupava produto quando era de notas diferentes.
 // 26/11/2008 - Robert  - Impressao da relacao dos municipios para entrega.
 // 10/04/2019 - Robert  - Migrada tabela 98 do SX5 para 50 do ZX5.
-// 30/08/2019 - Claudia - Alterado campo b1_p_brt para b1_pesbru.
+// 30/08/2019 - Claudia - Alterado campo peso bruto para b1_pesbru.
 // 23/11/2020 - Claudia - Ajustada a gravação de parametros SX1/SXK. GLPI: 8750
 //
 // -------------------------------------------------------------------------------

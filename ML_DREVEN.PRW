@@ -1,9 +1,18 @@
 // Programa..: ML_DREVEN.PRX
 // Autor.....: Catia Cardoso
 // Data......: 25/04/2015
-
+// Descricao.: Relatorio de Analise Rentabilidade
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #relatorio
+// #Descricao         #Relatorio de Analise Rentabilidade
+// #PalavasChave      #analise_de_rentabilidade
+// #TabelasPrincipais #SD2 #SF2 #SB1 
+// #Modulos   		  #FAT
+//
 // Historico de alteracoes:
-// 19/09/2018 - Catia   - Redefinido o relatorio conforme solicitacao Fernando, Rodrigo - chamado GLPI - Validacao do Cesar
+// 19/09/2018 - Catia   - Redefinido o relatorio conforme solicitacao Fernando, Rodrigo
+//                      - chamado GLPI - Validacao do Cesar
 // 02/10/2018 - Catia   - Voltada a versao que tinha sido perdida
 // 10/12/2018 - Catia   - tratamento para vendedor do SF2 e do SE1
 // 18/02/2018 - Catia   - Verbas utilizadas tratamento do vendedor SE1 e SA1
@@ -12,7 +21,9 @@
 //						  pois alguns itens não estavam constando como devolvidos, diferentemente do Exposta dados. 
 // 13/11/2019 - Cláudia - Ajuste na consulta de faturamento (1) - Alterado de INNER para LEFT a consulta na SC5
 //						  Ajuste na consulta de devolução(4) - Realizando a ligação na tabela SE1 para busca do vendedor
+// 10/05/2022 - Claudia - Alterado campo de peso bruto para B1_PESBRU. GLPI: 11822
 //
+// ------------------------------------------------------------------------------------------------------------------------ 
 #include "rwmake.ch"
 #IFNDEF WINDOWS
 	#DEFINE PSAY SAY
@@ -377,7 +388,7 @@ Static Function _ExecQuery()  // previsto e realizado é tratado na mesma query
 		//_sQuery += "      , SUM(SD2.D2_FRETCIF) AS FRETE"	// frete - PREVISTO
 		_sQuery += "      ,ISNULL(CASE SF2.F2_PBRUTO"
 		_sQuery += "      		WHEN 0 THEN 0"
-		_sQuery += "      		ELSE ROUND(SC5.C5_MVFRE * (SB1.B1_P_BRT * SD2.D2_QUANT) / SF2.F2_PBRUTO, 2)"
+		_sQuery += "      		ELSE ROUND(SC5.C5_MVFRE * (SB1.B1_PESBRU * SD2.D2_QUANT) / SF2.F2_PBRUTO, 2)"
 		_sQuery += "      		END, 0) AS FRETE"
 	else
 		_sQuery += "	  , (SELECT  SUM(SZH.ZH_RATEIO)"
@@ -457,7 +468,7 @@ Static Function _ExecQuery()  // previsto e realizado é tratado na mesma query
    	endif
    	_sQuery += " , SD2.D2_EST, SA3.A3_VAGEREN, SF2.F2_VEND1, SB1.B1_CODLIN, SD2.D2_COD, SF2.F2_VALMERC, "
    	_sQuery += " SD2.D2_VRAPEL,SD2.D2_FILIAL ,SD2.D2_DOC ,SD2.D2_EMISSAO ,SD2.D2_TOTAL ,SD2.D2_SERIE ,SD2.D2_ITEM,"
-   	_sQuery += " SD2.D2_CLIENTE,SD2.D2_LOJA,SF2.F2_PBRUTO,SC5.C5_MVFRE,SB1.B1_P_BRT,SD2.D2_QUANT "
+   	_sQuery += " SD2.D2_CLIENTE,SD2.D2_LOJA,SF2.F2_PBRUTO,SC5.C5_MVFRE,SB1.B1_PESBRU,SD2.D2_QUANT "
    	// busca bonificacoes
    	_sQuery += " UNION ALL "
    	_sQuery += " SELECT '4' AS TIPO" 
@@ -493,7 +504,7 @@ Static Function _ExecQuery()  // previsto e realizado é tratado na mesma query
 		//_sQuery += "      , SUM(SD2.D2_FRETCIF) AS FRETE"	// frete - PREVISTO
 		_sQuery += "      ,ISNULL(CASE SF2.F2_PBRUTO"
 		_sQuery += "      		WHEN 0 THEN 0"
-		_sQuery += "      		ELSE ROUND(SC5.C5_MVFRE * (SB1.B1_P_BRT * SD2.D2_QUANT) / SF2.F2_PBRUTO, 2)"
+		_sQuery += "      		ELSE ROUND(SC5.C5_MVFRE * (SB1.B1_PESBRU * SD2.D2_QUANT) / SF2.F2_PBRUTO, 2)"
 		_sQuery += "      		END, 0) AS FRETE"
 	else
 		_sQuery += "	  , (SELECT  SUM(SZH.ZH_RATEIO)"    // frete realizdo
@@ -555,7 +566,7 @@ Static Function _ExecQuery()  // previsto e realizado é tratado na mesma query
    		_sQuery += " GROUP BY SD2.D2_CLIENTE , SD2.D2_LOJA"
    	endif
    	_sQuery += " , SD2.D2_EST, SA3.A3_VAGEREN, SF2.F2_VEND1, SB1.B1_CODLIN, SD2.D2_COD, SF2.F2_VALMERC,SD2.D2_FILIAL ,SD2.D2_DOC ,"
-   	_sQuery += " SD2.D2_EMISSAO ,SD2.D2_TOTAL ,SD2.D2_SERIE ,SD2.D2_ITEM,SD2.D2_CLIENTE,SD2.D2_LOJA,SF2.F2_PBRUTO,SC5.C5_MVFRE,SB1.B1_P_BRT,SD2.D2_QUANT "
+   	_sQuery += " SD2.D2_EMISSAO ,SD2.D2_TOTAL ,SD2.D2_SERIE ,SD2.D2_ITEM,SD2.D2_CLIENTE,SD2.D2_LOJA,SF2.F2_PBRUTO,SC5.C5_MVFRE,SB1.B1_PESBRU,SD2.D2_QUANT "
    	// busca devoluções e reversao de impostos
    	_sQuery += " UNION ALL "
    	_sQuery += " SELECT '2' AS TIPO"

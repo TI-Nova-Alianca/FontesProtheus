@@ -12,7 +12,7 @@
 // 23/03/2016 - Robert  - Mesmo sem selecionar nenhuma NF, gerava arquivo vazio.
 // 30/07/2019 - Andre   - Alterado utilização do campo B1_VADUNCX pelo campo padrão B1_CODBAR.
 //					    - Alterado utilização do campo B1_VAEANUN pelo campo padrão B5_2CODBAR.
-// 30/08/2019 - Claudia - Alterado campo b1_p_brt para b1_pesbru.
+// 30/08/2019 - Claudia - Alterado campo peso bruto para b1_pesbru.
 // 28/10/2019 - Robert  - Ajustado nome campo 
 // --------------------------------------------------------------------------
 User Function EDIM2 (_lAutomat, _dDataIni, _dDataFim, _sCliIni, _sCliFim, _sNFIni, _sNFFim, _sSerie, _sDirDest)
