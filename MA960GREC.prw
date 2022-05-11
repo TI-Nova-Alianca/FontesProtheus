@@ -14,6 +14,7 @@
 // Historico de alteracoes:
 // 27/08/2021 - Claudia - Incluida novas validações. GLPI: 10838 e 10839
 // 06/10/2021 - Claudia - Incluido novos estados. GLPI: 11030
+// 11/05/2022 - Claudia - Incluida regra para AL e AC. GLPI: 12018
 //
 //---------------------------------------------------------------------------------
 #include "protheus.ch" 
@@ -69,6 +70,12 @@ User Function MA960GREC()
 
         Case Alltrim(cReceita) $ '100099/100102' .and. cUF $ 'SC' 
              aParam := {24, '2', '', 0, ''}    
+
+        Case Alltrim(cReceita) $ '100129' .and. cUF $ 'AL' 
+             aParam := {10, '1', '000079', 0, ''} 
+
+        Case Alltrim(cReceita) $ '100099' .and. cUF $ 'AC' 
+             aParam := {10, '1', '000022', 0, ''} 
 
         Otherwise   
             aParam := {10, '1', '', 0, ''}                      // Retorna os campos F6_TIPOGNU, F6_DOCORIG, F6_DETRECE, F6_CODPROD e F6_CODAREA de acordo com o código de receita e sigla da UF da guia atual.
