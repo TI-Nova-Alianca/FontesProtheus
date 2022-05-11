@@ -1103,11 +1103,11 @@ Return
 //	//
 //	do while ! sb1 -> (eof ())
 //		u_log ('Verificando item', sb1 -> b1_cod, SB1 -> B1_DESC)
-//		if sb1->b1_p_brt != sb1->b1_pesbru
+//		if sb1->B1_PESBRU != sb1->b1_pesbru
 //		
 //			// Cria variaveis para uso na gravacao do evento de alteracao
 //			regtomemory ("SB1", .F., .F.)
-//			m->b1_pesbru := sb1->b1_p_brt
+//			m->b1_pesbru := sb1->B1_PESBRU
 //			
 //			// Grava evento de alteracao
 //			_oEvento := ClsEvent():new ()

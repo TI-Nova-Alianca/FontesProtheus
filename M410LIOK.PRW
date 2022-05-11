@@ -63,7 +63,7 @@
 // 15/08/2018 - Robert  - Validacao almox. integracao FullWMS: acrescentado tratamento para alm.22
 // 07/12/2018 - Robert  - Valida campo C6_VAOPER.
 // 13/12/2018 - Robert  - TES deve ser o mesmo do contrato de parceria.
-// 30/08/2019 - Claudia - Alterado campo b1_p_brt para b1_pesbru.
+// 30/08/2019 - Claudia - Alterado campo peso bruto para b1_pesbru.
 // 28/07/2020 - Robert  - Acrescentado parametro .T. nas chamadas da funcao U_Help quando mensagens de erro.
 //                      - Inseridas tags para catalogacao de fontes
 // 10/08/2020 - Cláudia - Não permitir a inclusão de pedidos com problemas de TES que calcula IPI pelo 

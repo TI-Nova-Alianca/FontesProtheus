@@ -16,7 +16,7 @@
 // 08/07/2015 - Robert    - Possibilidade de receber parametros na chamada. 
 // 31/08/2015 - Robert    - Criado parametro para buscar obs. e msg. do pedido de venda.
 // 18/11/2015 - Catia     - Observacoes de Clientes
-// 29/08/2019 - Cláudia   - Alterado o campo de peso bruto de B1_P_BRT para B1_PESBRU  
+// 29/08/2019 - Cláudia   - Alterado o campo de peso bruto de peso bruto para B1_PESBRU  
 //							Na montagem de carga o valor do DAK_PESO ficava diferenciado do relatório.
 // 22/02/2021 - Cláudia   - Ajustes nos campos de observações. GLPI:9421
 // 23/02/2021 - Sandra    - Ajustado para sempre imprimir obs Expedição GLPI: 9466

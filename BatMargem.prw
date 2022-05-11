@@ -1,6 +1,6 @@
-// Programa...: BatMarDat
+// Programa...: BatMargem
 // Autor......: claudia Lionço
-// Data.......: 28/10/2021
+// Data.......: 11/11/2021
 // Descricao..: Bat criada para gerar tabela VA_RENTABILIDADE para consulta no Mercanet.
 //
 // Tipos de margem 
@@ -15,34 +15,37 @@
 // 9=Outros   
 //
 // Historico de alteracoes:
+// 09/05/2022 - Claudia - Ajustado para não dropar mais a tabela. GLPI: 11967
+// 10/05/2022 - Claudia - Alterado campo de peso bruto para B1_PESBRU. GLPI: 11822
 //
 // -----------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
 
-User Function BatMarDat(_nTipo)
-	local _oSQL   := NIL
-	Private cPerg := "BatMarDat"
+User Function BatMargem(_nTipo)
+    local _oSQL   := NIL
+	local _sSQL   := ""
+	Private cPerg := "BatRentab"
 	
-    If _nTipo != 1
+	If _nTipo != 1
+		u_help("Atualiza tabela VA_RENTABILIDADE")
 		If ! u_zzuvl ('097', __cUserId, .T.)
 			u_help ("Usuário sem permissão para usar estar rotina")
 			Return
 		Endif
-	EndIf
 
-	// Somente uma estacao por vez, pois a rotina eh pesada e certos usuarios derrubam o client na estacao e mandam rodar novamente...
-	_nLock := U_Semaforo (procname ())
-	If _nLock == 0
-		u_help ("Nao foi possivel obter acesso exclusivo a esta rotina.")
-		Return
-	Endif
+		// Somente uma estacao por vez, pois a rotina eh pesada e certos usuarios derrubam o client na estacao e mandam rodar novamente...
+		_nLock := U_Semaforo (procname ())
+		If _nLock == 0
+			u_help ("Nao foi possivel obter acesso exclusivo a esta rotina.")
+			Return
+		Endif
+	EndIf
 	
 	If _nTipo == 1
-		//_QtdDias := 45
-		_dDtIni  := '20170101' //DTOS(DaySub( Date() , _QtdDias))
-		_dDtFin  := DTOS(Date())
-		
+		_QtdDias := 365
+		_dDtIni  := DTOS(DaySub( Date() , _QtdDias))
+		_dDtFin  := DTOS( Date() )
 	Else
 		_ValidPerg()
 		If Pergunte(cPerg,.T.)
@@ -52,18 +55,29 @@ User Function BatMarDat(_nTipo)
 			Return
 		EndIf
 	EndIf
-
-	u_logIni ()
 	
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := " EXEC ('DROP TABLE IF EXISTS VA_RENTABILIDADE') AT LKSRV_BI_ALIANCA "
-	_oSQL:Log()
-	If ! _oSQL:Exec()
-		_oBatch:Mensagens += 'Erro ao limpar tabela VA_RENTABILIDADE'
-		_oBatch:Retorno = 'N'
-	else
-		_oSQL:_sQuery := " WITH C "
-		_oSQL:_sQuery += " AS "
+	
+	u_logIni ()
+	_sErroAuto := ''  // Para a funcao u_help gravar mensagens
+	
+	_sSQL := " DELETE FROM BI_ALIANCA.dbo.VA_RENTABILIDADE" 
+	_sSQL += " WHERE EMISSAO BETWEEN '"+ _dDtIni +"' AND '"+ _dDtFin +"'"
+	u_log (_sSQL)
+
+    If TCSQLExec (_sSQL) < 0
+		if type ('_oBatch') == 'O'
+			_oBatch:Mensagens += 'Erro ao limpar tabela VA_RENTABILIDADE'
+			_oBatch:Retorno = 'N'  // "Executou OK?" --> S=Sim;N=Nao;I=Iniciado;C=Cancelado;E=Encerrado automaticamente
+		else
+			u_help ('Erro ao limpar tabela VA_RENTABILIDADE',, .t.)
+		endif
+	Else
+        _oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := " 		INSERT INTO BI_ALIANCA.dbo.VA_RENTABILIDADE "
+        _oSQL:_sQuery += " (TIPO,FILIAL,CLIENTE,LOJA,C_BASE,L_BASE,NOTA,SERIE,EMISSAO,ESTADO,VENDEDOR,LINHA,PRODUTO "
+		_oSQL:_sQuery += " ,CUSTO_PREV,CUSTO_REAL,NF_QUANT,NF_VLRUNIT,NF_VLRPROD,NF_VALIPI,NF_ICMSRET,NF_VLR_BRT "
+		_oSQL:_sQuery += " ,NF_ICMS,NF_COFINS,NF_PIS,VLR_COMIS_PREV,VLR_COMIS_REAL,TOTPROD_NF,FRETE_PREVISTO "
+		_oSQL:_sQuery += " ,FRETE_REALIZADO,RAPEL_PREVISTO,RAPEL_REALIZADO,SUPER,VERBAS_UTIL,VERBAS_LIB,CODMUN,PROMOTOR) "
 		_oSQL:_sQuery += " (SELECT "
 		_oSQL:_sQuery += " 	SF4.F4_MARGEM AS TIPO "
 		_oSQL:_sQuery += "    ,SD2.D2_FILIAL AS FILIAL "
@@ -102,7 +116,7 @@ User Function BatMarDat(_nTipo)
 		_oSQL:_sQuery += "    ,SF2.F2_VALMERC AS TOTPROD_NF "
 		_oSQL:_sQuery += "    ,ISNULL(CASE SF2.F2_PBRUTO "
 		_oSQL:_sQuery += " 		WHEN 0 THEN 0 "
-		_oSQL:_sQuery += " 		ELSE ROUND(SC5.C5_MVFRE * (SB1.B1_P_BRT * SD2.D2_QUANT) / SF2.F2_PBRUTO, 2) "
+		_oSQL:_sQuery += " 		ELSE ROUND(SC5.C5_MVFRE * (SB1.B1_PESBRU * SD2.D2_QUANT) / SF2.F2_PBRUTO, 2) "		
 		_oSQL:_sQuery += " 		END, 0) AS FRETE_PREVISTO "
 		_oSQL:_sQuery += "    ,ISNULL((SELECT "
 		_oSQL:_sQuery += " 			SUM(SZH.ZH_RATEIO) "
@@ -182,7 +196,7 @@ User Function BatMarDat(_nTipo)
 		_oSQL:_sQuery += " 		,SD2.D2_COD "
 		_oSQL:_sQuery += " 		,SF2.F2_PBRUTO "
 		_oSQL:_sQuery += " 		,SC5.C5_MVFRE "
-		_oSQL:_sQuery += " 		,SB1.B1_P_BRT "
+		_oSQL:_sQuery += " 		,SB1.B1_PESBRU "
 		_oSQL:_sQuery += " 		,SD2.D2_QUANT "
 		_oSQL:_sQuery += " 		,SF2.F2_PBRUTO "
 		_oSQL:_sQuery += "      ,SA1.A1_COD_MUN "
@@ -326,7 +340,7 @@ User Function BatMarDat(_nTipo)
 		_oSQL:_sQuery += " 	   ,SF2.F2_VALMERC AS TOTPROD_NF "
 		_oSQL:_sQuery += " 	   ,ISNULL(CASE SF2.F2_PBRUTO "
 		_oSQL:_sQuery += " 			WHEN 0 THEN 0 "
-		_oSQL:_sQuery += " 			ELSE ROUND(SC5.C5_MVFRE * (SB1.B1_P_BRT * SD2.D2_QUANT) / SF2.F2_PBRUTO, 2) "
+		_oSQL:_sQuery += " 			ELSE ROUND(SC5.C5_MVFRE * (SB1.B1_PESBRU * SD2.D2_QUANT) / SF2.F2_PBRUTO, 2) "
 		_oSQL:_sQuery += " 			END, 0) AS FRETE_PREVISTO "
 		_oSQL:_sQuery += " 	   ,(SELECT "
 		_oSQL:_sQuery += " 				SUM(SZH.ZH_RATEIO) "
@@ -398,7 +412,7 @@ User Function BatMarDat(_nTipo)
 		_oSQL:_sQuery += " 			,SD2.D2_LOJA "
 		_oSQL:_sQuery += " 			,SF2.F2_PBRUTO "
 		_oSQL:_sQuery += " 			,SC5.C5_MVFRE "
-		_oSQL:_sQuery += " 			,SB1.B1_P_BRT "
+		_oSQL:_sQuery += " 			,SB1.B1_PESBRU "
 		_oSQL:_sQuery += " 			,SD2.D2_QUANT "
 		_oSQL:_sQuery += "          ,SA1.A1_COD_MUN "
 		_oSQL:_sQuery += "          ,SA1.A1_VAPROMO "
@@ -538,37 +552,18 @@ User Function BatMarDat(_nTipo)
 		_oSQL:_sQuery += "      ,SA1.A1_COD_MUN "
 		_oSQL:_sQuery += "      ,SA1.A1_VAPROMO "
 		_oSQL:_sQuery += "       )"
-		_oSQL:_sQuery += " SELECT * INTO LKSRV_BI_ALIANCA.BI_ALIANCA.dbo.VA_RENTABILIDADE FROM C "
 		_oSQL:Log()
-		If ! _oSQL:Exec()
-			_oBatch:Mensagens += 'Erro ao criar tabela VA_RENTABILIDADE'
-			_oBatch:Retorno = 'N'
-		else
-			_oSQL:_sQuery := " EXEC ('use BI_ALIANCA create clustered index IDX1 on dbo.VA_RENTABILIDADE(EMISSAO,VENDEDOR)') at LKSRV_BI_ALIANCA "
-			_oSQL:Log()
-			If ! _oSQL:Exec()
-				_oBatch:Mensagens += 'Erro ao criar Indice 1'
-				_oBatch:Retorno = 'N'
-			else
-				_oSQL:_sQuery := " EXEC ('use BI_ALIANCA create nonclustered index IDX2 on dbo.VA_RENTABILIDADE(VENDEDOR, EMISSAO)') at LKSRV_BI_ALIANCA "
-				_oSQL:Log()
-				If ! _oSQL:Exec()
-					_oBatch:Mensagens += 'Erro ao criar Indice 2'
-					_oBatch:Retorno = 'N'
-				else
-					_oSQL:_sQuery := " EXEC ('use BI_ALIANCA create nonclustered index IDX3 on dbo.VA_RENTABILIDADE(EMISSAO, SUPER)') at LKSRV_BI_ALIANCA "
-					_oSQL:Log()
-					If ! _oSQL:Exec()
-						_oBatch:Mensagens += 'Erro ao criar Indice 3'
-						_oBatch:Retorno = 'N'
-					endif
-				endif		
-			endif
-		endif
-	endif
-	
-	u_logFim ()
-	
+
+		nHandle := FCreate("c:\temp\log.txt")
+		FWrite(nHandle,_oSQL:_sQuery)
+		FClose(nHandle)
+
+        _oSQL:Exec ()
+    EndIf
+
+    If _nTipo != 1
+		u_help("Processo finalizado com sucesso")
+	EndIf
 Return
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1

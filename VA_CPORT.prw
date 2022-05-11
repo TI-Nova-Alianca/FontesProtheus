@@ -31,7 +31,7 @@
 //                      - royalties para Fabiano Fernandes
 //                      - Migrada impressao ticket para U_ImpZZT ()
 //                      - Eliminados parametros desnecessarios.
-// 30/08/2019 - Claudia - Alterado campo b1_p_brt para b1_pesbru.
+// 30/08/2019 - Claudia - Alterado campo peso bruto para b1_pesbru.
 // 20/12/2019 - Claudia - Incluida na menu a rotina ZZX 
 // 01/02/2020 - Robert  - Removido controle de transacao na inclusao por que impedia atualizacao 
 //                        externa (NaWeb).
