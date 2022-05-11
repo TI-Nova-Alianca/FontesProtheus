@@ -38,8 +38,8 @@
 // 28/10/2011 - Robert  - Criado tratamento para campo C6_VAPRCVE.
 // 06/12/2011 - Robert  - Verifica TES X prouto com/sem IPI.
 // 16/12/2011 - Robert  - Verifica produtos que usam controle de localizacao.
-// 27/05/2014 - Claudia DWT - Adicionado desconto em cascata - Desconto em da linha + desconto quando frete FOB + 
-//						  desconto Condição à vista.
+// 27/05/2014 - Claudia - Adicionado desconto em cascata - Desconto em da
+//                        linha + desconto quando frete FOB + desconto Condição à vista.
 // 02/12/2014 - Robert  - Criada validacao de almox. de inter]gracao com Fullsoft.
 // 27/01/2015 - Robert  - Passa a validar parametros VA_ALMFULP, VA_ALMFULT, VA_ALMFULT
 // 14/04/2015 - Robert  - Desabilitados calculos de ST no ambiente TESTE.
@@ -67,13 +67,16 @@
 // 28/07/2020 - Robert  - Acrescentado parametro .T. nas chamadas da funcao U_Help quando mensagens de erro.
 //                      - Inseridas tags para catalogacao de fontes
 // 10/08/2020 - Cláudia - Não permitir a inclusão de pedidos com problemas de TES que calcula IPI pelo 
-//						  processo manual do BatMercP. GLPI: 8284
+//                        processo manual do BatMercP. GLPI: 8284
 // 18/06/2021 - Sandra  - Desabilitado linha /M->C5_ESPECI1 := 'VOLUMES', para notas de exportação GLPI 10196
 // 02/12/2021 - Claudia - Desabilitada a validação de motivo de bonificação. GLPI: 10580
 // 22/03/2022 - Claudia - Criada validações de lote e localização. GLPI: 11590
 // 24/03/2022 - Claudia - Validação se item controla ou não estoque. GLPI: 11802
+// 11/05/2022 - Robert  - Melhoradas valid.venda entr.fut: agora testa se o
+//                        pedido eh de faturamento ou remessa (GLPI 12036).
 //
-// ----------------------------------------------------------------------------------------------------------------
+
+// --------------------------------------------------------------------------
 User Function M410LIOK()
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _xTIPO     := M->C5_TIPO
@@ -314,7 +317,7 @@ static function _VerVEF ()
 	local _lRet     := .T.
 	local _sContrat := ""
 
-	// Se usar nat.opr. de venda/remessa futura, deve ter contrato.
+	// Se usar nat.oper. de venda/remessa futura, deve ter contrato.
 	if _lRet .and. ! GDDeleted () .and. substr (GDFieldGet ("C6_CF"), 2, 3) $ '922/116'
 		if GDFieldPos ("C6_CONTRAT") == 0 .or. GDFieldPos ("C6_ITEMCON") == 0
 			u_help ("Campos " + alltrim (RetTitle ("C6_CONTRAT")) + " e " + alltrim (RetTitle ("C6_ITEMCON")) + " referentes a contrato de parceria devem estar 'em uso' para validar operacoes de venda para entrega futura.",, .t.)
@@ -332,10 +335,25 @@ static function _VerVEF ()
 	endif
 	
 	// TES deve ser o mesmo do contrato
-	if _lRet .and. altera .and. ! empty (GDFieldGet ("C6_CONTRAT"))
-		if GDFieldGet ('C6_TES') != fBuscaCpo ("ADB", 1, xfilial ("ADB") + GDFieldGet ("C6_CONTRAT") + GDFieldGet ("C6_ITEMCON"), "ADB_TES")
-			U_Help ("Pedido originado por contrato de parceria. Alteracao de TES nao permitida.",, .t.)
-			_lRet = .F.
+//	if _lRet .and. altera .and. ! empty (GDFieldGet ("C6_CONTRAT"))
+	if _lRet .and. ! empty (GDFieldGet ("C6_CONTRAT"))
+//		if GDFieldGet ('C6_TES') != fBuscaCpo ("ADB", 1, xfilial ("ADB") + GDFieldGet ("C6_CONTRAT") + GDFieldGet ("C6_ITEMCON"), "ADB_TES")
+//			U_Help ("Pedido originado por contrato de parceria. Alteracao de TES nao permitida.",, .t.)
+//			_lRet = .F.
+//		endif
+		if _lRet .and. substr (GDFieldGet ("C6_CF"), 2, 3) == '922'
+			U_Log2 ('debug', '[' + procname () + ']Estou validando um pedido de faturamento')
+			if GDFieldGet ('C6_TES') != fBuscaCpo ("ADB", 1, xfilial ("ADB") + GDFieldGet ("C6_CONTRAT") + GDFieldGet ("C6_ITEMCON"), "ADB_TESCOB")
+				U_Help ("Pedido originado pelo contrato de parceria '" + GDFieldGet ("C6_CONTRAT") + '/' + GDFieldGet ("C6_ITEMCON")+ "'. Deve ser usado o mesmo TES de cobranca.",, .t.)
+				_lRet = .F.
+			endif
+		endif
+		if _lRet .and. substr (GDFieldGet ("C6_CF"), 2, 3) == '116'
+			U_Log2 ('debug', '[' + procname () + ']Estou validando um pedido de remessa')
+			if GDFieldGet ('C6_TES') != fBuscaCpo ("ADB", 1, xfilial ("ADB") + GDFieldGet ("C6_CONTRAT") + GDFieldGet ("C6_ITEMCON"), "ADB_TES")
+				U_Help ("Pedido originado pelo contrato de parceria '" + GDFieldGet ("C6_CONTRAT") + '/' + GDFieldGet ("C6_ITEMCON")+ "'. Deve ser usado o mesmo TES de remessa.",, .t.)
+				_lRet = .F.
+			endif
 		endif
 	endif
 return _lRet
