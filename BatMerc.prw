@@ -592,6 +592,7 @@ static function _LeCli (_sLinkSrv)
 					_oEvento:MailToZZU = {'079'}
 					_oEvento:Grava ()
 					
+					// Limpa o codigo base para obrigar a informar na liberação do cliente
 					// If !empty(_AI0Cli)
 					// 	_oSQL:= ClsSQL ():New ()
 					// 	_oSQL:_sQuery := ""
@@ -603,17 +604,9 @@ static function _LeCli (_sLinkSrv)
 					// 	_oSQL:Exec ()
 					// EndIf
 			  
-
-					//Mercanet não tem esse campo, forçado a passar zero, depois limpa para preenchimento adequado.
-					// Limpa o codigo base para obrigar a informar na liberação do cliente
-					// reclock ("SA1", .F.)
-					// SA1 -> A1_CNAE    = ''
-					// SA1 -> A1_VACBASE = '' 
-					// SA1 -> A1_VALBASE = ''
-					// MSUNLOCK ()
-					reclock ("SA1", .F.)
-					SA1 -> A1_CNAE    = ''
-					MSUNLOCK ()
+					RecLock("SA1", .F.)
+						SA1 -> A1_CNAE    = ''
+					MsUnlock()
 					_oBatch:Mensagens += sa1 -> a1_cod + "/" + sa1 -> a1_loja + ' '
 				endif
 			

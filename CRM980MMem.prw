@@ -33,9 +33,9 @@ Return( aRotina )
 User Function VA_CODMAT()
     Local oButton1  
     Local oGet1
-    Local _sCodMat := space(6)
+    Local _sCodMat := SA1->A1_COD
     Local oGet2
-    Local _sLojMat := space(2)
+    Local _sLojMat := SA1->A1_LOJA
     Local oSay1
     Local oSay2
     Local oSay3
@@ -106,13 +106,13 @@ Static Function VerifCliente(_sCodMat, _sLojMat)
     _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " AND A1_COD  = '" + _sCodMat + "' "
     _oSQL:_sQuery += " AND A1_LOJA = '" + _sLojMat + "' "
-    _oSQL:_sQuery += " AND A1_MSBLQL = '2' "
+    //_oSQL:_sQuery += " AND A1_MSBLQL = '2' "
     _oSQL:Log ()
     _aDados := aclone (_oSQL:Qry2Array ())
 
     If Len(_aDados) > 0
        _lRet := .T.
     else
-        u_help("Cliente não existe e/ou está bloqueado. Não pode ser utilizado como código matriz.")
+        u_help("O código do cliente não existe. Não pode ser utilizado como código matriz.")
     EndIf
 Return _lRet
