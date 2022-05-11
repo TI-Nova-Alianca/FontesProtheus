@@ -16,7 +16,8 @@
 // 11/02/2022 - Robert  - Posicionava SB8 pelo D1_LOTEFOR. Alterado para posicionar pelo ZA1_PROD + D1_LOTECTL.
 //                      - Posiciona o SB8 via query por que nao tem indice por produto+lote+local.
 // 25/02/2022 - Robert  - Ajustes nas margens da etiq. de NF na impressora Argox/Datamax.
-// 01/04/2022 - Robert  - Nao envia para FullWMS se for ar=tiqueta de OP (envio vai ser feito noutro local) - GLPI 11825
+// 01/04/2022 - Robert  - Nao envia para FullWMS se for etiqueta de OP (envio vai ser feito noutro local) - GLPI 11825
+// 11/05/2022 - Robert  - Quando reimpressao, imprime 'Reimpressa' em vez de 'Impressa'.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -520,7 +521,8 @@ static function _ImpOP ()
 				fwrite (_nHdl, _Esc + 'H0740')		 		// Define ponto horizontal
 				fwrite (_nHdl, _Esc + 'V0440')		 		// Define ponto vertical
 				fwrite (_nHdl, _Esc + '$A,030,042,0')	 	// Define fonte (espacamento, largura, altura e tipo)
-				fwrite (_nHdl, _Esc + '$=' + 'Impressa em: ' + dtoc (date ()) + _Enter )	// Informacao a ser impressa
+			//	fwrite (_nHdl, _Esc + '$=' + 'Impressa em: ' + dtoc (date ()) + _Enter )	// Informacao a ser impressa
+				fwrite (_nHdl, _Esc + '$=' + iif (za1 -> za1_impres == 'S', 'Re', 'I') + 'mpressa em: ' + dtoc (date ()) + _Enter )	// Informacao a ser impressa
 			
 				// Linha legivel numero da OP
 				fwrite (_nHdl, _Esc + '%2' + _Enter)	 	// Define rotacao
@@ -553,7 +555,8 @@ static function _ImpOP ()
 				_sCodBarEtq := Alltrim(ZA1->ZA1_CODIGO)
 				_sEtq		:= 'ETQ: ' + Alltrim(ZA1->ZA1_CODIGO)
 				_sLoteDesc	:= 'LOTE: ' + _sLote 
-				_sImpressa	:= 'Impressa em: ' + dtoc (date ())
+				// _sImpressa	:= 'Impressa em: ' + dtoc (date ())
+				_sImpressa	:= iif (za1 -> za1_impres == 'S', 'Re', 'I') + 'mpressa em: ' + dtoc (date ())
 				_sDescOp    := 'OP: ' + substr (_sOP, 1, 6) + '.' + substr (_sOP, 7, 2) + '.' + substr (_sOP, 9) + '  ' + 'P. Bruto: ' + _sPbrt 
 				
 				fwrite (_nHdl, chr (2) + 'f220' + _Enter)  //  STX - inicio de etiqueta
