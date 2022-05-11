@@ -126,8 +126,11 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 	// esse total no momento de calcular proporcionalidade para outros niveis.
 	if _lContinua
 		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := "SELECT DATA AS DTMOVTO, OP, QT_ENTRADA, QT_SAIDA"
-		_oSQL:_sQuery +=  " FROM VA_FKARDEX_LOTE ('" + _sFilial + "'"
+		_oSQL:_sQuery := "SELECT TABELA_ORIGEM as TBL_ORIG, DATA AS DTMOVTO, OP, QT_ENTRADA, QT_SAIDA, CFOP"
+		_oSQL:_sQuery +=      ", PRODUTO_ORIGEM as PROD_ORIG, LOTE_ORIGEM as LOTE_ORIG"
+		_oSQL:_sQuery +=      ", DOC, TES, LOTE_FORNECEDOR as LOTEFOR"
+		_oSQL:_sQuery +=      ", SERIENF, CLIFOR, LOJA, TIPONF, ITEMNF, FILIAL_ORIGEM as FILORIG"
+		_oSQL:_sQuery +=  " FROM VA_FKARDEX_LOTE2 ('" + _sFilial + "'"
 		_oSQL:_sQuery +=                        ",'" + _sProduto + "'"
 		_oSQL:_sQuery +=                        ",'" + _sLote + "'"
 		_oSQL:_sQuery +=                        ",''"  // Data inicial
@@ -148,6 +151,23 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 	endif
 	
 	// Busca entradas por OP
+	_aOP = {}
+	if _lContinua .and. _nNivel <= 0 .and. ! empty (_sKardex)
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "SELECT OP, SUM (QT_ENTRADA), '" + sb1 -> b1_um + "', MAX (DTMOVTO)"
+		_oSQL:_sQuery +=  " FROM " + _sKardex + ' K'
+		_oSQL:_sQuery += " WHERE K.OP != ''"
+		_oSQL:_sQuery +=   " AND K.TBL_ORIG = 'SD3'"
+		_oSQL:_sQuery +=   " AND K.QT_ENTRADA > 0"
+		if _sFilial == '09'  // OP que teria jogado vinho dentro do mosto e deve ser desconsiderada
+			_oSQL:_sQuery +=   " AND K.OP != '00332501001'"
+		endif
+		_oSQL:_sQuery += " GROUP BY K.OP"
+		_oSQL:_sQuery += " ORDER BY K.OP"
+		_oSQL:Log (_sStrLog)
+		_aOP := aclone (_oSQL:Qry2Array (.F., .F.))
+//		_aOPNova := aclone (_aOP)  // durante testes
+	endif
 /*
 	// - Se o item controla rastreabilidade pelo Protheus, usa o campo do lote.
 	// - Senao, assume o numero da OP como sendo o lote. Quando a rastreabilidade for completa pelo Protheus, isso vai ser desnecessario.
@@ -170,20 +190,16 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 			_oSQL:_sQuery +=   " AND SD3.D3_OP      like '" + _sLote + "%'"
 		endif
 		_oSQL:_sQuery += " GROUP BY D3_OP, D3_UM"
-*/
-	if _lContinua .and. ! empty (_sKardex)
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := "SELECT OP, SUM (QT_ENTRADA), '" + sb1 -> b1_um + "', MAX (DTMOVTO)"
-		_oSQL:_sQuery +=  " FROM " + _sKardex
-		_oSQL:_sQuery += " WHERE OP != ''"
-		_oSQL:_sQuery +=   " AND QT_ENTRADA > 0"
-		if _sFilial == '09'  // OP que teria jogado vinho dentro do mosto e deve ser desconsiderada
-			_oSQL:_sQuery +=   " AND OP != '00332501001'"
-		endif
-		_oSQL:_sQuery += " GROUP BY OP"
+		_oSQL:_sQuery += " ORDER BY D3_OP"
 		_oSQL:Log (_sStrLog)
-
 		_aOP := aclone (_oSQL:Qry2Array (.F., .F.))
+		U_Log2 ('debug', _aOP)
+	endif
+
+	_aOP := aclone (_aOPNova)  // durante testes
+*/
+	if _lContinua
+		U_Log2 ('debug', _aOP)
 		for _nOP = 1 to len (_aOP)
 
 			// Calcula a quantidade proporcional para ser passada na chamada recursiva.
@@ -246,6 +262,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 
 
 	// Busca entradas por transferencia entre lotes.
+	_aEntTrLt = {}
 	if _lContinua .and. _nNivel <= 0 .and. sb1 -> b1_rastro == 'L'
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "SELECT CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL AS LOTEORI,"
@@ -275,7 +292,36 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 		_oSQL:_sQuery += " 	ORDER BY CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL"
 		_oSQL:Log (_sStrLog)
 		_aEntTrLt = aclone (_oSQL:Qry2Array (.F., .F.))
+		U_Log2 ('debug', _aEntTrLt)
+		_aEntTrL2 := aclone (_aEntTrLt)  // durante testes
 		dbselectarea ("SD3")  // Por algum motivo estah chegando aqui sem nenhum 'alias'.
+	endif
+
+	if _lContinua .and. _nNivel <= 0 .and. ! empty (_sKardex)
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "SELECT PROD_ORIG, LOTE_ORIG, SUM (QT_ENTRADA), SB1.B1_DESC"
+		_oSQL:_sQuery +=  " FROM " + _sKardex + " K "
+		_oSQL:_sQuery +=      ", " + RetSQLName ("SB1") + " SB1 "
+		_oSQL:_sQuery += " WHERE K.OP            = ''"
+		_oSQL:_sQuery +=   " AND K.TBL_ORIG      = 'SD3'"
+		_oSQL:_sQuery +=   " AND K.CFOP          = 'DE4'"
+		
+		// Se for o mesmo produto e lote, trata-se apenas de trasf. de endereco.
+		_oSQL:_sQuery +=   " AND NOT (K.PROD_ORIG = '" + _sProduto + "' AND K.LOTE_ORIG = '" + _sLote + "')"
+		
+		_oSQL:_sQuery +=   " AND K.QT_ENTRADA   > 0"
+		_oSQL:_sQuery +=   " AND SB1.D_E_L_E_T_ != '*'"
+		_oSQL:_sQuery +=   " AND SB1.B1_FILIAL   = '" + xfilial ("SB1") + "'"
+		_oSQL:_sQuery +=   " AND SB1.B1_COD      = K.PROD_ORIG"
+		_oSQL:_sQuery += " GROUP BY PROD_ORIG, LOTE_ORIG, SB1.B1_DESC"
+		_oSQL:_sQuery += " ORDER BY PROD_ORIG, LOTE_ORIG"
+		_oSQL:Log (_sStrLog)
+		_aEntTrLt := aclone (_oSQL:Qry2Array (.F., .F.))
+	//	_aEntTrLt := aclone (_aEntTrL2)  // durante testes
+		U_Log2 ('debug', _aEntTrLt)
+	endif
+
+	if _lContinua
 		for _nTrLt = 1 to len (_aEntTrLt)
 
 			// Calcula a quantidade proporcional para ser passada na chamada recursiva.
@@ -304,6 +350,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 
 
 	// Busca outras entradas por movimentos internos.
+/*
 	if _lContinua .and. _nNivel <= 0 .and. sb1 -> b1_rastro == 'L'
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "SELECT SD3.D3_DOC, SD3.D3_CF, SD3.D3_UM, SD3.D3_QUANT"
@@ -334,7 +381,32 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 		enddo	
 		(_sAliasQ) -> (dbclosearea ())
 	endif
-	
+*/
+	if _lContinua .and. _nNivel <= 0 .and. ! empty (_sKardex)
+		_oSQL:_sQuery := "SELECT DOC, '" + sb1 -> b1_um + "' AS UM, QT_ENTRADA AS QUANT"
+		_oSQL:_sQuery +=  " FROM " + _sKardex + " K "
+		_oSQL:_sQuery += " WHERE K.OP     = ''"
+		_oSQL:_sQuery +=   " AND K.TBL_ORIG = 'SD3'"
+		_oSQL:_sQuery +=   " AND K.CFOP  != 'DE4'"
+		_oSQL:_sQuery +=   " AND K.TES < '5'"
+		_oSQL:_sQuery += " ORDER BY DOC"
+		_oSQL:Log (_sStrLog)
+		_sAliasQ = _oSQL:Qry2Trb (.F.)
+		do while ! (_sAliasQ) -> (eof ())
+
+			// Calcula a quantidade proporcional para ser passada na chamada recursiva.
+			_nQtProp2 = _nQtProp  // Movimentacao por entrada normal eh sempre de 1 para 1
+
+			_sID = soma1 (_sID)
+			_sDescri = 'Mov.interno doc ' + (_sAliasQ) -> doc + _sQuebra
+			_sDescri += _FmtQt ((_sAliasQ) -> quant, (_sAliasQ) -> um, _nQtProp2)
+			_sRet += '<node BACKGROUND_COLOR="#669900" CREATED="1493031071766" ' + iif (abs (_nNivel) >= _nNivFold, 'FOLDED="true" ', '') + 'ID="' + _sID + '" POSITION="left" TEXT="' + _sDescri + '">'
+			_sRet += '</node>'
+			(_sAliasQ) -> (dbskip ())
+		enddo	
+		(_sAliasQ) -> (dbclosearea ())
+	endif
+
 
 	// Busca possiveis entradas via NF.
 	if _lContinua .and. _nNivel <= 0 .and. sb1 -> b1_rastro == 'L'
@@ -370,8 +442,39 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 		// Ignora transferencias de filiais
 		_oSQL:_sQuery +=   " AND SD1.D1_FORNECE NOT IN ('000021','001094','001369','003150','003402','003114','003209','003111','003108','003266','003195','004565','004734')"
 
+		_oSQL:_sQuery +=   " ORDER BY D1_FORNECE, D1_DOC"
 		_oSQL:Log (_sStrLog)
 		_aSD1 = aclone (_oSQL:Qry2Array (.F., .F.))
+		_aSD12 := aclone (_aSD1)  // durante testes
+		U_Log2 ('debug', _aSD1)
+	endif
+
+	if _lContinua .and. _nNivel <= 0 .and. ! empty (_sKardex)
+		_oSQL:_sQuery := "SELECT K.DOC, K.LOTEFOR, K.QT_ENTRADA, '" + sb1 -> b1_um + "' AS UM "
+		_oSQL:_sQuery +=      ", RTRIM (CASE WHEN K.TIPONF IN ('D', 'B') THEN A1_NOME ELSE A2_NOME END) "
+		_oSQL:_sQuery +=      ", K.SERIENF, K.CLIFOR, K.LOJA, K.ITEMNF"
+		_oSQL:_sQuery +=  " FROM " + _sKardex + " K "
+		_oSQL:_sQuery +=     " LEFT JOIN " + RetSQLName ("SA1") + " SA1 "
+		_oSQL:_sQuery +=        " ON (SA1.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=        " AND SA1.A1_FILIAL  = '" + xfilial ("SA1") + "'"
+		_oSQL:_sQuery +=        " AND SA1.A1_COD     = K.CLIFOR"
+		_oSQL:_sQuery +=        " AND SA1.A1_LOJA    = K.LOJA)"
+		_oSQL:_sQuery +=     " LEFT JOIN " + RetSQLName ("SA2") + " SA2 "
+		_oSQL:_sQuery +=        " ON (SA2.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=        " AND SA2.A2_FILIAL  = '" + xfilial ("SA2") + "'"
+		_oSQL:_sQuery +=        " AND SA2.A2_COD     = K.CLIFOR"
+		_oSQL:_sQuery +=        " AND SA2.A2_LOJA    = K.LOJA)"
+		_oSQL:_sQuery += " WHERE K.TBL_ORIG = 'SD1'"
+		_oSQL:_sQuery +=   " AND K.QT_ENTRADA > 0"
+		_oSQL:_sQuery +=   " AND K.FILORIG = ''"
+		_oSQL:_sQuery += " ORDER BY K.CLIFOR, K.DOC"
+		_oSQL:Log (_sStrLog)
+		_aSD1 = aclone (_oSQL:Qry2Array (.F., .F.))
+		U_Log2 ('debug', _aSD1)
+	//	_aSD1 := aclone (_aSD12)  // durante testes
+	endif
+
+	if _lContinua
 		for _nSD1 = 1 to len (_aSD1)
 
 			// Calcula a quantidade proporcional para ser passada na chamada recursiva.
