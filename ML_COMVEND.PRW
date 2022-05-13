@@ -14,6 +14,7 @@
 // 13/01/2022 - Claudia - Realizado melhorias no relatorio, originalmente desenvolvido por 
 //                        Catia Cardoso, conforme GLPI: 11468
 // 09/05/2022 - Claudia - Descontado valores de verbas e devoluções dos valores. GLPI: 11925
+// 13/05/2022 - Claudia - Alterada a descrição do titulo do relatorio. GLPI: 11925
 //
 // --------------------------------------------------------------------------------------------------- 
 #include 'protheus.ch'
@@ -37,7 +38,7 @@ Static Function ReportDef()
 	Local oSection1:= Nil
 	//Local oFunction
 
-	oReport := TReport():New("ML_COMVEND","Demonstrativo de indenização sobre comissões",cPerg,{|oReport| PrintReport(oReport)},"Demonstrativo de indenização sobre comissões")
+	oReport := TReport():New("ML_COMVEND","Demonstrativo de provisão de comissões",cPerg,{|oReport| PrintReport(oReport)},"Demonstrativo de provisão de comissões")
 	
 	//oReport:ShowParamPage() // imprime parametros
 	oReport:SetTotalInLine(.F.)
@@ -109,7 +110,7 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "    ,SUM(COMISSAO) "
     _oSQL:_sQuery += "    ,AVOS_1_2 "
     _oSQL:_sQuery += " FROM C "
-    If (mv_par03 == 2)
+    If (mv_par03 == 1)
         _oSQL:_sQuery += " WHERE INDENIZACAO = 'S' "
     else
         _oSQL:_sQuery += " WHERE INDENIZACAO = 'N' "

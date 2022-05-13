@@ -16,6 +16,7 @@
 //  05/05/2021 - Cláudia - Adicionado valor de frete + seguro + despesas acessorias. GLPI: 9895
 //  26/10/2021 - Claudia - Realizado ajuste quando tem dois vendedores. GLPI: 11124
 //  12/01/2022 - Claudia - Criada nova validação para indenização. GLPI: 11361
+//  13/05/2022 - Claudia - Ajuste no parametro de vendedores ativos/inativos.
 //
 // --------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -549,8 +550,10 @@ Static Function _COMVEND(_dtaIni, _dtaFin, _sVendIni, _sVendFin, _nLibPg)
 	_oSQL:_sQuery += "    FROM " + RetSQLName ("SE3") + " AS SE3 "
 	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA3") + " AS SA3 "
 	_oSQL:_sQuery += " 	ON (SA3.D_E_L_E_T_ = ''
-	_oSQL:_sQuery += " 			AND SA3.A3_MSBLQL != '1'
-	_oSQL:_sQuery += " 			AND SA3.A3_ATIVO != 'N'
+	if mv_par09 == 1
+		_oSQL:_sQuery += " 			AND SA3.A3_MSBLQL != '1'
+		_oSQL:_sQuery += " 			AND SA3.A3_ATIVO != 'N'
+	endif
 	_oSQL:_sQuery += " 			AND SA3.A3_COD = SE3.E3_VEND)
 	_oSQL:_sQuery += " WHERE E3_FILIAL = '" + xFilial('SE3') + "' "   
 	_oSQL:_sQuery += " AND E3_VEND BETWEEN '" + _sVendIni + "' and '" + _sVendFin + "'"
