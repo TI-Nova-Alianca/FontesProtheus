@@ -90,8 +90,11 @@
 // 07/04/2022 - Robert  - Iniciada funcao de alteracao de dados de associados (GLPI 10138)
 // 13/04/2022 - Robert  - Continuada funcao de alteracao de dados de associados (GLPI 10138)
 // 03/05/2022 - Claudia - Incluida a gravação do campo a1_savblq.GLPI: 11922
+// 13/05/2022 - Robert  - Criada consulta de kardex por lote (GLPI 8482)
+// 16/05/2022 - Robert  - Criada acao de apontamento de producao com cod.barras (GLPI 11994)
 //
-// --------------------------------------------------------------------------------------------------------
+
+// --------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
 #INCLUDE "PROTHEUS.CH"
 #include "tbiconn.ch"
@@ -227,6 +230,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 				_CanCarSaf ()
 			case _sAcao == 'ConsultaKardex'
 				_ExecKardex ()
+			case _sAcao == 'ConsultaKardexLote'
+				_KardexLt ()
 			case _sAcao == 'MonitorProtheus'
 				_MonitProt ()
 			case _sAcao == 'CapitalSocialAssoc'
@@ -237,6 +242,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 				_DtEntFat ()
 			case _sAcao == 'ApontarProducao'
 				_ApontProd ()
+			case _sAcao == 'ApontarProducaoEtqCodBar'
+				_ApPrEtqCB ()
 			case _sAcao == 'BuscaPedidosBloqueados'
 				_PedidosBloq ()
 			case _sAcao == 'GravaBloqueioGerencial'
@@ -1575,7 +1582,111 @@ Static function _ExecKardex()
 	EndIf
 	u_logFim ()
 Return 
-//
+
+
+// --------------------------------------------------------------------------
+// Executa consulta de Kardex por lote
+Static function _KardexLt()
+	local _wFilial   	:= ""
+	local _wProduto		:= ""
+	local _sLote		:= ""
+	local _wDataInicial := ""
+	local _wDataFinal   := ""
+	local _oSQL      	:= NIL
+	local _sAliasQ   	:= ""
+	local _XmlRet       := ""
+//	local _aRetQry      := {}
+
+	
+	// busca valores de entrada
+	if empty (_sErroWS)
+		_wFilial      = 	_ExtraiTag ("_oXML:_WSAlianca:_Filial"		, .T., .F.)
+		_wProduto     =     _ExtraiTag ("_oXML:_WSAlianca:_Produto"		, .T., .F.)
+		_sLote   	  =     _ExtraiTag ("_oXML:_WSAlianca:_Lote"		, .T., .F.)
+		_wDataInicial = 	_ExtraiTag ("_oXML:_WSAlianca:_DataInicial"	, .T., .T.)
+		_wDataFinal   = 	_ExtraiTag ("_oXML:_WSAlianca:_DataFinal"	, .T., .T.)
+	endif
+	
+//	if empty(_wFilial)		;_sErroWS += "Campo <filial> não preenchido"			;endif
+//	if empty(_wProduto)		;_sErroWS += "Campo <produto> não preenchido"		;endif
+//	if empty(_wAlmox)		;_sErroWS += "Campo <almoxarifado> não preenchido"	;endif
+//	if empty(_wDataInicial)	;_sErroWS += "Campo <data inicial> não preenchido"	;endif
+//	if empty(_wDataFinal)	;_sErroWS += "Campo <data final> não preenchido"		;endif
+
+/* Este problema nao deve existir no caso de lotes.
+	_oSQL := ClsSQL():New ()  
+	_oSQL:_sQuery := ""		
+	_oSQL:_sQuery += " SELECT * FROM " + RetSQLName ("SD3")
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " AND D3_FILIAL = '" + _wFilial + "'"
+	_oSQL:_sQuery += " AND D3_COD    = '" + _wProduto + "'"
+	_oSQL:_sQuery += " AND D3_LOCAL  = '" + _wAlmox + "'"
+	_oSQL:_sQuery += " AND D3_EMISSAO BETWEEN '" + _wDataInicial + "' AND '" + _wDataFinal + "'"
+	_oSQL:Log ()
+	_aRetQry  = aclone (_oSQL:Qry2Array ())
+		
+	If len(_aRetQry)> 2000  // 5000
+		_sErroWS := "Este item possui muita movimentacao. Selecione um periodo menor!"
+	EndIf
+*/	
+	If empty(_sErroWS)
+
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery := ""		
+		_oSQL:_sQuery += " SELECT * FROM dbo.VA_FKARDEX_LOTE('" + _wFilial + "', '" + _wProduto + "', '" + _sLote + "', '" + _wDataInicial + "', '" + _wDataFinal + "') "	
+		_oSQL:Log ()
+		_sAliasQ = _oSQL:Qry2Trb (.F.)
+		(_sAliasQ) -> (dbgotop ())
+
+		_XmlRet += "<ConsultaKardexLote>"
+		_XmlRet += 		"<DataInicial>"+ _wDataInicial +"</DataInicial>"
+		_XmlRet += 		"<DataFinal>"+ _wDataFinal +"</DataFinal>"
+		_XmlRet += 		"<Registro>"
+
+		While (_sAliasQ)->(!Eof())	
+			_sNome := StrTran((_sAliasQ) -> Nome , '&', '' )
+			_XmlRet += "<RegistroItem>"
+
+			_XmlRet += 		"<Linha>" 		  + alltrim(str((_sAliasQ) -> Linha))														+ "</Linha>" 			//+ chr (13) + chr (10)
+			_XmlRet += 		"<Data>"		  + IIf((alltrim((_sAliasQ) -> data))=='//'	,'', alltrim((_sAliasQ) -> data)) 				+ "</Data>"				//+ chr (13) + chr (10)
+			_XmlRet += 		"<Doc>"		 	  + alltrim((_sAliasQ) -> Doc)																+ "</Doc>"				//+ chr (13) + chr (10)
+			_XmlRet += 		"<Serie>"		  + alltrim((_sAliasQ) -> SerieNF)															+ "</Serie>"			//+ chr (13) + chr (10)
+			_XmlRet += 		"<Qt_Entrada>"	  + alltrim(str((_sAliasQ) -> Qt_Entrada))													+ "</Qt_Entrada>"		//+ chr (13) + chr (10)
+			_XmlRet += 		"<Qt_Saida>"	  + alltrim(str((_sAliasQ) -> Qt_Saida))													+ "</Qt_Saida>"			//+ chr (13) + chr (10)
+			_XmlRet += 		"<Saldo>"		  + alltrim(str((_sAliasQ) -> Saldo))														+ "</Saldo>"			//+ chr (13) + chr (10)
+			_XmlRet += 		"<NumSeq>"	 	  + alltrim((_sAliasQ) -> NumSeq)															+ "</NumSeq>"			//+ chr (13) + chr (10)
+			_XmlRet += 		"<Movimento>"	  + alltrim((_sAliasQ) -> Movimento)														+ "</Movimento>"		//+ chr (13) + chr (10)
+			_XmlRet += 		"<OP>"	 		  + alltrim((_sAliasQ) -> OP)																+ "</OP>"				//+ chr (13) + chr (10)
+			_XmlRet += 		"<TES>" 		  + alltrim((_sAliasQ) -> TES)																+ "</TES>"				//+ chr (13) + chr (10)
+			_XmlRet += 		"<CFOP>" 		  + alltrim((_sAliasQ) -> CFOP)																+ "</CFOP>"				//+ chr (13) + chr (10)
+			_XmlRet += 		"<Almox>" 		  + alltrim((_sAliasQ) -> Almox)															+ "</Almox>"
+			_XmlRet += 		"<Endereco>" 	  + alltrim((_sAliasQ) -> Endereco)															+ "</Endereco>"
+			_XmlRet += 		"<Etiqueta>" 	  + alltrim((_sAliasQ) -> Etiqueta)															+ "</Etiqueta>"			//+ chr (13) + chr (10)
+			_XmlRet += 		"<Usuario>" 	  + alltrim((_sAliasQ) -> Usuario)															+ "</Usuario>"			//+ chr (13) + chr (10)
+			_XmlRet += 		"<CliFor>" 		  + alltrim((_sAliasQ) -> CliFor)															+ "</CliFor>"			//+ chr (13) + chr (10)
+			_XmlRet += 		"<Loja>" 		  + alltrim((_sAliasQ) -> Loja)																+ "</Loja>"				//+ chr (13) + chr (10)
+			_XmlRet += 		"<Nome>" 		  + alltrim (_sNome)																		+ "</Nome>"				//+ chr (13) + chr (10)
+			_XmlRet += 		"<Motivo>" 		  + alltrim((_sAliasQ) -> Motivo)															+ "</Motivo>"			//+ chr (13) + chr (10)
+			_XmlRet += 		"<Nf_Orig>" 	  + alltrim((_sAliasQ) -> Nf_Orig)															+ "</Nf_Orig>"			//+ chr (13) + chr (10)
+			_XmlRet += 		"<LoteFor>" 	  + alltrim((_sAliasQ) -> Lote_Fornecedor)													+ "</LoteFor>"			//+ chr (13) + chr (10)
+			_XmlRet += 		"<Data_Inclusao>" + IIf((alltrim((_sAliasQ)->Data_Inclusao))=='//' ,'', alltrim((_sAliasQ)->Data_Inclusao)) + "</Data_Inclusao>"	//+ chr (13) + chr (10)
+			_XmlRet += 		"<Hora_Inclusao>" + alltrim((_sAliasQ) -> Hora_Inclusao)													+ "</Hora_Inclusao>"	//+ chr (13) + chr (10)
+			_XmlRet += 		"<Sequencia>" 	  + alltrim((_sAliasQ) -> Sequencia)														+ "</Sequencia>"		//+ chr (13) + chr (10)
+			_XmlRet += 		"</RegistroItem>"
+			
+			(_sAliasQ) -> (dbskip ())
+		EndDo
+
+		_XmlRet += 		"</Registro>" 	//+ chr (13) + chr (10)
+		_XmlRet += "</ConsultaKardexLote>" 	//+ chr (13) + chr (10)
+		
+		(_sAliasQ) -> (dbclosearea ())
+		
+		_sMsgRetWS := _XmlRet
+	EndIf
+Return 
+
+
 // --------------------------------------------------------------------------
 // Executa rotina semelhante ao antigo 'monitor' do sistema
 Static function _MonitProt ()
@@ -1835,7 +1946,90 @@ static function _ApontProd ()
 	enddo
 	_sMsgRetWS += '</ApontaProd>'
 return
-//
+
+
+// --------------------------------------------------------------------------
+// Gera apontamento de producao a partir de etiqueta+codigo barras do produto.
+// A intencao eh evitar que seja apontada uma etiqueta que tenha sido colada
+// em um pallet de outro produto. 
+static function _ApPrEtqCB ()
+	local _sEtqApont := ''
+	local _dDtProd   := ctod ('')
+	local _sTnoProd  := ''
+	local _aAutoSD3  := {}
+	local _sMotProd  := ''
+	local _sCodBarAp := ''
+
+	if empty (_sErroWS) ; _sEtqApont =       _ExtraiTag ("_oXML:_WSAlianca:_Etiq",     .T., .F.)  ; endif
+	if empty (_sErroWS) ; _sCodBarAp =       _ExtraiTag ("_oXML:_WSAlianca:_CodBarra", .T., .F.)  ; endif
+	if empty (_sErroWS) ; _sTnoProd  =       _ExtraiTag ("_oXML:_WSAlianca:_Turno",    .T., .F.)  ; endif
+	if empty (_sErroWS) ; _dDtProd   = stod (_ExtraiTag ("_oXML:_WSAlianca:_DtProd",   .T., .T.)) ; endif
+	if empty (_sErroWS) ; _sMotProd  =       _ExtraiTag ("_oXML:_WSAlianca:_Motivo",   .T., .F.)  ; endif
+
+	// Validacao inicial do numero da etiqueta.
+	if empty (_sErroWS)
+		_oEtiq := ClsEtiq ():New (_sEtqApont)
+		if _oEtiq:Codigo != _sEtqApont
+			_sErroWS += "Numero de etiqueta invalido."
+		endif
+	endif
+
+	// Valida se o codigo de barras pertence ao produto da etiqueta
+	if empty (_sErroWS)
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT count (*)"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB1") + " SB1"
+		_oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+		_oSQL:_sQuery +=   " AND SB1.B1_CODBAR  = '" + _sCodBarAp + "'"
+		_oSQL:_sQuery +=   " AND SB1.B1_COD     = '" + _oEtiq:Produto + "'"
+		_oSQL:Log (procname ())
+		if _oSQL:RetQry (1, .f.) == 0
+			_sErroWS += "Codigo de barras inconsistente. Etiqueta refere-se "
+			_sErroWS += "ao produto '" + alltrim (_oEtiq:Produto) + "' "
+			_sErroWS += "(" + alltrim (fBuscaCpo ("SB1", 1, xfilial ("SB1") + _oEtiq:Produto, "B1_DESC")) + ")"
+		endif
+	endif
+
+	if empty (_sErroWS)
+		if ! _oEtiq:PodeApont (_oEtiq:Quantidade, 0)
+			// Dentro do metodo PodeApont() jah deve estar sendo chamada a
+			// funcao U_Help(), que deve alimentar a variavel _sErroWS.
+			// Apenas para garantir, vou acrescentar algum conteudo a ela.
+			_sErroWS += '.'
+		endif
+	endif
+
+	// Gera oapontamento de producao
+	if empty (_sErroWS)
+		_aAutoSD3 = {}
+		aadd (_aAutoSD3, {"D3_OP",      za1 -> za1_op,  NIL})
+		aadd (_aAutoSD3, {"D3_VAETIQ",  za1 -> za1_codigo, NIL})
+		aadd (_aAutoSD3, {"D3_VADTPRD", _dDtProd,   NIL})
+		aadd (_aAutoSD3, {"D3_VATURNO", _sTnoProd,  NIL})
+		aadd (_aAutoSD3, {"D3_VAMOTIV", _sMotProd,  NIL})
+		aadd (_aAutoSD3, {"ATUEMP",     "T",        NIL})  // Para que sempre seja feita a baixa dos empenhos.
+		_aAutoSD3 := aclone (U_OrdAuto (_aAutoSD3))
+		U_Log2 ('debug', _aAutoSD3)
+		lMsErroAuto  := .F.
+		_sErroAuto := ''
+		U_Log2 ('info', 'Executando MATA250')
+		MATA250 (_aAutoSD3, 3)
+		If lMsErroAuto
+			if ! empty (_sErroAuto)
+				_sErroWS += _sErroAuto + '; '
+			elseif ! empty (NomeAutoLog ())
+				_sErroWS += U_LeErro (memoread (NomeAutoLog ())) + '; '
+			endif
+			u_log2 ('erro', 'Rotina automatica retornou erro: ' + _sErroWS)
+		else
+			_sMsgRetWS += "Apontamento gerado com sucesso (d3_numseq = " + sd3 -> d3_numseq + ")"
+		endif
+	endif
+return
+
+
 // --------------------------------------------------------------------------
 // Realiza bloqueio/desbloqueio de pedidos
 Static Function _PedidosBloq()

@@ -67,6 +67,8 @@
 // 23/03/2022 - Robert  - Verificacao 82 ajustado item 'MO-' para 'AO-'.
 // 05/04/2022 - Robert  - Consulta 82 passa a aceitar todas as filiais (para poder ser chamada de outras rotinas)
 // 11/04/2022 - Claudia - Excluido o usuario app.mntng da consulta 78.
+// 16/05/2022 - Robert  - Adicoinada verificacao 87 - Parametrizacoes TSS (GLPI 12042)
+//
 
 // --------------------------------------------------------------------------------------------------------------------
 #include "protheus.ch"
@@ -3179,6 +3181,36 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=  " FROM C"
 			::Query += " WHERE round (ZF_VALFRET, 2) != round (F1_DESPESA, 2)"
 			::Query += " ORDER BY SAFRA, FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE"
+
+
+		case ::Numero == 87
+			::Filiais   = '01'  // Gero todas as filiais juntas.
+			::Setores   = 'FIS/INF'
+			::Descricao = 'Parametrizacoes TSS'
+			::Sugestao  = 'Rodar wizard de configuracao do TSS'
+			::Query := ""
+			::Query += "WITH C AS ("
+			::Query += "SELECT CASE WHEN SPED000.PARAMETRO = 'MV_NFEDISD' AND CONTEUDO != '1'"
+			::Query +=          " THEN 'Nao configurada para enviar DANFe pelo TSS (MV_NFEDISD)'"
+			::Query +=          " ELSE ''"
+			::Query +=          " END AS PROBLEMA"
+			::Query +=      ", SPED001.ID_ENT ENTIDADE"
+			::Query +=      ", SYS_COMPANY.M0_CODIGO EMPRESA"
+			::Query +=      ", SYS_COMPANY.M0_CODFIL FILIAL"
+			::Query +=  " FROM SPED000, SPED001, SYS_COMPANY"
+			::Query += " WHERE SPED001.D_E_L_E_T_ = ''"
+			::Query +=   " AND SYS_COMPANY.D_E_L_E_T_ = ''"
+			::Query +=   " AND SPED001.CNPJ = SYS_COMPANY.M0_CGC"
+			::Query +=   " AND SPED001.IE = SYS_COMPANY.M0_INSC"
+			::Query +=   " AND SPED000.D_E_L_E_T_ = ''"
+			::Query +=   " AND SPED000.ID_ENT = SPED001.ID_ENT"
+			::Query +=   " AND SYS_COMPANY.M0_CODIGO = '" + cEmpAnt + "'"
+	//		::Query +=   " AND NOT (SYS_COMPANY.M0_CODIGO = '01' AND SYS_COMPANY.M0_CODFIL = '14')"  // Filial inativa
+			::Query += " )"
+			::Query += " SELECT *"
+			::Query +=   " FROM C"
+			::Query +=  " WHERE PROBLEMA != ''"
+			::Query +=  " ORDER BY ENTIDADE, PROBLEMA"
 
 
 		otherwise

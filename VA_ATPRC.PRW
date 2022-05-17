@@ -13,6 +13,7 @@
 // 02/12/2015 - Robert - Exigia % reajuste, mas pode haver casos de nao reajustar, executando apenas para recalculo de ST, opr exemplo.
 // 11/01/2016 - Catia  - % a diminuir nao esta funcionando
 // 08/12/2016 - Robert - Atualiza dados para Mercanet.
+// 11/05/2022 - Robert - Parametros produto de...ate tinham tamanho=4 (GLPI 12027)
 //
 
 // --------------------------------------------------------------------------
@@ -136,8 +137,8 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {02, "Tabela de preço até  ?","C", 03, 0,  "",   "DA0", {},                          	   ""})
 	aadd (_aRegsPerg, {03, "Linha de produto de  ?","C", 02, 0,  "",   "88 ", {},                     		   ""})
 	aadd (_aRegsPerg, {04, "Linha de produto até ?","C", 02, 0,  "",   "88 ", {},              			       ""})
-	aadd (_aRegsPerg, {05, "Produto de           ?","C", 04, 0,  "",   "SB1", {},                              ""})
-	aadd (_aRegsPerg, {06, "Produto até          ?","C", 04, 0,  "",   "SB1", {},                              ""})
+	aadd (_aRegsPerg, {05, "Produto de           ?","C", 15, 0,  "",   "SB1", {},                              ""})
+	aadd (_aRegsPerg, {06, "Produto até          ?","C", 15, 0,  "",   "SB1", {},                              ""})
 	aadd (_aRegsPerg, {07, "Tabelas              ?","N", 01, 0,  "",   "   ", {"Ativas","Inativas","Ambas"},   ""})
 	aadd (_aRegsPerg, {08, "UF de                ?","C", 02, 0,  "",   "   ", {},                         	   ""})
 	aadd (_aRegsPerg, {09, "UF até               ?","C", 02, 0,  "",   "   ", {},                         	   ""})

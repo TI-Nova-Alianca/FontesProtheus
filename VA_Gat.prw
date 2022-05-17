@@ -128,8 +128,11 @@
 // 31/08/2021 - Claudia - Desabilitada validacao do 'custo para transferencia' quando chamado a partir do MATA310. GLPI: 8077
 // 04/03/2022 - Robert  - Gatilho para campo ZZ9_SAFRA (GLPI 11708).
 // 14/04/2022 - Claudia - Criado gatilhos de vendedor. GLPI: 10699
+// 11/05/2022 - Robert  - Na valid.venda entr.fut. testava m->c6_tes, mas essa var.
+//                        agora vem com NIL. Alterado para GDFieldGet - GLPI 12036
 //
-// ----------------------------------------------------------------------------------------------------------------------------
+
+// --------------------------------------------------------------------------
 #include "VA_Inclu.prw"
 
 user function VA_Gat (_sParCpo, _sParSeq)
@@ -352,8 +355,22 @@ user function VA_Gat (_sParCpo, _sParSeq)
 				// Para a filial 16 precisamos usar tabela de precos (legislacao...) GLPI 7208
 				if m->c5_cliente != '025023'
 
+//					U_Log2 ('debug', '[' + procname () + ']_sCampo = ' + _sCampo)
+//					if _sCampo == "M->C6_TES"
+//						U_Log2 ('debug', '[' + procname () + ']valtype(m->c6_tes) = ' + valtype (m->c6_tes))
+//						U_Log2 ('debug', '[' + procname () + ']M->C6_TES = ' + cvaltochar (m->c6_tes))
+//						U_Log2 ('debug', '[' + procname () + ']valtype(GDFieldGet ("C6_TES")) = ' + valtype (GDFieldGet ("C6_TES")))
+//						U_Log2 ('debug', '[' + procname () + ']GDFieldGet ("C6_TES") = ' + cvaltochar (GDFieldGet ("C6_TES")))
+//					endif
+//					U_Log2 ('debug', '[' + procname () + ']passou teste 1')
+//					if _sCampo == "M->C6_OPER"
+//						U_Log2 ('debug', '[' + procname () + ']GDFieldGet ("C6_TES") = ' + GDFieldGet ("C6_TES"))
+//					endif
+//					U_Log2 ('debug', '[' + procname () + ']passou teste 2')
+
 					// Se for TES de remessa para deposito, busca o custo do produto.
-					if (_sCampo == "M->C6_TES" .and. m->c6_tes $ GetMv ("AL_TESPCUS")) ;
+				//	if (_sCampo == "M->C6_TES" .and. m->c6_tes $ GetMv ("AL_TESPCUS")) ;
+					if (_sCampo == "M->C6_TES" .and. GDFieldGet ("C6_TES") $ GetMv ("AL_TESPCUS")) ;
 						.or. (_sCampo == "M->C6_OPER" .and. GDFieldGet ("C6_TES") $ GetMv ("AL_TESPCUS"))
 						_xRet = U_PrcCust (GDFieldGet ("C6_PRODUTO"), GDFieldGet ("C6_LOCAL"))
 					endif

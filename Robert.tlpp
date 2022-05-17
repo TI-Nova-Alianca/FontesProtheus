@@ -104,7 +104,51 @@ static function _AndaLogo ()
 	incproc ()
 	u_help ('Nada definido.')
 return
-
+/*
+	// Testes verificacoes genericas.
+	// _oVerif := ClsVerif():New (25)
+	// _oVerif:SetParam ('01', '2017')
+	// _oVerif:SetParam ('02', '')
+	// _oVerif:SetParam ('03', 'zz')
+	// _oVerif:SetParam ('04', '30 ')
+	// _oVerif:SetParam ('05', '028')
+	// _oVerif:SetParam ('06', '077')
+	// _oVerif:SetParam ('07', '000017')
+	// _oVerif := ClsVerif():New (24)
+	// _oVerif:SetParam ('01', '09189201001  ')
+	// _oVerif:SetParam ('02', '09189201001  ')
+	// _oVerif:SetParam ('03', '')
+	// _oVerif:SetParam ('04', 'z')
+	_oVerif := ClsVerif():New (87)
+	if _oVerif:Executa ()
+		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
+		u_log2 ('debug', _oVerif:Result)
+		u_acolsxls (_oVerif:Result)
+	else
+		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
+	endif
+return
+/*
+	_oAssoc := ClsAssoc ():New ('016774', '01')
+	//                        _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResV, _lFSFrtS, _lFSLcCC
+//	u_log (_oAssoc:FechSafra ('2021',  .t.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,      .F.,      .F.))
+//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .t.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,      .F.,      .F.))
+//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .t.,     .F.,     .F.,      .F.,      .F.,      .F.,      .F.,      .F.))
+//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .t.,     .F.,      .F.,      .F.,      .F.,      .F.,      .F.))
+	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .t.,      .F.,      .F.,      .F.,      .F.,      .F.))
+//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .t.,      .F.,      .F.,      .F.,      .F.))
+//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .t.,      .F.,      .F.,      .F.))
+	
+//	u_log (_oAssoc:FechSafra ('2020',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .t.,      .F.,      .F.))
+//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .t.,      .F.,      .F.))
+	
+//	u_log (_oAssoc:FechSafra ('2020',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,      .t.,      .F.))
+//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,      .t.,      .F.))
+	
+//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,      .F.,      .t.))
+//	u_log (_oAssoc:FechSafra ('2021',  .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,      .t.,      .t.))
+return
+*/
 /*
 	// Testes classe transf.estq.
 	private _sErroAuto := ''
@@ -597,30 +641,6 @@ return
 	enddo
 return
 */
-/*
-	// Testes verificacoes genericas.
-	// _oVerif := ClsVerif():New (25)
-	// _oVerif:SetParam ('01', '2017')
-	// _oVerif:SetParam ('02', '')
-	// _oVerif:SetParam ('03', 'zz')
-	// _oVerif:SetParam ('04', '30 ')
-	// _oVerif:SetParam ('05', '028')
-	// _oVerif:SetParam ('06', '077')
-	// _oVerif:SetParam ('07', '000017')
-	// _oVerif := ClsVerif():New (24)
-	// _oVerif:SetParam ('01', '09189201001  ')
-	// _oVerif:SetParam ('02', '09189201001  ')
-	// _oVerif:SetParam ('03', '')
-	// _oVerif:SetParam ('04', 'z')
-	_oVerif := ClsVerif():New (86)
-	if _oVerif:Executa ()
-		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
-		u_log2 ('debug', _oVerif:Result)
-		u_acolsxls (_oVerif:Result)
-	else
-		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
-	endif
-return
 /*
 	// Testes arvore de rastreabilidade
 	private _aLtXLS58 := {}  // Deixar PRIVATE para ser alimentada pelo U_RastLT().
@@ -2034,27 +2054,6 @@ return
 		endif
 		(_sAliasQ) -> (dbskip ())
 	enddo
-return
-*/
-/*
-	_oAssoc := ClsAssoc ():New ('000161', '01')
-	//                        _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResV, _lFSFrtS, _lFSLcCC
-	u_log (_oAssoc:FechSafra ('2021',  .t.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,      .F.,      .F.))
-	u_log (_oAssoc:FechSafra ('2021',  .f.,     .t.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,      .F.,      .F.))
-	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .t.,     .F.,     .F.,      .F.,      .F.,      .F.,      .F.,      .F.))
-	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .t.,     .F.,      .F.,      .F.,      .F.,      .F.,      .F.))
-	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .t.,      .F.,      .F.,      .F.,      .F.,      .F.))
-	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .t.,      .F.,      .F.,      .F.,      .F.))
-	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .t.,      .F.,      .F.,      .F.))
-	
-	u_log (_oAssoc:FechSafra ('2020',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .t.,      .F.,      .F.))
-	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .t.,      .F.,      .F.))
-	
-	u_log (_oAssoc:FechSafra ('2020',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,      .t.,      .F.))
-	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,      .t.,      .F.))
-	
-	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,      .F.,      .t.))
-	u_log (_oAssoc:FechSafra ('2021',  .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,      .t.,      .t.))
 return
 */
 /*
