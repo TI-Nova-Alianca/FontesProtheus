@@ -13,20 +13,28 @@
 // Historico de alteracoes:
 // 10/02/2020 - Robert  - Indice do VA_SX6 passa a ser criado como 'clustered', pare permitir reorganizacao via job do SQL.
 // 12/05/2021 - Claudia - Ajustada leitura da tabela SX6 conforme R27. GLPI 8825
+// 17/05/2022 - Robert  - Implementada copia semanal do SX7 (GLPI 12063)
 //
-// ------------------------------------------------------------------------------------------------------------------------
 
-#Include "TbiConn.ch"
+//#Include "TbiConn.ch"
 
+// --------------------------------------------------------------------------
 User Function BatCpySX ()
+	local _lContinua := .T.
+
+	_lContinua = _SX6 ()
+	_lContinua = _SX7 ()
+return _lContinua
+
+
+
+// --------------------------------------------------------------------------
+static function _SX6 ()
 	local _oSQL      := NIL
 	local _lContinua := .T.
 	local _sX6Cont   := ''
 	local _x         := 0
 
-	u_logIni ()
-	u_logdh ()
-	
 	// Cria tabela caso ainda nao exista.
 	if _lContinua
 		_oSQL := ClsSQL ():New ()
@@ -43,11 +51,13 @@ User Function BatCpySX ()
 		_oSQL:_sQuery += " ,X6_PROPRI  VARCHAR (1) NOT NULL DEFAULT ''"
 		_oSQL:_sQuery += " ,X6_DEFPOR  VARCHAR (250) NOT NULL DEFAULT ''"
 		_oSQL:_sQuery += ")"
+		_oSQL:Log ('[' + procname () + ']')
 		_lContinua = _oSQL:Exec ()
 
 		if _lContinua
 			_oSQL:_sQuery := "IF NOT EXISTS (SELECT * FROM sysindexes WHERE name = 'VA_SX6_IDX1')"
 			_oSQL:_sQuery += " CREATE clustered INDEX VA_SX6_IDX1 ON VA_SX6 ([X6_FIL],[X6_VAR],[X6_CONTEUD])"
+			_oSQL:Log ('[' + procname () + ']')
 			_lContinua = _oSQL:Exec ()
 		endif
 	endif
@@ -68,6 +78,7 @@ User Function BatCpySX ()
 		_oSQL:_sQuery += "    	,X6_CONTEUD"
 		_oSQL:_sQuery += " FROM SX6010"
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:Log ('[' + procname () + ']')
 		_aSX6 := aclone (_oSQL:Qry2Array ())
 
 		For _x:= 1 to Len(_aSX6)
@@ -103,7 +114,7 @@ User Function BatCpySX ()
 			_oSQL:_sQuery +=         ",'" + _sX6Cont    + "'"
 			_oSQL:_sQuery +=         ",'" + _sX6_PROPRI + "'"
 			_oSQL:_sQuery +=         ",'" + alltrim(strtran (_sX6_DEFPOR, "'", "''")) + "')"
-
+		//	_oSQL:Log ('[' + procname () + ']')
 			_lContinua = _oSQL:Exec ()
 			if ! _lContinua
 				_oBatch:Mensagens += "Erro inserindo " + _sX6_VAR + ';'
@@ -112,6 +123,31 @@ User Function BatCpySX ()
 
 		_oBatch:Mensagens += 'SX6 finalizado;'
 	EndIf
-	u_logFim ()
+return _lContinua
 
+
+// --------------------------------------------------------------------------
+static function _SX7 ()
+	local _lContinua := .T.
+	local _oSQL      := NIL
+	local _sArqDest  := ''
+
+	// Para ter alguma rotatividade, define o nome do arquivo pelo dia da semana.
+	_sArqDest := 'VA_SX7_' + {'DOM','SEG','TER','QUA','QUI','SEX','SAB'} [dow (date ())]
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "DROP TABLE IF EXISTS " + _sArqDest
+	_oSQL:Log ('[' + procname () + ']')
+	_lContinua = _oSQL:Exec ()
+	if _lContinua
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT *
+		_oSQL:_sQuery +=  " INTO " + _sArqDest
+		_oSQL:_sQuery +=  " FROM SX7" + cEmpAnt + "0"  // Pelo que vi, a funcao RetSQLName() nao funciona para o SX7.
+		_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=  " ORDER BY X7_CAMPO, X7_SEQUENC"
+		_oSQL:Log ('[' + procname () + ']')
+		_lContinua = _oSQL:Exec ()
+	endif
+	_oBatch:Mensagens += 'SX7 finalizado;'
 return _lContinua

@@ -67,7 +67,9 @@
 // 23/03/2022 - Robert  - Verificacao 82 ajustado item 'MO-' para 'AO-'.
 // 05/04/2022 - Robert  - Consulta 82 passa a aceitar todas as filiais (para poder ser chamada de outras rotinas)
 // 11/04/2022 - Claudia - Excluido o usuario app.mntng da consulta 78.
-// 16/05/2022 - Robert  - Adicoinada verificacao 87 - Parametrizacoes TSS (GLPI 12042)
+// 16/05/2022 - Robert  - Adicionada verificacao 87 - Parametrizacoes TSS (GLPI 12042)
+// 17/05/2022 - Robert  - Adicionada verificacai 88 - Gatilhos (GLPI 12063)
+//                      - Melhorada definicao do atributo :UltVerif
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -121,6 +123,7 @@ ENDCLASS
 //
 // --------------------------------------------------------------------------------------------------
 METHOD New (_nQual) Class ClsVerif
+	//local _nBkNumVer := 0
 	::Numero     = 0
 	::Ativa      = .T.
 	::Filiais    = '*'
@@ -141,15 +144,30 @@ METHOD New (_nQual) Class ClsVerif
 	::MesAtuEstq = substr (dtos (GetMv ("MV_ULMES") + 1), 1, 6)
 	::QuandoUsar = "A qualquer momento"
 
+	// Para determinar qual a ultima verificacao, vou comecar por um numero
+	// alto e ir buscando para tras, ateh encontrar uma verificacao definida.
+	// Jah tentei diversas formas de fazer isso, mas no final sempre acabo
+	// criando somente o CASE que define a query e esqueco de atualizar o
+	// atributo :UltVerif.
+	for ::Numero = 1000 to 1 step -1
+		//U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (::Numero) + ' qry antes: ' + ::Query)
+		::GeraQry (.T.)
+		//U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (::Numero) + ' qry depois: ' + ::Query)
+		if ! empty (::Query)
+			::UltVerif = ::Numero
+			::Numero = 0
+			exit
+		endif
+	next
+
 	_nQual = iif (valtype (_nQual) == 'N', _nQual, 0)
 	::Numero  = _nQual
 	::GeraQry (.T.)
-	::UltVerif = 81  // Atualizar sempre que criar uma nova verificacao.
 
 Return ::Self
 
 
-// --------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------
 // Converte o resultado para formato HTML.
 METHOD ConvHTM (_nMaxLin) Class ClsVerif
 	local _sRet  := ""
@@ -3212,6 +3230,19 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=  " WHERE PROBLEMA != ''"
 			::Query +=  " ORDER BY ENTIDADE, PROBLEMA"
 
+
+		case ::Numero == 88
+			::Filiais   = '01'  // Gero todas as filiais juntas.
+			::Setores   = 'INF'
+			::Descricao = 'Gatilhos'
+			::Sugestao  = 'Verificar configuracao do gatilho'
+			::Query := ""
+			::Query += "SELECT X7_CAMPO, X7_SEQUENC, X7_CDOMIN, X7_REGRA"
+			::Query +=  " FROM SX7" + cEmpAnt + "0"  // Pelo que vi, a funcao RetSQLName() nao funciona para o SX7.
+			::Query += " WHERE D_E_L_E_T_ = ''"
+			::Query +=   " AND UPPER (X7_REGRA) LIKE '%U_VA_GAT%'"
+			::Query +=   " AND X7_REGRA NOT LIKE '%' + X7_SEQUENC + '%'"
+			::Query += " ORDER BY X7_CAMPO, X7_SEQUENC"
 
 		otherwise
 			::UltMsg = "Verificacao numero " + cvaltochar (::Numero) + " nao definida."
