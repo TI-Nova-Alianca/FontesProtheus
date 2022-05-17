@@ -92,6 +92,8 @@
 // 03/05/2022 - Claudia - Incluida a gravação do campo a1_savblq.GLPI: 11922
 // 13/05/2022 - Robert  - Criada consulta de kardex por lote (GLPI 8482)
 // 16/05/2022 - Robert  - Criada acao de apontamento de producao com cod.barras (GLPI 11994)
+//                      - Passa a trabalhar com um unico arquivo de log (antes
+//                        gerava um arqiovo de log para cada usuario).
 //
 
 // --------------------------------------------------------------------------
@@ -121,8 +123,9 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	local _sError    := ""
 	local _sWarning  := ""
 	local _aUsuario  := {}  // Guarda dados de identificacao do usuario.
-	local _sArqLog2  := ''
-	local _sArqLgOld := ''
+//	local _sArqLog2  := ''
+//	local _sArqLgOld := ''
+	local _nSegIni   := seconds ()
 	private __cUserId  := ''
 	private cUserName  := ''
 	private _sWS_Empr  := ""
@@ -137,7 +140,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	//WSDLDbgLevel(2)  // Ativa dados para debug no arquivo console.log
 	set century on
 
-	// Alimenta coluna de observacoes no monitor do sistema.
+	// Alimenta coluna de observacoes no monitor do sistema (R33 proibiu o usu dessa funcao)
 	//PtInternal (1, 'WS_Alianca')
 
 	// Validacoes gerais e extracoes de dados basicos.
@@ -168,6 +171,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 		_oXML := XmlParser(::XmlRcv, "_", @_sError, @_sWarning)
 	endif
 
+/*
 	// Faz a 'migracao' para outro arquivo de log, para nao misturar processos de diferentes usuarios.
 	if empty (_sErroWS)
 		//u_log ('vou mudar arqlog com cUserName=', cusername)
@@ -182,6 +186,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 		u_log2 ('info', '...continuacao de log da thread ' + cValToChar (ThreadID ()) + ' (gerado por chamada de web service)')
 		u_log2 ('debug', 'XML recebido: ' + ::XmlRcv)
 	endif
+*/
 
 	// Executa a acao especificada no XML.
 	if empty (_sErroWS)
@@ -273,16 +278,22 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 //	u_log2 ('info', '::Retorno:Resultado = ' + ::Retorno:Resultado)
 //	u_log2 ('info', '::Retorno:Mensagens = ' + ::Retorno:Mensagens)
 
-	// Volta log para o nome original, apenas para 'fechar' o processo.
-	_sArqLog = _sArqLgOld
-	u_log2 ('debug', 'Retornando web service com o seguinte resultado: ' + ::Retorno:Resultado)
-//	u_log2 ('debug', ::Retorno:Mensagens)
+//	// Volta log para o nome original, apenas para 'fechar' o processo.
+//	_sArqLog = _sArqLgOld
+
+	
+	// Como vou logar tudo no mesmo arquivo, tentarei fazer uma separacao entre cada execucao.
+//	u_log2 ('debug', '#######################################################################')
+//	u_log2 ('debug', '#######################################################################')
 
 	// Encerra ambiente. Ficou um pouco mais lento, mas resolveu problema que estava dando de,
 	// a cada execucao, trazer um cFilAnt diferente. Robert, 09/01/2020.
 	// dica em: https://centraldeatendimento.totvs.com/hc/pt-br/articles/360027855031-MP-ADVPL-FINAL-GERA-EXCE%C3%87%C3%83O
 	RPCClearEnv ()
 
+	u_log2 ('info', 'Mensagens WS: ' + ::Retorno:Mensagens)
+	u_log2 ('info', 'Retorno   WS: ' + ::Retorno:Resultado + ' (' + cvaltochar (seconds () - _nSegIni) + 's.)')
+	u_log2 ('info', '')  // Apenas para gerar uma linha vazia
 Return .T.
 //
 // --------------------------------------------------------------------------
@@ -697,7 +708,7 @@ Return
 static function _IncEvt ()
 	local _oEvento := NIL
 	local _dDtEvt  := ''
-	U_Log2 ('info', 'Iniciando ' + procname ())
+//	U_Log2 ('info', 'Iniciando ' + procname ())
 	_oEvento := ClsEvent ():New ()
 	_oEvento:Filial  = cFilAnt
 	
@@ -759,7 +770,7 @@ static function _IncEvt ()
 			_sMsgRetWS = "Evento gravado com sucesso"
 		endif
 	endif
-	U_Log2 ('info', 'Finalizando ' + procname ())
+//	U_Log2 ('info', 'Finalizando ' + procname ())
 Return
 //
 // --------------------------------------------------------------------------
@@ -1495,7 +1506,7 @@ Static function _ExecKardex()
 	local _XmlRet       := ""
 	local _aRetQry      := {}
 
-	u_logIni ()
+//	u_logIni ()
 	
 	// busca valores de entrada
 	if empty (_sErroWS)
@@ -1580,7 +1591,7 @@ Static function _ExecKardex()
 		
 		_sMsgRetWS := _XmlRet
 	EndIf
-	u_logFim ()
+//	u_logFim ()
 Return 
 
 
@@ -2189,7 +2200,7 @@ Static Function _GrvLibPed ()
 	local _wCliente  := ""
 	local _wLoja 	 := ""
 
-	u_logIni ()
+//	u_logIni ()
 
 	If empty(_sErroWS)
 		_wFilial   := _ExtraiTag ("_oXML:_WSAlianca:_Filial"	, .T., .F.)
@@ -2228,7 +2239,7 @@ Static Function _GrvLibPed ()
 		EndIf		
 	EndIf
 
-	u_logFim ()
+//	u_logFim ()
 Return
 //
 // --------------------------------------------------------------------------
@@ -2242,7 +2253,7 @@ Static Function _EnvMargem ()
 	local _XmlRet    := ""
 	local _x         := 0
 
-	u_logIni ()
+//	u_logIni ()
 
 	If empty(_sErroWS)
 		_wFilial   := _ExtraiTag ("_oXML:_WSAlianca:_Filial"	, .T., .F.)
@@ -2313,7 +2324,7 @@ Static Function _EnvMargem ()
 		EndIf		
 	EndIf
 	_sMsgRetWS := _XmlRet
-	u_logFim ()
+//	u_logFim ()
 Return
 
 

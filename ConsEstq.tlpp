@@ -22,9 +22,9 @@ user function ConsEstq (_sFilial, _sProduto, _sLocal)
 
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := "EXEC VA_SP_VERIFICA_ESTOQUES '" + _sFilial + "', '" + _sProduto + "', '" + _sLocal + "'"
-	_oSQL:Log ()
+	//_oSQL:Log ()
 	_aRetQry = aclone (_oSQL:Qry2Array (.F., .f.))
-	U_Log2 ('debug', _aRetQry)
+	//U_Log2 ('debug', _aRetQry)
 	if len (_aRetQry) == 1
 		_sMsg = "Inconsistencia estoques no prod/almox " + alltrim (_sProduto) + "/" + _sLocal + ": " + chr (13) + chr (10) + strtran (alltrim (_aRetQry [1, 12]), ';', chr (13) + chr (10))
 		//U_Log2 ('aviso', _sMsg)

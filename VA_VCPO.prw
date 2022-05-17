@@ -165,6 +165,7 @@
 // 11/01/2022 - Robert  - Criada validacao campo C1_VANF
 // 07/03/2022 - Robert  - Melhorada validacao de etiq.jah apontada/estornada no campo D3_VAETIQ (antes olhava campo ZA1_APONT e agora faz query no SD3).
 // 25/03/2022 - Robert  - Validacoes adicionais do campos C2_PRODUTO e D3_VAETIQ - GLPI 11825.
+// 16/05/2022 - Robert  - Restaurada valid.etiq.jah apontada (ganta alguns segundos do usuario).
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -995,7 +996,6 @@ user function VA_VCpo (_sCampo)
 				u_help ("Etiqueta ainda nao impressa.")
 				_lRet = .f.
 			endif
-/* O resto das validacoes foi para o programa ZA1PAP()
 			if _lRet
 				_oSQL := ClsSQL():New ()
 				_oSQL:_sQuery := "SELECT SUM (CASE WHEN D3_ESTORNO != 'S' THEN 1 ELSE 0 END) AS APONTAM"
@@ -1016,7 +1016,6 @@ user function VA_VCpo (_sCampo)
 					_lRet = .F.
 				endif
 			endif
-*/
 
 		case _sCampo $ "M->DB_LOCALIZ/M->DB_QUANT" .and. funname () != 'MATA805' 
 			_aQuery := {}
