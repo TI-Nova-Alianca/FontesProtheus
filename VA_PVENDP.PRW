@@ -13,59 +13,56 @@
 // Historico de alteracoes:
 // 
 //
-// --------------------------------------------------------------------------
-#include 'protheus.ch'
-#include 'parmtype.ch'
-#include "totvs.ch"
-#include "report.ch"
-#include "rwmake.ch"
-#include 'topconn.CH'
+// --------------------------------------------------------------------------// ----------------------------------------------------------------------------------------------------------------------------
+User Function VA_PVENDP (_lAutomat)
+	Local cCadastro := "Produtos Vendidos no Periodo"
+	Local aSays     := {}
+	Local aButtons  := {}
+	Local nOpca     := 0
+	Local lPerg     := .F.
+	private _lAuto   := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
 
-User Function VA_PVENDP()
-	Private oReport
-	Private cPerg := "VA_PVENDP"
-    
-	
+	// Verifica se o usuario tem liberacao para uso desta rotina.
+	//if ! U_ZZUVL ('045', __cUserID, .T.)
+	//	return
+	//endif
+
+	Private cPerg   := "VAPVENDP"
 	_ValidPerg()
 	Pergunte(cPerg,.F.)
-	
-	oReport := ReportDef()
-	oReport:PrintDialog()
 
-Return
+	if _lAuto != NIL .and. _lAuto
+		Processa( { |lEnd| _Gera() } )
+	else
+		AADD(aSays,cCadastro)
+		AADD(aSays,"")
+		AADD(aSays,"")
+		AADD(aButtons, { 5, .T.,{|| lPerg := Pergunte(cPerg,.T. ) } } )
+		AADD(aButtons, { 1, .T.,{|| nOpca := If(( lPerg .Or. Pergunte(cPerg,.T.)) .And. _TudoOk() , 1, 2 ), If( nOpca == 1, FechaBatch(), Nil ) }})
+		AADD(aButtons, { 2, .T.,{|| FechaBatch() }} )
+		FormBatch( cCadastro, aSays, aButtons )
+		If nOpca == 1
+			Processa( { |lEnd| _Gera() } )
+		Endif
+	endif
+return
 //
-// -------------------------------------------------------------------------
-Static Function ReportDef()
-    Local oReport   := Nil
-	Local oSection1 := Nil
+// --------------------------------------------------------------------------
+// 'Tudo OK' do FormBatch.
+Static Function _TudoOk()
+	Local _lRet     := .T.
+Return _lRet
+//
+// --------------------------------------------------------------------------
+// Geraqção
+Static Function _Gera()
+	local _oSQL   := NIL
 
-    oReport := TReport():New("VA_PVENDP","Produtos Vendidos no Periodo",cPerg,{|oReport| PrintReport(oReport)},"Produtos Vendidos no Periodo")
-	oReport:SetLandscape()
-	oSection1 := TRSection():New(oReport,,{}, , , , , ,.T.,.F.,.F.) 
-	
-	TRCell():New(oSection1,"COLUNA1", 	"" ,"FILIAL"		    ,	    				,02,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA2", 	"" ,"TIPOPROD"		    ,       				,04,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA3", 	"" ,"COD_PROD"			,						,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA4", 	"" ,"DESCRICAO"			,       				,40,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA5", 	"" ,"CODLINHA"		    ,       				,02,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA6", 	"" ,"LINHA"		        ,       				,16,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA7", 	"" ,"QTDE"          	,       				,8,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA8", 	"" ,"UNIDADE"	        ,       				,04,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA9", 	"" ,"LITROS"	        ,       				,8,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA10", 	"" ,"VRL_FATURADO_UN"   , "@E 999,999,999.99"   ,15,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA11", 	"" ,"VRL_TOTAL"	        , "@E 999,999,999.99"   ,15,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA12", 	"" ,"CUSTO_TOTAL"	    , "@E 999,999,999.99"   ,15,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA13", 	"" ,"CUSTO_UN"	        , "@E 999,999,999.99"   ,15,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA14", 	"" ,"CUSTO_STANDER"	    , "@E 999,999,999.99"   ,17,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA15", 	"" ,"MARGEM_%"	        ,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA16", 	"" ,"CPV_%"	            ,       				,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-Return(oReport)
-//
-// -------------------------------------------------------------------------
-Static Function PrintReport(oReport)
-	Local oSection1 := oReport:Section(1)	
-    Local _aDados   := {}
-    Local i         := 0
+	procregua (10)
+	incproc ("Gerando arquivo de exportacao")
+
+	// Busca dados
+	incproc ("Buscando dados")
 
     _oSQL:= ClsSQL ():New ()
     _oSQL:_sQuery := ""
@@ -84,8 +81,8 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "   ,ROUND(SUM(CUSTOMEDIO), 2) AS CUSTO_TOTAL "
     _oSQL:_sQuery += "   ,ROUND(AVG(CUSTOMEDIO / QUANTIDADE), 2) AS CUSTO_UN "
     _oSQL:_sQuery += "   ,SB1.B1_CUSTD AS CUSTO_STANDER"
-    _oSQL:_sQuery += "   ,ROUND((SUM(TOTAL) - SUM(CUSTOMEDIO)) / SUM(TOTAL) * 100, 1) AS 'MARGEM_%' "
-    _oSQL:_sQuery += "   ,ROUND(SUM(CUSTOMEDIO) / SUM(TOTAL) * 100, 0) AS 'CPV_%' "
+    _oSQL:_sQuery += "   ,ROUND((SUM(TOTAL) - SUM(CUSTOMEDIO)) / SUM(TOTAL) * 100, 1) AS 'MARGEM' "
+    _oSQL:_sQuery += "   ,ROUND(SUM(CUSTOMEDIO) / SUM(TOTAL) * 100, 0) AS 'CPV' "
     _oSQL:_sQuery += " FROM BI_ALIANCA.dbo.VA_FATDADOS "
     _oSQL:_sQuery += " INNER JOIN SB1010 AS SB1 "
     _oSQL:_sQuery += "	    ON (SB1.D_E_L_E_T_ = '' "
@@ -106,40 +103,19 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "		,ZX5_39DESC "
     _oSQL:_sQuery += "		,CODLINHA "
     _oSQL:_sQuery += "		,SB1.B1_CUSTD "
-    _aDados := _oSQL:Qry2Array ()
-
-
-    oSection1:Init()
-
-    For i := 1 to Len(_aDados)
-        oSection1:Cell("COLUNA1")	:SetBlock   ({|| _aDados[i,1] })
-        oSection1:Cell("COLUNA2")	:SetBlock   ({|| _aDados[i,2] })
-        oSection1:Cell("COLUNA3")	:SetBlock   ({|| _aDados[i,3] })
-        oSection1:Cell("COLUNA4")	:SetBlock   ({|| _aDados[i,4] })
-        oSection1:Cell("COLUNA5")	:SetBlock   ({|| _aDados[i,5] })
-        oSection1:Cell("COLUNA6")	:SetBlock   ({|| _aDados[i,6] })
-        oSection1:Cell("COLUNA7")	:SetBlock   ({|| _aDados[i,7] })
-        oSection1:Cell("COLUNA8")	:SetBlock   ({|| _aDados[i,8] })
-        oSection1:Cell("COLUNA9")	:SetBlock   ({|| _aDados[i,9] })
-        oSection1:Cell("COLUNA10")	:SetBlock   ({|| _aDados[i,10] })
-        oSection1:Cell("COLUNA11")	:SetBlock   ({|| _aDados[i,11] })
-        oSection1:Cell("COLUNA12")	:SetBlock   ({|| _aDados[i,12] })
-        oSection1:Cell("COLUNA13")	:SetBlock   ({|| _aDados[i,13] })
-        oSection1:Cell("COLUNA14")	:SetBlock   ({|| _aDados[i,14] })
-        oSection1:Cell("COLUNA15")	:SetBlock   ({|| _aDados[i,15] })
-        oSection1:Cell("COLUNA16")	:SetBlock   ({|| _aDados[i,16] })
-
-        oSection1:PrintLine()
-    Next
-
-    oSection1:Finish()
-Return
-//
-// -------------------------------------------------------------------------
+    _oSQL:Log ()
+	_oSQL:ArqDestXLS = 'VA_PVENDP'
+	_oSQL:Qry2Xls ()
+return
+	
+    
+// --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
-    local _aRegsPerg := {}
-    //                     PERGUNT                     TIPO TAM DEC VALID   F3     Opcoes                      Help
+	local _aRegsPerg := {}
+	local _aDefaults := {}
+	
+//                       PERGUNT                        TIPO TAM DEC VALID   F3     Opcoes                       Help
     aadd (_aRegsPerg, {01, "Filial de                 ", "C", 2, 0,  "",   "SM0", {},                         		 ""})
     aadd (_aRegsPerg, {02, "Filial ate                ", "C", 2, 0,  "",   "SM0", {},                        		 ""})
     aadd (_aRegsPerg, {03, "Data de                   ", "D", 8, 0,  "",   "   ", {},                         		 ""})
@@ -148,6 +124,6 @@ Static Function _ValidPerg ()
     aadd (_aRegsPerg, {06, "Produto ate               ", "C", 15, 0, "",   "SB1", {},                         		 ""})
     aadd (_aRegsPerg, {07, "Tipo de Produto de        ", "C", 2, 0,  "",   "02 ", {},                         		 ""})
     aadd (_aRegsPerg, {08, "Tipo de Produto ate       ", "C", 2, 0,  "",   "02 ", {},                         		 ""})
-
-    U_ValPerg (cPerg, _aRegsPerg)
+    U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
+    
 Return
