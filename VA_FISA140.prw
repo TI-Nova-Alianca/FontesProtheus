@@ -28,8 +28,12 @@ User Function VA_FISA140
 		_ValidPerg()
 		
 		If Pergunte(cPerg, .T.)
+			u_logIni()
+			u_log("Iniciando BatPessoas em", date (), time ())
+
 			If _lRet .and. empty(mv_par01)
 				u_help("Filial de destino não informada. Verifique!")
+				u_log("Filial de destino não informada. Verifique!")
 				_lRet    := .F.
 				_FilDest := ""
 			EndIf
@@ -38,11 +42,13 @@ User Function VA_FISA140
 				_FilDest := mv_par01
 				If _lRet .and. alltrim(_FilOri) <> '01'
 					u_help("A filial de origem para execução deve ser a matriz!")
+					u_log("A filial de origem para execução deve ser a matriz!")
 					_lRet := .F.
 				EndIf
 				
 				If _lRet .and. _FilDest == '01'
 					u_help("A filial de destino não pode ser a matriz")
+					u_log("A filial de destino não pode ser a matriz")
 					_lRet := .F.
 				EndIf
 
@@ -50,10 +56,12 @@ User Function VA_FISA140
 					Processa({|| _GravaRegistros(_FilOri, _FilDest)})
 				Else
 					u_help("Processo finalizado!")
+					u_log("Processo finalizado!")
 				EndIf
 			EndIf
 		EndIf
 	EndIf
+	u_logFim()
 Return
 //
 // --------------------------------------------------------------------------
@@ -124,16 +132,21 @@ Static Function _GravaRegistros(_FilOri, _FilDest)
 		        nReg += 1
 		        IncProc("Criando registros... " + alltrim(str(nReg)))
 		        
+				//u_log(str(TRA->DADREC))
 				DBSelectArea("TRA")
 				dbskip()
 			Enddo
 			TRA->(DbCloseArea())
 			RestArea(aArea)	
+			u_help("Processo finalizado!")
+			u_log("Processo finalizado!")
 		Else
 			u_help("Processo cancelado!")
+			u_log("Processo cancelado!")
 		EndIf
 	Else
 		u_help("Processo cancelado!")
+		u_log("Processo cancelado!")
 	EndIf
 Return
 //------------------------------------------------------------------------------------------
@@ -143,6 +156,7 @@ Static Function _DeletaReg(_FilDest)
 	
 	If alltrim(_FilDest) == '01'
 		u_help(" Filial de destino 01 é inválida! Não será possivel prosseguir com o processo.")
+		u_log(" Filial de destino 01 é inválida! Não será possivel prosseguir com o processo.")
 		_lRet := .F.
 	Else
 		_Qry1 := " DELETE F3K010 "
@@ -152,7 +166,6 @@ Static Function _DeletaReg(_FilDest)
 		
 		_lRet := .T.
 	EndIf
-
 Return _lRet
 //
 //------------------------------------------------------------------------------------------
