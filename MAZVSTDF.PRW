@@ -27,13 +27,17 @@ User Function MAZVSTDF()
       dbSelectArea('SD2')
       SD2->(dbSetOrder(3))
       
-      u_help("Ponto de entrada MAZVSTDF")
-
+      //msgAlert("Entrou no Ponto de entrada MAZVSTDF")
+      u_log("MAZVSTDF")
+      u_log(str(nDifal))
+      u_log(cEstado)
       If cEstado == "CE"
             //Zera Valor de Difal
             If nDifal > 0 .And. nDifal < 1
+                  u_log('1')
                   MafisAlt("NF_PPDIFAL",.F.)
-                  For nX := 1 to len(aItem)          
+                  For nX := 1 to len(aItem)     
+                  u_log('2')     
                         MafisAlt("IT_DIFAL",0,nX)
                         SD2->(MsSeek(xFilial('SD2') + SF2->F2_DOC + SF2->F2_SERIE + SF2->F2_CLIENTE + SF2->F2_LOJA+(aItem[nX][16])+(aItem[nX][73])))
                         MaFisWrite(2,"SD2",nX)
