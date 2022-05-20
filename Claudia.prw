@@ -9,159 +9,142 @@ User Function claudia ()
 
 	//u_help("Nada para executar")
 
-	u_help("AltIPI")
-	AltIPI()
-
-	//u_help("BatFunAssoc")
-	//U_BatFunAssoc()
-
-	//u_help("BatTrbAss")
-	//U_BatTrbAss()
-
-	//u_help("associados")
-	//U_BatFunAssoc()
-	//u_help("Executa Margens")
-	//U_BATMARDAT()
-
-	//u_help("Tela")
-	//TelaTeste()
-
-	//u_help("envMargem")
-	//u_envMargem()
-	//U_HELP("GNRE")
-	//_AtuGNRE()
-
-	//u_help("isento")
-	//_AtuISENTO()
-	//u_help("CIELO")
-	//Cielo()
-	//u_help("ALMOX1")
-	//Almox1()
-	//u_help("ALMOX2")
-	//Almox2()
-	// u_help('Solicitante')
-	// Solicitante()
-	//u_help("Coordenadores")
-	//Coordenadores()
-	//u_help("Teste de baixa")
-	//BaixaAut()
-
-	// Atualiza clientes inativos
-	//u_help("Atualiza clientes ativos")
-	//ClientesInativos()
-
-	// Atualiza representantes inativos
-	//u_help("Representantes Inativos")
-	//RepInativos()
-
-	// atualiza CGC PDV - SL1
-	//u_help("Atualiza CGC PDV - SL1")
-	//U_BatLojCGC()
+	u_help("ClsCtaRap")
+	_Rapel()
 Return
 //
-// Atualiza IPI
-Static Function AltIPI()
-    sb1 -> (dbsetorder (1))
-    sb1 -> (dbgotop ())
-    do while ! sb1 -> (eof ())
-        if alltrim (sb1 -> b1_posipi) $ '22042100/22041090/22043000/22021000/22042100/22060090/22082000'
-			u_log2 ('info', 'Verificando item ' + sb1 -> b1_cod + SB1 -> B1_DESC)
-
-			// Cria variaveis para uso na gravacao do evento de alteracao
-			regtomemory ("SB1", .F., .F.)
-			m->b1_ipi = sb1 -> b1_ipi
-			do case
-				case sb1 -> b1_posipi = '22042100' .and. sb1 -> b1_ipi != 7.5
-					m->b1_ipi = 7.5
-				case sb1 -> b1_posipi = '22041090' .and. sb1 -> b1_ipi != 7.5
-					m->b1_ipi = 7.5
-				case sb1 -> b1_posipi = '22043000' .and. sb1 -> b1_ipi != 7.5
-					m->b1_ipi = 7.5
-				case sb1 -> b1_posipi = '22021000' .and. sb1 -> b1_ipi != 3
-					m->b1_ipi = 3
-				case sb1 -> b1_posipi = '22042100' .and. sb1 -> b1_ipi != 7.5
-					m->b1_ipi = 7.5
-				case sb1 -> b1_posipi = '22060090' .and. sb1 -> b1_ipi != 7.5
-					m->b1_ipi = 7.5
-				case sb1 -> b1_posipi = '22082000' .and. sb1 -> b1_ipi != 22.5
-					m->b1_ipi = 22.5
-			endcase
-			if m->b1_ipi != sb1 -> b1_ipi
-				U_Log2 ('info', sb1 -> b1_posipi + ' alterando de ' + transform (sb1->b1_ipi, "@E 999.99") + ' para ' + transform (m->b1_ipi, "@E 999.99") + ' ' + ' ' + sb1 -> b1_cod + ' ' + sb1 -> b1_desc)
-				// Grava evento de alteracao
-				_oEvento := ClsEvent():new ()
-				_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 11681 - novas aliq.IPI', .F.)
-
-				reclock ("SB1", .f.)
-				sb1 -> B1_ipi = m->b1_ipi
-				msunlock ()
-			endif
-		endif
-        sb1 -> (dbskip ())
-    enddo
-Return
 //
-// Atualiza representantes inativos
-Static Function RepInativos()
-	Local _aDados := {}
-	Local _x      := 0
+// ----------------------------------------------------------------------------------------
+Static Function _Rapel()
+	_oCtaRapel := ClsCtaRap():New ()
 
-	_oSQL := ClsSQL():New ()  
-	_oSQL:_sQuery := "" 		
-	_oSQL:_sQuery += " SELECT "
-	_oSQL:_sQuery += " 		SA3.R_E_C_N_O_ "
-	_oSQL:_sQuery += " FROM SA3010 SA3 "
-	_oSQL:_sQuery += " LEFT JOIN LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_TB_REPRES REP "
-	_oSQL:_sQuery += " 		ON DB_TBREP_CODORIG = A3_COD "
-	_oSQL:_sQuery += " WHERE SA3.D_E_L_E_T_ = '' "
-	_oSQL:_sQuery += " AND SA3.A3_ATIVO = 'N' "  // BLOQUEADOS
-	_oSQL:_sQuery += " AND DB_TBREP_SIT_VENDA<>2 " // 1 = ATIVO/ 2 = INATIVO
-	_oSQL:_sQuery += " ORDER BY A3_COD "
+	_oCtaRapel:Filial  	 = xfilial("ZC0")
+	_oCtaRapel:Rede      = '000117'		
+	_oCtaRapel:LojaRed   = '01'
+	_oCtaRapel:Cliente 	 = '000117'	
+	_oCtaRapel:LojaCli	 = '01'	
+	_oCtaRapel:TM      	 = '01' 	
+	_oCtaRapel:Data    	 = date()
+	_oCtaRapel:Hora    	 = time()
+	_oCtaRapel:Usuario 	 = cusername 
+	_oCtaRapel:Histor  	 = 'Teste' 
+	_oCtaRapel:Documento = '123456789'
+	_oCtaRapel:Serie 	 = '10'
+	_oCtaRapel:Parcela	 = ''
+	_oCtaRapel:Rapel	 = 78.5
+	_oCtaRapel:Saldo	 = 78.5 
+	_oCtaRapel:Status	 = '' 
+	_oCtaRapel:Origem	 = ''
 
-	_aDados := aclone (_oSQL:Qry2Array ())
-
-	For _x := 1 to Len(_aDados)
-		U_AtuMerc ("SA3", _aDados[_x,1])
-	Next
-
+	If _oCtaRapel:Grava (.F.)
+		u_help("Gavou")
+	EndIf
 Return
-//
-// Atualiza clientes inativos protheus-> Mercanet
-Static Function ClientesInativos()
-	Local _aDados := {}
-	Local _x      := 0
 
-	_oSQL := ClsSQL():New ()  
-	_oSQL:_sQuery := "" 		
-	_oSQL:_sQuery += " WITH C "
-	_oSQL:_sQuery += " AS "
-	_oSQL:_sQuery += " (SELECT "
-	_oSQL:_sQuery += " 		SA1.R_E_C_N_O_ "
-	_oSQL:_sQuery += " 	   ,A1_COD AS COD_PROTHEUS "
-	_oSQL:_sQuery += " 	   ,A1_NOME AS NOME_PROTHEUS "
-	_oSQL:_sQuery += " 	   ,A1_CGC AS CGC_PROTHEUS "
-	_oSQL:_sQuery += " 	   ,A1_MSBLQL AS SITUACAO_PROTHEUS "
-	_oSQL:_sQuery += " 	   ,DB_CLI_CODIGO AS COD_MERC "
-	_oSQL:_sQuery += " 	   ,DB_CLI_NOME AS NOME_MERC "
-	_oSQL:_sQuery += " 	   ,DB_CLI_CGCMF AS CGC_MERC "
-	_oSQL:_sQuery += " 	   ,DB_CLI_SITUACAO AS SITUACAO_MERC "
-	_oSQL:_sQuery += " 	FROM SA1010 SA1 "
-	_oSQL:_sQuery += " 	LEFT JOIN LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_CLIENTE CLI "
-	_oSQL:_sQuery += " 		ON CLI.DB_CLI_CGCMF COLLATE Latin1_General_CI_AI = A1_CGC COLLATE Latin1_General_CI_AI "
-	_oSQL:_sQuery += " 	WHERE SA1.D_E_L_E_T_ = '' "
-	_oSQL:_sQuery += " 	AND A1_MSBLQL <> '1') "
-	_oSQL:_sQuery += " SELECT "
-	_oSQL:_sQuery += " 	* "
-	_oSQL:_sQuery += " FROM C "
-	_oSQL:_sQuery += " WHERE SITUACAO_MERC = 3 "
-	_oSQL:_sQuery += " ORDER BY COD_PROTHEUS "
-	_aDados := aclone (_oSQL:Qry2Array ())
+// //
+// // Atualiza IPI
+// Static Function AltIPI()
+//     sb1 -> (dbsetorder (1))
+//     sb1 -> (dbgotop ())
+//     do while ! sb1 -> (eof ())
+//         if alltrim (sb1 -> b1_posipi) $ '22042100/22041090/22043000/22021000/22042100/22060090/22082000'
+// 			u_log2 ('info', 'Verificando item ' + sb1 -> b1_cod + SB1 -> B1_DESC)
 
-	For _x := 1 to Len(_aDados)
-		U_AtuMerc ("SA1", _aDados[_x,1])
-	Next
+// 			// Cria variaveis para uso na gravacao do evento de alteracao
+// 			regtomemory ("SB1", .F., .F.)
+// 			m->b1_ipi = sb1 -> b1_ipi
+// 			do case
+// 				case sb1 -> b1_posipi = '22042100' .and. sb1 -> b1_ipi != 7.5
+// 					m->b1_ipi = 7.5
+// 				case sb1 -> b1_posipi = '22041090' .and. sb1 -> b1_ipi != 7.5
+// 					m->b1_ipi = 7.5
+// 				case sb1 -> b1_posipi = '22043000' .and. sb1 -> b1_ipi != 7.5
+// 					m->b1_ipi = 7.5
+// 				case sb1 -> b1_posipi = '22021000' .and. sb1 -> b1_ipi != 3
+// 					m->b1_ipi = 3
+// 				case sb1 -> b1_posipi = '22042100' .and. sb1 -> b1_ipi != 7.5
+// 					m->b1_ipi = 7.5
+// 				case sb1 -> b1_posipi = '22060090' .and. sb1 -> b1_ipi != 7.5
+// 					m->b1_ipi = 7.5
+// 				case sb1 -> b1_posipi = '22082000' .and. sb1 -> b1_ipi != 22.5
+// 					m->b1_ipi = 22.5
+// 			endcase
+// 			if m->b1_ipi != sb1 -> b1_ipi
+// 				U_Log2 ('info', sb1 -> b1_posipi + ' alterando de ' + transform (sb1->b1_ipi, "@E 999.99") + ' para ' + transform (m->b1_ipi, "@E 999.99") + ' ' + ' ' + sb1 -> b1_cod + ' ' + sb1 -> b1_desc)
+// 				// Grava evento de alteracao
+// 				_oEvento := ClsEvent():new ()
+// 				_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 11681 - novas aliq.IPI', .F.)
 
-Return
+// 				reclock ("SB1", .f.)
+// 				sb1 -> B1_ipi = m->b1_ipi
+// 				msunlock ()
+// 			endif
+// 		endif
+//         sb1 -> (dbskip ())
+//     enddo
+// Return
+// //
+// // Atualiza representantes inativos
+// Static Function RepInativos()
+// 	Local _aDados := {}
+// 	Local _x      := 0
+
+// 	_oSQL := ClsSQL():New ()  
+// 	_oSQL:_sQuery := "" 		
+// 	_oSQL:_sQuery += " SELECT "
+// 	_oSQL:_sQuery += " 		SA3.R_E_C_N_O_ "
+// 	_oSQL:_sQuery += " FROM SA3010 SA3 "
+// 	_oSQL:_sQuery += " LEFT JOIN LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_TB_REPRES REP "
+// 	_oSQL:_sQuery += " 		ON DB_TBREP_CODORIG = A3_COD "
+// 	_oSQL:_sQuery += " WHERE SA3.D_E_L_E_T_ = '' "
+// 	_oSQL:_sQuery += " AND SA3.A3_ATIVO = 'N' "  // BLOQUEADOS
+// 	_oSQL:_sQuery += " AND DB_TBREP_SIT_VENDA<>2 " // 1 = ATIVO/ 2 = INATIVO
+// 	_oSQL:_sQuery += " ORDER BY A3_COD "
+
+// 	_aDados := aclone (_oSQL:Qry2Array ())
+
+// 	For _x := 1 to Len(_aDados)
+// 		U_AtuMerc ("SA3", _aDados[_x,1])
+// 	Next
+
+// Return
+// //
+// // Atualiza clientes inativos protheus-> Mercanet
+// Static Function ClientesInativos()
+// 	Local _aDados := {}
+// 	Local _x      := 0
+
+// 	_oSQL := ClsSQL():New ()  
+// 	_oSQL:_sQuery := "" 		
+// 	_oSQL:_sQuery += " WITH C "
+// 	_oSQL:_sQuery += " AS "
+// 	_oSQL:_sQuery += " (SELECT "
+// 	_oSQL:_sQuery += " 		SA1.R_E_C_N_O_ "
+// 	_oSQL:_sQuery += " 	   ,A1_COD AS COD_PROTHEUS "
+// 	_oSQL:_sQuery += " 	   ,A1_NOME AS NOME_PROTHEUS "
+// 	_oSQL:_sQuery += " 	   ,A1_CGC AS CGC_PROTHEUS "
+// 	_oSQL:_sQuery += " 	   ,A1_MSBLQL AS SITUACAO_PROTHEUS "
+// 	_oSQL:_sQuery += " 	   ,DB_CLI_CODIGO AS COD_MERC "
+// 	_oSQL:_sQuery += " 	   ,DB_CLI_NOME AS NOME_MERC "
+// 	_oSQL:_sQuery += " 	   ,DB_CLI_CGCMF AS CGC_MERC "
+// 	_oSQL:_sQuery += " 	   ,DB_CLI_SITUACAO AS SITUACAO_MERC "
+// 	_oSQL:_sQuery += " 	FROM SA1010 SA1 "
+// 	_oSQL:_sQuery += " 	LEFT JOIN LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_CLIENTE CLI "
+// 	_oSQL:_sQuery += " 		ON CLI.DB_CLI_CGCMF COLLATE Latin1_General_CI_AI = A1_CGC COLLATE Latin1_General_CI_AI "
+// 	_oSQL:_sQuery += " 	WHERE SA1.D_E_L_E_T_ = '' "
+// 	_oSQL:_sQuery += " 	AND A1_MSBLQL <> '1') "
+// 	_oSQL:_sQuery += " SELECT "
+// 	_oSQL:_sQuery += " 	* "
+// 	_oSQL:_sQuery += " FROM C "
+// 	_oSQL:_sQuery += " WHERE SITUACAO_MERC = 3 "
+// 	_oSQL:_sQuery += " ORDER BY COD_PROTHEUS "
+// 	_aDados := aclone (_oSQL:Qry2Array ())
+
+// 	For _x := 1 to Len(_aDados)
+// 		U_AtuMerc ("SA1", _aDados[_x,1])
+// 	Next
+
+// Return
 
 // Static Function TelaTeste()
 // 		_aBoletos := {}
