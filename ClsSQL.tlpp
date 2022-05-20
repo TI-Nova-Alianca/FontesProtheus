@@ -54,6 +54,7 @@
 // 11/03/2022 - Robert - Metodo :Log() passa a receber parametro 'prefixo'.
 // 01/04/2022 - Robert - Programa fonte renomeado de .PRW para .TLPP (intencao usar posteriormente blocos try...catch)
 // 05/05/2022 - Robert - Implementado metodo GetRealName() - GLPI 11980
+// 19/05/2022 - Robert - Posiciona no inicio do arquivo ao final do metodo :Copy2Trb() - GLPI 12080
 //
 
 #include "protheus.ch"
@@ -194,7 +195,6 @@ METHOD Copy2Trb (_lSetField, _nDecFixo, _sAliasTrb, _aIndices) Class ClsSQL
 		_lContinua = .F.
 	else
 	
-	//	_oTempTbl := FWTemporaryTable():New ('_trb')
 		_oTempTbl := FWTemporaryTable():New (_sAliasTrb)
 		_oTempTbl:SetFields (_aEstrut)
 
@@ -232,6 +232,10 @@ METHOD Copy2Trb (_lSetField, _nDecFixo, _sAliasTrb, _aIndices) Class ClsSQL
 	endif
 
 	(::_sAliasQry) -> (dbclosearea ())
+
+	// Como fiz um 'copy to', a nova tabela ficou posicionada no ultimo registro.
+	(_sAliasTrb) -> (dbgotop ())
+
 	U_ML_SRArea (_aAreaAnt)
 return _sAliasTrb
 

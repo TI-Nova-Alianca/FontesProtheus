@@ -2917,7 +2917,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 			::Setores    = 'INF'
 			::Descricao  = 'Grupos: Nenhum grupo deveria ter este acesso'
-			::Query += " SELECT G.GR__NOME, GA.GR__CODACESSO, GA.GR__DESCACESSO"
+			::Query := " SELECT G.GR__NOME, GA.GR__CODACESSO, GA.GR__DESCACESSO"
 			::Query +=   " FROM SYS_GRP_ACCESS GA, SYS_GRP_GROUP G"
 			::Query +=  " WHERE GA.D_E_L_E_T_ = ''"
 			::Query +=    " AND G.D_E_L_E_T_ = ''"
@@ -3223,7 +3223,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=   " AND SPED000.D_E_L_E_T_ = ''"
 			::Query +=   " AND SPED000.ID_ENT = SPED001.ID_ENT"
 			::Query +=   " AND SYS_COMPANY.M0_CODIGO = '" + cEmpAnt + "'"
-	//		::Query +=   " AND NOT (SYS_COMPANY.M0_CODIGO = '01' AND SYS_COMPANY.M0_CODFIL = '14')"  // Filial inativa
+			::Query +=   " AND NOT (SYS_COMPANY.M0_CODIGO = '01' AND SYS_COMPANY.M0_CODFIL = '14')"  // Filial inativa
 			::Query += " )"
 			::Query += " SELECT *"
 			::Query +=   " FROM C"

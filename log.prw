@@ -58,6 +58,7 @@
 // 08/09/2021 - Robert  - Nao trazia o significado de respostas tipo combo no LogSX1().
 // 06/12/2021 - Robert  - LogPCham() passa a usar U_Log2() para gravar os dados.
 // 30/03/2022 - Robert  - LogObj() passa a usar U_Log2() para gravar os dados.
+// 19/05/2022 - Robert  - LogTrb() nao fazia dbgotop() quando exportacao completa (GLPI 12080)
 //
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -477,6 +478,12 @@ user function LogTrb (_sAlias, _lCompleto, _lSemCabec)
 	_lSemCabec := iif (_lSemCabec == NIL, .F., _lSemCabec)
 
 	if ! empty (_sAlias) .and. valtype (_sAlias) == 'C' .and. select (_sAlias) != 0
+
+		// Se foi solicitada exportacao completa, posiciona no inicio do arquivo.
+		if _lCompleto
+			dbgotop ()
+		endif
+
 		if (_sAlias) -> (BOF ())
 			u_log ("[" + procname () + "] Alias '" + _sAlias + "' encontra-se em BOF")
 		elseif (_sAlias) -> (EOF ())
@@ -506,9 +513,9 @@ user function LogTrb (_sAlias, _lCompleto, _lSemCabec)
 			endif
 	
 			// Exporta os dados dos campos.
-			if _lCompleto
-				dbgotop ()
-			endif
+//			if _lCompleto
+//				dbgotop ()
+//			endif
 			do while ! eof ()
 				_sLinha = padr (left (cvaltochar (recno ()), _aTamCpo [1]), _aTamCpo [1], " ")
 				for _nCampo = 1 to len (_aEstrut)

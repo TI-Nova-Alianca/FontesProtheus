@@ -105,6 +105,49 @@ static function _AndaLogo ()
 	u_help ('Nada definido.')
 return
 /*
+	// Roda comparativo entre precos de diferentes safras x tabela MOC - GLPI 12080
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " WITH C AS ("
+	_oSQL:_sQuery += " SELECT B1_VARUVA AS FINA_COMUM, SAFRA, PRODUTO, DESCRICAO, SIST_CONDUCAO AS CONDUCAO"
+	_oSQL:_sQuery += " 	, SUM (PESO_LIQ) AS PESO_LIQ"
+	_oSQL:_sQuery += " 	, ROUND (SUM (GRAU * PESO_LIQ) / SUM (PESO_LIQ), 2) AS GRAU_MEDIO"
+	_oSQL:_sQuery += " 	, ROUND (SUM (PESO_LIQ * VUNIT_EFETIVO) / SUM (PESO_LIQ), 4) AS PRECO_MEDIO"
+	_oSQL:_sQuery +=  " FROM VA_VPRECO_EFETIVO_SAFRA"
+	_oSQL:_sQuery +=      "," + RetSQLName ("SB1") + " SB1 "
+	_oSQL:_sQuery += " WHERE SAFRA IN ('2021','2022')"
+	_oSQL:_sQuery +=   " AND SB1.D_E_L_E_T_ = ''
+	_oSQL:_sQuery +=   " AND SB1.B1_FILIAL = '  '
+	_oSQL:_sQuery +=   " AND SB1.B1_COD = PRODUTO
+	_oSQL:_sQuery += " GROUP BY SAFRA, PRODUTO, DESCRICAO, SIST_CONDUCAO, B1_VARUVA"
+	_oSQL:_sQuery += " )"
+	_oSQL:_sQuery += " SELECT top 1 FINA_COMUM, CONDUCAO, PRODUTO, DESCRICAO"
+	_oSQL:_sQuery += " 	, SUM (CASE WHEN SAFRA = '2021' THEN PESO_LIQ    ELSE 0 END) AS KG_2021"
+	_oSQL:_sQuery += " 	, SUM (CASE WHEN SAFRA = '2022' THEN PESO_LIQ    ELSE 0 END) AS KG_2022"
+	_oSQL:_sQuery += " 	, SUM (CASE WHEN SAFRA = '2021' THEN GRAU_MEDIO  ELSE 0 END) AS GR_MED_21"
+	_oSQL:_sQuery += " 	, SUM (CASE WHEN SAFRA = '2022' THEN GRAU_MEDIO  ELSE 0 END) AS GR_MED_22"
+	_oSQL:_sQuery += " 	, SUM (CASE WHEN SAFRA = '2021' THEN PRECO_MEDIO ELSE 0 END) AS PR_MED_21"
+	_oSQL:_sQuery += " 	, SUM (CASE WHEN SAFRA = '2022' THEN PRECO_MEDIO ELSE 0 END) AS PR_MED_22"
+	_oSQL:_sQuery += " 	, 0 AS PR_MOC_21"
+	_oSQL:_sQuery += " 	, 0 AS PR_MOC_22"
+	_oSQL:_sQuery += " FROM C"
+	_oSQL:_sQuery += " GROUP BY FINA_COMUM, CONDUCAO, PRODUTO, DESCRICAO"
+	_oSQL:_sQuery += " ORDER BY FINA_COMUM, CONDUCAO, DESCRICAO"
+	_oSQL:Log ('[' + procname () + ']')
+	_oSQL:Copy2Trb (.f., 4, '_trb', {})
+	do while ! _trb -> (eof ())
+		U_Log ()
+		reclock ('_trb', .F.)
+		_trb -> Pr_MOC_21 = U_PrcUva21 (iif (_trb -> fina_comum == 'F', '03', '01'), _trb -> produto, round (_trb -> Gr_Med_21, 0), 'B ', _trb -> conducao, .F., .T.)[5]  // pos.5 = preco MOC
+		_trb -> Pr_MOC_22 = U_PrcUva22 (iif (_trb -> fina_comum == 'F', '03', '01'), _trb -> produto, round (_trb -> Gr_Med_22, 0), 'B ', _trb -> conducao, .F., .T.)[5]  // pos.5 = preco MOC
+		msunlock ()
+		_trb -> (dbskip ())
+	enddo
+	U_LogTrb ('_trb', .t.)
+	U_TRB2XLS ('_trb', .T., .t., .t., 'GLPI12080')
+return
+*/
+/*
 	// Testes verificacoes genericas.
 	// _oVerif := ClsVerif():New (25)
 	// _oVerif:SetParam ('01', '2017')
