@@ -108,6 +108,7 @@
 // 08/10/2021 - Robert  - Desabilitados alguns logs desnecessarios.
 // 08/01/2022 - Robert  - Tratamento para campo A2_VAAGE05 (associados que nao devem receber FUNRURAL)
 // 09/02/2022 - Robert  - Na validacao de NF de produtor jah apresentada, olhava a nota contra ela mesma (no caso estaria na rotina de 'classificar').
+// 19/05/2022 - Robert  - Chamada do romaneio de entrada migrado para MT100AGR - GLPI 11903
 //
 
 // ------------------------------------------------------------------------------------------------------------------------------
@@ -191,12 +192,13 @@ User Function SF1100i ()
 		_GeraLaudo(sf1 -> f1_filial, sf1 -> f1_fornece, sf1 -> f1_loja, sf1 -> f1_doc, sf1 -> f1_serie, sf1 -> f1_tipo)
 	EndIf
 	
+	// Migrado para MT100AGR - GLPI 11903
 	// Imprime romaneio de entrada
-	if cEmpAnt + cFilAnt == '0101' .and. ! IsInCallStack ("U_VA_RUSN") .and. cEspecie !='CTR' .and. cEspecie !='CTE' .and. ! IsInCallStack ("U_VA_GNF2")
-		if U_MsgYesNo ("Deseja imprimir o romaneio de entrada?")
-			U_RomEntr (sf1 -> f1_fornece, sf1 -> f1_loja, sf1 -> f1_doc, sf1 -> f1_serie)
-		endif
-	endif
+	//if cEmpAnt + cFilAnt == '0101' .and. ! IsInCallStack ("U_VA_RUSN") .and. cEspecie !='CTR' .and. cEspecie !='CTE' .and. ! IsInCallStack ("U_VA_GNF2")
+	//	if U_MsgYesNo ("Deseja imprimir o romaneio de entrada?")
+	//		U_RomEntr (sf1 -> f1_fornece, sf1 -> f1_loja, sf1 -> f1_doc, sf1 -> f1_serie)
+	//	endif
+	//endif
 	
 	U_ML_SRArea (_aAreaAnt)
 	//U_Log2 ('info', 'Finalizando ' + procname ())

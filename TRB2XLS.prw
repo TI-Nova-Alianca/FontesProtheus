@@ -11,6 +11,7 @@
 //                     - Remove ';' dos dados quando exportacao para formato CSV.
 // 05/05/2021 - Robert - Criado parametro para informar se tenta ou nao abrir o arquivo apos exportacao (GLPI 9973).
 //                     - Criado parametro para informar o nome do arquivo destino (GLPI 9973).
+// 19/05/2022 - Robert - Melhorada abertura automatica do arquivo gerado.
 //
 
 // --------------------------------------------------------------------------
@@ -60,7 +61,8 @@ user function TRB2XLS (_sAlias, _lFixaChar, _lSemEspac, _lAbrir, _sArqDest)
 	if _sArqDest == NIL
 		_sArq += "." + _sTipoArq
 	else
-		_sArq = _sArqDest
+		_sArq = _sArqDest + "." + _sTipoArq
+		_sNomeArq = _sArqDest
 	endif
 	U_Log2 ('debug', 'exportando para ' + _sArq)
 	_nHdl := MsfCreate (_sArq, 0)
