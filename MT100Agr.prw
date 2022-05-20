@@ -20,6 +20,7 @@
 // 19/02/2021 - Robert - Inclusao de chamadas da funcao U_PerfMon() para metricas de performance (GLPI 9409).
 // 31/08/2021 - Robert - Passa a gerar titulos de indenizacao (comissoes) tambem para notas tipo SPED.
 // 09/03/2022 - Robert - Desabilitado campo E2_VRETIR na rot.automatica do SE2, pois este campo nao existe (GLPI 11732)
+// 19/05/2022 - Robert - Incluida chamada do romaneio de entrada - GLPI 11903
 //
 
 // ------------------------------------------------------------------------------------
@@ -135,6 +136,13 @@ User Function MT100Agr ()
 	endif
 
 	U_PerfMon ('F', 'GravacaoMATA100')  // Para metricas de performance
+
+	// Imprime romaneio de entrada - GLPI 11903
+	if (inclui .or. altera) .and. cEmpAnt + cFilAnt == '0101' .and. ! IsInCallStack ("U_VA_RUSN") .and. cEspecie !='CTR' .and. cEspecie !='CTE' .and. ! IsInCallStack ("U_VA_GNF2")
+		if U_MsgYesNo ("Deseja imprimir o romaneio de entrada?")
+			U_RomEntr (ca100for, cLoja, cNFiscal, cSerie)
+		endif
+	endif
 
 	U_ML_SRArea (_aAreaAnt)
 Return
