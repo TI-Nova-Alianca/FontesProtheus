@@ -109,6 +109,7 @@
 // 08/01/2022 - Robert  - Tratamento para campo A2_VAAGE05 (associados que nao devem receber FUNRURAL)
 // 09/02/2022 - Robert  - Na validacao de NF de produtor jah apresentada, olhava a nota contra ela mesma (no caso estaria na rotina de 'classificar').
 // 19/05/2022 - Robert  - Chamada do romaneio de entrada migrado para MT100AGR - GLPI 11903
+// 20/05/2022 - Robert  - Desabilitada tela de dados adicionais quando chamado via LOJA720 e msg que mostrava a chave da nota.
 //
 
 // ------------------------------------------------------------------------------------------------------------------------------
@@ -270,7 +271,7 @@ static function _GrvDadosNCC ()
 		_wvendCAD := ""
 
     	// busca o vendedor informado nos dados de devolucao na manutenção de XML
-    	u_help (SF1 -> F1_CHVNFE + "chave"  )
+//    	u_help (SF1 -> F1_CHVNFE + "chave"  )
 
     	_sSQL := "SELECT ZAJ_VENDDV"
     	_sSQL += "   FROM ZAJ010"
@@ -694,7 +695,8 @@ static function _DadosAdic ()
 	next
 	
 	// Abre tela para usuario informar dados adicionais
-	if sf1 -> f1_formul == "S" .and. sf1 -> f1_est != "EX" .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_VA_RUSN")
+//	if sf1 -> f1_formul == "S" .and. sf1 -> f1_est != "EX" .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_VA_RUSN")
+	if sf1 -> f1_formul == "S" .and. sf1 -> f1_est != "EX" .and. ! IsInCallStack ("U_VA_GNF2") .and. ! IsInCallStack ("U_VA_RUSN") .and. ! IsInCallStack ("LOJA720")  // rotina troca/devolucoes loja
 		// Tela em loop para validar dados.
 		do while .T.
 			@ 0, 0 TO 300, 320 DIALOG oDlg1 TITLE "Dados Adicionais NF"
