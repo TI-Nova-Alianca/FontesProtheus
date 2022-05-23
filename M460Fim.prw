@@ -39,12 +39,11 @@
 // 20/10/2021 - Robert  - Passa a gravar a serie na array _aNComSono (GLPI 11112).
 // 02/12/2021 - Claudia - Incluida rotina para gravação do Rapel que será liberada por 
 //                        parametro VA_RAPEL quando processo concluido. GLPI: 8916
-
+// 23/05/2022 - Claudia - Ajuste da rotina de gravação de rapel. GLPI: 8916
+//
 // --------------------------------------------------------------------------------------------------
 user function M460Fim ()
 	local _aAreaAnt := U_ML_SRArea ()
-	local _x        := 0
-	local _aZC0     := {}
 
 	// Parece que estah chegando aqui sem nenhum alias().
 	dbselectarea ("SF2")
@@ -83,50 +82,37 @@ user function M460Fim ()
 
 	// Grava rapel
 	If GetMV('VA_RAPEL')
+		_oCtaRapel := ClsCtaRap():New ()
 
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := " SELECT "
-		_oSQL:_sQuery += " 		SE1.E1_FILIAL AS FILIAL "
-		_oSQL:_sQuery += " 	   ,A1_VACBASE AS REDE "
-		_oSQL:_sQuery += " 	   ,SA1.A1_VALBASE AS LOJA_REDE "
-		_oSQL:_sQuery += " 	   ,SA1.A1_COD AS CLIENTE "
-		_oSQL:_sQuery += " 	   ,SA1.A1_LOJA AS LOJA "
-		_oSQL:_sQuery += " 	   ,SE1.E1_EMISSAO AS EMISSAO "
-		_oSQL:_sQuery += " 	   ,SE1.E1_NUM AS TITULO "
-		_oSQL:_sQuery += " 	   ,SE1.E1_SERIE AS SERIE "
-		_oSQL:_sQuery += " 	   ,SE1.E1_PARCELA AS PARCELA "
-		_oSQL:_sQuery += " 	   ,SE1.E1_VARAPEL AS RAPEL_TITULO "
-		_oSQL:_sQuery += " 	FROM " + RetSQLName ("SE1") + " AS SE1 "
-		_oSQL:_sQuery += " 	INNER JOIN " + RetSQLName ("SA1") + " AS SA1 "
-		_oSQL:_sQuery += " 		ON (SA1.D_E_L_E_T_ = '' "
-		_oSQL:_sQuery += " 				AND SA1.A1_COD = SE1.E1_CLIENTE "
-		_oSQL:_sQuery += " 				AND SA1.A1_LOJA = SE1.E1_LOJA) "
-		_oSQL:_sQuery += " 	WHERE SE1.D_E_L_E_T_ = '' "
-		_oSQL:_sQuery += " 	AND SE1.E1_FILIAL    = '" + sf2->f2_filial + "' "
-		_oSQL:_sQuery += " 	AND SE1.E1_NUM       = '" + sf2->f2_doc    + "' "
-		_oSQL:_sQuery += " 	AND SE1.E1_SERIE     = '" + sf2->f2_serie  + "' "
-		_oSQL:_sQuery += " 	AND SE1.E1_VARAPEL   > 0"
-		_oSQL:Log ()
-		_aDados := aclone(_oSQL:Qry2Array ())
+		_sRede := _oCtaRapel:BuscaRede(sf2->f2_cliente, sf2->f2_loja)
 
-		For _x:=1 to Len(_aDados)
-			aadd (_aZC0,{ 	_aDados[_x, 1]		,; // 1
-							_aDados[_x, 2]  	,; // 2
-							_aDados[_x, 3] 		,; // 3
-							_aDados[_x, 4] 		,; // 4	
-							_aDados[_x, 5]		,; // 5
-							_aDados[_x, 6]		,; // 6
-							'02'				,; // 7
-							'Credito de saldo por titulo'	,; // 8
-							_aDados[_x, 7]		,; // 9
-							_aDados[_x, 8]		,; // 10
-							_aDados[_x, 9]		,; // 11
-							_aDados[_x,10]     	,; // 12
-							cUserName			,; // 13
-							_x			        ,; // 14
-							'A'					}) // 15
-		Next
-		U_ZC0GRV(_aZC0)
+		_oCtaRapel:Filial  	 = sf2->f2_filial
+		_oCtaRapel:Rede      = _sRede	
+		_oCtaRapel:LojaRed   = sf2->f2_loja
+		_oCtaRapel:Cliente 	 = sf2->f2_cliente
+		_oCtaRapel:LojaCli	 = sf2->f2_loja
+		_oCtaRapel:TM      	 = '02' 	
+		_oCtaRapel:Data    	 = date()
+		_oCtaRapel:Hora    	 = time()
+		_oCtaRapel:Usuario 	 = cusername 
+		_oCtaRapel:Histor  	 = 'Inclusão de rapel por emissão de NF' 
+		_oCtaRapel:Documento = sf2->f2_doc
+		_oCtaRapel:Serie 	 = sf2->f2_serie
+		_oCtaRapel:Parcela	 = ''
+		_oCtaRapel:Rapel	 = sf2->f2_varapel
+		_oCtaRapel:Origem	 = procname()
+
+		If _oCtaRapel:Grava (.F.)
+			_oEvento := ClsEvent():New ()
+			_oEvento:Alias     = 'ZC0'
+			_oEvento:Texto     = "Inclusão de rapel por emissão de NF"
+			_oEvento:CodEven   = 'ZC0001'
+			_oEvento:Cliente   = sf2->f2_cliente
+			_oEvento:LojaCli   = sf2->f2_loja
+			_oEvento:NFSaida   = sf2->f2_doc
+			_oEvento:SerieSaid = sf2->f2_serie
+			_oEvento:Grava()
+		EndIf
 	EndIf
 
 	U_ML_SRArea (_aAreaAnt)

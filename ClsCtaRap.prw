@@ -45,7 +45,6 @@ CLASS ClsCtaRap
 	data Parcela
 	data Rapel
 	data Saldo
-	data Status
 	data Origem
 	data RegZC0
 	data UltMsg
@@ -57,6 +56,7 @@ CLASS ClsCtaRap
 	METHOD Exclui()
 	METHOD GeraSeq()
 	METHOD VerifUser()
+	METHOD BuscaRede()
 	METHOD AtuSaldo()
 	METHOD GravaEvento()
 ENDCLASS
@@ -101,7 +101,6 @@ METHOD GeraAtrib(_sOrigem) Class ClsCtaRap
 	::Parcela	:= ''
 	::Rapel		:= 0
 	::Saldo		:= 0
-	::Status	:= ''
 	::Origem	:= ''
 
 	if _sOrigem == 'M'  // Variaveis M->
@@ -121,7 +120,6 @@ METHOD GeraAtrib(_sOrigem) Class ClsCtaRap
 		::Parcela	:= m->zc0_parcel 
 		::Rapel		:= m->zc0_rapel 
 		::Saldo		:= m->zc0_saldo 
-		::Status	:= m->zc0_status 
 		::Origem	:= m->zc0_origem 
 	elseif _sOrigem == "ZC0"
 	    ::Filial  	:= xfilial ("ZC0")
@@ -140,7 +138,6 @@ METHOD GeraAtrib(_sOrigem) Class ClsCtaRap
 		::Parcela	:= zc0->zc0_parcel 
 		::Rapel		:= zc0->zc0_rapel 
 		::Saldo		:= zc0->zc0_saldo 
-		::Status	:= zc0->zc0_status 
 		::Origem	:= zc0->zc0_origem 
 		::RegZC0    := zc0 -> (recno())
 	endif
@@ -185,7 +182,6 @@ METHOD Grava(_lZC0Grav) Class ClsCtaRap
 			zc0->zc0_parcel := ::Parcela
 			zc0->zc0_rapel 	:= ::Rapel
 			zc0->zc0_saldo 	:= ::Saldo	
-			zc0->zc0_status := ::Status
 			zc0->zc0_origem := ::Origem
 
 			msunlock ()
@@ -297,3 +293,6 @@ METHOD VerifUser (_sMsg) Class ClsCtaRap
 	endif
 return _lRet
 
+METHOD BuscaRede(_sCliente, _sLoja) Class ClsCtaRap
+	_sRede := Posicione("SA1",1, xFilial("SA1") + _sCliente + _sLoja, "A1_VACBASE")
+Return _sRede
