@@ -154,7 +154,7 @@ Static Function _Compos ()
 		@ 175, 100 get &(_sTotal) picture "@E 999,999.99" size 50, 11 when .F.
 		@ _oDlg:nClientHeight / 2 - 40, _oDlg:nClientWidth / 2 - 90 bmpbutton type 1 action ( iif(u_valida() = .T. , _oDlg:End (), u_help("Corrija informações de desconto!") )) 
 		@ _oDlg:nClientHeight / 2 - 40, _oDlg:nClientWidth / 2 - 40 bmpbutton type 2 action (_lRet := u_limpaCmp()  ,_oDlg:End ())
-		//@ _oDlg:nClientHeight / 2 - 40, _oDlg:nClientWidth / 2 - 40 bmpbutton type 2 action (_lRet := .F., _oDlg:End ())
+
 		activate dialog _oDlg centered
 	enddo
 
@@ -267,7 +267,8 @@ User Function valida()
 					_wnumverba = _E5VerMulC
 					_wdesc = "Multa Contratual"						
 					_nVlrDesc = _E5VADMulC
-			endcase																
+			endcase	
+
 			if !empty(@(_wnumverba))		
 				if fBuscaCpo ('ZA4', 1, xfilial('Za4') + _wnumverba, "ZA4_CLI") <> _wmatriz
 					u_help("Verba informada como desconto de " + _wdesc + " não pertence a este cliente.")
@@ -303,7 +304,6 @@ Return _valida
 // -------------------------------------------------------------------------------------------------
 // Realiza a limpeza dos campos no botão cancelar
 User Function limpaCmp()
-
 	_E5VARapel  := 0
 	_E5VAEncar  := 0
 	_E5VerEncar := "      "
@@ -320,7 +320,6 @@ User Function limpaCmp()
 	_E5VerARei  := "      "
 	_E5VADMulC  := 0
 	_E5VerMulC  := "      "
-	
 Return .F.
 //
 // -------------------------------------------------------------------------------------------------
@@ -480,7 +479,6 @@ Static Function VerifIpiSt(_nDesconto)
 				Case alltrim(_parcela) == 'L'  
 					_vlrIpi := (_ipiNota * _sParcC) / 100
 					_vlrST  := (_stNota  * _sParcC) / 100 
-
 			EndCase
 
 		Else
@@ -506,9 +504,7 @@ Static Function VerifIpiSt(_nDesconto)
 	If se1 -> e1_valor  < (_vlrIpi + _vlrST + _nDesconto)
 		u_help('O valor de descontos + IPI + ST não pode ultrapassar o valor do título!')
 		_lRet := .F.
-
 	EndIf
-
 Return _lRet
 //
 // -------------------------------------------------------------------------------------------------
@@ -568,5 +564,4 @@ Static Function _RapelAut ()
 
 	// grava rapel
 	 _E5VARapel := se1->e1_varapel
-
 Return _lRet

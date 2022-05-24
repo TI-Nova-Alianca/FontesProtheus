@@ -82,37 +82,7 @@ user function M460Fim ()
 
 	// Grava rapel
 	If GetMV('VA_RAPEL')
-		_oCtaRapel := ClsCtaRap():New ()
-
-		_sRede := _oCtaRapel:BuscaRede(sf2->f2_cliente, sf2->f2_loja)
-
-		_oCtaRapel:Filial  	 = sf2->f2_filial
-		_oCtaRapel:Rede      = _sRede	
-		_oCtaRapel:LojaRed   = sf2->f2_loja
-		_oCtaRapel:Cliente 	 = sf2->f2_cliente
-		_oCtaRapel:LojaCli	 = sf2->f2_loja
-		_oCtaRapel:TM      	 = '02' 	
-		_oCtaRapel:Data    	 = date()
-		_oCtaRapel:Hora    	 = time()
-		_oCtaRapel:Usuario 	 = cusername 
-		_oCtaRapel:Histor  	 = 'Inclusão de rapel por emissão de NF' 
-		_oCtaRapel:Documento = sf2->f2_doc
-		_oCtaRapel:Serie 	 = sf2->f2_serie
-		_oCtaRapel:Parcela	 = ''
-		_oCtaRapel:Rapel	 = sf2->f2_varapel
-		_oCtaRapel:Origem	 = procname()
-
-		If _oCtaRapel:Grava (.F.)
-			_oEvento := ClsEvent():New ()
-			_oEvento:Alias     = 'ZC0'
-			_oEvento:Texto     = "Inclusão de rapel por emissão de NF"
-			_oEvento:CodEven   = 'ZC0001'
-			_oEvento:Cliente   = sf2->f2_cliente
-			_oEvento:LojaCli   = sf2->f2_loja
-			_oEvento:NFSaida   = sf2->f2_doc
-			_oEvento:SerieSaid = sf2->f2_serie
-			_oEvento:Grava()
-		EndIf
+		_AtuZC0()
 	EndIf
 
 	U_ML_SRArea (_aAreaAnt)
@@ -356,3 +326,38 @@ Static Function _GravaProdXFornc(_sFilial,_sDoc,_sSerie,_sCliente,_sLoja,_sCodFo
 		EndIf
 	Next
 Return
+//
+// --------------------------------------------------------------------------
+// Grava Rapel
+Static Function _AtuZC0()
+	_oCtaRapel := ClsCtaRap():New ()
+	_sRede := _oCtaRapel:BuscaRede(sf2->f2_cliente, sf2->f2_loja)
+
+	_oCtaRapel:Filial  	 = sf2->f2_filial
+	_oCtaRapel:Rede      = _sRede	
+	_oCtaRapel:LojaRed   = sf2->f2_loja
+	_oCtaRapel:Cliente 	 = sf2->f2_cliente
+	_oCtaRapel:LojaCli	 = sf2->f2_loja
+	_oCtaRapel:TM      	 = '02' 	
+	_oCtaRapel:Data    	 = date()
+	_oCtaRapel:Hora    	 = time()
+	_oCtaRapel:Usuario 	 = cusername 
+	_oCtaRapel:Histor  	 = 'Inclusão de rapel por emissão de NF' 
+	_oCtaRapel:Documento = sf2->f2_doc
+	_oCtaRapel:Serie 	 = sf2->f2_serie
+	_oCtaRapel:Parcela	 = ''
+	_oCtaRapel:Rapel	 = sf2->f2_varapel
+	_oCtaRapel:Origem	 = procname()
+
+	If _oCtaRapel:Grava (.F.)
+		_oEvento := ClsEvent():New ()
+		_oEvento:Alias     = 'ZC0'
+		_oEvento:Texto     = "Inclusão de rapel por emissão de NF"
+		_oEvento:CodEven   = 'ZC0001'
+		_oEvento:Cliente   = sf2->f2_cliente
+		_oEvento:LojaCli   = sf2->f2_loja
+		_oEvento:NFSaida   = sf2->f2_doc
+		_oEvento:SerieSaid = sf2->f2_serie
+		_oEvento:Grava()
+	EndIf
+Return 
