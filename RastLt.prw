@@ -31,7 +31,7 @@
 // 29/04/2022 - Robert - Transf. lote p/outro proporcionalizava de 1 para 1, quando o correto eh usar a quantidade absoluta transferida - GLPI 11980
 //                     - Nao salvava area de trabalho entre as chamadas e, com isso, retornava com o SB1 desposicionado.
 //                     - Melhorado log, para identificacao de niveis.
-//
+// 24/05/2022 - Robert - Leitura de todas as entrada passa a buscar na function VA_FKARDEX_LOTE (GLPI 11980)
 
 // --------------------------------------------------------------------------
 user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
@@ -128,9 +128,9 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "SELECT TABELA_ORIGEM as TBL_ORIG, DATA AS DTMOVTO, OP, QT_ENTRADA, QT_SAIDA, CFOP"
 		_oSQL:_sQuery +=      ", PRODUTO_ORIGEM as PROD_ORIG, LOTE_ORIGEM as LOTE_ORIG"
-		_oSQL:_sQuery +=      ", DOC, TES, LOTE_FORNECEDOR as LOTEFOR"
+		_oSQL:_sQuery +=      ", DOC, TES, LOTE_FORNECEDOR as LOTEFOR, LOTE_FILIAL_ORIGEM as LTFILORI"
 		_oSQL:_sQuery +=      ", SERIENF, CLIFOR, LOJA, TIPONF, ITEMNF, FILIAL_ORIGEM as FILORIG"
-		_oSQL:_sQuery +=  " FROM VA_FKARDEX_LOTE2 ('" + _sFilial + "'"
+		_oSQL:_sQuery +=  " FROM VA_FKARDEX_LOTE ('" + _sFilial + "'"
 		_oSQL:_sQuery +=                        ",'" + _sProduto + "'"
 		_oSQL:_sQuery +=                        ",'" + _sLote + "'"
 		_oSQL:_sQuery +=                        ",''"  // Data inicial
@@ -263,6 +263,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 
 	// Busca entradas por transferencia entre lotes.
 	_aEntTrLt = {}
+/*
 	if _lContinua .and. _nNivel <= 0 .and. sb1 -> b1_rastro == 'L'
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "SELECT CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL AS LOTEORI,"
@@ -296,7 +297,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 		_aEntTrL2 := aclone (_aEntTrLt)  // durante testes
 		dbselectarea ("SD3")  // Por algum motivo estah chegando aqui sem nenhum 'alias'.
 	endif
-
+*/
 	if _lContinua .and. _nNivel <= 0 .and. ! empty (_sKardex)
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "SELECT PROD_ORIG, LOTE_ORIG, SUM (QT_ENTRADA), SB1.B1_DESC"
@@ -409,11 +410,12 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 
 
 	// Busca possiveis entradas via NF.
+/*
 	if _lContinua .and. _nNivel <= 0 .and. sb1 -> b1_rastro == 'L'
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "SELECT D1_DOC, D1_LOTEFOR, D1_QUANT, D1_UM,"
 		_oSQL:_sQuery +=  " RTRIM (CASE WHEN D1_TIPO IN ('D', 'B') THEN A1_NOME ELSE A2_NOME END), "
-		_oSQL:_sQuery +=  " D1_SERIE, D1_FORNECE, D1_LOJA, D1_ITEM"
+		_oSQL:_sQuery +=  " D1_SERIE, D1_FORNECE, D1_LOJA, D1_ITEM, 'teste_robert', 'teste_robert'"
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD1") + " SD1 "
 		_oSQL:_sQuery +=     " LEFT JOIN " + RetSQLName ("SA1") + " SA1 "
 		_oSQL:_sQuery +=        " ON (SA1.D_E_L_E_T_ = ''"
@@ -448,11 +450,21 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 		_aSD12 := aclone (_aSD1)  // durante testes
 		U_Log2 ('debug', _aSD1)
 	endif
+*/
 
+	// Busca entradas via NF.
 	if _lContinua .and. _nNivel <= 0 .and. ! empty (_sKardex)
-		_oSQL:_sQuery := "SELECT K.DOC, K.LOTEFOR, K.QT_ENTRADA, '" + sb1 -> b1_um + "' AS UM "
-		_oSQL:_sQuery +=      ", RTRIM (CASE WHEN K.TIPONF IN ('D', 'B') THEN A1_NOME ELSE A2_NOME END) "
-		_oSQL:_sQuery +=      ", K.SERIENF, K.CLIFOR, K.LOJA, K.ITEMNF"
+		_oSQL:_sQuery := "SELECT K.DOC"         // 1
+		_oSQL:_sQuery +=      ", K.LOTEFOR"     // 2
+		_oSQL:_sQuery +=      ", K.QT_ENTRADA"  // 3
+		_oSQL:_sQuery +=      ", '" + sb1 -> b1_um + "' AS UM "  // 4
+		_oSQL:_sQuery +=      ", RTRIM (CASE WHEN K.TIPONF IN ('D', 'B') THEN A1_NOME ELSE A2_NOME END) "  // 5
+		_oSQL:_sQuery +=      ", K.SERIENF"     // 6
+		_oSQL:_sQuery +=      ", K.CLIFOR"      // 7
+		_oSQL:_sQuery +=      ", K.LOJA"        // 8
+		_oSQL:_sQuery +=      ", K.ITEMNF"      // 9
+		_oSQL:_sQuery +=      ", K.FILORIG"     // 10
+		_oSQL:_sQuery +=      ", K.LTFILORI"    // 11
 		_oSQL:_sQuery +=  " FROM " + _sKardex + " K "
 		_oSQL:_sQuery +=     " LEFT JOIN " + RetSQLName ("SA1") + " SA1 "
 		_oSQL:_sQuery +=        " ON (SA1.D_E_L_E_T_ = ''"
@@ -466,12 +478,15 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 		_oSQL:_sQuery +=        " AND SA2.A2_LOJA    = K.LOJA)"
 		_oSQL:_sQuery += " WHERE K.TBL_ORIG = 'SD1'"
 		_oSQL:_sQuery +=   " AND K.QT_ENTRADA > 0"
-		_oSQL:_sQuery +=   " AND K.FILORIG = ''"
+//		_oSQL:_sQuery +=   " AND K.FILORIG = ''"
+		if _sFilial == '07'  // NF lancada com problemas e que deve ser ignorada.
+			_oSQL:_sQuery +=   " AND NOT (K.DOC = '000016150' AND K.LOTEFOR = '00107501a')"
+		endif
 		_oSQL:_sQuery += " ORDER BY K.CLIFOR, K.DOC"
 		_oSQL:Log (_sStrLog)
 		_aSD1 = aclone (_oSQL:Qry2Array (.F., .F.))
 		U_Log2 ('debug', _aSD1)
-	//	_aSD1 := aclone (_aSD12)  // durante testes
+//		_aSD1 := aclone (_aSD12)  // durante testes
 	endif
 
 	if _lContinua
@@ -481,8 +496,13 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 			_nQtProp2 = _nQtProp  // Movimentacao por NF eh sempre de 1 para 1
 
 			_sID = soma1 (_sID)
-			_sDescri := 'NF entr.' + alltrim (_aSD1 [_nSD1, 1]) + ' de ' + alltrim (_aSD1 [_nSD1, 5]) + _sQuebra
-			_sDescri += 'Lote forn:' + alltrim (_aSD1 [_nSD1, 2]) + _sQuebra
+			if ! empty (_aSD1 [_nSD1, 10])  // Filial origem
+				_sDescri := 'Transf. da filial ' + _aSD1 [_nSD1, 10] + ' - NF ' + alltrim (_aSD1 [_nSD1, 1]) + _sQuebra
+				_sDescri += 'Lote orig.(na filial ' + _aSD1 [_nSD1, 10] + '):' + alltrim (_aSD1 [_nSD1, 11]) + _sQuebra
+			else
+				_sDescri := 'NF entr.' + alltrim (_aSD1 [_nSD1, 1]) + ' de ' + alltrim (_aSD1 [_nSD1, 5]) + _sQuebra
+				_sDescri += 'Lote forn:' + alltrim (_aSD1 [_nSD1, 2]) + _sQuebra
+			endif
 			_sDescri += _FmtQt (_aSD1 [_nSD1, 3], _aSD1 [_nSD1, 4], _nQtProp2) + _sQuebra
 			if ! empty (_sLote)
 				_sLaudo = U_LaudoEm (_sProduto, _sLote, stod (_aSD1 [_nSD1, 5]))
@@ -526,12 +546,23 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 				endif
 			endif
 			
-			_sRet += '<node BACKGROUND_COLOR="#ccffff" CREATED="1493031071766" ' + iif (abs (_nNivel) >= _nNivFold, 'FOLDED="true" ', '') + 'ID="' + _sID + '" POSITION="left" TEXT="' + _sDescri + '">'
+			if ! empty (_aSD1 [_nSD1, 10])  // Filial origem
+				_sRet += '<node BACKGROUND_COLOR="#009999" CREATED="1493031071766" ' + iif (abs (_nNivel) >= _nNivFold, 'FOLDED="true" ', '') + 'ID="' + _sID + '" POSITION="left" TEXT="' + _sDescri + '">'
+
+				// Chamada recursiva para buscar a rastreabilidade do lote na filial origem.
+				if len (_sRet) > _nMaxStr  // Antes que alcance o tamanho maximo de uma string, vou parar a busca.
+					_sRet += '<node BACKGROUND_COLOR="#ff00cc" CREATED="1493031071766" ID="MAXNIVEIS" POSITION="left" TEXT="(...) limite de memoria excedido"></node>'
+				else
+					_sRet += U_RastLt (_aSD1 [_nSD1, 10], _sProduto, _aSD1 [_nSD1, 11], _nNivel - 1, _aHist, _nQtProp2)
+				endif
+			else
+				_sRet += '<node BACKGROUND_COLOR="#ccffff" CREATED="1493031071766" ' + iif (abs (_nNivel) >= _nNivFold, 'FOLDED="true" ', '') + 'ID="' + _sID + '" POSITION="left" TEXT="' + _sDescri + '">'
+			endif
 			_sRet += '</node>'
 		next
 	endif
 	
-
+/*
 	// Busca entradas por transferencias de filiais
 	if _lContinua .and. _nNivel <= 0 .and. sb1 -> b1_rastro == 'L'
 		_oSQL := ClsSQL ():New ()
@@ -576,7 +607,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp)
 			endif
 		next
 	endif
-
+*/
 
 	// ----------------------------------------------------------
 	// ----------------------------------------------------------
