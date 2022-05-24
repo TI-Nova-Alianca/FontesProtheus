@@ -9,13 +9,16 @@ User Function claudia ()
 
 	//u_help("Nada para executar")
 
-	u_help("ClsCtaRap")
-	_Rapel()
+	//u_help("_RapelGrava")
+	//_RapelGrava()
+
+	//u_help("_RapelExclui")
+	//_RapelExclui()
 Return
 //
 //
 // ----------------------------------------------------------------------------------------
-Static Function _Rapel()
+Static Function _RapelGrava()
 	_oCtaRapel := ClsCtaRap():New ()
 
 	_oCtaRapel:Filial  	 = xfilial("ZC0")
@@ -37,10 +40,27 @@ Static Function _Rapel()
 	_oCtaRapel:Origem	 = ''
 
 	If _oCtaRapel:Grava (.F.)
-		u_help("Gavou")
+		u_help("Gravou")
 	EndIf
 Return
-
+//
+//
+// ----------------------------------------------------------------------------------------
+Static Function _RapelExclui()
+	_sQuery := ""
+	_sQuery += " SELECT R_E_C_N_O_"
+	_sQuery += " FROM " + RetSQLName ("ZC0") + " ZC0 "
+	_sQuery += " WHERE D_E_L_E_T_ = ''"
+	_nRetQry = U_RetSQL (_sQuery)
+	if _nRetQry > 0
+		_oCtaRapel = ClsCtaRap():New (_nRetQry)
+		if !_oCtaRapel:Exclui ()
+			u_help("Nao foi possivel excluir o registro.")
+		else
+			u_help("Registro excluido")
+		endif
+	endif
+Return 
 // //
 // // Atualiza IPI
 // Static Function AltIPI()
