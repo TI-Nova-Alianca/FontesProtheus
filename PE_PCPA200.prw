@@ -83,5 +83,4 @@ Static Function _GravaLog(_sProduto, _sComponente, _sDesc)
 	//_oEvento:MailToZZU = {"069"}
 	
 	_oEvento:Grava()
-u_help("P.E. 3")
 Return 
