@@ -100,17 +100,21 @@ return
 // Estorna rapel
 Static Function _AtuZC0()
 	_oSQL:= ClsSQL ():New ()
-	_oSQL:_sQuery := ""
+	_oSQL:_sQuery  = ""
 	_oSQL:_sQuery += " SELECT "
-	_oSQL:_sQuery += " 	ZC0_RAPEL "
-	_oSQL:_sQuery += " FROM ZC0010 "
+	_oSQL:_sQuery += " 		E5_VARAPEL "
+	_oSQL:_sQuery += " FROM "+ RetSQLName ("SE5")
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
-	_oSQL:_sQuery += " AND ZC0_FILIAL = '"+ se1->e1_filial  +"' "
-	_oSQL:_sQuery += " AND ZC0_CODCLI = '"+ se1->e1_cliente +"' "
-	_oSQL:_sQuery += " AND ZC0_LOJCLI = '"+ se1->e1_loja    +"' "
-	_oSQL:_sQuery += " AND ZC0_DOC    = '"+ se1->e1_num     +"' "
-	_oSQL:_sQuery += " AND ZC0_SERIE  = '"+ se1->e1_prefixo +"' "
-	_oSQL:_sQuery += " AND ZC0_PARCEL = '"+ se1->e1_parcela +"' "
+	_oSQL:_sQuery += " AND E5_FILIAL   = '" + xfilial ("SE5")   + "'"
+	_oSQL:_sQuery += " AND E5_NUMERO   = '" + se1 -> e1_num     + "'"
+	_oSQL:_sQuery += " AND E5_PREFIXO  = '" + se1 -> e1_prefixo + "'"
+	_oSQL:_sQuery += " AND E5_PARCELA  = '" + se1 -> e1_parcela + "'"
+	_oSQL:_sQuery += " AND E5_CLIFOR   = '" + se1 -> e1_cliente + "'"
+	_oSQL:_sQuery += " AND E5_LOJA     = '" + se1 -> e1_loja    + "'"
+	_oSQL:_sQuery += " AND E5_RECPAG   = 'R' "
+	_oSQL:_sQuery += " AND E5_TIPODOC  = 'DC'"
+	_oSQL:_sQuery += " AND E5_SITUACA  = '' "
+	_oSQL:_sQuery += " AND E5_VARAPEL  > 0 "
 	_oSQL:Log ()
 	_aRapel := aclone (_oSQL:Qry2Array ())
 
@@ -133,7 +137,7 @@ Static Function _AtuZC0()
 		_oCtaRapel:Serie 	 = se1->e1_prefixo
 		_oCtaRapel:Parcela	 = se1->e1_parcela
 		_oCtaRapel:Rapel	 = _aRapel[1,1]
-		_oCtaRapel:Origem	 = procname()
+		_oCtaRapel:Origem	 = 'FA070CAN'
 
 		If _oCtaRapel:Grava (.F.)
 			_oEvento := ClsEvent():New ()

@@ -285,21 +285,21 @@ Static Function _AtuZC0()
 		_oCtaRapel:LojaRed   = se1->e1_loja
 		_oCtaRapel:Cliente 	 = se1->e1_cliente
 		_oCtaRapel:LojaCli	 = se1->e1_loja
-		_oCtaRapel:TM      	 = '05' 	
+		_oCtaRapel:TM      	 = '04' 	
 		_oCtaRapel:Data    	 = date()
 		_oCtaRapel:Hora    	 = time()
 		_oCtaRapel:Usuario 	 = cusername 
-		_oCtaRapel:Histor  	 = 'Estorno de rapel por cancelamento de baixa de titulo' 
+		_oCtaRapel:Histor  	 = 'Rapel por baixa de titulo' 
 		_oCtaRapel:Documento = se1->e1_num
 		_oCtaRapel:Serie 	 = se1->e1_prefixo
 		_oCtaRapel:Parcela	 = se1->e1_parcela
 		_oCtaRapel:Rapel	 = _aRapel[1,1]
-		_oCtaRapel:Origem	 = procname()
+		_oCtaRapel:Origem	 = 'F70GRSE1'
 
 		If _oCtaRapel:Grava (.F.)
 			_oEvento := ClsEvent():New ()
 			_oEvento:Alias     = 'ZC0'
-			_oEvento:Texto     = "Estorno rapel "+ se1->e1_parcela + se1->e1_num + "/" + se1->e1_prefixo
+			_oEvento:Texto     = "Baixa rapel "+ se1->e1_parcela + se1->e1_num + "/" + se1->e1_prefixo
 			_oEvento:CodEven   = 'ZC0001'
 			_oEvento:Cliente   = se1->e1_cliente
 			_oEvento:LojaCli   = se1->e1_loja

@@ -53,14 +53,13 @@ CLASS ClsCtaRap
 	METHOD New()
     METHOD GeraAtrib()
 	METHOD Grava()
-	METHOD Exclui()
 	METHOD GeraSeq()
-	METHOD VerifUser()
 	METHOD BuscaRede()
 	METHOD AtuSaldo()
-	METHOD GravaEvento()
+	//METHOD Exclui()
+	//METHOD VerifUser()
 ENDCLASS
-
+//
 // --------------------------------------------------------------------------
 // Construtor
 METHOD New(_nRecno) Class ClsCtaRap
@@ -161,30 +160,24 @@ METHOD Grava(_lZC0Grav) Class ClsCtaRap
 	
 	if _lContinua
 		if ! _lZC0Grav
-			//_cFilial := ZC0 -> zi_filial
-			//_dDtAtu := ZC0 -> zi_data
-			//u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + '] Gravando ZI_DOC = ' + ::Doc + '/' + ::Serie + '-' + ::Parcela + ' $ ' + transform (::Valor, "@E 999,999,999.99"))
-			
-			reclock ("ZC0", .T.)
-			zc0->zc0_filial := xfilial ("ZC0")
-			zc0->zc0_codred := ::Rede 		
-			zc0->zc0_lojred := ::LojaRed
-			zc0->zc0_codcli := ::Cliente	
-			zc0->zc0_lojcli := ::LojaCli	
-			zc0->zc0_tm 	:= ::TM 
-			zc0->zc0_data 	:= ::Data
-			zc0->zc0_hora 	:= ::Hora 
-			zc0->zc0_user 	:= cUserName
-			zc0->zc0_histor := ::Histor 
-			//zc0->zc0_seq 	:= ::SeqZC0 
-			zc0->zc0_doc 	:= ::Documento
-			zc0->zc0_serie 	:= ::Serie 
-			zc0->zc0_parcel := ::Parcela
-			zc0->zc0_rapel 	:= ::Rapel
-			zc0->zc0_saldo 	:= ::Saldo	
-			zc0->zc0_origem := ::Origem
-
-			msunlock ()
+			reclock("ZC0", .T.)
+				zc0->zc0_filial := xfilial ("ZC0")
+				zc0->zc0_codred := ::Rede 		
+				zc0->zc0_lojred := ::LojaRed
+				zc0->zc0_codcli := ::Cliente	
+				zc0->zc0_lojcli := ::LojaCli	
+				zc0->zc0_tm 	:= ::TM 
+				zc0->zc0_data 	:= ::Data
+				zc0->zc0_hora 	:= ::Hora 
+				zc0->zc0_user 	:= cUserName
+				zc0->zc0_histor := ::Histor 
+				zc0->zc0_doc 	:= ::Documento
+				zc0->zc0_serie 	:= ::Serie 
+				zc0->zc0_parcel := ::Parcela
+				zc0->zc0_rapel 	:= ::Rapel
+				zc0->zc0_saldo 	:= ::Saldo	
+				zc0->zc0_origem := ::Origem
+			msunlock()
 			
 			_lZC0Grav = .T.
 			::RegZC0 = zc0 -> (recno())
@@ -252,47 +245,50 @@ METHOD GeraSeq() Class ClsCtaRap
 return _lRet
 //
 // --------------------------------------------------------------------------
+// Busca a rede do cliente
+METHOD BuscaRede(_sCliente, _sLoja) Class ClsCtaRap
+	_sRede := Posicione("SA1",1, xFilial("SA1") + _sCliente + _sLoja, "A1_VACBASE")
+Return _sRede
+//
+// --------------------------------------------------------------------------
 // Atualiza saldo do movimento
 METHOD AtuSaldo () Class ClsCtaRap
 	local _lContinua := .T.
 
 return _lContinua
 //
-// --------------------------------------------------------------------------
-// Exclui movimento.
-METHOD Exclui() Class ClsCtaRap
-	local _lContinua := .T.
+// //
+// // --------------------------------------------------------------------------
+// // Exclui movimento.
+// METHOD Exclui() Class ClsCtaRap
+// 	local _lContinua := .T.
 
-	::UltMsg = ""
+// 	::UltMsg = ""
 	
-	if _lContinua
-		ZC0 -> (dbgoto (::RegZC0))
-		if ZC0 -> (recno ()) != ::RegZC0
-			::UltMsg += "Nao foi possivel localizar o registro correspondente no arquivo ZC0. Exclusao nao sera' efetuada."
-			u_help (::UltMsg,, .t.)
-			_lContinua = .F.
-		endif
-	endif
+// 	if _lContinua
+// 		ZC0 -> (dbgoto (::RegZC0))
+// 		if ZC0 -> (recno ()) != ::RegZC0
+// 			::UltMsg += "Nao foi possivel localizar o registro correspondente no arquivo ZC0. Exclusao nao sera' efetuada."
+// 			u_help (::UltMsg,, .t.)
+// 			_lContinua = .F.
+// 		endif
+// 	endif
 
-	if _lContinua
-		if ! ZC0 -> (deleted ())
-			reclock ("ZC0", .F.)
-				ZC0 -> (dbdelete ())
-			msunlock ()
-		endif
-	endif
-return _lContinua
+// 	if _lContinua
+// 		if ! ZC0 -> (deleted ())
+// 			reclock ("ZC0", .F.)
+// 				ZC0 -> (dbdelete ())
+// 			msunlock ()
+// 		endif
+// 	endif
+// return _lContinua
 //
 // --------------------------------------------------------------------------
 // Verifica se o usuario tem os devidos acessos.
-METHOD VerifUser (_sMsg) Class ClsCtaRap
-	_lRet = U_ZZUVL ('051', __cUserID, .T., cEmpAnt, cFilAnt)
-	if ! _lRet
-		::UltMsg += _sMsg
-		u_help (::UltMsg,, .t.)
-	endif
-return _lRet
-
-METHOD BuscaRede(_sCliente, _sLoja) Class ClsCtaRap
-	_sRede := Posicione("SA1",1, xFilial("SA1") + _sCliente + _sLoja, "A1_VACBASE")
-Return _sRede
+// METHOD VerifUser (_sMsg) Class ClsCtaRap
+// 	_lRet = U_ZZUVL ('051', __cUserID, .T., cEmpAnt, cFilAnt)
+// 	if ! _lRet
+// 		::UltMsg += _sMsg
+// 		u_help (::UltMsg,, .t.)
+// 	endif
+// return _lRet
