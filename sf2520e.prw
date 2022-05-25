@@ -320,7 +320,7 @@ Static Function _AtuZC0()
 			_oCtaRapel:Serie 	 = sf2 -> f2_serie
 			_oCtaRapel:Parcela	 = ''
 			_oCtaRapel:Rapel	 = _aRapel[1,1]
-			_oCtaRapel:Origem	 = procname()
+			_oCtaRapel:Origem	 = 'SF2520E'
 
 			If _oCtaRapel:Grava (.F.)
 				_oEvento := ClsEvent():New ()
