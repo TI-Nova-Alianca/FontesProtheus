@@ -26,6 +26,7 @@
 // 16/02/2021 - Robert - Implementada simulacao de geracao de contranota (GLPI 9420)
 // 23/02/2021 - Robert - Criada chamada para exportar planilha de medicoes de grau (GLPI 9454).
 // 13/03/2022 - Robert - Melhorados logs, criados botoes para consulta de eventos e simulacao de leitura de inspecoes.
+// 26/05/2022 - Robert - Novos parametros na chamada da funcao U_RastLt().
 //
 
 // --------------------------------------------------------------------------
@@ -344,7 +345,7 @@ user function VA_RUSRC ()
 			if _nLote == NIL .or. _nLote == 0
 				exit
 			endif
-			processa ({|| _sRastUva = U_RastLT (sze -> ze_filial, _aLotes [_nLote, 1], _aLotes [_nLote, 3], 0, NIL)})
+			processa ({|| _sRastUva = U_RastLT (sze -> ze_filial, _aLotes [_nLote, 1], _aLotes [_nLote, 3], 0, NIL, 1, 'A')})
 			_sArq := 'c:\temp\rast_carga_' + _aRast [_nRast, 4] + '.mm'
 			delete file (_sArq)
 			if file (_sArq)

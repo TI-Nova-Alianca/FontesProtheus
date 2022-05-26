@@ -90,7 +90,9 @@
 // 07/04/2022 - Robert  - Iniciada funcao de alteracao de dados de associados (GLPI 10138)
 // 13/04/2022 - Robert  - Continuada funcao de alteracao de dados de associados (GLPI 10138)
 // 03/05/2022 - Claudia - Incluida a gravação do campo a1_savblq.GLPI: 11922
+// 26/05/2022 - Robert  - Novos parametros na chamada da funcao U_RastLt().
 //
+
 // --------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
 #INCLUDE "PROTHEUS.CH"
@@ -463,7 +465,7 @@ static function _RastLt ()
 	endif
 
 	if empty (_sErroWS)
-		_sMapa = U_RastLt (_sWS_Filia, _sProduto, _sLote, 0, NIL, _nQtBase)
+		_sMapa = U_RastLt (_sWS_Filia, _sProduto, _sLote, 0, NIL, _nQtBase, 'A')
 		u_log ('')
 		u_log (_sMapa)
 		_sChave = 'RAST' + dtos (date ()) + strtran (time (), ':', '')
