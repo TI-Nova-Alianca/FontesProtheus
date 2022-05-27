@@ -53,11 +53,11 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _s
 	local _aSD2      := {}
 	local _nSD2      := 0
 	// nao estah buscando laudo (falta passar a data) ---> local _sLaudo    := ''
-	local _nNivFold  := 10  // A partir deste nivel gera os nodos 'compactados' para nao ficar grande demais na visualizacao inicial.
+	local _nNivFold  := 15 //10  // A partir deste nivel gera os nodos 'compactados' para nao ficar grande demais na visualizacao inicial.
 	local _sQuebra   := "&#xa;"  // Representacao de uma quebra de linha na visualizacao do FreeMind
 	local _aCarga    := ""
 	local _nMaxStr   := 200000  // Limite para o tamanho da string de retorno (pelo que sei, o maximo eh 64K)
-	local _nLimNivel := 15  // Limite maximo de niveis de pesquisa
+	local _nLimNivel := 20 //15  // Limite maximo de niveis de pesquisa
 	local _sStrLog   := ''
 	local _lContinua := .T.
 	local _sKardex   := ''
@@ -128,6 +128,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _s
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "SELECT TABELA_ORIGEM as TBL_ORIG, DATA AS DTMOVTO, OP, QT_ENTRADA, QT_SAIDA, CFOP"
 		_oSQL:_sQuery +=      ", PRODUTO_ORIGEM as PROD_ORIG, LOTE_ORIGEM as LOTE_ORIG"
+		_oSQL:_sQuery +=      ", PRODUTO_DESTINO as PROD_DEST, LOTE_DESTINO as LOTE_DEST"
 		_oSQL:_sQuery +=      ", DOC, TES, LOTE_FORNECEDOR as LOTEFOR"
 		_oSQL:_sQuery +=      ", LOTE_FILIAL_ORIGEM as LTFILORI, LOTE_FILIAL_DESTINO as LTFILDEST"
 		_oSQL:_sQuery +=      ", SERIENF, CLIFOR, LOJA, TIPONF, ITEMNF, FILIAL_ORIGEM as FILORIG"
@@ -782,7 +783,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _s
 	endif
 
 	if _lContinua
-		U_Log2 ('debug', _aSD2)
+//		U_Log2 ('debug', _aSD2)
 		for _nSD2 = 1 to len (_aSD2)
 
 			// Calcula a quantidade proporcional para ser passada na chamada recursiva.
@@ -790,7 +791,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _s
 
 			_sID = soma1 (_sID)
 			if ! empty (_aSD2 [_nSD2, 6])  // Filial destino
-				U_Log2 ('debug', '[' + procname () + ']achei transf para filial ' + _aSD2 [_nSD2, 6])
+//				U_Log2 ('debug', '[' + procname () + ']achei transf para filial ' + _aSD2 [_nSD2, 6])
 				_sDescri := 'Transf. para filial ' + _aSD2 [_nSD2, 6] + ' - NF ' + alltrim (_aSD2 [_nSD2, 1]) + _sQuebra
 				_sDescri += _FmtQt (_aSD2 [_nSD2, 2], sb1 -> b1_um, _nQtProp2) + _sQuebra
 				_sDescri += 'Lote gerado na filial:' + alltrim (_aSD2 [_nSD2, 7]) + _sQuebra
@@ -856,6 +857,8 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _s
 */
 
 	// Busca saidas por transferencia entre lotes.
+	_aSaiTrLt = {}
+/*	_aSaiTrLt2 = {}
 	if _lContinua .and. _nNivel >= 0 .and. sb1 -> b1_rastro == 'L' .and. _sQueFazer $ 'SA'  // [S]aidas ou [A]mbas
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "SELECT CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL AS LOTEORI,"
@@ -885,6 +888,36 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _s
 		_oSQL:_sQuery += " 	ORDER BY CONTRAPARTIDA.D3_COD, CONTRAPARTIDA.D3_LOTECTL"
 		_oSQL:Log (_sStrLog)
 		_aSaiTrLt = aclone (_oSQL:Qry2Array (.F., .F.))
+		_aSaiTrLt2 = aclone (_aSaiTrLt)  // durante testes
+	endif
+*/
+	// Busca saidas por transferencia para outros lotes.
+	if _lContinua .and. _nNivel >= 0 .and. ! empty (_sKardex) .and. _sQueFazer $ 'SA'  // [S]aidas ou [A]mbas
+		_oSQL:_sQuery := "SELECT K.PROD_DEST"         // 1
+		_oSQL:_sQuery +=      ", K.LOTE_DEST"     // 2
+		_oSQL:_sQuery +=      ", SUM (K.QT_SAIDA)"     // 3
+		_oSQL:_sQuery +=      ", RTRIM (SB1.B1_DESC) "  // 4
+		_oSQL:_sQuery +=  " FROM " + _sKardex + " K "
+		_oSQL:_sQuery +=     " LEFT JOIN " + RetSQLName ("SB1") + " SB1 "
+		_oSQL:_sQuery +=        " ON (SB1.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=        " AND SB1.B1_FILIAL  = '" + xfilial ("SA1") + "'"
+		_oSQL:_sQuery +=        " AND SB1.B1_COD     = K.PROD_DEST)"
+		_oSQL:_sQuery += " WHERE K.TBL_ORIG = 'SD3'"
+		_oSQL:_sQuery +=   " AND K.QT_SAIDA > 0"
+		_oSQL:_sQuery +=   " AND K.OP       = ''"
+		_oSQL:_sQuery +=   " AND NOT (PROD_DEST = '" + _sProduto + "' AND LOTE_DEST = '" + _sLote + "')"  // transferencia de endereco nao interessam aqui.
+		_oSQL:_sQuery +=   " AND K.CFOP     = 'RE4'"
+		_oSQL:_sQuery += " GROUP BY K.PROD_DEST, K.LOTE_DEST, SB1.B1_DESC"
+		_oSQL:_sQuery += " ORDER BY K.PROD_DEST, K.LOTE_DEST"
+		_oSQL:Log (_sStrLog)
+		_aSaiTrLt = aclone (_oSQL:Qry2Array (.F., .F.))
+//		U_Log2 ('debug','gerado pelo K:')
+//		U_Log2 ('debug', _aSaiTrLt)
+		//_aSaiTrLt = aclone (_aSaiTrLt2)  // usar a array original - durante testes
+	endif
+
+	if _lContinua
+//		U_Log2 ('debug', _aSaiTrLt)
 		for _nTrLt = 1 to len (_aSaiTrLt)
 
 			// Calcula a quantidade proporcional para ser passada na chamada recursiva.
