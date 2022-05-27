@@ -17,7 +17,9 @@
 // 02/03/2022 - Robert  - Coluna 'Kg' (COLUNA5) passada para a frente da coluna 'Produto'.
 // 21/03/2022 - Claudia - Incluido o codigo CR (sisdevin). GLPI: 11727
 // 27/04/2022 - Robert  - Criados parametros de NF de... ate
+// 26/05/2022 - Robert  - Novos parametros na chamada da funcao U_RastLt().
 //
+
 // ------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
@@ -113,7 +115,7 @@ Static Function PrintReport(oReport)
     For _x:=1 to Len(_aNf)
         // Busca dados na função do robert
         _aLtXLS58 :={}
-		_sMapa := U_RastLT (_aNf[_x,1], U_TamFixo (_aNf[_x,8], 15, ' '), alltrim(_aNf[_x,9]), 0, NIL, _aNf[_x,10])
+		_sMapa := U_RastLT (_aNf[_x,1], U_TamFixo (_aNf[_x,8], 15, ' '), alltrim(_aNf[_x,9]), 0, NIL, _aNf[_x,10], 'A')
 
 		// Habilitar este trecho se precisar gerar a arvore de cada nota fiscal
         _sArq  := 'c:\temp\rast_F' + _aNf[_x,1] + '_NF' + _aNf[_x,2] + '_Lt_' + alltrim(_aNf[_x,9]) + '.mm'

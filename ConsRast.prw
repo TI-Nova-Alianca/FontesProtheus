@@ -7,9 +7,10 @@
 // #TipoDePrograma    #consulta
 // #Descricao         #Consulta rastreabilidade lote produto.
 // #PalavasChave      #rastreabilidade #produto #lote_produto 
-// #Modulos 		  #EST
+// #Modulos           #EST
 //
 // Historico de alteracoes:
+// 26/05/2022 - Robert - Novos parametros na chamada da funcao U_RastLt().
 //
 
 // --------------------------------------------------------------------------
@@ -21,17 +22,9 @@ User Function ConsRast ()
 		if empty (mv_par01) .or. empty (mv_par02)
 			u_help ("Produto e lote devem ser informados.")
 		else
-			U_RastLt (cFilAnt, mv_par01, mv_par02, 0, (mv_par03 == 1))
+			U_RastLt (cFilAnt, mv_par01, mv_par02, 0, {}, 1, 'A')
 		endif
 	endif
-
-//	do while pergunte (cPerg)
-//		if empty (mv_par01) .or. empty (mv_par02)
-//			u_help ("Produto e lote devem ser informados.")
-//		else
-//			U_RastLt (cFilAnt, mv_par01, mv_par02, 0, (mv_par03 == 1))
-//		endif
-//	enddo
 Return
 //
 // --------------------------------------------------------------------------
@@ -42,6 +35,6 @@ Static Function _ValidPerg ()
 	
 	aadd (_aRegsPerg, {01, "Produto inicial               ", "C", 15, 0,  "",   "SB1", {},                       ""})
 	aadd (_aRegsPerg, {02, "Lote                          ", "C", 10, 0,  "",   ""	 , {},                       ""})
-	aadd (_aRegsPerg, {03, "Apenas componentes com lote   ", "N", 1,  0,  "",   ""	 , {'So com lote', 'Todos'}, ""})
+//	aadd (_aRegsPerg, {03, "Apenas componentes com lote   ", "N", 1,  0,  "",   ""	 , {'So com lote', 'Todos'}, ""})
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 Return

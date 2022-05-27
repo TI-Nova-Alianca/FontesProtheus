@@ -93,10 +93,11 @@
 // 13/05/2022 - Robert  - Criada consulta de kardex por lote (GLPI 8482)
 // 16/05/2022 - Robert  - Criada acao de apontamento de producao com cod.barras (GLPI 11994)
 //                      - Passa a trabalhar com um unico arquivo de log (antes
-//                        gerava um arqiovo de log para cada usuario).
+//                        gerava um arqivo de log para cada usuario).
+// 26/05/2022 - Robert  - Novos parametros na chamada da funcao U_RastLt().
 //
 
-// --------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
 #INCLUDE "PROTHEUS.CH"
 #include "tbiconn.ch"
@@ -481,7 +482,7 @@ static function _RastLt ()
 	endif
 
 	if empty (_sErroWS)
-		_sMapa = U_RastLt (_sWS_Filia, _sProduto, _sLote, 0, NIL, _nQtBase)
+		_sMapa = U_RastLt (_sWS_Filia, _sProduto, _sLote, 0, NIL, _nQtBase, 'A')
 		u_log ('')
 		u_log (_sMapa)
 		_sChave = 'RAST' + dtos (date ()) + strtran (time (), ':', '')
