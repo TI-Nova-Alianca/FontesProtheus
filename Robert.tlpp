@@ -97,8 +97,8 @@ static function _AndaLogo ()
 //	local _nParc := 0
 //	local _sCampo := ""
 //	local _nCampo := 0
-	local _aLotes := {}
-	local _nLote  := 0
+//	local _aLotes := {}
+//	local _nLote  := 0
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
@@ -691,7 +691,6 @@ return
 return
 */
 /*
-<<<<<<< HEAD
 	// Testes arvore de rastreabilidade
 	private _aLtXLS58 := {}  // Deixar PRIVATE para ser alimentada pelo U_RastLT().
 	_aLotes := {}
@@ -724,7 +723,7 @@ return
 	next
 return
 */
-=======
+/*
 	// Testes verificacoes genericas.
 	// _oVerif := ClsVerif():New (25)
 	// _oVerif:SetParam ('01', '2017')
@@ -748,7 +747,6 @@ return
 		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
 	endif
 return
->>>>>>> RastLT-pela-view
 /*
 	// Ajusta cadastro de TIPI em lote
 	syd -> (dbsetorder (1))

@@ -31,7 +31,9 @@
 // 29/04/2022 - Robert - Transf. lote p/outro proporcionalizava de 1 para 1, quando o correto eh usar a quantidade absoluta transferida - GLPI 11980
 //                     - Nao salvava area de trabalho entre as chamadas e, com isso, retornava com o SB1 desposicionado.
 //                     - Melhorado log, para identificacao de niveis.
-// 24/05/2022 - Robert - Leitura de todas as entrada passa a buscar na function VA_FKARDEX_LOTE (GLPI 11980)
+// 24/05/2022 - Robert - Leitura de todas as entradas passa a buscar na function VA_FKARDEX_LOTE (GLPI 11980)
+// 27/05/2022 - Robert - Leitura de todas as movimentacoes passa a buscar na function VA_FKARDEX_LOTE (GLPI 11980)
+//
 
 // --------------------------------------------------------------------------
 user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _sQueFazer)
