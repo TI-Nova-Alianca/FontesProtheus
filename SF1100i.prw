@@ -110,8 +110,8 @@
 // 09/02/2022 - Robert  - Na validacao de NF de produtor jah apresentada, olhava a nota contra ela mesma (no caso estaria na rotina de 'classificar').
 // 19/05/2022 - Robert  - Chamada do romaneio de entrada migrado para MT100AGR - GLPI 11903
 // 20/05/2022 - Robert  - Desabilitada tela de dados adicionais quando chamado via LOJA720 e msg que mostrava a chave da nota.
+// 25/05/2022 - Claudia - Incluido estorno de rapel. GLPI: 8916
 //
-
 // ------------------------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
@@ -159,6 +159,7 @@ User Function SF1100i ()
 	_EmailLog()  			 // email para a logistica avisando entradas no almox 91 e 10
 		
 	if sf1 -> f1_tipo = "D" 
+		_AtuZC0() 			 // Tratamento para conta corrente rapel
 		_HistNf()  	
 		_GrvDadosNCC ()		 // grava dados de vendedor e rapel na NCC
 		_VerMot()     		 // verifica motivo de devolucao
@@ -1266,3 +1267,92 @@ static function _GeraLaudo(_sFilial, _sFornece, _sLoja, _sDoc, _sSerie, _sTipo)
 		Next
 	EndIf
 return
+//
+// --------------------------------------------------------------------------
+// Debita rapel da NF de devolução
+Static Function _AtuZC0()
+	Local _x := 0
+	Local _i := 0
+
+	If GetMV('VA_RAPEL')
+		_oSQL:= ClsSQL():New()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery +=   " SELECT "
+		_oSQL:_sQuery +=   "     D1_FILIAL "
+		_oSQL:_sQuery +=   "    ,D1_NFORI "
+		_oSQL:_sQuery +=   "    ,D1_SERIORI "
+		_oSQL:_sQuery +=   "    ,D1_ITEMORI "
+		_oSQL:_sQuery +=   " 	,D1_COD "
+		_oSQL:_sQuery +=   "    ,D1_QUANT "
+		_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD1") + " SD1 "
+		_oSQL:_sQuery +=   " WHERE D_E_L_E_T_   = '' "
+		_oSQL:_sQuery +=   " AND SD1.D1_FILIAL  = '" + sf1 -> f1_filial  + "'"
+		_oSQL:_sQuery +=   " AND SD1.D1_FORNECE = '" + sf1 -> f1_fornece + "'"
+		_oSQL:_sQuery +=   " AND SD1.D1_LOJA    = '" + sf1 -> f1_loja    + "'"
+		_oSQL:_sQuery +=   " AND SD1.D1_DOC     = '" + sf1 -> f1_doc     + "'"
+		_oSQL:_sQuery +=   " AND SD1.D1_SERIE   = '" + sf1 -> f1_serie   + "'"
+		_aNfDev := aclone (_oSQL:Qry2Array ())
+
+		For _x:=1 to Len(_aNfDev)
+			_oSQL:= ClsSQL():New()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery +=   " SELECT "
+			_oSQL:_sQuery +=   " 	 D2_ITEM "
+			_oSQL:_sQuery +=   "    ,D2_COD "
+			_oSQL:_sQuery +=   "    ,D2_QUANT "
+			_oSQL:_sQuery +=   "    ,D2_RAPEL "
+			_oSQL:_sQuery +=   "    ,D2_VRAPEL "
+			_oSQL:_sQuery +=   "    ,D2_CLIENTE "
+			_oSQL:_sQuery +=   "    ,D2_LOJA"
+			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD2") 
+			_oSQL:_sQuery +=   " WHERE D_E_L_E_T_= '' "
+			_oSQL:_sQuery +=   " AND D2_FILIAL   = '"+ _aNfDev[_x, 1] + "' "
+			_oSQL:_sQuery +=   " AND D2_DOC      = '"+ _aNfDev[_x, 2] + "' "
+			_oSQL:_sQuery +=   " AND D2_SERIE    = '"+ _aNfDev[_x, 3] + "' "
+			_oSQL:_sQuery +=   " AND D2_COD      = '"+ _aNfDev[_x, 5] + "' "
+			_aNfVen := aclone (_oSQL:Qry2Array ())
+
+			For _i:=1 to Len(_aNfVen)
+					_oCtaRapel := ClsCtaRap():New ()
+					_sRede     := _oCtaRapel:BuscaRede(_aNfVen[_i, 6], _aNfVen[_i, 7])
+					_sTpRapel  := _oCtaRapel:TipoRapel(_aNfVen[_i, 6], _aNfVen[_i, 7])
+
+				If alltrim(_sTpRapel) <> '0' // Se o cliente tem configuração de rapel
+					If _aNfDev[_x, 6] == _aNfVen[_i,3] // Se as quantidades de venda e devolução for igual, desconta 100% do valor
+						_nRapel := _aNfVen[_i, 5]
+
+						_oCtaRapel:Filial  	 = sf1 -> f1_filial
+						_oCtaRapel:Rede      = _sRede	
+						_oCtaRapel:LojaRed   = sf1 -> f1_loja
+						_oCtaRapel:Cliente 	 = sf1 -> f1_fornece 
+						_oCtaRapel:LojaCli	 = sf1 -> f1_loja
+						_oCtaRapel:TM      	 = '07' 	
+						_oCtaRapel:Data    	 = date()
+						_oCtaRapel:Hora    	 = time()
+						_oCtaRapel:Usuario 	 = cusername 
+						_oCtaRapel:Histor  	 = 'Estorno de rapel por devolução de NF' 
+						_oCtaRapel:Documento = sf1 -> f1_doc
+						_oCtaRapel:Serie 	 = sf1 -> f1_serie
+						_oCtaRapel:Parcela	 = ''
+						_oCtaRapel:Produto	 = _aNfVen[_i,2]
+						_oCtaRapel:Rapel	 = _nRapel
+						_oCtaRapel:Origem	 = 'SF1100I'
+
+						If _oCtaRapel:Grava (.F.)
+							_oEvento := ClsEvent():New ()
+							_oEvento:Alias     = 'ZC0'
+							_oEvento:Texto     = "Estorno rapel "+ sf1 -> f1_doc + "/" + sf1 -> f1_serie
+							_oEvento:CodEven   = 'ZC0001'
+							_oEvento:Cliente   = sf1 -> f1_fornece 
+							_oEvento:LojaCli   = sf1 -> f1_loja
+							_oEvento:NFSaida   = sf1 -> f1_doc
+							_oEvento:SerieSaid = sf1 -> f1_serie
+							_oEvento:Grava()
+						EndIf
+					Else                    // Rapel proporcional
+					EndIf
+				EndIf
+			Next
+		Next
+	EndIf
+Return

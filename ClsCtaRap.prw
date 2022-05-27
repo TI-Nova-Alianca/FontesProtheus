@@ -43,6 +43,8 @@ CLASS ClsCtaRap
 	data Documento
 	data Serie
 	data Parcela
+	data Produto
+	data Status
 	data Rapel
 	data Saldo
 	data Origem
@@ -55,6 +57,7 @@ CLASS ClsCtaRap
 	METHOD Grava()
 	METHOD GeraSeq()
 	METHOD BuscaRede()
+	METHOD TipoRapel()
 	METHOD AtuSaldo()
 	//METHOD Exclui()
 	//METHOD VerifUser()
@@ -98,6 +101,8 @@ METHOD GeraAtrib(_sOrigem) Class ClsCtaRap
 	::Documento := ''
 	::Serie 	:= ''
 	::Parcela	:= ''
+	::Produto   := ''
+	::Status    := ''
 	::Rapel		:= 0
 	::Saldo		:= 0
 	::Origem	:= ''
@@ -117,6 +122,8 @@ METHOD GeraAtrib(_sOrigem) Class ClsCtaRap
 		::Documento := m->zc0_doc 
 		::Serie 	:= m->zc0_serie 
 		::Parcela	:= m->zc0_parcel 
+		::Produto   := m->zc0_prod
+		::Status    := m->zc0_status
 		::Rapel		:= m->zc0_rapel 
 		::Saldo		:= m->zc0_saldo 
 		::Origem	:= m->zc0_origem 
@@ -135,6 +142,8 @@ METHOD GeraAtrib(_sOrigem) Class ClsCtaRap
 		::Documento := zc0->zc0_doc 
 		::Serie 	:= zc0->zc0_serie 
 		::Parcela	:= zc0->zc0_parcel 
+		::Produto   := zc0->zc0_prod
+		::Status    := zc0->zc0_status
 		::Rapel		:= zc0->zc0_rapel 
 		::Saldo		:= zc0->zc0_saldo 
 		::Origem	:= zc0->zc0_origem 
@@ -174,6 +183,8 @@ METHOD Grava(_lZC0Grav) Class ClsCtaRap
 				zc0->zc0_doc 	:= ::Documento
 				zc0->zc0_serie 	:= ::Serie 
 				zc0->zc0_parcel := ::Parcela
+				zc0->zc0_prod   := ::Produto
+				zc0->zc0_status := 'A'
 				zc0->zc0_rapel 	:= ::Rapel
 				zc0->zc0_saldo 	:= ::Saldo	
 				zc0->zc0_origem := ::Origem
@@ -249,6 +260,12 @@ return _lRet
 METHOD BuscaRede(_sCliente, _sLoja) Class ClsCtaRap
 	_sRede := Posicione("SA1",1, xFilial("SA1") + _sCliente + _sLoja, "A1_VACBASE")
 Return _sRede
+//
+// --------------------------------------------------------------------------
+// Busca a rede do cliente
+METHOD TipoRapel(_sRede, _sLoja) Class ClsCtaRap
+	_sTpRapel := Posicione("SA1",1, xFilial("SA1") + _sRede + _sLoja, "A1_VABARAP")
+Return _sTpRapel
 //
 // --------------------------------------------------------------------------
 // Atualiza saldo do movimento
