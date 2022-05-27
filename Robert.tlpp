@@ -115,14 +115,14 @@ static function _AndaLogo ()
 	//aadd (_aLotes, {'09', U_TamFixo ('2444', 15, ' '), '4123'      , 0, 24200})  // lado 2 do par
 	//aadd (_aLotes, {'01', U_TamFixo ('9959', 15, ' '), '2201028401', 0, 1})      // enzima (arvore grande)
 	//aadd (_aLotes, {'01', U_TamFixo ('2776', 15, ' '), '11310701'  , 0, 1})      // gera mais de 15 niveis de rastro.
-	aadd (_aLotes, {'01', U_TamFixo ('3630', 15, ' '), '12107401A ', 0, 30000})  // NF 000202304 que foi para CENECOOP
-	aadd (_aLotes, {'09', U_TamFixo ('2445', 15, ' '), 'AUTO009869', 0, 1})      // Recebeu transf. da filial 01
+	//aadd (_aLotes, {'01', U_TamFixo ('3630', 15, ' '), '12107401A ', 0, 30000})  // NF 000202304 que foi para CENECOOP
+	//aadd (_aLotes, {'09', U_TamFixo ('2445', 15, ' '), 'AUTO009869', 0, 1})      // Recebeu transf. da filial 01
 	aadd (_aLotes, {'09', U_TamFixo ('1181', 15, ' '), '009159', 0, 1})      // Transferido da F09 para para F01 (origem bem grande, diversas transf. entre filiais)
-	aadd (_aLotes, {'07', U_TamFixo ('1180', 15, ' '), '001970001x', 0, 1})      // Transferido da F07 para para F01 (origem muito grande, 16 niveis, nem esperei terminar)
-	aadd (_aLotes, {'03', U_TamFixo ('3779', 15, ' '), '00229201  ', 0, 1})      // 
+	//aadd (_aLotes, {'07', U_TamFixo ('1180', 15, ' '), '001970001x', 0, 1})      // Transferido da F07 para para F01 (origem muito grande, 16 niveis, nem esperei terminar)
+	//aadd (_aLotes, {'03', U_TamFixo ('3779', 15, ' '), '00229201  ', 0, 1})      // 
 	for _nLote = 1 to len (_aLotes)
 		u_perfmon ('I', 'RastLt')
-		_sMapa := U_RastLT (_aLotes [_nLote, 1], _aLotes [_nLote, 2], _aLotes [_nLote, 3], _aLotes [_nLote, 4], NIL, _aLotes [_nLote, 5], 'S')
+		_sMapa := U_RastLT (_aLotes [_nLote, 1], _aLotes [_nLote, 2], _aLotes [_nLote, 3], _aLotes [_nLote, 4], NIL, _aLotes [_nLote, 5], 'A')
 		_nTmpExec = u_perfmon ('L', 'RastLt')
 		_sArq := 'c:\temp\rast_F' + _aLotes [_nLote, 1] + '_' + alltrim (_aLotes [_nLote, 2]) + '_' + alltrim (_aLotes [_nLote, 3]) + '_tempo' + cvaltochar (round (_nTmpExec, 0)) + 's.mm'
 		delete file (_sArq)
