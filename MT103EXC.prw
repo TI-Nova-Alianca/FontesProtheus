@@ -13,6 +13,7 @@
 // #Modulos           #FIS #EST
 //
 // Historico de alteracoes:
+// 27/05/2022 - Claudia - Gravação de rapel. GLPI: 8916
 //
 // ---------------------------------------------------------------------------------------------------------------
 User Function MT103EXC()
@@ -72,39 +73,47 @@ Static Function _AtuZC0()
 					_sTpRapel  := _oCtaRapel:TipoRapel(_aNfVen[_i, 6], _aNfVen[_i, 7])
 
 				If alltrim(_sTpRapel) <> '0' // Se o cliente tem configuração de rapel
-					If _aNfDev[_x, 6] == _aNfVen[_i,3] // Se as quantidades de venda e devolução for igual, desconta 100% do valor
-						_nRapel := _aNfVen[_i, 5]
+					_nRapVen := _aNfVen[_i, 5]
+					_nQtdVen := _aNfVen[_i, 3]
+					_nQtdDev := _aNfDev[_x, 6] 
+					_sProd   := _aNfVen[_i, 2]
 
-						_oCtaRapel:Filial  	 = sf1 -> f1_filial
-						_oCtaRapel:Rede      = _sRede	
-						_oCtaRapel:LojaRed   = sf1 -> f1_loja
-						_oCtaRapel:Cliente 	 = sf1 -> f1_fornece 
-						_oCtaRapel:LojaCli	 = sf1 -> f1_loja
-						_oCtaRapel:TM      	 = '08' 	
-						_oCtaRapel:Data    	 = date()
-						_oCtaRapel:Hora    	 = time()
-						_oCtaRapel:Usuario 	 = cusername 
-						_oCtaRapel:Histor  	 = 'Inclusão de rapel por exclusão de NF devolução' 
-						_oCtaRapel:Documento = sf1 -> f1_doc
-						_oCtaRapel:Serie 	 = sf1 -> f1_serie
-						_oCtaRapel:Parcela	 = ''
-						_oCtaRapel:Produto	 = _aNfVen[_i,2]
-						_oCtaRapel:Rapel	 = _nRapel
-						_oCtaRapel:Origem	 = 'MT103EXC'
+					If _nQtdDev == _nQtdVen // Se as quantidades de venda e devolução for igual, desconta 100% do valor	
+						_nRapel := _nRapVen
+						_sHist  := 'Inclusão de rapel por exclusão de NF devolução 100%' 
+					else					// Rapel proporcional
+						_nRapelDev := _nRapVen * _nQtdDev / _nQtdVen
+						_nRapel    := _nRapelDev
+						_sHist     := 'Inclusão de rapel por exclusão de NF devolução parcial' 
+					EndIf	
 
-						If _oCtaRapel:Grava (.F.)
-							_oEvento := ClsEvent():New ()
-							_oEvento:Alias     = 'ZC0'
-							_oEvento:Texto     = "Inclusão rapel "+ sf1 -> f1_doc + "/" + sf1 -> f1_serie
-							_oEvento:CodEven   = 'ZC0001'
-							_oEvento:Cliente   = sf1 -> f1_fornece 
-							_oEvento:LojaCli   = sf1 -> f1_loja
-							_oEvento:NFSaida   = sf1 -> f1_doc
-							_oEvento:SerieSaid = sf1 -> f1_serie
-							_oEvento:Grava()
-						EndIf
-                    Else                    // Rapel proporcional
-                        
+					_oCtaRapel:Filial  	 = sf1 -> f1_filial
+					_oCtaRapel:Rede      = _sRede	
+					_oCtaRapel:LojaRed   = sf1 -> f1_loja
+					_oCtaRapel:Cliente 	 = sf1 -> f1_fornece 
+					_oCtaRapel:LojaCli	 = sf1 -> f1_loja
+					_oCtaRapel:TM      	 = '08' 	
+					_oCtaRapel:Data    	 = date()
+					_oCtaRapel:Hora    	 = time()
+					_oCtaRapel:Usuario 	 = cusername 
+					_oCtaRapel:Histor  	 = _sHist
+					_oCtaRapel:Documento = sf1 -> f1_doc
+					_oCtaRapel:Serie 	 = sf1 -> f1_serie
+					_oCtaRapel:Parcela	 = ''
+					_oCtaRapel:Produto	 = _sProd
+					_oCtaRapel:Rapel	 = _nRapel
+					_oCtaRapel:Origem	 = 'MT103EXC'
+
+					If _oCtaRapel:Grava (.F.)
+						_oEvento := ClsEvent():New ()
+						_oEvento:Alias     = 'ZC0'
+						_oEvento:Texto     = "Inclusão rapel "+ sf1 -> f1_doc + "/" + sf1 -> f1_serie
+						_oEvento:CodEven   = 'ZC0001'
+						_oEvento:Cliente   = sf1 -> f1_fornece 
+						_oEvento:LojaCli   = sf1 -> f1_loja
+						_oEvento:NFSaida   = sf1 -> f1_doc
+						_oEvento:SerieSaid = sf1 -> f1_serie
+						_oEvento:Grava()
 					EndIf
 				EndIf
 			Next
