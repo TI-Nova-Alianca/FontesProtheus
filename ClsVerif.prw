@@ -68,8 +68,9 @@
 // 05/04/2022 - Robert  - Consulta 82 passa a aceitar todas as filiais (para poder ser chamada de outras rotinas)
 // 11/04/2022 - Claudia - Excluido o usuario app.mntng da consulta 78.
 // 16/05/2022 - Robert  - Adicionada verificacao 87 - Parametrizacoes TSS (GLPI 12042)
-// 17/05/2022 - Robert  - Adicionada verificacai 88 - Gatilhos (GLPI 12063)
+// 17/05/2022 - Robert  - Adicionada verificacao 88 - Gatilhos (GLPI 12063)
 //                      - Melhorada definicao do atributo :UltVerif
+// 31/05/2022 - Robert  - Adicionada verificacao 89 - ambientes SPED (GLPI 12126)
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -3243,6 +3244,33 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=   " AND UPPER (X7_REGRA) LIKE '%U_VA_GAT%'"
 			::Query +=   " AND X7_REGRA NOT LIKE '%' + X7_SEQUENC + '%'"
 			::Query += " ORDER BY X7_CAMPO, X7_SEQUENC"
+
+
+		case ::Numero == 89
+			::Filiais   = '01'  // Gero todas as filiais juntas.
+			::Setores   = 'FIS/INF'
+			::Descricao = 'Parametrizacoes TSS'
+			::Sugestao  = 'Verificar parametrizacao para cada tipo de documento'
+			::Query := ""
+			::Query += "SELECT 'Parametro setado para HOMOLOGACAO' as PROBLEMA"
+			::Query +=      ", C.M0_CODFIL AS FILIAL"
+			::Query +=      ", S0.ID_ENT AS ENTIDADE_TSS"
+			::Query +=      ", PARAMETRO"
+			::Query +=      ", CONTEUDO"
+			::Query += " FROM protheus.dbo.SPED000 S0"
+			::Query += " 	,protheus.dbo.SPED001 S1"
+			::Query += " 	,protheus.dbo.SYS_COMPANY C"
+			::Query += " WHERE S1.D_E_L_E_T_ = ''"
+			::Query += " AND C.D_E_L_E_T_ = ''"
+			::Query += " AND C.M0_CGC = S1.CNPJ"
+			::Query += " AND C.M0_INSC = S1.IE"
+			::Query += " AND S0.D_E_L_E_T_ = ''"
+			::Query += " AND S0.ID_ENT = S1.ID_ENT"
+			::Query += " AND S0.PARAMETRO IN ('MV_AMBCCE', 'MV_AMBMDFE', 'MV_AMBIENT', 'MV_AMBNCFE')"  // Nao usados (por enquanto): MV_AMBCTEC, MV_AMBEPP, MV_AMBNFEC
+			::Query += " AND S0.CONTEUDO != '1'"
+			::Query += " AND NOT (C.M0_CODIGO = '01' AND C.M0_CODFIL = '14')"  // Filial inativa
+			::Query += " ORDER BY FILIAL, PARAMETRO"
+
 
 		otherwise
 			::UltMsg = "Verificacao numero " + cvaltochar (::Numero) + " nao definida."
