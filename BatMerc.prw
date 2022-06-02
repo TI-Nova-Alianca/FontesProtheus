@@ -448,6 +448,7 @@ static function _LeCli (_sLinkSrv)
 					_sIE := ''
 				EndIf
 
+				u_log("*** Endereço (antes): "+ (_sAliasQ) -> ZA1_END)
 				oModel:Activate()
 				// Monta array de dados para inclusao do cadastro.
 				oSA1Mod:= oModel:getModel("MATA030_SA1")
@@ -526,6 +527,7 @@ static function _LeCli (_sLinkSrv)
 				    	_sStatMerc = 'PRO'
 				    	u_log('GRAVOU', SA1->A1_COD)
 				        lDeuCerto := .T.
+						u_log("*** Endereço (depois): "+ SA1->A1_END)
 
 						_AI0Cli := SA1->A1_COD
 						_AI0Loj := SA1->A1_LOJA
