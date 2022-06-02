@@ -111,7 +111,9 @@
 // 19/05/2022 - Robert  - Chamada do romaneio de entrada migrado para MT100AGR - GLPI 11903
 // 20/05/2022 - Robert  - Desabilitada tela de dados adicionais quando chamado via LOJA720 e msg que mostrava a chave da nota.
 // 25/05/2022 - Claudia - Incluido estorno de rapel. GLPI: 8916
+// 02/06/2022 - Robert  - Gravacao campo E2_VAFUNRU (GLPI 11723)
 //
+
 // ------------------------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
@@ -595,7 +597,7 @@ static function _AjSE2 ()
 				_oSQL:_sQuery +=      ", E2_VALOR"
 				_oSQL:_sQuery +=      ", dbo.VA_FTIPO_FORNECEDOR_UVA ('" + se2 -> E2_FORNECE + "', '" + se2 -> E2_LOJA + "', '" + dtos (se2-> E2_EMISSAO) + "')"
 				_oSQL:_sQuery +=      ", A2_TIPO"
-				_oSQL:_sQuery +=      ", A2_VAAGE05"
+			//	_oSQL:_sQuery +=      ", A2_VAAGE05"
 				_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE2") + " SE2,"
 				_oSQL:_sQuery +=             RetSQLName ("SA2") + " SA2"
 				_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_  = ''"
@@ -614,7 +616,7 @@ static function _AjSE2 ()
 					// Se for associado, nao quero descontar dele o FUNRURAL.
 					if alltrim (upper (_aRetFUNRU [1, 3])) == 'ASSOCIADO' .or. alltrim (upper (_aRetFUNRU [1, 3])) == 'EX ASSOCIADO'
 						if alltrim (upper (_aRetFUNRU [1, 4])) == 'F'  // Somente associados 'pessoa fisica'. Colleoni, maio/2021
-							if alltrim (upper (_aRetFUNRU [1, 5])) != 'S'  // Fornecedor nao pode ter um X marcado nas costas.
+			//nunca chegamos a usar				if alltrim (upper (_aRetFUNRU [1, 5])) != 'S'  // Fornecedor nao pode ter um X marcado nas costas.
 								// Com o valor do FUNRURAL, soma o valor ao titulo original.
 								begin transaction
 
@@ -622,6 +624,7 @@ static function _AjSE2 ()
 								se2 -> e2_valor  += _aRetFUNRU [1, 2]
 								se2 -> e2_saldo  += _aRetFUNRU [1, 2]
 								se2 -> e2_vlcruz += _aRetFUNRU [1, 2]
+								se2 -> e2_vafunru = 'P'  // Vamos [P]agar ao associado.
 								msunlock ()
 
 								// Grava evento para posterior consulta.

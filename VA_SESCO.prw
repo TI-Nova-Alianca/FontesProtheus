@@ -436,7 +436,7 @@ Static Function _Gera ()
 		_sAliasQ = _oSQL:Qry2Trb ()
 		procregua ((_sAliasQ) -> (reccount ()))
 		do while ! (_sAliasQ) -> (eof ())
-			u_log ((_sAliasQ) -> a2_cod)
+			//u_log ((_sAliasQ) -> a2_cod)
 
 			// Instancia classe para verificacao dos dados do associado.
 			_oAssoc := ClsAssoc():New ((_sAliasQ) -> a2_cod, (_sAliasQ) -> a2_loja)

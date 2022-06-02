@@ -50,6 +50,7 @@
 // 02/06/2020 - Robert - Arquivos de log passaram a ser gravados em pasta especifica.
 // 27/07/2020 - Robert - Verificacao de acesso para desabilitar batch custo médio: passa a validar acesso 113 e nao mais 069.
 //                     - Inseridas tags para catalogacao de fontes
+// 30/05/2022 - Robert - Removidos usuario e data do final do nome do arquivo de log.
 //
 
 // --------------------------------------------------------------------------
@@ -201,13 +202,15 @@ user function VA_ZZ6Ex ()
 			_nPosFLog = at ('(', zz6 -> zz6_cmd) - 1
 			_nPosFLog = len (alltrim (left (zz6 -> zz6_cmd, _nPosFLog)))
 			_sArqLog2 := iif (type ("_sArqLog") == 'C', _sArqLog, '')  // Salva nome do arquivo de log corrente
-			_sNomeLog := alltrim (left (zz6 -> zz6_cmd, _nPosFLog)) + "_" + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//			_sNomeLog := alltrim (left (zz6 -> zz6_cmd, _nPosFLog)) + "_" + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+			_sNomeLog := alltrim (left (zz6 -> zz6_cmd, _nPosFLog)) + ".log"
 
 			// Algumas rotinas quero gerar logs mais especificos
 			if 'U_BATREVCH' $ upper (zz6 -> zz6_cmd)
 				_sNomeLog := alltrim (left (zz6 -> zz6_cmd, _nPosFLog))
 				_sNomeLog += "_" + substr (zz6 -> zz6_cmd, 14, 2) + "_" + substr (zz6 -> zz6_cmd, 20, 3)  // Tah bom, eu sei que um espacinho na cahamada vai avacalhar tudo...
-				_sNomeLog += "_" + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+//				_sNomeLog += "_" + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+				_sNomeLog += ".log"
 			endif
 		endif
 
@@ -338,18 +341,6 @@ user function VA_ZZ6VL ()
 	endif
 return
 
-
-/*
-// --------------------------------------------------------------------------
-// Calcula quantidade de horas entre dois momentos.
-static function _Horas (_sIni, _sFim)
-	local _nRet   := 0
-	local _nHrIni := val (substr (_sIni, 9, 2)) + val (substr (_sIni, 12, 2)) / 60 + val (substr (_sIni, 15, 2)) / 3600
-	local _nHrFim := val (substr (_sFim, 9, 2)) + val (substr (_sFim, 12, 2)) / 60 + val (substr (_sFim, 15, 2)) / 3600
-	local _nDias  := val (substr (_sFim, 1, 8)) - val (substr (_sIni, 1, 8))
-	_nRet = _nHrFim - _nHrIni + _nDias * 24
-return _nRet
-*/
 
 
 // --------------------------------------------------------------------------

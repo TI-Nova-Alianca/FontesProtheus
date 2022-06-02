@@ -13,7 +13,9 @@
 //  Historico de alteracoes:
 //  24/06/2019 - Andre   - Adicionado validação para que teste insumos ja gravados na ordem antes de finalizar ordem.
 //  18/10/2021 - Claudia - Adicionada validação para produtos MC. GLPI: 10765
+//  27/05/2022 - Robert  - Adicionado CC 011304 para requisitar itens tipo MC (GLPI 12107)
 //
+
 //  ---------------------------------------------------------------------------------------------------------------------
 
 #include 'protheus.ch'
@@ -33,7 +35,8 @@ User Function MNTA435N()
     Local nCodBem    := ''
     Local nOS		 := ''
     local nCC		 := ''
-    
+    local _sCC_MC    := '011404/011405/011304'
+
     u_logIni ()
 	u_log ("Iniciando em", date (), time ())
 
@@ -89,10 +92,13 @@ User Function MNTA435N()
 
                         u_log ("Produto:" + sProduto + " Tipo:" + sTipo + " CC:" + nCC)
 
-                        if alltrim(sTipo) $ 'MC' .and. !(alltrim(nCC) $ alltrim('011404/011405'))
-                            u_log ("Produtos MC devem ser lançados nos centro de custo da Tetra Pak (011404/011405)")
+                    //    if alltrim(sTipo) $ 'MC' .and. !(alltrim(nCC) $ alltrim('011404/011405'))
+                        if alltrim(sTipo) $ 'MC' .and. !(alltrim(nCC) $ _sCC_MC)
+                    //        u_log ("Produtos MC devem ser lançados nos centro de custo da Tetra Pak (011404/011405)")
+                            u_log ("Produtos MC devem ser lançados nos centros de custo " + _sCC_MC)
 
-                        	MsgAlert( "Produtos MC devem ser lançados nos centro de custo da Tetra Pak (011404/011405)")
+                    //    	MsgAlert( "Produtos MC devem ser lançados nos centro de custo da Tetra Pak (011404/011405)")
+                        	MsgAlert( "Produtos MC devem ser lançados nos centros de custo " + _sCC_MC)
                         	RestArea( aArea )
                         	Return .F.
                         endif 
