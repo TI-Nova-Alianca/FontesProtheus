@@ -6,18 +6,17 @@
 // Historico de alteracoes:
 // 24/11/2016 - Robert - Tratamento para consultas que precisam ler parametros de usuario.
 // 28/03/2017 - Robert - Possibilita receber array com os parametros para execucao.
+// 01/06/2022 - Robert - Busca qt.validacoes via atributo :UltVerif.
 //
 
 // --------------------------------------------------------------------------
 User Function Verif (_nQual, _aParam)
 	local _aAreaAnt  := U_ML_SRArea ()
-	//local _lContinua := .T.
 	local _aRet      := {}
 	local _aVerif    := {}
 	local _nVerif    := 0
 	local _nParam    := 0
-
-//	u_logIni ()
+	local _nUltVerif := 0
 
 	_nQual     := iif (_nQual == NIL, 0, _nQual)
 
@@ -57,24 +56,20 @@ User Function Verif (_nQual, _aParam)
 
 		// Monta lista das verificacoes disponiveis.
 		_aVerif = {}
-		_nVerif = 1
-		do while .T.
+		_oVerif := ClsVerif ():New (1)
+		_nUltVerif = _oVerif:UltVerif
+		for _nVerif = 1 to _nUltVerif
 			_oVerif := ClsVerif ():New(_nVerif)
-			if _oVerif:Numero == 0 .or. empty (_oVerif:Descricao)  // Chegou ao final da lista
-				exit
-			else
-//			 	if _oVerif:Ativa .and. _PodeVer (_oVerif)
-				if _oVerif:Ativa .and. (_oVerif:Filiais == '*' .or. cFilAnt $ _oVerif:Filiais)
-			 		aadd (_aVerif, {.F., _oVerif:Numero, _oVerif:Setores, _oVerif:Descricao, _oVerif})
-			 	endif
+			if _oVerif:Ativa .and. (_oVerif:Filiais == '*' .or. cFilAnt $ _oVerif:Filiais)
+				aadd (_aVerif, {.F., _oVerif:Numero, _oVerif:Setores, _oVerif:Descricao, _oVerif})
 			endif
-			_nVerif ++
-		enddo
+		next
+		U_Log2 ('debug', _aVerif)
 	
 		// Executa em loop para poder fazer consultas repetidamente sem sair da tela.
 		do while .T.
 			_aCols = {}
-			aadd (_aCols, {2, "Tipo",            20,  ""})
+			aadd (_aCols, {2, "Tipo",            20, ""})
 			aadd (_aCols, {3, "Areas interesse", 70, ""})
 			aadd (_aCols, {4, "Descricao",      150, ""})
 			U_MBArray (@_aVerif, "Selecione verificacoes a fazer", _aCols, 1)
@@ -87,10 +82,12 @@ User Function Verif (_nQual, _aParam)
 							if _oVerif:QtErros == 0
 								u_help ("Nada encontrado para: " + _oVerif:Descricao)
 							else
-	
+
 								// Deixa variavel aHeader criada para o caso do usuario pedir exportacao para planilha.
 								private aHeader := aclone (_oVerif:aHeader)
-		
+
+								U_Log2 ('debug', _oVerif:Result)
+
 								// Mostra o resultado para o usuario.
 								u_showarray (_oVerif:Result, "Pendencias do tipo " + _oVerif:Descricao)
 							endif
@@ -99,7 +96,6 @@ User Function Verif (_nQual, _aParam)
 						endif
 					endif
 				endif
-//				_aVerif [_nVerif, 1] = .F.
 			next
 			if ! U_msgyesno ("Deseja fazer nova consulta?", .F.)
 				exit
@@ -108,7 +104,6 @@ User Function Verif (_nQual, _aParam)
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-//	u_logFim ()
 return _aRet
 
 
