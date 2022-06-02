@@ -16,6 +16,7 @@
 // 15/06/2021 - Claudia - Incluida novas validações C.custo X C.contabil. GLPI: 10224
 // 15/10/2021 - Claudia - Validação MC da tetra pak. GLPI: 10765
 // 21/03/2022 - Claudia - Ajustada a validação de obrigação do centro de custo. GLPI: 11780
+// 02/06/2022 - Claudia - Incluida validação de rateio. GLPI: 11937
 //
 // -----------------------------------------------------------------------------------------------------
 User Function MT120LOk ()
@@ -30,8 +31,12 @@ User Function MT120LOk ()
 		if ! substr(alltrim(GDFieldGet("C7_CONTA")),1,1) $ "4/7"
 			_lRet = .T.		// produtos considerados excessao - chamado 
 		else 
-			u_help ("Obrigatório informar centro de custo para este item.")
-			_lRet = .F.
+			If GDFieldGet("C7_RATEIO") == '1'
+				_lRet = .T.	// rateio. Chamado GLPI: 11937
+			Else
+				u_help ("Obrigatório informar centro de custo para este item.")
+				_lRet = .F.
+			EndIf
 		endif				
 	endif
 

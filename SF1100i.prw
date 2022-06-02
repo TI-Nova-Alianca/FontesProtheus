@@ -1313,44 +1313,54 @@ Static Function _AtuZC0()
 			_aNfVen := aclone (_oSQL:Qry2Array ())
 
 			For _i:=1 to Len(_aNfVen)
-					_oCtaRapel := ClsCtaRap():New ()
-					_sRede     := _oCtaRapel:BuscaRede(_aNfVen[_i, 6], _aNfVen[_i, 7])
-					_sTpRapel  := _oCtaRapel:TipoRapel(_aNfVen[_i, 6], _aNfVen[_i, 7])
+				_oCtaRapel := ClsCtaRap():New ()
+				_sRede     := _oCtaRapel:RetCodRede(_aNfVen[_i, 6], _aNfVen[_i, 7])
+				_sTpRapel  := _oCtaRapel:TipoRapel(_aNfVen[_i, 6], _aNfVen[_i, 7])
 
 				If alltrim(_sTpRapel) <> '0' // Se o cliente tem configuração de rapel
-					If _aNfDev[_x, 6] == _aNfVen[_i,3] // Se as quantidades de venda e devolução for igual, desconta 100% do valor
-						_nRapel := _aNfVen[_i, 5]
+					_nRapVen := _aNfVen[_i, 5]
+					_nQtdVen := _aNfVen[_i, 3]
+					_nQtdDev := _aNfDev[_x, 6] 
+					_sProd   := _aNfVen[_i, 2]
 
-						_oCtaRapel:Filial  	 = sf1 -> f1_filial
-						_oCtaRapel:Rede      = _sRede	
-						_oCtaRapel:LojaRed   = sf1 -> f1_loja
-						_oCtaRapel:Cliente 	 = sf1 -> f1_fornece 
-						_oCtaRapel:LojaCli	 = sf1 -> f1_loja
-						_oCtaRapel:TM      	 = '07' 	
-						_oCtaRapel:Data    	 = date()
-						_oCtaRapel:Hora    	 = time()
-						_oCtaRapel:Usuario 	 = cusername 
-						_oCtaRapel:Histor  	 = 'Estorno de rapel por devolução de NF' 
-						_oCtaRapel:Documento = sf1 -> f1_doc
-						_oCtaRapel:Serie 	 = sf1 -> f1_serie
-						_oCtaRapel:Parcela	 = ''
-						_oCtaRapel:Produto	 = _aNfVen[_i,2]
-						_oCtaRapel:Rapel	 = _nRapel
-						_oCtaRapel:Origem	 = 'SF1100I'
+					If _nQtdDev == _nQtdVen // Se as quantidades de venda e devolução for igual, desconta 100% do valor	
+						_nRapel := _nRapVen
+						_sHist  := 'Estorno de rapel por devolução de NF 100%' 
+					else					// Rapel proporcional
+						_nRapelDev := _nRapVen * _nQtdDev / _nQtdVen
+						_nRapel    := _nRapelDev
+						_sHist     := 'Estorno de rapel por devolução de NF parcial' 
+					EndIf					
 
-						If _oCtaRapel:Grava (.F.)
-							_oEvento := ClsEvent():New ()
-							_oEvento:Alias     = 'ZC0'
-							_oEvento:Texto     = "Estorno rapel "+ sf1 -> f1_doc + "/" + sf1 -> f1_serie
-							_oEvento:CodEven   = 'ZC0001'
-							_oEvento:Cliente   = sf1 -> f1_fornece 
-							_oEvento:LojaCli   = sf1 -> f1_loja
-							_oEvento:NFSaida   = sf1 -> f1_doc
-							_oEvento:SerieSaid = sf1 -> f1_serie
-							_oEvento:Grava()
-						EndIf
-					Else                    // Rapel proporcional
+					_oCtaRapel:Filial  	 = sf1 -> f1_filial
+					_oCtaRapel:Rede      = _sRede	
+					_oCtaRapel:LojaRed   = sf1 -> f1_loja
+					_oCtaRapel:Cliente 	 = sf1 -> f1_fornece 
+					_oCtaRapel:LojaCli	 = sf1 -> f1_loja
+					_oCtaRapel:TM      	 = '07' 	
+					_oCtaRapel:Data    	 = date()
+					_oCtaRapel:Hora    	 = time()
+					_oCtaRapel:Usuario 	 = cusername 
+					_oCtaRapel:Histor  	 = _sHist
+					_oCtaRapel:Documento = sf1 -> f1_doc
+					_oCtaRapel:Serie 	 = sf1 -> f1_serie
+					_oCtaRapel:Parcela	 = ''
+					_oCtaRapel:Produto	 = _sProd
+					_oCtaRapel:Rapel	 = _nRapel
+					_oCtaRapel:Origem	 = 'SF1100I'
+
+					If _oCtaRapel:Grava (.F.)
+						_oEvento := ClsEvent():New ()
+						_oEvento:Alias     = 'ZC0'
+						_oEvento:Texto     = "Estorno rapel "+ sf1 -> f1_doc + "/" + sf1 -> f1_serie
+						_oEvento:CodEven   = 'ZC0001'
+						_oEvento:Cliente   = sf1 -> f1_fornece 
+						_oEvento:LojaCli   = sf1 -> f1_loja
+						_oEvento:NFSaida   = sf1 -> f1_doc
+						_oEvento:SerieSaid = sf1 -> f1_serie
+						_oEvento:Grava()
 					EndIf
+	
 				EndIf
 			Next
 		Next

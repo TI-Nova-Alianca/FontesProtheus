@@ -50,7 +50,7 @@
 // 02/05/2018 - Robert  - Desabilitado tratamento para armazem geral (nao usamos mais ha tempo)
 // 03/05/2018 - Robert  - Desabilitados tratamentos do ZAB (devolucoes de clientes).
 // 06/11/2020 - Claudia - Incluida a exclusão de titulos de NF's de cartões. GLPI: 8749
-// 24/05/2022 - Claudia - Incluido o estorno de rapel. GLPI:8916
+// 24/05/2022 - Claudia - Incluido o estorno de rapel. GLPI: 8916
 //
 // ---------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
@@ -304,7 +304,7 @@ Static Function _AtuZC0()
 		If len(_aRapel) > 0
 			_oCtaRapel := ClsCtaRap():New ()
 
-			_sRede := _oCtaRapel:BuscaRede(sf2 -> f2_cliente, sf2 -> f2_loja)
+			_sRede := _oCtaRapel:RetCodRede(sf2 -> f2_cliente, sf2 -> f2_loja)
 
 			_oCtaRapel:Filial  	 = sf2 -> f2_filial
 			_oCtaRapel:Rede      = _sRede	

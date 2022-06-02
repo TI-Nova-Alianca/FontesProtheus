@@ -38,7 +38,6 @@ CLASS ClsCtaRap
 	data Hora
 	data Usuario
 	data Histor
-	data DebCred
 	data SeqZC0
 	data Documento
 	data Serie
@@ -56,9 +55,12 @@ CLASS ClsCtaRap
     METHOD GeraAtrib()
 	METHOD Grava()
 	METHOD GeraSeq()
-	METHOD BuscaRede()
+	METHOD RetCodRede()
+	METHOD RetNomeRede()
 	METHOD TipoRapel()
 	METHOD AtuSaldo()
+	METHOD RetSaldo()
+	METHOD RetDebCre()
 	//METHOD Exclui()
 	//METHOD VerifUser()
 ENDCLASS
@@ -96,7 +98,6 @@ METHOD GeraAtrib(_sOrigem) Class ClsCtaRap
 	::Hora    	:= ''
 	::Usuario 	:= cUserName
 	::Histor  	:= ''
-	::DebCred  	:= ''
 	::SeqZC0  	:= ''
 	::Documento := ''
 	::Serie 	:= ''
@@ -150,13 +151,7 @@ METHOD GeraAtrib(_sOrigem) Class ClsCtaRap
 		::RegZC0    := zc0 -> (recno())
 	endif
 
-	// Define se o tipo de movimento eh considerado a debito ou a credito.
-	//::DebCred = ""
-	//if ! empty (::TM)
-	//	::DebCred = fBuscaCpo ("ZX5", 2, xfilial ("ZX5") + '10' + ::TM, "ZX5_10DC")
-	//endif
 	U_ML_SRArea (_aAreaAnt)
-
 return
 //
 // --------------------------------------------------------------------------
@@ -257,9 +252,15 @@ return _lRet
 //
 // --------------------------------------------------------------------------
 // Busca a rede do cliente
-METHOD BuscaRede(_sCliente, _sLoja) Class ClsCtaRap
+METHOD RetCodRede(_sCliente, _sLoja) Class ClsCtaRap
 	_sRede := Posicione("SA1",1, xFilial("SA1") + _sCliente + _sLoja, "A1_VACBASE")
 Return _sRede
+//
+// --------------------------------------------------------------------------
+// Busca a rede do cliente
+METHOD RetNomeRede(_sCliente, _sLoja) Class ClsCtaRap
+	_sRedeNome := Posicione("SA1",1, xFilial("SA1") + _sCliente + _sLoja, "A1_NOME")
+Return _sRedeNome
 //
 // --------------------------------------------------------------------------
 // Busca a rede do cliente
@@ -268,11 +269,108 @@ METHOD TipoRapel(_sRede, _sLoja) Class ClsCtaRap
 Return _sTpRapel
 //
 // --------------------------------------------------------------------------
-// Atualiza saldo do movimento
+// Atualiza saldo da rede
 METHOD AtuSaldo () Class ClsCtaRap
-	local _lContinua := .T.
+	local _lRet   := .T.
+	local _x      := 0
+	local _nSaldo := 0
 
-return _lContinua
+	_oSQL:= ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 	SUM(CASE "
+	_oSQL:_sQuery += " 			WHEN ZX5_55DC = 'D' THEN ZC0_RAPEL * -1 "
+	_oSQL:_sQuery += " 			ELSE ZC0_RAPEL "
+	_oSQL:_sQuery += " 	    END) AS VLRRAPEL "
+	_oSQL:_sQuery += " FROM " + RetSQLName ("ZC0") + " ZC0 "
+	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA1") + " SA1 "
+	_oSQL:_sQuery += " 	ON SA1.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " 		AND SA1.A1_COD = ZC0_CODRED "
+	_oSQL:_sQuery += " 		AND SA1.A1_LOJA = ZC0_LOJRED "
+	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("ZX5") + " ZX5 "
+	_oSQL:_sQuery += " 	ON ZX5.D_E_L_E_T_ = '' " 
+	_oSQL:_sQuery += " 	    AND ZX5.ZX5_TABELA = '55' "
+	_oSQL:_sQuery += " 		AND ZX5.ZX5_CHAVE = ZC0_TM "
+	_oSQL:_sQuery += " WHERE ZC0.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " AND ZC0.ZC0_STATUS = 'A'"
+	_oSQL:_sQuery += " AND ZC0.ZC0_CODRED = '" + ZC0 -> zc0_codred + "' " 
+	_oSQL:_sQuery += " AND ZC0.ZC0_LOJRED = '" + ZC0 -> zc0_lojred + "' "
+	_aSaldo := aclone (_oSQL:Qry2Array ())
+
+	if Len(_aSaldo) > 0
+		for _x := 1 to Len(_aSaldo)
+			_nSaldo += _aSaldo[_x, 1]
+		next
+			
+		// Grava o saldo no ZC0 
+		reclock ("ZC0", .F.)
+			zc0 -> zc0_saldo := _nSaldo
+		msunlock ()
+		::Saldo = zc0 -> zc0_saldo
+	endif
+
+return _lRet
+//
+// --------------------------------------------------------------------------
+// Retorna saldo da rede
+METHOD RetSaldo (_sRede, _sLojaRede) Class ClsCtaRap
+	local _x      := 0
+	local _nSaldo := 0
+
+	_oSQL:= ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 		ROUND(SUM(CASE "
+	_oSQL:_sQuery += " 			WHEN ZX5_55DC = 'D' THEN ZC0_RAPEL * -1 "
+	_oSQL:_sQuery += " 			ELSE ZC0_RAPEL "
+	_oSQL:_sQuery += " 	    END),2) AS VLRRAPEL "
+	_oSQL:_sQuery += " FROM " + RetSQLName ("ZC0") + " ZC0 "
+	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA1") + " SA1 "
+	_oSQL:_sQuery += " 	ON SA1.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " 		AND SA1.A1_COD = ZC0_CODRED "
+	_oSQL:_sQuery += " 		AND SA1.A1_LOJA = ZC0_LOJRED "
+	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("ZX5") + " ZX5 "
+	_oSQL:_sQuery += " 	ON ZX5.D_E_L_E_T_ = '' " 
+	_oSQL:_sQuery += " 	    AND ZX5.ZX5_TABELA = '55' "
+	_oSQL:_sQuery += " 		AND ZX5.ZX5_CHAVE = ZC0_TM "
+	_oSQL:_sQuery += " WHERE ZC0.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " AND ZC0.ZC0_STATUS = 'A'"
+	_oSQL:_sQuery += " AND ZC0.ZC0_CODRED = '" + _sRede     + "' " 
+	_oSQL:_sQuery += " AND ZC0.ZC0_LOJRED = '" + _sLojaRede + "' "
+	_aSaldo := aclone (_oSQL:Qry2Array ())
+
+	if Len(_aSaldo) > 0
+		for _x := 1 to Len(_aSaldo)
+			_nSaldo += _aSaldo[_x, 1]
+		next
+	endif
+return _nSaldo
+//
+// --------------------------------------------------------------------------
+// Retorna se movimento é debito ou credito
+METHOD RetDebCre (_sTpMov) Class ClsCtaRap
+	local _sDebCre := ''
+	local _x       := 0
+
+	_oSQL:= ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 		ZX5_55DC "
+	_oSQL:_sQuery += " FROM " + RetSQLName ("ZX5")
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " AND ZX5_TABELA = '55' "
+	_oSQL:_sQuery += " AND ZX5_CHAVE = '" + _sTpMov + "' "
+	_aDebCre := aclone (_oSQL:Qry2Array ())
+
+	if Len(_aDebCre) > 0
+		for _x := 1 to Len(_aDebCre)
+			_sDebCre := _aDebCre[_x, 1]
+		next
+	endif
+	If empty(_sDebCre)
+		u_help("Não encontrado tipo de movimento " + _sTpMov + " cadastrado.")
+	EndIf
+return _sDebCre
 //
 // //
 // // --------------------------------------------------------------------------
