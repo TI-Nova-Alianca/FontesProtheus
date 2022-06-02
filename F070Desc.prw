@@ -28,6 +28,7 @@
 // 24/09/2020 - Cláudia - Não permitir a chamada da tela de descontos nas baixas de rapel. GLPI: 8367
 // 19/07/2021 - Cláudia - Não permitir a chamada da tela de descontos nas baixas automaticas do pagar.me.
 //                        A taxa pagar.me será emitida como um desconto.
+// 01/06/2022 - Claudia - Incluido parametro permitindo desativar regra de IPI e ST. GLPI: 12128
 //
 // ---------------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
@@ -296,7 +297,7 @@ User Function valida()
 	endif
 
 	// valida total de desconto x IPI X ST
-	If _valida == .T.
+	If GetMv('VA_ZA4DESC') == .T. 
 		_valida := VerifIpiSt(_nDesc)
 	EndIf
 Return _valida

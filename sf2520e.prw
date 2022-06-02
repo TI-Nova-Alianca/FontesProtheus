@@ -304,7 +304,7 @@ Static Function _AtuZC0()
 		If len(_aRapel) > 0
 			_oCtaRapel := ClsCtaRap():New ()
 
-			_sRede := _oCtaRapel:BuscaRede(sf2 -> f2_cliente, sf2 -> f2_loja)
+			_sRede := _oCtaRapel:RetCodRede(sf2 -> f2_cliente, sf2 -> f2_loja)
 
 			_oCtaRapel:Filial  	 = sf2 -> f2_filial
 			_oCtaRapel:Rede      = _sRede	

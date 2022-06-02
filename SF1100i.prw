@@ -1314,7 +1314,7 @@ Static Function _AtuZC0()
 
 			For _i:=1 to Len(_aNfVen)
 				_oCtaRapel := ClsCtaRap():New ()
-				_sRede     := _oCtaRapel:BuscaRede(_aNfVen[_i, 6], _aNfVen[_i, 7])
+				_sRede     := _oCtaRapel:RetCodRede(_aNfVen[_i, 6], _aNfVen[_i, 7])
 				_sTpRapel  := _oCtaRapel:TipoRapel(_aNfVen[_i, 6], _aNfVen[_i, 7])
 
 				If alltrim(_sTpRapel) <> '0' // Se o cliente tem configuração de rapel
