@@ -61,6 +61,8 @@ CLASS ClsCtaRap
 	METHOD AtuSaldo()
 	METHOD RetSaldo()
 	METHOD RetDebCre()
+	METHOD FecharPeriodo()
+	METHOD AbrirPeriodo()
 	//METHOD Exclui()
 	//METHOD VerifUser()
 ENDCLASS
@@ -226,10 +228,9 @@ METHOD GeraSeq() Class ClsCtaRap
 			else
 				_sQuery := ""
 				_sQuery += " SELECT MAX (ZC0_SEQ)"
-				_sQuery += " 	FROM " + RetSQLName ("ZC0")
-				_sQuery += " WHERE ZC0_FILIAL  = '" + xfilial ("ZC0")   + "'"
-				_sQuery += " 	AND ZC0_CODRED = '" + ZC0 -> zc0_codred   + "'"
-				_sQUery += " 	AND ZC0_LOJRED = '" + ZC0 -> zc0_lojred + "'"
+				_sQuery += " FROM " + RetSQLName ("ZC0")
+				_sQuery += " WHERE ZC0_CODRED = '" + ZC0 -> zc0_codred   + "'"
+				_sQUery += " AND ZC0_LOJRED = '" + ZC0 -> zc0_lojred + "'"
 				_sSeqZC0:= U_RetSQL (_sQuery)
 				if empty (_sSeqZC0)
 					_sSeqZC0 = '000000'
@@ -371,6 +372,130 @@ METHOD RetDebCre (_sTpMov) Class ClsCtaRap
 		u_help("Não encontrado tipo de movimento " + _sTpMov + " cadastrado.")
 	EndIf
 return _sDebCre
+//
+// --------------------------------------------------------------------------
+// Realiza o fechamento de registros
+METHOD FecharPeriodo (_dDtaIni, _sDataFin) Class ClsCtaRap
+	local _lRet    := .T.
+	local _x       := 0
+
+	_oSQL:= ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT DISTINCT "
+	_oSQL:_sQuery += " 		ZC0_CODRED "
+	_oSQL:_sQuery += "     ,ZC0_LOJRED "
+	_oSQL:_sQuery += " FROM " + RetSQLName ("ZC0")
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " AND ZC0_STATUS = 'A' "
+	_oSQL:_sQuery += " AND ZC0_DATA BETWEEN '"+dtos(_dDtaIni)+"' AND '"+dtos(_sDataFin)+"' "
+	_aPeriodo := aclone (_oSQL:Qry2Array ())
+
+	if Len(_aPeriodo) > 0
+		for _x := 1 to Len(_aPeriodo)
+			// Busca saldo
+			_oCtaRapel := ClsCtaRap():New ()
+			_nSaldo    := _oCtaRapel:RetSaldo(_aPeriodo[_x,1], _aPeriodo[_x,2])
+
+			_sData := dtos(date()) 
+			_oSQL:= ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " UPDATE ZC0010 "
+			_oSQL:_sQuery += " SET ZC0_STATUS = 'F', ZC0_DTAFIM = '" + _sData + "'"
+			_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+			_oSQL:_sQuery += " AND ZC0_STATUS = 'A' "
+			_oSQL:_sQuery += " AND ZC0_CODRED = '"+ _aPeriodo[_x,1] +"' "
+			_oSQL:_sQuery += " AND ZC0_LOJRED = '"+ _aPeriodo[_x,2] +"' "
+			if _oSQL:Exec()
+
+				// Cria registro de saldo			
+				_oCtaRapel:Filial  	 = xfilial("ZC0")
+				_oCtaRapel:Rede      = _aPeriodo[_x,1]	
+				_oCtaRapel:LojaRed   = _aPeriodo[_x,2]
+				_oCtaRapel:Cliente 	 = _aPeriodo[_x,1]	
+				_oCtaRapel:LojaCli	 = _aPeriodo[_x,2]
+				_oCtaRapel:TM      	 = '09' 	
+				_oCtaRapel:Data    	 = date()
+				_oCtaRapel:Hora    	 = time()
+				_oCtaRapel:Usuario 	 = cusername 
+				_oCtaRapel:Histor  	 = 'Geração de saldo por fechamento de registros' 
+				_oCtaRapel:Documento = ''
+				_oCtaRapel:Serie 	 = ''
+				_oCtaRapel:Parcela	 = ''
+				_oCtaRapel:Rapel	 = _nSaldo
+				_oCtaRapel:Status	 = 'A' 
+				_oCtaRapel:Origem	 = 'ZC0'
+
+				if _oCtaRapel:Grava (.F.)
+					_oEvento := ClsEvent():New ()
+					_oEvento:Alias     = 'ZC0'
+					_oEvento:Texto     = "Fechamento rapel rede "+ _aPeriodo[_x,1] + _aPeriodo[_x,2]
+					_oEvento:CodEven   = 'ZC0001'
+					_oEvento:Cliente   = _aPeriodo[_x,1]
+					_oEvento:LojaCli   = _aPeriodo[_x,2]
+					_oEvento:Grava()
+				Else
+					_oSQL:_sQuery := ""
+					_oSQL:_sQuery += " UPDATE ZC0010 "
+					_oSQL:_sQuery += " SET ZC0_STATUS = 'A', ZC0_DTAFIM = ''"
+					_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+					_oSQL:_sQuery += " AND ZC0_STATUS = 'F' "
+					_oSQL:_sQuery += " AND ZC0_DTAFIM = '"+ _sData          +"' "
+					_oSQL:_sQuery += " AND ZC0_CODRED = '"+ _aPeriodo[_x,1] +"' "
+					_oSQL:_sQuery += " AND ZC0_LOJRED = '"+ _aPeriodo[_x,2] +"' "
+					_oSQL:Exec()
+				endif
+			endif		
+		next
+	endif
+return _lRet
+//
+// --------------------------------------------------------------------------
+// Realiza a abertura do ultimo periodo fechado
+METHOD AbrirPeriodo () Class ClsCtaRap
+	local _lRet    := .T.
+	local _x       := 0
+
+	_oSQL:= ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 	MAX(ZC0_DTAFIM) "
+	_oSQL:_sQuery += " FROM " + RetSQLName ("ZC0")
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+	_aPeriodo := aclone (_oSQL:Qry2Array ())
+
+	if Len(_aPeriodo) > 0
+		for _x := 1 to Len(_aPeriodo)
+			_sData := _aPeriodo[_x, 1]
+
+			// deleta registro de saldo gerado
+			_oSQL:= ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " UPDATE ZC0010 "
+			_oSQL:_sQuery += " 		SET D_E_L_E_T_ = '*'
+			_oSQL:_sQuery += " WHERE ZC0_TM = '09' "
+			_oSQL:_sQuery += " AND ZC0_DATA = '"+ _sData +"'"
+			
+			if _oSQL:Exec()
+				// retorna status dos registros
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += " UPDATE ZC0010 "
+				_oSQL:_sQuery += " 		SET ZC0_STATUS = 'A', ZC0_DTAFIM = ''"
+				_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+				_oSQL:_sQuery += " AND ZC0_STATUS = 'F' "
+				_oSQL:_sQuery += " AND ZC0_DTAFIM = '"+ _sData +"' "
+				_oSQL:Exec()
+
+				_oEvento := ClsEvent():New ()
+				_oEvento:Alias     = 'ZC0'
+				_oEvento:Texto     = "Abertura rapel "+ _sData
+				_oEvento:CodEven   = 'ZC0001'
+				_oEvento:Grava()
+
+				u_help("Período do dia " + dtoc(stod(_sData)) + " aberto com sucesso!")
+			endif	
+		next
+	endif
+return _lRet
 //
 // //
 // // --------------------------------------------------------------------------

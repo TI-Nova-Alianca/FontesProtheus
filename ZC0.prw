@@ -22,14 +22,19 @@ User Function ZC0()
 	Private _aCores   := {}
 	Private cCadastro := "Conta corrente rapel"
 
-    AADD(aRotina, {"&Visualizar"       , "AxVisual"       , 0, 1})
-    AADD(aRotina, {"&Legenda"          , "U_ZC0LGD (.F.)" , 0 ,5})
-	AADD(aRotina, {"&Rel.Rapel"        , "U_ZC0REL()"     , 0 ,6})
-	AADD(aRotina, {"&Consulta Saldos"  , "U_ZC0SAL(ZC0->ZC0_CODRED, ZC0->ZC0_LOJRED)"     , 0 ,6})
+    AADD(aRotina, {"&Visualizar"       , "AxVisual"       								, 0, 1})
+	AADD(aRotina, {"Incluir"    		,"U_ZC0INC()"  	  								, 0, 3})
+    AADD(aRotina, {"&Legenda"          , "U_ZC0LGD (.F.)" 								, 0, 5})
+	AADD(aRotina, {"&Rel.Rapel"        , "U_ZC0REL()"     								, 0, 6})
+	AADD(aRotina, {"&Consulta Saldos"  , "U_ZC0SAL(ZC0->ZC0_CODRED, ZC0->ZC0_LOJRED)"	, 0, 6})
+	AADD(aRotina, {"&Fechamento"       , "U_ZC0FEC()"     								, 0, 6})
+	AADD(aRotina, {"&Abertura  "       , "U_ZC0ABE()"     								, 0, 6})
 
-    AADD(_aCores,{ "ZC0_TM == '01'"         , 'BR_AMARELO'   }) // Inclusão de saldo manual
-    AADD(_aCores,{ "ZC0_TM $ '02/05/06/08'" , 'BR_VERDE'     }) // Crédito
-    AADD(_aCores,{ "ZC0_TM $ '03/04/07'"    , 'BR_VERMELHO'  }) // Débito
+    AADD(_aCores,{ "ZC0_TM == '01'         .AND. ZC0_STATUS='A' " , 'BR_AMARELO'   }) // Inclusão de saldo manual
+    AADD(_aCores,{ "ZC0_TM $ '02/05/06/08' .AND. ZC0_STATUS='A' " , 'BR_VERDE'     }) // Crédito
+    AADD(_aCores,{ "ZC0_TM $ '03/04/07'    .AND. ZC0_STATUS='A' " , 'BR_VERMELHO'  }) // Débito
+	AADD(_aCores,{ "ZC0_TM $ '09'          .AND. ZC0_STATUS='A' " , 'BR_PINK'      }) // saldo de fechamento
+	AADD(_aCores,{ "ZC0_STATUS ='F'                             " , 'BR_PRETO'     }) // Fechados
 
     dbSelectArea("ZC0")
     dbSetOrder(2)
@@ -44,10 +49,11 @@ User function ZC0LGD (_lRetCores)
 	local aCores2 := {}
 	local _i       := 0
 	
-    aadd (aCores, {"ZC0->ZC0_TM == '01'" 						, 'BR_AMARELO' 	, 'Inclusão de saldo inicial/manual'	})
-    aadd (aCores, {"ZC0->ZC0_TM $ '02/05/06/08'" 				, 'BR_VERDE'   	, 'Crédito'	})
-    aadd (aCores, {"ZC0->ZC0_TM $ '03/04/07'" 					, 'BR_VERMELHO'	, 'Débito'	})
-	//aadd (aCores, {"ZC0->ZC0_TM == '09'" 					    , 'BR_PRETO'	, 'Saldo fechamento'	})
+    aadd (aCores, {"ZC0->ZC0_TM == '01'         .AND. ZC0_STATUS='A' " , 'BR_AMARELO' 	, 'Inclusão de saldo inicial/manual'})
+    aadd (aCores, {"ZC0->ZC0_TM $ '02/05/06/08' .AND. ZC0_STATUS='A' " , 'BR_VERDE'   	, 'Crédito'							})
+    aadd (aCores, {"ZC0->ZC0_TM $ '03/04/07'    .AND. ZC0_STATUS='A' " , 'BR_VERMELHO'	, 'Débito'							})
+	aadd (aCores, {"ZC0->ZC0_TM $ '09'          .AND. ZC0_STATUS='A' " , 'BR_PINK'      , 'Saldo de fechamento '	        }) 
+	aadd (aCores, {"ZC0_STATUS ='F'                                  " , 'BR_PRETO'     , 'Reg.Fechados'					}) 
 
 	if ! _lRetCores
 		for _i = 1 to len (aCores)
@@ -63,13 +69,34 @@ User function ZC0LGD (_lRetCores)
 Return
 //
 // --------------------------------------------------------------------------
+// Incluir AxCadastro
+User Function ZC0INC()
+	AxInclui("ZC0",,,,,,)
+Return
+//
+// --------------------------------------------------------------------------
+// Sequencia do incluir 
+User Function ZC0SEQ(_sRede)
+	Local _sQuery := ""
+
+	_sQuery := " SELECT MAX (ZC0_SEQ)"
+	_sQuery += " FROM " + RetSQLName ("ZC0")
+	_sQuery += " WHERE ZC0_CODRED = '" + _sRede + "'"
+	_sSeqZC0:= U_RetSQL (_sQuery)
+	if empty (_sSeqZC0)
+		_sSeqZC0 = '000000'
+	endif
+	
+	_sSeqZC0 = soma1(_sSeqZC0)
+Return _sSeqZC0
+//
+// --------------------------------------------------------------------------
 // Retorna Saldo Rapel da Rede selecionada
 User Function ZC0SAL(_sRede, _sLoja)
 	Local oButton1
 	Local oSay1
 	Local oSay2
 	Local oSay3
-	//Local oSay4
 	Local oSay5
 	Static oDlg
 
@@ -78,15 +105,70 @@ User Function ZC0SAL(_sRede, _sLoja)
 	_sNome     := _oCtaRapel:RetNomeRede(_sRede, _sLoja)
 	_sRed      := _sRede + " - " + _sNome
 
+	DEFINE MSDIALOG oDlg TITLE "Saldo de Rapel da Rede" FROM 000, 000  TO 150, 500 COLORS 0, 16777215 PIXEL
 
-  DEFINE MSDIALOG oDlg TITLE "Saldo de Rapel da Rede" FROM 000, 000  TO 150, 500 COLORS 0, 16777215 PIXEL
+	@ 020, 012 SAY oSay1 PROMPT "Rede:" SIZE 025, 007 OF oDlg COLORS 0, 16777215 PIXEL
+	@ 020, 045 SAY oSay2 PROMPT _sRed SIZE 195, 007 OF oDlg COLORS 0, 16777215 PIXEL
+	@ 035, 012 SAY oSay3 PROMPT "Saldo Atual:" SIZE 030, 007 OF oDlg COLORS 0, 16777215 PIXEL
+	@ 035, 045 SAY oSay5 PROMPT _sSaldo SIZE 100, 007 OF oDlg COLORS 0, 16777215 PIXEL
+	@ 053, 197 BUTTON oButton1 PROMPT "Ok" SIZE 037, 012 OF oDlg ACTION  oDlg:End ()  PIXEL
 
-    @ 020, 012 SAY oSay1 PROMPT "Rede:" SIZE 025, 007 OF oDlg COLORS 0, 16777215 PIXEL
-    @ 020, 045 SAY oSay2 PROMPT _sRed SIZE 195, 007 OF oDlg COLORS 0, 16777215 PIXEL
-    @ 035, 012 SAY oSay3 PROMPT "Saldo Atual:" SIZE 030, 007 OF oDlg COLORS 0, 16777215 PIXEL
-    //@ 005, 085 SAY oSay4 PROMPT "RAPEL - SALDO ATUAL DA REDE" SIZE 067, 007 OF oDlg COLORS 0, 16777215 PIXEL
-    @ 035, 045 SAY oSay5 PROMPT _sSaldo SIZE 100, 007 OF oDlg COLORS 0, 16777215 PIXEL
-    @ 053, 197 BUTTON oButton1 PROMPT "Ok" SIZE 037, 012 OF oDlg ACTION  oDlg:End ()  PIXEL
-
-  ACTIVATE MSDIALOG oDlg CENTERED
+	ACTIVATE MSDIALOG oDlg CENTERED
 Return
+//
+// --------------------------------------------------------------------------
+// Realiza o fechamento dos registros
+User Function ZC0FEC()
+	Local _lContinua := .F.
+	Private cPerg    := "ZC0FEC"
+
+	If U_ZZUVL("137", __cUserID, .T.)
+		_sMsg = "Esse processo realiza o fechamento de registros de rapel."
+		_lContinua =  U_msgnoyes(_sMsg + " Deseja continuar?")
+
+		If _lContinua
+			_ValidPerg1()
+			If Pergunte(cPerg,.T.)
+				_oCtaRapel:= ClsCtaRap():New ()
+				_oCtaRapel:FecharPeriodo(mv_par01, mv_par02)
+			Else
+				u_help("Processo cancelado!")
+			EndIf
+		EndIf		
+	Else
+		u_help("Usuário sem permissão para a rotina. Rotina: 137")
+	EndIf
+Return
+//
+// --------------------------------------------------------------------------
+// Realiza a abertura dos registros
+User Function ZC0ABE()
+	Local _lContinua := .F.
+	Private cPerg    := "ZC0ABE"
+
+	If U_ZZUVL("137", __cUserID, .T.)
+		_sMsg = "Esse processo realiza a abertura de registros de rapel, do ultimo período fechado."
+		_lContinua =  U_msgnoyes(_sMsg + " Deseja continuar?")
+
+		If _lContinua
+			_oCtaRapel:= ClsCtaRap():New ()
+			_oCtaRapel:AbrirPeriodo()
+		Else
+			u_help("Processo cancelado!")
+		EndIf
+	Else
+		u_help("Usuário sem permissão para a rotina. Rotina: 137")
+	EndIf
+Return
+//
+// -------------------------------------------------------------------------
+// Cria Perguntas no SX1
+Static Function _ValidPerg1 ()
+    local _aRegsPerg := {}
+    //                     PERGUNT             TIPO TAM DEC VALID F3     Opcoes                      Help
+    aadd (_aRegsPerg, {01, "Data de          ", "D", 8, 0,  "",   "   "     , {},                         		 ""})
+    aadd (_aRegsPerg, {02, "Data até         ", "D", 8, 0,  "",   "   "     , {},                         		 ""})
+
+    U_ValPerg (cPerg, _aRegsPerg)
+Return
+
