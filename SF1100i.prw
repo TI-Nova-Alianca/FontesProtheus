@@ -640,9 +640,9 @@ static function _AjSE2 ()
 								_oEvento:Grava ()
 
 								end transaction
-							else
-								U_Log2 ('info', 'Fornecedor eh associado, mas tem restricao cfe. clausula 05 da AGE maio/21. Vou deixar o desconto do FUNRURAL.')
-							endif
+							//else
+							//	U_Log2 ('info', 'Fornecedor eh associado, mas tem restricao cfe. clausula 05 da AGE maio/21. Vou deixar o desconto do FUNRURAL.')
+							//endif
 						else
 							U_Log2 ('info', 'Fornecedor eh associado, mas nao eh pessoa fisica. Vou deixar o desconto do FUNRURAL.')
 						endif

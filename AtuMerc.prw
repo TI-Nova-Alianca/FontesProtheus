@@ -16,8 +16,9 @@
 // 01/03/2021 - Robert  - Envia SB1 somente se for B1_TIPO = 'PA' (GLPI 11687)
 // 03/05/2022 - Claudia - Realiza envio de registro de cliente para mercanet 
 //                        quando a1_savblq <> 'N'. GLPI: 11922
+// 05/06/2022 - Robert  - Em vez de logar 'Enviando dados para Mercanet', passa a logar o SQL executado.
 //
-//
+
 // --------------------------------------------------------------------------------------------
 user function AtuMerc (_sAlias, _nRecno)
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -30,8 +31,6 @@ user function AtuMerc (_sAlias, _nRecno)
 	local _sChave5   := ""
 	local _lContinua := .T.
 
-	//u_logIni ()
-	
 	if _lContinua
 		(_sAlias) -> (dbgoto (_nRecno))
 		do case
@@ -132,7 +131,7 @@ user function AtuMerc (_sAlias, _nRecno)
 	endif
 
 	if _lContinua
-		u_log2 ('info', 'Enviando dados para Mercanet. Alias: ' + _sAlias + ' Chave: ' + _sChave1 + _sChave2 + _sChave3 + _sChave4 + _sChave5)
+//		u_log2 ('info', 'Enviando dados para Mercanet. Alias: ' + _sAlias + ' Chave: ' + _sChave1 + _sChave2 + _sChave3 + _sChave4 + _sChave5)
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := " if not exists (SELECT * FROM VA_INTEGR_MERCANET WHERE ALIAS = '" + _sAlias + "' AND TIPO = " + cvaltochar (_nTipo) + " AND RECNO = " + cvaltochar (_nRecno) + ")" 
 		_oSQL:_sQuery += " INSERT INTO VA_INTEGR_MERCANET"
@@ -145,7 +144,7 @@ user function AtuMerc (_sAlias, _nRecno)
 		_oSQL:_sQuery +=           "'" + _sChave3 + "',"
 		_oSQL:_sQuery +=           "'" + _sChave4 + "',"
 		_oSQL:_sQuery +=           "'" + _sChave5 + "')"
-//		_oSQL:Log ()
+		_oSQL:Log ()
 		if ! _oSQL:Exec ()
 			U_AvisaTI ("Erro ao agendar exportacao para Mercanet: " + _oSQL:_sQuery)
 			_lContinua = .F.
