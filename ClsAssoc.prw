@@ -1031,7 +1031,7 @@ return _aRet
 
 // --------------------------------------------------------------------------
 // Gera string para posteriormente montar demonstrativo de fechamento de safra em formato XML.
-METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC) Class ClsAssoc
+METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC, _lFSFunrur) Class ClsAssoc
 	local _sRetFechS      := ''
 	local _oSQL      := NIL
 	local _sAliasQ   := ""
@@ -1155,6 +1155,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 		(_sAliasQ) -> (dbclosearea ())
 	endif
 
+
 	// Busca previsoes de pagamento (faturas e notas em aberto no contas a pagar).
 	if _lFSPrPg
 		U_Log2 ('debug', 'Buscando previsao de pagamento')
@@ -1270,6 +1271,95 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 		_sRetFechS += '<saldo>'  + cvaltochar (_nTotSaldo) + '</saldo>'
 		_sRetFechS += '</faturaPagamentoItem>'
 		_sRetFechS += '</faturaPagamento>'
+	endif
+
+
+	// Busca valores de FUNRURAL que tenham sido descontados do fornecedor.
+	if _lFSFunrur
+		U_Log2 ('debug', 'Buscando descontos de FUNRURAL')
+		_sRetFechS += '<descontoFUNRURAL>'
+		_oSQL := ClsSQL ():New ()
+
+		parei aqui; falta fazer a query.
+
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "WITH C AS ("
+		_oSQL:_sQuery += "SELECT E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VENCTO, "
+		
+		// Existem casos em que nem todo o valor do titulo foi usado na geracao de uma fatura.
+		// Por exemplo quando parte foi compensada e apenas o saldo restante virou fatura.
+		// Ex.: título 000021485/30 -D do fornecedor 000643. Foi compensado R$ 3.066,09 e o saldo (R$ 1028,71) foi gerada a fatura 202000051.
+		// Devo descontar do valor do titulo somente a parte que foi consumida na geracao da fatura.
+		_oSQL:_sQuery += " E2_VALOR - dbo.VA_FSE2_CONSUMIDO_EM_FATURA (SE2.R_E_C_N_O_, 'z') AS E2_VALOR,
+		_oSQL:_sQuery +=       " E2_SALDO, "
+		_oSQL:_sQuery +=       " RTRIM (E2_HIST)"
+		_oSQL:_sQuery +=       " + CASE WHEN SE2.E2_FATURA != ''"
+		_oSQL:_sQuery +=              " THEN ' (' + (SELECT STRING_AGG (RTRIM (E2_HIST), '; ')"
+		_oSQL:_sQuery +=                             " FROM (SELECT DISTINCT E2_HIST"  // Gera uma subquery para poder usar DISTINCT
+		_oSQL:_sQuery +=                                     " FROM " + RetSQLName ("SE2") + " F "
+		_oSQL:_sQuery +=                                    " WHERE F.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=                                      " AND F.E2_FILIAL  = SE2.E2_FILIAL"
+		_oSQL:_sQuery +=                                      " AND F.E2_FORNECE = SE2.E2_FORNECE"
+		_oSQL:_sQuery +=                                      " AND F.E2_LOJA    = SE2.E2_LOJA"
+		_oSQL:_sQuery +=                                      " AND F.E2_FATURA  = SE2.E2_NUM"
+		_oSQL:_sQuery +=                                      " AND F.E2_FATPREF = SE2.E2_PREFIXO) AS DISTINTO"  // PRECISA DAR UM ALIAS PARA A SUBQUERY
+		_oSQL:_sQuery +=                                    ") + ')'"
+		_oSQL:_sQuery +=              " ELSE ''"
+		_oSQL:_sQuery +=              " END AS E2_HIST"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE2") + " SE2 "
+		_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND E2_FILIAL  = '01'"  // Pagamentos sao feitos sempre pela matriz.
+		_oSQL:_sQuery +=   " AND E2_FORNECE = '" + ::Codigo + "'"
+		_oSQL:_sQuery +=   " AND E2_LOJA    = '" + ::Loja + "'"
+		_oSQL:_sQuery +=   " AND E2_EMISSAO >= '20190101'"  // Primeira safra em que este metodo foi implementado. Para safras anteriores o tratamento era diferente.
+		if _sSafra >= '2021'
+			_oSQL:_sQuery +=   " AND E2_VASAFRA = '" + _sSafra + "'"
+		else
+			_oSQL:_sQuery +=   " AND E2_PREFIXO in ('30 ', '31 ')"  // Serie usada para notas e faturas de safra
+			_oSQL:_sQuery +=   " AND E2_TIPO IN ('NF', 'DP', 'FAT')"  // NF quando compra original da matriz; DP quando saldo transferido de outra filial; FAT quando agrupados em uma fatura.
+			_oSQL:_sQuery +=   " AND E2_EMISSAO >= '" + _sSafra + "0101'"
+			if _sSafra <= '2019'
+				_oSQL:_sQuery +=   " AND E2_EMISSAO <= '" + _sSafra + "1231'"
+			else  // Fatura para pagamento pode ainda ser gerada em janeiro do ano seguinte (GLPI 9558).
+				_oSQL:_sQuery +=   " AND (E2_EMISSAO <= '" + _sSafra + "1231' OR (E2_EMISSAO <= '" + Soma1 (_sSafra) + "0131' AND E2_TIPO = 'FAT'))"
+			endif
+		endif
+		_oSQL:_sQuery +=   ")"
+		_oSQL:_sQuery += " SELECT *"
+		_oSQL:_sQuery +=   " FROM C"
+		_oSQL:_sQuery +=  " WHERE E2_VALOR != 0"  // Os que estao zerados eh por que foram totalmente consumidos em uma fatura.
+		if _sSafra == '2021'
+			_oSQL:_sQuery +=   " AND E2_VENCTO >= '20210301'"  // Estou achando que devo criar um campo E2_VASAFRA para melhorar estes filtros.
+		endif
+
+		_oSQL:_sQuery +=  " ORDER BY E2_VENCTO, E2_NUM, E2_PREFIXO"
+		_oSQL:Log ()
+		_sAliasQ := _oSQL:Qry2Trb (.F.)
+		_nTotValor = 0
+		_nTotSaldo = 0
+		(_sAliasQ) -> (dbgotop ())
+		do while ! (_sAliasQ) -> (eof ())
+			_sRetFechS += '<descontoFUNRURALItem>'
+			_sRetFechS += '<doc>'    + (_sAliasQ) -> e2_num + '/' + (_sAliasQ) -> e2_prefixo + '-' + (_sAliasQ) -> e2_parcela + '</doc>'
+			_sRetFechS += '<vencto>' + dtoc (stod ((_sAliasQ) -> e2_vencto)) + '</vencto>'
+			_sRetFechS += '<valor>'  + cvaltochar ((_sAliasQ) -> e2_valor) + '</valor>'
+			_sRetFechS += '<saldo>'  + cvaltochar ((_sAliasQ) -> e2_saldo) + '</saldo>'
+			_sRetFechS += '<hist>'  + alltrim ((_sAliasQ) -> e2_hist) + '</hist>'
+			_nTotValor += (_sAliasQ) -> e2_valor
+			_nTotSaldo += (_sAliasQ) -> e2_saldo
+			_sRetFechS += '</descontoFUNRURALItem>'
+			(_sAliasQ) -> (dbskip ())
+		enddo
+		(_sAliasQ) -> (dbclosearea ())
+
+		// Ultima linha contem os totais
+		_sRetFechS += '<descontoFUNRURALItem>'
+		_sRetFechS += '<doc>TOTAIS</doc>'
+		_sRetFechS += '<vencto/>'
+		_sRetFechS += '<valor>'  + cvaltochar (_nTotValor) + '</valor>'
+		_sRetFechS += '<saldo>'  + cvaltochar (_nTotSaldo) + '</saldo>'
+		_sRetFechS += '</descontoFUNRURALItem>'
+		_sRetFechS += '</descontoFUNRURAL>'
 	endif
 
 
