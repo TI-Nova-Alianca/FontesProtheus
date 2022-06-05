@@ -112,8 +112,8 @@
 // 20/05/2022 - Robert  - Desabilitada tela de dados adicionais quando chamado via LOJA720 e msg que mostrava a chave da nota.
 // 25/05/2022 - Claudia - Incluido estorno de rapel. GLPI: 8916
 // 02/06/2022 - Robert  - Gravacao campo E2_VAFUNRU (GLPI 11723)
+// 03/06/2022 - Claudia - Comentado o restante do else do if referente ao funrural.
 //
-
 // ------------------------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 

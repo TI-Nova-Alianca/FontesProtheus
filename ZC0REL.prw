@@ -112,6 +112,11 @@ Static Function PrintReport(oReport)
     _aZC0 := aclone (_oSQL:Qry2Array ())
 
 	For _x:=1 to Len(_aZC0)
+		If _aZC0[_x, 13] == 'C'
+			_nVlrRapel := _aZC0[_x,11]  
+		else
+			_nVlrRapel := _aZC0[_x,11] * -1
+		EndIf
 		oSection1:Cell("COLUNA1")	:SetBlock   ({|| _aZC0[_x, 1] }) 		// filial
 		oSection1:Cell("COLUNA2")	:SetBlock   ({|| _aZC0[_x, 2] }) 		// rede
 		oSection1:Cell("COLUNA3")	:SetBlock   ({|| _aZC0[_x, 3] }) 		// nome
@@ -122,7 +127,7 @@ Static Function PrintReport(oReport)
 		oSection1:Cell("COLUNA8")	:SetBlock   ({|| _aZC0[_x, 8] }) 		// historico
 		oSection1:Cell("COLUNA9")	:SetBlock   ({|| _aZC0[_x, 9] }) 		// documento
 		oSection1:Cell("COLUNA10")	:SetBlock   ({|| _aZC0[_x,10] }) 		// cod.prod
-		oSection1:Cell("COLUNA11")	:SetBlock   ({|| _aZC0[_x,11] }) 		// rapel
+		oSection1:Cell("COLUNA11")	:SetBlock   ({|| _nVlrRapel   }) 		// rapel
 		oSection1:Cell("COLUNA12")	:SetBlock   ({|| _aZC0[_x,12] }) 		// status
 		
 		oSection1:PrintLine()
