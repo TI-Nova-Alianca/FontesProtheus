@@ -71,6 +71,7 @@
 // 17/05/2022 - Robert  - Adicionada verificacao 88 - Gatilhos (GLPI 12063)
 //                      - Melhorada definicao do atributo :UltVerif
 // 31/05/2022 - Robert  - Adicionada verificacao 89 - ambientes SPED (GLPI 12126)
+// 05/06/2022 - Robert  - Adicionada verificacao 90 (GLPI 12133)
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -109,7 +110,7 @@ CLASS ClsVerif
 	data Sugestao    // Sugestao de correcao a ser mostrada para o usuario.
 	data UltMsg      // Ultima mensagem de erro
 	data UltVerif    // Numero da ultima verificacao. Deve ser atualizado sempre que for criada uma nova verificacao.
-	data ViaBatch    // Indica se esta verificacao deve ser executada via batch ou apenas manualmente. 
+	data ViaBatch    // Indica se esta verificacao deve ser executada via batch ou apenas manualmente.
 
 	// Declaracao dos Metodos da Classe
 	method New ()
@@ -3270,6 +3271,53 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query += " AND S0.CONTEUDO != '1'"
 			::Query += " AND NOT (C.M0_CODIGO = '01' AND C.M0_CODFIL = '14')"  // Filial inativa
 			::Query += " ORDER BY FILIAL, PARAMETRO"
+
+
+		case ::Numero == 90
+			//::Filiais   = '01'  // Gero todas as filiais juntas.
+			::Setores   = 'INF/MNT'
+			::Descricao = 'Inconsistencia movimentos OS x Estoque'
+			::Sugestao  = 'Verificar movimentacao tabelas STL x SD3'
+			::GrupoPerg = "U_VALID002"
+			::ValidPerg (_lDefault)
+			::Query := ""
+			::Query += "WITH D3 AS ("
+			::Query +=    "SELECT D3_NUMSEQ, D3_COD, D3_EMISSAO, D3_OP, D3_LOCAL, D3_LOTECTL, D3_LOCALIZ, SUM (D3_QUANT) AS QT_SD3"
+			::Query +=     " FROM " + RetSQLName ("SD3")
+			::Query +=    " WHERE D_E_L_E_T_  = ''"
+			::Query +=      " AND D3_FILIAL   = '" + cFilAnt + "'"
+			::Query +=      " AND D3_ESTORNO != 'S'"
+			::Query +=      " AND SUBSTRING (D3_OP, 7, 2) = 'OS'"
+			::Query +=      " AND D3_TIPO    NOT IN ('MO', 'GG')"
+			::Query +=      " AND D3_EMISSAO BETWEEN '" + dtos (::Param01) + "' AND '" + dtos (::Param02) + "'"
+			::Query +=      " AND D3_COD     BETWEEN '" + ::Param03 + "' AND '" + ::Param04 + "'"
+			::Query +=    " GROUP BY D3_FILIAL, D3_COD, D3_NUMSEQ, D3_EMISSAO, D3_OP, D3_LOCAL, D3_LOTECTL, D3_LOCALIZ"
+			::Query += "),"
+			::Query += "TL AS ("
+			::Query +=    "SELECT TL_NUMSEQ, STL.TL_CODIGO, TL_DTFIM, TL_ORDEM, TL_LOCAL, TL_LOTECTL, TL_LOCALIZ, SUM (TL_QUANTID) AS QT_SDB"
+			::Query +=     " FROM " + RetSQLName ("STL") + " STL"
+			::Query +=    " WHERE D_E_L_E_T_  = ''"
+			::Query +=      " AND TL_FILIAL   = '01'"
+			::Query +=      " AND TL_TIPOREG  = 'P'"  // [P]roduto
+			::Query +=      " AND TL_SEQRELA != '0'"  // INDICA QUE FOI MOVIMENTADO NO ESTOQUE (LADO DIREITO DA TELA RETORNO MOD.II)
+			::Query +=      " AND TL_DTFIM   BETWEEN '" + dtos (::Param01) + "' AND '" + dtos (::Param02) + "'"
+			::Query +=      " AND TL_CODIGO  BETWEEN '" + ::Param03 + "' AND '" + ::Param04 + "'"
+			::Query +=    " GROUP BY TL_FILIAL, TL_ORDEM, TL_CODIGO, TL_NUMSEQ, TL_DTFIM, TL_LOCAL, TL_LOTECTL, TL_LOCALIZ"
+			::Query += ")"
+			::Query += ",UNIAO AS ("
+			::Query += "SELECT * FROM D3"
+			::Query +=    " FULL OUTER JOIN TL"
+			::Query +=       " ON (TL_NUMSEQ = D3_NUMSEQ"
+			::Query +=       " AND TL_LOCAL = D3_LOCAL"
+			::Query +=       " AND TL_LOTECTL = D3_LOTECTL"
+			::Query +=       " AND TL_LOCALIZ = D3_LOCALIZ"
+			::Query +=       " AND RTRIM (TL_ORDEM) + 'OS001' = D3_OP"
+			::Query +=     ")"
+			::Query += ")"
+			::Query += "SELECT 'Inconsist.mov.STL(O.S.)xSD3(estoque)' as PROBLEMA, *""
+			::Query +=  " FROM UNIAO"
+			::Query += " WHERE (QT_SD3 IS NULL OR QT_SDB IS NULL OR QT_SD3 != QT_SDB)"
+			::Query += " ORDER BY D3_NUMSEQ, TL_NUMSEQ"
 
 
 		otherwise

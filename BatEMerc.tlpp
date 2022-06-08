@@ -13,12 +13,14 @@
 // #Modulos           #FAT
 
 // Historico de alteracoes:
+// 05/06/2022 - Robert - Adicionados logs para monitoramento.
 //
 
 // --------------------------------------------------------------------------
 user function BatEMerc (_sAlias)
 
 	if empty (_sAlias) .or. _sAlias == 'DA0'
+		U_Log2 ('info', '[' + procname () + ']Exportando DA0 completo (DA1 vai no pacote)')
 		da0 -> (dbsetorder (1))
 		da0 -> (dbgotop ())
 		do while ! da0 -> (eof ())
@@ -28,6 +30,7 @@ user function BatEMerc (_sAlias)
 	endif
 
 	if empty (_sAlias) .or. _sAlias == 'SB1'
+		U_Log2 ('info', '[' + procname () + ']Exportando SB1 completo')
 		sb1 -> (dbsetorder (1))
 		sb1 -> (dbgotop ())
 		do while ! sb1 -> (eof ())
@@ -37,6 +40,7 @@ user function BatEMerc (_sAlias)
 	endif
 
 	if empty (_sAlias) .or. _sAlias == 'SA1'
+		U_Log2 ('info', '[' + procname () + ']Exportando SA1 completo')
 		sa1 -> (dbsetorder (1))
 		sa1 -> (dbgotop ())
 		do while ! sa1 -> (eof ())
@@ -46,6 +50,7 @@ user function BatEMerc (_sAlias)
 	endif
 
 	if empty (_sAlias) .or. _sAlias == 'SA3'
+		U_Log2 ('info', '[' + procname () + ']Exportando SA3 completo')
 		sa3 -> (dbsetorder (1))
 		sa3 -> (dbgotop ())
 		do while ! sa3 -> (eof ())
@@ -55,6 +60,7 @@ user function BatEMerc (_sAlias)
 	endif
 
 	if empty (_sAlias) .or. _sAlias == 'SE4'
+		U_Log2 ('info', '[' + procname () + ']Exportando SE4 completo')
 		se4 -> (dbsetorder (1))
 		se4 -> (dbgotop ())
 		do while ! se4 -> (eof ())
@@ -64,6 +70,7 @@ user function BatEMerc (_sAlias)
 	endif
 
 	if empty (_sAlias) .or. _sAlias == 'SF4'
+		U_Log2 ('info', '[' + procname () + ']Exportando SF4 completo')
 		sf4 -> (dbsetorder (1))
 		sf4 -> (dbgotop ())
 		do while ! sf4 -> (eof ())
