@@ -18,34 +18,6 @@ Return
 //
 //
 // ----------------------------------------------------------------------------------------
-Static Function _RapelGrava()
-	_oCtaRapel := ClsCtaRap():New ()
-
-	_oCtaRapel:Filial  	 = xfilial("ZC0")
-	_oCtaRapel:Rede      = '000117'		
-	_oCtaRapel:LojaRed   = '01'
-	_oCtaRapel:Cliente 	 = '000117'	
-	_oCtaRapel:LojaCli	 = '01'	
-	_oCtaRapel:TM      	 = '01' 	
-	_oCtaRapel:Data    	 = date()
-	_oCtaRapel:Hora    	 = time()
-	_oCtaRapel:Usuario 	 = cusername 
-	_oCtaRapel:Histor  	 = 'Teste' 
-	_oCtaRapel:Documento = '123456789'
-	_oCtaRapel:Serie 	 = '10'
-	_oCtaRapel:Parcela	 = ''
-	_oCtaRapel:Rapel	 = 78.5
-	_oCtaRapel:Saldo	 = 78.5 
-	_oCtaRapel:Status	 = '' 
-	_oCtaRapel:Origem	 = ''
-
-	If _oCtaRapel:Grava (.F.)
-		u_help("Gravou")
-	EndIf
-Return
-//
-//
-// ----------------------------------------------------------------------------------------
 Static Function _RapelExclui()
 	_sQuery := ""
 	_sQuery += " SELECT R_E_C_N_O_"

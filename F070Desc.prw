@@ -171,7 +171,7 @@ User Function valida()
 	local i			 := 0
 
 	// desconto de rapel
-	if !empty(_E5VARapel)
+	if !empty(_E5VARapel) .and. GetMV('VA_RAPEL')
 		_oCtaRapel := ClsCtaRap():New ()
 		_sRede := _oCtaRapel:RetCodRede(se1->e1_cliente, se1->e1_loja)
 		_lNeg  := _oCtaRapel:EhNegativo(_sRede, se1->e1_loja, _E5VARapel)
