@@ -493,7 +493,7 @@ static function _ValXML ()
 
 		// se nao encontrar o XML, nao permite continuar obriga que exista o XML na ZZX para dar entrada no documento 
 		if _nRetQry = 0
-			u_help ("XML da NF-e/CT-e referenciada NAO ENCONTRADA na nossa base de dados. Não é permitido incluir NF-e/CT-e sem XML. Providencie o XML")
+			u_help ("XML da NF-e/CT-e referenciada NAO ENCONTRADA na nossa base de dados (tabela ZZX). Não é permitido incluir NF-e/CT-e sem XML. Providencie o XML")
 			_lRet = .F.
 			_lContinua = .F.
 		endif
@@ -510,8 +510,8 @@ static function _ValXML ()
 				// Teste desabilitado para notas de retorno do deposito - Coop. Alianca.
 				if ! (sm0 -> m0_cgc == '88612486000160' .and. zzx -> zzx_clifor == '011863' .and. zzx -> zzx_loja == '01')
 					u_help ("XML da NF-e/CT-e referenciada por esta chave destina-se a documentos do tipo '" + zzx -> zzx_tiponf + "'.")
-						_lRet = .F.
-						_lContinua = .F.
+					_lRet = .F.
+					_lContinua = .F.
 				endif
 			endif
 			if _lContinua .and. (zzx -> zzx_clifor != ca100for .or. zzx -> zzx_loja != cLoja)

@@ -80,7 +80,7 @@ User Function MA261LIN ()
 
 			// Se nao estiver gerando pela rotina de solic.transf.estoque, verifica necessidade de bloquear.
 			if ! 'ZAG' $ _sChvEx
-				U_LOG2 ('DEBUG', 'Amox. que devem ser movimentados atraves da tabela ZAG: ' + _sAlmZAG)
+		//		U_LOG2 ('DEBUG', 'Amox. que devem ser movimentados atraves da tabela ZAG: ' + _sAlmZAG)
 				if ! _lExigeZAG .and. _sAlmOrig $ _sAlmZAG // '66'
 					u_help ("Almoxarifado '" + _sAlmOrig + "' nao pode ser movimentado diretamente por esta tela, conforme parametro VA_ALMZAG. Utilize NaWeb para solicitacoes de transferencia.",, .t.)
 					_lExigeZAG = .T.
