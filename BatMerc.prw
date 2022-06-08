@@ -50,6 +50,7 @@
 // 11/03/2022 - Claudia - Tratamento para cadastro prospect. GLPI:11757 
 // 25/03/2022 - Robert  - Passa a buscar caminho do banco de dados via funcao U_LkServer() - GLPI 11770
 // 03/05/2022 - Claudia - Incluida a gravação do campo a1_savblq.GLPI: 11922
+// 08/06/2022 - Claudia - Liberação do tratamento para código matriz. GLPI: 11635
 //
 // ------------------------------------------------------------------------------------------------------------------------
 user function BatMerc (_sQueFazer)
@@ -595,16 +596,18 @@ static function _LeCli (_sLinkSrv)
 					_oEvento:Grava ()
 					
 					// Limpa o codigo base para obrigar a informar na liberação do cliente
-					// If !empty(_AI0Cli)
-					// 	_oSQL:= ClsSQL ():New ()
-					// 	_oSQL:_sQuery := ""
-					// 	_oSQL:_sQuery += "  UPDATE " + RetSQLName ("SA1") + " SET A1_VACBASE = '', A1_VALBASE =''"
-					// 	_oSQL:_sQuery += " 	WHERE D_E_L_E_T_ = ''"
-					// 	_oSQL:_sQuery += " 	AND A1_COD  = '" + _AI0Cli + "'"
-					// 	_oSQL:_sQuery += " 	AND A1_LOJA = '" + _AI0Loj + "'"
-					// 	_oSQL:Log ()
-					// 	_oSQL:Exec ()
-					// EndIf
+					If GetMV('VA_CODMAT')
+						If !empty(_AI0Cli)
+							_oSQL:= ClsSQL ():New ()
+							_oSQL:_sQuery := ""
+							_oSQL:_sQuery += "  UPDATE " + RetSQLName ("SA1") + " SET A1_VACBASE = '', A1_VALBASE =''"
+							_oSQL:_sQuery += " 	WHERE D_E_L_E_T_ = ''"
+							_oSQL:_sQuery += " 	AND A1_COD  = '" + _AI0Cli + "'"
+							_oSQL:_sQuery += " 	AND A1_LOJA = '" + _AI0Loj + "'"
+							_oSQL:Log ()
+							_oSQL:Exec ()
+						EndIf
+					EndIf
 			  
 					RecLock("SA1", .F.)
 						SA1 -> A1_CNAE    = ''
