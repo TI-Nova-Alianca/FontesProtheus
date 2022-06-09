@@ -330,34 +330,40 @@ Return
 // --------------------------------------------------------------------------
 // Grava Rapel
 Static Function _AtuZC0()
+	Local _sTpRapel := ""
+	Local _sRede    := ""
+	
 	_oCtaRapel := ClsCtaRap():New ()
-	_sRede := _oCtaRapel:RetCodRede(sf2->f2_cliente, sf2->f2_loja)
+	_sRede     := _oCtaRapel:RetCodRede(sf2->f2_cliente, sf2->f2_loja)
+	_sTpRapel  := _oCtaRapel:TipoRapel(_sRede, sf2->f2_loja)
+	
+	If alltrim(_sTpRapel) <> '0' // Se o cliente tem configuração de rapel
+		_oCtaRapel:Filial  	 = sf2->f2_filial
+		_oCtaRapel:Rede      = _sRede	
+		_oCtaRapel:LojaRed   = sf2->f2_loja
+		_oCtaRapel:Cliente 	 = sf2->f2_cliente
+		_oCtaRapel:LojaCli	 = sf2->f2_loja
+		_oCtaRapel:TM      	 = '02' 	
+		_oCtaRapel:Data    	 = date()
+		_oCtaRapel:Hora    	 = time()
+		_oCtaRapel:Usuario 	 = cusername 
+		_oCtaRapel:Histor  	 = 'Inclusão de rapel por emissão de NF' 
+		_oCtaRapel:Documento = sf2->f2_doc
+		_oCtaRapel:Serie 	 = sf2->f2_serie
+		_oCtaRapel:Parcela	 = ''
+		_oCtaRapel:Rapel	 = sf2->f2_varapel
+		_oCtaRapel:Origem	 = 'M460FIM'
 
-	_oCtaRapel:Filial  	 = sf2->f2_filial
-	_oCtaRapel:Rede      = _sRede	
-	_oCtaRapel:LojaRed   = sf2->f2_loja
-	_oCtaRapel:Cliente 	 = sf2->f2_cliente
-	_oCtaRapel:LojaCli	 = sf2->f2_loja
-	_oCtaRapel:TM      	 = '02' 	
-	_oCtaRapel:Data    	 = date()
-	_oCtaRapel:Hora    	 = time()
-	_oCtaRapel:Usuario 	 = cusername 
-	_oCtaRapel:Histor  	 = 'Inclusão de rapel por emissão de NF' 
-	_oCtaRapel:Documento = sf2->f2_doc
-	_oCtaRapel:Serie 	 = sf2->f2_serie
-	_oCtaRapel:Parcela	 = ''
-	_oCtaRapel:Rapel	 = sf2->f2_varapel
-	_oCtaRapel:Origem	 = 'M460FIM'
-
-	If _oCtaRapel:Grava (.F.)
-		_oEvento := ClsEvent():New ()
-		_oEvento:Alias     = 'ZC0'
-		_oEvento:Texto     = "Inclusão de rapel por emissão de NF"
-		_oEvento:CodEven   = 'ZC0001'
-		_oEvento:Cliente   = sf2->f2_cliente
-		_oEvento:LojaCli   = sf2->f2_loja
-		_oEvento:NFSaida   = sf2->f2_doc
-		_oEvento:SerieSaid = sf2->f2_serie
-		_oEvento:Grava()
+		If _oCtaRapel:Grava (.F.)
+			_oEvento := ClsEvent():New ()
+			_oEvento:Alias     = 'ZC0'
+			_oEvento:Texto     = "Inclusão de rapel por emissão de NF"
+			_oEvento:CodEven   = 'ZC0001'
+			_oEvento:Cliente   = sf2->f2_cliente
+			_oEvento:LojaCli   = sf2->f2_loja
+			_oEvento:NFSaida   = sf2->f2_doc
+			_oEvento:SerieSaid = sf2->f2_serie
+			_oEvento:Grava()
+		EndIf
 	EndIf
 Return 
