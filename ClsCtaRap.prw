@@ -63,7 +63,8 @@ CLASS ClsCtaRap
 	METHOD RetDebCre()
 	METHOD FecharPeriodo()
 	METHOD AbrirPeriodo()
-	//METHOD Exclui()
+	METHOD Exclui()
+	METHOD EhNegativo()
 	//METHOD VerifUser()
 ENDCLASS
 //
@@ -258,13 +259,13 @@ METHOD RetCodRede(_sCliente, _sLoja) Class ClsCtaRap
 Return _sRede
 //
 // --------------------------------------------------------------------------
-// Busca a rede do cliente
+// Busca a nome da rede do cliente
 METHOD RetNomeRede(_sCliente, _sLoja) Class ClsCtaRap
 	_sRedeNome := Posicione("SA1",1, xFilial("SA1") + _sCliente + _sLoja, "A1_NOME")
 Return _sRedeNome
 //
 // --------------------------------------------------------------------------
-// Busca a rede do cliente
+// Busca tipo da configuração do rapel
 METHOD TipoRapel(_sRede, _sLoja) Class ClsCtaRap
 	_sTpRapel := Posicione("SA1",1, xFilial("SA1") + _sRede + _sLoja, "A1_VABARAP")
 Return _sTpRapel
@@ -497,31 +498,55 @@ METHOD AbrirPeriodo () Class ClsCtaRap
 	endif
 return _lRet
 //
-// //
-// // --------------------------------------------------------------------------
-// // Exclui movimento.
-// METHOD Exclui() Class ClsCtaRap
-// 	local _lContinua := .T.
+// --------------------------------------------------------------------------
+// Exclui movimento.
+METHOD Exclui(_nRecno, _sTM) Class ClsCtaRap
+	local _lContinua := .T.
+    local _sMsg      := ""
 
-// 	::UltMsg = ""
-	
-// 	if _lContinua
-// 		ZC0 -> (dbgoto (::RegZC0))
-// 		if ZC0 -> (recno ()) != ::RegZC0
-// 			::UltMsg += "Nao foi possivel localizar o registro correspondente no arquivo ZC0. Exclusao nao sera' efetuada."
-// 			u_help (::UltMsg,, .t.)
-// 			_lContinua = .F.
-// 		endif
-// 	endif
+	if _lContinua
+		ZC0 -> (dbgoto (_nRecno))
+		if ZC0 -> (recno()) != _nRecno
+			_sMsg := "Nao foi possivel localizar o registro correspondente no arquivo ZC0. Exclusao nao sera efetuada."
+			u_help(_sMsg,, .t.)
+			_lContinua = .F.
+		endif
+	endif
 
-// 	if _lContinua
-// 		if ! ZC0 -> (deleted ())
-// 			reclock ("ZC0", .F.)
-// 				ZC0 -> (dbdelete ())
-// 			msunlock ()
-// 		endif
-// 	endif
-// return _lContinua
+	if _lContinua
+		if !(_sTM) $ '01/10'
+			_sMsg := "Nao é possivel deletar registros não inseridos manualmente!"
+			u_help(_sMsg,, .t.)
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
+		if ! ZC0 -> (deleted())
+			reclock("ZC0", .F.)
+				ZC0 -> (dbdelete())
+			msunlock()
+		endif
+		_sMsg := "Registro deletado com sucesso!"
+		u_help(_sMsg,, .t.)
+	endif
+return _lContinua
+//
+// --------------------------------------------------------------------------
+// Verifica se o valor ficará negativo na conta
+METHOD EhNegativo(_sRede, _sLojaRede, nVlr) Class ClsCtaRap
+	local _lRet := .F.
+
+	_oCtaRapel := ClsCtaRap():New ()
+	_nSaldo    := _oCtaRapel:RetSaldo(_sRede, _sLojaRede)
+
+	_nSaldoRest := _nSaldo - nVlr
+
+	If _nSaldoRest < 0 .and. GetMV('VA_RAPNEG')
+		u_help(" Com esse débito o saldo ficará negativo. Não será possível efetuar.")
+		_lRet := .T.
+	EndIf
+return _lRet
 //
 // --------------------------------------------------------------------------
 // Verifica se o usuario tem os devidos acessos.

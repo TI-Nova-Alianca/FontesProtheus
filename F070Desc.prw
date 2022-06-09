@@ -29,6 +29,7 @@
 // 19/07/2021 - Cláudia - Não permitir a chamada da tela de descontos nas baixas automaticas do pagar.me.
 //                        A taxa pagar.me será emitida como um desconto.
 // 01/06/2022 - Claudia - Incluido parametro permitindo desativar regra de IPI e ST. GLPI: 12128
+// 08/06/2022 - Claudia - Incluido validação do rapel. GLPI: 8916
 //
 // ---------------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
@@ -168,6 +169,16 @@ User Function valida()
 	local _valida    := .T.
 	local _nVlrDesc  := 0
 	local i			 := 0
+
+	// desconto de rapel
+	if !empty(_E5VARapel) .and. GetMV('VA_RAPEL')
+		_oCtaRapel := ClsCtaRap():New ()
+		_sRede := _oCtaRapel:RetCodRede(se1->e1_cliente, se1->e1_loja)
+		_lNeg  := _oCtaRapel:EhNegativo(_sRede, se1->e1_loja, _E5VARapel)
+		if _lNeg
+			_valida = .F.
+		EndIf
+	endif
 
 	if &(_sTotal) <>  _nDesc
 		u_help ("Soma dos valores diferente do desconto total (" + cvaltochar (_nDesc) + ").")

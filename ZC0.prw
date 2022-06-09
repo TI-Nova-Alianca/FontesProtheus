@@ -24,8 +24,10 @@ User Function ZC0()
 
     AADD(aRotina, {"&Visualizar"       , "AxVisual"       								, 0, 1})
 	AADD(aRotina, {"Incluir"    		,"U_ZC0INC()"  	  								, 0, 3})
+	AADD(aRotina, {"Excluir"    		,"U_ZC0EXC()"  		    , 0, 6})
     AADD(aRotina, {"&Legenda"          , "U_ZC0LGD (.F.)" 								, 0, 5})
 	AADD(aRotina, {"&Rel.Rapel"        , "U_ZC0REL()"     								, 0, 6})
+	//AADD(aRotina, {"&Rapel Previsto"   , "U_ZC0PRE()"     								, 0, 6})
 	AADD(aRotina, {"&Consulta Saldos"  , "U_ZC0SAL(ZC0->ZC0_CODRED, ZC0->ZC0_LOJRED)"	, 0, 6})
 	AADD(aRotina, {"&Fechamento"       , "U_ZC0FEC()"     								, 0, 6})
 	AADD(aRotina, {"&Abertura  "       , "U_ZC0ABE()"     								, 0, 6})
@@ -75,6 +77,13 @@ User Function ZC0INC()
 Return
 //
 // --------------------------------------------------------------------------
+// Excluir cadastro
+User Function ZC0EXC()
+	_oCtaRapel:= ClsCtaRap():New ()
+	_oCtaRapel:Exclui(zc0 -> (recno ()), zc0 -> zc0_tm)
+Return
+//
+// --------------------------------------------------------------------------
 // Sequencia do incluir 
 User Function ZC0SEQ(_sRede)
 	Local _sQuery := ""
@@ -101,7 +110,7 @@ User Function ZC0SAL(_sRede, _sLoja)
 	Static oDlg
 
 	_oCtaRapel := ClsCtaRap():New ()
-	_sSaldo    := "R$ " + alltrim(str(_oCtaRapel:BuscaSaldo(_sRede, _sLoja)))
+	_sSaldo    := "R$ " + alltrim(str(_oCtaRapel:RetSaldo(_sRede, _sLoja)))
 	_sNome     := _oCtaRapel:RetNomeRede(_sRede, _sLoja)
 	_sRed      := _sRede + " - " + _sNome
 
@@ -171,4 +180,5 @@ Static Function _ValidPerg1 ()
 
     U_ValPerg (cPerg, _aRegsPerg)
 Return
+
 
