@@ -1,0 +1,46 @@
+// Programa:   PETRS006
+// Autor:      Robert Koch
+// Data:       07/06/2022
+// Descricao:  Ponto de entrada no fonte FBTRS006 (importador de XML da Totvs RS)
+//             Permite manipulacao dos dados de cabecalho e linha para execauto.
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Ponto_de_entrada
+// #Descricao         #Ponto de entrada no fonte FBTRS006 (importador de XML da Totvs RS). Permite manipulacao dos dados de cabecalho e linha para execauto.
+// #PalavasChave      #ponto_entrada #importador_XML #frete_sobre_venda
+// #TabelasPrincipais #SD1 #SF1
+// #Modulos           #COM #EST
+
+// Historico de alteracoes:
+//
+
+//#Include "Protheus.ch"
+//#Include "RwMake.ch"
+
+// --------------------------------------------------------------------------
+user function PECTE006 ()
+	local _aAreaAnt := U_ML_SRArea ()
+	local _aAmbAnt  := U_SalvaAmb ()
+	local _aRetTRS6 := {}
+	Local _aTRS006  := PARAMIXB
+	Local _aCabec   := _aTRS006[1]  // Vetor com Cabecaho repassado  para Execauto
+	Local _aLinha   := _aTRS006[2]	// Vetro com Itens    repassados para Execauto
+	Local _cChvCte  := _aTRS006[3]  // Caracter com Chave do CTe
+	Local _nTpoCte  := _aTRS006[4]  // Numerico com valor: 2=MATA116 Compras | 1=MATA140 Vendas
+	Local _oNfeOrg  := _aTRS006[5]  // Objeto com Notas Referenciadas
+
+
+	U_Log2 ('debug', '[' + procname () + ']')
+	u_logPCham ()
+	U_Log2 ('debug', _aCabec)
+	U_Log2 ('debug', _aLinha)
+	U_Log2 ('debug', _cChvCte)
+	U_Log2 ('debug', _nTpoCte)
+	U_Log2 ('debug', _oNfeOrg)
+
+	_aRetTRS6 := {_aCabec,_aLinha}
+	
+
+	U_SalvaAmb (_aAmbAnt)
+	U_ML_SRArea (_aAreaAnt)
+return _aRetTRS6

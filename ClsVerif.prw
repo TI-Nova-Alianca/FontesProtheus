@@ -3350,7 +3350,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 
 		case ::Numero == 90
-			//::Filiais   = '01'  // Gero todas as filiais juntas.
+			::Filiais   = '01'  // Usamos o modulo de manutencao somente ma filial 01.
 			::Setores   = 'INF/MNT'
 			::Descricao = 'Inconsistencia movimentos OS x Estoque'
 			::Sugestao  = 'Verificar movimentacao tabelas STL x SD3'
