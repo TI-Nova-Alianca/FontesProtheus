@@ -13,7 +13,7 @@
 // Historico de alteracoes:
 // 15/03/2022 - Claudia - Criação de rotina para gravação de codigo matriz. GLPI: 11635
 //
-// -------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------------------
 #INCLUDE "PROTHEUS.CH"
 #INCLUDE "FWMVCDEF.CH"
 
