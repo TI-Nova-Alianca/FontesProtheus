@@ -100,19 +100,23 @@ Static Function VerifCliente(_sCodMat, _sLojMat)
     Local _aDados := {}
     Local _lRet   := .F.
 
-    _oSQL:= ClsSQL ():New ()
-    _oSQL:_sQuery := ""
-    _oSQL:_sQuery += " SELECT * FROM " + RetSQLName ("SA1") 
-    _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
-    _oSQL:_sQuery += " AND A1_COD  = '" + _sCodMat + "' "
-    _oSQL:_sQuery += " AND A1_LOJA = '" + _sLojMat + "' "
-    //_oSQL:_sQuery += " AND A1_MSBLQL = '2' "
-    _oSQL:Log ()
-    _aDados := aclone (_oSQL:Qry2Array ())
+    If GetMV('VA_CODMAT')
+        _oSQL:= ClsSQL ():New ()
+        _oSQL:_sQuery := ""
+        _oSQL:_sQuery += " SELECT * FROM " + RetSQLName ("SA1") 
+        _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+        _oSQL:_sQuery += " AND A1_COD  = '" + _sCodMat + "' "
+        _oSQL:_sQuery += " AND A1_LOJA = '" + _sLojMat + "' "
+        //_oSQL:_sQuery += " AND A1_MSBLQL = '2' "
+        _oSQL:Log ()
+        _aDados := aclone (_oSQL:Qry2Array ())
 
-    If Len(_aDados) > 0
-       _lRet := .T.
+        If Len(_aDados) > 0
+        _lRet := .T.
+        else
+            u_help("O código do cliente não existe. Não pode ser utilizado como código matriz.")
+        EndIf
     else
-        u_help("O código do cliente não existe. Não pode ser utilizado como código matriz.")
+        u_help("Parâmetro VA_CODMAT não habilitado para essa opção!")
     EndIf
 Return _lRet
