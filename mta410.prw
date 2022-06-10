@@ -94,6 +94,7 @@
 // 19/08/2021 - Robert  - Desabilitado UPDATE SC9010 SET C9_BLCRED = '01' por que tinha sintaxe incorreta e nunca executou.
 // 10/09/2021 - Claudia - Não permitir vender mudas de uva e açucar no mesmo pedido para associados. GLPI: 10916
 // 29/09/2021 - Claudia - Tratamento para venda de milho. GLPI: 10994
+// 10/06/2022 - Claudia - Ajuste de lançamento para mudas. GLPI: 12191
 //
 // ---------------------------------------------------------------------------------------------------------------------------
 User Function MTA410 ()
@@ -291,6 +292,7 @@ User Function MTA410 ()
 		if valtype (_oAssoc) == "O" .and. _oAssoc:EhSocio ()
 			_sMuda   := 'N'
 			_sAcucar := 'N'
+			_sMilho  := 'N'
 
 			for _N = 1 to len (aCols)
 				N := _N

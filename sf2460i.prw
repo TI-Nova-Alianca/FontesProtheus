@@ -143,8 +143,8 @@
 // 29/09/2021 - Claudia - Tratamento para venda de milho. GLPI: 10994
 // 05/10/2021 - Claudia - Criado novo grupo para email de guia/st grupo 132. GLPI: 11028 
 // 15/10/2021 - Robert  - Ajuste sintaxe teste NF venda milho p/ associados (estava assim --> case _sTProd := '2')
+// 10/06/2022 - Claudia - Ajuste de lançamento para mudas. GLPI: 12191
 //
-
 // ---------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -725,6 +725,7 @@ static function _AtuSZIMudas ()
 				_oSQL:_sQuery += "    ,SE1.E1_CLIENTE"
 				_oSQL:_sQuery += "    ,SE1.E1_LOJA"
 				_oSQL:_sQuery += "    ,SE1.E1_EMISSAO"
+				_oSQL:_sQuery += "    ,SE1.E1_VENCTO"
 				_oSQL:_sQuery += " FROM " + RetSQLName ("SE1") + " AS SE1 "
 				_oSQL:_sQuery += " WHERE SE1.D_E_L_E_T_ = ''"
 				_oSQL:_sQuery += " AND SE1.E1_FILIAL  = '" + sf2 -> f2_filial  + "'"
@@ -753,6 +754,7 @@ static function _AtuSZIMudas ()
 						_oCtaCorr:Parcela  = _aSE1[i,4]
 						_oCtaCorr:Origem   = 'SF2460I'
 						_oCtaCorr:Obs      = alltrim (sc5 -> c5_obs)
+						_oCtaCorr:VctoSE2  = _aSE1[i,9]
 						if _oCtaCorr:PodeIncl ()
 							if ! _oCtaCorr:Grava (.F., .F.)
 								U_AvisaTI ("Erro na atualizacao da conta corrente de associados ao gerar a NF '" + sf2 -> f2_doc + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)
