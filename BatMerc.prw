@@ -596,19 +596,18 @@ static function _LeCli (_sLinkSrv)
 					_oEvento:Grava ()
 					
 					// Limpa o codigo base para obrigar a informar na liberação do cliente
-					If GetMV('VA_CODMAT')
-						If !empty(_AI0Cli)
-							_oSQL:= ClsSQL ():New ()
-							_oSQL:_sQuery := ""
-							_oSQL:_sQuery += "  UPDATE " + RetSQLName ("SA1") + " SET A1_VACBASE = '', A1_VALBASE =''"
-							_oSQL:_sQuery += " 	WHERE D_E_L_E_T_ = ''"
-							_oSQL:_sQuery += " 	AND A1_COD  = '" + _AI0Cli + "'"
-							_oSQL:_sQuery += " 	AND A1_LOJA = '" + _AI0Loj + "'"
-							_oSQL:Log ()
-							_oSQL:Exec ()
-						EndIf
+
+					If !empty(_AI0Cli)
+						_oSQL:= ClsSQL ():New ()
+						_oSQL:_sQuery := ""
+						_oSQL:_sQuery += "  UPDATE " + RetSQLName ("SA1") + " SET A1_VACBASE = '', A1_VALBASE =''"
+						_oSQL:_sQuery += " 	WHERE D_E_L_E_T_ = ''"
+						_oSQL:_sQuery += " 	AND A1_COD  = '" + _AI0Cli + "'"
+						_oSQL:_sQuery += " 	AND A1_LOJA = '" + _AI0Loj + "'"
+						_oSQL:Log ()
+						_oSQL:Exec ()
 					EndIf
-			  
+
 					RecLock("SA1", .F.)
 						SA1 -> A1_CNAE    = ''
 					MsUnlock()
