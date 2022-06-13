@@ -88,8 +88,9 @@
 // 13/05/2021 - Claudia - Criada uma variavel para o parametro VA_PJURBOL, para solucionar erro R27. GLPI: 8825
 // 06/12/2021 - Claudia - Criada validação para nao permitir impressão de boleto quando tiver algum erro. 
 //                        GLPI: 11283
-// 25/02/2022 - Sandra  - Alterado agencia e conta do banco 041 para filial 08 GLPI 11638.
+// 25/02/2022 - Sandra  - Alterado agencia e conta do banco 041 para filial 08. GLPI: 11638.
 // 18/02/2022 - Claudia - Criado modelo banrisul 240. GLPI: 11753
+// 10/06/2022 - Claudia - Realizado ajustes conforme solicitado pelo banco banrisul. GLPI: 11638
 //
 // --------------------------------------------------------------------------------------------------------------
 User Function ML_BOLLSR (_aBoletos)
@@ -270,6 +271,7 @@ Static Function MontaRel()
 		_oSQL:_sQuery += " AND M0_CODFIL = '01'"
 		_aEmp := _oSQL:Qry2Array ()
 		
+		_sEndereco := AllTrim(_aEmp[1,3])+ "-" + Subs(alltrim(_aEmp[1,4]),1,5) +"-" +Subs(alltrim(_aEmp[1,4]),6,3) + "," + alltrim(_aEmp[1,6]) 
 		aAdd(aDadosEmp, alltrim(_aEmp[1,1]))
 		// conforme solicitacao do banrisul - tem que sair o endereço completo
 		aAdd(aDadosEmp, AllTrim(_aEmp[1,3])+ "  -  " + Subs(alltrim(_aEmp[1,4]),1,5) +"-" +Subs(alltrim(_aEmp[1,4]),6,3)) // endereço
@@ -280,6 +282,7 @@ Static Function MontaRel()
 		aAdd(aDadosEmp, "I.E.: " + alltrim(_aEmp[1,7]))													// Inscrição estadual
 		
 	Else
+		_sEndereco := AllTrim(SM0->M0_ENDCOB) + "  -  " + SM0->M0_ESTCOB + "  -  " + Subs(SM0->M0_CEPCOB,1,5) +"-" +Subs(SM0->M0_CEPCOB,6,3) + ". " + AllTrim(SM0->M0_BAIRCOB)+",  "+AllTrim(SM0->M0_CIDCOB)+", "+SM0->M0_ESTCOB
 		aAdd(aDadosEmp, SM0->M0_NOMECOM)
 		// conforme solicitacao do banrisul - tem que sair o endereço completo
 		aAdd(aDadosEmp, AllTrim(SM0->M0_ENDCOB) + "  -  " + AllTrim(SM0->M0_CIDCOB) + "  -  " + SM0->M0_ESTCOB + "  -  " + Subs(SM0->M0_CEPCOB,1,5) +"-" +Subs(SM0->M0_CEPCOB,6,3))
@@ -2961,7 +2964,7 @@ Static Function _Impress(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
 				oPrn:Say(_nLinIni+0785 , 0100 ,"Nome do Beneficiário CPF/CNPJ/Endereço" ,oFont8 )
 				oPrn:Say(_nLinIni+0815 , 0100 ,"BANCO SAFRA"                            ,oFont10)											
 			otherwise  // outros bancos						
-				oPrn:Say(_nLinIni+0785 , 0100 ,"Beneficiáro"                            ,oFont8 )
+				oPrn:Say(_nLinIni+0785 , 0100 ,"Beneficiário"                            ,oFont8 )
 				oPrn:Say(_nLinIni+0815 , 0100 ,aDadosEmp[1] + '     ' + aDadosEmp[6]    , oFont10)
 		endcase			
 			
@@ -3230,7 +3233,7 @@ Static function _Impress422(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_R
 	oPrn:Say(_nLinIni+0705 , 1910 ,"Vencimento"                                 ,oFont8 )
 	oPrn:Say(_nLinIni+0735 , 1950 ,_Dtoc(aDadosTit[4])                          ,oFont10)	
 					
-	oPrn:Say(_nLinIni+0785 , 0110 ,"Beneficiáro"                            	,oFont8)
+	oPrn:Say(_nLinIni+0785 , 0110 ,"Beneficiário"                            	,oFont8)
 	oPrn:Say(_nLinIni+0815 , 0110 ,sDadosEmp1							    	,oFont10)	
 	
 	oPrn:Say(_nLinIni+0785 , 1910 ,"Agência/Código do Beneficiário"             ,oFont8)
@@ -3377,8 +3380,9 @@ Static function _ImpLayout240(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB
 	oPrn:Say(_nLinIni+0735 , 0100 ,"PAGÁVEL PREFERENCIALMENTE NA REDE INTEGRADA BANRISUL" 	,oFont10)
 	oPrn:Say(_nLinIni+0705 , 1910 ,"Vencimento"                                     		,oFont8 )
 	oPrn:Say(_nLinIni+0735 , 2010 ,_Dtoc(aDadosTit[4])                          			,oFont10)
-	oPrn:Say(_nLinIni+0785 , 0100 ,"Beneficiáro"                            				,oFont8 )
-	oPrn:Say(_nLinIni+0815 , 0100 ,aDadosEmp[1] + '     ' + aDadosEmp[6]    				, oFont10)		
+	oPrn:Say(_nLinIni+0785 , 0100 ,"Beneficiário"                            				,oFont8 )
+	oPrn:Say(_nLinIni+0785 , 0250 ,aDadosEmp[1] + '     ' + aDadosEmp[6]    				,oFont8)	
+	oPrn:Say(_nLinIni+0825 , 0250 ,_sEndereco                               				,oFont8)		
 	oPrn:Say(_nLinIni+0785 , 1910 ,"Agência/Código do Beneficiário"                    		,oFont8)		
 	
 	If _cBcoBol == '041' .and. cNumEmp == '0108'  // dados de agencia/conta do beneficiario da filial 08 - banrisul 
@@ -3407,7 +3411,11 @@ Static function _ImpLayout240(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB
 	oPrn:Say(_nLinIni+0935 , 1910 ,"(=)Valor do Documento"                     	,oFont8 )
 	oPrn:Say(_nLinIni+0965 , 2010 ,Transform(aDadosTit[5],"@E 9,999,999.99")   	,oFont10)
 	oPrn:Say(_nLinIni+1005 , 0100 ,"Informações de responsabilidade do beneficiário" ,oFont8 )
+	oPrn:Say(_nLinIni+1050 , 0100 ,"COBRAR JUROS DE " + GetMv('MV_SIMB1') + " " + alltrim (transform (Round(aDadosTit [5] * (aDadosTit [8] / 30 / 100),2), "@E 999,999,999.99")) + " AO DIA"		,oFont12)
 	oPrn:Say(_nLinIni+1110 , 0100 ,"PROTESTAR " + cvaltochar (GetMv ("VA_PROTBOL")) + " DIAS DO VENCIMENTO",oFont12)
+	If aDatSacado[8] > 0
+		oPrn:Say(_nLinIni+1170 , 0100 ,"POR OCASIÃO DO PAGAMENTO, ABATER R$ " + Transform(aDatSacado[8],"@EZ 9,999,999.99"),oFont12) // 20220610
+	EndIf
 	
 	oPrn:Say(_nLinIni+1230 , 0100 ,mv_par10                                 	,oFont12)
 	oPrn:Line(_nLinIni+0700 , 1900 ,_nLinIni+1350 , 1900)
@@ -3480,7 +3488,7 @@ Static function _ImpLayout240(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB
 	oPrn:Say(_nLinIni+0735 , 0100 ,"PAGÁVEL PREFERENCIALMENTE NA REDE INTEGRADA BANRISUL" 	,oFont10)
 	oPrn:Say(_nLinIni+0705 , 1910 ,"Vencimento"                                     		,oFont8 )
 	oPrn:Say(_nLinIni+0735 , 2010 ,_Dtoc(aDadosTit[4])                          			,oFont10)		
-	oPrn:Say(_nLinIni+0785 , 0100 ,"Beneficiáro"                            				,oFont8 )
+	oPrn:Say(_nLinIni+0785 , 0100 ,"Beneficiário"                            				,oFont8 )
 	oPrn:Say(_nLinIni+0815 , 0100 ,aDadosEmp[1] + '     ' + aDadosEmp[6]    				, oFont10)		
 	oPrn:Say(_nLinIni+0785 , 1910 ,"Agência/Código do Beneficiário"                    	,oFont8)		
 	
@@ -3510,7 +3518,12 @@ Static function _ImpLayout240(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB
 	oPrn:Say(_nLinIni+0935 , 1910 ,"(=)Valor do Documento"                     	,oFont8 )
 	oPrn:Say(_nLinIni+0965 , 2010 ,Transform(aDadosTit[5],"@E 9,999,999.99")   	,oFont10)
 	oPrn:Say(_nLinIni+1005 , 0100 ,"Informações de responsabilidade do beneficiário" ,oFont8 )
+	oPrn:Say(_nLinIni+1050 , 0100 ,"COBRAR JUROS DE " + GetMv('MV_SIMB1') + " " + alltrim (transform (Round(aDadosTit [5] * (aDadosTit [8] / 30 / 100),2), "@E 999,999,999.99")) + " AO DIA"		,oFont12)
 	oPrn:Say(_nLinIni+1110 , 0100 ,"PROTESTAR " + cvaltochar (GetMv ("VA_PROTBOL")) + " DIAS DO VENCIMENTO",oFont12)
+	If aDatSacado[8] > 0
+		oPrn:Say(_nLinIni+1170 , 0100 ,"POR OCASIÃO DO PAGAMENTO, ABATER R$ " + Transform(aDatSacado[8],"@EZ 9,999,999.99"),oFont12) // 20220610
+	EndIf
+
 	oPrn:Say(_nLinIni+1230 , 0100 ,mv_par10                                 	,oFont12)
 	oPrn:Line(_nLinIni+0700 , 1900 ,_nLinIni+1350 , 1900)
 	oPrn:Line(_nLinIni+1070 , 1900 ,_nLinIni+1070 , 2300)
