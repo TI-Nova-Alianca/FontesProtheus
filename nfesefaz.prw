@@ -147,7 +147,9 @@ static lSpedCodOnu := nil
 //              Claudia - Aplicadas nossas customizacoes na versao atualizada da Totvs (GLPI 11843). Compilado em 04/04/22
 // 06/04/2022 - Sandra
 //              Claudia - Ajustada variaveis de erro para notas de consignação. GLPI:11887 
+// 09/06/2022 - Sandra  - Ajustes na versao do pacote GLPI 11842 (Nota Técnica 2021.004_V_1.10) - Compilado por Robert em 09/06/22 21:45h
 //
+
 // --------------------------------------------------------------------------
 User Function XmlNfeSef(cTipo,cSerie,cNota,cClieFor,cLoja,cNotaOri,cSerieOri)
 
@@ -228,6 +230,7 @@ Local aFat			:= {}
 Local aValTotOpe	:= {}
 Local aCnpjPart		:= {}
 Local aCampoCnpj    := {}
+Local aObsItem		:= {} 					  
 
 //Declaração de Strings
 Local cString    	:= ""
@@ -284,7 +287,7 @@ Local cMunPres  	:= ""
 Local cAliasSE1  	:= "SE1"
 Local cAliasSE2  	:= "SE2"
 Local cAliasSD1  	:= "SD1"
-Local cAliasSD2  	:= "SD2" 	  
+Local cAliasSD2  	:= "SD2" 
 Local cAnttRntrc	:= iif(!Empty(SM0->M0_RNTRC),AllTrim(SM0->M0_RNTRC), AllTrim(SuperGetMV("MV_TMSANTT",,"")))  //Parametro do TMS que informa o codigo ANTT do transpotador
 Local cMVNFEMSA1	:= AllTrim(GetNewPar("MV_NFEMSA1",""))
 Local cMVNFEMSF4	:= AllTrim(GetNewPar("MV_NFEMSF4",""))
@@ -1655,7 +1658,7 @@ If cTipo == "1"
 							aadd(aEspVol,{ cEspecie, nVolume , SF2->F2_PLIQUI , SF2->F2_PBRUTO, cMarca, cNumeracao})
 						ElseIf ( nScan<>0 .AND.cScan == "1" )
 							aEspVol[nScan][2] += nVolume
-
+						Else
 							// Alianca: O certo seria ter isso em separado, mas ainda nao chegamos a tal nivel de sofisticacao...
 							if len (aEspVol) == 1
 								aEspVol [1, 3] = SF2->F2_PLIQUI
@@ -2482,7 +2485,20 @@ If cTipo == "1"
 								nValPisZF += (cAliasSD2)->D2_DESCZFP
 							EndIf
 						EndIf 
-									
+						
+						// Grupo obsItem - obsCont/obsFisco
+						aObsItem := {}
+						If SC6->(ColumnPos("C6_OBSFISC")) <> 0 .And. SC6->(ColumnPos("C6_OBSCONT")) <> 0 ;
+						.And. SC6->(ColumnPos("C6_OBSCCMP")) <> 0 .And. SC6->(ColumnPos("C6_OBSFCMP")) <> 0
+							SC6->(dbSetOrder(2))
+							If SC6->(MsSeek(xFilial("SD2")+(cAliasSD2)->(D2_COD+D2_PEDIDO+D2_ITEMPV)))
+								If !Empty(SC6->C6_OBSCONT) .Or. !Empty(SC6->C6_OBSFISC)
+									aAdd(aObsItem, { Alltrim(SC6->C6_OBSCCMP), AllTrim(SC6->C6_OBSCONT) } )
+									aAdd(aObsItem, { Alltrim(SC6->C6_OBSFCMP), AllTrim(SC6->C6_OBSFISC)} )
+								EndIf
+							EndIf
+						EndIf
+
 						dbSelectArea("SC5")
 						dbSetOrder(1)
 						MsSeek(xFilial("SC5")+(cAliasSD2)->D2_PEDIDO)
@@ -2490,7 +2506,8 @@ If cTipo == "1"
 						dbSelectArea("SC6")
 						dbSetOrder(1)
 						MsSeek(xFilial("SC6")+(cAliasSD2)->D2_PEDIDO+(cAliasSD2)->D2_ITEMPV+(cAliasSD2)->D2_COD)
-						
+			
+
 						cTpCliente:= Alltrim(SF2->F2_TIPOCLI)
 						//Para nota sobre cupom deve ser 
 						//impresso os valores da lei da transparência.					
@@ -2949,7 +2966,7 @@ If cTipo == "1"
 								aadd(aFCI,{(cAliasSD2)->D2_FCICOD}) 
 								
 								If lFCI
-									cMsgFci	:= "Resolucao do Senado Federal nº 13/12"
+									cMsgFci	:= "Resolucao do Senado Federal núm. 13/12"
 									cInfAdic  += cMsgFci + ", Numero da FCI " + Alltrim((cAliasSD2)->D2_FCICOD) + "."
 								EndIf
 								
@@ -3188,7 +3205,8 @@ If cTipo == "1"
 							0,;  //aprod[49]   nValLeite
 							IIf(!Empty(cBarra) .and. SB1->(ColumnPos(cBarra)),SB1->&(cBarra),""),; //aprod[50]   cBarra
 							IIf(!Empty(cBarTrib) .and. SB1->(ColumnPos(cBarTrib)),SB1->&(cBarTrib),""),; //aprod[51]   cBarraTrib
-							cInfAdOnu;
+							cInfAdOnu,;
+							aObsItem; // aprod[53] 
 							})
 							
 												
@@ -4797,15 +4815,22 @@ Else
 				If len(aCampoCnpj) > 0 .and. !Empty(SA4->A4_CGC) .and. ASCAN(aCampoCnpj, { |x| UPPER(x) == "F1_TRANSP" }) > 0 
 					aadd(aCnpjPart,{AllTrim(SA4->A4_CGC)})
 				EndIf
-               
+               	
 				If !Empty(SF1->F1_PLACA)
-					aadd(aVeiculo,SF1->F1_PLACA)
-					aadd(aVeiculo,SA4->A4_EST)
-					aadd(aVeiculo,"")//RNTC
+					dbSelectArea("DA3")
+					dbSetOrder(3)
+					If MsSeek(xFilial("DA3")+SF1->F1_PLACA)
+						aadd(aVeiculo,DA3->DA3_PLACA)
+						aadd(aVeiculo,DA3->DA3_ESTPLA)
+						aadd(aVeiculo,Iif(DA3->(ColumnPos("DA3_RNTC")) > 0 ,DA3->DA3_RNTC,""))//RNTC CRIAR CAMPO TESTE
+					Else
+						aadd(aVeiculo,SF1->F1_PLACA)
+						aadd(aVeiculo,SA4->A4_EST)
+						aadd(aVeiculo,"")//RNTC
+					EndIf
 				EndIf		
 			
 			EndIf
-
 			If SF1->(FieldPos("F1_MENNOTA"))>0
 				If !AllTrim(SF1->F1_MENNOTA) $ cMensCli
 					If Len(cMensCli) > 0 .And. SubStr(cMensCli, Len(cMensCli), 1) <> " "
@@ -4880,9 +4905,26 @@ Else
 			if SD1->(ColumnPos("D1_FCICOD"))<>0
 				cField  +=",D1_FCICOD"						    
 			EndIF
-			
+
+			if SD1->(ColumnPos("D1_OBSCTIT"))<>0
+				cField  +=",D1_OBSCTIT"						    
+			EndIF
+
+			if SD1->(ColumnPos("D1_OBSFTIT"))<>0
+				cField  +=",D1_OBSFTIT"						    
+			EndIF
+
+			if SD1->(ColumnPos("D1_OBSCONT"))<>0
+				cField  +=",D1_OBSCONT"						    
+			EndIF
+
+			if SD1->(ColumnPos("D1_OBSFISC"))<>0
+				cField  +=",D1_OBSFISC"						    
+			EndIF
+
 			cField += "%"
 			
+			// Campo Memo deve ser adicionado OBRIGATORIAMENTE no final da query.															
 			dbSelectArea("SD1")
 			dbSetOrder(1)	
 			#IFDEF TOP
@@ -4892,7 +4934,7 @@ Else
 						SELECT D1_FILIAL,D1_DOC,D1_SERIE,D1_FORNECE,D1_LOJA,D1_COD,D1_ITEM,D1_TES,D1_TIPO,D1_NFORI,D1_SERIORI,D1_ITEMORI,
 						D1_CF,D1_QUANT,D1_TOTAL,D1_VALDESC,D1_VALFRE,D1_SEGURO,D1_DESPESA,D1_CODISS,D1_VALISS,D1_VALIPI,D1_ICMSRET,
 						D1_VUNIT,D1_CLASFIS,D1_VALICM,D1_TIPO_NF,D1_PEDIDO,D1_ITEMPC,D1_VALIMP5,D1_VALIMP6,D1_BASEIRR,D1_VALIRR,D1_LOTECTL, 
-						D1_NUMLOTE,D1_CUSTO,D1_ORIGLAN,D1_DESCICM,D1_II,D1_FORMUL,D1_VALPS3,D1_ORIGLAN,D1_VALCF3,D1_TESACLA,D1_IDENTB6,D1_PICM,D1_DESC  %Exp:cField%
+D1_NUMLOTE,D1_CUSTO,D1_ORIGLAN,D1_DESCICM,D1_II,D1_FORMUL,D1_VALPS3,D1_ORIGLAN,D1_VALCF3,D1_TESACLA,D1_IDENTB6,D1_PICM,D1_DESC %Exp:cField%
 						// Alianca: Campos que nao constam na versao padrao
 						,D1_DESCRI,D1_UM,D1_VAVOLES, D1_VAVOLQT,D1_VAFOROR, D1_VALOJOR,D1_PESBRT, D1_TARA, D1_BRICMS, D1_II												 
 						FROM %Table:SD1% SD1
@@ -5020,7 +5062,16 @@ Else
 	    			nValIcmDev += (cAliasSD1)->D1_VALICM   //Valor total do ICMS devido
 	    			nValIcmDif += (cAliasSD1)->D1_ICMSDIF  //Valor total do ICMS diferido 
 	    		EndIf
-
+				
+				// Grupo obsItem - obsCont/obsFisco
+				aObsItem := {}
+				If SD1->(ColumnPos("D1_OBSFISC")) <> 0 .And. SD1->(ColumnPos("D1_OBSCONT")) <> 0;
+					.And. SD1->(ColumnPos("D1_OBSCTIT")) <> 0 .And. SD1->(ColumnPos("D1_OBSFTIT")) <> 0
+					If !Empty((cAliasSD1)->D1_OBSCONT) .Or. !Empty((cAliasSD1)->D1_OBSFISC)
+						aAdd(aObsItem, { AllTrim((cAliasSD1)->D1_OBSCTIT), AllTrim((cAliasSD1)->D1_OBSCONT) })
+						aAdd(aObsItem, { Alltrim((cAliasSD1)->D1_OBSFTIT), AllTrim((cAliasSD1)->D1_OBSFISC) })
+					EndIf					
+				EndIf
 	    		/* O campo F4_FORINFC é o substituto do F4_FORMULA, e através do parâmetro MV_NFEMSF4 se determina 
 				 se o conteudo da formula devera compor a mensagem do cliente(="C") ou do fisco(="F").
 				*/
@@ -5614,7 +5665,7 @@ Else
 						aadd(aFCI,{(cAliasSD1)->D1_FCICOD}) 
 								
 						If lFCI
-							cMsgFci	:= "Resolucao do Senado Federal nº 13/12"
+							cMsgFci	:= "Resolucao do Senado Federal núm. 13/12"
 							cInfAdic  += cMsgFci + ", Numero da FCI " + Alltrim((cAliasSD1)->D1_FCICOD) + "."
 						EndIf					
 					Else
@@ -5775,7 +5826,8 @@ Else
 					0,;  //aprod[49]   nValLeite
 					IIf(!Empty(cBarra) .and. SB1->(ColumnPos(cBarra)),SB1->&(cBarTrib),""),; //aprod[50]   cBarra
 					IIf(!Empty(cBarTrib) .and. SB1->(ColumnPos(cBarTrib)),SB1->&(cBarTrib),""),; //aprod[51]   cBarraTrib
-					cInfAdOnu;
+					cInfAdOnu,;
+					aObsItem; // aProd[53]	   
 					})
 					
 					
@@ -8114,7 +8166,10 @@ If  !lIssQn
 		//cString += '<pRedBCST>'+ConvType(aICMSST[04],5,2)+'</pRedBCST>'	
 		cString += '<vBCST>'+ConvType(aICMSST[05],15,2)+'</vBCST>'	
 		cString += '<aliquotaST>'+ConvType(aICMSST[06],7,4)+'</aliquotaST>'
-		cString += '<valorST>'+ConvType(aICMSST[07],15,2)+'</valorST>'		
+		cString += '<valorST>'+ConvType(aICMSST[07],15,2)+'</valorST>'
+		cString += '<vBCFCPST>'+ConvType(aICMSST[13],15,2)+'</vBCFCPST>'
+		cString += '<pFCPST>'+ConvType(aICMSST[14],5,2)+'</pFCPST>'
+		cString += '<vFCPST>'+ConvType(aICMSST[15],15,2)+'</vFCPST>'
 		cString += '<pBCOp>'+ConvType(aICMS[04],7,4)+'</pBCOp>'
 		cString += '<UFST>'+aDest[09]+'</UFST>'	
 		cString += '</Tributo>'
@@ -9118,7 +9173,24 @@ ElseIf aProd[43] > 0  .and. cVerAmb ='4.00'
    cMensFecp := NfeMFECOP(aProd[43],aDest[9],"2",aICMS,aICMSST,cVerAmb)
 EndIf
 	cString += '<infadprod>'+AllTrim(ConvType(aProd[25],500)+cMensDeson+cDedIcm+cCrgTrib+cMensFecp+' '+aProd[52])+'</infadprod>'
+    
+/*-------------------------------------------------------------------
+ Grupo det/obsItem (VA01) - pode ter obsCont (VA02) e obsFisco (VA05)
+-------------------------------------------------------------------*/
+If Len(aProd[53]) > 0
 
+	cString += '<obsItem>'
+
+		If !Empty(aProd[53][1][2])
+			cString += '<obsCont xCampo="' +aProd[53][1][1]+ '"><xTexto>' + aProd[53][1][2] + '</xTexto></obsCont>'
+		EndIf
+		If !Empty(aProd[53][2][2])
+			cString += '<obsFisco xCampo="' +aProd[53][2][1]+ '"><xTexto>' + aProd[53][2][2] + '</xTexto></obsFisco>'
+		EndIf
+
+	cString += '</obsItem>'
+
+EndIf
 cString += '</det>' 
 Return(cString)
 
@@ -9782,6 +9854,7 @@ For nX := 1 To Len(aProcRef)
 	cString += '<procRef>'
 	cString += '<nProc>'+aProcRef[nX][1]+ '</nProc>'
 	cString += '<indProc>'+aProcRef[nX][2]+ '</indProc>'
+	cString += '<tpAto>'+aProcRef[nX][3]+'</tpAto>'												 
 	cString += '</procRef>'	
 Next nX
 

@@ -28,6 +28,7 @@
 // 09/12/2020 - Robert - Passa a buscar nome do database BI_ALIANCA pela funcao U_LkServer (para poder usar com a base teste).
 // 22/01/2021 - Robert - Restaurada linha que pegava retorno das filiais, na opcao de rateio filial a filial.
 // 12/04/2021 - Robert - Acrescentadas colunas CPV, VERBDAS e OUTRAS DESP COML no layout 'por cliente para tab.dinamica'  (GLPI 9802).
+// 12/06/2022 - Robert - Limitado nome de usuario a 15 caracteres (erro "String or binary data would be truncated").
 //
 
 // --------------------------------------------------------------------------
@@ -204,7 +205,7 @@ static function _Gera (_sDescri, _dDataIni, _dDataFim, _sAgrRat, _sFormaRat)
 		_oSQL:_sQuery +=          ",'" + dtos (_dDataFim) + "'"
 		_oSQL:_sQuery +=          ",'" + _sAgrRat + "'"
 		_oSQL:_sQuery +=          ",'" + _sFormaRat + "'"
-		_oSQL:_sQuery +=          ",'" + cUserName + "')"
+		_oSQL:_sQuery +=          ",'" + left (cUserName, 15) + "')"
 		_oSQL:Log ()
 		if ! _oSQL:Exec ()
 			u_help ("Nao foi possivel criar a analise. Erro no SQL: " + _oSQL:_sQuery,, .t.)

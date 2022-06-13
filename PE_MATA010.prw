@@ -30,7 +30,9 @@
 // 04/10/2021 - Claudia - Incluida validação de usuario manutenção. GLPI: 10968
 // 05/10/2021 - CLaudia - Incluida a validação do docigo GNRE para PA e MR. GLPI: 11017
 // 08/10/2021 - Claudia - Incluida a validação para itens MC, conforme GLPI: 10845
+// 10/06/2022 - Robert  - Validacao codigo final C x tipo MC: ignora grupo 2007 (contra-rotulos) - GLPI 12190
 //
+
 //---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
 #Include "TOTVS.ch"
@@ -310,8 +312,10 @@ static function _A010TOk ()
 		_sCaracter := SUBSTR(alltrim(m->b1_cod), -1, 1) 
 
 		If _sCaracter == 'C' .and. m->b1_tipo <> 'MC'
-			u_help("Produto com final C deve ser obrigatoriamente do tipo MC.")
-			_lRet := .F.
+			if m->b1_grupo != '2007'  // contra-rotulos
+				u_help("Produto com final C deve ser obrigatoriamente do tipo MC.")
+				_lRet := .F.
+			endif
 		else
 			if _sCaracter <> 'C' .and. m->b1_tipo == 'MC'
 				u_help("Produto do tipo MC deve ter obrigatoriamente C no seu final.")
