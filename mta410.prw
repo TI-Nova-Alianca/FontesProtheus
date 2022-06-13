@@ -95,6 +95,7 @@
 // 10/09/2021 - Claudia - Não permitir vender mudas de uva e açucar no mesmo pedido para associados. GLPI: 10916
 // 29/09/2021 - Claudia - Tratamento para venda de milho. GLPI: 10994
 // 10/06/2022 - Claudia - Ajuste de lançamento para mudas. GLPI: 12191
+// 13/06/2022 - Claudia - Ajuste de validação de carga e AX01. GLPI: 12172
 //
 // ---------------------------------------------------------------------------------------------------------------------------
 User Function MTA410 ()
@@ -567,20 +568,30 @@ static function _VerCarga ()
 		u_help (_sMsg,, .t.)
 	endif
 
-	if _lRet .and. !IsInCallStack ("U_BATMERCP")
+	// if _lRet .and. !IsInCallStack ("U_BATMERCP")
+	// 	for _N = 1 to len (aCols)
+	// 		N := _N
+	// 		if ! GDDeleted ()
+	// 			posicione ("SB1", 1, xfilial ("SB1") + GDFieldGet ("C6_PRODUTO"), "B1_LOCALIZ")
+	// 			if m->c5_tpcarga == '1' .and. GDFieldGet ("C6_LOCAL") != '01'
+	// 				_lRet = U_MsgNoYes ("Pedido utiliza carga. Item " + GDFieldGet ("C6_ITEM") + ": O campo '" + alltrim (RetTitle ("C6_LOCAL")) + "' deveria ser '01'. Confirma assim mesmo?")
+	// 				if ! _lRet
+	// 					exit  // Nem pergunta para os proximos itens
+	// 				endif
+	// 			endif
+	// 		endif
+	// 	next
+	// endif
+	if _lRet .and. !IsInCallStack("U_BATMERCP")
 		for _N = 1 to len (aCols)
 			N := _N
-			if ! GDDeleted ()
-				posicione ("SB1", 1, xfilial ("SB1") + GDFieldGet ("C6_PRODUTO"), "B1_LOCALIZ")
-				if m->c5_tpcarga == '1' .and. GDFieldGet ("C6_LOCAL") != '01'
-					_lRet = U_MsgNoYes ("Pedido utiliza carga. Item " + GDFieldGet ("C6_ITEM") + ": O campo '" + alltrim (RetTitle ("C6_LOCAL")) + "' deveria ser '01'. Confirma assim mesmo?")
-					if ! _lRet
-						exit  // Nem pergunta para os proximos itens
-					endif
+			if !GDDeleted()
+				if m->c5_tpcarga == '1' .and. GDFieldGet("C6_LOCAL") != '01'
+					u_help("Pedido utiliza carga. Item " + GDFieldGet ("C6_ITEM") + ": O campo '" + alltrim (RetTitle ("C6_LOCAL")) + "' deve ser '01'.")
+					_lRet = .F.
 				endif
 			endif
 		next
 	endif
-
 	N = _n
 return _lRet
