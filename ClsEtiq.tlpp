@@ -14,6 +14,7 @@
 
 // Historico de alteracoes:
 // 28/03/2022 - Robert - Criada a classe e iniciada migracao de diversos outros fontes para ca.
+// 13/06/2022 - Robert - Ajuste leitura filial ZAG na impressao.
 //
 
 #Include "Protheus.ch"
@@ -231,12 +232,12 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 				_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZAG") + " ZAG "
 				_oSQL:_sQuery +=  " LEFT JOIN " + RetSQLName ("SB8") + " SB8 "
 				_oSQL:_sQuery +=       " ON (SB8.D_E_L_E_T_ = ''"
-				_oSQL:_sQuery +=       " AND SB8.B8_FILIAL  = ZAG.ZAG_FILIAL"
+				_oSQL:_sQuery +=       " AND SB8.B8_FILIAL  = ZAG.ZAG_FILORI"
 				_oSQL:_sQuery +=       " AND SB8.B8_LOTECTL = ZAG.ZAG_LOTORI"
 				_oSQL:_sQuery +=       " AND SB8.B8_PRODUTO = ZAG.ZAG_PRDORI"
 				_oSQL:_sQuery +=       ")"
 				_oSQL:_sQuery += " WHERE ZAG.D_E_L_E_T_ = ''"
-				_oSQL:_sQuery +=   " AND ZAG.ZAG_FILIAL = '" + ::Filial + "'"
+				_oSQL:_sQuery +=   " AND ZAG.ZAG_FILIAL = '" + xfilial ("ZAG") + "'"
 				_oSQL:_sQuery +=   " AND ZAG.ZAG_DOC    = '" + ::IdZAG + "'"
 				_oSQL:Log ()
 				_aLoteVal = aclone (_oSQL:RetFixo (1, "ao consultar lote do produto da etiqueta '" + ::Codigo + "' na solicitacao de transferencia numero '" + ::IdZAG + "'.", .T.))
