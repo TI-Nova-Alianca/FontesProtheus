@@ -3,13 +3,13 @@
 // Data.......: 18/04/2008
 // Descricao..: P.E. 'Tudo OK' da tela de pedidos de vendas
 //              Criado inicialmente para verificar CFO
-
+//
 // Tags de localização
 // #TipoDePrograma    #PontoDeEntrada
 // #PalavasChave      #PE #pontodeentrada #pedido #venda #pedidosdevendas #TudoOK
 // #TabelasPrincipais #SC5 #SC6 
 // #Modulos 		  #faturamento #FAT
-
+//
 // Historico de alteracoes:
 // 03/06/2008 - Robert  - Passa a avisar quando tem item do grupo ML_CARTU sem qt. volumes.
 // 11/06/2008 - Robert  - Aviso sobre volumes passa a ser apenas em pedidos do tipo 'normal'.
@@ -129,23 +129,6 @@ User Function MTA410 ()
 			u_help ("Para condicao A VISTA, informar banco CX1 (caixa).",, .t.)
 			_lRet = .F.
 		endif
-	/*	
-		// se condicao de pagamento A VISTA - pedido entra como bloqueado
-		if m->c5_condpag = '097' .and. m->c5_banco = 'CX1'
-			_sSql  = " " 
-			_sSql += " UPDATE SC9010" 
-		   	_sSql += "    SET C9_BLCRED = '01'" 
-		 	_sSql += "    WHERE C9_FILIAL = M->C5_FILIAL"
-		   	_sSql += "    	AND C9_NUM = M->C5_PEDIDO"
-		   	TCSQLExec (_sSQL)
-		endif
-	*/	
-/*		// se condição diferente de a vista banco não pode ser CX1 AGUARDAR RETORNO DA ALINE
-		if m->c5_condpag != '097' .and. m->c5_banco = 'CX1' 
-			u_help ("Para condicao A PRAZO, informar banco diferente de CX1 (caixa).",, .t.)
-			_lRet = .F.
-		endif
-*/
 	endif
 	
 	if _lRet
@@ -154,7 +137,6 @@ User Function MTA410 ()
 			for _N = 1 to len (aCols)
 				N := _N
 				if ! GDDeleted () .and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES"), "F4_DUPLIC") = "S"
-				//	u_help ("Para condição BONIFICAÇÃO, TES não deve gerar finaneiro.",, .t.)
 					u_help ("Para condicao de pagamento '" + m->c5_condpag + "' (bonificacao), o TES (" + GDFieldGet ("C6_TES") + ") nao deve gerar finaneiro.",, .t.)
 					_lRet = .F.
 					exit
@@ -197,7 +179,7 @@ User Function MTA410 ()
 	endif
 
 	// Consistencias simples ref. volumes
-	if _lRet //.and. ! IsInCallStack ("U_BATD04") .and. ! IsInCallStack ("U_VA_GPDM")
+	if _lRet 
 		_sCartu = GETMV("ML_CARTU")
 		for _N = 1 to len (aCols)
 			N := _N
@@ -242,12 +224,6 @@ User Function MTA410 ()
 	if _lRet
 		_lRet = _VerCopos ()
 	endif
-
-	// Pedidos importador por EDI nao devem ter, ao mesmo tempo, itens com e sem ST, pois
-	// o layout da Mercador nao permite posterior envio de NF nessa situacao.
-	//if _lRet .and. m->c5_tipo $ 'N' .and. IsInCallStack ("U_EDIM1")
-	//	_lRet = _VerSTEDI ()
-	//endif
 
 	// Valida Tipo de Frete do Pedido com o Tipo de Frete da Tabela de Precos
 	if _lRet .and. ! IsInCallStack ("U_VA_GPDM") .and. ! IsInCallStack ("U_EDIM1")
@@ -324,7 +300,7 @@ User Function MTA410 ()
 	U_ML_SRArea (_aAreaAnt)
 	u_log2 ('debug', procname () + " retornando " + cvaltochar (_lRet))
 return _lRet
-
+//
 // --------------------------------------------------------------------------
 // Verifica se a liberacao dos itens foi totalmente feita.
 static function _VerLib ()
@@ -354,9 +330,7 @@ static function _VerLib ()
 	endif
 	N = _n
 return _lRet
-
-
-
+//
 // --------------------------------------------------------------------------
 // Verifica saldos em estoques.
 static function _VerEstq ()
@@ -406,7 +380,7 @@ static function _VerEstq ()
 
 	N = _n
 return _lRet                                                   
-
+//
 // --------------------------------------------------------------------------
 // Verificacoes ref. pedidos digitados por representantes externos.
 static function _VerRepr ()
@@ -421,103 +395,7 @@ static function _VerRepr ()
 		endif
 	next
 return _lRet
-
-/*
-// --------------------------------------------------------------------------
-// Verificacoes ref. movimentacao de deposito fechado (filial 04)
-static function _VerDpFech ()
-	local _lRet      := .T.
-	local _n         := N
-	local _sTESEnvio := "606"
-	local _sTESDevol := "624"
-	local _lEnvio    := .F.
-	local _lDevol    := .F.
-
-	// Verifica se eh envio ou devolucao
-	if _lRet
-		_lEnvio = .F.
-		_lDevol = .F.
-		for N = 1 to len (aCols)
-			if ! GDDeleted () .and. GDFieldGet ("C6_TES") == _sTESEnvio
-				_lEnvio = .T.
-				exit
-			endif
-			if ! GDDeleted () .and. GDFieldGet ("C6_TES") == _sTESDevol
-				_lDevol = .T.
-				exit
-			endif
-		next
-	endif
-
-	if _lRet
-		for N = 1 to len (aCols)
-			if cNumEmp == "0101" .and. m->c5_cliente == "011863" .and. m->c5_lojacli == "01" .and. GDFieldGet ("C6_TES") != _sTESEnvio
-				_lRet = u_msgnoyes ("As operacoes com este cliente geralmente utilizam o TES '" + _sTESEnvio + "' (remessa para deposito fechado). Confirma assim mesmo?")
-				exit
-			endif
-			if ! GDDeleted () .and. cEmpAnt + cFilAnt $ "0104/0114" .and. ! GDFieldGet ("C6_TES") $ _sTESDevol + '/625'
-				u_help ("TES '" + GDFieldGet ("C6_TES") + "' nao permitido para deposito fechado")
-				_lRet = .F.
-				exit
-			endif
-		next
-	endif
-
-	if _lRet .and. (_lEnvio .or. _lDevol)
-		for N = 1 to len (aCols)
-			if ! GDDeleted ()
-				if (_lEnvio .and. GDFieldGet ("C6_TES") != _sTESEnvio) .or. (_lDevol .and. GDFieldGet ("C6_TES") != _sTESDevol)
-					u_help ("Notas de remessa (TES '" + _sTESEnvio + "') ou devolucao (TES '" + _sTESDevol + "') de deposito fechado nao devem ter outros TES misturados.")
-					_lRet = .F.
-					exit
-				endif
-			endif
-		next
-	endif
-
-	// Consistencias para notas de retorno simbolico do deposito para a matriz.
-	if _lRet .and. _lDevol .and. empty (m->c5_vaNFFD)
-		u_help ("O campo '" + alltrim (RetTitle ("C5_VANFFD")) + "' deve ser informado para pedidos de retorno do deposito para a matriz.")
-		_lRet = .F.
-	endif
-	if _lRet .and. !empty (m->c5_vaNFFD) .and. ! _lDevol
-		u_help ("O campo '" + alltrim (RetTitle ("C5_VANFFD")) + "' deve ser informado somente em pedidos de retorno do deposito para a matriz.")
-		_lRet = .F.
-	endif
-	
-	if _lRet .and. ! _lEnvio .and. ! _lDevol .and. cEmpAnt + cFilAnt == "0101"
-		for N = 1 to len (aCols)
-			if ! GDDeleted ()
-				if m->c5_vafemb $ "04/13/14/15" .and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES"), "F4_VAFDEP") != "S"
-					u_help ("Filial de embarque = '" + m->c5_vaFEmb + "', mas consta(m) item(s) usando TES de embarque na matriz.")
-					_lRet = .F.
-					exit
-				endif
-				if m->c5_vafemb == "01" .and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES"), "F4_VAFDEP") == "S"
-					u_help ("Filial de embarque = '" + m->c5_vaFEmb + "', mas consta(m) item(s) usando TES de embarque no deposito.")
-					_lRet = .F.
-					exit
-				endif
-			endif
-		next
-	endif
-
-	if _lRet .and. cNumEmp == '0101'
-		for N = 1 to len (aCols)
-			if ! GDDeleted ()
-				if m->c5_vafemb != "01" .and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES"), "F4_VARDEP") = "S"
-					u_help ("Remessa para deposito so pode ser embarcada na matriz.")
-					_lRet = .F.
-					exit
-				endif
-			endif
-		next
-	endif
- 
-	N = _n
-return _lRet
-*/
-
+//
 // --------------------------------------------------------------------------
 // Consistencias referentes a transferencias entre filiais.
 static function _VerTrFil ()
@@ -528,8 +406,6 @@ static function _VerTrFil ()
 	_TESPCUS := GetMv ("AL_TESPCUS")
 	for _N = 1 to len (aCols)
 		N := _N
-//		if ! GDDeleted () .and. GDFieldGet ("C6_TES") $ GetMv ("AL_TESPCUS")
-//		if ! GDDeleted () .and. GDFieldGet ("C6_TES") $ GetMv ("AL_TESPCUS") .and. m->c5_cliente != '025023'  // Para a filial 16 precisamos usar tabela de precos (GLPI 7208)
 		if ! GDDeleted () .and. GDFieldGet ("C6_TES") $ _TESPCUS .and. m->c5_cliente != '025023'
 			if ! IsInCallStack ("MATA310")  // TESTE ROBERT: Tela padrao transf. entre filiais
 				_nCusto = U_PrcCust (GDFieldGet ("C6_PRODUTO"), GDFieldGet ("C6_LOCAL"))
@@ -566,9 +442,7 @@ static function _VerTrFil ()
 	next
 	N = _n
 return _lRet
-
-
-
+//
 // --------------------------------------------------------------------------
 // Consistencias referentes a vendas de produtos para associados.
 static function _VerAssoc ()
@@ -583,15 +457,12 @@ static function _VerAssoc ()
 			if sa2 -> (dbseek (xfilial ("SA2") + sa1 -> a1_cgc, .F.))
 				_oAssoc := ClsAssoc():New (sa2 -> a2_cod, sa2 -> a2_loja)
 				if _oAssoc:EhSocio (dDataBase)
-//					_lRet = U_msgNoYes ("Lembrete:" + chr (13) + chr (10) + ;
-//					                    "Verifiquei, pelo CNPJ/CPF, que " + alltrim (sa1 -> a1_nome) + " consta como associado da cooperativa (codigo de fornecedor '" + sa2 -> a2_cod + '/' + sa2 -> a2_loja + "'). Se voce deseja que esta venda seja debitada na conta corrente do associado, deve cadastrar o pedido como tipo 'B' (Utiliza fornecedor)." + chr (13) + chr (10) + ;
-//					                    "Deseja incluir o pedido assim mesmo?", .F.)
 				endif
 			endif
 		endif
 	endif
 return _lRet
-
+//
 // --------------------------------------------------------------------------
 // Verifica envio de bag para dispenser sem os copos descartaveis.
 static function _VerCopos ()
@@ -622,45 +493,13 @@ static function _VerCopos ()
 			endif
 		 next
 	endif
-
 return _lRet
-
-/*
-// --------------------------------------------------------------------------
-// Pedidos importador por EDI nao devem ter, ao mesmo tempo, itens com e sem ST.
-static function _VerSTEDI()
-	local _lRet     := .T.
-	local _nLinha   := 0
-	local _lComST   := .F.
-	local _lSemST   := .F.
-	local _sComST   := ""
-	local _sSemST   := ""
-
-	for _nLinha = 1 to len (aCols)
-		if ! GDDeleted (_nLinha)
-			if U_CalcST4 (m->c5_vaEst, GDFieldGet ("C6_PRODUTO", _nLinha), GDFieldGet ("C6_PRCVEN", _nLinha) * GDFieldGet ("C6_QTDVEN", _nLinha), m->c5_cliente, m->c5_lojacli, GDFieldGet ("C6_QTDVEN", _nLinha), GDFieldGet ("C6_TES", _nLinha)) > 0
-				_lComST = .T.
-				_sComST += iif (empty (_sComST), '', ';') + alltrim (GDFieldGet ("C6_PRODUTO", _nLinha))
-			else
-				_lSemST = .T.
-				_sSemST += iif (empty (_sSemST), '', ';') + alltrim (GDFieldGet ("C6_PRODUTO", _nLinha))
-			endif
-		endif
-	next
-	if ! empty (_sComST) .and. ! empty (_sSemST)
-		u_help ("Pedidos via EDI nao aceitam itens com ST (" + _sComST + ") e sem ST (" + _sSemST + "), pois o layout da Mercador nao permite posterior envio de NF nessa situacao.",, .t.)
-		_lRet = .F.
-	endif
-return _lRet
-*/
-
-
+//
 // --------------------------------------------------------------------------
 // Valida o tipo de Frete do Pedido de acordo com o Tipo de Frete da Tabela de Precos
 static function _VerTPFre()
 	local _lRet     := .T.
     local _cTpFrete := ""
-//    local _sMsg     := ""
 
 	// Descobre o Tipo de Frete da Tabela de Preco
     DbSelectArea("DA0")
@@ -678,24 +517,24 @@ static function _VerTPFre()
        endif
     endif
 return _lRet
-
+//
 // --------------------------------------------------------------------------
+// Ver carga
 static function _VerCarga ()
 	local _lRet     := .T.
 	local _n        := N
 	local _sMsg     := ""
-//	local _sComFull := ''
-//	local _sSemFull := ''
 
-//	if _lRet .and. cEmpAnt + cFilAnt != '0101' .and. m->c5_tpcarga == '1'
 	if _lRet .and. ! cEmpAnt + cFilAnt $ '0101/0116' .and. m->c5_tpcarga == '1'
 		u_help ("Pedido nao deve utilizar carga para esta filial (campo '" + alltrim (RetTitle ("C5_TPCARGA")) + "')",, .t.)
 		_lRet = .F. 
 	endif
+
 	if _lRet .and. m->c5_gerawms != '2'
 		_sMsg += "Pelo nosso metodo atual de trabalho, o campo '" + alltrim (RetTitle ("C5_GERAWMS")) + "' deve estar configurado para gerar servico na montagem da carga." + chr (13) + chr (10)
 		_lRet = .F.
 	endif
+
 	if _lRet
 		for _N = 1 to len (aCols)
 			N := _N
@@ -705,36 +544,25 @@ static function _VerCarga ()
 					_sMsg += "Pedido utiliza carga. Item " + GDFieldGet ("C6_ITEM") + ": Produto '" + alltrim (GDFieldGet ("C6_PRODUTO")) + "' usa controle de enderecamento. O campo '" + alltrim (RetTitle ("C6_SERVIC")) + "' deve ser informado." + chr (13) + chr (10)
 					_lRet = .F.
 				endif
+
 				if m->c5_tpcarga == '2' .and. ! empty (GDFieldGet ("C6_SERVIC"))
 					_sMsg += "Pedido nao utiliza carga. Item " + GDFieldGet ("C6_ITEM") + ": O campo '" + alltrim (RetTitle ("C6_SERVIC")) + "' nao deve ser informado." + chr (13) + chr (10)
 					_lRet = .F.
 				endif
-				// Passado para fora do loop por que preciso liberar mediando confirmacao do usuario.
-				//if m->c5_tpcarga == '1' .and. GDFieldGet ("C6_LOCAL") != '01'
-				//	_sMsg += "Pedido utiliza carga. Item " + GDFieldGet ("C6_ITEM") + ": O campo '" + alltrim (RetTitle ("C6_LOCAL")) + "' deve ser '01'." + chr (13) + chr (10)
-				//	_lRet = .F.
-				//endif
+
 				if m->c5_tpcarga == '1' .and. fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("C6_TES"), "F4_ESTOQUE") != 'S'
 					_sMsg += "Quando o pedido utiliza carga, todos os TES devem movimentar estoque para nao gerar tarefas de separacao indevidamente (Item " + GDFieldGet ("C6_ITEM") + ": TES '" + GDFieldGet ("C6_TES") + "' nao movimenta estoque)." + chr (13) + chr (10)
 					_lRet = .F.
 				endif
-				// testar o campo estoque do TES
-//				if fBuscaCpo("SF4",1,xFilial("SF4")+GDFieldGet ("C6_TES"),"F4_ESTOQUE") = 'S'
-//					if m->c5_tpcarga == '2' .and. Localiza (GDFieldGet ("C6_PRODUTO")) .and. (empty (GDFieldGet ("C6_LOCALIZ")) .or. empty (GDFieldGet ("C6_ENDPAD")))
-//						_sMsg += "Item " + GDFieldGet ("C6_ITEM") + ": Pedido nao utiliza carga, mas o produto '" + alltrim (GDFieldGet ("C6_PRODUTO")) + "' controla localizacao. Informe endereco para retirada nos campos '" + alltrim (RetTitle ("C6_LOCALIZ")) + "' e '" + alltrim (RetTitle ("C6_ENDPAD")) + "'." + chr (13) + chr (10)
-//						_lRet = .F.
-//					endif
-//				endif
-				
+
 				if m->c5_tpcarga == '1' .and. (!empty (GDFieldGet ("C6_LOCALIZ")) .or. !empty (GDFieldGet ("C6_ENDPAD")))
 					_sMsg += "Item " + GDFieldGet ("C6_ITEM") + ": Pedido utiliza carga. Campos '" + alltrim (RetTitle ("C6_LOCALIZ")) + "' e '" + alltrim (RetTitle ("C6_ENDPAD")) + "' nao devem ser informados." + chr (13) + chr (10)
 					_lRet = .F.
-				endif 
-				
-
+				endif 	
 			endif
 		next
 	endif
+	
 	if ! empty (_sMsg)
 		u_help (_sMsg,, .t.)
 	endif
