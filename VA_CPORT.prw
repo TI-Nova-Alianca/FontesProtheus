@@ -39,13 +39,14 @@
 // 21/02/2020 - Robert  - Alteracoes na tabela ZZA passam a ser feitas em rotina externa (U_AtuZZA).
 // 07/08/2020 - Robert  - Incluidas tags para catalogacao de fontes
 //                      - Melhorados logs e mensagens de erro; ajuste paravras acentuadas e 
-//                        caracteres com erro de conversao para UTF8
+//                         caracteres com erro de conversao para UTF8
 //                      - Liberado uso em todas as filiais (antes era restito para a matriz)
 // 03/02/2021 - Robert  - Chamada do fechamento de safra apos fechar entrada de portaria (GLPI 9319)
 // 08/02/2021 - Robert  - Nao alimentava as variaveis _zx509fina e _zx509orga na chamada da tela de 
 //                        fechamento de safra (GLPI 9319)
 // 25/01/2022 - Claudia - Incluida rotina para exportar dados em planilha. GLPI: 10771.
 // 11/03/2022 - Robert  - Novos parametros funcao U_VA_RusLI() - GLPI 11745.
+// 14/06/2022 - sandra  - Incluso campo ZZT_OBS - GLPI 12209.
 //
 
 // ----------------------------------------------------------------------------------------------------------------
@@ -943,6 +944,7 @@ User Function VA_ZZTCON()
         _oSQL:_sQuery += "    ,ZZT_LOJF "
         _oSQL:_sQuery += "    ,ZZT_CLIENT "
         _oSQL:_sQuery += "    ,ZZT_LOJAC "
+		_oSQL:_sQuery += "    ,ZZT_OBS "
         _oSQL:_sQuery += " FROM ZZT010 "
         _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
         _oSQL:_sQuery += " AND ZZT_COD BETWEEN   '" + mv_par01 + "' AND '"+ mv_par02 + "'"
@@ -993,6 +995,7 @@ User Function VA_ZZTCON()
         aadd (_aCols, {26, "Loja"       	    ,  10,  "@!"})
         aadd (_aCols, {27, "Cliente"       	    ,  20,  "@!"})
         aadd (_aCols, {28, "Loja"       	    ,  10,  "@!"})
+		aadd (_aCols, {29, "OBS "       	    ,  20,  "@!"})
         
         U_F3Array (_aDados, "Controle de portaria", _aCols, oMainWnd:nClientWidth - 50, oMainWnd:nClientHeight - 40 , "", "", .T., 'C' )
     else
