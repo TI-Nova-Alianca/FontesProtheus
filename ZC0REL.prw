@@ -10,6 +10,7 @@
 // #Modulos 		  #FAT 
 //
 // Historico de alteracoes:
+// 14/06/2022 - Sandra - Incluso total, incluso parametro 12, quebra por rede. GLPI 12146.
 //
 // --------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -54,6 +55,13 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA11", 	"" ,"Vlr.Rapel"			, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA12", 	"" ,"Status"  			,       					,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 
+
+oBreak1 := TRBreak():New(oSection1,oSection1:Cell("COLUNA2"),"Total")
+   
+    TRFunction():New(oSection1:Cell("COLUNA11")  ,,"SUM" ,oBreak1,""          , "@E 99,999,999.99", NIL, .F., .T.)
+        
+
+
 Return(oReport)
 //
 // -------------------------------------------------------------------------
@@ -62,8 +70,12 @@ Static Function PrintReport(oReport)
 	Local oSection1  := oReport:Section(1)
     Local _x         := 0
 
+
+
+
 	oSection1:Init()
 	oSection1:SetHeaderSection(.T.)
+	
 
     _oSQL:= ClsSQL ():New ()
     _oSQL:_sQuery := ""
@@ -108,8 +120,14 @@ Static Function PrintReport(oReport)
 		_oSQL:_sQuery += " AND ZC0.ZC0_DOC   = '"+ mv_par10 +"' "
 		_oSQL:_sQuery += " AND ZC0.ZC0_SERIE = '"+ mv_par11 +"' "
 	EndIf
-	_oSQL:_sQuery += " ORDER BY FILIAL, EMISSAO, REDE, CLIENTE "
-    _aZC0 := aclone (_oSQL:Qry2Array ())
+	
+	if mv_par12 == 1
+		_oSQL:_sQuery += " ORDER BY FILIAL, EMISSAO, REDE, CLIENTE "
+	else
+		_oSQL:_sQuery += " ORDER BY FILIAL, NOME, EMISSAO "
+	endif
+	
+	    _aZC0 := aclone (_oSQL:Qry2Array ())
 
 	For _x:=1 to Len(_aZC0)
 		If _aZC0[_x, 13] == 'C'
@@ -152,6 +170,7 @@ Static Function _ValidPerg ()
     aadd (_aRegsPerg, {09, "Tp.Movimento     ", "C", 2, 0,  "",   "   "     , {},                         		 ""})
 	aadd (_aRegsPerg, {10, "Documento        ", "C", 9, 0,  "",   "   "     , {},                         		 ""})
 	aadd (_aRegsPerg, {11, "Serie            ", "C", 2, 0,  "",   "   "     , {},                         		 ""})
+	aadd (_aRegsPerg, {12, "Ordenação        ", "N", 1, 0,  "",   "   "     , {"Rede","Nome"},                   ""})
 
     U_ValPerg (cPerg, _aRegsPerg)
 Return
