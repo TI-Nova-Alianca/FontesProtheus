@@ -166,8 +166,11 @@ static function _FujaLouco ()
 			endif
 			incproc ()
 			
-			// Posiciona no registro de movimento a ser contabilizado.
+			// Atualiza log em percentuais, pois, se mostrar registro a registro, gera muitos logs e fica muito lento.
+			// funcao ainda nao pronta ---> u_LogPerc (_nRegMovto, len (_aRegMovto))
 			U_Log2 ('info', 'Posicionando ' + _sTabMovto + ' no recno ' + cvaltochar (_aRegMovto [_nRegMovto, 1]))
+			
+			// Posiciona no registro de movimento a ser contabilizado.
 			(_sTabMovto) -> (dbgoto (_aRegMovto [_nRegMovto, 1]))
 			
 			// Deixa arquivos adicionais posicionados para o caso do LPAD precisar.
