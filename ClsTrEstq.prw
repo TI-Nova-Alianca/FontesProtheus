@@ -22,6 +22,7 @@
 // 27/04/2022 - Robert  - Voltado nome de usuario 'FULLW' para 'FULLWMS' pois optei por criar um usuario com esse nome no Protheus.
 // 05/05/2022 - Robert  - Ateh definirmos melhor as integracoes, fica liberado transf.manualmente p/alm que usa Full.
 // 06/05/2022 - Robert  - Se a solicitacao foi gerada por integracao com FullWMS, limpa tambem da tabela de integracao (GLPI 8914).
+// 15/06/2022 - Robert  - Nao gerava etiqueta se o produto nao controlasse lotes (GLPI 12220)
 //
 
 // ------------------------------------------------------------------------------------
@@ -478,10 +479,10 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 		_lContinua = .F.
 	endif
 
-	if _lContinua .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + ::ProdDest, "B1_RASTRO") != "L"
-		_sMsg += "Produto destino '" + alltrim (::ProdDest) + "' nao controla lotes. Etiqueta nao pode ser gerada."
-		_lContinua = .F.
-	endif
+	//if _lContinua .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + ::ProdDest, "B1_RASTRO") != "L"
+	//	_sMsg += "Produto destino '" + alltrim (::ProdDest) + "' nao controla lotes. Etiqueta nao pode ser gerada."
+	//	_lContinua = .F.
+	//endif
 
 	if _lContinua
 		// Usa mesma rotina de etiquetas dos pallets de producao.

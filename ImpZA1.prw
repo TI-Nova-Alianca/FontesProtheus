@@ -18,6 +18,8 @@
 // 25/02/2022 - Robert  - Ajustes nas margens da etiq. de NF na impressora Argox/Datamax.
 // 01/04/2022 - Robert  - Nao envia para FullWMS se for etiqueta de OP (envio vai ser feito noutro local) - GLPI 11825
 // 11/05/2022 - Robert  - Quando reimpressao, imprime 'Reimpressa' em vez de 'Impressa'.
+// 15/06/2022 - Robert  - Quando o produto nao controla lotes, nao tem data de
+//                        validade, entao busca data atual+b1_prvalid (GLPI 12220)
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -67,7 +69,7 @@ user function ImpZA1 (_sCodigo, _sIdImpr)
 	if _lContinua
 		sb1 -> (dbsetorder(1))
 		if ! sb1 -> (dbseek (xFilial("SB1") + za1 -> za1_prod, .F.))
-			u_help ("Produto da etiqueta ('" + za1 -> za1_prod + "') nco cadastrado.",, .t.)
+			u_help ("Produto da etiqueta ('" + za1 -> za1_prod + "') nao cadastrado.",, .t.)
 			_lContinua = .F.
 		endif
 	endif
@@ -222,21 +224,19 @@ static function _ImpZAG ()
 		_sLoteI	:= zag -> zag_lotori
 		_sUM    := sb1 -> b1_um
 		_sObs1  := left ('Transf alm.' + zag -> zag_almori + ' -> ' + zag -> zag_almdst, 25)
-		_sObs2  := left (zag -> zag_motivo, 25)
+		// Nao imprimir para nao aparecer 'devolucao', etc. ---> _sObs2  := left (zag -> zag_motivo, 25)
 		
-		// Quando mexer aqui, ajustar tambem o fonte que exporta para o WMS (EnvEtFul.prw)
-//		SB8 -> (dbsetorder (4))  // FILIAL+LOTEFOR+PRODUTO+LOCAL
-//		if SB8 -> (dbseek (xfilial ("SB8") + zag -> zag_lotori + ZA1 -> ZA1_PROD, .T.))
-//			_sDataV := DTOC(SB8->B8_DTVALID)
-//		else
-//			_sDataV := DTOC(ctod (''))
-//		endif
-		// Quando mexer aqui, ajustar tambem o fonte que exporta para o WMS (EnvEtFul.prw)
-		if ! _AchaSB8 (ZA1 -> ZA1_PROD, zag -> zag_lotori, zag -> zag_almori)
-			u_help ("Lote '" + zag -> zag_lotori + "' do produto '" + za1 -> za1_prod + "' referenciado pela solicitacao de transferencia '" + zag -> zag_IdZAG + "' nao foi localizado na tabela SB8",, .t.)
-			_lContinua = .F.
+	//	if fBuscaCpo ("SB1", 1, xfilial ("SB1") + ZA1 -> ZA1_PROD, "B1_RASTRO") == 'L'
+		if sb1 -> b1_rastro == 'L'
+			if ! _AchaSB8 (ZA1 -> ZA1_PROD, zag -> zag_lotori, zag -> zag_almori)
+				u_help ("Lote '" + zag -> zag_lotori + "' do produto '" + za1 -> za1_prod + "' referenciado pela solicitacao de transferencia '" + za1 -> za1_IdZAG + "' nao foi localizado na tabela SB8",, .t.)
+				_lContinua = .F.
+			else
+				_sDataV := DTOC(SB8->B8_DTVALID)
+			endif
 		else
-			_sDataV := DTOC(SB8->B8_DTVALID)
+			U_Log2 ('aviso', '[' + procname () + "]Produto '" + alltrim (sb1 -> b1_cod) + "' nao controla lotes. Vou imprimir data de validade como data atual + b1_prvalid.")
+			_sDataV := date () + sb1 -> b1_prvalid
 		endif
 	endif
 
