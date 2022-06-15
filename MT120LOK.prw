@@ -17,8 +17,9 @@
 // 15/10/2021 - Claudia - Validação MC da tetra pak. GLPI: 10765
 // 21/03/2022 - Claudia - Ajustada a validação de obrigação do centro de custo. GLPI: 11780
 // 02/06/2022 - Claudia - Incluida validação de rateio. GLPI: 11937
+// 14/06/2022 - Claudia - Ajustada a validação para data de entrega não ser menor que data atual. GLPI: 12127
 //
-// -----------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------
 User Function MT120LOk ()
 	local _lRet     := .T.
 	local _aAreaAnt := U_ML_SRArea ()
@@ -45,7 +46,7 @@ User Function MT120LOk ()
 		_lRet = .F.
 	endif
 
-	if _lRet .and. ! GDDeleted() .and. (GDFieldGet("C7_DATPRF") < DATE()) .and. (GDFieldGet("C7_ENCER") = 'E' )
+	if _lRet .and. ! GDDeleted() .and. (GDFieldGet("C7_DATPRF") < DATE()) //.and. (GDFieldGet("C7_ENCER") = 'E' )
 		U_Help ("Data de entrega não pode ser menor que data atual.")
 		_lRet = .F.
 	endif

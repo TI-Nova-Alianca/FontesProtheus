@@ -18,7 +18,8 @@
 // 06/09/2018 - André   - Ajustado para mostrar TRANSPORTADORA na impressão
 // 14/09/2018 - Andre   - Impressao C7_CODPRF e ajustado impressão 
 // 28/01/2019 - Robert  - Ajustada mascara da quantidade para valores ate 9,999,999.99
-// 11/02/2019 - Andre   - Campo A5_CODPRF foi aumentado para 25 caracteres. Feito tratamento para itens com Cod Prod Forn maiores que 20 quebrar a linha.
+// 11/02/2019 - Andre   - Campo A5_CODPRF foi aumentado para 25 caracteres. Feito tratamento para itens com 
+//                        Cod Prod Forn maiores que 20 quebrar a linha.
 // 04/04/2019 - Andre   - Adicionado linha com descbrição do TES logo abaixo do tipo de frete.
 // 11/07/2019 - Andre   - Adicionado observação sobre notas vencidas na sexta feira.
 // 24/07/2019 - Andre   - Alterado todo texto do campo de observação do pedido de compra conforme chamado 6306.
@@ -33,8 +34,9 @@
 // 27/01/2022 - Sandra  - Alterado notas comforme chamado GLPI: 11541.
 // 27/01/2022 - Sandra  - Incluso linhas conforme chamado GLPI: 11544.
 // 21/03/2022 - Claudia - Ajustada a impressão duplicada das informações adicionais. GLPI: 11779
+// 14/06/2022 - Claudia - Ajustada a impressão das observações. GLPI: 12112
 //
-// ------------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------------
 #include 'topconn.ch'
 #INCLUDE "PROTHEUS.CH"
 #INCLUDE "TBICONN.CH"
@@ -380,20 +382,22 @@ Static Function xPrintRel()
 	SM0->(dbSeek(cEmpAnt+cFilAnt))
 
 	oPrint:Say(nLinha,0030,OemToAnsi('Observações:'),oFont13)
-	_initxt := 1
-	_tamtxt := 120
+	_initxt  := 1
+	_tamtxt  := 120
 	_obsfull := {}
-	//_obsTerceiros := {'TESTE TESTE TESTE TESTE'}
 	
 	aadd(_obsfull,U_QuebraTxt(alltrim(_sDadAdic),120))
-	// if len(_obsfull) > 0
-	// 	for i=1 to len(_obsfull[1])
-	// 		xVerPag()
-	// 		oPrint:Say(nLinha,0380,_obsfull[1][i],oFont10)
-	// 		nLinha += 40
-	// 		xPulaPag()
-	// 	next
-	// endif
+	if len(_obsfull) > 0
+		for i=1 to len(_obsfull[1])
+			xVerPag()
+			oPrint:Say(nLinha,0380,_obsfull[1][i],oFont10)
+			nLinha += 40
+			xPulaPag()
+		next
+	endif
+
+	_obsfull := {}
+
 	nLinha += 50
 
 	_cQuery := " SELECT "
@@ -411,12 +415,6 @@ Static Function xPrintRel()
 			for i=1 to len(_obsfull[1])
 				xVerPag()
 				oPrint:Say(nLinha,0380,_obsfull[1][i],oFont10)
-				nLinha += 40
-				xPulaPag()
-			next
-			for i=1 to len(_obsfull[2])
-				xVerPag()
-				oPrint:Say(nLinha,0380,_obsfull[2][i],oFont10)
 				nLinha += 40
 				xPulaPag()
 			next
@@ -497,10 +495,6 @@ Static Function xPrintRel()
 	nLinha += 40
 	oPrint:Say(nLinha,0060,'         expresso na nota fiscal a mesma será recusada.',oFont14n)
 	nLinha += 40
-	//oPrint:Say(nLinha,0060,'       - Não efetuamos pagamentos nas sexta-feiras, caso o vencimento ocorrer na sexta-feira, a',oFont14)
-	//nLinha += 40
-	//oPrint:Say(nLinha,0060,'         data efetiva do mesmo deverá ser deslocada para o próximo dia útil.',oFont14)
-	//nLinha += 40
 	oPrint:Say(nLinha,0060,'       - Laudos dos produtos devem ser enviados para: laudos@novaalianca.coop.br',oFont14n)
 	nLinha += 40
 	oPrint:Say(nLinha,0060,'       - O nº do Pedido de Compra, Lote e data de Validade do Produto devem ser preenchidos',oFont14n) 
