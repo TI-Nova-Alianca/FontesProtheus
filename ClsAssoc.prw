@@ -107,6 +107,7 @@
 // 27/02/2022 - Robert  - Passa a trazer historico do titulo na previsao de pagamentos no metodo FechSafr() - GLPI 11678.
 //                      - Passa a usar o camp E2_VASAFRA (acima de 2021) na previsao de pagamentos no metodo FechSafr() - GLPI 11678.
 // 31/03/2022 - Robert  - Nao busca mais premiacao safra 2021 em separado (agora tem o campo E2_VASAFRA preenchido).
+// 15/06/2022 - Robert  - Leitura valores FUNRURAL no metodo FechSafr() (GLPI 11723)
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -1042,6 +1043,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 	local _nTotSaldo := 0
 	local _aMedVar   := {}
 	local _nMedVar   := 0
+	local _nTotFunru := 0
 
 	if empty (_sSafra)
 		::UltMsg += "Safra nao informada"
@@ -1278,87 +1280,74 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 	if _lFSFunrur
 		U_Log2 ('debug', 'Buscando descontos de FUNRURAL')
 		_sRetFechS += '<descontoFUNRURAL>'
-		_oSQL := ClsSQL ():New ()
 
-		parei aqui; falta fazer a query.
+		if _sSafra >= '2022'  // Antes de 2022 nao faziamos esse desconto.
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += "WITH C AS ("
+			_oSQL:_sQuery += "SELECT E2_FILIAL, E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VALOR"
+			_oSQL:_sQuery +=      ", ISNULL ((SELECT E2_VALOR"
+			_oSQL:_sQuery +=          " FROM " + RetSQLName ("SE2") + " F "
+			_oSQL:_sQuery +=         " WHERE F.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=           " AND F.E2_FILIAL  = SE2.E2_FILIAL"
 
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "WITH C AS ("
-		_oSQL:_sQuery += "SELECT E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VENCTO, "
-		
-		// Existem casos em que nem todo o valor do titulo foi usado na geracao de uma fatura.
-		// Por exemplo quando parte foi compensada e apenas o saldo restante virou fatura.
-		// Ex.: título 000021485/30 -D do fornecedor 000643. Foi compensado R$ 3.066,09 e o saldo (R$ 1028,71) foi gerada a fatura 202000051.
-		// Devo descontar do valor do titulo somente a parte que foi consumida na geracao da fatura.
-		_oSQL:_sQuery += " E2_VALOR - dbo.VA_FSE2_CONSUMIDO_EM_FATURA (SE2.R_E_C_N_O_, 'z') AS E2_VALOR,
-		_oSQL:_sQuery +=       " E2_SALDO, "
-		_oSQL:_sQuery +=       " RTRIM (E2_HIST)"
-		_oSQL:_sQuery +=       " + CASE WHEN SE2.E2_FATURA != ''"
-		_oSQL:_sQuery +=              " THEN ' (' + (SELECT STRING_AGG (RTRIM (E2_HIST), '; ')"
-		_oSQL:_sQuery +=                             " FROM (SELECT DISTINCT E2_HIST"  // Gera uma subquery para poder usar DISTINCT
-		_oSQL:_sQuery +=                                     " FROM " + RetSQLName ("SE2") + " F "
-		_oSQL:_sQuery +=                                    " WHERE F.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=                                      " AND F.E2_FILIAL  = SE2.E2_FILIAL"
-		_oSQL:_sQuery +=                                      " AND F.E2_FORNECE = SE2.E2_FORNECE"
-		_oSQL:_sQuery +=                                      " AND F.E2_LOJA    = SE2.E2_LOJA"
-		_oSQL:_sQuery +=                                      " AND F.E2_FATURA  = SE2.E2_NUM"
-		_oSQL:_sQuery +=                                      " AND F.E2_FATPREF = SE2.E2_PREFIXO) AS DISTINTO"  // PRECISA DAR UM ALIAS PARA A SUBQUERY
-		_oSQL:_sQuery +=                                    ") + ')'"
-		_oSQL:_sQuery +=              " ELSE ''"
-		_oSQL:_sQuery +=              " END AS E2_HIST"
-		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE2") + " SE2 "
-		_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND E2_FILIAL  = '01'"  // Pagamentos sao feitos sempre pela matriz.
-		_oSQL:_sQuery +=   " AND E2_FORNECE = '" + ::Codigo + "'"
-		_oSQL:_sQuery +=   " AND E2_LOJA    = '" + ::Loja + "'"
-		_oSQL:_sQuery +=   " AND E2_EMISSAO >= '20190101'"  // Primeira safra em que este metodo foi implementado. Para safras anteriores o tratamento era diferente.
-		if _sSafra >= '2021'
-			_oSQL:_sQuery +=   " AND E2_VASAFRA = '" + _sSafra + "'"
-		else
-			_oSQL:_sQuery +=   " AND E2_PREFIXO in ('30 ', '31 ')"  // Serie usada para notas e faturas de safra
-			_oSQL:_sQuery +=   " AND E2_TIPO IN ('NF', 'DP', 'FAT')"  // NF quando compra original da matriz; DP quando saldo transferido de outra filial; FAT quando agrupados em uma fatura.
-			_oSQL:_sQuery +=   " AND E2_EMISSAO >= '" + _sSafra + "0101'"
-			if _sSafra <= '2019'
-				_oSQL:_sQuery +=   " AND E2_EMISSAO <= '" + _sSafra + "1231'"
-			else  // Fatura para pagamento pode ainda ser gerada em janeiro do ano seguinte (GLPI 9558).
-				_oSQL:_sQuery +=   " AND (E2_EMISSAO <= '" + _sSafra + "1231' OR (E2_EMISSAO <= '" + Soma1 (_sSafra) + "0131' AND E2_TIPO = 'FAT'))"
-			endif
-		endif
-		_oSQL:_sQuery +=   ")"
-		_oSQL:_sQuery += " SELECT *"
-		_oSQL:_sQuery +=   " FROM C"
-		_oSQL:_sQuery +=  " WHERE E2_VALOR != 0"  // Os que estao zerados eh por que foram totalmente consumidos em uma fatura.
-		if _sSafra == '2021'
-			_oSQL:_sQuery +=   " AND E2_VENCTO >= '20210301'"  // Estou achando que devo criar um campo E2_VASAFRA para melhorar estes filtros.
-		endif
+			// Pelo que entendi do sistema, na maioria das vezes o campo E2_TITPAI referencia uma parcela
+			// especifica do titulo original. Entretanto, algumas vezes a posicao referente a parcela do
+			// titulo pai encontra-se vazia, e todas as parcelas do titulo original estao com o campo
+			// E2_PARCCSS preenchido. Isso faria com que eu encontrasse valor de FUNRURAL para todas elas.
+			// Entao, optei por, nesses casos, considerar somente a primeira parcela (A). Robert, 14/06/2022
+			_oSQL:_sQuery +=           " AND (F.E2_TITPAI = SE2.E2_PREFIXO + SE2.E2_NUM + SE2.E2_PARCELA + SE2.E2_TIPO + SE2.E2_FORNECE + SE2.E2_LOJA"
+			_oSQL:_sQuery +=           "   OR F.E2_TITPAI = SE2.E2_PREFIXO + SE2.E2_NUM + ' '            + SE2.E2_TIPO + SE2.E2_FORNECE + SE2.E2_LOJA AND SE2.E2_PARCELA = 'A')"
+			
+			_oSQL:_sQuery +=         "), 0) AS VL_FUNRUR"
+			_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE2") + " SE2 "
+			_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
+			// Quero todas as filiais, pois o FUNRURAL estah nas notas de origem. ---> _oSQL:_sQuery +=   " AND E2_FILIAL  = '01'"  // Pagamentos sao feitos sempre pela matriz.
+			_oSQL:_sQuery +=   " AND E2_TIPO     = 'NF'"
+			_oSQL:_sQuery +=   " AND E2_FORNECE  = '" + ::Codigo + "'"
+			_oSQL:_sQuery +=   " AND E2_LOJA     = '" + ::Loja + "'"
+			_oSQL:_sQuery +=   " AND E2_VASAFRA  = '" + _sSafra + "'"
+			_oSQL:_sQuery +=   " AND NOT EXISTS (SELECT *"  // SE JAH TEM OUTRA PARCELA DESTE TITULO MARCADA, NAO PRECISO MAIS VERIFICAR O TITULO.
+			_oSQL:_sQuery +=                     " FROM " + RetSQLName ("SE2") + " OUTRA_PARCELA "
+			_oSQL:_sQuery +=                    " WHERE OUTRA_PARCELA.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=                      " AND OUTRA_PARCELA.E2_FILIAL  = SE2.E2_FILIAL"
+			_oSQL:_sQuery +=                      " AND OUTRA_PARCELA.E2_FORNECE = SE2.E2_FORNECE"
+			_oSQL:_sQuery +=                      " AND OUTRA_PARCELA.E2_LOJA    = SE2.E2_LOJA"
+			_oSQL:_sQuery +=                      " AND OUTRA_PARCELA.E2_NUM     = SE2.E2_NUM"
+			_oSQL:_sQuery +=                      " AND OUTRA_PARCELA.E2_PREFIXO = SE2.E2_PREFIXO"
+			_oSQL:_sQuery +=                      " AND OUTRA_PARCELA.E2_VAFUNRU = 'P')"
+			_oSQL:_sQuery += " ) "
+			_oSQL:_sQuery += "SELECT E2_FILIAL, E2_NUM, E2_PREFIXO, SUM (E2_VALOR) AS E2_VALOR, SUM (VL_FUNRUR) AS VL_FUNRUR"
+			_oSQL:_sQuery +=  " FROM C"
+			_oSQL:_sQuery += " GROUP BY E2_FILIAL, E2_NUM, E2_PREFIXO"
+			_oSQL:_sQuery += " ORDER BY E2_FILIAL, E2_NUM, E2_PREFIXO"
+			_oSQL:Log ()
+			_sAliasQ := _oSQL:Qry2Trb (.F.)
+			_nTotValor = 0
+			_nTotFunru = 0
+			(_sAliasQ) -> (dbgotop ())
+			do while ! (_sAliasQ) -> (eof ())
+				_sRetFechS += '<descontoFUNRURALItem>'
+				_sRetFechS += '<filial>' + (_sAliasQ) -> e2_filial + '</filial>'
+				_sRetFechS += '<doc>'    + (_sAliasQ) -> e2_num + '/' + (_sAliasQ) -> e2_prefixo + '</doc>'
+				_sRetFechS += '<vlTitulo>'  + cvaltochar ((_sAliasQ) -> e2_valor) + '</vlTitulo>'
+				_sRetFechS += '<vlFunru>'  + cvaltochar ((_sAliasQ) -> vl_funrur) + '</vlFunru>'
+				_nTotValor += (_sAliasQ) -> e2_valor
+				_nTotFunru += (_sAliasQ) -> vl_funrur
+				_sRetFechS += '</descontoFUNRURALItem>'
+				(_sAliasQ) -> (dbskip ())
+			enddo
+			(_sAliasQ) -> (dbclosearea ())
 
-		_oSQL:_sQuery +=  " ORDER BY E2_VENCTO, E2_NUM, E2_PREFIXO"
-		_oSQL:Log ()
-		_sAliasQ := _oSQL:Qry2Trb (.F.)
-		_nTotValor = 0
-		_nTotSaldo = 0
-		(_sAliasQ) -> (dbgotop ())
-		do while ! (_sAliasQ) -> (eof ())
+			// Ultima linha contem os totais
 			_sRetFechS += '<descontoFUNRURALItem>'
-			_sRetFechS += '<doc>'    + (_sAliasQ) -> e2_num + '/' + (_sAliasQ) -> e2_prefixo + '-' + (_sAliasQ) -> e2_parcela + '</doc>'
-			_sRetFechS += '<vencto>' + dtoc (stod ((_sAliasQ) -> e2_vencto)) + '</vencto>'
-			_sRetFechS += '<valor>'  + cvaltochar ((_sAliasQ) -> e2_valor) + '</valor>'
-			_sRetFechS += '<saldo>'  + cvaltochar ((_sAliasQ) -> e2_saldo) + '</saldo>'
-			_sRetFechS += '<hist>'  + alltrim ((_sAliasQ) -> e2_hist) + '</hist>'
-			_nTotValor += (_sAliasQ) -> e2_valor
-			_nTotSaldo += (_sAliasQ) -> e2_saldo
+			_sRetFechS += '<filial/>'
+			_sRetFechS += '<doc>TOTAIS</doc>'
+			_sRetFechS += '<vencto/>'
+			_sRetFechS += '<vlTitulo>'  + cvaltochar (_nTotValor) + '</vlTitulo>'
+			_sRetFechS += '<vlFunru>'  + cvaltochar (_nTotFunru) + '</vlFunru>'
 			_sRetFechS += '</descontoFUNRURALItem>'
-			(_sAliasQ) -> (dbskip ())
-		enddo
-		(_sAliasQ) -> (dbclosearea ())
-
-		// Ultima linha contem os totais
-		_sRetFechS += '<descontoFUNRURALItem>'
-		_sRetFechS += '<doc>TOTAIS</doc>'
-		_sRetFechS += '<vencto/>'
-		_sRetFechS += '<valor>'  + cvaltochar (_nTotValor) + '</valor>'
-		_sRetFechS += '<saldo>'  + cvaltochar (_nTotSaldo) + '</saldo>'
-		_sRetFechS += '</descontoFUNRURALItem>'
+		endif
 		_sRetFechS += '</descontoFUNRURAL>'
 	endif
 

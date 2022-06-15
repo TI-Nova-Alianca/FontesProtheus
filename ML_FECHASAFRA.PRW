@@ -36,6 +36,7 @@
 // 28/07/2021 - Sandra  - Incluso rodapé com nomenclatura 'Documento Sigiloso" GLPI 10139
 // 30/07/2021 - Robert  - Valores efetivos por variedade, na opcao resumido, nao tinha coluna de valor unitario (GLPI 10625)
 // 27/02/2022 - Robert  - Melhoria coluna historico nas previsoes de pagamento (GLPI 11678)
+// 15/06/2022 - Robert  - Impressao de descontos de FUNRURAL (GLPI 11723).
 //
 
 #include "protheus.ch"
@@ -1010,6 +1011,7 @@ static function _Modelo2 (_lSohCompr)
 	local _nNFVUnit  := 0
 	local _nNFVTot   := 0
 	local _sNFObs    := ''
+	local _nItFunr   := 0
 	private _aTAsEnt   := {}  // Totais (qt/valor) de notas de entrada (associado)
 	private _aTAsPro   := {}  // Totais (qt/valor) de notas de producao propria (associado)
 	private _aTAsCom   := {}  // Totais (qt/valor) de notas de compra (associado)
@@ -1070,11 +1072,11 @@ static function _Modelo2 (_lSohCompr)
 		endif
 
 		// Busca dados do fechamento de safra. Usa mesmo o metodo do APP associados.
-		//                                  _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lResVGC
+		//                                  _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lResVGC, _lFSFunrur
 		if _lSohCompr
-			_sXmlFech = _oAssoc:FechSafra (mv_par01, .f.,     .t.,     .f.,     .f.,     .f.,      .f.,      .f.,      .f.,        .f.,      .f.,      .F.)
+			_sXmlFech = _oAssoc:FechSafra (mv_par01, .f.,     .t.,     .f.,     .f.,     .f.,      .f.,      .f.,      .f.,        .f.,      .f.,      .F.,      .f.)
 		else
-			_sXmlFech = _oAssoc:FechSafra (mv_par01, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,        .t.,      .t.,      .f.)
+			_sXmlFech = _oAssoc:FechSafra (mv_par01, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,        .t.,      .t.,      .f.,      .t.)
 		endif
 		//	u_log2 ('debug', _sXmlFech)
 		if empty (_sXmlFech)
@@ -1274,6 +1276,45 @@ static function _Modelo2 (_lSohCompr)
 					_sLinImp += space (70)
 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_valor:TEXT), _sMascVTot) + '   '
 					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_faturaPagamento:_faturaPagamentoItem[_nFatPag]:_saldo:TEXT), _sMascVTot) + '  '
+				endif
+				@ li, 0 psay _sLinImp
+				li ++
+			next
+			li ++
+		endif
+
+
+		// Verifica se tem este tipo de tag no XML
+		_ValType := _RetType('_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem')
+		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
+			If li > _nMaxLin - 4
+				IF m_pag >1
+					_roda()
+				endif
+				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+			Endif
+			@li, 0 PSAY 'Descontos FUNRURAL:       FILIAL   NF                                            VALOR'
+			li ++
+			for _nItFunr = 1 to len (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem)
+				If li > _nMaxLin
+					IF m_pag >1
+						_roda()
+					endif
+					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+				Endif
+				_sLinImp := ''
+				if _oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItFunr]:_doc:TEXT != 'TOTAIS'
+					_sLinImp += space (26)
+					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItFunr]:_filial:TEXT, 2) + '       '
+					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItFunr]:_doc:TEXT, 10) + '                         '
+					//_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItFunr]:_vlTitulo:TEXT), _sMascVTot) + '   '
+					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItFunr]:_vlFunru:TEXT), _sMascVTot)
+				else
+					@ li, 0 psay space (74) + '------------'
+					li ++
+					_sLinImp += space (70)
+					//_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItFunr]:_vlTitulo:TEXT), _sMascVTot) + '   '
+					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItFunr]:_vlFunru:TEXT), _sMascVTot) + '  '
 				endif
 				@ li, 0 psay _sLinImp
 				li ++
@@ -1551,6 +1592,7 @@ static function _Modelo3 (_lSohCompr)
 	local _sMesPagto := ''
 	local _nTotDesc  := 0
 	local _sFtPgHist := ''
+	local _nItFunr   := 0
 	private _sMascPeso := "@E 9,999,999,999"
 	private _sMascVUni := "@E 9,999.9999"
 	private _sMascVTot := "@E 9,999,999,999.99"
@@ -1598,11 +1640,11 @@ static function _Modelo3 (_lSohCompr)
 		endif
 
 		// Busca dados do fechamento de safra. Usa mesmo o metodo do APP associados.
-		//                                  _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lResVGC
+		//                                  _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lResVGC, _lFSFunrur
 		if _lSohCompr
-			_sXmlFech = _oAssoc:FechSafra (mv_par01, .f.,     .t.,     .f.,     .f.,     .f.,      .t.,      .f.,      .f.,        .f.,      .f.,      .f.)
+			_sXmlFech = _oAssoc:FechSafra (mv_par01, .f.,     .t.,     .f.,     .f.,     .f.,      .t.,      .f.,      .f.,        .f.,      .f.,      .f.,      .t.)
 		else
-			_sXmlFech = _oAssoc:FechSafra (mv_par01, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .f.,        .t.,      .t.,      .t.)
+			_sXmlFech = _oAssoc:FechSafra (mv_par01, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .f.,        .t.,      .t.,      .t.,      .t.)
 		endif
 		//u_log2 ('debug', _sXmlFech)
 		if empty (_sXmlFech)
@@ -1716,6 +1758,27 @@ static function _Modelo3 (_lSohCompr)
 			li ++
 			@ li, 0 psay '                                    ' + transform (_aTotResP [1], _sMascVTot) + '  ' + transform (_aTotResP [2], _sMascVTot)
 			li += 2
+		endif
+
+
+		// Verifica se tem este tipo de tag no XML
+		_ValType := _RetType('_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem')
+		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
+			If li > _nMaxLin - 4
+				IF m_pag >1
+					_roda()
+				endif
+				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+			Endif
+			_nItFunr = len (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem)  // Quero a ultima linha (totais)
+			if _nItFunr > 0
+				_sLinImp := ''
+				_sLinImp += 'Descontos FUNRURAL:' + space (17)
+				_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItFunr]:_vlFunru:TEXT), _sMascVTot) + '  '
+				@ li, 0 psay _sLinImp
+				li ++
+			endif
+			li ++
 		endif
 
 

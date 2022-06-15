@@ -27,7 +27,7 @@
 //#include "rwmake.ch"
 #include "VA_INCLU.prw"
 #include "tbiconn.ch"
-//#INCLUDE "XMLXFUN.CH"
+#INCLUDE "XMLXFUN.CH"
 
 // --------------------------------------------------------------------------
 user function robert ()
@@ -92,19 +92,31 @@ static function _AndaLogo ()
 //	local _oCtaCorr  := NIL
 //	local _nParc     := 0
 //	local _oAssoc    := NIL
-//	local _aAssoc := {}
-//	local _nAssoc := 0
 //	local _nParc := 0
 //	local _sCampo := ""
 //	local _nCampo := 0
-//	local _aLotes := {}
-//	local _nLote  := 0
+local _nRegMovto := 0
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
-//	u_help ('Nada definido.')
-//return
+//	_SimCtb ()
 
+	_aRegMovto := array (25)
+	for _nRegMovto = 1 to len (_aRegMovto)
+//		u_LogPerc (_nRegMovto, len (_aRegMovto))
+	next
+//	_FechSafr ()
+	_ClsTrEstq ()
+//	u_help ('Nada definido.')
+return
+/*
+user function LogPerc (_nAtual, _nQuantos)
+	static _nUltimo := 0
+	if int (_nQuantos / _nAtual) > _nUltimo
+	endif
+return
+*/
+/*
 	// Testes verificacoes genericas.
 	// _oVerif := ClsVerif():New (25)
 	// _oVerif:SetParam ('01', '2017')
@@ -133,7 +145,7 @@ static function _AndaLogo ()
 		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
 	endif
 return
-/*
+*/
 /*
 	// U_BatRevCh ("AC", "CTE", 90)
 	// U_BatRevCh ("AC", "NFE", 90)
@@ -247,30 +259,91 @@ return
 	U_TRB2XLS ('_trb', .T., .t., .t., 'GLPI12080')
 return
 */
+
+// Testes fechamento safra associados
+static function _FechSafr ()
+	local _oSQL      := NIL
+	local _aAssoc    := {}
+	local _nAssoc    := 0
+	local _sXmlFech  := ''
+	local _nItemXML  := 0
+	local _sError    := ''
+	local _sWarning  := ''
+	local _ValType   := ''
+	private _oXmlFech  := NIL  // Deixar PROVATE, senao a funcao xmlparser() nao reconhece.
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += "SELECT ASSOCIADO, LOJA_ASSOC, SUM (VALOR_TOTAL), 0 as VL_CALC, SUM (VLR_FUNRURAL), 0 as FUNR_CALC"
+	_oSQL:_sQuery +=  " FROM VA_VNOTAS_SAFRA N"
+	_oSQL:_sQuery += " WHERE SAFRA = '2022'"
+	_oSQL:_sQuery += " and ASSOCIADO IN ('000161','012791')" //,'012792','016774','016775','016777', '005567')"
+	_oSQL:_sQuery += " GROUP BY ASSOCIADO, LOJA_ASSOC"
+	_oSQL:_sQuery += " ORDER BY ASSOCIADO, LOJA_ASSOC"
+	_oSQL:Log ()
+	_aAssoc := _oSQL:Qry2Array (.f., .f.)
+	U_Log2 ('debug', _aAssoc)
+	for _nAssoc := 1 to len (_aAssoc)
+		_oAssoc := ClsAssoc ():New (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
+		//                        _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC, _lFSFunrur
+		//	u_log (_oAssoc:FechSafra ('2021',  .t.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,        .F.,      .F.,      .F.,        .F.))
+		//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .t.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,        .F.,      .F.,      .F.,        .F.))
+		//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .t.,     .F.,     .F.,      .F.,      .F.,      .F.,        .F.,      .F.,      .F.,        .F.))
+		//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .t.,     .F.,      .F.,      .F.,      .F.,        .F.,      .F.,      .F.,        .F.))
+		//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .t.,      .F.,      .F.,      .F.,        .F.,      .F.,      .F.,        .F.))
+		//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .t.,      .F.,      .F.,        .F.,      .F.,      .F.,        .F.))
+		//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .t.,      .F.,        .F.,      .F.,      .F.,        .F.))
+		//	u_log (_oAssoc:FechSafra ('2020',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .t.,        .F.,      .F.,      .F.,        .F.))
+		//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .t.,        .F.,      .F.,      .F.,        .F.))
+		//	u_log (_oAssoc:FechSafra ('2020',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,        .t.,      .F.,      .F.,        .F.))
+		//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,        .t.,      .F.,      .F.,        .F.))
+		//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,        .F.,      .t.,      .F.,        .F.))
+		//	u_log (_oAssoc:FechSafra ('2021',  .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,        .t.,      .t.,      .F.,        .T.))
 /*
-	_oAssoc := ClsAssoc ():New ('016774', '01')
-	//                        _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResV, _lFSFrtS, _lFSLcCC
-//	u_log (_oAssoc:FechSafra ('2021',  .t.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,      .F.,      .F.))
-//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .t.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,      .F.,      .F.))
-//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .t.,     .F.,     .F.,      .F.,      .F.,      .F.,      .F.,      .F.))
-//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .t.,     .F.,      .F.,      .F.,      .F.,      .F.,      .F.))
-	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .t.,      .F.,      .F.,      .F.,      .F.,      .F.))
-//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .t.,      .F.,      .F.,      .F.,      .F.))
-//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .t.,      .F.,      .F.,      .F.))
-	
-//	u_log (_oAssoc:FechSafra ('2020',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .t.,      .F.,      .F.))
-//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .t.,      .F.,      .F.))
-	
-//	u_log (_oAssoc:FechSafra ('2020',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,      .t.,      .F.))
-//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,      .t.,      .F.))
-	
-//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,      .F.,      .t.))
-//	u_log (_oAssoc:FechSafra ('2021',  .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,      .t.,      .t.))
-//	u_help ('Nada definido.')
-//return
+		_sXmlFech = _oAssoc:FechSafra ('2022',  .F.,     .f.,     .F.,     .F.,     .f.,      .f.,      .F.,      .F.,        .F.,      .F.,      .F.,        .T.)
+		U_Log2 ('debug', '[' + procname () + ']' + _sxmlfech)
+
+		_oXMLFech := XmlParser (_sXmlFech, "_", @_sError, @_sWarning)
+		if ! empty (_sError) .or. ! empty (_sWarning)
+			u_help ("Erro ao decodificar retorno: " + _sError + _sWarning,, .t.)
+			loop
+		endif
+
+		_ValType := _RetType('_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem') 
+		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 nota + 1 linha de totais)
+			_nItemXML = len (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem)
+			_aAssoc [_nAssoc, 4] = val (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItemXML]:_vlTitulo:TEXT)
+			_aAssoc [_nAssoc, 6] = val (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItemXML]:_vlFunru:TEXT)
+			if _aAssoc [_nAssoc, 6] != _aAssoc [_nAssoc, 5]
+				U_Log2 ('erro', '[' + procname () + ']Diferenca no associado')
+			endif
+		endif
+*/
+		U_Log2 ('info', 'Iniciando associado ' + _aAssoc [_nAssoc, 1])
+		U_GravaSX1 ("ML_FECHASA", '01', '2022')  // safra
+		U_GravaSX1 ("ML_FECHASA", '02', _aAssoc [_nAssoc, 1])  // assoc
+		U_GravaSX1 ("ML_FECHASA", '03', _aAssoc [_nAssoc, 2])  // loja
+		U_GravaSX1 ("ML_FECHASA", '04', '  ')  // nucleo
+		U_GravaSX1 ("ML_FECHASA", '05', 1)  // lista saldo CC 1=sim;2=nao
+		U_GravaSX1 ("ML_FECHASA", '06', 2)  // 1=detalhado;2=resumido;3=apenas NF compra
+		U_ml_fechasafra (.T.)
+	next
+	U_Log2 ('debug', _aAssoc)
+return
 
 
-	// Testes arvore de rastreabilidade
+// --------------------------------------------------------------------------
+// Retorno do type - type em looling nao é permitido da R25 
+Static Function _RetType(_var)
+	_type := type(_var)
+Return _type
+
+
+
+// Testes arvore de rastreabilidade
+static function _Rast()
+	local _aLotes := {}
+	local _nLote  := 0
 	private _aLtXLS58 := {}  // Deixar PRIVATE para ser alimentada pelo U_RastLT().
 	_aLotes := {}
 	//aadd (_aLotes, {'01', U_TamFixo ('3630', 15, ' '), '12101401'  , 0, 14660})  // item 2580 lote 12101401 transformado em 3630 (mesmo lote) em 28/01/2022 na filial 01
@@ -304,10 +377,12 @@ return
 		U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (_oLtXLS58:TotCol (7)))
 	next
 return
-*/
-/*
-	// Testes classe transf.estq.
+
+
+// Testes classe transf.estq.
+STATIC FUNCTION _ClsTrEstq ()
 	private _sErroAuto := ''
+/*
 	_oTrEstq := ClsTrEstq ():New ()
 	_oTrEstq:FilOrig = cFilAnt
 	_oTrEstq:FilDest = cFilAnt
@@ -338,14 +413,14 @@ return
 			u_help (_oTrEstq:UltMsg)
 		endif
 	endif
-	//
-	_sDocZAG := '0000001594'
+*/	//
+	_sDocZAG := '0000001979'
 	zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
 	if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
 		u_help ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG")
 	else
 		_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
-		_oTrEstq:Executa () //Libera ()
+		_oTrEstq:GeraEtiq (.t.) //Libera ()
 	endif
 	//
 	//_oTrEstq:RegZAG = 1604
@@ -355,7 +430,7 @@ return
 	//	u_help (_oTrEstq:UltMsg)
 	//endif
 return
-*/
+
 /*
 	// Ajusta cadastro produtos em lote
 	_sArqLog := 'GLPI11986_SYD_para_SB1.log'
@@ -1308,16 +1383,17 @@ return
 return
 */
 
-/*
+// --------------------------------------------------------------------------
+static function _SimCtb ()
 	// Simula contabilizacoes
 	cPerg := "SIMULCTB"
-	U_GravaSX1 (cPerg, '01', stod ('20211116'))  // Data inicial
-	U_GravaSX1 (cPerg, '02', stod ('20211116'))  // Data final
+	U_GravaSX1 (cPerg, '01', stod ('20220501'))  // Data inicial
+	U_GravaSX1 (cPerg, '02', stod ('20220531'))  // Data final
 	U_GravaSX1 (cPerg, '03', '')  // Quais LPAD (bco=todos)
-	U_GravaSX1 (cPerg, '04', 'SD1')  // Quais tabelas ex: SD1/SD2/SD3
+	U_GravaSX1 (cPerg, '04', 'SD3')  // Quais tabelas ex: SD1/SD2/SD3
 	U_SimulCTB ()
 return
-*/
+
 /*
 	// Testes recontabilizacao NF e titulos.
 	cPerg = "ML_LCNF"
@@ -4195,23 +4271,6 @@ return
 	u_log ('finalizado')
 return
 */
-/* PE apos gravacao da aprovacao da solicitacao de compras
-user function MT110CFM ()
-	u_logIni ()
-	u_log (paramixb [1])  // numero da SC
-	u_log (paramixb [2])  // 1-aprovada;2-rejeitada;3-bloqueada
-	U_LOGTRB ("sc1")  // encontra-se posicionado na SC. quando mv_par02==2 (por SC) chama apenas 1 vez e vem posicionada no item 0001
-	if mv_par02 == 1  // por item
-		reclock ("SC1", .F.)
-		// campo ainda nao criado ---> sc1 -> vaDtLib = date ()
-		msunlock ()
-	else  // por SC
-		// fazer um update por SQL em todos os itens da SC
-	endif
-	// gravar evento de liber/bloueio/rejeicao da SC
-	u_logFim ()
-return
-*/
 /*
 	// Migra memo virtual para real no SZN.
 	_NgRAVADO := 0
@@ -5339,18 +5398,6 @@ return
 
 
 /*
-// Testes P.E. exclusao faturas -> atualizar SZI
-user function F290CAN ()
-	local _aAreaAnt := U_ML_SRArea ()
-	U_LOGiD ()
-	u_logini ()
-	u_logtrb ("SE2")
-	
-	_AtuSZI ()
-
-	U_ML_SRArea (_aAreaAnt)
-	u_logfim ()
-return
 
 static function _AtuSZI ()
 	local _nRegSZI  := 0
