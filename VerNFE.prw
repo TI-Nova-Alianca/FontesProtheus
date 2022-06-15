@@ -34,6 +34,7 @@
 // 19/10/2020 - Robert - Desabilitada validacao de endereco quando cliente do exterior.
 //                     - Incluidas tags para catalogo de fontes.
 // 18/04/2022 - Claudia - Incluida exceção no endereço do cliente '44807036000157'.
+// 15/06/2022 - Sandra  - Desabilitada validacao de IE para fornecedor
 //
 // --------------------------------------------------------------------------
 user function VerNFe (_sOnde)
@@ -169,10 +170,10 @@ static function _VerSA2 (_sCliente, _sLoja)
 			if !empty (sa2 -> a2_inscr)
 				_sMsg += "Inscricao estadual NAO DEVE ser informada para fornecedor do exterior. (Cod.forn.: " + sa2 -> a2_cod + ")" + chr (13) + chr (10)
 			endif
-		else
-			if empty (sa2 -> a2_inscr)  .and. sa2 -> a2_tipo != 'F'
-				_sMsg += "Inscricao estadual nao informada ou invalida no fornecedor." + chr (13) + chr (10)
-			endif
+		//else
+			//if empty (sa2 -> a2_inscr)  .and. sa2 -> a2_tipo != 'F'
+				//_sMsg += "Inscricao estadual nao informada ou invalida no fornecedor." + chr (13) + chr (10)
+			//endif
 		endif
 		if empty (sa2 -> a2_pais)
 			_sMsg += "Codigo de pais nao informado ou invalido no fornecedor. (CNPJ: " + sa2 -> a2_cgc + ")" + chr (13) + chr (10)
