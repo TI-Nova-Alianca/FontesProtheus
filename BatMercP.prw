@@ -3,54 +3,54 @@
 // Data.......: 11/11/2016
 // Descricao..: Importa pedidos de venda do sistema Mercanet.
 //              Criado para ser executado via batch.
-
+//
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #batch
 // #Descricao         #Importa pedidos de venda do sistema Mercanet.
 // #PalavasChave      #mercanet #pedidos_de_venda #importacao
 // #TabelasPrincipais #SC5 #SC6 #ZC5
 // #Modulos           #FAT
-
-// Historico de alteracoes:
-// 01/03/2017 - Robert - Chamada da funcao ConfirmSXC8() apos o MATA410 para tentar eliminar perda se sequencia de numero de pedidos.
-// 03/05/2017 - Robert - Obriga banco CX1 quando cond.pag.097 (a vista).
-// 26/06/2017 - Robert - Busca campos Canal, Segmento, Opt.simples nacional nas tabelas do Mercanet, pois nao vem no ZA1010.
-// 17/07/2017 - Robert - Envia e-mail notificando erro na importacao de clientes.
-// 28/07/2017 - Robert - Busca e-mail direto das tabelas do Mercanet por que vem cortado na tabela ZA1010.
-//                     - Tratamento para converter 'optante simples nacional' de 0 (Mercanet) para 2 (Protheus).
-// 05/10/2017 - Robert - Gravacao do campo C6_NUMPCOM.
-// 19/02/2018 - Robert - Campo A1_VABARAP passa a ser obrigatorio no SA1.
-// 20/02/2018 - Robert - Verifica se o CNPJ ja encontra-se cadastrado como cliente e grava codigo na tabela de retorno.
-// 31/07/2018 - Robert - Grava msg de erro no batch em caso de erro na execucao de algum SQL.
-// 01/08/2018 - Robert - Consiste CNPJ do cliente (raros casos de codigo sem zeros a esquerda no Protheus).
-// 27/08/2018 - Robert - Tratamento campo A1_FORMA.
-// 17/10/2018 - Robert - Criado tratamento para cliente '10013 ' (sem zero a esquerda).
-// 30/10/2018 - Robert - Criado tratamento para cliente '4954  ' (sem zero a esquerda).
-// 23/01/2019 - Andre  - Criada novas regras para preenchimeno de novos campos obrigatorios no Protheus 
-//						 (A1_IENCONT, A1_CONTRIB).
-// 30/04/2019 - Andre  - Incluido campos de integração da referencias bancarias/comerciais dos cliente vindas do Mercanet.
-// 02/08/2019 - Robert - Liberada importação de clientes pessoa fisica - GLPI 5846.
-// 23/08/2019 - Andre  - Alterada rotina automatica para cadastro de CLIENTES.
-// 10/10/2019 - Andre  - Caso cliente seja bloqueado, muda status do cliente para poder incluir pedido. 
-//						 Depois de incluido, volta o status original do cliente.
-// 14/11/2019 - Andre  - Adicionada validação para campo A1_VAFILAT.
-// 05/12/2019 - Robert - Ajustes para importar pedidos na filial 16
-// 19/02/2020 - Andre  - Adicionada mesma regra para integração de pedidos com frete FOB. Leva em branco para Protheus.
-// 06/05/2020 - Robert - Desabilitada declaracao nome arquivo de log (aceita o que vier da rotina principal).
-//                     - Numero do pedido do mercanet (zc5_pedmer) estava desposicionado nas mensagens de aviso.
-// 08/05/2020 - Robert - Melhoradas msg de erro
-//                     - Campo ZC5_ERRO aumentado de 250 para 1000 caracteres.
-// 14/05/2020 - Robert - Desmembrado do BatMerc (tinha varias funcionalidades no mesmo programa e ficava confuso).
-// 22/06/2020 - Robert - Funcao U_LkSrvMer() renomeada para U_LsServer().
-// 06/11/2020 - Robert - Quando nao tiver o TES no Mercanet, usa do zc5_TipVen para alimentar o TES inteligente.
-// 10/11/2020 - Robert - Passa a desconsiderar o TES que vem do Mercanet e usa apenas o zc5_TipVen para alimentar o TES inteligente (GLPI 8785).
-// 14/02/2021 - Robert - Incluidas chamadas da funcao U_PerfMon para testes de monitoramento de performance (GLPI 9409)
-// 30/06/2021 - Robert - Criado teste "Para informar motivo de bonificacao, o pedido deve ser do tipo bonificado."
-// 09/07/2021 - Sandra - Criado tratamento para cliente 10005 - GLPI 10456.
-// 01/09/2021 - Robert - Criado tratamento para campo C5_INDPRES: sempre 5=venda com entrega fora do estabelecimento (GLPI 10085)
-// 01/09/2021 - Robert - Mudado tratamento para campo C5_INDPRES: sempre 1=operacao presencial (GLPI 10085)
 //
-
+// Historico de alteracoes:
+// 01/03/2017 - Robert  - Chamada da funcao ConfirmSXC8() apos o MATA410 para tentar eliminar perda se sequencia de numero de pedidos.
+// 03/05/2017 - Robert  - Obriga banco CX1 quando cond.pag.097 (a vista).
+// 26/06/2017 - Robert  - Busca campos Canal, Segmento, Opt.simples nacional nas tabelas do Mercanet, pois nao vem no ZA1010.
+// 17/07/2017 - Robert  - Envia e-mail notificando erro na importacao de clientes.
+// 28/07/2017 - Robert  - Busca e-mail direto das tabelas do Mercanet por que vem cortado na tabela ZA1010.
+//                      - Tratamento para converter 'optante simples nacional' de 0 (Mercanet) para 2 (Protheus).
+// 05/10/2017 - Robert  - Gravacao do campo C6_NUMPCOM.
+// 19/02/2018 - Robert  - Campo A1_VABARAP passa a ser obrigatorio no SA1.
+// 20/02/2018 - Robert  - Verifica se o CNPJ ja encontra-se cadastrado como cliente e grava codigo na tabela de retorno.
+// 31/07/2018 - Robert  - Grava msg de erro no batch em caso de erro na execucao de algum SQL.
+// 01/08/2018 - Robert  - Consiste CNPJ do cliente (raros casos de codigo sem zeros a esquerda no Protheus).
+// 27/08/2018 - Robert  - Tratamento campo A1_FORMA.
+// 17/10/2018 - Robert  - Criado tratamento para cliente '10013 ' (sem zero a esquerda).
+// 30/10/2018 - Robert  - Criado tratamento para cliente '4954  ' (sem zero a esquerda).
+// 23/01/2019 - Andre   - Criada novas regras para preenchimeno de novos campos obrigatorios no Protheus 
+//						  (A1_IENCONT, A1_CONTRIB).
+// 30/04/2019 - Andre   - Incluido campos de integração da referencias bancarias/comerciais dos cliente vindas do Mercanet.
+// 02/08/2019 - Robert  - Liberada importação de clientes pessoa fisica - GLPI 5846.
+// 23/08/2019 - Andre   - Alterada rotina automatica para cadastro de CLIENTES.
+// 10/10/2019 - Andre   - Caso cliente seja bloqueado, muda status do cliente para poder incluir pedido. 
+//						 Depois de incluido, volta o status original do cliente.
+// 14/11/2019 - Andre   - Adicionada validação para campo A1_VAFILAT.
+// 05/12/2019 - Robert  - Ajustes para importar pedidos na filial 16
+// 19/02/2020 - Andre   - Adicionada mesma regra para integração de pedidos com frete FOB. Leva em branco para Protheus.
+// 06/05/2020 - Robert  - Desabilitada declaracao nome arquivo de log (aceita o que vier da rotina principal).
+//                      - Numero do pedido do mercanet (zc5_pedmer) estava desposicionado nas mensagens de aviso.
+// 08/05/2020 - Robert  - Melhoradas msg de erro
+//                      - Campo ZC5_ERRO aumentado de 250 para 1000 caracteres.
+// 14/05/2020 - Robert  - Desmembrado do BatMerc (tinha varias funcionalidades no mesmo programa e ficava confuso).
+// 22/06/2020 - Robert  - Funcao U_LkSrvMer() renomeada para U_LsServer().
+// 06/11/2020 - Robert  - Quando nao tiver o TES no Mercanet, usa do zc5_TipVen para alimentar o TES inteligente.
+// 10/11/2020 - Robert  - Passa a desconsiderar o TES que vem do Mercanet e usa apenas o zc5_TipVen para alimentar o TES inteligente (GLPI 8785).
+// 14/02/2021 - Robert  - Incluidas chamadas da funcao U_PerfMon para testes de monitoramento de performance (GLPI 9409)
+// 30/06/2021 - Robert  - Criado teste "Para informar motivo de bonificacao, o pedido deve ser do tipo bonificado."
+// 09/07/2021 - Sandra  - Criado tratamento para cliente 10005 - GLPI 10456.
+// 01/09/2021 - Robert  - Criado tratamento para campo C5_INDPRES: sempre 5=venda com entrega fora do estabelecimento (GLPI 10085)
+// 01/09/2021 - Robert  - Mudado tratamento para campo C5_INDPRES: sempre 1=operacao presencial (GLPI 10085)
+// 15/06/2022 - Claudia - Ajustado a gravação do usuario que incluiu o pedido. GLPI: 12206
+//
 // -----------------------------------------------------------------------------------------------------------------
 user function BatMercP ()
 	local _lContinua := .T.
@@ -184,11 +184,7 @@ static function _LePed ()
 			_oSQL:_sQuery +=   " FROM " + _sLinkSrv + ".DB_PEDIDO "
 			_oSQL:_sQuery +=   " LEFT JOIN " + _sLinkSrv + ".DB_CLIENTE ON (DB_CLI_CODIGO = DB_PED_CLIENTE)"
 			_oSQL:_sQuery +=  " WHERE DB_PED_NRO = " + substr ((_sAliasQ) -> zc5_pedmer, 1, 4) + substr ((_sAliasQ) -> zc5_pedmer, 6, 4)
-			//_oSQL:Log ()
 			_aCNPJ = _oSQL:Qry2Array (.F., .F.)
-			
-			//u_log2 ('info', 'Resultado da busca do cliente por CNPJ:')
-			//u_log2 ('info', _aCNPJ)
 			
 			if len (_aCNPJ) == 0
 				_sMsgErro += "O pedido Mercanet '" + substr ((_sAliasQ) -> zc5_pedmer, 1, 4) + substr ((_sAliasQ) -> zc5_pedmer, 6, 4) + "' consta na tabela de pedidos a importar, mas nao o encontrei na tabela de pedidos!"
@@ -232,7 +228,6 @@ static function _LePed ()
 				_oSQL:_sQuery += "UPDATE " + _sLinkSrv + ".ZC5010 "
 				_oSQL:_sQuery +=   " SET ZC5_DTINI  = '',"
 				_oSQL:_sQuery +=       " ZC5_HRINI  = '',"
-//				_oSQL:_sQuery +=       " ZC5_ERRO   = 'Filiais não são iguais.'"
 				_oSQL:_sQuery +=       " ZC5_ERRO   = 'Cliente configurado para ser atendido pela filial " + sa1 -> a1_vafilat + "'"
 				_oSQL:_sQuery += " WHERE ZC5_FILA   = '" + _sFila + "'"
 				_oSQL:_sQuery +=   " AND ZC5_PEDMER = '" + _sPedMer + "'"
@@ -251,16 +246,14 @@ static function _LePed ()
 			endif
 			
 			//// Por enquanto o Mercanet considera apenas tabelas da matriz.
-			//if cFilAnt == '01'
-				da0 -> (dbsetorder (1))  // DA0_FILIAL+DA0_CODTAB
-				if ! da0 -> (dbseek (xfilial ("DA0") + (_sAliasQ) -> zc5_tabela, .F.))
-					_sMsgErro += "Tabela de precos '" + (_sAliasQ) -> zc5_tabela + "' nao cadastrada."
-				else
-					if da0 -> da0_datde > dDataBase .or. da0 -> da0_datate < dDataBase .or. da0 -> da0_ativo != '1'
-						_sMsgErro += "Tabela de precos '" + (_sAliasQ) -> zc5_tabela + "' inativa ou fora de vigencia."
-					endif
+			da0 -> (dbsetorder (1))  // DA0_FILIAL+DA0_CODTAB
+			if ! da0 -> (dbseek (xfilial ("DA0") + (_sAliasQ) -> zc5_tabela, .F.))
+				_sMsgErro += "Tabela de precos '" + (_sAliasQ) -> zc5_tabela + "' nao cadastrada."
+			else
+				if da0 -> da0_datde > dDataBase .or. da0 -> da0_datate < dDataBase .or. da0 -> da0_ativo != '1'
+					_sMsgErro += "Tabela de precos '" + (_sAliasQ) -> zc5_tabela + "' inativa ou fora de vigencia."
 				endif
-			//endif
+			endif
 
 			_sDesbloq = ''
 			if ! sa1 -> (dbseek (xfilial ("SA1") + _sCliente + _sLojaCli, .F.))
@@ -328,13 +321,7 @@ static function _LePed ()
 					aadd (_aLinhaSC6, {"C6_ENTREG",  stod ((_sAliasQ) -> zc6_entreg), NIL})
 					aadd (_aLinhaSC6, {"C6_PRODUTO", (_sAliasQ) -> zc6_produt, NIL})
 					aadd (_aLinhaSC6, {"C6_QTDVEN",  (_sAliasQ) -> zc6_qtdven, NIL})
-				//	aadd (_aLinhaSC6, {"C6_TES",     (_sAliasQ) -> zc6_tes, NIL})
-//					if len (alltrim ((_sAliasQ) -> zc6_tes)) == 3  // Se estiver incompleto, presumo que o Mercanet nao tenha encontrado o TES correto
-//						aadd (_aLinhaSC6, {"C6_TES",     (_sAliasQ) -> zc6_tes, NIL})
-//					else
-						aadd (_aLinhaSC6, {"C6_VAOPER",  iif ((_sAliasQ) -> zc5_TipVen == 'V', '01', iif ((_sAliasQ) -> zc5_TipVen == 'B', '04', '')), NIL})
-//						u_log2 ('aviso', 'TES nao definido no Mercanet. Vou deixar em branco para que os gatilhos do Protheus resolvam por TES inteligente.')
-//					endif
+					aadd (_aLinhaSC6, {"C6_VAOPER",  iif ((_sAliasQ) -> zc5_TipVen == 'V', '01', iif ((_sAliasQ) -> zc5_TipVen == 'B', '04', '')), NIL})
 					aadd (_aLinhaSC6, {"C6_PRCVEN",  (_sAliasQ) -> zc6_vlr_liq, NIL})
 					if ! empty ((_sAliasQ) -> zc5_pedcli)
 						aadd (_aLinhaSC6, {"C6_NUMPCOM", alltrim ((_sAliasQ) -> zc5_pedcli), NIL})
@@ -349,7 +336,6 @@ static function _LePed ()
 					endif
 					aadd (_aLinhaSC6, {"C6_COMIS1",  (_sAliasQ) -> zc6_comis1, NIL})
 					
-					//u_log2 ('debug', 'zc5_pedcli: '+ (_sAliasQ) -> zc5_pedcli)
 					u_log2 ('debug', _aLinhaSC6)
 					
 					// Ordena campos cfe. dicionario de dados
@@ -409,6 +395,18 @@ static function _LePed ()
 						_oEvento:LojaCli  = sc5 -> c5_lojacli
 						_oEvento:Grava ()
 
+						// Atualiza usuário de inclusão. GLPI: 12206
+						_sUser := _BuscaUsuario(sc5 -> c5_vapdmer, sc5 -> c5_vauser, _sLinkSrv)
+						sc5 -> (dbsetorder(1))
+						DbSelectArea("SC5")
+
+						If dbseek(sc5->c5_filial + sc5 -> c5_num, .F.)
+							Reclock("SC5", .F.)
+								sc5 -> c5_vauser = _sUser
+							MsUnlock()
+							u_log("Gravou user " + _sUser)
+						EndIf
+
 						if se4 -> e4_tipo == '9'  // dias fixos
 							U_ZZUNU ({"079"}, "Importado pedido com cond.pag.data fixa", "Pedido '" + sc5 -> c5_num + "' importado do Mercanet usando condicao de pagamento com data fixa. REVISE AS DATAS!", .F.)
 						endif
@@ -459,7 +457,6 @@ static function _LePed ()
 		enddo
 	endif
 
-	//_oBatch:Mensagens = cvaltochar (len (_aPedGer)) + " pedido(s) gerado(s)"
 	if len (_aPedGer) > 0
 		_oBatch:Mensagens += "Ped.gerados:"
 		for _nPedGer = 1 to len (_aPedGer)
@@ -469,3 +466,29 @@ static function _LePed ()
 		_oBatch:Mensagens += "Nenhum pedido gerado."
 	endif
 return
+//
+// --------------------------------------------------------------------------
+// Retorna usuario de inclusão do pedido mercanet
+Static Function _BuscaUsuario(_sPedMerc, _sUsuario, _sLinkSrv)
+	Local _sUser := ""
+	Local _x     := 0
+
+	_sPedido := alltrim(StrTran(_sPedMerc, "/", ""))
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 		DB_PEDC_USU_CRIA "
+	_oSQL:_sQuery += " FROM " + _sLinkSrv + ".DB_PEDIDO_COMPL "
+	_oSQL:_sQuery += " WHERE DB_PEDC_NRO = '" + _sPedido + "'"
+	U_LOG(_oSQL:_sQuery)
+	_aUser := aclone(_oSQL:Qry2Array())
+
+	For _x:=1 to Len(_aUser)
+		_sUser := LEFT(_aUser[_x, 1], 20) 
+	Next
+
+	If empty(_sUser)
+		_sUser := _sUsuario
+	EndIf
+Return _sUser
