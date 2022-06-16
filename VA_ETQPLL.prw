@@ -55,6 +55,8 @@
 //                     - Funcao EtqPllGN (interna) migrada para fonte externo ZA1GN.
 // 31/03/2022 - Sandra - Comentariado campo ZA1_HORA GLPI 11862
 // 07/04/2022 - Robert - Verifica classe ClsEtiq para ver se pode excluir etiquetas (GLPI 11825)
+// 15/06/2022 - Robert - Exclusao passada para a classe ClsEtiq (GLPI 12220)
+// 16/06/2022 - Robert - Melhorada interface com usuario na funcao EtqPllCT().
 //
 
 #include "rwmake.ch"
@@ -71,19 +73,18 @@ User Function VA_ETQPLL()
 
 	//===Montagem do Menu===//
 	// A ordem em que os itens são adicionados ao vetor influencia na ordem de exibição.
-	aAdd(aRotina, {"Pesquisar"          , "AxPesqui"  , 0, 1})
-	aAdd(aRotina, {"Visualizar"         , "AxVisual"  , 0, 2})
-	aAdd(aRotina, {"Incluir"            , "U_EtqPlltI", 0, 3})
-	aadd(aRotina, {"Imprimir - Avulso"  , "U_ImpZA1 (ZA1->ZA1_CODIGO)", 0, 2})
-	aadd(aRotina, {"Imprimir - Grupo"   , "U_EtqPlltG(za1 -> za1_op, za1 -> za1_doce, za1 -> za1_seriee, za1 -> za1_fornec, za1 -> za1_lojaf, 'I')", 0, 2})
-	aadd(aRotina, {"Enviar para FullWMS", "processa ({||U_EnvEtFul (za1 -> za1_codigo, .T.)})", 0, 4})
-//	aadd(aRotina, {"Gera Etq NF entrada", "processa ({||U_EtqPllGN ()})", 0, 3})
-	aadd(aRotina, {"Gera Etq NF entrada", "U_ZA1GN ()", 0, 3})
-	aadd(aRotina, {"Regerar Grupo"      , "U_EtqPllRG()", 0, 3})
-	aadd(aRotina, {"Excluir Grupo"      , "U_EtqPlltG(za1 -> za1_op, za1 -> za1_doce, za1 -> za1_seriee, za1 -> za1_fornec, za1 -> za1_lojaf, 'E')", 0, 2})
-	aadd(aRotina, {"Inutilizar"         , "U_ZA1In (ZA1->ZA1_CODIGO, .T.)", 0, 2})
-	aAdd(aRotina, {"Excluir"            , "U_EtqPlltE (.T.)", 0, 5})
-	aAdd(aRotina, {"Cancela transf.Full", "U_EtqPllCT (ZA1->ZA1_CODIGO)", 0, 5})
+	aAdd(aRotina, {"Pesquisar"           , "AxPesqui"  , 0, 1})
+	aAdd(aRotina, {"Visualizar"          , "AxVisual"  , 0, 2})
+	aAdd(aRotina, {"Incluir"             , "U_EtqPlltI", 0, 3})
+	aadd(aRotina, {"Imprimir - Avulso"   , "U_ImpZA1 (ZA1->ZA1_CODIGO)", 0, 2})
+	aadd(aRotina, {"Imprimir - Grupo"    , "U_EtqPlltG(za1 -> za1_op, za1 -> za1_doce, za1 -> za1_seriee, za1 -> za1_fornec, za1 -> za1_lojaf, 'I')", 0, 2})
+	aadd(aRotina, {"Enviar para FullWMS" , "processa ({||U_EnvEtFul (za1 -> za1_codigo, .T.)})", 0, 4})
+	aadd(aRotina, {"Gera Etq NF entrada" , "U_ZA1GN ()", 0, 3})
+	aadd(aRotina, {"Regerar Grupo"       , "U_EtqPllRG()", 0, 3})
+	aadd(aRotina, {"Excluir Grupo"       , "U_EtqPlltG(za1 -> za1_op, za1 -> za1_doce, za1 -> za1_seriee, za1 -> za1_fornec, za1 -> za1_lojaf, 'E')", 0, 2})
+	aadd(aRotina, {"Inutilizar"          , "U_ZA1In (ZA1->ZA1_CODIGO, .T.)", 0, 2})
+	aAdd(aRotina, {"Excluir"             , "U_EtqPlltE (.T.)", 0, 5})
+	aAdd(aRotina, {"Cancela transf.ax 01", "U_EtqPllCT (ZA1->ZA1_CODIGO)", 0, 5})
 	aadd(aRotina, {"Legenda", "U_ZA1LG()", 0, 7})
 	
 	dbSelectArea(cString)
@@ -135,10 +136,9 @@ User Function EtqPlltI ()
 	if axinclui ("ZA1", za1 -> (recno ()), 3, NIL, NIL, NIL, "allwaystrue ()") == 1
 		u_log2 ('aviso', 'Axinclui deu certo')
 	endif
-
 return
 
-//
+// --------------------------------------------------------------------------
 // Exclusão
 User Function EtqPlltE (_lComTela)
 	local _lContinua := .T.
@@ -159,30 +159,30 @@ User Function EtqPlltE (_lComTela)
 	endif
 
 	if _lContinua
-//		_lContinua = _PodeExcl (_lComTela)
 		_lContinua = _oEtiq:PodeExcluir (_lComTela)
 	endif
 	
-	if ! empty (ZA1 -> ZA1_DOCE)
-		u_help ("A etiqueta '" + alltrim(ZA1 -> ZA1_CODIGO) + "' não pode ser excluída." + chr(13) + "Motivo: É uma etiqueta de nota fiscal (rastreabilidade).")
-		_lContinua := .F.
-	endif
+//	if ! empty (ZA1 -> ZA1_DOCE)
+//		u_help ("A etiqueta '" + alltrim(ZA1 -> ZA1_CODIGO) + "' não pode ser excluída." + chr(13) + "Motivo: É uma etiqueta de nota fiscal (rastreabilidade).")
+//		_lContinua := .F.
+//	endif
 
 	if _lContinua
-
 		if _lComTela
 		
 			// Cria variaveis M->... para a enchoice (a função não cria sozinha)
 			RegToMemory ("ZA1", inclui, inclui)
 	
 			if AxDeleta ("ZA1", za1 -> (recno ()), 5) == 2
-				_AtuFull ('E')
+				//_AtuFull ('E')
+				_oEtiq:Exclui ()
 			endif
 		else
-			reclock ("ZA1", .F.)
-			za1 -> (dbdelete ())
-			msunlock ()
-			_AtuFull ('E')
+			//reclock ("ZA1", .F.)
+			//za1 -> (dbdelete ())
+			//msunlock ()
+			//_AtuFull ('E')
+			_oEtiq:Exclui ()
 		endif
 	endif
 return
@@ -194,7 +194,7 @@ return
 static function _AtuFull (_sQueFazer)
 	local _oSQL      := NIL
 
-	if left (za1 -> za1_codigo, 1) > '0' .and. ! empty (za1 -> za1_op)
+	//if left (za1 -> za1_codigo, 1) > '0' .and. ! empty (za1 -> za1_op)
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
 		if _sQueFazer == 'E'
@@ -202,7 +202,7 @@ static function _AtuFull (_sQueFazer)
 			_oSQL:_sQuery += " where id = " + cvaltochar (za1 -> za1_codigo)
 			_oSQL:Exec ()
 		endif
-	endif
+	//endif
 return
 
 //
@@ -368,11 +368,9 @@ User Function IncEtqPll(_sCodPro, _sNumOP, _nQtd, _sFornece, _sLoja, _sNF, _sSer
 	za1 -> za1_lojaf  = _sLoja
 	za1 -> za1_seq    = _nSeqEtq
 	za1 -> za1_usrinc = cUserName
-	//za1 -> za1_hora   = left (time (), 5)
 	za1 -> za1_idZAG  = _sIdZAG 
 	msunlock()
 	u_log2 ('info', 'Etiqueta ' + za1 -> za1_codigo + ' gravada. Produto: ' + alltrim (za1 -> za1_prod) + ' OP: ' + alltrim (za1 -> za1_op))
-	//u_logtrb ('ZA1')
 
 	do while __lSX8
 		ConfirmSX8 ()
@@ -467,13 +465,11 @@ User Function EtqPlltG (_sOP, _sNF, _sSerie, _sFornece, _sLoja, _sQueFazer)
 				for _nEtiq = 1 to len (_aEtiq)
 					_oEtiq := ClsEtiq ():New (_aEtiq[_nEtiq, 2])
 					if _aEtiq [_nEtiq, 1] .and. _aEtiq [_nEtiq, 7] != ''
-		//				if _PodeExcl (.T.)
 						if _oEtiq:PodeExcluir (.T.)
 							U_ZA1In(_aEtiq[_nEtiq, 2], .F.)
 						endif
 					else
 						if _aEtiq [_nEtiq, 1] .and. za1 -> (dbseek (xfilial ("ZA1") + _aEtiq [_nEtiq, 2], .F.))
-//							if _PodeExcl (.T.)
 							if _oEtiq:PodeExcluir (.T.)
 								reclock ("ZA1", .F.)
 								za1 -> (dbdelete ())
@@ -492,37 +488,6 @@ User Function EtqPlltG (_sOP, _sNF, _sSerie, _sFornece, _sLoja, _sQueFazer)
 return
 
 
-/*
-// --------------------------------------------------------------------------
-// Verifica se permite a exclusao da etiqueta.
-static function _PodeExcl (_lComTela)
-	local _lRet := .T.
-	local _oSQL := NIL
-
-	if za1 -> za1_apont == 'S'
-		if _lComTela
-			u_help("Etiqueta '" + AllTrim(za1 -> za1_codigo) + "' gerou apontamento de produção e não pode ser excluída ou inutilizada.")
-		endif
-		_lRet = .F.
-	endif
-
-	if _lRet
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := " select count (*)"
-		_oSQL:_sQuery +=   " from tb_wms_etiquetas"
-		_oSQL:_sQuery +=  " where id = '" + cvaltochar (za1 -> za1_codigo) + "'" 
-		_oSQL:_sQuery +=    " and status != 'N'" 
-		if _oSQL:RetQry () > 0
-			if _lComTela
-				u_help ("Etiqueta '" + AllTrim (za1 -> za1_codigo) + "' ja vista pelo FullWMS. Nao pode ser excluida ou inutilizada. Exclua, antes, o recebimento dela no FullWMS.")
-			endif
-			_lRet = .F.
-		endif
-	endif
-return _lRet
-*/
-
-
 // --------------------------------------------------------------------------
 // Cancela transferencia para almox. do FullWMS
 User Function EtqPllCT (_sCodigo)
@@ -532,6 +497,7 @@ User Function EtqPllCT (_sCodigo)
 	local _aEntr_ID  := {}
 	local _sEntr_ID  := ""
 	local _oEventoCG := NIL
+	local _sMsgConf  := ''
 
 	// Verifica se o usuario tem liberacao.
 	if ! U_ZZUVL ('100',,.F.)
@@ -569,7 +535,13 @@ User Function EtqPllCT (_sCodigo)
 	endif
 	
 	if _lContinua
-		if U_MsgNoYes ("Confirma o cancelamento da transferencia para o ax. do FullWMS?")
+		_sMsgConf := "Este procedimento altera o campo status_protheus na tabela "
+		_sMsgConf += "tb_wms_entrada para 'C' de forma que o batch de integracao "
+		_sMsgConf += "nao tente mais efetuar a transferencia de estoques entre "
+		_sMsgConf += "os almoxarifados envolvidos no processo. Deve ser usado nos "
+		_sMsgConf += "casos em que houve algum problema na integracao e os estoques "
+		_sMsgConf += "ja tenham sido ajustados manualmente. Confirma?"
+		if U_MsgNoYes (_sMsgConf)
 
 			// Abre tela para justificativa
 			do while .T.
@@ -606,192 +578,6 @@ User Function EtqPllCT (_sCodigo)
 	endif
 return
 
-/*
-// --------------------------------------------------------------------------
-// Inutiliza Etiqueta
-User Function EtqPllIn (_sCodigo, _bMostraMsg)
-	local _oSQL      := NIL
-	local _lContinua := .T.
-	
-	u_log2 ('info', 'Iniciando ' + procname ())
-
-	za1 -> (dbsetorder(1))
-	if ! za1 -> (dbseek(xFilial("ZA1") + AllTrim(_sCodigo), .F.))
-		u_help ("Etiqueta '" + _sCodigo + "' nao encontrada!",, .t.)
-		_lContinua = .F.
-	endif
-
-	// Verifica se o usuario tem liberacao.
-	if ! empty (za1 -> za1_op) .and. ! U_ZZUVL ('073', __cUserID, .T.)
-		_lContinua = .F.
-	endif
-	if ! empty (za1 -> za1_doce) .and. ! U_ZZUVL ('074', __cUserID, .T.)
-		_lContinua = .F.
-	endif
-
-	if ! empty (ZA1 -> ZA1_OP) .and. _lContinua
-		u_help ("A etiqueta '" + alltrim(ZA1 -> ZA1_CODIGO) + "' nao pode ser inutilizada por ser uma etiqueta de ordem de producao.",, .t.)
-		_lContinua := .F.
-	endif
-
-	if (ZA1 -> ZA1_APONT == 'I') .and. _lContinua
-		u_help ("A etiqueta '" + alltrim(ZA1 -> ZA1_CODIGO) + "' ja encontra-se inutilizada.",, .t.)
-		_lContinua := .F.
-	endif
-
-	if _lContinua
-		if _bMostraMsg
-			_lContinua = .F.
-			_lContinua = U_MsgNoYes ("Confirma a inutilização da etiqueta?")
-		endif
-		
-		if _lContinua
-		
-			_oSQL := ClsSQL():New ()
-			_oSQL:_sQuery := ""
-			_oSQL:_sQuery += " UPDATE " + RetSQLName ("ZA1")
-			_oSQL:_sQuery += " SET ZA1_APONT = 'I'" 
-			_oSQL:_sQuery += " WHERE ZA1_CODIGO = '" + ZA1 -> ZA1_CODIGO + "'"
-			_oSQL:_sQuery += " AND D_E_L_E_T_ = ''"
-			_oSQL:Exec ()
-			
-			u_help ("Etiqueta '" + alltrim(_sCodigo) + "' inutilizada!" + chr(13) + "(Remover do Recipiente)")
-		endif
-	endif
-return _lContinua
-*/
-
-/* migrada para fonte separado
-// --------------------------------------------------------------------------
-// Gera etique a partir da NF de Entrada
-User Function EtqPllGN ()
-	local _aEtiq     := {}
-	local _nEtiq     := 0
-	local _oSQL      := NIL
-	local _aCols     := {}
-	local _nQtPorPal := 0
-	local _aPal      := {}
-	local _lContinua := .T.
-	local _i         := 0
-	local _dDataIni  := date () - 7
-
-	// Verifica se o usuario tem liberacao.
-	if ! U_ZZUVL ('074', __cUserID, .T.)
-		_lContinua = .F.
-	endif
-
-	if _lContinua
-		_dDataIni = U_Get ("Buscar notas a partir de", "D", 8, "", "", _dDataIni, .F., '.T.')
-		
-		procregua (10)
-		incproc ("Buscando notas sem etiqueta")
-
-		_oSQL := ClsSQl ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "select " 
-		_oSQL:_sQuery += " ' ' as OK, " 
-		_oSQL:_sQuery += " D1_DOC     as NotaFiscal, " 
-		_oSQL:_sQuery += " dbo.VA_DTOC(D1_EMISSAO) as Emissao, "
-		_oSQL:_sQuery += " A2_NOME    as Fornecedor, "
-		_oSQL:_sQuery += " D1_ITEM    as Linha, "
-		_oSQL:_sQuery += " D1_LOTEFOR as LoteFor, "
-		_oSQL:_sQuery += " D1_LOTECTL as Lote, "
-		_oSQL:_sQuery += " B1_COD     as Codigo, " 
-		_oSQL:_sQuery += " B1_DESC    as Item, "
-		_oSQL:_sQuery += " B1_UM      as UM, "
-		_oSQL:_sQuery += " D1_QUANT   as Quantidade, " 
-		_oSQL:_sQuery += " A2_COD     as CodFornec, " 
-		_oSQL:_sQuery += " A2_LOJA    as Loja, " 
-		_oSQL:_sQuery += " D1_SERIE   as Serie " 
-		_oSQL:_sQuery += "from "
-		_oSQL:_sQuery += " " + RetSQLName ("SD1") + " as SD1, " 
-		_oSQL:_sQuery += " " + RetSQLName ("SB1") + " as SB1, "
-		_oSQL:_sQuery += " " + RetSQLName ("SA2") + " as SA2, "
-		_oSQL:_sQuery += " " + RetSQLName ("SF4") + " as SF4 "
-		_oSQL:_sQuery += "where "
-		_oSQL:_sQuery += " D1_COD    = B1_COD     and "
-		_oSQL:_sQuery += " A2_FILIAL = '" + xfilial ("SA2") + "' and "
-		_oSQL:_sQuery += " A2_LOJA   = D1_LOJA    and "
-		_oSQL:_sQuery += " A2_COD    = D1_FORNECE and "
-		_oSQL:_sQuery += " B1_FILIAL = '" + xfilial ("SB1") + "' and "
-		_oSQL:_sQuery += " B1_UM <> 'LT'                 and "  // Granel nao interessa ainda (eventalmente optemos por etiquetas os tanques ?)
-		_oSQL:_sQuery += " B1_GRUPO != '0400'            and "  // Uvas
-		_oSQL:_sQuery += " B1_RASTRO = 'L'               and "
-		_oSQL:_sQuery += " D1_LOTECTL <> ''              and "
-		_oSQL:_sQuery += " D1_FILIAL = '" + xfilial ("SD1") + "' and "
-		_oSQL:_sQuery += " D1_QUANT  > 0                 and "
-		_oSQL:_sQuery += " D1_DTDIGIT >= '" + dtos (_dDataIni) + "' and "
-		_oSQL:_sQuery += " F4_CODIGO = D1_TES     and "
-		_oSQL:_sQuery += " F4_ESTOQUE = 'S'              and "
-		_oSQL:_sQuery += " B1_COD not in (select ZA1_PROD from ZA1010 where ZA1_FILIAL = D1_FILIAL and ZA1_DOCE = D1_DOC and ZA1_SERIEE = D1_SERIE and ZA1_PROD = D1_COD and ZA1_APONT <> 'I' and D1_ITEM = ZA1_ITEM and ZA1010.D_E_L_E_T_ = '') and "
-		// Nao vamos integrar com FullWMS ainda ---> _oSQL:_sQuery += "	EXISTS (SELECT * FROM v_wms_item I WHERE I.coditem = B1_COD) and"
-		_oSQL:_sQuery += " SD1.D_E_L_E_T_ = '' and "
-		_oSQL:_sQuery += " SB1.D_E_L_E_T_ = '' and "
-		_oSQL:_sQuery += " SA2.D_E_L_E_T_ = '' "
-		_oSQL:_sQuery += "Order By "
-		_oSQL:_sQuery += " D1_FILIAL, " 
-		_oSQL:_sQuery += " D1_EMISSAO, "
-		_oSQL:_sQuery += " D1_DOC "
-		_oSQL:Log ()
-		
-		_aEtiq = aclone(_oSQL:Qry2Array ())
-		
-		// Inicializa coluna de selecao com .F. ('nao selecionada').
-		for _nEtiq = 1 to len (_aEtiq)
-			_aEtiq [_nEtiq, 1] = .F.
-		next
-		
-		_aCols = {}
-		aadd (_aCols, {2, 'Nota Fiscal',     40, ''})
-		aadd (_aCols, {3, 'Emissão',       40, ''})
-		aadd (_aCols, {4, 'Fornecedor', 70, ''})
-		aadd (_aCols, {5, 'Linha', 30, ''})
-		aadd (_aCols, {6, 'Lote Forn.', 40, ''})
-		aadd (_aCols, {7, 'Lote Interno', 40, ''})
-		aadd (_aCols, {8, 'Produto', 20, ''})
-		aadd (_aCols, {9, 'Descrição', 150, ''})
-		aadd (_aCols, {10,'UM', 10, ''})
-		aadd (_aCols, {11,'Quant.', 30, ''})
-		aadd (_aCols, {12,'Cod.forn.', 30, ''})
-		aadd (_aCols, {13,'Loja', 30, ''})
-		
-		U_MBArray (@_aEtiq, 'Selecione as notas para gerar etiquetas', _aCols, 1)
-		
-		for _nEtiq = 1 to len (_aEtiq)
-			if _aEtiq [_nEtiq, 1]
-			
-				// Busca quantidade por pallet no relacionamento produto X fornecedor.
-				sa5 -> (dbsetorder (2))
-				if ! sa5 -> (dbseek (xfilial ("SA5") + _aEtiq [_nEtiq, 8] + _aEtiq [_nEtiq, 12] + _aEtiq [_nEtiq, 13], .F.))
-					u_help ("Nao encontrei relacionamento do produto '" + alltrim(_aEtiq [_nEtiq, 8]) + "' com o fornecedor '" + _aEtiq [_nEtiq, 12] + '/' + _aEtiq [_nEtiq, 13] + "' para buscar o padrao de palletizacao.")
-					loop
-				elseif sa5 -> a5_vaqtpal == 0
-					u_help ("Quantidade por pallet nao informada para o produto '" + alltrim(_aEtiq [_nEtiq, 8]) + "' no fornecedor '" + _aEtiq [_nEtiq, 12] + '/' + _aEtiq [_nEtiq, 13] + "'. Verifique o campo '" + alltrim (RetTitle ("A5_VAQTPAL")) + "' na amarracao produto X fornecedor.")
-					loop
-				else
-					_nQtPorPal = sa5 -> a5_vaqtpal
-				endif
-				u_log2 ('debug', '_nQtPorPal:' + cvaltochar (_nQtPorPal))
-
-				// Usa a funcao padrao de palletizacao para manter compatibilidade com outras rotinas.
-				_aPal := aclone (U_VA_QTDPAL (_aEtiq [_nEtiq, 8], _aEtiq [_nEtiq, 11], _nQtPorPal))
-				u_log2 ('debug', _aPal)
-
-				if U_MsgYesNo ("Serao geradas " + cvaltochar (len (_aPal)) + " etiquetas (" + cvaltochar (_nQtPorPal) + " cada) para este item. Confirma?")
-					procregua (len (_aPal))
-					for _i=1 to len(_aPal)
-						incproc ("Gerando etiqueta " + cvaltochar (_i) + " de " + cvaltochar (len (_aPal)))
-						U_IncEtqPll (_aEtiq [_nEtiq, 8], '', _aPal[_i, 2], _aEtiq [_nEtiq, 12], _aEtiq [_nEtiq, 13], _aEtiq [_nEtiq, 2], _aEtiq [_nEtiq, 14], date(), _aEtiq [_nEtiq, 5], '')
-					next
-					u_log2 ('debug', 'etiq.geradas')
-					U_EtqPlltG ('', _aEtiq [_nEtiq, 2], _aEtiq [_nEtiq, 14], _aEtiq [_nEtiq, 12], _aEtiq [_nEtiq, 13], 'I')
-					u_log2 ('debug', 'retornou do U_EtqPlltG')
-				endif
-			endif
-		next
-	endif
-return
-*/
 
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
