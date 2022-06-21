@@ -113,6 +113,7 @@
 // 25/05/2022 - Claudia - Incluido estorno de rapel. GLPI: 8916
 // 02/06/2022 - Robert  - Gravacao campo E2_VAFUNRU (GLPI 11723)
 // 03/06/2022 - Claudia - Comentado o restante do else do if referente ao funrural.
+// 20/06/2022 - Claudia - Incluido nome do fornecedor no e-mail. GLPI: 12213
 //
 // ------------------------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
@@ -999,9 +1000,12 @@ return
 // -----------------------------------------------------------------------------------------------------
 // email para a logistica avisando entradas no almox 91 e 10
 Static Function _EmailLog()
+	Local _sNomeFornece := ""
 		
 	if sf1 -> f1_filial = '01'  // verifica so na matriz
 		
+		_sNomeFornece := alltrim(Posicione("SA2",1,xFilial("SA2")+ sf1 -> f1_fornece + sf1 -> f1_loja,"A2_NOME"))
+				
 		// Avisa interessados sobre entradas no alm. de devolucoes. - ALMOX 91
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
@@ -1015,12 +1019,12 @@ Static Function _EmailLog()
 		_oSQL:_sQuery +=   " AND SD1.D1_LOJA     = '" + sf1 -> f1_loja    + "'"
 		_oSQL:_sQuery +=   " AND SD1.D1_LOCAL    = '91'"
 		if sf1 -> f1_tipo = 'D'
-			_sMsg = _oSQL:Qry2HTM ("NF devolucao '" + sf1 -> f1_doc + "' do cliente '" + sf1 -> f1_fornece + "' lançada no alm.91", NIL, "", .F.)
+			_sMsg = _oSQL:Qry2HTM ("NF devolucao '" + sf1 -> f1_doc + "' do cliente '" + sf1 -> f1_fornece + "-"+  _sNomeFornece + "' lançada no alm.91", NIL, "", .F.)
 			if ! empty (_sMsg)
 				U_ZZUNU ({"077"}, "NF devolucao alm.91", _sMsg, .F., cEmpAnt, cFilAnt)
 			endif
 		else
-			_sMsg = _oSQL:Qry2HTM ("Movimentação de Entrada por NF: '" + sf1 -> f1_doc + "' do cliente '" + sf1 -> f1_fornece + "' lançada no alm.91", NIL, "", .F.)
+			_sMsg = _oSQL:Qry2HTM ("Movimentação de Entrada por NF: '" + sf1 -> f1_doc + "' do cliente '" + sf1 -> f1_fornece +  "-"+  _sNomeFornece + "' lançada no alm.91", NIL, "", .F.)
 			if ! empty (_sMsg)
 				U_ZZUNU ({"077"}, "Movimentação de Entrada por NF no almox 91", _sMsg, .F., cEmpAnt, cFilAnt)
 			endif			
@@ -1039,12 +1043,12 @@ Static Function _EmailLog()
 		_oSQL:_sQuery +=   " AND SD1.D1_LOJA     = '" + sf1 -> f1_loja    + "'"
 		_oSQL:_sQuery +=   " AND SD1.D1_LOCAL    = '10'"
 		if sf1 -> f1_tipo = 'D'
-			_sMsg = _oSQL:Qry2HTM ("NF devolucao '" + sf1 -> f1_doc + "' do cliente '" + sf1 -> f1_fornece + "' lançada no alm.10", NIL, "", .F.)
+			_sMsg = _oSQL:Qry2HTM ("NF devolucao '" + sf1 -> f1_doc + "' do cliente '" + sf1 -> f1_fornece +  "-"+  _sNomeFornece + "' lançada no alm.10", NIL, "", .F.)
 			if ! empty (_sMsg)
 				U_ZZUNU ({"077"}, "NF devolucao alm.10", _sMsg, .F., cEmpAnt, cFilAnt)
 			endif
 		else
-			_sMsg = _oSQL:Qry2HTM ("Movimentação de Entrada por NF: '" + sf1 -> f1_doc + "' do cliente '" + sf1 -> f1_fornece + "' lançada no alm.10", NIL, "", .F.)
+			_sMsg = _oSQL:Qry2HTM ("Movimentação de Entrada por NF: '" + sf1 -> f1_doc + "' do cliente '" + sf1 -> f1_fornece +  "-" +  _sNomeFornece + "' lançada no alm.10", NIL, "", .F.)
 			if ! empty (_sMsg)
 				U_ZZUNU ({"077"}, "Movimentação de Entrada por NF no almox 10", _sMsg, .F., cEmpAnt, cFilAnt)
 			endif			
@@ -1063,7 +1067,7 @@ Static Function _EmailLog()
 	_oSQL:_sQuery +=   " AND SD1.D1_FORNECE  = '" + sf1 -> f1_fornece + "'"
 	_oSQL:_sQuery +=   " AND SD1.D1_LOJA     = '" + sf1 -> f1_loja    + "'"
 	if sf1 -> f1_tipo = 'D'
-		_sMsg = _oSQL:Qry2HTM ("NF devolucao '" + sf1 -> f1_doc + "' do cliente '" + sf1 -> f1_fornece , NIL, "", .F.)
+		_sMsg = _oSQL:Qry2HTM ("NF devolucao '" + sf1 -> f1_doc + "' do cliente '" + sf1 -> f1_fornece + "-" + _sNomeFornece, NIL, "", .F.)
 		if ! empty (_sMsg)
 			U_ZZUNU ({"089"}, "NF devolucao de venda", _sMsg, .F., cEmpAnt, cFilAnt)
 		endif
