@@ -644,12 +644,41 @@ return
 Static Function _CabecComp ()
 	_oPrn:Say (_nMargSup + li, _nMargEsq, padc ("  COMPONENTES  ", limite, "*"), _oCour8N, 100)
 	li += _nAltLin
-// 	_oPrn:Say (_nMargSup + li, _nMargEsq, " Compon.   Descricao                               Quant.prev.|UM|Alm| Ender.previsto| Endereco real |   Lote   |  Qt.real | Perdas |", _oCour8N, 100)
  	_oPrn:Say (_nMargSup + li, _nMargEsq, " Compon.   Descricao                     Quant.prev.|UM|Alm| Ender.previsto| Endereco real |        Lote        |  Qt.real | Perdas |", _oCour8N, 100)
 	li += _nAltLin * .5
-//	_oPrn:Say (_nMargSup + li, _nMargEsq, "|---------|-----------------------------------|---------------|--|---|---------------|---------------|----------|----------|--------|", _oCour8N, 100)
 	_oPrn:Say (_nMargSup + li, _nMargEsq, "|---------|-------------------------|---------------|--|---|---------------|---------------|--------------------|----------|--------|", _oCour8N, 100)
 	li += _nAltLin * .5
+
+/*
+// Simulacao
+	li += _nAltLin * 1.5
+	_oPrn:Say (_nMargSup + li, _nMargEsq, "|---------|------------------------------------|    -----------|--|---|---------------|---------------|----------|-----------|------|", _oCour8N, 100)
+	li += _nAltLin * .5
+	_oPrn:Say (_nMargSup + li, _nMargEsq, "|Compon.   Descricao                           |    Quant.prev.|UM|Alm| Ender.previsto| Endereco real |  Qt.real | Perdas qt | Meta%|", _oCour8N, 100)
+	li += _nAltLin * .5
+	_oPrn:Say (_nMargSup + li, _nMargEsq, "|---------|------------------------------------|---------------|--|---|---------------|---------------|----------|-----------|------|", _oCour8N, 100)
+	li += _nAltLin * .5
+	_oPrn:Say (_nMargSup + li, _nMargEsq, "|         | Lacre                              |               |  |   |               |               |          |           | 1.23 |", _oCour8N, 100)
+	li += _nAltLin * .5
+	_oPrn:Say (_nMargSup + li, _nMargEsq, "|---------|------------------------------------|---------------|--|---|---------------|---------------|----------|-----------|------|", _oCour8N, 100)
+	li += _nAltLin * .5
+	_oPrn:Say (_nMargSup + li, _nMargEsq, "|         | Suco antecede o envase             |               |  |   |               |               |          |           | 3.18 |", _oCour8N, 100)
+	li += _nAltLin * .5
+	_oPrn:Say (_nMargSup + li, _nMargEsq, "|---------|------------------------------------|---------------|--|---|---------------|---------------|----------|-----------|------|", _oCour8N, 100)
+	li += _nAltLin * .5
+	_oPrn:Say (_nMargSup + li, _nMargEsq, "|         | Caixa de papelao                   |               |  |   |               |               |          |           | 1.23 |", _oCour8N, 100)
+	li += _nAltLin * .5
+	_oPrn:Say (_nMargSup + li, _nMargEsq, "|---------|------------------------------------|---------------|--|---|---------------|---------------|----------|-----------|------|", _oCour8N, 100)
+	li += _nAltLin * .5
+	_oPrn:Say (_nMargSup + li, _nMargEsq, "|         | Garrafa                            |               |  |   |               |               |          |           | 1.88 |", _oCour8N, 100)
+	li += _nAltLin * .5
+	_oPrn:Say (_nMargSup + li, _nMargEsq, "|---------|------------------------------------|---------------|--|---|---------------|---------------|----------|-----------|------|", _oCour8N, 100)
+	li += _nAltLin * .5
+	_oPrn:Say (_nMargSup + li, _nMargEsq, "|         | Rotulo                             |               |  |   |               |               |          |           | 0.25 |", _oCour8N, 100)
+	li += _nAltLin * .5
+	_oPrn:Say (_nMargSup + li, _nMargEsq, "|---------|------------------------------------|---------------|--|---|---------------|---------------|----------|-----------|------|", _oCour8N, 100)
+	li += _nAltLin * .5
+*/
 return
 
 

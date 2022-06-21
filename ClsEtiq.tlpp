@@ -15,6 +15,10 @@
 // Historico de alteracoes:
 // 28/03/2022 - Robert - Criada a classe e iniciada migracao de diversos outros fontes para ca.
 // 13/06/2022 - Robert - Ajuste leitura filial ZAG na impressao.
+// 15/06/2022 - Robert - Ao instanciar etiqueta jah existente, tentava sempre buscar
+//                       dados de lote, mesmo quando b1_rastro!='L' (GLPI 12220)
+//                     - Impede exclusao de etiqueta de NF (migrado do VA_ETQPLL.PRW)
+// 16/06/2022 - Robert - Verif.se a etiq.existe no FullWMS antes excluir (GLPI 12220).
 //
 
 #Include "Protheus.ch"
@@ -58,6 +62,7 @@ CLASS ClsEtiq
 	// Declaracao dos Metodos da classe
 	public METHOD New ()
 	public METHOD EnviaFull ()
+	public METHOD Exclui ()
 	public METHOD Inutiliza ()
 	public METHOD GeraAtrib ()
 	public METHOD PodeEnvFul ()
@@ -201,49 +206,53 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 				endif
 
 			elseif ! empty (::DocEntrNum)  // Etiqueta gerada por NF de entrada
-				_oSQL := ClsSQL ():New ()
-				_oSQL:_sQuery := "SELECT D1_LOTECTL, B8_DTVALID"
-				_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD1") + " SD1 "
-				_oSQL:_sQuery +=  " LEFT JOIN " + RetSQLName ("SB8") + " SB8 "
-				_oSQL:_sQuery +=       " ON (SB8.D_E_L_E_T_ = ''"
-				_oSQL:_sQuery +=       " AND SB8.B8_FILIAL  = SD1.D1_FILIAL"
-				_oSQL:_sQuery +=       " AND SB8.B8_LOTECTL = SD1.D1_LOTECTL"
-				_oSQL:_sQuery +=       " AND SB8.B8_LOTEFOR = SD1.D1_LOTEFOR"
-				_oSQL:_sQuery +=       " AND SB8.B8_PRODUTO = SD1.D1_COD"
-				_oSQL:_sQuery +=       ")"
-				_oSQL:_sQuery += " WHERE SD1.D_E_L_E_T_ = ''"
-				_oSQL:_sQuery +=   " AND D1_FILIAL  = '" + ::Filial       + "'"
-				_oSQL:_sQuery +=   " AND D1_DOC     = '" + ::DocEntrNum   + "'"
-				_oSQL:_sQuery +=   " AND D1_SERIE   = '" + ::DocEntrSerie + "'"
-				_oSQL:_sQuery +=   " AND D1_FORNECE = '" + ::DocEntrForn  + "'"
-				_oSQL:_sQuery +=   " AND D1_LOJA    = '" + ::DocEntrLoja  + "'"
-				_oSQL:_sQuery +=   " AND D1_ITEM    = '" + ::DocEntrItem  + "'"
-				_oSQL:_sQuery +=   " AND D1_COD     = '" + ::Produto      + "'"
-				_oSQL:Log ()
-				_aLoteVal = aclone (_oSQL:RetFixo (1, "ao consultar lote do produto da etiqueta '" + ::Codigo + "' na NF de entrada '" + ::DocEntrNum + "'.", .T.))
-				if len (_aLoteVal) == 1
-					::LoteProduto  = _aLoteVal [1, 1]
-					::ValidadeLote = _aLoteVal [1, 2]
+				if sb1 -> b1_rastro == 'L'
+					_oSQL := ClsSQL ():New ()
+					_oSQL:_sQuery := "SELECT D1_LOTECTL, B8_DTVALID"
+					_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD1") + " SD1 "
+					_oSQL:_sQuery +=  " LEFT JOIN " + RetSQLName ("SB8") + " SB8 "
+					_oSQL:_sQuery +=       " ON (SB8.D_E_L_E_T_ = ''"
+					_oSQL:_sQuery +=       " AND SB8.B8_FILIAL  = SD1.D1_FILIAL"
+					_oSQL:_sQuery +=       " AND SB8.B8_LOTECTL = SD1.D1_LOTECTL"
+					_oSQL:_sQuery +=       " AND SB8.B8_LOTEFOR = SD1.D1_LOTEFOR"
+					_oSQL:_sQuery +=       " AND SB8.B8_PRODUTO = SD1.D1_COD"
+					_oSQL:_sQuery +=       ")"
+					_oSQL:_sQuery += " WHERE SD1.D_E_L_E_T_ = ''"
+					_oSQL:_sQuery +=   " AND D1_FILIAL  = '" + ::Filial       + "'"
+					_oSQL:_sQuery +=   " AND D1_DOC     = '" + ::DocEntrNum   + "'"
+					_oSQL:_sQuery +=   " AND D1_SERIE   = '" + ::DocEntrSerie + "'"
+					_oSQL:_sQuery +=   " AND D1_FORNECE = '" + ::DocEntrForn  + "'"
+					_oSQL:_sQuery +=   " AND D1_LOJA    = '" + ::DocEntrLoja  + "'"
+					_oSQL:_sQuery +=   " AND D1_ITEM    = '" + ::DocEntrItem  + "'"
+					_oSQL:_sQuery +=   " AND D1_COD     = '" + ::Produto      + "'"
+					_oSQL:Log ()
+					_aLoteVal = aclone (_oSQL:RetFixo (1, "ao consultar lote do produto da etiqueta '" + ::Codigo + "' na NF de entrada '" + ::DocEntrNum + "'.", .T.))
+					if len (_aLoteVal) == 1
+						::LoteProduto  = _aLoteVal [1, 1]
+						::ValidadeLote = _aLoteVal [1, 2]
+					endif
 				endif
 
 			elseif ! empty (::IdZAG)
-				_oSQL := ClsSQL ():New ()
-				_oSQL:_sQuery := "SELECT ZAG_LOTORI, B8_DTVALID"
-				_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZAG") + " ZAG "
-				_oSQL:_sQuery +=  " LEFT JOIN " + RetSQLName ("SB8") + " SB8 "
-				_oSQL:_sQuery +=       " ON (SB8.D_E_L_E_T_ = ''"
-				_oSQL:_sQuery +=       " AND SB8.B8_FILIAL  = ZAG.ZAG_FILORI"
-				_oSQL:_sQuery +=       " AND SB8.B8_LOTECTL = ZAG.ZAG_LOTORI"
-				_oSQL:_sQuery +=       " AND SB8.B8_PRODUTO = ZAG.ZAG_PRDORI"
-				_oSQL:_sQuery +=       ")"
-				_oSQL:_sQuery += " WHERE ZAG.D_E_L_E_T_ = ''"
-				_oSQL:_sQuery +=   " AND ZAG.ZAG_FILIAL = '" + xfilial ("ZAG") + "'"
-				_oSQL:_sQuery +=   " AND ZAG.ZAG_DOC    = '" + ::IdZAG + "'"
-				_oSQL:Log ()
-				_aLoteVal = aclone (_oSQL:RetFixo (1, "ao consultar lote do produto da etiqueta '" + ::Codigo + "' na solicitacao de transferencia numero '" + ::IdZAG + "'.", .T.))
-				if len (_aLoteVal) == 1
-					::LoteProduto  = _aLoteVal [1, 1]
-					::ValidadeLote = _aLoteVal [1, 2]
+				if sb1 -> b1_rastro == 'L'
+					_oSQL := ClsSQL ():New ()
+					_oSQL:_sQuery := "SELECT ZAG_LOTORI, B8_DTVALID"
+					_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZAG") + " ZAG "
+					_oSQL:_sQuery +=  " LEFT JOIN " + RetSQLName ("SB8") + " SB8 "
+					_oSQL:_sQuery +=       " ON (SB8.D_E_L_E_T_ = ''"
+					_oSQL:_sQuery +=       " AND SB8.B8_FILIAL  = ZAG.ZAG_FILORI"
+					_oSQL:_sQuery +=       " AND SB8.B8_LOTECTL = ZAG.ZAG_LOTORI"
+					_oSQL:_sQuery +=       " AND SB8.B8_PRODUTO = ZAG.ZAG_PRDORI"
+					_oSQL:_sQuery +=       ")"
+					_oSQL:_sQuery += " WHERE ZAG.D_E_L_E_T_ = ''"
+					_oSQL:_sQuery +=   " AND ZAG.ZAG_FILIAL = '" + xfilial ("ZAG") + "'"
+					_oSQL:_sQuery +=   " AND ZAG.ZAG_DOC    = '" + ::IdZAG + "'"
+					_oSQL:Log ()
+					_aLoteVal = aclone (_oSQL:RetFixo (1, "ao consultar lote do produto da etiqueta '" + ::Codigo + "' na solicitacao de transferencia numero '" + ::IdZAG + "'.", .T.))
+					if len (_aLoteVal) == 1
+						::LoteProduto  = _aLoteVal [1, 1]
+						::ValidadeLote = _aLoteVal [1, 2]
+					endif
 				endif
 			endif
 		endif
@@ -335,6 +344,7 @@ METHOD PodeExcluir (_lComTela) Class ClsEtiq
 	Local _aAreaAnt  := U_ML_SRArea ()
 	local _oSQL      := NIL
 	local _sMsgNaoEx := ''
+	local _sLinkSrv  := ""
 
 	if ::QtApontada + ::QtPerdida + ::QtEstornada > 0
 		_sMsgNaoEx += "Etiqueta '" + ::Codigo + "' ja foi apontada e/ou estornada. Exclusao nao permitida."
@@ -344,20 +354,42 @@ METHOD PodeExcluir (_lComTela) Class ClsEtiq
 		_sMsgNaoEx += "Etiqueta '" + ::Codigo + "' ja foi inutilizada. Exclusao nao permitida."
 		_lContinua = .F.
 	endif
+	if ! empty (::DocEntrNum)
+		_sMsgNaoEx += "A etiqueta '" + ::Codigo + "' nao pode ser excluida, pois trata-se de uma etiqueta de nota fiscal (rastreabilidade). Use opcao de 'inutilizar'."
+		_lContinua := .F.
+	endif
+
+	// Etiqueta nao deve esistir no FullWMS
 	if _lContinua
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := " select count (*)"
-		_oSQL:_sQuery +=   " from tb_wms_etiquetas"
-		_oSQL:_sQuery +=  " where id = '" + cvaltochar (::Codigo) + "'" 
-		_oSQL:_sQuery +=    " and status != 'N'" 
-		if _oSQL:RetQry () > 0
-			_sMsgNaoEx += "Etiqueta '" + ::Codigo + "' ja foi vista pelo FullWMS. Nao pode ser excluida. Exclua, antes, o recebimento dela no FullWMS. Query para verificacao: " + _oSQL:_sQuery
+	
+		// Busca o caminho do banco de dados do FullWMS
+		_sLinkSrv = U_LkServer ('FULLWMS_AX01')
+	
+		if empty (_sLinkSrv)
+			_sMsgNaoEx += "Impossivel verificar existencia da etiqueta '" + ::Codigo + "' no sistema FullWMS. Verifique parametrizacao para que o Protheus acesse o banco de dados do FullWMS."
 			_lContinua = .F.
+		else
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := "SELECT CONTAGEM"
+			_oSQL:_sQuery += " FROM openquery (" + _sLinkSrv + ","
+			_oSQL:_sQuery += " 'select count (*) as CONTAGEM"
+			_oSQL:_sQuery +=  " from wms_etiquetas"
+			_oSQL:_sQuery += " where wms_etiqueta_id = " + ::Codigo
+			_oSQL:_sQuery += " ')"
+			_oSQL:Log ('[' + procname () + ']')
+			if _oSQL:RetQry (1, .f.) > 0
+				_sMsgNaoEx += "Etiqueta '" + ::Codigo + "' encontrada no banco de dados do sistema FullWMS. Verifique (no FullWMS) a tela WF0101 - Consulta de etiquetas de producao."
+				_lContinua = .F.
+			endif
 		endif
 	endif
 
-	if _lComTela
-		u_help (_sMsgNaoEx,, .t.)
+	if ! empty (_sMsgNaoEx)
+		if _lComTela
+			u_help (_sMsgNaoEx, iif (valtype (_oSQL) == 'O', _oSQL:_sQuery, ''), .t.)
+		else
+			U_Log2 ('aviso', '[' + procname () + ']' + _sMsgNaoEx)
+		endif
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
@@ -410,6 +442,35 @@ METHOD EnviaFull (_lMsg) Class ClsEtiq
 			U_help ("Erro ao enviar etiqueta para FullWMS: " + _oSQL:_sQuery,, .t.)
 			_lRetEnv = .F.
 		endif
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
+return _lContinua
+
+
+// --------------------------------------------------------------------------
+// Exclusao da etiqueta.
+METHOD Exclui () Class ClsEtiq
+	Local _aAreaAnt  := U_ML_SRArea ()
+	local _lContinua := .T.
+
+	if _lContinua
+
+		// Se a chamada for feita para um registro jah deletado, eh por que a
+		// exclusao deve estar sendo feita pela tela de manutencao (usuario)
+		// e o registro do SZI jah foi deletado pela funcao AxDeleta().
+		// Faltaria, no caso, fazer as exclusoes de dados relacionados.
+		if ! za1 -> (deleted ())
+			U_Log2 ('debug', '[' + procname () + ']Deletando registro no ZA1')
+			reclock ("ZA1", .F.)
+			za1 -> (dbdelete ())
+			msunlock ()
+		else
+			U_Log2 ('debug', '[' + procname () + ']Registro jah encontra-se deletado no ZA1')
+		endif
+
+		// Verifica necessidade de enviar algum dado para FullWMS.
+		_AtuFull (::Codigo, 'E')
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
@@ -478,5 +539,20 @@ METHOD Inutiliza () Class ClsEtiq
 
 			u_help ("Etiqueta '" + alltrim(_sCodigo) + "' inutilizada!" + chr(13) + "(Remover do Recipiente)")
 		endif
+	endif
+return
+
+
+// --------------------------------------------------------------------------
+// Atualiza dados para integracao com Fullsoft.
+static function _AtuFull (_sEtiq, _sQueFazer)
+	local _oSQL      := NIL
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	if _sQueFazer == 'E'
+		_oSQL:_sQuery += " delete tb_wms_etiquetas"
+		_oSQL:_sQuery += " where id = " + cvaltochar (_sEtiq)
+		_oSQL:Exec ()
 	endif
 return
