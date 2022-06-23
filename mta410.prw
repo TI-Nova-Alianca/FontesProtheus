@@ -298,7 +298,7 @@ User Function MTA410 ()
 		endif
 	EndIf
 
-	If _lRet
+	If _lRet .and. ! IsInCallStack("U_BATMERCP")
 		_lBonif := .T.
 		for _N = 1 to len (aCols)
 			N := _N
