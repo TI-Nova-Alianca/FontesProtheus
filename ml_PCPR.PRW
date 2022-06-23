@@ -35,6 +35,7 @@
 // 27/01/2022 - Sandra  - Incluso linhas conforme chamado GLPI: 11544.
 // 21/03/2022 - Claudia - Ajustada a impressão duplicada das informações adicionais. GLPI: 11779
 // 14/06/2022 - Claudia - Ajustada a impressão das observações. GLPI: 12112
+// 26/06/2022 - Sandra  - Incluso novas moedas. GLPI: 12211
 //
 // ---------------------------------------------------------------------------------------------------------------------------
 #include 'topconn.ch'
@@ -181,7 +182,20 @@ Static Function xPrintRel()
 	
 	wmoeda := getMv("MV_SIMB1") 
 	if C7_MOEDA > 1  // se moeda diferente de real
-      wmoeda := iif(C7_MOEDA=2,getMv("MV_SIMB2"),getMv("MV_SIMB3"))  
+     // wmoeda := iif(C7_MOEDA=2,getMv("MV_SIMB2"),getMv("MV_SIMB3"))  
+	  	Do CASE
+		CASE C7_MOEDA == 2
+		 	wmoeda := getmv("MV_SIMB2")
+		CASE C7_MOEDA == 3
+		 	wmoeda := getmv("MV_SIMB3")
+		CASE C7_MOEDA == 4
+		 	wmoeda := getmv("MV_SIMB4")	
+		CASE C7_MOEDA == 5
+		 	wmoeda := getmv("MV_SIMB5")	
+		OTHERWISE
+		 	wmoeda := ""
+		ENDCASE
+
     endif
     
 	xCabec()
