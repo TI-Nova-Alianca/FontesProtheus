@@ -14,7 +14,50 @@ User Function claudia ()
 
 	//u_help("_RapelExclui")
 	//_RapelExclui()
+
+	u_help("Ajustes SB1")
+	_AtuSB1()
 Return
+//
+// ------------------------------------------------------------------------------------
+Static Function _AtuSB1()
+	Local _aDados 	:= {}
+	Local _i 		:=0
+
+	_aDados = U_LeCSV ('C:\Temp\sb1.csv', ';')
+
+	for _i := 1 to len (_aDados)
+		_sProd   := _aDados[_i, 1]
+		_sDesc   := _aDados[_i, 7]
+		_sLinha  := _aDados[_i, 8]
+		_sEnvase := _aDados[_i, 9]
+
+		DbSelectArea("SB1")
+		DbSetOrder(1)
+		if DbSeek(xFilial("SB1")+ _sProd,.F.)
+			_sDescOld   := sb1->b1_desc
+			_sLinhaOld  := sb1->b1_codlin
+			_sEnvaseOld := sb1->b1_valinen
+
+			reclock("SB1", .F.)
+				SB1->B1_B1_DESC := _sDesc
+				SB1->B1_CODLIN  := _sLinha
+				SB1->B1_VALINEN := _sEnvase
+			MsUnLock()
+
+			_oEvento := ClsEvent():new ()
+			_oEvento:Alias    = 'SB1'
+			_oEvento:Texto    = " B1_B1_DESC DE " + _sDescOld + " PARA " + _sDesc + chr (13) + chr (10) + ;
+								" B1_CODLIN DE " + _sLinhaOld + " PARA " + _sLinha + chr (13) + chr (10) + ;
+								" B1_VALINEN DE " + _sEnvaseOld +" PARA " + _sEnvase 
+			_oEvento:CodEven  = "SB1010"
+			_oEvento:Grava() 
+		endif	
+	
+	Next
+	u_help("Feito!")
+Return
+
 //
 //
 // ----------------------------------------------------------------------------------------
@@ -48,12 +91,8 @@ Return
 // 			do case
 // 				case sb1 -> b1_posipi = '22042100' .and. sb1 -> b1_ipi != 7.5
 // 					m->b1_ipi = 7.5
-// 				case sb1 -> b1_posipi = '22041090' .and. sb1 -> b1_ipi != 7.5
-// 					m->b1_ipi = 7.5
-// 				case sb1 -> b1_posipi = '22043000' .and. sb1 -> b1_ipi != 7.5
-// 					m->b1_ipi = 7.5
-// 				case sb1 -> b1_posipi = '22021000' .and. sb1 -> b1_ipi != 3
-// 					m->b1_ipi = 3
+// 				
+
 // 				case sb1 -> b1_posipi = '22042100' .and. sb1 -> b1_ipi != 7.5
 // 					m->b1_ipi = 7.5
 // 				case sb1 -> b1_posipi = '22060090' .and. sb1 -> b1_ipi != 7.5
