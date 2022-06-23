@@ -20,6 +20,8 @@
 // 15/03/2019 - Catia   - incluido rotina de recebimento de emails das previsoes de entrega para a portaria - ZZU - 031
 // 13/05/2020 - Sandra  - Retirado e-mail de compras@... Para não receber mais e-mail conforme chamado GLPI 7867.
 // 28/07/2020 - Cláudia - Adicionado email conforme GLPI: 8189
+// 23/06/2022 - Sandra  - Alterado grupo de usuário de 31 para 138 Pedidos de Compra com previsão de entrega nos próximos 
+// 						  10 dias. GLPI 12248
 
 // --------------------------------------------------------------------------
 user function BatPreEnt (_sQueFazer)
@@ -70,12 +72,12 @@ user function BatPreEnt (_sQueFazer)
 	   if len (_oSQL:Qry2Array (.T., .F.)) > 0
 	   
 			_sMsg = _oSQL:Qry2HTM ("Pedidos de Compra com previsão de entrega nos próximos 10 dias", _aCols, "", .F.)
-			_sDest := "qualidade@novaalianca.coop.br;"
-			_sDest += "leandro.kist@novaalianca.coop.br;"
+			//_sDest := "qualidade@novaalianca.coop.br;"
+			//_sDest += "leandro.kist@novaalianca.coop.br;"
 			
 			//U_SendMail ('compras@novaalianca.coop.br', "Previsões de Entrega", _sMsg, {})
 			U_SendMail (_sDest, "Previsões de Entrega", _sMsg, {})
-			U_ZZUNU ({'031'}, "Previsões de Entrega", _sMsg, .F., cEmpAnt, cFilAnt, "") // Portaria
+			U_ZZUNU ({'138'}, "Previsões de Entrega", _sMsg, .F., cEmpAnt, cFilAnt, "") // Portaria
 		 	
 	   endif
 	   
