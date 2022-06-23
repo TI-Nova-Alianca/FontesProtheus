@@ -1002,9 +1002,9 @@ return
 Static Function _EmailLog()
 	Local _sNomeFornece := ""
 		
+	_sNomeFornece := alltrim(Posicione("SA1", 1,xFilial("SA1")+ sf1 -> f1_fornece + sf1 -> f1_loja,"A1_NOME"))
+	
 	if sf1 -> f1_filial = '01'  // verifica so na matriz
-		
-		_sNomeFornece := alltrim(Posicione("SA1", 1,xFilial("SA1")+ sf1 -> f1_fornece + sf1 -> f1_loja,"A1_NOME"))
 				
 		// Avisa interessados sobre entradas no alm. de devolucoes. - ALMOX 91
 		_oSQL := ClsSQL ():New ()
