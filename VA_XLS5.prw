@@ -298,6 +298,8 @@ Static Function _Opcoes (_sTipo)
 		aadd (_aOpcoes, {.F., "NCM",                      "SB1.B1_POSIPI"})
 		aadd (_aOpcoes, {.F., "Id Pagar-me",              "C5_VAIDT"})
 		aadd (_aOpcoes, {.F., "NSU Pagar-me/Link Cielo",  "C5_VANSU"})
+		aadd (_aOpcoes, {.F., "Tipo bonificacao",         "CASE WHEN C5_VABTPO = '1' THEN '1=Negoc.Comercial' WHEN C5_VABTPO = '2' THEN '2=Doacao' WHEN C5_VABTPO = '3' THEN '3=Acao MKT' WHEN C5_VABTPO = '4' THEN '4=Merchandising' WHEN C5_VABTPO = '5' THEN '5=Introd.Produto ' ELSE '' END AS TIPO_BONIF"})
+		aadd (_aOpcoes, {.F., "Pedido venda bonificacao", "C5_VABREF AS PEDVEN_BONIF"})
 	endif
 	// Pre-seleciona opcoes cfe. conteudo anterior.
 	for _nOpcao = 1 to len (_aOpcoes)
