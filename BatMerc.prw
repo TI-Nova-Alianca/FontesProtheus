@@ -442,6 +442,14 @@ static function _LeCli (_sLinkSrv)
 					_sRet219 := _aAtrRet[1,1]
 				endif
 			endif
+
+			// if "R33" $ upper (GetEnvServer())
+			// 	// dados financeiros
+			// 	_sRet208 := "teste"
+			// 	_sRet209 := "54 999999999"
+			// 	_sRet210 := "teste@teste.com.br"		
+			// 	_sRet219 := "teste@teste.com.br"
+			// endif		
 	
 			if _lContinua
 				_sIE := (_sAliasQ) -> ZA1_INSCR
