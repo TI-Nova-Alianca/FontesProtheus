@@ -97,6 +97,7 @@
 // 10/06/2022 - Claudia - Ajuste de lançamento para mudas. GLPI: 12191
 // 13/06/2022 - Claudia - Ajuste de validação de carga e AX01. GLPI: 12172
 // 22/06/2022 - Claudia - Passada validações de NSU/Id pagarme e indenização e bonificações no p.e Mta410. GLPI: 11600
+// 24/06/2022 - Claudia - Incluida validação para vendedor incluir/não incluir pedido dereto no Protheus. GLPI: 12249
 //
 // ---------------------------------------------------------------------------------------------------------------------------
 User Function MTA410 ()
@@ -120,6 +121,10 @@ User Function MTA410 ()
 			endif
 			if ! empty(m->c5_vend2) .and. fBuscaCpo("SA3", 1, xfilial("SA3") + m->c5_vend2, "A3_ATIVO") != "S"
 				u_help ("Vendedor " + m->c5_vend2 + " nao consta como 'Ativo'",, .t.)
+				_lRet = .F.
+			endif
+			if (fBuscaCpo("SA3", 1, xfilial("SA3") + m->c5_vend1, "A3_VAIPED") != "S") .and. !IsInCallStack("U_BATMERCP")
+				u_help ("Vendedor " + m->c5_vend1 + " sem permissão para incluir pedido!",, .t.)
 				_lRet = .F.
 			endif
 		endif	
