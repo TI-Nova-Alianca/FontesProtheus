@@ -98,6 +98,7 @@
 // 13/06/2022 - Claudia - Ajuste de validação de carga e AX01. GLPI: 12172
 // 22/06/2022 - Claudia - Passada validações de NSU/Id pagarme e indenização e bonificações no p.e Mta410. GLPI: 11600
 // 24/06/2022 - Claudia - Incluida validação para vendedor incluir/não incluir pedido dereto no Protheus. GLPI: 12249
+// 28/06/2022 - Claudia - Incluida validação para numero de pedido bonificação não ser igual ao pedido de venda. GLPI: 12274
 //
 // ---------------------------------------------------------------------------------------------------------------------------
 User Function MTA410 ()
@@ -321,6 +322,10 @@ User Function MTA410 ()
 
 						if m->c5_vabtpo == '1' .and. (empty(m->c5_vabfil) .or. empty(m->c5_vabref))
 							u_help(" Pedido de bonificação de tipo 'Negociação comercial' exige preenchimento de filial e pedido de venda origem!")
+							_lRet := .F.
+						endif
+						if  m->c5_vabtpo == '1' .and. (m->c5_vabref == m->c5_num)
+							u_help(" Pedido de bonificação de tipo 'Negociação comercial' não pode ter o numero do pedido de bonificação igual ao pedido de venda!")
 							_lRet := .F.
 						endif
 						exit
