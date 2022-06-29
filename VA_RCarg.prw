@@ -21,6 +21,7 @@
 // 22/02/2021 - Cláudia   - Ajustes nos campos de observações. GLPI:9421
 // 23/02/2021 - Sandra    - Ajustado para sempre imprimir obs Expedição GLPI: 9466
 //	                      - Alterado nome do campo Mens. p/NF para OBS.Expedição  
+// 29/06/2022 - Sandra    - Ajustado para ter linhas conforme GLPI 12281.
 //
 // --------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -206,6 +207,10 @@ static function _Imprime ()
 		
 		@ li, 0 psay _sLinImp
 		li += 2
+		//li++
+		@ li, 0 psay replicate ("_", limite) 
+
+
 		do while ! (_sAliasQ) -> (eof ()) .and. (_sAliasQ) -> dak_cod == _sCarga
 
 			if li > _nMaxLin
@@ -352,7 +357,8 @@ static function _Imprime ()
 					@ li, 70  psay Substr(Alltrim(_aNotas [_nNota, 6]),1,35)
 					@ li, 100 psay "QT:"+transform (_aNotas [_nNota, 8], "@E 9,999") 
 					@ li, 110 psay "P.Bruto:" + transform (_aNotas [_nNota, 7], "@E 999,999.99")
-					
+					li++
+
 					_SumQt +=_aNotas [_nNota, 8]
 					_SumPes +=  _aNotas [_nNota, 7]
 				else //o campo 5 eh a soma de pessos de todos os itens para o sintetico
@@ -361,7 +367,8 @@ static function _Imprime ()
 					@ li, 44  psay Substr(Alltrim(_aNotas [_nNota, 4]),1,15)
 					@ li, 100 psay "QT:"+transform (_aNotas [_nNota, 6], "@E 9,999") 
 					@ li, 110 psay "P.Bruto:" + transform (_aNotas [_nNota, 5], "@E 999,999.99")
-		
+		            li++
+
 					_SumQt +=_aNotas [_nNota, 6]
 					_SumPes +=  _aNotas [_nNota, 5]
 				endif 
@@ -375,7 +382,9 @@ static function _Imprime ()
 					@ li, 70  psay Substr(Alltrim(_aNotas [_nNota, 6]),1,35)
 					@ li, 100 psay "QT:"+transform (_aNotas [_nNota, 8], "@E 9,999") 
 					@ li, 110 psay "P.Bruto:" + transform (_aNotas [_nNota, 7], "@E 999,999.99")
-					
+					li ++
+                   
+
 					_SumQt +=_aNotas [_nNota, 8]
 					_SumPes +=  _aNotas [_nNota, 7]
 				else
@@ -383,13 +392,16 @@ static function _Imprime ()
 					@ li, 17  psay SubStr(Alltrim(_aNotas [_nNota, 3]),1,25)
 					@ li, 44  psay Substr(Alltrim(_aNotas [_nNota, 4]),1,15)
 					@ li, 100 psay "QT:"+transform (_aNotas [_nNota, 6], "@E 9,999") 
-					@ li, 110 psay "P.Bruto:" + transform (_aNotas [_nNota, 5], "@E 999,999.99")					
+					@ li, 110 psay "P.Bruto:" + transform (_aNotas [_nNota, 5], "@E 999,999.99")	
+					//li ++	
+					//@ li, 0 psay replicate ("_", limite)	
 					
 					_SumQt +=_aNotas [_nNota, 6]
 					_SumPes +=  _aNotas [_nNota, 5]
 				endif 
 			endif
-			li ++
+			//li ++
+			//@ li, 0 psay replicate ("_", limite)
 
 			//if mv_par07 == 2  // imprimir obs pedido
 	
