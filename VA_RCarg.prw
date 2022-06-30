@@ -207,7 +207,7 @@ static function _Imprime ()
 		
 		@ li, 0 psay _sLinImp
 		li += 2
-		//li++
+		li++
 		@ li, 0 psay replicate ("_", limite) 
 
 
@@ -226,6 +226,7 @@ static function _Imprime ()
 			_sLinImp += transform ((_sAliasQ) -> peso, "@E 999,999,999.99")
 			@ li, 0 psay _sLinImp
 			li ++
+			@ li, 0 psay replicate ("_", limite) 
 				
 			// Acumula quantidades e pesos por unidade de medida.
 			_i = ascan (_aTCarga, {|_aVal| _aVal [1] == (_sAliasQ) -> um})
