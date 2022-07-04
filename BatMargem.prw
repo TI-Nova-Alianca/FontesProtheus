@@ -17,7 +17,9 @@
 // Historico de alteracoes:
 // 09/05/2022 - Claudia - Ajustado para não dropar mais a tabela. GLPI: 11967
 // 10/05/2022 - Claudia - Alterado campo de peso bruto para B1_PESBRU. GLPI: 11822
+// 19/06/2022 - Robert  - Criados campos NF_LITROS e NF_QTCAIXAS (GLPI 12223)
 //
+
 // -----------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
@@ -77,7 +79,8 @@ User Function BatMargem(_nTipo)
         _oSQL:_sQuery += " (TIPO,FILIAL,CLIENTE,LOJA,C_BASE,L_BASE,NOTA,SERIE,EMISSAO,ESTADO,VENDEDOR,LINHA,PRODUTO "
 		_oSQL:_sQuery += " ,CUSTO_PREV,CUSTO_REAL,NF_QUANT,NF_VLRUNIT,NF_VLRPROD,NF_VALIPI,NF_ICMSRET,NF_VLR_BRT "
 		_oSQL:_sQuery += " ,NF_ICMS,NF_COFINS,NF_PIS,VLR_COMIS_PREV,VLR_COMIS_REAL,TOTPROD_NF,FRETE_PREVISTO "
-		_oSQL:_sQuery += " ,FRETE_REALIZADO,RAPEL_PREVISTO,RAPEL_REALIZADO,SUPER,VERBAS_UTIL,VERBAS_LIB,CODMUN,PROMOTOR) "
+		_oSQL:_sQuery += " ,FRETE_REALIZADO,RAPEL_PREVISTO,RAPEL_REALIZADO,SUPER,VERBAS_UTIL,VERBAS_LIB,CODMUN,PROMOTOR "
+		_oSQL:_sQuery += " ,NF_LITROS, NF_QTCAIXAS) "
 		_oSQL:_sQuery += " (SELECT "
 		_oSQL:_sQuery += " 	SF4.F4_MARGEM AS TIPO "
 		_oSQL:_sQuery += "    ,SD2.D2_FILIAL AS FILIAL "
@@ -148,6 +151,8 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += "    ,0 AS VERBAS_LIB "
 		_oSQL:_sQuery += "    ,SA1.A1_COD_MUN AS CODMUN "
 		_oSQL:_sQuery += "    ,SA1.A1_VAPROMO AS PROMOTOR"
+		_oSQL:_sQuery += "    ,SUM (CASE WHEN SD2.D2_TP IN ('PA', 'PI', 'VD') THEN SD2.D2_QUANT * SB1.B1_LITROS ELSE 0 END) AS NF_LITROS"
+		_oSQL:_sQuery += "    ,dbo.VA_FQtCx (SD2.D2_COD, SUM (SD2.D2_QUANT)) AS NF_QTCAIXAS"
 		_oSQL:_sQuery += " FROM " + RetSQLName ("SD2") + " SD2 "
 		_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SF2") + " SF2 "
 		_oSQL:_sQuery += " 	ON (SF2.D_E_L_E_T_ = '' "
@@ -201,6 +206,7 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 		,SF2.F2_PBRUTO "
 		_oSQL:_sQuery += "      ,SA1.A1_COD_MUN "
 		_oSQL:_sQuery += "      ,SA1.A1_VAPROMO "
+		_oSQL:_sQuery += "      ,SD2.D2_TP "
 		_oSQL:_sQuery += " UNION ALL SELECT "
 		_oSQL:_sQuery += " 		SF4.F4_MARGEM AS TIPO "
 		_oSQL:_sQuery += " 	   ,SD1.D1_FILIAL AS FILIAL "
@@ -238,6 +244,8 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += "     ,0 AS VERBAS_LIB "
 		_oSQL:_sQuery += "     ,SA1.A1_COD_MUN AS CODMUN "
 		_oSQL:_sQuery += "     ,SA1.A1_VAPROMO AS PROMOTOR"
+		_oSQL:_sQuery += "     ,SUM (CASE WHEN SD1.D1_TP IN ('PA', 'PI', 'VD') THEN SD1.D1_QUANT * SB1.B1_LITROS ELSE 0 END) AS NF_LITROS"
+		_oSQL:_sQuery += "     ,dbo.VA_FQtCx (SD1.D1_COD, SUM (SD1.D1_QUANT)) AS NF_QTCAIXAS"
 		_oSQL:_sQuery += " 	FROM " + RetSQLName ("SD1") + " SD1 "
 		_oSQL:_sQuery += " 	INNER JOIN " + RetSQLName ("SF1") + " SF1 "
 		_oSQL:_sQuery += " 		ON (SF1.D_E_L_E_T_ = '' "
@@ -310,6 +318,7 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 			,SD1.D1_LOJA "
 		_oSQL:_sQuery += "          ,SA1.A1_COD_MUN "
 		_oSQL:_sQuery += "          ,SA1.A1_VAPROMO "
+		_oSQL:_sQuery += "          ,SD1.D1_TP "
 		_oSQL:_sQuery += " 	UNION ALL SELECT "
 		_oSQL:_sQuery += " 		SF4.F4_MARGEM AS TIPO "
 		_oSQL:_sQuery += " 	   ,SD2.D2_FILIAL AS FILIAL "
@@ -359,6 +368,8 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += "     ,0 AS VERBAS_LIB "
 		_oSQL:_sQuery += "     ,SA1.A1_COD_MUN AS CODMUN "
 		_oSQL:_sQuery += "     ,SA1.A1_VAPROMO AS PROMOTOR"
+		_oSQL:_sQuery += "     ,SUM (CASE WHEN SD2.D2_TP IN ('PA', 'PI', 'VD') THEN SD2.D2_QUANT * SB1.B1_LITROS ELSE 0 END) AS NF_LITROS"
+		_oSQL:_sQuery += "     ,dbo.VA_FQtCx (SD2.D2_COD, SUM (SD2.D2_QUANT)) AS NF_QTCAIXAS"
 		_oSQL:_sQuery += " 	FROM " + RetSQLName ("SD2") + " SD2 "
 		_oSQL:_sQuery += " 	INNER JOIN " + RetSQLName ("SF2") + " SF2 "
 		_oSQL:_sQuery += " 		ON (SF2.D_E_L_E_T_ = '' "
@@ -416,6 +427,7 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 			,SD2.D2_QUANT "
 		_oSQL:_sQuery += "          ,SA1.A1_COD_MUN "
 		_oSQL:_sQuery += "          ,SA1.A1_VAPROMO "
+		_oSQL:_sQuery += "          ,SD2.D2_TP "
 		_oSQL:_sQuery += " UNION ALL SELECT "
 		_oSQL:_sQuery += " 		'6' AS TIPO "
 		_oSQL:_sQuery += " 	   ,ZA5.ZA5_FILIAL AS FILIAL "
@@ -453,6 +465,8 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += "     ,0 AS VERBAS_LIB "
 		_oSQL:_sQuery += "     ,SA1.A1_COD_MUN AS CODMUN "
 		_oSQL:_sQuery += "     ,SA1.A1_VAPROMO AS PROMOTOR"
+		_oSQL:_sQuery += "     ,0 AS NF_LITROS"
+		_oSQL:_sQuery += "     ,0 AS NF_QTCAIXAS"
 		_oSQL:_sQuery += " 	FROM " + RetSQLName ("ZA5") + " ZA5 "
 		_oSQL:_sQuery += " 	INNER JOIN " + RetSQLName ("SA1") + " SA1 "
 		_oSQL:_sQuery += " 		ON (SA1.D_E_L_E_T_ = '' "
@@ -528,6 +542,8 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += "    ,SUM(ZA4.ZA4_VLR) AS VERBAS_LIB"
 		_oSQL:_sQuery += "    ,SA1.A1_COD_MUN AS CODMUN "
 		_oSQL:_sQuery += "    ,SA1.A1_VAPROMO AS PROMOTOR"
+		_oSQL:_sQuery += "    ,0 AS NF_LITROS"
+		_oSQL:_sQuery += "    ,0 AS NF_QTCAIXAS"
 		_oSQL:_sQuery += " FROM " + RetSQLName ("ZA4") + " ZA4 "
 		_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA1") + " SA1 " 
 		_oSQL:_sQuery += " 	ON (SA1.D_E_L_E_T_ = ''"
