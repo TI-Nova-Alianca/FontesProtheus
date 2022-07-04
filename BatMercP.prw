@@ -50,13 +50,14 @@
 // 01/09/2021 - Robert  - Criado tratamento para campo C5_INDPRES: sempre 5=venda com entrega fora do estabelecimento (GLPI 10085)
 // 01/09/2021 - Robert  - Mudado tratamento para campo C5_INDPRES: sempre 1=operacao presencial (GLPI 10085)
 // 15/06/2022 - Claudia - Ajustado a gravação do usuario que incluiu o pedido. GLPI: 12206
+// 04/07/2022 - Claudia - Gravação do campo de pedido de venda da bonificação.
 //
 // -----------------------------------------------------------------------------------------------------------------
 user function BatMercP ()
 	local _lContinua := .T.
 	local _nLock     := 0
 
-//	u_log2 ('info', 'Iniciando execucao')
+	u_log2 ('info', 'Iniciando execucao')
 
 	// Deixa retorno pronto para chamada em batch.
 	_oBatch:Retorno = 'S'
@@ -403,6 +404,7 @@ static function _LePed ()
 						If dbseek(sc5->c5_filial + sc5 -> c5_num, .F.)
 							Reclock("SC5", .F.)
 								sc5 -> c5_vauser = _sUser
+								sc5 -> c5_vabref = sc5 -> c5_num
 							MsUnlock()
 							u_log("Gravou user " + _sUser)
 						EndIf
