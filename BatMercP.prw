@@ -478,8 +478,10 @@ Static Function _BuscaUsuario(_sPedMerc, _sUsuario, _sLinkSrv)
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT "
-	_oSQL:_sQuery += " 		DB_PEDC_USU_CRIA "
+	_oSQL:_sQuery += " 		NOME "
 	_oSQL:_sQuery += " FROM " + _sLinkSrv + ".DB_PEDIDO_COMPL "
+	_oSQL:_sQuery += " INNER JOIN " + _sLinkSrv + ".DB_USUARIO "
+	_oSQL:_sQuery += " 		ON USUARIO = DB_PEDC_USU_CRIA "
 	_oSQL:_sQuery += " WHERE DB_PEDC_NRO = '" + _sPedido + "'"
 	U_LOG(_oSQL:_sQuery)
 	_aUser := aclone(_oSQL:Qry2Array())

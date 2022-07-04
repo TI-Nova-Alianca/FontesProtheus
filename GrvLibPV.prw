@@ -74,6 +74,7 @@
 // 05/10/2021 - Claudia - Incluida validação para não permitir liberara pedido sem gravar antes. GLPI: 11009
 // 03/01/2021 - Claudia - Ajustado para permitir desconto no cabeçalho da NF. GLPI: 11370
 // 04/01/2021 - Claudia - Incluida validação para ser obrigatorio informar NSU e Id Pagar-me em pedidos e-commerce.
+// 22/06/2022 - Claudia - Passada validações de NSU/Id pagarme e indenização e bonificações no p.e Mta410. GLPI: 11600
 //
 // --------------------------------------------------------------------------------------------------------------------
 user function GrvLibPV (_lLiberar)
@@ -506,29 +507,29 @@ user function GrvLibPV (_lLiberar)
 
 	endif
 
-	// Verifica se é pedido exportação e se pode dar desconto no cabeçalho 
-	If _lLiberar
-		_sCliEst  := fBuscaCpo('SA1', 1, xfilial('SA1') + M->C5_CLIENTE + M->C5_LOJACLI, "A1_EST")
+	// // Verifica se é pedido exportação e se pode dar desconto no cabeçalho 
+	// If _lLiberar
+	// 	_sCliEst  := fBuscaCpo('SA1', 1, xfilial('SA1') + M->C5_CLIENTE + M->C5_LOJACLI, "A1_EST")
 
-		If alltrim(_sCliEst) <> 'EX' .and. !Empty(m->c5_descont)
-			u_help("Desconto <indenização> só pode ser usado para clientes de exportação!")
-			_lLiberar := .F.
-		EndIf
-	EndIf
+	// 	If alltrim(_sCliEst) <> 'EX' .and. !Empty(m->c5_descont)
+	// 		u_help("Desconto <indenização> só pode ser usado para clientes de exportação!")
+	// 		_lLiberar := .F.
+	// 	EndIf
+	// EndIf
 
-	// Obriga a informar NSU e Id Pagar-me em pedidos e-commerce
-	If _lLiberar
-		If !Empty(M->C5_PEDECOM)
-			If Empty(M->C5_VANSU)
-				u_help("Para pedidos e-commerce, informar NSU!")
-				_lLiberar := .F.
-			EndIf
-			If Empty(M->C5_VAIDT)
-				u_help("Para pedidos e-commerce, informar Id Pagar-me!")
-				_lLiberar := .F.
-			EndIf
-		EndIf
-	EndIf
+	// // Obriga a informar NSU e Id Pagar-me em pedidos e-commerce
+	// If _lLiberar
+	// 	If !Empty(M->C5_PEDECOM)
+	// 		If Empty(M->C5_VANSU)
+	// 			u_help("Para pedidos e-commerce, informar NSU!")
+	// 			_lLiberar := .F.
+	// 		EndIf
+	// 		If Empty(M->C5_VAIDT)
+	// 			u_help("Para pedidos e-commerce, informar Id Pagar-me!")
+	// 			_lLiberar := .F.
+	// 		EndIf
+	// 	EndIf
+	// EndIf
 
 	N := _n
 	if type ("oGetDad") == "O"

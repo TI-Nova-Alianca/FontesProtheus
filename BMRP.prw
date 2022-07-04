@@ -1,6 +1,6 @@
-// Programa:   BMRP
-// Autor:      Robert Koch
-// Data:       21/10/2015
+// Programa.:  BMRP
+// Autor....:  Robert Koch
+// Data.....:  21/10/2015
 // Descricao:  Bancada MRP (tela auxiliar para programacao de producao).
 //
 // Tags para automatizar catalogo de customizacoes:
@@ -37,12 +37,12 @@
 // 17/08/2020 - Robert  - Comentariadas declaracoes de variaveis nao usadas, desabilitada geracao de logs.
 // 09/04/2021 - Robert  - Inseridos logs para analise de performance (GLPI 9797)
 //                      - Incluido teste do B1_FILIAL no na query _sExistsB1 - reduziu de 627 para 33 segundos (GLPI 9797)
+// 20/06/2022 - Claudia - Incluida importação .csv na simulação. GLPI: 12219
 //
-
+// --------------------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
 #include "protheus.ch"
 
-// ---------------------------------------------------------------------------------------------------------------
 user function BMRP ()
 	local _nTipoPlan   := 0
 	private _sTipoPlan := ''
@@ -83,44 +83,6 @@ user function BMRP ()
 			processa ({|| _Tela ()})
 		endif
 	endif
-
-//	// Consulta em loop para facilitar a troca de parametros.
-//	do while .T.
-//		_nTipoPlan = aviso ("Bancada MRP - Selecione o tipo de analise", ;
-//							"Selecione o tipo de produto a ser analisado", ;
-//							{"Acabados", "Materiais", "Simulação","Cancelar"}, ;
-//							3, ;
-//							"Tipo de analise")
-//		if _nTipoPlan == 1
-//			_sTipoPlan = 'A'
-//			cPerg = "BMRP1"
-//		elseif _nTipoPlan == 2
-//			_sTipoPlan = 'M'
-//			cPerg = "BMRP2"
-//		elseif _nTipoPlan == 3
-//			_sTipoPlan = 'S'
-//			cPerg = "BMRP3"		
-//		else
-//			exit
-//		endif
-//		
-//		if _sTipoPlan == 'S'	
-//			if Pergunte (cPerg, .T.)
-//				processa ({|| _TelaSimulacao ()})
-//				loop
-//			else
-//				exit
-//			endif
-//		
-//		else
-//			if Pergunte (cPerg, .T.)
-//				processa ({|| _Tela ()})
-//				loop
-//			else
-//				exit
-//			endif
-//		endif
-//	enddo
 return
 //
 // --------------------------------------------------------------------------
@@ -130,12 +92,9 @@ static function _Tela ()
 	local _bBotaoCan   := {|| NIL}
 	local _aBotAdic    := {}
 	local _aSize       := {}  // Para posicionamento de objetos em tela
-//	local _oCour24     := TFont():New("Courier New",,24,,.T.,,,,,.F.)
-//	local _oCour18     := TFont():New("Courier New",,18,,.T.,,,,,.F.)
 	local _oDlg        := NIL
 	local _aHead1      := {}
 	local _aCols1      := {}
-//	local _aCampos     := {}
 	local _aArqTrb     := {}
 	private _oGetD1    := NIL  // Deixar private para ser vista em outras rotinas.
 	private _oTxtBrw1  := NIL
@@ -176,23 +135,23 @@ static function _Tela ()
 		define MSDialog _oDlg from _aSize [1], _aSize [1] to _aSize [6], _aSize [5] of oMainWnd pixel title "Bancada MRP"
 
 		// P12: linha inicial pelo menos 25 ou 30
-		_oGetD1 := MsNewGetDados ():New (iif ('TOTVS 2011' $ cVersao, 1, 31), ; //55, ;                       // Limite superior
-	                                5, ;                             // Limite esquerdo //	                                iif (_lGrafico, _oDlg:nClientHeight / 3 - 25, _oDlg:nClientHeight / 2 - 30), ;  // Limite inferior
+		_oGetD1 := MsNewGetDados ():New (iif ('TOTVS 2011' $ cVersao, 1, 31), ; //55, ;     // Limite superior
+	                                5, ;                             						// Limite esquerdo 
 	                                iif (_lGrafico, _oDlg:nClientHeight / 4 - 20, _oDlg:nClientHeight / 2 - iif ('TOTVS 2011' $ cVersao, 30, 1)), ;  // Limite inferior
-	                                _oDlg:nClientWidth / 2 - 10, ;   // Limite direito    // _oDlg:nClientWidth / 5 - 5, ;                     // Limite direito
-                                    2, ; //GD_INSERT + GD_UPDATE, ;         // [ nStyle ]
-                                    "AllwaysTrue ()", ;              // [ uLinhaOk ]
-                                    "AllwaysTrue ()", ;              // [ uTudoOk ]
-                                    NIL, ; //[cIniCpos]
-                                    NIL,; // [ aAlter ]
-                                    NIL,; // [ nFreeze ]
-                                    NIL,; // [ nMax ]
-                                    NIL,; // [ cFieldOk ]
-                                    NIL,; // [ uSuperDel ]
-                                    NIL,; // [ uDelOk ]
-                                    _oDlg,; // [ oWnd ]
-                                    _aHead1,; // [ ParHeader ]
-                                    _aCols1) // [ aParCols ]
+	                                _oDlg:nClientWidth / 2 - 10, ;                          // Limite direito
+                                    2, ;                                                    // [ nStyle ]
+                                    "AllwaysTrue ()", ;              						// [ uLinhaOk ]
+                                    "AllwaysTrue ()", ;              						// [ uTudoOk ]
+                                    NIL, ; 													// [cIniCpos]
+                                    NIL,; 													// [ aAlter ]
+                                    NIL,; 													// [ nFreeze ]
+                                    NIL,; 													// [ nMax ]
+                                    NIL,; 													// [ cFieldOk ]
+                                    NIL,;				 									// [ uSuperDel ]
+                                    NIL,; 													// [ uDelOk ]
+                                    _oDlg,; 												// [ oWnd ]
+                                    _aHead1,; 												// [ ParHeader ]
+                                    _aCols1) 												// [ aParCols ]
 		
 		_oGetD1:oBrowse:bLDblClick := {|| _DblClick ()}
 		_oGetD1:oBrowse:bRClicked := {|_o, _x, _y| _RClick (_o, _x, _y)} 
@@ -225,8 +184,6 @@ return
 // Atualiza tela ao mudar linha do browse.
 static function _AtuTela (_nLinha)
 	local _sXML     := ""
-//	local _nMaior   := 0
-//	local _nPeriodo := 0
 	local _nSaidas  := 0
 	local _sProduto := ""
 	local _sLinProd := ""
@@ -327,7 +284,6 @@ static function _AtuTela (_nLinha)
 		next
 		_sXML += "</dataset>"
 
-
 		// Datasets (conjuntos de dados) para os valores da linha de produtos.
 		if ! empty (_sLinProd)
 			for _nAno = 1 to len (_aSazo)
@@ -360,17 +316,18 @@ static function _AtuTela (_nLinha)
 		_oGraf:Navigate (_sPathGraf + _sArqGraf + ".htm")
 	endif
 return
+//
 // --------------------------------------------------------------------------
 // Funcao executada pelo duplo clique do mouse.
 static function _DblClick ()
 //	local _sCampo := aHeader [_oGetD1:oBrowse:nColPos, 2]
 return
+//
 // --------------------------------------------------------------------------
 // Funcao executada pelo clique do botao direito do mouse.
 static function _RClick (_o, _x, _y)
 	local _oMenu     := NIL
 	Local _oMenuItem := {}
-//	local _sCampo    := alltrim (_oGetD1:aHeader [_oGetD1:oBrowse:nColPos, 2])
 	local _sProduto  := GDFieldGet ("PRODUTO", _oGetD1:nAt, .f., _oGetD1:aHeader, _oGetD1:aCols)
 	local _aSimula   := {}
  
@@ -427,9 +384,10 @@ static function _DetSD4 (_sProduto)
 	_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
 	_oSQL:_sQuery +=   " AND SB1.B1_COD     = SC2.C2_PRODUTO"
 	_oSQL:_sQuery += " ORDER BY D4_DATA, D4_OP"
-	//_oSQL:Log ()
+
 	_oSQL:F3Array ("Empenhos do produto '" + _sProduto + "' em ordens de producao")
 return
+//
 // --------------------------------------------------------------------------
 // Detalha OP
 static function _DetSC2 (_sProduto)
@@ -449,13 +407,15 @@ static function _DetSC2 (_sProduto)
 	_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
 	_oSQL:_sQuery +=   " AND SB1.B1_COD     = SC2.C2_PRODUTO"
 	_oSQL:_sQuery += " ORDER BY C2_DATPRF, C2_NUM, C2_ITEM, C2_SEQUEN, C2_ITEMGRD"
-	//_oSQL:Log ()
+
 	_oSQL:F3Array ("Ordens de producao do produto '" + _sProduto + "'")
 return
+//
 // --------------------------------------------------------------------------
 // Detalha pedidos de compra.
 static function _DetSC7 (_sProduto)
 	local _oSQL := ClsSQL ():New ()
+
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += "SELECT dbo.VA_DTOC (C7_DATPRF) AS DATA_PREVISTA, C7_QUANT - C7_QUJE AS QT_A_RECEBER, C7_UM AS UN_MEDIDA, C7_NUM AS PEDIDO, C7_ITEM AS ITEM_PEDIDO, C7_FORNECE AS FORNECEDOR, C7_LOJA AS LOJA, SA2.A2_NOME AS NOME_FORNECEDOR, C7_NUMSC AS SOLICITACAO, C7_ITEMSC AS ITEM_SOLICIT,"
 	_oSQL:_sQuery +=       " ISNULL ((SELECT TOP 1 C1_SOLICIT
@@ -478,13 +438,15 @@ static function _DetSC7 (_sProduto)
 	_oSQL:_sQuery +=   " AND SA2.A2_COD      = SC7.C7_FORNECE"
 	_oSQL:_sQuery +=   " AND SA2.A2_LOJA     = SC7.C7_LOJA"
 	_oSQL:_sQuery += " ORDER BY C7_DATPRF, C7_NUM, C7_ITEM"
-	//_oSQL:Log ()
+	
 	_oSQL:F3Array ("Pedidos de compra do produto '" + _sProduto + "'")
 return
+//
 // --------------------------------------------------------------------------
 // Detalha solicitacoes de compra
 static function _DetSC1 (_sProduto)
 	local _oSQL := ClsSQL ():New ()
+
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += "SELECT dbo.VA_DTOC (C1_DATPRF) AS DATA_PREVISTA, C1_QUANT - C1_QUJE AS QT_SOLICITADA, C1_UM AS UN_MEDIDA, C1_NUM AS SOLICITACAO, C1_ITEM AS ITEM_SOLIC, C1_SOLICIT AS SOLICITANTE, C1_PEDIDO AS PED_COMPRA, C1_ITEMPED AS ITEM_PED"
 	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SC1") + " SC1 "
@@ -497,6 +459,7 @@ static function _DetSC1 (_sProduto)
 	//_oSQL:Log ()
 	_oSQL:F3Array ("Solicitacoes de compra do produto '" + _sProduto + "'")
 return
+//
 // --------------------------------------------------------------------------
 // Detalha previsoes de venda.
 static function _DetSC4 (_sProduto)
@@ -508,13 +471,15 @@ static function _DetSC4 (_sProduto)
 	_oSQL:_sQuery +=   " AND SC4.C4_FILIAL  = '" + xfilial ("SC4") + "'"
 	_oSQL:_sQuery +=   " AND SC4.C4_PRODUTO = '" + _sProduto + "'"
 	_oSQL:_sQuery += " ORDER BY C4_DATA"
-	//_oSQL:Log ()
+	
 	_oSQL:F3Array ("Previsoes de venda do produto '" + _sProduto + "'")
 return
+//
 // --------------------------------------------------------------------------
 // Detalha pedidos de venda.
 static function _DetSC5 (_sProduto)
 	local _oSQL := ClsSQL ():New ()
+
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += "SELECT dbo.VA_DTOC (C6_ENTREG) AS DATA_ENTREGA, C6_QTDVEN - C6_QTDENT AS QUANTIDADE, C6_NUM AS PEDIDO, C5_CLIENTE AS CLI_FORN, C5_LOJACLI AS LOJA, "
 	_oSQL:_sQuery +=       " ISNULL (CASE WHEN C5_TIPO IN ('D', 'B') THEN SA2.A2_NOME ELSE SA1.A1_NOME END, '') AS NOME"
@@ -534,15 +499,15 @@ static function _DetSC5 (_sProduto)
 	_oSQL:_sQuery +=   " AND SC6.C6_FILIAL  = '" + xfilial ("SC6") + "'"
 	_oSQL:_sQuery +=   " AND SC6.C6_PRODUTO = '" + _sProduto + "'"
 	_oSQL:_sQuery +=   " AND SC6.C6_QTDVEN  > SC6.C6_QTDENT"
-//	_oSQL:_sQuery +=   " AND SC6.C6_BLQ    != 'R'"  // Eliminado residuo
 	_oSQL:_sQuery +=   " AND SC6.C6_BLQ NOT IN ('R', 'S')"  // Eliminado residuo / bloqueio manual
 	_oSQL:_sQuery +=   " AND SC5.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=   " AND SC5.C5_FILIAL  = SC6.C6_FILIAL"
 	_oSQL:_sQuery +=   " AND SC5.C5_NUM     = SC6.C6_NUM"
 	_oSQL:_sQuery += " ORDER BY C6_ENTREG, C6_NUM"
-	//_oSQL:Log ()
+
 	_oSQL:F3Array ("Pedidos de venda do produto '" + _sProduto + "'")
 return
+//
 // --------------------------------------------------------------------------
 // Detalha movimentos de entrada considerados na montagem da tela.
 static function _DetEntr (_sProduto)
@@ -551,6 +516,7 @@ static function _DetEntr (_sProduto)
 	set filter to produto = _sProd
 	u_showtrb ('_ent')
 return
+//
 // --------------------------------------------------------------------------
 // Detalha movimentos de saida considerados na montagem da tela.
 static function _DetSaid (_sProduto)
@@ -567,15 +533,11 @@ return
 //
 static function _SimulOP (_sProduto, _nQtd, _aSimula, _lSimula,_sRevis)
 	local _nQtSimul  := 0
-//	local _nQtBase   := 0
 	local _oSQL      := NIL
-//	local _aDispon   := {}
-//	local _nDispon   := 0
 	local _aCompon   := {}
 	local _nCompon   := 0
 	local _aDispComp := {}
 	local _nDispComp := 0
-//	local _nDispSB2  := 0
 	local _x		 := 0
 	local _y		 := 0
 	local _aRevisao  := {}
@@ -605,7 +567,6 @@ static function _SimulOP (_sProduto, _nQtd, _aSimula, _lSimula,_sRevis)
 		
 		For _x:=1 to Len(_aRevisao)
 			_sRevisao := _aRevisao[_x,3]
-			//_aArray:= aclone (U_ML_Comp2 (_sProduto, _nQtSimul, "!sb1->b1_tipo$'MO/'.and.!sb1->b1_grupo$'0400/'.and.sb1->b1_fantasm!='S'", dDataBase, .F., .F., .F., .F., .T., '', .F., '.t.', .T., .F., _sRevisao))
 			_aArray:= aclone (U_ML_Comp2 (_sProduto, _nQtSimul, _filtroSml, dDataBase, .F., .F., .F., .F., .T., '', .F., '.t.', .T., .F., _sRevisao))
 				
 			For _y:=1 to len(_aArray)
@@ -641,8 +602,6 @@ static function _SimulOP (_sProduto, _nQtd, _aSimula, _lSimula,_sRevis)
 									_sRevisao     })
 		Next
 	EndIf
-	
-//	u_log (_acompon)
 	
 	for _nCompon = 1 to len (_aCompon)
 		// Busca estoque disponivel no local padrao do produto, mas busca empenhos em qualquer local.
@@ -680,7 +639,7 @@ static function _SimulOP (_sProduto, _nQtd, _aSimula, _lSimula,_sRevis)
 		_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1")        + "'"
 		_oSQL:_sQuery +=   " AND SB1.B1_COD     = SB2.B2_COD"
 		_oSQL:_sQuery += " GROUP BY SB2.B2_COD"
-		//_oSQL:Log ()
+	
 		_aSB2 = aclone (_oSQL:Qry2Array ())
 		
 		// Se nao existe registro de estoque deste componente, cria uma array zerada.
@@ -711,7 +670,6 @@ static function _SimulOP (_sProduto, _nQtd, _aSimula, _lSimula,_sRevis)
 	
 	for _nDispComp = 1 to len (_aDispComp)
 		_aDispComp [_nDispComp, 15] = _aDispComp [_nDispComp, 4] - _aDispComp [_nDispComp, 13] - _aDispComp [_nDispComp, 14]
-		
 	next
 	
 	If _lSimula == .T.
@@ -742,6 +700,7 @@ static function _SimulOP (_sProduto, _nQtd, _aSimula, _lSimula,_sRevis)
 		u_F3Array (_aDispComp, "Disponibilidade de componentes", _aCols,,, "Disponibilidade dos empenhos", "", .T., 'C', TFont():New ("Courier New", 6, 14))
 	EndIf
 return _aSimula
+//
 // --------------------------------------------------------------------------
 // Leitura dos dados para alimentar o aCols.
 static function _LeDados (_aArqTrb)
@@ -751,7 +710,7 @@ static function _LeDados (_aArqTrb)
 	local _dDataIni  := ctod ('')
 	local _dDataFim  := ctod ('')
 	local _sExistsB1 := ""
-	local _sAlmoxNao := "66"  // Almoxarifados a desconsiderar
+	local _sAlmoxNao := "66"  		// Almoxarifados a desconsiderar
 	local _sAlmoxDuv := "90/91/92"  // Almoxarifados duvidosos
 	local _sProdIni  := mv_par01
 	local _sProdFim  := mv_par02
@@ -770,7 +729,6 @@ static function _LeDados (_aArqTrb)
 	local _sPerFim   := ""
 	local _nPeriodo  := 0
 	local _sPeriodo  := ""
-//	local _nQtDiasUt := 0
 	local _nVlTotEnt := 0
 	local _nVlTotSai := 0
 	local _aLinVazia := {}
@@ -818,7 +776,6 @@ static function _LeDados (_aArqTrb)
 
 	// Monta arquivos de trabalho para facilitar a preparacao dos dados.
 	if _lContinua
-		// U_PerfMon ('I', 'Montar_temporarios')
 		incproc ("Montando arquivos temporarios...")
 		//
 		_aCampos = {}
@@ -833,7 +790,7 @@ static function _LeDados (_aArqTrb)
 		U_ArqTrb ("Cria", "_sai", _aCampos, {"Filial + Produto + Ano + Mes + Origem"}, @_aArqTrb)
 		_ent -> (dbsetorder (1))
 		_sai -> (dbsetorder (1))
-		//
+		
 		_aCampos = {}
 		aadd (_aCampos, {"Filial",     "C", 2,  0})
 		aadd (_aCampos, {"Linha",      "C", 25, 0})
@@ -842,7 +799,7 @@ static function _LeDados (_aArqTrb)
 		aadd (_aCampos, {"Quant",      "N", 18, 2})
 		U_ArqTrb ("Cria", "_saiLin", _aCampos, {"Filial + Linha + Ano + Mes"}, @_aArqTrb)
 		_saiLin -> (dbsetorder (1))
-		//
+		
 		_aCampos = {}
 		aadd (_aCampos, {"Embalagem",  "C", 25, 0})
 		aadd (_aCampos, {"Linha",      "C", 25, 0})
@@ -894,7 +851,7 @@ static function _LeDados (_aArqTrb)
 		aadd (_aCampos, {"observ",     "C", 80, 0})
 		aadd (_aCampos, {"capproddia", "N", 18, 2})
 		U_ArqTrb ("Cria", "_trb", _aCampos, {"Produto", 'preco_unit', 'valor_estq', 'valor_es', 'valor_entr', 'valor_said'}, @_aArqTrb)
-		// U_PerfMon ('L', 'Montar_temporarios')
+
 		_trb -> (dbsetorder (1))
 
 		// Monta clausula 'exists' para tabela SB1 a ser usada em todas as filtragens.
@@ -947,8 +904,7 @@ static function _LeDados (_aArqTrb)
 		_oSQL:_sQuery +=   " AND SF4.F4_ESTOQUE = 'S'"
 		_oSQL:_sQuery +=   " AND SF4.F4_PODER3  NOT IN ('R', 'D')"
 		_oSQL:_sQuery += " GROUP BY D1_FILIAL, D1_COD, SUBSTRING (SD1.D1_DTDIGIT, 1, 4), SUBSTRING (SD1.D1_DTDIGIT, 5, 2)"
-		// _oSQL:PerfMon = .T.
-		//_oSQL:Log ()
+
 		_sAliasQ = _oSQL:Qry2Trb (.f.)
 		(_sAliasQ) -> (dbgotop ())
 		do while ! (_sAliasQ) -> (eof ())
@@ -965,7 +921,6 @@ static function _LeDados (_aArqTrb)
 		enddo
 		(_sAliasQ) -> (dbclosearea ())
 	
-
 		incproc ('Leitura de entradas via mov.internos')
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
@@ -977,8 +932,7 @@ static function _LeDados (_aArqTrb)
 		_oSQL:_sQuery +=   " AND SD3.D3_CF      LIKE 'PR%'"
 		_oSQL:_sQuery +=   " AND SD3.D3_COD IN (" + _sExistsB1 + ")"
 		_oSQL:_sQuery += " GROUP BY D3_FILIAL, D3_COD, SUBSTRING (SD3.D3_EMISSAO, 1, 4), SUBSTRING (SD3.D3_EMISSAO, 5, 2), D3_CF"
-		// _oSQL:PerfMon = .T.
-		//_oSQL:Log ()
+
 		_sAliasQ = _oSQL:Qry2Trb (.f.)
 		(_sAliasQ) -> (dbgotop ())
 		do while ! (_sAliasQ) -> (eof ())
@@ -1005,7 +959,6 @@ static function _LeDados (_aArqTrb)
 		_oSQL:_sQuery +=             RetSQLName ("SF4") + " SF4 "
 		_oSQL:_sQuery += " WHERE SD2.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND SD2.D2_FILIAL  = '" + xfilial ("SD2") + "'"
-//		_oSQL:_sQuery +=   " AND SD2.D2_EMISSAO BETWEEN '" + dtos (_dDataIni) + "' AND '" + dtos (_dDataFim) + "'"
 		_oSQL:_sQuery +=   " AND SD2.D2_EMISSAO BETWEEN '" + strzero (year (_dDataIni) - 1, 4) + "0101' AND '" + dtos (_dDataFim) + "'"
 		_oSQL:_sQuery +=   " AND SD2.D2_TIPO    NOT IN ('B', 'D')"
 		_oSQL:_sQuery +=   " AND SD2.D2_COD IN (" + _sExistsB1 + ")"
@@ -1014,8 +967,7 @@ static function _LeDados (_aArqTrb)
 		_oSQL:_sQuery +=   " AND SF4.F4_ESTOQUE = 'S'"
 		_oSQL:_sQuery +=   " AND SF4.F4_PODER3  NOT IN ('R', 'D')"
 		_oSQL:_sQuery += " GROUP BY D2_FILIAL, D2_COD, SUBSTRING (SD2.D2_EMISSAO, 1, 4), SUBSTRING (SD2.D2_EMISSAO, 5, 2)"
-		// _oSQL:PerfMon = .T.
-		//_oSQL:Log ()
+
 		_sAliasQ = _oSQL:Qry2Trb (.f.)
 		(_sAliasQ) -> (dbgotop ())
 		do while ! (_sAliasQ) -> (eof ())
@@ -1044,8 +996,7 @@ static function _LeDados (_aArqTrb)
 		_oSQL:_sQuery +=   " AND SD3.D3_CF      != 'RE4'"  // Transferencias
 		_oSQL:_sQuery +=   " AND SD3.D3_COD IN (" + _sExistsB1 + ")"
 		_oSQL:_sQuery += " GROUP BY D3_FILIAL, D3_COD, SUBSTRING (SD3.D3_EMISSAO, 1, 4), SUBSTRING (SD3.D3_EMISSAO, 5, 2), D3_CF"
-		// _oSQL:PerfMon = .T.
-		//_oSQL:Log ()
+
 		_sAliasQ = _oSQL:Qry2Trb (.f.)
 		(_sAliasQ) -> (dbgotop ())
 		do while ! (_sAliasQ) -> (eof ())
@@ -1062,20 +1013,17 @@ static function _LeDados (_aArqTrb)
 		enddo
 		(_sAliasQ) -> (dbclosearea ())
 
-
 		// Se vai ter grafico de sazonalidade, precisa gerar acumulados por linha de produto.
 		if _lGrafico
 			incproc ('Leitura de saidas via NF por linha de produto')
 			_oSQL := ClsSQL ():New ()
 			_oSQL:_sQuery := ""
-		//	_oSQL:_sQuery += "SELECT D2_FILIAL AS FILIAL, SX5_88.X5_DESCRI AS LINHA,"
 			_oSQL:_sQuery += "SELECT D2_FILIAL AS FILIAL, ZX5_39.ZX5_39DESC AS LINHA,"
 			_oSQL:_sQuery +=       " SUBSTRING (SD2.D2_EMISSAO, 1, 4) AS ANO, SUBSTRING (SD2.D2_EMISSAO, 5, 2) AS MES,"
 			_oSQL:_sQuery +=       " SUM (D2_QUANT) AS QUANT"
 			_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD2") + " SD2, "
 			_oSQL:_sQuery +=             RetSQLName ("SF4") + " SF4, "
 			_oSQL:_sQuery +=             RetSQLName ("SB1") + " SB1, "
-		//	_oSQL:_sQuery +=             RetSQLName ("SX5") + " SX5_88 "
 			_oSQL:_sQuery +=             RetSQLName ("ZX5") + " ZX5_39 "
 			_oSQL:_sQuery += " WHERE SD2.D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=   " AND SD2.D2_FILIAL  = '" + xfilial ("SD2") + "'"
@@ -1089,18 +1037,12 @@ static function _LeDados (_aArqTrb)
 			_oSQL:_sQuery +=   " AND SB1.D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
 			_oSQL:_sQuery +=   " AND SB1.B1_COD     = SD2.D2_COD"
-//			_oSQL:_sQuery +=   " AND SX5_88.D_E_L_E_T_ = ''"
-//			_oSQL:_sQuery +=   " AND SX5_88.X5_FILIAL  = '" + xfilial ("SX5") + "'"
-//			_oSQL:_sQuery +=   " AND SX5_88.X5_TABELA  = '88'"
-//			_oSQL:_sQuery +=   " AND SX5_88.X5_CHAVE   = SB1.B1_CODLIN"
 			_oSQL:_sQuery +=   " AND ZX5_39.D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=   " AND ZX5_39.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
 			_oSQL:_sQuery +=   " AND ZX5_39.ZX5_TABELA = '39'"
 			_oSQL:_sQuery +=   " AND ZX5_39.ZX5_39COD  = SB1.B1_CODLIN"
-		//	_oSQL:_sQuery += " GROUP BY D2_FILIAL, SX5_88.X5_DESCRI, SUBSTRING (SD2.D2_EMISSAO, 1, 4), SUBSTRING (SD2.D2_EMISSAO, 5, 2)"
 			_oSQL:_sQuery += " GROUP BY D2_FILIAL, ZX5_39.ZX5_39DESC, SUBSTRING (SD2.D2_EMISSAO, 1, 4), SUBSTRING (SD2.D2_EMISSAO, 5, 2)"
-			// _oSQL:PerfMon = .T.
-			//_oSQL:Log ()
+
 			_sAliasQ = _oSQL:Qry2Trb (.f.)
 			(_sAliasQ) -> (dbgotop ())
 			do while ! (_sAliasQ) -> (eof ())
@@ -1115,17 +1057,14 @@ static function _LeDados (_aArqTrb)
 			enddo
 			(_sAliasQ) -> (dbclosearea ())
 
-
 			incproc ('Leitura de saidas via NF por linha de produto')
 			_oSQL := ClsSQL ():New ()
 			_oSQL:_sQuery := ""
-		//	_oSQL:_sQuery += "SELECT D3_FILIAL AS FILIAL, SX5_88.X5_DESCRI AS LINHA,"
 			_oSQL:_sQuery += "SELECT D3_FILIAL AS FILIAL, ZX5_39.ZX5_39DESC AS LINHA,"
 			_oSQL:_sQuery +=       " SUBSTRING (SD3.D3_EMISSAO, 1, 4) AS ANO, SUBSTRING (SD3.D3_EMISSAO, 5, 2) AS MES,"
 			_oSQL:_sQuery +=       " SUM (D3_QUANT) AS QUANT"
 			_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD3") + " SD3, "
 			_oSQL:_sQuery +=             RetSQLName ("SB1") + " SB1, "
-		//	_oSQL:_sQuery +=             RetSQLName ("SX5") + " SX5_88 "
 			_oSQL:_sQuery +=             RetSQLName ("ZX5") + " ZX5_39 "
 			_oSQL:_sQuery += " WHERE SD3.D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=   " AND SD3.D3_FILIAL  = '" + xfilial ("SD3") + "'"
@@ -1136,18 +1075,12 @@ static function _LeDados (_aArqTrb)
 			_oSQL:_sQuery +=   " AND SB1.D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
 			_oSQL:_sQuery +=   " AND SB1.B1_COD     = SD3.D3_COD"
-//			_oSQL:_sQuery +=   " AND SX5_88.D_E_L_E_T_ = ''"
-//			_oSQL:_sQuery +=   " AND SX5_88.X5_FILIAL  = '" + xfilial ("SX5") + "'"
-//			_oSQL:_sQuery +=   " AND SX5_88.X5_TABELA  = '88'"
-//			_oSQL:_sQuery +=   " AND SX5_88.X5_CHAVE   = SB1.B1_CODLIN"
 			_oSQL:_sQuery +=   " AND ZX5_39.D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=   " AND ZX5_39.ZX5_FILIAL = '" + xfilial ("ZX5") + "'"
 			_oSQL:_sQuery +=   " AND ZX5_39.ZX5_TABELA = '39'"
 			_oSQL:_sQuery +=   " AND ZX5_39.ZX5_39COD  = SB1.B1_CODLIN"
-//			_oSQL:_sQuery += " GROUP BY D3_FILIAL, SX5_88.X5_DESCRI, SUBSTRING (SD3.D3_EMISSAO, 1, 4), SUBSTRING (SD3.D3_EMISSAO, 5, 2)"
 			_oSQL:_sQuery += " GROUP BY D3_FILIAL, ZX5_39.ZX5_39DESC, SUBSTRING (SD3.D3_EMISSAO, 1, 4), SUBSTRING (SD3.D3_EMISSAO, 5, 2)"
-			// _oSQL:PerfMon = .T.
-			//_oSQL:Log ()
+
 			_sAliasQ = _oSQL:Qry2Trb (.f.)
 			(_sAliasQ) -> (dbgotop ())
 			do while ! (_sAliasQ) -> (eof ())
@@ -1164,16 +1097,13 @@ static function _LeDados (_aArqTrb)
 
 		endif
 
-
 		// Leitura de produtos e demais dados que for possivel agrupar neste momento.
 		incproc ('Leitura de estoque e parametros')
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
-	//	_oSQL:_sQuery += "SELECT ISNULL (SX5_98.X5_DESCRI, '') AS EMBALAGEM, "
 		_oSQL:_sQuery += "SELECT ISNULL (ZX5_50.ZX5_50DESC, '') AS EMBALAGEM, "
 		_oSQL:_sQuery +=       " B1_QTDEMB, B1_LITROS,"
 		_oSQL:_sQuery +=       " ISNULL (ZX5_40.ZX5_40DESC, '') AS MARCA,"
-		//_oSQL:_sQuery +=       " ISNULL (SX5_88.X5_DESCRI, '') AS LINHA,"
 		_oSQL:_sQuery +=       " ISNULL (ZX5_39.ZX5_39DESC, '') AS LINHA,"
 		_oSQL:_sQuery +=       " B1_TIPO, B1_COD, B1_DESC, B1_UM, B1_LM, B1_QE, B1_EMIN, B1_EMAX, B1_VACOR,"
 		_oSQL:_sQuery +=       " CASE B1_VARUVA WHEN 'C' THEN 'COMUM' WHEN 'F' THEN 'VINIF' ELSE '' END AS VARUVA,"
@@ -1198,31 +1128,16 @@ static function _LeDados (_aArqTrb)
 		_oSQL:_sQuery +=       " ISNULL (SUM (B2_SALPEDI), 0) AS A_RECEBER,"
 		_oSQL:_sQuery +=       " SB1.B1_VAFORAL, SB1.B1_MRP, B1_VACAPDI, SH1.H1_DESCRI"
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB1") + " SB1 "
-/*
-		_oSQL:_sQuery +=  " LEFT JOIN " + RetSQLName ("SX5") + " SX5_88 "
-		_oSQL:_sQuery +=        " ON (SX5_88.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=        " AND SX5_88.X5_FILIAL  = '" + xfilial ("SX5") + "'"
-		_oSQL:_sQuery +=        " AND SX5_88.X5_TABELA  = '88'"
-		_oSQL:_sQuery +=        " AND SX5_88.X5_CHAVE   = SB1.B1_CODLIN)"
-*/
 		_oSQL:_sQuery +=  " LEFT JOIN " + RetSQLName ("ZX5") + " ZX5_39 "
 		_oSQL:_sQuery +=        " ON (ZX5_39.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=        " AND ZX5_39.ZX5_FILIAL  = '" + xfilial ("SX5") + "'"
 		_oSQL:_sQuery +=        " AND ZX5_39.ZX5_TABELA  = '39'"
 		_oSQL:_sQuery +=        " AND ZX5_39.ZX5_39COD   = SB1.B1_CODLIN)"
-
-
-//		_oSQL:_sQuery +=  " LEFT JOIN " + RetSQLName ("SX5") + " SX5_98 "
-//		_oSQL:_sQuery +=        " ON (SX5_98.D_E_L_E_T_ = ''"
-//		_oSQL:_sQuery +=        " AND SX5_98.X5_FILIAL  = '" + xfilial ("SX5") + "'"
-//		_oSQL:_sQuery +=        " AND SX5_98.X5_TABELA  = '98'"
-//		_oSQL:_sQuery +=        " AND SX5_98.X5_CHAVE   = SB1.B1_GRPEMB)"
 		_oSQL:_sQuery +=  " LEFT JOIN " + RetSQLName ("ZX5") + " ZX5_50 "
 		_oSQL:_sQuery +=        " ON (ZX5_50.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=        " AND ZX5_50.ZX5_FILIAL  = '" + xfilial ("SX5") + "'"
 		_oSQL:_sQuery +=        " AND ZX5_50.ZX5_TABELA  = '50'"
 		_oSQL:_sQuery +=        " AND ZX5_50.ZX5_50COD   = SB1.B1_GRPEMB)"
-
 		_oSQL:_sQuery +=  " LEFT JOIN " + RetSQLName ("ZX5") + " ZX5_40 "
 		_oSQL:_sQuery +=        " ON (ZX5_40.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=        " AND ZX5_40.ZX5_FILIAL  = '" + xfilial ("SX5") + "'"
@@ -1240,11 +1155,8 @@ static function _LeDados (_aArqTrb)
 		_oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
 		_oSQL:_sQuery +=   " AND SB1.B1_COD     IN (" + _sExistsB1 + ")"
-	//	_oSQL:_sQuery += " GROUP BY SX5_98.X5_DESCRI, SX5_88.X5_DESCRI, B1_TIPO, B1_COD, B1_DESC, B1_UM, B1_LM, B1_QE, B1_EMIN, B1_EMAX, B1_PE, B1_TIPE, B1_VAFORAL, B1_MRP, B1_VACAPDI, B1_VACOR, H1_DESCRI, B1_QTDEMB, B1_LITROS, ZX5_40.ZX5_40DESC, B1_VARUVA"
-	//	_oSQL:_sQuery += " GROUP BY SX5_98.X5_DESCRI, ZX5_39.ZX5_39DESC, B1_TIPO, B1_COD, B1_DESC, B1_UM, B1_LM, B1_QE, B1_EMIN, B1_EMAX, B1_PE, B1_TIPE, B1_VAFORAL, B1_MRP, B1_VACAPDI, B1_VACOR, H1_DESCRI, B1_QTDEMB, B1_LITROS, ZX5_40.ZX5_40DESC, B1_VARUVA"
 		_oSQL:_sQuery += " GROUP BY ZX5_50.ZX5_50DESC, ZX5_39.ZX5_39DESC, B1_TIPO, B1_COD, B1_DESC, B1_UM, B1_LM, B1_QE, B1_EMIN, B1_EMAX, B1_PE, B1_TIPE, B1_VAFORAL, B1_MRP, B1_VACAPDI, B1_VACOR, H1_DESCRI, B1_QTDEMB, B1_LITROS, ZX5_40.ZX5_40DESC, B1_VARUVA"
-		// _oSQL:PerfMon = .T.
-		//_oSQL:Log ()
+
 		_sAliasQ = _oSQL:Qry2Trb (.f.)
 		(_sAliasQ) -> (dbgotop ())
 		do while ! (_sAliasQ) -> (eof ())
@@ -1289,7 +1201,7 @@ static function _LeDados (_aArqTrb)
 	// Repassa o arquivo de trabalho preenchendo os dados de quantidades.
 	if _lContinua
 		incproc ('Calculando valores')
-		// U_PerfMon ('I', 'Calc_valores_trb')
+
 		_sPerIni = _aPeriodos [1]
 		_sPerFim = _aPeriodos [len (_aPeriodos)]	
 		_trb -> (dbgotop ())
@@ -1352,24 +1264,18 @@ static function _LeDados (_aArqTrb)
 
 			_trb -> (dbskip ())
 		enddo
-		// U_PerfMon ('L', 'Calc_valores_trb')
 	endif
-
 
 	// Classifica os itens como A/B/C
 	if _lContinua
-		// U_PerfMon ('I', 'Calculo_curvas')
 		_Curva ('preco_unit', 'CurEstat', 2)
 		_Curva ('valor_estq', 'CurInvent', 3)
 		_Curva ('valor_es',   'CurEntSai', 4)
 		_Curva ('valor_entr', 'CurEntr', 5)
 		_Curva ('valor_said', 'CurSaid', 6)
-		// U_PerfMon ('L', 'Calculo_curvas')
 	endif
 
-
 	if _lContinua
-		// U_PerfMon ('I', 'Montar_aCols')
 		_trb -> (dbsetorder (1))
 
 		aHeader = {}
@@ -1520,7 +1426,6 @@ static function _LeDados (_aArqTrb)
 				_trb -> (dbskip ())
 			enddo
 		endif
-		// U_PerfMon ('L', 'Montar_aCols')
 	endif
 return _lContinua
 //
@@ -1531,6 +1436,7 @@ static function _Curva (_sCpoValor, _sCpoDest, _nIndice)
 	local _nPercB    := 15
 	local _nAcumA    := 0
 	local _nAcumB    := 0
+
 	_trb -> (dbgotop ())
 	do while ! _trb -> (eof ())
 		_nTotCurva += _trb -> &(_sCpoValor)
@@ -1553,49 +1459,49 @@ static function _Curva (_sCpoValor, _sCpoDest, _nIndice)
 		_trb -> (dbskip (-1))
 	enddo
 return
+//
 // --------------------------------------------------------------------------
 // Simulação de OP de vários itens
-// --------------------------------------------------------------------------
-// SImulação de OP de vários itens
 static function _TelaSimulacao()
 	local _x			:= 0
-//	local _y			:= 0
-//	local nAux      	:= 0
-//	local aProd 		:= {}
-//	local aQnt			:= {}
-//	local aProduto  	:= {}
-//	local aArray    	:= {}
-//	local aSimula   	:= {}
-//	local aCols 		:= {}
-//	local lContinua 	:= .T.
 	local _oDlg         := NIL
 	local _oCour24      := TFont():New("Courier New",,24,,.T.,,,,,.F.)
 	private _oTxtBrw1   := NIL
 	private _oGetD1     := NIL
 	private aHeader     := {}
 	private _aCols1     := {}
-	
+
+	_sCaminho := "C:\Temp\" + alltrim(mv_par02) + ".csv"
+
 	If mv_par01 == 1
 		aHeader = aclone (U_GeraHead ("ZZZ", .T., {}, {"ZZZ_13PROD", "ZZZ_13QTD"}, .T.))
 	else
 		aHeader = aclone (U_GeraHead ("ZZZ", .T., {}, {"ZZZ_13PROD", "ZZZ_13QTD", "ZZZ_13REV"}, .T.))
 	EndIf
-	_aHead1 := aclone (aHeader)
-	_aCols1 = {}
-	_aLinVazia := aclone (U_LinVazia (aHeader))
+	_aHead1    := aclone (aHeader)
+	_aCols1    := {}
+	_aLinVazia := aclone(U_LinVazia(aHeader))
+	_aSize     := MsAdvSize()		// Define tamanho da tela.
+
+	If !empty(_sCaminho)
+		_aCols1 := _RetCSV(_sCaminho, ';', mv_par01)
 	
-	// Define tamanho da tela.
-	_aSize := MsAdvSize()	
-	  
-	for _x:=1 to 99
-		aadd (_aCols1, aclone (_aLinVazia))
-	next
-	
+		if Len(_aCols1) <= 0
+			for _x:=1 to 99
+				aadd (_aCols1, aclone (_aLinVazia))
+			next
+		endif
+	else
+		for _x:=1 to 99
+			aadd (_aCols1, aclone (_aLinVazia))
+		next
+	EndIf
+
 	define MSDialog _oDlg from _aSize [1], _aSize [1] to _aSize [6], _aSize [5] of oMainWnd pixel title "Produtos"
 	
     //                        Linha                         Coluna                      bTxt oWnd   pict oFont     ?    ?    ?    pixel corTxt    corBack larg                          altura
     _oTxtBrw1 := tSay ():New (15,                           7,                          NIL, _oDlg, NIL, _oCour24, NIL, NIL, NIL, .T.,  CLR_BLUE, NIL,    _oDlg:nClientWidth / 2 - 90,  25)
-    _oGetD1 := MsNewGetDados ():New (   40, ;                // Limite superior
+    _oGetD1 := MsNewGetDados ():New (   40, ;                				// Limite superior
 		                                5, ;                     			// Limite esquerdo
 		                                _oDlg:nClientHeight / 2 - 28, ;     // Limite inferior
 		                                _oDlg:nClientWidth / 2 - 10, ;      // Limite direito    // _oDlg:nClientWidth / 5 - 5, ;                     // Limite direito
@@ -1616,22 +1522,18 @@ static function _TelaSimulacao()
      // Define botoes para a barra de ferramentas
     
     _bBotaoOK  = {|| processa ({||_GeraSimul ()}), _oDlg:End ()}
-    
 	_bBotaoCan = {|| _oDlg:End ()}
     
     activate dialog _oDlg on init (EnchoiceBar (_oDlg, _bBotaoOK, _bBotaoCan,, ), _oGetD1:oBrowse:SetFocus (), "")
 
 return
+//
 // --------------------------------------------------------------------------
 // Filtro da revisão    
 User Function ZZZ13Rev()
-	
-	//If inclui
-	//	_sProd := M->HC_PRODUTO   
-	//Else
-		_sProd := GDFieldGet("ZZZ_13PROD")   
-	//EndIf            
-Return(_sProd)   
+	_sProd := GDFieldGet("ZZZ_13PROD")             
+Return(_sProd)  
+// 
 // --------------------------------------------------------------------------
 // Gera Simulação
 static function _GeraSimul()
@@ -1639,7 +1541,6 @@ static function _GeraSimul()
 	local _y			:= 0
 	local nAux      	:= 0
 	local aProd 		:= {}
-//	local aQnt			:= {}
 	local aProduto  	:= {}
 	local aArray    	:= {}
 	local aSimula   	:= {}
@@ -1648,8 +1549,6 @@ static function _GeraSimul()
 	
 	aProd   := aclone (_oGetD1:aCols)
 	
-	//aProd := StrToKarr( mv_par01 , '/')
-	//aQtd  := StrToKarr( mv_par02 , '/')
 	If len(aProd) > 0
 		For _x:=1 to len(aProd) 
 			If alltrim(aProd[_x, 1]) <> ''
@@ -1669,7 +1568,7 @@ static function _GeraSimul()
 		aadd (aColunas, { 1,  'Componente'				,45,  ''})
 		aadd (aColunas, { 2,  'Descricao'				,170, ''})
 		aadd (aColunas, { 3,  'Rev.estr'				,30,  ''})
-		aadd (aColunas, { 4,  'Alx. padrão produto'	,45, '@E 999,999,999.99'})
+		aadd (aColunas, { 4,  'Alx. padrão produto'	    ,45, '@E 999,999,999.99'})
 		aadd (aColunas, { 5,  'Almox 01'				,45, '@E 999,999,999.99'})
 		aadd (aColunas, { 6,  'Almox 02'				,45, '@E 999,999,999.99'})
 		aadd (aColunas, { 7,  'Almox 03'				,45, '@E 999,999,999.99'})
@@ -1697,7 +1596,6 @@ static function _GeraSimul()
 			EndIf
 			
 			_SimulOP(sProduto, nQtd, aArray, .T. , _sRevis)
-			
 			
 			For _y:=1 to len(aArray)
 				nDeTerceiros := _SaldosDeTerceiros(aArray[_y, 1])
@@ -1760,6 +1658,7 @@ static function _GeraSimul()
 		EndIf
 	EndIf
 return
+//
 // --------------------------------------------------------------------------
 // Busca saldos de terceiros
 Static Function _SaldosDeTerceiros(sProduto)
@@ -1776,9 +1675,9 @@ Static Function _SaldosDeTerceiros(sProduto)
 			
 	For _x:=1 to len(_aSaldo)
 		nDeTerceiros += _aSaldo[_x,1]
-	Next
-			
+	Next	
 Return nDeTerceiros
+//
 // --------------------------------------------------------------------------
 // Busca saldos de terceiros
 Static Function _SaldosEmTerceiros(sProduto)
@@ -1796,8 +1695,38 @@ Static Function _SaldosEmTerceiros(sProduto)
 	For _x:=1 to len(_aSaldo)
 		nEmTerceiros += _aSaldo[_x,1]
 	Next
-			
 Return nEmTerceiros
+//
+// --------------------------------------------------------------------------
+// Retorn CSV
+Static Function _RetCSV(_sArq, _sSeparad, _stp)
+	local _sLinha := ""
+	local _aLinha := {}
+	local _aRet   := {}
+
+	if ! file (_sArq)
+		u_help ("Arquivo nao encontrado: " + _sArq)
+		Return _aRet
+	endif
+	
+	FT_FUSE(_sArq)
+	ProcRegua(FT_FLASTREC())
+	FT_FGOTOP()
+	While !FT_FEOF()
+		IncProc("Lendo arquivo " + _sArq)
+		_sLinha := FT_FReadLN()
+		_aLinha = U_SeparaCpo (_sLinha, iif (empty (_sSeparad), ';', _sSeparad))
+		if len (_aLinha) > 0
+			if _stp = 1
+				aadd(_aRet, {_aLinha[1], val(_aLinha[2]), .F.})
+			else
+				aadd(_aRet, {_aLinha[1], val(_aLinha[2]),  _aLinha[3], .F.})
+			endif
+		endif
+		FT_FSKIP()
+	End
+	FT_FUSE()
+return _aRet
 //
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
@@ -1832,9 +1761,8 @@ Static Function _ValidPerg ()
 		
 	elseif cPerg == 'BMRP3'
 		//                     PERGUNT         TIPO TAM DEC VALID F3          Opcoes Help
-		//aadd (_aRegsPerg, {01, "Produtos       ", "C", 80, 0,  "",  "    ", {},                              "Separar por /"})
-		//aadd (_aRegsPerg, {02, "Quantidades    ", "C", 80, 0,  "",  "    ", {},                              "Separar por /"})
-		aadd (_aRegsPerg, {01, "Agrupar itens? ", "N",  1, 0,  "",  "    ", {"Nao", "Sim"},                  ""})
+		aadd (_aRegsPerg, {01, "Agrupar itens?    ", "N",  1,  0,  "",  "    ", {"Nao", "Sim"},                  ""})
+		aadd (_aRegsPerg, {02, "Arquivo no C:\temp", "C",  20, 0,  "",  "    ", {},                              ""})
 	endif
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 return

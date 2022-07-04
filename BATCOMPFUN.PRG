@@ -15,6 +15,7 @@
 // 25/10/2018 - Catia   - Alterada integracao que considere a reimplantação das lojas - cond 997 e forma de pagamento
 // 08/04/2019 - Catia   - include TbiConn.ch 
 // 02/05/2022 - Claudia - Ajustada query para contabilidade de compras de funcionarios.
+// 30/06/2022 - Claudia - Retirada CDOC do execauto e validação de filial. GLPI: 12294
 //
 // ------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -26,7 +27,11 @@ User Function BATCOMPFUN()
     Local _nQtdDias := 15
     Local _dDtIni   := dtos(DaySub(Date(), _nQtdDias))
     Local _dDtFim   := dtos(Date())
+    //Local _dDtIni   := dtos(ddatabase)
+    //Local _dDtFim   := dtos(ddatabase)
     Local _x         := 0
+
+    //u_help(_dDtIni)
 
     If dtos(ddatabase) > '20220420' // Implantação da contabilização de associados
         
@@ -99,6 +104,7 @@ User Function BATCOMPFUN()
         _oSQL:_sQuery += " AND SL1.L1_EMISNF BETWEEN '" + _dDtIni + "' AND '" + _dDtFim + "'"
         _oSQL:_sQuery += " AND SL1.L1_DOC != '' "
         _oSQL:_sQuery += " AND SL1.L1_INDCTB = '' "
+        //_oSQL:_sQuery += " AND SL1.L1_INDCTB = 'N' "
         _oSQL:_sQuery += " ORDER BY SL1.L1_EMISNF "
         _oSQL:Log()
         _aDados := aclone(_oSQL:Qry2Array ())
@@ -116,7 +122,7 @@ User Function BATCOMPFUN()
                 _sIndCtb  := 'N'
 
                 // Define contas
-                If _sFilvend != _sFilfunc
+                //If _sFilvend != _sFilfunc
                     lMsErroAuto := .F.
                     lMsHelpAuto := .T.
 
@@ -124,7 +130,7 @@ User Function BATCOMPFUN()
                     AADD(_aAutoCT2C,  {'DDATALANC'     , _sData         , NIL} )
                     AADD(_aAutoCT2C,  {'CLOTE'         ,'555555'        , NIL} )
                     AADD(_aAutoCT2C,  {'CSUBLOTE'      ,'001'           , NIL} )
-                    AADD(_aAutoCT2C,  {'CDOC'          ,_sDoc           , NIL} )
+                    //AADD(_aAutoCT2C,  {'CDOC'          ,_sDoc           , NIL} )
                     AADD(_aAutoCT2C,  {'CPADRAO'       ,''              , NIL} )
                     AADD(_aAutoCT2C,  {'NTOTINF'       ,0               , NIL} )
                     AADD(_aAutoCT2C,  {'NTOTINFLOT'    ,0               , NIL} )
@@ -161,7 +167,7 @@ User Function BATCOMPFUN()
                         _oEvento:CodEven = "BAT001"
                         _oEvento:Grava()
                     EndIf                    
-                EndIf
+                //EndIf
 
                 DbSelectArea("SL1")
                 DbSetOrder(1)

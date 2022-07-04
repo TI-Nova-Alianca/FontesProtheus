@@ -96,6 +96,9 @@
 // 29/09/2021 - Claudia - Tratamento para venda de milho. GLPI: 10994
 // 10/06/2022 - Claudia - Ajuste de lançamento para mudas. GLPI: 12191
 // 13/06/2022 - Claudia - Ajuste de validação de carga e AX01. GLPI: 12172
+// 22/06/2022 - Claudia - Passada validações de NSU/Id pagarme e indenização e bonificações no p.e Mta410. GLPI: 11600
+// 24/06/2022 - Claudia - Incluida validação para vendedor incluir/não incluir pedido dereto no Protheus. GLPI: 12249
+// 28/06/2022 - Claudia - Incluida validação para numero de pedido bonificação não ser igual ao pedido de venda. GLPI: 12274
 //
 // ---------------------------------------------------------------------------------------------------------------------------
 User Function MTA410 ()
@@ -119,6 +122,10 @@ User Function MTA410 ()
 			endif
 			if ! empty(m->c5_vend2) .and. fBuscaCpo("SA3", 1, xfilial("SA3") + m->c5_vend2, "A3_ATIVO") != "S"
 				u_help ("Vendedor " + m->c5_vend2 + " nao consta como 'Ativo'",, .t.)
+				_lRet = .F.
+			endif
+			if (fBuscaCpo("SA3", 1, xfilial("SA3") + m->c5_vend1, "A3_VAIPED") != "S") .and. !IsInCallStack("U_BATMERCP")
+				u_help ("Vendedor " + m->c5_vend1 + " sem permissão para incluir pedido!",, .t.)
 				_lRet = .F.
 			endif
 		endif	
@@ -295,6 +302,61 @@ User Function MTA410 ()
 				u_help("Não é permitido vender mudas e milho para associados no mesmo pedido. Verifique!")
 			EndIf		
 		endif
+	EndIf
+
+	If _lRet .and. ! IsInCallStack("U_BATMERCP")
+		_lBonif := .T.
+		for _N = 1 to len (aCols)
+			N := _N
+			if ! GDDeleted ()
+				if ! sf4 -> (msseek (xfilial ("SF4") + GDFieldGet("C6_TES"), .F.))
+					u_help ("Cadastro do TES '" + GDFieldGet("C6_TES") + "' nao localizado!")
+					_lRet = .F.
+				else
+					_lBonif  := (sf4 -> f4_margem == '3')
+					if _lBonif
+						if empty(m->c5_vabtpo)
+							u_help(" Pedido de bonificação exige preenchimento do tipo de bonificação!")
+							_lRet := .F.
+						endif
+
+						if m->c5_vabtpo == '1' .and. (empty(m->c5_vabfil) .or. empty(m->c5_vabref))
+							u_help(" Pedido de bonificação de tipo 'Negociação comercial' exige preenchimento de filial e pedido de venda origem!")
+							_lRet := .F.
+						endif
+						if  m->c5_vabtpo == '1' .and. (m->c5_vabref == m->c5_num)
+							u_help(" Pedido de bonificação de tipo 'Negociação comercial' não pode ter o numero do pedido de bonificação igual ao pedido de venda!")
+							_lRet := .F.
+						endif
+						exit
+					EndIf
+				endif
+			Endif
+		next
+	EndIf
+
+	// Obriga a informar NSU e Id Pagar-me em pedidos e-commerce
+	If _lRet
+		If !Empty(M->C5_PEDECOM)
+			If Empty(M->C5_VANSU)
+				u_help("Para pedidos e-commerce, informar NSU!")
+				_lRet := .F.
+			EndIf
+			If Empty(M->C5_VAIDT)
+				u_help("Para pedidos e-commerce, informar Id Pagar-me!")
+				_lRet := .F.
+			EndIf
+		EndIf
+	EndIf
+
+		// Verifica se é pedido exportação e se pode dar desconto no cabeçalho 
+	If _lRet
+		_sCliEst  := fBuscaCpo('SA1', 1, xfilial('SA1') + M->C5_CLIENTE + M->C5_LOJACLI, "A1_EST")
+
+		If alltrim(_sCliEst) <> 'EX' .and. !Empty(m->c5_descont)
+			u_help("Desconto <indenização> só pode ser usado para clientes de exportação!")
+			_lRet := .F.
+		EndIf
 	EndIf
 
 	U_SalvaAmb (_aAmbAnt)

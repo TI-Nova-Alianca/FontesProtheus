@@ -11,6 +11,7 @@
 // #Modulos   		  #CTB 
 //
 // Historico de alteracoes:
+// 30/06/2022 - Claudia - Retirada CDOC do execauto. GLPI: 12294
 //
 // --------------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -80,7 +81,7 @@ User Function BatCtbCom()
                 AADD(_aAutoCT2C,  {'DDATALANC'     , _sData         , NIL} )
                 AADD(_aAutoCT2C,  {'CLOTE'         ,'555555'        , NIL} )
                 AADD(_aAutoCT2C,  {'CSUBLOTE'      ,'001'           , NIL} )
-                AADD(_aAutoCT2C,  {'CDOC'          ,_sDoc           , NIL} )
+                //AADD(_aAutoCT2C,  {'CDOC'          ,_sDoc           , NIL} )
                 AADD(_aAutoCT2C,  {'CPADRAO'       ,''              , NIL} )
                 AADD(_aAutoCT2C,  {'NTOTINF'       ,0               , NIL} )
                 AADD(_aAutoCT2C,  {'NTOTINFLOT'    ,0               , NIL} )

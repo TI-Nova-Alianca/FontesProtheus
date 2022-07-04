@@ -18,6 +18,7 @@
 //                      - Inseridas tags para catalogacao de fontes
 // 03/02/2021 - Cláudia - Ajustada a importação de itens. GLPI: 9254
 // 12/03/2021 - Cláudia - Incluida a busca de dados do Ax 66. GLPI: 9052
+// 23/06/2022 - Claudia - Retirada validação de local e lote. GLPI 12118
 //
 // -------------------------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
@@ -163,33 +164,33 @@ Static Function BuscaEstoque()
 	_sQuery += " WHERE QTD <> 0"
 	_sQuery += " ORDER BY FILIAL, ALMOX, TPROD, GRUPO, PRODUTO"
 
-	// -------------------- Faz validações no processo para mostrar em tela
-	dbUseArea(.T., "TOPCONN", TCGenQry(,,_sQuery), "_trb", .F., .T.)
+	// // -------------------- Faz validações no processo para mostrar em tela
+	// dbUseArea(.T., "TOPCONN", TCGenQry(,,_sQuery), "_trb", .F., .T.)
 
-	procregua (_trb -> (reccount ()))
-	_trb -> (dbgotop ())
+	// procregua (_trb -> (reccount ()))
+	// _trb -> (dbgotop ())
 	
-	sMensagem := ""
-	Do while ! _trb -> (eof ())
-		If _trb -> B1_RASTRO = 'L' .AND. empty(_trb -> LOTECTL)
-			sMensagem += " SEM INFORMAÇÃO DE LOTE:" + CRLF
-			sMensagem += " -> Filial: " + alltrim(_trb-> FILIAL) +" Produto:"+alltrim(_trb->PRODUTO)+" Almox:"+alltrim(_trb->ALMOX) + CRLF
-			sMensagem += " --------------------------------" + CRLF
-			_Cnt := .F.
-		EndIf
-		If _trb -> B1_LOCAL = 'S' .AND. empty(_trb -> LOCALIZ)
-			sMensagem += "SEM INFORMAÇÃO DE LOCAL: " + CRLF
-			sMensagem += " -> Filial: " + alltrim(_trb-> FILIAL) +" Produto:"+alltrim(_trb->PRODUTO)+" Almox:"+alltrim(_trb->ALMOX) + CRLF
-			sMensagem += " --------------------------------" + CRLF
-			_Cnt := .F.
-		EndIf
-		_trb -> (dbskip ())
-	EndDo
+	// sMensagem := ""
+	// Do while ! _trb -> (eof ())
+	// 	If _trb -> B1_RASTRO = 'L' .AND. empty(_trb -> LOTECTL)
+	// 		sMensagem += " SEM INFORMAÇÃO DE LOTE:" + CRLF
+	// 		sMensagem += " -> Filial: " + alltrim(_trb-> FILIAL) +" Produto:"+alltrim(_trb->PRODUTO)+" Almox:"+alltrim(_trb->ALMOX) + CRLF
+	// 		sMensagem += " --------------------------------" + CRLF
+	// 		_Cnt := .F.
+	// 	EndIf
+	// 	// If _trb -> B1_LOCAL = 'S' .AND. empty(_trb -> LOCALIZ)
+	// 	// 	sMensagem += "SEM INFORMAÇÃO DE LOCAL: " + CRLF
+	// 	// 	sMensagem += " -> Filial: " + alltrim(_trb-> FILIAL) +" Produto:"+alltrim(_trb->PRODUTO)+" Almox:"+alltrim(_trb->ALMOX) + CRLF
+	// 	// 	sMensagem += " --------------------------------" + CRLF
+	// 	// 	_Cnt := .F.
+	// 	// EndIf
+	// 	_trb -> (dbskip ())
+	// EndDo
 	
-	If _Cnt == .F.
-		zMsgLog(sMensagem, "Log de erros na validação", 1, .T.)
-	EndIf
-	_trb -> (dbCloseArea ())
+	// If _Cnt == .F.
+	// 	zMsgLog(sMensagem, "Log de erros na validação", 1, .T.)
+	// EndIf
+	// _trb -> (dbCloseArea ())
 
 	// -------------------- Executa o processo
 	If _lContinua
