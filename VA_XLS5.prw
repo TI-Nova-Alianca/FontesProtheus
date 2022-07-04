@@ -88,7 +88,7 @@
 // 27/07/2021 - Robert  - Incluida coluna NCM (B1_POSIPI) do produto (GLPI 10591).
 //                      - Passa a somar a coluna D2_VALFRE no "Valor bruto" e "Valor total NF" (GLPI 10579).
 // 27/08/2021 - Cláudia - Incluida as colunas Id pagar-me e NSU pagarme e link cielo. GLPI 10830
-//
+// 01/07/2022 - Claudia - Ajuste na opção mesoregiao. GLPI: 12297
 //
 // ---------------------------------------------------------------------------------------------------------------
 User Function VA_XLS5 (_lAutomat)
@@ -371,7 +371,9 @@ Static Function _Gera()
 	_sQuery +=                 " ON(CC3.D_E_L_E_T_=''"
 	_sQuery +=                 " AND CC3.CC3_COD = SA1.A1_CNAE)"
     if "ZB_" $ upper (_sQuery)
-    	_sQuery +=             ","+ RetSQLName ("SZB") + " SZB"
+    	_sQuery +=         "LEFT JOIN "+ RetSQLName ("SZB") + " SZB"
+		_sQuery +=    			" ON (SZB.ZB_FILIAL      = '" + xfilial ("SZB") + "'"
+		_sQuery +=    			" AND SZB.ZB_COD         = SA1.A1_CMUN)"
 	endif
 	_sQuery +=            " ,BI_ALIANCA.dbo.VA_FATDADOS as V "
     if "A3_" $ upper (_sQuery)
@@ -442,10 +444,6 @@ Static Function _Gera()
 	_sQuery +=    " and SA1.A1_FILIAL      = '" + xfilial ("SA1") + "'"
 	_sQuery +=    " and SA1.A1_COD         = V.CLIENTE"
 	_sQuery +=    " and SA1.A1_LOJA        = V.LOJA"
-    if "ZB_" $ upper (_sQuery)
-		_sQuery +=    " and SZB.ZB_FILIAL      = '" + xfilial ("SZB") + "'"
-		_sQuery +=    " and SZB.ZB_COD         = SA1.A1_CMUN"
-	endif
     _sQuery +=    " and V.TIPONFSAID      != 'B'"  // Beneficiamento
     _sQuery +=    " and V.TIPONFSAID      != 'D'"  // Devolucao de compra
    	if mv_par23 == 1  // Apenas fatur.e bonif 
