@@ -56,7 +56,7 @@ user function BatMercP ()
 	local _lContinua := .T.
 	local _nLock     := 0
 
-	u_log2 ('info', 'Iniciando execucao')
+//	u_log2 ('info', 'Iniciando execucao')
 
 	// Deixa retorno pronto para chamada em batch.
 	_oBatch:Retorno = 'S'

@@ -24,23 +24,80 @@ user function PECTE006 ()
 	local _aRetTRS6 := {}
 	Local _aTRS006  := PARAMIXB
 	Local _aCabec   := _aTRS006[1]  // Vetor com Cabecaho repassado  para Execauto
-	Local _aLinha   := _aTRS006[2]	// Vetro com Itens    repassados para Execauto
-	Local _cChvCte  := _aTRS006[3]  // Caracter com Chave do CTe
-	Local _nTpoCte  := _aTRS006[4]  // Numerico com valor: 2=MATA116 Compras | 1=MATA140 Vendas
+	//Local _aLinha   := _aTRS006[2]	// Vetro com Itens    repassados para Execauto
+	//Local _cChvCte  := _aTRS006[3]  // Caracter com Chave do CTe
+	//Local _nTpoCte  := _aTRS006[4]  // Numerico com valor: 2=MATA116 Compras | 1=MATA140 Vendas
 	Local _oNfeOrg  := _aTRS006[5]  // Objeto com Notas Referenciadas
 
+	// Tratamento para alimentar variavel a ser usada para gravacao de fretes.
+	_NfOriFrt (_aCabec, _oNfeOrg)
 
-	U_Log2 ('debug', '[' + procname () + ']')
-	u_logPCham ()
-	U_Log2 ('debug', _aCabec)
-	U_Log2 ('debug', _aLinha)
-	U_Log2 ('debug', _cChvCte)
-	U_Log2 ('debug', _nTpoCte)
-	U_Log2 ('debug', _oNfeOrg)
-
+	// Devem ser retornados cabecalho e itens.
 	_aRetTRS6 := {_aCabec,_aLinha}
-	
 
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
 return _aRetTRS6
+
+
+// --------------------------------------------------------------------------
+static function _NfOriFrt (_aCabec, _oNfeOrg)
+//	local _aNFRef   := {}
+	local _nNFRef   := 0
+	local _oSQL     := NIL
+	local _aRetQ    := {}
+	local _nPosForn := ascan (_aCabec, {|_aVal| alltrim (upper (_aVal [1])) = "F1_FORNECE"})
+	local _nPosLoja := ascan (_aCabec, {|_aVal| alltrim (upper (_aVal [1])) = "F1_LOJA"})
+
+	u_logPCham ()
+
+	// Cria/popula objeto a ser usado por outros pontos de entrada para gravacao
+	// de dados de fretes.
+	if type ("_oClsFrtFr") == "O"
+		U_Log2 ('aviso', '[' + procname () + ']Objeto para frete nao existe')
+		public _oClsFrtFr := ClsFrtFr():New ()
+	endif
+	U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (_nPosForn))
+	U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (_nPosLoja))
+	_oClsFrtFr:_sFornece  = _aCabec [_nPosForn, 2]
+	_oClsFrtFr:_sLoja     = _aCabec [_nPosLoja, 2]
+/*
+
+THREAD ERROR ([43072], robert.koch, NA01-005781-NOT)   09/06/2022 19:44:57
+variable is not an object  on _NFORIFRT(PECTE006.TLPP) 09/06/2022 19:43:14 line : 62
+
+[TOTVS build: 7.00.210324P-20211206]
+Called from U_PECTE006(PECTE006.TLPP) 09/06/2022 19:43:14 line : 33
+Called from EXECBLOCK(APLIB190.PRW) 05/04/2022 15:25:12 line : 163
+Called from PROCCTE(FBTRS006.PRW) 14/05/2022 15:22:23 lin
+*/
+
+	// Varre a lista de chaves referenciadas e verifica se sao nossas notas
+	// de saida (frete sobre vendas)
+//	_aNFRef = {}
+	for _nNFRef = 1 to len (_oNfeOrg)
+//		aadd (_aNFRef, {_oNfeOrg [_nNFRef]:_Chave:TEXT})
+
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT top 1 F2_DOC, F2_SERIE"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SF2") + " SF2"
+		_oSQL:_sQuery += " WHERE SF2.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SF2.F2_FILIAL  = '" + xfilial ("SF2") + "'"
+		_oSQL:_sQuery +=   " AND SF2.F2_CHVNFE  = '" + _oNfeOrg [_nNFRef]:_Chave:TEXT + "'"
+		_aRetQ := aclone (_oSQL:Qry2Array (.f., .f.))
+		if len (_aRetQ) == 1
+			aadd (_oClsFrtFr:_aNaoPrev, array (3))
+			_oClsFrtFr:_aNaoPrev [ _i, 1] = _aRetQ [1, 1]
+			_oClsFrtFr:_aNaoPrev [ _i, 2] = _aRetQ [1, 2]
+			_oClsFrtFr:_aNaoPrev [ _i, 3] = '1'
+//			_aNFRef [_nNFRef, 2] = _aRetQ [1, 1]
+//			_aNFRef [_nNFRef, 3] = _aRetQ [1, 2]
+		endif
+	next
+//	U_Log2 ('debug', '[' + procname () + ']_aNFRef antes:')
+//	U_Log2 ('debug', _aNFRef)
+//	U_Log2 ('debug', '[' + procname () + ']_aNFRef depois:')
+//	U_Log2 ('debug', _aNFRef)
+return
+
