@@ -8,16 +8,17 @@
 // 17/02/2010 - Robert - Executa, tambem, o processo MATA216.
 // 22/03/2012 - Robert - Separado do MATA216, para poder agendar em separado.
 // 07/08/2013 - Robert - Passa a usar SIM nos parametros 'zera saldo MOD' e 'zera CM MOD'.
+// 05/07/2022 - Robert - Melhoria gravacao de logs (GLPI 12312)
 //
 
-#include "tbiconn.ch"
+//#include "tbiconn.ch"
 
 // --------------------------------------------------------------------------
 user function BatSldAt ()
-	local _sArqLog2 := iif (type ("_sArqLog") == "C", _sArqLog, "")
-	_sArqLog := U_NomeLog (.t., .f.)
-	u_logIni ()
-	u_log (date(), time())
+//	local _sArqLog2 := iif (type ("_sArqLog") == "C", _sArqLog, "")
+//	_sArqLog := U_NomeLog (.t., .f.)
+//	u_logIni ()
+//	u_log (date(), time())
 
 	// Atualiza perguntas da rotina e executa 'refaz saldo atual'.
 	cPerg := "MTA300"
@@ -29,8 +30,9 @@ user function BatSldAt ()
 	U_GravaSX1 (cPerg, "06", 1)       // Zera CM dos produtos MOD = Sim
 	U_GravaSX1 (cPerg, "07", 2)       // Trava registros do SB2 = Nao
 	U_GravaSX1 (cPerg, "08", 2)       // Seleciona filiais = Nao
-	u_log ("Iniciando MATA300 (refaz saldo atual)")
+	U_Log2 ('info', '[' + procname () + ']Iniciando MATA300 (refaz saldo atual)')
 	MATA300 (.T.)
-	u_logFim ()
-	_sArqLog = _sArqLog2
-return
+	U_Log2 ('info', '[' + procname () + ']Finalizou MATA300 (refaz saldo atual)')
+//	u_logFim ()
+//	_sArqLog = _sArqLog2
+return .t.
