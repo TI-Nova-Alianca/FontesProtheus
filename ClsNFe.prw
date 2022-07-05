@@ -14,7 +14,10 @@
 // 04/01/2016 - Robert - Erro na leitura da tag de dados adicionais - alguns XML nao tem - estava testando o tipo errado
 // 13/04/2017 - Catia  - Tratamento na TAG de produtos - buscando a unidade
 // 08/04/2019 - Catia  - include TbiConn.ch
-// 16/05/2019 - Catia  - tratamento para que leia os pesos das nfe  
+// 16/05/2019 - Catia  - tratamento para que leia os pesos das nfe
+// 05/07/2022 - Robert - Melhoria pequena nos logs (GLPI 12312)
+//
+
 // ------------------------------------------------------------------------------------
 #include "colors.ch"
 #Include "Protheus.ch"
@@ -567,7 +570,7 @@ METHOD LeXML (_oObjPai) Class ClsNFe
 	local _nTamDoc  := TamSX3 ('ZZX_DOC')[1]
 	//local _aAreaSM0 := {}
 
-	u_logIni (GetClassName (::Self) + '.' + procname ())
+	// u_logIni (GetClassName (::Self) + '.' + procname ())
 
 	if len (::Erros) == 0
 		if ! ::XMLLayout $ 'procNFe/NFe/enviNFe'
@@ -748,5 +751,5 @@ METHOD LeXML (_oObjPai) Class ClsNFe
 	//u_log ('Objeto ' + GetClassName (::Self) + ':')
 	//u_log (ClassDataArr (::self))
 
-	u_logFim (GetClassName (::Self) + '.' + procname ())
+	// u_logFim (GetClassName (::Self) + '.' + procname ())
 return (len (::Erros) == 0)
