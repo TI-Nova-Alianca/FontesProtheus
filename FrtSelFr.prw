@@ -38,7 +38,9 @@
 // 14/01/2020 - Andre   - Alterada query para mostrar dados especie CTE, CTR e tipo de produto iniciado com 'FR' 
 // 26/08/2021 - Claudia - Incluida validação que quando estiver classificando a pré nota de entrada, 
 //                        não realize a busca no SZH. GLPI: 10833
+// 10/07/2022 - Robert  - Carrega aCols de fretes nao previstos com dados do objeto _oClsFrt (GLPI 12330)
 //
+
 // -------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 #include "VA_Inclu.prw"
@@ -69,6 +71,7 @@ static function _AndaLogo (_lPaletiz)
 	local _nTotFret   := 0
 	local _sProdCIF   := alltrim (GetMv('VA_PRODCIF'))
 	local _n		  := 1
+	local _nLinCols   := 0
 	private _oBmpOK   := LoadBitmap( GetResources(), "LBOK" )
 	private _oBmpNo   := LoadBitmap( GetResources(), "LBNO" )
 	private _oLbx     := NIL
@@ -86,10 +89,17 @@ static function _AndaLogo (_lPaletiz)
 	_nTotFret = GDFieldGet ("D1_TOTAL")
 
 	// Cria variavel publica para que fique disponivel a outros pontos de entrada
-	public _oClsFrtFr := ClsFrtFr():New ()
+	u_logPCham ()
+	U_Log2 ('debug', '[' + procname () + ']tipo de _oClsFrtFr: ' + type ("_oClsFrtFr"))
+
+//	public _oClsFrtFr := ClsFrtFr():New ()
+	if type ("_oClsFrtFr") != "O"
+		U_Log2 ('aviso', '[' + procname () + ']Objeto para frete nao existe. Criando.')
+		public _oClsFrtFr := ClsFrtFr():New ()
+	endif
 	
 	// Se nao for inclusao, visualiza os dados do SZH e cai fora da rotina.
-	
+	U_Log2 ('debug', '[' + procname () + ']inclui: ' + cvaltochar (inclui) + ' l103class: ' + cvaltochar (l103Class))
 	if !inclui .and. !l103Class  // Estou classificando uma pre-nota de entrada
 	
 		_sQuery := ""
@@ -175,11 +185,11 @@ static function _AndaLogo (_lPaletiz)
 		endif
 	endif
 	
-	// Monta lista com os fretes previstos para esta transportadora
 	if _lContinua
 		_oClsFrtFr:_sFornece  = ca100for
 		_oClsFrtFr:_sLoja     = cLoja
 
+		// Monta lista com os fretes previstos para esta transportadora
 		_LePrev (.F., _lPaletiz)
 		if len (_aFretes) == 0
 			_LePrev (.T., _lPaletiz)
@@ -189,7 +199,27 @@ static function _AndaLogo (_lPaletiz)
 		// as notas nao previstas (reentregas ou redespachos, por exemplo)
 		aHeader = aclone (U_GeraHead ("ZZZ", .T., {}, {"ZZZ_06DOC", "ZZZ_06SERI", "ZZZ_06CLI", "ZZZ_06LOJA", "ZZZ_06NOME", "ZZZ_06TPSE"}, .T.))
 		aCols = {}
-		aadd (aCols, aclone (U_LinVazia (aHeader)))
+
+		// Se tem dados no objeto de fretes, deve ser por que jah havia entrado nesta
+		// tela e digitado, ou por que estah classificando uma pre-nota gerada pelo
+		// importador de XML. Caso contrario, inicializa linha vazia.
+		for _nLinCols = 1 to len (_oClsFrtFr:_aNaoPrev)
+			aadd (aCols, aclone (U_LinVazia (aHeader)))
+			GDFieldPut ("ZZZ_06DOC",  _oClsFrtFr:_aNaoPrev [_nLinCols, 1], _nLinCols)
+			GDFieldPut ("ZZZ_06SERI", _oClsFrtFr:_aNaoPrev [_nLinCols, 2], _nLinCols)
+			GDFieldPut ("ZZZ_06TPSE", _oClsFrtFr:_aNaoPrev [_nLinCols, 3], _nLinCols)
+			sf2 -> (dbsetorder (1))
+			if sf2 -> (dbseek (xfilial ("SF2") + GDFieldGet ("ZZZ_06DOC", _nLinCols) + GDFieldGet ("ZZZ_06SERI", _nLinCols), .F.))
+				GDFieldPut ("ZZZ_06CLI", sf2 -> f2_cliente, _nLinCols)
+				GDFieldPut ("ZZZ_06LOJA", sf2 -> f2_loja, _nLinCols)
+				GDFieldPut ("ZZZ_06NOME", fBuscaCpo ("SA1", 1, xfiliL ("SA1") + sf2 -> f2_cliente + sf2 -> f2_loja, "A1_NOME"), _nLinCols)
+			endif
+			U_Log2 ('debug', '[' + procname () + ']carreguei aCols assim:')
+			u_logaCols ()
+		next
+		if len (aCols) == 0  // Nao havia dados a carregar
+			aadd (aCols, aclone (U_LinVazia (aHeader)))
+		endif
 
 		// Monta tela para interface com o usuario.
 		_aSize := MsAdvSize()
