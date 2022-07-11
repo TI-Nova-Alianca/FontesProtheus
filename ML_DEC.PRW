@@ -82,6 +82,8 @@
 // 07/07/2021 - Robert - Desconsidera entradas de produtos oriundos de outros paises (GLPI 10436).
 // 26/07/2021 - Robert - Criado parametro para informar lotes (PA) a desconsiderar (GLPI 10436).
 // 05/08/2021 - Robert - Campo LT_IGNORAR (GLPI 10436) nao havia sido criado para as filiais (GLPI 10653).
+// 05/07/2022 - Robert - Ajustes novo layout 1.3 (GLPI 12307)
+//                     - Criada opcao de exportar apenas um movimento de cada tipo (para testes de layout)
 //
 
 // --------------------------------------------------------------------------
@@ -134,6 +136,12 @@ Static Function GeraTxt()
 	private _sAvisos   := ""
 	private _aTotOper  := {}
 	private _nHdl      := 0
+	private _lSoh1Reg  := .F.
+
+	// Tenho muita manutencao neste programa, entao uso esta opcao para gerar menos registros para teste.
+//	if cUserName == 'robert.koch' .and. dtos (date()) == '20220705'  // Estou em testes
+//		_lSoh1Reg = .T.
+//	endif
 
 	delete file (alltrim (mv_par06))
 	_nHdl = fCreate (alltrim (mv_par06))
@@ -294,7 +302,8 @@ Static Function _Tipo10()
 		_Erro ("Parametro VA_INSCMA (Nossa inscricao no Ministerio da Agricultura) vazio ou inexistente.")
 	endif
 	cLin:=""
-	cLin := cLin+"10"+left(SM0->M0_CGC,14)+_sInscMA+left(SM0->M0_NOMECOM+space(40),40)+left(SM0->M0_ENDCOB+space(40),40)+"04305108"+SM0->M0_CEPCOB+SPACE(10)+SPACE(30)
+//	cLin := cLin+"10"+left(SM0->M0_CGC,14)+_sInscMA+left(SM0->M0_NOMECOM+space(40),40)+left(SM0->M0_ENDCOB+space(40),40)+"04305108"+SM0->M0_CEPCOB+SPACE(10)+SPACE(30)
+	cLin := cLin+"10"+left(SM0->M0_CGC,14)+_sInscMA+left(SM0->M0_NOMECOM+space(40),40)+left(SM0->M0_ENDCOB+space(40),40)+"04305108"+SM0->M0_CEPCOB+'SDA1.3    '
 	_GravaLin ('10', cLin)
 Return
 
@@ -334,8 +343,12 @@ Static Function _Tipo20N ()
 	if _lContinua
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT  D2_DOC, D2_SERIE, D2_EMISSAO, F4_VASISEN, F2_EST, B1_COD, D2_UM, D2_QUANT, B1_LITROS, F2_DOC, D2_TIPO, "
-		_oSQL:_sQuery +=        "  D2_COD, D2_TES, F2_CLIENTE, F2_LOJA, B1_DESC, ISNULL(B8_VACRSIS, '') AS CODCRSIS, D2_LOTECTL "
+		_oSQL:_sQuery += " SELECT "
+		if _lSoh1Reg
+			_oSQL:_sQuery += " TOP 1 "
+		endif
+		_oSQL:_sQuery +=        " D2_DOC, D2_SERIE, D2_EMISSAO, F4_VASISEN, F2_EST, B1_COD, D2_UM, D2_QUANT, B1_LITROS, F2_DOC, D2_TIPO, "
+		_oSQL:_sQuery +=        " D2_COD, D2_TES, F2_CLIENTE, F2_LOJA, B1_DESC, ISNULL(B8_VACRSIS, '') AS CODCRSIS, D2_LOTECTL "
 
 		// Alguns lotes de produtos envasados devem ser desconsiderados, por exemplo produtos com origem internacional (GLPI 10436)
 		// Para isso, busco no FullWMS se foi feita separacao de algum desses lotes e ignoro essa nota.
@@ -595,8 +608,12 @@ Static Function _Tipo20D ()
 
 	if _lContinua
 		_sQry20 := ""
-		_sQry20 += " SELECT  D1_DOC, D1_SERIE, D1_DTDIGIT, F4_VASISEN, F1_EST, B1_COD, D1_UM, D1_QUANT, B1_LITROS, "
-		_sQry20 +=        "  D1_COD, D1_TES, F1_FORNECE, F1_LOJA, B1_DESC, D1_TIPO, ISNULL(B8_VACRSIS, '') AS CODCRSIS, D1_LOTECTL "
+		_sQry20 += " SELECT "
+		if _lSoh1Reg
+			_sQry20 += " TOP 1 "
+		endif
+		_sQry20 +=        " D1_DOC, D1_SERIE, D1_DTDIGIT, F4_VASISEN, F1_EST, B1_COD, D1_UM, D1_QUANT, B1_LITROS, "
+		_sQry20 +=        " D1_COD, D1_TES, F1_FORNECE, F1_LOJA, B1_DESC, D1_TIPO, ISNULL(B8_VACRSIS, '') AS CODCRSIS, D1_LOTECTL "
 		_sQry20 +=   " FROM " + RetSQLName ("SD1") + " SD1 "
 		_sQry20 +=   "	LEFT JOIN " + RetSQLName ("SB8") + " SB8 "
 		_sQry20 +=   "		ON (SB8.D_E_L_E_T_ = ''"
@@ -794,7 +811,11 @@ Static Function _Tipo30S ()
 	incproc ('Registro(s) ' + procname ())
 
 	_sQuery := ""
-	_sQuery += " SELECT ZR_NUMERO, ZQ_NUMLAB, ZQ_TPOPER, F2_DOC, F2_EST, D2_COD, F2_SERIE, ZQ_NUMERO, F2_EMISSAO, ZR_EMBALAG, D2_DOC, D2_TIPO, "
+	_sQuery += " SELECT "
+	if _lSoh1Reg
+		_sQuery += " TOP 1 "
+	endif
+	_sQuery +=        " ZR_NUMERO, ZQ_NUMLAB, ZQ_TPOPER, F2_DOC, F2_EST, D2_COD, F2_SERIE, ZQ_NUMERO, F2_EMISSAO, ZR_EMBALAG, D2_DOC, D2_TIPO, "
 	_sQuery +=        " CASE WHEN SD2.D2_TIPO IN ('B', 'D') THEN A2_VAREGMA ELSE A1_VAREGMA END AS REG_MA, "
 	_sQuery +=        " CASE WHEN SD2.D2_TIPO IN ('B', 'D') THEN A2_CGC     ELSE A1_CGC     END AS CNPJ, "
 	_sQuery +=        " CASE WHEN SD2.D2_TIPO IN ('B', 'D') THEN A2_NOME    ELSE A1_NOME    END AS NOME, "
@@ -999,7 +1020,11 @@ Static Function _Tipo30E ()
 	incproc ('Registro(s) ' + procname ())
 
 	_sQuery := ""
-	_sQuery += " SELECT F1_DOC, F1_EST, D1_COD, F1_SERIE, F1_VAGUIA, F4_VASISDE, F1_FORNECE, F1_LOJA, F1_DTDIGIT, D1_DOC, D1_TIPO, "
+	_sQuery += " SELECT "
+	if _lSoh1Reg
+		_sQuery += " TOP 1 "
+	endif
+	_sQuery +=        " F1_DOC, F1_EST, D1_COD, F1_SERIE, F1_VAGUIA, F4_VASISDE, F1_FORNECE, F1_LOJA, F1_DTDIGIT, D1_DOC, D1_TIPO, "
 	_sQuery +=        " CASE WHEN SD1.D1_TIPO IN ('B', 'D') THEN A1_VAREGMA ELSE A2_VAREGMA END AS REG_MA,"
 	_sQuery +=        " CASE WHEN SD1.D1_TIPO IN ('B', 'D') THEN A1_CGC     ELSE A2_CGC     END AS CNPJ, "
 	_sQuery +=        " CASE WHEN SD1.D1_TIPO IN ('B', 'D') THEN A1_NOME    ELSE A2_NOME    END AS NOME, "
@@ -1225,7 +1250,11 @@ Static Function _Tipo60 ()
 	_oSQL := ClsSQL():New ()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " WITH C AS ("
-	_oSQL:_sQuery += " SELECT " + _sCposV
+	_oSQL:_sQuery += " SELECT "
+	if _lSoh1Reg
+		_oSQL:_sQuery += " TOP 1 "
+	endif
+	_oSQL:_sQuery += _sCposV
 	_oSQL:_sQuery +=   " FROM VA_VNOTAS_SAFRA V,"
 	_oSQL:_sQuery +=          RetSQLName ("SA2") + " SA2, "
 	_oSQL:_sQuery +=          RetSQLName ("SB1") + " SB1, "
@@ -1255,7 +1284,11 @@ Static Function _Tipo60 ()
 	_oSQL:_sQuery +=    " AND NOT (V.SAFRA = '2017' AND V.ASSOCIADO = '005567')"
 
 	_oSQL:_sQuery += " UNION ALL"  // transf uva recebida de filiais
-	_oSQL:_sQuery += " SELECT " + _sCposSD1
+	_oSQL:_sQuery += " SELECT "
+	if _lSoh1Reg
+		_oSQL:_sQuery += " TOP 1 "
+	endif
+	_oSQL:_sQuery += _sCposSD1
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD1") + " SD1, "
 	_oSQL:_sQuery +=              RetSQLName ("SA2") + " SA2, "
 	_oSQL:_sQuery +=              RetSQLName ("SB1") + " SB1, "
@@ -1281,7 +1314,11 @@ Static Function _Tipo60 ()
 	_oSQL:_sQuery +=    " AND SF4.F4_FILIAL  = '" + xfilial ("SF4") + "'"
 	_oSQL:_sQuery +=    " AND SF4.F4_CODIGO  = SD1.D1_TES"
 	_oSQL:_sQuery += " UNION ALL"  // transf de uva para filiais
-	_oSQL:_sQuery += " SELECT " + _sCposSD2
+	_oSQL:_sQuery += " SELECT "
+	if _lSoh1Reg
+		_oSQL:_sQuery += " TOP 1 "
+	endif
+	_oSQL:_sQuery += _sCposSD2
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD2") + " SD2, "
 	_oSQL:_sQuery +=              RetSQLName ("SA1") + " SA1, "
 	_oSQL:_sQuery +=              RetSQLName ("SB1") + " SB1, "
