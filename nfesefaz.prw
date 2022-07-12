@@ -148,6 +148,7 @@ static lSpedCodOnu := nil
 // 06/04/2022 - Sandra
 //              Claudia - Ajustada variaveis de erro para notas de consignação. GLPI:11887 
 // 09/06/2022 - Sandra  - Ajustes na versao do pacote GLPI 11842 (Nota Técnica 2021.004_V_1.10) - Compilado por Robert em 09/06/22 21:45h
+// 11/07/2022 - Robert  - Quando houver "informacoes adicionais do produto", concatena-as com a descricao (GLPI 12334)
 //
 
 // --------------------------------------------------------------------------
@@ -604,6 +605,7 @@ Local nValIcmsC 	:= 0
 Local cNcmProd      := ""
 local lAchouSL1		:= .F. // Indica se achou o registra da venda na SL1 (SIGALOJA)
 Local lC110			:= .F. // Indica se F4_FORINFC foi utilizado para preenchimento do SPED C110
+local _sInfAdPro    := ''
 
 //Declaração de Arrays
 Private aUF     	:= {}
@@ -2893,6 +2895,14 @@ If cTipo == "1"
 		
 						cCodProd  := (cAliasSD2)->D2_COD	            
 						cDescProd := IIF(Empty(SC6->C6_DESCRI),SB1->B1_DESC,SC6->C6_DESCRI) 
+
+						// Alianca: quando houver "informacoes adicionais do produto", concatena-as com a descricao.
+						if ! empty (sc6 -> c6_codinf)
+							_sInfAdPro = alltrim (MSMM(SC6->C6_CODINF))
+							_sInfAdPro = strtran (strtran (strtran (strtran (_sInfAdPro, chr (14), ' '), chr (13), ''), chr (10), ''), chr (34), '')
+							_sInfAdPro = U_NoAcento (_sInfAdPro)
+							cDescProd = left (alltrim (cDescProd) + ' ' + _sInfAdPro, 120)  // Limita ao tamanho maximo especificado no layout da SEFAZ
+						endif
 						 
 						If !Empty((cAliasSD2)->D2_IDENTB6) .And. lNFPTER  
 				         	If SC5->C5_TIPO == "N" 
