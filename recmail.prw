@@ -10,10 +10,12 @@
 // #Modulos           #FAT 
 //
 // Historico de Alteracoes:
-// 04/11/2019 - Robert  - Passa a ler tambem extensoes TXT pois vamos redirecionar a conta 'edifretes' para cair junto 
-//					      com a 'fretesimport'
+// 04/11/2019 - Robert  - Passa a ler tambem extensoes TXT pois vamos redirecionar a conta
+//                        'edifretes' para cair junto com a 'fretesimport'
 // 14/08/2020 - Cláudia - Ajuste de Api em loop, conforme solicitação da versao 25 protheus. GLPI: 7339
+// 10/07/2022 - Robert  - Melhoria nos logs.
 //
+
 // --------------------------------------------------------------------------
 User Function RECMAIL(_lAuto)
 	Local oMessage   := NIL
@@ -43,8 +45,6 @@ User Function RECMAIL(_lAuto)
 	local _lRet      := .T.
 	local _oAviso    := NIL
 
-	u_logIni ()
-
 	procregua (10)
 
 	oPopServer := TMailManager():New()
@@ -53,24 +53,19 @@ User Function RECMAIL(_lAuto)
 	if oPopServer:PopConnect() == 0
 		//Conta quantas mensagens há no servidor
 		oPopServer:GetNumMsgs(@nMessages)
-		u_log ("Numero de mensagens no servidor: " + cvaltochar (nMessages) + ". Serao baixadas no maximo " + cvaltochar (_nMaxMsg) + " por vez.")
+		u_log2 ('info', '[' + procname () + "]Numero de mensagens no servidor: " + cvaltochar (nMessages) + ". Serao baixadas no maximo " + cvaltochar (_nMaxMsg) + " por vez.")
+
 		// Verifica todas mensagens no servidor
 		procregua (min (nMessages, _nMaxMsg))
-		
 		For nMessage := 1 To min (nMessages, _nMaxMsg)
-	
-			u_logIni ('Mensagem ' + cvaltochar (nMessage))
 			oMessage := TMailMessage():New()
-
 			if oMessage:Receive( oPopServer, nMessage) == 0  // Se recebido com sucesso
-
 				incproc (oMessage:cFrom)
 
 				// Verifica todos anexos da mensagem e os salva
-				u_log ('From.....:', oMessage:cFrom)
-				u_log ('Subject..:', oMessage:cSubject)
-				u_log ('Data.....:', oMessage:cDate)
-				u_log ('Qt.anexos:', oMessage:getAttachCount())
+				u_log2 ('info', '[' + procname () + ']Msg ' + cvaltochar (nMessage) ;
+					+ ' From: ' + alltrim (oMessage:cFrom) ;
+					+ ' Subject: ' + oMessage:cSubject)
 				
 				For nAtach := 1 to oMessage:getAttachCount()
 					_cNomeArq:= ""
@@ -78,15 +73,14 @@ User Function RECMAIL(_lAuto)
 					_cNome4  := ""
 					_cExt    := ""
 					_cTam    := 0
-                    
-                    if _nPosIni > 0
+					if _nPosIni > 0
 						_cEnder := substr(_cRemet, (_nPosIni +1), (_nPosFim -(_nPosIni +1)))
 					else
 						_cEnder := _cRemet
 					endif
 
 					aAttInfo:= oMessage:getAttachInfo(nAtach)
-					u_log ('aAttInfo:', aAttInfo)
+					//u_log ('aAttInfo:', aAttInfo)
 					_cNome1 := aAttInfo[1]
 					_cNome4 := aAttInfo[4]
 
@@ -100,8 +94,8 @@ User Function RECMAIL(_lAuto)
 							_cTam := len(alltrim(_cNome4))
 							_cExt := substr(_cNome4, (_cTam - 2), 3)
 						endif
-					else
-						u_log("Nao tem anexos")
+					//else
+					//	u_log("Nao tem anexos")
 					endif
 
 					if upper(_cExt) == "XML"
@@ -144,31 +138,30 @@ User Function RECMAIL(_lAuto)
 						
 						fwrite (_nDirArq, _cAnexo)
 						fclose (_nDirArq)
-												
-						 _cConta := _cConta + 1
+						_cConta := _cConta + 1
 					endif	
 				Next
 				// exclui o email do servidor
-				u_log ('Excluindo e-mail do servidor')
+				u_log2 ('info', '[' + procname () + ']Excluindo e-mail do servidor')
 				oMessage:SetConfirmRead(.T.)
 				nDel  := oPopServer:deleteMsg(nMessage)
-				if nDel == 0
-					u_log("Apagado com sucesso")
-				else
-					u_log ('e-mail nao foi deletado do servidor')
-					_lRet = .F.
-					_ValType := _RetType("_oBatch")
-					if _ValType == 'O'
-						_oBatch:Mensagens += 'E-mail nao foi deletado do servidor: ' + oMessage:cDate + ' from:' + oMessage:cFrom + ' subject:' + oMessage:cSubject
-						_oBatch:Retorno   := 'N'  // "Executou OK?" --> S=Sim;N=Nao;I=Iniciado;C=Cancelado;E=Encerrado automaticamente
-					endif
-					_oAviso := ClsAviso ():New ()
-					_oAviso:Tipo       = 'E'
-					_oAviso:Texto      = 'E-mail nao foi deletado do servidor: ' + oMessage:cDate + ' from:' + oMessage:cFrom + ' subject:' + oMessage:cSubject + "Considere excluir o e-mail manualmente antes de retomar este processo."
-					_oAviso:CodAviso   = '004'
-					_oAviso:Grava ()
-					exit
-				endIf
+
+// Tempo monitoramento no Zabbix.
+				// if nDel == 0
+				// 	u_log2 ('erro', '[' + procname () + ']e-mail nao foi deletado do servidor')
+				// 	_lRet = .F.
+				// 	_ValType := _RetType("_oBatch")
+				// 	if _ValType == 'O'
+				// 		_oBatch:Mensagens += 'E-mail nao foi deletado do servidor: ' + oMessage:cDate + ' from:' + oMessage:cFrom + ' subject:' + oMessage:cSubject
+				// 		_oBatch:Retorno   := 'N'  // "Executou OK?" --> S=Sim;N=Nao;I=Iniciado;C=Cancelado;E=Encerrado automaticamente
+				// 	endif
+				// 	_oAviso := ClsAviso ():New ()
+				// 	_oAviso:Tipo       = 'E'
+				// 	_oAviso:Texto      = 'E-mail nao foi deletado do servidor: ' + oMessage:cDate + ' from:' + oMessage:cFrom + ' subject:' + oMessage:cSubject + "Considere excluir o e-mail manualmente antes de retomar este processo."
+				// 	_oAviso:CodAviso   = '004'
+				// 	_oAviso:Grava ()
+				// 	exit
+				// endIf
 
 				oMessage:Clear()
 
@@ -181,10 +174,8 @@ User Function RECMAIL(_lAuto)
 //				_sAvisos += "Mensagem " + cvaltochar (nMessage) + " nao foi recebida com sucesso e nao sera´ processada." + chr (13) + chr (10)
 			EndIf
 
-			u_logFim ('Mensagem ' + cvaltochar (nMessage))
 		Next
 		oPopServer:PopDisconnect()
-		u_log("Desconectou servidor ")
 
 		if _lRet .and. type ("_oBatch") == 'O'
 			_oBatch:Mensagens += cvaltochar (_cConta) + ' arq.baixados.'
@@ -196,6 +187,7 @@ User Function RECMAIL(_lAuto)
 		_lRet = .F.
 		_ValType := _RetType("_oBatch")
 		if _ValType == 'O'
+			U_Log2 ('erro', '[' + procname () + ']Nao foi possivel conectar ao servidor de e-mail')
 			_oBatch:Mensagens += 'Nao foi possivel conectar ao servidor de e-mail'
 			_oBatch:Retorno   := 'N'  // "Executou OK?" --> S=Sim;N=Nao;I=Iniciado;C=Cancelado;E=Encerrado automaticamente
 		endif
@@ -206,7 +198,6 @@ User Function RECMAIL(_lAuto)
 		_oAviso:Grava ()
 	EndIf
 	
-	u_logFim ()
 Return _lRet
 //
 // --------------------------------------------------------------------------

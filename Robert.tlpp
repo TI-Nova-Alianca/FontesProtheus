@@ -107,8 +107,9 @@ local _nRegMovto := 0
 	next
 //	_FechSafr ()
 //	_ClsTrEstq ()
-	_ClsEtiq ()
-//	u_help ('Nada definido.')
+//	_ClsEtiq ()
+//	_Sisdevin ()
+	u_help ('Nada definido.')
 return
 
 static function _ClsEtiq ()
@@ -1042,22 +1043,22 @@ return
 	endif
 return
 */
-/*
+static function _Sisdevin ()
 	// Gera arq. Sisdeclara.
 	cPerg := "ML_DEC"
-	U_GravaSX1 (cPerg, "01", stod ("20220101"))
-	U_GravaSX1 (cPerg, "02", stod ("20220131"))
+	U_GravaSX1 (cPerg, "01", stod ("20220601"))
+	U_GravaSX1 (cPerg, "02", stod ("20220630"))
 	U_GravaSX1 (cPerg, "03", 1)  // 1=mov.mensal;2=entradas uvas
-	U_GravaSX1 (cPerg, "04", 'teste robert')
-	U_GravaSX1 (cPerg, "05", '????????')  // '05404198' = Hugo    '05403148' = Flavio
-	U_GravaSX1 (cPerg, "06", 'c:\temp\sisdeclara' + cFilAnt + '.txt')
+	U_GravaSX1 (cPerg, "04", 'teste robert')  // Nome diretor empresa
+	U_GravaSX1 (cPerg, "05", '????????')  // CRQ - '05404198' = Hugo    '05403148' = Flavio
+	U_GravaSX1 (cPerg, "06", 'c:\temp\Sisdevin_teste.txt')
 	U_GravaSX1 (cPerg, "07", 'robert.koch@novaalianca.coop.br')
 	U_GravaSX1 (cPerg, "08", 2)  // Gera arq conferencia (s/n)
 	U_GravaSX1 (cPerg, "09", 2)  // Exporta guias? (s/n)
 	U_GravaSX1 (cPerg, "10", '11422401/11128701')  // Lotes de PA a ignorar
 	U_ML_DEC (.t.)
 return
-*/
+
 /*
 	// Ajusta cadastro de representantes em lote
 	sa3 -> (dbsetorder (1))
