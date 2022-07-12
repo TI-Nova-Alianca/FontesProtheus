@@ -11,7 +11,7 @@
 // #Modulos 		  #CONT
 //
 // Historico de alteracoes:
-// 
+// 11/07/2022 - Sandra/Rbert - Ajuste nos totais quando a divisão por "0".
 //
 // --------------------------------------------------------------------------// ----------------------------------------------------------------------------------------------------------------------------
 User Function VA_PVENDP (_lAutomat)
@@ -76,13 +76,19 @@ Static Function _Gera()
     _oSQL:_sQuery += "   ,SUM(QUANTIDADE) AS QTDE "
     _oSQL:_sQuery += "   ,SB1.B1_UM AS UNIDADE "
     _oSQL:_sQuery += "   ,SUM(QTLITROS) AS LITROS "
-    _oSQL:_sQuery += "   ,ROUND(SUM(TOTAL) / SUM(QUANTIDADE), 2) AS VRL_FATURADO_UN "
+    //_oSQL:_sQuery += "   ,ROUND(SUM(TOTAL) / SUM(QUANTIDADE), 2) AS VRL_FATURADO_UN " -- original
+    _oSQL:_sQuery += "   ,ROUND(SUM(TOTAL) / SUM(case when QUANTIDADE = 0 then 1 else QUANTIDADE end), 2) AS VRL_FATURADO_UN "  
+    
     _oSQL:_sQuery += "   ,ROUND(SUM(TOTAL), 2) AS VRL_TOTAL "
     _oSQL:_sQuery += "   ,ROUND(SUM(CUSTOMEDIO), 2) AS CUSTO_TOTAL "
-    _oSQL:_sQuery += "   ,ROUND(AVG(CUSTOMEDIO / QUANTIDADE), 2) AS CUSTO_UN "
+    //_oSQL:_sQuery += "   ,ROUND(AVG(CUSTOMEDIO / QUANTIDADE), 2) AS CUSTO_UN " -- original
+    //_oSQL:_sQuery += "   ,ROUND(AVG(CUSTOMEDIO / case when QUANTIDADE = 0 then 1 else QUANTIDADE end), 2) AS CUSTO_UN ""
+    _oSQL:_sQuery += "   ,ROUND(AVG(NULLIF(CUSTOMEDIO,0) / QUANTIDADE), 2) AS CUSTO_UN
     _oSQL:_sQuery += "   ,SB1.B1_CUSTD AS CUSTO_STANDER"
-    _oSQL:_sQuery += "   ,ROUND((SUM(TOTAL) - SUM(CUSTOMEDIO)) / SUM(TOTAL) * 100, 1) AS 'MARGEM' "
-    _oSQL:_sQuery += "   ,ROUND(SUM(CUSTOMEDIO) / SUM(TOTAL) * 100, 0) AS 'CPV' "
+    //_oSQL:_sQuery += "   ,ROUND((SUM(TOTAL) - SUM(CUSTOMEDIO)) / SUM(TOTAL) * 100, 1) AS 'MARGEM' "  --original
+    _oSQL:_sQuery += "   ,ROUND((SUM(TOTAL) - SUM(CUSTOMEDIO)) / SUM(case when TOTAL = 0 then 1 else TOTAL end) * 100, 1) AS 'MARGEM' "
+    //_oSQL:_sQuery += "   ,ROUND(SUM(CUSTOMEDIO) / SUM(TOTAL) * 100, 0) AS 'CPV' " - original
+    _oSQL:_sQuery += "   ,ROUND(SUM(CUSTOMEDIO) / SUM(case when TOTAL = 0 then 1 else TOTAL end) * 100, 0) AS 'CPV' "
     _oSQL:_sQuery += " FROM BI_ALIANCA.dbo.VA_FATDADOS "
     _oSQL:_sQuery += " INNER JOIN SB1010 AS SB1 "
     _oSQL:_sQuery += "	    ON (SB1.D_E_L_E_T_ = '' "

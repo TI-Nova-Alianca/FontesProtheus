@@ -40,8 +40,9 @@
 // 02/12/2021 - Claudia - Incluida rotina para gravação do Rapel que será liberada por 
 //                        parametro VA_RAPEL quando processo concluido. GLPI: 8916
 // 23/05/2022 - Claudia - Ajuste da rotina de gravação de rapel. GLPI: 8916
+// 11/07/2022 - Claudia - Incluida gravação de nota e serie na amarração produto x fornecedor de transferencias 
 //
-// --------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------
 user function M460Fim ()
 	local _aAreaAnt := U_ML_SRArea ()
 
@@ -317,12 +318,13 @@ Static Function _GravaProdXFornc(_sFilial,_sDoc,_sSerie,_sCliente,_sLoja,_sCodFo
 								 " Fornecedor: "+ alltrim(_sCodForn) + "-" + alltrim(_sLojForn) + " "
 			_oEvento:CodEven   = "SA5010"
 			_oEvento:Produto   = alltrim(_sProduto)
+			_oEvento:NFSaida   = _sDoc
+			_oEvento:SerieSaid = _sSerie
 			_oEvento:Grava()
 
 			u_log2 ('info', 'Gravação: Produto: ' + alltrim(_sProduto) + 'Fornecedor: '+ alltrim(_sCodForn) + "-" + alltrim(_sLojForn) )
 		Else
-			u_log2 ('info', 'NÃO gravou: Produto: ' + alltrim(_sProduto) + 'Fornecedor: '+ alltrim(_sCodForn) + "-" + alltrim(_sLojForn) )	
-
+			u_log2 ('info', 'NÃO gravou: Produto: ' + alltrim(_sProduto) + 'Fornecedor: '+ alltrim(_sCodForn) + "-" + alltrim(_sLojForn) )	 
 		EndIf
 	Next
 Return
