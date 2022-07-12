@@ -23,13 +23,15 @@ user function PECTE006 ()
 	local _aRetTRS6 := {}
 	Local _aTRS006  := PARAMIXB
 	Local _aCabec   := _aTRS006[1]  // Vetor com Cabecaho repassado  para Execauto
-	Local _aLinhas  := _aTRS006[2]	// Vetro com Itens    repassados para Execauto
+	Local _aLinhas  := _aTRS006[2]	// Vetor com Itens    repassados para Execauto
 	//Local _cChvCte  := _aTRS006[3]  // Caracter com Chave do CTe
 	//Local _nTpoCte  := _aTRS006[4]  // Numerico com valor: 2=MATA116 Compras | 1=MATA140 Vendas
-	Local _oNfeOrg  := _aTRS006[5]  // Objeto com Notas Referenciadas
+	Local _oNfeOrg  := iif (len (_aTRS006) >= 5, _aTRS006[5], NIL)  // Objeto com Notas Referenciadas (nao presente em caso de exclusao)
 
 	// Tratamento para alimentar variavel a ser usada para gravacao de fretes.
-	_NfOriFrt (_aCabec, _oNfeOrg)
+	if inclui .or. altera  // 'importar XML'=inclui; 'reprocessa'=altera
+		_NfOriFrt (_aCabec, _oNfeOrg)
+	endif
 
 	// Devem ser retornados cabecalho e itens.
 	_aRetTRS6 := {_aCabec,_aLinhas}

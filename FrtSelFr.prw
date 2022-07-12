@@ -89,8 +89,8 @@ static function _AndaLogo (_lPaletiz)
 	_nTotFret = GDFieldGet ("D1_TOTAL")
 
 	// Cria variavel publica para que fique disponivel a outros pontos de entrada
-	u_logPCham ()
-	U_Log2 ('debug', '[' + procname () + ']tipo de _oClsFrtFr: ' + type ("_oClsFrtFr"))
+//	u_logPCham ()
+//	U_Log2 ('debug', '[' + procname () + ']tipo de _oClsFrtFr: ' + type ("_oClsFrtFr"))
 
 //	public _oClsFrtFr := ClsFrtFr():New ()
 	if type ("_oClsFrtFr") != "O"
@@ -99,7 +99,7 @@ static function _AndaLogo (_lPaletiz)
 	endif
 	
 	// Se nao for inclusao, visualiza os dados do SZH e cai fora da rotina.
-	U_Log2 ('debug', '[' + procname () + ']inclui: ' + cvaltochar (inclui) + ' l103class: ' + cvaltochar (l103Class))
+//	U_Log2 ('debug', '[' + procname () + ']inclui: ' + cvaltochar (inclui) + ' l103class: ' + cvaltochar (l103Class))
 	if !inclui .and. !l103Class  // Estou classificando uma pre-nota de entrada
 	
 		_sQuery := ""
@@ -212,7 +212,7 @@ static function _AndaLogo (_lPaletiz)
 			if sf2 -> (dbseek (xfilial ("SF2") + GDFieldGet ("ZZZ_06DOC", _nLinCols) + GDFieldGet ("ZZZ_06SERI", _nLinCols), .F.))
 				GDFieldPut ("ZZZ_06CLI", sf2 -> f2_cliente, _nLinCols)
 				GDFieldPut ("ZZZ_06LOJA", sf2 -> f2_loja, _nLinCols)
-				GDFieldPut ("ZZZ_06NOME", fBuscaCpo ("SA1", 1, xfiliL ("SA1") + sf2 -> f2_cliente + sf2 -> f2_loja, "A1_NOME"), _nLinCols)
+				GDFieldPut ("ZZZ_06NOME", fBuscaCpo ("SA1", 1, xfilial ("SA1") + sf2 -> f2_cliente + sf2 -> f2_loja, "A1_NOME"), _nLinCols)
 			endif
 			U_Log2 ('debug', '[' + procname () + ']carreguei aCols assim:')
 			u_logaCols ()
