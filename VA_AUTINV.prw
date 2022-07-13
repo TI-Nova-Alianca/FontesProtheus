@@ -19,6 +19,7 @@
 // 03/02/2021 - Cláudia - Ajustada a importação de itens. GLPI: 9254
 // 12/03/2021 - Cláudia - Incluida a busca de dados do Ax 66. GLPI: 9052
 // 23/06/2022 - Claudia - Retirada validação de local e lote. GLPI 12118
+// 13/07/2022 - Sandra  - Retirada validação da gravação do error, para variavel SMESAGEM. GLPI 12339.
 //
 // -------------------------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
@@ -220,9 +221,9 @@ Static Function BuscaEstoque()
 				EndDo
 				_trb ->(DbCloseArea())
 				
-				If _MErro == .T.
-					zMsgLog(sMensagem, "Log de erros na gravação", 1, .T.)
-				EndIf
+				//If _MErro == .T.
+					//zMsgLog(sMensagem, "Log de erros na gravação", 1, .T.)
+				//EndIf
 	
 			Endif
 		EndIf
