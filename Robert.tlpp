@@ -59,6 +59,7 @@ user function robert ()
 			u_help ('Bloqueio de semaforo na funcao ' + procname (),, .t.)
 		else
 		//	PtInternal (1, 'U_Robert')
+			U_Log2 ('info', '[' + procname () + ']Iniciando execucao.')
 			U_UsoRot ('I', procname (), '')
 			processa ({|| _AndaLogo ()})
 			u_log2 ('info', 'Processo finalizado')
@@ -99,17 +100,25 @@ local _nRegMovto := 0
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
-//	_SimCtb ()
 
 	_aRegMovto := array (25)
 	for _nRegMovto = 1 to len (_aRegMovto)
 //		u_LogPerc (_nRegMovto, len (_aRegMovto))
 	next
+
+//	_SimCtb ()
 //	_FechSafr ()
 //	_ClsTrEstq ()
 //	_ClsEtiq ()
 //	_Sisdevin ()
+//	_metaf ()
 	u_help ('Nada definido.')
+return
+
+static function _metaf ()
+	// Pela complexidade, prefixo manter o log. Jah aprontei mais de uma vez e o log me ajudou...
+	_sArqLog := 'U_BatMetaF.log'
+	u_batmetaf ()
 return
 
 static function _ClsEtiq ()
@@ -643,8 +652,6 @@ return
 //	endif
 //	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batocor ()
-//	_sArqLog := 'U_BatMetaF_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batmetaf ()
 //	_sArqLog := 'U_BatFunAtlz_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batfunatlz ()
 //	_sArqLog := 'U_BatBlUsr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"

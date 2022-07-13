@@ -33,6 +33,7 @@
 // 01/02/2021 - Robert - Passa a usar a funcao LkServer para acesso ao Meadados.
 //                     - Envia e-mail de notificacao em caso de erro na importacao (GLPI 9273).
 // 09/08/2021 - Robert - Passa a usar a view VA_VTITULOS_CPAGAR (GLPI 10667)
+// 13/07/2022 - Robert - Melhoria fluxo execucao; teste cadastro fornecedor (GLPI 12337)
 //
 
 // ------------------------------------------------------------------------------------
@@ -93,9 +94,6 @@ static function _Incluir ()
 	private _sCTE      := ""  // Deixar private para ser vista em mais de uma function.
 	
 	procregua (10)
-
-	U_LOG2 ('AVISO', "Melhorar este programa para ler da view VA_VTITULOS_CPAGAR")
-//	U_LOG2 ('AVISO', "Melhorar este programa para usar U_LkServer")
 
 	// Inclusao de titulos
 	if _lContinua
@@ -231,12 +229,7 @@ static function _Incluir ()
 				_dEmis = lastday (_dEmis)  
 			endif
 			
-//			U_LOG2 ('DEBUG', (_sAliasQ) -> nrosequencial)
-//			IF (_sAliasQ) -> nrosequencial == 7154 //7070  // SITUACAO ESPECIFICA QUE ESTAVA SEM NATUREZA
-//				_GeraSE2 ((_sAliasQ) -> nrosequencial, (_sAliasQ) -> Fornece, '120401', _dEmis, stod ((_sAliasQ) -> vencto), (_sAliasQ) -> valor, (_sAliasQ) -> hist)
-//			ELSE
-			_GeraSE2 ((_sAliasQ) -> nrosequencial, (_sAliasQ) -> Fornece, (_sAliasQ) -> Natureza, _dEmis, stod ((_sAliasQ) -> vencto), (_sAliasQ) -> valor, (_sAliasQ) -> hist)
-//			ENDIF
+			_lContinua = _GeraSE2 ((_sAliasQ) -> nrosequencial, (_sAliasQ) -> Fornece, (_sAliasQ) -> Natureza, _dEmis, stod ((_sAliasQ) -> vencto), (_sAliasQ) -> valor, (_sAliasQ) -> hist)
 
 			(_sAliasQ) -> (dbskip ())
 			u_log2 ('info', '')
@@ -269,6 +262,8 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 	local _sChvEx       := ""
 	local _sStatReg     := ''
 	local _sMsgMail     := ''
+	local _lIncOK       := .T.
+	local _sMsgForn     := ''
 	private lMsErroAuto	:= .f.  // Variavel padrao para rotinas automticas.
 	private lMsHelpAuto	:= .f.  // Variavel padrao para rotinas automticas.
 
@@ -295,139 +290,157 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 	else
 		_sDoc = strzero (_nSeqMeta, tamsx3 ("E2_NUM")[1])
 
-		// Encontra a maior parcela jah existente e gera a proxima.
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""                                                                                            
-		_oSQL:_sQuery += " select IsNull (max (E2_PARCELA), '1')"
-		_oSQL:_sQuery +=   " from " + RetSQLName ("SE2") + " SE2 "
-		_oSQL:_sQuery +=  " where SE2.D_E_L_E_T_ != '*'"
-		_oSQL:_sQuery +=    " and SE2.E2_FILIAL   = '" + xfilial ("SE2")   + "'"
-		_oSQL:_sQuery +=    " and SE2.E2_FORNECE  = '" + _sFornece + "'"
-		_oSQL:_sQuery +=    " and SE2.E2_LOJA     = '01'"
-		_oSQL:_sQuery +=    " and SE2.E2_NUM      = '" + _sDoc     + "'"
-		_oSQL:_sQuery +=    " and SE2.E2_PREFIXO  = '" + _sPrefixo + "'"
-		//_oSQL:Log ()
-		_sParcela = soma1 (_oSQL:RetQry ())
+		// Verifica se pegou um codigo de fornecedor valido	na view do Metadados.
+		if _lIncOK
+			sa2 -> (dbsetorder (1))
+			if ! sa2 -> (dbseek (xfilial ("SA2") + _sFornece + '01', .F.))  // Metadados nao me manda a 'loja'.
+				_sMsgForn := "Codigo de fornecedor '" + _sFornece + "'"
+				_sMsgForn += " informado pelo Metadados não existe no cadastro do Protheus."
+				_sMsgForn += " Verifique se poderia ser o campo de 'nome reduzido' no cadastro do fornecedor."
+				_sMsgForn += " Dados adicionais: Sequencia: " + cvaltochar (_nSeqMeta)
+				_sMsgForn += " " + alltrim (U_NoAcento (_sHistSE2))
+				_lIncOk = .F.
+				u_help (_sMsgForn,, .T.)
 
-		// Se chegou com data de vencimento retroativa, nao adianta importar. Ajusto para data de hoje.
-		if _dVencSE2 < date ()
-			U_Log2 ('aviso', 'Alterando date de vencimento original (' + dtoc (_dVencSE2) + ') por que nao tem como pagar retroativo.')
-			_dVencSE2 = date ()
-		endif
-
-		_aAutoSE2 := {}
-		aadd (_aAutoSE2, {"E2_PREFIXO", _sPrefixo,                        NIL})
-		aadd (_aAutoSE2, {"E2_NUM"    , _sDoc,                            Nil})
-		aadd (_aAutoSE2, {"E2_TIPO"   , 'FOL',                            Nil})
-		aadd (_aAutoSE2, {"E2_FORNECE", _sFornece,                        Nil})
-		aadd (_aAutoSE2, {"E2_LOJA"   , '01',                             Nil})
-		aadd (_aAutoSE2, {"E2_NATUREZ", _sNaturez,                        Nil})
-		aadd (_aAutoSE2, {"E2_EMISSAO", _dEmisSE2,                        Nil})
-		aadd (_aAutoSE2, {"E2_EMIS1",   _dEmisSE2,                        Nil})
-		aadd (_aAutoSE2, {"E2_VENCTO" , _dVencSE2,                        Nil})
-		aadd (_aAutoSE2, {"E2_VENCREA", dataValida (_dVencSE2),           Nil})
-		aadd (_aAutoSE2, {"E2_VALOR"  , _nValorSE2,                       Nil})
-		aadd (_aAutoSE2, {"E2_HIST"   , alltrim (U_NoAcento (_sHistSE2)), Nil})
-		aadd (_aAutoSE2, {"E2_PARCELA", _sParcela,                        Nil})
-		aadd (_aAutoSE2, {"E2_VACHVEX", _sChvEx,                          Nil})
-		_aAutoSE2 := aclone (U_OrdAuto (_aAutoSE2))
-		u_log2 ('info', _aAutoSE2)
-		lMsErroAuto	:= .f.
-		lMsHelpAuto	:= .f.
-		_sErroAuto  := ""
-		dbselectarea ("SE2")
-		dbsetorder (1)
-		MsExecAuto({ | x,y,z | Fina050(x,y,z) }, _aAutoSE2,, 3)
-	endif
-
-	if lMsErroAuto
-		u_log2 ('erro', "ExecAuto retornou erro")
-		_nQtTitErr ++
-		_sMsgSE2 += "Erro FINA050:" + U_LeErro (memoread (NomeAutoLog ())) + _sErroAuto
-		u_help (_sMsgSE2,, .t.)
-
-		// Se estiver rodando via batch, manda aviso por e-mail.
-		if IsInCallStack ("U_BATMETAF")
-			_sMsgMail := "Aviso de problema na integracao Metadados X Protheus:" + chr (13) + chr (10)
-			_sMsgMail += 'Sequencia Metadados: ' + cvaltochar (_nSeqMeta) + chr (13) + chr (10)
-			_sMsgMail += alltrim (U_NoAcento (_sHistSE2)) + chr (13) + chr (10)
-			_sMsgMail += _sMsgSE2
-			U_ZZUNU ({'023'}, 'Erro integracao Metadados x Protheus', _sMsgMail, .F.)
-		endif
-
-		_oSQL := ClsSQL ():New ()
-		// _oSQL:_sQuery := "UPDATE LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST"
-		_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
-		_oSQL:_sQuery +=   " SET STATUSREGISTRO = '08'"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
-		_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeqMeta)
-		_oSQL:Log ()
-		_lContinua = _oSQL:Exec ()
-
-		// Cria registro no log do Metadados com o motivo da rejeicao.
-		_lContinua = _LogMeta (_nSeqMeta, AllTrim (EnCodeUtf8 (_sMsgSE2)))
-	else
-		_nQtTitGer ++
-		u_log2 ('info', "ExecAuto retornou OK")
-
-		// Atualiza a data de emissao original por que na versao P12 o sistema nao aceita o que eu passo no ExecAuto.
-		reclock ("SE2", .F.)
-		se2 -> e2_emis1 = se2 -> e2_emissao
-		if empty (se2 -> E2_VACHVEX)  // Jah tivemos casos de nao gravar a chave externa.
-			se2 -> E2_VACHVEX = _sChvEx
-		endif
-		msunlock ()
-
-		// Cria registro no log do Metadados detalhando a operacao.
-		// NAO ALTERAR o texto desta mensagem por que eh usada no desmembramento por filial.
-		_lContinua = _LogMeta (_nSeqMeta, "Filial " + cFilAnt + ": Titulo gerado: " + _sPrefixo + "/" + _sDoc + "-" + _sParcela + " R$ " + alltrim (transform (_nValorSE2, "@E 999,999,999,999.99")))
-
-		// Se for um titulo que precisa desmembramento em mais de uma filial (ex.: DARFs e envios
-		// de arquivos de pagamento para bancos), usa o arquivo de log dos historicos do Metadados
-		// para controle de cada filial e mantem o sequencial do Metadados com status 10 (provisionado),
-		// que eu entenderia como 'em andamento'.
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := _sCTE
-		_oSQL:_sQuery += " SELECT FILIAL,"
-		_oSQL:_sQuery +=        " (SELECT COUNT (*)"
-		// _oSQL:_sQuery +=           " FROM LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHISTLOG"
-		_oSQL:_sQuery +=           " FROM " + _sLkSrvRH + ".RHCONTASPAGARHISTLOG"
-		_oSQL:_sQuery +=          " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeqMeta)
-		_oSQL:_sQuery +=            " AND DESCRICAOMEMO LIKE 'Filial ' + CTE.FILIAL + ': Titulo gerado%')"
-		_oSQL:_sQuery +=   " FROM CTE"
-		_oSQL:_sQuery +=  " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeqMeta)
-		_oSQL:Log ()
-		_aFiliais = _oSQL:Qry2Array ()
-		
-		// Verifica se falta gerar para alguma filial.
-		_sStatReg = '03'  // Inicialmente, assume que gerou para todas, 'ateh prova em contrario'.
-		for _nFilial = 1 to len (_aFiliais)
-			if _aFiliais [_nFilial, 2] == 0
-				_sStatReg = '10'  // Achei uma 'prova em contrario'
-				u_log2 ('info', 'Verifiquei que ainda falta gerar para a filial ' + _aFiliais [_nFilial, 1] + '. Manterei o Metadados com status=' + _sStatReg)
-			else
-				u_log2 ('info', 'Verifiquei que jah foi gerado para a filial ' + _aFiliais [_nFilial, 1])
+				// Se estiver rodando via batch, manda aviso por e-mail.
+				if IsInCallStack ("U_BATMETAF")
+					U_ZZUNU ({'023'}, 'Erro integracao Metadados x Protheus', _sMsgForn, .F.)
+				endif
 			endif
-		next
+		endif
 
-		// Muda status da sequencia no Metadados.
-		// _oSQL:_sQuery := "UPDATE LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST"
-		_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
-		_oSQL:_sQuery +=   " SET STATUSREGISTRO          = '" + _sStatReg + "',"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
-		_oSQL:_sQuery +=       " DATAACEITACAOLIBERACAO  = cast ('" + dtos (date ()) + " " + time () + "' as datetime),"
-		_oSQL:_sQuery +=       " CHAVEOUTROSISTEMATITULO = " + se2 -> e2_num + ","
-		_oSQL:_sQuery +=       " NUMEROTITULO            = " + se2 -> e2_num + ","
-		_oSQL:_sQuery +=       " SERIEDOC                = '" + se2 -> e2_prefixo + se2 -> e2_parcela + "'"
-		_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeqMeta)
-		_oSQL:Log ()
-		_lContinua = _oSQL:Exec ()
+		if _lIncOK
+			// Encontra a maior parcela jah existente e gera a proxima.
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""                                                                                            
+			_oSQL:_sQuery += " select IsNull (max (E2_PARCELA), '1')"
+			_oSQL:_sQuery +=   " from " + RetSQLName ("SE2") + " SE2 "
+			_oSQL:_sQuery +=  " where SE2.D_E_L_E_T_ != '*'"
+			_oSQL:_sQuery +=    " and SE2.E2_FILIAL   = '" + xfilial ("SE2")   + "'"
+			_oSQL:_sQuery +=    " and SE2.E2_FORNECE  = '" + _sFornece + "'"
+			_oSQL:_sQuery +=    " and SE2.E2_LOJA     = '01'"
+			_oSQL:_sQuery +=    " and SE2.E2_NUM      = '" + _sDoc     + "'"
+			_oSQL:_sQuery +=    " and SE2.E2_PREFIXO  = '" + _sPrefixo + "'"
+			//_oSQL:Log ()
+			_sParcela = soma1 (_oSQL:RetQry ())
+
+			// Se chegou com data de vencimento retroativa, nao adianta importar. Ajusto para data de hoje.
+			if _dVencSE2 < date ()
+				U_Log2 ('aviso', 'Alterando date de vencimento original (' + dtoc (_dVencSE2) + ') por que nao tem como pagar retroativo.')
+				_dVencSE2 = date ()
+			endif
+
+			_aAutoSE2 := {}
+			aadd (_aAutoSE2, {"E2_PREFIXO", _sPrefixo,                        NIL})
+			aadd (_aAutoSE2, {"E2_NUM"    , _sDoc,                            Nil})
+			aadd (_aAutoSE2, {"E2_TIPO"   , 'FOL',                            Nil})
+			aadd (_aAutoSE2, {"E2_FORNECE", _sFornece,                        Nil})
+			aadd (_aAutoSE2, {"E2_LOJA"   , '01',                             Nil})
+			aadd (_aAutoSE2, {"E2_NATUREZ", _sNaturez,                        Nil})
+			aadd (_aAutoSE2, {"E2_EMISSAO", _dEmisSE2,                        Nil})
+			aadd (_aAutoSE2, {"E2_EMIS1",   _dEmisSE2,                        Nil})
+			aadd (_aAutoSE2, {"E2_VENCTO" , _dVencSE2,                        Nil})
+			aadd (_aAutoSE2, {"E2_VENCREA", dataValida (_dVencSE2),           Nil})
+			aadd (_aAutoSE2, {"E2_VALOR"  , _nValorSE2,                       Nil})
+			aadd (_aAutoSE2, {"E2_HIST"   , alltrim (U_NoAcento (_sHistSE2)), Nil})
+			aadd (_aAutoSE2, {"E2_PARCELA", _sParcela,                        Nil})
+			aadd (_aAutoSE2, {"E2_VACHVEX", _sChvEx,                          Nil})
+			_aAutoSE2 := aclone (U_OrdAuto (_aAutoSE2))
+			u_log2 ('info', _aAutoSE2)
+			lMsErroAuto	:= .f.
+			lMsHelpAuto	:= .f.
+			_sErroAuto  := ""
+			dbselectarea ("SE2")
+			dbsetorder (1)
+			MsExecAuto({ | x,y,z | Fina050(x,y,z) }, _aAutoSE2,, 3)
+	
+			if lMsErroAuto
+				u_log2 ('erro', "ExecAuto retornou erro")
+				_nQtTitErr ++
+				_sMsgSE2 += "Erro FINA050:" + U_LeErro (memoread (NomeAutoLog ())) + _sErroAuto
+				u_help (_sMsgSE2,, .t.)
+
+				// Se estiver rodando via batch, manda aviso por e-mail.
+				if IsInCallStack ("U_BATMETAF")
+					_sMsgMail := "Aviso de problema na integracao Metadados X Protheus:" + chr (13) + chr (10)
+					_sMsgMail += 'Sequencia Metadados: ' + cvaltochar (_nSeqMeta) + chr (13) + chr (10)
+					_sMsgMail += alltrim (U_NoAcento (_sHistSE2)) + chr (13) + chr (10)
+					_sMsgMail += _sMsgSE2
+					U_ZZUNU ({'023'}, 'Erro integracao Metadados x Protheus', _sMsgMail, .F.)
+				endif
+
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
+				_oSQL:_sQuery +=   " SET STATUSREGISTRO = '08'"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
+				_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeqMeta)
+				_oSQL:Log ()
+				_lIncOK = _oSQL:Exec ()
+
+				// Cria registro no log do Metadados com o motivo da rejeicao.
+				_lIncOK = _LogMeta (_nSeqMeta, AllTrim (EnCodeUtf8 (_sMsgSE2)))
+			else
+				_nQtTitGer ++
+				u_log2 ('info', "ExecAuto retornou OK")
+
+				// Atualiza a data de emissao original por que na versao P12 o sistema nao aceita o que eu passo no ExecAuto.
+				reclock ("SE2", .F.)
+				se2 -> e2_emis1 = se2 -> e2_emissao
+				if empty (se2 -> E2_VACHVEX)  // Jah tivemos casos de nao gravar a chave externa.
+					se2 -> E2_VACHVEX = _sChvEx
+				endif
+				msunlock ()
+
+				// Cria registro no log do Metadados detalhando a operacao.
+				// NAO ALTERAR o texto desta mensagem por que eh usada no desmembramento por filial.
+				_lIncOK = _LogMeta (_nSeqMeta, "Filial " + cFilAnt + ": Titulo gerado: " + _sPrefixo + "/" + _sDoc + "-" + _sParcela + " R$ " + alltrim (transform (_nValorSE2, "@E 999,999,999,999.99")))
+
+				// Se for um titulo que precisa desmembramento em mais de uma filial (ex.: DARFs e envios
+				// de arquivos de pagamento para bancos), usa o arquivo de log dos historicos do Metadados
+				// para controle de cada filial e mantem o sequencial do Metadados com status 10 (provisionado),
+				// que eu entenderia como 'em andamento'.
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := _sCTE
+				_oSQL:_sQuery += " SELECT FILIAL,"
+				_oSQL:_sQuery +=        " (SELECT COUNT (*)"
+				_oSQL:_sQuery +=           " FROM " + _sLkSrvRH + ".RHCONTASPAGARHISTLOG"
+				_oSQL:_sQuery +=          " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeqMeta)
+				_oSQL:_sQuery +=            " AND DESCRICAOMEMO LIKE 'Filial ' + CTE.FILIAL + ': Titulo gerado%')"
+				_oSQL:_sQuery +=   " FROM CTE"
+				_oSQL:_sQuery +=  " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeqMeta)
+				_oSQL:Log ()
+				_aFiliais = _oSQL:Qry2Array ()
+				
+				// Verifica se falta gerar para alguma filial.
+				_sStatReg = '03'  // Inicialmente, assume que gerou para todas, 'ateh prova em contrario'.
+				for _nFilial = 1 to len (_aFiliais)
+					if _aFiliais [_nFilial, 2] == 0
+						_sStatReg = '10'  // Achei uma 'prova em contrario'
+						u_log2 ('info', 'Verifiquei que ainda falta gerar para a filial ' + _aFiliais [_nFilial, 1] + '. Manterei o Metadados com status=' + _sStatReg)
+					else
+						u_log2 ('info', 'Verifiquei que jah foi gerado para a filial ' + _aFiliais [_nFilial, 1])
+					endif
+				next
+
+				// Muda status da sequencia no Metadados.
+				_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
+				_oSQL:_sQuery +=   " SET STATUSREGISTRO          = '" + _sStatReg + "',"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
+				_oSQL:_sQuery +=       " DATAACEITACAOLIBERACAO  = cast ('" + dtos (date ()) + " " + time () + "' as datetime),"
+				_oSQL:_sQuery +=       " CHAVEOUTROSISTEMATITULO = " + se2 -> e2_num + ","
+				_oSQL:_sQuery +=       " NUMEROTITULO            = " + se2 -> e2_num + ","
+				_oSQL:_sQuery +=       " SERIEDOC                = '" + se2 -> e2_prefixo + se2 -> e2_parcela + "'"
+				_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeqMeta)
+				_oSQL:Log ()
+				_lIncOK = _oSQL:Exec ()
+			endif
+		endif
 	endif
-return
+return _lIncOK
 
 
 
 // --------------------------------------------------------------------------
 static function _Excluir ()
-	local _lContinua   := .T.
+	local _lExcOK      := .T.
 	local _oSQL        := NIL
 	local _sAliasQ     := ""
 	local _sMsgSE2     := ""
@@ -439,7 +452,7 @@ static function _Excluir ()
 	procregua (10)
 
 	// Exclusao de titulos
-	if _lContinua
+	if _lExcOK
 		u_log2 ('info', 'Verificando se ha movimentos para excluir')
 		incproc ()
 		_oSQL := ClsSQL ():New ()
@@ -447,18 +460,16 @@ static function _Excluir ()
 		_oSQL:_sQuery += "SELECT NROSEQUENCIAL,"
 		_oSQL:_sQuery +=       " CHAVEOUTROSISTEMATITULO AS NUM,"
 		_oSQL:_sQuery +=       " SERIEDOC"
-		// _oSQL:_sQuery +=  " FROM LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST"
 		_oSQL:_sQuery +=  " FROM " + _sLkSrvRH + ".RHCONTASPAGARHIST"
 		_oSQL:_sQuery += " WHERE EMPRESA         = '00' + '" + cEmpAnt + "'"
 		_oSQL:_sQuery +=   " AND ESTABELECIMENTO = '00' + '" + cFilAnt + "'"
-		//_oSQL:_sQuery +=   " AND STATUSREGISTRO  = '04'"
 		_oSQL:_sQuery +=   " AND CHAVEOUTROSISTEMATITULO is not null"
 		_oSQL:_sQuery +=   " AND STATUSREGISTRO  IN ('04','07')"
 		_oSQL:Log () 
 		_sAliasQ = _oSQL:Qry2Trb (.F.)
 		procregua ((_sAliasQ) -> (reccount ()))
 		(_sAliasQ) -> (dbgotop ())
-		do while _lContinua .and. ! (_sAliasQ) -> (eof ())
+		do while _lExcOK .and. ! (_sAliasQ) -> (eof ())
 			u_log2 ('info', 'Iniciando exclusao - Seq ' + cvaltochar ((_sAliasQ) -> NroSequencial))
 			_sChaveSE2 = xfilial ("SE2") + substr ((_sAliasQ) -> SerieDoc, 1, 3) + strzero ((_sAliasQ) -> num, 9) + substr ((_sAliasQ) -> SerieDoc, 4, 1)
 			U_LOG2 ('debug', 'Pesquisando SE2 com a seguinte chave: >>' + _sChaveSE2 + '<<')
@@ -501,8 +512,7 @@ static function _Excluir ()
 			(_sAliasQ) -> (dbskip ())
 		enddo
 	endif
-	
-return
+return _lExcOK
 
 
 
@@ -511,18 +521,16 @@ return
 static function _LogMeta (_nSeq, _sMsg)
 	local _nNroOrdem := 0
 	local _oSQL      := NIL
-	local _lContinua := .F.
+	local _lLogOK    := .F.
 
 	// Busca a proxima ordem livre para esta sequencia.
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := " SELECT ISNULL ((SELECT MAX (NROORDEM)"
-	// _oSQL:_sQuery +=                   " FROM LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHISTLOG" 
 	_oSQL:_sQuery +=                   " FROM " + _sLkSrvRH + ".RHCONTASPAGARHISTLOG" 
 	_oSQL:_sQuery +=                  " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeq) + "), 0) "
 	_oSQL:Log ()
 	_nNroOrdem = _oSQL:RetQry ()
 
-	// _oSQL:_sQuery := "INSERT INTO LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHISTLOG"
 	_oSQL:_sQuery := "INSERT INTO " + _sLkSrvRH + ".RHCONTASPAGARHISTLOG"
 	_oSQL:_sQuery +=        " (NROSEQUENCIAL, NROORDEM, DATAHORAALTERACAO, DESCRICAOMEMO)"
 	_oSQL:_sQuery += " VALUES (" + cvaltochar (_nSeq) + ", "
@@ -531,5 +539,5 @@ static function _LogMeta (_nSeq, _sMsg)
 	_oSQL:_sQuery +=         "'" + _sMsg + "'"
 	_oSQL:_sQuery +=         ")"
 	_oSQL:Log ()
-	_lContinua = _oSQL:Exec ()
-return _lContinua
+	_lLogOK = _oSQL:Exec ()
+return _lLogOK
