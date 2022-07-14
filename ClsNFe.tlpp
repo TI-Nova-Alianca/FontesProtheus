@@ -35,58 +35,58 @@ return
 CLASS ClsNFe
 
 	// Declaracao das propriedades da Classe
-	data Ambiente
-	data Avisos
-	data CNPJDestin
-	data CNPJEmiten
-	data Chave
-	data CliFor
-	data Doc
-	data DtEmissao
-	data Empresa
-	data Erros
-	data Filial
-	data IDNFe050
-	data ItCFOP
-	data ItCodFor
-	data ItDescri
-	data ItQuant
-	data ItVlICM
-	data ItVlIPI
-	data ItVlTot
-	data ItNCM
-	data ItCprod
-	data ItuCom
-	data ItVunCom
-	data ItxPed
-	data ItnItemPed
-	data Loja
-	data NomeCliFor
-	data NomeDestin
-	data NomeEmiten
-	data Serie
-	data StatusZZX
-	data TipoDoc
-	data TipoNF
-	data URL
-	data XML
-	data XMLLayout
-	data Transfer
-	data PesoL
-	data PesoB
-	data ContraNF
-	data DadosAdic
+	public data Ambiente
+	public data Avisos
+	public data CNPJDestin
+	public data CNPJEmiten
+	public data Chave
+	public data CliFor
+	public data Doc
+	public data DtEmissao
+	public data Empresa
+	public data Erros
+	public data Filial
+	public data IDNFe050
+	public data ItCFOP
+	public data ItCodFor
+	public data ItDescri
+	public data ItQuant
+	public data ItVlICM
+	public data ItVlIPI
+	public data ItVlTot
+	public data ItNCM
+	public data ItCprod
+	public data ItuCom
+	public data ItVunCom
+	public data ItxPed
+	public data ItnItemPed
+	public data Loja
+	public data NomeCliFor
+	public data NomeDestin
+	public data NomeEmiten
+	public data Serie
+	public data StatusZZX
+	public data TipoDoc
+	public data TipoNF
+	public data URL
+	public data XML
+	public data XMLLayout
+	public data Transfer
+	public data PesoL
+	public data PesoB
+	public data ContraNF
+	public data DadosAdic
+	public data EntidTSS
 
 	// Declaracao dos Metodos da classe
-	METHOD New ()
-	METHOD ConsAutori ()
-	METHOD ConsAutFP ()
-	//METHOD ConsChSEF ()
-	METHOD Chave050 ()
-	METHOD GeraNF ()
-	METHOD GetEntid ()
-	METHOD GetXML ()
-	METHOD LeXML ()
+	public METHOD New ()
+	public METHOD ConsAutori ()
+	public METHOD ConsAutFP ()
+	public METHOD Chave050 ()
+	public METHOD GeraNF ()
+	public METHOD GetEntid ()
+	public METHOD GetXML ()
+	public METHOD LeXML ()
 ENDCLASS
 
 
@@ -134,6 +134,7 @@ METHOD New () Class ClsNFe
 	::DadosAdic  = ''
 	::PesoL      = ''
 	::PesoB      = ''
+	::EntidTSS   = ::GetEntid ()  // Inicializa sempre com a entidade correspondente ao CNPJ/IE da filial atual.
 Return ::self
 
 
@@ -149,7 +150,7 @@ METHOD Chave050 (_sSerie, _sNF) Class ClsNFe
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT DOC_CHV"
 	_oSQL:_sQuery +=   " FROM SPED050"
-	_oSQL:_sQuery +=  " WHERE ID_ENT = '" + ::GetEntid () + "'"
+	_oSQL:_sQuery +=  " WHERE ID_ENT = '" + ::EntidTSS + "'"  //::GetEntid () + "'"
 	_oSQL:_sQuery +=    " AND NFE_ID = '" + _sSerie + _sNF + "'"
 	_sRet = _oSQL:RetQry ()
 return _sRet
@@ -160,13 +161,15 @@ return _sRet
 // Consulta ultimo retorno de autorizacao da nota na SEFAZ.
 METHOD ConsAutori () Class ClsNFe
 	local _aRet := {'', '', ''}
-	//u_logIni (GetClassName (::Self) + '.' + procname ())
-	if !empty (::GetEntid ()) .and. ! empty (::Chave)
+
+//	if !empty (::GetEntid ()) .and. ! empty (::Chave)
+	if !empty (::EntidTSS) .and. ! empty (::Chave)
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " SELECT TOP 1 CSTAT_SEFR, RTRIM (XMOT_SEFR), NFE_PROT, DTREC_SEFR, HRREC_SEFR"
 		_oSQL:_sQuery +=   " FROM SPED054"
-		_oSQL:_sQuery +=  " WHERE ID_ENT    = '" + ::GetEntid () + "'"
+		// _oSQL:_sQuery +=  " WHERE ID_ENT    = '" + ::GetEntid () + "'"
+		_oSQL:_sQuery +=  " WHERE ID_ENT    = '" + ::EntidTSS + "'"
 		_oSQL:_sQuery +=    " AND NFE_CHV   = '" + ::Chave + "'"
 		_oSQL:_sQuery +=    " AND NFE_PROT != ''"
 		_oSQL:_sQuery +=  " ORDER BY DTREC_SEFR desc, HRREC_SEFR desc"
@@ -189,14 +192,16 @@ METHOD ConsAutFP () Class ClsNFe
 	local _sRet := ''
 
 	//u_logIni (GetClassName (::Self) + '.' + procname ())
-	if !empty (::GetEntid ())
+	// if !empty (::GetEntid ())
+	if !empty (::EntidTSS)
 	
 		// Jah tive um caso de passar o atributo ::IdNFe050 incompleto e ter retorno positivo...
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "SELECT TOP 1 CSTAT_SEFR"
 		_oSQL:_sQuery +=  " FROM SPED054"
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND ID_ENT = '" + ::GetEntid () + "'"
+		// _oSQL:_sQuery +=   " AND ID_ENT = '" + ::GetEntid () + "'"
+		_oSQL:_sQuery +=   " AND ID_ENT = '" + ::EntidTSS + "'"
 		_oSQL:_sQuery +=   " AND NFE_ID = '" + ::IdNFe050 + "'"
 		_oSQL:_sQuery += " ORDER BY DTREC_SEFR desc, HRREC_SEFR desc"
 		//_oSQL:Log ()
@@ -205,73 +210,6 @@ METHOD ConsAutFP () Class ClsNFe
 
 	//u_logFim (GetClassName (::Self) + '.' + procname ())
 return _sRet
-
-
-
-/* nao consegui fazer funcionar. Robert, 08/09/18
-// --------------------------------------------------------------------------
-// Consulta status da chave no SEFAZ.
-// a intencao eh migrar para ca a verificacao de chaves feita pelo scriptr do powershell
-METHOD ConsChSEF (_sChave) Class ClsNFe
-	local _oWS  := NIL
-	local _sRet := ''
-	u_logIni (GetClassName (::Self) + '.' + procname ())
-
-	if !empty (::GetEntid ())
-		_oWS := WSNFeSBRA():New()
-		_oWS:cUSERTOKEN = "TOTVS"
-		_oWS:cID_ENT    = ::GetEntid ()
-		_oWS:_URL       = ::URL + "/NFeSBRA.apw"
-		u_log ('_oWS:')
-		u_logobj (_oWS)
-
-		u_log ('##########################')
-		u_log ('')
-		private _oResult := NFESBRA_NFEPROTOCOLOCONSULTA():New
-
-		_oWS:CCHVNFE    = _sChave
-		_oWS:cIdInicial = '000146428'
-		//          CONSULTACHAVENFE (CUSERTOKEN, CID_ENT, CCHVNFE, OWSCONSULTACHAVENFERESULT)
-   		u_log (_oWS:CONSULTACHAVENFE (_oWS:cUSERTOKEN, _oWS:cID_ENT, _sChave, _oWS:OWSCONSULTACHAVENFERESULT))
-
-		u_logObj (_oWS:OWSCONSULTACHAVENFERESULT)
-		u_log ('&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
-		u_logObj (_oResult)
-
-		
-//		oWS:oWSCONSULTACONTRIBUINTERESULT:= NFESBRA_ARRAYOFNFECONSULTACONTRIBUINTE():New()
-		
-		
-		
-		_oWS:nDIASPARAEXCLUSAO := 0
-		_oWS:cIdInicial = ::IDNFe050
-		_oWS:cIdFinal   = ::IDNFe050
-		_oWS:dDataDe    = ::DtEmissao
-		_oWS:dDataAte   = ::DtEmissao
-		_oWS:cCNPJDESTInicial = ::CNPJDestin
-		_oWS:cCNPJDESTFinal   = ::CNPJDestin
-		if _oWS:RETORNAFX ()
-			_oRetorno := _oWS:oWsRetornaFxResult
-			_oXml := _oRetorno:OWSNOTAS:OWSNFES3[1]
-			If !Empty(_oXml:oWSNFe:cProtocolo)
-				_sRet := '<?xml version="1.0" encoding="UTF-8"?><nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.portalfiscal.inf.br/nfe procNFe_v1.00.xsd" versao="1.10">'
-				_sRet += AllTrim(_oXml:oWSNFe:cXML)
-				_sRet += AllTrim(_oXml:oWSNFe:cXMLPROT)
-				_sRet += '</nfeProc>'
-			else
-				aadd (::Erros, 'NF-e sem protocolo de autorizacao')					
-			endif
-		else
-			aadd (::Erros, "Sem retorno para esta NF-e")
-		endif
-	else
-		aadd (::Erros, "Nao foi possivel identificar a entidade")
-	endif
-
-
-	u_logFim (GetClassName (::Self) + '.' + procname ())
-return _sRet
-*/
 
 
 // --------------------------------------------------------------------------
@@ -321,7 +259,7 @@ METHOD GeraNF (_lPreNota, _sCondPag) Class ClsNFe
 		if ::TipoNF == 'N'
 			sa2 -> (dbsetorder (1))
 			if ! sa2 -> (dbseek (xfilial ("SA2") + ::CliFor + ::Loja, .F.))
-				u_help ("Fornecedor/loja '" + ::CliFor + '/' + ::Loja + "' nao encontrado.")
+				u_help ("Fornecedor/loja '" + ::CliFor + '/' + ::Loja + "' nao encontrado.",, .t.)
 				_lContinua = .F.
 			else
 				_sUF = sa2 -> a2_est
@@ -329,7 +267,7 @@ METHOD GeraNF (_lPreNota, _sCondPag) Class ClsNFe
 		else
 			sa1 -> (dbsetorder (1))
 			if ! sa1 -> (dbseek (xfilial ("SA1") + ::CliFor + ::Loja, .F.))
-				u_help ("Cliente/loja '" + ::CliFor + '/' + ::Loja + "' nao encontrado.")
+				u_help ("Cliente/loja '" + ::CliFor + '/' + ::Loja + "' nao encontrado.",, .t.)
 				_lContinua = .F.
 			else
 				_sUF = sa1 -> a1_est
@@ -404,7 +342,7 @@ METHOD GeraNF (_lPreNota, _sCondPag) Class ClsNFe
 			// Posiciona SB1 no produto para leitura de dados adicionais.
 			sb1 -> (dbsetorder (1))
 			if ! sb1 -> (dbseek (xfilial ("SB1") + _sProduto, .F.))
-				u_help ("Produto '" + _sProduto + "' nao cadastrado.")
+				u_help ("Produto '" + _sProduto + "' nao cadastrado.",, .t.)
 				_lContinua = .F.
 				exit
 			endif
@@ -450,12 +388,8 @@ METHOD GeraNF (_lPreNota, _sCondPag) Class ClsNFe
 		DbSelectArea("SF1")
 		if _lPreNota
 			MsExecAuto({|x,y,z|MATA140(x,y,z)},_aAutoSF1,_aAutoSD1,3)
-//			A140NFiscal ("SF1", sf1 -> (recno ()), 3)
 		else
 			MATA116 (_aAutoSF1, _aAutoSD1)  // Abre tela do doc. entrada (parametro .T.) para possibilitar conferencia e manutencao do usuario.
-//			Pergunte("MTA103",.F.)
-			//MsExecAuto({|x,y,z|MATA103(x,y,z)},_aAutoSF1,_aAutoSD1,3)
-			//MATA116 (_aAutoSF1, _aAutoSD1, 3, .T.)  // Abre tela do doc. entrada (parametro .T.) para possibilitar conferencia e manutencao do usuario.
 		endif
 		If lMsErroAuto
 			MostraErro()
@@ -475,6 +409,7 @@ return _lContinua
 
 
 // --------------------------------------------------------------------------
+// Busca o codigo de 'entidade' da filial (para o CNPJ/IE atual) no TSS.
 METHOD GetEntid () Class ClsNFe
 	local _sCNPJ := ""
 	local _sInsc := ""
@@ -500,62 +435,59 @@ METHOD GetEntid () Class ClsNFe
 	_sRet = _oSQL:RetQry ()
 	if empty (_sRet)
 		aadd (::Erros, "Nao foi possivel definir a ID no SPED para o CNPJ/IE atual. Operacoes com NF-e nao serao possiveis.")
-		u_help ("Nao foi possivel definir a ID no SPED para o CNPJ/IE atual. Operacoes com NF-e nao serao possiveis.")
+		u_help ("Nao foi possivel definir a ID no SPED para o CNPJ/IE atual. Operacoes com NF-e nao serao possiveis.",, .t.)
 	endif
 return _sRet
 
 
 
 // --------------------------------------------------------------------------
-// Busca o XML de NF emitidas (que deve se enviado para o cliente).
+// Busca o XML de NF emitidas pos nos (que deveria se enviado para o cliente).
 METHOD GetXML () Class ClsNFe
 	local _oWS      := NIL
 	local _sRet     := ''
 	local _oRetorno := NIL
 	local _oXML     := NIL
+	local _oXMLExp  := NIL
 
-//	u_logIni (GetClassName (::Self) + '.' + procname ())
-	if !empty (::GetEntid ())
-	
-		// Jah tive um caso de passar o atributo ::IdNFe050 incompleto e ter retorno positivo...
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := "SELECT COUNT (*)"
-		_oSQL:_sQuery +=  " FROM SPED050"
-		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND ID_ENT = '" + ::GetEntid () + "'"
-		_oSQL:_sQuery +=   " AND NFE_ID = '" + ::IdNFe050 + "'"
-//		u_log (_oSQL:_sQuery)
-		if _oSQL:RetQry () > 0
-			_oWS := WSNFeSBRA():New()
-			_oWS:cUSERTOKEN = "TOTVS"
-			_oWS:cID_ENT    = ::GetEntid ()
-			_oWS:_URL       = ::URL + "/NFeSBRA.apw"
-			_oWS:nDIASPARAEXCLUSAO := 0
-			_oWS:cIdInicial = ::IDNFe050
-			_oWS:cIdFinal   = ::IDNFe050
-			_oWS:dDataDe    = ::DtEmissao
-			_oWS:dDataAte   = ::DtEmissao
-			_oWS:cCNPJDESTInicial = ::CNPJDestin
-			_oWS:cCNPJDESTFinal   = ::CNPJDestin
-			if _oWS:RETORNAFX ()
-				_oRetorno := _oWS:oWsRetornaFxResult
-				_oXml := _oRetorno:OWSNOTAS:OWSNFES3[1]
-				If !Empty(_oXml:oWSNFe:cProtocolo)
-					_sRet := '<?xml version="1.0" encoding="UTF-8"?><nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.portalfiscal.inf.br/nfe procNFe_v1.00.xsd" versao="1.10">'
-					_sRet += AllTrim(_oXml:oWSNFe:cXML)
-					_sRet += AllTrim(_oXml:oWSNFe:cXMLPROT)
-					_sRet += '</nfeProc>'
-				else
-					aadd (::Erros, 'NF-e sem protocolo de autorizacao')					
-				endif
+	// Jah tive um caso de passar o atributo ::IdNFe050 incompleto e ter retorno positivo...
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "SELECT COUNT (*)"
+	_oSQL:_sQuery +=  " FROM SPED050"
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=   " AND ID_ENT = '" + ::EntidTSS + "'"
+	_oSQL:_sQuery +=   " AND NFE_ID = '" + ::IdNFe050 + "'"
+	if _oSQL:RetQry () > 0
+		_oWS := WSNFeSBRA():New()
+		_oWS:cUSERTOKEN = "TOTVS"
+		_oWS:cID_ENT    = ::EntidTSS
+		_oWS:_URL       = ::URL + "/NFeSBRA.apw"
+		_oWS:nDIASPARAEXCLUSAO := 0
+		_oWS:cIdInicial = ::IDNFe050
+		_oWS:cIdFinal   = ::IDNFe050
+		_oWS:dDataDe    = ::DtEmissao
+		_oWS:dDataAte   = ::DtEmissao
+		_oWS:cCNPJDESTInicial = ::CNPJDestin
+		_oWS:cCNPJDESTFinal   = ::CNPJDestin
+		if _oWS:RETORNAFX ()
+			_oRetorno := _oWS:oWsRetornaFxResult
+			_oXml := _oRetorno:OWSNOTAS:OWSNFES3[1]
+			If !Empty(_oXml:oWSNFe:cProtocolo)
+				_oXmlExp := XmlParser (_oRetorno:OWSNOTAS:OWSNFES3[1]:OWSNFE:CXML,"","","")
+				_sRet := '<?xml version="1.0" encoding="UTF-8"?>'
+				_sRet += '<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="' + _oXmlExp:_NFE:_INFNFE:_VERSAO:TEXT + '">'
+				//_sRet += '<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.portalfiscal.inf.br/nfe procNFe_v1.00.xsd" versao="1.10">'
+				_sRet += AllTrim(_oXml:oWSNFe:cXML)
+				_sRet += AllTrim(_oXml:oWSNFe:cXMLPROT)
+				_sRet += '</nfeProc>'
 			else
-				aadd (::Erros, "Sem retorno para esta NF-e")
+				aadd (::Erros, 'NF-e sem protocolo de autorizacao')
 			endif
 		else
-			aadd (::Erros, "NF nao encontrada na tabela SPED050 com ID '" + ::IDNFe050 + "'")
+			aadd (::Erros, "Sem retorno para esta NF-e")
 		endif
 	else
-		aadd (::Erros, "Nao foi possivel identificar a entidade")
+		aadd (::Erros, "NF nao encontrada na tabela SPED050 com ID '" + ::IDNFe050 + "'")
 	endif
 //	u_log ('Retornando:', _sRet)
 //	u_logFim (GetClassName (::Self) + '.' + procname ())

@@ -20,6 +20,7 @@
 // 14/08/2020 - Cláudia - retirado parametros e looping conforme solicitação da verção 25. GLPI: 7339
 // 16/06/2021 - Robert  - Acrescentados mais parametros do SX6 (ref.TAF) para serem alterados (GLPI 9843)
 //                      - Parametros a alterar passam a ser tratados em array (loop).
+// 14/07/2022 - Robert  - Removidas linhas comentariadas.
 //
 
 // -------------------------------------------------------------------------------------------------
@@ -32,16 +33,9 @@ user function AjBasTes ()
 	Local cAlias      := Alias()
 	local lxProxNum   := NIL
 	local _oSQL       := NIL
-	local _oClsNFe    := NIL
 	local _sSeqC5     := ""
 	local _aParSX6     := {}
 	local _nParSX6     := {}
-	// local _mv_docseq  := GetMv ('MV_DOCSEQ')
-	// local _mv_spedurl := GetMv ('MV_SPEDURL')
-	// local _mv_nfceurl := GetMv ('MV_NFCEURL')
-	// local _mv_tafsurl := GetMv ('MV_TAFSURL')
-	// local _mv_nfcetok := GetMv ('MV_NFCETOK')
-	// local _mv_nfceidt := GetMv ('MV_NFCEIDT')
 
 	if ! U_MsgNoYes ('ATENCAO: Este programa ajusta varios parametros para serem usados em ambiente de teste/homologacao. Foi criado para ser executado NA BASE TESTE depois que a mesma foi atualizada com os dados da quente. Confirma?')
 		return
@@ -124,30 +118,13 @@ user function AjBasTes ()
 		cNext := ProxNum(.f.)
 		
 		IF cGreat >= cNext
-//			u_log2 ('info', 'Alterando MV_DOCSEQ (conteudo anterior: ' + alltrim (_mv_docseq) + ') para ' + cGreat)
-//			PutMv ("MV_DOCSEQ", cGreat)
 			aadd (_aParSX6, {'MV_DOCSEQ', cGreat})
 		Endif
 
 		aadd (_aParSX6, {'MV_SPEDURL', 'HTTP://192.168.1.3:8073'})
-//		u_log2 ('info', 'Alterando MV_SPEDURL (conteudo anterior: ' + alltrim (_mv_spedurl) + ')')
-//		PutMv ('MV_SPEDURL', 'HTTP://192.168.1.3:8073')
-
 		aadd (_aParSX6, {'MV_NFCEURL', 'HTTP://192.168.1.3:8073'})
-//		u_log2 ('info', 'Alterando MV_NFCEURL (conteudo anterior: ' + alltrim (_mv_nfceurl) + ')')
-//		PutMv ('MV_NFCEURL', 'HTTP://192.168.1.3:8073')
-
-//		u_log2 ('info', 'Alterando MV_TAFSURL (conteudo anterior: ' + alltrim (_mv_tafsurl) + ')')
-//		PutMv ('MV_TAFSURL', 'HTTP://192.168.1.3:8073')
-
 		aadd (_aParSX6, {'MV_NFCETOK', '5C69E546-0126-462A-9277-45F205EA4503'})
-//		u_log2 ('info', 'Alterando MV_NFCETOK (conteudo anterior: ' + alltrim (_mv_nfcetok) + ')')
-//		PutMv ('MV_NFCETOK', '5C69E546-0126-462A-9277-45F205EA4503')
-
 		aadd (_aParSX6, {'MV_NFCEIDT', '000002'})
-//		u_log2 ('info', 'Alterando MV_NFCEIDT (conteudo anterior: ' + alltrim (_mv_nfceidt) + ')')
-//		PutMv ('MV_NFCEIDT', '000002')
-
 		aadd (_aParSX6, {'MV_BACKEND', 'HTTP://192.168.1.3:3001/REST'})  // Servidor REST para o TAF
 		aadd (_aParSX6, {'MV_GCTPURL', 'HTTP://192.168.1.3:8094'})  // Servidor HTTP para o TAF
 		aadd (_aParSX6, {'MV_TAFSURL', 'HTTP://192.168.1.3:8073'})  // URL de comunicacao com o TSS no produto TAF
@@ -158,15 +135,12 @@ user function AjBasTes ()
 		next
 
 		// Muda NFe e NFCe para 'homologacao'
-		_oClsNFe := ClsNFe ():New ()
 		_oSQL := ClsSQL ():New ()
-		// _oSQL:_sQuery := "UPDATE SPED000 SET CONTEUDO='2' WHERE D_E_L_E_T_ = '' AND PARAMETRO IN ('MV_AMBIENT', 'MV_AMBCCE', 'MV_AMBMDFE', 'MV_AMBNFCE') AND ID_ENT = '" + _oClsNFe:GetEntid () + "'"
 		_oSQL:_sQuery := "UPDATE SPED000 SET CONTEUDO='2' WHERE D_E_L_E_T_ = '' AND PARAMETRO IN ('MV_AMBIENT', 'MV_AMBCCE', 'MV_AMBMDFE', 'MV_AMBNFCE')"
 		_oSQL:Log ()
 		_oSQL:Exec ()
 
 		// Ajusta qualquer NF/cupom pendente nas tabelas SPED/TSS para evitar que o TSS fique tentando retransmitir.
-		_oClsNFe := ClsNFe ():New ()
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "UPDATE SPED050 SET STATUS = 5 WHERE STATUS in (1, 2, 4)"
 		_oSQL:Log ()
@@ -199,7 +173,6 @@ user function AjBasTes ()
 
 		// Ajusta sequencial do C5_NUM (na verdade teria que ver se voltamos a usar o inicializador padrao do sistema...)
 		u_log2 ('info', 'Ajustando sequencial SC5')
-		//_sSeqC5 := getmv ("VA_INIC5NU", .t., '000000')
 		_sSeqC5 := _UseGetMv("VA_INIC5NU", .t., '000000')
 		_sSeqC5 = iif (empty (_sSeqC5), '', _sSeqC5)
 
@@ -207,7 +180,6 @@ user function AjBasTes ()
 		do while sc5 -> (dbseek (cFilAnt + _sSeqC5, .F.))
 			_sSeqC5 = soma1 (_sSeqC5)
 		enddo
-		//putmv ("VA_INIC5NU", _sSeqC5)
 		_UsePutMv("VA_INIC5NU", _sSeqC5)
 		u_log2 ('info', 'Sequencial SC5 ajustado para ' + _sSeqC5)
 
