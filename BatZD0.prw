@@ -1,4 +1,4 @@
-// Programa...: ZD0
+// Programa...: BatZD0
 // Autor......: Cláudia Lionço
 // Data.......: 06/07/2022
 // Descricao..: Baixa de registro de recebíveis pagos Pagar.me
@@ -15,14 +15,11 @@
 // --------------------------------------------------------------------------
 #include "tbiconn.ch"
 
-User Function BatZD0(_sTipo, _sFilLog)
+User Function BatZD0(_sTipo)
     Private cPerg := "BatZD0"
 	
     u_logIni()
-
-    _sAkKey := iif(_sFilLog == '01', GETMV("VA_PAG01"),GETMV("VA_PAG13"))
-
-    U_HELP(_sFilLog +"-"+ _sAkKey)
+    
     If _sTipo == '1' // Bat
         dDataIni := DaySub(Date(),1)
         dDataFin := DaySub(Date(),1)
@@ -35,13 +32,17 @@ User Function BatZD0(_sTipo, _sFilLog)
 
     u_log2('aviso', 'Pagar.me:' + DTOC(mv_par01) +" até "+ DTOC(mv_par02))
 
-    MsAguarde({|| _GravaPgtos(_sTipo, _sFilLog, dDataIni, dDataFin)}, "Aguarde...", "Processando Registros...")
+    If _sTipo == '2' 
+        MsAguarde({|| _GravaPgtos(_sTipo, dDataIni, dDataFin)}, "Aguarde...", "Processando Registros...")
+    else
+        _GravaPgtos(_sTipo,  dDataIni, dDataFin)
+    EndIf
       
 Return
 //
 // -----------------------------------------------------------------------------------
 // Busca Pagamentos recebidos no período
-Static Function _GravaPgtos(_sTipo, _sFilLog, dDataIni, dDataFin) 
+Static Function _GravaPgtos(_sTipo, dDataIni, dDataFin) 
     local cUrlReceb  := ""
     local cGetParms  := ""
     local nTimeOut   := 200
@@ -51,7 +52,7 @@ Static Function _GravaPgtos(_sTipo, _sFilLog, dDataIni, dDataFin)
     local i          := 1
     local oJSONR
 
-    cUrlReceb := _RetLinkPgto(_sFilLog, dDataIni, dDataFin)
+    cUrlReceb := _RetLinkPgto( dDataIni, dDataFin)
     cRetorno := HttpGet( cUrlReceb , cGetParms, nTimeOut, aHeadStr, @cHeaderGet ) // Retorno do link
 
     oJSONR:= JsonObject():New()
@@ -67,7 +68,9 @@ Static Function _GravaPgtos(_sTipo, _sFilLog, dDataIni, dDataFin)
     
     If nNumReg >= 0
         For i := 1 to nNumReg
-            MsProcTxt("Importando registro " + alltrim(str(i)) + " de " + alltrim(str(nNumReg)) + "...")
+            If _sTipo == '2'
+                MsProcTxt("Importando registro " + alltrim(str(i)) + " de " + alltrim(str(nNumReg)) + "...")
+            EndIf
 
             _lContinua := .T.
             _sId         := alltrim(STR(IIF(empty(oJSONR[i]["id"])              , 0                 , oJSONR[i]["id"])))
@@ -88,11 +91,11 @@ Static Function _GravaPgtos(_sTipo, _sFilLog, dDataIni, dDataFin)
             dbSetOrder(1) 
             dbGoTop()
             
-            _sChaveZD0 := _sFilLog + PADR(alltrim(_sIdTrans),15,' ') + PADR(alltrim(_sId),15,' ')
+            _sChaveZD0 := xFilial('ZD0') + PADR(alltrim(_sIdTrans),15,' ') + PADR(alltrim(_sId),15,' ')
             If !dbSeek(_sChaveZD0)
                 Begin Transaction
                     Reclock("ZD0",.T.)
-                    ZD0 -> ZD0_FILIAL := _sFilLog
+                    ZD0 -> ZD0_FILIAL := xFilial('ZD0')
                     ZD0 -> ZD0_RID    := _sId
                     ZD0 -> ZD0_TID    := _sIdTrans
                     ZD0 -> ZD0_STATUS := _sStatus
@@ -109,7 +112,7 @@ Static Function _GravaPgtos(_sTipo, _sFilLog, dDataIni, dDataFin)
                     ZD0->(MsUnlock())
                 End Transaction
 
-                _GravaTransacoes(_sTipo, _sFilLog, _sChaveZD0, _sIdTrans, _sId)
+                _GravaTransacoes(_sTipo, _sChaveZD0, _sIdTrans, _sId)
             Else
                 _lContinua := .F.
                 u_log2('aviso', 'Transação ' + alltrim(_sIdTrans) + ' Recebível:'+ alltrim(_sId) + ' já gravada no sistema.')
@@ -118,13 +121,16 @@ Static Function _GravaPgtos(_sTipo, _sFilLog, dDataIni, dDataFin)
         Next
         If _sTipo == '2'
             u_help("Importação finalizada com sucesso!")
+            u_ZD0RAS(_sTipo, dDataIni, dDataFin)
+        else
+            u_log2('aviso', 'Importação finalizada com sucesso!')
         EndIf
     EndIf
 Return
 //
 // -----------------------------------------------------------------------------------
 // Acessa o link da transação para gravar demais dados
-Static Function _GravaTransacoes(_sTipo, _sFilLog, _sChaveZD0,_sIdTrans, _sId)
+Static Function _GravaTransacoes(_sTipo, _sChaveZD0,_sIdTrans, _sId)
     local cUrlTrans  := ""
     local cGetParms  := ""
     local nTimeOut   := 200
@@ -133,7 +139,7 @@ Static Function _GravaTransacoes(_sTipo, _sFilLog, _sChaveZD0,_sIdTrans, _sId)
     local cRetTrans  := ""
     local oJSONT
 
-    cUrlTrans := _RetLinkTransacao(_sFilLog, _sIdTrans) // Monta Link
+    cUrlTrans := _RetLinkTransacao(_sIdTrans) // Monta Link
     cRetTrans := HttpGet( cUrlTrans , cGetParms, nTimeOut, aHeadStr, @cHeaderGet ) // Retorno do link da transação
 
     oJSONT := JsonObject():New()
@@ -153,7 +159,6 @@ Static Function _GravaTransacoes(_sTipo, _sFilLog, _sChaveZD0,_sIdTrans, _sId)
         // Dados das transações
         _nTVlr       := IIF(Empty(oJSONT["amount"])          , 0 , oJSONT["amount"]/100) 
         _nTParTot    := IIF(Empty(oJSONT["installments"])    , 0 , oJSONT["installments"])
-        //_sMetPgto    := IIF(empty(oJSONT["payment_method"])  , "", oJSONT["payment_method"])
         _sNomeCart   := IIF(Empty(oJSONT["card_holder_name"]), "", oJSONT["card_holder_name"])
         _sBandCart   := IIF(Empty(oJSONT["card_brand"])      , "", oJSONT["card_brand"])
 
@@ -167,7 +172,6 @@ Static Function _GravaTransacoes(_sTipo, _sFilLog, _sChaveZD0,_sIdTrans, _sId)
                 Reclock("ZD0",.F.)
                     ZD0 -> ZD0_VLRTOT  := _nTVlr
                     ZD0 -> ZD0_QTDPAR  := _nTParTot
-                    //ZD0 -> ZD0_PGTOM   := _sMetPgto
                     ZD0 -> ZD0_CARDN   := _sNomeCart
                     ZD0 -> ZD0_CARDB   := _sBandCart
                     ZD0 -> ZD0_STABAI  := 'A'
@@ -185,10 +189,10 @@ Return
 //
 // -----------------------------------------------------------------------------------
 // Cria o link de recebíveis pagos
-Static Function _RetLinkPgto(_sFilLog, dDataIni, dDataFin)
+Static Function _RetLinkPgto( dDataIni, dDataFin)
     Local _sDt01  := alltrim(str(Year(dDataIni))) + "-" + PADL(alltrim(str(Month(dDataIni))),2,'0') +"-"+ PADL(alltrim(str(Day(dDataIni))),2,'0')
     Local _sDt02  := alltrim(str(Year(dDataFin))) +"-"+ PADL(alltrim(str(Month(dDataFin))),2,'0') +"-"+PADL(alltrim(str(Day(dDataFin))),2,'0')
-    Local _sAkKey := iif(_sFilLog == '01', GETMV("VA_PAG01"),GETMV("VA_PAG13"))
+    Local _sAkKey := GETMV("VA_PAGAR")
     
     _sLink := 'https://api.pagar.me/1/payables?api_key='+_sAkKey +'&count=1000&payment_date=>='+ _sDt01 +'T00:00:00.000Z&payment_date=<='+ _sDt02 +'T23:59:59.000Z'
 
@@ -197,8 +201,8 @@ Return _sLink
 //
 // -----------------------------------------------------------------------------------
 // Cria o link de transações
-Static Function _RetLinkTransacao(_sFilLog, _sIdTransacao)
-    Local _sAkKey := iif(_sFilLog == '01', GETMV("VA_PAG01"),GETMV("VA_PAG13"))
+Static Function _RetLinkTransacao(_sIdTransacao)
+    Local _sAkKey := GETMV("VA_PAGAR")
 
     _sLink  := 'https://api.pagar.me/1/transactions/' + _sIdTransacao + '?api_key=' + alltrim(_sAkKey)
     u_log2("Aviso", _sLink)

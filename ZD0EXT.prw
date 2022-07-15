@@ -86,6 +86,7 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "			WHEN ZD0_STABAI = 'A' THEN 'Aberto' "
     _oSQL:_sQuery += "			WHEN ZD0_STABAI = 'B' THEN 'Baixado' "
     _oSQL:_sQuery += "			WHEN ZD0_STABAI = 'F' THEN 'Fechado' "
+    _oSQL:_sQuery += "			WHEN ZD0_STABAI = 'R' THEN 'RA Gerada' "
     _oSQL:_sQuery += "		END AS STATUS_BAIXA "
     _oSQL:_sQuery += "	   ,ZD0_DTABAI AS DATA_BAIXA "
     _oSQL:_sQuery += "	   ,ZD0_VLRPAR AS VALOR_PARCELA "
@@ -93,11 +94,19 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "	   ,ZD0_TAXANT AS TAXA_ANTECIPACAO "
     _oSQL:_sQuery += "	   ,ZD0_TAXFRA AS TAXA_ANTIFRAUDE "
     _oSQL:_sQuery += "	   ,ZD0_VLRPAR - ZD0_TAXA - ZD0_TAXANT - ZD0_TAXFRA AS TOTAL_LIQUIDO "
-    _oSQL:_sQuery += "	FROM " + RetSQLName ("ZD0") + " ZD0"
-    _oSQL:_sQuery += "	LEFT JOIN " + RetSQLName ("SC5") + " SC5 "
-    _oSQL:_sQuery += "		ON SC5.D_E_L_E_T_ = '' "
-    _oSQL:_sQuery += "			AND SC5.C5_VAIDT <> '' "
-    _oSQL:_sQuery += "			AND SC5.C5_VAIDT = ZD0_TID "
+    _oSQL:_sQuery += "	FROM " + RetSQLName ("ZD0") + " ZD0 "
+    if mv_par05 == 1
+        _oSQL:_sQuery += "	LEFT JOIN " + RetSQLName ("SC5") + " SC5 "
+        _oSQL:_sQuery += "		ON SC5.D_E_L_E_T_ = '' "
+        _oSQL:_sQuery += "			AND SC5.C5_VAIDT <> '' "
+        _oSQL:_sQuery += "			AND SC5.C5_VAIDT = ZD0_TID "
+    else
+        _oSQL:_sQuery += "	INNER JOIN " + RetSQLName ("SC5") + " SC5 "
+        _oSQL:_sQuery += "		ON SC5.D_E_L_E_T_ = '' "
+        _oSQL:_sQuery += "			AND SC5.C5_VAIDT <> '' "
+        _oSQL:_sQuery += "			AND SC5.C5_VAIDT = ZD0_TID "
+        _oSQL:_sQuery += "			AND SC5.C5_NOTA  <> '' "
+    endif
     _oSQL:_sQuery += "	WHERE ZD0.D_E_L_E_T_ = '' "
     _oSQL:_sQuery += "	AND ZD0_FILIAL BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'"
     _oSQL:_sQuery += "	AND ZD0_DTAPGT BETWEEN '" + dtos(mv_par03) + "' AND '" + dtos(mv_par04) + "'"
@@ -135,10 +144,11 @@ Return
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT             TIPO TAM DEC VALID F3     Opcoes                      Help
-    aadd (_aRegsPerg, {01, "Filial de"       , "C", 2, 0,  "",   "   ", {},                         		 ""})
-    aadd (_aRegsPerg, {02, "Filial até "     , "C", 2, 0,  "",   "   ", {},                         		 ""})
-    aadd (_aRegsPerg, {03, "Data pgto de "   , "D", 8, 0,  "",   "   ", {},                         		 ""})
-    aadd (_aRegsPerg, {04, "Data pgto até "  , "D", 8, 0,  "",   "   ", {},                         		 ""})
+    aadd (_aRegsPerg, {01, "Filial de"           , "C", 2, 0,  "",   "   ", {},                         		 ""})
+    aadd (_aRegsPerg, {02, "Filial até "         , "C", 2, 0,  "",   "   ", {},                         		 ""})
+    aadd (_aRegsPerg, {03, "Data pgto de "       , "D", 8, 0,  "",   "   ", {},                         		 ""})
+    aadd (_aRegsPerg, {04, "Data pgto até "      , "D", 8, 0,  "",   "   ", {},                         		 ""})
+    aadd (_aRegsPerg, {05, "Apenas NF emitidas?" , "N", 1, 0,  "",   "   ", {"Não","Sim"},                    ""})
 
     U_ValPerg (cPerg, _aRegsPerg)
 Return

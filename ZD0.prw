@@ -31,19 +31,20 @@ User Function ZD0()
 	endif
 
 	If _lContinua
-		AADD(aRotina, {"&Visualizar"    , "AxVisual"                        , 0, 1 })
-		AADD(aRotina, {"Conciliar "     , "U_ZD0CON()"                      , 0, 4 })
-		AADD(aRotina, {"Importar"       , "U_BatZD0('2','" + cFilAnt +"')"  , 0, 4 })
-		AADD(aRotina, {"Legenda"        , "U_ZD0LGD(.F.)"                   , 0 ,5 })
-        AADD(aRotina, {"Extrato"     	, "U_ZD0EXT()"                      , 0, 6 })
-		//AADD(aRotina, {"Fechar Registro"     	, "U_ZD0FEC()"      , 0, 6 })
+		AADD(aRotina, {"&Visualizar"      	, "AxVisual"       , 0, 1 })
+		AADD(aRotina, {"Importar"       	, "U_BatZD0('2')"  , 0, 3 })			
+		//AADD(aRotina, {"Conciliar "     	, "U_ZD0CON()"     , 0, 4 })				
+		AADD(aRotina, {"Legenda"        	, "U_ZD0LGD(.F.)"  , 0 ,5 })
+        AADD(aRotina, {"Extrato"     		, "U_ZD0EXT()"     , 0, 8 })
+		AADD(aRotina, {"Consulta TItulos" 	, "U_ZD0CONS()"    , 0, 8 })	
 
 		AADD(_aCores,{ "ZD0_STABAI == 'A'", 'BR_VERMELHO' }) // aberto
 		AADD(_aCores,{ "ZD0_STABAI == 'B'", 'BR_VERDE'    }) // baixado
+		AADD(_aCores,{ "ZD0_STABAI == 'R'", 'BR_AZUL'     }) // Gerada RA's
 		AADD(_aCores,{ "ZD0_STABAI == 'F'", 'BR_PRETO'    }) // fechado
                       
 		dbSelectArea ("ZD0")
-		dbSetOrder (2)
+		dbSetOrder (1)
 
 		mBrowse(,,,,"ZD0",,,,,,_aCores,,,,,,,,)
 	EndIf
@@ -56,10 +57,10 @@ User function ZD0LGD (_lRetCores)
 	local aCores2 := {}
 	local _i      := 0
 	
-	aadd (aCores, {"ZD0->ZD0_STABAI=='A'", 'BR_VERMELHO' , 'Aberto'					    })
-	aadd (aCores, {"ZD0->ZD0_STABAI=='B'", 'BR_VERDE'	 , 'Baixado'					})
-	aadd (aCores, {"ZD0->ZD0_STABAI=='F'", 'BR_PRETO'	 , 'Fechado'					})
-
+	aadd (aCores, {"ZD0->ZD0_STABAI=='A'", 'BR_VERMELHO' , 'Aberto'		})
+	aadd (aCores, {"ZD0->ZD0_STABAI=='B'", 'BR_VERDE'	 , 'Baixado'	})
+	aadd (aCores, {"ZD0->ZD0_STABAI=='R'", 'BR_AZUL'	 , 'Gerada RA'	})
+	aadd (aCores, {"ZD0->ZD0_STABAI=='F'", 'BR_PRETO'	 , 'Fechado'	})
 
 	if ! _lRetCores
 		for _i = 1 to len (aCores)
