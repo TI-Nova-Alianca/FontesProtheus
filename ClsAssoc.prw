@@ -210,7 +210,8 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 			if type ('_sErroWS') == 'C'
 				_sErroWS += "Impossivel instanciar classe ClsAssoc. Codigo/loja '" + _sCodigo + "/" + _sLoja + "' nao cadastrado como fornecedor."
 			endif
-			u_log ("Impossivel instanciar classe ClsAssoc. Codigo/loja '" + _sCodigo + "/" + _sLoja + "' nao cadastrado como fornecedor.",, .t.)
+		//	u_log ("Impossivel instanciar classe ClsAssoc. Codigo/loja '" + _sCodigo + "/" + _sLoja + "' nao cadastrado como fornecedor.",, .t.)
+			U_Log2 ('aviso', '[' + procname () + "]Impossivel instanciar classe ClsAssoc. Codigo/loja '" + _sCodigo + "/" + _sLoja + "' nao cadastrado como fornecedor.")
 			_lContinua = .F.
 		endif
 		if _lContinua .and. (empty (sa2 -> a2_vacbase) .or. empty (sa2 -> a2_valbase))

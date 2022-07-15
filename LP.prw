@@ -103,7 +103,8 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 						case _wtipo ='3'
 							_xRet = "VERBAS-FRETES:" + SE1->E1_NUM + ' / ' + alltrim(SE1->E1_NOMCLI) // fretes
 						case _wtipo ='4'
-							_xRet = "VERBAS-CAMPANHA VENDAS:" + SE1->E1_NUM + ' / ' + alltrim(SE1->E1_NOMCLI) // campanha de vendas
+						//	_xRet = "VERBAS-CAMPANHA VENDAS:" + SE1->E1_NUM + ' / ' + alltrim(SE1->E1_NOMCLI) // campanha de vendas
+							_xRet = "CAMPANHA VENDAS VERBA NR " + alltrim (SE1->E1_NUM) + ' ' + alltrim(SE1->E1_NOMCLI) // campanha de vendas
 						case _wtipo ='5'
 							_xRet = "VERBAS - ABERTURA LOJAS:" + SE1->E1_NUM + ' / ' + alltrim(SE1->E1_NOMCLI) // abertura/reinauguracao lojas
 						case _wtipo ='6'

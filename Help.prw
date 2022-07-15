@@ -29,6 +29,7 @@
 // 21/07/2020 - Robert  - Passa a gravar log e console sempre.
 // 24/09/2021 - Claudia - Incluido o tratamento para retorno de mensagem WS.
 // 20/02/2022 - Robert  - Variavel _sErros (publica do web service) renomeada para _sErroWS
+// 15/07/2022 - Robert  - Acrescentados mais niveis de procname() no titulo da janela de avisos.
 //
 
 // --------------------------------------------------------------------------
@@ -92,7 +93,8 @@ user function Help (_sMsg, _sDAdic, _lHlpErro)
 				enddo
 		//		u_log ('fim quebra')
 			endif
-			msgalert (_sMsg, procname (1) + " => " + procname (2) + " => " + procname (3))
+//			msgalert (_sMsg, procname (1) + " => " + procname (2) + " => " + procname (3))
+			msgalert (_sMsg, procname (1) + " => " + procname (2) + " => " + procname (3) + " => " + procname (4) + " => " + procname (5))
 		endif
 	else
 		if cModulo == "ACD"
