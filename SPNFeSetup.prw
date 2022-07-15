@@ -12,6 +12,7 @@
 
 // Historico de alteracoes:
 // 03/02/2021 - Robert - Para saber se estava gerando contranota de safra, testava rotina U_VA_RUS. Passa a testar U_VA_RUSN.
+// 15/07/2022 - Robert - Comentariadas algumas linhas de logs.
 //
 
 #INCLUDE "RPTDEF.CH"
@@ -22,7 +23,7 @@ user function SPNFESETUP ()
 	local _aImpres := {}
 	local _nImpres := 0
 
-	U_Log2 ('info', 'Iniciando ' + procname ())
+//	U_Log2 ('info', 'Iniciando ' + procname ())
 	// u_log2 ('debug', 'dados que seriam usados no DANFEII:')
 	// U_Log2 ('debug', GetPrinterSession())
 	// U_Log2 ('debug', Paramixb[2]:aOptions[PD_VALUETYPE])

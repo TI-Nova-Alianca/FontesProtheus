@@ -9,7 +9,10 @@
 // 22/08/2019 - Robert  - Seleciona arquivo SF2 antes de chamar rotina de transmissao 
 //                        (tentava dar RETINDEX em arquivo ja fechado). GLPI 6531.
 // 13/01/2020 - Claudia - GLPI: 9149 - Incluida a gravação do SXK para parametros.
+// 15/07/2022 - Robert  - Se for transf.entre filiais, exporta o XML para
+//                        posterior importacao na filial destino (GLPI 12336)
 //
+
 // ---------------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"  // Deixar este include para aparecerem os botoes da tela de acompanhamento do SPED
 
@@ -29,7 +32,8 @@ user function SPEDAut (_sEntSai, _sSerie, _sNFIni, _sNFFim)
 //	u_logIni ()
 
 	if _lContinua
-		if "TESTE" $ upper (GetEnvServer()) .or. "R2" $ upper (GetEnvServer())
+	//	if "TESTE" $ upper (GetEnvServer()) .or. "R2" $ upper (GetEnvServer())
+		if "TESTE" $ upper (GetEnvServer()) .or. "R33" $ upper (GetEnvServer())
 			if type ("oMainWnd") == "O"  // Se tem interface com o usuario
 				if ! U_msgnoyes ("Ambiente de TESTE. Confirme se deseja enviar as notas para a SEFAZ")
 					_lContinua = .F.
@@ -58,7 +62,7 @@ user function SPEDAut (_sEntSai, _sSerie, _sNFIni, _sNFFim)
 		_oSQL := ClsSQL ():New ()
 		if _sEntSai == 'E'
 			_oSQL:_sQuery := ""
-			_oSQL:_sQuery += " SELECT F1_DOC, '', '', ''"
+			_oSQL:_sQuery += " SELECT F1_DOC, '', '', '', '', '', ''"
 			_oSQL:_sQuery +=   " FROM " + RETSQLName ("SF1") + " SF1 "
 			_oSQL:_sQuery +=  " WHERE F1_FILIAL   = '" + xFilial ("SF1") + "'"
 			_oSQL:_sQuery +=    " AND D_E_L_E_T_  = ' '"
@@ -68,11 +72,23 @@ user function SPEDAut (_sEntSai, _sSerie, _sNFIni, _sNFFim)
 		else
 			_oSQL:_sQuery := ""
 			_oSQL:_sQuery += " SELECT F2_DOC, '', '', ''"
+			_oSQL:_sQuery +=       ", CASE WHEN F2_TIPO = 'N'"  // Pos.5 = Verifica se trata-se de transf. para outra filial.
+			_oSQL:_sQuery +=           " THEN (SELECT A1_FILTRF"
+			_oSQL:_sQuery +=                   " FROM " + RETSQLName ("SA1") + " SA1 "
+			_oSQL:_sQuery +=                  " WHERE SA1.D_E_L_E_T_  = ' '"
+			_oSQL:_sQuery +=                    " AND SA1.A1_FILIAL   = '" + xFilial ("SA1") + "'"
+			_oSQL:_sQuery +=                    " AND SA1.A1_COD      = SF2.F2_CLIENTE"
+			_oSQL:_sQuery +=                    " AND SA1.A1_LOJA     = SF2.F2_LOJA)"
+			_oSQL:_sQuery +=           " ELSE ''"
+			_oSQL:_sQuery +=           " END"
+			_oSQL:_sQuery +=       ", ''"  // Pos.6 = reservada para o XML
+			_oSQL:_sQuery +=       ", ''"  // Pos.7 = reservada para a chave (campo F2_CHVNFE soh vai estar populado apos a impressao do DANFe)
 			_oSQL:_sQuery +=   " FROM " + RETSQLName ("SF2") + " SF2 "
 			_oSQL:_sQuery +=  " WHERE F2_FILIAL   = '" + xFilial ("SF2") + "'"
 			_oSQL:_sQuery +=    " AND D_E_L_E_T_  = ' '"
 			_oSQL:_sQuery +=    " AND F2_SERIE    = '" + _sSerie + "'"
 			_oSQL:_sQuery +=    " AND F2_DOC      BETWEEN '" + _sNFIni + "' AND '" + _sNFFim + "'"
+			_oSQL:Log ()
 		endif
 		_aNotas := aclone (_oSQL:Qry2Array ())
 		for _nNota = 1 to len (_aNotas)
@@ -95,10 +111,18 @@ user function SPEDAut (_sEntSai, _sSerie, _sNFIni, _sNFFim)
 					else
 						_aNotas [_nNota, 3] = 'Nota autorizada'
 						_aNotas [_nNota, 4] = .T.
+						
+						// Se for uma nota de transf.para outra filial, guardo seu XML para uso posterior.
+						if ! empty (_aNotas [_nNota, 5])
+							_aNotas [_nNota, 6] = _oNFe:GetXML ()
+							_aNotas [_nNota, 7] = _oNFe:Chave050 (_sSerie, _aNotas [_nNota, 1])
+						endif
 					endif
 				endif
 			next
-	
+			U_Log2 ('debug', '[' + procname () + ']_aNotas depois de verificar a autorizacao:')
+			U_Log2 ('debug', _aNotas)
+
 			// Mostra status ao usuario
 			define msdialog _oDlg title "Acompanhamento SEFAZ" from 0, 0 to oMainWnd:nClientHeight / 1.5, oMainWnd:nClientWidth / 1.5 of oMainWnd pixel
 			_oLbx := TWBrowse ():New (15,;      // Linha
@@ -155,9 +179,40 @@ user function SPEDAut (_sEntSai, _sSerie, _sNFIni, _sNFFim)
 			U_GravaSXK (_sGrupo, "03", _sSerie			, _sTipo)
 			U_GravaSXK (_sGrupo, "04", _par04           , _sTipo) 
 		endif
+
+		// Exporta os XML para arquivos, quando for o caso.
+		_GrvXMLArq (_aNotas)
+
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
 //	u_logFim ()
+return
+
+
+// --------------------------------------------------------------------------
+// Exporta os XML, quando for o caso.
+static function _GrvXMLArq (_aNotas)
+	local _nNota    := 0
+	local _nHdl     := 0
+	local _sNomeArq := ''
+	
+	U_Log2 ('info', 'Iniciando ' + procname ())
+	for _nNota = 1 to len (_aNotas)
+		U_Log2 ('debug', '[' + procname () + ']verificando linha ' + cvaltochar (_nNota))
+		// Se for transf.entre filiais, exporta o XML para posterior importacao na filial destino.
+		if ! empty (_aNotas [_nNota, 5]) .and. ! empty (_aNotas [_nNota, 6])
+			_sNomeArq = '\xml_nfe\' + _aNotas [_nNota, 7] + "-" + 'NFe' + "INTPROTHEUS.xml"
+			U_Log2 ('debug', '[' + procname () + ']' + _sNomeArq)
+			_nHdl := FCreate (_sNomeArq)
+			if _nHdl > 0
+				FWrite (_nHdl, allTrim (_aNotas [_nNota, 6]))
+	 			FClose (_nHdl)
+				U_Log2 ('info', '[' + procname () + ']Arquivo gerado: ' + _sNomeArq)
+			else
+				U_Log2 ('erro', '[' + procname () + ']Nao foi possivel criar o arquivo ' + _sNomeArq)
+			endif
+		endif
+	next
 return

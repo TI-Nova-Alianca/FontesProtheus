@@ -32,7 +32,7 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '03' modulo 'FIN'
+		prepare environment empresa '01' filial '01' modulo 'FIN'
 		private cModulo   := 'FIN'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -112,7 +112,6 @@ local _nRegMovto := 0
 //	_ClsEtiq ()
 //	_Sisdevin ()
 //	_metaf ()
-	U_BATMARGEM (1)
 	_exml ()
 	//u_help ('Nada definido.')
 return
@@ -132,7 +131,7 @@ static function _exml ()
 	_oSQL:_sQuery += " WHERE SF2.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=   " AND SF2.F2_FILIAL  = '" + xfilial ("SF2") + "'"
 	//_oSQL:_sQuery +=   " AND SF2.F2_EMISSAO = '" + dtos (cdataini) + "'"
-	_oSQL:_sQuery +=   " AND SF2.F2_DOC     = '000005678'"
+	_oSQL:_sQuery +=   " AND SF2.F2_DOC     = '140720301'"
 	_oSQL:_sQuery +=   " AND SF2.F2_SERIE   = '10 '"
 	_oSQL:_sQuery += " ORDER BY F2_DOC"
 	_aNotas := _oSQL:Qry2Array (.f., .f.)
@@ -140,8 +139,8 @@ static function _exml ()
 	cNotaIni = _aNotas [1, 1] + _aNotas [1, 2]
 	cNotaFim = _aNotas [len (_aNotas), 1] + _aNotas [len (_aNotas), 2]
 	U_Log2 ('debug', '[' + procname () + ']' + cNotaIni + ' a ' + cNotaFim)
-//	for _nNota = 1 to len (_aNotas)
 
+/*
 	oWS:= WSNFeSBRA():New()
 	oWS:cUSERTOKEN        := "TOTVS"
 	oWS:cID_ENT           := cidentidade
@@ -191,14 +190,13 @@ static function _exml ()
 	 	Next
 	EndIf
 	U_Log2 ('debug', '[' + procname () + ']' + _sRet)
-
+*/
 	// Agora pelo metodo novo
 	_oNFe:IdNFe050 = cNotaIni
 	_sRet2 = _oNFe:GetXML ()
 	U_Log2 ('debug', '[' + procname () + ']' + _sRet2)
-
-
 return
+
 
 static function _metaf ()
 	// Pela complexidade, prefixo manter o log. Jah aprontei mais de uma vez e o log me ajudou...

@@ -16,6 +16,9 @@
 // 08/04/2019 - Catia  - include TbiConn.ch
 // 16/05/2019 - Catia  - tratamento para que leia os pesos das nfe
 // 05/07/2022 - Robert - Melhoria pequena nos logs (GLPI 12312)
+// 15/07/2022 - Robert - Fonte alterado da extensao .prw para .tlpp
+//                     - Criado atributo :EntidTSS (para nao precisar chamar :GetEntid() a cada pouco)
+//                     - Ajustes no metodo GetXML() que ateh entao nao era usado (GLPI 12336)
 //
 
 // ------------------------------------------------------------------------------------
@@ -204,7 +207,7 @@ METHOD ConsAutFP () Class ClsNFe
 		_oSQL:_sQuery +=   " AND ID_ENT = '" + ::EntidTSS + "'"
 		_oSQL:_sQuery +=   " AND NFE_ID = '" + ::IdNFe050 + "'"
 		_oSQL:_sQuery += " ORDER BY DTREC_SEFR desc, HRREC_SEFR desc"
-		//_oSQL:Log ()
+		_oSQL:Log ()
 		_sRet = _oSQL:RetQry (1, .F.)
 	endif
 
@@ -469,6 +472,7 @@ METHOD GetXML () Class ClsNFe
 		_oWS:dDataAte   = ::DtEmissao
 		_oWS:cCNPJDESTInicial = ::CNPJDestin
 		_oWS:cCNPJDESTFinal   = ::CNPJDestin
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Consultando ' + _oWS:_URL)
 		if _oWS:RETORNAFX ()
 			_oRetorno := _oWS:oWsRetornaFxResult
 			_oXml := _oRetorno:OWSNOTAS:OWSNFES3[1]
