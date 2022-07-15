@@ -2,13 +2,13 @@
 // Autor......: Jeferson Rech
 // Data.......: nov/2004
 // Descricao..: P.E. 'Tudo OK' da tela de notas de entrada.
-//
+
 //  #TipoDePrograma    #ponto_de_entrada
 //  #Descricao         #P.E. 'Tudo OK' da tela de notas de entrada.
 //  #PalavasChave      #notas_de_entrada #tudo_ok 
 //  #TabelasPrincipais #SD1 #SF1
-//  #Modulos 		   #FAT
-//
+//  #Modulos           #COM #EST
+
 // Historico de alteracoes:
 // 12/05/2008 - Robert  - Incluidas validacoes para tratamento de controle de fretes.
 // 19/05/2008 - Robert  - Ajustada logica de retorno em caso de erros.
@@ -67,7 +67,9 @@
 // 08/10/2021 - Robert  - Desabilitados alguns logs desnecessarios.
 // 13/12/2021 - Robert  - Pequena melhoria msg. alter.vlr.unit em relacao ao pedido de compra.
 // 23/12/2021 - Claudia - Incluida validação de almox 11. GLPI: 7665
-//
+// 14/07/2022 - Robert  - Removidas linhas comentariadas.
+// 
+
 // -----------------------------------------------------------------------------------------------------------------------
 User Function MT100TOK()
 	local _aAmbAnt   := U_SalvaAmb ()
@@ -391,45 +393,11 @@ static function _ValChvNFe ()
 			_oSQL:_sQuery +=       " AND F1_FORNECE = '" + cA100For + "'"
 			_oSQL:_sQuery +=       " AND F1_LOJA    = '" + cLoja    + "')"
 		endif
-		//u_log (_oSQL:_sQuery)
-		//u_logPCham ()
 		if ! empty (_oSQL:RetQry ())
 			u_help ("Chave NF-e ja existe no banco de dados. Verifique a seguinte NF:" + chr (13) + chr (10) + _oSQL:_xRetQry)
 			_lRet = .F.
 			return _lRet
 		endif
-	endif
-
-	// Verifica a situacao da chave junto `a SEFAZ.
-	if _lDeveTer
-		
-		/* DESABILITADO ATEH CONSEGUIRMOS FAZER FUNCIONAR NOVAMENTE A VERIFICACAO DE CHAVES JUNTO `A SEFAZ. Robert, 13/05/15
-		// Se tem no arquivo ZZX, aproveita. Senao, verifica na SEFAZ.
-		_lAutSEFAZ = .F.
-		zzx -> (dbsetorder (4))  // ZZX_CHAVE
-		if zzx -> (dbseek (_sChvNFe, .F.))
-			U_LOG ('Encontrei zzx, com zzx_retsef =', zzx -> zzx_retsef)
-			if zzx -> zzx_retsef != '100'  // Se ainda nao autorizada, verifica a chave e jah atualiza o ZZX.
-				processa ({|| U_ZZXCC ()}, "Verificando chave na SEFAZ")
-			endif
-			_lAutSEFAZ = (zzx -> zzx_retsef == '100')
-		else
-			u_log ('Chave nao encontrada no ZZX')
-			// Se nao tem XML importado, verifica somente a chave.
-			_oNFe = ClsNFe():New ()
-			_oNFe:Chave = _sChvNFe
-			// ACHO QUE AQUI VOU USAR O METODO :CONSAUTORI  --> processa ({|| _aRetSEFAZ := aclone (_oNFe:ConsChv ())}, "Verificando chave na SEFAZ")
-			if len (_aRetSEFAZ) == 0 .or. empty (_aRetSEFAZ [1])
-				_lRet = msgnoyes ("Nao foi possivel verificar a chave da NF-e/CT-e junto `a SEFAZ. Deseja continuar assim mesmo?")
-			else
-				if _aRetSEFAZ [1] != '100'
-					_lRet = msgnoyes ('NF-e NAO autorizada junto `a SEFAZ.' + chr (13) + chr (10) + ;
-					        'Mensagem de retorno: ' + _aRetSEFAZ [1] + ' - ' + _aRetSEFAZ [2] + chr (13) + chr (10) + chr (13) + chr (10) + ;
-					        'Deseja continuar assim mesmo?')
-				endif
-			endif
-		endif
-		*/
 	endif
 
 	// Se for transferencia de filial, exige que a NF tenha chave na filial origem (pode estar nao autorizada ou DANFe nao impresso).
