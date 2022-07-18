@@ -17,16 +17,27 @@
 #include "tbiconn.ch"
 
 User Function ZD0RAS(_sTipo, dDataIni, dDataFin)
-    Private cPerg := "BatZD0"
+    Private cPerg := "ZD0RAS"
 	
     u_logIni()
+    
+    Do Case
+        Case _sTipo == '3'
+            _ValidPerg()
+            Pergunte(cPerg,.T.)  
+            dDataIni := mv_par01
+            dDataFin := mv_par02
 
-    If _sTipo == '2'
-        MsAguarde({|| _GeraTitulos(_sTipo, dDataIni, dDataFin)}, "Aguarde...", "Gerando Títulos RA's...")
-    else
-        u_log2('aviso', 'Iniciada a criação dos titulos RAs!')
-        _GeraTitulos(_sTipo, dDataIni, dDataFin)       
-    EndIf      
+            MsAguarde({|| _GeraTitulos(_sTipo, dDataIni, dDataFin)}, "Aguarde...", "Gerando Títulos RA's...")
+
+        Case _sTipo == '2'
+            MsAguarde({|| _GeraTitulos(_sTipo, dDataIni, dDataFin)}, "Aguarde...", "Gerando Títulos RA's...")
+
+        Otherwise
+            u_log2('aviso', 'Iniciada a criação dos titulos RAs!')
+            _GeraTitulos(_sTipo, dDataIni, dDataFin)  
+
+    EndCase
 Return
 //
 // -----------------------------------------------------------------------------------
@@ -123,7 +134,7 @@ Static Function _GeraTitulos(_sTipo, dDataIni, dDataFin)
                     u_log2("Erro", _sErro)
                 else
                     If _sTipo == '2'
-                        u_help("Titulo "+ alltrim(_nTitNum) + "/10 gerado com sucesso!")
+                        //u_help("Titulo "+ alltrim(_nTitNum) + "/10 gerado com sucesso!")
                     EndIf
                     u_log2("Aviso", "Gravado título "+ alltrim(_nTitNum) + " refetente a Id Transacao " +  _aZD0[_x,2])
                 EndIf
@@ -174,15 +185,26 @@ Static Function _GeraTitulos(_sTipo, dDataIni, dDataFin)
             _oSQL:_sQuery += " AND E1_VAIDT    = '" + _aZD0[_x,2] + "' "
             _oSQL:_sQuery += " AND E1_TIPO     = 'RA' "
             _oSQL:_sQuery += " AND E1_SALDO    = E1_VALOR "
+            _oSQL:Log ()
             _aRA := _oSQL:Qry2Array ()
 
             For _i:=1 to Len(_aRA)
                 DbSelectArea("SE1")
                 SE1 -> (DBSetorder(1))
-                If DbSeek(xFilial("SE1") + _aRA[_i, 1] + _aRA[_i, 2] + _aRA[_i, 3] + _aRA[_i, 4] + _aRA[_i, 5])
+                If DbSeek(xFilial("SE1") + _aRA[_i, 2] + _aRA[_i, 3] + _aRA[_i, 4] + _aRA[_i, 5])
                     RecLock("SE1",.F.)
                     DbDelete()
                     MsUnLock()
+
+                    _oSQL:= ClsSQL ():New ()
+                    _oSQL:_sQuery := ""
+                    _oSQL:_sQuery += " UPDATE " + RetSQLName ("ZD0") + " SET ZD0_STABAI = 'E' "
+                    _oSQL:_sQuery += " WHERE D_E_L_E_T_=''"
+                    _oSQL:_sQuery += " AND ZD0_FILIAL = '" + _aZD0[_x,1]   + "'"
+                    _oSQL:_sQuery += " AND ZD0_TID    = '" + _aZD0[_x,2]   + "'"
+                    //_oSQL:_sQuery += " AND ZD0_RID    = '" + _aZD0[_x,3]   + "'"
+                    _oSQL:Log ()
+                    _oSQL:Exec ()
                 Endif
             Next            
         EndIf
@@ -251,3 +273,14 @@ Static Function _GeraNumeracao(_nSeq, _dtPgto)
     _sNumero := _sDia + _sMes + _sAno +_sSeq
 
 Return _sNumero
+//
+// -------------------------------------------------------------------------
+// Cria Perguntas no SX1
+Static Function _ValidPerg ()
+    local _aRegsPerg := {}
+    //                     PERGUNT          TIPO TAM DEC VALID F3     Opcoes                      Help
+    aadd (_aRegsPerg, {01, "Data Inicial ", "D", 8, 0,  "",   "   ", {},                         		 ""})
+    aadd (_aRegsPerg, {02, "Data Final   ", "D", 8, 0,  "",   "   ", {},                         		 ""})
+
+    U_ValPerg (cPerg, _aRegsPerg)
+Return

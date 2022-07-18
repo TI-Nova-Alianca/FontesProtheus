@@ -13,7 +13,9 @@
 // Historico de alteracoes:
 //
 // --------------------------------------------------------------------------
+#include 'protheus.ch'
 #include "tbiconn.ch"
+#include 'parmtype.ch'
 
 User Function BatZD0(_sTipo)
     Private cPerg := "BatZD0"
@@ -121,7 +123,10 @@ Static Function _GravaPgtos(_sTipo, dDataIni, dDataFin)
         Next
         If _sTipo == '2'
             u_help("Importação finalizada com sucesso!")
-            u_ZD0RAS(_sTipo, dDataIni, dDataFin)
+            _cMens := ""
+            If MsgYesNo(_cMens,"ATENÇÃO","YESNO")
+                u_ZD0RAS(_sTipo, dDataIni, dDataFin)
+            EndIf
         else
             u_log2('aviso', 'Importação finalizada com sucesso!')
         EndIf
