@@ -112,87 +112,13 @@ local _nRegMovto := 0
 //	_ClsEtiq ()
 //	_Sisdevin ()
 //	_metaf ()
-	_exml ()
-	//u_help ('Nada definido.')
+//	_exml ()
+	u_help ('Nada definido.')
 return
 
 static function _exml ()
-	local nX	:= 0
-	local _oSQL := NIL
-	local cdataini := date ()
-	local cidentidade := ''
-	local _sRet := ''
 	_oNFe := ClsNFe ():New ()
-	cidentidade := _oNFe:GetEntid ()
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += "SELECT F2_SERIE, F2_DOC"
-	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SF2") + " SF2 "
-	_oSQL:_sQuery += " WHERE SF2.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=   " AND SF2.F2_FILIAL  = '" + xfilial ("SF2") + "'"
-	//_oSQL:_sQuery +=   " AND SF2.F2_EMISSAO = '" + dtos (cdataini) + "'"
-	_oSQL:_sQuery +=   " AND SF2.F2_DOC     = '140720301'"
-	_oSQL:_sQuery +=   " AND SF2.F2_SERIE   = '10 '"
-	_oSQL:_sQuery += " ORDER BY F2_DOC"
-	_aNotas := _oSQL:Qry2Array (.f., .f.)
-	//U_Log2 ('debug', _aNotas)
-	cNotaIni = _aNotas [1, 1] + _aNotas [1, 2]
-	cNotaFim = _aNotas [len (_aNotas), 1] + _aNotas [len (_aNotas), 2]
-	U_Log2 ('debug', '[' + procname () + ']' + cNotaIni + ' a ' + cNotaFim)
-
-/*
-	oWS:= WSNFeSBRA():New()
-	oWS:cUSERTOKEN        := "TOTVS"
-	oWS:cID_ENT           := cidentidade
-	oWS:_URL              := AllTrim(PadR(GetNewPar("MV_SPEDURL","http://"),250))+"/NFeSBRA.apw"
-	oWS:cIdInicial        := cnotaini
-	oWS:cIdFinal          := cnotafim
-	oWS:dDataDe           := cdataini
-	oWS:dDataAte          := cdataini
-	oWS:cCNPJDESTInicial  := ''
-	oWS:cCNPJDESTFinal    := 'z'
-	oWS:nDiasparaExclusao := 0
-	lOk:= oWS:RETORNAFX()
-	oRetorno := oWS:oWsRetornaFxResult
-	lOk := iif( valtype(lOk) == "U", .F., lOk )
-	U_Log2 ('debug', '[' + procname () + ']lOK:' + cvaltochar (lOK))
-	If lOk
-	
-	    For nX := 1 To Len(oRetorno:OWSNOTAS:OWSNFES3)
-			U_Log2 ('debug', '[' + procname () + ']nX:' + cvaltochar (nX))
-	
-	    	oXml    := oRetorno:OWSNOTAS:OWSNFES3[nX]
-	    	oXmlExp := XmlParser(oRetorno:OWSNOTAS:OWSNFES3[nX]:OWSNFE:CXML,"","","")
-			
-			_ValCNPJ := _RetType("oXmlExp:_NFE:_INFNFE:_DEST:_CNPJ")
-			_ValCPF  := _RetType("oXmlExp:_NFE:_INFNFE:_DEST:_CPF")
-			
-			If _ValCNPJ <> "U"
-				cCNPJDEST := AllTrim(oXmlExp:_NFE:_INFNFE:_DEST:_CNPJ:TEXT)
-			ElseIF _ValCPF <> "U"
-				cCNPJDEST := AllTrim(oXmlExp:_NFE:_INFNFE:_DEST:_CPF:TEXT)
-			Else
-				cCNPJDEST := ""
-			EndIf
-			
-			_ValTypeText := _RetType("oXmlExp:_NFE:_INFNFE:_VERSAO:TEXT") 
-			cVerNfe := IIf(_ValTypeText <> "U", oXmlExp:_NFE:_INFNFE:_VERSAO:TEXT, '')
-			cPrefixo := "NFe"
-			cChvNFe	:= NfeIdSPED(oXml:oWSNFe:cXML,"Id")
-			
-			cCab1 := '<?xml version="1.0" encoding="UTF-8"?>'
-			cCab1 += '<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="' + cVerNfe + '">'
-			cRodap := '</nfeProc>'
-			_sRet := AllTrim(cCab1)
-			_sRet += AllTrim(oXml:oWSNFe:cXML)
-			_sRet += AllTrim(oXml:oWSNFe:cXMLPROT)
-			_sRet += AllTrim(cRodap)
-	 	Next
-	EndIf
-	U_Log2 ('debug', '[' + procname () + ']' + _sRet)
-*/
-	// Agora pelo metodo novo
-	_oNFe:IdNFe050 = cNotaIni
+	_oNFe:IdNFe050 = 'concatenar_aqui_serie_e_NF'
 	_sRet2 = _oNFe:GetXML ()
 	U_Log2 ('debug', '[' + procname () + ']' + _sRet2)
 return

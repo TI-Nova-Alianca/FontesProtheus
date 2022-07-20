@@ -125,7 +125,7 @@ User Function MTA410 ()
 				_lRet = .F.
 			endif
 			if (fBuscaCpo("SA3", 1, xfilial("SA3") + m->c5_vend1, "A3_VAIPED") != "S") .and. !IsInCallStack("U_BATMERCP")
-				u_help ("Vendedor " + m->c5_vend1 + " sem permissão para incluir pedido (campo " + alltrim (RetTitle ("A3_VAIPED")),, .t.)
+				u_help ("Vendedor " + m->c5_vend1 + " sem permissão para incluir pedido (cfe. campo " + alltrim (RetTitle ("A3_VAIPED") + " no cadastro de representantes)."),, .t.)
 				_lRet = .F.
 			endif
 		endif	

@@ -22,7 +22,9 @@
 // 20/11/2020 - Claudia - Incluida validações para notas do e-commerce 
 // 05/04/2021 - Claudia - Acrescentado valor de frete para LPAD 610 000 e 610 001. GLPI: 9753
 // 02/12/2021 - Claudia - Incluida validação para produtos 7209/7210. GLPI: 11136
+// 19/07/2022 - Robert  - Incluido TES 727 para nao contabilizar.
 //
+
 // --------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
@@ -75,7 +77,8 @@ User Function ML_LVDA(_nEcomm)
                         _wVAL:= "101021101005"
                 EndCase  
             Case _nEcomm == '4'
-                If  SF4->F4_DUPLIC<>"S" .or. SD2->D2_TIPO=="D" .or. SD2->D2_TES$"518/510/603" .or. SD2->D2_SERIE $ GetMV ("VA_SERIECF") .or. SF4->F4_TOCON$('15/16')
+//                If  SF4->F4_DUPLIC<>"S" .or. SD2->D2_TIPO=="D" .or. SD2->D2_TES$"518/510/603" .or. SD2->D2_SERIE $ GetMV ("VA_SERIECF") .or. SF4->F4_TOCON$('15/16')
+                If  SF4->F4_DUPLIC<>"S" .or. SD2->D2_TIPO=="D" .or. SD2->D2_TES$"518/510/603/727" .or. SD2->D2_SERIE $ GetMV ("VA_SERIECF") .or. SF4->F4_TOCON$('15/16')
                     _wVAL := 0
                 Else
                     _wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + SD2->D2_ICMSRET + SD2->D2_VALFRE
@@ -84,7 +87,8 @@ User Function ML_LVDA(_nEcomm)
 
     Else // Não é notas ecommerce 
         If _nEcomm == '1' .or. _nEcomm == '4' // 610 000 e 610 001
-            If  SF4->F4_DUPLIC<>"S" .or. SD2->D2_TIPO=="D" .or. SD2->D2_TES$"518/510/603" .or. SD2->D2_SERIE $ GetMV ("VA_SERIECF") .or. SF4->F4_TOCON$('15/16') .or. alltrim(SD2->D2_COD) $ ('7209/7210')
+//            If  SF4->F4_DUPLIC<>"S" .or. SD2->D2_TIPO=="D" .or. SD2->D2_TES$"518/510/603" .or. SD2->D2_SERIE $ GetMV ("VA_SERIECF") .or. SF4->F4_TOCON$('15/16') .or. alltrim(SD2->D2_COD) $ ('7209/7210')
+            If  SF4->F4_DUPLIC<>"S" .or. SD2->D2_TIPO=="D" .or. SD2->D2_TES$"518/510/603/727" .or. SD2->D2_SERIE $ GetMV ("VA_SERIECF") .or. SF4->F4_TOCON$('15/16') .or. alltrim(SD2->D2_COD) $ ('7209/7210')
                 _wVAL := 0
             Else
                 _wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + sd2->d2_icmsret + SD2->D2_VALFRE

@@ -2,56 +2,69 @@
 // Autor:     Andre Alves
 // Data:      06/05/2019
 // Descricao: Ponto entrada na tela cadastro de Fornecedores.
-//           
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #Ponto de entrada generico no cadastro de fornecedores.
+// #PalavasChave      #ponto_entrada
+// #TabelasPrincipais #SA2
+// #Modulos           #COM #EST #COOP
+
 // Historico de alteracoes:
+// 15/07/2022 - Robert - Impede exclusao se tiver movimentacao na conta corrente de associados.
+//
 
 #include "protheus.ch"
 #include "parmtype.ch"
 
+// --------------------------------------------------------------------------
 user Function CUSTOMERVENDOR()
-    Local aParam := PARAMIXB
-    Local _xRet := .T.
-    Local oObj := ""
-    Local cIdPonto := ""
-    Local cIdModel := ""
-    Local lIsGrid := .F.
-    //Local nLinha := 0
-    //Local nQtdLinhas := 0
-    //Local cMsg := ""
+	Local aParam := PARAMIXB
+	Local _xRet := .T.
+	Local oObj := ""
+	Local cIdPonto := ""
+	Local cIdModel := ""
+	Local lIsGrid := .F.
 
-    If aParam <> NIL
-        oObj := aParam[1]
-        cIdPonto := aParam[2]
-        cIdModel := aParam[3]
-        lIsGrid := (Len(aParam) > 3)
-        
-        If cIdPonto == "MODELPOS"
-            nOper := oObj:nOperation
-        	if nOper == 4
-        		_GeraLog ()
-        	endif
-            _xRet := MA020TDOK ()
-        ElseIf cIdPonto == "FORMPOS"
-        	_xRet := NIL
-        ElseIf cIdPonto == "FORMLINEPRE"
-            _xRet := .T.
-        ElseIf cIdPonto == "FORMLINEPOS"
-            _xRet := .T.
-        ElseIf cIdPonto == "MODELCOMMITTTS"
-            _xRet = NIL
-        ElseIf cIdPonto == "MODELCOMMITNTTS"
-            _xRet = NIL
-        ElseIf cIdPonto == "FORMCOMMITTTSPRE"
-            _xRet = NIL
-        ElseIf cIdPonto == "FORMCOMMITTTSPOS"
-            _xRet = NIL
-        ElseIf cIdPonto == "MODELCANCEL"
-            _xRet := .T.
-        ElseIf cIdPonto == "BUTTONBAR"
-            _xRet := {}
-        EndIf
-    EndIf
+	If aParam <> NIL
+		oObj := aParam[1]
+		cIdPonto := aParam[2]
+		cIdModel := aParam[3]
+		lIsGrid := (Len(aParam) > 3)
+	//	U_Log2 ('debug', '[' + procname () + ']cIdPonto: ' + cIdPonto)
+		
+		If cIdPonto == "MODELPOS"
+			nOper := oObj:nOperation
+	//		U_Log2 ('debug', '[' + procname () + ']nOper: ' + cvaltochar (nOper))
+			if _xRet .and. nOper == 5  // Exclusao
+				_xRet = _PodeExcl ()
+			endif
+			if _xRet .and. nOper == 4  // Alteracao
+				_GeraLog ()
+			endif
+			if _xRet
+				_xRet := MA020TDOK ()
+			endif
+		ElseIf cIdPonto == "FORMPOS"
+			_xRet := NIL
+		ElseIf cIdPonto == "FORMLINEPRE"
+			_xRet := .T.
+		ElseIf cIdPonto == "FORMLINEPOS"
+			_xRet := .T.
+		ElseIf cIdPonto == "MODELCOMMITTTS"
+			_xRet = NIL
+		ElseIf cIdPonto == "MODELCOMMITNTTS"
+			_xRet = NIL
+		ElseIf cIdPonto == "FORMCOMMITTTSPRE"
+			_xRet = NIL
+		ElseIf cIdPonto == "FORMCOMMITTTSPOS"
+			_xRet = NIL
+		ElseIf cIdPonto == "MODELCANCEL"
+			_xRet := .T.
+		ElseIf cIdPonto == "BUTTONBAR"
+			_xRet := {}
+		EndIf
+	EndIf
 Return _xRet
 
 
@@ -136,4 +149,14 @@ Static Function MA020TDOK ()
 	
 Return(_lRet)
 
-                              
+
+// --------------------------------------------------------------------------
+static function _PodeExcl ()
+	local _lRet := .T.
+
+	szi -> (dbsetorder (1))  // ZI_FILIAL, ZI_ASSOC, ZI_LOJASSO, ZI_DATA, ZI_TM, R_E_C_N_O_, D_E_L_E_T_
+	if szi -> (dbseek (xfilial ("SZI") + m->a2_cod + m->a2_loja, .T.))
+		u_help ("Fornecedor tem movimentacao na conta corrente de associados. Exclusao nao permitida.",, .t.)
+		_lRet = .F.
+	endif
+return _lRet
