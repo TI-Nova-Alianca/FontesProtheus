@@ -54,6 +54,7 @@
 // 21/05/2021 - Robert  - Campo ZN_PILHA substituido pelo ZN_ORIGEM (GLPI 10072)
 // 19/08/2021 - Robert  - Inicializador para ::Origem, pois quando pilha de chamadas, excedia tamanho do campo (GLPI 10578).
 // 02/05/2022 - Robert  - Incluidas chamadas de U_PerfMon() para acompanhar tempo de gravacao.
+// 20/07/2022 - Robert  - Criado tratamento para atributos ::DiasValid e ::ChaveNFe (GLPI 12336)
 //
 
 #include "protheus.ch"
@@ -102,6 +103,8 @@ CLASS ClsEvent
 	data HrEvento
 	data Ambiente
 	data Origem
+	data DiasValid
+	data ChaveNFe
 
 	// Declaração dos Métodos da Classe
 	METHOD New ()
@@ -150,6 +153,8 @@ METHOD New (_nRegSZN) Class ClsEvent
 	::HrEvento   := TIME()
 	::Ambiente   := GetEnvServer ()
 	::Origem     := ''
+	::DiasValid  := 0
+	::ChaveNFe   := ''
 
 	if _nRegSZN != NIL
 		szn -> (dbgoto (_nRegSZN))
@@ -186,6 +191,8 @@ METHOD New (_nRegSZN) Class ClsEvent
 		::HrEvento   = SZN -> zn_hora
 		::Ambiente   = SZN -> zn_ambient
 		::Origem     = SZN -> zn_origem
+		::DiasValid  = SZN -> zn_diasvls
+		::ChaveNFe   = SZN -> zn_chvnfe
 	endif
 Return Self
 //
@@ -221,7 +228,6 @@ METHOD Grava () Class ClsEvent
 	SZN -> zn_serieS  = ::SerieSaid
 	SZN -> zn_nfE     = ::NFEntrada
 	SZN -> zn_serieE  = ::SerieEntr
-// quero excluir este campo --->	SZN -> zn_pilha   = _PCham ()
 	SZN -> zn_texto   = _sTextoZN
 	SZN -> zn_produto = ::Produto
 	SZN -> zn_CodEven = ::CodEven
@@ -247,8 +253,9 @@ METHOD Grava () Class ClsEvent
 	SZN -> zn_redesp  = ::TranspReds
 	szn -> zn_txt     = ::Texto
 	szn -> zn_ambient = ::Ambiente
-	// SZN -> zn_origem  = iif (empty (::Origem), _PCham (), ::Origem)
 	SZN -> zn_origem  = _Origem ()
+	szn -> zn_diasvld = ::DiasValid
+	szn -> zn_chvnfe  = ::ChaveNFe
 	msunlock ("SZN")
 
 	U_PerfMon ('F', 'GravarSZN')
@@ -292,6 +299,8 @@ METHOD GravaNovo () Class ClsEvent
 	_oSQL:_sQuery +=   " AND SZN.ZN_REDESP  = '" + ::TranspReds + "'"
 	_oSQL:_sQuery +=   " AND SZN.ZN_CODPROC = '" + ::CodProceda + "'"
 	_oSQL:_sQuery +=   " AND SZN.ZN_ORIGEM  = '" + _Origem () + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_DIASVLD = " + cvaltochar (::DiasValid)
+	_oSQL:_sQuery +=   " AND SZN.ZN_CHVNFE  = '" + ::ChaveNFe + "'"
 	_oSQL:Log ()
 
 	if _oSQL:RetQry (1, .f.) == 0
@@ -469,6 +478,8 @@ METHOD Log () Class ClsEvent
 	if !empty (::MailTo);                  _sTxtLog += "MailTo.........: " + ::MailTo + chr (13) + chr (10); endif
 	if !empty (::MailToZZU);               _sTxtLog += "MailToZZU......: " + ::MailToZZU + chr (13) + chr (10); endif
 	if !empty (::Hist);                    _sTxtLog += "Historico......: " + ::Hist + chr (13) + chr (10); endif
+	if !empty (::DiasValid);               _sTxtLog += "Dias vld.evento: " + cvaltochar (::DiasValid) + chr (13) + chr (10); endif
+	if !empty (::ChaveNFe);                _sTxtLog += "Chave NFe......: " + ::ChaveNFe + chr (13) + chr (10); endif
 
 	_sTxtLog += "-----------------------------------------------------------" + chr (13) + chr (10)
 	u_log2 ('info', _sTxtLog)
@@ -515,6 +526,9 @@ METHOD SendMail (_sDestin) Class ClsEvent
 		if ! empty (::Produto)
 			_sTxtMail += "Produto........: " + ::Produto + chr (13) + chr (10)
 		endif
+		if ! empty (::ChaveNFe)
+			_sTxtMail += "Chave NFe......: " + ::ChaveNFe + chr (13) + chr (10)
+		endif
 		_sTxtMail += "Data/hora......: " + dtoc (date ()) + "  -  " + time () + chr (13) + chr (10)
 		_sTxtMail += "Usuario/estacao: " + cUserName + " / " + getcomputername () + chr (13) + chr (10)
 	endif
@@ -532,7 +546,7 @@ return
 // --------------------------------------------------------------------------
 // Faz exportacao da pilha de chamadas para uma string.
 static function _PCham ()
-	local _i      := 2
+	local _i      := 3  // Inicia em 3 por que nao quero pegar o nome da funcao interna GRAVA()
 	local _sPilha := ""
 	do while procname (_i) != ""
 		_sPilha += procname (_i) + "=>"

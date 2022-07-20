@@ -41,6 +41,8 @@ user function GravaSX1 (_sGrupo, _sPerg, _xValor, _sDelProf)
 	local _lContinua := .T.
 	local _x		 := 0
 
+//	U_Log2 ('debug', '[' + procname () + ']Recebi _xValor assim: >>' + cvaltochar (_xValor) + "<<")
+
 	// Monta array com cada pergunta e sua resposta em uma linha.
 	_oSQL  := ClsSQL ():New ()
 	_oSQL:_sQuery := ""

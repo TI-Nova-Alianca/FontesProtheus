@@ -96,15 +96,9 @@ static function _AndaLogo ()
 //	local _nParc := 0
 //	local _sCampo := ""
 //	local _nCampo := 0
-local _nRegMovto := 0
 	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
 	procregua (100)
 	incproc ()
-
-	_aRegMovto := array (25)
-	for _nRegMovto = 1 to len (_aRegMovto)
-//		u_LogPerc (_nRegMovto, len (_aRegMovto))
-	next
 
 //	_SimCtb ()
 //	_FechSafr ()
@@ -113,7 +107,12 @@ local _nRegMovto := 0
 //	_Sisdevin ()
 //	_metaf ()
 //	_exml ()
-	u_help ('Nada definido.')
+
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "select count (*) from " + RetSQLName ('SZN') + " WHERE ZN_DIASVLD > 0 AND DATEADD (DAY, ZN_DIASVLD, CAST (ZN_DATA + ' ' + ZAB_HORA AS DATETIME)) < GETDATE ()"
+		_oSQL:Log ()
+
+//	u_help ('Nada definido.')
 return
 
 static function _exml ()

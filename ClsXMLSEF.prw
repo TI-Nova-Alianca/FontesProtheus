@@ -23,7 +23,9 @@
 // 28/07/2016 - Robert - Possibilidade de tag RetEvento separada da InfEvento.
 // 28/11/2016 - Robert - XML do CTe passou a vir com tag <procCTe> em vez de <cteProc>
 // 07/11/2018 - Catia  - Alterado a leitura da versao dos XML layout <procNFe> que estava pegando a versao errada nas nossas notas de transferencia
- 
+// 20/07/2022 - Robert  - Gravacao de eventos temporarios para rastreio de import/export. XML (GLPI 12336)
+//
+
 #include "protheus.ch"
 
 // --------------------------------------------------------------------------
@@ -92,8 +94,6 @@ METHOD LeXML (_sXMLOri) Class ClsXMLSEF
 	local _oCTe      := NIL
 	private _oXML := NIL  // Tenho certeza de que eu usava 'local', mas nao funciona mais...
 
-//	u_logIni (GetClassName (::Self) + '.' + procname ())
-	
 	// Verifica o Layout (tipo de documento XML) e gera array com as partes (subniveis)
 	// do XML que interessam. Por exemplo, o layout 'NFe' eh semelhante ao subnivel 'NFe'
 	// do layout 'nfeProc'.
@@ -117,7 +117,6 @@ METHOD LeXML (_sXMLOri) Class ClsXMLSEF
 	// consCad			2.00	Mensagem de consulta ao cadastro de contribuintes do ICMS.	
 	// retConsCad		2.00	Mensagem de retorno da consulta ao cadastro de contribuintes do ICMS.
 
-//	u_log ('XML original:', _sXMLOri)
 	if empty (_sXMLOri)
 		aadd (::Erros, "XML vazio")
 	endif
@@ -354,9 +353,6 @@ METHOD LeXML (_sXMLOri) Class ClsXMLSEF
 			::CNPJDestin = _oEvento:CNPJDestin
 			::CNPJEmiten = _oEvento:CNPJEmiten
 
-//			u_log ('Objeto ' + GetClassName (::Self) + ':')
-//			u_log (ClassDataArr (::self))
-
 		otherwise
 			aadd (::Erros, "Nao identifiquei nenhuma informacao util neste XML.")
 		endcase
@@ -369,7 +365,7 @@ METHOD LeXML (_sXMLOri) Class ClsXMLSEF
 		if alltrim (::CNPJDestin) == alltrim (sm0 -> m0_cgc)
 			::FilDest = cFilAnt
 		else
-			u_log ('Nao eh para o CNPJ atual do SM0')
+			u_log2 ('aviso', 'Este XML nao eh para o CNPJ atual do SM0')
 			dbselectarea ("SM0")
 			_aAreaSM0 = getarea ()
 			sm0 -> (dbgotop ())
@@ -382,8 +378,6 @@ METHOD LeXML (_sXMLOri) Class ClsXMLSEF
 			enddo
 			restarea (_aAreaSM0)
 			if empty (::FilDest)
-				//u_log (valtype (::CNPJDestin))
-				//u_log (valtype (::CNPJEmiten))
 				aadd (::Erros, "Arquivo XML destina-se ao CNPJ/CPF '" + ::CNPJDestin + "'. CNPJ emitente: '" + ::CNPJEmiten + "'")
 				
 				if valtype (_oCTe) == 'O'  // Arquivo contem dados conhecimento de transporte.
@@ -393,17 +387,12 @@ METHOD LeXML (_sXMLOri) Class ClsXMLSEF
 		endif
 	endif
 
-	// Habilitar a linha abaixo para verificar os atributos da classe:
-	//u_log ('Objeto ' + GetClassName (::Self) + ':')
-	//u_log (ClassDataArr (::self))
-
 	if len (::Avisos) > 0
-		u_log ('Avisos:', ::Avisos)
+		u_log2 ('aviso', ::Avisos)
 	endif
 	if len (::Erros) > 0
-		u_log ('Erros:', ::Erros)
+		u_log2 ('erro', ::Erros)
 	endif
-//	u_logFim (GetClassName (::Self) + '.' + procname ())
 return (len (::Erros) == 0)
 
 
@@ -442,7 +431,6 @@ static function _VerSF1(_wchave)
 			    	   
 	   	_oSQL := ClsSQL():New ()
 	   	_oSQL:_sQuery := _sSQL  
-	   	//u_log (_oSQL:_sQuery)
 	   	if len (_oSQL:Qry2Array (.T., .F.)) > 0
     		_sMsg = _oSQL:Qry2HTM ("ERRO - CTe digitado no sistema porém, nao somos o tomador do frete.", _aCols, "", .F.)
     		
