@@ -18,8 +18,8 @@
 // 09/05/2022 - Claudia - Ajustado para não dropar mais a tabela. GLPI: 11967
 // 10/05/2022 - Claudia - Alterado campo de peso bruto para B1_PESBRU. GLPI: 11822
 // 19/06/2022 - Robert  - Criados campos NF_LITROS e NF_QTCAIXAS (GLPI 12223)
+// 20/07/2022 - Claudia - Ajustado o numero de dias de execução.
 //
-
 // -----------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
@@ -45,7 +45,7 @@ User Function BatMargem(_nTipo)
 	EndIf
 	
 	If _nTipo == 1
-		_QtdDias := 400
+		_QtdDias := 90
 		_dDtIni  := DTOS(DaySub( Date() , _QtdDias))
 		_dDtFin  := DTOS( Date() )
 	Else
