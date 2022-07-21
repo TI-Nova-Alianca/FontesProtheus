@@ -32,10 +32,11 @@ User Function ZD0()
 
 	If _lContinua
 		AADD(aRotina, {"&Visualizar"      	, "AxVisual"       , 0, 1 })
-		AADD(aRotina, {"Importar"       	, "U_BatZD0('2')"  , 0, 3 })			
+		AADD(aRotina, {"Importar"       	, "U_BatZD0('2')"  , 0, 3 })
+		AADD(aRotina, {"Gerar RA's"        	, "U_ZD0RAS('3')"  , 0 ,3 })
+		AADD(aRotina, {"Compensação"        , "U_ZD0CMP()"     , 0 ,3 })				
 		//AADD(aRotina, {"Conciliar "     	, "U_ZD0CON()"     , 0, 4 })				
 		AADD(aRotina, {"Legenda"        	, "U_ZD0LGD(.F.)"  , 0 ,5 })
-		AADD(aRotina, {"Gerar RA's"        	, "U_ZD0RAS('3')"  , 0 ,6 })
         AADD(aRotina, {"Extrato"     		, "U_ZD0EXT()"     , 0, 8 })
 		AADD(aRotina, {"Consulta TItulos" 	, "U_ZD0CONS()"    , 0, 8 })	
 

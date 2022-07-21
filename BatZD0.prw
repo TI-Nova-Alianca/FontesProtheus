@@ -88,6 +88,8 @@ Static Function _GravaPgtos(_sTipo, dDataIni, dDataFin)
             _nTaxaAntec  := IIF(empty(oJSONR[i]["anticipation_fee"])            , 0                 , oJSONR[i]["anticipation_fee"]/100)
             _nTaxaFraude := IIF(empty(oJSONR[i]["fraud_coverage_fee"])          , 0                 , oJSONR[i]["fraud_coverage_fee"]/100)
             _sParProt    := _BuscaParcProtheus(_nParcela)
+            _nVlrTaxTot  := _nTaxa + _nTaxaAntec + _nTaxaFraude
+            _nVlrLiq     := _nVlr - _nVlrTaxTot
            
             dbSelectArea("ZD0") 
             dbSetOrder(1) 
@@ -110,6 +112,8 @@ Static Function _GravaPgtos(_sTipo, dDataIni, dDataFin)
                     ZD0 -> ZD0_TAXA   := _nTaxa
                     ZD0 -> ZD0_TAXANT := _nTaxaAntec
                     ZD0 -> ZD0_TAXFRA := _nTaxaFraude
+                    ZD0 -> ZD0_TAXTOT := _nVlrTaxTot
+                    ZD0 -> ZD0_VLRLIQ := _nVlrLiq
 
                     ZD0->(MsUnlock())
                 End Transaction
@@ -123,7 +127,7 @@ Static Function _GravaPgtos(_sTipo, dDataIni, dDataFin)
         Next
         If _sTipo == '2'
             u_help("Importação finalizada com sucesso!")
-            _cMens := ""
+            _cMens := "Deseja realizar a geração dos RA's?"
             If MsgYesNo(_cMens,"ATENÇÃO","YESNO")
                 u_ZD0RAS(_sTipo, dDataIni, dDataFin)
             EndIf
