@@ -166,6 +166,7 @@
 // 07/03/2022 - Robert  - Melhorada validacao de etiq.jah apontada/estornada no campo D3_VAETIQ (antes olhava campo ZA1_APONT e agora faz query no SD3).
 // 25/03/2022 - Robert  - Validacoes adicionais do campos C2_PRODUTO e D3_VAETIQ - GLPI 11825.
 // 16/05/2022 - Robert  - Restaurada valid.etiq.jah apontada (ganta alguns segundos do usuario).
+// 15/07/2022 - Robert  - Valida grupo 140 do ZZU no campo D3_VAETIQ.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -986,6 +987,7 @@ user function VA_VCpo (_sCampo)
 				_lRet = .F.
 			endif
 
+
 		case _sCampo == "M->D3_VAETIQ"
 			za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP
 			if ! za1 -> (dbseek (xfilial ("ZA1") + m->d3_vaetiq, .F.))
@@ -1016,6 +1018,10 @@ user function VA_VCpo (_sCampo)
 					_lRet = .F.
 				endif
 			endif
+			if _lRet
+				_lRet = U_ZZUVL ('140', __cUserId, .T.)
+			endif
+
 
 		case _sCampo $ "M->DB_LOCALIZ/M->DB_QUANT" .and. funname () != 'MATA805' 
 			_aQuery := {}

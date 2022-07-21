@@ -20,6 +20,7 @@
 // 11/05/2022 - Robert  - Quando reimpressao, imprime 'Reimpressa' em vez de 'Impressa'.
 // 15/06/2022 - Robert  - Quando o produto nao controla lotes, nao tem data de
 //                        validade, entao busca data atual+b1_prvalid (GLPI 12220)
+// 18/07/2022 - Robert  - Nao formatava dt.valid como string na impressao do ZAG quando b1_rastro != 'L'
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -211,7 +212,7 @@ static function _ImpZAG ()
 	
 	zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
 	if ! zag -> (dbseek (xfilial ("ZAG") + za1 -> za1_idZAG, .F.))
-		u_help ("Documento de transferencia '" + za1 -> za1_idZAG + "' nao encontrado.")
+		u_help ("Documento de transferencia '" + za1 -> za1_idZAG + "' nao encontrado.",, .t.)
 		_lContinua = .F.
 	endif
 	
@@ -226,7 +227,6 @@ static function _ImpZAG ()
 		_sObs1  := left ('Transf alm.' + zag -> zag_almori + ' -> ' + zag -> zag_almdst, 25)
 		// Nao imprimir para nao aparecer 'devolucao', etc. ---> _sObs2  := left (zag -> zag_motivo, 25)
 		
-	//	if fBuscaCpo ("SB1", 1, xfilial ("SB1") + ZA1 -> ZA1_PROD, "B1_RASTRO") == 'L'
 		if sb1 -> b1_rastro == 'L'
 			if ! _AchaSB8 (ZA1 -> ZA1_PROD, zag -> zag_lotori, zag -> zag_almori)
 				u_help ("Lote '" + zag -> zag_lotori + "' do produto '" + za1 -> za1_prod + "' referenciado pela solicitacao de transferencia '" + za1 -> za1_IdZAG + "' nao foi localizado na tabela SB8",, .t.)
@@ -236,7 +236,7 @@ static function _ImpZAG ()
 			endif
 		else
 			U_Log2 ('aviso', '[' + procname () + "]Produto '" + alltrim (sb1 -> b1_cod) + "' nao controla lotes. Vou imprimir data de validade como data atual + b1_prvalid.")
-			_sDataV := date () + sb1 -> b1_prvalid
+			_sDataV := dtoc (date () + sb1 -> b1_prvalid)
 		endif
 	endif
 
@@ -441,7 +441,7 @@ static function _ImpOP ()
 				fwrite (_nHdl, _Esc + 'BG02070')	 			// Define ccdigo de barras (tipo, tamanho, altura)
 				if sb1 -> b1_vafullw == 'S'
 					if empty (sb1 -> b1_codbar)
-						u_help ("Produto '" + alltrim (sb1 -> b1_cod) + "' nao tem codigo DUN14 informado no campo '" + alltrim (RetTitle ("B1_CODBAR")) + "'.")
+						u_help ("Produto '" + alltrim (sb1 -> b1_cod) + "' nao tem codigo DUN14 informado no campo '" + alltrim (RetTitle ("B1_CODBAR")) + "'.",, .t.)
 					else
 						fwrite (_nHdl, '>G' + alltrim (sb1 -> b1_codbar) + _Enter )			// Informacao a ser impressa no ccdigo de barras (estilo, dado)
 					endif
@@ -542,7 +542,7 @@ static function _ImpOP ()
 			
 				if sb1 -> b1_vafullw == 'S'   // busca codigo de barra do produto
 					if empty (sb1 -> b1_codbar)
-						u_help ("Produto '" + alltrim (sb1 -> b1_cod) + "' nao tem codigo DUN14 informado no campo '" + alltrim (RetTitle ("B1_CODBAR")) + "'.")
+						u_help ("Produto '" + alltrim (sb1 -> b1_cod) + "' nao tem codigo DUN14 informado no campo '" + alltrim (RetTitle ("B1_CODBAR")) + "'.",, .t.)
 					else
 						_sCodBarProd := alltrim (sb1 -> b1_codbar) 		
 					endif
@@ -590,7 +590,6 @@ static function _ImpOP ()
 				msunlock ()
 			
 			Otherwise
-//			u_help ("Etiqueta nao disponivel para o modelo de impressora '" + cvaltochar (_nModelImp) + "'")
 			u_help ("Impossivel imprimir etiqueta '" + za1 -> za1_codigo + "': formato nao disponivel para o modelo de impressora '" + cvaltochar (_nModelImp) + "'",, .t.)
 			_lContinua = .F.
 		EndCase
@@ -820,15 +819,10 @@ static function _ImpNF ()
 		fwrite (_nHdl, '431100000' + _sMargEsq + '200' + 'Qtd:' + transform (ZA1->ZA1_QUANT, '@E 999,999,999.99') + ' ' + _sUM + _Enter)
 		fwrite (_nHdl, '431100000' + _sMargEsq + '220' + 'FABRICACAO: ' + _sDataF + _Enter)
 		fwrite (_nHdl, '431100000' + _sMargEsq + '240' + 'VALIDADE:   ' + _sDataV + _Enter)
-	//	fwrite (_nHdl, '431100000' + _sMargEsq + '270' + 'ETIQUETA:   ' + ZA1->ZA1_CODIGO + _Enter)
 		fwrite (_nHdl, '431100000' + _sMargEsq + '267' + 'ETIQUETA:   ' + ZA1->ZA1_CODIGO + _Enter)
-	//	fwrite (_nHdl, '4e5200000' + _sMargEsq + '320' + ZA1->ZA1_CODIGO + _Enter)  // cod barras
 		fwrite (_nHdl, '4e5200000' + _sMargEsq + '310' + ZA1->ZA1_CODIGO + _Enter)  // cod barras
-	//	fwrite (_nHdl, '431100000' + _sMargEsq + '350' + 'DATA: _______________' + _Enter)
 		fwrite (_nHdl, '431100000' + _sMargEsq + '330' + 'DATA: _______________' + _Enter)
-	//	fwrite (_nHdl, '431100000' + _sMargEsq + '375' + 'RESP: _______________' + _Enter)
 		fwrite (_nHdl, '431100000' + _sMargEsq + '350' + 'RESP: _______________' + _Enter)
-	//	fwrite (_nHdl, '431100000' + _sMargEsq + '400' + 'ASS.: _______________' + _Enter)
 		fwrite (_nHdl, '431100000' + _sMargEsq + '370' + 'ASS.: _______________' + _Enter)
 		fwrite (_nHdl, 'Q0001' + _Enter)
 		fwrite (_nHdl, 'E' + _Enter)

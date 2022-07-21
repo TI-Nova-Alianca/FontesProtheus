@@ -109,7 +109,9 @@
 // 05/05/2021 - Robert  - Alterada regra geracao TES entrada transf.filiais tipo prod.RE do TES 234 para 151 (GLPI 7916).
 // 25/08/2021 - Robert  - Manda uma copia do XML para o importador da TRS (GLPI projeto 15).
 // 14/04/2022 - Claudia - Criado novo menu para exporta dados. GLPI: 11889
+// 20/07/2022 - Robert  - Gravacao de eventos temporarios para rastreio de import/export. XML (GLPI 12336)
 //
+
 // ----------------------------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
 #Include "RwMake.ch"
@@ -544,6 +546,8 @@ user function ZZXE (_lAuto)
 	local _lContinua := .T.
 	local _sCodmemo  := zzx -> zzx_CodMem
 	local _sCodm2    := zzx -> zzx_CodM2
+	local _oEvento   := NIL
+	local _sChave    := zzx -> zzx_chave
 	private altera   := .F.
 	private inclui   := .F.
 	private aGets    := {}
@@ -551,7 +555,8 @@ user function ZZXE (_lAuto)
 
 	if ! _lAuto
 		if  ! u_zzuvl ('025', __cUserId, .T.)  // se vem direto do menu testa as permissoes pra excluir
-			return
+//			return
+			_lContinua = .F.
 		endif
 	endif
 	
@@ -584,6 +589,16 @@ user function ZZXE (_lAuto)
 		if _lContinua .and. ! empty (_sCodM2)
 			msmm (_sCodM2  ,,,, 2,,, "ZZX", "ZZX_CODM2")
 		endif
+
+		// Grava evento temporario
+		_oEvento := ClsEvent():new ()
+		_oEvento:CodEven   = "ZZX002"
+		_oEvento:Texto     = "Finalizada exclusao do ZZX"
+		_oEvento:Alias     = "ZZX"
+		_oEvento:Recno     = zzx -> (recno ())
+		_oEvento:ChaveNFe  = cvaltochar (_sChave)
+		_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
+		_oEvento:Grava ()
 	endif
 return
 // ------------------------------------------------------------------------------------------------------
@@ -1544,6 +1559,7 @@ user function ZZXI (_sArqImp, _sXML)
 	local _sFldImpor   := "Importados"  // Pasta para arquivos ignorados.
 	local _sFldIgnor   := "Ignorados"  // Pasta para arquivos ignorados.
 	local _lContinua   := .T.
+	local _oEvento     := NIL
 	
 	// Se recebeu um nome de arquivo a importar, nao precisa abrir tela para o usuario.
 	if _lAutoZZXI
@@ -1576,14 +1592,14 @@ user function ZZXI (_sArqImp, _sXML)
 			// Se tem nome de arquivo definido, importa-o.
 			if ! empty (_sArqOrig)
 	
-				// Guarda caminho para usar na proxima execucao, sem a barra final, pois ela atrapalha no cGetFile.
-				// Na execucao via batch nao tem necessidade de perder tempo atualizando o SX1;
-				if ! _lAutoZZXI
-					U_GravaSX1 (cPerg, '01', substr (_sDrvRmt + _sDirRmt, 1, len (alltrim (_sDrvRmt + _sDirRmt)) - 1))
-				endif
+// perguntas foram mudadas.				// Guarda caminho para usar na proxima execucao, sem a barra final, pois ela atrapalha no cGetFile.
+// perguntas foram mudadas.				// Na execucao via batch nao tem necessidade de perder tempo atualizando o SX1;
+// perguntas foram mudadas.				if ! _lAutoZZXI
+// perguntas foram mudadas.					U_GravaSX1 (cPerg, '01', substr (_sDrvRmt + _sDirRmt, 1, len (alltrim (_sDrvRmt + _sDirRmt)) - 1))
+// perguntas foram mudadas.				endif
 			
 				if ! file (_sArqOrig)
-					u_help ("Arquivo '" + _sArqOrig + "' nao encontrado.")
+					u_help ("Arquivo '" + _sArqOrig + "' nao encontrado.",, .t.)
 				else
 
 					// Manda uma copia para o importador da TRS (por enquanto... a intencao eh ficar somente o da TRS) Robert, 24/08/2021
@@ -1618,9 +1634,19 @@ user function ZZXI (_sArqImp, _sXML)
 		endif
 		if len (_oXMLSEF:Erros) > 0
 			U_F3Array (_oXMLSEF:Erros, 'Erros gerados durante a leitura do XML:')
-			// move arquivo para o diretorio temporario de erros
+			
+			// Grava evento temporario
+			_oEvento := ClsEvent():new ()
+			_oEvento:CodEven   = "ZZX002"
+			_oEvento:Texto     = "Erros leitura XML: " + cvaltochar (_oXMLSEF:Erros)
+			_oEvento:ChaveNFe  = cvaltochar (_oXMLSEF:Chave)
+			_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
+			_oEvento:Grava ()
+
+			// Move arquivo para o diretorio temporario de erros
 			_Move (_sArqOrig, "Erros")
-			return
+//			return
+
 			_lContinua = .F.
 		endif
 	endif
@@ -1633,7 +1659,7 @@ user function ZZXI (_sArqImp, _sXML)
 		endif
 	endif
 
-	// Move o arquivo para outro diretorio, conforme o resultado da importacao.		
+	// Move o arquivo para outro diretorio, conforme o resultado da importacao.
 	if _lContinua
 		if ! empty (_sArqOrig)
 			_Move (_sArqOrig, _sFldImpor)
@@ -1672,12 +1698,22 @@ static function _GravaZZX (_sQueFazer, _oXMLSEF, _sXML, _worigem)
 	local _sMemo1    := ""
 	local _sMemo2    := ""
 	local _nItemNF   := 0
+	local _oEvento   := NIL
 
 	// Verifica se destina-se a outra empresa.
 	if _lContinua
 		if ! empty (_oXMLSEF:CNPJDestin) .and. left (_oXMLSEF:CNPJDestin, 8) != left (sm0 -> m0_cgc, 8)
 			U_Help ("XML nao sera mantido na base de dados, pois destina-se a outro CNPJ (" + _oXMLSEF:CNPJDestin + ").")
 			if _sQueFazer == 'A'
+
+				// Grava evento temporario
+				_oEvento := ClsEvent():new ()
+				_oEvento:CodEven   = "ZZX002"
+				_oEvento:Texto     = "XML nao sera mantido na base de dados, pois destina-se a outro CNPJ (" + _oXMLSEF:CNPJDestin + ").
+				_oEvento:ChaveNFe  = cvaltochar (_oXMLSEF:Chave)
+				_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
+				_oEvento:Grava ()
+
 				U_ZZXE (.T.)
 			endif
 			_lContinua = .F.
@@ -1834,6 +1870,17 @@ static function _GravaZZX (_sQueFazer, _oXMLSEF, _sXML, _worigem)
 			msmm (,,, _sMemo2, 1,,, "ZZX", "ZZX_CODM2")
 			cFilAnt = _sFilAnt
 		endif
+	
+		// Grava evento temporario
+		_oEvento := ClsEvent():new ()
+		_oEvento:CodEven   = "ZZX002"
+		_oEvento:Texto     = "Finalizada gravacao na tabela ZZX"
+		_oEvento:Alias     = "ZZX"
+		_oEvento:Recno     = zzx -> (recno ())
+		_oEvento:ChaveNFe  = cvaltochar (_oXMLSEF:Chave)
+		_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
+		_oEvento:Grava ()
+
 	endif
 return _lContinua
 // ------------------------------------------------------------------------------------------------------
