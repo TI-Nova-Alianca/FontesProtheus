@@ -108,9 +108,13 @@ static function _AndaLogo ()
 //	_metaf ()
 //	_exml ()
 
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := "select count (*) from " + RetSQLName ('SZN') + " WHERE ZN_DIASVLD > 0 AND DATEADD (DAY, ZN_DIASVLD, CAST (ZN_DATA + ' ' + ZAB_HORA AS DATETIME)) < GETDATE ()"
-		_oSQL:Log ()
+	//u_revalxml ()
+	// _oSQL := ClsSQL ():New ()
+	// _oSQL:_sQuery := "select R_E_C_N_O_ from ZZX010 where ZZX_CHAVE = '43220607508851000199550010000328141613152572'"
+	// zzx -> (dbgoto (_oSQL:RetQry (1, .f.)))
+	zzx -> (dbgoto (282156))
+	u_zzxr ()
+
 
 //	u_help ('Nada definido.')
 return

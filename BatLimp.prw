@@ -19,6 +19,7 @@
 // 30/06/2021 - Robert - Limpeza do ZZ6 para nao-repetitivos reduzida de 180 para 90 dias.
 // 29/11/2021 - Robert - Criada rotina de compactacao (no SQL) de algumas tabelas especificas.
 // 20/07/2022 - Robert - Iniciada limpeza da tabela SZN (GLPI 12336)
+// 22/07/2022 - Robert - Finalizada funcao de limpeza da tabela SZN (GLPI 12336)
 //
 
 // ----------------------------------------------------------------
@@ -196,16 +197,15 @@ static function _LimpaSZN ()
 	local _oSQL    := NIL
 	local _lContinua := .T.
 
-	// Apaga avisos cuja validade jah expirou
+	// Apaga eventos cuja validade jah expirou.
 	if _lContinua
 		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := "select * from " + RetSQLName ('SZN') + " WHERE ZN_DIASVLD > 0 AND DATEADD (DAY, ZN_DIASVLD, CAST (ZN_DATA + ' ' + ZN_HORA AS DATETIME)) < GETDATE ()"
+		_oSQL:_sQuery := "UPDATE " + RetSQLName ('SZN') + " SET D_E_L_E_T_ = '*' WHERE ZN_DIASVLD > 0 AND DATEADD (DAY, ZN_DIASVLD, CAST (ZN_DATA + ' ' + ZN_HORA AS DATETIME)) < GETDATE ()"
 		_oSQL:Log ()
-		U_Log2 ('aviso', '[' + procname () + ']Nao vou executar ainda')  // aguardar mais testes
-//		if ! _oSQL:Exec ()
-//			_oBatch:Mensagens += _oSQL:UltMsg
-//			_lContinua = .F.
-//		endif
+		if ! _oSQL:Exec ()
+			_oBatch:Mensagens += _oSQL:UltMsg
+			_lContinua = .F.
+		endif
 	endif
 
 	if _lContinua

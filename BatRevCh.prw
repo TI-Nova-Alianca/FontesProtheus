@@ -3,7 +3,14 @@
 // Data:       09/10/2018
 // Descricao:  Revalida chaves de XMLs da tabela ZZX.
 //             Criado para ser executado via batch.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Revalida chaves de XMLs da tabela ZZX.
+// #PalavasChave      #batch #XML #chave #NFe #CTe #Revalidacao #auxiliar #uso_generico
+// #TabelasPrincipais #ZZX
+// #Modulos           #FIS
+
 // Historico de alteracoes:
 // 07/05/2019 - Robert  - Leitura certificado atualizado.
 //                      - Alguns testes de erros de comunicacao. Por fim era a pasta SSO que foi descompactada no appserver.
@@ -21,13 +28,8 @@
 //                      - Deixa de gravar campo ZZX_DPCC (vai ser eliminado)
 //                      - Passa a gravar protocolo de cancelamento (criado campo zzx_prtcan).
 // 01/02/2021 - Robert  - Ajuste leitura retorno CTe do MS (GLPI 9196)
+// 20/07/2022 - Robert  - Gravacao de eventos temporarios para rastreio de movimentacao dos XML (GLPI 12336)
 //
-
-// Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #Processamento
-// #PalavasChave      #batch #XML #chave #NFe #CTe #Revalidacao #auxiliar #uso_generico
-// #TabelasPrincipais #ZZX
-// #Modulos           #FIS
 
 // --------------------------------------------------------------------------
 // Documentacao Totvs: http://tdn.totvs.com/display/tec/Classe+TWsdlManager
@@ -483,6 +485,14 @@ static function _TrataRet (_sEstado, _sTipo, _lDebug)
 		zzx -> zzx_protoc = _sRetPrAut
 		zzx -> zzx_prtcan = _sRetPrCan
 		msunlock ()
+
+		// Grava evento temporario
+		_oEvento := ClsEvent():new ()
+		_oEvento:CodEven   = "ZZX002"
+		_oEvento:Texto     = "Finalizada revalidacao (de chave junto a SEFAZ), com retorno = " + _sRetStat + " Pilha: " + U_LogPCham ()
+		_oEvento:ChaveNFe  = zzx -> zzx_chave
+		_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
+		_oEvento:Grava ()
 	endif
 return
 

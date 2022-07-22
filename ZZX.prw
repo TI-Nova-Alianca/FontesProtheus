@@ -109,7 +109,7 @@
 // 05/05/2021 - Robert  - Alterada regra geracao TES entrada transf.filiais tipo prod.RE do TES 234 para 151 (GLPI 7916).
 // 25/08/2021 - Robert  - Manda uma copia do XML para o importador da TRS (GLPI projeto 15).
 // 14/04/2022 - Claudia - Criado novo menu para exporta dados. GLPI: 11889
-// 20/07/2022 - Robert  - Gravacao de eventos temporarios para rastreio de import/export. XML (GLPI 12336)
+// 20/07/2022 - Robert  - Gravacao de eventos temporarios para rastreio de movimentacao do XML (GLPI 12336)
 //
 
 // ----------------------------------------------------------------------------------------------------------------------------------
@@ -413,9 +413,11 @@ user function ZZXV (_nOQueVer)
 		if valtype (_oXMLSEF:NFe) == 'O'
 			_wdadosaidc = _oXMLSEF:NFe:DadosAdic
 			u_showmemo (_wdadosaidc)
-		endif			
+		endif
 	endcase
 return
+
+
 // ------------------------------------------------------------------------------------------------------
 // CTEs verifica NOTAS
 user function ZZXVNFS()
@@ -540,6 +542,8 @@ user function ZZXVNFS()
 		u_help ("Nao foi possivel ler a TAG de notas relacionadas deste XML")
 	endif
 return
+
+
 // ------------------------------------------------------------------------------------------------------
 // Exclusao
 user function ZZXE (_lAuto)
@@ -552,6 +556,12 @@ user function ZZXE (_lAuto)
 	private inclui   := .F.
 	private aGets    := {}
 	private aTela    := {}
+
+	// Descobri que a funcao MSMM comecou a operar somente na filial atual! Robert, 21/07/2022
+	if _lContinua .and. zzx -> zzx_filial != cFilAnt
+		u_help ("Exclusao deve ser feita somente para registros da filial atual, para evitar risco de nao conseguir apagar o conteudo do XML na tabela SYP.",, .t.)
+		_lcontinua = .F.
+	endif
 
 	if ! _lAuto
 		if  ! u_zzuvl ('025', __cUserId, .T.)  // se vem direto do menu testa as permissoes pra excluir
@@ -593,14 +603,16 @@ user function ZZXE (_lAuto)
 		// Grava evento temporario
 		_oEvento := ClsEvent():new ()
 		_oEvento:CodEven   = "ZZX002"
-		_oEvento:Texto     = "Finalizada exclusao do ZZX"
+		_oEvento:Texto     = "Finalizada exclusao do ZZX. Pilha: " + U_LogPCham ()
 		_oEvento:Alias     = "ZZX"
 		_oEvento:Recno     = zzx -> (recno ())
 		_oEvento:ChaveNFe  = cvaltochar (_sChave)
 		_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
 		_oEvento:Grava ()
 	endif
-return
+return _lContinua
+
+
 // ------------------------------------------------------------------------------------------------------
 // Marca como Contra Nota
 user function ZZXM ()
@@ -678,40 +690,26 @@ user function ZZXO ()
 	   		ZZX->ZZX_ERRO    = _wprotocolo
 	   		ZZX->ZZX_JUSTAJ  = 'Não Aceite de Operação - ' +  alltrim (cUserName) + ' - ' + substr (dtos (date ()),7,2) + '/' + substr (dtos (date ()),5,2) + '/' + substr (dtos (date ()),1,4)
 	   	MsUnLock()
-	endif			   	
+	endif
 return
+
+
 // ------------------------------------------------------------------------------------------------------
 // Informa dados referentes a devolução
 user function ZZXD (_wtpdados)
-
-	//local _lContinua   := .T.
-	//local _sArq        := "" 
-	//local _sTmpPath    := AllTrim (GetTempPath ())
-	//local _nHdl        := 0
-	//local _sArqProg    := ""
 	local _sXML        := ""
 	local _oXMLSEF     := NIL
-	//local _nNota       := 0
-	//local _oXMLNota    := NIL
 	local _nItem       := 0
 	local _aItens      := {}
-	//local _aCols       := {}
 	local _bBotaoOK    := {|| NIL}
 	local _bBotaoCan   := {|| NIL}
 	local _aBotAdic    := {}
 	local _aSize       := {}
 	local _aHead1      := {}
-	//local _aCampos     := {}
-	//local _aArqTrb     := {}
 	local _oDlg        := NIL
 	local _oCour24     := TFont():New("Courier New",,24,,.T.,,,,,.F.)
-    //local _sQuery      := ""
-	//local _sAliasQ     := ""
-	//local _aRetQry     := {}
 	local _nErro	   := 0
 	local _nAviso	   := 0
-	//local _nItem       := 0
-	//local _n		   := 1
 	private _oTxtBrw1  := NIL
 	private _oGetD1    := NIL
 	private aHeader    := {}
@@ -725,6 +723,12 @@ user function ZZXD (_wtpdados)
 	                      {"BlaBlaBla", "allwaystrue ()", 0, 3}, ;
 	                      {"BlaBlaBla", "allwaystrue ()", 0, 4}}  // aRotina eh exigido pela MSGetDados!!!
 		
+	// Descobri que a funcao MSMM comecou a operar somente na filial atual! Robert, 21/07/2022
+	if zzx -> zzx_filial != cFilAnt
+		u_help ("Dados de devolucao devem ser preenchidos somente para registros da filial atual, para evitar risco de nao conseguir ler o conteudo do XML.",, .t.)
+		return
+	endif
+
 	if zzx -> zzx_tiponf != 'D'
 		u_help ("XML selecionado não é referente a uma nota de devolução.")
 		return
@@ -742,10 +746,6 @@ user function ZZXD (_wtpdados)
 		   	u_help ("Status não permite alterar/informar dados devolução")
 			return
 		endif
-		
-		//if ! u_zzuvl ('088', __cUserId, .T.)
-			//return
-		//endif
 		
 		aHeader = aclone (U_GeraHead ("ZZZ", .T., {}, {"ZZZ_12XIT", "ZZZ_12XPRO", "ZZZ_12XDES", "ZZZ_12XUN", "ZZZ_12XQUA", "ZZZ_12CPRO", "ZZZ_12DESC", "ZZZ_12UN", "ZZZ_12QUAN", "ZZZ_12MDEV", "ZZZ_12NFOR", "ZZZ_12NIOR", "ZZZ_12RET", "ZZZ_12TES", ,"ZZZ_12VORI","ZZZ_12VDEV","ZZZ_12USER", "ZZZ_12DATA", "ZZZ_12HORA"}, .T.))
 		_aHead1 := aclone (aHeader)
@@ -1375,71 +1375,82 @@ user function ZZXS ()
 		
 	endif
 return
+
+
 // ------------------------------------------------------------------------------------------------------
 // Revalida arquivo XML.
 user function ZZXR (_lAvisos)
 	local _lContinua := .T.
-	//local _sFilDest  := ""
-	//local _sFilAnt   := ""
 	local _sXML      := ""
 	local _oXMLSEF   := NIL
-	//local _nAviso    := 0
-	//local _sMemo1    := ""
-	//local _sMemo2    := ""
-	local _wcgc		 := "88612486"
-	local _nItem	 := 0
-	local i			 := 0
+	local _wcgc      := "88612486"
+	local _nItem     := 0
+	local i          := 0
+	local _oEvento   := NIL
+	local _lXMLInval := .F.
 
-	DbSelectArea("ZZX")
-	reclock("ZZX", .F.)
-	   	ZZX->ZZX_STATUS  = ''
-	 	ZZX->ZZX_CSTAT   = ''
-	MsUnLock()
-	// verifica se o XML ja esta digitado
-	_sSQL := ""
-    _sSQL += " SELECT F1_CHVNFE, dbo.VA_DTOC(F1_VADTINC), F1_VAHRINC, F1_VAUSER"
-    _sSQL += "   FROM SF1010"
-    _sSQL += "  WHERE F1_CHVNFE = '" + alltrim(zzx -> zzx_chave) + "'"
-    _sSQL += "    AND D_E_L_E_T_ = ''"
-    
-    aDados := U_Qry2Array(_sSQL)
-    
-	if len (aDados) > 0
-		DbSelectArea("ZZX")
-		reclock("ZZX", .F.)
-			ZZX->ZZX_STATUS = '1'
-			ZZX->ZZX_CSTAT  = aDados[1,2] + ' - ' + aDados[1,3] + ' - ' + substr (aDados[1,4] ,1,15)
-		MsUnLock()		
-		
-    else
-    	if ZZX->ZZX_LAYOUT != 'procCTe'  
-	    	// se nao encontrou pela chave... procura como pre-nota
-	    	_sSQL := ""
-	    	_sSQL += " SELECT F1_DOC, dbo.VA_DTOC(F1_VADTINC), F1_VAHRINC, F1_VAUSER""
-	    	_sSQL += "   FROM SF1010"
-	    	_sSQL += "  WHERE F1_CHVNFE  = ''" 
-	    	_sSQL += "    AND D_E_L_E_T_ = ''"
-	    	_sSQL += "    AND F1_DOC     = '" + alltrim(zzx -> zzx_doc) + "'" 
-	    	_sSQL += "    AND F1_FORNECE = '" + alltrim(zzx -> zzx_clifor) + "'"
-	    	aDados1 := U_Qry2Array(_sSQL)
-	    	
-	    	if len (aDados1) > 0
-	    		DbSelectArea("ZZX")
-	    		reclock("ZZX", .F.)
-	    			ZZX->ZZX_STATUS  = '2'
-	    			ZZX->ZZX_CSTAT   = aDados1[1,2] + ' - ' + aDados1[1,3] + ' - ' + substr (aDados1[1,4] ,1,15)
-				MsUnLock()		
-			endif
-		endif		
-    endif
-    
-    if ! empty (zzx -> zzx_ajman) .and. zzx -> zzx_ajman != 'N'
-		u_help ("Este registro ja' sofreu ajustes manuais. Revalidacao nao sera' feita.")
-		_lContinua = .F.
+	// Descobri que a funcao MSMM comecou a operar somente na filial atual! Robert, 21/07/2022
+	if _lContinua .and. zzx -> zzx_filial != cFilAnt
+		u_help ("Revalidacao deve ser feita somente para registros da filial atual, para evitar risco de nao conseguir ler o conteudo do XML.",, .t.)
+		_lcontinua = .F.
 	endif
 
 	if _lContinua
+		DbSelectArea("ZZX")
+		reclock("ZZX", .F.)
+			ZZX->ZZX_STATUS  = ''
+			ZZX->ZZX_CSTAT   = ''
+		MsUnLock()
+		// verifica se o XML ja esta digitado
+		_sSQL := ""
+		_sSQL += " SELECT F1_CHVNFE, dbo.VA_DTOC(F1_VADTINC), F1_VAHRINC, F1_VAUSER"
+		_sSQL += "   FROM SF1010"
+		_sSQL += "  WHERE F1_CHVNFE = '" + alltrim(zzx -> zzx_chave) + "'"
+		_sSQL += "    AND D_E_L_E_T_ = ''"
+
+		aDados := U_Qry2Array(_sSQL)
+
+		if len (aDados) > 0
+			DbSelectArea("ZZX")
+			reclock("ZZX", .F.)
+				ZZX->ZZX_STATUS = '1'
+				ZZX->ZZX_CSTAT  = aDados[1,2] + ' - ' + aDados[1,3] + ' - ' + substr (aDados[1,4] ,1,15)
+			MsUnLock()
+			
+		else
+			if ZZX->ZZX_LAYOUT != 'procCTe'  
+				// se nao encontrou pela chave... procura como pre-nota
+				_sSQL := ""
+				_sSQL += " SELECT F1_DOC, dbo.VA_DTOC(F1_VADTINC), F1_VAHRINC, F1_VAUSER""
+				_sSQL += "   FROM SF1010"
+				_sSQL += "  WHERE F1_CHVNFE  = ''" 
+				_sSQL += "    AND D_E_L_E_T_ = ''"
+				_sSQL += "    AND F1_DOC     = '" + alltrim(zzx -> zzx_doc) + "'" 
+				_sSQL += "    AND F1_FORNECE = '" + alltrim(zzx -> zzx_clifor) + "'"
+				aDados1 := U_Qry2Array(_sSQL)
+				
+				if len (aDados1) > 0
+					DbSelectArea("ZZX")
+					reclock("ZZX", .F.)
+						ZZX->ZZX_STATUS  = '2'
+						ZZX->ZZX_CSTAT   = aDados1[1,2] + ' - ' + aDados1[1,3] + ' - ' + substr (aDados1[1,4] ,1,15)
+					MsUnLock()		
+				endif
+			endif		
+		endif
+	endif
+
+	if _lContinua
+		if ! empty (zzx -> zzx_ajman) .and. zzx -> zzx_ajman != 'N'
+			u_help ("Este registro ja' sofreu ajustes manuais. Revalidacao nao sera' feita.")
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
+	//	U_Log2 ('debug', '[' + procname () + ']Vou ler o XML com base no codigo ' + zzx -> zzx_CodMem + '. Conteudo atual: ' + _sXML)
 		_sXML = MSMM (zzx -> zzx_CodMem,,,,3)
+	//	U_Log2 ('debug', '[' + procname () + ']XML lido. Conteudo atual: ' + _sXML)
 	endif
 
 	// Nao adianta guardar XML vazios.
@@ -1461,9 +1472,25 @@ user function ZZXR (_lAvisos)
 		if len (_oXMLSEF:Erros) > 0
 			U_F3Array (_oXMLSEF:Erros, 'Erros gerados durante a leitura do XML:')
 			_lContinua = .F.
+
+			// Testa erros mais comuns
+			if "START TAG EXPECTED" $ upper (_oXMLSEF:Erros [1, 1])
+			//	U_Log2 ('debug', '[' + procname () + ']tem erro de tag inicial')
+				_lXMLInval = .T.
+			endif
 		endif
 	endif
 	
+	// Se for um XML invalido, nao adianta mante-lo.
+	if ! _lcontinua .and. _lXMLInval
+		if ZZX->ZZX_STATUS != '1'  // Nota jah gerada
+			if empty (zzx -> zzx_ajman) .or. zzx -> zzx_ajman = 'N'  // Nao teve ajustes manuais
+				u_help ("XML com conteudo invalido. Nao sera´ mantido na base de dados.")
+				U_ZZXE (.T.)
+			endif
+		endif
+	endif
+
 	if _lContinua .and. _oXMLSEF:XMLLayout == 'cancNFe'
 		u_help ('Falta tratamento para cancelamentos')
 		_lContinua = .F.
@@ -1477,84 +1504,99 @@ user function ZZXR (_lAvisos)
 	endif
 
 	// se nao tem nota e nem pre nota --- verifica dados de devolução
-	if ZZX->ZZX_TIPONF = 'D'	        
-    	if ZZX->ZZX_STATUS !='1' .AND. ZZX->ZZX_STATUS !='2'
-    		
-	    	// cont o numero de itens que tem no XML
-	    	_wtotitensXML = 0
-	    	for _nItem = 1 to len (_oXMLSEF:NFe:ItCFOP)
-	    		_wtotitensXML = _nItem 
-	    	next
+	if _lContinua .and. ZZX->ZZX_TIPONF = 'D'
+		if ZZX->ZZX_STATUS !='1' .AND. ZZX->ZZX_STATUS !='2'
+			
+			// cont o numero de itens que tem no XML
+			_wtotitensXML = 0
+			for _nItem = 1 to len (_oXMLSEF:NFe:ItCFOP)
+				_wtotitensXML = _nItem 
+			next
 			
 			// verifica se o XML ja esta digitado
 			_sSQL := ""
-		    _sSQL += " SELECT COUNT (ZAJ_CHAVE)"
-		    _sSQL += "   FROM ZAJ010"
-		    _sSQL += "  WHERE ZAJ_CHAVE = '" + alltrim(zzx -> zzx_chave) + "'"
-		    _sSQL += "    AND D_E_L_E_T_ = ''"
-		    
-		    aDados := U_Qry2Array(_sSQL)
-		    
-		    _wstatus = ''
-		    if len (aDados) > 0
-		    	if aDados[1,1] > 0 
-		    		if aDados[1,1] <> _wtotitensXML
+			_sSQL += " SELECT COUNT (ZAJ_CHAVE)"
+			_sSQL += "   FROM ZAJ010"
+			_sSQL += "  WHERE ZAJ_CHAVE = '" + alltrim(zzx -> zzx_chave) + "'"
+			_sSQL += "    AND D_E_L_E_T_ = ''"
+			
+			aDados := U_Qry2Array(_sSQL)
+			
+			_wstatus = ''
+			if len (aDados) > 0
+				if aDados[1,1] > 0 
+					if aDados[1,1] <> _wtotitensXML
 						_wstatus = '9'
 					else
-						_wstatus = '6'																
-					endif						
+						_wstatus = '6'
+					endif
 				endif
 			endif
 			// verifica se tem dados de DEV ok ou se tem dados parciais apenas
 			_sSQL := ""
-		    _sSQL += " SELECT TOP 1 dbo.VA_DTOC(ZAJ_DATA), ZAJ_HORA, ZAJ_USER"
-		    _sSQL += "   FROM ZAJ010"
-		    _sSQL += "  WHERE ZAJ_CHAVE = '" + alltrim(zzx -> zzx_chave) + "'"
-		    _sSQL += "    AND D_E_L_E_T_ = ''"
-		    
-		    aDados := U_Qry2Array(_sSQL)
-		    if len (aDados) > 0
+			_sSQL += " SELECT TOP 1 dbo.VA_DTOC(ZAJ_DATA), ZAJ_HORA, ZAJ_USER"
+			_sSQL += "   FROM ZAJ010"
+			_sSQL += "  WHERE ZAJ_CHAVE = '" + alltrim(zzx -> zzx_chave) + "'"
+			_sSQL += "    AND D_E_L_E_T_ = ''"
+			
+			aDados := U_Qry2Array(_sSQL)
+			if len (aDados) > 0
 				DbSelectArea("ZZX")
 				reclock("ZZX", .F.)
-				   	ZZX->ZZX_STATUS  = _wstatus
-			   		ZZX->ZZX_CSTAT   = aDados[1,1] + ' - ' + aDados[1,2] + ' - ' + substr (aDados[1,3] ,1,15)
+					ZZX->ZZX_STATUS  = _wstatus
+					ZZX->ZZX_CSTAT   = aDados[1,1] + ' - ' + aDados[1,2] + ' - ' + substr (aDados[1,3] ,1,15)
 				MsUnLock()
-			endif	
-		endif					
+			endif
+		endif
 	endif
 	
 	// se for CTE - verifica as notas referenciadas para revalidar o TIPONF
-	if zzx -> zzx_layout $ 'CTE'
+	if _lContinua .and. zzx -> zzx_layout $ 'CTE'
 		_wTipoNF = 'N' // em teoria temos mais fretes sobre saidas
 		// le XML - para buscar a que notas se refere o conhecimento de frete
-	    // verifica notas referenciadas para verificar se eh um frete sobre compras
+		// verifica notas referenciadas para verificar se eh um frete sobre compras
 		for i = 1 to len (_oXMLSEF:CTe:ChaveRel)
-		_wchave  = _oXMLSEF:CTe:ChaveRel [i]
-			if ! _wcgc $ _wchave 
+			_wchave  = _oXMLSEF:CTe:ChaveRel [i]
+			if ! _wcgc $ _wchave
 				_wTipoNF = 'C'
 				exit
-			endif			
+			endif
 		next
 		if ZZX->ZZX_TIPONF != _wTipoNF 
 			DbSelectArea("ZZX")
 			reclock("ZZX", .F.)
 				ZZX->ZZX_TIPONF = _wTipoNF
 			MsUnLock()
-	    endif		
+		endif
 	endif
-				    
+
 	if _lContinua
+		reclock ("ZZX", .F.)
+		zzx -> zzx_durc = date ()
+		MsUnLock ()
 		_lContinua = _GravaZZX ("A", _oXMLSEF, _sXML)
 	endif
+
+	// Grava evento temporario
+	if _lContinua
+		_oEvento := ClsEvent():new ()
+		_oEvento:CodEven   = "ZZX002"
+		_oEvento:Texto     = "Finalizada revalidacao (de conteudo) do XML. Pilha: " + U_LogPCham ()
+		_oEvento:ChaveNFe  = zzx -> zzx_chave
+		_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
+		_oEvento:Grava ()
+	endif
 return
+
+
 // ------------------------------------------------------------------------------------------------------
 // Importacao de arquivo XML
 user function ZZXI (_sArqImp, _sXML)
 	local _lAutoZZXI   := (_sArqImp != NIL .or. _sXML != NIL)
 	local _oXMLSEF     := NIL
 	local _sArqOrig    := ""
-	local _sDrvRmt     := ""
-	local _sDirRmt     := ""
+//	local _sDrvRmt     := ""
+//	local _sDirRmt     := ""
 	local _ZZXXML      := ""
 	local _sFldImpor   := "Importados"  // Pasta para arquivos ignorados.
 	local _sFldIgnor   := "Ignorados"  // Pasta para arquivos ignorados.
@@ -1638,7 +1680,7 @@ user function ZZXI (_sArqImp, _sXML)
 			// Grava evento temporario
 			_oEvento := ClsEvent():new ()
 			_oEvento:CodEven   = "ZZX002"
-			_oEvento:Texto     = "Erros leitura XML: " + cvaltochar (_oXMLSEF:Erros)
+			_oEvento:Texto     = "Erros leitura XML: " + cvaltochar (_oXMLSEF:Erros) + " Pilha: " + U_LogPCham ()
 			_oEvento:ChaveNFe  = cvaltochar (_oXMLSEF:Chave)
 			_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
 			_oEvento:Grava ()
@@ -1709,7 +1751,7 @@ static function _GravaZZX (_sQueFazer, _oXMLSEF, _sXML, _worigem)
 				// Grava evento temporario
 				_oEvento := ClsEvent():new ()
 				_oEvento:CodEven   = "ZZX002"
-				_oEvento:Texto     = "XML nao sera mantido na base de dados, pois destina-se a outro CNPJ (" + _oXMLSEF:CNPJDestin + ").
+				_oEvento:Texto     = "XML nao sera mantido na base de dados, pois destina-se a outro CNPJ (" + _oXMLSEF:CNPJDestin + "). Pilha: " + U_LogPCham ()
 				_oEvento:ChaveNFe  = cvaltochar (_oXMLSEF:Chave)
 				_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
 				_oEvento:Grava ()
@@ -1783,13 +1825,13 @@ static function _GravaZZX (_sQueFazer, _oXMLSEF, _sXML, _worigem)
 						_witem = UPPER(_oXMLSEF:NFe:ItCprod [_nItemNF])
 						if val(fbuscacpo ("SA5", 14, xfilial ("SA5") + zzx -> zzx_clifor + zzx -> zzx_loja + _witem,  "A5_PRODUTO")) = 0
 							// não existe a amaração produto x fornecedor
-							_wstatus = '7'					
+							_wstatus = '7'
 						endif
-					endif					
+					endif
 				elseif zzx -> zzx_TipoNF = 'D'
-				    if substr (_oXMLSEF:NFe:ItCFOP [_nItemNF], 2, 3) = "603"
+					if substr (_oXMLSEF:NFe:ItCFOP [_nItemNF], 2, 3) = "603"
 						_wressarcimento = '1'
-					endif										
+					endif
 				endif
 			next
 			zzx -> zzx_vlNF  += zzx -> zzx_vlIPI // o IPI faz parte do total da nota
@@ -1874,7 +1916,7 @@ static function _GravaZZX (_sQueFazer, _oXMLSEF, _sXML, _worigem)
 		// Grava evento temporario
 		_oEvento := ClsEvent():new ()
 		_oEvento:CodEven   = "ZZX002"
-		_oEvento:Texto     = "Finalizada gravacao na tabela ZZX"
+		_oEvento:Texto     = "Finalizada " + iif (_sQueFazer == 'I', '', 're') + "gravacao na tabela ZZX. Pilha: " + U_LogPCham ()
 		_oEvento:Alias     = "ZZX"
 		_oEvento:Recno     = zzx -> (recno ())
 		_oEvento:ChaveNFe  = cvaltochar (_oXMLSEF:Chave)
