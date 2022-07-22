@@ -59,6 +59,7 @@
 // 06/12/2021 - Robert  - LogPCham() passa a usar U_Log2() para gravar os dados.
 // 30/03/2022 - Robert  - LogObj() passa a usar U_Log2() para gravar os dados.
 // 19/05/2022 - Robert  - LogTrb() nao fazia dbgotop() quando exportacao completa (GLPI 12080)
+// 20/07/2022 - Robert  - LogPCham() passa a receber parametro indicando se grava log ou apenas retorna a pilha.
 //
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -276,7 +277,7 @@ return
 //
 // --------------------------------------------------------------------------
 // Faz exportacao da pilha de chamadas para o arquivo de log.
-user function LogPCham ()
+user function LogPCham (_lGeraLog)
 	local _i      := 0
 	local _sPilha := ""
 
@@ -284,8 +285,11 @@ user function LogPCham ()
 		_sPilha += "   =>   " + procname (_i)
 		_i++
 	enddo
-	//u_log ("Pilha de chamadas: " + _sPilha)
-	U_Log2 ('info', 'Pilha de chamadas: ' + _sPilha)
+
+	// Em alguns casos, a rotina chamadora quer a pilha para outras coisas.
+	if _lGeraLog == NIL .or. _lGeraLog
+		U_Log2 ('info', 'Pilha de chamadas: ' + _sPilha)
+	endif
 
 return _sPilha
 //

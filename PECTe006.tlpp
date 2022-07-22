@@ -38,7 +38,7 @@ user function PECTE006 ()
 	// Grava evento temporario para rastreio de eventuais chaves perdidas
 	if inclui
 		_oEvento := ClsEvent():new ()
-		_oEvento:CodEven   = "ZZX002"
+		_oEvento:CodEven   = "ZBE001"
 		_oEvento:Texto     = "Incluindo chave CTE"
 		_oEvento:ChaveNFe  = _sChvCte
 		_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
@@ -46,7 +46,7 @@ user function PECTE006 ()
 	endif
 	if altera
 		_oEvento := ClsEvent():new ()
-		_oEvento:CodEven   = "ZZX002"
+		_oEvento:CodEven   = "ZBE001"
 		_oEvento:Texto     = "Reprocessando chave CTE"
 		_oEvento:ChaveNFe  = _sChvCte
 		_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
@@ -54,7 +54,7 @@ user function PECTE006 ()
 	endif
 	if !inclui .and. !altera
 		_oEvento := ClsEvent():new ()
-		_oEvento:CodEven   = "ZZX002"
+		_oEvento:CodEven   = "ZBE001"
 		_oEvento:Texto     = "Excluindo chave CTE"
 		_oEvento:ChaveNFe  = _sChvCte
 		_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.

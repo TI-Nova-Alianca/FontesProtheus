@@ -56,7 +56,7 @@ static function _Logs (_aCabec)
 		// Grava evento temporario para rastreio de eventuais chaves perdidas
 		if inclui
 			_oEvento := ClsEvent():new ()
-			_oEvento:CodEven   = "ZZX002"
+			_oEvento:CodEven   = "ZBE001"
 			_oEvento:Texto     = "Incluindo (a nivel de item) chave NFE"  // Este P.E. eh executado para cada item da nota
 			_oEvento:ChaveNFe  = _sChvNFe
 			_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
@@ -64,7 +64,7 @@ static function _Logs (_aCabec)
 		endif
 		if altera
 			_oEvento := ClsEvent():new ()
-			_oEvento:CodEven   = "ZZX002"
+			_oEvento:CodEven   = "ZBE001"
 			_oEvento:Texto     = "Reprocessando (a nivel de item) chave NFE"  // Este P.E. eh executado para cada item da nota
 			_oEvento:ChaveNFe  = _sChvNFe
 			_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
@@ -72,7 +72,7 @@ static function _Logs (_aCabec)
 		endif
 		if !inclui .and. !altera
 			_oEvento := ClsEvent():new ()
-			_oEvento:CodEven   = "ZZX002"
+			_oEvento:CodEven   = "ZBE001"
 			_oEvento:Texto     = "Excluindo (a nivel de item) chave NFE"  // Este P.E. eh executado para cada item da nota
 			_oEvento:ChaveNFe  = _sChvNFe
 			_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.

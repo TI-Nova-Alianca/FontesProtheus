@@ -95,6 +95,7 @@
 //                      - Passa a trabalhar com um unico arquivo de log (antes
 //                        gerava um arqivo de log para cada usuario).
 // 26/05/2022 - Robert  - Novos parametros na chamada da funcao U_RastLt().
+// 20/07/2022 - Robert  - Novas tags DiasValid e ChaveNFe na gravacao de eventos (GLPI 12336)
 //
 
 // --------------------------------------------------------------------------------------------------------
@@ -740,30 +741,32 @@ static function _IncEvt ()
 	if empty (_sErroWS) .and. ! U_ExistZX5 ('54', _oEvento:CodEven)
 		_sErroWS += "Codigo do evento " + _oEvento:CodEven + " nao cadastrado na tabela 54 do arquivo ZX5."
 	endif
-	if empty (_sErroWS) ; _oEvento:Origem     = _ExtraiTag ("_oXML:_WSAlianca:_Origem",       .T., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:Texto      = _ExtraiTag ("_oXML:_WSAlianca:_Texto",        .T., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:NFSaida    = _ExtraiTag ("_oXML:_WSAlianca:_NFSaida",      .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:SerieSaid  = _ExtraiTag ("_oXML:_WSAlianca:_SerieSaid",    .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:ParcTit    = _ExtraiTag ("_oXML:_WSAlianca:_ParcTit",      .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:NFEntrada  = _ExtraiTag ("_oXML:_WSAlianca:_NFEntrada",    .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:SerieEntr  = _ExtraiTag ("_oXML:_WSAlianca:_SerieEntr",    .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:Produto    = _ExtraiTag ("_oXML:_WSAlianca:_Produto",      .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:PedVenda   = _ExtraiTag ("_oXML:_WSAlianca:_PedVenda",     .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:Cliente    = _ExtraiTag ("_oXML:_WSAlianca:_Cliente",      .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:LojaCli    = _ExtraiTag ("_oXML:_WSAlianca:_LojaCli",      .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:Fornece    = _ExtraiTag ("_oXML:_WSAlianca:_Fornece",      .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:LojaFor    = _ExtraiTag ("_oXML:_WSAlianca:_LojaFor",      .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:MailTo     = _ExtraiTag ("_oXML:_WSAlianca:_MailTo",       .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:MailToZZU  = _ExtraiTag ("_oXML:_WSAlianca:_MailToZZU",    .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:Alias      = _ExtraiTag ("_oXML:_WSAlianca:_Alias",        .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:Recno      = val (_ExtraiTag ("_oXML:_WSAlianca:_Recno",   .F., .F.)) ;   endif
-	if empty (_sErroWS) ; _oEvento:CodAlias   = _ExtraiTag ("_oXML:_WSAlianca:_CodAlias",     .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:Chave      = _ExtraiTag ("_oXML:_WSAlianca:_Chave",        .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:OP         = _ExtraiTag ("_oXML:_WSAlianca:_OP",           .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:Etiqueta   = _ExtraiTag ("_oXML:_WSAlianca:_Etiqueta",     .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:CodProceda = _ExtraiTag ("_oXML:_WSAlianca:_CodProceda",   .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:Transp     = _ExtraiTag ("_oXML:_WSAlianca:_Transp",       .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:TranspReds = _ExtraiTag ("_oXML:_WSAlianca:_TranspReds",   .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:Origem     = _ExtraiTag ("_oXML:_WSAlianca:_Origem",         .T., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:Texto      = _ExtraiTag ("_oXML:_WSAlianca:_Texto",          .T., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:NFSaida    = _ExtraiTag ("_oXML:_WSAlianca:_NFSaida",        .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:SerieSaid  = _ExtraiTag ("_oXML:_WSAlianca:_SerieSaid",      .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:ParcTit    = _ExtraiTag ("_oXML:_WSAlianca:_ParcTit",        .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:NFEntrada  = _ExtraiTag ("_oXML:_WSAlianca:_NFEntrada",      .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:SerieEntr  = _ExtraiTag ("_oXML:_WSAlianca:_SerieEntr",      .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:Produto    = _ExtraiTag ("_oXML:_WSAlianca:_Produto",        .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:PedVenda   = _ExtraiTag ("_oXML:_WSAlianca:_PedVenda",       .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:Cliente    = _ExtraiTag ("_oXML:_WSAlianca:_Cliente",        .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:LojaCli    = _ExtraiTag ("_oXML:_WSAlianca:_LojaCli",        .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:Fornece    = _ExtraiTag ("_oXML:_WSAlianca:_Fornece",        .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:LojaFor    = _ExtraiTag ("_oXML:_WSAlianca:_LojaFor",        .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:MailTo     = _ExtraiTag ("_oXML:_WSAlianca:_MailTo",         .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:MailToZZU  = _ExtraiTag ("_oXML:_WSAlianca:_MailToZZU",      .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:Alias      = _ExtraiTag ("_oXML:_WSAlianca:_Alias",          .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:Recno      = val (_ExtraiTag ("_oXML:_WSAlianca:_Recno",     .F., .F.)) ;   endif
+	if empty (_sErroWS) ; _oEvento:CodAlias   = _ExtraiTag ("_oXML:_WSAlianca:_CodAlias",       .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:Chave      = _ExtraiTag ("_oXML:_WSAlianca:_Chave",          .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:OP         = _ExtraiTag ("_oXML:_WSAlianca:_OP",             .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:Etiqueta   = _ExtraiTag ("_oXML:_WSAlianca:_Etiqueta",       .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:CodProceda = _ExtraiTag ("_oXML:_WSAlianca:_CodProceda",     .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:Transp     = _ExtraiTag ("_oXML:_WSAlianca:_Transp",         .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:TranspReds = _ExtraiTag ("_oXML:_WSAlianca:_TranspReds",     .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:DiasValid  = val (_ExtraiTag ("_oXML:_WSAlianca:_DiasValid", .F., .F.)) ;   endif
+	if empty (_sErroWS) ; _oEvento:ChaveNFe   = _ExtraiTag ("_oXML:_WSAlianca:_ChaveNFe",       .F., .F.) ;   endif
 	if empty (_sErroWS)
 		if ! _oEvento:Grava ()
 			_sErroWS += "Erro na gravacao do objeto evento"
