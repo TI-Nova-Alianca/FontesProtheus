@@ -30,6 +30,7 @@
 //                        A taxa pagar.me será emitida como um desconto.
 // 01/06/2022 - Claudia - Incluido parametro permitindo desativar regra de IPI e ST. GLPI: 12128
 // 08/06/2022 - Claudia - Incluido validação do rapel. GLPI: 8916
+// 21/07/2022 - claudia - Não permitir a chamada da tela de descontos nas baixas automaticas da pagar-me.
 //
 // ---------------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
@@ -38,7 +39,7 @@ User Function F070Desc ()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _lRet     := .T.
 	
-	If !IsInCallStack("U_ZB2_CON") .and. !IsInCallStack("U_ZB1_CON") .and. !IsInCallStack("U_ZB3CON") .and. !IsInCallStack("U_VA_040BRAP") // Não chama tela de descontos qndo realizada a baixa de titulos cielo e baixa do rapel
+	If !IsInCallStack("U_ZB1_CON") .and. !IsInCallStack("U_ZD0CMP") .and. !IsInCallStack("U_VA_040BRAP") // Não chama tela de descontos qndo realizada a baixa de titulos cielo e baixa do rapel
 	    _lRet = _Compos ()
 	EndIf
 
