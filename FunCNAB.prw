@@ -1,18 +1,22 @@
-// Programa:  FunCNAB
-// Autor:     Robert Koch
-// Data:      05/06/2009
-// Cliente:   Alianca
+// Programa.: FunCNAB
+// Autor....: Robert Koch
+// Data.....: 05/06/2009
 // Descricao: Funcoes auxiliares para geracao de arquivos de CNAB
 //            Criado inicialmente para casos onde a formula nao cabe na linha do arquivo de config. do CNAB.
 //
-// Historico de alteracoes:
-// 07/12/2010 - Robert - Considera os campos E1_ACRESC e E1_DECRESC independente do titulo ter baixa parcial.
-// 29/06/2017 - Catia  - Teste para que se o E1_VAPJURO estiver zerado assuma o valor do parametro VA_PJURBOL
-// 02/10/2017 - Catia  - funcao do calculo do desconto financeiro - deve assumir o valor ja calculado de rapel que vem do E1
-// 20/12/2017 - Robert - So usa campos do endereco de cobranca se estiverem todos preenchidos.
+// #TipoDePrograma    #Validacoes
+// #PalavasChave      #Funcoes auxiliares para geracao de arquivos de CNAB
+// #TabelasPrincipais #SE1 #SF3 #SA1
+// #Modulos 		  #FIN
 //
-
-// --------------------------------------------------------------------------
+// Historico de alteracoes:
+// 07/12/2010 - Robert  - Considera os campos E1_ACRESC e E1_DECRESC independente do titulo ter baixa parcial.
+// 29/06/2017 - Catia   - Teste para que se o E1_VAPJURO estiver zerado assuma o valor do parametro VA_PJURBOL
+// 02/10/2017 - Catia   - funcao do calculo do desconto financeiro - deve assumir o valor ja calculado de rapel que vem do E1
+// 20/12/2017 - Robert  - So usa campos do endereco de cobranca se estiverem todos preenchidos.
+// 26/07/2022 - Claudia - Incluido retorno de nota fiscal, emissão, chave e valor. GLPI: 12365
+//
+// ------------------------------------------------------------------------------------------------------------------------------
 User Function FunCNAB (_sBanco, _sCampo)
 	local _xRet      := NIL
 	local _nVlrTit   := 0
@@ -59,7 +63,25 @@ User Function FunCNAB (_sBanco, _sCampo)
 			
 		case upper (_sCampo) == "VLRTIT"
 			_xRet = _nVlrTit
+		
+		case upper (_sCampo) == 'NFFISCAL'
+			_sNf    := posicione("SF3", 4, xFilial("SF3") + se1->e1_cliente + se1->e1_loja + se1->e1_num + se1->e1_prefixo, "F3_NFISCAL") // F3_FILIAL+F3_CLIEFOR+F3_LOJA+F3_NFISCAL+F3_SERIE
+			_sSerie := posicione("SF3", 4, xFilial("SF3") + se1->e1_cliente + se1->e1_loja + se1->e1_num + se1->e1_prefixo, "F3_SERIE") // F3_FILIAL+F3_CLIEFOR+F3_LOJA+F3_NFISCAL+F3_SERIE
+			_xRet := _sNf + _sSerie
 
+		case upper (_sCampo) == 'NFVALOR'
+			_xRet   := posicione("SF3", 4, xFilial("SF3") + se1->e1_cliente + se1->e1_loja + se1->e1_num + se1->e1_prefixo, "F3_VALCONT") // F3_FILIAL+F3_CLIEFOR+F3_LOJA+F3_NFISCAL+F3_SERIE
+
+		case upper (_sCampo) == 'NFEMISSAO'
+			_sData   := DTOS(posicione("SF3", 4, xFilial("SF3") + se1->e1_cliente + se1->e1_loja + se1->e1_num + se1->e1_prefixo, "F3_EMISSAO")) // F3_FILIAL+F3_CLIEFOR+F3_LOJA+F3_NFISCAL+F3_SERIE
+			U_LOG(_sData)
+			_sAno := SubStr(_sData, 1, 4)
+			_sMes := SubStr(_sData, 5, 2)
+			_sDia := SubStr(_sData, 7, 2)
+			_xRet := _sDia + _sMes + _sAno
+
+		case upper (_sCampo) == 'NFCHAVE'
+			_xRet   := posicione("SF3", 4, xFilial("SF3") + se1->e1_cliente + se1->e1_loja + se1->e1_num + se1->e1_prefixo, "F3_CHVNFE") // F3_FILIAL+F3_CLIEFOR+F3_LOJA+F3_NFISCAL+F3_SERIE
 
 		otherwise
 			final ("Rotina " + procname () + ": Retorno para Banco/campo " + _sBanco + "/" + _sCampo + " nao implementado.")
