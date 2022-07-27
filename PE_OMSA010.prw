@@ -65,9 +65,8 @@ User Function OMSA010()
         ElseIf cIdPonto == "FORMCOMMITTTSPRE"
             If cIdModel == "DA0MASTER"
                 //Pegando os modelos de dados
-                oModelPad  := FWModelActive()
+                oModelPad := FWModelActive()
                 oModelCab := oModelPad:GetModel('DA0MASTER')
-
                 U_DA0Verif(oModelCab)
                 
             EndIf
@@ -83,11 +82,14 @@ User Function OMSA010()
                 _nValor    := oModelGrid:GetValue("DA1_PRCVEN")
                 _lExcluido := oModelGrid:IsDeleted()
 
+                _nVlrAnt  := U_ValorDA1(xFilial("DA1"),_sCodTab,_sProduto)
+                _sDesProd := posicione("SB1", 1, xFilial("SB1") + _sProduto, "B1_DESC")
+
                 //Chama a rotina do log (para gravar alterações de preço)
                 If _lExcluido 
-                    _sMsg := "Tabela " + _sCodTab + " alterada. Produto:" +  _sProduto + " Valor:" + cValtoChar(_nValor) + " Registro excluído." 
+                    _sMsg := "Produto:" + alltrim(_sProduto) +"-"+ alltrim(_sDesProd) + "   Vlr.de:"+ cValtoChar(_nVlrAnt) +" para:" + cValtoChar(_nValor) + " Registro excluído." 
                 Else
-                    _sMsg := "Tabela " + _sCodTab + " alterada. Produto:" +  _sProduto + " Valor:" + cValtoChar(_nValor) 
+                    _sMsg := "Produto:" + alltrim(_sProduto) +"-"+ alltrim(_sDesProd) + "   Vlr.de:"+ cValtoChar(_nVlrAnt) +" para:" + cValtoChar(_nValor) 
                 EndIf
                 
                 U_LogDA1(_sCodTab, _sMsg, _sProduto )
@@ -101,7 +103,7 @@ User Function OMSA010()
  
         //Commit das operações (após a gravação)
         ElseIf cIdPonto == "MODELCOMMITNTTS"
-            u_TabEmail(da0->da0_filial, da0->da0_codtab)
+            u_TabEmail(da0->da0_filial, da0->da0_codtab, da0->da0_descri)
         EndIf 
     EndIf 
 Return xRet
@@ -227,8 +229,33 @@ User Function LogDA1(_sCodTab, _sMsg, _sProduto)
     _oEvento:Produto  = _sProduto
     _oEvento:Grava()
 Return
+//
+// -----------------------------------------------------------------------------------
+// Busca valor DA1 anterior
+User Function ValorDA1(_sFilial,_sCodTab,_sProduto)
+    Local _x    := 0
+    Local _nRet := 0
 
-User Function TabEmail(_sFilial, _sTabela)
+    _oSQL := ClsSQL():New ()  
+    _oSQL:_sQuery := "" 		
+    _oSQL:_sQuery += " SELECT "
+    _oSQL:_sQuery += " 	    DA1_PRCVEN "
+    _oSQL:_sQuery += " FROM DA1010 "
+    _oSQL:_sQuery += " WHERE D_E_L_E_T_ ='' "
+    _oSQL:_sQuery += " AND DA1_FILIAL   = '" + _sFilial + "'"
+    _oSQL:_sQuery += " AND DA1_CODTAB   = '" + _sCodTab + "'"
+    _oSQL:_sQuery += " AND DA1_CODPRO   = '" + _sProduto+ "'"
+    _aDados := _oSQL:Qry2Array ()
+
+    For _x:=1 to Len(_aDados)
+        _nRet := _aDados[_x,1]
+    Next
+
+Return _nRet
+//
+// -----------------------------------------------------------------------------------
+// Envia e-mail de aviso
+User Function TabEmail(_sFilial, _sTabela, _sNomeTab)
     Local _x := 0
 
     _oSQL := ClsSQL():New ()  
@@ -278,14 +305,12 @@ User Function TabEmail(_sFilial, _sTabela)
         aadd(_aCols, {'USUARIO'     , "left"    ,  "@!"})
 
         _sMsg := '<H1 align="center"></H1>'
-		_sMsg += '<H3 align="center">ALTERAÇÃO DE TABELA DE PREÇO '+ _sTabela +'</H2>' + chr (13) + chr (10)
+		_sMsg += '<H3 align="center">ALTERAÇÃO DE TABELA DE PREÇO '+ alltrim(_sTabela) +'-'+alltrim(_sNomeTab) +'</H2>' + chr (13) + chr (10)
 
         _oAUtil := ClsAUtil():New (_aRetorno)
 		_sMsg += _oAUtil:ConvHTM ("", _aCols, 'width="80%" border="1" cellspacing="0" cellpadding="0" align="center"', .T.)
 
-        _sTitulo  := "ALTERAÇÃO: TABELA DE PREÇO " + _sTabela
-		//U_SendMail (_sDestin, _sTitulo, _sMsg, {})
+        _sTitulo  := "ALTERAÇÃO: TABELA DE PREÇO " + _sTabela +'-' + alltrim(_sNomeTab)
         U_ZZUNU ({'141'}, _sTitulo , _sMsg, .F.)
     EndIf
-
 Return
