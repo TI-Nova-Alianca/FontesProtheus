@@ -29,6 +29,9 @@
 //                      - Passa a gravar protocolo de cancelamento (criado campo zzx_prtcan).
 // 01/02/2021 - Robert  - Ajuste leitura retorno CTe do MS (GLPI 9196)
 // 20/07/2022 - Robert  - Gravacao de eventos temporarios para rastreio de movimentacao dos XML (GLPI 12336)
+// 28/07/2022 - Robert  - Nao considerava parametro _nQtDias (reprocessava sempre 90 dias) - GLPI 12384
+//                      - Melhorada ordenacao (preferencia para chaves nunca revalidadas)
+//                      - Nao revalida mais as chaves jah marcadas como 'canceladas pelo emitente'
 //
 
 // --------------------------------------------------------------------------
@@ -61,7 +64,9 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 	_lDebug := iif (_lDebug == NIL, .F., _lDebug)
 	_oBatch:Mensagens = ''
 	_oBatch:Retorno   = ''
-	
+
+	//_nQtDias = iif (_nQtDias == NIL, 0, _nQtDias)
+
 	if _lContinua .and. empty (_sEstado) .and. empty (_sTipo) .and. empty (_sChave)
 		_Evento ("ERRO: Informe estado (UF) + tipo (NFE/CTE) ou chave.", .T.)
 	endif
@@ -94,7 +99,6 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 			case _sEstado == 'MT' ; _sCodUF = '51'
 			case _sEstado == 'GO' ; _sCodUF = '52' // nao conecta
 			case _sEstado == 'DF' ; _sCodUF = '53'
-			
 			otherwise
 				_Evento ("ERRO: UF '" + _sEstado + "' desconhecida.", .T.)
 				_lContinua = .F.
@@ -104,30 +108,61 @@ user function BatRevCh (_sEstado, _sTipo, _nQtDias, _sChave, _lDebug)
 	if _lContinua
 		// A verificacao de chaves sempre eh feita em cima do arquivo ZZX (preciso dados adicionais dele)
 		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "SELECT R_E_C_N_O_ AS RECNO, ZZX_CHAVE AS CHAVE, ZZX_VERSAO AS VERSAO"
+		_oSQL:_sQuery +=      ", SUBSTRING (ZZX_CHAVE, 1, 2) AS UF"
+		_oSQL:_sQuery +=      ", CASE WHEN UPPER(ZZX_LAYOUT) LIKE '%NFE%' THEN 'NFE' ELSE CASE WHEN UPPER(ZZX_LAYOUT) LIKE '%CTE%' THEN 'CTE' ELSE '' END END AS LAYOUT"
 
-		// Ordena por UF (chave) + layout + versao para fazer um unico acesso a cada servico.
-		// Dentro disso, inicia pelas chaves nunca validadas e depois pelas emitidas ha mais tempo.
-		if empty (_sChave)
-			_oSQL:_sQuery := "SELECT R_E_C_N_O_ AS RECNO, ZZX_CHAVE AS CHAVE, ZZX_VERSAO AS VERSAO"
-			_oSQL:_sQuery +=      ", SUBSTRING (ZZX_CHAVE, 1, 2) AS UF"
-			_oSQL:_sQuery +=      ", CASE WHEN UPPER(ZZX_LAYOUT) LIKE '%NFE%' THEN 'NFE' ELSE CASE WHEN UPPER(ZZX_LAYOUT) LIKE '%CTE%' THEN 'CTE' ELSE '' END END AS LAYOUT"
-			_oSQL:_sQuery += " FROM VA_VDFES_A_REVALIDAR"
-			_oSQL:_sQuery += " WHERE "
-			_oSQL:_sQuery += " (HORAS_DESDE_ULTIMA_REVALIDACAO >= 4"  // Pelo menos algumas horas entre uma revalidacao e outra
-			_oSQL:_sQuery +=  " OR ZZX_RETSEF = '')"
-			if ! empty (_sEstado) .and. ! empty (_sTipo)  // Permite agendar um batch para cada UF
-				_oSQL:_sQuery += " AND substring (ZZX_CHAVE, 1, 2) = '" + _sCodUF + "'"
-				_oSQL:_sQuery += " AND UPPER (ZZX_LAYOUT) LIKE '%" + _sTipo + "%'"
-			endif
-		else
-			_oSQL:_sQuery := "SELECT R_E_C_N_O_ AS RECNO, ZZX_CHAVE AS CHAVE, ZZX_VERSAO AS VERSAO "
-			_oSQL:_sQuery +=      ", SUBSTRING (ZZX_CHAVE, 1, 2) AS UF"
-			_oSQL:_sQuery +=      ", CASE WHEN UPPER(ZZX_LAYOUT) LIKE '%NFE%' THEN 'NFE' ELSE CASE WHEN UPPER(ZZX_LAYOUT) LIKE '%CTE%' THEN 'CTE' ELSE '' END END AS LAYOUT"
+		// Se recebi uma chave especifica, busco direto no ZZX por que pode
+		// estar sendo desconsiderada pela view (por motivo de data, etc.)
+		if ! empty (_sChave)
 			_oSQL:_sQuery += " FROM " + RetSQLName ("ZZX") + " ZZX "
 			_oSQL:_sQuery += " WHERE ZZX.D_E_L_E_T_     = ''"
 			_oSQL:_sQuery += " AND ZZX_CHAVE = '" + _sChave + "'"
+		else
+			_oSQL:_sQuery += " FROM VA_VDFES_A_REVALIDAR"
+			_oSQL:_sQuery += " WHERE "
+			
+			// Somente doctos emitidos nos ultimos N dias
+			_oSQL:_sQuery += " ZZX_EMISSA >= '" + dtos (date () - _nQtDias) + "'"
+			
+			// Pelo menos algumas horas entre uma revalidacao e outra
+			_oSQL:_sQuery += " AND (HORAS_DESDE_ULTIMA_REVALIDACAO >= 4 OR ZZX_RETSEF = '')"
+			
+			// Se jah consta como cancelada (e com protocolo
+			// de cancelamento), nem revalido mais.
+			_oSQL:_sQuery +=  " AND NOT (ZZX_RETSEF = '101' AND ZZX_PRTCAN != '')"
+			
+			if ! empty (_sCodUF)  // Permite agendar um batch para cada UF
+				_oSQL:_sQuery += " AND substring (ZZX_CHAVE, 1, 2) = '" + _sCodUF + "'"
+			endif
+			if ! empty (_sTipo)  // Permite agendar um batch para cada tipo (CTe/NFe/...)
+				_oSQL:_sQuery += " AND UPPER (ZZX_LAYOUT) LIKE '%" + _sTipo + "%'"
+			endif
 		endif
-		_oSQL:_sQuery += " ORDER BY ZZX_CHAVE, ZZX_LAYOUT, ZZX_VERSAO desc, ZZX_DUCC, ZZX_EMISSA"
+
+//		// Ordena por UF (chave) + layout + versao para fazer um unico acesso a cada servico.
+//		// Dentro disso, inicia pelas chaves nunca validadas e depois pelas emitidas ha mais tempo.
+//		//_oSQL:_sQuery += " ORDER BY ZZX_CHAVE, ZZX_LAYOUT, ZZX_VERSAO desc, ZZX_DUCC, ZZX_EMISSA"
+		
+		// Como faz uma conexao ao web service da UF e valida todas as chaves
+		// nessa mesma conexao, a ordenacao principal vai ser por UF.
+		_oSQL:_sQuery += " ORDER BY substring (ZZX_CHAVE, 1, 2)"
+		
+		// Apesar de ser um web service para cada tipo e versao de documento,
+		// preciso dar preferencia para as chaves que nunca foram revalidadas,
+		// ou que foram revalidadas ha mais tempo. Se a cada execucao do batch
+		// eu tivesse certeza de que todas foram revalidadas, nao precisaria...
+		_oSQL:_sQuery +=          " ,ZZX_DUCC "
+		
+		// Continua com a ordenacao por layout, pois tem um web service
+		// para cada tipo de documento.
+		_oSQL:_sQuery +=          " ,ZZX_LAYOUT"
+		
+		// Mais uma ultima ordenacao incluindo a chave, para facilitar
+		// comparativos entre logs de execucao, por exemplo quando preciso
+		// executar varias vezes uma mesma sequencia, durante desenvolvimento.
+		_oSQL:_sQuery +=          " ,ZZX_VERSAO desc, ZZX_EMISSA, ZZX_CHAVE"
+		
 		_oSQL:Log ()
 		_sAliasQ = _oSQL:Qry2Trb (.F.)
 		count to _nQtAReval
@@ -491,7 +526,7 @@ static function _TrataRet (_sEstado, _sTipo, _lDebug)
 		_oEvento:CodEven   = "ZZX002"
 		_oEvento:Texto     = "Finalizada revalidacao (de chave junto a SEFAZ), com retorno = " + _sRetStat + " Pilha: " + U_LogPCham ()
 		_oEvento:ChaveNFe  = zzx -> zzx_chave
-		_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
+		_oEvento:DiasValid = 30  // Manter o evento por alguns dias, depois disso vai ser deletado.
 		_oEvento:Grava ()
 	endif
 return

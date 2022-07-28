@@ -107,16 +107,43 @@ static function _AndaLogo ()
 //	_Sisdevin ()
 //	_metaf ()
 //	_exml ()
+//	_RevCH ()
+	//_elastic ()
+	u_help ('Nada definido.')
+return
 
-	//u_revalxml ()
-	// _oSQL := ClsSQL ():New ()
-	// _oSQL:_sQuery := "select R_E_C_N_O_ from ZZX010 where ZZX_CHAVE = '43220607508851000199550010000328141613152572'"
-	// zzx -> (dbgoto (_oSQL:RetQry (1, .f.)))
-	zzx -> (dbgoto (282156))
-	u_zzxr ()
+// Testes gravacao ElasticSearch - https://tdn.totvs.com/display/framework/FWRest
+static function _elastic ()
+	// Assim jah funcionou:
+	// oRestClient := NIL
+	// oRestClient := FWRest():New("http://192.168.1.2:9200")
+	// oRestClient:setPath ('/_search')  // retorna os indices existentes
+	// _aHeadStr := {}
+	// // inclui o campo Authorization no formato : na base64
+	// aadd (_aHeadStr, "Authorization: Basic " + Encode64('elastic:IeIRdnpYht9gI2fxoSYM'))
+	// if oRestClient:Post(_aHeadStr)
+	// 	U_Log2 ('debug', '[' + procname () + ']GetResult: ' + oRestClient:GetResult())
+	// else
+	// 	U_Log2 ('debug', '[' + procname () + ']GetLastError: ' + oRestClient:GetLastError())
+	// endif
 
+	oRestClient := NIL
+	oRestClient := FWRest():New("http://192.168.1.2:9200")
+	oRestClient:setPath ('/_search')  // retorna os indices existentes
+//	oRestClient:setPath ('{"name":"Elasticsearch Essentials","author":"nome_do_autor", "etiqueta":"200014132", "produto":"0328", "usr":"robert.koch"}')
 
-//	u_help ('Nada definido.')
+	_aHeadStr := {}
+	// inclui o campo Authorization no formato : na base64
+	aadd (_aHeadStr, "Authorization: Basic " + Encode64('elastic:IeIRdnpYht9gI2fxoSYM'))
+
+	//_sParPost := '{"name":"Elasticsearch Essentials","author":"nome_do_autor", "etiqueta":"200014132", "produto":"0328", "usr":"robert.koch"}'
+	//oRestClient:SetPostParams(_sParPost)
+	if oRestClient:Post(_aHeadStr)
+		U_Log2 ('debug', '[' + procname () + ']GetResult: ' + oRestClient:GetResult())
+	else
+		U_Log2 ('debug', '[' + procname () + ']GetLastError: ' + oRestClient:GetLastError())
+	endif
+
 return
 
 static function _exml ()
@@ -135,48 +162,11 @@ return
 
 static function _ClsEtiq ()
 	local _oEtiq := NIL
-	_oEtiq := ClsEtiq ():New ('2000504109')
-	U_Log2 ('debug', _oEtiq:PodeExcluir (.f.))
+	_oEtiq := ClsEtiq ():New ('2000519466')
+	U_Log2 ('debug', _oEtiq:PodeApont (10000, 0))
 return
 
-/*
-user function LogPerc (_nAtual, _nQuantos)
-	static _nUltimo := 0
-	if int (_nQuantos / _nAtual) > _nUltimo
-	endif
-return
-*/
-/*
-	// Testes verificacoes genericas.
-	// _oVerif := ClsVerif():New (25)
-	// _oVerif:SetParam ('01', '2017')
-	// _oVerif:SetParam ('02', '')
-	// _oVerif:SetParam ('03', 'zz')
-	// _oVerif:SetParam ('04', '30 ')
-	// _oVerif:SetParam ('05', '028')
-	// _oVerif:SetParam ('06', '077')
-	// _oVerif:SetParam ('07', '000017')
-	// _oVerif := ClsVerif():New (24)
-	// _oVerif:SetParam ('01', '09189201001  ')
-	// _oVerif:SetParam ('02', '09189201001  ')
-	// _oVerif:SetParam ('03', '')
-	// _oVerif:SetParam ('04', 'z')
-	_oVerif := ClsVerif():New (90)
-	_oVerif:SetParam ('01', date () - 10)
-	_oVerif:SetParam ('02', date ())
-	_oVerif:SetParam ('03', '')
-	_oVerif:SetParam ('04', 'z')
-	//U_Log2 ('debug', '[' + procname () + ']ult ver:' + cvaltochar (_oVerif:UltVerif))
-	if _oVerif:Executa ()
-		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
-		u_log2 ('debug', _oVerif:Result)
-		//u_acolsxls (_oVerif:Result)
-	else
-		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
-	endif
-return
-*/
-/*
+static function _RevCH()
 	// U_BatRevCh ("AC", "CTE", 90)
 	// U_BatRevCh ("AC", "NFE", 90)
 	// U_BatRevCh ("AL", "CTE", 90)
@@ -221,8 +211,8 @@ return
 	// U_BatRevCh ("RO", "NFE", 90)
 	// U_BatRevCh ("RR", "CTE", 90)
 	// U_BatRevCh ("RR", "NFE", 90)
-	// U_BatRevCh ("RS", "CTE", 90)
-	// U_BatRevCh ("RS", "NFE", 90)
+	//U_BatRevCh ("RS", "CTE", 30)
+	U_BatRevCh ("RS", "NFE", 90)
 	// U_BatRevCh ("SC", "CTE", 90)
 	// U_BatRevCh ("SC", "NFE", 90)
 	// U_BatRevCh ("SE", "CTE", 90)
@@ -234,6 +224,43 @@ return
 //	U_BatXML("\\192.168.1.2\Siga\Protheus11\protheus_data\xml_NFe\", 200, .F.)
 //	U_BatXML("\\192.168.1.2\Siga\Protheus11\protheus_data\xml_NFe\CT-e\", 100, .F.)
 RETURN
+
+/*
+user function LogPerc (_nAtual, _nQuantos)
+	static _nUltimo := 0
+	if int (_nQuantos / _nAtual) > _nUltimo
+	endif
+return
+*/
+/*
+	// Testes verificacoes genericas.
+	// _oVerif := ClsVerif():New (25)
+	// _oVerif:SetParam ('01', '2017')
+	// _oVerif:SetParam ('02', '')
+	// _oVerif:SetParam ('03', 'zz')
+	// _oVerif:SetParam ('04', '30 ')
+	// _oVerif:SetParam ('05', '028')
+	// _oVerif:SetParam ('06', '077')
+	// _oVerif:SetParam ('07', '000017')
+	// _oVerif := ClsVerif():New (24)
+	// _oVerif:SetParam ('01', '09189201001  ')
+	// _oVerif:SetParam ('02', '09189201001  ')
+	// _oVerif:SetParam ('03', '')
+	// _oVerif:SetParam ('04', 'z')
+	_oVerif := ClsVerif():New (90)
+	_oVerif:SetParam ('01', date () - 10)
+	_oVerif:SetParam ('02', date ())
+	_oVerif:SetParam ('03', '')
+	_oVerif:SetParam ('04', 'z')
+	//U_Log2 ('debug', '[' + procname () + ']ult ver:' + cvaltochar (_oVerif:UltVerif))
+	if _oVerif:Executa ()
+		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
+		u_log2 ('debug', _oVerif:Result)
+		//u_acolsxls (_oVerif:Result)
+	else
+		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
+	endif
+return
 */
 /*
 	Private cPerg   := "VAXLS59"
@@ -1044,22 +1071,6 @@ return
 		sleep (1000)
 		u_log2 ('debug', cvaltochar (len (_a2)))
 	enddo
-return
-*/
-/*
-	// Testes gravacao ElasticSearch - https://tdn.totvs.com/display/framework/FWRest
-	oRestClient := NIL
- 	oRestClient := FWRest():New("http://192.168.1.2:9200")
-	oRestClient:setPath("/robert2/elasticsearch")
-	_aHeadStr := {}
-	aadd (_aHeadStr, 'ContentType: application/json')
-	_sParPost := '{"aplicacao":"teste_local", "usr":"robert.koch"}'
-	oRestClient:SetPostParams(_sParPost)
-	if oRestClient:Post(_aHeadStr)
-		U_Log2 ('info', oRestClient:GetResult())
-	else
-		U_Log2 ('erro', oRestClient:GetLastError())
-	endif
 return
 */
 static function _Sisdevin ()
