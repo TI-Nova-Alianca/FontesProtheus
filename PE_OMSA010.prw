@@ -274,6 +274,7 @@ User Function TabEmail(_sFilial, _sTabela, _sNomeTab)
     _oSQL:_sQuery += " AND CODIGO_ALIAS  = '" + _sTabela     + "'"
     _oSQL:_sQuery += " AND (ALIAS_TABELA = 'DA0' "
     _oSQL:_sQuery += " OR ALIAS_TABELA   = 'DA1') "
+    _oSQL:_sQuery += " AND CODEVENTO IN ('DA0001', 'DA1001') "
     _aDados := _oSQL:Qry2Array ()
 
     _aRetorno := {}
