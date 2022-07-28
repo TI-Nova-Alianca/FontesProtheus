@@ -107,6 +107,7 @@ User Function BatVFat(_nTipo)
 
 		_oSQL:_sQuery +=  " FROM VA_VFAT"
 		_oSQL:_sQuery += " WHERE EMISSAO BETWEEN '"+ _dDtIni +"' AND '"+ _dDtFim +"'"
+		_oSQL:Log ('[' + procname () + ']')
 		_lContinua = _oSQL:Exec ()
 	EndIf
 

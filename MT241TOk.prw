@@ -20,7 +20,9 @@
 // 13/04/2021 - Claudia - Validação Centro de Custo X Conta Contábil - GLPI: 9120
 // 15/06/2021 - Claudia - Incluida novas validações C.custo X C.contabil. GLPI: 10224
 // 15/10/2021 - Claudia - Validação MC ao movimento 573. GLPI: 10765
+// 25/07/2022 - Robert  - Liberados TMs 008/510/573 para itens tipo MC
 //
+
 // ------------------------------------------------------------------------------------------
 user function MT241TOk ()
 	local _lRet     := .T.
@@ -28,6 +30,7 @@ user function MT241TOk ()
 	local _sMsg     := ""
 	local _x        := 0
 	local _nPos     := 0
+	local _sTM_MC   := '008/510/573'
 
 	if empty (cCC)
 		sf5 -> (dbsetorder (1))  // F5_FILIAL+F5_CODIGO
@@ -82,10 +85,11 @@ user function MT241TOk ()
 		for _x:=1 to len(aCols)
 			_sTipo := fbuscacpo("SB1",1,xfilial("SB1") + aCols[_x,_nPos],"B1_TIPO")
 
-	        if alltrim(cTM) != '573' .and. _sTipo $ ('MC') .and. !GDDeleted (_x)
-	        	_lRet = .F.
-				u_help ("Itens tipo MC só podem ser movimentados com movimento 573.",, .t.)
-	        EndIf
+//			if alltrim(cTM) != '573' .and. _sTipo $ ('MC') .and. !GDDeleted (_x)
+			if ! alltrim(cTM) $ _sTM_MC .and. _sTipo $ ('MC') .and. !GDDeleted (_x)
+				_lRet = .F.
+				u_help ("Itens tipo MC só podem ser movimentados com movimentos " + _sTM_MC,, .t.)
+			EndIf
 		next
 	endif 
 
@@ -94,10 +98,11 @@ user function MT241TOk ()
 		for _x:=1 to len(aCols)
 			_sProdC := RIGHT(alltrim(aCols[_x,_nPos]), 1) 
 			_sTipo  := fbuscacpo("SB1",1,xfilial("SB1")+aCols[_x,_nPos],"B1_TIPO")
-	        if alltrim(_sProdC) == 'C' .and. alltrim(CTM) != '573' .and. _sTipo $ ('MM/BN/MC/CL') .and. !GDDeleted (_x)
-	        	_lRet = .F.
+//			if alltrim(_sProdC) == 'C' .and. alltrim(CTM) != '573' .and. _sTipo $ ('MM/BN/MC/CL') .and. !GDDeleted (_x)
+			if alltrim(_sProdC) == 'C' .and. ! alltrim(CTM) != _sTM_MC .and. _sTipo $ ('MM/BN/MC/CL') .and. !GDDeleted (_x)
+				_lRet = .F.
 				u_help ("Itens da manutenção com final C só podem ser movimentados com movimento 573.",, .t.)
-	        EndIf
+			EndIf
 		next
 	endIf
 
