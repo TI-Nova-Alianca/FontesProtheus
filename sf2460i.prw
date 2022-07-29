@@ -144,6 +144,7 @@
 // 05/10/2021 - Claudia - Criado novo grupo para email de guia/st grupo 132. GLPI: 11028 
 // 15/10/2021 - Robert  - Ajuste sintaxe teste NF venda milho p/ associados (estava assim --> case _sTProd := '2')
 // 10/06/2022 - Claudia - Ajuste de lançamento para mudas. GLPI: 12191
+// 28/07/2022 - Claudia - Incluida a gravação de historico para e-commerce/pagar-me. GLPI: 12392
 //
 // ---------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
@@ -279,6 +280,7 @@ User Function sf2460i ()
 			EndIf
 			If !empty(sc5 -> c5_vaidt)
 				se1 -> e1_vaidt = sc5 -> c5_vaidt
+				se1 -> e1_hist  = 'E-COMMERCE/PAGAR.ME'
 			EndIf
 			msunlock ()
 			se1 -> (dbskip ())
