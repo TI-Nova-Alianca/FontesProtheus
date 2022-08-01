@@ -83,6 +83,17 @@ User Function FunCNAB (_sBanco, _sCampo)
 		case upper (_sCampo) == 'NFCHAVE'
 			_xRet   := posicione("SF3", 4, xFilial("SF3") + se1->e1_cliente + se1->e1_loja + se1->e1_num + se1->e1_prefixo, "F3_CHVNFE") // F3_FILIAL+F3_CLIEFOR+F3_LOJA+F3_NFISCAL+F3_SERIE
 
+		case upper (_sCampo) == 'DTLIMITE'
+			if se1->e1_vaRapel == 0
+				_xRet := '000000'
+			else
+				_sData : dtos(se1->e1_vencrea)
+				_sAno := SubStr(_sData, 3, 4)
+				_sMes := SubStr(_sData, 5, 2)
+				_sDia := SubStr(_sData, 7, 2)
+				_xRet := _sDia + _sMes + _sAno
+			endif
+
 		otherwise
 			final ("Rotina " + procname () + ": Retorno para Banco/campo " + _sBanco + "/" + _sCampo + " nao implementado.")
 	endcase
