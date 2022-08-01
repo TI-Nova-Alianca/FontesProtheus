@@ -15,6 +15,7 @@
 // 27/08/2021 - Claudia - Incluida novas validações. GLPI: 10838 e 10839
 // 06/10/2021 - Claudia - Incluido novos estados. GLPI: 11030
 // 11/05/2022 - Claudia - Incluida regra para AL e AC. GLPI: 12018
+// 01/08/2022 - Claudia - Incluida regra para PE. GLPI: 12371
 //
 //---------------------------------------------------------------------------------
 #include "protheus.ch" 
@@ -43,6 +44,9 @@ User Function MA960GREC()
             EndCase   
 
         Case Alltrim(cReceita) $ '100099/100102/100110/100129' .and. cUF == 'RJ'   
+            aParam := {24, '2', '', 0, ''} 
+
+        Case Alltrim(cReceita) $ '100099/100102/100129' .and. cUF == 'PE'   
             aParam := {24, '2', '', 0, ''} 
 
         Case  Alltrim(cReceita) $ '100099/100102/100110/100129' .and. cUF == 'MG' 
