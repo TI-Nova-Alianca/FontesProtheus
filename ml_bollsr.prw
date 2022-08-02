@@ -502,11 +502,19 @@ Static Function MontaRel()
 			U_Log ('Nosso numero gerado: >>' + _sNumBco + '<<')
 
 			// Verifica se a numeracao atual encontra-se dentro da faixa liberada pelo banco.
-			If _sNumBco < SEE->EE_FAXINI .Or. _sNumBco > SEE->EE_FAXFIM
-				u_help("Valor gerado para 'nosso numero' (" + _sNumBco + ") fora da sequencia valida para o banco " + _cBcoBol)
-				_lContinua = .F.
-				loop
-			EndIF
+			If _cBcoBol == '707'
+				If val(_sNumBco) < val(SEE->EE_FAXINI) .Or. val(_sNumBco) > val(SEE->EE_FAXFIM)
+					u_help("Valor gerado para 'nosso numero' (" + _sNumBco + ") fora da sequencia valida para o banco " + _cBcoBol)
+					_lContinua = .F.
+					loop
+				EndIF
+			else
+				If _sNumBco < SEE->EE_FAXINI .Or. _sNumBco > SEE->EE_FAXFIM
+					u_help("Valor gerado para 'nosso numero' (" + _sNumBco + ") fora da sequencia valida para o banco " + _cBcoBol)
+					_lContinua = .F.
+					loop
+				EndIF
+			endif
 						
 			If VAL (_sNumBco) < SEE->EE_BOLATU
 				u_help("Valor gerado para 'nosso numero' (" + _sNumBco + ") e' menor que o ultimo gravado nos parametros do banco " + _cBcoBol + "(" + alltrim (str (see->ee_bolatu)) + "). Isso causaria repeticao de numeracao junto ao banco! Verifique!")
