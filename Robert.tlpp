@@ -31,6 +31,7 @@
 
 // --------------------------------------------------------------------------
 user function robert ()
+	local _lContinua := .T.
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
 		prepare environment empresa '01' filial '01' modulo 'FIN'
 		private cModulo   := 'FIN'
@@ -41,37 +42,55 @@ user function robert ()
 	endif
 	if ! alltrim(upper(cusername)) $ 'ROBERT.KOCH/ADMINISTRADOR'
 		msgalert ('Nao te conheco, nao gosto de ti e nao vou te deixar continuar. Vai pra casa.', procname ())
-		return
+		_lContinua = .F.
 	endif
 
-	private _sArqLog := procname () + "_" + alltrim (cUserName) + ".log"
-	delete file ('\logs\' + _sArqLog)
-	delete file ('\logs\' + _sArqLog + '001')
-	delete file ('\logs\' + _sArqLog + '002')
-	delete file ('\logs\' + _sArqLog + '003')
-	delete file ('\logs\' + _sArqLog + '004')
-	delete file ('\logs\' + _sArqLog + '005')
-	delete file ('\logs\' + _sArqLog + '006')
-	if ! empty (GetSrvProfString ("IXBLOG", ""))
+	if _lContinua
+		PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
+		private _sArqLog := procname () + "_" + alltrim (cUserName) + ".log"
+		delete file ('\logs\' + _sArqLog)
+		delete file ('\logs\' + _sArqLog + '001')
+		delete file ('\logs\' + _sArqLog + '002')
+		delete file ('\logs\' + _sArqLog + '003')
+		delete file ('\logs\' + _sArqLog + '004')
+		delete file ('\logs\' + _sArqLog + '005')
+		delete file ('\logs\' + _sArqLog + '006')
+		delete file ('\logs\' + _sArqLog + '007')
+		delete file ('\logs\' + _sArqLog + '008')
+		delete file ('\logs\' + _sArqLog + '009')
+	endif
+	if _lContinua .and. ! empty (GetSrvProfString ("IXBLOG", ""))
 		u_help ("Parametro IXBLOG ativo no appserver.ini")
-	else
-		if U_Semaforo (procname ()) == 0
-			u_help ('Bloqueio de semaforo na funcao ' + procname (),, .t.)
-		else
-		//	PtInternal (1, 'U_Robert')
-			U_Log2 ('info', '[' + procname () + ']Iniciando execucao.')
-			U_UsoRot ('I', procname (), '')
-			processa ({|| _AndaLogo ()})
-			u_log2 ('info', 'Processo finalizado')
-			U_UsoRot ('F', procname (), '')
-		endif
+		_lContinua = .F.
+	endif
+	if _lContinua .and. U_Semaforo (procname ()) == 0
+		u_help ('Bloqueio de semaforo na funcao ' + procname (),, .t.)
+		_lContinua = .F.
+	endif
+	if _lContinua
+		U_Log2 ('info', '[' + procname () + ']Iniciando execucao.')
+		U_UsoRot ('I', procname (), '')
+
+		// _SimCtb ()
+		// _FechSafr ()
+		_ClsTrEstq ()
+		// _ClsEtiq ()
+		// _Sisdevin ()
+		// _metaf ()
+		// _exml ()
+		// _RevCH ()
+		// _elastic ()
+
+		//u_help ('Nada definido.')
+		u_log2 ('info', 'Processo finalizado')
+		U_UsoRot ('F', procname (), '')
 	endif
 return
 
 
 
 // --------------------------------------------------------------------------
-static function _AndaLogo ()
+//static function _AndaLogo ()
 //	local _sQuery    := ""
 //	local _sAliasQ   := ""
 //	local _oEvento   := NIL
@@ -96,21 +115,7 @@ static function _AndaLogo ()
 //	local _nParc := 0
 //	local _sCampo := ""
 //	local _nCampo := 0
-	PRIVATE _oBatch  := ClsBatch():New ()  // Deixar definido para quando testar rotinas em batch.
-	procregua (100)
-	incproc ()
 
-//	_SimCtb ()
-//	_FechSafr ()
-//	_ClsTrEstq ()
-//	_ClsEtiq ()
-//	_Sisdevin ()
-//	_metaf ()
-//	_exml ()
-//	_RevCH ()
-	//_elastic ()
-	u_help ('Nada definido.')
-return
 
 // Testes gravacao ElasticSearch - https://tdn.totvs.com/display/framework/FWRest
 static function _elastic ()
@@ -439,7 +444,6 @@ return
 // Testes classe transf.estq.
 STATIC FUNCTION _ClsTrEstq ()
 	private _sErroAuto := ''
-/*
 	_oTrEstq := ClsTrEstq ():New ()
 	_oTrEstq:FilOrig = cFilAnt
 	_oTrEstq:FilDest = cFilAnt
@@ -447,9 +451,9 @@ STATIC FUNCTION _ClsTrEstq ()
 	//_oTrEstq:OP = '1234561212312'
 	_oTrEstq:Motivo = 'teste robert (ZAG)' 
 	_oTrEstq:ProdOrig = '4072           '
-	_oTrEstq:ProdDest = '2626           '
-	_oTrEstq:AlmOrig = '02'
-	_oTrEstq:AlmDest = '08'
+	//_oTrEstq:ProdDest = '2626           '
+	_oTrEstq:AlmOrig = '01'
+	_oTrEstq:AlmDest = '25'
 	//_oTrEstq:EndOrig = 'a'
 	//_oTrEstq:EndDest = 'b'
 	//_oTrEstq:LoteOrig = '1'
@@ -457,29 +461,30 @@ STATIC FUNCTION _ClsTrEstq ()
 	_oTrEstq:QtdSolic = 1 
 	_oTrEstq:UsrIncl  = 'robert.koch'
 	if _oTrEstq:Grava ()
-		u_log ('gravou!', _oTrEstq:UltMsg)
+		U_Log2 ('debug', '[' + procname () + ']Gravou! msg: ' + _oTrEstq:UltMsg)
 		//u_logObj (_oTrEstq)
-		if _oTrEstq:Libera ()
-			u_log ('Liberou!', _oTrEstq:UltMsg)
-		else
-			u_help (_oTrEstq:UltMsg)
-		endif
-		if _oTrEstq:Exclui ()
-			u_log ('Excluiu!', _oTrEstq:UltMsg)
-		else
-			u_help (_oTrEstq:UltMsg)
-		endif
-	endif
-*/	//
-	_sDocZAG := '0000001979'
-	zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
-	if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
-		u_help ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG")
+//		if _oTrEstq:Libera ()
+//			u_log ('Liberou!', _oTrEstq:UltMsg)
+//		else
+//			u_help (_oTrEstq:UltMsg)
+//		endif
+//		if _oTrEstq:Exclui ()
+//			u_log ('Excluiu!', _oTrEstq:UltMsg)
+//		else
+//			u_help (_oTrEstq:UltMsg)
+//		endif
 	else
-		_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
-		_oTrEstq:GeraEtiq (.t.) //Libera ()
+		U_Log2 ('debug', '[' + procname () + ']Nao gravou. msg: ' + _oTrEstq:UltMsg)
 	endif
-	//
+//	_sDocZAG := '0000001979'
+//	zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
+//	if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
+//		u_help ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG")
+//	else
+//		_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
+//		_oTrEstq:GeraEtiq (.t.) //Libera ()
+//	endif
+//	//
 	//_oTrEstq:RegZAG = 1604
 	//if _oTrEstq:Exclui ()
 	//	u_log ('Excluiu!', _oTrEstq:UltMsg)

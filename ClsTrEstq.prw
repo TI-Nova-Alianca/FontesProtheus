@@ -23,6 +23,7 @@
 // 05/05/2022 - Robert  - Ateh definirmos melhor as integracoes, fica liberado transf.manualmente p/alm que usa Full.
 // 06/05/2022 - Robert  - Se a solicitacao foi gerada por integracao com FullWMS, limpa tambem da tabela de integracao (GLPI 8914).
 // 15/06/2022 - Robert  - Nao gerava etiqueta se o produto nao controlasse lotes (GLPI 12220)
+// 02/08/2022 - Robert  - Para gravar, precisa ser dono de pelo menos um dos almox. (GLPI 12404)
 //
 
 // ------------------------------------------------------------------------------------
@@ -547,8 +548,10 @@ METHOD Grava () Class ClsTrEstq
 			_lContinua = .F.
 		endif
 
-		// Verifica tamanhos de campos para evitar, por exemplo, uma chamada passando o produto com tamanho != 15
-		// Usa tamanhos fixos (nao busca n SX3) por questao de performance, jah que sao campos chave e dificilmente mudarao de tamanho.  
+		// Verifica tamanhos de campos para evitar, por exemplo, uma chamada
+		// passando o produto com tamanho != 15
+		// Usa tamanhos fixos (nao busca no SX3) por questao de performance,
+		// jah que sao campos chave e dificilmente mudarao de tamanho.  
 		if _lContinua
 			if len (::FilOrig)  !=  2; ::UltMsg += "Filial origem deve ter tamanho 2."    ; _lContinua = .F.; endif
 			if len (::FilDest)  !=  2; ::UltMsg += "Filial destino deve ter tamanho 2."   ; _lContinua = .F.; endif
@@ -693,10 +696,22 @@ METHOD Grava () Class ClsTrEstq
 		_nResto = ::QtdSolic % _nTamLote
 		if _nResto != 0
 			_lContinua = .F.
-			::UltMsg += "Produto e almox. de origem operam com FullWMS, e o produto tem lote mínimo de "+ alltrim(str(_nTamLote)) + ". Não será possível gerar uma movimentação."
+			::UltMsg += "Produto e almox. de origem operam com FullWMS, e o produto tem lote minimo de "+ alltrim(str(_nTamLote)) + ". Nao sera possivel gerar uma movimentacao."
 		endif
 	endif
 	
+	// Usuario que estah gravando a solicitacao tem que ser dono de pelo menos um dos almoxarifados envolvidos.
+	if _lContinua
+		if ! U_ZZUVL ('A' + ::AlmOrig, __cUserId, .F.)
+			U_Log2 ('debug', '[' + procname () + ']Usr atual nao eh dono do ax.origem (' + ::AlmOrig + ')')
+			if ! U_ZZUVL ('A' + ::AlmDest, __cUserId, .F.)
+				U_Log2 ('debug', '[' + procname () + ']Usr atual nao eh dono do ax.destino (' + ::AlmDest + ')')
+				::UltMsg += "Para gravar esta solicitacao, voce deve ser dono de pelo menos um dos almoxarifados envolvidos."
+				_lContinua = .F.
+			endif
+		endif
+	endif
+
 	if _lContinua
 		::Docto = GetSXENum ("ZAG", "ZAG_DOC")
 
