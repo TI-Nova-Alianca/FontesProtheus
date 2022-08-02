@@ -21,6 +21,7 @@
 // 16/06/2022 - Robert - Verif.se a etiq.existe no FullWMS antes excluir (GLPI 12220).
 // 26/07/2022 - Robert - Implementada verif.disponib.estq no metodo PodeApont() - GLPI 11994
 // 29/07/2022 - Robert - Verif.saldo empenhos desconsiderava empenhos zerados.
+// 01/08/2022 - Robert - Ajuste formula verif.saldo empenhos (GLPI 11994)
 //
 
 #Include "Protheus.ch"
@@ -308,7 +309,7 @@ METHOD PodeApont (_nQtApont, _nQtPerda) Class ClsEtiq
 	//	_oSQL:_sQuery +=        ",(SUM (D4_QTDEORI) * " + cvaltochar (_nQtApont + _nQtPerda) + ") / C2_QUANT AS QT_A_REQ"
 		_oSQL:_sQuery +=        ",CASE WHEN SUM (D4_QUANT) = 0"
 		_oSQL:_sQuery +=             " THEN 0"
-		_oSQL:_sQuery +=             " ELSE (SUM(D4_QTDEORI) * 100) / C2_QUANT"
+		_oSQL:_sQuery +=             " ELSE (SUM(D4_QTDEORI) * " + cvaltochar (_nQtApont + _nQtPerda) + ") / C2_QUANT"
 		_oSQL:_sQuery +=        " END AS QT_A_REQ"
 		_oSQL:_sQuery +=        ",ISNULL (SB2.B2_QATU, 0) AS ESTQ"
 		_oSQL:_sQuery +=        ",B1_UM"
