@@ -91,7 +91,7 @@
 // 25/02/2022 - Sandra  - Alterado agencia e conta do banco 041 para filial 08. GLPI: 11638.
 // 18/02/2022 - Claudia - Criado modelo banrisul 240. GLPI: 11753
 // 10/06/2022 - Claudia - Realizado ajustes conforme solicitado pelo banco banrisul. GLPI: 11638
-// 22/07/2022 - Claudia - Criado modelo de boleto banco Daycoval.
+// 22/07/2022 - Claudia - Criado modelo de boleto banco Daycoval. GLPI: 12365
 //
 // --------------------------------------------------------------------------------------------------------------
 User Function ML_BOLLSR (_aBoletos)
@@ -245,6 +245,7 @@ Static Function MontaRel()
 	local _nDescFin  := 0
 	local _nPJurbol  := GetMv ("VA_PJURBOL") 
 	Local _oSQL  	 := ClsSQL ():New ()
+	Local _sDigVerif := ""
 	private _nVlrTit := 0
 	private CB_RN    := {}
 
@@ -487,7 +488,8 @@ Static Function MontaRel()
 				case _cBcoBol == '422'
 					_sNumBco = _NosNum422_422()
 				case _cBcoBol == '707'
-                    _sNumBco = _NosNum707()
+                    _sNumBco = soma1 (strzero (see -> ee_bolatu, 10)) 
+					//_sDigVerif := _DigVerif707()
         		case _cBcoBol == '748'
 					_sNumBco = _NosNum748()
 				case _cBcoBol == 'RED'
@@ -647,7 +649,8 @@ Static Function MontaRel()
 				CB_RN [1] = _CodBar422_422 ()
 				CB_RN [2] = _LinDig422_422 ()	
 			case _cBcoBol == '707'
-				CB_RN [1] = _CodBar707 ()
+				_sDigVerif := _DigVerif707(_sNumBco)
+				CB_RN [1] = _CodBar707 (_sDigVerif)
 				CB_RN [2] = _LinDig707 ()		
 			case _cBcoBol == '748'
                 CB_RN [1] = _CodBar748 ()
@@ -662,6 +665,8 @@ Static Function MontaRel()
 		aDadosTit   := {}
 		if _cBcoBol == 'RED'
 			aAdd(aDadosTit, SE1->E1_NUM )
+		elseif _cBcoBol == '707'
+			aAdd(aDadosTit, SE1->E1_NUM + SE1->E1_PARCELA)
 		else	
 			aAdd(aDadosTit, se1 -> e1_prefixo + SE1->E1_NUM+SE1->E1_PARCELA)	// Número do título: BB exige identico ao arquivo de cobranca.
 		endif
@@ -738,7 +743,7 @@ Static Function MontaRel()
 	
 		// --------- IMPRESSÃO DO BOLETO ----------
 		If _lContinua == .T.
-			_Impress(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
+			_Impress(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN, _sDigVerif)
 				
 			// Marca titulo como 'boleto jah impresso'.
 			RecLock("SE1",.F.)
@@ -1176,8 +1181,8 @@ Static Function _NosNum422_422 ()
 return _sRet
 //
 // --------------------------------------------------------------------------
-// Calcula 'Nosso numero' para o banco 707 por 'modulo 10'.
-Static Function _NosNum707 ()
+// Calcula Digito Verificador para o banco 707 por 'modulo 10'.
+Static Function _DigVerif707 (_sNumBco)
 	local _nDV1      := NIL  // Para dar erro caso nao encontre o DV.
 	local _nResto    := 0
 	local _nSoma     := 0
@@ -1187,11 +1192,16 @@ Static Function _NosNum707 ()
 	local _nPos      := 0
 	local _nPeso     := 0
 
+	//_sBanco    := see -> ee_codigo
 	_sAgencia  := substr(see -> ee_agencia,1,4)
 	_sSubConta := see -> ee_subcta
 	
 	// Busca a raiz do 'nosso numero' para o proximo boleto.
-	_sProxBol1 = soma1 (strzero (see -> ee_bolatu, 10))
+	If empty(_sNumBco)
+		_sProxBol1 = soma1 (strzero (see -> ee_bolatu, 10))
+	else
+		_sProxBol1 = alltrim(_sNumBco)
+	EndIf
 
 	_sProxBol = _sAgencia + _sSubConta + _sProxBol1
 
@@ -1214,7 +1224,7 @@ Static Function _NosNum707 ()
 	else
 		_nDV1 = 10 - _nResto
 	endif
-	_sRet = _sProxBol1 + alltrim(str(_nDV1))
+	_sRet = alltrim(str(_nDV1))
 
 return _sRet
 //
@@ -1984,7 +1994,7 @@ return _sRet
 //
 // --------------------------------------------------------------------------
 // Monta codigo de barras para o banco 707 - daycoval
-Static Function _CodBar707()
+Static Function _CodBar707(_sDigVerif)
 	local _sRet      := ""
 	local _aCodBar   := afill (array (44), 0)
 	local _nPos      := 0
@@ -2008,7 +2018,7 @@ Static Function _CodBar707()
 	_aCodBar [4] = 9 //Moeda: Reais
 	
 	// Passa o fator de vencimento para as devidas posicoes da array.
-	_nFatorVct = se1 -> e1_vencrea - stod ("20000703")
+	_nFatorVct = se1 -> e1_vencrea - stod ("20000703") + 1000
 	_sFatorVct = strzero (_nFatorVct, 4)
 	
 	_aCodBar [6] = val (substr (_sFatorVct, 1, 1))
@@ -2037,11 +2047,14 @@ Static Function _CodBar707()
 		_aCodBar [_nPos + 26] = val (substr (_sOper, _nPos, 1))
 	next
 
+	_sNumBcoDV := alltrim(se1 -> e1_numbco) + _sDigVerif
+	u_log("Nosso num + DV" + _sNumBcoDV)
 	// Passa nosso numero para a array do codigo de barras
 	for _nPos = 1 to 11
-		_aCodBar [_nPos + 33] = val (substr (se1 -> e1_numbco, _nPos, 1))
+		_aCodBar [_nPos + 33] = val (substr (_sNumBcoDV, _nPos, 1))
 	next
 
+	_nPeso := 2
 	// Calculo do digito verificador
 	for _nPos = 44 to 1 step -1
 		if _nPos != 5  // Esta posicao nao participa do calculo.
@@ -2073,6 +2086,7 @@ Static Function _CodBar707()
 	for _nPos = 20 to 44
 		_campolivre  += alltrim (str (_aCodBar [_nPos]))
 	next
+	u_log("Codigo de barra" + _sRet)
 return _sRet
 //
 // --------------------------------------------------------------------------
@@ -2927,7 +2941,7 @@ Return(_cRet)
 //
 // --------------------------------------------------------------------------
 // Rotina de impressao do boleto
-Static Function _Impress(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
+Static Function _Impress(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN, _sDigVerif)
 	local _nLinIni  := 0
 	local _sNumComp := ""  // Numero de compensacao
 	local i 	    := 0
@@ -3104,6 +3118,8 @@ Static Function _Impress(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
 			oPrn:Say(_nLinIni+0735 , 0100 ,"PAGAVEL EM QUALQUER BANCO ATE O VENCIMENTO"							, oFont10)
 		Elseif _cBcoBol == '748'
 			oPrn:Say(_nLinIni+0735 , 0100 ,"Pagável preferencialmente nas cooperativas de crédito do Sicredi"	, oFont10)
+		Elseif _cBcoBol == '707'
+			oPrn:Say(_nLinIni+0735 , 0100 ,"PAGAVEL EM QUALQUER REDE BANCÁRIA, MESMO APÓS VENCIMENTO"			, oFont10)
 		Elseif _cBcoBol == 'RED'
 			oPrn:Say(_nLinIni+0735 , 0100 ,"Pagável preferencialmente na Rede Bradesco ou Bradesco Expresso"	, oFont10)
 		else
@@ -3184,8 +3200,8 @@ Static Function _Impress(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
 		elseif _cBcoBol == 'RED'
 			oPrn:Say(_nLinIni+0895 , 1960 , "09/" + aDadosTit[6]            	    ,oFont10)	
 		elseif _cBcoBol == '707'
-			_sNum707 := alltrim(_cAgeBol)+'/'+ alltrim(see->ee_subcta)+'/'+aDadosTit[6]
-			oPrn:Say(_nLinIni+0895 , 1960 , _sNum707								,oFont10)	
+			_sNum707 := alltrim(_cAgeBol)+'/'+ alltrim(see->ee_subcta)+'/'+aDadosTit[6] + '-' + _sDigVerif
+			oPrn:Say(_nLinIni+0885 , 1960 , _sNum707								,oFont10)	
 		else		
 			oPrn:Say(_nLinIni+0895 , 1960 ,aDadosTit[6]                           	,oFont10)
 		endif		
@@ -3220,6 +3236,8 @@ Static Function _Impress(oPrn,aDadosEmp,sDadosEmp1,aDadosTit,aDatSacado, CB_RN)
 			oPrn:Say(_nLinIni+0965, 0605 ,"09"                                       	,oFont10)	
 		elseif _cBcoBol == '399'
 			oPrn:Say(_nLinIni+0965, 0605 ,"CSB"                                       	,oFont10)
+		elseif _cBcoBol == '707'
+			oPrn:Say(_nLinIni+0965, 0605 ,"121"                                       	,oFont10)
 		endif
 		
 		oPrn:Say(_nLinIni+0935 , 0755 ,"Espécie"                                   	,oFont8 )
