@@ -96,6 +96,7 @@
 //                        gerava um arqivo de log para cada usuario).
 // 26/05/2022 - Robert  - Novos parametros na chamada da funcao U_RastLt().
 // 20/07/2022 - Robert  - Novas tags DiasValid e ChaveNFe na gravacao de eventos (GLPI 12336)
+// 01/08/2022 - Robert  - Nova tag MotProrrogTit na gravacao de eventos.
 //
 
 // --------------------------------------------------------------------------------------------------------
@@ -757,7 +758,7 @@ static function _IncEvt ()
 	if empty (_sErroWS) ; _oEvento:MailTo     = _ExtraiTag ("_oXML:_WSAlianca:_MailTo",         .F., .F.) ;   endif
 	if empty (_sErroWS) ; _oEvento:MailToZZU  = _ExtraiTag ("_oXML:_WSAlianca:_MailToZZU",      .F., .F.) ;   endif
 	if empty (_sErroWS) ; _oEvento:Alias      = _ExtraiTag ("_oXML:_WSAlianca:_Alias",          .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:Recno      = val (_ExtraiTag ("_oXML:_WSAlianca:_Recno",     .F., .F.)) ;   endif
+	if empty (_sErroWS) ; _oEvento:Recno      = val (_ExtraiTag ("_oXML:_WSAlianca:_Recno",     .F., .F.)) ;  endif
 	if empty (_sErroWS) ; _oEvento:CodAlias   = _ExtraiTag ("_oXML:_WSAlianca:_CodAlias",       .F., .F.) ;   endif
 	if empty (_sErroWS) ; _oEvento:Chave      = _ExtraiTag ("_oXML:_WSAlianca:_Chave",          .F., .F.) ;   endif
 	if empty (_sErroWS) ; _oEvento:OP         = _ExtraiTag ("_oXML:_WSAlianca:_OP",             .F., .F.) ;   endif
@@ -765,8 +766,9 @@ static function _IncEvt ()
 	if empty (_sErroWS) ; _oEvento:CodProceda = _ExtraiTag ("_oXML:_WSAlianca:_CodProceda",     .F., .F.) ;   endif
 	if empty (_sErroWS) ; _oEvento:Transp     = _ExtraiTag ("_oXML:_WSAlianca:_Transp",         .F., .F.) ;   endif
 	if empty (_sErroWS) ; _oEvento:TranspReds = _ExtraiTag ("_oXML:_WSAlianca:_TranspReds",     .F., .F.) ;   endif
-	if empty (_sErroWS) ; _oEvento:DiasValid  = val (_ExtraiTag ("_oXML:_WSAlianca:_DiasValid", .F., .F.)) ;   endif
+	if empty (_sErroWS) ; _oEvento:DiasValid  = val (_ExtraiTag ("_oXML:_WSAlianca:_DiasValid", .F., .F.)) ;  endif
 	if empty (_sErroWS) ; _oEvento:ChaveNFe   = _ExtraiTag ("_oXML:_WSAlianca:_ChaveNFe",       .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:MotProrTit = _ExtraiTag ("_oXML:_WSAlianca:_MotProrrogTit",  .F., .F.) ;   endif
 	if empty (_sErroWS)
 		if ! _oEvento:Grava ()
 			_sErroWS += "Erro na gravacao do objeto evento"
