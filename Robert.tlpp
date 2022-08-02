@@ -73,21 +73,26 @@ user function robert ()
 
 		// _SimCtb ()
 		// _FechSafr ()
-		_ClsTrEstq ()
+		// _ClsTrEstq ()
 		// _ClsEtiq ()
 		// _Sisdevin ()
 		// _metaf ()
 		// _exml ()
 		// _RevCH ()
 		// _elastic ()
+		_evtXML ()
 
-		//u_help ('Nada definido.')
+		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
 return
 
 
+static function _evtxml ()
+	// Envia ciencia da operacao
+	U_FBTRS101({'43220701784637000189550010000401951013095045'}, 4, '')
+return
 
 // --------------------------------------------------------------------------
 //static function _AndaLogo ()

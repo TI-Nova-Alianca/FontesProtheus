@@ -1,3 +1,19 @@
+// Programa:  FBTRS101
+// Autor:     Mauricio Dani - TRS
+// Data:      15/01/2021
+// Descricao: Monta XML de eventos (ciencia/desconhecimento/etc.) de operacao para a SEFAZ.
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Interface
+// #Descricao         #Monta XML de eventos (ciencia/desconhecimento/etc.) de operacao para a SEFAZ.
+// #PalavasChave      #XML NFe SEFAZ evento operacao
+// #TabelasPrincipais #SF1
+// #Modulos           #COM #EST
+
+// Historico de alteracoes:
+// 02/08/2022 - Robert - Gravacao evento(interno do Protheus) ao final da operacao (GLPI 12418)
+//
+
 #Include "RwMake.ch" 
 #Include "Protheus.ch"
 #Include "TBICoNN.ch"
@@ -24,9 +40,13 @@ User Function FBTRS101(aChaves, nTpEvento, cJustific)
 	Local _nN           := 0
 	Local aJust 		:= {}
 	Local cDescEvent	:= ''
+	local _oEvento      := NIL
 	Private oWs			:= NIL
 
 	Default	cJustific 	:= ""
+
+	U_Log2 ('debug', '[' + procname () + ']Chaves recebidas:')
+	U_Log2 ('debug', aChaves)
 
 	AADD(aItensCb, '210200') // Confirmação da Operação
 	AADD(aItensCb, '210220') // Desconhecimento da Operação
@@ -84,10 +104,6 @@ User Function FBTRS101(aChaves, nTpEvento, cJustific)
 		U_Log2 ('debug', aRet)
 
 		If lRetOk .And. Len(aRet) > 0
-			For nZ:=1 to Len(aRet)
-				aRet[nZ] := Substr(aRet[nZ],9,44)
-				cChavesMsg += aRet[nZ] + Chr(10) + Chr(13)
-			Next
 
 			If aItensCb[nTpEvento] 		== '210200'
 				cDescEvent := ' - Confirmação da operação'
@@ -98,6 +114,20 @@ User Function FBTRS101(aChaves, nTpEvento, cJustific)
 			ElseIf aItensCb[nTpEvento] 	== '210240'
 				cDescEvent := ' - Operação não realizada'
 			EndIf
+
+			For nZ:=1 to Len(aRet)
+				aRet[nZ] := Substr(aRet[nZ],9,44)
+				cChavesMsg += aRet[nZ] + Chr(10) + Chr(13)
+
+				// Grava evento temporario para posterior rastreamento da chave da nota.
+				_oEvento := ClsEvent ():New ()
+				_oEvento:CodEven   = "ZZX002"
+				_oEvento:Texto     = "Enviado evento '" + aItensCb[nTpEvento] + cDescEvent + "' para a SEFAZ. Pilha: " + U_LogPCham ()
+				_oEvento:ChaveNFe  = aRet[nZ]
+				_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
+				_oEvento:Grava ()
+
+			Next
 
 			cMsgManif := "Manifestação transmitida com sucesso!" + Chr(10) + Chr(13)
 			cMsgManif += aItensCb[nTpEvento] + cDescEvent + Chr(10) + Chr(13)
