@@ -55,6 +55,7 @@
 // 19/08/2021 - Robert  - Inicializador para ::Origem, pois quando pilha de chamadas, excedia tamanho do campo (GLPI 10578).
 // 02/05/2022 - Robert  - Incluidas chamadas de U_PerfMon() para acompanhar tempo de gravacao.
 // 20/07/2022 - Robert  - Criado tratamento para atributos ::DiasValid e ::ChaveNFe (GLPI 12336)
+// 01/08/2022 - Robert  - Criado atributo ::MotProrTit
 //
 
 #include "protheus.ch"
@@ -105,6 +106,7 @@ CLASS ClsEvent
 	data Origem
 	data DiasValid
 	data ChaveNFe
+	data MotProrTit
 
 	// Declaração dos Métodos da Classe
 	METHOD New ()
@@ -155,6 +157,7 @@ METHOD New (_nRegSZN) Class ClsEvent
 	::Origem     := ''
 	::DiasValid  := 0
 	::ChaveNFe   := ''
+	::MotProrTit := ''
 
 	if _nRegSZN != NIL
 		szn -> (dbgoto (_nRegSZN))
@@ -193,6 +196,7 @@ METHOD New (_nRegSZN) Class ClsEvent
 		::Origem     = SZN -> zn_origem
 		::DiasValid  = SZN -> zn_diasvls
 		::ChaveNFe   = SZN -> zn_chvnfe
+		::MotProrTit = szn -> zn_MotPror
 	endif
 Return Self
 //
@@ -256,6 +260,7 @@ METHOD Grava () Class ClsEvent
 	SZN -> zn_origem  = _Origem ()
 	szn -> zn_diasvld = ::DiasValid
 	szn -> zn_chvnfe  = ::ChaveNFe
+	szn -> zn_MotPror = ::MotProrTit
 	msunlock ("SZN")
 
 	U_PerfMon ('F', 'GravarSZN')
@@ -301,6 +306,7 @@ METHOD GravaNovo () Class ClsEvent
 	_oSQL:_sQuery +=   " AND SZN.ZN_ORIGEM  = '" + _Origem () + "'"
 	_oSQL:_sQuery +=   " AND SZN.ZN_DIASVLD = " + cvaltochar (::DiasValid)
 	_oSQL:_sQuery +=   " AND SZN.ZN_CHVNFE  = '" + ::ChaveNFe + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_MOTPROR = '" + ::MotProrTit + "'"
 	_oSQL:Log ()
 
 	if _oSQL:RetQry (1, .f.) == 0
@@ -480,6 +486,7 @@ METHOD Log () Class ClsEvent
 	if !empty (::Hist);                    _sTxtLog += "Historico......: " + ::Hist + chr (13) + chr (10); endif
 	if !empty (::DiasValid);               _sTxtLog += "Dias vld.evento: " + cvaltochar (::DiasValid) + chr (13) + chr (10); endif
 	if !empty (::ChaveNFe);                _sTxtLog += "Chave NFe......: " + ::ChaveNFe + chr (13) + chr (10); endif
+	if !empty (::MotProrTit);              _sTxtLog += "Mot.prorrog.tit: " + ::MotProrTit + chr (13) + chr (10); endif
 
 	_sTxtLog += "-----------------------------------------------------------" + chr (13) + chr (10)
 	u_log2 ('info', _sTxtLog)
@@ -528,6 +535,9 @@ METHOD SendMail (_sDestin) Class ClsEvent
 		endif
 		if ! empty (::ChaveNFe)
 			_sTxtMail += "Chave NFe......: " + ::ChaveNFe + chr (13) + chr (10)
+		endif
+		if ! empty (::MotProrTit)
+			_sTxtMail += "Mot.prorrog.tit: " + ::MotProrTit + chr (13) + chr (10)
 		endif
 		_sTxtMail += "Data/hora......: " + dtoc (date ()) + "  -  " + time () + chr (13) + chr (10)
 		_sTxtMail += "Usuario/estacao: " + cUserName + " / " + getcomputername () + chr (13) + chr (10)

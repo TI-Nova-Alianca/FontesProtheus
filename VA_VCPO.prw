@@ -167,6 +167,7 @@
 // 25/03/2022 - Robert  - Validacoes adicionais do campos C2_PRODUTO e D3_VAETIQ - GLPI 11825.
 // 16/05/2022 - Robert  - Restaurada valid.etiq.jah apontada (ganta alguns segundos do usuario).
 // 15/07/2022 - Robert  - Valida grupo 140 do ZZU no campo D3_VAETIQ.
+// 01/08/2022 - Robert  - Criada validacao duplicidade B1_CODBAR (GLPI 11994)
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -393,6 +394,25 @@ user function VA_VCpo (_sCampo)
 				U_Help ("Venda para entrega futura: TES de cobranca nao deve atualizar estoque e deve gerar duplicata.")
 				_lRet = .F.
 			endif
+
+		case _sCampo == "M->B1_CODBAR"
+			if ! empty (m->b1_codbar)
+				_oSQL := ClsSQL():New ()
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += " SELECT RTRIM (STRING_AGG (RTRIM (B1_COD) + '-' + RTRIM (B1_DESC), '; '))"
+				_oSQL:_sQuery +=   " FROM " + RetSQLName ("SB1") + " SB1 "
+				_oSQL:_sQuery +=  " WHERE SB1.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=    " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+				_oSQL:_sQuery +=    " AND SB1.B1_CODBAR  = '" + m->b1_codbar + "'"
+				_oSQL:_sQuery +=    " AND SB1.B1_COD    != '" + m->b1_cod + "'"
+				_oSQL:Log ()
+				_sMsg = _oSQL:RetQry (1, .f.)
+				if ! empty (_sMsg)
+					U_Help ("Codigo de barras ja informado para o(s) seguinte(s) produto (s): " + _sMsg,, .t.)
+					_lRet = .F.
+				endif
+			endif
+
 
 		case _sCampo == "M->B1_CODPAI"
 			if ! empty (M->B1_CODPAI) .and. M->B1_GRUPO != '0400'  // Uvas tem mais de um pai (organ/bordadura, etc.)
