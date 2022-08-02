@@ -13,6 +13,7 @@
 
 // Historico de alteracoes:
 // 01/02/2021 - Robert - Criado botão para chamar tela e destinação de lotes (GLPI 5563).
+// 02/08/2022 - Robert - Adicionado DB_VAUSER na consulta de enderecamentos (GLPI 12421)
 //
 
 #include "rwmake.ch"
@@ -30,8 +31,10 @@ return _aRet
 // --------------------------------------------------------------------------
 user function ConsSDB (_sDoc, _sSerie)
 	local _oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := "SELECT DB_PRODUTO AS PRODUTO, B1_DESC AS DESCRICAO, DB_LOTECTL AS LOTE, DB_ESTORNO AS ESTORNADO"
-	_oSQL:_sQuery +=      ", DB_LOCALIZ AS ENDERECO, DB_QUANT AS QUANTIDADE, dbo.VA_DTOC(DB_DATA) AS DATA"
+	_oSQL:_sQuery := "SELECT DB_PRODUTO AS PRODUTO, B1_DESC AS DESCRICAO"
+	_oSQL:_sQuery +=      ", DB_LOTECTL AS LOTE, DB_ESTORNO AS ESTORNADO"
+	_oSQL:_sQuery +=      ", DB_LOCALIZ AS ENDERECO, DB_QUANT AS QUANTIDADE"
+	_oSQL:_sQuery +=      ", dbo.VA_DTOC(DB_DATA) AS DATA, DB_VAUSER AS USUARIO"
 	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SDB") + " SDB, "
 	_oSQL:_sQuery +=            RetSQLName ("SB1") + " SB1 "
 	_oSQL:_sQuery += " WHERE SDB.D_E_L_E_T_ = ''"
