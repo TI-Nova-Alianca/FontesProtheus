@@ -1,0 +1,8 @@
+# Lista de arquivos a serem ignorados para controle de versionamento pelo GIT
+
+*.old
+*.bak
+*.~pr
+.vscode/launch.json
+.vscode/settings.json
+.project
