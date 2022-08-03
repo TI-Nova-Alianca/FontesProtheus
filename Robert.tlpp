@@ -79,8 +79,10 @@ user function robert ()
 		// _metaf ()
 		// _exml ()
 		// _RevCH ()
+		// _BatXML ()
 		// _elastic ()
-		_evtXML ()
+		// _evtXML ()
+		//_batfullw ()
 
 		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
@@ -88,6 +90,18 @@ user function robert ()
 	endif
 return
 
+
+static function _batfullw ()
+	_sArqLog := 'U_BatFullW.log'
+	U_BatFullW ()
+return
+
+static function _BatXML ()
+	_sArqLog := "U_BatXML.log"
+	U_BatXML("\\192.168.1.3\Siga\Protheus12\protheus_data\xml_NFe\", 10, .F.)
+//	U_BatXML("\\192.168.1.2\Siga\Protheus11\protheus_data\xml_NFe\", 200, .F.)
+//	U_BatXML("\\192.168.1.2\Siga\Protheus11\protheus_data\xml_NFe\CT-e\", 100, .F.)
+return
 
 static function _evtxml ()
 	// Envia ciencia da operacao
@@ -231,8 +245,6 @@ static function _RevCH()
 	// U_BatRevCh ("SP", "NFE", 90)
 	// U_BatRevCh ("TO", "CTE", 90)
 	// U_BatRevCh ("TO", "NFE", 90)
-//	U_BatXML("\\192.168.1.2\Siga\Protheus11\protheus_data\xml_NFe\", 200, .F.)
-//	U_BatXML("\\192.168.1.2\Siga\Protheus11\protheus_data\xml_NFe\CT-e\", 100, .F.)
 RETURN
 
 /*
@@ -456,8 +468,8 @@ STATIC FUNCTION _ClsTrEstq ()
 	//_oTrEstq:OP = '1234561212312'
 	_oTrEstq:Motivo = 'teste robert (ZAG)' 
 	_oTrEstq:ProdOrig = '4072           '
-	//_oTrEstq:ProdDest = '2626           '
-	_oTrEstq:AlmOrig = '01'
+	_oTrEstq:ProdDest = '4072           '
+	_oTrEstq:AlmOrig = '25'
 	_oTrEstq:AlmDest = '25'
 	//_oTrEstq:EndOrig = 'a'
 	//_oTrEstq:EndDest = 'b'
@@ -714,8 +726,6 @@ return
 //	_sArqLog := 'U_BatMercN_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batMercN (5)
 //	u_log2 ('info', _oBatch:Mensagens)
-//	_sArqLog := 'U_BatXML_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	U_BatXML("\\192.168.1.3\Siga\Protheus12\protheus_data\xml_NFe\", 1, .F.)
 return
 */
 /*

@@ -24,6 +24,7 @@
 // 06/05/2022 - Robert  - Se a solicitacao foi gerada por integracao com FullWMS, limpa tambem da tabela de integracao (GLPI 8914).
 // 15/06/2022 - Robert  - Nao gerava etiqueta se o produto nao controlasse lotes (GLPI 12220)
 // 02/08/2022 - Robert  - Para gravar, precisa ser dono de pelo menos um dos almox. (GLPI 12404)
+// 02/08/2022 - Robert  - Para gravar, testa possibilidade do destino ser igual a origem (GLPI 12427).
 //
 
 // ------------------------------------------------------------------------------------
@@ -566,6 +567,18 @@ METHOD Grava () Class ClsTrEstq
 		endif
 	endif
 
+	// Testa possibilidade do destino ser igual a origem.
+	if _lContinua
+		if ::FilOrig == ::FilDest ;
+		.and. ::ProdOrig == ::ProdDest ;
+		.and. ::AlmOrig  == ::AlmDest ;
+		.and. ::EndOrig  == ::EndDest ;
+		.and. ::LoteOrig == ::LoteDest
+			::UltMsg += "Nao ha sentido em transferir quando origem e destino sao iguais."
+			_lContinua = .F.
+		endif
+	endif
+
 	if _lContinua
 		sb1 -> (dbsetorder (1))
 		if ! sb1 -> (dbseek (xfilial ("SB1") + ::ProdOrig, .F.))
@@ -871,7 +884,7 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 	endif
 
 	if _lNenhuma
-		u_log2 ('info', 'Nada a liberar')
+		U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Nada a liberar')
 		::UltMsg += iif (_lMsg, "Nenhuma liberacao pendente para este usuario.", '')
 	endif
 

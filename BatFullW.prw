@@ -38,6 +38,7 @@
 // 06/05/2020 - Robert - Ajuste nome variavel _sChaveEx em msg de aviso.
 // 07/08/2020 - Robert - Melhorados logs e mensagens de erro.
 // 10/12/2021 - Robert - Nao atualizava status_protheus quando nao tinha quantidade executada nem movimentada na tb_wns_entrada.
+// 03/08/2022 - Robert - Criado controle de semaforo para evitar 2 execucoes simultaneas; melhorado log (GLPI 12427)
 //
 
 #Include "Protheus.ch"
@@ -46,18 +47,30 @@
 // ------------------------------------------------------------------------------------
 User Function BatFullW ()
 	local _lRet      := .T.
+	local _nLock     := 0
 
-	// Verifica entradas (Protheus enviando para FullWMS)
-	u_log2 ('info', 'Iniciando processamento de entradas')
-	_Entradas ()
-	u_log2 ('info', 'Finalizou processamento de entradas')
+	_nLock := U_Semaforo (procname () + cEmpAnt + cFilAnt, .F.)
+	if _nLock == 0
+		u_log2 ('erro', "Bloqueio de semaforo.")
+	else
 
-	// Verifica saidas (FullWMS separando materiais para entregar ao Protheus)
-	u_log2 ('info', 'Iniciando processamento de saidas')
-	_Saidas ()
-	u_log2 ('info', 'Finalizou processamento de saidas')
+		// Verifica entradas (Protheus enviando para FullWMS)
+		u_log2 ('info', 'Iniciando processamento de entradas')
+		_Entradas ()
+		u_log2 ('info', 'Finalizou processamento de entradas')
 
-	u_log2 ('info', '')  // Apenas para gerar una linha vazia.
+		// Verifica saidas (FullWMS separando materiais para entregar ao Protheus)
+		u_log2 ('info', 'Iniciando processamento de saidas')
+		_Saidas ()
+		u_log2 ('info', 'Finalizou processamento de saidas')
+	endif
+
+	// Libera semaforo.
+	if _nLock > 0
+		U_Semaforo (_nLock)
+	endif
+
+	u_log2 ('info', '-----------Final de execucao-----------')
 return _lRet
 
 
@@ -115,7 +128,7 @@ static function _Entradas ()
 			endif
 			
 			if ! empty (za1 -> za1_idZAG)  // Trata-se de entrada gerada por solicitacao de transferencia
-				u_log2 ('info', "Entrada gerada pelo ZAG")
+				u_log2 ('info', "Entrada gerada pelo ZAG. ZA1_IDZAG=" + za1 -> za1_idZAG + " ZA1_CODIGO=" + za1 -> za1_codigo)
 				zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
 				if ! zag -> (dbseek (xfilial ("ZAG") + za1 -> za1_idZAG, .F.))
 					u_log2 ('aviso', "Documento de transferencia '" + za1 -> za1_idZAG + "' nao encontrado na tabela ZAG")
