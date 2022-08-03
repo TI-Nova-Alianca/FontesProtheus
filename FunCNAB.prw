@@ -87,7 +87,7 @@ User Function FunCNAB (_sBanco, _sCampo)
 			if se1->e1_vaRapel == 0
 				_xRet := '000000'
 			else
-				_sData : dtos(se1->e1_vencrea)
+				_sData := dtos(se1->e1_vencrea)
 				_sAno := SubStr(_sData, 3, 4)
 				_sMes := SubStr(_sData, 5, 2)
 				_sDia := SubStr(_sData, 7, 2)
