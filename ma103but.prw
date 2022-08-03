@@ -2,6 +2,7 @@
 // Autor......: Jererson Rech
 // Data.......: 12/2004
 // Descricao..: P.E. acrescenta opcoes no menu da NF de entrada
+//              (dentro da tela de edicao/visualizacao da nota)
 //
 // Historico de alteracoes:
 // 05/05/2008 - Robert - Inclusao botao para selecao de frete.
@@ -14,7 +15,7 @@ User Function MA103BUT()
 	Local _aArea  := GetArea()
 	Local _aRet   := {}
 
-	aadd (_aRet, {"CARGA",    {|| U_FrtSelFr ()}                                                                     , "Frete"})
+	aadd (_aRet, {"CARGA", {|| U_FrtSelFr ()},   "Frete"})
 
 	RestArea(_aArea)
 Return(_aRet)

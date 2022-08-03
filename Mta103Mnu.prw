@@ -13,17 +13,22 @@
 // 23/08/2017 - Catia   - Botao para liberar NF de importação
 // 11/10/2019 - Cláudia - Botao para gerar etiqueta de NF entrada"
 // 08/06/2021 - Cláudia - Incluido o botao para alterar a natureza. GLPI: 10083
+// 02/08/2022 - Robert  - Incluída chamada para manifesto da TRS (GLPI 12418)
+//                      - Incluída consulta de enderecamentos (GLPI 12421)
 //
+
 // ---------------------------------------------------------------------------------
 user function Mta103Mnu ()
 	local _aRotAdic := {}
 
 	aadd (_aRotAdic, {"Eventos Alianca" 	, "U_VA_SZNC  ('NFENTRADA', sf1 -> f1_doc, sf1 -> f1_serie, sf1 -> f1_fornece, sf1 -> f1_loja)", 0, 6, 0, NIL})
-	aadd (_aRotAdic, {"Eventos NF-e"    	, "U_EvtNFe   ('E', sf1 -> f1_doc, sf1 -> f1_serie, sf1 -> f1_fornece, sf1 -> f1_loja)", 0, 6, 0, NIL})
+	aadd (_aRotAdic, {"Eventos NF-e(SEFAZ)"	, "U_EvtNFe   ('E', sf1 -> f1_doc, sf1 -> f1_serie, sf1 -> f1_fornece, sf1 -> f1_loja)", 0, 6, 0, NIL})
 	aadd (_aRotAdic, {"Dados adicionais"	, "U_NFDAdicC ('E', sf1 -> f1_doc, sf1 -> f1_serie, sf1 -> f1_fornece, sf1 -> f1_loja)", 0, 6, 0, NIL})
 	aadd (_aRotAdic, {"NF Import.FLAG"  	, "U_NFImpFlag( sf1 -> f1_doc, sf1 -> f1_serie, sf1 -> f1_fornece, sf1 -> f1_loja)", 0, 6, 0, NIL})
 	aadd (_aRotAdic, {"Gera Etq NF entrada"	, "U_EtqPllGN ()", 0, 6, 0, NIL})
 	aadd (_aRotAdic, {"Altera Natureza"	    , "U_VA_ALTNAT(sf1->f1_filial, sf1 -> f1_doc, sf1 -> f1_serie, sf1 -> f1_fornece, sf1 -> f1_loja)", 0, 6, 0, NIL})
+	aadd (_aRotAdic, {"Manifesto SEFAZ(TRS)", "U_FBTRS102(.T.)", 0, 6, 0, NIL})
+	aadd (_aRotAdic, {"Enderecamentos"      , "processa ({||U_ConsSDB (sf1->f1_doc, sf1->f1_serie)})", 0, 6, 0, NIL})
 	
 	aadd (aRotina, {"Especificos"           , _aRotAdic, 0, 6, 0, NIL})
 return

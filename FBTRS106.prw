@@ -11,7 +11,8 @@
 User Function FBTRS106(aRet, lShowMsg, lCompleta)
 
 	Local aArea 		:= GetArea()
-	Local aChaveNfe 	:= {}
+//	Local aChaveNfe 	:= {}
+	Local aChaveNfe 	:= {sf1 -> f1_chvnfe}
 	Local lRetManif		:= .F.
 	//Local cIdEnt   		:= U_FBTRS103()
 	//Local cURL    		:= PadR(GetNewPar("MV_SPEDURL","http://"), 250)
@@ -36,6 +37,8 @@ User Function FBTRS106(aRet, lShowMsg, lCompleta)
 		If !lCompleta
 			aRet[1]++
 		EndIf
+		U_Log2 ('debug', '[' + procname () + ']Vou chamar U_FBTRS101 passando a seguinte array de chaves:')
+		U_Log2 ('debug', aChaveNfe)
 		lRetManif := U_FBTRS101(aChaveNfe, aRet[1], aRet[2]) // Faz o manifesto
 
 	Else
