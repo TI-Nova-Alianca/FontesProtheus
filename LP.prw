@@ -201,29 +201,53 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 			endif
 
 	case _sLpad+_sseq $ ('520002/521002/527002') // ESX - tratamento baixa e cancelamento da baixa para venda futura
-		beginsql alias "_qd2"
-			SELECT DISTINCT D2_DOC 
-			FROM %table:SD2% SD2, %table:SF4% SF4
-			WHERE D2_FILIAL = %xfilial:SD2% 
-			AND F4_FILIAL = %xfilial:SF4% 
-			AND SD2.%notdel% 
-			AND SF4.%notdel%
-			AND D2_TES = F4_CODIGO 
-			AND F4_TOCON = '16'
-			AND D2_DOC = %exp:SE1->E1_NUM%
-			AND D2_SERIE = %exp:SE1->E1_PREFIXO%
-		endsql 
 
-		do case
-			case alltrim(_sQueRet) $ 'CRED/DEB' 
-				if  _qd2->(eof())
-					_xret := '101020201001'
-				else
-					_xret := '101020201003'
-				endif
-			endcase
-			_qd2->(dbclosearea())
+		// if ('LINK CIELO' $ SE1->E1_HIST) .and. _sQueRet == 'DEB'// É ESTORNO DE LINK CIELO
+		// 	Do Case
+		// 		Case !empty(SE1->E1_ADM) // cartão
+		// 			do case
+		// 				case SE1->E1_ADM == "100" .or. SE1->E1_ADM =="101"
+		// 					_xRet:= "101021101002"
+		// 				case SE1->E1_ADM == "200" .or. SE1->E1_ADM =="201"
+		// 					_xRet:= "101021101001"
+		// 				case SE1->E1_ADM == "300" .or. SE1->E1_ADM =="301"
+		// 					_xRet:= "101021101003"
+		// 				case SE1->E1_ADM == "400" .or. SE1->E1_ADM =="401"
+		// 					_xRet:= "101021101004"
+		// 				otherwise
+		// 					_xRet:= "101021101005"
+		// 			endcase
 
+		// 		Case empty(SE1->E1_ADM) 	// boleto
+		// 			_xRet := "101020201001" // conta clientes	
+
+		// 		Otherwise
+		// 			_xRet := "101020201001" // conta clientes							
+		// 	EndCase
+		// else
+			beginsql alias "_qd2"
+				SELECT DISTINCT D2_DOC 
+				FROM %table:SD2% SD2, %table:SF4% SF4
+				WHERE D2_FILIAL = %xfilial:SD2% 
+				AND F4_FILIAL = %xfilial:SF4% 
+				AND SD2.%notdel% 
+				AND SF4.%notdel%
+				AND D2_TES = F4_CODIGO 
+				AND F4_TOCON = '16'
+				AND D2_DOC = %exp:SE1->E1_NUM%
+				AND D2_SERIE = %exp:SE1->E1_PREFIXO%
+			endsql 
+
+			do case
+				case alltrim(_sQueRet) $ 'CRED/DEB' 
+					if  _qd2->(eof())
+						_xret := '101020201001'
+					else
+						_xret := '101020201003'
+					endif
+				endcase
+				_qd2->(dbclosearea())
+//		endif
 	case _sLPad + _sSeq $ '520003'
 		u_help (SE1->E1_TIPO)
 		u_help (SE5->E5_VLDESCO)
