@@ -11,7 +11,7 @@
 // #Modulos   		  #FIN 
 //
 // Historico de alteracoes:
-// teste teste
+// teste teste teste
 // --------------------------------------------------------------------------
 #Include "Protheus.ch"
 #include 'parmtype.ch'
