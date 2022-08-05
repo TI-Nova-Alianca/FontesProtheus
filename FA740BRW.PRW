@@ -28,6 +28,7 @@ User Function FA740BRW()
 	aAdd(aBotao, {"Boleto"				, "U_VA_040BOL()" ,   0,  2})
 	aAdd(aBotao, {"Carta Anuência"		, "U_VA_040CART()",   0,  2})
 	aAdd(aBotao, {"Alt.Bandeira Cartão"	, "U_VA_040BAND()",   0,  2})
+	aAdd(aBotao, {"Eventos"	            , "U_VA_040EVEN(se1->e1_filial,se1->e1_num,se1->e1_prefixo,se1->e1_cliente,se1->e1_loja)",   0,  2})
    
 Return(aBotao)   
 //
@@ -48,7 +49,6 @@ user function VA_040BAND()
 		u_help ("Titulo não pode ser alterado pois ja esta quitado.")
 		return
 	endif
-	
 	
 	// -- solicita nova bandeira
 	if U_ZZUVL ('043', __cUserId, .T.)
@@ -103,7 +103,6 @@ return
 // ---------------------------------------------------------------------------------------------------------------------------------
 // Rapel
 user function VA_040RAP()
-//	local _lRet := .T.
 	
 	if SE1 -> E1_VARAPEL = 0
 		u_help("Titulo não tem valor de rapel.")
@@ -368,22 +367,6 @@ user function VA_040BRAP()
 	endif
 return
 //
-// --------------------------------------------------------------------------
-// Perguntas
-static function _ValidPerg ()
-    local _aRegsPerg := {}
-    //                     PERGUNT                TIPO TAM DEC VALID F3     Opcoes                      			Help
-    aadd (_aRegsPerg, {01, "Banco       ", "C",  3 , 0,  "",  "SEE", {},                         				""})
-    aadd (_aRegsPerg, {02, "Agencia     ", "C",  5 , 0,  "",  "   ", {},                         				""})
-	aadd (_aRegsPerg, {03, "Conta    	", "C",  10, 0,  "",  "   ", {},                         				""})
-	aadd (_aRegsPerg, {04, "Dt.Baixa    ", "D",  8 , 0,  "",  "   ", {},                         				""})
-	aadd (_aRegsPerg, {05, "Titulo      ", "C",  9 , 0,  "",  "   ", {},                         				""})
-	aadd (_aRegsPerg, {06, "Prefixo     ", "C",  3 , 0,  "",  "   ", {},                         				""})
-	aadd (_aRegsPerg, {07, "Cliente     ", "C",  6 , 0,  "",  "   ", {},                         				""})
-	aadd (_aRegsPerg, {08, "Loja        ", "C",  2 , 0,  "",  "   ", {},                         				""})
-    U_ValPerg (cPerg, _aRegsPerg)
-Return
-//
 // ---------------------------------------------------------------------------------------------------------------------------------
 // Boleto
 user function VA_040BOL()
@@ -477,7 +460,6 @@ user function VA_040BOL()
 	   				aadd (_aBoletos, { SE1 -> E1_PREFIXO, SE1 -> E1_NUM, _sBanco, _abanco[1,1], _abanco[1,2], _abanco[1,3] , "FA740BRW"})
 	   			else
 	   				aadd (_aBoletos, { SE1 -> E1_PREFIXO, SE1 -> E1_NUM, SE1 -> E1_PORTADO, _aTitulos[i,8], _aTitulos[i,9], _aTitulos[i,10] , "FA740BRW"})
-	   				//aadd (_aBoletos, { SE1 -> E1_PREFIXO, SE1 -> E1_NUM, SE1 -> E1_PORTADO, (_sAliasQ2) -> EE_AGENCIA, (_sAliasQ2) -> EE_CONTA, (_sAliasQ2) -> EE_SUBCTA , "FA740BRW"})
 	  			endif	
 	    	next
 		endif
@@ -542,8 +524,8 @@ Static Function RptDetail()
 	::_nMargEsq  := 40   // Margem esquerda da pagina
 	::_nAltPag   := 3100  //3400  // Altura maxima da pagina
 	::_nLargPag  := 2350  // Largura maxima da pagina
-	::_oTimes8  := TFont():New("Times New Roman",,8,,.T.,,,,,.F.)
-	::_oTimes16 := TFont():New("Times New Roman",,16,,.T.,,,,,.F.)
+	::_oTimes8   := TFont():New("Times New Roman",,8,,.T.,,,,,.F.)
+	::_oTimes16  := TFont():New("Times New Roman",,16,,.T.,,,,,.F.)
 
 	// Objetos para tamanho e tipo das fontes
 	_oCour12N := TFont():New("Courier New",,12,,.T.,,,,,.F.)
@@ -654,15 +636,16 @@ return
 static function _Cabec(_lObrig, _nMinimo, _lZeraPag)
 	_sLinhaImp := ""
 	_nMinimo   := iif (_nMinimo == NIL, 0, _nMinimo)
+
 	if ::_nLinAtual >= ::_nAltPag - (::_nMargInf + _nMinimo) .or. _lObrig
 		::_oPrn:StartPage ()  // Inicia uma nova pagina
 		::_nPagAtual = 1
 		::_nLinAtual = ::_nMargSup
-		::_oPrn:SayBitmap(::_nLinAtual, ;  // Linha
-		                  800, ;  // Coluna
-		                  "Logo_carta.png", ;  // Arquivo
-		                  900, ;  // Largura
-		                  280)  // Altura
+		::_oPrn:SayBitmap(::_nLinAtual		, ;  // Linha
+		                  800				, ;  // Coluna
+		                  "Logo_carta.png"	, ;  // Arquivo
+		                  900				, ;  // Largura
+		                  280				  )  // Altura
 		::_nLinAtual += 60
 		::_nPagAtual ++
 	endif
@@ -695,4 +678,19 @@ static function _rodape(_sCNPJ)
 	::_nPagAtual ++
 	
 return	
-	
+//
+// --------------------------------------------------------------------------
+// Perguntas
+static function _ValidPerg ()
+    local _aRegsPerg := {}
+    //                     PERGUNT                TIPO TAM DEC VALID F3     Opcoes                      			Help
+    aadd (_aRegsPerg, {01, "Banco       ", "C",  3 , 0,  "",  "SEE", {},                         				""})
+    aadd (_aRegsPerg, {02, "Agencia     ", "C",  5 , 0,  "",  "   ", {},                         				""})
+	aadd (_aRegsPerg, {03, "Conta    	", "C",  10, 0,  "",  "   ", {},                         				""})
+	aadd (_aRegsPerg, {04, "Dt.Baixa    ", "D",  8 , 0,  "",  "   ", {},                         				""})
+	aadd (_aRegsPerg, {05, "Titulo      ", "C",  9 , 0,  "",  "   ", {},                         				""})
+	aadd (_aRegsPerg, {06, "Prefixo     ", "C",  3 , 0,  "",  "   ", {},                         				""})
+	aadd (_aRegsPerg, {07, "Cliente     ", "C",  6 , 0,  "",  "   ", {},                         				""})
+	aadd (_aRegsPerg, {08, "Loja        ", "C",  2 , 0,  "",  "   ", {},                         				""})
+    U_ValPerg (cPerg, _aRegsPerg)
+Return
