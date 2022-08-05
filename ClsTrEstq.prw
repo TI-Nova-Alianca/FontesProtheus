@@ -479,6 +479,13 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 	if _lContinua .and. ! ::AlmUsaEtiq (::AlmDest)
 		_sMsg += "Almoxarifado destino nao faz entrada com etiqueta."
 		_lContinua = .F.
+	else
+		// Nem todos os tipos de produto geram etiqueta no ax.02
+		if ::AlmDest == '02' .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + ::ProdDest, "B1_TIPO") != 'PS'
+			U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Almoxarifado destino (' + ::AlmDest + ') nao faz entrada com etiqueta para esse tipo de produto.')
+			_sMsg += 'Almoxarifado destino (' + ::AlmDest + ') nao faz entrada com etiqueta para esse tipo de produto.'
+			_lContinua = .F.
+		endif
 	endif
 
 	//if _lContinua .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + ::ProdDest, "B1_RASTRO") != "L"

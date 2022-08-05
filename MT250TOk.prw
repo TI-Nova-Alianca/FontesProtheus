@@ -32,6 +32,8 @@
 // 06/12/2021 - Robert - Valida se o empenho jah foi enderecado (para evitar que o sistema requisite de onde quiser). GLPI 11076
 // 27/03/2022 - Robert - Verificacao de etiquetas passada para classe ClsEtiq() - GLPI 11825.
 // 18/04/2022 - Robert - Incluida chamada para funcao PerfMon().
+// 04/05/2022 - Robert - Desabilitada verificacao local dos empenhos (sem utilidade) - GLPI 11994
+// 05/08/2022 - Robert - Bloqueia empenhos negativos (GLPI 12441)
 //
 
 // --------------------------------------------------------------------------
@@ -86,7 +88,6 @@ user function mt250tok ()
 	// Verifica consistencia com etiquetas, quando usadas.
 	if _lRet .and. ! empty (m->d3_vaetiq)
 		_lRet = _VerEtiq ()
-//		_lRet = U_ZA1PAp (m->d3_vaetiq, m->d3_op, m->d3_cod, m->d3_quant, m->d3_perda, m->d3_parctot)
 	endif
 	
 	// Integracao com Fullsoft
@@ -121,15 +122,6 @@ static function _VerEtiq ()
 	local _oEtiq := NIL
 
 	if ! empty (m->d3_vaetiq)
-//		za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP
-//		if ! za1 -> (dbseek (xfilial ("ZA1") + m->d3_vaetiq, .F.))
-//			u_help ("Etiqueta '" + m->d3_vaetiq + "' nao localizada.",, .t.)
-//			_lRet = .F.
-//		endif
-//		if _lRet .and. (m->d3_quant + m->d3_perda) != za1 -> za1_quant
-//			u_help ("Quantidade produzida + perdida nao pode ser diferente da quantidade da etiqueta.",, .t.)
-//			_lRet = .F.
-//		endif
 		if _lRet .and. m->d3_parctot != 'P'
 			u_help ("Quando informada etiqueta, a producao deve ser sempre 'Parcial'. Para encerrar a OP use opcao 'Encerrar'.",, .t.)
 			_lRet = .F.
@@ -156,10 +148,7 @@ return _lRet
 // Consiste data do apontamento.
 static function _VerData ()
 	local _lRet     := .T.
-//	local _oSQL     := NIL
-//	local _aRetQry  := {}
-    
-    if _lRet
+	if _lRet
 		if m->d3_emissao > date ()
 			u_help ("Data de apontamento nao pode ser maior que a data atual.",, .t.)
 			_lRet = .F.
@@ -180,29 +169,8 @@ static function _VerData ()
 				u_help ("Data do movimento nao pode estar em mes posterior da data prevista de termino da OP (" + dtoc (sc2 -> c2_datprf) + ").",, .t.)
 				_lRet = .F.
 			endif
-		// Com o apontamento via web service, nao consigo mais colocar perguntas na tela -->	if _lRet .and. m->d3_emissao != sc2 -> c2_datprf
-		// Com o apontamento via web service, nao consigo mais colocar perguntas na tela -->		_lRet = U_MsgNoYes ("Apontamento em data diferente da data prevista de termino da OP (" + dtoc (sc2 -> c2_datprf) + "). Confirma assim mesmo?")
-		// Com o apontamento via web service, nao consigo mais colocar perguntas na tela -->	endif
 		endif
 	endif
-
-	// Com o apontamento via web service, nao consigo mais colocar perguntas na tela.
-	// if _lRet
-	// 	_oSQL := ClsSQL():New ()
-	// 	_oSQL:_sQuery += "SELECT MIN (D3_EMISSAO), MAX (D3_EMISSAO) "
-	// 	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD3") + " SD3 "
-	// 	_oSQL:_sQuery += " WHERE SD3.D_E_L_E_T_  = ''"
-	// 	_oSQL:_sQuery +=   " AND SD3.D3_FILIAL   = '" + xfilial ("SD3") + "'"
-	// 	_oSQL:_sQuery +=   " AND SD3.D3_OP       = '" + M->D3_OP + "'"
-	// 	_oSQL:_sQuery +=   " AND SD3.D3_CF      like 'PR%'"
-	// 	_oSQL:_sQuery +=   " AND SD3.D3_ESTORNO != 'S'"
-	// 	_aRetQry = aclone (_oSQL:Qry2Array ())
-	// 	if ! empty (_aRetQry [1,1]) .and. ! empty (_aRetQry [1,2]) .and. _aRetQry [1,1] != _aRetQry [1,2] .and. m->d3_emissao < stod (_aRetQry [1,1]) .and. m->d3_emissao > stod (_aRetQry [1,2])
-	// 		_lRet = U_MsgNoYes ("Esta OP ja tem apontamento(s) entre as datas de " + dtoc (stod (_aRetQry [1,1])) + " e " + dtoc (stod (_aRetQry [1,1])) + ". Seria interessante manter a producao no mesmo periodo. Confirma assim mesmo?")
-	// 	elseif ! empty (_aRetQry [1,1]) .and. _aRetQry [1,1] == _aRetQry [1,2] .and. m->d3_emissao != stod (_aRetQry [1,1])
-	// 		_lRet = U_MsgNoYes ("Esta OP ja tem apontamento(s) em " + dtoc (stod (_aRetQry [1,1])) + ". Seria interessante manter a producao no mesmo periodo. Confirma assim mesmo?")
-	// 	endif
-	// endif
 return _lRet
 
 
@@ -232,10 +200,11 @@ return _lRet
 static function _VerEmpenh ()
 	local _lRet     := .T.
 	local _oSQL     := NIL
-	local _aRetQry  := {}
-	local _nRetQry  := 0
-	local _sMsg     := ""
+//	local _aRetQry  := {}
+//	local _nRetQry  := 0
+//	local _sMsg     := ""
 	local _sEmpEnd  := ''
+	local _sEmpNeg  := ''
 
 	if _lRet
 		sc2 -> (dbsetorder (1))
@@ -304,6 +273,7 @@ static function _VerEmpenh ()
 		endif
 	endif
 
+	/* Desabilitado por que, pelo historico que olhei, sempre responde-se 'sim'. Robert, 04/08/2022
 	// Verifica local (almox) dos empenhos.
 	if _lRet
 		_sMsg = ''
@@ -324,6 +294,7 @@ static function _VerEmpenh ()
 			_lRet = u_msgnoyes (_sMsg + chr (13) + chr (10) + "Confirma assim mesmo?")
 		endif
 	endif
+	*/
 
 	// Verifica se pode gerar recursividade
 	if _lRet
@@ -341,6 +312,7 @@ static function _VerEmpenh ()
 		endif
 	endif
 
+	// Verifica se foi definida localizacao dos empenhos.
 	if _lRet
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery += "SELECT STRING_AGG (RTRIM (D4_COD), ', ')"
@@ -368,6 +340,36 @@ static function _VerEmpenh ()
 			_lRet = .F.
 		endif
 	endif
+
+	// Verifica se tem empenhos negativos (nao eh nosso procedimento normal, pois gera devolucao
+	// de saldo para o estoque) - GLPI 12441
+	if _lRet
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery += "SELECT STRING_AGG (RTRIM (D4_COD), ', ')"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD4") + " SD4 "
+		_oSQL:_sQuery += " WHERE SD4.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SD4.D4_FILIAL  = '" + xfilial ("SD4") + "'"
+		_oSQL:_sQuery +=   " AND SD4.D4_OP      = '" + M->D3_OP + "'"
+		_oSQL:_sQuery +=   " AND SD4.D4_QUANT   < 0"
+		_oSQL:Log ()
+		_sEmpNeg := alltrim (_oSQL:RetQry ())
+		if ! empty (_sEmpNeg)
+			u_Help ("O(s) seguinte(s) item(s) estao com empenho negativo: " + _sEmpNeg + " na OP '" + alltrim (m->d3_op) + "'. Atualmente nao eh procedimento padrao termos esse tipo de situacao. Apontamento nao permitido.",, .t.)
+			_lRet = .F.
+		endif
+	endif
+
+	// Verifica se tem alguma mensagem de inconsistencia entre tabelas de estoque.
+	if _lRet
+		sd4 -> (dbsetorder (2))  // D4_FILIAL, D4_OP, D4_COD, D4_LOCAL, R_E_C_N_O_, D_E_L_E_T_
+		sd4 -> (dbseek (xfilial ("SD4") + m->d3_op, .F.))
+		do while ! sd4 -> (eof ()) .and. sd4 -> d4_filial == xfilial ("SD4") .and. sd4 -> d4_op == m->d3_op
+			if ! U_ConsEstq (sd4 -> d4_filial, sd4 -> d4_cod, sd4 -> d4_local)
+				_lRet = .F.
+			endif
+		enddo
+	endif
+
 return _lRet
 
 

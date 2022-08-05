@@ -12,7 +12,9 @@
 // #Modulos           #FIS
 //
 // Historico de alteracoes:
+// 04/08/2022 - Robert - Ajuste log, que mostrava nome de outra rotina.
 //
+
 // --------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include "totvs.ch"
@@ -28,8 +30,9 @@ User Function VA_FISA140
 		_ValidPerg()
 		
 		If Pergunte(cPerg, .T.)
-			u_logIni()
-			u_log("Iniciando BatPessoas em", date (), time ())
+//			u_logIni()
+//			u_log("Iniciando BatPessoas em", date (), time ())
+			U_Log2 ('info', '[' + procname () + ']')
 
 			If _lRet .and. empty(mv_par01)
 				u_help("Filial de destino não informada. Verifique!")
@@ -61,7 +64,8 @@ User Function VA_FISA140
 			EndIf
 		EndIf
 	EndIf
-	u_logFim()
+//	u_logFim()
+	U_Log2 ('info', 'Finalizando ' + procname ())
 Return
 //
 // --------------------------------------------------------------------------

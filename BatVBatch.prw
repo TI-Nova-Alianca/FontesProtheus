@@ -11,7 +11,9 @@
 // #Modulos   		  #TODOS
 //
 // Historico de alteracoes:
+// 04/08/2022 - Robert - Ajuste log, que mostrava nome de outra rotina.
 //
+
 // --------------------------------------------------------------------------
 #Include "Protheus.ch"
 #include 'parmtype.ch'
@@ -23,8 +25,9 @@ User Function BatVBatch()
     Local _sMsg   := ""
     Local _sMsg1  := ""
 
-    u_logIni ()
-	u_log ("Iniciando BatPessoas em", date (), time ())
+//    u_logIni ()
+//	u_log ("Iniciando BatPessoas em", date (), time ())
+	U_Log2 ('info', '[' + procname () + ']')
 
     // Executados
     _oSQL:= ClsSQL ():New ()

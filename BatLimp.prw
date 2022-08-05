@@ -20,6 +20,7 @@
 // 29/11/2021 - Robert - Criada rotina de compactacao (no SQL) de algumas tabelas especificas.
 // 20/07/2022 - Robert - Iniciada limpeza da tabela SZN (GLPI 12336)
 // 22/07/2022 - Robert - Finalizada funcao de limpeza da tabela SZN (GLPI 12336)
+// 05/08/2022 - Robert - Adicionada tabela SZN a lista para compactacao via SQL.
 //
 
 // ----------------------------------------------------------------
@@ -166,6 +167,7 @@ static function _Compact ()
 	aadd (_aArqComp, 'SE2010')  // Verifiquei reducao de metade do tempo de execucao do extrato de conta corrente
 	aadd (_aArqComp, 'SE5010')  // Verifiquei reducao de metade do tempo de execucao do extrato de conta corrente
 	aadd (_aArqComp, 'SZI010')  // Verifiquei reducao de metade do tempo de execucao do extrato de conta corrente
+	aadd (_aArqComp, 'SZN010')  // Estimativa (em 05/08/2022) de reducao de tamanho de 7GB para 2.5GB
 
 	for _nArqComp = 1 to len (_aArqComp)
 		_oSQL := ClsSQL ():New ()

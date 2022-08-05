@@ -12,7 +12,9 @@
 // #Modulos   		  # 
 //
 // Historico de alteracoes:
+// 04/08/2022 - Robert - Passa a gravar eventos com data de validade (expiracao).
 //
+
 // --------------------------------------------------------------------------
 #Include "Protheus.ch"
 #include 'parmtype.ch'
@@ -22,8 +24,9 @@ User Function BatPessoas()
     Local _lRet  := .F.
     Local _sMsg  := ""
 
-    u_logIni()
-	u_log("Iniciando BatPessoas em", date (), time ())
+//    u_logIni()
+//	u_log("Iniciando BatPessoas em", date (), time ())
+	U_Log2 ('info', 'Iniciando ' + procname ())
 
     // Grava Funcionarios e Associados como Clientes
     _lRet := U_BatFunAtlz()  
@@ -116,7 +119,8 @@ User Function BatPessoas()
         _GravaLog(_sMsg, "BAT002")
     EndIf
     
-    u_logFim()
+    //u_logFim()
+	U_Log2 ('info', 'Finalizando ' + procname ())
 Return
 //
 // --------------------------------------------------------------------------
@@ -124,9 +128,10 @@ Return
 Static Function _GravaLog(_sMsg, _sEvento)
 
     _oEvento := ClsEvent():New ()
-    _oEvento:Alias   = 'BAT'
-    _oEvento:Texto   = _sMsg
-    _oEvento:CodEven = _sEvento
+    _oEvento:Alias     = 'BAT'
+    _oEvento:Texto     = _sMsg
+    _oEvento:CodEven   = _sEvento
+    _oEvento:DiasValid = 30
     _oEvento:Grava()
 
 Return
