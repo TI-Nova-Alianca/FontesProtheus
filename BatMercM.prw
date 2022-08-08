@@ -6,7 +6,31 @@
 //             Criado com base no Atl_PerComp.prw (03/02/2017) de Catia Cardoso.
 //
 // Historico de alteracoes:
+// 08/08/2022 - Robert - Inseridos alguns comentarios para registro e removido do projeto.
 //
+/*
+(08:09) Robert Koch: Bom dia, César. Temos um esquema de formação de preços no Mercanet que foi montado lá no início do projeto, pegando o custo e aplicando despesas até chegar ao preço de venda (contrário do que o Mercanet faz, que é pegar o preço cheio e dar descontos).
+Tenho no Protheus uma rotina que exporta isso apenas para poucos clientes:
+A1_COD	A1_LOJA	A1_NOME	A1_MUN
+000219	01	IMPORTADORA COELHO CP COELHO ME                   	BOA VISTA           
+009830	01	CONDOR SUPER CENTER LTDA                          	CURITIBA            
+009991	01	A E S COMERCIO E DISTRIBUICAO DE ALIMENTOS LTDA   	BRASILIA            
+020561	01	SUPERMERCADO BAHAMAS S/A                          	JUIZ DE FORA        
+
+Já no Mercanet, pelo que vejo, a importação está desabilitada.
+(08:09) Robert Koch: Acho que, se não foi usada até agora, posso remover essa 'exportação de tabelas' do Protheus também, certo?
+(08:23) Cesar Luis Chinato: Bom Dia, 
+(08:23) Cesar Luis Chinato: pode remover sim
+(08:23) Cesar Luis Chinato: troquei uma ideia com o Fernando tbm e ele me falou que nunca funcionou 
+(08:25) Robert Koch: blz!
+*/
+
+/*
+Este programa gerava a tabela MER_PERCOMP, que era posteriormente importada pelo Mercanet
+executando o seguinte comando: 
+EXECUTE [dbo].[MERCP_FORMACAO_PRECOS]
+... que ficava agendado nos jobs do SQL Server, mas jah estava desabilitado em 08/08/2022
+*/
 
 // --------------------------------------------------------------------------
 user function BatMercM ()
