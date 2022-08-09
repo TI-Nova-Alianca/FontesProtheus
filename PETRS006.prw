@@ -23,6 +23,8 @@ User Function PETRS006()
 	Local _aTRS006   := PARAMIXB
 	Local _aCabec    := _aTRS006[3]
 	Local _aLinha    := _aTRS006[4]
+	Local _lManut    := _aTRS006[5]
+	Local _lEscrit   := _aTRS006[6]
 	local _aRet      := {}
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aAmbAnt   := U_SalvaAmb ()
@@ -33,7 +35,7 @@ User Function PETRS006()
 	U_Log2 ('debug', '[' + procname () + ']Olha eu aqui...')
 
 	// Grava alguns eventos e logs.
-	_Logs (_aCabec)
+	_Logs (_aCabec, _lManut, _lEscrit)
 
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
@@ -41,7 +43,7 @@ Return _aRet
 
 
 // --------------------------------------------------------------------------
-static function _Logs (_aCabec)
+static function _Logs (_aCabec, _lManut, _lEscrit)
 	local _oEvento   := NIL
 	local _sChvNFe   := ''
 	local _nPosChave := 0
@@ -54,30 +56,12 @@ static function _Logs (_aCabec)
 		U_Log2 ('debug', '[' + procname () + ']chave: ' + _sChvNFe)
 
 		// Grava evento temporario para rastreio de eventuais chaves perdidas
-		if inclui
-			_oEvento := ClsEvent():new ()
-			_oEvento:CodEven   = "ZBE001"
-			_oEvento:Texto     = "Incluindo (a nivel de item) chave NFE"  // Este P.E. eh executado para cada item da nota
-			_oEvento:ChaveNFe  = _sChvNFe
-			_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
-			_oEvento:GravaNovo ()
-		endif
-		if altera
-			_oEvento := ClsEvent():new ()
-			_oEvento:CodEven   = "ZBE001"
-			_oEvento:Texto     = "Reprocessando (a nivel de item) chave NFE"  // Este P.E. eh executado para cada item da nota
-			_oEvento:ChaveNFe  = _sChvNFe
-			_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
-			_oEvento:GravaNovo ()
-		endif
-		if !inclui .and. !altera
-			_oEvento := ClsEvent():new ()
-			_oEvento:CodEven   = "ZBE001"
-			_oEvento:Texto     = "Excluindo (a nivel de item) chave NFE"  // Este P.E. eh executado para cada item da nota
-			_oEvento:ChaveNFe  = _sChvNFe
-			_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
-			_oEvento:GravaNovo ()
-		endif
+		_oEvento := ClsEvent():new ()
+		_oEvento:CodEven   = "ZBE001"
+		_oEvento:Texto     = "Processando (a nivel de item) a chave NFE, com _lManut = " + cvaltochar (_lManut) + " e _lEscrit = " + cvaltochar (_lEscrit)  // Este P.E. eh executado para cada item da nota
+		_oEvento:ChaveNFe  = _sChvNFe
+		_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
+		_oEvento:GravaNovo ()
 	endif
 return
 

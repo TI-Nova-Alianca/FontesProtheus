@@ -34,6 +34,7 @@
 // 18/04/2022 - Robert - Incluida chamada para funcao PerfMon().
 // 04/05/2022 - Robert - Desabilitada verificacao local dos empenhos (sem utilidade) - GLPI 11994
 // 05/08/2022 - Robert - Bloqueia empenhos negativos (GLPI 12441)
+// 08/08/2022 - Robert - Verifica inconsistencia de estoue nos itens empenhados (GLPI 11994)
 //
 
 // --------------------------------------------------------------------------
@@ -315,7 +316,7 @@ static function _VerEmpenh ()
 	// Verifica se foi definida localizacao dos empenhos.
 	if _lRet
 		_oSQL := ClsSQL():New ()
-		_oSQL:_sQuery += "SELECT STRING_AGG (RTRIM (D4_COD), ', ')"
+		_oSQL:_sQuery += "SELECT ISNULL (STRING_AGG (RTRIM (D4_COD), ', '), '')"
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD4") + " SD4 "
 		_oSQL:_sQuery += " WHERE SD4.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND SD4.D4_FILIAL  = '" + xfilial ("SD4") + "'"
@@ -333,7 +334,7 @@ static function _VerEmpenh ()
 		_oSQL:_sQuery +=                          " AND SDC.DC_FILIAL  = SD4.D4_FILIAL"
 		_oSQL:_sQuery +=                          " AND SDC.DC_PRODUTO = SD4.D4_COD"
 		_oSQL:_sQuery +=                          " AND SDC.DC_OP      = SD4.D4_OP), 0) < SD4.D4_QTDEORI)"
-		_oSQL:Log ()
+		_oSQL:Log ('[' + procname () + ']')
 		_sEmpEnd := alltrim (_oSQL:RetQry ())
 		if ! empty (_sEmpEnd)
 			u_Help ("O(s) seguinte(s) item(s) controlam enderecamento: " + _sEmpEnd + ". Ainda nao foi definido o endereco desse(s) item(s) nos empenhos da OP '" + alltrim (m->d3_op) + "'. Apontamento nao permitido.",, .t.)
@@ -343,21 +344,23 @@ static function _VerEmpenh ()
 
 	// Verifica se tem empenhos negativos (nao eh nosso procedimento normal, pois gera devolucao
 	// de saldo para o estoque) - GLPI 12441
+
 	if _lRet
 		_oSQL := ClsSQL():New ()
-		_oSQL:_sQuery += "SELECT STRING_AGG (RTRIM (D4_COD), ', ')"
+		_oSQL:_sQuery += "SELECT ISNULL (STRING_AGG (RTRIM (D4_COD), ', '), '')"
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD4") + " SD4 "
 		_oSQL:_sQuery += " WHERE SD4.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND SD4.D4_FILIAL  = '" + xfilial ("SD4") + "'"
 		_oSQL:_sQuery +=   " AND SD4.D4_OP      = '" + M->D3_OP + "'"
 		_oSQL:_sQuery +=   " AND SD4.D4_QUANT   < 0"
-		_oSQL:Log ()
+		_oSQL:Log ('[' + procname () + ']')
 		_sEmpNeg := alltrim (_oSQL:RetQry ())
 		if ! empty (_sEmpNeg)
 			u_Help ("O(s) seguinte(s) item(s) estao com empenho negativo: " + _sEmpNeg + " na OP '" + alltrim (m->d3_op) + "'. Atualmente nao eh procedimento padrao termos esse tipo de situacao. Apontamento nao permitido.",, .t.)
 			_lRet = .F.
 		endif
 	endif
+
 
 	// Verifica se tem alguma mensagem de inconsistencia entre tabelas de estoque.
 	if _lRet
@@ -367,9 +370,10 @@ static function _VerEmpenh ()
 			if ! U_ConsEstq (sd4 -> d4_filial, sd4 -> d4_cod, sd4 -> d4_local)
 				_lRet = .F.
 			endif
+			sd4 -> (dbskip ())
 		enddo
 	endif
-
+	U_Log2 ('info', 'Finalizando ' + procname ())
 return _lRet
 
 
