@@ -17,6 +17,7 @@
 // 25/08/2021 - Robert  - Nova versao de ciencia e manifesto da TRS (GLPI 10822)
 // 23/11/2021 - Claudia - Gerar manifesto apenas para SPED. GLPI: 11183
 //
+//
 // ------------------------------------------------------------------------------------------
 User Function A140EXC()
 	Local _aAreaAnt := U_ML_SRArea ()
