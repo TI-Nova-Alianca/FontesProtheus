@@ -119,6 +119,8 @@ User Function SendMail (_sTo, _sSubject, _sBody, _aArq, _sCtaMail, _sGrupoZZU, _
 		//_sBody = strtran (_sBody, chr(13), "<br>")
 		//_sBody = _sBody + "</p>"
 		
+		// Cria processo de envio via workflow. O primeiro parametro vai ser gravado
+		// no campo WF3_PROC, permitindo rastreamento (no caso, nao me interessa)
 		_oProcess := Nil
 		_oProcess := TWFProcess():New("SendMail", "Envio de e-mail generico" )
 		_oProcess:oWF:cMailBox = _sCtaMail
