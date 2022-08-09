@@ -200,7 +200,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 					_oSQL:_sQuery += " WHERE SD3.D_E_L_E_T_ = ''"
 					_oSQL:_sQuery +=   " AND SD3.D3_FILIAL  = '" + xfilial ("SD3") + "'"
 					_oSQL:_sQuery +=   " AND SD3.D3_VAETIQ  = '" + ::Codigo + "'"
-					_oSQL:Log ()
+					_oSQL:Log (GetClassName (::Self) + '.' + procname ())
 					_aRetSD3 := aclone (_oSQL:Qry2Array (.f., .f.))
 					::QtApontada  = _aRetSD3 [1 , 1]
 					::QtPerdida   = _aRetSD3 [1 , 2]

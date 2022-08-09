@@ -21,6 +21,7 @@
 // 20/07/2022 - Robert - Iniciada limpeza da tabela SZN (GLPI 12336)
 // 22/07/2022 - Robert - Finalizada funcao de limpeza da tabela SZN (GLPI 12336)
 // 05/08/2022 - Robert - Adicionada tabela SZN a lista para compactacao via SQL.
+// 08/08/2022 - Robert - Adicionadas tabelas CV3 e CTK (GLPI 12412).
 //
 
 // ----------------------------------------------------------------
@@ -35,6 +36,7 @@ user function BatLimp ()
 	processa ({|| _LimpaZAB ()})
 	processa ({|| _Compact ()})
 	processa ({|| _LimpaSZN ()})
+	processa ({|| _LimpaWF3 ()})
 return
 
 
@@ -61,14 +63,15 @@ static function _Pack ()
 		aadd (_aPack, {"SFT", "FT_ENTRADA < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
 		aadd (_aPack, {"SC1", "C1_EMISSAO < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
 		aadd (_aPack, {"SC7", "C7_EMISSAO < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
-		// Totvs orienta (chamado 7124121 e https://tdn.totvs.com/pages/releaseview.action?pageId=6068533) a nunca executar pack nesta tabela -->  aadd (_aPack, {"CTK", "CTK_DATA   < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
-		// Totvs orienta (chamado 7124121 e https://tdn.totvs.com/pages/releaseview.action?pageId=6068533) a nunca executar pack nesta tabela -->  aadd (_aPack, {"CV3", "CV3_DTSEQ  < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
+		// CV3: Totvs orienta (chamado 7124121 e https://tdn.totvs.com/pages/releaseview.action?pageId=6068533) a nunca executar pack nesta tabela
+		// CTK: Totvs orienta (chamado 7124121 e https://tdn.totvs.com/pages/releaseview.action?pageId=6068533) a nunca executar pack nesta tabela
 		aadd (_aPack, {"SD3", "D3_EMISSAO < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
 		aadd (_aPack, {"SC5", "C5_EMISSAO < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
 		aadd (_aPack, {"SC6", "C6_ENTREG  < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
 		aadd (_aPack, {"SC9", "C9_DATALIB < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
 		aadd (_aPack, {"ZAB", "ZAB_DTEMIS < '" + dtos (date () -  60 * 1) + "'"})
 		aadd (_aPack, {"SC0", "C0_VALIDA  < '" + dtos (date () - 180 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"WF3", "WF3_DATA   < '" + dtos (date () - 180 * 1) + "'", '', 0, 0, 0, 0, ''})
 
 		procregua (len (_aPack))
 	endif
@@ -168,6 +171,8 @@ static function _Compact ()
 	aadd (_aArqComp, 'SE5010')  // Verifiquei reducao de metade do tempo de execucao do extrato de conta corrente
 	aadd (_aArqComp, 'SZI010')  // Verifiquei reducao de metade do tempo de execucao do extrato de conta corrente
 	aadd (_aArqComp, 'SZN010')  // Estimativa (em 05/08/2022) de reducao de tamanho de 7GB para 2.5GB
+	aadd (_aArqComp, 'CV3010')  // Criados campos grandes (IDORIG e IDDEST) e vazios - GLPI 12412
+	aadd (_aArqComp, 'CTK010')  // Criados campos grandes (IDORIG e IDDEST) e vazios - GLPI 12412
 
 	for _nArqComp = 1 to len (_aArqComp)
 		_oSQL := ClsSQL ():New ()
@@ -203,6 +208,35 @@ static function _LimpaSZN ()
 	if _lContinua
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "UPDATE " + RetSQLName ('SZN') + " SET D_E_L_E_T_ = '*' WHERE ZN_DIASVLD > 0 AND DATEADD (DAY, ZN_DIASVLD, CAST (ZN_DATA + ' ' + ZN_HORA AS DATETIME)) < GETDATE ()"
+		_oSQL:Log ()
+		if ! _oSQL:Exec ()
+			_oBatch:Mensagens += _oSQL:UltMsg
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
+		_oBatch:Mensagens += procname () + " ok. "
+	endif
+return
+
+
+
+// --------------------------------------------------------------------------
+// Limpa arquivo WF3 (rastreamento workflow)
+static function _LimpaWF3 ()
+	local _oSQL    := NIL
+	local _lContinua := .T.
+
+	// Apaga workflows de envio de e-mail generico (rotina customizada que usa
+	// algumas facilidades do workflow para envio de e-mails, mas que nao precisa
+	// manter rastreabilidade disso.
+	if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "UPDATE " + RetSQLName ('WF3') + " SET D_E_L_E_T_ = '*'"
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND WF3_PROC   = 'SendMa'"  // Gerado pelo U_SendMail()
+		_oSQL:_sQuery +=   " AND WF3_DATA  <= '" + dtos (date () - 180) + "'"
 		_oSQL:Log ()
 		if ! _oSQL:Exec ()
 			_oBatch:Mensagens += _oSQL:UltMsg

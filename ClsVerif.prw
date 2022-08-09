@@ -73,6 +73,7 @@
 // 31/05/2022 - Robert  - Adicionada verificacao 89 - ambientes SPED (GLPI 12126)
 // 05/06/2022 - Robert  - Adicionada verificacao 90 (GLPI 12133)
 // 07/06/2022 - Robert  - Ajustes query verif.06 que concatenava com a anterior.
+// 08/08/2022 - Robert  - Melhoria formatacao HTML para envio por e-mail.
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -183,10 +184,12 @@ METHOD ConvHTM (_nMaxLin) Class ClsVerif
 	endif
 
 	if ! empty (::Sugestao)
-		_sRet += chr (13) + chr (10) + alltrim (::Sugestao) + chr (13) + chr (10)
+	//	_sRet += chr (13) + chr (10) + alltrim (::Sugestao) + chr (13) + chr (10)
+		_sRet += '</br></br>Sugestao: ' + alltrim (::Sugestao) + '</br>'
 	endif
 	if ! empty (::Query)
-		_sRet += chr (13) + chr (10) + 'Query para verificacao: ' + alltrim (::Query) + chr (13) + chr (10)
+	//	_sRet += chr (13) + chr (10) + 'Query para verificacao: ' + alltrim (::Query) + chr (13) + chr (10)
+		_sRet += '</br></br>Query para verificacao: ' + alltrim (::Query) + '</br>'
 	endif
 
 Return _sRet

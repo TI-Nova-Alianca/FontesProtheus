@@ -90,6 +90,32 @@ user function robert ()
 	endif
 return
 
+// --------------------------------------------------------------------------
+// Limpa arquivo WF3 (rastreamento workflow)
+static function _LimpaWF3 ()
+	local _oSQL    := NIL
+	local _lContinua := .T.
+
+	// Apaga workflows de envio de e-mail generico (rotina customizada que usa
+	// algumas facilidades do workflow para envio de e-mails, mas que nao precisa
+	// manter rastreabilidade disso.
+	if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "UPDATE " + RetSQLName ('WF3') + " SET D_E_L_E_T_ = '*'"
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND WF3_PROC   = 'SendMa'"  // Gerado pelo U_SendMail()
+		_oSQL:_sQuery +=   " AND WF3_DATA  <= '" + dtos (date () - 180) + "'"
+		_oSQL:Log ()
+		if ! _oSQL:Exec ()
+			_oBatch:Mensagens += _oSQL:UltMsg
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
+		_oBatch:Mensagens += procname () + " ok. "
+	endif
+return
 
 static function _batfullw ()
 	_sArqLog := 'U_BatFullW.log'
