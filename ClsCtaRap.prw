@@ -47,6 +47,7 @@ CLASS ClsCtaRap
 	data Rapel
 	data Saldo
 	data Origem
+	data NFEmissao
 	data RegZC0
 	data UltMsg
 
@@ -110,6 +111,7 @@ METHOD GeraAtrib(_sOrigem) Class ClsCtaRap
 	::Rapel		:= 0
 	::Saldo		:= 0
 	::Origem	:= ''
+	::NFEmissao := ctod ('')
 
 	if _sOrigem == 'M'  // Variaveis M->
 		::Filial  	:= xfilial ("ZC0")
@@ -131,6 +133,7 @@ METHOD GeraAtrib(_sOrigem) Class ClsCtaRap
 		::Rapel		:= m->zc0_rapel 
 		::Saldo		:= m->zc0_saldo 
 		::Origem	:= m->zc0_origem 
+		::NFEmissao := m->zc0_nfemis
 	elseif _sOrigem == "ZC0"
 	    ::Filial  	:= xfilial ("ZC0")
 		::Rede    	:= zc0->zc0_codred 		
@@ -151,6 +154,7 @@ METHOD GeraAtrib(_sOrigem) Class ClsCtaRap
 		::Rapel		:= zc0->zc0_rapel 
 		::Saldo		:= zc0->zc0_saldo 
 		::Origem	:= zc0->zc0_origem 
+		::NFEmissao := zc0->zc0_nfemis
 		::RegZC0    := zc0 -> (recno())
 	endif
 
@@ -186,6 +190,7 @@ METHOD Grava(_lZC0Grav) Class ClsCtaRap
 				zc0->zc0_rapel 	:= ::Rapel
 				zc0->zc0_saldo 	:= ::Saldo	
 				zc0->zc0_origem := ::Origem
+				zc0->zc0_nfemis := ::NFEmissao
 			msunlock()
 			
 			_lZC0Grav = .T.

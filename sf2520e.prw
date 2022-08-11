@@ -322,6 +322,7 @@ Static Function _AtuZC0()
 		_oCtaRapel:Parcela	 = ''
 		_oCtaRapel:Rapel	 = _aRapel[1,1]
 		_oCtaRapel:Origem	 = 'SF2520E'
+		_oCtaRapel:NfEmissao = sf2 -> f2_emissao
 
 		If _oCtaRapel:Grava (.F.)
 			_oEvento := ClsEvent():New ()

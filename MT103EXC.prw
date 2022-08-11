@@ -105,6 +105,7 @@ Static Function _AtuZC0()
 				_oCtaRapel:Produto	 = _sProd
 				_oCtaRapel:Rapel	 = _nRapel
 				_oCtaRapel:Origem	 = 'MT103EXC'
+				_oCtaRapel:NfEmissao = sf1 -> f1_emissao
 
 				If _oCtaRapel:Grava (.F.)
 					_oEvento := ClsEvent():New ()

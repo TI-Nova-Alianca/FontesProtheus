@@ -138,6 +138,7 @@ Static Function _AtuZC0()
 		_oCtaRapel:Parcela	 = se1->e1_parcela
 		_oCtaRapel:Rapel	 = _aRapel[1,1]
 		_oCtaRapel:Origem	 = 'FA070CAN'
+		_oCtaRapel:NfEmissao = se1->e1_emissao
 
 		If _oCtaRapel:Grava (.F.)
 			_oEvento := ClsEvent():New ()
