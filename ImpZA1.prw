@@ -22,7 +22,9 @@
 //                        validade, entao busca data atual+b1_prvalid (GLPI 12220)
 // 18/07/2022 - Robert  - Nao formatava dt.valid como string na impressao do ZAG quando b1_rastro != 'L'
 // 10/08/2022 - Robert  - Passa a retornar .T. ou .F. em caso de sucesso ou erro.
-//
+// 11/08/2022 - Robert  - Ajuste 'alias not in use' na impressao.
+//                      - Grava msg em _oEtiq caso esteja instanciada.
+// 
 
 // -------------------------------------------------------------------------------------------------------------------
 user function ImpZA1 (_sCodigo, _sIdImpr)
@@ -178,8 +180,13 @@ user function ImpZA1 (_sCodigo, _sIdImpr)
 			fclose (_nHdl)
 			//u_log2 ('debug', memoread (_sArq))
 			copy file (_sArq) to (_sPortaImp)
-			u_log2 ('debug', 'copiei etiq para ' + _sPortaImp)
 			delete file (_sArq)
+			u_log2 ('debug', 'copiei etiq para ' + _sPortaImp)
+			
+			// Se tem objeto instanciado, nao custa nada gravar uma mensagem de retorno
+			if type ('_oEtiq') == 'O'
+				_oEtiq:UltMsg += 'Dados enviados para ' + _sPortaImp
+			endif
 
 			// Penso que o fato de uma etiqueta estar impressa nao significa que jah precise
 			// ser enviada para o FullWMS. Vou deixar isso a cargo do ClsEtiq().
@@ -402,7 +409,7 @@ static function _ImpOP ()
 		_sQtd  := Alltrim(cvaltochar(ZA1->ZA1_QUANT)) 
 		_sCod  := Alltrim(ZA1->ZA1_CODIGO)
 		_sOP   := Alltrim(ZA1->ZA1_OP)
-		_sPbrt := Alltrim(cvaltochar(SB1->B1_PESBRU*ZA1_QUANT))
+		_sPbrt := Alltrim(cvaltochar(SB1->B1_PESBRU*za1->ZA1_QUANT))
 
 		if sc2 -> c2_vaqtetq != 0 .and. za1 -> za1_seq != 0
 			_sSeqEtq = padc (alltrim (str (za1 -> za1_seq)) + '/' + alltrim (str (sc2 -> c2_vaqtetq)), 9, ' ')

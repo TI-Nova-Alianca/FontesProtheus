@@ -97,6 +97,7 @@
 // 26/05/2022 - Robert  - Novos parametros na chamada da funcao U_RastLt().
 // 20/07/2022 - Robert  - Novas tags DiasValid e ChaveNFe na gravacao de eventos (GLPI 12336)
 // 01/08/2022 - Robert  - Nova tag MotProrrogTit na gravacao de eventos.
+// 11/08/2022 - Robert  - Criada opcao de impressao de etiquetas.
 //
 
 // --------------------------------------------------------------------------------------------------------
@@ -267,7 +268,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 			case _sAcao == 'AlteraDadosAssociado'
 				_AltAssoc ()
 			case _sAcao == 'ImprimeEtiqueta'
-				_ImpEtq ()
+				_ImpEtiq ()
 			otherwise
 				_sErroWS += "A acao especificada no XML eh invalida: " + _sAcao
 		endcase
@@ -2495,21 +2496,16 @@ static function _ImpEtiq ()
 	if empty (_sErroWS) ; _sCodImpr = _ExtraiTag ("_oXML:_WSAlianca:_CodImpressora", .T., .F.)  ; endif
 
 	// Validacao inicial do numero da etiqueta.
-	// Poderia apenas ver se existe no ZA1, mas pretendo futuramente
-	// implementar um metodo de impressao na classe ClsEtiq.
 	if empty (_sErroWS)
-		_oEtiq := ClsEtiq ():New (_sEtqApont)
+		_oEtiq := ClsEtiq ():New (_sEtiq)
 		if _oEtiq:Codigo != _sEtiq
 			_sErroWS += "Numero de etiqueta invalido."
-		endif
-	endif
-
-	// Valida se o codigo de barras pertence ao produto da etiqueta
-	if empty (_sErroWS)
-		if ! U_ImpZA1 (_sEtiq, _sCodImpr)
-			_sErroWS += 'Erro na rotina de impressao'
 		else
-			_sMsgRetWS += "Impressao com sucesso"
+			if ! _oEtiq:Imprime (_sCodImpr)
+				_sErroWS += 'Erro na rotina de impressao'
+			else
+				_sMsgRetWS += _oEtiq:UltMsg
+			endif
 		endif
 	endif
 return

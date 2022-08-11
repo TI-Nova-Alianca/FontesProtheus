@@ -74,7 +74,7 @@ user function robert ()
 		// _SimCtb ()
 		// _FechSafr ()
 		// _ClsTrEstq ()
-		// _ClsEtiq ()
+		_ClsEtiq ()
 		// _Sisdevin ()
 		// _metaf ()
 		// _exml ()
@@ -84,7 +84,7 @@ user function robert ()
 		// _evtXML ()
 		//_batfullw ()
 
-		u_help ('Nada definido.')
+//		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
@@ -212,8 +212,9 @@ return
 
 static function _ClsEtiq ()
 	local _oEtiq := NIL
-	_oEtiq := ClsEtiq ():New ('2000519466')
-	U_Log2 ('debug', _oEtiq:PodeApont (10000, 0))
+	_oEtiq := ClsEtiq ():New ('200051946x')
+	//U_Log2 ('debug', _oEtiq:PodeApont (10000, 0))
+	u_log (_oEtiq:Imprime ('97'))
 return
 
 static function _RevCH()

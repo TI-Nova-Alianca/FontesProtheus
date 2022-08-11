@@ -22,6 +22,8 @@
 // 26/07/2022 - Robert - Implementada verif.disponib.estq no metodo PodeApont() - GLPI 11994
 // 29/07/2022 - Robert - Verif.saldo empenhos desconsiderava empenhos zerados.
 // 01/08/2022 - Robert - Ajuste formula verif.saldo empenhos (GLPI 11994)
+// 11/08/2022 - Robert - Criado metodo :Imprime (por enquanto, ainda chamando rotina externa)
+//                     - Criado atributo :UltMsg
 //
 
 #Include "Protheus.ch"
@@ -58,6 +60,7 @@ CLASS ClsEtiq
 	public data QtPerdida     // Quando relacionada a uma OP
 	public data Quantidade    // ZA1_QUANT
 	public data SeqNoGrupo    // ZA1_SEQ - Sequencia dentro do grupo, geralmente de OP. Ex.: 1 de 10, 2 de 10, ...
+	public data UltMsg        // Ultima mensagem gerada.
 	public data UsrIncl       // ZA1_USRINC - Usuario que incluiu/gerou a etiqueta
 	public data ValidadeLote
 
@@ -65,6 +68,7 @@ CLASS ClsEtiq
 	public METHOD New ()
 	public METHOD EnviaFull ()
 	public METHOD Exclui ()
+	public METHOD Imprime ()
 	public METHOD Inutiliza ()
 	public METHOD GeraAtrib ()
 	public METHOD PodeEnvFul ()
@@ -125,6 +129,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 	::QtPerdida    = 0
 	::Quantidade   = 0
 	::SeqNoGrupo   = ''
+	::UltMsg       = ''
 	::UsrIncl      = ''
 	::ValidadeLote = ctod ('')
 
@@ -200,7 +205,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 					_oSQL:_sQuery += " WHERE SD3.D_E_L_E_T_ = ''"
 					_oSQL:_sQuery +=   " AND SD3.D3_FILIAL  = '" + xfilial ("SD3") + "'"
 					_oSQL:_sQuery +=   " AND SD3.D3_VAETIQ  = '" + ::Codigo + "'"
-					_oSQL:Log (GetClassName (::Self) + '.' + procname ())
+					_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 					_aRetSD3 := aclone (_oSQL:Qry2Array (.f., .f.))
 					::QtApontada  = _aRetSD3 [1 , 1]
 					::QtPerdida   = _aRetSD3 [1 , 2]
@@ -546,6 +551,14 @@ METHOD Exclui () Class ClsEtiq
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
+return _lContinua
+
+
+// --------------------------------------------------------------------------
+// Envia para impressora (ou porta relacionada a esta)
+METHOD Imprime (_sCodImpr) Class ClsEtiq
+	local _lContinua := .T.
+	_lContinua = U_ImpZA1 (::Codigo, _sCodImpr)
 return _lContinua
 
 

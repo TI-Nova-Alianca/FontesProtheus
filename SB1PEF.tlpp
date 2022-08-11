@@ -12,7 +12,7 @@
 
 // Historico de alteracoes
 // 20/04/2022 - Robert - Validava etiqueta (tabela ZA1), mas posso ainda nao ter etiqueta gerada.
-// 10/08/2022 - Robert - Valida codigo de barras (inclusive duplicidade) do produto (GLPI 
+// 10/08/2022 - Robert - Valida codigo de barras (inclusive duplicidade) do produto (GLPI 11994)
 //
 
 // ------------------------------------------------------------------------------------
