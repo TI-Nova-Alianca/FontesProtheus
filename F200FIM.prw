@@ -1,7 +1,6 @@
 // Programa...: F200VAR
 // Autor......: Cláudia Lionço
-// Data.......: 03/2007
-// Cliente....: Alianca
+// Data.......: 05/05/2021
 // Descricao..: P.E. Gravação de linha de lançamento
 //
 // Tags para automatizar catalogo de customizacoes:

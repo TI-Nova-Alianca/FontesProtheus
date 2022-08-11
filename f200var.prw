@@ -58,6 +58,7 @@
 // 05/05/2021 - Claudia - Incluida gravação de novos campos na ZB5. GLPI: 9983
 // 19/08/2021 - Robert  - (compilado em 25/08) Passa a validar tamanho da variável cNumTit para saber se precisa inserir o prefixo (GLPI 10697).
 // 02/12/2021 - Claudia - Incluido novo tipo Juros para realizar transferencia entre filiais. GLPI: 11149.
+// 09/08/2022 - Claudia - Incluida gravação de eventos de juros indevidos. GLPI: 12454
 //
 // -------------------------------------------------------------------------------------------------------------------------------------------
 User Function F200VAR()
@@ -72,6 +73,7 @@ User Function F200VAR()
 	local _nValOri  := 0
 	local _sTitulo  := ""
 	local _sTit2    := ""
+	local _x        := 0
 
 	// Verifica se foi chamado a partir do P.E. F650Var (FINR650 - relatorio do CNAB)
 	if len (_aValores) == 14
@@ -228,6 +230,7 @@ User Function F200VAR()
 			endif
 			End Transaction
 		endif
+
 	endif
 	//
 	// TRATAMENTO DO CNAB A RECEBER
@@ -490,5 +493,61 @@ User Function F200VAR()
 		RestArea(_aAreaSE1)
 		RestArea(_aAreaSA1)
 	endif
+	//
+	// tratamento de juros. GLPI: 12454
+	If IsInCallStack ("FINR650") .and. mv_par07= 1
+
+		_sQuery := " "
+		_sQuery += " SELECT "
+		_sQuery += " 	 SE1.E1_FILIAL "
+		_sQuery += "    ,SE1.E1_PREFIXO "
+		_sQuery += "    ,SE1.E1_NUM "
+		_sQuery += "    ,SE1.E1_PARCELA "
+		_sQuery += "    ,SE1.E1_CLIENTE "
+		_sQuery += "    ,SE1.E1_LOJA "
+		_sQuery += "    ,SE1.E1_VENCREA "
+		_sQuery += "    ,SE1.E1_VALOR "
+		_sQuery += " FROM " + RetSQLName ("SE1") + " AS SE1 "
+		_sQuery += " WHERE SE1.D_E_L_E_T_ = '' "
+		_sQuery += " AND SE1.E1_FILIAL    = '"+ xFilial("SE1") + "'"
+		_sQuery += " AND SE1.E1_PREFIXO + SE1.E1_NUM + SE1.E1_PARCELA = '"+ _aValores [1]+ "'"
+		U_Log2 ('debug', _sQuery)
+		_aSE1 := U_Qry2Array(_sQuery)
+
+		For _x := 1 to Len(_aSE1)
+			If _aSE1[_x,7] >= _aValores[2] .and. _aValores[9] > 0
+				
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += " UPDATE SZN010 "
+				_oSQL:_sQuery += " 		SET D_E_L_E_T_='*' "
+				_oSQL:_sQuery += " WHERE D_E_L_E_T_='' "
+				_oSQL:_sQuery += " AND ZN_FILIAL   = '"+ _aSE1[_x,1] +"'"
+				_oSQL:_sQuery += " AND ZN_CODEVEN  = 'SE1008'"
+				_oSQL:_sQuery += " AND ZN_NFS      = '"+ _aSE1[_x,3] +"'"
+				_oSQL:_sQuery += " AND ZN_SERIES   = '"+ _aSE1[_x,2] +"'"
+				_oSQL:_sQuery += " AND ZN_PARCTIT  = '"+ _aSE1[_x,4] +"'"
+				_oSQL:_sQuery += " AND ZN_CLIENTE  = '"+ _aSE1[_x,5] +"'"
+				_oSQL:_sQuery += " AND ZN_LOJACLI  = '"+ _aSE1[_x,6] +"'"
+				_oSQL:Log ()
+				_oSQL:Exec ()
+
+				_oEvento := ClsEvent():new ()
+				_oEvento:CodEven   = "SE1008"
+				_oEvento:DtEvento  = date()
+				_oEvento:Texto	   = "*** Vlr.Titulo:" + CValToChar(_aSE1[_x,8]) + " *** Vlr.Juros:" + CValToChar(_aValores[9])
+				_oEvento:Filial    = _aSE1[_x,1]
+				_oEvento:SerieSaid = _aSE1[_x,2]
+				_oEvento:NFSaida   = _aSE1[_x,3]
+				_oEvento:ParcTit   = _aSE1[_x,4]
+				_oEvento:Cliente   = _aSE1[_x,5]
+				_oEvento:LojaCli   = _aSE1[_x,6]
+				_oEvento:ChaveNFe  = "Dt.Real:" + dtoc(_aSE1[_x,7]) + " Dt.Pgt:" + dtoc(_aValores[2])
+				_oEvento:Grava ()
+
+				u_help(" Título " + _aSE1[_x,3] + "/" + _aSE1[_x,2] + " " + _aSE1[_x,4] + " Foi paga no prazo, porém possui valor de juros. Verificar nos eventos <Juros indevidos>")
+			EndIf
+		Next
+	EndIf
 	RestArea(_aArea)
 Return _lRet
