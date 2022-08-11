@@ -12,6 +12,7 @@
 
 // Historico de alteracoes
 // 20/04/2022 - Robert - Validava etiqueta (tabela ZA1), mas posso ainda nao ter etiqueta gerada.
+// 10/08/2022 - Robert - Valida codigo de barras (inclusive duplicidade) do produto (GLPI 
 //
 
 // ------------------------------------------------------------------------------------
@@ -21,6 +22,8 @@ user function SB1PEF (_sProduto)
 	local _oSQL      := NIL
 	local _sLinkSrv  := ""
 	local _aQryWMS   := {}
+	local _sDuplos   := ''
+	local _sMsgErr   := ''
 
 	u_log2 ('info', 'Verificando se o produto ' + _sProduto + ' pode ser enviado para o FullWMS.')
 
@@ -36,6 +39,33 @@ user function SB1PEF (_sProduto)
 		if empty (sb1 -> b1_prvalid)
 			u_help ("Impossivel enviar produto '" + _sProduto + "' para o FullWMS: prazo de validade nao informado no cadastro do produto - campo B1_PRVALID (" + alltrim (RetTitle ("B1_PRVALID")) + ").",, .t.)
 			_lContinua = .F.
+		endif
+	endif
+
+	// Valida codigo de barras
+	if _lContinua
+		if empty (sb1 -> b1_codbar)
+			u_help ("Impossivel enviar produto '" + _sProduto + "' para o FullWMS: codigo de barras nao informado no cadastro do produto - campo B1_CODBAR (" + alltrim (RetTitle ("B1_CODBAR")) + ").",, .t.)
+			_lContinua = .F.
+		else
+			_oSQL := ClsSQL():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " SELECT RTRIM (STRING_AGG (RTRIM (B1_COD) + '-' + RTRIM (B1_DESC), '; '))"
+			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SB1") + " SB1 "
+			_oSQL:_sQuery +=  " WHERE SB1.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=    " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+			_oSQL:_sQuery +=    " AND SB1.B1_CODBAR  = '" + sb1 -> b1_codbar + "'"
+			_oSQL:_sQuery +=    " AND SB1.B1_COD    != '" + sb1 -> b1_cod + "'"
+			_oSQL:Log ()
+			_sDuplos = _oSQL:RetQry (1, .f.)
+			if ! empty (_sDuplos)
+				_sMsgErr := "Impossivel enviar produto '" + sb1 -> b1_cod + "'"
+				_sMsgErr += " para o FullWMS: codigo de barras no cadastro do produto"
+				_sMsgErr += " - campo B1_CODBAR (" + alltrim (RetTitle ("B1_CODBAR")) + ") - "
+				_sMsgErr += " consta em duplicidade com o(s) seguinte(s) produto (s): " + _sDuplos
+				u_help (_sMsgErr,, .t.)
+				_lRet = .F.
+			endif
 		endif
 	endif
 
@@ -77,10 +107,6 @@ user function SB1PEF (_sProduto)
 				u_help ("Impossivel enviar produto '" + _sProduto + "' para o FullWMS: Regiao de armazenagem nao informada para o item '" + alltrim (_sProduto) + "' no FullWMS.", _oSQL:_sQuery, .t.)
 				_lContinua = .F.
 			endif
-// ainda nao tenho a etiqueta			if _lContinua .and. _aQryWMS [1, 2] < za1 -> za1_quant
-// ainda nao tenho a etiqueta				u_help ("Impossivel enviar produto '" + _sProduto + "' para o FullWMS: Qtd.por pallet nos dados logisticos do FullWMS (" + cvaltochar (_aQryWMS [1, 2]) + "). Quantidade da etiqueta (" + cvaltochar (za1 -> za1_quant) + ") nao pode ser maior.", _oSQL:_sQuery, .t.)
-// ainda nao tenho a etiqueta				_lContinua = .F.
-// ainda nao tenho a etiqueta			endif
 		endif
 	endif
 

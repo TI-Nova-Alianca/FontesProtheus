@@ -266,6 +266,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 				_AsCapSoc ()
 			case _sAcao == 'AlteraDadosAssociado'
 				_AltAssoc ()
+			case _sAcao == 'ImprimeEtiqueta'
+				_ImpEtq ()
 			otherwise
 				_sErroWS += "A acao especificada no XML eh invalida: " + _sAcao
 		endcase
@@ -2479,6 +2481,36 @@ static function _AltAssoc ()
 	endif
 	if empty (_sErroWS)
 		_sMsgRetWS = _sMsgRet
+	endif
+return
+
+
+// --------------------------------------------------------------------------
+// Imprime uma etiqueta da tabela ZA1.
+static function _ImpEtiq ()
+	local _sEtiq    := ''
+	local _sCodImpr := ''
+
+	if empty (_sErroWS) ; _sEtiq    = _ExtraiTag ("_oXML:_WSAlianca:_Etiqueta",      .T., .F.) ; endif
+	if empty (_sErroWS) ; _sCodImpr = _ExtraiTag ("_oXML:_WSAlianca:_CodImpressora", .T., .F.)  ; endif
+
+	// Validacao inicial do numero da etiqueta.
+	// Poderia apenas ver se existe no ZA1, mas pretendo futuramente
+	// implementar um metodo de impressao na classe ClsEtiq.
+	if empty (_sErroWS)
+		_oEtiq := ClsEtiq ():New (_sEtqApont)
+		if _oEtiq:Codigo != _sEtiq
+			_sErroWS += "Numero de etiqueta invalido."
+		endif
+	endif
+
+	// Valida se o codigo de barras pertence ao produto da etiqueta
+	if empty (_sErroWS)
+		if ! U_ImpZA1 (_sEtiq, _sCodImpr)
+			_sErroWS += 'Erro na rotina de impressao'
+		else
+			_sMsgRetWS += "Impressao com sucesso"
+		endif
 	endif
 return
 

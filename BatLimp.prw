@@ -22,6 +22,7 @@
 // 22/07/2022 - Robert - Finalizada funcao de limpeza da tabela SZN (GLPI 12336)
 // 05/08/2022 - Robert - Adicionada tabela SZN a lista para compactacao via SQL.
 // 08/08/2022 - Robert - Adicionadas tabelas CV3 e CTK (GLPI 12412).
+// 09/08/2022 - Robert - Adicionada tabela SBK.
 //
 
 // ----------------------------------------------------------------
@@ -72,6 +73,7 @@ static function _Pack ()
 		aadd (_aPack, {"ZAB", "ZAB_DTEMIS < '" + dtos (date () -  60 * 1) + "'"})
 		aadd (_aPack, {"SC0", "C0_VALIDA  < '" + dtos (date () - 180 * 1) + "'", '', 0, 0, 0, 0, ''})
 		aadd (_aPack, {"WF3", "WF3_DATA   < '" + dtos (date () - 180 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"SBK", "BK_DATA    < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
 
 		procregua (len (_aPack))
 	endif
@@ -173,6 +175,7 @@ static function _Compact ()
 	aadd (_aArqComp, 'SZN010')  // Estimativa (em 05/08/2022) de reducao de tamanho de 7GB para 2.5GB
 	aadd (_aArqComp, 'CV3010')  // Criados campos grandes (IDORIG e IDDEST) e vazios - GLPI 12412
 	aadd (_aArqComp, 'CTK010')  // Criados campos grandes (IDORIG e IDDEST) e vazios - GLPI 12412
+	aadd (_aArqComp, 'SBK010')  // Uso pouco frequente, nao vejo problemas em compactar.
 
 	for _nArqComp = 1 to len (_aArqComp)
 		_oSQL := ClsSQL ():New ()

@@ -21,6 +21,7 @@
 // 15/06/2022 - Robert  - Quando o produto nao controla lotes, nao tem data de
 //                        validade, entao busca data atual+b1_prvalid (GLPI 12220)
 // 18/07/2022 - Robert  - Nao formatava dt.valid como string na impressao do ZAG quando b1_rastro != 'L'
+// 10/08/2022 - Robert  - Passa a retornar .T. ou .F. em caso de sucesso ou erro.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -180,8 +181,8 @@ user function ImpZA1 (_sCodigo, _sIdImpr)
 			u_log2 ('debug', 'copiei etiq para ' + _sPortaImp)
 			delete file (_sArq)
 
-	// Penso que o fato de uma etiqueta estar impressa nao significa que jah precise
-	// ser enviada para o FullWMS. Vou deixar isso a cargo do ClsEtiq().
+			// Penso que o fato de uma etiqueta estar impressa nao significa que jah precise
+			// ser enviada para o FullWMS. Vou deixar isso a cargo do ClsEtiq().
 			// Etiquetas (quando necessario) sao enviadas para o Full somente depois de impressas
 			if za1 -> za1_impres == 'S'
 				if empty (za1 -> za1_op)  // Etiquetas de OP sao enviadas somente depois de apontadas (P.E. SD3250I)
@@ -192,7 +193,7 @@ user function ImpZA1 (_sCodigo, _sIdImpr)
 	endif
 		
 	U_ML_SRArea (_aAreaAnt)
-Return
+Return _lContinua
 
 
 
