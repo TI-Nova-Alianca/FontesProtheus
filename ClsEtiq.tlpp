@@ -24,6 +24,8 @@
 // 01/08/2022 - Robert - Ajuste formula verif.saldo empenhos (GLPI 11994)
 // 11/08/2022 - Robert - Criado metodo :Imprime (por enquanto, ainda chamando rotina externa)
 //                     - Criado atributo :UltMsg
+// 12/08/2022 - Robert - Criado atributo :AlmDest (GLPI 12474)
+//                     - Melhorias leitura lote origem (ZAG e SD1)
 //
 
 #Include "Protheus.ch"
@@ -40,6 +42,7 @@ return
 CLASS ClsEtiq
 
 	// Declaracao das propriedades da Classe
+	public data AlmDest       // Almox.destino
 	public data Apontada      // ZA1_APONT - Apontamento de producao ja executado (quando etiq. para OP)
 	public data Codigo        // ZA1_CODIGO
 	public data DocEntrForn   // ZA1_FORNEC - Quando refere-se a NF de entrada
@@ -109,6 +112,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 	local _aRetSD3  := {}
 
 	// Defaults
+	::AlmDest      = ''
 	::Apontada     = 'N'
 	::Codigo       = ''
 	::DocEntrForn  = ''
@@ -213,52 +217,50 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 				endif
 
 			elseif ! empty (::DocEntrNum)  // Etiqueta gerada por NF de entrada
-				if sb1 -> b1_rastro == 'L'
-					_oSQL := ClsSQL ():New ()
-					_oSQL:_sQuery := "SELECT D1_LOTECTL, B8_DTVALID"
-					_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD1") + " SD1 "
-					_oSQL:_sQuery +=  " LEFT JOIN " + RetSQLName ("SB8") + " SB8 "
-					_oSQL:_sQuery +=       " ON (SB8.D_E_L_E_T_ = ''"
-					_oSQL:_sQuery +=       " AND SB8.B8_FILIAL  = SD1.D1_FILIAL"
-					_oSQL:_sQuery +=       " AND SB8.B8_LOTECTL = SD1.D1_LOTECTL"
-					_oSQL:_sQuery +=       " AND SB8.B8_LOTEFOR = SD1.D1_LOTEFOR"
-					_oSQL:_sQuery +=       " AND SB8.B8_PRODUTO = SD1.D1_COD"
-					_oSQL:_sQuery +=       ")"
-					_oSQL:_sQuery += " WHERE SD1.D_E_L_E_T_ = ''"
-					_oSQL:_sQuery +=   " AND D1_FILIAL  = '" + ::Filial       + "'"
-					_oSQL:_sQuery +=   " AND D1_DOC     = '" + ::DocEntrNum   + "'"
-					_oSQL:_sQuery +=   " AND D1_SERIE   = '" + ::DocEntrSerie + "'"
-					_oSQL:_sQuery +=   " AND D1_FORNECE = '" + ::DocEntrForn  + "'"
-					_oSQL:_sQuery +=   " AND D1_LOJA    = '" + ::DocEntrLoja  + "'"
-					_oSQL:_sQuery +=   " AND D1_ITEM    = '" + ::DocEntrItem  + "'"
-					_oSQL:_sQuery +=   " AND D1_COD     = '" + ::Produto      + "'"
-					_oSQL:Log ()
-					_aLoteVal = aclone (_oSQL:RetFixo (1, "ao consultar lote do produto da etiqueta '" + ::Codigo + "' na NF de entrada '" + ::DocEntrNum + "'.", .T.))
-					if len (_aLoteVal) == 1
-						::LoteProduto  = _aLoteVal [1, 1]
-						::ValidadeLote = _aLoteVal [1, 2]
+				sd1 -> (dbsetorder (1))  // D1_FILIAL, D1_DOC, D1_SERIE, D1_FORNECE, D1_LOJA, D1_COD, D1_ITEM, R_E_C_N_O_, D_E_L_E_T_
+				if ! sd1 -> (dbseek (::Filial + ::DocEntrNum + ::DocEntrSerie + ::DocEntrForn + ::DocEntrLoja + ::Produto + ::DocEntrItem, .F.))
+					u_help ("NF/fornecedor/produto/item '" + ::DocEntrNum + '/' + ::DocEntrForn + '/' + ::Produto + '/' +::DocEntrItem + "' referenciada pela etiqueta '" + ::Codigo + "' nao foi localizada na tabela SD1.",, .t.)
+				else
+					::AlmDest = sd1 -> d1_local
+					if sb1 -> b1_rastro == 'L'
+						_oSQL := ClsSQL ():New ()
+						_oSQL:_sQuery := "SELECT B8_LOTECTL, B8_DTVALID"
+						_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB8") + " SB8 "
+						_oSQL:_sQuery += " WHERE SB8.D_E_L_E_T_ = ''"
+						_oSQL:_sQuery +=   " AND SB8.B8_FILIAL  = '" + sd1 -> d1_filial  + "'"
+						_oSQL:_sQuery +=   " AND SB8.B8_LOTECTL = '" + sd1 -> d1_lotectl + "'"
+						_oSQL:_sQuery +=   " AND SB8.B8_PRODUTO = '" + sd1 -> d1_cod     + "'"
+						_oSQL:_sQuery +=   " AND SB8.B8_LOCAL   = '" + sd1 -> d1_local   + "'"
+						_oSQL:Log ()
+						_aLoteVal = aclone (_oSQL:RetFixo (1, "ao consultar lote do produto da etiqueta '" + ::Codigo + "' na NF de entrada '" + ::DocEntrNum + "'.", .T.))
+						if len (_aLoteVal) == 1
+							::LoteProduto  = _aLoteVal [1, 1]
+							::ValidadeLote = _aLoteVal [1, 2]
+						endif
 					endif
 				endif
 
 			elseif ! empty (::IdZAG)
-				if sb1 -> b1_rastro == 'L'
-					_oSQL := ClsSQL ():New ()
-					_oSQL:_sQuery := "SELECT ZAG_LOTORI, B8_DTVALID"
-					_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZAG") + " ZAG "
-					_oSQL:_sQuery +=  " LEFT JOIN " + RetSQLName ("SB8") + " SB8 "
-					_oSQL:_sQuery +=       " ON (SB8.D_E_L_E_T_ = ''"
-					_oSQL:_sQuery +=       " AND SB8.B8_FILIAL  = ZAG.ZAG_FILORI"
-					_oSQL:_sQuery +=       " AND SB8.B8_LOTECTL = ZAG.ZAG_LOTORI"
-					_oSQL:_sQuery +=       " AND SB8.B8_PRODUTO = ZAG.ZAG_PRDORI"
-					_oSQL:_sQuery +=       ")"
-					_oSQL:_sQuery += " WHERE ZAG.D_E_L_E_T_ = ''"
-					_oSQL:_sQuery +=   " AND ZAG.ZAG_FILIAL = '" + xfilial ("ZAG") + "'"
-					_oSQL:_sQuery +=   " AND ZAG.ZAG_DOC    = '" + ::IdZAG + "'"
-					_oSQL:Log ()
-					_aLoteVal = aclone (_oSQL:RetFixo (1, "ao consultar lote do produto da etiqueta '" + ::Codigo + "' na solicitacao de transferencia numero '" + ::IdZAG + "'.", .T.))
-					if len (_aLoteVal) == 1
-						::LoteProduto  = _aLoteVal [1, 1]
-						::ValidadeLote = _aLoteVal [1, 2]
+				zag -> (dbsetorder (1))  // ZAG_FILIAL, ZAG_DOC, R_E_C_N_O_, D_E_L_E_T_
+				if ! zag -> (dbseek (::Filial + ::IdZAG, .F.))
+					u_help ("Solicitacao de transferencia '" + ::IdZAG + "' referenciada pela etiqueta '" + ::Codigo + "' nao foi localizada na tabela ZAG.",, .t.)
+				else
+					::AlmDest = zag -> zag_almdst
+					if sb1 -> b1_rastro == 'L'
+						_oSQL := ClsSQL ():New ()
+						_oSQL:_sQuery := "SELECT B8_LOTECTL, B8_DTVALID"
+						_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB8") + " SB8 "
+						_oSQL:_sQuery += " WHERE SB8.D_E_L_E_T_ = ''"
+						_oSQL:_sQuery +=   " AND SB8.B8_FILIAL  = '" + zag -> zag_filori + "'"
+						_oSQL:_sQuery +=   " AND SB8.B8_LOTECTL = '" + zag -> zag_lotori + "'"
+						_oSQL:_sQuery +=   " AND SB8.B8_PRODUTO = '" + zag -> zag_prdori + "'"
+						_oSQL:_sQuery +=   " AND SB8.B8_LOCAL   = '" + zag -> zag_almori + "'"
+						_oSQL:Log ()
+						_aLoteVal = aclone (_oSQL:RetFixo (1, "ao consultar lote do produto da etiqueta '" + ::Codigo + "' na solicitacao de transferencia numero '" + ::IdZAG + "'.", .T.))
+						if len (_aLoteVal) == 1
+							::LoteProduto  = _aLoteVal [1, 1]
+							::ValidadeLote = _aLoteVal [1, 2]
+						endif
 					endif
 				endif
 			endif
@@ -380,6 +382,11 @@ METHOD PodeEnvFul () Class ClsEtiq
 	local _lContinua := .T.
 	Local _aAreaAnt  := U_ML_SRArea ()
 
+	if _lContinua .and. ::AlmDest != '01'
+		u_help ("Etiqueta '" + ::Codigo + "' nao deve ser enviada para o FullWMS, pois destina-se ao almox." + ::AlmDest,, .t.)
+		_lContinua = .f.
+	endif
+
 	if _lContinua .and. left (::Codigo, 1) == '0'
 		u_Help ("Impossivel enviar etiqueta '" + ::Codigo + "' para o FullWMS: Etiquetas iniciadas por '0' sao geradas diretamente pelo FullWMS.",, .t.)
 		_lContinua = .F.
@@ -401,11 +408,11 @@ METHOD PodeEnvFul () Class ClsEtiq
 				_lContinua = .F.
 			endif
 		else
-
-			// Valida o produto por que pode nao ser etiqueta de OP, e essa validacao pode nao ter sido feita ainda.
-			if _lContinua .and. ! U_SB1PEF (::Produto)
-				u_log2 ('erro', 'Envio da etiqueta ' + ::Codigo + ' para o FullWMS nao vai ser permitido por que o produto da etiqueta nao encontra-se em condicoes de ser enviado para o FullWMS.')
-				_lContinua = .F.
+			if ! empty (::IdZAG)
+				if ::AlmDest == '01' .and. ! U_SB1PEF (::Produto)
+					u_log2 ('erro', 'Envio da etiqueta ' + ::Codigo + ' para o FullWMS nao vai ser permitido por que o produto da etiqueta nao encontra-se em condicoes de ser enviado para o FullWMS.')
+					_lContinua = .F.
+				endif
 			endif
 		endif
 	endif

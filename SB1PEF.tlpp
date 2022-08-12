@@ -13,6 +13,7 @@
 // Historico de alteracoes
 // 20/04/2022 - Robert - Validava etiqueta (tabela ZA1), mas posso ainda nao ter etiqueta gerada.
 // 10/08/2022 - Robert - Valida codigo de barras (inclusive duplicidade) do produto (GLPI 11994)
+// 12/08/2022 - Robert - Melhoria validacao com atributo :AlmDest da CLsEtiq (GLPI 12474)
 //
 
 // ------------------------------------------------------------------------------------
@@ -25,19 +26,19 @@ user function SB1PEF (_sProduto)
 	local _sDuplos   := ''
 	local _sMsgErr   := ''
 
-	u_log2 ('info', 'Verificando se o produto ' + _sProduto + ' pode ser enviado para o FullWMS.')
+	u_log2 ('info', 'Verificando se o produto ' + alltrim (_sProduto) + ' pode ser enviado para o FullWMS.')
 
 	if _lContinua
 		zb1 -> (dbsetorder (1))
 		if ! sb1 -> (dbseek (xfilial ("SB1") + _sProduto, .F.))
-			u_help ("Impossivel enviar produto '" + _sProduto + "' para o FullWMS: produto nao cadastrado!",, .t.)
+			u_help ("Impossivel enviar produto '" + alltrim (_sProduto) + "' para o FullWMS: produto nao cadastrado!",, .t.)
 			_lContinua = .F.
 		endif
 	endif
 
 	if _lContinua
 		if empty (sb1 -> b1_prvalid)
-			u_help ("Impossivel enviar produto '" + _sProduto + "' para o FullWMS: prazo de validade nao informado no cadastro do produto - campo B1_PRVALID (" + alltrim (RetTitle ("B1_PRVALID")) + ").",, .t.)
+			u_help ("Impossivel enviar produto '" + alltrim (_sProduto) + "' para o FullWMS: prazo de validade nao informado no cadastro do produto - campo B1_PRVALID (" + alltrim (RetTitle ("B1_PRVALID")) + ").",, .t.)
 			_lContinua = .F.
 		endif
 	endif
@@ -45,7 +46,7 @@ user function SB1PEF (_sProduto)
 	// Valida codigo de barras
 	if _lContinua
 		if empty (sb1 -> b1_codbar)
-			u_help ("Impossivel enviar produto '" + _sProduto + "' para o FullWMS: codigo de barras nao informado no cadastro do produto - campo B1_CODBAR (" + alltrim (RetTitle ("B1_CODBAR")) + ").",, .t.)
+			u_help ("Impossivel enviar produto '" + alltrim (_sProduto) + "' para o FullWMS: codigo de barras nao informado no cadastro do produto - campo B1_CODBAR (" + alltrim (RetTitle ("B1_CODBAR")) + ").",, .t.)
 			_lContinua = .F.
 		else
 			_oSQL := ClsSQL():New ()
@@ -59,7 +60,7 @@ user function SB1PEF (_sProduto)
 			_oSQL:Log ()
 			_sDuplos = _oSQL:RetQry (1, .f.)
 			if ! empty (_sDuplos)
-				_sMsgErr := "Impossivel enviar produto '" + sb1 -> b1_cod + "'"
+				_sMsgErr := "Impossivel enviar produto '" + alltrim (sb1 -> b1_cod) + "'"
 				_sMsgErr += " para o FullWMS: codigo de barras no cadastro do produto"
 				_sMsgErr += " - campo B1_CODBAR (" + alltrim (RetTitle ("B1_CODBAR")) + ") - "
 				_sMsgErr += " consta em duplicidade com o(s) seguinte(s) produto (s): " + _sDuplos
@@ -86,7 +87,7 @@ user function SB1PEF (_sProduto)
 		// Busca o caminho do banco de dados do FullWMS
 		_sLinkSrv = U_LkServer ('FULLWMS_AX01')
 		if empty (_sLinkSrv)
-			u_help ("Impossivel enviar produto '" + _sProduto + "' para o FullWMS: nao consegui validar cadastros preliminares no Full por que nao ha definicao de linked server.",, .t.)
+			u_help ("Impossivel enviar produto '" + alltrim (_sProduto) + "' para o FullWMS: nao consegui validar cadastros preliminares no Full por que nao ha definicao de linked server.",, .t.)
 			_lContinua = .F.
 		else
 			_oSQL := ClsSQL ():New ()
@@ -100,11 +101,11 @@ user function SB1PEF (_sProduto)
 			_aQryWMS = aclone (_oSQL:Qry2Array (.F., .F.))
 	//		u_log2 ('debug', _aQryWMS)
 			if len (_aQryWMS) == 0
-				u_help ("Impossivel enviar produto '" + _sProduto + "' para o FullWMS: Nao encontrei nenhum cadastro de dados logisticos para o item '" + alltrim (_sProduto) + "' no FullWMS.", _oSQL:_sQuery, .t.)
+				u_help ("Impossivel enviar produto '" + alltrim (_sProduto) + "' para o FullWMS: Nao encontrei nenhum cadastro de dados logisticos para o item '" + alltrim (_sProduto) + "' no FullWMS.", _oSQL:_sQuery, .t.)
 				_lContinua = .F.
 			endif
 			if _lContinua .and. empty (_aQryWMS [1, 1])
-				u_help ("Impossivel enviar produto '" + _sProduto + "' para o FullWMS: Regiao de armazenagem nao informada para o item '" + alltrim (_sProduto) + "' no FullWMS.", _oSQL:_sQuery, .t.)
+				u_help ("Impossivel enviar produto '" + alltrim (_sProduto) + "' para o FullWMS: Regiao de armazenagem nao informada para o item '" + alltrim (_sProduto) + "' no FullWMS.", _oSQL:_sQuery, .t.)
 				_lContinua = .F.
 			endif
 		endif
