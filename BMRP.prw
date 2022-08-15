@@ -38,6 +38,7 @@
 // 09/04/2021 - Robert  - Inseridos logs para analise de performance (GLPI 9797)
 //                      - Incluido teste do B1_FILIAL no na query _sExistsB1 - reduziu de 627 para 33 segundos (GLPI 9797)
 // 20/06/2022 - Claudia - Incluida importação .csv na simulação. GLPI: 12219
+// 12/08/2022 - Claudia - Incluida opção de revisão ativa. GLPI:12466
 //
 // --------------------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
@@ -548,18 +549,28 @@ static function _SimulOP (_sProduto, _nQtd, _aSimula, _lSimula,_sRevis)
 		_nQtSimul = U_Get ("Quantidade a produzir", "N", 12, "@E 999,999,999.99", "", 0, .F., ".T.")
 	EndIf
 	
-	If alltrim(_sRevis) == 'N'
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := " SELECT G5_PRODUTO, G5_OBS, G5_REVISAO, G5_DATAREV "
-		_oSQL:_sQuery += " FROM SG5010"
-		_oSQL:_sQuery += " WHERE D_E_L_E_T_=''"
-		_oSQL:_sQuery += " AND G5_PRODUTO = '" + _sProduto + "'" 
-		_aRevisao := _oSQL:Qry2Array ()
-	else
-		If !empty(_sRevis) 
-			aadd (_aRevisao, { _sProduto, "", _sRevis })
-		EndIf
-	endif
+	If alltrim(_sRevis) == 'A' // tras apenas revisao atual
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := " SELECT G5_PRODUTO, G5_OBS, G5_REVISAO, G5_DATAREV "
+			_oSQL:_sQuery += " FROM SG5010"
+			_oSQL:_sQuery += " WHERE D_E_L_E_T_= ''"
+			_oSQL:_sQuery += " AND G5_MSBLQL   = '2' ""
+			_oSQL:_sQuery += " AND G5_PRODUTO  = '" + _sProduto + "'" 
+			_aRevisao := _oSQL:Qry2Array ()
+	Else
+		If alltrim(_sRevis) == 'N'
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := " SELECT G5_PRODUTO, G5_OBS, G5_REVISAO, G5_DATAREV "
+			_oSQL:_sQuery += " FROM SG5010"
+			_oSQL:_sQuery += " WHERE D_E_L_E_T_=''"
+			_oSQL:_sQuery += " AND G5_PRODUTO = '" + _sProduto + "'" 
+			_aRevisao := _oSQL:Qry2Array ()
+		else
+			If !empty(_sRevis) 
+				aadd (_aRevisao, { _sProduto, "", _sRevis })
+			EndIf
+		endif
+	EndIf
 	
 	_filtroSml = "!sb1->b1_tipo$'MO/'.and.!sb1->b1_grupo$'0400/'.and.sb1->b1_fantasm!='S'"
 	
@@ -1552,10 +1563,14 @@ static function _GeraSimul()
 	If len(aProd) > 0
 		For _x:=1 to len(aProd) 
 			If alltrim(aProd[_x, 1]) <> ''
-				If mv_par01 == 1
-					aadd (aProduto,{ alltrim(aProd[_x,1]) , aProd[_x,2], "N"})
+				If mv_par03 == 1 // apenas revisao atual 
+					aadd (aProduto,{ alltrim(aProd[_x,1]) , aProd[_x,2], "A"})
 				else
-					aadd (aProduto,{ alltrim(aProd[_x,1]) , aProd[_x,2], aProd[_x,3]})
+					If mv_par01 == 1
+						aadd (aProduto,{ alltrim(aProd[_x,1]) , aProd[_x,2], "N"})
+					else
+						aadd (aProduto,{ alltrim(aProd[_x,1]) , aProd[_x,2], aProd[_x,3]})
+					EndIf
 				EndIf
 			EndIf
 		Next
@@ -1761,8 +1776,9 @@ Static Function _ValidPerg ()
 		
 	elseif cPerg == 'BMRP3'
 		//                     PERGUNT         TIPO TAM DEC VALID F3          Opcoes Help
-		aadd (_aRegsPerg, {01, "Agrupar itens?    ", "N",  1,  0,  "",  "    ", {"Nao", "Sim"},                  ""})
+		aadd (_aRegsPerg, {01, "Agrupar itens?    ", "N",   1, 0,  "",  "    ", {"Nao", "Sim"},                  ""})
 		aadd (_aRegsPerg, {02, "Arquivo no C:\temp", "C",  20, 0,  "",  "    ", {},                              ""})
+		aadd (_aRegsPerg, {03, "Revisao           ", "N",   1, 0,  "",  "    ", {"Ativas", "Todas"},              ""})
 	endif
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 return
