@@ -185,6 +185,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 		else
 			if ! empty (::OP)
 				::LoteProduto = substring (::OP, 1, 8)
+				::AlmDest = sb1 -> b1_locpad
 				sc2 -> (dbsetorder (1))
 				if ! sc2 -> (dbseek (xfilial ("SC2") + ::OP, .f.))
 					u_help ('[' + GetClassName (::Self) + '.' + procname () + "]Impossivel encontrar a OP '" + ::OP + "' relacionada `a etiqueta '" + ::Codigo + "'. Validade nao pode ser determinada.",, .t.)
