@@ -68,7 +68,8 @@
 // 04/10/2021 - Robert  - Ajustado LPAD 666/005 para considerar os CC de final 1409 e 1410 (GLPI 10917)
 //                      - Ajustado LPAD 666/008 para diferencial req.mat.MM entre indl.X adm/coml
 // 11/11/2021 - Claudia - Incluso contabilizacao venda cupons PIX lançamento padrão 520 015
-
+// 16/08/2022 - Claudia - Inclusão de retorno de historico para LPAD 520012 e 521012. GLPI: 12461
+//
 // -----------------------------------------------------------------------------------------------------------------
 // Informar numero e sequencia do lancamento padrao, seguido do campo a ser retornado.
 User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
@@ -252,6 +253,26 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 		u_help (SE1->E1_TIPO)
 		u_help (SE5->E5_VLDESCO)
 		u_help (SE5->E5_VADOUTR)
+
+	case _sLPad + _sSeq $ '520012/521012'
+		If alltrim(_sQueRet) $ 'HIST' 
+			_oSQL:= ClsSQL ():New ()
+    		_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " SELECT ZA5_NUM "
+			_oSQL:_sQuery += " FROM " + RetSQLName ("ZA5")
+			_oSQL:_sQuery += " WHERE D_E_L_E_T_='' "
+			_oSQL:_sQuery += " AND ZA5_FILIAL  ='"+ se1->e1_filial  +"'"
+			_oSQL:_sQuery += " AND ZA5_DOC     ='"+ se1->e1_num     +"'"
+			_oSQL:_sQuery += " AND ZA5_PREFIX  ='"+ se1->e1_prefixo +"'"
+			_oSQL:_sQuery += " AND ZA5_PARC    ='"+ se1->e1_parcela +"'"
+			_oSQL:_sQuery += " AND ZA5_CLI     ='"+ se1->e1_cliente +"'"
+			_oSQL:_sQuery += " AND ZA5_LOJA    ='"+ se1->e1_Loja    +"'"
+			_aVerbas := aclone (_oSQL:Qry2Array ())
+
+			If Len(_aVerbas) > 0
+				_xret := "VERBA Nº"+ _aVerbas[1,1] + " "+ alltrim(SE1->E1_NOMCLI) +"-" + alltrim(SE1->E1_NUM)
+			EndIf
+		EndIf
 
 	case _sLPad + _sSeq $ '520015'
 		Do Case
