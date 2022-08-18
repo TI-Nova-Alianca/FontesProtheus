@@ -14,6 +14,7 @@
 // 05/05/2021 - Cláudia - Adicionado valor de frete + seguro + despesas acessorias. GLPI: 9895
 // 26/10/2021 - Claudia - Realizado ajuste quando tem dois vendedores. GLPI: 11124
 // 12/01/2022 - Claudia - Criada nova validação para indenização. GLPI: 11361
+// 18/08/2022 - Claudia - Ajustada a consulta para não trazer comissões duplicadas. GLPI: 12496
 //
 // -----------------------------------------------------------------------------------------------
 
@@ -74,7 +75,7 @@ User Function VA_COMEXE(_dtaIni, _dtaFin, _sVend, _nLibPg)
 	_oSQL:_sQuery += " 		AND E5_DOCUMEN NOT LIKE '% RA %'))"
 	_oSQL:_sQuery += " 		AND E5_PREFIXO = E3_PREFIXO"
 	_oSQL:_sQuery += " 		AND E5_PARCELA = E3_PARCELA"
-	_oSQL:_sQuery += " 		AND E5_SEQ = E3_SEQ"
+	//_oSQL:_sQuery += " 		AND E5_SEQ = E3_SEQ"
 	_oSQL:_sQuery += " 		AND E5_DATA BETWEEN '"+ dtos (_dtaIni) + "' AND '" + dtos (_dtaFin) + "'"
 	_oSQL:_sQuery += " 		GROUP BY E5_FILIAL"
 	_oSQL:_sQuery += " 				,E5_RECPAG"
@@ -224,9 +225,10 @@ User Function VA_COMEXE(_dtaIni, _dtaFin, _sVend, _nLibPg)
 	_oSQL:_sQuery += " AND E3_VEND   = '" + _sVend + "'"
 	_oSQL:_sQuery += " AND E3_EMISSAO BETWEEN '" + dtos (_dtaIni) + "' AND '" + dtos (_dtaFin) + "'"
 	_oSQL:_sQuery += " AND E3_BAIEMI = 'B'"
+	_oSQL:_sQuery += " AND E3_COMIS <> 0 "
 	If _nLibPg = 1  	// comissoes liberadas
 		_oSQL:_sQuery += " AND E3_DATA = ''"
-	Else 				// comissoes pagas
+	Else 				// comissoes pagase n
 		_oSQL:_sQuery += " AND E3_DATA != ''"
 	EndIf
 	_oSQL:_sQuery += " ORDER BY E3_VEND, E3_NUM, E3_PARCELA"
