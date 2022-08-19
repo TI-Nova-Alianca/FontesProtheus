@@ -78,6 +78,7 @@ user function Help (_sMsg, _sDAdic, _lHlpErro)
 	endif
 
 	if type ("oMainWnd") == "O"  // Se tem interface com o usuario
+		U_Log2 ('debug', '[' + procname () + ']tenho oMainWnd')
 		if valtype (_sDAdic) == "C" .and. ! empty (_sDAdic) .and. existblock ("SHOWMEMO")
 			U_ShowMemo (cValToChar (_sMsg) + chr (13) + chr (10) + chr (13) + chr (10) + "Dados adicionais:" + chr (13) + chr (10) + _sDAdic, procname (1) + " => " + procname (2))
 		else
@@ -97,8 +98,12 @@ user function Help (_sMsg, _sDAdic, _lHlpErro)
 			msgalert (_sMsg, procname (1) + " => " + procname (2) + " => " + procname (3) + " => " + procname (4) + " => " + procname (5))
 		endif
 	else
-		if cModulo == "ACD"
-			vtalert (cValToChar (_sMsg))
+		U_Log2 ('debug', '[' + procname () + ']nao tenho oMainWnd')
+		U_Log2 ('debug', '[' + procname () + ']cModulo: ' + cModulo)
+		U_Log2 ('debug', '[' + procname () + ']nModulo: ' + cvaltochar (nModulo))
+		if IsInCallStack ("SIGAACD")
+			U_Log2 ('debug', '[' + procname () + ']estou no ACD')
+			vtAlert (cValToChar (_sMsg), procname (), .t., 3000)  // Tempo em milissegundos
 		endif
 	//	_sMsg = procname () + " ==> " + procname (1) + ": " + procname (2) + ": " + procname (3) + ": " + cvaltochar (_sMsg)
 	endif
