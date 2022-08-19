@@ -515,7 +515,7 @@ User Function F200VAR()
 		_aSE1 := U_Qry2Array(_sQuery)
 
 		For _x := 1 to Len(_aSE1)
-			If _aSE1[_x,7] >= _aValores[2] .and. _aValores[9] > 0
+			If _aSE1[_x,7] < _aValores[2] .and. _aValores[9] > 0
 				
 				_oSQL := ClsSQL ():New ()
 				_oSQL:_sQuery := ""
