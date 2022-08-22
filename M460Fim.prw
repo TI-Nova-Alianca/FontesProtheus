@@ -41,6 +41,7 @@
 //                        parametro VA_RAPEL quando processo concluido. GLPI: 8916
 // 23/05/2022 - Claudia - Ajuste da rotina de gravação de rapel. GLPI: 8916
 // 11/07/2022 - Claudia - Incluida gravação de nota e serie na amarração produto x fornecedor de transferencias 
+// 22/08/2022 - Claudia - Incluida validação para nao gravar registro no conta rapel se não houver valor.
 //
 // --------------------------------------------------------------------------------------------------------------
 user function M460Fim ()
@@ -339,7 +340,7 @@ Static Function _AtuZC0()
 	_sRede     := _oCtaRapel:RetCodRede(sf2->f2_cliente, sf2->f2_loja)
 	_sTpRapel  := _oCtaRapel:TipoRapel(_sRede, sf2->f2_loja)
 	
-	If alltrim(_sTpRapel) <> '0' // Se o cliente tem configuração de rapel
+	If alltrim(_sTpRapel) <> '0' .and. sf2->f2_varapel > 0 // Se o cliente tem configuração de rapel
 		_oCtaRapel:Filial  	 = sf2->f2_filial
 		_oCtaRapel:Rede      = _sRede	
 		_oCtaRapel:LojaRed   = sf2->f2_loja
