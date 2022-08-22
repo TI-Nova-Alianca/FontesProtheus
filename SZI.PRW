@@ -62,6 +62,7 @@
 //                      - Eliminado parametro 'contabiliza online' (passa a ler de cada rotina financeira)
 // 27/02/2022 - Robert  - Adicionada coluna HIST na consulta de titulos agrupados numa fatura (GLPI 11678)
 // 05/04/2022 - Robert  - Verifica valor do SE2 antes do recalculo manual de saldos.
+// 22/08/2022 - Robert  - Consulta de movtos.vinculados passa a usar o metodo :RegRelac().
 //
 
 #include "colors.ch"
@@ -119,7 +120,7 @@ User Function szi()
 	// Submenu de rotinas adicionais
 	aadd (_aRotAdic, {"Extrato conta corrente",   "U_SZIR(1)",0,2})
 	aadd (_aRotAdic, {"Extr.producao associado",  "U_SZIR(2)",0,2})
-	aadd (_aRotAdic, {"Amarracoes c/ financeiro", "U_SZIR(3)",0,2})
+	aadd (_aRotAdic, {"Registros relacionados",   "U_SZIR(3)",0,2})
 	aadd (_aRotAdic, {"Posicao fornecedor",       "U_SZIR(4)",0,2})
 	aadd (_aRotAdic, {"Cadastro fornecedor",      "U_SZIR(5)",0,2})
 	aadd (_aRotAdic, {"Capital social",           "U_SZIR(6)",0,2})
@@ -201,6 +202,9 @@ User Function SZIR (_nQual)
 	local _aCols     := {}
 	local _oCtaCorr  := NIL
 	local _oAssocRel := NIL
+	local _aColsRel  := {}
+	local _aRegRel   := {}
+	local _nRegRel   := 0
 
 	do case
 	case _nQual == 1
@@ -217,7 +221,7 @@ User Function SZIR (_nQual)
 		U_ML_PAss ()
 	case _nQual == 3
 		CursorWait ()
-		_sQuery := ""
+/*		_sQuery := ""
 		_sQuery += " SELECT 'Ctas. pagar' AS ORIGEM, E2_EMISSAO, E2_TIPO, E2_PREFIXO, E2_NUM, E2_PARCELA, E2_VALOR, E2_HIST, '', '', '', '', ''"
 		_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2"
 		_sQuery +=  " WHERE E2_FILIAL   = '" + xfilial ("SE2") + "'"
@@ -232,25 +236,72 @@ User Function SZIR (_nQual)
 		_sQuery +=    " AND D_E_L_E_T_  = ''"
 		u_log (_sQuery)
 		_aRetQry = U_Qry2Array (_sQuery, .T., .F.)
+*/
+		_aCols = {}
+		aadd (_aCols, {1,  "Origem",     50, ""})
+		aadd (_aCols, {2,  "Emissao",    30, "@D"})
+		aadd (_aCols, {3,  "Tipo",       25, ""})
+		aadd (_aCols, {4,  "Pref",       25, ""})
+		aadd (_aCols, {5,  "Numero",     30, ""})
+		aadd (_aCols, {6,  "Parc",       15, ""})
+		aadd (_aCols, {7,  "Valor",      50, "@E 999,999.99"})
+		aadd (_aCols, {8,  "Historico", 100, ""})
+		aadd (_aCols, {9,  "Banco",      30, ""})
+		aadd (_aCols, {10, "Mot.Bx",     30, ""})
+		aadd (_aCols, {11, "Tipo doc",   30, ""})
+		aadd (_aCols, {12, "Numerario",  30, ""})
+		aadd (_aCols, {13, "Form.pag.",  30, ""})
+		aadd (_aCols, {14, "Vencto",     30, ""})
+		aadd (_aCols, {15, "Fornecedor", 40, ""})
+		aadd (_aCols, {16, "Nome",       60, ""})
+		_aColsRel = {}
+		_oCtaCorr := ClsCtaCorr():New (szi -> (recno ()))
+		_aRegRel := aclone (_oCtaCorr:RegRelac ())
+		//U_Log2 ('debug', _aRegRel)
+		for _nRegRel = 1 to len (_aRegRel)
+			if _aRegRel [_nRegRel, 1] == 'SE2'
+				se2 -> (dbgoto (_aRegRel [_nRegRel, 2]))
+				aadd (_aColsRel, {'Ctas.pagar',;
+								se2 -> e2_emissao,;
+								se2 -> e2_tipo,;
+								se2 -> e2_prefixo,;
+								se2 -> e2_num,;
+								se2 -> e2_parcela,;
+								se2 -> e2_valor,;
+								se2 -> e2_hist,;
+								'', '', '', '', '',;
+								se2 -> e2_vencrea,;
+								se2 -> e2_fornece + '/' + se2 -> e2_loja,;
+								se2 -> e2_nomfor})
+
+			elseif _aRegRel [_nRegRel, 1] == 'SE5'
+				se5 -> (dbgoto (_aRegRel [_nRegRel, 2]))
+				aadd (_aColsRel, {'Mov.bancario',;
+								se5 -> e5_data,;
+								se5 -> e5_tipo,;
+								se5 -> e5_prefixo,;
+								se5 -> e5_numero,;
+								se5 -> e5_parcela,;
+								se5 -> e5_valor,;
+								se5 -> e5_histor,;
+								se5 -> e5_banco,;
+								se5 -> e5_motbx,;
+								se5 -> e5_tipodoc,;
+								se5 -> e5_moeda,;
+								se5 -> e5_vaszifp,;
+								ctod (''),;
+								se5 -> e5_clifor + '/' + se5 -> e5_loja,;
+								se5 -> e5_benef})
+			else
+				u_help ("Sem tratamento para origem '" + _aRegRel [_nRegRel, 1] + "' na consulta de movimentos relacionados.",, .t.)
+			endif
+		next
 		CursorArrow ()
-		if len (_aRetQry) == 0
-			u_help ("Nao foi encontrada no financeiro nenhuma movimentacao relacionada a este lancamento.")
+		//U_Log2 ('debug', _aColsRel)
+		if len (_aColsRel) == 0
+			u_help ("Nao foi encontrado nenhum movimento relacionado a este lancamento.")
 		else
-			_aCols = {}
-			aadd (_aCols, {1,  "Origem",    50,  ""})
-			aadd (_aCols, {2,  "Data",      40,  "@D"})
-			aadd (_aCols, {3,  "Tipo",      25,  ""})
-			aadd (_aCols, {4,  "Pref",      25,  ""})
-			aadd (_aCols, {5,  "Numero",    30,  ""})
-			aadd (_aCols, {6,  "Parc",      15,  ""})
-			aadd (_aCols, {7,  "Valor",     50,  "@E 999,999.99"})
-			aadd (_aCols, {8,  "Historico", 100, ""})
-			aadd (_aCols, {9,  "Banco",     30,  ""})
-			aadd (_aCols, {10, "Mot.Bx",    30,  ""})
-			aadd (_aCols, {11, "Tipo doc",  30,  ""})
-			aadd (_aCols, {12, "Numerario", 30,  ""})
-			aadd (_aCols, {13, "Form.pag.", 30,  ""})
-			U_F3Array (_aRetQry, "Movimento financeiro", _aCols, oMainWnd:nClientWidth - 50, NIL, "Movimentacao financeira relacionada a este lancamento")
+			U_F3Array (_aColsRel, "Registros relacionados", _aCols, oMainWnd:nClientWidth - 50, NIL, "Registros relacionados a este lancamento")
 		endif
 
 	case _nQual == 4
@@ -274,16 +325,6 @@ User Function SZIR (_nQual)
 			u_help ("Fornecedor nao encontrado!")
 		endif
 	
-		// sa2 -> (dbsetorder (1))
-		// if ! sa2 -> (dbseek (xfilial ("SA2") + szi -> zi_assoc + szi -> zi_lojasso, .F.))
-		// 	u_help ("Fornecedor nao encontrado!")
-		// else
-		// 	_aAuto := {}
-		// 	aadd (_aAuto, {"A2_COD",  szi -> zi_assoc,   nil})
-		// 	aadd (_aAuto, {"A2_NOME", szi -> zi_lojasso, nil})
-		// 	MSExecAuto ({|_x, _y| MATA020 (_x, _y)}, _aAuto, 2)
-		// endif
-
 	case _nQual == 6
 		_oAssocRel := ClsAssoc():New(szi -> zi_assoc, szi -> zi_lojasso)
 		if valtype (_oAssocRel) != "O"

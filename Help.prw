@@ -30,6 +30,7 @@
 // 24/09/2021 - Claudia - Incluido o tratamento para retorno de mensagem WS.
 // 20/02/2022 - Robert  - Variavel _sErros (publica do web service) renomeada para _sErroWS
 // 15/07/2022 - Robert  - Acrescentados mais niveis de procname() no titulo da janela de avisos.
+// 19/08/2022 - Robert  - Melhoria para uso com telnet (funcao vtAlert)
 //
 
 // --------------------------------------------------------------------------

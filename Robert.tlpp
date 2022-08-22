@@ -26,7 +26,7 @@
 //#include "protheus.ch"
 //#include "rwmake.ch"
 //#include "VA_INCLU.prw"
-//#include "tbiconn.ch"
+#include "tbiconn.ch"
 //#INCLUDE "XMLXFUN.CH"
 //#INCLUDE "apvt100.ch"
 
@@ -34,7 +34,7 @@
 user function robert ()
 	local _lContinua := .T.
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-//		prepare environment empresa '01' filial '01' modulo 'FIN'
+		prepare environment empresa '01' filial '01' modulo 'FIN'
 		private cModulo   := 'FIN'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -91,6 +91,15 @@ user function robert ()
 		U_UsoRot ('F', procname (), '')
 	endif
 return
+
+user function MA070Mnu ()
+	local _aRotAdic := {}
+
+	aadd (_aRotAdic, {"Saldo para fluxo", "U_SA6Flx  ()", 0, 6, 0, NIL})
+	
+	aadd (aRotina, {"Especificos"           , _aRotAdic, 0, 6, 0, NIL})
+return
+
 
 // --------------------------------------------------------------------------
 user function vtEtqAp ()

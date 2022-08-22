@@ -96,6 +96,7 @@
 // 19/01/2022 - Robert - Nao inicializava atributo ::Safra quando chamado via tela de manutencao da conta corrente.
 // 23/02/2022 - Robert - Ordenados por tipo de movimento alguns blocos de codigo no metodo PodeIncl().
 // 01/04/2022 - Robert - Ajuste teste se associado jah possui lcto restituicao FUNRURAL.
+// 22/08/2022 - Robert - Removidos alguns trechos comentariados.
 //
 
 // ------------------------------------------------------------------------------------
@@ -540,78 +541,6 @@ METHOD Exclui () Class ClsCtaCorr
 	endif
 
 	// Exclui movimentacao relacionada no financeiro, caso exista.
-	/*
-	if _lContinua
-		if ! U_TemNick ("SE2", "E2_VACHVEX")
-			_lContinua = .F.
-			::UltMsg += "Problema nos indices de arquivos (indice E2_VACHVEX nao encontrado). Acione suporte."
-			u_help (::UltMsg,, .t.)
-			U_AvisaTI (::UltMsg + " --> Falta indice no SE2 para exclusao de movto da conta corrente de associados na rotina " + procname ())
-		endif
-		if _lContinua
-			se2 -> (dbOrderNickName ("E2_VACHVEX"))  // E2_FILIAL+E2_VACHVEX
-			if se2 -> (dbseek (xfilial ("SE2") + ::ChaveExt (), .F.))
-
-				// Descalculo de correcao monetaria nao abre tela para excluir titulo manualmente.
-				if ::TM $ ::TMCorrMonC + ::TMCorrMonD
-
-					if se2 -> e2_saldo != se2 -> e2_valor
-						::UltMsg += "Este lancamento nao sera' excluido, pois o titulo relacionado a este movimento no modulo financeiro tem saldo diferente do valor original e nao foi excluido."
-						u_help (::UltMsg,, .t.)
-						_lContinua = .F.
-					else
-						reclock ("SE2", .F.)
-						se2 -> (dbdelete ())
-						msunlock ()
-					endif
-				else
-
-					_aAutoSE2 := {}
-					aadd (_aAutoSE2, {"E2_PREFIXO", se2 -> e2_prefixo, NIL})
-					aadd (_aAutoSE2, {"E2_NUM"    , se2 -> e2_num,     Nil})
-					aadd (_aAutoSE2, {"E2_PARCELA", se2 -> e2_parcela, Nil})
-					aadd (_aAutoSE2, {"E2_TIPO"   , se2 -> e2_tipo,    Nil})
-					aadd (_aAutoSE2, {"E2_FORNECE", se2 -> e2_fornece, Nil})
-					aadd (_aAutoSE2, {"E2_LOJA"   , se2 -> e2_loja,    Nil})
-					_aAutoSE2 := aclone (U_OrdAuto (_aAutoSE2))
-					//u_log (_aAutoSE2)
-					lMsErroAuto	:=	.f.
-					lMsHelpAuto	:=	.f.
-					dbselectarea ("SE2")
-					dbsetorder (1)
-					Processa({|| MsExecAuto({ | x,y,z | Fina050(x,y,z) }, _aAutoSE2,, 5)},"Excluindo titulo correspondente no financeiro.")
-					if lMsErroAuto
-						::UltMsg += U_LeErro (memoread (NomeAutoLog ())) + "; Este lancamento nao sera' excluido, pois o titulo relacionado a este movimento no modulo financeiro continua existindo."
-						u_help (::UltMsg,, .t.)
-						_lContinua = .F.
-					endif
-				endif
-			endif
-		//endif
-	endif
-
-	// Estorna movimentacao do SE5, caso exista.
-	if _lContinua .and. ::OQueGera () == "DP+SE5_R"
-		if ! U_TemNick ("SE5", "E5_VACHVEX")
-			_lContinua = .F.
-			::UltMsg += "Problema nos indices de arquivos. Acione suporte."
-			u_help (::UltMsg,, .t.)
-			U_AvisaTI (::UltMsg + " --> Falta indice no SE5 para exclusao de movto da conta corrente de associados na rotina " + procname ())
-		endif
-		if _lContinua
-			se5 -> (dbOrderNickName ("E5_VACHVEX"))  // E5_FILIAL+E5_VACHVEX
-			if se5 -> (dbseek (xfilial ("SE5") + ::ChaveExt (), .F.))
-				u_log ('vou gerar cancelamento do SE5 a receber')
-				if ! U_GeraSE5 ("CR", ::DtMovto, ::Valor, ::Histor, ::Banco, ::Agencia, ::NumCon, ::ChaveExt (), @::UltMsg, iif (type ('_lCtOnLine') == 'L', _lCtOnLine, .F.), '110104', ::FormPag)
-					::UltMsg += "Erro no estorno do movimento financeiro a receber. Este registro nao sera' excluido."
-					_lContinua = .F.
-				endif
-			endif
-		endif
-	endif
-	*/
-
-	// Exclui movimentacao relacionada no financeiro, caso exista.
 	if _lContinua
 
 		// Gera uma lista de registros relacionados em outras tabelas.
@@ -655,7 +584,6 @@ METHOD Exclui () Class ClsCtaCorr
 			case ::RegRelac [_nRegRelac, 1] == 'SE5'
 				se5 -> (dbgoto (::RegRelac [_nRegRelac, 2]))
 				U_Log2 ('debug', 'Vou gerar cancelamento do SE5')
-			//	if ! U_GeraSE5 ("CR", se5 -> e5_data, se5 -> e5_valor, se5 -> e5_histor, se5 -> e5_banco, se5 -> e5_agencia, se5 -> e5_conta, se5 -> e5_vachvex, @::UltMsg, .T., se5 -> e5_naturez, se5 -> e5_vaszifp)
 				if ! ::ExcluiSE5 ()
 					::UltMsg += "Erro no estorno do movimento financeiro a receber. Este registro nao sera' excluido."
 					_lContinua = .F.
@@ -682,7 +610,7 @@ METHOD Exclui () Class ClsCtaCorr
 	endif
 
 	// Atualiza saldo do Associado
-	if _lContinua                                          
+	if _lContinua
 		if upper(alltrim(getenvserver())) == 'ROBERT' .and. dtos (date ()) == '20190205'
 			// hoje to re-re-refazendo distr.sobras....
 		else
@@ -2155,7 +2083,8 @@ METHOD RegRelac () Class ClsCtaCorr
 			.and. se2 -> e2_prefixo == ::Serie ;
 			.and. se2 -> e2_num     == ::Doc ;
 			.and. se2 -> e2_parcela == ::Parcela
-			aadd (_aRRelac, {"SE2", se2 -> (recno ()), se2 -> e2_tipo})
+//			aadd (_aRRelac, {"SE2", se2 -> (recno ()), se2 -> e2_tipo})
+			aadd (_aRRelac, {"SE2", se2 -> (recno ()), se2 -> e2_tipo, se2 -> e2_vencrea})
 			se2 -> (dbskip ())
 		enddo
 		//U_Log2 ('debug', 'leitura 1 do SE2:')
@@ -2183,26 +2112,8 @@ METHOD RegRelac () Class ClsCtaCorr
 	endif
 
 	if ::OQueGera () $ 'DP+SE5_R/NDF+DP_Forn'
-/*
-		se5 -> (dbsetorder (7))  // E5_FILIAL, E5_PREFIXO, E5_NUMERO, E5_PARCELA, E5_TIPO, E5_CLIFOR, E5_LOJA, E5_SEQ, R_E_C_N_O_, D_E_L_E_T_
-		se5 -> (dbseek (::Filial + ::Serie + ::Doc + ::Parcela + 'DP ' + ::Assoc + ::Loja, .T.))
-		do while ! se5 -> (eof ()) ;
-			.and. se5 -> e5_filial  == ::Filial ;
-			.and. se5 -> e5_prefixo == ::Serie ;
-			.and. se5 -> e5_numero  == ::Doc ;
-			.and. se5 -> e5_parcela == ::Parcela
-			.and. se5 -> e5_tipo    == 'DP '
-			.and. se5 -> e5_clifor  == ::Assoc ;
-			.and. se5 -> e5_loja    == ::Loja
-			aadd (_aRRelac, {"SE5", se5 -> (recno ()), se5 -> e5_tipo})
-			se5 -> (dbskip ())
-		enddo
-		U_Log2 ('debug', 'leitura 1 do SE5:'')
-		U_Log2 ('debug', _aRRelac)
-
 		// Em tempos antigos, a chave nao era completa (nao tinha o campo ZI_PARCELA) entao era usado o campo E5_VACHVEX.
 		// Vou pesquisar por ele tambem para contemplar todas as situacoes.
-*/
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += "SELECT 'SE5', R_E_C_N_O_, E5_TIPO, E5_DATA"
