@@ -13,44 +13,46 @@
 // #Modulos           #TODOS
 //
 // Historico de alteracoes:
-// 27/03/2009 - Robert - Criado inicializador para o campo ZZ7_SEQ
-// 19/05/2009 - Robert - Criado inicializador para o campo ZX5_CHAVE
-// 14/10/2009 - Robert - Criado inicializador para o campo C5_VAEST
-//                     - Compatibilizacao com DBF para uso em Livramento.
-//                     - Atualiza nome e estado do cliente quando efetivacao de pre-pedidos.
-// 18/01/2010 - Robert - Criado inicializador para o campo ZE_CARGA.
-// 14/10/2010 - Robert - Criados inicializadores para os campos 'Coop. origem' de diversas tabelas.
-// 15/10/2010 - Robert - Criado inicializador para o campo C5_VATOTST.
-// 11/11/2010 - Robert - Novos usuarios para campos de 'coop.origem'.
-// 24/01/2011 - Robert - Ajustes p/ campos *_VACORIG e ZE_SAFRA.
-// 01/03/2011 - Robert - Criado inicializador para o campo ZI_DESCMOV.
-// 29/05/2011 - Robert - Criado inicializador para o campo ZZX_NOME.
-// 04/01/2012 - Robert - Criado inicializador para o campo CR_VANUSER e CR_VANFORN.
-// 21/02/2012 - Robert - Nao usa mais a funcao PswSeek para buscar nomes no inicializador do campo CR_VANUSER.
-// 28/05/2012 - Robert - Tratamentos para campos do SCR quando A.E. e nao somente P.C.
-// 01/10/2012 - Robert - Inicializador do ZZ7_SEQ passa a considerar registros deletados.
-// 02/08/2014 - Robert - Inicializador para o campo C5_VASTAT.
-// 13/08/2014 - Catia  - Tratamento para buscar descricao do SX5 de um campo virtual
-// 21/11/2014 - Robert - Criato tratamento para campo DB_VASLDLO.
-// 14/08/2015 - Robert - Melhorado retorno para coluna C5_VASTAT (lib coml, NF gerada)
-// 12/09/2015 - Robert - Removidos tratamentos (jah desabilitados) de ST customizada.
-// 29/09/2015 - Robert - Incluido Rafael na lista de nomes de compradores.
-// 09/10/2015 - Robert - Tratamento para o campo DAK_VASTFU
-// 15/10/2015 - Robert - Campo C5_VASTAT passa a ser gerado com base na funcao VA_FSTATUS_PED_VENDA do SQL.
-// 26/10/2015 - Catia  - Campo ZZX_NOME - quando era CTE estava buscando o nome de um cliente e nao de um fornecedor
-// 20/11/2015 - Robert - Inicializador para o campo ZZ6_PREX.
-// 23/07/2016 - Robert - Campo ZAF_ENSAIO.
-// 28/02/2017 - Robert - Campo ZAG_SEQ.
-// 09/03/2017 - Robert - Inic.padrao campo C5_NUM (soh enquanto estiver tendo problema com a funcao GetSX8Num)
-// 13/12/2017 - Robert - Tratamento para o campo Z9_SEQ.
-// 13/09/2018 - Andre  - Tratamento para o campo C7_CODPRF
-// 15/01/2019 - Andre  - Tratamento para o campo CR_DATAMIN
-// 20/05/2019 - Andre  - Tratamento para gatilho na tela de retorno no campo Nome do C5_NOMECLI
-// 19/09/2019 - Robert - Sugere CC cfe.grupo do usuario no campo D3_CC
-// 25/09/2019 - Andre  - Adicionado codigos do Joel e Marcus no inicializador padrão.
-// 10/12/2019 - Robert - Desabilitado tratamento para o D3_CC
+// 27/03/2009 - Robert  - Criado inicializador para o campo ZZ7_SEQ
+// 19/05/2009 - Robert  - Criado inicializador para o campo ZX5_CHAVE
+// 14/10/2009 - Robert  - Criado inicializador para o campo C5_VAEST
+//                      - Compatibilizacao com DBF para uso em Livramento.
+//                      - Atualiza nome e estado do cliente quando efetivacao de pre-pedidos.
+// 18/01/2010 - Robert  - Criado inicializador para o campo ZE_CARGA.
+// 14/10/2010 - Robert  - Criados inicializadores para os campos 'Coop. origem' de diversas tabelas.
+// 15/10/2010 - Robert  - Criado inicializador para o campo C5_VATOTST.
+// 11/11/2010 - Robert  - Novos usuarios para campos de 'coop.origem'.
+// 24/01/2011 - Robert  - Ajustes p/ campos *_VACORIG e ZE_SAFRA.
+// 01/03/2011 - Robert  - Criado inicializador para o campo ZI_DESCMOV.
+// 29/05/2011 - Robert  - Criado inicializador para o campo ZZX_NOME.
+// 04/01/2012 - Robert  - Criado inicializador para o campo CR_VANUSER e CR_VANFORN.
+// 21/02/2012 - Robert  - Nao usa mais a funcao PswSeek para buscar nomes no inicializador do campo CR_VANUSER.
+// 28/05/2012 - Robert  - Tratamentos para campos do SCR quando A.E. e nao somente P.C.
+// 01/10/2012 - Robert  - Inicializador do ZZ7_SEQ passa a considerar registros deletados.
+// 02/08/2014 - Robert  - Inicializador para o campo C5_VASTAT.
+// 13/08/2014 - Catia   - Tratamento para buscar descricao do SX5 de um campo virtual
+// 21/11/2014 - Robert  - Criato tratamento para campo DB_VASLDLO.
+// 14/08/2015 - Robert  - Melhorado retorno para coluna C5_VASTAT (lib coml, NF gerada)
+// 12/09/2015 - Robert  - Removidos tratamentos (jah desabilitados) de ST customizada.
+// 29/09/2015 - Robert  - Incluido Rafael na lista de nomes de compradores.
+// 09/10/2015 - Robert  - Tratamento para o campo DAK_VASTFU
+// 15/10/2015 - Robert  - Campo C5_VASTAT passa a ser gerado com base na funcao VA_FSTATUS_PED_VENDA do SQL.
+// 26/10/2015 - Catia   - Campo ZZX_NOME - quando era CTE estava buscando o nome de um cliente e nao de um fornecedor
+// 20/11/2015 - Robert  - Inicializador para o campo ZZ6_PREX.
+// 23/07/2016 - Robert  - Campo ZAF_ENSAIO.
+// 28/02/2017 - Robert  - Campo ZAG_SEQ.
+// 09/03/2017 - Robert  - Inic.padrao campo C5_NUM (soh enquanto estiver tendo problema com a funcao GetSX8Num)
+// 13/12/2017 - Robert  - Tratamento para o campo Z9_SEQ.
+// 13/09/2018 - Andre   - Tratamento para o campo C7_CODPRF
+// 15/01/2019 - Andre   - Tratamento para o campo CR_DATAMIN
+// 20/05/2019 - Andre   - Tratamento para gatilho na tela de retorno no campo Nome do C5_NOMECLI
+// 19/09/2019 - Robert  - Sugere CC cfe.grupo do usuario no campo D3_CC
+// 25/09/2019 - Andre   - Adicionado codigos do Joel e Marcus no inicializador padrão.
+// 10/12/2019 - Robert  - Desabilitado tratamento para o D3_CC
 // 29/09/2020 - Cláudia - Incluido o novo usuário do alexandre na validação de liberação de doc. GLPI: 8369
+// 22/08/2022 - Robert  - Criado inicializador de browse para o campo ZI_VENCTO (GLPI 12503)
 //
+
 // -------------------------------------------------------------------------------------------------------
 user function VA_IniPd (_sCampo, _lBrowse)
 	local _xRet     := NIL
@@ -354,6 +356,13 @@ user function VA_IniPd (_sCampo, _lBrowse)
 			_sQuery += "    and ZX5_10COD  = '" + szi -> zi_tm + "'"
 			_xRet = U_RetSQL (_sQuery)
 
+
+		case _sCampo == "ZI_VENCTO"
+			if _lBrowse
+				_xRet = POSICIONE("SE2",6,ZI_FILIAL+zi_assoc+zi_lojasso+ZI_SERIE+ZI_DOC+ZI_PARCELA,"E2_VENCTO")
+			else
+				_xRet = ctod ('')
+			endif
 
 
 		case _sCampo == "ZX5_CHAVE"
