@@ -41,7 +41,8 @@
 //                        parametro VA_RAPEL quando processo concluido. GLPI: 8916
 // 23/05/2022 - Claudia - Ajuste da rotina de gravação de rapel. GLPI: 8916
 // 11/07/2022 - Claudia - Incluida gravação de nota e serie na amarração produto x fornecedor de transferencias 
-// 22/08/2022 - Claudia - Incluida validação para nao gravar registro no conta rapel se não houver valor.
+// 22/08/2022 - Claudia - Incluida validação para nao gravar registro no conta rapel 
+//                        se não houver valor. GLPI: 8916
 //
 // --------------------------------------------------------------------------------------------------------------
 user function M460Fim ()
@@ -363,6 +364,16 @@ Static Function _AtuZC0()
 			_oEvento:Alias     = 'ZC0'
 			_oEvento:Texto     = "Inclusão de rapel por emissão de NF"
 			_oEvento:CodEven   = 'ZC0001'
+			_oEvento:Cliente   = sf2->f2_cliente
+			_oEvento:LojaCli   = sf2->f2_loja
+			_oEvento:NFSaida   = sf2->f2_doc
+			_oEvento:SerieSaid = sf2->f2_serie
+			_oEvento:Grava()
+		else
+			_oEvento := ClsEvent():New ()
+			_oEvento:Alias     = 'ZC0'
+			_oEvento:Texto     = "ERRO na inclusão de rapel emissãoNF"
+			_oEvento:CodEven   = 'ZC0002'
 			_oEvento:Cliente   = sf2->f2_cliente
 			_oEvento:LojaCli   = sf2->f2_loja
 			_oEvento:NFSaida   = sf2->f2_doc
