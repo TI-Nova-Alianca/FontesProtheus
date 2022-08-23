@@ -74,6 +74,7 @@
 // 05/06/2022 - Robert  - Adicionada verificacao 90 (GLPI 12133)
 // 07/06/2022 - Robert  - Ajustes query verif.06 que concatenava com a anterior.
 // 08/08/2022 - Robert  - Melhoria formatacao HTML para envio por e-mail.
+// 23/08/2022 - Robert  - Criada sugestao para a verificacao 42 (GLPI 12134)
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -185,11 +186,11 @@ METHOD ConvHTM (_nMaxLin) Class ClsVerif
 
 	if ! empty (::Sugestao)
 	//	_sRet += chr (13) + chr (10) + alltrim (::Sugestao) + chr (13) + chr (10)
-		_sRet += '</br></br>Sugestao: ' + alltrim (::Sugestao) + '</br>'
+		_sRet += chr (13) + chr (10) + '</br></br>Sugestao: ' + alltrim (::Sugestao) + '</br>'
 	endif
 	if ! empty (::Query)
 	//	_sRet += chr (13) + chr (10) + 'Query para verificacao: ' + alltrim (::Query) + chr (13) + chr (10)
-		_sRet += '</br></br>Query para verificacao: ' + alltrim (::Query) + '</br>'
+		_sRet += chr (13) + chr (10) + '</br></br>Query para verificacao: ' + alltrim (::Query) + '</br>'
 	endif
 
 Return _sRet
@@ -1751,9 +1752,13 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query += " ORDER BY EMISSAO_OP"	
 			
 		case ::Numero == 42
-			::Setores    = 'CUS'
+			::Setores    = 'CUS/INF'
 			::Descricao  = "Quantidade ou valor negativo para fechamento"
-			::Sugestao   = ""
+			::Sugestao   := "Toda vez que é rodado o custo médio, o sistema grava na tabela SB2 os campos B2_QFIM e B2_VFIM1 que são, respectivamente, quantidade e valor (custo na moeda 1) que ele encontrou na data final do cálculo."
+			::Sugestao   += "Se foi rodado o médio automaticamente à noite, o cálculo é feito até a data atual, e esses seriam a quantidade e valor que o sistema apurou até o momento."
+			::Sugestao   += "Se fo executado o cálculo para fazer o fechamento de estoque, então serão os valores apurados até o dia 31 do mês a ser fechado."
+			::Sugestao   += "Essa quantidade e valor devem ser os mesmos a que você chegará se emitir o kardex diário (MATR900)."
+			::Sugestao   += "Para saber o motivo de ficarem negativos, você teria que emitir esse relatório para analisar, preferencialmente um almoxarifado por vez. Lembrar de parametrizar o intervalo de datas desde o primeiro dia do mês que está aberto no estoque. Já a data final, depende de qual cálculo de médio foi realizado antes de consultar essa verificação (se foi até a data atual, ou até o último dia do mês a encerrar)."
 			::Query := ""
 			::Query += " SELECT"
 			::Query += "	'Quantidade ou valor negativo para fechamento' AS PROBLEMA"

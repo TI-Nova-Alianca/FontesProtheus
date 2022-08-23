@@ -19,6 +19,7 @@
 //                     - Inseridas tags para catalogo de fontes.
 // 18/11/2020 - Robert - Maioria das validacoes estava desabilitada (para testes) desde 10/09/2020 e esqueci assim.
 // 31/08/2021 - Robert - Melhorias controle de loop de execucao e monitor de performance (GLPI 10876).
+// 23/08/2022 - Robert - Apenas alguns desvios condigionais para simulacoes (GLPI 12134)
 //
 
 // --------------------------------------------------------------------------
@@ -37,15 +38,14 @@ user function BatVerif ()
 	_nVerif = 1
 
 
-	if "ROBERT" $ upper (GetEnvServer()) .and. dtos (date ()) == '20210831'  // Simulacoes
-		_nVerif = 60
+	if "ROBERT" $ upper (GetEnvServer()) .and. dtos (date ()) == '20220823'  // Simulacoes
+		_nVerif = 42
 	endif
 
 
 	do while .T.
 		U_Log2 ('info', 'Vou ver se devo executar a verificacao ' + cvaltochar (_nVerif))
 		_oVerif := ClsVerif ():New (_nVerif)
-		//if _oVerif:Numero == 0 .or. empty (_oVerif:Descricao)  // Chegou ao final da lista
 		if _nVerif > _oVerif:UltVerif  // Jah passei por todas.
 			U_Log2 ('info', 'Cheguei ao final da lista')
 			exit
@@ -53,6 +53,11 @@ user function BatVerif ()
 			if _oVerif:Ativa .and. _oVerif:ViaBatch
 				u_log2 ('info', 'Verificacao ' + cvaltochar (_oVerif:Numero) + ' (' + _oVerif:Descricao + ') --> ' + _oVerif:Query)
 				
+				if _nVerif != 42 .and. "ROBERT" $ upper (GetEnvServer()) .and. dtos (date ()) == '20220823'  // Simulacoes
+					U_Log2 ('aviso', '[' + procname () + ']caindo fora do loop (testes)')
+					exit
+				endif
+
 				// Acompanhamento de performance de execucao de rotinas
 				_sChvPerfM = 'BatVerif' + cvaltochar (_oVerif:Numero) + '_F' + cFilAnt
 				U_PerfMon ('I', _sChvPerfM)
@@ -116,7 +121,7 @@ static function _Envia (_oVerif, _aGrupos, _sMsg)
 	local _aEMails := {}
 	local _nLiber  := 0
 
-	if "ROBERT" $ upper (GetEnvServer()) .and. dtos (date ()) == '20210831'  // Simulacoes
+	if "ROBERT" $ upper (GetEnvServer()) .and. dtos (date ()) == '20220823'  // Simulacoes
 		U_Log2 ('debug', 'Agora estaria enviando aviso para:')
 		U_Log2 ('debug', _aGrupos)
 		U_Log2 ('debug', _sMsg)
