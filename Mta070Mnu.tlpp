@@ -11,6 +11,8 @@
 // #TabelasPrincipais #SA6
 // #Modulos           #FIN
 
+
+
 // --------------------------------------------------------------------------
 user function Mta070Mnu ()
 	local _aRotAdic := {}
@@ -26,7 +28,7 @@ return
 user function A070Flx ()
 	local _lContinua := .T.
 
-	if _lContinua .and. sa6 -> a6_cod != '111'
+	if _lContinua .and. sa6 -> a6_cod != '997'
 		u_help ("Esta nao e' a conta bancaria criada para fluxo de caixa.",, .t.)
 		_lContinua = .F.
 	endif
