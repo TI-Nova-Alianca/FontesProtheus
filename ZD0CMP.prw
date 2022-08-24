@@ -25,13 +25,12 @@ User Function ZD0CMP()
     u_logIni()
     
     _ValidPerg()
-    Pergunte(cPerg,.T.)  
-    dDataIni := mv_par01
-    dDataFin := mv_par02
+    If Pergunte(cPerg,.T.)  
+        dDataIni := mv_par01
+        dDataFin := mv_par02
 
-    u_log2('aviso', 'Pagar.me compensação:' + DTOC(mv_par01) +" até "+ DTOC(mv_par02))
-    
-    if mv_par04 == 1
+        u_log2('aviso', 'Pagar.me compensação:' + DTOC(mv_par01) +" até "+ DTOC(mv_par02))
+        
         _oSQL := ClsSQL():New ()  
         _oSQL:_sQuery := "" 		
         _oSQL:_sQuery += " SELECT "
@@ -41,6 +40,7 @@ User Function ZD0CMP()
         _oSQL:_sQuery += "    ,ZD0_PARCEL "
         _oSQL:_sQuery += "    ,ZD0_VLRLIQ " 
         _oSQL:_sQuery += "    ,ZD0_TAXTOT "
+        _oSQL:_sQuery += "    ,ZD0_RID "
         _oSQL:_sQuery += " FROM " + RetSQLName ("ZD0") 
         _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
         _oSQL:_sQuery += " AND ZD0_FILIAL   = '" + xFilial('ZD0') + "' "
@@ -72,8 +72,27 @@ User Function ZD0CMP()
             _oSQL:_sQuery += " AND E1_TIPO    <> 'RA' "
             _aSE1 := _oSQL:Qry2Array ()
 
-            If len(_aSE1) > 0
+            _oSQL := ClsSQL():New ()  
+            _oSQL:_sQuery := "" 		
+            _oSQL:_sQuery += " SELECT "
+            _oSQL:_sQuery += " 	   R_E_C_N_O_ "
+            _oSQL:_sQuery += "    ,E1_FILIAL "
+            _oSQL:_sQuery += "    ,E1_PREFIXO "
+            _oSQL:_sQuery += "    ,E1_NUM "
+            _oSQL:_sQuery += "    ,E1_PARCELA "
+            _oSQL:_sQuery += "    ,E1_CLIENTE "
+            _oSQL:_sQuery += "    ,E1_LOJA "
+            _oSQL:_sQuery += "    ,E1_TIPO "
+            _oSQL:_sQuery += "    ,E1_VALOR"
+            _oSQL:_sQuery += " FROM " + RetSQLName ("SE1") 
+            _oSQL:_sQuery += " WHERE D_E_L_E_T_= '' "
+            _oSQL:_sQuery += " AND E1_FILIAL   = '" + _aZD0[_x, 2] + "' "
+            _oSQL:_sQuery += " AND E1_VAIDT    = '" + _aZD0[_x, 3] + "' "
+            _oSQL:_sQuery += " AND E1_PARCELA  = '" + _aZD0[_x, 4] + "' "
+            _oSQL:_sQuery += " AND E1_TIPO     = 'RA' "
+            _aRA := _oSQL:Qry2Array ()
 
+            If len(_aSE1) > 0 .and. len(_aRA) > 0
                 PERGUNTE("FIN330",.F.)
                 lContabiliza    := (MV_PAR09 == 1) // Contabiliza On Line ?
                 lDigita         := (MV_PAR07 == 1) // Mostra Lanc Contab ?
@@ -81,8 +100,8 @@ User Function ZD0CMP()
             
                 //NF X RA
                 aRecSE1    := { _aSE1[ 1, 1] }
-                aRecRA     := { _aZD0[_x, 1] }
-                nSaldoComp := _aZD0[_x, 5]
+                aRecRA     := { _aRA[ 1, 1] }
+                nSaldoComp := _aRA[ 1, 9]
 
                 Begin Transaction
 
@@ -91,8 +110,7 @@ User Function ZD0CMP()
                     lRet := .F.
                     DisarmTransaction()
                 else
-                    u_help(" Compensação realizada com sucesso!")
-                    u_log2('aviso', 'Compensação realizada com sucesso! RECNOs: NF:' + alltrim(str(_aSE1[ 1, 1])) + " RA:" + alltrim(str(_aZD0[_x, 1])) )
+                    u_log2('aviso', 'Compensação realizada com sucesso! RECNOs: NF:' + alltrim(str(_aSE1[ 1, 1])) + " RA:" + alltrim(str(_aRA[ 1, 1])) )
 
                     // Realiza movimento da taxa
                     // Define banco
@@ -145,47 +163,36 @@ User Function ZD0CMP()
                     If lMsErroAuto
                         u_log(memoread (NomeAutoLog ()))
                         _sErro := ALLTRIM(memoread (NomeAutoLog ()))
-                        u_log2('erro', "Movimentação não realizada. RECNO. NF:" + alltrim(str(_aSE1[ 1, 1])) + " RA:" + alltrim(str(_aZD0[_x, 1])) )
+                        u_log2('erro', "Movimentação não realizada. RECNO. NF:" + alltrim(str(_aSE1[ 1, 1])) + " RA:" + alltrim(str(_aRA[ 1, 1])) )
                         u_log2('erro', _sErro )                       
                     Else
-                        u_log2('aviso', "Movimentação realizada. RECNO. NF:" + alltrim(str(_aSE1[ 1, 1])) + " RA:" + alltrim(str(_aZD0[_x, 1])) )
+                        u_log2('aviso', "Movimentação realizada. RECNO. NF:" + alltrim(str(_aSE1[ 1, 1])) + " RA:" + alltrim(str(_aRA[ 1, 1])) )
+
+                        _oSQL:= ClsSQL ():New ()
+                        _oSQL:_sQuery := ""
+                        _oSQL:_sQuery += " UPDATE " + RetSQLName ("ZD0") + " SET ZD0_STABAI = 'B' "
+                        _oSQL:_sQuery += " WHERE D_E_L_E_T_=''"
+                        _oSQL:_sQuery += " AND ZD0_FILIAL = '" + _aZD0[_x,2]   + "'"
+                        _oSQL:_sQuery += " AND ZD0_TID    = '" + _aZD0[_x,3]   + "'"
+                        _oSQL:_sQuery += " AND ZD0_RID    = '" + _aZD0[_x,7]   + "'"
+                        _oSQL:Log ()
+                        _oSQL:Exec ()
+
                     Endif
                     
                     U_GravaSXK (cPerg, "01", "2", 'D' )
                     U_GravaSXK (cPerg, "04", "2", 'D' )
 
                     U_SalvaSX1 (cPerg, _aBkpSX1)  // Restaura parametros da rotina  
+
+                    u_log2('aviso', 'Baixa de taxa realizada com sucesso! RECNOs: NF:' + alltrim(str(_aSE1[ 1, 1])) + " RA:" + alltrim(str(_aRA[ 1, 1])) )
+                    u_help(" Compensação realizada com sucesso!")
                 EndIf
 
                 End Transaction
             EndIf
         Next
- 
-    else
-        
-
-        PERGUNTE("FIN330",.F.)
-        lContabiliza    := (MV_PAR09 == 1) // Contabiliza On Line ?
-        lDigita         := (MV_PAR07 == 1) // Mostra Lanc Contab ?
-        lAglutina       := .F.
-    
-        //NF X RA
-        aRecSE1    := { 630763 }
-        aRecRA     := { 632235 }
-        nSaldoComp := 512.8
-        aEstorno   := {}
-        AADD(aEstorno,{ "10 2806222  BRA 01"  }) 
-
-        Begin Transaction
-
-        If !MaIntBxCR(3, aRecSE1,,aRecRA,,{lContabiliza,lAglutina,lDigita,.F.,.F.,.F.},,aEstorno,,,nSaldoComp,,,, nTaxaCM, aTxMoeda)
-            u_log2('erro', 'Erro na compensação dos títulos! RECNOs:')
-            lRet := .F.
-            DisarmTransaction()
-        EndIf
-
-        End Transaction
-    endif
+    EndIf
     RestArea(aArea)
 Return
 //
@@ -194,10 +201,9 @@ Return
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT          TIPO TAM DEC VALID F3     Opcoes                      Help
-    aadd (_aRegsPerg, {01, "Data Inicial ", "D", 8, 0,  "",   "   ", {},                         		 ""})
-    aadd (_aRegsPerg, {02, "Data Final   ", "D", 8, 0,  "",   "   ", {},                         		 ""})
-    aadd (_aRegsPerg, {03, "Id Transacao ", "C",12, 0,  "",   "   ", {},                         		 ""})
-    aadd (_aRegsPerg, {04, "Tipo.Mov     ", "N", 1, 0,  "",   "   ", {"Compensação", "Estorno"},         ""})
+    aadd (_aRegsPerg, {01, "Data Inicial ", "D",  8, 0,  "",   "   ", {},                         		 ""})
+    aadd (_aRegsPerg, {02, "Data Final   ", "D",  8, 0,  "",   "   ", {},                         		 ""})
+    aadd (_aRegsPerg, {03, "Id Transacao ", "C", 15, 0,  "",   "   ", {},                         		 ""})
 
     U_ValPerg (cPerg, _aRegsPerg)
 Return

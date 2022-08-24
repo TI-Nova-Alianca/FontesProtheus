@@ -16,33 +16,23 @@
 #include "protheus.ch"
 #include "tbiconn.ch"
 
-User Function ZD0RAS(_sTipo, dDataIni, dDataFin)
+User Function ZD0RAS(dDataIni, dDataFin)
     Private cPerg := "ZD0RAS"
 	
     u_logIni()
     
-    Do Case
-        Case _sTipo == '3'
-            _ValidPerg()
-            Pergunte(cPerg,.T.)  
-            dDataIni := mv_par01
-            dDataFin := mv_par02
+    _ValidPerg()
+    If Pergunte(cPerg,.T.)  
+        dDataIni := mv_par01
+        dDataFin := mv_par02
 
-            MsAguarde({|| _GeraTitulos(_sTipo, dDataIni, dDataFin)}, "Aguarde...", "Gerando Títulos RA's...")
-
-        Case _sTipo == '2'
-            MsAguarde({|| _GeraTitulos(_sTipo, dDataIni, dDataFin)}, "Aguarde...", "Gerando Títulos RA's...")
-
-        Otherwise
-            u_log2('aviso', 'Iniciada a criação dos titulos RAs!')
-            _GeraTitulos(_sTipo, dDataIni, dDataFin)  
-
-    EndCase
+        MsAguarde({|| _GeraTitulos(dDataIni, dDataFin)}, "Aguarde...", "Gerando Títulos RA's...")
+    EndIf
 Return
 //
 // -----------------------------------------------------------------------------------
 // Gera titulos RA's para compensação
-Static Function _GeraTitulos(_sTipo, dDataIni, dDataFin)
+Static Function _GeraTitulos(dDataIni, dDataFin)
     Local _aZD0     := {}
     Local _aAutoSE1 := {}
     Local _x        := 0
@@ -53,21 +43,24 @@ Static Function _GeraTitulos(_sTipo, dDataIni, dDataFin)
     _oSQL:= ClsSQL ():New ()
     _oSQL:_sQuery := ""
     _oSQL:_sQuery += "	SELECT "
-    _oSQL:_sQuery += "		ZD0_FILIAL AS FILIAL "
-    _oSQL:_sQuery += "	   ,ZD0_TID AS ID_TRANSACAO "
-    _oSQL:_sQuery += "	   ,ZD0_RID AS ID_RECEBIVEL "
-    _oSQL:_sQuery += "	   ,ZD0_DTAPGT AS DATA_PGTO "
-    _oSQL:_sQuery += "	   ,ZD0_PARCEL AS PARCELA "
-    _oSQL:_sQuery += "	   ,ZD0_VLRPAR AS VALOR_PARCELA "
-    _oSQL:_sQuery += "	   ,ZD0_TAXTOT AS TAXAS "
-    _oSQL:_sQuery += "     ,ZD0_VLRLIQ AS VALOR_LIQ "
-    _oSQL:_sQuery += "	   ,ZD0_PGTMET AS METODO_PGTO "
-    _oSQL:_sQuery += "	   ,ZD0_CARDB AS BANDEIRA "
-    _oSQL:_sQuery += "	   ,ZD0_PGTTIP AS TIPO "
+    _oSQL:_sQuery += "		ZD0_FILIAL AS FILIAL "          // 1
+    _oSQL:_sQuery += "	   ,ZD0_TID AS ID_TRANSACAO "       // 2
+    _oSQL:_sQuery += "	   ,ZD0_RID AS ID_RECEBIVEL "       // 3
+    _oSQL:_sQuery += "	   ,ZD0_DTAPGT AS DATA_PGTO "       // 4
+    _oSQL:_sQuery += "	   ,ZD0_PARCEL AS PARCELA "         // 5
+    _oSQL:_sQuery += "	   ,ZD0_VLRPAR AS VALOR_PARCELA "   // 6
+    _oSQL:_sQuery += "	   ,ZD0_TAXTOT AS TAXAS "           // 7
+    _oSQL:_sQuery += "     ,ZD0_VLRLIQ AS VALOR_LIQ "       // 8
+    _oSQL:_sQuery += "	   ,ZD0_PGTMET AS METODO_PGTO "     // 9
+    _oSQL:_sQuery += "	   ,ZD0_CARDB AS BANDEIRA "         // 10
+    _oSQL:_sQuery += "	   ,ZD0_PGTTIP AS TIPO "            // 11
     _oSQL:_sQuery += "	FROM " + RetSQLName ("ZD0") + " ZD0 "
     _oSQL:_sQuery += "	WHERE ZD0.D_E_L_E_T_ = '' "
     _oSQL:_sQuery += "	AND ZD0.ZD0_FILIAL   = '" + xFilial('ZD0') + "' "
     _oSQL:_sQuery += "	AND ZD0_DTAPGT BETWEEN '" + dtos(dDataIni) + "' AND '" + dtos(dDataFin) + "' "
+    If !empty(mv_par03)
+        _oSQL:_sQuery += "	AND ZD0_TID = '" + mv_par03 + "'"
+    EndIf
     _oSQL:_sQuery += "	AND ZD0_STABAI = 'A' ""
     _oSQL:_sQuery += "	ORDER BY FILIAL, VALOR_PARCELA  DESC "
     _aZD0 := _oSQL:Qry2Array ()
@@ -113,16 +106,13 @@ Static Function _GeraTitulos(_sTipo, dDataIni, dDataFin)
             aAdd(_aAutoSE1, {"E1_ORIGEM"   , 'PAGAR.ME'             , Nil})           
             aAdd(_aAutoSE1, {"E1_HIST"     , _sHist                 , Nil})
             aAdd(_aAutoSE1, {"E1_MOEDA"    , 1                      , Nil})
-                //aAdd(_aAutoSE1, {"E1_VAIDT"    , alltrim(_aZD0[_x,2]), Nil})
 
             Begin Transaction
                 lMsErroAuto := .F.
                 MSExecAuto({|x,y| FINA040(x,y)}, _aAutoSE1, 3)
                 
                 If lMsErroAuto
-                    If _sTipo == '2'
-                        MostraErro()
-                    EndIf
+                    MostraErro()
 
                     _sErro   := ""
                     aLogAuto := GetAutoGRLog()
@@ -134,9 +124,7 @@ Static Function _GeraTitulos(_sTipo, dDataIni, dDataFin)
                     DisarmTransaction()
                     u_log2("Erro", _sErro)
                 else
-                    If _sTipo == '2'
-                        //u_help("Titulo "+ alltrim(_nTitNum) + "/10 gerado com sucesso!")
-                    EndIf
+                    u_help("Gravado título "+ alltrim(_nTitNum) + " refetente a Id Transacao " +  _aZD0[_x,2])
                     u_log2("Aviso", "Gravado título "+ alltrim(_nTitNum) + " refetente a Id Transacao " +  _aZD0[_x,2])
                 EndIf
             End Transaction   
@@ -280,8 +268,9 @@ Return _sNumero
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT          TIPO TAM DEC VALID F3     Opcoes                      Help
-    aadd (_aRegsPerg, {01, "Data Inicial ", "D", 8, 0,  "",   "   ", {},                         		 ""})
-    aadd (_aRegsPerg, {02, "Data Final   ", "D", 8, 0,  "",   "   ", {},                         		 ""})
+    aadd (_aRegsPerg, {01, "Data Inicial ", "D",  8, 0,  "",   "   ", {},                         		 ""})
+    aadd (_aRegsPerg, {02, "Data Final   ", "D",  8, 0,  "",   "   ", {},                         		 ""})
+    aadd (_aRegsPerg, {03, "Id Transação ", "C", 15, 0,  "",   "   ", {},                         		 ""})
 
     U_ValPerg (cPerg, _aRegsPerg)
 Return

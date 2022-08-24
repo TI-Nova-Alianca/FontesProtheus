@@ -129,7 +129,7 @@ Static Function _GravaPgtos(_sTipo, dDataIni, dDataFin)
             u_help("Importação finalizada com sucesso!")
             _cMens := "Deseja realizar a geração dos RA's?"
             If MsgYesNo(_cMens,"ATENÇÃO","YESNO")
-                u_ZD0RAS(_sTipo, dDataIni, dDataFin)
+                u_ZD0RAS(dDataIni, dDataFin)
             EndIf
         else
             u_log2('aviso', 'Importação finalizada com sucesso!')
