@@ -122,18 +122,25 @@ Static Function _GravaPgtos(_sTipo, dDataIni, dDataFin)
             Else
                 _lContinua := .F.
                 u_log2('aviso', 'Transação ' + alltrim(_sIdTrans) + ' Recebível:'+ alltrim(_sId) + ' já gravada no sistema.')
-            EndIf
-            
+            EndIf            
         Next
+        // If _sTipo == '2'
+        //     u_help("Importação finalizada com sucesso!")
+        //     _cMens := "Deseja realizar a geração dos RA's?"
+        //     If MsgYesNo(_cMens,"ATENÇÃO","YESNO")
+        //         u_ZD0RAS(dDataIni, dDataFin)
+        //     EndIf
+        // else
+        //     u_log2('aviso', 'Importação finalizada com sucesso!')
+        // EndIf
         If _sTipo == '2'
-            u_help("Importação finalizada com sucesso!")
-            _cMens := "Deseja realizar a geração dos RA's?"
-            If MsgYesNo(_cMens,"ATENÇÃO","YESNO")
-                u_ZD0RAS(dDataIni, dDataFin)
-            EndIf
+            u_help('Importação finalizada!')
         else
-            u_log2('aviso', 'Importação finalizada com sucesso!')
+            u_log2('aviso', 'Importação finalizada!')
         EndIf
+        // Emite relatório da importação
+        U_ZD0RIMP(mv_par01, mv_par02)
+
     EndIf
 Return
 //
