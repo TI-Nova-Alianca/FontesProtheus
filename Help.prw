@@ -31,6 +31,7 @@
 // 20/02/2022 - Robert  - Variavel _sErros (publica do web service) renomeada para _sErroWS
 // 15/07/2022 - Robert  - Acrescentados mais niveis de procname() no titulo da janela de avisos.
 // 19/08/2022 - Robert  - Melhoria para uso com telnet (funcao vtAlert)
+// 25/08/2022 - Robert  - Melhoria para uso com telnet (funcao vtAlert)
 //
 
 // --------------------------------------------------------------------------
@@ -52,12 +53,6 @@ user function Help (_sMsg, _sDAdic, _lHlpErro)
 		U_Log2 (iif (_lHlpErro, 'ERRO', 'Info'), '[' + procname () + '] ' + _sMsgLog)
 	endif
 	
-	// Grava na console do servico
-	//ConOut (iif (_lHlpErro, '[ERRO]', '') + '[' + procname (1) + '] ' + cValToChar (_sMsg))
-	if valtype (_sDAdic) == "C" .and. ! empty (_sDAdic)
-		//ConOut ("Dados adicionais: " + _sDAdic)
-	endif
-
 	if ! _lHlpErro
 		if type('_sMsgRetWS') == 'C'
 			_sMsgRetWS := cValToChar(_sMsg)
@@ -99,9 +94,7 @@ user function Help (_sMsg, _sDAdic, _lHlpErro)
 			msgalert (_sMsg, procname (1) + " => " + procname (2) + " => " + procname (3) + " => " + procname (4) + " => " + procname (5))
 		endif
 	else
-		U_Log2 ('debug', '[' + procname () + ']nao tenho oMainWnd')
-		U_Log2 ('debug', '[' + procname () + ']cModulo: ' + cModulo)
-		U_Log2 ('debug', '[' + procname () + ']nModulo: ' + cvaltochar (nModulo))
+		//U_Log2 ('debug', '[' + procname () + ']nao tenho oMainWnd')
 		if IsInCallStack ("SIGAACD")
 			U_Log2 ('debug', '[' + procname () + ']estou no ACD')
 			vtAlert (cValToChar (_sMsg), procname (), .t., 3000)  // Tempo em milissegundos

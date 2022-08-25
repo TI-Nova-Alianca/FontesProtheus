@@ -23,9 +23,9 @@
 // Linguagem TL++: https://tdn.totvs.com/pages/viewpage.action?pageId=334340072
 // local varJson := { "teste" : { "var1" : "oioi", "var2": "oioi2", "var3": "oioi3" }}  https://tdn.totvs.com/display/tec/Json
 
-//#include "protheus.ch"
-//#include "rwmake.ch"
-//#include "VA_INCLU.prw"
+#include "protheus.ch"
+#include "rwmake.ch"
+#include "VA_INCLU.prw"
 #include "tbiconn.ch"
 //#INCLUDE "XMLXFUN.CH"
 //#INCLUDE "apvt100.ch"
@@ -34,8 +34,8 @@
 user function robert ()
 	local _lContinua := .T.
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '01' modulo 'FIN'
-		private cModulo   := 'FIN'
+		prepare environment empresa '01' filial '01' modulo 'EST'
+		private cModulo   := 'EST'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
 		private __RelDir  := "c:\temp\spool_protheus\"
@@ -75,7 +75,6 @@ user function robert ()
 		// _SimCtb ()
 		// _FechSafr ()
 		// _ClsTrEstq ()
-		// _ClsEtiq ()
 		// _Sisdevin ()
 		// _metaf ()
 		// _exml ()
@@ -84,22 +83,15 @@ user function robert ()
 		// _elastic ()
 		// _evtXML ()
 		// _batfull ()
-		//_telnet ()
+		// _telnet ()
+		// _verif ()
+		// _ClsEtiq ()
 
-		u_help ('Nada definido.')
+		//u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
 return
-
-user function MA070Mnu ()
-	local _aRotAdic := {}
-
-	aadd (_aRotAdic, {"Saldo para fluxo", "U_SA6Flx  ()", 0, 6, 0, NIL})
-	
-	aadd (aRotina, {"Especificos"           , _aRotAdic, 0, 6, 0, NIL})
-return
-
 
 // --------------------------------------------------------------------------
 user function vtEtqAp ()
@@ -109,6 +101,8 @@ user function vtEtqAp ()
 	private _sProdEtq := ''
 	private _dDatProd := ctod ('')
 	private _oEtiq    := NIL
+	private _sTnoProd := ''
+	private _nLargTela := 40
 
 	do while _lContinua
 		
@@ -117,13 +111,13 @@ user function vtEtqAp ()
 		_sBarProd = space (14)
 		_sProdEtq = space (15)
 		_dDatProd = ctod ('')
-		_oEtiq    := NIL
+		_oEtiq    = NIL
+		_sTnoProd   = space (1)
 
-		vtSetSize (10, 40)
+		vtSetSize (10, _nLargTela)
 		terCls()
 		terSay(0, 0, "Apontamento de producao")
 
-/*
 		if _lContinua
 			terSay(1, 0, "Informe etiqueta...")
 			U_Log2 ('debug', '[' + procname () + ']Antes de ler etiq')
@@ -144,7 +138,6 @@ user function vtEtqAp ()
 			terCBuffer ()
 			U_Log2 ('debug', '[' + procname () + ']depois do terCBuffer')
 		endif
-*/
 		if _lContinua
 			terSay (5, 0, "Data producao........:")
 			VTSetGet (@_dDatProd, "_dDatProd", 5, 22, {||_ValDtProd ()})
@@ -154,15 +147,17 @@ user function vtEtqAp ()
 			U_Log2 ('debug', '[' + procname () + ']depois do terCBuffer')
 		endif
 		if _lContinua
-			terSay (5, 0, "Turno producao.......:")
-			VTSetGet (@_sTurno, "_sTurno", 5, 22, {||_ValTurno ()})
+			terSay (6, 0, "Turno producao.......:")
+			VTSetGet (@_sTnoProd, "_sTnoProd", 6, 22, {||_ValTurno ()})
 			vtRead ()
 			_lContinua = (vtLastkey() != 27)
 			terCBuffer ()
 			U_Log2 ('debug', '[' + procname () + ']depois do terCBuffer')
 		endif
 		if _lContinua
-			U_Log2 ('info', '[' + procname () + ']Campos lidos!')
+			U_Log2 ('info', '[' + procname () + ']Campos lidos. Vou gerar apontamento')
+			terSay (7, 0, "Aguarde... gerando apontamento")
+			_oEtiq:ApontaOP (_dDatProd, _sTnoProd)
 		endif
 	enddo
 return
@@ -196,7 +191,9 @@ return _lRet
 
 // --------------------------------------------------------------------------
 static function _ValCBProd ()
-	local _lRet := .T.
+	local _lRet      := .T.
+	local _sDescProd := ''
+
 	U_Log2 ('info', 'Iniciando ' + procname ())
 	U_Log2 ('debug', '[' + procname () + ']' + _sProdEtq)
 	sb1 -> (dbsetorder (5))  // B1_FILIAL, B1_CODBAR, R_E_C_N_O_, D_E_L_E_T_
@@ -210,8 +207,9 @@ static function _ValCBProd ()
 			vtAlert ("Produto nao pertence a esta etiqueta","Erro",.f.,4000)  // Tempo em milissegundos
 			_lRet = .F.
 		else
-			terSay (3, 0, sb1 -> b1_cod)
-			terSay (4, 0, sb1 -> b1_desc)
+			_sDescProd = alltrim (sb1 -> b1_cod) + ' - ' + alltrim (sb1 -> b1_desc)
+			terSay (3, 0, substr (_sDescProd, 1, _nLargTela))
+			terSay (4, 0, substr (_sDescProd, _nLargTela + 1, _nLargTela))
 	
 			// Nao vou permitir mais de um produto com mesmo codigo de barras
 			sb1 -> (dbskip ())
@@ -244,8 +242,8 @@ return _lRet
 static function _ValTurno ()
 	local _lRet := .T.
 	U_Log2 ('info', 'Iniciando ' + procname ())
-	U_Log2 ('debug', '[' + procname () + ']' + _sTurno)
-	if _lRet .and. ! _sTurno $ '12'
+	U_Log2 ('debug', '[' + procname () + ']' + _sTnoProd)
+	if _lRet .and. ! _sTnoProd $ '12'
 		u_help ("Turno deve ser 1 ou 2",, .t.)
 		_lRet = .F.
 	endif
@@ -361,9 +359,9 @@ static function _ClsEtiq ()
 //	_oEtiq:Imprime ('01')
 //	_oEtiq := ClsEtiq ():New ('2000519769')  // Etiq gerada pelo ZAG
 //	_oEtiq:Imprime ('01')
-	_oEtiq := ClsEtiq ():New ('9000240143')  // Etiq gerada pela NF de entrada 000130897
-	_oEtiq:Imprime ('97')
-	//U_Log2 ('debug', _oEtiq:PodeApont (10000, 0))
+	_oEtiq := ClsEtiq ():New ('2000529531')  // Etiq gerada pela NF de entrada 000130897
+	_oEtiq:ApontaOP (date (), '1')
+	U_Log2 ('debug', _oEtiq:UltMsg)
 return
 
 // --------------------------------------------------------------------------
@@ -424,7 +422,7 @@ static function _RevCH()
 	// U_BatRevCh ("TO", "NFE", 90)
 RETURN
 
-/*
+static function _verif ()
 	// Testes verificacoes genericas.
 	// _oVerif := ClsVerif():New (25)
 	// _oVerif:SetParam ('01', '2017')
@@ -439,21 +437,22 @@ RETURN
 	// _oVerif:SetParam ('02', '09189201001  ')
 	// _oVerif:SetParam ('03', '')
 	// _oVerif:SetParam ('04', 'z')
-	_oVerif := ClsVerif():New (90)
-	_oVerif:SetParam ('01', date () - 10)
-	_oVerif:SetParam ('02', date ())
-	_oVerif:SetParam ('03', '')
-	_oVerif:SetParam ('04', 'z')
-	//U_Log2 ('debug', '[' + procname () + ']ult ver:' + cvaltochar (_oVerif:UltVerif))
-	if _oVerif:Executa ()
-		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
-		u_log2 ('debug', _oVerif:Result)
-		//u_acolsxls (_oVerif:Result)
-	else
-		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
-	endif
+//	_oVerif := ClsVerif():New (90)
+	//	_oVerif:SetParam ('01', date () - 10)
+	//	_oVerif:SetParam ('02', date ())
+	//	_oVerif:SetParam ('03', '')
+	//	_oVerif:SetParam ('04', 'z')
+	//	//U_Log2 ('debug', '[' + procname () + ']ult ver:' + cvaltochar (_oVerif:UltVerif))
+	//	if _oVerif:Executa ()
+	//		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
+	//		u_log2 ('debug', _oVerif:Result)
+	//		//u_acolsxls (_oVerif:Result)
+	//	else
+	//		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
+	//	endif
+	u_batverif ()
 return
-*/
+
 /*
 	Private cPerg   := "VAXLS59"
 	U_GravaSX1 (cPerg, '01', '01')

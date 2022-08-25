@@ -32,6 +32,7 @@
 // 05/10/2020 - Cláudia - Incluida variavel na função zzuvl para emitir/não emitir a mensagem de aviso.
 // 17/01/2021 - Robert  - Eliminadas algumas linhas comentariadas.
 // 31/03/2022 - Robert  - Melhoria logs.
+// 25/08/2022 - Robert  - Criado tratamento para o campo ZZU_SITUAC.
 //
 
 // -------------------------------------------------------------------------------------------------------
@@ -108,6 +109,7 @@ user function ZZUA ()
 		if alltrim (GDFieldGet ("ZZU_USER", _nLinACols)) == "*"
 			GDFieldPut ("ZZU_NOME", "TODOS", _nLinACols)
 		endif
+		GDFieldPut ("ZZU_SITUAC", iif (GDFieldGet ("ZZU_VALID", _nLinACols) >= date (), 'Ativo', 'Vencido'), _nLinACols)
 	next
 	N := 1
 

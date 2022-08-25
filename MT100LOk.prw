@@ -78,7 +78,9 @@
 // 19/06/2020 - Robert  - Na validacao de safra, quando espaldeira, exigia D1_PRM99 e nao atendia caso especifico de uva bordo em espaldeira.
 // 10/05/2021 - Claudia - Retirada a chamada o programa MATA119. GLPI: 9996
 // 25/08/2021 - Claudia - Incluido validação para a chamada do programa FBTRS006.GLPI: 10802
+// 23/08/2022 - Robert  - Passa a aceitar CFOP de industrializacao para outros tipos alem de BN (GLPI 12509)
 //
+
 // -------------------------------------------------------------------------------------------------------------------------
 User Function MT100LOK()
 	local _aAreaAnt    := U_ML_SRArea ()
@@ -384,7 +386,8 @@ return _lRetSafr
 // -----------------------------------------------------------------------------------------------
 // Verificacoes sobre OP / item tipo BN
 static function _VerOPBN ()
-	local _lRet     := .T.
+	local _lRet      := .T.
+	local _sTpPrdInd := ''
 
 	if _lRet .and. empty (GDFieldGet ("D1_OP")) .and. ;
 		fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_TIPO") == "BN"    .AND. ;
@@ -421,12 +424,17 @@ static function _VerOPBN ()
 	 	endif
 	endif
 
-	if _lRet .and. alltrim (GDFieldGet ("D1_CF")) $ '1124/2124' .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_TIPO") != "BN"
-		u_help ("CFOP de industrializacao: o produto deve ser do tipo BN.")
-		_lRet = .F.
+//	if _lRet .and. alltrim (GDFieldGet ("D1_CF")) $ '1124/2124' .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_TIPO") != "BN"
+	if _lRet .and. alltrim (GDFieldGet ("D1_CF")) $ '1124/2124'
+		_sTpPrdInd = "BN/ME/PS/MP/VD"  // GLPI 12509
+		if ! fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_TIPO") $ _sTpPrdInd
+			u_help ("CFOP de industrializacao: o produto deve ser do tipo " + _sTpPrdInd,, .t.)
+			_lRet = .F.
+		endif
 	endif
 return _lRet
-//
+
+
 // ---------------------------------------------------------------------------------------------------
 // Verificacoes integracao com Fullsoft.
 static function _VerFull (_lTransFil)
