@@ -80,26 +80,39 @@ user function Help (_sMsg, _sDAdic, _lHlpErro)
 		else
 			// Se a mensagem for muito grande, quebra-a em varias linhas.
 			if len (_sMsg) > 400 .and. ! chr (13) + chr (10) $ _sMsg
-		//		u_log ('vou quebrar msg --> tamanho msg=', len(_sMsg))
 				_nQuebra = 400
 				do while _nQuebra < len (_sMsg)
-		//			u_log (_nQuebra)
 					_sMsg = left (_sMsg, _nQuebra) + chr (13) + chr (10) + substr (_sMsg, _nQuebra + 1)
-		//			u_log (_sMsg)
 					_nQuebra += 400
 				enddo
-		//		u_log ('fim quebra')
 			endif
-//			msgalert (_sMsg, procname (1) + " => " + procname (2) + " => " + procname (3))
 			msgalert (_sMsg, procname (1) + " => " + procname (2) + " => " + procname (3) + " => " + procname (4) + " => " + procname (5))
 		endif
 	else
-		//U_Log2 ('debug', '[' + procname () + ']nao tenho oMainWnd')
 		if IsInCallStack ("SIGAACD")
-			U_Log2 ('debug', '[' + procname () + ']estou no ACD')
-			vtAlert (cValToChar (_sMsg), procname (), .t., 3000)  // Tempo em milissegundos
+		//	vtAlert (cValToChar (_sMsg), procname (), .t., 4000)  // Tempo em milissegundos
+			_vtHelp (cValToChar (_sMsg), _lHlpErro)
 		endif
-	//	_sMsg = procname () + " ==> " + procname (1) + ": " + procname (2) + ": " + procname (3) + ": " + cvaltochar (_sMsg)
+	endif
+return
+
+
+// --------------------------------------------------------------------------
+static function _vtHelp (_sMsg, _lHlpErro)
+	local _cTela     := ''
+	local _nLargTela := 40  // Por enquanto eh a unica tela que tenho...
+	local _aLinhas   := {}
+
+	_cTela := TerSave()
+	TerCls()
+
+	if _lHlpErro
+		TerBeep (2)
 	endif
 
+	_aLinhas = U_QuebraTXT (_sMsg, _nLargTela - 1)
+	U_Log2 ('debug', _aLinhas)
+	TeraChoice(,,,, _aLinhas)
+	TerRestore(,,,,_cTela)
+	//Function TeraChoice(nTop,nLeft,nBottom,nRight,aMenu,cFunct,nIniVetor,nIniW)
 return

@@ -324,25 +324,25 @@ METHOD PodeApont (_nQtApont, _nQtPerda) Class ClsEtiq
 	local _sMsgSaldo := ''
 
 	if _lContinua .and. empty (::OP)
-		u_help ("Impossivel apontar producao da etiqueta '" + ::Codigo + "' pois nao encontra-se vinculada a nenhum OP.",, .t.)
+		u_help ("Impossivel apontar etiq.'" + ::Codigo + "' pois nao encontra-se vinculada a nenhum OP.",, .t.)
 		_lContinua = .f.
 	endif
 	if _lContinua .and. ::Impressa != 'S'
-		u_help ("Impossivel apontar producao da etiqueta '" + ::Codigo + "': ainda nao impressa.",, .t.)
+		u_help ("Impossivel apontar etiq.'" + ::Codigo + "': ainda nao impressa.",, .t.)
 		_lContinua = .f.
 	endif
 	if _lContinua .and. (::QtApontada + ::QtPerdida) > 0
-		u_help ("Impossivel apontar producao da etiqueta '" + ::Codigo + "': ja gerou apontamento de producao.",, .t.)
+		u_help ("Impossivel apontar etiq.'" + ::Codigo + "': ja gerou apontamento de producao.",, .t.)
 		_lContinua = .f.
 	endif
 	if _lContinua .and. ::QtEstornada > 0
-		U_help ("Impossivel apontar producao da etiqueta '" + ::Codigo + "': ja foi apontada e ESTORNADA. Gere nova etiqueta.",, .t.)
+		U_help ("Impossivel apontar etiq.'" + ::Codigo + "': ja foi apontada e ESTORNADA. Gere nova etiqueta.",, .t.)
 		_lContinua = .F.
 	endif
 	if _lContinua
 		_nQtTot = ::QtApontada + ::QtPerdida + _nQtApont + _nQtPerda
 		if _nQtTot != ::Quantidade
-			u_help ("Impossivel apontar producao da etiqueta '" + ::Codigo + "': Quantidade total produzida + perdida (" + cvaltochar (_nQtTot) + ") nao pode ser diferente da quantidade prevista da etiqueta (" + cvaltochar (::Quantidade) + ").",, .t.)
+			u_help ("Impossivel apontar etiq.'" + ::Codigo + "': Quantidade total produzida + perdida (" + cvaltochar (_nQtTot) + ") nao pode ser diferente da quantidade prevista da etiqueta (" + cvaltochar (::Quantidade) + ").",, .t.)
 			_lContinua = .F.
 		endif
 	endif
@@ -397,7 +397,7 @@ METHOD PodeApont (_nQtApont, _nQtPerda) Class ClsEtiq
 		_aSemSaldo := aclone (_oSQL:Qry2Array (.F., .F.))
 		U_Log2 ('debug', _aSemSaldo)
 		if len (_aSemSaldo) > 0
-			_sMsgSaldo := "Impossivel apontar producao da etiqueta '" + ::Codigo + "'. Saldo insuficiente dos seguintes materiais: "
+			_sMsgSaldo := "Sem saldo:"
 			for _nSemSaldo = 1 to len (_aSemSaldo)
 				_sMsgSaldo += alltrim (_aSemSaldo [_nSemSaldo, 1]) + '-' + alltrim (_aSemSaldo [_nSemSaldo, 2])
 				_sMsgSaldo += ' Qt.necessaria: ' + cvaltochar (_aSemSaldo [_nSemSaldo, 3])

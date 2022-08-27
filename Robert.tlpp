@@ -34,8 +34,8 @@
 user function robert ()
 	local _lContinua := .T.
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '01' modulo 'EST'
-		private cModulo   := 'EST'
+		prepare environment empresa '01' filial '01' modulo 'FIN'
+		private cModulo   := 'FIN'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
 		private __RelDir  := "c:\temp\spool_protheus\"
@@ -86,173 +86,158 @@ user function robert ()
 		// _telnet ()
 		// _verif ()
 		// _ClsEtiq ()
+		//_VA_XLS ()
 
-		//u_help ('Nada definido.')
+		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
 return
 
 // --------------------------------------------------------------------------
-user function vtEtqAp ()
-	local _lContinua  := .T.
-	private _sBarEtiq := ''
-	private _sBarProd := ''
-	private _sProdEtq := ''
-	private _dDatProd := ctod ('')
-	private _oEtiq    := NIL
-	private _sTnoProd := ''
-	private _nLargTela := 40
+static function _va_xls ()
+//	// Estoque com codigo de Sisdevin
+//	Private cPerg   := "VAXLS15"
+//	U_GravaSX1 (cPerg, '01', '2445')
+//	U_GravaSX1 (cPerg, '02', '2445')
+//	U_GravaSX1 (cPerg, '03', '')
+//	U_GravaSX1 (cPerg, '04', 'z')
+//	U_GravaSX1 (cPerg, '05', date ())
+//	U_GravaSX1 (cPerg, '06', 1)
+//	u_va_xls15 (.T.)
 
-	do while _lContinua
-		
-		// Limpa variaveis para ler nova etiqueta.
-		_sBarEtiq = space (10)
-		_sBarProd = space (14)
-		_sProdEtq = space (15)
-		_dDatProd = ctod ('')
-		_oEtiq    = NIL
-		_sTnoProd   = space (1)
+//	Private cPerg   := "VAXLS19"
+//	U_GravaSX1 (cPerg, '01', '')  // assoc ini
+//	U_GravaSX1 (cPerg, '02', '')  // loja ini
+//	U_GravaSX1 (cPerg, '03', '000200')  // assoc fim
+//	U_GravaSX1 (cPerg, '04', 'z')  // loja fim
+//	U_GravaSX1 (cPerg, '05', 1)  // ativos/inat/todos
+//	U_GravaSX1 (cPerg, '06', 2)  // listar capital social
+//	U_GravaSX1 (cPerg, '07', 1)  // listar endereco
+//	U_GravaSX1 (cPerg, '08', 2)  // listar DAP
+//	U_GravaSX1 (cPerg, '09', 1)  // lista grupo familiar
+//	U_GravaSX1 (cPerg, '10', 2)  // lista ultima safra
+//	U_GravaSX1 (cPerg, '11', stod ('20190311'))
+//	U_VA_XLS19 (.t.)
 
-		vtSetSize (10, _nLargTela)
-		terCls()
-		terSay(0, 0, "Apontamento de producao")
+//	Private cPerg   := "VAXLS30"
+//	U_GravaSX1 (cPerg, '01', '000161')  // assoc 
+//	U_GravaSX1 (cPerg, '02', '')  // loja
+//	U_GravaSX1 (cPerg, '03', '000161')  // assoc 
+//	U_GravaSX1 (cPerg, '04', 'z')  // loja
+//	U_GravaSX1 (cPerg, '05', '2021')  // safra
+//	U_GravaSX1 (cPerg, '06', '')  // filial
+//	U_GravaSX1 (cPerg, '07', 'zz')  // filial
+//	U_GravaSX1 (cPerg, '08', '')  // carga
+//	U_GravaSX1 (cPerg, '09', 'z')  // carga
+//	U_GravaSX1 (cPerg, '10', 3)  // comum/fina/ambas
+//	U_GravaSX1 (cPerg, '11', '')  // nf produtor ini
+//	U_GravaSX1 (cPerg, '12', 'z')  // nf produtor fim
+//	U_GravaSX1 (cPerg, '13', stod ('20210101'))  // data contranota inicial
+//	U_GravaSX1 (cPerg, '14', stod ('20210223'))  // data contranota final
+//	U_GravaSX1 (cPerg, '15', 1)  // notas de entrada [S/N]
+//	U_GravaSX1 (cPerg, '16', 1)  // notas de prod.propria [S/N]
+//	U_GravaSX1 (cPerg, '17', 1)  // notas de compra [S/N]
+//	U_GravaSX1 (cPerg, '18', 1)  // notas de complemento valor [S/N]
+//	u_va_xls30 (.T.)
 
-		if _lContinua
-			terSay(1, 0, "Informe etiqueta...")
-			U_Log2 ('debug', '[' + procname () + ']Antes de ler etiq')
-			VTSetGet (@_sBarEtiq, "_sBarEtiq", 1, 22, {||_ValEtiq ()})
-			vtRead ()
-			U_Log2 ('debug', '[' + procname () + ']Li etiqueta. Lastkey:' + cvaltochar (vtLastkey ()))
-			U_Log2 ('debug', '[' + procname () + ']Voltou com _sCodProd = ' + _sProdEtq)
-			_lContinua = (vtLastkey() != 27)
-			terCBuffer ()
-			U_Log2 ('debug', '[' + procname () + ']depois do terCBuffer')
-		endif
-		if _lContinua
-			U_Log2 ('debug', '[' + procname () + ']Antes de ler barras produto')
-			terSay (2, 0, "Cod.barras produto...:")
-			VTSetGet (@_sBarProd, "_sBarProd", 2, 22, {||_ValCBProd ()})
-			vtRead ()
-			_lContinua = (vtLastkey() != 27)
-			terCBuffer ()
-			U_Log2 ('debug', '[' + procname () + ']depois do terCBuffer')
-		endif
-		if _lContinua
-			terSay (5, 0, "Data producao........:")
-			VTSetGet (@_dDatProd, "_dDatProd", 5, 22, {||_ValDtProd ()})
-			vtRead ()
-			_lContinua = (vtLastkey() != 27)
-			terCBuffer ()
-			U_Log2 ('debug', '[' + procname () + ']depois do terCBuffer')
-		endif
-		if _lContinua
-			terSay (6, 0, "Turno producao.......:")
-			VTSetGet (@_sTnoProd, "_sTnoProd", 6, 22, {||_ValTurno ()})
-			vtRead ()
-			_lContinua = (vtLastkey() != 27)
-			terCBuffer ()
-			U_Log2 ('debug', '[' + procname () + ']depois do terCBuffer')
-		endif
-		if _lContinua
-			U_Log2 ('info', '[' + procname () + ']Campos lidos. Vou gerar apontamento')
-			terSay (7, 0, "Aguarde... gerando apontamento")
-			_oEtiq:ApontaOP (_dDatProd, _sTnoProd)
-		endif
-	enddo
+//	Private cPerg   := "VAXLS35"
+//	U_GravaSX1 (cPerg, '01', '')  // assoc 
+//	U_GravaSX1 (cPerg, '02', '')  // loja
+//	U_GravaSX1 (cPerg, '03', 'z')  // assoc 
+//	U_GravaSX1 (cPerg, '04', 'z')  // loja
+//	U_GravaSX1 (cPerg, '05', '2020')  // safra
+//	U_GravaSX1 (cPerg, '06', '09')  // filial
+//	U_GravaSX1 (cPerg, '07', '09')  // filial
+//	U_GravaSX1 (cPerg, '08', '')  // carga
+//	U_GravaSX1 (cPerg, '09', 'z')  // carga
+//	U_GravaSX1 (cPerg, '10', 3)  // comum/fina/ambas
+//	U_GravaSX1 (cPerg, '11', '')  // nf produtor ini
+//	U_GravaSX1 (cPerg, '12', 'z')  // nf produtor fim
+//	U_GravaSX1 (cPerg, '13', 1)  // ignorar cargas canceladas / redirecionadas
+//	u_va_xls35 (.T.)
+
+//	Private cPerg   := "VAXLS37"
+//	U_GravaSX1 (cPerg, '01', stod ('20201231'))  // data inicial
+//	U_GravaSX1 (cPerg, '02', 2)  // qt meses
+//	U_GravaSX1 (cPerg, '03', '0150')  // prod inicial
+//	U_GravaSX1 (cPerg, '04', '0150')  // prod final
+//	U_GravaSX1 (cPerg, '05', 'MO/AP/')  // tipos ignorar
+//	U_GravaSX1 (cPerg, '06', 1)  // [qt;custo]
+//	u_va_xls37 (.T.)
+
+//	Private cPerg   := "VAXLS38"
+//	U_GravaSX1 (cPerg, '01', stod ('20210401'))  // data inicial
+//	U_GravaSX1 (cPerg, '02', stod ('20210430'))  // data final
+//	U_GravaSX1 (cPerg, '03', 'RS-866/2020')  // codigo CR
+//	u_va_xls38 (.T.)
+
+//	Private cPerg   := "VAXLS40"
+//	U_GravaSX1 (cPerg, '01', '2022')  // safra
+//	U_GravaSX1 (cPerg, '02', 1)  // 'Comuns', 'Finas espaldeira', 'Finas latadas', 'Finas SC'
+//	U_GravaSX1 (cPerg, '03', 2)  // Entrada/Compra/MOC
+//	U_GravaSX1 (cPerg, '04', 1)  // Todos(decimais) / Apenas inteiros
+//	U_GravaSX1 (cPerg, '05', 2)  // Descricao completa/resumida
+//	u_va_xls40 (.T.)
+
+//	Private cPerg   := "VAXLS41"
+//	U_GravaSX1 (cPerg, '01', '')  // assoc 
+//	U_GravaSX1 (cPerg, '02', '')  // loja
+//	U_GravaSX1 (cPerg, '03', 'z')  // assoc 
+//	U_GravaSX1 (cPerg, '04', 'z')  // loja
+//	U_GravaSX1 (cPerg, '05', '2020')  // safra
+//	U_GravaSX1 (cPerg, '06', '')  // grp fam
+//	U_GravaSX1 (cPerg, '07', 'z')  // grp fam
+//	U_GravaSX1 (cPerg, '08', '01')  // filial
+//	U_GravaSX1 (cPerg, '09', '01')  // filial
+//	U_GravaSX1 (cPerg, '10', '1520')  // carga
+//	U_GravaSX1 (cPerg, '11', '1520')  // carga
+//	U_GravaSX1 (cPerg, '12', stod (''))  // data
+//	U_GravaSX1 (cPerg, '13', stod ('20201231'))  // data
+//	u_va_xls41 (.T.)
+
+//	Private cPerg   := "VAXLS42"
+//	U_GravaSX1 (cPerg, '01', '2019')  // safra
+//	U_GravaSX1 (cPerg, '02', stod ('20190101'))  // data ini
+//	U_GravaSX1 (cPerg, '03', stod ('20191231'))  // data fim
+//	u_va_xls42 (.T.)
+
+//	cPerg := "VAXLS46"
+//	U_GravaSX1 (cPerg, '01', stod ('20190901'))
+//	U_GravaSX1 (cPerg, '02', date ())
+//	U_GravaSX1 (cPerg, '03', '')
+//	U_GravaSX1 (cPerg, '04', 'z')
+//	U_VA_XLS46 (.T.)
+
+//	Private cPerg   := "VAXLS50"
+//	U_GravaSX1 (cPerg, '01', stod ('20200101'))
+//	U_GravaSX1 (cPerg, '02', stod ('20201231'))
+//	u_va_xls50 (.T.)
+
+//	Private cPerg   := "VAXLS53"
+//	U_GravaSX1 (cPerg, '01', '2020')
+//	U_GravaSX1 (cPerg, '02', '2020')
+//	u_va_xls53 (.T.)
+//	Private cPerg   := "VAXLS57"
+//	U_GravaSX1 (cPerg, '01', stod ('20210101'))
+//	U_GravaSX1 (cPerg, '02', stod ('20210930'))
+//	u_va_xls57 (.T.)
+
+//	Private cPerg   := "VAXLS59"
+//	U_GravaSX1 (cPerg, '01', '01')
+//	U_GravaSX1 (cPerg, '02', '01')
+//	U_GravaSX1 (cPerg, '03', stod ('20220501'))
+//	U_GravaSX1 (cPerg, '04', stod ('20220531'))
+//	U_GravaSX1 (cPerg, '05', '')
+//	U_GravaSX1 (cPerg, '06', 'z')
+//	u_va_xls59 (.T.)
+
+	// Produtos para planilha GTIN (cadastro nacional de produtos - GS1)
+	Private cPerg   := "VAXLS61"
+	U_GravaSX1 (cPerg, '01', '')
+	U_GravaSX1 (cPerg, '02', 'z')
+	u_va_xls61 (.T.)
 return
-
-// --------------------------------------------------------------------------
-static function _ValEtiq ()
-	local _lRet := .T.
-	U_Log2 ('info', 'Iniciando ' + procname ())
-	U_Log2 ('debug', '[' + procname () + ']' + _sBarEtiq)
-	
-	// Farei algumas validacoes rapidinhas direto pelo ZA1 antes de instanciar uma etiqueta, para melhoria de performance.
-	za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP
-	if _lRet
-		if ! za1 -> (dbseek (xfilial ("ZA1") + _sBarEtiq, .F.))
-			U_Log2 ('debug', '[' + procname () + ']etiq.invalida')
-			vtBeep (2)
-			vtAlert ("Etiqueta invalida","Erro",.f.,3000)  // Tempo em milissegundos
-			U_Log2 ('debug', '[' + procname () + ']passou do alert')
-			_sProdEtq = ''
-			_lRet = .F.
-		else
-			_sProdEtq = za1 -> za1_prod
-		endif
-	endif
-	if _lRet
-		_oEtiq := ClsEtiq ():New (_sBarEtiq)
-		_lRet = _oEtiq:PodeApont(_oEtiq:Quantidade, 0)  // Sempre seria um apontamento 
-	endif
-	U_Log2 ('info', 'Finalizando ' + procname ())
-return _lRet
-
-// --------------------------------------------------------------------------
-static function _ValCBProd ()
-	local _lRet      := .T.
-	local _sDescProd := ''
-
-	U_Log2 ('info', 'Iniciando ' + procname ())
-	U_Log2 ('debug', '[' + procname () + ']' + _sProdEtq)
-	sb1 -> (dbsetorder (5))  // B1_FILIAL, B1_CODBAR, R_E_C_N_O_, D_E_L_E_T_
-	if ! sb1 -> (dbseek (xfilial ("SB1") + _sBarProd, .F.))
-		U_Log2 ('debug', '[' + procname () + ']produto.invalida')
-		u_help ("Nenhum produto cadastrado com esse codigo de barras",, .t.)
-		U_Log2 ('debug', '[' + procname () + ']passou do alert')
-		_lRet = .F.
-	else
-		if sb1 -> b1_cod != _sProdEtq
-			vtAlert ("Produto nao pertence a esta etiqueta","Erro",.f.,4000)  // Tempo em milissegundos
-			_lRet = .F.
-		else
-			_sDescProd = alltrim (sb1 -> b1_cod) + ' - ' + alltrim (sb1 -> b1_desc)
-			terSay (3, 0, substr (_sDescProd, 1, _nLargTela))
-			terSay (4, 0, substr (_sDescProd, _nLargTela + 1, _nLargTela))
-	
-			// Nao vou permitir mais de um produto com mesmo codigo de barras
-			sb1 -> (dbskip ())
-			if sb1 -> b1_codbar == _sBarProd
-				vtAlert ("Encontrado mais de um produto com o mesmo codigo de barras","Erro",.f.,4000)  // Tempo em milissegundos
-				_lRet = .F.
-			endif
-		endif
-	endif
-	U_Log2 ('info', 'Finalizando ' + procname ())
-return _lRet
-
-// --------------------------------------------------------------------------
-static function _ValDtProd ()
-	local _lRet := .T.
-	U_Log2 ('info', 'Iniciando ' + procname ())
-	U_Log2 ('debug', '[' + procname () + ']' + dtoc (_dDatProd))
-	if _lRet .and. _dDatProd > date ()
-		u_help ("Nao pode ser informada data futura",, .t.)
-		_lRet = .F.
-	endif
-	if _lRet .and. _dDatProd < date () - 5  // Aqui pode ter ajustes...
-		u_help ("Nao pode ser informada data muito antiga",, .t.)
-		_lRet = .F.
-	endif
-	U_Log2 ('info', 'Finalizando ' + procname ())
-return _lRet
-
-// --------------------------------------------------------------------------
-static function _ValTurno ()
-	local _lRet := .T.
-	U_Log2 ('info', 'Iniciando ' + procname ())
-	U_Log2 ('debug', '[' + procname () + ']' + _sTnoProd)
-	if _lRet .and. ! _sTnoProd $ '12'
-		u_help ("Turno deve ser 1 ou 2",, .t.)
-		_lRet = .F.
-	endif
-	U_Log2 ('info', 'Finalizando ' + procname ())
-return _lRet
-
-
-
-
 
 // --------------------------------------------------------------------------
 static function _batfull ()
@@ -453,17 +438,6 @@ static function _verif ()
 	u_batverif ()
 return
 
-/*
-	Private cPerg   := "VAXLS59"
-	U_GravaSX1 (cPerg, '01', '01')
-	U_GravaSX1 (cPerg, '02', '01')
-	U_GravaSX1 (cPerg, '03', stod ('20220501'))
-	U_GravaSX1 (cPerg, '04', stod ('20220531'))
-	U_GravaSX1 (cPerg, '05', '')
-	U_GravaSX1 (cPerg, '06', 'z')
-	u_va_xls59 (.T.)
-return
-*/
 /*
 	// Roda comparativo entre precos de diferentes safras x tabela MOC - GLPI 12080
 	_oSQL := ClsSQL ():New ()
@@ -1323,17 +1297,6 @@ return
 return
 */
 /*
-	Private cPerg   := "VAXLS37"
-	U_GravaSX1 (cPerg, '01', stod ('20201231'))  // data inicial
-	U_GravaSX1 (cPerg, '02', 2)  // qt meses
-	U_GravaSX1 (cPerg, '03', '0150')  // prod inicial
-	U_GravaSX1 (cPerg, '04', '0150')  // prod final
-	U_GravaSX1 (cPerg, '05', 'MO/AP/')  // tipos ignorar
-	U_GravaSX1 (cPerg, '06', 1)  // [qt;custo]
-	u_va_xls37 (.T.)
-return
-*/
-/*
 	// Varre safra anterior simulando precos da nova safra, para ver se ficaria algum caso sem tratamento.
 	_sPreNF := U_RetSQL ("SELECT MAX (ZZ9_PRE_NF) FROM ZZ9010 WHERE ZZ9_SAFRA = '2022'")
 	_aPrecos := {}
@@ -1574,16 +1537,6 @@ return
 return
 */
 /*
-	Private cPerg   := "VAXLS40"
-	U_GravaSX1 (cPerg, '01', '2022')  // safra
-	U_GravaSX1 (cPerg, '02', 1)  // 'Comuns', 'Finas espaldeira', 'Finas latadas', 'Finas SC'
-	U_GravaSX1 (cPerg, '03', 2)  // Entrada/Compra/MOC
-	U_GravaSX1 (cPerg, '04', 1)  // Todos(decimais) / Apenas inteiros
-	U_GravaSX1 (cPerg, '05', 2)  // Descricao completa/resumida
-	u_va_xls40 (.T.)
-return
-*/
-/*
 	// Recalcula frete safra e compara com conteudo jah gravado.
 	private _aHisFrSaf := {}  // Para poder gerar, no final, uma planilha com todos os valores.
 	_oSQL := ClsSQL ():New ()
@@ -1690,11 +1643,6 @@ user function STMenuTP ()
 return
 */
 
-//	Private cPerg   := "VAXLS57"
-//	U_GravaSX1 (cPerg, '01', stod ('20210101'))
-//	U_GravaSX1 (cPerg, '02', stod ('20210930'))
-//	u_va_xls57 (.T.)
-//return
 
 /*
 	// Testes inclusao conta corrente
@@ -1834,29 +1782,6 @@ return
 		U_XmlNfeSEF (_aNotas [_nDado, 1], _aNotas [_nDado, 2], _aNotas [_nDado, 3], _aNotas [_nDado, 4], _aNotas [_nDado, 5], _aNotas [_nDado, 6], _aNotas [_nDado, 7])
 		u_logFim (_aNotas [_nDado, 3])
 	next
-return
-*/
-/*
-	Private cPerg   := "VAXLS30"
-	U_GravaSX1 (cPerg, '01', '000161')  // assoc 
-	U_GravaSX1 (cPerg, '02', '')  // loja
-	U_GravaSX1 (cPerg, '03', '000161')  // assoc 
-	U_GravaSX1 (cPerg, '04', 'z')  // loja
-	U_GravaSX1 (cPerg, '05', '2021')  // safra
-	U_GravaSX1 (cPerg, '06', '')  // filial
-	U_GravaSX1 (cPerg, '07', 'zz')  // filial
-	U_GravaSX1 (cPerg, '08', '')  // carga
-	U_GravaSX1 (cPerg, '09', 'z')  // carga
-	U_GravaSX1 (cPerg, '10', 3)  // comum/fina/ambas
-	U_GravaSX1 (cPerg, '11', '')  // nf produtor ini
-	U_GravaSX1 (cPerg, '12', 'z')  // nf produtor fim
-	U_GravaSX1 (cPerg, '13', stod ('20210101'))  // data contranota inicial
-	U_GravaSX1 (cPerg, '14', stod ('20210223'))  // data contranota final
-	U_GravaSX1 (cPerg, '15', 1)  // notas de entrada [S/N]
-	U_GravaSX1 (cPerg, '16', 1)  // notas de prod.propria [S/N]
-	U_GravaSX1 (cPerg, '17', 1)  // notas de compra [S/N]
-	U_GravaSX1 (cPerg, '18', 1)  // notas de complemento valor [S/N]
-	u_va_xls30 (.T.)
 return
 */
 /*
@@ -2086,14 +2011,6 @@ return
 		endif
 		sed -> (dbskip ())
 	enddo
-return
-*/
-/*
-	Private cPerg   := "VAXLS38"
-	U_GravaSX1 (cPerg, '01', stod ('20210401'))  // data inicial
-	U_GravaSX1 (cPerg, '02', stod ('20210430'))  // data final
-	U_GravaSX1 (cPerg, '03', 'RS-866/2020')  // codigo CR
-	u_va_xls38 (.T.)
 return
 */
 /*
@@ -2505,13 +2422,6 @@ Function u_localPrint()
         oPrinter:Preview()
     EndIf
 Return
-*/
-/*
-	Private cPerg   := "VAXLS50"
-	U_GravaSX1 (cPerg, '01', stod ('20200101'))
-	U_GravaSX1 (cPerg, '02', stod ('20201231'))
-	u_va_xls50 (.T.)
-return
 */
 /*
 	// Insere registro no SE2 para notas de safra que foram geradas com parcelamento incorreto
@@ -2981,13 +2891,6 @@ RETURN
 //		u_log (FWGrpParam (_a [_n, 1, 1]))
 //	next
 
-/*
-	Private cPerg   := "VAXLS53"
-	U_GravaSX1 (cPerg, '01', '2020')
-	U_GravaSX1 (cPerg, '02', '2020')
-	u_va_xls53 (.T.)
-return
-*/
 /*
 	// Cria registros na conta corrente para nota trocada entre associados (GLPI 8175)
 	if cFilAnt != '07'
@@ -3577,18 +3480,6 @@ return
 return
 */
 /*
-	// Estoque com codigo de Sisdevin
-	Private cPerg   := "VAXLS15"
-	U_GravaSX1 (cPerg, '01', '2445')
-	U_GravaSX1 (cPerg, '02', '2445')
-	U_GravaSX1 (cPerg, '03', '')
-	U_GravaSX1 (cPerg, '04', 'z')
-	U_GravaSX1 (cPerg, '05', date ())
-	U_GravaSX1 (cPerg, '06', 1)
-	u_va_xls15 (.T.)
-return
-*/
-/*
 	// Gera precos para as pre-notas de compra de safra.
 	Private cPerg   := "VAZZ9P"
 	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
@@ -4042,42 +3933,6 @@ return
 return
 */
 /*
-	Private cPerg   := "VAXLS35"
-	U_GravaSX1 (cPerg, '01', '')  // assoc 
-	U_GravaSX1 (cPerg, '02', '')  // loja
-	U_GravaSX1 (cPerg, '03', 'z')  // assoc 
-	U_GravaSX1 (cPerg, '04', 'z')  // loja
-	U_GravaSX1 (cPerg, '05', '2020')  // safra
-	U_GravaSX1 (cPerg, '06', '09')  // filial
-	U_GravaSX1 (cPerg, '07', '09')  // filial
-	U_GravaSX1 (cPerg, '08', '')  // carga
-	U_GravaSX1 (cPerg, '09', 'z')  // carga
-	U_GravaSX1 (cPerg, '10', 3)  // comum/fina/ambas
-	U_GravaSX1 (cPerg, '11', '')  // nf produtor ini
-	U_GravaSX1 (cPerg, '12', 'z')  // nf produtor fim
-	U_GravaSX1 (cPerg, '13', 1)  // ignorar cargas canceladas / redirecionadas
-	u_va_xls35 (.T.)
-return
-*/
-/*
-	Private cPerg   := "VAXLS41"
-	U_GravaSX1 (cPerg, '01', '')  // assoc 
-	U_GravaSX1 (cPerg, '02', '')  // loja
-	U_GravaSX1 (cPerg, '03', 'z')  // assoc 
-	U_GravaSX1 (cPerg, '04', 'z')  // loja
-	U_GravaSX1 (cPerg, '05', '2020')  // safra
-	U_GravaSX1 (cPerg, '06', '')  // grp fam
-	U_GravaSX1 (cPerg, '07', 'z')  // grp fam
-	U_GravaSX1 (cPerg, '08', '01')  // filial
-	U_GravaSX1 (cPerg, '09', '01')  // filial
-	U_GravaSX1 (cPerg, '10', '1520')  // carga
-	U_GravaSX1 (cPerg, '11', '1520')  // carga
-	U_GravaSX1 (cPerg, '12', stod (''))  // data
-	U_GravaSX1 (cPerg, '13', stod ('20201231'))  // data
-	u_va_xls41 (.T.)
-return
-*/
-/*
 	// Gera alguns XML para testar criacao de novas cargas
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := "SELECT top 100 FILIAL, SAFRA, CARGA "
@@ -4150,15 +4005,6 @@ return
 			u_log (_oSQL:Qry2Array ())
 		endif
 	next
-return
-*/
-/*
-	cPerg := "VAXLS46"
-	U_GravaSX1 (cPerg, '01', stod ('20190901'))
-	U_GravaSX1 (cPerg, '02', date ())
-	U_GravaSX1 (cPerg, '03', '')
-	U_GravaSX1 (cPerg, '04', 'z')
-	U_VA_XLS46 (.T.)
 return
 */
 /*
@@ -4908,14 +4754,6 @@ return
 	u_log ('finalizado.')
 return
 */
-/*
-	Private cPerg   := "VAXLS42"
-	U_GravaSX1 (cPerg, '01', '2019')  // safra
-	U_GravaSX1 (cPerg, '02', stod ('20190101'))  // data ini
-	U_GravaSX1 (cPerg, '03', stod ('20191231'))  // data fim
-	u_va_xls42 (.T.)
-return
-*/
 /*	// LISTA CAMPOS OBRIGATORIOS
 	sx3 -> (dbsetorder (1))
 	sx3 -> (dbseek ('SD1', .t.))
@@ -4942,22 +4780,6 @@ return
 	U_GravaSX1 (cPerg, '11', '801')     // Cond pagto
 	u_va_gnf2 (.t.)
 return
-*/
-/*
-	Private cPerg   := "VAXLS19"
-	U_GravaSX1 (cPerg, '01', '')  // assoc ini
-	U_GravaSX1 (cPerg, '02', '')  // loja ini
-	U_GravaSX1 (cPerg, '03', '000200')  // assoc fim
-	U_GravaSX1 (cPerg, '04', 'z')  // loja fim
-	U_GravaSX1 (cPerg, '05', 1)  // ativos/inat/todos
-	U_GravaSX1 (cPerg, '06', 2)  // listar capital social
-	U_GravaSX1 (cPerg, '07', 1)  // listar endereco
-	U_GravaSX1 (cPerg, '08', 2)  // listar DAP
-	U_GravaSX1 (cPerg, '09', 1)  // lista grupo familiar
-	U_GravaSX1 (cPerg, '10', 2)  // lista ultima safra
-	U_GravaSX1 (cPerg, '11', stod ('20190311'))
-	U_VA_XLS19 (.t.)
-RETURN
 */
 /*
 	// importa planilha com cadastro de DAPs dos associados
