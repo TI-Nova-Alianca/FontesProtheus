@@ -2,14 +2,14 @@
 // Autor......: Jeferson Rech 
 // Data.......: 10/2004
 // Descricao..: Validacao LinhaOk da NF de Entrada 
-//
+
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #ponto_de_entrada
 // #Descricao         #Validacao LinhaOK da NF de Entrada
 // #PalavasChave      #Nf_de_entrada #linhaOK
 // #TabelasPrincipais #SD1 #SA1 #SA2 #SD2
 // #Modulos   		  #COM 
-//
+
 // Historico de alteracoes:
 // 13/10/2008 - Robert - Nao exige mais pedido de compra quando tiver NF original informada.
 // 16/10/2008 - Robert - Criada validacao de NF original/item/produto quando tipo NF = D.
@@ -79,6 +79,7 @@
 // 10/05/2021 - Claudia - Retirada a chamada o programa MATA119. GLPI: 9996
 // 25/08/2021 - Claudia - Incluido validação para a chamada do programa FBTRS006.GLPI: 10802
 // 23/08/2022 - Robert  - Passa a aceitar CFOP de industrializacao para outros tipos alem de BN (GLPI 12509)
+// 29/08/2022 - Robert  - Criada validacao para exigir F4_ESTOQUE=S quando tiver D1_ORDEM.
 //
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -87,7 +88,7 @@ User Function MT100LOK()
 	Local _lRet        := ParamIxb[1]
 	local _lVA_Retor   := .F.
 	local _lTransFil   := .F.
-    Private _xLOJAPAT  := ""
+	Private _xLOJAPAT  := ""
 
 	If !IsInCallStack("MATA119") 
 		
@@ -132,7 +133,7 @@ User Function MT100LOK()
 					u_help ("Tipo de documento NÃO é FRETE, porém TES é de FRETE. Verifique!")
 					_lRet = .F.
 				endif
-			endif							
+			endif
 		endif
 
 		// Validacoes para notas de entrada de safra
@@ -168,7 +169,7 @@ User Function MT100LOK()
 				_lRet = .F.
 			endif
 		endif
-																																				
+
 		// Validacoes OP e produto BN
 		if _lRet .and. ! GDDeleted ()
 			_lRet = _VerOPBN ()
@@ -188,10 +189,17 @@ User Function MT100LOK()
 		if _lRet .and. ! GDDeleted ()
 			_lRet = _VerData ()
 		endif
+
+		// Validacoes OS (de manutencao)
+		if _lRet .and. ! GDDeleted ()
+			_lRet = _VerOSMan ()
+		endif
+
 	EndIf
 	U_ML_SRArea (_aAreaAnt)
 Return(_lRet)
-//
+
+
 // ----------------------------------------------------------------------------------------
 // Validacoes ref. nota fiscal original.
 static function _ValNFOri ()
@@ -314,7 +322,7 @@ static function _ValNFOri ()
 				_sQuery += "    AND D2_DOC     = '" + GDFieldGet ("D1_NFORI") + "'"
 				_sQuery += "    AND D2_SERIE   = '" + GDFieldGet ("D1_SERIORI") + "'"
 				_sQuery += "    AND D2_CLIENTE = '" + ca100For + "'"
-		    	_sQuery += "    AND D2_LOJA    = '" + cLoja + "'"
+				_sQuery += "    AND D2_LOJA    = '" + cLoja + "'"
 				_aDados := U_Qry2Array(_sQuery)
 				if len(_aDados) = 0
 					u_help ("Nota/Serie Original não é desse cliente.")
@@ -322,11 +330,10 @@ static function _ValNFOri ()
 				endif
 			endif
 		endif
-	 
 	endif
-
 return _lRet
-//
+
+
 // -------------------------------------------------------------------------------------------------
 // Validacoes ref. notas de entrada/compra de safra de uva.
 Static Function _ValSafra ()
@@ -382,7 +389,8 @@ Static Function _ValSafra ()
 		endif
 	endif
 return _lRetSafr
-//
+
+
 // -----------------------------------------------------------------------------------------------
 // Verificacoes sobre OP / item tipo BN
 static function _VerOPBN ()
@@ -398,33 +406,32 @@ static function _VerOPBN ()
 	endif
 
 	if _lRet .and. ! empty (GDFieldGet ("D1_OP"))
-	 	sc2 -> (dbsetorder (1))
-	 	if ! sc2 -> (dbseek (xfilial ("SC2") + GDFieldGet ("D1_OP"), .F.))
-	 		u_help ("OP '" + GDFieldGet ("D1_OP") + "' nao encontrada.")
-	 		_lRet = .F.
-	 	else
-	 		if _lRet .and. sc2 -> c2_produto == GDFieldGet ("D1_COD")
-	 			u_help ("O produto informado nao pode ser o mesmo a ser produzido pela OP, pois seria requisitado na propria OP, gerando uma referencia circular.")
-	 			_lRet = .F.
-	 		endif
+		sc2 -> (dbsetorder (1))
+		if ! sc2 -> (dbseek (xfilial ("SC2") + GDFieldGet ("D1_OP"), .F.))
+			u_help ("OP '" + GDFieldGet ("D1_OP") + "' nao encontrada.")
+			_lRet = .F.
+		else
+			if _lRet .and. sc2 -> c2_produto == GDFieldGet ("D1_COD")
+				u_help ("O produto informado nao pode ser o mesmo a ser produzido pela OP, pois seria requisitado na propria OP, gerando uma referencia circular.")
+				_lRet = .F.
+			endif
 
-	 		if _lRet .and. ! sc2 -> c2_vaopesp $ 'E/F' .and. sc2 -> c2_item != 'OS'  // Ignora OS da manutencao.
-	 			u_help ("Somente ordens de producao do tipo 'externa' podem receber lancamentos de NF de entrada.")
-	 			_lRet = .F.
-	 		endif
-	 		if _lRet
-	 			if fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("D1_TES"), "F4_ESTOQUE") == 'S'  // Soh gera SD3 se o TES movimentar estoque.
-		 			sd4 -> (dbsetorder (1))  // D4_FILIAL+D4_COD+D4_OP+D4_TRT+D4_LOTECTL+D4_NUMLOTE
-		 			if sd4 -> (dbseek (xfilial ("SD4") + GDFieldGet ("D1_COD") + GDFieldGet ("D1_OP"), .F.)) .and. sd4 -> d4_quant != 0
-		 				u_help ("O produto '" + alltrim (GDFieldGet ("D1_COD")) + "' encontra-se empenhado na OP '" + alltrim (GDFieldGet ("D1_OP")) + "'. Providencie a remocao do empenho, pois do contrario o mesmo sera´ requisitado novamente ao apontar a OP.")
-		 				_lRet = .F.
-		 			endif
-	 			endif
-	 		endif
-	 	endif
+			if _lRet .and. ! sc2 -> c2_vaopesp $ 'E/F' .and. sc2 -> c2_item != 'OS'  // Ignora OS da manutencao.
+				u_help ("Somente ordens de producao do tipo 'externa' podem receber lancamentos de NF de entrada.")
+				_lRet = .F.
+			endif
+			if _lRet
+				if fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("D1_TES"), "F4_ESTOQUE") == 'S'  // Soh gera SD3 se o TES movimentar estoque.
+					sd4 -> (dbsetorder (1))  // D4_FILIAL+D4_COD+D4_OP+D4_TRT+D4_LOTECTL+D4_NUMLOTE
+					if sd4 -> (dbseek (xfilial ("SD4") + GDFieldGet ("D1_COD") + GDFieldGet ("D1_OP"), .F.)) .and. sd4 -> d4_quant != 0
+						u_help ("O produto '" + alltrim (GDFieldGet ("D1_COD")) + "' encontra-se empenhado na OP '" + alltrim (GDFieldGet ("D1_OP")) + "'. Providencie a remocao do empenho, pois do contrario o mesmo sera´ requisitado novamente ao apontar a OP.")
+						_lRet = .F.
+					endif
+				endif
+			endif
+		endif
 	endif
 
-//	if _lRet .and. alltrim (GDFieldGet ("D1_CF")) $ '1124/2124' .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_TIPO") != "BN"
 	if _lRet .and. alltrim (GDFieldGet ("D1_CF")) $ '1124/2124'
 		_sTpPrdInd = "BN/ME/PS/MP/VD"  // GLPI 12509
 		if ! fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_TIPO") $ _sTpPrdInd
@@ -439,7 +446,7 @@ return _lRet
 // Verificacoes integracao com Fullsoft.
 static function _VerFull (_lTransFil)
 	local _lRet     := .T.
-   	local _sMsg     := ""
+	local _sMsg     := ""
 	local _sAlmFull := ""
 
 	if GDFieldGet ("D1_QUANT") != 0
@@ -479,7 +486,8 @@ static function _VerFull (_lTransFil)
 		endif
 	endif
 return _lRet
-//
+
+
 // ------------------------------------------------------------------------------------------
 // Verificacoes para quando houver controle de lote.
 static function _VerLotes (_lTransFil, _lVA_Retor)
@@ -492,7 +500,8 @@ static function _VerLotes (_lTransFil, _lVA_Retor)
 		endif
 	endif
 return _lRet
-//
+
+
 // -------------------------------------------------------------------------------------------------------
 // Verificacoes para datas.
 static function _VerData ()
@@ -510,4 +519,19 @@ static function _VerData ()
 			endif
 		endif
 	endif
+return _lRet
+
+
+// -----------------------------------------------------------------------------------------------
+// Verificacoes para OS (de manutencao).
+static function _VerOSMan ()
+	local _lRet      := .T.
+
+	if _lRet .and. ! empty (GDFieldGet ("D1_ORDEM"))
+		if fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("D1_TES"), "F4_ESTOQUE") != "S"
+			u_help ("Quando informada ordem de manutencao (campo D1_ORDEM - '" + alltrim (RetTitle ("D1_ORDEM")) + "), o TES deve atualizar estoque, para que seja possivel requisitar o material direto para a OS.")
+			_lRet = .F.
+		endif
+	endif
+
 return _lRet
