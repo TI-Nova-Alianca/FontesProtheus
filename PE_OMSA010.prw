@@ -11,8 +11,10 @@
 // #Modulos 		  #FAT
 //
 // Historico de alteracoes:
+// 30/08/2022 - Claudia - Alterada a gravação de logs de alteração, não executando na 
+//                        inclusão de novas tabelas. GLPI: 12534
 //
-// ----------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
 #Include "TopConn.ch"
  
@@ -28,6 +30,7 @@ User Function OMSA010()
     Local _sCodTab   := ""
     Local _nValor    := 0
     Local _lExcluido := .F.
+    Local aArea      := GetArea()
  
     //Se tiver parâmetros
     If aParam != Nil 
@@ -36,6 +39,7 @@ User Function OMSA010()
         oObj := aParam[1] 
         cIdPonto := aParam[2] 
         cIdModel := aParam[3] 
+        cOper 	 := oObj:GetOperation()
  
         //Valida a abertura da tela
         If cIdPonto == "MODELVLDACTIVE"
@@ -63,49 +67,53 @@ User Function OMSA010()
  
         //Pré validações do Commit
         ElseIf cIdPonto == "FORMCOMMITTTSPRE"
-            If cIdModel == "DA0MASTER"
-                //Pegando os modelos de dados
-                oModelPad := FWModelActive()
-                oModelCab := oModelPad:GetModel('DA0MASTER')
-                U_DA0Verif(oModelCab)
-                
-            EndIf
-            //Se vier da Grid
-            If cIdModel == "DA1DETAIL"
-                //Pegando os modelos de dados
-                oModelPad  := FWModelActive()
-                oModelGrid := oModelPad:GetModel('DA1DETAIL')
-                 
-                //Pegando as informações do item atual
-                _sProduto  := oModelGrid:GetValue("DA1_CODPRO")
-                _sCodTab   := oModelPad:GetValue("DA0MASTER", "DA0_CODTAB")
-                _nValor    := oModelGrid:GetValue("DA1_PRCVEN")
-                _lExcluido := oModelGrid:IsDeleted()
-
-                _nVlrAnt  := U_ValorDA1(xFilial("DA1"),_sCodTab,_sProduto)
-                _sDesProd := posicione("SB1", 1, xFilial("SB1") + _sProduto, "B1_DESC")
-
-                //Chama a rotina do log (para gravar alterações de preço)
-                If _lExcluido 
-                    _sMsg := "Produto:" + alltrim(_sProduto) +"-"+ alltrim(_sDesProd) + "   Vlr.de:"+ cValtoChar(_nVlrAnt) +" para:" + cValtoChar(_nValor) + " Registro excluído." 
-                Else
-                    _sMsg := "Produto:" + alltrim(_sProduto) +"-"+ alltrim(_sDesProd) + "   Vlr.de:"+ cValtoChar(_nVlrAnt) +" para:" + cValtoChar(_nValor) 
+            If cOper <> 3
+                If cIdModel == "DA0MASTER"
+                    //Pegando os modelos de dados
+                    oModelPad := FWModelActive()
+                    oModelCab := oModelPad:GetModel('DA0MASTER')
+                    U_DA0Verif(oModelCab)
+                    
                 EndIf
-                
-                U_LogDA1(_sCodTab, _sMsg, _sProduto )
+                //Se vier da Grid
+                If cIdModel == "DA1DETAIL"
+                    //Pegando os modelos de dados
+                    oModelPad  := FWModelActive()
+                    oModelGrid := oModelPad:GetModel('DA1DETAIL')
+                    
+                    //Pegando as informações do item atual
+                    _sProduto  := oModelGrid:GetValue("DA1_CODPRO")
+                    _sCodTab   := oModelPad:GetValue("DA0MASTER", "DA0_CODTAB")
+                    _nValor    := oModelGrid:GetValue("DA1_PRCVEN")
+                    _lExcluido := oModelGrid:IsDeleted()
+
+                    _nVlrAnt  := U_ValorDA1(xFilial("DA1"),_sCodTab,_sProduto)
+                    _sDesProd := posicione("SB1", 1, xFilial("SB1") + _sProduto, "B1_DESC")
+
+                    //Chama a rotina do log (para gravar alterações de preço)
+                    If _lExcluido 
+                        _sMsg := "Produto:" + alltrim(_sProduto) +"-"+ alltrim(_sDesProd) + "   Vlr.de:"+ cValtoChar(_nVlrAnt) +" para:" + cValtoChar(_nValor) + " Registro excluído." 
+                    Else
+                        _sMsg := "Produto:" + alltrim(_sProduto) +"-"+ alltrim(_sDesProd) + "   Vlr.de:"+ cValtoChar(_nVlrAnt) +" para:" + cValtoChar(_nValor) 
+                    EndIf
+                    
+                    U_LogDA1(_sCodTab, _sMsg, _sProduto )
+                EndIf
             EndIf
- 
+             xRet := .T. 
         //Pós validações do Commit
         ElseIf cIdPonto == "FORMCOMMITTTSPOS"
- 
+         xRet := .T. 
         //Commit das operações (antes da gravação)
         ElseIf cIdPonto == "MODELCOMMITTTS"
- 
+         xRet := .T. 
         //Commit das operações (após a gravação)
         ElseIf cIdPonto == "MODELCOMMITNTTS"
-            u_TabEmail(da0->da0_filial, da0->da0_codtab, da0->da0_descri)
+           // u_TabEmail(da0->da0_filial, da0->da0_codtab, da0->da0_descri)
+            xRet := .T. 
         EndIf 
     EndIf 
+    RestArea(aArea)
 Return xRet
 //
 // -----------------------------------------------------------------------------------
