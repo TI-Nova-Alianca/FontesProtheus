@@ -145,6 +145,7 @@
 // 15/10/2021 - Robert  - Ajuste sintaxe teste NF venda milho p/ associados (estava assim --> case _sTProd := '2')
 // 10/06/2022 - Claudia - Ajuste de lançamento para mudas. GLPI: 12191
 // 28/07/2022 - Claudia - Incluida a gravação de historico para e-commerce/pagar-me. GLPI: 12392
+// 30/08/2022 - Claudia - Incluida a gravação das contas para titulos pagar-me. GLPI: 12280
 //
 // ---------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
@@ -278,9 +279,20 @@ User Function sf2460i ()
 			If !empty(sc5 -> c5_vaaut)
 				se1 -> e1_cartaut = sc5 -> c5_vaaut
 			EndIf
-			If !empty(sc5 -> c5_vaidt)
+			If !empty(sc5 -> c5_vaidt) // pedidos e-commerce
 				se1 -> e1_vaidt = sc5 -> c5_vaidt
 				se1 -> e1_hist  = 'E-COMMERCE/PAGAR.ME'
+				//
+				If se1->e1_filial == '01'
+					se1->e1_portado = '237'
+					se1->e1_agedep  = '03471'
+					se1->e1_conta   = '0000470'
+				EndIf
+				If se1->e1_filial == '13'
+					se1->e1_portado = '041'
+					se1->e1_agedep  = '0873 '
+					se1->e1_conta   = '0619710901'
+				EndIf
 			EndIf
 			msunlock ()
 			se1 -> (dbskip ())
