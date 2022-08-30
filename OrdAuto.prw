@@ -10,6 +10,7 @@
 // 07/03/2022 - Robert - Verifica nivel de acesso e se os campos encontram-se em uso (GLPI 11721)
 // 09/03/2022 - Robert - Verifica se o campo encontra-se usado pelo modulo atual 
 // 11/03/2022 - Robert - Erro de 'campo nao usado' aparecia em tela. Mudado para log de erro (causava panico desnecessario entre os usuarios)
+// 24/08/2022 - Robert - Valida tipo do campo X tipo da variavel recebida.
 //
 
 // --------------------------------------------------------------------------
@@ -30,12 +31,20 @@ user function OrdAuto (_aMatriz)
 	//	if sx3 -> (dbseek (_aMatriz [_nLinha, 1], .F.))
 		if sx3 -> (dbseek (padr (_aMatriz [_nLinha, 1], 10, ' '), .F.))  // Preenche com especos por que jah tive problemas, por exemplo, ao passar E2_VRETIR quando devia ter passado E2_VRETIRF.
 
+			// Em 24/08/2022 tive problema com campo caracter e que mandei tipo numerico.
+			if valtype (_aMatriz [_nLinha, 2]) != sx3 -> x3_tipo
+				U_Log2 ('erro', "[" + procname () + "]Campo '" + _aMatriz [_nLinha, 1] + "' consta com tipo '" + sx3 -> x3_tipo + "' no configurador, mas recebi tipo '" + valtype (_aMatriz [_nLinha, 2]) + "'.")
+				u_logpcham ()
+			//	U_Help ("Campo '" + _aMatriz [_nLinha, 1] + "' nao encontra-se 'usado' no dicionario de dados (ou, talvez, nao visivel para o modulo " + cModulo + ") e pode ser desconsiderado pela rotina automatica.",, .t.)
+			endif
+
 			// Em 07/03/2022 tive problema com campo que foi tirado de uso por um UPDDISTR (GLPI 11721)
 			if ! X3Uso (sx3 -> x3_usado)
 				U_Log2 ('erro', "[" + procname () + "]Campo '" + _aMatriz [_nLinha, 1] + "' nao encontra-se 'usado' e pode nao ser considerado pela rotina automatica.")
 				u_logpcham ()
 			//	U_Help ("Campo '" + _aMatriz [_nLinha, 1] + "' nao encontra-se 'usado' no dicionario de dados (ou, talvez, nao visivel para o modulo " + cModulo + ") e pode ser desconsiderado pela rotina automatica.",, .t.)
 			endif
+
 			if cNivel < sx3 -> x3_nivel
 				U_Log2 ('erro', "[" + procname () + "]Campo '" + _aMatriz [_nLinha, 1] + "' possui nivel " + cvaltochar (sx3 -> x3_nivel) + ", mas o usuario atual possui nivel menor (" + cvaltochar (cNivel) + "). Campo pode nao ser considerado pela rotina automatica.")
 				u_logpcham ()

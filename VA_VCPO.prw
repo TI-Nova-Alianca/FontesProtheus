@@ -168,6 +168,7 @@
 // 16/05/2022 - Robert  - Restaurada valid.etiq.jah apontada (ganta alguns segundos do usuario).
 // 15/07/2022 - Robert  - Valida grupo 140 do ZZU no campo D3_VAETIQ.
 // 01/08/2022 - Robert  - Criada validacao duplicidade B1_CODBAR (GLPI 11994)
+// 25/08/2022 - Robert  - Pequena melhoria mensagem validacao etiqueta (D3_VAETIQ)
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -1009,6 +1010,7 @@ user function VA_VCpo (_sCampo)
 
 
 		case _sCampo == "M->D3_VAETIQ"
+				u_logpcham ()
 			za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP
 			if ! za1 -> (dbseek (xfilial ("ZA1") + m->d3_vaetiq, .F.))
 				u_help ("Etiqueta nao encontrada.")
@@ -1027,19 +1029,22 @@ user function VA_VCpo (_sCampo)
 				_oSQL:_sQuery +=   " AND SD3.D3_FILIAL  = '" + xfilial ("SD3") + "'"
 				_oSQL:_sQuery +=   " AND SD3.D3_VAETIQ  = '" + m->d3_vaetiq + "'"
 				_oSQL:_sQuery +=   " AND SD3.D3_CF LIKE 'PR%'"
-				_oSQL:Log ()
+				_oSQL:Log ('[' + procname () + ']')
 				_aApontEtq = aclone (_oSQL:Qry2Array (.f., .f.))
 				if _aApontEtq [1, 1] > 0
-					u_help ("Essa etiqueta ja gerou apontamento de producao.")
+					u_help ("Essa etiqueta ja gerou apontamento de producao.",, .t.)
 					_lRet = .f.
 				endif
 				if _aApontEtq [1, 2] > 0
-					U_help ("Essa etiqueta ja foi apontada e ESTORNADA. Gere nova etiqueta.")
+					U_help ("Essa etiqueta ja foi apontada e ESTORNADA. Gere nova etiqueta.",, .t.)
 					_lRet = .F.
 				endif
 			endif
 			if _lRet
-				_lRet = U_ZZUVL ('140', __cUserId, .T.)
+				// Quero obrigar o pessoal a apontar com coletor, seja web service ou telnet.
+				if ! IsInCallStack ("INTEGRAWS") .and. ! IsInCallStack ("U_VTETQAP")
+					_lRet = U_ZZUVL ('140', __cUserId, .T.)
+				endif
 			endif
 
 

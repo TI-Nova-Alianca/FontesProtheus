@@ -26,6 +26,7 @@
 //                     - Criado atributo :UltMsg
 // 12/08/2022 - Robert - Criado atributo :AlmDest (GLPI 12474)
 //                     - Melhorias leitura lote origem (ZAG e SD1)
+// 25/08/2022 - Robert - Criado metodo :ApontaOP
 //
 
 #Include "Protheus.ch"
@@ -69,6 +70,7 @@ CLASS ClsEtiq
 
 	// Declaracao dos Metodos da classe
 	public METHOD New ()
+	public METHOD ApontaOP ()
 	public METHOD EnviaFull ()
 	public METHOD Exclui ()
 	public METHOD Imprime ()
@@ -101,6 +103,44 @@ METHOD New (_xChave) Class ClsEtiq
 		endif
 	endif
 Return ::self
+
+
+// --------------------------------------------------------------------------
+// Gera apontamento de producao
+METHOD ApontaOP (_dDtProd, _sTnoProd) Class ClsEtiq
+	local _lRetAp    := .T.
+	local _aAutoSD3  := {}
+
+	if ! ::PodeApont (::Quantidade, 0)
+		_lRetAp = .F.
+	else
+		aadd (_aAutoSD3, {"D3_OP",      ::OP,       NIL})
+		aadd (_aAutoSD3, {"D3_VAETIQ",  ::Codigo,   NIL})
+		aadd (_aAutoSD3, {"D3_VADTPRD", _dDtProd,   NIL})
+		aadd (_aAutoSD3, {"D3_VATURNO", _sTnoProd,  NIL})
+		aadd (_aAutoSD3, {"D3_VAMOTIV", 'PRODUCAO', NIL})
+		aadd (_aAutoSD3, {"ATUEMP",     "T",        NIL})  // Para que sempre seja feita a baixa dos empenhos.
+		_aAutoSD3 := aclone (U_OrdAuto (_aAutoSD3))
+		U_Log2 ('debug', _aAutoSD3)
+		lMsErroAuto  := .F.
+		_sErroAuto := ''
+		U_Log2 ('info', 'Executando MATA250')
+		dbselectarea ("SD3")
+		dbsetorder (1)
+		MATA250 (_aAutoSD3, 3)
+		If lMsErroAuto
+			_lRetAp = .F.
+			if ! empty (_sErroAuto)
+				::UltMsg += _sErroAuto + '; '
+			elseif ! empty (NomeAutoLog ())
+				::UltMsg += U_LeErro (memoread (NomeAutoLog ())) + '; '
+			endif
+			u_help ('erro', 'Rotina automatica retornou erro: ' + ::UltMsg,, .t.)
+		else
+			::UltMsg += "Apontamento gerado com sucesso (d3_numseq = " + sd3 -> d3_numseq + ")"
+		endif
+	endif
+return _lRetAp
 
 
 // --------------------------------------------------------------------------
@@ -284,25 +324,25 @@ METHOD PodeApont (_nQtApont, _nQtPerda) Class ClsEtiq
 	local _sMsgSaldo := ''
 
 	if _lContinua .and. empty (::OP)
-		u_help ("Impossivel apontar producao da etiqueta '" + ::Codigo + "' pois nao encontra-se vinculada a nenhum OP.",, .t.)
+		u_help ("Impossivel apontar etiq.'" + ::Codigo + "' pois nao encontra-se vinculada a nenhum OP.",, .t.)
 		_lContinua = .f.
 	endif
 	if _lContinua .and. ::Impressa != 'S'
-		u_help ("Impossivel apontar producao da etiqueta '" + ::Codigo + "': ainda nao impressa.",, .t.)
+		u_help ("Impossivel apontar etiq.'" + ::Codigo + "': ainda nao impressa.",, .t.)
 		_lContinua = .f.
 	endif
 	if _lContinua .and. (::QtApontada + ::QtPerdida) > 0
-		u_help ("Impossivel apontar producao da etiqueta '" + ::Codigo + "': ja gerou apontamento de producao.",, .t.)
+		u_help ("Impossivel apontar etiq.'" + ::Codigo + "': ja gerou apontamento de producao.",, .t.)
 		_lContinua = .f.
 	endif
 	if _lContinua .and. ::QtEstornada > 0
-		U_help ("Impossivel apontar producao da etiqueta '" + ::Codigo + "': ja foi apontada e ESTORNADA. Gere nova etiqueta.",, .t.)
+		U_help ("Impossivel apontar etiq.'" + ::Codigo + "': ja foi apontada e ESTORNADA. Gere nova etiqueta.",, .t.)
 		_lContinua = .F.
 	endif
 	if _lContinua
 		_nQtTot = ::QtApontada + ::QtPerdida + _nQtApont + _nQtPerda
 		if _nQtTot != ::Quantidade
-			u_help ("Impossivel apontar producao da etiqueta '" + ::Codigo + "': Quantidade total produzida + perdida (" + cvaltochar (_nQtTot) + ") nao pode ser diferente da quantidade prevista da etiqueta (" + cvaltochar (::Quantidade) + ").",, .t.)
+			u_help ("Impossivel apontar etiq.'" + ::Codigo + "': Quantidade total produzida + perdida (" + cvaltochar (_nQtTot) + ") nao pode ser diferente da quantidade prevista da etiqueta (" + cvaltochar (::Quantidade) + ").",, .t.)
 			_lContinua = .F.
 		endif
 	endif
@@ -353,11 +393,11 @@ METHOD PodeApont (_nQtApont, _nQtPerda) Class ClsEtiq
 		_oSQL:_sQuery += " SELECT *"
 		_oSQL:_sQuery +=   " FROM C"
 		_oSQL:_sQuery +=  " WHERE QT_A_REQ > ESTQ""
-		_oSQL:Log ()
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 		_aSemSaldo := aclone (_oSQL:Qry2Array (.F., .F.))
 		U_Log2 ('debug', _aSemSaldo)
 		if len (_aSemSaldo) > 0
-			_sMsgSaldo := "Impossivel apontar producao da etiqueta '" + ::Codigo + "'. Saldo insuficiente dos seguintes materiais: "
+			_sMsgSaldo := "Sem saldo:"
 			for _nSemSaldo = 1 to len (_aSemSaldo)
 				_sMsgSaldo += alltrim (_aSemSaldo [_nSemSaldo, 1]) + '-' + alltrim (_aSemSaldo [_nSemSaldo, 2])
 				_sMsgSaldo += ' Qt.necessaria: ' + cvaltochar (_aSemSaldo [_nSemSaldo, 3])

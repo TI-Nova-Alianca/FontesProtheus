@@ -1,0 +1,219 @@
+// Programa...: VA_XLS61
+// Autor......: Robert Koch
+// Data.......: 25/08/2022
+// Descricao..: Exporta planilha com dados para serem 'copiados e colados' em
+//              planilha especificamente formatada para fazer upload no site do
+//              cadastro nacional de produtos (https://cnp.gs1br.org/importacao)
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #exporta_planilha
+// #Descricao         #Exporta planilha com dados para cadastro nacional de produtos no portal GS1
+// #PalavasChave      #GS1 #GTIN #cadastro_nacional_de_produtos #portal
+// #TabelasPrincipais #SB1
+// #Modulos           #FAT #FIS
+//
+// Historico de alteracoes:
+//
+
+// --------------------------------------------------------------------------
+User Function VA_XLS61 (_lAutomat)
+	Local cCadastro := "Exporta planilha com dados para cadastro nacional de produtos no GS1."
+	Local aSays     := {}
+	Local aButtons  := {}
+	Local nOpca     := 0
+	Local lPerg     := .F.
+	private _lAuto   := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
+	Private cPerg   := "VAXLS61"
+	_ValidPerg()
+	Pergunte(cPerg,.F.)
+
+	if _lAuto != NIL .and. _lAuto
+		Processa( { |lEnd| _Gera() } )
+	else
+		AADD(aSays,cCadastro)
+		AADD(aSays,"")
+		AADD(aSays,"")
+		AADD(aButtons, { 5, .T.,{|| lPerg := Pergunte(cPerg,.T. ) } } )
+		AADD(aButtons, { 1, .T.,{|| nOpca := If(( lPerg .Or. Pergunte(cPerg,.T.)) .And. _TudoOk() , 1, 2 ), If( nOpca == 1, FechaBatch(), Nil ) }})
+		AADD(aButtons, { 2, .T.,{|| FechaBatch() }} )
+		FormBatch( cCadastro, aSays, aButtons )
+		If nOpca == 1
+			Processa( { |lEnd| _Gera() } )
+		Endif
+	endif
+return
+
+
+// --------------------------------------------------------------------------
+// 'Tudo OK' do FormBatch.
+Static Function _TudoOk()
+	Local _lRet     := .T.
+Return _lRet
+
+
+// --------------------------------------------------------------------------
+Static Function _Gera()
+	local _oSQL      := NIL
+	local _sWhereSB1 := ''
+
+	procregua (10)
+	incproc ("Gerando arquivo de exportacao")
+
+	// Como vou ler o SB1 em dois momentos (unidades e depois caixas), achei
+	// melhor criar um unico WHERE.
+	_sWhereSB1 := " WHERE D_E_L_E_T_ = ''"
+	_sWhereSB1 +=   " AND B1_CODBAR NOT LIKE '000%'"
+	_sWhereSB1 +=   " AND (LEN (B1_CODBAR) = 13 or LEN (B1_CODBAR) = 14)"
+	_sWhereSB1 +=   " AND B1_COD    BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'"
+	_sWhereSB1 +=   " AND B1_TIPO   IN ('PA', 'PI', 'MR')"
+
+	// Busca dados
+	incproc ("Buscando dados")
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	
+	// Monta uma CTE com os codigos a exportar, para poder fazer antes as 
+	// unidades (itens filhos/garrafas), pois a GS1 nao vai aceitar que seja
+	// enviado um item composto por outros que ainda nao estajam cadastrados.
+	_oSQL:_sQuery += "WITH ITENS AS ("
+	_oSQL:_sQuery += " SELECT '1' AS ORIGEM, SB1.* "
+	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SB1") + " SB1 "
+	_oSQL:_sQuery += _sWhereSB1
+	_oSQL:_sQuery +=    " AND B1_CODPAI != ''"  // Neste momento quero apenas os filhos
+	_oSQL:_sQuery +=  " UNION ALL "
+	_oSQL:_sQuery += " SELECT '2' AS ORIGEM, P.* "
+	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SB1") + " P "
+	_oSQL:_sQuery += _sWhereSB1
+	_oSQL:_sQuery +=    " AND EXISTS (SELECT *"  // Neste momento quero apenas os pais
+	_oSQL:_sQuery +=                  " FROM " + RetSQLName ("SB1") + " F "
+	_oSQL:_sQuery +=                 " WHERE F.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=                   " AND F.B1_FILIAL  = P.B1_FILIAL"
+	_oSQL:_sQuery +=                   " AND F.B1_CODPAI  = P.B1_COD)"
+	_oSQL:_sQuery += ")"
+	_oSQL:_sQuery += "SELECT CASE WHEN P.B1_MSBLQL = '1' THEN 'Suspenso' ELSE 'Ativo' END AS STATUS"
+	_oSQL:_sQuery +=      " ,P.B1_CODBAR AS GTIN" //CASE LEN (RTRIM (P.B1_CODBAR)) WHEN 14 THEN 'GTIN_14' WHEN 13 THEN 'GTIN_13' ELSE '' END AS TIPO_GTIN"
+	_oSQL:_sQuery +=      " ,P.B1_DESC AS DESCRI"
+	_oSQL:_sQuery +=      " ,'[pt-br]' AS IDIOMA"
+	_oSQL:_sQuery +=      " ,CASE WHEN F.B1_CODBAR IS NULL THEN '' ELSE F.B1_CODBAR END AS GTIN_ORIG"  // se tiver filho, exporta o GTIN dele
+	_oSQL:_sQuery +=      " ,CASE WHEN F.B1_CODBAR IS NULL THEN 0  ELSE P.B1_QTDEMB END AS QT_IT_CX"  // quant.gfas por cx (sim, é informada NO PAI), mas vou exportar somente se tiver tb. o cod.barras do filho.
+	_oSQL:_sQuery +=      " ,'' AS GTIN_CONTIDO"  // em caso de kits/packs/combos
+	_oSQL:_sQuery +=      " ,'' AS QT_IT_CONTIDO"
+	_oSQL:_sQuery +=      " ,'' AS TIPO_IMG"
+	_oSQL:_sQuery +=      " ,'' AS LINK_IMG"
+	_oSQL:_sQuery +=      " ,'' AS DESCRI_IMG"
+	_oSQL:_sQuery +=      " ,'' AS IDIOMA_IMG"
+	_oSQL:_sQuery +=      " ,'Não' AS COMPARTILH"
+	_oSQL:_sQuery +=      " ,RTRIM (ISNULL (ZX5_40.ZX5_40DESC, '')) AS MARCA"
+	_oSQL:_sQuery +=      " ,'[pt-br]' AS IDIOMA_MARCA"
+	_oSQL:_sQuery +=      " ,'Código interno' AS TIPO_CODIGO"
+	_oSQL:_sQuery +=      " ,P.B1_COD AS CODIGO"
+	_oSQL:_sQuery +=      " ,'MAPA' AS ORGAO_GOV"  // Ministerio da Agricultura, Pecuaria e Abastecimento
+	_oSQL:_sQuery +=      " ,P.B1_VARMAAL AS COD_REG_GOV"
+	_oSQL:_sQuery +=      " ,'Brasil' AS PAIS_ORIG"
+	_oSQL:_sQuery +=      " ,'Rio Grande Do Sul' AS ESTADO_ORIG"
+	_oSQL:_sQuery +=      " ,CASE WHEN F.B1_COD IS NULL THEN 'Item' ELSE 'Caixa' END AS TIPO_PRODUTO"
+	_oSQL:_sQuery +=      " ,CASE WHEN ISNULL (ZX5_50.ZX5_50DESC, '') LIKE '%TETRA%'"
+	_oSQL:_sQuery +=          " THEN 'Embalagem " + '"tetra pak"' + "'"
+	_oSQL:_sQuery +=          " ELSE CASE P.B1_UM"
+	_oSQL:_sQuery +=                  " WHEN 'CX' THEN 'Caixa'"
+	_oSQL:_sQuery +=                  " WHEN 'FD' THEN 'Embalado, não especificado'"
+	_oSQL:_sQuery +=                  " WHEN 'GF' THEN 'Garrafa'"
+	_oSQL:_sQuery +=                  " ELSE 'Não Embalado'"
+	_oSQL:_sQuery +=               " END "
+	_oSQL:_sQuery +=          " END AS TIPO_EMBALAG"
+	_oSQL:_sQuery +=      " ,P.B1_PESBRU AS PESO_BRUTO"
+	_oSQL:_sQuery +=      " ,'kg' AS UM_PESOBRU"
+	_oSQL:_sQuery +=      " ,'' AS PESO_MEDIO"
+	_oSQL:_sQuery +=      " ,'' AS PESO_MINIMO"
+	_oSQL:_sQuery +=      " ,'' AS PESO_MAXIMO"
+	_oSQL:_sQuery +=      " ,'' AS UM_PESOMED"
+	_oSQL:_sQuery +=      " ,P.B1_PESO AS PESO_LIQ"
+	_oSQL:_sQuery +=      " ,'kg' AS UM_PESOLIQ"
+	_oSQL:_sQuery +=      " ,CASE WHEN P.B1_TIPO IN ('PA', 'PI', 'VD')"
+	_oSQL:_sQuery +=          " THEN P.B1_LITROS"
+	_oSQL:_sQuery +=          " ELSE ''"
+	_oSQL:_sQuery +=       " END AS CONT_LIQUIDO"
+	_oSQL:_sQuery +=      " ,CASE WHEN P.B1_TIPO IN ('PA', 'PI', 'VD')"
+	_oSQL:_sQuery +=          " THEN 'l'"  // LITRO
+	_oSQL:_sQuery +=          " ELSE ''"
+	_oSQL:_sQuery +=       " END AS UM_CONTLIQ"
+	_oSQL:_sQuery +=      " ,'' AS ALTURA"
+	_oSQL:_sQuery +=      " ,'' AS UM_ALTURA"
+	_oSQL:_sQuery +=      " ,'' AS LARGURA"
+	_oSQL:_sQuery +=      " ,'' AS UM_LARGURA"
+	_oSQL:_sQuery +=      " ,'' AS PROFUNDIDADE"
+	_oSQL:_sQuery +=      " ,'' AS UM_PROFUND"
+	_oSQL:_sQuery +=      " ,'' AS TIPO_PALLET"
+	_oSQL:_sQuery +=      " ,'' AS FATOR_EMPIL"
+	_oSQL:_sQuery +=      " ,'' AS QT_CAMADAS"
+	_oSQL:_sQuery +=      " ,'' AS QT_IT_CAMADA"
+	_oSQL:_sQuery +=      " ,'' AS QT_IT_CAM_CPL"
+	_oSQL:_sQuery +=      " ,'' AS QT_CAM_COMPL"
+	_oSQL:_sQuery +=      " ,P.B1_PRVALID AS MIN_DIAS_VIDA"
+	_oSQL:_sQuery +=      " ,'' AS TEMPER_MINIMA"
+	_oSQL:_sQuery +=      " ,'' AS TEMPER_MAXIMA"
+	_oSQL:_sQuery +=      " ,'' AS UM_TEMPER"
+	_oSQL:_sQuery +=      " ,'Não' AS PERIGOSA"
+	_oSQL:_sQuery +=      " ,P.B1_POSIPI AS NCM"
+	_oSQL:_sQuery +=      " ,'' AS TIPI"
+	_oSQL:_sQuery +=      " ,'' AS CEST"
+	_oSQL:_sQuery +=      " ,P.B1_IPI AS ALIQ_IPI"
+	_oSQL:_sQuery +=      " ,'' AS GPC"
+	_oSQL:_sQuery +=      " ,'' AS NUTRI_DESCR"
+	_oSQL:_sQuery +=      " ,'' AS NUTRI_DIARIA"
+	_oSQL:_sQuery +=      " ,'' AS NUTRI_COMPOS"
+	_oSQL:_sQuery +=      " ,'' AS NUTRI_QTCOMP"
+	_oSQL:_sQuery +=      " ,'' AS NUTRI_UMCOMP"
+	_oSQL:_sQuery +=      " ,'' AS ALERG_PERC"
+	_oSQL:_sQuery +=      " ,'' AS ALERG_NOMES"
+	_oSQL:_sQuery +=      " ,'' AS ALERG_PRESEN"
+	_oSQL:_sQuery +=      " ,'' AS OBSERV"
+	_oSQL:_sQuery +=      " ,'' AS SITE_TIPO"
+	_oSQL:_sQuery +=      " ,'' AS SITE_LINK"
+	_oSQL:_sQuery +=      " ,'' AS SITE_NOME"
+	_oSQL:_sQuery +=      " ,'' AS SITE_DTLANC"
+	_oSQL:_sQuery +=      " ,'Brasil' AS PAIS_DEST"
+	_oSQL:_sQuery +=      " ,'' AS QT_MIN_PED"
+	_oSQL:_sQuery +=      " ,'' AS UM_PEDIDO"
+	_oSQL:_sQuery +=      " ,'' AS MULT_QT_PED"
+	_oSQL:_sQuery +=  " FROM ITENS AS P" // + RetSQLName ("SB1") + " P "
+	_oSQL:_sQuery +=     " LEFT JOIN " + RetSQLName ("SB1") + " F "
+	_oSQL:_sQuery +=        " ON (F.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=            " AND F.B1_FILIAL  = P.B1_FILIAL"
+	_oSQL:_sQuery +=            " AND F.B1_CODPAI  = P.B1_COD"
+	_oSQL:_sQuery +=            " AND NOT EXISTS (SELECT *"  // Nao quero itens de exportacao (un.med.diferente)
+	_oSQL:_sQuery +=                              " FROM " + RetSQLName ("SB5") + " SB5 "
+	_oSQL:_sQuery +=                             " WHERE SB5.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=                               " AND SB5.B5_FILIAL  = '" + xfilial ("SB5") + "'"
+	_oSQL:_sQuery +=                               " AND SB5.B5_COD     = F.B1_COD"
+	_oSQL:_sQuery +=                               " AND SB5.B5_UMDIPI != F.B1_UM"
+	_oSQL:_sQuery +=                             ")"
+	_oSQL:_sQuery +=            ")"
+	_oSQL:_sQuery +=     " LEFT JOIN " + RetSQLName ("ZX5") + " ZX5_40 "
+	_oSQL:_sQuery +=          " ON (ZX5_40.D_E_L_E_T_ != '*'"
+	_oSQL:_sQuery +=          " AND ZX5_40.ZX5_FILIAL  = '" + xfilial ("ZX5") + "'"
+	_oSQL:_sQuery +=          " AND ZX5_40.ZX5_TABELA  = '40'"
+	_oSQL:_sQuery +=          " AND ZX5_40.ZX5_40COD   = P.B1_VAMARCM)"
+	_oSQL:_sQuery +=     " LEFT JOIN " + RetSQLName ("ZX5") + " ZX5_50 "
+	_oSQL:_sQuery +=          " ON (ZX5_50.D_E_L_E_T_ != '*'"
+	_oSQL:_sQuery +=          " AND ZX5_50.ZX5_FILIAL  = '" + xfilial ("ZX5") + "'"
+	_oSQL:_sQuery +=          " AND ZX5_50.ZX5_TABELA  = '50'"
+	_oSQL:_sQuery +=          " AND ZX5_50.ZX5_50COD   = P.B1_GRPEMB)"
+	_oSQL:_sQuery += " ORDER BY P.ORIGEM, P.B1_COD"
+	_oSQL:Log ('[' + procname () + ']')
+	_oSQL:ArqDestXLS = 'VA_XLS61'
+	_oSQL:Qry2Xls (.F., .F., .F.)
+return
+
+
+// --------------------------------------------------------------------------
+// Cria Perguntas no SX1
+Static Function _ValidPerg ()
+	local _aRegsPerg := {}
+	local _aDefaults := {}
+
+	//                 Ordem Descri                          tipo tam                   dec valid  F3    opcoes (combo)  help
+	aadd (_aRegsPerg, {01, "Produto inicial               ", "C", tamsx3 ("B1_COD")[1], 0,  "",   "SB1", {},             ""})
+	aadd (_aRegsPerg, {02, "Produto final                 ", "C", tamsx3 ("B1_COD")[1], 0,  "",   "SB1", {},             ""})
+	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
+Return
