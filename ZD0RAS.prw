@@ -124,7 +124,7 @@ Static Function _GeraTitulos(dDataIni, dDataFin)
                     DisarmTransaction()
                     u_log2("Erro", _sErro)
                 else
-                    u_help("Gravado título "+ alltrim(_nTitNum) + " refetente a Id Transacao " +  _aZD0[_x,2])
+                    //u_help("Gravado título "+ alltrim(_nTitNum) + " refetente a Id Transacao " +  _aZD0[_x,2])
                     u_log2("Aviso", "Gravado título "+ alltrim(_nTitNum) + " refetente a Id Transacao " +  _aZD0[_x,2])
                 EndIf
             End Transaction   
@@ -198,6 +198,8 @@ Static Function _GeraTitulos(dDataIni, dDataFin)
             Next            
         EndIf
     Next
+    // chama relatorio de baixas
+    U_ZD0RCMP(dDataIni, dDataFin)
 Return
 //
 // -------------------------------------------------------------------------

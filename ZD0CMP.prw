@@ -17,8 +17,9 @@ User Function ZD0CMP()
     Local aArea      := GetArea()
     Local nTaxaCM    := 0
     Local aTxMoeda   := {}
+    Local aTaxa      := {}
     Local _x         := 0
-    Local nSaldoComp := 0  // Valor a ser compensado (Caso seja parcial Pode ser parcial)
+    Local nSaldoComp := 0  // Valor a ser compensado (Caso seja parcial Pode ser parcial)  
     
     Private cPerg := "ZD0CMP"
 	
@@ -84,6 +85,7 @@ User Function ZD0CMP()
             _oSQL:_sQuery += "    ,E1_LOJA "
             _oSQL:_sQuery += "    ,E1_TIPO "
             _oSQL:_sQuery += "    ,E1_VALOR"
+            _oSQL:_sQuery += "    ,E1_SALDO"
             _oSQL:_sQuery += " FROM " + RetSQLName ("SE1") 
             _oSQL:_sQuery += " WHERE D_E_L_E_T_= '' "
             _oSQL:_sQuery += " AND E1_FILIAL   = '" + _aZD0[_x, 2] + "' "
@@ -111,89 +113,116 @@ User Function ZD0CMP()
                     DisarmTransaction()
                 else
                     u_log2('aviso', 'Compensação realizada com sucesso! RECNOs: NF:' + alltrim(str(_aSE1[ 1, 1])) + " RA:" + alltrim(str(_aRA[ 1, 1])) )
+                    aadd(aTaxa,{    _aSE1[ 1, 2],; // filial
+                                    _aSE1[ 1, 3],; // prefixo
+                                    _aSE1[ 1, 4],; // número
+                                    _aSE1[ 1, 5],; // parcela
+                                    _aSE1[ 1, 6],; // cliente
+                                    _aSE1[ 1, 7],; // loja
+                                    _aSE1[ 1, 8],; // tipo
+                                    _aZD0[_x, 6],; // desconto
+                                    _aSE1[ 1, 1],; // recno titulo
+                                    _aRA[ 1, 1] ,; // recno RA
+                                    _aZD0[_x, 3],; // TID
+                                    _aZD0[_x, 7]}) // RID
 
-                    // Realiza movimento da taxa
-                    // Define banco
-                    If xFilial('ZD0') == '01'
-                        _sBanco     := '237'
-                        _sAgencia   := '03471'
-                        _sConta     := '0000470'
-                    else
-                        _sBanco     := '041'
-                        _sAgencia   := '0873'
-                        _sConta     := '0619710901'
-                    EndIf
-
-                    lMsErroAuto := .F.
-                    _sMotBaixa := 'NORMAL' 
-                    _sHist     := 'Taxa pagar.me'
-
-                    // executar a rotina de baixa automatica do SE1 gerando o SE5 - DO VALOR LÍQUIDO
-                    _aAutoSE1 := {}
-                    aAdd(_aAutoSE1, {"E1_FILIAL" 	, _aSE1[ 1, 2]  , Nil})
-                    aAdd(_aAutoSE1, {"E1_PREFIXO" 	, _aSE1[ 1, 3]  , Nil})
-                    aAdd(_aAutoSE1, {"E1_NUM"     	, _aSE1[ 1, 4]  , Nil})
-                    aAdd(_aAutoSE1, {"E1_PARCELA" 	, _aSE1[ 1, 5]  , Nil})
-                    aAdd(_aAutoSE1, {"E1_CLIENTE" 	, _aSE1[ 1, 6]	, Nil})
-                    aAdd(_aAutoSE1, {"E1_LOJA"    	, _aSE1[ 1, 7]	, Nil})
-                    aAdd(_aAutoSE1, {"E1_TIPO"    	, _aSE1[ 1, 8]	, Nil})
-                    aAdd(_aAutoSE1, {"AUTMOTBX"		, _sMotBaixa  	, Nil})
-                    aAdd(_aAutoSE1, {"CBANCO"  		, _sBanco	    , Nil})  	
-                    aAdd(_aAutoSE1, {"CAGENCIA"   	, _sAgencia		, Nil})  
-                    aAdd(_aAutoSE1, {"CCONTA"  		, _sConta		, Nil})
-                    aAdd(_aAutoSE1, {"AUTDTBAIXA"	, dDataBase		, Nil})
-                    aAdd(_aAutoSE1, {"AUTDTCREDITO"	, dDataBase		, Nil})
-                    aAdd(_aAutoSE1, {"AUTHIST"   	, _sHist    	, Nil})
-                    aAdd(_aAutoSE1, {"AUTDESCONT"	, _aZD0[_x, 6]  , Nil})
-                    aAdd(_aAutoSE1, {"AUTMULTA"  	, 0         	, Nil})
-                    aAdd(_aAutoSE1, {"AUTJUROS"  	, 0         	, Nil})
-                    aAdd(_aAutoSE1, {"AUTVALREC"  	, 0				, Nil})
-                
-                    _aAutoSE1 := aclone (U_OrdAuto (_aAutoSE1))  // orderna conforme dicionário de dados
-
-                    cPerg = 'FIN070'
-                    _aBkpSX1 = U_SalvaSX1 (cPerg)  // Salva parametros da rotina.
-                    U_GravaSX1 (cPerg, "01", 2)    // testar mostrando o lcto contabil depois pode passar para nao
-                    U_GravaSX1 (cPerg, "04", 2)    // esse movimento tem que contabilizar
-                    U_GravaSXK (cPerg, "01", "2", 'G' )
-                    U_GravaSXK (cPerg, "04", "2", 'G' )
-
-                    MSExecAuto({|x,y| Fina070(x,y)},_aAutoSE1,3,.F.,5) // rotina automática para baixa de títulos
-
-                    If lMsErroAuto
-                        u_log(memoread (NomeAutoLog ()))
-                        _sErro := ALLTRIM(memoread (NomeAutoLog ()))
-                        u_log2('erro', "Movimentação não realizada. RECNO. NF:" + alltrim(str(_aSE1[ 1, 1])) + " RA:" + alltrim(str(_aRA[ 1, 1])) )
-                        u_log2('erro', _sErro )                       
-                    Else
-                        u_log2('aviso', "Movimentação realizada. RECNO. NF:" + alltrim(str(_aSE1[ 1, 1])) + " RA:" + alltrim(str(_aRA[ 1, 1])) )
-
-                        _oSQL:= ClsSQL ():New ()
-                        _oSQL:_sQuery := ""
-                        _oSQL:_sQuery += " UPDATE " + RetSQLName ("ZD0") + " SET ZD0_STABAI = 'B' "
-                        _oSQL:_sQuery += " WHERE D_E_L_E_T_=''"
-                        _oSQL:_sQuery += " AND ZD0_FILIAL = '" + _aZD0[_x,2]   + "'"
-                        _oSQL:_sQuery += " AND ZD0_TID    = '" + _aZD0[_x,3]   + "'"
-                        _oSQL:_sQuery += " AND ZD0_RID    = '" + _aZD0[_x,7]   + "'"
-                        _oSQL:Log ()
-                        _oSQL:Exec ()
-
-                    Endif
-                    
-                    U_GravaSXK (cPerg, "01", "2", 'D' )
-                    U_GravaSXK (cPerg, "04", "2", 'D' )
-
-                    U_SalvaSX1 (cPerg, _aBkpSX1)  // Restaura parametros da rotina  
-
-                    u_log2('aviso', 'Baixa de taxa realizada com sucesso! RECNOs: NF:' + alltrim(str(_aSE1[ 1, 1])) + " RA:" + alltrim(str(_aRA[ 1, 1])) )
-                    u_help(" Compensação realizada com sucesso!")
                 EndIf
-
+                _BaixaTaxa(aTaxa)
                 End Transaction
             EndIf
         Next
+
+        // chama relatorio de baixas
+        U_ZD0RCMP(dDataIni, dDataFin)
+
     EndIf
     RestArea(aArea)
+Return
+//
+// -------------------------------------------------------------------------
+// Cria Perguntas no SX1
+Static Function _BaixaTaxa(aTaxa)
+    Local _x := 0
+
+    For _x:=1 to Len(aTaxa)                       
+        // Realiza movimento da taxa
+        // Define banco
+        If aTaxa[_x,1] == '01'
+            _sBanco     := '237'
+            _sAgencia   := '03471'
+            _sConta     := '0000470'
+        else
+            _sBanco     := '041'
+            _sAgencia   := '0873 '
+            _sConta     := '0619710901'
+        EndIf
+
+        lMsErroAuto := .F.
+        _sMotBaixa := 'NORMAL' 
+        _sHist     := 'Taxa pagar.me'
+
+        // executar a rotina de baixa automatica do SE1 gerando o SE5 - DO VALOR LÍQUIDO
+        _aAutoSE1 := {}
+
+        aAdd(_aAutoSE1, {"E1_FILIAL" 	, aTaxa[_x,1]       , Nil})
+        aAdd(_aAutoSE1, {"E1_PREFIXO" 	, aTaxa[_x,2]       , Nil})
+        aAdd(_aAutoSE1, {"E1_NUM"     	, aTaxa[_x,3]       , Nil})
+        aAdd(_aAutoSE1, {"E1_PARCELA" 	, aTaxa[_x,4]       , Nil})
+        aAdd(_aAutoSE1, {"E1_CLIENTE" 	, aTaxa[_x,5] 	    , Nil})
+        aAdd(_aAutoSE1, {"E1_LOJA"    	, aTaxa[_x,6] 	    , Nil})
+        aAdd(_aAutoSE1, {"E1_TIPO"    	, aTaxa[_x,7] 	    , Nil})
+        aAdd(_aAutoSE1, {"AUTMOTBX"		, _sMotBaixa  	    , Nil})
+        aAdd(_aAutoSE1, {"CBANCO"  		, _sBanco	        , Nil})  	
+        aAdd(_aAutoSE1, {"CAGENCIA"   	, _sAgencia         , Nil})  
+        aAdd(_aAutoSE1, {"CCONTA"  		, _sConta	        , Nil})
+        aAdd(_aAutoSE1, {"AUTDTBAIXA"	, dDataBase		    , Nil})
+        aAdd(_aAutoSE1, {"AUTDTCREDITO"	, dDataBase		    , Nil})
+        aAdd(_aAutoSE1, {"AUTHIST"   	, _sHist    	    , Nil})
+        aAdd(_aAutoSE1, {"AUTDESCONT"	, aTaxa[_x,8]       , Nil})
+        aAdd(_aAutoSE1, {"AUTMULTA"  	, 0         	    , Nil})
+        aAdd(_aAutoSE1, {"AUTJUROS"  	, 0         	    , Nil})
+        aAdd(_aAutoSE1, {"AUTVALREC"  	, 0				    , Nil})
+
+        _aAutoSE1 := aclone (U_OrdAuto (_aAutoSE1))  // orderna conforme dicionário de dados
+
+        cPerg = 'FIN070'
+        _aBkpSX1 = U_SalvaSX1 (cPerg)  // Salva parametros da rotina.
+        U_GravaSX1 (cPerg, "01", 2)    // testar mostrando o lcto contabil depois pode passar para nao
+        U_GravaSX1 (cPerg, "04", 2)    // esse movimento tem que contabilizar
+        U_GravaSXK (cPerg, "01", "2", 'G' )
+        U_GravaSXK (cPerg, "04", "2", 'G' )
+
+        MSExecAuto({|x,y| Fina070(x,y)},_aAutoSE1,3,.F.,5) // rotina automática para baixa de títulos
+
+        If lMsErroAuto
+            u_log(memoread (NomeAutoLog ()))
+            _sErro := ALLTRIM(memoread (NomeAutoLog ()))
+            u_help("Erro" + _sErro)
+            u_log2('erro', "Movimentação não realizada. RECNO. NF:" + alltrim(str(aTaxa[_x,9])) + " RA:" + alltrim(str(aTaxa[_x,10])) )
+            u_log2('erro', _sErro )                       
+        Else
+            u_log2('aviso', "Movimentação realizada. RECNO. NF:" + alltrim(str(aTaxa[_x,9])) + " RA:" + alltrim(str(aTaxa[_x,10])) )
+
+            _oSQL:= ClsSQL ():New ()
+            _oSQL:_sQuery := ""
+            _oSQL:_sQuery += " UPDATE " + RetSQLName ("ZD0") + " SET ZD0_STABAI = 'B' "
+            _oSQL:_sQuery += " WHERE D_E_L_E_T_=''"
+            _oSQL:_sQuery += " AND ZD0_FILIAL = '" + aTaxa[_x,1]  + "'"
+            _oSQL:_sQuery += " AND ZD0_TID    = '" + aTaxa[_x,11] + "'"
+            _oSQL:_sQuery += " AND ZD0_RID    = '" + aTaxa[_x,12] + "'"
+            _oSQL:Log ()
+            _oSQL:Exec ()
+
+        Endif
+        
+        U_GravaSXK (cPerg, "01", "2", 'D' )
+        U_GravaSXK (cPerg, "04", "2", 'D' )
+
+        U_SalvaSX1 (cPerg, _aBkpSX1)  // Restaura parametros da rotina  
+
+        u_log2('aviso', 'Baixa de taxa realizada com sucesso! RECNOs: NF:' + alltrim(str(aTaxa[_x,9])) + " RA:" + alltrim(str(aTaxa[_x,10])) )
+    Next
+
 Return
 //
 // -------------------------------------------------------------------------

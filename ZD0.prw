@@ -40,10 +40,9 @@ User Function ZD0()
         AADD(aRotina, {"Extrato"     		, "U_ZD0EXT()"     , 0, 8 })
 		AADD(aRotina, {"Consulta TItulos" 	, "U_ZD0CONS()"    , 0, 8 })	
 
-		AADD(_aCores,{ "ZD0_STABAI == 'A'", 'BR_VERMELHO' }) // aberto
-		AADD(_aCores,{ "ZD0_STABAI == 'B'", 'BR_VERDE'    }) // baixado
+		AADD(_aCores,{ "ZD0_STABAI == 'A'", 'BR_VERDE'    }) // aberto
+		AADD(_aCores,{ "ZD0_STABAI == 'B'", 'BR_VERMELHO' }) // baixado
 		AADD(_aCores,{ "ZD0_STABAI == 'R'", 'BR_AZUL'     }) // Gerada RA's
-		AADD(_aCores,{ "ZD0_STABAI == 'E'", 'BR_PRETO'    }) // estorno RA'a
                       
 		dbSelectArea ("ZD0")
 		dbSetOrder (1)
@@ -59,10 +58,9 @@ User function ZD0LGD (_lRetCores)
 	local aCores2 := {}
 	local _i      := 0
 	
-	aadd (aCores, {"ZD0->ZD0_STABAI=='A'", 'BR_VERMELHO' , 'Aberto'		})
-	aadd (aCores, {"ZD0->ZD0_STABAI=='B'", 'BR_VERDE'	 , 'Baixado'	})
+	aadd (aCores, {"ZD0->ZD0_STABAI=='A'", 'BR_VERDE' 	 , 'Aberto'		})
+	aadd (aCores, {"ZD0->ZD0_STABAI=='B'", 'BR_VERMELHO' , 'Baixado'	})
 	aadd (aCores, {"ZD0->ZD0_STABAI=='R'", 'BR_AZUL'	 , 'Gerada RA'	})
-	aadd (aCores, {"ZD0->ZD0_STABAI=='E'", 'BR_PRETO'	 , 'Estorno RA'	})
 
 	if ! _lRetCores
 		for _i = 1 to len (aCores)
