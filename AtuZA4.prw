@@ -7,6 +7,7 @@
 //
 // Historico de alteracoes:
 // 30/10/2019 - Robert - Passa a gravar avisos e erros usando a classe ClsAviso().
+// 31/08/2022 - Robert - Melhoria uso classe ClsAviso.
 //
 
 // --------------------------------------------------------------------------
@@ -15,16 +16,12 @@ user function AtuZA4 (_sVerba)
 	local _oSQL      := NIL
 	local _nUsado    := 0
 	local _oAviso    := NIL
-//	local _sMsg      := ''
 
-	u_logIni ()
-	
 	za4 -> (dbsetorder (1))  // ZA4_FILIAL, ZA4_NUM, R_E_C_N_O_, D_E_L_E_T_
 	if ! za4 -> (dbseek (xfilial ("ZA4") + _sVerba, .F.))
-	//	U_GrvAviso ('E', 'grpTI', procname (), 0, "Verba '" + _sVerba + "' nao localizada na tabela ZA4. Atualizacao nao pode ser feita.")
 		_oAviso := ClsAviso ():New ()
 		_oAviso:Tipo       = 'E'
-		_oAviso:Destinatar = 'grpTI'
+		_oAviso:DestinAvis = 'grpTI'
 		_oAviso:Texto      = "Verba '" + _sVerba + "' nao localizada na tabela ZA4. Atualizacao nao pode ser feita."
 		_oAviso:Origem     = procname ()
 		_oAviso:Grava ()
@@ -48,10 +45,9 @@ user function AtuZA4 (_sVerba)
 		else
 			za4 -> za4_sutl = '2'  // Usado total
 			if _nUsado > za4 -> za4_vlr
-//				U_GrvAviso ('E', 'grpTI', "Verba '" + _sVerba + "' valor usado maior que o valor da verba.", procname (), 0)
 				_oAviso := ClsAviso ():New ()
 				_oAviso:Tipo       = 'E'
-				_oAviso:Destinatar = 'grpTI'
+				_oAviso:DestinAvis = 'grpTI'
 				_oAviso:Texto      = "Verba '" + _sVerba + "' valor usado maior que o valor da verba."
 				_oAviso:Origem     = procname ()
 				_oAviso:Grava ()
@@ -62,5 +58,4 @@ user function AtuZA4 (_sVerba)
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
 return

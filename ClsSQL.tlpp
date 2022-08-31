@@ -261,9 +261,8 @@ METHOD Exec () Class ClsSQL
 			u_help (::UltMsg,, .t.)
 				
 			// Grava aviso. A gravacao do aviso, se executada direto via SQL, gera erro de estouro de pilha. Nao descobri o motivo. Robert, 10/10/2019.
-			// por enquanto nao temos monitoramento de avisos ---> if existblock ("GRVAVISO")
-			// por enquanto nao temos monitoramento de avisos ---> 	U_GrvAviso ('E', 'grpTI', ::UltMsg, procname (1) + '==>' + procname (2) + '==>' + procname (3), 0)
-			// por enquanto nao temos monitoramento de avisos ---> endif
+			// ::UltMsg, procname (1) + '==>' + procname (2) + '==>' + procname (3), 0)
+
 		endif
 	endif
 return _lRet

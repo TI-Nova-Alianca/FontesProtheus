@@ -10,10 +10,11 @@
 // 14/02/2021 - Robert - Atributo ::Destinatar substituido por ::DestinAvis
 //                     - Nao grava mais para GrpTI qunto tipo 'Erro'.
 // 08/12/2021 - Robert - Gera log quando tipo de aviso invalido.
+// 30/08/2022 - Robert - Atributo ClsAviso:DestinAvis passa a ser tipo string.
+//                     - Versao inicial de envio para NaWeb via web service.
 //
 
 #include "protheus.ch"
-
 
 // --------------------------------------------------------------------------
 // Funcao declarada apenas para poder compilar este arquivo fonte.
@@ -30,12 +31,14 @@ CLASS ClsAviso
 	data Destinatar  // soh pra manter compatibilidade com fontes antigos
 	data DestinAvis
 	data Texto
+	data Titulo
 	data Origem
 	data DiasDeVida
 	data CodAviso
 
 	// Declaração dos Métodos da Classe
 	METHOD New ()
+	METHOD EnviaNAWeb ()
 	METHOD Grava ()
 ENDCLASS
 
@@ -44,8 +47,9 @@ ENDCLASS
 METHOD New () Class ClsAviso
 	::Tipo       := ""
 	::Destinatar := ""
-	::DestinAvis := {}
+	::DestinAvis := ''
 	::Texto      := ""
+	::Titulo     := ""
 	::Origem     := ""
 	::DiasDeVida := 0
 	::CodAviso   := ""
@@ -59,22 +63,33 @@ METHOD Grava () Class ClsAviso
 	local _i         := 0
 	local _sPilha    := ""
 	local _aCodAvis  := {}
-	local _nDestAvis := 0
+	local _lEnvNAW   := .T.
 
-	if ! ::Tipo $ 'E/A'
+	if ! ::Tipo $ 'E/A/I'  // [E]rro, [A]viso, [I]nfo
 		u_log2 ('erro', "Tipo de aviso invalido: '" + cvaltochar (::Tipo) + "'")
+		_lEnvNAW = .F.
+	endif
+
+	::DiasDeVida = iif (::DiasDeVida == NIL, iif (::Tipo == 'E', 0, 30), ::DiasDeVida)
+
+	// Tenho alguns grupos ja usados em outros fontes, que ainda preciso pensar
+	// em como tratar...
+	if upper (alltrim (::DestinAvis)) == 'GRPTI'
+		::DestinAvis = 'robert.koch,sandra.sugari,claudia.lionco'
 	endif
 
 	if empty (::DestinAvis)  // ateh eliminar o atributo antigo
-		::DestinAvis = U_SeparaCpo (::Destinatar, ';')
+		::DestinAvis = ::Destinatar
 	endif
 
-	for _nDestAvis = 1 to len (::DestinAvis)
-		u_log2 (iif (::Tipo == 'A', 'info', 'erro'), '[' + GetClassName (::Self) + '.' + procname () + '] ' + iif (::Tipo == 'A', 'Aviso', 'Notif.erro') + ' p/ ' + ::DestinAvis [_nDestAvis] + ': ' + ::Texto)
-	next
+//	u_log (::Tipo)
+//	u_log (::DestinAvis)
+//	u_log (::Texto)
+	u_log2 (iif (::Tipo == 'E', 'erro', iif (::Tipo == 'A', 'aviso', 'info')), '[' + GetClassName (::Self) + '.' + procname () + ']Notificacao para ' + ::DestinAvis + ': ' + ::Texto)
 
 	if empty (::CodAviso)	
 		U_Log2 ('aviso', 'Codigo de aviso nao informado.')
+		_lEnvNAW = .F.
 	endif
 
 	_aCodAVis = {}
@@ -93,32 +108,79 @@ METHOD Grava () Class ClsAviso
 	aadd (_aCodAvis, {'013', 'Erro atualizacao SE5 na compensacao de contas a pagar'})
 	aadd (_aCodAvis, {'014', 'Tamanho chave medicao performance excedido'})
 	aadd (_aCodAvis, {'015', 'Problemas para gerar contabilizacao'})
+	aadd (_aCodAvis, {'00000000-0000-0000-0000-000000000000', 'testes naweb'})
 
 	if ascan (_aCodAVis, {|_aVal| _aVal [1] == ::CodAviso}) == 0
 		u_log2 ('erro', "Codigo de aviso '" + ::CodAviso + "' nao cadastrado na classe " + GetClassName (::Self))
+		_lEnvNAW = .F.
 	endif
 
-	for _nDestAvis = 1 to len (::DestinAvis)
-		reclock ("ZAB", .T.)
-		zab -> zab_tipo   = ::Tipo
-		zab -> zab_destin = ::DestinAvis [_nDestAvis]
-		zab -> zab_texto  = ::Texto
-		zab -> zab_dtemis = date ()
-		zab -> zab_hremis = time ()
-		if ::Origem == NIL .or. empty (::Origem)
-			do while procname (_i) != ""
-				_sPilha += '=>' + procname (_i)
-				_i++
-			enddo
-			zab -> zab_origem = _sPilha
-		else
-			zab -> zab_origem = ::Origem
-		endif
-		zab -> zab_valid  = iif (::DiasDeVida == NIL, iif (::Tipo == 'E', 0, 30), ::DiasDeVida)
-		zab -> zab_lido   = 'N'
-		zab -> zab_codigo = ::CodAviso
-		msunlock ()
-	next
+	reclock ("ZAB", .T.)
+	zab -> zab_tipo   = ::Tipo
+	zab -> zab_destin = ::DestinAvis
+	zab -> zab_titulo = ::Titulo
+	zab -> zab_texto  = ::Texto
+	zab -> zab_dtemis = date ()
+	zab -> zab_hremis = time ()
+	if ::Origem == NIL .or. empty (::Origem)
+		do while procname (_i) != ""
+			_sPilha += '=>' + procname (_i)
+			_i++
+		enddo
+		zab -> zab_origem = _sPilha
+	else
+		zab -> zab_origem = ::Origem
+	endif
+	zab -> zab_valid  = ::DiasDeVida
+	zab -> zab_codigo = ::CodAviso
+	msunlock ()
 
+/*ainda nao
+	// Tenta fazer o envio para web service do NaWeb
+	if _lEnvNAW  // Se nao tinha algum problema anterior...
+		if ::EnviaNaWeb ()
+			reclock ("ZAB", .F.)
+			zab -> zab_EnvNAW = 'S'
+			msunlock ()
+		endif
+	endif
+*/
 	U_ML_SRArea (_aAreaAnt)
 return
+
+
+// --------------------------------------------------------------------------
+// Envia para NaWeb (local padrao de consulta) via web service.
+METHOD EnviaNAWeb () Class ClsAviso
+	local _lRetWSNA  := .F.
+	local _sXMLNotif := ''
+	local _oWSNaWeb  := NIL
+	U_Log2 ('debug', '[' + procname () + ']Enviando para NaWeb')
+	_sXMLNotif := '<SdtNotificacoes>'
+	_sXMLNotif +=    '<SdtNotificacoesItem>'
+//	_sXMLNotif +=    '<NotifIcone/>'
+
+	_sXMLNotif +=    '<NotifTitulo>' + alltrim (::Titulo) + '</NotifTitulo>'
+	_sXMLNotif +=    '<NotifMsg>' + alltrim (::Texto) + '</NotifMsg>'
+	_sXMLNotif +=    '<Notifcod>' + ::CodAviso + '</Notifcod>'
+//	_sXMLNotif +=    '<NotifData>'
+//	_sXMLNotif +=       substring (dtos (zab -> zab_dtemis), 1, 4) + '-'
+//	_sXMLNotif +=       substring (dtos (zab -> zab_dtemis), 5, 2) + '-'
+//	_sXMLNotif +=       substring (dtos (zab -> zab_dtemis), 7, 2)
+//	_sXMLNotif +=       'T' + zab -> zab_hremis
+//	_sXMLNotif +=    '</NotifData>'
+//	_sXMLNotif +=    '<NotifLink/>'
+	_sXMLNotif +=    '<NotifUsuarios>' + ::DestinAvis + '</NotifUsuarios>'
+	_sXMLNotif +=    '<NotifHTML/>'
+	_sXMLNotif +=    '<NotifRecorrencia>' + cvaltochar (::DiasDeVida) + '</NotifRecorrencia>'
+	_sXMLNotif +=    '<NotifTipo>' + ::Tipo + '</NotifTipo>'
+	_sXMLNotif +=    '</SdtNotificacoesItem>'
+	_sXMLNotif += '</SdtNotificacoes>'
+	U_Log2 ('debug', '[' + procname () + ']' + _sxmlNotif)
+	_oWSNaWeb := WSPrcNotificacoesWS():New()
+	_oWSNaWeb:cEntrada := _sXMLNotif
+	_oWSNaWeb:Execute()
+	u_log ('retorno:', _oWSNaWeb:cSaida)
+return _lRetWSNA
+
+

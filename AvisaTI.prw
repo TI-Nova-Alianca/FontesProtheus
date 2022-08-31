@@ -15,16 +15,15 @@
 // 01/10/2018 - Robert - Gera um arquivo por mes.
 // 10/10/2019 - Robert - Inicio gravacao tabela avisos.
 // 04/01/2021 - Robert - Nao grava mais em arquivo (nunca foi consultado).
+// 31/08/2022 - Robert - Melhoria uso classe ClsAviso.
 //
 
 // --------------------------------------------------------------------------
 user function AvisaTI (_sAviso)
-	//local _oSQL := NIL
-	local _aAreaAnt  := U_ML_SRArea ()
-	local _aAmbAnt   := U_SalvaAmb ()
-//	local _sArqAviso := "Avisos_para_TI_" + left (dtos (date ()), 6) + ".txt"
-//	local _nHdl      := 0
-	local _oAviso    := NIL
+//	local _aAreaAnt  := U_ML_SRArea ()
+//	local _aAmbAnt   := U_SalvaAmb ()
+	local _oAviso := NIL
+	local _sMsg   := ''
 
 	_sMsg := '[' + dtoc (date ()) + ' ' + time () + ']'
 	_sMsg += '[' + cvaltochar(GetServerPort ()) + '/' + GetEnvServer () + ']'
@@ -33,29 +32,20 @@ user function AvisaTI (_sAviso)
 	_sMsg += _sAviso
 	_sMsg += _PCham ()
 	_sMsg += chr (13) + chr (10)
-/*
-	if file (_sArqAviso)
-		_nHdl = fopen(_sArqAviso, 1)
-	else
-		_nHdl = fcreate(_sArqAviso, 0)
-	endif
-	fseek (_nHdl, 0, 2)  // Encontra final do arquivo
-	fwrite (_nHdl, _sMsg)
-	fclose (_nHdl)
-*/
+
 	// Caso tenha arquivo de log, grava a mensagem nele tambem.
 	U_Log2 ('aviso', procname () + ": " + _sAviso)
 
 	// Ainda em implementacao. Depois pretendemos passar para o NaWeb.
-	//U_GrvAviso ('E', 'robert.koch', _sAviso, procname (1) + '==>' + procname (2), 0)
 	_oAviso := ClsAviso ():New ()
 	_oAviso:Tipo       = 'E'
-	_oAviso:Destinatar = 'grpTI'
+	_oAviso:DestinAvis = 'grpTI'
+	_oAviso:Titulo     = 'Avisos para TI'
 	_oAviso:Texto      = _sAviso
 	_oAviso:Grava ()
 
-	U_ML_SRArea (_aAreaAnt)
-	U_SalvaAmb (_aAmbAnt)
+//	U_ML_SRArea (_aAreaAnt)
+//	U_SalvaAmb (_aAmbAnt)
 return
 
 

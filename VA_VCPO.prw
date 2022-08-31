@@ -169,6 +169,7 @@
 // 15/07/2022 - Robert  - Valida grupo 140 do ZZU no campo D3_VAETIQ.
 // 01/08/2022 - Robert  - Criada validacao duplicidade B1_CODBAR (GLPI 11994)
 // 25/08/2022 - Robert  - Pequena melhoria mensagem validacao etiqueta (D3_VAETIQ)
+// 30/08/2022 - Robert - Atributo ClsAviso:DestinAvis passa a ser tipo string.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -1608,7 +1609,7 @@ user function VA_VCpo (_sCampo)
 			//U_AvisaTI ("Campo '" + _sCampo + "' nao previsto na rotina " + procname ())
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:DestinAvis = {'robert.koch', 'sandra.sugari', 'claudia.lionco'}
+			_oAviso:DestinAvis = 'robert.koch,sandra.sugari,claudia.lionco'
 			_oAviso:Texto      = "Campo '" + _sCampo + "' nao previsto na rotina " + procname ()
 			_oAviso:Origem     = procname ()
 			_oAviso:CodAviso   = '005'

@@ -17,6 +17,7 @@
 // 09/04/2021 - Robert - Criada opcao 'L' para apenas gravar em log, sem persistir no banco de dados.
 // 03/05/2021 - Robert - Criado tratamento para quando virar a meia noite.
 // 01/05/2022 - Robert - Retorna o tempo total ao final do processo (caso a rotina chamadora queira usar).
+// 30/08/2022 - Robert - Atributo ClsAviso:DestinAvis passa a ser tipo string.
 //
 
 // --------------------------------------------------------------------------
@@ -68,7 +69,7 @@ user function PerfMon (_sQueFazer, _sChvPerf)
 					if len (_sChvPerf) > 25  // Deve estar de acordo com o campo CHAVE da tabela VA_PERFMON
 						_oAviso := ClsAviso ():New ()
 						_oAviso:Tipo       = 'E'
-						_oAviso:DestinAvis = {'robert.koch'}
+						_oAviso:DestinAvis = 'robert.koch'
 						_oAviso:Texto      = "Chave de medicao de performance '" + _sChvPerf + "' excedeu tamanho maximo.'
 						_oAviso:Origem     = procname ()
 						_oAviso:CodAviso   = '014'

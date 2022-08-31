@@ -86,14 +86,55 @@ user function robert ()
 		// _telnet ()
 		// _verif ()
 		// _ClsEtiq ()
-		//_VA_XLS ()
+		// _VA_XLS ()
+		_aviso ()
 
-		u_help ('Nada definido.')
+		//u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
 return
 
+static function _aviso ()
+	// Teste geracao avisos
+	_oAviso := ClsAviso ():New ()
+	_oAviso:Tipo       = 'A'
+	_oAviso:DestinAvis = 'ze'
+	_oAviso:Titulo     = 'powershell'
+	_oAviso:Texto      = 'este eh o corpitcho da mensagem'
+	_oAviso:Origem     = procname ()
+	_oAviso:DiasDeVida = 1
+	_oAviso:CodAviso   = '00000000-0000-0000-0000-000000000000'
+	_oAviso:Grava ()
+return
+
+/*
+// --------------------------------------------------------------------------
+static function _ws_naweb ()
+	local _sXMLNotif := ''
+	local _oWSNaWeb := NIL
+
+	_sXMLNotif := '<SdtNotificacoes>'
+	_sXMLNotif +=    '<SdtNotificacoesItem>'
+	_sXMLNotif +=    '<NotifIcone/>'
+	_sXMLNotif +=    '<NotifTitulo>via Protheus ' + time () + '</NotifTitulo>'
+	_sXMLNotif +=    '<NotifMsg>corpo da mensagem</NotifMsg>'
+	//_sXMLNotif +=    '<NotifData/>' #2022-08-30T11:45:11</NotifData>'
+	_sXMLNotif +=    '<NotifLink/>'
+	_sXMLNotif +=    '<Notifcod>00000000-0000-0000-0000-000000000000</Notifcod>'
+	_sXMLNotif +=    '<NotifUsuarios>daiana.ribas, robert.koch</NotifUsuarios>'
+	_sXMLNotif +=    '<NotifHTML/>'
+	_sXMLNotif +=    '<NotifRecorrencia>1</NotifRecorrencia>'
+	_sXMLNotif +=    '<NotifTipo>I</NotifTipo>'
+	_sXMLNotif +=    '</SdtNotificacoesItem>'
+	_sXMLNotif += '</SdtNotificacoes>'
+	U_Log2 ('debug', '[' + procname () + ']' + _sxmlNotif)
+	_oWSNaWeb := WSPrcNotificacoesWS():New()
+	_oWSNaWeb:cEntrada := _sXMLNotif
+	_oWSNaWeb:Execute()
+	u_log ('retorno:', _oWSNaWeb:cSaida)
+return
+*/
 // --------------------------------------------------------------------------
 static function _va_xls ()
 //	// Estoque com codigo de Sisdevin
@@ -1593,27 +1634,6 @@ return
 	U_GravaSX1 (cPerg, '12', 1)    // Apenas CNAB (quando mov.banc) [So CNAB, Exceto CNAB, Todos]
 	U_GravaSX1 (cPerg, '13', 2)    // Simular ou Executar           [Simular, Executar]
 	u_va_lcnf (.t.)
-return
-*/
-/*
-	// Teste geracao avisos
-	_oAviso := ClsAviso ():New ()
-	_oAviso:Tipo       = 'A'
-	_oAviso:Destinatar = 'robert'
-	_oAviso:Texto      = 'teste robert'
-	_oAviso:Origem     = procname ()
-	_oAviso:DiasDeVida = 3
-	_oAviso:CodAviso   = '010'
-	_oAviso:Grava ()
-	//
-	_oAviso := ClsAviso ():New ()
-	_oAviso:Tipo       = 'E'
-	_oAviso:Destinatar = 'robert'
-	_oAviso:Texto      = 'teste robert'
-	_oAviso:Origem     = procname ()
-	_oAviso:DiasDeVida = 3
-	_oAviso:CodAviso   = '010'
-	_oAviso:Grava ()
 return
 */
 /* Nao vamos usar agora

@@ -130,6 +130,7 @@
 // 14/04/2022 - Claudia - Criado gatilhos de vendedor. GLPI: 10699
 // 11/05/2022 - Robert  - Na valid.venda entr.fut. testava m->c6_tes, mas essa var.
 //                        agora vem com NIL. Alterado para GDFieldGet - GLPI 12036
+// 31/08/2022 - Robert  - Melhoria uso classe ClsAviso.
 //
 
 // --------------------------------------------------------------------------
@@ -191,21 +192,6 @@ user function VA_Gat (_sParCpo, _sParSeq)
 			_sCampo = ''
 			_sCDomin = ''
 		endif
-
-		// sx7 -> (dbsetorder (1))  // X7_CAMPO + X7_SEQUENC
-		// if sx7 -> (dbseek (_sParCpo + _sParSeq, .F.))
-		// 	_sCampo  = 'M->' + alltrim (sx7 -> x7_campo)
-		// 	_sCDomin = alltrim (sx7 -> x7_cdomin)
-		// 	if ! "VA_GAT" $ upper (sx7 -> x7_regra)
-		// 		U_AvisaTI ("Gatilho do campo: '" + _sParCpo + "' seq.: '" + _sParSeq + "' nao contem 'VA_GAT' no campo x7_regra. Suspeito que isso seja um problema. Gatilho nao serah executado.")
-		// 		_sCampo = ''
-		// 		_sCDomin = ''
-		// 	endif
-		// else
-		// 	U_help ("Gatilho nao encontrado no SX7. Campo: '" + _sParCpo + "' Seq.: '" + _sParSeq + "'. Gatilho nao serah executado.",, .T.)
-		// 	_sCampo = ''
-		// 	_sCDomin = ''
-		// endif
 	endif
 
 	do case

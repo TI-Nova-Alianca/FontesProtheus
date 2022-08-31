@@ -15,6 +15,7 @@
 // 17/07/2020 - Robert - Inseridas tags para catalogacao de fontes
 //                     - Melhorada chamada de reprocessamento de saldo associado (chamava 2 vezes sem necessidade).
 // 25/03/2021 - Robert - Gravacao do E5_VAUSER nao levava em conta o tamanho do campo e dava warning do SQL.
+// 31/08/2022 - Robert - Melhoria uso classe ClsAviso.
 //
 
 // Tags para automatizar catalogo de customizacoes:
@@ -102,7 +103,6 @@ static function _AtuChv ()
 		_sSQL +=   " AND E5_VACHVEX = ''"
 		//u_log2 ('info', _sSQL)
 		if TCSQLExec (_sSQL) < 0
-		//	U_GrvAviso ('E', 'grpTI', "Erro na atualizacao do SE5 - rotina " + procname () + " - comando: " + _sSQL)
 			_oAviso := ClsAviso ():New ()
 			_oAviso:CodAviso   = '013'
 			_oAviso:Tipo       = 'E'
