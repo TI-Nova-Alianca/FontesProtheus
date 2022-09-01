@@ -16,6 +16,7 @@
 // 06/10/2021 - Claudia - Incluido novos estados. GLPI: 11030
 // 11/05/2022 - Claudia - Incluida regra para AL e AC. GLPI: 12018
 // 01/08/2022 - Claudia - Incluida regra para PE. GLPI: 12371
+// 01/09/2022 - Claudia - Ajustada a regra MT conforme GLPI: 12542
 //
 //---------------------------------------------------------------------------------
 #include "protheus.ch" 
@@ -25,21 +26,22 @@ User Function MA960GREC()
     Local aParam   := {0, '', '', 0, ''}    // Parâmetros de retorno default
     Local cReceita := PARAMIXB[1]           // Código de Receita da guia atual
     Local cUF      := PARAMIXB[2]           // Sigla da UF da guia atual
+    // Retorna os campos F6_TIPOGNU, F6_DOCORIG, F6_DETRECE, F6_CODPROD e F6_CODAREA de acordo com o código de receita e sigla da UF da guia atual.
 
     Do Case
         Case Alltrim(cReceita) $ '100099/100102/100110/100129' .and. cUF == 'MT'    
             Do Case
                 Case Alltrim(cReceita) == '100099'
-                    aParam := {10, '1', '000017', 0, ''}  
+                    aParam := {22, '2', '000106', 0, ''}  
 
                 Case Alltrim(cReceita) == '100102'
-                    aParam := {10, '1', '000055', 0, ''}  
+                    aParam := {22, '2', '000109', 0, ''}  
 
                 Case Alltrim(cReceita) == '100110'
-                    aParam := {10, '1', '000056', 0, ''} 
+                    aParam := {22, '2', '000056', 0, ''} 
 
                 Case Alltrim(cReceita) == '100129'
-                    aParam := {10, '1', '000057', 0, ''} 
+                    aParam := {22, '2', '000110', 0, ''} 
 
             EndCase   
 
