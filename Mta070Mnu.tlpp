@@ -11,7 +11,9 @@
 // #TabelasPrincipais #SA6
 // #Modulos           #FIN
 
-
+// Historico de alteracoes:
+// 31/08/2022 - Robert - Atualiza tambem a tabela SE8 (GLPI 12535)
+//
 
 // --------------------------------------------------------------------------
 user function Mta070Mnu ()
@@ -41,6 +43,24 @@ user function A070Flx ()
 			reclock ("SA6", .F.)
 			sa6 -> a6_salatu = _nNovoSld
 			msunlock ()
+			
+			// O job de atualizacao do fluxo de caixa busca na tabela SE8
+			se8 -> (dbsetorder (1)) // E8_FILIAL, E8_BANCO, E8_AGENCIA, E8_CONTA, E8_DTSALAT, R_E_C_N_O_, D_E_L_E_T_
+			if ! se8 -> (dbseek (xfilial ("SE8") + sa6 -> a6_cod + sa6 -> a6_agencia + sa6 -> a6_numcon + dtos (dDataBase), .F.))
+				reclock ("SE8", .T.)
+			else
+				reclock ("SE8", .F.)
+			endif
+			se8 -> e8_filial  = xfilial ("SE8")
+			se8 -> e8_banco   = sa6 -> a6_cod
+			se8 -> e8_agencia = sa6 -> a6_agencia
+			se8 -> e8_conta   = sa6 -> a6_numcon
+			se8 -> e8_dtsalat = dDataBase
+			se8 -> e8_salatua = _nNovoSld
+			se8 -> e8_moeda   = ' 1'  // Tem espaco na frente, mesmo.
+			msunlock ()
+
+			u_help ("Saldo alterado.")
 		endif
 	endif
 return

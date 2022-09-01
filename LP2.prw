@@ -15,6 +15,7 @@
 // 21/11/2019 - Robert - Criados retornos de informacoes do SN4 (transf.ativo imob.)
 // 08/12/2021 - Robert - Alterado envio de avisos para TI (passa a usar classe ClsAviso).
 //                     - Ao buscar repres.da NF orig. de venda, queria que esta fosse tipo D. Alterado para tipo N.
+// 01/09/2022 - Robert - Melhorias ClsAviso.
 //
 
 // --------------------------------------------------------------------------
@@ -49,14 +50,13 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 			case valtype (_sTipoProd) == "C" .and. _sTipoProd == "UC" ; _xRet = "101030301001"
 			case valtype (_sTipoProd) == "C" .and. _sTipoProd == "VD" ; _xRet = "101030101013"  // VINHOS E DERIVADOS
 			otherwise
-//			U_AvisaTI ("Tipo de produto '" + cvaltochar (_sTipoProd) + "' sem tratamento. LPAD = " + cvaltochar (_sLPad))
+
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:Destinatar = 'grpTI'
+			_oAviso:DestinAvis = 'grpTI'
 			_oAviso:Texto      = "LPAD '" + cvaltochar (_sLPad) + "': Tipo de produto '" + cvaltochar (_sTipoProd) + "' sem tratamento."
 			_oAviso:Origem     = procname ()
 			_oAviso:DiasDeVida = 30
-			_oAviso:CodAviso   = '015'
 			_oAviso:Grava ()
 
 			_xRet = ''
@@ -64,19 +64,16 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 
 
 	case _sQueRet = "CTA_TP_VEND"
-	//	U_Log2 ('debug', 'Pesquisando _sRepres >>' + cvaltochar (_sRepres) + '<<')
-	//	U_Log2 ('debug', 'SD1 -> (RECNO ()): ' + cvaltochar (SD1 -> (RECNO ())) + '  SD2 -> (RECNO ()): ' + cvaltochar (SD2 -> (RECNO ())) + '  Se1 -> (RECNO ()): ' + cvaltochar (Se1 -> (RECNO ())) + '  SE5 -> (RECNO ()): ' + cvaltochar (Se5 -> (RECNO ())) + '  D2_DOC: ' + sd2 -> d2_doc)
 		if valtype (_sRepres) == 'C'
 			sa3 -> (dbsetorder (1))
 			if ! sa3 -> (dbseek (xfilial ("SA3") + _sRepres, .F.))
 //				U_AvisaTI ("Cadastro do vendedor '" + _sRepres + "' nao encontrado. LPAD = " + cvaltochar (_sLPad))
 				_oAviso := ClsAviso ():New ()
 				_oAviso:Tipo       = 'E'
-				_oAviso:Destinatar = 'grpTI'
+				_oAviso:DestinAvis = 'grpTI'
 				_oAviso:Texto      = "LPAD '" + cvaltochar (_sLPad) + "': Cadastro do vendedor '" + _sRepres + "' nao encontrado."
 				_oAviso:Origem     = procname ()
 				_oAviso:DiasDeVida = 30
-				_oAviso:CodAviso   = '015'
 				_oAviso:Grava ()
 
 				_xRet = ''
@@ -89,11 +86,10 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 						//U_AvisaTI ("Campo '" + alltrim (RetTitle ("A3_VATPCON")) + "' nao informado no vendedor '" + sa3 -> a3_cod + "'. LPAD = " + cvaltochar (_sLPad))
 						_oAviso := ClsAviso ():New ()
 						_oAviso:Tipo       = 'E'
-						_oAviso:Destinatar = 'grpTI'
+						_oAviso:DestinAvis = 'grpTI'
 						_oAviso:Texto      = "LPAD '" + cvaltochar (_sLPad) + "': Campo '" + alltrim (RetTitle ("A3_VATPCON")) + "' nao informado no vendedor '" + sa3 -> a3_cod + "'."
 						_oAviso:Origem     = procname ()
 						_oAviso:DiasDeVida = 30
-						_oAviso:CodAviso   = '015'
 						_oAviso:Grava ()
 
 						_xRet = ''
@@ -109,11 +105,10 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 //			U_AvisaTI ("Codigo de vendedor nao informado na rotina " + procname () + ". LPAD = " + cvaltochar (_sLPad))
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:Destinatar = 'grpTI'
+			_oAviso:DestinAvis = 'grpTI'
 			_oAviso:Texto      = "LPAD '" + cvaltochar (_sLPad) + "': Codigo de vendedor nao informado na rotina " + procname ()
 			_oAviso:Origem     = procname ()
 			_oAviso:DiasDeVida = 30
-			_oAviso:CodAviso   = '015'
 			_oAviso:Grava ()
 
 			_xRet = ''
@@ -132,11 +127,10 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 //					U_AvisaTI ("NF orig. venda '" + sd1 -> d1_nfori + "/" + sd1 -> d1_seriori + "' nao encontrada'. LPAD = " + cvaltochar (_sLPad))
 					_oAviso := ClsAviso ():New ()
 					_oAviso:Tipo       = 'E'
-					_oAviso:Destinatar = 'grpTI'
+					_oAviso:DestinAvis = 'grpTI'
 					_oAviso:Texto      = "LPAD '" + cvaltochar (_sLPad) + "': NF orig. venda '" + sd1 -> d1_nfori + "/" + sd1 -> d1_seriori + "' nao encontrada'
 					_oAviso:Origem     = procname ()
 					_oAviso:DiasDeVida = 30
-					_oAviso:CodAviso   = '015'
 					_oAviso:Grava ()
 
 					_xRet = ''
@@ -145,11 +139,10 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 //				U_AvisaTI ("NF de entrada '" + sd1 -> d1_doc + "' eh do tipo '" + sd1 -> d1_tipo + "'. Deveria ser do tipo 'D' para este lcto. LPAD = " + cvaltochar (_sLPad))
 				_oAviso := ClsAviso ():New ()
 				_oAviso:Tipo       = 'E'
-				_oAviso:Destinatar = 'grpTI'
+				_oAviso:DestinAvis = 'grpTI'
 				_oAviso:Texto      = "LPAD '" + cvaltochar (_sLPad) + "': NF de entrada '" + sd1 -> d1_doc + "' eh do tipo '" + sd1 -> d1_tipo + "'. Deveria ser do tipo 'D' para este lcto."
 				_oAviso:Origem     = procname ()
 				_oAviso:DiasDeVida = 30
-				_oAviso:CodAviso   = '015'
 				_oAviso:Grava ()
 
 				_xRet = ''
@@ -158,11 +151,10 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 //			U_AvisaTI ("Numero do RECNO da tabela SD1 nao informado na rotina " + procname () + ". LPAD = " + cvaltochar (_sLPad))
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:Destinatar = 'grpTI'
+			_oAviso:DestinAvis = 'grpTI'
 			_oAviso:Texto      = "LPAD '" + cvaltochar (_sLPad) + "': Numero do RECNO da tabela SD1 nao informado na rotina " + procname ()
 			_oAviso:Origem     = procname ()
 			_oAviso:DiasDeVida = 30
-			_oAviso:CodAviso   = '015'
 			_oAviso:Grava ()
 
 			_xRet = ''
@@ -213,11 +205,10 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 //			u_help ("Sem tratamento para requisicao do tipo '" + _sQueRet + "' no programa " + procname ())
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:Destinatar = 'grpTI'
+			_oAviso:DestinAvis = 'grpTI'
 			_oAviso:Texto      = "LPAD '" + cvaltochar (_sLPad) + "': Sem tratamento para requisicao do tipo '" + _sQueRet + "' no programa " + procname ()
 			_oAviso:Origem     = procname ()
 			_oAviso:DiasDeVida = 30
-			_oAviso:CodAviso   = '015'
 			_oAviso:Grava ()
 		endcase
 		_oSQL:Log ()
@@ -227,11 +218,10 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 //		U_AvisaTI ("Tipo de retorno '" + _sQueRet + "' sem tratamento no programa " + procname () + ". LPAD = " + cvaltochar (_sLPad))
 		_oAviso := ClsAviso ():New ()
 		_oAviso:Tipo       = 'E'
-		_oAviso:Destinatar = 'grpTI'
+		_oAviso:DestinAvis = 'grpTI'
 		_oAviso:Texto      = "LPAD '" + cvaltochar (_sLPad) + "': Tipo de retorno '" + _sQueRet + "' sem tratamento no programa " + procname ()
 		_oAviso:Origem     = procname ()
 		_oAviso:DiasDeVida = 30
-		_oAviso:CodAviso   = '015'
 		_oAviso:Grava ()
 	endcase
 

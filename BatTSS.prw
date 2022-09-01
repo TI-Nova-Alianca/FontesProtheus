@@ -4,6 +4,7 @@
 // Descricao..: Verifica inconsistencias no TSS / SPED
 //
 // Historico de alteracoes:
+// 01/09/2022 - Robert - Melhorias ClsAviso.
 //
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -16,7 +17,6 @@ user function BatTSS (_sTipoVer)
 	local _nQtAlt4   := 0
 	local _TSS0004   := ''
 
-	u_logIni ()
 	_oBatch:Retorno = 'S'  // "Executou OK?" --> S=Sim;N=Nao;I=Iniciado;C=Cancelado;E=Encerrado automaticamente
 
 	// Verifica casos em que a SEFAZ estiver retornando rejeicao 656 (uso indevido). Tivemos mais de uma situacao em que
@@ -112,14 +112,13 @@ user function BatTSS (_sTipoVer)
 						if _oSQL:Exec ()
 							_oAviso := ClsAviso ():New ()
 							_oAviso:Tipo       = 'E'
-							_oAviso:Destinatar = 'grpTI'
+							_oAviso:DestinAvis = 'grpTI'
 							_oAviso:Texto      = 'Filial ' + cFilAnt + ' NFE_ID ' + alltrim ((_sReg656) -> nfe_id) + ' - alterando STATUSCANC de 1 para 2 na tabela SPED050 por que estamos recebendo rejeicao 656.'
 							if ! empty (sf3 -> f3_dtcanc)
 								_oAviso:Texto     += ' Documento ja consta como cancelado na tabela SF3.'
 							endif
 							_oAviso:Texto     += ' Provavelmente seja necessario reenvio manual para obtermos autorizacao da SEFAZ.'
 							_oAviso:Origem     = procname ()
-							_oAviso:CodAviso   = '006'
 							_oAviso:Grava ()
 							_nQtAlt656 ++
 						else
@@ -170,11 +169,10 @@ user function BatTSS (_sTipoVer)
 				if _oSQL:Exec ()
 					_oAviso := ClsAviso ():New ()
 					_oAviso:Tipo       = 'E'
-					_oAviso:Destinatar = 'grpTI'
+					_oAviso:DestinAvis = 'grpTI'
 					_oAviso:Texto      = 'Filial ' + cFilAnt + ' NFE_ID ' + alltrim ((_TSS0004) -> nfe_id) + ' - alterando STATUSCANC de 1 para 2 na tabela SPED050 por que tem muitos registros na tabela TSS0004.'
 					_oAviso:Texto     += 'Verifique movimentacoes deste documento.'
 					_oAviso:Origem     = procname ()
-					_oAviso:CodAviso   = '008'
 					_oAviso:Grava ()
 					_nQtAlt4 ++
 				else
@@ -194,5 +192,4 @@ user function BatTSS (_sTipoVer)
 	_oBatch:Mensagens += cvaltochar (_nQtAlt656) + ' alter.STATUSCANC(ret.656); '
 	_oBatch:Mensagens += cvaltochar (_nQtAlt4) + ' alter.STATUSCANC(excesso TSS0004); '
 	
-	u_logFim ()
 return .T.

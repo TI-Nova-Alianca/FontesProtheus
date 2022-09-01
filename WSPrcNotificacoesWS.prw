@@ -57,7 +57,8 @@ Return oClone
 // WSDL Method Execute of Service WSPrcNotificacoesWS
 
 WSMETHOD Execute WSSEND cEntrada WSRECEIVE cSaida WSCLIENT WSPrcNotificacoesWS
-Local cSoap := "" , oXmlRet
+Local cSoap := ""
+private oXmlRet
 
 BEGIN WSMETHOD
 
@@ -67,11 +68,15 @@ cSoap += "</PrcNotificacoesWS.Execute>"
 
 oXmlRet := SvcSoapCall(Self,cSoap,; 
 	"NAWebaction/APRCNOTIFICACOESWS.Execute",; 
-	"DOCUMENT","NAWeb",,,; 
+	"DOCUMENT","NAWeb",,,; // "DOCUMENT","NAWeb",,,; 
 	"http://naweb17.novaalianca.coop.br/prcnotificacoesws.aspx")
 
 ::Init()
-::cSaida             :=  WSAdvValue( oXmlRet,"_PRCNOTIFICACOESWS.EXECUTERESPONSE:_SAIDA:TEXT","string",NIL,NIL,NIL,NIL,NIL,NIL) 
+
+//::cSaida             :=  WSAdvValue( oXmlRet,"_PRCNOTIFICACOESWS.EXECUTERESPONSE:_SAIDA:TEXT","string",NIL,NIL,NIL,NIL,NIL,NIL) 
+
+// Pelo client gerado nativamente, nao consegui ler este resultado. Robert, 01/09/2022.
+::cSaida = oXmlRet:_PRCNOTIFICACOESWS_EXECUTERESPONSE:_SAIDA:TEXT
 
 END WSMETHOD
 

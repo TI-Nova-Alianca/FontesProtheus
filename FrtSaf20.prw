@@ -8,6 +8,7 @@
 // 20/01/2020 - Robert - Erro ao mostrar mensagem de propriedade rural sem distancia informada.
 // 23/01/2020 - Robert - Gera aviso para agronomia quando falta cadastro.
 // 01/07/2020 - Robert - Calcula frete independente de distancia - GLPI 8131.
+// 01/09/2022 - Robert - Melhorias ClsAviso.
 //
 
 // ------------------------------------------------------------------------------------
@@ -38,10 +39,9 @@ User Function FrtSaf20 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor)
 			u_help ("Filial destino '" + _sFilDest + "' sem tratamento no programa " + procname (),, .T.)
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:Destinatar = 'grpAgronomia'
+			_oAviso:DestinAvis = 'grpAgronomia'
 			_oAviso:Texto      = "Filial destino '" + _sFilDest + "' sem tratamento no programa de calculo de frete de safra."
 			_oAviso:Origem     = procname ()
-			_oAviso:CodAviso   = '011'
 			_oAviso:Grava ()
 		endif
 	endif
@@ -50,10 +50,9 @@ User Function FrtSaf20 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor)
 		if IsInCallStack ("U_VA_RUSN")
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:Destinatar = 'grpAgronomia'
+			_oAviso:DestinAvis = 'grpAgronomia'
 			_oAviso:Texto      = "Sem distancias cadastradas na propriedade " + _sCadVit + " para calculo de frete."
 			_oAviso:Origem     = procname ()
-			_oAviso:CodAviso   = '011'
 			_oAviso:Grava ()
 		endif
 	endif

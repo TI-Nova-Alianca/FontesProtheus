@@ -14,6 +14,7 @@
 // 03/05/2021 - Robert - Passa a bloquear somente usuarios que nao autenticam pelo dominio.
 // 02/03/2022 - Robert - Pequena melhoria nos logs.
 // 11/08/2022 - Robert - Bloqueia demitidos (antes ignorava-os, se autenticassem pelo A.D.)
+// 01/09/2022 - Robert - Melhorias ClsAviso.
 //
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -159,14 +160,13 @@ user function BatBlUsr ()
 							else
 								if _aPswRet [1, 17]
 									u_log2 ('aviso', 'Usuario deveria ser desbloqueado no Protheus.')
-	// ainda nao estamos monitorando.										_oAviso := ClsAviso ():New ()
-	// ainda nao estamos monitorando.										_oAviso:Tipo       = 'A'
-	// ainda nao estamos monitorando.										_oAviso:Destinatar = 'grpTI'
-	// ainda nao estamos monitorando.										_oAviso:Texto      = 'Usuario ' + _sIdUser + ' - Pessoa ' + alltrim (_aPessoa [_nPessoa, 1]) + ' - ' + alltrim (_aPessoa [_nPessoa, 4]) + ': deveria ser desbloqueado no Protheus.'
-	// ainda nao estamos monitorando.										_oAviso:Origem     = procname ()
-	// ainda nao estamos monitorando.										_oAviso:DiasDeVida = 5
-	// ainda nao estamos monitorando.										_oAviso:CodAviso   = '001'
-	// ainda nao estamos monitorando.										_oAviso:Grava ()
+									_oAviso := ClsAviso ():New ()
+									_oAviso:Tipo       = 'A'
+									_oAviso:DestinAvis = 'grpTI'
+									_oAviso:Texto      = 'Usuario ' + _sIdUser + ' - Pessoa ' + alltrim (_aPessoa [_nPessoa, 1]) + ' - ' + alltrim (_aPessoa [_nPessoa, 4]) + ': deveria ser desbloqueado no Protheus.'
+									_oAviso:Origem     = procname ()
+									_oAviso:DiasDeVida = 5
+									_oAviso:Grava ()
 								endif
 							endif
 						endif

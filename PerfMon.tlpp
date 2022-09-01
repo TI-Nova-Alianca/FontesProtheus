@@ -18,6 +18,7 @@
 // 03/05/2021 - Robert - Criado tratamento para quando virar a meia noite.
 // 01/05/2022 - Robert - Retorna o tempo total ao final do processo (caso a rotina chamadora queira usar).
 // 30/08/2022 - Robert - Atributo ClsAviso:DestinAvis passa a ser tipo string.
+// 01/09/2022 - Robert - Melhorias ClsAviso.
 //
 
 // --------------------------------------------------------------------------
@@ -72,7 +73,6 @@ user function PerfMon (_sQueFazer, _sChvPerf)
 						_oAviso:DestinAvis = 'robert.koch'
 						_oAviso:Texto      = "Chave de medicao de performance '" + _sChvPerf + "' excedeu tamanho maximo.'
 						_oAviso:Origem     = procname ()
-						_oAviso:CodAviso   = '014'
 						_oAviso:Grava ()
 					else
 						/*

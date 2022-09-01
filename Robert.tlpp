@@ -22,6 +22,27 @@
 // depurar mais de uma thread: https://devforum.totvs.com.br/1066-debugar-multiplas-threads-no-vscode
 // Linguagem TL++: https://tdn.totvs.com/pages/viewpage.action?pageId=334340072
 // local varJson := { "teste" : { "var1" : "oioi", "var2": "oioi2", "var3": "oioi3" }}  https://tdn.totvs.com/display/tec/Json
+// If ExistTrigger('D3_NUMSERI')
+// If ExistProc( cProcNam, VerIDProc())  .and. ( TcSrvType() <> "AS/400" ) .And. !lMATA103
+// If ExistDir(DIRRAIZ)
+// If ExistTree(cPai, cComp, @cMsgEstr)
+// If ExistTable(cPai, cComp, @cMsgEstr, oEvent:oDadosCommit, xFilial("SG1"),.F.)
+// If ExistEstru(P200RetInf(cCargo,"COMP"),.F.)
+// If ExistNaRev()
+// If ExistTemplate("MT680GEFTR")
+// If ExistOpc(cOpcionais, SG1->G1_GROPC+SG1->G1_OPC, cProOpcT, SG1->G1_COMP + SG1->G1_TRT)
+// If ExistIni(EVAL(bCampo1,i))
+// If ExistFunc("PCPA124")
+// If ExistIni(cMemo)
+// If ExistNodeRule( cOwner, cNode2, lTag, cCodEvent )
+// If ExistSX3("GWN_ENVNFE")
+// If ExistKey("DT6_DOCTMS", aVetDoc, @xValor)
+// If ExistMov(SB9->B9_COD, SB9->B9_LOCAL, aDelSD5)
+// If ExistChav("LJY",M->LJY_TIPOL+M->LJY_CODQUA,1) .And. Inclui
+// If ExistArr( cAgenPerg, aPeriod[3], aPeriod[4] )
+// If ExistRec(::cPasta+cArquivo+cExtencao)
+// If ExistInd()
+// If ExisteCampo("D1_DESGR"+SFB->FB_CPOLVRO,.T.)[1]
 
 #include "protheus.ch"
 #include "rwmake.ch"
@@ -96,16 +117,18 @@ user function robert ()
 return
 
 static function _aviso ()
+	u_batzab ()
+	/*
 	// Teste geracao avisos
 	_oAviso := ClsAviso ():New ()
 	_oAviso:Tipo       = 'A'
-	_oAviso:DestinAvis = 'ze'
-	_oAviso:Titulo     = 'powershell'
+	_oAviso:DestinAvis = 'robert.koch,daiana.ribas'
+	_oAviso:Titulo     = 'teste aviso protheus 2'
 	_oAviso:Texto      = 'este eh o corpitcho da mensagem'
 	_oAviso:Origem     = procname ()
 	_oAviso:DiasDeVida = 1
-	_oAviso:CodAviso   = '00000000-0000-0000-0000-000000000000'
 	_oAviso:Grava ()
+	*/
 return
 
 /*

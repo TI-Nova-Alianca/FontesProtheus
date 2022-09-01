@@ -104,9 +104,8 @@ static function _AtuChv ()
 		//u_log2 ('info', _sSQL)
 		if TCSQLExec (_sSQL) < 0
 			_oAviso := ClsAviso ():New ()
-			_oAviso:CodAviso   = '013'
 			_oAviso:Tipo       = 'E'
-			_oAviso:Destinatar = 'grpTI'
+			_oAviso:DestinAvis = 'grpTI'
 			_oAviso:Texto      = 'Erro na atualizacao do SE5 compensacao cta.corr. ' + _sSQL
 			_oAviso:Origem     = procname ()
 			_oAviso:Grava ()

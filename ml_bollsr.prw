@@ -100,7 +100,12 @@ User Function ML_BOLLSR (_aBoletos)
 	cPerg := "BOLL" + cFilAnt
 	_ValidPerg()
 	Pergunte(cPerg,.F.)    // Pergunta no SX1
-	
+
+	U_Log2 ('debug', '[' + procname () + ']Depois do PERGUNTE')
+	u_log2 ('debug', 'mv_par05: >>' + mv_par05 + '<<')
+	u_log2 ('debug', 'mv_par06: >>' + mv_par06 + '<<')
+	u_log2 ('debug', 'mv_par07: >>' + mv_par07 + '<<')
+
 	oPrn:=TAVPrinter():New("Boleto Laser")
 	if oPrn:Setup()      // Tela para selecao da impressora.
 		oPrn:SetPortrait()     // ou SetLanscape()
@@ -132,12 +137,17 @@ User Function ML_BOLLSR (_aBoletos)
 			endif
 		endif
 		
+	U_Log2 ('debug', '[' + procname () + ']Antes de ver se a conta estah bloqueada')
+	u_log2 ('debug', 'mv_par05: >>' + mv_par05 + '<<')
+	u_log2 ('debug', 'mv_par06: >>' + mv_par06 + '<<')
+	u_log2 ('debug', 'mv_par07: >>' + mv_par07 + '<<')
+
 		// --- verifica se o banco/conta esta bloqueada - se estiver nao deixa imprimir boletos
 		if fbuscacpo ("SA6", 1, xfilial ("SA6") + mv_par05 + mv_par06 + mv_par07,  "A6_BLOCKED") == '1'
 			u_help ("Banco/agencia/conta bloqueado, não permitida a impressão de boletos")
 			return
-		endif		
-			
+		endif
+
 		If mv_par11 == 1  //_lVisualizar
 			oPrn:Preview()       // Visualiza antes de imprimir
 		Else
@@ -218,6 +228,11 @@ Return
 // --------------------------------------------------------------------------
 User Function _IMPTIT()
 	procregua (se5 -> (reccount ()))
+
+	U_Log2 ('debug', '[' + procname () + ']Antes de ver se o banco estah homologado')
+	u_log2 ('debug', 'mv_par05: >>' + mv_par05 + '<<')
+	u_log2 ('debug', 'mv_par06: >>' + mv_par06 + '<<')
+	u_log2 ('debug', 'mv_par07: >>' + mv_par07 + '<<')
 
 	If ! mv_par05 $ GetMv ("VA_BCOBOL") .AND. ! upper (alltrim (GETENVSERVER ())) $ 'COMPILACAO3/TESTE/CATIA'
 		u_help('Impressao de boletos para o banco ' + mv_par05 + ' ainda nao liberada no sistema (parametro VA_BCOBOL).')
@@ -300,8 +315,12 @@ Static Function MontaRel()
 	
 	DbSelectArea("SA6")
 	DbSetOrder(1)
+	U_Log2 ('debug', '[' + procname () + ']Antes de pesquisar SA6')
+	u_log2 ('debug', 'mv_par05: >>' + mv_par05 + '<<')
+	u_log2 ('debug', 'mv_par06: >>' + mv_par06 + '<<')
+	u_log2 ('debug', 'mv_par07: >>' + mv_par07 + '<<')
 	If !DbSeek(xFilial("SA6")+mv_par05 + mv_par06 + mv_par07,.t.)
-		u_help("Banco / Agencia / Conta nao cadastrados" + chr(13) + mv_par05 + ' / ' + mv_par06 + ' / ' + mv_par07)
+		u_help("Banco / Agencia / Conta nao cadastrados: " + mv_par05 + ' / ' + mv_par06 + ' / ' + mv_par07,, .t.)
 		_lContinua = .F.
 	Endif
 	

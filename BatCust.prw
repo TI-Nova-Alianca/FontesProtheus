@@ -4,6 +4,7 @@
 // Descricao..: Verifica custos negativos.
 //
 // Historico de alteracoes:
+// 01/09/2022 - Robert - Melhorias ClsAviso.
 //
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -33,10 +34,9 @@ user function BatCust ()
 			sb2 -> (dbgoto (_aRegSB2 [_nRegSB2, 1]))
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'A' // Aviso
-			_oAviso:Destinatar = 'grpTI'
+			_oAviso:DestinAvis = 'grpTI'
 			_oAviso:Texto      = 'Filial ' + cFilAnt + ' Item ' + alltrim (sb2 -> b2_cod) + ' Alm. ' + sb2 -> b2_local + ' com valor distorcido no B2_VATU (' + cvaltochar (sb2 -> b2_vatu1) + '). Ajustando para 1'
 			_oAviso:Origem     = procname ()
-			_oAviso:CodAviso   = '012'
 			_oAviso:DiasDeVida = 60
 			_oAviso:Grava ()
 			reclock ("SB2", .F.)

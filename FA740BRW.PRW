@@ -18,7 +18,9 @@
 // 24/09/2020 - Cláudia - Criada a rotina "Baixa Rapel" - VA_040BRAP. GLPI: 8367
 // 10/11/2020 - Claudia - Incluido CNPJ formatado com mascara no corpo e rodapé da impressão do relatorio de anuencia. GLPI: 8789
 // 22/01/2021 - Cláudia - Incluida validação verificando se o valor já movimentado + rapel é igual ou menor que o valor do título. GLPI: 9066
+// 01/09/2022 - Robert  - Trocado teste [SE1->E1_NUMBOR!=''] por [!empty(SE1->E1_NUMBOR)]
 //
+
 // ---------------------------------------------------------------------------------------------------------------------------------
 User Function FA740BRW()
 	Local aBotao := {}
@@ -379,7 +381,8 @@ user function VA_040BOL()
 		u_help ("Não é possivel imprimir boletos pra esse tipo de titulo")
 		_lRet = .F.
 	endif
-	if _lRet .AND. VAL(SE1 -> E1_PORTADO) = 0 .AND. SE1 -> E1_BOLIMP = 'S' .AND. SE1-> E1_NUMBOR  != ''
+//	if _lRet .AND. VAL(SE1 -> E1_PORTADO) = 0 .AND. SE1 -> E1_BOLIMP = 'S' .AND. SE1-> E1_NUMBOR  != ''
+	if _lRet .AND. VAL(SE1 -> E1_PORTADO) = 0 .AND. SE1 -> E1_BOLIMP = 'S' .AND. ! empty (SE1-> E1_NUMBOR)
 		u_help ("Não é possivel imprimir boletos nesse caso, titulo em protesto")
 		_lRet = .F.
 	endif
@@ -387,7 +390,8 @@ user function VA_040BOL()
 		if SE1 -> E1_BOLIMP = 'S'
 			_sBanco = SE1 -> E1_PORTADO
 		else		
-			_sBanco = U_Get ("Informe o novo para impressão do boleto: ", "C", 3, "", "SA6", se1 -> e1_portado, .F., '.t.')
+			_sBanco = U_Get ("Informe o novo banco para impressão do boleto: ", "C", 3, "", "SA6", se1 -> e1_portado, .F., '.t.')
+			_sBanco = iif (_sBanco == NIL, '', _sBanco)  // Funcao U_Get retorna NIL se o usuario cancelar.
 			if ! empty (_sBanco) .and. ! sa6 -> (dbseek (xfilial ("SA6") + _sBanco, .F.))
 				u_help ("Banco '" + _sBanco + "' nao cadastrado.")
 				_lRet = .F.

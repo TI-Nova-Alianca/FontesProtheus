@@ -14,6 +14,7 @@
 //                        'edifretes' para cair junto com a 'fretesimport'
 // 14/08/2020 - Cláudia - Ajuste de Api em loop, conforme solicitação da versao 25 protheus. GLPI: 7339
 // 10/07/2022 - Robert  - Melhoria nos logs.
+// 01/09/2022 - Robert  - Melhorias ClsAviso.
 //
 
 // --------------------------------------------------------------------------
@@ -146,32 +147,14 @@ User Function RECMAIL(_lAuto)
 				oMessage:SetConfirmRead(.T.)
 				nDel  := oPopServer:deleteMsg(nMessage)
 
-// Tempo monitoramento no Zabbix.
-				// if nDel == 0
-				// 	u_log2 ('erro', '[' + procname () + ']e-mail nao foi deletado do servidor')
-				// 	_lRet = .F.
-				// 	_ValType := _RetType("_oBatch")
-				// 	if _ValType == 'O'
-				// 		_oBatch:Mensagens += 'E-mail nao foi deletado do servidor: ' + oMessage:cDate + ' from:' + oMessage:cFrom + ' subject:' + oMessage:cSubject
-				// 		_oBatch:Retorno   := 'N'  // "Executou OK?" --> S=Sim;N=Nao;I=Iniciado;C=Cancelado;E=Encerrado automaticamente
-				// 	endif
-				// 	_oAviso := ClsAviso ():New ()
-				// 	_oAviso:Tipo       = 'E'
-				// 	_oAviso:Texto      = 'E-mail nao foi deletado do servidor: ' + oMessage:cDate + ' from:' + oMessage:cFrom + ' subject:' + oMessage:cSubject + "Considere excluir o e-mail manualmente antes de retomar este processo."
-				// 	_oAviso:CodAviso   = '004'
-				// 	_oAviso:Grava ()
-				// 	exit
-				// endIf
-
 				oMessage:Clear()
 
 			else
 				_oAviso := ClsAviso ():New ()
-				_oAviso:Tipo       = 'A'
+				_oAviso:Tipo       = 'E'
+				_oAviso:DestinAvis = 'grpTI'
 				_oAviso:Texto      = "Mensagem " + cvaltochar (nMessage) + " nao foi recebida com sucesso e nao sera´ processada."
-				_oAviso:CodAviso   = '004'
 				_oAviso:Grava ()
-//				_sAvisos += "Mensagem " + cvaltochar (nMessage) + " nao foi recebida com sucesso e nao sera´ processada." + chr (13) + chr (10)
 			EndIf
 
 		Next
@@ -193,8 +176,8 @@ User Function RECMAIL(_lAuto)
 		endif
 		_oAviso := ClsAviso ():New ()
 		_oAviso:Tipo       = 'E'
+		_oAviso:DestinAvis = 'grpTI'
 		_oAviso:Texto      = 'Nao foi possivel conectar ao servidor de e-mail.'
-		_oAviso:CodAviso   = '004'
 		_oAviso:Grava ()
 	EndIf
 	

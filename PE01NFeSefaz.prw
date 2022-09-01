@@ -12,6 +12,7 @@
 // 13/11/2018 - Catia  - Tratamento do aObsCont - Tag <obsCont xCampo=" "> e <xTexto> 
 // 30/10/2019 - Robert - Tratamento para concatenar msg proveniente do NFESEFAZ.PRW em vez de apenas sobrepor.
 // 16/01/2020 - Robert - Desabilitadas gravacoes de logs.
+// 01/09/2022 - Robert - Melhorias ClsAviso.
 //
 
 // ------------------------------------------------------------------------------------------
@@ -171,7 +172,7 @@ static function _MsgObs (aObsCont)
 				_oAviso:Tipo       = 'E'
 				_oAviso:Destinatar = 'grpTI'
 				_oAviso:Texto      = "Transportadora '" + sf2 -> f2_redesp + "' nao localizada para gerar tag de redespacho'
-				_oAviso:CodAviso   = '002'
+				_oAviso:Origem     = procname (1)
 				_oAviso:Grava ()
 			endif
 		endif

@@ -1609,10 +1609,9 @@ user function VA_VCpo (_sCampo)
 			//U_AvisaTI ("Campo '" + _sCampo + "' nao previsto na rotina " + procname ())
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:DestinAvis = 'robert.koch,sandra.sugari,claudia.lionco'
+			_oAviso:DestinAvis = 'grpTI'
 			_oAviso:Texto      = "Campo '" + _sCampo + "' nao previsto na rotina " + procname ()
 			_oAviso:Origem     = procname ()
-			_oAviso:CodAviso   = '005'
 			_oAviso:Grava ()
 
 	endcase

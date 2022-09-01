@@ -13,6 +13,7 @@
 // 12/01/2021 - Robert - NaWeb guarda o cadastro da propriedade (que eu trato por cad.viticola) em formato numerico.
 // 15/01/2021 - Robert - Novo parametro metodo :RetFixo da classe ClsSQL().
 // 03/02/2021 - Robert - Melhorada mensagem de aviso por e-mail.
+// 01/09/2022 - Robert - Melhorias ClsAviso.
 //
 
 // ------------------------------------------------------------------------------------
@@ -45,10 +46,9 @@ User Function FrtSaf21 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor, _sFilCa
 			u_help ("Filial destino '" + _sFilDest + "' sem tratamento no programa " + procname (),, .T.)
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:Destinatar = 'grpAgronomia'
+			_oAviso:DestinAvis = 'grpAgronomia'
 			_oAviso:Texto      = "Filial destino '" + _sFilDest + "' sem tratamento no programa de calculo de frete de safra."
 			_oAviso:Origem     = procname ()
-			_oAviso:CodAviso   = '011'
 			_oAviso:Grava ()
 		endif
 	endif
@@ -71,10 +71,9 @@ User Function FrtSaf21 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor, _sFilCa
 		u_help ("Filial destino '" + _sFilDest + "' sem tratamento no programa " + procname (),, .T.)
 		_oAviso := ClsAviso ():New ()
 		_oAviso:Tipo       = 'E'
-		_oAviso:Destinatar = 'grpAgronomia'
+		_oAviso:DestinAvis = 'grpAgronomia'
 		_oAviso:Texto      = "Filial destino '" + _sFilDest + "' sem tratamento no programa de calculo de frete de safra."
 		_oAviso:Origem     = procname ()
-		_oAviso:CodAviso   = '011'
 		_oAviso:Grava ()
 	endif
 	_oSQL:_sQuery +=   " FROM " + _sLinkSrv + ".CCPropriedade"
@@ -93,16 +92,10 @@ User Function FrtSaf21 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor, _sFilCa
 		if IsInCallStack ("U_VA_RUSN")
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:Destinatar = 'grpAgronomia'
-		//	_oAviso:Texto      = "Sem distancias cadastradas na propriedade " + _sCadVit + " para calculo de frete."
+			_oAviso:DestinAvis = 'grpAgronomia'
 			_oAviso:Texto      = "Distancia nao informada entre a propriedade " + _sCadVit + " e a filial " + _sFilDest + ". Frete de safra nao pode ser calculado."
 			_oAviso:Origem     = procname ()
-			_oAviso:CodAviso   = '011'
-		//	_oAviso:Grava ()
-			// como ainda nao estamos usando os avisos, vou mandar por e-mail
-			U_ZZUNU ({'075'}, ;  // 075=agronomia
-			          "Sem distancias prop.rural " + _sCadVit, ;
-			          "Distancia nao informada entre a propriedade " + _sCadVit + " e a filial " + _sFilDest + ". Frete de safra nao pode ser calculado para a carga " + sze -> ze_carga + ' da filial ' + cFilAnt + ".")
+			_oAviso:Grava ()
 		endif
 	endif
 	u_log2 ('info', '[' + procname () + '] Distancia Km..: ' + cvaltochar (_nDist))

@@ -5,6 +5,7 @@
 //              Criado para ser executado, evidentemente, via batch...
 //
 // Historico de alteracoes:
+// 01/09/2022 - Robert - Melhorias ClsAviso.
 //
 
 #include "tbiconn.ch"
@@ -59,7 +60,7 @@ user function KillBat ()
 					// Gera aviso para acompanhamento
 					_oAviso := ClsAviso ():New ()
 					_oAviso:Tipo       = 'A'
-					_oAviso:Destinatar = 'grpTI'
+					_oAviso:DestinAvis = 'grpTI'
 					_oAviso:Texto      = 'Nao deveria ser necessario aplicar kill no batch com seq.' + zz6 -> zz6_seq + ' ' + alltrim (zz6 -> zz6_cmd)
 					_oAviso:Origem     = procname ()
 					_oAviso:DiasDeVida = 30
