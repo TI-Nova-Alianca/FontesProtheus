@@ -25,13 +25,13 @@ user function AvisaTI (_sAviso)
 	local _oAviso := NIL
 	local _sMsg   := ''
 
-	_sMsg := '[' + dtoc (date ()) + ' ' + time () + ']'
-	_sMsg += '[' + cvaltochar(GetServerPort ()) + '/' + GetEnvServer () + ']'
-	_sMsg += '[' + cUserName + ']'
-	_sMsg += '[' + cEmpAnt + '/' + cFilAnt + ']'
-	_sMsg += _sAviso
-	_sMsg += _PCham ()
-	_sMsg += chr (13) + chr (10)
+	//_sMsg := '[' + dtoc (date ()) + ' ' + time () + ']'
+	_sMsg += '[porta/ambiente:' + cvaltochar(GetServerPort ()) + '/' + GetEnvServer () + ']'
+	_sMsg += '[username:' + cUserName + ']'
+	_sMsg += '[emp/filial:' + cEmpAnt + '/' + cFilAnt + ']'
+	//_sMsg += _sAviso
+	_sMsg += '[' + _PCham () + ']'
+	//_sMsg += chr (13) + chr (10)
 
 	// Caso tenha arquivo de log, grava a mensagem nele tambem.
 	U_Log2 ('aviso', procname () + ": " + _sAviso)
@@ -41,7 +41,8 @@ user function AvisaTI (_sAviso)
 	_oAviso:Tipo       = 'E'
 	_oAviso:DestinAvis = 'grpTI'
 	_oAviso:Titulo     = 'Avisos para TI'
-	_oAviso:Texto      = _sAviso + ' [usuario logado: ' + cUserName + ']'
+	_oAviso:Texto      = alltrim (_sAviso) + ' ' + _sMsg
+	_oAviso:Origem     = procname (1)
 	_oAviso:Grava ()
 
 //	U_ML_SRArea (_aAreaAnt)

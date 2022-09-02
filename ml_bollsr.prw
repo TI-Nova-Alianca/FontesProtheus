@@ -92,7 +92,9 @@
 // 18/02/2022 - Claudia - Criado modelo banrisul 240. GLPI: 11753
 // 10/06/2022 - Claudia - Realizado ajustes conforme solicitado pelo banco banrisul. GLPI: 11638
 // 22/07/2022 - Claudia - Criado modelo de boleto banco Daycoval. GLPI: 12365
+// 02/09/2022 - Robert  - Chamadas da funcao u_log() trocadas para u_log2().
 //
+
 // --------------------------------------------------------------------------------------------------------------
 User Function ML_BOLLSR (_aBoletos)
     local _nBoleto := 0
@@ -100,11 +102,6 @@ User Function ML_BOLLSR (_aBoletos)
 	cPerg := "BOLL" + cFilAnt
 	_ValidPerg()
 	Pergunte(cPerg,.F.)    // Pergunta no SX1
-
-	U_Log2 ('debug', '[' + procname () + ']Depois do PERGUNTE')
-	u_log2 ('debug', 'mv_par05: >>' + mv_par05 + '<<')
-	u_log2 ('debug', 'mv_par06: >>' + mv_par06 + '<<')
-	u_log2 ('debug', 'mv_par07: >>' + mv_par07 + '<<')
 
 	oPrn:=TAVPrinter():New("Boleto Laser")
 	if oPrn:Setup()      // Tela para selecao da impressora.
@@ -137,11 +134,6 @@ User Function ML_BOLLSR (_aBoletos)
 			endif
 		endif
 		
-	U_Log2 ('debug', '[' + procname () + ']Antes de ver se a conta estah bloqueada')
-	u_log2 ('debug', 'mv_par05: >>' + mv_par05 + '<<')
-	u_log2 ('debug', 'mv_par06: >>' + mv_par06 + '<<')
-	u_log2 ('debug', 'mv_par07: >>' + mv_par07 + '<<')
-
 		// --- verifica se o banco/conta esta bloqueada - se estiver nao deixa imprimir boletos
 		if fbuscacpo ("SA6", 1, xfilial ("SA6") + mv_par05 + mv_par06 + mv_par07,  "A6_BLOCKED") == '1'
 			u_help ("Banco/agencia/conta bloqueado, não permitida a impressão de boletos")
@@ -229,11 +221,6 @@ Return
 User Function _IMPTIT()
 	procregua (se5 -> (reccount ()))
 
-	U_Log2 ('debug', '[' + procname () + ']Antes de ver se o banco estah homologado')
-	u_log2 ('debug', 'mv_par05: >>' + mv_par05 + '<<')
-	u_log2 ('debug', 'mv_par06: >>' + mv_par06 + '<<')
-	u_log2 ('debug', 'mv_par07: >>' + mv_par07 + '<<')
-
 	If ! mv_par05 $ GetMv ("VA_BCOBOL") .AND. ! upper (alltrim (GETENVSERVER ())) $ 'COMPILACAO3/TESTE/CATIA'
 		u_help('Impressao de boletos para o banco ' + mv_par05 + ' ainda nao liberada no sistema (parametro VA_BCOBOL).')
 		Return
@@ -315,10 +302,6 @@ Static Function MontaRel()
 	
 	DbSelectArea("SA6")
 	DbSetOrder(1)
-	U_Log2 ('debug', '[' + procname () + ']Antes de pesquisar SA6')
-	u_log2 ('debug', 'mv_par05: >>' + mv_par05 + '<<')
-	u_log2 ('debug', 'mv_par06: >>' + mv_par06 + '<<')
-	u_log2 ('debug', 'mv_par07: >>' + mv_par07 + '<<')
 	If !DbSeek(xFilial("SA6")+mv_par05 + mv_par06 + mv_par07,.t.)
 		u_help("Banco / Agencia / Conta nao cadastrados: " + mv_par05 + ' / ' + mv_par06 + ' / ' + mv_par07,, .t.)
 		_lContinua = .F.
@@ -340,13 +323,13 @@ Static Function MontaRel()
 		_aAreaSEE  := SEE->(GetArea())
 		
 		If ! _lAuto .and. !Marked("E1_OK")
-			u_log ('Titulo nao selecionado no markbrowse')
+			u_log2 ('debug', 'Titulo nao selecionado no markbrowse')
 			se1 -> (DbSkip())
 			Loop
 		EndIf
 		
 		If SE1->E1_TIPO # "NF" .And. SE1->E1_TIPO # "DP"
-			u_log ("Titulo do tipo", SE1->E1_TIPO, "nao gera boleto.")
+			u_log2 ('debug', "Titulo do tipo " + SE1->E1_TIPO + " nao gera boleto.")
 			DbSelectArea("SE1")
 			DbSkip()
 			Loop
@@ -354,7 +337,7 @@ Static Function MontaRel()
 		
 		// VERIFICA SE CLIENTE ESTA NO PARAMETRO ML_CLIC19 (cliente que exigem que o boleto seja impresso pelo banco)
 		IF fBuscaCpo ("SA1", 1, xfilial ("SA1") + SE1->E1_CLIENTE + se1 -> e1_loja, "A1_VAEBOL") == "B"
-			u_log ("Cliente", SE1->E1_CLIENTE, "Nao recebe boleto - campo A1_VAEBOL")  //parametro ML_CLIC19")
+			u_log2 ('debug', "Cliente " + SE1->E1_CLIENTE + "Nao recebe boleto - campo A1_VAEBOL")  //parametro ML_CLIC19")
 			DbSelectArea("SE1")
 			DbSkip()
 			Loop
@@ -397,7 +380,7 @@ Static Function MontaRel()
 			_sBcoPed = fBuscaCpo ("SC5", 1, xfilial ("SC5") + se1 -> e1_pedido, "C5_BANCO")
 			if _sBcoPed != mv_par05
 				if ! msgnoyes ("Titulo " + SE1->E1_NUM + ": banco diferente informado no pedido de venda (" + _sBcoPed + "). Confirma a impressao do boleto mesmo assim?","AVISO")
-					u_log ('Boleto nao serah impresso por que o banco estah diferente do pedido de venda')
+					u_log2 ('aviso', 'Boleto nao serah impresso por que o banco estah diferente do pedido de venda')
 					se1 -> (DbSkip())
 					Loop
 				else
@@ -410,7 +393,6 @@ Static Function MontaRel()
 					_oEvento:PedVenda  = se1 -> e1_pedido
 					_oEvento:Cliente   = se1 -> e1_cliente
 					_oEvento:LojaCli   = se1 -> e1_loja
-					// Desabilitado a pedido do usuario _oEvento:MailTo    = "aline.trentin@novaalianca.coop.br"
 					_oEvento:Grava ()
 				endif
 			endif
@@ -426,7 +408,7 @@ Static Function MontaRel()
 				Loop
 			else
 				If ! Msgyesno("Boleto " + AllTrim(SE1->E1_NUMBCO) + " Titulo " + se1 -> e1_prefixo + "/" + SE1->E1_NUM + "-" + se1 -> e1_parcela + " ja impresso. Confirma reimpressao?","AVISO")
-					u_log ('Usuario nao confirmou reimpressao')
+					u_log2 ('debug', 'Usuario nao confirmou reimpressao')
 					DbSelectArea("SE1")
 					DbSkip()
 					Loop
@@ -445,7 +427,7 @@ Static Function MontaRel()
 				Endif
 				if se1 -> e1_saldo != se1 -> e1_valor
 					If ! MsgYesNo ("A T E N C A O: Titulo " + se1 -> e1_prefixo + "/" + SE1->E1_NUM + "-" + se1 -> e1_parcela + " parcial ou totalmente baixado. Confirma reimpressao do boleto?","AVISO")
-						u_log ('Usuario nao confirmou impressao de boleto para titulo parcial ou totalmente baixado')
+						u_log2 ('debug', 'Usuario nao confirmou impressao de boleto para titulo parcial ou totalmente baixado')
 						DbSelectArea("SE1")
 						DbSkip()
 						Loop
@@ -518,7 +500,7 @@ Static Function MontaRel()
 					_lContinua = .f.
 					loop
 			endcase
-			U_Log ('Nosso numero gerado: >>' + _sNumBco + '<<')
+			u_log2 ('info', 'Nosso numero gerado: >>' + _sNumBco + '<<')
 
 			// Verifica se a numeracao atual encontra-se dentro da faixa liberada pelo banco.
 			If _cBcoBol == '707'
@@ -608,7 +590,7 @@ Static Function MontaRel()
 					case _cBcoBol == "104"
 						RecLock("SEE",.F.)
 						SEE->EE_BOLATU = val (substr (se1 -> e1_numbco, 3, 15))
-						U_LOG ('Atualizei EE_BOLATU para ', SEE->EE_BOLATU)
+						u_log2 ('debug', 'Atualizei EE_BOLATU para ' + SEE->EE_BOLATU)
 						MsUnlock()
 					case _cBcoBol == "237" .OR. _cBcoBol == "RED" 
 						RecLock("SEE",.F.)
@@ -2075,7 +2057,7 @@ Static Function _CodBar707(_sDigVerif)
 	next
 
 	_sNumBcoDV := alltrim(se1 -> e1_numbco) + _sDigVerif
-	u_log("Nosso num + DV" + _sNumBcoDV)
+	u_log2 ('debug', "Nosso num + DV >>" + _sNumBcoDV + "<<")
 	// Passa nosso numero para a array do codigo de barras
 	for _nPos = 1 to 11
 		_aCodBar [_nPos + 33] = val (substr (_sNumBcoDV, _nPos, 1))
@@ -2113,7 +2095,7 @@ Static Function _CodBar707(_sDigVerif)
 	for _nPos = 20 to 44
 		_campolivre  += alltrim (str (_aCodBar [_nPos]))
 	next
-	u_log("Codigo de barra" + _sRet)
+	u_log2 ('debug', "Codigo de barra >>" + _sRet + "<<")
 return _sRet
 //
 // --------------------------------------------------------------------------

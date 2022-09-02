@@ -74,26 +74,13 @@ METHOD GeraAtrib (_sOrigem) Class ClsAviso
 	::DiasDeVida = 1
 	if _sOrigem == 'ZAB'
 		::Tipo       = zab -> zab_tipo
-	    ::DtAviso    = zab -> zab_dtemis
-	    ::HrAviso    = zab -> zab_hremis
+		::DtAviso    = zab -> zab_dtemis
+		::HrAviso    = zab -> zab_hremis
 		::DestinAvis = alltrim (zab -> zab_destin)
 		::Texto      = alltrim (zab -> zab_texto)
 		::Titulo     = alltrim (zab -> zab_titulo)
 		::Origem     = alltrim (zab -> zab_origem)
 		::DiasDeVida = zab -> zab_valid
-	endif
-
-	::Titulo     = iif (empty (::Titulo), ::Texto, ::Titulo)
-	::DiasDeVida = iif (::DiasDeVida == NIL, iif (::Tipo == 'E', 90, 30), ::DiasDeVida)
-
-	// Tenho alguns grupos ja usados em outros fontes, que ainda preciso pensar
-	// em como tratar...
-	if upper (alltrim (::DestinAvis)) == 'GRPTI'
-		::DestinAvis = 'robert.koch,sandra.sugari,claudia.lionco'
-	endif
-
-	if empty (::DestinAvis)  // ateh eliminar o atributo antigo
-		::DestinAvis = ::Destinatar
 	endif
 
 Return Self
@@ -106,6 +93,22 @@ METHOD Grava () Class ClsAviso
 	local _i         := 0
 	local _sPilha    := ""
 	local _lEnvNAW   := .T.
+
+	::Titulo     = iif (empty (::Titulo), ::Texto, ::Titulo)
+	::DiasDeVida = iif (::DiasDeVida == NIL, iif (::Tipo == 'E', 90, 30), ::DiasDeVida)
+
+	// Tenho alguns grupos ja usados em outros fontes, que ainda preciso pensar
+	// em como tratar...
+	if upper (alltrim (::DestinAvis)) == 'GRPTI'
+		::DestinAvis = 'robert.koch,sandra.sugari,claudia.lionco'
+	endif
+	if upper (alltrim (::DestinAvis)) == 'GRPAGRONOMIA'
+		::DestinAvis = 'leonardo.reffatti,debora.lang,monica.rodrigues'
+	endif
+
+	if empty (::DestinAvis)  // ateh eliminar o atributo antigo
+		::DestinAvis = ::Destinatar
+	endif
 
 	if ! ::Tipo $ 'E/A/I'  // [E]rro, [A]viso, [I]nfo
 		u_log2 ('erro', "Tipo de aviso invalido: '" + cvaltochar (::Tipo) + "'. Nao vou enviar para NaWeb.")
