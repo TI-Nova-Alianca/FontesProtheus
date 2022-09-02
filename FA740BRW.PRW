@@ -2,9 +2,15 @@
 // Autor......: Catia Cardoso
 // Data.......: 28/06/2017
 // Descricao..: Ponto de Entrada - Funções a Receber - Criando mais opcoes
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #Ponto de entrada na tela de funcoes contas a receber (FINA740)
+// #PalavasChave      #atalhos #botoes_adicionais #facilitadores
+// #TabelasPrincipais #SE1
+// #Modulos           #FIN
+
 // Historico de alteracoes:
-// 
 // 30/01/2018 - Catia   - criada a opcao de base de rape 3 = total nf - dt
 // 25/09/2018 - Catia   - impressao de boleto a partir da tela de funcoes do contas a receber
 // 28/09/2018 - Catia   - impressão da carta de anuencia
@@ -19,20 +25,21 @@
 // 10/11/2020 - Claudia - Incluido CNPJ formatado com mascara no corpo e rodapé da impressão do relatorio de anuencia. GLPI: 8789
 // 22/01/2021 - Cláudia - Incluida validação verificando se o valor já movimentado + rapel é igual ou menor que o valor do título. GLPI: 9066
 // 01/09/2022 - Robert  - Trocado teste [SE1->E1_NUMBOR!=''] por [!empty(SE1->E1_NUMBOR)]
+// 02/09/2022 - Robert  - Melhoradas algumas mensagens para o usuario (GLPI 12543)
 //
 
 // ---------------------------------------------------------------------------------------------------------------------------------
 User Function FA740BRW()
 	Local aBotao := {}
-	
+
 	aAdd(aBotao, {"Rapel"				, "U_VA_040RAP()" ,   0,  2})
 	aAdd(aBotao, {"Baixa Rapel"			, "U_VA_040BRAP()",   0,  2})
 	aAdd(aBotao, {"Boleto"				, "U_VA_040BOL()" ,   0,  2})
 	aAdd(aBotao, {"Carta Anuência"		, "U_VA_040CART()",   0,  2})
 	aAdd(aBotao, {"Alt.Bandeira Cartão"	, "U_VA_040BAND()",   0,  2})
 	aAdd(aBotao, {"Eventos"	            , "U_VA_040EVEN(se1->e1_filial,se1->e1_num,se1->e1_prefixo,se1->e1_cliente,se1->e1_loja)",   0,  2})
-   
-Return(aBotao)   
+
+Return(aBotao)
 //
 // ---------------------------------------------------------------------------------------------------------------------------------
 // Altera bandeira do cartão
@@ -378,49 +385,57 @@ user function VA_040BOL()
 	private _aBoletos := {}
 	
 	if _lRet .AND. (SE1 -> E1_TIPO = 'NCC' .OR. SE1 -> E1_TIPO = 'RA') 
-		u_help ("Não é possivel imprimir boletos pra esse tipo de titulo")
+		u_help ("Não é possivel imprimir boletos pra esse tipo de titulo",, .t.)
 		_lRet = .F.
 	endif
 //	if _lRet .AND. VAL(SE1 -> E1_PORTADO) = 0 .AND. SE1 -> E1_BOLIMP = 'S' .AND. SE1-> E1_NUMBOR  != ''
 	if _lRet .AND. VAL(SE1 -> E1_PORTADO) = 0 .AND. SE1 -> E1_BOLIMP = 'S' .AND. ! empty (SE1-> E1_NUMBOR)
-		u_help ("Não é possivel imprimir boletos nesse caso, titulo em protesto")
+		u_help ("Não é possivel imprimir boletos nesse caso, titulo em protesto",, .t.)
 		_lRet = .F.
 	endif
 	if _lRet
 		if SE1 -> E1_BOLIMP = 'S'
 			_sBanco = SE1 -> E1_PORTADO
-		else		
+			if empty (_sBanco)
+				u_help ("Titulo consta como tendo boleto ja impresso, mas nao ha banco (portador) informado neste titulo!",, .t.)
+				_lRet = .F.
+			endif
+		else
 			_sBanco = U_Get ("Informe o novo banco para impressão do boleto: ", "C", 3, "", "SA6", se1 -> e1_portado, .F., '.t.')
 			_sBanco = iif (_sBanco == NIL, '', _sBanco)  // Funcao U_Get retorna NIL se o usuario cancelar.
 			if ! empty (_sBanco) .and. ! sa6 -> (dbseek (xfilial ("SA6") + _sBanco, .F.))
-				u_help ("Banco '" + _sBanco + "' nao cadastrado.")
+				u_help ("Banco '" + _sBanco + "' nao cadastrado.",, .t.)
 				_lRet = .F.
 			endif
 		endif	
+	endif
+	if _lRet .and. empty (_sBanco)
+		u_help ("Banco nao informado no titulo, impossivel impressao de boletos.",, .t.)
+		_lRet = .F.
 	endif
 	if _lRet
 		_sQuery := ""
 		_sQuery += " SELECT SEE.EE_AGENCIA"
 		_sQuery += "      , SEE.EE_CONTA"
 		_sQuery += "      , SEE.EE_SUBCTA"
-	 	_sQuery += "   FROM SA6010 AS SA6
-		_sQuery += " 	INNER JOIN SEE010 AS SEE
-		_sQuery += " 		ON (SEE.D_E_L_E_T_ = ''
-		_sQuery += " 			AND SEE.EE_FILIAL  = SA6.A6_FILIAL
-		_sQuery += " 			AND SEE.EE_CODIGO  = SA6.A6_COD
-		_sQuery += " 			AND SEE.EE_AGENCIA = SA6.A6_AGENCIA
-		_sQuery += " 			AND SEE.EE_CONTA   = SA6.A6_NUMCON
+	 	_sQuery += "   FROM " + RetSQLName ("SA6") + " AS SA6 "
+		_sQuery += " 	INNER JOIN " + RetSQLName ("SEE") + " AS SEE"
+		_sQuery += " 		ON (SEE.D_E_L_E_T_ = ''"
+		_sQuery += " 			AND SEE.EE_FILIAL  = SA6.A6_FILIAL"
+		_sQuery += " 			AND SEE.EE_CODIGO  = SA6.A6_COD"
+		_sQuery += " 			AND SEE.EE_AGENCIA = SA6.A6_AGENCIA"
+		_sQuery += " 			AND SEE.EE_CONTA   = SA6.A6_NUMCON"
 		if _sBanco = '001' .and. SE1 -> E1_FILIAL = '01' // troca de convenio da matriz usar sempre subconta 1
-			_sQuery += "		AND SEE.EE_SUBCTA  = '1'
+			_sQuery += "		AND SEE.EE_SUBCTA  = '1'"
 		endif
-		_sQuery += "			AND SEE.EE_SUBCTA != '100')
-		_sQuery += "  WHERE SA6.D_E_L_E_T_ = ''
+		_sQuery += "			AND SEE.EE_SUBCTA != '100')"
+		_sQuery += "  WHERE SA6.D_E_L_E_T_ = ''"
 		_sQuery += " 	AND SA6.A6_FILIAL  = '" + SE1 -> E1_FILIAL + "'"
 		_sQuery += " 	AND SA6.A6_COD     = '" + _sBanco + "'"
-		_sQuery += " 	AND SA6.A6_BLOCKED = '2'
+		_sQuery += " 	AND SA6.A6_BLOCKED = '2'"
 		_aBanco := U_Qry2Array(_sQuery) // dados do banco - conta/agencia/subconta
 		if len(_aBanco) = 0
-			u_help ("Não foram encontrados os dados de cobrança deste banco")
+			u_help ("Não foram encontrados os dados de cobrança do banco '" + _sBanco + "'", _sQuery, .t.)
 			_lRet = .F.
 		endif
 	endif
@@ -437,18 +452,18 @@ user function VA_040BOL()
 		_sQuery += "        , SEE.EE_AGENCIA"
 		_sQuery += "        , SEE.EE_CONTA"
 		_sQuery += "        , SEE.EE_SUBCTA"
-		_sQuery += "   FROM SE1010 AS SE1"
-		_sQuery += " 	LEFT JOIN SEE010 AS SEE"
+		_sQuery += "   FROM " + RetSQLName ("SE1") + " AS SE1"
+		_sQuery += " 	LEFT JOIN " + RetSQLName ("SEE") + " AS SEE"
 		_sQuery += " 		ON (SEE.D_E_L_E_T_ = ''"
 		_sQuery += " 			AND SEE.EE_FILIAL  = SE1.E1_FILIAL"
 		_sQuery += " 			AND SEE.EE_CODIGO  = SE1.E1_PORTADO"
 		_sQuery += " 			AND SEE.EE_AGENCIA = SE1.E1_AGEDEP"
 		if _sBanco = '001' .and. SE1 -> E1_FILIAL = '01' // troca de convenio da matriz usar sempre subconta 1
-			_sQuery += "		AND SEE.EE_SUBCTA  = '1'
+			_sQuery += "		AND SEE.EE_SUBCTA  = '1'"
 		endif
-		_sQuery += "			AND SEE.EE_SUBCTA != '100'
+		_sQuery += "			AND SEE.EE_SUBCTA != '100'"
 		_sQuery += " 			AND SEE.EE_CONTA   = SE1.E1_CONTA )"
-		_sQuery += "  WHERE SE1.D_E_L_E_T_ = ''
+		_sQuery += "  WHERE SE1.D_E_L_E_T_ = ''"
 		_sQuery += "    AND SE1.E1_FILIAL  = '" + SE1 -> E1_FILIAL + "'"
 	    _sQuery += "    AND SE1.E1_NUM     = '" + SE1 -> E1_NUM + "'"
 	   	_sQuery += "    AND SE1.E1_PREFIXO = '" + SE1 -> E1_PREFIXO + "'"
