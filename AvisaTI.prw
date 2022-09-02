@@ -41,7 +41,7 @@ user function AvisaTI (_sAviso)
 	_oAviso:Tipo       = 'E'
 	_oAviso:DestinAvis = 'grpTI'
 	_oAviso:Titulo     = 'Avisos para TI'
-	_oAviso:Texto      = _sAviso
+	_oAviso:Texto      = _sAviso + ' [usuario logado: ' + cUserName + ']'
 	_oAviso:Grava ()
 
 //	U_ML_SRArea (_aAreaAnt)

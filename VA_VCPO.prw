@@ -169,7 +169,8 @@
 // 15/07/2022 - Robert  - Valida grupo 140 do ZZU no campo D3_VAETIQ.
 // 01/08/2022 - Robert  - Criada validacao duplicidade B1_CODBAR (GLPI 11994)
 // 25/08/2022 - Robert  - Pequena melhoria mensagem validacao etiqueta (D3_VAETIQ)
-// 30/08/2022 - Robert - Atributo ClsAviso:DestinAvis passa a ser tipo string.
+// 30/08/2022 - Robert  - Atributo ClsAviso:DestinAvis passa a ser tipo string.
+// 01/09/2022 - Robert  - Melhorias ClsAviso.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -232,7 +233,7 @@ user function VA_VCpo (_sCampo)
 				endif
 			endif
 
-		case _sCampo $ "M->A1_EMAIL/M->A1_VAMDANF/M->A2_EMAIL/M->A2_VAMDANF/M->A2_VAMAIL2/M->A3_EMAIL/M->RA_EMAIL/M->U5_EMAIL"
+		case _sCampo $ "M->A1_EMAIL/M->A1_VAMDANF/M->A2_EMAIL/M->A2_VAMDANF/M->A2_VAMAIL2/M->A3_EMAIL/M->RA_EMAIL/M->U5_EMAIL/M->A1_VAEMLF"
 			_lRet = U_MailOk (&(_sCampo))
 
 		case _sCampo $ "M->A1_TEL/M->A2_TEL/M->A1_FAX/M->A2_FAX/M->A2_VACELUL"

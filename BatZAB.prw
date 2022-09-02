@@ -35,7 +35,7 @@ user function BatZAB ()
 		// batch tenta reeenviar depois.
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "SELECT TOP 50 R_E_C_N_O_"
+		_oSQL:_sQuery += "SELECT top 100 R_E_C_N_O_"  // Nao muitas de uma unica vez...
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZAB")
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_  = ''"
 		_oSQL:_sQuery +=   " AND ZAB_FILIAL  = '" + xfilial ("ZAB") + "'"
@@ -46,18 +46,7 @@ user function BatZAB ()
 		for _nDado = 1 to len (_aDados)
 			U_Log2 ('debug', '[' + procname () + ']Vou instanciar recno ' + cvaltochar (_aDados [_nDado, 1]) + ' do ZAB')
 			_oAviso := ClsAviso ():New (_aDados [_nDado, 1])
-			/*
-			if _oAviso:Tipo == 'E' .and. _oAviso:DiasDeVida == 0
-				_oAviso:DiasDeVida = 90
-			elseif _oAviso:Tipo == 'A' .and. _oAviso:DiasDeVida == 0
-				_oAviso:DiasDeVida = 60
-			elseif _oAviso:Tipo == 'I' .and. _oAviso:DiasDeVida == 0
-				_oAviso:DiasDeVida = 30
-			endif
-			*/
-			if ! _oAviso:EnviaNaWeb()
-				exit  // durate testesn
-			endif
+			_oAviso:EnviaNaWeb()
 		next
 		_oBatch:Mensagens += cvaltochar (_nRegEnv) + " registros enviados"
 	endif

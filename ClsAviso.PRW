@@ -128,7 +128,7 @@ METHOD Grava () Class ClsAviso
 	zab -> zab_destin = ::DestinAvis
 	zab -> zab_valid  = ::DiasDeVida
 	if ::Origem == NIL .or. empty (::Origem)
-		do while procname (_i) != ""
+		do while _i <= 5 .and. procname (_i) != ""
 			_sPilha += '=>' + procname (_i)
 			_i++
 		enddo
@@ -161,7 +161,8 @@ METHOD EnviaNAWeb () Class ClsAviso
 
 	U_Log2 ('debug', '[' + procname () + ']Enviando para NaWeb: ' + ::Titulo)
 
-	_sXMLNotif := '<SdtNotificacoes>'
+	_sXMLNotif := '<?xml version="1.0" encoding="utf-8"?>'
+	_sXMLNotif += '<SdtNotificacoes>'
 	_sXMLNotif +=    '<SdtNotificacoesItem>'
 	_sXMLNotif +=    '<NotifTipo>' + ::Tipo + '</NotifTipo>'
 	_sXMLNotif +=    '<NotifTitulo>' + alltrim (::Titulo) + '</NotifTitulo>'
@@ -179,6 +180,8 @@ METHOD EnviaNAWeb () Class ClsAviso
 	_sXMLNotif +=    '<NotifOrigem>' + '[PROTHEUS]' + alltrim (::Origem) + '</NotifOrigem>'
 	_sXMLNotif +=    '</SdtNotificacoesItem>'
 	_sXMLNotif += '</SdtNotificacoes>'
+
+	U_Log2 ('debug', '[' + procname () + ']' + _sXMLNotif)
 	
 	_oWSNaWeb := WSPrcNotificacoesWS():New()
 	_oWSNaWeb:cEntrada := _sXMLNotif
@@ -198,8 +201,9 @@ return _lRetWSNA
 // --------------------------------------------------------------------------
 // Limpa caracteres que podem atrapalhar no XML
 static function _Limpa (_sCampoX)
-	_sCampoX = strtran (_sCampoX, '>', '')
-	_sCampoX = strtran (_sCampoX, '<', '')
-	_sCampoX = strtran (_sCampoX, '"', '')
-	_sCampoX = strtran (_sCampoX, "'", "")
+//	_sCampoX = strtran (_sCampoX, '>', '&gt;')
+//	_sCampoX = strtran (_sCampoX, '<', '&lt;')
+	_sCampoX = strtran (_sCampoX, '"', '&quot;')
+	_sCampoX = strtran (_sCampoX, "'", "&apos;")
+	_sCampoX = strtran (_sCampoX, "&", "&amp;")
 return _sCampoX

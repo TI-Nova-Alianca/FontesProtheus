@@ -54,6 +54,7 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
 			_oAviso:DestinAvis = 'grpTI'
+			_oAviso:Titulo     = "Inconsistencia lcto padrao " + _sLPad
 			_oAviso:Texto      = "LPAD '" + cvaltochar (_sLPad) + "': Tipo de produto '" + cvaltochar (_sTipoProd) + "' sem tratamento."
 			_oAviso:Origem     = procname ()
 			_oAviso:DiasDeVida = 30
@@ -67,10 +68,11 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 		if valtype (_sRepres) == 'C'
 			sa3 -> (dbsetorder (1))
 			if ! sa3 -> (dbseek (xfilial ("SA3") + _sRepres, .F.))
-//				U_AvisaTI ("Cadastro do vendedor '" + _sRepres + "' nao encontrado. LPAD = " + cvaltochar (_sLPad))
+
 				_oAviso := ClsAviso ():New ()
 				_oAviso:Tipo       = 'E'
 				_oAviso:DestinAvis = 'grpTI'
+				_oAviso:Titulo     = "Inconsistencia lcto padrao " + _sLPad
 				_oAviso:Texto      = "LPAD '" + cvaltochar (_sLPad) + "': Cadastro do vendedor '" + _sRepres + "' nao encontrado."
 				_oAviso:Origem     = procname ()
 				_oAviso:DiasDeVida = 30
@@ -83,10 +85,11 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 					case sa3 -> a3_vaTpCon == "2" ; _xRet = cFilAnt + "4006"
 					case sa3 -> a3_vaTpCon == "3" ; _xRet = cFilAnt + "4003"
 					otherwise
-						//U_AvisaTI ("Campo '" + alltrim (RetTitle ("A3_VATPCON")) + "' nao informado no vendedor '" + sa3 -> a3_cod + "'. LPAD = " + cvaltochar (_sLPad))
+
 						_oAviso := ClsAviso ():New ()
 						_oAviso:Tipo       = 'E'
 						_oAviso:DestinAvis = 'grpTI'
+						_oAviso:Titulo     = "Inconsistencia lcto padrao " + _sLPad
 						_oAviso:Texto      = "LPAD '" + cvaltochar (_sLPad) + "': Campo '" + alltrim (RetTitle ("A3_VATPCON")) + "' nao informado no vendedor '" + sa3 -> a3_cod + "'."
 						_oAviso:Origem     = procname ()
 						_oAviso:DiasDeVida = 30
@@ -102,10 +105,11 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 				endif
 			endif
 		else
-//			U_AvisaTI ("Codigo de vendedor nao informado na rotina " + procname () + ". LPAD = " + cvaltochar (_sLPad))
+
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
 			_oAviso:DestinAvis = 'grpTI'
+			_oAviso:Titulo     = "Inconsistencia lcto padrao " + _sLPad
 			_oAviso:Texto      = "LPAD '" + cvaltochar (_sLPad) + "': Codigo de vendedor nao informado na rotina " + procname ()
 			_oAviso:Origem     = procname ()
 			_oAviso:DiasDeVida = 30
@@ -116,18 +120,17 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 
 	case _sQueRet = "VEND_NF_ORI"
 		if valtype (_nRecnoSD1) == 'N'
-	//		U_Log2 ('debug', 'nf orig: recno SD1: ' + cvaltochar (_nRecnoSD1))
 			sd1 -> (dbgoto (_nRecnoSD1))
-	//		U_Log2 ('debug', 'd1_tipo: ' + sd1 -> d1_tipo)
 			if sd1 -> d1_tipo == 'N'  //'D'
 				sf2 -> (dbsetorder (1))  // F2_FILIAL+F2_DOC+F2_SERIE+F2_CLIENTE+F2_LOJA+F2_FORMUL
 				if sf2 -> (dbseek (xfilial ("SF2") + sd1 -> d1_nfori + sd1 -> d1_seriori, .F.))
 					_xRet = sf2 -> f2_vend1
 				else
-//					U_AvisaTI ("NF orig. venda '" + sd1 -> d1_nfori + "/" + sd1 -> d1_seriori + "' nao encontrada'. LPAD = " + cvaltochar (_sLPad))
+
 					_oAviso := ClsAviso ():New ()
 					_oAviso:Tipo       = 'E'
 					_oAviso:DestinAvis = 'grpTI'
+					_oAviso:Titulo     = "Inconsistencia lcto padrao " + _sLPad
 					_oAviso:Texto      = "LPAD '" + cvaltochar (_sLPad) + "': NF orig. venda '" + sd1 -> d1_nfori + "/" + sd1 -> d1_seriori + "' nao encontrada'
 					_oAviso:Origem     = procname ()
 					_oAviso:DiasDeVida = 30
@@ -136,10 +139,11 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 					_xRet = ''
 				endif
 			else
-//				U_AvisaTI ("NF de entrada '" + sd1 -> d1_doc + "' eh do tipo '" + sd1 -> d1_tipo + "'. Deveria ser do tipo 'D' para este lcto. LPAD = " + cvaltochar (_sLPad))
+
 				_oAviso := ClsAviso ():New ()
 				_oAviso:Tipo       = 'E'
 				_oAviso:DestinAvis = 'grpTI'
+				_oAviso:Titulo     = "Inconsistencia lcto padrao " + _sLPad
 				_oAviso:Texto      = "LPAD '" + cvaltochar (_sLPad) + "': NF de entrada '" + sd1 -> d1_doc + "' eh do tipo '" + sd1 -> d1_tipo + "'. Deveria ser do tipo 'D' para este lcto."
 				_oAviso:Origem     = procname ()
 				_oAviso:DiasDeVida = 30
@@ -148,10 +152,10 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 				_xRet = ''
 			endif
 		else
-//			U_AvisaTI ("Numero do RECNO da tabela SD1 nao informado na rotina " + procname () + ". LPAD = " + cvaltochar (_sLPad))
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
 			_oAviso:DestinAvis = 'grpTI'
+			_oAviso:Titulo     = "Inconsistencia lcto padrao " + _sLPad
 			_oAviso:Texto      = "LPAD '" + cvaltochar (_sLPad) + "': Numero do RECNO da tabela SD1 nao informado na rotina " + procname ()
 			_oAviso:Origem     = procname ()
 			_oAviso:DiasDeVida = 30
@@ -202,23 +206,25 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 			_oSQL:_sQuery += " AND SN4.N4_TIPOCNT = '1'"
 
 		otherwise
-//			u_help ("Sem tratamento para requisicao do tipo '" + _sQueRet + "' no programa " + procname ())
+
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
 			_oAviso:DestinAvis = 'grpTI'
+			_oAviso:Titulo     = "Inconsistencia lcto padrao " + _sLPad
 			_oAviso:Texto      = "LPAD '" + cvaltochar (_sLPad) + "': Sem tratamento para requisicao do tipo '" + _sQueRet + "' no programa " + procname ()
 			_oAviso:Origem     = procname ()
 			_oAviso:DiasDeVida = 30
 			_oAviso:Grava ()
 		endcase
-		_oSQL:Log ()
+//		_oSQL:Log ()
 		_xRet := _oSQL:RetQry()
 
 	otherwise
-//		U_AvisaTI ("Tipo de retorno '" + _sQueRet + "' sem tratamento no programa " + procname () + ". LPAD = " + cvaltochar (_sLPad))
+
 		_oAviso := ClsAviso ():New ()
 		_oAviso:Tipo       = 'E'
 		_oAviso:DestinAvis = 'grpTI'
+		_oAviso:Titulo     = "Inconsistencia lcto padrao " + _sLPad
 		_oAviso:Texto      = "LPAD '" + cvaltochar (_sLPad) + "': Tipo de retorno '" + _sQueRet + "' sem tratamento no programa " + procname ()
 		_oAviso:Origem     = procname ()
 		_oAviso:DiasDeVida = 30

@@ -9,6 +9,7 @@
 // 08/01/2020 - Claudia - Alterada validação de associado, pesquisando pelo código e loja base. GLPI 7305
 // 05/04/2021 - Robert  - Incluidas chamadas da funcao PerfMon para monitoramento de tempos de validacao de funcionarios e associados (GLPI 9573)
 //                      - Nao salvava / restaurava a area de trabalho.
+// 01/09/2022 - Robert  - Eliminadas chamadas da funcao U_PerfMon().
 //
 
 #include 'protheus.ch'
@@ -59,8 +60,6 @@ Static Function _VerFunc(sCGC,_lRet)
 	local _lRFun		:= .T.
 	local _lRAssoc	    := .T.
 	
-	U_PerfMon ('I', 'ValidarFuncOuAssocLJVldPgt')  // Deixa variavel pronta para posterior medicao de tempos de execucao
-
 	_sQuery2 += " SELECT" 
 	_sQuery2 += " 	NOME"
 	_sQuery2 += "    ,SITUACAO"
@@ -110,7 +109,6 @@ Static Function _VerFunc(sCGC,_lRet)
 //			_lRet = _VerAssoc(sCGC,_lRet)
 //		EndIf
 //	EndIf
-	U_PerfMon ('F', 'ValidarFuncOuAssocLJVldPgt')
 Return _lRet
 
 //-----------------------------------------------------------------------------------------

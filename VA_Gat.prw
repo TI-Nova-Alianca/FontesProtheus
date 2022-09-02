@@ -131,6 +131,7 @@
 // 11/05/2022 - Robert  - Na valid.venda entr.fut. testava m->c6_tes, mas essa var.
 //                        agora vem com NIL. Alterado para GDFieldGet - GLPI 12036
 // 31/08/2022 - Robert  - Melhoria uso classe ClsAviso.
+// 02/09/2022 - Robert  - Nao desconsiderava registros deletados do SX7 na query.
 //
 
 // --------------------------------------------------------------------------
@@ -167,16 +168,13 @@ user function VA_Gat (_sParCpo, _sParSeq)
 		// Procura definicao do gatilho.
 		_oSQL:= ClsSQL ():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT "
-		_oSQL:_sQuery += " 	   X7_CAMPO "
-		_oSQL:_sQuery += "    ,X7_CDOMIN "
-		_oSQL:_sQuery += "    ,X7_REGRA "
-		_oSQL:_sQuery += " FROM  SX7010 "
-		_oSQL:_sQuery += " WHERE X7_CAMPO = '" + _sParCpo + "'"
-		_oSQL:_sQuery += " AND X7_SEQUENC = '" + _sParSeq + "'"
+		_oSQL:_sQuery += "SELECT X7_CAMPO, X7_CDOMIN, X7_REGRA"
+		_oSQL:_sQuery +=  " FROM SX7010 "
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND X7_CAMPO = '" + _sParCpo + "'"
+		_oSQL:_sQuery +=   " AND X7_SEQUENC = '" + _sParSeq + "'"
 		_aSX7 := aclone (_oSQL:Qry2Array ())
-
-		if Len(_aSX7) > 0
+		if Len(_aSX7) > 0  // A intencao eh encontrar somente 1 registro, mas, para garantir...
 			for _x := 1 to Len(_aSX7)
 				_sCampo  = 'M->' + alltrim (_aSX7[_x, 1])
 				_sCDomin = alltrim (_aSX7[_x, 2])
@@ -189,6 +187,7 @@ user function VA_Gat (_sParCpo, _sParSeq)
 			next
 		else
 			U_help ("Gatilho nao encontrado no SX7. Campo: '" + _sParCpo + "' Seq.: '" + _sParSeq + "'. Gatilho nao serah executado.",, .T.)
+			U_AvisaTI ("Gatilho nao encontrado no SX7. Campo: '" + _sParCpo + "' Seq.: '" + _sParSeq + "'. Gatilho nao serah executado.")
 			_sCampo = ''
 			_sCDomin = ''
 		endif
