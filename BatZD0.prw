@@ -21,25 +21,20 @@ User Function BatZD0(_sTipo)
     Private cPerg := "BatZD0"
 	
     u_logIni()
-    
-    If _sTipo == '1' // Bat
-        dDataIni := DaySub(Date(),1)
-        dDataFin := DaySub(Date(),1)
-    Else            // Tela de sistema
-        _ValidPerg()
-	    Pergunte(cPerg,.T.)  
+
+    _ValidPerg()
+    If Pergunte(cPerg,.T.)  
         dDataIni := mv_par01
         dDataFin := mv_par02
-    EndIf
 
-    u_log2('aviso', 'Pagar.me:' + DTOC(mv_par01) +" até "+ DTOC(mv_par02))
+        u_log2('aviso', 'Pagar.me:' + DTOC(mv_par01) +" até "+ DTOC(mv_par02))
 
-    If _sTipo == '2' 
-        MsAguarde({|| _GravaPgtos(_sTipo, dDataIni, dDataFin)}, "Aguarde...", "Processando Registros...")
-    else
-        _GravaPgtos(_sTipo,  dDataIni, dDataFin)
+        If _sTipo == '2' 
+            MsAguarde({|| _GravaPgtos(_sTipo, dDataIni, dDataFin)}, "Aguarde...", "Processando Registros...")
+        else
+            _GravaPgtos(_sTipo,  dDataIni, dDataFin)
+        EndIf
     EndIf
-      
 Return
 //
 // -----------------------------------------------------------------------------------
