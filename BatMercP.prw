@@ -51,6 +51,7 @@
 // 01/09/2021 - Robert  - Mudado tratamento para campo C5_INDPRES: sempre 1=operacao presencial (GLPI 10085)
 // 15/06/2022 - Claudia - Ajustado a gravação do usuario que incluiu o pedido. GLPI: 12206
 // 04/07/2022 - Claudia - Gravação do campo de pedido de venda da bonificação.
+// 05/09/2022 - Claudia - Incluida a gravação do campo de municipio. GLPI: 12561
 //
 // -----------------------------------------------------------------------------------------------------------------
 user function BatMercP ()
@@ -266,30 +267,32 @@ static function _LePed ()
 					MSUNLOCK ()
 					_sDesbloq = '1'
 				endif
+				// busca municipio para gravação
+				_sMunicipio = fbuscacpo("SA1",1,xFilial("SA1")+ _sCliente + _sLojaCli,"A1_MUN")
 			endif
 
 			// Monta array de cabecalho para geracao do pedido.
 			_aAutoSC5 = {}
 			if empty (_sMsgErro)
-				aadd (_aAutoSC5, {"C5_VAPDMER", (_sAliasQ) -> zc5_pedmer, NIL})
-				aadd (_aAutoSC5, {"C5_EMISSAO", stod ((_sAliasQ) -> zc5_emissa), NIL})
-				aadd (_aAutoSC5, {"C5_CLIENTE", _sCliente, NIL})
-				aadd (_aAutoSC5, {"C5_LOJACLI", _sLojaCli, NIL})
-				aadd (_aAutoSC5, {"C5_TPFRETE", (_sAliasQ) -> zc5_tpfret, NIL})
-				aadd (_aAutoSC5, {"C5_CONDPAG", (_sAliasQ) -> zc5_condpa, NIL})
+				aadd (_aAutoSC5, {"C5_VAPDMER", (_sAliasQ) -> zc5_pedmer		, NIL})
+				aadd (_aAutoSC5, {"C5_EMISSAO", stod ((_sAliasQ) -> zc5_emissa)	, NIL})
+				aadd (_aAutoSC5, {"C5_CLIENTE", _sCliente						, NIL})
+				aadd (_aAutoSC5, {"C5_LOJACLI", _sLojaCli						, NIL})
+				aadd (_aAutoSC5, {"C5_TPFRETE", (_sAliasQ) -> zc5_tpfret		, NIL})
+				aadd (_aAutoSC5, {"C5_CONDPAG", (_sAliasQ) -> zc5_condpa		, NIL})
 				if se4 -> e4_tipo == '9'  // dias fixos
-					aadd (_aAutoSC5, {"C5_PARC1", 100, NIL})
-					aadd (_aAutoSC5, {"C5_DATA1", DataValida (date () + 30), NIL})
+					aadd (_aAutoSC5, {"C5_PARC1", 100							, NIL})
+					aadd (_aAutoSC5, {"C5_DATA1", DataValida (date () + 30)		, NIL})
 				endif
-				aadd (_aAutoSC5, {"C5_TABELA",  (_sAliasQ) -> zc5_tabela, NIL})
-				aadd (_aAutoSC5, {"C5_VEND1",   (_sAliasQ) -> zc5_vend1, NIL})
-				aadd (_aAutoSC5, {"C5_TIPO",    "N", NIL})
-				aadd (_aAutoSC5, {"C5_VAUSER",  sa3 -> a3_nome, NIL})
-				aadd (_aAutoSC5, {"C5_MENNOTA", alltrim (left ((_sAliasQ) -> zc5_mennot, tamsx3 ("C5_MENNOTA")[1])), NIL})
+				aadd (_aAutoSC5, {"C5_TABELA"	, (_sAliasQ) -> zc5_tabela		, NIL})
+				aadd (_aAutoSC5, {"C5_VEND1"	, (_sAliasQ) -> zc5_vend1		, NIL})
+				aadd (_aAutoSC5, {"C5_TIPO"		, "N"							, NIL})
+				aadd (_aAutoSC5, {"C5_VAUSER"	, sa3 -> a3_nome				, NIL})
+				aadd (_aAutoSC5, {"C5_MENNOTA"	, alltrim (left ((_sAliasQ) -> zc5_mennot, tamsx3 ("C5_MENNOTA")[1])), NIL})
 				if ! empty ((_sAliasQ) -> zc5_pedcli)
 					aadd (_aAutoSC5, {"C5_PEDCLI",  alltrim ((_sAliasQ) -> zc5_pedcli), NIL})
 				endif
-				aadd (_aAutoSC5, {"C5_OBS",     U_NoAcento (alltrim ((_sAliasQ) -> zc5_obs)), NIL})
+				aadd (_aAutoSC5, {"C5_OBS"    , U_NoAcento (alltrim ((_sAliasQ) -> zc5_obs))						, NIL})
 				aadd (_aAutoSC5, {"C5_VAOBSLG", alltrim (left ((_sAliasQ) -> zc5_vaobslg, tamsx3 ("C5_VAOBSLG")[1])), NIL})
 				
 				// Para condicao a vista queremos sempre banco CX1.
@@ -297,15 +300,16 @@ static function _LePed ()
 					aadd (_aAutoSC5, {"C5_BANCO", 'CX1' , NIL})
 				else
 					if ! empty ((_sAliasQ) -> zc5_banco)
-						aadd (_aAutoSC5, {"C5_BANCO",   (_sAliasQ) -> zc5_banco, NIL})
+						aadd (_aAutoSC5, {"C5_BANCO", (_sAliasQ) -> zc5_banco, NIL})
 					endif
 				endif
 				if (_sAliasQ) -> zc5_tpfret == 'C'
-					aadd (_aAutoSC5, {"C5_TRANSP",  '', NIL})
+					aadd (_aAutoSC5, {"C5_TRANSP",  ''		, NIL})
 				else
-					aadd (_aAutoSC5, {"C5_TRANSP",  '', NIL})
+					aadd (_aAutoSC5, {"C5_TRANSP",  ''		, NIL})
 				endif
-				aadd (_aAutoSC5, {"C5_INDPRES",  '1', NIL})  // 5=operacao presencial
+				aadd (_aAutoSC5, {"C5_INDPRES",  '1'		, NIL})  // 5=operacao presencial
+				aadd (_aAutoSC5, {"C5_VAMUN"  ,  _sMunicipio, NIL})  
 
 				// Ordena campos cfe. dicionario de dados.
 				_aAutoSC5 = aclone (U_OrdAuto (_aAutoSC5))
