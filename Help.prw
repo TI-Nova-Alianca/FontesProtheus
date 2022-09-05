@@ -100,7 +100,7 @@ return
 // --------------------------------------------------------------------------
 static function _vtHelp (_sMsg, _lHlpErro)
 	local _cTela     := ''
-	local _nLargTela := 40  // Por enquanto eh a unica tela que tenho...
+	local _nLargTela := 39  // Por enquanto eh a unica tela que tenho...
 	local _aLinhas   := {}
 
 	_cTela := TerSave()
@@ -110,8 +110,8 @@ static function _vtHelp (_sMsg, _lHlpErro)
 		TerBeep (2)
 	endif
 
-	_aLinhas = U_QuebraTXT (_sMsg, _nLargTela - 1)
-	U_Log2 ('debug', _aLinhas)
+	_aLinhas = U_QuebraTXT (_sMsg, _nLargTela - 2)
+	//U_Log2 ('debug', _aLinhas)
 	TeraChoice(,,,, _aLinhas)
 	TerRestore(,,,,_cTela)
 	//Function TeraChoice(nTop,nLeft,nBottom,nRight,aMenu,cFunct,nIniVetor,nIniW)

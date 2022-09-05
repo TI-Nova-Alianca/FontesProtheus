@@ -114,6 +114,7 @@ METHOD ApontaOP (_dDtProd, _sTnoProd) Class ClsEtiq
 	if ! ::PodeApont (::Quantidade, 0)
 		_lRetAp = .F.
 	else
+		U_PerfMon ("I", "ClsEtiqApontaOP")  // Medicao de tempos de execucao
 		aadd (_aAutoSD3, {"D3_OP",      ::OP,       NIL})
 		aadd (_aAutoSD3, {"D3_VAETIQ",  ::Codigo,   NIL})
 		aadd (_aAutoSD3, {"D3_VADTPRD", _dDtProd,   NIL})
@@ -135,10 +136,11 @@ METHOD ApontaOP (_dDtProd, _sTnoProd) Class ClsEtiq
 			elseif ! empty (NomeAutoLog ())
 				::UltMsg += U_LeErro (memoread (NomeAutoLog ())) + '; '
 			endif
-			u_help ('erro', 'Rotina automatica retornou erro: ' + ::UltMsg,, .t.)
+			u_help ('Erro rot.aut:' + alltrim (::UltMsg),, .t.)
 		else
-			::UltMsg += "Apontamento gerado com sucesso (d3_numseq = " + sd3 -> d3_numseq + ")"
+			::UltMsg += "Etiq." + ::Codigo + " apontada com sucesso (d3_numseq = " + sd3 -> d3_numseq + ")"
 		endif
+		U_PerfMon ("F", "ClsEtiqApontaOP")  // Medicao de tempos de execucao
 	endif
 return _lRetAp
 

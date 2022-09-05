@@ -11,6 +11,7 @@
 // 08/04/2022 - Robert - Criado filtro de OS conforme usuario (cada manutentor visualiza zaapenas as suas OS) - GLPI 11886
 // 26/08/2022 - Robert - Criado filtro para usuario FELIPE.ESTEVES
 // 02/09/2022 - Robert - Criado filtro para usuarios junior.melgarejo e joao.costa
+// 05/09/2022 - Robert - Nome do Evaldo estava incorreto no filtro de OS.
 //
 
 //  ---------------------------------------------------------------------------------------------------------------------
@@ -63,7 +64,7 @@ User Function MNTNG()
 		_sCodFunc = ''
 		do case
 	//	case alltrim (upper (cUserName)) $ 'EVALDO.AGNOLETO/LEONARDO.BORGES/APP.MNTNG/ELSO.RODRIGUES/MARCOS.OLIVEIRA/JONATHAN.SANTOS'
-		case alltrim (upper (cUserName)) $ 'EVALDO.AGNOLETO/LEONARDO.BORGES/APP.MNTNG/ELSO.RODRIGUES/MARCOS.OLIVEIRA/JONATHAN.SANTOS/JUNIOR.MELGAREJO/JOAO.COSTA'
+		case alltrim (upper (cUserName)) $ 'EVALDO.AGNOLETTO/LEONARDO.BORGES/APP.MNTNG/ELSO.RODRIGUES/MARCOS.OLIVEIRA/JONATHAN.SANTOS/JUNIOR.MELGAREJO/JOAO.COSTA'
 			_sCodFunc = ''  // Sem filtro para estes usuarios.
 		case alltrim (upper (cUserName)) = 'ELIEL.PEDRON'    ; _sCodFunc = '2119'
 		case alltrim (upper (cUserName)) = 'FABRICIO.GOMES'  ; _sCodFunc = '2010'

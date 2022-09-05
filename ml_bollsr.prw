@@ -97,8 +97,8 @@
 
 // --------------------------------------------------------------------------------------------------------------
 User Function ML_BOLLSR (_aBoletos)
-    local _nBoleto := 0
-    
+	local _nBoleto := 0
+
 	cPerg := "BOLL" + cFilAnt
 	_ValidPerg()
 	Pergunte(cPerg,.F.)    // Pergunta no SX1
@@ -130,6 +130,15 @@ User Function ML_BOLLSR (_aBoletos)
 		else
 			U_GravaSX1 (cPerg, "11", 1)  // Visualizar
 			If Pergunte (cPerg,.T.)
+
+//				// Alguns profiles de usuario comecaram a ser gravados sem
+//				// os espacos no final dos campos, deixando-os menores do
+//				// que o parametro original. Robert, 05/09/2022
+//				mv_par05 = left (mv_par05 + space (5),   3)  // Manter consistencia de tamanho com a funcao _ValidPerg ()
+//				mv_par06 = left (mv_par06 + space (5),   5)  // Manter consistencia de tamanho com a funcao _ValidPerg ()
+//				mv_par07 = left (mv_par07 + space (10), 10)  // Manter consistencia de tamanho com a funcao _ValidPerg ()
+//				mv_par08 = left (mv_par08 + space (3),   3)  // Manter consistencia de tamanho com a funcao _ValidPerg ()
+
 				processa ({|| _Gera (.F.)})
 			endif
 		endif
@@ -354,6 +363,7 @@ Static Function MontaRel()
 		
 		DbSelectArea("SEE")
 		DbSetOrder(1)
+		U_Log2 ('debug', '[' + procname () + '] pesquisando SEE >> ' + xFilial("SEE") + mv_par05 + mv_par06 + mv_par07 + mv_par08 + '<<')
 		If DbSeek(xFilial("SEE") + mv_par05 + mv_par06 + mv_par07 + mv_par08,.f.)
 			_nNumBco := SEE->EE_BOLATU
 			_cBcoBol := see -> ee_codigo

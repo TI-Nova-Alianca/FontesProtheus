@@ -206,7 +206,7 @@ return _lRetWSNA
 static function _Limpa (_sCampoX)
 //	_sCampoX = strtran (_sCampoX, '>', '&gt;')
 //	_sCampoX = strtran (_sCampoX, '<', '&lt;')
-	_sCampoX = strtran (_sCampoX, '"', '&quot;')
-	_sCampoX = strtran (_sCampoX, "'", "&apos;")
-	_sCampoX = strtran (_sCampoX, "&", "&amp;")
+	_sCampoX = strtran (_sCampoX, '"', '')  // '&quot;')
+	_sCampoX = strtran (_sCampoX, "'", '')  // "&apos;")
+	_sCampoX = strtran (_sCampoX, "&", '')  // "&amp;")
 return _sCampoX

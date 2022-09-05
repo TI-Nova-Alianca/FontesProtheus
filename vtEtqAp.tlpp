@@ -1,7 +1,7 @@
 // Programa:  vtEtqAp
 // Autor:     Robert Koch
 // Data:      26/08/2022
-// Descricao: Apontamento de etiquetas de producao via telnet
+// Descricao: Apontamento de etiquetas de producao via telnet (GLPI 11994)
 
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Processamento
@@ -10,12 +10,11 @@
 // #TabelasPrincipais #ZA1 #SD3 #SC2
 // #Modulos           #PCP #EST
 
+// Historico de alteracoes:
+// 02/09/2022 - Robert - Chamadas de vtAlert() substituidas por u_help().
+//
+
 #include "protheus.ch"
-//#include "rwmake.ch"
-//#include "VA_INCLU.prw"
-//#include "tbiconn.ch"
-//#INCLUDE "XMLXFUN.CH"
-//#INCLUDE "apvt100.ch"
 
 // --------------------------------------------------------------------------
 user function vtEtqAp ()
@@ -27,11 +26,7 @@ user function vtEtqAp ()
 	private _oEtiq     := NIL
 	private _sTnoProd  := ' '
 	private _nAltTela  := 10
-	private _nLargTela := 40
-
-	U_Log2 ('debug', '[' + procname () + ']Usando modulo ' + cvaltochar (nModulo) + ' ' + cModulo)
-	u_help ("texto bem grande para verificar como se comporta no telnet, para poder mostrar mensagens grandes quebrando-as em mais de uma linha bla bla bla DE NOVO: texto bem grande para verificar como se comporta no telnet, para poder mostrar mensagens grandes quebrando-as em mais de uma linha bla bla bla")
-	u_help ("texto bem grande para verificar" + chr (13) + chr (10) + " com enter como se comporta no telnet, para poder mostrar mensagens grandes quebrando-as em mais de uma linha bla bla bla DE NOVO: texto bem grande para verificar como se comporta no telnet, para poder mostrar mensagens grandes quebrando-as em mais de uma linha bla bla bla")
+	private _nLargTela := 39
 
 	do while _lContinua
 		
@@ -45,18 +40,14 @@ user function vtEtqAp ()
 
 		vtSetSize (_nAltTela, _nLargTela)
 		terCls()
-//		terSay(0, 0, "Apontamento de producao")
 
 		if _lContinua
 			terSay(0, 0, "Apontar etiqueta:")
 			U_Log2 ('debug', '[' + procname () + ']Antes de ler etiq')
 			VTSetGet (@_sBarEtiq, "_sBarEtiq", 0, 19, {||_ValEtiq ()})
 			vtRead ()
-			U_Log2 ('debug', '[' + procname () + ']Li etiqueta. Lastkey:' + cvaltochar (vtLastkey ()))
-			U_Log2 ('debug', '[' + procname () + ']Voltou com _sCodProd = ' + _sProdEtq)
 			_lContinua = (vtLastkey() != 27)
 			terCBuffer ()
-			U_Log2 ('debug', '[' + procname () + ']depois do terCBuffer')
 		endif
 		if _lContinua
 			U_Log2 ('debug', '[' + procname () + ']Antes de ler barras produto')
@@ -65,7 +56,6 @@ user function vtEtqAp ()
 			vtRead ()
 			_lContinua = (vtLastkey() != 27)
 			terCBuffer ()
-			U_Log2 ('debug', '[' + procname () + ']depois do terCBuffer')
 		endif
 		if _lContinua
 			terSay (4, 0, "Dt.producao:")
@@ -73,7 +63,6 @@ user function vtEtqAp ()
 			vtRead ()
 			_lContinua = (vtLastkey() != 27)
 			terCBuffer ()
-			U_Log2 ('debug', '[' + procname () + ']depois do terCBuffer')
 		endif
 		if _lContinua
 			terSay (4, 25, "Turno:")
@@ -81,13 +70,12 @@ user function vtEtqAp ()
 			vtRead ()
 			_lContinua = (vtLastkey() != 27)
 			terCBuffer ()
-			U_Log2 ('debug', '[' + procname () + ']depois do terCBuffer')
 		endif
 		if _lContinua
 			U_Log2 ('info', '[' + procname () + ']Campos lidos. Vou gerar apontamento')
 			terSay (6, 0, "Aguarde... gerando apontamento")
 			if _oEtiq:ApontaOP (_dDatProd, _sTnoProd)
-				u_help ("Apontamento gerado com sucesso.")
+				u_help ("Etiq." + _oEtiq:Codigo + " apontada com sucesso!")
 			else
 				u_help ("ERRO no apontamento.",, .t.)
 			endif
@@ -98,7 +86,6 @@ return
 // --------------------------------------------------------------------------
 static function _ValEtiq ()
 	local _lRet := .T.
-	U_Log2 ('info', 'Iniciando ' + procname ())
 	U_Log2 ('debug', '[' + procname () + ']' + _sBarEtiq)
 	
 	// Farei algumas validacoes rapidinhas direto pelo ZA1 antes de instanciar uma etiqueta, para melhoria de performance.
@@ -107,8 +94,7 @@ static function _ValEtiq ()
 		if ! za1 -> (dbseek (xfilial ("ZA1") + _sBarEtiq, .F.))
 			U_Log2 ('debug', '[' + procname () + ']etiq.invalida')
 			vtBeep (2)
-			vtAlert ("Etiqueta invalida","Erro",.f.,3000)  // Tempo em milissegundos
-			U_Log2 ('debug', '[' + procname () + ']passou do alert')
+			u_help ("Etiqueta nao cadastrada.",, .t.)
 			_sProdEtq = ''
 			_lRet = .F.
 		else
@@ -119,7 +105,6 @@ static function _ValEtiq ()
 		_oEtiq := ClsEtiq ():New (_sBarEtiq)
 		_lRet = _oEtiq:PodeApont(_oEtiq:Quantidade, 0)  // Sempre seria um apontamento 
 	endif
-	U_Log2 ('info', 'Finalizando ' + procname ())
 return _lRet
 
 // --------------------------------------------------------------------------
@@ -127,17 +112,14 @@ static function _ValCBProd ()
 	local _lRet      := .T.
 	local _sDescProd := ''
 
-	U_Log2 ('info', 'Iniciando ' + procname ())
 	U_Log2 ('debug', '[' + procname () + ']' + _sProdEtq)
 	sb1 -> (dbsetorder (5))  // B1_FILIAL, B1_CODBAR, R_E_C_N_O_, D_E_L_E_T_
 	if ! sb1 -> (dbseek (xfilial ("SB1") + _sBarProd, .F.))
-		U_Log2 ('debug', '[' + procname () + ']produto.invalida')
 		u_help ("Nenhum produto cadastrado com esse codigo de barras",, .t.)
-		U_Log2 ('debug', '[' + procname () + ']passou do alert')
 		_lRet = .F.
 	else
 		if sb1 -> b1_cod != _sProdEtq
-			vtAlert ("Produto nao pertence a esta etiqueta","Erro",.f.,4000)  // Tempo em milissegundos
+			u_help ("Produto nao pertence a esta etiqueta",, .t.)
 			_lRet = .F.
 		else
 			_sDescProd = alltrim (sb1 -> b1_cod) + ' - ' + alltrim (sb1 -> b1_desc)
@@ -147,7 +129,7 @@ static function _ValCBProd ()
 			// Nao vou permitir mais de um produto com mesmo codigo de barras
 			sb1 -> (dbskip ())
 			if sb1 -> b1_codbar == _sBarProd
-				vtAlert ("Encontrado mais de um produto com o mesmo codigo de barras","Erro",.f.,4000)  // Tempo em milissegundos
+				u_help ("Encontrado mais de um produto com o mesmo codigo de barras.")
 				_lRet = .F.
 			endif
 		endif
@@ -158,7 +140,6 @@ return _lRet
 // --------------------------------------------------------------------------
 static function _ValDtProd ()
 	local _lRet := .T.
-	U_Log2 ('info', 'Iniciando ' + procname ())
 	U_Log2 ('debug', '[' + procname () + ']' + dtoc (_dDatProd))
 	if _lRet .and. _dDatProd > date ()
 		u_help ("Nao pode ser informada data futura",, .t.)
@@ -168,17 +149,14 @@ static function _ValDtProd ()
 		u_help ("Nao pode ser informada data muito antiga",, .t.)
 		_lRet = .F.
 	endif
-	U_Log2 ('info', 'Finalizando ' + procname ())
 return _lRet
 
 // --------------------------------------------------------------------------
 static function _ValTurno ()
 	local _lRet := .T.
-	U_Log2 ('info', 'Iniciando ' + procname ())
 	U_Log2 ('debug', '[' + procname () + ']' + _sTnoProd)
 	if _lRet .and. ! _sTnoProd $ '12'
 		u_help ("Turno deve ser 1 ou 2",, .t.)
 		_lRet = .F.
 	endif
-	U_Log2 ('info', 'Finalizando ' + procname ())
 return _lRet
