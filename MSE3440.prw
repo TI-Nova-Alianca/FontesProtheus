@@ -33,6 +33,7 @@
 // 05/05/2021 - Cláudia - Adicionado valor de frete + seguro + despesas acessorias. GLPI: 9895
 // 02/06/2021 - Claudia - Ajuste de descontos de ST e IPI. GLPI: 10051
 // 22/07/2021 - Claudia - Incluida a divisão das parcelas para ST/IPI no "IPI distribuídos nas "N" parcelas".GLPI: 10539
+// 05/09/2022 - Claudia - Incluso variaveis _VLRSEG, _VLFRETE, _vlrDesp - GLPI: 12563
 //
 // -----------------------------------------------------------------------------------------------------------------------------------
 /*
@@ -315,6 +316,9 @@ User Function MSE3440 ()
 		_vlrIpi 	:= 0
 		_vlrST  	:= 0
 		_vlrBC  	:= 0
+		_vlFrete    := 0
+		_Vlrseg     := 0
+		_vlrDesp    := 0
 		_vlrBasePrev:= _baseComis
 		
 		_sQuery := ""
