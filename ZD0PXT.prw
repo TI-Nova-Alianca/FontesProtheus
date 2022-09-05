@@ -1,7 +1,7 @@
 // Programa...: ZDOPXT
 // Autor......: Claudia Lionço
 // Data.......: 01/09/2022
-// Descricao..: Consulta Pagar.me x pedido x nota x titulos
+// Descricao..: Consulta Pagar.me X titulos
 //
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #consulta
