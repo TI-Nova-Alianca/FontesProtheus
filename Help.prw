@@ -74,7 +74,7 @@ user function Help (_sMsg, _sDAdic, _lHlpErro)
 	endif
 
 	if type ("oMainWnd") == "O"  // Se tem interface com o usuario
-		U_Log2 ('debug', '[' + procname () + ']tenho oMainWnd')
+//		U_Log2 ('debug', '[' + procname () + ']tenho oMainWnd')
 		if valtype (_sDAdic) == "C" .and. ! empty (_sDAdic) .and. existblock ("SHOWMEMO")
 			U_ShowMemo (cValToChar (_sMsg) + chr (13) + chr (10) + chr (13) + chr (10) + "Dados adicionais:" + chr (13) + chr (10) + _sDAdic, procname (1) + " => " + procname (2))
 		else

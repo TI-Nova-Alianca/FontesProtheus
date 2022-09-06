@@ -144,9 +144,6 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	//WSDLDbgLevel(2)  // Ativa dados para debug no arquivo console.log
 	set century on
 
-	// Alimenta coluna de observacoes no monitor do sistema (R33 proibiu o usu dessa funcao)
-	//PtInternal (1, 'WS_Alianca')
-
 	// Validacoes gerais e extracoes de dados basicos.
 	U_ValReqWS (GetClassName (::Self), ::XmlRcv, @_sErroWS, @_sWS_Empr, @_sWS_Filia, @_sAcao)
 	
@@ -175,27 +172,9 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 		_oXML := XmlParser(::XmlRcv, "_", @_sError, @_sWarning)
 	endif
 
-/*
-	// Faz a 'migracao' para outro arquivo de log, para nao misturar processos de diferentes usuarios.
-	if empty (_sErroWS)
-		//u_log ('vou mudar arqlog com cUserName=', cusername)
-		_sArqLgOld = _sArqLog
-	//	_sArqLog2 = 'WS_Alianca_' + alltrim (cUserName) + "_" + dtos (date ()) + ".log"
-		_sArqLog2 = 'WS_Alianca_' + alltrim (cUserName) + ".log"
-		u_log2 ('info', 'Log da thread ' + cValToChar (ThreadID ()) + ' prossegue em outro arquivo: ' + _sArqLog2)
-		_sArqLog = _sArqLog2
-		u_log2 ('info', '')
-		u_log2 ('info', '')
-		u_log2 ('info', '###############################################################################################')
-		u_log2 ('info', '...continuacao de log da thread ' + cValToChar (ThreadID ()) + ' (gerado por chamada de web service)')
-		u_log2 ('debug', 'XML recebido: ' + ::XmlRcv)
-	endif
-*/
-
 	// Executa a acao especificada no XML.
 	if empty (_sErroWS)
 		u_log2 ('info', 'Acao solicitada ao web service: ' + _sAcao)
-		//PtInternal (1, _sAcao)
 		U_UsoRot ('I', _sAcao, '')
 
 		do case
@@ -269,6 +248,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 				_AltAssoc ()
 			case _sAcao == 'ImprimeEtiqueta'
 				_ImpEtiq ()
+			case _sAcao == 'TesteRobert'
+				_TstRobert ()
 			otherwise
 				_sErroWS += "A acao especificada no XML eh invalida: " + _sAcao
 		endcase
@@ -2508,6 +2489,15 @@ static function _ImpEtiq ()
 			endif
 		endif
 	endif
+return
+
+
+// --------------------------------------------------------------------------
+// Testes Robert
+static function _TstRobert ()
+	U_Log2 ('debug', '[' + procname () + ']porta: ' + cvaltochar (GetServerPort ()) + ']Cozinhando um pouco...')
+	sleep (20000)
+	U_Log2 ('debug', '[' + procname () + ']porta: ' + cvaltochar (GetServerPort ()) + ']Liberando')
 return
 
 
