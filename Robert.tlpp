@@ -107,15 +107,29 @@ user function robert ()
 		// _telnet ()
 		// _verif ()
 		// _ClsEtiq ()
-		// _VA_XLS ()
+		_VA_XLS ()
 		// _aviso ()
 //		_reginv ()
+		//_ImpGPC ()
 
-		u_help ('Nada definido.')
+		//u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
 return
+
+// --------------------------------------------------------------------------
+static function _impGPC ()
+	local _aDados := {}
+	local _nDado  := 0
+
+	_aDados = U_LeCSV ('c:\temp\gpc1.csv', ';')
+	u_log (_aDados)
+	for _nDado = 1 to 10 //len (_aDados)
+		u_log (U_NoAcento (_aDados [_nDado, 4]))
+	next
+return
+
 
 // --------------------------------------------------------------------------
 static function _reginv ()
