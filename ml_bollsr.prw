@@ -93,6 +93,7 @@
 // 10/06/2022 - Claudia - Realizado ajustes conforme solicitado pelo banco banrisul. GLPI: 11638
 // 22/07/2022 - Claudia - Criado modelo de boleto banco Daycoval. GLPI: 12365
 // 02/09/2022 - Robert  - Chamadas da funcao u_log() trocadas para u_log2().
+// 05/09/2022 - Robert  - Ajustes pequenos nos logs.
 //
 
 // --------------------------------------------------------------------------------------------------------------
@@ -363,7 +364,7 @@ Static Function MontaRel()
 		
 		DbSelectArea("SEE")
 		DbSetOrder(1)
-		U_Log2 ('debug', '[' + procname () + '] pesquisando SEE >> ' + xFilial("SEE") + mv_par05 + mv_par06 + mv_par07 + mv_par08 + '<<')
+		U_Log2 ('debug', '[' + procname () + '] pesquisando SEE >>' + xFilial("SEE") + mv_par05 + mv_par06 + mv_par07 + mv_par08 + '<<')
 		If DbSeek(xFilial("SEE") + mv_par05 + mv_par06 + mv_par07 + mv_par08,.f.)
 			_nNumBco := SEE->EE_BOLATU
 			_cBcoBol := see -> ee_codigo
@@ -412,7 +413,7 @@ Static Function MontaRel()
 		_sNumBco := SE1->E1_NUMBCO
 		If SE1->E1_BOLIMP == "S" .OR. !empty (_sNumBco)
 			If SE1->E1_PORT2 != mv_par05
-				u_help ("Boleto " + AllTrim(SE1->E1_NUMBCO) + " Titulo " + se1 -> e1_prefixo + "/" + SE1->E1_NUM + "-" + se1 -> e1_parcela + " ja impresso no Banco '" + SE1->E1_PORT2 + "'." + chr(13) + chr (10) + "Este boleto nao sera reimpresso")
+				u_help ("Boleto " + AllTrim(SE1->E1_NUMBCO) + " Titulo " + se1 -> e1_prefixo + "/" + SE1->E1_NUM + "-" + se1 -> e1_parcela + " ja impresso no Banco '" + SE1->E1_PORT2 + "'." + chr(13) + chr (10) + "Este boleto nao sera reimpresso.")
 				DbSelectArea("SE1")
 				DbSkip()
 				Loop
@@ -432,7 +433,6 @@ Static Function MontaRel()
 					_oEvento:PedVenda  = se1 -> e1_pedido
 					_oEvento:Cliente   = se1 -> e1_cliente
 					_oEvento:LojaCli   = se1 -> e1_loja
-					// Desabilitado a pedido do usuario_oEvento:MailTo    = "aline.trentin@novaalianca.coop.br"
 					_oEvento:Grava ()
 				Endif
 				if se1 -> e1_saldo != se1 -> e1_valor
@@ -460,7 +460,6 @@ Static Function MontaRel()
 						_oEvento:PedVenda  = se1 -> e1_pedido
 						_oEvento:Cliente   = se1 -> e1_cliente
 						_oEvento:LojaCli   = se1 -> e1_loja
-						// Desabilitado a pedido do usuario_oEvento:MailTo    = "aline.trentin@novaalianca.coop.br"
 						_oEvento:Grava ()
 					Endif
 				endif
@@ -484,29 +483,28 @@ Static Function MontaRel()
 			do case
 				case _cBcoBol == '001'
 					_sNumBco = _NosNum001()
-		        case _cBcoBol == '033'
-                    _sNumBco = _NosNum033()
+				case _cBcoBol == '033'
+					_sNumBco = _NosNum033()
 				case _cBcoBol == '041'
 					_sNumBco = _NosNum041()
-		        case _cBcoBol == '104'
-                    _sNumBco = _NosNum104()
+				case _cBcoBol == '104'
+					_sNumBco = _NosNum104()
 				case _cBcoBol == '237'
 					_sNumBco = _NosNum237()
 				case _cBcoBol == '341'
-					_sNumBco = _NosNum341()	                    
+					_sNumBco = _NosNum341()
 				case _cBcoBol == '399'
 					_sNumBco = _NosNum399()
 				case _cBcoBol == '422'
 					_sNumBco = _NosNum422_422()
 				case _cBcoBol == '707'
-                    _sNumBco = soma1 (strzero (see -> ee_bolatu, 10)) 
-					//_sDigVerif := _DigVerif707()
-        		case _cBcoBol == '748'
+					_sNumBco = soma1 (strzero (see -> ee_bolatu, 10)) 
+				case _cBcoBol == '748'
 					_sNumBco = _NosNum748()
 				case _cBcoBol == 'RED'
-                    _sNumBco = _NosNumRED_237()	
+					_sNumBco = _NosNumRED_237()	
 				otherwise
-					u_help ("Sem tratamento para calculo de nosso numero para o banco " + _cBcoBol)
+					u_help ("Sem tratamento para calculo de nosso numero para o banco " + _cBcoBol,, .t.)
 					_lContinua = .f.
 					loop
 			endcase
@@ -515,20 +513,20 @@ Static Function MontaRel()
 			// Verifica se a numeracao atual encontra-se dentro da faixa liberada pelo banco.
 			If _cBcoBol == '707'
 				If val(_sNumBco) < val(SEE->EE_FAXINI) .Or. val(_sNumBco) > val(SEE->EE_FAXFIM)
-					u_help("Valor gerado para 'nosso numero' (" + _sNumBco + ") fora da sequencia valida para o banco " + _cBcoBol)
+					u_help("Valor gerado para 'nosso numero' (" + _sNumBco + ") fora da sequencia valida para o banco " + _cBcoBol,, .t.)
 					_lContinua = .F.
 					loop
 				EndIF
 			else
 				If _sNumBco < SEE->EE_FAXINI .Or. _sNumBco > SEE->EE_FAXFIM
-					u_help("Valor gerado para 'nosso numero' (" + _sNumBco + ") fora da sequencia valida para o banco " + _cBcoBol)
+					u_help("Valor gerado para 'nosso numero' (" + _sNumBco + ") fora da sequencia valida para o banco " + _cBcoBol,, .t.)
 					_lContinua = .F.
 					loop
 				EndIF
 			endif
 						
 			If VAL (_sNumBco) < SEE->EE_BOLATU
-				u_help("Valor gerado para 'nosso numero' (" + _sNumBco + ") e' menor que o ultimo gravado nos parametros do banco " + _cBcoBol + "(" + alltrim (str (see->ee_bolatu)) + "). Isso causaria repeticao de numeracao junto ao banco! Verifique!")
+				u_help("Valor gerado para 'nosso numero' (" + _sNumBco + ") e' menor que o ultimo gravado nos parametros do banco " + _cBcoBol + "(" + alltrim (str (see->ee_bolatu)) + "). Isso causaria repeticao de numeracao junto ao banco! Verifique!",, .t.)
 				_lContinua = .F.
 				loop
 			EndIF
@@ -547,7 +545,7 @@ Static Function MontaRel()
 			EndIf
  
 			if U_RetSQL (_sQuery) > 0
-				u_help ("Problemas na geracao do 'nosso numero' para o titulo '" + se1 -> e1_num + "':" + chr (13) + chr (10) + "O numero '" + _sNumBco + "' ja existe no sistema.")
+				u_help ("Problemas na geracao do 'nosso numero' para o titulo '" + se1 -> e1_num + "': O numero '" + _sNumBco + "' ja existe no sistema.",, .t.)
 				_lContinua = .F.
 				loop
 			endif
@@ -557,12 +555,12 @@ Static Function MontaRel()
 
 				// Verifica tamanhos dos campos
 				if len (alltrim (_sNumBco)) > TamSX3 ("E1_NUMBCO")[1]
-					u_help ("Tamanho do campo E1_NUMBCO insuficiente para armazenar o nosso numero '" + _sNumBco + "'")
+					u_help ("Tamanho do campo E1_NUMBCO insuficiente para armazenar o nosso numero '" + _sNumBco + "'",, .t.)
 					_lContinua = .F.
 					loop
 				endif
 				if len (alltrim (_sNumBco)) > TamSX3 ("EE_BOLATU")[1]
-					u_help ("Tamanho do campo EE_BOLATU insuficiente para armazenar o nosso numero '" + _sNumBco + "'")
+					u_help ("Tamanho do campo EE_BOLATU insuficiente para armazenar o nosso numero '" + _sNumBco + "'",, .t.)
 					_lContinua = .F.
 					loop
 				endif
@@ -600,7 +598,7 @@ Static Function MontaRel()
 					case _cBcoBol == "104"
 						RecLock("SEE",.F.)
 						SEE->EE_BOLATU = val (substr (se1 -> e1_numbco, 3, 15))
-						u_log2 ('debug', 'Atualizei EE_BOLATU para ' + SEE->EE_BOLATU)
+						u_log2 ('debug', 'Atualizei EE_BOLATU para ' + cvaltochar (SEE->EE_BOLATU))
 						MsUnlock()
 					case _cBcoBol == "237" .OR. _cBcoBol == "RED" 
 						RecLock("SEE",.F.)
@@ -774,7 +772,7 @@ Static Function MontaRel()
 				U_SendMail ("financeiro@novaalianca.coop.br", "Boleto " + se1 -> e1_prefixo + "/" + se1 -> e1_num + se1 -> e1_parcela + " emitido para cliente " + alltrim (aDatSacado [1]), "", {}, "")
 			endif
 		Else
-			u_help("Boleto não impresso!")
+			u_help("Boleto não impresso!",, .t.)
 		EndIf
 
 		// Retorna Parametros Originais

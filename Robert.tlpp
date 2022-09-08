@@ -109,6 +109,7 @@ user function robert ()
 		// _ClsEtiq ()
 		// _VA_XLS ()
 		// _aviso ()
+//		_reginv ()
 
 		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
@@ -116,6 +117,19 @@ user function robert ()
 	endif
 return
 
+// --------------------------------------------------------------------------
+static function _reginv ()
+	local _aDados := {}
+	local _nDado  := 0
+
+	_aDados = U_LeCSV ('c:\temp\matr460.txt', '|')
+	u_log (_aDados)
+	for _nDado = 1 to len (_aDados)
+	//	u_log (_nDado)
+	next
+return
+
+// --------------------------------------------------------------------------
 static function _aviso ()
 	// u_batzab ()
 
