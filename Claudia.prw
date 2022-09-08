@@ -15,8 +15,11 @@ User Function claudia ()
 	//u_help("_RapelExclui")
 	//_RapelExclui()
 
-	u_help("Ajustes SB1")
-	_AtuSB1()
+	//u_help("Ajustes SB1")
+	//_AtuSB1()
+
+	//U_HELP("BATTITBAI")
+	//U_BATTITBAI()
 Return
 //
 // ------------------------------------------------------------------------------------
