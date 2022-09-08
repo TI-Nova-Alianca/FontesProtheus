@@ -15,6 +15,7 @@
 // 26/10/2021 - Claudia - Realizado ajuste quando tem dois vendedores. GLPI: 11124
 // 12/01/2022 - Claudia - Criada nova validação para indenização. GLPI: 11361
 // 18/08/2022 - Claudia - Ajustada a consulta para não trazer comissões duplicadas. GLPI: 12496
+// 08/09/2022 - Claudia - Retirado o tipo de titulo DP. GLPI: 12572
 //
 // -----------------------------------------------------------------------------------------------
 
@@ -202,7 +203,8 @@ User Function VA_COMEXE(_dtaIni, _dtaFin, _sVend, _nLibPg)
 	_oSQL:_sQuery += " 			AND SE1.E1_PARCELA = SE3.E3_PARCELA"
 	_oSQL:_sQuery += " 			AND SE1.E1_PREFIXO = SE3.E3_PREFIXO"
 	_oSQL:_sQuery += " 			AND SE1.E1_TIPO    = SE3.E3_TIPO"
-	_oSQL:_sQuery += " 			AND SE1.E1_CLIENTE = SE3.E3_CODCLI)"
+	_oSQL:_sQuery += " 			AND SE1.E1_CLIENTE = SE3.E3_CODCLI "
+	_oSQL:_sQuery += "          AND SE1.E1_TIPO   <> 'DP')"
 	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SF2") + " AS SF2 "
 	_oSQL:_sQuery += " 	     ON (SF2.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery += "          AND SF2.F2_FILIAL  = SE3.E3_FILIAL"
@@ -244,6 +246,8 @@ User Function VA_COMITNF(_sFilial, _sNota, _sSerie, _nBaseComis, _nVlrComis, _nB
 	Local _oSQL    := ClsSQL ():New ()
 	Local _aItens  := {}
 	Local _aFat    := {}
+	Local _sVend1  := ''
+	Local _sVend2  := ''
 	Local i        := 0
 
 	_oSQL:_sQuery := ""
@@ -257,6 +261,7 @@ User Function VA_COMITNF(_sFilial, _sNota, _sSerie, _nBaseComis, _nVlrComis, _nB
 	_oSQL:_sQuery += " AND F2_SERIE  = '" + _sSerie  + "'"
 	_aFat := aclone (_oSQL:Qry2Array ())
 
+	//u_log("*** NF: " + _sFilial + "/"+_sNota+"/" + _sSerie)
 	For i=1 to len(_aFat)
 		_sVend1 := _aFat[i, 1]
 		_sVend2 := _aFat[i, 2]
