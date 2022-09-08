@@ -11,6 +11,7 @@
 // #Modulos           #FAT
 //
 //  Historico de alterações
+// 06/09/2022 - Claudia - Retirada a coluna de saldos de titulos. GLPI:
 //
 // ----------------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -42,27 +43,28 @@ Static Function ReportDef()
 	oReport := TReport():New("ZD0PXT","Pagar.me x Titulos",cPerg,{|oReport| PrintReport(oReport)},"Pagar.me x Titulos")
 	
 	oReport:SetTotalInLine(.F.)
-	oReport:SetPortrait()
+	oReport:SetLandscape()
 	oReport:ShowHeader()
 	
 	oSection1 := TRSection():New(oReport,,{}, , , , , ,.T.,.F.,.F.) 
 	
-	TRCell():New(oSection1,"COLUNA1", 	"" ,"Filial"		,	    					, 8,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA2", 	"" ,"ID Recebivel"  ,       					,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA3", 	"" ,"ID Transacao"  ,       					,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA4", 	"" ,"Vlr.Parcela"	, "@E 999,999,999.99"   	,25,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA5", 	"" ,"Vlr.Taxa"		, "@E 999,999,999.99"   	,25,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA6", 	"" ,"Vlr.Liquido"	, "@E 999,999,999.99"   	,25,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA7", 	"" ,"Dt.Pgto"		,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA8", 	"" ,"Título"    	,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA9", 	"" ,"Cliente"    	,       					,40,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA10", 	"" ,"Saldo Título"	, "@E 999,999,999.99"   	,25,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA1"	, 	"" ,"Filial"		,	    					, 8,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA2"	, 	"" ,"ID Recebivel"  ,       					,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA3"	, 	"" ,"ID Transacao"  ,       					,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA3_1"	, 	"" ,"Parcela"       ,       					,06,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA4"	, 	"" ,"Vlr.Parcela"	, "@E 999,999,999.99"   	,25,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA5"	, 	"" ,"Vlr.Taxa"		, "@E 999,999,999.99"   	,25,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA6"	, 	"" ,"Vlr.Liquido"	, "@E 999,999,999.99"   	,25,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA7"	, 	"" ,"Dt.Pgto"		,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA8"	, 	"" ,"Título"    	,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA9"	, 	"" ,"Cliente"    	,       					,40,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	//TRCell():New(oSection1,"COLUNA10", 	"" ,"Saldo Título"	, "@E 999,999,999.99"   	,25,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 
     oBreak1 := TRBreak():New(oSection1,oSection1:Cell("COLUNA1"),"Total por filial")
     TRFunction():New(oSection1:Cell("COLUNA4")	,,"SUM"	,oBreak1,"Total parcela "   , "@E 99,999,999.99", NIL, .F., .T.)
     TRFunction():New(oSection1:Cell("COLUNA5")	,,"SUM"	,oBreak1,"Total taxa "      , "@E 99,999,999.99", NIL, .F., .T.)
     TRFunction():New(oSection1:Cell("COLUNA6")	,,"SUM"	,oBreak1,"Total liquido "   , "@E 99,999,999.99", NIL, .F., .T.)
-	TRFunction():New(oSection1:Cell("COLUNA10")	,,"SUM"	,oBreak1,"Total Títulos"    , "@E 99,999,999.99", NIL, .F., .T.)
+	//TRFunction():New(oSection1:Cell("COLUNA10")	,,"SUM"	,oBreak1,"Total Títulos"    , "@E 99,999,999.99", NIL, .F., .T.)
 	
 Return(oReport)
 //
@@ -88,6 +90,7 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += "    ,SE1.E1_NUM + '/' + SE1.E1_PREFIXO + ' ' + SE1.E1_PARCELA "
 	_oSQL:_sQuery += "    ,SE1.E1_CLIENTE + ' - ' + SA1.A1_NOME "
 	_oSQL:_sQuery += "    ,SE1.E1_SALDO "
+	_oSQL:_sQuery += "    ,ZD0_PARCEL "
 	_oSQL:_sQuery += " FROM " + RetSQLName ("ZD0") + " ZD0 "
 	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SE1") + " SE1 "
 	_oSQL:_sQuery += " 	ON SE1.D_E_L_E_T_ = '' "
@@ -107,13 +110,14 @@ Static Function PrintReport(oReport)
 		oSection1:Cell("COLUNA1")	:SetBlock   ({|| _aDados[_x, 1] }) 
 		oSection1:Cell("COLUNA2")	:SetBlock   ({|| _aDados[_x, 2] }) 
 		oSection1:Cell("COLUNA3")	:SetBlock   ({|| _aDados[_x, 3] }) 
+		oSection1:Cell("COLUNA3_1")	:SetBlock   ({|| _aDados[_x,11] }) 
 		oSection1:Cell("COLUNA4")	:SetBlock   ({|| _aDados[_x, 4] }) 
 		oSection1:Cell("COLUNA5")	:SetBlock   ({|| _aDados[_x, 5] }) 
 		oSection1:Cell("COLUNA6")	:SetBlock   ({|| _aDados[_x, 6] }) 
 		oSection1:Cell("COLUNA7")	:SetBlock   ({|| _aDados[_x, 7] }) 
 		oSection1:Cell("COLUNA8")	:SetBlock   ({|| _aDados[_x, 8] }) 
         oSection1:Cell("COLUNA9")	:SetBlock   ({|| _aDados[_x, 9] }) 
-		oSection1:Cell("COLUNA10")	:SetBlock   ({|| _aDados[_x,10] }) 
+		//oSection1:Cell("COLUNA10")	:SetBlock   ({|| _aDados[_x,10] }) 
 		
 		oSection1:PrintLine()
 	Next
