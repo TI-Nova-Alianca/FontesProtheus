@@ -11,9 +11,9 @@
 // #Modulos 		  #FIN 
 //
 //  Historico de alteracoes:
+// 08/09/2022 - Claudia - Incluida a data de cancelamento da baixa de verbas. GLPI: 12575
 //
-//
-// ------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
 
@@ -75,6 +75,7 @@ User Function VA_COMDEV(_dtaIni, _dtaFin, _sVend)
     _oSQL:_sQuery += " AND E5_TIPO   = 'NCC'"
     _oSQL:_sQuery += " AND E5_MOTBX  = 'DEB'"
     _oSQL:_sQuery += " AND E5_NATUREZ <> 'VERBAS'"
+    _oSQL:_sQuery += " AND E5_DTCANBX = '' "
     _oSQL:_sQuery += " ORDER BY E5_DATA"
     _oSQL:Log ()
 	
