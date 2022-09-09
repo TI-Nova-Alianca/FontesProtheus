@@ -13,6 +13,7 @@
 // 30/08/2022 - Robert - Atributo ClsAviso:DestinAvis passa a ser tipo string.
 //                     - Versao inicial de envio para NaWeb via web service.
 // 31/08/2022 - Robert - Desabilitado tratamento de 'codigo de mensagem'.
+// 09/09/2022 - Robert - Criado atributo ::DestinZZU.
 //
 
 #include "protheus.ch"
@@ -32,7 +33,8 @@ CLASS ClsAviso
 	data DtAviso
 	data HrAviso
 	data Destinatar  // soh pra manter compatibilidade com fontes antigos
-	data DestinAvis
+	data DestinAvis  // Nomes dos usuarios no formato fulano.silva;ciclano.dastantas
+	data DestinZZU   // Codigos de um grupo da tabela ZZU no formato {grp1, grp2, ...}
 	data Texto
 	data Titulo
 	data Origem
@@ -68,6 +70,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsAviso
 	::HrAviso    = time ()
 	::Destinatar = ""
 	::DestinAvis = ''
+	::DestinZZU  = {}
 	::Texto      = ""
 	::Titulo     = ""
 	::Origem     = ""
@@ -93,22 +96,35 @@ METHOD Grava () Class ClsAviso
 	local _i         := 0
 	local _sPilha    := ""
 	local _lEnvNAW   := .T.
+	local _nDestZZU  := 0
+	local _sDestZZU  := ''
 
 	::Titulo     = iif (empty (::Titulo), ::Texto, ::Titulo)
 	::DiasDeVida = iif (::DiasDeVida == NIL, iif (::Tipo == 'E', 90, 30), ::DiasDeVida)
 
-	// Tenho alguns grupos ja usados em outros fontes, que ainda preciso pensar
-	// em como tratar...
+	// Tenho alguns grupos ja usados em outros fontes.
 	if upper (alltrim (::DestinAvis)) == 'GRPTI'
-		::DestinAvis = 'robert.koch,sandra.sugari,claudia.lionco'
-	endif
-	if upper (alltrim (::DestinAvis)) == 'GRPAGRONOMIA'
-		::DestinAvis = 'leonardo.reffatti,debora.lang,monica.rodrigues'
+		::DestinZZU  = {'122'}
 	endif
 
-	if empty (::DestinAvis)  // ateh eliminar o atributo antigo
-		::DestinAvis = ::Destinatar
+	// Se recebi uma lista de grupos a notificar, busco os usuarios desses grupos.
+	if valtype (::DestinZZU) == 'A'
+		::DestinAvis = ''
+		for _nDestZZU = 1 to len (::DestinZZU)
+		//	U_Log2 ('debug', '[' + procname () + ']Verificando grupo ' + ::DestinZZU [_nDestZZU])
+			_sDestZZU = U_ZZULD (::DestinZZU [_nDestZZU], cFilAnt, '23') [4]
+			if empty (_sDestZZU)
+				U_Log2 ('aviso', '[' + procname () + ']Grupo ' + ::DestinZZU [_nDestZZU] + ' nao retornou nenhum destinatario para notificacao.')
+			else
+				::DestinAvis += iif (empty (::DestinAvis), '', ';') + _sDestZZU
+			endif
+		next
+	//	U_Log2 ('debug', 'Destinatarios ficou assim:' + ::DestinAvis)
 	endif
+
+//	if empty (::DestinAvis)  // ateh eliminar o atributo antigo
+//		::DestinAvis = ::Destinatar
+//	endif
 
 	if ! ::Tipo $ 'E/A/I'  // [E]rro, [A]viso, [I]nfo
 		u_log2 ('erro', "Tipo de aviso invalido: '" + cvaltochar (::Tipo) + "'. Nao vou enviar para NaWeb.")

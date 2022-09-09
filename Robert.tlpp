@@ -107,9 +107,9 @@ user function robert ()
 		// _telnet ()
 		// _verif ()
 		// _ClsEtiq ()
-		_VA_XLS ()
-		// _aviso ()
-//		_reginv ()
+		// _VA_XLS ()
+		_aviso ()
+		// _reginv ()
 		//_ImpGPC ()
 
 		//u_help ('Nada definido.')
@@ -146,20 +146,15 @@ return
 // --------------------------------------------------------------------------
 static function _aviso ()
 	// u_batzab ()
-
-//	U_AvisaTI ('teste robert')
-	/*
-
-	// Teste geracao avisos
 	_oAviso := ClsAviso ():New ()
 	_oAviso:Tipo       = 'A'
-	_oAviso:DestinAvis = 'robert.koch'
-	_oAviso:Titulo     = 'teste caracteres especiais'
-	_oAviso:Texto      = 'Mensagem com sinal de maior > continuacao do texto'
+	//_oAviso:DestinAvis = 'robert.koch'
+	_oAviso:DestinZZU  = {'122'}
+	_oAviso:Titulo     = 'teste mensagem aviso'
+	_oAviso:Texto      = 'Teste envio notificacao'
 	_oAviso:Origem     = procname ()
 	_oAviso:DiasDeVida = 1
 	_oAviso:Grava ()
-*/
 return
 
 /*
@@ -1664,10 +1659,14 @@ return
 static function _SimCtb ()
 	// Simula contabilizacoes
 	cPerg := "SIMULCTB"
-	U_GravaSX1 (cPerg, '01', stod ('20220501'))  // Data inicial
-	U_GravaSX1 (cPerg, '02', stod ('20220531'))  // Data final
-	U_GravaSX1 (cPerg, '03', '')  // Quais LPAD (bco=todos)
+	U_GravaSX1 (cPerg, '01', stod ('20220701'))  // Data inicial
+	U_GravaSX1 (cPerg, '02', stod ('20220831'))  // Data final
+	U_GravaSX1 (cPerg, '03', '666')  // Quais LPAD (bco=todos)
+//	U_GravaSX1 (cPerg, '03', '678')  // Quais LPAD (bco=todos)
 	U_GravaSX1 (cPerg, '04', 'SD3')  // Quais tabelas ex: SD1/SD2/SD3
+	U_GravaSX1 (cPerg, '05', '')  // Filtro adicional (em SQL) para tabela SD1
+	U_GravaSX1 (cPerg, '06', '')  // Filtro adicional (em SQL) para tabela SD2
+	U_GravaSX1 (cPerg, '07', "D3_CF IN (''RE0'',''RE1'') and D3_OP=''''")  // Filtro adicional (em SQL) para tabela SD3
 	U_SimulCTB ()
 return
 

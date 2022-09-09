@@ -146,7 +146,7 @@ User Function RBatch (_sEmp, _sFil)
 			// Gera aviso para monitoramento
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'A'
-			_oAviso:Destinatar = 'grpTI'
+			_oAviso:DestinAvis = 'grpTI'
 			_oAviso:Texto      = 'Bloqueio de semaforo para execucao de batches na empresa/filial ' + _sEmp + _sFil
 			_oAviso:Origem     = procname ()
 			_oAviso:DiasDeVida = 5

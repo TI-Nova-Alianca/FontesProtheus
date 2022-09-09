@@ -6,7 +6,7 @@
 //
 // Historico de alteracoes:
 // 01/09/2022 - Robert - Melhorias ClsAviso.
-//
+// 09/09/2022 - Robert - Criado grupo 143 no ZZU para notificar agronomia.
 
 // ------------------------------------------------------------------------------------
 User Function FrtSaf22 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor, _sFilCarg)
@@ -37,7 +37,7 @@ User Function FrtSaf22 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor, _sFilCa
 		u_help ("Filial destino '" + _sFilDest + "' sem tratamento no programa " + procname (),, .T.)
 		_oAviso := ClsAviso ():New ()
 		_oAviso:Tipo       = 'E'
-		_oAviso:DestinAvis = 'grpAgronomia'
+		_oAviso:DestinZZU  = {'143'}
 		_oAviso:Texto      = "Filial destino '" + _sFilDest + "' sem tratamento no programa de calculo de frete de safra."
 		_oAviso:Origem     = procname ()
 		_oAviso:Grava ()
@@ -57,7 +57,7 @@ User Function FrtSaf22 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor, _sFilCa
 		if IsInCallStack ("U_VA_RUSN")
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:DestinAvis = 'grpAgronomia'
+			_oAviso:DestinZZU  = {'143'}
 			_oAviso:Texto      = "Distancia nao informada entre a propriedade " + _sCadVit + " e a filial " + _sFilDest + ". Frete de safra nao pode ser calculado."
 			_oAviso:Origem     = procname ()
 			_oAviso:Grava ()

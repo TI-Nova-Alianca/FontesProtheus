@@ -1012,7 +1012,7 @@ user function VA_VCpo (_sCampo)
 
 
 		case _sCampo == "M->D3_VAETIQ"
-				u_logpcham ()
+				//u_logpcham ()
 			za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP
 			if ! za1 -> (dbseek (xfilial ("ZA1") + m->d3_vaetiq, .F.))
 				u_help ("Etiqueta nao encontrada.")
@@ -1611,7 +1611,8 @@ user function VA_VCpo (_sCampo)
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
 			_oAviso:DestinAvis = 'grpTI'
-			_oAviso:Texto      = "Campo '" + _sCampo + "' nao previsto na rotina " + procname ()
+			_oAviso:Titulo     = "Campo '" + _sCampo + "' nao previsto na rotina " + procname ()
+			_oAviso:Texto      = "Pilha de chamadas: " + U_LogPCham (.f.)
 			_oAviso:Origem     = procname ()
 			_oAviso:Grava ()
 

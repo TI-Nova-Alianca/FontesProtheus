@@ -38,6 +38,7 @@
 //                        devido a má formação da tabela no html
 // 14/12/2021 - Robert  - Verifica se eh ambiente R33 (testes release) e pede confirmacao para envio do e-mail.
 // 28/01/2022 - Robert  - Criada opcao de envio em copia oculta.
+// 08/09/2022 - Robert  - Melhorada mensagem de 'conta nao cadastrada'.
 //
 
 // ----------------------------------------------------------------------------------------------
@@ -85,8 +86,8 @@ User Function SendMail (_sTo, _sSubject, _sBody, _aArq, _sCtaMail, _sGrupoZZU, _
 			_sCtaMail = upper (alltrim (_sCtaMail))
 			wf7 -> (dbsetorder (1))  // WF7_FILIAL+WF7_PASTA
 			if ! wf7 -> (dbseek (xfilial ("WF7") + _sCtaMail, .F.))
-				_sCtaMail = "PROTHEUS"
 				_sMsgErro = "Conta de correio '" + _sCtaMail + "' nao cadastrada na tabela WF7. O e-mail sera´ enviado usando a conta padrao"
+				_sCtaMail = "PROTHEUS"
 			else
 				_sCtaMail = wf7 -> wf7_pasta
 			endif

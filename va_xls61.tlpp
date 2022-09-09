@@ -99,7 +99,7 @@ Static Function _Gera()
 	_oSQL:_sQuery +=      " ,'' AS GTIN_CONTIDO"  // em caso de kits/packs/combos
 	_oSQL:_sQuery +=      " ,'' AS QT_IT_CONTIDO"
 	_oSQL:_sQuery +=      " ,'' AS TIPO_IMG"
-	_oSQL:_sQuery +=      " ,ISNULL (B5_ECIMGFI, '') AS LINK_IMG"
+	_oSQL:_sQuery +=      " ,'http://novaalianca.coop.br/imagens_produtos/' + rtrim (P.B1_COD) + '.jpeg' AS LINK_IMG"  //ISNULL (B5_ECIMGFI, '') AS LINK_IMG"
 	_oSQL:_sQuery +=      " ,'' AS DESCRI_IMG"
 	_oSQL:_sQuery +=      " ,'' AS IDIOMA_IMG"
 	_oSQL:_sQuery +=      " ,'Não' AS COMPARTILH"

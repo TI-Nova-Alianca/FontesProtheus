@@ -70,7 +70,9 @@
 // 11/11/2021 - Claudia - Incluso contabilizacao venda cupons PIX lançamento padrão 520 015
 // 16/08/2022 - Claudia - Inclusão de retorno de historico para LPAD 520012 e 521012. GLPI: 12461
 // 18/08/2022 - Claudia - Incluida validação para desconto cielo. GLPI: 12417
+// 09/09/2022 - Robert  - Avisos passam a usar ClsAviso() e nao mais U_AvisaTI().
 //
+
 // -----------------------------------------------------------------------------------------------------------------
 // Informar numero e sequencia do lancamento padrao, seguido do campo a ser retornado.
 User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
@@ -79,41 +81,41 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 	local _sQuery   := ""
 	local _aRetQry  := {}
 	local _oSQL     := NIL
-	//local _x        := 0
+	local _oAviso   := NIL
 
- 	_sQueRet = alltrim (upper (_sQueRet))
- 	do case
-		case _sLPad == '500' .and. _sSeq='004' .and. IsInCallStack ("U_VA_ZA4")// Inclusao contas a receber
-			// seta as contas corretas para contabilizacao da NCC do controle de verbas
-			IF alltrim(SE1->E1_PREFIXO) == "CV" .AND. SE1->E1_TIPO=="NCC" .AND. alltrim(SE1->E1_NATUREZ)=="VERBAS"
-				// Busca código do tipo da verba
-				_wtipo   := fBuscaCpo ('ZA3', 1, xfilial('ZA3') +  m->za4_cod, "ZA3_CTB")
-				if _sQueRet == 'CDEB'
-					if _wtipo ='6'
-						_xRet = "403010201031" // multa contratual
-					else
-						_xRet = "403010401007" 
-					endif
-	    		endif
-
-	     		if _sQueRet == 'HIST'
-	    			do case
-						case _wtipo ='1'
-							_xRet = "VERBAS-ENCARTES/P.EXTRA:" + SE1->E1_NUM + ' / ' + alltrim(SE1->E1_NOMCLI) // encartes/ponto extra
-						case _wtipo ='2'
-							_xRet = "VERBAS-FEIRAS:" + SE1->E1_NUM + ' / ' + alltrim(SE1->E1_NOMCLI)  // feiras
-						case _wtipo ='3'
-							_xRet = "VERBAS-FRETES:" + SE1->E1_NUM + ' / ' + alltrim(SE1->E1_NOMCLI) // fretes
-						case _wtipo ='4'
-						//	_xRet = "VERBAS-CAMPANHA VENDAS:" + SE1->E1_NUM + ' / ' + alltrim(SE1->E1_NOMCLI) // campanha de vendas
-							_xRet = "CAMPANHA VENDAS VERBA NR " + alltrim (SE1->E1_NUM) + ' ' + alltrim(SE1->E1_NOMCLI) // campanha de vendas
-						case _wtipo ='5'
-							_xRet = "VERBAS - ABERTURA LOJAS:" + SE1->E1_NUM + ' / ' + alltrim(SE1->E1_NOMCLI) // abertura/reinauguracao lojas
-						case _wtipo ='6'
-							_xRet = "VERBAS - MULTA CONTRATUAL - VERBA NRO/CLIENTE:" + SE1->E1_NUM + ' / ' + SE1->E1_NOMCLI // multa contratual
-					endcase
+	_sQueRet = alltrim (upper (_sQueRet))
+	do case
+	case _sLPad == '500' .and. _sSeq='004' .and. IsInCallStack ("U_VA_ZA4")// Inclusao contas a receber
+		// seta as contas corretas para contabilizacao da NCC do controle de verbas
+		IF alltrim(SE1->E1_PREFIXO) == "CV" .AND. SE1->E1_TIPO=="NCC" .AND. alltrim(SE1->E1_NATUREZ)=="VERBAS"
+			// Busca código do tipo da verba
+			_wtipo   := fBuscaCpo ('ZA3', 1, xfilial('ZA3') +  m->za4_cod, "ZA3_CTB")
+			if _sQueRet == 'CDEB'
+				if _wtipo ='6'
+					_xRet = "403010201031" // multa contratual
+				else
+					_xRet = "403010401007" 
 				endif
-			ENDIF
+			endif
+
+			if _sQueRet == 'HIST'
+				do case
+					case _wtipo ='1'
+						_xRet = "VERBAS-ENCARTES/P.EXTRA:" + SE1->E1_NUM + ' / ' + alltrim(SE1->E1_NOMCLI) // encartes/ponto extra
+					case _wtipo ='2'
+						_xRet = "VERBAS-FEIRAS:" + SE1->E1_NUM + ' / ' + alltrim(SE1->E1_NOMCLI)  // feiras
+					case _wtipo ='3'
+						_xRet = "VERBAS-FRETES:" + SE1->E1_NUM + ' / ' + alltrim(SE1->E1_NOMCLI) // fretes
+					case _wtipo ='4'
+					//	_xRet = "VERBAS-CAMPANHA VENDAS:" + SE1->E1_NUM + ' / ' + alltrim(SE1->E1_NOMCLI) // campanha de vendas
+						_xRet = "CAMPANHA VENDAS VERBA NR " + alltrim (SE1->E1_NUM) + ' ' + alltrim(SE1->E1_NOMCLI) // campanha de vendas
+					case _wtipo ='5'
+						_xRet = "VERBAS - ABERTURA LOJAS:" + SE1->E1_NUM + ' / ' + alltrim(SE1->E1_NOMCLI) // abertura/reinauguracao lojas
+					case _wtipo ='6'
+						_xRet = "VERBAS - MULTA CONTRATUAL - VERBA NRO/CLIENTE:" + SE1->E1_NUM + ' / ' + SE1->E1_NOMCLI // multa contratual
+				endcase
+			endif
+		ENDIF
 
 
 	case _sLPad == '510' .and. _sSeq='200' // Inclusao contas a pagar
@@ -258,7 +260,7 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 	case _sLPad + _sSeq $ '520012/521012'
 		If alltrim(_sQueRet) $ 'HIST' 
 			_oSQL:= ClsSQL ():New ()
-    		_oSQL:_sQuery := ""
+			_oSQL:_sQuery := ""
 			_oSQL:_sQuery += " SELECT ZA5_NUM "
 			_oSQL:_sQuery += " FROM " + RetSQLName ("ZA5")
 			_oSQL:_sQuery += " WHERE D_E_L_E_T_='' "
@@ -287,20 +289,22 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 				_xret := 0
 		EndCase	
 
-	case _sLPad + _sSeq $ '520021/521021/524021' .and. _sQueRet == 'VL' .and. !alltrim(SE5->E5_ORIGEM) $ 'ZB1/ZB3'// descontos - estorna provisao de comissao
-		if SE1->E1_TIPO<>"NCC" .AND. SE5->E5_VLDESCO > 0 .and. SE1->E1_COMIS1>0 .AND. ! alltrim(SE1->E1_VEND1) $ GETMV("MV_VENDDIR")
-			// acha a base de comissao do titulo - não da pra considerar a do SE1, por conta do recalculo
-			_xbaseComTit = _BComis (SE1->E1_NUM, SE1->E1_PREFIXO, SE1->E1_CLIENTE,SE1->E1_LOJA, SE1->E1_VALOR)
-			// proporcionalizar o valor do desconto com a base de comissao do titulo
-			_xbase = _xbaseComTit * SE5->E5_VLDESCO / SE1->E1_VALOR 
-			// valor do estorno de comissao = valor base de comissao ref ao desconto * percentual de comissao do vendedor
-			_xRet = round(_xbase * SE1->E1_COMIS1/100,2)
-		else
-			_xRet = 0
-		endif						
-    
+//	case _sLPad + _sSeq $ '520021/521021/524021' .and. _sQueRet == 'VL' .and. !alltrim(SE5->E5_ORIGEM) $ 'ZB1/ZB3'// descontos - estorna provisao de comissao
+	case _sLPad + _sSeq $ '520021/521021/524021' .and. _sQueRet == 'VL'
+		_xRet = 0
+		if !alltrim(SE5->E5_ORIGEM) $ 'ZB1/ZB3'// descontos - estorna provisao de comissao
+			if SE1->E1_TIPO<>"NCC" .AND. SE5->E5_VLDESCO > 0 .and. SE1->E1_COMIS1>0 .AND. ! alltrim(SE1->E1_VEND1) $ GETMV("MV_VENDDIR")
+				// acha a base de comissao do titulo - não da pra considerar a do SE1, por conta do recalculo
+				_xbaseComTit = _BComis (SE1->E1_NUM, SE1->E1_PREFIXO, SE1->E1_CLIENTE,SE1->E1_LOJA, SE1->E1_VALOR)
+				// proporcionalizar o valor do desconto com a base de comissao do titulo
+				_xbase = _xbaseComTit * SE5->E5_VLDESCO / SE1->E1_VALOR 
+				// valor do estorno de comissao = valor base de comissao ref ao desconto * percentual de comissao do vendedor
+				_xRet = round(_xbase * SE1->E1_COMIS1/100,2)
+			endif
+		endif
+
 	case _sLPad + _sSeq $ '520022/521022/524022' .and. _sQueRet == 'VL' // descontos - estorna provisao de rapel
-		_xRet = 0			
+		_xRet = 0
 
 	case _sLPad == '520' .and. _sSeq='026'
 		if _sQueRet == 'CDEB'
@@ -582,20 +586,30 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 			case SD3->D3_TIPO == 'MB'; _xRet = '701010301020'
 			case SD3->D3_TIPO == 'UC'; _xRet = '403010401016'
 			case SD3->D3_TIPO == 'II' .and. sd3 -> d3_grupo == '5000'; _xRet = '701010301009'  // Mat.aux.limpeza producao
-//			case SD3->D3_TIPO $ 'II/MA' .and. sd3 -> d3_grupo == '5001'; _xRet = '701010301024'  // Mat.aux.producao
 			case SD3->D3_TIPO $ 'II/MA' .and. sd3 -> d3_grupo $ '5001/7001'; _xRet = '701010301024'  // Mat.aux.producao + mat.perigosos
 			case SD3->D3_TIPO $ 'II/MA' .and. sd3 -> d3_grupo == '5002'; _xRet = '701010301018'  // Mat.aux.producao - acondicionamento (filme, etc.)
 			case SD3->D3_TIPO == 'EP' .and. substr (sd3 -> d3_cc, 3, 1) $ '1/2' ; _xRet = '701010201008'
 			case SD3->D3_TIPO == 'EP' .and. substr (sd3 -> d3_cc, 3,1) $ '3/4' ; _xRet = '403010101007'
-
-			// case SD3->D3_TIPO == 'MM' ; _xRet = '701010301011'
 			case SD3->D3_TIPO == 'MM' .and. substr (sd3 -> d3_cc, 3, 1) $ '1/2' ; _xRet = '701010301011'
 			case SD3->D3_TIPO == 'MM' .and. substr (sd3 -> d3_cc, 3,1) $ '3/4' ; _xRet = '403010201049'
-
 			case SD3->D3_TIPO == 'MR' ; _xRet = '403010401010'
 			case SD3->D3_TIPO == 'IA' ; _xRet = '701010301017'
 			otherwise
-				U_AvisaTI ("Sem tratamento no LPad/seq '" + _sLPad + _sSeq + "' para produto='" + alltrim (sd3 -> d3_cod) + "' tipo='" + sd3 -> d3_tipo + "' grupo='" + sd3 -> d3_grupo + "' CC='" + sd3 -> d3_cc + "' recnoSD3=" + cvaltochar (sd3 -> (recno ())) + ")")
+				//U_AvisaTI ("Sem tratamento no LPad/seq '" + _sLPad + _sSeq + "' para produto='" + alltrim (sd3 -> d3_cod) + "' tipo='" + sd3 -> d3_tipo + "' grupo='" + sd3 -> d3_grupo + "' CC='" + sd3 -> d3_cc + "' recnoSD3=" + cvaltochar (sd3 -> (recno ())) + ")")
+				_oAviso := ClsAviso ():New ()
+				_oAviso:Tipo       = 'E'
+				_oAviso:DestinAvis = 'grpTI'
+				_oAviso:Titulo     = "Sem tratamento no LPad/seq " + _sLPad + _sSeq
+				_oAviso:Texto      = "Sem tratamento no LPad/seq '" + _sLPad + _sSeq
+				_oAviso:Texto     += " filial=" + sd3 -> d3_filial
+				_oAviso:Texto     += " tipo=" + sd3 -> d3_tipo
+				_oAviso:Texto     += " produto=" + alltrim (sd3 -> d3_cod)
+				_oAviso:Texto     += " grupo=" + sd3 -> d3_grupo
+				_oAviso:Texto     += " CC='" + sd3 -> d3_cc
+				_oAviso:Texto     += " recnoSD3=" + cvaltochar (sd3 -> (recno ()))
+				_oAviso:Texto     += " Pilha de chamadas: " + U_LogPCham (.f.)
+				_oAviso:Origem     = procname ()
+				_oAviso:Grava ()
 			endcase
 		endif
 
@@ -612,13 +626,35 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 				case SD2->D2_TP=="VD" ; _xRet = "101030101013"
 				case SD2->D2_TP=="PI" ; _xRet = "101030101012"
 				otherwise
-					U_AvisaTI ("Tipo '" + sd2 -> d2_tp + "' sem tratamento no LPad/seq '" + _sLPad + _sSeq + "'")
+//					U_AvisaTI ("Tipo '" + sd2 -> d2_tp + "' sem tratamento no LPad/seq '" + _sLPad + _sSeq + "'")
+					_oAviso := ClsAviso ():New ()
+					_oAviso:Tipo       = 'E'
+					_oAviso:DestinAvis = 'grpTI'
+					_oAviso:Titulo     = "Sem tratamento no LPad/seq " + _sLPad + _sSeq
+					_oAviso:Texto      = "Sem tratamento no LPad/seq '" + _sLPad + _sSeq
+					_oAviso:Texto     += " filial=" + sd2 -> d2_filial
+					_oAviso:Texto     += " tipo=" + sd2 -> d2_tipo
+					_oAviso:Texto     += " produto=" + alltrim (sd2 -> d2_cod)
+					_oAviso:Texto     += " NF=" + alltrim (sd2 -> d2_doc)
+					_oAviso:Texto     += " recnoSD2=" + cvaltochar (sd2 -> (recno ()))
+					_oAviso:Texto     += " Pilha de chamadas: " + U_LogPCham (.f.)
+					_oAviso:Origem     = procname ()
+					_oAviso:Grava ()
 				endcase
 
 			case _sQueRet = "CCD"  // Cfe. prog. antigo 'vendacc.prw':
 				// Acho que estamos chamando esta contabilizacao indevidamente...
 				if empty (fBuscaCpo ("SF2", 1, xfilial ("SF2") + _sDoc + _sSerie, "F2_VEND1"))
-					u_avisaTI ("Vendedor em branco para doc/serie '" + _sDoc + '/' + _sSerie + "' no LPAD " + _sLPad + _sSeq + _sQueRet) 
+//					u_avisaTI ("Vendedor em branco para doc/serie '" + _sDoc + '/' + _sSerie + "' no LPAD " + _sLPad + _sSeq + _sQueRet) 
+					_oAviso := ClsAviso ():New ()
+					_oAviso:Tipo       = 'E'
+					_oAviso:DestinAvis = 'grpTI'
+					_oAviso:Titulo     = "Vendedor em branco no LPad/seq " + _sLPad + _sSeq
+					_oAviso:Texto      = "Vendedor em branco no LPad/seq '" + _sLPad + _sSeq
+					_oAviso:Texto     += " cod/serie=" + _sDoc + '/' + _sSerie
+					_oAviso:Texto     += " Pilha de chamadas: " + U_LogPCham (.f.)
+					_oAviso:Origem     = procname ()
+					_oAviso:Grava ()
 				endif
 				
 				// Nao deu para chamar o programa LP2 direto no lcto padrao por que o arquivo SF2 nao encontra-se posicionado para este lcto padrao.
@@ -640,7 +676,16 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 				
 				// Acho que estamos chamando esta contabilizacao indevidamente...
 				if empty (fBuscaCpo ("SF2", 1, xfilial ("SF2") + _sDoc + _sSerie, "F2_VEND1"))
-					u_avisaTI ("Vendedor em branco para doc/serie '" + _sDoc + '/' + _sSerie + "' no LPAD " + _sLPad + _sSeq + _sQueRet) 
+//					u_avisaTI ("Vendedor em branco para doc/serie '" + _sDoc + '/' + _sSerie + "' no LPAD " + _sLPad + _sSeq + _sQueRet) 
+					_oAviso := ClsAviso ():New ()
+					_oAviso:Tipo       = 'E'
+					_oAviso:DestinAvis = 'grpTI'
+					_oAviso:Titulo     = "Vendedor em branco no LPad/seq " + _sLPad + _sSeq
+					_oAviso:Texto      = "Vendedor em branco no LPad/seq '" + _sLPad + _sSeq
+					_oAviso:Texto     += " cod/serie=" + _sDoc + '/' + _sSerie
+					_oAviso:Texto     += " Pilha de chamadas: " + U_LogPCham (.f.)
+					_oAviso:Origem     = procname ()
+					_oAviso:Grava ()
 				endif
 
 				// Nao deu para chamar o programa LP2 direto no lcto padrao por que o arquivo SF2 nao encontra-se posicionado para este lcto padrao.
@@ -650,10 +695,19 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 
 	// Tenta dar um tratamento para o caso de nao ter encontrado nada a retornar.
 	if _xRet == NIL
-		u_AvisaTI ("Lancamento padrao '" + _sLPad + _sSeq + ;
-		           "' sem tratamento para o tipo de retorno '" + _sQueRet + ;
-		           "' no programa " + procname () + ;
-		           ". Pilha de chamadas:" + _Pcham ())
+//		u_AvisaTI ("Lancamento padrao '" + _sLPad + _sSeq + ;
+//		           "' sem tratamento para o tipo de retorno '" + _sQueRet + ;
+//		           "' no programa " + procname () + ;
+//		           ". Pilha de chamadas:" + _Pcham ())
+		_oAviso := ClsAviso ():New ()
+		_oAviso:Tipo       = 'E'
+		_oAviso:DestinAvis = 'grpTI'
+		_oAviso:Titulo     = "Sem tratamento para LPad/seq " + _sLPad + _sSeq
+		_oAviso:Texto      = "Sem tratamento para LPad/seq '" + _sLPad + _sSeq
+		_oAviso:Texto     += " tipo de retorno=" + _sQueRet
+		_oAviso:Texto     += " Pilha de chamadas: " + U_LogPCham (.f.)
+		_oAviso:Origem     = procname ()
+		_oAviso:Grava ()
 		do case
 			case _sQueRet $ "HIST/CRED/DEB/CCC/CCD/ITCTAD"
 				_xRet = ""
