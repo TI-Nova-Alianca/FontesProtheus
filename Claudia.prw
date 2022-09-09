@@ -20,6 +20,10 @@ User Function claudia ()
 
 	//U_HELP("BATTITBAI")
 	//U_BATTITBAI()
+
+	U_HELP("_AtuRepre")
+	_AtuRepre()
+
 Return
 //
 // ------------------------------------------------------------------------------------
@@ -60,7 +64,44 @@ Static Function _AtuSB1()
 	Next
 	u_help("Feito!")
 Return
+//
+// ------------------------------------------------------------------------------------
+Static Function _AtuRepre()
+	Local _aDados 	:= {}
+	Local _i 		:=0
 
+	_aDados = U_LeCSV ('C:\Temp\representante.csv', ';')
+
+	for _i := 1 to len (_aDados)
+		_sCod  := PADL(_aDados[_i, 1],6,'0')
+		_sVend := PADL(_aDados[_i, 2],3,'0')
+		_sFil  := _aDados[_i, 3]
+
+		DbSelectArea("SA1")
+		DbSetOrder(1)
+		if DbSeek(xFilial("SA1")+ _sCod,.F.)
+			_sVendOld   := sa1->a1_vend
+			_sFilialOld := sa1->a1_vafilat
+
+			reclock("SA1", .F.)
+				SA1->A1_VEND    := _sVend
+				SA1->A1_VAFILAT := _sFil
+			MsUnLock()
+
+			U_AtuMerc ("SA1", sa1 -> (recno ())) // manda p mercanet
+
+			_oEvento := ClsEvent():new ()
+			_oEvento:Alias    = 'SA1'
+			_oEvento:Texto    = " A1_VEND DE " + _sVendOld + " PARA " + _sVend + chr (13) + chr (10) + ;
+								" A1_VAFILAT DE " + _sFilialOld + " PARA " + _sFil 
+			_oEvento:CodEven  = "SA1001"
+			_oEvento:Cliente  = _sCod
+			_oEvento:Grava() 
+		endif	
+	
+	Next
+	u_help("Atualizado!")
+Return
 // //
 // //
 // // ----------------------------------------------------------------------------------------
