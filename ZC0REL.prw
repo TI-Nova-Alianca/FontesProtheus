@@ -55,12 +55,9 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA11", 	"" ,"Vlr.Rapel"			, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA12", 	"" ,"Status"  			,       					,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 
-
-oBreak1 := TRBreak():New(oSection1,oSection1:Cell("COLUNA2"),"Total")
+	oBreak1 := TRBreak():New(oSection1,oSection1:Cell("COLUNA2"),"Total")
    
     TRFunction():New(oSection1:Cell("COLUNA11")  ,,"SUM" ,oBreak1,""          , "@E 99,999,999.99", NIL, .F., .T.)
-        
-
 
 Return(oReport)
 //
@@ -70,13 +67,9 @@ Static Function PrintReport(oReport)
 	Local oSection1  := oReport:Section(1)
     Local _x         := 0
 
-
-
-
 	oSection1:Init()
 	oSection1:SetHeaderSection(.T.)
 	
-
     _oSQL:= ClsSQL ():New ()
     _oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT "
@@ -122,7 +115,7 @@ Static Function PrintReport(oReport)
 	EndIf
 	
 	if mv_par12 == 1
-		_oSQL:_sQuery += " ORDER BY FILIAL, EMISSAO, REDE, CLIENTE "
+		_oSQL:_sQuery += " ORDER BY FILIAL, REDE, CLIENTE, EMISSAO "
 	else
 		_oSQL:_sQuery += " ORDER BY FILIAL, NOME, EMISSAO "
 	endif
