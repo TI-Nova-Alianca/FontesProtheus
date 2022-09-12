@@ -18,19 +18,24 @@
 #Include "totvs.ch"
 
 User Function ZC0()
+	Local _aRotAdic   := {}
 	Private aRotina   := {}  
 	Private _aCores   := {}
 	Private cCadastro := "Conta corrente rapel"
 
-    AADD(aRotina, {"&Visualizar"       , "AxVisual"       								, 0, 1})
-	AADD(aRotina, {"Incluir"    		,"U_ZC0INC()"  	  								, 0, 3})
-	AADD(aRotina, {"Excluir"    		,"U_ZC0EXC()"  		    , 0, 6})
-    AADD(aRotina, {"&Legenda"          , "U_ZC0LGD (.F.)" 								, 0, 5})
-	AADD(aRotina, {"&Rel.Rapel"        , "U_ZC0REL()"     								, 0, 6})
-	//AADD(aRotina, {"&Rapel Previsto"   , "U_ZC0PRE()"     								, 0, 6})
-	AADD(aRotina, {"&Consulta Saldos"  , "U_ZC0SAL(ZC0->ZC0_CODRED, ZC0->ZC0_LOJRED)"	, 0, 6})
-	AADD(aRotina, {"&Fechamento"       , "U_ZC0FEC()"     								, 0, 6})
-	AADD(aRotina, {"&Abertura  "       , "U_ZC0ABE()"     								, 0, 6})
+	AADD(_aRotAdic, {"&Provisão Rapel"   , "U_ZC0PRO()"     							, 0, 6})
+	AADD(_aRotAdic, {"&Registros Rapel"  , "U_ZC0REL()"     							, 0, 6})
+	AADD(_aRotAdic, {"&Saldos Rapel"     , "U_ZC0SALDO()"     							, 0, 6})
+	AADD(_aRotAdic, {"&Consulta Saldos"  , "U_ZC0SAL(ZC0->ZC0_CODRED, ZC0->ZC0_LOJRED)"	, 0, 6})
+
+    AADD(aRotina, {"&Visualizar"       	, "AxVisual"       								, 0, 1})
+	AADD(aRotina, {"Incluir"    		, "U_ZC0INC()"  	  							, 0, 3})
+	AADD(aRotina, {"Excluir"    		, "U_ZC0EXC()"  		    					, 0, 6})
+    AADD(aRotina, {"&Legenda"          	, "U_ZC0LGD (.F.)" 								, 0, 5})
+	AADD(aRotina, {"Relatorios"         , _aRotAdic										, 0, 2})
+	//AADD(aRotina, {"&Rapel Previsto"   , "U_ZC0PRE()"     							, 0, 6})
+	//AADD(aRotina, {"&Fechamento"       , "U_ZC0FEC()"     							, 0, 6})
+	//AADD(aRotina, {"&Abertura  "       , "U_ZC0ABE()"     							, 0, 6})
 
     AADD(_aCores,{ "ZC0_TM == '01'         .AND. ZC0_STATUS='A' " , 'BR_AMARELO'   }) // Inclusão de saldo manual
     AADD(_aCores,{ "ZC0_TM $ '02/05/06/08' .AND. ZC0_STATUS='A' " , 'BR_VERDE'     }) // Crédito
