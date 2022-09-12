@@ -170,7 +170,7 @@ static function _MsgObs (aObsCont)
 			else
 				_oAviso := ClsAviso ():New ()
 				_oAviso:Tipo       = 'E'
-				_oAviso:Destinatar = 'grpTI'
+				_oAviso:DestinAvis = 'grpTI'
 				_oAviso:Texto      = "Transportadora '" + sf2 -> f2_redesp + "' nao localizada para gerar tag de redespacho'
 				_oAviso:Origem     = procname (1)
 				_oAviso:Grava ()

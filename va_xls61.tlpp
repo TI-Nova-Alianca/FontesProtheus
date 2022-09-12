@@ -99,7 +99,7 @@ Static Function _Gera()
 	_oSQL:_sQuery +=      " ,'' AS GTIN_CONTIDO"  // em caso de kits/packs/combos
 	_oSQL:_sQuery +=      " ,'' AS QT_IT_CONTIDO"
 	_oSQL:_sQuery +=      " ,'' AS TIPO_IMG"
-	_oSQL:_sQuery +=      " ,'' AS LINK_IMG"
+	_oSQL:_sQuery +=      " ,'http://novaalianca.coop.br/imagens_produtos/' + rtrim (P.B1_COD) + '.jpeg' AS LINK_IMG"  //ISNULL (B5_ECIMGFI, '') AS LINK_IMG"
 	_oSQL:_sQuery +=      " ,'' AS DESCRI_IMG"
 	_oSQL:_sQuery +=      " ,'' AS IDIOMA_IMG"
 	_oSQL:_sQuery +=      " ,'Não' AS COMPARTILH"
@@ -158,7 +158,17 @@ Static Function _Gera()
 	_oSQL:_sQuery +=      " ,P.B1_POSIPI AS TIPI"
 	_oSQL:_sQuery +=      " ,P.B1_CEST AS CEST"
 	_oSQL:_sQuery +=      " ,P.B1_IPI AS ALIQ_IPI"
-	_oSQL:_sQuery +=      " ,'' AS GPC"
+	
+	// Seria bom ter um campo no cadastro, mas de momento vai ter que ir assim mesmo...
+	_oSQL:_sQuery +=      " ,CASE WHEN P.B1_POSIPI = '15092000  ' THEN '10000040'"  // Oleos comestiveis
+	_oSQL:_sQuery +=            " ELSE CASE WHEN SUBSTRING (P.B1_POSIPI, 1, 8) IN ('22041090', '22041010') THEN '10000275'"  // Espumantes
+	_oSQL:_sQuery +=                 " ELSE CASE WHEN P.B1_POSIPI LIKE '2204%' THEN '10000273'"  // Vinhos (tranquilos)
+	_oSQL:_sQuery +=                      " ELSE CASE WHEN SUBSTRING (P.B1_POSIPI, 1, 4) in ('2009', '2202') THEN '10000220'"  // Sucos e outras nao alcoolicas
+	_oSQL:_sQuery +=                           " ELSE '10000263'"  // Bebidas alcoolicas
+	_oSQL:_sQuery +=                      " END"
+	_oSQL:_sQuery +=                 " END"
+	_oSQL:_sQuery +=            " END"
+	_oSQL:_sQuery +=       " END AS GPC" //10000040,10000220,10000263,10000275
 	_oSQL:_sQuery +=      " ,'' AS NUTRI_DESCR"
 	_oSQL:_sQuery +=      " ,'' AS NUTRI_DIARIA"
 	_oSQL:_sQuery +=      " ,'' AS NUTRI_COMPOS"
@@ -199,10 +209,19 @@ Static Function _Gera()
 	_oSQL:_sQuery +=          " AND ZX5_50.ZX5_FILIAL  = '" + xfilial ("ZX5") + "'"
 	_oSQL:_sQuery +=          " AND ZX5_50.ZX5_TABELA  = '50'"
 	_oSQL:_sQuery +=          " AND ZX5_50.ZX5_50COD   = P.B1_GRPEMB)"
+	_oSQL:_sQuery +=     " LEFT JOIN " + RetSQLName ("SB5") + " SB5 "
+	_oSQL:_sQuery +=          " ON (SB5.D_E_L_E_T_ != '*'"
+	_oSQL:_sQuery +=          " AND SB5.B5_FILIAL  = '" + xfilial ("SB5") + "'"
+	_oSQL:_sQuery +=          " AND SB5.B5_COD     = P.B1_COD)"
 	_oSQL:_sQuery += " ORDER BY P.ORIGEM, P.B1_COD"
 	_oSQL:Log ('[' + procname () + ']')
 	_oSQL:ArqDestXLS = 'VA_XLS61'
 	_oSQL:Qry2Xls (.F., .F., .F.)
+
+	// Percorre o arquivo gerado procurando possiveis inconsistencias
+	// ainda nao fiz...
+
+	u_help ("Sugestao: copie os dados da planilha gerada e cole-os na planilha modelo do portal GS1, usando a opcao de 'colar especial - somente valores' para manter a formatacao da planilha original. Alguns campos numericos como o codigo de barras poderao precisar de ajuste manual.")
 return
 
 

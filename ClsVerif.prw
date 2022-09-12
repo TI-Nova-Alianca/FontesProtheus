@@ -3125,7 +3125,8 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query += " WHERE U.D_E_L_E_T_ = ''"
 			::Query +=   " and USR_MSBLQL != '1'"
 			::Query +=   " AND exists (select *"
-			::Query +=                 " FROM LKSRV_SIRH.SIRH.dbo.VA_VFUNCIONARIOS M"
+//			::Query +=                 " FROM LKSRV_SIRH.SIRH.dbo.VA_VFUNCIONARIOS M"
+			::Query +=                 " FROM " + U_LkServer ("Metadados") + ".VA_VFUNCIONARIOS M"
 			::Query +=                " WHERE U.USR_CARGO LIKE 'Pessoa ' + CAST(M.PESSOA AS VARCHAR(MAX)) + '%' COLLATE DATABASE_DEFAULT"
 			::Query +=                  " and M.SITUACAO = 4)"
 
@@ -3403,6 +3404,25 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query += " WHERE (QT_SD3 IS NULL OR QT_SDB IS NULL OR QT_SD3 != QT_SDB)"
 			::Query += " ORDER BY D3_NUMSEQ, TL_NUMSEQ"
 
+
+		case ::Numero == 91
+			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+			::Setores    = 'INF'
+			::Descricao  = 'Profile poderia ser excluido para usuarios demitidos.'
+			::Query := ""
+			::Query += " SELECT 'GRUPO ' + GR__ID AS CODIGO, GR__CODIGO, GR__NOME"
+			::Query +=   " FROM SYS_GRP_GROUP"
+			::Query +=  " WHERE D_E_L_E_T_ = ''"
+			::Query +=    " AND GR__MSBLQL != '1'"
+			::Query +=    " AND GR__ALLEMP = '1'"
+			::Query +=    " AND GR__ID != '000000'"
+			::Query +=  " UNION ALL"
+			::Query += " SELECT 'USER ' + USR_ID AS CODIGO, USR_CODIGO, USR_NOME"
+			::Query +=   " FROM SYS_USR"
+			::Query +=  " WHERE D_E_L_E_T_ = ''"
+			::Query +=    " AND USR_MSBLQL != '1'"
+			::Query +=    " AND USR_ALLEMP = '1'"
+			::Query +=    " AND USR_ID != '000000'"
 
 		otherwise
 			::UltMsg = "Verificacao numero " + cvaltochar (::Numero) + " nao definida."

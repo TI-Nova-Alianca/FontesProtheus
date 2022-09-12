@@ -6,6 +6,7 @@
 // Historico de alteracoes:
 // 01/12/2016 - Robert -
 // 08/12/2021 - Robert - Ajustes contabilizacoes SD1
+// 09/09/2022 - Robert - Criados parametros para passar filtros adicionais SD1, SD2, SD3.
 //
 
 // --------------------------------------------------------------------------
@@ -95,6 +96,9 @@ static function _FujaLouco ()
 			_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=   " AND D1_FILIAL  = '" + xfilial ("SD1") + "'"
 			_oSQL:_sQuery +=   " AND D1_DTDIGIT BETWEEN '" + dtos (mv_par01) + "' AND '" + dtos (mv_par02) + "'"
+			if ! empty (mv_par05)
+				_oSQL:_sQuery +=   " AND " + alltrim (mv_par05)
+			endif
 			_oSQL:_sQuery += " ORDER BY D1_FILIAL, D1_DTDIGIT, D1_NUMSEQ"
 		case _sTabMovto == 'SD2'
 			_oSQL:_sQuery := "SELECT R_E_C_N_O_"
@@ -102,6 +106,9 @@ static function _FujaLouco ()
 			_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=   " AND D2_FILIAL  = '" + xfilial ("SD2") + "'"
 			_oSQL:_sQuery +=   " AND D2_EMISSAO BETWEEN '" + dtos (mv_par01) + "' AND '" + dtos (mv_par02) + "'"
+			if ! empty (mv_par06)
+				_oSQL:_sQuery +=   " AND " + alltrim (mv_par06)
+			endif
 			_oSQL:_sQuery += " ORDER BY D2_FILIAL, D2_EMISSAO, D2_NUMSEQ"
 		case _sTabMovto == 'SD3'
 			_oSQL:_sQuery := "SELECT R_E_C_N_O_"
@@ -110,6 +117,9 @@ static function _FujaLouco ()
 			_oSQL:_sQuery +=   " AND D3_FILIAL  = '" + xfilial ("SD3") + "'"
 			_oSQL:_sQuery +=   " AND D3_EMISSAO BETWEEN '" + dtos (mv_par01) + "' AND '" + dtos (mv_par02) + "'"
 			_oSQL:_sQuery +=   " AND D3_ESTORNO != 'S'"
+			if ! empty (mv_par07)
+				_oSQL:_sQuery +=   " AND " + alltrim (mv_par07)
+			endif
 			_oSQL:_sQuery += " ORDER BY D3_FILIAL, D3_EMISSAO, D3_NUMSEQ"
 		endcase
 		_oSQL:Log ()
@@ -304,7 +314,9 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {02, "Data final                    ", "D", 8,  0,  "",   "", {},                    ""})
 	aadd (_aRegsPerg, {03, "LPADs a considerar(bco=todos) ", "C", 60, 0,  "",   "", {},                    ""})
 	aadd (_aRegsPerg, {04, "Tabelas (SD1/SD2/...)         ", "C", 60, 0,  "",   "", {},                    ""})
-//	aadd (_aRegsPerg, {06, "D3_CF a considerar(sep.barras)", "C", 60, 0,  "",   "", {},                    ""})
+	aadd (_aRegsPerg, {05, "Filtro adic.(SQL) para SD1    ", "C", 60, 0,  "",   "", {},                    ""})
+	aadd (_aRegsPerg, {06, "Filtro adic.(SQL) para SD2    ", "C", 60, 0,  "",   "", {},                    ""})
+	aadd (_aRegsPerg, {07, "Filtro adic.(SQL) para SD3    ", "C", 60, 0,  "",   "", {},                    ""})
 //	aadd (_aRegsPerg, {07, "TES a considerar(sep.barras)  ", "C", 60, 0,  "",   "", {},                    ""})
 
 	U_ValPerg (cPerg, _aRegsPerg)

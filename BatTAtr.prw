@@ -11,25 +11,22 @@
 // 16/07/2018 - Robert  - Passa a enviar para o grupo 085 e nao mais fixo para aline.trentin@...
 // 20/11/2018 - Sandra  - Alterado e-mail de aline.trentin@novaalianca.coop.br para financeiro@novaalianca.coop.br
 // 07/04/2020 - Claudia - Alterada a busca do SX5 conforme R25. GLPI: 7339
+// 09/09/2022 - Robert  - Desabilitado envio de copia para o gerente, pois nem mesmo usava a tabela correta.
+//                      - Passa a enviar erros pela classe ClsAviso().
 //
+
 // --------------------------------------------------------------------------
 user function BatTAtr ()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _aAmbAnt  := U_SalvaAmb ()
-	local _sMsg   	:= ""
-	local _sQuery 	:= ""
-	local _sVend  	:= ""
-	local _nLinha 	:= 0
-	local _aRet   	:= {}
-	local _sDest  	:= ""
-	local _nSeconds := seconds ()
-	local _sArqLog2 := iif (type ("_sArqLog") == "C", _sArqLog, "")
-	local _nEMail	:= 0
-	local i         := 0
-	
-	_sArqLog := U_NomeLog (.t., .f.)
-	u_logIni ()
-	u_log ("Iniciando as", time ())
+	local _sMsg     := ""
+	local _sQuery   := ""
+	local _sVend    := ""
+	local _nLinha   := 0
+	local _aRet     := {}
+	local _sDest    := ""
+	local _nEMail   := 0
+	local _oAviso   := NIL
 
 	sa3 -> (dbsetorder (1))
 
@@ -47,7 +44,7 @@ user function BatTAtr ()
 	_sQuery += " AND SA1.A1_COD     = SE1.E1_CLIENTE"
 	_sQuery += " AND SA1.A1_LOJA    = SE1.E1_LOJA"
 	_sQuery += " ORDER BY E1_VEND1, E1_VENCREA"
-	u_log (_squery)
+	u_log2 ('debug', _squery)
 	_aRet = U_Qry2Array (_sQuery)
 
 	_nLinha = 1
@@ -57,7 +54,6 @@ user function BatTAtr ()
 		// Controla quebra por vendedor
 		_sVend = _aRet [_nLinha, 1]
 		if sa3 -> (dbseek (xfilial ("SA3") + _sVend, .F.)) .and. sa3 -> a3_ativo == "S"
-			u_logIni ("Vendedor", _svend)
 
 			// Monta cabecalho da mensagem em formato de tabela.
 			_sMsg = "Titulos a receber vencidos ref. vendedor '" + _sVend + "' - " + fBuscaCpo ("SA3", 1, xfilial ("SA3") + _sVend, "A3_NOME") + chr (13) + chr (10)
@@ -89,7 +85,7 @@ user function BatTAtr ()
 				_nLinha ++
 			enddo
 			_sMsg += '</table>'
-			u_log (_sMsg)
+			u_log2 ('info', _sMsg)
 
 			// Financeiro recebe sempre uma copia.
 			_sDest := ""
@@ -98,71 +94,32 @@ user function BatTAtr ()
 			for _nEMail = 1 to len (_aEMails)
 				_sDest += _aEMails [_nEMail] + iif (_nEMail < len (_aEMails), ';', '')
 			next
-			u_log ('_sdest ficou com', _sDest)
+			u_log ('debug', '_sdest ficou com: ' + _sDest)
 
 
 			// Envia copia para o representante
 			if ! empty (sa3 -> a3_email) .and. alltrim (_sVend) != "001/136"  // Para a matriz não precisa enviar.
 				_sDest += ";" + alltrim (sa3 -> a3_email)
 			else
-				U_AvisaTI ("Vendedor " + _sVend + " nao tem e-mail cadastrado no sistema.")
+//				U_AvisaTI ("Vendedor " + _sVend + " nao tem e-mail cadastrado no sistema.")
+				_oAviso := ClsAviso ():New ()
+				_oAviso:Tipo       = 'A'
+				_oAviso:DestinZZU  = {'003'}
+				_oAviso:Titulo     = "Vendedor " + _sVend + " nao tem e-mail cadastrado no sistema."
+				_oAviso:Texto      = "Cadastro do representante (tabela SA3) nao tem e-mail informado."
+				_oAviso:Origem     = procname ()
+				_oAviso:Grava ()
 			endif
-
-			if ! empty (sa3 -> a3_vageren)
-				aSX580  := {}
-				cQry 	:= ""
-				i		:= 0
-				
-				// Envia copia ao gerente do representante.
-				cQry := " SELECT X5_DESCSPA "
-				cQry += " FROM SX5010 "
-				cQry += " WHERE D_E_L_E_T_='' "
-				cQry += " AND X5_TABELA  = '80'"
-				cQry += " AND X5_CHAVE = '" + sa3 -> a3_vageren + "'"
-				aSX580 :=  U_Qry2Array(cQry)
-				
-				If len(aSX580) > 0
-					For i:= 1 to len(aSX580)
-						If empty (aSX580[i,1]) .or. ! U_MailOk (aSX580[i,1])
-							u_help ("E-mail vazio ou invalido no campo x5_descspa para o gerente " + sa3 -> a3_vageren)
-						Else
-							_sDest += ";" + alltrim (aSX580[i,1])
-						Endif
-					Next
-				Else
-					u_AvisaTI ("Gerente do vendedor '" + sa3 -> a3_cod + "' nao encontrado na tabela 80")
-				EndIf
-			else
-				U_AvisaTI ("Vendedor " + _sVend + " sem gerente cadastrado no sistema.")
-			endif
-			
-					
-//			if ! empty (sa3 -> a3_vageren)
-//				sx5 -> (dbsetorder (1))
-//				if ! sx5 -> (dbseek (xfilial ("SX5") + "80" + sa3 -> a3_vageren, .F.))
-//					u_AvisaTI ("Gerente do vendedor '" + sa3 -> a3_cod + "' nao encontrado na tabela 80")
-//				else
-//					if empty (sx5 -> x5_descspa) .or. ! U_MailOk (sx5 -> x5_descspa)
-//						u_help ("E-mail vazio ou invalido no campo x5_descspa para o gerente " + sa3 -> a3_vageren)
-//					else
-//						_sDest += ";" + alltrim (sx5 -> x5_descspa)
-//					endif
-//				endif
-//			else
-//				U_AvisaTI ("Vendedor " + _sVend + " sem gerente cadastrado no sistema.")
-//			endif
 
 			// Envia com a conta da Aline para que respondam a ela.
-			u_log ("destinatarios:", _sDest)
+			u_log2 ('info', "destinatarios:" + _sDest)
 
 			U_SendMail (_sDest, "Verif.diaria - Ctas. receber atrasadas ", _sMsg, {}, "financeiro")
-
 
 			// Dorme por um minuto por que configuramos o servidor de e-mail para nao permitir
 			// envio de muitos e-mails repetidamente, buscando bloquear spams.
 			sleep (1000)
 			
-			u_logFim ("Vendedor", _svend)
 		else
 			_nLinha ++
 		endif
@@ -170,7 +127,4 @@ user function BatTAtr ()
 
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
-	u_log ("Executou em ", seconds () - _nSeconds, "segundos.")
-	u_logFim ()
-	_sArqLog = _sArqLog2
 return .T.

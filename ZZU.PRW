@@ -33,9 +33,11 @@
 // 17/01/2021 - Robert  - Eliminadas algumas linhas comentariadas.
 // 31/03/2022 - Robert  - Melhoria logs.
 // 25/08/2022 - Robert  - Criado tratamento para o campo ZZU_SITUAC.
+// 09/09/2022 - Robert  - Funcao ZZULD() passa a retornar tambem uma lista de
+//                        usernames para uso nas notificacoes do NaWeb.
 //
 
-// -------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------
 User Function ZZU ()
 	local _sFiltrTop := ""
 	private aRotina   := {}  // Opcoes do menu
@@ -383,6 +385,7 @@ user function ZZULD (_sGrupoZZU, _sFil, _sTipos)
 	local _sResultTo := ""
 	local _aResultTo := {}
 	local _aIDs      := {}
+	local _sUsrNames := ''
 
 	_sTipos = iif (_sTipos == NIL, '123', _sTipos)
 
@@ -396,6 +399,10 @@ user function ZZULD (_sGrupoZZU, _sFil, _sTipos)
 					PswOrder (1)  // 1 - ID do usuário/grupo; 2 - Nome do usuário/grupo; 3 - Senha do usuário; 4 - E-mail do usuário
 					if PswSeek (zzu -> zzu_user, .T.)
 						_aUser := PswRet ()
+						
+						// Lista de usernames para uso nas notificacoes do NaWeb
+						_sUsrNames += iif (empty (_sUsrNames), '', ';') + alltrim (_aUser [1, 2])
+						
 						if empty (_aUser [1, 14])
 							U_log2 ('aviso', "Usuario '" + zzu -> zzu_user + "' nao tem e-mail no cadastro de usuarios do sistema.")
 						else
@@ -412,4 +419,4 @@ user function ZZULD (_sGrupoZZU, _sFil, _sTipos)
 	enddo
 
 	U_ML_SRArea (_aAreaAnt)
-return {_sResultTo, _aResultTo, _aIDs}
+return {_sResultTo, _aResultTo, _aIDs, _sUsrNames}
