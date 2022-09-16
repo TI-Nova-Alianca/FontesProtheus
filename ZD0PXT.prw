@@ -49,22 +49,21 @@ Static Function ReportDef()
 	oSection1 := TRSection():New(oReport,,{}, , , , , ,.T.,.F.,.F.) 
 	
 	TRCell():New(oSection1,"COLUNA1"	, 	"" ,"Filial"		,	    					, 8,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA2"	, 	"" ,"ID Recebivel"  ,       					,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA3"	, 	"" ,"ID Transacao"  ,       					,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA3_1"	, 	"" ,"Parcela"       ,       					,06,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA4"	, 	"" ,"Vlr.Parcela"	, "@E 999,999,999.99"   	,25,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA5"	, 	"" ,"Vlr.Taxa"		, "@E 999,999,999.99"   	,25,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA6"	, 	"" ,"Vlr.Liquido"	, "@E 999,999,999.99"   	,25,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA7"	, 	"" ,"Dt.Pgto"		,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA8"	, 	"" ,"Título"    	,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA9"	, 	"" ,"Cliente"    	,       					,40,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	//TRCell():New(oSection1,"COLUNA10", 	"" ,"Saldo Título"	, "@E 999,999,999.99"   	,25,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA2"	, 	"" ,"Tipo Reg."     ,       					,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA3"	, 	"" ,"ID Recebivel"  ,       					,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA4"	, 	"" ,"ID Transacao"  ,       					,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA5"	, 	"" ,"Parcela"       ,       					,06,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA6"	, 	"" ,"Dt.Extrato"    ,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA7"	, 	"" ,"Vlr.Parcela"	, "@E 999,999,999.99"   	,25,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA8"	, 	"" ,"Vlr.Taxa"		, "@E 999,999,999.99"   	,25,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA9"	, 	"" ,"Vlr.Liquido"	, "@E 999,999,999.99"   	,25,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA10"	, 	"" ,"Título"    	,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA11"	, 	"" ,"Cliente"    	,       					,40,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 
     oBreak1 := TRBreak():New(oSection1,oSection1:Cell("COLUNA1"),"Total por filial")
-    TRFunction():New(oSection1:Cell("COLUNA4")	,,"SUM"	,oBreak1,"Total parcela "   , "@E 99,999,999.99", NIL, .F., .T.)
-    TRFunction():New(oSection1:Cell("COLUNA5")	,,"SUM"	,oBreak1,"Total taxa "      , "@E 99,999,999.99", NIL, .F., .T.)
-    TRFunction():New(oSection1:Cell("COLUNA6")	,,"SUM"	,oBreak1,"Total liquido "   , "@E 99,999,999.99", NIL, .F., .T.)
-	//TRFunction():New(oSection1:Cell("COLUNA10")	,,"SUM"	,oBreak1,"Total Títulos"    , "@E 99,999,999.99", NIL, .F., .T.)
+    TRFunction():New(oSection1:Cell("COLUNA7")	,,"SUM"	,oBreak1,"Total parcela "   , "@E 99,999,999.99", NIL, .F., .T.)
+    TRFunction():New(oSection1:Cell("COLUNA8")	,,"SUM"	,oBreak1,"Total taxa "      , "@E 99,999,999.99", NIL, .F., .T.)
+    TRFunction():New(oSection1:Cell("COLUNA9")	,,"SUM"	,oBreak1,"Total liquido "   , "@E 99,999,999.99", NIL, .F., .T.)
 	
 Return(oReport)
 //
@@ -73,6 +72,7 @@ Return(oReport)
 Static Function PrintReport(oReport)
 	Local oSection1 := oReport:Section(1)
 	Local _x        := 0
+	Local _y        := 0
 
 	oSection1:Init()
 	oSection1:SetHeaderSection(.T.)
@@ -80,17 +80,51 @@ Static Function PrintReport(oReport)
 	_oSQL := ClsSQL():New ()  
 	_oSQL:_sQuery := "" 		
 	_oSQL:_sQuery += " SELECT "
-	_oSQL:_sQuery += " 	   ZD0_FILIAL "
+	_oSQL:_sQuery += " 	ZD0_DTAEXT + ' ' + ZD0_HOREXT "
+	_oSQL:_sQuery += " FROM ZD0010 "
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " AND ZD0_FILIAL BETWEEN '"+ mv_par01 +"' AND '"+ mv_par02 +"' "
+	_oSQL:_sQuery += " AND ZD0_DTAEXT BETWEEN '"+ dtos(mv_par03) +"' AND '"+ dtos(mv_par04) +"' "
+	_oSQL:_sQuery += " AND ZD0_TIPO = '2' "
+	_oSQL:_sQuery += " ORDER BY ZD0_DTAEXT "
+	_aDatas := _oSQL:Qry2Array ()
+
+	For _y := 1 to Len(_aDatas)		
+		If _y == 1
+			_sData1 := _aDatas[_y,1]
+		EndIf
+		If _y == 2
+			_sData2 := _aDatas[_y,1]
+		EndIf
+	Next
+
+	// Verfica datas
+	If empty(_sData1)
+		_sData1 := DTOS(date()) +' 00:00:00'
+	EndIf
+
+	If empty(_sData2)
+		_sData2 := DTOS(date()) +' 23:59:59'
+	EndIf
+
+	_oSQL := ClsSQL():New ()  
+	_oSQL:_sQuery := "" 		
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += "     ZD0_FILIAL "
+	_oSQL:_sQuery += "    ,CASE "
+	_oSQL:_sQuery += " 		WHEN ZD0_TIPO = '1' THEN 'Transação' "
+	_oSQL:_sQuery += " 		WHEN ZD0_TIPO = '2' THEN 'Transferencia' "
+	_oSQL:_sQuery += " 		WHEN ZD0_TIPO = '3' THEN 'Tarifa' "
+	_oSQL:_sQuery += " 	END AS TIPO "
 	_oSQL:_sQuery += "    ,ZD0_RID "
 	_oSQL:_sQuery += "    ,ZD0_TID "
+	_oSQL:_sQuery += "    ,ZD0_PARCEL "
+	_oSQL:_sQuery += "    ,ZD0_DTAEXT "
 	_oSQL:_sQuery += "    ,ZD0_VLRPAR "
 	_oSQL:_sQuery += "    ,ZD0_TAXTOT "
 	_oSQL:_sQuery += "    ,ZD0_VLRLIQ "
-	_oSQL:_sQuery += "    ,ZD0_DTAPGT "
-	_oSQL:_sQuery += "    ,SE1.E1_NUM + '/' + SE1.E1_PREFIXO + ' ' + SE1.E1_PARCELA "
-	_oSQL:_sQuery += "    ,SE1.E1_CLIENTE + ' - ' + SA1.A1_NOME "
-	_oSQL:_sQuery += "    ,SE1.E1_SALDO "
-	_oSQL:_sQuery += "    ,ZD0_PARCEL "
+	_oSQL:_sQuery += "    ,SE1.E1_NUM + '/' + SE1.E1_PREFIXO + ' ' + SE1.E1_PARCELA AS TITULO "
+	_oSQL:_sQuery += "    ,SE1.E1_CLIENTE + ' - ' + SA1.A1_NOME AS CLIENTE "
 	_oSQL:_sQuery += " FROM " + RetSQLName ("ZD0") + " ZD0 "
 	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SE1") + " SE1 "
 	_oSQL:_sQuery += " 	ON SE1.D_E_L_E_T_ = '' "
@@ -98,26 +132,27 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " 		AND SE1.E1_VAIDT   = ZD0.ZD0_TID "
 	_oSQL:_sQuery += " 		AND SE1.E1_PARCELA = ZD0.ZD0_PARCEL "
 	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SA1") + " SA1 "
-	_oSQL:_sQuery += " 	ON SA1.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " 	ON SA1.D_E_L_E_T_  = '' "
 	_oSQL:_sQuery += " 		AND SA1.A1_COD = SE1.E1_CLIENTE "
-	_oSQL:_sQuery += " 		AND A1_LOJA = SE1.E1_LOJA "
-	_oSQL:_sQuery += " WHERE ZD0.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " 		AND A1_LOJA    = SE1.E1_LOJA "
+	_oSQL:_sQuery += " WHERE ZD0.D_E_L_E_T_ = ''
 	_oSQL:_sQuery += " AND ZD0_FILIAL BETWEEN '"+ mv_par01 +"' AND '"+ mv_par02 +"' "
-	_oSQL:_sQuery += " AND ZD0_DTAPGT BETWEEN '"+ dtos(mv_par03) +"' AND '"+ dtos(mv_par04) +"' "
+	_oSQL:_sQuery += " AND ZD0_DTAEXT + ' ' + ZD0_HOREXT BETWEEN '"+ _sData1 +"' AND '"+ _sData2 +"' "
+	_oSQL:_sQuery += " AND ZD0_TIPO <> '2' "
 	_aDados := _oSQL:Qry2Array ()
 
 	For _x := 1 to Len(_aDados)
 		oSection1:Cell("COLUNA1")	:SetBlock   ({|| _aDados[_x, 1] }) 
 		oSection1:Cell("COLUNA2")	:SetBlock   ({|| _aDados[_x, 2] }) 
 		oSection1:Cell("COLUNA3")	:SetBlock   ({|| _aDados[_x, 3] }) 
-		oSection1:Cell("COLUNA3_1")	:SetBlock   ({|| _aDados[_x,11] }) 
 		oSection1:Cell("COLUNA4")	:SetBlock   ({|| _aDados[_x, 4] }) 
 		oSection1:Cell("COLUNA5")	:SetBlock   ({|| _aDados[_x, 5] }) 
 		oSection1:Cell("COLUNA6")	:SetBlock   ({|| _aDados[_x, 6] }) 
 		oSection1:Cell("COLUNA7")	:SetBlock   ({|| _aDados[_x, 7] }) 
 		oSection1:Cell("COLUNA8")	:SetBlock   ({|| _aDados[_x, 8] }) 
-        oSection1:Cell("COLUNA9")	:SetBlock   ({|| _aDados[_x, 9] }) 
-		//oSection1:Cell("COLUNA10")	:SetBlock   ({|| _aDados[_x,10] }) 
+		oSection1:Cell("COLUNA9")	:SetBlock   ({|| _aDados[_x, 9] }) 
+        oSection1:Cell("COLUNA10")	:SetBlock   ({|| _aDados[_x,10] }) 
+		oSection1:Cell("COLUNA11")	:SetBlock   ({|| _aDados[_x,11] }) 
 		
 		oSection1:PrintLine()
 	Next

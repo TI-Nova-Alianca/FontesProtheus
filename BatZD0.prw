@@ -82,6 +82,7 @@ Static Function _GravaPgtos(_sTipo, dDataIni, dDataFin)
             _nTaxa       := IIF(empty(oJSONR[i]["fee"])                         , 0                 , oJSONR[i]["fee"]/100)
             _nTaxaAntec  := IIF(empty(oJSONR[i]["anticipation_fee"])            , 0                 , oJSONR[i]["anticipation_fee"]/100)
             _nTaxaFraude := IIF(empty(oJSONR[i]["fraud_coverage_fee"])          , 0                 , oJSONR[i]["fraud_coverage_fee"]/100)
+            _sHora       := IIF(Empty(oJSONR[i]["date_created"])                ,'00:00'            ,_CastHora(oJSONR[i]["date_created"]))
             _sParProt    := _BuscaParcProtheus(_nParcela)
             _nVlrTaxTot  := _nTaxa + _nTaxaAntec + _nTaxaFraude
             _nVlrLiq     := _nVlr - _nVlrTaxTot
@@ -109,6 +110,8 @@ Static Function _GravaPgtos(_sTipo, dDataIni, dDataFin)
                     ZD0 -> ZD0_TAXFRA := _nTaxaFraude
                     ZD0 -> ZD0_TAXTOT := _nVlrTaxTot
                     ZD0 -> ZD0_VLRLIQ := _nVlrLiq
+                    ZD0 -> ZD0_TIPO   := '1'
+                    ZD0 -> ZD0_HORA   := _sHora
 
                     ZD0->(MsUnlock())
                 End Transaction
@@ -128,6 +131,10 @@ Static Function _GravaPgtos(_sTipo, dDataIni, dDataFin)
         // else
         //     u_log2('aviso', 'Importação finalizada com sucesso!')
         // EndIf
+
+        // Importa Transferencias
+        _GrvTransferencias(_sTipo,  dDataIni, dDataFin)
+
         If _sTipo == '2'
             u_help('Importação finalizada!')
         else
@@ -199,6 +206,65 @@ Static Function _GravaTransacoes(_sTipo, _sChaveZD0,_sIdTrans, _sId)
 Return
 //
 // -----------------------------------------------------------------------------------
+// Acessa o link da transação para gravar demais dados
+Static Function _GrvTransferencias(_sTipo, dDataIni, dDataFin) 
+    local cUrlTrans  := ""
+    local cGetParms  := ""
+    local nTimeOut   := 200
+    local aHeadStr   := {"Content-Type: application/json"}
+    local cHeaderGet := ""
+    local cRetTrans  := ""
+    local i          := 0
+    local oJSONT
+
+    cUrlTrans := _RetLinkBanco(dDataIni, dDataFin)
+    cRetTrans := HttpGet( cUrlTrans , cGetParms, nTimeOut, aHeadStr, @cHeaderGet ) // Retorno do link da transação
+
+    oJSONT := JsonObject():New()
+    oJSONT:fromJSON(cRetTrans)
+
+    nNumReg := len(oJSONT)
+
+    If nNumReg == 0
+        u_log2('aviso', 'Pagar.me: Transferencia(s) encontrada(s):' + _sIdTrans)
+    else
+        u_log2('aviso', 'Verifique a chave API')
+    EndIf
+    
+    If nNumReg >= 0
+        For i := 1 to nNumReg
+            _sId         := alltrim(STR(IIF(empty(oJSONT[i]["id"])              , 0                 , oJSONT[i]["id"])))
+            _nVlr        := IIF(empty(oJSONT[i]["amount"])                      , 0                 , oJSONT[i]["amount"]/100)
+            _dDtCriacao  := IIF(Empty(oJSONT[i]["date_created"])                ,STOD('19000101')   ,_CastData(oJSONT[i]["date_created"]))
+            _sHora       := IIF(Empty(oJSONT[i]["date_created"])                ,'00:00'            ,_CastHora(oJSONT[i]["date_created"]))
+            
+            dbSelectArea("ZD0") 
+            dbSetOrder(1) 
+            dbGoTop()
+            
+            _sChaveZD0 := xFilial('ZD0') + PADR(alltrim(_sId),15,' ') + PADR(alltrim(_sId),15,' ')
+            If !dbSeek(_sChaveZD0)
+                Begin Transaction
+                    Reclock("ZD0",.T.)
+                    ZD0 -> ZD0_FILIAL := xFilial('ZD0')
+                    ZD0 -> ZD0_RID    := _sId
+                    ZD0 -> ZD0_TID    := _sId
+                    ZD0 -> ZD0_DTACRI := _dDtCriacao
+                    ZD0 -> ZD0_DTAPGT := _dDtCriacao
+                    ZD0 -> ZD0_VLRLIQ := _nVlr
+                    ZD0 -> ZD0_TIPO   := '2'
+                    ZD0 -> ZD0_HORA   := _sHora
+
+                    ZD0->(MsUnlock())
+                End Transaction
+            EndIf
+        Next
+    Else
+        u_log2('aviso', 'Pagar.me: Sem registro de transferencia')
+    Endif
+Return
+//
+// -----------------------------------------------------------------------------------
 // Cria o link de recebíveis pagos
 Static Function _RetLinkPgto( dDataIni, dDataFin)
     Local _sDt01  := alltrim(str(Year(dDataIni))) + "-" + PADL(alltrim(str(Month(dDataIni))),2,'0') +"-"+ PADL(alltrim(str(Day(dDataIni))),2,'0')
@@ -217,6 +283,18 @@ Static Function _RetLinkTransacao(_sIdTransacao)
 
     _sLink  := 'https://api.pagar.me/1/transactions/' + _sIdTransacao + '?api_key=' + alltrim(_sAkKey)
     u_log2("Aviso", _sLink)
+Return _sLink
+//
+// -----------------------------------------------------------------------------------
+// Cria o link de recebíveis pagos
+Static Function _RetLinkBanco( dDataIni, dDataFin)
+    Local _sDt01  := alltrim(str(Year(dDataIni))) + "-" + PADL(alltrim(str(Month(dDataIni))),2,'0') +"-"+ PADL(alltrim(str(Day(dDataIni))),2,'0')
+    Local _sDt02  := alltrim(str(Year(dDataFin))) +"-"+ PADL(alltrim(str(Month(dDataFin))),2,'0') +"-"+PADL(alltrim(str(Day(dDataFin))),2,'0')
+    Local _sAkKey := GETMV("VA_PAGAR")
+
+    _sLink := 'https://api.pagar.me/1/transfers?api_key='+_sAkKey +'&count=1000&date_created=>='+ _sDt01 +'T00:00:00.000Z&date_created=<='+ _sDt02 +'T23:59:59.000Z'
+
+    u_log2("Aviso", " Link de transferencias gerado:" + _sLink)
 Return _sLink
 //
 // -------------------------------------------------------------------------
@@ -266,6 +344,14 @@ Static Function _CastData(_sDt)
     _dDt  := STOD(_sAno + _sMes + _sDia)
 
 Return _dDt
+//
+// -----------------------------------------------------------------------------------
+// Busca hora da gravação
+Static Function _CastHora(_sDt)
+
+    _sHr := SubStr(_sDt, 12, 5)
+
+Return _sHr
 //
 // -------------------------------------------------------------------------
 // Cria Perguntas no SX1
