@@ -32,7 +32,7 @@ user function vtEtqAp ()
 		
 		// Limpa variaveis para ler nova etiqueta.
 		_sBarEtiq = space (10)
-		_sBarProd = space (14)
+		_sBarProd = space (17)  // Maior que o necessario por que tem casos de licitacoes de SP que exigem uns caracteres de controle no inicio das barras.
 		_sProdEtq = space (15)
 		// Nao limpar entre as etiquetas --> _dDatProd = ctod ('')
 		_oEtiq    = NIL
@@ -112,7 +112,7 @@ static function _ValCBProd ()
 	local _lRet      := .T.
 	local _sDescProd := ''
 
-	U_Log2 ('debug', '[' + procname () + ']' + _sProdEtq)
+	U_Log2 ('debug', '[' + procname () + ']barras lidas: >>' + _sBarProd + '<<')
 	sb1 -> (dbsetorder (5))  // B1_FILIAL, B1_CODBAR, R_E_C_N_O_, D_E_L_E_T_
 	if ! sb1 -> (dbseek (xfilial ("SB1") + _sBarProd, .F.))
 		u_help ("Nenhum produto cadastrado com esse codigo de barras",, .t.)

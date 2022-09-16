@@ -22,7 +22,8 @@
 // 22/07/2022 - Robert - Finalizada funcao de limpeza da tabela SZN (GLPI 12336)
 // 05/08/2022 - Robert - Adicionada tabela SZN a lista para compactacao via SQL.
 // 08/08/2022 - Robert - Adicionadas tabelas CV3 e CTK (GLPI 12412).
-// 09/08/2022 - Robert - Adicionada tabela SBK.
+// 09/08/2022 - Robert - Adicionada tabela SBK para compactacao.
+// 14/09/2022 - Robert - Adicionada tabela SC2 para compactacao.
 //
 
 // ----------------------------------------------------------------
@@ -176,6 +177,7 @@ static function _Compact ()
 	aadd (_aArqComp, 'CV3010')  // Criados campos grandes (IDORIG e IDDEST) e vazios - GLPI 12412
 	aadd (_aArqComp, 'CTK010')  // Criados campos grandes (IDORIG e IDDEST) e vazios - GLPI 12412
 	aadd (_aArqComp, 'SBK010')  // Uso pouco frequente, nao vejo problemas em compactar.
+	aadd (_aArqComp, 'SC2010')  // Tem alguns campos de observacoes, etc que geralmente ficam vazios.
 
 	for _nArqComp = 1 to len (_aArqComp)
 		_oSQL := ClsSQL ():New ()
