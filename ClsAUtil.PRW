@@ -377,7 +377,7 @@ return iif (_lAchou, _aRet, {})
 // Args: _sTitTab:  Texto a ser usado como titulo (primeira linha) da tabela
 //       _aCols:    Definicao de colunas para geracao do HTML: {nome, left/right, mascara}
 //       _sArgsTbl: Argumentos para a montagem de tabela em HTML. Ex.:  'width="90%" border="1" cellspacing="0" cellpadding="3" align="center"'
-//       _lDestUlt: Destacar em negrito (.T.) ou nao (.F.) e ultima linha da tabela.
+//       _lDestUlt: Destacar em negrito (.T.) ou nao (.F.) a ultima linha da tabela.
 //       _nMaxLin:  Maximo de linhas a exportar para HTM. Se nao informado, exporta todas.
 METHOD ConvHTM (_sTitTab, _aCols, _sArgsTbl, _lDestUlt, _nMaxLin) Class ClsAUtil
 	local _nLin    := 0

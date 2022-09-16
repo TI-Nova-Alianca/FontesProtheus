@@ -103,19 +103,47 @@ user function robert ()
 		// _BatXML ()
 		// _elastic ()
 		// _evtXML ()
-		// _batfull ()
+		//_batfull ()
 		// _telnet ()
 		// _verif ()
 		// _ClsEtiq ()
 		// _VA_XLS ()
-		_aviso ()
+		// _aviso ()
 		// _reginv ()
 		//_ImpGPC ()
+		//_memoria ()
+		//_EstFul()
 
 		//u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
+return
+
+// --------------------------------------------------------------------------
+// Tentativa de encher a memoria do servico
+static function _EstFul ()
+	dak -> (dbsetorder (1))
+	IF dak -> (dbseek (xfilial ("DAK") + "018112", .f.))
+		_ValEstFul ()
+	ELSE
+		U_HELP ('DAK nao localizado',, .t.)
+	endif
+return
+
+
+// --------------------------------------------------------------------------
+// Tentativa de encher a memoria do servico
+static function _memoria ()
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "SELECT TOP 1000 * FROM SD1010"
+	_a1 := aclone (_oSQL:Qry2Array ())
+	_a2 := {}
+	do while .t.
+		// pior que sobe a memoria mesmo!!!  -->  		aadd (_a2, aclone (_a1))
+		sleep (500)
+		u_log2 ('debug', cvaltochar (len (_a2)))
+	enddo
 return
 
 // --------------------------------------------------------------------------
@@ -331,8 +359,8 @@ return
 
 // --------------------------------------------------------------------------
 static function _batfull ()
-	//_sArqLog := 'U_BatFullW.log' ; 	U_BatFullW ()
-	_sArqLog := 'U_BatFullM.log' ; 	U_BatFullM ()
+	_sArqLog := 'U_BatFullW.log' ; 	U_BatFullW ('S')
+	//_sArqLog := 'U_BatFullM.log' ; 	U_BatFullM ()
 return
 
 // --------------------------------------------------------------------------
@@ -513,20 +541,20 @@ static function _verif ()
 	// _oVerif:SetParam ('02', '09189201001  ')
 	// _oVerif:SetParam ('03', '')
 	// _oVerif:SetParam ('04', 'z')
-//	_oVerif := ClsVerif():New (90)
+	_oVerif := ClsVerif():New (91)
 	//	_oVerif:SetParam ('01', date () - 10)
 	//	_oVerif:SetParam ('02', date ())
 	//	_oVerif:SetParam ('03', '')
 	//	_oVerif:SetParam ('04', 'z')
 	//	//U_Log2 ('debug', '[' + procname () + ']ult ver:' + cvaltochar (_oVerif:UltVerif))
-	//	if _oVerif:Executa ()
-	//		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
-	//		u_log2 ('debug', _oVerif:Result)
-	//		//u_acolsxls (_oVerif:Result)
-	//	else
-	//		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
-	//	endif
-	u_batverif ()
+	if _oVerif:Executa ()
+		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
+		u_log2 ('debug', _oVerif:Result)
+		//u_acolsxls (_oVerif:Result)
+	else
+		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
+	endif
+	//u_batverif ()
 return
 
 /*
@@ -1312,19 +1340,6 @@ return
 		//EXIT  // por enquanto quero gerar apenas um
 	enddo
 	FreeObj (_oSQL)
-return
-*/
-/*
-	// Tentativa de encher a memoria do servico
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := "SELECT TOP 1000 * FROM SD1010"
-	_a1 := aclone (_oSQL:Qry2Array ())
-	_a2 := {}
-	do while .t.
-		// pior que sobe a memoria mesmo!!!  --> aadd (_a2, aclone (_a1))
-		sleep (1000)
-		u_log2 ('debug', cvaltochar (len (_a2)))
-	enddo
 return
 */
 static function _Sisdevin ()

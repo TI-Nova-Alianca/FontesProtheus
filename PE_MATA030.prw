@@ -52,12 +52,12 @@ User Function CRMA980()
 			nOper := oObj:nOperation
 
 			if nOper == 4
-				u_log ('')
-				u_log ('')
-				u_log ('')
-				u_logPCham ()
-				u_log ('M:', m->a1_nome)
-				u_log ('SA1:', sa1->a1_nome)
+//				u_log ('')
+//				u_log ('')
+//				u_log ('')
+//				u_logPCham ()
+//				u_log ('M:', m->a1_nome)
+//				u_log ('SA1:', sa1->a1_nome)
 
 				_GeraLog ()
 				U_AtuMerc ('SA1', sa1 -> (recno ()))

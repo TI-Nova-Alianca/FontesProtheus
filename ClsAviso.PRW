@@ -14,6 +14,7 @@
 //                     - Versao inicial de envio para NaWeb via web service.
 // 31/08/2022 - Robert - Desabilitado tratamento de 'codigo de mensagem'.
 // 09/09/2022 - Robert - Criado atributo ::DestinZZU.
+// 16/09/2022 - Robert - Criado tratamento para enviar HTML para NaWeb.
 //
 
 #include "protheus.ch"
@@ -30,13 +31,14 @@ CLASS ClsAviso
 
 	// Declaracao das propriedades da Classe
 	data Tipo
+	data Titulo
 	data DtAviso
 	data HrAviso
 	data Destinatar  // soh pra manter compatibilidade com fontes antigos
 	data DestinAvis  // Nomes dos usuarios no formato fulano.silva;ciclano.dastantas
 	data DestinZZU   // Codigos de um grupo da tabela ZZU no formato {grp1, grp2, ...}
 	data Texto
-	data Titulo
+	data Formato     // [T]exto ou [H]tml
 	data Origem
 	data DiasDeVida
 	data CodAviso  // a ser descontinuado
@@ -72,6 +74,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsAviso
 	::DestinAvis = ''
 	::DestinZZU  = {}
 	::Texto      = ""
+	::Formato    = "T"  // Formato padrao: [T]exto
 	::Titulo     = ""
 	::Origem     = ""
 	::DiasDeVida = 1
@@ -81,6 +84,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsAviso
 		::HrAviso    = zab -> zab_hremis
 		::DestinAvis = alltrim (zab -> zab_destin)
 		::Texto      = alltrim (zab -> zab_texto)
+		::Formato    = zab -> zab_format
 		::Titulo     = alltrim (zab -> zab_titulo)
 		::Origem     = alltrim (zab -> zab_origem)
 		::DiasDeVida = zab -> zab_valid
@@ -107,9 +111,9 @@ METHOD Grava () Class ClsAviso
 		::DestinZZU  = {'122'}
 	endif
 
-	// Se recebi uma lista de grupos a notificar, busco os usuarios desses grupos.
-	if valtype (::DestinZZU) == 'A'
-		::DestinAvis = ''
+	// Se recebi uma lista de grupos a notificar, adiciono os usuarios desses grupos.
+	if valtype (::DestinZZU) == 'A' //.and. len (::DestinZZU) > 0
+//		::DestinAvis = ''
 		for _nDestZZU = 1 to len (::DestinZZU)
 		//	U_Log2 ('debug', '[' + procname () + ']Verificando grupo ' + ::DestinZZU [_nDestZZU])
 			_sDestZZU = U_ZZULD (::DestinZZU [_nDestZZU], cFilAnt, '23') [4]
@@ -121,10 +125,6 @@ METHOD Grava () Class ClsAviso
 		next
 	//	U_Log2 ('debug', 'Destinatarios ficou assim:' + ::DestinAvis)
 	endif
-
-//	if empty (::DestinAvis)  // ateh eliminar o atributo antigo
-//		::DestinAvis = ::Destinatar
-//	endif
 
 	if ! ::Tipo $ 'E/A/I'  // [E]rro, [A]viso, [I]nfo
 		u_log2 ('erro', "Tipo de aviso invalido: '" + cvaltochar (::Tipo) + "'. Nao vou enviar para NaWeb.")
@@ -144,6 +144,7 @@ METHOD Grava () Class ClsAviso
 	zab -> zab_tipo   = ::Tipo
 	zab -> zab_titulo = ::Titulo
 	zab -> zab_texto  = ::Texto
+	zab -> zab_format = ::Formato
 	zab -> zab_destin = ::DestinAvis
 	zab -> zab_valid  = ::DiasDeVida
 	if ::Origem == NIL .or. empty (::Origem)
@@ -185,7 +186,12 @@ METHOD EnviaNAWeb () Class ClsAviso
 	_sXMLNotif +=    '<SdtNotificacoesItem>'
 	_sXMLNotif +=    '<NotifTipo>' + ::Tipo + '</NotifTipo>'
 	_sXMLNotif +=    '<NotifTitulo>' + alltrim (::Titulo) + '</NotifTitulo>'
-	_sXMLNotif +=    '<NotifMsg>' + alltrim (::Texto) + '</NotifMsg>'
+	if ::Formato == 'H'
+		_sXMLNotif += '<NotifHTML>' + alltrim (::Texto) + '</NotifHTML>'
+		_sXMLNotif += '<NotifMsg>Mensagem em formato HTML</NotifMsg>'
+	else
+		_sXMLNotif += '<NotifMsg>' + alltrim (::Texto) + '</NotifMsg>'
+	endif
 	_sXMLNotif +=    '<NotifData>'
 	_sXMLNotif +=       substring (dtos (zab -> zab_dtemis), 1, 4) + '-'
 	_sXMLNotif +=       substring (dtos (zab -> zab_dtemis), 5, 2) + '-'
@@ -194,7 +200,6 @@ METHOD EnviaNAWeb () Class ClsAviso
 	_sXMLNotif +=    '</NotifData>'
 	_sXMLNotif +=    '<NotifLink/>'
 	_sXMLNotif +=    '<NotifUsuarios>' + alltrim (::DestinAvis) + '</NotifUsuarios>'
-	_sXMLNotif +=    '<NotifHTML/>'
 	_sXMLNotif +=    '<NotifRecorrencia>' + cvaltochar (::DiasDeVida) + '</NotifRecorrencia>'
 	_sXMLNotif +=    '<NotifOrigem>' + '[PROTHEUS]' + alltrim (::Origem) + '</NotifOrigem>'
 	_sXMLNotif +=    '</SdtNotificacoesItem>'
@@ -220,9 +225,9 @@ return _lRetWSNA
 // --------------------------------------------------------------------------
 // Limpa caracteres que podem atrapalhar no XML
 static function _Limpa (_sCampoX)
-//	_sCampoX = strtran (_sCampoX, '>', '&gt;')
-//	_sCampoX = strtran (_sCampoX, '<', '&lt;')
+	_sCampoX = strtran (_sCampoX, '>', '&gt;')
+	_sCampoX = strtran (_sCampoX, '<', '&lt;')
 	_sCampoX = strtran (_sCampoX, '"', '')  // '&quot;')
 	_sCampoX = strtran (_sCampoX, "'", '')  // "&apos;")
-	_sCampoX = strtran (_sCampoX, "&", '')  // "&amp;")
+//	_sCampoX = strtran (_sCampoX, "&", '')  // "&amp;")
 return _sCampoX
