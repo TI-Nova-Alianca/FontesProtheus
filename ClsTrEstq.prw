@@ -25,6 +25,7 @@
 // 15/06/2022 - Robert  - Nao gerava etiqueta se o produto nao controlasse lotes (GLPI 12220)
 // 02/08/2022 - Robert  - Para gravar, precisa ser dono de pelo menos um dos almox. (GLPI 12404)
 // 02/08/2022 - Robert  - Para gravar, testa possibilidade do destino ser igual a origem (GLPI 12427).
+// 13/09/2022 - Robert  - Criados atributos CtrLocOrig, CtrLocDest, CtrLotOrig, CtrLotDest.
 //
 
 // ------------------------------------------------------------------------------------
@@ -43,40 +44,39 @@ return
 CLASS ClsTrEstq
 
 	// Declaracao das propriedades da Classe
-	data Filial    // Filial onde foi incluido o registro (campo ZAG_FILIAL)
-	data FilOrig   // Filial origem.
-	data FilDest   // Filial destino.
-	data Docto     // Numero docto na tabela ZAG.
-	data DtEmis    // Data emissao (inclusao) do ZAG. Nao obrigatoriamente a mesma da geracao do movto.
-	data RegZAG    // Numero registro (RECNO) no ZAG.
-	data OP        // Numero da OP, quando a solic. for gerada por OP.
-	data Motivo    // Descricao do motivo da transferencia. 
-	data ProdOrig  // Codigo do produto origem a transferir.
-	data ProdDest  // Codigo do produto destino (inicilmente a ideia eh sempre transferir para o msmo produto)
-	data AlmOrig   // Almox (local) origem
-	data AlmDest   // Almox (local) destino
-	data ContrLoc  // Indica se o produto controla lote (campo B1_LOCALIZ)
-	data ContrLote // Indica se o produto controla lote (campo B1_RASTRO)
-	data EndOrig   // Endereco origem (quando produto tiver controle de localizacao)
-	data EndDest   // Endereco destino  (quando produto tiver controle de localizacao)
-	data Etiqueta  // Numero da etiqueta (tabela ZA1), quando existir
-	data Executado // Indica se jah foi executado (se gerou alguma movimentacao) S=Executado;E=Erro na execucao;X=Estornado
+	data Filial     // Filial onde foi incluido o registro (campo ZAG_FILIAL)
+	data FilOrig    // Filial origem.
+	data FilDest    // Filial destino.
+	data Docto      // Numero docto na tabela ZAG.
+	data DtEmis     // Data emissao (inclusao) do ZAG. Nao obrigatoriamente a mesma da geracao do movto.
+	data RegZAG     // Numero registro (RECNO) no ZAG.
+	data OP         // Numero da OP, quando a solic. for gerada por OP.
+	data Motivo     // Descricao do motivo da transferencia. 
+	data ProdOrig   // Codigo do produto origem a transferir.
+	data ProdDest   // Codigo do produto destino (inicilmente a ideia eh sempre transferir para o msmo produto)
+	data AlmOrig    // Almox (local) origem
+	data AlmDest    // Almox (local) destino
+	data CtrLocOrig // Indica se o produto de origem controla enderecamento (campo B1_LOCALIZ)
+	data CtrLocDest // Indica se o produto destino controla enderecamento (campo B1_LOCALIZ)
+	data CtrLotOrig // Indica se o produto de origem controla lote (campo B1_RASTRO)
+	data CtrLotDest // Indica se o produto destino controla lote (campo B1_RASTRO)
+	data EndOrig    // Endereco origem (quando produto tiver controle de localizacao)
+	data EndDest    // Endereco destino  (quando produto tiver controle de localizacao)
+	data Etiqueta   // Numero da etiqueta (tabela ZA1), quando existir
+	data Executado  // Indica se jah foi executado (se gerou alguma movimentacao) S=Executado;E=Erro na execucao;X=Estornado
 	data FWProdOrig // Indica se o produto origem eh controlado pelo FullWMS
 	data FWProdDest // Indica se o produto destino eh controlado pelo FullWMS
-//	data IdSC5     // Id (numero pedido) gerado na tabela SC5 (quando transf. entre filiais) 
-//	data IdSD3     // Id (D3_NUMSEQ) gerado na tabela SD3 (quando transf. interna)
-	data ImprEtq   // ID da immpressora (caso seja necessario gerar e imprimir etiqueta) 
-	data LibNaIncl // Indica se, no momento da inclusao do registro no ZAG, jah deve tentar fazer as liberacoes.
-	data LoteOrig  // Lote origem (quando produto tiver controle de lote)
-	data LoteDest  // Lote destino (quando produto tiver controle de lote)
-	data QtdSolic  // Quantidade solicitada (inicial a ser transferida) 
-//	data QtdReceb  // Quantidade recebida (confirmacao de recebimento)
-	data UltMsg    // Ultima mensagem gerada.
-	data UsrIncl   // Usuario que fez a inclusao do registro
-	data UsrAutOri // Usuario que autorizou pelo almox origem
-	data UsrAutDst // Usuario que autorizou pelo almox destino
-	data UsrAutPCP // Usuario que autorizou pelo PCP
-	data UsrAutQld // Usuario que autorizou pela qualidade
+	data ImprEtq    // ID da immpressora (caso seja necessario gerar e imprimir etiqueta) 
+	data LibNaIncl  // Indica se, no momento da inclusao do registro no ZAG, jah deve tentar fazer as liberacoes.
+	data LoteOrig   // Lote origem (quando produto tiver controle de lote)
+	data LoteDest   // Lote destino (quando produto tiver controle de lote)
+	data QtdSolic   // Quantidade solicitada (inicial a ser transferida) 
+	data UltMsg     // Ultima mensagem gerada.
+	data UsrIncl    // Usuario que fez a inclusao do registro
+	data UsrAutOri  // Usuario que autorizou pelo almox origem
+	data UsrAutDst  // Usuario que autorizou pelo almox destino
+	data UsrAutPCP  // Usuario que autorizou pelo PCP
+	data UsrAutQld  // Usuario que autorizou pela qualidade
 
 	// Declaracao dos Metodos da classe
 	METHOD New ()
@@ -97,40 +97,45 @@ ENDCLASS
 // --------------------------------------------------------------------------
 // Construtor.
 METHOD New (_nRecno) Class ClsTrEstq
-	local _nRegZAG  := 0
-	::Filial    = ''
-	::FilOrig   = ''
-	::FilDest   = ''
-	::Docto     = ''
-	::DtEmis    = ''
-	::RegZAG    = 0
-	::OP        = ''
-	::Motivo    = ''
-	::ProdOrig  = ''
-	::ProdDest  = ''
-	::AlmOrig   = ''
-	::AlmDest   = ''
-	::EndOrig   = ''
-	::EndDest   = ''
-	::Etiqueta  = ''
-	::Executado = ''
+	local _aAmbAnt := {}
+
+	::Filial     = ''
+	::FilOrig    = ''
+	::FilDest    = ''
+	::Docto      = ''
+	::DtEmis     = ''
+	::RegZAG     = 0
+	::OP         = ''
+	::Motivo     = ''
+	::ProdOrig   = ''
+	::ProdDest   = ''
+	::AlmOrig    = ''
+	::AlmDest    = ''
+	::CtrLocOrig = .f.
+	::CtrLocDest = .f.
+	::CtrLotOrig = .f.
+	::CtrLotDest = .f.
+	::EndOrig    = ''
+	::EndDest    = ''
+	::Etiqueta   = ''
+	::Executado  = ''
 	::FWProdOrig = .F.
 	::FWProdDest = .F.
-	::ImprEtq   = ''
-	::LibNaIncl = .T.
-	::LoteOrig  = ''
-	::LoteDest  = ''
-	::QtdSolic  = 0
-	::UltMsg    = ''
-	::UsrIncl   = ''
-	::UsrAutOri = ''
-	::UsrAutDst = ''
-	::UsrAutPCP = ''
-	::UsrAutQld = ''
+	::ImprEtq    = ''
+	::LibNaIncl  = .T.
+	::LoteOrig   = ''
+	::LoteDest   = ''
+	::QtdSolic   = 0
+	::UltMsg     = ''
+	::UsrIncl    = ''
+	::UsrAutOri  = ''
+	::UsrAutDst  = ''
+	::UsrAutPCP  = ''
+	::UsrAutQld  = ''
 
 	// Se receber numero de registro do ZAG, alimenta atributos da classe com seus dados.
 	if valtype (_nRecno) == "N"
-		_nRegZAG = zag -> (recno ())
+		_aAmbAnt := U_ML_SRArea ()
 		zag -> (dbgoto (_nRecno))
 		::Filial    = zag -> zag_filial
 		::FilOrig   = zag -> zag_FilOri
@@ -147,8 +152,6 @@ METHOD New (_nRecno) Class ClsTrEstq
 		::AlmDest   = zag -> zag_AlmDst
 		::EndOrig   = zag -> zag_EndOri
 		::EndDest   = zag -> zag_EndDst
-		::FWProdOrig = (fBuscaCpo ("SB1", 1, xfilial ("SB1") + ::ProdOrig, 'B1_VAFULLW') == 'S')
-		::FWProdDest = (fBuscaCpo ("SB1", 1, xfilial ("SB1") + ::ProdDest, 'B1_VAFULLW') == 'S')
 		::Executado = zag -> zag_exec
 		::LoteOrig  = zag -> zag_LotOri
 		::LoteDest  = zag -> zag_LotDst
@@ -157,7 +160,31 @@ METHOD New (_nRecno) Class ClsTrEstq
 		::UsrAutDst = zag -> zag_UAutD
 		::UsrAutPCP = zag -> zag_UAutP
 		::UsrAutQld = zag -> zag_UAutQ
-		zag -> (dbgoto (_nRegZAG))
+
+		// Busca dados adicionais do produto origem
+		sb1 -> (dbsetorder (1))
+		if ! sb1 -> (dbseek (xfilial ("SB1") + ::ProdOrig, .F.))
+			::UltMsg += "Cadastro do produto origem (" + alltrim (::ProdOrig) + ") da transferencia nao localizado!"
+			u_help (::UltMsg,, .t.)
+		else
+			::CtrLocOrig = (sb1 -> b1_localiz == 'S')
+			::CtrLocDest = (sb1 -> b1_localiz == 'S')  // Presumindo que seja o mesmo produto.
+			::CtrLotOrig = (sb1 -> b1_rastro  == 'L')
+			::CtrLotDest = (sb1 -> b1_rastro  == 'L')  // Presumindo que seja o mesmo produto.
+			::FWProdOrig = (sb1 -> b1_vafullw == 'S')
+			::FWProdDest = (sb1 -> b1_vafullw == 'S')  // Presumindo que seja o mesmo produto.
+		endif
+		if ::ProdDest != ::ProdOrig
+			if ! sb1 -> (dbseek (xfilial ("SB1") + ::ProdDest, .F.))
+				::UltMsg += "Cadastro do produto destino (" + alltrim (::ProdDest) + ") da transferencia nao localizado!"
+				u_help (::UltMsg,, .t.)
+			else
+				::CtrLocDest = (sb1 -> b1_localiz == 'S')
+				::CtrLotDest = (sb1 -> b1_rastro  == 'L')
+				::FWProdDest = (sb1 -> b1_vafullw == 'S')
+			endif
+		endif
+		U_ML_SRArea (_aAmbAnt)
 	endif
 Return ::self
 

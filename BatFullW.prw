@@ -45,24 +45,31 @@
 #Include "TbiConn.ch"
 
 // ------------------------------------------------------------------------------------
-User Function BatFullW ()
+User Function BatFullW (_sQueFazer)
 	local _lRet      := .T.
 	local _nLock     := 0
 
-	_nLock := U_Semaforo (procname () + cEmpAnt + cFilAnt, .F.)
+	// Define o que deve fazer: [E]ntradas, [S]aidas ou [A]mbas.
+	_sQueFazer = iif (_sQueFazer == NIL, 'A', upper (_sQueFazer))
+
+	_nLock := U_Semaforo (procname () + cEmpAnt + cFilAnt + _sQueFazer, .F.)
 	if _nLock == 0
 		u_log2 ('erro', "Bloqueio de semaforo.")
 	else
 
 		// Verifica entradas (Protheus enviando para FullWMS)
-		u_log2 ('info', 'Iniciando processamento de entradas')
-		_Entradas ()
-		u_log2 ('info', 'Finalizou processamento de entradas')
+		if _sQueFazer $ 'EA'
+			u_log2 ('info', 'Iniciando processamento de entradas')
+			_Entradas ()
+			u_log2 ('info', 'Finalizou processamento de entradas')
+		endif
 
 		// Verifica saidas (FullWMS separando materiais para entregar ao Protheus)
-		u_log2 ('info', 'Iniciando processamento de saidas')
-		_Saidas ()
-		u_log2 ('info', 'Finalizou processamento de saidas')
+		if _sQueFazer $ 'SA'
+			u_log2 ('info', 'Iniciando processamento de saidas')
+			_Saidas ()
+			u_log2 ('info', 'Finalizou processamento de saidas')
+		endif
 	endif
 
 	// Libera semaforo.
@@ -583,7 +590,9 @@ static function _Saidas ()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " select saida_id, coditem, qtde_exec"
 	_oSQL:_sQuery +=   " from tb_wms_pedidos"
-	_oSQL:_sQuery +=  " where empresa = 2"  // Empresa 1 = logistica (onde usamos esta tabela apenas para consulta)
+	_oSQL:_sQuery +=  " where empresa = 1"
+	_oSQL:_sQuery +=    " and saida_id not like 'DAK%'"  // As separacoes de cargas OMS sao simplesmente faturadas via NF.
+	_oSQL:_sQuery +=    " and saida_id like 'ZAG%'"
 	_oSQL:_sQuery +=    " and status  = '6'"
 	_oSQL:_sQuery +=    " and tpdoc   = '1'"
 	_oSQL:_sQuery +=    " and status_protheus != '3'"  // 3 = executado
@@ -596,119 +605,149 @@ static function _Saidas ()
 	do while ! (_sAliasQ) -> (eof ())
 		u_log2 ('info', 'Processando saida_id ' + (_sAliasQ) -> saida_id)
 		do case
-			case left ((_sAliasQ) -> saida_id, 3) == 'ZAG'
-				_sChaveZAG = substr ((_sAliasQ) -> saida_id, 6, 10)  // Chave composta por ZAG + filial + chave_do_ZAG
-				zag -> (dbsetorder (1))  // ZAG_FILIAL, ZAG_DOC
-				if zag -> (dbseek (xfilial ("ZAG") + _sChaveZAG, .F.)) .and. zag -> zag_filori == substr ((_sAliasQ) -> saida_id, 4, 2)
-					
-					// Deixa objeto instanciado com a solicitacao original de transferencia
-					_oTrOrig := ClsTrEstq ():New (zag -> (recno ()))
-					if _oTrOrig:Executado == 'S'  // Se jah foi executado anteriormente...
-						_AtuSaid ((_sAliasQ) -> saida_id, '3')  // Atualiza a tabela do Fullsoft como 'executado no ERP'
-					else
-						if zag -> zag_qtdsol != (_sAliasQ) -> qtde_exec
-							_sMsg = "Quantidade solicitada: " + cvaltochar (zag -> zag_qtdsol) + "; Quantidade movimentada pelo FullWMS: " + cvaltochar ((_sAliasQ) -> qtde_exec)
-							_AtuSaid ((_sAliasQ) -> saida_id, '4')  // Atualiza a tabela do Fullsoft como 'diferenca na quantidade'
-							_oBatch:Mensagens += _sMsg + '; '
-						else
-							sb2 -> (dbsetorder (1))  // B2_FILIAL+B2_COD+B2_LOCAL
-							if ! sb2 -> (dbseek (xfilial ("SB2") + zag -> zag_prdori + zag -> zag_almori, .F.)) .or. sb2 -> b2_qatu < (_sAliasQ) -> qtde_exec
-								u_log2 ('aviso', 'Sem estoque para transferir')
-								_AtuSaid ((_sAliasQ) -> saida_id, '1')  // Atualiza a tabela do Fullsoft como 'falta estoque para fazer a transferencia'
-							else
-								// Verifica quais os lotes separado pelo Full. Se apenas um, atualiza na solicitacao original de transferencia;
-								// Se mais de um, replica a solicitacao (uma para cada lote) visando manter os lotes no Protheus iguais aos do Full.
-								_oSQL:_sQuery := ""
-								_oSQL:_sQuery += " select substring (lote, 1, 10), qtde"
-								_oSQL:_sQuery +=   " from tb_wms_lotes"
-								_oSQL:_sQuery +=  " where empresa = 2"  // Empresa 1 = logistica (onde usamos esta tabela apenas para consulta)
-								_oSQL:_sQuery +=    " and documento_id = '" + (_sAliasQ) -> saida_id + "'"
-								_oSQL:_sQuery +=    " and tpdoc   = '1'"
-								_oSQL:_sQuery +=  " order by lote"
-								_oSQL:Log ()
-								_aLotes = _oSQL:Qry2Array (.F., .F.)
-								u_log2 ('info', 'Lotes separados pelo Full:')
-								u_log2 ('info', _aLotes)
+		case left ((_sAliasQ) -> saida_id, 3) == 'ZAG'
+			_sChaveZAG = substr ((_sAliasQ) -> saida_id, 6, 10)  // Chave composta por ZAG + filial + chave_do_ZAG cfe. view v_wms_pedido
+			zag -> (dbsetorder (1))  // ZAG_FILIAL, ZAG_DOC
+			if ! zag -> (dbseek (xfilial ("ZAG") + _sChaveZAG, .F.))
+				_sMsg = 'ZAG nao localizado com chave >>' + _sChaveZAG + '<<'
+				u_help (_sMsg,, .t.)
+				_oBatch:Mensagens += _sMsg + '; '
+				(_sAliasQ) -> (dbskip ())
+				loop
+			endif
+			if zag -> zag_filori != cFilAnt
+				_sMsg = 'Sol.transf.gerada na filial ' + zag -> zag_filori + ' e deve ser executada la.'
+				u_help (_sMsg,, .t.)
+				_oBatch:Mensagens += _sMsg + '; '
+				(_sAliasQ) -> (dbskip ())
+				loop
+			endif
 
-								// Faz algumas validacoes para saber se vai conseguir transferir todos os lotes.
-								_lLotesOK = .T.
-								if _lLotesOK
-									_nSomaLote = 0
-									for _nLote = 1 to len (_aLotes)
-										_nSomaLote += _aLotes [_nLote, 2]
-									next
-									if _nSomaLote != (_sAliasQ) -> qtde_exec
-										_sMsg = "Soma qt.separadas por lotes difere da qtde_exec"
-										_AtuSaid ((_sAliasQ) -> saida_id, '4')  // Atualiza a tabela do Fullsoft como 'diferenca na quantidade'
-										_oBatch:Mensagens += _sMsg + '; '
-										_lLotesOK = .F.
-									endif
-								endif
-								if _lLotesOK
-									sb8 -> (dbsetorder (3)) // B8_FILIAL, B8_PRODUTO, B8_LOCAL, B8_LOTECTL, B8_NUMLOTE, B8_DTVALID, R_E_C_N_O_, D_E_L_E_T_
-									for _nLote = 1 to len (_aLotes)
-										if ! sb8 -> (dbseek (_oTrOrig:FilOrig + _oTrOrig:ProdOrig + _oTrOrig:AlmOrig + _aLotes [_nLote, 1], .F.))
-											_sMsg = "Lote '" + _aLotes [_nLote, 1] + "' nao localizado para o produto '" + _oTrOrig:ProdOrig + "'"
-											_AtuSaid ((_sAliasQ) -> saida_id, '4')  // Atualiza a tabela do Fullsoft como 'diferenca na quantidade'
-											_oBatch:Mensagens += _sMsg + '; '
-											_lLotesOK = .F.
-											exit
-										endif
-										u_log2 ('debug', 'comparando b8_saldo = ' + cvaltochar (sb8 -> b8_saldo) + ' com _aLotes [_nLote, 2] = ' + cvaltochar (_aLotes [_nLote, 2]))
-										if sb8 -> b8_saldo < _aLotes [_nLote, 2]
-											_sMsg = "Saldo insuficiente lote '" + _aLotes [_nLote, 1] + "' do produto '" + _oTrOrig:ProdOrig + "'"
-											_AtuSaid ((_sAliasQ) -> saida_id, '1')  // Atualiza a tabela do Fullsoft como 'falta estoque para fazer a transferencia'
-											_oBatch:Mensagens += _sMsg + '; '
-											_lLotesOK = .F.
-											exit
-										endif
-									next
-								endif
+			// Deixa objeto instanciado com a solicitacao original de transferencia
+			_oTrOrig := ClsTrEstq ():New (zag -> (recno ()))
+			if _oTrOrig:Executado == 'S'  // Se jah foi executado anteriormente...
+				u_log2 ('aviso', 'Transferencia consta como jah executada na tabela ZAG.')
+				_AtuSaid ((_sAliasQ) -> saida_id, '3')  // Atualiza a tabela do Fullsoft como 'executado no ERP'
+				(_sAliasQ) -> (dbskip ())
+				loop
+			endif
 
-								if _lLotesOK
-									for _nLote = 1 to len (_aLotes)
+			if zag -> zag_qtdsol != (_sAliasQ) -> qtde_exec
+				_sMsg = "Diferenca! Qt.solicitada: " + cvaltochar (zag -> zag_qtdsol) + "; Qt.movim.FullWMS: " + cvaltochar ((_sAliasQ) -> qtde_exec)
+				_AtuSaid ((_sAliasQ) -> saida_id, '4')  // Atualiza a tabela do Fullsoft como 'diferenca na quantidade'
+				u_help (_sMsg,, .t.)
+				_oBatch:Mensagens += _sMsg + '; '
+				(_sAliasQ) -> (dbskip ())
+				loop
+			endif
 
-										// Se tiver mais de um lote, preciso gerar novo(s) registro(s) no ZAG (um para cada lote).
-										if _nLote == 1  // Jah estou posicionado na solicitacao original gerada pelo Protheus
-											u_log2 ('debug', 'Transferindo pelo ZAG original')
-											_oTrEstq := _oTrOrig
-											_oTrEstq:LoteOrig = _aLotes [_nLote, 1]
-											_oTrEstq:QtdSOlic = _aLotes [_nLote, 2]
-										else
-											u_log2 ('debug', 'Gerando novo ZAG')
-											_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
-											_oTrEstq:Filial    = _oTrOrig:Filial
-											_oTrEstq:FilOrig   = _oTrOrig:FilOrig
-											_oTrEstq:FilDest   = _oTrOrig:FilDest
-											_oTrEstq:DtEmis    = _oTrOrig:DtEmis
-											_oTrEstq:OP        = _oTrOrig:OP
-											_oTrEstq:Motivo    = alltrim (_oTrOrig:Motivo) + "-lote adicional"
-											_oTrEstq:ProdOrig  = _oTrOrig:ProdOrig
-											_oTrEstq:ProdDest  = _oTrOrig:ProdDest
-											_oTrEstq:AlmOrig   = _oTrOrig:AlmOrig
-											_oTrEstq:AlmDest   = _oTrOrig:AlmDest
-											_oTrEstq:FullWOrig = _oTrOrig:FullWOrig
-											_oTrEstq:FullWDest = _oTrOrig:FullWDest
-											_oTrEstq:LoteOrig  = _oTrOrig:_aLotes [_nLote, 1]
-											_oTrEstq:QtdSolic  = _oTrOrig:_aLotes [_nLote, 2]
-										endif
+			sb2 -> (dbsetorder (1))  // B2_FILIAL+B2_COD+B2_LOCAL
+			if ! sb2 -> (dbseek (xfilial ("SB2") + zag -> zag_prdori + zag -> zag_almori, .F.)) .or. sb2 -> b2_qatu < (_sAliasQ) -> qtde_exec
+				_sMsg = 'Falta estq prod. ' + alltrim (zag -> zag_prdori) + ' alm. ' + zag -> zag_almori + '. Saldo=' + cvaltochar (sb2 -> b2_qatu) + ' Qt.solicitada:' + cvaltochar (zag -> zag_qtdsol)
+				_AtuSaid ((_sAliasQ) -> saida_id, '1')  // Atualiza a tabela do Fullsoft como 'falta estoque para fazer a transferencia'
+				u_help (_sMsg,, .t.)
+				_oBatch:Mensagens += _sMsg + '; '
+				(_sAliasQ) -> (dbskip ())
+				loop
+			endif
 
-										// Chama a rotina de liberacao do docto. Se estiver em condicoes, a transferencia jah serah executada.
-										u_log2 ('info', 'Chamando liberacao do ZAG')
-										_oTrEstq:Libera (.F., 'FULLW')
-										if _oTrEstq:Executado == 'S'
-											_AtuSaid ((_sAliasQ) -> saida_id, '3')  // Atualiza a tabela do Fullsoft como 'executado no ERP'
-										elseif _oTrEstq:Executado == 'E'
-											_AtuSaid ((_sAliasQ) -> saida_id, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
-										endif
-									next
-								endif
-							endif
-						endif
+			// Verifica quais os lotes separado pelo Full. Se apenas um, atualiza na solicitacao original de transferencia;
+			// Se mais de um, replica a solicitacao (uma para cada lote) visando manter os lotes no Protheus iguais aos do Full.
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " select substring (lote, 1, 10), qtde"
+			_oSQL:_sQuery +=   " from tb_wms_lotes"
+			_oSQL:_sQuery +=  " where empresa = 1"
+			_oSQL:_sQuery +=    " and documento_id = '" + (_sAliasQ) -> saida_id + "'"
+			_oSQL:_sQuery +=  " order by lote"
+			_oSQL:Log ()
+			_aLotes = _oSQL:Qry2Array (.F., .F.)
+			u_log2 ('info', 'Lotes separados pelo Full:')
+			u_log2 ('info', _aLotes)
+
+			// Faz algumas validacoes para saber se vai conseguir transferir todos os lotes.
+			_lLotesOK = .T.
+			_nSomaLote = 0
+			for _nLote = 1 to len (_aLotes)
+				_nSomaLote += _aLotes [_nLote, 2]
+			next
+			if _nSomaLote != (_sAliasQ) -> qtde_exec
+				_lLotesOK = .F.
+				_sMsg = "Inconsistencia no FulLWMS: Soma qt.separadas por lotes difere da qtde_exec"
+				_AtuSaid ((_sAliasQ) -> saida_id, '4')  // Atualiza a tabela do Fullsoft como 'diferenca na quantidade'
+				u_help (_sMsg,, .t.)
+				_oBatch:Mensagens += _sMsg + '; '
+				(_sAliasQ) -> (dbskip ())
+				loop
+			endif
+
+			// Se o produto controla lotes, confere saldos (no Protheus) dos lotes separados.
+			if _lLotesOK .and. _oTrOrig:CtrLotOrig
+				sb8 -> (dbsetorder (3)) // B8_FILIAL, B8_PRODUTO, B8_LOCAL, B8_LOTECTL, B8_NUMLOTE, B8_DTVALID, R_E_C_N_O_, D_E_L_E_T_
+				for _nLote = 1 to len (_aLotes)
+					if ! sb8 -> (dbseek (_oTrOrig:FilOrig + _oTrOrig:ProdOrig + _oTrOrig:AlmOrig + _aLotes [_nLote, 1], .F.))
+						_sMsg = "Lote '" + _aLotes [_nLote, 1] + "' nao localizado para o produto '" + _oTrOrig:ProdOrig + "'"
+						_AtuSaid ((_sAliasQ) -> saida_id, '4')  // Atualiza a tabela do Fullsoft como 'diferenca na quantidade'
+						u_help (_sMsg,, .t.)
+						_oBatch:Mensagens += _sMsg + '; '
+						_lLotesOK = .F.
+						exit
 					endif
-				else
-					u_log2 ('aviso', 'ZAG nao localizado com chave >>' + _sChaveZAG + '<< (ou nao se destina a esta filial).')
-				endif
+					u_log2 ('debug', 'comparando b8_saldo = ' + cvaltochar (sb8 -> b8_saldo) + ' com _aLotes [_nLote, 2] = ' + cvaltochar (_aLotes [_nLote, 2]))
+					if sb8 -> b8_saldo < _aLotes [_nLote, 2]
+						_sMsg = "Saldo insuficiente lote " + _aLotes [_nLote, 1] + " do produto " + _oTrOrig:ProdOrig
+						_AtuSaid ((_sAliasQ) -> saida_id, '1')  // Atualiza a tabela do Fullsoft como 'falta estoque para fazer a transferencia'
+						u_help (_sMsg,, .t.)
+						_oBatch:Mensagens += _sMsg + '; '
+						_lLotesOK = .F.
+						exit
+					endif
+				next
+			endif
+
+			if ! _lLotesOK
+				(_sAliasQ) -> (dbskip ())
+				loop
+			endif
+
+			if _lLotesOK
+				for _nLote = 1 to len (_aLotes)
+
+					// Se tiver mais de um lote, preciso gerar novo(s) registro(s) no ZAG (um para cada lote).
+					if _nLote == 1  // Jah estou posicionado na solicitacao original gerada pelo Protheus
+						u_log2 ('debug', 'Transferindo pelo ZAG original')
+						_oTrEstq := _oTrOrig
+						_oTrEstq:LoteOrig = _aLotes [_nLote, 1]
+						_oTrEstq:QtdSOlic = _aLotes [_nLote, 2]
+					else
+						u_log2 ('debug', 'Gerando novo ZAG')
+						_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
+						_oTrEstq:Filial    = _oTrOrig:Filial
+						_oTrEstq:FilOrig   = _oTrOrig:FilOrig
+						_oTrEstq:FilDest   = _oTrOrig:FilDest
+						_oTrEstq:DtEmis    = _oTrOrig:DtEmis
+						_oTrEstq:OP        = _oTrOrig:OP
+						_oTrEstq:Motivo    = alltrim (_oTrOrig:Motivo) + "-lote adicional"
+						_oTrEstq:ProdOrig  = _oTrOrig:ProdOrig
+						_oTrEstq:ProdDest  = _oTrOrig:ProdDest
+						_oTrEstq:AlmOrig   = _oTrOrig:AlmOrig
+						_oTrEstq:AlmDest   = _oTrOrig:AlmDest
+						_oTrEstq:FullWOrig = _oTrOrig:FullWOrig
+						_oTrEstq:FullWDest = _oTrOrig:FullWDest
+						_oTrEstq:LoteOrig  = _oTrOrig:_aLotes [_nLote, 1]
+						_oTrEstq:QtdSolic  = _oTrOrig:_aLotes [_nLote, 2]
+					endif
+
+					// Chama a rotina de liberacao do docto. Se estiver em condicoes, a transferencia jah serah executada.
+					u_log2 ('info', 'Chamando liberacao do ZAG')
+					_oTrEstq:Libera (.F., 'FULLW')
+					if _oTrEstq:Executado == 'S'
+						_AtuSaid ((_sAliasQ) -> saida_id, '3')  // Atualiza a tabela do Fullsoft como 'executado no ERP'
+					elseif _oTrEstq:Executado == 'E'
+						_AtuSaid ((_sAliasQ) -> saida_id, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
+					endif
+				next
+			endif
+
 		otherwise
 			u_help ("Sem tratamento para tpdoc / saida_id '" + (_sAliasQ) -> tpdoc + (_sAliasQ) -> saida_id + "' da tabela 'tb_wms_pedidos'.",, .t.)
 		endcase

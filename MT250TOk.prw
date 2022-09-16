@@ -342,22 +342,23 @@ static function _VerEmpenh ()
 		endif
 	endif
 
-	// Verifica se tem empenhos negativos (nao eh nosso procedimento normal, pois gera devolucao
-	// de saldo para o estoque) - GLPI 12441
-
+	// Verifica se tem empenhos negativos (nao eh nosso procedimento normal,
+	// pois gera devolucao de saldo para o estoque) - GLPI 12441
 	if _lRet
-		_oSQL := ClsSQL():New ()
-		_oSQL:_sQuery += "SELECT ISNULL (STRING_AGG (RTRIM (D4_COD), ', '), '')"
-		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD4") + " SD4 "
-		_oSQL:_sQuery += " WHERE SD4.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND SD4.D4_FILIAL  = '" + xfilial ("SD4") + "'"
-		_oSQL:_sQuery +=   " AND SD4.D4_OP      = '" + M->D3_OP + "'"
-		_oSQL:_sQuery +=   " AND SD4.D4_QUANT   < 0"
-		_oSQL:Log ('[' + procname () + ']')
-		_sEmpNeg := alltrim (_oSQL:RetQry ())
-		if ! empty (_sEmpNeg)
-			u_Help ("O(s) seguinte(s) item(s) estao com empenho negativo: " + _sEmpNeg + " na OP '" + alltrim (m->d3_op) + "'. Atualmente nao eh procedimento padrao termos esse tipo de situacao. Apontamento nao permitido.",, .t.)
-			_lRet = .F.
+		if dtos (date()) != '20220916'  // Hoje temos uma OP que especificamente precisa devolver caixas vazias.
+			_oSQL := ClsSQL():New ()
+			_oSQL:_sQuery += "SELECT ISNULL (STRING_AGG (RTRIM (D4_COD), ', '), '')"
+			_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD4") + " SD4 "
+			_oSQL:_sQuery += " WHERE SD4.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND SD4.D4_FILIAL  = '" + xfilial ("SD4") + "'"
+			_oSQL:_sQuery +=   " AND SD4.D4_OP      = '" + M->D3_OP + "'"
+			_oSQL:_sQuery +=   " AND SD4.D4_QUANT   < 0"
+			_oSQL:Log ('[' + procname () + ']')
+			_sEmpNeg := alltrim (_oSQL:RetQry ())
+			if ! empty (_sEmpNeg)
+				u_Help ("O(s) seguinte(s) item(s) estao com empenho negativo: " + _sEmpNeg + " na OP '" + alltrim (m->d3_op) + "'. Atualmente nao eh procedimento padrao termos esse tipo de situacao. Apontamento nao permitido.",, .t.)
+				_lRet = .F.
+			endif
 		endif
 	endif
 

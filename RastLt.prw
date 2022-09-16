@@ -141,7 +141,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _s
 		_oSQL:_sQuery +=                        ",'" + _sLote + "'"
 		_oSQL:_sQuery +=                        ",''"  // Data inicial
 		_oSQL:_sQuery +=                        ",'z')"  // Data final
-		_oSQL:Log (_sStrLog)
+		//_oSQL:Log (_sStrLog)
 		
 		// Gera um arquivo temporario que vai ser gravado na tabela TEMPDB do
 		// SQLServer, de modo que eu possa fazer queries nessa tabela.
@@ -171,7 +171,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _s
 		endif
 		_oSQL:_sQuery += " GROUP BY K.OP"
 		_oSQL:_sQuery += " ORDER BY K.OP"
-		_oSQL:Log (_sStrLog)
+		//_oSQL:Log (_sStrLog)
 		_aOP := aclone (_oSQL:Qry2Array (.F., .F.))
 
 		for _nOP = 1 to len (_aOP)
@@ -255,7 +255,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _s
 		_oSQL:_sQuery +=   " AND SB1.B1_COD      = K.PROD_ORIG"
 		_oSQL:_sQuery += " GROUP BY PROD_ORIG, LOTE_ORIG, SB1.B1_DESC"
 		_oSQL:_sQuery += " ORDER BY PROD_ORIG, LOTE_ORIG"
-		_oSQL:Log (_sStrLog)
+		//_oSQL:Log (_sStrLog)
 		_aEntTrLt := aclone (_oSQL:Qry2Array (.F., .F.))
 
 		for _nTrLt = 1 to len (_aEntTrLt)
@@ -294,7 +294,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _s
 		_oSQL:_sQuery +=   " AND K.CFOP  != 'DE4'"
 		_oSQL:_sQuery +=   " AND K.TES < '5'"
 		_oSQL:_sQuery += " ORDER BY DOC"
-		_oSQL:Log (_sStrLog)
+		//_oSQL:Log (_sStrLog)
 		_sAliasQ = _oSQL:Qry2Trb (.F.)
 		do while ! (_sAliasQ) -> (eof ())
 
@@ -342,7 +342,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _s
 			_oSQL:_sQuery +=   " AND NOT (K.DOC = '000016150' AND K.LOTEFOR = '00107501a')"
 		endif
 		_oSQL:_sQuery += " ORDER BY K.CLIFOR, K.DOC"
-		_oSQL:Log (_sStrLog)
+		//_oSQL:Log (_sStrLog)
 		_aSD1 = aclone (_oSQL:Qry2Array (.F., .F.))
 
 		for _nSD1 = 1 to len (_aSD1)
@@ -462,7 +462,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _s
 		_oSQL:_sQuery +=   " AND K.CFOP LIKE 'RE%'"
 		_oSQL:_sQuery += " GROUP BY K.OP, SC2.C2_PRODUTO, SB1_FINAL.B1_DESC"
 		_oSQL:_sQuery += " ORDER BY K.OP"
-		_oSQL:Log (_sStrLog)
+		//_oSQL:Log (_sStrLog)
 		_aReqOP = aclone (_oSQL:Qry2Array (.F., .F.))
 
 		for _nReqOP = 1 to len (_aReqOP)
@@ -510,7 +510,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _s
 		_oSQL:_sQuery += " WHERE K.TBL_ORIG = 'SD2'"
 		_oSQL:_sQuery +=   " AND K.QT_SAIDA > 0"
 		_oSQL:_sQuery += " ORDER BY K.DOC"
-		_oSQL:Log (_sStrLog)
+		//_oSQL:Log (_sStrLog)
 		_aSD2 = aclone (_oSQL:Qry2Array (.F., .F.))
 
 		for _nSD2 = 1 to len (_aSD2)
@@ -566,7 +566,7 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _s
 		_oSQL:_sQuery +=   " AND K.CFOP     = 'RE4'"
 		_oSQL:_sQuery += " GROUP BY K.PROD_DEST, K.LOTE_DEST, SB1.B1_DESC"
 		_oSQL:_sQuery += " ORDER BY K.PROD_DEST, K.LOTE_DEST"
-		_oSQL:Log (_sStrLog)
+		//_oSQL:Log (_sStrLog)
 		_aSaiTrLt = aclone (_oSQL:Qry2Array (.F., .F.))
 
 		for _nTrLt = 1 to len (_aSaiTrLt)

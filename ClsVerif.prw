@@ -75,6 +75,8 @@
 // 07/06/2022 - Robert  - Ajustes query verif.06 que concatenava com a anterior.
 // 08/08/2022 - Robert  - Melhoria formatacao HTML para envio por e-mail.
 // 23/08/2022 - Robert  - Criada sugestao para a verificacao 42 (GLPI 12134)
+// 09/09/2022 - Robert  - Criada verificacao 91.
+// 12/09/2022 - Robert  - Verif.91: Melhorado relacionamento entre MP_SYSTEM_PROFILE e SYS_USR
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -1530,8 +1532,8 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=   " FROM " + RetSQLName ("SBJ") + " SBJ"
 			::Query +=  " WHERE SBJ.D_E_L_E_T_ = ''"
 			::Query +=    " AND SBJ.BJ_FILIAL  = '" + xfilial ("SBJ") + "'"
-			::Query +=    " AND SBJ.BJ_COD     between '" + ::Param02 + "' AND '" + ::Param03 + "'"
-			::Query +=    " AND SBJ.BJ_DATA    = '" + dtos (::Param01) + "'"
+			::Query +=    " AND SBJ.BJ_COD     between '" + ::Param03 + "' AND '" + ::Param04 + "'"
+			::Query +=    " AND SBJ.BJ_DATA    between '" + dtos (::Param01) + "' and '" + dtos (::Param02) + "'"
 			::Query += " GROUP BY BJ_FILIAL, SBJ.BJ_COD, SBJ.BJ_LOCAL, SBJ.BJ_DATA"
 			::Query += " ),"
 			::Query += " _SBK AS ("
@@ -1539,8 +1541,8 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=   " FROM " + RetSQLName ("SBK") + " SBK"
 			::Query +=  " WHERE SBK.D_E_L_E_T_ = ''"
 			::Query +=    " AND SBK.BK_FILIAL  = '" + xfilial ("SBK") + "'"
-			::Query +=    " AND SBK.BK_COD     between '" + ::Param02 + "' AND '" + ::Param03 + "'"
-			::Query +=    " AND SBK.BK_DATA    = '" + dtos (::Param01) + "'"
+			::Query +=    " AND SBK.BK_COD     between '" + ::Param03 + "' AND '" + ::Param04 + "'"
+			::Query +=    " AND SBK.BK_DATA    between '" + dtos (::Param01) + "' and '" + dtos (::Param02) + "'"
 			::Query += " GROUP BY BK_FILIAL, BK_COD, BK_LOCAL, BK_DATA"
 			::Query += " ),"
 			::Query += " _SB9 AS ("
@@ -1548,8 +1550,8 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=   " FROM " + RetSQLName ("SB9") + " SB9"
 			::Query +=  " WHERE SB9.D_E_L_E_T_ = ''"
 			::Query +=    " AND SB9.B9_FILIAL  = '" + xfilial ("SB9") + "'"
-			::Query +=    " AND SB9.B9_COD     between '" + ::Param02 + "' AND '" + ::Param03 + "'"
-			::Query +=    " AND SB9.B9_DATA    = '" + dtos (::Param01) + "'"
+			::Query +=    " AND SB9.B9_COD     between '" + ::Param03 + "' AND '" + ::Param04 + "'"
+			::Query +=    " AND SB9.B9_DATA    between '" + dtos (::Param01) + "' and '" + dtos (::Param02) + "'"
 			::Query += " )"
 			::Query += " SELECT B9_FILIAL, B9_COD, B9_LOCAL, B9_DATA, QT_SB9, QT_SBJ, QT_SBK, QT_SB9 - QT_SBJ AS DIF_SB9_SBJ, QT_SB9 - QT_SBK AS DIF_SB9_SBK"
 			::Query += " FROM _SB9"
@@ -3205,6 +3207,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=    " AND SD4.D_E_L_E_T_ = ''"
 			::Query +=    " AND SD4.D4_FILIAL  = '" + xfilial ("SD4") + "'"
 			::Query +=    " AND SD4.D4_QUANT  != 0"
+
 			::Query +=    " AND NOT EXISTS (SELECT *"
 			::Query +=                      " FROM " + RetSQLName ("SC2") + " SC2 "
 			::Query +=                     " WHERE SC2.D_E_L_E_T_ = ''"
@@ -3409,20 +3412,34 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
 			::Setores    = 'INF'
 			::Descricao  = 'Profile poderia ser excluido para usuarios demitidos.'
-			::Query := ""
-			::Query += " SELECT 'GRUPO ' + GR__ID AS CODIGO, GR__CODIGO, GR__NOME"
-			::Query +=   " FROM SYS_GRP_GROUP"
-			::Query +=  " WHERE D_E_L_E_T_ = ''"
-			::Query +=    " AND GR__MSBLQL != '1'"
-			::Query +=    " AND GR__ALLEMP = '1'"
-			::Query +=    " AND GR__ID != '000000'"
-			::Query +=  " UNION ALL"
-			::Query += " SELECT 'USER ' + USR_ID AS CODIGO, USR_CODIGO, USR_NOME"
-			::Query +=   " FROM SYS_USR"
-			::Query +=  " WHERE D_E_L_E_T_ = ''"
-			::Query +=    " AND USR_MSBLQL != '1'"
-			::Query +=    " AND USR_ALLEMP = '1'"
-			::Query +=    " AND USR_ID != '000000'"
+			::Query := " SELECT U.USR_ID, U.USR_CODIGO"
+			::Query +=       ", CASE WHEN U.D_E_L_E_T_ = '*' THEN 'DELETADO' ELSE '' END AS USR_DELETADO"
+			::Query +=       ", P.P_NAME, P.P_PROG, P.P_TYPE"
+			::Query +=   " FROM MP_SYSTEM_PROFILE P, SYS_USR U"
+			::Query +=  " WHERE P.D_E_L_E_T_ = ''"
+			::Query +=    " AND U.USR_ID != '000260'"  // BRUNA.MARTINS - POSSIVEL RETORNO COMO SAFRISTA
+			::Query +=    " AND U.USR_ID != '000261'"  // CLAUDIA.BIONDO - POSSIVEL RETORNO COMO SAFRISTA
+			::Query +=    " AND U.USR_ID != '000378'"  // PEDRO TONIOLO - NAO RETORNA, MAS ERA USR CHAVE. VOU GUARDAR MAIS UM POUCO
+			::Query +=    " AND U.USR_ID != '000523'"  // PABLO.SANTOS - NAO RETORNA, MAS ERA USR CHAVE. VOU GUARDAR MAIS UM POUCO
+			::Query +=    " AND U.USR_ID != '000503'"  // CALIANDRA.TUMELERO - POSSIVEL RETORNO COMO SAFRISTA
+			::Query +=    " AND U.USR_ID != '000612'"  // KAREN.NUNES - POSSIVEL RETORNO COMO SAFRISTA
+			::Query +=    " AND U.USR_ID != '000698'"  // LARISSA.LAZZARI - POSSIVEL RETORNO COMO SAFRISTA
+			::Query +=    " AND U.USR_ID != '000703'"  // GUILHERME.STUMPF - POSSIVEL RETORNO COMO SAFRISTA
+			::Query +=    " AND U.USR_ID != '000719'"  // RUAN.PIVOTTO - POSSIVEL RETORNO COMO SAFRISTA
+			::Query +=    " AND U.USR_ID != '000753'"  // MARCIA.UEZ - POSSIVEL RETORNO COMO SAFRISTA
+			::Query +=    " AND U.USR_ID != '000754'"  // CHIARA.MAGALHAES - POSSIVEL RETORNO COMO SAFRISTA
+			::Query +=    " AND U.USR_ID != '000757'"  // CAROLINA.MAZZOTTI - POSSIVEL RETORNO COMO SAFRISTA
+			::Query +=    " AND U.USR_ID != '000758'"  // JESSICA.CAVALHEIRO - POSSIVEL RETORNO COMO SAFRISTA
+			::Query +=    " AND (U.USR_CODIGO LIKE '%' + P.P_NAME + '%'"
+			::Query +=        " OR P.P_NAME = U.USR_ID"
+			::Query +=        " OR P.P_NAME like U.USR_ID + '01%'"  // se gravar empresa + filial no profile
+			::Query +=        " OR substring (P.P_NAME, 3, 13) like substring (U.USR_CODIGO, 1, 13)"  // Antigamente gravava empresa + username
+			::Query +=        ")"
+			::Query +=    " AND exists (select *"
+			::Query +=                  " FROM LKSRV_SIRH.SIRH.dbo.VA_VFUNCIONARIOS META"
+			::Query +=                 " WHERE U.USR_CARGO LIKE 'Pessoa ' + CAST(META.PESSOA AS VARCHAR(MAX)) + '%' COLLATE DATABASE_DEFAULT"
+			::Query +=                   " and META.SITUACAO = 4)"
+			::Query +=    " order by P_NAME, U.USR_ID"
 
 		otherwise
 			::UltMsg = "Verificacao numero " + cvaltochar (::Numero) + " nao definida."
@@ -3546,13 +3563,15 @@ METHOD ValidPerg (_lDefault) Class ClsVerif
 
 		case ::GrupoPerg == "U_VALID006"
 			//                     PERGUNT                           TIPO TAM DEC VALID F3        Opcoes                               Help
-			aadd (_aRegsPerg, {01, "Data fechamento estoque       ", "D", 8,  0,  "",   "      ", {},                                  ""})
-			aadd (_aRegsPerg, {02, "Produto inicial               ", "C", 15, 0,  "",   "SB1   ", {},                                  ""})
-			aadd (_aRegsPerg, {03, "Produto final                 ", "C", 15, 0,  "",   "SB1   ", {},                                  ""})
+			aadd (_aRegsPerg, {01, "Data fechamento estq inicial  ", "D", 8,  0,  "",   "      ", {},                                  ""})
+			aadd (_aRegsPerg, {02, "Data fechamento estq final    ", "D", 8,  0,  "",   "      ", {},                                  ""})
+			aadd (_aRegsPerg, {03, "Produto inicial               ", "C", 15, 0,  "",   "SB1   ", {},                                  ""})
+			aadd (_aRegsPerg, {04, "Produto final                 ", "C", 15, 0,  "",   "SB1   ", {},                                  ""})
 			if _lDefault
 				::Param01 = lastday (stod (::MesAntEstq + '01'))  // Deixa um valor default para poder gerar a query inicial.
-				::Param02 = ''  // Deixa um valor default para poder gerar a query inicial.
-				::Param03 = 'z'  // Deixa um valor default para poder gerar a query inicial.
+				::Param02 = lastday (stod (::MesAntEstq + '01'))  // Deixa um valor default para poder gerar a query inicial.
+				::Param03 = ''  // Deixa um valor default para poder gerar a query inicial.
+				::Param04 = 'z'  // Deixa um valor default para poder gerar a query inicial.
 			endif	
 				
 		case ::GrupoPerg == "U_VALID007"

@@ -285,7 +285,8 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 
 			elseif ! empty (::IdZAG)
 				zag -> (dbsetorder (1))  // ZAG_FILIAL, ZAG_DOC, R_E_C_N_O_, D_E_L_E_T_
-				if ! zag -> (dbseek (::Filial + ::IdZAG, .F.))
+				U_Log2 ('debug', '[' + procname () + ']Pesquisando ZAG com >>' + xfilial ("ZAG") + ::IdZAG + '<<')
+				if ! zag -> (dbseek (xfilial ("ZAG") + ::IdZAG, .F.))
 					u_help ("Solicitacao de transferencia '" + ::IdZAG + "' referenciada pela etiqueta '" + ::Codigo + "' nao foi localizada na tabela ZAG.",, .t.)
 				else
 					::AlmDest = zag -> zag_almdst

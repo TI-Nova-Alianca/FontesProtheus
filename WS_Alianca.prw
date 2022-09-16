@@ -98,6 +98,7 @@
 // 20/07/2022 - Robert  - Novas tags DiasValid e ChaveNFe na gravacao de eventos (GLPI 12336)
 // 01/08/2022 - Robert  - Nova tag MotProrrogTit na gravacao de eventos.
 // 11/08/2022 - Robert  - Criada opcao de impressao de etiquetas.
+// 13/09/2022 - Robert  - Melhorado teste de muita movimentacao no kardex (de SELECT * para SELECT COUNT (*) )
 //
 
 // --------------------------------------------------------------------------------------------------------
@@ -1494,9 +1495,6 @@ Static function _ExecKardex()
 	local _oSQL      	:= NIL
 	local _sAliasQ   	:= ""
 	local _XmlRet       := ""
-	local _aRetQry      := {}
-
-//	u_logIni ()
 	
 	// busca valores de entrada
 	if empty (_sErroWS)
@@ -1513,75 +1511,75 @@ Static function _ExecKardex()
 	if empty(_wDataInicial)	;_sErroWS += "Campo <data inicial> não preenchido"	;endif
 	if empty(_wDataFinal)	;_sErroWS += "Campo <data final> não preenchido"		;endif
 
+	// Faz um teste inicial para verificar se pode gerar muitos registros,
+	// pois tinhamos usuarios listando 100 anos de movimentacao!
 	_oSQL := ClsSQL():New ()  
-	_oSQL:_sQuery := ""		
-	_oSQL:_sQuery += " SELECT * FROM " + RetSQLName ("SD3")
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT count (*)"
+	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD3")
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 	_oSQL:_sQuery += " AND D3_FILIAL = '" + _wFilial + "'"
 	_oSQL:_sQuery += " AND D3_COD    = '" + _wProduto + "'"
 	_oSQL:_sQuery += " AND D3_LOCAL  = '" + _wAlmox + "'"
 	_oSQL:_sQuery += " AND D3_EMISSAO BETWEEN '" + _wDataInicial + "' AND '" + _wDataFinal + "'"
-	_oSQL:Log ()
-	_aRetQry  = aclone (_oSQL:Qry2Array ())
-		
-	If len(_aRetQry)> 2000  // 5000
+	_oSQL:Log ('[' + procname () + ']')
+	if _osql:RetQry (1, .f.) > 2000
 		_sErroWS := "Este item possui muita movimentacao. Selecione um periodo menor!"
 	EndIf
 	
 	If empty(_sErroWS)
-
 		_oSQL := ClsSQL():New ()
-		_oSQL:_sQuery := ""		
-		_oSQL:_sQuery += " SELECT * FROM dbo.VA_FKARDEX('" + _wFilial + "', '" + _wProduto + "', '" + _wAlmox + "', '" + _wDataInicial + "', '" + _wDataFinal + "') "	
-		_oSQL:Log ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT *"
+		_oSQL:_sQuery +=  " FROM dbo.VA_FKARDEX('" + _wFilial + "', '" + _wProduto + "', '" + _wAlmox + "', '" + _wDataInicial + "', '" + _wDataFinal + "') "
+		_oSQL:Log ('[' + procname () + ']')
 		_sAliasQ = _oSQL:Qry2Trb (.F.)
 		(_sAliasQ) -> (dbgotop ())
 
-		_XmlRet += "<ConsultaKardex>" //+ chr (13) + chr (10)
-		_XmlRet += 		"<DataInicial>"+ _wDataInicial +"</DataInicial>" //+ chr (13) + chr (10)
-		_XmlRet += 		"<DataFinal>"+ _wDataFinal +"</DataFinal>" //+ chr (13) + chr (10)
-		_XmlRet += 		"<Registro>" //+ chr (13) + chr (10)
+		_XmlRet += "<ConsultaKardex>"
+		_XmlRet += 		"<DataInicial>"+ _wDataInicial +"</DataInicial>"
+		_XmlRet += 		"<DataFinal>"+ _wDataFinal +"</DataFinal>"
+		_XmlRet += 		"<Registro>"
 
 		While (_sAliasQ)->(!Eof())	
 			_sNome := StrTran((_sAliasQ) -> Nome , '&', '' )  
 			_XmlRet += "<RegistroItem>"
 				
-			_XmlRet += 		"<Linha>" 		  + alltrim(str((_sAliasQ) -> Linha))														+ "</Linha>" 			//+ chr (13) + chr (10)
-			_XmlRet += 		"<Data>"		  + IIf((alltrim((_sAliasQ) -> data))=='//'	,'', alltrim((_sAliasQ) -> data)) 				+ "</Data>"				//+ chr (13) + chr (10)
-			_XmlRet += 		"<Doc>"		 	  + alltrim((_sAliasQ) -> Doc)																+ "</Doc>"				//+ chr (13) + chr (10)
-			_XmlRet += 		"<Serie>"		  + alltrim((_sAliasQ) -> Serie)															+ "</Serie>"			//+ chr (13) + chr (10)
-			_XmlRet += 		"<Qt_Entrada>"	  + alltrim(str((_sAliasQ) -> Qt_Entrada))													+ "</Qt_Entrada>"		//+ chr (13) + chr (10)
-			_XmlRet += 		"<Qt_Saida>"	  + alltrim(str((_sAliasQ) -> Qt_Saida))													+ "</Qt_Saida>"			//+ chr (13) + chr (10)
-			_XmlRet += 		"<Saldo>"		  + alltrim(str((_sAliasQ) -> Saldo))														+ "</Saldo>"			//+ chr (13) + chr (10)
-			_XmlRet += 		"<NumSeq>"	 	  + alltrim((_sAliasQ) -> NumSeq)															+ "</NumSeq>"			//+ chr (13) + chr (10)
-			_XmlRet += 		"<Movimento>"	  + alltrim((_sAliasQ) -> Movimento)														+ "</Movimento>"		//+ chr (13) + chr (10)
-			_XmlRet += 		"<OP>"	 		  + alltrim((_sAliasQ) -> OP)																+ "</OP>"				//+ chr (13) + chr (10)
-			_XmlRet += 		"<TES>" 		  + alltrim((_sAliasQ) -> TES)																+ "</TES>"				//+ chr (13) + chr (10)
-			_XmlRet += 		"<CFOP>" 		  + alltrim((_sAliasQ) -> CFOP)																+ "</CFOP>"				//+ chr (13) + chr (10)
-			_XmlRet += 		"<Lote>" 		  + alltrim((_sAliasQ) -> Lote)																+ "</Lote>"				//+ chr (13) + chr (10)
-			_XmlRet += 		"<Etiqueta>" 	  + alltrim((_sAliasQ) -> Etiqueta)															+ "</Etiqueta>"			//+ chr (13) + chr (10)
-			_XmlRet += 		"<Usuario>" 	  + alltrim((_sAliasQ) -> Usuario)															+ "</Usuario>"			//+ chr (13) + chr (10)
-			_XmlRet += 		"<CliFor>" 		  + alltrim((_sAliasQ) -> CliFor)															+ "</CliFor>"			//+ chr (13) + chr (10)
-			_XmlRet += 		"<Loja>" 		  + alltrim((_sAliasQ) -> Loja)																+ "</Loja>"				//+ chr (13) + chr (10)
-			_XmlRet += 		"<Nome>" 		  + alltrim (_sNome)																		+ "</Nome>"				//+ chr (13) + chr (10)
-			_XmlRet += 		"<Motivo>" 		  + alltrim((_sAliasQ) -> Motivo)															+ "</Motivo>"			//+ chr (13) + chr (10)
-			_XmlRet += 		"<Nf_Orig>" 	  + alltrim((_sAliasQ) -> Nf_Orig)															+ "</Nf_Orig>"			//+ chr (13) + chr (10)
-			_XmlRet += 		"<Data_Inclusao>" + IIf((alltrim((_sAliasQ)->Data_Inclusao))=='//' ,'', alltrim((_sAliasQ)->Data_Inclusao)) + "</Data_Inclusao>"	//+ chr (13) + chr (10)
-			_XmlRet += 		"<Hora_Inclusao>" + alltrim((_sAliasQ) -> Hora_Inclusao)													+ "</Hora_Inclusao>"	//+ chr (13) + chr (10)
-			_XmlRet += 		"<Sequencia>" 	  + alltrim((_sAliasQ) -> Sequencia)														+ "</Sequencia>"		//+ chr (13) + chr (10)
+			_XmlRet += 		"<Linha>" 		  + alltrim(str((_sAliasQ) -> Linha))														+ "</Linha>"
+			_XmlRet += 		"<Data>"		  + IIf((alltrim((_sAliasQ) -> data))=='//'	,'', alltrim((_sAliasQ) -> data)) 				+ "</Data>"
+			_XmlRet += 		"<Doc>"		 	  + alltrim((_sAliasQ) -> Doc)																+ "</Doc>"
+			_XmlRet += 		"<Serie>"		  + alltrim((_sAliasQ) -> Serie)															+ "</Serie>"
+			_XmlRet += 		"<Qt_Entrada>"	  + alltrim(str((_sAliasQ) -> Qt_Entrada))													+ "</Qt_Entrada>"
+			_XmlRet += 		"<Qt_Saida>"	  + alltrim(str((_sAliasQ) -> Qt_Saida))													+ "</Qt_Saida>"
+			_XmlRet += 		"<Saldo>"		  + alltrim(str((_sAliasQ) -> Saldo))														+ "</Saldo>"
+			_XmlRet += 		"<NumSeq>"	 	  + alltrim((_sAliasQ) -> NumSeq)															+ "</NumSeq>"
+			_XmlRet += 		"<Movimento>"	  + alltrim((_sAliasQ) -> Movimento)														+ "</Movimento>"
+			_XmlRet += 		"<OP>"	 		  + alltrim((_sAliasQ) -> OP)																+ "</OP>"
+			_XmlRet += 		"<TES>" 		  + alltrim((_sAliasQ) -> TES)																+ "</TES>"
+			_XmlRet += 		"<CFOP>" 		  + alltrim((_sAliasQ) -> CFOP)																+ "</CFOP>"
+			_XmlRet += 		"<Lote>" 		  + alltrim((_sAliasQ) -> Lote)																+ "</Lote>"
+			_XmlRet += 		"<Etiqueta>" 	  + alltrim((_sAliasQ) -> Etiqueta)															+ "</Etiqueta>"
+			_XmlRet += 		"<Usuario>" 	  + alltrim((_sAliasQ) -> Usuario)															+ "</Usuario>"
+			_XmlRet += 		"<CliFor>" 		  + alltrim((_sAliasQ) -> CliFor)															+ "</CliFor>"
+			_XmlRet += 		"<Loja>" 		  + alltrim((_sAliasQ) -> Loja)																+ "</Loja>"
+			_XmlRet += 		"<Nome>" 		  + alltrim (_sNome)																		+ "</Nome>"
+			_XmlRet += 		"<Motivo>" 		  + alltrim((_sAliasQ) -> Motivo)															+ "</Motivo>"
+			_XmlRet += 		"<Nf_Orig>" 	  + alltrim((_sAliasQ) -> Nf_Orig)															+ "</Nf_Orig>"
+			_XmlRet += 		"<Data_Inclusao>" + IIf((alltrim((_sAliasQ)->Data_Inclusao))=='//' ,'', alltrim((_sAliasQ)->Data_Inclusao)) + "</Data_Inclusao>"
+			_XmlRet += 		"<Hora_Inclusao>" + alltrim((_sAliasQ) -> Hora_Inclusao)													+ "</Hora_Inclusao>"
+			_XmlRet += 		"<Sequencia>" 	  + alltrim((_sAliasQ) -> Sequencia)														+ "</Sequencia>"
 			_XmlRet += 		"</RegistroItem>"
 			
 			(_sAliasQ) -> (dbskip ())
 		EndDo
 
-		_XmlRet += 		"</Registro>" 	//+ chr (13) + chr (10)
-		_XmlRet += "</ConsultaKardex>" 	//+ chr (13) + chr (10)
+		_XmlRet += 		"</Registro>"
+		_XmlRet += "</ConsultaKardex>"
 		
 		(_sAliasQ) -> (dbclosearea ())
 		
 		_sMsgRetWS := _XmlRet
 	EndIf
-//	u_logFim ()
 Return 
 
 
@@ -1596,8 +1594,6 @@ Static function _KardexLt()
 	local _oSQL      	:= NIL
 	local _sAliasQ   	:= ""
 	local _XmlRet       := ""
-//	local _aRetQry      := {}
-
 	
 	// busca valores de entrada
 	if empty (_sErroWS)
@@ -1608,28 +1604,6 @@ Static function _KardexLt()
 		_wDataFinal   = 	_ExtraiTag ("_oXML:_WSAlianca:_DataFinal"	, .T., .T.)
 	endif
 	
-//	if empty(_wFilial)		;_sErroWS += "Campo <filial> não preenchido"			;endif
-//	if empty(_wProduto)		;_sErroWS += "Campo <produto> não preenchido"		;endif
-//	if empty(_wAlmox)		;_sErroWS += "Campo <almoxarifado> não preenchido"	;endif
-//	if empty(_wDataInicial)	;_sErroWS += "Campo <data inicial> não preenchido"	;endif
-//	if empty(_wDataFinal)	;_sErroWS += "Campo <data final> não preenchido"		;endif
-
-/* Este problema nao deve existir no caso de lotes.
-	_oSQL := ClsSQL():New ()  
-	_oSQL:_sQuery := ""		
-	_oSQL:_sQuery += " SELECT * FROM " + RetSQLName ("SD3")
-	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-	_oSQL:_sQuery += " AND D3_FILIAL = '" + _wFilial + "'"
-	_oSQL:_sQuery += " AND D3_COD    = '" + _wProduto + "'"
-	_oSQL:_sQuery += " AND D3_LOCAL  = '" + _wAlmox + "'"
-	_oSQL:_sQuery += " AND D3_EMISSAO BETWEEN '" + _wDataInicial + "' AND '" + _wDataFinal + "'"
-	_oSQL:Log ()
-	_aRetQry  = aclone (_oSQL:Qry2Array ())
-		
-	If len(_aRetQry)> 2000  // 5000
-		_sErroWS := "Este item possui muita movimentacao. Selecione um periodo menor!"
-	EndIf
-*/	
 	If empty(_sErroWS)
 
 		_oSQL := ClsSQL():New ()
