@@ -39,6 +39,8 @@
 // 07/08/2020 - Robert - Melhorados logs e mensagens de erro.
 // 10/12/2021 - Robert - Nao atualizava status_protheus quando nao tinha quantidade executada nem movimentada na tb_wns_entrada.
 // 03/08/2022 - Robert - Criado controle de semaforo para evitar 2 execucoes simultaneas; melhorado log (GLPI 12427)
+// 21/09/2022 - Robert - Desabilitadas algumas partes das entradas (melhorias para integracao com ZAG)
+//                     - Passa a usar ClsAviso() para as notificacoes.
 //
 
 #Include "Protheus.ch"
@@ -92,6 +94,7 @@ static function _Entradas ()
 	local _oTrEstq   := NIL
 	local _sChaveEx  := ""
 	local _lRet      := .T.
+	local _oAviso    := NIL
 
 	// Variavel para erros de rotinas automaticas. Deixar tipo 'private'.
  	if type ("_sErroAuto") != 'C'
@@ -144,17 +147,21 @@ static function _Entradas ()
 					u_log2 ('info', 'Chamando liberacao do ZAG')
 					_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
 					_oTrEstq:Etiqueta = za1 -> za1_codigo
+					U_Log2 ('aviso', '[' + procname () + ']Restante do programa desabilitado por que eu acho que deveria pesquisar na tabela tb_wms_movimentacoes antes de dar prosseguimento.')
+/*
 					_oTrEstq:Libera (.F., 'FULLW')
 					if _oTrEstq:Executado == 'S'
 						_AtuEntr ((_sAliasQ) -> entrada_id, '3')  // Atualiza a tabela do Fullsoft como 'executado no ERP'
 					elseif _oTrEstq:Executado == 'E'
 						_AtuEntr ((_sAliasQ) -> entrada_id, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
 					endif
+*/
 				endif
 
 			elseif ! empty (za1 -> za1_doce)  // Trata-se de entrada gerada por NF
 				u_log2 ('info', "Entrada gerada por NF. Chave: " + xfilial ("SD1") + za1 -> za1_doce + za1 -> za1_seriee + za1 -> za1_fornec + za1 -> za1_lojaf + za1 -> za1_prod + za1 -> za1_item)
-				sd1 -> (dbsetorder (1))  // D1_FILIAL+D1_DOC+D1_SERIE+D1_FORNECE+D1_LOJA+D1_COD+D1_ITEM
+				U_Log2 ('aviso', '[' + procname () + ']Restante do programa desabilitado por que eu acho que deveria pesquisar na tabela tb_wms_movimentacoes antes de dar prosseguimento.')
+/*				sd1 -> (dbsetorder (1))  // D1_FILIAL+D1_DOC+D1_SERIE+D1_FORNECE+D1_LOJA+D1_COD+D1_ITEM
 				if ! sd1 -> (dbseek (xfilial ("SD1") + za1 -> za1_doce + za1 -> za1_seriee + za1 -> za1_fornec + za1 -> za1_lojaf + za1 -> za1_prod + za1 -> za1_item, .F.))
 					_sMsg = "NF entrada '" + za1 -> za1_doce + "' referenciada pela entrada_id '" + (_sAliasQ) -> entrada_id +"' nao encontrada na tabela SD1"
 					_AtuEntr ((_sAliasQ) -> entrada_id, '9')  // Atualiza a tabela do Fullsoft como 'cancelado no ERP'
@@ -194,8 +201,17 @@ static function _Entradas ()
 						u_help ('Transf.da etiq ' + alltrim ((_sAliasQ) -> codfor) + ' ja realizada ou desnecessaria.',, .t.)
 					endif
 				endif
+				*/
 			else
-				u_AvisaTI ("Sem tratamento para entrada_id '" + (_sAliasQ) -> entrada_id +"' no programa " + procname ())
+				_oAviso := ClsAviso ():New ()
+				_oAviso:Tipo       = 'E'
+				_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
+				_oAviso:Titulo     = "Sem tratamento para entrada_id [" + (_sAliasQ) -> entrada_id + ']'
+				_oAviso:Texto      = "Sem tratamento para entrada_id [" + (_sAliasQ) -> entrada_id + '] lida da tabela tb_wms_entrada."
+				_oAviso:Origem     = procname ()
+				_oAviso:InfoSessao = .T.  // Incluir informacoes adicionais de sessao na mensagem.
+				_oAviso:Grava ()
+//				u_AvisaTI ("Sem tratamento para entrada_id '" + (_sAliasQ) -> entrada_id +"' no programa " + procname ())
 			endif
 
 
@@ -337,9 +353,17 @@ static function _Entradas ()
 */
 			// Procura o apontamento de producao gerado por esta etiqueta no almox. de integracao
 			if ! U_TemNick ("SD3", "D3_VAETIQ")
-				u_help ("Problema no indice 'D3_VAETIQ' do arquivo SD3. Acione suporte.",, .t.)
-				u_AvisaTI (procname () + ": Problema no indice 'D3_VAETIQ' do arquivo SD3.")
 				_lRet = .F.
+				u_help ("Problema no indice 'D3_VAETIQ' do arquivo SD3. Acione suporte.",, .t.)
+//				u_AvisaTI (procname () + ": Problema no indice 'D3_VAETIQ' do arquivo SD3.")
+				_oAviso := ClsAviso ():New ()
+				_oAviso:Tipo       = 'E'
+				_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
+				_oAviso:Titulo     = "Nao encontrei indice de nickname D3_VAETIQ na tabela SD3"
+				_oAviso:Texto      = "Nao encontrei indice de nickname D3_VAETIQ na tabela SD3. O mesmo eh necessario para verificar a movimentacao da etiqueta."
+				_oAviso:Origem     = procname ()
+				_oAviso:InfoSessao = .T.  // Incluir informacoes adicionais de sessao na mensagem.
+				_oAviso:Grava ()
 			else
 				sd3 -> (dbOrderNickName ("D3_VAETIQ"))  // D3_FILIAL+D3_VAETIQ
 				if sd3 -> (dbseek (xfilial ("SD3") + alltrim ((_sAliasQ) -> codfor), .F.))
@@ -402,13 +426,30 @@ static function _Entradas ()
 					_sMsg := ""
 					_sMsg += "Problema etiq.'" + alltrim ((_sAliasQ) -> codfor) + "' Produto (FullWMS): '" + alltrim ((_sAliasQ) -> coditem) + "' Movto producao desta etiq.nao encontrado no Protheus"
 					_oBatch:Mensagens += _sMsg + '; '
-					//u_AvisaTI (procname () + ": " + strtran (strtran (_sMsg, chr (10), '; '), chr (13), ''))
+
+					_oAviso := ClsAviso ():New ()
+					_oAviso:Tipo       = 'E'
+					_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
+					_oAviso:Titulo     = _sMsg
+					_oAviso:Texto      = _sMsg
+					_oAviso:Origem     = procname ()
+					_oAviso:InfoSessao = .T.  // Incluir informacoes adicionais de sessao na mensagem.
+					_oAviso:Grava ()
 				endif
 			endif
 
 		otherwise
 			u_help ("Sem tratamento para tpdoc / entrada_id '" + (_sAliasQ) -> tpdoc + (_sAliasQ) -> entrada_id + "' da tabela 'tb_wms_entradas'.",, .t.)
-			u_avisaTI ("Sem tratamento para tpdoc / entrada_id '" + (_sAliasQ) -> tpdoc + (_sAliasQ) -> entrada_id + "' da tabela 'tb_wms_entradas'.")
+//			u_avisaTI ("Sem tratamento para tpdoc / entrada_id '" + (_sAliasQ) -> tpdoc + (_sAliasQ) -> entrada_id + "' da tabela 'tb_wms_entradas'.")
+
+			_oAviso := ClsAviso ():New ()
+			_oAviso:Tipo       = 'E'
+			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
+			_oAviso:Titulo     = "Sem tratamento para tpdoc / entrada_id " + (_sAliasQ) -> tpdoc + '/' + (_sAliasQ) -> entrada_id
+			_oAviso:Texto      = "Nao sei como tratar os campos tpdoc/entrada_id [" + (_sAliasQ) -> tpdoc + '/' + (_sAliasQ) -> entrada_id + '] encontrados na tabela tb_wms_entradas."
+			_oAviso:Origem     = procname ()
+			_oAviso:InfoSessao = .T.  // Incluir informacoes adicionais de sessao na mensagem.
+			_oAviso:Grava ()
 		endcase
 
 		(_sAliasQ) -> (dbskip ())

@@ -39,6 +39,7 @@
 // 14/12/2021 - Robert  - Verifica se eh ambiente R33 (testes release) e pede confirmacao para envio do e-mail.
 // 28/01/2022 - Robert  - Criada opcao de envio em copia oculta.
 // 08/09/2022 - Robert  - Melhorada mensagem de 'conta nao cadastrada'.
+// 21/09/2022 - Robert  - Passa a usar a classe ClsAviso() para notificar problemas.
 //
 
 // ----------------------------------------------------------------------------------------------
@@ -51,6 +52,7 @@ User Function SendMail (_sTo, _sSubject, _sBody, _aArq, _sCtaMail, _sGrupoZZU, _
 	local _sMsgErro  := ""
 	local _aAreaAnt  := {}
 	local _sArqMail  := ""
+	local _oAviso    := NIL
 	
 	if _lContinua
 		_aArq      := iif (_aArq      == NIL, {}, _aArq)
@@ -75,9 +77,19 @@ User Function SendMail (_sTo, _sSubject, _sBody, _aArq, _sCtaMail, _sGrupoZZU, _
 	endif
 
 	if _lContinua .and. ! file (_sArqHTM)
-		u_help ("[" + procname () + "]: Arquivo '" + _sArqHTM + "' necessario para o envio de e-mail nao foi encontrado." + iif (type ("_sArqLog") == "C", " Mais detalhes no arquivo de log '" + _sArqLog + "'.", ""),, .t.)
-		u_AvisaTI ("[" + procname () + "]: Arquivo '" + _sArqHTM + "' necessario para o envio de e-mail nao foi encontrado." + iif (type ("_sArqLog") == "C", " Mais detalhes no arquivo de log '" + _sArqLog + "'.", ""))
 		_lContinua = .F.
+		u_help ("[" + procname () + "]: Arquivo '" + _sArqHTM + "' necessario para o envio de e-mail nao foi encontrado." + iif (type ("_sArqLog") == "C", " Mais detalhes no arquivo de log '" + _sArqLog + "'.", ""),, .t.)
+
+		_oAviso := ClsAviso ():New ()
+		_oAviso:Tipo       = 'E'
+		_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
+		_oAviso:Titulo     = "Arquivo " + _sArqHTM + " (necessario para o envio de e-mail) nao foi encontrado."
+		_oAviso:Texto      = "Para montagem do e-mail, eh necessario acesso ao arquivo " + _sArqHTM + ", que contem o HTML para formatar o corpo da mensagem."
+		_oAviso:Origem     = procname ()
+		_oAviso:InfoSessao = .T.  // Incluir informacoes adicionais de sessao na mensagem.
+		_oAviso:Grava ()
+
+//		u_AvisaTI ("[" + procname () + "]: Arquivo '" + _sArqHTM + "' necessario para o envio de e-mail nao foi encontrado." + iif (type ("_sArqLog") == "C", " Mais detalhes no arquivo de log '" + _sArqLog + "'.", ""))
 	endif
 
 	// Se foi especificado um endereco para retorno, preciso usar essa mesma conta para autenticacao no envio do e-mail.
@@ -155,9 +167,18 @@ User Function SendMail (_sTo, _sSubject, _sBody, _aArq, _sCtaMail, _sGrupoZZU, _
 	endif
 
 	if ! empty (_sMsgErro)
-		_sMsgErro = "[" + procname () + "]: Processo: " + _sArqMail + " " + _sMsgErro
-		U_AvisaTI (_sMsgErro)
+		//_sMsgErro += "[" + procname () + "]: Processo: " + _sArqMail + " " + _sMsgErro
+		_sMsgErro = "[" + procname () + "]" + _sMsgErro + "[Processo WF:" + _sArqMail + "]"
 		U_Help (_sMsgErro,, .t.)
+//		U_AvisaTI (_sMsgErro)
+		_oAviso := ClsAviso ():New ()
+		_oAviso:Tipo       = 'E'
+		_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
+		_oAviso:Titulo     = _sMsgErro
+		_oAviso:Texto      = _sMsgErro
+		_oAviso:Origem     = procname ()
+		_oAviso:InfoSessao = .T.  // Incluir informacoes adicionais de sessao na mensagem.
+		_oAviso:Grava ()
 	endif
 
 	if ! _lContinua

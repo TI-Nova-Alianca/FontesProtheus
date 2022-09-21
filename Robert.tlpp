@@ -114,7 +114,8 @@ user function robert ()
 		//_memoria ()
 		//_EstFul()
 
-		//u_help ('Nada definido.')
+		//U_SendMail ('robert.koch@novaalianca.coop.br', 'teste conta', 'teste', {}, 'financeiro2', '', '')
+		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
@@ -177,7 +178,7 @@ static function _aviso ()
 	_oAviso := ClsAviso ():New ()
 	_oAviso:Tipo       = 'A'
 	//_oAviso:DestinAvis = 'robert.koch'
-	_oAviso:DestinZZU  = {'122'}
+	_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 	_oAviso:Titulo     = 'teste mensagem aviso'
 	_oAviso:Texto      = 'Teste envio notificacao'
 	_oAviso:Origem     = procname ()

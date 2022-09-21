@@ -15,6 +15,7 @@
 // 31/08/2022 - Robert - Desabilitado tratamento de 'codigo de mensagem'.
 // 09/09/2022 - Robert - Criado atributo ::DestinZZU.
 // 16/09/2022 - Robert - Criado tratamento para enviar HTML para NaWeb.
+// 21/09/2022 - Robert - Criado atributo :InfoSessao
 //
 
 #include "protheus.ch"
@@ -42,6 +43,7 @@ CLASS ClsAviso
 	data Origem
 	data DiasDeVida
 	data CodAviso  // a ser descontinuado
+	data InfoSessao  // se .T. inclui informacoes adicionais de sessao na mensagem.
 
 	// Declaração dos Métodos da Classe
 	METHOD New ()
@@ -78,6 +80,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsAviso
 	::Titulo     = ""
 	::Origem     = ""
 	::DiasDeVida = 1
+	::InfoSessao = .F.
 	if _sOrigem == 'ZAB'
 		::Tipo       = zab -> zab_tipo
 		::DtAviso    = zab -> zab_dtemis
@@ -108,7 +111,7 @@ METHOD Grava () Class ClsAviso
 
 	// Tenho alguns grupos ja usados em outros fontes.
 	if upper (alltrim (::DestinAvis)) == 'GRPTI'
-		::DestinZZU  = {'122'}
+		::DestinZZU  = {'122'}  // 122 = grupo da TI
 	endif
 
 	// Se recebi uma lista de grupos a notificar, adiciono os usuarios desses grupos.
@@ -137,6 +140,14 @@ METHOD Grava () Class ClsAviso
 	endif
 
 	u_log2 (iif (::Tipo == 'E', 'erro', iif (::Tipo == 'A', 'aviso', 'info')), '[' + GetClassName (::Self) + '.' + procname () + ']Notificacao para ' + ::DestinAvis + ': ' + ::Texto)
+
+	// Caso solicitado na criacao do objeto, gera dados adicionais de sessao na mensagem.
+	if ::InfoSessao
+		::Texto += '[porta/ambiente:' + cvaltochar(GetServerPort ()) + '/' + GetEnvServer () + ']'
+		::Texto += '[username:' + cUserName + ']'
+		::Texto += '[emp/filial:' + cEmpAnt + '/' + cFilAnt + ']'
+		::Texto += '[Pilha de chamadas:' + _PCham () + ']'
+	endif
 
 	reclock ("ZAB", .T.)
 	zab -> zab_dtemis = ::DtAviso
@@ -231,3 +242,17 @@ static function _Limpa (_sCampoX)
 	_sCampoX = strtran (_sCampoX, "'", '')  // "&apos;")
 //	_sCampoX = strtran (_sCampoX, "&", '')  // "&amp;")
 return _sCampoX
+
+
+// --------------------------------------------------------------------------
+// Gera string com a pilha de chamadas.
+static function _PCham ()
+	local _i      := 0
+	local _sPilha := ""
+
+	do while procname (_i) != ""
+		_sPilha += "   =>   " + procname (_i)
+		_i++
+	enddo
+
+return _sPilha

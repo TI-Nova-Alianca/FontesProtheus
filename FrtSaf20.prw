@@ -40,7 +40,7 @@ User Function FrtSaf20 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor)
 			u_help ("Filial destino '" + _sFilDest + "' sem tratamento no programa " + procname (),, .T.)
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:DestinZZU  = {'143'}
+			_oAviso:DestinZZU  = {'143'}  // 143 = grupo da agronomia
 			_oAviso:Texto      = "Filial destino '" + _sFilDest + "' sem tratamento no programa de calculo de frete de safra."
 			_oAviso:Origem     = procname ()
 			_oAviso:Grava ()
@@ -51,7 +51,7 @@ User Function FrtSaf20 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor)
 		if IsInCallStack ("U_VA_RUSN")
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:DestinZZU  = {'143'}
+			_oAviso:DestinZZU  = {'143'}  // 143 = grupo da agronomia
 			_oAviso:Texto      = "Sem distancias cadastradas na propriedade " + _sCadVit + " para calculo de frete."
 			_oAviso:Origem     = procname ()
 			_oAviso:Grava ()
