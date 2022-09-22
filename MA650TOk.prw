@@ -12,7 +12,9 @@
 // 07/02/2016 - Robert  - Verifica se a revisao do VD existe na tabela SG5.
 // 18/08/2017 - Robert  - Valida lote e validade originais para OP de reprocesso.
 // 15/10/2019 - Cláudia - Incluída validações no C2_VAEVENT - _VerEvent() GLPI: 6793
+// 22/09/2022 - Robert  - Validacao do campo C2_VABARCX - GLPI 11994
 //
+
 // ----------------------------------------------------------------
 user function MA650TOk ()
 	local _lRet     := .T.
@@ -35,8 +37,8 @@ user function MA650TOk ()
 //		_lRet = _VerEvent () 
 //	endif
 	
-   	U_SalvaAmb (_aAmbAnt)
-   	U_ML_SRArea (_aAreaAnt)
+	U_SalvaAmb (_aAmbAnt)
+	U_ML_SRArea (_aAreaAnt)
 return _lRet
 //
 // --------------------------------------------------------------------------
@@ -46,24 +48,34 @@ static function _VerFull ()
    	local _sMsg     := ""
 	local _sAlmFull := GetMv ("VA_ALMFULP",, '')
 
-	// Nao uso esta verificacao quando a OP estah sendo gerada pelo MRP, pois
-	// nao consegui criar um gatilho nem ponto de entrada que trocasse o C2_LOCAL
-	// para o almox. do Fullsoft. Tudo que consegui foi fazer a troca no ponto
-	// de entrada MTA650I, que eh executado depois desta validacao. Robert, 21/12/2014.
-	if empty (m->c2_seqmrp)
-		if ! empty(_sAlmFull) .and. m->c2_local != _sAlmFull
-			sb1 -> (dbsetorder (1))
-			if sb1 -> (dbseek (xfilial ("SB1") + m->c2_produto, .F.)) .and. sb1 -> b1_vafullw == 'S'
-				_sMsg = "Produto '" + alltrim (sb1 -> b1_cod) + "' controla armazenagem via Fullsoft. Producao deve ser apontada no almoxarifado '" + _sAlmFull + "'."
-				if u_zzuvl ('029', __cUserId, .F.)
-					_lRet = U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
-				else
-					u_help (_sMsg)
-					_lret = .F.
-				endif
+	sb1 -> (dbsetorder (1))
+	if ! sb1 -> (dbseek (xfilial ("SB1") + m->c2_produto, .F.))
+		u_help ("Produto da OP nao cadastrado!",, .t.)
+		_lRet = .F.
+	endif
+
+	if _lRet .and. sb1 -> b1_vafullw == 'S' .and. ! empty(_sAlmFull) .and. m->c2_local != _sAlmFull
+
+		// Nao uso esta verificacao quando a OP estah sendo gerada pelo MRP, pois
+		// nao consegui criar um gatilho nem ponto de entrada que trocasse o C2_LOCAL
+		// para o almox. do Fullsoft. Tudo que consegui foi fazer a troca no ponto
+		// de entrada MTA650I, que eh executado depois desta validacao. Robert, 21/12/2014.
+		if empty (m->c2_seqmrp)
+			_sMsg = "Produto '" + alltrim (sb1 -> b1_cod) + "' controla armazenagem via Fullsoft. Producao deve ser apontada no almoxarifado '" + _sAlmFull + "'."
+			if u_zzuvl ('029', __cUserId, .F.)
+				_lRet = U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
+			else
+				u_help (_sMsg,, .t.)
+				_lret = .F.
 			endif
 		endif
 	endif
+
+	if _lRet .and. sb1 -> b1_vafullw == 'S' .and. empty (M->C2_VABARCX) .and. cEmpAnt == '01' .and. cFilAnt == '01'  // Nao tenho FullWMS nas filiais.
+		u_help ("Produto eh controlado pelo FullWMS. O campo C2_VABARCX (" + alltrim (RetTitle ("C2_VABARCX")) + ") deve ser informado para que o apontamento de etiquetas possa ser feito via coletor.",, .t.)
+		_lRet = .F.
+	endif
+
 return _lRet
 //
 // --------------------------------------------------------------------------

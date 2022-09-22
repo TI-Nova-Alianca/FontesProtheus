@@ -12,6 +12,7 @@
 
 // Historico de alteracoes:
 // 02/09/2022 - Robert - Chamadas de vtAlert() substituidas por u_help().
+// 22/09/2022 - Robert - Validacao das barras do produto paas a ser pelo atributo _oEtiq:CodBarCx (GLPI 11994)
 //
 
 #include "protheus.ch"
@@ -19,6 +20,7 @@
 // --------------------------------------------------------------------------
 user function vtEtqAp ()
 	local _lContinua   := .T.
+	local _nTamCBPro   := TamSX3 ("C2_VABARCX")[1]
 	private _sBarEtiq  := ''
 	private _sBarProd  := ''
 	private _sProdEtq  := ''
@@ -32,7 +34,7 @@ user function vtEtqAp ()
 		
 		// Limpa variaveis para ler nova etiqueta.
 		_sBarEtiq = space (10)
-		_sBarProd = space (17)  // Maior que o necessario por que tem casos de licitacoes de SP que exigem uns caracteres de controle no inicio das barras.
+		_sBarProd = space (_nTamCBPro)  // Maior que o necessario por que tem casos de licitacoes de SP que exigem uns caracteres de controle no inicio das barras.
 		_sProdEtq = space (15)
 		// Nao limpar entre as etiquetas --> _dDatProd = ctod ('')
 		_oEtiq    = NIL
@@ -113,6 +115,7 @@ static function _ValCBProd ()
 	local _sDescProd := ''
 
 	U_Log2 ('debug', '[' + procname () + ']barras lidas: >>' + _sBarProd + '<<')
+/*
 	sb1 -> (dbsetorder (5))  // B1_FILIAL, B1_CODBAR, R_E_C_N_O_, D_E_L_E_T_
 	if ! sb1 -> (dbseek (xfilial ("SB1") + _sBarProd, .F.))
 		u_help ("Nenhum produto cadastrado com esse codigo de barras",, .t.)
@@ -132,6 +135,21 @@ static function _ValCBProd ()
 				u_help ("Encontrado mais de um produto com o mesmo codigo de barras.")
 				_lRet = .F.
 			endif
+		endif
+	endif
+*/
+	if _sBarProd != _oEtiq:CodBarCx
+		u_help ("Barras caixa nao conferem com campo C2_VABARCX da OP.",, .t.)
+		_lRet = .F.
+	else
+		sb1 -> (dbsetorder (1))
+		if ! sb1 -> (dbseek (xfilial ("SB1") + _oEtiq:Produto, .F.))
+			u_help ("Produto " + _oEtiq:Produto + " nao cadastrado!",, .t.)
+			_lRet = .F.
+		else
+			_sDescProd = alltrim (sb1 -> b1_cod) + ' - ' + alltrim (sb1 -> b1_desc)
+			terSay (2, 0, substr (_sDescProd, 1, _nLargTela))
+			terSay (3, 0, substr (_sDescProd, _nLargTela + 1, _nLargTela))
 		endif
 	endif
 	U_Log2 ('info', 'Finalizando ' + procname ())

@@ -110,6 +110,7 @@
 // 25/08/2021 - Robert  - Manda uma copia do XML para o importador da TRS (GLPI projeto 15).
 // 14/04/2022 - Claudia - Criado novo menu para exporta dados. GLPI: 11889
 // 20/07/2022 - Robert  - Gravacao de eventos temporarios para rastreio de movimentacao do XML (GLPI 12336)
+// 21/09/2022 - Robert  - Log de impressao de romaneio.
 //
 
 // ----------------------------------------------------------------------------------------------------------------------------------
@@ -2611,9 +2612,11 @@ user function ZZXG (_wprenota)
 		DbSetOrder(1) //FILIAL+DOC+SERIE+FORNECE+LOJA
 		If DbSeek(xFilial("SF1") + _sDoc + _sSerie + _sCodCF + _sLojaCF ,.F.)
 			DbSelectArea("SF1")
-		    if cEmpAnt + cFilAnt == '0101' .and. SF1->F1_ESPECIE !='CTR' .and. SF1->F1_ESPECIE !='CTE' 
-		    	if U_MsgYesNo ("Deseja imprimir o romaneio de entrada?")
-		    		U_RomEntr (sf1 -> f1_fornece, sf1 -> f1_loja, sf1 -> f1_doc, sf1 -> f1_serie)
+			if cEmpAnt + cFilAnt == '0101' .and. SF1->F1_ESPECIE !='CTR' .and. SF1->F1_ESPECIE !='CTE' 
+				U_Log2 ('debug', '[' + procname () + ']Estou logando a pilha de chamadas para identificar de onde abre msg de impressaodo romaneio no reprocessamento do painel XML.')
+				U_LogPCham ()
+				if U_MsgYesNo ("Deseja imprimir o romaneio de entrada?")
+					U_RomEntr (sf1 -> f1_fornece, sf1 -> f1_loja, sf1 -> f1_doc, sf1 -> f1_serie)
 				endif
 			endif
 		Else

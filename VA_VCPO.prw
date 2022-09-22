@@ -171,6 +171,7 @@
 // 25/08/2022 - Robert  - Pequena melhoria mensagem validacao etiqueta (D3_VAETIQ)
 // 30/08/2022 - Robert  - Atributo ClsAviso:DestinAvis passa a ser tipo string.
 // 01/09/2022 - Robert  - Melhorias ClsAviso.
+// 22/09/2022 - Robert  - Validacao do campo C2_VABARCX - GLPI 11994
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -356,6 +357,7 @@ user function VA_VCpo (_sCampo)
 				_lRet = .F.
 			endif
 
+
 		case _sCampo == "M->TL_DTINICI"
 			if _lRet .and. (M->TL_DTINICI < Date() -3 .or. dDataBase > date ())
 				U_Help ("Data inicial nao pode ser menor do que 3 dias da data de hoje.")
@@ -529,6 +531,43 @@ user function VA_VCpo (_sCampo)
 
 		case _sCampo == "M->C2_QUANT"
 			_lRet = _ValQtLote ()
+
+
+		case _sCampo == "M->C2_VABARCX"
+			// Por enquanto, somente me interessa se o produto da OP vai ser
+			// envasado, e vai para FullWMS, pois nesse caso teremos
+			// impressao das barras na caixa, e essas barras serao usadas para
+			// validar o apontamento das etiquetas. O retorno padrao eh o
+			// proprio codigo DUN14 do item, mas o usuario pode alterar depois
+			// caso tenha situacoes especiais como licitacoes, etc. que exijam
+			// um codigo de barras diferenciado.
+			if _lRet
+				sb1 -> (dbsetorder (1))
+				if ! sb1 -> (dbseek (xfilial ("SB1") + M->C2_PRODUTO, .F.))
+					u_help ("Produto da OP nao cadastrado!",, .t.)
+					_lRet = .F.
+				endif
+			endif
+			if _lRet .and. ! sb1 -> b1_tipo $ 'PA/PI'
+				u_help ("Este campo aplica-se inicialmente apenas a itens PA/PI que vao ser guardados pelo FullWMS",, .t.)
+				_lRet = .F.
+			endif
+			if _lRet .and. sb1 -> b1_vafullw != 'S'
+				u_help ("Este campo aplica-se inicialmente apenas a itens que vao ser guardados pelo FullWMS",, .t.)
+				_lRet = .F.
+			endif
+			
+			// Ateh o momento, a unica excecao que tenho sao as licitacoes para
+			// o estado de SP, que exigem EAN128
+			if _lRet .and. alltrim (M->C2_VABARCX) != alltrim (sb1 -> b1_codbar)
+				if substring (M->C2_VABARCX, 4, len (alltrim (sb1 -> b1_codbar))) == alltrim (sb1 -> b1_codbar)
+					_lRet = .T.
+				else
+					u_help ("O codigo de barras para impressao da caixa deve ser igual ao GTIN do produto ("+ alltrim (sb1 -> b1_codbar) + "). Excecao para licitacoes para SP, onde o codigo GTIN deve iniciar na posicao 4.",, .t.)
+					_lRet = .F.
+				endif
+			endif
+
 
 		case _sCampo == "M->C2_VAOPESP"
 			if altera
