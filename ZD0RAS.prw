@@ -52,8 +52,9 @@ Static Function _GeraTitulos(dDataIni, dDataFin)
     _oSQL:_sQuery += "	   ,ZD0_TAXTOT AS TAXAS "           // 7
     _oSQL:_sQuery += "     ,ZD0_VLRLIQ AS VALOR_LIQ "       // 8
     _oSQL:_sQuery += "	   ,ZD0_PGTMET AS METODO_PGTO "     // 9
-    _oSQL:_sQuery += "	   ,ZD0_CARDB AS BANDEIRA "         // 10
-    _oSQL:_sQuery += "	   ,ZD0_PGTTIP AS TIPO "            // 11
+    _oSQL:_sQuery += "	   ,ZD0_PGTTIP AS TIPO "            // 10
+    _oSQL:_sQuery += "	   ,ZD0_CLIENT AS CLIENTE "         // 11
+    _oSQL:_sQuery += "	   ,ZD0_LOJA AS LOJA "              // 12
     _oSQL:_sQuery += "	FROM " + RetSQLName ("ZD0") + " ZD0 "
     _oSQL:_sQuery += "	WHERE ZD0.D_E_L_E_T_ = '' "
     _oSQL:_sQuery += "	AND ZD0.ZD0_FILIAL   = '" + xFilial('ZD0') + "' "
@@ -67,9 +68,8 @@ Static Function _GeraTitulos(dDataIni, dDataFin)
 
     For _x:=1 to Len(_aZD0)
         // entrada de valores
-        If alltrim(_aZD0[_x, 11]) == 'credit'
+        If alltrim(_aZD0[_x, 10]) == 'credit'
             _aAutoSE1 := {}
-            _sCliente := padr(_BuscaCliCartao(_aZD0[_x,9], _aZD0[_x,10]),6,' ') // Define cliente
 
             // Define banco
             If xFilial('ZD0') == '01'
@@ -84,7 +84,7 @@ Static Function _GeraTitulos(dDataIni, dDataFin)
 
             // Gera RA's com pgtos
             _sHist    := 'PAGAR.ME '+ _aZD0[_x,2] + '-' + _aZD0[_x,3]
-            _nTitNum  := _GeraNumeracao(_nSeq, _aZD0[_x,4])
+            _nTitNum  := _GeraNumeracao(_nSeq, _aZD0[_x,4], _aZD0[_x,5])
             _nSeq ++ 
 
             aAdd(_aAutoSE1, {"E1_FILIAL"   , _aZD0[_x,1]            , Nil})
@@ -93,8 +93,8 @@ Static Function _GeraTitulos(dDataIni, dDataFin)
             aAdd(_aAutoSE1, {"E1_PARCELA"  , _aZD0[_x,5]            , Nil})
             aAdd(_aAutoSE1, {"E1_TIPO"     , 'RA'                   , Nil})
             aAdd(_aAutoSE1, {"E1_NATUREZ"  , '110101'               , Nil})
-            aAdd(_aAutoSE1, {"E1_CLIENTE"  , _sCliente              , Nil})
-            aAdd(_aAutoSE1, {"E1_LOJA"     , '01'                   , Nil})
+            aAdd(_aAutoSE1, {"E1_CLIENTE"  , _aZD0[_x,11]           , Nil})
+            aAdd(_aAutoSE1, {"E1_LOJA"     , _aZD0[_x,12]           , Nil})
             aAdd(_aAutoSE1, {"E1_EMISSAO"  , stod(_aZD0[_x,4])      , Nil})
             aAdd(_aAutoSE1, {"E1_VENCTO"   , stod(_aZD0[_x,4])      , Nil})
             aAdd(_aAutoSE1, {"E1_VENCREA"  , stod(_aZD0[_x,4])      , Nil})
@@ -141,7 +141,7 @@ Static Function _GeraTitulos(dDataIni, dDataFin)
                 _oSQL:_sQuery += " AND E1_PARCELA = '" + _aZD0[_x,5]  + "'"
                 _oSQL:_sQuery += " AND E1_PREFIXO = '10'"
                 _oSQL:_sQuery += " AND E1_TIPO    = 'RA'"
-                _oSQL:_sQuery += " AND E1_CLIENTE = '" + _sCliente    + "'"
+                _oSQL:_sQuery += " AND E1_CLIENTE = '" + _aZD0[_x,11] + "'"
                 _oSQL:_sQuery += " AND E1_LOJA    = '01'"
                 _oSQL:Log ()
                 _oSQL:Exec ()
@@ -202,66 +202,16 @@ Static Function _GeraTitulos(dDataIni, dDataFin)
     U_ZD0RCMP(dDataIni, dDataFin)
 Return
 //
-// -------------------------------------------------------------------------
-// Transforma parcela pagar.me em protheus
-Static Function _BuscaCliCartao(_sMetPgto, _sCardBand)
-    Local _sCliente := ''
-
-    Do Case 
-        Case alltrim(_sMetPgto) == 'pix'
-            _sCliente := '005'
-        Case alltrim(_sMetPgto) == 'boleto'
-            _sCliente := '005'                   // criar cliente boleto
-        Case alltrim(_sMetPgto) == 'credit_card'
-            Do Case
-                Case alltrim(_sCardBand) == 'amex'
-                     _sCliente := '503'
-                Case alltrim(_sCardBand) == 'elo'
-                     _sCliente := '401'
-                Case alltrim(_sCardBand) == 'mastercard'
-                     _sCliente := '101'
-                Case alltrim(_sCardBand) == 'visa'
-                     _sCliente := '201'
-                Case alltrim(_sCardBand) == 'hipercard'
-                     _sCliente := '501'
-                Otherwise
-                    u_log2("Aviso", 'Cartão de débito não previsto!')
-                    _sCliente := ''
-            EndCase
-
-        Case empty(_sMetPgto) 
-            Do Case
-                Case alltrim(_sCardBand) == 'amex'
-                     _sCliente := '502'
-                Case alltrim(_sCardBand) == 'elo'
-                     _sCliente := '400'
-                Case alltrim(_sCardBand) == 'mastercard'
-                     _sCliente := '100'
-                Case alltrim(_sCardBand) == 'visa'
-                     _sCliente := '200'
-                Case alltrim(_sCardBand) == 'hipercard'
-                     _sCliente := '500'                    
-                Otherwise
-                    u_log2("Aviso", 'Cartão de crédito não previsto!')
-                    _sCliente := ''
-            EndCase
-        Otherwise
-            u_log2("Aviso", 'Método de pagamento não previsto!')
-            _sCliente := ''
-    EndCase
-
-Return _sCliente
-//
 // -----------------------------------------------------------------------------------
 // Gera numeração para titulos
-Static Function _GeraNumeracao(_nSeq, _dtPgto)
+Static Function _GeraNumeracao(_nSeq, _dtPgto, _sParcel)
     _sSeq := alltrim(str(_nSeq))
 
     _sAno := SubStr(_dtPgto, 3, 2)
     _sMes := SubStr(_dtPgto, 5, 2)
     _sDia := SubStr(_dtPgto, 7, 2)
 
-    _sNumero := _sDia + _sMes + _sAno +_sSeq
+    _sNumero := _sDia + _sMes + _sAno +_sSeq + _sParcel
 
 Return _sNumero
 //

@@ -73,15 +73,21 @@ Static Function PrintReport(oReport)
 	Local oSection1 := oReport:Section(1)
 	Local _x        := 0
 	Local _y        := 0
+	Local _sData1   := DTOS(date()) +' 00:00:00'
+	Local _sData2   := DTOS(date()) +' 23:59:59'
 
 	oSection1:Init()
 	oSection1:SetHeaderSection(.T.)
+
+	_nLinha :=  oReport:Row()
+	oReport:PrintText("Período de " +dtoc(mv_par03)+ " até " + dtoc(mv_par04) ,_nLinha, 100)
+	oReport:SkipLine(1) 
 
 	_oSQL := ClsSQL():New ()  
 	_oSQL:_sQuery := "" 		
 	_oSQL:_sQuery += " SELECT "
 	_oSQL:_sQuery += " 	ZD0_DTAEXT + ' ' + ZD0_HOREXT "
-	_oSQL:_sQuery += " FROM ZD0010 "
+	_oSQL:_sQuery += " FROM " + RetSQLName ("ZD0")
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " AND ZD0_FILIAL BETWEEN '"+ mv_par01 +"' AND '"+ mv_par02 +"' "
 	_oSQL:_sQuery += " AND ZD0_DTAEXT BETWEEN '"+ dtos(mv_par03) +"' AND '"+ dtos(mv_par04) +"' "
@@ -97,15 +103,6 @@ Static Function PrintReport(oReport)
 			_sData2 := _aDatas[_y,1]
 		EndIf
 	Next
-
-	// Verfica datas
-	If empty(_sData1)
-		_sData1 := DTOS(date()) +' 00:00:00'
-	EndIf
-
-	If empty(_sData2)
-		_sData2 := DTOS(date()) +' 23:59:59'
-	EndIf
 
 	_oSQL := ClsSQL():New ()  
 	_oSQL:_sQuery := "" 		
@@ -139,6 +136,7 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " AND ZD0_FILIAL BETWEEN '"+ mv_par01 +"' AND '"+ mv_par02 +"' "
 	_oSQL:_sQuery += " AND ZD0_DTAEXT + ' ' + ZD0_HOREXT BETWEEN '"+ _sData1 +"' AND '"+ _sData2 +"' "
 	_oSQL:_sQuery += " AND ZD0_TIPO <> '2' "
+	_oSQL:_sQuery += " ORDER BY ZD0_DTAEXT "
 	_aDados := _oSQL:Qry2Array ()
 
 	For _x := 1 to Len(_aDados)

@@ -54,81 +54,89 @@ User Function ZD0CMP()
 
         For _x := 1 to Len(_aZD0)
 
-            _oSQL := ClsSQL():New ()  
-            _oSQL:_sQuery := "" 		
-            _oSQL:_sQuery += " SELECT "
-            _oSQL:_sQuery += " 	   R_E_C_N_O_ "
-            _oSQL:_sQuery += "    ,E1_FILIAL "
-            _oSQL:_sQuery += "    ,E1_PREFIXO "
-            _oSQL:_sQuery += "    ,E1_NUM "
-            _oSQL:_sQuery += "    ,E1_PARCELA "
-            _oSQL:_sQuery += "    ,E1_CLIENTE "
-            _oSQL:_sQuery += "    ,E1_LOJA "
-            _oSQL:_sQuery += "    ,E1_TIPO "
-            _oSQL:_sQuery += " FROM " + RetSQLName ("SE1") 
-            _oSQL:_sQuery += " WHERE D_E_L_E_T_= '' "
-            _oSQL:_sQuery += " AND E1_FILIAL   = '" + _aZD0[_x, 2] + "' "
-            _oSQL:_sQuery += " AND E1_VAIDT    = '" + _aZD0[_x, 3] + "' "
-            _oSQL:_sQuery += " AND E1_PARCELA  = '" + _aZD0[_x, 4] + "' "
-            _oSQL:_sQuery += " AND E1_TIPO    <> 'RA' "
-            _aSE1 := _oSQL:Qry2Array ()
+            if _aZD0[_x, 5] > 0
 
-            _oSQL := ClsSQL():New ()  
-            _oSQL:_sQuery := "" 		
-            _oSQL:_sQuery += " SELECT "
-            _oSQL:_sQuery += " 	   R_E_C_N_O_ "
-            _oSQL:_sQuery += "    ,E1_FILIAL "
-            _oSQL:_sQuery += "    ,E1_PREFIXO "
-            _oSQL:_sQuery += "    ,E1_NUM "
-            _oSQL:_sQuery += "    ,E1_PARCELA "
-            _oSQL:_sQuery += "    ,E1_CLIENTE "
-            _oSQL:_sQuery += "    ,E1_LOJA "
-            _oSQL:_sQuery += "    ,E1_TIPO "
-            _oSQL:_sQuery += "    ,E1_VALOR"
-            _oSQL:_sQuery += "    ,E1_SALDO"
-            _oSQL:_sQuery += " FROM " + RetSQLName ("SE1") 
-            _oSQL:_sQuery += " WHERE D_E_L_E_T_= '' "
-            _oSQL:_sQuery += " AND E1_FILIAL   = '" + _aZD0[_x, 2] + "' "
-            _oSQL:_sQuery += " AND E1_VAIDT    = '" + _aZD0[_x, 3] + "' "
-            _oSQL:_sQuery += " AND E1_PARCELA  = '" + _aZD0[_x, 4] + "' "
-            _oSQL:_sQuery += " AND E1_TIPO     = 'RA' "
-            _aRA := _oSQL:Qry2Array ()
+                _oSQL := ClsSQL():New ()  
+                _oSQL:_sQuery := "" 		
+                _oSQL:_sQuery += " SELECT "
+                _oSQL:_sQuery += " 	   R_E_C_N_O_ "
+                _oSQL:_sQuery += "    ,E1_FILIAL "
+                _oSQL:_sQuery += "    ,E1_PREFIXO "
+                _oSQL:_sQuery += "    ,E1_NUM "
+                _oSQL:_sQuery += "    ,E1_PARCELA "
+                _oSQL:_sQuery += "    ,E1_CLIENTE "
+                _oSQL:_sQuery += "    ,E1_LOJA "
+                _oSQL:_sQuery += "    ,E1_TIPO "
+                _oSQL:_sQuery += " FROM " + RetSQLName ("SE1") 
+                _oSQL:_sQuery += " WHERE D_E_L_E_T_= '' "
+                _oSQL:_sQuery += " AND E1_FILIAL   = '" + _aZD0[_x, 2] + "' "
+                _oSQL:_sQuery += " AND E1_VAIDT    = '" + _aZD0[_x, 3] + "' "
+                _oSQL:_sQuery += " AND E1_PARCELA  = '" + _aZD0[_x, 4] + "' "
+                _oSQL:_sQuery += " AND E1_TIPO    <> 'RA' "
+                _aSE1 := _oSQL:Qry2Array ()
 
-            If len(_aSE1) > 0 .and. len(_aRA) > 0
-                PERGUNTE("FIN330",.F.)
-                lContabiliza    := (MV_PAR09 == 1) // Contabiliza On Line ?
-                lDigita         := (MV_PAR07 == 1) // Mostra Lanc Contab ?
-                lAglutina       := .F.
-            
-                //NF X RA
-                aRecSE1    := { _aSE1[ 1, 1] }
-                aRecRA     := { _aRA[ 1, 1] }
-                nSaldoComp := _aRA[ 1, 9]
+                _oSQL := ClsSQL():New ()  
+                _oSQL:_sQuery := "" 		
+                _oSQL:_sQuery += " SELECT "
+                _oSQL:_sQuery += " 	   R_E_C_N_O_ "
+                _oSQL:_sQuery += "    ,E1_FILIAL "
+                _oSQL:_sQuery += "    ,E1_PREFIXO "
+                _oSQL:_sQuery += "    ,E1_NUM "
+                _oSQL:_sQuery += "    ,E1_PARCELA "
+                _oSQL:_sQuery += "    ,E1_CLIENTE "
+                _oSQL:_sQuery += "    ,E1_LOJA "
+                _oSQL:_sQuery += "    ,E1_TIPO "
+                _oSQL:_sQuery += "    ,E1_VALOR"
+                _oSQL:_sQuery += "    ,E1_SALDO"
+                _oSQL:_sQuery += " FROM " + RetSQLName ("SE1") 
+                _oSQL:_sQuery += " WHERE D_E_L_E_T_= '' "
+                _oSQL:_sQuery += " AND E1_FILIAL   = '" + _aZD0[_x, 2] + "' "
+                _oSQL:_sQuery += " AND E1_VAIDT    = '" + _aZD0[_x, 3] + "' "
+                _oSQL:_sQuery += " AND E1_PARCELA  = '" + _aZD0[_x, 4] + "' "
+                _oSQL:_sQuery += " AND E1_TIPO     = 'RA' "
+                _aRA := _oSQL:Qry2Array ()
 
-                Begin Transaction
+                If len(_aSE1) > 0 .and. len(_aRA) > 0
+                    PERGUNTE("FIN330",.F.)
+                    lContabiliza    := (MV_PAR09 == 1) // Contabiliza On Line ?
+                    lDigita         := (MV_PAR07 == 1) // Mostra Lanc Contab ?
+                    lAglutina       := .F.
+                
+                    //NF X RA
+                    aRecSE1    := { _aSE1[ 1, 1] }
+                    aRecRA     := { _aRA[ 1, 1] }
+                    nSaldoComp := _aRA[ 1, 9]
 
-                If !MaIntBxCR(3, aRecSE1,,aRecRA,,{lContabiliza,lAglutina,lDigita,.F.,.F.,.F.},,,,,nSaldoComp,,,, nTaxaCM, aTxMoeda)
-                    u_log2('erro', 'Erro na compensação dos títulos! RECNOs:')
-                    lRet := .F.
-                    DisarmTransaction()
-                else
-                    u_log2('aviso', 'Compensação realizada com sucesso! RECNOs: NF:' + alltrim(str(_aSE1[ 1, 1])) + " RA:" + alltrim(str(_aRA[ 1, 1])) )
-                    aadd(aTaxa,{    _aSE1[ 1, 2],; // filial
-                                    _aSE1[ 1, 3],; // prefixo
-                                    _aSE1[ 1, 4],; // número
-                                    _aSE1[ 1, 5],; // parcela
-                                    _aSE1[ 1, 6],; // cliente
-                                    _aSE1[ 1, 7],; // loja
-                                    _aSE1[ 1, 8],; // tipo
-                                    _aZD0[_x, 6],; // desconto
-                                    _aSE1[ 1, 1],; // recno titulo
-                                    _aRA[ 1, 1] ,; // recno RA
-                                    _aZD0[_x, 3],; // TID
-                                    _aZD0[_x, 7]}) // RID
+                    Begin Transaction
 
+                    If !MaIntBxCR(3, aRecSE1,,aRecRA,,{lContabiliza,lAglutina,lDigita,.F.,.F.,.F.},,,,,nSaldoComp,,,, nTaxaCM, aTxMoeda)
+                        u_log2('erro', 'Erro na compensação dos títulos! RECNOs:')
+                        lRet := .F.
+                        DisarmTransaction()
+                    else
+                        u_log2('aviso', 'Compensação realizada com sucesso! RECNOs: NF:' + alltrim(str(_aSE1[ 1, 1])) + " RA:" + alltrim(str(_aRA[ 1, 1])) )
+                        aadd(aTaxa,{    _aSE1[ 1, 2],; // filial
+                                        _aSE1[ 1, 3],; // prefixo
+                                        _aSE1[ 1, 4],; // número
+                                        _aSE1[ 1, 5],; // parcela
+                                        _aSE1[ 1, 6],; // cliente
+                                        _aSE1[ 1, 7],; // loja
+                                        _aSE1[ 1, 8],; // tipo
+                                        _aZD0[_x, 6],; // desconto
+                                        _aSE1[ 1, 1],; // recno titulo
+                                        _aRA[ 1, 1] ,; // recno RA
+                                        _aZD0[_x, 3],; // TID
+                                        _aZD0[_x, 7]}) // RID
+
+                    EndIf
+                    _BaixaTaxa(aTaxa)
+                    End Transaction
                 EndIf
-                _BaixaTaxa(aTaxa)
-                End Transaction
+            else
+                
+            // estorno de valor
+
+
             EndIf
         Next
 
@@ -187,10 +195,10 @@ Static Function _BaixaTaxa(aTaxa)
 
         cPerg = 'FIN070'
         _aBkpSX1 = U_SalvaSX1 (cPerg)  // Salva parametros da rotina.
-        U_GravaSX1 (cPerg, "01", 2)    // testar mostrando o lcto contabil depois pode passar para nao
-        U_GravaSX1 (cPerg, "04", 2)    // esse movimento tem que contabilizar
-        U_GravaSXK (cPerg, "01", "2", 'G' )
-        U_GravaSXK (cPerg, "04", "2", 'G' )
+        U_GravaSX1 (cPerg, "01", 1)    // testar mostrando o lcto contabil depois pode passar para nao
+        U_GravaSX1 (cPerg, "04", 1)    // esse movimento tem que contabilizar
+        U_GravaSXK (cPerg, "01", "1", 'G' )
+        U_GravaSXK (cPerg, "04", "1", 'G' )
 
         MSExecAuto({|x,y| Fina070(x,y)},_aAutoSE1,3,.F.,5) // rotina automática para baixa de títulos
 
@@ -215,8 +223,8 @@ Static Function _BaixaTaxa(aTaxa)
 
         Endif
         
-        U_GravaSXK (cPerg, "01", "2", 'D' )
-        U_GravaSXK (cPerg, "04", "2", 'D' )
+        U_GravaSXK (cPerg, "01", "1", 'D' )
+        U_GravaSXK (cPerg, "04", "1", 'D' )
 
         U_SalvaSX1 (cPerg, _aBkpSX1)  // Restaura parametros da rotina  
 
