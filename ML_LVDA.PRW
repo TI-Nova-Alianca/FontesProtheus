@@ -23,6 +23,7 @@
 // 05/04/2021 - Claudia - Acrescentado valor de frete para LPAD 610 000 e 610 001. GLPI: 9753
 // 02/12/2021 - Claudia - Incluida validação para produtos 7209/7210. GLPI: 11136
 // 19/07/2022 - Robert  - Incluido TES 727 para nao contabilizar.
+// 21/09/2022 - Robert  - Descontar VALIRRF para _nEcomm='1'
 //
 
 // --------------------------------------------------------------------------------------------
@@ -91,7 +92,8 @@ User Function ML_LVDA(_nEcomm)
             If  SF4->F4_DUPLIC<>"S" .or. SD2->D2_TIPO=="D" .or. SD2->D2_TES$"518/510/603/727" .or. SD2->D2_SERIE $ GetMV ("VA_SERIECF") .or. SF4->F4_TOCON$('15/16') .or. alltrim(SD2->D2_COD) $ ('7209/7210')
                 _wVAL := 0
             Else
-                _wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + sd2->d2_icmsret + SD2->D2_VALFRE
+//                _wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + sd2->d2_icmsret + SD2->D2_VALFRE
+                _wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + sd2->d2_icmsret + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0)
             EndIf
         EndIf
     EndIf

@@ -4,11 +4,14 @@
 // Descricao..: P.E. apos a inclusao de pre-nota de entrada.
 //
 // Historico de alteracoes:
-// 30/09/2014 - incluida opcao para mandar email - se pre-nota estiver bloqueada
-// 03/03/2016 - alteracao para que nao solicite se deseja imprimir romaneio quando eh conhecimento de frete
-// 27/03/2018 - estava funcao _AtuZZX ('') nao encontrada
-// 23/11/2018 - tirado teste do bat de transferencias de filiais
-// 17/12/2018 - Incluida impressão de romaneio de entrada
+// 30/09/2014 -        - incluida opcao para mandar email - se pre-nota estiver bloqueada
+// 03/03/2016 -        - alteracao para que nao solicite se deseja imprimir romaneio quando eh conhecimento de frete
+// 27/03/2018 -        - estava funcao _AtuZZX ('') nao encontrada
+// 23/11/2018 -        - tirado teste do bat de transferencias de filiais
+// 17/12/2018 -        - Incluida impressão de romaneio de entrada
+// 21/09/2022 - Robert - Log de impressao de romaneio.
+//
+
 // --------------------------------------------------------------------------------------------------------
 user function SF1140I ()
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -23,11 +26,15 @@ user function SF1140I ()
    
 	// Imprime romaneio de entrada
 	if sf1 -> f1_especie !='CTR' .and. sf1 -> f1_especie !='CTE'
-	 if ! isincallstack ('U_ZZXG') 
-	    if cEmpAnt + cFilAnt == '0101' .and.  U_MsgYesNo ("Deseja imprimir o romaneio de entrada?")
-	    	U_RomEntr (sf1 -> f1_fornece, sf1 -> f1_loja, sf1 -> f1_doc, sf1 -> f1_serie)
-		endif    	  	
-	 endif
+		if ! isincallstack ('U_ZZXG') 
+			if ! (isincallstack ('U_TRS006IMP') .and. isincallstack ('REPALL'))  // Se foi chamado pelo bota 'reprocessa todos' do painel XML.
+				U_Log2 ('debug', '[' + procname () + ']Estou logando a pilha de chamadas para identificar de onde abre msg de impressaodo romaneio no reprocessamento do painel XML.')
+				U_LogPCham ()
+				if cEmpAnt + cFilAnt == '0101' .and. U_MsgYesNo ("Deseja imprimir o romaneio de entrada?")
+					U_RomEntr (sf1 -> f1_fornece, sf1 -> f1_loja, sf1 -> f1_doc, sf1 -> f1_serie)
+				endif
+			endif
+		endif
 	endif
 	
 	// grava usuario que esta incluindo o documento de entrada

@@ -114,7 +114,9 @@
 // 02/06/2022 - Robert  - Gravacao campo E2_VAFUNRU (GLPI 11723)
 // 03/06/2022 - Claudia - Comentado o restante do else do if referente ao funrural.
 // 20/06/2022 - Claudia - Incluido nome do fornecedor no e-mail. GLPI: 12213
+// 21/09/2022 - Robert  - Removidas linhas comentariadas.
 //
+
 // ------------------------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
@@ -198,17 +200,8 @@ User Function SF1100i ()
 	If ! IsInCallStack ("U_VA_RUSN")
 		_GeraLaudo(sf1 -> f1_filial, sf1 -> f1_fornece, sf1 -> f1_loja, sf1 -> f1_doc, sf1 -> f1_serie, sf1 -> f1_tipo)
 	EndIf
-	
-	// Migrado para MT100AGR - GLPI 11903
-	// Imprime romaneio de entrada
-	//if cEmpAnt + cFilAnt == '0101' .and. ! IsInCallStack ("U_VA_RUSN") .and. cEspecie !='CTR' .and. cEspecie !='CTE' .and. ! IsInCallStack ("U_VA_GNF2")
-	//	if U_MsgYesNo ("Deseja imprimir o romaneio de entrada?")
-	//		U_RomEntr (sf1 -> f1_fornece, sf1 -> f1_loja, sf1 -> f1_doc, sf1 -> f1_serie)
-	//	endif
-	//endif
-	
+
 	U_ML_SRArea (_aAreaAnt)
-	//U_Log2 ('info', 'Finalizando ' + procname ())
 return
 // 
 // -----------------------------------------------------------------------------------------------------
