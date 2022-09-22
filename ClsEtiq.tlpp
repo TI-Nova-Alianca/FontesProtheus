@@ -27,6 +27,7 @@
 // 12/08/2022 - Robert - Criado atributo :AlmDest (GLPI 12474)
 //                     - Melhorias leitura lote origem (ZAG e SD1)
 // 25/08/2022 - Robert - Criado metodo :ApontaOP
+// 22/09/2022 - Robert - Criado atributo :CodBarCx - GLPI 11994
 //
 
 #Include "Protheus.ch"
@@ -46,6 +47,7 @@ CLASS ClsEtiq
 	public data AlmDest       // Almox.destino
 	public data Apontada      // ZA1_APONT - Apontamento de producao ja executado (quando etiq. para OP)
 	public data Codigo        // ZA1_CODIGO
+	public data CodBarCx      // C2_VABARCX - Para validacao no momento de apontar a producao.
 	public data DocEntrForn   // ZA1_FORNEC - Quando refere-se a NF de entrada
 	public data DocEntrItem   // ZA1_ITEM - Quando refere-se a NF de entrada
 	public data DocEntrLoja   // ZA1_LOJAF - Quando refere-se a NF de entrada
@@ -157,6 +159,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 	::AlmDest      = ''
 	::Apontada     = 'N'
 	::Codigo       = ''
+	::CodBarCx     = ''
 	::DocEntrForn  = ''
 	::DocEntrItem  = ''
 	::DocEntrLoja  = ''
@@ -232,6 +235,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 				if ! sc2 -> (dbseek (xfilial ("SC2") + ::OP, .f.))
 					u_help ('[' + GetClassName (::Self) + '.' + procname () + "]Impossivel encontrar a OP '" + ::OP + "' relacionada `a etiqueta '" + ::Codigo + "'. Validade nao pode ser determinada.",, .t.)
 				else
+					::CodBarCx = sc2 -> c2_vaBarCx
 					if sc2 -> c2_vaopesp == 'R'  // OP de reprocesso assume dt valid do lote original, cfe informada pelo usuario.
 						if empty (sc2 -> c2_vadvori)
 							u_help ('[' + GetClassName (::Self) + '.' + procname () + "]Impossivel buscar a data de validade do lote  da etiqueta '" + ::Codigo + "': a OP referenciada (" + ::OP + ") eh uma OP de reprocesso, e nao foi informada a data de validade do lote original no campo C2_VADVORI (" + alltrim (rettitle ("C2_VADVORI")) + ").",, .t.)
@@ -340,6 +344,10 @@ METHOD PodeApont (_nQtApont, _nQtPerda) Class ClsEtiq
 	endif
 	if _lContinua .and. ::QtEstornada > 0
 		U_help ("Impossivel apontar etiq.'" + ::Codigo + "': ja foi apontada e ESTORNADA. Gere nova etiqueta.",, .t.)
+		_lContinua = .F.
+	endif
+	if _lContinua .and. empty (::CodBarCx)
+		U_help ("Cod.barras p/impres.caixa nao informado na OP.",, .t.)
 		_lContinua = .F.
 	endif
 	if _lContinua
