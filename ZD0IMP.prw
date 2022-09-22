@@ -86,14 +86,24 @@ Static Function _GravaExtrato(dDataIni, dDataFin)
             _sIdReceb   := _VerifType(_IdReceb, _sTipoExt)
             _sIdExtrato := _VerifType(_IdExtrato,_sTipoExt)
         
-            If _sTipoExt == '2'
-                _sIdTrans := _sIdReceb
-            EndIf
-            If _sTipoExt == '3'
-                _sIdTrans := _sIdExtrato
-                _sIdReceb := _sIdExtrato
-            EndIf
+            _sStaBai := 'A'
+            Do Case
+                Case _sTipoExt == '1'
+                     _sCliente    := _BuscaCliente(_IdTrans,_sMetodoPgto)
+                     
+                Case _sTipoExt == '2'
+                    _sIdTrans := _sIdReceb
+                    _sStaBai  := 'T'
+                    _sCliente := ""
+
+                Case _sTipoExt == '3'
+                    _sIdTrans := _sIdExtrato
+                    _sIdReceb := _sIdExtrato
+                    _sStaBai  := 'X'
+                    _sCliente := ""
+            EndCase
             _sParProt    := _BuscaParcProtheus(_nParcela)
+           
             _nVlrTaxTot  := _nTaxa + _nTaxaAntec + _nTaxaFraude
             _nVlrLiq     := _nVlr - _nVlrTaxTot
            
@@ -125,6 +135,9 @@ Static Function _GravaExtrato(dDataIni, dDataFin)
                     ZD0 -> ZD0_TIPO   := _sTipoExt
                     ZD0 -> ZD0_DTAEXT := _sDtExtrato
                     ZD0 -> ZD0_HOREXT := _sHoraExt
+                    ZD0 -> ZD0_STABAI := _sStaBai
+                    ZD0 -> ZD0_CLIENT := _sCliente
+                    ZD0 -> ZD0_LOJA   := '01'
 
                     ZD0->(MsUnlock())
                 End Transaction
@@ -135,10 +148,6 @@ Static Function _GravaExtrato(dDataIni, dDataFin)
         Next
 
         u_log2('aviso', 'Importação finalizada!')
-        
-        // Emite relatório do período
-        // U_ZDOPXT(mv_par01, mv_par02)
-        // U_ZD0RIMP(mv_par01, mv_par02)
 
     EndIf
 Return
@@ -155,6 +164,87 @@ Static Function _RetLinkExt( dDataIni, dDataFin)
 
     u_log2("Aviso", " Link de pagamentos recebidos gerado:" + _sLink)
 Return _sLink
+//
+// -----------------------------------------------------------------------------------
+// Retirna cliente pela bandeira do cartão
+Static Function _BuscaCliente(_IdTrans, _sMetPgto)
+    local cUrlTrans  := ""
+    local cGetParms  := ""
+    local nTimeOut   := 200
+    local aHeadStr   := {"Content-Type: application/json"}
+    local cHeaderGet := ""
+    local cRetTrans  := ""
+    local _sCardBand := ""
+    local oJSONT
+    Local _sAkKey := GETMV("VA_PAGAR")
+
+    cUrlTrans  := 'https://api.pagar.me/1/transactions/' + alltrim(str(_IdTrans)) + '?api_key=' + alltrim(_sAkKey)
+    u_log2("Aviso", cUrlTrans)
+    cRetTrans := HttpGet( cUrlTrans , cGetParms, nTimeOut, aHeadStr, @cHeaderGet ) // Retorno do link da transação
+
+    oJSONT := JsonObject():New()
+    oJSONT:fromJSON(cRetTrans)
+
+    nNum := len(oJSONT)
+
+    If nNum == 0
+        u_log2('aviso', 'Pagar.me: Transação encontada:' + _sIdTrans)
+    else
+        u_log2('aviso', 'Verifique a chave API')
+    EndIf
+    
+    If nNum == 0
+        _lContinua := .T.
+        _sCardBand   := IIF(Empty(oJSONT["card_brand"])      , "", oJSONT["card_brand"])
+               
+    Else
+        u_log2('aviso', 'Pagar.me: Sem registro de transação')
+    Endif
+
+       Do Case 
+        Case alltrim(_sMetPgto) == 'pix'
+            _sCliente := '005'
+        Case alltrim(_sMetPgto) == 'boleto'
+            _sCliente := '005'                   // criar cliente boleto
+        Case alltrim(_sMetPgto) == 'credit_card'
+            Do Case
+                Case alltrim(_sCardBand) == 'amex'
+                     _sCliente := '503'
+                Case alltrim(_sCardBand) == 'elo'
+                     _sCliente := '401'
+                Case alltrim(_sCardBand) == 'mastercard'
+                     _sCliente := '101'
+                Case alltrim(_sCardBand) == 'visa'
+                     _sCliente := '201'
+                Case alltrim(_sCardBand) == 'hipercard'
+                     _sCliente := '501'
+                Otherwise
+                    u_log2("Aviso", 'Cartão de débito não previsto!')
+                    _sCliente := ''
+            EndCase
+
+        Case empty(_sMetPgto) 
+            Do Case
+                Case alltrim(_sCardBand) == 'amex'
+                     _sCliente := '502'
+                Case alltrim(_sCardBand) == 'elo'
+                     _sCliente := '400'
+                Case alltrim(_sCardBand) == 'mastercard'
+                     _sCliente := '100'
+                Case alltrim(_sCardBand) == 'visa'
+                     _sCliente := '200'
+                Case alltrim(_sCardBand) == 'hipercard'
+                     _sCliente := '500'                    
+                Otherwise
+                    u_log2("Aviso", 'Cartão de crédito não previsto!')
+                    _sCliente := '005'
+            EndCase
+        Otherwise
+            u_log2("Aviso", 'Método de pagamento não previsto!')
+            _sCliente := '005'
+    EndCase
+
+Return _sCliente
 //
 // -------------------------------------------------------------------------
 // Transforma parcela pagar.me em protheus
