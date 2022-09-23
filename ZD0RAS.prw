@@ -84,7 +84,7 @@ Static Function _GeraTitulos(dDataIni, dDataFin)
 
             // Gera RA's com pgtos
             _sHist    := 'PAGAR.ME '+ _aZD0[_x,2] + '-' + _aZD0[_x,3]
-            _nTitNum  := _GeraNumeracao(_nSeq, _aZD0[_x,4], _aZD0[_x,5])
+            _nTitNum  := _GeraNumeracao(_nSeq, DtoS(dDataBase), _aZD0[_x,5])
             _nSeq ++ 
 
             aAdd(_aAutoSE1, {"E1_FILIAL"   , _aZD0[_x,1]            , Nil})
@@ -204,12 +204,12 @@ Return
 //
 // -----------------------------------------------------------------------------------
 // Gera numeração para titulos
-Static Function _GeraNumeracao(_nSeq, _dtPgto, _sParcel)
-    _sSeq := alltrim(str(_nSeq))
+Static Function _GeraNumeracao(_nSeq, _sData, _sParcel)
+    _sSeq := PADL(alltrim(str(_nSeq)), 2,'0')
 
-    _sAno := SubStr(_dtPgto, 3, 2)
-    _sMes := SubStr(_dtPgto, 5, 2)
-    _sDia := SubStr(_dtPgto, 7, 2)
+    _sAno := SubStr(_sData, 3, 2)
+    _sMes := SubStr(_sData, 5, 2)
+    _sDia := SubStr(_sData, 7, 2)
 
     _sNumero := _sDia + _sMes + _sAno +_sSeq + _sParcel
 
