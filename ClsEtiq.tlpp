@@ -27,7 +27,7 @@
 // 12/08/2022 - Robert - Criado atributo :AlmDest (GLPI 12474)
 //                     - Melhorias leitura lote origem (ZAG e SD1)
 // 25/08/2022 - Robert - Criado metodo :ApontaOP
-// 22/09/2022 - Robert - Criado atributo :CodBarCx - GLPI 11994
+// 23/09/2022 - Robert - Criado atributo :CBEmbCol e metodo :ValCBEmb - GLPI 11994
 //
 
 #Include "Protheus.ch"
@@ -47,7 +47,7 @@ CLASS ClsEtiq
 	public data AlmDest       // Almox.destino
 	public data Apontada      // ZA1_APONT - Apontamento de producao ja executado (quando etiq. para OP)
 	public data Codigo        // ZA1_CODIGO
-	public data CodBarCx      // C2_VABARCX - Para validacao no momento de apontar a producao.
+	private data CBEmbCol      // C2_VABARCX - Cod.barras embalagem coletiva - Para validacao no momento de apontar a producao.
 	public data DocEntrForn   // ZA1_FORNEC - Quando refere-se a NF de entrada
 	public data DocEntrItem   // ZA1_ITEM - Quando refere-se a NF de entrada
 	public data DocEntrLoja   // ZA1_LOJAF - Quando refere-se a NF de entrada
@@ -81,6 +81,7 @@ CLASS ClsEtiq
 	public METHOD PodeEnvFul ()
 	public METHOD PodeExcluir ()
 	public METHOD PodeApont ()
+	public METHOD ValCBEmb ()
 ENDCLASS
 
 
@@ -96,12 +97,13 @@ METHOD New (_xChave) Class ClsEtiq
 
 	// Se receber caracter, eh por que se trata do codigo da etiqueta.
 	elseif valtype (_xChave) == "C"
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + '] >>' + xfilial ("ZA1") + _xChave + '<<')
 		za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP
 		if za1 -> (dbseek (xfilial ("ZA1") + _xChave, .F.))
 			::GeraAtrib ("ZA1")
 		else
-			U_Log2 ('debug', '[' + procname () + '] >>' + xfilial ("ZA1") + _xChave + '<<')
-			U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + "]Problema ao instanciar etiqueta: Nao localizei codigo de etiqueta '" + _xChave + "' para a filial atual na tabela ZA1.")
+			::UltMsg += "Problema ao instanciar etiqueta: Nao localizei codigo de etiqueta '" + _xChave + "' para a filial atual na tabela ZA1."
+			U_help (::UltMsg,, .t.)
 		endif
 	endif
 Return ::self
@@ -159,7 +161,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 	::AlmDest      = ''
 	::Apontada     = 'N'
 	::Codigo       = ''
-	::CodBarCx     = ''
+	::CBEmbCol     = ''
 	::DocEntrForn  = ''
 	::DocEntrItem  = ''
 	::DocEntrLoja  = ''
@@ -235,7 +237,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 				if ! sc2 -> (dbseek (xfilial ("SC2") + ::OP, .f.))
 					u_help ('[' + GetClassName (::Self) + '.' + procname () + "]Impossivel encontrar a OP '" + ::OP + "' relacionada `a etiqueta '" + ::Codigo + "'. Validade nao pode ser determinada.",, .t.)
 				else
-					::CodBarCx = sc2 -> c2_vaBarCx
+					::CBEmbCol = sc2 -> c2_vaBarCx
 					if sc2 -> c2_vaopesp == 'R'  // OP de reprocesso assume dt valid do lote original, cfe informada pelo usuario.
 						if empty (sc2 -> c2_vadvori)
 							u_help ('[' + GetClassName (::Self) + '.' + procname () + "]Impossivel buscar a data de validade do lote  da etiqueta '" + ::Codigo + "': a OP referenciada (" + ::OP + ") eh uma OP de reprocesso, e nao foi informada a data de validade do lote original no campo C2_VADVORI (" + alltrim (rettitle ("C2_VADVORI")) + ").",, .t.)
@@ -289,7 +291,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 
 			elseif ! empty (::IdZAG)
 				zag -> (dbsetorder (1))  // ZAG_FILIAL, ZAG_DOC, R_E_C_N_O_, D_E_L_E_T_
-				U_Log2 ('debug', '[' + procname () + ']Pesquisando ZAG com >>' + xfilial ("ZAG") + ::IdZAG + '<<')
+				U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Pesquisando ZAG com >>' + xfilial ("ZAG") + ::IdZAG + '<< para buscar lote e validade.')
 				if ! zag -> (dbseek (xfilial ("ZAG") + ::IdZAG, .F.))
 					u_help ("Solicitacao de transferencia '" + ::IdZAG + "' referenciada pela etiqueta '" + ::Codigo + "' nao foi localizada na tabela ZAG.",, .t.)
 				else
@@ -309,6 +311,15 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 							::LoteProduto  = _aLoteVal [1, 1]
 							::ValidadeLote = _aLoteVal [1, 2]
 						endif
+					endif
+					
+					// Teste criado em 23/09/22 para ver se o Full nao estah aceitando 
+					// as entradas por faltar lote.
+					// Manter consistencia com a view v_wms_entrada !!!
+					if ::AlmDest == '01' .and. empty (::LoteProduto)
+						U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Gerando lote e validade fajutos para ver se o Full aceita.')
+						::LoteProduto  = '000001'
+						::ValidadeLote = date () + sb1 -> b1_prvalid
 					endif
 				endif
 			endif
@@ -331,29 +342,29 @@ METHOD PodeApont (_nQtApont, _nQtPerda) Class ClsEtiq
 	local _sMsgSaldo := ''
 
 	if _lContinua .and. empty (::OP)
-		u_help ("Impossivel apontar etiq.'" + ::Codigo + "' pois nao encontra-se vinculada a nenhum OP.",, .t.)
+		u_help ("Etiq.'" + ::Codigo + "' nao vinculada a nenhuma OP.",, .t.)
 		_lContinua = .f.
 	endif
 	if _lContinua .and. ::Impressa != 'S'
-		u_help ("Impossivel apontar etiq.'" + ::Codigo + "': ainda nao impressa.",, .t.)
+		u_help ("Etiq.'" + ::Codigo + "' ainda nao impressa.",, .t.)
 		_lContinua = .f.
 	endif
 	if _lContinua .and. (::QtApontada + ::QtPerdida) > 0
-		u_help ("Impossivel apontar etiq.'" + ::Codigo + "': ja gerou apontamento de producao.",, .t.)
+		u_help ("Etiq.'" + ::Codigo + "' ja gerou apontamento de producao.",, .t.)
 		_lContinua = .f.
 	endif
 	if _lContinua .and. ::QtEstornada > 0
-		U_help ("Impossivel apontar etiq.'" + ::Codigo + "': ja foi apontada e ESTORNADA. Gere nova etiqueta.",, .t.)
+		U_help ("Etiq.'" + ::Codigo + "' ja foi apontada e ESTORNADA. Gere nova etiqueta.",, .t.)
 		_lContinua = .F.
 	endif
-	if _lContinua .and. empty (::CodBarCx)
-		U_help ("Cod.barras p/impres.caixa nao informado na OP.",, .t.)
+	if _lContinua .and. empty (::CBEmbCol)
+		U_help ("Cod.barras p/embalagem coletiva nao informado na OP.",, .t.)
 		_lContinua = .F.
 	endif
 	if _lContinua
 		_nQtTot = ::QtApontada + ::QtPerdida + _nQtApont + _nQtPerda
 		if _nQtTot != ::Quantidade
-			u_help ("Impossivel apontar etiq.'" + ::Codigo + "': Quantidade total produzida + perdida (" + cvaltochar (_nQtTot) + ") nao pode ser diferente da quantidade prevista da etiqueta (" + cvaltochar (::Quantidade) + ").",, .t.)
+			u_help ("Erro etiq.'" + ::Codigo + "':Qt.produzida+perdida (" + cvaltochar (_nQtTot) + ") nao pode ser diferente da quantidade prevista da etiqueta (" + cvaltochar (::Quantidade) + ").",, .t.)
 			_lContinua = .F.
 		endif
 	endif
@@ -550,7 +561,7 @@ METHOD EnviaFull (_lMsg) Class ClsEtiq
 		_oSQL:_sQuery := "select count (*)"
 		_oSQL:_sQuery +=  " from tb_wms_etiquetas"
 		_oSQL:_sQuery += " where id = '" + cvaltochar (::Codigo) + "'"
-		_oSQL:Log ()
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 		if _oSQL:RetQry () > 0
 			if _lMsg
 				u_help ("Impossivel enviar etiqueta '" + ::Codigo + "' para o FullWMS: Etiqueta jah existe na tabela tb_wms_etiquetas.", _oSQL:_sQuery, .t.)
@@ -573,7 +584,7 @@ METHOD EnviaFull (_lMsg) Class ClsEtiq
 		_oSQL:_sQuery +=          "'01',"
 		_oSQL:_sQuery +=          "'" + ::Filial + "',"
 		_oSQL:_sQuery +=          "'N')"  // N=ainda nao lida pelo Full
-		_oSQL:Log ()
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 		if ! _oSQL:Exec ()
 			U_help ("Erro ao enviar etiqueta para FullWMS: " + _oSQL:_sQuery,, .t.)
 			_lRetEnv = .F.
@@ -617,7 +628,7 @@ return _lContinua
 // Envia para impressora (ou porta relacionada a esta)
 METHOD Imprime (_sCodImpr) Class ClsEtiq
 	local _lContinua := .T.
-	_lContinua = U_ImpZA1 (::Codigo, _sCodImpr)
+	_lContinua = U_ImpZA1 (::Codigo, _sCodImpr, ::Self)
 return _lContinua
 
 
@@ -685,6 +696,17 @@ METHOD Inutiliza () Class ClsEtiq
 		endif
 	endif
 return
+
+
+// --------------------------------------------------------------------------
+METHOD ValCBEmb () Class ClsEtiq
+	local _lRetVCBE := .T.
+
+	if _sCBEmbCol != _oEtiq:CBEmbCol
+		::UltMsg += "Barras embalagem coletiva nao conferem com campo C2_VABARCX da OP."
+		_lRetVCBE = .F.
+	endif
+return _lRetVCBE
 
 
 // --------------------------------------------------------------------------

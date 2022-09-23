@@ -37,6 +37,7 @@
 User Function EnvEtFul (_sEtiq, _lMsg)
 	Local _aAreaAnt := U_ML_SRArea ()
 	local _oEtiq    := NIL
+	U_Log2 ('debug', '[' + procname () + ']Instanciando etiqueta')
 	_oEtiq := ClsEtiq ():New (_sEtiq)
 	_oEtiq:EnviaFull (_lMsg)
 	U_ML_SRArea (_aAreaAnt)

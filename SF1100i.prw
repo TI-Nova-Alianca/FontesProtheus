@@ -1126,6 +1126,7 @@ Static Function _AvisaSoli ()
 			_sMsg += 'Ped.compra.: ' + _aItens [_nItem, 8] + chr (13) + chr (10)
 			_sMsg += 'Solicitacao: ' + _aItens [_nItem, 9] + ' - Descr.orig.: ' + _aItens [_nItem, 10] + chr (13) + chr (10)
 			_sMsg += '------------------------------------------------------------------' + chr (13) + chr (10)
+			incluir aqui o numero da OS (ou OP) e tb o almox onde foi lançado
 			_nItem ++
 		enddo
 		if ! empty (_sMsg)

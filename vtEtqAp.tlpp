@@ -20,9 +20,9 @@
 // --------------------------------------------------------------------------
 user function vtEtqAp ()
 	local _lContinua   := .T.
-	local _nTamCBPro   := TamSX3 ("C2_VABARCX")[1]
+	local _nTamCBEmb   := TamSX3 ("C2_VABARCX")[1]
 	private _sBarEtiq  := ''
-	private _sBarProd  := ''
+	private _sCBEmbCol := ''
 	private _sProdEtq  := ''
 	private _dDatProd  := ctod ('')
 	private _oEtiq     := NIL
@@ -34,7 +34,7 @@ user function vtEtqAp ()
 		
 		// Limpa variaveis para ler nova etiqueta.
 		_sBarEtiq = space (10)
-		_sBarProd = space (_nTamCBPro)  // Maior que o necessario por que tem casos de licitacoes de SP que exigem uns caracteres de controle no inicio das barras.
+		_sCBEmbCol = space (_nTamCBEmb)  // Maior que o necessario por que tem casos de licitacoes de SP que exigem uns caracteres de controle no inicio das barras.
 		_sProdEtq = space (15)
 		// Nao limpar entre as etiquetas --> _dDatProd = ctod ('')
 		_oEtiq    = NIL
@@ -54,7 +54,7 @@ user function vtEtqAp ()
 		if _lContinua
 			U_Log2 ('debug', '[' + procname () + ']Antes de ler barras produto')
 			terSay (1, 0, "Cod.barras produto:")
-			VTSetGet (@_sBarProd, "_sBarProd", 1, 19, {||_ValCBProd ()})
+			VTSetGet (@_sCBEmbCol, "_sCBEmbCol", 1, 19, {||_ValCBProd ()})
 			vtRead ()
 			_lContinua = (vtLastkey() != 27)
 			terCBuffer ()
@@ -114,10 +114,10 @@ static function _ValCBProd ()
 	local _lRet      := .T.
 	local _sDescProd := ''
 
-	U_Log2 ('debug', '[' + procname () + ']barras lidas: >>' + _sBarProd + '<<')
+	U_Log2 ('debug', '[' + procname () + ']barras lidas: >>' + _sCBEmbCol + '<<')
 /*
 	sb1 -> (dbsetorder (5))  // B1_FILIAL, B1_CODBAR, R_E_C_N_O_, D_E_L_E_T_
-	if ! sb1 -> (dbseek (xfilial ("SB1") + _sBarProd, .F.))
+	if ! sb1 -> (dbseek (xfilial ("SB1") + _sCBEmbCol, .F.))
 		u_help ("Nenhum produto cadastrado com esse codigo de barras",, .t.)
 		_lRet = .F.
 	else
@@ -131,21 +131,21 @@ static function _ValCBProd ()
 	
 			// Nao vou permitir mais de um produto com mesmo codigo de barras
 			sb1 -> (dbskip ())
-			if sb1 -> b1_codbar == _sBarProd
+			if sb1 -> b1_codbar == _sCBEmbCol
 				u_help ("Encontrado mais de um produto com o mesmo codigo de barras.")
 				_lRet = .F.
 			endif
 		endif
 	endif
 */
-	if _sBarProd != _oEtiq:CodBarCx
-		u_help ("Barras caixa nao conferem com campo C2_VABARCX da OP.",, .t.)
+	if ! _oEtiq:ValCbEmb (_sCBEmbCol)
+		u_help (_oEtiq:UltMsg,, .t.)
 		_lRet = .F.
 	else
 		sb1 -> (dbsetorder (1))
 		if ! sb1 -> (dbseek (xfilial ("SB1") + _oEtiq:Produto, .F.))
 			u_help ("Produto " + _oEtiq:Produto + " nao cadastrado!",, .t.)
-			_lRet = .F.
+			_lRetVCBE = .F.
 		else
 			_sDescProd = alltrim (sb1 -> b1_cod) + ' - ' + alltrim (sb1 -> b1_desc)
 			terSay (2, 0, substr (_sDescProd, 1, _nLargTela))
