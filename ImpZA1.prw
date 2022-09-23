@@ -25,10 +25,11 @@
 // 11/08/2022 - Robert  - Ajuste 'alias not in use' na impressao.
 //                      - Grava msg em _oEtiq caso esteja instanciada.
 // 12/08/2022 - Robert  - Revisao geral, reformatacao, melhorias na logica, adequacao para Datamax (GLPI 12474)
+// 23/09/2022 - Robert  - Passa a (se nao receber) sempre instanciar ClsEtiq para leitura de alguns dados.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
-user function ImpZA1 (_sEtiq, _sIdImpr)
+user function ImpZA1 (_sEtiq, _sIdImpr, _oEtiq)
 	local _aAreaAnt   := U_ML_SRArea ()
 	local _lContinua  := .T.
 	local _sAlmOri    := ''
@@ -87,6 +88,21 @@ user function ImpZA1 (_sEtiq, _sIdImpr)
 		endif
 	endif
 
+	// Se recebi objeto na chamada, eh por que a rotina anterior jah tinha
+	// instanciado. Caso contrario, vou instanciar agora. Minha intencao eh
+	// que, com o tempo, todos os dados para impressao sejam lidos do objeto
+	// _oEtiq e nao mais direto das tabelas. Robert, 23/09/2022.
+	if valtype ('_oEtiq') != 'O'
+		U_Log2 ('debug', '[' + procname () + ']Nao recebi objeto _oEtiq. Instanciando agora.')
+		_oEtiq := ClsEtiq ():New (_sEtiq)
+		if empty (_oEtiq:Codigo)
+			u_help ("Erro ao instanciar etiqueta " + _sEtiq,, .t.)
+			_lContinua = .F.
+		endif
+	else
+		U_Log2 ('debug', '[' + procname () + ']Recebi objeto _oEtiq jah instanciado.')
+	endif
+
 	if _lContinua
 		za1 -> (dbsetorder(1))
 		if ! za1 -> (dbseek(xFilial("ZA1") + _sEtiq, .F.))
@@ -106,14 +122,15 @@ user function ImpZA1 (_sEtiq, _sIdImpr)
 	// Deixa o maximo de variaveis prontas para impressao, buscando manter
 	// integridade entre as diferentes funcoes de impressao.
 	if _lContinua
-		_sEtqImp   = alltrim (za1 -> za1_codigo)
-		_sProdImp  = alltrim (za1 -> za1_prod)
+		_sEtqImp   = alltrim (_oEtiq:Codigo) //alltrim (za1 -> za1_codigo)
+		_sProdImp  = alltrim (_oEtiq:Produto) //alltrim (za1 -> za1_prod)
 		_sUMImp    = sb1 -> b1_um
-		_sQtdImp   = alltrim (cvaltochar (za1 -> za1_quant))
+		_sQtdImp   = alltrim (cvaltochar (_oEtiq:Quantidade)) //alltrim (cvaltochar (za1 -> za1_quant))
 		_sDProImp1 = substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 1, 25)
 		_sDProImp2 = substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 26, 25)
 		_sDProImp3 = substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 51, 25)
-		_sPesoBImp = alltrim (cvaltochar (sb1 -> B1_PESBRU * za1 -> ZA1_QUANT))
+	//	_sPesoBImp = alltrim (cvaltochar (sb1 -> B1_PESBRU * za1 -> ZA1_QUANT))
+		_sPesoBImp = alltrim (cvaltochar (sb1 -> B1_PESBRU * _oEtiq:Quantidade))
 		_sDImpImp  = iif (za1 -> za1_impres == 'S', 'Reimpr:', 'Dt.Impr:') + dtoc (date ()) + ' ' + time ()
 		if sb1 -> b1_vafullw == 'S'
 			if empty (sb1 -> b1_codbar)
@@ -134,7 +151,7 @@ user function ImpZA1 (_sEtiq, _sIdImpr)
 				_sDocImp  = 'Solic.transf:' + alltrim (za1 -> za1_IdZAG)
 				_sLoteImp = zag -> zag_lotori
 				_sAlmOri  = zag -> zag_almori
-				_sObsImp1 = left ('Transf alm.' + zag -> zag_almori + ' -> ' + zag -> zag_almdst, 25)
+				_sObsImp1 = left ('Tr.alm.' + zag -> zag_almori + ' -> ' + zag -> zag_almdst + ' (' + alltrim (zag -> zag_usrinc) + ')', 31)
 				if zag -> zag_almdst != '01'  // Nao imprimir para nao aparecer 'devolucao', etc.
 					_sObs2 = left (zag -> zag_motivo, 25)
 				endif
@@ -158,18 +175,6 @@ user function ImpZA1 (_sEtiq, _sIdImpr)
 				endif
 			endif
 
-//			// Busca o primeiro (e deve ser o unico) apontamento gerado por esta etiqueta
-//			_oSQL := ClsSQL ():New ()
-//			_oSQL:_sQuery := ""
-//			_oSQL:_sQuery += "SELECT TOP 1 D3_LOCAL"
-//			_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD3") + " SD3"
-//			_oSQL:_sQuery += " WHERE SD3.D_E_L_E_T_ = ''"
-//			_oSQL:_sQuery +=   " AND SD3.D3_FILIAL  = '" + xfilial ("SD3") + "'"
-//			_oSQL:_sQuery +=   " AND SD3.D3_ESTORNO != 'S'"
-//			_oSQL:_sQuery +=   " AND SD3.D3_CF      like 'PR%'"
-//			_oSQL:_sQuery +=   " AND SD3.D3_VAETIQ  = '" + _sEtqImp + "'"
-//			_oSQL:Log ('[' + procname () + ']')
-//			_sAlmOri = _oSQL:RetQry (1, .F.)
 
 		case ! empty (ZA1 -> ZA1_DOCE)
 			_sDocImp = 'NF.' + alltrim (za1 -> za1_doce) + '/' + alltrim (za1 -> za1_seriee)
@@ -202,7 +207,7 @@ user function ImpZA1 (_sEtiq, _sIdImpr)
 	if _lContinua
 		if sb1 -> b1_rastro == 'L'
 			if ! _AchaSB8 (_sProdImp, _sLoteImp, _sAlmOri)
-				u_help ("Lote '" + _sLoteImp + "' do produto '" + _sProdImp + "' referenciado pela ettiqueta '" + _sEtqImp + "' nao foi localizado na tabela SB8",, .t.)
+				u_help ("Lote '" + _sLoteImp + "' do produto '" + _sProdImp + "' referenciado pela etiqueta '" + _sEtqImp + "' nao foi localizado na tabela SB8",, .t.)
 				_lContinua = .F.
 			else
 				_sVldLtImp = dtoc (sb8 -> b8_dtvalid)
@@ -285,15 +290,14 @@ user function ImpZA1 (_sEtiq, _sIdImpr)
 			endif
 
 			// Se tem objeto instanciado, nao custa nada gravar uma mensagem de retorno
-			if type ('_oEtiq') == 'O'
-				_oEtiq:UltMsg += 'Dados enviados para ' + _sPortaImp
-			endif
+			_oEtiq:UltMsg += 'Dados enviados para ' + _sPortaImp
 
 			// Penso que o fato de uma etiqueta estar impressa nao significa que jah precise
 			// ser enviada para o FullWMS. Vou deixar isso a cargo do ClsEtiq().
 			// Etiquetas (quando necessario) sao enviadas para o Full somente depois de impressas
 			if za1 -> za1_impres == 'S'
 				if empty (za1 -> za1_op)  // Etiquetas de OP sao enviadas somente depois de apontadas (P.E. SD3250I)
+					U_Log2 ('debug', '[' + procname () + ']Chamando envio da etiqueta para o Full')
 					U_EnvEtFul (za1 -> za1_codigo, .F.)
 				endif
 			endif

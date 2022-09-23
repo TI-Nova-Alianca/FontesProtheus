@@ -7,3 +7,4 @@
 .vscode/settings.json
 .project
 *.vscode
+!*.vscode/Customizacoes_Nova_Alianca.code-snippets

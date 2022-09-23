@@ -463,8 +463,8 @@ static function _ClsEtiq ()
 //	_oEtiq:Imprime ('01')
 //	_oEtiq := ClsEtiq ():New ('2000519769')  // Etiq gerada pelo ZAG
 //	_oEtiq:Imprime ('01')
-	_oEtiq := ClsEtiq ():New ('2000529531')  // Etiq gerada pela NF de entrada 000130897
-	_oEtiq:ApontaOP (date (), '1')
+	_oEtiq := ClsEtiq ():New ('2000541780')
+	_oEtiq:Imprime ('15')
 	U_Log2 ('debug', _oEtiq:UltMsg)
 return
 
@@ -729,17 +729,18 @@ STATIC FUNCTION _ClsTrEstq ()
 	_oTrEstq:FilDest = cFilAnt
 	_oTrEstq:DtEmis  = date ()
 	//_oTrEstq:OP = '1234561212312'
-	_oTrEstq:Motivo = 'teste robert (ZAG)' 
-	_oTrEstq:ProdOrig = '4072           '
-	_oTrEstq:ProdDest = '4072           '
-	_oTrEstq:AlmOrig = '25'
-	_oTrEstq:AlmDest = '25'
+	_oTrEstq:Motivo = 'teste robert para ax 01' 
+	_oTrEstq:ProdOrig = '0151           '
+	_oTrEstq:ProdDest = '0151           '
+	_oTrEstq:AlmOrig = '11'
+	_oTrEstq:AlmDest = '01'
 	//_oTrEstq:EndOrig = 'a'
 	//_oTrEstq:EndDest = 'b'
 	//_oTrEstq:LoteOrig = '1'
 	//_oTrEstq:LoteDest = '2'
 	_oTrEstq:QtdSolic = 1 
 	_oTrEstq:UsrIncl  = 'robert.koch'
+	_oTrEstq:ImprEtq = '15'
 	if _oTrEstq:Grava ()
 		U_Log2 ('debug', '[' + procname () + ']Gravou! msg: ' + _oTrEstq:UltMsg)
 		//u_logObj (_oTrEstq)

@@ -488,7 +488,6 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 	local _sEtiq     := ''
 	local _sMsg      := ''
 
-//	u_logIni (GetClassName (::Self) + '.' + procname ())
 	if empty (::RegZAG)
 		_sMsg += "Registro ainda nao gravado na tabela ZAG. Etiqueta nao vai ser gerada."
 		_lContinua = .F.
@@ -521,6 +520,8 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 	//endif
 
 	if _lContinua
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + '] Vou gerar etiqueta.')
+
 		// Usa mesma rotina de etiquetas dos pallets de producao.
 		_sEtiq = U_IncEtqPll (::ProdDest, '', ::QtdSolic, '', '', '', '', date (), '', ::Docto)
 		if ! empty (_sEtiq)
@@ -536,7 +537,6 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 	if _lMsg .and. ! empty (_sMsg)
 		u_help (_sMsg)
 	endif
-//	u_logFim (GetClassName (::Self) + '.' + procname ())
 return
 
 
