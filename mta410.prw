@@ -99,6 +99,7 @@
 // 22/06/2022 - Claudia - Passada validações de NSU/Id pagarme e indenização e bonificações no p.e Mta410. GLPI: 11600
 // 24/06/2022 - Claudia - Incluida validação para vendedor incluir/não incluir pedido dereto no Protheus. GLPI: 12249
 // 28/06/2022 - Claudia - Incluida validação para numero de pedido bonificação não ser igual ao pedido de venda. GLPI: 12274
+// 23/09/2022 - Claudia - Incluida validação para fazer bloqueio por vendedor apenas na inclusao de pedidos. GLPI: 12623
 //
 // ---------------------------------------------------------------------------------------------------------------------------
 User Function MTA410 ()
@@ -108,6 +109,7 @@ User Function MTA410 ()
 	local _sQueroCFO := ""
 	local _sCartu    := ""
 	local _N         := 0
+	local _sInclui   := iif(INCLUI, 'S','N')
 	
 	// Verifica se a liberacao dos itens foi totalmente feita.
 	if _lRet
@@ -124,7 +126,7 @@ User Function MTA410 ()
 				u_help ("Vendedor " + m->c5_vend2 + " nao consta como 'Ativo'",, .t.)
 				_lRet = .F.
 			endif
-			if (fBuscaCpo("SA3", 1, xfilial("SA3") + m->c5_vend1, "A3_VAIPED") != "S") .and. !IsInCallStack("U_BATMERCP")
+			if (fBuscaCpo("SA3", 1, xfilial("SA3") + m->c5_vend1, "A3_VAIPED") != "S") .and. !IsInCallStack("U_BATMERCP") .and. _sInclui == 'S'
 				u_help ("Vendedor " + m->c5_vend1 + " sem permissão para incluir pedido (cfe. campo " + alltrim (RetTitle ("A3_VAIPED") + " no cadastro de representantes)."),, .t.)
 				_lRet = .F.
 			endif
