@@ -128,6 +128,7 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " 		AND SE1.E1_FILIAL  = ZD0.ZD0_FILIAL "
 	_oSQL:_sQuery += " 		AND SE1.E1_VAIDT   = ZD0.ZD0_TID "
 	_oSQL:_sQuery += " 		AND SE1.E1_PARCELA = ZD0.ZD0_PARCEL "
+	_oSQL:_sQuery += " 		AND SE1.E1_TIPO    = 'RA' "
 	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SA1") + " SA1 "
 	_oSQL:_sQuery += " 	ON SA1.D_E_L_E_T_  = '' "
 	_oSQL:_sQuery += " 		AND SA1.A1_COD = SE1.E1_CLIENTE "
@@ -137,6 +138,7 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " AND ZD0_DTAEXT + ' ' + ZD0_HOREXT BETWEEN '"+ _sData1 +"' AND '"+ _sData2 +"' "
 	_oSQL:_sQuery += " AND ZD0_TIPO <> '2' "
 	_oSQL:_sQuery += " ORDER BY ZD0_DTAEXT "
+	_oSQL:Log ()
 	_aDados := _oSQL:Qry2Array ()
 
 	For _x := 1 to Len(_aDados)

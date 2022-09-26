@@ -45,6 +45,7 @@ User Function ZD0()
 		AADD(_aCores,{ "ZD0_STABAI == 'R'", 'BR_AZUL'     }) // Gerada RA's
 		AADD(_aCores,{ "ZD0_STABAI == 'T'", 'BR_PRETO'    }) // Transferencias
 		AADD(_aCores,{ "ZD0_STABAI == 'X'", 'BR_BRANCO'   }) // Taxas
+		AADD(_aCores,{ "ZD0_STABAI == 'E'", 'BR_AMARELO'  }) // Amarelo
                       
 		dbSelectArea ("ZD0")
 		dbSetOrder (1)
@@ -65,6 +66,7 @@ User function ZD0LGD (_lRetCores)
 	aadd (aCores, {"ZD0->ZD0_STABAI=='R'", 'BR_AZUL'	 , 'Gerada RA'		})
 	aadd (aCores, {"ZD0->ZD0_STABAI=='T'", 'BR_PRETO'	 , 'Transferencias'	})
 	aadd (aCores, {"ZD0->ZD0_STABAI=='X'", 'BR_BRANCO'	 , 'Taxas'			})
+	aadd (aCores, {"ZD0->ZD0_STABAI=='E'", 'BR_AMARELO'	 , 'Estorno'		})
 
 	if ! _lRetCores
 		for _i = 1 to len (aCores)

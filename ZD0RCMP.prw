@@ -138,7 +138,7 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += " AND ZD0_FILIAL = '"+ xFilial('ZD0')+"'"
     _oSQL:_sQuery += " AND ZD0_DTAPGT BETWEEN '"+ dtos(dDtIni) +"' AND '"+ dtos(dDtFin) +"'"
     _oSQL:_sQuery += " ORDER BY ZD0_TID
-
+    _oSQL:Log ()
     _aZD0 := aclone (_oSQL:Qry2Array ())
 
 	For _x := 1 to Len(_aZD0)

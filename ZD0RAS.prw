@@ -36,7 +36,6 @@ Static Function _GeraTitulos(dDataIni, dDataFin)
     Local _aZD0     := {}
     Local _aAutoSE1 := {}
     Local _x        := 0
-    Local _nSeq     := 1
     Local _y        := 0
     Local _i        := 0
 
@@ -59,9 +58,9 @@ Static Function _GeraTitulos(dDataIni, dDataFin)
     _oSQL:_sQuery += "	WHERE ZD0.D_E_L_E_T_ = '' "
     _oSQL:_sQuery += "	AND ZD0.ZD0_FILIAL   = '" + xFilial('ZD0') + "' "
     _oSQL:_sQuery += "	AND ZD0_DTAPGT BETWEEN '" + dtos(dDataIni) + "' AND '" + dtos(dDataFin) + "' "
-    If !empty(mv_par03)
-        _oSQL:_sQuery += "	AND ZD0_TID = '" + mv_par03 + "'"
-    EndIf
+    //If !empty(mv_par03)
+    //    _oSQL:_sQuery += "	AND ZD0_TID = '" + mv_par03 + "'"
+    //EndIf
     _oSQL:_sQuery += "	AND ZD0_STABAI = 'A' ""
     _oSQL:_sQuery += "	ORDER BY FILIAL, VALOR_PARCELA  DESC "
     _aZD0 := _oSQL:Qry2Array ()
@@ -84,20 +83,19 @@ Static Function _GeraTitulos(dDataIni, dDataFin)
 
             // Gera RA's com pgtos
             _sHist    := 'PAGAR.ME '+ _aZD0[_x,2] + '-' + _aZD0[_x,3]
-            _nTitNum  := _GeraNumeracao(_nSeq, DtoS(dDataBase), _aZD0[_x,5])
-            _nSeq ++ 
+            _nTitNum  := _BuscaNumeracao(_aZD0[_x,1])
 
             aAdd(_aAutoSE1, {"E1_FILIAL"   , _aZD0[_x,1]            , Nil})
-            aAdd(_aAutoSE1, {"E1_PREFIXO"  , '10'                   , Nil})
+            aAdd(_aAutoSE1, {"E1_PREFIXO"  , 'PGM'                  , Nil})
             aAdd(_aAutoSE1, {"E1_NUM"      , _nTitNum               , Nil})            
             aAdd(_aAutoSE1, {"E1_PARCELA"  , _aZD0[_x,5]            , Nil})
             aAdd(_aAutoSE1, {"E1_TIPO"     , 'RA'                   , Nil})
             aAdd(_aAutoSE1, {"E1_NATUREZ"  , '110101'               , Nil})
             aAdd(_aAutoSE1, {"E1_CLIENTE"  , _aZD0[_x,11]           , Nil})
             aAdd(_aAutoSE1, {"E1_LOJA"     , _aZD0[_x,12]           , Nil})
-            aAdd(_aAutoSE1, {"E1_EMISSAO"  , stod(_aZD0[_x,4])      , Nil})
-            aAdd(_aAutoSE1, {"E1_VENCTO"   , stod(_aZD0[_x,4])      , Nil})
-            aAdd(_aAutoSE1, {"E1_VENCREA"  , stod(_aZD0[_x,4])      , Nil})
+            aAdd(_aAutoSE1, {"E1_EMISSAO"  , dDataBase              , Nil}) // stod(_aZD0[_x,4])
+            aAdd(_aAutoSE1, {"E1_VENCTO"   , dDataBase              , Nil})
+            aAdd(_aAutoSE1, {"E1_VENCREA"  , dDataBase              , Nil})
             aAdd(_aAutoSE1, {"CBCOAUTO"    , _sBanco                , Nil})
             aAdd(_aAutoSE1, {"CAGEAUTO"    , _sAgencia              , Nil})
             aAdd(_aAutoSE1, {"CCTAAUTO"    , _sConta                , Nil}) 
@@ -124,7 +122,6 @@ Static Function _GeraTitulos(dDataIni, dDataFin)
                     DisarmTransaction()
                     u_log2("Erro", _sErro)
                 else
-                    //u_help("Gravado título "+ alltrim(_nTitNum) + " refetente a Id Transacao " +  _aZD0[_x,2])
                     u_log2("Aviso", "Gravado título "+ alltrim(_nTitNum) + " refetente a Id Transacao " +  _aZD0[_x,2])
                 EndIf
             End Transaction   
@@ -139,10 +136,10 @@ Static Function _GeraTitulos(dDataIni, dDataFin)
                 _oSQL:_sQuery += " AND E1_FILIAL  = '" + _aZD0[_x,1]  + "'"
                 _oSQL:_sQuery += " AND E1_NUM     = '" + _nTitNum     + "'"
                 _oSQL:_sQuery += " AND E1_PARCELA = '" + _aZD0[_x,5]  + "'"
-                _oSQL:_sQuery += " AND E1_PREFIXO = '10'"
-                _oSQL:_sQuery += " AND E1_TIPO    = 'RA'"
+                _oSQL:_sQuery += " AND E1_PREFIXO = 'PGM' "
+                _oSQL:_sQuery += " AND E1_TIPO    = 'RA' "
                 _oSQL:_sQuery += " AND E1_CLIENTE = '" + _aZD0[_x,11] + "'"
-                _oSQL:_sQuery += " AND E1_LOJA    = '01'"
+                _oSQL:_sQuery += " AND E1_LOJA    = '01' "
                 _oSQL:Log ()
                 _oSQL:Exec ()
 
@@ -201,19 +198,55 @@ Static Function _GeraTitulos(dDataIni, dDataFin)
     // chama relatorio de baixas
     U_ZD0RCMP(dDataIni, dDataFin)
 Return
+// //
+// // -----------------------------------------------------------------------------------
+// // Gera numeração para titulos
+// Static Function _GeraNumeracao(_nSeq, _sData, _sParcel)
+//     _sSeq := PADL(alltrim(str(_nSeq)), 2,'0')
+
+//     _sAno := SubStr(_sData, 3, 2)
+//     _sMes := SubStr(_sData, 5, 2)
+//     _sDia := SubStr(_sData, 7, 2)
+
+//     _sNumero := _sDia + _sMes + _sAno +_sSeq + _sParcel
+
+// Return _sNumero
 //
 // -----------------------------------------------------------------------------------
-// Gera numeração para titulos
-Static Function _GeraNumeracao(_nSeq, _sData, _sParcel)
-    _sSeq := PADL(alltrim(str(_nSeq)), 2,'0')
+// Busca numeração para titulos
+Static Function _BuscaNumeracao(_sFilial)
+    Local _x       := 0
+    Local _sTabela := '01' 
+    Local _sChave  := 'PGM'
 
-    _sAno := SubStr(_sData, 3, 2)
-    _sMes := SubStr(_sData, 5, 2)
-    _sDia := SubStr(_sData, 7, 2)
+    _oSQL:= ClsSQL ():New ()
+    _oSQL:_sQuery := ""
+    _oSQL:_sQuery += " SELECT "
+    _oSQL:_sQuery += " 	    X5_DESCRI "
+    _oSQL:_sQuery += " FROM " + RetSQLName ("SX5") 
+    _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+    _oSQL:_sQuery += " AND X5_FILIAL    = '" + _sFilial + "' "
+    _oSQL:_sQuery += " AND X5_TABELA    = '" + _sTabela + "' "
+    _oSQL:_sQuery += " AND X5_CHAVE     = '" + _sChave  + "' "
+    _aSX5 := _oSQL:Qry2Array ()
 
-    _sNumero := _sDia + _sMes + _sAno +_sSeq + _sParcel
+    For _x := 1 to Len(_aSX5)
+        _nNumAtu  := val(_aSX5[_x,1])
+        _nNumAtu  := _nNumAtu + 1
+        _sNumNovo := PADL(alltrim(str(_nNumAtu)),9,'0')
+    Next
 
-Return _sNumero
+    _oSQL:= ClsSQL ():New ()
+    _oSQL:_sQuery := ""
+    _oSQL:_sQuery += " UPDATE " + RetSQLName ("SX5") 
+    _oSQL:_sQuery += " 	    SET X5_DESCRI='"+ _sNumNovo +"', X5_DESCSPA='"+ _sNumNovo +"', X5_DESCENG='"+ _sNumNovo +"'"
+    _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+    _oSQL:_sQuery += " AND X5_FILIAL    = '" + _sFilial + "' "
+    _oSQL:_sQuery += " AND X5_TABELA    = '" + _sTabela + "' "
+    _oSQL:_sQuery += " AND X5_CHAVE     = '" + _sChave  + "' "
+    _oSQL:Exec ()
+
+Return _sNumNovo
 //
 // -------------------------------------------------------------------------
 // Cria Perguntas no SX1
@@ -222,7 +255,7 @@ Static Function _ValidPerg ()
     //                     PERGUNT          TIPO TAM DEC VALID F3     Opcoes                      Help
     aadd (_aRegsPerg, {01, "Data Inicial ", "D",  8, 0,  "",   "   ", {},                         		 ""})
     aadd (_aRegsPerg, {02, "Data Final   ", "D",  8, 0,  "",   "   ", {},                         		 ""})
-    aadd (_aRegsPerg, {03, "Id Transação ", "C", 15, 0,  "",   "   ", {},                         		 ""})
+    //aadd (_aRegsPerg, {03, "Id Transação ", "C", 15, 0,  "",   "   ", {},                         		 ""})
 
     U_ValPerg (cPerg, _aRegsPerg)
 Return
