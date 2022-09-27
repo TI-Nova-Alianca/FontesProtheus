@@ -115,6 +115,7 @@
 // 03/06/2022 - Claudia - Comentado o restante do else do if referente ao funrural.
 // 20/06/2022 - Claudia - Incluido nome do fornecedor no e-mail. GLPI: 12213
 // 21/09/2022 - Robert  - Removidas linhas comentariadas.
+// 27/09/2022 - Robert  - Avisa setor de manutencao quando chega NF referenciando OS (GLPI 12643)
 //
 
 // ------------------------------------------------------------------------------------------------------------------------------
@@ -148,6 +149,11 @@ User Function SF1100i ()
 	// Avisa solicitante que seu pedido chegou.
 	if ! sf1 -> f1_tipo $ "BD"
 		_AvisaSoli ()
+	endif
+
+	// Avisa setor manutencao quando chegou material alocado em OS
+	if ! sf1 -> f1_tipo $ "BD"
+		_AvisaMnt ()
 	endif
 	
 	// Parece que nas notas de uva fica em branco, e a versao 3.10 da NF-e exige...
@@ -1126,7 +1132,6 @@ Static Function _AvisaSoli ()
 			_sMsg += 'Ped.compra.: ' + _aItens [_nItem, 8] + chr (13) + chr (10)
 			_sMsg += 'Solicitacao: ' + _aItens [_nItem, 9] + ' - Descr.orig.: ' + _aItens [_nItem, 10] + chr (13) + chr (10)
 			_sMsg += '------------------------------------------------------------------' + chr (13) + chr (10)
-			incluir aqui o numero da OS (ou OP) e tb o almox onde foi lançado
 			_nItem ++
 		enddo
 		if ! empty (_sMsg)
@@ -1147,7 +1152,77 @@ Static Function _AvisaSoli ()
 
 	U_ML_SRArea (_aAreaAnt)
 return
-// 
+
+
+// --------------------------------------------------------------------------
+// Avisa setor manutencao quando chegou material alocado em OS
+static function _AvisaMnt ()
+	local _aAreaAnt := U_ML_SRArea ()
+	local _oSQL     := NIL
+	local _aItens   := {}
+	local _oItens   := NIL
+	local _sMsgHTM  := ''
+	local _aColsMsg := {}
+	local _oAviso   := NIL
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT DISTINCT 'OS ' + D1_ORDEM + ' ('"
+	_oSQL:_sQuery += "      + RTRIM (STJ.TJ_CODBEM) + ' ' + RTRIM (ST9.T9_NOME) + ')'"
+	_oSQL:_sQuery += "      , RTRIM (D1_COD), RTRIM (D1_DESCRI), D1_QUANT,D1_UM"
+	_oSQL:_sQuery += " FROM " + RetSQLName ("SD1") + " SD1"
+	_oSQL:_sQuery +=    " LEFT JOIN " + RetSQLName ("STJ") + " STJ"
+	_oSQL:_sQuery +=         " LEFT JOIN " + RetSQLName ("ST9") + " ST9"
+	_oSQL:_sQuery +=              " ON (ST9.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=              " AND ST9.T9_FILIAL  = STJ.TJ_FILIAL"
+	_oSQL:_sQuery +=              " AND ST9.T9_CODBEM  = STJ.TJ_CODBEM)"
+	_oSQL:_sQuery +=         " ON (STJ.D_E_L_E_T_ != '*'"
+	_oSQL:_sQuery +=         " AND STJ.TJ_FILIAL   = SD1.D1_FILIAL"
+	_oSQL:_sQuery +=         " AND STJ.TJ_ORDEM    = SD1.D1_ORDEM)"
+	_oSQL:_sQuery +=   " AND SD1.D1_SERIE    = '" + sf1 -> f1_serie   + "'"
+	_oSQL:_sQuery += " where SD1.D_E_L_E_T_ != '*'"
+	_oSQL:_sQuery +=   " AND SD1.D1_FILIAL   = '" + xfilial ("SD1")   + "'"
+	_oSQL:_sQuery +=   " AND SD1.D1_DOC      = '" + sf1 -> f1_doc     + "'"
+	_oSQL:_sQuery +=   " AND SD1.D1_SERIE    = '" + sf1 -> f1_serie   + "'"
+	_oSQL:_sQuery +=   " AND SD1.D1_FORNECE  = '" + sf1 -> f1_fornece + "'"
+	_oSQL:_sQuery +=   " AND SD1.D1_LOJA     = '" + sf1 -> f1_loja    + "'"
+	_oSQL:_sQuery +=   " AND SD1.D1_ORDEM   != ''"
+	_oSQL:Log ('[' + procname () + ']')
+	_aItens := aclone (_oSQL:Qry2Array (.f., .f.))
+	_oItens = ClsAUtil():New(_aItens)
+	if len (_oItens:_aArray) > 0
+		_aColsMsg = {}
+		aadd (_aColsMsg, {'Ordem',        'left',  ''})
+		aadd (_aColsMsg, {'Produto',      'left',  ''})
+		aadd (_aColsMsg, {'Descricao',    'left',  ''})
+		aadd (_aColsMsg, {'Quant',        'right', '@E 999,999,999'})
+		aadd (_aColsMsg, {'U.M.',         'left',  ''})
+		_sMsgHTM = _oItens:ConvHTM ('Digitada NF entrada referenciando ordens de manutencao', ;
+									_aColsMsg, ;
+									'', ;
+									.F., ;
+									100)
+
+		_oAviso := ClsAviso ():New ()
+		_oAviso:Tipo       = 'A'
+		_oAviso:DestinAvis = 'evaldo.agnoletto;leonardo.borges'
+		_oAviso:Titulo     = 'NF entrada ' + sf1 -> f1_doc
+		_oAviso:Titulo    += ' de ' + alltrim (fBuscaCpo ("SA2", 1, xfilial ("SA2") + sf1 -> f1_fornece + sf1 -> f1_loja, "A2_NOME"))
+		_oAviso:Titulo    += ' contendo itens para OS'
+		_oAviso:Texto      = _sMsgHTM
+		_oAviso:Formato    = 'H'
+		_oAviso:Origem     = procname () + ' - ' + procname (1)
+		_oAviso:Grava ()
+
+		// copia para testes
+		_oAviso:DestinAvis = 'robert.koch'
+		_oAviso:Grava ()
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
+return
+
+
 // -----------------------------------------------------------------------------------------------------
 // Atualiza status na tabela ZZX  --- essa rotina é usada pelo SF1140I
 static function _AtuZZX (_zzxstatus)

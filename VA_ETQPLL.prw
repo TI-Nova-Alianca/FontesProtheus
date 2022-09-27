@@ -84,7 +84,7 @@ User Function VA_ETQPLL()
 	aadd(aRotina, {"Excluir Grupo"       , "U_EtqPlltG(za1 -> za1_op, za1 -> za1_doce, za1 -> za1_seriee, za1 -> za1_fornec, za1 -> za1_lojaf, 'E')", 0, 2})
 	aadd(aRotina, {"Inutilizar"          , "U_ZA1In (ZA1->ZA1_CODIGO, .T.)", 0, 2})
 	aAdd(aRotina, {"Excluir"             , "U_EtqPlltE (.T.)", 0, 5})
-	aAdd(aRotina, {"Cancela transf.ax 01", "U_EtqPllCT (ZA1->ZA1_CODIGO)", 0, 5})
+	aAdd(aRotina, {"Abortar transf.ax 01", "U_EtqPllCT (ZA1->ZA1_CODIGO)", 0, 5})
 	aadd(aRotina, {"Legenda", "U_ZA1LG()", 0, 7})
 	
 	dbSelectArea(cString)
@@ -489,7 +489,7 @@ return
 
 
 // --------------------------------------------------------------------------
-// Cancela transferencia para almox. do FullWMS
+// Aborta transferencia para almox. do FullWMS
 User Function EtqPllCT (_sCodigo)
 	local _oSQL      := NIL
 	local _lContinua := .T.
@@ -524,7 +524,7 @@ User Function EtqPllCT (_sCodigo)
 		_oSQL:Log ()
 		_aEntr_ID = _oSQL:Qry2Array ()
 		if len (_aEntr_ID) == 0
-			u_help ("Entrada nao existe (ou ja foi executada ou cancelada) na tabela de transferencias para o FullWMS. Nao ha transferencia a cancelar.")
+			u_help ("Entrada nao existe (ou ja foi executada ou cancelada) na tabela de transferencias para o FullWMS. Nao ha transferencia pendente.", _oSQL:_sQuery, .t.)
 			_lContinua = .F.
 		elseif len (_aEntr_ID) == 1
 			_sEntr_ID = _aEntr_ID [1, 1] 
@@ -572,7 +572,7 @@ User Function EtqPllCT (_sCodigo)
 				_oEventoCG:SerieEntr = za1 -> za1_seriee
 				_oEventoCG:Grava ()
 				
-				u_help ("Cancelamento gravado.")
+				u_help ("Pendencia cancelada.")
 			endif
 		endif
 	endif

@@ -15,7 +15,6 @@
 	// 	],
 	// 	"description": "Log output to console"
 	// }
-
 	"Gravar log para debug": {"prefix": "logD", "body": ["U_Log2 ('debug', '[' + procname () + ']'$1)"]},
 	"Gravar log de aviso":   {"prefix": "logA", "body": ["U_Log2 ('aviso', '[' + procname () + ']'$1)"]},
 	"Gravar log de erro":    {"prefix": "logE", "body": ["U_Log2 ('erro', '[' + procname () + ']'$1)"]},

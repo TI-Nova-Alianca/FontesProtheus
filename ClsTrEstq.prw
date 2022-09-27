@@ -26,6 +26,7 @@
 // 02/08/2022 - Robert  - Para gravar, precisa ser dono de pelo menos um dos almox. (GLPI 12404)
 // 02/08/2022 - Robert  - Para gravar, testa possibilidade do destino ser igual a origem (GLPI 12427).
 // 13/09/2022 - Robert  - Criados atributos CtrLocOrig, CtrLocDest, CtrLotOrig, CtrLotDest.
+// 23/09/2022 - Robert  - Tratamentos para envio para o FullWMS (GLPI 12220).
 //
 
 // ------------------------------------------------------------------------------------
@@ -134,7 +135,7 @@ METHOD New (_nRecno) Class ClsTrEstq
 	::UsrAutQld  = ''
 
 	// Se receber numero de registro do ZAG, alimenta atributos da classe com seus dados.
-	if valtype (_nRecno) == "N"
+	if valtype (_nRecno) == "N" .and. _nRecno > 0
 		_aAmbAnt := U_ML_SRArea ()
 		zag -> (dbgoto (_nRecno))
 		::Filial    = zag -> zag_filial
@@ -242,8 +243,9 @@ METHOD Exclui () Class ClsTrEstq
 	local _lContinua := .T.
 	local _oSQL      := NIL
 	local _sEtiq     := ''
+	local _oEtiq     := NIL
 
-	u_log2 ('info', 'Iniciando exclusao do ZAG docto ' + ::Docto + ' na rotina ' + GetClassName (::Self) + '.' + procname ())
+	u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Iniciando exclusao do ZAG docto ' + ::Docto)
 	::UltMsg = ""
 
 	if _lContinua .and. ::Executado == 'S'
@@ -269,9 +271,11 @@ METHOD Exclui () Class ClsTrEstq
 		_oSQL:_sQuery += " AND ZA1_APONT  != 'I'"
 		_sEtiq = _oSQL:RetQry (1, .F.)
 		if ! empty (_sEtiq)
+			
 			// Tenta inutilizar a etiqueta
-		//	if ! U_EtqPllIn (_sEtiq, .F.)
-			if ! U_ZA1In (_sEtiq, .F.)
+			_oEtiq := ClsEtiq():New(_sEtiq)
+		//	if ! U_ZA1In (_sEtiq, .F.)
+			if ! _oEtiq:Inutiliza ()
 				::UltMsg += "Existe a etiqueta " + _sEtiq + " gerada para esta solicitacao. Inutilize, antes, a etiqueta."
 				_lContinua = .F.
 			endif
@@ -727,6 +731,9 @@ METHOD Grava () Class ClsTrEstq
 			_lContinua = .F.
 		endif
 	endif
+
+	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + '] ::AlmOrig = >>' + cvaltochar (::AlmOrig) + '<<')
+	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + '] ::AlmUsaFull = >>' + cvaltochar (::AlmUsaFull (::AlmOrig)) + '<<')
 
 	if _lContinua .and. ::AlmUsaFull (::AlmOrig)
 		_oSQL := ClsSQL ():New ()

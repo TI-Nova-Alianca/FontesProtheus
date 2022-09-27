@@ -95,7 +95,7 @@ user function robert ()
 
 		// _SimCtb ()
 		// _FechSafr ()
-		// _ClsTrEstq ()
+		//_TrEstq ()
 		// _Sisdevin ()
 		// _metaf ()
 		// _exml ()
@@ -106,19 +106,33 @@ user function robert ()
 		//_batfull ()
 		// _telnet ()
 		// _verif ()
-		// _ClsEtiq ()
+		// _Etiq ()
 		// _VA_XLS ()
 		// _aviso ()
 		// _reginv ()
 		//_ImpGPC ()
 		//_memoria ()
 		//_EstFul()
+		_SF1()
 
 		//U_SendMail ('robert.koch@novaalianca.coop.br', 'teste conta', 'teste', {}, 'financeiro2', '', '')
-		u_help ('Nada definido.')
+		//u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
+return
+
+static function _SF1 ()
+	local _nDado := 0
+	local _oSQL := ClsSQL():New()
+	_oSQL:_sQuery := "SELECT top 10 R_E_C_N_O_ FROM SD1010 WHERE D_E_L_E_T_ = '' and D1_FILIAL = '01' AND D1_DTDIGIT >= '20220901' AND D1_ORDEM != ''"
+	_aDados = aclone (_oSQL:Qry2Array (1, .f.))
+	for _nDado = 1 to len (_aDados)
+		sd1 -> (dbgoto (_aDados [_nDado, 1]))
+		sf1 -> (dbsetorder (1))  // F1_FILIAL, F1_DOC, F1_SERIE, F1_FORNECE, F1_LOJA, F1_TIPO, R_E_C_N_O_, D_E_L_E_T_
+		sf1 -> (dbseek (sd1->d1_filial + sd1->d1_doc + sd1->d1_serie + sd1->d1_fornece + sd1->d1_loja, .F.))
+		_AvisaMnt ()
+	next
 return
 
 // --------------------------------------------------------------------------
@@ -141,8 +155,8 @@ static function _memoria ()
 	_a1 := aclone (_oSQL:Qry2Array ())
 	_a2 := {}
 	do while .t.
-		// pior que sobe a memoria mesmo!!!  -->  		aadd (_a2, aclone (_a1))
-		sleep (500)
+		// pior que sobe a memoria mesmo!!!  -->  aadd (_a2, aclone (_a1))
+		sleep (10500)
 		u_log2 ('debug', cvaltochar (len (_a2)))
 	enddo
 return
@@ -457,14 +471,16 @@ static function _metaf ()
 return
 
 // --------------------------------------------------------------------------
-static function _ClsEtiq ()
+static function _Etiq ()
 	local _oEtiq := NIL
 //	_oEtiq := ClsEtiq ():New ('2000527843')  // Etiq apontamento de OP (item 0151)
 //	_oEtiq:Imprime ('01')
 //	_oEtiq := ClsEtiq ():New ('2000519769')  // Etiq gerada pelo ZAG
 //	_oEtiq:Imprime ('01')
-	_oEtiq := ClsEtiq ():New ('2000541780')
-	_oEtiq:Imprime ('15')
+//	_oEtiq := ClsEtiq ():New ('2000541780')  // Transf.manual ax 11 para 01
+//	_oEtiq:Imprime ('15')
+	_oEtiq := ClsEtiq ():New ('2000541691')  // Teste transf.manual
+	u_log (_oEtiq:Inutiliza (.f.))
 	U_Log2 ('debug', _oEtiq:UltMsg)
 return
 
@@ -722,8 +738,31 @@ return
 
 
 // Testes classe transf.estq.
-STATIC FUNCTION _ClsTrEstq ()
+STATIC FUNCTION _TrEstq ()
 	private _sErroAuto := ''
+	_sDocZAG := '0000002433'
+	zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
+	if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
+		u_help ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG")
+	else
+		U_Log2 ('debug', '[' + procname () + ']Instanciando...')
+		_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
+		U_Log2 ('debug', '[' + procname () + ']Instanciou')
+		if empty (_oTrEstq:Docto)
+			u_help ("Nao foi possivel instanciar objeto _oTrEstq",, .t.)
+		else
+			U_Log2 ('debug', '[' + procname () + ']tentando excluir')
+			_oTrEstq:Exclui ()
+		endif
+	endif
+//	//
+	//_oTrEstq:RegZAG = 1604
+	//if _oTrEstq:Exclui ()
+	//	u_log ('Excluiu!', _oTrEstq:UltMsg)
+	//else
+	//	u_help (_oTrEstq:UltMsg)
+	//endif
+/*
 	_oTrEstq := ClsTrEstq ():New ()
 	_oTrEstq:FilOrig = cFilAnt
 	_oTrEstq:FilDest = cFilAnt
@@ -757,21 +796,7 @@ STATIC FUNCTION _ClsTrEstq ()
 	else
 		U_Log2 ('debug', '[' + procname () + ']Nao gravou. msg: ' + _oTrEstq:UltMsg)
 	endif
-//	_sDocZAG := '0000001979'
-//	zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
-//	if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
-//		u_help ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG")
-//	else
-//		_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
-//		_oTrEstq:GeraEtiq (.t.) //Libera ()
-//	endif
-//	//
-	//_oTrEstq:RegZAG = 1604
-	//if _oTrEstq:Exclui ()
-	//	u_log ('Excluiu!', _oTrEstq:UltMsg)
-	//else
-	//	u_help (_oTrEstq:UltMsg)
-	//endif
+*/
 return
 
 /*

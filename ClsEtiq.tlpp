@@ -28,6 +28,7 @@
 //                     - Melhorias leitura lote origem (ZAG e SD1)
 // 25/08/2022 - Robert - Criado metodo :ApontaOP
 // 23/09/2022 - Robert - Criado atributo :CBEmbCol e metodo :ValCBEmb - GLPI 11994
+// 26/09/2022 - Robert - Funcao de inutilizacao migrada do fonte ZA1IN para metodo :Inutiliza()
 //
 
 #Include "Protheus.ch"
@@ -65,6 +66,7 @@ CLASS ClsEtiq
 	public data QtEstornada   // Quando relacionada a uma OP
 	public data QtPerdida     // Quando relacionada a uma OP
 	public data Quantidade    // ZA1_QUANT
+	private data RegZA1       // Numero registro (RECNO) no ZA1.
 	public data SeqNoGrupo    // ZA1_SEQ - Sequencia dentro do grupo, geralmente de OP. Ex.: 1 de 10, 2 de 10, ...
 	public data UltMsg        // Ultima mensagem gerada.
 	public data UsrIncl       // ZA1_USRINC - Usuario que incluiu/gerou a etiqueta
@@ -179,6 +181,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 	::QtEstornada  = 0
 	::QtPerdida    = 0
 	::Quantidade   = 0
+	::RegZA1       = 0
 	::SeqNoGrupo   = ''
 	::UltMsg       = ''
 	::UsrIncl      = ''
@@ -220,6 +223,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 		::OP           = za1 -> ZA1_OP
 		::Produto      = za1 -> ZA1_PROD
 		::Quantidade   = za1 -> ZA1_QUANT
+		::RegZA1       = za1 -> (recno ())
 		::SeqNoGrupo   = za1 -> ZA1_SEQ
 		::UsrIncl      = za1 -> ZA1_USRINC
 	endif
@@ -634,68 +638,91 @@ return _lContinua
 
 // --------------------------------------------------------------------------
 // Inutiliza a etiqueta.
-METHOD Inutiliza () Class ClsEtiq
+METHOD Inutiliza (_lMsg) Class ClsEtiq
 	local _lContinua := .T.
-	local _sMsgNaoIn := ''
 	local _oEvento   := NIL
-	
+	local _oSQL      := NIL
+	local _aAreaAnt  := U_ML_SRArea ()
+
+	_lMsg := iif (_lMsg == NIL, .F., _lMsg)
+	if _lContinua .and. (::Inutilizada)
+		::UltMsg += "A etiqueta '" + ::Codigo + "' ja encontra-se inutilizada."
+		_lContinua := .F.
+	endif
+
 	// Verifica se o usuario tem liberacao.
 	if ! empty (::OP) .and. ! U_ZZUVL ('073', __cUserID, .T.)
-		_sMsgNaoIn += "Usuario sem acesso a etiquetas de OP."
+		::UltMsg += "Usuario sem acesso para initilizar etiquetas de OP."
 		_lContinua = .F.
 	endif
 	if ! empty (::DocEntrNum) .and. ! U_ZZUVL ('074', __cUserID, .T.)
-		_sMsgNaoIn += "Usuario sem acesso a etiquetas de NF."
+		::UltMsg += "Usuario sem acesso para inutilizar etiquetas de NF."
 		_lContinua = .F.
 	endif
 	if _lContinua .and. ! empty (::OP)
-		_sMsgNaoIn := "A etiqueta '" + ::Codigo + "' nao pode ser inutilizada por ser uma etiqueta de ordem de producao."
+		::UltMsg := "A etiqueta '" + ::Codigo + "' nao pode ser inutilizada por ser uma etiqueta de ordem de producao."
 		_lContinua := .F.
 	endif
 
-	if (ZA1 -> ZA1_APONT == 'I') .and. _lContinua
-		u_help ("A etiqueta '" + alltrim(ZA1 -> ZA1_CODIGO) + "' ja encontra-se inutilizada.",, .t.)
-		_lContinua := .F.
-	endif
 
-	if _lContinua
-		if _bMostraMsg
+	// Se foi gerada por solicitacao de transf.estoque, vou ver do que se trata.
+	if _lContinua .and. ! empty (::IdZAG) .and. ::AlmDest == '01'
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " select status_protheus"
+		_oSQL:_sQuery +=   " from tb_wms_entrada"
+		_oSQL:_sQuery +=  " where entrada_id = 'ZA1" + ::Filial + ::Codigo + "'"
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		_sStatWMS = _oSQL:RetQry (1, .F.)
+		if ! empty (_sStatWMS) .and. ! _sStatWMS $ 'C'
+			::UltMsg += "A etiqueta '" + ::Codigo + "' ja foi enviada para o FullWMS"
+			::UltMsg += " e nao pode ser inutilizada por que encontra-se com status '" + _sStatWMS + "'"
+			::UltMsg += " na tabela de integracao tb_wms_entrada."
+			::UltMsg += "Essa entrada deve ser excluida, antes, no FullWMS"
+			::UltMsg += "(ou sua 'guarda' deve ser cancelada manualmente nesta tabela)"
 			_lContinua = .F.
-			_lContinua = U_MsgNoYes ("Confirma a inutilização da etiqueta?")
-		endif
-		
-		if _lContinua
-			begin transaction
-				reclock ("ZA1", .f.)
-				za1 -> za1_apont = 'I'
-				msunlock ()
-
-				_oEvento := ClsEvent():new ()
-				_oEvento:CodEven   = "ZA1002"
-				_oEvento:Texto     = "Inutilizacao etiqueta " + za1 -> za1_codigo
-				_oEvento:Recno     = za1 -> (recno ())
-				_oEvento:Alias     = 'ZA1'
-				_oEvento:CodAlias  = za1 -> za1_codigo
-				_oEvento:Etiqueta  = za1 -> za1_codigo
-				if ! empty (za1 -> za1_doce)
-					_oEvento:NFEntrada = za1 -> za1_doce
-				endif
-				if ! empty (za1 -> za1_seriee)
-					_oEvento:SerieEntr = za1 -> za1_seriee
-				endif
-				if ! empty (za1 -> za1_fornec)
-					_oEvento:Fornece = za1 -> za1_fornec
-				endif
-				if ! empty (za1 -> za1_lojaf)
-					_oEvento:LojaFor = za1 -> za1_lojaf
-				endif
-				_oEvento:Grava ()
-			end transaction
-
-			u_help ("Etiqueta '" + alltrim(_sCodigo) + "' inutilizada!" + chr(13) + "(Remover do Recipiente)")
 		endif
 	endif
-return
+
+	if _lContinua .and. _lMsg
+		_lContinua = U_MsgNoYes ("Confirma a inutilização da etiqueta?")
+	endif
+		
+	if _lContinua
+		za1 -> (dbgoto (::RegZA1))
+		begin transaction
+			reclock ("ZA1", .f.)
+			za1 -> za1_apont = 'I'
+			msunlock ()
+
+			// Grava evento para posterior rastreamento
+			_oEvento := ClsEvent():new ()
+			_oEvento:CodEven   = "ZA1002"
+			_oEvento:Texto     = "Inutilizacao etiqueta " + ::Codigo
+			_oEvento:Recno     = ::RegZA1
+			_oEvento:Alias     = 'ZA1'
+			_oEvento:CodAlias  = ::Codigo
+			_oEvento:Etiqueta  = ::Codigo
+			_oEvento:Produto   = ::Produto
+			_oEvento:OP        = ::OP
+			_oEvento:NFEntrada = ::DocEntrNum
+			_oEvento:SerieEntr = ::DocEntrSerie
+			_oEvento:Fornece   = ::DocEntrForn
+			_oEvento:LojaFor   = ::DocEntrLoja
+			_oEvento:Grava ()
+		end transaction
+		::Inutilizada = .T.
+
+		::UltMsg += "Etiqueta '" + ::Codigo + "' inutilizada (Remover do Recipiente)"
+		if _lMsg
+			u_help (::UltMsg)
+		endif
+	else
+		u_help (::UltMsg)
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
+return _lContinua
 
 
 // --------------------------------------------------------------------------
