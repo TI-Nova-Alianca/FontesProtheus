@@ -25,7 +25,7 @@
 // 11/08/2022 - Robert  - Ajuste 'alias not in use' na impressao.
 //                      - Grava msg em _oEtiq caso esteja instanciada.
 // 12/08/2022 - Robert  - Revisao geral, reformatacao, melhorias na logica, adequacao para Datamax (GLPI 12474)
-// 23/09/2022 - Robert  - Passa a (se nao receber) sempre instanciar ClsEtiq para leitura de alguns dados.
+// 23/09/2022 - Robert  - Passa a (se nao receber) sempre instanciar ClsEtiq para leitura de alguns dados (GLPI 12220)
 //
 
 // -------------------------------------------------------------------------------------------------------------------

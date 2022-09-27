@@ -5,6 +5,5 @@
 *.~pr
 .vscode/launch.json
 .vscode/settings.json
+.vscode/servers.json
 .project
-*.vscode
-!*.vscode/Customizacoes_Nova_Alianca.code-snippets

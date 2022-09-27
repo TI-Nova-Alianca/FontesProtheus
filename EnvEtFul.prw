@@ -31,6 +31,7 @@
 // 11/02/2022 - Robert - Desabilitado envio para Full quando etiq. de NF de entrada (nunca chegamos a usar).
 // 31/03/2022 - Robert - Passa a usar a classe ClsEtiq() - GLPI 11825
 // 15/06/2022 - Robert - Removidas linhas comentariadas.
+// 23/09/2022 - Robert  - Tratamentos para envio para o FullWMS (GLPI 12220).
 //
 
 // ------------------------------------------------------------------------------------

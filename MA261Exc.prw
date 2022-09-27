@@ -22,7 +22,6 @@ user function MA261Exc ()
 
 	// Este P.E. parece ser chamado uma vez para cada registro RE/DE do SD3, mas, para atualizar o ZAG, soh preciso de um deles.
 	if left (sd3 -> d3_vaChvEx, 3) == 'ZAG' .and. left (sd3 -> d3_cf, 2) == 'RE'
-		//U_SendMail ("robert.koch@novaalianca.coop.br", "falta estornar ClsTrEstq no " + procname (), "vai corrigir isso, tche!", {})
 		zag -> (dbsetorder (1))
 		if zag -> (dbseek (xfilial ("ZAG") + substr (sd3 -> d3_vaChvEx, 4, 10), .F.))
 			_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
@@ -31,7 +30,12 @@ user function MA261Exc ()
 			endif
 		endif
 	endif
-	_AtuEstor ()  // Atualiza a tabela do Fullsoft como 'Estornado'
+
+	// Se envolve almox.controlado pelo FullWMS, atualiza tabela(s) relacionada(s).
+	if left (sd3 -> d3_cf, 2) == 'DE' .and. sd3 -> d3_local == '01'
+		_AtuEstor ()  // Atualiza a tabela do Fullsoft como 'Estornado'
+	endif
+
 	U_ML_SRArea (_aAreaAnt)
 return
 
@@ -44,7 +48,6 @@ static function _AtuEstor ()
 	_oSQL:_sQuery := " update tb_wms_entrada"
 	_oSQL:_sQuery +=    " set status_protheus = '5'"
 	_oSQL:_sQuery +=  " where entrada_id = 'ZA1" + sd3->d3_filial + sd3->d3_vaetiq + "'"
-	_oSQL:Log()
+	_oSQL:Log ('[' + procname () + ']')
 	_oSQL:Exec ()
-	
 return
