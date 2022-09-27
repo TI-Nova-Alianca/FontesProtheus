@@ -113,12 +113,26 @@ user function robert ()
 		//_ImpGPC ()
 		//_memoria ()
 		//_EstFul()
+		_SF1()
 
 		//U_SendMail ('robert.koch@novaalianca.coop.br', 'teste conta', 'teste', {}, 'financeiro2', '', '')
-		u_help ('Nada definido.')
+		//u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
+return
+
+static function _SF1 ()
+	local _nDado := 0
+	local _oSQL := ClsSQL():New()
+	_oSQL:_sQuery := "SELECT top 10 R_E_C_N_O_ FROM SD1010 WHERE D_E_L_E_T_ = '' and D1_FILIAL = '01' AND D1_DTDIGIT >= '20220901' AND D1_ORDEM != ''"
+	_aDados = aclone (_oSQL:Qry2Array (1, .f.))
+	for _nDado = 1 to len (_aDados)
+		sd1 -> (dbgoto (_aDados [_nDado, 1]))
+		sf1 -> (dbsetorder (1))  // F1_FILIAL, F1_DOC, F1_SERIE, F1_FORNECE, F1_LOJA, F1_TIPO, R_E_C_N_O_, D_E_L_E_T_
+		sf1 -> (dbseek (sd1->d1_filial + sd1->d1_doc + sd1->d1_serie + sd1->d1_fornece + sd1->d1_loja, .F.))
+		_AvisaMnt ()
+	next
 return
 
 // --------------------------------------------------------------------------
