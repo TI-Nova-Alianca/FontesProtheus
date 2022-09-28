@@ -19,8 +19,9 @@
 // 07/04/2021 - Sandra  - Tratamento do SE5 eh especifico para verbas de clientes 
 //                        (habilitado quando cupons das lojas)
 // 24/05/2022 - Claudia - Incluido a gravação do rapel. GLPI: 8916
+// 28/09/2022 - Claudia - Incluida validação de saldo da verba na gravação da baixa ZA5. GLPI: 12654
 //
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------
 User Function F70GRSE1()
 	local _aAreaAnt := U_ML_SRArea ()
 	u_logIni ()
@@ -154,28 +155,37 @@ Static Function _AtuSE5 ()
 					_wseq = _aDados[1,1]
 				endif
 
-				// grava tabela ZA5
-				RecLock("ZA5",.T.)
-					za5 -> za5_num     = @(_wnumverba)
-					za5 -> za5_seq     = _wseq+1
-					za5 -> za5_vlr     = @(_wvalor)
-					za5 -> za5_prefix  = se1 -> e1_prefixo
-					za5 -> za5_doc     = se1 -> e1_num
-					za5 -> za5_parc    = se1 -> e1_parcela
-					za5 -> za5_tipo    = se1 -> e1_tipo
-					za5 -> za5_cli	   = se1 -> e1_cliente
-					za5 -> za5_loja    = se1 -> e1_loja
-					za5 -> za5_tlib    = fBuscaCpo ('ZA4', 1, xfilial('ZA4') + @(_wnumverba), "ZA4_TLIB")
-					za5 -> za5_usu     = alltrim (cUserName)
-					za5 -> za5_dta     = ddatabase
-					za5 -> za5_filial  = xFilial("ZA5")
-					za5 -> za5_seqSE5  = _sSeqSE5
-					za5 -> za5_venver  = fBuscaCpo ('ZA4', 1, xfilial('ZA4') + @(_wnumverba), "ZA4_VEND")
-					za5 -> za5_vennf   = se1 -> e1_vend1
-				MsUnLock()
-				
-				// Atualiza status de utilizacao da verba.
-				U_AtuZA4 (_wnumverba)
+				// Verifica saldo da verba para baixa (casos de baixas duplicadas)
+				_lContinua := _SaldoZA5(@(_wnumverba) ,  @(_wvalor))
+
+				If _lContinua
+					// grava tabela ZA5
+					RecLock("ZA5",.T.)
+						za5 -> za5_num     = @(_wnumverba)
+						za5 -> za5_seq     = _wseq+1
+						za5 -> za5_vlr     = @(_wvalor)
+						za5 -> za5_prefix  = se1 -> e1_prefixo
+						za5 -> za5_doc     = se1 -> e1_num
+						za5 -> za5_parc    = se1 -> e1_parcela
+						za5 -> za5_tipo    = se1 -> e1_tipo
+						za5 -> za5_cli	   = se1 -> e1_cliente
+						za5 -> za5_loja    = se1 -> e1_loja
+						za5 -> za5_tlib    = fBuscaCpo ('ZA4', 1, xfilial('ZA4') + @(_wnumverba), "ZA4_TLIB")
+						za5 -> za5_usu     = alltrim (cUserName)
+						za5 -> za5_dta     = ddatabase
+						za5 -> za5_filial  = xFilial("ZA5")
+						za5 -> za5_seqSE5  = _sSeqSE5
+						za5 -> za5_venver  = fBuscaCpo ('ZA4', 1, xfilial('ZA4') + @(_wnumverba), "ZA4_VEND")
+						za5 -> za5_vennf   = se1 -> e1_vend1
+					MsUnLock()
+					
+					// Atualiza status de utilizacao da verba.
+					U_AtuZA4 (_wnumverba)
+					
+				else
+					u_log(" Verba " + se1 -> e1_num + " sem saldo para baixa!")
+				EndIf
+
 			endif
 		next
 	endif
@@ -221,33 +231,40 @@ Static Function _AtuZA5 ()
 		_wseq = _aDados[1,1]
 	endif	
 			
-	// grava tabela ZA5
-	RecLock("ZA5",.T.)
-		za5 -> za5_num     = se1 -> e1_num  // a verba tem o mesmo nro da NCC
-		za5 -> za5_seq     = _wseq+1
-		za5 -> za5_vlr     = se1 -> e1_valor
-		za5 -> za5_prefix  = se1 -> e1_prefixo
-		za5 -> za5_doc     = se1 -> e1_num
-		za5 -> za5_parc    = se1 -> e1_parcela
-		za5 -> za5_tipo    = se1 -> e1_tipo
-		za5 -> za5_cli	   = se1 -> e1_cliente
-		za5 -> za5_loja    = se1 -> e1_loja
-		za5 -> za5_tlib    = fBuscaCpo ('ZA4', 1, xfilial('ZA4') + se1 -> e1_num, "ZA4_TLIB")
-		za5 -> za5_usu     = alltrim (cUserName)
-		za5 -> za5_dta     = ddatabase
-		za5 -> za5_filial  = xFilial("ZA5") 
-		za5 -> za5_venver  = fBuscaCpo ('ZA4', 1, xfilial('ZA4') + se1 -> e1_num, "ZA4_VEND")
-		za5 -> za5_vennf   = se1 -> e1_vend1
-	MsUnLock()
+	// Verifica saldo da verba para baixa (casos de baixas duplicadas)
+	_lContinua := _SaldoZA5(se1 -> e1_num, se1 -> e1_valor)
 
-	// grava status de utilizacao
-	DbSelectArea("ZA4")
-	DbSetOrder(1)
-	DbSeek(xFilial("ZA4") + se1 -> e1_num,.F.)
+	If _lContinua
+		// grava tabela ZA5
+		RecLock("ZA5",.T.)
+			za5 -> za5_num     = se1 -> e1_num  // a verba tem o mesmo nro da NCC
+			za5 -> za5_seq     = _wseq+1
+			za5 -> za5_vlr     = se1 -> e1_valor
+			za5 -> za5_prefix  = se1 -> e1_prefixo
+			za5 -> za5_doc     = se1 -> e1_num
+			za5 -> za5_parc    = se1 -> e1_parcela
+			za5 -> za5_tipo    = se1 -> e1_tipo
+			za5 -> za5_cli	   = se1 -> e1_cliente
+			za5 -> za5_loja    = se1 -> e1_loja
+			za5 -> za5_tlib    = fBuscaCpo ('ZA4', 1, xfilial('ZA4') + se1 -> e1_num, "ZA4_TLIB")
+			za5 -> za5_usu     = alltrim (cUserName)
+			za5 -> za5_dta     = ddatabase
+			za5 -> za5_filial  = xFilial("ZA5") 
+			za5 -> za5_venver  = fBuscaCpo ('ZA4', 1, xfilial('ZA4') + se1 -> e1_num, "ZA4_VEND")
+			za5 -> za5_vennf   = se1 -> e1_vend1
+		MsUnLock()
 
-	RecLock("ZA4",.F.)
-		za4 -> za4_sutl = '2'
-	MsUnLock()
+		// grava status de utilizacao
+		DbSelectArea("ZA4")
+		DbSetOrder(1)
+		DbSeek(xFilial("ZA4") + se1 -> e1_num,.F.)
+
+		RecLock("ZA4",.F.)
+			za4 -> za4_sutl = '2'
+		MsUnLock()
+	else
+		u_log(" Verba " + se1 -> e1_num + " sem saldo para baixa!")
+	EndIf
 
 	u_logFim ()
 Return
@@ -309,4 +326,49 @@ Static Function _AtuZC0()
 		EndIf
 	EndIf
 Return
+//
+// -------------------------------------------------
+// Verifica saldo para baixa
+Static Function _SaldoZA5(_sVerba, _nValor)
+	Local _lRet      := .T.
+	Local _nVlrBaixa := 0
+	Local _nVlrVerba := 0
+	Local _x         := 0
+	Local _y         := 0
+	Local _nBxTotal  := 0
+	local _oSQL      := ClsSQL():New ()
 
+	// Busca total já baixado
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT SUM(ZA5.ZA5_VLR)"
+	_oSQL:_sQuery += "   	FROM " + RetSQLName ("ZA5") + " AS ZA5 "
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_   = '' "
+	_oSQL:_sQuery += " AND ZA5.ZA5_NUM    = '" + _sVerba  + "'"
+	_oSQL:Log ()
+	_aBaixado := _oSQL:Qry2Array ()
+
+	For _x := 1 to Len(_aBaixado)
+		_nVlrBaixa += _aBaixado[_x,1]
+	Next
+	_nBxTotal :=  _nVlrBaixa + _nValor // baixa mais valor que pretende baixar
+
+	// Busca total da verba já baixado
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT SUM(ZA4.ZA4_VLR)"
+	_oSQL:_sQuery += "   	FROM " + RetSQLName ("ZA4") + " AS ZA4 "
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_   = '' "
+	_oSQL:_sQuery += " AND ZA4.ZA4_NUM    = '" + _sVerba  + "'"
+	_oSQL:Log ()
+	_aVerba := _oSQL:Qry2Array ()
+
+	For _y :=1 to Len(_aVerba)
+		_nVlrVerba += _aVerba[_y,1]
+	Next 
+
+	If _nVlrBaixa >= _nVlrVerba // se a baixa esta maior ou igual ao valor da verba, nao permite baixa
+		_lRet := .F.
+	EndIf
+	If _nBxTotal > _nVlrVerba // se baixa + valor que pretende baixar ficar maior que o valor da verba, nao permite a baixa
+		_lRet := .F.
+	EndIf
+Return _lRet

@@ -132,11 +132,6 @@ User Function ZD0CMP()
                     _BaixaTaxa(aTaxa)
                     End Transaction
                 EndIf
-            else
-                
-            // estorno de valor
-
-
             EndIf
         Next
 
