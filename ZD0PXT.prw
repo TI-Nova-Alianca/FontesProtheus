@@ -59,6 +59,7 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA9"	, 	"" ,"Vlr.Liquido"	, "@E 999,999,999.99"   	,25,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
     TRCell():New(oSection1,"COLUNA10"	, 	"" ,"Título"    	,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA11"	, 	"" ,"Cliente"    	,       					,40,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA12"	, 	"" ,"Titulo RA"    	,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 
     oBreak1 := TRBreak():New(oSection1,oSection1:Cell("COLUNA1"),"Total por filial")
     TRFunction():New(oSection1:Cell("COLUNA7")	,,"SUM"	,oBreak1,"Total parcela "   , "@E 99,999,999.99", NIL, .F., .T.)
@@ -122,13 +123,20 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += "    ,ZD0_VLRLIQ "
 	_oSQL:_sQuery += "    ,SE1.E1_NUM + '/' + SE1.E1_PREFIXO + ' ' + SE1.E1_PARCELA AS TITULO "
 	_oSQL:_sQuery += "    ,SE1.E1_CLIENTE + ' - ' + SA1.A1_NOME AS CLIENTE "
+	_oSQL:_sQuery += "    ,SE1RA.E1_NUM + '/' + SE1RA.E1_PREFIXO + ' ' + SE1RA.E1_PARCELA AS TITULO_RA "
 	_oSQL:_sQuery += " FROM " + RetSQLName ("ZD0") + " ZD0 "
 	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SE1") + " SE1 "
 	_oSQL:_sQuery += " 	ON SE1.D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " 		AND SE1.E1_FILIAL  = ZD0.ZD0_FILIAL "
 	_oSQL:_sQuery += " 		AND SE1.E1_VAIDT   = ZD0.ZD0_TID "
 	_oSQL:_sQuery += " 		AND SE1.E1_PARCELA = ZD0.ZD0_PARCEL "
-	_oSQL:_sQuery += " 		AND SE1.E1_TIPO    = 'RA' "
+	//_oSQL:_sQuery += " 		AND SE1.E1_TIPO    = 'RA' "
+	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SE1") + " SE1RA "
+	_oSQL:_sQuery += " 	ON SE1RA.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " 		AND SE1RA.E1_FILIAL  = ZD0.ZD0_FILIAL "
+	_oSQL:_sQuery += " 		AND SE1RA.E1_VAIDT   = ZD0.ZD0_TID "
+	_oSQL:_sQuery += " 		AND SE1RA.E1_PARCELA = ZD0.ZD0_PARCEL "
+	_oSQL:_sQuery += " 		AND SE1RA.E1_TIPO    = 'RA' "	
 	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SA1") + " SA1 "
 	_oSQL:_sQuery += " 	ON SA1.D_E_L_E_T_  = '' "
 	_oSQL:_sQuery += " 		AND SA1.A1_COD = SE1.E1_CLIENTE "
@@ -142,6 +150,35 @@ Static Function PrintReport(oReport)
 	_aDados := _oSQL:Qry2Array ()
 
 	For _x := 1 to Len(_aDados)
+		_sTitulo  := _aDados[_x,10]
+		_sCliente := _aDados[_x,11]
+
+		If empty(_sTitulo) // se nao encontrou o titulo, verifica se é a parcela A, já que o pagar.me inclui como 1 parcela em compra de cartões
+			_oSQL := ClsSQL():New ()  
+			_oSQL:_sQuery := "" 		
+			_oSQL:_sQuery += " 	SELECT "
+			_oSQL:_sQuery += " 		 SE1.E1_NUM "
+			_oSQL:_sQuery += " 		,SE1.E1_PREFIXO "
+			_oSQL:_sQuery += " 		,SE1.E1_PARCELA "
+			_oSQL:_sQuery += " 		,SE1.E1_CLIENTE "
+			_oSQL:_sQuery += " 		,SA1.A1_NOME "
+			_oSQL:_sQuery += " 	FROM " + RetSQLName ("SE1") + " SE1 "
+			_oSQL:_sQuery += " 	LEFT JOIN " + RetSQLName ("SA1") + " SA1 "
+			_oSQL:_sQuery += " 		ON SA1.D_E_L_E_T_ = '' "
+			_oSQL:_sQuery += " 			AND SA1.A1_COD = SE1.E1_CLIENTE "
+			_oSQL:_sQuery += " 			AND SA1.A1_LOJA = SE1.E1_LOJA "
+			_oSQL:_sQuery += " 	WHERE SE1.D_E_L_E_T_ = '' "
+			_oSQL:_sQuery += " 	AND SE1.E1_FILIAL   = '" + _aDados[_x, 1] +"' "
+			_oSQL:_sQuery += " 	AND SE1.E1_VAIDT    = '" + _aDados[_x, 4] +"' "
+			_oSQL:_sQuery += " 	AND SE1.E1_PARCELA  = '' "
+			_aTit := _oSQL:Qry2Array ()
+
+			For _y:=1 to Len(_aTit)
+				_sTitulo  := _aTit[_y, 1] + "/" + _aTit[_y, 2] + " " + _aTit[_y, 3]
+				_sCliente := _aTit[_y, 4] + " - " + _aTit[_y, 5]
+			Next
+		EndIf
+
 		oSection1:Cell("COLUNA1")	:SetBlock   ({|| _aDados[_x, 1] }) 
 		oSection1:Cell("COLUNA2")	:SetBlock   ({|| _aDados[_x, 2] }) 
 		oSection1:Cell("COLUNA3")	:SetBlock   ({|| _aDados[_x, 3] }) 
@@ -151,8 +188,9 @@ Static Function PrintReport(oReport)
 		oSection1:Cell("COLUNA7")	:SetBlock   ({|| _aDados[_x, 7] }) 
 		oSection1:Cell("COLUNA8")	:SetBlock   ({|| _aDados[_x, 8] }) 
 		oSection1:Cell("COLUNA9")	:SetBlock   ({|| _aDados[_x, 9] }) 
-        oSection1:Cell("COLUNA10")	:SetBlock   ({|| _aDados[_x,10] }) 
-		oSection1:Cell("COLUNA11")	:SetBlock   ({|| _aDados[_x,11] }) 
+        oSection1:Cell("COLUNA10")	:SetBlock   ({|| _sTitulo       }) 
+		oSection1:Cell("COLUNA11")	:SetBlock   ({|| _sCliente      }) 
+		oSection1:Cell("COLUNA12")	:SetBlock   ({|| _aDados[_x,12] }) 
 		
 		oSection1:PrintLine()
 	Next
