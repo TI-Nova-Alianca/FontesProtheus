@@ -18,7 +18,9 @@
 // 21/03/2022 - Claudia - Ajustada a validação de obrigação do centro de custo. GLPI: 11780
 // 02/06/2022 - Claudia - Incluida validação de rateio. GLPI: 11937
 // 14/06/2022 - Claudia - Ajustada a validação para data de entrega não ser menor que data atual. GLPI: 12127
+// 28/09/2022 - Robert  - Validacao de data de entrega passa a desconsiderar linhas jah encerradas.
 //
+
 // ---------------------------------------------------------------------------------------------------------------
 User Function MT120LOk ()
 	local _lRet     := .T.
@@ -38,7 +40,7 @@ User Function MT120LOk ()
 				u_help ("Obrigatório informar centro de custo para este item.")
 				_lRet = .F.
 			EndIf
-		endif				
+		endif
 	endif
 
 	if !empty(GDFieldGet ("C7_CC")) .and. empty(GDFieldGet ("C7_OBS"))
@@ -47,8 +49,10 @@ User Function MT120LOk ()
 	endif
 
 	if _lRet .and. ! GDDeleted() .and. (GDFieldGet("C7_DATPRF") < DATE()) //.and. (GDFieldGet("C7_ENCER") = 'E' )
-		U_Help ("Data de entrega não pode ser menor que data atual.")
-		_lRet = .F.
+		if GDFieldGet ("C7_QUJE") < GDFieldGet ("C7_QUANT") .and. empty (GDFieldGet ("C7_RESIDUO"))
+			U_Help ("Data de entrega não pode ser menor que data atual.",, .t.)
+			_lRet = .F.
+		endif
 	endif
 
 	//validação de Centro de custo X conta contábil
