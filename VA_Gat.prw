@@ -132,6 +132,7 @@
 //                        agora vem com NIL. Alterado para GDFieldGet - GLPI 12036
 // 31/08/2022 - Robert  - Melhoria uso classe ClsAviso.
 // 02/09/2022 - Robert  - Nao desconsiderava registros deletados do SX7 na query.
+// 28/09/2022 - Robert  - Gatilho do C2_VABARCX passa a considerar apenas B1_VAFULLW.
 //
 
 // --------------------------------------------------------------------------
@@ -206,7 +207,8 @@ user function VA_Gat (_sParCpo, _sParSeq)
 		_xRet = ''
 		sb1 -> (dbsetorder (1))
 		if sb1 -> (dbseek (xfilial ("SB1") + M->C2_PRODUTO, .F.))
-			if sb1 -> b1_tipo == 'PA' .and. sb1 -> b1_vafullw == 'S'
+		//	if sb1 -> b1_tipo == 'PA' .and. sb1 -> b1_vafullw == 'S'
+			if sb1 -> b1_vafullw == 'S'
 				_xRet = sb1 -> b1_codbar
 			endif
 		endif
