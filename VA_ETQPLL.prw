@@ -57,6 +57,7 @@
 // 07/04/2022 - Robert - Verifica classe ClsEtiq para ver se pode excluir etiquetas (GLPI 11825)
 // 15/06/2022 - Robert - Exclusao passada para a classe ClsEtiq (GLPI 12220)
 // 16/06/2022 - Robert - Melhorada interface com usuario na funcao EtqPllCT().
+// 28/09/2022 - Robert - Melhorada leitura da tb_wms_entrada na rotina de abortar guarda do pallet.
 //
 
 #include "rwmake.ch"
@@ -496,6 +497,7 @@ User Function EtqPllCT (_sCodigo)
 	local _sJustif   := ""
 	local _aEntr_ID  := {}
 	local _sEntr_ID  := ""
+	local _sStat_pro := ''
 	local _oEventoCG := NIL
 	local _sMsgConf  := ''
 
@@ -516,24 +518,35 @@ User Function EtqPllCT (_sCodigo)
 	if _lContinua
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " select entrada_id"
+		_oSQL:_sQuery += " select entrada_id, status_protheus"
 		_oSQL:_sQuery +=   " from tb_wms_entrada"
 		_oSQL:_sQuery +=  " where codfor = '" + _sCodigo + "'"
-		_oSQL:_sQuery +=    " and status_protheus != '3'"
-		_oSQL:_sQuery +=    " and status_protheus != 'C'"
-		_oSQL:Log ()
+//		_oSQL:_sQuery +=    " and status_protheus != '3'"
+//		_oSQL:_sQuery +=    " and status_protheus != 'C'"
+		_oSQL:Log ('[' + procname () + ']')
 		_aEntr_ID = _oSQL:Qry2Array ()
 		if len (_aEntr_ID) == 0
-			u_help ("Entrada nao existe (ou ja foi executada ou cancelada) na tabela de transferencias para o FullWMS. Nao ha transferencia pendente.", _oSQL:_sQuery, .t.)
+			u_help ("Entrada nao existe na tabela de transferencias para o FullWMS (pode sem ter sido enviada para o FullWMS). Nao ha transferencia pendente que possa ser abortada.", _oSQL:_sQuery, .t.)
 			_lContinua = .F.
 		elseif len (_aEntr_ID) == 1
-			_sEntr_ID = _aEntr_ID [1, 1] 
+			_sEntr_ID  = _aEntr_ID [1, 1]
+			_sStat_pro = _aEntr_ID [1, 2]
 		elseif len (_aEntr_ID) > 1
-			u_help ("Encontrei MAIS DE UMA entrada na tabela de transferencias para o FullWMS referindo essa etiqueta. Query para verificacao: " + _oSQL:_sQuery)
+			u_help ("Encontrei MAIS DE UMA entrada na tabela de transferencias para o FullWMS referindo essa etiqueta. Suspeita de problemas na view v_wms_entrada! Query para verificacao: " + _oSQL:_sQuery, .T.)
 			_lContinua = .F.
 		endif
 	endif
 	
+//	if _lContinua .and. _sStat_pro == '3'
+//		u_help ("Esta etiqueta encontra-se com status_protheus=" + _sStat_pro + " na tabela de integracao tb_wms_entrada, indicando que ja foi feita transferencia para o almox. do FullWMS. Estorne, antes essa transferencia. Query para verificacao: " + _oSQL:_sQuery, .T.)
+//		_lContinua = .F.
+//	endif
+
+	if _lContinua .and. _sStat_pro == 'C'
+		u_help ("Esta etiqueta encontra-se com status_protheus=" + _sStat_pro + " na tabela de integracao tb_wms_entrada, indicando que a guarda Da etiqueta ja foi abortada.")
+		_lContinua = .F.
+	endif
+
 	if _lContinua
 		_sMsgConf := "Este procedimento altera o campo status_protheus na tabela "
 		_sMsgConf += "tb_wms_entrada para 'C' de forma que o batch de integracao "
