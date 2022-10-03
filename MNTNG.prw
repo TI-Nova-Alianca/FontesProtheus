@@ -8,7 +8,7 @@
 // 07/04/2021 - Robert - Faltava declaracao variavel _oObjMnt (GLPI 9774)
 // 09/03/2022 - Robert - Instanciava objeto oWS sempre, mas parece que paramixb[2] muda conforme o caso.
 // 16/03/2022 - Robert - Filtro busca produtos mudado de tipo MM para MM e MC (GLPI 11296)
-// 08/04/2022 - Robert - Criado filtro de OS conforme usuario (cada manutentor visualiza zaapenas as suas OS) - GLPI 11886
+// 08/04/2022 - Robert - Criado filtro de OS conforme usuario (cada manutentor visualiza apenas as suas OS) - GLPI 11886
 // 26/08/2022 - Robert - Criado filtro para usuario FELIPE.ESTEVES
 // 02/09/2022 - Robert - Criado filtro para usuarios junior.melgarejo e joao.costa
 // 05/09/2022 - Robert - Nome do Evaldo estava incorreto no filtro de OS.
@@ -16,6 +16,7 @@
 //                     - Criada variavel unica para retorno da funcao.
 // 02/10/2022 - Robert - Removido atributo :DiasDeVida da classe ClsAviso.
 // 03/10/2022 - Robert - Trocado grpTI por grupo 122 no envio de avisos.
+// 03/10/2022 - Robert - Impede encerramento OS se tiver pedido de compra aberto (GLPI 12678)
 //
 
 //  ---------------------------------------------------------------------------------------------------------------------
@@ -23,10 +24,10 @@
 // https://tdn.engpro.totvs.com.br/pages/releaseview.action?pageId=347448878
 #include "PROTHEUS.ch"
 User Function MNTNG()
+	local _aAreaAnt  := U_ML_SRArea ()
 	local _xRet      := NIL
 	Local _sIDdLocal := ''
 	local _oObjMnt   := NIL
-//	local _sRet      := ''
 	local _sCodFunc  := ''
 	local _oAviso    := NIL
 	private _sArqLog := 'U_MNTNG.log'  // Quero usar o mesmo arquivo de log para todos os usuarios.
@@ -41,7 +42,6 @@ User Function MNTNG()
 			EndIf
 		else
 			_xRet = ''
-//			U_Log2 ('erro', '[' + procname () + ']_sIDdLocal:' + cvaltochar (_sIDdLocal) + ': Nao foi possivel desserializar objeto.')
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
 			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
@@ -62,9 +62,13 @@ User Function MNTNG()
 			if STOD(substr(_oObjMnt:endDate, 1, 8)) < date () -3 .and. STOD(substr(_oObjMnt:endDate, 1, 8)) > date ()
 				_xRet = "Data final nao pode ser menor do que data de hoje."
 			endif
+//			u_logObj (_oObjMnt)
+			
+			// Verifica se tem pedido de compra em aberto relacionado a esta OS
+			_xRet = _VerPdCom (_oObjMnt:ORDER)
+
 		else
 			_xRet = ''
-//			U_Log2 ('erro', '[' + procname () + ']_sIDdLocal:' + cvaltochar (_sIDdLocal) + ': Nao foi possivel desserializar objeto.')
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
 			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
@@ -79,14 +83,11 @@ User Function MNTNG()
 	
 	ElseIf _sIDdLocal == "FILTER_ORDER" // Filtro para ordens de servico
 		_xRet = ''
-//		U_Log2 ('debug', '[' + procname () + ']filtrando OS')
-//		U_Log2 ('debug', '[' + procname () + ']cUserName: >>' + cUserName + '<<')
 
 		// Define o codigo de funcionario (campo T1_CODFUNC) para que o usuario receba somente as OS designadas para ele.
 		// Siiiim, eu sei que chumbar os nomes no fonte é deselegante, mas ainda nao tenho uma forma melhor de descobrir o codigo do funcionario.
 		_sCodFunc = ''
 		do case
-	//	case alltrim (upper (cUserName)) $ 'EVALDO.AGNOLETO/LEONARDO.BORGES/APP.MNTNG/ELSO.RODRIGUES/MARCOS.OLIVEIRA/JONATHAN.SANTOS'
 		case alltrim (upper (cUserName)) $ 'EVALDO.AGNOLETTO/LEONARDO.BORGES/APP.MNTNG/ELSO.RODRIGUES/MARCOS.OLIVEIRA/JONATHAN.SANTOS/JUNIOR.MELGAREJO/JOAO.COSTA'
 			_sCodFunc = ''  // Sem filtro para estes usuarios.
 		case alltrim (upper (cUserName)) = 'ALEXANDRE.ANDRADE'; _sCodFunc = '2065'
@@ -98,7 +99,6 @@ User Function MNTNG()
 		case alltrim (upper (cUserName)) = 'TAILOR.BACCA'     ; _sCodFunc = '2369'
 		case alltrim (upper (cUserName)) = 'FELIPE.ESTEVES'   ; _sCodFunc = '2487'
 		otherwise
-//			U_AvisaTI ('[' + procname () + "]Usuario '" + cUserName + "' sem tratamento para filtrar OS.")
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
 			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
@@ -118,4 +118,31 @@ User Function MNTNG()
 		endif
 		U_Log2 ('debug', '[' + procname () + ']Filtrando OS. _xRet = ' + _xRet)
 	EndIf
+
+	U_ML_SRArea (_aAreaAnt)
 Return _xRet
+
+
+// --------------------------------------------------------------------------
+static function _VerPdCom (_sOrdem)
+	local _sRetPdCom := ''
+	local _sPdCom    := ''
+	local _oSQL      := NIL
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += "SELECT ISNULL (STRING_AGG (C7_NUM, ','), '')"
+	_oSQL:_sQuery +=  " FROM (SELECT DISTINCT C7_NUM"
+	_oSQL:_sQuery +=          " FROM " + RetSQLName ("SC7") + " SC7"
+	_oSQL:_sQuery +=         " WHERE SC7.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=           " AND SC7.C7_FILIAL  = '" + xfilial ("SC7") + "'"
+	_oSQL:_sQuery +=           " AND SC7.C7_OP      like '" + _sOrdem + "%'"
+	_oSQL:_sQuery +=           " AND SC7.C7_QUANT   > SC7.C7_QUJE"
+	_oSQL:_sQuery +=           " AND SC7.C7_RESIDUO != 'S'"
+	_oSQL:_sQuery +=        ") AS SUB"  // Tive que fazer uma subquery para poder usar STRING_AGG
+	_oSQL:Log ('[' + procname () + ']')
+	_sPdCom = alltrim (_oSQL:RetQry (1, .f.))
+	if ! empty (_sPdCom)
+		_sRetPdCom = "Ped.compra vinculados: " + _sPdCom + ". Encerramento da OS nao permitido."
+	endif
+return _sRetPdCom

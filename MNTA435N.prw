@@ -58,7 +58,6 @@ User Function MNTA435N()
 			//Verifica se há insumos realizados
 			If ValType( aDadosOS[ nOrdem, 5 ] ) == "A"
 				aInsumos := aClone( aDadosOS[ nOrdem, 5 ] )
-		//		U_Log2 ('debug', aInsumos)
 
 				//Percorre o array de insumos realizados
 				nInsumo := 1
@@ -71,12 +70,9 @@ User Function MNTA435N()
 						.And. aInsumos[ nInsumo, nPosDtInic ] < Date() -3;  // Nao permite data menor que 3 dias da data atual
 
 							//Apresenta para o usuário o número da OS que há uma inconsistência
-						//	MsgAlert( "Ordem " + aDadosOS[ nOrdem, 1 ] +  ": a data dos insumos tipo mão de obra, não pode ser menor que três dias retroativos.")
 							u_help ("Ordem '" + aDadosOS[ nOrdem, 1 ] +  "': a data dos insumos tipo mão de obra, não pode ser menor que três dias retroativos.",, .t.)
 								
-						//	//Quando há problema, deve retornar falso
-						//	RestArea( aArea )
-						//	Return .F.
+							// Quando há problema, deve retornar falso
 							_lRetMN435 = .F.
 						EndIf
 					
@@ -87,10 +83,9 @@ User Function MNTA435N()
 							nCC :=  fbuscacpo ("ST9",1,xFilial("ST9")+nCodBem, "T9_CCUSTO")
 
 							if substr(nCC,1,2) != cFilAnt
-								//Apresenta para o usuário o número da OS que há uma inconsistência
+
+								// Apresenta para o usuário o número da OS que há uma inconsistência
 								u_help ("Ordem '" + aDadosOS[ nOrdem, 1 ] +  "': o bem '" + nCodBem + "' desta manutencao nao pertence a esta filial.",, .t.)
-								//RestArea( aArea )
-								//Return .F.
 								_lRetMN435 = .F.
 							endif 
 
@@ -100,14 +95,8 @@ User Function MNTA435N()
 							nCodBem  := fbuscacpo("STJ",1,xFilial("STJ") + nOs, "TJ_CODBEM")
 							nCC      := fbuscacpo("ST9",1,xFilial("ST9") + nCodBem, "T9_CCUSTO")
 
-							u_log ("Produto:" + sProduto + " Tipo:" + sTipo + " CC:" + nCC)
-
 							if alltrim(sTipo) $ 'MC' .and. !(alltrim(nCC) $ _sCC_MC)
-								u_log ("Produtos MC devem ser lançados nos centros de custo " + _sCC_MC)
-
 								u_help ("Produtos tipo MC devem ser lançados nos centros de custo '" + _sCC_MC + "'.",, .t.)
-								//RestArea( aArea )
-								//Return .F.
 								_lRetMN435 = .F.
 							endif
 
@@ -122,10 +111,6 @@ User Function MNTA435N()
 				enddo
 			EndIf
 		Next nOrdem
-
-//		//Quando não houver problema retorna sucesso na validação
-//		RestArea( aArea )
-//		Return .T.
 	EndIf
 
 	U_ML_SRArea (_aAreaAnt)
