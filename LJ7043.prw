@@ -28,6 +28,7 @@
 // 16/09/2021 - Claudia - ALterada regra de eh funcionario, filtrando apenas registros ativos. GLPI: 10946
 // 30/08/2022 - Robert  - Ajuste destinatario(s) da classe ClsAviso().
 // 01/09/2022 - Robert  - Melhorias ClsAviso.
+// 02/10/2022 - Robert  - Removido atributo :DiasDeVida da classe ClsAviso.
 //
 
 // ---------------------------------------------------------------------------------------------------------
@@ -116,7 +117,6 @@ Static Function _VerAssoc(_sCGC,_sTabela,_sTP,_lRet)
 		_oAviso:DestinAvis = 'robert.koch'
 		_oAviso:Texto      = 'Associado com mais de 1 codigo base. CPF: ' + _sCGC
 		_oAviso:Origem     = procname ()
-		_oAviso:DiasDeVida = 90
 		_oAviso:Grava ()
 	endif
 

@@ -4,7 +4,13 @@
 // Cliente:    Alianca
 // Descricao:  P.E. apos rotina de compensacao de contas a pagar (executado uma vez para cada titulo selecionado).
 //             Criado inicialmente para atualizar saldo do arquivo SZI.
-// 
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #PalavasChave      #compensacao #contas_a_pagar
+// #TabelasPrincipais #SE5 #FK2
+// #Modulos           #FIN
+
 // Historico de alteracoes:
 // 28/07/2011 - Robert - Gravacao de chave externa nos registros do SE5.
 //                     - Soh atualizava o saldo de um dos registros do SZi envolvidos.
@@ -16,13 +22,8 @@
 //                     - Melhorada chamada de reprocessamento de saldo associado (chamava 2 vezes sem necessidade).
 // 25/03/2021 - Robert - Gravacao do E5_VAUSER nao levava em conta o tamanho do campo e dava warning do SQL.
 // 31/08/2022 - Robert - Melhoria uso classe ClsAviso.
+// 02/10/2022 - Robert - Trocado grpTI por grupo 122 no envio de avisos.
 //
-
-// Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #ponto_de_entrada
-// #PalavasChave      #compensacao #contas_a_pagar
-// #TabelasPrincipais #SE5 #FK2
-// #Modulos           #FIN
 
 // --------------------------------------------------------------------------
 user function F340_PA ()
@@ -105,7 +106,7 @@ static function _AtuChv ()
 		if TCSQLExec (_sSQL) < 0
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:DestinAvis = 'grpTI'
+			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 			_oAviso:Texto      = 'Erro na atualizacao do SE5 compensacao cta.corr. ' + _sSQL
 			_oAviso:Origem     = procname ()
 			_oAviso:Grava ()

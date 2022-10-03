@@ -14,6 +14,8 @@
 // 05/09/2022 - Robert - Nome do Evaldo estava incorreto no filtro de OS.
 // 06/09/2022 - Robert - Criado filtro para alexandre.andrade
 //                     - Criada variavel unica para retorno da funcao.
+// 02/10/2022 - Robert - Removido atributo :DiasDeVida da classe ClsAviso.
+// 03/10/2022 - Robert - Trocado grpTI por grupo 122 no envio de avisos.
 //
 
 //  ---------------------------------------------------------------------------------------------------------------------
@@ -42,11 +44,10 @@ User Function MNTNG()
 //			U_Log2 ('erro', '[' + procname () + ']_sIDdLocal:' + cvaltochar (_sIDdLocal) + ': Nao foi possivel desserializar objeto.')
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:DestinAvis = 'grpTI'
+			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 			_oAviso:Titulo     = 'Erro ao desserializar objeto _oObjMnt'
 			_oAviso:Texto      = 'Nao foi possivel desserializar objeto no ponto de entrada ' + procname () + ". Mais detalhes em " + _sArqLog
 			_oAviso:Origem     = procname ()
-			_oAviso:DiasDeVida = 60
 			_oAviso:Grava ()
 		EndIf
 
@@ -66,11 +67,10 @@ User Function MNTNG()
 //			U_Log2 ('erro', '[' + procname () + ']_sIDdLocal:' + cvaltochar (_sIDdLocal) + ': Nao foi possivel desserializar objeto.')
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:DestinAvis = 'grpTI'
+			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 			_oAviso:Titulo     = 'Erro ao desserializar objeto _oObjMnt'
 			_oAviso:Texto      = 'Nao foi possivel desserializar objeto no ponto de entrada ' + procname () + ". Mais detalhes em " + _sArqLog
 			_oAviso:Origem     = procname ()
-			_oAviso:DiasDeVida = 60
 			_oAviso:Grava ()
 		EndIf
 		
@@ -101,11 +101,10 @@ User Function MNTNG()
 //			U_AvisaTI ('[' + procname () + "]Usuario '" + cUserName + "' sem tratamento para filtrar OS.")
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:DestinAvis = 'grpTI'
+			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 			_oAviso:Titulo     = 'Erro ao desserializar objeto _oObjMnt'
 			_oAviso:Texto      = "Usuario '" + cUserName + "' sem tratamento para filtrar OS no ponto de entrada " + procname () + ". Mais detalhes em " + _sArqLog
 			_oAviso:Origem     = procname ()
-			_oAviso:DiasDeVida = 60
 			_oAviso:Grava ()
 		endcase
 		if ! empty (_sCodFunc)

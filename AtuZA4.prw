@@ -8,6 +8,7 @@
 // Historico de alteracoes:
 // 30/10/2019 - Robert - Passa a gravar avisos e erros usando a classe ClsAviso().
 // 31/08/2022 - Robert - Melhoria uso classe ClsAviso.
+// 02/10/2022 - Robert - Trocado grpTI por grupo 122 no envio de avisos.
 //
 
 // --------------------------------------------------------------------------
@@ -21,7 +22,7 @@ user function AtuZA4 (_sVerba)
 	if ! za4 -> (dbseek (xfilial ("ZA4") + _sVerba, .F.))
 		_oAviso := ClsAviso ():New ()
 		_oAviso:Tipo       = 'E'
-		_oAviso:DestinAvis = 'grpTI'
+		_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 		_oAviso:Texto      = "Verba '" + _sVerba + "' nao localizada na tabela ZA4. Atualizacao nao pode ser feita."
 		_oAviso:Origem     = procname ()
 		_oAviso:Grava ()
@@ -47,7 +48,7 @@ user function AtuZA4 (_sVerba)
 			if _nUsado > za4 -> za4_vlr
 				_oAviso := ClsAviso ():New ()
 				_oAviso:Tipo       = 'E'
-				_oAviso:DestinAvis = 'grpTI'
+				_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 				_oAviso:Texto      = "Verba '" + _sVerba + "' valor usado maior que o valor da verba."
 				_oAviso:Origem     = procname ()
 				_oAviso:Grava ()

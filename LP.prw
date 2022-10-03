@@ -71,6 +71,7 @@
 // 16/08/2022 - Claudia - Inclusão de retorno de historico para LPAD 520012 e 521012. GLPI: 12461
 // 18/08/2022 - Claudia - Incluida validação para desconto cielo. GLPI: 12417
 // 09/09/2022 - Robert  - Avisos passam a usar ClsAviso() e nao mais U_AvisaTI().
+// 02/10/2022 - Robert  - Trocado grpTI por grupo 122 no envio de avisos.
 //
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -595,10 +596,9 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 			case SD3->D3_TIPO == 'MR' ; _xRet = '403010401010'
 			case SD3->D3_TIPO == 'IA' ; _xRet = '701010301017'
 			otherwise
-				//U_AvisaTI ("Sem tratamento no LPad/seq '" + _sLPad + _sSeq + "' para produto='" + alltrim (sd3 -> d3_cod) + "' tipo='" + sd3 -> d3_tipo + "' grupo='" + sd3 -> d3_grupo + "' CC='" + sd3 -> d3_cc + "' recnoSD3=" + cvaltochar (sd3 -> (recno ())) + ")")
 				_oAviso := ClsAviso ():New ()
 				_oAviso:Tipo       = 'E'
-				_oAviso:DestinAvis = 'grpTI'
+				_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 				_oAviso:Titulo     = "Sem tratamento no LPad/seq " + _sLPad + _sSeq
 				_oAviso:Texto      = "Sem tratamento no LPad/seq '" + _sLPad + _sSeq
 				_oAviso:Texto     += " filial=" + sd3 -> d3_filial
@@ -626,10 +626,9 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 				case SD2->D2_TP=="VD" ; _xRet = "101030101013"
 				case SD2->D2_TP=="PI" ; _xRet = "101030101012"
 				otherwise
-//					U_AvisaTI ("Tipo '" + sd2 -> d2_tp + "' sem tratamento no LPad/seq '" + _sLPad + _sSeq + "'")
 					_oAviso := ClsAviso ():New ()
 					_oAviso:Tipo       = 'E'
-					_oAviso:DestinAvis = 'grpTI'
+					_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 					_oAviso:Titulo     = "Sem tratamento no LPad/seq " + _sLPad + _sSeq
 					_oAviso:Texto      = "Sem tratamento no LPad/seq '" + _sLPad + _sSeq
 					_oAviso:Texto     += " filial=" + sd2 -> d2_filial
@@ -645,10 +644,9 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 			case _sQueRet = "CCD"  // Cfe. prog. antigo 'vendacc.prw':
 				// Acho que estamos chamando esta contabilizacao indevidamente...
 				if empty (fBuscaCpo ("SF2", 1, xfilial ("SF2") + _sDoc + _sSerie, "F2_VEND1"))
-//					u_avisaTI ("Vendedor em branco para doc/serie '" + _sDoc + '/' + _sSerie + "' no LPAD " + _sLPad + _sSeq + _sQueRet) 
 					_oAviso := ClsAviso ():New ()
 					_oAviso:Tipo       = 'E'
-					_oAviso:DestinAvis = 'grpTI'
+					_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 					_oAviso:Titulo     = "Vendedor em branco no LPad/seq " + _sLPad + _sSeq
 					_oAviso:Texto      = "Vendedor em branco no LPad/seq '" + _sLPad + _sSeq
 					_oAviso:Texto     += " cod/serie=" + _sDoc + '/' + _sSerie
@@ -676,10 +674,9 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 				
 				// Acho que estamos chamando esta contabilizacao indevidamente...
 				if empty (fBuscaCpo ("SF2", 1, xfilial ("SF2") + _sDoc + _sSerie, "F2_VEND1"))
-//					u_avisaTI ("Vendedor em branco para doc/serie '" + _sDoc + '/' + _sSerie + "' no LPAD " + _sLPad + _sSeq + _sQueRet) 
 					_oAviso := ClsAviso ():New ()
 					_oAviso:Tipo       = 'E'
-					_oAviso:DestinAvis = 'grpTI'
+					_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 					_oAviso:Titulo     = "Vendedor em branco no LPad/seq " + _sLPad + _sSeq
 					_oAviso:Texto      = "Vendedor em branco no LPad/seq '" + _sLPad + _sSeq
 					_oAviso:Texto     += " cod/serie=" + _sDoc + '/' + _sSerie
@@ -695,13 +692,9 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 
 	// Tenta dar um tratamento para o caso de nao ter encontrado nada a retornar.
 	if _xRet == NIL
-//		u_AvisaTI ("Lancamento padrao '" + _sLPad + _sSeq + ;
-//		           "' sem tratamento para o tipo de retorno '" + _sQueRet + ;
-//		           "' no programa " + procname () + ;
-//		           ". Pilha de chamadas:" + _Pcham ())
 		_oAviso := ClsAviso ():New ()
 		_oAviso:Tipo       = 'E'
-		_oAviso:DestinAvis = 'grpTI'
+		_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 		_oAviso:Titulo     = "Sem tratamento para LPad/seq " + _sLPad + _sSeq
 		_oAviso:Texto      = "Sem tratamento para LPad/seq '" + _sLPad + _sSeq
 		_oAviso:Texto     += " tipo de retorno=" + _sQueRet

@@ -13,6 +13,7 @@
 // 30/10/2019 - Robert - Tratamento para concatenar msg proveniente do NFESEFAZ.PRW em vez de apenas sobrepor.
 // 16/01/2020 - Robert - Desabilitadas gravacoes de logs.
 // 01/09/2022 - Robert - Melhorias ClsAviso.
+// 03/10/2022 - Robert - Trocado grpTI por grupo 122 no envio de avisos.
 //
 
 // ------------------------------------------------------------------------------------------
@@ -170,7 +171,7 @@ static function _MsgObs (aObsCont)
 			else
 				_oAviso := ClsAviso ():New ()
 				_oAviso:Tipo       = 'E'
-				_oAviso:DestinAvis = 'grpTI'
+				_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 				_oAviso:Texto      = "Transportadora '" + sf2 -> f2_redesp + "' nao localizada para gerar tag de redespacho'
 				_oAviso:Origem     = procname (1)
 				_oAviso:Grava ()

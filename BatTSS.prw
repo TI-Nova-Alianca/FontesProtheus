@@ -5,6 +5,7 @@
 //
 // Historico de alteracoes:
 // 01/09/2022 - Robert - Melhorias ClsAviso.
+// 02/10/2022 - Robert - Trocado grpTI por grupo 122 no envio de avisos.
 //
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -112,7 +113,7 @@ user function BatTSS (_sTipoVer)
 						if _oSQL:Exec ()
 							_oAviso := ClsAviso ():New ()
 							_oAviso:Tipo       = 'E'
-							_oAviso:DestinAvis = 'grpTI'
+							_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 							_oAviso:Texto      = 'Filial ' + cFilAnt + ' NFE_ID ' + alltrim ((_sReg656) -> nfe_id) + ' - alterando STATUSCANC de 1 para 2 na tabela SPED050 por que estamos recebendo rejeicao 656.'
 							if ! empty (sf3 -> f3_dtcanc)
 								_oAviso:Texto     += ' Documento ja consta como cancelado na tabela SF3.'
@@ -169,7 +170,7 @@ user function BatTSS (_sTipoVer)
 				if _oSQL:Exec ()
 					_oAviso := ClsAviso ():New ()
 					_oAviso:Tipo       = 'E'
-					_oAviso:DestinAvis = 'grpTI'
+					_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 					_oAviso:Texto      = 'Filial ' + cFilAnt + ' NFE_ID ' + alltrim ((_TSS0004) -> nfe_id) + ' - alterando STATUSCANC de 1 para 2 na tabela SPED050 por que tem muitos registros na tabela TSS0004.'
 					_oAviso:Texto     += 'Verifique movimentacoes deste documento.'
 					_oAviso:Origem     = procname ()
