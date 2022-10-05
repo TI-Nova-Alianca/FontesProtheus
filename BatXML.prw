@@ -25,6 +25,7 @@ user function BatXML (_sPath, _nMaxArq)
 	local _nArq      := 0
 	local _aDir      := {}
 	local _nQtArq    := 0
+	local _oAviso    := NIL
 
 	U_log2 ('info', '[' + procname () + '] Iniciando execucao.')
 
@@ -48,6 +49,13 @@ user function BatXML (_sPath, _nMaxArq)
 			endif
 		else
 			U_AvisaTI ("Arquivo muito grande na pasta de importacao de XML: " + _aDir [_nArq, 1])
+			_oAviso := ClsAviso ():New ()
+			_oAviso:Tipo       = 'E'
+			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
+			_oAviso:Titulo     = "Arquivo muito grande na pasta de importacao de XML"
+			_oAviso:Texto      = "Arquivo " + _aDir [_nArq, 1] + " muito grande na pasta de importacao de XML (" + _sPath + ")"
+			_oAviso:InfoSessao = .T.
+			_oAviso:Grava ()
 		endif
 	next
 

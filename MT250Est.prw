@@ -21,6 +21,7 @@
 // 03/03/2021 - Robert  - Desabilitado gravação do Evento
 // 05/10/2021 - Robert  - Desabilitado contorno que permitia ao grupo 029 estornar apont.de etiq.jah vista pelço FullWMS (o pessoal estorna producao sem se importar em fazer o ajuste na integracao com FullWMS).
 // 08/10/2021 - Robert  - Nao considerava status_protheus = 'C' na validacao da integracao com FullWMS (GLPI 10041).
+// 05/10/2022 - Robert  - Valida tabela tb_wms_entrada pelo 'codfor' e nao mais por 'nrodoc'.
 //
 
 // ----------------------------------------------------------------
@@ -33,24 +34,21 @@ user function MT250Est ()
 		_lRet = .F.
 	endif
 
-	if _lRet
+//	if _lRet
+	if _lRet .and. ! empty (sd3 -> d3_vaetiq)
 		_lRet = _VerFull ()
 	endif
 	
-//	if _lRet
-//		_lRet = _LibEst ()
-//	endif
-
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
 return _lRet
+
 
 // --------------------------------------------------------------------------
 static function _VerFull ()
 	local _lRet      := .T.
 	local _oSQL      := NIL
 	local _sMsg      := ""
-//	local _sJustif   := ""
 	public _oEvtEstF := NIL
 
 	if _lRet
@@ -58,44 +56,19 @@ static function _VerFull ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " select count (*)"
 		_oSQL:_sQuery +=   " from tb_wms_entrada"
-		_oSQL:_sQuery +=  " where nrodoc = '" + sd3 -> d3_doc + "'"
+//		_oSQL:_sQuery +=  " where nrodoc = '" + sd3 -> d3_doc + "'"
+		_oSQL:_sQuery +=  " where codfor = '" + sd3 -> d3_vaetiq + "'"
 		_oSQL:_sQuery +=    " and status != '9'"
 		_oSQL:_sQuery +=    " and status_protheus != 'C'"
+		_oSQL:Log ('[' + procname () + ']')
 		if _oSQL:RetQry () > 0
 			_lRet = .F.
 			_sMsg := "Esta entrada de estoque ja foi aceita pelo FullWMS. Para estornar esta producao exclua do Fullsoft, antes, a tarefa de recebimento (ou cancele operacao de guarda da etiqueta)." + chr (13) + chr (10) + chr (13) + chr (10)
 			_sMsg += "Dados adicionais:" + chr (13) + chr (10)
 			_sMsg += "Documento: " + sd3 -> d3_doc + chr (13) + chr (10)
 			_sMsg += "Etiq/pallet: " + sd3 -> d3_vaetiq
-/* Desabilitado por RObert em 05/10/2021 por que o pessoal estorna producao sem se importar em fazer o ajuste na integracao com FullWMS
-			if u_zzuvl ('029', __cUserId, .F.)
-				if U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
-					do while .T.
-						_sJustif = U_Get ('Justificativa', 'C', 150, '', '', space (150), .F., '.T.')
-						if _sJustif == NIL
-							_lRet = .F.
-							loop
-						endif
-						exit
-					enddo
-
-					_lRet = .T.
-
-					// Cria evento dedo-duro para posterior gravacao em outro P.E. apos a efetivacao do movimento.
-					_oEvtEstF := ClsEvent ():New ()
-					_oEvtEstF:CodEven  = 'SD3002'
-					_oEvtEstF:Texto    = 'Estorno apontamento pallet ' + alltrim (sd3 -> d3_vaetiq) + '. Justif: ' + _sJustif
-					_oEvtEstF:Produto  = sd3 -> d3_cod
-					_oEvtEstF:Etiqueta = sd3 -> d3_vaetiq
-					_oEvtEstF:OP       = sd3 -> d3_op
-					
-					//_oEvtEstF:Grava()
-				endif
-			else
-*/
-				u_help (_sMsg, _oSQL:_sQuery, .t.)
-				_lRet = .F.
-//			endif
+			u_help (_sMsg, _oSQL:_sQuery, .t.)
+			_lRet = .F.
 		endif
 	endif
 	
@@ -117,14 +90,4 @@ static function _VerFull ()
 			endif
 		endif
 	endif
-	u_logFim ()
 return _lRet
-//
-//static function _LibEst ()
-//	local _lRet      := .T.
-//	
-//	if ! U_ZZUVL ('090', __cUserId, .F.)
-//		u_help ("Usuário sem permissão para estorno de estoque")
-//		_lRet = .F.
-//	endif
-//return _lRet

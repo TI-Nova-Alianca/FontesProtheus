@@ -1593,16 +1593,16 @@ return
 // ------------------------------------------------------------------------------------------------------
 // Importacao de arquivo XML
 user function ZZXI (_sArqImp, _sXML)
-	local _lAutoZZXI   := (_sArqImp != NIL .or. _sXML != NIL)
-	local _oXMLSEF     := NIL
-	local _sArqOrig    := ""
-//	local _sDrvRmt     := ""
-//	local _sDirRmt     := ""
-	local _ZZXXML      := ""
-	local _sFldImpor   := "Importados"  // Pasta para arquivos ignorados.
-	local _sFldIgnor   := "Ignorados"  // Pasta para arquivos ignorados.
-	local _lContinua   := .T.
-	local _oEvento     := NIL
+	local _lAutoZZXI := (_sArqImp != NIL .or. _sXML != NIL)
+	local _oXMLSEF   := NIL
+	local _sArqOrig  := ""
+	local _ZZXXML    := ""
+	local _sFldImpor := "Importados"  // Pasta para arquivos ignorados.
+	local _sFldIgnor := "Ignorados"  // Pasta para arquivos ignorados.
+	local _lContinua := .T.
+	local _oEvento   := NIL
+	local _sRetCopia := ''
+	local _sRetMove  := ''
 	
 	// Se recebeu um nome de arquivo a importar, nao precisa abrir tela para o usuario.
 	if _lAutoZZXI
@@ -1610,10 +1610,10 @@ user function ZZXI (_sArqImp, _sXML)
 		do case 
 			case "_XXX" $ _sArqImp
 				_worigem = "ESPIAO"
-		    case "INTPROTHEUS" $ _sArqImp
-		    	_worigem = "INTPROTHEUS"
-		    otherwise
-		    	_worigem = "EMAIL"
+			case "INTPROTHEUS" $ _sArqImp
+				_worigem = "INTPROTHEUS"
+			otherwise
+				_worigem = "EMAIL"
 		endcase
 	else
 		_sArqOrig = cGetFile ("XML|*.XML", "Selecione arquivo", 0, alltrim (mv_par01), .T., GETF_LOCALFLOPPY + GETF_LOCALHARD + GETF_NETWORKDRIVE)
@@ -1634,19 +1634,12 @@ user function ZZXI (_sArqImp, _sXML)
 		
 			// Se tem nome de arquivo definido, importa-o.
 			if ! empty (_sArqOrig)
-	
-// perguntas foram mudadas.				// Guarda caminho para usar na proxima execucao, sem a barra final, pois ela atrapalha no cGetFile.
-// perguntas foram mudadas.				// Na execucao via batch nao tem necessidade de perder tempo atualizando o SX1;
-// perguntas foram mudadas.				if ! _lAutoZZXI
-// perguntas foram mudadas.					U_GravaSX1 (cPerg, '01', substr (_sDrvRmt + _sDirRmt, 1, len (alltrim (_sDrvRmt + _sDirRmt)) - 1))
-// perguntas foram mudadas.				endif
-			
 				if ! file (_sArqOrig)
 					u_help ("Arquivo '" + _sArqOrig + "' nao encontrado.",, .t.)
 				else
 
 					// Manda uma copia para o importador da TRS (por enquanto... a intencao eh ficar somente o da TRS) Robert, 24/08/2021
-					_CopiaTRS (_sArqOrig)
+					_sRetCopia = _CopiaTRS (_sArqOrig)
 
 					// Leitura trocada de MemoRead () para FT_ReadLn () por que a memoread limita-se a 64Kb.
 					_ZZXXML = ""
@@ -1671,6 +1664,20 @@ user function ZZXI (_sArqImp, _sXML)
 		_oXMLSEF := ClsXMLSEF ():New ()
 		_oXMLSEF:LeXML (_ZZXXML)
 		
+		// Se conseguiu identificar a chave e se tem mensagem de copia de arquivo,
+		// pode gravar evento (temos alguns casos de arq.que nao chagaram ateh a
+		// pasta do importador da TRS). Depois de resolvido, a gravacao deste
+		// evento poderia ser eliminada. RObert, 04/10/2022.
+		if ! empty (_oXMLSEF:Chave) .and. ! empty (_sRetCopia)
+			_oEvento := ClsEvent():new ()
+			_oEvento:CodEven   = "ZZX002"
+			_oEvento:Texto     = _sRetCopia
+			_oEvento:Alias     = "ZZX"
+			_oEvento:ChaveNFe  = cvaltochar (_oXMLSEF:Chave)
+			_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
+			_oEvento:Grava ()
+		endif
+
 		// Mostra avisos e erros.
 		if len (_oXMLSEF:Avisos) > 0
 			U_F3Array (_oXMLSEF:Avisos, 'Avisos gerados durante a leitura do XML:')
@@ -1687,12 +1694,12 @@ user function ZZXI (_sArqImp, _sXML)
 			_oEvento:Grava ()
 
 			// Move arquivo para o diretorio temporario de erros
-			_Move (_sArqOrig, "Erros")
-//			return
+			_sRetMove = _Move (_sArqOrig, "Erros")
 
 			_lContinua = .F.
 		endif
 	endif
+
 	// Se conseguiu interpretar o XML sem gerar erros, pode gravar.
 	if _lContinua
 		if _GravaZZX ("I", _oXMLSEF, _ZZXXML, _worigem)
@@ -1705,23 +1712,38 @@ user function ZZXI (_sArqImp, _sXML)
 	// Move o arquivo para outro diretorio, conforme o resultado da importacao.
 	if _lContinua
 		if ! empty (_sArqOrig)
-			_Move (_sArqOrig, _sFldImpor)
+			_sRetMove = _Move (_sArqOrig, _sFldImpor)
 		endif
 	else
 		if ! empty (_sArqOrig)
-			_Move (_sArqOrig, _sFldIgnor)
+			_sRetMove = _Move (_sArqOrig, _sFldIgnor)
 		endif
 	endif
+
+	// Se conseguiu identificar a chave e se tem mensagem de copia de arquivo,
+	// pode gravar evento (temos alguns casos de arq.que nao chagaram ateh a
+	// pasta do importador da TRS). Depois de resolvido, a gravacao deste
+	// evento poderia ser eliminada. RObert, 04/10/2022.
+	if ! empty (_oXMLSEF:Chave) .and. ! empty (_sRetMove)
+		_oEvento := ClsEvent():new ()
+		_oEvento:CodEven   = "ZZX002"
+		_oEvento:Texto     = _sRetMove
+		_oEvento:Alias     = "ZZX"
+		_oEvento:ChaveNFe  = cvaltochar (_oXMLSEF:Chave)
+		_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
+		_oEvento:Grava ()
+	endif
+
 return _lContinua
 
 
 // ------------------------------------------------------------------------------------------------------
 // Manda uma copia para o importador da TRS (por enquanto... a intencao eh ficar somente o da TRS) Robert, 24/08/2021
 static function _CopiaTRS (_sArqTRS)
-	local _sDrvRmt := ""
-	local _sDirRmt := ""
-	local _sArqRmt := ""
-	local _sExtRmt := ""
+	local _sDrvRmt  := ""
+	local _sDirRmt  := ""
+	local _sArqRmt  := ""
+	local _sExtRmt  := ""
 	local _sDestTRS := ''
 
 	// Separa drive, diretorio, nome e extensao.
@@ -1731,7 +1753,9 @@ static function _CopiaTRS (_sArqTRS)
 	// Copia o arquivo e depois deleta do local original.
 	U_Log2 ('debug', 'Copiando para TRS: de >>' + _sDrvRmt + _sDirRmt + _sArqRmt + _sExtRmt + '<< para >>' + _sDestTRS + '<<')
 	copy file (_sDrvRmt + _sDirRmt + _sArqRmt + _sExtRmt) to (_sDestTRS)
-return
+
+return "Arq.copiado de " + _sDrvRmt + _sDirRmt + _sArqRmt + _sExtRmt + ' para ' + _sDestTRS
+
 
 // ------------------------------------------------------------------------------------------------------
 // Grava dados no arquivo ZZX.
@@ -1933,7 +1957,7 @@ Static Function _Move (_sArq, _sDest)
 	local _sDirRmt := ""
 	local _sArqRmt := ""
 	local _sExtRmt := ""
-	//local _sPath   := ""
+	local _sMsgRet := ""
 
 	// Separa drive, diretorio, nome e extensao.
 	SplitPath (_sArq, @_sDrvRmt, @_sDirRmt, @_sArqRmt, @_sExtRmt )
@@ -1944,11 +1968,15 @@ Static Function _Move (_sArq, _sDest)
 	// Copia o arquivo e depois deleta do local original.
 	copy file (_sDrvRmt + _sDirRmt + _sArqRmt + _sExtRmt) to (_sDrvRmt + _sDirRmt + _sDest + "\" + _sArqRmt + _sExtRmt)
 	if ! file (_sDrvRmt + _sDirRmt + _sDest + "\" + _sArqRmt + _sExtRmt)
-		u_help ("Arquivo nao foi copiado para a pasta " + _sDest + ". Nao sera´ removido da pasta origem.")
+		_sMsgRet = "Arquivo " + _sDrvRmt + _sDirRmt + _sArqRmt + _sExtRmt + " nao foi copiado para a pasta " + _sDest + ". Nao vou remover da pasta origem."
+		u_help (_sMsgRet,, .t.)
 	else
+		_sMsgRet = "Movendo arq. de " + _sDrvRmt + _sDirRmt + _sArqRmt + _sExtRmt + ' para ' + _sDrvRmt + _sDirRmt + _sDest + "\" + _sArqRmt + _sExtRmt
+		U_Log2 ('info', '[' + procname () + ']' + _sMsgRet)
 		delete file (_sDrvRmt + _sDirRmt + _sArqRmt + _sExtRmt)
 	endif
-return
+return _sMsgRet
+
 // ------------------------------------------------------------------------------------------------------
 // Geracao de NF de entrada no sistema
 user function ZZXG (_wprenota)
