@@ -85,6 +85,10 @@ Static Function _GravaExtrato(dDataIni, dDataFin)
             _sIdTrans   := _VerifType(_IdTrans, _sTipoExt)
             _sIdReceb   := _VerifType(_IdReceb, _sTipoExt)
             _sIdExtrato := _VerifType(_IdExtrato,_sTipoExt)
+
+            If _dDtPgto == STOD('19000101')
+                _dDtPgto := _dDtCriacao
+            EndIf
         
             _sStaBai := 'A'
             Do Case

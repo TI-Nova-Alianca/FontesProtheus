@@ -31,13 +31,14 @@ User Function ZD0()
 	endif
 
 	If _lContinua
-		AADD(aRotina, {"&Visualizar"      		, "AxVisual"       , 0, 1 })
-		AADD(aRotina, {"Importar"       		, "U_ZD0IMP()"     , 0, 3 })
-		//AADD(aRotina, {"Gerar RA's"        	, "U_ZD0RAS('3')"  , 0 ,3 })
-		//AADD(aRotina, {"Compensação"        	, "U_ZD0CMP()"     , 0 ,3 })						
-		AADD(aRotina, {"Legenda"        		, "U_ZD0LGD(.F.)"  , 0 ,5 })
-		AADD(aRotina, {"Pagar.me x Titulos"  	, "U_ZD0PXT()"     , 0, 8 })
-		AADD(aRotina, {"PagarXTitulosXPedido" 	, "U_ZD0CONS()"    , 0, 8 })	
+		AADD(aRotina, {"&Visualizar"      		, "AxVisual"       								, 0, 1 })
+		AADD(aRotina, {"Importar"       		, "U_ZD0IMP()"     								, 0, 3 })
+		AADD(aRotina, {"Gerar RA's"          	, "U_ZD0RAS('3')"  								, 0 ,3 })
+		AADD(aRotina, {"Compensação "        	, "U_ZD0CMP('1',ZD0->ZD0_FILIAL, ZD0->ZD0_TID)" , 0 ,3 })
+		//AADD(aRotina, {"Comp.Lote"           	, "U_ZD0CMP('2')"     								, 0 ,3 })						
+		AADD(aRotina, {"Legenda"        		, "U_ZD0LGD(.F.)"  								, 0 ,5 })
+		AADD(aRotina, {"Pagar.me x Titulos"  	, "U_ZD0PXT()"     								, 0, 8 })
+		AADD(aRotina, {"PagarXTitulosXPedido" 	, "U_ZD0CONS()"    								, 0, 8 })	
 
 		AADD(_aCores,{ "ZD0_STABAI == 'A'", 'BR_VERDE'    }) // aberto
 		AADD(_aCores,{ "ZD0_STABAI == 'B'", 'BR_VERMELHO' }) // baixado
@@ -47,7 +48,7 @@ User Function ZD0()
 		AADD(_aCores,{ "ZD0_STABAI == 'E'", 'BR_AMARELO'  }) // Amarelo
                       
 		dbSelectArea ("ZD0")
-		dbSetOrder (1)
+		dbSetOrder (2)
 
 		mBrowse(,,,,"ZD0",,,,,,_aCores,,,,,,,,)
 	EndIf

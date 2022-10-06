@@ -54,9 +54,9 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA4"	, 	"" ,"ID Transacao"  ,       					,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA5"	, 	"" ,"Parcela"       ,       					,06,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA6"	, 	"" ,"Dt.Extrato"    ,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA7"	, 	"" ,"Vlr.Parcela"	, "@E 999,999,999.99"   	,25,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA8"	, 	"" ,"Vlr.Taxa"		, "@E 999,999,999.99"   	,25,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA9"	, 	"" ,"Vlr.Liquido"	, "@E 999,999,999.99"   	,25,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA7"	, 	"" ,"Vlr.Parcela"	, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA8"	, 	"" ,"Vlr.Taxa"		, "@E 999,999,999.99"   	,15,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA9"	, 	"" ,"Vlr.Liquido"	, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
     TRCell():New(oSection1,"COLUNA10"	, 	"" ,"Título"    	,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA11"	, 	"" ,"Cliente"    	,       					,40,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA12"	, 	"" ,"Titulo RA"    	,       					,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
@@ -130,13 +130,15 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " 		AND SE1.E1_FILIAL  = ZD0.ZD0_FILIAL "
 	_oSQL:_sQuery += " 		AND SE1.E1_VAIDT   = ZD0.ZD0_TID "
 	_oSQL:_sQuery += " 		AND SE1.E1_PARCELA = ZD0.ZD0_PARCEL "
-	//_oSQL:_sQuery += " 		AND SE1.E1_TIPO    = 'RA' "
+	_oSQL:_sQuery += " 		AND SE1.E1_TIPO   <> 'RA' "
+	_oSQL:_sQuery += " 		AND SE1.E1_PREFIXO <> 'PGM' "
 	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SE1") + " SE1RA "
 	_oSQL:_sQuery += " 	ON SE1RA.D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " 		AND SE1RA.E1_FILIAL  = ZD0.ZD0_FILIAL "
 	_oSQL:_sQuery += " 		AND SE1RA.E1_VAIDT   = ZD0.ZD0_TID "
 	_oSQL:_sQuery += " 		AND SE1RA.E1_PARCELA = ZD0.ZD0_PARCEL "
 	_oSQL:_sQuery += " 		AND SE1RA.E1_TIPO    = 'RA' "	
+	_oSQL:_sQuery += " 		AND SE1RA.E1_PREFIXO = 'PGM' "	
 	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SA1") + " SA1 "
 	_oSQL:_sQuery += " 	ON SA1.D_E_L_E_T_  = '' "
 	_oSQL:_sQuery += " 		AND SA1.A1_COD = SE1.E1_CLIENTE "
@@ -171,6 +173,7 @@ Static Function PrintReport(oReport)
 			_oSQL:_sQuery += " 	AND SE1.E1_FILIAL   = '" + _aDados[_x, 1] +"' "
 			_oSQL:_sQuery += " 	AND SE1.E1_VAIDT    = '" + _aDados[_x, 4] +"' "
 			_oSQL:_sQuery += " 	AND SE1.E1_PARCELA  = '' "
+			_oSQL:_sQuery += " 	AND SE1.E1_PREFIXO  <> 'PGM' "
 			_aTit := _oSQL:Qry2Array ()
 
 			For _y:=1 to Len(_aTit)

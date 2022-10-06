@@ -13,25 +13,22 @@
 // Historico de alteracoes:
 //
 // --------------------------------------------------------------------------
-User Function ZD0CMP()
+User Function ZD0CMP(_sTipo, _sFilial, _sTrans)
     Local aArea      := GetArea()
     Local nTaxaCM    := 0
     Local aTxMoeda   := {}
     Local aTaxa      := {}
     Local _x         := 0
+    Local _lContinua := .T.
     Local nSaldoComp := 0  // Valor a ser compensado (Caso seja parcial Pode ser parcial)  
     
     Private cPerg := "ZD0CMP"
 	
     u_logIni()
     
-    _ValidPerg()
-    If Pergunte(cPerg,.T.)  
-        dDataIni := mv_par01
-        dDataFin := mv_par02
+    If _sTipo == '1'
+        u_log2('aviso', 'Pagar.me compensação:' + _sTrans)
 
-        u_log2('aviso', 'Pagar.me compensação:' + DTOC(mv_par01) +" até "+ DTOC(mv_par02))
-        
         _oSQL := ClsSQL():New ()  
         _oSQL:_sQuery := "" 		
         _oSQL:_sQuery += " SELECT "
@@ -44,14 +41,44 @@ User Function ZD0CMP()
         _oSQL:_sQuery += "    ,ZD0_RID "
         _oSQL:_sQuery += " FROM " + RetSQLName ("ZD0") 
         _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
-        _oSQL:_sQuery += " AND ZD0_FILIAL   = '" + xFilial('ZD0') + "' "
-        _oSQL:_sQuery += " AND ZD0_STABAI   = 'R' "
-        _oSQL:_sQuery += " AND ZD0_DTAPGT BETWEEN '" + dtos(dDataIni) + "' AND '" + dtos(dDataFin) + "' "
-        if !empty(mv_par03)
-            _oSQL:_sQuery += " AND ZD0_TID = '" + mv_par03 + "' "
-        endif
+        _oSQL:_sQuery += " AND ZD0_FILIAL   = '" + _sFilial + "' "
+        _oSQL:_sQuery += " AND ZD0_STABAI   = 'R'"
+        _oSQL:_sQuery += " AND ZD0_TID      = '" + _sTrans + "' "
         _aZD0 := _oSQL:Qry2Array ()
+    else
+        _ValidPerg()
+        If Pergunte(cPerg,.T.)  
+            dDataIni := mv_par01
+            dDataFin := mv_par02
+            _lContinua := .T.
 
+            u_log2('aviso', 'Pagar.me compensação:' + DTOC(mv_par01) +" até "+ DTOC(mv_par02))
+   
+            _oSQL := ClsSQL():New ()  
+            _oSQL:_sQuery := "" 		
+            _oSQL:_sQuery += " SELECT "
+            _oSQL:_sQuery += " 	   R_E_C_N_O_ "
+            _oSQL:_sQuery += "    ,ZD0_FILIAL "
+            _oSQL:_sQuery += "    ,ZD0_TID "
+            _oSQL:_sQuery += "    ,ZD0_PARCEL "
+            _oSQL:_sQuery += "    ,ZD0_VLRLIQ " 
+            _oSQL:_sQuery += "    ,ZD0_TAXTOT "
+            _oSQL:_sQuery += "    ,ZD0_RID "
+            _oSQL:_sQuery += " FROM " + RetSQLName ("ZD0") 
+            _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+            _oSQL:_sQuery += " AND ZD0_FILIAL   = '" + xFilial('ZD0') + "' "
+            _oSQL:_sQuery += " AND ZD0_STABAI   = 'R' "
+            _oSQL:_sQuery += " AND ZD0_DTAPGT BETWEEN '" + dtos(dDataIni) + "' AND '" + dtos(dDataFin) + "' "
+            if !empty(mv_par03)
+                _oSQL:_sQuery += " AND ZD0_TID = '" + mv_par03 + "' "
+            endif
+            _aZD0 := _oSQL:Qry2Array ()
+        else
+            _lContinua := .F.
+        EndIf
+    EndIf
+
+    If _lContinua
         For _x := 1 to Len(_aZD0)
 
             if _aZD0[_x, 5] > 0
@@ -113,6 +140,7 @@ User Function ZD0CMP()
                         u_log2('erro', 'Erro na compensação dos títulos! RECNOs:')
                         lRet := .F.
                         DisarmTransaction()
+
                     else
                         u_log2('aviso', 'Compensação realizada com sucesso! RECNOs: NF:' + alltrim(str(_aSE1[ 1, 1])) + " RA:" + alltrim(str(_aRA[ 1, 1])) )
                         aadd(aTaxa,{    _aSE1[ 1, 2],; // filial
@@ -135,10 +163,12 @@ User Function ZD0CMP()
             EndIf
         Next
 
-        // chama relatorio de baixas
-        U_ZD0RCMP(dDataIni, dDataFin)
-
+        If _sTipo == '2'
+            // chama relatorio de baixas
+            U_ZD0RCMP(dDataIni, dDataFin)
+        EndIf
     EndIf
+
     RestArea(aArea)
 Return
 //
