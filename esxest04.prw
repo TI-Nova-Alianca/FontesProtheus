@@ -26,6 +26,7 @@
 // 08/02/2021 - Robert - Valida campo B1_CCCUSTO no cadastro dos itens tipo MO, AP, GF (GLPI 9356).
 // 25/03/2022 - Robert - Verifica cadastro dos itens AP-, AO- e GF- passa a ser feita pela classe ClsVerif()
 // 05/04/2022 - Robert - Verificacao numero 82 estava bloqueando prosseguimento da rotina. Alterado emergencialmente para mostrar erro, mas dar escolha ao usuario se quer prosseguir.
+// 06/10/2022 - Robert - Melhorada chamada da verificacao 82, que mostrava tela vazia (GLPI 12324)
 //
 
 // -------------------------------------------------------------------------------
@@ -79,31 +80,9 @@ Static function _Roda()
 
 	// Verifica cadastro dos itens AP-, AO- e GF-
 	if _lContinua
-		/*
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "SELECT DISTINCT SB1.B1_COD, SB1.B1_DESC, B1_CCCUSTO"
-		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD3") + " SD3, "
-		_oSQL:_sQuery +=             RetSQLName ("SB1") + " SB1 "
-		_oSQL:_sQuery += " WHERE SD3.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND D3_FILIAL = '" + xfilial ("SD3") + "'"
-		_oSQL:_sQuery +=   " AND D3_EMISSAO BETWEEN '" + DtoS(MV_PAR01)+"' AND '"+DtoS(MV_PAR02) + "'"
-		_oSQL:_sQuery +=   " AND D3_TIPO = 'MO'"
-		_oSQL:_sQuery +=   " AND SUBSTRING (SD3.D3_OP, 7, 2) != 'OS'"
-		_oSQL:_sQuery +=   " AND SB1.B1_FILIAL = '" + xfilial ("SB1") + "'"
-		_oSQL:_sQuery +=   " AND SB1.B1_COD = D3_COD"
-		_oSQL:_sQuery +=   " AND SB1.D_E_L_E_T_ = '' AND B1_TIPO IN ('AP', 'MO', 'GF')"
-		_oSQL:_sQuery +=   " AND (B1_COD NOT LIKE 'MMM%' AND B1_CCCUSTO != SUBSTRING (B1_COD, 4, 9) OR (B1_COD LIKE 'MMM%' AND B1_CCCUSTO != '999999'))"
-		_oSQL:Log ()
-		_aErrSB1 := _oSQL:Qry2Array (.T., .t.)
-		if len (_aErrSB1) > 1  // Primeira linha vai trazer os nomes dos campos
-			U_F3Array (_aErrSB1, 'Inconsistencia cadastro itens', NIL, NIL, NIL, 'Campo CCC PARA CUSTO inconsistente', "Campo CC PARA CUSTO deveria conter o mesmo CC que faz parte do codigo do produto (ou 999999 no caso de item MMM).", .F., "", NIL)
-			_lContinua = .F.
-		endif
-		*/
 		_oVerif := ClsVerif():New (82)
 		_oVerif:Executa ()
-		if len (_oVerif:Result) > 0
+		if len (_oVerif:Result) > 1  // A primeira linha tem os titulos das colunas
 			U_Log2 ('erro', _oVerif:Result)
 			u_help ("Foram encontrados itens de mao de obra amarrados a centro de custo indevido",, .t.)
 			U_F3Array (_oVerif:Result, "Problemas no cadastro de itens", , , , '', '', .T., 'C')
