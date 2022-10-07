@@ -72,6 +72,7 @@
 // 18/08/2022 - Claudia - Incluida validação para desconto cielo. GLPI: 12417
 // 09/09/2022 - Robert  - Avisos passam a usar ClsAviso() e nao mais U_AvisaTI().
 // 02/10/2022 - Robert  - Trocado grpTI por grupo 122 no envio de avisos.
+// 07/10/2022 - Robert  - Envia copia dos avisos de erro para grupo 144 (coord.contabil)
 //
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -596,6 +597,8 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 			case SD3->D3_TIPO == 'MR' ; _xRet = '403010401010'
 			case SD3->D3_TIPO == 'IA' ; _xRet = '701010301017'
 			otherwise
+
+				// Envia aviso para a TI
 				_oAviso := ClsAviso ():New ()
 				_oAviso:Tipo       = 'E'
 				_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
@@ -609,6 +612,10 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 				_oAviso:Texto     += " recnoSD3=" + cvaltochar (sd3 -> (recno ()))
 				_oAviso:Texto     += " Pilha de chamadas: " + U_LogPCham (.f.)
 				_oAviso:Origem     = procname ()
+				_oAviso:Grava ()
+
+				// Copia do aviso para responsavel contabilidade.
+				_oAviso:DestinZZU  = {'144'}  // 144 = grupo de coordenacao contabil
 				_oAviso:Grava ()
 			endcase
 		endif
@@ -639,6 +646,10 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 					_oAviso:Texto     += " Pilha de chamadas: " + U_LogPCham (.f.)
 					_oAviso:Origem     = procname ()
 					_oAviso:Grava ()
+
+					// Copia do aviso para responsavel contabilidade.
+					_oAviso:DestinZZU  = {'144'}  // 144 = grupo de coordenacao contabil
+					_oAviso:Grava ()
 				endcase
 
 			case _sQueRet = "CCD"  // Cfe. prog. antigo 'vendacc.prw':
@@ -652,6 +663,10 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 					_oAviso:Texto     += " cod/serie=" + _sDoc + '/' + _sSerie
 					_oAviso:Texto     += " Pilha de chamadas: " + U_LogPCham (.f.)
 					_oAviso:Origem     = procname ()
+					_oAviso:Grava ()
+
+					// Copia do aviso para responsavel contabilidade.
+					_oAviso:DestinZZU  = {'144'}  // 144 = grupo de coordenacao contabil
 					_oAviso:Grava ()
 				endif
 				
@@ -683,6 +698,10 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 					_oAviso:Texto     += " Pilha de chamadas: " + U_LogPCham (.f.)
 					_oAviso:Origem     = procname ()
 					_oAviso:Grava ()
+
+					// Copia do aviso para responsavel contabilidade.
+					_oAviso:DestinZZU  = {'144'}  // 144 = grupo de coordenacao contabil
+					_oAviso:Grava ()
 				endif
 
 				// Nao deu para chamar o programa LP2 direto no lcto padrao por que o arquivo SF2 nao encontra-se posicionado para este lcto padrao.
@@ -701,6 +720,11 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 		_oAviso:Texto     += " Pilha de chamadas: " + U_LogPCham (.f.)
 		_oAviso:Origem     = procname ()
 		_oAviso:Grava ()
+
+		// Copia do aviso para responsavel contabilidade.
+		_oAviso:DestinZZU  = {'144'}  // 144 = grupo de coordenacao contabil
+		_oAviso:Grava ()
+
 		do case
 			case _sQueRet $ "HIST/CRED/DEB/CCC/CCD/ITCTAD"
 				_xRet = ""

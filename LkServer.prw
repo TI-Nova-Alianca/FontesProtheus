@@ -28,7 +28,7 @@ user function LkServer (_sQualSrv)
 	
 	// Define se deve apontar para o banco de producao ou de homologacao.
 //	if "TESTE" $ upper (GetEnvServer())
-	if "TESTE" $ upper (GetEnvServer()) .or. "R33" $ upper (GetEnvServer())
+	if "TESTE" $ upper (GetEnvServer()) .or. "R22" $ upper (GetEnvServer()) .or. "R23" $ upper (GetEnvServer())
 		U_Log2 ('debug', '[' + procname () + ']Estou definindo linked server para base teste')
 		_lBaseTST = .T.
 	endif
