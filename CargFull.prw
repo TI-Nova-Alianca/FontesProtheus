@@ -7,6 +7,7 @@
 // 10/07/2015 - Robert - Verifica se a carga tem transportadora antes de enviar para o FullWMS.
 // 16/09/2022 - Robert - Iniciada validacao de saldos com FullWMS (GLPI 12612)
 // 27/09/2022 - Robert - Envia comparativo estq.Full x Protheus para todos os itens, mesmo sem diferenca de saldo.
+// 03/10/2022 - Robert - Desabilitado envio de comparativo de estoques ateh melhorarmos a leitura do Full.
 //
 
 // --------------------------------------------------------------------------
@@ -28,7 +29,7 @@ User Function CargFull (_sQueFazer)
 
 		// Valida estoques entre os dois sistemas.
 		if _lContinua
-			_lContinua = _ValEstFul ()
+	// em manutencao		_lContinua = _ValEstFul ()
 		endif
 
 		if _lContinua
