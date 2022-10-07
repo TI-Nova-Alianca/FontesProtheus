@@ -58,6 +58,7 @@
 // 15/06/2022 - Robert - Exclusao passada para a classe ClsEtiq (GLPI 12220)
 // 16/06/2022 - Robert - Melhorada interface com usuario na funcao EtqPllCT().
 // 28/09/2022 - Robert - Melhorada leitura da tb_wms_entrada na rotina de abortar guarda do pallet.
+// 05/10/2022 - Robert - Iniciada funcao U_ZA1SD5, para receber da MTA390MNU (GLPI 12651)
 //
 
 #include "rwmake.ch"
@@ -333,6 +334,7 @@ return len (_aPal)
 
 // --------------------------------------------------------------------------
 // Inclusão automática (para ser chamada de outra rotina).
+// Minha intencao eh migrar esta funcao para o metodo :Grava() da ClsEtiq.
 User Function IncEtqPll(_sCodPro, _sNumOP, _nQtd, _sFornece, _sLoja, _sNF, _sSerie, _dData, _sItem, _sIdZAG)
 	local _aAreaAnt := U_ML_SRArea ()
 	local _sNextNum := ''
@@ -588,6 +590,18 @@ User Function EtqPllCT (_sCodigo)
 				u_help ("Pendencia cancelada.")
 			endif
 		endif
+	endif
+return
+
+
+// --------------------------------------------------------------------------
+// Recebe chamadas feitas pelos botoes da MTA390MNU.
+user function ZA1SD5 (_sQueFazer)
+	local _oEtiq := CLsEtiq ():New ()
+	if _sQueFazer == 'G'  // Gerar nova
+		_oEtiq:NovaPorSD5 (sd5 -> d5_produto, sd5 -> d5_LoteCtl, sd5 -> d5_local, sd5 -> d5_NumSeq)
+	elseif _sQueFazer == 'I'  // Imprimir
+		// falta fazer
 	endif
 return
 

@@ -77,6 +77,7 @@
 // 23/08/2022 - Robert  - Criada sugestao para a verificacao 42 (GLPI 12134)
 // 09/09/2022 - Robert  - Criada verificacao 91.
 // 12/09/2022 - Robert  - Verif.91: Melhorado relacionamento entre MP_SYSTEM_PROFILE e SYS_USR
+// 06/10/2022 - Robert  - Verif.82 passa a ser valida para todas as filiais (GLPI 12324)
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -156,10 +157,13 @@ METHOD New (_nQual) Class ClsVerif
 	// Jah tentei diversas formas de fazer isso, mas no final sempre acabo
 	// criando somente o CASE que define a query e esqueco de atualizar o
 	// atributo :UltVerif.
-	for ::Numero = 1000 to 1 step -1
+	for ::Numero = 100 to 1 step -1
 		//U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (::Numero) + ' qry antes: ' + ::Query)
+		::UltMsg = ''
 		::GeraQry (.T.)
-		//U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (::Numero) + ' qry depois: ' + ::Query)
+		U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (::Numero))
+		U_Log2 ('debug', '[' + procname () + ']qry depois: ' + ::Query)
+		U_Log2 ('debug', '[' + procname () + ']Msg depois: ' + ::UltMsg)
 		if ! empty (::Query)
 			::UltVerif = ::Numero
 			::Numero = 0
@@ -3175,14 +3179,13 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=  " GROUP BY SYS_USR.USR_ID, SYS_USR.USR_CODIGO, SYS_USR.USR_NOME"
 
 		case ::Numero == 82
-			//::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
-			::Setores    = 'CUS'
-			::Descricao  = 'Itens de mao de obra devem estar amarrados ao CC correspondente'
+			::Filiais   = '*'
+			::Setores   = 'CUS'
+			::Descricao = 'Itens de mao de obra devem estar amarrados ao CC correspondente'
 			::Query := "" 
 			::Query += "SELECT 'Item de mao de obra amarrado a CC errado' as PROBLEMA, B1_COD, B1_CCCUSTO, B1_GCCUSTO, B1_DESC"
 			::Query +=  " FROM " + RetSQLName ("SB1")
 			::Query += " WHERE D_E_L_E_T_ = ''"
-//			::Query +=   " AND SUBSTRING (B1_COD, 1, 3) IN ('AP-', 'MO-', 'GF-')"
 			::Query +=   " AND SUBSTRING (B1_COD, 1, 3) IN ('AP-', 'AO-', 'GF-')"
 			::Query +=   " AND B1_CCCUSTO != SUBSTRING (B1_COD, 4, 11)"
 			::Query += " ORDER BY B1_COD"

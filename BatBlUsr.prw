@@ -15,6 +15,7 @@
 // 02/03/2022 - Robert - Pequena melhoria nos logs.
 // 11/08/2022 - Robert - Bloqueia demitidos (antes ignorava-os, se autenticassem pelo A.D.)
 // 01/09/2022 - Robert - Melhorias ClsAviso.
+// 02/10/2022 - Robert - Removido atributo :DiasDeVida da classe ClsAviso.
 //
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -162,10 +163,9 @@ user function BatBlUsr ()
 									u_log2 ('aviso', 'Usuario deveria ser desbloqueado no Protheus.')
 									_oAviso := ClsAviso ():New ()
 									_oAviso:Tipo       = 'A'
-									_oAviso:DestinAvis = 'grpTI'
+									_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 									_oAviso:Texto      = 'Usuario ' + _sIdUser + ' - Pessoa ' + alltrim (_aPessoa [_nPessoa, 1]) + ' - ' + alltrim (_aPessoa [_nPessoa, 4]) + ': deveria ser desbloqueado no Protheus.'
 									_oAviso:Origem     = procname ()
-									_oAviso:DiasDeVida = 5
 									_oAviso:Grava ()
 								endif
 							endif

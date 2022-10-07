@@ -6,24 +6,22 @@
 //
 // Historico de alteracoes:
 // 17/08/2018 - Robert - Grava evento de estorno, se existir.
+// 05/10/2022 - Robert - Eliminados alguns logs
 //
 
 // ----------------------------------------------------------------
 user function MT250GrEst ()
 	local _lRet     := .T.
 	local _aAreaAnt := U_ML_SRArea ()
-	u_logIni ()
 
 	_AtuZA1 ()
 
 	// Verifica se deve gravar evento gerado em P.E. anterior.
-	u_log (type ('_oEvtEstF'))
 	if type ('_oEvtEstF') == 'O'
 		_oEvtEstF:Grava ()
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
 return _lRet
 
 

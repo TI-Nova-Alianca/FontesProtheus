@@ -172,6 +172,8 @@
 // 30/08/2022 - Robert  - Atributo ClsAviso:DestinAvis passa a ser tipo string.
 // 01/09/2022 - Robert  - Melhorias ClsAviso.
 // 22/09/2022 - Robert  - Validacao do campo C2_VABARCX - GLPI 11994
+// 02/10/2022 - Robert  - Removido atributo :DiasDeVida da classe ClsAviso.
+// 03/10/2022 - Robert  - Trocado grpTI por grupo 122 no envio de avisos.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -1646,13 +1648,13 @@ user function VA_VCpo (_sCampo)
 			endif
 
 		otherwise
-			//U_AvisaTI ("Campo '" + _sCampo + "' nao previsto na rotina " + procname ())
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:DestinAvis = 'grpTI'
+			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 			_oAviso:Titulo     = "Campo '" + _sCampo + "' nao previsto na rotina " + procname ()
-			_oAviso:Texto      = "Pilha de chamadas: " + U_LogPCham (.f.)
+			_oAviso:Texto      = _oAviso:Texto
 			_oAviso:Origem     = procname ()
+			_oAviso:InfoSessao = .T.  // Incluir informacoes adicionais de sessao na mensagem.
 			_oAviso:Grava ()
 
 	endcase

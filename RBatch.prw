@@ -24,6 +24,7 @@
 // 18/12/2019 - Robert - Pequenos ajustes para filial 16
 // 14/02/2021 - Robert - Incluidas chamadas das funcoes U_UsoRot() e U_PerfMon para testes de monitoramento de performance  (GLPI 9409).
 // 30/06/2021 - Robert - Passa a acessar modulo '06' como default.
+// 02/10/2022 - Robert - Removido atributo :DiasDeVida da classe ClsAviso.
 //
 
 #include "tbiconn.ch"
@@ -52,7 +53,6 @@ User Function RBatch (_sEmp, _sFil)
 
 	set century on
 	
-	//ConOut (procname () + ' ' + dtoc (date ()) + ' ' + time ())
 	if _lContinua
 		if _sEmp == NIL .or. _sFil == NIL
 			u_log2 ('erro', "Parametros de emp/filial nao definidos.")
@@ -96,8 +96,6 @@ User Function RBatch (_sEmp, _sFil)
 	fwrite (_nHdl, cvaltochar (iif (_nUltEmpFi >= len (_aUltEmpFi), 1, _nUltEmpFi + 1)))
 	fclose (_nHdl)
 
-
-//	private _sArqLog := procname () + '_' + dtos (date ()) + ".log"
 	private _sArqLog := procname () + ".log"
 
 	// Como alguns batches exigem ser executados em determinados modulos, na primeira tentativa de execucao
@@ -122,7 +120,6 @@ User Function RBatch (_sEmp, _sFil)
 		if ! empty (_sModulo)
 			prepare environment empresa _sEmp filial _sFil modulo _sModulo
 		else
-		//	prepare environment empresa _sEmp filial _sFil
 			prepare environment empresa _sEmp filial _sFil modulo "06"
 		endif
 		private __cUserId := "000000"
@@ -130,11 +127,7 @@ User Function RBatch (_sEmp, _sFil)
 		private __RelDir  := "c:\temp\spool_protheus\"
 		set century on
 	endif
-//	u_log2 ('debug', '[' + procname () + '] ambiente preparado para emp/filial ' + _sEmp + _sFil)
 	//PtInternal (1, 'Iniciando emp/filial ' + _sEmp + _sFil)
-
-	// Gera log soh depois de inicializar ambiente.
-//	u_log2 ('info', 'Iniciando execucao de batches para emp_filial ' + _sEmp + _sFil + ' Thread ' + cvaltochar (ThreadId ()))
 
 	// Controla acesso via semaforo para evitar executar quando a execucao anterior ainda nao terminou.
 	if _lContinua
@@ -146,10 +139,9 @@ User Function RBatch (_sEmp, _sFil)
 			// Gera aviso para monitoramento
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'A'
-			_oAviso:DestinAvis = 'grpTI'
+			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 			_oAviso:Texto      = 'Bloqueio de semaforo para execucao de batches na empresa/filial ' + _sEmp + _sFil
 			_oAviso:Origem     = procname ()
-			_oAviso:DiasDeVida = 5
 			_oAviso:Grava ()
 		endif
 	endif

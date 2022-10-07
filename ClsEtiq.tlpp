@@ -29,6 +29,7 @@
 // 25/08/2022 - Robert - Criado metodo :ApontaOP
 // 23/09/2022 - Robert - Criado atributo :CBEmbCol e metodo :ValCBEmb - GLPI 11994
 // 26/09/2022 - Robert - Funcao de inutilizacao migrada do fonte ZA1IN para metodo :Inutiliza()
+// 05/10/2022 - Robert - Iniciado tratamento para etiquetas geradas a partir do SD5 (GLPI 12651)
 //
 
 #Include "Protheus.ch"
@@ -45,32 +46,34 @@ return
 CLASS ClsEtiq
 
 	// Declaracao das propriedades da Classe
-	public data AlmDest       // Almox.destino
-	public data Apontada      // ZA1_APONT - Apontamento de producao ja executado (quando etiq. para OP)
-	public data Codigo        // ZA1_CODIGO
-	private data CBEmbCol      // C2_VABARCX - Cod.barras embalagem coletiva - Para validacao no momento de apontar a producao.
-	public data DocEntrForn   // ZA1_FORNEC - Quando refere-se a NF de entrada
-	public data DocEntrItem   // ZA1_ITEM - Quando refere-se a NF de entrada
-	public data DocEntrLoja   // ZA1_LOJAF - Quando refere-se a NF de entrada
-	public data DocEntrNum    // ZA1_DOCE - Quando refere-se a NF de entrada
-	public data DocEntrSerie  // ZA1_SERIEE - Quando refere-se a NF de entrada
-	public data DtEmis        // ZA1_DATA
-	public data Filial        // ZA1_FILIAL
-	public data IdZAG         // ZA1_IDZAG - Identificador de registro da tabela ZAG
-	public data Impressa      // ZA1_IMPRES - Jah impressa
-	public data Inutilizada   // ZA1_APONT='I' - Indica que foi inutilizada manualmente
-	public data LoteProduto
-	public data OP            // ZA1_OP
-	public data Produto       // ZA1_PROD
-	public data QtApontada    // Quando relacionada a uma OP
-	public data QtEstornada   // Quando relacionada a uma OP
-	public data QtPerdida     // Quando relacionada a uma OP
-	public data Quantidade    // ZA1_QUANT
+	public  data AlmDest      // Almox.destino, quando transferencia (ZAG) ou apontamento de OP
+	public  data AlmOrig      // Almox.origem, quando transferencia (ZAG) ou gerada com base no SD5 (lotes iniciais).
+	public  data Apontada     // ZA1_APONT - Apontamento de producao ja executado (quando etiq. para OP)
+	public  data Codigo       // ZA1_CODIGO - Numero da etiqueta
+	private data CBEmbCol     // C2_VABARCX - Cod.barras embalagem coletiva - Para validacao no momento de apontar a producao.
+	private data D5_NUMSEQ    // D5_NUMSEQ - Quando etiq. gerada a partir de um registro de origem MAN do SD5.
+	public  data DocEntrForn  // ZA1_FORNEC - Quando refere-se a NF de entrada
+	public  data DocEntrItem  // ZA1_ITEM - Quando refere-se a NF de entrada
+	public  data DocEntrLoja  // ZA1_LOJAF - Quando refere-se a NF de entrada
+	public  data DocEntrNum   // ZA1_DOCE - Quando refere-se a NF de entrada
+	public  data DocEntrSerie // ZA1_SERIEE - Quando refere-se a NF de entrada
+	public  data DtEmis       // ZA1_DATA
+	public  data Filial       // ZA1_FILIAL
+	public  data IdZAG        // ZA1_IDZAG - Identificador de registro da tabela ZAG
+	public  data Impressa     // ZA1_IMPRES - Jah impressa
+	public  data Inutilizada  // ZA1_APONT='I' - Indica que foi inutilizada manualmente
+	public  data LoteProduto
+	public  data OP           // ZA1_OP
+	public  data Produto      // ZA1_PROD
+	public  data QtApontada   // Quando relacionada a uma OP
+	public  data QtEstornada  // Quando relacionada a uma OP
+	public  data QtPerdida    // Quando relacionada a uma OP
+	public  data Quantidade   // ZA1_QUANT
 	private data RegZA1       // Numero registro (RECNO) no ZA1.
-	public data SeqNoGrupo    // ZA1_SEQ - Sequencia dentro do grupo, geralmente de OP. Ex.: 1 de 10, 2 de 10, ...
-	public data UltMsg        // Ultima mensagem gerada.
-	public data UsrIncl       // ZA1_USRINC - Usuario que incluiu/gerou a etiqueta
-	public data ValidadeLote
+	public  data SeqNoGrupo   // ZA1_SEQ - Sequencia dentro do grupo, geralmente de OP. Ex.: 1 de 10, 2 de 10, ...
+	public  data UltMsg       // Ultima mensagem gerada.
+	public  data UsrIncl      // ZA1_USRINC - Usuario que incluiu/gerou a etiqueta
+	public  data ValidLote    // Validade do lote
 
 	// Declaracao dos Metodos da classe
 	public METHOD New ()
@@ -80,6 +83,8 @@ CLASS ClsEtiq
 	public METHOD Imprime ()
 	public METHOD Inutiliza ()
 	public METHOD GeraAtrib ()
+	public METHOD Grava ()
+	public METHOD NovaPorSD5 ()
 	public METHOD PodeEnvFul ()
 	public METHOD PodeExcluir ()
 	public METHOD PodeApont ()
@@ -90,6 +95,8 @@ ENDCLASS
 // --------------------------------------------------------------------------
 // Construtor.
 METHOD New (_xChave) Class ClsEtiq
+
+	// Alimenta atributos com valores default de uma etiqueta nova.
 	::GeraAtrib ("")
 	
 	// Se receber numerico, eh por que se trata do numero de registro do ZA1.
@@ -158,12 +165,15 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 	local _oSQL     := NIL
 	local _aLoteVal := {}
 	local _aRetSD3  := {}
+	local _nRegSD5  := 0
 
 	// Defaults
 	::AlmDest      = ''
+	::AlmOrig      = ''
 	::Apontada     = 'N'
 	::Codigo       = ''
 	::CBEmbCol     = ''
+	::D5_NUMSEQ    = ''
 	::DocEntrForn  = ''
 	::DocEntrItem  = ''
 	::DocEntrLoja  = ''
@@ -184,12 +194,14 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 	::RegZA1       = 0
 	::SeqNoGrupo   = ''
 	::UltMsg       = ''
-	::UsrIncl      = ''
-	::ValidadeLote = ctod ('')
+	::UsrIncl      = cUserName
+	::ValidLote    = ctod ('')
 
-	if _sOrigem == 'M'  // Variaveis M->
+	do case
+	case _sOrigem == 'M'  // Variaveis M->
 		::Apontada     = m->ZA1_APONT
 		::Codigo       = m->ZA1_CODIGO
+		::D5_NUMSEQ    = m->ZA1_D5NSEQ
 		::DocEntrForn  = m->ZA1_FORNEC
 		::DocEntrItem  = m->ZA1_ITEM
 		::DocEntrLoja  = m->ZA1_LOJAF
@@ -206,10 +218,11 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 		::SeqNoGrupo   = m->ZA1_SEQ
 		::UsrIncl      = m->ZA1_USRINC
 
-	elseif _sOrigem == "ZA1"
+	case _sOrigem == "ZA1"
 
 		::Apontada     = za1 -> ZA1_APONT
 		::Codigo       = za1 -> ZA1_CODIGO
+		::D5_NUMSEQ    = za1 -> ZA1_D5NSEQ
 		::DocEntrForn  = za1 -> ZA1_FORNEC
 		::DocEntrItem  = za1 -> ZA1_ITEM
 		::DocEntrLoja  = za1 -> ZA1_LOJAF
@@ -226,7 +239,12 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 		::RegZA1       = za1 -> (recno ())
 		::SeqNoGrupo   = za1 -> ZA1_SEQ
 		::UsrIncl      = za1 -> ZA1_USRINC
-	endif
+	otherwise
+		if ! empty (_sOrigem)  // Se origem vazia, eh por que estou apenas instanciando um objeto vazio.
+			::UltMsg += "Impossivel gerar atributos. Origem '" + _sOrigem + "' desconhecida."
+			u_help (::UltMsg,, .t.)
+		endif
+	endcase
 
 	// Alimenta lote e validade
 	if _sOrigem == 'M' .or. _sOrigem == "ZA1"
@@ -234,22 +252,24 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 		if ! sb1 -> (dbseek (xfilial ("SB1") + ::Produto, .f.))
 			u_help ('[' + GetClassName (::Self) + '.' + procname () + "]Nao localizado cadastro do produto '" + ::Produto + "' relacionado `a etiqueta '" + ::Codigo + "'.",, .t.)
 		else
-			if ! empty (::OP)
+			do case
+			case ! empty (::OP)
 				::LoteProduto = substring (::OP, 1, 8)
 				::AlmDest = sb1 -> b1_locpad
 				sc2 -> (dbsetorder (1))
 				if ! sc2 -> (dbseek (xfilial ("SC2") + ::OP, .f.))
 					u_help ('[' + GetClassName (::Self) + '.' + procname () + "]Impossivel encontrar a OP '" + ::OP + "' relacionada `a etiqueta '" + ::Codigo + "'. Validade nao pode ser determinada.",, .t.)
 				else
+					::AlmOrig  = sc2 -> c2_local
 					::CBEmbCol = sc2 -> c2_vaBarCx
 					if sc2 -> c2_vaopesp == 'R'  // OP de reprocesso assume dt valid do lote original, cfe informada pelo usuario.
 						if empty (sc2 -> c2_vadvori)
 							u_help ('[' + GetClassName (::Self) + '.' + procname () + "]Impossivel buscar a data de validade do lote  da etiqueta '" + ::Codigo + "': a OP referenciada (" + ::OP + ") eh uma OP de reprocesso, e nao foi informada a data de validade do lote original no campo C2_VADVORI (" + alltrim (rettitle ("C2_VADVORI")) + ").",, .t.)
 						else
-							::ValidadeLote = sc2 -> c2_vadvori
+							::ValidLote = sc2 -> c2_vadvori
 						endif
 					else
-						::ValidadeLote = sc2 -> c2_datprf + sb1 -> b1_prvalid
+						::ValidLote = sc2 -> c2_datprf + sb1 -> b1_prvalid
 					endif
 
 					// Busca quantidades apontadas e perdidas
@@ -269,7 +289,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 					::QtEstornada = _aRetSD3 [1 , 3]
 				endif
 
-			elseif ! empty (::DocEntrNum)  // Etiqueta gerada por NF de entrada
+			case ! empty (::DocEntrNum)  // Etiqueta gerada por NF de entrada
 				sd1 -> (dbsetorder (1))  // D1_FILIAL, D1_DOC, D1_SERIE, D1_FORNECE, D1_LOJA, D1_COD, D1_ITEM, R_E_C_N_O_, D_E_L_E_T_
 				if ! sd1 -> (dbseek (::Filial + ::DocEntrNum + ::DocEntrSerie + ::DocEntrForn + ::DocEntrLoja + ::Produto + ::DocEntrItem, .F.))
 					u_help ("NF/fornecedor/produto/item '" + ::DocEntrNum + '/' + ::DocEntrForn + '/' + ::Produto + '/' +::DocEntrItem + "' referenciada pela etiqueta '" + ::Codigo + "' nao foi localizada na tabela SD1.",, .t.)
@@ -287,13 +307,13 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 						_oSQL:Log ()
 						_aLoteVal = aclone (_oSQL:RetFixo (1, "ao consultar lote do produto da etiqueta '" + ::Codigo + "' na NF de entrada '" + ::DocEntrNum + "'.", .T.))
 						if len (_aLoteVal) == 1
-							::LoteProduto  = _aLoteVal [1, 1]
-							::ValidadeLote = _aLoteVal [1, 2]
+							::LoteProduto = _aLoteVal [1, 1]
+							::ValidLote   = _aLoteVal [1, 2]
 						endif
 					endif
 				endif
 
-			elseif ! empty (::IdZAG)
+			case ! empty (::IdZAG)
 				zag -> (dbsetorder (1))  // ZAG_FILIAL, ZAG_DOC, R_E_C_N_O_, D_E_L_E_T_
 				U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Pesquisando ZAG com >>' + xfilial ("ZAG") + ::IdZAG + '<< para buscar lote e validade.')
 				if ! zag -> (dbseek (xfilial ("ZAG") + ::IdZAG, .F.))
@@ -312,24 +332,153 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 						_oSQL:Log ()
 						_aLoteVal = aclone (_oSQL:RetFixo (1, "ao consultar lote do produto da etiqueta '" + ::Codigo + "' na solicitacao de transferencia numero '" + ::IdZAG + "'.", .T.))
 						if len (_aLoteVal) == 1
-							::LoteProduto  = _aLoteVal [1, 1]
-							::ValidadeLote = _aLoteVal [1, 2]
+							::LoteProduto = _aLoteVal [1, 1]
+							::ValidLote   = _aLoteVal [1, 2]
 						endif
 					endif
 					
-					// Teste criado em 23/09/22 para ver se o Full nao estah aceitando 
-					// as entradas por faltar lote.
-					// Manter consistencia com a view v_wms_entrada !!!
+					// Se quero enviar para o FullWMS, tenho que ter algum lote.
+					// Enquanto eu nao tiver (seja por que o produto nao controla
+					// lote no Protheus, ou por que ainda nao implementamos uma
+					// maneira de informar na solicitacao de transferencia), vou
+					// ter que gerar algum lote fajuto.
+					// OBS: Manter consistencia com a view v_wms_entrada !!!
 					if ::AlmDest == '01' .and. empty (::LoteProduto)
 						U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Gerando lote e validade fajutos para ver se o Full aceita.')
-						::LoteProduto  = '000001'
-						::ValidadeLote = date () + sb1 -> b1_prvalid
+						::LoteProduto = '000001'
+						::ValidLote   = date () + sb1 -> b1_prvalid
 					endif
 				endif
-			endif
+			case ! empty (::D5_NUMSEQ)
+				_nRegSD5 = _AchaSD5 (::Produto, ::LoteProduto)
+				if _nRegSD5 > 0
+					sd5 -> (dbgoto (_nRegSD5))
+					::AlmDest     = sd5 -> d5_local
+					::AlmOrig     = sd5 -> d5_local
+					::LoteProduto = sd5 -> d5_lotectl
+					::ValidLote   = sd5 -> d5_dtvalid
+				endif
+			otherwise
+				::UltMsg += "Impossivel determinar atributos adicionais. Origem de etiqueta desconhecida."
+				u_help (::UltMsg,, .t.)
+			endcase
 		endif
 	endif
 	
+	U_ML_SRArea (_aAreaAnt)
+return
+
+
+// --------------------------------------------------------------------------
+// Grava nova etiqueta na tabela ZA1.
+// Minha intencao eh migrar a funcao U_IncEtqPll para este metodo.
+METHOD Grava () Class ClsEtiq
+	local _lGravou := .F.
+	local _aAreaAnt := U_ML_SRArea ()
+	local _sNextNum := ''
+	local _nSeqEtq  := 0
+
+	// Gera sequencial da etiqueta dentro do grupo (OP ou NF) a que pertence.
+	if ! empty (::OP) .or. ! empty (::DocEntrNum)
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT COUNT (*)"
+		_oSQL:_sQuery +=   " FROM " + RetSQLName ("ZA1")
+		_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=    " AND ZA1_OP     = '" + ::OP + "'"
+		_oSQL:_sQuery +=    " AND ZA1_DOCE   = '" + ::DocEntrNum + "'"
+		_oSQL:_sQuery +=    " AND ZA1_SERIEE = '" + ::DocEntrSerie + "'"
+		_oSQL:_sQuery +=    " AND ZA1_ITEM = '"   + ::DocEntrItem + "'"
+		_oSQL:_sQuery +=    " AND ZA1_FORNEC = '" + ::DocEntrForn + "'"
+		_oSQL:_sQuery +=    " AND ZA1_LOJAF  = '" + ::DocEntrLoja + "'"
+		_nSeqEtq = _oSQL:RetQry () + 1
+	endif
+
+	begin transaction
+		_sNextNum = U_NxtZA1 (::Produto)
+		reclock ("ZA1",.T.)
+		ZA1 -> ZA1_FILIAL = ::Filial
+		ZA1 -> ZA1_CODIGO = _sNextNum
+		ZA1 -> ZA1_DATA   = ::DtEmis
+		ZA1 -> ZA1_OP     = ::OP
+		ZA1 -> ZA1_PROD   = ::Produto
+		ZA1 -> ZA1_QUANT  = ::Quantidade
+		za1 -> za1_doce   = ::DocEntrNum
+		za1 -> za1_seriee = ::DocEntrSerie
+		za1 -> za1_item   = ::DocEntrItem
+		za1 -> za1_fornec = ::DocEntrForn
+		za1 -> za1_lojaf  = ::DocEntrLoja
+		za1 -> za1_seq    = _nSeqEtq
+		za1 -> za1_usrinc = cUserName
+		za1 -> za1_idZAG  = ::IdZAG
+		za1 -> ZA1_D5NSEQ = ::D5_NUMSEQ
+		msunlock()
+		::Codigo     = za1 -> za1_codigo
+		::SeqNoGrupo = za1 -> za1_seq
+		::RegZA1     = za1 -> (recno ())
+		_lGravou = .T.
+	end transaction
+	u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Etiqueta ' + za1 -> za1_codigo + ' gravada. Produto: ' + alltrim (za1 -> za1_prod) + ' OP: ' + alltrim (za1 -> za1_op) + ' NF: ' + alltrim (za1 -> za1_doce) + ' D5NSEQ: ' + alltrim (za1 -> ZA1_D5NSEQ))
+
+	do while __lSX8
+		ConfirmSX8 ()
+	enddo
+
+	U_ML_SRArea (_aAreaAnt)
+return _lGravou
+
+
+// --------------------------------------------------------------------------
+// Gera etiqueta para lote jah existente no estoque. A intencao desta operacao
+// eh poder etiquetar lotes jah existentes no estoque quando a rastreabilidade
+// for habilitada para um produto, pois esses 'lotes iniciais' nao terao sua
+// origem a partir de um movimento de estoque (lotes posteriores serao criados
+// atraves de um apontamento de OP, ou uma nota de compra, etc.)
+METHOD NovaPorSD5 (_sProduto, _sLote, _sAlmox, _sNumSeq) Class ClsEtiq
+	local _aAreaAnt := U_ML_SRArea ()
+	local _nRegSD5  := 0
+	local _oSQL     := NIL
+
+	U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Tentando criar etiqueta para produto/lote/almox/numseq ' + _sProduto + '/' + _sLote + '/' + _sAlmox + '/' + _sNumSeq)
+	
+	// Nao vou permitir duas etiquetas para o mesmo lote.
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += "SELECT ZA1_CODIGO"
+	_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZA1") + " ZA1"
+	_oSQL:_sQuery += " WHERE ZA1.D_E_L_E_T_  = ''"
+	_oSQL:_sQuery +=   " AND ZA1.ZA1_FILIAL  = '" + xfilial ("ZA1") + "'"
+	_oSQL:_sQuery +=   " AND ZA1.ZA1_PROD    = '" + _sProduto + "'"
+	_oSQL:_sQuery +=   " AND ZA1.ZA1_D5NSEQ  = '" + _sNumSeq  + "'"
+	_oSQL:_sQuery +=   " AND ZA1.ZA1_IMPRES != 'I'"
+	_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+	_sJahTem = _oSQL:RetQry (1, .f.)
+	if ! empty (_sJahTem)
+		::UltMsg += "Ja existe a etiqueta '" + _sJahTem + "' para este produto/lote. Inutilize-a antes de gerar uma nova."
+		u_help (::UltMsg,, .t.)
+	else
+		_nRegSD5 = _AchaSD5 (_sProduto, _sLote, _sAlmox, _sNumSeq)
+		if _nRegSD5 == 0
+			::UltMsg += "Nao encontrei registro com origem MAN para o produto/lote/almox/NumSeq informados. Geracao de etiquetas cancelada."
+			u_help (::UltMsg,, .t.)
+		else
+			sd5 -> (dbgoto (_nRegSD5))
+			::AlmDest     = sd5 -> d5_local
+			::AlmOrig     = sd5 -> d5_local
+			::D5_NUMSEQ   = sd5 -> d5_numseq
+			::DtEmis      = date ()
+			::Filial      = xfilial ("ZA1")
+			::LoteProduto = sd5 -> d5_lotectl
+			::Produto     = sd5 -> d5_produto
+			::Quantidade  = sd5 -> d5_quant
+			::ValidLote   = sd5 -> d5_dtvalid
+			if ! ::Grava ()
+				::UltMsg += "Nao foi possivel gravar a etiqueta."
+				u_help (::UltMsg,, .t.)
+			endif
+		endif
+	endif
+
 	U_ML_SRArea (_aAreaAnt)
 return
 
@@ -584,7 +733,7 @@ METHOD EnviaFull (_lMsg) Class ClsEtiq
 		_oSQL:_sQuery +=          "'" + alltrim (::Produto) + "',"
 		_oSQL:_sQuery +=          "'" + ::LoteProduto + "',"
 		_oSQL:_sQuery +=          cvaltochar (::Quantidade) + ","
-		_oSQL:_sQuery +=          "'" + dtos (::ValidadeLote) + "',"
+		_oSQL:_sQuery +=          "'" + dtos (::ValidLote) + "',"
 		_oSQL:_sQuery +=          "'01',"
 		_oSQL:_sQuery +=          "'" + ::Filial + "',"
 		_oSQL:_sQuery +=          "'N')"  // N=ainda nao lida pelo Full
@@ -749,3 +898,26 @@ static function _AtuFull (_sEtiq, _sQueFazer)
 		_oSQL:Exec ()
 	endif
 return
+
+
+// --------------------------------------------------------------------------
+// Localiza registro na tabela SD5, para alimentar dados de nova etiqueta.
+static function _AchaSD5 (_sProduto, _sLote, _sAlmox, _sNumSeq)
+	local _oSQL    := NIL
+	local _nRetSD5 := 0
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += "SELECT TOP 1 R_E_C_N_O_"  // Nao espero encontrar mais de 1, mas, para garantir...
+	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD5") + " SD5"
+	_oSQL:_sQuery += " WHERE SD5.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=   " AND SD5.D5_FILIAL  = '" + xfilial ("SD5") + "'"
+	_oSQL:_sQuery +=   " AND SD5.D5_PRODUTO = '" + _sProduto + "'"
+	_oSQL:_sQuery +=   " AND SD5.D5_LOTECTL = '" + _sLote    + "'"
+	_oSQL:_sQuery +=   " AND SD5.D5_LOCAL   = '" + _sAlmox   + "'"
+	_oSQL:_sQuery +=   " AND SD5.D5_NUMSEQ  = '" + _sNumSeq  + "'"
+	_oSQL:_sQuery +=   " AND SD5.D5_ORIGLAN = 'MAN'"  // Soh vou aceitar (por enqto) lotes criados manualmente.
+	_oSQL:_sQuery += " ORDER BY SD5.D5_DATA, SD5.D5_NUMSEQ"
+	_oSQL:Log ('[' + procname () + ']')
+	_nRetSD5 = _oSQL:RetQry (1, .f.)
+return _nRetSD5

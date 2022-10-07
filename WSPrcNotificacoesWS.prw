@@ -1,3 +1,15 @@
+// Programa:  WSPrcNotificacoesWS
+// Autor:     Robert Koch
+// Data:      30/08/2022
+// Descricao: Acessa web service do NaWeb
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #cliente_web_service
+// #Descricao         #Acessa web service do NaWeb - notificacoes
+// #PalavasChave      #web_service #naweb #notificacoes
+// #TabelasPrincipais #
+// #Modulos           #Todos
+
 #INCLUDE "protheus.ch"
 #INCLUDE "apwebsrv.ch"
 

@@ -17,6 +17,8 @@
 //                     - Ao buscar repres.da NF orig. de venda, queria que esta fosse tipo D. Alterado para tipo N.
 // 01/09/2022 - Robert - Melhorias ClsAviso.
 // 09/09/2022 - Robert - Melhorias avisos.
+// 02/10/2022 - Robert - Trocado grpTI por grupo 122 no envio de avisos.
+// 07/10/2022 - Robert - Envia copia dos avisos de erro para grupo 144 (coord.contabil)
 //
 
 // --------------------------------------------------------------------------
@@ -54,13 +56,17 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:DestinAvis = 'grpTI'
+			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 			_oAviso:Titulo     = "Tipo produto sem tratamento LPAD " + _sLPad
 			_oAviso:Texto     := "LPAD " + cvaltochar (_sLPad)
 			_oAviso:Texto     += " Tipo prod:" + cvaltochar (_sTipoProd)
 			_oAviso:Texto     += " Retorno solicitado:" + _sQueRet
 			_oAviso:Texto     += " Pilha de chamadas: " + U_LogPCham (.f.)
 			_oAviso:Origem     = procname ()
+			_oAviso:Grava ()
+
+			// Copia do aviso para responsavel contabilidade.
+			_oAviso:DestinZZU  = {'144'}  // 144 = grupo de coordenacao contabil
 			_oAviso:Grava ()
 
 			_xRet = ''
@@ -74,13 +80,17 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 
 				_oAviso := ClsAviso ():New ()
 				_oAviso:Tipo       = 'E'
-				_oAviso:DestinAvis = 'grpTI'
+				_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 				_oAviso:Titulo     = "Vendedor nao encontrado LPAD " + _sLPad
-				_oAviso:Texto     := "Vendedos nao encontrado na tanela SA3 - LPAD " + cvaltochar (_sLPad)
+				_oAviso:Texto     := "Vendedor nao encontrado na tanela SA3 - LPAD " + cvaltochar (_sLPad)
 				_oAviso:Texto     += " Repres:" + cvaltochar (_sRepres)
 				_oAviso:Texto     += " Retorno solicitado:" + _sQueRet
 				_oAviso:Texto     += " Pilha de chamadas: " + U_LogPCham (.f.)
 				_oAviso:Origem     = procname ()
+				_oAviso:Grava ()
+
+				// Copia do aviso para responsavel contabilidade.
+				_oAviso:DestinZZU  = {'144'}  // 144 = grupo de coordenacao contabil
 				_oAviso:Grava ()
 
 				_xRet = ''
@@ -93,7 +103,7 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 
 						_oAviso := ClsAviso ():New ()
 						_oAviso:Tipo       = 'E'
-						_oAviso:DestinAvis = 'grpTI'
+						_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 						_oAviso:Titulo     = "Campo A3_VATPCON nao informado no representante - LPAD " + _sLPad
 						_oAviso:Texto     := "LPAD " + cvaltochar (_sLPad)
 						_oAviso:Texto     += " Campo A3_VATPCON (" + alltrim (RetTitle ("A3_VATPCON")) + ") nao informado no cadastro do vendedor."
@@ -101,6 +111,10 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 						_oAviso:Texto     += " Retorno solicitado:" + _sQueRet
 						_oAviso:Texto     += " Pilha de chamadas: " + U_LogPCham (.f.)
 						_oAviso:Origem     = procname ()
+						_oAviso:Grava ()
+
+						// Copia do aviso para responsavel contabilidade.
+						_oAviso:DestinZZU  = {'144'}  // 144 = grupo de coordenacao contabil
 						_oAviso:Grava ()
 
 						_xRet = ''
@@ -116,13 +130,17 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:DestinAvis = 'grpTI'
+			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 			_oAviso:Titulo     = "LPAD " + cvaltochar (_sLPad) + ": Codigo de vendedor nao informado."
 			_oAviso:Texto     := "LPAD " + cvaltochar (_sLPad)
 			_oAviso:Texto     += " Recebi parametro _sRepres do tipo " + valtype (_sRepres)
 			_oAviso:Texto     += " Retorno solicitado:" + _sQueRet
 			_oAviso:Texto     += " Pilha de chamadas: " + U_LogPCham (.f.)
 			_oAviso:Origem     = procname ()
+			_oAviso:Grava ()
+
+			// Copia do aviso para responsavel contabilidade.
+			_oAviso:DestinZZU  = {'144'}  // 144 = grupo de coordenacao contabil
 			_oAviso:Grava ()
 
 			_xRet = ''
@@ -139,10 +157,14 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 
 					_oAviso := ClsAviso ():New ()
 					_oAviso:Tipo       = 'E'
-					_oAviso:DestinAvis = 'grpTI'
+					_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 					_oAviso:Titulo     = "Inconsistencia lcto padrao " + _sLPad
 					_oAviso:Texto      = "LPAD '" + cvaltochar (_sLPad) + "': NF orig. venda '" + sd1 -> d1_nfori + "/" + sd1 -> d1_seriori + "' nao encontrada'
 					_oAviso:Origem     = procname ()
+					_oAviso:Grava ()
+
+					// Copia do aviso para responsavel contabilidade.
+					_oAviso:DestinZZU  = {'144'}  // 144 = grupo de coordenacao contabil
 					_oAviso:Grava ()
 
 					_xRet = ''
@@ -153,10 +175,14 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 		else
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:DestinAvis = 'grpTI'
+			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 			_oAviso:Titulo     = "Inconsistencia lcto padrao " + _sLPad
 			_oAviso:Texto      = "LPAD '" + cvaltochar (_sLPad) + "': Numero do RECNO da tabela SD1 nao informado na rotina " + procname ()
 			_oAviso:Origem     = procname ()
+			_oAviso:Grava ()
+
+			// Copia do aviso para responsavel contabilidade.
+			_oAviso:DestinZZU  = {'144'}  // 144 = grupo de coordenacao contabil
 			_oAviso:Grava ()
 
 			_xRet = ''
@@ -207,11 +233,16 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
-			_oAviso:DestinAvis = 'grpTI'
+			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 			_oAviso:Titulo     = "Inconsistencia lcto padrao " + _sLPad
 			_oAviso:Texto      = "LPAD '" + cvaltochar (_sLPad) + "': Sem tratamento para requisicao do tipo '" + _sQueRet + "' no programa " + procname ()
 			_oAviso:Origem     = procname ()
 			_oAviso:Grava ()
+
+			// Copia do aviso para responsavel contabilidade.
+			_oAviso:DestinZZU  = {'144'}  // 144 = grupo de coordenacao contabil
+			_oAviso:Grava ()
+
 		endcase
 //		_oSQL:Log ()
 		_xRet := _oSQL:RetQry()
@@ -220,11 +251,16 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 
 		_oAviso := ClsAviso ():New ()
 		_oAviso:Tipo       = 'E'
-		_oAviso:DestinAvis = 'grpTI'
+		_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 		_oAviso:Titulo     = "Inconsistencia lcto padrao " + _sLPad
 		_oAviso:Texto      = "LPAD '" + cvaltochar (_sLPad) + "': Tipo de retorno '" + _sQueRet + "' sem tratamento no programa " + procname ()
 		_oAviso:Origem     = procname ()
 		_oAviso:Grava ()
+
+		// Copia do aviso para responsavel contabilidade.
+		_oAviso:DestinZZU  = {'144'}  // 144 = grupo de coordenacao contabil
+		_oAviso:Grava ()
+
 	endcase
 
 	U_ML_SRArea (_aAreaAnt)

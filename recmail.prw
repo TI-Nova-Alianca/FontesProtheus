@@ -15,6 +15,7 @@
 // 14/08/2020 - Cláudia - Ajuste de Api em loop, conforme solicitação da versao 25 protheus. GLPI: 7339
 // 10/07/2022 - Robert  - Melhoria nos logs.
 // 01/09/2022 - Robert  - Melhorias ClsAviso.
+// 03/10/2022 - Robert  - Trocado grpTI por grupo 122 no envio de avisos.
 //
 
 // --------------------------------------------------------------------------
@@ -152,7 +153,7 @@ User Function RECMAIL(_lAuto)
 			else
 				_oAviso := ClsAviso ():New ()
 				_oAviso:Tipo       = 'E'
-				_oAviso:DestinAvis = 'grpTI'
+				_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 				_oAviso:Texto      = "Mensagem " + cvaltochar (nMessage) + " nao foi recebida com sucesso e nao sera´ processada."
 				_oAviso:Grava ()
 			EndIf
@@ -176,7 +177,7 @@ User Function RECMAIL(_lAuto)
 		endif
 		_oAviso := ClsAviso ():New ()
 		_oAviso:Tipo       = 'E'
-		_oAviso:DestinAvis = 'grpTI'
+		_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 		_oAviso:Texto      = 'Nao foi possivel conectar ao servidor de e-mail.'
 		_oAviso:Grava ()
 	EndIf

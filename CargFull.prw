@@ -7,6 +7,7 @@
 // 10/07/2015 - Robert - Verifica se a carga tem transportadora antes de enviar para o FullWMS.
 // 16/09/2022 - Robert - Iniciada validacao de saldos com FullWMS (GLPI 12612)
 // 27/09/2022 - Robert - Envia comparativo estq.Full x Protheus para todos os itens, mesmo sem diferenca de saldo.
+// 03/10/2022 - Robert - Desabilitado envio de comparativo de estoques ateh melhorarmos a leitura do Full.
 //
 
 // --------------------------------------------------------------------------
@@ -28,7 +29,7 @@ User Function CargFull (_sQueFazer)
 
 		// Valida estoques entre os dois sistemas.
 		if _lContinua
-			_lContinua = _ValEstFul ()
+	// em manutencao		_lContinua = _ValEstFul ()
 		endif
 
 		if _lContinua
@@ -122,7 +123,9 @@ static function _ValEstFul ()
 	_oSQL:_sQuery +=      ", SUM (CASE WHEN B2_LOCAL = '01' THEN B2_QATU ELSE 0 END) AS ESTQ_01"
 	_oSQL:_sQuery +=      ", SUM (CASE WHEN B2_LOCAL = '11' THEN B2_QATU ELSE 0 END) AS ESTQ_11"
 	_oSQL:_sQuery +=      ", SUM (CASE WHEN B2_LOCAL = '90' THEN B2_QATU ELSE 0 END) AS ESTQ_90"
-	_oSQL:_sQuery +=      ", 0 as SaldoFullW"
+	_oSQL:_sQuery +=      ", SUM (CASE WHEN B2_LOCAL = '91' THEN B2_QATU ELSE 0 END) AS ESTQ_91"
+	_oSQL:_sQuery +=      ", 0 as Full_Lib"
+	_oSQL:_sQuery +=      ", 0 as Full_Blq"
 	_oSQL:_sQuery +=  " FROM ITENS,"
 	_oSQL:_sQuery +=         RetSQLName ("SB2") + " SB2 "
 	_oSQL:_sQuery += " WHERE SB2.D_E_L_E_T_ = ''"
@@ -145,7 +148,7 @@ static function _ValEstFul ()
 		_oSQL:_sQuery +=                   " and item_cod_item_log = ''" + alltrim (_aItemCar [_nItemCar, 1]) + "''"
 		_oSQL:_sQuery +=                  "')"
 		_oSQL:Log ('[' + procname () + ']')
-		_aItemCar [_nItemCar, 7] = _oSQL:RetQry (1, .f.)
+		_aItemCar [_nItemCar, 8] = _oSQL:RetQry (1, .f.)
 	next
 	//U_Log2 ('debug', _aItemCar)
 
@@ -171,6 +174,7 @@ static function _ValEstFul ()
 		aadd (_aColsDif, {'Sld.AX01',     'right', '@E 999,999,999'})
 		aadd (_aColsDif, {'Sld.AX11',     'right', '@E 999,999,999'})
 		aadd (_aColsDif, {'Sld.AX90',     'right', '@E 999,999,999'})
+		aadd (_aColsDif, {'Sld.AX91',     'right', '@E 999,999,999'})
 		aadd (_aColsDif, {'Sld.FullWMS',  'right', '@E 999,999,999'})
 		_oDifEstq := ClsAUtil ():New (_aDifEstq)
 		_sMsgHTM = _oDifEstq:ConvHTM ('Comparativo estoques (Protheus X FullWMS) na carga ' + dak -> dak_cod, ;
@@ -187,16 +191,11 @@ static function _ValEstFul ()
 		_oAviso:Texto      = _sMsgHTM
 		_oAviso:Formato    = 'H'
 		_oAviso:Origem     = procname () + ' - ' + procname (1)
-		_oAviso:Grava ()
+	//	_oAviso:Grava ()
 
-		_oAviso := ClsAviso ():New ()
-		_oAviso:Tipo       = 'A'
+		// Recebo copia para testes
 		_oAviso:DestinAvis = 'robert.koch'
-		_oAviso:Titulo     = 'Diferenca estoque Protheus x FullWMS'
-		_oAviso:Texto      = _sMsgHTM
-		_oAviso:Formato    = 'H'
-		_oAviso:Origem     = procname () + ' - ' + procname (1)
-		_oAviso:Grava ()
+	//	_oAviso:Grava ()
 	endif
 
 return _lValEstq

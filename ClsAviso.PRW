@@ -16,6 +16,7 @@
 // 09/09/2022 - Robert - Criado atributo ::DestinZZU.
 // 16/09/2022 - Robert - Criado tratamento para enviar HTML para NaWeb.
 // 21/09/2022 - Robert - Criado atributo :InfoSessao
+// 02/10/2022 - Robert - Removido atributo :DiasDeVida.
 //
 
 #include "protheus.ch"
@@ -79,7 +80,6 @@ METHOD GeraAtrib (_sOrigem) Class ClsAviso
 	::Formato    = "T"  // Formato padrao: [T]exto
 	::Titulo     = ""
 	::Origem     = ""
-	::DiasDeVida = 1
 	::InfoSessao = .F.
 	if _sOrigem == 'ZAB'
 		::Tipo       = zab -> zab_tipo
@@ -90,7 +90,6 @@ METHOD GeraAtrib (_sOrigem) Class ClsAviso
 		::Formato    = zab -> zab_format
 		::Titulo     = alltrim (zab -> zab_titulo)
 		::Origem     = alltrim (zab -> zab_origem)
-		::DiasDeVida = zab -> zab_valid
 	endif
 
 Return Self
@@ -107,8 +106,7 @@ METHOD Grava () Class ClsAviso
 	local _sDestZZU  := ''
 
 	::Titulo     = iif (empty (::Titulo), ::Texto, ::Titulo)
-	::DiasDeVida = iif (::DiasDeVida == NIL, iif (::Tipo == 'E', 90, 30), ::DiasDeVida)
-
+	
 	// Tenho alguns grupos ja usados em outros fontes.
 	if upper (alltrim (::DestinAvis)) == 'GRPTI'
 		::DestinZZU  = {'122'}  // 122 = grupo da TI
@@ -134,11 +132,6 @@ METHOD Grava () Class ClsAviso
 		_lEnvNAW = .F.
 	endif
 
-	if ::DiasDeVida <= 0
-		u_log2 ('erro', "Dias de vida deve ser um inteiro positivo. Nao vou enviar para NaWeb.")
-		_lEnvNAW = .F.
-	endif
-
 	u_log2 (iif (::Tipo == 'E', 'erro', iif (::Tipo == 'A', 'aviso', 'info')), '[' + GetClassName (::Self) + '.' + procname () + ']Notificacao para ' + ::DestinAvis + ': ' + ::Texto)
 
 	// Caso solicitado na criacao do objeto, gera dados adicionais de sessao na mensagem.
@@ -157,7 +150,6 @@ METHOD Grava () Class ClsAviso
 	zab -> zab_texto  = ::Texto
 	zab -> zab_format = ::Formato
 	zab -> zab_destin = ::DestinAvis
-	zab -> zab_valid  = ::DiasDeVida
 	if ::Origem == NIL .or. empty (::Origem)
 		do while _i <= 5 .and. procname (_i) != ""
 			_sPilha += '=>' + procname (_i)
@@ -211,7 +203,7 @@ METHOD EnviaNAWeb () Class ClsAviso
 	_sXMLNotif +=    '</NotifData>'
 	_sXMLNotif +=    '<NotifLink/>'
 	_sXMLNotif +=    '<NotifUsuarios>' + alltrim (::DestinAvis) + '</NotifUsuarios>'
-	_sXMLNotif +=    '<NotifRecorrencia>' + cvaltochar (::DiasDeVida) + '</NotifRecorrencia>'
+	_sXMLNotif +=    '<NotifRecorrencia>1</NotifRecorrencia>'
 	_sXMLNotif +=    '<NotifOrigem>' + '[PROTHEUS]' + alltrim (::Origem) + '</NotifOrigem>'
 	_sXMLNotif +=    '</SdtNotificacoesItem>'
 	_sXMLNotif += '</SdtNotificacoes>'

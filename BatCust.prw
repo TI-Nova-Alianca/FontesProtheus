@@ -5,6 +5,8 @@
 //
 // Historico de alteracoes:
 // 01/09/2022 - Robert - Melhorias ClsAviso.
+// 02/10/2022 - Robert - Removido atributo :DiasDeVida da classe ClsAviso.
+// 02/10/2022 - Robert - Trocado grpTI por grupo 122 no envio de avisos.
 //
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -34,10 +36,9 @@ user function BatCust ()
 			sb2 -> (dbgoto (_aRegSB2 [_nRegSB2, 1]))
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'A' // Aviso
-			_oAviso:DestinAvis = 'grpTI'
+			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 			_oAviso:Texto      = 'Filial ' + cFilAnt + ' Item ' + alltrim (sb2 -> b2_cod) + ' Alm. ' + sb2 -> b2_local + ' com valor distorcido no B2_VATU (' + cvaltochar (sb2 -> b2_vatu1) + '). Ajustando para 1'
 			_oAviso:Origem     = procname ()
-			_oAviso:DiasDeVida = 60
 			_oAviso:Grava ()
 			reclock ("SB2", .F.)
 			sb2 -> b2_vatu1 = 1

@@ -201,9 +201,6 @@ return _lRet
 static function _VerEmpenh ()
 	local _lRet     := .T.
 	local _oSQL     := NIL
-//	local _aRetQry  := {}
-//	local _nRetQry  := 0
-//	local _sMsg     := ""
 	local _sEmpEnd  := ''
 	local _sEmpNeg  := ''
 
@@ -273,29 +270,6 @@ static function _VerEmpenh ()
 			_lRet = .F.
 		endif
 	endif
-
-	/* Desabilitado por que, pelo historico que olhei, sempre responde-se 'sim'. Robert, 04/08/2022
-	// Verifica local (almox) dos empenhos.
-	if _lRet
-		_sMsg = ''
-		_oSQL := ClsSQL():New ()
-		_oSQL:_sQuery += "SELECT D4_COD, D4_LOCAL, dbo.VA_FLOC_EMP_OP ('" + cFilAnt + "', D4_COD) AS LOCEMP"
-		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD4") + " SD4 "
-		_oSQL:_sQuery += " WHERE SD4.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND SD4.D4_FILIAL  = '" + xfilial ("SD4") + "'"
-		_oSQL:_sQuery +=   " AND SD4.D4_OP      = '" + M->D3_OP + "'"
-		_oSQL:_sQuery +=   " AND SD4.D4_QUANT   > 0"
-		_aRetQry := aclone (_oSQL:Qry2Array (.F., .F.))
-		for _nRetQry = 1 to len (_aRetQry)
-			if _aRetQry [_nRetQry, 2] != _aRetQry [_nRetQry, 3]
-				_sMsg += "Item " + alltrim (_aRetQry [_nRetQry, 1]) + ' - ' + alltrim (fBuscaCpo ("SB1", 1, xfilial ("SB1") + _aRetQry [_nRetQry, 1], "B1_DESC")) + " empenhado indevidamente no almox. '" + _aRetQry [_nRetQry, 2] + "' (alm.correto: " + _aRetQry [_nRetQry, 3] + ")." + chr (13) + chr (10)
-			endif
-		next
-		if ! empty (_sMsg)
-			_lRet = u_msgnoyes (_sMsg + chr (13) + chr (10) + "Confirma assim mesmo?")
-		endif
-	endif
-	*/
 
 	// Verifica se pode gerar recursividade
 	if _lRet

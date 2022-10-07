@@ -16,6 +16,7 @@
 // 10/10/2019 - Robert - Inicio gravacao tabela avisos.
 // 04/01/2021 - Robert - Nao grava mais em arquivo (nunca foi consultado).
 // 31/08/2022 - Robert - Melhoria uso classe ClsAviso.
+// 02/10/2022 - Robert - Trocado grpTI por grupo 122 no envio de avisos.
 //
 
 // --------------------------------------------------------------------------
@@ -39,7 +40,7 @@ user function AvisaTI (_sAviso)
 	// Ainda em implementacao. Depois pretendemos passar para o NaWeb.
 	_oAviso := ClsAviso ():New ()
 	_oAviso:Tipo       = 'E'
-	_oAviso:DestinAvis = 'grpTI'
+	_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 	_oAviso:Titulo     = 'Avisos para TI'
 	_oAviso:Texto      = alltrim (_sAviso) + ' ' + _sMsg
 	_oAviso:Origem     = procname (1)
