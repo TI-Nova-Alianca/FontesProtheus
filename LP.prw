@@ -73,7 +73,7 @@
 // 09/09/2022 - Robert  - Avisos passam a usar ClsAviso() e nao mais U_AvisaTI().
 // 02/10/2022 - Robert  - Trocado grpTI por grupo 122 no envio de avisos.
 // 07/10/2022 - Robert  - Envia copia dos avisos de erro para grupo 144 (coord.contabil)
-//
+// 07/10/2022 - Claudia - Criado LPAD 640 014 - devolução de rapel. GLPI: 11924
 
 // -----------------------------------------------------------------------------------------------------------------
 // Informar numero e sequencia do lancamento padrao, seguido do campo a ser retornado.
@@ -550,6 +550,8 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
      		endif
      	endif
      	
+	case _sLPad + _sSeq == '640014'  // DEVOLUÇÃO DE RAPEL
+		_xRet := _BuscaZC0()
 
 	case _sLPad + _sSeq == '666005'  // Custeio MO + GGF + apoio.
 		_xRet   = ""
@@ -881,3 +883,50 @@ static function _BComis (_wnf, _wserie, _wcliente, _wloja, _wvalor)
 	endif
 	
 return _wbaseCom	    	    
+//
+// --------------------------------------------------------------------------
+// Debita rapel da NF de devolução
+Static Function _BuscaZC0()
+	Local _i    := 0
+	Local _nRet := 0
+
+	_oSQL:= ClsSQL():New()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery +=   " SELECT "
+	_oSQL:_sQuery +=   " 	 D2_ITEM "
+	_oSQL:_sQuery +=   "    ,D2_COD "
+	_oSQL:_sQuery +=   "    ,D2_QUANT "
+	_oSQL:_sQuery +=   "    ,D2_RAPEL "
+	_oSQL:_sQuery +=   "    ,D2_VRAPEL "
+	_oSQL:_sQuery +=   "    ,D2_CLIENTE "
+	_oSQL:_sQuery +=   "    ,D2_LOJA"
+	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD2") 
+	_oSQL:_sQuery +=   " WHERE D_E_L_E_T_= '' "
+	_oSQL:_sQuery +=   " AND D2_FILIAL   = '"+ sd1 -> d1_filial  + "' "
+	_oSQL:_sQuery +=   " AND D2_DOC      = '"+ sd1 -> d1_nfori   + "' "
+	_oSQL:_sQuery +=   " AND D2_SERIE    = '"+ sd1 -> d1_seriori + "' "
+	_oSQL:_sQuery +=   " AND D2_COD      = '"+ sd1 -> d1_cod     + "' "
+	u_log(_oSQL:_sQuery)
+	_aNfVen := aclone (_oSQL:Qry2Array ())
+
+	For _i:=1 to Len(_aNfVen)
+		_oCtaRapel := ClsCtaRap():New ()
+		_sRede     := _oCtaRapel:RetCodRede(_aNfVen[_i, 6], _aNfVen[_i, 7])
+		_sTpRapel  := _oCtaRapel:TipoRapel(_aNfVen[_i, 6], _aNfVen[_i, 7])
+
+		If alltrim(_sTpRapel) <> '0' // Se o cliente tem configuração de rapel
+			_nRapVen := _aNfVen[_i, 5]
+			_nQtdVen := _aNfVen[_i, 3]
+			_nQtdDev := sd1 -> d1_quant
+			_sProd   := _aNfVen[_i, 2]
+
+			If _nQtdDev == _nQtdVen // Se as quantidades de venda e devolução for igual, desconta 100% do valor	
+				_nRet := _nRapVen
+			else					// Rapel proporcional
+				_nRapelDev := _nRapVen * _nQtdDev / _nQtdVen
+				_nRet      := _nRapelDev
+			EndIf					
+
+		EndIf
+	Next
+Return _nRet
