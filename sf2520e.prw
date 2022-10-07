@@ -51,6 +51,7 @@
 // 03/05/2018 - Robert  - Desabilitados tratamentos do ZAB (devolucoes de clientes).
 // 06/11/2020 - Claudia - Incluida a exclusão de titulos de NF's de cartões. GLPI: 8749
 // 24/05/2022 - Claudia - Incluido o estorno de rapel. GLPI: 8916
+// 07/10/2022 - Claudia - Atualização de rapel apenas para serie 10. GLPI: 8916
 //
 // ---------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
@@ -287,53 +288,55 @@ Return
 // Estorna rapel da NF
 Static Function _AtuZC0()
 
-	// Cancela rapel	
-	_oSQL:= ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT "
-	_oSQL:_sQuery += " 	ZC0_RAPEL "
-	_oSQL:_sQuery += " FROM ZC0010 "
-	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
-	_oSQL:_sQuery += " AND ZC0_FILIAL = '"+ sf2 -> f2_filial  +"' "
-	_oSQL:_sQuery += " AND ZC0_CODCLI = '"+ sf2 -> f2_cliente +"' "
-	_oSQL:_sQuery += " AND ZC0_LOJCLI = '"+ sf2 -> f2_loja    +"' "
-	_oSQL:_sQuery += " AND ZC0_DOC    = '"+ sf2 -> f2_doc     +"' "
-	_oSQL:_sQuery += " AND ZC0_SERIE  = '"+ sf2 -> f2_serie   +"' "
-	_oSQL:Log ()
-	_aRapel := aclone (_oSQL:Qry2Array ())
+	If  alltrim(sf2->f2_serie) == '10
+		// Cancela rapel	
+		_oSQL:= ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT "
+		_oSQL:_sQuery += " 	ZC0_RAPEL "
+		_oSQL:_sQuery += " FROM ZC0010 "
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " AND ZC0_FILIAL = '"+ sf2 -> f2_filial  +"' "
+		_oSQL:_sQuery += " AND ZC0_CODCLI = '"+ sf2 -> f2_cliente +"' "
+		_oSQL:_sQuery += " AND ZC0_LOJCLI = '"+ sf2 -> f2_loja    +"' "
+		_oSQL:_sQuery += " AND ZC0_DOC    = '"+ sf2 -> f2_doc     +"' "
+		_oSQL:_sQuery += " AND ZC0_SERIE  = '"+ sf2 -> f2_serie   +"' "
+		_oSQL:Log ()
+		_aRapel := aclone (_oSQL:Qry2Array ())
 
-	If len(_aRapel) > 0
-		_oCtaRapel := ClsCtaRap():New ()
+		If len(_aRapel) > 0
+			_oCtaRapel := ClsCtaRap():New ()
 
-		_sRede := _oCtaRapel:RetCodRede(sf2 -> f2_cliente, sf2 -> f2_loja)
+			_sRede := _oCtaRapel:RetCodRede(sf2 -> f2_cliente, sf2 -> f2_loja)
 
-		_oCtaRapel:Filial  	 = sf2 -> f2_filial
-		_oCtaRapel:Rede      = _sRede	
-		_oCtaRapel:LojaRed   = sf2 -> f2_loja
-		_oCtaRapel:Cliente 	 = sf2 -> f2_cliente
-		_oCtaRapel:LojaCli	 = sf2 -> f2_loja
-		_oCtaRapel:TM      	 = '03' 	
-		_oCtaRapel:Data    	 = date()
-		_oCtaRapel:Hora    	 = time()
-		_oCtaRapel:Usuario 	 = cusername 
-		_oCtaRapel:Histor  	 = 'Estorno de rapel por cancelamento de NF' 
-		_oCtaRapel:Documento = sf2 -> f2_doc
-		_oCtaRapel:Serie 	 = sf2 -> f2_serie
-		_oCtaRapel:Parcela	 = ''
-		_oCtaRapel:Rapel	 = _aRapel[1,1]
-		_oCtaRapel:Origem	 = 'SF2520E'
-		_oCtaRapel:NfEmissao = sf2 -> f2_emissao
+			_oCtaRapel:Filial  	 = sf2 -> f2_filial
+			_oCtaRapel:Rede      = _sRede	
+			_oCtaRapel:LojaRed   = sf2 -> f2_loja
+			_oCtaRapel:Cliente 	 = sf2 -> f2_cliente
+			_oCtaRapel:LojaCli	 = sf2 -> f2_loja
+			_oCtaRapel:TM      	 = '03' 	
+			_oCtaRapel:Data    	 = date()
+			_oCtaRapel:Hora    	 = time()
+			_oCtaRapel:Usuario 	 = cusername 
+			_oCtaRapel:Histor  	 = 'Estorno de rapel por cancelamento de NF' 
+			_oCtaRapel:Documento = sf2 -> f2_doc
+			_oCtaRapel:Serie 	 = sf2 -> f2_serie
+			_oCtaRapel:Parcela	 = ''
+			_oCtaRapel:Rapel	 = _aRapel[1,1]
+			_oCtaRapel:Origem	 = 'SF2520E'
+			_oCtaRapel:NfEmissao = sf2 -> f2_emissao
 
-		If _oCtaRapel:Grava (.F.)
-			_oEvento := ClsEvent():New ()
-			_oEvento:Alias     = 'ZC0'
-			_oEvento:Texto     = "Estorno rapel "+ sf2 -> f2_doc + "/" + sf2 -> f2_serie
-			_oEvento:CodEven   = 'ZC0001'
-			_oEvento:Cliente   = sf2 -> f2_cliente
-			_oEvento:LojaCli   = sf2 -> f2_loja
-			_oEvento:NFSaida   = sf2 -> f2_doc
-			_oEvento:SerieSaid = sf2 -> f2_serie
-			_oEvento:Grava()
+			If _oCtaRapel:Grava (.F.)
+				_oEvento := ClsEvent():New ()
+				_oEvento:Alias     = 'ZC0'
+				_oEvento:Texto     = "Estorno rapel "+ sf2 -> f2_doc + "/" + sf2 -> f2_serie
+				_oEvento:CodEven   = 'ZC0001'
+				_oEvento:Cliente   = sf2 -> f2_cliente
+				_oEvento:LojaCli   = sf2 -> f2_loja
+				_oEvento:NFSaida   = sf2 -> f2_doc
+				_oEvento:SerieSaid = sf2 -> f2_serie
+				_oEvento:Grava()
+			EndIf
 		EndIf
 	EndIf
 Return

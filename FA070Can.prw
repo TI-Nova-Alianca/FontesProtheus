@@ -19,6 +19,7 @@
 // 10/10/2019 - Robert  - Valida campo ZA5_SEQSE5 para limpeza do ZA5 (GLPI 6785)
 // 11/11/2019 - Robert  - Tratamento campo ZA5_FILIAL (tabela passar de compartilhada para exclusiva). GLPI 6987.
 // 23/05/2022 - Claudia - Incluido o estorno do rapel. GLPI: 8916
+// 07/10/2022 - Claudia - Atualização de rapel apenas para serie 10. GLPI: 8916
 //
 // -----------------------------------------------------------------------------------------------------------------
 user function FA070Can ()
@@ -99,57 +100,60 @@ return
 // --------------------------------------------------------------------------
 // Estorna rapel
 Static Function _AtuZC0()
-	_oSQL:= ClsSQL ():New ()
-	_oSQL:_sQuery  = ""
-	_oSQL:_sQuery += " SELECT "
-	_oSQL:_sQuery += " 		E5_VARAPEL "
-	_oSQL:_sQuery += " FROM "+ RetSQLName ("SE5")
-	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
-	_oSQL:_sQuery += " AND E5_FILIAL   = '" + xfilial ("SE5")   + "'"
-	_oSQL:_sQuery += " AND E5_NUMERO   = '" + se1 -> e1_num     + "'"
-	_oSQL:_sQuery += " AND E5_PREFIXO  = '" + se1 -> e1_prefixo + "'"
-	_oSQL:_sQuery += " AND E5_PARCELA  = '" + se1 -> e1_parcela + "'"
-	_oSQL:_sQuery += " AND E5_CLIFOR   = '" + se1 -> e1_cliente + "'"
-	_oSQL:_sQuery += " AND E5_LOJA     = '" + se1 -> e1_loja    + "'"
-	_oSQL:_sQuery += " AND E5_RECPAG   = 'R' "
-	_oSQL:_sQuery += " AND E5_TIPODOC  = 'DC'"
-	_oSQL:_sQuery += " AND E5_SITUACA  = '' "
-	_oSQL:_sQuery += " AND E5_VARAPEL  > 0 "
-	_oSQL:Log ()
-	_aRapel := aclone (_oSQL:Qry2Array ())
 
-	If len(_aRapel) > 0
-		_oCtaRapel := ClsCtaRap():New ()
+	If alltrim(se1 -> e1_prefixo) == '10'
+		_oSQL:= ClsSQL ():New ()
+		_oSQL:_sQuery  = ""
+		_oSQL:_sQuery += " SELECT "
+		_oSQL:_sQuery += " 		E5_VARAPEL "
+		_oSQL:_sQuery += " FROM "+ RetSQLName ("SE5")
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " AND E5_FILIAL   = '" + xfilial ("SE5")   + "'"
+		_oSQL:_sQuery += " AND E5_NUMERO   = '" + se1 -> e1_num     + "'"
+		_oSQL:_sQuery += " AND E5_PREFIXO  = '" + se1 -> e1_prefixo + "'"
+		_oSQL:_sQuery += " AND E5_PARCELA  = '" + se1 -> e1_parcela + "'"
+		_oSQL:_sQuery += " AND E5_CLIFOR   = '" + se1 -> e1_cliente + "'"
+		_oSQL:_sQuery += " AND E5_LOJA     = '" + se1 -> e1_loja    + "'"
+		_oSQL:_sQuery += " AND E5_RECPAG   = 'R' "
+		_oSQL:_sQuery += " AND E5_TIPODOC  = 'DC'"
+		_oSQL:_sQuery += " AND E5_SITUACA  = '' "
+		_oSQL:_sQuery += " AND E5_VARAPEL  > 0 "
+		_oSQL:Log ()
+		_aRapel := aclone (_oSQL:Qry2Array ())
 
-		_sRede := _oCtaRapel:RetCodRede(se1->e1_cliente, se1->e1_loja)
+		If len(_aRapel) > 0
+			_oCtaRapel := ClsCtaRap():New ()
 
-		_oCtaRapel:Filial  	 = se1->e1_filial
-		_oCtaRapel:Rede      = _sRede	
-		_oCtaRapel:LojaRed   = se1->e1_loja
-		_oCtaRapel:Cliente 	 = se1->e1_cliente
-		_oCtaRapel:LojaCli	 = se1->e1_loja
-		_oCtaRapel:TM      	 = '05' 	
-		_oCtaRapel:Data    	 = date()
-		_oCtaRapel:Hora    	 = time()
-		_oCtaRapel:Usuario 	 = cusername 
-		_oCtaRapel:Histor  	 = 'Estorno de rapel por cancelamento de baixa de titulo' 
-		_oCtaRapel:Documento = se1->e1_num
-		_oCtaRapel:Serie 	 = se1->e1_prefixo
-		_oCtaRapel:Parcela	 = se1->e1_parcela
-		_oCtaRapel:Rapel	 = _aRapel[1,1]
-		_oCtaRapel:Origem	 = 'FA070CAN'
-		_oCtaRapel:NfEmissao = se1->e1_emissao
+			_sRede := _oCtaRapel:RetCodRede(se1->e1_cliente, se1->e1_loja)
 
-		If _oCtaRapel:Grava (.F.)
-			_oEvento := ClsEvent():New ()
-			_oEvento:Alias     = 'ZC0'
-			_oEvento:Texto     = "Estorno rapel "+ se1->e1_parcela + se1->e1_num + "/" + se1->e1_prefixo
-			_oEvento:CodEven   = 'ZC0001'
-			_oEvento:Cliente   = se1->e1_cliente
-			_oEvento:LojaCli   = se1->e1_loja
-			_oEvento:NFSaida   = se1->e1_num
-			_oEvento:SerieSaid = se1->e1_prefixo
-			_oEvento:Grava()
+			_oCtaRapel:Filial  	 = se1->e1_filial
+			_oCtaRapel:Rede      = _sRede	
+			_oCtaRapel:LojaRed   = se1->e1_loja
+			_oCtaRapel:Cliente 	 = se1->e1_cliente
+			_oCtaRapel:LojaCli	 = se1->e1_loja
+			_oCtaRapel:TM      	 = '05' 	
+			_oCtaRapel:Data    	 = date()
+			_oCtaRapel:Hora    	 = time()
+			_oCtaRapel:Usuario 	 = cusername 
+			_oCtaRapel:Histor  	 = 'Estorno de rapel por cancelamento de baixa de titulo' 
+			_oCtaRapel:Documento = se1->e1_num
+			_oCtaRapel:Serie 	 = se1->e1_prefixo
+			_oCtaRapel:Parcela	 = se1->e1_parcela
+			_oCtaRapel:Rapel	 = _aRapel[1,1]
+			_oCtaRapel:Origem	 = 'FA070CAN'
+			_oCtaRapel:NfEmissao = se1->e1_emissao
+
+			If _oCtaRapel:Grava (.F.)
+				_oEvento := ClsEvent():New ()
+				_oEvento:Alias     = 'ZC0'
+				_oEvento:Texto     = "Estorno rapel "+ se1->e1_parcela + se1->e1_num + "/" + se1->e1_prefixo
+				_oEvento:CodEven   = 'ZC0001'
+				_oEvento:Cliente   = se1->e1_cliente
+				_oEvento:LojaCli   = se1->e1_loja
+				_oEvento:NFSaida   = se1->e1_num
+				_oEvento:SerieSaid = se1->e1_prefixo
+				_oEvento:Grava()
+			EndIf
 		EndIf
 	EndIf
 Return
