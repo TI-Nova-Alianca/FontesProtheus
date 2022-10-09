@@ -18,6 +18,7 @@
 // 04/11/2019 - Robert - Nao chama mais a rotina de recepcao de e-mail (migrada para 'batch' separado).
 // 28/09/2020 - Robert - Inseridas tags para catalogo de fontes
 //                     - Melhorados alguns logs.
+// 09/10/2022 - Robert - Passa a usar a classe ClaAviso.
 //
 
 // --------------------------------------------------------------------------
@@ -48,7 +49,7 @@ user function BatXML (_sPath, _nMaxArq)
 				_nQtArq ++
 			endif
 		else
-			U_AvisaTI ("Arquivo muito grande na pasta de importacao de XML: " + _aDir [_nArq, 1])
+			//U_AvisaTI ("Arquivo muito grande na pasta de importacao de XML: " + _aDir [_nArq, 1])
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
 			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI

@@ -1,0 +1,90 @@
+// Programa...: VA_XLS62
+// Autor......: Robert Koch
+// Data.......: 07/10/2022
+// Descricao..: Exporta planilha com dados de OS da manutencao.
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #exporta_planilha
+// #Descricao         #Exporta planilha com dados das OS da manutencao.
+// #PalavasChave      #OS #ordens_de_servico #manutencao #mnt
+// #TabelasPrincipais #STJ #STL #STI #ST9
+// #Modulos           #MNT
+//
+// Historico de alteracoes:
+//
+
+// --------------------------------------------------------------------------
+User Function VA_XLS62 (_lAutomat)
+	Local cCadastro := "Exporta planilha com dados de OS de manutencao."
+	Local aSays     := {}
+	Local aButtons  := {}
+	Local nOpca     := 0
+	Local lPerg     := .F.
+	private _lAuto   := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
+	Private cPerg   := "VAXLS62"
+	_ValidPerg()
+	Pergunte(cPerg,.F.)
+
+	if _lAuto != NIL .and. _lAuto
+		Processa( { |lEnd| _Gera() } )
+	else
+		AADD(aSays,cCadastro)
+		AADD(aSays,"")
+		AADD(aSays,"")
+		AADD(aButtons, { 5, .T.,{|| lPerg := Pergunte(cPerg,.T. ) } } )
+		AADD(aButtons, { 1, .T.,{|| nOpca := If(( lPerg .Or. Pergunte(cPerg,.T.)) .And. _TudoOk() , 1, 2 ), If( nOpca == 1, FechaBatch(), Nil ) }})
+		AADD(aButtons, { 2, .T.,{|| FechaBatch() }} )
+		FormBatch( cCadastro, aSays, aButtons )
+		If nOpca == 1
+			Processa( { |lEnd| _Gera() } )
+		Endif
+	endif
+return
+
+
+// --------------------------------------------------------------------------
+// 'Tudo OK' do FormBatch.
+Static Function _TudoOk()
+	Local _lRet     := .T.
+Return _lRet
+
+
+// --------------------------------------------------------------------------
+Static Function _Gera()
+	local _oSQL      := NIL
+
+	procregua (10)
+	incproc ("Gerando arquivo de exportacao")
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += "SELECT *"
+	_oSQL:_sQuery +=  " FROM VA_VDADOS_OS"
+	_oSQL:_sQuery += " WHERE FILIAL          BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'"
+	_oSQL:_sQuery +=   " AND ORDEM           BETWEEN '" + mv_par03 + "' AND '" + mv_par04 + "'"
+	_oSQL:_sQuery +=   " AND BEM             BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
+	_oSQL:_sQuery +=   " AND INICIO_PREVISTO BETWEEN '" + dtos (mv_par07) + "' AND '" + dtos (mv_par08) + "'"
+	_oSQL:_sQuery += " ORDER BY FILIAL, ORDEM"
+	_oSQL:Log ('[' + procname () + ']')
+	_oSQL:ArqDestXLS = 'VA_XLS62'
+	_oSQL:Qry2Xls (.F., .F., .F.)
+return
+
+
+// --------------------------------------------------------------------------
+// Cria Perguntas no SX1
+Static Function _ValidPerg ()
+	local _aRegsPerg := {}
+	local _aDefaults := {}
+
+	//                 Ordem Descri                          tipo tam                      dec valid  F3    opcoes (combo)  help
+	aadd (_aRegsPerg, {01, "Filial inicial                ", "C", 2,                       0,  "",   "SM0", {},             ""})
+	aadd (_aRegsPerg, {02, "Filial final                  ", "C", 2,                       0,  "",   "SM0", {},             ""})
+	aadd (_aRegsPerg, {03, "OS inicial                    ", "C", tamsx3 ("TJ_ORDEM")[1],  0,  "",   "STJ", {},             ""})
+	aadd (_aRegsPerg, {04, "OS final                      ", "C", tamsx3 ("TJ_ORDEM")[1],  0,  "",   "STJ", {},             ""})
+	aadd (_aRegsPerg, {05, "Bem inicial                   ", "C", tamsx3 ("TJ_CODBEM")[1], 0,  "",   "ST9", {},             ""})
+	aadd (_aRegsPerg, {06, "Bem final                     ", "C", tamsx3 ("TJ_CODBEM")[1], 0,  "",   "ST9", {},             ""})
+	aadd (_aRegsPerg, {07, "Inicio previsto de            ", "D", 8,                       0,  "",   "   ", {},             ""})
+	aadd (_aRegsPerg, {08, "Inicio previsto ate           ", "D", 8,                       0,  "",   "   ", {},             ""})
+	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
+Return

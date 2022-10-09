@@ -2,11 +2,6 @@
 // Autor:      Catia Cardoso
 // Data:       03/12/2018
 // Descricao:  Exporta XML de notas de saida
-//
-// Historico de alteracoes:
-// 06/08/2020 - Robert - Inseridos alguns logs
-//                     - Criadas tags para catalogar fontes.
-//
 
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Batch
@@ -14,6 +9,11 @@
 // #PalavasChave      #XML #exporta_arquivo
 // #TabelasPrincipais #SF2 #SPED050
 // #Modulos           #FAT #FIS
+
+// Historico de alteracoes:
+// 06/08/2020 - Robert - Inseridos alguns logs
+//                     - Criadas tags para catalogar fontes.
+//
 
 // --------------------------------------------------------------------------
 user function BatEXML (_sDestino, _sTipo)
