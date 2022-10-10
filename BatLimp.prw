@@ -24,6 +24,8 @@
 // 08/08/2022 - Robert - Adicionadas tabelas CV3 e CTK (GLPI 12412).
 // 09/08/2022 - Robert - Adicionada tabela SBK para compactacao.
 // 14/09/2022 - Robert - Adicionada tabela SC2 para compactacao.
+// 10/10/2022 - Robert - Adicionada tabela SX3 para compactacao.
+//                     - Envia aviso para TI quando vai compactar uma tabela.
 //
 
 // ----------------------------------------------------------------
@@ -166,6 +168,7 @@ static function _Compact ()
 	local _lContinua := .T.
 	local _aArqComp  := {}
 	local _nArqComp  := 0
+	local _oAviso    := NIL
 
 	aadd (_aArqComp, 'XAM010')  // Configuracao de campos (dados sensiveis) para LGPD
 	aadd (_aArqComp, 'MPMENU_I18N')
@@ -178,6 +181,7 @@ static function _Compact ()
 	aadd (_aArqComp, 'CTK010')  // Criados campos grandes (IDORIG e IDDEST) e vazios - GLPI 12412
 	aadd (_aArqComp, 'SBK010')  // Uso pouco frequente, nao vejo problemas em compactar.
 	aadd (_aArqComp, 'SC2010')  // Tem alguns campos de observacoes, etc que geralmente ficam vazios.
+	aadd (_aArqComp, 'SX3010')  // Tabela bastante usada, quero ver se melhora performance.
 
 	for _nArqComp = 1 to len (_aArqComp)
 		_oSQL := ClsSQL ():New ()
@@ -189,6 +193,17 @@ static function _Compact ()
 		if alltrim (_oSQL:RetQry (1, .F.)) == 'NONE'  // Tabela nao encontra-se compactada
 			_oSQL:_sQuery := "ALTER TABLE [dbo].[" + _aArqComp [_nArqComp] + "] REBUILD PARTITION = ALL WITH (DATA_COMPRESSION = PAGE)"
 			_oSQL:Log ()
+
+			// Gera notificacao para monitoramento.
+			_oAviso := ClsAviso ():New ()
+			_oAviso:Tipo       = 'I'
+			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
+			_oAviso:Titulo     = 'Compactando tabela ' + _aArqComp [_nArqComp] + ' no SQL'
+			_oAviso:Texto      = _oSQL:_sQuery
+			_oAviso:Origem     = procname ()
+			_oAviso:InfoSessao = .T.
+			_oAviso:Grava ()
+
 			if ! _oSQL:Exec ()
 				_oBatch:Mensagens += _oSQL:UltMsg
 				_lContinua = .F.

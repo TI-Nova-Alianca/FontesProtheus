@@ -30,6 +30,7 @@
 // 16/08/2019 - Robert - Campo B1_VADUNCX substituido pelo campo B1_CODBAR.
 // 02/12/2021 - Robert - Acrescentados logs para depuracao de empenhos.
 // 06/11/2016 - Robert - Ajustado (nas OP de reprocesso) para validar G1_REVINI e G1_REVFIM com C2_REVISAO, e nao mais G1_TRT (GLPI 11310)
+// 10/10/2022 - Robert - Passa a imprimir o campo c2_vaBarCx e nao mais b1_codbar como 'cod.barras embalagem coletiva' (GLPI 11994).
 //
 
 // --------------------------------------------------------------------------
@@ -432,7 +433,8 @@ static function _Cabec ()
 	local _aObs    := {}
 	local _nObs    := 0
 	local _sLinImp := ""
-	local _sDUN14  := sb1 -> b1_codbar  //b1_vaduncx
+//	local _sDUN14  := sb1 -> b1_codbar  //b1_vaduncx
+	local _sCBEmbCol := sc2 -> c2_vaBarCx
 
 	if _nViaAtual > 1 .or. _nPagAtual > 1
 		_oPrn:EndPage ()    // Encerra pagina
@@ -535,8 +537,9 @@ static function _Cabec ()
 
 	_sLinImp := "Ini/fim prev.:" + DTOC(SC2->C2_DATPRI) + " - " + DTOC(SC2->C2_DATPRF)
 	_sLinImp += "        Real: ____/____/____ - ____/____/____"
-	if ! empty (_sDUN14)
-		_sLinImp += "     Cod.barras caixa:        " + _sDUN14
+	if ! empty (_sCBEmbCol)
+	//	_sLinImp += "     Cod.barras caixa:        " + _sDUN14
+		_sLinImp += "     Barras embal.coletiva    " + _sCBEmbCol
 	endif
 	_oPrn:Say (_nMargSup + li, _nMargEsq, _sLinImp, _oCour8N, 100)
 
@@ -618,11 +621,11 @@ static function _Cabec ()
 	2)       // Numero do indice de ajuste da altura da fonte
 
 	// Codigo de barras com DUN14 da caixa
-	if ! empty (_sDUN14)
+	if ! empty (_sCBEmbCol)
 		MSBAR ("CODE128", ;  // tipo do codigo de barras ("EAN13","EAN8","UPCA" ,"SUP5"   ,"CODE128" INT25","MAT25,"IND25","CODABAR" ,"CODE3_9")
 		4.5, ;        // Pos. vertical em Cm
 		16.0, ;       // Pos. horiz. em Cm
-		alltrim (_sDUN14), ;     // Conteudo
+		alltrim (_sCBEmbCol), ;     // Conteudo
 		_oPrn, ;    // Objeto printer
 		.F., ;      // .T. = calcula digito de controle
 		Nil, ;      // Numero da Cor, utilize a "common.ch"
