@@ -23,16 +23,10 @@ Observa��es      C�digo-Fonte gerado por ADVPL WSDL Client 1.120703
 
 User Function _SLMRJND ; Return  // "dummy" function - Internal Use 
 
-/* -------------------------------------------------------------------------------
-WSDL Service WSPrcNotificacoesWS
-------------------------------------------------------------------------------- */
-
+// --------------------------------------------------------------------------
 WSCLIENT WSPrcNotificacoesWS
 
 	WSMETHOD NEW
-	WSMETHOD INIT
-	WSMETHOD RESET
-	WSMETHOD CLONE
 	WSMETHOD Execute
 
 	WSDATA   _URL                      AS String
@@ -43,54 +37,43 @@ WSCLIENT WSPrcNotificacoesWS
 
 ENDWSCLIENT
 
+// --------------------------------------------------------------------------
 WSMETHOD NEW WSCLIENT WSPrcNotificacoesWS
-::Init()
-If !FindFunction("XMLCHILDEX")
-	UserException("O C�digo-Fonte Client atual requer os execut�veis do Protheus Build [7.00.210324P-20220608] ou superior. Atualize o Protheus ou gere o C�digo-Fonte novamente utilizando o Build atual.")
-EndIf
+	If !FindFunction("XMLCHILDEX")
+		UserException("O C�digo-Fonte Client atual requer os execut�veis do Protheus Build [7.00.210324P-20220608] ou superior. Atualize o Protheus ou gere o C�digo-Fonte novamente utilizando o Build atual.")
+	EndIf
 Return Self
 
-WSMETHOD INIT WSCLIENT WSPrcNotificacoesWS
-Return
 
-WSMETHOD RESET WSCLIENT WSPrcNotificacoesWS
-	::cEntrada           := NIL 
-	::cSaida             := NIL 
-	::Init()
-Return
-
-WSMETHOD CLONE WSCLIENT WSPrcNotificacoesWS
-Local oClone := WSPrcNotificacoesWS():New()
-	oClone:_URL          := ::_URL 
-	oClone:cEntrada      := ::cEntrada
-	oClone:cSaida        := ::cSaida
-Return oClone
-
-// WSDL Method Execute of Service WSPrcNotificacoesWS
-
+// --------------------------------------------------------------------------
 WSMETHOD Execute WSSEND cEntrada WSRECEIVE cSaida WSCLIENT WSPrcNotificacoesWS
-Local cSoap := ""
-private oXmlRet
+	Local cSoap := ""
+	local _sURI := ''
+	private oXmlRet
 
-BEGIN WSMETHOD
+	BEGIN WSMETHOD
 
-cSoap += '<PrcNotificacoesWS.Execute xmlns="NAWeb">'
-cSoap += WSSoapValue("Entrada", ::cEntrada, cEntrada , "string", .T. , .F., 0 , NIL, .F.,.F.) 
-cSoap += "</PrcNotificacoesWS.Execute>"
+	// Tenho enderecos diferentes para a base de testes e a de producao.
+	if "TESTE" $ upper (GetEnvServer()) .or. "R22" $ upper (GetEnvServer()) .or. "R23" $ upper (GetEnvServer())
+		U_Log2 ('debug', '[' + procname () + ']Estou definindo web service para base teste')
+		_sURI = "http://naweb17.novaalianca.coop.br/prcnotificacoesws.aspx"
+	else
+		_sURI = "http://naweb17.novaalianca.coop.br/prcnotificacoesws.aspx"
+		U_Log2 ('aviso', '[' + procname () + ']Ainda estou usando naweb17 seria bom ir para naweb oficial.')
+	endif
 
-oXmlRet := SvcSoapCall(Self,cSoap,; 
-	"NAWebaction/APRCNOTIFICACOESWS.Execute",; 
-	"DOCUMENT","NAWeb",,,; // "DOCUMENT","NAWeb",,,; 
-	"http://naweb17.novaalianca.coop.br/prcnotificacoesws.aspx")
+	cSoap += '<PrcNotificacoesWS.Execute xmlns="NAWeb">'
+	cSoap += WSSoapValue("Entrada", ::cEntrada, cEntrada , "string", .T. , .F., 0 , NIL, .F.,.F.) 
+	cSoap += "</PrcNotificacoesWS.Execute>"
 
-::Init()
+	oXmlRet := SvcSoapCall(Self,cSoap,; 
+		"NAWebaction/APRCNOTIFICACOESWS.Execute",; 
+		"DOCUMENT","NAWeb",,,; // "DOCUMENT","NAWeb",,,; 
+		_sURI)  // 		"http://naweb17.novaalianca.coop.br/prcnotificacoesws.aspx")
 
-//::cSaida             :=  WSAdvValue( oXmlRet,"_PRCNOTIFICACOESWS.EXECUTERESPONSE:_SAIDA:TEXT","string",NIL,NIL,NIL,NIL,NIL,NIL) 
+	::cSaida = oXmlRet:_PRCNOTIFICACOESWS_EXECUTERESPONSE:_SAIDA:TEXT
 
-// Pelo client gerado nativamente, nao consegui ler este resultado. Robert, 01/09/2022.
-::cSaida = oXmlRet:_PRCNOTIFICACOESWS_EXECUTERESPONSE:_SAIDA:TEXT
+	END WSMETHOD
 
-END WSMETHOD
-
-oXmlRet := NIL
+	oXmlRet := NIL
 Return .T.

@@ -213,7 +213,7 @@ METHOD EnviaNAWeb () Class ClsAviso
 	_oWSNaWeb := WSPrcNotificacoesWS():New()
 	_oWSNaWeb:cEntrada := _sXMLNotif
 	_oWSNaWeb:Execute()
-	U_Log2 ('debug', '[' + procname () + ']Retorno do NaWeb: ' + _oWSNaWeb:cSaida)
+	U_Log2 ('debug', '[' + procname () + ']Retorno do NaWeb: ' + cvaltochar (_oWSNaWeb:cSaida))
 
 	// Se retornou ok, marca como 'enviado'.
 	if _oWSNaWeb:cSaida == 'OK'

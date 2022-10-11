@@ -1,0 +1,129 @@
+// Programa:  ClsCarSaf
+// Autor:     Robert Koch
+// Data:      09/10/2022 (inicio)
+// Descricao: Declaracao de classe de representacao de carga recebida na safra de uva.
+//            Poderia trabalhar como uma include, mas prefiro declarar uma funcao de usuario
+//            apenas para poder incluir no projeto e manter na pasta dos fontes.
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Classe
+// #Descricao         #Representa carga recebida durante safra de uva.
+// #PalavasChave      #carga #safra
+// #TabelasPrincipais #SZD #SZE
+// #Modulos           #COOP
+
+// Historico de alteracoes:
+//
+
+#Include "Protheus.ch"
+//#Include "RwMake.ch"
+//#Include "TbiConn.ch"
+
+// --------------------------------------------------------------------------
+// Funcao declarada apenas para poder compilar este arquivo fonte.
+user function ClsCarSaf ()
+return
+
+
+// ==========================================================================
+CLASS ClsCarSaf
+
+	// Declaracao das propriedades da Classe
+	public  data Filial      // ZE_FILIAL
+	public  data Safra       // ZE_SAFRA
+	public  data Carga       // ZE_CARGA
+	public  data RegSZE      // recno() da tabela SZE.
+	public  data UltMsg      // Ultima mensagem gerada
+
+	// Declaracao dos Metodos da classe
+	public METHOD New ()
+	public METHOD AtuAgenda ()
+	private METHOD GeraAtrib ()
+ENDCLASS
+
+
+// --------------------------------------------------------------------------
+// Construtor da classe pelo R_E_C_N_O_ da tabela SZE.
+METHOD New (_nNumReg) Class ClsCarSaf
+
+	// Alimenta atributos com valores default de uma carga nova (vazia).
+	::GeraAtrib ("")
+	
+	// Se receber valor numerico, eh por que se trata do numero de registro do SZE.
+	if valtype (_nNumReg) == "N" .and. _nNumReg > 0
+		SZE -> (dbgoto (_nNumReg))
+		::GeraAtrib ("SZE")
+	endif
+Return ::self
+
+
+// --------------------------------------------------------------------------
+// Altera o status do agendamento relacionado a esta carga na agenda do NaWeb.
+METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
+	local _lRetWSNA  := .F.
+	local _oWSNaWeb  := NIL
+	local _sXMLCarg  := ''
+
+	_sXMLCarg := '<?xml version="1.0" encoding="utf-8"?>'
+	_sXMLCarg += '<SDT_Cargas>'
+	_sXMLCarg +=    '<Itens>'
+	_sXMLCarg +=    '<Filial>'   + ::Filial   + '</Filial>'
+	_sXMLCarg +=    '<Safra>'    + ::Safra    + '</Safra>'
+	_sXMLCarg +=    '<Carga>'    + ::Carga    + '</Carga>'
+	_sXMLCarg +=    '<Situacao>' + _sStatPara + '</Situacao>'
+	_sXMLCarg +=    '</Itens>'
+	_sXMLCarg += '</SDT_Cargas>'
+
+	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']' + _sXMLCarg)
+	
+	_oWSNaWeb := WSPrcStatusAgendaSafraWS():New()
+	_oWSNaWeb:cEntrada := _sXMLCarg
+	_oWSNaWeb:Execute()
+//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Retorno do NaWeb: ' + CVALTOCHAR (_oWSNaWeb:cSaida))
+
+	if cvaltochar (_oWSNaWeb:cSaida) == 'OK'
+		U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Alteracao da carga foi aceita pelo NaWeb')
+		_lRetWSNA = .T.
+	else
+		::UltMsg += "Alteracao da carga '" + _sCarga + "' nao foi aceita pelo NaWeb: " + cvaltochar (_oWSNaWeb:cSaida)
+		u_help (::UltMsg,, .t.)
+		_lRetWSNA = .F.
+	endif
+return _lRetWSNA
+
+
+// --------------------------------------------------------------------------
+// Alimenta os atributos da classe.
+METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
+	local _aAreaAnt := U_ML_SRArea ()
+
+	// Defaults
+	::RegSZE = 0
+	::Filial = ''
+	::Safra  = ''
+	::Carga  = ''
+	::UltMsg = ''
+
+	do case
+	case _sOrigem == 'M'  // Variaveis M->
+		::Filial = xfilial ("SZE")
+		::Safra  = m->safra
+		::Carga  = m->carga
+
+	case _sOrigem == "SZE"
+		::RegSZE       = sze -> (recno ())
+		::Filial = sze -> ze_filial
+		::Safra  = sze -> ze_safra
+		::Carga  = sze -> ze_carga
+
+	otherwise
+		if ! empty (_sOrigem)  // Se origem vazia, eh por que estou apenas instanciando um objeto vazio.
+			::UltMsg += "Impossivel gerar atributos. Origem '" + _sOrigem + "' desconhecida."
+			u_help (::UltMsg,, .t.)
+		endif
+	endcase
+
+	U_ML_SRArea (_aAreaAnt)
+return
+
+
