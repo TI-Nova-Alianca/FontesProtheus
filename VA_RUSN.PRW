@@ -105,6 +105,9 @@ User Function va_rusN (_lSimulNF)
 	private _sErroAuto := ''  // Deixar private para ser alimentada em subrotinas.
 
 	u_Log2 ('info', 'Iniciando ' + procname ())
+	if type ("_oCarSaf") != 'O'
+		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+	endif
 	
 	// Nao permite duas sessoes alterando a mesma carga. Usa a funcao SoftLock para que mostre a mensagem 'registro em uso por fulano'
 	if _lContinua

@@ -73,6 +73,9 @@ User Function va_rus2 (_nOpc, _lFechPort)
 		u_Log2 ('info', '[' + procname () + ']Iniciando com _nOpc = ' + cvaltochar (_nOpc))
 	else
 		u_Log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Iniciando com _nOpc = ' + cvaltochar (_nOpc))
+		if type ("_oCarSaf") != 'O'
+			private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+		endif
 	endif
 
 	if _lContinua .and. _nOpc >= 4 .and. sze -> ze_status == "N"

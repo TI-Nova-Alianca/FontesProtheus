@@ -50,6 +50,7 @@ User Function va_rus1 ()
 	private _ZEPATRIAR := ""  // Variavel private para alimentar a tela final de AxInclui
 	private _ZESNFPROD := ""  // Variavel private para alimentar a tela final de AxInclui
 	private _ZENFPROD  := ""  // Variavel private para alimentar a tela final de AxInclui
+	private _oCarSaf   := ClsCarSaf ():New ()
 
 
 	// Este teste parece que vai exigir manutencao eterna...

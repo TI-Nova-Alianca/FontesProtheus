@@ -35,9 +35,13 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 	_nQtVias := iif (_nQtVias == NIL, 1, _nQtVias)
 	_sModelImp = upper (_sModelImp)
 	
-//	u_Log2 ('info', 'Iniciando ' + procname ())
+	u_Log2 ('info', 'Iniciando ' + procname ())
 //	u_log2 ('debug', '   Qual ticket......: ' + cvaltochar (_nQual) + "   Porta: " + cvaltochar (_sPorta))
 //	u_log2 ('debug', '   Modelo impressora: ' + cvaltochar (_sModelImp))
+
+	if type ("_oCarSaf") != 'O'
+		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+	endif
 
 	if type ("_lImpTick") == "L" .and. ! _lImpTick
 		u_help ("Impressao disponivel somente em estacoes com impressora de ticket/cupom",, .t.)

@@ -95,7 +95,7 @@ user function robert ()
 
 		// _SimCtb ()
 		// _FechSafr ()
-		//_TrEstq ()
+		// _TrEstq ()
 		// _Sisdevin ()
 		// _metaf ()
 		// _exml ()
@@ -103,25 +103,74 @@ user function robert ()
 		// _BatXML ()
 		// _elastic ()
 		// _evtXML ()
-		//_batfull ()
+		// _batfull ()
 		// _telnet ()
 		// _verif ()
 		// _Etiq ()
 		// _VA_XLS ()
-		_aviso ()
+		// _aviso ()
 		// _reginv ()
-		//_ImpGPC ()
-		//_memoria ()
-		//_EstFul()
-		//_SF1()
+		// _ImpGPC ()
+		// _memoria ()
+		// _EstFul()
+		// _SF1()
+		// _WSCarNA ()
+		// _gerasze ()
 
-		//U_SendMail ('robert.koch@novaalianca.coop.br', 'teste conta', 'teste', {}, 'financeiro2', '', '')
 		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
 return
 
+// --------------------------------------------------------------------------
+static function _gerasze()
+	local _oAssoc    := NIL
+	local _sSafra    := '2023'
+	local _sBalanca  := 'LB'
+//	local _sAssoc    := '000161'
+//	local _sLoja     := '01'
+	local _sSerieNF  := ''
+	local _sNumNF    := ''
+	local _sChvNfPe  := ''
+	local _sPlacaVei := 'DODGE'
+	local _sObs      := 'TESTE ROBERT'
+	local _sCadVit   := '13386'
+	local _sVaried   := '9925'
+	local _sEmbalag  := 'G'
+	local _sTombador := '1'
+	local _aItensCar := {}
+	local _sLote     := ''
+	local _sSenhaOrd := ''
+//	local _sCPFCarg  := '43176070004   '
+//	local _sInscCarg := '0291074634        '
+	local _sImpTkCar := '99'
+//	local _oSQL      := NIL
+//	local _aRegSA2   := {}
+	local _sSivibe   := 'RS-000.013.392'
+	local _sEspumant := ''
+	local _sCargaC1  := ''
+	local _sCargaC2  := ''
+	local _lAmostra  := .F.
+
+	_oAssoc := ClsAssoc ():New ('000161', '01')
+	PRIVATE _sErroWS := ''
+	aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
+	u_log2 ('info', 'Itens da carga:')
+	u_log2 ('info', _aItensCar)
+	U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sImpTkCar, _sCargaC1, _sCargaC2)
+return
+
+// --------------------------------------------------------------------------
+static function _WSCarNA ()  // teste web service atualizacao de cargas no naweb
+	local _oCarSaf := ClsCarSaf ():New ()
+	_oCarSaf:Filial = '01'
+	_oCarSaf:Safra  = '2023'
+	_oCarSaf:Carga  = '4025'
+	_oCarSaf:AtuAgenda ('LIB')
+return
+
+// --------------------------------------------------------------------------
 static function _SF1 ()
 	local _nDado := 0
 	local _oSQL := ClsSQL():New()
@@ -310,42 +359,16 @@ return
 static function _aviso ()
 	// u_batzab ()
 	_oAviso := ClsAviso ():New ()
-	_oAviso:Tipo       = 'E'
+	_oAviso:Tipo       = 'I'
 	_oAviso:DestinAvis = 'robert.koch'
 	//_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
-	_oAviso:Titulo     = 'teste mensagem aviso'
+	_oAviso:Titulo     = 'teste mensagem'
 	_oAviso:Texto      = 'Teste envio notificacao'
 	_oAviso:Origem     = procname ()
+	_oAviso:InfoSessao = .T.
 	_oAviso:Grava ()
 return
 
-/*
-// --------------------------------------------------------------------------
-static function _ws_naweb ()
-	local _sXMLNotif := ''
-	local _oWSNaWeb := NIL
-
-	_sXMLNotif := '<SdtNotificacoes>'
-	_sXMLNotif +=    '<SdtNotificacoesItem>'
-	_sXMLNotif +=    '<NotifIcone/>'
-	_sXMLNotif +=    '<NotifTitulo>via Protheus ' + time () + '</NotifTitulo>'
-	_sXMLNotif +=    '<NotifMsg>corpo da mensagem</NotifMsg>'
-	//_sXMLNotif +=    '<NotifData/>' #2022-08-30T11:45:11</NotifData>'
-	_sXMLNotif +=    '<NotifLink/>'
-	_sXMLNotif +=    '<Notifcod>00000000-0000-0000-0000-000000000000</Notifcod>'
-	_sXMLNotif +=    '<NotifUsuarios>daiana.ribas, robert.koch</NotifUsuarios>'
-	_sXMLNotif +=    '<NotifHTML/>'
-	_sXMLNotif +=    '<NotifRecorrencia>1</NotifRecorrencia>'
-	_sXMLNotif +=    '<NotifTipo>I</NotifTipo>'
-	_sXMLNotif +=    '</SdtNotificacoesItem>'
-	_sXMLNotif += '</SdtNotificacoes>'
-	U_Log2 ('debug', '[' + procname () + ']' + _sxmlNotif)
-	_oWSNaWeb := WSPrcNotificacoesWS():New()
-	_oWSNaWeb:cEntrada := _sXMLNotif
-	_oWSNaWeb:Execute()
-	u_log ('retorno:', _oWSNaWeb:cSaida)
-return
-*/
 // --------------------------------------------------------------------------
 static function _va_xls ()
 //	// Estoque com codigo de Sisdevin
@@ -485,10 +508,22 @@ static function _va_xls ()
 //	u_va_xls59 (.T.)
 
 	// Produtos para planilha GTIN (cadastro nacional de produtos - GS1)
-	Private cPerg   := "VAXLS61"
-	U_GravaSX1 (cPerg, '01', '')
-	U_GravaSX1 (cPerg, '02', 'z')
-	u_va_xls61 (.T.)
+	//Private cPerg   := "VAXLS61"
+	//U_GravaSX1 (cPerg, '01', '')
+	//U_GravaSX1 (cPerg, '02', 'z')
+	//u_va_xls61 (.T.)
+
+	// // exporta dados de OS
+	// Private cPerg   := "VAXLS62"
+	// U_GravaSX1 (cPerg, '01', '')  // filial
+	// U_GravaSX1 (cPerg, '02', 'z')
+	// U_GravaSX1 (cPerg, '03', '')  // OS
+	// U_GravaSX1 (cPerg, '04', 'z')
+	// U_GravaSX1 (cPerg, '05', 'RDR-004-02-0002')  // Bem
+	// U_GravaSX1 (cPerg, '06', 'RDR-004-02-0002')
+	// U_GravaSX1 (cPerg, '07', date () - 60)  // dt prev ini
+	// U_GravaSX1 (cPerg, '08', date () - 30)
+	// u_va_xls62 (.T.)
 return
 
 // --------------------------------------------------------------------------
@@ -598,8 +633,13 @@ static function _Etiq ()
 //	_oEtiq:Imprime ('01')
 //	_oEtiq := ClsEtiq ():New ('2000541780')  // Transf.manual ax 11 para 01
 //	_oEtiq:Imprime ('15')
-	_oEtiq := ClsEtiq ():New ('2000541691')  // Teste transf.manual
-	u_log (_oEtiq:Inutiliza (.f.))
+//	_oEtiq := ClsEtiq ():New ('2000541691')  // Teste transf.manual
+//	u_log (_oEtiq:Inutiliza (.f.))
+
+	sd5 -> (dbgoto (592295))
+	_oEtiq := CLsEtiq ():New ()
+	_oEtiq:NovaPorSD5 (sd5 -> d5_produto, sd5 -> d5_LoteCtl, sd5 -> d5_local, sd5 -> d5_NumSeq)
+
 	U_Log2 ('debug', _oEtiq:UltMsg)
 return
 
@@ -662,8 +702,8 @@ static function _RevCH()
 RETURN
 
 // --------------------------------------------------------------------------
+// Testes verificacoes genericas.
 static function _verif ()
-	// Testes verificacoes genericas.
 	// _oVerif := ClsVerif():New (25)
 	// _oVerif:SetParam ('01', '2017')
 	// _oVerif:SetParam ('02', '')

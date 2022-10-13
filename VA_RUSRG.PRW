@@ -32,6 +32,10 @@ user function VA_RUSRG ()
 		_lContinua = .F.
 	endif
 
+	if type ("_oCarSaf") != 'O'
+		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+	endif
+
 	if _lContinua
 		zza -> (dbsetorder (1))  // ZZA_FILIAL+ZZA_SAFRA+ZZA_CARGA+ZZA_PRODUT
 		szf -> (dbsetorder (1))  // filial + safra + carga + item
@@ -40,12 +44,6 @@ user function VA_RUSRG ()
 			if zza -> (dbseek (xfilial ("ZZA") + szf -> zf_safra + szf -> zf_carga + szf -> zf_item, .F.))
 				if zza -> zza_status == '1'
 					u_help ("Status do item " + zza -> zza_nprod + " ja encontra-se como 'aguardando leitura do grau'.",, .t.)
-				// elseif zza -> zza_status == '2'
-				// 	if U_MsgNoYes ("Item " + zza -> zza_nprod + " encontra-se com status 'em descarga' na tabela de integracao com medidor de grau. Deseja reiniciar o status?")
-				// 		reclock ("ZZA", .F.)
-				// 		zza -> zza_status = iif (sze -> ze_pesobru <= 0, '0', '1')
-				// 		msunlock ()
-				// 	endif
 				elseif zza -> zza_status == '0' .or. (zza -> zza_status == '2' .and. U_MsgNoYes ("Item " + zza -> zza_nprod + " encontra-se com status 'em descarga' na tabela de integracao com medidor de grau. Deseja reiniciar o status?"))
 					reclock ("ZZA", .F.)
 					zza -> zza_status = iif (sze -> ze_pesobru <= 0, '0', '1')

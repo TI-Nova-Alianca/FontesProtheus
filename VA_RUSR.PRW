@@ -24,6 +24,9 @@ User Function va_rusR ()
 			return
 		endif
 	endif
+	if type ("_oCarSaf") != 'O'
+		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+	endif
 
 	cDesc1   := "Recibo de entrada de uva"
 	cDesc2   := ""

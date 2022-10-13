@@ -37,6 +37,10 @@ user function va_rusLI (_nPesagem, _lSimular)
 		u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Iniciando em modo de SIMULACAO')
 	endif
 
+	if type ("_oCarSaf") != 'O'
+		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+	endif
+
 	// Verifica situacao do agendamento / inspecoes.
 	if _lContinua
 		_oSQL := ClsSQL ():New ()
@@ -207,6 +211,8 @@ user function va_rusLI (_nPesagem, _lSimular)
 						_aClasUva = aclone (eval (&("{||U_ClUva" + right (sze -> ze_safra, 2) + " (szf -> zf_produto, val (szf -> zf_grau), szf -> zf_conduc, val (_sInspBotr), val (_sInspGlom), val (_sInspAspe), val (_sInspPodr), val (_sInspAcid), _sInspMEst)}")))
 					elseif sze -> ze_safra == '2022'
 						_aClasUva = aclone (U_ClUva22 (szf -> zf_produto, val (szf -> zf_grau), szf -> zf_conduc, _sInspBotr, _sInspGlom, _sInspAspe, _sInspPodr, _sInspAcid))
+					elseif sze -> ze_safra == '2023'
+						_aClasUva = aclone (U_ClUva23 (szf -> zf_produto, val (szf -> zf_grau), szf -> zf_conduc, _sInspBotr, _sInspGlom, _sInspAspe, _sInspPodr, _sInspAcid))
 					else
 						// A chamada com EVAL rodou bem, mas uma pesquisa nos fontes por CLUVA21, por exemplo, nao retorna nada. ---> _aClasUva = aclone (eval (&("{||U_ClUva" + right (sze -> ze_safra, 2) + " (szf -> zf_produto, val (szf -> zf_grau), szf -> zf_conduc, val (_sInspBotr), val (_sInspGlom), val (_sInspAspe), val (_sInspPodr), val (_sInspAcid), _sInspMEst)}")))
 						u_help ("Sem tratamento para leitura de classificacao de uvas no programa " + procname ())

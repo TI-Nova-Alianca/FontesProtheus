@@ -23,9 +23,10 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 	local _nLock      := 0
 	local _oSQL       := NIL
 	local _aEspum     := {}
-	private _sRetSZECG := ''  // Numero da carga gerada. Para compor, depois, o XML de retorno. Deixar private para ser vista por demais rotinas.
-	private _sRetSZEAv := ''  // Avisos para usuario.    Para compor, depois, o XML de retorno. Deixar private para ser vista por demais rotinas.
-	private _sRetSZEOb := ''  // Observacoes em geral.   Para compor, depois, o XML de retorno. Deixar private para ser vista por demais rotinas.
+	private _sRetSZECG := ''  // Numero da carga gerada. Para retornar dados ao web service. Deixar private para ser vista por demais rotinas.
+//	private _sRetSZEAv := ''  // Avisos para usuario.    Para compor, depois, o XML de retorno. Deixar private para ser vista por demais rotinas.
+//	private _sRetSZEOb := ''  // Observacoes em geral.   Para compor, depois, o XML de retorno. Deixar private para ser vista por demais rotinas.
+	private _oCarSaf  := ClsCarSaf ():New ()
 
 	u_log2 ('info', 'Iniciando ' + procname ())
 	U_PerfMon ('I', 'GeraSZE_validacoes')  // Para metricas de performance
@@ -239,16 +240,6 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 				u_log2 ('erro', 'U_VA_RUS2G() retornou erro.')
 			endif
 
-			// Monta XML para retorno.
-			// Retorno em XML deu problema. Deixemos para outra hora...
-			//_sMsgRetWS := ''
-			//_sMsgRetWS += '<RetornoCarga>'
-			//_sMsgRetWS +=    '<Item xmlns="">'
-			//_sMsgRetWS +=       '<cargaGerada>' + _sRetSZECG + '</cargaGerada>'
-			//_sMsgRetWS +=       '<avisos>' + iif (empty (_sRetSZEAv), '.', _sRetSZEAv) + '</avisos>'
-			//_sMsgRetWS +=       '<obs>' + iif (empty (_sRetSZEOb), '.', _sRetSZEOb) + '</obs>'
-			//_sMsgRetWS +=    '</Item>'
-			//_sMsgRetWS += '</RetornoCarga>'
 			_sMsgRetWS = _sRetSZECG
 		endif
 	endif

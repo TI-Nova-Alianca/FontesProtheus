@@ -1304,7 +1304,7 @@ static function _IncCarSaf ()
 	local _sCadVit   := ''
 	local _sVaried   := ''
 	local _sEmbalag  := ''
-	local _sTombador := 0
+	local _sTombador := ''
 	local _aItensCar := {}
 	local _sLote     := ''
 	local _sSenhaOrd := ''
@@ -1317,6 +1317,7 @@ static function _IncCarSaf ()
 	local _sEspumant := ''
 	local _sCargaC1  := ''
 	local _sCargaC2  := ''
+	local _lAmostra  := .F.
 
 	u_log2 ('info', 'Iniciando web service de geracao de carga.')
 	U_PerfMon ('I', 'WSGerarCargaSafra')  // Para metricas de performance

@@ -21,6 +21,9 @@ user function va_rus1P (_lPortaria)
 	private _nPLidoBal := 0  // Deixar private senao a funcao MsgRun nao altera.
 	
 	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']   Assoc:' + sze -> ze_assoc + '/' + sze -> ze_lojasso)
+	if type ("_oCarSaf") != 'O'
+		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+	endif
 
 	_lPortaria = iif (_lPortaria == NIL, .F., _lPortaria)
 	

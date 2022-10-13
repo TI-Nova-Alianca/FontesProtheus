@@ -60,13 +60,8 @@ user Function VA_RUS2G (_nOpc)
 		endif
 
 		// Variavel para retorno do numero da carga para a funcao de geracao automatica.
-//		if type ("_RetGrvSZE") == 'C'
-//			_RetGrvSZE = sze -> ze_carga
-//			u_log2 ('debug', '_RetGrvSZE: ' + cvaltochar (_RetGrvSZE))
-//		endif
 		if type ("_sRetSZECG") == 'C'
 			_sRetSZECG = sze -> ze_carga
-//			u_log2 ('debug', '[' + procname () + '] _sRetSZECG: ' + cvaltochar (_sRetSZECG))
 		endif
 	
 		msunlock ("SZE")
