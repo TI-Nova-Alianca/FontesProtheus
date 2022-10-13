@@ -174,6 +174,7 @@
 // 22/09/2022 - Robert  - Validacao do campo C2_VABARCX - GLPI 11994
 // 02/10/2022 - Robert  - Removido atributo :DiasDeVida da classe ClsAviso.
 // 03/10/2022 - Robert  - Trocado grpTI por grupo 122 no envio de avisos.
+// 13/10/2022 - Robert  - Melhorias validacao C2_VABARCX
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -550,18 +551,30 @@ user function VA_VCpo (_sCampo)
 					_lRet = .F.
 				endif
 			endif
-			if _lRet .and. ! sb1 -> b1_tipo $ 'PA/PI'
-				u_help ("Este campo aplica-se inicialmente apenas a itens PA/PI que vao ser guardados pelo FullWMS",, .t.)
-				_lRet = .F.
-			endif
-			if _lRet .and. sb1 -> b1_vafullw != 'S'
+			if _lRet .and. sb1 -> b1_vafullw != 'S' .and. ! empty (M->C2_VABARCX)
 				u_help ("Este campo aplica-se inicialmente apenas a itens que vao ser guardados pelo FullWMS",, .t.)
 				_lRet = .F.
+			endif
+			if _lRet .and. ! empty (M->C2_VABARCX)
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += " SELECT STRING_AGG (B1_COD, ',')"
+				_oSQL:_sQuery +=   " FROM " + RetSQLName ("SB1")
+				_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=    " AND B1_FILIAL  = '" + xfilial ("SB1") + "'"
+				_oSQL:_sQuery +=    " AND B1_CODBAR  = '" + sb1 -> b1_codbar + "'"
+				_oSQL:_sQuery +=    " AND B1_COD    != '" + sb1 -> b1_cod + "'"
+				_oSQL:Log ('[' + procname () + ']')
+				_sRetSQL = alltrim  (_oSQL:RetQry (1, .f.))
+				if ! empty (_sRetSQL)
+					u_help ('Encontrados outros produtos com mesmo codigo de barras, o que vai posteriormente impedir o apontamento de producao: ' + _sRetSQL,, .t.)
+					_lRet = .F.
+				endif
 			endif
 			
 			// Ateh o momento, a unica excecao que tenho sao as licitacoes para
 			// o estado de SP, que exigem EAN128
-			if _lRet .and. alltrim (M->C2_VABARCX) != alltrim (sb1 -> b1_codbar)
+			if _lRet .and. ! empty (M->C2_VABARCX) .and. alltrim (M->C2_VABARCX) != alltrim (sb1 -> b1_codbar)
 				if substring (M->C2_VABARCX, 4, len (alltrim (sb1 -> b1_codbar))) == alltrim (sb1 -> b1_codbar)
 					_lRet = .T.
 				else
@@ -1072,7 +1085,7 @@ user function VA_VCpo (_sCampo)
 				_oSQL:_sQuery +=   " AND SD3.D3_FILIAL  = '" + xfilial ("SD3") + "'"
 				_oSQL:_sQuery +=   " AND SD3.D3_VAETIQ  = '" + m->d3_vaetiq + "'"
 				_oSQL:_sQuery +=   " AND SD3.D3_CF LIKE 'PR%'"
-				_oSQL:Log ('[' + procname () + ']')
+				//_oSQL:Log ('[' + procname () + ']')
 				_aApontEtq = aclone (_oSQL:Qry2Array (.f., .f.))
 				if _aApontEtq [1, 1] > 0
 					u_help ("Essa etiqueta ja gerou apontamento de producao.",, .t.)

@@ -5,10 +5,18 @@
 // Descricao..: Ordena array para uso em rotina automatica conforme ordem dos
 //              campos no SX3. Isso por que, se os campos forem enviados fora de
 //              ordem, os gatilhos podem fazer as coisas mais inusitadas...
-// Historico de alteracoes:            
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Generico
+// #Descricao         #Ordena lista de campos para rotinas automaticas.
+// #PalavasChave      #generico
+// #TabelasPrincipais #
+// #Modulos           #Todos
+
+// Historico de alteracoes:
 // 02/03/2006 - Robert - Nao aceitava campos que nao constam no SX3.
 // 07/03/2022 - Robert - Verifica nivel de acesso e se os campos encontram-se em uso (GLPI 11721)
-// 09/03/2022 - Robert - Verifica se o campo encontra-se usado pelo modulo atual 
+// 09/03/2022 - Robert - Verifica se o campo encontra-se usado pelo modulo atual
 // 11/03/2022 - Robert - Erro de 'campo nao usado' aparecia em tela. Mudado para log de erro (causava panico desnecessario entre os usuarios)
 // 24/08/2022 - Robert - Valida tipo do campo X tipo da variavel recebida.
 //

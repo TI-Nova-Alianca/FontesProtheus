@@ -11,10 +11,12 @@
 // #Modulos           #EST
 
 // Historico de alteracoes:
+// 13/10/2022 - Robert - Reduzida mensagem para uso com telnet.
+//                     - Passa a receber param.de grupo que pode "aceitar assim mesmo".
 //
 
 // --------------------------------------------------------------------------
-user function ConsEstq (_sFilial, _sProduto, _sLocal)
+user function ConsEstq (_sFilial, _sProduto, _sLocal, _sGrpLib)
 	local _lRet     := .T.
 	local _aRetQry  := {}
 	local _sMsg     := ''
@@ -25,8 +27,19 @@ user function ConsEstq (_sFilial, _sProduto, _sLocal)
 	_aRetQry = aclone (_oSQL:Qry2Array (.F., .f.))
 	//U_Log2 ('debug', _aRetQry)
 	if len (_aRetQry) == 1
-		_sMsg = "Inconsistencia estoques no prod/almox " + alltrim (_sProduto) + "/" + _sLocal + ": " + chr (13) + chr (10) + strtran (alltrim (_aRetQry [1, 12]), ';', chr (13) + chr (10))
-		//U_Log2 ('aviso', _sMsg)
-		_lRet = U_MsgNoYes (_sMsg + " Deseja continuar assim mesmo?")
+//		_sMsg = "Inconsistencia estoques no prod/almox " + alltrim (_sProduto) + "/" + _sLocal + ": " + chr (13) + chr (10) + strtran (alltrim (_aRetQry [1, 12]), ';', chr (13) + chr (10))
+		_sMsg = "Incons.estq.prod." + alltrim (_sProduto) + " ax." + _sLocal + ":" + alltrim (_aRetQry [1, 12])
+		U_Log2 ('aviso', '[' + procname () + ']' + _sMsg)
+		U_Log2 ('aviso', '[' + procname () + ']query para verificacao: ' + _oSQL:_sQuery)
+
+		// Caso tenha sido especificado um grupo que pode "aceitar assim mesmo",
+		// verifica se o usuario atual faz parte desse grupo.
+		// O grupo '*' significa que aceita todo mundo (com o tempo, quero eliminar esse 'todo mundo').
+		if _sGrpLib == '*' .or. (! empty (_sGrpLib) .and. u_zzuvl (_sGrpLib, __cUserId, .F.))
+			_lRet = U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
+		else
+			u_help (_sMsg)
+			_lRet = .F.
+		endif
 	endif
 return _lRet

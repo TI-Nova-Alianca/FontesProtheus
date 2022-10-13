@@ -2,14 +2,14 @@
 // Autor....: Robert Koch
 // Data.....: 24/09/2016
 // Descricao: P.E. 'Tudo OK' na tela de movimentos internos.
-//
+
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #ponto_de_entrada
 // #Descricao         #P.E. 'Tudo OK' na tela de movimentos internos.
 // #PalavasChave      #validacao #movimentacoes_internas #modelo_II #tudo_ok
 // #TabelasPrincipais #SD3
 // #Modulos           #EST
-//
+
 // Historico de alteracoes:
 // 14/03/2018 - Robert  - dDataBase nao pode mais ser diferente de date().
 // 02/04/2018 - Robert  - Movimentacao retroativa habilitada para o grupo 084.
@@ -20,7 +20,9 @@
 // 15/06/2021 - Claudia - Incluida novas validações C.custo X C.contabil. GLPI: 10224
 // 09/07/2021 - Robert  - Criada chamada da funcao U_ConsEst (GLPI 10464).
 // 15/10/2021 - Claudia - Validação MC ao movimento 573. GLPI: 10765
+// 13/10/2022 - Robert  - Novos parametros funcao U_ConsEst().
 //
+
 // -----------------------------------------------------------------------------------------------------
 user function MT240TOk ()
 	local _lRet := .T.
@@ -111,7 +113,7 @@ user function MT240TOk ()
 
 	// Verifica se tem alguma mensagem de inconsistencia de estoque.
 	if _lRet
-		_lRet := U_ConsEstq (xfilial ("SD3"), m->d3_cod, m->d3_local)
+		_lRet := U_ConsEstq (xfilial ("SD3"), m->d3_cod, m->d3_local, '*')
 	endif
 
 	U_ML_SRArea (_aAreaAnt)

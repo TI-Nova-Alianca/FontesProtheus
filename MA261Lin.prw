@@ -38,6 +38,7 @@
 // 09/07/2021 - Robert  - Criada chamada da funcao U_ConsEst (GLPI 10464).
 // 23/12/2021 - Claudia - Incluida validação de almox 11. GLPI: 7665
 // 31/03/2022 - Robert  - Melhoradas mensagens de log.
+// 13/10/2022 - Robert  - Novos parametros funcao U_ConsEst().
 //
 
 // ------------------------------------------------------------------------------------
@@ -252,9 +253,9 @@ User Function MA261LIN ()
 
 	// Verifica se tem alguma mensagem de inconsistencia entre tabelas de estoque.
 	if _lRet
-		_lRet = U_ConsEstq (xfilial ("SD3"), _sProdOrig, _sAlmOrig)
+		_lRet = U_ConsEstq (xfilial ("SD3"), _sProdOrig, _sAlmOrig, '*')
 		if _lRet
-			_lRet = U_ConsEstq (xfilial ("SD3"), _sProdDest, _sAlmDest)
+			_lRet = U_ConsEstq (xfilial ("SD3"), _sProdDest, _sAlmDest, '*')
 		endif
 	endif
 
