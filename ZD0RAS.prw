@@ -283,7 +283,7 @@ Static Function _GeraTitulos(dDataIni, dDataFin)
         EndIf
     Next
     // chama relatorio de baixas
-    U_ZD0RCMP(dDataIni, dDataFin)
+    //U_ZD0RCMP(dDataIni, dDataFin)
 Return
 //
 // -----------------------------------------------------------------------------------
