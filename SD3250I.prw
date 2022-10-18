@@ -40,7 +40,6 @@ User Function SD3250I()
 			reclock ("ZA1", .F.)
 			za1 -> za1_apont = 'S'
 			msunlock ()
-//			U_EnvEtFul (M->D3_VAETIQ, .F.)
 			
 			// Envia etiqueta para o FullWMS
 			_oEtiq := ClsEtiq ():New (m->d3_vaetiq)
@@ -54,8 +53,9 @@ User Function SD3250I()
 	// Atualiza laudos/ensaios de laboratorio
 	processa ({|| _AtuLaudo ()})
 
-	// Finaliza registro (criado pelo P.E. MT250TOk) para medicao de tempo de apontamento de producao.
-	U_PerfMon ('F', 'GravacaoMATA250')
+	// Desabilitado por que a demora nao era aqui.
+	// // Finaliza registro (criado pelo P.E. MT250TOk) para medicao de tempo de apontamento de producao.
+	// U_PerfMon ('F', 'GravacaoMATA250')
 
 	U_ML_SRArea (_aAreaAnt)
 Return
@@ -154,7 +154,7 @@ static function _AtuLaudo ()
 	_oSQL:_sQuery +=    " AND SDB.DB_NUMSEQ  = SD3.D3_NUMSEQ"
 	_oSQL:_sQuery +=    " AND SDB.DB_ORIGEM  = 'SC2'"
 	_oSQL:_sQuery +=  " GROUP BY SD3.D3_COD, DB_LOTECTL"
-	_oSQL:Log ()
+	//_oSQL:Log ('[' + procname () + ']')
 	_aLotes :=  aclone (_oSQL:Qry2Array (.F., .F.))
 	_aLaudos = {}
 	for _nLotes = 1 to len (_aLotes)

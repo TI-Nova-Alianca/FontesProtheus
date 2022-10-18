@@ -12,6 +12,7 @@
 // #Modulos           #EST
 
 // Historico de alteracoes:
+// 13/10/2022 - Robert  - Novos parametros funcao U_ConsEst().
 //
 
 // --------------------------------------------------------------------------
@@ -22,7 +23,7 @@ user function MT241LOK ()
 
 	// Verifica se tem alguma mensagem de inconsistencia entre tabelas de estoque.
 	if _lRet
-		_lRet := U_ConsEstq (xfilial ("SD3"), GDFieldGet ("D3_COD"), GDFieldGet ("D3_LOCAL"))
+		_lRet := U_ConsEstq (xfilial ("SD3"), GDFieldGet ("D3_COD"), GDFieldGet ("D3_LOCAL"), '*')
 	endif
 
 	U_ML_SRArea (_aAreaAnt)

@@ -18,6 +18,7 @@
 //                      - Varre todos os itens (antes retornava no primeiro erro)
 //                      - MsgAlert() trocada por u_help()
 //                      - Valida consistencias de estoque (GLPI 12133).
+// 13/10/2022 - Robert  - Novos parametros funcao U_ConsEst().
 //
 
 //  ---------------------------------------------------------------------------------------------------------------------
@@ -103,7 +104,7 @@ User Function MNTA435N()
 							// Verifica se ha inconsistencias entre as tabelas de estoque.
 							if _lRetMN435
 								_sAlmox = aInsumos[ nInsumo, _nPosAlm]
-								_lRetMN435 = U_ConsEstq (xfilial ("SD3"), sProduto, _sAlmox)
+								_lRetMN435 = U_ConsEstq (xfilial ("SD3"), sProduto, _sAlmox, '*')
 							endif
 						endif
 					endif

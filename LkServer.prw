@@ -19,6 +19,7 @@
 // 08/02/2021 - Robert - Criado tratamento para acessar o database TI (GLPI 9353)
 // 23/02/2021 - Robert - Adicionado database BL01 (GLPI 9454).
 // 25/03/2022 - Robert - Adicionado ambiente R33 (homologacao release33 do Protheus)
+// 11/10/2020 - Robert - Criado linked server FullWMS TESTE (almox.01 logistica).
 //
 
 // --------------------------------------------------------------------------
@@ -58,10 +59,13 @@ user function LkServer (_sQualSrv)
 
 	case upper (alltrim (_sQualSrv)) == 'FULLWMS_AX01'
 		if _lBaseTST
-			_sRetLk = ""  // Nao existe ainda (precisa instalar bastante coisa; ver GLPI 5701
+			_sRetLk = "LKSRV_FULLWMS_LOGISTICATESTE"  // Deve ser usado com OpenQuery por se tratar de banco Oracle. Configurado cfe. GLPI 5701
 		else
-			_sRetLk = "LKSRV_FULLWMS_LOGISTICA"  // Deve ser usado com OpenQuery por se tratar de banco Oracle.
+			_sRetLk = "LKSRV_FULLWMS_LOGISTICA"  // Deve ser usado com OpenQuery por se tratar de banco Oracle. Configurado cfe. GLPI 5701
 		endif
+		// pode ser ser testado assim, para ver se diferencia da base quente:
+		// SELECT RETORNO FROM openquery (LKSRV_FULLWMS_LOGISTICA,      'select max(dt_mov) as RETORNO from wms_mov_estoques_cd')
+		// SELECT RETORNO FROM openquery (LKSRV_FULLWMS_LOGISTICATESTE, 'select max(dt_mov) as RETORNO from wms_mov_estoques_cd')
 
 	case upper (alltrim (_sQualSrv)) == 'MERCANET'
 		if _lBaseTST

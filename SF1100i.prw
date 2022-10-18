@@ -1205,7 +1205,7 @@ static function _AvisaMnt ()
 									100)
 
 		_oAviso := ClsAviso ():New ()
-		_oAviso:Tipo       = 'A'
+		_oAviso:Tipo       = 'I'
 		_oAviso:DestinAvis = 'evaldo.agnoletto;leonardo.borges'
 		_oAviso:Titulo     = 'NF entrada ' + sf1 -> f1_doc
 		_oAviso:Titulo    += ' de ' + alltrim (fBuscaCpo ("SA2", 1, xfilial ("SA2") + sf1 -> f1_fornece + sf1 -> f1_loja, "A2_NOME"))

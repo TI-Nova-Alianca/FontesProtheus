@@ -13,6 +13,7 @@
 // 18/08/2017 - Robert  - Valida lote e validade originais para OP de reprocesso.
 // 15/10/2019 - Cláudia - Incluída validações no C2_VAEVENT - _VerEvent() GLPI: 6793
 // 22/09/2022 - Robert  - Validacao do campo C2_VABARCX - GLPI 11994
+// 17/10/2022 - Robert  - Validacao do campo B1_PRVALID quando usa rastro.
 //
 
 // ----------------------------------------------------------------
@@ -37,6 +38,10 @@ user function MA650TOk ()
 //		_lRet = _VerEvent () 
 //	endif
 	
+	if _lRet
+		_lRet = _VerRastro ()
+	endif
+
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
 return _lRet
@@ -208,3 +213,21 @@ return _lRet
 //		endif
 //	endif
 //return _lRet
+
+
+// --------------------------------------------------------------------------
+// Verificacoes para itens que controlam rastro/lote.
+static function _VerRastro ()
+	local _lRet     := .T.
+
+	sb1 -> (dbsetorder (1))
+	if ! sb1 -> (dbseek (xfilial ("SB1") + m->c2_produto, .F.))
+		u_help ("Produto da OP nao localizado",, .t.)
+		_lRet = .F.
+	endif
+	if _lRet .and. sb1 -> b1_rastro == 'L' .and. sb1 -> b1_prvalid <= 0
+		u_help ("Para produtos que controlam rastro, o prazo de validade do item deve ser informado no campo B1_PRVALID (" + alltrim (RetTitle ("B1_PRVALID")) + ") do cadastro.",, .t.)
+		_lRet = .F.
+	endif
+
+return _lRet

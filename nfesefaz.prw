@@ -149,6 +149,7 @@ static lSpedCodOnu := nil
 //              Claudia - Ajustada variaveis de erro para notas de consignação. GLPI:11887 
 // 09/06/2022 - Sandra  - Ajustes na versao do pacote GLPI 11842 (Nota Técnica 2021.004_V_1.10) - Compilado por Robert em 09/06/22 21:45h
 // 11/07/2022 - Robert  - Quando houver "informacoes adicionais do produto", concatena-as com a descricao (GLPI 12334)
+// 13/10/2022 - Robert  - Pequena melhoria nos logs quando ambiente de teste.
 //
 
 // --------------------------------------------------------------------------
@@ -6888,13 +6889,14 @@ endif
 
 // Alianca: as linhas abaixo podem ser habilitada para 'derrubar' o programa antes que a NF seja transmitida. Serve para conferencia do XML gerado.
 if "COMP"$upper (alltrim (getenvserver ())) .or. "SANDRA"$upper (alltrim (getenvserver ())) .or. "CLAUDIA"$upper (alltrim (getenvserver ())) .or. "TESTE"$upper (alltrim (getenvserver ())) .or. "ROBERT"$upper (alltrim (getenvserver ()))
-	u_log2 ('debug', '[' + procname () + '] retornando: ' + EncodeUTF8(cString))
+	u_log2 ('debug', '[' + procname () + '] XML gerado: ' + EncodeUTF8(cString))
 	if msgyesno ("Deseja visualizar o XML gerado?")
 		cString = U_ShowMemo (cString, 'XML gerado')
 	endif
 	if ! msgnoyes ("Deseja continuar a transmissao da nota?")
 		Final ("Termino proposital para conferencia", iif (type ("_sArqLog") == "C", " Mais detalhes no arquivo de log '" + _sArqLog + "'", ""))
 	endif
+	u_log2 ('debug', '[' + procname () + '] retornando: ' + EncodeUTF8(cString))
 endif
 Return({cNFe, cStringUTF, cNotaOri, cSerieOri})
 

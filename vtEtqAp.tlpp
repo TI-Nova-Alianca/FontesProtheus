@@ -91,9 +91,16 @@ static function _ValEtiq ()
 	local _lRet := .T.
 	U_Log2 ('debug', '[' + procname () + ']etiqueta lida: >>' + _sBarEtiq + '<<')
 	
+	if _lRet .and. empty (_sBarEtiq)
+		vtBeep (2)
+		u_help ("Etiqueta nao cadastrada.",, .t.)
+		_sProdEtq = ''
+		_lRet = .F.
+	endif
+
 	// Farei algumas validacoes rapidinhas direto pelo ZA1 antes de instanciar uma etiqueta, para melhoria de performance.
-	za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP
 	if _lRet
+		za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP
 		if ! za1 -> (dbseek (xfilial ("ZA1") + _sBarEtiq, .F.))
 			vtBeep (2)
 			u_help ("Etiqueta nao cadastrada.",, .t.)

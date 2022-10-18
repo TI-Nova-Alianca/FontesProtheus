@@ -17,6 +17,7 @@
 // 02/10/2022 - Robert - Removido atributo :DiasDeVida da classe ClsAviso.
 // 03/10/2022 - Robert - Trocado grpTI por grupo 122 no envio de avisos.
 // 03/10/2022 - Robert - Impede encerramento OS se tiver pedido de compra aberto (GLPI 12678)
+// 17/10/2022 - Robert - Sai Joao Costa e entra Max Padilha (filtros de OS)
 //
 
 //  ---------------------------------------------------------------------------------------------------------------------
@@ -46,8 +47,8 @@ User Function MNTNG()
 			_oAviso:Tipo       = 'E'
 			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 			_oAviso:Titulo     = 'Erro ao desserializar objeto _oObjMnt'
-			_oAviso:Texto      = 'Nao foi possivel desserializar objeto no ponto de entrada ' + procname () + ". Mais detalhes em " + _sArqLog
-			_oAviso:Origem     = procname ()
+			_oAviso:Texto      = 'Nao foi possivel desserializar objeto no ponto de entrada ' + procname () + " com IdLocal = " + _sIDdLocal + ". Mais detalhes em " + _sArqLog
+			_oAviso:InfoSessao = .T.
 			_oAviso:Grava ()
 		EndIf
 
@@ -73,8 +74,8 @@ User Function MNTNG()
 			_oAviso:Tipo       = 'E'
 			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 			_oAviso:Titulo     = 'Erro ao desserializar objeto _oObjMnt'
-			_oAviso:Texto      = 'Nao foi possivel desserializar objeto no ponto de entrada ' + procname () + ". Mais detalhes em " + _sArqLog
-			_oAviso:Origem     = procname ()
+			_oAviso:Texto      = 'Nao foi possivel desserializar objeto no ponto de entrada ' + procname () + " com IdLocal = " + _sIDdLocal + ". Mais detalhes em " + _sArqLog
+			_oAviso:InfoSessao = .T.
 			_oAviso:Grava ()
 		EndIf
 		
@@ -88,7 +89,8 @@ User Function MNTNG()
 		// Siiiim, eu sei que chumbar os nomes no fonte é deselegante, mas ainda nao tenho uma forma melhor de descobrir o codigo do funcionario.
 		_sCodFunc = ''
 		do case
-		case alltrim (upper (cUserName)) $ 'EVALDO.AGNOLETTO/LEONARDO.BORGES/APP.MNTNG/ELSO.RODRIGUES/MARCOS.OLIVEIRA/JONATHAN.SANTOS/JUNIOR.MELGAREJO/JOAO.COSTA'
+	//	case alltrim (upper (cUserName)) $ 'EVALDO.AGNOLETTO/LEONARDO.BORGES/APP.MNTNG/ELSO.RODRIGUES/MARCOS.OLIVEIRA/JONATHAN.SANTOS/JUNIOR.MELGAREJO/JOAO.COSTA'
+		case alltrim (upper (cUserName)) $ 'EVALDO.AGNOLETTO/LEONARDO.BORGES/APP.MNTNG/ELSO.RODRIGUES/MARCOS.OLIVEIRA/JONATHAN.SANTOS/JUNIOR.MELGAREJO/MAX.PADILHA'
 			_sCodFunc = ''  // Sem filtro para estes usuarios.
 		case alltrim (upper (cUserName)) = 'ALEXANDRE.ANDRADE'; _sCodFunc = '2065'
 		case alltrim (upper (cUserName)) = 'ELIEL.PEDRON'     ; _sCodFunc = '2119'
@@ -102,9 +104,9 @@ User Function MNTNG()
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
 			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
-			_oAviso:Titulo     = 'Erro ao desserializar objeto _oObjMnt'
+			_oAviso:Titulo     = 'Usuario sem tratamento para filtrar OS'
 			_oAviso:Texto      = "Usuario '" + cUserName + "' sem tratamento para filtrar OS no ponto de entrada " + procname () + ". Mais detalhes em " + _sArqLog
-			_oAviso:Origem     = procname ()
+			_oAviso:InfoSessao = .T.
 			_oAviso:Grava ()
 		endcase
 		if ! empty (_sCodFunc)

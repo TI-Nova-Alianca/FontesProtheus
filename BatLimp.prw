@@ -26,6 +26,7 @@
 // 14/09/2022 - Robert - Adicionada tabela SC2 para compactacao.
 // 10/10/2022 - Robert - Adicionada tabela SX3 para compactacao.
 //                     - Envia aviso para TI quando vai compactar uma tabela.
+// 13/10/2022 - Robert - Adicionadas tabelas SFT e CD2 para compactacao.
 //
 
 // ----------------------------------------------------------------
@@ -182,6 +183,8 @@ static function _Compact ()
 	aadd (_aArqComp, 'SBK010')  // Uso pouco frequente, nao vejo problemas em compactar.
 	aadd (_aArqComp, 'SC2010')  // Tem alguns campos de observacoes, etc que geralmente ficam vazios.
 	aadd (_aArqComp, 'SX3010')  // Tabela bastante usada, quero ver se melhora performance.
+	aadd (_aArqComp, 'SFT010')  // Teste inicial reduziu 70% do tamanho, e considero uma tabela que tem muito mais leituras do que gravacoes.
+	aadd (_aArqComp, 'CD2010')  // Teste inicial reduziu 35% do tamanho, e considero uma tabela que tem muito mais leituras do que gravacoes.
 
 	for _nArqComp = 1 to len (_aArqComp)
 		_oSQL := ClsSQL ():New ()

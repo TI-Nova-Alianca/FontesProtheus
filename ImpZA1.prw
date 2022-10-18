@@ -26,6 +26,8 @@
 //                      - Grava msg em _oEtiq caso esteja instanciada.
 // 12/08/2022 - Robert  - Revisao geral, reformatacao, melhorias na logica, adequacao para Datamax (GLPI 12474)
 // 23/09/2022 - Robert  - Passa a (se nao receber) sempre instanciar ClsEtiq para leitura de alguns dados (GLPI 12220)
+// 13/10/2022 - Robert  - Nao envia mais etiqueta para o Full apos impressao (fica por conta da rotina chamadora)
+//                      - Criado tratamento para etiquetas geradas a partir do SD5 (GLPI 12651).
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -196,6 +198,11 @@ user function ImpZA1 (_sEtiq, _sIdImpr, _oEtiq)
 				endif
 			endif
 
+		case ! empty (_oEtiq:D5_NUMSEQ)  // Etiqueta gerada com base na tabela SD5.
+			//u_logobj (_oEtiq)
+			_sLoteImp = _oEtiq:LoteProduto
+			_sAlmOri  = _oEtiq:AlmOrig
+
 		otherwise
 			u_help ("Tipo de etiqueta sem tratamento na leitura de dados iniciais para impressao no programa " + procname (),, .t.)
 			_lContinua = .F.
@@ -234,12 +241,14 @@ user function ImpZA1 (_sEtiq, _sIdImpr, _oEtiq)
 			_sTxtEtiq += _Esc + '%1' + _Enter      // Rotacao
 
 			// Adiciona 'miolo' da etiqueta, formatado conforme o tipo de aplicacao da etiqueta
-			if ! empty (ZA1 -> ZA1_OP)
+			if ! empty (_oEtiq:OP)  //ZA1 -> ZA1_OP)
 				_sTxtEtiq += _FmtOP ()
-			elseif ! empty (ZA1 -> ZA1_IdZAG)
+			elseif ! empty (_oEtiq:IdZAG)  //ZA1 -> ZA1_IdZAG)
 				_sTxtEtiq += _FmtZAG ()
-			elseif ! empty (ZA1 -> ZA1_DOCE)
+			elseif ! empty (_oEtiq:DocEntrNum) .or. ! empty (_oEtiq:D5_NUMSEQ)  //ZA1 -> ZA1_DOCE)
 				_sTxtEtiq += _FmtNF ()
+			else
+				u_help ("Sem definicao de formatacao de etiqueta deste tipo na Sato.",, .t.)
 			endif
 			
 			// Comandos finais da etiqueta.
@@ -257,12 +266,14 @@ user function ImpZA1 (_sEtiq, _sIdImpr, _oEtiq)
 			_sTxtEtiq += 'PC'  + _Enter  // Velocidade
 			
 			// Adiciona 'miolo' da etiqueta, formatado conforme o tipo de aplicacao da etiqueta
-			if ! empty (ZA1 -> ZA1_OP)
+			if ! empty (_oEtiq:OP)  //ZA1 -> ZA1_OP)
 				_sTxtEtiq += _FmtOP ()
-			elseif ! empty (ZA1 -> ZA1_IdZAG)
+			elseif ! empty (_oEtiq:IdZAG)  //ZA1 -> ZA1_IdZAG)
 				_sTxtEtiq += _FmtZAG ()
-			elseif ! empty (ZA1 -> ZA1_DOCE)
+			elseif ! empty (_oEtiq:DocEntrNum) .or. ! empty (_oEtiq:D5_NUMSEQ)  //ZA1 -> ZA1_DOCE)
 				_sTxtEtiq += _FmtNF ()
+			else
+				u_help ("Sem definicao de formatacao de etiqueta deste tipo na Datamax.",, .t.)
 			endif
 			
 			// Comandos finais da etiqueta.
@@ -290,17 +301,17 @@ user function ImpZA1 (_sEtiq, _sIdImpr, _oEtiq)
 			endif
 
 			// Se tem objeto instanciado, nao custa nada gravar uma mensagem de retorno
-			_oEtiq:UltMsg += 'Dados enviados para ' + _sPortaImp
+			_oEtiq:UltMsg += 'Impressao enviada para ' + _sPortaImp
 
 			// Penso que o fato de uma etiqueta estar impressa nao significa que jah precise
 			// ser enviada para o FullWMS. Vou deixar isso a cargo do ClsEtiq().
 			// Etiquetas (quando necessario) sao enviadas para o Full somente depois de impressas
-			if za1 -> za1_impres == 'S'
-				if empty (za1 -> za1_op)  // Etiquetas de OP sao enviadas somente depois de apontadas (P.E. SD3250I)
-					U_Log2 ('debug', '[' + procname () + ']Chamando envio da etiqueta para o Full')
-					U_EnvEtFul (za1 -> za1_codigo, .F.)
-				endif
-			endif
+//			if za1 -> za1_impres == 'S'
+//				if empty (za1 -> za1_op)  // Etiquetas de OP sao enviadas somente depois de apontadas (P.E. SD3250I)
+//					U_Log2 ('debug', '[' + procname () + ']Chamando envio da etiqueta para o Full')
+//					U_EnvEtFul (za1 -> za1_codigo, .F.)
+//				endif
+//			endif
 		endif
 	endif
 		
@@ -424,7 +435,9 @@ static function _FmtNF ()
 		_sFmtNF += _Esc + 'H0150' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + Alltrim(_sDocImp) + _Enter
 		_sFmtNF += _Esc + 'H0200' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sFornImp1 + _Enter
 		_sFmtNF += _Esc + 'H0225' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sFornImp2 + _Enter
-		_sFmtNF += _Esc + 'H0275' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'LOTE FORN: ' + AllTrim(_sLtForImp) + _Enter
+		if ! empty (_sLtForImp)
+			_sFmtNF += _Esc + 'H0275' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'LOTE FORN: ' + AllTrim(_sLtForImp) + _Enter
+		endif
 		_sFmtNF += _Esc + 'H0300' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'LOTE INT: ' + AllTrim(_sLoteImp) + _Enter
 		_sFmtNF += _Esc + 'H0325' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'QTD: ' + Alltrim(_sQtdImp) + ' ' + AllTrim(_sUMImp) + _Enter
 		_sFmtNF += _Esc + 'H0375' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'FABRICACAO: ' + AllTrim(_sDtFabImp) + _Enter
@@ -444,7 +457,9 @@ static function _FmtNF ()
 		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 105, 4) + _sDocImp   + _Enter
 		_sFmtNF += '4211' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 120, 4) + _sFornImp1 + _Enter
 		_sFmtNF += '4211' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 135, 4) + _sFornImp2 + _Enter
-		_sFmtNF += '4211' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 155, 4) + 'Lt.forn:' + _sLtForImp + _Enter
+		if ! empty (_sLtForImp)
+			_sFmtNF += '4211' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 155, 4) + 'Lt.forn:' + _sLtForImp + _Enter
+		endif
 		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 175, 4) + 'Lt.int:' + _sLoteImp + _Enter
 		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 200, 4) + 'Qtd:' + transform (ZA1->ZA1_QUANT, '@E 999,999,999.99') + ' ' + _sUMImp + _Enter
 		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 220, 4) + 'FABRICACAO: ' + _sDtFabImp + _Enter
@@ -459,7 +474,6 @@ static function _FmtNF ()
 		u_help ("Sem tratamento para formatacao de impressao para este tipo de etiqueta no programa " + procname (),, .t.)
 	endif
 return _sFmtNF
-
 
 
 // --------------------------------------------------------------------------

@@ -27,6 +27,7 @@
 // 02/08/2022 - Robert  - Para gravar, testa possibilidade do destino ser igual a origem (GLPI 12427).
 // 13/09/2022 - Robert  - Criados atributos CtrLocOrig, CtrLocDest, CtrLotOrig, CtrLotDest.
 // 23/09/2022 - Robert  - Tratamentos para envio para o FullWMS (GLPI 12220).
+// 13/10/2022 - Robert  - Melhoria envio etiq. para o FullWMS.
 //
 
 // ------------------------------------------------------------------------------------
@@ -491,21 +492,13 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 	local _lContinua := .T.
 	local _sEtiq     := ''
 	local _sMsg      := ''
+	local _oEtiq     := NIL
 
 	if empty (::RegZAG)
 		_sMsg += "Registro ainda nao gravado na tabela ZAG. Etiqueta nao vai ser gerada."
 		_lContinua = .F.
 	endif
-/*
-	if _lContinua .and. ! ::AlmUsaFull (::AlmDest)
-		_sMsg += "Almoxarifado destino nao controlado pelo FullWMS. Etiqueta nao deve ser gerada."
-		_lContinua = .F.
-	endif
-	if _lContinua .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + ::ProdDest, "B1_VAFULLW") != "S"
-		_sMsg += "Produto destino '" + alltrim (::ProdDest) + "' nao controlado pelo FullWMS. Etiqueta nao pode ser gerada."
-		_lContinua = .F.
-	endif
-*/
+
 	if _lContinua .and. ! ::AlmUsaEtiq (::AlmDest)
 		_sMsg += "Almoxarifado destino nao faz entrada com etiqueta."
 		_lContinua = .F.
@@ -517,11 +510,6 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 			_lContinua = .F.
 		endif
 	endif
-
-	//if _lContinua .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + ::ProdDest, "B1_RASTRO") != "L"
-	//	_sMsg += "Produto destino '" + alltrim (::ProdDest) + "' nao controla lotes. Etiqueta nao pode ser gerada."
-	//	_lContinua = .F.
-	//endif
 
 	if _lContinua
 		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + '] Vou gerar etiqueta.')
@@ -536,6 +524,13 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 			if ! empty (::ImprEtq)
 				U_ImpZA1 (_sEtiq, ::ImprEtq)
 			endif
+
+			if ::AlmUsaFull (::AlmDest)
+				U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Criei uma qtei. para alm.destino que usa Full. Vou enviar a etiq. para o Full.')
+				_oEtiq := ClsEtiq():New(_sEtiq)
+				_oEtiq:EnviaFull ()
+			endif
+
 		endif
 	endif
 	if _lMsg .and. ! empty (_sMsg)
