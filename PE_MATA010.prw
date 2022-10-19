@@ -2,13 +2,13 @@
 // Autor......: Andre Alves
 // Data.......: 06/05/2019
 // Descricao..: Ponto entrada na tela cadastro de Produtos.
-//
+
 // #TipoDePrograma    #ponto_de_entrada
 // #Descricao         #Ponto entrada na tela cadastro de Produtos.
 // #PalavasChave      #ponto_de_entrada #cadastro_de_produto  #cadastro_de_produto_MVC
 // #TabelasPrincipais #SB1 
 // #Modulos 		  #todos
-//
+
 // Historico de alteracoes:
 // 16/08/2019 - Robert  - Campo B1_VADUNCX substituido pelo campo B1_CODBAR.
 // 20/08/2019 - Robert  - Ajustes para opcao de nao copiar determinados campos e gravacao de eventos.
@@ -31,6 +31,7 @@
 // 05/10/2021 - CLaudia - Incluida a validação do docigo GNRE para PA e MR. GLPI: 11017
 // 08/10/2021 - Claudia - Incluida a validação para itens MC, conforme GLPI: 10845
 // 10/06/2022 - Robert  - Validacao codigo final C x tipo MC: ignora grupo 2007 (contra-rotulos) - GLPI 12190
+// 19/10/2022 - Robert  - Valida duplicidade do B1_CODBAr no 'tudo ok' - GLPI 12726
 //
 
 //---------------------------------------------------------------------------------------------------------------
@@ -186,9 +187,10 @@ static function _A010TOk ()
 	local _lEhUva    := .F.
 	local _aAreaSB1  := {}
 	local _oEvento   := NIL
-	static _lJahPassou := .F.
+	local _oSQL      := NIL
+//	static _lJahPassou := .F.
 
-	if ! _lJahPassou
+//	if ! _lJahPassou
 		if m->b1_tipo $ "PA/PI/VD"
 			if m->b1_litros == 0 .and. ! m->b1_grupo $ '0603/0706'
 				u_help ("Campo '" + alltrim (RetTitle ("B1_LITROS")) + "' deve ser informado para este tipo de produto.")
@@ -218,11 +220,11 @@ static function _A010TOk ()
 		endif
 		
 		if _lRet .and. _lEhUva
-			if ! empty (m->b1_codbar) //b1_vaDUNCx)
-				u_help ("Este item e´ UVA: O(s) seguinte(s) campo(s) NAO deve(m) ser informado(s) ou deve(m) ficar como generico(s): " + chr (13) + chr (10) + ;
-						alltrim (RetTitle ("B1_CODBAR")))  //VADUNCX")))
-				_lRet = .F.
-			endif
+//			if ! empty (m->b1_codbar) //b1_vaDUNCx)
+//				u_help ("Este item e´ UVA: O(s) seguinte(s) campo(s) NAO deve(m) ser informado(s) ou deve(m) ficar como generico(s): " + chr (13) + chr (10) + ;
+//						alltrim (RetTitle ("B1_CODBAR")))  //VADUNCX")))
+//				_lRet = .F.
+//			endif
 			if 	empty (m->b1_VarUva)
 				u_help ("Este item e´ UVA: Os seguintes campos devem ser informados: " + chr (13) + chr (10) + ;
 						alltrim (RetTitle ("B1_VARUVA")))
@@ -254,6 +256,23 @@ static function _A010TOk ()
 			endif
 		endif
 
+		if _lRet .and. ! empty (m->b1_codbar)
+			_oSQL := ClsSQL():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " SELECT RTRIM (STRING_AGG (RTRIM (B1_COD) + '-' + RTRIM (B1_DESC), '; '))"
+			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SB1") + " SB1 "
+			_oSQL:_sQuery +=  " WHERE SB1.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=    " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+			_oSQL:_sQuery +=    " AND SB1.B1_CODBAR  = '" + m->b1_codbar + "'"
+			_oSQL:_sQuery +=    " AND SB1.B1_COD    != '" + m->b1_cod + "'"
+			_oSQL:Log ()
+			_sMsg = _oSQL:RetQry (1, .f.)
+			if ! empty (_sMsg)
+				U_Help ("Codigo de barras ja informado para o(s) seguinte(s) produto (s): " + _sMsg,, .t.)
+				_lRet = .F.
+			endif
+		endif
+
 		if _lRet .and. paramixb [1]:nOperation == 4  // Se estou alterando um cadastro, gero evento de alteracao.
 			_aAreaSB1 := sb1 -> (getarea ())
 			sb1 -> (dbsetorder (1))
@@ -266,10 +285,10 @@ static function _A010TOk ()
 			restarea (_aAreaSB1)
 		endif
 
-		// Marca flag como 'jah passou por este local' por que o P.E. eh chamado duas vezes.
-		_lJahPassou = .T.
+//		// Marca flag como 'jah passou por este local' por que o P.E. eh chamado duas vezes.
+//		_lJahPassou = .T.
 
-	endif
+//	endif
 	
 	if m->b5_convdip != 0 .and. empty(m->b5_umdipi)
 		u_help ("Fator de conversão informado no complemento. A unidade DIPI deve ser informada no registro!")
