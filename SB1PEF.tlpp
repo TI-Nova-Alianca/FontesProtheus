@@ -14,6 +14,7 @@
 // 20/04/2022 - Robert - Validava etiqueta (tabela ZA1), mas posso ainda nao ter etiqueta gerada.
 // 10/08/2022 - Robert - Valida codigo de barras (inclusive duplicidade) do produto (GLPI 11994)
 // 12/08/2022 - Robert - Melhoria validacao com atributo :AlmDest da CLsEtiq (GLPI 12474)
+// 19/10/2022 - Robert - Teste de duplicidade de cod.barras dava retorno em variavel errada.
 //
 
 // ------------------------------------------------------------------------------------
@@ -65,7 +66,7 @@ user function SB1PEF (_sProduto)
 				_sMsgErr += " - campo B1_CODBAR (" + alltrim (RetTitle ("B1_CODBAR")) + ") - "
 				_sMsgErr += " consta em duplicidade com o(s) seguinte(s) produto (s): " + _sDuplos
 				u_help (_sMsgErr,, .t.)
-				_lRet = .F.
+				_lContinua = .F.
 			endif
 		endif
 	endif

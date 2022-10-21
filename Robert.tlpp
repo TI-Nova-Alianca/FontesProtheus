@@ -603,9 +603,9 @@ static function _Etiq ()
 //	_oEtiq:Imprime ('01')
 //	_oEtiq := ClsEtiq ():New ('2000519769')  // Etiq gerada pelo ZAG
 //	_oEtiq:Imprime ('01')
-	_oEtiq := ClsEtiq ():New ('9000238732')
+	_oEtiq := ClsEtiq ():New ('2000554252')
 //	u_log (_oEtiq:Inutiliza (.f.))
-	_oEtiq:Imprime ('98')
+	_oEtiq:Imprime ('14')
 
 //	sd5 -> (dbgoto (509183))
 //	_oEtiq := CLsEtiq ():New ()
@@ -869,10 +869,10 @@ return
 // Testes classe transf.estq.
 STATIC FUNCTION _TrEstq ()
 	private _sErroAuto := ''
-	_sDocZAG := '0000002433'
+	_sDocZAG := '0000002768'
 	zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
 	if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
-		u_help ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG")
+		u_help ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG",, .t.)
 	else
 		U_Log2 ('debug', '[' + procname () + ']Instanciando...')
 		_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
@@ -881,7 +881,8 @@ STATIC FUNCTION _TrEstq ()
 			u_help ("Nao foi possivel instanciar objeto _oTrEstq",, .t.)
 		else
 			U_Log2 ('debug', '[' + procname () + ']tentando excluir')
-			_oTrEstq:Exclui ()
+			_lRetExcl := _oTrEstq:Exclui ()
+			U_Log2 ('debug', '[' + procname () + ']retorno:' + cvaltochar (_lRetExcl))
 		endif
 	endif
 //	//

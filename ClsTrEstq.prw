@@ -28,6 +28,7 @@
 // 13/09/2022 - Robert  - Criados atributos CtrLocOrig, CtrLocDest, CtrLotOrig, CtrLotDest.
 // 23/09/2022 - Robert  - Tratamentos para envio para o FullWMS (GLPI 12220).
 // 13/10/2022 - Robert  - Melhoria envio etiq. para o FullWMS.
+// 19/10/2022 - Robert  - Impedir exclusao se gerou solic.separacao no FullWMS (GLPI 12724)
 //
 
 // ------------------------------------------------------------------------------------
@@ -275,7 +276,6 @@ METHOD Exclui () Class ClsTrEstq
 			
 			// Tenta inutilizar a etiqueta
 			_oEtiq := ClsEtiq():New(_sEtiq)
-		//	if ! U_ZA1In (_sEtiq, .F.)
 			if ! _oEtiq:Inutiliza ()
 				::UltMsg += "Existe a etiqueta " + _sEtiq + " gerada para esta solicitacao. Inutilize, antes, a etiqueta."
 				_lContinua = .F.
@@ -283,14 +283,30 @@ METHOD Exclui () Class ClsTrEstq
 		endif
 	endif
 
-	// Se foi gerado por integracao com FullWMS, limpa tambem da tabela de integracao.
-	if _lContinua
+	// Se esta sol.transf. gerou tarefa de separacao no FullWMS, verifica se
+	// a mesma jah foi excluida do Full.
+	if _lContinua .and. ::FWProdOrig .and. ::AlmUsaFull (::AlmOrig)
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "select count (*)"
+		_oSQL:_sQuery +=  " from tb_wms_pedidos"
+		_oSQL:_sQuery += " where saida_id = 'ZAG" + xfilial ("ZAG") + ::Docto + "'"  // Manter consistencia com a view v_wms_pedido !!!
+		_oSQL:_sQuery +=   " and status  != '9'"
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		if _oSQL:RetQry (1, .f.) > 0
+			::UltMsg += "Esta solic.gerou o pedido de separacao " + ::Docto + " para o FullWMS, que encontra-se ainda pendente. Esse pedido deve ser excluido do FullWMS antes de poder excluir esta solicitacao de transferencia."
+			_lContinua = .F.
+		endif
+	endif
+
+	// Esta solicitacao pode ter sido gerada a partir de uma 'avria' pelo FullWMS.
+	// Varre tabela de integracao e limpa o campo, caso encontre.
+	if _lContinua .and. ::FWProdOrig .and. ::AlmUsaFull (::AlmOrig)
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "update tb_wms_movimentacoes"
 		_oSQL:_sQuery +=   " set status_protheus = ' '"
 		_oSQL:_sQuery +=      ", ZAG_DOC = ''"
 		_oSQL:_sQuery += " where ZAG_DOC = '" + ::Docto + "'"
-		_oSQL:Log ()
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 		_lContinua = _oSQL:Exec ()
 	endif
 
@@ -305,7 +321,6 @@ METHOD Exclui () Class ClsTrEstq
 		u_help (::UltMsg)
 	endif
 
-//	u_logFim (GetClassName (::Self) + '.' + procname ())
 return _lContinua
 
 

@@ -28,6 +28,7 @@
 // 23/09/2022 - Robert  - Passa a (se nao receber) sempre instanciar ClsEtiq para leitura de alguns dados (GLPI 12220)
 // 13/10/2022 - Robert  - Nao envia mais etiqueta para o Full apos impressao (fica por conta da rotina chamadora)
 //                      - Criado tratamento para etiquetas geradas a partir do SD5 (GLPI 12651).
+// 21/10/2022 - Robert  - Validar parametro VA_ETQOCBP: nao impressao cod.barras produto (GLPI 12344)
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -328,9 +329,11 @@ static function _FmtOP ()
 	local _sFmtOP     := ''
 
 	if _nModelImp == 1  // Impressora Sato
-		_sFmtOP += _Esc + 'H0050' + _Esc + 'V0440'  // Coordenadas
-		_sFmtOP += _Esc + 'BG02070'  // Define codigo de barras (tipo, tamanho, altura) ou fonte (espacamento, largura, altura e tipo)
-		_sFmtOP += '>G' + _sCBarProd + _Enter  // Informacao a ser impressa no codigo de barras (estilo, dado)
+		if GetMv ("VA_ETQOCBP") == 'S'
+			_sFmtOP += _Esc + 'H0050' + _Esc + 'V0440'  // Coordenadas
+			_sFmtOP += _Esc + 'BG02070'  // Define codigo de barras (tipo, tamanho, altura) ou fonte (espacamento, largura, altura e tipo)
+			_sFmtOP += '>G' + _sCBarProd + _Enter  // Informacao a ser impressa no codigo de barras (estilo, dado)
+		endif
 		_sFmtOP += _Esc + 'H0130' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sDProImp1 + _Enter
 		_sFmtOP += _Esc + 'H0155' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sDProImp2 + _Enter
 		_sFmtOP += _Esc + 'H0180' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sDProImp3 + _Enter
@@ -353,7 +356,9 @@ static function _FmtOP ()
 
 		_nMargEsq = 15 //7
 		_nMargSup = 30
-		_sFmtOP += '4e72' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup +  10, 4) + _sCBarProd + _Enter // código de barra do produto
+		if GetMv ("VA_ETQOCBP") == 'S'
+			_sFmtOP += '4e72' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup +  10, 4) + _sCBarProd + _Enter // código de barra do produto
+		endif
 		_sFmtOP += '4211' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup +  30, 4) + _sDProImp1    + _Enter 	// descrição 
 		_sFmtOP += '4211' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup +  45, 4) + _sDProImp2    + _Enter
 		_sFmtOP += '4211' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup +  50, 4) + _sDProImp3    + _Enter

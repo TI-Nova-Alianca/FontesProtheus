@@ -31,7 +31,7 @@
 // 05/10/2021 - CLaudia - Incluida a validação do docigo GNRE para PA e MR. GLPI: 11017
 // 08/10/2021 - Claudia - Incluida a validação para itens MC, conforme GLPI: 10845
 // 10/06/2022 - Robert  - Validacao codigo final C x tipo MC: ignora grupo 2007 (contra-rotulos) - GLPI 12190
-// 19/10/2022 - Robert  - Valida duplicidade do B1_CODBAr no 'tudo ok' - GLPI 12726
+// 19/10/2022 - Robert  - Valida duplicidade do B1_CODBAR no 'tudo ok' - GLPI 12726
 //
 
 //---------------------------------------------------------------------------------------------------------------

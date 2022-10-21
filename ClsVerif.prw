@@ -157,13 +157,13 @@ METHOD New (_nQual) Class ClsVerif
 	// Jah tentei diversas formas de fazer isso, mas no final sempre acabo
 	// criando somente o CASE que define a query e esqueco de atualizar o
 	// atributo :UltVerif.
-	for ::Numero = 100 to 1 step -1
+	for ::Numero = 120 to 1 step -1  // Manter aqui sempre um numero maior que o da ultima verificacao.
 		//U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (::Numero) + ' qry antes: ' + ::Query)
 		::UltMsg = ''
 		::GeraQry (.T.)
-		U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (::Numero))
-		U_Log2 ('debug', '[' + procname () + ']qry depois: ' + ::Query)
-		U_Log2 ('debug', '[' + procname () + ']Msg depois: ' + ::UltMsg)
+//		U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (::Numero))
+//		U_Log2 ('debug', '[' + procname () + ']qry depois: ' + ::Query)
+//		U_Log2 ('debug', '[' + procname () + ']Msg depois: ' + ::UltMsg)
 		if ! empty (::Query)
 			::UltVerif = ::Numero
 			::Numero = 0

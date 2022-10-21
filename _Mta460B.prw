@@ -2,7 +2,14 @@
 // Autor......: Robert Koch
 // Data.......: 29/03/2014
 // Descricao..: Para ser chamado no menu em lugar do MATA460B (faturamento por cargas OMS).
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #atualizacao
+// #Descricao         #Mascaramento da tela de faturamento de cargas.
+// #PalavasChave      #faturamento #MATA460 #preparacao_documento_saida #carga #logistica #OMS #expedicao
+// #TabelasPrincipais #SF2 #DAK #DAI
+// #Modulos           #FAT #OMS
+
 // Historico de alteracoes:
 // 23/07/2014 - Robert - Monitor do SPED substituido por rotina customizada.
 // 12/02/2015 - Robert - Matodo ConsChv() trocado por ConsAutori() na consulta de autorizacao do SPED.
@@ -13,21 +20,14 @@
 //                       faixa de numeracao, com a possibilidade de ter notas inutilizadas ou de entrada (formulário próprio) no meio.
 // 31/07/2020 - Robert - Melhorados avisos e logs.
 //                     - Inseridas tags para catalogacao de fontes
-// 20/10/2021 - Robert  - Variavel _sSerie passa a ser lida na array _aNComSono (GLPI 11112)
+// 20/10/2021 - Robert - Variavel _sSerie passa a ser lida na array _aNComSono (GLPI 11112)
+// 21/10/2022 - RObert - Removidos logs desnecessarios.
 //
-
-// Tags para automatizar catalogo de customizacoes:
-// #TipoDePrograma    #atualizacao
-// #Descricao         #Mascaramento da tela de faturamento de cargas.
-// #PalavasChave      #faturamento #MATA460 #preparacao_documento_saida #carga #logistica #OMS #expedicao
-// #TabelasPrincipais #SF2 #DAK #DAI
-// #Modulos           #FAT #OMS
 
 #include "rwmake.ch"
 
 // --------------------------------------------------------------------------
 user function _Mta460B ()
-	//local _sQuery    := ""
 	local _sNFIni    := ""
 	local _sNFFim    := ""
 	local _sSerie    := ''  //"10 "
@@ -52,15 +52,14 @@ user function _Mta460B ()
 	if _lContinua
 			
 		// Tela padrao de preparacao de doctos.
-		u_log ('Chamando MATA460B')
 		MATA460B ()
-		u_log ('Retornou do MATA460B')
 
 		// Libera semaforo
 		U_Semaforo (_nLock)
 
 		// Se foram geradas notas, chama rotina de transmissao para o SEFAZ.
-		u_log ('notas geradas:', _aNComSono)
+		U_Log2 ('info', '[' + procname () + ']notas geradas:')
+		U_Log2 ('info', _aNComSono)
 		if len (_aNComSono) > 0 .and. U_MsgYesNo ("Voce gerou " + cvaltochar (len (_aNComSono)) + ' notas. Deseja transmiti-las para a SEFAZ agora?')
 
 			// Antes de enviar uma faixa para a SEFAZ, verifica se teve lacuna na numeracao.
@@ -75,7 +74,6 @@ user function _Mta460B ()
 					endif
 				endif
 			next
-			u_log (_aNComSono)
 
 			// Chama telas de transmissao e de impressao de boletos a cada quebra de sequencia.
 			if ascan (_aNComSono, {|_aVal| _aVal [2] == .T.}) > 0
@@ -90,7 +88,6 @@ user function _Mta460B ()
 					_sNFFim = _aNComSono [_nNComSono, 1]
 					_sSerie = _aNComSono [_nNComSono, 3]
 					if _aNComSono [_nNComSono, 2] == .T.  // A proxima nota vai ter lacuna na numeracao.
-						u_log ('Processar:', _sNFIni, _sNFFim)
 						U_SPEDAut ('S', _sSerie, _sNFIni, _sNFFim)
 						U_BolAuto (_sSerie, _sNFIni, _sNFFim)
 						_sNFIni = _aNComSono [_nNComSono + 1, 1]
@@ -104,10 +101,8 @@ user function _Mta460B ()
 					exit
 				endif
 			enddo
-			u_log ('Processar:', _sNFIni, _sNFFim)
 			U_SPEDAut ('S', _sSerie, _sNFIni, _sNFFim)
 			U_BolAuto (_sSerie, _sNFIni, _sNFFim)
 		endif
 	endif
-	u_logFim ()
 return
