@@ -29,6 +29,7 @@
 // 13/10/2022 - Robert  - Nao envia mais etiqueta para o Full apos impressao (fica por conta da rotina chamadora)
 //                      - Criado tratamento para etiquetas geradas a partir do SD5 (GLPI 12651).
 // 21/10/2022 - Robert  - Validar parametro VA_ETQOCBP: nao impressao cod.barras produto (GLPI 12344)
+// 24/10/2022 - Robert  - Validar atributo :FinalidOP junto com parametro VA_ETQOCBP para nao impressao cod.barras produto (GLPI 12344)
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -95,9 +96,9 @@ user function ImpZA1 (_sEtiq, _sIdImpr, _oEtiq)
 	// instanciado. Caso contrario, vou instanciar agora. Minha intencao eh
 	// que, com o tempo, todos os dados para impressao sejam lidos do objeto
 	// _oEtiq e nao mais direto das tabelas. Robert, 23/09/2022.
-	if valtype ('_oEtiq') != 'O'
-		U_Log2 ('debug', '[' + procname () + ']Nao recebi objeto _oEtiq. Instanciando agora.')
-		_oEtiq := ClsEtiq ():New (_sEtiq)
+	if valtype (_oEtiq) != 'O'
+		U_Log2 ('debug', '[' + procname () + ']Nao recebi objeto _oObjEtq. Instanciando agora.')
+		private _oEtiq := ClsEtiq ():New (_sEtiq)
 		if empty (_oEtiq:Codigo)
 			u_help ("Erro ao instanciar etiqueta " + _sEtiq,, .t.)
 			_lContinua = .F.
@@ -125,14 +126,13 @@ user function ImpZA1 (_sEtiq, _sIdImpr, _oEtiq)
 	// Deixa o maximo de variaveis prontas para impressao, buscando manter
 	// integridade entre as diferentes funcoes de impressao.
 	if _lContinua
-		_sEtqImp   = alltrim (_oEtiq:Codigo) //alltrim (za1 -> za1_codigo)
-		_sProdImp  = alltrim (_oEtiq:Produto) //alltrim (za1 -> za1_prod)
+		_sEtqImp   = alltrim (_oEtiq:Codigo)
+		_sProdImp  = alltrim (_oEtiq:Produto)
 		_sUMImp    = sb1 -> b1_um
-		_sQtdImp   = alltrim (cvaltochar (_oEtiq:Quantidade)) //alltrim (cvaltochar (za1 -> za1_quant))
+		_sQtdImp   = alltrim (cvaltochar (_oEtiq:Quantidade))
 		_sDProImp1 = substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 1, 25)
 		_sDProImp2 = substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 26, 25)
 		_sDProImp3 = substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 51, 25)
-	//	_sPesoBImp = alltrim (cvaltochar (sb1 -> B1_PESBRU * za1 -> ZA1_QUANT))
 		_sPesoBImp = alltrim (cvaltochar (sb1 -> B1_PESBRU * _oEtiq:Quantidade))
 		_sDImpImp  = iif (za1 -> za1_impres == 'S', 'Reimpr:', 'Dt.Impr:') + dtoc (date ()) + ' ' + time ()
 		if sb1 -> b1_vafullw == 'S'
@@ -243,7 +243,7 @@ user function ImpZA1 (_sEtiq, _sIdImpr, _oEtiq)
 
 			// Adiciona 'miolo' da etiqueta, formatado conforme o tipo de aplicacao da etiqueta
 			if ! empty (_oEtiq:OP)  //ZA1 -> ZA1_OP)
-				_sTxtEtiq += _FmtOP ()
+				_sTxtEtiq += _FmtOP (_oEtiq:FinalidOP)
 			elseif ! empty (_oEtiq:IdZAG)  //ZA1 -> ZA1_IdZAG)
 				_sTxtEtiq += _FmtZAG ()
 			elseif ! empty (_oEtiq:DocEntrNum) .or. ! empty (_oEtiq:D5_NUMSEQ)  //ZA1 -> ZA1_DOCE)
@@ -323,13 +323,20 @@ Return _lContinua
 
 // --------------------------------------------------------------------------
 // Formatacao da etiqueta quando destina-se a OP
-static function _FmtOP ()
+static function _FmtOP (_sFinOP)
 	local _nMargEsq   := 0
 	local _nMargSup   := 0
 	local _sFmtOP     := ''
+	local _lBarProdu  := .F.
+
+	// Ateh este momento, o procedimento para OPs feitas em terceiros eh apontar 'de mentirinha'
+	// como se tivesse sido produzida aqui, e enviar para a logistica. Robert, 24/10/2022
+	if _sFinOP == 'E' .or. GetMv ("VA_ETQOCBP") == 'S'
+		_lBarProdu = .T.
+	endif
 
 	if _nModelImp == 1  // Impressora Sato
-		if GetMv ("VA_ETQOCBP") == 'S'
+		if _lBarProdu
 			_sFmtOP += _Esc + 'H0050' + _Esc + 'V0440'  // Coordenadas
 			_sFmtOP += _Esc + 'BG02070'  // Define codigo de barras (tipo, tamanho, altura) ou fonte (espacamento, largura, altura e tipo)
 			_sFmtOP += '>G' + _sCBarProd + _Enter  // Informacao a ser impressa no codigo de barras (estilo, dado)
@@ -356,7 +363,7 @@ static function _FmtOP ()
 
 		_nMargEsq = 15 //7
 		_nMargSup = 30
-		if GetMv ("VA_ETQOCBP") == 'S'
+		if _lBarProdu
 			_sFmtOP += '4e72' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup +  10, 4) + _sCBarProd + _Enter // código de barra do produto
 		endif
 		_sFmtOP += '4211' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup +  30, 4) + _sDProImp1    + _Enter 	// descrição 

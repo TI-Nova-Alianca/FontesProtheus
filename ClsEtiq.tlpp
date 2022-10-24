@@ -30,6 +30,7 @@
 // 23/09/2022 - Robert - Criado atributo :CBEmbCol e metodo :ValCBEmb - GLPI 11994
 // 26/09/2022 - Robert - Funcao de inutilizacao migrada do fonte ZA1IN para metodo :Inutiliza()
 // 05/10/2022 - Robert - Iniciado tratamento para etiquetas geradas a partir do SD5 (GLPI 12651)
+// 24/10/2022 - Robert - Criado atributo :FinalidOP
 //
 
 #Include "Protheus.ch"
@@ -59,6 +60,7 @@ CLASS ClsEtiq
 	public  data DocEntrSerie // ZA1_SERIEE - Quando refere-se a NF de entrada
 	public  data DtEmis       // ZA1_DATA
 	public  data Filial       // ZA1_FILIAL
+	public  data FinalidOP    // C2_vaOpEsp: N=Normal;R=Reprocesso;E=externa (em 3os);T=Terceirizacao (para 3os);F=Filtracao
 	public  data IdZAG        // ZA1_IDZAG - Identificador de registro da tabela ZAG
 	public  data Impressa     // ZA1_IMPRES - Jah impressa
 	public  data Inutilizada  // ZA1_APONT='I' - Indica que foi inutilizada manualmente
@@ -182,6 +184,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 	::DocEntrSerie = ''
 	::DtEmis       = ctod ('')
 	::Filial       = xfilial ("ZA1")
+	::FinalidOP    = ''
 	::IdZAG        = ''
 	::Impressa     = 'N'
 	::Inutilizada  = .F.
@@ -247,7 +250,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 		endif
 	endcase
 
-	// Alimenta lote e validade
+	// Alimenta dados adicionais conforme a origem da etiqueta.
 	if _sOrigem == 'M' .or. _sOrigem == "ZA1"
 		sb1 -> (dbsetorder (1))
 		if ! sb1 -> (dbseek (xfilial ("SB1") + ::Produto, .f.))
@@ -261,8 +264,9 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 				if ! sc2 -> (dbseek (xfilial ("SC2") + ::OP, .f.))
 					u_help ('[' + GetClassName (::Self) + '.' + procname () + "]Impossivel encontrar a OP '" + ::OP + "' relacionada `a etiqueta '" + ::Codigo + "'. Validade nao pode ser determinada.",, .t.)
 				else
-					::AlmOrig  = sc2 -> c2_local
-					::CBEmbCol = sc2 -> c2_vaBarCx
+					::AlmOrig   = sc2 -> c2_local
+					::CBEmbCol  = sc2 -> c2_vaBarCx
+					::FinalidOP = sc2 -> c2_vaOpEsp
 					if sc2 -> c2_vaopesp == 'R'  // OP de reprocesso assume dt valid do lote original, cfe informada pelo usuario.
 						if empty (sc2 -> c2_vadvori)
 							u_help ('[' + GetClassName (::Self) + '.' + procname () + "]Impossivel buscar a data de validade do lote  da etiqueta '" + ::Codigo + "': a OP referenciada (" + ::OP + ") eh uma OP de reprocesso, e nao foi informada a data de validade do lote original no campo C2_VADVORI (" + alltrim (rettitle ("C2_VADVORI")) + ").",, .t.)
