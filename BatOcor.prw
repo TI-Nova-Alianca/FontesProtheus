@@ -20,7 +20,8 @@
 //                     - Criadas tags para catalogo de fontes.
 // 20/04/2021 - Robert - Campo F2_DtEntr (padrao, mas atualmente vazio) substitui o campo customizado F2_vaDtEntr (GLPI 9884).
 // 19/08/2021 - Robert - Gravava F2_DtEntr quando transp.redespacho. O correto eh aguardar entrega final (GLPI 10578).
-//
+// 22/10/2022 - Robert - Melhoradas mensagens evento para casos que tem redespacho (GLPI 12660)
+//                     - Nao gravava atributo :TranspReds no evento.
 
 // --------------------------------------------------------------------------
 user function BatOcor ()
@@ -57,7 +58,7 @@ user function BatOcor ()
 	endif
 	if _lContinua 
 		for _nDir = 1 to len (_aDir)
-			u_log2 ('info', "Lendo arquivo " + _aDir [_nDir, 1])
+			U_Log2 ('info', '[' + procname () + ']Lendo arquivo ' + _aDir [_nDir, 1])
 			cArq := "\PROCEDA\" + _aDir [_nDir, 1]
 			cArqDest := "\PROCEDA\IMPORTADO\" + _aDir [_nDir, 1]
 			if file (cArqDest)
@@ -67,6 +68,8 @@ user function BatOcor ()
 				delete file (cArq)
 				loop
 			else
+
+				// Faz a leitura de todas as linhas do arquivo para uma array
 				_aDados := {}
 				cLinha = ""
 				FT_FUSE(cArq)
@@ -79,12 +82,15 @@ user function BatOcor ()
 					FT_FSKIP()
 				EndDo
 				FT_FUSE()  // Fecha arquivo
+				
+				// Move o arquivo para determinada pasta conforme teve ou nao
+				// sucesso em interpretar/gravar as informacoes da array
 				if _Grava (_aDados) = .T.
-					U_Log2 ('debug', 'Funcao _Grava() retornou .T.')
+					//U_Log2 ('debug', 'Funcao _Grava() retornou .T.')
 					_nQtArqImp ++
 					_Move ("\PROCEDA\" + _aDir [_nDir, 1], "Importado")
 				else
-					U_Log2 ('debug', 'Funcao _Grava() retornou .F.')
+					U_Log2 ('erro', 'Problemas na interpretacao/gravacao dos dados.')
 					_nQtArqErr ++
 					_Move ("\PROCEDA\" + _aDir [_nDir, 1], "Erro")
 				endif
@@ -121,17 +127,17 @@ Static Function _Move (_sArq, _sDest)
 
 	// Copia o arquivo e depois deleta do local original.
 	_sArqDest = _sArqRmt
-	U_Log2 ('debug', 'Movendo >>' + _sDirRmt + _sArqRmt + _sExtRmt + '<< para >>' + _sDirRmt + _sDest + "\" + _sArqDest + _sExtRmt + '<<')
+//	U_Log2 ('debug', 'Movendo >>' + _sDirRmt + _sArqRmt + _sExtRmt + '<< para >>' + _sDirRmt + _sDest + "\" + _sArqDest + _sExtRmt + '<<')
 	copy file (_sDirRmt + _sArqRmt + _sExtRmt) to (_sDirRmt + _sDest + "\" + _sArqDest + _sExtRmt)
 	
 	if ! file (_sDirRmt + _sDest + "\" + _sArqDest + _sExtRmt)
 		u_help ("Erro ao mover arquivo " + _sArqRmt + _sExtRmt,, .t.)
 	else
-		U_Log2 ('debug', 'Apagando arquivo movido >>' + _sDirRmt + _sArqRmt + _sExtRmt + '<<')
+	//	U_Log2 ('debug', 'Apagando arquivo do local original >>' + _sDirRmt + _sArqRmt + _sExtRmt + '<<')
 		delete file (_sDirRmt + _sArqRmt + _sExtRmt)
 	endif
-
 return
+
 
 // --------------------------------------------------------------------------
 Static Function _Grava (_aDados)
@@ -152,6 +158,7 @@ Static Function _Grava (_aDados)
 	local _sHrEvt    := ''
 	local _sCodObs   := ''
 	local _sTxtLivre := ''
+	local _sTrRedesp := ''
 
 	for _nLinha = 1 to LEN (_aDados)
 		// U_Log2 ('debug', 'lendo linha ' + cvaltochar (_nLinha) + ' --> ' + _aDados[_nLinha])
@@ -187,6 +194,7 @@ Static Function _Grava (_aDados)
 			_sHrEvt    := substr (_aDados[_nLinha],39,2) + ':' + substr (_aDados[_nLinha],41,2) + ':00'
 			_sCodObs   := substr (_aDados[_nLinha],43,2)
 			_sTxtLivre := substr (_aDados[_nLinha],45,70)
+			_sTrRedesp := ''
 
 			_sDescProc = alltrim (u_retZX5('51',_sOcor,'ZX5_51DESC'))
 			if empty (_sDescProc)
@@ -205,11 +213,12 @@ Static Function _Grava (_aDados)
 				_sDescProc += ' Obs: ' + alltrim (_sTxtLivre)
 			endif
 
-			// Vou considerar registros deletados por que quero gravar os eventos, mesmo que a nota tenha sido cancelada.
+			// Vou considerar registros deletados por que quero gravar os
+			// eventos da nota, mesmo que ela tenha sido cancelada.
 			set deleted off
 
 			if substr (_sCGC,1,8) != substr (sm0->m0_cgc,1,8)
-				u_log2 ('info', 'Ocorrencia com CGC de outra empresa.(' + _sCGC + '). Vou verificar se eh nota de entrada.')
+				u_log2 ('aviso', 'Ocorrencia com CGC de outra empresa.(' + _sCGC + '). Vou verificar se eh nota de entrada.')
 				sa2 -> (dbsetorder (3))  // A2_FILIAL, A2_CGC, R_E_C_N_O_, D_E_L_E_T_
 				if sa2 -> (dbseek (xfilial ("SA2") + _sCGC, .F.))
 					U_Log2 ('info', 'CGC cadastrado como fornecedor: ' + sa2 -> a2_cod)
@@ -222,7 +231,7 @@ Static Function _Grava (_aDados)
 						exit
 					endif
 				else
-					U_Log2 ('info', 'CGC cadastrado como fornecedor: ' + sa2 -> a2_cod)
+					U_Log2 ('erro', 'CGC NAO cadastrado como fornecedor: ' + sa2 -> a2_cod)
 					_lRet := .F.
 					exit
 				endif
@@ -246,19 +255,6 @@ Static Function _Grava (_aDados)
 					_lRet := .F.
 					exit
 				else
-					// if _sOcor == '01' .and. empty (sf2 -> f2_vaDtEnt)
-					if _sOcor == '01' .and. empty (sf2 -> f2_DtEntr)
-						U_Log2 ('debug', 'Vou comparar f2_redesp >>' + sf2 -> f2_redesp + '<< com _sTransp >>' + _sTransp + '<<')
-						if ! empty (sf2 -> f2_redesp) .and. _sTransp != sf2 -> f2_redesp
-							U_Log2 ('info', 'Ocorrencia de entrega, mas a NF ' + sf2 -> f2_doc + ' tem transportadora de redespacho (' + sf2 -> f2_redesp + ') e, no momento, estou processando a transportadora ' + _sTransp + '. Entendo que nao seja a entrega definitiva.')
-						else
-							U_Log2 ('debug', 'atualizando f2_vaDtEnt')
-							reclock ("SF2", .f.)
-							sf2 -> f2_DtEntr = _dDATA
-							msunlock ()
-						endif
-					endif
-
 					// Posiciona SD2 para buscar numero do pedido.
 					sd2->(dbsetorder(3))
 					if sd2->(dbseek(_sFilNF + _sNota + _sSerie,.F.))
@@ -266,14 +262,47 @@ Static Function _Grava (_aDados)
 					else
 						_sPedido := ''
 					endif
+
+					if _sOcor == '01' .and. empty (sf2 -> f2_DtEntr)
+						U_Log2 ('debug', 'Vou comparar f2_redesp >>' + sf2 -> f2_redesp + '<< com _sTransp >>' + _sTransp + '<<')
+						if ! empty (sf2 -> f2_redesp) .and. _sTransp != sf2 -> f2_redesp
+							_sTrRedesp = sf2 -> f2_redesp
+							U_Log2 ('info', 'Ocorrencia de entrega, mas a NF ' + sf2 -> f2_doc + ' tem transportadora de redespacho (' + sf2 -> f2_redesp + ') e, no momento, estou processando a transportadora ' + _sTransp + '. Entendo que nao seja a entrega definitiva.')
+						else
+							U_Log2 ('debug', 'atualizando f2_vaDtEnt com ' + dtoc (_dDATA))
+
+							// Grava evento temporario (nao estou descobrindo em que momento este campo eh atualizado)
+							_oEvento := ClsEvent():new ()
+							_oEvento:Filial     = _sFilNF
+							_oEvento:Texto     := 'Atualizando campo F2_DTENTR de ' + dtoc (sf2 -> f2_DtEntr) + ' para ' + dtoc (_dDATA)
+							_oEvento:Texto     += ' durante leitura das ocorrencias da transp. ' + _sTransp
+							_oEvento:Texto     += ' cod.ocor.: ' + _sOcor
+							_oEvento:Texto     += " Pilha: " + U_LogPCham ()
+							_oEvento:CodEven    = "DEBUG"
+							_oEvento:NFSaida    = _sNota
+							_oEvento:SerieSaid  = _sSerie
+							_oEvento:Cliente    = sf2 -> f2_cliente
+							_oEvento:LojaCli    = sf2 -> f2_loja
+							_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
+							_oEvento:Grava ()
+
+							reclock ("SF2", .f.)
+							sf2 -> f2_DtEntr = _dDATA
+							msunlock ()
+						endif
+					endif
+
 				endif
 			endif
 
-			u_log2 ('info', 'Dt:' + _sData + ' Fil:' + _sFilNF + ' NF(' + _sNFEntSai + '):' + _sNota + ' Ocor:' + _sOcor + ' ' + _sDescProc)
+			//u_log2 ('info', 'Dt:' + _sData + ' Fil:' + _sFilNF + ' NF(' + _sNFEntSai + '):' + _sNota + ' Ocor:' + _sOcor + ' ' + _sDescProc)
 
 			_oEvento := ClsEvent():new ()
 			_oEvento:Filial     = _sFilNF
 			_oEvento:Texto      = ALLTRIM(_sDescProc)
+			if ! empty (_sTrRedesp)
+				_oEvento:Texto += '(transp.redespacho: ' + _sTrRedesp + ')'
+			endif
 			if _sNFEntSai == 'S'
 				_oEvento:CodEven    = "SF2009"
 				_oEvento:NFSaida    = _sNota
@@ -291,9 +320,8 @@ Static Function _Grava (_aDados)
 			_oEvento:DtEvento   = _dDATA
 			_oEvento:HrEvento   = _sHrEvt // substr (_aDados[_nLinha],39,2) + ':' + substr (_aDados[_nLinha],41,2) 
 			_oEvento:CodProceda = _sOcor
-			_oEvento:Transp	    = _sTransp
-			_oEvento:TranspReds = ''
-			// _oEvento:Log ()
+			_oEvento:Transp     = _sTransp
+			_oEvento:TranspReds = _sTrRedesp  // ''
 			_oEvento:GravaNovo ()
 
 			set deleted on
@@ -303,7 +331,7 @@ Static Function _Grava (_aDados)
 			U_Log2 ('aviso', 'Nao fiz tratamento para registro tipo 343 (redespacho) por que nao informa a NF a qual se refere.')
 		endif
 
-		U_Log2 ('info', '')  // Para gerar linha em branco
+//		U_Log2 ('info', '')  // Para gerar linha em branco
 	next
 
 Return _lRet
