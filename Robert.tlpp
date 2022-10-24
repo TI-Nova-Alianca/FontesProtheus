@@ -87,8 +87,10 @@ user function robert ()
 		// _SF1()
 		// _WSCarNA ()
 		// _gerasze ()
+		// _BatOcor ()
+		_AtuSB1 ()
 
-		u_help ('Nada definido.')
+		//u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
@@ -500,13 +502,14 @@ return
 
 // --------------------------------------------------------------------------
 static function _batfull ()
-	_sArqLog := 'U_BatFullW.log' ; 	U_BatFullW ('S')
-	//_sArqLog := 'U_BatFullM.log' ; 	U_BatFullM ()
+	//_sArqLog := 'U_BatFullW.log' ; 	U_BatFullW ('S')
+	U_MudaLog ('U_BatFullW.log')
+	U_BatFullW ('S')
 return
 
 // --------------------------------------------------------------------------
 static function _BatXML ()
-	_sArqLog := "U_BatXML.log"
+	U_MudaLog ("U_BatXML.log")
 	U_BatXML("\\192.168.1.3\Siga\Protheus12\protheus_data\xml_NFe\", 10, .F.)
 //	U_BatXML("\\192.168.1.2\Siga\Protheus11\protheus_data\xml_NFe\", 200, .F.)
 //	U_BatXML("\\192.168.1.2\Siga\Protheus11\protheus_data\xml_NFe\CT-e\", 100, .F.)
@@ -516,6 +519,12 @@ return
 static function _evtxml ()
 	// Envia ciencia da operacao
 	U_FBTRS101({'43220701784637000189550010000401951013095045'}, 4, '')
+return
+
+// --------------------------------------------------------------------------
+static function _BatOcor ()
+	U_MudaLog ('U_BatOcor.log')
+	u_batocor ()
 return
 
 // --------------------------------------------------------------------------
@@ -592,7 +601,7 @@ return
 // --------------------------------------------------------------------------
 static function _metaf ()
 	// Pela complexidade, prefixo manter o log. Jah aprontei mais de uma vez e o log me ajudou...
-	_sArqLog := 'U_BatMetaF.log'
+	U_MudaLog ('U_BatMetaF.log')
 	u_batmetaf ()
 return
 
@@ -603,9 +612,9 @@ static function _Etiq ()
 //	_oEtiq:Imprime ('01')
 //	_oEtiq := ClsEtiq ():New ('2000519769')  // Etiq gerada pelo ZAG
 //	_oEtiq:Imprime ('01')
-	_oEtiq := ClsEtiq ():New ('2000554252')
+	_oEtiq := ClsEtiq ():New ('2000527843')
 //	u_log (_oEtiq:Inutiliza (.f.))
-	_oEtiq:Imprime ('14')
+	_oEtiq:Imprime ('98')
 
 //	sd5 -> (dbgoto (509183))
 //	_oEtiq := CLsEtiq ():New ()
@@ -865,7 +874,7 @@ static function _Rast()
 	next
 return
 
-
+// --------------------------------------------------------------------------
 // Testes classe transf.estq.
 STATIC FUNCTION _TrEstq ()
 	private _sErroAuto := ''
@@ -929,50 +938,52 @@ STATIC FUNCTION _TrEstq ()
 */
 return
 
-/*
-	// Ajusta cadastro produtos em lote
-	_sArqLog := 'GLPI11986_SYD_para_SB1.log'
+// --------------------------------------------------------------------------
+// Ajusta cadastro produtos em lote
+static function _AtuSB1 ()
+	local _lContinua := .T.
+
+	U_MudaLog ('GLPI12741_B1_GRTRIB.log')
 	sb1 -> (dbsetorder (1))
 	sb5 -> (dbsetorder (1))
 	syd -> (dbsetorder (1))  // YD_FILIAL, YD_TEC, YD_EX_NCM, YD_EX_NBM, YD_DESTAQU, R_E_C_N_O_, D_E_L_E_T_
 	sb1 -> (dbgotop ())
-	do while ! sb1 -> (eof ())
-		if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
+	do while _lContinua .and. ! sb1 -> (eof ())
+		if _lContinua .and. ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
 			u_log2 ('ERRO', 'Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
-		else
-			if ! syd -> (dbseek (xfilial ("SYD") + sb1 -> b1_posipi, .F.))
-				u_log2 ('ERRO', "Nao encontrei SYD '" + sb1 -> b1_posipi + "' para o produto " + sb1 -> b1_cod)
-			else
-				if sb1 -> b1_ipi != syd -> yd_per_ipi
-					//u_log2 ('info', 'Verificando item ' + sb1 -> b1_cod + SB1 -> B1_DESC)
+			_lContinua = .F.
+		endif
+		//if _lContinua .and. ! syd -> (dbseek (xfilial ("SYD") + sb1 -> b1_posipi, .F.))
+		//	u_log2 ('ERRO', "Nao encontrei SYD '" + sb1 -> b1_posipi + "' para o produto " + sb1 -> b1_cod)
+		//	_lContinua = .F.
+		//endif
+		if _lContinua .and. ! sb1->b1_tipo $ "PA/MR" .and. alltrim (sb1->b1_tipo) != alltrim (sb1->b1_grtrib)
+			u_log2 ('info', 'Verificando item ' + sb1 -> b1_cod + SB1 -> B1_DESC)
 
-					// Cria variaveis para uso na gravacao do evento de alteracao
-					regtomemory ("SB1", .F., .F.)
-					//regtomemory ("SB5", .F., .F.)
-					//m->b5_vasisde = 'S'
-					m->b1_ipi = syd -> yd_per_ipi
-					U_Log2 ('info', sb1 -> b1_posipi + ' alterando de ' + transform (sb1->b1_ipi, "@E 999.99") + ' para ' + transform (m->b1_ipi, "@E 999.99") + ' ' + ' ' + sb1 -> b1_cod + ' ' + sb1 -> b1_desc)
+			// Cria variaveis para uso na gravacao do evento de alteracao
+			regtomemory ("SB1", .F., .F.)
+			//regtomemory ("SB5", .F., .F.)
+			//m->b5_vasisde = 'S'
+			m->b1_grtrib = sb1->b1_tipo
 
-					// Grava evento de alteracao
-					_oEvento := ClsEvent():new ()
-					_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 11986 - ajustar B1_IPI pelo SYD', .F.)
-					reclock ("SB1", .f.)
-					sb1 -> B1_ipi = m->b1_ipi
-					msunlock ()
-					//reclock ("SB5", .f.)
-					//sb5->b5_vasisde = m->b5_vasisde
-					//msunlock ()
-					U_AtuMerc ("SB1", sb1 -> (recno ()))
+			// Grava evento de alteracao
+			_oEvento := ClsEvent():new ()
+			_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 12741 - ajustar B1_GRTRIB', .F.)
+			reclock ("SB1", .f.)
+			sb1 -> B1_grtrib = m->b1_grtrib
+			msunlock ()
+			//reclock ("SB5", .f.)
+			//sb5->b5_vasisde = m->b5_vasisde
+			//msunlock ()
+			U_AtuMerc ("SB1", sb1 -> (recno ()))
 
-					// Cai fora no primeiro, para testes.
-					// exit
-				endif
-			endif
+			// Cai fora no primeiro, para testes.
+			// exit
 		endif
 		sb1 -> (dbskip ())
 	enddo
 return
-*/
+
 /*
 	_sArqLog := 'GLPI11986_SYD.log'
 	syd -> (dbsetorder (1))
@@ -1130,8 +1141,6 @@ return
 //	if cFilAnt == '01'
 //		u_batSZI (stod ('20200101'), stod ('20210228'))
 //	endif
-//	_sArqLog := 'U_BatOcor_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batocor ()
 //	_sArqLog := 'U_BatFunAtlz_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batfunatlz ()
 //	_sArqLog := 'U_BatBlUsr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
