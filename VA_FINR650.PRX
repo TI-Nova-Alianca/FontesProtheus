@@ -769,6 +769,7 @@ While (nTamArq-nLidos) >= nTamDet
 			EndIf
 			
 			cTipo   :=Substr(xBuffer,Int(Val(Substr(cPosTipo, 1,3))),nLenTipo )
+			U_LOG("***TIPO "+cTipo)
 			cTipo   := Iif(Empty(cTipo),"NF ",cTipo)		// Bradesco
 			
 			IF !Empty(cPosDtCc)
