@@ -32,6 +32,7 @@
 // 08/10/2021 - Claudia - Incluida a validação para itens MC, conforme GLPI: 10845
 // 10/06/2022 - Robert  - Validacao codigo final C x tipo MC: ignora grupo 2007 (contra-rotulos) - GLPI 12190
 // 19/10/2022 - Robert  - Valida duplicidade do B1_CODBAR no 'tudo ok' - GLPI 12726
+// 24/10/2022 - Robert  - Melhorada mensagem de validacao B1_TIPO x B1_GRTRIB
 //
 
 //---------------------------------------------------------------------------------------------------------------
@@ -205,7 +206,7 @@ static function _A010TOk ()
 		
 		if ! m->b1_tipo $ "PA/MR"
 			if alltrim (m->b1_tipo) != alltrim (m->b1_grtrib)
-				u_help ("Campo '" + alltrim (RetTitle ("B1_TIPO")) + "' nao pode ser diferente de '" + alltrim (RetTitle ("B1_GRTRIB")) + "'.")
+				u_help ("Campo '" + alltrim (RetTitle ("B1_TIPO")) + "' nao pode ser diferente de '" + alltrim (RetTitle ("B1_GRTRIB")) + "' para que TES inteligente / excecoes fiscais funcionem.")
 				_lRet = .F.
 			endif
 		endif

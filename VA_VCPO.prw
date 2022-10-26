@@ -175,6 +175,7 @@
 // 02/10/2022 - Robert  - Removido atributo :DiasDeVida da classe ClsAviso.
 // 03/10/2022 - Robert  - Trocado grpTI por grupo 122 no envio de avisos.
 // 13/10/2022 - Robert  - Melhorias validacao C2_VABARCX
+// 24/10/2022 - Robert  - Passa a validar campo A4_EMAIL.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -237,7 +238,7 @@ user function VA_VCpo (_sCampo)
 				endif
 			endif
 
-		case _sCampo $ "M->A1_EMAIL/M->A1_VAMDANF/M->A2_EMAIL/M->A2_VAMDANF/M->A2_VAMAIL2/M->A3_EMAIL/M->RA_EMAIL/M->U5_EMAIL/M->A1_VAEMLF"
+		case _sCampo $ "M->A1_EMAIL/M->A1_VAMDANF/M->A2_EMAIL/M->A2_VAMDANF/M->A2_VAMAIL2/M->A3_EMAIL/M->RA_EMAIL/M->U5_EMAIL/M->A1_VAEMLF/M->A4_EMAIL"
 			_lRet = U_MailOk (&(_sCampo))
 
 		case _sCampo $ "M->A1_TEL/M->A2_TEL/M->A1_FAX/M->A2_FAX/M->A2_VACELUL"
@@ -1104,62 +1105,64 @@ user function VA_VCpo (_sCampo)
 			endif
 
 
-		case _sCampo $ "M->DB_LOCALIZ/M->DB_QUANT" .and. funname () != 'MATA805' 
-			_aQuery := {}
-			_aPal := {}
+		case _sCampo $ "M->DB_LOCALIZ/M->DB_QUANT"
+			if funname () != 'MATA805' 
+				_aQuery := {}
+				_aPal := {}
 
-			for _i = 1 to len(aCols)
-				if alltrim (M->DB_LOCALIZ) == alltrim(acols[_i][3]) ;
-					.and. empty (GDFieldGet ("DB_ESTORNO", _i)) ;
-					.and. fBuscaCpo ("SBE", 1, xfilial ("SBE") + m->da_local + GDFieldGet ("DB_LOCALIZ", _i), "BE_VAPROUN") != 'S'
-					_lRet = U_MsgNoYes ("Endereco ja informado anteriormente. Confirma assim mesmo?")
-				endif
-			next _i
+				for _i = 1 to len(aCols)
+					if alltrim (M->DB_LOCALIZ) == alltrim(acols[_i][3]) ;
+						.and. empty (GDFieldGet ("DB_ESTORNO", _i)) ;
+						.and. fBuscaCpo ("SBE", 1, xfilial ("SBE") + m->da_local + GDFieldGet ("DB_LOCALIZ", _i), "BE_VAPROUN") != 'S'
+						_lRet = U_MsgNoYes ("Endereco ja informado anteriormente. Confirma assim mesmo?")
+					endif
+				next _i
 
-			// verifica se o endereco ja esta sendo utilizado
-			if _lRet // so faz Validacao se nao achou o mesmo endereco na linha
-				_sQuery := ""
-				_sQuery += " select BF_QUANT, BF_PRODUTO "
-				_sQuery +=   " from " + RetSQLName ("SBF") + " SBF, "
-				_sQuery +=              RetSQLName ("SBE") + " SBE "
-				_sQuery +=  " where SBF.D_E_L_E_T_  = ''"
-				_sQuery +=    " and SBF.BF_FILIAL   = '" + xfilial ("SBF") + "'"
-				_sQuery +=    " and SBF.BF_LOCALIZ  = '" + alltrim(M->DB_LOCALIZ) + "'"
-				if type ("M->DA_LOCAL") == "C"
-					_sQuery +=    " and SBF.BF_LOCAL    = '" + alltrim(M->DA_LOCAL) + "'"
-				endif
-				if type ("M->DB_LOCAL") == "C"
-					_sQuery +=    " and SBF.BF_LOCAL    = '" + alltrim(M->DB_LOCAL) + "'"
-				endif
-				_sQuery +=    " and SBF.BF_QUANT   != 0"
-				_sQuery +=    " and SBE.D_E_L_E_T_  = ''"
-				_sQuery +=    " and SBE.BE_FILIAL   = '" + xfilial ("SBE") + "'"
-				_sQuery +=    " and SBE.BE_LOCAL    = SBF.BF_LOCAL"
-				_sQuery +=    " and SBE.BE_LOCALIZ  = SBF.BF_LOCALIZ"
-				_sQuery +=    " and SBE.BE_VAPROUN != 'N'"
-				_aQuery := U_Qry2Array(_sQuery)
-				if len(_aQuery) > 1
-					U_Help("Endereco nao aceita mais de um produto.")
-					_lRet := .F.
-				elseif len(_aQuery) == 1
-					if alltrim(M->DA_PRODUTO) == alltrim(_aQuery[1][2])
-						// se for o mesmo produto, verifica se ainda pode transferir quantidade
-						_aPal := aclone(U_VA_QTDPAL(M->DA_PRODUTO, 1)) // envia um somente para fazer a Validacao
-						if len(_apal) > 0
-							if GDFieldGet ("DB_QUANT") > _aPal[1][2]
-								U_Help("Quantidade a enderecar maior que o suportado pelo pallet.")
-								_lRet := .F.
-							endif
-						endif
-					else
-						// se for produto diferente, nao deixa enderecar
+				// verifica se o endereco ja esta sendo utilizado
+				if _lRet // so faz Validacao se nao achou o mesmo endereco na linha
+					_sQuery := ""
+					_sQuery += " select BF_QUANT, BF_PRODUTO "
+					_sQuery +=   " from " + RetSQLName ("SBF") + " SBF, "
+					_sQuery +=              RetSQLName ("SBE") + " SBE "
+					_sQuery +=  " where SBF.D_E_L_E_T_  = ''"
+					_sQuery +=    " and SBF.BF_FILIAL   = '" + xfilial ("SBF") + "'"
+					_sQuery +=    " and SBF.BF_LOCALIZ  = '" + alltrim(M->DB_LOCALIZ) + "'"
+					if type ("M->DA_LOCAL") == "C"
+						_sQuery +=    " and SBF.BF_LOCAL    = '" + alltrim(M->DA_LOCAL) + "'"
+					endif
+					if type ("M->DB_LOCAL") == "C"
+						_sQuery +=    " and SBF.BF_LOCAL    = '" + alltrim(M->DB_LOCAL) + "'"
+					endif
+					_sQuery +=    " and SBF.BF_QUANT   != 0"
+					_sQuery +=    " and SBE.D_E_L_E_T_  = ''"
+					_sQuery +=    " and SBE.BE_FILIAL   = '" + xfilial ("SBE") + "'"
+					_sQuery +=    " and SBE.BE_LOCAL    = SBF.BF_LOCAL"
+					_sQuery +=    " and SBE.BE_LOCALIZ  = SBF.BF_LOCALIZ"
+					_sQuery +=    " and SBE.BE_VAPROUN != 'N'"
+					_aQuery := U_Qry2Array(_sQuery)
+					if len(_aQuery) > 1
 						U_Help("Endereco nao aceita mais de um produto.")
 						_lRet := .F.
+					elseif len(_aQuery) == 1
+						if alltrim(M->DA_PRODUTO) == alltrim(_aQuery[1][2])
+							// se for o mesmo produto, verifica se ainda pode transferir quantidade
+							_aPal := aclone(U_VA_QTDPAL(M->DA_PRODUTO, 1)) // envia um somente para fazer a Validacao
+							if len(_apal) > 0
+								if GDFieldGet ("DB_QUANT") > _aPal[1][2]
+									U_Help("Quantidade a enderecar maior que o suportado pelo pallet.")
+									_lRet := .F.
+								endif
+							endif
+						else
+							// se for produto diferente, nao deixa enderecar
+							U_Help("Endereco nao aceita mais de um produto.")
+							_lRet := .F.
+						endif
 					endif
+				else
+					U_Help("Endereco ja existe em uma das linhas acima.")
+					_lRet := .F.
 				endif
-			else
-				U_Help("Endereco ja existe em uma das linhas acima.")
-				_lRet := .F.
 			endif
 
 

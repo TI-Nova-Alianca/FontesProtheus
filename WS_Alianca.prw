@@ -99,6 +99,7 @@
 // 01/08/2022 - Robert  - Nova tag MotProrrogTit na gravacao de eventos.
 // 11/08/2022 - Robert  - Criada opcao de impressao de etiquetas.
 // 13/09/2022 - Robert  - Melhorado teste de muita movimentacao no kardex (de SELECT * para SELECT COUNT (*) )
+// 22/10/2022 - Robert  - Grava evento temporario de atualizacao do campo f2_DtEntr para depuracao de programas.
 //
 
 // --------------------------------------------------------------------------------------------------------
@@ -128,8 +129,6 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	local _sError    := ""
 	local _sWarning  := ""
 	local _aUsuario  := {}  // Guarda dados de identificacao do usuario.
-//	local _sArqLog2  := ''
-//	local _sArqLgOld := ''
 	local _nSegIni   := seconds ()
 	private __cUserId  := ''
 	private cUserName  := ''
@@ -2309,6 +2308,20 @@ Static function _DtEntFat ()
 		if ! sf2 -> (dbseek (xfilial ("SF2") + _sNf + _sSerie, .F.))
 			_sErroWS += "NF/serie " + _sNF + '/' + _sSerie + ' de saida nao localizada.'
 		else
+
+			// Grava evento temporario (nao estou descobrindo em que momento este campo eh atualizado)
+			_oEvento := ClsEvent():new ()
+			_oEvento:Filial     = SF2 -> F2_FILIAL
+			_oEvento:Texto     := 'Atualizando campo F2_DTENTR de ' + dtoc (sf2 -> f2_DtEntr) + ' para ' + dtoc (_dDtEntr)
+			_oEvento:Texto     += " Pilha: " + U_LogPCham ()
+			_oEvento:CodEven    = "DEBUG"
+			_oEvento:NFSaida    = sf2 -> f2_doc
+			_oEvento:SerieSaid  = sf2 -> f2_Serie
+			_oEvento:Cliente    = sf2 -> f2_cliente
+			_oEvento:LojaCli    = sf2 -> f2_loja
+			_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
+			_oEvento:Grava ()
+
 			reclock ("SF2", .F.)
 			sf2 -> f2_DtEntr = _dDtEntr
 			msunlock ()

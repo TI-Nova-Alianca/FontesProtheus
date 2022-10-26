@@ -21,6 +21,7 @@
 // 01/03/2022 - Robert - Renomeia o arquivo quando ficar muito grande (inicialmente 10 MB).
 // 07/03/2022 - Robert - Acumula em memoria o tamanho estimado do arquivo, para evitar repetidos acessos a disco.
 // 17/04/2022 - Robert - Fazia chamada recursiva indevidamente quando estava na hora de renomear o arquivo de log.
+// 24/10/2022 - Robert - Criada funcao MudaLog().
 //
 
 // --------------------------------------------------------------------------
@@ -116,6 +117,19 @@ user function Log2 (_sTipo, _xDadoOri, _xExtra)
 return
 
 
+// --------------------------------------------------------------------------
+// Muda nome do arquivo de log
+user function MudaLog (_sNovoLog)
+	if valtype (_sNovoLog) == 'C'
+		U_Log2 ('debug', '[' + procname () + ']Log prossegue no arquivo ' + _sNovoLog)
+		if type ('_sArqLog') != 'C'
+			public _sArqLog := ''
+		endif
+		_sArqLog := _sNovoLog
+	else
+		U_Log2 ('erro', '[' + procname () + ']Sem definicao do novo arquivo de log (ou nome invalido).')
+	endif
+return
 
 // --------------------------------------------------------------------------
 static function _DumpTXT (_sDadoTXT)

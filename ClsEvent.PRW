@@ -307,7 +307,7 @@ METHOD GravaNovo () Class ClsEvent
 	_oSQL:_sQuery +=   " AND SZN.ZN_DIASVLD = " + cvaltochar (::DiasValid)
 	_oSQL:_sQuery +=   " AND SZN.ZN_CHVNFE  = '" + ::ChaveNFe + "'"
 	_oSQL:_sQuery +=   " AND SZN.ZN_MOTPROR = '" + ::MotProrTit + "'"
-	_oSQL:Log ()
+	//_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 
 	if _oSQL:RetQry (1, .f.) == 0
 		::Grava ()
