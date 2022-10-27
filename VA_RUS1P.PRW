@@ -75,9 +75,13 @@ user function va_rus1P (_lPortaria)
 		U_AtuZZA (sze -> ze_safra, sze -> ze_carga)
 	endif
 
-	// Atualiza sistema de agendamento com status de 'LIB' (significa que jah encontra-se 'pesado e liberado para descarga'.
-	if _lContinua .and. sze->ze_pesoBru > 0
-		U_VA_RusAI ('INS/AGE', 'LIB')
+//	// Atualiza sistema de agendamento com status de 'LIB' (significa que jah encontra-se 'pesado e liberado para descarga'.
+//	if _lContinua .and. sze->ze_pesoBru > 0
+//		U_VA_RusAI ('INS/AGE', 'LIB')
+//	endif
+	if _lContinua
+		_oCarSaf:GeraAtrib ("SZE")  // Atualiza atributos com o que foi gravado nos arquivos.
+		_oCarSaf:AtuAgenda ()
 	endif
 
 	U_ML_SRArea (_aAreaAnt)

@@ -16,8 +16,6 @@
 //
 
 #Include "Protheus.ch"
-//#Include "RwMake.ch"
-//#Include "TbiConn.ch"
 
 // --------------------------------------------------------------------------
 // Funcao declarada apenas para poder compilar este arquivo fonte.
@@ -32,19 +30,23 @@ CLASS ClsCarSaf
 	public  data Filial      // ZE_FILIAL
 	public  data Safra       // ZE_SAFRA
 	public  data Carga       // ZE_CARGA
+	public  data Contranota  // ZE_NFGER
+	public  data PesoBruto   // ZE_PESOBRU
+	public  data PesoTara    // ZE_PESOTAR
 	public  data RegSZE      // recno() da tabela SZE.
 	public  data UltMsg      // Ultima mensagem gerada
 
 	// Declaracao dos Metodos da classe
 	public METHOD New ()
 	public METHOD AtuAgenda ()
-	private METHOD GeraAtrib ()
+	public METHOD GeraAtrib ()
 ENDCLASS
 
 
 // --------------------------------------------------------------------------
 // Construtor da classe pelo R_E_C_N_O_ da tabela SZE.
 METHOD New (_nNumReg) Class ClsCarSaf
+	local _aAreaAnt := U_ML_SRArea ()
 
 	// Alimenta atributos com valores default de uma carga nova (vazia).
 	::GeraAtrib ("")
@@ -54,6 +56,8 @@ METHOD New (_nNumReg) Class ClsCarSaf
 		SZE -> (dbgoto (_nNumReg))
 		::GeraAtrib ("SZE")
 	endif
+
+	U_ML_SRArea (_aAreaAnt)
 Return ::self
 
 
@@ -63,31 +67,49 @@ METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
 	local _lRetWSNA  := .F.
 	local _oWSNaWeb  := NIL
 	local _sXMLCarg  := ''
+	local _lContinua := .T.
 
-	_sXMLCarg := '<?xml version="1.0" encoding="utf-8"?>'
-	_sXMLCarg += '<SDT_Cargas>'
-	_sXMLCarg +=    '<Itens>'
-	_sXMLCarg +=    '<Filial>'   + ::Filial   + '</Filial>'
-	_sXMLCarg +=    '<Safra>'    + ::Safra    + '</Safra>'
-	_sXMLCarg +=    '<Carga>'    + ::Carga    + '</Carga>'
-	_sXMLCarg +=    '<Situacao>' + _sStatPara + '</Situacao>'
-	_sXMLCarg +=    '</Itens>'
-	_sXMLCarg += '</SDT_Cargas>'
+	// Define o que vai enviar para o NaWeb
+	if _lContinua
+		do case
+		case ! empty (::Contranota)
+			_sStatPara = 'CON'  // Concluida
+		case ::PesoBruto > 0
+			_sStatPara = 'LIB'  // Liberada (para entrar e descrregar)
+		otherwise
+			u_help ("Situacao nao prevista. Nao sei o que enviar para o NaWeb para definir o status da carga " + ::Carga,, .T.)
+			_lContinua = .F.
+		endcase
+	endif
 
-	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']' + _sXMLCarg)
-	
-	_oWSNaWeb := WSPrcStatusAgendaSafraWS():New()
-	_oWSNaWeb:cEntrada := _sXMLCarg
-	_oWSNaWeb:Execute()
-//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Retorno do NaWeb: ' + CVALTOCHAR (_oWSNaWeb:cSaida))
+	if _lContinua
+		_sXMLCarg := '<?xml version="1.0" encoding="utf-8"?>'
+		_sXMLCarg += '<SDT_Cargas>'
+		_sXMLCarg +=    '<Itens>'
+		_sXMLCarg +=    '<Filial>'   + ::Filial   + '</Filial>'
+		_sXMLCarg +=    '<Safra>'    + ::Safra    + '</Safra>'
+		_sXMLCarg +=    '<Carga>'    + ::Carga    + '</Carga>'
+		_sXMLCarg +=    '<Situacao>' + _sStatPara + '</Situacao>'
+		_sXMLCarg +=    '</Itens>'
+		_sXMLCarg += '</SDT_Cargas>'
 
-	if cvaltochar (_oWSNaWeb:cSaida) == 'OK'
-		U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Alteracao da carga foi aceita pelo NaWeb')
-		_lRetWSNA = .T.
-	else
-		::UltMsg += "Alteracao da carga '" + _sCarga + "' nao foi aceita pelo NaWeb: " + cvaltochar (_oWSNaWeb:cSaida)
-		u_help (::UltMsg,, .t.)
-		_lRetWSNA = .F.
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']' + _sXMLCarg)
+		
+		_oWSNaWeb := WSPrcStatusAgendaSafraWS():New()
+		_oWSNaWeb:cEntrada := _sXMLCarg
+		_oWSNaWeb:Execute()
+	//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Retorno do NaWeb: ' + CVALTOCHAR (_oWSNaWeb:cSaida))
+
+		if cvaltochar (_oWSNaWeb:cSaida) == 'OK'
+			U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Alteracao da carga foi aceita pelo NaWeb')
+			_lRetWSNA = .T.
+
+			::GrvEvento ("Enviado novo status (" + _sStatPara
+		else
+			::UltMsg += "Alteracao da carga '" + ::Carga + "' nao foi aceita pelo NaWeb: " + cvaltochar (_oWSNaWeb:cSaida)
+			u_help (::UltMsg,, .t.)
+			_lRetWSNA = .F.
+		endif
 	endif
 return _lRetWSNA
 
@@ -98,11 +120,14 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	local _aAreaAnt := U_ML_SRArea ()
 
 	// Defaults
-	::RegSZE = 0
-	::Filial = ''
-	::Safra  = ''
-	::Carga  = ''
-	::UltMsg = ''
+	::RegSZE     = 0
+	::Filial     = ''
+	::Safra      = ''
+	::Carga      = ''
+	::Contranota = ''
+	::PesoBruto  = 0
+	::PesoTara   = 0
+	::UltMsg     = ''
 
 	do case
 	case _sOrigem == 'M'  // Variaveis M->
@@ -111,10 +136,13 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 		::Carga  = m->carga
 
 	case _sOrigem == "SZE"
-		::RegSZE       = sze -> (recno ())
-		::Filial = sze -> ze_filial
-		::Safra  = sze -> ze_safra
-		::Carga  = sze -> ze_carga
+		::RegSZE     = sze -> (recno ())
+		::Filial     = sze -> ze_filial
+		::Safra      = sze -> ze_safra
+		::Carga      = sze -> ze_carga
+		::Contranota = sze -> ze_nfger
+		::PesoBruto  = sze -> ze_pesobru
+		::PesoTara   = sze -> ze_pesotar
 
 	otherwise
 		if ! empty (_sOrigem)  // Se origem vazia, eh por que estou apenas instanciando um objeto vazio.
@@ -125,5 +153,3 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 
 	U_ML_SRArea (_aAreaAnt)
 return
-
-

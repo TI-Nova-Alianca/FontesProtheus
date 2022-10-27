@@ -1216,8 +1216,8 @@ static function _AvisaMnt ()
 		_oAviso:Grava ()
 
 		// copia para testes
-		_oAviso:DestinAvis = 'robert.koch'
-		_oAviso:Grava ()
+		//_oAviso:DestinAvis = 'robert.koch'
+		//_oAviso:Grava ()
 	endif
 
 	U_ML_SRArea (_aAreaAnt)

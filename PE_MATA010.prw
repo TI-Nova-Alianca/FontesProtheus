@@ -33,6 +33,7 @@
 // 10/06/2022 - Robert  - Validacao codigo final C x tipo MC: ignora grupo 2007 (contra-rotulos) - GLPI 12190
 // 19/10/2022 - Robert  - Valida duplicidade do B1_CODBAR no 'tudo ok' - GLPI 12726
 // 24/10/2022 - Robert  - Melhorada mensagem de validacao B1_TIPO x B1_GRTRIB
+// 26/10/2022 - Robert  - Valida duplicidade de do B1_CODBAR somente "se nao for tudo zero".
 //
 
 //---------------------------------------------------------------------------------------------------------------
@@ -146,7 +147,6 @@ static function _NaoCopia ()
 	oModelB1:LoadValue("B1_CONINI",'')
 	oModelB1:LoadValue("B1_REVATU",'')
 	oModelB1:LoadValue("B1_UCALSTD",'')
-	oModelB1:LoadValue("B1_CODBAR",'')
 	oModelB1:LoadValue("B1_VARMAAL",'00000000000000') // CARREGAR PADRÃO
 	oModelB1:LoadValue("B1_VAFULLW",'')
 	// Atualiza campos na tela do usuario
@@ -221,11 +221,6 @@ static function _A010TOk ()
 		endif
 		
 		if _lRet .and. _lEhUva
-//			if ! empty (m->b1_codbar) //b1_vaDUNCx)
-//				u_help ("Este item e´ UVA: O(s) seguinte(s) campo(s) NAO deve(m) ser informado(s) ou deve(m) ficar como generico(s): " + chr (13) + chr (10) + ;
-//						alltrim (RetTitle ("B1_CODBAR")))  //VADUNCX")))
-//				_lRet = .F.
-//			endif
 			if 	empty (m->b1_VarUva)
 				u_help ("Este item e´ UVA: Os seguintes campos devem ser informados: " + chr (13) + chr (10) + ;
 						alltrim (RetTitle ("B1_VARUVA")))
@@ -239,8 +234,8 @@ static function _A010TOk ()
 
 		if _lRet
 			if m->b1_vafullw == 'S'
-				if empty (m->b1_codbar)  //vaduncx)
-					u_help ("Produtos controlados pelo FullWMS (campo '" + alltrim (RetTitle ("B1_VAFULLW")) + "') devem ter codigo de barras da caixa informado, mesmo que seja ficticio, informado no campo '" + alltrim (RetTitle ("B1_CODBAR")) + "'.")  // VADUNCX")) + "'.")
+				if empty (m->b1_codbar)
+					u_help ("Produtos controlados pelo FullWMS (campo '" + alltrim (RetTitle ("B1_VAFULLW")) + "') devem ter codigo de barras da caixa informado, mesmo que seja composto de zeros, informado no campo '" + alltrim (RetTitle ("B1_CODBAR")) + "'.")
 					_lRet = .F.
 				endif
 				if ! m->b1_um $ 'GF/CX/UN/FD'
@@ -257,7 +252,7 @@ static function _A010TOk ()
 			endif
 		endif
 
-		if _lRet .and. ! empty (m->b1_codbar)
+		if _lRet .and. ! empty (m->b1_codbar) .and. ! _SohZeros (m->b1_codbar)
 			_oSQL := ClsSQL():New ()
 			_oSQL:_sQuery := ""
 			_oSQL:_sQuery += " SELECT RTRIM (STRING_AGG (RTRIM (B1_COD) + '-' + RTRIM (B1_DESC), '; '))"
@@ -532,3 +527,18 @@ Static Function CaracEsp(_sCampo)
         u_help("Produto "+ RTRIM(_sCampo) + " com caracteres especiais. Verifique!")
     EndIf
 Return _lRet
+
+
+// -------------------------------------------------------------------
+// Verifica se o texto informado contem somente zeros.
+static function _SohZeros (_sStrOrig)
+	_lRetZeros := .T.
+	do while ! empty (_sStrOrig)
+//		U_Log2 ('debug', '[' + procname () + ']testando >>' + _sStrOrig + '<<')
+		if left (_sStrOrig, 1) != '0'
+			_lRetZeros = .F.
+			exit
+		endif
+		_sStrOrig = substr (_sStrOrig, 2)
+	enddo
+return _lRetZeros

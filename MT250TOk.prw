@@ -36,13 +36,14 @@
 // 05/08/2022 - Robert - Bloqueia empenhos negativos (GLPI 12441)
 // 08/08/2022 - Robert - Verifica inconsistencia de estoue nos itens empenhados (GLPI 11994)
 // 13/10/2022 - Robert - Novos parametros funcao U_ConsEst. Liberacao para grupo 155.
+// 25/10/2022 - Robert - Quando tem empenho negativo nao bloqueia mais. Apenas notifica o PCP.
 //
 
 // --------------------------------------------------------------------------
 user function mt250tok ()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _lRet     := .T.
-	
+
 	if _lRet .and. (empty (m->d3_vadtprd) .or. m->d3_vadtprd > date () + 4)  // GLPI 10430
 		u_help ('Data real de producao nao pode ser vazia nem avancar muitos dias (descontando feriadoes)',, .t.)
 		_lRet = .F.
@@ -205,6 +206,8 @@ static function _VerEmpenh ()
 	local _oSQL     := NIL
 	local _sEmpEnd  := ''
 	local _sEmpNeg  := ''
+	local _sMsgEmp  := ''
+	local _oAviso   := NIL
 
 	if _lRet
 		sc2 -> (dbsetorder (1))
@@ -321,20 +324,39 @@ static function _VerEmpenh ()
 	// Verifica se tem empenhos negativos (nao eh nosso procedimento normal,
 	// pois gera devolucao de saldo para o estoque) - GLPI 12441
 	if _lRet
-		if dtos (date()) != '20220916'  // Hoje temos uma OP que especificamente precisa devolver caixas vazias.
-			_oSQL := ClsSQL():New ()
-			_oSQL:_sQuery += "SELECT ISNULL (STRING_AGG (RTRIM (D4_COD), ', '), '')"
-			_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD4") + " SD4 "
-			_oSQL:_sQuery += " WHERE SD4.D_E_L_E_T_ = ''"
-			_oSQL:_sQuery +=   " AND SD4.D4_FILIAL  = '" + xfilial ("SD4") + "'"
-			_oSQL:_sQuery +=   " AND SD4.D4_OP      = '" + M->D3_OP + "'"
-			_oSQL:_sQuery +=   " AND SD4.D4_QUANT   < 0"
-			//_oSQL:Log ('[' + procname () + ']')
-			_sEmpNeg := alltrim (_oSQL:RetQry ())
-			if ! empty (_sEmpNeg)
-				u_Help ("O(s) seguinte(s) item(s) estao com empenho negativo: " + _sEmpNeg + " na OP '" + alltrim (m->d3_op) + "'. Atualmente nao eh procedimento padrao termos esse tipo de situacao. Apontamento nao permitido.",, .t.)
-				_lRet = .F.
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery += "SELECT ISNULL (STRING_AGG (RTRIM (D4_COD), ', '), '')"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD4") + " SD4 "
+		_oSQL:_sQuery += " WHERE SD4.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SD4.D4_FILIAL  = '" + xfilial ("SD4") + "'"
+		_oSQL:_sQuery +=   " AND SD4.D4_OP      = '" + M->D3_OP + "'"
+		_oSQL:_sQuery +=   " AND SD4.D4_QUANT   < 0"
+		//_oSQL:Log ('[' + procname () + ']')
+		_sEmpNeg := alltrim (_oSQL:RetQry ())
+		if ! empty (_sEmpNeg)
+			u_Help ("Apenas um aviso: OP tem empenhos negativos!")
+			_sMsgEmp := "A OP " + alltrim (m->d3_op)
+			_sMsgEmp += " (finalidade " + alltrim (X3Combo ("C2_VAOPESP", sc2 -> c2_vaOpEsp)) + ")"
+			_sMsgEmp += " contem empenho negativo dos seguintes itens: " + _sEmpNeg
+			_sMsgEmp += ". Se essa for mesmo a intencao, apenas desconsidere esta mensagem."
+			U_Log2 ('aviso', '[' + procname () + ']' + _sMsgEmp)
+//			_lRet = .F.
+
+			// Como ha casos de reprocesso em que amgumas embalagens realmente
+			// voltam para o estoque, optei por apenas notificar. Robert, 25/10/22
+			_oAviso := ClsAviso ():New ()
+			_oAviso:Tipo       = 'A'
+			_oAviso:DestinZZU  = {'047', '122'}  // 047 = Grupo do PCP; 122=TI apenas para testes
+			_oAviso:Titulo     = _sMsgEmp
+			_oAviso:Texto      = "Verificado durante o apontamento"
+			if ! empty (m->d3_vaetiq)
+				_oAviso:Texto += " da etiqueta " + m->d3_vaetiq
 			endif
+			_oAviso:Texto     += " que " + _sMsgEmp
+			_oAviso:Formato    = 'T'
+			_oAviso:Origem     = procname () + ' - ' + procname (1)
+			_oAviso:Grava ()
+
 		endif
 	endif
 

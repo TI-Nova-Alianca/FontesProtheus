@@ -176,6 +176,7 @@
 // 03/10/2022 - Robert  - Trocado grpTI por grupo 122 no envio de avisos.
 // 13/10/2022 - Robert  - Melhorias validacao C2_VABARCX
 // 24/10/2022 - Robert  - Passa a validar campo A4_EMAIL.
+// 26/10/2022 - Robert  - Valida duplicidade de do B1_CODBAR somente "se nao for tudo zero".
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -405,7 +406,7 @@ user function VA_VCpo (_sCampo)
 			endif
 
 		case _sCampo == "M->B1_CODBAR"
-			if ! empty (m->b1_codbar)
+			if ! empty (m->b1_codbar) .and. ! _SohZeros (m->b1_codbar)
 				_oSQL := ClsSQL():New ()
 				_oSQL:_sQuery := ""
 				_oSQL:_sQuery += " SELECT RTRIM (STRING_AGG (RTRIM (B1_COD) + '-' + RTRIM (B1_DESC), '; '))"
@@ -1873,3 +1874,18 @@ static function _ValDescLj (_sQual)
 		u_help ("Desconto acima do permitido")
 	endif
 return _lRet
+
+
+// -------------------------------------------------------------------
+// Verifica se o texto informado contem somente zeros.
+static function _SohZeros (_sStrOrig)
+	_lRetZeros := .T.
+	do while ! empty (_sStrOrig)
+//		U_Log2 ('debug', '[' + procname () + ']testando >>' + _sStrOrig + '<<')
+		if left (_sStrOrig, 1) != '0'
+			_lRetZeros = .F.
+			exit
+		endif
+		_sStrOrig = substr (_sStrOrig, 2)
+	enddo
+return _lRetZeros

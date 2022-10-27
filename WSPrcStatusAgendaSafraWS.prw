@@ -47,7 +47,7 @@ WSMETHOD Execute WSSEND cEntrada WSRECEIVE cSaida WSCLIENT WSPrcStatusAgendaSafr
 
 	// Tenho enderecos diferentes para a base de testes e a de producao.
 	if "TESTE" $ upper (GetEnvServer()) .or. "R22" $ upper (GetEnvServer()) .or. "R23" $ upper (GetEnvServer())
-		U_Log2 ('debug', '[' + procname () + ']Estou definindo web service para base teste')
+		U_Log2 ('aviso', '[' + procname () + ']Estou definindo web service para base teste')
 		_sURI = "http://naweb17.novaalianca.coop.br/PrcStatusAgendaSafraWS.aspx"
 	else
 		_sURI = "http://naweb17.novaalianca.coop.br/PrcStatusAgendaSafraWS.aspx"

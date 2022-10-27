@@ -264,12 +264,13 @@ Static Function _Grava (_aDados)
 					endif
 
 					if _sOcor == '01' .and. empty (sf2 -> f2_DtEntr)
+						u_log2 ('info', 'Dt:' + _sData + ' Fil:' + _sFilNF + ' NF(' + _sNFEntSai + '):' + _sNota + ' Ocor:' + _sOcor + ' ' + _sDescProc)
 						U_Log2 ('debug', 'Vou comparar f2_redesp >>' + sf2 -> f2_redesp + '<< com _sTransp >>' + _sTransp + '<<')
 						if ! empty (sf2 -> f2_redesp) .and. _sTransp != sf2 -> f2_redesp
 							_sTrRedesp = sf2 -> f2_redesp
 							U_Log2 ('info', 'Ocorrencia de entrega, mas a NF ' + sf2 -> f2_doc + ' tem transportadora de redespacho (' + sf2 -> f2_redesp + ') e, no momento, estou processando a transportadora ' + _sTransp + '. Entendo que nao seja a entrega definitiva.')
 						else
-							U_Log2 ('debug', 'atualizando f2_vaDtEnt com ' + dtoc (_dDATA))
+							U_Log2 ('debug', 'atualizando f2_vaDtEnt da nota ' + _sNota + ' com ' + dtoc (_dDATA))
 
 							// Grava evento temporario (nao estou descobrindo em que momento este campo eh atualizado)
 							_oEvento := ClsEvent():new ()
@@ -295,7 +296,6 @@ Static Function _Grava (_aDados)
 				endif
 			endif
 
-			//u_log2 ('info', 'Dt:' + _sData + ' Fil:' + _sFilNF + ' NF(' + _sNFEntSai + '):' + _sNota + ' Ocor:' + _sOcor + ' ' + _sDescProc)
 
 			_oEvento := ClsEvent():new ()
 			_oEvento:Filial     = _sFilNF

@@ -227,7 +227,11 @@ User Function va_rusN (_lSimulNF)
 
 
 	// Atualiza sistema de agendamento/inspecao com status de 'CON' (concluida). Mais para garantir em algum caso que o inspetor de tombadores tenha deixado passar.
-	U_VA_RusAI ('INS/AGE/LIB', 'CON')
+//	U_VA_RusAI ('INS/AGE/LIB', 'CON')
+	if _lContinua
+		_oCarSaf:GeraAtrib ("SZE")  // Atualiza atributos com o que foi gravado nos arquivos.
+		_oCarSaf:AtuAgenda ()
+	endif
 
 
 	// A partir de 2016 teremos uma serie especifica para NF de safra.

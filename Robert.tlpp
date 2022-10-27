@@ -88,13 +88,14 @@ user function robert ()
 		// _WSCarNA ()
 		// _gerasze ()
 		// _BatOcor ()
-		_AtuSB1 ()
+		// _AtuSB1 ()
 
-		//u_help ('Nada definido.')
+		// u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
 return
+
 
 
 // --------------------------------------------------------------------------
@@ -612,9 +613,10 @@ static function _Etiq ()
 //	_oEtiq:Imprime ('01')
 //	_oEtiq := ClsEtiq ():New ('2000519769')  // Etiq gerada pelo ZAG
 //	_oEtiq:Imprime ('01')
-	_oEtiq := ClsEtiq ():New ('2000527843')
+	_oEtiq := ClsEtiq ():New ('2000554968')
 //	u_log (_oEtiq:Inutiliza (.f.))
-	_oEtiq:Imprime ('98')
+//	_oEtiq:Imprime ('98')
+	_oEtiq:ApontaOP (date(), '1')
 
 //	sd5 -> (dbgoto (509183))
 //	_oEtiq := CLsEtiq ():New ()
