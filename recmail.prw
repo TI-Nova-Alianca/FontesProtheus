@@ -154,7 +154,7 @@ User Function RECMAIL(_lAuto)
 				_oAviso := ClsAviso ():New ()
 				_oAviso:Tipo       = 'E'
 				_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
-				_oAviso:Texto      = "Mensagem " + cvaltochar (nMessage) + " nao foi recebida com sucesso e nao sera´ processada."
+				_oAviso:Texto      = "Mensagem " + cvaltochar (nMessage) + " nao foi recebida com sucesso e nao vai ser processada."
 				_oAviso:Grava ()
 			EndIf
 

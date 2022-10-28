@@ -14,6 +14,7 @@
 // depurar mais de uma thread: https://devforum.totvs.com.br/1066-debugar-multiplas-threads-no-vscode
 // Linguagem TL++: https://tdn.totvs.com/pages/viewpage.action?pageId=334340072
 // local varJson := { "teste" : { "var1" : "oioi", "var2": "oioi2", "var3": "oioi3" }}  https://tdn.totvs.com/display/tec/Json
+// Compilacao por linha de comando  https://tdn.totvs.com/pages/viewpage.action?pageId=528461210
 
 #include "protheus.ch"
 #include "rwmake.ch"
@@ -89,6 +90,12 @@ user function robert ()
 		// _gerasze ()
 		// _BatOcor ()
 		// _AtuSB1 ()
+
+		_oEvento := ClsEvent():new ()
+		_oEvento:CodEven   = "teste"
+		_oEvento:Texto     = "teste msg"
+		_oEvento:diasValid = 1
+		_oEvento:Grava ()
 
 		// u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
@@ -483,10 +490,10 @@ static function _va_xls ()
 //	u_va_xls59 (.T.)
 
 	// Produtos para planilha GTIN (cadastro nacional de produtos - GS1)
-	//Private cPerg   := "VAXLS61"
-	//U_GravaSX1 (cPerg, '01', '')
-	//U_GravaSX1 (cPerg, '02', 'z')
-	//u_va_xls61 (.T.)
+	Private cPerg   := "VAXLS61"
+	U_GravaSX1 (cPerg, '01', '')
+	U_GravaSX1 (cPerg, '02', 'z')
+	u_va_xls61 (.T.)
 
 	// // exporta dados de OS
 	// Private cPerg   := "VAXLS62"

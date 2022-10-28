@@ -19,6 +19,7 @@
 // 09/09/2022 - Robert - Melhorias avisos.
 // 02/10/2022 - Robert - Trocado grpTI por grupo 122 no envio de avisos.
 // 07/10/2022 - Robert - Envia copia dos avisos de erro para grupo 144 (coord.contabil)
+// 27/10/2022 - Robert - Declaracao da variavel local _oAviso
 //
 
 // --------------------------------------------------------------------------
@@ -27,6 +28,7 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 	local _xRet      := NIL
 	local _sWhere    := ''
 	local _oSQL      := NIL
+	local _oAviso    := NIL
 
 //	u_log ('Parametros recebidos:', _sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo)
 
@@ -82,7 +84,7 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 				_oAviso:Tipo       = 'E'
 				_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 				_oAviso:Titulo     = "Vendedor nao encontrado LPAD " + _sLPad
-				_oAviso:Texto     := "Vendedor nao encontrado na tanela SA3 - LPAD " + cvaltochar (_sLPad)
+				_oAviso:Texto     := "Vendedor nao encontrado na tabela SA3 - LPAD " + cvaltochar (_sLPad)
 				_oAviso:Texto     += " Repres:" + cvaltochar (_sRepres)
 				_oAviso:Texto     += " Retorno solicitado:" + _sQueRet
 				_oAviso:Texto     += " Pilha de chamadas: " + U_LogPCham (.f.)

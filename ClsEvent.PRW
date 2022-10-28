@@ -4,14 +4,14 @@
 // Descricao: Declaracao de classe para uso em outros programas. Poderia trabalhar como
 //            uma include, mas prefiro declarar uma funcao de usuario apenas para poder
 //            incluir no projeto e manter na pasta dos fontes.
-//
+
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Classe
 // #Descricao         #Declaracao de classe para uso em outros programas.
 // #PalavasChave      #classe #eventos
 // #TabelasPrincipais #SZN 
 // #Modulos           #todos
-//
+
 // Historico de alteracoes:
 // 07/08/2008 - Robert  - Criado metodo de gravacao dos eventos.
 // 03/03/2010 - Robert  - Criada possibilidade de enviar o texto do evento por e-mail.
@@ -56,14 +56,17 @@
 // 02/05/2022 - Robert  - Incluidas chamadas de U_PerfMon() para acompanhar tempo de gravacao.
 // 20/07/2022 - Robert  - Criado tratamento para atributos ::DiasValid e ::ChaveNFe (GLPI 12336)
 // 01/08/2022 - Robert  - Criado atributo ::MotProrTit
+// 27/10/2022 - Robert  - ENvia notificacao ao gravar codigo de evento desconhecido.
 //
 
 #include "protheus.ch"
 
+
 // Funcao declarada apenas para poder compilar este arquivo fonte.
 user function ClsEvent ()
 return
-//
+
+
 // ------------------------------------------------------------------------------------
 // Classe usada para armazenamento de dados de eventos do sistema (customizados).
 CLASS ClsEvent
@@ -118,7 +121,8 @@ CLASS ClsEvent
 	METHOD Log ()
 	METHOD SendMail ()
 ENDCLASS
-//
+
+
 // --------------------------------------------------------------------------
 METHOD New (_nRegSZN) Class ClsEvent
 	::Filial     := xfilial ("SZN")
@@ -199,15 +203,17 @@ METHOD New (_nRegSZN) Class ClsEvent
 		::MotProrTit = szn -> zn_MotPror
 	endif
 Return Self
-//
+
+
 // --------------------------------------------------------------------------
 // Gravacao de eventos
 METHOD Grava () Class ClsEvent
 	local _aArea    := U_ML_SRArea ()
 	local _sTextoZN := ""
+	local _oAviso   := Nil
 
 	// Monitoramento de performance
-	U_PerfMon ('I', 'GravarSZN')
+// Nem estou olhando, mesmo...	U_PerfMon ('I', 'GravarSZN')
 	
 	// Se tem quebras de linha no texto, gravo soh a primeira linha no SZN e deixo o restante para o campo memo.
 	if chr (13) $ ::Texto
@@ -263,14 +269,26 @@ METHOD Grava () Class ClsEvent
 	szn -> zn_MotPror = ::MotProrTit
 	msunlock ("SZN")
 
-	U_PerfMon ('F', 'GravarSZN')
+// Nem estou olhando, mesmo...	U_PerfMon ('F', 'GravarSZN')
+
+	// Envia aviso em caso de codigo de evento nao cadastrado.
+	if ! U_ExistZX5 ('54', ::CodEven, .f.)
+		_oAviso := ClsAviso ():New ()
+		_oAviso:Tipo       = 'A'
+		_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
+		_oAviso:Titulo     = "Gravado evento com codigo inexistente (" + ::CodEven + ") na tabela 54 do ZX5"
+		_oAviso:Texto      = _oAviso:Titulo
+		_oAviso:InfoSessao = .T.
+		_oAviso:Grava ()
+	endif
 
 	// Envia evento por e-mail, se for o caso.
 	::Self:SendMail ()
 
 	U_ML_SRArea (_aArea)
 return .t.
-//
+
+
 // --------------------------------------------------------------------------
 // Gravacao de eventos somente quando ainda nao existirem (evitar duplicidade)
 METHOD GravaNovo () Class ClsEvent
@@ -315,7 +333,8 @@ METHOD GravaNovo () Class ClsEvent
 		U_Log2 ('aviso', 'Evento nao vai ser gravado, pois jah existe registro com essa informacao no SZN.')
 	endif
 return
-//
+
+
 // --------------------------------------------------------------------------
 // Verifica alteracao de cadastros e grava evento quando for o caso.
 // Deve ser disparado ANTES da alteracao, pois compara as variaveis M-> com os campos da tabela.
@@ -431,7 +450,8 @@ METHOD AltCadast (_sAlias, _sCodAlias, _nRecno, _sDadAdic, _lNotif) Class ClsEve
 	U_ML_SRArea (_aAreaAnt)
 
 return
-//
+
+
 // --------------------------------------------------------------------------
 // Exclusao do evento posicionado no SZN
 METHOD Exclui () Class ClsEvent
@@ -447,7 +467,8 @@ METHOD Exclui () Class ClsEvent
 
 	U_ML_SRArea (_aArea)
 return
-//
+
+
 // --------------------------------------------------------------------------
 // Faz a leitura das respostas de determinado grupo de perguntas e grava no evento.
 METHOD LeParam (_sPerg) CLASS ClsEvent
@@ -460,7 +481,8 @@ METHOD LeParam (_sPerg) CLASS ClsEvent
 		::Texto += _aPerg [_nPerg, 3] + ' ' + _aPerg [_nPerg, 4] + ' ' + cvaltochar (_aPerg [_nPerg, 5]) + chr (13) + chr (10)
 	next
 return
-//
+
+
 // --------------------------------------------------------------------------
 // Grava dados do evento em arquivo de log
 METHOD Log () Class ClsEvent
@@ -491,9 +513,10 @@ METHOD Log () Class ClsEvent
 	_sTxtLog += "-----------------------------------------------------------" + chr (13) + chr (10)
 	u_log2 ('info', _sTxtLog)
 return
-//
+
+
 // --------------------------------------------------------------------------
-// Verifica alteracao de cadastros e grava evento quando for o caso.
+// Envia copia do evento por e-mail, quando solicitado.
 METHOD SendMail (_sDestin) Class ClsEvent
 	local _sTxtMail := ""
 	local _sTxtCabec := ""
@@ -552,7 +575,8 @@ METHOD SendMail (_sDestin) Class ClsEvent
 	endif
 
 return
-//
+
+
 // --------------------------------------------------------------------------
 // Faz exportacao da pilha de chamadas para uma string.
 static function _PCham ()
@@ -563,7 +587,8 @@ static function _PCham ()
 		_i++
 	enddo
 return _sPilha
-//
+
+
 // --------------------------------------------------------------------------
 // Busca o tipo do campo
 static Function BuscaTipo(_sCampo)
@@ -572,7 +597,8 @@ static Function BuscaTipo(_sCampo)
 	_sRet:= type("M->" + _sCampo) 
 
 return _sRet
-//
+
+
 // --------------------------------------------------------------------------
 // Tratamento para gerar o atributo Origem.
 static function _Origem (_sOrigDef)

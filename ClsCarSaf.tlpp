@@ -31,15 +31,21 @@ CLASS ClsCarSaf
 	public  data Safra       // ZE_SAFRA
 	public  data Carga       // ZE_CARGA
 	public  data Contranota  // ZE_NFGER
+	public  data Fornece     // ze_assoc
+	public  data Loja        // ze_lojasso
 	public  data PesoBruto   // ZE_PESOBRU
 	public  data PesoTara    // ZE_PESOTAR
 	public  data RegSZE      // recno() da tabela SZE.
+	public  data Segregada   // ZE_SEGREG
+	public  data SerieCtrn   // ze_serie
+	public  data StatusZZA   // status desta carga na tabela ZZA (integracao com leitor de grau)
 	public  data UltMsg      // Ultima mensagem gerada
 
 	// Declaracao dos Metodos da classe
 	public METHOD New ()
 	public METHOD AtuAgenda ()
 	public METHOD GeraAtrib ()
+	public METHOD GrvEvt ()
 ENDCLASS
 
 
@@ -69,13 +75,33 @@ METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
 	local _sXMLCarg  := ''
 	local _lContinua := .T.
 
+	// Lista de status passados pela Daiana em 26/10/22:
+	// Dis Disponível
+	// AGE Agendado
+	// RES Reservado
+	// INS Inspecionado
+	// AUT Autorizada entrada
+	// LIB Liberada
+	// EMP Em processamento
+	// CON Concluido processamento
+	// REJ Rejeitada
+	// REI Reinspecionar
+	// SEG Segregada
+	// CNF Concluida NF
+
 	// Define o que vai enviar para o NaWeb
 	if _lContinua
 		do case
+		case ::Segregada
+			_sStatPara = 'SEG'  // Segregada
 		case ! empty (::Contranota)
-			_sStatPara = 'CON'  // Concluida
+			_sStatPara = 'CNF'  // Concluida NF
+		case ::StatusZZA == '3'
+			_sStatPara = 'CON'  // Concluido processamento
+		case ::StatusZZA == '2'
+			_sStatPara = 'EMP'  // Em processamento
 		case ::PesoBruto > 0
-			_sStatPara = 'LIB'  // Liberada (para entrar e descrregar)
+			_sStatPara = 'LIB'  // Liberada (para entrar e descarregar)
 		otherwise
 			u_help ("Situacao nao prevista. Nao sei o que enviar para o NaWeb para definir o status da carga " + ::Carga,, .T.)
 			_lContinua = .F.
@@ -104,11 +130,15 @@ METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
 			U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Alteracao da carga foi aceita pelo NaWeb')
 			_lRetWSNA = .T.
 
-			::GrvEvento ("Enviado novo status (" + _sStatPara
+			// Grava evento para posterior rastreamento
+			::GrvEvt ('SZE004', "Enviado novo status (" + _sStatPara + ") para o NaWeb.")
 		else
 			::UltMsg += "Alteracao da carga '" + ::Carga + "' nao foi aceita pelo NaWeb: " + cvaltochar (_oWSNaWeb:cSaida)
 			u_help (::UltMsg,, .t.)
 			_lRetWSNA = .F.
+
+			// Grava evento para posterior rastreamento
+			::GrvEvt ('SZE004', "ERRO ao enviado novo status (" + _sStatPara + ") para o NaWeb: " + ::UltMsg)
 		endif
 	endif
 return _lRetWSNA
@@ -118,6 +148,7 @@ return _lRetWSNA
 // Alimenta os atributos da classe.
 METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	local _aAreaAnt := U_ML_SRArea ()
+	local _oSQL     := NIL
 
 	// Defaults
 	::RegSZE     = 0
@@ -127,6 +158,8 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	::Contranota = ''
 	::PesoBruto  = 0
 	::PesoTara   = 0
+	::Segregada  = .F.
+	::StatusZZA  = ''
 	::UltMsg     = ''
 
 	do case
@@ -143,6 +176,18 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 		::Contranota = sze -> ze_nfger
 		::PesoBruto  = sze -> ze_pesobru
 		::PesoTara   = sze -> ze_pesotar
+		::Segregada  = (sze -> ze_segreg == 'S')
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT ISNULL (ZZA_STATUS, '')"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZA") + " ZZA"
+		_oSQL:_sQuery += " WHERE ZZA.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND ZZA.ZZA_FILIAL = '" + ::Filial + "'"
+		_oSQL:_sQuery +=   " AND ZZA.ZZA_SAFRA  = '" + ::Safra + "'"
+		_oSQL:_sQuery +=   " AND ZZA.ZZA_CARGA  = '" + ::Carga + "'"
+		_oSQL:_sQuery +=   " AND ZZA.ZZA_PRODUT = '01'"  // Tenho intencao de comecar a gravar apenas 1 item por carga, independentemente de haver mais de uma variedade.
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		::StatusZZA  = _oSQL:RetQry (1, .f.)
 
 	otherwise
 		if ! empty (_sOrigem)  // Se origem vazia, eh por que estou apenas instanciando um objeto vazio.
@@ -152,4 +197,23 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	endcase
 
 	U_ML_SRArea (_aAreaAnt)
+return
+
+
+// --------------------------------------------------------------------------
+// Grava evento padrao do sistema.
+METHOD GrvEvt (_sCodEvt, _sTxtEvt) Class ClsCarSaf
+	local _oEvento := NIL
+
+	_oEvento := ClsEvent():new ()
+	_oEvento:CodEven   = _sCodEvt
+	_oEvento:Texto    := 'Safra ' + ::Safra + ' Carga ' + ::Carga + ' ' + _sTxtEvt
+	_oEvento:Recno     = ::RegSZE
+	_oEvento:Alias     = 'SZE'
+	_oEvento:CodAlias  = ::Safra + ::Carga
+	_oEvento:NFEntrada = ::Contranota
+	_oEvento:SerieEntr = ::SerieCtrn
+	_oEvento:Fornece   = ::Fornece
+	_oEvento:LojaFor   = ::Loja
+	_oEvento:Grava ()
 return

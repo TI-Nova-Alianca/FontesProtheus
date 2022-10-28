@@ -13,6 +13,8 @@
 // #Modulos           #FAT #FIS
 //
 // Historico de alteracoes:
+// 27/10/2022 - Robert - Populados campos de pesos min/medio/max
+//                     - Varre arquivo gerado apontando inconsitencias
 //
 
 // --------------------------------------------------------------------------
@@ -55,6 +57,8 @@ Return _lRet
 Static Function _Gera()
 	local _oSQL      := NIL
 	local _sWhereSB1 := ''
+	local _sAliasQ   := ''
+	local _aProbl    := {}
 
 	procregua (10)
 	incproc ("Gerando arquivo de exportacao")
@@ -123,10 +127,10 @@ Static Function _Gera()
 	_oSQL:_sQuery +=          " END AS TIPO_EMBALAG"
 	_oSQL:_sQuery +=      " ,P.B1_PESBRU AS PESO_BRUTO"
 	_oSQL:_sQuery +=      " ,'kg' AS UM_PESOBRU"
-	_oSQL:_sQuery +=      " ,'' AS PESO_MEDIO"
-	_oSQL:_sQuery +=      " ,'' AS PESO_MINIMO"
-	_oSQL:_sQuery +=      " ,'' AS PESO_MAXIMO"
-	_oSQL:_sQuery +=      " ,'' AS UM_PESOMED"
+	_oSQL:_sQuery +=      " ,(P.B1_PESBRU + P.B1_PESO) / 2 AS PESO_MEDIO"
+	_oSQL:_sQuery +=      " ,P.B1_PESO AS PESO_MINIMO"
+	_oSQL:_sQuery +=      " ,P.B1_PESBRU AS PESO_MAXIMO"
+	_oSQL:_sQuery +=      " ,P.B1_PESO AS UM_PESOMED"
 	_oSQL:_sQuery +=      " ,P.B1_PESO AS PESO_LIQ"
 	_oSQL:_sQuery +=      " ,'kg' AS UM_PESOLIQ"
 	_oSQL:_sQuery +=      " ,CASE WHEN P.B1_TIPO IN ('PA', 'PI', 'VD')"
@@ -218,8 +222,34 @@ Static Function _Gera()
 	_oSQL:ArqDestXLS = 'VA_XLS61'
 	_oSQL:Qry2Xls (.F., .F., .F.)
 
-	// Percorre o arquivo gerado procurando possiveis inconsistencias
-	// ainda nao fiz...
+	// Gera nova query para percorrer o arquivo gerado procurando
+	// possiveis inconsistencias
+	_sAliasQ := _oSQL:Qry2Trb()
+	_aProbl = {}
+	do while ! (_sAliasQ) -> (eof ())
+		if (_sAliasQ) -> PESO_BRUTO <= 0
+			aadd (_aProbl, "Produto " + alltrim ((_sAliasQ) -> codigo) + " - " + alltrim ((_sAliasQ) -> descri) + ": peso bruto nao informado")
+		endif
+		if (_sAliasQ) -> PESO_LIQ <= 0
+			aadd (_aProbl, "Produto " + alltrim ((_sAliasQ) -> codigo) + " - " + alltrim ((_sAliasQ) -> descri) + ": peso liquido nao informado")
+		endif
+		if (_sAliasQ) -> MIN_DIAS_VIDA <= 0
+			aadd (_aProbl, "Produto " + alltrim ((_sAliasQ) -> codigo) + " - " + alltrim ((_sAliasQ) -> descri) + ": prazo de validade nao informado")
+		endif
+		if (_sAliasQ) -> CONT_LIQUIDO > 0 .and. empty ((_sAliasQ) -> UM_CONTLIQ)
+			aadd (_aProbl, "Produto " + alltrim ((_sAliasQ) -> codigo) + " - " + alltrim ((_sAliasQ) -> descri) + ": calculou conteudo liquido, mas nao definiu unidade de medida")
+		endif
+		if (_sAliasQ) -> CONT_LIQUIDO == 0 .and. ! empty ((_sAliasQ) -> UM_CONTLIQ)
+			aadd (_aProbl, "Produto " + alltrim ((_sAliasQ) -> codigo) + " - " + alltrim ((_sAliasQ) -> descri) + ": definiu unidade de medida para conteudo liquido, mas nao calculou nada")
+		endif
+
+		(_sAliasQ) -> (dbskip ())
+	enddo
+
+	if len (_aProbl) > 0
+		U_Log2 ('erro', _aProbl)
+		u_showarray (_aProbl)
+	endif
 
 	u_help ("Sugestao: copie os dados da planilha gerada e cole-os na planilha modelo do portal GS1, usando a opcao de 'colar especial - somente valores' para manter a formatacao da planilha original. Alguns campos numericos como o codigo de barras poderao precisar de ajuste manual.")
 return

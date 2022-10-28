@@ -182,7 +182,7 @@ METHOD EnviaNAWeb () Class ClsAviso
 	::Titulo = _Limpa (::Titulo)
 	::Texto  = _Limpa (::Texto)
 
-	U_Log2 ('debug', '[' + procname () + ']Enviando para NaWeb: ' + ::Titulo)
+	//U_Log2 ('debug', '[' + procname () + ']Enviando para NaWeb: ' + ::Titulo)
 
 	_sXMLNotif := '<?xml version="1.0" encoding="utf-8"?>'
 	_sXMLNotif += '<SdtNotificacoes>'
@@ -213,7 +213,6 @@ METHOD EnviaNAWeb () Class ClsAviso
 	_oWSNaWeb := WSPrcNotificacoesWS():New()
 	_oWSNaWeb:cEntrada := _sXMLNotif
 	_oWSNaWeb:Execute()
-	U_Log2 ('debug', '[' + procname () + ']Retorno do NaWeb: ' + cvaltochar (_oWSNaWeb:cSaida))
 
 	// Se retornou ok, marca como 'enviado'.
 	if _oWSNaWeb:cSaida == 'OK'
@@ -221,6 +220,8 @@ METHOD EnviaNAWeb () Class ClsAviso
 		reclock ("ZAB", .F.)
 		zab -> zab_EnvNAW = 'S'
 		msunlock ()
+	else
+		U_Log2 ('erro', '[' + procname () + ']Retorno do NaWeb: ' + cvaltochar (_oWSNaWeb:cSaida))
 	endif
 return _lRetWSNA
 
