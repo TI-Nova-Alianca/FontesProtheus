@@ -429,10 +429,14 @@ User Function EtqPlltG (_sOP, _sNF, _sSerie, _sFornece, _sLoja, _sQueFazer)
 			if _aEtiq [_nEtiq, 1]
 				if _aEtiq [_nEtiq, 6] == 'S'
 					if U_MsgYesNo ("Etiqueta '" + _aEtiq [_nEtiq, 2] + "' ja gerou apontamento de producao. Deseja reimprimir mesmo assim?")
-						U_ImpZA1 (_aEtiq [_nEtiq, 2], mv_par01)
+						//U_ImpZA1 (_aEtiq [_nEtiq, 2], mv_par01)
+						_oEtiq := ClsEtiq ():New (_aEtiq [_nEtiq, 2])
+						_oEtiq:Imprime (mv_par01)
 					endif
 				else
-					U_ImpZA1 (_aEtiq [_nEtiq, 2], mv_par01)
+					//U_ImpZA1 (_aEtiq [_nEtiq, 2], mv_par01)
+					_oEtiq := ClsEtiq ():New (_aEtiq [_nEtiq, 2])
+					_oEtiq:Imprime (mv_par01)
 				endif
 			endif
 		next

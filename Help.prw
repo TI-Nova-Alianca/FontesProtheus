@@ -50,7 +50,7 @@ user function Help (_sMsg, _sDAdic, _lHlpErro)
 		_sMsgLog = strtran (_sMsgLog, chr (10), chr (13) + chr (10))  // Erros do SQL, por exemplo, tem apenas chr(10)
 		_sMsgLog = strtran (_sMsgLog, chr (13) + chr (10), chr (13) + chr (10) + space (32))
 		
-		U_Log2 (iif (_lHlpErro, 'ERRO', 'Info'), '[' + procname () + '] ' + _sMsgLog)
+		U_Log2 (iif (_lHlpErro, 'ERRO', 'Info'), '[' + procname () + '.' + procname (1) + '.' + procname (2) + '] ' + _sMsgLog)
 	endif
 	
 	if ! _lHlpErro

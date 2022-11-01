@@ -31,6 +31,7 @@
 // 26/09/2022 - Robert - Funcao de inutilizacao migrada do fonte ZA1IN para metodo :Inutiliza()
 // 05/10/2022 - Robert - Iniciado tratamento para etiquetas geradas a partir do SD5 (GLPI 12651)
 // 24/10/2022 - Robert - Criado atributo :FinalidOP
+// 31/10/2022 - Robert - Quando transf.p/ax01 via ZAG, busca zag_lotori (nao gera mais lote fajuto)
 //
 
 #Include "Protheus.ch"
@@ -324,7 +325,8 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 				if ! zag -> (dbseek (xfilial ("ZAG") + ::IdZAG, .F.))
 					u_help ("Solicitacao de transferencia '" + ::IdZAG + "' referenciada pela etiqueta '" + ::Codigo + "' nao foi localizada na tabela ZAG.",, .t.)
 				else
-					::AlmDest = zag -> zag_almdst
+					::AlmDest     = zag -> zag_almdst
+					::LoteProduto = zag -> zag_lotOri
 					if sb1 -> b1_rastro == 'L'
 						_oSQL := ClsSQL ():New ()
 						_oSQL:_sQuery := "SELECT B8_LOTECTL, B8_DTVALID"
@@ -337,7 +339,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 						//_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 						_aLoteVal = aclone (_oSQL:RetFixo (1, "ao consultar lote do produto da etiqueta '" + ::Codigo + "' na solicitacao de transferencia numero '" + ::IdZAG + "'.", .T.))
 						if len (_aLoteVal) == 1
-							::LoteProduto = _aLoteVal [1, 1]
+							//::LoteProduto = _aLoteVal [1, 1]
 							::ValidLote   = _aLoteVal [1, 2]
 						endif
 					endif
@@ -348,9 +350,9 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 					// maneira de informar na solicitacao de transferencia), vou
 					// ter que gerar algum lote fajuto.
 					// OBS: Manter consistencia com a view v_wms_entrada !!!
-					if ::AlmDest == '01' .and. empty (::LoteProduto)
-						U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Gerando lote e validade fajutos para ver se o Full aceita.')
-						::LoteProduto = '000001'
+					if ::AlmDest == '01' .and. ! empty (::LoteProduto) .and. sb1 -> b1_rastro != 'L'
+						U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Gerando validade fajuta para ver se o Full aceita.')
+					//	::LoteProduto = '000001'
 						::ValidLote   = date () + sb1 -> b1_prvalid
 					endif
 				endif
@@ -378,28 +380,54 @@ return
 // Grava nova etiqueta na tabela ZA1.
 // Minha intencao eh migrar a funcao U_IncEtqPll para este metodo.
 METHOD Grava () Class ClsEtiq
-	local _lGravou := .F.
-	local _aAreaAnt := U_ML_SRArea ()
-	local _sNextNum := ''
-	local _nSeqEtq  := 0
+	local _lGravou   := .F.
+	local _aAreaAnt  := U_ML_SRArea ()
+	local _sNextNum  := ''
+	local _nSeqEtq   := 0
+	local _sTxtLog   := ''
+	local _lContinua := .T.
 
+	if empty (::Produto)
+		::UltMsg += "Produto nao informado. Gravacao de etiqueta nao permitida."
+		_lContinua = .F.
+	endif
+	if empty (::DtEmis)
+		::UltMsg += "Data emissao etiq.nao informada. Gravacao de etiqueta nao permitida."
+		_lContinua = .F.
+	endif
+	if empty (::OP) .and. empty (::DocEntrNum) .and. empty (::IdZAG) .and. empty (::D5_NUMSEQ)
+		::UltMsg += "Origem (OP, NF, sol.transf. ou D5_NUMSEQ) nao informada. Gravacao de etiqueta nao permitida."
+		_lContinua = .F.
+	endif
+	if ::Quantidade <= 0
+		::UltMsg += "Quantidade nao informada. Gravacao de etiqueta nao permitida."
+		_lContinua = .F.
+	endif
+	if ! empty (::DocEntrNum) .and. (empty (::DocEntrSerie) .or. empty (::DocEntrItem) .or. empty (::DocEntrForn) .or. empty (::DocEntrLoja))
+		::UltMsg += "Para NF entrada, devem ser informadas tambem serie, fornecedor, loja e item da nota. Gravacao de etiqueta nao permitida."
+		_lContinua = .F.
+	endif
+	
 	// Gera sequencial da etiqueta dentro do grupo (OP ou NF) a que pertence.
-	if ! empty (::OP) .or. ! empty (::DocEntrNum)
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT COUNT (*)"
-		_oSQL:_sQuery +=   " FROM " + RetSQLName ("ZA1")
-		_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=    " AND ZA1_OP     = '" + ::OP + "'"
-		_oSQL:_sQuery +=    " AND ZA1_DOCE   = '" + ::DocEntrNum + "'"
-		_oSQL:_sQuery +=    " AND ZA1_SERIEE = '" + ::DocEntrSerie + "'"
-		_oSQL:_sQuery +=    " AND ZA1_ITEM = '"   + ::DocEntrItem + "'"
-		_oSQL:_sQuery +=    " AND ZA1_FORNEC = '" + ::DocEntrForn + "'"
-		_oSQL:_sQuery +=    " AND ZA1_LOJAF  = '" + ::DocEntrLoja + "'"
-		_nSeqEtq = _oSQL:RetQry () + 1
+	if _lContinua
+		if ! empty (::OP) .or. ! empty (::DocEntrNum)
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " SELECT COUNT (*)"
+			_oSQL:_sQuery +=   " FROM " + RetSQLName ("ZA1")
+			_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=    " AND ZA1_OP     = '" + ::OP + "'"
+			_oSQL:_sQuery +=    " AND ZA1_DOCE   = '" + ::DocEntrNum + "'"
+			_oSQL:_sQuery +=    " AND ZA1_SERIEE = '" + ::DocEntrSerie + "'"
+			_oSQL:_sQuery +=    " AND ZA1_ITEM = '"   + ::DocEntrItem + "'"
+			_oSQL:_sQuery +=    " AND ZA1_FORNEC = '" + ::DocEntrForn + "'"
+			_oSQL:_sQuery +=    " AND ZA1_LOJAF  = '" + ::DocEntrLoja + "'"
+			_nSeqEtq = _oSQL:RetQry () + 1
+		endif
 	endif
 
-	begin transaction
+	if _lContinua
+		begin transaction
 		_sNextNum = U_NxtZA1 (::Produto)
 		reclock ("ZA1",.T.)
 		ZA1 -> ZA1_FILIAL = ::Filial
@@ -422,12 +450,24 @@ METHOD Grava () Class ClsEtiq
 		::SeqNoGrupo = za1 -> za1_seq
 		::RegZA1     = za1 -> (recno ())
 		_lGravou = .T.
-	end transaction
-	u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Etiqueta ' + za1 -> za1_codigo + ' gravada. Produto: ' + alltrim (za1 -> za1_prod) + ' OP: ' + alltrim (za1 -> za1_op) + ' NF: ' + alltrim (za1 -> za1_doce) + ' D5NSEQ: ' + alltrim (za1 -> ZA1_D5NSEQ))
+		end transaction
+	endif
 
+	// Grava sequenciais, se existirem.
 	do while __lSX8
 		ConfirmSX8 ()
 	enddo
+
+	// Monta um textinho bonitinho para log.
+	if _lGravou
+		_sTxtLog := 'Etiqueta ' + za1 -> za1_codigo + ' gravada.'
+		_sTxtLog += ' Produto: ' + alltrim (za1 -> za1_prod)
+		_sTxtLog += iif (! empty (za1 -> za1_op),     ' OP: '     + alltrim (za1 -> za1_op),     '')
+		_sTxtLog += iif (! empty (za1 -> za1_idZAG),  ' ZAG: '    + alltrim (za1 -> za1_idZAG),  '')
+		_sTxtLog += iif (! empty (za1 -> za1_doce),   ' NF: '     + alltrim (za1 -> za1_doce),   '')
+		_sTxtLog += iif (! empty (za1 -> za1_d5nseq), ' D5NSEQ: ' + alltrim (za1 -> ZA1_D5NSEQ), '')
+		u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']' + _sTxtLog)
+	endif
 
 	U_ML_SRArea (_aAreaAnt)
 return _lGravou
@@ -786,6 +826,7 @@ return _lContinua
 // Envia para impressora (ou porta relacionada a esta)
 METHOD Imprime (_sCodImpr) Class ClsEtiq
 	local _lContinua := .T.
+	za1 -> (dbgoto (::RegZA1))
 	_lContinua = U_ImpZA1 (::Codigo, _sCodImpr, ::Self)
 return _lContinua
 
@@ -796,6 +837,7 @@ METHOD Inutiliza (_lMsg) Class ClsEtiq
 	local _lContinua := .T.
 	local _oEvento   := NIL
 	local _oSQL      := NIL
+	local _aStatWMS  := {}
 	local _aAreaAnt  := U_ML_SRArea ()
 
 	_lMsg := iif (_lMsg == NIL, .F., _lMsg)
@@ -823,17 +865,25 @@ METHOD Inutiliza (_lMsg) Class ClsEtiq
 	if _lContinua .and. ! empty (::IdZAG) .and. ::AlmDest == '01'
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " select status_protheus"
+		_oSQL:_sQuery += " select status, status_protheus"
 		_oSQL:_sQuery +=   " from tb_wms_entrada"
-		_oSQL:_sQuery +=  " where entrada_id = 'ZA1" + ::Filial + ::Codigo + "'"
+		// _oSQL:_sQuery +=  " where entrada_id = 'ZA1" + ::Filial + ::Codigo + "'"
+		_oSQL:_sQuery +=  " where entrada_id = 'ZA1" + xfilial ("ZA1") + ::Codigo + "'"
 		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
-		_sStatWMS = _oSQL:RetQry (1, .F.)
-		if ! empty (_sStatWMS) .and. ! _sStatWMS $ 'C'
+		_aStatWMS = _oSQL:Qry2Array (.f., .f.)
+		U_Log2 ('debug', _aStatWMS)
+		if ! empty (_aStatWMS [1, 1]) .and. _aStatWMS [1, 1] != '9'
+			::UltMsg += "A etiqueta '" + ::Codigo + "' ja foi vista pelo FullWMS"
+			::UltMsg += " e nao pode ser inutilizada por que encontra-se com status '" + _aStatWMS [1, 1] + "'"
+			::UltMsg += " no campo STATUS da tabela de integracao tb_wms_entrada."
+			::UltMsg += "Essa entrada deve ser excluida, antes, na tela de recebimentos do FullWMS."
+			_lContinua = .F.
+		endif
+		if ! empty (_aStatWMS [1, 2]) .and. _aStatWMS [1, 2] != 'C'
 			::UltMsg += "A etiqueta '" + ::Codigo + "' ja foi enviada para o FullWMS"
-			::UltMsg += " e nao pode ser inutilizada por que encontra-se com status '" + _sStatWMS + "'"
-			::UltMsg += " na tabela de integracao tb_wms_entrada."
-			::UltMsg += "Essa entrada deve ser excluida, antes, no FullWMS"
-			::UltMsg += "(ou sua 'guarda' deve ser cancelada manualmente nesta tabela)"
+			::UltMsg += " e nao pode ser inutilizada por que encontra-se com status '" + _aStatWMS [1, 2] + "'"
+			::UltMsg += " no campo STATUS_PROTHEUS da tabela de integracao tb_wms_entrada."
+			::UltMsg += "Essa operacao de 'guarda' deve ser abortada manualmente nesta tabela para poder inutilizar a etiqueta.)"
 			_lContinua = .F.
 		endif
 	endif
@@ -872,7 +922,7 @@ METHOD Inutiliza (_lMsg) Class ClsEtiq
 			u_help (::UltMsg)
 		endif
 	else
-		u_help (::UltMsg)
+		u_help (::UltMsg,, .t.)
 	endif
 
 	U_ML_SRArea (_aAreaAnt)

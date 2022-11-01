@@ -27,7 +27,7 @@ user function SB1PEF (_sProduto)
 	local _sDuplos   := ''
 	local _sMsgErr   := ''
 
-	u_log2 ('info', 'Verificando se o produto ' + alltrim (_sProduto) + ' pode ser enviado para o FullWMS.')
+	U_Log2 ('debug', '[' + procname () + ']Verificando se o produto ' + alltrim (_sProduto) + ' pode ser enviado para o FullWMS.')
 
 	if _lContinua
 		zb1 -> (dbsetorder (1))
@@ -58,7 +58,7 @@ user function SB1PEF (_sProduto)
 			_oSQL:_sQuery +=    " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
 			_oSQL:_sQuery +=    " AND SB1.B1_CODBAR  = '" + sb1 -> b1_codbar + "'"
 			_oSQL:_sQuery +=    " AND SB1.B1_COD    != '" + sb1 -> b1_cod + "'"
-			_oSQL:Log ()
+			//_oSQL:Log ('[' + procname () + ']')
 			_sDuplos = _oSQL:RetQry (1, .f.)
 			if ! empty (_sDuplos)
 				_sMsgErr := "Impossivel enviar produto '" + alltrim (sb1 -> b1_cod) + "'"
@@ -98,7 +98,7 @@ user function SB1PEF (_sProduto)
 			_oSQL:_sQuery +=  " from V_WMS_DADOS_LOGISTICOS"
 			_oSQL:_sQuery += " where COD_ITEM = ''" + alltrim (_sProduto) + "''"
 			_oSQL:_sQuery += " ')"
-			_oSQL:Log ('[' + procname () + ']')
+			//_oSQL:Log ('[' + procname () + ']')
 			_aQryWMS = aclone (_oSQL:Qry2Array (.F., .F.))
 	//		u_log2 ('debug', _aQryWMS)
 			if len (_aQryWMS) == 0

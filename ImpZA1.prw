@@ -91,7 +91,7 @@ user function ImpZA1 (_sEtiq, _sIdImpr, _oEtiq)
 			_lContinua = .F.
 		endif
 	endif
-
+/*
 	// Se recebi objeto na chamada, eh por que a rotina anterior jah tinha
 	// instanciado. Caso contrario, vou instanciar agora. Minha intencao eh
 	// que, com o tempo, todos os dados para impressao sejam lidos do objeto
@@ -106,7 +106,7 @@ user function ImpZA1 (_sEtiq, _sIdImpr, _oEtiq)
 	else
 		U_Log2 ('debug', '[' + procname () + ']Recebi objeto _oEtiq jah instanciado.')
 	endif
-
+*/
 	if _lContinua
 		za1 -> (dbsetorder(1))
 		if ! za1 -> (dbseek(xFilial("ZA1") + _sEtiq, .F.))
@@ -117,8 +117,10 @@ user function ImpZA1 (_sEtiq, _sIdImpr, _oEtiq)
 
 	if _lContinua
 		sb1 -> (dbsetorder(1))
-		if ! sb1 -> (dbseek (xFilial("SB1") + za1 -> za1_prod, .F.))
-			u_help ("Produto da etiqueta ('" + za1 -> za1_prod + "') nao cadastrado.",, .t.)
+	//	if ! sb1 -> (dbseek (xFilial("SB1") + za1 -> za1_prod, .F.))
+		if ! sb1 -> (dbseek (xFilial("SB1") + _oEtiq:Produto, .F.))
+	//		u_help ("Produto da etiqueta ('" + za1 -> za1_prod + "') nao cadastrado.",, .t.)
+			u_help ("Produto da etiqueta ('" + _oEtiq:Produto + "') nao cadastrado.",, .t.)
 			_lContinua = .F.
 		endif
 	endif
