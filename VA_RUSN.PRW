@@ -200,24 +200,6 @@ User Function va_rusN (_lSimulNF)
 
 	// Definicao do TES a ser usado.
 	if _lContinua
-/*
-		U_Log2 ('debug', 'Para definicao de TES: _sTpForUva + sa2 -> a2_tipo = ' + _sTpForUva + sa2 -> a2_tipo)
-		do case
-		case sze -> ze_assoc == '001369'  // Producao propria Livramento
-			_sTES = '028'
-		case _sTpForUva + sa2 -> a2_tipo == 'AF'
-			_sTES = GetMv ("VA_TSAFAF")  // Associado pessoa fisica
-		case _sTpForUva + sa2 -> a2_tipo == 'AJ'
-			_sTES = GetMv ("VA_TSAFAJ")  // Associado pessoa juridica
-		case _sTpForUva + sa2 -> a2_tipo == 'NF'
-			_sTES = GetMv ("VA_TSAFNF")  // Nao associado pessoa fisica
-		case _sTpForUva + sa2 -> a2_tipo == 'NJ'
-			_sTES = GetMv ("VA_TSAFNJ")  // Nao associado pessoa juridica
-		otherwise
-			u_help ("Nao foi possivel definir o TES a ser usado para gerar contranota. Verifique o cadastro do fornecedor (pessoa fisica/juridica) e tipo de fornecedor no NaWeb.",, .T.)
-			_lContinua = .F.
-		endcase
-*/
 		_sTes = U_TESSafra (sze -> ze_safra, sze -> ze_assoc, sze -> ze_lojasso, 'C')
 		if empty (_sTES)
 			_lContinua = .F.
@@ -226,7 +208,7 @@ User Function va_rusN (_lSimulNF)
 //	u_log2 ('info', '_sTES:' + _sTES)
 
 
-	// Atualiza sistema de agendamento/inspecao com status de 'CON' (concluida). Mais para garantir em algum caso que o inspetor de tombadores tenha deixado passar.
+	// Atualiza status no sistema de agendamento/inspecao
 //	U_VA_RusAI ('INS/AGE/LIB', 'CON')
 	if _lContinua
 		_oCarSaf:GeraAtrib ("SZE")  // Atualiza atributos com o que foi gravado nos arquivos.
@@ -260,7 +242,7 @@ User Function va_rusN (_lSimulNF)
 		if ! empty (_sAlmox)
 			sx5 -> (dbsetorder (1))
 			if ! sx5 -> (dbseek (xfilial ("SX5") + "AL" + _sAlmox, .F.))
-				u_help ("Almoxarifado '" + _sAlmox + "' nao cadastrado neste filial para entrada da uva. Verifique cadastro da balanca '" + sze -> ze_local + "'.")
+				u_help ("Almoxarifado '" + _sAlmox + "' nao cadastrado nesta filial para entrada da uva. Verifique cadastro da balanca '" + sze -> ze_local + "'.")
 				_lContinua = .F.
 			endif
 		endif

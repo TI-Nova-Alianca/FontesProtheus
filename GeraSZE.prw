@@ -12,6 +12,7 @@
 // 17/12/2021 - Robert - Voltamos para o retorno original em texto.
 // 18/02/2022 - Robert - Criado tratamento para 'carga compartilhada' (GLPI 11633).
 // 20/02/2022 - Robert - Variavel _sErros (publica do web service) renomeada para _sErroWS
+// 28/10/2022 - Robert - Removidos alguns parametros em desuso.
 //
 
 #include "VA_INCLU.prw"
@@ -57,7 +58,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		private _lLeBrix   := .T.
 		private _nQViasTk1 := 1
 		private _nQViasTk2 := 2
-		private _lTickPeso := .F.
+		//private _lTickPeso := .F.
 		private _lIntPort  := .F.
 		private agets      := {}  // Alimentada pelas rotinas do sistema e necessaria para validacoes de campos obrigatorios.
 		private aTela      := {}  // Alimentada pelas rotinas do sistema e necessaria para validacoes de campos obrigatorios.

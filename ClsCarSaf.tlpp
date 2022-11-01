@@ -27,18 +27,21 @@ return
 CLASS ClsCarSaf
 
 	// Declaracao das propriedades da Classe
-	public  data Filial      // ZE_FILIAL
-	public  data Safra       // ZE_SAFRA
+	public  data aIntegGrau  // Registros referentes a esta carga na tabela ZZA (integracao com leitor de grau)
 	public  data Carga       // ZE_CARGA
+	public  data CXouGranel  // Indica se recebe em caixas ou a granel (tombador)
+	public  data Compart1    // ZE_CargaC1 - Carga compartilhada com outro fornecedor
+	public  data Compart2    // ZE_CargaC2 - Carga compartilhada com outro fornecedor (atualmente, no maximo 2)
 	public  data Contranota  // ZE_NFGER
+	public  data Filial      // ZE_FILIAL
 	public  data Fornece     // ze_assoc
 	public  data Loja        // ze_lojasso
 	public  data PesoBruto   // ZE_PESOBRU
 	public  data PesoTara    // ZE_PESOTAR
 	public  data RegSZE      // recno() da tabela SZE.
+	public  data Safra       // ZE_SAFRA
 	public  data Segregada   // ZE_SEGREG
 	public  data SerieCtrn   // ze_serie
-	public  data StatusZZA   // status desta carga na tabela ZZA (integracao com leitor de grau)
 	public  data UltMsg      // Ultima mensagem gerada
 
 	// Declaracao dos Metodos da classe
@@ -46,6 +49,8 @@ CLASS ClsCarSaf
 	public METHOD AtuAgenda ()
 	public METHOD GeraAtrib ()
 	public METHOD GrvEvt ()
+	public METHOD Log ()
+	public METHOD StatusZZA ()
 ENDCLASS
 
 
@@ -54,15 +59,17 @@ ENDCLASS
 METHOD New (_nNumReg) Class ClsCarSaf
 	local _aAreaAnt := U_ML_SRArea ()
 
-	// Alimenta atributos com valores default de uma carga nova (vazia).
-	::GeraAtrib ("")
 	
 	// Se receber valor numerico, eh por que se trata do numero de registro do SZE.
 	if valtype (_nNumReg) == "N" .and. _nNumReg > 0
 		SZE -> (dbgoto (_nNumReg))
 		::GeraAtrib ("SZE")
+	else
+		// Alimenta atributos com valores default de uma carga nova (vazia).
+		::GeraAtrib ("")
 	endif
 
+	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Instanciada carga F' + ::Filial + '/' + ::Safra + '/' + ::Carga + ' de ' + ::Fornece + '/' + ::Loja)
 	U_ML_SRArea (_aAreaAnt)
 Return ::self
 
@@ -74,6 +81,7 @@ METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
 	local _oWSNaWeb  := NIL
 	local _sXMLCarg  := ''
 	local _lContinua := .T.
+	local _sZZAAtual := ''
 
 	// Lista de status passados pela Daiana em 26/10/22:
 	// Dis Disponível
@@ -89,16 +97,20 @@ METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
 	// SEG Segregada
 	// CNF Concluida NF
 
+	// Analisa situacao do arquivo de integracao com medidor de grau
+	_sZZAAtual = ::StatusZZA ()
+
 	// Define o que vai enviar para o NaWeb
+	_sStatPara = ''
 	if _lContinua
 		do case
 		case ::Segregada
 			_sStatPara = 'SEG'  // Segregada
 		case ! empty (::Contranota)
 			_sStatPara = 'CNF'  // Concluida NF
-		case ::StatusZZA == '3'
-			_sStatPara = 'CON'  // Concluido processamento
-		case ::StatusZZA == '2'
+		case _sZZAAtual == '3'
+			_sStatPara = 'CON'  // Processamento concluido
+		case _sZZAAtual == '2'
 			_sStatPara = 'EMP'  // Em processamento
 		case ::PesoBruto > 0
 			_sStatPara = 'LIB'  // Liberada (para entrar e descarregar)
@@ -151,43 +163,49 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	local _oSQL     := NIL
 
 	// Defaults
-	::RegSZE     = 0
-	::Filial     = ''
-	::Safra      = ''
+	::aIntegGrau   = {}
 	::Carga      = ''
 	::Contranota = ''
+	::Compart1   = ''
+	::Compart2   = ''
+	::CXouGranel = ''
+	::Filial     = ''
+	::Fornece    = ''
+	::Loja       = ''
 	::PesoBruto  = 0
 	::PesoTara   = 0
+	::RegSZE     = 0
+	::Safra      = ''
 	::Segregada  = .F.
-	::StatusZZA  = ''
 	::UltMsg     = ''
 
 	do case
 	case _sOrigem == 'M'  // Variaveis M->
-		::Filial = xfilial ("SZE")
-		::Safra  = m->safra
-		::Carga  = m->carga
+		::Filial     = xfilial ("SZE")
+		::Safra      = m->safra
+		::Carga      = m->carga
+		::Compart1   = m->ze_cargaC1
+		::Compart2   = m->ze_cargaC2
+		::Contranota = m->ze_nfger
+		::Fornece    = m->ze_assoc
+		::Loja       = m->ze_lojasso
+		::PesoBruto  = m->ze_pesobru
+		::PesoTara   = m->ze_pesotar
+		::Segregada  = (m->ze_segreg == 'S')
 
 	case _sOrigem == "SZE"
-		::RegSZE     = sze -> (recno ())
-		::Filial     = sze -> ze_filial
-		::Safra      = sze -> ze_safra
 		::Carga      = sze -> ze_carga
+		::Filial     = sze -> ze_filial
+		::Compart1   = sze -> ze_cargaC1
+		::Compart2   = sze -> ze_cargaC2
 		::Contranota = sze -> ze_nfger
+		::Fornece    = sze -> ze_assoc
+		::Loja       = sze -> ze_lojasso
 		::PesoBruto  = sze -> ze_pesobru
 		::PesoTara   = sze -> ze_pesotar
+		::RegSZE     = sze -> (recno ())
+		::Safra      = sze -> ze_safra
 		::Segregada  = (sze -> ze_segreg == 'S')
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "SELECT ISNULL (ZZA_STATUS, '')"
-		_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZA") + " ZZA"
-		_oSQL:_sQuery += " WHERE ZZA.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND ZZA.ZZA_FILIAL = '" + ::Filial + "'"
-		_oSQL:_sQuery +=   " AND ZZA.ZZA_SAFRA  = '" + ::Safra + "'"
-		_oSQL:_sQuery +=   " AND ZZA.ZZA_CARGA  = '" + ::Carga + "'"
-		_oSQL:_sQuery +=   " AND ZZA.ZZA_PRODUT = '01'"  // Tenho intencao de comecar a gravar apenas 1 item por carga, independentemente de haver mais de uma variedade.
-		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
-		::StatusZZA  = _oSQL:RetQry (1, .f.)
 
 	otherwise
 		if ! empty (_sOrigem)  // Se origem vazia, eh por que estou apenas instanciando um objeto vazio.
@@ -195,6 +213,26 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 			u_help (::UltMsg,, .t.)
 		endif
 	endcase
+
+	::CxOuGranel = iif (::Filial == '03', 'C', 'G')  // Somente Livramento ainda recebe em caixas
+
+	// Alimenta array de informacoes da tabela de integracao com medidor de grau.
+	if ! empty (::Filial) .and. ! empty (::Safra) .and. ! empty (::Carga)
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT ZZA_PRODUT, ZZA_STATUS, ZZA_GRAU"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZA") + " ZZA"
+		_oSQL:_sQuery += " WHERE ZZA.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND ZZA.ZZA_FILIAL = '" + ::Filial + "'"
+		_oSQL:_sQuery +=   " AND ZZA.ZZA_SAFRA  = '" + ::Safra + "'"
+		_oSQL:_sQuery +=   " AND ZZA.ZZA_CARGA  = '" + ::Carga + "'"
+		_oSQL:_sQuery += " ORDER BY ZZA.ZZA_PRODUT"  // zza_produt = zf_item
+		//_oSQL:_sQuery +=   " AND ZZA.ZZA_PRODUT = '01'"  // Tenho intencao de comecar a gravar apenas 1 item por carga, independentemente de haver mais de uma variedade.
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		::aIntegGrau := aclone (_oSQL:Qry2Array (.F., .F.))
+//		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']aIntegGrau:')
+//		U_Log2 ('debug', ::aIntegGrau)
+	endif
 
 	U_ML_SRArea (_aAreaAnt)
 return
@@ -217,3 +255,64 @@ METHOD GrvEvt (_sCodEvt, _sTxtEvt) Class ClsCarSaf
 	_oEvento:LojaFor   = ::Loja
 	_oEvento:Grava ()
 return
+
+
+// --------------------------------------------------------------------------
+// Grava dados da carga em arquivo de log, para ajudar em rastreio de problemas.
+METHOD Log () Class ClsCarSaf
+	local _sLogCar := ''
+	_sLogCar += 'Filial: ' + ::Filial + ' Safra: ' + ::Safra + ' Carga: ' + ::Carga + chr (13) + chr (10)
+	_sLogCar += 'Fornecedor: ' + ::Fornece + '/' + ::Loja + ' - ' + ::Carga + chr (13) + chr (10)
+	U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']--------------------------')
+	U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Exportando dados do objeto')
+	U_Log2 ('info', _sLogCar)
+	U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']--------------------------')
+return _sLogCar
+
+
+// --------------------------------------------------------------------------
+// Faz uma analise da integracao com o grau (pode ter mais de um item na carga)
+// e procura definir o status do ZZA 'como um todo' para a carga.
+METHOD StatusZZA () Class ClsCarSaf
+	local _sRetStZZA := ''
+
+	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Avaliando carga recebida em ' + ::CXouGranel + ' com registros assim:')
+	U_Log2 ('debug', ::aIntegGrau)
+	
+	// Quando a carga eh recebida em caixas, vale o 'menor' status por
+	// que provavelmente cada variedade vai ser processada separadamente.
+	if ::CXouGranel == 'C'
+		if ascan (::aIntegGrau, {|_aVal| _aVal [2] == 'C'}) > 0
+			_sRetStZZA = 'C'
+		elseif ascan (::aIntegGrau, {|_aVal| _aVal [2] == '0'}) > 0
+			_sRetStZZA = '0'
+		elseif ascan (::aIntegGrau, {|_aVal| _aVal [2] == '1'}) > 0
+			_sRetStZZA = '1'
+		elseif ascan (::aIntegGrau, {|_aVal| _aVal [2] == '2'}) > 0
+			_sRetStZZA = '2'
+		elseif ascan (::aIntegGrau, {|_aVal| _aVal [2] == '3'}) > 0
+			_sRetStZZA = '3'
+		endif
+
+	// Quando a carga eh recebida a granel, vale o 'maior' status por
+	// que todas as variedades serao processadas junto. O programa do
+	// grau vai dar o retorno em apenas um dos registros.
+	elseif ::CXouGranel == 'G'
+		if ascan (::aIntegGrau, {|_aVal| _aVal [2] == 'C'}) > 0
+			_sRetStZZA = 'C'
+		elseif ascan (::aIntegGrau, {|_aVal| _aVal [2] == '3'}) > 0
+			_sRetStZZA = '3'
+		elseif ascan (::aIntegGrau, {|_aVal| _aVal [2] == '2'}) > 0
+			_sRetStZZA = '2'
+		elseif ascan (::aIntegGrau, {|_aVal| _aVal [2] == '1'}) > 0
+			_sRetStZZA = '1'
+		elseif ascan (::aIntegGrau, {|_aVal| _aVal [2] == '0'}) > 0
+			_sRetStZZA = '0'
+		endif
+		
+	else
+		u_help ("Conteudo desconhecido (" + ::CXouGranel + ") na analise do status da medicao de grau.")
+	endif
+
+	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Retornando statusZZA = ' + _sRetStZZA + ' para a carga ' + ::Carga)
+return _sRetStZZA

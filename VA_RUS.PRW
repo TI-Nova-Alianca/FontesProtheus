@@ -27,6 +27,7 @@
 // 23/02/2021 - Robert - Criada chamada para exportar planilha de medicoes de grau (GLPI 9454).
 // 13/03/2022 - Robert - Melhorados logs, criados botoes para consulta de eventos e simulacao de leitura de inspecoes.
 // 26/05/2022 - Robert - Novos parametros na chamada da funcao U_RastLt().
+// 28/10/2022 - Robert - Removidos alguns parametros em desuso.
 //
 
 // --------------------------------------------------------------------------
@@ -51,7 +52,7 @@ User Function va_rus ()
 	private _lLeBrix   := .F. // Deixar private para ser vista por outras rotinas.
 	private _nQViasTk1 := 0   // Deixar private para ser vista por outras rotinas.
 	private _nQViasTk2 := 0   // Deixar private para ser vista por outras rotinas.
-	private _lTickPeso := .F. // Deixar private para ser vista por outras rotinas.
+	//private _lTickPeso := .F. // Deixar private para ser vista por outras rotinas.
 	private _xSAFRAJ   := U_IniSafra ()  // Retorna o Ano da Safra (ML_SZ9.PRW)
 	private aRotina    := {}
 	private cPerg      := 'VA_RUS'
@@ -69,6 +70,10 @@ User Function va_rus ()
 		endif
 		_nPCham++
 	enddo
+
+	// Deixa uma carga instanciada, mesmo que vazia, pois algumas funcoes
+	// (como a validacao de parametros por exemplo) jah vao tentar ler o objeto.
+	private _oCarSaf := ClsCarSaf ():New ()
 
 	// Cria parametros e obriga usuario a responde-los na entrada da rotina.
 	_ValidPerg ()
@@ -366,6 +371,8 @@ return
 // --------------------------------------------------------------------------
 // Monitora fila de descarga.
 user function VA_RUSMF ()
+	u_help ("Funcionalidade de fila de descarga migrada para o NaWeb")
+	/*
 	local _aAreaAnt := U_ML_SRArea ()
 	local _oSQL := NIL
 
@@ -384,6 +391,7 @@ user function VA_RUSMF ()
 		_oSQL:F3Array ("Fila de descarga")
 	endif
 	U_ML_SRArea (_aAreaAnt)
+	*/
 return
 
 
@@ -459,26 +467,30 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {04, "Porta comunicacao balanca     ", "C", 4,  0,  "",   "",      {},                                "COM1 / COM2 / ..."})
 	aadd (_aRegsPerg, {05, "Modelo balanca eletronica     ", "N", 1,  0,  "",   "",      {'Digitron', 'Toledo', 'Saturno'}, ""})
 	aadd (_aRegsPerg, {06, "Multiplos Kg balanca          ", "N", 2,  0,  "",   "",      {},                                ""})
-	aadd (_aRegsPerg, {07, "Embalagem padrao              ", "N", 1,  0,  "",   "",      {'GRANEL', 'CAIXAS'},              ""})
-	aadd (_aRegsPerg, {08, "Peso padrao embalagem (caixa) ", "N", 2,  0,  "",   "",      {},                                ""})
+//	aadd (_aRegsPerg, {07, "Embalagem padrao              ", "N", 1,  0,  "",   "",      {'GRANEL', 'CAIXAS'},              ""})
+	aadd (_aRegsPerg, {07, "PARAMETRO EM DESUSO           ", "N", 1,  0,  "",   "",      {},                                ""})
+//	aadd (_aRegsPerg, {08, "Peso padrao embalagem (caixa) ", "N", 2,  0,  "",   "",      {},                                ""})
+	aadd (_aRegsPerg, {08, "PARAMETRO EM DESUSO           ", "N", 1,  0,  "",   "",      {},                                ""})
 	aadd (_aRegsPerg, {09, "Usa impressora de ticket      ", "N", 1,  0,  "",   "",      {"Sim", "Nao"},                    ""})
 	aadd (_aRegsPerg, {10, "Impressora de ticket          ", "C", 2,  0,  "",   "ZX549", {},                                "Ex.: lpt1: ou LPT2:"})
 	aadd (_aRegsPerg, {11, "Comunicacao c/ medidor de brix", "N", 1,  0,  "",   "",      {"Sim", "Nao"},                    ""})
 	aadd (_aRegsPerg, {12, "Qt. de vias ticket 1a.pesagem ", "N", 1,  0,  "",   "",      {},                                ""})
 	aadd (_aRegsPerg, {13, "Qt. de vias ticket 2a.pesagem ", "N", 1,  0,  "",   "",      {},                                ""})
-	aadd (_aRegsPerg, {14, "Imprime ticket a cada pesagem ", "N", 1,  0,  "",   "",      {"Sim", "Nao"},                    ""})
-	aadd (_aRegsPerg, {15, "Integr. c/ controle portaria  ", "N", 1,  0,  "",   "",      {"Sim", "Nao"},                    ""})
+//	aadd (_aRegsPerg, {14, "Imprime ticket a cada pesagem ", "N", 1,  0,  "",   "",      {"Sim", "Nao"},                    ""})
+	aadd (_aRegsPerg, {14, "PARAMETRO EM DESUSO           ", "N", 1,  0,  "",   "",      {},                                ""})
+//	aadd (_aRegsPerg, {15, "Integr. c/ controle portaria  ", "N", 1,  0,  "",   "",      {"Sim", "Nao"},                    ""})
+	aadd (_aRegsPerg, {15, "PARAMETRO EM DESUSO           ", "N", 1,  0,  "",   "",      {},                                ""})
 
 	aadd (_aDefaults, {"02", 2})
 	aadd (_aDefaults, {"03", 2})
 	aadd (_aDefaults, {"06", 10})
-	aadd (_aDefaults, {"07", 2})
-	aadd (_aDefaults, {"08", 21})
+//	aadd (_aDefaults, {"07", 2})
+////	aadd (_aDefaults, {"08", 21})
 	aadd (_aDefaults, {"09", 2})
 	aadd (_aDefaults, {"11", 2})
 	aadd (_aDefaults, {"12", 1})
 	aadd (_aDefaults, {"13", 1})
-	aadd (_aDefaults, {"14", 2})
-	aadd (_aDefaults, {"15", 2})
+//	aadd (_aDefaults, {"14", 2})
+//	aadd (_aDefaults, {"15", 2})
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 Return

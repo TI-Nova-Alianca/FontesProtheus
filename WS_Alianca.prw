@@ -2047,7 +2047,7 @@ Static Function _PedidosBloq()
 	_oSQL:_sQuery += " AND C5_LIBEROK != ''	 "		// Pedido com 'liberacao comercial (SC9 gerado)
 	_oSQL:_sQuery += " AND C5_NOTA != 'XXXXXXXXX' " // Residuo eliminado (nao sei por que as vezes grava com 9 posicoes)
 	_oSQL:_sQuery += " AND C5_NOTA != 'XXXXXX'  " 	// Residuo eliminado (nao sei por que as vezes grava com 6 posicoes)
-	_oSQL:Log ()
+	//_oSQL:Log ()
 	_aPed := aclone(_oSQL:Qry2Array ())
 
 	_XmlRet += "<BuscaPedidosBloqueados>"
@@ -2126,7 +2126,7 @@ Static Function _PedidosBloq()
 		_oSQL:_sQuery += " AND SC6.C6_NUM    = '" + _aPed[_x, 2] + "'"
 		_oSQL:_sQuery += " AND SC6.C6_CLI    = '" + _aPed[_x, 4] + "'"
 		_oSQL:_sQuery += " AND SC6.C6_LOJA   = '" + _aPed[_x, 5] + "'"
-		_oSQL:Log ()
+		//_oSQL:Log ()
 		_aItem := aclone (_oSQL:Qry2Array ())
 
 		_XmlRet += "		<ItensPedido>"

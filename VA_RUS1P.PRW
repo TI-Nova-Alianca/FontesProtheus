@@ -10,6 +10,7 @@
 // 01/02/2020 - Robert - Sobreescrevia inspecoes quando chamado a partir da rotina de portaria.
 // 21/02/2020 - Robert - Alteracoes na tabela ZZA passam a ser feitas em rotina externa (U_AtuZZA).
 // 11/03/2022 - Robert - Novos parametros funcao U_VA_RusLI() - GLPI 11745.
+// 28/10/2022 - Robert - Removidos alguns parametros em desuso.
 //
 
 #include "VA_Inclu.prw"
@@ -63,7 +64,8 @@ user function va_rus1P (_lPortaria)
 			sze->ze_pesoBru = _nPLidoBal
 			msunlock ()
 	
-			if _lImpTick .and. _lTickPeso .and. ! _lIntPort
+		//	if _lImpTick .and. _lTickPeso .and. ! _lIntPort
+			if _lImpTick .and. ! _lIntPort
 				U_VA_RUSTk (1, _sPortTick, _nQViasTk1, {}, 'Bematech', .t.)
 			endif
 		endif

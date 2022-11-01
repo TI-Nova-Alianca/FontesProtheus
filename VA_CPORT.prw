@@ -47,6 +47,7 @@
 // 25/01/2022 - Claudia - Incluida rotina para exportar dados em planilha. GLPI: 10771.
 // 11/03/2022 - Robert  - Novos parametros funcao U_VA_RusLI() - GLPI 11745.
 // 14/06/2022 - sandra  - Incluso campo ZZT_OBS - GLPI 12209.
+// 28/10/2022 - Robert  - Removidos alguns parametros em desuso (da rotina de recebimento safra).
 //
 
 // ----------------------------------------------------------------------------------------------------------------
@@ -414,7 +415,7 @@ static function _SegPesSZE ()
 			private _lLeBrix   := .F. // Deixar private para ser vista por outras rotinas.
 			private _nQViasTk1 := 0   // Deixar private para ser vista por outras rotinas.
 			private _nQViasTk2 := 0   // Deixar private para ser vista por outras rotinas.
-			private _lTickPeso := .F. // Deixar private para ser vista por outras rotinas.
+			//private _lTickPeso := .F. // Deixar private para ser vista por outras rotinas.
 			private _xSAFRAJ   := U_IniSafra ()  // Retorna o Ano da Safra (ML_SZ9.PRW)
 			private aRotina    := {}
 			private cPerg      := 'VA_RUS'
