@@ -16,21 +16,22 @@
 // 05/02/2021 - Claudia - Alteração do campo descrição, conforme view VA_VSALDOS_TERCEIROS. GLPI: 9297
 // 08/03/2021 - Cláudia - GLPI: 9427 - Preço unitário VLR_UNIT
 // 27/08/2021 - Robert  - Inserido aviso de que a tela vai ser descontinuada (GLPI 9297).
+// 31/10/2022 - Robert  - Habilitado novamente (agora o pessoal jah se acostumou a usar pelo NaWeb).
 //
 
 // --------------------------------------------------------------------------------------------------
 User Function SldTerc ()
 	local _aAreaAnt   := U_ML_SRArea ()
 	local _aAmbAnt    := U_SalvaAmb ()
-	local _dDeadLine  := stod ('20210930')
+//	local _dDeadLine  := stod ('20210930')
 	private cPerg     := "SLDTERC"
 
-	u_help ("ATENCAO: A partir de " + dtoc (_dDeadLine) + " esta consulta vai estar disponivel somente no sistema NaWeb.")
-	if date () < _dDeadLine
+//	u_help ("ATENCAO: A partir de " + dtoc (_dDeadLine) + " esta consulta vai estar disponivel somente no sistema NaWeb.")
+//	if date () < _dDeadLine
 		_ValidPerg ()
 		Pergunte (cPerg, .T.)
 		Processa ({|| _Tela ()})
-	endif
+//	endif
 
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)

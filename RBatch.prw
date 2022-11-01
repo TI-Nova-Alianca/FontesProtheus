@@ -25,6 +25,7 @@
 // 14/02/2021 - Robert - Incluidas chamadas das funcoes U_UsoRot() e U_PerfMon para testes de monitoramento de performance  (GLPI 9409).
 // 30/06/2021 - Robert - Passa a acessar modulo '06' como default.
 // 02/10/2022 - Robert - Removido atributo :DiasDeVida da classe ClsAviso.
+// 31/10/2022 - Robert - Nao validava zz6_hrini para saber se encontra-se fora do intervalo de execucao
 //
 
 #include "tbiconn.ch"
@@ -170,19 +171,25 @@ User Function RBatch (_sEmp, _sFil)
 		for _nSeq = 1 to len (_aSeq)
 			zz6 -> (dbgoto (_aSeq [_nSeq, 1]))
 
-        	// Verifica se o batch ainda encontra-se ativo (pode ter havido alteracao manual depois que gerei a array de batches pendentes)
-        	if zz6 -> zz6_ativo != 'S'
-        		u_log2 ('aviso', 'batch inativo.')
-        		loop
-        	endif
+			// Verifica se o batch ainda encontra-se ativo (pode ter havido alteracao manual depois que gerei a array de batches pendentes)
+			if zz6 -> zz6_ativo != 'S'
+				u_log2 ('aviso', 'batch inativo.')
+				loop
+			endif
 
-        	// Verifica se jah passou o horario limite (pode ter havido alteracao manual depois que gerei a array de batches pendentes ou demora no batch anterior)
-        	if zz6 -> zz6_hrfim < left (time (), 5)
-        		u_log2 ('aviso', 'Fora do horario limite de execucao para este batch.')
-        		loop
-        	endif
+			// Verifica se ainda nao chegou no horario limite (pode ter havido alteracao manual depois que gerei a array de batches pendentes ou demora no batch anterior)
+			if zz6 -> zz6_hrini > left (time (), 5)
+				u_log2 ('aviso', 'Fora do horario limite de execucao para este batch. Ainda nao estah na hora de rodar.')
+				loop
+			endif
 
-        	// Cria uma variavel global indicando o inicio da execucao deste batch.
+			// Verifica se jah passou o horario limite (pode ter havido alteracao manual depois que gerei a array de batches pendentes ou demora no batch anterior)
+			if zz6 -> zz6_hrfim < left (time (), 5)
+				u_log2 ('aviso', 'Fora do horario limite de execucao para este batch. Jah passou da hora de rodar.')
+				loop
+			endif
+
+			// Cria uma variavel global indicando o inicio da execucao deste batch.
 			_nTenta := 0
 			_lGlbOK := .F.
 			_sVarGlob := 'Batch_' + alltrim (str (ThreadId ()))

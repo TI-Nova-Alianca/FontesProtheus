@@ -44,7 +44,9 @@
 // 22/08/2022 - Claudia - Incluida validação para nao gravar registro no conta rapel 
 //                        se não houver valor. GLPI: 8916
 // 07/10/2022 - Claudia - Atualização de rapel apenas para serie 10. GLPI: 8916
+// 28/10/2022 - Robert  - Cod. evento trocado de SA5010 para SA5001 ao gravar amarracao produto x fornecedor.
 //
+
 // --------------------------------------------------------------------------------------------------------------
 user function M460Fim ()
 	local _aAreaAnt := U_ML_SRArea ()
@@ -319,7 +321,7 @@ Static Function _GravaProdXFornc(_sFilial,_sDoc,_sSerie,_sCliente,_sLoja,_sCodFo
 			_oEvento:Texto     = " Inclusão de produto X fornecedor" + chr (13) + chr (10) + ;
 								 " Produto: " + alltrim(_sProduto) + chr (13) + chr (10) + ;
 								 " Fornecedor: "+ alltrim(_sCodForn) + "-" + alltrim(_sLojForn) + " "
-			_oEvento:CodEven   = "SA5010"
+			_oEvento:CodEven   = 'SA5001'  //"SA5010"
 			_oEvento:Produto   = alltrim(_sProduto)
 			_oEvento:NFSaida   = _sDoc
 			_oEvento:SerieSaid = _sSerie
