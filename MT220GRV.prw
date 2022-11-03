@@ -12,6 +12,7 @@ user function MT220GRV ()
 	local _oEvento  := NIL
 	_oEvento := ClsEvent():new ()
 	_oEvento:Produto = sb9 -> b9_cod
+	_oEvento:CodEven = 'SB9003'
 	_oEvento:Texto   = "Inclusao de saldo inicial AX '" + sb9 -> b9_local + "' Qt = " + cvaltochar (sb9 -> b9_qini) + " Vlr = " + cvaltochar (sb9 -> b9_vini1)
 	_oEvento:Grava ()
 return

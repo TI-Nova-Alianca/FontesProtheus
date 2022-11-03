@@ -100,6 +100,7 @@
 // 11/08/2022 - Robert  - Criada opcao de impressao de etiquetas.
 // 13/09/2022 - Robert  - Melhorado teste de muita movimentacao no kardex (de SELECT * para SELECT COUNT (*) )
 // 22/10/2022 - Robert  - Grava evento temporario de atualizacao do campo f2_DtEntr para depuracao de programas.
+// 03/11/2022 - Robert  - No apontamento de etiq.producao, passa a usar o metodo ValCbEmb para validar barras embalagem coletiva.
 //
 
 // --------------------------------------------------------------------------------------------------------
@@ -1949,6 +1950,7 @@ static function _ApPrEtqCB ()
 		endif
 	endif
 
+	/*
 	// Valida se o codigo de barras pertence ao produto da etiqueta
 	if empty (_sErroWS)
 		_oSQL := ClsSQL ():New ()
@@ -1964,6 +1966,13 @@ static function _ApPrEtqCB ()
 			_sErroWS += "Codigo de barras inconsistente. Etiqueta refere-se "
 			_sErroWS += "ao produto '" + alltrim (_oEtiq:Produto) + "' "
 			_sErroWS += "(" + alltrim (fBuscaCpo ("SB1", 1, xfilial ("SB1") + _oEtiq:Produto, "B1_DESC")) + ")"
+		endif
+	endif
+*/
+	// Valida codigo de barras lido na embalagem coletiva.
+	if empty (_sErroWS)
+		if ! _oEtiq:ValCbEmb (_sCodBarAp)
+			_sErroWS += _oEtiq:UltMsg
 		endif
 	endif
 

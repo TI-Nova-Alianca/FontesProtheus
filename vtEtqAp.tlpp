@@ -31,6 +31,8 @@ user function vtEtqAp ()
 	private _nLargTela := 39
 	private _sArqLog := 'VtEtqAp.log'  // Quero usar o mesmo arquivo de log para todos os usuarios.
 
+	U_Log2 ('debug', '[' + procname () + ']Entrou no programa.')
+
 	do while _lContinua
 		
 		// Limpa variaveis para ler nova etiqueta.
