@@ -52,6 +52,7 @@
 // 06/11/2020 - Claudia - Incluida a exclusão de titulos de NF's de cartões. GLPI: 8749
 // 24/05/2022 - Claudia - Incluido o estorno de rapel. GLPI: 8916
 // 07/10/2022 - Claudia - Atualização de rapel apenas para serie 10. GLPI: 8916
+// 01/11/2022 - Claudia - Incluido o tipo PX para validação de exclusão de títulos. GLPI: 12713
 //
 // ---------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
@@ -263,7 +264,7 @@ Static Function _ExcTitCartao()
 	_oSQL:_sQuery += " WHERE E1_FILIAL = '" + sf2 -> f2_filial + "'"
 	_oSQL:_sQuery += " AND E1_NUM      = '" + sf2 -> f2_doc    + "'"
 	_oSQL:_sQuery += " AND E1_PREFIXO  = '" + sf2 -> f2_serie  + "'"
-	_oSQL:_sQuery += " AND E1_TIPO IN('CC','CD') "
+	_oSQL:_sQuery += " AND E1_TIPO IN('CC','CD','PX') "
     _oSQL:_sQuery += " AND E1_ADM   <> '' "
 	_oSQL:_sQuery += " AND E1_BAIXA = '' "
 	_aDados := aclone (_oSQL:Qry2Array ())
@@ -276,7 +277,7 @@ Static Function _ExcTitCartao()
 		_oSQL:_sQuery += " WHERE E1_FILIAL = '" + sf2 -> f2_filial + "'"
 		_oSQL:_sQuery += " AND E1_NUM      = '" + sf2 -> f2_doc    + "'"
 		_oSQL:_sQuery += " AND E1_PREFIXO  = '" + sf2 -> f2_serie  + "'"
-		_oSQL:_sQuery += " AND E1_TIPO IN('CC','CD') "
+		_oSQL:_sQuery += " AND E1_TIPO IN('CC','CD','PX') "
 		_oSQL:_sQuery += " AND E1_ADM   <> '' "
 		_oSQL:_sQuery += " AND E1_BAIXA = '' "
 		_oSQL:Log ()
