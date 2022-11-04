@@ -100,10 +100,11 @@
 // 11/08/2022 - Robert  - Criada opcao de impressao de etiquetas.
 // 13/09/2022 - Robert  - Melhorado teste de muita movimentacao no kardex (de SELECT * para SELECT COUNT (*) )
 // 22/10/2022 - Robert  - Grava evento temporario de atualizacao do campo f2_DtEntr para depuracao de programas.
-// 03/11/2022 - Robert  - No apontamento de etiq.producao, passa a usar o metodo ValCbEmb para validar barras embalagem coletiva.
+// 03/11/2022 - Robert  - No apontamento de etiq.producao, passa a usar o metodo ValCbEmb para validar 
+//                        barras embalagem coletiva.
+// 04/11/2022 - Claudia - Incluido nome do vendedor na consulta _PedidosBloq/BuscaPedidosBloqueados. GLPI: 12764
 //
-
-// --------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
 #INCLUDE "PROTHEUS.CH"
 #include "tbiconn.ch"
@@ -2041,7 +2042,7 @@ Static Function _PedidosBloq()
 	_oSQL:_sQuery += "    ,C5_VAPRPED "
 	_oSQL:_sQuery += "    ,C5_STATUS "
 	_oSQL:_sQuery += "    ,C5_VABLOQ "
-	_oSQL:_sQuery += "    ,C5_VEND1 "
+	_oSQL:_sQuery += "    ,C5_VEND1 +'- '+ SA3.A3_NOME "
 	_oSQL:_sQuery += "    ,C5_VAUSER "
 	_oSQL:_sQuery += "    ,C5_TIPO "
 	_oSQL:_sQuery += "    ,C5_TPFRETE "
@@ -2051,6 +2052,9 @@ Static Function _PedidosBloq()
 	_oSQL:_sQuery += " 	ON SA1.D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " 		AND A1_COD = C5_CLIENTE "
 	_oSQL:_sQuery += " 		AND A1_LOJA = C5_LOJACLI "
+	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA3") + " SA3 "
+	_oSQL:_sQuery += "  ON SA3.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " 		AND SA3.A3_COD = SC5.C5_VEND1 "
 	_oSQL:_sQuery += " WHERE SC5.D_E_L_E_T_   = '' "
 	_oSQL:_sQuery += " AND C5_VABLOQ  != ''	 "		// Pedido com bloqueio
 	_oSQL:_sQuery += " AND C5_LIBEROK != ''	 "		// Pedido com 'liberacao comercial (SC9 gerado)
