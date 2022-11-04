@@ -7,7 +7,7 @@ User Function claudia ()
 		return
 	endif
 
-	//u_help("Nada para executar")
+	u_help("Nada para executar")
 
 	//u_help("_RapelGrava")
 	//_RapelGrava()
@@ -24,46 +24,103 @@ User Function claudia ()
 	//U_HELP("_AtuRepre")
 	//_AtuRepre()
 
+	//u_help("ALTERASB1")
+	//U_ALTERASB1()
+
 Return
-//
-// ------------------------------------------------------------------------------------
-Static Function _AtuSB1()
-	Local _aDados 	:= {}
-	Local _i 		:=0
+// //
+// // altera B1 para manutenção
+// User Function ALTERASB1()
+//     Local oModel        := Nil
+// 	Local _i            := 0
+//     Private lMsErroAuto := .F.
+     
+//     // Le planilha .csv
+//     _aDados = U_LeCSV ('C:\Temp\manutencao.csv', ';')
+     
+//     for _i := 1 to len (_aDados)
+// 		_sProd   := _aDados[_i, 1]
+// 		_sGrupo  := _aDados[_i, 2]
 
-	_aDados = U_LeCSV ('C:\Temp\sb1.csv', ';')
+// 		//Posiciona
+// 		DbSelectArea("SB1")
+// 		DbSetOrder(1)
 
-	for _i := 1 to len (_aDados)
-		_sProd   := _aDados[_i, 1]
-		_sDesc   := _aDados[_i, 7]
-		_sLinha  := _aDados[_i, 8]
-		_sEnvase := _aDados[_i, 9]
+// 		u_log("Produto " + _sProd)
+// 		If SB1->(DbSeek(xFilial("SB1") + _sProd))
+// 			_sGrpOld := SB1->B1_GRUPO
+			
+// 			if alltrim(_sGrupo) <> alltrim(_sGrpOld)
+// 				oModel:= FwLoadModel ("MATA010")
+// 				oModel:SetOperation(4)
+// 				oModel:Activate()
+			
+// 				// inclui os cmapos para alteração
+// 				oModel:SetValue("SB1MASTER","B1_GRUPO",_sGrupo)
+			
+// 				If oModel:VldData()
+// 					oModel:CommitData()
 
-		DbSelectArea("SB1")
-		DbSetOrder(1)
-		if DbSeek(xFilial("SB1")+ _sProd,.F.)
-			_sDescOld   := sb1->b1_desc
-			_sLinhaOld  := sb1->b1_codlin
-			_sEnvaseOld := sb1->b1_valinen
+// 					_oEvento := ClsEvent():new ()
+// 					_oEvento:Alias    = 'SB1'
+// 					_oEvento:Texto    = "B1_GRUPO DE " + _sGrpOld + " PARA " + _sGrupo 
+// 					_oEvento:CodEven  = "SB1001"
+// 					_oEvento:Grava() 
 
-			reclock("SB1", .F.)
-				SB1->B1_B1_DESC := _sDesc
-				SB1->B1_CODLIN  := _sLinha
-				SB1->B1_VALINEN := _sEnvase
-			MsUnLock()
+// 					u_log("Registro ALTERADO!")
+// 				Else
+// 					VarInfo("",oModel:GetErrorMessage())
+// 					u_log("Deu erro")
+// 				EndIf
 
-			_oEvento := ClsEvent():new ()
-			_oEvento:Alias    = 'SB1'
-			_oEvento:Texto    = " B1_B1_DESC DE " + _sDescOld + " PARA " + _sDesc + chr (13) + chr (10) + ;
-								" B1_CODLIN DE " + _sLinhaOld + " PARA " + _sLinha + chr (13) + chr (10) + ;
-								" B1_VALINEN DE " + _sEnvaseOld +" PARA " + _sEnvase 
-			_oEvento:CodEven  = "SB1010"
-			_oEvento:Grava() 
-		endif	
+// 				oModel:DeActivate()
+// 			endif
+// 		Else
+// 			u_log("Registro NAO LOCALIZADO!")
+// 		EndIf
+// 	Next 
+// 	u_help("Finalizou") 
+// Return 
+ 
+// //
+// // ------------------------------------------------------------------------------------
+// Static Function _AtuSB1()
+// 	Local _aDados 	:= {}
+// 	Local _i 		:=0
+
+// 	_aDados = U_LeCSV ('C:\Temp\sb1.csv', ';')
+
+// 	for _i := 1 to len (_aDados)
+// 		_sProd   := _aDados[_i, 1]
+// 		_sDesc   := _aDados[_i, 7]
+// 		_sLinha  := _aDados[_i, 8]
+// 		_sEnvase := _aDados[_i, 9]
+
+// 		DbSelectArea("SB1")
+// 		DbSetOrder(1)
+// 		if DbSeek(xFilial("SB1")+ _sProd,.F.)
+// 			_sDescOld   := sb1->b1_desc
+// 			_sLinhaOld  := sb1->b1_codlin
+// 			_sEnvaseOld := sb1->b1_valinen
+
+// 			reclock("SB1", .F.)
+// 				SB1->B1_B1_DESC := _sDesc
+// 				SB1->B1_CODLIN  := _sLinha
+// 				SB1->B1_VALINEN := _sEnvase
+// 			MsUnLock()
+
+// 			_oEvento := ClsEvent():new ()
+// 			_oEvento:Alias    = 'SB1'
+// 			_oEvento:Texto    = " B1_B1_DESC DE " + _sDescOld + " PARA " + _sDesc + chr (13) + chr (10) + ;
+// 								" B1_CODLIN DE " + _sLinhaOld + " PARA " + _sLinha + chr (13) + chr (10) + ;
+// 								" B1_VALINEN DE " + _sEnvaseOld +" PARA " + _sEnvase 
+// 			_oEvento:CodEven  = "SB1010"
+// 			_oEvento:Grava() 
+// 		endif	
 	
-	Next
-	u_help("Feito!")
-Return
+// 	Next
+// 	u_help("Feito!")
+// Return
 //
 // ------------------------------------------------------------------------------------
 Static Function _AtuRepre()
