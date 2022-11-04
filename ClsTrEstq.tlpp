@@ -31,7 +31,7 @@
 // 19/10/2022 - Robert  - Impedir exclusao se gerou solic.separacao no FullWMS (GLPI 12724)
 // 31/10/2022 - Robert  - Classe renomeada de PRW para TLPP
 //                      - Tratamentos para permitir lote origem quando destino for FullWMS.
-//
+// 
 
 // ------------------------------------------------------------------------------------
 #include "colors.ch"
@@ -92,6 +92,7 @@ CLASS ClsTrEstq
 	public  METHOD Exclui ()
 	public  METHOD Executa ()
 	public  METHOD Inclui ()
+	public  METHOD GeraAtrib ()
 	public  METHOD GeraEtiq ()
 	public  METHOD GeraSD3 ()
 	public  METHOD Grava ()
@@ -103,97 +104,17 @@ ENDCLASS
 // --------------------------------------------------------------------------
 // Construtor.
 METHOD New (_nRecno) Class ClsTrEstq
-	local _aAmbAnt := {}
 
-	::Filial     = ''
-	::FilOrig    = ''
-	::FilDest    = ''
-	::Docto      = ''
-	::DtEmis     = ''
-	::RegZAG     = 0
-	::OP         = ''
-	::Motivo     = ''
-	::ProdOrig   = ''
-	::ProdDest   = ''
-	::AlmOrig    = ''
-	::AlmDest    = ''
-	::CtrLocOrig = .f.
-	::CtrLocDest = .f.
-	::CtrLotOrig = .f.
-	::CtrLotDest = .f.
-	::EndOrig    = ''
-	::EndDest    = ''
-	::Etiqueta   = ''
-	::Executado  = ''
-	::FWProdOrig = .F.
-	::FWProdDest = .F.
-	::ImprEtq    = ''
-	::LibNaIncl  = .T.
-	::LoteOrig   = ''
-	::LoteDest   = ''
-	::QtdSolic   = 0
-	::UltMsg     = ''
-	::UsrIncl    = ''
-	::UsrAutOri  = ''
-	::UsrAutDst  = ''
-	::UsrAutPCP  = ''
-	::UsrAutQld  = ''
+	// Alimenta atributos com valores default de uma etiqueta nova.
+	::GeraAtrib ("")
 
-	// Se receber numero de registro do ZAG, alimenta atributos da classe com seus dados.
-	if valtype (_nRecno) == "N" .and. _nRecno > 0
-		_aAmbAnt := U_ML_SRArea ()
-		zag -> (dbgoto (_nRecno))
-		::Filial    = zag -> zag_filial
-		::FilOrig   = zag -> zag_FilOri
-		::FilDest   = zag -> zag_FilDst
-		::RegZAG    = zag -> (recno ())
-		::Docto     = zag -> zag_doc
-		::DtEmis    = zag -> zag_emis
-		::UsrIncl   = zag -> zag_usrinc
-		::OP        = zag -> zag_op
-		::Motivo    = zag -> zag_Motivo
-		::ProdOrig  = zag -> zag_PrdOri
-		::ProdDest  = zag -> zag_PrdDst
-		::AlmOrig   = zag -> zag_AlmOri
-		::AlmDest   = zag -> zag_AlmDst
-		::EndOrig   = zag -> zag_EndOri
-		::EndDest   = zag -> zag_EndDst
-		::Executado = zag -> zag_exec
-		::LoteOrig  = zag -> zag_LotOri
-		::LoteDest  = zag -> zag_LotDst
-		::QtdSolic  = zag -> zag_QtdSol
-		::UsrAutOri = zag -> zag_UAutO
-		::UsrAutDst = zag -> zag_UAutD
-		::UsrAutPCP = zag -> zag_UAutP
-		::UsrAutQld = zag -> zag_UAutQ
-
-		// Busca dados adicionais dos produtos origem e destino (podem nao ser iguais)
-		::LeSB1 ()
-//		sb1 -> (dbsetorder (1))
-//		if ! sb1 -> (dbseek (xfilial ("SB1") + ::ProdOrig, .F.))
-//			::UltMsg += "Cadastro do produto origem (" + alltrim (::ProdOrig) + ") da transferencia nao localizado!"
-//			u_help (::UltMsg,, .t.)
-//		else
-//			::CtrLocOrig = (sb1 -> b1_localiz == 'S')
-//			::CtrLocDest = (sb1 -> b1_localiz == 'S')  // Presumindo que seja o mesmo produto.
-//			::CtrLotOrig = (sb1 -> b1_rastro  == 'L')
-//			::CtrLotDest = (sb1 -> b1_rastro  == 'L')  // Presumindo que seja o mesmo produto.
-//			::FWProdOrig = (sb1 -> b1_vafullw == 'S')
-//			::FWProdDest = (sb1 -> b1_vafullw == 'S')  // Presumindo que seja o mesmo produto.
-//		endif
-//		if ::ProdDest != ::ProdOrig
-//			if ! sb1 -> (dbseek (xfilial ("SB1") + ::ProdDest, .F.))
-//				::UltMsg += "Cadastro do produto destino (" + alltrim (::ProdDest) + ") da transferencia nao localizado!"
-//				u_help (::UltMsg,, .t.)
-//			else
-//				::CtrLocDest = (sb1 -> b1_localiz == 'S')
-//				::CtrLotDest = (sb1 -> b1_rastro  == 'L')
-//				::FWProdDest = (sb1 -> b1_vafullw == 'S')
-//			endif
-//		endif
-
-		U_ML_SRArea (_aAmbAnt)
+	// Se receber numerico, eh por que se trata do numero de registro
+	// jah existente no ZAG e preciso atualizar o objeto.
+	if valtype (_nRecno) == "N"
+		ZAG -> (dbgoto (_nRecno))
+		::GeraAtrib ("ZAG")
 	endif
+
 Return ::self
 
 
@@ -218,7 +139,7 @@ METHOD AtuZAG (_sCampo, _xValor) Class ClsTrEstq
 	local _lRet := .F.
 	local _aAreaAnt  := U_ML_SRArea ()
 
-	u_log2 ('info', 'Atualizando campo ' + _sCampo + ' com ' + cvaltochar (_xValor))
+	//u_log2 ('info', 'Atualizando campo ' + _sCampo + ' com ' + cvaltochar (_xValor))
 	if ::RegZAG > 0
 		zag -> (dbgoto (::RegZAG))
 		reclock ("ZAG", .F.)
@@ -375,7 +296,7 @@ METHOD Executa (_lMensagem) Class ClsTrEstq
 		u_log2 ('info', 'Ainda nao estah em condicoes de executar - msg.interna: ' + _sMsgInt)
 	endif
 
-	// Concatena a mensagen interna somente se a rotina chamadora quiser ve-la.
+	// Concatena a mensagem interna somente se a rotina chamadora quiser ve-la.
 	if _lMensagem
 		::UltMsg += _sMsgInt
 	endif
@@ -390,9 +311,81 @@ METHOD Executa (_lMensagem) Class ClsTrEstq
 		u_help (::UltMsg)
 	endif
 
-//	u_logFim (GetClassName (::Self) + '.' + procname ())
+	// Atualiza atributos do objeto com base no conteudo do registro atual.
+	::GeraAtrib ("ZAG")
+
 return _lContinua
 
+
+// --------------------------------------------------------------------------
+// Gera / atualiza atributos para o objeto.
+METHOD GeraAtrib (_sOrigem) class ClsTrEstq
+
+	// Defaults
+	::Filial     = ''
+	::FilOrig    = ''
+	::FilDest    = ''
+	::Docto      = ''
+	::DtEmis     = ''
+	::RegZAG     = 0
+	::OP         = ''
+	::Motivo     = ''
+	::ProdOrig   = ''
+	::ProdDest   = ''
+	::AlmOrig    = ''
+	::AlmDest    = ''
+	::CtrLocOrig = .f.
+	::CtrLocDest = .f.
+	::CtrLotOrig = .f.
+	::CtrLotDest = .f.
+	::EndOrig    = ''
+	::EndDest    = ''
+	::Etiqueta   = ''
+	::Executado  = ''
+	::FWProdOrig = .F.
+	::FWProdDest = .F.
+	::ImprEtq    = ''
+	::LibNaIncl  = .T.
+	::LoteOrig   = ''
+	::LoteDest   = ''
+	::QtdSolic   = 0
+	::UltMsg     = ''
+	::UsrIncl    = ''
+	::UsrAutOri  = ''
+	::UsrAutDst  = ''
+	::UsrAutPCP  = ''
+	::UsrAutQld  = ''
+
+	if _sOrigem == 'ZAG'
+		::Filial    = zag -> zag_filial
+		::FilOrig   = zag -> zag_FilOri
+		::FilDest   = zag -> zag_FilDst
+		::RegZAG    = zag -> (recno ())
+		::Docto     = zag -> zag_doc
+		::DtEmis    = zag -> zag_emis
+		::UsrIncl   = zag -> zag_usrinc
+		::OP        = zag -> zag_op
+		::Motivo    = zag -> zag_Motivo
+		::ProdOrig  = zag -> zag_PrdOri
+		::ProdDest  = zag -> zag_PrdDst
+		::AlmOrig   = zag -> zag_AlmOri
+		::AlmDest   = zag -> zag_AlmDst
+		::EndOrig   = zag -> zag_EndOri
+		::EndDest   = zag -> zag_EndDst
+		::Executado = zag -> zag_exec
+		::LoteOrig  = zag -> zag_LotOri
+		::LoteDest  = zag -> zag_LotDst
+		::QtdSolic  = zag -> zag_QtdSol
+		::UsrAutOri = zag -> zag_UAutO
+		::UsrAutDst = zag -> zag_UAutD
+		::UsrAutPCP = zag -> zag_UAutP
+		::UsrAutQld = zag -> zag_UAutQ
+
+		// Busca dados adicionais dos produtos origem e destino (podem nao ser iguais)
+		::LeSB1 ()
+
+	endif
+return
 
 
 // --------------------------------------------------------------------------
@@ -510,7 +503,6 @@ return _lContinua
 // Verifica necessidade e gera etiqueta para esta transferencia.
 METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 	local _lContinua := .T.
-//	local _sEtiq     := ''
 	local _sMsg      := ''
 	local _oEtiq     := NIL
 
@@ -534,27 +526,34 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 	if _lContinua
 		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + '] Vou gerar etiqueta.')
 
-	//	// Usa mesma rotina de etiquetas dos pallets de producao.
-	//	_sEtiq = U_IncEtqPll (::ProdDest, '', ::QtdSolic, '', '', '', '', date (), '', ::Docto)
-		
 		_oEtiq := ClsEtiq():New()
-		_oEtiq:Grava ()
-		::UltMsg += 'Etiqueta gerada:' + _oEtiq:Codigo + '.'
-	
-//		// Se gerou uma etiqueta, deixa objeto instanciado por que
-//		// provavelmente vai ser impressa e/ou enviada para FullWMS.
-//		U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Criou uma etiqueta. Vou deixar instanciada para possivel impressao.')
+		_oEtiq:Produto     = ::ProdDest
+		_oEtiq:DtEmis      = ::DtEmis
+		_oEtiq:IdZAG       = ::Docto
+		_oEtiq:Quantidade  = ::QtdSolic
+		_oEtiq:AlmDest     = ::AlmDest
+		_oEtiq:AlmOrig     = ::AlmOrig
+		_oEtiq:LoteProduto = ::LoteDest
+	//	_oEtiq:ValidLote   = ?
 
-		// Se tem impressora informada, jah faz a impressao da etiqueta.
-		//U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Impressora para etiqueta: ' + ::ImprEtq)
-		if ! empty (::ImprEtq)
-			//U_ImpZA1 (_sEtiq, ::ImprEtq)
-			_oEtiq:Imprime (::ImprEtq)
-		endif
+		//U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']RegZA1 antes de gravar a etiq:' + cvaltochar (_oEtiq:RegZA1))
+		if _oEtiq:Grava ()
+			//U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']RegZA1 depois de gravar a etiq:' + cvaltochar (_oEtiq:RegZA1))
+			::Etiqueta = _oEtiq:Codigo
+			::UltMsg += 'Etiqueta gerada:' + ::Etiqueta + '.'
 
-		if ::AlmUsaFull (::AlmDest)
-			U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Criei uma qtei. para alm.destino que usa Full. Vou enviar a etiq. para o Full.')
-			_oEtiq:EnviaFull ()
+			// Se tem impressora informada, jah faz a impressao da etiqueta.
+			if ! empty (::ImprEtq)
+				_oEtiq:Imprime (::ImprEtq)
+			endif
+
+			if ::AlmUsaFull (::AlmDest)
+				U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Criei uma qtei. para alm.destino que usa Full. Vou enviar a etiq. para o Full.')
+				_oEtiq:EnviaFull ()
+			endif
+		else
+			_sMsg += 'Nao foi gerada etiqueta.'
+			U_Log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + ']Nao foi gerada etiqueta.' + _oEtiq:UltMsg)
 		endif
 
 	endif
@@ -978,7 +977,7 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 		//u_log2 ('debug', 'Liberadores alm ' + ::AlmDest + '(destino):' + alltrim (_aLib [1, 2]))
 		//u_log2 ('debug', 'Testando com usuario ' + _sUserName)
 		if empty (::UsrAutOri) .and. alltrim (upper (_sUserName)) $ _aLib [1, 1]
-			u_log2 ('info', 'Usuario tem liberacao para o almox. origem')
+			u_log2 ('info', 'Usuario atual tem liberacao para o almox. origem')
 			// desabilitado enquanto nao definirmos melhor as integracoes. Robert, 05/05/2022
 			//if ::FWProdOrig .and. ::AlmUsaFull (::AlmOrig) .and. _sUserName != 'FULLWMS'
 			//	u_log2 ('info', '... mas o produto usa Full e o AX origem eh controlado pelo FullWMS')
@@ -1002,7 +1001,7 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 		endif
 
 		if empty (::UsrAutDst) .and. alltrim (upper (_sUserName)) $ _aLib [1, 2]
-			u_log2 ('info', 'Usuario tem liberacao para o almox. destino')
+			u_log2 ('info', 'Usuario atual tem liberacao para o almox. destino')
 			// desabilitado enquanto nao definirmos melhor as integracoes. Robert, 05/05/2022
 			//if ::FWProdDest .and. ::AlmUsaFull (::AlmDest) .and. _sUserName != 'FULLWMS'
 			//	u_log ('info', '... mas o produto usa Full e o AX destino eh controlado pelo FullWMS')
@@ -1035,13 +1034,15 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 			::UsrAutQld = 'Auto' //_sUserName
 			_lNenhuma = .F.
 		endif
-
 	endif
 
 	if _lNenhuma
 		U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Nada a liberar')
 		::UltMsg += iif (_lMsg, "Nenhuma liberacao pendente para este usuario.", '')
 	endif
+
+	// Atualiza atributos do objeto com base no conteudo do registro atual.
+	::GeraAtrib ("ZAG")
 
 	// Tenta executar a transferencia
 	::Executa (.F.)

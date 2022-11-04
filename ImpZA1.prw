@@ -112,6 +112,8 @@ user function ImpZA1 (_sEtiq, _sIdImpr, _oEtiq)
 		if ! za1 -> (dbseek(xFilial("ZA1") + _sEtiq, .F.))
 			u_help ("Etiqueta '" + _sEtiq + "' nao encontrada!",, .t.)
 			_lContinua = .F.
+		else
+			U_Log2 ('debug', '[' + procname () + ']posicionei etiq no ZA1 com reg.' + cvaltochar (za1 -> (recno ())))
 		endif
 	endif
 
@@ -294,13 +296,14 @@ user function ImpZA1 (_sEtiq, _sIdImpr, _oEtiq)
 			fclose (_nHdl)
 			copy file (_sArq) to (_sPortaImp)
 			delete file (_sArq)
-			u_log2 ('debug', 'copiei etiq para ' + _sPortaImp)
+			u_log2 ('debug', '[' + procname () + ']Copiei etiq para ' + _sPortaImp)
 			
 			// Marca a etiqueta como jah impressa.
 			if za1 -> za1_impres != 'S'
 				reclock ("ZA1", .F.)
 				za1 -> za1_impres = 'S'
 				msunlock ()
+				_oEtiq:Impressa = 'S'
 			endif
 
 			// Se tem objeto instanciado, nao custa nada gravar uma mensagem de retorno
