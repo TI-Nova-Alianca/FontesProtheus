@@ -102,12 +102,14 @@ METHOD New (_xChave) Class ClsEtiq
 	// Alimenta atributos com valores default de uma etiqueta nova.
 	::GeraAtrib ("")
 	
-	// Se receber numerico, eh por que se trata do numero de registro do ZA1.
+	// Se receber numerico, eh por que se trata do numero de registro
+	// jah existente no ZA1 e preciso atualizar o objeto.
 	if valtype (_xChave) == "N"
 		ZA1 -> (dbgoto (_xChave))
 		::GeraAtrib ("ZA1")
 
-	// Se receber caracter, eh por que se trata do codigo da etiqueta.
+	// Se receber caracter, eh por que se trata de um codigo de etiqueta jah
+	// existente no ZA1 e preciso atualizar o objeto.
 	elseif valtype (_xChave) == "C"
 		//U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + '] >>' + xfilial ("ZA1") + _xChave + '<<')
 		za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP
@@ -387,6 +389,8 @@ METHOD Grava () Class ClsEtiq
 	local _sTxtLog   := ''
 	local _lContinua := .T.
 
+	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Iniciando gravacao etiq')
+	//u_logObj (::Self)
 	if empty (::Produto)
 		::UltMsg += "Produto nao informado. Gravacao de etiqueta nao permitida."
 		_lContinua = .F.
@@ -467,6 +471,8 @@ METHOD Grava () Class ClsEtiq
 		_sTxtLog += iif (! empty (za1 -> za1_doce),   ' NF: '     + alltrim (za1 -> za1_doce),   '')
 		_sTxtLog += iif (! empty (za1 -> za1_d5nseq), ' D5NSEQ: ' + alltrim (za1 -> ZA1_D5NSEQ), '')
 		u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']' + _sTxtLog)
+	else
+		U_Log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + ']Etiqueta NAO gravada.' + ::UltMsg)
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
@@ -827,6 +833,7 @@ return _lContinua
 METHOD Imprime (_sCodImpr) Class ClsEtiq
 	local _lContinua := .T.
 	za1 -> (dbgoto (::RegZA1))
+	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']posicionei ZA1 no reg.' + cvaltochar (za1 -> (recno ())))
 	_lContinua = U_ImpZA1 (::Codigo, _sCodImpr, ::Self)
 return _lContinua
 
@@ -872,18 +879,18 @@ METHOD Inutiliza (_lMsg) Class ClsEtiq
 		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 		_aStatWMS = _oSQL:Qry2Array (.f., .f.)
 		U_Log2 ('debug', _aStatWMS)
-		if ! empty (_aStatWMS [1, 1]) .and. _aStatWMS [1, 1] != '9'
+		if len (_aStatWMS) > 0 .and. ! empty (_aStatWMS [1, 1]) .and. _aStatWMS [1, 1] != '9'
 			::UltMsg += "A etiqueta '" + ::Codigo + "' ja foi vista pelo FullWMS"
 			::UltMsg += " e nao pode ser inutilizada por que encontra-se com status '" + _aStatWMS [1, 1] + "'"
 			::UltMsg += " no campo STATUS da tabela de integracao tb_wms_entrada."
 			::UltMsg += "Essa entrada deve ser excluida, antes, na tela de recebimentos do FullWMS."
 			_lContinua = .F.
 		endif
-		if ! empty (_aStatWMS [1, 2]) .and. _aStatWMS [1, 2] != 'C'
+		if len (_aStatWMS) > 0 .and. ! empty (_aStatWMS [1, 2]) .and. _aStatWMS [1, 2] != 'C'
 			::UltMsg += "A etiqueta '" + ::Codigo + "' ja foi enviada para o FullWMS"
 			::UltMsg += " e nao pode ser inutilizada por que encontra-se com status '" + _aStatWMS [1, 2] + "'"
 			::UltMsg += " no campo STATUS_PROTHEUS da tabela de integracao tb_wms_entrada."
-			::UltMsg += "Essa operacao de 'guarda' deve ser abortada manualmente nesta tabela para poder inutilizar a etiqueta.)"
+			::UltMsg += "Essa operacao de 'guarda' deve ser abortada manualmente nesta tabela para poder inutilizar a etiqueta."
 			_lContinua = .F.
 		endif
 	endif

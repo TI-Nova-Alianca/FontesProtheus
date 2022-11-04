@@ -179,13 +179,13 @@ User Function RBatch (_sEmp, _sFil)
 
 			// Verifica se ainda nao chegou no horario limite (pode ter havido alteracao manual depois que gerei a array de batches pendentes ou demora no batch anterior)
 			if zz6 -> zz6_hrini > left (time (), 5)
-				u_log2 ('aviso', 'Fora do horario limite de execucao para este batch. Ainda nao estah na hora de rodar.')
+				u_log2 ('aviso', alltrim (zz6 -> zz6_cmd) + ' Ainda nao estah na hora de rodar.')
 				loop
 			endif
 
 			// Verifica se jah passou o horario limite (pode ter havido alteracao manual depois que gerei a array de batches pendentes ou demora no batch anterior)
 			if zz6 -> zz6_hrfim < left (time (), 5)
-				u_log2 ('aviso', 'Fora do horario limite de execucao para este batch. Jah passou da hora de rodar.')
+				u_log2 ('aviso', alltrim (zz6 -> zz6_cmd) + ' Jah passou da hora de rodar.')
 				loop
 			endif
 
@@ -215,7 +215,7 @@ User Function RBatch (_sEmp, _sFil)
 				endif
 				if ! empty (_sExprMnt)
 
-					// Endereca monitor
+					// Endereca monitor (eh uma pena que tenha sido bloqueado pela Totvs)
 					//PtInternal (1, "Emp :"+cEmpAnt+"/"+cFilAnt+" - " + _sExprMnt)
 
 					// Grava log de uso de rotinas

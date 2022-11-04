@@ -78,7 +78,8 @@ User Function VA_ETQPLL()
 	aAdd(aRotina, {"Pesquisar"           , "AxPesqui"  , 0, 1})
 	aAdd(aRotina, {"Visualizar"          , "AxVisual"  , 0, 2})
 	aAdd(aRotina, {"Incluir"             , "U_EtqPlltI", 0, 3})
-	aadd(aRotina, {"Imprimir - Avulso"   , "U_ImpZA1 (ZA1->ZA1_CODIGO)", 0, 2})
+//	aadd(aRotina, {"Imprimir - Avulso"   , "U_ImpZA1 (ZA1->ZA1_CODIGO)", 0, 2})
+	aadd(aRotina, {"Imprimir - Avulso"   , "U_ZA1ImpAv ()", 0, 2})
 	aadd(aRotina, {"Imprimir - Grupo"    , "U_EtqPlltG(za1 -> za1_op, za1 -> za1_doce, za1 -> za1_seriee, za1 -> za1_fornec, za1 -> za1_lojaf, 'I')", 0, 2})
 	aadd(aRotina, {"Enviar para FullWMS" , "processa ({||U_EnvEtFul (za1 -> za1_codigo, .T.)})", 0, 4})
 	aadd(aRotina, {"Gera Etq NF entrada" , "U_ZA1GN ()", 0, 3})
@@ -395,8 +396,6 @@ User Function EtqPlltG (_sOP, _sNF, _sSerie, _sFornece, _sLoja, _sQueFazer)
 	local _bInutil  := .F.
 	local _oEtiq    := NIL
 	
-	u_logIni ()
-
 	_oSQL := ClsSQl ():New ()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT ' ' AS OK, ZA1_CODIGO, ZA1_PROD, ZA1_QUANT, ZA1_IMPRES, ZA1_APONT, ZA1_DOCE"
@@ -491,7 +490,6 @@ User Function EtqPlltG (_sOP, _sNF, _sSerie, _sFornece, _sLoja, _sQueFazer)
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
 return
 
 
@@ -597,7 +595,7 @@ User Function EtqPllCT (_sCodigo)
 	endif
 return
 
-
+/* migrado para ZA1.prw
 // --------------------------------------------------------------------------
 // Recebe chamadas feitas pelos botoes do MTA390MNU.
 user function ZA1SD5 (_sQueFazer)
@@ -654,6 +652,7 @@ user function ZA1SD5 (_sQueFazer)
 
 	U_ML_SRArea (_aAreaAnt)
 return _xRet
+*/
 
 
 // --------------------------------------------------------------------------

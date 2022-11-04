@@ -67,7 +67,7 @@ user function robert ()
 
 		// _SimCtb ()
 		// _FechSafr ()
-		// _TrEstq ()
+		_TrEstq ()
 		// _Sisdevin ()
 		// _metaf ()
 		// _exml ()
@@ -86,18 +86,12 @@ user function robert ()
 		// _memoria ()
 		// _EstFul()
 		// _SF1()
-		// _WSCarNA ()
+		// _CargSaf ()
 		// _gerasze ()
 		// _BatOcor ()
 		// _AtuSB1 ()
 
-		_oEvento := ClsEvent():new ()
-		_oEvento:CodEven   = "teste"
-		_oEvento:Texto     = "teste msg"
-		_oEvento:diasValid = 1
-		_oEvento:Grava ()
-
-		// u_help ('Nada definido.')
+		//u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
@@ -144,12 +138,92 @@ static function _gerasze()
 return
 
 // --------------------------------------------------------------------------
-static function _WSCarNA ()  // teste web service atualizacao de cargas no naweb
-	local _oCarSaf := ClsCarSaf ():New ()
-	_oCarSaf:Filial = '01'
-	_oCarSaf:Safra  = '2023'
-	_oCarSaf:Carga  = '4025'
-	_oCarSaf:AtuAgenda ('LIB')
+static function _CargSaf ()
+	local _oCarSaf := NIL
+	
+	_oCarSaf = ClsCarSaf ():New (94776)
+	_oCarSaf:Log ()
+/*
+	_oCarSaf:CXouGranel = 'C'
+	_oCarSaf:aIntegGrau = {{'01', ' ', 0}}
+	_oCarSaf:StatusZZA ()
+
+	_oCarSaf:aIntegGrau = {{'01', '0', 0}}
+	_oCarSaf:StatusZZA ()
+
+	_oCarSaf:aIntegGrau = {{'01', '1', 0}}
+	_oCarSaf:StatusZZA ()
+
+	_oCarSaf:aIntegGrau = {{'01', '2', 0}}
+	_oCarSaf:StatusZZA ()
+
+	_oCarSaf:aIntegGrau = {{'01', '3', 0}}
+	_oCarSaf:StatusZZA ()
+
+	_oCarSaf:aIntegGrau = {{'01', 'C', 0}}
+	_oCarSaf:StatusZZA ()
+
+
+	_oCarSaf:CXouGranel = 'G'
+	_oCarSaf:aIntegGrau = {{'01', ' ', 0}}
+	_oCarSaf:StatusZZA ()
+
+	_oCarSaf:aIntegGrau = {{'01', '0', 0}}
+	_oCarSaf:StatusZZA ()
+
+	_oCarSaf:aIntegGrau = {{'01', '1', 0}}
+	_oCarSaf:StatusZZA ()
+
+	_oCarSaf:aIntegGrau = {{'01', '2', 0}}
+	_oCarSaf:StatusZZA ()
+
+	_oCarSaf:aIntegGrau = {{'01', '3', 0}}
+	_oCarSaf:StatusZZA ()
+
+	_oCarSaf:aIntegGrau = {{'01', 'C', 0}}
+	_oCarSaf:StatusZZA ()
+
+
+	_oCarSaf:aIntegGrau [1, 2] = 'C'
+	_oCarSaf:aIntegGrau [2, 2] = '2'
+	_oCarSaf:StatusZZA ()
+
+	_oCarSaf:aIntegGrau [1, 2] = '1'
+	_oCarSaf:aIntegGrau [2, 2] = '2'
+	_oCarSaf:StatusZZA ()
+
+	_oCarSaf:aIntegGrau [1, 2] = '2'
+	_oCarSaf:aIntegGrau [2, 2] = '3'
+	_oCarSaf:StatusZZA ()
+
+	_oCarSaf:aIntegGrau [1, 2] = '2'
+	_oCarSaf:aIntegGrau [2, 2] = '1'
+	_oCarSaf:StatusZZA ()
+
+	_oCarSaf:aIntegGrau [1, 2] = '3'
+	_oCarSaf:aIntegGrau [2, 2] = '3'
+	_oCarSaf:StatusZZA ()
+
+	_oCarSaf:aIntegGrau [1, 2] = '1'
+	_oCarSaf:aIntegGrau [2, 2] = '1'
+	_oCarSaf:StatusZZA ()
+
+	_oCarSaf:aIntegGrau [1, 2] = '0'
+	_oCarSaf:aIntegGrau [2, 2] = '0'
+	_oCarSaf:StatusZZA ()
+
+	_oCarSaf:aIntegGrau [1, 2] = '1'
+	_oCarSaf:aIntegGrau [2, 2] = '3'
+	_oCarSaf:StatusZZA ()
+
+	_oCarSaf:aIntegGrau [1, 2] = '0'
+	_oCarSaf:aIntegGrau [2, 2] = '1'
+	_oCarSaf:StatusZZA ()
+*/
+	//_oCarSaf:Filial = '01'
+	//_oCarSaf:Safra  = '2023'
+	//_oCarSaf:Carga  = '4025'
+	//_oCarSaf:AtuAgenda ('LIB')
 return
 
 // --------------------------------------------------------------------------
@@ -887,7 +961,8 @@ return
 // Testes classe transf.estq.
 STATIC FUNCTION _TrEstq ()
 	private _sErroAuto := ''
-	_sDocZAG := '0000002768'
+
+	_sDocZAG := U_RetSQL ("SELECT MIN (ZAG_DOC) FROM ZAG010 WHERE D_E_L_E_T_ = '' AND ZAG_EMIS BETWEEN '20221101' AND '20221103' AND ZAG_PRDORI = '0243'")
 	zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
 	if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
 		u_help ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG",, .t.)
@@ -903,34 +978,27 @@ STATIC FUNCTION _TrEstq ()
 			U_Log2 ('debug', '[' + procname () + ']retorno:' + cvaltochar (_lRetExcl))
 		endif
 	endif
-//	//
-	//_oTrEstq:RegZAG = 1604
-	//if _oTrEstq:Exclui ()
-	//	u_log ('Excluiu!', _oTrEstq:UltMsg)
-	//else
-	//	u_help (_oTrEstq:UltMsg)
-	//endif
+
 /*
 	_oTrEstq := ClsTrEstq ():New ()
 	_oTrEstq:FilOrig = cFilAnt
 	_oTrEstq:FilDest = cFilAnt
 	_oTrEstq:DtEmis  = date ()
 	//_oTrEstq:OP = '1234561212312'
-	_oTrEstq:Motivo = 'teste robert para ax 01' 
-	_oTrEstq:ProdOrig = '0151           '
-	_oTrEstq:ProdDest = '0151           '
-	_oTrEstq:AlmOrig = '11'
+	_oTrEstq:Motivo = 'teste robert para ax 01'
+	_oTrEstq:ProdOrig = '0243           '
+	_oTrEstq:ProdDest = '0243           '
+	_oTrEstq:AlmOrig = '25'
 	_oTrEstq:AlmDest = '01'
 	//_oTrEstq:EndOrig = 'a'
 	//_oTrEstq:EndDest = 'b'
-	//_oTrEstq:LoteOrig = '1'
-	//_oTrEstq:LoteDest = '2'
-	_oTrEstq:QtdSolic = 1 
+	_oTrEstq:LoteOrig = '002       '
+	_oTrEstq:LoteDest = '002       '
+	_oTrEstq:QtdSolic = 1
 	_oTrEstq:UsrIncl  = 'robert.koch'
-	_oTrEstq:ImprEtq = '15'
+	_oTrEstq:ImprEtq = '97'
 	if _oTrEstq:Grava ()
 		U_Log2 ('debug', '[' + procname () + ']Gravou! msg: ' + _oTrEstq:UltMsg)
-		//u_logObj (_oTrEstq)
 //		if _oTrEstq:Libera ()
 //			u_log ('Liberou!', _oTrEstq:UltMsg)
 //		else
