@@ -284,6 +284,26 @@ user function ImpZA1 (_sEtiq, _sIdImpr, _oEtiq)
 			// Comandos finais da etiqueta.
 			_sTxtEtiq += 'Q0001' + _Enter
 			_sTxtEtiq += 'E' + _Enter
+		
+		// ainda nao pronto
+		elseif _nModelImp == 4  // BPLA usado pela Elgin L42 - manual online em https://docplayer.net/59879244-Programmer-s-manual-bpla.html
+			_sTxtEtiq += chr (2) + 'L' + _Enter  //  STX - inicio de etiqueta
+			_sTxtEtiq += 'n' + _Enter  // polegadas
+
+			// Adiciona 'miolo' da etiqueta, formatado conforme o tipo de aplicacao da etiqueta
+			if ! empty (_oEtiq:OP)
+				_sTxtEtiq += _FmtOP ()
+			elseif ! empty (_oEtiq:IdZAG)
+				_sTxtEtiq += _FmtZAG ()
+			elseif ! empty (_oEtiq:DocEntrNum) .or. ! empty (_oEtiq:D5_NUMSEQ)
+				_sTxtEtiq += _FmtNF ()
+			else
+				u_help ("Sem definicao de formatacao de etiqueta deste tipo na Elgin.",, .t.)
+			endif
+
+			_sTxtEtiq += 'Q0001' + _Enter  // Quantidade
+			_sTxtEtiq += 'E' + _Enter  // Final de etiqueta
+		
 		else
 			u_help ("Sem definicao de comandos iniciais para este modelo de impressora.",, .t.)
 		endif
@@ -431,7 +451,29 @@ static function _FmtZAG ()
 		_sFmtZAG += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 310, 4) + 'DATA: _______________' + _Enter
 		_sFmtZAG += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 335, 4) + 'RESP: _______________' + _Enter
 		_sFmtZAG += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 360, 4) + 'ASS.: _______________' + _Enter
+
+	elseif _nModelImp == 4  // Impressora Elgin L42 (BPLA)
+//			_sTxtEtiq += '1A3104000200020' + _oEtiq:Codigo + _Enter  // SOH - inicio de header
+
+		// Formatacao BPLA:
+		// R: rotacao (1 a 4)
+		// B: 0-9=fonte(letras); A-T=cod.barras com linha legivel;a-t=sem linga legivel; X=grafico; Y-imagem
+		// C: multiplicador de largura
+		// D: multiplicador de altura
+		// E: seletor de fonte / altura cod.barras
+		// F: posicionamento (eixo X ou 'colunas')
+		// G: posicionamento (eixo Y ou 'linhas')
+		// H: dados (texto ou numeros para cod. barra)
+		//           RBCDEEEFFFFGGGGH...
+		_sFmtZAG += '421100000150005posicao 15,5' + _Enter
+		_sFmtZAG += '421100000150100posicao 15,100' + _Enter
+		_sFmtZAG += '421100000150200posicao 15,200' + _Enter
+		_sFmtZAG += '421100000150300posicao 15,300' + _Enter
+		_sFmtZAG += '421100000150350posicao 15,350' + _Enter
+		_sFmtZAG += '4A31040001500502000558306' + _Enter
+		_sFmtZAG += '4A31040001502502000558306' + _Enter
 	endif
+
 	if empty (_sFmtZAG)
 		u_help ("Sem tratamento para formatacao de impressao para este tipo de etiqueta no programa " + procname (),, .t.)
 	endif

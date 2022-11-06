@@ -536,9 +536,12 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 		_oEtiq:LoteProduto = ::LoteDest
 	//	_oEtiq:ValidLote   = ?
 
-		//U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']RegZA1 antes de gravar a etiq:' + cvaltochar (_oEtiq:RegZA1))
 		if _oEtiq:Grava ()
-			//U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']RegZA1 depois de gravar a etiq:' + cvaltochar (_oEtiq:RegZA1))
+
+			// Faz uma releitura dos atributos da etiqueta para popular
+			// campos adicionais como por exemplo a data de validade.
+			_oEtiq:GeraAtrib ("ZA1")
+			U_Log2 ('debug', '[' + procname () + ']depois de regerar atrib fiquei com validade = ' + cvaltochar (_oEtiq:ValidLote))
 			::Etiqueta = _oEtiq:Codigo
 			::UltMsg += 'Etiqueta gerada:' + ::Etiqueta + '.'
 
