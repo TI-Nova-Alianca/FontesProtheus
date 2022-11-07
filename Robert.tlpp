@@ -67,7 +67,7 @@ user function robert ()
 
 		// _SimCtb ()
 		// _FechSafr ()
-		_TrEstq ()
+		// _TrEstq ()
 		// _Sisdevin ()
 		// _metaf ()
 		// _exml ()
@@ -90,6 +90,7 @@ user function robert ()
 		// _gerasze ()
 		// _BatOcor ()
 		// _AtuSB1 ()
+		_ctbanc ()
 
 		//u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
@@ -98,6 +99,12 @@ user function robert ()
 return
 
 
+
+// --------------------------------------------------------------------------
+static function _ctbanc ()
+	U_GravaSX1 ("CTBANC", '01', stod ('20220701'))
+	U_CtbANC (.t.)
+return
 
 // --------------------------------------------------------------------------
 static function _gerasze()
@@ -962,7 +969,7 @@ return
 STATIC FUNCTION _TrEstq ()
 	private _sErroAuto := ''
 
-	_sDocZAG := U_RetSQL ("SELECT MIN (ZAG_DOC) FROM ZAG010 WHERE D_E_L_E_T_ = '' AND ZAG_EMIS BETWEEN '20221101' AND '20221103' AND ZAG_PRDORI = '0243'")
+	_sDocZAG := U_RetSQL ("SELECT MIN (ZAG_DOC) FROM ZAG010 WHERE D_E_L_E_T_ = '' AND ZAG_EMIS BETWEEN '20221104' AND '20221104' AND ZAG_USRINC = 'robert.koch'")
 	zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
 	if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
 		u_help ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG",, .t.)
@@ -986,17 +993,17 @@ STATIC FUNCTION _TrEstq ()
 	_oTrEstq:DtEmis  = date ()
 	//_oTrEstq:OP = '1234561212312'
 	_oTrEstq:Motivo = 'teste robert para ax 01'
-	_oTrEstq:ProdOrig = '0243           '
-	_oTrEstq:ProdDest = '0243           '
+	_oTrEstq:ProdOrig = '0151           '
+	_oTrEstq:ProdDest = '0151           '
 	_oTrEstq:AlmOrig = '25'
 	_oTrEstq:AlmDest = '01'
 	//_oTrEstq:EndOrig = 'a'
 	//_oTrEstq:EndDest = 'b'
-	_oTrEstq:LoteOrig = '002       '
-	_oTrEstq:LoteDest = '002       '
-	_oTrEstq:QtdSolic = 1
+	_oTrEstq:LoteOrig = '12906201  '
+	_oTrEstq:LoteDest = '12906201  '
+	_oTrEstq:QtdSolic = 75
 	_oTrEstq:UsrIncl  = 'robert.koch'
-	_oTrEstq:ImprEtq = '97'
+	_oTrEstq:ImprEtq = '16' //16=Elgin TI  '15' //15=logistica
 	if _oTrEstq:Grava ()
 		U_Log2 ('debug', '[' + procname () + ']Gravou! msg: ' + _oTrEstq:UltMsg)
 //		if _oTrEstq:Libera ()
