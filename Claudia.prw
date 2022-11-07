@@ -7,7 +7,7 @@ User Function claudia ()
 		return
 	endif
 
-	u_help("Nada para executar")
+	//u_help("Nada para executar")
 
 	//u_help("_RapelGrava")
 	//_RapelGrava()
@@ -27,6 +27,38 @@ User Function claudia ()
 	//u_help("ALTERASB1")
 	//U_ALTERASB1()
 
+	u_help("Saldos iniciais")
+	U_SaldosIniciais()
+
+Return
+//
+//
+User Function SaldosIniciais()
+	Local _i := 0
+
+    // Le planilha .csv
+    _aDados = U_LeCSV ('C:\Temp\saldosiniciais.csv', ';')
+     
+    For _i := 1 to len (_aDados)
+		_sRede   := _aDados[_i, 1]
+		_sLoja   := _aDados[_i, 2]
+		_nValor  := val(_aDados[_i, 4])
+
+		Reclock("ZC0",.T.)
+			zc0 -> zc0_filial := '01'
+			zc0 -> zc0_codred := _sRede
+			zc0 -> zc0_lojred := _sLoja
+			zc0 -> zc0_tm     := '01'
+			zc0 -> zc0_data   := STOD('20221031')
+			zc0 -> zc0_hora   := Time()
+			zc0 -> zc0_user   := 'administrador'
+			zc0 -> zc0_histor := 'INCLUSAO DE SALDO INICIAL'
+			zc0 -> zc0_seq    := '000000'
+			zc0 -> zc0_rapel  := _nValor
+			zc0 ->zc0_origem  := 'CLAUDIA'
+		ZC0->(MsUnlock())
+	Next
+	U_HELP("FEITO!")
 Return
 // //
 // // altera B1 para manutenção
