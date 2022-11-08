@@ -26,8 +26,8 @@
 // 22/01/2021 - Cláudia - Incluida validação verificando se o valor já movimentado + rapel é igual ou menor que o valor do título. GLPI: 9066
 // 01/09/2022 - Robert  - Trocado teste [SE1->E1_NUMBOR!=''] por [!empty(SE1->E1_NUMBOR)]
 // 02/09/2022 - Robert  - Melhoradas algumas mensagens para o usuario (GLPI 12543)
+// 08/11/2022 - Claudia - Alterada a consulta quando o boleto ja esta impresso. GLPI: 12785
 //
-
 // ---------------------------------------------------------------------------------------------------------------------------------
 User Function FA740BRW()
 	Local aBotao := {}
@@ -382,6 +382,7 @@ user function VA_040BOL()
 	local   _lRet     := .T.
 	local   _aBanco   := {}
 	local 	i		  := 0
+	local _lJaImp     := .F.
 	private _aBoletos := {}
 	
 	if _lRet .AND. (SE1 -> E1_TIPO = 'NCC' .OR. SE1 -> E1_TIPO = 'RA') 
@@ -395,12 +396,16 @@ user function VA_040BOL()
 	endif
 	if _lRet
 		if SE1 -> E1_BOLIMP = 'S'
-			_sBanco = SE1 -> E1_PORTADO
+			_lJaImp   := .T.
+			_sBanco   := SE1 -> E1_PORTADO
+			_sAgencia := SE1 -> E1_AGEDEP
+			_sConta   := SE1 -> E1_CONTA
 			if empty (_sBanco)
 				u_help ("Titulo consta como tendo boleto ja impresso, mas nao ha banco (portador) informado neste titulo!",, .t.)
 				_lRet = .F.
 			endif
 		else
+			_lJaImp   := .F.
 			_sBanco = U_Get ("Informe o novo banco para impressão do boleto: ", "C", 3, "", "SA6", se1 -> e1_portado, .F., '.t.')
 			_sBanco = iif (_sBanco == NIL, '', _sBanco)  // Funcao U_Get retorna NIL se o usuario cancelar.
 			if ! empty (_sBanco) .and. ! sa6 -> (dbseek (xfilial ("SA6") + _sBanco, .F.))
@@ -431,7 +436,11 @@ user function VA_040BOL()
 		_sQuery += "			AND SEE.EE_SUBCTA != '100')"
 		_sQuery += "  WHERE SA6.D_E_L_E_T_ = ''"
 		_sQuery += " 	AND SA6.A6_FILIAL  = '" + SE1 -> E1_FILIAL + "'"
-		_sQuery += " 	AND SA6.A6_COD     = '" + _sBanco + "'"
+		_sQuery += " 	AND SA6.A6_COD     = '" + _sBanco   + "'"
+		If _lJaImp
+			_sQuery += " AND SA6.A6_AGENCIA = '"+ _sAgencia + "'"
+			_sQuery += " AND SA6.A6_NUMCON   = '"+ _sConta   + "'"
+		EndIf
 		_sQuery += " 	AND SA6.A6_BLOCKED = '2'"
 		_aBanco := U_Qry2Array(_sQuery) // dados do banco - conta/agencia/subconta
 		if len(_aBanco) = 0
