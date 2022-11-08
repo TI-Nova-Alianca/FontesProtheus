@@ -31,7 +31,7 @@
 // 30/08/2012 - Robert  - Implementada consulta da chave na SEFAZ.
 // 29/11/2012 - Robert  - Implementada verificacao de preenchimento do numero da nota, considerando opcao 'retornar'.
 // 14/02/2013 - Elaine  - Comparar DtEmissao, Valor Total da Nota e Insc Estadual (caso digitada nota que tenha XML do fornecedor) informada com a 
-//                       informacao contida no XML.
+//                        informacao contida no XML.
 // 18/02/2013 - Elaine  - Testar parâmetro VA_VALXML - nao permitir a inclusao da nota pelo XML se existir qq inconsistência
 // 19/08/2014 - Robert  - Melhorada leitura da chave no ZZX. Caso a chave exista e nao esteja autorizada, chama a funcao ZZXCC.
 // 06/10/2014 - Catia   - Alterada a mensagem do "Layout / versao XML", para que não de a mensagem quando usado pelo IMPCONH
@@ -68,7 +68,8 @@
 // 13/12/2021 - Robert  - Pequena melhoria msg. alter.vlr.unit em relacao ao pedido de compra.
 // 23/12/2021 - Claudia - Incluida validação de almox 11. GLPI: 7665
 // 14/07/2022 - Robert  - Removidas linhas comentariadas.
-// 
+// 08/11/2022 - Robert  - Passa a usar a funcao U_AmbTeste().
+//
 
 // -----------------------------------------------------------------------------------------------------------------------
 User Function MT100TOK()
@@ -401,7 +402,8 @@ static function _ValChvNFe ()
 	endif
 
 	// Se for transferencia de filial, exige que a NF tenha chave na filial origem (pode estar nao autorizada ou DANFe nao impresso).
-	if ! "TESTE" $ upper (alltrim (getenvserver ()))
+	//if ! "TESTE" $ upper (alltrim (getenvserver ()))
+	if ! U_AmbTeste ()
 		if _lDeveTer .and. ! empty (_sChvNFe)
 			if cTipo $ 'B/D'
 				_sCGCEmit = fBuscaCpo ("SA1", 1, xfilial ("SA1") + ca100For + cLoja, "A1_CGC")

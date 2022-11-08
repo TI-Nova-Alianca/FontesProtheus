@@ -43,6 +43,7 @@
 // 18/05/2021 - Robert - Melhorias diversas FUNRURAL e complemento safra 2021 (GLPI 9891 e 10007).
 // 04/03/2022 - Robert - Valida se o TES de complemento estah atualizando estoque (GLPI 11708).
 // 07/03/2022 - Robert - Permite (mediante confirmacao) TES que atualiza estoque nos complementos (GLPI 11721)
+// 08/11/2022 - Robert - Passa a usar a funcao U_AmbTeste().
 //
 
 #XTranslate .ItensProduto    => 1
@@ -163,7 +164,8 @@ Static Function _Gera03 ()
 
 	// Altera parametro "Mostra lctos contabeis" para "Nao" 
 	// e 'Contabiliza online' para 'sim' na tela de NF de entrada
-	if "TESTE" $ upper (GetEnvServer())  // na base teste nao quero contabilizar
+//	if "TESTE" $ upper (GetEnvServer())  // na base teste nao quero contabilizar
+	if U_AmbTeste ()
 		U_GravaSX1 ("MTA103", "01", "2")
 		U_GravaSX1 ("MTA103", "06", "2")
 	else

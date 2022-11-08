@@ -60,6 +60,7 @@ CLASS ClsEtiq
 	public  data DocEntrNum   // ZA1_DOCE - Quando refere-se a NF de entrada
 	public  data DocEntrSerie // ZA1_SERIEE - Quando refere-se a NF de entrada
 	public  data DtEmis       // ZA1_DATA
+	public  data DtFabrLote   // Data de fabricacao do lote de produto
 	public  data Filial       // ZA1_FILIAL
 	public  data FinalidOP    // C2_vaOpEsp: N=Normal;R=Reprocesso;E=externa (em 3os);T=Terceirizacao (para 3os);F=Filtracao
 	public  data IdZAG        // ZA1_IDZAG - Identificador de registro da tabela ZAG
@@ -186,6 +187,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 	::DocEntrNum   = ''
 	::DocEntrSerie = ''
 	::DtEmis       = ctod ('')
+	::DtFabrLote   = ctod ('')
 	::Filial       = xfilial ("ZA1")
 	::FinalidOP    = ''
 	::IdZAG        = ''
@@ -270,6 +272,8 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 					::AlmOrig   = sc2 -> c2_local
 					::CBEmbCol  = sc2 -> c2_vaBarCx
 					::FinalidOP = sc2 -> c2_vaOpEsp
+					
+					// OP de reprocesso assume dt valid do lote original, cfe informada pelo usuario.
 					if sc2 -> c2_vaopesp == 'R'  // OP de reprocesso assume dt valid do lote original, cfe informada pelo usuario.
 						if empty (sc2 -> c2_vadvori)
 							u_help ('[' + GetClassName (::Self) + '.' + procname () + "]Impossivel buscar a data de validade do lote  da etiqueta '" + ::Codigo + "': a OP referenciada (" + ::OP + ") eh uma OP de reprocesso, e nao foi informada a data de validade do lote original no campo C2_VADVORI (" + alltrim (rettitle ("C2_VADVORI")) + ").",, .t.)
@@ -280,12 +284,13 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 						::ValidLote = sc2 -> c2_datprf + sb1 -> b1_prvalid
 					endif
 
-					// Busca quantidades apontadas e perdidas
+					// Busca dados de apontamento de producao desta etiqueta.
 					_oSQL := ClsSQL ():New ()
 					_oSQL:_sQuery := ""
-					_oSQL:_sQuery += "SELECT ISNULL (SUM (CASE WHEN D3_ESTORNO != 'S' AND D3_CF LIKE 'PR%' THEN D3_QUANT ELSE 0 END), 0) AS APONTAM"
-					_oSQL:_sQuery +=      ", ISNULL (SUM (CASE WHEN D3_ESTORNO != 'S' AND D3_CF LIKE 'PR%' THEN D3_PERDA ELSE 0 END), 0) AS PERDA"
-					_oSQL:_sQuery +=      ", ISNULL (SUM (CASE WHEN D3_ESTORNO  = 'S' AND D3_CF LIKE 'ER%' THEN D3_QUANT ELSE 0 END), 0) AS ESTORNO"
+					_oSQL:_sQuery += "SELECT ISNULL (SUM (CASE WHEN D3_ESTORNO != 'S' AND D3_CF LIKE 'PR%' THEN D3_QUANT   ELSE 0  END), 0) AS APONTAM"
+					_oSQL:_sQuery +=      ", ISNULL (SUM (CASE WHEN D3_ESTORNO != 'S' AND D3_CF LIKE 'PR%' THEN D3_PERDA   ELSE 0  END), 0) AS PERDA"
+					_oSQL:_sQuery +=      ", ISNULL (SUM (CASE WHEN D3_ESTORNO  = 'S' AND D3_CF LIKE 'ER%' THEN D3_QUANT   ELSE 0  END), 0) AS ESTORNO"
+					_oSQL:_sQuery +=      ", ISNULL (MIN (CASE WHEN D3_ESTORNO != 'S' AND D3_CF LIKE 'PR%' THEN D3_VADTPRD ELSE '' END), 0) AS DTFABRIC"
 					_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD3") + " SD3"
 					_oSQL:_sQuery += " WHERE SD3.D_E_L_E_T_ = ''"
 					_oSQL:_sQuery +=   " AND SD3.D3_FILIAL  = '" + xfilial ("SD3") + "'"
@@ -295,6 +300,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 					::QtApontada  = _aRetSD3 [1 , 1]
 					::QtPerdida   = _aRetSD3 [1 , 2]
 					::QtEstornada = _aRetSD3 [1 , 3]
+					::DtFabrLote  = stod (_aRetSD3 [1 , 4])
 				endif
 
 			case ! empty (::DocEntrNum)  // Etiqueta gerada por NF de entrada
@@ -302,10 +308,10 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 				if ! sd1 -> (dbseek (::Filial + ::DocEntrNum + ::DocEntrSerie + ::DocEntrForn + ::DocEntrLoja + ::Produto + ::DocEntrItem, .F.))
 					u_help ("NF/fornecedor/produto/item '" + ::DocEntrNum + '/' + ::DocEntrForn + '/' + ::Produto + '/' +::DocEntrItem + "' referenciada pela etiqueta '" + ::Codigo + "' nao foi localizada na tabela SD1.",, .t.)
 				else
-					::AlmDest = sd1 -> d1_local
+					::AlmDest    = sd1 -> d1_local
 					if sb1 -> b1_rastro == 'L'
 						_oSQL := ClsSQL ():New ()
-						_oSQL:_sQuery := "SELECT B8_LOTECTL, B8_DTVALID"
+						_oSQL:_sQuery := "SELECT B8_LOTECTL, B8_DTVALID, B8_DFABRIC"
 						_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB8") + " SB8 "
 						_oSQL:_sQuery += " WHERE SB8.D_E_L_E_T_ = ''"
 						_oSQL:_sQuery +=   " AND SB8.B8_FILIAL  = '" + sd1 -> d1_filial  + "'"
@@ -316,7 +322,8 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 						_aLoteVal = aclone (_oSQL:RetFixo (1, "ao consultar lote do produto da etiqueta '" + ::Codigo + "' na NF de entrada '" + ::DocEntrNum + "'.", .T.))
 						if len (_aLoteVal) == 1
 							::LoteProduto = _aLoteVal [1, 1]
-							::ValidLote   = _aLoteVal [1, 2]
+							::ValidLote   = stod (_aLoteVal [1, 2])
+							::DtFabrLote  = stod (_aLoteVal [1, 3])
 						endif
 					endif
 				endif
@@ -331,7 +338,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 					::LoteProduto = zag -> zag_lotOri
 					if sb1 -> b1_rastro == 'L'
 						_oSQL := ClsSQL ():New ()
-						_oSQL:_sQuery := "SELECT B8_LOTECTL, B8_DTVALID"
+						_oSQL:_sQuery := "SELECT B8_LOTECTL, B8_DTVALID, B8_DFABRIC"
 						_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB8") + " SB8 "
 						_oSQL:_sQuery += " WHERE SB8.D_E_L_E_T_ = ''"
 						_oSQL:_sQuery +=   " AND SB8.B8_FILIAL  = '" + zag -> zag_filori + "'"
@@ -341,8 +348,8 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 						//_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 						_aLoteVal = aclone (_oSQL:RetFixo (1, "ao consultar lote do produto da etiqueta '" + ::Codigo + "' na solicitacao de transferencia numero '" + ::IdZAG + "'.", .T.))
 						if len (_aLoteVal) == 1
-							//::LoteProduto = _aLoteVal [1, 1]
-							::ValidLote   = _aLoteVal [1, 2]
+							::ValidLote   = stod (_aLoteVal [1, 2])
+							::DtFabrLote  = stod (_aLoteVal [1, 3])
 						endif
 					endif
 					
@@ -353,8 +360,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 					// ter que gerar algum lote fajuto.
 					// OBS: Manter consistencia com a view v_wms_entrada !!!
 					if ::AlmDest == '01' .and. ! empty (::LoteProduto) .and. sb1 -> b1_rastro != 'L'
-						U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Gerando validade fajuta para ver se o Full aceita.')
-					//	::LoteProduto = '000001'
+						U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Gerando validade fajuta por que o Protheus nao controla rastro deste item, mas o Full vai exigir.')
 						::ValidLote   = date () + sb1 -> b1_prvalid
 					endif
 				endif
@@ -366,6 +372,20 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 					::AlmOrig     = sd5 -> d5_local
 					::LoteProduto = sd5 -> d5_lotectl
 					::ValidLote   = sd5 -> d5_dtvalid
+
+					_oSQL := ClsSQL ():New ()
+					_oSQL:_sQuery := "SELECT B8_LOTECTL, B8_DTVALID, B8_DFABRIC"
+					_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB8") + " SB8 "
+					_oSQL:_sQuery += " WHERE SB8.D_E_L_E_T_ = ''"
+					_oSQL:_sQuery +=   " AND SB8.B8_FILIAL  = '" + ::Filial + "'"
+					_oSQL:_sQuery +=   " AND SB8.B8_LOTECTL = '" + ::LoteProduto + "'"
+					_oSQL:_sQuery +=   " AND SB8.B8_PRODUTO = '" + ::Produto + "'"
+					_oSQL:_sQuery +=   " AND SB8.B8_LOCAL   = '" + ::AlmOrig + "'"
+					//_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+					_aLoteVal = aclone (_oSQL:RetFixo (1, "ao consultar lote do produto da etiqueta '" + ::Codigo + "' na implantacao de saldo/lote numero '" + ::D5_NUMSEQ + "'.", .T.))
+					if len (_aLoteVal) == 1
+						::DtFabrLote  = stod (_aLoteVal [1, 3])
+					endif
 				endif
 			otherwise
 				::UltMsg += "Impossivel determinar atributos adicionais. Origem de etiqueta desconhecida."
@@ -832,9 +852,11 @@ return _lContinua
 // Envia para impressora (ou porta relacionada a esta)
 METHOD Imprime (_sCodImpr) Class ClsEtiq
 	local _lContinua := .T.
+	// Ainda tenho algumas leituras do ZA1. A intencao eh pegar tudo do objeto oEtiq.
 	za1 -> (dbgoto (::RegZA1))
-	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']posicionei ZA1 no reg.' + cvaltochar (za1 -> (recno ())))
-	_lContinua = U_ImpZA1 (::Codigo, _sCodImpr, ::Self)
+	//U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']posicionei ZA1 no reg.' + cvaltochar (za1 -> (recno ())))
+	//_lContinua = U_ImpZA1 (::Codigo, _sCodImpr, ::Self)
+	_lContinua = U_ImpZA1 (_sCodImpr, ::Self)
 return _lContinua
 
 

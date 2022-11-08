@@ -17,6 +17,7 @@
 // 16/09/2022 - Robert - Criado tratamento para enviar HTML para NaWeb.
 // 21/09/2022 - Robert - Criado atributo :InfoSessao
 // 02/10/2022 - Robert - Removido atributo :DiasDeVida.
+// 08/11/2022 - Robert - Nao envia aviso para NaWeb quando estiver em ambiente de teste.
 //
 
 #include "protheus.ch"
@@ -163,7 +164,11 @@ METHOD Grava () Class ClsAviso
 
 	// Tenta fazer o envio para web service do NaWeb
 	if _lEnvNAW  // Se nao tinha algum problema anterior...
-		::EnviaNaWeb ()
+		if U_AmbTeste ()
+			U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Nao vou enviar aviso para o NaWeb por que estou em ambiente de testes.')
+		else
+			::EnviaNaWeb ()
+		endif
 	endif
 
 	U_ML_SRArea (_aAreaAnt)

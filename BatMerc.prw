@@ -51,23 +51,15 @@
 // 25/03/2022 - Robert  - Passa a buscar caminho do banco de dados via funcao U_LkServer() - GLPI 11770
 // 03/05/2022 - Claudia - Incluida a gravação do campo a1_savblq.GLPI: 11922
 // 08/06/2022 - Claudia - Liberação do tratamento para código matriz. GLPI: 11635
+// 08/11/2022 - Robert  - Removidas algumas linhas comentariadas.
 //
+
 // ------------------------------------------------------------------------------------------------------------------------
 user function BatMerc (_sQueFazer)
-//	local _sArqLog2 := iif (type ("_sArqLog") == "C", _sArqLog, "")
 	local _sLinkSrv := ""
-
-//	u_logDH ()
-//	u_logIni ()
 
 	_oBatch:Retorno = 'S'
 
-	// Define se deve apontar para o banco de producao ou de homologacao.
-	// if "TESTE" $ upper (GetEnvServer())
-	// 	_sLinkSrv = "LKSRV_MERCANETHML.MercanetHML.dbo"
-	// else
-	// 	_sLinkSrv = "LKSRV_MERCANETPRD.MercanetPRD.dbo"
-	// endif
 	_sLinkSrv = U_LkServer ('MERCANET')
 	if empty (_sLinkSrv)
 		u_help ("Sem definicao para comunicacao com banco de dados do Mercanet.",, .t.)
@@ -78,7 +70,6 @@ user function BatMerc (_sQueFazer)
 		case _sQueFazer == 'E'  // Enviar dados
 			_Envia (_sLinkSrv)
 		case _sQueFazer == 'P'  // Ler pedidos de venda
-			//_LePed (_sLinkSrv)
 			u_help ("Para importar pedidos use o agendamento do programa U_BatMercP()")
 		case _sQueFazer == 'C'  // Ler novos clientes
 			_LeCli (_sLinkSrv)
@@ -89,7 +80,6 @@ user function BatMerc (_sQueFazer)
 	endif
 
 	u_log2 ('info', 'Mensagens do batch: ' + _oBatch:Mensagens)
-//	_sArqLog = _sArqLog2
 return .T.
 //
 // --------------------------------------------------------------------------
@@ -443,14 +433,6 @@ static function _LeCli (_sLinkSrv)
 				endif
 			endif
 
-			// if "R33" $ upper (GetEnvServer())
-			// 	// dados financeiros
-			// 	_sRet208 := "teste"
-			// 	_sRet209 := "54 999999999"
-			// 	_sRet210 := "teste@teste.com.br"		
-			// 	_sRet219 := "teste@teste.com.br"
-			// endif		
-	
 			if _lContinua
 				_sIE := (_sAliasQ) -> ZA1_INSCR
 				If alltrim(_sIE) == 'ISENTO' .or. alltrim(_sIE) == 'ISENTA'

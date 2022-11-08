@@ -11,6 +11,7 @@
 // 13/01/2020 - Claudia - GLPI: 9149 - Incluida a gravação do SXK para parametros.
 // 15/07/2022 - Robert  - Se for transf.entre filiais, exporta o XML para
 //                        posterior importacao na filial destino (GLPI 12336)
+// 08/11/2022 - Robert  - Passa a usar a funcao U_AmbTeste().
 //
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -32,8 +33,8 @@ user function SPEDAut (_sEntSai, _sSerie, _sNFIni, _sNFFim)
 //	u_logIni ()
 
 	if _lContinua
-	//	if "TESTE" $ upper (GetEnvServer()) .or. "R2" $ upper (GetEnvServer())
-		if "TESTE" $ upper (GetEnvServer()) .or. "R33" $ upper (GetEnvServer())
+//		if "TESTE" $ upper (GetEnvServer()) .or. "R33" $ upper (GetEnvServer())
+		if U_AmbTeste ()
 			if type ("oMainWnd") == "O"  // Se tem interface com o usuario
 				if ! U_msgnoyes ("Ambiente de TESTE. Confirme se deseja enviar as notas para a SEFAZ")
 					_lContinua = .F.
@@ -187,7 +188,6 @@ user function SPEDAut (_sEntSai, _sSerie, _sNFIni, _sNFFim)
 
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
-//	u_logFim ()
 return
 
 

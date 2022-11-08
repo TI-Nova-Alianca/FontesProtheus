@@ -40,6 +40,7 @@
 // 28/01/2022 - Robert  - Criada opcao de envio em copia oculta.
 // 08/09/2022 - Robert  - Melhorada mensagem de 'conta nao cadastrada'.
 // 21/09/2022 - Robert  - Passa a usar a classe ClsAviso() para notificar problemas.
+// 08/11/2022 - Robert  - Passa a usar a funcao U_AmbTeste().
 //
 
 // ----------------------------------------------------------------------------------------------
@@ -67,7 +68,8 @@ User Function SendMail (_sTo, _sSubject, _sBody, _aArq, _sCtaMail, _sGrupoZZU, _
 		endif
 	endif
 
-	if _lContinua .and. ("TESTE" $ upper (GetEnvServer()) .or. "R33" $ upper (GetEnvServer()))
+//	if _lContinua .and. ("TESTE" $ upper (GetEnvServer()) .or. "R33" $ upper (GetEnvServer()))
+	if _lContinua .and. U_AmbTeste ()
 		if type ("oMainWnd") == "O"  // Se tem interface com o usuario
 			_lContinua = U_msgnoyes ("Ambiente de TESTE. Confirme se deseja enviar a mensagem abaixo:" + chr (13) + chr (10) + chr (13) + chr (10) + alltrim (_sSubject))
 		else
