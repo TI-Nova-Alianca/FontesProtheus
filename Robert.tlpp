@@ -78,7 +78,7 @@ user function robert ()
 		// _batfull ()
 		// _telnet ()
 		// _verif ()
-		// _Etiq ()
+		_Etiq ()
 		// _VA_XLS ()
 		// _aviso ()
 		// _reginv ()
@@ -90,7 +90,7 @@ user function robert ()
 		// _gerasze ()
 		// _BatOcor ()
 		// _AtuSB1 ()
-		_ctbanc ()
+		// _ctbanc ()
 
 		//u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
@@ -701,9 +701,9 @@ static function _Etiq ()
 //	_oEtiq:Imprime ('01')
 //	_oEtiq := ClsEtiq ():New ('2000519769')  // Etiq gerada pelo ZAG
 //	_oEtiq:Imprime ('01')
-	_oEtiq := ClsEtiq ():New ('2000554968')
+	_oEtiq := ClsEtiq ():New ('2000558700')
 //	u_log (_oEtiq:Inutiliza (.f.))
-//	_oEtiq:Imprime ('98')
+	//_oEtiq:Imprime ('98')
 	_oEtiq:ApontaOP (date(), '1')
 
 //	sd5 -> (dbgoto (509183))
@@ -1517,7 +1517,6 @@ return
 	enddo
 return
 */
-//	U_ImpZA1 ('9000240912', '14')
 /*
 	// Gera conta 'PREMIACAO QUALIDADE' na corrente ref. safra 2021 (GLPI 11661)
 	_sArqLog := 'GLPI11661_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"

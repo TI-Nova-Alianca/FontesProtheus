@@ -33,7 +33,8 @@
 //
 
 // -------------------------------------------------------------------------------------------------------------------
-user function ImpZA1 (_sEtiq, _sIdImpr, _oEtiq)
+//user function ImpZA1 (_sEtiq, _sIdImpr, _oEtiq)
+user function ImpZA1 (_sIdImpr, _oEtiq)
 	local _aAreaAnt   := U_ML_SRArea ()
 	local _lContinua  := .T.
 	local _sAlmOri    := ''
@@ -91,23 +92,8 @@ user function ImpZA1 (_sEtiq, _sIdImpr, _oEtiq)
 			_lContinua = .F.
 		endif
 	endif
-/*
-	// Se recebi objeto na chamada, eh por que a rotina anterior jah tinha
-	// instanciado. Caso contrario, vou instanciar agora. Minha intencao eh
-	// que, com o tempo, todos os dados para impressao sejam lidos do objeto
-	// _oEtiq e nao mais direto das tabelas. Robert, 23/09/2022.
-	if valtype (_oEtiq) != 'O'
-		U_Log2 ('debug', '[' + procname () + ']Nao recebi objeto _oObjEtq. Instanciando agora.')
-		private _oEtiq := ClsEtiq ():New (_sEtiq)
-		if empty (_oEtiq:Codigo)
-			u_help ("Erro ao instanciar etiqueta " + _sEtiq,, .t.)
-			_lContinua = .F.
-		endif
-	else
-		U_Log2 ('debug', '[' + procname () + ']Recebi objeto _oEtiq jah instanciado.')
-	endif
-*/
-	if _lContinua
+
+/*	if _lContinua
 		za1 -> (dbsetorder(1))
 		if ! za1 -> (dbseek(xFilial("ZA1") + _sEtiq, .F.))
 			u_help ("Etiqueta '" + _sEtiq + "' nao encontrada!",, .t.)
@@ -116,17 +102,16 @@ user function ImpZA1 (_sEtiq, _sIdImpr, _oEtiq)
 			U_Log2 ('debug', '[' + procname () + ']posicionei etiq no ZA1 com reg.' + cvaltochar (za1 -> (recno ())))
 		endif
 	endif
+*/
 
-	if _lContinua
+/*	if _lContinua
 		sb1 -> (dbsetorder(1))
-	//	if ! sb1 -> (dbseek (xFilial("SB1") + za1 -> za1_prod, .F.))
 		if ! sb1 -> (dbseek (xFilial("SB1") + _oEtiq:Produto, .F.))
-	//		u_help ("Produto da etiqueta ('" + za1 -> za1_prod + "') nao cadastrado.",, .t.)
 			u_help ("Produto da etiqueta ('" + _oEtiq:Produto + "') nao cadastrado.",, .t.)
 			_lContinua = .F.
 		endif
 	endif
-
+*/
 	// Deixa o maximo de variaveis prontas para impressao, buscando manter
 	// integridade entre as diferentes funcoes de impressao.
 	if _lContinua
@@ -139,6 +124,8 @@ user function ImpZA1 (_sEtiq, _sIdImpr, _oEtiq)
 		_sDProImp3 = substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 51, 25)
 		_sPesoBImp = alltrim (cvaltochar (sb1 -> B1_PESBRU * _oEtiq:Quantidade))
 		_sDImpImp  = iif (za1 -> za1_impres == 'S', 'Reimpr:', 'Dt.Impr:') + dtoc (date ()) + ' ' + time ()
+		_sVldLtImp = dtoc (_oEtiq:ValidLote)
+		_sDtFabImp = dtoc (_oEtiq:DtFabrLote)
 		if sb1 -> b1_vafullw == 'S'
 			if empty (sb1 -> b1_codbar)
 				u_help ("Produto '" + alltrim (sb1 -> b1_cod) + "' nao tem codigo DUN14 informado no campo '" + alltrim (RetTitle ("B1_CODBAR")) + "'.",, .t.)
@@ -213,24 +200,24 @@ user function ImpZA1 (_sEtiq, _sIdImpr, _oEtiq)
 			_lContinua = .F.
 		endcase
 	endif
-
+/*
 	// Busca data de validade e fabricacao do lote.
 	// Quando mexer aqui, ajustar tambem o fonte que exporta para o WMS (EnvEtFul.prw)
 	if _lContinua
 		if sb1 -> b1_rastro == 'L'
 			if ! _AchaSB8 (_sProdImp, _sLoteImp, _sAlmOri)
-				u_help ("Lote '" + _sLoteImp + "' do produto '" + _sProdImp + "' referenciado pela etiqueta '" + _sEtqImp + "' nao foi localizado na tabela SB8",, .t.)
-				_lContinua = .F.
+			//	u_help ("Lote '" + _sLoteImp + "' do produto '" + _sProdImp + "' referenciado pela etiqueta '" + _sEtqImp + "' nao foi localizado na tabela SB8",, .t.)
+			//	_lContinua = .F.
+				U_Log2 ('aviso', '[' + procname () + "]Lote '" + _sLoteImp + "' do produto '" + _sProdImp + "' referenciado pela etiqueta '" + _sEtqImp + "' nao foi localizado na tabela SB8")
 			else
-				_sVldLtImp = dtoc (sb8 -> b8_dtvalid)
 				_sDtFabImp = dtoc (sb8 -> b8_dfabric)
 			endif
-		else
-			U_Log2 ('aviso', '[' + procname () + "]Produto '" + alltrim (sb1 -> b1_cod) + "' nao controla lotes. Vou imprimir data de validade como data atual + b1_prvalid.")
-			_sVldLtImp := dtoc (date () + sb1 -> b1_prvalid)
+//		else
+//			U_Log2 ('aviso', '[' + procname () + "]Produto '" + alltrim (sb1 -> b1_cod) + "' nao controla lotes. Vou imprimir data de validade como data atual + b1_prvalid.")
+//			_sVldLtImp := dtoc (date () + sb1 -> b1_prvalid)
 		endif
 	endif
-
+*/
 	// Se chegou aqui com todos os dados prontos, gera etiqueta em arquivo
 	// temporario e copia-o para a porta selecionada.
 	if _lContinua
@@ -329,15 +316,6 @@ user function ImpZA1 (_sEtiq, _sIdImpr, _oEtiq)
 			// Se tem objeto instanciado, nao custa nada gravar uma mensagem de retorno
 			_oEtiq:UltMsg += 'Impressao enviada para ' + _sPortaImp
 
-			// Penso que o fato de uma etiqueta estar impressa nao significa que jah precise
-			// ser enviada para o FullWMS. Vou deixar isso a cargo do ClsEtiq().
-			// Etiquetas (quando necessario) sao enviadas para o Full somente depois de impressas
-//			if za1 -> za1_impres == 'S'
-//				if empty (za1 -> za1_op)  // Etiquetas de OP sao enviadas somente depois de apontadas (P.E. SD3250I)
-//					U_Log2 ('debug', '[' + procname () + ']Chamando envio da etiqueta para o Full')
-//					U_EnvEtFul (za1 -> za1_codigo, .F.)
-//				endif
-//			endif
 		endif
 	endif
 		
@@ -534,7 +512,7 @@ static function _FmtNF ()
 	endif
 return _sFmtNF
 
-
+/*
 // --------------------------------------------------------------------------
 // Posiciona tabela SB8 no registro referente ao lote solicitado.
 static function _AchaSB8 (_sProduto, _sLote, _sAlmox)
@@ -558,7 +536,7 @@ static function _AchaSB8 (_sProduto, _sLote, _sAlmox)
 		sb8 -> (dbgoto (_nRegSB8))
 	endif
 return _lRet
-
+*/
 
 
 // --------------------------------------------------------------------------

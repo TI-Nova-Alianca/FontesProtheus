@@ -20,6 +20,7 @@
 // 23/02/2021 - Robert - Adicionado database BL01 (GLPI 9454).
 // 25/03/2022 - Robert - Adicionado ambiente R33 (homologacao release33 do Protheus)
 // 11/10/2020 - Robert - Criado linked server FullWMS TESTE (almox.01 logistica).
+// 08/11/2022 - Robert - Passa a usar a funcao U_AmbTeste().
 //
 
 // --------------------------------------------------------------------------
@@ -28,8 +29,7 @@ user function LkServer (_sQualSrv)
 	local _lBaseTST := .F.
 	
 	// Define se deve apontar para o banco de producao ou de homologacao.
-//	if "TESTE" $ upper (GetEnvServer())
-	if "TESTE" $ upper (GetEnvServer()) .or. "R22" $ upper (GetEnvServer()) .or. "R23" $ upper (GetEnvServer())
+	if U_AmbTeste ()
 		U_Log2 ('debug', '[' + procname () + ']Estou definindo linked server para base teste')
 		_lBaseTST = .T.
 	endif

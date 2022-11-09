@@ -33,6 +33,7 @@
 // 28/01/2022 - Robert - E-mail de acompanhamento de safra passa a enviar para lista de distribuicao acomp.safra@novaalianca.coop.br
 // 18/02/2022 - Robert - Passa a dar 2 dias antes de transferir titulos para a matriz (para necessidades de cancelar alguma nota recente).
 // 28/02/2022 - Robert - Ajuste conferencia parcelamento (a coop. nao paga FUNRURAL para nao associados e PJ).
+// 08/11/2022 - Robert - Removidas algumas linhas comentariadas.
 //
 
 // --------------------------------------------------------------------------
@@ -607,15 +608,6 @@ static function _GeraSZI ()
 					msunlock ()
 				endif
 
-			// Implementada funcao separada
-			//	// Se gerei conta corrente numa filial, preciso transferir esse lcto para a matriz, pois todos os pagamentos sao centralizados.
-			//	if cFilAnt != '01' //.and. 'TESTE' $ upper (getenvserver ())  // por enqto apenas na base teste
-			//		_oCtaCorr:FilDest = '01'
-			//		U_Log2 ('info', 'Solicitando transferencia do saldo deste movimento para a matriz.')
-			//		if ! _oCtaCorr:TransFil (_oCtaCorr:DtMovto)
-			//			u_help ("A transferencia para outra filial nao foi possivel. " + _oCtaCorr:UltMsg,, .T.)
-			//		endif
-			//	endif
 			endif
 		else
 			U_help ("Gravacao do SZI nao permitida na atualizacao da conta corrente para o associado '" + (_sAliasQ) -> e2_fornece + '/' + (_sAliasQ) -> e2_loja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg)

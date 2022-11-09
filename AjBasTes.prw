@@ -21,6 +21,7 @@
 // 16/06/2021 - Robert  - Acrescentados mais parametros do SX6 (ref.TAF) para serem alterados (GLPI 9843)
 //                      - Parametros a alterar passam a ser tratados em array (loop).
 // 14/07/2022 - Robert  - Removidas linhas comentariadas.
+// 08/11/2022 - Robert  - Passa a usar a funcao U_AmbTeste().
 //
 
 // -------------------------------------------------------------------------------------------------
@@ -40,7 +41,8 @@ user function AjBasTes ()
 	if ! U_MsgNoYes ('ATENCAO: Este programa ajusta varios parametros para serem usados em ambiente de teste/homologacao. Foi criado para ser executado NA BASE TESTE depois que a mesma foi atualizada com os dados da quente. Confirma?')
 		return
 	endif
-	if ! "TESTE" $ upper (GetEnvServer ())
+	//if ! "TESTE" $ upper (GetEnvServer ())
+	if ! U_AmbTeste ()
 		if ! U_MsgNoYes ('Este ambiente NAO PARECE SER DA BASE TESTE. Confirma a execucao assim mesmo?')
 			return
 		endif

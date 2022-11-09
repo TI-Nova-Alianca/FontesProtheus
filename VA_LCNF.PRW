@@ -11,6 +11,7 @@
 // 02/09/2019 - Robert - Criado parametro que possibilita simular antes de executar.
 // 02/08/2021 - Robert - Nao considerava param. de numero doc. na filtragem do SE5 (GLPI 10644)
 // 04/08/2021 - Robert - Nao tinha tratamento para tabelas FK2 e FK5 (GLPI 10644).
+// 08/11/2022 - Robert - Passa a usar a funcao U_AmbTeste().
 //
 
 // --------------------------------------------------------------------------
@@ -134,7 +135,8 @@ Static Function _Gera()
 					loop
 				endif
 				if mv_par13 == 2  // Executar
-					if ! "TESTE" $ upper (GetEnvServer ())  // Por questao de performance
+				//	if ! "TESTE" $ upper (GetEnvServer ())  // Por questao de performance
+					if ! U_AmbTeste ()
 						_oEvento := ClsEvent():new ()
 						_oEvento:CodEven   = "SE5001"
 						_oEvento:Texto     = "Limpando campo E5_LA"
@@ -155,7 +157,8 @@ Static Function _Gera()
 					if fk2 -> (dbseek (xfilial ("FK2") + se5 -> e5_idorig, .F.))
 						if mv_par13 == 2  // Executar
 							U_Log2 ('debug', 'Encontrei FK2')
-							if ! "TESTE" $ upper (GetEnvServer ())  // Por questao de performance
+						//	if ! "TESTE" $ upper (GetEnvServer ())  // Por questao de performance
+							if ! U_AmbTeste ()
 								_oEvento := ClsEvent():new ()
 								_oEvento:CodEven   = "FK2001"
 								_oEvento:Texto     = "Limpando campo FK2_LA"
@@ -182,7 +185,8 @@ Static Function _Gera()
 									if fk5 -> (dbseek (xfilial ("FK5") + fka -> fka_idorig, .F.))
 										U_Log2 ('debug', 'Encontrei FK5')
 										if mv_par13 == 2  // Executar
-											if ! "TESTE" $ upper (GetEnvServer ())  // Por questao de performance
+										//	if ! "TESTE" $ upper (GetEnvServer ())  // Por questao de performance
+											if ! U_AmbTeste ()
 												_oEvento := ClsEvent():new ()
 												_oEvento:CodEven   = "FK5001"
 												_oEvento:Texto     = "Limpando campo FK5_LA"

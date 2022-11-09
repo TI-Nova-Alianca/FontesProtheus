@@ -10,6 +10,10 @@
 // #TabelasPrincipais #
 // #Modulos           #Todos
 
+// Historico de alteracoes:
+// 08/11/2022 - Robert - Passa a usar a funcao U_AmbTeste().
+//
+
 #INCLUDE "protheus.ch"
 #INCLUDE "apwebsrv.ch"
 
@@ -46,7 +50,8 @@ WSMETHOD Execute WSSEND cEntrada WSRECEIVE cSaida WSCLIENT WSPrcNotificacoesWS
 	BEGIN WSMETHOD
 
 	// Tenho enderecos diferentes para a base de testes e a de producao.
-	if "TESTE" $ upper (GetEnvServer()) .or. "R22" $ upper (GetEnvServer()) .or. "R23" $ upper (GetEnvServer())
+//	if "TESTE" $ upper (GetEnvServer()) .or. "R22" $ upper (GetEnvServer()) .or. "R23" $ upper (GetEnvServer())
+	if U_AmbTeste ()
 		U_Log2 ('debug', '[' + procname () + ']Estou definindo web service para base teste')
 		_sURI = "http://naweb17.novaalianca.coop.br/prcnotificacoesws.aspx"
 	else

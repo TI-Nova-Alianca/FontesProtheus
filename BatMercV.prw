@@ -15,7 +15,9 @@
 //						  U_ZZUNU ({'A10'}, "Verificações Mercanet - Clientes"
 //						  U_ZZUNU ({'A10'}, "Verificações Mercanet - Representantes"
 // 11/04/2022 - Claudia - Retirado o CNPJ 18694748000105 da consulta. GLPI: 11899
+// 08/11/2022 - Robert  - Passa a usar funcao U_LkServer() para apontar para o banco do Mercanet.
 //
+
 // -------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'totvs.ch'
@@ -23,24 +25,20 @@
 User Function BatMercV()
     local _sLinkSrv := ""
 
-	u_logDH ()
-	u_logIni ()
-
 	// Define se deve apontar para o banco de producao ou de homologacao.
-	if "TESTE" $ upper (GetEnvServer())
-		_sLinkSrv = "LKSRV_MERCANETHML.MercanetHML.dbo"
+	_sLinkSrv = U_LkServer ('MERCANET')
+	if empty (_sLinkSrv)
+		u_help ("Sem definicao para comunicacao com banco de dados do Mercanet.",, .t.)
 	else
-		_sLinkSrv = "LKSRV_MERCANETPRD.MercanetPRD.dbo"
+
+		// Verificação de clientes inativos Protheus/Mercanet
+		_oBatch:Mensagens += "Verificação de clientes inativos Protheus/Mercanet"
+		ClientesInativos()
+
+		RepInativos()
 	endif
 
-    //Verificação de clientes inativos Protheus/Mercanet
-    _oBatch:Mensagens += "Verificação de clientes inativos Protheus/Mercanet"
-    ClientesInativos()
-
-	RepInativos()
-
-    u_log ('Mensagens do batch:', _oBatch:Mensagens)
-    u_logFim ()
+	u_log ('Mensagens do batch:', _oBatch:Mensagens)
 Return
 //
 // -------------------------------------------------------------------------------
