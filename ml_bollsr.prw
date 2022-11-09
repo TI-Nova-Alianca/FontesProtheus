@@ -94,6 +94,7 @@
 // 22/07/2022 - Claudia - Criado modelo de boleto banco Daycoval. GLPI: 12365
 // 02/09/2022 - Robert  - Chamadas da funcao u_log() trocadas para u_log2().
 // 05/09/2022 - Robert  - Ajustes pequenos nos logs.
+// 09/11/2022 - Claudia - Tratamento de parametros de agencia e conta. 
 //
 
 // --------------------------------------------------------------------------------------------------------------
@@ -312,7 +313,7 @@ Static Function MontaRel()
 	
 	DbSelectArea("SA6")
 	DbSetOrder(1)
-	If !DbSeek(xFilial("SA6")+mv_par05 + mv_par06 + mv_par07,.t.)
+	If !DbSeek(xFilial("SA6")+mv_par05 + PADR(alltrim(mv_par06),5) + mv_par07,.t.)
 		u_help("Banco / Agencia / Conta nao cadastrados: " + mv_par05 + ' / ' + mv_par06 + ' / ' + mv_par07,, .t.)
 		_lContinua = .F.
 	Endif
@@ -326,7 +327,7 @@ Static Function MontaRel()
 		incproc ()
 		// Guarda Parametros Originais
 		_xSlvpar05 := mv_par05
-		_xSlvpar06 := mv_par06
+		_xSlvpar06 := PADR(alltrim(mv_par06),5)
 		_xSlvpar07 := mv_par07
 		_xSlvpar08 := mv_par08
 		_aAreaSA6  := SA6->(GetArea())
@@ -364,8 +365,8 @@ Static Function MontaRel()
 		
 		DbSelectArea("SEE")
 		DbSetOrder(1)
-		U_Log2 ('debug', '[' + procname () + '] pesquisando SEE >>' + xFilial("SEE") + mv_par05 + mv_par06 + mv_par07 + mv_par08 + '<<')
-		If DbSeek(xFilial("SEE") + mv_par05 + mv_par06 + mv_par07 + mv_par08,.f.)
+		U_Log2 ('debug', '[' + procname () + '] pesquisando SEE >>' + xFilial("SEE") + mv_par05 +  PADR(alltrim(mv_par06),5) + mv_par07 + mv_par08 + '<<')
+		If DbSeek(xFilial("SEE") + mv_par05 +  PADR(alltrim(mv_par06),5) + PADR(alltrim(mv_par07),10) + mv_par08,.f.)
 			_nNumBco := SEE->EE_BOLATU
 			_cBcoBol := see -> ee_codigo
 			_cAgeBol := see -> ee_vaBolAg
@@ -380,7 +381,7 @@ Static Function MontaRel()
 				loop
 			endif
 		Else
-			u_help("Nao Encontrado Dados Param. Bancos / Agencia / Conta / Sub-Conta CNAB " + chr(13) + mv_par05 + ' / ' + mv_par06 + ' / ' + mv_par07 + ' / ' + mv_par08)
+			u_help("Nao Encontrado Dados Param. Bancos / Agencia / Conta / Sub-Conta CNAB " + chr(13) + mv_par05 + ' / ' +  PADR(alltrim(mv_par06),5) + ' / ' + mv_par07 + ' / ' + mv_par08)
 			se1 -> (dbskip ())
 			_lContinua = .F.
 			loop
@@ -540,7 +541,7 @@ Static Function MontaRel()
 			_sQuery +=  " and E1_NUMBCO = '" + _sNumBco + "'"
 			If alltrim(mv_par05) == '748' // verifica banco/agencia e conta para o sicred
 				_sQuery +=  " and E1_PORT2  = '" + mv_par05 + "'"
-				_sQuery +=  " and E1_AGEDEP = '" + mv_par06 + "'"
+				_sQuery +=  " and E1_AGEDEP = '" + PADR(alltrim(mv_par06),5) + "'"
 				_sQuery +=  " and E1_CONTA  = '" + mv_par07 + "'"
 			EndIf
  
