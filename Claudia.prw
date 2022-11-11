@@ -27,39 +27,102 @@ User Function claudia ()
 	//u_help("ALTERASB1")
 	//U_ALTERASB1()
 
-	u_help("Saldos iniciais")
-	U_SaldosIniciais()
+	//u_help("Saldos iniciais")
+	//U_SaldosIniciais()
+
+	u_help("Busca utilização do fonte")
+	_RotinaUsada()
 
 Return
-//
-//
-User Function SaldosIniciais()
+
+Static Function _RotinaUsada()
 	Local _i := 0
+	Local _x := 0
 
     // Le planilha .csv
-    _aDados = U_LeCSV ('C:\Temp\saldosiniciais.csv', ';')
+    _aDados = U_LeCSV ('C:\Temp\rotinas.csv', ';')
      
-    For _i := 1 to len (_aDados)
-		_sRede   := _aDados[_i, 1]
-		_sLoja   := _aDados[_i, 2]
-		_nValor  := val(_aDados[_i, 4])
+	nHandle := FCreate("c:\temp\logRotinas.csv")
 
-		Reclock("ZC0",.T.)
-			zc0 -> zc0_filial := '01'
-			zc0 -> zc0_codred := _sRede
-			zc0 -> zc0_lojred := _sLoja
-			zc0 -> zc0_tm     := '01'
-			zc0 -> zc0_data   := STOD('20221031')
-			zc0 -> zc0_hora   := Time()
-			zc0 -> zc0_user   := 'administrador'
-			zc0 -> zc0_histor := 'INCLUSAO DE SALDO INICIAL'
-			zc0 -> zc0_seq    := '000000'
-			zc0 -> zc0_rapel  := _nValor
-			zc0 ->zc0_origem  := 'CLAUDIA'
-		ZC0->(MsUnlock())
+    For _i := 1 to len (_aDados)
+		_sRotina := UPPER(ALLTRIM(_aDados[_i, 1]))
+
+		_oSQL:= ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT 
+		_oSQL:_sQuery += " 	MAX(CAST(ENTRADA AS DATE)) "
+		_oSQL:_sQuery += "    ,ROTINA "
+		_oSQL:_sQuery += " FROM VA_USOROT "
+		_oSQL:_sQuery += " WHERE ENTRADA >= '20200101'"
+		_oSQL:_sQuery += " AND UPPER(ROTINA) IN ('"+_sRotina+"')"
+		_oSQL:_sQuery += " GROUP BY ROTINA "
+		_oSQL:_sQuery += " ORDER BY ROTINA "
+		_aRot := aclone(_oSQL:Qry2Array())
+
+		If len(_aRot) > 0
+			For _x := 1 to len(_aRot)
+				_sRet := _sRotina +";"+dtoc(_aRot[_x,1]) + chr (13) + chr (10)
+			Next
+		else
+			_oSQL:= ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += "  SELECT * FROM SX3010 "
+			_oSQL:_sQuery += " 	WHERE D_E_L_E_T_ = '' "
+			_oSQL:_sQuery += " 	AND X3_VALID <> '' "
+			_oSQL:_sQuery += " 	AND UPPER(X3_VALID) LIKE '%"+_sRotina+"%'"
+			_aSX3 := aclone(_oSQL:Qry2Array())
+
+			If len(_aSX3) > 0
+				_sRet := _sRotina + ';SX3' + chr (13) + chr (10)
+			else
+				_oSQL:= ClsSQL ():New ()
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += "  SELECT * FROM SX7010 "
+				_oSQL:_sQuery += "  WHERE D_E_L_E_T_ = '' "
+				_oSQL:_sQuery += "  AND UPPER(X7_REGRA) LIKE '%"+_sRotina+"%'"
+				_aSX7 := aclone(_oSQL:Qry2Array())
+
+				If len(_aSX7) > 0
+					_sRet := _sRotina + ';SX7' + chr (13) + chr (10)
+				else
+					_sRet := _sRotina + chr (13) + chr (10)
+				EndIf
+			EndIf
+		EndIf
+		FWrite(nHandle,_sRet )
 	Next
 	U_HELP("FEITO!")
+	FClose(nHandle)
 Return
+// //
+// //
+// User Function SaldosIniciais()
+// 	Local _i := 0
+
+//     // Le planilha .csv
+//     _aDados = U_LeCSV ('C:\Temp\saldosiniciais.csv', ';')
+     
+//     For _i := 1 to len (_aDados)
+// 		_sRede   := _aDados[_i, 1]
+// 		_sLoja   := _aDados[_i, 2]
+// 		_nValor  := val(_aDados[_i, 4])
+
+// 		Reclock("ZC0",.T.)
+// 			zc0 -> zc0_filial := '01'
+// 			zc0 -> zc0_codred := _sRede
+// 			zc0 -> zc0_lojred := _sLoja
+// 			zc0 -> zc0_tm     := '01'
+// 			zc0 -> zc0_data   := STOD('20221031')
+// 			zc0 -> zc0_hora   := Time()
+// 			zc0 -> zc0_user   := 'administrador'
+// 			zc0 -> zc0_histor := 'INCLUSAO DE SALDO INICIAL'
+// 			zc0 -> zc0_seq    := '000000'
+// 			zc0 -> zc0_rapel  := _nValor
+// 			zc0 ->zc0_origem  := 'CLAUDIA'
+// 		ZC0->(MsUnlock())
+// 	Next
+// 	U_HELP("FEITO!")
+// Return
 // //
 // // altera B1 para manutenção
 // User Function ALTERASB1()
