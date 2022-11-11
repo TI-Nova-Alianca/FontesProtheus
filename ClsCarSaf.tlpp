@@ -113,7 +113,7 @@ METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
 		case _sZZAAtual == '2'
 			_sStatPara = 'EMP'  // Em processamento
 		case ::PesoBruto > 0
-			_sStatPara = 'LIB'  // Liberada (para entrar e descarregar)
+			_sStatPara = 'LIB'  // Liberada (para ir ate o tombador e descarregar)
 		otherwise
 			u_help ("Situacao nao prevista. Nao sei o que enviar para o NaWeb para definir o status da carga " + ::Carga,, .T.)
 			_lContinua = .F.

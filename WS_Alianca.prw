@@ -103,7 +103,9 @@
 // 03/11/2022 - Robert  - No apontamento de etiq.producao, passa a usar o metodo ValCbEmb para validar 
 //                        barras embalagem coletiva.
 // 04/11/2022 - Claudia - Incluido nome do vendedor na consulta _PedidosBloq/BuscaPedidosBloqueados. GLPI: 12764
+// 09/11/2022 - Robert  - Criada acao ImprimeEtiquetaZAG (GLPI 12773)
 //
+
 // ---------------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
 #INCLUDE "PROTHEUS.CH"
@@ -250,6 +252,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 				_AltAssoc ()
 			case _sAcao == 'ImprimeEtiqueta'
 				_ImpEtiq ()
+			case _sAcao == 'ImprimeEtiquetaZAG'
+				_ImpEtiqZAG ()
 			case _sAcao == 'TesteRobert'
 				_TstRobert ()
 			otherwise
@@ -934,9 +938,9 @@ static function _IncProd()
 		Else
 			u_log ('rotina automatica OK')
 			_sMsgRetWS = 'Produto criado codigo ' + sb1 -> b1_cod
-		EndIf
+		endif
 
-	EndIf
+	endif
 	u_logFim ()
 Return Nil
 //
@@ -1042,7 +1046,7 @@ static function _IncCli ()
 				u_log("Mensagem da solução: "        + ' [' + AllToChar(aErro[07]) + ']')
 				u_log("Valor atribuído: "            + ' [' + AllToChar(aErro[08]) + ']')
 				u_log("Valor anterior: "             + ' [' + AllToChar(aErro[09]) + ']')
-			EndIf			      
+			endif			      
 		Else 					// Se não conseguir validar as informações, altera a variável para false
 			u_log('Erro na rotina automatica')
 			aErro := oModel:GetErrorMessage()
@@ -1057,7 +1061,7 @@ static function _IncCli ()
 			u_log("Mensagem da solução: "        + ' [' + AllToChar(aErro[07]) + ']')
 			u_log("Valor atribuído: "            + ' [' + AllToChar(aErro[08]) + ']')
 			u_log("Valor anterior: "             + ' [' + AllToChar(aErro[09]) + ']')
-		EndIf
+		endif
 	endif
 	u_logFim ()
 return
@@ -1284,7 +1288,7 @@ Static function _ExecConsOrc()
 		(_sAliasQ) -> (dbclosearea ())
 		
 		_sMsgRetWS := _XmlRet
-	EndIf
+	endif
 //	u_logFim ()
 Return 
 
@@ -1527,7 +1531,7 @@ Static function _ExecKardex()
 	_oSQL:Log ('[' + procname () + ']')
 	if _osql:RetQry (1, .f.) > 2000
 		_sErroWS := "Este item possui muita movimentacao. Selecione um periodo menor!"
-	EndIf
+	endif
 	
 	If empty(_sErroWS)
 		_oSQL := ClsSQL():New ()
@@ -1581,7 +1585,7 @@ Static function _ExecKardex()
 		(_sAliasQ) -> (dbclosearea ())
 		
 		_sMsgRetWS := _XmlRet
-	EndIf
+	endif
 Return 
 
 
@@ -1660,7 +1664,7 @@ Static function _KardexLt()
 		(_sAliasQ) -> (dbclosearea ())
 		
 		_sMsgRetWS := _XmlRet
-	EndIf
+	endif
 Return 
 
 
@@ -2185,15 +2189,15 @@ Static Function _GrvLibPed ()
 		_wCliente  := _ExtraiTag ("_oXML:_WSAlianca:_Cliente"	, .T., .F.)
 		_wLoja     := _ExtraiTag ("_oXML:_WSAlianca:_Loja"		, .T., .F.)
 		_wBloqLib  := _ExtraiTag ("_oXML:_WSAlianca:_BloqLib"	, .T., .F.) // Retorna L - libera / B - Bloqueia
-	EndIf
+	endif
 
 	If empty(_sErroWS)
 		sa1 -> (dbsetorder(1)) // A1_FILIAL + A1_COD + A1_LOJA
 		DbSelectArea("SA1")
 		If ! dbseek(xFilial("SA1") + _wCliente + _wLoja, .F.)
 			_sErroWS := " Cliente " + _wCliente +"/"+ _wLoja +" não encontrado. Verifique!"
-		EndIf
-	EndIf
+		endif
+	endif
 
 	If empty(_sErroWS)
 		sc5 -> (dbsetorder(3)) // C5_FILIAL + C5_CLIENTE + C5_LOJACLI + C5_NUM
@@ -2208,13 +2212,13 @@ Static Function _GrvLibPed ()
 				Else
 					If alltrim(_wBloqLib) == 'B'	// Bloqueia pedido
 						U_SC5LBGN()
-					EndIf
-				EndIf
-			EndIf
+					endif
+				endif
+			endif
 		Else
 			_sErroWS := "Pedido " + _wPedido + " não encontrado para o cliente "	+ _wCliente +"/"+ _wLoja 		
-		EndIf		
-	EndIf
+		endif		
+	endif
 
 //	u_logFim ()
 Return
@@ -2237,7 +2241,7 @@ Static Function _EnvMargem ()
 		_wPedido   := _ExtraiTag ("_oXML:_WSAlianca:_Pedido"	, .T., .F.)
 		_wCliente  := _ExtraiTag ("_oXML:_WSAlianca:_Cliente"	, .T., .F.)
 		_wLoja     := _ExtraiTag ("_oXML:_WSAlianca:_Loja"		, .T., .F.)
-	EndIf
+	endif
 
 	u_log2 ('info', "Pedido:"+ _wPedido + " Cliente:" + PADR(_wCliente, 6,' ') + "-" + _wLoja)
 
@@ -2249,8 +2253,8 @@ Static Function _EnvMargem ()
 			_sErroWS := " Cliente " + _wCliente +"/"+ _wLoja +" não encontrado. Verifique!"
 		Else
 			_wNomeCli := sa1->a1_nome
-		EndIf
-	EndIf
+		endif
+	endif
 
 	If empty(_sErroWS)
 		sc5 -> (dbsetorder(3)) // C5_FILIAL + C5_CLIENTE + C5_LOJACLI + C5_NUM
@@ -2298,8 +2302,8 @@ Static Function _EnvMargem ()
 			u_log2 ('info', _XmlRet)
 		Else
 			_sErroWS := "Pedido " + _wPedido + " não encontrado para o cliente "	+ _wCliente +"/"+ _wLoja 		
-		EndIf		
-	EndIf
+		endif		
+	endif
 	_sMsgRetWS := _XmlRet
 //	u_logFim ()
 Return
@@ -2487,6 +2491,48 @@ static function _ImpEtiq ()
 				_sErroWS += 'Erro na rotina de impressao'
 			else
 				_sMsgRetWS += _oEtiq:UltMsg
+			endif
+		endif
+	endif
+return
+
+
+// --------------------------------------------------------------------------
+// Imprime uma etiqueta gerada para atender a uma sol.transf. da tabela ZAG.
+static function _ImpEtiqZAG ()
+	local _sDocZAG  := ''
+	local _sCodImpr := ''
+	local _oTrEstq  := NIL
+	local _oEtiq    := NIL
+
+	if empty (_sErroWS) ; _sDocZAG  = _ExtraiTag ("_oXML:_WSAlianca:_DocZAG",        .T., .F.) ; endif
+	if empty (_sErroWS) ; _sCodImpr = _ExtraiTag ("_oXML:_WSAlianca:_CodImpressora", .T., .F.) ; endif
+
+	// Validacao inicial do numero da etiqueta.
+	if empty (_sErroWS)
+		zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
+		if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
+			_sErroWS += "Documento '" + _sDocZAG + "' nao localizado na tabela ZAG"
+		else
+			_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
+			
+			// Se nao tem etiqueta, eh possivel que tenha dado problema na
+			// geracao da mesma. Vou tentar gerar novamente.
+			if empty (_oTrEstq:Etiqueta)
+				_oTrEstq:ImprEtq = _sCodImpr
+				_oTrEstq:GeraEtiq (.F.)
+				_sMsgRetWS += _oTrEstq:UltMsg
+			else
+				_oEtiq := ClsEtiq ():New (_oTrEstq:Etiqueta)
+				if _oEtiq:Codigo != _oTrEstq:Etiqueta
+					_sErroWS += "Numero de etiqueta invalido."
+				else
+					if ! _oEtiq:Imprime (_sCodImpr)
+						_sErroWS += 'Erro na rotina de impressao'
+					else
+						_sMsgRetWS += _oEtiq:UltMsg
+					endif
+				endif
 			endif
 		endif
 	endif

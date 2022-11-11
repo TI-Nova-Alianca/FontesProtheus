@@ -1718,6 +1718,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query += " WHERE ATU_EST_NFE <> ATU_EST_NFS"
 			
 		case ::Numero == 41
+			::Ativa = .F.  // Ninguem usa e estava demorando 3 horas para rodar... Robert, 10/11/2022
 			::Setores    = 'CUS'
 			::Descricao  = "Movimento fora do período de emissão/encerramento OP"
 			::Sugestao   = ""
