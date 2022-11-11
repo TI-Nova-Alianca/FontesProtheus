@@ -31,7 +31,8 @@
 // 19/10/2022 - Robert  - Impedir exclusao se gerou solic.separacao no FullWMS (GLPI 12724)
 // 31/10/2022 - Robert  - Classe renomeada de PRW para TLPP
 //                      - Tratamentos para permitir lote origem quando destino for FullWMS.
-// 
+// 09/11/2022 - Robert  - Nao alimentava numero da etiqueta no metodo GeraAtrib.
+//
 
 // ------------------------------------------------------------------------------------
 #include "colors.ch"
@@ -320,6 +321,7 @@ return _lContinua
 // --------------------------------------------------------------------------
 // Gera / atualiza atributos para o objeto.
 METHOD GeraAtrib (_sOrigem) class ClsTrEstq
+	local _oSQL := NIL
 
 	// Defaults
 	::Filial     = ''
@@ -383,6 +385,17 @@ METHOD GeraAtrib (_sOrigem) class ClsTrEstq
 
 		// Busca dados adicionais dos produtos origem e destino (podem nao ser iguais)
 		::LeSB1 ()
+
+		// Busca etiqueta gerada para este registro, se existir.
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT ZA1_CODIGO"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZA1") + " ZA1"
+		_oSQL:_sQuery += " WHERE ZA1.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND ZA1.ZA1_FILIAL = '" + xfilial ("ZA1") + "'"
+		_oSQL:_sQuery +=   " AND ZA1.ZA1_IDZAG  = '" + zag -> zag_doc + "'"
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		::Etiqueta = _oSQL:RetQry (1, .f.)
 
 	endif
 return

@@ -276,6 +276,8 @@ user function ImpZA1 (_sIdImpr, _oEtiq)
 		elseif _nModelImp == 4  // BPLA usado pela Elgin L42 - manual online em https://docplayer.net/59879244-Programmer-s-manual-bpla.html
 			_sTxtEtiq += chr (2) + 'L' + _Enter  //  STX - inicio de etiqueta
 			_sTxtEtiq += 'n' + _Enter  // polegadas
+			_sTxtEtiq += 'H25' + _Enter  // H=Temperatura (de 00 a 30)
+			_sTxtEtiq += 'PE' + _Enter  // P=velocidade (de A a T)
 
 			// Adiciona 'miolo' da etiqueta, formatado conforme o tipo de aplicacao da etiqueta
 			if ! empty (_oEtiq:OP)
@@ -382,7 +384,29 @@ static function _FmtOP (_sFinOP)
 		_sFmtOP += '4311' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup + 300, 4) + 'LOTE:' + _sLoteImp + _Enter // Lote
 		_sFmtOP += '4211' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup + 325, 4) + _sDImpImp + _Enter // Impressa em:
 		_sFmtOP += '3311' + '000' + strzero (_nMargEsq + 210, 4) + strzero (_nMargSup + 335, 4) + _sOPImp + '  ' + 'Peso Bruto: ' + _sPesoBImp + _Enter // OP
+
+	elseif _nModelImp == 4  // Impressora Elgin L42 (BPLA)
+
+		// Formatacao BPLA:
+		// A: rotacao (1 a 4)
+		// B: 0-9=fonte(letras); A-T=cod.barras com linha legivel;a-t=sem linha legivel; X=grafico; Y-imagem
+		// C: multiplicador de largura
+		// D: multiplicador de altura
+		// E: seletor de fonte / altura cod.barras
+		// F: posicionamento (eixo X ou 'colunas')
+		// G: posicionamento (eixo Y ou 'linhas')
+		// H: dados (texto ou numeros para cod. barra)
+		//           RBCDEEEFFFFGGGGH...
+		_sFmtOP += '421100000150005posicao 15,5' + _Enter
+		//_sFmtOP += '421100000150100posicao 15,100' + _Enter
+		_sFmtOP += '421100000150200posicao 15,200' + _Enter
+		_sFmtOP += '421100000150300posicao 15,300' + _Enter
+		_sFmtOP += '421100000150350posicao 15,350' + _Enter
+		_sFmtOP += '4E1204000150100' + _sEtqImp + _Enter // E=code128
+		_sFmtOP += '4e1204000150250' + _sEtqImp + _Enter  // 4=rotacao;E=code128;1=unavailable;2=narrow bar width
+		U_Log2 ('debug', _sFmtOP)
 	endif
+
 	if empty (_sFmtOP)
 		u_help ("Sem tratamento para formatacao de impressao para este tipo de etiqueta no programa " + procname (),, .t.)
 	endif
@@ -444,12 +468,11 @@ static function _FmtZAG ()
 		// H: dados (texto ou numeros para cod. barra)
 		//           RBCDEEEFFFFGGGGH...
 		_sFmtZAG += '421100000150005posicao 15,5' + _Enter
-		_sFmtZAG += '421100000150100posicao 15,100' + _Enter
 		_sFmtZAG += '421100000150200posicao 15,200' + _Enter
 		_sFmtZAG += '421100000150300posicao 15,300' + _Enter
 		_sFmtZAG += '421100000150350posicao 15,350' + _Enter
-		_sFmtZAG += '4A31040001500502000558306' + _Enter
-		_sFmtZAG += '4A31040001502502000558306' + _Enter
+		_sFmtZAG += '4E1204000150100' + _sEtqImp + _Enter // E=code128
+		_sFmtZAG += '4e1204000150250' + _sEtqImp + _Enter  // 4=rotacao;E=code128;1=unavailable;2=narrow bar width
 	endif
 
 	if empty (_sFmtZAG)
