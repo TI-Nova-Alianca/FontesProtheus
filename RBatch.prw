@@ -179,13 +179,13 @@ User Function RBatch (_sEmp, _sFil)
 
 			// Verifica se ainda nao chegou no horario limite (pode ter havido alteracao manual depois que gerei a array de batches pendentes ou demora no batch anterior)
 			if zz6 -> zz6_hrini > left (time (), 5)
-				u_log2 ('aviso', alltrim (zz6 -> zz6_cmd) + ' Ainda nao estah na hora de rodar.')
+				u_log2 ('aviso', alltrim (zz6 -> zz6_cmd) + ' Soh vai rodar apos ' + zz6 -> zz6_hrini)
 				loop
 			endif
 
 			// Verifica se jah passou o horario limite (pode ter havido alteracao manual depois que gerei a array de batches pendentes ou demora no batch anterior)
 			if zz6 -> zz6_hrfim < left (time (), 5)
-				u_log2 ('aviso', alltrim (zz6 -> zz6_cmd) + ' Jah passou da hora de rodar.')
+				u_log2 ('aviso', alltrim (zz6 -> zz6_cmd) + ' Nao roda apos ' + zz6 -> zz6_hrfim)
 				loop
 			endif
 

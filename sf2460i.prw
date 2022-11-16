@@ -83,7 +83,7 @@
 // 06/01/2011 - Robert - Gravacao dos campos F2_VEICUL1, 2 e 3 a partir de campos customizados do SC5.
 // 11/01/2011 - Robert - Alterada leitura do ZZ2 para geracao de msg. para NF (novo formato do arquivo ZZ2).
 // 21/02/2011 - Robert - Criado tratamento para quando der erro em rotina automatica, mas nao houver arquivo de log gerado.
-// 17/03/2011 - Robert - Montagem das mensagens adicionais parra a usar a funcao _SomaMsg ().
+// 17/03/2011 - Robert - Montagem das mensagens adicionais passa a usar a funcao _SomaMsg ().
 //                     - Passa a considerar os parametros MV_NFEMSA1 e MV_NFEMSF4 para montagem de dados adicionais.
 //                     - Incluidas mensagens adicionais para zona franca de Manaus / ALC.
 // 28/03/2011 - Robert - Criado tratamento para gravacao do SZI (conta corrente associados).
@@ -133,7 +133,7 @@
 // 15/07/2020 - Cláudia - Ajustes da conta corrente para venda de mudas para associados. GLPI: 8120
 // 11/08/2020 - Robert  - Gravacao campos e1_nsutef, e1_adm, e1_tipo (venda c/ cartao credito) GLPI 8295
 // 27/08/2020 - Cláudia - Gravação do campo e1_cartaut com c5 -> c5_vaaut. 
-//						  Incluida verificação se campos do SC5 estao preenchidos para gravar na SE1
+//                        Incluida verificação se campos do SC5 estao preenchidos para gravar na SE1
 // 24/10/2020 - Robert  - Desabilitada gravacao SC0 (reservas) cfe. campo C5_VARESER (nao usamos mais desde 2014).
 // 10/12/2020 - Claudia - Gravação do campo ID transação do pagar.me em títulos. GLPI: 9012
 // 12/07/2021 - Robert  - Representante 328 nao quer que seja impresso seu nome nos dados adicionais (GLPI 10472).
@@ -146,7 +146,9 @@
 // 10/06/2022 - Claudia - Ajuste de lançamento para mudas. GLPI: 12191
 // 28/07/2022 - Claudia - Incluida a gravação de historico para e-commerce/pagar-me. GLPI: 12392
 // 30/08/2022 - Claudia - Incluida a gravação das contas para titulos pagar-me. GLPI: 12280
+// 11/11/2022 - Robert  - Gera títulos e msg adicional cobranca ST para MG (GLPI 12779)
 //
+
 // ---------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -325,6 +327,9 @@ User Function sf2460i ()
 	if !sf2 -> f2_TIPO $ "B/D"
 		_HistNf ()
 	endif
+
+	// Gera titulos antecipacao ST para MG
+	_TitSTMG ()
 
 	U_ML_SRArea (_aAreaAnt)
 Return
@@ -596,23 +601,7 @@ static function _Notifica ()
  		U_ZZUNU ({'132'}, _sMsg, _sMsg)
 	EndIf
 Return
-// //
-// // --------------------------------------------------------------------------
-// // Envia e-mail de notificacao em determinadas condicoes.
-// static function _Notifica ()
-// 	local _sMsg   := ""
 
-// 	if cFilAnt == '01' .and. sf2 -> f2_est $ "ES/DF/MA/RO/AC/AM/RR/PA/AP/TO/PI/CE/RN/PB/PE/AL/MS/MT/GO/SE/BA" 
-// 		_sMsg = "NF " + sf2 -> f2_doc + " emitida para " + sf2 -> f2_est + " Verifique GUIA/ST"
-//  		U_ZZUNU ({'132'}, _sMsg, _sMsg)
-// 	endif
-	
-// 	if cFilAnt == '07/08/09/10/13' .and. sf2 -> f2_est $ "AC / AM / RR / PA / AP / TO / MA / PI / CE / RN / PB / PE / AL / SE / BA / MG / ES / RJ / SP / PR / SC / RS / MS / MT / G0" 
-// 		_sMsg = "NF " + sf2 -> f2_doc + " emitida para " + sf2 -> f2_est + " Verifique GUIA/ST"
-//  		U_ZZUNU ({'132'}, _sMsg, _sMsg)
-// 	endif
-// return
-//
 // --------------------------------------------------------------------------
 // Verificacoes no pedido de venda.
 static function _VerPed ()
@@ -801,3 +790,163 @@ Static Function _HistNf()
 	_oEvento:Flag      = .T.
 	_oEvento:Grava ()
 Return
+
+// --------------------------------------------------------------------------
+// Gera mensagem e titulos referente a cobranca 'em separado' da ST para MG (GLPI 12779)
+static function _TitSTMG ()
+	local _oSQL      := NIL
+	local _nST_MG    := 0
+	local _aAutoSE1  := {}
+	local _aAutoSE2  := {}
+	local _sMsgContr := ""
+	local _sFornRec  := '000092'  // Fornecedor 'ICMS'
+	local _sLojaRec  := '01'
+	local _oEvento   := NIL
+
+	if ! empty (GetNewPar ("VA_COBSTMG", ''))
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT SUM (D2_ICMSRET)"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD2") + " SD2"
+		_oSQL:_sQuery += " WHERE SD2.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SD2.D2_FILIAL  = '" + xfilial ("SD2") + "'"
+		_oSQL:_sQuery +=   " AND SD2.D2_DOC     = '" + sf2 -> f2_doc   + "'"
+		_oSQL:_sQuery +=   " AND SD2.D2_SERIE   = '" + sf2 -> f2_serie + "'"
+		_oSQL:_sQuery +=   " AND SD2.D2_TES     IN " + FormatIn (alltrim (GetNewPar ("VA_COBSTMG", '')), '/')
+		_oSQL:Log ('[' + procname () + ']')
+		_nST_MG = _oSQL:RetQry (1, .f.)
+	endif
+
+	// Gera mensagem nos dados adicionais da nota
+	if _nST_MG > 0
+		_SomaMsg (@_sMsgContr, "Valor ST MG antecipacao " + GetMv ("MV_SIMB1") + " " + alltrim (transform (_nST_MG, "@E 999,999,999.99")))
+		msmm(,,,_sMsgContr,1,,,"SF2","F2_VACMEMC")
+	endif
+
+	// Geracao dos titulos
+	if _nST_MG > 0
+
+		// Titulo a receber para termos controle se a ST foi cobrada do cliente
+		//
+		// Encontra a proxima parcela para esta nota
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " select IsNull (max (E1_PARCELA), '0')"
+		_oSQL:_sQuery +=   " from " + RetSQLName ("SE1") + " SE1 "
+		_oSQL:_sQuery +=  " where SE1.D_E_L_E_T_ != '*'"
+		_oSQL:_sQuery +=    " and SE1.E1_FILIAL   = '" + xfilial ("SE1")   + "'"
+		_oSQL:_sQuery +=    " and SE1.E1_CLIENTE  = '" + sf2 -> f2_cliente + "'"
+		_oSQL:_sQuery +=    " and SE1.E1_LOJA     = '" + sf2 -> f2_loja + "'"
+		_oSQL:_sQuery +=    " and SE1.E1_NUM      = '" + sf2 -> f2_doc + "'"
+		_oSQL:_sQuery +=    " and SE1.E1_PREFIXO  = '" + sf2 -> f2_serie + "'"
+		_sProxParc = _oSQL:RetQry (1, .f.)
+		if empty (_sProxParc)
+			_sProxParc = '1'
+		else
+			_sProxParc = soma1 (_sProxParc)
+		endif
+
+		_aAutoSE1 = {}
+		aAdd(_aAutoSE1, {"E1_PREFIXO"  , sf2 -> f2_serie       , Nil})
+		aAdd(_aAutoSE1, {"E1_NUM"      , sf2 -> f2_doc         , Nil})
+		aAdd(_aAutoSE1, {"E1_PARCELA"  , _sProxParc            , Nil})
+		aAdd(_aAutoSE1, {"E1_TIPO"     , 'DP'                  , Nil})
+		aAdd(_aAutoSE1, {"E1_NATUREZ"  , '110198'              , Nil})
+		aAdd(_aAutoSE1, {"E1_CLIENTE"  , sf2 -> f2_cliente     , Nil})
+		aAdd(_aAutoSE1, {"E1_LOJA"     , sf2 -> f2_loja        , Nil})
+		aAdd(_aAutoSE1, {"E1_VALOR"    , _nST_MG               , Nil})
+		aAdd(_aAutoSE1, {"E1_VLCRUZ"   , _nST_MG               , Nil})
+		aAdd(_aAutoSE1, {"E1_MOEDA"    , 1                     , Nil})
+		aAdd(_aAutoSE1, {"E1_ORIGEM"   , 'MATA460'             , Nil})
+		aAdd(_aAutoSE1, {"E1_EMISSAO"  , sf2 -> f2_emissao     , Nil})
+		aAdd(_aAutoSE1, {"E1_VENCTO"   , sf2 -> f2_emissao + 15, Nil})
+		aAdd(_aAutoSE1, {"E1_VENCREA"  , DataValida (sf2 -> f2_emissao + 15), Nil})
+		aAdd(_aAutoSE1, {"E1_HIST"     , 'Valor ST MG antecipacao'          , Nil})
+		_aAutoSE1 := aclone (U_OrdAuto (_aAutoSE1))
+		lMsErroAuto := .F.
+		MSExecAuto({|x,y| FINA040(x,y)}, _aAutoSE1, 3)
+		if lMsErroAuto
+			MostraErro()
+			U_Log2 ('erro', GetAutoGRLog())
+		else
+			u_log2 ("info", "Gravado E1_NUM/E1_PREFIXO/E1_PARCELA " + se1 -> e1_num + '/' + se1 -> e1_prefixo + '/' + se1 -> e1_parcela + " ref.antecipacao ST")
+
+			// Grava evento para posterior consulta/rastreamento
+			_oEvento := ClsEvent():new ()
+			_oEvento:CodEven   = 'SF2017'
+			_oEvento:Texto     = 'Geracao tit.a receber ref.antecipacao ST da NF saida ' + sf2 -> f2_doc
+			_oEvento:Recno     = SE1 -> (recno ())
+			_oEvento:Alias     = 'SE1'
+			_oEvento:Chave     = SE1 -> e1_filial + se1 -> e1_num + se1 -> e1_prefixo + se1 -> e1_parcela
+			_oEvento:NFSaida   = sf2 -> f2_doc
+			_oEvento:SerieSaid = sf2 -> f2_serie
+			_oEvento:Cliente   = sf2 -> f2_cliente
+			_oEvento:LojaCli   = sf2 -> f2_loja
+			_oEvento:ParcTit   = se1 -> e1_parcela
+			_oEvento:Grava ()
+		endif
+
+
+		// Titulo a pagar que seria o controle de recolhimento da guia.
+		//
+		// Encontra a proxima parcela para esta nota
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " select IsNull (max (E2_PARCELA), '0')"
+		_oSQL:_sQuery +=   " from " + RetSQLName ("SE2") + " SE2 "
+		_oSQL:_sQuery +=  " where SE2.D_E_L_E_T_ != '*'"
+		_oSQL:_sQuery +=    " and SE2.E2_FILIAL   = '" + xfilial ("SE2")   + "'"
+		_oSQL:_sQuery +=    " and SE2.E2_FORNECE  = '" + _sFornRec + "'"
+		_oSQL:_sQuery +=    " and SE2.E2_LOJA     = '" + _sLojaRec + "'"
+		_oSQL:_sQuery +=    " and SE2.E2_NUM      = '" + sf2 -> f2_doc + "'"
+		_oSQL:_sQuery +=    " and SE2.E2_PREFIXO  = '" + sf2 -> f2_serie + "'"
+		_sProxParc = _oSQL:RetQry (1, .f.)
+		if empty (_sProxParc)
+			_sProxParc = '1'
+		else
+			_sProxParc = soma1 (_sProxParc)
+		endif
+		_aAutoSE2 = {}
+		aAdd(_aAutoSE2, {"E2_PREFIXO"  , sf2 -> f2_serie       , Nil})
+		aAdd(_aAutoSE2, {"E2_NUM"      , sf2 -> f2_doc         , Nil})
+		aAdd(_aAutoSE2, {"E2_PARCELA"  , _sProxParc            , Nil})
+		aAdd(_aAutoSE2, {"E2_TIPO"     , 'DP'                  , Nil})
+		aAdd(_aAutoSE2, {"E2_NATUREZ"  , '110198'              , Nil})
+		aAdd(_aAutoSE2, {"E2_FORNECE"  , _sFornRec             , Nil})
+		aAdd(_aAutoSE2, {"E2_LOJA"     , _sLojaRec             , Nil})
+		aAdd(_aAutoSE2, {"E2_VALOR"    , _nST_MG               , Nil})
+		aAdd(_aAutoSE2, {"E2_VLCRUZ"   , _nST_MG               , Nil})
+		aAdd(_aAutoSE2, {"E2_MOEDA"    , 1                     , Nil})
+		aAdd(_aAutoSE2, {"E2_ORIGEM"   , 'MATA460'             , Nil})
+		aAdd(_aAutoSE2, {"E2_EMISSAO"  , sf2 -> f2_emissao     , Nil})
+		aAdd(_aAutoSE2, {"E2_VENCTO"   , sf2 -> f2_emissao     , Nil})
+		aAdd(_aAutoSE2, {"E2_VENCREA"  , DataValida (sf2 -> f2_emissao), Nil})
+		aAdd(_aAutoSE2, {"E2_HIST"     , 'Valor ST MG antecipacao'     , Nil})
+		_aAutoSE2 := aclone (U_OrdAuto (_aAutoSE2))
+		lMsErroAuto := .F.
+		MSExecAuto({|x,y| FINA050(x,y)}, _aAutoSE2, 3)
+		if lMsErroAuto
+			MostraErro()
+			U_Log2 ('erro', GetAutoGRLog())
+		else
+			u_log2 ("info", "Gravado E2_NUM/E2_PREFIXO/E2_PARCELA " + sE2 -> E2_num + '/' + sE2 -> E2_prefixo + '/' + sE2 -> E2_parcela + " ref.recolhimento ST")
+
+			// Grava evento para posterior consulta/rastreamento
+			_oEvento := ClsEvent():new ()
+			_oEvento:CodEven   = 'SF2017'
+			_oEvento:Texto     = 'Geracao tit.a pagar ref.antecipacao ST da NF saida ' + sf2 -> f2_doc
+			_oEvento:Recno     = SE2 -> (recno ())
+			_oEvento:Alias     = 'SE2'
+			_oEvento:Chave     = SE2 -> e2_filial + se2 -> e2_num + se2 -> e2_prefixo + se2 -> e2_parcela
+			_oEvento:NFSaida   = sf2 -> f2_doc
+			_oEvento:SerieSaid = sf2 -> f2_serie
+			_oEvento:Cliente   = sf2 -> f2_cliente
+			_oEvento:LojaCli   = sf2 -> f2_loja
+			_oEvento:ParcTit   = se2 -> e2_parcela
+			_oEvento:Fornece   = se2 -> e2_fornece
+			_oEvento:LojaFor   = se2 -> e2_loja
+			_oEvento:Grava ()
+		endif
+
+	endif
+return

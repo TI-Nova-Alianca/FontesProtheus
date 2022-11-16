@@ -27,6 +27,7 @@
 // 10/10/2022 - Robert - Adicionada tabela SX3 para compactacao.
 //                     - Envia aviso para TI quando vai compactar uma tabela.
 // 13/10/2022 - Robert - Adicionadas tabelas SFT e CD2 para compactacao.
+// 14/11/2022 - Robert - Adicionada tabela SCHDTSK.
 //
 
 // ----------------------------------------------------------------
@@ -36,12 +37,15 @@ user function BatLimp ()
 	// Arquivos com sufixo _UNQ sao registros duplicados encontrados pela rotina CheckDupl e 'eliminados' pela mesma.
 	// Limpar filial XX
 
+	// A execucao de pack eu ateh vou fazer todas as tabelas numa unica rotina,
+	// mas a 'limpeza' profiro uma funcao para cada tabela.
 	processa ({|| _Pack ()})
 	processa ({|| _LimpaZZ6 ()})
 	processa ({|| _LimpaZAB ()})
 	processa ({|| _Compact ()})
 	processa ({|| _LimpaSZN ()})
 	processa ({|| _LimpaWF3 ()})
+	processa ({|| _SCHDTSK ()})
 return
 
 
@@ -56,28 +60,29 @@ static function _Pack ()
 	// Elimina registros deletados
 	if _lContinua
 		_aPack = {}
-		aadd (_aPack, {"SC8", "C8_EMISSAO < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
-		aadd (_aPack, {"SE1", "E1_EMISSAO < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
-		aadd (_aPack, {"SE2", "E2_EMISSAO < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
-		aadd (_aPack, {"SE5", "E5_DATA    < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
-		aadd (_aPack, {"SD1", "D1_DTDIGIT < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
-		aadd (_aPack, {"SD2", "D2_EMISSAO < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
-		aadd (_aPack, {"SF1", "F1_DTDIGIT < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
-		aadd (_aPack, {"SF2", "F2_EMISSAO < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
-		aadd (_aPack, {"SF3", "F3_ENTRADA < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
-		aadd (_aPack, {"SFT", "FT_ENTRADA < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
-		aadd (_aPack, {"SC1", "C1_EMISSAO < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
-		aadd (_aPack, {"SC7", "C7_EMISSAO < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"SC8", "C8_EMISSAO  < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"SE1", "E1_EMISSAO  < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"SE2", "E2_EMISSAO  < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"SE5", "E5_DATA     < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"SD1", "D1_DTDIGIT  < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"SD2", "D2_EMISSAO  < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"SF1", "F1_DTDIGIT  < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"SF2", "F2_EMISSAO  < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"SF3", "F3_ENTRADA  < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"SFT", "FT_ENTRADA  < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"SC1", "C1_EMISSAO  < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"SC7", "C7_EMISSAO  < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
 		// CV3: Totvs orienta (chamado 7124121 e https://tdn.totvs.com/pages/releaseview.action?pageId=6068533) a nunca executar pack nesta tabela
 		// CTK: Totvs orienta (chamado 7124121 e https://tdn.totvs.com/pages/releaseview.action?pageId=6068533) a nunca executar pack nesta tabela
-		aadd (_aPack, {"SD3", "D3_EMISSAO < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
-		aadd (_aPack, {"SC5", "C5_EMISSAO < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
-		aadd (_aPack, {"SC6", "C6_ENTREG  < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
-		aadd (_aPack, {"SC9", "C9_DATALIB < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
-		aadd (_aPack, {"ZAB", "ZAB_DTEMIS < '" + dtos (date () -  60 * 1) + "'"})
-		aadd (_aPack, {"SC0", "C0_VALIDA  < '" + dtos (date () - 180 * 1) + "'", '', 0, 0, 0, 0, ''})
-		aadd (_aPack, {"WF3", "WF3_DATA   < '" + dtos (date () - 180 * 1) + "'", '', 0, 0, 0, 0, ''})
-		aadd (_aPack, {"SBK", "BK_DATA    < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"SD3", "D3_EMISSAO  < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"SC5", "C5_EMISSAO  < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"SC6", "C6_ENTREG   < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"SC9", "C9_DATALIB  < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"ZAB", "ZAB_DTEMIS  < '" + dtos (date () -  60 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"SC0", "C0_VALIDA   < '" + dtos (date () - 180 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"WF3", "WF3_DATA    < '" + dtos (date () - 180 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"SBK", "BK_DATA     < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"SCHDTSK", "TSK_DIA < '" + dtos (date () - 30  * 1) + "'", '', 0, 0, 0, 0, ''})
 
 		procregua (len (_aPack))
 	endif
@@ -260,6 +265,34 @@ static function _LimpaWF3 ()
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND WF3_PROC   = 'SendMa'"  // Gerado pelo U_SendMail()
 		_oSQL:_sQuery +=   " AND WF3_DATA  <= '" + dtos (date () - 180) + "'"
+		_oSQL:Log ()
+		if ! _oSQL:Exec ()
+			_oBatch:Mensagens += _oSQL:UltMsg
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
+		_oBatch:Mensagens += procname () + " ok. "
+	endif
+return
+
+
+// --------------------------------------------------------------------------
+// Limpa arquivo SCHDTSK (tarefas do schedule do Protheus)
+static function _SCHDTSK ()
+	local _oSQL    := NIL
+	local _lContinua := .T.
+
+	// Tarefas jah executadas ha tempos nao vejo necessidade de guardar.
+	// TSK_STATUS: 0=Aguardando execucao;1=Executando;2=Finalizada;3=Falhou;4=Permanente;5=Descartada
+	if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "UPDATE SCHDTSK SET D_E_L_E_T_ = '*'"
+		_oSQL:_sQuery +=                  ", R_E_C_D_E_L_ = R_E_C_N_O_"
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND TSK_DIA    < '" + dtos (date () - 15) + "'"
+		_oSQL:_sQuery +=   " AND TSK_STATUS IN ('2', '3', '5')"
 		_oSQL:Log ()
 		if ! _oSQL:Exec ()
 			_oBatch:Mensagens += _oSQL:UltMsg

@@ -65,6 +65,11 @@ user function robert ()
 		U_Log2 ('info', '[' + procname () + ']Iniciando execucao.')
 		U_UsoRot ('I', procname (), '')
 
+		// _BatLimp ()
+		// _BatOcor ()
+		// _batFull ()
+		// _BatXML ()
+		// _batZBE ()
 		// _SimCtb ()
 		// _FechSafr ()
 		// _TrEstq ()
@@ -72,13 +77,11 @@ user function robert ()
 		// _metaf ()
 		// _exml ()
 		// _RevCH ()
-		// _BatXML ()
 		// _elastic ()
 		// _evtXML ()
-		// _batfull ()
 		// _telnet ()
 		// _verif ()
-		_Etiq ()
+		// _Etiq ()
 		// _VA_XLS ()
 		// _aviso ()
 		// _reginv ()
@@ -88,17 +91,23 @@ user function robert ()
 		// _SF1()
 		// _CargSaf ()
 		// _gerasze ()
-		// _BatOcor ()
 		// _AtuSB1 ()
 		// _ctbanc ()
+		//_ST_MG ()
 
-		//u_help ('Nada definido.')
+		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
 return
 
 
+
+// --------------------------------------------------------------------------
+static function _ST_MG ()
+	SF2 -> (dbgoto (636425))
+	_TitSTMG ()
+return
 
 // --------------------------------------------------------------------------
 static function _ctbanc ()
@@ -597,11 +606,23 @@ static function _batfull ()
 return
 
 // --------------------------------------------------------------------------
+static function _batLimp ()
+	U_MudaLog ('U_BatLimp.log')
+	U_BatLimp ()
+return
+
+// --------------------------------------------------------------------------
 static function _BatXML ()
 	U_MudaLog ("U_BatXML.log")
 	U_BatXML("\\192.168.1.3\Siga\Protheus12\protheus_data\xml_NFe\", 10, .F.)
 //	U_BatXML("\\192.168.1.2\Siga\Protheus11\protheus_data\xml_NFe\", 200, .F.)
 //	U_BatXML("\\192.168.1.2\Siga\Protheus11\protheus_data\xml_NFe\CT-e\", 100, .F.)
+return
+
+// --------------------------------------------------------------------------
+static function _BatZBE ()
+	U_MudaLog ("U_BatZBE.log")
+	U_BatZBE ()
 return
 
 // --------------------------------------------------------------------------
@@ -701,7 +722,7 @@ static function _Etiq ()
 //	_oEtiq:Imprime ('01')
 //	_oEtiq := ClsEtiq ():New ('2000519769')  // Etiq gerada pelo ZAG
 //	_oEtiq:Imprime ('01')
-	_oEtiq := ClsEtiq ():New ('2000558700')
+	_oEtiq := ClsEtiq ():New ('2000559689')
 //	u_log (_oEtiq:Inutiliza (.f.))
 	//_oEtiq:Imprime ('98')
 	_oEtiq:ApontaOP (date(), '1')
