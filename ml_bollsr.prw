@@ -95,7 +95,7 @@
 // 02/09/2022 - Robert  - Chamadas da funcao u_log() trocadas para u_log2().
 // 05/09/2022 - Robert  - Ajustes pequenos nos logs.
 // 09/11/2022 - Claudia - Tratamento de parametros de agencia e conta. 
-// 16/11/2022 - Claudia - Alterada a nomneclatura das perguntas, não separando mais por filial.
+// 16/11/2022 - Claudia - Alterada a nomenclatura das perguntas, não separando mais por filial.
 //
 //
 // --------------------------------------------------------------------------------------------------------------
