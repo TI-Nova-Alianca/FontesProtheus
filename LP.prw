@@ -74,7 +74,8 @@
 // 02/10/2022 - Robert  - Trocado grpTI por grupo 122 no envio de avisos.
 // 07/10/2022 - Robert  - Envia copia dos avisos de erro para grupo 144 (coord.contabil)
 // 07/10/2022 - Claudia - Criado LPAD 640 014 - devolução de rapel. GLPI: 11924
-
+// 11/11/2022 - Claudia - Ajustado LPAD 530 001. GLPI: 12794
+//
 // -----------------------------------------------------------------------------------------------------------------
 // Informar numero e sequencia do lancamento padrao, seguido do campo a ser retornado.
 User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
@@ -392,6 +393,8 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 				_xRet = "201030101002" // conta add associados
 			case SE2->E2_VAOBRA=="S"
 				_xRet = "201090101001" // conta fixa da obra
+			case ALLTRIM(SE2->E2_NATUREZ) == '110198' //GLPI: 12794
+				_xRet = "101020201002"
 			otherwise
 				_xRet = SA2->A2_CONTA
 		endcase
