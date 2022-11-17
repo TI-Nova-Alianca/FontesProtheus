@@ -132,7 +132,7 @@ Static Function _AtuZC0()
 			_oCtaRapel:Cliente 	 = se1->e1_cliente
 			_oCtaRapel:LojaCli	 = se1->e1_loja
 			_oCtaRapel:TM      	 = '05' 	
-			_oCtaRapel:Data    	 = date()
+			_oCtaRapel:Data    	 = ddatabase//date()
 			_oCtaRapel:Hora    	 = time()
 			_oCtaRapel:Usuario 	 = cusername 
 			_oCtaRapel:Histor  	 = 'Estorno de rapel por cancelamento de baixa de titulo' 

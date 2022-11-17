@@ -11,38 +11,38 @@
 // #Modulos           #EST #COM
 
 // Historico de alteracoes:
-// 12/05/2008 - Robert - Incluida chamada para funcao de tratamento de controle de fretes.
-// 20/08/2008 - Robert - Limpeza do S Z H passa a ser feita pelo FrtNFE.
-// 04/09/2008 - Robert - Limpeza do ZZ4.
-// 10/03/2009 - Robert - Criado tratamento para controle de transferencias para depositos externos.
-// 11/08/2011 - Robert - Tratamento para exclusao do SZI.
-// 13/10/2011 - Robert - Passa a usar a funcao VA_ZZ4E para limpeza do ZZ4.
-// 11/05/2012 - Robert - Passa a considerar especie CTE da mesma forma que CTR.
-// 14/09/2012 - Robert - Nao considerava o D3_COD na busca do registro de transf. entre depositos a ser estornado.
-// 30/09/2012 - Robert - Criados campos D3_VANFRD, D3_VASERRD e D3_VAITNRD para substituir o D3_VACHVEX no controle de armazens externos.
-// 24/06/2013 - Robert - Tratamento de armazem passa a usar a classe ClsAmzGer.
-//                     - Cancelamento remessa para armazem geral passa a ser via batch. 
+// 12/05/2008 - Robert  - Incluida chamada para funcao de tratamento de controle de fretes.
+// 20/08/2008 - Robert  - Limpeza do S Z H passa a ser feita pelo FrtNFE.
+// 04/09/2008 - Robert  - Limpeza do ZZ4.
+// 10/03/2009 - Robert  - Criado tratamento para controle de transferencias para depositos externos.
+// 11/08/2011 - Robert  - Tratamento para exclusao do SZI.
+// 13/10/2011 - Robert  - Passa a usar a funcao VA_ZZ4E para limpeza do ZZ4.
+// 11/05/2012 - Robert  - Passa a considerar especie CTE da mesma forma que CTR.
+// 14/09/2012 - Robert  - Nao considerava o D3_COD na busca do registro de transf. entre depositos a ser estornado.
+// 30/09/2012 - Robert  - Criados campos D3_VANFRD, D3_VASERRD e D3_VAITNRD para substituir o D3_VACHVEX no controle de armazens externos.
+// 24/06/2013 - Robert  - Tratamento de armazem passa a usar a classe ClsAmzGer.
+//                      - Cancelamento remessa para armazem geral passa a ser via batch. 
 // 15/01/2014 - Leandro DWT - grava evento para histórico de NF
-// 11/05/2015 - Robert - Tratamento para devolucoes/cancelamentos (arquivo ZAB).
-// 21/10/2015 - Robert - Atualiza status na tabela ZZX.
-// 28/10/2015 - Robert - Limpa memos do f1_vacmemc e f1_vacmemf.
-// 20/04/2016 - Robert - Limpava apenas um registro do SZI. Agora faz loop nos registros (NF pode ter gerado mais de uma parcela).
-//                     - Valida parametro VA_AMZGER.
-// 14/06/2016 - Catia  - excluir os lançamentos contabeis quando excluir o documento de entrada
-// 23/01/2018 - Catia  - excluir titulo de indenizacao de comissoes
-// 14/02/2018 - Catia  - passar a solicitar o motivo da exclusao do documento de entrada
-// 17/04/2018 - Robert - Deixa de chamar o VA_ZZ4E pois os dados adicionais foram migrados para campos memo no SF1.
-// 02/05/2018 - Robert - Desabilitada rotina de armazem externo (nunca chegamos a usar)
-// 03/05/2018 - Robert - Desabilitados tratamentos do ZAB (devolucoes de clientes).
-// 08/04/2019 - Catia  - Include "TbiConn.ch"
-// 10/05/2019 - Catia  - tira include protheus #Include "Protheus.ch" pq dava conflito com a "rwmake.ch" - e nao permitia digitar a justificativa
-// 14/05/2019 - Catia  - Algumas notas nao estavam excluindo na contabilidade
-// 03/06/2020 - Robert - Criado tratamento para exclusao de contranotas de comprea de uva (atualiza ZZ9 e SZI).
-// 28/09/2020 - Robert - Quando nao informado motivo de exclusao na primeira vez, a variavel ficava com tamanho zero e nao permitia mais digitar.
-//                     - Inseridas tags para catalogo de programas.
-// 03/02/2021 - Robert - Soh verificava necessidade de limpar SZE quando serie 30. Agora verifica para qualquer serie.
+// 11/05/2015 - Robert  - Tratamento para devolucoes/cancelamentos (arquivo ZAB).
+// 21/10/2015 - Robert  - Atualiza status na tabela ZZX.
+// 28/10/2015 - Robert  - Limpa memos do f1_vacmemc e f1_vacmemf.
+// 20/04/2016 - Robert  - Limpava apenas um registro do SZI. Agora faz loop nos registros (NF pode ter gerado mais de uma parcela).
+//                      - Valida parametro VA_AMZGER.
+// 14/06/2016 - Catia   - excluir os lançamentos contabeis quando excluir o documento de entrada
+// 23/01/2018 - Catia   - excluir titulo de indenizacao de comissoes
+// 14/02/2018 - Catia   - passar a solicitar o motivo da exclusao do documento de entrada
+// 17/04/2018 - Robert  - Deixa de chamar o VA_ZZ4E pois os dados adicionais foram migrados para campos memo no SF1.
+// 02/05/2018 - Robert  - Desabilitada rotina de armazem externo (nunca chegamos a usar)
+// 03/05/2018 - Robert  - Desabilitados tratamentos do ZAB (devolucoes de clientes).
+// 08/04/2019 - Catia   - Include "TbiConn.ch"
+// 10/05/2019 - Catia   - tira include protheus #Include "Protheus.ch" pq dava conflito com a "rwmake.ch" - e nao permitia digitar a justificativa
+// 14/05/2019 - Catia   - Algumas notas nao estavam excluindo na contabilidade
+// 03/06/2020 - Robert  - Criado tratamento para exclusao de contranotas de comprea de uva (atualiza ZZ9 e SZI).
+// 28/09/2020 - Robert  - Quando nao informado motivo de exclusao na primeira vez, a variavel ficava com tamanho zero e nao permitia mais digitar.
+//                      - Inseridas tags para catalogo de programas.
+// 03/02/2021 - Robert   - Soh verificava necessidade de limpar SZE quando serie 30. Agora verifica para qualquer serie.
+// 17/11/2022 - Claudia - Incluido estorno de rapel.
 //
-
 // -----------------------------------------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"  
 #Include "TbiConn.ch"          
@@ -138,18 +138,20 @@ User Function sf1100e()
 	// Exclui lcto contabil
 	_ExcCTB ()
 
+	// Tratamento para conta corrente rapel
+	If GetMV('VA_RAPEL')
+		_AtuZC0() 			 
+	EndIf
+
 	U_ML_SRArea (_aAreaAnt)
 	
 Return()
-
-
-
+//
 // --------------------------------------------------------------------------
 // Controles referentes a NF de entrada de safra.
 static function _NFSafra ()
 	local _oSQL     := NIL
 
-//	if sf1 -> f1_formul == "S" .and. sf1 -> f1_serie == '30 ' .and. sf1 -> f1_vasafra != ''
 	if sf1 -> f1_formul == "S" .and. sf1 -> f1_vasafra != ''
 
 		// Se encontrar este docto como uma contranota de entrada...
@@ -163,7 +165,8 @@ static function _NFSafra ()
 			msunlock ()
 		endif
 
-		// Se encontrar este docto como uma contranota de compra, limpa o numero da contranota do arquivo de pre-notas
+		// Se encontrar este docto como uma contranota de compra, 
+		// limpa o numero da contranota do arquivo de pre-notas
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += "UPDATE " + RetSQLName ("ZZ9")
@@ -175,40 +178,13 @@ static function _NFSafra ()
 		_oSQL:_sQuery +=   " AND ZZ9_SERCOM   = '" + sf1 -> f1_serie   + "'"
 		_oSQL:_sQuery +=   " AND ZZ9_FORNEC   = '" + sf1 -> f1_fornece + "'"
 		_oSQL:_sQuery +=   " AND ZZ9_LOJA     = '" + sf1 -> f1_loja    + "'"
-	//	u_log2 ('info', _oSQL:_sQuery)
+
 		if ! _oSQL:Exec ()
 			u_help ("Erro ao atualizar a tabela ZZ9 (pre-notas de compra de safra). Verifique!", _oSQL:_sQuery, .t.)
 		endif
-
-/* ainda nao pronto
-		// Se encontrar este docto como uma contranota de compra, limpa a conta corrente.
-		local _aRegSZI  := {}
-		local _nRegSZI  := 0
-		local _oCtaCorr := NIL
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "SELECT R_E_C_N_O_"
-		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI "
-		_oSQL:_sQuery += " WHERE SZI.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND SZI.ZI_FILIAL  = '" + sf1 -> f1_filial + "'"
-		_oSQL:_sQuery +=   " AND SZI.ZI_DOC     = '" + sf1 -> f1_doc + "'"
-		_oSQL:_sQuery +=   " AND SZI.ZI_SERIE   = '" + sf1 -> f1_serie + "'"
-		_oSQL:_sQuery +=   " AND SZI.ZI_ASSOC   = '" + sf1 -> f1_fornece + "'"
-		_oSQL:_sQuery +=   " AND SZI.ZI_LOJASSO = '" + sf1 -> f1_loja + "'"
-		u_log2 ('info', _oSQL:_sQuery)
-		_aRegSZI := aclone (_oSQL:Qry2Array ())
-		for _nRegSZI = 1 to len (_aRegSZI)
-			_oCtaCorr := ClsCtaCorr ():New (_aRegSZI [_nRegSZI, 1])
-			if ! _oCtaCorr:PodeExcl ()
-				u_help ("Esta NF gerou movimento(s) na conta corrente de associados (parcela " + _oCtaCorr:Parcela + ") que nao pode(m) ser excluido(s) neste momento. Verifique! " + _oCtaCorr:UltMsg,, .t.)
-			endif
-		next
-		*/
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Atualiza arquivo de conta corrente de associados, quando for o caso.
 static function _AtuSZI ()
@@ -240,7 +216,8 @@ static function _AtuSZI ()
 		next
 	endif
 return
-
+//
+// --------------------------------------------------------------------------
 // Verifica se existem titulos de indenizacao
 Static Function _Verind()
 	_sSQL := ""
@@ -326,13 +303,12 @@ Static Function _Verind()
 	            u_showmemo(_sSQL)
 	            return
 	        endif
-		endif	
-			        		
+		endif				        		
 	endif	
-
 return
-
+//
 // --------------------------------------------------------------------------
+// Histórico 
 Static Function _HistNf()
 	_oEvento := ClsEvent():new ()
 	_oEvento:CodEven   = "SZN001"
@@ -351,9 +327,7 @@ Static Function _HistNf()
 	_oEvento:Flag	  = .T.
 	_oEvento:Grava ()
 Return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Atualiza status na tabela ZZX.
 static function _AtuZZX ()
@@ -374,7 +348,7 @@ static function _AtuZZX ()
 
 	u_logFim ()
 return
-
+//
 // -----------------------------------------------------
 // Exclui Lançamento contabil referente a contabilização
 static function _ExcCTB ()
@@ -390,7 +364,7 @@ static function _ExcCTB ()
    	_sSQL += "    AND CT2_DATA   = '" + dtos (sf1 -> f1_dtdigit) + "'"
    	_sSQL += "    AND CT2_ROTINA = 'MATA103'"
    	_sSQL += "    AND CT2_KEY  LIKE '" + _wkey + "'"
-    //u_showmemo (_sSQL)
+  
     _aExcluir := U_Qry2Array(_sSQL)
 	// le cada um dos lctos e monta _aAutoCT2
 	if len(_aExcluir) > 0
@@ -432,7 +406,7 @@ static function _ExcCTB ()
    	_sSQL += "    AND CT2_DATA   = '" + dtos (sf1 -> f1_dtdigit) + "'"
    	_sSQL += "    AND CT2_ROTINA = 'FINA050'"
    	_sSQL += "    AND CT2_KEY  LIKE '" + _wkey + "'"
-    //u_showmemo (_sSQL)
+   
     _aExcluir := U_Qry2Array(_sSQL)
 	// le cada um dos lctos e monta _aAutoCT2
 	if len(_aExcluir) > 0
@@ -464,9 +438,8 @@ static function _ExcCTB ()
 			u_help (_sErro)
 		endif
 	endif		
-	
 return
-
+//
 // -----------------------------------------------------
 // Exclui Notas canceladas no Protheus que devem ser excluidas no Mercanet
 if _lContinua
@@ -478,7 +451,6 @@ if _lContinua
 		// QUERO as deletadas tambem, pois o Mercanet precisa cancelar elas --> _oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 		_oSQL:_sQuery += " WHERE SF1.F1_FILIAL = '" + xfilial ("SF1") + "'"
 		_oSQL:_sQuery +=   " AND SF1.F1_TIPO     = 'D'"
-//		_oSQL:_sQuery +=   " AND F1_DTDIGIT >= '" + dtos (date () - _nQtDias) + "'"
 		_oSQL:_sQuery +=   " AND SF1.F1_DTDIGIT >= '20150101'"  // DATA INICIAL EXPORT P/ MERCANET
 		_oSQL:_sQuery +=   " AND SA1.A1_COD  = SF1.F1_FORNECE "
 	    _oSQL:_sQuery +=   " AND SA1.A1_LOJA = SF1.F1_LOJA "
@@ -488,4 +460,104 @@ if _lContinua
 		_oSQL:_sQuery +=   " )"
 		_oSQL:_sQuery += " ORDER BY SF1.R_E_C_N_O_"
 endif
+//
+// --------------------------------------------------------------------------
+// Debita rapel da NF de devolução
+Static Function _AtuZC0()
+	Local _x := 0
+	Local _i := 0
+
+	//If alltrim(sf1 -> f1_serie) == '10'
+		_oSQL:= ClsSQL():New()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery +=   " SELECT "
+		_oSQL:_sQuery +=   "     D1_FILIAL "
+		_oSQL:_sQuery +=   "    ,D1_NFORI "
+		_oSQL:_sQuery +=   "    ,D1_SERIORI "
+		_oSQL:_sQuery +=   "    ,D1_ITEMORI "
+		_oSQL:_sQuery +=   " 	,D1_COD "
+		_oSQL:_sQuery +=   "    ,D1_QUANT "
+		_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD1") + " SD1 "
+		_oSQL:_sQuery +=   " WHERE D_E_L_E_T_   = '' "
+		_oSQL:_sQuery +=   " AND SD1.D1_FILIAL  = '" + sf1 -> f1_filial  + "'"
+		_oSQL:_sQuery +=   " AND SD1.D1_FORNECE = '" + sf1 -> f1_fornece + "'"
+		_oSQL:_sQuery +=   " AND SD1.D1_LOJA    = '" + sf1 -> f1_loja    + "'"
+		_oSQL:_sQuery +=   " AND SD1.D1_DOC     = '" + sf1 -> f1_doc     + "'"
+		_oSQL:_sQuery +=   " AND SD1.D1_SERIE   = '" + sf1 -> f1_serie   + "'"
+		_aNfDev := aclone (_oSQL:Qry2Array ())
+
+		For _x:=1 to Len(_aNfDev)
+			_oSQL:= ClsSQL():New()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery +=   " SELECT "
+			_oSQL:_sQuery +=   " 	 D2_ITEM "
+			_oSQL:_sQuery +=   "    ,D2_COD "
+			_oSQL:_sQuery +=   "    ,D2_QUANT "
+			_oSQL:_sQuery +=   "    ,D2_RAPEL "
+			_oSQL:_sQuery +=   "    ,D2_VRAPEL "
+			_oSQL:_sQuery +=   "    ,D2_CLIENTE "
+			_oSQL:_sQuery +=   "    ,D2_LOJA"
+			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD2") 
+			_oSQL:_sQuery +=   " WHERE D_E_L_E_T_= '' "
+			_oSQL:_sQuery +=   " AND D2_FILIAL   = '"+ _aNfDev[_x, 1] + "' "
+			_oSQL:_sQuery +=   " AND D2_DOC      = '"+ _aNfDev[_x, 2] + "' "
+			_oSQL:_sQuery +=   " AND D2_SERIE    = '"+ _aNfDev[_x, 3] + "' "
+			_oSQL:_sQuery +=   " AND D2_COD      = '"+ _aNfDev[_x, 5] + "' "
+			_aNfVen := aclone (_oSQL:Qry2Array ())
+
+			For _i:=1 to Len(_aNfVen)
+				_oCtaRapel := ClsCtaRap():New ()
+				_sRede     := _oCtaRapel:RetCodRede(_aNfVen[_i, 6], _aNfVen[_i, 7])
+				_sTpRapel  := _oCtaRapel:TipoRapel(_aNfVen[_i, 6], _aNfVen[_i, 7])
+
+				If alltrim(_sTpRapel) <> '0' // Se o cliente tem configuração de rapel
+					_nRapVen := _aNfVen[_i, 5]
+					_nQtdVen := _aNfVen[_i, 3]
+					_nQtdDev := _aNfDev[_x, 6] 
+					_sProd   := _aNfVen[_i, 2]
+
+					If _nQtdDev == _nQtdVen // Se as quantidades de venda e devolução for igual, desconta 100% do valor	
+						_nRapel := _nRapVen
+						_sHist  := 'Estorno de rapel por devolução de NF 100%' 
+					else					// Rapel proporcional
+						_nRapelDev := _nRapVen * _nQtdDev / _nQtdVen
+						_nRapel    := _nRapelDev
+						_sHist     := 'Estorno de rapel por devolução de NF parcial' 
+					EndIf					
+
+					_oCtaRapel:Filial  	 = sf1 -> f1_filial
+					_oCtaRapel:Rede      = _sRede	
+					_oCtaRapel:LojaRed   = sf1 -> f1_loja
+					_oCtaRapel:Cliente 	 = sf1 -> f1_fornece 
+					_oCtaRapel:LojaCli	 = sf1 -> f1_loja
+					_oCtaRapel:TM      	 = '07' 	
+					_oCtaRapel:Data    	 = ddatabase//date()
+					_oCtaRapel:Hora    	 = time()
+					_oCtaRapel:Usuario 	 = cusername 
+					_oCtaRapel:Histor  	 = _sHist
+					_oCtaRapel:Documento = sf1 -> f1_doc
+					_oCtaRapel:Serie 	 = sf1 -> f1_serie
+					_oCtaRapel:Parcela	 = ''
+					_oCtaRapel:Produto	 = _sProd
+					_oCtaRapel:Rapel	 = _nRapel
+					_oCtaRapel:Origem	 = 'SF1100E'
+					_oCtaRapel:NfEmissao = sf1 -> f1_emissao
+
+					If _oCtaRapel:Grava (.F.)
+						_oEvento := ClsEvent():New ()
+						_oEvento:Alias     = 'ZC0'
+						_oEvento:Texto     = "Estorno rapel "+ sf1 -> f1_doc + "/" + sf1 -> f1_serie
+						_oEvento:CodEven   = 'ZC0001'
+						_oEvento:Cliente   = sf1 -> f1_fornece 
+						_oEvento:LojaCli   = sf1 -> f1_loja
+						_oEvento:NFSaida   = sf1 -> f1_doc
+						_oEvento:SerieSaid = sf1 -> f1_serie
+						_oEvento:Grava()
+					EndIf
+
+				EndIf
+			Next
+		Next
+	//EndIf
+Return
 

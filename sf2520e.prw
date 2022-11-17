@@ -289,7 +289,7 @@ Return
 // Estorna rapel da NF
 Static Function _AtuZC0()
 
-	If  alltrim(sf2->f2_serie) == '10
+	If  alltrim(sf2->f2_serie) == '10'
 		// Cancela rapel	
 		_oSQL:= ClsSQL ():New ()
 		_oSQL:_sQuery := ""
@@ -316,7 +316,7 @@ Static Function _AtuZC0()
 			_oCtaRapel:Cliente 	 = sf2 -> f2_cliente
 			_oCtaRapel:LojaCli	 = sf2 -> f2_loja
 			_oCtaRapel:TM      	 = '03' 	
-			_oCtaRapel:Data    	 = date()
+			_oCtaRapel:Data    	 = ddatabase//date()
 			_oCtaRapel:Hora    	 = time()
 			_oCtaRapel:Usuario 	 = cusername 
 			_oCtaRapel:Histor  	 = 'Estorno de rapel por cancelamento de NF' 

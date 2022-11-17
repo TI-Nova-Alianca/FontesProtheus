@@ -351,7 +351,7 @@ Static Function _AtuZC0()
 		_oCtaRapel:Cliente 	 = sf2->f2_cliente
 		_oCtaRapel:LojaCli	 = sf2->f2_loja
 		_oCtaRapel:TM      	 = '02' 	
-		_oCtaRapel:Data    	 = date()
+		_oCtaRapel:Data    	 = ddatabase//date()
 		_oCtaRapel:Hora    	 = time()
 		_oCtaRapel:Usuario 	 = cusername 
 		_oCtaRapel:Histor  	 = 'Inclusão de rapel por emissão de NF' 

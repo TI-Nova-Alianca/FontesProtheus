@@ -1353,7 +1353,7 @@ Static Function _AtuZC0()
 	Local _x := 0
 	Local _i := 0
 
-	If alltrim(sf1 -> f1_serie) == '10'
+	//If alltrim(sf1 -> f1_serie) == '10'
 		_oSQL:= ClsSQL():New()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery +=   " SELECT "
@@ -1417,7 +1417,7 @@ Static Function _AtuZC0()
 					_oCtaRapel:Cliente 	 = sf1 -> f1_fornece 
 					_oCtaRapel:LojaCli	 = sf1 -> f1_loja
 					_oCtaRapel:TM      	 = '07' 	
-					_oCtaRapel:Data    	 = date()
+					_oCtaRapel:Data    	 = ddatabase//date()
 					_oCtaRapel:Hora    	 = time()
 					_oCtaRapel:Usuario 	 = cusername 
 					_oCtaRapel:Histor  	 = _sHist
@@ -1444,5 +1444,5 @@ Static Function _AtuZC0()
 				EndIf
 			Next
 		Next
-	EndIf
+	//EndIf
 Return
