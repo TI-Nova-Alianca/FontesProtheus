@@ -116,7 +116,7 @@ Return
 // 			zc0 -> zc0_hora   := Time()
 // 			zc0 -> zc0_user   := 'administrador'
 // 			zc0 -> zc0_histor := 'INCLUSAO DE SALDO INICIAL'
-// 			zc0 -> zc0_seq    := '000000'
+// 			zc0 -> zc0_seq    := '000001'
 // 			zc0 -> zc0_rapel  := _nValor
 // 			zc0 ->zc0_origem  := 'CLAUDIA'
 // 		ZC0->(MsUnlock())

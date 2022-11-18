@@ -36,6 +36,7 @@
 // 13/09/2021 - Robert  - Valida B1_TIPO MM/MC x grupo 131 (GLPI 10651).
 // 17/09/2021 - Robert  - Valida B1_TIPO MM/MC x grupo 131 somente para filial 01 (GLPI 10651).
 // 21/03/2022 - Claudia - Ajustada a validação de obrigação do centro de custo. GLPI: 11780
+// 14/11/2022 - Claudia - Validação de OS. GLPI: 12755
 //
 // ----------------------------------------------------------------------------------------------------------------------------
 user function mt110lok ()
@@ -132,7 +133,6 @@ user function mt110lok ()
 	endif
 
 	// Valida se o usuario pode solicitar compra deste tipo de material.
-//	if _lRet .and. ! GDDeleted ()
 	if _lRet .and. cFilAnt == '01' .and. ! GDDeleted ()
 		if sb1 -> b1_tipo $ 'MC/MM'
 			if ! U_ZZUVL ('131', __cUserID, .T.)
@@ -141,6 +141,22 @@ user function mt110lok ()
 			endif
 		endif
 	endif
+
+	// Obriga solicitação de compras para produtos do parametro va_osprod GLPI: 12755
+	if _lRet .and. !GDDeleted () .and. alltrim(GDFieldGet("C1_PRODUTO")) $ GetMV('VA_OSPROD')
+		if substr(GDFieldGet("C1_OP"),7,2) != 'OS'
+			u_help("O produto " +  alltrim(GDFieldGet("C1_PRODUTO")) + " obriga informar OS!")
+			_lRet = .F.
+		endif
+	endif
+
+	// // Não permite colocar OP para produtos do parametro VA_PSEMOS GLPI: 12755
+	// if _lRet .and. !GDDeleted () .and. alltrim(GDFieldGet("C1_PRODUTO")) $ GetMV('VA_PSEMOS')
+	// 	if substr(GDFieldGet("C1_OP"),7,2) == 'OS'
+	// 		u_help("O produto " +  alltrim(GDFieldGet("C1_PRODUTO")) + " não deve informar OS!")
+	// 		_lRet = .F.
+	// 	endif
+	// endif
 
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
