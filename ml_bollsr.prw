@@ -96,7 +96,7 @@
 // 05/09/2022 - Robert  - Ajustes pequenos nos logs.
 // 09/11/2022 - Claudia - Tratamento de parametros de agencia e conta. 
 // 16/11/2022 - Claudia - Alterada a nomenclatura das perguntas, não separando mais por filial.
-//
+// 18/11/2022 - Claudia - Incluida gravação de parametros pela nova função SetMVValue. GLPI: 12801
 //
 // --------------------------------------------------------------------------------------------------------------
 User Function ML_BOLLSR (_aBoletos)
@@ -104,6 +104,7 @@ User Function ML_BOLLSR (_aBoletos)
 
 	//cPerg := "BOLL" + cFilAnt
 	cPerg := "ML_BOLLSR"
+
 	_ValidPerg()
 	Pergunte(cPerg,.F.)    // Pergunta no SX1
 
@@ -132,17 +133,15 @@ User Function ML_BOLLSR (_aBoletos)
 				endif
 			next
 		else
-			U_GravaSX1 (cPerg, "11", 1)  // Visualizar
+
+			// Gravando novamente os valores de parametros devido ap problema de espaços no profile
+			SetMVValue(cPerg,"MV_PAR05",PADR(alltrim(MV_PAR05),3)) //Atualizo o valor da  pergunta 
+			SetMVValue(cPerg,"MV_PAR06",PADR(alltrim(MV_PAR06),5)) 
+			SetMVValue(cPerg,"MV_PAR07",PADR(alltrim(MV_PAR07),10)) 
+			SetMVValue(cPerg,"MV_PAR11",1) 
+			
+			//U_GravaSX1 (cPerg, "11", 1)  // Visualizar
 			If Pergunte (cPerg,.T.)
-
-//				// Alguns profiles de usuario comecaram a ser gravados sem
-//				// os espacos no final dos campos, deixando-os menores do
-//				// que o parametro original. Robert, 05/09/2022
-//				mv_par05 = left (mv_par05 + space (5),   3)  // Manter consistencia de tamanho com a funcao _ValidPerg ()
-//				mv_par06 = left (mv_par06 + space (5),   5)  // Manter consistencia de tamanho com a funcao _ValidPerg ()
-//				mv_par07 = left (mv_par07 + space (10), 10)  // Manter consistencia de tamanho com a funcao _ValidPerg ()
-//				mv_par08 = left (mv_par08 + space (3),   3)  // Manter consistencia de tamanho com a funcao _ValidPerg ()
-
 				processa ({|| _Gera (.F.)})
 			endif
 		endif
