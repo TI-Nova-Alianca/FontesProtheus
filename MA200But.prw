@@ -6,6 +6,7 @@
 // 
 // Historico de alteracoes:
 // 06/10/2015 - Robert - Passa extensao na chamada da visualizacao de especificacoes / imagem do produto.
+// 21/11/2022 - Robert - Passa a buscar imagem em formato PNG e nao mais JPG
 //
 
 #include "rwmake.ch"
@@ -25,11 +26,8 @@ static function _Menu ()
 	local _aF3      := {}
 	local _nF3      := 0
 	local _aCols    := {}
-	//local _aColsLib := {}
 	local _aAmbAnt  := U_SalvaAmb ()
 	local _aAreaAnt := U_ML_SRArea ()
-	//local _aNotas   := {}
-	//local _sQuery   := {}
 
 	// Colunas para menu de opcoes
 	aadd (_aCols, {1, "Opcao",     100, ""})
@@ -46,7 +44,7 @@ static function _Menu ()
 		U_EspPrd (m->g1_comp, 'PDF')
 
 	case _nF3 != 0 .and. _aF3 [_nF3, 2] == "Imagem_produto"
-		U_EspPrd (m->g1_comp, 'JPG')
+		U_EspPrd (m->g1_comp, 'PNG')
 
 	endcase
 

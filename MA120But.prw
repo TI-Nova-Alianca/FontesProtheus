@@ -14,7 +14,9 @@
 // 06/10/2015 - Robert  - Passa extensao na chamada da visualizacao de especificacoes / imagem do produto.
 // 25/02/2021 - Claudia - Observações para pedidos de serviço. GLPI: 7846
 // 14/06/2022 - Claudia - Ajustada a impressão das observações. GLPI: 12112
+// 21/11/2022 - Robert  - Passa a buscar imagem em formato PNG e nao mais JPG
 //
+
 // ---------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 #Include "PROTHEUS.CH"    
@@ -58,7 +60,7 @@ static function _Menu ()
 		U_EspPrd (GDFieldGet ("C7_PRODUTO"), 'PDF')
 
 	case _nF3 != 0 .and. _aF3 [_nF3, 2] == "Imagem_produto"
-		U_EspPrd (GDFieldGet ("C7_PRODUTO"), 'JPG')
+		U_EspPrd (GDFieldGet ("C7_PRODUTO"), 'PNG')
 	
 	case _nF3 != 0 .and. _aF3 [_nF3, 2] == "ObsServico"
 		_ObsServico ()

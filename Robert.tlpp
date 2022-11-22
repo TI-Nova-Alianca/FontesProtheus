@@ -101,8 +101,6 @@ user function robert ()
 	endif
 return
 
-
-
 // --------------------------------------------------------------------------
 static function _ST_MG ()
 	SF2 -> (dbgoto (636425))
@@ -722,10 +720,10 @@ static function _Etiq ()
 //	_oEtiq:Imprime ('01')
 //	_oEtiq := ClsEtiq ():New ('2000519769')  // Etiq gerada pelo ZAG
 //	_oEtiq:Imprime ('01')
-	_oEtiq := ClsEtiq ():New ('2000559689')
-//	u_log (_oEtiq:Inutiliza (.f.))
+	_oEtiq := ClsEtiq ():New ('2000562699')
+	u_log (_oEtiq:Inutiliza (.f.))
 	//_oEtiq:Imprime ('98')
-	_oEtiq:ApontaOP (date(), '1')
+//	_oEtiq:ApontaOP (date(), '1')
 
 //	sd5 -> (dbgoto (509183))
 //	_oEtiq := CLsEtiq ():New ()
@@ -794,6 +792,7 @@ RETURN
 // --------------------------------------------------------------------------
 // Testes verificacoes genericas.
 static function _verif ()
+	/*
 	// _oVerif := ClsVerif():New (25)
 	// _oVerif:SetParam ('01', '2017')
 	// _oVerif:SetParam ('02', '')
@@ -807,7 +806,7 @@ static function _verif ()
 	// _oVerif:SetParam ('02', '09189201001  ')
 	// _oVerif:SetParam ('03', '')
 	// _oVerif:SetParam ('04', 'z')
-	_oVerif := ClsVerif():New (91)
+	_oVerif := ClsVerif():New (92)
 	//	_oVerif:SetParam ('01', date () - 10)
 	//	_oVerif:SetParam ('02', date ())
 	//	_oVerif:SetParam ('03', '')
@@ -820,7 +819,9 @@ static function _verif ()
 	else
 		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
 	endif
-	//u_batverif ()
+	*/
+	U_MudaLog ('U_BatVerif.log')
+	u_batverif ()
 return
 
 /*
@@ -990,6 +991,7 @@ return
 STATIC FUNCTION _TrEstq ()
 	private _sErroAuto := ''
 
+/*
 	_sDocZAG := U_RetSQL ("SELECT MIN (ZAG_DOC) FROM ZAG010 WHERE D_E_L_E_T_ = '' AND ZAG_EMIS BETWEEN '20221104' AND '20221104' AND ZAG_USRINC = 'robert.koch'")
 	zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
 	if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
@@ -1006,25 +1008,25 @@ STATIC FUNCTION _TrEstq ()
 			U_Log2 ('debug', '[' + procname () + ']retorno:' + cvaltochar (_lRetExcl))
 		endif
 	endif
+*/
 
-/*
 	_oTrEstq := ClsTrEstq ():New ()
-	_oTrEstq:FilOrig = cFilAnt
-	_oTrEstq:FilDest = cFilAnt
-	_oTrEstq:DtEmis  = date ()
-	//_oTrEstq:OP = '1234561212312'
-	_oTrEstq:Motivo = 'teste robert para ax 01'
-	_oTrEstq:ProdOrig = '0151           '
-	_oTrEstq:ProdDest = '0151           '
-	_oTrEstq:AlmOrig = '25'
-	_oTrEstq:AlmDest = '01'
-	//_oTrEstq:EndOrig = 'a'
-	//_oTrEstq:EndDest = 'b'
-	_oTrEstq:LoteOrig = '12906201  '
-	_oTrEstq:LoteDest = '12906201  '
-	_oTrEstq:QtdSolic = 75
+	_oTrEstq:FilOrig  = cFilAnt
+	_oTrEstq:FilDest  = cFilAnt
+	_oTrEstq:DtEmis   = date ()
+	//_oTrEstq:OP       = ''
+	_oTrEstq:Motivo   = 'teste robert'
+	_oTrEstq:ProdOrig = '600754         '
+	_oTrEstq:ProdDest = '600754         '
+	_oTrEstq:AlmOrig  = '60'
+	_oTrEstq:AlmDest  = '60'
+	_oTrEstq:EndOrig  = 'ESTOQUE 66     '
+	_oTrEstq:EndDest  = '03-07-090      '
+	_oTrEstq:LoteOrig = ''
+	_oTrEstq:LoteDest = ''
+	_oTrEstq:QtdSolic = 2
 	_oTrEstq:UsrIncl  = 'robert.koch'
-	_oTrEstq:ImprEtq = '16' //16=Elgin TI  '15' //15=logistica
+	_oTrEstq:ImprEtq  = '98' // 16=Elgin TI;15=logistica;98=
 	if _oTrEstq:Grava ()
 		U_Log2 ('debug', '[' + procname () + ']Gravou! msg: ' + _oTrEstq:UltMsg)
 //		if _oTrEstq:Libera ()
@@ -1040,7 +1042,7 @@ STATIC FUNCTION _TrEstq ()
 	else
 		U_Log2 ('debug', '[' + procname () + ']Nao gravou. msg: ' + _oTrEstq:UltMsg)
 	endif
-*/
+
 return
 
 // --------------------------------------------------------------------------
@@ -1252,8 +1254,6 @@ return
 //	u_batBlUsr ()
 //	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batmercp ()
-//	_sArqLog := 'U_BatVerif_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batVerif ()
 //	_sArqLog := 'U_BatEDIM_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batedim ("I")
 //	_sArqLog := 'U_BatMercN_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"

@@ -756,7 +756,7 @@ METHOD Grava () Class ClsTrEstq
 				_lContinua = .F.
 			endif
 		endif
-		if ! empty (::EndDest) .and. ! ::CtrLotDest
+		if ! empty (::EndDest) .and. ! ::CtrLocDest
 			::UltMsg += "Endereco destino nao deve ser informado pois o produto '" + alltrim (::ProdDest) + "' nao controla localizacao."
 			_lContinua = .F.
 		endif

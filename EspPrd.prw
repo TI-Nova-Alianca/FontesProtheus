@@ -14,14 +14,19 @@ user function EspPrd (_sProduto, _sExtensao)
 	local _sArq      := ""
 	local _lContinua := .T.
 
-	u_logIni ()
+	U_Log2 ('info', '[' + procname () + ']Tentando abrir arquivo de especificacoes do item ' + alltrim (_sProduto) + ' em formato ' + _sExtensao)
+
 	sb1 -> (dbsetorder (1))
 	if _lContinua .and. ! sb1 -> (dbseek (xfilial ("SB1") + _sProduto, .F.))
 		u_help ("Produto '" + _sProduto + "' nao cadastrado!")
 		_lContinua = .F.
 	endif
 	if _lContinua
-		_sArq = "\\192.168.1.5\esp_mat\" + sb1 -> b1_tipo + '\' + alltrim (_sProduto) + '.' + _sExtensao
+		if upper (_sExtensao) == 'PNG'
+			_sArq = "https://novaalianca.coop.br/imagens-itens/" + alltrim (_sProduto) + '.png'
+		else
+			_sArq = "\\192.168.1.5\esp_mat\" + sb1 -> b1_tipo + '\' + alltrim (_sProduto) + '.' + _sExtensao
+		endif
 	endif
 
 	if _lContinua
@@ -35,5 +40,4 @@ user function EspPrd (_sProduto, _sExtensao)
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
 return

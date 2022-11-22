@@ -20,6 +20,7 @@
 // 18/11/2020 - Robert - Maioria das validacoes estava desabilitada (para testes) desde 10/09/2020 e esqueci assim.
 // 31/08/2021 - Robert - Melhorias controle de loop de execucao e monitor de performance (GLPI 10876).
 // 23/08/2022 - Robert - Apenas alguns desvios condigionais para simulacoes (GLPI 12134)
+// 18/11/2022 - Robert - Verificacoes do setor INF passam a ser enviadas para o NaWeb e nao mais por e-mail.
 //
 
 // --------------------------------------------------------------------------
@@ -38,8 +39,8 @@ user function BatVerif ()
 	_nVerif = 1
 
 
-	if "ROBERT" $ upper (GetEnvServer()) .and. dtos (date ()) == '20220823'  // Simulacoes
-		_nVerif = 42
+	if "ROBERT" $ upper (GetEnvServer()) .and. dtos (date ()) == '20221121'  // Simulacoes
+		_nVerif = 92
 	endif
 
 
@@ -92,7 +93,8 @@ user function BatVerif ()
 							_Envia (_oVerif, {'003'}, _sMsg)
 						endif
 						if 'INF' $ _oVerif:Setores
-							_Envia (_oVerif, {'122'}, _sMsg)
+						//	_Envia (_oVerif, {'122'}, _sMsg)
+							_Notif (_oVerif, {'122'}, _sMsg)  // Gera notificacao para NaWeb.
 						endif
 					endif
 				else
@@ -112,7 +114,7 @@ return
 
 
 // --------------------------------------------------------------------------
-// Envia resultado da verificacao.
+// Envia resultado da verificacao por e-mail.
 static function _Envia (_oVerif, _aGrupos, _sMsg)
 	local _nGrupo  := 0
 	local _aDest   := 0
@@ -149,5 +151,34 @@ static function _Envia (_oVerif, _aGrupos, _sMsg)
 				u_log2 ('info', '')
 			next
 		next
+	endif
+return
+
+
+// --------------------------------------------------------------------------
+// Envia resultado da verificacao via notificacao no NaWeb.
+static function _Notif (_oVerif, _aGrupos, _sMsg)
+	local _oAviso  := NIL
+	local _nGrupo  := 0
+	local _aDest   := {}
+
+	// Monta lista de destinatarios.
+	for _nGrupo = 1 to len (_aGrupos)
+		
+		// Verifica se cada grupo recebido no parametro tem liberacao para ver esta verificacao.
+		if empty (_oVerif:LiberZZU) .or. _aGrupos [_nGrupo] $ _oVerif:LiberZZU
+			aadd (_aDest, _aGrupos [_nGrupo])
+		endif
+	next
+		
+	if len (_aDest) > 0
+		_oAviso := ClsAviso():new ()
+		_oAviso:Tipo       = 'A'  // I=Info;A=Aviso;E=Erro
+		_oAviso:Titulo     = "Verif.Protheus " + _oVerif:Descricao
+		_oAviso:Texto      = _sMsg
+		_oAviso:DestinZZU  = _aDest  // Codigos de um grupo da tabela ZZU no formato {grp1, grp2, ...}
+		_oAviso:Origem     = 'Verificacoes diarias'
+		_oAviso:Formato    = 'H'  // [T]exto ou [H]tml
+		_oAviso:Grava ()
 	endif
 return
