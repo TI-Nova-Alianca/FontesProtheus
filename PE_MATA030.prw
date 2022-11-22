@@ -27,7 +27,7 @@
 //                        de prospect. GLPI: 11421
 // 17/03/2022 - Claudia - Validação de cadastro de prospect apenas para inclusão de novos clientes. GLPI: 11774
 // 03/05/2022 - Claudia - Incluida validação para o campo a1_savblq. GLPI: 11922
-//
+// 22/11/2022 - Claudia - Incluido envio de aviso por e-mail para troca de vendedores. GLPI: 12756
 //
 // --------------------------------------------------------------------------------------------------------------------
 #include "protheus.ch"
@@ -51,25 +51,23 @@ User Function CRMA980()
 		If cIdPonto == "MODELPOS"
 			nOper := oObj:nOperation
 
-			if nOper == 4
-//				u_log ('')
-//				u_log ('')
-//				u_log ('')
-//				u_logPCham ()
-//				u_log ('M:', m->a1_nome)
-//				u_log ('SA1:', sa1->a1_nome)
-
+			if nOper == 4 // operação alteração
 				_GeraLog ()
 				U_AtuMerc ('SA1', sa1 -> (recno ()))
+
+				//GLPI: 12756
+				if alltrim(sa1->a1_vend) <> alltrim(m->a1_vend) 
+					_EnvAvisoRep(sa1->a1_cod, sa1->a1_nome, sa1->a1_vend, m->a1_vend)
+				endif
 			endif
-			If nOper != 5  // Se nao for exclusao
+			If nOper != 5  // operação exclusão
 				xRet := _ma030tok(nOper)
 			endif
 
 		ElseIf cIdPonto == "MODELVLDACTIVE"
 			nOper := oObj:nOperation
 			//Se for Exclusão, não permite abrir a tela
-			If nOper == 5  // Exclusao
+			If nOper == 5  // operação exclusão
 				u_help ("Nenhum registro de cliente pode ser excluído em função da integração com o software Mercanet.")
 				xRet = .F.
 			EndIf
@@ -314,3 +312,20 @@ Static Function AtuSuper(_sVend, _sCliente, _sLoja)
 		_oSQL:Exec ()
 	EndIf
  Return
+//
+//----------------------------------------------------------------------------------
+// Envia e-mail de aviso
+Static Function _EnvAvisoRep(_sCliente, _sNome, _sVendOld, _sVendNew) 
+	local _sMsg := ""
+
+	_sVendN1 := Posicione("SA3",1,xFilial("SA3") + _sVendOld, "A3_NOME")
+	_sVendN2 := Posicione("SA3",1,xFilial("SA3") + _sVendNew, "A3_NOME")
+
+	_sMsg := "<br>CLIENTE:	" + alltrim(_sCliente) + " - " + alltrim(_sNome) + "</br>"
+    _sMsg += "<br>Alteração de vendedor de :" + alltrim(_sVendOld) +" - " + alltrim(_sVendN1) + " para " + alltrim(_sVendNew) +" - " + alltrim(_sVendN2) + "</br>"
+	_sMsg += "<br>Usuário de alteração:" +cUserName + "</br>"
+    _sMsg += "<br></br>"
+
+	_sTitulo := "Alteração de vendedor no cliente " + alltrim(_sNome)
+    U_ZZUNU ({'146'}, _sTitulo, _sMsg, .F., cEmpAnt, cFilAnt, "")
+Return
