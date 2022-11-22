@@ -75,6 +75,7 @@
 // 07/10/2022 - Robert  - Envia copia dos avisos de erro para grupo 144 (coord.contabil)
 // 07/10/2022 - Claudia - Criado LPAD 640 014 - devolução de rapel. GLPI: 11924
 // 11/11/2022 - Claudia - Ajustado LPAD 530 001. GLPI: 12794
+// 22/11/2022 - Claudia - Ajuste em LPAD 520 002/ 527 002. GLPI: 12812
 //
 // -----------------------------------------------------------------------------------------------------------------
 // Informar numero e sequencia do lancamento padrao, seguido do campo a ser retornado.
@@ -146,8 +147,8 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 			_xRet = _oSQL:RetQry ()
 		endcase
 
-		case _sLPad == '520' .and. _sSeq='002'
-			if _sQueRet == 'CRED'
+		case _sLPad == '520' .and. _sSeq='002' 
+			if _sQueRet == 'CRED' .and.  ALLTRIM(SE5->E5_NATUREZ) != '110198' // GLPI: 
 				// cielo 
 				if (alltrim(SE5->E5_ORIGEM) =='ZB1' .or. alltrim(SE5->E5_ORIGEM) =='FINA740') .and. alltrim(SE5->E5_TIPO) $ 'CC/CD'				
 					if !empty(SE5->E5_ADM) 
@@ -202,12 +203,13 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 								_xRet := "101020201001" // conta clientes							
 						EndCase
 					else
+
 						_xRet := "101020201001"
 					endif
 				endif  				
 			endif
 
-	case _sLpad+_sseq $ ('520002/521002/527002') // ESX - tratamento baixa e cancelamento da baixa para venda futura
+	case _sLpad+_sseq $ ('520002/521002/527002')  .and. ALLTRIM(SE5->E5_NATUREZ) != '110198' // GLPI:  // ESX - tratamento baixa e cancelamento da baixa para venda futura
 
 		// if ('LINK CIELO' $ SE1->E1_HIST) .and. _sQueRet == 'DEB'// É ESTORNO DE LINK CIELO
 		// 	Do Case
