@@ -161,6 +161,9 @@ user function ImpZA1 (_sIdImpr, _oEtiq)
 			else
 				_sAlmOri = sc2 -> c2_local
 				
+				// O cod.barras da OP sobrepoe o do produto, pois vai ser usado no apontamento.
+				_sCBarProd = alltrim (sc2 -> c2_vaBarCx)
+				
 				// Sequencial de etiquetas (1 e 3, 2 de 3, ...) para ver se nao ficou alguma esquecida.
 				if sc2 -> c2_vaqtetq != 0 .and. za1 -> za1_seq != 0
 					_sSeqImp = padc (alltrim (str (za1 -> za1_seq)) + '/' + alltrim (str (sc2 -> c2_vaqtetq)), 9, ' ')
@@ -200,24 +203,7 @@ user function ImpZA1 (_sIdImpr, _oEtiq)
 			_lContinua = .F.
 		endcase
 	endif
-/*
-	// Busca data de validade e fabricacao do lote.
-	// Quando mexer aqui, ajustar tambem o fonte que exporta para o WMS (EnvEtFul.prw)
-	if _lContinua
-		if sb1 -> b1_rastro == 'L'
-			if ! _AchaSB8 (_sProdImp, _sLoteImp, _sAlmOri)
-			//	u_help ("Lote '" + _sLoteImp + "' do produto '" + _sProdImp + "' referenciado pela etiqueta '" + _sEtqImp + "' nao foi localizado na tabela SB8",, .t.)
-			//	_lContinua = .F.
-				U_Log2 ('aviso', '[' + procname () + "]Lote '" + _sLoteImp + "' do produto '" + _sProdImp + "' referenciado pela etiqueta '" + _sEtqImp + "' nao foi localizado na tabela SB8")
-			else
-				_sDtFabImp = dtoc (sb8 -> b8_dfabric)
-			endif
-//		else
-//			U_Log2 ('aviso', '[' + procname () + "]Produto '" + alltrim (sb1 -> b1_cod) + "' nao controla lotes. Vou imprimir data de validade como data atual + b1_prvalid.")
-//			_sVldLtImp := dtoc (date () + sb1 -> b1_prvalid)
-		endif
-	endif
-*/
+
 	// Se chegou aqui com todos os dados prontos, gera etiqueta em arquivo
 	// temporario e copia-o para a porta selecionada.
 	if _lContinua

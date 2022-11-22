@@ -106,4 +106,23 @@
 			"_oEvento:Grava ()"
 		]
 	},
+
+	"Enviar aviso":{
+		"prefix": "aviso",
+		"body": [
+			"_oAviso := ClsAviso():new ()",
+			"_oAviso:Tipo       = 'I'  // I=Info;A=Aviso;E=Erro",
+			"_oAviso:Titulo     = ''",
+			"_oAviso:Texto      = ''",
+			"_oAviso:DestinAvis = ''  // Nomes dos usuarios no formato fulano.silva;ciclano.dastantas",
+			"_oAviso:DestinZZU  = {}  // Codigos de um grupo da tabela ZZU no formato {grp1, grp2, ...}",
+			"_oAviso:Origem     = procname ()  // Acrescentar aqui o que for interessante para rastrear posteriormente",
+			"// _oAviso:Formato    = 'T'  // [T]exto ou [H]tml",
+			"// _oAviso:DiasDeVida =   // Dias para exclusao automatica (default Erro=90;Aviso=60;Info=30)",
+			"// _oAviso:DtAviso = ?  // Usar somente em casos especiais (data retroativa por exemplo)",
+			"// _oAviso:HrAviso = ?  // Usar somente em casos especiais (hora retroativa por exemplo)",
+			"// _oAviso:InfoSessao = .F.  // se .T. inclui informacoes adicionais de sessao na mensagem.",
+			"_oAviso:Grava ()"
+		]
+	},
 }

@@ -132,8 +132,6 @@ Static Function PrintReport(_oRep)
 	(_sAliasQ) -> (DbcloseArea ())
 
 	_oSec1:Finish()
-	
-Return
 
 
 

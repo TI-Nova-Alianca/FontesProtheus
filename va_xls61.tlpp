@@ -15,6 +15,7 @@
 // Historico de alteracoes:
 // 27/10/2022 - Robert - Populados campos de pesos min/medio/max
 //                     - Varre arquivo gerado apontando inconsitencias
+// 21/11/2022 - Robert - Ajustado caminho das imagens no site.
 //
 
 // --------------------------------------------------------------------------
@@ -103,7 +104,7 @@ Static Function _Gera()
 	_oSQL:_sQuery +=      " ,'' AS GTIN_CONTIDO"  // em caso de kits/packs/combos
 	_oSQL:_sQuery +=      " ,'' AS QT_IT_CONTIDO"
 	_oSQL:_sQuery +=      " ,'' AS TIPO_IMG"
-	_oSQL:_sQuery +=      " ,'http://novaalianca.coop.br/imagens_produtos/' + rtrim (P.B1_COD) + '.jpeg' AS LINK_IMG"  //ISNULL (B5_ECIMGFI, '') AS LINK_IMG"
+	_oSQL:_sQuery +=      " ,'https://novaalianca.coop.br/imagens-itens/' + rtrim (P.B1_COD) + '.png' AS LINK_IMG"  //ISNULL (B5_ECIMGFI, '') AS LINK_IMG"
 	_oSQL:_sQuery +=      " ,'' AS DESCRI_IMG"
 	_oSQL:_sQuery +=      " ,'' AS IDIOMA_IMG"
 	_oSQL:_sQuery +=      " ,'Não' AS COMPARTILH"

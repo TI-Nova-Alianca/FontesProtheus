@@ -273,6 +273,15 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 					::CBEmbCol  = sc2 -> c2_vaBarCx
 					::FinalidOP = sc2 -> c2_vaOpEsp
 					
+					// Jah peguei casos de excluirem uma OP e cadastrarem uma
+					// nova de mesmo numero, para outro produto!
+					if ::Produto != sc2 -> c2_produto
+						::UltMsg = "Produto da etiq.(" + alltrim (::Produto) + ") nao pode ser diferente do produto da OP (" + alltrim (sc2 -> c2_produto) + ")."
+						u_help ('[' + GetClassName (::Self) + '.' + procname () + "]" + ::UltMsg,, .t.)
+						::Produto = ''
+						::OP = ''
+					endif
+
 					// OP de reprocesso assume dt valid do lote original, cfe informada pelo usuario.
 					if sc2 -> c2_vaopesp == 'R'  // OP de reprocesso assume dt valid do lote original, cfe informada pelo usuario.
 						if empty (sc2 -> c2_vadvori)
@@ -569,6 +578,10 @@ METHOD PodeApont (_nQtApont, _nQtPerda) Class ClsEtiq
 		u_help ("Etiq.'" + ::Codigo + "' nao vinculada a nenhuma OP.",, .t.)
 		_lContinua = .f.
 	endif
+	if _lContinua .and. ::Inutilizada
+		::UltMsg += "Etiq.'" + ::Codigo + "' inutilizada."
+		_lContinua := .F.
+	endif
 	if _lContinua .and. ::Impressa != 'S'
 		u_help ("Etiq.'" + ::Codigo + "' ainda nao impressa.",, .t.)
 		_lContinua = .f.
@@ -852,11 +865,18 @@ return _lContinua
 // Envia para impressora (ou porta relacionada a esta)
 METHOD Imprime (_sCodImpr) Class ClsEtiq
 	local _lContinua := .T.
-	// Ainda tenho algumas leituras do ZA1. A intencao eh pegar tudo do objeto oEtiq.
+
+	// Ainda tenho algumas leituras do ZA1, enteo tenho que ter ele posicionado.
+	// A intencao eh pegar tudo do objeto oEtiq.
 	za1 -> (dbgoto (::RegZA1))
-	//U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']posicionei ZA1 no reg.' + cvaltochar (za1 -> (recno ())))
-	//_lContinua = U_ImpZA1 (::Codigo, _sCodImpr, ::Self)
-	_lContinua = U_ImpZA1 (_sCodImpr, ::Self)
+	
+	if ::Inutilizada
+		u_help ("Etiquetas inutilizadas nao podem mais ser impressas.",, .t.)
+		_lContinua = .F.
+	else
+		_lContinua = U_ImpZA1 (_sCodImpr, ::Self)
+	endif
+
 return _lContinua
 
 
@@ -877,7 +897,7 @@ METHOD Inutiliza (_lMsg) Class ClsEtiq
 
 	// Verifica se o usuario tem liberacao.
 	if ! empty (::OP) .and. ! U_ZZUVL ('073', __cUserID, .T.)
-		::UltMsg += "Usuario sem acesso para initilizar etiquetas de OP."
+		::UltMsg += "Usuario sem acesso para inutilizar etiquetas de OP."
 		_lContinua = .F.
 	endif
 	if ! empty (::DocEntrNum) .and. ! U_ZZUVL ('074', __cUserID, .T.)
@@ -885,8 +905,14 @@ METHOD Inutiliza (_lMsg) Class ClsEtiq
 		_lContinua = .F.
 	endif
 	if _lContinua .and. ! empty (::OP)
-		::UltMsg := "A etiqueta '" + ::Codigo + "' nao pode ser inutilizada por ser uma etiqueta de ordem de producao."
-		_lContinua := .F.
+		if ::QtApontada > 0
+			::UltMsg := "etiq." + ::Codigo + " jah apontada. Nao pode ser inutilizada."
+			_lContinua := .F.
+		endif
+		if ::QtPerdida > 0
+			::UltMsg := "etiq." + ::Codigo + " tem quantidade perdida. Nao pode ser inutilizada."
+			_lContinua := .F.
+		endif
 	endif
 
 

@@ -78,6 +78,7 @@
 // 09/09/2022 - Robert  - Criada verificacao 91.
 // 12/09/2022 - Robert  - Verif.91: Melhorado relacionamento entre MP_SYSTEM_PROFILE e SYS_USR
 // 06/10/2022 - Robert  - Verif.82 passa a ser valida para todas as filiais (GLPI 12324)
+// 18/11/2022 - Robert  - Criada verificacao 92.
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -3444,6 +3445,23 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=                 " WHERE U.USR_CARGO LIKE 'Pessoa ' + CAST(META.PESSOA AS VARCHAR(MAX)) + '%' COLLATE DATABASE_DEFAULT"
 			::Query +=                   " and META.SITUACAO = 4)"
 			::Query +=    " order by P_NAME, U.USR_ID"
+
+		case ::Numero == 92
+			::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+			::Setores    = 'INF'
+			::Descricao  = 'Usuarios: Timeout nao deveria estar configurado no usuario nem no grupo'
+			::Query := ""
+			::Query += " SELECT 'Usuario ' as origem, U.USR_ID, U.USR_CODIGO, U.USR_TIMEOUT"
+			::Query +=   " FROM SYS_USR U"
+			::Query +=  " WHERE U.D_E_L_E_T_ = ''"
+			::Query +=    " AND U.USR_MSBLQL != '1'"
+			::Query +=    " AND U.USR_TIMEOUT > 0"
+			::Query +=  " UNION ALL "
+			::Query += " SELECT 'Grupo ' as origem, G.GR__ID, G.GR__CODIGO + ' - ' + G.GR__NOME, G.GR__TIMEOUT"
+			::Query +=   " FROM SYS_GRP_GROUP G"
+			::Query +=  " WHERE G.D_E_L_E_T_ = ''"
+			::Query +=    " AND G.GR__MSBLQL != '1'"
+			::Query +=    " AND G.GR__TIMEOUT > 0"
 
 		otherwise
 			::UltMsg = "Verificacao numero " + cvaltochar (::Numero) + " nao definida."
