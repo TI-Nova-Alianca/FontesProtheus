@@ -36,27 +36,23 @@ user function OrdAuto (_aMatriz)
 		// Como algumas rotinas automaticas aceitam 'campos' nao presentes no
 		// SX3 (por exemplo 'INDEX' ou 'AUTEXPLODE') tento deixa-los na primeira
 		// posicao ou na ultima.
-	//	if sx3 -> (dbseek (_aMatriz [_nLinha, 1], .F.))
 		if sx3 -> (dbseek (padr (_aMatriz [_nLinha, 1], 10, ' '), .F.))  // Preenche com especos por que jah tive problemas, por exemplo, ao passar E2_VRETIR quando devia ter passado E2_VRETIRF.
 
 			// Em 24/08/2022 tive problema com campo caracter e que mandei tipo numerico.
 			if valtype (_aMatriz [_nLinha, 2]) != sx3 -> x3_tipo
 				U_Log2 ('erro', "[" + procname () + "]Campo '" + _aMatriz [_nLinha, 1] + "' consta com tipo '" + sx3 -> x3_tipo + "' no configurador, mas recebi tipo '" + valtype (_aMatriz [_nLinha, 2]) + "'.")
 				u_logpcham ()
-			//	U_Help ("Campo '" + _aMatriz [_nLinha, 1] + "' nao encontra-se 'usado' no dicionario de dados (ou, talvez, nao visivel para o modulo " + cModulo + ") e pode ser desconsiderado pela rotina automatica.",, .t.)
 			endif
 
 			// Em 07/03/2022 tive problema com campo que foi tirado de uso por um UPDDISTR (GLPI 11721)
 			if ! X3Uso (sx3 -> x3_usado)
 				U_Log2 ('erro', "[" + procname () + "]Campo '" + _aMatriz [_nLinha, 1] + "' nao encontra-se 'usado' e pode nao ser considerado pela rotina automatica.")
 				u_logpcham ()
-			//	U_Help ("Campo '" + _aMatriz [_nLinha, 1] + "' nao encontra-se 'usado' no dicionario de dados (ou, talvez, nao visivel para o modulo " + cModulo + ") e pode ser desconsiderado pela rotina automatica.",, .t.)
 			endif
 
 			if cNivel < sx3 -> x3_nivel
 				U_Log2 ('erro', "[" + procname () + "]Campo '" + _aMatriz [_nLinha, 1] + "' possui nivel " + cvaltochar (sx3 -> x3_nivel) + ", mas o usuario atual possui nivel menor (" + cvaltochar (cNivel) + "). Campo pode nao ser considerado pela rotina automatica.")
 				u_logpcham ()
-			//	U_Help ("Campo '" + _aMatriz [_nLinha, 1] + "' tem nivel " + cvaltochar (sx3 -> x3_nivel) + ", mas o usuario atual possui nivel menor (" + cvaltochar (cNivel) + "). Campo pode nao ser considerado pela rotina automatica.",, .t.)
 			endif
 
 			_sOrdem = sx3 -> x3_ordem

@@ -21,6 +21,7 @@
 // 07/10/2022 - Robert - Envia copia dos avisos de erro para grupo 144 (coord.contabil)
 // 27/10/2022 - Robert - Declaracao da variavel local _oAviso
 // 10/11/2022 - Robert - Pequena melhoria nos avisos.
+// 22/11/2022 - Robert - Para tipo CTA_TP_VEND, retornar sempre CC=164006 quando filial 16 (Sara via Spark)
 //
 
 // --------------------------------------------------------------------------
@@ -99,9 +100,14 @@ User Function LP2 (_sQueRet, _sTipoProd, _sRepres, _nRecnoSD1, _sLPad, _sTpAtivo
 				_xRet = ''
 			else
 				do case
-					case sa3 -> a3_vaTpCon == "1" ; _xRet = cFilAnt + "4001"
-					case sa3 -> a3_vaTpCon == "2" ; _xRet = cFilAnt + "4006"
-					case sa3 -> a3_vaTpCon == "3" ; _xRet = cFilAnt + "4003"
+					case cFilAnt == '16'
+						_xRet = '164006'
+					case sa3 -> a3_vaTpCon == "1"
+						_xRet = cFilAnt + "4001"
+					case sa3 -> a3_vaTpCon == "2"
+						_xRet = cFilAnt + "4006"
+					case sa3 -> a3_vaTpCon == "3"
+						_xRet = cFilAnt + "4003"
 					otherwise
 
 						_oAviso := ClsAviso ():New ()
