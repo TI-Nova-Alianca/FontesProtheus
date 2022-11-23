@@ -45,8 +45,8 @@
 //                        se não houver valor. GLPI: 8916
 // 07/10/2022 - Claudia - Atualização de rapel apenas para serie 10. GLPI: 8916
 // 28/10/2022 - Robert  - Cod. evento trocado de SA5010 para SA5001 ao gravar amarracao produto x fornecedor.
+// 23/11/2022 - Claudia - Incluido evento ao gravar amarracao produto x fornecedor. GLPI: 
 //
-
 // --------------------------------------------------------------------------------------------------------------
 user function M460Fim ()
 	local _aAreaAnt := U_ML_SRArea ()
@@ -256,7 +256,7 @@ Static Function _ProdXForneceFil(_sFilial, _sDoc, _sSerie, _sCliente, _sLoja)
 			_sCGCFornec := _aCGCM0[_x, 1]
 		Next
 		u_log2 ('info', 'CNPJ Fornecedor ' + _sCGCFornec)
-		// Busca código de fornecedor do emissões da NF saida, para dar entrana no importador XML
+		// Busca código de fornecedor do emissor da NF saida, para dar entrada no importador XML
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " SELECT "
@@ -321,7 +321,7 @@ Static Function _GravaProdXFornc(_sFilial,_sDoc,_sSerie,_sCliente,_sLoja,_sCodFo
 			_oEvento:Texto     = " Inclusão de produto X fornecedor" + chr (13) + chr (10) + ;
 								 " Produto: " + alltrim(_sProduto) + chr (13) + chr (10) + ;
 								 " Fornecedor: "+ alltrim(_sCodForn) + "-" + alltrim(_sLojForn) + " "
-			_oEvento:CodEven   = 'SA5001'  //"SA5010"
+			_oEvento:CodEven   = 'SA5002'  //"SA5010"
 			_oEvento:Produto   = alltrim(_sProduto)
 			_oEvento:NFSaida   = _sDoc
 			_oEvento:SerieSaid = _sSerie
@@ -329,7 +329,17 @@ Static Function _GravaProdXFornc(_sFilial,_sDoc,_sSerie,_sCliente,_sLoja,_sCodFo
 
 			u_log2 ('info', 'Gravação: Produto: ' + alltrim(_sProduto) + 'Fornecedor: '+ alltrim(_sCodForn) + "-" + alltrim(_sLojForn) )
 		Else
-			u_log2 ('info', 'NÃO gravou: Produto: ' + alltrim(_sProduto) + 'Fornecedor: '+ alltrim(_sCodForn) + "-" + alltrim(_sLojForn) )	 
+			u_log2 ('info', 'NÃO gravou: Produto: ' + alltrim(_sProduto) + 'Fornecedor: '+ alltrim(_sCodForn) + "-" + alltrim(_sLojForn) )
+			_oEvento := ClsEvent():New ()
+			_oEvento:Alias     = 'SA5'
+			_oEvento:Texto     = " Produto já cadastrado em produto X fornecedor" + chr (13) + chr (10) + ;
+								 " Produto: " + alltrim(_sProduto) + chr (13) + chr (10) + ;
+								 " Fornecedor: "+ alltrim(_sCodForn) + "-" + alltrim(_sLojForn) + " "
+			_oEvento:CodEven   = 'SA5003'  //"SA5010"
+			_oEvento:Produto   = alltrim(_sProduto)
+			_oEvento:NFSaida   = _sDoc
+			_oEvento:SerieSaid = _sSerie
+			_oEvento:Grava()	 
 		EndIf
 	Next
 Return
