@@ -45,7 +45,7 @@
 //                        se não houver valor. GLPI: 8916
 // 07/10/2022 - Claudia - Atualização de rapel apenas para serie 10. GLPI: 8916
 // 28/10/2022 - Robert  - Cod. evento trocado de SA5010 para SA5001 ao gravar amarracao produto x fornecedor.
-// 23/11/2022 - Claudia - Incluido evento ao gravar amarracao produto x fornecedor. GLPI: 
+// 23/11/2022 - Claudia - Incluido evento ao gravar amarracao produto x fornecedor. GLPI: 12821
 //
 // --------------------------------------------------------------------------------------------------------------
 user function M460Fim ()
