@@ -7,7 +7,9 @@
 // 11/11/2019 - Cláudia - Alterada a formula de Estoque médio. 
 // 						  O retorno será em dias e não meses, conforme código comentado.
 // 04/12/2019 - Cláudia - Incluído parâmetro de grupo de produto.
+// 22/11/2022 - Robert  - Criado parametro para selecionar tipo de produto.
 //
+
 // --------------------------------------------------------------------------------------- 
 #include 'protheus.ch'
 #include 'parmtype.ch'
@@ -78,7 +80,7 @@ Static Function _IREDiario(oSection1)
 	_cQry1 += " 	B1_COD "
 	_cQry1 += " FROM " + RetSqlName("SB1")
 	_cQry1 += " WHERE D_E_L_E_T_ = '' "
-	_cQry1 += " AND B1_TIPO = 'PA' "
+	_cQry1 += " AND B1_TIPO = '" + mv_par06 + "'"  //'PA' "
 	If !empty(mv_par05)
 		_cQry1 += " AND B1_GRUPO = '" + alltrim(mv_par05) + "' "
 	EndIf
@@ -192,11 +194,12 @@ Return
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT                TIPO TAM DEC VALID F3     Opcoes                      				Help
-    aadd (_aRegsPerg, {01, "Data Inicial	", "D", 8, 0,  "",  "   ", {},                         					""})
-    aadd (_aRegsPerg, {02, "Data Final		", "D", 8, 0,  "",  "   ", {},                         					""})
-    aadd (_aRegsPerg, {03, "Produto de		", "C",15, 0,  "",  "SB1", {},                         					""})
-    aadd (_aRegsPerg, {04, "Produto até		", "C",15, 0,  "",  "SB1", {},                         					""})
-    aadd (_aRegsPerg, {05, "Grupo	     	", "C", 4, 0,  "",  "SBM", {},                         					""})
+    aadd (_aRegsPerg, {01, "Data Inicial       ", "D", 8, 0,  "",  "   ", {},                         					""})
+    aadd (_aRegsPerg, {02, "Data Final         ", "D", 8, 0,  "",  "   ", {},                         					""})
+    aadd (_aRegsPerg, {03, "Produto de         ", "C",15, 0,  "",  "SB1", {},                         					""})
+    aadd (_aRegsPerg, {04, "Produto até        ", "C",15, 0,  "",  "SB1", {},                         					""})
+    aadd (_aRegsPerg, {05, "Grupo              ", "C", 4, 0,  "",  "SBM", {},                         					""})
+    aadd (_aRegsPerg, {06, "Tipo de produto    ", "C", 2, 0,  "",  "02 ", {},                         					""})
     //aadd (_aRegsPerg, {05, "Tipo			", "N", 1, 0,  "",  "   ", {"Diário","Mensal"},                         ""})
      U_ValPerg (cPerg, _aRegsPerg)
 Return
