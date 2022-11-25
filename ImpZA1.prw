@@ -143,7 +143,7 @@ user function ImpZA1 (_sIdImpr, _oEtiq)
 				_lContinua = .F.
 			else
 				_sDocImp  = 'Solic.transf:' + alltrim (za1 -> za1_IdZAG)
-				_sLoteImp = zag -> zag_lotori
+				_sLoteImp = _oEtiq:LoteProduto  // zag -> zag_lotori
 				_sAlmOri  = zag -> zag_almori
 				_sObsImp1 = left ('Tr.alm.' + zag -> zag_almori + ' -> ' + zag -> zag_almdst + ' (' + alltrim (zag -> zag_usrinc) + ')', 31)
 				if zag -> zag_almdst != '01'  // Nao imprimir para nao aparecer 'devolucao', etc.

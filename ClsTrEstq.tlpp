@@ -553,8 +553,9 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 
 			// Faz uma releitura dos atributos da etiqueta para popular
 			// campos adicionais como por exemplo a data de validade.
+			U_Log2 ('debug', '[' + procname () + ']antes  de regerar atrib estou  com lote = ' + cvaltochar (_oEtiq:LoteProduto) + ' e validade = ' + cvaltochar (_oEtiq:ValidLote))
 			_oEtiq:GeraAtrib ("ZA1")
-			U_Log2 ('debug', '[' + procname () + ']depois de regerar atrib fiquei com validade = ' + cvaltochar (_oEtiq:ValidLote))
+			U_Log2 ('debug', '[' + procname () + ']depois de regerar atrib fiquei com lote = ' + cvaltochar (_oEtiq:LoteProduto) + ' e validade = ' + cvaltochar (_oEtiq:ValidLote))
 			::Etiqueta = _oEtiq:Codigo
 			::UltMsg += 'Etiqueta gerada:' + ::Etiqueta + '.'
 
@@ -653,70 +654,6 @@ METHOD Grava () Class ClsTrEstq
 	endif
 
 	if _lContinua
-/*
-		sb1 -> (dbsetorder (1))
-		if ! sb1 -> (dbseek (xfilial ("SB1") + ::ProdOrig, .F.))
-			::UltMsg += "Produto '" + alltrim (::ProdOrig) + "' nao cadastrado."
-			_lContinua = .F.
-		else
-			::FWProdOrig = (sb1 -> b1_vaFullW == 'S')
-			::FWProdDest = (sb1 -> b1_vaFullW == 'S')  // Como geralmente eh o mesmo item, jah deixo a variavel carregada.
-			if sb1 -> b1_rastro == 'L' .and. empty (::LoteOrig) .and. ! ::AlmUsaFull (::AlmOrig)  // Alm 02 gera solicitacoes ao FullWMS
-				::UltMsg += "Produto origem controla lotes. Lote de origem deve ser informado."
-				_lContinua = .F.
-			endif
-			if sb1 -> b1_rastro == 'S'
-				::UltMsg += "Produto origem controla sublote. Falta tratamento neste programa."
-				_lContinua = .F.
-			endif
-			if sb1 -> b1_localiz == 'S' .and. empty (::EndOrig) .and. ! ::AlmUsaFull (::AlmOrig)  // Alm 02 gera solicitacoes ao FullWMS
-				::UltMsg += "Produto origem controla localizacao. Endereco de origem deve ser informado."
-				_lContinua = .F.
-			endif
-			if ! empty (::LoteOrig) .and. ! ::CtrLotOrig // sb1 -> b1_rastro != 'L'
-				if ! (::FWProdOrig .and. ::AlmUsaFull (::AlmDest))
-					::UltMsg += "Lote origem nao deve ser informado pois o produto '" + alltrim (::ProdOrig) + "' nao controla lote."
-					_lContinua = .F.
-				else
-					U_Log2 ('debug', '[' + procname () + ']Vou aceitar lote origem por que preciso ter algum lote para informar ao FullWMS.')
-				endif
-			endif
-			if ! empty (::EndOrig) .and. ! ::CtrLocOrig  // sb1 -> b1_localiz != 'S'
-				::UltMsg += "Endereco origem nao deve ser informado pois o produto '" + alltrim (::ProdOrig) + "' nao controla localizacao."
-				_lContinua = .F.
-			endif
-		endif
-		if ::ProdDest != ::ProdOrig
-			if ! sb1 -> (dbseek (xfilial ("SB1") + ::ProdDest, .F.))
-				::UltMsg += "Produto '" + alltrim (::ProdDest) + "' nao cadastrado."
-				_lContinua = .F.
-			else
-				::FWProdDest = (sb1 -> b1_vaFullW == 'S')
-			//	if sb1 -> b1_rastro == 'L' .and. empty (::LoteDest)
-				if ::CtrLotDest .and. empty (::LoteDest)
-					::UltMsg += "Produto destino controla lotes. Lote destino deve ser informado."
-					_lContinua = .F.
-				endif
-				if ::CtrLotDest  // sb1 -> b1_rastro == 'S'
-					::UltMsg += "Produto destino controla sublote. Falta tratamento neste programa."
-					_lContinua = .F.
-				endif
-//				if sb1 -> b1_localiz == 'S' .and. empty (::EndDest)
-				if ::CtrLocDest .and. empty (::EndDest)
-					::UltMsg += "Produto destino controla localizacao. Endereco destino deve ser informado."
-					_lContinua = .F.
-				endif
-				if ! empty (::LoteDest) .and. ! ::CtrLotDest  // sb1 -> b1_rastro != 'L'
-					::UltMsg += "Lote destino nao deve ser informado pois o produto '" + alltrim (::ProdDest) + "' nao controla lote."
-					_lContinua = .F.
-				endif
-				if ! empty (::EndDest) .and. ! ::CtrLotDest // sb1 -> b1_localiz != 'S'
-					::UltMsg += "Endereco destino nao deve ser informado pois o produto '" + alltrim (::ProdDest) + "' nao controla localizacao."
-					_lContinua = .F.
-				endif
-			endif
-		endif
-*/
 		// Faz leitura de dados dos produtos a partir do SB1. Isso por que o
 		// objeto pode ter sido instanciado e modificado pelo programa chamador
 		// e agora eu estaria com dados de SB1 desatualizados.
@@ -853,7 +790,20 @@ METHOD Grava () Class ClsTrEstq
 	endif
 
 	if _lContinua
-		::Docto = GetSXENum ("ZAG", "ZAG_DOC")
+		BEGIN TRANSACTION
+		//::Docto = GetSXENum ("ZAG", "ZAG_DOC")
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT MAX (ZAG_DOC)"
+		_oSQL:_sQuery +=   " FROM " + RetSQLName ("ZAG") + " ZAG "
+		_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=    " AND ZAG_FILIAL = '" + xfilial ("ZAG") + "'"
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		::Docto = _oSQL:RetQry (1, .f.)
+		if empty (::Docto)
+			::Docto = strzero (0, tamsx3 ("ZAG_DOC")[1])
+		endif
+		::Docto = soma1 (::Docto)
 
 		// Prepara mensagem bem 'cuti-cuti' para arquivo de log.
 		_sMsgLog := ''
@@ -893,13 +843,14 @@ METHOD Grava () Class ClsTrEstq
 //		zag -> zag_UAutP  = 'Auto'  // Liberacao automatica sempre
 //		zag -> zag_UAutQ  = 'Auto'  // Liberacao automatica sempre
 		msunlock ()
-		do while __lSX8
-			ConfirmSX8 ()
-		enddo
+		//do while __lSX8
+		//	ConfirmSX8 ()
+		//enddo
 
 		::RegZAG = zag -> (recno ())
 		::UltMsg += "Solic.de transf.gerada: " + ::Docto + '.'
 		_lRet = .T.
+		END TRANSACTION
 	endif
 
 	// Verifica necessidade de gerar etiqueta
