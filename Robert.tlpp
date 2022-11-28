@@ -94,11 +94,56 @@ user function robert ()
 		// _AtuSB1 ()
 		// _ctbanc ()
 		//_ST_MG ()
+		_PreNF ()
 
 		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
+return
+
+// --------------------------------------------------------------------------
+static function _PreNF ()
+	Local _aAutoSF1 	:= {}											//ARRAY COM OS DADOS DO CABEÇALHO DA NOTA -SF1
+	local _aAutoSD1  	:= {}											//ARRAY COM DADOS DOS ITENS DA NOTA - SD1
+	private lMsHelpAuto := .F. 											//SE .T. DIRECIONA AS MENSAGENS DO HELP
+	private lMsErroAuto := .F.
+
+	AADD( _aAutoSF1, { "F1_DOC"      	, '555555555'					, NIL } ) 
+	AADD( _aAutoSF1, { "F1_SERIE"    	, '  1'				, NIL } )
+	AADD( _aAutoSF1, { "F1_TIPO"     	, 'N',				, NIL } )
+	AADD( _aAutoSF1, { "F1_FORMUL"   	, "N"					, Nil } )
+	AADD( _aAutoSF1, { "F1_EMISSAO"  	, date ()		, NIL } )
+	AADD( _aAutoSF1, { "F1_FORNECE"  	, '000851'      			, NIL } )
+	AADD( _aAutoSF1, { "F1_LOJA"     	, '01'				, NIL } )
+	//AADD( _aAutoSF1, { "F1_EST"      	, 					, NIL } )
+	AADD( _aAutoSF1, { "F1_ESPECIE"  	, "SPED"				, NIL } )
+	//AADD( _aAutoSF1, { "F1_CHVNFE"   	, _sChaveNF 		    , NIL } )
+	//AADD( _aAutoSF1, { "F1_COND"     	, _sCondPag				, NIL } )
+
+	_aLinha  := {}
+	AADD(_aLinha , {"D1_COD"     , 	 '4438'								, NIL } )
+	AADD(_aLinha , {"D1_DESCRI"  , 	 'teste'  								, NIL } )
+	AADD(_aLinha , {"D1_QUANT"   ,  1								, NIL } )
+	AADD(_aLinha , {"D1_VUNIT"   ,  10, NIL } )
+	AADD(_aLinha , {"D1_TOTAL"   ,  10	, NIL } )
+	//AADD(_aLinha , {"D1_UM"      , 	 _aProdSD1[i,4]  								, NIL } )
+	//AADD(_aLinha , {"D1_TP"      , 	 _aProdSD1[i,5]  								, NIL } )
+	//AADD(_aLinha , {"D1_LOCAL"   , 	 _aProdSD1[i,6]  								, NIL } )
+	//AADD(_aLinha , {"D1_CF"      , fBuscaCpo ("SF4", 1, xfilial ("SF4") + _aProdSD1[i,9] , "F4_CF"), Nil } )
+	AADD(_aLinha , {"D1_TES"     , 	 '001'  								, NIL } )
+	//AADD(_aLinha , {"D1_PEDIDO"  ,   _aProdSD1[i,10]                   				, Nil } )
+	//AADD(_aLinha , {"D1_ITEMPC"  ,   _aProdSD1[i,11]                   				, Nil } )
+	AADD(_aAutoSD1, aClone (U_OrdAuto (_aLinha)))
+	MSExecAuto({|x,y,z| Mata140(x,y,z)},_aAutoSF1,_aAutoSD1,3)
+	If lMsErroAuto
+		if ! empty (NomeAutoLog ())
+			u_log2 ('erro', U_LeErro (memoread (NomeAutoLog ())))
+		endif
+	else
+		U_Log2 ('debug', '[' + procname () + ']sucesso')
+	endif
+
 return
 
 // --------------------------------------------------------------------------
@@ -1016,17 +1061,18 @@ STATIC FUNCTION _TrEstq ()
 	_oTrEstq:DtEmis   = date ()
 	//_oTrEstq:OP       = ''
 	_oTrEstq:Motivo   = 'teste robert'
-	_oTrEstq:ProdOrig = '600754         '
-	_oTrEstq:ProdDest = '600754         '
-	_oTrEstq:AlmOrig  = '60'
-	_oTrEstq:AlmDest  = '60'
-	_oTrEstq:EndOrig  = 'ESTOQUE 66     '
-	_oTrEstq:EndDest  = '03-07-090      '
+	_oTrEstq:ProdOrig = '0151           '
+	_oTrEstq:ProdDest = '0151           '
+	//dataware barcode generator
+	_oTrEstq:AlmOrig  = '25'
+	_oTrEstq:AlmDest  = '01'
+	_oTrEstq:EndOrig  = ''
+	_oTrEstq:EndDest  = ''
 	_oTrEstq:LoteOrig = ''
-	_oTrEstq:LoteDest = ''
-	_oTrEstq:QtdSolic = 2
+	_oTrEstq:LoteDest = '001       '
+	_oTrEstq:QtdSolic = 1
 	_oTrEstq:UsrIncl  = 'robert.koch'
-	_oTrEstq:ImprEtq  = '98' // 16=Elgin TI;15=logistica;98=
+	_oTrEstq:ImprEtq  = '15' // 14=AX EMBALAGENS;15=logistica;16=Elgin TI;98=sato em disco
 	if _oTrEstq:Grava ()
 		U_Log2 ('debug', '[' + procname () + ']Gravou! msg: ' + _oTrEstq:UltMsg)
 //		if _oTrEstq:Libera ()

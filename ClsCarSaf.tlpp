@@ -110,7 +110,7 @@ METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
 			_sStatPara = 'CNF'  // Concluida NF
 		case _sZZAAtual == '3'
 			_sStatPara = 'CON'  // Processamento concluido
-		case _sZZAAtual == '2'
+		case _sZZAAtual == '2'  // Muito provavelmente o NaWeb vai ver isso bem antes que o Protheus
 			_sStatPara = 'EMP'  // Em processamento
 		case ::PesoBruto > 0
 			_sStatPara = 'LIB'  // Liberada (para ir ate o tombador e descarregar)

@@ -13,14 +13,14 @@
 
 // Historico de alteracoes:
 // 10/07/2022 - Robert - Versao inicial para buscar NF referenciadas pelos CTes (GLPI 12330)
-// 20/07/2022 - Robert  - Gravacao de eventos temporarios para rastreio de import/export. XML (GLPI 12336)
+// 20/07/2022 - Robert - Gravacao de eventos temporarios para rastreio de import/export. XML (GLPI 12336)
 //
 
 
 // --------------------------------------------------------------------------
 user function PECTE006 ()
 	local _aAreaAnt := U_ML_SRArea ()
-	local _aAmbAnt  := U_SalvaAmb ()
+//	local _aAmbAnt  := U_SalvaAmb ()
 	local _aRetTRS6 := {}
 	Local _aTRS006  := PARAMIXB
 	Local _aCabec   := _aTRS006[1]  // Vetor com Cabecaho repassado  para Execauto
@@ -29,6 +29,8 @@ user function PECTE006 ()
 	//Local _nTpoCte  := _aTRS006[4]  // Numerico com valor: 2=MATA116 Compras | 1=MATA140 Vendas
 	Local _oNfeOrg  := iif (len (_aTRS006) >= 5, _aTRS006[5], NIL)  // Objeto com Notas Referenciadas (nao presente em caso de exclusao)
 	local _oEvento  := NIL
+
+	U_Log2 ('debug', '[' + procname () + ']Chave=' + _sChvCte + ' inclui=' + cvaltochar (inclui) + ' altera=' + cvaltochar (altera))
 
 	// Tratamento para alimentar variavel a ser usada para gravacao de fretes.
 	if inclui .or. altera  // 'importar XML'=inclui; 'reprocessa'=altera
@@ -64,7 +66,7 @@ user function PECTE006 ()
 	// Devem ser retornados cabecalho e itens.
 	_aRetTRS6 := {_aCabec,_aLinhas}
 
-	U_SalvaAmb (_aAmbAnt)
+//	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
 return _aRetTRS6
 
