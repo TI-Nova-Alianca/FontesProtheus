@@ -746,12 +746,12 @@ user function LogObj (_oObj)
 return _sRet
 //
 // --------------------------------------------------------------------------
-// Tenta fazer uma formatacao basicade uma query do SQL.
+// Tenta fazer uma formatacao basica de uma query do SQL.
 user function LogQry (_sQry)
 	local _sRet     := chr (13) + chr (10) + _sQry
 	local _nPos     := 0
 	local _nPos2    := 0
-	local _aQuebras := {'SELECT ', 'FROM ', 'WHERE ', 'CASE '}
+	local _aQuebras := {'SELECT ', 'FROM ', 'WHERE ', 'CASE ', 'JOIN ', 'UNION'}
 	local _nQuebra  := 0
 	
 	// Insere quebras de linha antes de palavras chave.

@@ -57,7 +57,7 @@ user function Log2 (_sTipo, _xDadoOri, _xExtra)
 		_aTxtLog = aclone (_DumpJSON (_xDadoOri))
 	else
 		if valtype (_xDadoOri) == 'U'
-			_aTxtLog = {'*NIL*'}
+			_aTxtLog = {'Parametros insuficientes na chamada de ' + procname ()}
 		else
 			_aTxtLog = _DumpTXT (rtrim (cValToChar (_xDadoOri)))
 		endif
