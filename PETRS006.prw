@@ -13,12 +13,12 @@
 // #Modulos           #COM #EST
 
 // Historico de alteracoes:
+// 28/11/2022 - Claudia - Acrescentada a gravação do campo F1_VAFLAG. GLPI: 12841
 //
-
+// -------------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
 #Include "RwMake.ch"
 
-// --------------------------------------------------------------------------
 User Function PETRS006()
 	Local _aTRS006   := PARAMIXB
 	Local _aCabec    := _aTRS006[3]
@@ -28,6 +28,9 @@ User Function PETRS006()
 	local _aRet      := {}
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aAmbAnt   := U_SalvaAmb ()
+
+	// Grava flag de identificação
+	AADD(_aCabec, {"F1_VAFLAG"	,'P',Nil})
 
 	// Deve sempre retornar cabecalho e itens.
 	_aRet := {_aCabec,_aLinha}
@@ -40,9 +43,9 @@ User Function PETRS006()
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
 Return _aRet
-
-
+//
 // --------------------------------------------------------------------------
+// Gravação de logs
 static function _Logs (_aCabec, _lManut, _lEscrit)
 	local _oEvento   := NIL
 	local _sChvNFe   := ''
