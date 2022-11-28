@@ -97,6 +97,7 @@
 // 23/02/2022 - Robert - Ordenados por tipo de movimento alguns blocos de codigo no metodo PodeIncl().
 // 01/04/2022 - Robert - Ajuste teste se associado jah possui lcto restituicao FUNRURAL.
 // 22/08/2022 - Robert - Removidos alguns trechos comentariados.
+// 23/11/2022 - Robert - Bloquear somente mov.07 quando jah tiver corr.mon. (ver obs no local)
 //
 
 // ------------------------------------------------------------------------------------
@@ -1998,7 +1999,9 @@ METHOD PodeIncl () Class ClsCtaCorr
 	endif
 
 	// Verifica periodo fechado (correcao monetaria jah calculada) - independente de filial.
-	if _lContinua .and. ! ::TM $ '19/'
+	// Conselho optou por calcular correcao diaria (o que ainda estah sendo feito manualmente)
+	// e somente aplicavel (por enquanto) a movimento 07. Robert, 23/11/2022
+//	if _lContinua .and. ! ::TM $ '19/'
 		_sQuery := ""
 		_sQuery += "SELECT COUNT (*)"
 		_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI"
@@ -2012,7 +2015,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 			::UltMsg += "Ja' existe calculo de correcao monetaria para este mes (ou posterior)."
 			_lContinua = .F.
 		endif
-	endif
+//	endif
 
 	// Se chegou aqui com mensagem de erro, mostra para o usuario.
 	if ! _lContinua .and. ! empty (::UltMsg)

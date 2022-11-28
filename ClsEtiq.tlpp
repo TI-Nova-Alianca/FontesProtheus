@@ -344,7 +344,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 					u_help ("Solicitacao de transferencia '" + ::IdZAG + "' referenciada pela etiqueta '" + ::Codigo + "' nao foi localizada na tabela ZAG.",, .t.)
 				else
 					::AlmDest     = zag -> zag_almdst
-					::LoteProduto = zag -> zag_lotOri
+					::LoteProduto = zag -> zag_lotdst  // zag_lotOri
 					if sb1 -> b1_rastro == 'L'
 						_oSQL := ClsSQL ():New ()
 						_oSQL:_sQuery := "SELECT B8_LOTECTL, B8_DTVALID, B8_DFABRIC"
@@ -693,6 +693,10 @@ METHOD PodeEnvFul () Class ClsEtiq
 	endif
 	if _lContinua .and. ::Impressa != 'S'
 		u_help ("Etiqueta '" + ::Codigo + "' nao deve ser enviada para o FullWMS antes de estar impressa.",, .t.)
+		_lContinua = .f.
+	endif
+	if _lContinua .and. empty (::LoteProduto)
+		u_help ("Etiqueta '" + ::Codigo + "' nao pode ser enviada para o FullWMS pois nao tem lote informado.",, .t.)
 		_lContinua = .f.
 	endif
 
