@@ -29,7 +29,8 @@ User Function Verif (_nQual, _aParam)
 		else
 			if _oVerif:Ativa .and. (_oVerif:Filiais == '*' .or. cFilAnt $ _oVerif:Filiais)
 				if _PodeVer (_oVerif)
-					if _oVerif:Pergunte (.F.)
+					_oVerif:ComTela = .F.
+					if _oVerif:Pergunte ()
 	
 						// Se recebi os parametros, informo-os no objeto.
 						if valtype (_aParam) == 'A'
@@ -77,7 +78,8 @@ User Function Verif (_nQual, _aParam)
 			for _nVerif = 1 to len (_aVerif)
 				if _aVerif [_nVerif, 1]
 					_oVerif = _aVerif [_nVerif, 5]
-					if _oVerif:Pergunte (.T.)
+					_oVerif:ComTela = .T.
+					if _oVerif:Pergunte ()
 						if _oVerif:Executa ()
 							if _oVerif:QtErros == 0
 								u_help ("Nada encontrado para: " + _oVerif:Descricao)

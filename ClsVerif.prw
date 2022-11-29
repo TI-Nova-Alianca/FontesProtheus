@@ -79,6 +79,7 @@
 // 12/09/2022 - Robert  - Verif.91: Melhorado relacionamento entre MP_SYSTEM_PROFILE e SYS_USR
 // 06/10/2022 - Robert  - Verif.82 passa a ser valida para todas as filiais (GLPI 12324)
 // 18/11/2022 - Robert  - Criada verificacao 92.
+// 26/11/2022 - Robert  - Criado atributo :ComTela
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -90,6 +91,7 @@ CLASS ClsVerif
 	// Declaracao das propriedades da Classe
 	data aHeader     // Para o caso de exportar no formato aHeader/aCols	
 	data Ativa       // Se encontra-se ativa (.T. / .F.)
+	data ComTela     // Indica se mostra (.T.) mensagens em tela (posso estar usando em batch)
 	data Descricao   // Descricao da verificacao
 	data Dica        // Dica para o usuario.
 	data ExecutouOK  // Indica se executou a verificacao sem problemas
@@ -132,9 +134,9 @@ ENDCLASS
 //
 // --------------------------------------------------------------------------------------------------
 METHOD New (_nQual) Class ClsVerif
-	//local _nBkNumVer := 0
 	::Numero     = 0
 	::Ativa      = .T.
+	::ComTela    = .T.
 	::Filiais    = '*'
 	::Query      = ""
 	::Descricao  = ""
@@ -153,30 +155,30 @@ METHOD New (_nQual) Class ClsVerif
 	::MesAtuEstq = substr (dtos (GetMv ("MV_ULMES") + 1), 1, 6)
 	::QuandoUsar = "A qualquer momento"
 
-	// Para determinar qual a ultima verificacao, vou comecar por um numero
-	// alto e ir buscando para tras, ateh encontrar uma verificacao definida.
-	// Jah tentei diversas formas de fazer isso, mas no final sempre acabo
-	// criando somente o CASE que define a query e esqueco de atualizar o
-	// atributo :UltVerif.
-	for ::Numero = 120 to 1 step -1  // Manter aqui sempre um numero maior que o da ultima verificacao.
-		//U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (::Numero) + ' qry antes: ' + ::Query)
-		::UltMsg = ''
-		::GeraQry (.T.)
-//		U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (::Numero))
-//		U_Log2 ('debug', '[' + procname () + ']qry depois: ' + ::Query)
-//		U_Log2 ('debug', '[' + procname () + ']Msg depois: ' + ::UltMsg)
-		if ! empty (::Query)
-			::UltVerif = ::Numero
-			::Numero = 0
-			exit
-		endif
-	next
+	// Se recebi um numero de verificacao definido, nao preciso ficar testando a existencia de todas.
+	if valtype (_nQual) == 'N'
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Recebi um numero de verificacao definido: ' + cvaltochar (_nQual))
+		::Numero = _nQual
+	else
+		// Para determinar qual a ultima verificacao, vou comecar por um numero
+		// alto e ir buscando para tras, ateh encontrar uma verificacao definida.
+		// Jah tentei diversas formas de fazer isso, mas no final sempre acabo
+		// criando somente o CASE que define a query e esqueco de atualizar o
+		// atributo :UltVerif.
+		for ::Numero = 150 to 1 step -1  // Manter aqui sempre um numero maior que o da ultima verificacao.
+			::UltMsg = ''
+			::GeraQry (.T.)
+			if ! empty (::Query)
+				::UltVerif = ::Numero
+				::Numero = 0
+				exit
+			endif
+		next
+	endif
 
-	_nQual = iif (valtype (_nQual) == 'N', _nQual, 0)
-	::Numero  = _nQual
 	::GeraQry (.T.)
 
-Return ::Self
+Return Self
 
 
 // --------------------------------------------------------------------------
@@ -186,21 +188,20 @@ METHOD ConvHTM (_nMaxLin) Class ClsVerif
 	local _oUtil := NIL
 
 	if ::ExecutouOK
-		u_log2 ('debug', 'result: ' + cvaltochar (len (::Result)))
 		_oUtil := ClsAUtil ():New (::Result)
 		_sRet = _oUtil:ConvHtm (::Descricao, NIL, NIL, NIL, _nMaxLin)
 	endif
 
 	if ! empty (::Sugestao)
-	//	_sRet += chr (13) + chr (10) + alltrim (::Sugestao) + chr (13) + chr (10)
 		_sRet += chr (13) + chr (10) + '</br></br>Sugestao: ' + alltrim (::Sugestao) + '</br>'
 	endif
 	if ! empty (::Query)
-	//	_sRet += chr (13) + chr (10) + 'Query para verificacao: ' + alltrim (::Query) + chr (13) + chr (10)
 		_sRet += chr (13) + chr (10) + '</br></br>Query para verificacao: ' + alltrim (::Query) + '</br>'
 	endif
 
 Return _sRet
+
+
 // --------------------------------------------------------------------------
 // Executa a verificacao.
 METHOD Executa () Class ClsVerif
@@ -208,14 +209,22 @@ METHOD Executa () Class ClsVerif
 	local _lContinua := .T.
 	local _oSQL      := NIL
 
-	if empty (::Query)
+	if _lContinua .and. empty (::Query)
 		::UltMsg += "Query nao definida para esta verificacao."
-		u_help (::UltMsg,, .t.)
+		if ::ComTela
+			u_help (::UltMsg,, .t.)
+		else
+			U_Log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + ']' + ::UltMsg)
+		endif
 		_lContinua = .F.
 	endif
-	if ::Filiais != '*' .and. ! cFilAnt $ ::Filiais
+	if _lContinua .and. ::Filiais != '*' .and. ! cFilAnt $ ::Filiais
 		::UltMsg += "Query nao se destina a esta filial."
-		u_help (::UltMsg)
+		if ::ComTela
+			u_help (::UltMsg,, .t.)
+		else
+			U_Log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + ']' + ::UltMsg)
+		endif
 		_lContinua = .F.
 	endif
 	if _lContinua
@@ -226,7 +235,7 @@ METHOD Executa () Class ClsVerif
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery = ::Query
 		_oSQL:lGeraHead = .T.  // Para gerar array 'aHeader' ao final da execucao da query
-		_oSQL:Log()
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 		::Result = aclone (_oSQL:Qry2Array (.F., .T.))
 		::QtErros = len (::Result) - 1  // Primeira linha tem os nomes de campos
 		::ExecutouOK = .T.
@@ -235,6 +244,7 @@ METHOD Executa () Class ClsVerif
 		::aHeader := aclone (_oSQL:aHeader)
 		CursorArrow ()
 	endif
+
 	U_ML_SRArea (_aAreaAnt)
 return _lContinua
 
@@ -3473,11 +3483,11 @@ return
 
 // --------------------------------------------------------------------------
 // Faz a leitura dos parametros (caso existam)
-METHOD Pergunte (_lComTela) Class ClsVerif
+METHOD Pergunte () Class ClsVerif
 	local _lRet := .T.
 	
 	if _lRet .and. ! empty (::GrupoPerg)
-		_lRet = Pergunte (::GrupoPerg, _lComTela)
+		_lRet = Pergunte (::GrupoPerg, ::ComTela)
 	endif
 	if _lRet
 		::Param01 = mv_par01
@@ -3513,7 +3523,11 @@ METHOD SetParam (_sParam, _xConteudo) Class ClsVerif
 		case _sParam == '10' ; ::Param10 = _xConteudo
 		otherwise
 			::UltMsg = "Parametro '" + _sParam + "' sem tratamento no metodo " + procname () + " da classe " + GetClassName (::Self) + '.'
-			u_help (::UltMsg)
+			if ::ComTela
+				u_help (::UltMsg,, .t.)
+			else
+				U_Log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + ']' + ::UltMsg)
+			endif
 	endcase
 	
 	// Gera novamente a definicao da query para pegar os novos parametros.

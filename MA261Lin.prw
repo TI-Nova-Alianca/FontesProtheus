@@ -39,6 +39,7 @@
 // 23/12/2021 - Claudia - Incluida validação de almox 11. GLPI: 7665
 // 31/03/2022 - Robert  - Melhoradas mensagens de log.
 // 13/10/2022 - Robert  - Novos parametros funcao U_ConsEst().
+// 26/11/2022 - Robert  - Permite mov.com inconsistencia entre tabelas (U_ConsEst) somente para grupo 119 do ZZU.
 //
 
 // ------------------------------------------------------------------------------------
@@ -253,9 +254,11 @@ User Function MA261LIN ()
 
 	// Verifica se tem alguma mensagem de inconsistencia entre tabelas de estoque.
 	if _lRet
-		_lRet = U_ConsEstq (xfilial ("SD3"), _sProdOrig, _sAlmOrig, '*')
+	//	_lRet = U_ConsEstq (xfilial ("SD3"), _sProdOrig, _sAlmOrig, '*')
+		_lRet = U_ConsEstq (xfilial ("SD3"), _sProdOrig, _sAlmOrig, '119')
 		if _lRet
-			_lRet = U_ConsEstq (xfilial ("SD3"), _sProdDest, _sAlmDest, '*')
+	//		_lRet = U_ConsEstq (xfilial ("SD3"), _sProdDest, _sAlmDest, '*')
+			_lRet = U_ConsEstq (xfilial ("SD3"), _sProdDest, _sAlmDest, '119')
 		endif
 	endif
 

@@ -12,6 +12,7 @@
 // 13/07/2020 - Robert  - Melhorado texto do evento de inicio de processamento.
 //                      - Inseridas tags para catalogacao de fontes
 // 27/07/2020 - Robert  - Verificacao de acesso: passa a validar acesso 115 e nao mais 069.
+// 26/11/2022 - Robert  - Melhoria msg verificacao de pendencias.
 //
 
 // Tags para automatizar catalogo de customizacoes:
@@ -45,17 +46,19 @@ user function MA330OK ()
 		endif
 	endif
 
+	// Faz algumas verificacoes previas.
 	if _lRet .and. FunName () == "MATA330"
 		_oVerif := ClsVerif():New (4)
 		_oVerif:SetParam ('01', date ())
 		_oVerif:SetParam ('02', date ())
+
+		// Nao quero que mostre mensagens durante a execucao da verificacao.
+		// Se tiver alguma mensagem, vou mostrar por aqui.
+		_oVerif:ComTela = .F.
+
 		_oVerif:Executa ()
-		u_log (_oVerif:Result)
 		_oAvisos := ClsAUtil ():New (_oVerif:Result)
-		u_log (_oAvisos:_aArray)
-					
-		if len (_oAvisos:_aArray)	
-			u_log ('Erros ou avisos impedem a execucao do calculo:', _oAvisos:_aArray)
+		if len (_oAvisos:_aArray) > 0
 			if type ("_oBatch") == 'O'
 				_oBatch:Mensagens += 'Erros ou avisos impedem a execucao do calculo'
 			endif

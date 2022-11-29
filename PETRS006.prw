@@ -35,7 +35,7 @@ User Function PETRS006()
 	// Deve sempre retornar cabecalho e itens.
 	_aRet := {_aCabec,_aLinha}
 
-	U_Log2 ('debug', '[' + procname () + ']Olha eu aqui...')
+	U_Log2 ('debug', '[' + procname () + ']')
 
 	// Grava alguns eventos e logs.
 	_Logs (_aCabec, _lManut, _lEscrit)

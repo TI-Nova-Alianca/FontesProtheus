@@ -385,13 +385,12 @@ static function _VerRetr ()
 	local _sAlmRetr  := GetMv ("VA_ALMREPR")
 	local _nSalDisp  := 0
 
-//	u_logIni ()
 	if _lRet
 		_lEhReproc = (fBuscaCpo ("SC2", 1, xfilial ("SC2") + m->d3_op, "C2_VAOPESP") == 'R')
 	endif
 	if _lRet .and. _lEhReproc
 		if _lRet .and. m->d3_quant > 0
-			u_help ("OP de retrabalho / reprocesso: a quantidade deve ser informada como 'perda'.",, .t.)
+			u_help ("OP retrab/reproc: qt.deve ser informada como PERDA.",, .t.)
 			_lRet = .F.
 		endif
 	endif
@@ -399,15 +398,14 @@ static function _VerRetr ()
 	if _lRet .and. _lEhReproc
 		sb2 -> (dbsetorder (1))  // B2_FILIAL+B2_COD+B2_LOCAL
 		if ! sb2 -> (dbseek (xfilial ("SB2") + m->d3_cod + _sAlmRetr, .F.))
-			u_help ("O produto retrabalhado (" + alltrim (m->d3_cod) + ") deve estar disponivel no almoxarifado '" + _sAlmRetr + "', pois o apontamento de uma OP de retrabalho precisa gerar transferencia para o almoxarifado de integracao com o FullWMS, e neste caso nao ha de onde fazer essa transferencia.",, .t.)
+			u_help ("Item retrabalhado (" + alltrim (m->d3_cod) + ") deve estar disponivel no almoxarifado '" + _sAlmRetr + "', pois o apontamento de uma OP de retrabalho precisa gerar transferencia para o almoxarifado de integracao com o FullWMS, e neste caso nao ha de onde fazer essa transferencia.",, .t.)
 			_lRet = .F.
 		else
 			_nSalDisp = sb2 -> b2_qatu - sb2 -> b2_reserva - sb2 -> b2_qaclass
 			if m->d3_perda > _nSalDisp
-				u_help ("Saldo disponivel (" + cvaltochar (_nSalDisp) + ") do produto '" + alltrim (m->d3_cod) + "' no almoxarifado '" + _sAlmRetr + "' deve ser no minimo " + cvaltochar (m->d3_perda) + ", pois essa quantidade precisa ser transferida para o almoxarifado de integracao com FullWMS para entrada na expedicao.",, .t.)
+				u_help ("Sld.disp.(" + cvaltochar (_nSalDisp) + ") do prod." + alltrim (m->d3_cod) + " no ax " + _sAlmRetr + " deve ser no minimo " + cvaltochar (m->d3_perda) + ", pois essa quantidade precisa ser transferida para o almoxarifado de integracao com FullWMS para entrada na expedicao.",, .t.)
 				_lRet = .F.
 			endif
 		endif
 	endif
-//	u_logFim ()
 return _lRet

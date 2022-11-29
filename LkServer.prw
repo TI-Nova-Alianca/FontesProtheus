@@ -91,8 +91,8 @@ user function LkServer (_sQualSrv)
 
 	case upper (alltrim (_sQualSrv)) == 'TI'
 		if _lBaseTST
-			u_help ("Sem definicao de linked server para database TI para ambiente de testes.",, .t.)
-			_sRetLk = ""
+			U_Log2 ('aviso', '[' + procname () + ']Usando o mesmo linked server da producao para database TI, pois nao tenho nada do tipo TI_TESTE')
+			_sRetLk = "LKSRV_TI.TI.dbo"
 		else
 			_sRetLk = "LKSRV_TI.TI.dbo"
 		endif

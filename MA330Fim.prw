@@ -12,9 +12,6 @@
 // --------------------------------------------------------------------------
 user function MA330FIM ()
 	local _aAreaAnt := U_ML_SRArea ()
-	u_LogIni ()
-	u_log ('mv_par20:', mv_par20)
-	u_log ('Filial atual:', cFilAnt, xfilial ("CT2"))
 
 	Processa({|| U_CtbMedio (.T.)}, "Ajustando lctos contabeis")
 
@@ -27,7 +24,6 @@ user function MA330FIM ()
 	_AtuSB2 ()
 
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
 return
 
 
