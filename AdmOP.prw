@@ -53,6 +53,7 @@
 // 04/08/2020 - Robert  - Usuario deve pertencer ao grupo 117 do ZZU para permitir alteracoes (nao mais pelos grupos do configurador).
 // 20/04/2022 - Robert  - Removidos logs desnecessarios.
 // 04/05/2022 - Robert  - Desabilitado botao 'ajuste empenhos formulacao' (ninguem mais usa e nunca funcionou bem) - GLPI 11997
+// 29/11/2022 - Robert  - Botao 'imprime OP' passa a ser liberado para todos os usuarios.
 //
 
 #include "rwmake.ch"
@@ -272,11 +273,11 @@ static function _Tela (_lAltera)
 		_bBotaoOK  = {|| _oDlg:End ()}
 		_bBotaoCan = {|| _oDlg:End ()}
 		_aBotAdic  = {}
+		aadd (_aBotAdic, {"", {|| U_ImpOP (_sOP, _sOP)}, "&Imprime OP"})
 		if _lAltera
 			aadd (_aBotAdic, {"", {|| processa ({|| U_LibOpPr (_sOP, _sOP)})},     "Liberar p/producao"})
 		//	aadd (_aBotAdic, {"", {|| U_AdmOPE3 (_sOP)},     "Emp.&Formulacao"})
 			aadd (_aBotAdic, {"", {|| U_AdmOPAE ()},         "&Empenhos"})
-			aadd (_aBotAdic, {"", {|| U_ImpOP (_sOP, _sOP)}, "&Imprime OP"})
 			aadd (_aBotAdic, {"", {|| U_AdmOPAP ()},         "&Perdas"})
 			aadd (_aBotAdic, {"", {|| U_AdmOPIM ()},         "&Req/devol"})
 			aadd (_aBotAdic, {"", {|| U_AdmOPEn ()},         "&Apont/Encer"})
