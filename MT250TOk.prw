@@ -78,7 +78,7 @@ user function mt250tok ()
 			_lRet = .F.
 		endif
 	endif
-    
+
 	if _lRet .and. (m->d3_qtganho > 0 .or. m->d3_qtmaior > 0) .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + m->d3_cod, "B1_TIPO") == 'PA'  
 		u_help ("Para produto acabado nao deve ser produzida quantidade acima do previsto na OP.",, .t.)
 		_lRet = .F.
@@ -107,13 +107,6 @@ user function mt250tok ()
 	if _lRet
 		_lRet = _VerRetr ()
 	endif
-
-	// Desabilitado por que a demora nao era aqui.
-	// // Deixa registro pronto (a ser 'fechado' pelo P.E. SD3250i) para medicao de tempo de apontamento de producao.
-	// if _lRet .and. ! empty (m->d3_vaetiq)
-	// 	U_Log2 ('debug', '[' + procname () + ']Criando entrada no PerfMon com chave GravacaoMATA250')
-	// 	U_PerfMon ('I', 'GravacaoMATA250')
-	// endif
 
 	U_ML_SRArea (_aAreaAnt)
 return _lRet
@@ -340,7 +333,6 @@ static function _VerEmpenh ()
 			_sMsgEmp += " contem empenho negativo dos seguintes itens: " + _sEmpNeg
 			_sMsgEmp += ". Se essa for mesmo a intencao, apenas desconsidere esta mensagem."
 			U_Log2 ('aviso', '[' + procname () + ']' + _sMsgEmp)
-//			_lRet = .F.
 
 			// Como ha casos de reprocesso em que amgumas embalagens realmente
 			// voltam para o estoque, optei por apenas notificar. Robert, 25/10/22

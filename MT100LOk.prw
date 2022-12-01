@@ -80,6 +80,7 @@
 // 25/08/2021 - Claudia - Incluido validação para a chamada do programa FBTRS006.GLPI: 10802
 // 23/08/2022 - Robert  - Passa a aceitar CFOP de industrializacao para outros tipos alem de BN (GLPI 12509)
 // 29/08/2022 - Robert  - Criada validacao para exigir F4_ESTOQUE=S quando tiver D1_ORDEM.
+// 30/11/2022 - Robert  - Passa a exigir dados de rastreabilidade para tipos de nota (antes era apenas cTipo=N)
 //
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -493,7 +494,8 @@ return _lRet
 static function _VerLotes (_lTransFil, _lVA_Retor)
 	local _lRet    := .T.
 
-	if _lRet .and. ! _lVA_Retor .and. cTipo == 'N' .and. (empty (GDFieldGet ("D1_LOTEFOR")) .or. empty (GDFieldGet ("D1_DTVALID"))) .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_RASTRO") == "L" 
+//	if _lRet .and. ! _lVA_Retor .and. cTipo == 'N' .and. (empty (GDFieldGet ("D1_LOTEFOR")) .or. empty (GDFieldGet ("D1_DTVALID"))) .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_RASTRO") == "L" 
+	if _lRet .and. ! _lVA_Retor .and. (empty (GDFieldGet ("D1_LOTEFOR")) .or. empty (GDFieldGet ("D1_DTVALID"))) .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_RASTRO") == "L" 
 		if fBuscaCpo ("SF4", 1, xfilial ("SF4") + GDFieldGet ("D1_TES"), "F4_ESTOQUE") == "S"
 			u_help ("O produto '" + GDFieldGet ("D1_COD") + "' possui controle de lotes. O lote do fornecedor (campo '" + alltrim (RetTitle ("D1_LOTEFOR")) + "') e data de validade (campo '" + alltrim (RetTitle ("D1_DTVALID")) + "') devem ser informados para possibilitar a rastreabilidade.")
 			_lRet = .F.
