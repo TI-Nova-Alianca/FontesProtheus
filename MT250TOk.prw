@@ -78,7 +78,7 @@ user function mt250tok ()
 			_lRet = .F.
 		endif
 	endif
-    
+
 	if _lRet .and. (m->d3_qtganho > 0 .or. m->d3_qtmaior > 0) .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + m->d3_cod, "B1_TIPO") == 'PA'  
 		u_help ("Para produto acabado nao deve ser produzida quantidade acima do previsto na OP.",, .t.)
 		_lRet = .F.

@@ -8,6 +8,7 @@
 // 16/09/2022 - Robert - Iniciada validacao de saldos com FullWMS (GLPI 12612)
 // 27/09/2022 - Robert - Envia comparativo estq.Full x Protheus para todos os itens, mesmo sem diferenca de saldo.
 // 03/10/2022 - Robert - Desabilitado envio de comparativo de estoques ateh melhorarmos a leitura do Full.
+// 30/11/2022 - Robert - Permite cancelamento somente apos cancelamento no Full (antes permitia para grupo 029)
 //
 
 // --------------------------------------------------------------------------
@@ -59,12 +60,12 @@ User Function CargFull (_sQueFazer)
 			_oSQL:_sQuery +=    " and status  != '9'"
 			if _oSQL:RetQry () > 0
 				_sMsg = "Separacao consta no Fullsoft. Exclua, antes, a solicitacao no Fullsoft."
-				if U_ZZUVL ('029', __cUserId, .F.)
-					_lContinua = U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
-				else
+//				if U_ZZUVL ('029', __cUserId, .F.)
+//					_lContinua = U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
+//				else
 					u_help (_sMsg)
 					_lContinua = .F.
-				endif
+//				endif
 			endif
 
 			if _lContinua
