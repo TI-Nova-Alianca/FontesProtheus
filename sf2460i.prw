@@ -147,6 +147,7 @@
 // 28/07/2022 - Claudia - Incluida a gravação de historico para e-commerce/pagar-me. GLPI: 12392
 // 30/08/2022 - Claudia - Incluida a gravação das contas para titulos pagar-me. GLPI: 12280
 // 11/11/2022 - Robert  - Gera títulos e msg adicional cobranca ST para MG (GLPI 12779)
+// 01/12/2022 - Robert  - Gravava E1_COMIS1...5 indevidamente na funcao _TitSTMG().
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -860,6 +861,11 @@ static function _TitSTMG ()
 		aAdd(_aAutoSE1, {"E1_ORIGEM"   , 'MATA460'             , Nil})
 		aAdd(_aAutoSE1, {"E1_EMISSAO"  , sf2 -> f2_emissao     , Nil})
 		aAdd(_aAutoSE1, {"E1_VENCTO"   , sf2 -> f2_emissao + 15, Nil})
+		aAdd(_aAutoSE1, {"E1_COMIS1"   , 0                     , Nil})
+		aAdd(_aAutoSE1, {"E1_COMIS2"   , 0                     , Nil})
+		aAdd(_aAutoSE1, {"E1_COMIS3"   , 0                     , Nil})
+		aAdd(_aAutoSE1, {"E1_COMIS4"   , 0                     , Nil})
+		aAdd(_aAutoSE1, {"E1_COMIS5"   , 0                     , Nil})
 		aAdd(_aAutoSE1, {"E1_VENCREA"  , DataValida (sf2 -> f2_emissao + 15), Nil})
 		aAdd(_aAutoSE1, {"E1_HIST"     , 'Valor ST MG antecipacao'          , Nil})
 		_aAutoSE1 := aclone (U_OrdAuto (_aAutoSE1))
