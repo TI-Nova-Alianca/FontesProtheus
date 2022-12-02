@@ -30,70 +30,293 @@ User Function claudia ()
 	//u_help("Saldos iniciais")
 	//U_SaldosIniciais()
 
-	u_help("Busca utilização do fonte")
-	_RotinaUsada()
+	//u_help("Busca utilização do fonte")
+	//_RotinaUsada()
+
+	// Atualiza produto x fornecedor
+	//u_help("Atualiza produto x fornecedor")
+	//
+
+	//u_help("GrupoTIB1")
+	//_GrupoTIB1()
 
 Return
-
-Static Function _RotinaUsada()
-	Local _i := 0
-	Local _x := 0
-
-    // Le planilha .csv
-    _aDados = U_LeCSV ('C:\Temp\rotinas.csv', ';')
+// //
+// // ----------------------------------------------------------------------
+// // Altera grupo TI de produtos
+// Static Function _GrupoTIB1()
+//     Local oModel        := Nil
+// 	Local _x            := 0
+// 	Local _aSucos       := {}
+// 	//lOCAL _aNectar      := {}
+//     Private lMsErroAuto := .F.
      
-	nHandle := FCreate("c:\temp\logRotinas.csv")
+// 	// //Suco grupo 0004
+// 	// _oSQL:= ClsSQL ():New ()
+// 	// _oSQL:_sQuery := ""
+// 	// _oSQL:_sQuery += " SELECT "
+// 	// _oSQL:_sQuery += "       B1_COD "
+// 	// _oSQL:_sQuery += " 		,B1_DESC "
+// 	// _oSQL:_sQuery += " 		,B1_POSIPI "
+// 	// _oSQL:_sQuery += " FROM SB1010 "
+// 	// _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+// 	// _oSQL:_sQuery += " AND B1_POSIPI = '20096100' "
+//     // _aSucos := aclone(_oSQL:Qry2Array())
 
-    For _i := 1 to len (_aDados)
-		_sRotina := UPPER(ALLTRIM(_aDados[_i, 1]))
+//     // for _x := 1 to len (_aSucos)
+// 	// 	_sProd   := _aSucos[_x, 1]
 
-		_oSQL:= ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT 
-		_oSQL:_sQuery += " 	MAX(CAST(ENTRADA AS DATE)) "
-		_oSQL:_sQuery += "    ,ROTINA "
-		_oSQL:_sQuery += " FROM VA_USOROT "
-		_oSQL:_sQuery += " WHERE ENTRADA >= '20200101'"
-		_oSQL:_sQuery += " AND UPPER(ROTINA) IN ('"+_sRotina+"')"
-		_oSQL:_sQuery += " GROUP BY ROTINA "
-		_oSQL:_sQuery += " ORDER BY ROTINA "
-		_aRot := aclone(_oSQL:Qry2Array())
+// 	// 	//Posiciona
+// 	// 	DbSelectArea("SB1")
+// 	// 	DbSetOrder(1)
 
-		If len(_aRot) > 0
-			For _x := 1 to len(_aRot)
-				_sRet := _sRotina +";"+dtoc(_aRot[_x,1]) + chr (13) + chr (10)
-			Next
-		else
-			_oSQL:= ClsSQL ():New ()
-			_oSQL:_sQuery := ""
-			_oSQL:_sQuery += "  SELECT * FROM SX3010 "
-			_oSQL:_sQuery += " 	WHERE D_E_L_E_T_ = '' "
-			_oSQL:_sQuery += " 	AND X3_VALID <> '' "
-			_oSQL:_sQuery += " 	AND UPPER(X3_VALID) LIKE '%"+_sRotina+"%'"
-			_aSX3 := aclone(_oSQL:Qry2Array())
+// 	// 	u_log("Produto " + _sProd)
+// 	// 	If SB1->(DbSeek(xFilial("SB1") + _sProd))
+// 	// 		_sGrpTIOld := SB1->B1_GRPTI
+// 	// 		_sGrupoTI  := '0004'    
 
-			If len(_aSX3) > 0
-				_sRet := _sRotina + ';SX3' + chr (13) + chr (10)
-			else
-				_oSQL:= ClsSQL ():New ()
-				_oSQL:_sQuery := ""
-				_oSQL:_sQuery += "  SELECT * FROM SX7010 "
-				_oSQL:_sQuery += "  WHERE D_E_L_E_T_ = '' "
-				_oSQL:_sQuery += "  AND UPPER(X7_REGRA) LIKE '%"+_sRotina+"%'"
-				_aSX7 := aclone(_oSQL:Qry2Array())
+// 	// 		oModel:= FwLoadModel ("MATA010")
+// 	// 		oModel:SetOperation(4)
+// 	// 		oModel:Activate()
+			
+// 	// 		// inclui os cmapos para alteração
+// 	// 		oModel:SetValue("SB1MASTER","B1_GRPTI",_sGrupoTI)
+			
+// 	// 		If oModel:VldData()
+// 	// 			oModel:CommitData()
 
-				If len(_aSX7) > 0
-					_sRet := _sRotina + ';SX7' + chr (13) + chr (10)
-				else
-					_sRet := _sRotina + chr (13) + chr (10)
-				EndIf
-			EndIf
-		EndIf
-		FWrite(nHandle,_sRet )
-	Next
-	U_HELP("FEITO!")
-	FClose(nHandle)
-Return
+// 	// 			_oEvento := ClsEvent():new ()
+// 	// 			_oEvento:Alias    = 'SB1'
+// 	// 			_oEvento:Texto    = "B1_GRPTI DE " + _sGrpTIOld + " PARA " + _sGrupoTI 
+// 	// 			_oEvento:CodEven  = "SB1001"
+// 	// 			_oEvento:Produto  = _sProd
+// 	// 			_oEvento:Grava() 
+
+// 	// 			u_log("Registro ALTERADO!")
+// 	// 		Else
+// 	// 			VarInfo("",oModel:GetErrorMessage())
+// 	// 			u_log("Deu erro")
+// 	// 		EndIf
+
+// 	// 		oModel:DeActivate()
+// 	// 	endif
+// 	// Next 
+// 	//u_help("Finalizou grupo 0004") 
+
+// 	//
+// 	//
+// 	//---------------------------------------------------------------------------------------
+
+// 	// // Nectar grupo 0005
+// 	// _oSQL:= ClsSQL ():New ()
+// 	// _oSQL:_sQuery := ""
+// 	// _oSQL:_sQuery += " SELECT "
+// 	// _oSQL:_sQuery += "       B1_COD "
+// 	// _oSQL:_sQuery += " 		,B1_DESC "
+// 	// _oSQL:_sQuery += " 		,B1_POSIPI "
+// 	// _oSQL:_sQuery += " FROM SB1010 "
+// 	// _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+// 	// _oSQL:_sQuery += " AND B1_POSIPI = '22029900' "
+// 	// _oSQL:_sQuery += " AND B1_VAATO = 'S' "
+//     // _aNectar := aclone(_oSQL:Qry2Array())
+
+//     // for _x := 1 to len (_aNectar)
+// 	// 	_sProd   := _aNectar[_x, 1]
+
+// 	// 	//Posiciona
+// 	// 	DbSelectArea("SB1")
+// 	// 	DbSetOrder(1)
+
+// 	// 	u_log("Produto " + _sProd)
+// 	// 	If SB1->(DbSeek(xFilial("SB1") + _sProd))
+// 	// 		_sGrpTIOld := SB1->B1_GRPTI
+// 	// 		_sGrupoTI  := '0005'    
+
+// 	// 		oModel:= FwLoadModel ("MATA010")
+// 	// 		oModel:SetOperation(4)
+// 	// 		oModel:Activate()
+			
+// 	// 		// inclui os cmapos para alteração
+// 	// 		oModel:SetValue("SB1MASTER","B1_GRPTI",_sGrupoTI)
+			
+// 	// 		If oModel:VldData()
+// 	// 			oModel:CommitData()
+
+// 	// 			_oEvento := ClsEvent():new ()
+// 	// 			_oEvento:Alias    = 'SB1'
+// 	// 			_oEvento:Texto    = "B1_GRPTI DE " + _sGrpTIOld + " PARA " + _sGrupoTI 
+// 	// 			_oEvento:CodEven  = "SB1001"
+// 	//          _oEvento:Produto  = _sProd
+// 	// 			_oEvento:Grava() 
+
+// 	// 			u_log("Registro ALTERADO!")
+// 	// 		Else
+// 	// 			VarInfo("",oModel:GetErrorMessage())
+// 	// 			u_log("Deu erro")
+// 	// 		EndIf
+
+// 	// 		oModel:DeActivate()
+// 	// 	endif
+// 	// Next 
+
+
+// 	// // u_help("finalizou")
+// 	// u_help("Finalizou grupo 0005") 
+
+// 	// //GRUPO IPI
+// 	// _oSQL:= ClsSQL ():New ()
+// 	// _oSQL:_sQuery := ""
+// 	// _oSQL:_sQuery += " SELECT "
+// 	// _oSQL:_sQuery += "       B1_COD "
+// 	// _oSQL:_sQuery += " 		,B1_DESC "
+// 	// _oSQL:_sQuery += " 		,B1_POSIPI "
+// 	// _oSQL:_sQuery += " FROM SB1010 "
+// 	// _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+// 	// _oSQL:_sQuery += " AND B1_IPI > 0"
+// 	// _oSQL:_sQuery += " AND B1_TIPO NOT IN ('PA','MR') "
+// 	// _oSQL:_sQuery += " AND B1_GRPTI <> '0001'"
+//     // _aSucos := aclone(_oSQL:Qry2Array())
+
+//     // for _x := 1 to len (_aSucos)
+// 	// 	_sProd   := _aSucos[_x, 1]
+
+// 	// 	//Posiciona
+// 	// 	DbSelectArea("SB1")
+// 	// 	DbSetOrder(1)
+
+// 	// 	u_log("Produto " + _sProd)
+// 	// 	If SB1->(DbSeek(xFilial("SB1") + _sProd))
+// 	// 		_sGrpTIOld := SB1->B1_GRPTI
+// 	// 		_sGrupoTI  := '0001'    
+
+// 	// 		oModel:= FwLoadModel ("MATA010")
+// 	// 		oModel:SetOperation(4)
+// 	// 		oModel:Activate()
+			
+// 	// 		// inclui os cmapos para alteração
+// 	// 		oModel:SetValue("SB1MASTER","B1_GRPTI",_sGrupoTI)
+			
+// 	// 		If oModel:VldData()
+// 	// 			oModel:CommitData()
+
+// 	// 			_oEvento := ClsEvent():new ()
+// 	// 			_oEvento:Alias    = 'SB1'
+// 	// 			_oEvento:Texto    = "B1_GRPTI DE " + _sGrpTIOld + " PARA " + _sGrupoTI 
+// 	// 			_oEvento:CodEven  = "SB1001"
+// 	// 			_oEvento:Produto  = _sProd
+// 	// 			_oEvento:Grava() 
+
+// 	// 			u_log("Registro ALTERADO!")
+// 	// 		Else
+// 	// 			VarInfo("",oModel:GetErrorMessage())
+// 	// 			u_log("Deu erro")
+// 	// 		EndIf
+
+// 	// 		oModel:DeActivate()
+// 	// 	endif
+// 	// Next 
+// 	// u_help("Finalizou") 
+
+// Return 
+//
+//
+//
+// Static Function _ProdXFornece()
+// 	local _aDados := {}
+// 	local _x      := 0
+
+// 	_oSQL:= ClsSQL ():New ()
+// 	_oSQL:_sQuery := ""
+// 	_oSQL:_sQuery += " SELECT "
+// 	_oSQL:_sQuery += " 	   A5_FILIAL "
+// 	_oSQL:_sQuery += "    ,A5_FORNECE "
+// 	_oSQL:_sQuery += "    ,A5_LOJA "
+// 	_oSQL:_sQuery += "    ,A5_PRODUTO "
+// 	_oSQL:_sQuery += " FROM SA5010 "
+// 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+// 	_oSQL:_sQuery += " AND A5_CODPRF = '' "
+// 	_oSQL:_sQuery += " AND A5_NOMEFOR LIKE '%COOP.%' "
+// 	_aDados := aclone(_oSQL:Qry2Array())
+
+// 	For _x:=1 to Len(_aDados)
+		
+// 		DbSelectArea("SA5")
+// 		DbSetOrder(1) // filial + fornece +loja + produto
+// 		if DbSeek(_aDados[_x,1] + _aDados[_x,2] +_aDados[_x,3] +_aDados[_x,4] ,.F.)
+// 			reclock("SA5", .F.)
+// 				SA5->A5_CODPRF := _aDados[_x,4]
+// 			MsUnLock()
+
+// 			_oEvento := ClsEvent():new ()
+// 			_oEvento:Alias    = 'SA5'
+// 			_oEvento:Texto    = "Inclusão de produto em produto X fornecedor " 
+// 			_oEvento:CodEven  = "SA5004"
+// 			_oEvento:Produto  = _aDados[_x,4]
+// 			_oEvento:Grava() 
+// 		endif	
+// 	Next
+// 	u_help("Feito")
+// Return
+
+// Static Function _RotinaUsada()
+// 	Local _i := 0
+// 	Local _x := 0
+
+//     // Le planilha .csv
+//     _aDados = U_LeCSV ('C:\Temp\rotinas.csv', ';')
+     
+// 	nHandle := FCreate("c:\temp\logRotinas.csv")
+
+//     For _i := 1 to len (_aDados)
+// 		_sRotina := UPPER(ALLTRIM(_aDados[_i, 1]))
+
+// 		_oSQL:= ClsSQL ():New ()
+// 		_oSQL:_sQuery := ""
+// 		_oSQL:_sQuery += " SELECT 
+// 		_oSQL:_sQuery += " 	MAX(CAST(ENTRADA AS DATE)) "
+// 		_oSQL:_sQuery += "    ,ROTINA "
+// 		_oSQL:_sQuery += " FROM VA_USOROT "
+// 		_oSQL:_sQuery += " WHERE ENTRADA >= '20200101'"
+// 		_oSQL:_sQuery += " AND UPPER(ROTINA) IN ('"+_sRotina+"')"
+// 		_oSQL:_sQuery += " GROUP BY ROTINA "
+// 		_oSQL:_sQuery += " ORDER BY ROTINA "
+// 		_aRot := aclone(_oSQL:Qry2Array())
+
+// 		If len(_aRot) > 0
+// 			For _x := 1 to len(_aRot)
+// 				_sRet := _sRotina +";"+dtoc(_aRot[_x,1]) + chr (13) + chr (10)
+// 			Next
+// 		else
+// 			_oSQL:= ClsSQL ():New ()
+// 			_oSQL:_sQuery := ""
+// 			_oSQL:_sQuery += "  SELECT * FROM SX3010 "
+// 			_oSQL:_sQuery += " 	WHERE D_E_L_E_T_ = '' "
+// 			_oSQL:_sQuery += " 	AND X3_VALID <> '' "
+// 			_oSQL:_sQuery += " 	AND UPPER(X3_VALID) LIKE '%"+_sRotina+"%'"
+// 			_aSX3 := aclone(_oSQL:Qry2Array())
+
+// 			If len(_aSX3) > 0
+// 				_sRet := _sRotina + ';SX3' + chr (13) + chr (10)
+// 			else
+// 				_oSQL:= ClsSQL ():New ()
+// 				_oSQL:_sQuery := ""
+// 				_oSQL:_sQuery += "  SELECT * FROM SX7010 "
+// 				_oSQL:_sQuery += "  WHERE D_E_L_E_T_ = '' "
+// 				_oSQL:_sQuery += "  AND UPPER(X7_REGRA) LIKE '%"+_sRotina+"%'"
+// 				_aSX7 := aclone(_oSQL:Qry2Array())
+
+// 				If len(_aSX7) > 0
+// 					_sRet := _sRotina + ';SX7' + chr (13) + chr (10)
+// 				else
+// 					_sRet := _sRotina + chr (13) + chr (10)
+// 				EndIf
+// 			EndIf
+// 		EndIf
+// 		FWrite(nHandle,_sRet )
+// 	Next
+// 	U_HELP("FEITO!")
+// 	FClose(nHandle)
+// Return
 // //
 // //
 // User Function SaldosIniciais()
@@ -112,13 +335,13 @@ Return
 // 			zc0 -> zc0_codred := _sRede
 // 			zc0 -> zc0_lojred := _sLoja
 // 			zc0 -> zc0_tm     := '01'
-// 			zc0 -> zc0_data   := STOD('20221031')
+// 			zc0 -> zc0_data   := STOD('20221130')
 // 			zc0 -> zc0_hora   := Time()
 // 			zc0 -> zc0_user   := 'administrador'
 // 			zc0 -> zc0_histor := 'INCLUSAO DE SALDO INICIAL'
 // 			zc0 -> zc0_seq    := '000001'
 // 			zc0 -> zc0_rapel  := _nValor
-// 			zc0 ->zc0_origem  := 'CLAUDIA'
+// 			zc0 ->zc0_origem  := 'BACA'
 // 		ZC0->(MsUnlock())
 // 	Next
 // 	U_HELP("FEITO!")
@@ -218,42 +441,42 @@ Return
 // Return
 //
 // ------------------------------------------------------------------------------------
-Static Function _AtuRepre()
-	Local _aDados 	:= {}
-	Local _i 		:=0
+// Static Function _AtuRepre()
+// 	Local _aDados 	:= {}
+// 	Local _i 		:=0
 
-	_aDados = U_LeCSV ('C:\Temp\representante.csv', ';')
+// 	_aDados = U_LeCSV ('C:\Temp\representante.csv', ';')
 
-	for _i := 1 to len (_aDados)
-		_sCod  := PADL(_aDados[_i, 1],6,'0')
-		_sVend := PADL(_aDados[_i, 2],3,'0')
-		_sFil  := _aDados[_i, 3]
+// 	for _i := 1 to len (_aDados)
+// 		_sCod  := PADL(_aDados[_i, 1],6,'0')
+// 		_sVend := PADL(_aDados[_i, 2],3,'0')
+// 		_sFil  := _aDados[_i, 3]
 
-		DbSelectArea("SA1")
-		DbSetOrder(1)
-		if DbSeek(xFilial("SA1")+ _sCod,.F.)
-			_sVendOld   := sa1->a1_vend
-			_sFilialOld := sa1->a1_vafilat
+// 		DbSelectArea("SA1")
+// 		DbSetOrder(1)
+// 		if DbSeek(xFilial("SA1")+ _sCod,.F.)
+// 			_sVendOld   := sa1->a1_vend
+// 			_sFilialOld := sa1->a1_vafilat
 
-			reclock("SA1", .F.)
-				SA1->A1_VEND    := _sVend
-				SA1->A1_VAFILAT := _sFil
-			MsUnLock()
+// 			reclock("SA1", .F.)
+// 				SA1->A1_VEND    := _sVend
+// 				SA1->A1_VAFILAT := _sFil
+// 			MsUnLock()
 
-			U_AtuMerc ("SA1", sa1 -> (recno ())) // manda p mercanet
+// 			U_AtuMerc ("SA1", sa1 -> (recno ())) // manda p mercanet
 
-			_oEvento := ClsEvent():new ()
-			_oEvento:Alias    = 'SA1'
-			_oEvento:Texto    = " A1_VEND DE " + _sVendOld + " PARA " + _sVend + chr (13) + chr (10) + ;
-								" A1_VAFILAT DE " + _sFilialOld + " PARA " + _sFil 
-			_oEvento:CodEven  = "SA1001"
-			_oEvento:Cliente  = _sCod
-			_oEvento:Grava() 
-		endif	
+// 			_oEvento := ClsEvent():new ()
+// 			_oEvento:Alias    = 'SA1'
+// 			_oEvento:Texto    = " A1_VEND DE " + _sVendOld + " PARA " + _sVend + chr (13) + chr (10) + ;
+// 								" A1_VAFILAT DE " + _sFilialOld + " PARA " + _sFil 
+// 			_oEvento:CodEven  = "SA1001"
+// 			_oEvento:Cliente  = _sCod
+// 			_oEvento:Grava() 
+// 		endif	
 	
-	Next
-	u_help("Atualizado!")
-Return
+// 	Next
+// 	u_help("Atualizado!")
+// Return
 // //
 // //
 // // ----------------------------------------------------------------------------------------
