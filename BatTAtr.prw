@@ -13,6 +13,7 @@
 // 07/04/2020 - Claudia - Alterada a busca do SX5 conforme R25. GLPI: 7339
 // 09/09/2022 - Robert  - Desabilitado envio de copia para o gerente, pois nem mesmo usava a tabela correta.
 //                      - Passa a enviar erros pela classe ClsAviso().
+// 01/12/2022 - Sandra  - Alterado e-mail da rotina 085 do financeiro para o comercial - GLPI 12865
 //
 
 // --------------------------------------------------------------------------
@@ -114,7 +115,7 @@ user function BatTAtr ()
 			// Envia com a conta da Aline para que respondam a ela.
 			u_log2 ('info', "destinatarios:" + _sDest)
 
-			U_SendMail (_sDest, "Verif.diaria - Ctas. receber atrasadas ", _sMsg, {}, "financeiro")
+			U_SendMail (_sDest, "Verif.diaria - Ctas. receber atrasadas ", _sMsg, {}, "Comercial")
 
 			// Dorme por um minuto por que configuramos o servidor de e-mail para nao permitir
 			// envio de muitos e-mails repetidamente, buscando bloquear spams.

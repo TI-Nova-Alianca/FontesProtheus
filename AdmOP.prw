@@ -53,6 +53,7 @@
 // 04/08/2020 - Robert  - Usuario deve pertencer ao grupo 117 do ZZU para permitir alteracoes (nao mais pelos grupos do configurador).
 // 20/04/2022 - Robert  - Removidos logs desnecessarios.
 // 04/05/2022 - Robert  - Desabilitado botao 'ajuste empenhos formulacao' (ninguem mais usa e nunca funcionou bem) - GLPI 11997
+// 29/11/2022 - Robert  - Botao 'imprime OP' passa a ser liberado para todos os usuarios.
 //
 
 #include "rwmake.ch"
@@ -63,13 +64,11 @@
 User Function AdmOP (_sOrdProd, _lAltera)
 	local _aAreaAnt   := U_ML_SRArea ()
 	local _aAmbAnt    := U_SalvaAmb ()
-//	local _nLock      := 0
 	local _lContinua  := .T.
 	local _aCores     := U_AdmOPLg (.T.)
 	local _aIndBrw    := {}  // Para filtragem no browse
 	local _bFilBrw    := {|| Nil}  // Para filtragem no browse
 	local _cCondicao  := ""  // Para filtragem no browse
-//	local _aGrpUsr    := {}
 	private cString   := "SC2"
 	private cCadastro := "Administracao de ordens de producao"
 	private aRotina   := {}
@@ -79,15 +78,6 @@ User Function AdmOP (_sOrdProd, _lAltera)
 
 	// Verifica se o usuario atual pode fazer manutencoes na OP
 	if _lAltera
-//		_aGrpUsr := UsrRetGRP (__cUserID) // Retorna todos os grupos do usuário
-//		if ascan (_aGrpUsr, '000061') == 0 ;  // Controladoria
-//			.and. ascan (_aGrpUsr, '000010') == 0 ;  // PCP
-//			.and. ascan (_aGrpUsr, '000009') == 0 ;  // Custos
-//			.and. ascan (_aGrpUsr, '000006') == 0 ;  // Contabilidade
-//			.and. ascan (_aGrpUsr, '000063') == 0 ;  // Manutencao
-//			.and. ascan (_aGrpUsr, '000000') == 0  // Administradores
-//			_lAltera = .F.
-//		endif
 		_lAltera = u_ZZUVL ('117', __cUserId, .f.)
 	endif
 
@@ -119,7 +109,6 @@ User Function AdmOP (_sOrdProd, _lAltera)
 return
 
 
-
 // --------------------------------------------------------------------------
 // Mostra legenda ou retorna array de cores, cfe. o caso.
 user function AdmOPLg (_lRetCores)
@@ -143,7 +132,6 @@ user function AdmOPLg (_lRetCores)
 		return _aCores
 	endif
 return
-
 
 
 // --------------------------------------------------------------------------
@@ -190,41 +178,18 @@ static function _Tela (_lAltera)
 		_lContinua = .F.
 	endif
 
-//	if _lContinua
-//		_sRevEstru = sc2 -> c2_revisao
-//
-//		// Cria aHeader somente com os campos necessarios
-//		_aCampos = {}
-//		sx3 -> (DbSetOrder (2))
-//		sx3 -> (dbseek ("ZZZ_08", .T.))
-//		do while ! sx3 -> (eof ()) .and. left (sx3 -> x3_campo, 6) == 'ZZZ_08'
-//			If X3USO (sx3 -> X3_USADO) .And. cNivel >= sx3 -> X3_NIVEL
-//				aadd (_aCampos, sx3 -> x3_campo)
-//			Endif
-//			sx3 -> (dbskip ())
-//		enddo
-//		aHeader = aclone (U_GeraHead ("ZZZ", .T., {}, _aCampos, .T.))
-//
-//		aCols = {}
-//		_LeDados ()
-//	endif
-
 	if _lContinua
 		_sRevEstru = sc2 -> c2_revisao
 
 		// Cria aHeader somente com os campos necessarios
 		_aCampos = {}
 		_aCpoSX3 := FwSX3Util():GetAllFields('ZZZ')
-		
 		For i:=1 To Len(_aCpoSX3)
-		
-		    If(X3Uso(GetSx3Cache(_aCpoSX3[i], 'X3_USADO')) .And. cNivel >= GetSx3Cache(_aCpoSX3[i], 'X3_NIVEL') .and. left(GetSx3Cache(_aCpoSX3[i], 'X3_CAMPO'),6) == 'ZZZ_08')
+			If(X3Uso(GetSx3Cache(_aCpoSX3[i], 'X3_USADO')) .And. cNivel >= GetSx3Cache(_aCpoSX3[i], 'X3_NIVEL') .and. left(GetSx3Cache(_aCpoSX3[i], 'X3_CAMPO'),6) == 'ZZZ_08')
 				aadd (_aCampos, GetSx3Cache(_aCpoSX3[i], 'X3_CAMPO'))
-		    Endif
-	
+			Endif
 		Next i
 		aHeader = aclone (U_GeraHead ("ZZZ", .T., {}, _aCampos, .T.))
-
 		aCols = {}
 		_LeDados ()
 	endif
@@ -266,17 +231,15 @@ static function _Tela (_lAltera)
                                     _oDlg,; // [ oWnd ]
                                     _aHead1,; // [ ParHeader ]
                                     _aCols1) // [ aParCols ]
-		
 
 		// Define botoes para a barra de ferramentas
 		_bBotaoOK  = {|| _oDlg:End ()}
 		_bBotaoCan = {|| _oDlg:End ()}
 		_aBotAdic  = {}
+		aadd (_aBotAdic, {"", {|| U_ImpOP (_sOP, _sOP)}, "&Imprime OP"})
 		if _lAltera
 			aadd (_aBotAdic, {"", {|| processa ({|| U_LibOpPr (_sOP, _sOP)})},     "Liberar p/producao"})
-		//	aadd (_aBotAdic, {"", {|| U_AdmOPE3 (_sOP)},     "Emp.&Formulacao"})
 			aadd (_aBotAdic, {"", {|| U_AdmOPAE ()},         "&Empenhos"})
-			aadd (_aBotAdic, {"", {|| U_ImpOP (_sOP, _sOP)}, "&Imprime OP"})
 			aadd (_aBotAdic, {"", {|| U_AdmOPAP ()},         "&Perdas"})
 			aadd (_aBotAdic, {"", {|| U_AdmOPIM ()},         "&Req/devol"})
 			aadd (_aBotAdic, {"", {|| U_AdmOPEn ()},         "&Apont/Encer"})
@@ -297,9 +260,7 @@ static function _Tela (_lAltera)
 		aadd (_aBotAdic, {"", {|| U_AdmOPEM (_sOP)},        "Lotes/ender.consumidos"})
 		activate dialog _oDlg on init (EnchoiceBar (_oDlg, _bBotaoOK, _bBotaoCan,, _aBotAdic), U_AdmOPAt (.F.))
 	endif
-
 return
-
 
 
 // --------------------------------------------------------------------------
@@ -339,7 +300,7 @@ static function _LeDados ()
 	_oSQL:_sQuery +=    " AND SD3.D3_FILIAL   = '" + xFilial("SD3") + "' "
 	_oSQL:_sQuery +=    " AND SD3.D3_ESTORNO != 'S'"
 	_oSQL:_sQuery +=    " AND SD3.D3_OP       = '" + _sOP + "'"
-	//_oSQL:Log ()
+	_oSQL:Log ()
 	_aRetQry  = aclone (_oSQL:Qry2Array ())
 	_dPrimMov = stod (_aRetQry [1, 1])
 	_dUltMov  = stod (_aRetQry [1, 2])
@@ -469,8 +430,9 @@ static function _LeDados ()
 
 	// Ordena aCols pela coluna do codigo do componente.
 	aCols = asort (aCols,,, {|_x, _y| _x [GDFieldPos ("ZZZ_08COD")] < _y [GDFieldPos ("ZZZ_08COD")]})
-
 return
+
+
 // --------------------------------------------------------------------------
 // Atualiza toda a tela. Chamada principalmente por gatilhos.
 user function AdmOPAt (_lLeDados)
@@ -525,9 +487,7 @@ user function AdmOPAt (_lLeDados)
 		_oTxtBrw6:SetText ('Qt.prod. maior: ' + transform (_nQtAMaior,      "@E 999,999,999.99") + ' ' + sb1 -> b1_um + ' (' + transform (_nQtAMaior      * sb1 -> b1_litros, "@E 9999999") + ' litros)   Obs. da OP..: ' + alltrim (sc2 -> c2_obs)) 
 		_oTxtBrw7:SetText ('Qt.ganho prod.: ' + transform (_nQtGanho,       "@E 999,999,999.99") + ' ' + sb1 -> b1_um + ' (' + transform (_nQtGanho       * sb1 -> b1_litros, "@E 9999999") + ' litros)')
 	endif
-
 return _xDado
-
 
 
 // --------------------------------------------------------------------------
@@ -550,7 +510,6 @@ user function AdmOPAE ()
 return
 
 
-
 // --------------------------------------------------------------------------
 // Etiquetas com problemas.
 user function AdmOPEP ()
@@ -570,7 +529,6 @@ user function AdmOPEP ()
 return
 
 
-
 // --------------------------------------------------------------------------
 // Etiquetas pallets.
 user function AdmOPEt ()
@@ -585,7 +543,6 @@ user function AdmOPEt ()
  	U_ML_SRArea (_aAreaAnt)
 	U_AdmOPAt (.T.)
 return
-
 
 
 // --------------------------------------------------------------------------
@@ -609,7 +566,6 @@ user function AdmOPIM ()
 return
 
 
-
 // --------------------------------------------------------------------------
 // Inclui apontamento de perda na OP.
 user function AdmOPAP ()
@@ -631,7 +587,6 @@ user function AdmOPAP ()
 return
 
 
-
 // --------------------------------------------------------------------------
 // Apontamentos/ encerramento.
 user function AdmOPEn ()
@@ -651,7 +606,6 @@ user function AdmOPEn ()
  	U_ML_SRArea (_aAreaAnt)
 	U_AdmOPAt (.T.)
 return
-
 
 
 // --------------------------------------------------------------------------
@@ -689,7 +643,6 @@ user function AdmOPRe ()
  	U_ML_SRArea (_aAreaAnt)
 	U_AdmOPAt (.T.)
 return
-
 
 
 // --------------------------------------------------------------------------
@@ -739,7 +692,6 @@ user function AdmOPDV (_sOP)
 return
 
 
-
 // --------------------------------------------------------------------------
 // Consulta enderecos (de estoque) movimentados pela OP.
 user function AdmOPEM (_sOP)
@@ -773,131 +725,6 @@ user function AdmOPEM (_sOP)
 return
 
 
-/*
-// --------------------------------------------------------------------------
-// Ajuste empenhos por 'regra de 3' de acordo com a quantidade produzida.
-// Criado inicialmente para OPs de formulacao, onde a quantidade final dificilmente
-// fica de acordo com a prevista, bem como os insumos variam muito por que sao
-// usados para 'corrigir' o produto (acidez, brix, etc.)
-user function AdmOPE3 (_sOP)
-	local _aAreaAnt  := U_ML_SRArea ()
-	local _aAmbAnt   := U_SalvaAmb ()
-	local _lContinua := .T.
-	local aC         := {}
-	local aR         := {}
-	local _aJanela   := {}
-	local aCGD       := {}
-	local _nLinGD    := 0
-	private aHeader  := {}
-	private aCols    := {}
-	private aGets    := {}
-	private aTela    := {}
-	private nOpc     := 4
-//	private N        := 1
-	private _nQtFinal  := sc2 -> c2_quant  // Deixar private para ser vista pela funcao Modelo2().
-	private _sErroAuto := ''  // Deixar private para ser alimentada em subrotinas.
-	private _lRetAjSD4 := .T.  // Deixar private para ser alimentada em subrotinas.
-
-	if sc2 -> c2_quje != 0
-		u_help ("OP ja teve apontamentos. O ajuste de empenhos por esta rotina nao pode ser feito.")
-		_lContinua = .F.
-	endif
-
-	// Monta tela 'modelo 2' para alteracao de quantidade produzida / empenhos.
-	if _lContinua
-		aHeader := aclone (U_GeraHead ('ZZZ', .F., NIL, {'ZZZ_10COD', 'ZZZ_10DESC', 'ZZZ_10QTD', 'ZZZ_10UM', 'ZZZ_10ALM', 'ZZZ_10END', 'ZZZ_10LOTE', 'ZZZ_10RECN'}, .T.))
-		aCols = {}
-		sb1 -> (dbsetorder (1))
-		sd4 -> (dbsetorder (2))  // D4_FILIAL+D4_OP+D4_COD+D4_LOCAL
-		sd4 -> (dbseek (xfilial ("SD4") + _sOP, .T.))
-		do while ! sd4 -> (eof ()) .and. sd4 -> d4_op == _sOP
-			if sd4 -> d4_quant != sd4 -> d4_qtdeori
-				u_help ("Saldo do empenho do produto '" + (sd4 -> d4_cod) + "' diferente do original. O ajuste de empenhos por esta rotina nao pode ser feito.")
-				_lContinua = .F.
-				exit
-			endif
-			if sd4 -> d4_quant > 0
-				if ! sb1 -> (dbseek (xfilial ("SB1") + sd4 -> d4_cod, .F.))
-					u_help ("Componente '" + (sd4 -> d4_cod) + "' nao encontrado no cadastro!")
-					_lContinua = .F.
-					exit
-				endif
-//				if ascan (aCols, {|_aVal| _aVal [GDFieldPos ('ZZZ_10COD')] == sd4 -> d4_cod}) > 0
-//					u_help ("Produto '" + alltrim (sd4 -> d4_cod) + "' repetido nos empenhos desta OP. Aglutine os empenhos antes de usar esta rotina.")
-				if ascan (aCols, {|_aVal| _aVal [GDFieldPos ('ZZZ_10COD')] == sd4 -> d4_cod .and. _aVal [GDFieldPos ('ZZZ_10LOTE')] == sd4 -> d4_lotectl}) > 0
-					u_help ("Produto '" + alltrim (sd4 -> d4_cod) + "' repetido com lote '" + alltrim (sd4 -> d4_lotectl) + "' nos empenhos desta OP. Aglutine os empenhos antes de usar esta rotina.")
-					_lContinua = .F.
-				else
-					aadd (aCols, aclone (U_LinVazia (aHeader)))
-					N = len (aCols)
-					GDFieldPut ('ZZZ_10COD',  sd4 -> d4_cod)
-			//		GDFieldPut ('ZZZ_10DESC', fbuscacpo ("SB1", 1, xfilial ("SB1") + sd4 -> d4_cod, 'B1_DESC'))
-					GDFieldPut ('ZZZ_10ALM',  sd4 -> d4_local)
-					GDFieldPut ('ZZZ_10QTD',  sd4 -> d4_quant)
-					GDFieldPut ('ZZZ_10UM',   fbuscacpo ("SB1", 1, xfilial ("SB1") + sd4 -> d4_cod, 'B1_UM'))
-					GDFieldPut ('ZZZ_10END',  sd4 -> d4_vaend)
-					GDFieldPut ('ZZZ_10LOTE', sd4 -> d4_lotectl)
-					GDFieldPut ('ZZZ_10RECN', sd4 -> (recno ()))
-				endif
-				sd4 -> (dbskip ())
-			endif
-		enddo
-		if _lContinua
-			if len (aCols) == 0
-				aadd (aCols, aclone (U_LinVazia (aHeader)))
-			endif
-	
-			// Variaveis do cabecalho da tela:
-			aC:={}
-			aadd (aC, {"_nQtFinal", {15, 50}, "Qt.final OP", "@E 999,999,999.99", "U_ADMOPVQF()", "", .T.})
-	
-			aR := {}
-			_aJanela := {100, 50, oMainWnd:nClientHeight - 50, oMainWnd:nClientWidth - 50}  // Janela (dialog) do modelo2
-			aCGD := {55,20,118,315}
-			_lContinua = Modelo2 (cCadastro, ;  // Titulo
-			                      aC, ;  // Cabecalho
-			                      aR, ;  // Rodape
-			                      aCGD, ;  // Coordenadas da getdados
-			                      nOpc, ;  // nOPC
-			                      'U_AdmOPE3L ()', ;  // Linha OK
-			                      'U_AdmOPE3T ()', ;  // Tudo OK
-			                      , ;  // Gets editaveis
-			                      , ;  // bloco codigo para tecla F4
-			                      , ;  // Campos inicializados
-			                      9999, ;  // Numero maximo de linhas
-			                      _aJanela, ;  // Coordenadas da janela
-			                      .T.)  // Linhas podem ser deletadas.
-		endif
-	endif
-
-	if _lContinua
-
-		// Se o usuario informou que vai produzir uma quantidade diferente da prevista, calcula novas quantidades dos empenhos por 'regra de 3'.
-		if _nQtFinal != sc2 -> c2_quant
-			for _nLinGD = 1 to len (aCols)
-				GDFieldPut ("ZZZ_10QTD", (GDFieldGet ("ZZZ_10QTD", _nLinGD) * sc2 -> c2_quant) / _nQtFinal, _nLinGD)
-				
-				// Se a quantidade ficar pequena demais, exclui o empenho.
-				if round (GDFieldGet ("ZZZ_10QTD", _nLinGD), tamsx3 ("D4_QUANT")[2]) == 0
-					aCols [_nLinGD, len (aCols [_nLinGD])] = .T.
-				endif
-			next
-		endif
-
-		processa ({||_lRetAjSD4 := _AjSD4 (_sOP)})
-		if _lRetAjSD4
-			u_help ("Ajuste de empenhos efetuado com sucesso.")
-		else
-			u_help ("Problema no ajuste dos empenhos da OP:" + _sErroAuto)
-		endif
-
-	endif
-	U_SalvaAmb (_aAmbAnt)
-	U_ML_SRArea (_aAreaAnt)
-return
-*/
-
-
 // --------------------------------------------------------------------------
 // Usa validacao do campo da q.final para ajustar empenho da mao de obra.
 user function ADMOPVQF ()
@@ -916,103 +743,6 @@ user function ADMOPVQF ()
 return .T.
 
 
-/*
-// --------------------------------------------------------------------------
-static function _AjSD4 (_sOP)
-	local _aAutoSD4  := {}
-	local _oEvento   := NIL
-	local _lContinua := .T.
-	local _nLinGD    := 0
-	local _nBkpN     := N
-
-	N := 0  // QUERO que ocorra erro se eu tiver esquecido de indexar alguma funcao GD*
-
-	procregua (len (aCols))
-
-	// Faz todos os ajustes dentro de uma mesma transacao para manter 'tudo ou nada'.
-	for _nLinGD = 1 to len (aCols)
-//		N := _nLinha 
-		if ! _lContinua
-			exit
-		endif
-		incproc ("Verificando " + GDFieldGet ("ZZZ_10COD", _nLinGD))
-
-		_oEvento := ClsEvent():new ()
-		_oEvento:CodEven = "SD4001"
-		_oEvento:OP      = _sOP
-		_oEvento:Texto   = "Aj.emp.furmul. Qt.final OP:" + cvaltochar (_nQtFinal) + ';'
-
-		lMsErroAuto = .F.
-		_aAutoSD4 = {}
-		aadd (_aAutoSD4, {"D4_OP",      _sOP,                     NIL})
-		aadd (_aAutoSD4, {"D4_COD",     GDFieldGet ("ZZZ_10COD", _nLinGD), NIL})
-		aadd (_aAutoSD4, {"D4_LOCAL",   GDFieldGet ("ZZZ_10ALM", _nLinGD), NIL})
-
-		if GDFieldGet ("ZZZ_10RECN", _nLinGD) == 0
-			if GDDeleted (_nLinGD)
-				loop
-			else
-				aadd (_aAutoSD4, {"D4_DATA",    FBuscaCpo ("SC2", 1, xfilial ("SC2") + _sOP, "C2_DATPRI") ,Nil})
-				aadd (_aAutoSD4, {"D4_QTDEORI", GDFieldGet ("ZZZ_10QTD", _nLinGD), NIL})
-				aadd (_aAutoSD4, {"D4_QUANT",   GDFieldGet ("ZZZ_10QTD", _nLinGD), NIL})
-				if ! empty (GDFieldGet ("ZZZ_10LOTE", _nLinGD))
-					aadd (_aAutoSD4, {"D4_LOTECTL", GDFieldGet ("ZZZ_10LOTE", _nLinGD), NIL})
-				endif
-				if ! empty (GDFieldGet ("ZZZ_10END", _nLinGD))
-					aadd (_aAutoSD4, {"D4_VAEND",   GDFieldGet ("ZZZ_10END", _nLinGD), NIL})
-				endif
-				_oEvento:Texto   += "Incluindo empenho prod." + alltrim (GDFieldGet ("ZZZ_10COD", _nLinGD)) + " Almox." + GDFieldGet ("ZZZ_10ALM", _nLinGD) + " Qt:" + cvaltochar (GDFieldGet ("ZZZ_10QTD", _nLinGD))
-				_oEvento:Produto := GDFieldGet ("ZZZ_10COD", _nLinGD)
-				MATA380 (_aAutoSD4, 3)
-			endif
-		else
-			sd4 -> (dbgoto (GDFieldGet ("ZZZ_10RECN", _nLinGD)))
-			if GDDeleted (_nLinGD)
-				_oEvento:Texto   += "Excluindo empenho prod." + alltrim (sd4 -> d4_cod) + " Almox/qt:" + sd4 -> d4_local + " / " + cvaltochar (sd4 -> d4_quant)
-				_oEvento:Produto := sd4 -> d4_cod
-				MATA380 (_aAutoSD4, 5)
-			else
-				if sd4 -> d4_local     != GDFieldGet ("ZZZ_10ALM",  _nLinGD) ;
-				.or. sd4 -> d4_quant   != GDFieldGet ("ZZZ_10QTD",  _nLinGD) ;
-				.or. sd4 -> d4_lotectl != GDFieldGet ("ZZZ_10LOTE", _nLinGD) ;
-				.or. sd4 -> d4_vaend   != GDFieldGet ("ZZZ_10END",  _nLinGD)  // Se mudou alguma coisa...
-					
-					// Se estou aumentando o empenho, preciso aumentar antes a quantidade original
-					// Se estou diminuindo o empenho, preciso diminuir antes o saldo do empenho.
-					if GDFieldGet ("ZZZ_10QTD", _nLinGD) > sd4 -> d4_quant
-						aadd (_aAutoSD4, {"D4_QTDEORI", GDFieldGet ("ZZZ_10QTD", _nLinGD), NIL})
-						aadd (_aAutoSD4, {"D4_QUANT",   GDFieldGet ("ZZZ_10QTD", _nLinGD), NIL})
-					else
-						aadd (_aAutoSD4, {"D4_QUANT",   GDFieldGet ("ZZZ_10QTD", _nLinGD), NIL})
-						aadd (_aAutoSD4, {"D4_QTDEORI", GDFieldGet ("ZZZ_10QTD", _nLinGD), NIL})
-					endif
-					if GDFieldGet ("ZZZ_10END") != sd4 -> d4_vaend
-						aadd (_aAutoSD4, {"D4_VAEND",   GDFieldGet ("ZZZ_10END", _nLinGD), NIL})
-					endif
-					if GDFieldGet ("ZZZ_10LOTE") != sd4 -> d4_lotectl
-						aadd (_aAutoSD4, {"D4_LOTECTL", GDFieldGet ("ZZZ_10LOTE", _nLinGD), NIL})
-					endif
-					_oEvento:Texto   += "Alterando empenho prod." + alltrim (GDFieldGet ("ZZZ_10COD", _nLinGD)) + "-alm.de:" + sd4 -> d4_local + " para:" + GDFieldGet ("ZZZ_10ALM", _nLinGD) + " qt.de:" + cvaltochar (sd4 -> d4_quant) + " para:" + cvaltochar (GDFieldGet ("ZZZ_10QTD", _nLinGD))
-					_oEvento:Produto := sd4 -> d4_cod
-					MATA380 (_aAutoSD4, 4)
-				else
-					loop
-				endif
-			endif
-		endif
-		if lMSErroAuto
-			_lContinua = .F.
-			_sErroAuto := memoread (NomeAutoLog ())
-		else
-			_oEvento:Grava ()
-		endif
-	next
-
-	N = _nBkpN
-return _lContinua
-*/
-
-
 // --------------------------------------------------------------------------
 // Valida 'Linha OK' da tela de manutencao de empenhos.
 user function AdmOPE3L ()
@@ -1021,7 +751,6 @@ user function AdmOPE3L ()
 		_lRet = GDCheckKey ({"ZZZ_10COD"}, 4)
 	endif
 return _lRet
-
 
 
 // --------------------------------------------------------------------------
