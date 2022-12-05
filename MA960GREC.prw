@@ -18,6 +18,7 @@
 // 01/08/2022 - Claudia - Incluida regra para PE. GLPI: 12371
 // 01/09/2022 - Claudia - Ajustada a regra MT conforme GLPI: 12542
 // 29/09/2022 - Claudia - Incluida a validacao AL. GLPI: 12666
+// 05/12/2022 - Sandra  - Incluida a validacao RN. GLPI: 12860
 //
 //---------------------------------------------------------------------------------
 #include "protheus.ch" 
@@ -48,6 +49,9 @@ User Function MA960GREC()
 
         Case Alltrim(cReceita) $ '100099/100102/100110/100129' .and. cUF == 'RJ'   
             aParam := {24, '2', '', 0, ''} 
+
+        Case Alltrim(cReceita) $ '100102' .and. cUF == 'RN'   
+            aParam := {22, '2', '', 0, ''}     
 
         Case Alltrim(cReceita) $ '100099/100102/100129' .and. cUF == 'PE'   
             aParam := {24, '2', '', 0, ''} 
