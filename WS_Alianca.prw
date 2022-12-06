@@ -104,6 +104,8 @@
 //                        barras embalagem coletiva.
 // 04/11/2022 - Claudia - Incluido nome do vendedor na consulta _PedidosBloq/BuscaPedidosBloqueados. GLPI: 12764
 // 09/11/2022 - Robert  - Criada acao ImprimeEtiquetaZAG (GLPI 12773)
+// 05/12/2022 - Robert  - Criada acao InutilizaEtiqueta.
+//                      - Criada tag ObrigarBarrasProd na impressao de etiquetas.
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -254,6 +256,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 				_ImpEtiq ()
 			case _sAcao == 'ImprimeEtiquetaZAG'
 				_ImpEtiqZAG ()
+			case _sAcao == 'InutilizaEtiqueta'
+				_InutEtiq ()
 			case _sAcao == 'TesteRobert'
 				_TstRobert ()
 			otherwise
@@ -2477,9 +2481,11 @@ return
 static function _ImpEtiq ()
 	local _sEtiq    := ''
 	local _sCodImpr := ''
+	local _sCBProd  := ''
 
-	if empty (_sErroWS) ; _sEtiq    = _ExtraiTag ("_oXML:_WSAlianca:_Etiqueta",      .T., .F.) ; endif
-	if empty (_sErroWS) ; _sCodImpr = _ExtraiTag ("_oXML:_WSAlianca:_CodImpressora", .T., .F.)  ; endif
+	if empty (_sErroWS) ; _sEtiq    = _ExtraiTag ("_oXML:_WSAlianca:_Etiqueta",          .T., .F.) ; endif
+	if empty (_sErroWS) ; _sCodImpr = _ExtraiTag ("_oXML:_WSAlianca:_CodImpressora",     .T., .F.) ; endif
+	if empty (_sErroWS) ; _sCBProd  = _ExtraiTag ("_oXML:_WSAlianca:_ObrigarBarrasProd", .F., .F.) ; endif
 
 	// Validacao inicial do numero da etiqueta.
 	if empty (_sErroWS)
@@ -2487,6 +2493,12 @@ static function _ImpEtiq ()
 		if _oEtiq:Codigo != _sEtiq
 			_sErroWS += "Numero de etiqueta invalido."
 		else
+			
+			// Eventualmente posso obrigar a listar as barras do produto.
+			if _sCBProd == 'S'
+				_oEtiq:ImprCBProd = 'S'
+			endif
+			
 			if ! _oEtiq:Imprime (_sCodImpr)
 				_sErroWS += 'Erro na rotina de impressao'
 			else
@@ -2533,6 +2545,29 @@ static function _ImpEtiqZAG ()
 						_sMsgRetWS += _oEtiq:UltMsg
 					endif
 				endif
+			endif
+		endif
+	endif
+return
+
+
+// --------------------------------------------------------------------------
+// Inutiliza uma etiqueta da tabela ZA1.
+static function _InutEtiq ()
+	local _sEtiq    := ''
+
+	if empty (_sErroWS) ; _sEtiq    = _ExtraiTag ("_oXML:_WSAlianca:_Etiqueta",      .T., .F.) ; endif
+
+	// Validacao inicial do numero da etiqueta.
+	if empty (_sErroWS)
+		_oEtiq := ClsEtiq ():New (_sEtiq)
+		if _oEtiq:Codigo != _sEtiq
+			_sErroWS += "Numero de etiqueta invalido."
+		else
+			if ! _oEtiq:Inutiliza (.F.)
+				_sErroWS += _oEtiq:UltMsg
+			else
+				_sMsgRetWS += _oEtiq:UltMsg
 			endif
 		endif
 	endif

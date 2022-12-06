@@ -338,7 +338,7 @@ static function _VerEmpenh ()
 			// voltam para o estoque, optei por apenas notificar. Robert, 25/10/22
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'A'
-			_oAviso:DestinZZU  = {'047', '122'}  // 047 = Grupo do PCP; 122=TI apenas para testes
+			_oAviso:DestinZZU  = {'047'}  // 047 = Grupo do PCP
 			_oAviso:Titulo     = _sMsgEmp
 			_oAviso:Texto      = "Verificado durante o apontamento"
 			if ! empty (m->d3_vaetiq)

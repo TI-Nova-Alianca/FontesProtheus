@@ -546,7 +546,8 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 		_oEtiq:Quantidade  = ::QtdSolic
 		_oEtiq:AlmDest     = ::AlmDest
 		_oEtiq:AlmOrig     = ::AlmOrig
-		_oEtiq:LoteProduto = ::LoteDest
+		_oEtiq:LoteProduto = alltrim (::LoteDest)
+		U_Log2 ('debug', '[' + procname () + ']LoteProduto:  >>' + _oEtiq:LoteProduto + "<<")
 	//	_oEtiq:ValidLote   = ?
 
 		if _oEtiq:Grava ()

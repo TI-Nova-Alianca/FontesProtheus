@@ -220,11 +220,11 @@ user function ImpZA1 (_sIdImpr, _oEtiq)
 
 			// Adiciona 'miolo' da etiqueta, formatado conforme o tipo de aplicacao da etiqueta
 			if ! empty (_oEtiq:OP)  //ZA1 -> ZA1_OP)
-				_sTxtEtiq += _FmtOP (_oEtiq:FinalidOP)
+				_sTxtEtiq += _FmtOP (_oEtiq)
 			elseif ! empty (_oEtiq:IdZAG)  //ZA1 -> ZA1_IdZAG)
-				_sTxtEtiq += _FmtZAG ()
+				_sTxtEtiq += _FmtZAG (_oEtiq)
 			elseif ! empty (_oEtiq:DocEntrNum) .or. ! empty (_oEtiq:D5_NUMSEQ)  //ZA1 -> ZA1_DOCE)
-				_sTxtEtiq += _FmtNF ()
+				_sTxtEtiq += _FmtNF (_oEtiq)
 			else
 				u_help ("Sem definicao de formatacao de etiqueta deste tipo na Sato.",, .t.)
 			endif
@@ -245,11 +245,11 @@ user function ImpZA1 (_sIdImpr, _oEtiq)
 			
 			// Adiciona 'miolo' da etiqueta, formatado conforme o tipo de aplicacao da etiqueta
 			if ! empty (_oEtiq:OP)  //ZA1 -> ZA1_OP)
-				_sTxtEtiq += _FmtOP ()
+				_sTxtEtiq += _FmtOP (_oEtiq)
 			elseif ! empty (_oEtiq:IdZAG)  //ZA1 -> ZA1_IdZAG)
-				_sTxtEtiq += _FmtZAG ()
+				_sTxtEtiq += _FmtZAG (_oEtiq)
 			elseif ! empty (_oEtiq:DocEntrNum) .or. ! empty (_oEtiq:D5_NUMSEQ)  //ZA1 -> ZA1_DOCE)
-				_sTxtEtiq += _FmtNF ()
+				_sTxtEtiq += _FmtNF (_oEtiq)
 			else
 				u_help ("Sem definicao de formatacao de etiqueta deste tipo na Datamax.",, .t.)
 			endif
@@ -267,11 +267,11 @@ user function ImpZA1 (_sIdImpr, _oEtiq)
 
 			// Adiciona 'miolo' da etiqueta, formatado conforme o tipo de aplicacao da etiqueta
 			if ! empty (_oEtiq:OP)
-				_sTxtEtiq += _FmtOP ()
+				_sTxtEtiq += _FmtOP (_oEtiq)
 			elseif ! empty (_oEtiq:IdZAG)
-				_sTxtEtiq += _FmtZAG ()
+				_sTxtEtiq += _FmtZAG (_oEtiq)
 			elseif ! empty (_oEtiq:DocEntrNum) .or. ! empty (_oEtiq:D5_NUMSEQ)
-				_sTxtEtiq += _FmtNF ()
+				_sTxtEtiq += _FmtNF (_oEtiq)
 			else
 				u_help ("Sem definicao de formatacao de etiqueta deste tipo na Elgin.",, .t.)
 			endif
@@ -314,7 +314,7 @@ Return _lContinua
 
 // --------------------------------------------------------------------------
 // Formatacao da etiqueta quando destina-se a OP
-static function _FmtOP (_sFinOP)
+static function _FmtOP (_oEtiq)
 	local _nMargEsq   := 0
 	local _nMargSup   := 0
 	local _sFmtOP     := ''
@@ -322,7 +322,7 @@ static function _FmtOP (_sFinOP)
 
 	// Ateh este momento, o procedimento para OPs feitas em terceiros eh apontar 'de mentirinha'
 	// como se tivesse sido produzida aqui, e enviar para a logistica. Robert, 24/10/2022
-	if _sFinOP == 'E' .or. GetMv ("VA_ETQOCBP") == 'S'
+	if _oEtiq:FinalidOP == 'E' .or. GetMv ("VA_ETQOCBP") == 'S' .or. _oEtiq:ImprCBProd == 'S'
 		_lBarProdu = .T.
 	endif
 
@@ -401,7 +401,7 @@ return _sFmtOP
 
 // --------------------------------------------------------------------------
 // Formatacao da etiqueta quando destina-se a uma transferencia da tabela ZAG
-static function _FmtZAG ()
+static function _FmtZAG (_oEtiq)
 	local _nMargEsq   := 0
 	local _nMargSup   := 0
 	local _sFmtZAG    := ''
@@ -469,7 +469,7 @@ return _sFmtZAG
 
 // --------------------------------------------------------------------------
 // Formatacao da etiqueta quando originada por NF de entrada.
-static function _FmtNF ()
+static function _FmtNF (_oEtiq)
 	local _nMargEsq   := 0
 	local _nMargSup   := 0
 	local _sFmtNF     := ''
