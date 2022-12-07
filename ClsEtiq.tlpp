@@ -66,6 +66,7 @@ CLASS ClsEtiq
 	public  data IdZAG        // ZA1_IDZAG - Identificador de registro da tabela ZAG
 	public  data Impressa     // ZA1_IMPRES - Jah impressa
 	public  data Inutilizada  // ZA1_APONT='I' - Indica que foi inutilizada manualmente
+	public  data ImprCBProd   // Indica se deve obrigatoriamente imprimir o cod.barras do produto.
 	public  data LoteProduto
 	public  data OP           // ZA1_OP
 	public  data Produto      // ZA1_PROD
@@ -193,6 +194,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 	::IdZAG        = ''
 	::Impressa     = 'N'
 	::Inutilizada  = .F.
+	::ImprCBProd   = 'N'
 	::LoteProduto  = ''
 	::OP           = ''
 	::Produto      = ''
@@ -819,7 +821,7 @@ METHOD EnviaFull (_lMsg) Class ClsEtiq
 		_oSQL:_sQuery += " insert into tb_wms_etiquetas (id, coditem, lote, qtde, validade, empresa, cd, status)"
 		_oSQL:_sQuery += " values (" + cvaltochar (::Codigo) + ","
 		_oSQL:_sQuery +=          "'" + alltrim (::Produto) + "',"
-		_oSQL:_sQuery +=          "'" + ::LoteProduto + "',"
+		_oSQL:_sQuery +=          "'" + alltrim (::LoteProduto) + "',"
 		_oSQL:_sQuery +=          cvaltochar (::Quantidade) + ","
 		_oSQL:_sQuery +=          "'" + dtos (::ValidLote) + "',"
 		_oSQL:_sQuery +=          "'01',"

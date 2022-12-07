@@ -57,8 +57,9 @@ User Function Verif (_nQual, _aParam)
 
 		// Monta lista das verificacoes disponiveis.
 		_aVerif = {}
-		_oVerif := ClsVerif ():New (1)
+		_oVerif := ClsVerif ():New () //1)
 		_nUltVerif = _oVerif:UltVerif
+		U_Log2 ('debug', '[' + procname () + ']ultima verif:' + cvaltochar (_nUltVerif))
 		for _nVerif = 1 to _nUltVerif
 			_oVerif := ClsVerif ():New(_nVerif)
 			if _oVerif:Ativa .and. (_oVerif:Filiais == '*' .or. cFilAnt $ _oVerif:Filiais)

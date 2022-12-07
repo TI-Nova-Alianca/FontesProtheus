@@ -93,13 +93,25 @@ user function robert ()
 		// _gerasze ()
 		// _AtuSB1 ()
 		// _ctbanc ()
-		//_ST_MG ()
+		// _ST_MG ()
 		// _PreNF ()
 
 		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
+return
+
+user function PEEXT006 ()
+	local _nItem := 0
+	local _sProduto := ''
+	U_Log2 ('debug', '[' + procname () + ']')
+	u_showarray (paramixb)
+	for _nItem = 1 to len (paramixb [1])
+		U_Log2 ('debug', paramixb [1, _nItem])
+		_sProduto = paramixb [1, _nItem, 1, 2]
+		U_Log2 ('debug', '[' + procname () + ']B1_RASTRO para o item ' + _sProduto + ': ' + fBuscaCpo ("SB1", 1, xfilial ("SB1") + _sProduto, "B1_RASTRO"))
+	next
 return
 
 // --------------------------------------------------------------------------
@@ -145,7 +157,7 @@ return
 // --------------------------------------------------------------------------
 static function _ST_MG ()
 	SF2 -> (dbgoto (636425))
-	_TitSTMG ()
+	_TitSTMG ()  // static function do SF2460I
 return
 
 // --------------------------------------------------------------------------
@@ -761,9 +773,9 @@ static function _Etiq ()
 //	_oEtiq:Imprime ('01')
 //	_oEtiq := ClsEtiq ():New ('2000519769')  // Etiq gerada pelo ZAG
 //	_oEtiq:Imprime ('01')
-	_oEtiq := ClsEtiq ():New ('2000562699')
-	u_log (_oEtiq:Inutiliza (.f.))
-	//_oEtiq:Imprime ('98')
+	_oEtiq := ClsEtiq ():New ('2000574686')
+	//_oEtiq:ImprCBProd = 'S'
+	_oEtiq:Imprime ('98')
 //	_oEtiq:ApontaOP (date(), '1')
 
 //	sd5 -> (dbgoto (509183))
