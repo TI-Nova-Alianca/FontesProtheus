@@ -10,6 +10,7 @@
 // #Modulos 		  #FAT 
 //
 // Historico de alteracoes:
+// 07/12/2022 - Claudia - Retirado quebras/somatorios por filial. GLPI 12885 
 //
 // --------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -63,7 +64,7 @@ Static Function PrintReport(oReport)
     _oSQL:= ClsSQL ():New ()
     _oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT "
-    _oSQL:_sQuery += "     ZC0_FILIAL "
+    _oSQL:_sQuery += "     '' "
     _oSQL:_sQuery += "    ,ZC0.ZC0_CODRED "
     _oSQL:_sQuery += "    ,SA1.A1_NOME "
     _oSQL:_sQuery += "    ,ROUND(SUM(CASE "
@@ -81,15 +82,14 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += " 		AND ZX5.ZX5_CHAVE  = ZC0_TM "
     _oSQL:_sQuery += " WHERE ZC0.D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " AND ZC0_RAPEL > 0 "
-    _oSQL:_sQuery += " GROUP BY ZC0_FILIAL "
-    _oSQL:_sQuery += " 		   ,ZC0.ZC0_CODRED "
+    _oSQL:_sQuery += " GROUP BY ZC0.ZC0_CODRED "
     _oSQL:_sQuery += " 		   ,SA1.A1_NOME "
-    _oSQL:_sQuery += " ORDER BY ZC0_FILIAL, ZC0.ZC0_CODRED, SA1.A1_NOME "
+    _oSQL:_sQuery += " ORDER BY ZC0.ZC0_CODRED, SA1.A1_NOME "
 	_aZC0 := aclone (_oSQL:Qry2Array ())
 
 	For _x:=1 to Len(_aZC0)
 
-		oSection1:Cell("COLUNA1")	:SetBlock   ({|| _aZC0[_x, 1] }) 		
+		//oSection1:Cell("COLUNA1")	:SetBlock   ({|| _aZC0[_x, 1] }) 		
 		oSection1:Cell("COLUNA2")	:SetBlock   ({|| _aZC0[_x, 2] }) 		
 		oSection1:Cell("COLUNA3")	:SetBlock   ({|| _aZC0[_x, 3] }) 		
 		oSection1:Cell("COLUNA4")	:SetBlock   ({|| _aZC0[_x, 4] }) 		

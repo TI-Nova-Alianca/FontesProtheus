@@ -10,6 +10,7 @@
 // #Modulos 		  #FAT 
 //
 // Historico de alteracoes:
+// 07/12/2022 - Claudia - Retirado quebras/somatorios por filial.  GLPI 12885
 //
 // --------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -41,17 +42,16 @@ Static Function ReportDef()
 	
 	oSection1 := TRSection():New(oReport,,{}, , , , , ,.T.,.F.,.F.) 
 	
-	TRCell():New(oSection1,"COLUNA1", 	"" ,"Filial"			,	    					, 8,/*lPixel*/,{||  },"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA2", 	"" ,"Rede"				,       					,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA3", 	"" ,"Nome"				,       					,50,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA4", 	"" ,"Cliente"			,       					,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA5", 	"" ,"Data"  			,       					,12,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA6", 	"" ,"Documento"  		,		       				,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA7", 	"" ,"Vlr.Rapel"			, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA1", 	"" ,"Rede"				,       					,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA2", 	"" ,"Nome"				,       					,50,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA3", 	"" ,"Cliente"			,       					,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA4", 	"" ,"Data"  			,       					,12,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA5", 	"" ,"Documento"  		,		       				,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA6", 	"" ,"Vlr.Rapel"			, "@E 999,999,999.99"   	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 
-	oBreak1 := TRBreak():New(oSection1,oSection1:Cell("COLUNA2"),"Total")
+	oBreak1 := TRBreak():New(oSection1,oSection1:Cell("COLUNA1"),"Total")
    
-    TRFunction():New(oSection1:Cell("COLUNA7")  ,,"SUM" ,oBreak1,""          , "@E 99,999,999.99", NIL, .F., .T.)
+    TRFunction():New(oSection1:Cell("COLUNA6")  ,,"SUM" ,oBreak1,""          , "@E 99,999,999.99", NIL, .F., .T.)
 
 Return(oReport)
 //
@@ -67,8 +67,7 @@ Static Function PrintReport(oReport)
     _oSQL:= ClsSQL ():New ()
     _oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT "
-    _oSQL:_sQuery += " 	   ZC0_FILIAL "
-    _oSQL:_sQuery += "    ,ZC0_CODRED "
+    _oSQL:_sQuery += " 	   ZC0_CODRED "
     _oSQL:_sQuery += "    ,SA1.A1_NOME "
     _oSQL:_sQuery += "    ,ZC0_CODCLI "
     _oSQL:_sQuery += "    ,ZC0.ZC0_DATA "
@@ -83,19 +82,17 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += " 		AND SA1.A1_COD = ZC0.ZC0_CODRED "
     _oSQL:_sQuery += " WHERE ZC0.D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " AND ZC0.ZC0_TM IN ('02', '03') "
-    _oSQL:_sQuery += " AND ZC0.ZC0_FILIAL BETWEEN '" + mv_par01      + "' AND '" + mv_par02       + "' "
-    _oSQL:_sQuery += " AND ZC0_NFEMIS     BETWEEN '"+ dtos(mv_par03) + "' AND '" + dtos(mv_par04) + "' "
-    _oSQL:_sQuery += " AND ZC0.ZC0_DATA   BETWEEN '"+ dtos(mv_par03) + "' AND '" + dtos(mv_par04) + "' "
+    _oSQL:_sQuery += " AND ZC0_NFEMIS     BETWEEN '"+ dtos(mv_par01) + "' AND '" + dtos(mv_par02) + "' "
+    _oSQL:_sQuery += " AND ZC0.ZC0_DATA   BETWEEN '"+ dtos(mv_par01) + "' AND '" + dtos(mv_par02) + "' "
     _oSQL:_sQuery += " AND ZC0_RAPEL > 0 "
-    _oSQL:_sQuery += " GROUP BY ZC0_FILIAL "
-    _oSQL:_sQuery += " 		,ZC0_CODRED "
+    _oSQL:_sQuery += " GROUP BY ZC0_CODRED "
     _oSQL:_sQuery += " 		,ZC0_CODCLI "
     _oSQL:_sQuery += " 		,SA1.A1_NOME "
     _oSQL:_sQuery += " 		,ZC0.ZC0_DATA "
     _oSQL:_sQuery += " 		,ZC0_DOC "
     _oSQL:_sQuery += " 		,ZC0.ZC0_SERIE "
     _oSQL:_sQuery += " 		,ZC0.ZC0_TM "
-    _oSQL:_sQuery += " ORDER BY ZC0_FILIAL, ZC0.ZC0_DATA, ZC0.ZC0_DOC "
+    _oSQL:_sQuery += " ORDER BY ZC0.ZC0_DATA, ZC0.ZC0_DOC "
 
 	_aZC0 := aclone (_oSQL:Qry2Array ())
 
@@ -106,8 +103,7 @@ Static Function PrintReport(oReport)
 		oSection1:Cell("COLUNA3")	:SetBlock   ({|| _aZC0[_x, 3] }) 		
 		oSection1:Cell("COLUNA4")	:SetBlock   ({|| _aZC0[_x, 4] }) 		
 		oSection1:Cell("COLUNA5")	:SetBlock   ({|| _aZC0[_x, 5] }) 		
-		oSection1:Cell("COLUNA6")	:SetBlock   ({|| _aZC0[_x, 6] }) 		
-		oSection1:Cell("COLUNA7")	:SetBlock   ({|| _aZC0[_x, 7] }) 	
+		oSection1:Cell("COLUNA6")	:SetBlock   ({|| _aZC0[_x, 6] }) 	
 		
 		oSection1:PrintLine()
 	Next
@@ -120,10 +116,8 @@ Return
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT             TIPO TAM DEC VALID F3     Opcoes                      Help
-    aadd (_aRegsPerg, {01, "Filial de        ", "C", 2, 0,  "",   "   "     , {},                         		 ""})
-	aadd (_aRegsPerg, {02, "Filial até       ", "C", 2, 0,  "",   "   "     , {},                         		 ""})
-    aadd (_aRegsPerg, {03, "Data de          ", "D", 8, 0,  "",   "   "     , {},                         		 ""})
-    aadd (_aRegsPerg, {04, "Data até         ", "D", 8, 0,  "",   "   "     , {},                         		 ""})
+    aadd (_aRegsPerg, {01, "Data de          ", "D", 8, 0,  "",   "   "     , {},                         		 ""})
+    aadd (_aRegsPerg, {02, "Data até         ", "D", 8, 0,  "",   "   "     , {},                         		 ""})
 
     U_ValPerg (cPerg, _aRegsPerg)
 Return
