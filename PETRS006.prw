@@ -14,7 +14,9 @@
 
 // Historico de alteracoes:
 // 28/11/2022 - Claudia - Acrescentada a gravação do campo F1_VAFLAG. GLPI: 12841
+// 06/12/2022 - Robert  - Gravacao do campo D1_DESCRI
 //
+
 // -------------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
 #Include "RwMake.ch"
@@ -28,17 +30,35 @@ User Function PETRS006()
 	local _aRet      := {}
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aAmbAnt   := U_SalvaAmb ()
+	Local nPosProd 	:= 0
 
 	// Grava flag de identificação
 	AADD(_aCabec, {"F1_VAFLAG"	,'P',Nil})
 
-	// Deve sempre retornar cabecalho e itens.
-	_aRet := {_aCabec,_aLinha}
+	//U_Log2 ('debug', '[' + procname () + ']_aLinha antes:')
+	//U_Log2 ('debug', _aLinha)
 
-	U_Log2 ('debug', '[' + procname () + ']')
+	// Preenche descricao do produto
+	If aScan(_aLinha,{|x| x[1] == "D1_COD"}) > 0 
+		nPosProd := aScan(_aLinha,{|x| x[1] == "D1_COD"})
+		SB1->(dbSetOrder(1))
+		If SB1->(MsSeek(xFilial('SB1') + PadR(_aLinha[nPosProd, 2], TamSX3('B1_COD')[1])))
+			AADD(_aLinha, {"D1_DESCRI"	,sb1 -> b1_desc	,Nil})
+		else
+			//U_Log2 ('aviso', '[' + procname () + ']Nao achei o produto')
+		endif
+	else
+		//U_Log2 ('aviso', '[' + procname () + ']Nao encontrei D1_COD na array')
+	EndIf
+
+	//U_Log2 ('debug', '[' + procname () + ']_aLinha depois:')
+	//U_Log2 ('debug', _aLinha)
 
 	// Grava alguns eventos e logs.
 	_Logs (_aCabec, _lManut, _lEscrit)
+
+	// Deve sempre retornar cabecalho e itens.
+	_aRet := {_aCabec,_aLinha}
 
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
@@ -133,7 +153,6 @@ User Function PETRS006()
 		Else
 			AADD(_aLinha, {"D1_DESCRI"	,SB1->B1_DESC 	,Nil}) // FARINA - PRENTISS
 		EndIf
-		AADD(_aLinha, {"D1_XDESCRI"	,SB1->B1_DESC 	,Nil}) // HDA
 		AADD(_aLinha, {"D1_RDESCR "	,SB1->B1_DESC 	,Nil}) // RUGERI
 
 		If lManut 
