@@ -659,7 +659,8 @@ return
 METHOD RetFixo (_nRetFixo, _sMsgFixo, _lMsgTela) Class ClsSQL
 	local _aRetFixo  := NIL
 	local _sErrRetFx := ''
-	_aRetFixo := ::Qry2Array (.T., .F.)
+//	_aRetFixo := ::Qry2Array (.T., .F.)
+	_aRetFixo := ::Qry2Array (.F., .F.)
 	_lMsgTela = iif (_lMsgTela == NIL, .T., _lMsgTela)
 	if len (_aRetFixo) != _nRetFixo
 		_sErrRetFx := "Foram encontrados "
@@ -668,10 +669,10 @@ METHOD RetFixo (_nRetFixo, _sMsgFixo, _lMsgTela) Class ClsSQL
 		_sErrRetFx += " do que o esperado (" + cvaltochar (_nRetFixo) + ") "
 		_sErrRetFx += _sMsgFixo
 		_aRetFixo = {}
+		U_Log2 ('erro', _sErrRetFx + ' - '+ ::_sQuery)
 		if _lMsgTela
 			u_help (_sErrRetFx, ::_sQuery, .T.)
 		else
-			U_Log2 ('aviso', _sErrRetFx + ' - '+ ::_sQuery)
 			if type ("_sErroAuto") == "C"  // Variavel private (customizada) para retorno de erros em rotinas automaticas.
 				_sErroAuto += iif (empty (_sErroAuto), '', '; ') + _sErrRetFx
 			endif

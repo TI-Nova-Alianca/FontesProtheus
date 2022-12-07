@@ -38,7 +38,7 @@ user function ConsEstq (_sFilial, _sProduto, _sLocal, _sGrpLib)
 		if _sGrpLib == '*' .or. (! empty (_sGrpLib) .and. u_zzuvl (_sGrpLib, __cUserId, .F.))
 			_lRet = U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
 		else
-			u_help (_sMsg)
+			u_help (_sMsg,, .F.)
 			_lRet = .F.
 		endif
 	endif

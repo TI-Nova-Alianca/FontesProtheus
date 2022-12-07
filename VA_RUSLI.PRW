@@ -142,14 +142,14 @@ user function va_rusLI (_nPesagem, _lSimular)
 	// Tratamento para dados retornados pelo sistema de inspecao
 	if _lContinua
 		if _nPesagem == 1
-			if ! _aRusInsp [.InspecoesSafraSituacao] $ "LIB/SEG/CON/INS"
+			if ! _aRusInsp [.InspecoesSafraSituacao] $ "LIB/SEG/CON/INS/AUT"
 				_sMsg = "Carga nao localizada ou com status '" + _aRusInsp [.InspecoesSafraSituacao] + "' no sistema de agendamento / inspecao. Somente cargas com status LIB (liberadas), SEG (segregadas), CON (concluidas), INS (inspecionadas) na inspecao de patio devem ser recebidas. Se voce continuar o recebimento, pode nao ser possivel ler as inspecoes a partir do sistema de agenda/inspecao, podendo afetar a classificacao final da uva."
 				if ! _lSimular
 					_lContinua = U_MsgNoYes (_sMsg + " Deseja continuar assim mesmo?")
 					if _lContinua
 						_oEvento := ClsEvent ():New ()
 						_oEvento:Alias   = 'SZE'
-						_oEvento:Texto   = 'Recebimento da carga ' + sze -> ze_carga + ' sem leitura do status no NaWeb'
+						_oEvento:Texto   = 'Recebimento da carga ' + sze -> ze_carga + ' sem leitura do status no siatema de agendamento'
 						_oEvento:CodEven = 'SZE002'
 						_oEvento:Fornece = sze -> ze_assoc
 						_oEvento:LojaFor = sze -> ze_lojasso

@@ -133,6 +133,7 @@
 // 31/08/2022 - Robert  - Melhoria uso classe ClsAviso.
 // 02/09/2022 - Robert  - Nao desconsiderava registros deletados do SX7 na query.
 // 28/09/2022 - Robert  - Gatilho do C2_VABARCX passa a considerar apenas B1_VAFULLW.
+// 07/12/2022 - Robert  - Atualizada chamada funcao classif.uva para safra 2023 (linguagem passou a exigir formato caracter nos parametros)
 //
 
 // --------------------------------------------------------------------------
@@ -719,6 +720,8 @@ user function VA_Gat (_sParCpo, _sParSeq)
 			_xRet = U_ClUva21 (GDFieldGet ("ZF_PRODUTO"), val (m->zf_grau), GDFieldGet ("ZF_CONDUC"), 0, 0, 0, 0, 0) [1]
 		elseif m->ze_safra == '2022'
 			_xRet = U_ClUva22 (GDFieldGet ("ZF_PRODUTO"), val (m->zf_grau), GDFieldGet ("ZF_CONDUC"), 0, 0, 0, 0, 0) [1]
+		elseif m->ze_safra == '2023'
+			_xRet = U_ClUva23 (GDFieldGet ("ZF_PRODUTO"), val (m->zf_grau), GDFieldGet ("ZF_CONDUC"), '0', '0', '0', '0', '0') [1]
 		else
 			u_help ("Sem tratamento para gerar o campo '" + _sCDomin + "' para esta safra.",, .T.)
 		endif

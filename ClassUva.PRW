@@ -49,6 +49,8 @@ user function ClassUva (_sConduc, _xPrm02, _xPrm03, _xPrm04, _xPrm05)
 		u_help ("Sem tratamento para sistema de conducao '" + _sConduc + "' no programa " + procname (),, .t.)
 	endif
 
+	U_Log2 ('debug', '[' + procname () + ']' + _sConduc + ',' + _xPrm02 + ',' + _xPrm03 + ',' + _xPrm04 + ',' + _xPrm05 + ' ==> ' + _sRet)
+
 return _sRet
 
 /* versao ateh a safra 2019

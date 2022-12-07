@@ -54,6 +54,8 @@ User Function VA_RusMV ()
 					_aProdut [_nProdut, 2] = U_PrcUva21 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[2]  // pos.2=preco de compra
 				elseif sze -> ze_safra == '2022'
 					_aProdut [_nProdut, 2] = U_PrcUva22 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[2]  // pos.2 = preco de compra.
+				elseif sze -> ze_safra == '2023'
+					_aProdut [_nProdut, 2] = U_PrcUva23 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[2]  // pos.2 = preco de compra.
 				else
 					u_help (procname () + ": Sem tratamento para verificar precificacao em caso de mistura de variedades nesta safra.",, .t.)
 					_lContinua = .F.

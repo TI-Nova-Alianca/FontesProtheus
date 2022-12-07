@@ -72,7 +72,7 @@ user function robert ()
 		// _batZBE ()
 		// _SimCtb ()
 		// _FechSafr ()
-		// _TrEstq ()
+//		_TrEstq ()
 		// _Sisdevin ()
 		// _metaf ()
 		// _exml ()
@@ -96,24 +96,29 @@ user function robert ()
 		// _ST_MG ()
 		// _PreNF ()
 
+		_a := U_TESSafra ('2023', '002868', '01', 'C')
+		U_Log2 ('debug', '[' + procname () + ']' + _a)
+
 		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
 return
-
+/*
 user function PEEXT006 ()
 	local _nItem := 0
 	local _sProduto := ''
+	if U_AmbTeste ()
+		u_showarray (paramixb)
+	endif
 	U_Log2 ('debug', '[' + procname () + ']')
-	u_showarray (paramixb)
 	for _nItem = 1 to len (paramixb [1])
 		U_Log2 ('debug', paramixb [1, _nItem])
 		_sProduto = paramixb [1, _nItem, 1, 2]
 		U_Log2 ('debug', '[' + procname () + ']B1_RASTRO para o item ' + _sProduto + ': ' + fBuscaCpo ("SB1", 1, xfilial ("SB1") + _sProduto, "B1_RASTRO"))
 	next
-return
-
+return paramixb [1]
+*/
 // --------------------------------------------------------------------------
 static function _PreNF ()
 	Local _aAutoSF1 	:= {}											//ARRAY COM OS DADOS DO CABEÇALHO DA NOTA -SF1
@@ -1044,8 +1049,8 @@ return
 STATIC FUNCTION _TrEstq ()
 	private _sErroAuto := ''
 
-/*
-	_sDocZAG := U_RetSQL ("SELECT MIN (ZAG_DOC) FROM ZAG010 WHERE D_E_L_E_T_ = '' AND ZAG_EMIS BETWEEN '20221104' AND '20221104' AND ZAG_USRINC = 'robert.koch'")
+//	_sDocZAG := U_RetSQL ("SELECT MIN (ZAG_DOC) FROM ZAG010 WHERE D_E_L_E_T_ = '' AND ZAG_EMIS BETWEEN '20221104' AND '20221104' AND ZAG_USRINC = 'robert.koch'")
+	_sDocZAG = '0000004127'
 	zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
 	if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
 		u_help ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG",, .t.)
@@ -1056,13 +1061,13 @@ STATIC FUNCTION _TrEstq ()
 		if empty (_oTrEstq:Docto)
 			u_help ("Nao foi possivel instanciar objeto _oTrEstq",, .t.)
 		else
-			U_Log2 ('debug', '[' + procname () + ']tentando excluir')
-			_lRetExcl := _oTrEstq:Exclui ()
-			U_Log2 ('debug', '[' + procname () + ']retorno:' + cvaltochar (_lRetExcl))
+			_oTrEstq:Executa ()
+			U_Log2 ('debug', '[' + procname () + ']retorno:' + cvaltochar (_oTrEstq:UltMsg))
 		endif
 	endif
-*/
 
+
+/*
 	_oTrEstq := ClsTrEstq ():New ()
 	_oTrEstq:FilOrig  = cFilAnt
 	_oTrEstq:FilDest  = cFilAnt
@@ -1096,7 +1101,7 @@ STATIC FUNCTION _TrEstq ()
 	else
 		U_Log2 ('debug', '[' + procname () + ']Nao gravou. msg: ' + _oTrEstq:UltMsg)
 	endif
-
+*/
 return
 
 // --------------------------------------------------------------------------
