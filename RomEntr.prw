@@ -18,6 +18,7 @@
 // 08/01/2020 - Claudia - Ajuste das letras e configurações de layout devido a problemas de cortes nas colunas.
 // 26/02/2020 - Cláudia - Incluida coluna de lote interno
 // 22/03/2022 - Sandra  - Inclusão campos ordem manutenção, solicitação compra - GLPI 11763
+// 07/12/2022 - Sandra  - Alterado campo OP de C7_OP  para D1_OP - GLPI 12877
 // -------------------------------------------------------------------------------------------------------------------------
 
 #include 'protheus.ch'
@@ -111,7 +112,7 @@ Static Function PrintReport(oReport)
 		cQuery += " , D1_LOCAL "
 		cQuery += " , D1_TP "
 		cQuery += " , D1_LOTECTL "
-		cQuery += " , SUBSTRING(C7_OP,1,6) AS OP"
+		cQuery += " , SUBSTRING(D1_OP,1,6) AS OP "
    		cQuery += " , C7_NUMSC "
 		cQuery += " FROM " + RetSQLName ("SD1") + " SD1"
 		cQuery += " LEFT JOIN SC1010 AS SC1"
@@ -187,7 +188,7 @@ Static Function PrintReport(oReport)
 				oSection1:Cell("COLUNA7")	:SetBlock   ({|| TRA->LOTE_MULTIPLO   				})
 				oSection1:Cell("COLUNA8")	:SetBlock   ({|| TRA->D1_LOCAL    					})
 				oSection1:Cell("COLUNA9")	:SetBlock   ({|| TRA->D1_LOTECTL    				})
-				oSection1:Cell("COLUNA10")	:SetBlock   ({|| TRA->OP         			    	})
+				oSection1:Cell("COLUNA10")	:SetBlock   ({|| OP                 			   	})
 				oSection1:Cell("COLUNA11")	:SetBlock   ({|| TRA->C7_NUMSC      				})
 				oSection1:PrintLine()
 				

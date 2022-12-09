@@ -14,7 +14,8 @@
 // 09/09/2022 - Robert  - Desabilitado envio de copia para o gerente, pois nem mesmo usava a tabela correta.
 //                      - Passa a enviar erros pela classe ClsAviso().
 // 01/12/2022 - Sandra  - Alterado e-mail da rotina 085 do financeiro para o comercial - GLPI 12865
-//
+// 08/12/2022 - Sandra  - Incluso filial 16 - GLPI 12899
+// 09/12/2022 - Sandra  - Incluso coluna filial - GLPI 12900
 
 // --------------------------------------------------------------------------
 user function BatTAtr ()
@@ -31,14 +32,14 @@ user function BatTAtr ()
 
 	sa3 -> (dbsetorder (1))
 
-	_sQuery := " SELECT E1_VEND1, E1_PREFIXO, E1_NUM, E1_PARCELA, A1_NOME, E1_EMISSAO, E1_VENCREA, E1_VALOR, E1_SALDO, E1_HIST"
+	_sQuery := " SELECT E1_VEND1, E1_PREFIXO, E1_NUM, E1_PARCELA, A1_NOME, E1_EMISSAO, E1_VENCREA, E1_VALOR, E1_SALDO, E1_HIST, E1_FILIAL"
 	_sQuery += " FROM " + RetSQLName ("SE1") + " SE1, "
 	_sQuery +=            RetSQLName ("SA1") + " SA1 "
 	_sQuery += " WHERE E1_SALDO    >  0"
 	_sQuery += " AND E1_VENCREA    < '" + dtos (date ()) + "'"
 	_sQuery += " AND E1_EMISSAO    >= '" + dtos (date () - 547) + "'"  // Mais velhos que 1 ano e meio, nem adianta mais cobrar...
 	_sQuery += " AND E1_TIPO        = 'NF'"
-	_sQuery += " AND E1_FILIAL      = '01'"
+	_sQuery += " AND E1_FILIAL      IN ('01','16') "
 	_sQuery += " AND SE1.D_E_L_E_T_ = ''"
 	_sQuery += " AND SA1.A1_FILIAL  = '  '"
 	_sQuery += " AND SA1.D_E_L_E_T_ = ''"
@@ -60,6 +61,7 @@ user function BatTAtr ()
 			_sMsg = "Titulos a receber vencidos ref. vendedor '" + _sVend + "' - " + fBuscaCpo ("SA3", 1, xfilial ("SA3") + _sVend, "A3_NOME") + chr (13) + chr (10)
 			_sMsg += '<table border="1" width="100%" id="table9">'
 			_sMsg += '	<tr>'
+			_sMsg += '		<td><b>Filial</b></td>'
 			_sMsg += '		<td><b>Prefixo</b></td>'
 			_sMsg += '		<td><b>Numero</b></td>'
 			_sMsg += '		<td><b>Parcela</b></td>'
@@ -73,6 +75,7 @@ user function BatTAtr ()
 	
 			do while _nLinha <= len (_aRet) .and. _aRet [_nLinha, 1] == _sVend
 				_sMsg += '	<tr>'
+				_sMsg += '		<td>' + _aRet [_nLinha, 11] + '</td>'
 				_sMsg += '		<td>' + _aRet [_nLinha, 2] + '</td>'
 				_sMsg += '		<td>' + _aRet [_nLinha, 3] + '</td>'
 				_sMsg += '		<td>' + _aRet [_nLinha, 4] + '</td>'
@@ -116,7 +119,7 @@ user function BatTAtr ()
 			u_log2 ('info', "destinatarios:" + _sDest)
 
 			U_SendMail (_sDest, "Verif.diaria - Ctas. receber atrasadas ", _sMsg, {}, "Comercial")
-
+			
 			// Dorme por um minuto por que configuramos o servidor de e-mail para nao permitir
 			// envio de muitos e-mails repetidamente, buscando bloquear spams.
 			sleep (1000)
