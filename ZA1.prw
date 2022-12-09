@@ -53,7 +53,7 @@ user function ZA1SD5 (_sQueFazer)
 			u_help ("Nao encontrei etiqueta gerada para este registro (ou ja foi inutilizada).",, .t.)
 		else
 			_oEtiq := ClsEtiq ():New (_sEtiq)
-			_sImpr = U_Get ("Selecione impressora", 'C', 2, '', 'ZX542', _sImpr, .f., '.t.')
+			_sImpr = U_Get ("Selecione impressora", 'C', 2, '', 'ZX549', _sImpr, .f., '.t.')
 			if ! empty (_sImpr)
 				_xRet = _oEtiq:Imprime (_sImpr)
 			endif

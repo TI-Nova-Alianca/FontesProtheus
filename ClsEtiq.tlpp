@@ -32,6 +32,7 @@
 // 05/10/2022 - Robert - Iniciado tratamento para etiquetas geradas a partir do SD5 (GLPI 12651)
 // 24/10/2022 - Robert - Criado atributo :FinalidOP
 // 31/10/2022 - Robert - Quando transf.p/ax01 via ZAG, busca zag_lotori (nao gera mais lote fajuto)
+// 09/12/2022 - Robert - Criados atributos B1_CodBar, B1_VAFullW, DescriProd, PesoBruto, UM.
 //
 
 #Include "Protheus.ch"
@@ -51,9 +52,12 @@ CLASS ClsEtiq
 	public  data AlmDest      // Almox.destino, quando transferencia (ZAG) ou apontamento de OP
 	public  data AlmOrig      // Almox.origem, quando transferencia (ZAG) ou gerada com base no SD5 (lotes iniciais).
 	public  data Apontada     // ZA1_APONT - Apontamento de producao ja executado (quando etiq. para OP)
+	public  data B1_CodBar    // B1_CODBAR
+	public  data B1_VAFullW   // B1_VAFULLW
 	public  data Codigo       // ZA1_CODIGO - Numero da etiqueta
-	private data CBEmbCol     // C2_VABARCX - Cod.barras embalagem coletiva - Para validacao no momento de apontar a producao.
+	public  data CBEmbCol     // C2_VABARCX - Cod.barras embalagem coletiva - Para validacao no momento de apontar a producao.
 	public  data D5_NUMSEQ    // D5_NUMSEQ - Quando etiq. gerada a partir de um registro de origem MAN do SD5.
+	public  data DescriProd   // B1_DESC
 	public  data DocEntrForn  // ZA1_FORNEC - Quando refere-se a NF de entrada
 	public  data DocEntrItem  // ZA1_ITEM - Quando refere-se a NF de entrada
 	public  data DocEntrLoja  // ZA1_LOJAF - Quando refere-se a NF de entrada
@@ -69,14 +73,17 @@ CLASS ClsEtiq
 	public  data ImprCBProd   // Indica se deve obrigatoriamente imprimir o cod.barras do produto.
 	public  data LoteProduto
 	public  data OP           // ZA1_OP
+	public  data PesoBruto    // B1_PESBRU * qtid (peso bruto total da etiqueta)
 	public  data Produto      // ZA1_PROD
 	public  data QtApontada   // Quando relacionada a uma OP
 	public  data QtEstornada  // Quando relacionada a uma OP
+	public  data QtEtqGrupo   // C2_VAQTETQ - Quantidade de etiquetas do grupo (geralmente usada com OP)
 	public  data QtPerdida    // Quando relacionada a uma OP
 	public  data Quantidade   // ZA1_QUANT
 	private data RegZA1       // Numero registro (RECNO) no ZA1.
 	public  data SeqNoGrupo   // ZA1_SEQ - Sequencia dentro do grupo, geralmente de OP. Ex.: 1 de 10, 2 de 10, ...
 	public  data UltMsg       // Ultima mensagem gerada.
+	public  data UM           // B1_UM
 	public  data UsrIncl      // ZA1_USRINC - Usuario que incluiu/gerou a etiqueta
 	public  data ValidLote    // Validade do lote
 
@@ -179,9 +186,12 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 	::AlmDest      = ''
 	::AlmOrig      = ''
 	::Apontada     = 'N'
+	::B1_CodBar    = ''
+	::B1_VAFullW   = ''
 	::Codigo       = ''
 	::CBEmbCol     = ''
 	::D5_NUMSEQ    = ''
+	::DescriProd   = ''
 	::DocEntrForn  = ''
 	::DocEntrItem  = ''
 	::DocEntrLoja  = ''
@@ -197,14 +207,17 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 	::ImprCBProd   = 'N'
 	::LoteProduto  = ''
 	::OP           = ''
+	::PesoBruto    = 0
 	::Produto      = ''
 	::QtApontada   = 0
 	::QtEstornada  = 0
+	::QtEtqGrupo   = 0
 	::QtPerdida    = 0
 	::Quantidade   = 0
 	::RegZA1       = 0
 	::SeqNoGrupo   = ''
 	::UltMsg       = ''
+	::UM           = ''
 	::UsrIncl      = cUserName
 	::ValidLote    = ctod ('')
 
@@ -263,6 +276,11 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 		if ! sb1 -> (dbseek (xfilial ("SB1") + ::Produto, .f.))
 			u_help ('[' + GetClassName (::Self) + '.' + procname () + "]Nao localizado cadastro do produto '" + ::Produto + "' relacionado `a etiqueta '" + ::Codigo + "'.",, .t.)
 		else
+			::B1_CodBar  = sb1 -> b1_codbar
+			::B1_VAFullW = sb1 -> b1_vafullw
+			::DescriProd = sb1 -> b1_desc
+			::PesoBruto  = sb1 -> b1_pesbru * ::Quantidade
+			::UM         = sb1 -> b1_um
 			do case
 			case ! empty (::OP)
 				::LoteProduto = substring (::OP, 1, 8)
@@ -271,9 +289,10 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 				if ! sc2 -> (dbseek (xfilial ("SC2") + ::OP, .f.))
 					u_help ('[' + GetClassName (::Self) + '.' + procname () + "]Impossivel encontrar a OP '" + ::OP + "' relacionada `a etiqueta '" + ::Codigo + "'. Validade nao pode ser determinada.",, .t.)
 				else
-					::AlmOrig   = sc2 -> c2_local
-					::CBEmbCol  = sc2 -> c2_vaBarCx
-					::FinalidOP = sc2 -> c2_vaOpEsp
+					::AlmOrig    = sc2 -> c2_local
+					::CBEmbCol   = sc2 -> c2_vaBarCx
+					::FinalidOP  = sc2 -> c2_vaOpEsp
+					::QtEtqGrupo = sc2 -> c2_vaqtetq
 					
 					// Jah peguei casos de excluirem uma OP e cadastrarem uma
 					// nova de mesmo numero, para outro produto!

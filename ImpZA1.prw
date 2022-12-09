@@ -30,6 +30,7 @@
 //                      - Criado tratamento para etiquetas geradas a partir do SD5 (GLPI 12651).
 // 21/10/2022 - Robert  - Validar parametro VA_ETQOCBP: nao impressao cod.barras produto (GLPI 12344)
 // 24/10/2022 - Robert  - Validar atributo :FinalidOP junto com parametro VA_ETQOCBP para nao impressao cod.barras produto (GLPI 12344)
+// 09/12/2022 - Robert  - Nao busca mais nada do SB1 e SC2. Dados jah chegam como atributos do objeto.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -93,45 +94,34 @@ user function ImpZA1 (_sIdImpr, _oEtiq)
 		endif
 	endif
 
-/*	if _lContinua
-		za1 -> (dbsetorder(1))
-		if ! za1 -> (dbseek(xFilial("ZA1") + _sEtiq, .F.))
-			u_help ("Etiqueta '" + _sEtiq + "' nao encontrada!",, .t.)
-			_lContinua = .F.
-		else
-			U_Log2 ('debug', '[' + procname () + ']posicionei etiq no ZA1 com reg.' + cvaltochar (za1 -> (recno ())))
-		endif
-	endif
-*/
-
-/*	if _lContinua
-		sb1 -> (dbsetorder(1))
-		if ! sb1 -> (dbseek (xFilial("SB1") + _oEtiq:Produto, .F.))
-			u_help ("Produto da etiqueta ('" + _oEtiq:Produto + "') nao cadastrado.",, .t.)
-			_lContinua = .F.
-		endif
-	endif
-*/
 	// Deixa o maximo de variaveis prontas para impressao, buscando manter
 	// integridade entre as diferentes funcoes de impressao.
 	if _lContinua
 		_sEtqImp   = alltrim (_oEtiq:Codigo)
 		_sProdImp  = alltrim (_oEtiq:Produto)
-		_sUMImp    = sb1 -> b1_um
+		_sUMImp    = _oEtiq:UM  //sb1 -> b1_um
 		_sQtdImp   = alltrim (cvaltochar (_oEtiq:Quantidade))
-		_sDProImp1 = substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 1, 25)
-		_sDProImp2 = substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 26, 25)
-		_sDProImp3 = substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 51, 25)
-		_sPesoBImp = alltrim (cvaltochar (sb1 -> B1_PESBRU * _oEtiq:Quantidade))
+
+//		_sDProImp1 = substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 1, 25)
+//		_sDProImp2 = substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 26, 25)
+//		_sDProImp3 = substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 51, 25)
+		_sDProImp1 = substr (alltrim (_oEtiq:Produto) + ' - ' + _oEtiq:DescriProd, 1, 25)
+		_sDProImp2 = substr (alltrim (_oEtiq:Produto) + ' - ' + _oEtiq:DescriProd, 26, 25)
+		_sDProImp3 = substr (alltrim (_oEtiq:Produto) + ' - ' + _oEtiq:DescriProd, 51, 25)
+
+	//	_sPesoBImp = alltrim (cvaltochar (sb1 -> B1_PESBRU * _oEtiq:Quantidade))
+		_sPesoBImp = alltrim (cvaltochar (_oEtiq:PesoBruto))
 		_sDImpImp  = iif (za1 -> za1_impres == 'S', 'Reimpr:', 'Dt.Impr:') + dtoc (date ()) + ' ' + time ()
 		_sVldLtImp = dtoc (_oEtiq:ValidLote)
 		_sDtFabImp = dtoc (_oEtiq:DtFabrLote)
-		if sb1 -> b1_vafullw == 'S'
-			if empty (sb1 -> b1_codbar)
-				u_help ("Produto '" + alltrim (sb1 -> b1_cod) + "' nao tem codigo DUN14 informado no campo '" + alltrim (RetTitle ("B1_CODBAR")) + "'.",, .t.)
+//		if sb1 -> b1_vafullw == 'S'
+		if _oEtiq:B1_VAFullW == 'S'
+//			if empty (sb1 -> b1_codbar)
+			if empty (_oEtiq:B1_CodBar)
+				u_help ("Produto '" + alltrim (_oEtiq:Produto) + "' nao tem codigo DUN14 informado no campo '" + alltrim (RetTitle ("B1_CODBAR")) + "'.",, .t.)
 				_lContinua = .F.
 			else
-				_sCBarProd = alltrim (sb1 -> b1_codbar)
+				_sCBarProd = alltrim (_oEtiq:B1_CodBar)  //sb1 -> b1_codbar)
 			endif
 		endif
 
@@ -159,14 +149,16 @@ user function ImpZA1 (_sIdImpr, _oEtiq)
 				u_help ("A O.P. '" + AllTrim(ZA1 -> ZA1_OP) + "' referenciada pela etiqueta '" + _sEtqImp + "' nao foi encontrada.",, .t.)
 				_lContinua = .F.
 			else
-				_sAlmOri = sc2 -> c2_local
+				_sAlmOri = _oEtiq:AlmOrig //sc2 -> c2_local
 				
 				// O cod.barras da OP sobrepoe o do produto, pois vai ser usado no apontamento.
-				_sCBarProd = alltrim (sc2 -> c2_vaBarCx)
+				_sCBarProd = alltrim (_oEtiq:CBEmbCol)  //sc2 -> c2_vaBarCx)
 				
 				// Sequencial de etiquetas (1 e 3, 2 de 3, ...) para ver se nao ficou alguma esquecida.
-				if sc2 -> c2_vaqtetq != 0 .and. za1 -> za1_seq != 0
-					_sSeqImp = padc (alltrim (str (za1 -> za1_seq)) + '/' + alltrim (str (sc2 -> c2_vaqtetq)), 9, ' ')
+		//		if sc2 -> c2_vaqtetq != 0 .and. za1 -> za1_seq != 0
+				if _oEtiq:QtEtqGrupo != 0 .and. _oEtiq:SeqNoGrupo != 0
+		//			_sSeqImp = padc (alltrim (str (za1 -> za1_seq)) + '/' + alltrim (str (sc2 -> c2_vaqtetq)), 9, ' ')
+					_sSeqImp = padc (alltrim (str (_oEtiq:SeqNoGrupo)) + '/' + alltrim (str (_oEtiq:QtEtqGrupo)), 9, ' ')
 				else
 					_sSeqImp = ''
 				endif
@@ -520,32 +512,6 @@ static function _FmtNF (_oEtiq)
 		u_help ("Sem tratamento para formatacao de impressao para este tipo de etiqueta no programa " + procname (),, .t.)
 	endif
 return _sFmtNF
-
-/*
-// --------------------------------------------------------------------------
-// Posiciona tabela SB8 no registro referente ao lote solicitado.
-static function _AchaSB8 (_sProduto, _sLote, _sAlmox)
-	local _lRet    := .T.
-	local _nRegSB8 := 0
-	local _oSQL    := NIL
-
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery := "SELECT ISNULL (SB8.R_E_C_N_O_, 0)"
-	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB8") + " SB8"
-	_oSQL:_sQuery += " WHERE SB8.D_E_L_E_T_  = ''"
-	_oSQL:_sQuery +=   " AND SB8.B8_FILIAL   = '" + xfilial ("SB8") + "'"
-	_oSQL:_sQuery +=   " AND SB8.B8_PRODUTO  = '" + _sProduto + "'"
-	_oSQL:_sQuery +=   " AND SB8.B8_LOTECTL  = '" + _sLote    + "'"
-	_oSQL:_sQuery +=   " AND SB8.B8_LOCAL    = '" + _sAlmox   + "'"
-	_nRegSB8 = _oSQL:RetQry (1, .f.)
-	if _nRegSB8 == 0
-		_lRet = .F.
-	else
-		sb8 -> (dbgoto (_nRegSB8))
-	endif
-return _lRet
-*/
 
 
 // --------------------------------------------------------------------------

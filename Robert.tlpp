@@ -96,9 +96,6 @@ user function robert ()
 		// _ST_MG ()
 		// _PreNF ()
 
-		_a := U_TESSafra ('2023', '002868', '01', 'C')
-		U_Log2 ('debug', '[' + procname () + ']' + _a)
-
 		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
