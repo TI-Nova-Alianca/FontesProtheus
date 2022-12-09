@@ -106,6 +106,7 @@
 // 09/11/2022 - Robert  - Criada acao ImprimeEtiquetaZAG (GLPI 12773)
 // 05/12/2022 - Robert  - Criada acao InutilizaEtiqueta.
 //                      - Criada tag ObrigarBarrasProd na impressao de etiquetas.
+// 08/12/2022 - Robert  - Criada acao TransfEstqExecuta.
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -204,6 +205,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 				_TrEstq ('A')
 			case _sAcao == 'TransfEstqDeleta'
 				_TrEstq ('D')
+			case _sAcao == 'TransfEstqExecuta'
+				_TrEstq ('E')
 			case _sAcao == 'OndeSeUsa'
 				_OndeSeUsa ()
 			case _sAcao == 'IncluiCliente'
@@ -799,7 +802,7 @@ static function _TrEstq (_sQueFazer)
 	local _oTrEstq := NIL
 
 	do case
-		case _sQueFazer == 'I'  // Inserir
+	case _sQueFazer == 'I'  // Inserir
 		_oTrEstq := ClsTrEstq ():New ()
 		if empty (_sErroWS) ; _oTrEstq:FilOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialOrigem",    .T., .F.), 2) ;  endif
 		if empty (_sErroWS) ; _oTrEstq:FilDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialDestino",   .T., .F.), 2) ;  endif
@@ -829,7 +832,7 @@ static function _TrEstq (_sQueFazer)
 			endif
 		endif
 
-		case _sQueFazer == 'A'  // Autorizar
+	case _sQueFazer $ 'A/D/E'  // [A]utorizar;[D]eletar;[E]xecutar
 		if empty (_sErroWS) ; _sDocZAG = _ExtraiTag ("_oXML:_WSAlianca:_DocTransf", .T., .F.) ; endif
 		if empty (_sErroWS)
 			zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
@@ -837,26 +840,34 @@ static function _TrEstq (_sQueFazer)
 				_sErroWS += "Documento '" + _sDocZAG + "' nao localizado na tabela ZAG"
 			else
 				_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
-				_oTrEstq:Libera ()
-				_sMsgRetWS = _oTrEstq:UltMsg
-			endif
-		endif
-
-		case _sQueFazer == 'D'  // Deletar
-		if empty (_sErroWS) ; _sDocZAG = _ExtraiTag ("_oXML:_WSAlianca:_DocTransf", .T., .F.) ; endif
-		if empty (_sErroWS)
-			zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
-			if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
-				_sErroWS += "Documento '" + _sDocZAG + "' nao localizado na tabela ZAG"
-			else
-				_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
-				if ! _oTrEstq:Exclui ()
-					_sErroWS += _oTrEstq:UltMsg
+				if empty (_oTrEstq:Docto)
+					_sErroWS += "Nao foi possivel instanciar objeto _oTrEstq"
 				else
-					_sMsgRetWS = _oTrEstq:UltMsg
+					do case
+					case _sQueFazer == 'A'  // Autorizar
+						_oTrEstq:Libera ()
+						_sMsgRetWS = _oTrEstq:UltMsg
+					case _sQueFazer == 'D'  // Deletar
+						if ! _oTrEstq:Exclui ()
+							_sErroWS += _oTrEstq:UltMsg
+						else
+							_sMsgRetWS = _oTrEstq:UltMsg
+						endif
+					case _sQueFazer == 'E'  // Executar (pode ter dado erro na tentativa anterior)
+						if ! _oTrEstq:Executa ()
+							_sErroWS += _oTrEstq:UltMsg
+						else
+							_sMsgRetWS = _oTrEstq:UltMsg
+						endif
+					otherwise
+						_sErroWS += "Opcao desconhecida na rotina " + procname ()
+					endcase
 				endif
+
 			endif
 		endif
+	otherwise
+		_sErroWS += "Acao desconhecida na rotina " + procname ()
 	endcase
 Return
 //

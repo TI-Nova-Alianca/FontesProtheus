@@ -1375,7 +1375,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 			_sRetFechS += '<perc01>10</perc01><perc02>4</perc02><perc03>4</perc03><perc04>4</perc04><perc05>4</perc05><perc06>11.4</perc06><perc07>11.4</perc07><perc08>11.4</perc08><perc09>11.4</perc09><perc10>14.2</perc10><perc11>14.2</perc11>'
 			_sRetFechS += '<descComParc>C-Demais variedades.....: 10+4+4+4+4+11.4+11.4+11.4+11.4+14.2+14.2</descComParc>'
 			_sRetFechS += '</regraPagamentoItem>'
-		elseif _sSafra == '2021' .or. _sSafra == '2022'
+		elseif _sSafra == '2021' .or. _sSafra == '2022' .or. _sSafra == '2023'
 			_sRetFechS += '<regraPagamentoItem>'
 			_sRetFechS += '<grupo>A</grupo>'
 			_sRetFechS += '<descricao>Bordo,niagara,concord e organicas - 6 vezes</descricao>'

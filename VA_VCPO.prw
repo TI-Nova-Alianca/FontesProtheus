@@ -1060,7 +1060,8 @@ user function VA_VCpo (_sCampo)
 			endif
 
 
-		case _sCampo $ "M->D3_TM/CTM"  // cTM eh usado no MATA241 (mod.2)
+	//	case _sCampo $ "M->D3_TM/CTM"  // cTM eh usado no MATA241 (mod.2)
+		case _sCampo $ "M->D3_TM/M->CTM"  // Variavel "cTM" eh usada no MATA241 (mod.2)
 			if ! alltrim (upper (funname ())) $ upper (fBuscaCpo ("SF5", 1, xfilial ("SF5") + &(_sCampo), "F5_VAROTIN"))
 				U_Help ("Tipo de movimento nao liberado para esta rotina.")
 				_lRet = .F.
