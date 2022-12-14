@@ -34,7 +34,7 @@ user function Log2 (_sTipo, _xDadoOri, _xExtra)
 	local _nTxtLog   := 0
 	local _nTamArq   := 0
 	local _sSeqNome  := ''
-	local _nLimTamLg := 2000000  // 1000000
+	local _nLimTamLg := 5000000  //2000000  // 1000000
 	static _nAcumLog := 0
 
 	// Prepara 'tags' para o inicio de linha

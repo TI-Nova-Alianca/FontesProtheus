@@ -11,7 +11,7 @@
 // #Modulos           
 //
 // Historico de alteracoes:
-// ??/08/2017 - Julio   - Implementda gravacao do arquico ZAM
+// ??/08/2017 - Julio   - Implementada gravacao do arquico ZAM
 // 31/08/2017 - Robert  - Implementacao execucao de rotinas sem interface com o usurio.
 // 30/11/2017 - Robert  - Implementado recalculo de saldo atual de estoque.
 // 07/12/2017 - Robert  - Implementado metodo de atualizacao de estrutura de tabela.
@@ -107,6 +107,7 @@
 // 05/12/2022 - Robert  - Criada acao InutilizaEtiqueta.
 //                      - Criada tag ObrigarBarrasProd na impressao de etiquetas.
 // 08/12/2022 - Robert  - Criada acao TransfEstqExecuta.
+// 13/12/2022 - Robert  - Criada acao TransfEstqNegar.
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -166,7 +167,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	endif
 	if empty (_sErroWS) .and. cFilAnt != _sWS_Filia
 		u_log2 ('erro', 'Nao consegui acessar a filial solicitada.')
-		_sErroWS += "Nao foi possivel acessar a filial '" + _sWS_Filia + "' conforme solicitado."
+		_SomaErro ("Nao foi possivel acessar a filial '" + _sWS_Filia + "' conforme solicitado.")
 	endif
 	if empty (_sErroWS)
 		__cUserId = _aUsuario [1]
@@ -207,6 +208,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 				_TrEstq ('D')
 			case _sAcao == 'TransfEstqExecuta'
 				_TrEstq ('E')
+			case _sAcao == 'TransfEstqNegar'
+				_TrEstq ('N')
 			case _sAcao == 'OndeSeUsa'
 				_OndeSeUsa ()
 			case _sAcao == 'IncluiCliente'
@@ -264,7 +267,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 			case _sAcao == 'TesteRobert'
 				_TstRobert ()
 			otherwise
-				_sErroWS += "A acao especificada no XML eh invalida: " + _sAcao
+				_SomaErro ("A acao especificada no XML eh invalida: " + _sAcao)
 		endcase
 		U_UsoRot ('F', _sAcao, '')
 	else
@@ -274,17 +277,10 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	// Cria a instância de retorno
 	::Retorno := WSClassNew ("RetornoWS")
 	::Retorno:Resultado = iif (empty (_sErroWS), "OK", "ERRO")
-	::Retorno:Mensagens = _sErroWS + _sMsgRetWS
-//	u_log2 ('info', '::Retorno:Resultado = ' + ::Retorno:Resultado)
-//	u_log2 ('info', '::Retorno:Mensagens = ' + ::Retorno:Mensagens)
-
-//	// Volta log para o nome original, apenas para 'fechar' o processo.
-//	_sArqLog = _sArqLgOld
-
-	
-	// Como vou logar tudo no mesmo arquivo, tentarei fazer uma separacao entre cada execucao.
-//	u_log2 ('debug', '#######################################################################')
-//	u_log2 ('debug', '#######################################################################')
+//	::Retorno:Mensagens = _sErroWS + _sMsgRetWS
+	::Retorno:Mensagens  = ''
+	::Retorno:Mensagens += iif (_sErroWS $ ::Retorno:Mensagens, '', _sErroWS)
+	::Retorno:Mensagens += iif (_sMsgRetWS $ ::Retorno:Mensagens, '', _sMsgRetWS)
 
 	// Encerra ambiente. Ficou um pouco mais lento, mas resolveu problema que estava dando de,
 	// a cada execucao, trazer um cFilAnt diferente. Robert, 09/01/2020.
@@ -331,11 +327,11 @@ static function _ExecBatch ()
 	if empty (_sErroWS)
 		zz6 -> (dbsetorder (1))  // ZZ6_FILIAL+ZZ6_SEQ
 		if ! zz6 -> (dbseek (xfilial ("ZZ6") + _sSeqBatch, .F.))
-			_sErroWS += "Sequencia nao localizada na tabela ZZ6"
+			_SomaErro ("Sequencia nao localizada na tabela ZZ6")
 		else
 			_oBatch := ClsBatch ():New (zz6 -> (recno ()))
 			if ! _sWS_Filia $ _oBatch:FilDes
-				_sErroWS += "Batch nao se destina a esta filial."
+				_SomaErro ("Batch nao se destina a esta filial.")
 			else
 				_oBatch:Executa ()
 				// u_log ('Retorno do batch:', _oBatch:Retorno)
@@ -344,7 +340,7 @@ static function _ExecBatch ()
 	endif
 
 	if _oBatch:Retorno == 'N'
-		_sErroWS += "Batch nao executado" + ' ' + _oBatch:Mensagens
+		_SomaErro ("Batch nao executado" + ' ' + _oBatch:Mensagens)
 	endif
 	_sMsgRetWS += _oBatch:Comando + ' ' + _oBatch:Mensagens
 
@@ -365,7 +361,7 @@ static function _Exec ()
 	_sGrpPerg = _ExtraiTag ("_oXML:_WSAlianca:_GrpPerg", .T., .F.)
 
 	if empty (_sErroWS) .and. right (_sRotina, 1) != ')'
-		_sErroWS += "Rotina a ser chamada deve finalizar por )"
+		_SomaErro ("Rotina a ser chamada deve finalizar por )")
 	endif
 
 	// Leitura das perguntas em loop, pois nao sei quantas serao recebidas.
@@ -409,7 +405,7 @@ static function _GrvInsp ()
 	// u_logIni ()
 
 	if empty (_sErroWS) .and. empty (cUserName)
-		_sErroWS += "Usuario nao identificado."
+		_SomaErro ("Usuario nao identificado.")
 	endif
 
 	if empty (_sErroWS)
@@ -437,7 +433,7 @@ static function _GrvInsp ()
 		_oSQL:_sQuery +=   " AND D1_LOTECTL = '" + _sLote    + "'"
 		_oSQL:Log ()
 		if _oSQL:RetQry (1, .F.) < 1
-			_sErroWS += "Nao foi encontrada NF de entrada com os parametros informados " + _oSQL:_sQuery
+			_SomaErro ("Nao foi encontrada NF de entrada com os parametros informados " + _oSQL:_sQuery)
 		endif
 	endif
 	if empty (_sErroWS)
@@ -495,7 +491,7 @@ static function _RastLt ()
 		if _oSQL:Exec ()
 			_sMsgRetWS = _sChave
 		else
-			_sErroWS += "Erro na gravacao: " + _oSQL:_sQuery
+			_SomaErro ("Erro na gravacao: " + _oSQL:_sQuery)
 		endif
 	endif
 
@@ -552,7 +548,7 @@ static function _SaldoAtu ()
 		_oSQL:Log ()
 		_sUltExec = _oSQL:RetQry (1, .F.)
 		if empty (_sUltExec)
-			_sErroWS += "Erro no processo"
+			_SomaErro ("Erro no processo")
 		else
 			_sMsgRetWS = _sUltExec
 		endif
@@ -580,7 +576,7 @@ static function _ZAM ()
 	u_logIni ()
 
 	if empty (_sErroWS) .and. empty (cUserName)
-		_sErroWS += "Usuario nao identificado."
+		_SomaErro ("Usuario nao identificado.")
 	endif
 
 	if empty (_sErroWS)
@@ -600,48 +596,48 @@ static function _ZAM ()
 
 	if empty (_sErroWS) .and. _sIAE <> "E"
 		if empty(_sFILIAL)
-			_sErroWS += "Filial invalida."
+			_SomaErro ("Filial invalida.")
 		endif
 
 		if empty(_sDATAPT) .or. (StoD(_sDATAPT) > date())
-			_sErroWS += "Data do Apontamento invalida."
+			_SomaErro ("Data do Apontamento invalida.")
 		endif
 
 		SN1 -> (dbsetorder (1))
 		if empty(_sMAQCOD) .or. ! SN1 -> (dbseek (_sFILIAL + AllTrim(_sMAQCOD), .F.))
-			_sErroWS += "Maquina invalida."
+			_SomaErro ("Maquina invalida.")
 		endif
 
 		if empty(_sDATINI) .or. (StoD(_sDATINI) > date())
-			_sErroWS += "Data Inicial invalida."
+			_SomaErro ("Data Inicial invalida.")
 		endif
 
 		if empty(_sHORINI)
-			_sErroWS += "Hora Inicial invalida."
+			_SomaErro ("Hora Inicial invalida.")
 		endif
 
 		if empty(_sDATFIM) .or. (StoD(_sDATFIM) > date())
-			_sErroWS += "Data Final invalida."
+			_SomaErro ("Data Final invalida.")
 		endif
 
 		if empty(_sHORFIM)
-			_sErroWS += "Hora Final invalida."
+			_SomaErro ("Hora Final invalida.")
 		endif
 
 		if (AllTrim(_sDATINI) + AllTrim(_sHORINI)) > (DtoS(date()) + SubStr(time(),1,5))
-			_sErroWS += "Data Inicial nao pode ser maior do que hoje."
+			_SomaErro ("Data Inicial nao pode ser maior do que hoje.")
 		endif
 
 		if (AllTrim(_sDATFIM) + AllTrim(_sHORFIM)) > (DtoS(date()) + SubStr(time(),1,5))
-			_sErroWS += "Data Final nao pode ser maior do que hoje."
+			_SomaErro ("Data Final nao pode ser maior do que hoje.")
 		endif
 
 		if .not. empty(AllTrim(_sTIPCOD)) .and. ! U_ExistZX5("45", _sTIPCOD)
-			_sErroWS += "Tipo invalido."
+			_SomaErro ("Tipo invalido.")
 		endif
 
 		if empty(_sUSUCOD)
-			_sErroWS += "Usuario invalido."
+			_SomaErro ("Usuario invalido.")
 		endif
 	endif
 
@@ -664,7 +660,7 @@ static function _ZAM ()
 				msunlock ()
 				_sMsgRetWS += "Evento incluido com sucesso."
 			else
-				_sErroWS += "Evento ja cadastrado."
+				_SomaErro ("Evento ja cadastrado.")
 			endif
 		endif
 
@@ -683,7 +679,7 @@ static function _ZAM ()
 				msunlock ()
 				_sMsgRetWS += "Evento alterado com sucesso."
 			else
-				_sErroWS += "Evento nao cadastrado."
+				_SomaErro ("Evento nao cadastrado.")
 			endif
 		endif
 
@@ -695,7 +691,7 @@ static function _ZAM ()
 				msunlock ()
 				_sMsgRetWS += "Evento excluido com sucesso."
 			else
-				_sErroWS += "Evento nao cadastrado."
+				_SomaErro ("Evento nao cadastrado.")
 			endif
 		endif
 	endif
@@ -719,7 +715,7 @@ static function _IncEvt ()
 			_oEvento:DtEvento = date ()
 		else
 			if len (_dDtEvt) != 8
-				_sErroWS += "Data do evento deve ser informada no formato AAAAMMDD"
+				_SomaErro ("Data do evento deve ser informada no formato AAAAMMDD")
 			else
 				_oEvento:DtEvento = stod (_dDtEvt)
 			endif
@@ -731,13 +727,13 @@ static function _IncEvt ()
 			_oEvento:HrEvento = time ()
 		else
 			if len (_oEvento:HrEvento) != 8 .or. substr (_oEvento:HrEvento, 3, 1) != ':' .or. substr (_oEvento:HrEvento, 6, 1) != ':'
-				_sErroWS += "Hora do evento deve ser informada no formato HH:MM:SS"
+				_SomaErro ("Hora do evento deve ser informada no formato HH:MM:SS")
 			endif
 		endif
 	endif
 	if empty (_sErroWS) ; _oEvento:CodEven    = _ExtraiTag ("_oXML:_WSAlianca:_CodEven",      .T., .F.) ;   endif
 	if empty (_sErroWS) .and. ! U_ExistZX5 ('54', _oEvento:CodEven)
-		_sErroWS += "Codigo do evento " + _oEvento:CodEven + " nao cadastrado na tabela 54 do arquivo ZX5."
+		_SomaErro ("Codigo do evento " + _oEvento:CodEven + " nao cadastrado na tabela 54 do arquivo ZX5.")
 	endif
 	if empty (_sErroWS) ; _oEvento:Origem     = _ExtraiTag ("_oXML:_WSAlianca:_Origem",         .T., .F.) ;   endif
 	if empty (_sErroWS) ; _oEvento:Texto      = _ExtraiTag ("_oXML:_WSAlianca:_Texto",          .T., .F.) ;   endif
@@ -768,7 +764,7 @@ static function _IncEvt ()
 	if empty (_sErroWS) ; _oEvento:MotProrTit = _ExtraiTag ("_oXML:_WSAlianca:_MotProrrogTit",  .F., .F.) ;   endif
 	if empty (_sErroWS)
 		if ! _oEvento:Grava ()
-			_sErroWS += "Erro na gravacao do objeto evento"
+			_SomaErro ("Erro na gravacao do objeto evento")
 		else
 			_sMsgRetWS = "Evento gravado com sucesso"
 		endif
@@ -787,7 +783,7 @@ static function _DelEvt ()
 
 		// Permitirei exclusao somente de algumas origens de eventos (GLPI 9161).
 		if ! alltrim (upper (_oEvento:Origem)) $ upper ('WPNFATSOLICITACAOPRORROGACAO/WPNFATEVENTOSNOTASMOV/TRNVA_VEVENTOS/WPNFATAGENDARENTREGA')
-			_sErroWS += "Eventos com esta origem nao podem ser excluidos manualmente."
+			_SomaErro ("Eventos com esta origem nao podem ser excluidos manualmente.")
 		endif
 	endif
 	if empty (_sErroWS)
@@ -827,21 +823,21 @@ static function _TrEstq (_sQueFazer)
 				_sMsgRetWS = _oTrEstq:UltMsg
 			else
 				u_log2 ('erro', 'Nao gravou ZAG. ' + _oTrEstq:UltMsg)
-				_sErroWS += "Erro na gravacao."
+				_SomaErro ("Erro na gravacao.")
 				_sMsgRetWS = _oTrEstq:UltMsg
 			endif
 		endif
 
-	case _sQueFazer $ 'A/D/E'  // [A]utorizar;[D]eletar;[E]xecutar
+	case _sQueFazer $ 'A/D/E/N'  // [A]utorizar;[D]eletar;[E]xecutar;[N]egar
 		if empty (_sErroWS) ; _sDocZAG = _ExtraiTag ("_oXML:_WSAlianca:_DocTransf", .T., .F.) ; endif
 		if empty (_sErroWS)
 			zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
 			if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
-				_sErroWS += "Documento '" + _sDocZAG + "' nao localizado na tabela ZAG"
+				_SomaErro ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG")
 			else
 				_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
 				if empty (_oTrEstq:Docto)
-					_sErroWS += "Nao foi possivel instanciar objeto _oTrEstq"
+					_SomaErro ("Nao foi possivel instanciar objeto _oTrEstq")
 				else
 					do case
 					case _sQueFazer == 'A'  // Autorizar
@@ -849,28 +845,38 @@ static function _TrEstq (_sQueFazer)
 						_sMsgRetWS = _oTrEstq:UltMsg
 					case _sQueFazer == 'D'  // Deletar
 						if ! _oTrEstq:Exclui ()
-							_sErroWS += _oTrEstq:UltMsg
+							_SomaErro (_oTrEstq:UltMsg)
 						else
 							_sMsgRetWS = _oTrEstq:UltMsg
 						endif
 					case _sQueFazer == 'E'  // Executar (pode ter dado erro na tentativa anterior)
-						if ! _oTrEstq:Executa ()
-							_sErroWS += _oTrEstq:UltMsg
+						if ! _oTrEstq:Executa (.T.)
+							_SomaErro (_oTrEstq:UltMsg)
 						else
 							_sMsgRetWS = _oTrEstq:UltMsg
 						endif
+					case _sQueFazer == 'N'  // Negar (usuario nao aceitou a transferencia)
+						_sMotZAG = _ExtraiTag ("_oXML:_WSAlianca:_Motivo", .T., .F.)
+						if empty (_sErroWS)
+							if ! _oTrEstq:Negar (_sMotZAG)
+								_SomaErro (_oTrEstq:UltMsg)
+							else
+								_sMsgRetWS = _oTrEstq:UltMsg
+							endif
+						endif
 					otherwise
-						_sErroWS += "Opcao desconhecida na rotina " + procname ()
+						_SomaErro ("Opcao desconhecida na rotina " + procname ())
 					endcase
 				endif
 
 			endif
 		endif
 	otherwise
-		_sErroWS += "Acao desconhecida na rotina " + procname ()
+		_SomaErro ("Acao desconhecida na rotina " + procname ())
 	endcase
 Return
-//
+
+
 // --------------------------------------------------------------------------
 // Verifica onde determinada string eh usada. Geralmente serve para pesquisar por
 // nomes de campos, nicknames de gatilhos, etc.
@@ -945,10 +951,10 @@ static function _IncProd()
 		If lMsErroAuto
 			u_log ('Erro na rotina automatica')
 			if ! empty (_sErroAuto)
-				_sErroWS += _sErroAuto
+				_SomaErro (_sErroAuto)
 			endif
 			if ! empty (NomeAutoLog ())
-				_sErroWS += U_LeErro (memoread (NomeAutoLog ()))
+				_SomaErro (U_LeErro (memoread (NomeAutoLog ())))
 			endif
 		Else
 			u_log ('rotina automatica OK')
@@ -1136,7 +1142,7 @@ static function _AltCli ()
 		_sSQL += "    AND A1_COD     = '" + _wcodcli  + "'"
 		u_log (_sSQL)
 		if TCSQLExec (_sSQL) < 0
-			_sErroWS += 'Nao foi possivel alterar o cadastro'
+			_SomaErro ('Nao foi possivel alterar o cadastro')
 		else
 			u_log ('rotina automatica OK')
 			_sMsgRetWS = 'Cliente alterado codigo ' + _wcodcli
@@ -1235,7 +1241,7 @@ Static function _ExecConsOrc()
 			_oSQL:_sQuery += " SELECT * FROM C"		
 			_oSQL:_sQuery += " ORDER BY ORDEM, DESC_N1, DESC_N2, 999999999999999 - SUM(REA_PER) OVER (PARTITION BY DESC_N1, DESC_N2), CONTA"
 		//else
-		//	_sErroWS += "Modelo de orcamento '" + _sModelo + "' desconhecido ou sem tratamento no web service."
+		//	_SomaErro ("Modelo de orcamento '" + _sModelo + "' desconhecido ou sem tratamento no web service.")
 		//endif
 		_oSQL:Log ()
 	endif
@@ -1290,7 +1296,7 @@ Static function _ExecConsOrc()
 				_XmlRet += 			"<Destacar>"		 + (_sAliasQ) -> destacar + "</Destacar>"
 				_XmlRet += 			"<FilCC>"			 + alltrim ((_sAliasQ) -> FiltraCC) + "</FilCC>"
 			//else
-			//	_sErroWS += "Modelo de orcamento '" + _sModelo + "' desconhecido ou sem tratamento na montagem do XML"
+			//	_SomaErro ("Modelo de orcamento '" + _sModelo + "' desconhecido ou sem tratamento na montagem do XML")
 			//endif
 			_XmlRet += 		"</OrcamentoItem>"
 
@@ -1385,13 +1391,13 @@ static function _IncCarSaf ()
 		_oSQL:Log ()
 		_aRegSA2 = aclone (_oSQL:Qry2Array (.F., .F.))
 		if len (_aRegSA2) == 0
-			_sErroWS += "Nao foi localizado nenhum fornecedor pelos parametros informados (cod/loja/CPF/IE)"
+			_SomaErro ("Nao foi localizado nenhum fornecedor pelos parametros informados (cod/loja/CPF/IE)")
 		elseif len (_aRegSA2) > 1
-			_sErroWS += "Foi localizado MAIS DE UM fornecedor pelos parametros informados (cod/loja/CPF/IE)"
+			_SomaErro ("Foi localizado MAIS DE UM fornecedor pelos parametros informados (cod/loja/CPF/IE)")
 		else
 			_oAssoc := ClsAssoc ():New (_aRegSA2 [1, 1], _aRegSA2 [1, 2])
 			if valtype (_oAssoc) != 'O'
-				_sErroWS += "Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto
+				_SomaErro ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto)
 			endif
 		endif
 	endif
@@ -1430,7 +1436,7 @@ static function _IncCarSaf ()
 	u_log2 ('info', _aItensCar)
 	if empty (_sErroWS)
 		if len (_aItensCar) == 0
-			_sErroWS += "Nenhum item informado para gerar carga."
+			_SomaErro ("Nenhum item informado para gerar carga.")
 		else
 			// Estamos tentando implementar um retorno em XML com novas tags.
 			//_sMsgRetWS = U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sImpTkCar)
@@ -1461,7 +1467,7 @@ static function _CanCarSaf ()
 	if empty (_sErroWS)
 		sze -> (dbsetorder (1))  // ZE_FILIAL, ZE_SAFRA, ZE_CARGA, R_E_C_N_O_, D_E_L_E_T_
 		if ! sze -> (dbseek (xfilial ("SZE") + _sSafra + _sCarga, .F.))
-			_sErroWS += "Carga '" + _sCarga + "' nao encontrada para a safra '" + _sSafra + "' na filial '" + xfilial ("SZE") + "'."
+			_SomaErro ("Carga '" + _sCarga + "' nao encontrada para a safra '" + _sSafra + "' na filial '" + xfilial ("SZE") + "'.")
 		else
 			U_VA_RUS2 (5, .F.)
 		endif
@@ -1491,10 +1497,10 @@ static function _ITkCarSaf ()
 		if _lImpTick .and. empty (_sErroWS)
 			sze -> (dbsetorder (1))  // ZE_FILIAL+ZE_SAFRA+ZE_CARGA
 			if ! sze -> (dbseek (xfilial ("SZE") + _sSafra + _sCarga, .F.))
-				_sErroWS += 'Carga ' + sze -> ze_carga + ' nao localizada na filial ' + cFilAnt + ' / safra ' + _sSafra + '.'
+				_SomaErro ('Carga ' + sze -> ze_carga + ' nao localizada na filial ' + cFilAnt + ' / safra ' + _sSafra + '.')
 			endif
 			if empty (_sErroWS) .and. sze -> ze_status = 'C'
-				_sErroWS += 'Carga ' + sze -> ze_carga + ' cancelada.'
+				_SomaErro ('Carga ' + sze -> ze_carga + ' cancelada.')
 			endif
 			if empty (_sErroWS)
 				U_VA_RUSTk (1, _sPortTick, _nQViasTk1, {}, 'Bematech', .t.)
@@ -1526,11 +1532,11 @@ Static function _ExecKardex()
 		_wDataFinal   = 	_ExtraiTag ("_oXML:_WSAlianca:_DataFinal"	, .T., .F.)
 	endif
 	
-	if empty(_wFilial)		;_sErroWS += "Campo <filial> não preenchido"			;endif
-	if empty(_wProduto)		;_sErroWS += "Campo <produto> não preenchido"		;endif
-	if empty(_wAlmox)		;_sErroWS += "Campo <almoxarifado> não preenchido"	;endif
-	if empty(_wDataInicial)	;_sErroWS += "Campo <data inicial> não preenchido"	;endif
-	if empty(_wDataFinal)	;_sErroWS += "Campo <data final> não preenchido"		;endif
+	if empty(_wFilial)		; _SomaErro ("Campo <filial> não preenchido")       ;endif
+	if empty(_wProduto)		; _SomaErro ("Campo <produto> não preenchido")      ;endif
+	if empty(_wAlmox)		; _SomaErro ("Campo <almoxarifado> não preenchido") ;endif
+	if empty(_wDataInicial)	; _SomaErro ("Campo <data inicial> não preenchido") ;endif
+	if empty(_wDataFinal)	; _SomaErro ("Campo <data final> não preenchido")	;endif
 
 	// Faz um teste inicial para verificar se pode gerar muitos registros,
 	// pois tinhamos usuarios listando 100 anos de movimentacao!
@@ -1776,7 +1782,7 @@ Static Function _ExecCapAssoc ()
 	if empty (_sErroWS)
 		_oAssoc := ClsAssoc ():New (_sAssoc, _sLoja)
 		if valtype (_oAssoc) != 'O'
-			_sErroWS += "Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto
+			_SomaErro ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto)
 		endif
 	endif
 
@@ -1784,7 +1790,7 @@ Static Function _ExecCapAssoc ()
 		_sRet = _oAssoc:SldQuotCap (dDataBase, .T.) [.QtCapRetTXT]
 
 		if empty (_sRet)
-			_sErroWS += "Retorno invalido metodo SldQuotCap " + _oAssoc:UltMsg
+			_SomaErro ("Retorno invalido metodo SldQuotCap " + _oAssoc:UltMsg)
 		else
 			_sMsgRetWS = _sRet
 		endif
@@ -1805,7 +1811,7 @@ Static function _AgEntFat ()
 	if empty (_sErroWS)
 		sf2 -> (dbsetorder (1))
 		if ! sf2 -> (dbseek (xfilial ("SF2") + _sNf + _sSerie, .F.))
-			_sErroWS += "NF/serie " + _sNF + '/' + _sSerie + ' de saida nao localizada.'
+			_SomaErro ("NF/serie " + _sNF + '/' + _sSerie + ' de saida nao localizada.')
 		else
 			reclock ("SF2", .F.)
 			sf2 -> f2_vadagen = _dDtAgend
@@ -1846,7 +1852,7 @@ static function _ApontProd ()
 		if empty (_sErroWS) .and. empty (_sEtqApont)
 			// Se eu ainda estava na primeira etiqueta e a tag encontra-se vazia, eh por que nao veio nenhuma etiqueta.
 			if _sSeqEtiq == '01'
-				_sErroWS += "Nao foi informado nenhum numero de etiqueta."
+				_SomaErro ("Nao foi informado nenhum numero de etiqueta.")
 				exit
 			else
 				// Jah processei todas as etiquetas e posso sair do loop
@@ -1966,7 +1972,7 @@ static function _ApPrEtqCB ()
 	if empty (_sErroWS)
 		_oEtiq := ClsEtiq ():New (_sEtqApont)
 		if _oEtiq:Codigo != _sEtqApont
-			_sErroWS += "Numero de etiqueta invalido."
+			_SomaErro ("Numero de etiqueta invalido.")
 		endif
 	endif
 
@@ -1983,16 +1989,16 @@ static function _ApPrEtqCB ()
 		_oSQL:_sQuery +=   " AND SB1.B1_COD     = '" + _oEtiq:Produto + "'"
 		_oSQL:Log (procname ())
 		if _oSQL:RetQry (1, .f.) == 0
-			_sErroWS += "Codigo de barras inconsistente. Etiqueta refere-se "
-			_sErroWS += "ao produto '" + alltrim (_oEtiq:Produto) + "' "
-			_sErroWS += "(" + alltrim (fBuscaCpo ("SB1", 1, xfilial ("SB1") + _oEtiq:Produto, "B1_DESC")) + ")"
+			_SomaErro ("Codigo de barras inconsistente. Etiqueta refere-se ")
+			_SomaErro ("ao produto '" + alltrim (_oEtiq:Produto) + "' ")
+			_SomaErro ("(" + alltrim (fBuscaCpo ("SB1", 1, xfilial ("SB1") + _oEtiq:Produto, "B1_DESC")) + ")")
 		endif
 	endif
 */
 	// Valida codigo de barras lido na embalagem coletiva.
 	if empty (_sErroWS)
 		if ! _oEtiq:ValCbEmb (_sCodBarAp)
-			_sErroWS += _oEtiq:UltMsg
+			_SomaErro (_oEtiq:UltMsg)
 		endif
 	endif
 
@@ -2001,7 +2007,7 @@ static function _ApPrEtqCB ()
 			// Dentro do metodo PodeApont() jah deve estar sendo chamada a
 			// funcao U_Help(), que deve alimentar a variavel _sErroWS.
 			// Apenas para garantir, vou acrescentar algum conteudo a ela.
-			_sErroWS += '.'
+			_SomaErro ('.')
 		endif
 	endif
 
@@ -2022,9 +2028,9 @@ static function _ApPrEtqCB ()
 		MATA250 (_aAutoSD3, 3)
 		If lMsErroAuto
 			if ! empty (_sErroAuto)
-				_sErroWS += _sErroAuto + '; '
+				_SomaErro (_sErroAuto)
 			elseif ! empty (NomeAutoLog ())
-				_sErroWS += U_LeErro (memoread (NomeAutoLog ())) + '; '
+				_SomaErro (U_LeErro (memoread (NomeAutoLog ())))
 			endif
 			u_log2 ('erro', 'Rotina automatica retornou erro: ' + _sErroWS)
 		else
@@ -2338,7 +2344,7 @@ Static function _DtEntFat ()
 	if empty (_sErroWS)
 		sf2 -> (dbsetorder (1))
 		if ! sf2 -> (dbseek (xfilial ("SF2") + _sNf + _sSerie, .F.))
-			_sErroWS += "NF/serie " + _sNF + '/' + _sSerie + ' de saida nao localizada.'
+			_SomaErro ("NF/serie " + _sNF + '/' + _sSerie + ' de saida nao localizada.')
 		else
 
 			// Grava evento temporario (nao estou descobrindo em que momento este campo eh atualizado)
@@ -2379,7 +2385,7 @@ static function _AsFecSaf ()
 	if empty (_sErroWS)
 		_oAssoc := ClsAssoc ():New (_sAssoc, _sLoja)
 		if valtype (_oAssoc) != 'O'
-			_sErroWS += "Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto
+			_SomaErro ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto)
 		endif
 	endif
 	if empty (_sErroWS)
@@ -2387,7 +2393,7 @@ static function _AsFecSaf ()
 		_sRet = _oAssoc:FechSafra (_sSafra, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,        .t.,      .t.,      .t.)
 		U_Log2 ('debug', '[' + procname () + ']' + _sRet)
 		if empty (_sRet)
-			_sErroWS += "Retorno invalido metodo FechSafra " + _oAssoc:UltMsg
+			_SomaErro ("Retorno invalido metodo FechSafra " + _oAssoc:UltMsg)
 		else
 			_sMsgRetWS = _sRet
 		endif
@@ -2408,13 +2414,13 @@ static function _AsCapSoc ()
 	if empty (_sErroWS)
 		_oAssoc := ClsAssoc ():New (_sAssoc, _sLoja)
 		if valtype (_oAssoc) != 'O'
-			_sErroWS += "Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto
+			_SomaErro ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto)
 		endif
 	endif
 	if empty (_sErroWS)
 		_sRet = _oAssoc:SldQuotCap (date ()) [.QtCapRetXML]
 		if empty (_sRet)
-			_sErroWS += "Retorno invalido metodo SldQuotCap " + _oAssoc:UltMsg
+			_SomaErro ("Retorno invalido metodo SldQuotCap " + _oAssoc:UltMsg)
 		else
 			_sMsgRetWS = _sRet
 		endif
@@ -2473,12 +2479,12 @@ static function _AltAssoc ()
 		if len (_aRegSA2) == 1
 			_oAssoc := ClsAssoc ():New (sa2 -> a2_cod, sa2 -> a2_loja)
 			if valtype (_oAssoc) != 'O'
-				_sErroWS += "Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto
+				_SomaErro ("Impossivel instanciar objeto ClsAssoc. Verifique codigo e loja informados " + _sErroAuto)
 			else
 				u_logobj (_oAssoc)
 			endif
 		else
-			_sErroWS += "Impossivel identificar associado."
+			_SomaErro ("Impossivel identificar associado.")
 		endif
 	endif
 	if empty (_sErroWS)
@@ -2502,7 +2508,7 @@ static function _ImpEtiq ()
 	if empty (_sErroWS)
 		_oEtiq := ClsEtiq ():New (_sEtiq)
 		if _oEtiq:Codigo != _sEtiq
-			_sErroWS += "Numero de etiqueta invalido."
+			_SomaErro ("Numero de etiqueta invalido.")
 		else
 			
 			// Eventualmente posso obrigar a listar as barras do produto.
@@ -2511,7 +2517,7 @@ static function _ImpEtiq ()
 			endif
 			
 			if ! _oEtiq:Imprime (_sCodImpr)
-				_sErroWS += 'Erro na rotina de impressao'
+				_SomaErro ('Erro na rotina de impressao')
 			else
 				_sMsgRetWS += _oEtiq:UltMsg
 			endif
@@ -2535,23 +2541,28 @@ static function _ImpEtiqZAG ()
 	if empty (_sErroWS)
 		zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
 		if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
-			_sErroWS += "Documento '" + _sDocZAG + "' nao localizado na tabela ZAG"
+			_SomaErro ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG")
 		else
 			_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
 			
 			// Se nao tem etiqueta, eh possivel que tenha dado problema na
 			// geracao da mesma. Vou tentar gerar novamente.
 			if empty (_oTrEstq:Etiqueta)
+				U_Log2 ('debug', '[' + procname () + ']nao tem etiq.ainda. Vou gerar.')
 				_oTrEstq:ImprEtq = _sCodImpr
-				_oTrEstq:GeraEtiq (.F.)
-				_sMsgRetWS += _oTrEstq:UltMsg
+				if ! _oTrEstq:GeraEtiq (.T.)
+					_SomaErro (_oTrEstq:UltMsg)
+				else
+					_sMsgRetWS += _oTrEstq:UltMsg
+				endif
 			else
+				U_Log2 ('debug', '[' + procname () + ']jah tem a etiq ' + _oTrEstq:Etiqueta + ' Vou imprimir.')
 				_oEtiq := ClsEtiq ():New (_oTrEstq:Etiqueta)
 				if _oEtiq:Codigo != _oTrEstq:Etiqueta
-					_sErroWS += "Numero de etiqueta invalido."
+					_SomaErro ("Numero de etiqueta invalido.")
 				else
 					if ! _oEtiq:Imprime (_sCodImpr)
-						_sErroWS += 'Erro na rotina de impressao'
+						_SomaErro ('Erro na rotina de impressao')
 					else
 						_sMsgRetWS += _oEtiq:UltMsg
 					endif
@@ -2573,14 +2584,22 @@ static function _InutEtiq ()
 	if empty (_sErroWS)
 		_oEtiq := ClsEtiq ():New (_sEtiq)
 		if _oEtiq:Codigo != _sEtiq
-			_sErroWS += "Numero de etiqueta invalido."
+			_SomaErro ("Numero de etiqueta invalido.")
 		else
 			if ! _oEtiq:Inutiliza (.F.)
-				_sErroWS += _oEtiq:UltMsg
+				_SomaErro (_oEtiq:UltMsg)
 			else
 				_sMsgRetWS += _oEtiq:UltMsg
 			endif
 		endif
+	endif
+return
+
+
+static function _SomaErro (_sMsg)
+	local _sMsgAux := alltrim (cvaltochar (_sMsg))
+	if ! _sMsgAux $ _sErroWS
+		_sErroWS += iif (empty (_sErroWS), '', '; ') + _sMsgAux
 	endif
 return
 
@@ -2605,13 +2624,13 @@ static function _ExtraiTag (_sTag, _lObrig, _lValData)
 //	U_Log2 ('debug', '[' + procname () + ']Type:' + type (_sTag))
 	if type (_sTag) != "O"
 		if _lObrig
-			_sErroWS += "XML invalido: Tag '" + _sTag + "' nao encontrada."
+			_SomaErro ("XML invalido: Tag '" + _sTag + "' nao encontrada.")
 		endif
 	else
 		_sRet = &(_sTag + ":TEXT")
 //		U_Log2 ('debug', '[' + procname () + ']Li a tag ' + _sTag + ' e obtive: ' + _sRet)
 		if empty (_sRet) .and. _lObrig
-			_sErroWS += "XML invalido: valor da tag '" + _sTag + "' deve ser informado."
+			_SomaErro ("XML invalido: valor da tag '" + _sTag + "' deve ser informado.")
 		endif
 		if _lValData  // Preciso validar formato da data
 			if ! empty (_sRet)
@@ -2626,7 +2645,7 @@ static function _ExtraiTag (_sTag, _lObrig, _lValData)
 					next
 				endif
 				if ! _lDataOK
-					_sErroWS += "Data deve ser informada no formato AAAAMMDD"
+					_SomaErro ("Data deve ser informada no formato AAAAMMDD")
 				endif
 			endif
 		endif

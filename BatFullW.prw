@@ -41,6 +41,7 @@
 // 03/08/2022 - Robert - Criado controle de semaforo para evitar 2 execucoes simultaneas; melhorado log (GLPI 12427)
 // 21/09/2022 - Robert - Desabilitadas algumas partes das entradas (melhorias para integracao com ZAG)
 //                     - Passa a usar ClsAviso() para as notificacoes.
+// 13/12/2022 - Robert - Habilitada liberacao de transf.estq gerada pelo ZAG.
 //
 
 #Include "Protheus.ch"
@@ -147,15 +148,12 @@ static function _Entradas ()
 					u_log2 ('info', 'Chamando liberacao do ZAG')
 					_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
 					_oTrEstq:Etiqueta = za1 -> za1_codigo
-					U_Log2 ('aviso', '[' + procname () + ']Restante do programa desabilitado por que eu acho que deveria pesquisar na tabela tb_wms_movimentacoes antes de dar prosseguimento.')
-/*
-					_oTrEstq:Libera (.F., 'FULLW')
+					_oTrEstq:Libera (.F., 'FULLWMS')
 					if _oTrEstq:Executado == 'S'
 						_AtuEntr ((_sAliasQ) -> entrada_id, '3')  // Atualiza a tabela do Fullsoft como 'executado no ERP'
 					elseif _oTrEstq:Executado == 'E'
 						_AtuEntr ((_sAliasQ) -> entrada_id, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
 					endif
-*/
 				endif
 
 			elseif ! empty (za1 -> za1_doce)  // Trata-se de entrada gerada por NF
@@ -666,9 +664,23 @@ static function _Saidas ()
 
 			// Deixa objeto instanciado com a solicitacao original de transferencia
 			_oTrOrig := ClsTrEstq ():New (zag -> (recno ()))
+			if empty (_oTrEstq:Docto)
+				u_help ("Nao foi possivel instanciar objeto _oTrEstq",, .t.)
+				loop
+			endif
 			if _oTrOrig:Executado == 'S'  // Se jah foi executado anteriormente...
 				u_log2 ('aviso', 'Transferencia consta como jah executada na tabela ZAG.')
 				_AtuSaid ((_sAliasQ) -> saida_id, '3')  // Atualiza a tabela do Fullsoft como 'executado no ERP'
+				(_sAliasQ) -> (dbskip ())
+				loop
+			endif
+			
+			sb2 -> (dbsetorder (1))  // B2_FILIAL+B2_COD+B2_LOCAL
+			if ! sb2 -> (dbseek (xfilial ("SB2") + zag -> zag_prdori + zag -> zag_almori, .F.)) .or. sb2 -> b2_qatu < (_sAliasQ) -> qtde_exec
+				_sMsg = 'Falta estq prod. ' + alltrim (zag -> zag_prdori) + ' alm. ' + zag -> zag_almori + '. Saldo=' + cvaltochar (sb2 -> b2_qatu) + ' Qt.solicitada:' + cvaltochar (zag -> zag_qtdsol)
+				_AtuSaid ((_sAliasQ) -> saida_id, '1')  // Atualiza a tabela do Fullsoft como 'falta estoque para fazer a transferencia'
+				u_help (_sMsg,, .t.)
+				_oBatch:Mensagens += _sMsg + '; '
 				(_sAliasQ) -> (dbskip ())
 				loop
 			endif
@@ -676,16 +688,6 @@ static function _Saidas ()
 			if zag -> zag_qtdsol != (_sAliasQ) -> qtde_exec
 				_sMsg = "Diferenca! Qt.solicitada: " + cvaltochar (zag -> zag_qtdsol) + "; Qt.movim.FullWMS: " + cvaltochar ((_sAliasQ) -> qtde_exec)
 				_AtuSaid ((_sAliasQ) -> saida_id, '4')  // Atualiza a tabela do Fullsoft como 'diferenca na quantidade'
-				u_help (_sMsg,, .t.)
-				_oBatch:Mensagens += _sMsg + '; '
-				(_sAliasQ) -> (dbskip ())
-				loop
-			endif
-
-			sb2 -> (dbsetorder (1))  // B2_FILIAL+B2_COD+B2_LOCAL
-			if ! sb2 -> (dbseek (xfilial ("SB2") + zag -> zag_prdori + zag -> zag_almori, .F.)) .or. sb2 -> b2_qatu < (_sAliasQ) -> qtde_exec
-				_sMsg = 'Falta estq prod. ' + alltrim (zag -> zag_prdori) + ' alm. ' + zag -> zag_almori + '. Saldo=' + cvaltochar (sb2 -> b2_qatu) + ' Qt.solicitada:' + cvaltochar (zag -> zag_qtdsol)
-				_AtuSaid ((_sAliasQ) -> saida_id, '1')  // Atualiza a tabela do Fullsoft como 'falta estoque para fazer a transferencia'
 				u_help (_sMsg,, .t.)
 				_oBatch:Mensagens += _sMsg + '; '
 				(_sAliasQ) -> (dbskip ())
