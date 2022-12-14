@@ -101,9 +101,11 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " 	    AND ZX5.ZX5_TABELA = '55' "
 	_oSQL:_sQuery += " 		AND ZX5.ZX5_CHAVE = ZC0_TM "
 	_oSQL:_sQuery += " WHERE ZC0.D_E_L_E_T_ = '' "
-	_oSQL:_sQuery += " AND ZC0.ZC0_DATA   BETWEEN '"+ dtos(mv_par01) +"' AND '"+ dtos(mv_par02) +"' "
 	_oSQL:_sQuery += " AND ZC0.ZC0_CODRED BETWEEN '"+ mv_par03 +"' AND '"+ mv_par04 +"' "
 	_oSQL:_sQuery += " AND ZC0.ZC0_CODCLI BETWEEN '"+ mv_par05 +"' AND '"+ mv_par06 +"' "
+	If !empty(mv_par01)
+		_oSQL:_sQuery += " AND ZC0.ZC0_DATA   BETWEEN '"+ dtos(mv_par01) +"' AND '"+ dtos(mv_par02) +"' "
+	EndIf
 	If !empty(mv_par07)
 		_oSQL:_sQuery += " AND ZC0.ZC0_TM    = '"+ mv_par07 +"' "
 	EndIf
