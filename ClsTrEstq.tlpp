@@ -33,6 +33,7 @@
 //                      - Tratamentos para permitir lote origem quando destino for FullWMS.
 // 09/11/2022 - Robert  - Nao alimentava numero da etiqueta no metodo GeraAtrib.
 // 12/12/2022 - Robert  - Implementados metodos SomaMsg e GravaErro.
+// 14/12/2022 - RObert  - Gravacao campo ZAG_EREXEC e melhoria mensagens de log.
 //
 
 // ------------------------------------------------------------------------------------
@@ -77,7 +78,7 @@ CLASS ClsTrEstq
 	public data LibNaIncl  // Indica se, no momento da inclusao do registro no ZAG, jah deve tentar fazer as liberacoes.
 	public data LoteOrig   // Lote origem (quando produto tiver controle de lote)
 	public data LoteDest   // Lote destino (quando produto tiver controle de lote)
-	private data MsgErro   // Mensagens (persistidas na tabela ZAG) de erro, para ajudar a investigar posteriormente casos de problemas.
+//	private data MsgErro   // Mensagens (persistidas na tabela ZAG) de erro, para ajudar a investigar posteriormente casos de problemas.
 	public data MotNac     // Motivo de nao aceite da solicitacao.
 	public data QtdSolic   // Quantidade solicitada (inicial a ser transferida) 
 	public data UltMsg     // Ultima mensagem gerada.
@@ -156,6 +157,7 @@ METHOD AtuZAG (_sCampo, _xValor) Class ClsTrEstq
 	//u_log2 ('info', 'Atualizando campo ' + _sCampo + ' com ' + cvaltochar (_xValor))
 	if ::RegZAG > 0
 		zag -> (dbgoto (::RegZAG))
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Gravando campo ' + _sCampo + ' com conteudo ' + cvaltochar (_xValor))
 		reclock ("ZAG", .F.)
 		zag -> &(_sCampo) = _xValor
 		msunlock ()
@@ -277,7 +279,7 @@ METHOD Executa (_lMensagem) Class ClsTrEstq
 	local _lContinua := .T.
 	local _sMsgInt   := ''
 
-//	u_logIni (GetClassName (::Self) + '.' + procname ())
+	_lMensagem := iif (_lMensagem == NIL, .T., _lMensagem)
 
 	if _lContinua .and. ::RegZAG == 0
 		_sMsgInt += "Transferencia ainda nao gravada na tabela ZAG"
@@ -332,12 +334,16 @@ METHOD Executa (_lMensagem) Class ClsTrEstq
 		_lContinua = ::GeraSC5 ()
 	endif
 
+	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']_lContinua=' + cvaltochar (_lContinua))
+	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']::UltMsg=' + ::UltMsg)
 	if ! _lContinua .and. ! empty (::UltMsg)
-		::GravaErro (::UltMsg)  // Persiste mensagem de erro na tabela ZAG
+		// Persiste mensagem de erro na tabela ZAG, para ajudar pessoal de suporte.
+		::AtuZAG ("zag_ErExec", ::UltMsg)
+
 		u_help (::UltMsg)
 	endif
 
-	// Atualiza novamente os atributos, para atualizar caso tenha gerado movimento.
+	// Gera novamente os atributos, para atualizar caso tenha gerado movimento.
 	::GeraAtrib ("ZAG")
 
 return _lContinua
@@ -375,7 +381,7 @@ METHOD GeraAtrib (_sOrigem) class ClsTrEstq
 	::LibNaIncl  = .T.
 	::LoteOrig   = ''
 	::LoteDest   = ''
-	::MsgErro    = iif (valtype (::MsgErro) == 'U', '', ::MsgErro)  // Posso estar atualizando apos alguma operacao e nao quero perder o historico.
+//	::MsgErro    = iif (valtype (::MsgErro) == 'U', '', ::MsgErro)  // Posso estar atualizando apos alguma operacao e nao quero perder o historico.
 	::MotNac     = ''
 	::QtdSolic   = 0
 	::UltMsg     = iif (valtype (::UltMsg) == 'U', '', ::UltMsg)  // Posso estar atualizando apos alguma operacao e nao quero perder o historico.
@@ -404,7 +410,7 @@ METHOD GeraAtrib (_sOrigem) class ClsTrEstq
 		::Executado = zag -> zag_exec
 		::LoteOrig  = zag -> zag_LotOri
 		::LoteDest  = zag -> zag_LotDst
-		::MsgErro   = alltrim (zag -> zag_MsgErr)
+//		::MsgErro   = alltrim (zag -> zag_MsgErr)
 		::MotNac    = alltrim (zag -> zag_MotNac)
 		::QtdSolic  = zag -> zag_QtdSol
 		::UsrAutOri = zag -> zag_UAutO
@@ -951,7 +957,7 @@ METHOD Grava () Class ClsTrEstq
 //	u_logFim (GetClassName (::Self) + '.' + procname ())
 return _lRet
 
-
+/*
 // --------------------------------------------------------------------------
 // Grava mensagem de erro (geralmente ocorrida ao tentar efetivar a
 // transferencia) na tabela ZAG, para ajudar pessoal de suporte.
@@ -962,7 +968,7 @@ METHOD GravaErro (_sMsg) Class ClsTrEstq
 		::AtuZAG ("zag_msgerr", ::MsgErro)
 	endif
 return
-
+*/
 
 // --------------------------------------------------------------------------
 // Busca dados adicionais dos produtos origem e destino (podem nao ser iguais)
