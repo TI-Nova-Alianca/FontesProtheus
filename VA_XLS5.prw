@@ -89,6 +89,7 @@
 //                      - Passa a somar a coluna D2_VALFRE no "Valor bruto" e "Valor total NF" (GLPI 10579).
 // 27/08/2021 - Cláudia - Incluida as colunas Id pagar-me e NSU pagarme e link cielo. GLPI 10830
 // 01/07/2022 - Claudia - Ajuste na opção mesoregiao. GLPI: 12297
+// 14/12/2022 - Claudia - Inclusão de tratamento notas de complemento no valor mercadoria. GLPI: 12852
 //
 // ---------------------------------------------------------------------------------------------------------------
 User Function VA_XLS5 (_lAutomat)
@@ -229,7 +230,8 @@ Static Function _Opcoes (_sTipo)
 		aadd (_aOpcoes, {.F., "Mesoregiao",               "RTRIM (ZB_MESO) AS MESOREGIAO"})
 		aadd (_aOpcoes, {.F., "Municipio",                "RTRIM (SA1.A1_MUN) MUNICIPIO"})
 		aadd (_aOpcoes, {.F., "Nome Representante 1",     "RTRIM (A3_NOME) AS REPRES"})
-		aadd (_aOpcoes, {.F., "Valor mercadoria",         _sSelVlMer + " * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALMERC"})
+		aadd (_aOpcoes, {.F., "Valor mercadoria",         "CASE WHEN V.TIPONFSAID = 'C' THEN 0 ELSE "+_sSelVlMer + " * (CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END) END AS VALMERC"})
+	//	aadd (_aOpcoes, {.F., "Valor mercadoria",         _sSelVlMer + " * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALMERC"})
 	//	aadd (_aOpcoes, {.F., "Valor bruto",              "(V.TOTAL + V.VALIPI + V.SEGURO + V.DESPESA + V.PVCOND + V.ICMSRET) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALBRUT"})
 		aadd (_aOpcoes, {.F., "Valor bruto",              "(V.TOTAL + V.VALIPI + V.SEGURO + V.DESPESA + V.PVCOND + V.ICMSRET + V.D2_VALFRE) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VALBRUT"})
 		aadd (_aOpcoes, {.F., "Valor ICMS",               "V.VALICM * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END  AS ICMS"})
