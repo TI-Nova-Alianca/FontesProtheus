@@ -80,8 +80,8 @@
 // 06/10/2022 - Robert  - Verif.82 passa a ser valida para todas as filiais (GLPI 12324)
 // 18/11/2022 - Robert  - Criada verificacao 92.
 // 26/11/2022 - Robert  - Criado atributo :ComTela
+// 15/12/2022 - Claudia - Incluido parametros na verificação 28. GLPI: 12938
 //
-
 // --------------------------------------------------------------------------------------------------------------------
 #include "protheus.ch"
 
@@ -1359,6 +1359,8 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Descricao  = 'OP com valores totais de RE x PR inconsistentes'
 			::Sugestao   = 'Revise custo dos movimentos da OP na tabela SD3.'
 			::ViaBatch   = .F.
+			::GrupoPerg = "U_VALID028"
+			::ValidPerg (_lDefault)
 			::QuandoUsar = "Apos rodar o custo medio."
 			::Query := ""
 			::Query += "WITH C AS ("
@@ -1373,7 +1375,8 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=             RetSQLName ("SB1") + " CONSUMIDO "
 			::Query += " WHERE SD3.D_E_L_E_T_ = ''"
 			::Query +=   " AND SD3.D3_FILIAL  = '" + xfilial ("SD3") + "'"
-			::Query +=   " AND SD3.D3_EMISSAO BETWEEN '" + ::MesAtuEstq + "01' AND '" + dtos (lastday (stod (::MesAtuEstq + '01'))) + "'"
+			//::Query +=   " AND SD3.D3_EMISSAO BETWEEN '" + ::MesAtuEstq + "01' AND '" + dtos (lastday (stod (::MesAtuEstq + '01'))) + "'"
+			::Query +=   " AND SD3.D3_EMISSAO BETWEEN '" + dtos (::Param01)  + "' AND '"+ dtos (::Param02) + "'"
 			::Query +=   " AND SD3.D3_OP      != ''"
 			::Query +=   " AND SD3.D3_ESTORNO != 'S'"
 			::Query +=   " AND CONSUMIDO.D_E_L_E_T_ = ''"
@@ -1390,6 +1393,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=    " FROM C"
 			::Query +=   " WHERE ROUND (CUSTO_RE_MO + CUSTO_RE_OUTROS, 2) != ROUND (CUSTO_PR, 2)"
 			::Query += " ORDER BY FILIAL, OP"
+			u_log(::Query)
 
 		case ::Numero == 29
 			::Filiais    = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
@@ -3644,6 +3648,16 @@ METHOD ValidPerg (_lDefault) Class ClsVerif
 			if _lDefault
 				::Param01 = U_IniSafra ()  // Retorna o Ano da Safra atual. Deixa um valor default para poder gerar a query inicial.
 			endif
+
+		case ::GrupoPerg == "U_VALID028"
+			//                     PERGUNT                           TIPO TAM DEC VALID F3        Opcoes                               Help
+			aadd (_aRegsPerg, {01, "Data de  ", "D", 8,  0,  "",   "      ", {},                                  	""})
+			aadd (_aRegsPerg, {02, "Data até ", "D", 8,  0,  "",   "      ", {},  									""})
+			
+			if _lDefault
+				::Param01 = dDataBase   // Deixa um valor default para poder gerar a query inicial.
+				::Param02 = dDataBase   // Deixa um valor default para poder gerar a query inicial.
+			EndIf
 
 		case ::GrupoPerg == "U_VALID046"
 			//                     PERGUNT                           TIPO TAM DEC VALID F3        Opcoes                               Help
