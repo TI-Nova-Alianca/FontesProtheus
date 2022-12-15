@@ -34,8 +34,8 @@
 // 19/10/2022 - Robert  - Valida duplicidade do B1_CODBAR no 'tudo ok' - GLPI 12726
 // 24/10/2022 - Robert  - Melhorada mensagem de validacao B1_TIPO x B1_GRTRIB
 // 26/10/2022 - Robert  - Valida duplicidade de do B1_CODBAR somente "se nao for tudo zero".
+// 15/12/2022 - Claudia - Incluidas validações de rastro e lote. GLPI: 12933
 //
-
 //---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
 #Include "TOTVS.ch"
@@ -189,102 +189,95 @@ static function _A010TOk ()
 	local _aAreaSB1  := {}
 	local _oEvento   := NIL
 	local _oSQL      := NIL
-//	static _lJahPassou := .F.
 
-//	if ! _lJahPassou
-		if m->b1_tipo $ "PA/PI/VD"
-			if m->b1_litros == 0 .and. ! m->b1_grupo $ '0603/0706'
-				u_help ("Campo '" + alltrim (RetTitle ("B1_LITROS")) + "' deve ser informado para este tipo de produto.")
+	if m->b1_tipo $ "PA/PI/VD"
+		if m->b1_litros == 0 .and. ! m->b1_grupo $ '0603/0706'
+			u_help ("Campo '" + alltrim (RetTitle ("B1_LITROS")) + "' deve ser informado para este tipo de produto.")
+			_lRet = .F.
+		endif
+	else
+		if ! empty (m->b1_locprod)
+			u_help ("Campo '" + alltrim (RetTitle ("B1_LOCPROD")) + "' nao deve ser informado para este tipo de produto.")
+			_lRet = .F.
+		endif
+	endif
+		
+	if ! m->b1_tipo $ "PA/MR"
+		if alltrim (m->b1_tipo) != alltrim (m->b1_grtrib)
+			u_help ("Campo '" + alltrim (RetTitle ("B1_TIPO")) + "' nao pode ser diferente de '" + alltrim (RetTitle ("B1_GRTRIB")) + "' para que TES inteligente / excecoes fiscais funcionem.")
+			_lRet = .F.
+		endif
+	endif
+		
+	// Verifica se eh uva (materia prima)
+	if m->b1_tipo == "MP" .and. ! alltrim (m->b1_cod) $ "9989/2852" ;  // Lenha
+		.and. (! empty (m->b1_varuva) ;
+		.or. m->b1_locpad == "50")
+		_lEhUva = .T.
+	else
+		_lEhUva = .F.
+	endif
+		
+	if _lRet .and. _lEhUva
+		if 	empty (m->b1_VarUva)
+			u_help ("Este item e´ UVA: Os seguintes campos devem ser informados: " + chr (13) + chr (10) + ;
+					alltrim (RetTitle ("B1_VARUVA")))
+			_lRet = .F.
+		endif
+		if _lRet .and. ! m->b1_vacor $ "BRT"
+			u_help ("Este item e´ UVA: Campo '" + alltrim (RetTitle ("B1_VACOR")) + "' deve ser informado para este tipo de produto.")
+			_lRet = .F.
+		endif
+	endif
+
+	if _lRet
+		if m->b1_vafullw == 'S'
+			if empty (m->b1_codbar)
+				u_help ("Produtos controlados pelo FullWMS (campo '" + alltrim (RetTitle ("B1_VAFULLW")) + "') devem ter codigo de barras da caixa informado, mesmo que seja composto de zeros, informado no campo '" + alltrim (RetTitle ("B1_CODBAR")) + "'.")
 				_lRet = .F.
 			endif
+			if ! m->b1_um $ 'GF/CX/UN/FD'
+				u_help ("Unidade de medida invalida para produtos controlados pelo FullWMS (campo '" + alltrim (RetTitle ("B1_VAFULLW")) + "').")
+				_lRet = .F.
+			endif
+		endif
+	endif
+
+	if _lRet
+		if m->b1_vlr_ipi != 0 .and. m->b1_ipi != 0
+			u_help ("IPI deve ser informado somente por aliquota (campo '" + alltrim (RetTitle ("B1_IPI")) + "') ou por valor absoluto (campo '" + alltrim (RetTitle ("B1_VLR_IPI")) + "'), mas nao ambos.")
+			_lRet = .F.
+		endif
+	endif
+
+	if _lRet .and. ! empty (m->b1_codbar) .and. ! _SohZeros (m->b1_codbar)
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT RTRIM (STRING_AGG (RTRIM (B1_COD) + '-' + RTRIM (B1_DESC), '; '))"
+		_oSQL:_sQuery +=   " FROM " + RetSQLName ("SB1") + " SB1 "
+		_oSQL:_sQuery +=  " WHERE SB1.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=    " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+		_oSQL:_sQuery +=    " AND SB1.B1_CODBAR  = '" + m->b1_codbar + "'"
+		_oSQL:_sQuery +=    " AND SB1.B1_COD    != '" + m->b1_cod + "'"
+		_oSQL:Log ()
+		_sMsg = _oSQL:RetQry (1, .f.)
+		if ! empty (_sMsg)
+			U_Help ("Codigo de barras ja informado para o(s) seguinte(s) produto (s): " + _sMsg,, .t.)
+			_lRet = .F.
+		endif
+	endif
+
+	if _lRet .and. paramixb [1]:nOperation == 4  // Se estou alterando um cadastro, gero evento de alteracao.
+		_aAreaSB1 := sb1 -> (getarea ())
+		sb1 -> (dbsetorder (1))
+		if sb1 -> (dbseek (xfilial ("SB1") + m->b1_cod, .F.))  // SB1 chega aqui em BOF (vai entender...)
+			_oEvento := ClsEvent():new ()
+			_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), '', .F.)
 		else
-			if ! empty (m->b1_locprod)
-				u_help ("Campo '" + alltrim (RetTitle ("B1_LOCPROD")) + "' nao deve ser informado para este tipo de produto.")
-				_lRet = .F.
-			endif
+			u_log2 ('erro', "Nao encontrei o SB1 do produto '" + m->b1_cod + "' para gerar o evento.")
 		endif
-		
-		if ! m->b1_tipo $ "PA/MR"
-			if alltrim (m->b1_tipo) != alltrim (m->b1_grtrib)
-				u_help ("Campo '" + alltrim (RetTitle ("B1_TIPO")) + "' nao pode ser diferente de '" + alltrim (RetTitle ("B1_GRTRIB")) + "' para que TES inteligente / excecoes fiscais funcionem.")
-				_lRet = .F.
-			endif
-		endif
-		
-		// Verifica se eh uva (materia prima)
-		if m->b1_tipo == "MP" .and. ! alltrim (m->b1_cod) $ "9989/2852" ;  // Lenha
-			.and. (! empty (m->b1_varuva) ;
-			.or. m->b1_locpad == "50")
-			_lEhUva = .T.
-		else
-			_lEhUva = .F.
-		endif
-		
-		if _lRet .and. _lEhUva
-			if 	empty (m->b1_VarUva)
-				u_help ("Este item e´ UVA: Os seguintes campos devem ser informados: " + chr (13) + chr (10) + ;
-						alltrim (RetTitle ("B1_VARUVA")))
-				_lRet = .F.
-			endif
-			if _lRet .and. ! m->b1_vacor $ "BRT"
-				u_help ("Este item e´ UVA: Campo '" + alltrim (RetTitle ("B1_VACOR")) + "' deve ser informado para este tipo de produto.")
-				_lRet = .F.
-			endif
-		endif
-
-		if _lRet
-			if m->b1_vafullw == 'S'
-				if empty (m->b1_codbar)
-					u_help ("Produtos controlados pelo FullWMS (campo '" + alltrim (RetTitle ("B1_VAFULLW")) + "') devem ter codigo de barras da caixa informado, mesmo que seja composto de zeros, informado no campo '" + alltrim (RetTitle ("B1_CODBAR")) + "'.")
-					_lRet = .F.
-				endif
-				if ! m->b1_um $ 'GF/CX/UN/FD'
-					u_help ("Unidade de medida invalida para produtos controlados pelo FullWMS (campo '" + alltrim (RetTitle ("B1_VAFULLW")) + "').")
-					_lRet = .F.
-				endif
-			endif
-		endif
-
-		if _lRet
-			if m->b1_vlr_ipi != 0 .and. m->b1_ipi != 0
-				u_help ("IPI deve ser informado somente por aliquota (campo '" + alltrim (RetTitle ("B1_IPI")) + "') ou por valor absoluto (campo '" + alltrim (RetTitle ("B1_VLR_IPI")) + "'), mas nao ambos.")
-				_lRet = .F.
-			endif
-		endif
-
-		if _lRet .and. ! empty (m->b1_codbar) .and. ! _SohZeros (m->b1_codbar)
-			_oSQL := ClsSQL():New ()
-			_oSQL:_sQuery := ""
-			_oSQL:_sQuery += " SELECT RTRIM (STRING_AGG (RTRIM (B1_COD) + '-' + RTRIM (B1_DESC), '; '))"
-			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SB1") + " SB1 "
-			_oSQL:_sQuery +=  " WHERE SB1.D_E_L_E_T_ = ''"
-			_oSQL:_sQuery +=    " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
-			_oSQL:_sQuery +=    " AND SB1.B1_CODBAR  = '" + m->b1_codbar + "'"
-			_oSQL:_sQuery +=    " AND SB1.B1_COD    != '" + m->b1_cod + "'"
-			_oSQL:Log ()
-			_sMsg = _oSQL:RetQry (1, .f.)
-			if ! empty (_sMsg)
-				U_Help ("Codigo de barras ja informado para o(s) seguinte(s) produto (s): " + _sMsg,, .t.)
-				_lRet = .F.
-			endif
-		endif
-
-		if _lRet .and. paramixb [1]:nOperation == 4  // Se estou alterando um cadastro, gero evento de alteracao.
-			_aAreaSB1 := sb1 -> (getarea ())
-			sb1 -> (dbsetorder (1))
-			if sb1 -> (dbseek (xfilial ("SB1") + m->b1_cod, .F.))  // SB1 chega aqui em BOF (vai entender...)
-				_oEvento := ClsEvent():new ()
-				_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), '', .F.)
-			else
-				u_log2 ('erro', "Nao encontrei o SB1 do produto '" + m->b1_cod + "' para gerar o evento.")
-			endif
-			restarea (_aAreaSB1)
-		endif
-
-//		// Marca flag como 'jah passou por este local' por que o P.E. eh chamado duas vezes.
-//		_lJahPassou = .T.
-
-//	endif
+		restarea (_aAreaSB1)
+	endif
 	
 	if m->b5_convdip != 0 .and. empty(m->b5_umdipi)
 		u_help ("Fator de conversão informado no complemento. A unidade DIPI deve ser informada no registro!")
@@ -338,6 +331,37 @@ static function _A010TOk ()
 			endif
 		endif	
 	endif
+
+	// validações lote e rastro
+	if _lRet
+		_oSQL:= ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT * FROM SB8010 "
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery += " AND B8_PRODUTO   = '" + m->b1_cod + "'"
+		_oSQL:_sQuery += " AND B8_SALDO > 0"
+		_aSB8 := aclone(_oSQL:Qry2Array ())
+
+		if alltrim(m->b1_rastro) $ ('L/S') .and. len(_aSB8) > 0
+			u_help("Produto possui saldo em lote! Não é possível alteração no cadastro.")
+			_lRet := .F.
+		endif
+	endif
+	if _lRet
+		_oSQL:= ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT * FROM SBF010 "
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery += " AND BF_PRODUTO   = '" + m->b1_cod + "'"
+		_oSQL:_sQuery += " AND BF_QUANT > 0"
+		_aSBF := aclone(_oSQL:Qry2Array ())
+
+		if alltrim(m->b1_localiz) == 'S' .and. Len(_aSBF) > 0
+			u_help("Produto possui saldo em endereço! Não é possível alteração no cadastro.")
+			_lRet := .F.
+		endif
+	endif
+
 return _lRet
 //
 // --------------------------------------------------------------------------
