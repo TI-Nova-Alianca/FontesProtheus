@@ -40,7 +40,37 @@ User Function claudia ()
 	//u_help("GrupoTIB1")
 	//_GrupoTIB1()
 
+	u_help("_AtuTES")
+	_AtuTES()
 Return
+// --------------------------------------------------------------------------
+//
+static function _AtuTES ()
+	local _lContinua := .T.
+
+	DbSelectArea("SB1")
+	sb1 -> (dbsetorder (1))
+	sb1 -> (dbgotop ())
+	do while _lContinua .and. ! sb1 -> (eof ())
+	
+		if _lContinua
+			u_log2 ('info', 'Verificando item ' + sb1 -> b1_cod + SB1 -> B1_DESC)
+
+			// Grava evento de alteracao
+			_oEvento := ClsEvent():new ()
+			_oEvento:Alias    = 'SB1'
+			_oEvento:Texto    = 'GLPI: Ajusta b1_te para vazio'
+			_oEvento:CodEven  = "SB1001"
+			_oEvento:Produto  = sb1 -> b1_cod
+			_oEvento:Grava() 
+
+			reclock ("SB1", .f.)
+				sb1 -> b1_te = ''
+			msunlock ()
+		endif
+		sb1 -> (dbskip ())
+	enddo
+return
 // //
 // // ----------------------------------------------------------------------
 // // Altera grupo TI de produtos
