@@ -17,6 +17,7 @@
 //  26/10/2021 - Claudia - Realizado ajuste quando tem dois vendedores. GLPI: 11124
 //  12/01/2022 - Claudia - Criada nova validação para indenização. GLPI: 11361
 //  13/05/2022 - Claudia - Ajuste no parametro de vendedores ativos/inativos.
+//  15/12/2022 - Claudia - Incluido codigo de fornecedor na impressão do relatorio. GLPI: 12945
 //
 // --------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -128,7 +129,8 @@ Static Function PrintReport(oReport)
 		For _x:=1 to len(_aVend)
 			_sVend     := _aVend[_x,1]
 			_sVendNome := _aVend[_x,2]
-			_sVendedor := 'REPRESENTANTE: '+ alltrim(_aVend[_x,1]) + ' - ' + alltrim(_sVendNome)
+			_sFornece  := Posicione("SA3",1,xFilial("SA3") + _sVend, "A3_FORNECE")
+			_sVendedor := 'REPRESENTANTE: '+ alltrim(_aVend[_x,1]) + ' - ' + alltrim(_sVendNome) + "| Código Fornecedor: " + alltrim(_sFornece)
 			
 			_sAliasQ = U_VA_COMEXE(mv_par01, mv_par02, _sVend, mv_par05) // Consulta principal
 			(_sAliasQ) -> (dbgotop ())
