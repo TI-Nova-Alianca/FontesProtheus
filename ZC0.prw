@@ -11,6 +11,7 @@
 // #Modulos   		  #FIN 
 //
 // Historico de alteracoes:
+// 16/12/2022 - Cláudia - Incluida validação de NF na gravação. GLPI: 12943
 //
 // ----------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -78,7 +79,7 @@ Return
 // --------------------------------------------------------------------------
 // Incluir AxCadastro
 User Function ZC0INC()
-	AxInclui("ZC0",,,,,,)
+	AxInclui("ZC0",,,,,,"U_ZC0TDOK()")
 Return
 //
 // --------------------------------------------------------------------------
@@ -174,6 +175,29 @@ User Function ZC0ABE()
 		u_help("Usuário sem permissão para a rotina. Rotina: 137")
 	EndIf
 Return
+//
+// --------------------------------------------------------------------------
+// valida NF digitada
+User Function ZC0TDOK()
+	Local _oSQL := ClsSQL ():New ()
+	Local _lRet := .T.
+
+    _oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT * FROM SF2010 "
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_='' "
+	_oSQL:_sQuery += " AND F2_FILIAL   ='"+ xfilial("ZC0") +"'"
+	_oSQL:_sQuery += " AND F2_DOC      ='"+ M->ZC0_DOC    +"'"
+	_oSQL:_sQuery += " AND F2_SERIE    ='"+ M->ZC0_SERIE  +"'"
+	_aNFe := aclone (_oSQL:Qry2Array ())
+
+	If Len(_aNFe) > 0
+		_lRet := .T.
+	else
+		u_help(" Nota fiscal não encontrada!")
+		_lRet := .F.
+	EndIf
+	
+Return _lRet
 //
 // -------------------------------------------------------------------------
 // Cria Perguntas no SX1
