@@ -13,7 +13,7 @@
 user function MT035EXC()
 	local _lRet := .T.
 		
-	alert("Nenhum registro de grupo de produto pode ser excluído em função da integração com o software Mercanet.")
+	u_help ("Nenhum registro de grupo de produto pode ser excluído em função da integração com o software Mercanet.",, .t.)
 	_lRet = .F.
 
 Return _lRet

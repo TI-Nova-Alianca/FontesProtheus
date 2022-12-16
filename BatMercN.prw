@@ -40,10 +40,17 @@ user function BatMercN (_nQtDias)
 	local _lContinua := .T.
 	local _aDados    := {}
 	local _nLinha    := 0
-	
-	u_log2 ('info', 'Iniciando ' + procname ())
+	local _sLinkSrv  := ""
 
 	_oBatch:Retorno = 'N'
+
+	// Define se deve apontar para o banco de producao ou de homologacao.
+	_sLinkSrv = U_LkServer ('MERCANET')
+	if empty (_sLinkSrv)
+		u_help ("Sem definicao para comunicacao com banco de dados do Mercanet.",, .t.)
+		_oBatch:Retorno = 'E'  // Erro
+		_lContinua = .F.
+	endif
 
 	// Controla acesso via semaforo para evitar executar quando a execucao anterior ainda nao terminou.
 	if _lContinua
@@ -84,7 +91,7 @@ user function BatMercN (_nQtDias)
 		_oSQL:_sQuery +=   " AND F2_EMISSAO >= '" + dtos (date () - _nQtDias) + "'"
 //		_oSQL:_sQuery +=   " AND F2_EMISSAO >= '20190601'"  // DATA INICIAL EXPORT P/ MERCANET
 		_oSQL:_sQuery +=   " AND F2_TIPO != 'D'" //DIFERENTE DE DEVOLUCAO
-		_oSQL:_sQuery +=   " AND NOT EXISTS (SELECT * FROM LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_NOTA_FISCAL"
+		_oSQL:_sQuery +=   " AND NOT EXISTS (SELECT * FROM " + _sLinkSrv + ".DB_NOTA_FISCAL"
 		_oSQL:_sQuery +=   "                          WHERE DB_NOTA_NRO = CAST (F2_DOC AS INT)"
 		_oSQL:_sQuery +=   "                          AND DB_NOTA_SERIE = F2_SERIE COLLATE DATABASE_DEFAULT )
 		_oSQL:_sQuery += " ORDER BY R_E_C_N_O_"
@@ -102,7 +109,7 @@ user function BatMercN (_nQtDias)
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " SELECT R_E_C_N_O_"
-		_oSQL:_sQuery +=   " FROM LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_NOTA_FISCAL,"
+		_oSQL:_sQuery +=   " FROM " + _sLinkSrv + ".DB_NOTA_FISCAL,"
 		_oSQL:_sQuery +=          RetSQLName ("SF2") + " SF2 "
 		_oSQL:_sQuery +=  " WHERE DATEDIFF (DAY, DB_NOTA_DT_EMISSAO,GETDATE()) < " + cValToChar (_nQtDias)
 //		_oSQL:_sQuery +=  " WHERE DB_NOTA_DT_EMISSAO >= '20190601' "
@@ -155,8 +162,8 @@ user function BatMercN (_nQtDias)
 		_oSQL:_sQuery +=   " 		AND SF1.F1_SERIE = SD1A.D1_SERIE "
 		_oSQL:_sQuery +=   " 		AND SF1.F1_FORNECE = SD1A.D1_FORNECE "
 		_oSQL:_sQuery +=   " 		AND SF1.F1_LOJA = SD1A.D1_LOJA) "
-		_oSQL:_sQuery +=   " 		AND (NOT EXISTS (SELECT * FROM LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_NOTA_FISCAL WHERE DB_NOTA_NRO = CAST (SF1.F1_DOC AS INT))"
-		_oSQL:_sQuery +=   " OR EXISTS (SELECT * FROM LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_NOTA_FISCAL" 
+		_oSQL:_sQuery +=   " 		AND (NOT EXISTS (SELECT * FROM " + _sLinkSrv + ".DB_NOTA_FISCAL WHERE DB_NOTA_NRO = CAST (SF1.F1_DOC AS INT))"
+		_oSQL:_sQuery +=   " OR EXISTS (SELECT * FROM " + _sLinkSrv + ".DB_NOTA_FISCAL" 
 		_oSQL:_sQuery +=   "	WHERE DB_NOTA_NRO = CAST (SF1.F1_DOC AS INT) AND DB_NOTA_REPRES != SA1.A1_VEND)
 		_oSQL:_sQuery +=   " )"
 		_oSQL:_sQuery += " ORDER BY SF1.R_E_C_N_O_"
@@ -183,7 +190,7 @@ user function BatMercN (_nQtDias)
 		_oSQL:_sQuery +=        " AND F1_DOC    != '00126.498'"  // Nota-monstro que o SQL nao converte para INT.
 		_oSQL:_sQuery += " )"
 		_oSQL:_sQuery += " SELECT R_E_C_N_O_ "
-		_oSQL:_sQuery +=   " FROM LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_NOTA_FISCAL, SF1"
+		_oSQL:_sQuery +=   " FROM " + _sLinkSrv + ".DB_NOTA_FISCAL, SF1"
 		_oSQL:_sQuery +=  " WHERE DATEDIFF (DAY, DB_NOTA_DT_EMISSAO,GETDATE()) < " + cValToChar (_nQtDias)
 //		_oSQL:_sQuery +=  " WHERE DB_NOTA_DT_EMISSAO >= '20190601'"
 		_oSQL:_sQuery +=    " AND DB_NOTA_SERIE LIKE 'D%' "
@@ -316,7 +323,7 @@ user function BatMercN (_nQtDias)
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += "	SELECT SE1.R_E_C_N_O_" 
-		_oSQL:_sQuery += "	FROM LKSRV_MERCANETPRD.MercanetPRD.dbo.MCR01"
+		_oSQL:_sQuery += "	FROM " + _sLinkSrv + ".MCR01"
 		_oSQL:_sQuery += "	    INNER JOIN " + RetSQLName ("SE1") + " AS SE1 "
 		_oSQL:_sQuery += "			ON (SE1.D_E_L_E_T_ = '*'"
 		_oSQL:_sQuery += "			AND SE1.E1_FILIAL   = '01'"

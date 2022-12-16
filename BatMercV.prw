@@ -16,6 +16,7 @@
 //						  U_ZZUNU ({'A10'}, "Verificações Mercanet - Representantes"
 // 11/04/2022 - Claudia - Retirado o CNPJ 18694748000105 da consulta. GLPI: 11899
 // 08/11/2022 - Robert  - Passa a usar funcao U_LkServer() para apontar para o banco do Mercanet.
+// 16/12/2022 - Robert  - Manutencao porca na vez anterior. Nao tinha ajustado o linked server nas queries!
 //
 
 // -------------------------------------------------------------------------------------
@@ -33,17 +34,16 @@ User Function BatMercV()
 
 		// Verificação de clientes inativos Protheus/Mercanet
 		_oBatch:Mensagens += "Verificação de clientes inativos Protheus/Mercanet"
-		ClientesInativos()
+		ClientesInativos(_sLinkSrv)
 
-		RepInativos()
+		RepInativos(_sLinkSrv)
 	endif
-
-	u_log ('Mensagens do batch:', _oBatch:Mensagens)
+	U_Log2 ('info', '[' + procname () + ']Mensagens do batch:' + cvaltochar (_oBatch:Mensagens))
 Return
 //
 // -------------------------------------------------------------------------------
 // Verificação de clientes inativos Protheus/Mercanet
-Static Function ClientesInativos()
+Static Function ClientesInativos(_sLinkSrv)
 
 	_aCols = {}
 
@@ -72,7 +72,7 @@ Static Function ClientesInativos()
 	_oSQL:_sQuery += " 	   ,DB_CLI_CGCMF AS CGC_MERC "
 	_oSQL:_sQuery += " 	   ,DB_CLI_SITUACAO AS SITUACAO_MERC "
 	_oSQL:_sQuery += " 	FROM SA1010 SA1 "
-	_oSQL:_sQuery += " 	LEFT JOIN LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_CLIENTE CLI "
+	_oSQL:_sQuery += " 	LEFT JOIN " + _sLinkSrv + ".DB_CLIENTE CLI "
 	_oSQL:_sQuery += " 		ON CLI.DB_CLI_CGCMF COLLATE Latin1_General_CI_AI = A1_CGC COLLATE Latin1_General_CI_AI "
 	_oSQL:_sQuery += " 	WHERE SA1.D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " 	AND A1_MSBLQL = '1' "
@@ -89,7 +89,7 @@ Static Function ClientesInativos()
 	_oSQL:_sQuery += " 	   ,DB_CLI_CGCMF AS CGC_MERC "
 	_oSQL:_sQuery += " 	   ,DB_CLI_SITUACAO AS SITUACAO_MERC "
 	_oSQL:_sQuery += " 	FROM SA1010 SA1 "
-	_oSQL:_sQuery += " 	LEFT JOIN LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_CLIENTE CLI "
+	_oSQL:_sQuery += " 	LEFT JOIN " + _sLinkSrv + ".DB_CLIENTE CLI "
 	_oSQL:_sQuery += " 		ON CLI.DB_CLI_CGCMF COLLATE Latin1_General_CI_AI = A1_CGC COLLATE Latin1_General_CI_AI "
 	_oSQL:_sQuery += " 	WHERE SA1.D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " 	AND A1_MSBLQL = '2' "
@@ -111,19 +111,18 @@ Static Function ClientesInativos()
 	_oSQL:_sQuery += "    END AS STATUS_MERCANET "
 	_oSQL:_sQuery += " FROM C "
 	_oSQL:_sQuery += " WHERE CGC_PROTHEUS NOT IN ('92685460000119', '97944823587', '00213985000133','18694748000105') "
-
-	u_log (_oSQL:_sQuery)
+	_oSQL:Log ('[' + procname () + ']')
 	if len (_oSQL:Qry2Array (.T., .F.)) > 0
 
 		_sMsg = _oSQL:Qry2HTM ("Clientes com status divergentes. Data de verificacao: " + dtoc(date()-1), _aCols, "", .F.)
-		u_log (_sMsg)
+		U_Log2 ('info', '[' + procname () + ']' + cvaltochar (_sMsg))
 		U_ZZUNU ({'134'}, "Verificações Mercanet - Clientes", _sMsg, .F., cEmpAnt, cFilAnt, "") // CLientes
 	endif
 Return
 //
 // -------------------------------------------------------------------------------
 // Verificação de clientes inativos Protheus/Mercanet
-Static Function RepInativos()
+Static Function RepInativos(_sLinkSrv)
 
 	_aCols = {}
 
@@ -145,7 +144,7 @@ Static Function RepInativos()
 	_oSQL:_sQuery += "    ,DB_TBREP_NOME "
 	_oSQL:_sQuery += "    ,DB_TBREP_SIT_VENDA  "  
 	_oSQL:_sQuery += " FROM SA3010 SA3 "
-	_oSQL:_sQuery += " LEFT JOIN LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_TB_REPRES REP "
+	_oSQL:_sQuery += " LEFT JOIN " + _sLinkSrv + ".DB_TB_REPRES REP "
 	_oSQL:_sQuery += " 	ON DB_TBREP_CODORIG = A3_COD "
 	_oSQL:_sQuery += " WHERE SA3.D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " AND SA3.A3_ATIVO = 'S'  "
@@ -160,20 +159,18 @@ Static Function RepInativos()
 	_oSQL:_sQuery += "    ,DB_TBREP_NOME "
 	_oSQL:_sQuery += "    ,DB_TBREP_SIT_VENDA "
 	_oSQL:_sQuery += " FROM SA3010 SA3 "
-	_oSQL:_sQuery += " LEFT JOIN LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_TB_REPRES REP "
+	_oSQL:_sQuery += " LEFT JOIN " + _sLinkSrv + ".DB_TB_REPRES REP "
 	_oSQL:_sQuery += " 	ON DB_TBREP_CODORIG = A3_COD "
 	_oSQL:_sQuery += " WHERE SA3.D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " AND SA3.A3_ATIVO = 'N'  "
 	_oSQL:_sQuery += " AND DB_TBREP_SIT_VENDA = 1  "
 	_oSQL:_sQuery += " AND A3_COD NOT IN ('000001') "
 	_oSQL:_sQuery += " ORDER BY A3_COD "
-
-	u_log (_oSQL:_sQuery)
+	_oSQL:Log ('[' + procname () + ']')
 	if len (_oSQL:Qry2Array (.T., .F.)) > 0
 
 		_sMsg = _oSQL:Qry2HTM ("Representantes com status divergentes. Data de verificacao: " + dtoc(date()-1), _aCols, "", .F.)
-		u_log (_sMsg)
+		U_Log2 ('info', '[' + procname () + ']' + cvaltochar (_sMsg))
 		U_ZZUNU ({'134'}, "Verificações Mercanet - Representantes", _sMsg, .F., cEmpAnt, cFilAnt, "") // CLientes
 	endif
 Return
-

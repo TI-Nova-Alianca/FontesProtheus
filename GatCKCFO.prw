@@ -5,7 +5,7 @@
 // 
 //  #TipoDePrograma    #gatilho
 //  #Descricao         #Gatilho campo CK_CFO para geracao do CK_CF
-//  #PalavasChave      #Mercanet #integracao 
+//  #PalavasChave      #
 //  #TabelasPrincipais #SA1 
 //  #Modulos 		   #FAT 
 //

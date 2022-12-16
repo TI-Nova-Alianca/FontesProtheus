@@ -95,7 +95,6 @@ Static Function _Tela (_sCNPJ, _dDataIni)
 		_oSQL:_sQuery +=             " ELSE 0"
 		_oSQL:_sQuery +=             " END AS MINUTOS_RODANDO"
 		_oSQL:_sQuery += " FROM MONITOR"
-//		_oSQL:_sQuery += " LEFT JOIN LKSRV_MERCANETPRD.MercanetPRD.dbo.ZA1010 AS ZA1 "
 		_oSQL:_sQuery += " LEFT JOIN " + _sLinkSrv + ".ZA1010 AS ZA1 "
 		_oSQL:_sQuery +=      " ON (ZA1.ZA1_COD = COD_PROTHEUS COLLATE Latin1_General_CI_AI"
 		_oSQL:_sQuery +=      " AND ZA1.ZA1_CGC = CNPJ COLLATE Latin1_General_CI_AI)"
@@ -143,7 +142,6 @@ Static Function _Tela (_sCNPJ, _dDataIni)
 					for _nCli = 1 to len (_aCli)
 						if _aCli [_nCli, 1] .and. ! empty (_aCli [_nCli, 7])
 							_oSQL := ClsSQL ():New ()
-					//		_oSQL:_sQuery := "UPDATE LKSRV_MERCANETPRD.MercanetPRD.dbo.ZA1010"
 							_oSQL:_sQuery := "UPDATE " + _sLinkSrv + ".ZA1010"
 							_oSQL:_sQuery +=   " SET ZA1_DTINI  = '', ZA1_HRINI  = '', ZA1_STATUS = 'INS', ZA1_PROCRT = ' '"
 							_oSQL:_sQuery += " WHERE ZA1_FILIAL = '' AND ZA1_CODMER = '" + _aCli [_nCli, 4] + "'"

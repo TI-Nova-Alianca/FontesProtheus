@@ -111,7 +111,6 @@ Static Function _Tela(_dDtIni,_sCliente,_sLoja,_sPedido,_sVend,_sProd,_sTitulo,_
 		_oSQL:_sQuery += " TIPO, "
 		_oSQL:_sQuery += " R_E_C_N_O_,"
 		_oSQL:_sQuery += " ISNULL (ERRO, '') COLLATE DATABASE_DEFAULT AS MSG_ERRO"
-	//	_oSQL:_sQuery += " FROM LKSRV_MERCANETPRD.MercanetPRD.dbo.DB_INTERFACE_PROTHEUS"
 		_oSQL:_sQuery += " FROM " + _sLinkSrv + ".DB_INTERFACE_PROTHEUS"
 		_oSQL:_sQuery += " WHERE DATA_GRAVACAO BETWEEN '" + _sDtIni + "' AND '" + _sDtFin + "')"
 		_oSQL:_sQuery += " SELECT * FROM C "

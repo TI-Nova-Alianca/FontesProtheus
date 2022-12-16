@@ -32,6 +32,7 @@ user function LkServer (_sQualSrv)
 	if U_AmbTeste ()
 		U_Log2 ('debug', '[' + procname () + ']Estou definindo linked server para base teste')
 		_lBaseTST = .T.
+		//u_logpcham ()
 	endif
 
 	do case

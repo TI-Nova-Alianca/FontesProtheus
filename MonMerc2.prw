@@ -87,7 +87,6 @@ static function _Tela (_sPedMerc, _dDataIni, _sSituacao)
 		_oSQL:_sQuery +=        " ZC5_TABELA AS TABELA, "
 		_oSQL:_sQuery +=        " ZC5_ERRO AS MSG_ERRO,"
 		_oSQL:_sQuery +=        " CASE WHEN ZC5_STATUS = 'INS' AND ZC5_DTINI != '' AND ZC5_HRINI != '' THEN datediff (minute, cast (ZC5_DTINI + ' ' + ZC5_HRINI as DATETIME), CURRENT_TIMESTAMP) ELSE 0 END AS MINUTOS_RODANDO"
-	//	_oSQL:_sQuery +=  " FROM LKSRV_MERCANETPRD.MercanetPRD.dbo.ZC5010"
 		_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".ZC5010"
 		_oSQL:_sQuery +=  " LEFT JOIN " + RetSQLName ("SC5") + " SC5 "
 		_oSQL:_sQuery +=         " ON (SC5.D_E_L_E_T_ = ''"
@@ -145,7 +144,6 @@ static function _Tela (_sPedMerc, _dDataIni, _sSituacao)
 			for _nPed = 1 to len (_aPed)
 				if _aPed [_nPed, 1] // .and. ! empty (_aPed [_nPed, 14])
 					_oSQL := ClsSQL ():New ()
-	//				_oSQL:_sQuery := "UPDATE LKSRV_MERCANETPRD.MercanetPRD.dbo.ZC5010"
 					_oSQL:_sQuery := "UPDATE " + _sLinkSrv + ".ZC5010"
 					_oSQL:_sQuery +=   " SET ZC5_DTINI  = '', ZC5_HRINI  = '', ZC5_STATUS = 'INS', ZC5_ERRO = ''"
 					_oSQL:_sQuery += " where ZC5_FILIAL = '1' AND ZC5_PEDMER = '" + _aPed [_nPed, 4] + "'"

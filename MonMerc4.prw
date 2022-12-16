@@ -43,7 +43,6 @@ static function _Tela (_dDataIni)
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " SELECT *"
-	//	_oSQL:_sQuery += " FROM LKSRV_MERCANETPRD.MercanetPRD.dbo.DBS_ERROS_TRIGGERS"
 		_oSQL:_sQuery += " FROM " + _sLinkSrv + ".DBS_ERROS_TRIGGERS"
 		_oSQL:_sQuery += " WHERE DBS_ERROS_DATA >= '" + dtos (_dDataIni) + "'"
 		_oSQL:Log ()
