@@ -40,16 +40,18 @@
 // 03/06/2020 - Robert  - Criado tratamento para exclusao de contranotas de comprea de uva (atualiza ZZ9 e SZI).
 // 28/09/2020 - Robert  - Quando nao informado motivo de exclusao na primeira vez, a variavel ficava com tamanho zero e nao permitia mais digitar.
 //                      - Inseridas tags para catalogo de programas.
-// 03/02/2021 - Robert   - Soh verificava necessidade de limpar SZE quando serie 30. Agora verifica para qualquer serie.
+// 03/02/2021 - Robert  - Soh verificava necessidade de limpar SZE quando serie 30. Agora verifica para qualquer serie.
 // 17/11/2022 - Claudia - Incluido estorno de rapel.
+// 16/12/2022 - Robert  - Comentariado trecho sem efeito que faria leituras do Mercanet.
+//                      - Ajustadas algumas chamadas de log e acrescentado parametro .T. em chamadas de u_help.
 //
+
 // -----------------------------------------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"  
 #Include "TbiConn.ch"          
 
 User Function sf1100e()
 	local _aAreaAnt := U_ML_SRArea ()
-//	local _oBatch   := NIL
 	local _sMotExc  := ''
 
 	// solicita motivo de exclusao do documento - obrigatorio
@@ -144,8 +146,7 @@ User Function sf1100e()
 	EndIf
 
 	U_ML_SRArea (_aAreaAnt)
-	
-Return()
+Return
 //
 // --------------------------------------------------------------------------
 // Controles referentes a NF de entrada de safra.
@@ -211,7 +212,7 @@ static function _AtuSZI ()
 		for _nRecno = 1 to len (_aRecnos)
 			_oCtaCorr = ClsCtaCorr():New (_aRecnos [_nRecno, 1])
 			if ! _oCtaCorr:Exclui ()
-				u_help ("Nao foi possivel excluir da conta corrente de associados a movimentacao gerada por esta nota fiscal. Revise a conta corrente do associado '" + sf1 -> f1_fornece + "'.")
+				u_help ("Nao foi possivel excluir da conta corrente de associados a movimentacao gerada por esta nota fiscal. Revise a conta corrente do associado '" + sf1 -> f1_fornece + "'.",, .t.)
 			endif
 		next
 	endif
@@ -333,8 +334,6 @@ Return
 static function _AtuZZX ()
 	local _oSQL      := NIL
 
-	u_logIni ()
-
 	if ! empty (sf1 -> f1_chvnfe)
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery := ""
@@ -342,11 +341,10 @@ static function _AtuZZX ()
 		_oSQL:_sQuery +=    " SET ZZX_STATUS = '3'"  // 1=NF gerada no SF1;2=Pre-NF gerada no SF1;3=NF excluida no SF1
 		_oSQL:_sQuery +=  " WHERE ZZX_CHAVE  = '" + sf1 -> f1_chvnfe + "'"
 		_oSQL:_sQuery +=    " AND D_E_L_E_T_ = ''"
-		_oSQL:Log ()
+		_oSQL:Log ('[' + procname () + ']')
 		_oSQL:Exec ()
 	endif
 
-	u_logFim ()
 return
 //
 // -----------------------------------------------------
@@ -393,7 +391,7 @@ static function _ExcCTB ()
 		
 		if lMSErroAuto
 			_sErro := memoread (NomeAutoLog ()) + chr (13) + chr (10) + _sErroAuto
-			u_help (_sErro)
+			u_help (_sErro,, .t.)
 		endif
 	endif
 	_wkey = '%' + xfilial ("SF1") + "IND"+ sf1 -> f1_doc+ '%'
@@ -435,10 +433,12 @@ static function _ExcCTB ()
 		
 		if lMSErroAuto
 			_sErro := memoread (NomeAutoLog ()) + chr (13) + chr (10) + _sErroAuto
-			u_help (_sErro)
+			u_help (_sErro,, .t.)
 		endif
 	endif		
 return
+
+/* Este trecho de codigo fora de uma funcao nao tem efeito. Robert, 16/12/2022
 //
 // -----------------------------------------------------
 // Exclui Notas canceladas no Protheus que devem ser excluidas no Mercanet
@@ -460,6 +460,8 @@ if _lContinua
 		_oSQL:_sQuery +=   " )"
 		_oSQL:_sQuery += " ORDER BY SF1.R_E_C_N_O_"
 endif
+*/
+
 //
 // --------------------------------------------------------------------------
 // Debita rapel da NF de devolução

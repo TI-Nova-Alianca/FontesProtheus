@@ -309,7 +309,7 @@ static function _VerEmpenh ()
 		//_oSQL:Log ('[' + procname () + ']')
 		_sEmpEnd := alltrim (_oSQL:RetQry ())
 		if ! empty (_sEmpEnd)
-			u_Help ("O(s) seguinte(s) item(s) controlam enderecamento: " + _sEmpEnd + ". Ainda nao foi definido o endereco desse(s) item(s) nos empenhos da OP '" + alltrim (m->d3_op) + "'. Apontamento nao permitido.",, .t.)
+			u_Help ("Falta informar endereco dos empenhos (" + _sEmpEnd + ")",, .t.)
 			_lRet = .F.
 		endif
 	endif

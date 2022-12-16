@@ -7,7 +7,7 @@
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #batch
 // #Descricao         #Envia e-mail com disponibilidades de estoques (inicialmente a granel).
-// #PalavasChave      #mercanet #pedidos_de_venda #importacao
+// #PalavasChave      #saldos #estoques #e-mail
 // #TabelasPrincipais #SB1 #VA_FDISPONESTQ #SM0
 // #Modulos           #EST
 //

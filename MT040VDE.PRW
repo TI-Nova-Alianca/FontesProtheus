@@ -14,7 +14,7 @@
 user function MT040VDE()
 	local _lRet := .T.
 		
-	alert("Nenhum registro de vendedor pode ser excluído em função da integração com o software Mercanet.")
+	u_help ("Nenhum registro de vendedor pode ser excluído em função da integração com o software Mercanet.",, .t.)
 	_lRet = .F.
 
 Return _lRet

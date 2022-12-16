@@ -12,7 +12,7 @@
 user function MT360DEL()
 	local _lRet := .T.
 		
-	alert("Nenhum registro de condição de pagamento pode ser excluído em função da integração com o software Mercanet.")
+	u_help ("Nenhum registro de condição de pagamento pode ser excluído em função da integração com o software Mercanet.",, .t.)
 	_lRet = .F.
 
 Return _lRet
