@@ -98,6 +98,7 @@
 // 01/04/2022 - Robert - Ajuste teste se associado jah possui lcto restituicao FUNRURAL.
 // 22/08/2022 - Robert - Removidos alguns trechos comentariados.
 // 23/11/2022 - Robert - Bloquear somente mov.07 quando jah tiver corr.mon. (ver obs no local)
+// 16/12/2022 - Robert - Criados tratamentos para "fornecedores de uva" (GLPI 12501)
 //
 
 // ------------------------------------------------------------------------------------
@@ -1155,7 +1156,7 @@ METHOD Grava (_lSZIGrav, _lMemoGrav) Class ClsCtaCorr
 		if ! _lSZIGrav
 			_cFilial := szi -> zi_filial
 			_dDtAtu := szi -> zi_data
-			u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + '] Gravando ZI_DOC = ' + ::Doc + '/' + ::Serie + '-' + ::Parcela + ' $ ' + transform (::Valor, "@E 999,999,999.99"))
+			u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + '] Gravando ZI_TM=' + ::TM + ' ZI_DOC=' + ::Doc + '/' + ::Serie + '-' + ::Parcela + ' R$' + transform (::Valor, "@E 999,999,999.99"))
 			reclock ("SZI", .T.)
 			szi -> zi_filial  = xfilial ("SZI")
 			szi -> zi_assoc   = ::Assoc
@@ -1590,8 +1591,6 @@ METHOD PodeIncl () Class ClsCtaCorr
 	local _sCRLF     := chr (13) + chr (10)
 	local _oSQL      := NIL
 
-//	u_logIni (GetClassName (::Self) + '.' + procname ())
-
 	::UltMsg = ""
 
 	// Verifica dados.
@@ -1618,7 +1617,7 @@ METHOD PodeIncl () Class ClsCtaCorr
 
 	// Esta validacao eh soh por que sou enjoado e quero o cadastro preenchido. A principio nao preciso para nada em especial.
 	if _lContinua .and. empty (_oAssoc:CoopOrigem)
-		::UltMsg += "Cooperativa de origem nao informada no cadastro do associado." + _sCRLF
+		::UltMsg += "Cooperativa de origem nao informada no cadastro do associado / fornecedor." + _sCRLF
 		_lContinua = .F.
 	endif
 
@@ -1924,7 +1923,8 @@ METHOD PodeIncl () Class ClsCtaCorr
 				_lContinua = .F.
 			endif
 		else
-			if ! ::TM $ '11/08/13/19'
+	//		if ! ::TM $ '11/08/13/19'
+			if ! ::TM $ '11/08/13/19/39/40'
 				if ::TM == '16'
 					if ! u_msgnoyes ("Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data informada. Confirma a inclusao deste registro?")
 						::UltMsg += "Codigo/loja '" + ::Assoc + '/' + ::Loja + "' nao consta como associado na data informada."
@@ -2017,13 +2017,31 @@ METHOD PodeIncl () Class ClsCtaCorr
 		endif
 //	endif
 
+	// Para comecar a ser considerado como 'fornecedor de uva'
+	if _lContinua .and. ::TM == '39'
+		if _oAssoc:EhSocio (::DtMovto)
+			::UltMsg += "Associado ativo nao pode ser transformado em 'fornecedor de uva'." + _sCRLF
+			_lContinua = .F.
+		endif
+		if _lContinua .and. _oAssoc:EhFornUva (::DtMovto)
+			::UltMsg += "Ja' consta como fornecedor de uva nesta data."
+			_lContinua = .F.
+		endif
+	endif
+
+	// Para deixar de ser considerado como 'fornecedor de uva'
+	if _lContinua .and. ::TM == '40'
+		if ! _oAssoc:EhFornUva (::DtMovto)
+			::UltMsg += "Nao consta como fornecedor de uva nesta data."
+			_lContinua = .F.
+		endif
+	endif
+
 	// Se chegou aqui com mensagem de erro, mostra para o usuario.
 	if ! _lContinua .and. ! empty (::UltMsg)
 		u_help (::UltMsg,, .t.)
 	endif
 
-	//u_log ('Retornando', _lContinua)
-//	u_logFim (GetClassName (::Self) + '.' + procname ())
 return _lContinua
 
 

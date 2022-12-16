@@ -108,6 +108,7 @@
 //                      - Passa a usar o camp E2_VASAFRA (acima de 2021) na previsao de pagamentos no metodo FechSafr() - GLPI 11678.
 // 31/03/2022 - Robert  - Nao busca mais premiacao safra 2021 em separado (agora tem o campo E2_VASAFRA preenchido).
 // 15/06/2022 - Robert  - Leitura valores FUNRURAL no metodo FechSafr() (GLPI 11723)
+// 16/12/2022 - Robert  - Criados tratamentos para "fornecedores de uva" (GLPI 12501)
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -173,9 +174,12 @@ CLASS ClsAssoc
 	METHOD AtuSaldo ()
 	METHOD CadVitic ()
 	METHOD CalcCM ()
+	METHOD DtEntForUva ()
 	METHOD DtEntrada ()
 	METHOD DtSaida ()
+	METHOD DtSaiForUva ()
 	METHOD EhSocio ()
+	METHOD EhFornUva ()
 	METHOD FechSafra ()
 	METHOD GrpFam ()
 	METHOD IdadeEm ()
@@ -757,6 +761,49 @@ return aclone (_oSQL:Qry2Array ())
 
 
 // --------------------------------------------------------------------------
+// Busca data de entrada como 'fornecedor de uva'
+METHOD DtEntForUva (_dDataRef) Class ClsAssoc
+	local _oSQL    := NIL
+	local _sRetQry := ""
+	local _dRet    := ctod ("")
+
+	// Pode ter saido e entrado novamente, entao
+	// este metodo permite especificar uma data de referencia, sendo que deverah
+	// existir entrada anterior a esta data de referencia.
+	// Se nao especificado, assume a data base.
+	if valtype (_dDataRef) != "D" .or. empty (_dDataRef)
+		_dDataRef = dDataBase
+	endif
+	
+	// Varre todas as filiais.
+	if ::Codigo != NIL .and. ::Loja != NIL
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT MAX (ZI_DATA)"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI"
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND ZI_ASSOC   = '" + ::Codigo + "'"
+		_oSQL:_sQuery +=   " AND ZI_LOJASSO = '" + ::Loja + "'"
+		_oSQL:_sQuery +=   " AND ZI_DATA   <= '" + dtos (_dDataRef) + "'"
+		_oSQL:_sQuery +=   " AND ZI_TM      = '39'"
+		_oSQL:_sQuery +=   " AND NOT EXISTS (SELECT *"  // Se existir saida posterior, invalida a entrada.
+		_oSQL:_sQuery +=                     " FROM " + RetSQLName ("SZI") + " AS DESASSOC"
+		_oSQL:_sQuery +=                    " WHERE DESASSOC.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=                      " AND DESASSOC.ZI_ASSOC   = SZI.ZI_ASSOC"
+		_oSQL:_sQuery +=                      " AND DESASSOC.ZI_LOJASSO = SZI.ZI_LOJASSO"
+		_oSQL:_sQuery +=                      " AND DESASSOC.ZI_DATA   >= SZI.ZI_DATA"
+//		_oSQL:_sQuery +=                      " AND DESASSOC.ZI_DATA   <  '" + dtos (_dDataRef) + "'"
+		_oSQL:_sQuery +=                      " AND DESASSOC.ZI_TM      = '40')"
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		_sRetQry = _oSQL:RetQry (1, .F.)
+		if ! empty (_sRetQry)
+			_dRet = stod (_sRetQry)
+		endif
+	endif
+return _dRet
+
+
+// --------------------------------------------------------------------------
 // Busca data de entrada no quadro de socios.
 METHOD DtEntrada (_dDataRef) Class ClsAssoc
 	local _sQuery  := ""
@@ -798,7 +845,6 @@ METHOD DtEntrada (_dDataRef) Class ClsAssoc
 return _dRet
 
 
-
 // --------------------------------------------------------------------------
 // Busca data de saida do quadro de socios.
 METHOD DtSaida (_dDataRef) Class ClsAssoc
@@ -838,6 +884,60 @@ METHOD DtSaida (_dDataRef) Class ClsAssoc
 	endif
 return _dRet
 
+
+// --------------------------------------------------------------------------
+// Busca data de saida de 'fornecedor de uva'
+METHOD DtSaiForUva (_dDataRef) Class ClsAssoc
+	local _oSQL    := NIL
+	local _sRetQry := ""
+	local _dRet    := ctod ("")
+
+	// Pode ter saido e entrado novamente, entao
+	// este metodo permite especificar uma data de referencia, sendo que deverah
+	// existir saida anterior a esta data de referencia.
+	// Se nao especificado, assume a data base.
+	if valtype (_dDataRef) != "D" .or. empty (_dDataRef)
+		_dDataRef = dDataBase
+	endif
+	
+	// Varre todas as filiais.
+	if ::Codigo != NIL .and. ::Loja != NIL
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT MAX (ZI_DATA)"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI"
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND ZI_ASSOC   = '" + ::Codigo + "'"
+		_oSQL:_sQuery +=   " AND ZI_LOJASSO = '" + ::Loja + "'"
+		_oSQL:_sQuery +=   " AND ZI_DATA   <= '" + dtos (_dDataRef) + "'"
+		_oSQL:_sQuery +=   " AND ZI_TM      = '40'"
+		_oSQL:_sQuery +=   " AND NOT EXISTS (SELECT *"  // Se existir entrada posterior, invalida a saida.
+		_oSQL:_sQuery +=                     " FROM " + RetSQLName ("SZI") + " AS REASSOC"
+		_oSQL:_sQuery +=                    " WHERE REASSOC.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=                      " AND REASSOC.ZI_ASSOC   = SZI.ZI_ASSOC"
+		_oSQL:_sQuery +=                      " AND REASSOC.ZI_LOJASSO = SZI.ZI_LOJASSO"
+		_oSQL:_sQuery +=                      " AND REASSOC.ZI_DATA   >= SZI.ZI_DATA"
+		_oSQL:_sQuery +=                      " AND REASSOC.ZI_DATA   <= '" + dtos (_dDataRef) + "'"
+		_oSQL:_sQuery +=                      " AND REASSOC.ZI_TM      = '39')"
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		_sRetQry = _oSQL:RetQry (1, .f.)
+		if ! empty (_sRetQry)
+			_dRet = stod (_sRetQry)
+		endif
+	endif
+return _dRet
+
+
+// --------------------------------------------------------------------------
+// Verifica se deve ser considerado como 'fornecedor de uva' na data de referencia.
+METHOD EhFornUva (_dDataRef) Class ClsAssoc
+	local _lRet    := .F.
+
+	if ! empty (Self:DtEntForUva (_dDataRef))
+		_lRet = .T.
+	endif
+	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']retornando ' + cvaltochar (_lRet))
+return _lRet
 
 
 // --------------------------------------------------------------------------

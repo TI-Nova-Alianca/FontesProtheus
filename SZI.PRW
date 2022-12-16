@@ -826,7 +826,7 @@ User Function SZI1 ()
 	if _lRet
 		_aBcos = {}
 		_aNaoBcos = {'ZI_DOC'}
-		if m->zi_tm $ '08/09'
+		if m->zi_tm $ '08/09/39/40'
 			aadd (_aBcos, 'ZI_VALOR')
 		else
 			aadd (_aNaoBcos, 'ZI_VALOR')

@@ -82,6 +82,8 @@ User Function va_rusCF (_lRegrav)
 					_nFrtItem = U_FrtSaf21 (_oAssoc:Nucleo, szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor)
 				elseif sze -> ze_safra == '2022'
 					_aFrtSaf = aclone (U_FrtSaf22 (_oAssoc:Nucleo, szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor))
+				elseif sze -> ze_safra == '2023'
+					_aFrtSaf = aclone (U_FrtSaf23 (_oAssoc:Nucleo, szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor))
 					_nFrtItem = _aFrtSaf [1]
 				else
 					_nFrtItem = 0
