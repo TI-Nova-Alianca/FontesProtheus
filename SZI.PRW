@@ -63,6 +63,7 @@
 // 27/02/2022 - Robert  - Adicionada coluna HIST na consulta de titulos agrupados numa fatura (GLPI 11678)
 // 05/04/2022 - Robert  - Verifica valor do SE2 antes do recalculo manual de saldos.
 // 22/08/2022 - Robert  - Consulta de movtos.vinculados passa a usar o metodo :RegRelac().
+// 04/01/2023 - Robert  - Validacao de preenchimento do valor passada para ClsCtaCorr.
 //
 
 #include "colors.ch"
@@ -800,8 +801,8 @@ return _lRet
 // Valida inclusao.
 User Function SZI1 ()
 	local _lRet     := .T.
-	local _aBcos    := {}
-	local _aNaoBcos := {}
+//	local _aBcos    := {}
+//	local _aNaoBcos := {}
 	local _oCtaCorr := NIL
 
 	if _lRet .and. m->zi_tm == '04'
@@ -822,6 +823,7 @@ User Function SZI1 ()
 		_lRet = .F.
 	endif
 
+	/* Passado para ClsCtaCorr
 	// Verifica preenchimento de campos
 	if _lRet
 		_aBcos = {}
@@ -833,7 +835,10 @@ User Function SZI1 ()
 		endif
 		_lRet = _VerCpos (_aBcos, _aNaoBcos)
 	endif
+	*/
 return _lRet
+
+	/* Passado para ClsCtaCorr
 //
 // --------------------------------------------------------------------------
 // Verifica preenchimento dos campos, conforme tipo de movimentacao.
@@ -855,6 +860,8 @@ static function _VerCpos (_aBcos, _aNaoBcos)
 		endif
 	next
 return _lRet
+*/
+
 //
 // --------------------------------------------------------------------------
 // Exclusao de movimento da conta corrente.
