@@ -48,7 +48,8 @@ User Function va_rusCF (_lRegrav)
 		_oSQL:_sQuery := "SELECT dbo.VA_FTIPO_FORNECEDOR_UVA ('" + sze -> ze_assoc   + "'"
 		_oSQL:_sQuery +=                                   ", '" + sze -> ze_lojasso + "'"
 		_oSQL:_sQuery +=                                   ", '" + dtos (sze -> ze_data) + "')"
-		if ! alltrim (_oSQL:RetQry (1, .F.)) $ 'ASSOCIADO/EX ASSOCIADO'
+//		if ! alltrim (_oSQL:RetQry (1, .F.)) $ 'ASSOCIADO/EX ASSOCIADO'
+		if ! left (_oSQL:RetQry (1, .F.), 1) $ '1/3'  // 1=ASSOCIADO; 3=EX ASSOCIADO
 			u_log2 ('info', 'Fornecedor ' + sze -> ze_assoc + '/' + sze -> ze_lojasso + ' nao eh associado nem ex associado nesta data. Nao deve calcular frete.')
 			_lDeveCalc = .F.
 		else
@@ -82,6 +83,8 @@ User Function va_rusCF (_lRegrav)
 					_nFrtItem = U_FrtSaf21 (_oAssoc:Nucleo, szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor)
 				elseif sze -> ze_safra == '2022'
 					_aFrtSaf = aclone (U_FrtSaf22 (_oAssoc:Nucleo, szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor))
+				elseif sze -> ze_safra == '2023'
+					_aFrtSaf = aclone (U_FrtSaf23 (_oAssoc:Nucleo, szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor))
 					_nFrtItem = _aFrtSaf [1]
 				else
 					_nFrtItem = 0

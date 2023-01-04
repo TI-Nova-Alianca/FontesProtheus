@@ -55,7 +55,9 @@ User Function VA_RusMV ()
 				elseif sze -> ze_safra == '2022'
 					_aProdut [_nProdut, 2] = U_PrcUva22 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[2]  // pos.2 = preco de compra.
 				elseif sze -> ze_safra == '2023'
-					_aProdut [_nProdut, 2] = U_PrcUva23 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[2]  // pos.2 = preco de compra.
+					//_aProdut [_nProdut, 2] = U_PrcUva23 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[2]  // pos.2 = preco de compra.
+					// Safra 2023 faremos compra a preco de tabela MOC2022 cfe.e-mail Colleoni 12/12/2022
+					_aProdut [_nProdut, 2] = U_PrcUva22 (sze -> ze_filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[5]  // pos.5 = preco MOC
 				else
 					u_help (procname () + ": Sem tratamento para verificar precificacao em caso de mistura de variedades nesta safra.",, .t.)
 					_lContinua = .F.

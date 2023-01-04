@@ -800,8 +800,8 @@ return _lRet
 // Valida inclusao.
 User Function SZI1 ()
 	local _lRet     := .T.
-	local _aBcos    := {}
-	local _aNaoBcos := {}
+//	local _aBcos    := {}
+//	local _aNaoBcos := {}
 	local _oCtaCorr := NIL
 
 	if _lRet .and. m->zi_tm == '04'
@@ -822,18 +822,22 @@ User Function SZI1 ()
 		_lRet = .F.
 	endif
 
+	/* Passado para ClsCtaCorr
 	// Verifica preenchimento de campos
 	if _lRet
 		_aBcos = {}
 		_aNaoBcos = {'ZI_DOC'}
-		if m->zi_tm $ '08/09'
+		if m->zi_tm $ '08/09/39/40'
 			aadd (_aBcos, 'ZI_VALOR')
 		else
 			aadd (_aNaoBcos, 'ZI_VALOR')
 		endif
 		_lRet = _VerCpos (_aBcos, _aNaoBcos)
 	endif
+	*/
 return _lRet
+
+	/* Passado para ClsCtaCorr
 //
 // --------------------------------------------------------------------------
 // Verifica preenchimento dos campos, conforme tipo de movimentacao.
@@ -855,6 +859,8 @@ static function _VerCpos (_aBcos, _aNaoBcos)
 		endif
 	next
 return _lRet
+*/
+
 //
 // --------------------------------------------------------------------------
 // Exclusao de movimento da conta corrente.

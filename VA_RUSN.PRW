@@ -373,7 +373,9 @@ User Function va_rusN (_lSimulNF)
 			// ateh 15/01/22 usamos erroneamente preco da MOC	_nVlUni = U_PrcUva22 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[5]  // pos.5 = preco MOC
 				_nVlUni = U_PrcUva22 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[2]  // pos.2 = preco de compra.
 			elseif szf -> zf_safra == '2023'
-				_nVlUni = U_PrcUva23 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[2]  // pos.2 = preco de compra.
+				// Safra 2023 faremos compra a preco de tabela MOC2022 cfe.e-mail Colleoni 12/12/2022
+				//_nVlUni = U_PrcUva23 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[2]  // pos.2 = preco de compra.
+				_nVlUni = U_PrcUva22 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[5]  // pos.5 = preco MOC
 			else
 				u_help ("Sem tratamento para leitura de precos para esta safra.")
 				_lContinua = .F.

@@ -118,8 +118,6 @@ Static Function _Gera()
 		_sQuery +=        " GRAU, CLAS_FINAL AS PRM99, FINA_COMUM AS VARUVA,"
 		_sQuery +=        " FORMA_CLAS_UVA_FINA AS FCUVA, V.CLAS_ABD, SIST_CONDUCAO AS SIST_COND"
 		_sQuery +=        ",dbo.VA_FTIPO_FORNECEDOR_UVA (V.ASSOCIADO, V.LOJA_ASSOC, FORMAT(getdate(), 'yyyyMMdd')) AS TP_FORNEC"
-//		_sQuery +=        ",dbo.VA_ASSOC_DT_ENTRADA (V.ASSOCIADO, V.LOJA_ASSOC, FORMAT(getdate(), 'yyyyMMdd')) AS DT_ASSOC"
-//		_sQuery +=        ",dbo.VA_ASSOC_DT_SAIDA (V.ASSOCIADO, V.LOJA_ASSOC, FORMAT(getdate(), 'yyyyMMdd')) AS DT_DESASSOC"
 		_sQuery +=   " FROM VA_VNOTAS_SAFRA V"
 		_sQuery +=  " WHERE V.TIPO_NF      = 'E'"  // Nao temos mais 'prod.propria' na F07 ---> OR (V.TIPO_NF = 'P' AND V.FILIAL = '07'))"
 		_sQuery +=    " AND V.SAFRA         = '" + mv_par05 + "'"
