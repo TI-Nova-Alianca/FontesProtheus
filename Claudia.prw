@@ -7,70 +7,71 @@ User Function claudia ()
 		return
 	endif
 
-	//u_help("Nada para executar")
+	u_help("Nada para executar")
 
-	//u_help("_RapelGrava")
-	//_RapelGrava()
+	// u_help("Atualiza ME")
+	// _GLPI12952()
 
-	//u_help("_RapelExclui")
-	//_RapelExclui()
-
-	//u_help("Ajustes SB1")
-	//_AtuSB1()
-
-	//U_HELP("BATTITBAI")
-	//U_BATTITBAI()
-
-	//U_HELP("_AtuRepre")
-	//_AtuRepre()
-
-	//u_help("ALTERASB1")
-	//U_ALTERASB1()
-
-	//u_help("Saldos iniciais")
-	//U_SaldosIniciais()
-
-	//u_help("Busca utilização do fonte")
-	//_RotinaUsada()
-
-	// Atualiza produto x fornecedor
-	//u_help("Atualiza produto x fornecedor")
-	//
-
-	//u_help("GrupoTIB1")
-	//_GrupoTIB1()
-
-	u_help("_AtuTES")
-	_AtuTES()
 Return
 // --------------------------------------------------------------------------
 //
-static function _AtuTES ()
-	local _lContinua := .T.
+// static function _GLPI12952 ()
+// 	local _lContinua := .T.
 
-	DbSelectArea("SB1")
-	sb1 -> (dbsetorder (1))
-	sb1 -> (dbgotop ())
-	do while _lContinua .and. ! sb1 -> (eof ())
+// 	DbSelectArea("SB1")
+// 	sb1 -> (dbsetorder (1))
+// 	sb1 -> (dbgotop ())
+// 	do while _lContinua .and. ! sb1 -> (eof ())
 	
-		if _lContinua
-			u_log2 ('info', 'Verificando item ' + sb1 -> b1_cod + SB1 -> B1_DESC)
+// 		if _lContinua .and. sb1->b1_tipo='ME'
+// 			u_log2 ('info', 'Verificando item ' + sb1 -> b1_cod + SB1 -> B1_DESC)
 
-			// Grava evento de alteracao
-			_oEvento := ClsEvent():new ()
-			_oEvento:Alias    = 'SB1'
-			_oEvento:Texto    = 'GLPI: Ajusta b1_te para vazio'
-			_oEvento:CodEven  = "SB1001"
-			_oEvento:Produto  = sb1 -> b1_cod
-			_oEvento:Grava() 
+// 			// Grava evento de alteracao
+// 			_oEvento := ClsEvent():new ()
+// 			_oEvento:Alias    = 'SB1'
+// 			_oEvento:Texto    = 'GLPI: 12952 - Ajusta segunda unidade ME'
+// 			_oEvento:CodEven  = "SB1001"
+// 			_oEvento:Produto  = sb1 -> b1_cod
+// 			_oEvento:Grava() 
 
-			reclock ("SB1", .f.)
-				sb1 -> b1_te = ''
-			msunlock ()
-		endif
-		sb1 -> (dbskip ())
-	enddo
-return
+// 			reclock ("SB1", .f.)
+// 				sb1 -> b1_segum  := 'MI'
+// 				sb1 -> b1_conv   := 1000
+// 				sb1 -> b1_tipconv :='D'
+// 			msunlock ()
+// 		endif
+// 		sb1 -> (dbskip ())
+// 	enddo
+// return
+
+// // --------------------------------------------------------------------------
+// //
+// static function _AtuTES ()
+// 	local _lContinua := .T.
+
+// 	DbSelectArea("SB1")
+// 	sb1 -> (dbsetorder (1))
+// 	sb1 -> (dbgotop ())
+// 	do while _lContinua .and. ! sb1 -> (eof ())
+	
+// 		if _lContinua
+// 			u_log2 ('info', 'Verificando item ' + sb1 -> b1_cod + SB1 -> B1_DESC)
+
+// 			// Grava evento de alteracao
+// 			_oEvento := ClsEvent():new ()
+// 			_oEvento:Alias    = 'SB1'
+// 			_oEvento:Texto    = 'GLPI: Ajusta b1_te para vazio'
+// 			_oEvento:CodEven  = "SB1001"
+// 			_oEvento:Produto  = sb1 -> b1_cod
+// 			_oEvento:Grava() 
+
+// 			reclock ("SB1", .f.)
+// 				sb1 -> b1_te = ''
+// 			msunlock ()
+// 		endif
+// 		sb1 -> (dbskip ())
+// 	enddo
+// return
 // //
 // // ----------------------------------------------------------------------
 // // Altera grupo TI de produtos
