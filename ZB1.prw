@@ -38,6 +38,20 @@ User Function ZB1()
 	endif
 
 	If _lContinua
+	/*
+		Aadd(aRotina2, {"Funcao 11", "U_Funcao11", 0, 3 } )
+
+		1. Nome a aparecer no cabecalho                            
+		2. Nome da Rotina associada                                 
+		3. Campo reservado                                   
+		4. Tipo de Transacao a ser efetuada
+			4.1 - Pesquisa e Posiciona em um Banco de Dados            
+			4.2 - Simplesmente Mostra os Campos                        
+			4.3 - Inclui registros no Bancos de Dados                  
+			4.4 - Altera o registro corrente                           
+			4.5 - Remove o registro corrente do Banco de Dados       
+			4.6 - Altera determinados campos sem incluir novos Regs
+	*/
 		AADD(aRotina, {"&Visualizar" 	     , "AxVisual"      , 0, 1})
 		AADD(aRotina, {"Importar"    	     , "U_ZB1_IMP()"   , 0, 4})
 		//AADD(aRotina, {"Conciliar Cielo Loja", "U_ZB1_CON('1')", 0, 4})
