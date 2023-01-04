@@ -44,6 +44,7 @@
 // 04/03/2022 - Robert - Valida se o TES de complemento estah atualizando estoque (GLPI 11708).
 // 07/03/2022 - Robert - Permite (mediante confirmacao) TES que atualiza estoque nos complementos (GLPI 11721)
 // 08/11/2022 - Robert - Passa a usar a funcao U_AmbTeste().
+// 04/01/2023 - Robert - Novos codigos de retorno da funcao VA_FTIPO_FORNECEDOR_UVA
 //
 
 #XTranslate .ItensProduto    => 1
@@ -809,7 +810,8 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 		_sQuery +=    " AND E2_NUM     = '" + sf1 -> f1_doc + "'"
 		_sQuery +=    " AND E2_VACHVEX = ''"
 		_sQuery +=    " AND E2_FILIAL  = '" + xfilial ("SE2") + "'"
-		_sQuery +=    " AND dbo.VA_FTIPO_FORNECEDOR_UVA ('" + sF1 -> F1_FORNECE + "', '" + sF1 -> F1_LOJA + "', '" + dtos (sF1-> F1_EMISSAO) + "') IN ('ASSOCIADO', 'EX ASSOCIADO')"
+//		_sQuery +=    " AND dbo.VA_FTIPO_FORNECEDOR_UVA ('" + sF1 -> F1_FORNECE + "', '" + sF1 -> F1_LOJA + "', '" + dtos (sF1-> F1_EMISSAO) + "') IN ('ASSOCIADO', 'EX ASSOCIADO')"
+		_sQuery +=    " AND SUBSTRING (dbo.VA_FTIPO_FORNECEDOR_UVA ('" + sF1 -> F1_FORNECE + "', '" + sF1 -> F1_LOJA + "', '" + dtos (sF1-> F1_EMISSAO) + "'), 1, 1) IN ('1', '3')"  // 1=ASSOCIADO; 3=EX ASSOCIADO
 		_sQuery +=  " ORDER BY E2_PARCELA"
 		//u_log (_sQuery)
 		_sAliasQ = GetNextAlias ()
