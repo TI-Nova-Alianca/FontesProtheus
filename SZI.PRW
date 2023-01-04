@@ -63,7 +63,6 @@
 // 27/02/2022 - Robert  - Adicionada coluna HIST na consulta de titulos agrupados numa fatura (GLPI 11678)
 // 05/04/2022 - Robert  - Verifica valor do SE2 antes do recalculo manual de saldos.
 // 22/08/2022 - Robert  - Consulta de movtos.vinculados passa a usar o metodo :RegRelac().
-// 04/01/2023 - Robert  - Validacao de preenchimento do valor passada para ClsCtaCorr - GLPI 12964
 //
 
 #include "colors.ch"

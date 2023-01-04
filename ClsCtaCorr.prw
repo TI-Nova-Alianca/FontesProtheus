@@ -99,7 +99,6 @@
 // 22/08/2022 - Robert - Removidos alguns trechos comentariados.
 // 23/11/2022 - Robert - Bloquear somente mov.07 quando jah tiver corr.mon. (ver obs no local)
 // 16/12/2022 - Robert - Criados tratamentos para "fornecedores de uva" (GLPI 12501)
-// 04/01/2023 - Robert - Valida preenchimento do valor cfe. tipo de movimento no metodo PodeIncl - GLPI 12964
 //
 
 // ------------------------------------------------------------------------------------
