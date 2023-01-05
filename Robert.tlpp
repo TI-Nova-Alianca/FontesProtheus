@@ -95,7 +95,7 @@ user function robert ()
 		// _ctbanc ()
 		// _ST_MG ()
 		// _PreNF ()
-		_SZI ()
+		//_SZI ()
 
 		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')

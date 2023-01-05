@@ -13,6 +13,7 @@
 // Historico de alteracoes:
 // 02/09/2022 - Robert - Chamadas de vtAlert() substituidas por u_help().
 // 22/09/2022 - Robert - Validacao das barras do produto paas a ser pelo atributo _oEtiq:CodBarCx (GLPI 11994)
+// 05/01/2023 - Robert - Pede confirmacao para data muito antiga.
 //
 
 #include "protheus.ch"
@@ -150,8 +151,7 @@ static function _ValDtProd ()
 		_lRet = .F.
 	endif
 	if _lRet .and. _dDatProd < date () - 5  // Aqui pode ter ajustes...
-		u_help ("Nao pode ser informada data muito antiga",, .t.)
-		_lRet = .F.
+		_lRet = U_MsgNoYes ("Confirma voltar " + cvaltochar (date () - _dDatProd) + " dias?", .F.)
 	endif
 return _lRet
 

@@ -37,6 +37,7 @@
 // 08/08/2022 - Robert - Verifica inconsistencia de estoue nos itens empenhados (GLPI 11994)
 // 13/10/2022 - Robert - Novos parametros funcao U_ConsEst. Liberacao para grupo 155.
 // 25/10/2022 - Robert - Quando tem empenho negativo nao bloqueia mais. Apenas notifica o PCP.
+// 05/01/2023 - Robert - Abreviadas algumas mensagens, para mostrar via telnet.
 //
 
 // --------------------------------------------------------------------------
@@ -69,8 +70,10 @@ user function mt250tok ()
 		_lRet = .F.
 	endif
 	
+// NEM CHAGUEI A COMPILAR. VOU TRATAR TELNET NA FUNCAO U_MSGNOYES().	IF DATE () != STOD ('20230105')  // NESTE DIA ESTAMOS APONTANDO UMAS OPS DO ANO PASSADO...
 	if _lRet .and. (dDataBase != date () .or. m->d3_emissao != date ())
-		_sMsg = "Alteracao de data da movimentacao ou data base do sistema: bloqueada para esta rotina."
+	//	_sMsg = "Alteracao de data da movimentacao ou data base do sistema: bloqueada para esta rotina."
+		_sMsg = "Troca de data bloqueada nesta rotina."
 		if U_ZZUVL ('084', __cUserId, .F.)
 			_lRet = U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
 		else
@@ -78,6 +81,7 @@ user function mt250tok ()
 			_lRet = .F.
 		endif
 	endif
+//	ENDIF
 
 	if _lRet .and. (m->d3_qtganho > 0 .or. m->d3_qtmaior > 0) .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + m->d3_cod, "B1_TIPO") == 'PA'  
 		u_help ("Para produto acabado nao deve ser produzida quantidade acima do previsto na OP.",, .t.)
@@ -156,14 +160,14 @@ static function _VerData ()
 		sc2 -> (dbsetorder (1))
 		if sc2 -> (dbseek (xfilial ("SC2") + m->d3_op, .F.))
 			if _lRet .and. m->d3_emissao < sc2 -> c2_emissao
-				u_help ("Data do movimento nao pode ser menor que a data de emissao da OP (" + dtoc (sc2 -> c2_emissao) + ").",, .t.)
+				u_help ("Apontamento nao pode ser anterior a data de emissao da OP (" + dtoc (sc2 -> c2_emissao) + ").",, .t.)
 				_lRet = .F.
 			endif
 			if _lRet .and. m->d3_emissao < sc2 -> c2_datpri
-				_lRet = U_MsgNoYes ("Data do movimento nao deveria ser menor que a data prevista de inicio da OP (" + dtoc (sc2 -> c2_datpri) + "). Confirma assim mesmo?")
+				_lRet = U_MsgNoYes ("Apontamento nao deveria ser menor que a data prevista de inicio da OP (" + dtoc (sc2 -> c2_datpri) + "). Confirma assim mesmo?")
 			endif
 			if _lRet .and. left (dtos (m->d3_emissao), 6) > left (dtos (sc2 -> c2_datprf), 6)
-				u_help ("Data do movimento nao pode estar em mes posterior da data prevista de termino da OP (" + dtoc (sc2 -> c2_datprf) + ").",, .t.)
+				u_help ("Apontamento nao pode estar em mes posterior da data prevista de termino da OP (" + dtoc (sc2 -> c2_datprf) + ").",, .t.)
 				_lRet = .F.
 			endif
 		endif
