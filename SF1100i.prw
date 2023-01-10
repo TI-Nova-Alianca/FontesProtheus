@@ -34,7 +34,7 @@
 // 15/12/2010 - Robert  - Criado tratamento para campo ZX5_MODO.
 // 27/12/2010 - Robert  - Desabilitada leitura do arquivo ZZ2 para impressao de mensagem de S.T.
 // 11/01/2010 - Robert  - Desabilitada geracao de dados adicionais para NF de
-//                       entrada de safra, pois jah vem pronto da respectiva rotina.
+//                        entrada de safra, pois jah vem pronto da respectiva rotina.
 // 17/03/2011 - Robert  - Montagem das mensagens adicionais parra a usar a funcao _SomaMsg ().
 //                      - Incluido tratamento para os campos F1_MENPAD e F1_MENNOTA, se existirem.
 // 30/11/2011 - Robert  - Gravacao do campo E2_vaLenha.
@@ -118,6 +118,9 @@
 // 27/09/2022 - Robert  - Avisa setor de manutencao quando chega NF referenciando OS (GLPI 12643)
 // 07/10/2022 - Claudia - Atualização de rapel apenas para serie 10. GLPI: 8916
 // 04/01/2023 - Robert  - Novos codigos de retorno da funcao VA_FTIPO_FORNECEDOR_UVA
+// 09/01/2023 - Robert  - Desabilitado aviso de movimentacao de dispensers (em desuso cfe.Fernando Matana)
+//                      - Testa se estah gerando contranota de safra antes de
+//                        chamar algumas rotinas que nao se aplicam a safras.
 //
 
 // ------------------------------------------------------------------------------------------------------------------------------
@@ -140,21 +143,23 @@ User Function SF1100i ()
 	_AjSE2 ()
 	
 	// envia e-mail para responsáveis dispensadoras de suco
-	_Dispenser()
-	
+// em desuso	_Dispenser()
+
 	// envia e-mail para responsáveis - itens controlados pela policia federal
-	_Controle_PF()
+	if ! sf1 -> f1_tipo $ "BD" .and. ! IsInCallStack ("U_VA_RUSN")
+		_Controle_PF()
+	endif
 	
 	// envia e-mail para compras/financeiro - se os vencimentos informados na nota não estao de acordo com a ordem de compra
 	//_VerVenc()
 	
 	// Avisa solicitante que seu pedido chegou.
-	if ! sf1 -> f1_tipo $ "BD"
+	if ! sf1 -> f1_tipo $ "BD" .and. ! IsInCallStack ("U_VA_RUSN")
 		_AvisaSoli ()
 	endif
 
 	// Avisa setor manutencao quando chegou material alocado em OS
-	if ! sf1 -> f1_tipo $ "BD"
+	if ! sf1 -> f1_tipo $ "BD" .and. ! IsInCallStack ("U_VA_RUSN")
 		_AvisaMnt ()
 	endif
 	
@@ -169,7 +174,9 @@ User Function SF1100i ()
 	_AtuZZX ('')
 	
 	// verifica sempre, pra ver se movimentou um desses almox
-	_EmailLog()  			 // email para a logistica avisando entradas no almox 91 e 10
+	if ! IsInCallStack ("U_VA_RUSN")
+		_EmailLog()  			 // email para a logistica avisando entradas no almox 91 e 10
+	endif
 		
 	if sf1 -> f1_tipo = "D" 
 		If GetMV('VA_RAPEL')
@@ -200,7 +207,8 @@ User Function SF1100i ()
 	endif
 	
 	// Se for nota de compra normal - verifica e atualiza ativo fixo
-	if sf1 -> f1_tipo = "N"
+//	if sf1 -> f1_tipo = "N"
+	if sf1 -> f1_tipo = "N" .and. ! IsInCallStack ("U_VA_RUSN")
 		_AtuATF()
 	endif
 
@@ -614,7 +622,7 @@ static function _AjSE2 ()
 				_oSQL:Log ()
 				_aRetFUNRU = aclone (_oSQL:Qry2Array (.f., .f.))
 				if len (_aRetFUNRU) > 0 .and. _aRetFUNRU [1, 1] >= 0
-					U_Log2 ('debug', 'Achei tit.funrural')
+					U_Log2 ('debug', '[' + procname () + ']Achei tit.funrural')
 
 					// Se for associado, nao quero descontar dele o FUNRURAL.
 //					if alltrim (upper (_aRetFUNRU [1, 3])) == 'ASSOCIADO' .or. alltrim (upper (_aRetFUNRU [1, 3])) == 'EX ASSOCIADO'
@@ -782,6 +790,8 @@ static function _SomaMsg (_sVariav, _sTexto)
 	_sVariav += iif (! empty (_sVariav), "; ", "") + alltrim (_sTexto)
 return
 // 
+
+/* Em desuso
 // -----------------------------------------------------------------------------------------------------
 // Envia e-mail para responsáveis dispensadoras de suco
 Static Function _Dispenser()
@@ -829,6 +839,7 @@ Static Function _Dispenser()
 		
 	endif				
 return
+*/
 // 
 // -----------------------------------------------------------------------------------------------------
 // envia e-mail para responsáveis - itens controlados pela policia federal

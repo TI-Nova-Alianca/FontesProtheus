@@ -70,12 +70,18 @@ User Function va_rus2 (_nOpc, _lFechPort)
 	private _aAglut    := {}  // Deixar private para ser vista por outras rotinas.
 	private cArqMnu    := FWGetMnuFile()  //'COOPERATIVA.XNU'
 
+	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
+	if type ("_oCarSaf") != 'O'
+		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+	endif
+
 	if inclui
 		u_Log2 ('info', '[' + procname () + ']Iniciando com _nOpc = ' + cvaltochar (_nOpc))
 	else
 		u_Log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Iniciando com _nOpc = ' + cvaltochar (_nOpc))
-		if type ("_oCarSaf") != 'O'
-			private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+		if empty (_oCarSaf:Carga)
+			u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
+			_lContinua = .F.
 		endif
 	endif
 
@@ -391,9 +397,11 @@ static function _LePeso ()
 		_nPLidoBal = round (_nPLidoBal / _nMultBal, 0)
 		_nPLidoBal *= _nMultBal
 	
-		if _lImpTick //.and. _lTickPeso
-			U_VA_RUSTk (3, _sPortTick, 1, {}, 'Bematech', .t.)
-		endif
+		// Pelo que lembro, aqui nao gera nada, pois a opcao '3' nao gera nada
+		// e o ticket em geral eh impresso apos gravacao na VA_RUS2G.
+		//if _lImpTick
+		//	U_VA_RUSTk (3, _sPortTick, 1, {}, 'Bematech', .t.)
+		//endif
 
 		if inclui  // Primeira pesagem: leitura do peso bruto
 			m->ze_pesoBru = _nPLidoBal

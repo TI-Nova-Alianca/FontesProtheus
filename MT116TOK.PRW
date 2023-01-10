@@ -6,23 +6,20 @@
 // Historico de alteracoes:
 // 03/05/2016 - Catia  - Validar campo F4_FRETE - so podem ser usados TES com F4_FRETE = 1(SIM) nas especies CTR e CTe
 // 29/11/2016 - Robert - Layout de CT-e passa a ter nova tag <procCTe>
-// 07/03/2017 - Catia -  Validações no XML de CTEs
+// 07/03/2017 - Catia  - Validações no XML de CTEs
+// 05/01/2023 - Robert - Desabilitadas validacoes tabela ZZX (vamos comecar a usar o importador da TRS)
 //
+
 // --------------------------------------------------------------------------
 User Function MT116TOK()
 	local _aAmbAnt   := U_SalvaAmb ()
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _lRet      := .T.
-	//local _xFim      := chr(13)+chr(10)
-	//local _sQuery    := ""
-	//local _nRetQry   := 0
 	local _nLinha	 := 0
 	private _aMatriz := {}
 	public _nRegZZX  := 0  // Deixar como 'public' para ser vista em outros pontos de entrada.
-    Public _vVlrTot  := 0
-   	
-	u_logIni ()
-	
+	Public _vVlrTot  := 0
+
 	// valida TES de FRETE apenas para documento do tipo CTE ou CTR
 	For _nLinha := 1 to Len(aCols)
 		_xTES     := GDFieldGet( "D1_TES"     , _nLinha )
@@ -48,35 +45,27 @@ User Function MT116TOK()
 			_lRet = _ValChvNFe ()
 		endif			
 		
+		/* Estamos migrando para o importador da TRS
 		if _lRet 
 			_lRet = _ValXML ()
 		endif			
+		*/
 		
 	endif
 	
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
-	u_log (procname (), 'retornando', _lRet)
-	u_logFim ()
-	
 Return(_lRet)
 // --------------------------------------------------------------------------
 // Verifica preenchimento da chave NFe.
 static function _ValChvNFe ()
-	//local _i         := 0
 	local _lRet      := .T.
 	local _oSQL      := NIL
-	//local _aUF       := {}
 	local _sChvNFe   := iif (type ("aNFeDANFe") == "A", aNFeDANFe [13], "")
 	local _sCNPJ     := ""
 	local _nTamDoc   := tamsx3 ("F1_DOC")[1]
 	local _sNumNF    := ""
 	local _lDeveTer  := .F.
-	//local _oNFe      := NIL
-	//local _aRetSEFAZ := {}
-	//local _lAutSEFAZ := .F.
-	//local _sCGCEmit  := ''
-	//local _sFilOri   := ''
 	
 	_lDeveTer = .T.
 	
@@ -138,8 +127,9 @@ static function _ValChvNFe ()
 		endif
 	endif
 	
-	u_logFim ()
 return _lRet
+
+/*
 // -----------------------------------------------------------
 // Verifica dados no XML do fornecedor, caso esteja disponivel
 static function _ValXML ()
@@ -328,3 +318,4 @@ static function _ValXML ()
     endif
 	u_logFim ()
 return _lRet
+*/

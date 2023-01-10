@@ -69,6 +69,7 @@
 // 23/12/2021 - Claudia - Incluida validação de almox 11. GLPI: 7665
 // 14/07/2022 - Robert  - Removidas linhas comentariadas.
 // 08/11/2022 - Robert  - Passa a usar a funcao U_AmbTeste().
+// 05/01/2023 - Robert  - Desabilitadas validacoes tabela ZZX (vamos comecar a usar o importador da TRS)
 //
 
 // -----------------------------------------------------------------------------------------------------------------------
@@ -195,11 +196,13 @@ User Function MT100TOK()
 		endif
 	endif
 
+	/* Estamos migrando para o importador da TRS
 	// Validacoes com o XML do fornecedor.
 	if _lRet .and. cFormul != "S" // .and. ! IsInCallStack ("ZZX")
 		_lRet = _ValXML ()
 	endif
-	
+	*/
+
 	// Validacoes itens controlados policia federal
 	if _lRet
 		_lRet = _ValCtrPF ()
@@ -433,6 +436,8 @@ static function _ValChvNFe ()
 	endif
 return _lRet
 //
+
+/*
 // --------------------------------------------------------------------------
 // Verifica dados no XML do fornecedor, caso esteja disponivel.
 static function _ValXML ()
@@ -719,6 +724,7 @@ static function _ValXML ()
   	   endif   
     endif
 return _lRet
+*/
 //
 // --------------------------------------------------------------------------
 // Valida NF Origem

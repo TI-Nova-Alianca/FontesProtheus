@@ -35,6 +35,7 @@ CLASS ClsCarSaf
 	public  data Contranota  // ZE_NFGER
 	public  data Filial      // ZE_FILIAL
 	public  data Fornece     // ze_assoc
+	public  data PortImpTk   // Porta / caminho para impressao do ticket
 	public  data Loja        // ze_lojasso
 	public  data PesoBruto   // ZE_PESOBRU
 	public  data PesoTara    // ZE_PESOTAR
@@ -47,8 +48,10 @@ CLASS ClsCarSaf
 	// Declaracao dos Metodos da classe
 	public METHOD New ()
 	public METHOD AtuAgenda ()
+	public METHOD DefImprTk ()  // Define porta para impressao do ticket
 	public METHOD GeraAtrib ()
 	public METHOD GrvEvt ()
+	public METHOD ImprimeTk ()  // Gera impressao do ticket
 	public METHOD Log ()
 	public METHOD StatusZZA ()
 ENDCLASS
@@ -59,7 +62,12 @@ ENDCLASS
 METHOD New (_nNumReg) Class ClsCarSaf
 	local _aAreaAnt := U_ML_SRArea ()
 
-	
+	// Como o metodo GeraAtrib eh chamado de varios lugares depois que o objeto
+	// jah foi instanciado, achei que seria desnecessario ler novamente algumas
+	// coisas que apenas degradariam a performance, entao jah vou deixar setadas
+	// aqui. Havendo necessidades especificas, poderao ser alteradas depois.
+	::DefImprTk ()
+
 	// Se receber valor numerico, eh por que se trata do numero de registro do SZE.
 	if valtype (_nNumReg) == "N" .and. _nNumReg > 0
 		SZE -> (dbgoto (_nNumReg))
@@ -69,7 +77,7 @@ METHOD New (_nNumReg) Class ClsCarSaf
 		::GeraAtrib ("")
 	endif
 
-	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Instanciada carga F' + ::Filial + '/' + ::Safra + '/' + ::Carga + ' de ' + ::Fornece + '/' + ::Loja)
+	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Instanciada carga p/ Filial ' + ::Filial + ' Safra ' + ::Safra + ' Carga ' + ::Carga + ' de ' + ::Fornece + '/' + ::Loja)
 	U_ML_SRArea (_aAreaAnt)
 Return ::self
 
@@ -158,9 +166,33 @@ return _lRetWSNA
 
 // --------------------------------------------------------------------------
 // Alimenta os atributos da classe.
+METHOD DefImprTk (_sFilial, _sCamFixo) Class ClsCarSaf
+	//local _sIdImpr := ''
+
+	_sFilial = iif (empty (_sFilial), ::Filial, _sFilial)
+
+	if ! empty (_sCamFixo)
+		U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Recebi um caminho fixo para impressora: ' + _sCamFixo)
+		::PortImpTk = _sCamFixo
+	else
+		// Se for base teste, evita enviar para a impressora padrao para nao causar confusao com a safra normal.
+		if U_AmbTeste()
+			::PortImpTk := '\\192.168.1.3\siga\ticket.txt'
+			U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Ambiente de TESTE. Vou redirecionar o ticket para ' + ::PortImpTk)
+		else
+			::PortImpTk = GetMV ("VA_ITKSAFR")
+			U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']::PortImTk = ' + ::PortImpTk + ' (lido do parametro VA_ITKSAFR)')
+		endif
+	endif
+return
+
+
+// --------------------------------------------------------------------------
+// Alimenta os atributos da classe.
 METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
-	local _aAreaAnt := U_ML_SRArea ()
-	local _oSQL     := NIL
+	local _aAreaAnt  := U_ML_SRArea ()
+	local _oSQL      := NIL
+	local _lContinua := .T.
 
 	// Defaults
 	::aIntegGrau   = {}
@@ -212,12 +244,15 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 			::UltMsg += "Impossivel gerar atributos. Origem '" + _sOrigem + "' desconhecida."
 			u_help (::UltMsg,, .t.)
 		endif
+		_lContinua = .F.
 	endcase
 
-	::CxOuGranel = iif (::Filial == '03', 'C', 'G')  // Somente Livramento ainda recebe em caixas
+	if _lContinua
+		::CxOuGranel = iif (::Filial == '03', 'C', 'G')  // Somente Livramento ainda recebe em caixas
+	endif
 
 	// Alimenta array de informacoes da tabela de integracao com medidor de grau.
-	if ! empty (::Filial) .and. ! empty (::Safra) .and. ! empty (::Carga)
+	if _lContinua .and. ! empty (::Filial) .and. ! empty (::Safra) .and. ! empty (::Carga)
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += "SELECT ZZA_PRODUT, ZZA_STATUS, ZZA_GRAU"
@@ -254,6 +289,20 @@ METHOD GrvEvt (_sCodEvt, _sTxtEvt) Class ClsCarSaf
 	_oEvento:Fornece   = ::Fornece
 	_oEvento:LojaFor   = ::Loja
 	_oEvento:Grava ()
+return
+
+
+// --------------------------------------------------------------------------
+// Gera (re)impressao do ticket da carga.
+METHOD ImprimeTk (_nQualTk) Class ClsCarSaf
+	
+	// Se nao especificado qual ticket (1a. ou 2a. pesagem), verifica se quais dados jah tem.
+	if empty (_nQualTk)
+		_nQualTk = iif (::PesoTara != 0, 2, 1)
+	endif
+
+	U_VA_RusTk (_nQualTk, ::PortImpTk, iif (_nQualTk == 1, 1, 2), {}, 'bematech', .t.)
+
 return
 
 

@@ -50,13 +50,16 @@ User Function va_rus1 ()
 	private _ZEPATRIAR := ""  // Variavel private para alimentar a tela final de AxInclui
 	private _ZESNFPROD := ""  // Variavel private para alimentar a tela final de AxInclui
 	private _ZENFPROD  := ""  // Variavel private para alimentar a tela final de AxInclui
-	private _oCarSaf   := ClsCarSaf ():New ()
-
 
 	// Este teste parece que vai exigir manutencao eterna...
 	if _ZESAFRA >= '2014' .and. ! cEmpAnt + cFilAnt $ '0101/0103/0107/0109/0110/0111/0112/0113'
 		u_help ("Filial nao liberada para recebimento de safra.")
 		return
+	endif
+
+	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
+	if type ("_oCarSaf") != 'O'
+		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
 	endif
 
 	// Identificacao do associado: pode ser manual ou via leitor de codigo de barras.

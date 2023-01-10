@@ -35,6 +35,8 @@
 // 24/10/2022 - Robert  - Melhorada mensagem de validacao B1_TIPO x B1_GRTRIB
 // 26/10/2022 - Robert  - Valida duplicidade de do B1_CODBAR somente "se nao for tudo zero".
 // 15/12/2022 - Claudia - Incluidas validações de rastro e lote. GLPI: 12933
+// 05/01/2023 - Robert  - Teste de desabilitacao de rastro e enderecamento
+//                        considerava se jah estava habilitado ou nao no SB1.
 //
 //---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
@@ -267,18 +269,6 @@ static function _A010TOk ()
 		endif
 	endif
 
-	if _lRet .and. paramixb [1]:nOperation == 4  // Se estou alterando um cadastro, gero evento de alteracao.
-		_aAreaSB1 := sb1 -> (getarea ())
-		sb1 -> (dbsetorder (1))
-		if sb1 -> (dbseek (xfilial ("SB1") + m->b1_cod, .F.))  // SB1 chega aqui em BOF (vai entender...)
-			_oEvento := ClsEvent():new ()
-			_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), '', .F.)
-		else
-			u_log2 ('erro', "Nao encontrei o SB1 do produto '" + m->b1_cod + "' para gerar o evento.")
-		endif
-		restarea (_aAreaSB1)
-	endif
-	
 	if m->b5_convdip != 0 .and. empty(m->b5_umdipi)
 		u_help ("Fator de conversão informado no complemento. A unidade DIPI deve ser informada no registro!")
 		_lRet = .F.
@@ -333,35 +323,52 @@ static function _A010TOk ()
 	endif
 
 	// validações lote e rastro
-	if _lRet
+//	if _lRet
+	if _lRet .and. m->b1_rastro = 'N' .and. sb1 -> b1_rastro = 'L'  // Usuario tentou desabilitar o rastro
 		_oSQL:= ClsSQL ():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT * FROM SB8010 "
+		_oSQL:_sQuery += " SELECT count (*)"
+		_oSQL:_sQuery += " FROM " + RetSQLName ("SB8")
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 		_oSQL:_sQuery += " AND B8_PRODUTO   = '" + m->b1_cod + "'"
 		_oSQL:_sQuery += " AND B8_SALDO > 0"
-		_aSB8 := aclone(_oSQL:Qry2Array ())
-
-		if alltrim(m->b1_rastro) $ ('L/S') .and. len(_aSB8) > 0
+//		_aSB8 := aclone(_oSQL:Qry2Array ())
+//		if alltrim(m->b1_rastro) $ ('L/S') .and. len(_aSB8) > 0
+		if _oSQL:RetQry (1, .F.) > 0
 			u_help("Produto possui saldo em lote! Não é possível alteração no cadastro.")
 			_lRet := .F.
 		endif
 	endif
-	if _lRet
+//	if _lRet
+	U_Log2 ('debug', '[' + procname () + ']validando sb1->b1_cod=' + sb1 -> b1_cod)
+	if _lRet .and. alltrim(m->b1_localiz) == 'N' .and. sb1 -> b1_localiz = 'S'  // Usuario tentou desabilitar a localizacao
 		_oSQL:= ClsSQL ():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT * FROM SBF010 "
+//		_oSQL:_sQuery += " SELECT * FROM SBF010 "
+		_oSQL:_sQuery += " SELECT count (*)"
+		_oSQL:_sQuery += " FROM " + RetSQLName ("SBF")
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 		_oSQL:_sQuery += " AND BF_PRODUTO   = '" + m->b1_cod + "'"
 		_oSQL:_sQuery += " AND BF_QUANT > 0"
-		_aSBF := aclone(_oSQL:Qry2Array ())
-
-		if alltrim(m->b1_localiz) == 'S' .and. Len(_aSBF) > 0
+//		_aSBF := aclone(_oSQL:Qry2Array ())
+//		if alltrim(m->b1_localiz) == 'S' .and. Len(_aSBF) > 0
+		if _oSQL:RetQry (1, .F.) > 0
 			u_help("Produto possui saldo em endereço! Não é possível alteração no cadastro.")
 			_lRet := .F.
 		endif
 	endif
 
+	if _lRet .and. paramixb [1]:nOperation == 4  // Se estou alterando um cadastro, gero evento de alteracao.
+		_aAreaSB1 := sb1 -> (getarea ())
+		sb1 -> (dbsetorder (1))
+		if sb1 -> (dbseek (xfilial ("SB1") + m->b1_cod, .F.))  // SB1 chega aqui em BOF (vai entender...)
+			_oEvento := ClsEvent():new ()
+			_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), '', .F.)
+		else
+			u_log2 ('erro', "Nao encontrei o SB1 do produto '" + m->b1_cod + "' para gerar o evento.")
+		endif
+		restarea (_aAreaSB1)
+	endif
 return _lRet
 //
 // --------------------------------------------------------------------------

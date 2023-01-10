@@ -737,7 +737,7 @@ static function _ExecQry (_oSelf)
 	DbUseArea(.t., 'TOPCONN', TcGenQry (,, _oSelf:_sQuery), _oSelf:_sAliasQry, .f., .t.)
 
 	if _oSelf:PerfMon
-		U_PerfMon ('L', '_ExecQry')
+		U_PerfMon ('L', '_ExecQry', _oSelf:_sQuery)
 	//	U_Log2 ('info', '-------------- Final medicao de tempo de execucao de SQL')
 	endif
 

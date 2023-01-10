@@ -177,6 +177,8 @@
 // 13/10/2022 - Robert  - Melhorias validacao C2_VABARCX
 // 24/10/2022 - Robert  - Passa a validar campo A4_EMAIL.
 // 26/10/2022 - Robert  - Valida duplicidade de do B1_CODBAR somente "se nao for tudo zero".
+// 05/01/2022 - Robert  - Desabilitada validacao D3_TM x ROTINA, pois agora o
+//                        sistema controla acessos por TM x usuario.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -1061,12 +1063,13 @@ user function VA_VCpo (_sCampo)
 
 
 	//	case _sCampo $ "M->D3_TM/CTM"  // cTM eh usado no MATA241 (mod.2)
+/* Em desuso, pois agora o sistema controla acessos por TM/usuario
 		case _sCampo $ "M->D3_TM/M->CTM"  // Variavel "cTM" eh usada no MATA241 (mod.2)
 			if ! alltrim (upper (funname ())) $ upper (fBuscaCpo ("SF5", 1, xfilial ("SF5") + &(_sCampo), "F5_VAROTIN"))
 				U_Help ("Tipo de movimento nao liberado para esta rotina.")
 				_lRet = .F.
 			endif
-
+*/
 
 		case _sCampo == "M->D3_VAETIQ"
 				//u_logpcham ()

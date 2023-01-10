@@ -22,8 +22,14 @@ user function va_rus1P (_lPortaria)
 	private _nPLidoBal := 0  // Deixar private senao a funcao MsgRun nao altera.
 	
 	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']   Assoc:' + sze -> ze_assoc + '/' + sze -> ze_lojasso)
+
+	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
 	if type ("_oCarSaf") != 'O'
 		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+	endif
+	if empty (_oCarSaf:Carga)
+		u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
+		_lContinua = .F.
 	endif
 
 	_lPortaria = iif (_lPortaria == NIL, .F., _lPortaria)
@@ -64,9 +70,10 @@ user function va_rus1P (_lPortaria)
 			sze->ze_pesoBru = _nPLidoBal
 			msunlock ()
 	
-		//	if _lImpTick .and. _lTickPeso .and. ! _lIntPort
-			if _lImpTick .and. ! _lIntPort
-				U_VA_RUSTk (1, _sPortTick, _nQViasTk1, {}, 'Bematech', .t.)
+//			if _lImpTick .and. ! _lIntPort
+			if ! _lIntPort
+		//		U_VA_RUSTk (1, _sPortTick, _nQViasTk1, {}, 'Bematech', .t.)
+				_oCarSaf:ImprimeTk (1)
 			endif
 		endif
 	endif

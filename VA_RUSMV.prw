@@ -19,6 +19,15 @@ User Function VA_RusMV ()
 
 	u_Log2 ('info', 'Iniciando ' + procname ())
 
+	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
+	if type ("_oCarSaf") != 'O'
+		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+	endif
+	if empty (_oCarSaf:Carga)
+		u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
+		_lContinua = .F.
+	endif
+
 	// Se existe mistura de variedades, precifica pela de menor valor.
 	// Para isso, varre os itens, monta uma lista de codigos distintos e busca o preco de cada um
 	// considerando um grau medio e classificacoes medias. Neste momento nao interessa a classificacao

@@ -24,13 +24,10 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 	local _nLock      := 0
 	local _oSQL       := NIL
 	local _aEspum     := {}
-	private _sRetSZECG := ''  // Numero da carga gerada. Para retornar dados ao web service. Deixar private para ser vista por demais rotinas.
-//	private _sRetSZEAv := ''  // Avisos para usuario.    Para compor, depois, o XML de retorno. Deixar private para ser vista por demais rotinas.
-//	private _sRetSZEOb := ''  // Observacoes em geral.   Para compor, depois, o XML de retorno. Deixar private para ser vista por demais rotinas.
 	private _oCarSaf  := ClsCarSaf ():New ()
 
 	u_log2 ('info', 'Iniciando ' + procname ())
-	U_PerfMon ('I', 'GeraSZE_validacoes')  // Para metricas de performance
+	//U_PerfMon ('I', 'GeraSZE_validacoes')  // Para metricas de performance
 
 	// Este programa foi criado para ser chamado via web service, que jah deve
 	// deixar a variavel _sErroWS criada, mas, para garantir...
@@ -53,8 +50,8 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		private _sModelBal := 0
 		private _nMultBal  := 10
 		private _nPesoEmb  := 20
-		private _lImpTick  := .F.
-		private _sPortTick := ''
+//		private _lImpTick  := .F.
+//		private _sPortTick := ''
 		private _lLeBrix   := .T.
 		private _nQViasTk1 := 1
 		private _nQViasTk2 := 2
@@ -100,8 +97,11 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 	U_Log2 ('debug', '[' + procname () + ']M->ZE_CARGAC2 = ' + m->ze_cargaC2)
 	U_Log2 ('debug', '[' + procname () + ']M->ZE_PLACA   = ' + m->ze_placa)
 
-	// Define impressora de ticket e alimenta as respectivas variaveis (que jah devem ter escopo PRIVATE).
-	U_VA_RusDI (cFilAnt)
+//	// Define impressora de ticket e alimenta as respectivas variaveis (que jah devem ter escopo PRIVATE).
+//	U_VA_RusDI (cFilAnt, _sIdImpr)
+	
+	// Define impressora de ticket
+	_oCarSaf:DefImprTk (cFilAnt, _sIdImpr)
 
 	// Verifica se o associado tem alguma restricao
 	if empty (_sErroWS)
@@ -113,7 +113,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		_oSQL:_sQuery +=   " AND GX0001_ASSOCIADO_LOJA   = '" + _oAssoc:Loja   + "'"
 		_oSQL:_sQuery +=   " AND GX0001_ASSOCIADO_RESTRICAO != ''"
 	//	_oSQL:Log ()
-		_oSQL:PerfMon = .T.  // Para monitoramento de performance - desabilitar depois
+		//_oSQL:PerfMon = .T.  // Para monitoramento de performance - desabilitar depois
 		_sRestri = _oSQL:RetQry ()
 		if ! empty (_sRestri)
 			_sErroWS += "Associado com restricoes: " + _sRestri
@@ -122,9 +122,9 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 
 	// Gera array com os cadastros viticolas vinculados ao associado. Deve ser mantido, aqui, o mesmo formato gerado pela classe ClsAssoc.
 	if empty (_sErroWS)
-		U_PerfMon ('I', 'GeraSZE_RUSCV')  // Para metricas de performance
+		//U_PerfMon ('I', 'GeraSZE_RUSCV')  // Para metricas de performance
 		_aCadVitic = aclone (U_VA_RusCV (_oAssoc:Codigo, _oAssoc:Loja))
-		U_PerfMon ('F', 'GeraSZE_RUSCV')  // Para metricas de performance
+		//U_PerfMon ('F', 'GeraSZE_RUSCV')  // Para metricas de performance
 		if len (_aCadVitic) == 0
 			_sErroWS += "Nao ha nenhuma variedade de uva ligada ao associado."
 		endif
@@ -194,12 +194,12 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 			u_logACols ()
 
 			// Executa a validacao de linha
-			U_PerfMon ('I', 'GeraSZE_RUS2L')  // Para metricas de performance
+			//U_PerfMon ('I', 'GeraSZE_RUS2L')  // Para metricas de performance
 			if ! U_VA_RUS2L ()
 				_sErroWS += 'Erro na validacao do item ' + cvaltochar (_nItemCar)
 				exit
 			else
-				U_PerfMon ('F', 'GeraSZE_RUS2L')  // Para metricas de performance
+				//U_PerfMon ('F', 'GeraSZE_RUS2L')  // Para metricas de performance
 				U_Log2 ('debug', 'U_VA_RUS2L() retornou .T.')
 			endif
 		next
@@ -211,37 +211,25 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 
 	// Validacoes do programa original.
 	if empty (_sErroWS)  // Variavel private do web service
-		U_PerfMon ('I', 'GeraSZE_RUS2T')  // Para metricas de performance
+		//U_PerfMon ('I', 'GeraSZE_RUS2T')  // Para metricas de performance
 		if U_VA_RUS2T ()
-			U_PerfMon ('F', 'GeraSZE_RUS2T')  // Para metricas de performance
+			//U_PerfMon ('F', 'GeraSZE_RUS2T')  // Para metricas de performance
 			u_log2 ('debug', 'U_VA_RUS2T() ok')
-			//_sCargaGer = CriaVar ("ZE_CARGA")
 			u_log2 ('debug', 'Tentando gravar carga')
 			
-//			// Deixa criada variavel para retorno
-//			private _RetGrvSZE := ""
-//			
-//			// Gravacao pelo programa original.
-//			if U_VA_RUS2G ()
-//				u_log ('U_VA_RUS2G() ok')
-//				_sCargaGer = _RetGrvSZE
-//			else
-//				_sCargaGer = ''
-//			endif
-
-			U_PerfMon ('F', 'GeraSZE_validacoes')  // Para metricas de performance
+			//U_PerfMon ('F', 'GeraSZE_validacoes')  // Para metricas de performance
 
 			// Gravacao pelo programa original.
-			U_PerfMon ('I', 'GeraSZE_gravacao')  // Para metricas de performance
+			//U_PerfMon ('I', 'GeraSZE_gravacao')  // Para metricas de performance
 			if U_VA_RUS2G ()
+				//U_PerfMon ('F', 'GeraSZE_gravacao')  // Para metricas de performance
 				u_log2 ('info', 'U_VA_RUS2G() ok')
-				u_log2 ('info', 'Carga gerada: ' + sze -> ze_carga)
-				U_PerfMon ('F', 'GeraSZE_gravacao')  // Para metricas de performance
+				_sMsgRetWS = sze -> ze_carga
+				u_log2 ('info', 'Carga gerada: ' + _sMsgRetWS)
 			else
 				u_log2 ('erro', 'U_VA_RUS2G() retornou erro.')
 			endif
 
-			_sMsgRetWS = _sRetSZECG
 		endif
 	endif
 
@@ -250,5 +238,5 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		U_Semaforo (_nLock)
 	endif
 
-	u_log2 ('info', 'Finalizando ' + procname ())
+	U_Log2 ('info', '[' + procname () + "]Finalizando com carga '" + _sMsgRetWS + "' gerada.")
 return _sCargaGer

@@ -31,7 +31,7 @@ user Function VA_RUS2G (_nOpc)
 	local _nAglut    := 0
 
 	u_log2 ('info', 'Iniciando ' + procname ())
-	U_PerfMon ('I', 'Interno_VA_Rus2G')
+	//U_PerfMon ('I', 'Interno_VA_Rus2G')
 
 	// Confere se jah existe este numero de carga (caso haja problema com os sequenciais).
 	if _lContinua .and. inclui
@@ -45,7 +45,7 @@ user Function VA_RUS2G (_nOpc)
 
 	if _lContinua .and. (inclui .or. altera)
 
-		U_PerfMon ('I', 'Interno_VA_Rus2G_gravacao')
+		//U_PerfMon ('I', 'Interno_VA_Rus2G_gravacao')
 
 		// Gravacao dos campos da enchoice
 		dbselectarea ("SZE")
@@ -62,11 +62,6 @@ user Function VA_RUS2G (_nOpc)
 			sze -> ze_horsaid = time ()
 		endif
 
-		// Variavel para retorno do numero da carga para a funcao de geracao automatica.
-		if type ("_sRetSZECG") == 'C'
-			_sRetSZECG = sze -> ze_carga
-		endif
-	
 		msunlock ("SZE")
 		_nRegSZE = sze -> (recno ())
 		
@@ -104,7 +99,7 @@ user Function VA_RUS2G (_nOpc)
 				endif
 			endif
 
-			U_PerfMon ('L', 'Interno_VA_Rus2G_gravacao')
+			//U_PerfMon ('L', 'Interno_VA_Rus2G_gravacao')
 		next
 		
 		// Confirma sequenciais, se houver.
@@ -114,9 +109,9 @@ user Function VA_RUS2G (_nOpc)
 
 		// Atualiza tabela de comunicacao com leitor de grau.
 	//	U_Log2 ('debug', '[' + procname () + '] Gravei SZE e SZF e vou chamar a atualizacao do ZZA.')
-		U_PerfMon ('I', 'Interno_VA_Rus2G_AtuZZA')
+		//U_PerfMon ('I', 'Interno_VA_Rus2G_AtuZZA')
 		U_AtuZZA (sze -> ze_safra, sze -> ze_carga)
-		U_PerfMon ('L', 'Interno_VA_Rus2G_AtuZZA')
+		//U_PerfMon ('L', 'Interno_VA_Rus2G_AtuZZA')
 
 		// Grava relacionamento entre cargas de origem e de destino, em caso de aglutinacao de cargas.
 		if m->ze_aglutin == "D"
@@ -145,16 +140,21 @@ user Function VA_RUS2G (_nOpc)
 			sze -> (dbgoto (_nRegSZE))
 		endif
 
-		// Verifica se deve imprimir ticket em impressora termica.
-		if _lImpTick
+		_oCarSaf:GeraAtrib ("SZE")  // Atualiza atributos com o que foi gravado nos arquivos.
+
+//		// Verifica se deve imprimir ticket.
+		// Imprime ticket
+//		if _lImpTick
 			if inclui
-				U_PerfMon ('I', 'Impr_ticket1_safra')  // Para metricas de performance
-				U_VA_RUSTk (1, _sPortTick, _nQViasTk1, {}, 'Bematech', .t.)
-				U_PerfMon ('L', 'Impr_ticket1_safra')  // Para metricas de performance
+				//U_PerfMon ('I', 'Impr_ticket1_safra')  // Para metricas de performance
+			//	U_VA_RUSTk (1, _sPortTick, _nQViasTk1, {}, 'Bematech', .t.)
+				_oCarSaf:ImprimeTk (1)
+				//U_PerfMon ('L', 'Impr_ticket1_safra')  // Para metricas de performance
 			elseif altera
-				U_VA_RUSTk (2, _sPortTick, _nQViasTk2, {}, 'Bematech', .t.)
+			//	U_VA_RUSTk (2, _sPortTick, _nQViasTk2, {}, 'Bematech', .t.)
+				_oCarSaf:ImprimeTk (2)
 			endif
-		endif
+//		endif
 
 		// Verifica se deve gerar contranota agora.
 		if altera .or. (inclui .and. m->ze_aglutin == "D")   // 2a. pesagem ou 1a. pesagem aglutinada
@@ -228,6 +228,6 @@ user Function VA_RUS2G (_nOpc)
 		endif
 
 	endif
-	U_PerfMon ('L', 'Interno_VA_Rus2G')
+	//U_PerfMon ('L', 'Interno_VA_Rus2G')
 	
 Return _lContinua

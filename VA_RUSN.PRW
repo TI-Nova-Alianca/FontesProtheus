@@ -75,11 +75,11 @@ User Function va_rusN (_lSimulNF)
 	local _aLinha    := {}
 	local _sVitic    := ""
 	local _sSivibe   := ""
-	local _sNaoConf  := ""
-	local _nNaoConf  := 0
+//	local _sNaoConf  := ""
+//	local _nNaoConf  := 0
 	local _sAlmox    := ""
 	local _oSQL      := NIL
-	local _sDescNC   := ""
+//	local _sDescNC   := ""
 	local _sAglutin  := ""
 	local _sClasFina := ''
 	local _nVlUni    := 0
@@ -105,8 +105,14 @@ User Function va_rusN (_lSimulNF)
 	private _sErroAuto := ''  // Deixar private para ser alimentada em subrotinas.
 
 	u_Log2 ('info', 'Iniciando ' + procname ())
+
+	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
 	if type ("_oCarSaf") != 'O'
 		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+	endif
+	if empty (_oCarSaf:Carga)
+		u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
+		_lContinua = .F.
 	endif
 	
 	// Nao permite duas sessoes alterando a mesma carga. Usa a funcao SoftLock para que mostre a mensagem 'registro em uso por fulano'
@@ -278,8 +284,7 @@ User Function va_rusN (_lSimulNF)
 			.and. szf -> zf_carga  == sze -> ze_carga
 			
 			// Se tem produto de menor valor definido, usa-o (carga com mistura). Senao, eh por que tem apenas 1 item na carga.
-			U_Log2 ('info', 'zf_produto: ' + szf -> zf_produto)
-			U_Log2 ('info', '_sMenorVlr: ' + _sMenorVlr)
+			U_Log2 ('debug', '[' + procname () + ']ZF_PRODUTO: ' + szf -> zf_produto + '_sMenorVlr: ' + _sMenorVlr)
 			if szf -> zf_produto == _sMenorVlr .or. empty (_sMenorVlr)
 				_sGrpPgSaf = U_VA_RusGP (szf -> zf_safra, szf -> zf_produto, szf -> zf_conduc)
 				exit
@@ -308,7 +313,7 @@ User Function va_rusN (_lSimulNF)
 
 	if _lContinua
 		_sVitic   = ""
-		_sNaoConf = ""
+//		_sNaoConf = ""
 
 		// Prepara itens da nota
 		sb1 -> (dbsetorder (1))
@@ -446,6 +451,7 @@ User Function va_rusN (_lSimulNF)
 				_lSemPadVi = .T.
 			endif
 
+			/* Controle de nao conformidades passou para o NaWeb
 			// Lista cada nao conformidade uma unica vez, independente de quantos itens a tenham
 			for _nNaoConf = 1 to 2  //4  // Aumentar aqui se forem criados novos campos.
 				_sDescNC = alltrim (U_RetZX5 ('11', sze -> ze_safra + szf -> &('zf_nconf' + strzero (_nNaoConf, 2)), 'ZX5_11DESC'))
@@ -457,6 +463,7 @@ User Function va_rusN (_lSimulNF)
 					endif
 				endif
 			next
+			*/
 
 			// Define lote a ser gerado. Se tiver nao conformidades, acrescenta 'NC' ao mesmo.
 			if sze -> ze_segreg == 'S'  // Carga segregada: deve gerar lote nao conforme
@@ -551,10 +558,14 @@ User Function va_rusN (_lSimulNF)
 			_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "SIVIBE:" + _sSivibe
 		endif
 
-
-		if ! empty (_sNaoConf)
-			_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "N.conform:" + _sNaoConf
+		if sze -> ze_segreg == 'S'  // Carga segregada.
+			U_Log2 ('debug', '[' + procname () + ']carga segregada!')
+			_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Carga nao conforme"
 		endif
+
+//		if ! empty (_sNaoConf)
+//			_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "N.conform:" + _sNaoConf
+//		endif
 		if ! empty (sze -> ze_obs)
 			_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Obs:" + alltrim (sze -> ze_obs)
 		endif
@@ -679,7 +690,7 @@ User Function va_rusN (_lSimulNF)
 
 		MsExecAuto({|x,y,z|MATA103(x,y,z)},_aAutoSF1,_aAutoSD1,3)
 
-		U_PerfMon ('F', 'GravarContranotaSafra')  // Para metricas de performance
+		U_PerfMon ('L', 'GravarContranotaSafra')  // Para metricas de performance
 
 		If lMsErroAuto
 			_lContinua = .F.

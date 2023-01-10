@@ -410,8 +410,8 @@ static function _SegPesSZE ()
 			private _sModelBal := ""  // Deixar private para ser vista por outras rotinas.
 			private _nMultBal  := ""  // Deixar private para ser vista por outras rotinas.
 			private _nPesoEmb  := ""  // Deixar private para ser vista por outras rotinas.
-			private _lImpTick  := ""  // Deixar private para ser vista por outras rotinas.
-			private _sPortTick := ""  // Deixar private para ser vista por outras rotinas.
+//			private _lImpTick  := ""  // Deixar private para ser vista por outras rotinas.
+//			private _sPortTick := ""  // Deixar private para ser vista por outras rotinas.
 			private _lLeBrix   := .F. // Deixar private para ser vista por outras rotinas.
 			private _nQViasTk1 := 0   // Deixar private para ser vista por outras rotinas.
 			private _nQViasTk2 := 0   // Deixar private para ser vista por outras rotinas.

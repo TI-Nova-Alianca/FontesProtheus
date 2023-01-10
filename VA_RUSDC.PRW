@@ -13,6 +13,15 @@ User Function va_rusDC ()
 	local _sNFDevol  := ""
 	local _oSQL      := NIL
 
+	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
+	if type ("_oCarSaf") != 'O'
+		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+	endif
+	if empty (_oCarSaf:Carga)
+		u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
+		_lContinua = .F.
+	endif
+
 	if _lContinua .and. empty (sze -> ze_nfger)
 		u_help ("Nao ha contranota gerada para esta carga.")
 		_lContinua = .F.

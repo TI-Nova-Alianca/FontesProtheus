@@ -51,8 +51,9 @@ WSMETHOD Execute WSSEND cEntrada WSRECEIVE cSaida WSCLIENT WSPrcStatusAgendaSafr
 		U_Log2 ('aviso', '[' + procname () + ']Estou definindo web service para base teste')
 		_sURI = "http://naweb17.novaalianca.coop.br/PrcStatusAgendaSafraWS.aspx"
 	else
-		_sURI = "http://naweb17.novaalianca.coop.br/PrcStatusAgendaSafraWS.aspx"
-		U_Log2 ('aviso', '[' + procname () + ']Ainda estou usando naweb17 seria bom ir para naweb oficial.')
+//		_sURI = "http://naweb17.novaalianca.coop.br/PrcStatusAgendaSafraWS.aspx"
+//		U_Log2 ('aviso', '[' + procname () + ']Ainda estou usando naweb17 seria bom ir para naweb oficial.')
+		_sURI = "http://naweb.novaalianca.coop.br/PrcStatusAgendaSafraWS.aspx"
 	endif
 
 	_sSOAP += '<PrcStatusAgendaSafraWS.Execute xmlns="NAWeb">'

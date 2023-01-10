@@ -11,6 +11,7 @@
 // 26/02/2020 - Robert - Campo ze_senhade passa a ser do tipo caracter.
 // 15/01/2021 - Robert - Grava campo ze_imptk no final da impressao.
 // 11/03/2022 - Robert - Melhorados logs.
+// 06/01/2023 - Robert - Desabilitada impr. da senha de descarga.
 //
 
 // --------------------------------------------------------------------------
@@ -36,17 +37,22 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 	_sModelImp = upper (_sModelImp)
 	
 	u_Log2 ('info', 'Iniciando ' + procname ())
-//	u_log2 ('debug', '   Qual ticket......: ' + cvaltochar (_nQual) + "   Porta: " + cvaltochar (_sPorta))
-//	u_log2 ('debug', '   Modelo impressora: ' + cvaltochar (_sModelImp))
+	u_log2 ('debug', '   Qual ticket......: ' + cvaltochar (_nQual) + "   Porta: " + cvaltochar (_sPorta))
+	u_log2 ('debug', '   Modelo impressora: ' + cvaltochar (_sModelImp))
 
+	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
 	if type ("_oCarSaf") != 'O'
 		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
 	endif
-
-	if type ("_lImpTick") == "L" .and. ! _lImpTick
-		u_help ("Impressao disponivel somente em estacoes com impressora de ticket/cupom",, .t.)
+	if empty (_oCarSaf:Carga)
+		u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
 		_lContinua = .F.
 	endif
+
+//	if type ("_lImpTick") == "L" .and. ! _lImpTick
+//		u_help ("Impressao disponivel somente em estacoes com impressora de ticket/cupom",, .t.)
+//		_lContinua = .F.
+//	endif
 	
 	// Busca os produtos da carga
 	if _lContinua .and. (_nQual == 1 .or. _nQual == 2)
@@ -178,11 +184,13 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 			_sTicket += _Enter
 		endif
 
+		/* Desabilitada impr. da senha de descarga por solicitacao do Leonardo em 06/01/2023.
 		if _nQual == 1 .and. ! empty (sze -> ze_senhade)
 			_sTicket += _Enter
 			_sTicket += "***Senha descarga: " + sze -> ze_senhade
 			_sTicket += _Enter
 		endif
+		*/
 	endif
 
 	if _lContinua .and. (_nQual == 4)  // Fila de descarga
