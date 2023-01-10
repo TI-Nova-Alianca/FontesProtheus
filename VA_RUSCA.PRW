@@ -14,6 +14,15 @@ User Function VA_RusCA (_nQual, _lRetCarg)
 	local _oSQL      := NIL
 	local _sCargas   := ""
 
+	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
+	if type ("_oCarSaf") != 'O'
+		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+	endif
+	if empty (_oCarSaf:Carga)
+		u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
+		_lContinua = .F.
+	endif
+
 	if _lContinua .and. _nQual == 1 .and. ! sze -> ze_aglutin $ 'D/O'
 		u_help ("Esta nao e´ uma carga aglutinada / aglutinadora",, .t.)
 		_lContinua = .F.

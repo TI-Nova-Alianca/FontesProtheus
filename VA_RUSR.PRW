@@ -24,8 +24,14 @@ User Function va_rusR ()
 			return
 		endif
 	endif
+
+	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
 	if type ("_oCarSaf") != 'O'
 		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+	endif
+	if empty (_oCarSaf:Carga)
+		u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
+		_lContinua = .F.
 	endif
 
 	cDesc1   := "Recibo de entrada de uva"

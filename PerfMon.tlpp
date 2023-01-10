@@ -19,10 +19,11 @@
 // 01/05/2022 - Robert - Retorna o tempo total ao final do processo (caso a rotina chamadora queira usar).
 // 30/08/2022 - Robert - Atributo ClsAviso:DestinAvis passa a ser tipo string.
 // 01/09/2022 - Robert - Melhorias ClsAviso.
+// 06/01/2023 - Robert - Pode mostrar observacoes, caso enviadas pela rotina chamadora.
 //
 
 // --------------------------------------------------------------------------
-user function PerfMon (_sQueFazer, _sChvPerf)
+user function PerfMon (_sQueFazer, _sChvPerf, _sObsPerf)
 	local _nPosPerf := 0
 	local _oSQL     := NIL
 	local _oAviso   := NIL
@@ -63,7 +64,7 @@ user function PerfMon (_sQueFazer, _sChvPerf)
 				endif
 				_nRetPerf = _aPerfMon [_nPosPerf, 3]
 				if _sQueFazer == 'L'
-					U_Log2 ('info', '[' + procname () + ']Tempo execucao chave ' + _sChvPerf + ': ' + cvaltochar (_aPerfMon [_nPosPerf, 3]) + ' segundos')
+					U_Log2 ('info', '[' + procname () + ']Tempo execucao chave ' + _sChvPerf + ': ' + cvaltochar (_aPerfMon [_nPosPerf, 3]) + ' segundos. ' + iif (_sObsPerf != NIL, cvaltochar (_sObsPerf), ''))
 				endif
 
 				if _sQueFazer == 'F'  // Vou persistir em disco

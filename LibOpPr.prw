@@ -6,7 +6,7 @@
 // Historico de alteracoes:
 // 31/08/2018 - Robert - Quebra qt solicitdas ao FullWMS pela qt.embalagem (B1_QB).
 // 02/10/2018 - Robert - Busca lote (quant) a solicitar no A5_VAQSOLW e solicita ao FullWMS em multiplos desse lote.
-//
+// 05/01/2023 - Robert - Melhorados alguns logs
 
 #XTranslate .SolicProduto      => 1
 #XTranslate .SolicDescricao    => 2
@@ -28,8 +28,6 @@ User Function LibOpPr (_sOPIni, _sOPFim)
 	private cCadastro := "Liberar OP para producao"
 	private aRotina   := {}
 	private cPerg     := "LIBOPPR"
-
-	u_logIni ()
 
 	// Monta interface conforme os parametros recebidos.
 	do case
@@ -81,7 +79,6 @@ User Function LibOpPr (_sOPIni, _sOPFim)
 
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
 return
 
 
@@ -195,7 +192,6 @@ static function _GeraZAG (_sOP)
 	local _aCols     := {}
 	private _sErroAuto := ''
 
-	u_logIni ()
 	CursorWait ()
 
 	incproc ('Gerando solicitacoes ao almoxarifado')
@@ -239,7 +235,7 @@ static function _GeraZAG (_sOP)
 		_nOutrEmp = sb2 -> b2_qemp - (_sAliasQ) -> d4_quant
 		_nNecessid = (_sAliasQ) -> d4_quant - (sb2 -> b2_qatu - _nOutrEmp)
 
-		u_log ('componente:', (_sAliasQ) -> d4_cod, '   outros empenhos:', _nOutrEmp, '   necessidade:', _nNecessid)
+		U_Log2 ('debug', '[' + procname () + ']Componente: ' + (_sAliasQ) -> d4_cod + '   outros empenhos: ' + cvaltochar (_nOutrEmp) + '   necessidade: ' + cvaltochar (_nNecessid))
 
 		// Solicitar usando o menor multiplo disponivel (cada fornecedor me manda produtos em diferentes embalagens)
 		// pois o WMS vai estar configurado para permitir ao operador separar acima da quantidade solicitada.
@@ -253,7 +249,7 @@ static function _GeraZAG (_sOP)
 		_oSQL:_sQuery +=   " AND SA5.A5_VAQSOLW != 0"
 		_oSQL:Log ()
 		_nTamLote = _oSQL:RetQry (1, .F.)
-		u_log ('tam lote:', _nTamLote)
+		U_Log2 ('debug', '[' + procname () + ']tam lote: ' + cvaltochar (_nTamLote))
 
 		if _nTamLote == 0
 			_sErros += "Produto '" + alltrim ((_sAliasQ) -> d4_cod) + "': nao foi possivel definir o multiplo para separacao. Verifique se o produto tem amarracao com algum fornecedor e se o campo '" + alltrim (RetTitle ("A5_VAQSOLW")) + "' foi informado." + chr (13) + chr (10)
@@ -262,7 +258,7 @@ static function _GeraZAG (_sOP)
 			// Quando garrafas, solicita 'de lote em lote', pois nao tem espaco fisico na fabrica
 			// para separar tudo de uma vez, e o Full so me retorna a quantidade separada depois de finalizar a onda.
 			if (_sAliasQ) -> b1_grupo == '2000'
-				u_log ('Trata-se de garrafa! vou particionar em ', _nTamLote)
+				U_Log2 ('debug', '[' + procname () + ']Trata-se de garrafa! vou particionar em ' + cvaltochar (_nTamLote))
 				_nJaRequis = 0
 				do while _nJaRequis < _nNecessid
 					aadd (_aSolic, afill (array (.SolicQtColunas), 0))
@@ -283,7 +279,7 @@ static function _GeraZAG (_sOP)
 				if _nQtLotes < _nNecessid / _nTamLote
 					_nQtLotes ++
 				endif
-				u_log ('produto ', (_sAliasQ) -> d4_cod, 'necessidade:', _nNecessid, 'tam.lote:', _nTamLote, 'qt lotes:', _nQtLotes)
+				//u_log ('produto ', (_sAliasQ) -> d4_cod, 'necessidade:', _nNecessid, 'tam.lote:', _nTamLote, 'qt lotes:', _nQtLotes)
 
 				aadd (_aSolic, afill (array (.SolicQtColunas), 0))
 				_aSolic [len (_aSolic), .SolicProduto]      = (_sAliasQ) -> d4_cod
@@ -300,7 +296,8 @@ static function _GeraZAG (_sOP)
 		(_sAliasQ) -> (dbskip ())
 	enddo
 	(_sAliasQ) -> (dbclosearea ())
-	u_log ('solicitacoes a gerar:', _aSolic)
+	U_Log2 ('debug', '[' + procname () + ']Solicitacoes a gerar:')
+	U_Log2 ('debug', _aSolic)
 
 	if _lZAG_OK .and. len (_aSolic) > 0
 		if len (_aSolic) > 200 // Talvez este valor ainda precise ser ajustado.

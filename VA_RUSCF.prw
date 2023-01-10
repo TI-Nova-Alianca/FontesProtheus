@@ -20,6 +20,15 @@ User Function va_rusCF (_lRegrav)
 	local _oAssoc    := NIL
 	local _aFrtSaf   := {0, 0, ''}
 
+	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
+	if type ("_oCarSaf") != 'O'
+		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+	endif
+	if empty (_oCarSaf:Carga)
+		u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
+		_lContinua = .F.
+	endif
+
 	// Nao permite duas sessoes alterando a mesma carga. Usa a funcao SoftLock para que mostre a mensagem 'registro em uso por fulano'
 	if _lContinua
 		softlock ("SZE")

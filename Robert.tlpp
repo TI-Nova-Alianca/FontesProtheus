@@ -90,7 +90,7 @@ user function robert ()
 		// _EstFul()
 		// _SF1()
 		// _CargSaf ()
-		// _gerasze ()
+		_gerasze ()
 		// _AtuSB1 ()
 		// _ctbanc ()
 		// _ST_MG ()
@@ -198,13 +198,14 @@ static function _gerasze()
 	local _sCargaC1  := ''
 	local _sCargaC2  := ''
 	local _lAmostra  := .F.
-
+	U_PerfMon ('I', procname ())
 	_oAssoc := ClsAssoc ():New ('000161', '01')
 	PRIVATE _sErroWS := ''
 	aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
 	u_log2 ('info', 'Itens da carga:')
 	u_log2 ('info', _aItensCar)
 	U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sImpTkCar, _sCargaC1, _sCargaC2)
+	U_PerfMon ('L', procname ())
 return
 
 // --------------------------------------------------------------------------
@@ -306,7 +307,7 @@ static function _SF1 ()
 		sd1 -> (dbgoto (_aDados [_nDado, 1]))
 		sf1 -> (dbsetorder (1))  // F1_FILIAL, F1_DOC, F1_SERIE, F1_FORNECE, F1_LOJA, F1_TIPO, R_E_C_N_O_, D_E_L_E_T_
 		sf1 -> (dbseek (sd1->d1_filial + sd1->d1_doc + sd1->d1_serie + sd1->d1_fornece + sd1->d1_loja, .F.))
-		_AvisaMnt ()
+		//_AvisaMnt ()
 	next
 return
 

@@ -108,6 +108,7 @@
 //                      - Criada tag ObrigarBarrasProd na impressao de etiquetas.
 // 08/12/2022 - Robert  - Criada acao TransfEstqExecuta.
 // 13/12/2022 - Robert  - Criada acao TransfEstqNegar.
+// 09/01/2023 - Robert  - Nao envia mais o cod.da impr. de ticket para a funcao U_GeraSZE.
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -1336,7 +1337,7 @@ static function _IncCarSaf ()
 	local _sSenhaOrd := ''
 	local _sCPFCarg  := ''
 	local _sInscCarg := ''
-	local _sImpTkCar := ''
+//	local _sImpTkCar := ''
 	local _oSQL      := NIL
 	local _aRegSA2   := {}
 	local _sSivibe   := ''
@@ -1354,7 +1355,7 @@ static function _IncCarSaf ()
 	if empty (_sErroWS) ; _sLoja     = _ExtraiTag ("_oXML:_WSAlianca:_Loja",                   .F., .F.) ; endif
 	if empty (_sErroWS) ; _sCPFCarg  = _ExtraiTag ("_oXML:_WSAlianca:_CPF",                    .F., .F.) ; endif
 	if empty (_sErroWS) ; _sInscCarg = _ExtraiTag ("_oXML:_WSAlianca:_IE",                     .F., .F.) ; endif
-	if empty (_sErroWS) ; _sImpTkCar = _ExtraiTag ("_oXML:_WSAlianca:_ImprTk",                 .F., .F.) ; endif
+//	if empty (_sErroWS) ; _sImpTkCar = _ExtraiTag ("_oXML:_WSAlianca:_ImprTk",                 .F., .F.) ; endif
 	if empty (_sErroWS) ; _sSerieNF  = _ExtraiTag ("_oXML:_WSAlianca:_SerieNFProdutor",        .T., .F.) ; endif
 	if empty (_sErroWS) ; _sNumNF    = _ExtraiTag ("_oXML:_WSAlianca:_NumeroNFProdutor",       .T., .F.) ; endif
 	if empty (_sErroWS) ; _sChvNFPe  = _ExtraiTag ("_oXML:_WSAlianca:_ChaveNFPe",              .F., .F.) ; endif
@@ -1441,7 +1442,8 @@ static function _IncCarSaf ()
 			// Estamos tentando implementar um retorno em XML com novas tags.
 			//_sMsgRetWS = U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sImpTkCar)
 			
-			U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sImpTkCar, _sCargaC1, _sCargaC2)
+//			U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sImpTkCar, _sCargaC1, _sCargaC2)
+			U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, NIL, _sCargaC1, _sCargaC2)
 		endif
 	endif
 
@@ -1484,28 +1486,41 @@ static function _ITkCarSaf ()
 	if empty (_sErroWS) ; _sSafra = _ExtraiTag ("_oXML:_WSAlianca:_Safra",                  .T., .F.) ; endif
 	if empty (_sErroWS) ; _sCarga = _ExtraiTag ("_oXML:_WSAlianca:_Carga",               .T., .F.) ; endif
 	if empty (_sErroWS)
-		
+		sze -> (dbsetorder (1))  // ZE_FILIAL+ZE_SAFRA+ZE_CARGA
+		if ! sze -> (dbseek (xfilial ("SZE") + _sSafra + _sCarga, .F.))
+			_SomaErro ('Carga ' + sze -> ze_carga + ' nao localizada na filial ' + cFilAnt + ' / safra ' + _sSafra + '.')
+		endif
+		if empty (_sErroWS) .and. sze -> ze_status = 'C'
+			_SomaErro ('Carga ' + sze -> ze_carga + ' cancelada.')
+		endif
+		if empty (_sErroWS)
+			// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
+			if type ("_oCarSaf") != 'O'
+				private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+			endif
+			if empty (_oCarSaf:Carga)
+				u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
+				_SomaErro ('Objeto CARGA SAFRA invalido.')
+			endif
+		endif
+	endif
+
+	if empty (_sErroWS)
+
 		// Deixa prontas variaveis usadas pelo programa de impressao do ticket
-		private _lImpTick  := .T.
-		private _sPortTick := ''
-		private _nQViasTk1 := 1
-		private _nQViasTk2 := 2
+//		private _lImpTick  := .T.
+//		private _sPortTick := ''
+//		private _nQViasTk1 := 1
+//		private _nQViasTk2 := 2
 
 		// Define impressora de ticket e alimenta as respectivas variaveis (que jah devem ter escopo PRIVATE).
-		U_VA_RusDI (cFilAnt)
+		//U_VA_RusDI (cFilAnt)
+		_oCarSaf:DefImprTk ()
+		if _oCarSaf:ImprimeTk (1)
 
-		if _lImpTick .and. empty (_sErroWS)
-			sze -> (dbsetorder (1))  // ZE_FILIAL+ZE_SAFRA+ZE_CARGA
-			if ! sze -> (dbseek (xfilial ("SZE") + _sSafra + _sCarga, .F.))
-				_SomaErro ('Carga ' + sze -> ze_carga + ' nao localizada na filial ' + cFilAnt + ' / safra ' + _sSafra + '.')
-			endif
-			if empty (_sErroWS) .and. sze -> ze_status = 'C'
-				_SomaErro ('Carga ' + sze -> ze_carga + ' cancelada.')
-			endif
-			if empty (_sErroWS)
-				U_VA_RUSTk (1, _sPortTick, _nQViasTk1, {}, 'Bematech', .t.)
-				_sMsgRetWS += 'Ticket enviado para ' + _sPortTick
-			endif
+//				U_VA_RUSTk (1, _sPortTick, _nQViasTk1, {}, 'Bematech', .t.)
+				_sMsgRetWS += 'Ticket enviado para ' + _oCarSaf:PortImpTk
+//			endif
 		endif
 	endif
 Return

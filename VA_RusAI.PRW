@@ -17,8 +17,13 @@ user function va_rusAI (_sStatDe, _sStatPara)
 
 	u_Log2 ('info', 'Iniciando ' + procname ())
 
+	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
 	if type ("_oCarSaf") != 'O'
 		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+	endif
+	if empty (_oCarSaf:Carga)
+		u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
+		_lContinua = .F.
 	endif
 
 	// Nao posso estragar a variavel caso ela venha populada de rotinas anteriores.

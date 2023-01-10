@@ -48,8 +48,8 @@ User Function va_rus ()
 	private _sModelBal := ""  // Deixar private para ser vista por outras rotinas.
 	private _nMultBal  := ""  // Deixar private para ser vista por outras rotinas.
 	private _nPesoEmb  := ""  // Deixar private para ser vista por outras rotinas.
-	private _lImpTick  := ""  // Deixar private para ser vista por outras rotinas.
-	private _sPortTick := ""  // Deixar private para ser vista por outras rotinas.
+//	private _lImpTick  := ""  // Deixar private para ser vista por outras rotinas.
+//	private _sPortTick := ""  // Deixar private para ser vista por outras rotinas.
 	private _lLeBrix   := .F. // Deixar private para ser vista por outras rotinas.
 	private _nQViasTk1 := 0   // Deixar private para ser vista por outras rotinas.
 	private _nQViasTk2 := 0   // Deixar private para ser vista por outras rotinas.
@@ -98,7 +98,7 @@ User Function va_rus ()
 		// A partir de 2018 estamos usando o conceito de grupos familiares, nao tem mais
 		// o condominio, e nao temos previsao de receber de associados de outras cooperativas.
 		private _aCoop    := {}
-		aadd (_aCoop, {"Alianca",              "000021", "01", "Alianca"})  // Codigo e loja no SA2 (embora o tratamento para a Alianca seja diferente)
+		aadd (_aCoop, {"Alianca", "000021", "01", "Alianca"})  // Codigo e loja no SA2 (embora o tratamento para a Alianca seja diferente)
 
 		// Busca outras cooperativas habilitadas
 		sa2 -> (dbsetorder (1))
@@ -147,28 +147,29 @@ User Function va_rus ()
 
 	// Monta menu para a rotina.
 	if _lContinua
-//		u_log2 ('debug', 'vou montar o menu com porta de ticket >>' + _sPortTick + '<<')
 
 		// Submenu para contranota.
 		_aMenuNFe = {}
-		aadd (_aMenuNFe, {"Gera contra&nota"   ,  "U_VA_RUSN(.F.)", 0,4})
-		aadd (_aMenuNFe, {"Im&prime DANFe"     ,  "U_VA_RUSi ()", 0,4})
-		aadd (_aMenuNFe, {"Monitor Faixa"      ,  "U_VA_RUSM (1)",0,2})
-		aadd (_aMenuNFe, {"Monitor Tempo"      ,  "U_VA_RUSM (2)",0,2})
-		aadd (_aMenuNFe, {"Transmite contanota",  "U_VA_RUSTX ()",0,2})
+		aadd (_aMenuNFe, {"Gera contra&nota"   ,  "U_VA_RUSOO ('CONTRANOTA')", 0,4})
+		aadd (_aMenuNFe, {"Im&prime DANFe"     ,  "U_VA_RUSOO ('ImprimeDanfe')", 0,4})
+		aadd (_aMenuNFe, {"Monitor Faixa"      ,  "U_VA_RUSOO ('MonitorNFe_1')",0,2})
+		aadd (_aMenuNFe, {"Monitor Tempo"      ,  "U_VA_RUSOO ('MonitorNFe_2')",0,2})
+		aadd (_aMenuNFe, {"Transmite contanota",  "U_VA_RUSOO ('TransmiteContranota')",0,2})
 		aadd (_aMenuNFe, {"Visualiza contanota",  "U_VA_RUSVC ()",0,2})
 		aadd (_aMenuNFe, {"Devolucao carga    ",  "U_VA_RUSDC ()",0,2})
-		aadd (_aMenuNFe, {"Simular contranota" ,  "U_VA_RUSN(.T.)", 0,4})
+		aadd (_aMenuNFe, {"Simular contranota" ,  "U_VA_RUSOO ('SimularCONTRANOTA')", 0,4})
 
 		// Submenu para Outros.
 		_aMenuOut = {}
 		aadd (_aMenuOut, {"&Parametros",            "U_VA_RUSLP (.T.)", 0,4})
-		aadd (_aMenuOut, {"&Ticket 1a.pesag",       "U_VA_RUSTk (1, _sPortTick, _nQViasTk1, {}, 'Bematech', .t.)",0,4})
-		aadd (_aMenuOut, {"&Ticket 2a.pesag",       "U_VA_RUSTk (2, _sPortTick, _nQViasTk2, {}, 'Bematech', .t.)",0,4})
+	//	aadd (_aMenuOut, {"&Ticket 1a.pesag",       "U_VA_RUSTk (1, _sPortTick, _nQViasTk1, {}, 'Bematech', .t.)",0,4})
+	//	aadd (_aMenuOut, {"&Ticket 2a.pesag",       "U_VA_RUSTk (2, _sPortTick, _nQViasTk2, {}, 'Bematech', .t.)",0,4})
+		aadd (_aMenuOut, {"&Ticket 1a.pesag",       "U_VA_RUSOO ('Tk1Pes')",0,4})
+		aadd (_aMenuOut, {"&Ticket 2a.pesag",       "U_VA_RUSOO ('Tk2Pes')",0,4})
 		aadd (_aMenuOut, {"&Impr.Recibo",           "U_VA_RUSR ()", 0,4})
 		aadd (_aMenuOut, {"&Cons.Aglutinacoes",     "U_VA_RUSCA (1, .F.)",0,4})
-		aadd (_aMenuOut, {"&Fila descarga",         "U_VA_RUSMF ()", 0,4})
-		aadd (_aMenuOut, {"&Redirecionar",          "U_VA_RUSRD ()", 0,4})
+		// migrado para naweb --> aadd (_aMenuOut, {"&Fila descarga",         "U_VA_RUSMF ()", 0,4})
+		//aadd (_aMenuOut, {"&Redirecionar",          "U_VA_RUSRD ()", 0,4})
 		aadd (_aMenuOut, {"&Reenviar p/grau",       "U_VA_RUSRG ()", 0,4})
 		aadd (_aMenuOut, {"&Rastrear estoque",      "U_VA_RUSRC ()", 0,4})
 		aadd (_aMenuOut, {"&NF remessa coop",       "U_VA_RUSNR ('A')", 0,4})
@@ -205,6 +206,44 @@ User Function va_rus ()
 return
 
 
+
+// --------------------------------------------------------------------------
+user function VA_RUSOO (_sQueFazer)
+
+	// Deixa atributos alimentados no objeto, por que a maioria das rotinas vai precisar.
+	_oCarSaf:GeraAtrib ("SZE")
+
+	do case
+	case upper (_sQueFazer) == 'TK1PES'
+		_oCarSaf:ImprimeTk (1)
+	case upper (_sQueFazer) == 'TK2PES'
+		_oCarSaf:GeraAtrib ("SZE")  // Atualiza atributos com o que foi gravado nos arquivos.
+		_oCarSaf:ImprimeTk (2)
+	case upper (_sQueFazer) == 'CONTRANOTA'
+		U_VA_RUSN (.F.)
+	case upper (_sQueFazer) == 'SIMULARCONTRANOTA'
+		U_VA_RUSN (.T.)
+	case upper (_sQueFazer) == 'TRANSMITECONTRANOTA'
+		U_VA_RUSTX ()
+	case upper (_sQueFazer) == 'IMPRIMEDANFE'
+		if empty (sze -> ze_nfger)
+			u_help ("Nao ha nota fiscal gerada para esta carga.")
+		else
+			U_ImpDanfe ('E', sze -> ze_nfger, sze -> ze_nfger, sze -> ze_serie)
+		endif
+	case 'MONITORNFE' $ upper (_sQueFazer)
+		// Variaveis usadas pelas rotinas da NFe
+		private bFiltraBrw := {|| ".T."}
+		private aFilBrw := {"SF2", ".T."}
+		if upper (_sQueFazer) == 'MONITORNFE_1'
+			SpedNFe1Mnt ()
+		else
+			SpedNFe2Mnt ()
+		endif
+	otherwise
+		u_help ("Acao desconhecida: " + _sQueFazer,, .t.)
+	endcase
+return
 
 // --------------------------------------------------------------------------
 // Leitura da lista de associados habilitados
@@ -292,7 +331,7 @@ user function VA_RUSLG (_lRetCores)
 return
 
 
-
+/* Em desuso. Robert, 06/01/2023
 // --------------------------------------------------------------------------
 // Redireciona a carga para outro local (filial).
 user function VA_RUSRD ()
@@ -317,7 +356,7 @@ user function VA_RUSRD ()
 
 	U_ML_SRArea (_aAreaAnt)
 return
-
+*/
 
 
 // --------------------------------------------------------------------------
@@ -370,34 +409,6 @@ return
 
 
 // --------------------------------------------------------------------------
-// Monitora fila de descarga.
-user function VA_RUSMF ()
-	u_help ("Funcionalidade de fila de descarga migrada para o NaWeb")
-	/*
-	local _aAreaAnt := U_ML_SRArea ()
-	local _oSQL := NIL
-
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += "SELECT STATUS, PLACA + '     ' AS PLACA, NOME_ASSOC, COR, RTRIM (DESCRICAO) AS DESCRICAO, CARGA, dbo.VA_DTOC (DATA), PESO_BRUTO, PESO_TARA, PESO_ESTIMADO, ZZA_STATUS"
-	_oSQL:_sQuery +=  " FROM dbo.VA_VFILA_DESCARGA_SAFRA V"
-	_oSQL:_sQuery += " WHERE V.SAFRA = '" + _xSAFRAJ + "'"
-	_oSQL:_sQuery +=   " AND V.FILIAL = '" + xfilial ("SZE") + "'"
-	if aviso ("Deseja visualizar em tela ou imprimir em ticket?", "Deseja visualizar em tela ou imprimir em ticket?", {"Tela", "Ticket"}) == 2
-		_oSQL:_sQuery +=   " AND V.STATUS LIKE '1%'"
-		_oSQL:_sQuery +=   " ORDER BY V.SAFRA, V.FILIAL, V.CARGA"
-		U_VA_RUSTk (4, _sPortTick, 1, _oSQL:Qry2Array (), "BEMATECH", .F.)
-	else
-		_oSQL:_sQuery +=   " ORDER BY V.SAFRA, V.FILIAL, V.CARGA"
-		_oSQL:F3Array ("Fila de descarga")
-	endif
-	U_ML_SRArea (_aAreaAnt)
-	*/
-return
-
-
-
-// --------------------------------------------------------------------------
 // Visualiza contranota.
 user function VA_RUSVC ()
 	local _aAreaAnt := U_ML_SRArea ()
@@ -425,35 +436,6 @@ user function VA_RUSVC ()
 return
 
 
-
-// --------------------------------------------------------------------------
-// Imprime (DANFe) a NF posicionada no browse.
-user function VA_RUSi ()
-	if empty (sze -> ze_nfger)
-		u_help ("Nao ha nota fiscal gerada para esta carga.")
-	else
-		U_ImpDanfe ('E', sze -> ze_nfger, sze -> ze_nfger, sze -> ze_serie)
-	endif
-return
-
-
-// --------------------------------------------------------------------------
-// Chama diferentes telas do 'monitor' do SPED.
-user function VA_RUSM (_nQual)
-
-	// Variaveis usadas pelas rotinas da NFe
-	private bFiltraBrw := {|| ".T."}
-	private aFilBrw := {"SF2", ".T."}
-
-	if _nQual == 1
-		SpedNFe1Mnt ()
-	elseif _nQual == 2
-		SpedNFe2Mnt ()
-	endif
-return
-
-
-
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
@@ -474,8 +456,10 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {07, "PARAMETRO EM DESUSO           ", "N", 1,  0,  "",   "",      {},                                ""})
 //	aadd (_aRegsPerg, {08, "Peso padrao embalagem (caixa) ", "N", 2,  0,  "",   "",      {},                                ""})
 	aadd (_aRegsPerg, {08, "PARAMETRO EM DESUSO           ", "N", 1,  0,  "",   "",      {},                                ""})
-	aadd (_aRegsPerg, {09, "Usa impressora de ticket      ", "N", 1,  0,  "",   "",      {"Sim", "Nao"},                    ""})
-	aadd (_aRegsPerg, {10, "Impressora de ticket          ", "C", 2,  0,  "",   "ZX549", {},                                "Ex.: lpt1: ou LPT2:"})
+//	aadd (_aRegsPerg, {09, "Usa impressora de ticket      ", "N", 1,  0,  "",   "",      {"Sim", "Nao"},                    ""})
+	aadd (_aRegsPerg, {09, "PARAMETRO EM DESUSO           ", "N", 1,  0,  "",   "",      {},                                ""})
+//	aadd (_aRegsPerg, {10, "Impressora de ticket          ", "C", 2,  0,  "",   "ZX549", {},                                "Ex.: lpt1: ou LPT2:"})
+	aadd (_aRegsPerg, {10, "PARAMETRO EM DESUSO           ", "N", 1,  0,  "",   "",      {},                                ""})
 	aadd (_aRegsPerg, {11, "Comunicacao c/ medidor de brix", "N", 1,  0,  "",   "",      {"Sim", "Nao"},                    ""})
 //	aadd (_aRegsPerg, {12, "Qt. de vias ticket 1a.pesagem ", "N", 1,  0,  "",   "",      {},                                ""})
 	aadd (_aRegsPerg, {12, "PARAMETRO EM DESUSO           ", "N", 1,  0,  "",   "",      {},                                ""})

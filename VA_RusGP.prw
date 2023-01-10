@@ -6,6 +6,7 @@
 // Historico de alteracoes:
 // 08/01/2021 - Robert - Uvas niagara, concord e 'concord clone 30' passadas do grupo C para A
 // 16/02/2021 - Robert - Passa a consistir a safra para definir os grupos de pagamento (GLPI 9420)
+// 10/01/2023 - Robert - Ajustes para safra 2023 (a principio, mesmos grupos do ano passado)
 //
 
 // --------------------------------------------------------------------------
@@ -14,7 +15,14 @@ User Function VA_RusGP (_sSafra, _sVaried, _sConduc)
 	local _lContinua := .T.
 	local _sRetGrpPg := ''
 
-//	u_Log2 ('info', 'Iniciando ' + procname ())
+	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
+	if type ("_oCarSaf") != 'O'
+		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+	endif
+	if empty (_oCarSaf:Carga)
+		u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
+		_lContinua = .F.
+	endif
 
 	if _lContinua
 		
@@ -58,7 +66,7 @@ User Function VA_RusGP (_sSafra, _sVaried, _sConduc)
 				_sRetGrpPg = 'C'
 			endif
 
-		case _sSafra == '2021' .or. _sSafra == '2022'
+		case _sSafra == '2021' .or. _sSafra == '2022' .or. _sSafra == '2023'
 			// Nao tenho muitas opcoes alem de fazer alguns testes com codigos fixos...
 			if alltrim (sb1 -> b1_cod) $ '9925/9904/9922/9855'  // bordo, niagara, concord
 				_sRetGrpPg = 'A'

@@ -34,11 +34,16 @@ user function va_rusLI (_nPesagem, _lSimular)
 	local _sMsg       := ''
 
 	if _lSimular
-		u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Iniciando em modo de SIMULACAO')
+		u_log2 ('aviso', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Iniciando em modo de SIMULACAO')
 	endif
 
+	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
 	if type ("_oCarSaf") != 'O'
 		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+	endif
+	if empty (_oCarSaf:Carga)
+		u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
+		_lContinua = .F.
 	endif
 
 	// Verifica situacao do agendamento / inspecoes.
