@@ -9,10 +9,39 @@ User Function claudia ()
 
 	u_help("Nada para executar")
 
-	// u_help("Atualiza ME")
-	// _GLPI12952()
+	//u_help("Atualiza GG")
+	//_GLPI12948()
 
 Return
+// // --------------------------------------------------------------------------
+// //
+// static function _GLPI12948 ()
+// 	local _aDados    := {}
+// 	local _x         := 0
+
+// 	_oSQL:= ClsSQL ():New ()
+// 	_oSQL:_sQuery := ""
+// 	_oSQL:_sQuery += " SELECT "
+// 	_oSQL:_sQuery += " 	A5_PRODUTO, A5_FORNECE, A5_LOJA "
+// 	_oSQL:_sQuery += " FROM SA5010 SA5 "
+// 	_oSQL:_sQuery += " INNER JOIN SB1010 SB1 "
+// 	_oSQL:_sQuery += " 	ON SA5.A5_PRODUTO = SB1.B1_COD "
+// 	_oSQL:_sQuery += " 		AND B1_TIPO = 'GG' "
+// 	_aDados := aclone(_oSQL:Qry2Array())
+
+// 	for _x := 1 to len (_aDados)
+// 		//Posiciona
+// 		DbSelectArea("SA5")
+// 		DbSetOrder(2)
+
+// 		If SA5->(DbSeek(xFilial("SA5") + _aDados[_x,1] + _aDados[_x,2] + _aDados[_x,3])) // A5_FILIAL+A5_PRODUTO+A5_FORNECE+A5_LOJA
+// 			reclock("SA5", .F.)
+// 				sa5 -> (dbdelete())
+// 			msunlock()
+// 		endif
+//  		sa5 -> (dbskip ())
+//  	Next
+// return
 // --------------------------------------------------------------------------
 //
 // static function _GLPI12952 ()
