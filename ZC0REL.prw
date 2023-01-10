@@ -10,8 +10,9 @@
 // #Modulos 		  #FAT 
 //
 // Historico de alteracoes:
-// 14/06/2022 - Sandra - Incluso total, incluso parametro 12, quebra por rede. GLPI 12146.
+// 14/06/2022 - Sandra  - Incluso total, incluso parametro 12, quebra por rede. GLPI 12146.
 // 07/12/2022 - Claudia - Retirado quebras/somatorios por filial.  GLPI 12885
+// 10/01/2023 - Claudia - Incluida lupa de pesquisa de TM. GLPI: 13008
 //
 // --------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -158,10 +159,10 @@ Static Function _ValidPerg ()
     aadd (_aRegsPerg, {04, "Rede até         ", "C", 6, 0,  "",   "SA1RED"  , {},                         		 ""})
     aadd (_aRegsPerg, {05, "Cliente de       ", "C", 6, 0,  "",   "SA1"     , {},                         		 ""})
     aadd (_aRegsPerg, {06, "Cliente até      ", "C", 6, 0,  "",   "SA1"     , {},                         		 ""})
-    aadd (_aRegsPerg, {07, "Tp.Movimento     ", "C", 2, 0,  "",   "   "     , {},                         		 ""})
+    aadd (_aRegsPerg, {07, "Tp.Movimento     ", "C", 2, 0,  "",   "ZX555"   , {},                         		 ""})
 	aadd (_aRegsPerg, {08, "Documento        ", "C", 9, 0,  "",   "   "     , {},                         		 ""})
 	aadd (_aRegsPerg, {09, "Serie            ", "C", 2, 0,  "",   "   "     , {},                         		 ""})
-	aadd (_aRegsPerg, {10, "Ordenação        ", "N", 1, 0,  "",   "   "     , {"Rede","Nome"},                   ""})
+	aadd (_aRegsPerg, {10, "Ordenação        ", "N", 1, 0,  "",   "   "   , {"Rede","Nome"},                   ""})
 
     U_ValPerg (cPerg, _aRegsPerg)
 Return
