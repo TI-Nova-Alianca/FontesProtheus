@@ -54,8 +54,8 @@
 // 20/10/2021 - Robert  - Variavel _sSerie passa a ser lida na array _aNComSono (GLPI 11112)
 //                      - Incluidas chamadas da funcao PerfMon para monitoramento de performance.
 // 04/05/2022 - Robert  - Eliminada leitura do parametro VA_USRENF (atualmente grupo 050 do ZZU).
+// 11/01/2023 - Claudia - Incluída a chamada de transmissão da GNRE. GLPI: 10469 - (comentado até finalização de testes)
 //
-
 // --------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"  // Deixar este include para aparecerem os botoes da tela de acompanhamento do SPED
 #include "PROTHEUS.ch"
@@ -73,34 +73,18 @@
 #XTranslate .PedTransp         => 11
 
 user function _Mata460 ()
-//	local _sParam     := "VA_USRENF"
-//	local _sUserLib   := alltrim (upper (GetMV (_sParam, .F., "")))
-//	local _sMsg       := ""
-	//local _aLiber     := {.F.,,}
-	local _lContinua  := .T.
-	local _nLock      := 0
-	local _sNFIni     := ""
-	local _sNFFim     := ""
-	local _sSerie     := ''  // "10 "
-	local _oSQL       := NIL
-	local _sPerg      := "MT461A"
-	local _aBkpSX1    := {}
-	local _nNComSono  := 0
+	local _lContinua   := .T.
+	local _nLock       := 0
+	local _sNFIni      := ""
+	local _sNFFim      := ""
+	local _sSerie      := ''  
+	local _oSQL        := NIL
+	local _sPerg       := "MT461A"
+	local _aBkpSX1     := {}
+	local _nNComSono   := 0
 	private _aNComSono := {}  // Deixar como private para ser vista por outros P.E. (lista de notas a ser transmitida para a SEFAZ)
 
 	u_log2 ('info', 'Iniciando processamento')
-
-	// // Verifica geracao de nota com data muito antiga.
-	// if _lContinua .and. (dDataBase + 59) < date ()
-	// 	_sMsg = "Cfe.layout XML da SEFAZ, o prazo maximo eh 60 dias retroativos p/ emissao de NF normais."
-	// 	if alltrim (upper (cUserName)) $ _sUserLib
-	// 		_lContinua =  U_msgnoyes (_sMsg + " Continua assim mesmo?")
-	// 	else
-	// 		//_aLiber := U_ML_Senha ("Autorizacao exigida", _sMsg + " Liberacao conforme parametro '" + _sParam + "'", _sUserLib, .F.)
-	// 		//_lContinua = _aLiber [1]
-	// 		_lContinua :=.F.
-	// 	endif
-	// endif
 
 	// Controle de semaforo.
 	if _lContinua
@@ -125,6 +109,7 @@ user function _Mata460 ()
 			// casos aleatorios).
 			if ! ExistBlock ("M460FIL") .or. ! ExistBlock ("M460QRY")
 				u_log2 ('aviso', "Pontos de entrada de filtragem M460FIL e M460QRY nao estao compilados. Vou filtrar por numero de pedido.")
+				
 				_oSQL := ClsSQL():New ()
 				_oSQL:_sQuery := ""
 				_oSQL:_sQuery += " SELECT MIN (C9_PEDIDO)"
@@ -176,11 +161,11 @@ user function _Mata460 ()
 					u_help ("Foram geradas notas com quebra de sequencia. Por esse motivo, vai ser feita mais de uma transmissao para a SEFAZ.")
 				endif
 				_nNComSono = 1
-				do while .t.  //_nNComSono <= len (_aNComSono)
+				do while .t. 
 					_sNFIni = _aNComSono [_nNComSono, 1]
 					_sNFFim = _aNComSono [_nNComSono, 1]
 					_sSerie = _aNComSono [_nNComSono, 3]
-					do while .t. //_nNComSono <= len (_aNComSono)
+					do while .t.
 						_sNFFim = _aNComSono [_nNComSono, 1]
 						_sSerie = _aNComSono [_nNComSono, 3]
 						if _aNComSono [_nNComSono, 2] == .T.  // A proxima nota vai ter lacuna na numeracao.
@@ -199,6 +184,7 @@ user function _Mata460 ()
 				enddo
 				U_SPEDAut ('S', _sSerie, _sNFIni, _sNFFim)
 				U_BolAuto (_sSerie, _sNFIni, _sNFFim)
+				//_VerifGNRE(cFilAnt, _sSerie, _sNFIni)
 			endif
 		endif
 	endif
@@ -232,7 +218,7 @@ static function _Filtra ()
 		_sSQL +=    " AND C9_FILIAL  = '" + xfilial ("SC9") + "'"
 		_sSQL +=    " AND C9_NFISCAL = ''"
 		_sSQL +=    " AND C9_CARGA   = ''"
-		// u_log (_sSQL)
+
 		if TCSQLExec (_sSQL) < 0
 			U_help ("Erro na atualizacao do bloqueio do SC9 - rotina " + procname () + " => " + procname (1) + " - comando: " + _sSQL,, .t.)
 			U_AvisaTI ("Erro na atualizacao do bloqueio do SC9 - rotina " + procname () + " => " + procname (1) + " - comando: " + _sSQL)
@@ -277,8 +263,8 @@ static function _Filtra ()
 			_sQuery += " AND SC5.C5_TPCARGA = '1'"  // Utiliza
 		endif
 		_sQuery += " ORDER BY C5_VAFEMB, C5_VAPRIOR, C9_PEDIDO"
-		//u_log (_sQuery)
 		_aPedAux = aclone (U_Qry2Array (_sQuery))
+
 		U_PerfMon ('F', 'FiltraPedFaturar')  // Para metricas de performance
 		if len (_aPedAux) == 0
 			u_help ("Nao foram encontrados pedidos em aberto.",, .t.)
@@ -296,7 +282,7 @@ static function _Filtra ()
 
 		processa ({|| _VerifPed (@_aPedAux)})
 
-		// Desmarca os pedidos apos a verificacao.
+		// Desmarca os pedidos apos a verificacao
 		for _nPed = 1 to len (_aPedAux)
 			_aPedAux [_nPed, .PedOk] = .F.
 		next
@@ -317,30 +303,29 @@ static function _Filtra ()
 	if _lContinua
 		// u_log ("_aPed antes do mbrowse:", _aPed)
 		define msdialog _oDlgMbA title "Selecione os pedidos para gerar nota" from 0, 0 to oMainWnd:nClientHeight - 150, oMainWnd:nClientWidth - 50 of oMainWnd pixel
-			_oLbx := TWBrowse ():New (15, ;  // Linha
-			10, ;  // Coluna
-			_oDlgMbA:nClientWidth / 2 - 20, ;   // Largura
-			_oDlgMbA:nClientHeight / 2 - 60, ;  // Altura
-			NIL, ;                              // Campos
-			{"Ok", "Fil.embarque", "Usuario", "Pedido", "Cliente", "Nome cliente", "Volumes", "Transportadora", "Avisos", "Erros", "Prioridade"}, ;  // Cabecalhos colunas
-			{25,   35,             30,        30,       30,        100,            30,        50,               60,       500,       30}, ;          // Larguras colunas
-			_oDlgMbA,,,,,,,,,,,,.F.,,.T.,,.F.,,,)             // Etc. Veja pasta IXBPAD
+			_oLbx := TWBrowse ():New (	15, ;  								// Linha
+										10, ;  								// Coluna
+										_oDlgMbA:nClientWidth / 2 - 20, ;   // Largura
+										_oDlgMbA:nClientHeight / 2 - 60, ;  // Altura
+										NIL, ;                              // Campos
+										{"Ok", "Fil.embarque", "Usuario", "Pedido", "Cliente", "Nome cliente", "Volumes", "Transportadora", "Avisos", "Erros", "Prioridade"}, ;  // Cabecalhos colunas
+										{25,   35,             30,        30,       30,        100,            30,        50,               60,       500,       30}, ;          // Larguras colunas
+										_oDlgMbA,,,,,,,,,,,,.F.,,.T.,,.F.,,,)             // Etc. Veja pasta IXBPAD
 			_oLbx:SetArray (_aPed)
-			_oLbx:bLine := {|| {iif (_aPed [_oLbx:nAt, .PedOk], _oBmpOk, _oBmpNo), ;
-			                   _aPed [_oLbx:nAt, .PedFilialEmbarque], ;
-			                   _aPed [_oLbx:nAt, .PedUsuario], ;
-			                   _aPed [_oLbx:nAt, .PedPedido], ;
-			                   _aPed [_oLbx:nAt, .PedCliente], ;
-			                   _aPed [_oLbx:nAt, .PedNomeCli], ;
-			                   _aPed [_oLbx:nAt, .PedVolumes], ;
-			                   _aPed [_oLbx:nAt, .PedTransp], ;
-			                   iif (empty (_aPed [_oLbx:nAt, .PedAviso]), "Ok", _aPed [_oLbx:nAt, .PedAviso]), ;
-			                   iif (empty (_aPed [_oLbx:nAt, .PedErros]), "Ok", _aPed [_oLbx:nAt, .PedErros]), ;
-			                   _aPed [_oLbx:nAt, .PedPrioridade]}}
+			_oLbx:bLine := {|| {iif (	_aPed [_oLbx:nAt, .PedOk], _oBmpOk, _oBmpNo), ;
+			                   			_aPed [_oLbx:nAt, .PedFilialEmbarque]		, ;
+			                   			_aPed [_oLbx:nAt, .PedUsuario]				, ;
+			                   			_aPed [_oLbx:nAt, .PedPedido]				, ;
+			                   			_aPed [_oLbx:nAt, .PedCliente]				, ;
+			                   			_aPed [_oLbx:nAt, .PedNomeCli]				, ;
+			                   			_aPed [_oLbx:nAt, .PedVolumes]				, ;
+			                   			_aPed [_oLbx:nAt, .PedTransp]				, ;
+			                   			iif (empty (_aPed [_oLbx:nAt, .PedAviso]), "Ok", _aPed [_oLbx:nAt, .PedAviso]), ;
+			                   			iif (empty (_aPed [_oLbx:nAt, .PedErros]), "Ok", _aPed [_oLbx:nAt, .PedErros]), ;
+			                   			_aPed [_oLbx:nAt, .PedPrioridade]}}
 			_oLbx:bLDblClick := {|| (_aPed [_oLbx:nAt, .PedOk] := ! _aPed [_oLbx:nAt, .PedOk], _oLbx:Refresh())}
 			@ _oDlgMbA:nClientHeight / 2 - 40, _oDlgMbA:nClientWidth / 2 - 90 bmpbutton type 1 action (iif (_TudoOK (_aPed), (_lBotaoOK  := .T., _oDlgMbA:End ()), NIL))
 			@ _oDlgMbA:nClientHeight / 2 - 40, _oDlgMbA:nClientWidth / 2 - 40 bmpbutton type 2 action (_lBotaoOK  := .F., _oDlgMbA:End ())
-			//@ _oDlgMbA:nClientHeight / 2 - 40, 10  button "Inverte selecao"   size 60, 14 action (_Inverte (@_aPed, _oBmpOk, _oBmpNo), _oLbx:Refresh())
 			@ _oDlgMbA:nClientHeight / 2 - 40, 10  button "Inverte selecao"   size 60, 14 action (_Inverte (@_aPed), _oLbx:Refresh())
 			@ _oDlgMbA:nClientHeight / 2 - 40, 150 button "Visualizar pedido" size 60, 14 action (_VisualPed (_aPed [_oLbx:nAt, .PedPedido]))
 		activate dialog _oDlgMbA centered
@@ -363,7 +348,7 @@ static function _Filtra ()
 				_sSQL +=    " AND C9_FILIAL  = '" + xfilial ("SC9") + "'"
 				_sSQL +=    " AND C9_NFISCAL = ''"
 				_sSQL +=    " AND C9_PEDIDO  = '" + _aPed [_nPed, .PedPedido] + "'"
-				// u_log (_sSQL)
+
 				if TCSQLExec (_sSQL) < 0
 					U_help ("Erro na atualizacao do bloqueio do SC9 - rotina " + procname () + " => " + procname (1) + " - comando: " + _sSQL,, .t.)
 					U_AvisaTI ("Erro na atualizacao do bloqueio do SC9 - rotina " + procname () + " => " + procname (1) + " - comando: " + _sSQL)
@@ -421,7 +406,6 @@ static function _Filtra ()
 							_lRet := .F.
 						EndIf
 					EndIf
-
 				EndIf
 			endif
 		next
@@ -447,14 +431,11 @@ static function _TudoOK (_aPed)
 
 	if _lRet
 		for _nPed = 1 to len (_aPed)
-	//		if _lRet .and. alltrim(_aPed [_nPed, .PedAviso]) == 'BLQ.GERENCIAL;'
 			if _aPed [_nPed, .PedOk] .and. alltrim(_aPed [_nPed, .PedAviso]) == 'BLQ.GERENCIAL;'
 				u_help ("Foram selecionados pedidos com bloqueio gerencial que impedem a geracao de notas. Revise marcacao. " + alltrim (_aPed [_nPed, .PedAviso]),, .T.)
 				_lRet := .F.
 				exit
-			//Else
-			//	_lRet := .T.
-			EndIf
+			endif
 		next
 	endif
 
@@ -494,6 +475,7 @@ return
 // Inverte a mancacao no browse.
 static function _Inverte (_aOpcoes)
 	local _nPed := 0
+
 	CursorWait ()
 	for _nPed = 1 to len (_aOpcoes)
 		_aOpcoes [_nPed, .PedOk] = ! _aOpcoes [_nPed, .PedOk]
@@ -515,7 +497,6 @@ static function _VerifPed (_aPed)
 	local _aRetSQL  := {}
 	local _oSQL     := NIL
 
-	//u_logIni ()
 	CursorWait ()
 	procregua (len (_aPed))
 
@@ -528,8 +509,8 @@ static function _VerifPed (_aPed)
 	for _nPed = 1 to len (_aPed)
 		_aPed [_nPed, .PedAviso] = ""
 		_aPed [_nPed, .PedErros] = ""
+
 		if _aPed [_nPed, .PedOk]
-			// u_logIni (_aPed [_nPed, .PedPedido])
 			incproc ("Verificando pedido " + _aPed [_nPed, .PedPedido])
 
 			// Verifica SC9 e outras pendencias.
@@ -570,17 +551,14 @@ static function _VerifPed (_aPed)
 			_sQuery +=             " THEN ''"
 			_sQuery +=             " ELSE 'LIBER.PARCIAL; '"
 			_sQuery +=             " END AS OBS, "
-
 			_sQuery +=        " CASE WHEN SC5.C5_TRANSP = '' AND SC5.C5_TPFRETE IN ('C','F') ""
 			_sQuery +=             " THEN 'FALTA TRANSP; '"
 			_sQuery +=             " ELSE ''"
 			_sQuery +=             " END + "
-
 			_sQuery +=        " CASE WHEN SC5.C5_TPCARGA = '1' ""
 			_sQuery +=             " THEN 'Utiliza carga; '"
 			_sQuery +=             " ELSE ''"
 			_sQuery +=             " END + "
-
 			_sQuery +=        " CASE WHEN (SC5.C5_VAFEMB != SC5.C5_FILIAL OR SC5.C5_FILIAL IN ('04', '14'))"
 			_sQuery +=              " AND (SELECT COUNT (*)"
 			_sQuery +=                     " FROM " + RetSQLName ("ZZ6") + " ZZ6"
@@ -595,7 +573,6 @@ static function _VerifPed (_aPed)
 			_sQuery +=             " THEN 'FALTA TR.ALM.RET;'"
 			_sQuery +=             " ELSE ''"
 			_sQuery +=             " END + "
-			
 			_sQuery +=        " CASE WHEN EXISTS (SELECT *"
 			_sQuery +=                            " FROM " + RetSQLName ("DAI") + " DAI "
 			_sQuery +=                           " WHERE DAI.D_E_L_E_T_ = ''"
@@ -604,7 +581,6 @@ static function _VerifPed (_aPed)
 			_sQuery +=             " THEN 'Faturar via OMS;'"
 			_sQuery +=             " ELSE ''"
 			_sQuery +=             " END "
-
 			_sQuery +=             " AS ERROS"
 			_sQuery +=   " FROM " + RETSQLName ("SC9") + " SC9, "
 			_sQuery +=              RETSQLName ("SC5") + " SC5 "
@@ -616,9 +592,8 @@ static function _VerifPed (_aPed)
 			_sQuery +=    " AND SC5.D_E_L_E_T_ = ' '"
 			_sQuery +=    " AND SC5.C5_NUM     = SC9.C9_PEDIDO"
 			_sQuery +=  " GROUP BY SC5.C5_TRANSP, SC5.C5_FILIAL, SC5.C5_VAFEMB, SC5.C5_VAPEMB, SC5.C5_NUM, SC5.C5_TPCARGA, SC5.C5_TPFRETE"
-			// u_log (_sQuery)
-			//_aPed [_nPed, .PedAviso] = alltrim (U_RetSQL (_sQuery))
 			_aRetSQL := aclone (U_Qry2Array (_sQuery, .F., .F.))
+
 			_aPed [_nPed, .PedAviso] = alltrim (_aRetSQL [1, 1])
 			_aPed [_nPed, .PedErros] = alltrim (_aRetSQL [1, 2])
 
@@ -650,7 +625,6 @@ static function _VerifPed (_aPed)
 				_oSQL:_sQuery += " SELECT COUNT (*)"
 				_oSQL:_sQuery +=   " FROM C"
 				_oSQL:_sQuery +=  " WHERE QT_CARGA != QT_SEPARADA"
-				// u_log (_oSQL:_sQuery)
 				if _oSQL:RetQry () > 0
 					_aPed [_nPed, .PedErros] += "Falta separar Fullsoft; "
 				endif
@@ -665,9 +639,7 @@ static function _VerifPed (_aPed)
 			_sQuery +=    " AND SC9.C9_PEDIDO  = '" + _aPed [_nPed, .PedPedido] + "'"
 			_sQuery +=    " AND SC9.C9_NFISCAL = ''"
 			_sQuery +=  " GROUP BY C9_PEDIDO, C9_ITEM "
-			//_sQuery +=  " GROUP BY C9_PEDIDO, C9_ITEM, C9_LOTECTL"
 			_sQuery +=  " HAVING COUNT (*) > 1"
-			//u_log (_sQuery)
 			if U_RetSQL (_sQuery) > 1
 				_aPed [_nPed, .PedAviso] += "DUPLICIDADE; "
 			endif
@@ -689,28 +661,23 @@ static function _VerifPed (_aPed)
 			_sQuery +=    " AND SC6.C6_NUM     = SC9.C9_PEDIDO"
 			_sQuery +=    " AND SC6.C6_ITEM    = SC9.C9_ITEM"
 			_sQuery +=  " GROUP BY C9_PRODUTO, C5_VAFEMB, C9_LOCAL, C6_TES, C6_LOCALIZ, C9_LOTECTL"
-			//u_log (_sQuery)
 			_aSC9 := aclone (U_Qry2Array (_sQuery))
-			// u_log ("Quantidades solicitadas pelo pedido "+ _aPed [_nPed, .PedPedido] + ":", _aSC9)
 			_sRetEstq = ""
-			for _nSC9 = 1 to len (_aSC9)
 
+			for _nSC9 = 1 to len (_aSC9)
 				_nQtSolic = _aSC9 [_nSC9, 4]
-			
 				// Verifica se este produto jah foi reservado por algum pedido anterior.
 				_nUsado = ascan (_aUsados, {|_aVal| _aVal [1] == _aSC9 [_nSC9, 1] .and. _aVal [2] == _aSC9 [_nSC9, 2] .and. _aVal [3] == _aSC9 [_nSC9, 3] .and. _aVal [5] == _aSC9 [_nSC9, 6]})
 				if _nUsado > 0
 					_nQtSolic += _aUsados [_nUsado, 4]
 				endif
-
 				if ! (_aSC9 [_nSC9, 2] == '13' .and. _aSC9 [_nSC9, 3] == '13')
 					_sRetEstq = U_VerEstq ("3", _aSC9 [_nSC9, 1], _aSC9 [_nSC9, 2], _aSC9 [_nSC9, 3], _nQtSolic, _aSC9 [_nSC9, 5], _aSC9 [_nSC9, 6], _aSC9 [_nSC9, 7], _aPed [_nPed, .PedPedido])
 				endif
-
 				if ! empty (_sRetEstq) .and. at (alltrim (_aSC9 [_nSC9, 1]), _aPed [_nPed, .PedErros]) == 0
 					_aPed [_nPed, .PedErros] += alltrim (_aSC9 [_nSC9, 1]) + " insuficiente; "
 				else
-					// Acrescenta produto/filial de embarque/local `a lista de reservas.
+					// Acrescenta produto/filial de embarque/local a lista de reservas.
 					if _nUsado == 0
 						aadd (_aUsados, {_aSC9 [_nSC9, 1], _aSC9 [_nSC9, 2], _aSC9 [_nSC9, 3], _nQtSolic, _aSC9 [_nSC9, 6]})
 					else
@@ -721,5 +688,47 @@ static function _VerifPed (_aPed)
 		endif
 	next
 	CursorArrow ()
-	//u_logFim ()
+return
+//
+// --------------------------------------------------------------------------
+// Verificação de guias GNRE
+static function _VerifGNRE(_sFilial, _sSerie, _sDoc)
+	Local _x        := 0
+	Local _aAutoriz := {}
+	Local _aGNRE    := {}
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 		F3_CODRSEF "
+	_oSQL:_sQuery += " FROM " + RetSQLName ("SF3") 
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " AND F3_FILIAL  = '" + _sFilial + "' "
+	_oSQL:_sQuery += " AND F3_NFISCAL = '" + _sDoc    + "' "
+	_oSQL:_sQuery += " AND F3_SERIE   = '" + _sSerie  + "' "
+	_aAutoriz := aclone (_oSQL:Qry2Array ())
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 		COUNT(*) "
+	_oSQL:_sQuery += " FROM " + RetSQLName ("SF6") 
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " AND F6_FILIAL    = '" + _sFilial + "' "
+	_oSQL:_sQuery += " AND F6_DOC       = '" + _sDoc    + "' "
+	_oSQL:_sQuery += " AND F6_SERIE     = '" + _sSerie  + "' "
+	_aGNRE := aclone (_oSQL:Qry2Array ())
+
+	If len(_aGNRE) > 0 // se tem GNRE
+		For _x:=1 to Len(_aAutoriz)
+
+			if  _aAutoriz[_x, 1] == '100'
+				FISA095()
+			else
+				If msgyesno ("A nota " + _sSerie + _sDoc +" possui guia GNRE. Deseja transmitir agora?")
+					FISA095()
+				endif
+			endif
+		Next
+	EndIf
 return
