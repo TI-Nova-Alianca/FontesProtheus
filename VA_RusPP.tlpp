@@ -94,8 +94,8 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 			next
 		endif
 	endif
-	//u_log2 ('debug', '_aParcel depois de ler o XML:')
-	//u_log2 ('debug', _aParcel)
+	u_log2 ('debug', '_aParcel depois de ler o XML:')
+	u_log2 ('debug', _aParcel)
 
 	// A parcela do frete cai sempre na proxima posicao livre
 	if _lContinua
@@ -108,7 +108,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 			_lContinua = .F.
 		else
 			_nParcFrt = _nParcel
-		//	U_Log2 ('debug', 'Vou jogar o frete na ' + cvaltochar (_nParcFrt) + 'a. parcela.')
+			U_Log2 ('debug', 'Vou jogar o frete na ' + cvaltochar (_nParcFrt) + 'a. parcela.')
 		endif
 	endif
 
@@ -230,9 +230,63 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 
 				_aParcel [_nParcel, 2] = lastday (stod (_sAnoVcSaf + _sMesVcSaf + '01'))
 			next
+
 		case _sSafPag == '2023'
-			u_help ("Ainda nao implementado para este ano",, .t.)
-			_lContinua = .F.
+
+			// A maioria dos vencimentos vai ser no mesmo ano da safra.
+			_sAnoVcSaf = _sSafPag
+			for _nParcel = 1 to len (_aParcel)
+				if _aParcel [_nParcel, 3] <= 0
+					loop
+				endif
+				U_Log2 ('debug', 'Definindo mes para vencimento da parcela ' + cvaltochar (_nParcel))
+				// Parcela do frete sempre eh a ultima (jah descobri
+				// anteriormente qual das parcelas vai ter o frete.
+				if _nParcel == _nParcFrt
+					_sAnoVcSaf = strzero (val (_sSafPag) + 1, 4)
+					_sMesVcSaf = '03'
+				elseif _nParcel == 1
+					_sMesVcSaf = '04'
+				elseif _nParcel == 2
+					_sMesVcSaf = '05'
+				elseif _nParcel == 3
+					_sMesVcSaf = '06'
+				elseif _nParcel == 4
+					_sMesVcSaf = '07'
+				elseif _nParcel == 5
+					_sMesVcSaf = '08'
+				elseif _nParcel == 6
+					_sMesVcSaf = '09'
+				elseif _nParcel == 7
+					_sMesVcSaf = '10'
+				elseif _nParcel == 8
+					_sMesVcSaf = '11'
+				elseif _nParcel == 9
+					_sMesVcSaf = '12'
+				elseif _nParcel == 10
+					_sAnoVcSaf = strzero (val (_sSafPag) + 1, 4)
+					_sMesVcSaf = '01'
+				elseif _nParcel == 11
+					_sAnoVcSaf = strzero (val (_sSafPag) + 1, 4)
+					_sMesVcSaf = '02'
+				else
+					u_help ("Sem tratamento para parcela " + cvaltochar (_nParcel) + " no ajuste de datas de pagamento de safra.",, .T.)
+					_dVctSafra = _dEmissao
+					_lContinua = .F.
+				endif
+
+				// Se o ano+mes previsto jah passou (ocorre por exemplo quando gera-se nota de complemento de preco apos a safra), nao adianta gerar com data retroativa.
+				if _sAnoVcSaf + _sMesVcSaf < left (dtos (dDataBase), 6)
+					U_Log2 ('aviso', 'Vencimento desta parcela seria inicialmente calculado para o ano/mes ' + _sAnoVcSaf + _sMesVcSaf + ' (retroativo). Vou atualizar para o ano/mes da dDataBase')
+					_sAnoVcSaf = left (dtos (dDataBase), 4)
+					_sMesVcSaf = substring (dtos (dDataBase), 5, 2)
+				endif
+
+				U_Log2 ('debug', 'Ano/mes para vcto desta parcela ficou definido como ' + _sAnoVcSaf + _sMesVcSaf)
+
+				_aParcel [_nParcel, 2] = lastday (stod (_sAnoVcSaf + _sMesVcSaf + '01'))
+			next
+
 		otherwise
 			u_help ("Sem definicao de parcelamento de pagamento de safra para o ano " + _sSafPag + " no programa " + procname (),, .t.)
 			_lContinua = .F.

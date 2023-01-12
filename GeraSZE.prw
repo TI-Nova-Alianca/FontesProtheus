@@ -190,8 +190,8 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 			GDFieldPut ("ZF_HRRECEB", left (time (), 5))
 			GDFieldPut ("ZF_IDZA8",   _aItensCar [_nItemCar, 1])  // Por enquanto ainda eh igual ao cadastro viticola
 			GDFieldPut ("ZF_OBS",     _sObs)
-			U_Log2 ('debug', 'conteudo do aCols:')
-			u_logACols ()
+		//	U_Log2 ('debug', 'conteudo do aCols:')
+		//	u_logACols ()
 
 			// Executa a validacao de linha
 			//U_PerfMon ('I', 'GeraSZE_RUS2L')  // Para metricas de performance

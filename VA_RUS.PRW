@@ -150,34 +150,30 @@ User Function va_rus ()
 
 		// Submenu para contranota.
 		_aMenuNFe = {}
-		aadd (_aMenuNFe, {"Gera contra&nota"   ,  "U_VA_RUSOO ('CONTRANOTA')", 0,4})
+		aadd (_aMenuNFe, {"Gera contra&nota"   ,  "U_VA_RUSOO ('GerarContranota')", 0,4})
 		aadd (_aMenuNFe, {"Im&prime DANFe"     ,  "U_VA_RUSOO ('ImprimeDanfe')", 0,4})
 		aadd (_aMenuNFe, {"Monitor Faixa"      ,  "U_VA_RUSOO ('MonitorNFe_1')",0,2})
 		aadd (_aMenuNFe, {"Monitor Tempo"      ,  "U_VA_RUSOO ('MonitorNFe_2')",0,2})
 		aadd (_aMenuNFe, {"Transmite contanota",  "U_VA_RUSOO ('TransmiteContranota')",0,2})
 		aadd (_aMenuNFe, {"Visualiza contanota",  "U_VA_RUSVC ()",0,2})
 		aadd (_aMenuNFe, {"Devolucao carga    ",  "U_VA_RUSDC ()",0,2})
-		aadd (_aMenuNFe, {"Simular contranota" ,  "U_VA_RUSOO ('SimularCONTRANOTA')", 0,4})
+		aadd (_aMenuNFe, {"Simular contranota" ,  "U_VA_RUSOO ('SimularContranota')", 0,4})
 
 		// Submenu para Outros.
 		_aMenuOut = {}
-		aadd (_aMenuOut, {"&Parametros",            "U_VA_RUSLP (.T.)", 0,4})
-	//	aadd (_aMenuOut, {"&Ticket 1a.pesag",       "U_VA_RUSTk (1, _sPortTick, _nQViasTk1, {}, 'Bematech', .t.)",0,4})
-	//	aadd (_aMenuOut, {"&Ticket 2a.pesag",       "U_VA_RUSTk (2, _sPortTick, _nQViasTk2, {}, 'Bematech', .t.)",0,4})
-		aadd (_aMenuOut, {"&Ticket 1a.pesag",       "U_VA_RUSOO ('Tk1Pes')",0,4})
-		aadd (_aMenuOut, {"&Ticket 2a.pesag",       "U_VA_RUSOO ('Tk2Pes')",0,4})
-		aadd (_aMenuOut, {"&Impr.Recibo",           "U_VA_RUSR ()", 0,4})
-		aadd (_aMenuOut, {"&Cons.Aglutinacoes",     "U_VA_RUSCA (1, .F.)",0,4})
-		// migrado para naweb --> aadd (_aMenuOut, {"&Fila descarga",         "U_VA_RUSMF ()", 0,4})
-		//aadd (_aMenuOut, {"&Redirecionar",          "U_VA_RUSRD ()", 0,4})
-		aadd (_aMenuOut, {"&Reenviar p/grau",       "U_VA_RUSRG ()", 0,4})
-		aadd (_aMenuOut, {"&Rastrear estoque",      "U_VA_RUSRC ()", 0,4})
-		aadd (_aMenuOut, {"&NF remessa coop",       "U_VA_RUSNR ('A')", 0,4})
-		aadd (_aMenuOut, {"Controle Portaria",      "U_VA_CPORT ()", 0,4})
-		aadd (_aMenuOut, {"Medicoes do grau",       "U_VA_XLS54 (sze -> ze_filial, sze -> ze_safra, sze -> ze_carga)", 0,4})
-		aadd (_aMenuOut, {"Enderecar uva(estoque)", "U_VA_RusEn (sze -> ze_nfger, sze -> ze_serie, sze -> ze_assoc, sze -> ze_Lojasso, .f.)", 0,4})
-		aadd (_aMenuOut, {"Estornar enderecamento", "U_VA_RusEn (sze -> ze_nfger, sze -> ze_serie, sze -> ze_assoc, sze -> ze_Lojasso, .t.)", 0,4})
-		aadd (_aMenuOut, {"Consultar eventos",      "U_VA_SZNC  ('CARGASAFRA', sze -> ze_safra + sze -> ze_carga)", 0,4})
+		aadd (_aMenuOut, {"&Parametros",                "U_VA_RUSLP (.T.)", 0,4})
+		aadd (_aMenuOut, {"&Ticket 1a.pesag",           "U_VA_RUSOO ('Tk1Pes')",0,4})
+		aadd (_aMenuOut, {"&Ticket 2a.pesag",           "U_VA_RUSOO ('Tk2Pes')",0,4})
+		aadd (_aMenuOut, {"&Impr.Recibo",               "U_VA_RUSR ()", 0,4})
+		aadd (_aMenuOut, {"&Cons.Aglutinacoes",         "U_VA_RUSCA (1, .F.)",0,4})
+		aadd (_aMenuOut, {"&Reenviar p/grau",           "U_VA_RUSRG ()", 0,4})
+		aadd (_aMenuOut, {"&Rastrear estoque",          "U_VA_RUSRC ()", 0,4})
+		aadd (_aMenuOut, {"&NF remessa coop",           "U_VA_RUSNR ('A')", 0,4})
+		aadd (_aMenuOut, {"Controle Portaria",          "U_VA_CPORT ()", 0,4})
+		aadd (_aMenuOut, {"Exportar medicoes do grau",  "U_VA_XLS54 (sze -> ze_filial, sze -> ze_safra, sze -> ze_carga)", 0,4})
+		aadd (_aMenuOut, {"Enderecar uva no estoque",   "U_VA_RusOO ('EnderecarEstoque')", 0,4})
+		aadd (_aMenuOut, {"Estornar enderecamento uva", "U_VA_RusOO ('EstornarEnderecamento')", 0,4})
+		aadd (_aMenuOut, {"Consultar eventos",          "U_VA_SZNC  ('CARGASAFRA', sze -> ze_safra + sze -> ze_carga)", 0,4})
 		if upper (alltrim (cUserName)) == 'ROBERT.KOCH'
 			aadd (_aMenuOut, {"Simular leitura inspecoes(Robert)", "U_VA_RusLI (iif (sze -> ze_status == '1', 1, 2), .t.)", 0,4})
 			aadd (_aMenuOut, {"Simular frete (Robert)",  "U_VA_RusCF (.F.)", 0,4})  // Apenas para ver nova simulacao no arquivo de log.
@@ -214,36 +210,50 @@ user function VA_RUSOO (_sQueFazer)
 	_oCarSaf:GeraAtrib ("SZE")
 
 	do case
-	case upper (_sQueFazer) == 'TK1PES'
+	case _sQueFazer == upper ('Tk1Pes')  // Sim, a chamada pelo menu parece passar tudo em maiusculas.
 		_oCarSaf:ImprimeTk (1)
-	case upper (_sQueFazer) == 'TK2PES'
+
+	case _sQueFazer == upper ('Tk2Pes')
 		_oCarSaf:GeraAtrib ("SZE")  // Atualiza atributos com o que foi gravado nos arquivos.
 		_oCarSaf:ImprimeTk (2)
-	case upper (_sQueFazer) == 'CONTRANOTA'
+
+	case _sQueFazer == upper ('GerarContranota')
 		U_VA_RUSN (.F.)
-	case upper (_sQueFazer) == 'SIMULARCONTRANOTA'
+
+	case _sQueFazer == upper ('EnderecarEstoque')
+		_oCarSaf:EnderEstq ('I')
+
+	case _sQueFazer == upper ('EstornarEnderecamento')
+		_oCarSaf:EnderEstq ('E')
+
+	case _sQueFazer == upper ('SimularContranota')
 		U_VA_RUSN (.T.)
-	case upper (_sQueFazer) == 'TRANSMITECONTRANOTA'
+
+	case _sQueFazer == upper ('TransmiteContranota')
 		U_VA_RUSTX ()
-	case upper (_sQueFazer) == 'IMPRIMEDANFE'
-		if empty (sze -> ze_nfger)
+
+	case _sQueFazer == upper ('ImprimeDanfe')
+		if empty (_oCarSaf:Contranota)
 			u_help ("Nao ha nota fiscal gerada para esta carga.")
 		else
-			U_ImpDanfe ('E', sze -> ze_nfger, sze -> ze_nfger, sze -> ze_serie)
+			U_ImpDanfe ('E', _oCarSaf:Contranota, _oCarSaf:Contranota, _oCarSaf:SerieCtrn)
 		endif
-	case 'MONITORNFE' $ upper (_sQueFazer)
+
+	case upper ('MonitorNFe') $ _sQueFazer
 		// Variaveis usadas pelas rotinas da NFe
 		private bFiltraBrw := {|| ".T."}
 		private aFilBrw := {"SF2", ".T."}
-		if upper (_sQueFazer) == 'MONITORNFE_1'
+		if upper (_sQueFazer) == upper ('MonitorNFe_1')
 			SpedNFe1Mnt ()
 		else
 			SpedNFe2Mnt ()
 		endif
+
 	otherwise
-		u_help ("Acao desconhecida: " + _sQueFazer,, .t.)
+		u_help ("Acao desconhecida: " + cvaltochar (_sQueFazer),, .t.)
 	endcase
 return
+
 
 // --------------------------------------------------------------------------
 // Leitura da lista de associados habilitados
@@ -458,8 +468,8 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {08, "PARAMETRO EM DESUSO           ", "N", 1,  0,  "",   "",      {},                                ""})
 //	aadd (_aRegsPerg, {09, "Usa impressora de ticket      ", "N", 1,  0,  "",   "",      {"Sim", "Nao"},                    ""})
 	aadd (_aRegsPerg, {09, "PARAMETRO EM DESUSO           ", "N", 1,  0,  "",   "",      {},                                ""})
-//	aadd (_aRegsPerg, {10, "Impressora de ticket          ", "C", 2,  0,  "",   "ZX549", {},                                "Ex.: lpt1: ou LPT2:"})
-	aadd (_aRegsPerg, {10, "PARAMETRO EM DESUSO           ", "N", 1,  0,  "",   "",      {},                                ""})
+	aadd (_aRegsPerg, {10, "Impressora de ticket          ", "C", 2,  0,  "",   "ZX549", {},                                ""})
+//	aadd (_aRegsPerg, {10, "PARAMETRO EM DESUSO           ", "N", 1,  0,  "",   "",      {},                                ""})
 	aadd (_aRegsPerg, {11, "Comunicacao c/ medidor de brix", "N", 1,  0,  "",   "",      {"Sim", "Nao"},                    ""})
 //	aadd (_aRegsPerg, {12, "Qt. de vias ticket 1a.pesagem ", "N", 1,  0,  "",   "",      {},                                ""})
 	aadd (_aRegsPerg, {12, "PARAMETRO EM DESUSO           ", "N", 1,  0,  "",   "",      {},                                ""})

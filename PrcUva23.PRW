@@ -55,6 +55,17 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	local _nVlrMaior := 0
 	local _nContador := 0
 	local _sSafraPrc := '2023'  // Ajustar caso seja copiado para o proximo ano!
+	local _lUsaMoc22 := .F.
+
+
+
+	// Durante o recebimento da safra 2023, faremos compra a preco de tabela MOC2022 cfe.e-mail Colleoni 12/12/2022.
+	// Restante do valor vai ser decidido posteriormente.
+	U_Log2 ('aviso', '[' + procname () + ']Durante o recebimento da safra 2023, faremos compra a preco de tabela MOC2022')
+	_lUsaMoc22 = .T.
+	_sSafraPrc = '2022'
+
+
 
 	if _lContinua
 		_nGrau = round (_nGrau, 1)  // Por enquanto trabalhamos apenas com 1 decimal.
@@ -96,14 +107,6 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 				endif
 			endif
 
-//			// Complemento gerado em abril 2021 (GLPI 9891) - moscatos, riesling e procecco, trebiano
-//			if alltrim (sb1 -> b1_cod) $ '9845/9854/9911/9932/9920/9928/9912' .and. _sConducao == 'L'
-//				if _nGrau >= 9
-//					_lIsabel = .F.
-//					_sComent = "Compl.2021 desclassifica moscatos so abaixo de 9 graus."
-//				endif
-//			endif
-
 			if _lIsabel
 				_sClassif = ''
 				if sb1 -> b1_vacor == 'T' .and. ! alltrim (sb1 -> b1_cod) $ '9969/9969A' // Alicante vai ser tratada como uva branca.
@@ -134,13 +137,15 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 			// Define o % a ser aplicado sobre o preco do produto base
 			if sb1 -> b1_vaorgan $ 'BEO'  // [B]ordadura, [E]m conversao ou [O]rganica
 				_nAgioOrg = 0
-				if sb1 -> b1_vaorgan == 'E'
-					_nAgioOrg = 15
-				elseif sb1 -> b1_vaorgan == 'O'
-					if sb1 -> b1_vacor == 'T' .and. sb1 -> b1_vattr == 'S'  // Tintorias
-						_nAgioOrg = 55
-					else
-						_nAgioOrg = 70
+				if ! _lUsaMoc22
+					if sb1 -> b1_vaorgan == 'E'
+						_nAgioOrg = 15
+					elseif sb1 -> b1_vaorgan == 'O'
+						if sb1 -> b1_vacor == 'T' .and. sb1 -> b1_vattr == 'S'  // Tintorias
+							_nAgioOrg = 55
+						else
+							_nAgioOrg = 70
+						endif
 					endif
 				endif
 				
@@ -328,7 +333,6 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 					_nPerAgMOC = 90
 				elseif int (_nGBaseMOC) - _nAux <= 11
 					_nPerAgMOC = 95
-
 				endif
 			elseif _nAux > _nGBaseMOC  // Verifica quantos graus encontra-se acima do grau base
 				if _nAux - _nGBaseMOC <= 1
@@ -377,7 +381,8 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	// Calcula tabela de precos a partir de aplicacao de agio / desagio sobre o preco do grau base.
 	if _lContinua
 
-		// PARTE I: gera valores de 'entrada' e 'compra' usando criterios de agio da Alianca
+		// PARTE I: gera valores de 'entrada' e 'compra' usando criterios de
+		// agio da Alianca (variacao entre graus geralmente eh diferente da CONAB)
 		// Encontra a linha e atualiza preco do grau base Alianca na lista de graus.
 		_nPosGBase = ascan (_aGraus, {|_x| _x [.PrcUvaColGrau] == _nGBaseAli})
 		if _nPosGBase == 0
@@ -412,6 +417,7 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 
 
 		// PARTE II: gera valores da MOC usando criterios de agio da CONAB
+		// (variacao entre graus geralmente eh diferente da nossa)
 		// Atualiza preco do grau base MOC na lista de graus.
 		_nPosGBase = ascan (_aGraus, {|_x| _x [.PrcUvaColGrau] == _nGBaseMOC})
 		if _nPosGBase == 0
@@ -457,6 +463,12 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 			
 		endif
 
+		// Se for uva desclassificada, usa valor fixo em qualquer grau.
+		if _lUsaMoc22 .and. _lIsabel
+			for _nAux = 1 to len (_aGraus)
+				_aGraus [_nAux, .PrcUvaColPrcMOC] = 0.5
+			next
+		endif
 
 		// PARTE III: aplica % de agio das organicas, se for o caso.
 		// Estamos fazendo as entradas a valor de CONAB neste ano, mas jah vamos aplicar o agio nas organicas. 
@@ -498,7 +510,7 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	endif
 
 	// Aplica acrescimos ou decrescimos conforme a classificacao da uva.
-	if _lContinua
+	if _lContinua .and. ! _lUsaMoc22
 	
 		// O preco varia conforme a sua classificacao final. Nao se aplica ao preco da tabela MOC.
 		if sb1 -> B1_VARUVA == "F" .and. sb1 -> B1_VAFCUVA == "F" .and. ! _lIsabel
@@ -582,20 +594,6 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 		if _lMostrMsg
 			u_help (_sComent,, .t.)
 		else
-
-			/*
-			// Gravacoes que seriam feitas pela funcao u_help.
-			u_log2 ('erro', _sComent)
-			if type ("_sErroAuto") == "C"  // Variavel private (customizada) para retorno de erros em rotinas automaticas.
-				_sErroAuto += iif (empty (_sErroAuto), '', '; ') + _sComent
-			endif
-			if type ('_sErros') == 'C'  // Variavel private (customizada) geralmente usada em chamadas via web service.
-				_sErros += iif (empty (_sErros), '', '; ') + _sComent
-			endif
-			if type ("_oBatch") == "O"
-				_oBatch:Mensagens += iif (alltrim (_sComent) $ _oBatch:Mensagens, '', '; ' + alltrim (_sComent))
-			endif
-			*/
 			U_help (_sComent,, .t.)
 		endif
 

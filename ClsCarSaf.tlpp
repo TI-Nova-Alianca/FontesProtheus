@@ -50,6 +50,7 @@ CLASS ClsCarSaf
 	public METHOD AtuAgenda ()
 	public METHOD DefImprTk ()  // Define porta para impressao do ticket
 	public METHOD GeraAtrib ()
+	public METHOD EnderEstq ()  // Enderecar (ou estornar) estoque
 	public METHOD GrvEvt ()
 	public METHOD ImprimeTk ()  // Gera impressao do ticket
 	public METHOD Log ()
@@ -124,6 +125,8 @@ METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
 			_sStatPara = 'LIB'  // Liberada (para ir ate o tombador e descarregar)
 		otherwise
 			u_help ("Situacao nao prevista. Nao sei o que enviar para o NaWeb para definir o status da carga " + ::Carga,, .T.)
+			U_Log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + ']_sZZAAtual: ' + cvaltochar (_sZZAAtual))
+			u_logObj (::Self)
 			_lContinua = .F.
 		endcase
 	endif
@@ -158,7 +161,7 @@ METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
 			_lRetWSNA = .F.
 
 			// Grava evento para posterior rastreamento
-			::GrvEvt ('SZE004', "ERRO ao enviado novo status (" + _sStatPara + ") para o NaWeb: " + ::UltMsg)
+			::GrvEvt ('SZE004', "ERRO ao enviar novo status (" + _sStatPara + ") para o NaWeb: " + ::UltMsg)
 		endif
 	endif
 return _lRetWSNA
@@ -188,6 +191,135 @@ return
 
 
 // --------------------------------------------------------------------------
+// Faz o enderecamento (ou estorno)dos lotes de uva no estoque
+METHOD EnderEstq (_sQueFazer) Class ClsCarSaf
+	local _aAreaAnt  := U_ML_SRArea ()
+	local _aAmbAnt   := U_SalvaAmb ()
+	local _oSQL      := NIL
+	local _aRegSDA   := {}
+	local _nRegSDA   := 0
+	local _aAutoSDA  := {}
+	local _aAutoSDB  := {}
+	local _aLinhaSDB := {}
+	local _sFiltrSDA := ''
+	local _lContinua := .T.
+
+	// Se for estorno, filtra a tabela e chama tela padrao do sistema.
+	// O usuario deverah clicar no botao 'estornar'.
+	if _sQueFazer == 'E'  // Estornar
+		U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Chamando tela estorno enderecamento docto ' + ::Contranota)
+		oGetD := NIL
+		nOpcA := 0
+		aHeader := NIL
+		aCols := NIL
+		N := 1
+		aRotina := NIL
+	//	u_logobj (::Self)
+		_sFiltrSDA := "da_filial='"      + ::Filial     + "'"
+		_sFiltrSDA += ".and.da_doc='"    + ::Contranota + "'"
+		_sFiltrSDA += ".and.da_serie='"  + ::SerieCtrn  + "'"
+		_sFiltrSDA += ".and.da_clifor='" + ::Fornece    + "'"
+		_sFiltrSDA += ".and.da_loja='"   + ::Loja       + "'"
+	//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']' + _sFiltrSDA)
+ 		dbselectarea ("SDA")
+		set filter to &(_sFiltrSDA)
+		MATA265 ()
+		dbselectarea ("SDA")
+		set filter to
+
+	elseif _sQueFazer == 'I'  // Incluir
+
+		U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Iniciando enderecamento docto ' + ::Contranota)
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT SDA.R_E_C_N_O_"
+		
+		// Posso estar reenderecando uma nota. Nesse caso, preciso gerar o
+		// campo DB_ITEM maior que 0001.
+		_oSQL:_sQuery +=      " ,ISNULL ((SELECT MAX (DB_ITEM)
+		_oSQL:_sQuery +=                  " FROM " + RetSQLName ("SDB") + " SDB "
+		_oSQL:_sQuery +=                 " WHERE SDB.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=                   " AND SDB.DB_FILIAL = SDA.DA_FILIAL"
+		_oSQL:_sQuery +=                  " AND SDB.DB_PRODUTO = SDA.DA_PRODUTO"
+		_oSQL:_sQuery +=                  " AND SDB.DB_DOC = SDA.DA_DOC"
+		_oSQL:_sQuery +=                  " AND SDB.DB_SERIE = SDA.DA_SERIE"
+		_oSQL:_sQuery +=                  " AND SDB.DB_CLIFOR = SDA.DA_CLIFOR"
+		_oSQL:_sQuery +=                  " AND SDB.DB_LOJA = SDA.DA_LOJA"
+		_oSQL:_sQuery +=                  " AND SDB.DB_LOTECTL = SDA.DA_LOTECTL"
+		_oSQL:_sQuery +=                  " AND SDB.DB_NUMSEQ = SDA.DA_NUMSEQ"
+		_oSQL:_sQuery +=                  " AND SDB.DB_ORIGEM = SDA.DA_ORIGEM), '0000')"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD1") + " SD1, "
+		_oSQL:_sQuery +=             RetSQLName ("SDA") + " SDA "
+		_oSQL:_sQuery += " WHERE SD1.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SD1.D1_FILIAL  = '" + ::Filial + "'"
+		_oSQL:_sQuery +=   " AND SD1.D1_DOC     = '" + ::Contranota + "'"
+		_oSQL:_sQuery +=   " AND SD1.D1_SERIE   = '" + ::SerieCtrn + "'"
+		_oSQL:_sQuery +=   " AND SD1.D1_FORNECE = '" + ::Fornece + "'"
+		_oSQL:_sQuery +=   " AND SD1.D1_LOJA    = '" + ::Loja + "'"
+		_oSQL:_sQuery +=   " AND SDA.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SDA.DA_FILIAL  = SD1.D1_FILIAL"
+		_oSQL:_sQuery +=   " AND SDA.DA_DOC     = SD1.D1_DOC"
+		_oSQL:_sQuery +=   " AND SDA.DA_SERIE   = SD1.D1_SERIE"
+		_oSQL:_sQuery +=   " AND SDA.DA_CLIFOR  = SD1.D1_FORNECE"
+		_oSQL:_sQuery +=   " AND SDA.DA_LOJA    = SD1.D1_LOJA"
+		_oSQL:_sQuery +=   " AND SDA.DA_ORIGEM  = 'SD1'"
+		_oSQL:_sQuery +=   " AND SDA.DA_NUMSEQ  = SD1.D1_NUMSEQ"
+		_oSQL:_sQuery +=   " AND SDA.DA_PRODUTO = SD1.D1_COD"
+		_oSQL:_sQuery +=   " AND SDA.DA_SALDO   > 0"
+		_oSQL:Log ()
+		_aRegSDA = _oSQL:Qry2Array (.F., .F.)
+		if len (_aRegSDA) == 0
+			u_help ("Nenhum produto com saldo a enderecar para esta carga/contranota.")
+		endif
+		for _nRegSDA = 1 to len (_aRegSDA)
+			sda -> (dbgoto (_aRegSDA [_nRegSDA, 1]))
+			_aAutoSDA = {}
+			aadd (_aAutoSDA, {"DA_PRODUTO", sda -> da_produto, nil})
+			aadd (_aAutoSDA, {"DA_LOCAL"  , SDA -> DA_LOCAL    , nil})
+			aadd (_aAutoSDA, {"DA_NUMSEQ" , SDA -> DA_NUMSEQ   , nil})
+			aadd (_aAutoSDA, {"DA_DOC"    , SDA -> DA_DOC      , nil})
+			aadd (_aAutoSDA, {"DA_SERIE"  , SDA -> DA_SERIE    , nil})
+
+			_aAutoSDB = {}
+			_aLinhaSDB = {}
+		//	aadd (_aLinhaSDB, {"DB_ITEM", '0001', nil})
+			aadd (_aLinhaSDB, {"DB_ITEM", Soma1 (_aRegSDA [_nRegSDA, 2]), nil})
+			if ::Filial == '01'
+				aadd (_aLinhaSDB, {"DB_LOCALIZ", 'T01PCP03       ', nil})
+			elseif ::Filial == '03'
+				aadd (_aLinhaSDB, {"DB_LOCALIZ", 'T03 PCP AX 03  ', nil})
+			elseif ::Filial == '07'
+				aadd (_aLinhaSDB, {"DB_LOCALIZ", 'T07 PCP 03     ', nil})
+			elseif ::Filial == '09'
+				aadd (_aLinhaSDB, {"DB_LOCALIZ", 'T09 PCP AX 03  ', nil})
+			endif
+			aadd (_aLinhaSDB, {"DB_QUANT"  , SDA->DA_QTDORI   , nil})
+			aadd (_aLinhaSDB, {"DB_DATA"   , dDATABASE        , nil})
+			U_Log2 ('info', 'Enderecando docto ' + sda -> da_doc + ' / produto ' + sda -> da_produto)
+			_aLinhaSDB = aclone (U_OrdAuto (_aLinhaSDB))
+			aadd (_aAutoSDB, aclone (_aLinhaSDB))
+			lMsErroAuto := .F.
+			MSExecAuto({|x,y,z| mata265(x,y,z)}, _aAutoSDA, _aAutoSDB, 3)
+			If lMsErroAuto
+				u_log2 ('erro', 'lMsErroAuto')
+				if ! empty (NomeAutoLog ())
+					u_log2 ('erro', memoread (NomeAutoLog ()))
+					MostraErro()
+				else
+					u_help ("Nao foi possivel ler o arquivo de log de erros da rotina de enderecamento de uva no estoque.",, .t.)
+				endif
+			endif
+		next
+	else
+		u_help ('Sem tratamento para acao ' + _sQueFazer,, .t.)
+	endif
+
+	U_SalvaAmb (_aAmbAnt)
+	U_ML_SRArea (_aAreaAnt)
+return _lContinua
+
+
+// --------------------------------------------------------------------------
 // Alimenta os atributos da classe.
 METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -209,6 +341,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	::RegSZE     = 0
 	::Safra      = ''
 	::Segregada  = .F.
+	::SerieCtrn  = ''
 	::UltMsg     = ''
 
 	do case
@@ -224,6 +357,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 		::PesoBruto  = m->ze_pesobru
 		::PesoTara   = m->ze_pesotar
 		::Segregada  = (m->ze_segreg == 'S')
+		::SerieCtrn  = m->ze_serie
 
 	case _sOrigem == "SZE"
 		::Carga      = sze -> ze_carga
@@ -238,6 +372,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 		::RegSZE     = sze -> (recno ())
 		::Safra      = sze -> ze_safra
 		::Segregada  = (sze -> ze_segreg == 'S')
+		::SerieCtrn  = sze -> ze_serie
 
 	otherwise
 		if ! empty (_sOrigem)  // Se origem vazia, eh por que estou apenas instanciando um objeto vazio.

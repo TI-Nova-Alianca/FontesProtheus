@@ -77,12 +77,10 @@ User Function va_rus2 (_nOpc, _lFechPort)
 
 	if inclui
 		u_Log2 ('info', '[' + procname () + ']Iniciando com _nOpc = ' + cvaltochar (_nOpc))
+		u_Log2 ('debug', '[' + procname () + ']Nao preciso atualizar objeto _oCarSaf')
 	else
 		u_Log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Iniciando com _nOpc = ' + cvaltochar (_nOpc))
-		if empty (_oCarSaf:Carga)
-			u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
-			_lContinua = .F.
-		endif
+		_oCarSaf:GeraAtrib ("SZE")  // Atualiza objeto com dados do arquivo.
 	endif
 
 	if _lContinua .and. _nOpc >= 4 .and. sze -> ze_status == "N"

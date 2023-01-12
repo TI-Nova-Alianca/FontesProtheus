@@ -109,6 +109,7 @@
 // 31/03/2022 - Robert  - Nao busca mais premiacao safra 2021 em separado (agora tem o campo E2_VASAFRA preenchido).
 // 15/06/2022 - Robert  - Leitura valores FUNRURAL no metodo FechSafr() (GLPI 11723)
 // 16/12/2022 - Robert  - Criados tratamentos para "fornecedores de uva" (GLPI 12501)
+// 10/01/2023 - Robert  - Criada (versao inicial) regra de pagamento para safra 2023.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -1475,7 +1476,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 			_sRetFechS += '<perc01>10</perc01><perc02>4</perc02><perc03>4</perc03><perc04>4</perc04><perc05>4</perc05><perc06>11.4</perc06><perc07>11.4</perc07><perc08>11.4</perc08><perc09>11.4</perc09><perc10>14.2</perc10><perc11>14.2</perc11>'
 			_sRetFechS += '<descComParc>C-Demais variedades.....: 10+4+4+4+4+11.4+11.4+11.4+11.4+14.2+14.2</descComParc>'
 			_sRetFechS += '</regraPagamentoItem>'
-		elseif _sSafra == '2021' .or. _sSafra == '2022' .or. _sSafra == '2023'
+		elseif _sSafra == '2021' .or. _sSafra == '2022'
 			_sRetFechS += '<regraPagamentoItem>'
 			_sRetFechS += '<grupo>A</grupo>'
 			_sRetFechS += '<descricao>Bordo,niagara,concord e organicas - 6 vezes</descricao>'
@@ -1493,6 +1494,25 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 			_sRetFechS += '<descricao>Demais variedades                 - 11 vezes</descricao>'
 			_sRetFechS += '<perc01>10</perc01><perc02>5.5</perc02><perc03>5.5</perc03><perc04>5.5</perc04><perc05>5.5</perc05><perc06>6.5</perc06><perc07>11.5</perc07><perc08>11.5</perc08><perc09>11.5</perc09><perc10>13.5</perc10><perc11>13.5</perc11>'
 			_sRetFechS += '<descComParc>C-Demais variedades: 10+5.5+5.5+5.5+5.5+6.5+11.5+11.5+11.5+13.5+13.5</descComParc>'
+			_sRetFechS += '</regraPagamentoItem>'
+		elseif _sSafra == '2023'
+			_sRetFechS += '<regraPagamentoItem>'
+			_sRetFechS += '<grupo>A</grupo>'
+			_sRetFechS += '<descricao>Bordo,niagara,concord e organicas - 11 vezes</descricao>'
+			_sRetFechS += '<perc01>10</perc01><perc02>9</perc02><perc03>9</perc03><perc04>9</perc04><perc05>9</perc05><perc06>9</perc06><perc07>9</perc07><perc08>9</perc08><perc09>9</perc09><perc10>9</perc10><perc11>9</perc11>'
+			_sRetFechS += '<descComParc>A-Bordo,niagara,concord e organicas: 10+9+9+9+9+9+9+9+9+9+9</descComParc>'
+			_sRetFechS += '</regraPagamentoItem>'
+			_sRetFechS += '<regraPagamentoItem>'
+			_sRetFechS += '<grupo>B</grupo>'
+			_sRetFechS += '<descricao>Tintorias e viniferas espaldeira  - 11 vezes</descricao>'
+			_sRetFechS += '<perc01>10</perc01><perc02>9</perc02><perc03>9</perc03><perc04>9</perc04><perc05>9</perc05><perc06>9</perc06><perc07>9</perc07><perc08>9</perc08><perc09>9</perc09><perc10>9</perc10><perc11>9</perc11>'
+			_sRetFechS += '<descComParc>B-Tintorias+vinif.espald: 10+9+9+9+9+9+9+9+9+9+9</descComParc>'
+			_sRetFechS += '</regraPagamentoItem>'
+			_sRetFechS += '<regraPagamentoItem>'
+			_sRetFechS += '<grupo>C</grupo>'
+			_sRetFechS += '<descricao>Demais variedades                 - 11 vezes</descricao>'
+			_sRetFechS += '<perc01>10</perc01><perc02>9</perc02><perc03>9</perc03><perc04>9</perc04><perc05>9</perc05><perc06>9</perc06><perc07>9</perc07><perc08>9</perc08><perc09>9</perc09><perc10>9</perc10><perc11>9</perc11>'
+			_sRetFechS += '<descComParc>C-Demais variedades: 10+9+9+9+9+9+9+9+9+9+9</descComParc>'
 			_sRetFechS += '</regraPagamentoItem>'
 		else
 			_sRetFechS += '<regraPagamentoItem>'

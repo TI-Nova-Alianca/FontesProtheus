@@ -27,10 +27,9 @@ user function va_rus1P (_lPortaria)
 	if type ("_oCarSaf") != 'O'
 		private _oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
 	endif
-	if empty (_oCarSaf:Carga)
-		u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
-		_lContinua = .F.
-	endif
+
+	// Como eh primeira pesagem, tenho que alimentar o objeto com dados do arquivo.
+	_oCarSaf:GeraAtrib ("SZE")
 
 	_lPortaria = iif (_lPortaria == NIL, .F., _lPortaria)
 	
