@@ -61,7 +61,7 @@ User Function VA_RUSLP (_lMostra)
 	
 	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
 	if type ("_oCarSaf") == 'O'
-		_oCarSaf:DefImprTk ()
+		_oCarSaf:DefImprTk (cFilAnt, alltrim (U_RetZX5 ('49', mv_par10, 'ZX5_49CAM')))
 	endif
 
 return _lRet

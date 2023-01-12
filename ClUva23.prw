@@ -168,10 +168,9 @@ return _aRetClUva
 
 // --------------------------------------------------------------------------
 static function _Prm03 (_sConduc, _sAcidVol, _sBotrytis, _sPodrid, _sGlomer, _sAspergil)
-//	local _nSomaPerc := _sBotrytis + _sGlomer + _sAspergil + _sPodrid
 	local _nSomaPerc := 0
 
-	U_LOG ('ENTREI EM ', procname (), ' com ', _sConduc, _sAcidVol, _sBotrytis, _sPodrid, _sGlomer, _sAspergil)
+//	U_Log2 ('debug', '[' + procname () + ']ENTREI EM ' + procname () + ' com ' + _sConduc + _sAcidVol + _sBotrytis + _sPodrid + _sGlomer + _sAspergil)
 
 	// 'Presente' entende-se como 'acima do aceitavel'
 	if upper (_sAcidVol) = 'PRESENTE' .or. val (_sAcidVol) > 10

@@ -5,7 +5,7 @@
 
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Processamento
-// #Descricao         #Funcao que retorna caminhos/nomes de bancos de dados de outros siatemas.
+// #Descricao         #Funcao que retorna caminhos/nomes de bancos de dados de outros sistemas.
 // #PalavasChave      #auxiliar #uso_generico
 // #TabelasPrincipais 
 // #Modulos           #todos_modulos

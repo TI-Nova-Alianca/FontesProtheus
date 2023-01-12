@@ -85,7 +85,7 @@ User Function va_rusCF (_lRegrav)
 			endif
 
 			if _lDeveCalc
-				u_log2 ('debug', 'Filial: ' + sze -> ze_filial + ' Safra:' + sze -> ze_safra + ' Carga:' + sze -> ze_carga + ' Variedade: ' + alltrim (fbuscacpo ('SB1', 1, xfilial ("SB1") + szf -> zf_produto, 'B1_DESC')) + ' Associado: ' + sze -> ze_assoc + '-' + alltrim (fbuscacpo ('SA2', 1, xfilial ("SA2") + sze -> ze_assoc + sze -> ze_lojasso, 'A2_NOME')))
+				U_Log2 ('debug', '[' + procname () + ']Filial: ' + sze -> ze_filial + ' Safra:' + sze -> ze_safra + ' Carga:' + sze -> ze_carga + ' Variedade: ' + alltrim (fbuscacpo ('SB1', 1, xfilial ("SB1") + szf -> zf_produto, 'B1_DESC')) + ' Associado: ' + sze -> ze_assoc + '-' + alltrim (fbuscacpo ('SA2', 1, xfilial ("SA2") + sze -> ze_assoc + sze -> ze_lojasso, 'A2_NOME')))
 				if sze -> ze_safra == '2020'
 					_nFrtItem = U_FrtSaf20 (_oAssoc:Nucleo, szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor)
 				elseif sze -> ze_safra == '2021'
@@ -103,6 +103,10 @@ User Function va_rusCF (_lRegrav)
 				endif
 			else
 				_nFrtItem = 0
+			endif
+
+			if _nFrtItem == 0
+				_lFrtSafOK = .F.
 			endif
 
 			// Posso estar executando para regravar, ou apenas para simulacoes.

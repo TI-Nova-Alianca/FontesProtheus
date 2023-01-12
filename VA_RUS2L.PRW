@@ -128,7 +128,6 @@ user function VA_RUS2L ()
 		// Se for uva para espumante, o que vai estar no cadastro viticola vai ser o a vriedade base (para vinho)
 		if _lParaEsp
 			_sUvaBase = fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("ZF_PRODUTO"), "B1_CODPAI")
-			u_log ('debug', 'Vou testar cadastro viticola com uva base: ' + _sUvaBase)
 			_nVitic = ascan (_aCadVitic, {|_aVal| alltrim (_aVal [.CadVitCodigo]) == alltrim (GDFieldGet ("ZF_CADVITI")) .and. alltrim (_aVal [.CadVitProduto]) == alltrim (_sUvaBase)})
 		else
 			_nVitic = ascan (_aCadVitic, {|_aVal| alltrim (_aVal [.CadVitCodigo]) == alltrim (GDFieldGet ("ZF_CADVITI")) .and. alltrim (_aVal [.CadVitProduto]) == alltrim (GDFieldGet ("ZF_PRODUTO"))})

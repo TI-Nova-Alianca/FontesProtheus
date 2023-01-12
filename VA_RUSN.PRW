@@ -218,7 +218,9 @@ User Function va_rusN (_lSimulNF)
 //	U_VA_RusAI ('INS/AGE/LIB', 'CON')
 	if _lContinua
 		_oCarSaf:GeraAtrib ("SZE")  // Atualiza atributos com o que foi gravado nos arquivos.
-		_oCarSaf:AtuAgenda ()
+		if ! _lSimulNF
+			_oCarSaf:AtuAgenda ()
+		endif
 	endif
 
 
@@ -269,7 +271,7 @@ User Function va_rusN (_lSimulNF)
 
 	// Calcula valor do frete a ser incluido na nota. Roda em funcao separada por que eh comum precisar recalcular depois da safra.
 	if _lContinua
-		U_VA_RUSCF (.T.)
+		_lContinua = U_VA_RUSCF (.T.)
 	endif
 
 	// Define qual o grupo para pagamento ao qual esta nota deve ser vinculada.
@@ -378,9 +380,7 @@ User Function va_rusN (_lSimulNF)
 			// ateh 15/01/22 usamos erroneamente preco da MOC	_nVlUni = U_PrcUva22 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[5]  // pos.5 = preco MOC
 				_nVlUni = U_PrcUva22 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[2]  // pos.2 = preco de compra.
 			elseif szf -> zf_safra == '2023'
-				// Safra 2023 faremos compra a preco de tabela MOC2022 cfe.e-mail Colleoni 12/12/2022
-				//_nVlUni = U_PrcUva23 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[2]  // pos.2 = preco de compra.
-				_nVlUni = U_PrcUva22 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[5]  // pos.5 = preco MOC
+				_nVlUni = U_PrcUva23 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[5]  // pos.5 = preco MOC
 			else
 				u_help ("Sem tratamento para leitura de precos para esta safra.")
 				_lContinua = .F.
@@ -524,12 +524,6 @@ User Function va_rusN (_lSimulNF)
 		enddo
 	endif
 
-//	u_help ("em 2021, por estar usando o ponto de entrada MTCOLSE2, foram geradas duplicatas independente do TES mandar gerar duplicatas. TESTAR COMO FICOU!")
-//	_lContinua = .F.
-
-//	u_help ("testar tratamento para verificar se a cooperativa paga o funrural deste produtor (feito no SF1100I)")
-//	_lContinua = .F.
-
 	// Prepara valores e datas das parcelas do financeiro, para ser lida pelo P.E. MTColSE2
 	if _lContinua
 		if fBuscaCpo ("SF4", 1, xfilial ("SF4") + _sTES, "F4_DUPLIC") == 'S'
@@ -617,7 +611,7 @@ User Function va_rusN (_lSimulNF)
 	endif
 
 	if _lSimulNF
-		u_help ('A seguir serao mostrados alguns dados da simulacao de garacao de NF')
+		u_help ('A seguir serao mostrados alguns dados da simulacao de geracao de NF')
 		u_showarray (_aAutoSD1, 'Itens para a contranota')
 		u_showarray (_aParPgSaf, 'Parcelas e percentuais previstos para pagamento')
 		u_help ('Mensagem do contribuinte: ' + _sMsgContr)
@@ -724,6 +718,7 @@ User Function va_rusN (_lSimulNF)
 		endif
 		end transaction
 		U_Log2 ('info', '[' + procname () + ']Fim da transacao de geracao da contranota.')
+		_oCarSaf:GeraAtrib ("SZE")  // Atualiza objeto com dados do arquivo.
 
 		PutMv ('MV_LIMPAG', 0.09) // Valor original do parametro (ver comentario acima)
 
@@ -733,8 +728,10 @@ User Function va_rusN (_lSimulNF)
 		endif
 
 		// Endereca (saldos a distribuir) o lote de uva recebido por esta contranota.
-		if ! empty (sze -> ze_nfger)
-			U_VA_RusEn (sze -> ze_nfger, sze -> ze_serie, sze -> ze_assoc, sze -> ze_Lojasso)
+		//if ! empty (sze -> ze_nfger)
+		if ! empty (_oCarSaf:Contranota)
+//			U_VA_RusEn (sze -> ze_nfger, sze -> ze_serie, sze -> ze_assoc, sze -> ze_Lojasso)
+			_oCarSaf:EnderEstq ('I')
 		endif
 
 		// Atualiza conta corrente associados

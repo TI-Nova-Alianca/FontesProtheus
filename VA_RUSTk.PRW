@@ -36,9 +36,7 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 	_nQtVias := iif (_nQtVias == NIL, 1, _nQtVias)
 	_sModelImp = upper (_sModelImp)
 	
-	u_Log2 ('info', 'Iniciando ' + procname ())
-	u_log2 ('debug', '   Qual ticket......: ' + cvaltochar (_nQual) + "   Porta: " + cvaltochar (_sPorta))
-	u_log2 ('debug', '   Modelo impressora: ' + cvaltochar (_sModelImp))
+	U_Log2 ('debug', '[' + procname () + ']Qual ticket: ' + cvaltochar (_nQual) + "   Porta: " + cvaltochar (_sPorta) + ' Modelo impressora: ' + cvaltochar (_sModelImp))
 
 	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
 	if type ("_oCarSaf") != 'O'
@@ -251,6 +249,10 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 		reclock ("SZE", .F.)
 		sze -> ze_imptk = cvaltochar (_nQual)
 		msunlock ()
+	endif
+
+	if cUserName = 'robert.koch'
+		U_Log2 ('debug', '[' + procname () + ']' + _sTicket)
 	endif
 
 	U_ML_SRArea (_aAreaAnt)

@@ -44,6 +44,7 @@
 // 17/11/2022 - Claudia - Incluido estorno de rapel.
 // 16/12/2022 - Robert  - Comentariado trecho sem efeito que faria leituras do Mercanet.
 //                      - Ajustadas algumas chamadas de log e acrescentado parametro .T. em chamadas de u_help.
+// 12/01/2023 - Robert  - Grava na carga de safra um evento de cancelamento de contranota.
 //
 
 // -----------------------------------------------------------------------------------------------------------------------------------------------
@@ -151,7 +152,8 @@ Return
 // --------------------------------------------------------------------------
 // Controles referentes a NF de entrada de safra.
 static function _NFSafra ()
-	local _oSQL     := NIL
+	local _oSQL    := NIL
+	local _oCarSaf := NIL
 
 	if sf1 -> f1_formul == "S" .and. sf1 -> f1_vasafra != ''
 
@@ -164,6 +166,10 @@ static function _NFSafra ()
 			sze -> ze_serie = ""
 			sze -> ze_status = "2"
 			msunlock ()
+
+			// Instancia e grava evento na carga
+			_oCarSaf  := ClsCarSaf ():New (sze -> (recno ()))
+			_oCarSaf:GrvEvt ('SZE005', 'Exclusao contranota ' + sf1 -> f1_doc)
 		endif
 
 		// Se encontrar este docto como uma contranota de compra, 
@@ -183,6 +189,7 @@ static function _NFSafra ()
 		if ! _oSQL:Exec ()
 			u_help ("Erro ao atualizar a tabela ZZ9 (pre-notas de compra de safra). Verifique!", _oSQL:_sQuery, .t.)
 		endif
+
 	endif
 return
 //

@@ -154,7 +154,7 @@ user function va_rusLI (_nPesagem, _lSimular)
 					if _lContinua
 						_oEvento := ClsEvent ():New ()
 						_oEvento:Alias   = 'SZE'
-						_oEvento:Texto   = 'Recebimento da carga ' + sze -> ze_carga + ' sem leitura do status no siatema de agendamento'
+						_oEvento:Texto   = 'Recebimento da carga ' + sze -> ze_carga + ' sem leitura do status no sistema de agendamento'
 						_oEvento:CodEven = 'SZE002'
 						_oEvento:Fornece = sze -> ze_assoc
 						_oEvento:LojaFor = sze -> ze_lojasso
