@@ -632,7 +632,8 @@ static function impZebra(aNFe, aEmit, aDest)
     Default aDest    := {}
 
     _sVolume  := _BuscaVolEsp(aNFe[nSerie],aNFe[nNumero],'1') // RETORNA VOLUME
-    _sEspecie := _BuscaVolEsp(aNFe[nSerie],aNFe[nNumero],'2') // RETORNA VOLUME
+    _sEspecie := _BuscaVolEsp(aNFe[nSerie],aNFe[nNumero],'2') // RETORNA ESPECIE
+    _nVolume  := val(_sVolume)
     _sVolEsp  := _sVolume +" " + _sEspecie
 
     //Inicializa a impressão
@@ -727,12 +728,12 @@ static function impZebra(aNFe, aEmit, aDest)
         MSCBSay(15, 66.25, transform( aEmit[nCNPJ], "@R 999.999.999-99" ), "N", "A", cFontMenor) //Emitente pessoa física
     endIf
 
-    MSCBSay(11, 70,    aEmit[nIE], "N", "A", cFontMenor)
-    MSCBSay(11, 73.75, aEmit[nUF], "N", "A", cFontMenor)
-    MSCBSay(18, 88.75, aNFe[nSerie], "N", "A", cFontMenor)
-    MSCBSay(11, 93.75, aNFe[nNumero], "N", "A", cFontMenor)
-    MSCBSay(40, 93.75, ajustaData( aNFe[nData] ) , "N", "A", cFontMenor)
-    MSCBSay(93, 88.75, aNFe[nOperacao], "N", "A", cFontMenor)
+    MSCBSay(11, 70,    aEmit[nIE]                   , "N", "A", cFontMenor)
+    MSCBSay(11, 73.75, aEmit[nUF]                   , "N", "A", cFontMenor)
+    MSCBSay(18, 88.75, aNFe[nSerie]                 , "N", "A", cFontMenor)
+    MSCBSay(11, 93.75, aNFe[nNumero]                , "N", "A", cFontMenor)
+    MSCBSay(40, 93.75, ajustaData( aNFe[nData] )    , "N", "A", cFontMenor)
+    MSCBSay(93, 88.75, aNFe[nOperacao]              , "N", "A", cFontMenor)
 
     if lNomeDest
         MSCBSay(44, 113.75, allTrim( subStr( aDest[nNome], 1, nMaxNome ) ), "N", "A", cFontMenor)
