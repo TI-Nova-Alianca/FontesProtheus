@@ -48,6 +48,7 @@
 // 11/03/2022 - Robert  - Novos parametros funcao U_VA_RusLI() - GLPI 11745.
 // 14/06/2022 - sandra  - Incluso campo ZZT_OBS - GLPI 12209.
 // 28/10/2022 - Robert  - Removidos alguns parametros em desuso (da rotina de recebimento safra).
+// 12/01/2023 - Robert  - Instancia object ClsCarSaf antes de chamar tela de fechamento de safra.
 //
 
 // ----------------------------------------------------------------------------------------------------------------
@@ -396,7 +397,7 @@ static function _SegPesSZE ()
 
 	sze -> (dbsetorder (1))  // ZE_FILIAL+ZE_SAFRA+ZE_CARGA
 	if sze -> (dbseek (xfilial ("SZE") + zzt -> zzt_safra + zzt -> zzt_carga, .F.))
-		if U_MsgYesNo ("Deseja abrir a tela de safra para finalizar o recebimento da carga " + zzt -> zzt_carga + " ?")
+	//	if U_MsgYesNo ("Deseja abrir a tela de safra para finalizar o recebimento da carga " + zzt -> zzt_carga + " ?")
 			U_Log2 ('info', '[' + procname () + '] Vou chamar a tela de segunda pesagem de safra para encerrar a carga.')
 			_aAreaPort := U_ML_SRArea ()
 			_aAmbPort  := U_SalvaAmb ()
@@ -429,13 +430,19 @@ static function _SegPesSZE ()
 			aadd (aRotina, {"&1a pesagem"       , "U_VA_RUS1P ()"		, 0,4})
 			aadd (aRotina, {"&2a pesagem"       , "U_VA_RUS2 (4, .F.)"	, 0,4})
 
+			// Deixa uma carga instanciada, mesmo que vazia, pois algumas funcoes
+			// (como a validacao de parametros por exemplo) jah vao tentar ler o objeto.
+			private _oCarSaf := ClsCarSaf ():New (sze -> (recno ()))
+
 			U_VA_RUSLP (.F.)  // Releitura de parametros do programa de safra
 			U_VA_Rus2 (4, .T.)  // Segunda pesagem: opcao4=alteracao; .t.=a partir do fechamento de uma entrada no contr.portaria
 			U_SalvaAmb (_aAmbPort)
 			U_ML_SRArea (_aAreaPort)
 
 			U_Log2 ('info', '[' + procname () + '] Retornou da tela de segunda pesagem de safra.')
-		endif
+	//	endif
+	else
+		U_Log2 ('erro', '[' + procname () + ']Nao encontrei SZE!')
 	endif
 return
 //

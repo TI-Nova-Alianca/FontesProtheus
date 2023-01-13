@@ -159,7 +159,7 @@ User Function SF1100i ()
 	endif
 
 	// Avisa setor manutencao quando chegou material alocado em OS
-	if ! sf1 -> f1_tipo $ "BD" .and. ! IsInCallStack ("U_VA_RUSN")
+	if ! sf1 -> f1_tipo $ "BD" .and. ! IsInCallStack ("U_VA_RUSN") .and. sf1 -> f1_formul != "S"
 		_AvisaMnt ()
 	endif
 	
