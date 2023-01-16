@@ -13,7 +13,10 @@
 // #Modulos   		  #LOJA 
 //
 // Historico de alteracoes:
+// 13/01/2023 - Robert - Fonte renomeado de LJ7016 para LJ7016_ por que acusava
+//                       existencia de outro fonte de mesmo nome no RPO (GLPI 13018)
 //
+
 // ---------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
