@@ -27,6 +27,7 @@
 // 01/09/2022 - Robert  - Trocado teste [SE1->E1_NUMBOR!=''] por [!empty(SE1->E1_NUMBOR)]
 // 02/09/2022 - Robert  - Melhoradas algumas mensagens para o usuario (GLPI 12543)
 // 08/11/2022 - Claudia - Alterada a consulta quando o boleto ja esta impresso. GLPI: 12785
+// 16/01/2023 - Claudia - Ajustada a impressão de boletos. GLPI: 13025
 //
 // ---------------------------------------------------------------------------------------------------------------------------------
 User Function FA740BRW()
@@ -389,7 +390,6 @@ user function VA_040BOL()
 		u_help ("Não é possivel imprimir boletos pra esse tipo de titulo",, .t.)
 		_lRet = .F.
 	endif
-//	if _lRet .AND. VAL(SE1 -> E1_PORTADO) = 0 .AND. SE1 -> E1_BOLIMP = 'S' .AND. SE1-> E1_NUMBOR  != ''
 	if _lRet .AND. VAL(SE1 -> E1_PORTADO) = 0 .AND. SE1 -> E1_BOLIMP = 'S' .AND. ! empty (SE1-> E1_NUMBOR)
 		u_help ("Não é possivel imprimir boletos nesse caso, titulo em protesto",, .t.)
 		_lRet = .F.
@@ -439,7 +439,7 @@ user function VA_040BOL()
 		_sQuery += " 	AND SA6.A6_COD     = '" + _sBanco   + "'"
 		If _lJaImp
 			_sQuery += " AND SA6.A6_AGENCIA = '"+ _sAgencia + "'"
-			_sQuery += " AND SA6.A6_NUMCON   = '"+ _sConta   + "'"
+			_sQuery += " AND SA6.A6_NUMCON  = '"+ _sConta   + "'"
 		EndIf
 		_sQuery += " 	AND SA6.A6_BLOCKED = '2'"
 		_aBanco := U_Qry2Array(_sQuery) // dados do banco - conta/agencia/subconta
@@ -473,12 +473,13 @@ user function VA_040BOL()
 		_sQuery += "			AND SEE.EE_SUBCTA != '100'"
 		_sQuery += " 			AND SEE.EE_CONTA   = SE1.E1_CONTA )"
 		_sQuery += "  WHERE SE1.D_E_L_E_T_ = ''"
-		_sQuery += "    AND SE1.E1_FILIAL  = '" + SE1 -> E1_FILIAL + "'"
-	    _sQuery += "    AND SE1.E1_NUM     = '" + SE1 -> E1_NUM + "'"
+		_sQuery += "    AND SE1.E1_FILIAL  = '" + SE1 -> E1_FILIAL  + "'"
+	    _sQuery += "    AND SE1.E1_NUM     = '" + SE1 -> E1_NUM     + "'"
 	   	_sQuery += "    AND SE1.E1_PREFIXO = '" + SE1 -> E1_PREFIXO + "'"
 	   	_sQuery += "    AND SE1.E1_CLIENTE = '" + SE1 -> E1_CLIENTE + "'"
-	   	_sQuery += "    AND SE1.E1_LOJA    = '" + SE1 -> E1_LOJA + "'"
+	   	_sQuery += "    AND SE1.E1_LOJA    = '" + SE1 -> E1_LOJA    + "'"
 	   	_sQuery += "    AND SE1.E1_PARCELA = '" + SE1 -> E1_PARCELA + "'"
+		_sQuery += "    AND SE1.E1_TIPO    = '" + SE1 -> E1_TIPO    + "'"
 	   	_aTitulos := U_Qry2Array(_sQuery)
 	   		   	
 	   	if len(_aTitulos) > 0
