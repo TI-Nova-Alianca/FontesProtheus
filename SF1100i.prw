@@ -121,6 +121,7 @@
 // 09/01/2023 - Robert  - Desabilitado aviso de movimentacao de dispensers (em desuso cfe.Fernando Matana)
 //                      - Testa se estah gerando contranota de safra antes de
 //                        chamar algumas rotinas que nao se aplicam a safras.
+// 16/01/2023 - Robert  - Criado parametro VA_RFRSAFR para reembolsar (ou nao) FUNRURAL nas contranotas de safra.
 //
 
 // ------------------------------------------------------------------------------------------------------------------------------
@@ -504,8 +505,7 @@ static function _AjSE2 ()
 	endif
 
 	// Se for uma contranota de safra...
-	if sf1 -> f1_tipo $ "N/C" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) .and. (IsInCallStack ("U_VA_RUSN") .or. IsInCallStack ("U_VA_GNF2"))
-
+	if sf1 -> f1_tipo $ "N/C" .and. sf1 -> f1_formul == "S" .and. ! empty (sf1 -> f1_vasafra) .and. ! empty (sf1 -> f1_vagpsaf) //.and. (IsInCallStack ("U_VA_RUSN") .or. IsInCallStack ("U_VA_GNF2"))
 		if ! ExistBlock ("MTCOLSE2")
 		// Se for uma nota de compra de uva (em 2021 jah vamos gerar contranotas de compra em vez de 'entrada'), ajusta vencimentos.
 			U_Log2 ('info', 'Ajustando datas de vencimento dos titulos de nota de compra de safra.')
@@ -600,62 +600,64 @@ static function _AjSE2 ()
 
 		// Contranotas de compra de safra descontam, por padrao, o FUNRURAL do fornecedor. Mas nao queremos descontar dos associados.
 		// Por isso posiciono no primeiro titulo da nota, que vai ser o titulo pai do FUNRURAL.
-		se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
-		if se2 -> (dbseek (xfilial ("SE2") + sf1 -> f1_fornece + sf1 -> f1_loja + sf1 -> f1_serie + sf1 -> f1_doc, .T.))
-			if se2 -> e2_parcCSS != ''  // Se este titulo gerou FUNRURAL...
-				_oSQL := ClsSQL ():New ()
-				_oSQL:_sQuery := ""
-				_oSQL:_sQuery += "SELECT SE2.R_E_C_N_O_"
-				_oSQL:_sQuery +=      ", E2_VALOR"
-				_oSQL:_sQuery +=      ", dbo.VA_FTIPO_FORNECEDOR_UVA ('" + se2 -> E2_FORNECE + "', '" + se2 -> E2_LOJA + "', '" + dtos (se2-> E2_EMISSAO) + "')"
-				_oSQL:_sQuery +=      ", A2_TIPO"
-				_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE2") + " SE2,"
-				_oSQL:_sQuery +=             RetSQLName ("SA2") + " SA2"
-				_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_  = ''"
-				_oSQL:_sQuery +=   " AND SE2.E2_FILIAL   = '" + xfilial ("SE2") + "'"
-				_oSQL:_sQuery +=   " AND SE2.E2_TITPAI   = '" + se2 -> e2_prefixo + se2 -> e2_num + se2 -> e2_parcela + se2 -> e2_tipo + se2 -> e2_fornece + se2 -> e2_loja + "'"
-				_oSQL:_sQuery +=   " AND SE2.E2_TIPO     = 'TX'"
-				_oSQL:_sQuery +=   " AND SA2.D_E_L_E_T_  = ''"
-				_oSQL:_sQuery +=   " AND SA2.A2_FILIAL   = '" + xfilial ("SA2") + "'"
-				_oSQL:_sQuery +=   " AND SA2.A2_COD      = '" + se2 -> e2_fornece + "'"
-				_oSQL:_sQuery +=   " AND SA2.A2_LOJA     = '" + se2 -> e2_loja + "'
-				_oSQL:Log ()
-				_aRetFUNRU = aclone (_oSQL:Qry2Array (.f., .f.))
-				if len (_aRetFUNRU) > 0 .and. _aRetFUNRU [1, 1] >= 0
-					U_Log2 ('debug', '[' + procname () + ']Achei tit.funrural')
+		if GetMv ("VA_RFRSAFR") == 'S'  // Reembolsa FUNRURAL para associados nas duplicatas de contranotas de compra de safra [S/N]
+			se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
+			if se2 -> (dbseek (xfilial ("SE2") + sf1 -> f1_fornece + sf1 -> f1_loja + sf1 -> f1_serie + sf1 -> f1_doc, .T.))
+				if se2 -> e2_parcCSS != ''  // Se este titulo gerou FUNRURAL...
+					_oSQL := ClsSQL ():New ()
+					_oSQL:_sQuery := ""
+					_oSQL:_sQuery += "SELECT SE2.R_E_C_N_O_"
+					_oSQL:_sQuery +=      ", E2_VALOR"
+					_oSQL:_sQuery +=      ", dbo.VA_FTIPO_FORNECEDOR_UVA ('" + se2 -> E2_FORNECE + "', '" + se2 -> E2_LOJA + "', '" + dtos (se2-> E2_EMISSAO) + "')"
+					_oSQL:_sQuery +=      ", A2_TIPO"
+					_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE2") + " SE2,"
+					_oSQL:_sQuery +=             RetSQLName ("SA2") + " SA2"
+					_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_  = ''"
+					_oSQL:_sQuery +=   " AND SE2.E2_FILIAL   = '" + xfilial ("SE2") + "'"
+					_oSQL:_sQuery +=   " AND SE2.E2_TITPAI   = '" + se2 -> e2_prefixo + se2 -> e2_num + se2 -> e2_parcela + se2 -> e2_tipo + se2 -> e2_fornece + se2 -> e2_loja + "'"
+					_oSQL:_sQuery +=   " AND SE2.E2_TIPO     = 'TX'"
+					_oSQL:_sQuery +=   " AND SA2.D_E_L_E_T_  = ''"
+					_oSQL:_sQuery +=   " AND SA2.A2_FILIAL   = '" + xfilial ("SA2") + "'"
+					_oSQL:_sQuery +=   " AND SA2.A2_COD      = '" + se2 -> e2_fornece + "'"
+					_oSQL:_sQuery +=   " AND SA2.A2_LOJA     = '" + se2 -> e2_loja + "'
+					_oSQL:Log ()
+					_aRetFUNRU = aclone (_oSQL:Qry2Array (.f., .f.))
+					if len (_aRetFUNRU) > 0 .and. _aRetFUNRU [1, 1] >= 0
+						U_Log2 ('debug', '[' + procname () + ']Achei tit.funrural')
 
-					// Se for associado, nao quero descontar dele o FUNRURAL.
-//					if alltrim (upper (_aRetFUNRU [1, 3])) == 'ASSOCIADO' .or. alltrim (upper (_aRetFUNRU [1, 3])) == 'EX ASSOCIADO'
-					if left (_aRetFUNRU [1, 3], 1) $ '1/3'  // 1=ASSOCIADO; 3=EX ASSOCIADO
-						if alltrim (upper (_aRetFUNRU [1, 4])) == 'F'  // Somente associados 'pessoa fisica'. Colleoni, maio/2021
-							// Com o valor do FUNRURAL, soma o valor ao titulo original.
-							begin transaction
+						// Se for associado, nao quero descontar dele o FUNRURAL.
+	//					if alltrim (upper (_aRetFUNRU [1, 3])) == 'ASSOCIADO' .or. alltrim (upper (_aRetFUNRU [1, 3])) == 'EX ASSOCIADO'
+						if left (_aRetFUNRU [1, 3], 1) $ '1/3'  // 1=ASSOCIADO; 3=EX ASSOCIADO
+							if alltrim (upper (_aRetFUNRU [1, 4])) == 'F'  // Somente associados 'pessoa fisica'. Colleoni, maio/2021
+								// Com o valor do FUNRURAL, soma o valor ao titulo original.
+								begin transaction
 
-							reclock ("SE2", .F.)
-							se2 -> e2_valor  += _aRetFUNRU [1, 2]
-							se2 -> e2_saldo  += _aRetFUNRU [1, 2]
-							se2 -> e2_vlcruz += _aRetFUNRU [1, 2]
-							se2 -> e2_vafunru = 'P'  // Vamos [P]agar ao associado.
-							msunlock ()
+								reclock ("SE2", .F.)
+								se2 -> e2_valor  += _aRetFUNRU [1, 2]
+								se2 -> e2_saldo  += _aRetFUNRU [1, 2]
+								se2 -> e2_vlcruz += _aRetFUNRU [1, 2]
+								se2 -> e2_vafunru = 'P'  // Vamos [P]agar ao associado.
+								msunlock ()
 
-							// Grava evento para posterior consulta.
-							_oEvento := ClsEvent ():New ()
-							_oEvento:Alias = 'SE2'
-							_oEvento:Texto = 'Acrescentando vlr.FUNRURAL ($' + cvaltochar (_aRetFUNRU [1, 2]) + ') ao vlr.orig.por que nao queremos descontar do associado.'
-							_oEvento:NFEntrada = se2 -> e2_num
-							_oEvento:SerieEntr = se2 -> e2_prefixo
-							_oEvento:CodEven   = 'SE2003'
-							_oEvento:Fornece   = se2 -> e2_fornece
-							_oEvento:LojaFor   = se2 -> e2_loja
-							_oEvento:ParcTit   = se2 -> e2_parcela
-							_oEvento:Grava ()
+								// Grava evento para posterior consulta.
+								_oEvento := ClsEvent ():New ()
+								_oEvento:Alias = 'SE2'
+								_oEvento:Texto = 'Acrescentando vlr.FUNRURAL ($' + cvaltochar (_aRetFUNRU [1, 2]) + ') ao vlr.orig.por que nao queremos descontar do associado.'
+								_oEvento:NFEntrada = se2 -> e2_num
+								_oEvento:SerieEntr = se2 -> e2_prefixo
+								_oEvento:CodEven   = 'SE2003'
+								_oEvento:Fornece   = se2 -> e2_fornece
+								_oEvento:LojaFor   = se2 -> e2_loja
+								_oEvento:ParcTit   = se2 -> e2_parcela
+								_oEvento:Grava ()
 
-							end transaction
+								end transaction
+							else
+								U_Log2 ('info', 'Fornecedor eh associado, mas nao eh pessoa fisica. Vou deixar o desconto do FUNRURAL.')
+							endif
 						else
-							U_Log2 ('info', 'Fornecedor eh associado, mas nao eh pessoa fisica. Vou deixar o desconto do FUNRURAL.')
+							U_Log2 ('info', 'Fornecedor nao eh associado. Vou deixar o desconto do FUNRURAL.')
 						endif
-					else
-						U_Log2 ('info', 'Fornecedor nao eh associado. Vou deixar o desconto do FUNRURAL.')
 					endif
 				endif
 			endif

@@ -267,11 +267,13 @@ User Function va_rusN (_lSimulNF)
 			u_help ('Erro na funcao de verificacao de variedade com menor valor.',, .t.)
 			_lContinua = .F.
 		endif
+		U_Log2 ('info', '[' + procname () + ']Variedade de menor valor: ' + _sMenorVlr)
 	endif
 
 	// Calcula valor do frete a ser incluido na nota. Roda em funcao separada por que eh comum precisar recalcular depois da safra.
 	if _lContinua
 		_lContinua = U_VA_RUSCF (.T.)
+		U_Log2 ('debug', '[' + procname () + ']Retorno de U_VA_RUSCF: ' + cvaltochar (_lContinua))
 	endif
 
 	// Define qual o grupo para pagamento ao qual esta nota deve ser vinculada.
@@ -293,8 +295,8 @@ User Function va_rusN (_lSimulNF)
 			endif
 			szf -> (dbskip ())
 		enddo
+		U_Log2 ('info', 'Grupo para pagamento: ' + _sGrpPgSaf)
 	endif
-	U_Log2 ('info', 'Grupo para pagamento: ' + _sGrpPgSaf)
 	if _lContinua .and. empty (_sGrpPgSaf)
 		u_help ("Nao ha definicao de grupo para pagamento.",, .T.)
 		_lContinua = .F.
@@ -532,7 +534,7 @@ User Function va_rusN (_lSimulNF)
 				_lContinua = .F.
 			endif
 		else
-			U_Log2 ('debug', '[' + procname () + ']O TES usado (' + _sTES + ') nao gera duplicatas. Vou deixar a variavel _aParPgSaf vazia.')
+			U_Log2 ('aviso', '[' + procname () + ']O TES usado (' + _sTES + ') nao gera duplicatas. Vou deixar a variavel _aParPgSaf (parcelamento) vazia.')
 			_aParPgSaf = {}
 		end
 	endif

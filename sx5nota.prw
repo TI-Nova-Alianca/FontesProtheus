@@ -54,5 +54,6 @@ User Function SX5NOTA ()
 		endif
 	endif
 
+	U_Log2 ('debug', '[' + procname () + ']Saindo com _lRet = ' + cvaltochar (_lRet))
 	U_ML_SRArea (_aAreaAnt)
 Return(_lRet)

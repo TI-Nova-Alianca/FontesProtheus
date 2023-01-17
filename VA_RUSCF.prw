@@ -8,6 +8,7 @@
 // 05/01/2022 - Robert - Tratamento para safra 2022, novo tipo de retorno da funcao de calculo do frete.
 //                     - Gravacao campo ZF_KMFRT.
 // 13/01/2021 - Robert - Inicializacao variavel _aFrtSaf.
+// 17/01/2023 - Robert - QUando prod.propria (sem frete), assumia que era erro no calculo.
 //
 
 // ------------------------------------------------------------------------------------
@@ -105,9 +106,9 @@ User Function va_rusCF (_lRegrav)
 				_nFrtItem = 0
 			endif
 
-			if _nFrtItem == 0
-				_lFrtSafOK = .F.
-			endif
+// teste jah estah no IF anterior.			if _nFrtItem == 0
+// teste jah estah no IF anterior.				_lFrtSafOK = .F.
+// teste jah estah no IF anterior.			endif
 
 			// Posso estar executando para regravar, ou apenas para simulacoes.
 			if _lRegrav

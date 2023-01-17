@@ -1183,7 +1183,7 @@ user function VA_VCpo (_sCampo)
 
 
 		case _sCampo $ "M->D4_OP"
-			if IsInCallStack ("MATA380") .and. m->d4_cod == fBuscaCpo ("SC2", 1, xfilial ("SC2") + m->d4_op, "C2_PRODUTO")
+			if (IsInCallStack ("MATA380") .or. IsInCallStack ("MATA381")) .and. m->d4_cod == fBuscaCpo ("SC2", 1, xfilial ("SC2") + m->d4_op, "C2_PRODUTO")
 				u_help ("Componente nao pode ser igual ao produto final da OP.")
 				_lRet = .F.
 			endif
