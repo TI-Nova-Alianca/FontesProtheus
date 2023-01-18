@@ -13,6 +13,7 @@
 // #Modulos           #COOP
 
 // Historico de alteracoes:
+// 17/01/2023 - RObert - Quando producao propria, gera apenas 1 via do ticket 2a.pesagem.
 //
 
 #Include "Protheus.ch"
@@ -430,13 +431,20 @@ return
 // --------------------------------------------------------------------------
 // Gera (re)impressao do ticket da carga.
 METHOD ImprimeTk (_nQualTk) Class ClsCarSaf
-	
+	local _nQtVias := 0
 	// Se nao especificado qual ticket (1a. ou 2a. pesagem), verifica se quais dados jah tem.
 	if empty (_nQualTk)
 		_nQualTk = iif (::PesoTara != 0, 2, 1)
 	endif
+	
+	// Producao propria: nao preciso entregar segunda via de ticket a ninguem.
+	if ::Fornece == '001369' .and. ::Loja == '02'
+		_nQtVias = 1
+	else
+		_nQtVias := iif (_nQualTk == 1, 1, 2)
+	endif
 
-	U_VA_RusTk (_nQualTk, ::PortImpTk, iif (_nQualTk == 1, 1, 2), {}, 'bematech', .t.)
+	U_VA_RusTk (_nQualTk, ::PortImpTk, _nQtVias, {}, 'bematech', .t.)
 
 return
 

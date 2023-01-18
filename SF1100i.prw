@@ -601,6 +601,7 @@ static function _AjSE2 ()
 		// Contranotas de compra de safra descontam, por padrao, o FUNRURAL do fornecedor. Mas nao queremos descontar dos associados.
 		// Por isso posiciono no primeiro titulo da nota, que vai ser o titulo pai do FUNRURAL.
 		if GetMv ("VA_RFRSAFR") == 'S'  // Reembolsa FUNRURAL para associados nas duplicatas de contranotas de compra de safra [S/N]
+			U_Log2 ('info', '[' + procname () + ']Ajustando parcelas ref.FUNRURAL cfe. parametro VA_RFRSAFR')
 			se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
 			if se2 -> (dbseek (xfilial ("SE2") + sf1 -> f1_fornece + sf1 -> f1_loja + sf1 -> f1_serie + sf1 -> f1_doc, .T.))
 				if se2 -> e2_parcCSS != ''  // Se este titulo gerou FUNRURAL...
@@ -661,6 +662,8 @@ static function _AjSE2 ()
 					endif
 				endif
 			endif
+		else
+			U_Log2 ('info', '[' + procname () + ']Nao vou ajustandr parcelas ref.FUNRURAL cfe. parametro VA_RFRSAFR')
 		endif
 	endif
 return
