@@ -148,6 +148,7 @@
 // 30/08/2022 - Claudia - Incluida a gravação das contas para titulos pagar-me. GLPI: 12280
 // 11/11/2022 - Robert  - Gera títulos e msg adicional cobranca ST para MG (GLPI 12779)
 // 01/12/2022 - Robert  - Gravava E1_COMIS1...5 indevidamente na funcao _TitSTMG().
+// 18/01/2023 - Robert  - Gravar E1_TIPO=TRS e nao mais DP na funcao _TitSTMG() - GLPI 12779
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -851,7 +852,8 @@ static function _TitSTMG ()
 		aAdd(_aAutoSE1, {"E1_PREFIXO"  , sf2 -> f2_serie       , Nil})
 		aAdd(_aAutoSE1, {"E1_NUM"      , sf2 -> f2_doc         , Nil})
 		aAdd(_aAutoSE1, {"E1_PARCELA"  , _sProxParc            , Nil})
-		aAdd(_aAutoSE1, {"E1_TIPO"     , 'DP'                  , Nil})
+	//	aAdd(_aAutoSE1, {"E1_TIPO"     , 'DP'                  , Nil})
+		aAdd(_aAutoSE1, {"E1_TIPO"     , 'TRS'                 , Nil})
 		aAdd(_aAutoSE1, {"E1_NATUREZ"  , '110198'              , Nil})
 		aAdd(_aAutoSE1, {"E1_CLIENTE"  , sf2 -> f2_cliente     , Nil})
 		aAdd(_aAutoSE1, {"E1_LOJA"     , sf2 -> f2_loja        , Nil})
