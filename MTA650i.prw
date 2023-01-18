@@ -3,7 +3,14 @@
 // Data.......: 26/06/2014
 // Descricao..: P.E. apos inclusao de ordem de producao.
 //              Criado inicialmente para gerar etiquetas para pallets.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #ponto_de_entrada
+// #Descricao         #P.E. apos inclusao de ordem de producao
+// #PalavasChave      #OP #ordem_producao
+// #TabelasPrincipais #SC2
+// #Modulos           #EST #PCP
+
 // Historico de alteracoes:
 // 27/01/2015 - Robert - Passa a validar parametros VA_ALMFULP, VA_ALMFULT, VA_ALMFULT
 // 27/04/2015 - Robert - Funcao de alteracao de almox. dos empenhos passada do MTA710OPSC para ca.
@@ -12,6 +19,7 @@
 // 05/10/2016 - Robert - Passa a verificar campo B1_APROPRI antes de alterar o almox. dos empenhos.
 // 11/05/2017 - Robert - Funcao de ajuste de almox. dos empenhos passa a ser externa.
 // 24/08/2017 - Robert - Tratamento para diferenciar ordens de manutencao.
+// 17/01/2023 - Robert - Atualiza FullWMS e gera etiquetas somente na filial 01.
 //
 
 // ------------------------------------------------------------------------------------
@@ -24,13 +32,13 @@ User Function MTA650I ()
 		_AtuEmp ()
 	endif
 
-	// Integracao com Fullsoft
-	if sc2 -> c2_item != 'OS'
+	// Integracao com Fullsoft (somente na filial 01)
+	if cFilAnt == '01' .and. sc2 -> c2_item != 'OS'
 		_AtuFull ()
 	endif
 
-	// Gera etiquetas para pallets.
-	if sc2 -> c2_item != 'OS'
+	// Gera etiquetas para pallets (somente na filial 01)
+	if cFilAnt == '01' .and. sc2 -> c2_item != 'OS'
 		_GeraEtq ()
 	endif
 
