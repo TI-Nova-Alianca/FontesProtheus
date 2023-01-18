@@ -3,14 +3,14 @@
 // Data.......: 01/09/2003
 // Cliente....: Alianca
 // Descricao..: Emissao de boletos bancarios
-//
+
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Processamento
 // #Descricao         #Geracao e impressao de boletos de cobranca.
 // #PalavasChave      #boleto #nosso_numero #cobranca
 // #TabelasPrincipais 
 // #Modulos           #FAT #FIN
-//
+
 // Historico de alteracoes:
 // 19/02/2008 - Robert  - Ajustes calculo Sicredi
 // 10/03/2008 - Robert  - Nao imprimia desconto financeiro.
@@ -97,7 +97,9 @@
 // 09/11/2022 - Claudia - Tratamento de parametros de agencia e conta. 
 // 16/11/2022 - Claudia - Alterada a nomenclatura das perguntas, não separando mais por filial.
 // 18/11/2022 - Claudia - Incluida gravação de parametros pela nova função SetMVValue. GLPI: 12801
+// 18/01/2023 - Robert  - Nao gera boleto tipo TRS quando em modo de impressao automatica (GLPI 12779).
 //
+
 // --------------------------------------------------------------------------------------------------------------
 User Function ML_BOLLSR (_aBoletos)
 	local _nBoleto := 0
@@ -188,6 +190,10 @@ static function _Gera (_lAutomat)
 	cFilter    += "E1_NUM>='" + mv_par03 + "'.and."
 	cFilter    += "E1_NUM<='" + mv_par04 + "'.and."
 	cFilter    += "E1_SALDO>0"
+	if _lAuto
+		U_Log2 ('info', '[' + procname () + ']GLPI 12779: Como estou em modo de impressao automatica (provavelmente foi chamado automaticamente apos a geracao de notas), nao vou imprimir boletos de ressarcimento de ST.')
+		cFilter    += ".and.E1_TIPO!='TRS'"
+	endif
 	
 	IndRegua("SE1", cIndexName, cIndexKey,, cFilter, "Aguarde. Selecionando Registros....")
 	DbSelectArea("SE1")
