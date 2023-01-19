@@ -42,6 +42,7 @@
 // 21/09/2022 - Robert - Desabilitadas algumas partes das entradas (melhorias para integracao com ZAG)
 //                     - Passa a usar ClsAviso() para as notificacoes.
 // 13/12/2022 - Robert - Habilitada liberacao de transf.estq gerada pelo ZAG.
+// 19/01/2023 - Robert - ClsTrEstq:Libera() nao tenta mais executar a transferencia no final.
 //
 
 #Include "Protheus.ch"
@@ -149,6 +150,7 @@ static function _Entradas ()
 					_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
 					_oTrEstq:Etiqueta = za1 -> za1_codigo
 					_oTrEstq:Libera (.F., 'FULLWMS')
+					_oTrEstq:Executa ()  // Tenta executar, pois as liberacoes podem ter tido exito.
 					if _oTrEstq:Executado == 'S'
 						_AtuEntr ((_sAliasQ) -> entrada_id, '3')  // Atualiza a tabela do Fullsoft como 'executado no ERP'
 					elseif _oTrEstq:Executado == 'E'
@@ -783,6 +785,7 @@ static function _Saidas ()
 					// Chama a rotina de liberacao do docto. Se estiver em condicoes, a transferencia jah serah executada.
 					u_log2 ('info', 'Chamando liberacao do ZAG')
 					_oTrEstq:Libera (.F., 'FULLW')
+					_oTrEstq:Executa ()  // Tenta executar, pois as liberacoes podem ter tido exito.
 					if _oTrEstq:Executado == 'S'
 						_AtuSaid ((_sAliasQ) -> saida_id, '3')  // Atualiza a tabela do Fullsoft como 'executado no ERP'
 					elseif _oTrEstq:Executado == 'E'

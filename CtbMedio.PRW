@@ -15,16 +15,11 @@
 
 // --------------------------------------------------------------------------
 User function CtbMedio (_lSoAjuste)
-//	local _nLock     := 0
-//	local _lContinua := .T.
-	u_logIni ()
-	u_logId ()
 	
 	If _lSoAjuste != NIL .and. _lSoAjuste // Chamado nas rotinas MA330Fim e MA331Fim
 		ML_CNT2 ()
 	EndIf
 
-	u_logFim ()
 Return
 // --------------------------------------------------------------------------
 // Rotina para gravação do campo CT2_ROTINA
@@ -44,7 +39,6 @@ Static Function ML_CNT2()
 		endif
 		_oSQL:_sQuery +=    " AND CT2_DATA   = '" + Dtos(mv_par01) + "'"
 		_oSQL:_sQuery +=    " AND CT2_ROTINA IN ('MATA330   ', 'MTA330C   ')"
-
 		_oSQL:Log ()
 		if ! _oSQL:Exec ()
 			if type ("_oBatch") == 'O'

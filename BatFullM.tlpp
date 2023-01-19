@@ -12,6 +12,7 @@
 // #Modulos           #EST
 
 // Historico de alteracoes:
+// 19/01/2023 - Robert - ClsTrEstq:Libera() nao tenta mais executar a transferencia no final.
 //
 
 #Include "Protheus.ch"
@@ -88,6 +89,7 @@ User Function BatFullM ()
 				// Chama a rotina de liberacao do docto. Se estiver em condicoes, a transferencia jah serah executada.
 				u_log2 ('debug', 'Chamando liberacao do ZAG')
 				_oTrEstq:Libera (.F., 'FULLWMS')
+				_oTrEstq:Executa ()  // Tenta executar, pois as liberacoes podem ter tido exito.
 			endif
 		otherwise
 			u_help ("Sem tratamento para movimentos tipo '" + (_sAliasQ) -> tipo + "' lidos na tabela tb_wms_movimentacoes do FullWMS.", _oSQL:_sQuery, .t.)

@@ -34,6 +34,7 @@
 // 09/11/2022 - Robert  - Nao alimentava numero da etiqueta no metodo GeraAtrib.
 // 12/12/2022 - Robert  - Implementados metodos SomaMsg e GravaErro.
 // 14/12/2022 - RObert  - Gravacao campo ZAG_EREXEC e melhoria mensagens de log.
+// 19/01/2023 - Robert  - Metodo Libera() nao tenta mais executar a transferencia no final.
 //
 
 // ------------------------------------------------------------------------------------
@@ -75,6 +76,8 @@ CLASS ClsTrEstq
 	public data FWProdOrig // Indica se o produto origem eh controlado pelo FullWMS
 	public data FWProdDest // Indica se o produto destino eh controlado pelo FullWMS
 	public data ImprEtq    // ID da immpressora (caso seja necessario gerar e imprimir etiqueta) 
+//	public data LLibDst    // Lista de nomes dos liberadores do almox.destino
+//	public data LLibOri    // Lista de nomes dos liberadores do almox.origem
 	public data LibNaIncl  // Indica se, no momento da inclusao do registro no ZAG, jah deve tentar fazer as liberacoes.
 	public data LoteOrig   // Lote origem (quando produto tiver controle de lote)
 	public data LoteDest   // Lote destino (quando produto tiver controle de lote)
@@ -301,6 +304,17 @@ METHOD Executa (_lMensagem) Class ClsTrEstq
 		_sMsgInt += "Esta transf.deve ser executada na filial '" + ::FilOrig + "'."
 		_lContinua = .F.
 	endif
+/*
+	// Tenho alguns casos em que o responsavel eh o FullWMS e este jah executou
+	// a tarefa, mas por algum motivo nao peguei o retorno e fiquei aguardando
+	// a liberacao. Entao tentarei novamente agora, para nao ficar travando o processo...
+	if _lContinua
+		if (empty (::UsrAutOri) .and. ::AlmOrig == '01') .or. (empty (::UsrAutDst) .and. ::AlmDest == '01')
+			U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Almox.envolvendo Full. Tentarei liberar novamente.')
+			::Libera (.F., 'FullWMS')
+		endif
+	endif
+*/
 	if _lContinua .and. empty (::UsrAutOri)
 		_sMsgInt += "Falta liberacao do responsavel pelo almox origem"
 		_lContinua = .F.
@@ -379,6 +393,8 @@ METHOD GeraAtrib (_sOrigem) class ClsTrEstq
 	::FWProdDest = .F.
 	::ImprEtq    = ''
 	::LibNaIncl  = .T.
+//	::LLibDst    = ''
+//	::LLibOri    = ''
 	::LoteOrig   = ''
 	::LoteDest   = ''
 //	::MsgErro    = iif (valtype (::MsgErro) == 'U', '', ::MsgErro)  // Posso estar atualizando apos alguma operacao e nao quero perder o historico.
@@ -947,6 +963,7 @@ METHOD Grava () Class ClsTrEstq
 	if _lRet
 		if ::LibNaIncl
 			::Libera (.F.)
+			::Executa ()  // Tenta executar, pois as liberacoes podem ter tido exito.
 		endif
 	endif
 
@@ -1039,9 +1056,9 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 		//u_log2 ('debug', 'Liberadores alm ' + ::AlmDest + '(destino):' + alltrim (_aLib [1, 2]))
 		//u_log2 ('debug', 'Testando com usuario ' + _sUserName)
 		if empty (::UsrAutOri) .and. alltrim (upper (_sUserName)) $ _aLib [1, 1]
-			u_log2 ('info', 'Usuario atual tem liberacao para o almox. origem')
+			u_log2 ('info', 'Usuario ' + _sUserName + ' tem liberacao para o almox. origem')
 			if ::FWProdOrig .and. ::AlmUsaFull (::AlmOrig) .and. _sUserName != 'FULLWMS'
-				u_log2 ('aviso', '... mas o produto usa Full e o AX origem eh controlado pelo FullWMS')
+				U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']... mas o produto usa Full e o AX origem eh controlado pelo FullWMS')
 				_sMsg = "Produto '" + alltrim (::ProdOrig) + "' tem controle via FullWMS no AX '" + ::AlmOrig + "' e nao deve ser movimentado manualmente."
 				::SomaMsg (_sMsg)
 				_lNenhuma = .F.
@@ -1055,9 +1072,9 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 		endif
 
 		if empty (::UsrAutDst) .and. alltrim (upper (_sUserName)) $ _aLib [1, 2]
-			u_log2 ('info', 'Usuario atual tem liberacao para o almox. destino')
+			u_log2 ('info', 'Usuario ' + _sUserName + ' tem liberacao para o almox. destino')
 			if ::FWProdDest .and. ::AlmUsaFull (::AlmDest) .and. _sUserName != 'FULLWMS'
-				u_log ('aviso', '... mas o produto usa Full e o AX destino eh controlado pelo FullWMS')
+				U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']... mas o produto usa Full e o AX destino eh controlado pelo FullWMS')
 				_sMsg = "Produto '" + alltrim (::ProdDest) + "' tem controle via FullWMS no AX '" + ::AlmDest + "' e nao deve ser movimentado manualmente."
 				::SomaMsg (_sMsg)
 				_lNenhuma = .F.
@@ -1091,7 +1108,7 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 	::GeraAtrib ("ZAG")
 
 	// Tenta executar a transferencia
-	::Executa (.F.)
+//	::Executa (.F.)
 
 //	u_logFim (GetClassName (::Self) + '.' + procname ())
 return

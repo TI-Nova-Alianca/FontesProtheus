@@ -109,6 +109,7 @@
 // 08/12/2022 - Robert  - Criada acao TransfEstqExecuta.
 // 13/12/2022 - Robert  - Criada acao TransfEstqNegar.
 // 09/01/2023 - Robert  - Nao envia mais o cod.da impr. de ticket para a funcao U_GeraSZE.
+// 19/01/2023 - Robert  - ClsTrEstq:Libera() nao tenta mais executar a transferencia no final.
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -843,6 +844,7 @@ static function _TrEstq (_sQueFazer)
 					do case
 					case _sQueFazer == 'A'  // Autorizar
 						_oTrEstq:Libera ()
+						_oTrEstq:Executa ()  // Tenta executar, pois as liberacoes podem ter tido exito.
 						_sMsgRetWS = _oTrEstq:UltMsg
 					case _sQueFazer == 'D'  // Deletar
 						if ! _oTrEstq:Exclui ()
