@@ -97,7 +97,7 @@
 // 09/11/2022 - Claudia - Tratamento de parametros de agencia e conta. 
 // 16/11/2022 - Claudia - Alterada a nomenclatura das perguntas, não separando mais por filial.
 // 18/11/2022 - Claudia - Incluida gravação de parametros pela nova função SetMVValue. GLPI: 12801
-// 18/01/2023 - Robert  - Nao gera boleto tipo IMP quando em modo de impressao automatica (GLPI 12779).
+// 18/01/2023 - Robert  - Nao gera boleto tipo IMP  quando em modo de impressao automatica (GLPI 12779).
 //
 
 // --------------------------------------------------------------------------------------------------------------

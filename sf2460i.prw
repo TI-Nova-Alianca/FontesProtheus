@@ -148,7 +148,7 @@
 // 30/08/2022 - Claudia - Incluida a gravação das contas para titulos pagar-me. GLPI: 12280
 // 11/11/2022 - Robert  - Gera títulos e msg adicional cobranca ST para MG (GLPI 12779)
 // 01/12/2022 - Robert  - Gravava E1_COMIS1...5 indevidamente na funcao _TitSTMG().
-// 18/01/2023 - Robert  - Gravar E1_TIPO=IMP e nao mais DP na funcao _TitSTMG() - GLPI 12779
+// 18/01/2023 - Robert  - Gravar E1_TIPO=IMP  e nao mais DP na funcao _TitSTMG() - GLPI 12779
 //
 
 // ---------------------------------------------------------------------------------------------------------------
