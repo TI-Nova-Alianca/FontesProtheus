@@ -166,7 +166,7 @@ User Function va_rus ()
 		aadd (_aMenuOut, {"&Ticket 2a.pesag",           "U_VA_RUSOO ('Tk2Pes')",0,4})
 		aadd (_aMenuOut, {"&Impr.Recibo",               "U_VA_RUSR ()", 0,4})
 		aadd (_aMenuOut, {"&Cons.Aglutinacoes",         "U_VA_RUSCA (1, .F.)",0,4})
-		aadd (_aMenuOut, {"&Reenviar p/grau",           "U_VA_RUSRG ()", 0,4})
+		aadd (_aMenuOut, {"&Reenviar p/grau",           "U_VA_RUSOO ('ReenviarParaGrau')",0,4})
 		aadd (_aMenuOut, {"&Rastrear estoque",          "U_VA_RUSRC ()", 0,4})
 		aadd (_aMenuOut, {"&NF remessa coop",           "U_VA_RUSNR ('A')", 0,4})
 		aadd (_aMenuOut, {"Controle Portaria",          "U_VA_CPORT ()", 0,4})
@@ -248,6 +248,9 @@ user function VA_RUSOO (_sQueFazer)
 		else
 			SpedNFe2Mnt ()
 		endif
+
+	case _sQueFazer == upper ('ReenviarParaGrau')
+		_oCarSaf:AtuZZA (.T.)
 
 	otherwise
 		u_help ("Acao desconhecida: " + cvaltochar (_sQueFazer),, .t.)
