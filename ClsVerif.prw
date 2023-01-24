@@ -81,15 +81,17 @@
 // 18/11/2022 - Robert  - Criada verificacao 92.
 // 26/11/2022 - Robert  - Criado atributo :ComTela
 // 15/12/2022 - Claudia - Incluido parametros na verificação 28. GLPI: 12938
+// 23/01/2023 - Robert  - Criada verificacao 93.
 //
-// --------------------------------------------------------------------------------------------------------------------
+
 #include "protheus.ch"
 
-// Classe usada para operacoes genericas com arrays.
+// --------------------------------------------------------------------------------------------------------------------
+// Classe usada para verificacoes de inconsistencias em geral.
 CLASS ClsVerif
 
 	// Declaracao das propriedades da Classe
-	data aHeader     // Para o caso de exportar no formato aHeader/aCols	
+	data aHeader     // Para o caso de exportar no formato aHeader/aCols
 	data Ativa       // Se encontra-se ativa (.T. / .F.)
 	data ComTela     // Indica se mostra (.T.) mensagens em tela (posso estar usando em batch)
 	data Descricao   // Descricao da verificacao
@@ -98,8 +100,8 @@ CLASS ClsVerif
 	data Filiais     // String contendo as filiais (*=todas) para as quais a consulta deve ser habilitada. Ex.: 01/03/05
 	data GrupoPerg   // Grupo de perguntas no SX1, quando houver.
 	data LiberZZU    // Grupos da tabela ZZU que podem acessar esta consulta. Se vazio, estah liberada para todos.
-	data MesAntEstq  // Mes ja fechado no estque.
-	data MesAtuEstq  // Mes em aberto no estque.
+	data MesAntEstq  // Mes ja fechado no estoque.
+	data MesAtuEstq  // Mes em aberto no estoque.
 	data Numero      // Numero (codigo) da verificacao
 	data Param01     // NAO alterar diretamente. Usar o metodo SetParam().
 	data Param02     // NAO alterar diretamente. Usar o metodo SetParam().
@@ -118,7 +120,7 @@ CLASS ClsVerif
 	data Setores     // String com os setores da empresa que teriam interesse na verificacao.
 	data Sugestao    // Sugestao de correcao a ser mostrada para o usuario.
 	data UltMsg      // Ultima mensagem de erro
-	data UltVerif    // Numero da ultima verificacao. Deve ser atualizado sempre que for criada uma nova verificacao.
+	data UltVerif    // Numero da ultima verificacao.
 	data ViaBatch    // Indica se esta verificacao deve ser executada via batch ou apenas manualmente.
 
 	// Declaracao dos Metodos da Classe
@@ -3476,6 +3478,35 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=  " WHERE G.D_E_L_E_T_ = ''"
 			::Query +=    " AND G.GR__MSBLQL != '1'"
 			::Query +=    " AND G.GR__TIMEOUT > 0"
+
+		case ::Numero == 93
+			::Setores   = 'CUS/CTB/INF'
+			::Descricao = "Nao levou custo correto da NF para a OP"
+			::Sugestao  = "Custo dos movimentos RE5 na tabela SD3 deve ser igual ao custo da NF que os gerou. Tente refazer custo das entradas."
+			::GrupoPerg = "U_VALID028"
+			::ValidPerg (_lDefault)
+			::QuandoUsar = "Apos rodar o custo medio."
+			::Query := ""
+			::Query += " WITH C AS ("
+			::Query += " SELECT D3_FILIAL, D3_EMISSAO, D3_DOC, D3_FORNDOC"
+			::Query +=       ", D3_LOJADOC, D3_NUMSEQ, D3_COD, D3_QUANT, D3_CUSTO1, SD1.D1_CUSTO"
+			::Query +=   " FROM " + RetSQLName ("SD3") + " SD3 "
+			::Query +=      " LEFT JOIN " + RetSQLName ("SD1") + " SD1 "
+			::Query +=        " ON (SD1.D_E_L_E_T_ = ''"
+			::Query +=        " AND SD1.D1_FILIAL  = SD3.D3_FILIAL"
+			::Query +=        " AND SD1.D1_DOC     = SD3.D3_DOC"
+			::Query +=        " AND SD1.D1_NUMSEQ  = SD3.D3_NUMSEQ"
+			::Query +=        " AND SD1.D1_FORNECE = SD3.D3_FORNDOC"
+			::Query +=        " AND SD1.D1_LOJA    = SD3.D3_LOJADOC)"
+			::Query +=  " WHERE SD3.D_E_L_E_T_ = ''"
+			::Query +=    " AND SD3.D3_ESTORNO != 'S'"
+			::Query +=    " AND D3_EMISSAO BETWEEN '" + dtos (::Param01) + "' AND '" + dtos (::Param02) + "'"
+			::Query +=    " AND D3_CF = 'RE5'"
+			::Query += ")"
+			::Query += " SELECT *"
+			::Query +=   " FROM C"
+			::Query +=  " WHERE D3_CUSTO1 != D1_CUSTO OR D1_CUSTO IS NULL"
+			::Query +=  " ORDER BY D3_FILIAL, D3_EMISSAO, D3_DOC, D3_COD"
 
 		otherwise
 			::UltMsg = "Verificacao numero " + cvaltochar (::Numero) + " nao definida."

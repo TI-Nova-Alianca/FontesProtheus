@@ -32,24 +32,28 @@
 //                      - Funcao Va_McPed() tem novos parametros
 // 10/08/2020 - Robert  - Eliminadas linhas comentariadas, melhoria historico alteracoes.
 //                      - Inseridas tags para catalogacao de fontes.
+// 23/01/2023 - Robert  - Tratamento para medicao de grau (usado em vendas de mosto durante a safra).
 //
+
 // --------------------------------------------------------------------------
 User Function A410CONS()
 	Local _aRet := {}
 	aadd( _aRet, {"LANDSCAPE",  {|| _Menu ()}, "Especificos"})
 Return(_aRet)
-//
+
+
 // --------------------------------------------------------------------------
 // Menu
 static function _Menu ()
 	local _aF3      := {}
 	local _nF3      := 0
 	local _aCols    := {}
-	local _aColsLib := {}
 	local _aAmbAnt  := U_SalvaAmb ()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _aNotas   := {}
 	local _sQuery   := {}
+	local _aColsLib := {}
+	local _aColsZZA := {}
 
 	// Colunas para menu de opcoes
 	aadd (_aCols, {1, "Opcao",     100, ""})
@@ -68,7 +72,9 @@ static function _Menu ()
 	if type ("_sCodRep") != "C"  // Representantes externos nao visualizam este botao.
 		aadd (_aF3, {"Imprimir DANFe",             "DANFe"})
 	endif
-	aadd (_aF3, {"Cancelar",                   "Cancelar"})
+	aadd (_aF3, {"Enviar para medicao de grau",   "MedGrau"})
+	aadd (_aF3, {"Pegar retorno medicao de grau", "RetGrau"})
+	aadd (_aF3, {"Cancelar",                      "Cancelar"})
 
 	_nF3 = U_F3Array (_aF3, "Opcoes", _aCols, oMainWnd:nClientWidth / 3, oMainWnd:nClientHeight / 1.5, "", "", .F.)
 
@@ -109,6 +115,22 @@ static function _Menu ()
 					U_ImpDanfe ('2', _aNotas [_nNota, 2], _aNotas [_nNota, 2], _aNotas [_nNota, 3])
 				endif
 			endif
+
+		case _nF3 != 0 .and. _aF3 [_nF3, 2] == "MedGrau"
+			if U_MsgYesNo ("Esta rotina disponibiliza este pedido para o programa de medicao de grau de uva, visando medir o grau de mosto que vai ser vendido/transferido. Confirma?")
+				_EnviaZZA ()
+			endif
+
+		case _nF3 != 0 .and. _aF3 [_nF3, 2] == "RetGrau"
+			if ! altera
+				u_help ("Funcionalidade disponivel somente em nodo de alteracao do pedido.",, .t.)
+			else
+				_RetZZA ()
+				// Como o ponto de entrada faz um backup do aCols, preciso pega a posicao atual
+				// para restaurar depois do backup original.
+				_aColsZZA := aclone (aCols)
+			endif
+
 	endcase
 
 	U_ML_SRArea (_aAreaAnt)
@@ -118,10 +140,14 @@ static function _Menu ()
 	if len (_aColsLib) > 0
 		aCols := aclone (_aColsLib)
 	endif
+	if len (_aColsZZA) > 0
+		aCols := aclone (_aColsZZA)
+	endif
 return
-//
+
+
 // --------------------------------------------------------------------------
-// Funcao que Processa o Saldo Limite Cliente                   
+// Funcao que Processa o Saldo Limite Cliente
 User Function _SldLimite(_xCLIENTE,_xLOJA,_xTIPO)
 	Local _aArea     := GetArea()
 	Local _aAreaSA1  := SA1->(GetArea())
@@ -175,3 +201,80 @@ User Function _SldLimite(_xCLIENTE,_xLOJA,_xTIPO)
 	RestArea(_aAreaSA1)
 	RestArea(_aArea)
 Return(.T.)
+
+
+// --------------------------------------------------------------------------
+// Gera uma carga de safra ficticia, com dados do pedido de venda atual, para
+// poder ser enviada ao programa que faz a medicao de grau.
+static function _EnviaZZA ()
+	local _oCarSaf  := NIL
+	local _aAreaAnt := U_ML_SRArea ()
+	local _nLinha   := 0
+	
+	_oCarSaf := ClsCarSaf ():New ()
+	_oCarSaf:Filial     = sc5 -> c5_filial
+	_oCarSaf:Safra      = U_IniSafra ()
+	_oCarSaf:Carga      = 'PV'
+	_oCarSaf:StatusCar  = '1'
+	_oCarSaf:PesoBruto  = M->C5_PBRUTO
+	_oCarSaf:PesoTara   = 0 //M->C5_PBRUTO - M->C5_PESOL
+	_oCarSaf:NomeFornec = fBuscaCpo ("SA1", 1, xfilial ("SA1") + sc5 -> c5_cliente + sc5 -> c5_lojacli, "A1_NOME")
+	for _nLinha = 1 to len (aCols)
+		if ! GDDeleted (_nLinha)
+			_oCarSaf:AddItem ()
+			atail (_oCarSaf:ItDescri)  = GDFieldGet ("C6_DESCRI", _nLinha)
+			atail (_oCarSaf:ItItem)    = m->c5_num + '/' + GDFieldGet ("C6_ITEM", _nLinha) // Numero pedido nao cabe no ZZA_CARGA
+			atail (_oCarSaf:ItProduto) = GDFieldGet ("C6_PRODUTO", _nLinha)
+		endif
+	next
+	_oCarSaf:Log ()
+	_oCarSaf:AtuZZA (.T.)
+	u_help ("Processo finalizado.")
+
+	U_ML_SRArea (_aAreaAnt)
+return
+
+
+// --------------------------------------------------------------------------
+// Faz leitura da tabela de integracao com o programa de medicao de grau,
+// procurando registros relacionados ao pedido atual.
+static function _RetZZA ()
+	local _aAreaAnt  := U_ML_SRArea ()
+	local _nLinha    := 0
+	local _sChaveZZA := ''
+	local _sDescri   := ''
+	local _sStrGrau  := ''
+
+	zza -> (dbsetorder (1))  // ZZA_FILIAL, ZZA_SAFRA, ZZA_CARGA, ZZA_PRODUT
+
+	for _nLinha = 1 to len (aCols)
+		
+		// Usa chave de pesquisa equivalente a que usa no momento do envio.
+		_sChaveZZA = xfilial ("SC6") + U_IniSafra () + 'PV  ' + U_TamFixo (m->c5_num + '/' + GDFieldGet ("C6_ITEM", _nLinha), 15)
+		U_Log2 ('debug', '[' + procname () + ']Pesqusando ZZA com >>' + _sChaveZZA + '<<')
+		if ! zza -> (dbseek (_sChaveZZA, .F.))
+			u_log2 ('info', '[' + procname () + ']Nao encontrei ZZA.')
+			u_help ("Nao localizado nenhum registro de medicao de grau para o item " + GDFieldGet ("C6_ITEM", _nLinha),, .t.)
+		else
+			if zza -> zza_status != '3'
+ 				u_help ("Item " + GDFieldGet ("C6_ITEM", _nLinha) + ": somente medicoes de grau com status 3 (finalizado) serao aceitos. Status atual: " + zza -> zza_status)
+			else
+				// Corta final da descricao, caso necessario, para caber o grau.
+				_sStrGrau = ' Gr:' + transform (zza -> zza_grau, "@E 99.9")
+				if ! _sStrGrau $ GDFieldGet ("C6_DESCRI", _nLinha)  // Para nao concatenar 2 vezes.
+					_sDescri = left (GDFieldGet ("C6_DESCRI", _nLinha), TamSX3 ("C6_DESCRI")[1] - len (_sStrGrau))
+					_sDescri = alltrim (_sDescri) + _sStrGrau
+					U_Log2 ('debug', '[' + procname () + ']ficou assim:' + _sDescri)
+					GDFieldPut ("C6_DESCRI", _sDescri, _nLinha)
+				else
+					U_Log2 ('debug', '[' + procname () + ']STR do grau jah estava na descricao')
+				endif
+	//			U_Log2 ('debug', '[' + procname () + ']' + GDFieldGet ("C6_DESCRI", _nLinha))
+			endif
+		endif
+	next
+	GetDRefresh ()  // Atualiza tela do pedido.
+	u_help ("Processo finalizado.")
+
+	U_ML_SRArea (_aAreaAnt)
+return

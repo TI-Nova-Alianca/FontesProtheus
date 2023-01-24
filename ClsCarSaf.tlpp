@@ -13,7 +13,9 @@
 // #Modulos           #COOP
 
 // Historico de alteracoes:
-// 17/01/2023 - RObert - Quando producao propria, gera apenas 1 via do ticket 2a.pesagem.
+// 17/01/2023 - Robert - Quando producao propria, gera apenas 1 via do ticket 2a.pesagem.
+// 20/01/2023 - Robert - Comecado a gravar arrays de itens (ItItem, ItProduto, ...)
+// 23/01/2023 - Robert - Criado metodo AtuZZA.
 //
 
 #Include "Protheus.ch"
@@ -29,6 +31,7 @@ CLASS ClsCarSaf
 
 	// Declaracao das propriedades da Classe
 	public  data aIntegGrau  // Registros referentes a esta carga na tabela ZZA (integracao com leitor de grau)
+	public  data Aglutin     // ZE_AGLUTIN - Situacao quanto a aglutinacao de cargas: O=Origem (aglutinada em outra carga);D=Destino (aglutinadora);N=Nenhuma(carga normal)
 	public  data Carga       // ZE_CARGA
 	public  data CXouGranel  // Indica se recebe em caixas ou a granel (tombador)
 	public  data Compart1    // ZE_CargaC1 - Carga compartilhada com outro fornecedor
@@ -36,19 +39,27 @@ CLASS ClsCarSaf
 	public  data Contranota  // ZE_NFGER
 	public  data Filial      // ZE_FILIAL
 	public  data Fornece     // ze_assoc
-	public  data PortImpTk   // Porta / caminho para impressao do ticket
+	public  data ItDescri    // Array de Itens da carga - Descricao do produto
+	public  data ItGrau      // Array de Itens da carga - zf_grau
+	public  data ItItem      // Array de Itens da carga - zf_item
+	public  data ItProduto   // Array de Itens da carga - zf_produto
 	public  data Loja        // ze_lojasso
+	public  data NomeFornec  // A2_NOME - nome do fornecedor
 	public  data PesoBruto   // ZE_PESOBRU
 	public  data PesoTara    // ZE_PESOTAR
+	public  data PortImpTk   // Porta / caminho para impressao do ticket
 	public  data RegSZE      // recno() da tabela SZE.
 	public  data Safra       // ZE_SAFRA
 	public  data Segregada   // ZE_SEGREG
 	public  data SerieCtrn   // ze_serie
+	public  data StatusCar   // ze_status
 	public  data UltMsg      // Ultima mensagem gerada
 
 	// Declaracao dos Metodos da classe
 	public METHOD New ()
-	public METHOD AtuAgenda ()
+	public METHOD AddItem ()    // Adiciona uma posicao nas arrays de itens
+	public METHOD AtuAgenda ()  // Envia atualizacao para o sistema de agendamento
+	public METHOD AtuZZA ()     // Envia atualizacao para o programa de medicao de grau
 	public METHOD DefImprTk ()  // Define porta para impressao do ticket
 	public METHOD GeraAtrib ()
 	public METHOD EnderEstq ()  // Enderecar (ou estornar) estoque
@@ -82,6 +93,16 @@ METHOD New (_nNumReg) Class ClsCarSaf
 	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Instanciada carga p/ Filial ' + ::Filial + ' Safra ' + ::Safra + ' Carga ' + ::Carga + ' de ' + ::Fornece + '/' + ::Loja)
 	U_ML_SRArea (_aAreaAnt)
 Return ::self
+
+
+// --------------------------------------------------------------------------
+// Adiciona uma posicao em cada array de itens.
+METHOD AddItem () Class ClsCarSaf
+	aadd (::ItItem,    '')
+	aadd (::ItProduto, '')
+	aadd (::ItDescri,  '')
+	aadd (::ItGrau,    '')
+return
 
 
 // --------------------------------------------------------------------------
@@ -166,6 +187,104 @@ METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
 		endif
 	endif
 return _lRetWSNA
+
+
+// --------------------------------------------------------------------------
+// Envia atualizacao para o sistema de medicao de grau.
+METHOD AtuZZA (_lReenvio) Class ClsCarSaf
+	local _aAreaAnt  := U_ML_SRArea ()
+	local _lRetAtZZA := .T.
+	local _nItem     := 0
+	local _sChaveZZA := ''
+
+	// Possiveis situacoes para o campo ZZA_STATUS:
+	// 0 = carga cadastrada no Protheus, ainda nao pesada. Programa BL01 ignora-a;
+	// 1 = carga com 1a.pesagem pronta, pode descarregar. Programa BL01 lista-a para o usuario ao clicar no botao 'Filial/Safra/Carga';
+	// 2 = carga selecionada pelo usuario no programa BL01. Estah pronto para medir grau, ou jah medindo;
+	// 3 = usuario clicou botao 'Armazenar' no programa BL01 e jah gravou tambem o ZZA_GRAU.
+	// M = usuario (do Protheus) finalizou manualmente (ZZA_STATUS nao estava 3 por algum motivo).
+	// C = Carga cancelada no Protheus
+
+	if _lRetAtZZA .and. ::PesoBruto <= 0
+		u_help ("Carga ainda nao tem peso bruto. Efetue, antes, a primeira pesagem.",, .t.)
+		_lRetAtZZA = .F.
+	endif
+	if _lRetAtZZA .and. ::StatusCar $ 'R/N/D/C'  // 1=Primeira pesagem OK;2=Segunda pesagem OK;R=Recibo impresso;N=NF gerada;D=Redirecionada;C=Cancelada
+		u_help ("Status da carga nao permite mais ser reenviada para leitura de grau.",, .t.)
+		_lRetAtZZA = .F.
+	endif
+	if _lRetAtZZA .and. ::Aglutin $ 'D/O'
+		u_help ("Esta eh uma carga aglutinada ou aglutinadora. Nao pode mais ser enviada para o grau.",, .t.)
+		_lRetAtZZA = .F.
+	endif
+	if _lRetAtZZA
+		zza -> (dbsetorder (1))  // ZZA_FILIAL, ZZA_SAFRA, ZZA_CARGA, ZZA_PRODUT
+		for _nItem = 1 to len (::ItItem)
+			_sChaveZZA = U_TamFixo (::Filial, 2) + U_TamFixo (::Safra, 4) + U_TamFixo (::Carga, 4) + U_TamFixo (::ItItem [_nItem], 15)
+			U_Log2 ('debug', '[' + procname () + ']Pesqusando ZZA com >>' + _sChaveZZA + '<<')
+		
+			if ! zza -> (dbseek (_sChaveZZA, .F.))
+				u_log2 ('info', '[' + procname () + ']Carga:' + ::Carga + ' Item: ' + ::ItItem [_nItem] + ' Incluindo ZZA')
+				reclock ("ZZA", .T.)
+				// Se nao existia ZZA, nem vou tratar como reenvio.
+				_lReenvio = .F.
+			else
+				u_log2 ('info', '[' + procname () + ']Carga:' + ::Carga + ' Item: ' + ::ItItem [_nItem] + ' Vou alterar ZZA (zza_status encontra-se com ' + zza -> zza_status + ')')
+				reclock ("ZZA", .F.)
+			endif
+
+			// Campos 'basicos' sao atualizados sempre.
+			zza -> zza_filial = ::Filial
+			zza -> zza_safra  = ::Safra
+			zza -> zza_carga  = ::Carga
+			zza -> zza_produt = ::ItItem [_nItem]
+			zza -> zza_nprod  = ::ItDescri [_nItem]
+			zza -> zza_nassoc = ::NomeFornec
+
+			// Quando solicitado reenvio manualmente, faz algumas verificacoes adicionais.
+			if _lReenvio
+				if zza -> zza_status == '1'
+					u_help ("Status do item " + zza -> zza_nprod + " ja encontra-se como 'aguardando leitura do grau'.",, .t.)
+				elseif zza -> zza_status == '0' .or. (zza -> zza_status == '2' .and. U_MsgNoYes ("Item " + zza -> zza_nprod + " encontra-se com status 'em descarga' na tabela de integracao com medidor de grau. Deseja reiniciar o status?"))
+					zza -> zza_status = iif (::PesoBruto <= 0, '0', '1')
+
+				elseif zza -> zza_status $ '3/M'
+					_sMsg = "Status do item " + zza -> zza_nprod + " encontra-se 'concluido' na tabela de integracao com o medidor de grau (resultado: " + cvaltochar (zza -> zza_grau) + " gravado em " + zza -> zza_inist3 + "."
+					
+					// Se foi gravado com grau zero, deve ter dado algum problema, ou clicaram em 'armazenar' sem medir nada.
+					if zza -> zza_grau = 0
+						if u_msgNoYes (_sMsg + " Deseja reenviar para nova medicao?")
+							zza -> zza_status = iif (::PesoBruto <= 0, '0', '1')
+						endif
+					else
+						u_help (_sMsg + " Reenvio para medicao de grau nao permitida, pois ja contem valor no grau.")
+					endif
+				endif
+			else
+
+				if ::StatusCar $ 'C/D'  // Carga [C]ancelada ou [D]irecionada para outra filial
+					zza -> zza_status = 'C'
+				elseif ::PesoBruto == 0
+					zza -> zza_status = '0'
+				elseif ::PesoTara > 0 .and. zza -> zza_status != '3' .and. val (::ItGrau [_nItem]) > 0  // Jah fez a segunda pesagem, sem finalizar no BL01.
+					u_log2 ('info', '[' + procname () + ']Carga:' + ::Carga + ' Item: ' + ::ItItem [_nItem] + ' Alterando ZZA_STATUS para M por que jah estah sendo feita a segunda pesagem, mesmo sem finalizar no programa do grau.')
+					zza -> zza_status = 'M'
+				elseif ::PesoBruto > 0 .and. ::PesoTara == 0
+					if empty (zza -> zza_status) .or. zza -> zza_status == '0'
+						zza -> zza_status = '1'
+					endif
+				elseif ::PesoBruto > 0 .and. ::PesoTara > 0 .and. zza -> zza_status == '3'  // Segunda pesagem OK
+					u_log2 ('aviso', "Nao vou enviar nada para o programa do grau por que, no grau, esta carga jah encontra-se com status=3 (finalizada)")
+				else
+					u_help ("Situacao imprevista na gravacao do campo ZZA_STATUS. Revise programa!",, .t.)
+				endif
+			endif
+			msunlock ()
+		next
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
+return _lRetAtZZA
 
 
 // --------------------------------------------------------------------------
@@ -326,9 +445,11 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _oSQL      := NIL
 	local _lContinua := .T.
+	local _nItemGD   := 0
 
 	// Defaults
 	::aIntegGrau   = {}
+	::Aglutin    = ''
 	::Carga      = ''
 	::Contranota = ''
 	::Compart1   = ''
@@ -336,18 +457,25 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	::CXouGranel = ''
 	::Filial     = ''
 	::Fornece    = ''
+	::ItItem     = {}
+	::ItProduto  = {}
+	::ItDescri   = {}
+	::ItGrau     = {}
 	::Loja       = ''
+	::NomeFornec = ''
 	::PesoBruto  = 0
 	::PesoTara   = 0
 	::RegSZE     = 0
 	::Safra      = ''
 	::Segregada  = .F.
 	::SerieCtrn  = ''
+	::StatusCar  = ''
 	::UltMsg     = ''
 
 	do case
 	case _sOrigem == 'M'  // Variaveis M->
 		::Filial     = xfilial ("SZE")
+		::Aglutin    = m->ze_aglutin
 		::Safra      = m->safra
 		::Carga      = m->carga
 		::Compart1   = m->ze_cargaC1
@@ -355,12 +483,24 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 		::Contranota = m->ze_nfger
 		::Fornece    = m->ze_assoc
 		::Loja       = m->ze_lojasso
+		::NomeFornec = m->ze_nomasso
 		::PesoBruto  = m->ze_pesobru
 		::PesoTara   = m->ze_pesotar
 		::Segregada  = (m->ze_segreg == 'S')
 		::SerieCtrn  = m->ze_serie
+		::StatusCar  = m->ze_status
+
+		// Alimenta array de itens
+		for _nItemGD = 1 to len (aCols)
+			::AddItem ()
+			atail (::ItItem)    = GDFieldGet ("ZF_ITEM",    _nItemGD)
+			atail (::ItProduto) = GDFieldGet ("ZF_PRODUTO", _nItemGD)
+			atail (::ItDescri)  = GDFieldGet ("ZF_DESCRI",  _nItemGD)
+			atail (::ItGrau)    = GDFieldGet ("ZF_GRAU",    _nItemGD)
+		next
 
 	case _sOrigem == "SZE"
+		::Aglutin    = sze -> ze_aglutin
 		::Carga      = sze -> ze_carga
 		::Filial     = sze -> ze_filial
 		::Compart1   = sze -> ze_cargaC1
@@ -368,12 +508,31 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 		::Contranota = sze -> ze_nfger
 		::Fornece    = sze -> ze_assoc
 		::Loja       = sze -> ze_lojasso
+		::NomeFornec = sze -> ze_nomasso
 		::PesoBruto  = sze -> ze_pesobru
 		::PesoTara   = sze -> ze_pesotar
 		::RegSZE     = sze -> (recno ())
 		::Safra      = sze -> ze_safra
 		::Segregada  = (sze -> ze_segreg == 'S')
 		::SerieCtrn  = sze -> ze_serie
+		::StatusCar  = sze -> ze_status
+
+		// Alimenta array de itens
+		szf -> (dbsetorder (1))  // filial + safra + carga + item
+		szf -> (dbseek (xfilial ("SZF") + sze -> ze_safra + sze -> ze_carga, .T.))
+		do while ! szf -> (eof ()) ;
+			.and. szf -> zf_filial == xfilial ("SZF") ;
+			.and. szf -> zf_safra  == sze -> ze_safra ;
+			.and. szf -> zf_carga  == sze -> ze_carga
+
+			::AddItem ()
+			atail (::ItItem)    = szf -> zf_item
+			atail (::ItProduto) = szf -> zf_produto
+			atail (::ItDescri)  = fBuscaCpo ("SB1", 1, xfilial ("SB1") + szf -> zf_produto, "B1_DESC")
+			atail (::ItGrau)    = szf -> zf_grau
+
+			szf -> (dbskip ())
+		enddo
 
 	otherwise
 		if ! empty (_sOrigem)  // Se origem vazia, eh por que estou apenas instanciando um objeto vazio.
@@ -452,13 +611,21 @@ return
 // --------------------------------------------------------------------------
 // Grava dados da carga em arquivo de log, para ajudar em rastreio de problemas.
 METHOD Log () Class ClsCarSaf
-	local _sLogCar := ''
-	_sLogCar += 'Filial: ' + ::Filial + ' Safra: ' + ::Safra + ' Carga: ' + ::Carga + chr (13) + chr (10)
-	_sLogCar += 'Fornecedor: ' + ::Fornece + '/' + ::Loja + ' - ' + ::Carga + chr (13) + chr (10)
-	U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']--------------------------')
-	U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Exportando dados do objeto')
+	local _sLogCar  := ''
+	local _nItCarga := 0
+
+	_sLogCar += '  Filial: ' + ::Filial + ' Safra: ' + ::Safra + ' Carga: ' + ::Carga + chr (13) + chr (10)
+	_sLogCar += '  Fornecedor: ' + ::Fornece + '/' + ::Loja + ' - ' + ::NomeFornec + chr (13) + chr (10)
+	for _nItCarga = 1 to len (::ItItem)
+		_sLogCar += '     '   + ::ItItem [_nItCarga]
+		_sLogCar += ' - '   + alltrim (::ItProduto [_nItCarga])
+		_sLogCar += ' - '   + alltrim (::ItDescri  [_nItCarga])
+		_sLogCar += ' Gr: ' + ::ItGrau [_nItCarga]
+		_sLogCar += chr (13) + chr (10)
+	next
+	U_Log2 ('info', '-----------------------------------------------')
 	U_Log2 ('info', _sLogCar)
-	U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']--------------------------')
+	U_Log2 ('info', '-----------------------------------------------')
 return _sLogCar
 
 

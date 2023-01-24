@@ -33,6 +33,8 @@ user function AtuZZA (_sSafra, _sCarga)
 	local _aAreaAnt := U_ML_SRArea ()
 //	u_log2 ('info', 'Iniciando ' + procname () + ' com parametros safra >>' + _sSafra + '<< e carga >>' + _sCarga + '<<')
 
+//	COM O TEMPO, PRETENDO MIGRAR PARA O METODO ClsCarSaf:AtuZZA()
+
 	sze -> (dbsetorder (1))  // ZE_FILIAL, ZE_SAFRA, ZE_CARGA
 	if ! sze -> (dbseek (xfilial ("SZE") + _sSafra + _sCarga, .F.))
 		u_help ("Carga nao localizada nesta filial/safra. Atualizacao da tabela ZZA nao pode ser feita.",, .t.)
