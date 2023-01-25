@@ -27,6 +27,7 @@
 // 01/12/2022 - Claudia - Incluida regra conforme GLPI: 12854	
 // 09/12/2022 - Robert  - Soma ICMSRET somente quando F4_CREDST=2 nas opcoes '1' e '4' (GLPI 12883)
 // 06/01/2023 - Claudia - Aplicada regra conforme GLPI: 12854	
+// 25/01/2023 - Claudia - Voltada a versão do programa. GLPI: 13087
 //
 // --------------------------------------------------------------------------------------------
 #include "rwmake.ch"
@@ -93,16 +94,16 @@ User Function ML_LVDA(_nEcomm)
             If  SF4->F4_DUPLIC<>"S" .or. SD2->D2_TIPO=="D" .or. SD2->D2_TES$"518/510/603/727" .or. SD2->D2_SERIE $ GetMV ("VA_SERIECF") .or. SF4->F4_TOCON$('15/16') .or. alltrim(SD2->D2_COD) $ ('7209/7210')
                 _wVAL := 0
             Else
-                _wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + iif(POSICIONE("SF4",1,XFILIAL("SF4")+SD2->D2_TES,"F4_CREDST")=="2", sd2->d2_icmsret, 0) + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) 
-
+                _wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + sd2->d2_icmsret + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) 
             EndIf
         Else 
             If _nEcomm == '4' // 610 000 e 610 001
                 If  SF4->F4_DUPLIC<>"S" .or. SD2->D2_TIPO=="D" .or. SD2->D2_TES$"518/510/603/727" .or. SD2->D2_SERIE $ GetMV ("VA_SERIECF") .or. SF4->F4_TOCON$('15/16') .or. alltrim(SD2->D2_COD) $ ('7209/7210')
                     _wVAL := 0
                 Else
-                    //_wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + iif(POSICIONE("SF4",1,XFILIAL("SF4")+SD2->D2_TES,"F4_CREDST")=="2", sd2->d2_icmsret, 0) + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) // até 31/12/2022
-                    _wVAL := SD2->D2_TOTAL + iif(POSICIONE("SF4",1,XFILIAL("SF4")+SD2->D2_TES,"F4_CREDST")=="2", sd2->d2_icmsret, 0) + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) // a partir de 01/01/2023
+                    //_wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + sd2->d2_icmsret + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) // até 31/12/2022
+                    _wVAL := SD2->D2_TOTAL + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) // a partir de 01/01/2023
+
                 EndIf
             EndIf
         EndIf
