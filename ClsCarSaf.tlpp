@@ -15,7 +15,9 @@
 // Historico de alteracoes:
 // 17/01/2023 - Robert - Quando producao propria, gera apenas 1 via do ticket 2a.pesagem.
 // 20/01/2023 - Robert - Comecado a gravar arrays de itens (ItItem, ItProduto, ...)
-// 23/01/2023 - Robert - Criado metodo AtuZZA.
+// 25/01/2023 - Robert - Criado metodo AtuZZA.
+//                     - Metodo New() passa a aceitar tanto recno() como chave filial+safra+carga.
+//                     - Metodo SegPesTOk, melhorias gerais
 //
 
 #Include "Protheus.ch"
@@ -26,6 +28,7 @@ user function ClsCarSaf ()
 return
 
 
+
 // ==========================================================================
 CLASS ClsCarSaf
 
@@ -34,11 +37,12 @@ CLASS ClsCarSaf
 	public  data Aglutin     // ZE_AGLUTIN - Situacao quanto a aglutinacao de cargas: O=Origem (aglutinada em outra carga);D=Destino (aglutinadora);N=Nenhuma(carga normal)
 	public  data Carga       // ZE_CARGA
 	public  data CXouGranel  // Indica se recebe em caixas ou a granel (tombador)
-	public  data Compart1    // ZE_CargaC1 - Carga compartilhada com outro fornecedor
-	public  data Compart2    // ZE_CargaC2 - Carga compartilhada com outro fornecedor (atualmente, no maximo 2)
+	public  data CCompart1   // ZE_CargaC1 - Carga compartilhada com outro fornecedor
+	public  data CCompart2   // ZE_CargaC2 - Carga compartilhada com outro fornecedor (atualmente, no maximo 2)
 	public  data Contranota  // ZE_NFGER
 	public  data Filial      // ZE_FILIAL
 	public  data Fornece     // ze_assoc
+	public  data ItConducao  // Array de Itens da carga - Forma de conducao: [L]atada;[E]spaldeira
 	public  data ItDescri    // Array de Itens da carga - Descricao do produto
 	public  data ItGrau      // Array de Itens da carga - zf_grau
 	public  data ItItem      // Array de Itens da carga - zf_item
@@ -66,14 +70,18 @@ CLASS ClsCarSaf
 	public METHOD GrvEvt ()
 	public METHOD ImprimeTk ()  // Gera impressao do ticket
 	public METHOD Log ()
+	public METHOD SegPesTOk ()  // Verifica se 'tudo ok' com a segunda pesagem.
 	public METHOD StatusZZA ()
 ENDCLASS
 
 
 // --------------------------------------------------------------------------
-// Construtor da classe pelo R_E_C_N_O_ da tabela SZE.
-METHOD New (_nNumReg) Class ClsCarSaf
+// Construtor da classe.
+METHOD New (_xChvCar) Class ClsCarSaf
 	local _aAreaAnt := U_ML_SRArea ()
+
+	// Alimenta atributos com valores default de uma carga nova.
+	::GeraAtrib ("")
 
 	// Como o metodo GeraAtrib eh chamado de varios lugares depois que o objeto
 	// jah foi instanciado, achei que seria desnecessario ler novamente algumas
@@ -82,12 +90,20 @@ METHOD New (_nNumReg) Class ClsCarSaf
 	::DefImprTk ()
 
 	// Se receber valor numerico, eh por que se trata do numero de registro do SZE.
-	if valtype (_nNumReg) == "N" .and. _nNumReg > 0
+	if valtype (_xChvCar) == "N" .and. _xChvCar > 0
 		SZE -> (dbgoto (_nNumReg))
 		::GeraAtrib ("SZE")
-	else
-		// Alimenta atributos com valores default de uma carga nova (vazia).
-		::GeraAtrib ("")
+
+	// Se receber caracter, eh por que se trata de um codigo de etiqueta jah
+	// existente no ZA1 e preciso atualizar o objeto.
+	elseif valtype (_xChvCar) == "C"
+		za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP
+		if za1 -> (dbseek (_xChvCar, .F.))
+			::GeraAtrib ("SZE")
+		else
+			::UltMsg += "Problema ao instanciar carga: Nao localizei chave '" + _xChvCar + "' na tabela SZE."
+			U_help (::UltMsg,, .t.)
+		endif
 	endif
 
 	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Instanciada carga p/ Filial ' + ::Filial + ' Safra ' + ::Safra + ' Carga ' + ::Carga + ' de ' + ::Fornece + '/' + ::Loja)
@@ -98,10 +114,11 @@ Return ::self
 // --------------------------------------------------------------------------
 // Adiciona uma posicao em cada array de itens.
 METHOD AddItem () Class ClsCarSaf
-	aadd (::ItItem,    '')
-	aadd (::ItProduto, '')
-	aadd (::ItDescri,  '')
-	aadd (::ItGrau,    '')
+	aadd (::ItConducao, '')
+	aadd (::ItDescri,   '')
+	aadd (::ItItem,     '')
+	aadd (::ItGrau,     '')
+	aadd (::ItProduto,  '')
 return
 
 
@@ -204,6 +221,11 @@ METHOD AtuZZA (_lReenvio) Class ClsCarSaf
 	// 3 = usuario clicou botao 'Armazenar' no programa BL01 e jah gravou tambem o ZZA_GRAU.
 	// M = usuario (do Protheus) finalizou manualmente (ZZA_STATUS nao estava 3 por algum motivo).
 	// C = Carga cancelada no Protheus
+
+//	if ! empty (::CCompart1)  // .or.  ! empty (::CCompart2)  // Por enquanto, aceito no maximo 2 cargas compartilhadas
+//		u_help ("Esta carga consta como fisicamente compartilhada (mesmo caminhao) com a carga " + ::CCompart1 + ". Por isso, nao vai ser enviada para medicao de grau. Vai assumir o grau dessa carga compartilhada.")
+//		_lRetAtZZA = .F.
+//	endif
 
 	if _lRetAtZZA .and. ::PesoBruto <= 0
 		u_help ("Carga ainda nao tem peso bruto. Efetue, antes, a primeira pesagem.",, .t.)
@@ -452,15 +474,16 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	::Aglutin    = ''
 	::Carga      = ''
 	::Contranota = ''
-	::Compart1   = ''
-	::Compart2   = ''
+	::CCompart1  = ''
+	::CCompart2  = ''
 	::CXouGranel = ''
 	::Filial     = ''
 	::Fornece    = ''
-	::ItItem     = {}
-	::ItProduto  = {}
+	::ItConducao = {}
 	::ItDescri   = {}
 	::ItGrau     = {}
+	::ItItem     = {}
+	::ItProduto  = {}
 	::Loja       = ''
 	::NomeFornec = ''
 	::PesoBruto  = 0
@@ -476,10 +499,10 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	case _sOrigem == 'M'  // Variaveis M->
 		::Filial     = xfilial ("SZE")
 		::Aglutin    = m->ze_aglutin
-		::Safra      = m->safra
-		::Carga      = m->carga
-		::Compart1   = m->ze_cargaC1
-		::Compart2   = m->ze_cargaC2
+		::Safra      = m->ze_safra
+		::Carga      = m->ze_carga
+		::CCompart1  = m->ze_cargaC1
+		::CCompart2  = m->ze_cargaC2
 		::Contranota = m->ze_nfger
 		::Fornece    = m->ze_assoc
 		::Loja       = m->ze_lojasso
@@ -493,18 +516,19 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 		// Alimenta array de itens
 		for _nItemGD = 1 to len (aCols)
 			::AddItem ()
-			atail (::ItItem)    = GDFieldGet ("ZF_ITEM",    _nItemGD)
-			atail (::ItProduto) = GDFieldGet ("ZF_PRODUTO", _nItemGD)
-			atail (::ItDescri)  = GDFieldGet ("ZF_DESCRI",  _nItemGD)
-			atail (::ItGrau)    = GDFieldGet ("ZF_GRAU",    _nItemGD)
+			atail (::ItConducao) = GDFieldGet ("ZF_CONDUC",  _nItemGD)
+			atail (::ItDescri)   = GDFieldGet ("ZF_DESCRI",  _nItemGD)
+			atail (::ItGrau)     = GDFieldGet ("ZF_GRAU",    _nItemGD)
+			atail (::ItItem)     = GDFieldGet ("ZF_ITEM",    _nItemGD)
+			atail (::ItProduto)  = GDFieldGet ("ZF_PRODUTO", _nItemGD)
 		next
 
 	case _sOrigem == "SZE"
 		::Aglutin    = sze -> ze_aglutin
 		::Carga      = sze -> ze_carga
 		::Filial     = sze -> ze_filial
-		::Compart1   = sze -> ze_cargaC1
-		::Compart2   = sze -> ze_cargaC2
+		::CCompart1  = sze -> ze_cargaC1
+		::CCompart2  = sze -> ze_cargaC2
 		::Contranota = sze -> ze_nfger
 		::Fornece    = sze -> ze_assoc
 		::Loja       = sze -> ze_lojasso
@@ -526,10 +550,11 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 			.and. szf -> zf_carga  == sze -> ze_carga
 
 			::AddItem ()
-			atail (::ItItem)    = szf -> zf_item
-			atail (::ItProduto) = szf -> zf_produto
-			atail (::ItDescri)  = fBuscaCpo ("SB1", 1, xfilial ("SB1") + szf -> zf_produto, "B1_DESC")
-			atail (::ItGrau)    = szf -> zf_grau
+			atail (::ItConducao) = szf -> zf_conduc
+			atail (::ItDescri)   = fBuscaCpo ("SB1", 1, xfilial ("SB1") + szf -> zf_produto, "B1_DESC")
+			atail (::ItGrau)     = szf -> zf_grau
+			atail (::ItItem)     = szf -> zf_item
+			atail (::ItProduto)  = szf -> zf_produto
 
 			szf -> (dbskip ())
 		enddo
@@ -556,14 +581,14 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 		_oSQL:_sQuery +=   " AND ZZA.ZZA_FILIAL = '" + ::Filial + "'"
 		_oSQL:_sQuery +=   " AND ZZA.ZZA_SAFRA  = '" + ::Safra + "'"
 		_oSQL:_sQuery +=   " AND ZZA.ZZA_CARGA  = '" + ::Carga + "'"
-		_oSQL:_sQuery += " ORDER BY ZZA.ZZA_PRODUT"  // zza_produt = zf_item
-		//_oSQL:_sQuery +=   " AND ZZA.ZZA_PRODUT = '01'"  // Tenho intencao de comecar a gravar apenas 1 item por carga, independentemente de haver mais de uma variedade.
-		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		_oSQL:_sQuery += " ORDER BY ZZA.ZZA_PRODUT"
+		//_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 		::aIntegGrau := aclone (_oSQL:Qry2Array (.F., .F.))
-//		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']aIntegGrau:')
-//		U_Log2 ('debug', ::aIntegGrau)
 	endif
 
+	//u_logobj (::Self)
+	//U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Gerei atributos usando origem = ' + _sOrigem + ' e ficou assim:')
+	//::Log ()
 	U_ML_SRArea (_aAreaAnt)
 return
 
@@ -615,18 +640,63 @@ METHOD Log () Class ClsCarSaf
 	local _nItCarga := 0
 
 	_sLogCar += '  Filial: ' + ::Filial + ' Safra: ' + ::Safra + ' Carga: ' + ::Carga + chr (13) + chr (10)
+	_sLogCar += '  Peso bruto: ' + cvaltochar (::PesoBruto) + ' Peso tara: ' + cvaltochar (::PesoTara) + chr (13) + chr (10)
 	_sLogCar += '  Fornecedor: ' + ::Fornece + '/' + ::Loja + ' - ' + ::NomeFornec + chr (13) + chr (10)
 	for _nItCarga = 1 to len (::ItItem)
-		_sLogCar += '     '   + ::ItItem [_nItCarga]
-		_sLogCar += ' - '   + alltrim (::ItProduto [_nItCarga])
+		_sLogCar += '    It.' + ::ItItem [_nItCarga] + ': '
+		_sLogCar += alltrim (::ItProduto [_nItCarga])
 		_sLogCar += ' - '   + alltrim (::ItDescri  [_nItCarga])
 		_sLogCar += ' Gr: ' + ::ItGrau [_nItCarga]
+		_sLogCar += ' Sist.cond: ' + ::ItConducao [_nItCarga]
 		_sLogCar += chr (13) + chr (10)
 	next
 	U_Log2 ('info', '-----------------------------------------------')
 	U_Log2 ('info', _sLogCar)
 	U_Log2 ('info', '-----------------------------------------------')
 return _sLogCar
+
+
+// --------------------------------------------------------------------------
+// Verifica se 'tudo ok' na segunda pesagem da carga.
+METHOD SegPesTOk () Class ClsCarSaf
+	local _l2PesTOK := .T.
+	local _sGrau    := ''
+	local _nItemCar := 0
+	local _sMsg     := ''
+
+	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']iniciando...')
+	// Todas as variedades da carga devem ter mesmo grau (excecao para Livramento
+	// que, no momento em que estou fazendo esta validacao, recebe uva em caixas
+	// e, portanto, tem condicao de medir o grau separadamente.
+	if _l2PesTOK
+		_sMsg = ''
+		_sGrau = ''
+		for _nItemCar = 1 to len (_oCarSaf:ItItem)
+			if empty (_sGrau)
+				_sGrau = _oCarSaf:ItGrau [_nItemCar]
+			else
+				if _oCarSaf:ItGrau [_nItemCar] != _sGrau
+					_l2PesTOK = .F.
+					exit
+				endif
+			endif
+		next
+		if ! _l2PesTOK
+			_sMsg = "Todos os itens da carga deveriam apresentar o mesmo grau"
+			if cFilAnt == '03'
+				if U_MsgNoYes (_sMsg + " . Confirma?")
+					_sMsg += " (mas, sendo recebimento em caixas, existe possibilidade de medicao do grau em separado)."
+					_l2PesTOK = .T.
+					U_Log2 ('aviso', '[' + procname () + ']Gravar aqui um evento de graus diferentes na carga!')
+				endif
+			else
+				_sMsg += ", uma vez que a carga foi recebida a granel."
+				::UltMsg += _sMsg
+			endif
+		endif
+	endif
+
+return _l2PesTOK
 
 
 // --------------------------------------------------------------------------

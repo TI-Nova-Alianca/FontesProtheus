@@ -236,6 +236,7 @@ user function VA_RUSOO (_sQueFazer)
 		if empty (_oCarSaf:Contranota)
 			u_help ("Nao ha nota fiscal gerada para esta carga.")
 		else
+			U_Log2 ('debug', '[' + procname () + ']Chamando IMPDANFE com: >>' + _oCarSaf:Contranota + '<< >>' + _oCarSaf:Contranota + '<< >>' + _oCarSaf:SerieCtrn + '<<')
 			U_ImpDanfe ('E', _oCarSaf:Contranota, _oCarSaf:Contranota, _oCarSaf:SerieCtrn)
 		endif
 

@@ -5,6 +5,8 @@
 //              Desmembrada do programa VA_RUS2.PRW
 //
 // Historico de alteracoes:
+// 25/01/2023 - Robert - Passa a chamar, tambem, o metodo ClsCarSaf.SegPesTOk()
+//                     - Melhorias validacao cargas compartilhadas.
 //
 
 #include "totvs.ch"
@@ -17,6 +19,8 @@ user function VA_RUS2T (_nOpc)
 	local _nBkpN     := N
 	local _nLinha    := 0
 	local _nCpoSZE   := 0
+
+	//  COM O TEMPO, PRETENDO MIGRAR PARA O METODO ClsCarSaf:SegPesTOk()
 
 	u_Log2 ('info', 'Iniciando ' + procname ())
 
@@ -48,6 +52,18 @@ user function VA_RUS2T (_nOpc)
 				Endif
 			endif
 		next
+	endif
+
+	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
+	if _lRet
+		if type ("_oCarSaf") != 'O'
+			private _oCarSaf  := ClsCarSaf ():New ()
+		endif
+		_oCarSaf:GeraAtrib ('M')  // Alimenta objeto com dados das variaveis M->
+		if empty (_oCarSaf:Carga)
+			u_help ("Impossivel instanciar carga (ou carga invalida recebida).",, .t.)
+			_lContinua = .F.
+		endif
 	endif
 
 	if _lRet .and. (inclui .or. altera)  // Na exclusao nao precisa validar nada.
@@ -120,7 +136,14 @@ user function VA_RUS2T (_nOpc)
 			u_help ("Durante a inspecao desta carga foi apontado que existe variedade nao prevista no cadastro viticola. Sendo assim, o campo '" + alltrim (RetTitle ("ZF_PRREAL")) + "' deve ser informado para manter um historico de qual era a variedade efetivamente recebida.",, .T.)
 		endif
 	endif
- 
+
+	// Estou migrando para dentro da classe.
+	if _lRet
+		_lRet = _oCarSaf:SegPesTOk ()
+		if ! _lRet
+			u_help (_oCarSaf:UltMsg,, .t.)
+		endif
+	endif
 
 	// Verifica situacao das inspecoes no NaWeb.
 	if _lRet .and. _nOpc == 4
@@ -169,7 +192,7 @@ static function _ValCompar (_sCarComp)
 	local _aAreaSZE  := {}
 	local _lRet      := .T.
 	local _oSQL      := NIL
-	local _sCarUsada := ''
+	//local _sCarUsada := ''
 
 	U_Log2 ('debug', '[' + procname () + ']Validando carga compartilhada1: ' + _sCarComp)
 	_aAreaSZE := sze -> (getarea ())
@@ -187,8 +210,7 @@ static function _ValCompar (_sCarComp)
 	endif
 	if _lRet
 		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "SELECT ZE_CARGA + ' de ' + RTRIM (ZE_NOMASSO) + ' em ' + dbo.VA_DTOC (ZE_DATA)"
+		_oSQL:_sQuery := "SELECT COUNT (*)"
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZE") + " SZE"
 		_oSQL:_sQuery += " WHERE SZE.D_E_L_E_T_  = ''"
 		_oSQL:_sQuery +=   " AND SZE.ZE_FILIAL   = '" + xfilial ("SZE") + "'"
@@ -197,9 +219,8 @@ static function _ValCompar (_sCarComp)
 		_oSQL:_sQuery +=   " AND SZE.ZE_STATUS  != 'C'"
 		_oSQL:_sQuery +=   " AND (SZE.ZE_CARGAC1 = '" + _sCarComp + "' OR SZE.ZE_CARGAC2 = '" + _sCarComp + "')"
 		_oSQL:Log ()
-		_sCarUsada = _oSQL:RetQry (1, .f.)
-		if ! empty (_sCarUsada)
-			u_help ("A carga '" + _sCarComp + "' ja foi informada como 'compartilhada' na carga " + _sCarUsada,, .t.)
+		if _oSQL:RetQry (1, .f.) >= 2  // Para aumentar, preciso criar campos ZE_CARGAC3, ZE_CARGAC4,...
+			u_help ("Atualmente temos tratamento para uma carga ser compartilhada com, no maximo, outras duas.",, .t.)
 			_lRet = .F.
 		endif
 	endif

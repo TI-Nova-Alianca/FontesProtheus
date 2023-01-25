@@ -11,6 +11,7 @@
 // 21/02/2020 - Robert - Alteracoes na tabela ZZA passam a ser feitas em rotina externa (U_AtuZZA).
 // 11/03/2022 - Robert - Novos parametros funcao U_VA_RusLI() - GLPI 11745.
 // 28/10/2022 - Robert - Removidos alguns parametros em desuso.
+// 25/01/2023 - Robert - Passa a usar classe ClsCarSaf para atualizar tabela ZZA.
 //
 
 #include "VA_Inclu.prw"
@@ -69,9 +70,7 @@ user function va_rus1P (_lPortaria)
 			sze->ze_pesoBru = _nPLidoBal
 			msunlock ()
 	
-//			if _lImpTick .and. ! _lIntPort
 			if ! _lIntPort
-		//		U_VA_RUSTk (1, _sPortTick, _nQViasTk1, {}, 'Bematech', .t.)
 				_oCarSaf:ImprimeTk (1)
 			endif
 		endif
@@ -80,13 +79,10 @@ user function va_rus1P (_lPortaria)
 	// Atualiza itens da carga (SZF) e status para medicao de grau (ZZA).
 	if _lContinua
 		U_Log2 ('debug', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Chamando AtuZZA')
-		U_AtuZZA (sze -> ze_safra, sze -> ze_carga)
+		// U_AtuZZA (sze -> ze_safra, sze -> ze_carga)
+		_oCarSaf:AtuZZA (.F.)
 	endif
 
-//	// Atualiza sistema de agendamento com status de 'LIB' (significa que jah encontra-se 'pesado e liberado para descarga'.
-//	if _lContinua .and. sze->ze_pesoBru > 0
-//		U_VA_RusAI ('INS/AGE', 'LIB')
-//	endif
 	if _lContinua
 		_oCarSaf:GeraAtrib ("SZE")  // Atualiza atributos com o que foi gravado nos arquivos.
 		_oCarSaf:AtuAgenda ()
