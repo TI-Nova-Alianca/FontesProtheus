@@ -20,6 +20,7 @@
 // 12/03/2021 - Cláudia - Incluida a busca de dados do Ax 66. GLPI: 9052
 // 23/06/2022 - Claudia - Retirada validação de local e lote. GLPI 12118
 // 13/07/2022 - Sandra  - Retirada validação da gravação do error, para variavel SMESAGEM. GLPI 12339.
+// 25/01/2023 - Claudia - Incluido parametro de endereço e verificação de saldos. GLPI: 13062
 //
 // -------------------------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
@@ -74,11 +75,13 @@ User Function VA_AUTINV ()
 	
 		If nOpca == 1
 			sDocumento := DTOS(mv_par01)
-			Processa( {|lEnd| BuscaEstoque()})
+			_lContinua := VerificaInventario()
+			If _lContinua
+				Processa( {|lEnd| BuscaEstoque()})
+			EndIf
 		EndIf
-	
-		// Libera semaforo.
-		If _nLock > 0
+		
+		If _nLock > 0	// Libera semaforo.
 			U_Semaforo (_nLock)
 		EndIf
 	EndIf
@@ -93,8 +96,34 @@ Static Function _TudoOk()
 		u_help ("Data de inventário deverá ser preenchida")
 		_lRet = .F.
 	EndIf
-	
 Return(_lRet)
+//
+// --------------------------------------------------------------------------
+// Verifica divergencias de estoque
+Static Function VerificaInventario()
+	local _oSQL   := NIL
+	local _aVerif := {}
+	local _lRet   := .T.
+
+	procregua (10)
+	incproc ("Verificação de saldos divergentes")
+
+	incproc ("Buscando dados divergentes")
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " exec VA_SP_VERIFICA_ESTOQUES null, null, null "
+	_oSQL:Qry2XLS (.F., .F., .F.)
+	_aVerif := aclone (U_Qry2Array(_oSQL:_sQuery))
+
+	If Len(_aVerif) > 0
+		If U_MsgYesNo ("Encontrados produtos com inconsistências entre saldos físicos, de lote ou de enrdereços. Deseja continuar?")
+			_lRet := .T.
+		else
+			_lRet := .F.
+		EndIf
+	EndIf
+Return _lRet
 //
 // --------------------------------------------------------------------------
 // Busca estoque
@@ -144,54 +173,30 @@ Static Function BuscaEstoque()
 	_sQuery += " 	WHERE SB1.D_E_L_E_T_ = ''"
 	_sQuery += " 	AND SB2.B2_QATU <> 0"
 	_sQuery += "    AND SB1.B1_TIPO NOT IN ('MO')"
-	//_sQuery += "  AND B2_LOCAL NOT IN ('66')"
-	If ! empty(mv_par01) // filial
+	If !empty(mv_par01) // filial
 		_sQuery += "  AND B2_FILIAL = '" + alltrim(cFilAnt) + "'"
 	EndIf
-	If ! empty(mv_par03) // grupo
+	If !empty(mv_par03) // grupo
 		_sQuery += "  AND SB1.B1_GRUPO BETWEEN '" + alltrim(mv_par02) + "' AND '" + alltrim(mv_par03)+ "'"
 	EndIf
-	If ! empty(mv_par05) // tipo de produto
+	If !empty(mv_par05) // tipo de produto
 		_sQuery += "  AND SB1.B1_TIPO BETWEEN '" + alltrim(mv_par04) + "' AND '" + alltrim(mv_par05) + "'"
 	EndIf
-	If ! empty(mv_par07) // almoxarifado/local
+	If !empty(mv_par07) // almoxarifado/local
 		_sQuery += "  AND B2_LOCAL BETWEEN '" + alltrim(mv_par06) + "' AND '" + alltrim(mv_par07) + "'"
 	EndIf
-	If ! empty(mv_par09) // produto
+	If !empty(mv_par09) // produto
 		_sQuery += "  AND SB1.B1_COD BETWEEN '" + alltrim(mv_par08) + "' AND '" + alltrim(mv_par09) + "'"
 	EndIf	
 	_sQuery += " )"
 	_sQuery += " SELECT * FROM C"
 	_sQuery += " WHERE QTD <> 0"
+	If !empty(mv_par10) // endereço
+		_sQuery += "  AND LOCALIZ BETWEEN '" + alltrim(mv_par10) + "' AND '" + alltrim(mv_par11) + "'"
+	EndIf
 	_sQuery += " ORDER BY FILIAL, ALMOX, TPROD, GRUPO, PRODUTO"
 
-	// // -------------------- Faz validações no processo para mostrar em tela
-	// dbUseArea(.T., "TOPCONN", TCGenQry(,,_sQuery), "_trb", .F., .T.)
-
-	// procregua (_trb -> (reccount ()))
-	// _trb -> (dbgotop ())
-	
-	// sMensagem := ""
-	// Do while ! _trb -> (eof ())
-	// 	If _trb -> B1_RASTRO = 'L' .AND. empty(_trb -> LOTECTL)
-	// 		sMensagem += " SEM INFORMAÇÃO DE LOTE:" + CRLF
-	// 		sMensagem += " -> Filial: " + alltrim(_trb-> FILIAL) +" Produto:"+alltrim(_trb->PRODUTO)+" Almox:"+alltrim(_trb->ALMOX) + CRLF
-	// 		sMensagem += " --------------------------------" + CRLF
-	// 		_Cnt := .F.
-	// 	EndIf
-	// 	// If _trb -> B1_LOCAL = 'S' .AND. empty(_trb -> LOCALIZ)
-	// 	// 	sMensagem += "SEM INFORMAÇÃO DE LOCAL: " + CRLF
-	// 	// 	sMensagem += " -> Filial: " + alltrim(_trb-> FILIAL) +" Produto:"+alltrim(_trb->PRODUTO)+" Almox:"+alltrim(_trb->ALMOX) + CRLF
-	// 	// 	sMensagem += " --------------------------------" + CRLF
-	// 	// 	_Cnt := .F.
-	// 	// EndIf
-	// 	_trb -> (dbskip ())
-	// EndDo
-	
-	// If _Cnt == .F.
-	// 	zMsgLog(sMensagem, "Log de erros na validação", 1, .T.)
-	// EndIf
-	// _trb -> (dbCloseArea ())
+	u_log(_sQuery)
 
 	// -------------------- Executa o processo
 	If _lContinua
@@ -205,7 +210,6 @@ Static Function BuscaEstoque()
 		
 		 // Verifica permissão para geração de inventário
 		If U_MsgNoYes ("Confirma a geracao dos registros de inventário?")
-
 			If ! U_ZZUVL ('106', __cUserId, .F.)
 				u_help ("Usuário sem permissão para inclusão/alteração de registro de inventário.")
 			Else
@@ -219,12 +223,7 @@ Static Function BuscaEstoque()
 					GravaSB7()
 					_trb -> (dbskip ())
 				EndDo
-				_trb ->(DbCloseArea())
-				
-				//If _MErro == .T.
-					//zMsgLog(sMensagem, "Log de erros na gravação", 1, .T.)
-				//EndIf
-	
+				_trb ->(DbCloseArea())	
 			Endif
 		EndIf
 	EndIf
@@ -249,10 +248,9 @@ Static function GravaSB7()
 	Aadd(aAuto, {"B7_CONTAGE" 	, '1' 					 , NIL})
 	Aadd(aAuto, {"B7_ORIGEM" 	, "VA_AUTINV" 			 , NIL})
 	Aadd(aAuto, {"B7_STATUS" 	, "1" 					 , NIL})
-	IF alltrim(_trb -> USALOC) ='S'
+	If alltrim(_trb -> USALOC) ='S'
 		Aadd(aAuto, {"B7_DTVALID" 	, dDtValid					 , NIL})
-	EndIf
-            
+	EndIf   
 	MsExecAuto({|a,b,c| MATA270(a,b,c)}, aAuto, .T.,3)
 
 	If lMsErroAuto
@@ -266,36 +264,7 @@ Static function GravaSB7()
 		_oEvento:CodEven = 'SB7010'
 		_oEvento:Grava ()
 	Endif
-
 Return 
-//
-// --------------------------------------------------------------------------
-Static Function zMsgLog(cMsg, cTitulo, nTipo, lEdit)
-    Local lRetMens := .F.
-    Local oDlgMens
-    Local oBtnOk, cTxtConf := ""
-    Local oFntTxt := TFont():New("Lucida Console",,-015,,.F.,,,,,.F.,.F.)
-    Local oMsg  
-    Default lEdit   := .F.
-     
-    //Definindo os textos dos botões
-    cTxtConf:='&Ok'
- 
-    //Criando a janela centralizada com os botões
-    DEFINE MSDIALOG oDlgMens TITLE cTitulo FROM 000, 000  TO 300, 400 COLORS 0, 16777215 PIXEL
-        //Get com o Log
-        @ 002, 004 GET oMsg VAR cMsg OF oDlgMens MULTILINE SIZE 191, 121 FONT oFntTxt COLORS 0, 16777215 HSCROLL PIXEL
-        If !lEdit
-            oMsg:lReadOnly := .T.
-        EndIf
-         
-        //Se for Tipo 1, cria somente o botão OK
-
-        @ 127, 144 BUTTON oBtnOk  PROMPT cTxtConf   SIZE 051, 019 ACTION (lRetMens:=.T., oDlgMens:End()) OF oDlgMens PIXEL
-         
-    ACTIVATE MSDIALOG oDlgMens CENTERED
- 
-Return lRetMens
 // --------------------------------------------------------------------------
 // Importa registro por .CSV
 // Formato de arquivo: .csv
@@ -315,6 +284,7 @@ Static Function _IMPSB7()
 	_sArq     := alltrim(mv_par01) + alltrim(mv_par02)  + '.csv'
 	_sSeparad := ";"
 	_aDados := U_LeCSV (_sArq, _sSeparad)
+
 	If Len(_aDados) == 0
 		Return
 	EndIf
@@ -369,8 +339,9 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {07, "Almoxarifado até 	", "C",  2,  0,  "",   "      ", {},    ""})
 	aadd (_aRegsPerg, {08, "Produto de       	", "C", 15,  0,  "",   "      ", {},    ""})
 	aadd (_aRegsPerg, {09, "Produto até      	", "C", 15,  0,  "",   "      ", {},    ""})
+	aadd (_aRegsPerg, {10, "Endereço de      	", "C", 15,  0,  "",   "      ", {},    ""})
+	aadd (_aRegsPerg, {11, "Endereço até      	", "C", 15,  0,  "",   "      ", {},    ""})
 	
-
 	U_ValPerg (cPerg, _aRegsPerg)
 Return
 //
