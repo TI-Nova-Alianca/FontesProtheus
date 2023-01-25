@@ -212,24 +212,35 @@ static function _EnviaZZA ()
 	local _nLinha   := 0
 	
 	_oCarSaf := ClsCarSaf ():New ()
-	_oCarSaf:Filial     = sc5 -> c5_filial
-	_oCarSaf:Safra      = U_IniSafra ()
-	_oCarSaf:Carga      = 'PV'
-	_oCarSaf:StatusCar  = '1'
-	_oCarSaf:PesoBruto  = M->C5_PBRUTO
-	_oCarSaf:PesoTara   = 0 //M->C5_PBRUTO - M->C5_PESOL
-	_oCarSaf:NomeFornec = fBuscaCpo ("SA1", 1, xfilial ("SA1") + sc5 -> c5_cliente + sc5 -> c5_lojacli, "A1_NOME")
-	for _nLinha = 1 to len (aCols)
-		if ! GDDeleted (_nLinha)
-			_oCarSaf:AddItem ()
-			atail (_oCarSaf:ItDescri)  = GDFieldGet ("C6_DESCRI", _nLinha)
-			atail (_oCarSaf:ItItem)    = m->c5_num + '/' + GDFieldGet ("C6_ITEM", _nLinha) // Numero pedido nao cabe no ZZA_CARGA
-			atail (_oCarSaf:ItProduto) = GDFieldGet ("C6_PRODUTO", _nLinha)
-		endif
-	next
-	_oCarSaf:Log ()
-	_oCarSaf:AtuZZA (.T.)
-	u_help ("Processo finalizado.")
+	
+	// Nao usa a mesma filial por que o programa BL01 faz medicao de grau continua, e vai estar
+	// rodando em um computador diferente do que receber cargas de uva. Se usarmos a mesma
+	// filial, ao sincronizar com o servidor SQL ficariamos com chave repetida.
+	if cFilial == '07'
+		_oCarSaf:Filial = '72'
+	else
+		u_help ("Filial sem tratamento para gerar cargas",, .t.)
+	endif
+
+	if ! empty (_oCarSaf:Filial)
+		_oCarSaf:Safra      = U_IniSafra ()
+		_oCarSaf:Carga      = 'PV'
+		_oCarSaf:StatusCar  = '1'
+		_oCarSaf:PesoBruto  = M->C5_PBRUTO
+		_oCarSaf:PesoTara   = 0 //M->C5_PBRUTO - M->C5_PESOL
+		_oCarSaf:NomeFornec = fBuscaCpo ("SA1", 1, xfilial ("SA1") + sc5 -> c5_cliente + sc5 -> c5_lojacli, "A1_NOME")
+		for _nLinha = 1 to len (aCols)
+			if ! GDDeleted (_nLinha)
+				_oCarSaf:AddItem ()
+				atail (_oCarSaf:ItDescri)  = GDFieldGet ("C6_DESCRI", _nLinha)
+				atail (_oCarSaf:ItItem)    = m->c5_num + '/' + GDFieldGet ("C6_ITEM", _nLinha) // Numero pedido nao cabe no ZZA_CARGA
+				atail (_oCarSaf:ItProduto) = GDFieldGet ("C6_PRODUTO", _nLinha)
+			endif
+		next
+		_oCarSaf:Log ()
+		_oCarSaf:AtuZZA (.T.)
+		u_help ("Processo finalizado.")
+	endif
 
 	U_ML_SRArea (_aAreaAnt)
 return
@@ -244,37 +255,48 @@ static function _RetZZA ()
 	local _sChaveZZA := ''
 	local _sDescri   := ''
 	local _sStrGrau  := ''
+	local _sFilCarg  := ''
 
-	zza -> (dbsetorder (1))  // ZZA_FILIAL, ZZA_SAFRA, ZZA_CARGA, ZZA_PRODUT
+	// Nao usa a mesma filial por que o programa BL01 faz medicao de grau continua, e vai estar
+	// rodando em um computador diferente do que receber cargas de uva. Se usarmos a mesma
+	// filial, ao sincronizar com o servidor SQL ficariamos com chave repetida.
+	if cFilial == '07'
+		_sFilCarg = '72'
+	else
+		u_help ("Filial sem tratamento para gerar cargas",, .t.)
+	endif
 
-	for _nLinha = 1 to len (aCols)
-		
-		// Usa chave de pesquisa equivalente a que usa no momento do envio.
-		_sChaveZZA = xfilial ("SC6") + U_IniSafra () + 'PV  ' + U_TamFixo (m->c5_num + '/' + GDFieldGet ("C6_ITEM", _nLinha), 15)
-		U_Log2 ('debug', '[' + procname () + ']Pesqusando ZZA com >>' + _sChaveZZA + '<<')
-		if ! zza -> (dbseek (_sChaveZZA, .F.))
-			u_log2 ('info', '[' + procname () + ']Nao encontrei ZZA.')
-			u_help ("Nao localizado nenhum registro de medicao de grau para o item " + GDFieldGet ("C6_ITEM", _nLinha),, .t.)
-		else
-			if zza -> zza_status != '3'
- 				u_help ("Item " + GDFieldGet ("C6_ITEM", _nLinha) + ": somente medicoes de grau com status 3 (finalizado) serao aceitos. Status atual: " + zza -> zza_status)
+	if ! empty (_sFilCarg)
+		zza -> (dbsetorder (1))  // ZZA_FILIAL, ZZA_SAFRA, ZZA_CARGA, ZZA_PRODUT
+		for _nLinha = 1 to len (aCols)
+			
+			// Usa chave de pesquisa equivalente a que usa no momento do envio.
+			_sChaveZZA = _sFIlCarg + U_IniSafra () + 'PV  ' + U_TamFixo (m->c5_num + '/' + GDFieldGet ("C6_ITEM", _nLinha), 15)
+			U_Log2 ('debug', '[' + procname () + ']Pesqusando ZZA com >>' + _sChaveZZA + '<<')
+			if ! zza -> (dbseek (_sChaveZZA, .F.))
+				u_log2 ('info', '[' + procname () + ']Nao encontrei ZZA.')
+				u_help ("Nao localizado nenhum registro de medicao de grau para o item " + GDFieldGet ("C6_ITEM", _nLinha),, .t.)
 			else
-				// Corta final da descricao, caso necessario, para caber o grau.
-				_sStrGrau = ' Gr:' + transform (zza -> zza_grau, "@E 99.9")
-				if ! _sStrGrau $ GDFieldGet ("C6_DESCRI", _nLinha)  // Para nao concatenar 2 vezes.
-					_sDescri = left (GDFieldGet ("C6_DESCRI", _nLinha), TamSX3 ("C6_DESCRI")[1] - len (_sStrGrau))
-					_sDescri = alltrim (_sDescri) + _sStrGrau
-					U_Log2 ('debug', '[' + procname () + ']ficou assim:' + _sDescri)
-					GDFieldPut ("C6_DESCRI", _sDescri, _nLinha)
+				if zza -> zza_status != '3'
+					u_help ("Item " + GDFieldGet ("C6_ITEM", _nLinha) + ": somente medicoes de grau com status 3 (finalizado) serao aceitos. Status atual: " + zza -> zza_status)
 				else
-					U_Log2 ('debug', '[' + procname () + ']STR do grau jah estava na descricao')
+					// Corta final da descricao, caso necessario, para caber o grau.
+					_sStrGrau = ' Gr:' + transform (zza -> zza_grau, "@E 99.9")
+					if ! _sStrGrau $ GDFieldGet ("C6_DESCRI", _nLinha)  // Para nao concatenar 2 vezes.
+						_sDescri = left (GDFieldGet ("C6_DESCRI", _nLinha), TamSX3 ("C6_DESCRI")[1] - len (_sStrGrau))
+						_sDescri = alltrim (_sDescri) + _sStrGrau
+						U_Log2 ('debug', '[' + procname () + ']ficou assim:' + _sDescri)
+						GDFieldPut ("C6_DESCRI", _sDescri, _nLinha)
+					else
+						U_Log2 ('debug', '[' + procname () + ']STR do grau jah estava na descricao')
+					endif
+		//			U_Log2 ('debug', '[' + procname () + ']' + GDFieldGet ("C6_DESCRI", _nLinha))
 				endif
-	//			U_Log2 ('debug', '[' + procname () + ']' + GDFieldGet ("C6_DESCRI", _nLinha))
 			endif
-		endif
-	next
-	GetDRefresh ()  // Atualiza tela do pedido.
-	u_help ("Processo finalizado.")
+		next
+		GetDRefresh ()  // Atualiza tela do pedido.
+		u_help ("Processo finalizado.")
+	endif
 
 	U_ML_SRArea (_aAreaAnt)
 return
