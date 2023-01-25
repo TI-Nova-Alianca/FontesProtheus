@@ -390,8 +390,6 @@ user function ImpDfEtq(cUrl, cIdEnt, lUsaColab)
 
                 impZebra(aNfe, aEmit, aDest)
 
-                u_help("Impressão Finalizada")
-
             elseif nTipImp == 2 // 2 - Normal
 
                 if nContDanfe == 1
@@ -421,9 +419,7 @@ user function ImpDfEtq(cUrl, cIdEnt, lUsaColab)
 
             endif    
             lOk := .T.
-
         endif
-
     next
 
     if lOk
@@ -452,7 +448,9 @@ user function ImpDfEtq(cUrl, cIdEnt, lUsaColab)
     restArea(aArea)
 
 return
-
+//
+//--------------------------------------------------------------------------------------------------------
+// Valor atributo
 static Function ValAtrib(atributo)
 Return (type(atributo) )
 //
@@ -485,7 +483,6 @@ static function DanfeSimp(oPrinter, nPosY, nPosX, oFontTit, oFontInf, aEmit, aNf
     _sVolEsp  := _sVolume + " " + _sEspecie
 
     For _x:=1 to _nVolume
-
         _nCont ++
 
         // Box Principal
@@ -512,24 +509,16 @@ static function DanfeSimp(oPrinter, nPosY, nPosX, oFontTit, oFontInf, aEmit, aNf
             oPrinter:Say( 130 + nPosY, 180 + nPosX, aNfe[3], oFontInf)
         endif
 
-        // //Remetente
-        // oPrinter:SayBitmap( 140 + nPosY, 35 + nPosX, aNfe[4], 25, 25)
-        // oPrinter:Say( 145 + nPosY, 80 + nPosX, cTitNome, oFontTit)
-        // if len(aEmit[1]) > 21
-        //     oPrinter:Say( 145 + nPosY, 175 + nPosX, SubStr(aEmit[1],1,20), oFontInf)
-        //     oPrinter:Say( 153 + nPosY, 80 + nPosX, SubStr(aEmit[1],21,59), oFontInf)
-        // else
-        //     oPrinter:Say( 145 + nPosY, 175 + nPosX, aEmit[1], oFontInf)
-        // endif
-        //Remetente
-        //oPrinter:SayBitmap( 140 + nPosY, 35 + nPosX, aNfe[4], 25, 25)
+        // Remetente
         oPrinter:Say( 145 + nPosY, 35 + nPosX, cTitNome, oFontTit)
+
         if len(aEmit[1]) > 21
             oPrinter:Say( 145 + nPosY, 130 + nPosX, SubStr(aEmit[1],1,27) , oFontInf)
             oPrinter:Say( 153 + nPosY, 130 + nPosX, SubStr(aEmit[1],28,59), oFontInf)
         else
             oPrinter:Say( 145 + nPosY, 130 + nPosX, aEmit[1], oFontInf)
         endif
+
         oPrinter:Say( 161 + nPosY, 35 + nPosX, cIETxt, oFontTit)
         oPrinter:Say( 161 + nPosY, 45 + nPosX, aEmit[3], oFontInf)
         if len(aEmit[2]) == 11
@@ -539,6 +528,7 @@ static function DanfeSimp(oPrinter, nPosY, nPosX, oFontTit, oFontInf, aEmit, aNf
             oPrinter:Say( 161 + nPosY, 175 + nPosX, cCnpj, oFontTit)
             oPrinter:Say( 161 + nPosY, 200 + nPosX, Transform(aEmit[2],"@R 99.999.999/9999-99"), oFontInf)
         endif
+
         oPrinter:Say( 169 + nPosY, 35 + nPosX, cUFTxt, oFontTit)
         oPrinter:Say( 169 + nPosY, 55 + nPosX, aEmit[4], oFontInf)
 
@@ -565,14 +555,17 @@ static function DanfeSimp(oPrinter, nPosY, nPosX, oFontTit, oFontInf, aEmit, aNf
         oPrinter:Box( 210 + nPosY, 30 + nPosX, 220 + nPosY, 270 + nPosX, "-4")
         oPrinter:Say( 218 + nPosY, 120 + nPosX, cDestTxt, oFontTit)
         oPrinter:Say( 228 + nPosY, 35 + nPosX, cTitNome, oFontTit)
+
         if len(aDest[1]) > 21
             oPrinter:Say( 228 + nPosY, 130 + nPosX, SubStr(aDest[1], 1, 30), oFontInf)
             oPrinter:Say( 236 + nPosY, 35 + nPosX, SubStr(aDest[1], 31, 49), oFontInf)
         else
             oPrinter:Say( 228 + nPosY, 130 + nPosX, aDest[1], oFontInf)
         endif
+
         oPrinter:Say( 244 + nPosY, 35 + nPosX, cIETxt, oFontTit)
         oPrinter:Say( 244 + nPosY, 45 + nPosX, aDest[3], oFontInf)
+
         if len(aDest[2]) == 11
             oPrinter:Say( 244 + nPosY, 175 + nPosX, cCpf, oFontTit)
             oPrinter:Say( 244 + nPosY, 200 + nPosX, Transform(aDest[2], "@R 999.999.999-99"), oFontInf)
@@ -580,6 +573,7 @@ static function DanfeSimp(oPrinter, nPosY, nPosX, oFontTit, oFontInf, aEmit, aNf
             oPrinter:Say( 244 + nPosY, 175 + nPosX, cCnpj, oFontTit)
             oPrinter:Say( 244 + nPosY, 200 + nPosX, Transform(aDest[2], "@R 99.999.999/9999-99"), oFontInf)
         endif
+
         oPrinter:Say( 252 + nPosY, 35 + nPosX, cUFTxt, oFontTit)
         oPrinter:Say( 252 + nPosY, 55 + nPosX, aDest[4], oFontInf)
 
@@ -597,7 +591,6 @@ static function DanfeSimp(oPrinter, nPosY, nPosX, oFontTit, oFontInf, aEmit, aNf
             oPrinter:StartPage()
         EndIf
     Next
-
 return
 //
 //--------------------------------------------------------------------------------------------------------
@@ -610,6 +603,7 @@ static function impZebra(aNFe, aEmit, aDest)
     local lProtEPEC  := .F.
     local lNomeEmit  := .F.
     local lNomeDest  := .F.
+    local lEnder     := .F.
 
     local nNome      := 1
     local nCNPJ      := 2
@@ -622,140 +616,160 @@ static function impZebra(aNFe, aEmit, aDest)
     local nNumero    := 6
     local nSerie     := 7
     local nData      := 8
-    //local nValor     := 9
     local nTamEmit   := len( allTrim( aEmit[nNome] ) ) //Quantidade de caracteres da razão social do emitente
     local nTamDest   := len( allTrim( aDest[nNome] ) ) //Quantidade de caracteres da razão social do destinatário
-    local nMaxNome   := 34 //Quantidade de caracteres máxima da primeira linha da razão social
+    local nMaxNome   := 80 // Quantidade de caracteres máxima da primeira linha da razão social
+    LOCAL nMaxEnd    := 80 // Quantidade maxima do endereço
+    local _x         := 0
+    local _nCont     := 0
 
     Default aNFe     := {}
     Default aEmit    := {}
     Default aDest    := {}
+
+    _sEnder   := _BuscaEndEntrega(aNFe[nSerie],aNFe[nNumero])
+    _nTamEnd  := len( allTrim( _sEnder) )
 
     _sVolume  := _BuscaVolEsp(aNFe[nSerie],aNFe[nNumero],'1') // RETORNA VOLUME
     _sEspecie := _BuscaVolEsp(aNFe[nSerie],aNFe[nNumero],'2') // RETORNA ESPECIE
     _nVolume  := val(_sVolume)
     _sVolEsp  := _sVolume +" " + _sEspecie
 
-    //Inicializa a impressão
-    MSCBBegin(1,6,150)
+    For _x:=1 to _nVolume
+        _nCont ++
 
-    //Criação do Box
-    MSCBBox(02,02,98,148)
+        MSCBBegin(1,6,150)         // Inicializa a impressão
 
-    //Criação das linhas Horizontais - sentido: de cima para baixo
-    MSCBLineH(02, 012, 98)
-    MSCBLineH(02, 047, 98)
-    MSCBLineH(02, 057, 98)
-    MSCBLineH(02, 084, 98)
-    MSCBLineH(40, 101, 98)
-    MSCBLineH(02, 101, 98)
-    MSCBLineH(02, 111, 98)
-    MSCBLineH(02, 138, 98)
+        MSCBBox(07,04,130,210)     // Criação do Box
 
-    //Criação das linhas verticais - sentido: da direita para esquerda
-    MSCBLineV(32, 84, 101)
-    MSCBLineV(64, 84, 101)
+        //Criação das linhas Horizontais - sentido: de cima para baixo
+        MSCBLineH(07, 012, 130)
+        MSCBLineH(07, 047, 130)
+        MSCBLineH(07, 057, 130)
+        MSCBLineH(07, 084, 130)
+        MSCBLineH(40, 101, 130)
+        MSCBLineH(07, 101, 130)
+        MSCBLineH(07, 111, 130)
+        MSCBLineH(07, 150, 130)
 
-    //Imprime o código de barras
-    MSCBSayBar(14, 24, aNFe[nChave], "N", "C", 10, .F., .F., .F., "C", 2, 1, .F., .F., "1", .T.)
+        //Criação das linhas verticais - sentido: da direita para esquerda
+        MSCBLineV(43, 84, 101)
+        MSCBLineV(85, 84, 101)
 
-    lProtEPEC  := !empty( aNFe[nProt_EPEC] ) //Se utilizado evento EPEC para emissão da Nota lProtEPEC = .T.
-    lEmitJurid := len( aEmit[nCNPJ] ) == 14 //Se emitente pessoa jurídica lEmitJurid = .T.
-    lDestJurid := len( aDest[nCNPJ] ) == 14 //Se destinatário pessoa jurídica lDestJurid = .T.
+        //Imprime o código de barras
+        MSCBSayBar(19, 24, aNFe[nChave], "N", "C", 10, .F., .F., .F., "C", 2, 1, .F., .F., "1", .T.)
 
-    //Criação dos campos de textos fixos da etiqueta
-    MSCBSay(17.5, 06.25, "DANFE SIMPLIFICADO - ETIQUETA", "N", "A", cFontMaior)
-    MSCBSay(04  , 15   , "CHAVE DE ACESSO:"             , "N", "A", cFontMaior)
+        lProtEPEC  := !empty( aNFe[nProt_EPEC] ) // Se utilizado evento EPEC para emissão da Nota lProtEPEC = .T.
+        lEmitJurid := len( aEmit[nCNPJ] ) == 14  // Se emitente pessoa jurídica lEmitJurid = .T.
+        lDestJurid := len( aDest[nCNPJ] ) == 14  // Se destinatário pessoa jurídica lDestJurid = .T.
 
-    if !lProtEPEC
-        MSCBSay(22.5, 48.75, "PROTOCOLO DE AUTORIZACAO:"     , "N", "A", cFontMaior)
-    else
-        MSCBSay(16.5, 48.75, "PROTOCOLO DE AUTORIZACAO EPEC:", "N", "A", cFontMaior)
-    endIf
+        lNomeEmit := nTamEmit > nMaxNome //Se quantidade de caracteres da razão social do emitente for maior que o permitido para a primeira linha lNomeEmit := T
+        lNomeDest := nTamDest > nMaxNome //Se quantidade de caracteres da razão social do destinatário for maior que o permitido para a primeira linha lNomeDest := T
 
-    MSCBSay(04, 60, "NOME/RAZAO SOCIAL:", "N", "A", cFontMaior)
+        //Criação dos campos de textos fixos da etiqueta
+        MSCBSay(23, 07.25, "DANFE SIMPLIFICADO - ETIQUETA", "N", "A", cFontMaior)
+        MSCBSay(47, 16   , "CHAVE DE ACESSO"              , "N", "A", cFontMaior)
 
-    if lEmitJurid
-        MSCBSay(04, 66.25 , "CNPJ:", "N", "A", cFontMaior)
-    else
-        MSCBSay(04, 66.25 , "CPF:", "N", "A", cFontMaior)
-    endIf
+        if !lProtEPEC
+            MSCBSay(30, 48.75, "PROTOCOLO DE AUTORIZACAO"     , "N", "A", cFontMaior)
+        else
+            MSCBSay(30, 48.75, "PROTOCOLO DE AUTORIZACAO EPEC", "N", "A", cFontMaior)
+        endIf
 
-    MSCBSay(04  , 70    , "IE:"               , "N", "A", cFontMaior)
-    MSCBSay(04  , 73.75 , "UF:"               , "N", "A", cFontMaior)
-    MSCBSay(04  , 88.75 , "SERIE:"            , "N", "A", cFontMaior)
-    MSCBSay(04  , 93.75 , "N_A7:"             , "N", "A", cFontMaior)
-    MSCBSay(34  , 88.75 , "DATA EMISSAO:"     , "N", "A", cFontMaior)
-    MSCBSay(65.5, 88.75 , "TIPO OPER.:"       , "N", "A", cFontMaior)
-    MSCBSay(65.5, 92.5  , "0 - ENTRADA"       , "N", "A", cFontMenor)
-    MSCBSay(65.5, 96.25 , "1 - SAIDA"         , "N", "A", cFontMenor)
-    MSCBSay(35  , 105.5 , "DESTINATARIO"      , "N", "A", cFontMaior)
-    MSCBSay(04  , 113.75, "NOME/RAZAO SOCIAL:", "N", "A", cFontMaior)
+        // Emissor
+        MSCBSay(10, 60, "NOME/RAZAO SOCIAL:", "N", "A", cFontMaior)
 
-    if lDestJurid
-        MSCBSay(04, 120, "CNPJ:", "N", "A", cFontMaior)
-    else
-        MSCBSay(04, 120, "CPF:" , "N", "A", cFontMaior)
-    endIf
+        if lEmitJurid
+            MSCBSay(10, 70 , "CNPJ:", "N", "A", cFontMaior)
+        else
+            MSCBSay(10, 70 , "CPF:", "N", "A", cFontMaior)
+        endIf
+        MSCBSay(10  , 74    , "IE:"               , "N", "A", cFontMaior)
+        MSCBSay(10  , 78    , "UF:"               , "N", "A", cFontMaior)
 
-    MSCBSay(04  , 123.75, "IE:"         , "N", "A", cFontMaior)
-    MSCBSay(04  , 127.5 , "UF:"         , "N", "A", cFontMaior)
-    MSCBSay(04  , 142.5 , "VOLUMES:"    , "N", "A", cFontMaior)
-    //MSCBSay(62.5, 142.5 , "R$"          , "N", "A", cFontMaior)
+        // Blocos centrais
 
-    lNomeEmit := nTamEmit > nMaxNome //Se quantidade de caracteres da razão social do emitente for maior que o permitido para a primeira linha lNomeEmit := T
-    lNomeDest := nTamDest > nMaxNome //Se quantidade de caracteres da razão social do destinatário for maior que o permitido para a primeira linha lNomeDest := T
+        MSCBSay(10, 88.75 , "DOC.N_A7:"         , "N", "A", cFontMaior)
+        MSCBSay(45, 88.75 , "DATA EMISSAO:"     , "N", "A", cFontMaior)
+        MSCBSay(87, 88.75 , "TIPO OPER."        , "N", "A", cFontMaior)
+        MSCBSay(87, 92.5  , "0 - ENTRADA"       , "N", "A", cFontMenor)
+        MSCBSay(87, 96.25 , "1 - SAIDA"         , "N", "A", cFontMenor)
+        
+        // Destinatário
+        MSCBSay(48, 105.5 , "DESTINATARIO"      , "N", "A", cFontMaior)
+        MSCBSay(10, 113.75, "NOME/RAZAO SOCIAL:", "N", "A", cFontMaior)
 
-    //Criação dos campos de textos variáveis da etiqueta
-    MSCBSay(09, 39, transform( aNFe[nChave], "@R 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999" ), "N", "A", cFontMenor)
+        if lDestJurid
+            MSCBSay(10, 123, "CNPJ:", "N", "A", cFontMaior)
+        else
+            MSCBSay(10, 123, "CPF:" , "N", "A", cFontMaior)
+        endIf
 
-    if !lProtEPEC
-        MSCBSay(38.75, 53.75, aNFe[nProtocolo], "N", "A", cFontMenor)
-    else
-        MSCBSay(38.75, 53.75, aNFe[nProt_EPEC], "N", "A", cFontMenor)
-    endIf
+        MSCBSay(10, 127, "IE:"                      , "N", "A", cFontMaior)
+        MSCBSay(10, 130 ,"UF:"                      , "N", "A", cFontMaior)
+        MSCBSay(10, 134 ,"ENDEREÇO DE ENTREGA:"     , "N", "A", cFontMaior)
 
-    if lNomeEmit
-        MSCBSay(44, 60, allTrim( subStr( aEmit[nNome], 1, nMaxNome ) ), "N", "A", cFontMenor)
-        MSCBSay(04, 62.5, allTrim( subStr( aEmit[nNome], nMaxNome + 1, nTamEmit ) ), "N", "A", cFontMenor)
-    else
-        MSCBSay(44, 60, allTrim( aEmit[nNome] ), "N", "A", cFontMenor)
-    endIf
+        // Volumes
+        MSCBSay(10, 152 , "VOLUMES:"    , "N", "A", cFontMaior)
 
-    if lEmitJurid
-        MSCBSay(15, 66.25, transform( aEmit[nCNPJ], "@R 99.999.999/9999-99" ), "N", "A", cFontMenor) //Emitente pessoa jurídica
-    else
-        MSCBSay(15, 66.25, transform( aEmit[nCNPJ], "@R 999.999.999-99" ), "N", "A", cFontMenor) //Emitente pessoa física
-    endIf
+        //Criação dos campos de textos variáveis da etiqueta
+        MSCBSay(13, 39, transform( aNFe[nChave], "@R 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999 9999" ), "N", "A", cFontMenor)
 
-    MSCBSay(11, 70,    aEmit[nIE]                   , "N", "A", cFontMenor)
-    MSCBSay(11, 73.75, aEmit[nUF]                   , "N", "A", cFontMenor)
-    MSCBSay(18, 88.75, aNFe[nSerie]                 , "N", "A", cFontMenor)
-    MSCBSay(11, 93.75, aNFe[nNumero]                , "N", "A", cFontMenor)
-    MSCBSay(40, 93.75, ajustaData( aNFe[nData] )    , "N", "A", cFontMenor)
-    MSCBSay(93, 88.75, aNFe[nOperacao]              , "N", "A", cFontMenor)
+        if !lProtEPEC
+            MSCBSay(50, 53.75, aNFe[nProtocolo], "N", "A", cFontMenor)
+        else
+            MSCBSay(50, 53.75, aNFe[nProt_EPEC], "N", "A", cFontMenor)
+        endIf
 
-    if lNomeDest
-        MSCBSay(44, 113.75, allTrim( subStr( aDest[nNome], 1, nMaxNome ) ), "N", "A", cFontMenor)
-        MSCBSay(04, 116.25, allTrim( subStr( aDest[nNome], nMaxNome + 1, nTamDest ) ), "N", "A", cFontMenor)
-    else
-        MSCBSay(44, 113.75, allTrim( aDest[nNome] ), "N", "A", cFontMenor)
-    endIf
+        // Emissor
+        MSCBSay(25, 64, allTrim( aEmit[nNome] ), "N", "A", cFontMenor) // nome do emitente
 
-    if lDestJurid
-        MSCBSay(15, 120, transform( aDest[nCNPJ], "@R 99.999.999/9999-99" ), "N", "A", cFontMenor) //Destinatário pessoa jurídica
-    else
-        MSCBSay(15, 120, transform( aDest[nCNPJ], "@R 999.999.999-99" ), "N", "A", cFontMenor) //Destinatário pessoa física
-    endIf
+        if lEmitJurid
+            MSCBSay(25, 70, transform( aEmit[nCNPJ], "@R 99.999.999/9999-99" ), "N", "A", cFontMenor) //Emitente pessoa jurídica
+        else
+            MSCBSay(25, 70, transform( aEmit[nCNPJ], "@R 999.999.999-99" ), "N", "A", cFontMenor) //Emitente pessoa física
+        endIf
 
-    MSCBSay(11, 123.75, aDest[nIE]  , "N", "A", cFontMenor)
-    MSCBSay(11, 127.5 , aDest[nUF]  , "N", "A", cFontMenor)
-    MSCBSay(70, 142.5 , _sVolEsp    , "N", "A", cFontMenor)
-    //MSCBSay(70, 142.5 , aNFe[nValor], "N", "A", cFontMenor)
+        MSCBSay(25, 74   , aEmit[nIE]                   , "N", "A", cFontMenor)
+        MSCBSay(25, 78   , aEmit[nUF]                   , "N", "A", cFontMenor)
+        
+        // Blocos centrais
+        MSCBSay(10  , 93.75, aNFe[nNumero] +' ' + aNFe[nSerie]  , "N", "A", cFontMenor)
+        MSCBSay(53.5, 93.75, ajustaData( aNFe[nData] )          , "N", "A", cFontMenor)
+        MSCBSay(122 , 88.75, aNFe[nOperacao]                    , "N", "A", cFontMenor)
 
-    //Finaliza a impressão
-    MSCBEND()
+        if lNomeDest
+            MSCBSay(25, 117.75, allTrim( subStr( aDest[nNome], 1, nMaxNome ) )              , "N", "A", cFontMenor)
+            MSCBSay(10, 120   , allTrim( subStr( aDest[nNome], nMaxNome + 1, nTamDest ) )   , "N", "A", cFontMenor)
+        else
+            MSCBSay(25, 117.75, allTrim( aDest[nNome] ), "N", "A", cFontMenor)
+        endIf
 
+        if lDestJurid
+            MSCBSay(25, 123, transform( aDest[nCNPJ], "@R 99.999.999/9999-99" ), "N", "A", cFontMenor)  // Destinatário pessoa jurídica
+        else
+            MSCBSay(25, 123, transform( aDest[nCNPJ], "@R 999.999.999-99" ), "N", "A", cFontMenor)      // Destinatário pessoa física
+        endIf
+
+        MSCBSay(25, 127   , aDest[nIE]  , "N", "A", cFontMenor)
+        MSCBSay(25, 130   , aDest[nUF]  , "N", "A", cFontMenor)
+        
+        lEnder := iif(_nTamEnd > nMaxEnd, .T.,.F.)
+        if lEnder
+            MSCBSay(25, 138 , subStr(_sEnder,1, nMaxEnd), "N", "A", cFontMenor)
+            MSCBSay(25, 141 , subStr(_sEnder, nMaxEnd +1,_nTamEnd), "N", "A", cFontMenor)
+        else
+            MSCBSay(25, 138   , _sEnder , "N", "A", cFontMenor)
+        endIf
+
+        MSCBSay(25, 138   , _sEnder , "N", "A", cFontMenor)
+
+        // Volume
+        MSCBSay(70, 152, str(_x) + " de " + _sVolume + " " + _sEspecie    , "N", "A", cFontMenor)
+
+        //Finaliza a impressão
+        MSCBEND()
+    Next
 return
 //
 //--------------------------------------------------------------------------------------------------------
@@ -806,3 +820,30 @@ static function _BuscaVolEsp(_sSerie, _sDoc,_sTipo)
         endif
     Next
 return _sRet
+//
+//--------------------------------------------------------------------------------------------------------
+// Retorna Endereço de entrega
+Static Function _BuscaEndEntrega(_sSerie, _sDoc)
+    Local _x      := 0
+    Local _aDados := {}
+    Local _sRet   := ""
+
+    _oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT "
+    _oSQL:_sQuery += " 	 TRIM(SA1.A1_ENDENT) + ' - ' + TRIM(SA1.A1_BAIRROE) + ' - ' + TRIM(SA1.A1_ESTE) "
+    _oSQL:_sQuery += " FROM " + RetSQLName ("SF2") + " SF2 "
+    _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SA1") + " SA1 "
+    _oSQL:_sQuery += " 	ON SA1.D_E_L_E_T_ = '' "
+    _oSQL:_sQuery += " 		AND A1_COD  = SF2.F2_CLIENTE "
+    _oSQL:_sQuery += " 		AND A1_LOJA = SF2.F2_LOJA "
+    _oSQL:_sQuery += " WHERE SF2.D_E_L_E_T_ = '' "
+    _oSQL:_sQuery += " AND F2_FILIAL = '" + cFilAnt + "' "
+    _oSQL:_sQuery += " AND F2_DOC    = '" + _sDoc   + "' "
+    _oSQL:_sQuery += " AND F2_SERIE  = '" + _sSerie + "' "
+    _aDados := aclone (_oSQL:Qry2Array ())
+
+    For _x := 1 to Len(_aDados)
+        _sRet := alltrim(_aDados[_x,1])
+    Next
+Return _sRet
