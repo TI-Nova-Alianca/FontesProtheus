@@ -13,6 +13,7 @@
 // 18/02/2022 - Robert - Criado tratamento para 'carga compartilhada' (GLPI 11633).
 // 20/02/2022 - Robert - Variavel _sErros (publica do web service) renomeada para _sErroWS
 // 28/10/2022 - Robert - Removidos alguns parametros em desuso.
+// 25/01/2023 - Robert - Removidos alguns logs e medicoes de performance.
 //
 
 #include "VA_INCLU.prw"
@@ -27,7 +28,6 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 	private _oCarSaf  := ClsCarSaf ():New ()
 
 	u_log2 ('info', 'Iniciando ' + procname ())
-	//U_PerfMon ('I', 'GeraSZE_validacoes')  // Para metricas de performance
 
 	// Este programa foi criado para ser chamado via web service, que jah deve
 	// deixar a variavel _sErroWS criada, mas, para garantir...
@@ -91,15 +91,10 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		private _zx509orga    := U_RetZX5 ("09", _sSafra + _sBalanca, 'ZX5_09ORGA')
 	endif
 
-	U_Log2 ('debug', '[' + procname () + ']_sCargaC1 = ' + _sCargaC1)
-	U_Log2 ('debug', '[' + procname () + ']_sCargaC2 = ' + _sCargaC2)
+	U_Log2 ('debug', '[' + procname () + ']M->ZE_CARGA   = ' + m->ze_carga)
 	U_Log2 ('debug', '[' + procname () + ']M->ZE_CARGAC1 = ' + m->ze_cargaC1)
 	U_Log2 ('debug', '[' + procname () + ']M->ZE_CARGAC2 = ' + m->ze_cargaC2)
-	U_Log2 ('debug', '[' + procname () + ']M->ZE_PLACA   = ' + m->ze_placa)
 
-//	// Define impressora de ticket e alimenta as respectivas variaveis (que jah devem ter escopo PRIVATE).
-//	U_VA_RusDI (cFilAnt, _sIdImpr)
-	
 	// Define impressora de ticket
 	_oCarSaf:DefImprTk (cFilAnt, _sIdImpr)
 
@@ -112,8 +107,6 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		_oSQL:_sQuery += " WHERE GX0001_ASSOCIADO_CODIGO = '" + _oAssoc:Codigo + "'"
 		_oSQL:_sQuery +=   " AND GX0001_ASSOCIADO_LOJA   = '" + _oAssoc:Loja   + "'"
 		_oSQL:_sQuery +=   " AND GX0001_ASSOCIADO_RESTRICAO != ''"
-	//	_oSQL:Log ()
-		//_oSQL:PerfMon = .T.  // Para monitoramento de performance - desabilitar depois
 		_sRestri = _oSQL:RetQry ()
 		if ! empty (_sRestri)
 			_sErroWS += "Associado com restricoes: " + _sRestri
@@ -122,33 +115,25 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 
 	// Gera array com os cadastros viticolas vinculados ao associado. Deve ser mantido, aqui, o mesmo formato gerado pela classe ClsAssoc.
 	if empty (_sErroWS)
-		//U_PerfMon ('I', 'GeraSZE_RUSCV')  // Para metricas de performance
 		_aCadVitic = aclone (U_VA_RusCV (_oAssoc:Codigo, _oAssoc:Loja))
-		//U_PerfMon ('F', 'GeraSZE_RUSCV')  // Para metricas de performance
 		if len (_aCadVitic) == 0
 			_sErroWS += "Nao ha nenhuma variedade de uva ligada ao associado."
 		endif
 	endif
-	//u_log2 ('info', '_aCadVitic ficou assim:')
-	//u_log2 ('info', _aCadVitic)
 
 	// Cria aHeader e aCols para poder usar as validacoes do VA_RUS2.PRW
 	if empty (_sErroWS)  // Variavel private do web service
 		sb1 -> (dbsetorder (1))
 		private aHeader := aclone (U_GeraHead ("SZF", .F., {}, {}, .F.))
 		private aCols := {}
-		//u_log2 ('debug', '_aItensCar:')
-		//u_log2 ('debug', _aItensCar)
 		for _nItemCar = 1 to len (_aItensCar)
 
 			// Verifica em qual das linhas da array de cadastros viticolas encontra-se esta variedade.
-			//u_log2 ('debug', 'Pesquisando ' + _aItensCar [_nItemCar, 2])
 			_nItemVit = ascan (_aCadVitic, {|_aVal| alltrim (_aVal [.CadVitProduto]) == alltrim (_aItensCar [_nItemCar, 2])})
 			if _nItemVit == 0
 				_sErroWS += "Variedade " + alltrim (_aItensCar [_nItemCar, 2]) + " nao vinculada com a propriedade rural " + _aItensCar [_nItemCar, 1] + ' / SIVIBE ' + _aItensCar [_nItemCar, 5]
 				exit
 			endif
-
 			if ! sb1 -> (dbseek (xfilial ("SB1") + _aItensCar [_nItemCar, 2], .F.))
 				_sErroWS += "Variedade '" + _aItensCar [_nItemCar, 2] + "' nao encontrada no cadastro de itens."
 				exit
@@ -194,35 +179,27 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		//	u_logACols ()
 
 			// Executa a validacao de linha
-			//U_PerfMon ('I', 'GeraSZE_RUS2L')  // Para metricas de performance
 			if ! U_VA_RUS2L ()
 				_sErroWS += 'Erro na validacao do item ' + cvaltochar (_nItemCar)
 				exit
 			else
-				//U_PerfMon ('F', 'GeraSZE_RUS2L')  // Para metricas de performance
 				U_Log2 ('debug', 'U_VA_RUS2L() retornou .T.')
 			endif
 		next
-	//	u_log (aHeader)
-	//	u_log (aCols)
-	//	u_logACols ()
 	endif
-//	U_Log2 ('debug', '_sErroWS ateh o momento: ' + _sErroWS)
 
 	// Validacoes do programa original.
 	if empty (_sErroWS)  // Variavel private do web service
-		//U_PerfMon ('I', 'GeraSZE_RUS2T')  // Para metricas de performance
+
+	//	// Os programas de validacao e gravacao vao gostar de receber o objeto bem alimentadinho...
+	//	_oCarSaf:GeraAtrib ('M')
+
 		if U_VA_RUS2T ()
-			//U_PerfMon ('F', 'GeraSZE_RUS2T')  // Para metricas de performance
 			u_log2 ('debug', 'U_VA_RUS2T() ok')
 			u_log2 ('debug', 'Tentando gravar carga')
 			
-			//U_PerfMon ('F', 'GeraSZE_validacoes')  // Para metricas de performance
-
 			// Gravacao pelo programa original.
-			//U_PerfMon ('I', 'GeraSZE_gravacao')  // Para metricas de performance
 			if U_VA_RUS2G ()
-				//U_PerfMon ('F', 'GeraSZE_gravacao')  // Para metricas de performance
 				u_log2 ('info', 'U_VA_RUS2G() ok')
 				_sMsgRetWS = sze -> ze_carga
 				u_log2 ('info', 'Carga gerada: ' + _sMsgRetWS)

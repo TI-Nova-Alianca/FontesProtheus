@@ -1482,6 +1482,16 @@ user function VA_VCpo (_sCampo)
 				_lRet = u_msgnoyes ("Saldos iniciais COM QUANTIDADE deveriam ser informados somente no momento de implantacao do sistema. Confirma assim mesmo?")
 			endif
 
+// NEM COLOQUEI EM PRODUCAO		case _sCampo == "M->ZF_GRAU"
+// NEM COLOQUEI EM PRODUCAO			if ! empty (M->ZF_GRAU) .and. len (alltrim (m->zf_grau)) != len (m->zf_grau)
+// NEM COLOQUEI EM PRODUCAO				u_help ("Grau deve ser informado com decimal.",, .t.)
+// NEM COLOQUEI EM PRODUCAO				_lRet = .F.
+// NEM COLOQUEI EM PRODUCAO			endif
+// NEM COLOQUEI EM PRODUCAO			if _lRet .and. ! empty (_oCarSaf:CCompart1)
+// NEM COLOQUEI EM PRODUCAO				u_help ("Esta carga consta como fisicamente compartilhada (mesmo caminhao) com a carga " + _oCarSaf:CCompart1 + ". Por isso, deve assumir o grau dessa carga compartilhada.")
+// NEM COLOQUEI EM PRODUCAO				_lRet = .F.
+// NEM COLOQUEI EM PRODUCAO			endif
+// NEM COLOQUEI EM PRODUCAO
 		case _sCampo == "M->ZF_PRM02"
 			if IsInCallStack ("U_VA_RUS2")
 				if fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("ZF_PRODUTO"), "B1_VAUVAES") != "S"

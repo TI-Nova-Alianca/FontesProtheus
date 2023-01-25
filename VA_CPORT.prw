@@ -49,6 +49,7 @@
 // 14/06/2022 - sandra  - Incluso campo ZZT_OBS - GLPI 12209.
 // 28/10/2022 - Robert  - Removidos alguns parametros em desuso (da rotina de recebimento safra).
 // 12/01/2023 - Robert  - Instancia object ClsCarSaf antes de chamar tela de fechamento de safra.
+// 25/01/2023 - Robert  - Passa a usar classe ClsCarSaf para atualizar tabela ZZA.
 //
 
 // ----------------------------------------------------------------------------------------------------------------
@@ -192,6 +193,7 @@ return
 User Function DelZZT()
 	local _lContinua := .T.
 	local _oSQL      := NIL
+	local _oCarSaf   := NIL
 
 	// Valida carga de safra.
 	if ! empty(ZZT->ZZT_CARGA)
@@ -244,7 +246,9 @@ User Function DelZZT()
 						msunlock ()
 				
 						// Atualiza tabela de comunicacao com leitor de grau.
-						U_AtuZZA (sze -> ze_safra, sze -> ze_carga)
+					//	U_AtuZZA (sze -> ze_safra, sze -> ze_carga)
+						_oCarSaf := ClsCarSaf ():New (sze -> (recno ()))
+						_oCarSaf:AtuZZA (.F.)
 					endif
 				endif
 			endif

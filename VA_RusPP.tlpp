@@ -14,6 +14,7 @@
 // 12/02/2022 - Robert - Ajuste no 'se ano+mes previsto jah passou' pois na vdd considerava apenas o mes! (GLPI 11619).
 // 14/03/2022 - Robert - Incluida coluna com a letra para parcela na array de retorno.
 // 10/01/2023 - RObert - Ajustes para safra 2023.
+// 25/01/2023 - Robert - Removidos alguns logs
 //
 
 // ------------------------------------------------------------------------------------
@@ -94,8 +95,8 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 			next
 		endif
 	endif
-	u_log2 ('debug', '_aParcel depois de ler o XML:')
-	u_log2 ('debug', _aParcel)
+//	u_log2 ('debug', '_aParcel depois de ler o XML:')
+//	u_log2 ('debug', _aParcel)
 
 	// A parcela do frete cai sempre na proxima posicao livre
 	if _lContinua
@@ -239,7 +240,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 				if _aParcel [_nParcel, 3] <= 0
 					loop
 				endif
-				U_Log2 ('debug', 'Definindo mes para vencimento da parcela ' + cvaltochar (_nParcel))
+			//	U_Log2 ('debug', 'Definindo mes para vencimento da parcela ' + cvaltochar (_nParcel))
 				// Parcela do frete sempre eh a ultima (jah descobri
 				// anteriormente qual das parcelas vai ter o frete.
 				if _nParcel == _nParcFrt
@@ -282,7 +283,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 					_sMesVcSaf = substring (dtos (dDataBase), 5, 2)
 				endif
 
-				U_Log2 ('debug', 'Ano/mes para vcto desta parcela ficou definido como ' + _sAnoVcSaf + _sMesVcSaf)
+			//	U_Log2 ('debug', 'Ano/mes para vcto desta parcela ficou definido como ' + _sAnoVcSaf + _sMesVcSaf)
 
 				_aParcel [_nParcel, 2] = lastday (stod (_sAnoVcSaf + _sMesVcSaf + '01'))
 			next
@@ -318,6 +319,6 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 			endif
 		next
 	endif
-	U_Log2 ('info', '[' + procname () + ']Parcelas previstas:')
-	U_Log2 ('info', _aAux)
+//	U_Log2 ('info', '[' + procname () + ']Parcelas previstas:')
+//	U_Log2 ('info', _aAux)
 return _aAux
