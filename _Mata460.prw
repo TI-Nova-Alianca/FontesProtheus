@@ -184,7 +184,7 @@ user function _Mata460 ()
 				enddo
 				U_SPEDAut ('S', _sSerie, _sNFIni, _sNFFim)
 				U_BolAuto (_sSerie, _sNFIni, _sNFFim)
-				//_VerifGNRE(cFilAnt, _sSerie, _sNFIni)
+				_VerifGNRE(cFilAnt, _sSerie, _sNFIni)
 			endif
 		endif
 	endif
