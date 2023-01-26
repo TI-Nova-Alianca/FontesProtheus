@@ -35,6 +35,8 @@
 // 12/12/2022 - Robert  - Implementados metodos SomaMsg e GravaErro.
 // 14/12/2022 - RObert  - Gravacao campo ZAG_EREXEC e melhoria mensagens de log.
 // 19/01/2023 - Robert  - Metodo Libera() nao tenta mais executar a transferencia no final.
+// 27/01/2023 - Robert  - Metodo New passa a aceitar R_E_C_N_O_ ou chave de pesquisa.
+//                      - Mensagens, quando for o caso, passam a ser todas persistidas no campo ZAG_ULTMSG.
 //
 
 // ------------------------------------------------------------------------------------
@@ -108,30 +110,38 @@ CLASS ClsTrEstq
 	private METHOD LeSB1 ()
 	public  METHOD Libera ()
 	public  METHOD Negar ()
+	public  METHOD NovoEndDst ()
 	private METHOD SomaMsg ()
 ENDCLASS
 
 
 // --------------------------------------------------------------------------
 // Construtor.
-METHOD New (_nRecno) Class ClsTrEstq
+METHOD New (_xChave) Class ClsTrEstq
+
+	// Alimenta atributos com valores default de uma solicitacao nova.
+	::GeraAtrib ("")
 
 	// Se receber numerico, eh por que se trata do numero de registro
 	// jah existente no ZAG e preciso atualizar o objeto.
-	if valtype (_nRecno) == "N"
-		ZAG -> (dbgoto (_nRecno))
+	if valtype (_xChave) == "N"
+		ZAG -> (dbgoto (_xChave))
 		::GeraAtrib ("ZAG")
-		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Instanciado' + ;
+	elseif valtype (_xChave) == "C"
+		zag -> (dbsetorder (1))  // ZAG_FILIAL, ZAG_DOC, R_E_C_N_O_, D_E_L_E_T_
+		if ! zag -> (dbseek (_xChave, .F.))
+			u_help ("Erro ao instanciar solicitacao de transferencia. Nao foi possivel localizar registro na tabela ZAG com chave '" + _xChave + "'.",, .t.)
+		else
+			::GeraAtrib ("ZAG")
+		endif
+	endif
+
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Instanciado ' + ;
 			' ZAG_DOC ' + ::Docto + ;
 			' ' + ::AlmOrig + '->' + ::AlmDest + ;
 			' item ' + alltrim (::ProdOrig) + ;
 			' qt=' + cvaltochar (::QtdSolic) + ;
 			' recno=' + cvaltochar (zag -> (recno ())))
-	else
-
-		// Alimenta atributos com valores default de uma etiqueta nova.
-		::GeraAtrib ("")
-	endif
 
 Return ::self
 
@@ -270,6 +280,9 @@ METHOD Exclui () Class ClsTrEstq
 
 	if ! _lContinua
 		u_help (::UltMsg)
+
+		// Persiste ultimas mensagens na tabela ZAG, para ajudar pessoal de suporte.
+		::AtuZAG ("zag_UltMsg", ::UltMsg)
 	endif
 
 return _lContinua
@@ -351,10 +364,10 @@ METHOD Executa (_lMensagem) Class ClsTrEstq
 	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']_lContinua=' + cvaltochar (_lContinua))
 	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']::UltMsg=' + ::UltMsg)
 	if ! _lContinua .and. ! empty (::UltMsg)
-		// Persiste mensagem de erro na tabela ZAG, para ajudar pessoal de suporte.
-		::AtuZAG ("zag_ErExec", ::UltMsg)
-
 		u_help (::UltMsg)
+
+		// Persiste ultimas mensagens na tabela ZAG, para ajudar pessoal de suporte.
+		::AtuZAG ("zag_UltMsg", ::UltMsg)
 	endif
 
 	// Gera novamente os atributos, para atualizar caso tenha gerado movimento.
@@ -661,26 +674,6 @@ METHOD Grava () Class ClsTrEstq
 
 	// Verifica campos obrigatorios, nao aceitos, tamanhos, tipos, etc.
 	if _lContinua
-	//	if empty (::FilOrig) ; ::UltMsg += "Filial de origem deve ser informada."          ; _lContinua = .F. ; endif
-	//	if empty (::FilDest) ; ::UltMsg += "Filial destino deve ser informada."            ; _lContinua = .F. ; endif
-	//	if empty (::AlmOrig) ; ::UltMsg += "Almoxarifado de origem deve ser informado."    ; _lContinua = .F. ; endif
-	//	if empty (::AlmDest) ; ::UltMsg += "Almoxarifado destino deve ser informado."      ; _lContinua = .F. ; endif
-	//	if empty (::DtEmis)  ; ::UltMsg += "Data de emissao deve ser informada."           ; _lContinua = .F. ; endif
-	//	if empty (::UsrIncl) ; ::UltMsg += "Nome solicitante deve ser informado."          ; _lContinua = .F. ; endif
-	//	if empty (::Motivo)  ; ::UltMsg += "Motivo da transferencia deve ser informado."   ; _lContinua = .F. ; endif
-	//	if empty (::ProdOrig); ::UltMsg += "Produto deve ser informado."                   ; _lContinua = .F. ; endif
-	//	if empty (::QtdSolic); ::UltMsg += "Quantidade solicitada deve ser informada."     ; _lContinua = .F. ; endif
-	//	if ! empty (::Docto) ; ::UltMsg += "Documento NAO deve ser informado na inclusao."          ; _lContinua = .F. ; endif
-	//	if ! empty (::RegZAG); ::UltMsg += "RECNO da tabela ZAG NAO deve ser informado na inclusao."; _lContinua = .F. ; endif
-	//	if valtype (::QtdSolic) != 'N'
-	//		::UltMsg += "Quantidade deve ser do tipo numerico."
-	//		_lContinua = .F.
-	//	else
-	//		if ::QtdSolic <= 0
-	//			::UltMsg += "Quantidade solicitada zerada ou negativa."
-	//			_lContinua = .F.
-	//		endif
-	//	endif
 		if empty (::FilOrig) ; ::SomaMsg ("Filial de origem deve ser informada.")                   ; _lContinua = .F. ; endif
 		if empty (::FilDest) ; ::SomaMsg ("Filial destino deve ser informada.")                     ; _lContinua = .F. ; endif
 		if empty (::AlmOrig) ; ::SomaMsg ("Almoxarifado de origem deve ser informado.")             ; _lContinua = .F. ; endif
@@ -715,17 +708,6 @@ METHOD Grava () Class ClsTrEstq
 		// Usa tamanhos fixos (nao busca no SX3) por questao de performance,
 		// jah que sao campos chave e dificilmente mudarao de tamanho.  
 		if _lContinua
-	//		if len (::FilOrig)  !=  2; ::UltMsg += "Filial origem deve ter tamanho 2."    ; _lContinua = .F.; endif
-	//		if len (::FilDest)  !=  2; ::UltMsg += "Filial destino deve ter tamanho 2."   ; _lContinua = .F.; endif
-	//		if len (::ProdOrig) != 15; ::UltMsg += "Produto origem deve ter tamanho 15."  ; _lContinua = .F.; endif
-	//		if len (::ProdDest) != 15; ::UltMsg += "Produto destino deve ter tamanho 15." ; _lContinua = .F.; endif
-	//		if len (::AlmOrig)  !=  2; ::UltMsg += "Alm.origem deve ter tamanho 2."       ; _lContinua = .F.; endif
-	//		if len (::AlmDest)  !=  2; ::UltMsg += "Alm.destino deve ter tamanho 2."      ; _lContinua = .F.; endif
-	//		if ! empty (::EndOrig)  .and. len (::EndOrig)  != 15; ::UltMsg += "Endereco origem deve ter tamanho 15." ; _lContinua = .F.; endif
-	//		if ! empty (::EndDest)  .and. len (::EndDest)  != 15; ::UltMsg += "Endereco destino deve ter tamanho 15."; _lContinua = .F.; endif
-	//		if ! empty (::LoteOrig) .and. len (::LoteOrig) != 10; ::UltMsg += "Lote origem deve ter tamanho 10."     ; _lContinua = .F.; endif
-	//		if ! empty (::loteDest) .and. len (::LoteDest) != 10; ::UltMsg += "Lote destino deve ter tamanho 10."    ; _lContinua = .F.; endif
-
 			if len (::FilOrig)  !=  2                           ; ::SomaMsg ("Filial origem deve ter tamanho 2.")    ; _lContinua = .F.; endif
 			if len (::FilDest)  !=  2                           ; ::SomaMsg ("Filial destino deve ter tamanho 2.")   ; _lContinua = .F.; endif
 			if len (::ProdOrig) != 15                           ; ::SomaMsg ("Produto origem deve ter tamanho 15.")  ; _lContinua = .F.; endif
@@ -969,23 +951,13 @@ METHOD Grava () Class ClsTrEstq
 
 	if ! _lContinua .and. ! empty (::UltMsg)
 		u_help (::UltMsg,, .t.)
+
+		// Persiste ultimas mensagens na tabela ZAG, para ajudar pessoal de suporte.
+		::AtuZAG ("zag_UltMsg", ::UltMsg)
 	endif
 
-//	u_logFim (GetClassName (::Self) + '.' + procname ())
 return _lRet
 
-/*
-// --------------------------------------------------------------------------
-// Grava mensagem de erro (geralmente ocorrida ao tentar efetivar a
-// transferencia) na tabela ZAG, para ajudar pessoal de suporte.
-METHOD GravaErro (_sMsg) Class ClsTrEstq
-	local _sMsgAux := alltrim (cvaltochar (_sMsg))
-	if ! _sMsgAux $ ::MsgErro
-		::MsgErro += iif (empty (::MsgErro), '', '; ') + _sMsgAux
-		::AtuZAG ("zag_msgerr", ::MsgErro)
-	endif
-return
-*/
 
 // --------------------------------------------------------------------------
 // Busca dados adicionais dos produtos origem e destino (podem nao ser iguais)
@@ -1036,8 +1008,6 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 	local _lNenhuma := .T.
 	local _oSQL     := NIL
 	local _aLib     := {}
-
-//	u_logIni (GetClassName (::Self) + '.' + procname ())
 
 	_lMsg = iif (_lMsg == NIL, .T., _lMsg)
 	_sUserName = iif (_sUserName == NIL, cUsername, _sUserName)
@@ -1107,10 +1077,6 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 	// Atualiza atributos do objeto com base no conteudo do registro atual.
 	::GeraAtrib ("ZAG")
 
-	// Tenta executar a transferencia
-//	::Executa (.F.)
-
-//	u_logFim (GetClassName (::Self) + '.' + procname ())
 return
 
 
@@ -1159,6 +1125,73 @@ METHOD Negar (_sMotivo) Class ClsTrEstq
 	endif
 	if ! _lContinua
 		u_help (::UltMsg)
+
+		// Persiste ultimas mensagens na tabela ZAG, para ajudar pessoal de suporte.
+		::AtuZAG ("zag_UltMsg", ::UltMsg)
+	endif
+return _lContinua
+
+
+// --------------------------------------------------------------------------
+// Negar a solicitacao de transferencia (nao aceite).
+METHOD NovoEndDst (_sNEndDst) Class ClsTrEstq
+	local _lContinua := .T.
+
+	::UltMsg = ""
+
+	if _lContinua .and. ::Executado == 'S'
+		::SomaMsg ("Transferencia ja executada.")
+		_lContinua = .F.
+	endif
+	if _lContinua .and. ::Executado == 'X'
+		::SomaMsg ("Transferencia ja estornada.")
+		_lContinua = .F.
+	endif
+	if _lContinua .and. ::Executado == 'N'
+		::SomaMsg ("Transferencia ja negada.")
+		_lContinua = .F.
+	endif
+	if _lContinua .and. empty (_sNEndDst)
+		::SomaMsg ("Deve ser informado um novo endereco destino.")
+		_lContinua = .F.
+	endif
+	if _lContinua
+		sbe -> (dbsetorder (1))  // BE_FILIAL, BE_LOCAL, BE_LOCALIZ, BE_ESTFIS, R_E_C_N_O_, D_E_L_E_T_
+		if ! sbe -> (dbseek (xfilial ("SBE") + ::AlmDest + _sNEndDst, .F.))
+			::SomaMsg ("Endereco informado (" + _sNEndDst + ") nao existe no almoxarifado " + ::AlmDest)
+			_lContinua = .F.
+		else
+			if sbe -> be_status $ '3/4/5/6'  // 1=Desocupado;2=Ocupado;3=Bloqueado;4=Bloqueio Entrada;5=Bloqueio Saída;6=Bloqueio Inventário
+				::SomaMsg ("Endereco informado (" + _sNEndDst + ") encontra-se bloqueado.")
+				_lContinua = .F.
+			else
+				if sbe -> be_vasitua $ '2/3'  // 1=Instalado;2=Em instalacao;3=Desativado;4=Investimento
+					::SomaMsg ("Situacao do tanque " + _sNEndDst + " impede seu uso.")
+					_lContinua = .F.
+				endif
+			endif
+		endif
+	endif
+
+	// Usuario que estah gravando tem que ser dono do almoxarifado destino.
+	if _lContinua
+		if ! U_ZZUVL ('A' + ::AlmDest, __cUserId, .F.)
+			U_Log2 ('debug', '[' + procname () + ']Usr atual nao eh dono do ax.destino (' + ::AlmDest + ')')
+			::SomaMsg ("Para alterar o endereço destino, voce deve ser dono do almoxarifado " + ::AlmDest)
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
+		::SomaMsg ("Endereco destino alterado de " + ::EndDest + " para " + _sNEndDst + " por " + cUserName + ' em ' + dtoc (date ()))
+		::EndDest = _sNEndDst
+		::AtuZAG ("zag_enddst", ::EndDest)
+	endif
+	if ! _lContinua
+		u_help (::UltMsg)
+
+		// Persiste ultimas mensagens na tabela ZAG, para ajudar pessoal de suporte.
+		::AtuZAG ("zag_UltMsg", ::UltMsg)
 	endif
 return _lContinua
 
@@ -1171,4 +1204,3 @@ METHOD SomaMsg (_sMsg) Class ClsTrEstq
 		::UltMsg += iif (empty (::UltMsg), '', '; ') + _sMsgAux
 	endif
 return
-

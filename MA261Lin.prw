@@ -40,6 +40,7 @@
 // 31/03/2022 - Robert  - Melhoradas mensagens de log.
 // 13/10/2022 - Robert  - Novos parametros funcao U_ConsEst().
 // 26/11/2022 - Robert  - Permite mov.com inconsistencia entre tabelas (U_ConsEst) somente para grupo 119 do ZZU.
+// 26/01/2023 - Robert  - Bloqueio do MV_ALMZAG impedia, inclusive, o U_BatFullW e U_BatFullM
 //
 
 // ------------------------------------------------------------------------------------
@@ -81,7 +82,8 @@ User Function MA261LIN ()
 		if cFilAnt == '01'  // por enquanto apenas na Matriz (NAWeb ainda nao gera para outra filial destino)
 
 			// Se nao estiver gerando pela rotina de solic.transf.estoque, verifica necessidade de bloquear.
-			if ! 'ZAG' $ _sChvEx
+		//	if ! 'ZAG' $ _sChvEx
+			if ! 'ZAG' $ _sChvEx .and. ! IsInCallStack ("U_BATFULLW") .and. ! IsInCallStack ("U_BATFULLM")
 		//		U_LOG2 ('DEBUG', 'Amox. que devem ser movimentados atraves da tabela ZAG: ' + _sAlmZAG)
 				if ! _lExigeZAG .and. _sAlmOrig $ _sAlmZAG // '66'
 					u_help ("Almoxarifado '" + _sAlmOrig + "' nao pode ser movimentado diretamente por esta tela, conforme parametro VA_ALMZAG. Utilize NaWeb para solicitacoes de transferencia.",, .t.)
