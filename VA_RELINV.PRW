@@ -4,6 +4,7 @@
 // Descricao: Relatório de inventário
 //
 // Historico de alteracoes:
+// 27/01/2023 - Claudia - Incluido parametro de ordenação
 //
 // ---------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -75,6 +76,17 @@ Static Function _Gera()
     _oSQL:_sQuery += " AND SB7.B7_LOCAL  BETWEEN '"+ mv_par07 +"' AND '"+ mv_par08 +"' "
     _oSQL:_sQuery += " AND SB7.B7_TIPO   BETWEEN '"+ mv_par09 +"' AND '"+ mv_par10 +"' "
     _oSQL:_sQuery += " AND SB7.B7_DATA   BETWEEN '"+ dtos(mv_par11) +"' AND '"+ dtos(mv_par12) +"' "
+    	Do Case
+		Case mv_par13 == 1
+			_oSQL:_sQuery += " ORDER BY FILIAL, ALMOXARIFADO, PRODUTO"
+		Case mv_par13 == 2
+			_oSQL:_sQuery += " ORDER BY FILIAL, ALMOXARIFADO, TP_MATERIAL, ENDERECO"
+		Case mv_par13 == 3
+			_oSQL:_sQuery += " ORDER BY FILIAL, DESCRICAO"
+		Case mv_par13 == 4
+			_oSQL:_sQuery += " ORDER BY FILIAL, ALMOXARIFADO, TP_MATERIAL, DESCRICAO"
+			
+	EndCase
 
 	_oSQL:Log ()
 	_oSQL:Qry2Xls (.F., .F., .F.)
@@ -97,6 +109,7 @@ Static Function _ValidPerg ()
     aadd (_aRegsPerg, {10, "Tipo até        ", "C", 2, 0,  "",  "   ", {},                         								""})
     aadd (_aRegsPerg, {11, "Dt. geração de  ", "D", 8, 0,  "",  "   ", {},                         								""})
     aadd (_aRegsPerg, {12, "Dt. geração até ", "D", 8, 0,  "",  "   ", {},                         								""})
+    aadd (_aRegsPerg, {13, "Ordenação       ", "N", 1, 0,  "",  "   ", {"Almox+Item","Tipo+Endereço","Descrição","Tipo+Descrição"},   ""})
     
     U_ValPerg (cPerg, _aRegsPerg)
 Return
