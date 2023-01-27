@@ -25,6 +25,7 @@
 // 15/09/2021 - Claudia -  Inclusão campo Entrada/Saida tipos de movimentos GLPI 10652.
 // 03/01/2021 - Claudia -  Incluida busca de registros das notas de saida, movimentos e transferencias 
 //                         de produtos do Almox 02. GLPI 8153.
+// 27/01/2023 - Claudia - Incluidas colunas de lote e endereço. GLPI: 13088
 //
 // -----------------------------------------------------------------------------------------------------
 user function BatRecebidos (_sQueFazer)
@@ -42,74 +43,74 @@ user function BatRecebidos (_sQueFazer)
    	if alltrim (upper (_sQueFazer)) == "OC"	
 	   	//	
 		// ITENS RECEBIDOS NO DIA ANTERIOR
-	   	if _lContinua
-			// le todas as notas que entraram no dia anterior
-			_aCols = {}
-			aadd (_aCols, {'Dt.Entrega'  ,    'left' ,  ''})
-			aadd (_aCols, {'Cod.Forn'    ,    'left' ,  ''})
-			aadd (_aCols, {'Fornecedor'  ,    'left' ,  ''})
-			aadd (_aCols, {'Nota Fiscal' ,    'left' ,  ''})
-			aadd (_aCols, {'Produto'     ,    'left' ,  ''})
-			aadd (_aCols, {'Descrição'   ,    'left' ,  ''})
-			aadd (_aCols, {'UN'          ,    'left' ,  ''})
-			aadd (_aCols, {'Quantidade'  ,    'right',  ''})
-			aadd (_aCols, {'Tipo'   	 ,    'right',  ''})
+	   	// if _lContinua
+		// 	// le todas as notas que entraram no dia anterior
+		// 	_aCols = {}
+		// 	aadd (_aCols, {'Dt.Entrega'  ,    'left' ,  ''})
+		// 	aadd (_aCols, {'Cod.Forn'    ,    'left' ,  ''})
+		// 	aadd (_aCols, {'Fornecedor'  ,    'left' ,  ''})
+		// 	aadd (_aCols, {'Nota Fiscal' ,    'left' ,  ''})
+		// 	aadd (_aCols, {'Produto'     ,    'left' ,  ''})
+		// 	aadd (_aCols, {'Descrição'   ,    'left' ,  ''})
+		// 	aadd (_aCols, {'UN'          ,    'left' ,  ''})
+		// 	aadd (_aCols, {'Quantidade'  ,    'right',  ''})
+		// 	aadd (_aCols, {'Tipo'   	 ,    'right',  ''})
 
-			_oSQL := ClsSQL():New ()
-			_oSQL:_sQuery := ""
-			_oSQL:_sQuery += " SELECT SD1.D1_DTDIGIT, SD1.D1_FORNECE"
-			_oSQL:_sQuery += "	   	, SA2.A2_NOME"
-			_oSQL:_sQuery += "		, SD1.D1_DOC, SD1.D1_COD, SD1.D1_DESCRI, SD1.D1_UM"
-			_oSQL:_sQuery += "		, dbo.FormataValor (SD1.D1_QUANT, 4, 15) AS QUANT"
-			_oSQL:_sQuery += "		, SB1.B1_TIPO AS TIPO"
-			_oSQL:_sQuery += "    FROM " + RetSQLName ("SD1") + " AS SD1 "
-			_oSQL:_sQuery += " 		    INNER JOIN " + RetSQLName ("SF1") + " AS SF1 "
-			_oSQL:_sQuery += "				ON (SF1.D_E_L_E_T_ = ''"
-			_oSQL:_sQuery += "					AND SF1.F1_FILIAL   = SD1.D1_FILIAL"
-			_oSQL:_sQuery += "					AND SF1.F1_EMISSAO  = SD1.D1_EMISSAO"
-			_oSQL:_sQuery += "					AND SF1.F1_FORNECE  = SD1.D1_FORNECE"
-			_oSQL:_sQuery += "					AND SF1.F1_LOJA     = SD1.D1_LOJA"
-			_oSQL:_sQuery += "					AND SF1.F1_DOC      = SD1.D1_DOC"
-			_oSQL:_sQuery += "					AND SF1.F1_SERIE    = SD1.D1_SERIE"
-			_oSQL:_sQuery += "					AND SF1.F1_TIPO    != 'D'"
-			_oSQL:_sQuery += "					AND SF1.F1_TIPO    != 'C'"
-			_oSQL:_sQuery += "					AND SF1.F1_TIPO    != 'B'"
-			_oSQL:_sQuery += "					AND SF1.F1_ESPECIE !='CTR'"
-			_oSQL:_sQuery += "					AND SF1.F1_ESPECIE !='CTE')"
-			_oSQL:_sQuery += "			INNER JOIN " + RetSQLName ("SB1") + " AS SB1 "
-			_oSQL:_sQuery += "				ON (SB1.D_E_L_E_T_ = ''"
-			_oSQL:_sQuery += "					AND SB1.B1_COD = SD1.D1_COD)"
-			_oSQL:_sQuery += " 		    INNER JOIN " + RetSQLName ("SA2") + " AS SA2 "
-			_oSQL:_sQuery += "				ON (SA2.D_E_L_E_T_ = ''"
-			_oSQL:_sQuery += "					AND SA2.A2_COD    = SD1.D1_FORNECE"
-			_oSQL:_sQuery += "					AND SA2.A2_LOJA   = SD1.D1_LOJA"
-			_oSQL:_sQuery += "					AND SA2.A2_CGC NOT LIKE '%88612486%')" // desprezar as transferencias
-			_oSQL:_sQuery += "			INNER JOIN " + RetSQLName ("SF4") + " AS SF4 "
-			_oSQL:_sQuery += "				ON (SF4.D_E_L_E_T_ = ''"
-			_oSQL:_sQuery += "					AND SF4.F4_CODIGO = SD1.D1_TES"
-			_oSQL:_sQuery += "					AND SF4.F4_ESTOQUE = 'S')"
-			_oSQL:_sQuery += "	WHERE SD1.D_E_L_E_T_ = ''"
-			_oSQL:_sQuery += "	  AND SD1.D1_FILIAL = '01'"	
-			_oSQL:_sQuery += "	  AND SD1.D1_DTDIGIT = '" + dtos (date()-1) + "'"
-			_oSQL:_sQuery += "	  AND SD1.D1_COD != 'FR01'"
-			_oSQL:_sQuery += "	  AND SD1.D1_COD != 'FR02'"
-			_oSQL:_sQuery += "	  AND SD1.D1_COD != '9996'"
-			_oSQL:_sQuery += "	  AND SD1.D1_COD != '9997'"
-			_oSQL:_sQuery += "	  AND SD1.D1_COD != '9998'"
-			_oSQL:_sQuery += "	  AND SD1.D1_TES != '184'"
-			_oSQL:_sQuery += "  ORDER BY SA2.A2_NOME,SD1.D1_DESCRI"
+		// 	_oSQL := ClsSQL():New ()
+		// 	_oSQL:_sQuery := ""
+		// 	_oSQL:_sQuery += " SELECT SD1.D1_DTDIGIT, SD1.D1_FORNECE"
+		// 	_oSQL:_sQuery += "	   	, SA2.A2_NOME"
+		// 	_oSQL:_sQuery += "		, SD1.D1_DOC, SD1.D1_COD, SD1.D1_DESCRI, SD1.D1_UM"
+		// 	_oSQL:_sQuery += "		, dbo.FormataValor (SD1.D1_QUANT, 4, 15) AS QUANT"
+		// 	_oSQL:_sQuery += "		, SB1.B1_TIPO AS TIPO"
+		// 	_oSQL:_sQuery += "    FROM " + RetSQLName ("SD1") + " AS SD1 "
+		// 	_oSQL:_sQuery += " 		    INNER JOIN " + RetSQLName ("SF1") + " AS SF1 "
+		// 	_oSQL:_sQuery += "				ON (SF1.D_E_L_E_T_ = ''"
+		// 	_oSQL:_sQuery += "					AND SF1.F1_FILIAL   = SD1.D1_FILIAL"
+		// 	_oSQL:_sQuery += "					AND SF1.F1_EMISSAO  = SD1.D1_EMISSAO"
+		// 	_oSQL:_sQuery += "					AND SF1.F1_FORNECE  = SD1.D1_FORNECE"
+		// 	_oSQL:_sQuery += "					AND SF1.F1_LOJA     = SD1.D1_LOJA"
+		// 	_oSQL:_sQuery += "					AND SF1.F1_DOC      = SD1.D1_DOC"
+		// 	_oSQL:_sQuery += "					AND SF1.F1_SERIE    = SD1.D1_SERIE"
+		// 	_oSQL:_sQuery += "					AND SF1.F1_TIPO    != 'D'"
+		// 	_oSQL:_sQuery += "					AND SF1.F1_TIPO    != 'C'"
+		// 	_oSQL:_sQuery += "					AND SF1.F1_TIPO    != 'B'"
+		// 	_oSQL:_sQuery += "					AND SF1.F1_ESPECIE !='CTR'"
+		// 	_oSQL:_sQuery += "					AND SF1.F1_ESPECIE !='CTE')"
+		// 	_oSQL:_sQuery += "			INNER JOIN " + RetSQLName ("SB1") + " AS SB1 "
+		// 	_oSQL:_sQuery += "				ON (SB1.D_E_L_E_T_ = ''"
+		// 	_oSQL:_sQuery += "					AND SB1.B1_COD = SD1.D1_COD)"
+		// 	_oSQL:_sQuery += " 		    INNER JOIN " + RetSQLName ("SA2") + " AS SA2 "
+		// 	_oSQL:_sQuery += "				ON (SA2.D_E_L_E_T_ = ''"
+		// 	_oSQL:_sQuery += "					AND SA2.A2_COD    = SD1.D1_FORNECE"
+		// 	_oSQL:_sQuery += "					AND SA2.A2_LOJA   = SD1.D1_LOJA"
+		// 	_oSQL:_sQuery += "					AND SA2.A2_CGC NOT LIKE '%88612486%')" // desprezar as transferencias
+		// 	_oSQL:_sQuery += "			INNER JOIN " + RetSQLName ("SF4") + " AS SF4 "
+		// 	_oSQL:_sQuery += "				ON (SF4.D_E_L_E_T_ = ''"
+		// 	_oSQL:_sQuery += "					AND SF4.F4_CODIGO = SD1.D1_TES"
+		// 	_oSQL:_sQuery += "					AND SF4.F4_ESTOQUE = 'S')"
+		// 	_oSQL:_sQuery += "	WHERE SD1.D_E_L_E_T_ = ''"
+		// 	_oSQL:_sQuery += "	  AND SD1.D1_FILIAL = '01'"	
+		// 	_oSQL:_sQuery += "	  AND SD1.D1_DTDIGIT = '" + dtos (date()-1) + "'"
+		// 	_oSQL:_sQuery += "	  AND SD1.D1_COD != 'FR01'"
+		// 	_oSQL:_sQuery += "	  AND SD1.D1_COD != 'FR02'"
+		// 	_oSQL:_sQuery += "	  AND SD1.D1_COD != '9996'"
+		// 	_oSQL:_sQuery += "	  AND SD1.D1_COD != '9997'"
+		// 	_oSQL:_sQuery += "	  AND SD1.D1_COD != '9998'"
+		// 	_oSQL:_sQuery += "	  AND SD1.D1_TES != '184'"
+		// 	_oSQL:_sQuery += "  ORDER BY SA2.A2_NOME,SD1.D1_DESCRI"
 
-			u_log (_oSQL:_sQuery)
-			if len (_oSQL:Qry2Array (.T., .F.)) > 0
+		// 	u_log (_oSQL:_sQuery)
+		// 	if len (_oSQL:Qry2Array (.T., .F.)) > 0
 
-				_sMsg = _oSQL:Qry2HTM ("Itens recebidos em: " + dtoc(date()-1), _aCols, "", .F.)
-				u_log (_sMsg)
+		// 		_sMsg = _oSQL:Qry2HTM ("Itens recebidos em: " + dtoc(date()-1), _aCols, "", .F.)
+		// 		u_log (_sMsg)
 
-				//U_SendMail ('compras@novaalianca.coop.br', "Itens recebidos no dia anterior", _sMsg, {})
-				U_ZZUNU ({'022'}, "Itens recebidos no dia anterior", _sMsg, .F., cEmpAnt, cFilAnt, "") // PCP/QUALIDADE/ALMOX
+		// 		//U_SendMail ('compras@novaalianca.coop.br', "Itens recebidos no dia anterior", _sMsg, {})
+		// 		U_ZZUNU ({'022'}, "Itens recebidos no dia anterior", _sMsg, .F., cEmpAnt, cFilAnt, "") // PCP/QUALIDADE/ALMOX
 			 
-	      	endif
-      	endif
+	    //   	endif
+      	// endif
        
 	    //	
 		// ITENS RECEBIDOS NO DIA ANTERIOR - MANUTENÇÃO
@@ -128,6 +129,8 @@ user function BatRecebidos (_sQueFazer)
 			aadd (_aCols, {'Local'        ,    'left' ,  ''})
 			aadd (_aCols, {'Usuario'      ,    'left' ,  ''})
 			aadd (_aCols, {'Quantidade'   ,    'right',  ''})
+			aadd (_aCols, {'Lote'         ,    'right',  ''})
+			aadd (_aCols, {'Endereço'     ,    'right',  ''})
 			
 
 			// le todas as notas que entraram no dia anterior
@@ -147,6 +150,14 @@ user function BatRecebidos (_sQueFazer)
 			_oSQL:_sQuery += " 		,SD1.D1_LOCAL AS ALMOX "
 			_oSQL:_sQuery += " 		,SF1.F1_VAUSER AS USUARIO "
 			_oSQL:_sQuery += " 		,dbo.FormataValor(SD1.D1_QUANT, 4, 15) AS QUANT "
+			_oSQL:_sQuery += "      ,CASE "
+			_oSQL:_sQuery += "       	WHEN SB1.B1_LOCALIZ = 'S' THEN BF_LOTECTL "
+			_oSQL:_sQuery += " 		 	ELSE '' "
+			_oSQL:_sQuery += "       END AS LOTECTL "
+   			_oSQL:_sQuery += " 		,CASE "
+			_oSQL:_sQuery += " 			WHEN SB1.B1_LOCALIZ = 'S' THEN BF_LOCALIZ "
+			_oSQL:_sQuery += " 			ELSE '' "
+			_oSQL:_sQuery += " 		END AS LOCALIZ "
 			_oSQL:_sQuery += " FROM " + RetSQLName ("SD1") + " AS SD1 "
 			_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SF1") + " AS SF1 "
 			_oSQL:_sQuery += " 	ON (SF1.D_E_L_E_T_ = '' "
@@ -170,7 +181,12 @@ user function BatRecebidos (_sQueFazer)
 			_oSQL:_sQuery += " 	ON (SF4.D_E_L_E_T_ = '' "
 			_oSQL:_sQuery += " 			AND SF4.F4_CODIGO = SD1.D1_TES "
 			_oSQL:_sQuery += " 			AND SF4.F4_ESTOQUE = 'S') "
-			_oSQL:_sQuery += " WHERE SD1.D_E_L_E_T_ = '' "
+			_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SBF") + " AS SBF "
+			_oSQL:_sQuery += "		ON  (RTRIM(D1_COD) = RTRIM(SBF.BF_PRODUTO) "
+			_oSQL:_sQuery += "		AND RTRIM(SD1.D1_LOCAL) = RTRIM(BF_LOCAL) "
+			_oSQL:_sQuery += "		AND RTRIM(SD1.D1_FILIAL) = RTRIM(BF_FILIAL) "
+			_oSQL:_sQuery += "		AND SBF.D_E_L_E_T_ = '') "
+			_oSQL:_sQuery += " WHERE SD1.D_E_L_E_T_ = '' " 
 			_oSQL:_sQuery += " AND SD1.D1_FILIAL = '01' "
 			_oSQL:_sQuery += " AND SD1.D1_DTDIGIT = '" + dtos (date()-1) + "'"
 			_oSQL:_sQuery += " AND SD1.D1_COD NOT IN ('FR01', 'FR02', '9996', '9997', '9998') "
@@ -193,6 +209,8 @@ user function BatRecebidos (_sQueFazer)
 			_oSQL:_sQuery += " 		,SD2.D2_LOCAL AS ALMOX "
 			_oSQL:_sQuery += " 		,SF2.F2_VAUSER AS USUARIO "
 			_oSQL:_sQuery += " 		,dbo.FormataValor(SD2.D2_QUANT, 4, 15) AS QUANT "
+			_oSQL:_sQuery += " 		,SD2.D2_LOTECTL AS LOTECTL "
+   			_oSQL:_sQuery += "      ,SD2.D2_LOCALIZ AS LOCALIZ "
 			_oSQL:_sQuery += " FROM " + RetSQLName ("SD2") + " AS SD2 "
 			_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SF2") + " AS SF2 "
 			_oSQL:_sQuery += " 	ON (SF2.D_E_L_E_T_ = '' "
@@ -242,6 +260,8 @@ user function BatRecebidos (_sQueFazer)
 			_oSQL:_sQuery += " 		,D3_LOCAL AS ALMOX "
 			_oSQL:_sQuery += " 		,SD3.D3_USUARIO AS USUARIO "
 			_oSQL:_sQuery += " 		,dbo.FormataValor(SD3.D3_QUANT, 4, 15) AS QUANT "
+			_oSQL:_sQuery += "		,SD3.D3_LOTECTL AS LOTECTL "
+   			_oSQL:_sQuery += "		,SD3.D3_LOCALIZ AS LOCALIZ "
 			_oSQL:_sQuery += " FROM " + RetSQLName ("SD3") + " AS SD3 "
 			_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SB1") + " AS SB1 "
 			_oSQL:_sQuery += " 	ON SB1.D_E_L_E_T_ = '' "
@@ -277,6 +297,8 @@ user function BatRecebidos (_sQueFazer)
 			aadd (_aCols, {'Local'        ,    'left' ,  ''})
 			aadd (_aCols, {'Usuario'      ,    'left' ,  ''})
 			aadd (_aCols, {'Quantidade'   ,    'right',  ''})
+			aadd (_aCols, {'Lote'         ,    'right',  ''})
+			aadd (_aCols, {'Endereço'     ,    'right',  ''})
 			
 
 			// le todas as notas que entraram no dia anterior
@@ -296,6 +318,14 @@ user function BatRecebidos (_sQueFazer)
 			_oSQL:_sQuery += " 		,SD1.D1_LOCAL AS ALMOX "
 			_oSQL:_sQuery += " 		,SF1.F1_VAUSER AS USUARIO "
 			_oSQL:_sQuery += " 		,dbo.FormataValor(SD1.D1_QUANT, 4, 15) AS QUANT "
+			_oSQL:_sQuery += "      ,CASE "
+			_oSQL:_sQuery += "       	WHEN SB1.B1_LOCALIZ = 'S' THEN BF_LOTECTL "
+			_oSQL:_sQuery += " 		 	ELSE '' "
+			_oSQL:_sQuery += "       END AS LOTECTL "
+   			_oSQL:_sQuery += " 		,CASE "
+			_oSQL:_sQuery += " 			WHEN SB1.B1_LOCALIZ = 'S' THEN BF_LOCALIZ "
+			_oSQL:_sQuery += " 			ELSE '' "
+			_oSQL:_sQuery += " 		END AS LOCALIZ "
 			_oSQL:_sQuery += " FROM " + RetSQLName ("SD1") + " AS SD1 "
 			_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SF1") + " AS SF1 "
 			_oSQL:_sQuery += " 	ON (SF1.D_E_L_E_T_ = '' "
@@ -319,6 +349,11 @@ user function BatRecebidos (_sQueFazer)
 			_oSQL:_sQuery += " 	ON (SF4.D_E_L_E_T_ = '' "
 			_oSQL:_sQuery += " 			AND SF4.F4_CODIGO = SD1.D1_TES "
 			_oSQL:_sQuery += " 			AND SF4.F4_ESTOQUE = 'S') "
+			_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SBF") + " AS SBF "
+			_oSQL:_sQuery += "		ON  (RTRIM(D1_COD) = RTRIM(SBF.BF_PRODUTO) "
+			_oSQL:_sQuery += "		AND RTRIM(SD1.D1_LOCAL) = RTRIM(BF_LOCAL) "
+			_oSQL:_sQuery += "		AND RTRIM(SD1.D1_FILIAL) = RTRIM(BF_FILIAL) "
+			_oSQL:_sQuery += "		AND SBF.D_E_L_E_T_ = '') "
 			_oSQL:_sQuery += " WHERE SD1.D_E_L_E_T_ = '' "
 			_oSQL:_sQuery += " AND SD1.D1_FILIAL = '01' "
 			_oSQL:_sQuery += " AND SD1.D1_DTDIGIT = '" + dtos (date()-1) + "'"
@@ -342,6 +377,8 @@ user function BatRecebidos (_sQueFazer)
 			_oSQL:_sQuery += " 		,SD2.D2_LOCAL AS ALMOX "
 			_oSQL:_sQuery += " 		,SF2.F2_VAUSER AS USUARIO "
 			_oSQL:_sQuery += " 		,dbo.FormataValor(SD2.D2_QUANT, 4, 15) AS QUANT "
+			_oSQL:_sQuery += " 		,SD2.D2_LOTECTL AS LOTECTL "
+   			_oSQL:_sQuery += "      ,SD2.D2_LOCALIZ AS LOCALIZ "
 			_oSQL:_sQuery += " FROM " + RetSQLName ("SD2") + " AS SD2 "
 			_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SF2") + " AS SF2 "
 			_oSQL:_sQuery += " 	ON (SF2.D_E_L_E_T_ = '' "
@@ -391,6 +428,8 @@ user function BatRecebidos (_sQueFazer)
 			_oSQL:_sQuery += " 		,D3_LOCAL AS ALMOX "
 			_oSQL:_sQuery += " 		,SD3.D3_USUARIO AS USUARIO "
 			_oSQL:_sQuery += " 		,dbo.FormataValor(SD3.D3_QUANT, 4, 15) AS QUANT "
+			_oSQL:_sQuery += "		,SD3.D3_LOTECTL AS LOTECTL "
+   			_oSQL:_sQuery += "		,SD3.D3_LOCALIZ AS LOCALIZ "
 			_oSQL:_sQuery += " FROM " + RetSQLName ("SD3") + " AS SD3 "
 			_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SB1") + " AS SB1 "
 			_oSQL:_sQuery += " 	ON SB1.D_E_L_E_T_ = '' "
