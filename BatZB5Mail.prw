@@ -201,7 +201,7 @@ User Function BatZB5Mail()
                             
         _oAUtil := ClsAUtil():New (_aResumo)
 		_sMsg += _oAUtil:ConvHTM ("", _aCols, 'width="80%" border="1" cellspacing="0" cellpadding="3" align="center"', .F.)
-        _sDestin := 'claudia.lionco@novaalianca.coop.br;charlene.baldez@novaalianca.coop.br;vanessa.frasson@novaalianca.coop.br'
+        _sDestin := 'charlene.baldez@novaalianca.coop.br;'
         //_sDestin := 'claudia.lionco@novaalianca.coop.br'
 
 		U_SendMail (_sDestin, "Transf.de valores entre filiais MENSAL", _sMsg, {})
