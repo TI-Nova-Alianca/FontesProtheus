@@ -182,8 +182,8 @@ static function _Entradas (_sEntrID)
 			endif
 
 			// Verifica se a quantidade apontada com esta etiqueta precisa ser transferida para o almox. 01
-			if _oEtiq:AlmApontOP != U_AlmFull (sd3 -> d3_cod, 'PR')
-				u_help ("Apontamento de producao gerado pela etiqueta '" + _oEtiq:Codigo + "' foi feito no almox. '" + _oEtiq:_oEtiq:AlmApontOP + "'. Esse nao eh um almox. reconhecido como entrada de producao para o Full.",, .t.)
+			if _oEtiq:AlmApontOP != '11'
+				u_help ("Apontamento de producao gerado pela etiqueta '" + _oEtiq:Codigo + "' foi feito no almox. '" + _oEtiq:AlmApontOP + "', para o qual nao tenho tratamento aqui.",, .t.)
 				_AtuEntr ((_sAliasQ) -> entrada_id, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
 				(_sAliasQ) -> (dbskip ())
 				loop
