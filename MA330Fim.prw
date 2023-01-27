@@ -41,7 +41,7 @@ static function _AtuSB2 ()
 	if mv_par20 == 1  // Apenas a filial atual
 		_oSQL:_sQuery +=   " AND B2_FILIAL  = '" + xfilial ("SB2") + "'"
 	endif
-	_oSQL:Log ()
+	_oSQL:Log ('[' + procname () + ']')
 	if ! _oSQL:Exec ()
 		U_help ("Erro atualizando custo para transferencia. SQL: " + _oSQL:_sQuery)
 	endif

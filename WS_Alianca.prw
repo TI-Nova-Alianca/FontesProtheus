@@ -110,6 +110,7 @@
 // 13/12/2022 - Robert  - Criada acao TransfEstqNegar.
 // 09/01/2023 - Robert  - Nao envia mais o cod.da impr. de ticket para a funcao U_GeraSZE.
 // 19/01/2023 - Robert  - ClsTrEstq:Libera() nao tenta mais executar a transferencia no final.
+// 27/01/2023 - Robert  - Criada acao TransfEstqInformarEndDest (GLPI 13097).
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -203,15 +204,17 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 			case _sAcao == 'AtuEstru'
 				_AtuEstru ()
 			case _sAcao == 'TransfEstqInsere'
-				_TrEstq ('I')
+				_TrEstq ('INS')
 			case _sAcao == 'TransfEstqAutoriza'
-				_TrEstq ('A')
+				_TrEstq ('AUT')
 			case _sAcao == 'TransfEstqDeleta'
-				_TrEstq ('D')
+				_TrEstq ('DEL')
 			case _sAcao == 'TransfEstqExecuta'
-				_TrEstq ('E')
+				_TrEstq ('EXE')
 			case _sAcao == 'TransfEstqNegar'
-				_TrEstq ('N')
+				_TrEstq ('NEG')
+			case _sAcao == 'TransfEstqInformarEndDest'
+				_TrEstq ('IED')
 			case _sAcao == 'OndeSeUsa'
 				_OndeSeUsa ()
 			case _sAcao == 'IncluiCliente'
@@ -796,11 +799,13 @@ Return
 // --------------------------------------------------------------------------
 // Interface para a classe de transferencias de estoque.
 static function _TrEstq (_sQueFazer)
-	local _sDocZAG := ""
-	local _oTrEstq := NIL
+	local _sDocZAG  := ""
+	local _oTrEstq  := NIL
+	local _sMotZAG  := ''
+	local _sNEndDst := ''
 
 	do case
-	case _sQueFazer == 'I'  // Inserir
+	case _sQueFazer == 'INS'  // Inserir
 		_oTrEstq := ClsTrEstq ():New ()
 		if empty (_sErroWS) ; _oTrEstq:FilOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialOrigem",    .T., .F.), 2) ;  endif
 		if empty (_sErroWS) ; _oTrEstq:FilDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialDestino",   .T., .F.), 2) ;  endif
@@ -829,8 +834,7 @@ static function _TrEstq (_sQueFazer)
 				_sMsgRetWS = _oTrEstq:UltMsg
 			endif
 		endif
-
-	case _sQueFazer $ 'A/D/E/N'  // [A]utorizar;[D]eletar;[E]xecutar;[N]egar
+	case _sQueFazer $ 'AUT/DEL/EXE/NEG'  // [A]utorizar;[D]eletar;[E]xecutar;[N]egar
 		if empty (_sErroWS) ; _sDocZAG = _ExtraiTag ("_oXML:_WSAlianca:_DocTransf", .T., .F.) ; endif
 		if empty (_sErroWS)
 			zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
@@ -842,26 +846,35 @@ static function _TrEstq (_sQueFazer)
 					_SomaErro ("Nao foi possivel instanciar objeto _oTrEstq")
 				else
 					do case
-					case _sQueFazer == 'A'  // Autorizar
+					case _sQueFazer == 'AUT'  // Autorizar
 						_oTrEstq:Libera ()
 						_oTrEstq:Executa ()  // Tenta executar, pois as liberacoes podem ter tido exito.
 						_sMsgRetWS = _oTrEstq:UltMsg
-					case _sQueFazer == 'D'  // Deletar
+					case _sQueFazer == 'DEL'  // Deletar
 						if ! _oTrEstq:Exclui ()
 							_SomaErro (_oTrEstq:UltMsg)
 						else
 							_sMsgRetWS = _oTrEstq:UltMsg
 						endif
-					case _sQueFazer == 'E'  // Executar (pode ter dado erro na tentativa anterior)
+					case _sQueFazer == 'EXE'  // Executar (pode ter dado erro na tentativa anterior)
 						if ! _oTrEstq:Executa (.T.)
 							_SomaErro (_oTrEstq:UltMsg)
 						else
 							_sMsgRetWS = _oTrEstq:UltMsg
 						endif
-					case _sQueFazer == 'N'  // Negar (usuario nao aceitou a transferencia)
+					case _sQueFazer == 'NEG'  // Negar (usuario nao aceitou a transferencia)
 						_sMotZAG = _ExtraiTag ("_oXML:_WSAlianca:_Motivo", .T., .F.)
 						if empty (_sErroWS)
 							if ! _oTrEstq:Negar (_sMotZAG)
+								_SomaErro (_oTrEstq:UltMsg)
+							else
+								_sMsgRetWS = _oTrEstq:UltMsg
+							endif
+						endif
+					case _sQueFazer == 'IED'  // Informar Endereco Destino
+						_sNEndDst = _ExtraiTag ("_oXML:_WSAlianca:_NovoEndDest", .T., .F.)
+						if empty (_sErroWS)
+							if ! _oTrEstq:NovoEndDst (_sNEndDst)
 								_SomaErro (_oTrEstq:UltMsg)
 							else
 								_sMsgRetWS = _oTrEstq:UltMsg

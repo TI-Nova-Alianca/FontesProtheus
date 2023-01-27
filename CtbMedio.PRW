@@ -39,7 +39,7 @@ Static Function ML_CNT2()
 		endif
 		_oSQL:_sQuery +=    " AND CT2_DATA   = '" + Dtos(mv_par01) + "'"
 		_oSQL:_sQuery +=    " AND CT2_ROTINA IN ('MATA330   ', 'MTA330C   ')"
-		_oSQL:Log ()
+		_oSQL:Log ('[' + procname () + ']')
 		if ! _oSQL:Exec ()
 			if type ("_oBatch") == 'O'
 				_oBatch:Mensagens += 'Erro UPD do CT2: ' + _oSQL:_sQuery

@@ -43,18 +43,23 @@
 //                     - Passa a usar ClsAviso() para as notificacoes.
 // 13/12/2022 - Robert - Habilitada liberacao de transf.estq gerada pelo ZAG.
 // 19/01/2023 - Robert - ClsTrEstq:Libera() nao tenta mais executar a transferencia no final.
+// 27/01/2023 - Robert - Reescrito tratamento para entradas, que passa a ser 100% com etiquetas.
 //
 
 #Include "Protheus.ch"
 #Include "TbiConn.ch"
 
 // ------------------------------------------------------------------------------------
-User Function BatFullW (_sQueFazer)
+User Function BatFullW (_sQueFazer, _sEntrID, _sSaidID)
 	local _lRet      := .T.
 	local _nLock     := 0
 
 	// Define o que deve fazer: [E]ntradas, [S]aidas ou [A]mbas.
 	_sQueFazer = iif (_sQueFazer == NIL, 'A', upper (_sQueFazer))
+
+	// Abre a possibilidade de informar uma entrada_id ou saida_id especifica a ser processada.
+	_sEntrID = iif (_sEntrID == NIL, '', _sEntrID)
+	_sSaidID = iif (_sSaidID == NIL, '', _sSaidID)
 
 	_nLock := U_Semaforo (procname () + cEmpAnt + cFilAnt + _sQueFazer, .F.)
 	if _nLock == 0
@@ -64,14 +69,14 @@ User Function BatFullW (_sQueFazer)
 		// Verifica entradas (Protheus enviando para FullWMS)
 		if _sQueFazer $ 'EA'
 			u_log2 ('info', 'Iniciando processamento de entradas')
-			_Entradas ()
+			_Entradas (_sEntrID)
 			u_log2 ('info', 'Finalizou processamento de entradas')
 		endif
 
 		// Verifica saidas (FullWMS separando materiais para entregar ao Protheus)
 		if _sQueFazer $ 'SA'
 			u_log2 ('info', 'Iniciando processamento de saidas')
-			_Saidas ()
+			_Saidas (_sSaidID)
 			u_log2 ('info', 'Finalizou processamento de saidas')
 		endif
 	endif
@@ -87,375 +92,181 @@ return _lRet
 
 // ------------------------------------------------------------------------------------
 // Processa entradas no FullWMS
-static function _Entradas ()
+static function _Entradas (_sEntrID)
 	local _oSQL      := NIL
 	local _sAliasQ   := ""
 	local _nQtAUsar  := 0
-	local _dData     := ctod ('')
+//	local _dData     := ctod ('')
 	local _sEtiq     := ''
 	local _oTrEstq   := NIL
 	local _sChaveEx  := ""
 	local _lRet      := .T.
-	local _oAviso    := NIL
+//	local _oAviso    := NIL
+	local _oEtiq     := NIL
+	local _sAlmOrig  := ''
 
 	// Variavel para erros de rotinas automaticas. Deixar tipo 'private'.
  	if type ("_sErroAuto") != 'C'
 		private _sErroAuto := ""
 	endif
 
+	za1 -> (dbsetorder(1))
+
 	// Busca entradas finalizadas no Fullsoft.
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " select tpdoc, codfor, entrada_id, coditem, qtde_exec, qtde_mov, dbo.VA_DatetimeToVarchar (dthr) as dthr"
+	_oSQL:_sQuery += " select tpdoc, codfor, entrada_id, coditem, qtde_exec, qtde_mov, dbo.VA_DatetimeToVarchar (dthr) as dthr, status"
 	_oSQL:_sQuery +=   " from tb_wms_entrada"
 	_oSQL:_sQuery +=  " where status = '3'"
 	_oSQL:_sQuery +=    " and status_protheus != '3'"  // 3 = executado
 	_oSQL:_sQuery +=    " and status_protheus != 'C'"  // C = cancelado: por que jah foi acertado manualmente, ou jah foi inventariado, etc.
 	_oSQL:_sQuery +=    " and status_protheus != '5'"  // 5 = qtd.movimentada diferente qt.executada
+	if ! empty (_sEntrID)
+		_oSQL:_sQuery += " and entrada_id = '" + _sEntrID + "'"
+	endif
 	_oSQL:_sQuery +=  " order by entrada_id"
 	_oSQL:Log ()
 	_sAliasQ := _oSQL:Qry2Trb ()
 	(_sAliasQ) -> (dbgotop ())
 	do while ! (_sAliasQ) -> (eof ())
+		U_Log2 ('info', '[' + procname () + "]Verificando tb_wms_entrada.entrada_id = '" + (_sAliasQ) -> entrada_id + "'")
 
-		_sChaveEx = 'Full' + alltrim ((_sAliasQ) -> entrada_id)
-
+		if (_sAliasQ) -> tpdoc != '6'
+			u_help ("Sem tratamento para tpdoc = " + (_sAliasQ) -> tpdoc,, .t.)
+			(_sAliasQ) -> (dbskip ())
+			loop
+		endif
 		if (_sAliasQ) -> qtde_exec == 0 .and. (_sAliasQ) -> qtde_mov == 0
-			u_log2 ('aviso', 'Chave ' + _sChaveEx + ': sem quantidade executada nem movimentada')
-			_AtuEntr ((_sAliasQ) -> entrada_id, '4')  // Atualiza a tabela do Fullsoft como 'diferenca na quantidade'
+			u_help ("Sem quantidade executada nem movimentada",, .t.)
 			(_sAliasQ) -> (dbskip ())
 			loop
 		endif
 
-		do case
-		
-		// Entradas em geral com etiqueta
-		case (_sAliasQ) -> tpdoc $ '1/2' .and. left ((_sAliasQ) -> entrada_id, 3) == 'ZA1' .and. substr ((_sAliasQ) -> entrada_id, 4, 2) == cFilAnt
-			_sEtiq = substr ((_sAliasQ) -> entrada_id, 6, 10)
-			za1 -> (dbsetorder(1))
-			if ! za1 -> (dbseek (xfilial ("ZA1") + _sEtiq, .F.))
-				u_help ("Etiqueta '" + _sEtiq + "' nao encontrada na tabela ZA1",, .t.)
-				(_sAliasQ) -> (dbskip ())
-				loop
-			endif
-			
-			if ! empty (za1 -> za1_idZAG)  // Trata-se de entrada gerada por solicitacao de transferencia
-				u_log2 ('info', "Entrada gerada pelo ZAG. ZA1_IDZAG=" + za1 -> za1_idZAG + " ZA1_CODIGO=" + za1 -> za1_codigo)
-				zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
-				if ! zag -> (dbseek (xfilial ("ZAG") + za1 -> za1_idZAG, .F.))
-					u_log2 ('aviso', "Documento de transferencia '" + za1 -> za1_idZAG + "' nao encontrado na tabela ZAG")
-				else
-					// Chama a rotina de liberacao do docto. Se estiver em condicoes, a transferencia jah serah executada.
-					u_log2 ('info', 'Chamando liberacao do ZAG')
-					_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
-					_oTrEstq:Etiqueta = za1 -> za1_codigo
-					_oTrEstq:Libera (.F., 'FULLWMS')
-					_oTrEstq:Executa ()  // Tenta executar, pois as liberacoes podem ter tido exito.
-					if _oTrEstq:Executado == 'S'
-						_AtuEntr ((_sAliasQ) -> entrada_id, '3')  // Atualiza a tabela do Fullsoft como 'executado no ERP'
-					elseif _oTrEstq:Executado == 'E'
-						_AtuEntr ((_sAliasQ) -> entrada_id, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
-					endif
-				endif
+		// ACHO QUE ESTA AQUI AINDA NAO VOU PODER HABILITAR
+		// if (_sAliasQ) -> qtde_exec < (_sAliasQ) -> qtde_mov
+		// 	u_log2 ('aviso', 'Quant.movimentada menor que executada (no FullWMS).')
+		// 	_AtuEntr ((_sAliasQ) -> entrada_id, '5')  // 5 = 'qtde movimentada menor que executada'
+		// 	(_sAliasQ) -> (dbskip ())
+		// 	loop
+		// endif
 
-			elseif ! empty (za1 -> za1_doce)  // Trata-se de entrada gerada por NF
-				u_log2 ('info', "Entrada gerada por NF. Chave: " + xfilial ("SD1") + za1 -> za1_doce + za1 -> za1_seriee + za1 -> za1_fornec + za1 -> za1_lojaf + za1 -> za1_prod + za1 -> za1_item)
-				U_Log2 ('aviso', '[' + procname () + ']Restante do programa desabilitado por que eu acho que deveria pesquisar na tabela tb_wms_movimentacoes antes de dar prosseguimento.')
-/*				sd1 -> (dbsetorder (1))  // D1_FILIAL+D1_DOC+D1_SERIE+D1_FORNECE+D1_LOJA+D1_COD+D1_ITEM
-				if ! sd1 -> (dbseek (xfilial ("SD1") + za1 -> za1_doce + za1 -> za1_seriee + za1 -> za1_fornec + za1 -> za1_lojaf + za1 -> za1_prod + za1 -> za1_item, .F.))
-					_sMsg = "NF entrada '" + za1 -> za1_doce + "' referenciada pela entrada_id '" + (_sAliasQ) -> entrada_id +"' nao encontrada na tabela SD1"
-					_AtuEntr ((_sAliasQ) -> entrada_id, '9')  // Atualiza a tabela do Fullsoft como 'cancelado no ERP'
-					_oBatch:Mensagens += _sMsg + '; '
-				else
-					if sd1 -> d1_local == U_AlmFull (sd1 -> d1_cod, 'NE')
-						u_log2 ('debug', 'achei SD1')
-						if za1 -> za1_quant != (_sAliasQ) -> qtde_exec
-							_sMsg := ""
-							_sMsg += "Produto '" + alltrim (sd1 -> d1_cod) + "': problemas no recebimento da etiqueta '" + za1 -> za1_codigo + "':" + chr (10) + chr (13)
-							_sMsg += "Quantidade da etiqueta: " + cvaltochar (sd1 -> d1_quant) + chr (10) + chr (13)
-							_sMsg += "Quantidade recebida pelo FullWMS: " + cvaltochar ((_sAliasQ) -> qtde_exec) + chr (10) + chr (13)
-							_AtuEntr ((_sAliasQ) -> entrada_id, '4')  // Atualiza a tabela do Fullsoft como 'diferenca na quantidade'
-							_oBatch:Mensagens += _sMsg + '; '
-						else
-							if (_sAliasQ) -> qtde_mov < (_sAliasQ) -> qtde_exec
-								_sMsg := ""
-								_sMsg += "Produto '" + alltrim (sd1 -> d1_cod) + "': problemas no recebimento da etiqueta '" + za1 -> za1_codigo + "':" + chr (10) + chr (13)
-								_sMsg += "Quantidade movimentada pelo FullWMS (" + cvaltochar ((_sAliasQ) -> qtde_mov) + ") menor que quantidade executada (" + cvaltochar ((_sAliasQ) -> qtde_exec) + ")"
-								_AtuEntr ((_sAliasQ) -> entrada_id, '5')  // Atualiza a tabela do Fullsoft como 'qtde movimentada menor que executada'
-								_oBatch:Mensagens += _sMsg + '; '
-							else
-								sb2 -> (dbsetorder (1))  // B2_FILIAL+B2_COD+B2_LOCAL
-								if ! sb2 -> (dbseek (xfilial ("SB2") + sd1 -> d1_cod + sd1 -> d1_local, .F.)) .or. sb2 -> b2_qatu < _nQtAUsar
-									u_log2 ('aviso', 'Sem estoque para transferir')
-									_AtuEntr ((_sAliasQ) -> entrada_id, '1')  // Atualiza a tabela do Fullsoft como 'falta estoque para fazer a transferencia'
-								else
-									if _GeraTran (sd1 -> d1_cod, sd1 -> d1_lotectl, za1 -> za1_quant, sd1 -> d1_local, '02', '', '', 'GUARDA NF ' + sd1 -> d1_doc, za1 -> za1_codigo, _sChaveEx)
-										_AtuEntr ((_sAliasQ) -> entrada_id, '3')  // Atualiza a tabela do Fullsoft como 'executado no ERP'
-									else
-										_AtuEntr ((_sAliasQ) -> entrada_id, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
-									endif
-								endif
-							endif
-						endif
-					else
-						u_help ('Transf.da etiq ' + alltrim ((_sAliasQ) -> codfor) + ' ja realizada ou desnecessaria.',, .t.)
-					endif
-				endif
-				*/
-			else
-				_oAviso := ClsAviso ():New ()
-				_oAviso:Tipo       = 'E'
-				_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
-				_oAviso:Titulo     = "Sem tratamento para entrada_id [" + (_sAliasQ) -> entrada_id + ']'
-				_oAviso:Texto      = "Sem tratamento para entrada_id [" + (_sAliasQ) -> entrada_id + '] lida da tabela tb_wms_entrada."
-				_oAviso:Origem     = procname ()
-				_oAviso:InfoSessao = .T.  // Incluir informacoes adicionais de sessao na mensagem.
-				_oAviso:Grava ()
-//				u_AvisaTI ("Sem tratamento para entrada_id '" + (_sAliasQ) -> entrada_id +"' no programa " + procname ())
-			endif
+		if left ((_sAliasQ) -> entrada_id, 3) != 'ZA1'
+			u_help ("Sem tratamento para entrada_id diferente de ZA1 (sem etiqueta)",, .t.)
+			(_sAliasQ) -> (dbskip ())
+			loop
+		endif
 
+		_sEtiq = substr ((_sAliasQ) -> entrada_id, 6, 10)
+		u_log2 ('debug', 'Identifiquei codigo de etiqueta = ' + _sEtiq)
+		_oEtiq = ClsEtiq ():New (_sEtiq)
+		if empty (_oEtiq:Codigo)
+			u_help ("Etiqueta '" + _sEtiq + "' invalida." + _oEtiq:UltMsg,, .t.)
+			(_sAliasQ) -> (dbskip ())
+			loop
+		endif
 
-		// Entrada de producao com etiqueta
-		case (_sAliasQ) -> tpdoc == '6' .and. left ((_sAliasQ) -> entrada_id, 3) == 'ZA1' .and. substr ((_sAliasQ) -> entrada_id, 4, 2) == cFilAnt
-			_sEtiq = substr ((_sAliasQ) -> entrada_id, 6, 10)
-			u_log2 ('info', 'Entrada de producao pelo ZA1. Etiqueta: ' + _sEtiq)
-			za1 -> (dbsetorder(1))
-			if ! za1 -> (dbseek (xfilial ("ZA1") + _sEtiq, .F.))
-				u_help ("Etiqueta '" + _sEtiq + "' nao encontrada na tabela ZA1",, .t.)
-				(_sAliasQ) -> (dbskip ())
-				loop
-			endif
-
-			/* Nunca entrou em producao
-			// Verifica se necessita de inspecao
-			_Inspe = _VerInsp((_sAliasQ) -> coditem, (_sAliasQ) -> codfor)
-			If "ERRO" $ _Inspe
-				u_help ('Erro web service do NaWeb: ' + _Inspe + " Etiqueta: " + (_sAliasQ) -> codfor)
-				(_sAliasQ) -> (dbskip ())
-				loop
-			elseIf _Inspe != 'INSPECAO NAO DEFINIDA'  // Indica que nao precisa inspecionar este item 
-				u_help ("Etiqueta " + (_sAliasQ) -> codfor + " aguardando inspecao no NaWeb")
-				(_sAliasQ) -> (dbskip ())
-				loop
-			EndIf
-*/
-
-			// Procura o apontamento de producao gerado por esta etiqueta no almox. de integracao
-			_oSQL := ClsSQL ():New ()
-			_oSQL:_sQuery := " SELECT R_E_C_N_O_"
-			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD3")
-			_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
-			_oSQL:_sQuery +=    " AND D3_FILIAL  = '" + xfilial ("SD3") + "'"
-			_oSQL:_sQuery +=    " AND D3_VAETIQ  = '" + _sEtiq + "'"
-			_oSQL:_sQuery +=    " AND D3_CF LIKE 'PR%'"
-			_oSQL:_sQuery +=    " AND D3_ESTORNO != 'S'"
-			_nRegSD3 = _oSQL:RetQry (1, .F.)
-			if _nRegSD3 == 0
-				u_help ("Apontamento de producao gerado pela etiqueta '" + _sEtiq + "' nao encontrado.",, .t.)
-				_AtuEntr ((_sAliasQ) -> entrada_id, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
-				(_sAliasQ) -> (dbskip ())
-				loop
-			endif
-			sd3 -> (dbgoto (_nRegSD3))
-
-			if sd3 -> d3_estorno == 'S'
-				u_help ("Apontamento de producao gerado pela etiqueta '" + _sEtiq + "' encontra-se estornado no Protheus.",, .t.)
-				_AtuEntr ((_sAliasQ) -> entrada_id, '9')  // Atualiza a tabela do Fullsoft como 'cancelado no ERP'
-				(_sAliasQ) -> (dbskip ())
-				loop
-			endif
-				
-			// Verifica se a quantidade apontada com esta etiqueta precisa ser transferida para o almox. 01
-			if sd3 -> d3_local != U_AlmFull (sd3 -> d3_cod, 'PR')
-				u_help ("Apontamento de producao gerado pela etiqueta '" + _sEtiq + "' foi feito no almox. '" + sd3 -> d3_local + "'. Esse nao eh um almox. reconhecido como entrada de producao para o Full.",, .t.)
-				_AtuEntr ((_sAliasQ) -> entrada_id, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
-				(_sAliasQ) -> (dbskip ())
-				loop
-			endif
-			
-			// Quando for OP de reprocesso, considera o campo D3_PERDA.
-			if fBuscaCpo ("SC2", 1, xfilial ("SC2") + sd3->d3_op, "C2_VAOPESP") == 'R'  // OP de retrabalho.
-				_nQtAUsar = sd3 -> d3_perda
-			else
-				_nQtAUsar = sd3 -> d3_quant
-			endif
-			if _nQtAUsar != (_sAliasQ) -> qtde_exec  // no futuro quero usar o campo "qtde_mov" mas o Full ainda nao ta gravando
-				u_help ("Apontamento de producao gerado pela etiqueta '" + _sEtiq + "' tem quantidade = " + cvaltochar (_nQtAUsar) + ", mas a quant.movimentada no Full foi de " + cvaltochar ((_sAliasQ) -> qtde_exec),, .t.)
-				_AtuEntr ((_sAliasQ) -> entrada_id, '4')  // Atualiza a tabela do Fullsoft como 'diferenca na quantidade'
-				(_sAliasQ) -> (dbskip ())
-				loop
-			endif
-
-			// Verifica se jah tem movimento de guarda da etiqueta (o processo pode ter caido na execucao anterior
-			// antes de conseguir atualizar o status na tabela de integracao)
-			_oSQL := ClsSQL ():New ()
-			_oSQL:_sQuery := " SELECT TOP 1 D3_NUMSEQ"
-			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD3")
-			_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
-			_oSQL:_sQuery +=    " AND D3_FILIAL  = '" + xfilial ("SD3") + "'"
-			_oSQL:_sQuery +=    " AND D3_VAETIQ  = '" + _sEtiq + "'"
-			_oSQL:_sQuery +=    " AND D3_CF      = 'RE4'"
-			_oSQL:_sQuery +=    " AND D3_ESTORNO != 'S'"
-			_oSQL:_sQuery +=    " AND D3_LOCAL   = '" + sd3 -> d3_local + "'"
-			_oSQL:_sQuery +=    " AND D3_VACHVEX = '" + _sChaveEx + "'"
-			//_oSQL:Log ()
-			_sNumSeq := _oSQL:RetQry (1, .F.)
-			if ! empty (_sNumSeq)
-				u_help ("Guarda da producao gerada pela etiqueta '" + _sEtiq + "' ja realizada (D3_NUMSEQ = '" + _sNumSeq + "')",, .t.)
+		// Se for uma etiqueta de apontamento de producao
+		if ! empty (_oEtiq:OP)
+			if _oEtiq:QtRE4 > 0 .or. _oEtiq:QtDE4 > 0
+				u_help ("Guarda da producao gerada pela etiqueta '" + _oEtiq:Codigo + "' ja iniciada/realizada.",, .t.)
 				_AtuEntr ((_sAliasQ) -> entrada_id, '3')  // Atualiza a tabela do Fullsoft como 'jah executado no ERP'
 				(_sAliasQ) -> (dbskip ())
 				loop
 			endif
 
+			if _oEtiq:QtApontada == 0 .and. _oEtiq:QtPerdida == 0
+				u_help ("Qt.apontada e qt.perdida(em caso de reprocesso) zeradas para a etiqueta " + _oEtiq:Codigo,, .t.)
+				_AtuEntr ((_sAliasQ) -> entrada_id, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
+				(_sAliasQ) -> (dbskip ())
+				loop
+			endif
+
+			// Verifica se a quantidade apontada com esta etiqueta precisa ser transferida para o almox. 01
+			if _oEtiq:AlmApontOP != '11'
+				u_help ("Apontamento de producao gerado pela etiqueta '" + _oEtiq:Codigo + "' foi feito no almox. '" + _oEtiq:AlmApontOP + "', para o qual nao tenho tratamento aqui.",, .t.)
+				_AtuEntr ((_sAliasQ) -> entrada_id, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
+				(_sAliasQ) -> (dbskip ())
+				loop
+			else
+				_sAlmOrig = _oEtiq:AlmApontOP
+			endif
+
+			// Quando for OP de reprocesso, considera o campo D3_PERDA.
+			if _oEtiq:FinalidOP == 'R'  // OP de retrabalho.
+				_nQtAUsar = _oEtiq:QtPerdida
+			else
+				_nQtAUsar = _oEtiq:QtApontada
+			endif
+			if _nQtAUsar != (_sAliasQ) -> qtde_exec  // no futuro quero usar o campo "qtde_mov" mas o Full ainda nao ta gravando
+				u_help ("Apontamento de producao gerado pela etiqueta '" + _oEtiq:Codigo + "' tem quantidade = " + cvaltochar (_nQtAUsar) + ", mas a quant.movimentada no Full foi de " + cvaltochar ((_sAliasQ) -> qtde_exec),, .t.)
+				_AtuEntr ((_sAliasQ) -> entrada_id, '4')  // Atualiza a tabela do Fullsoft como 'diferenca na quantidade'
+				(_sAliasQ) -> (dbskip ())
+				loop
+			endif
+		
 			// Verifica se vai ter estoque suficiente para transferir.
 			sb2 -> (dbsetorder (1))  // B2_FILIAL+B2_COD+B2_LOCAL
-			if ! sb2 -> (dbseek (xfilial ("SB2") + sd3 -> d3_cod + sd3 -> d3_local, .F.)) .or. sb2 -> b2_qatu < _nQtAUsar
-				u_help ("Apont.prod.etiq. '" + _sEtiq + "': sem saldo estoque produto '" + alltrim (sb2 -> b2_cod) + "' no ax. '" + sb2 -> b2_local + "' para transferir.",, .t.)
+			if ! sb2 -> (dbseek (xfilial ("SB2") + _oEtiq:Produto + _oEtiq:AlmApontOP, .F.)) .or. sb2 -> b2_qatu < _nQtAUsar
+				u_help ("Apont.prod.etiq. '" + _oEtiq:Codigo + "': sem saldo estoque produto '" + alltrim (sb2 -> b2_cod) + "' no ax. '" + sb2 -> b2_local + "' para transferir.",, .t.)
 				_AtuEntr ((_sAliasQ) -> entrada_id, '1')  // Atualiza a tabela do Fullsoft como 'falta estoque para fazer a transferencia'
 				(_sAliasQ) -> (dbskip ())
 				loop
 			endif
 
 			// Gera a transferencia.
-			if _GeraTran (sd3 -> d3_cod, '', _nQtAUsar, sd3 -> d3_local, '01', '', '', 'GUARDA PALLET ' + alltrim ((_sAliasQ) -> codfor), alltrim ((_sAliasQ) -> codfor), _sChaveEx)
+			_sChaveEx = 'Full' + alltrim ((_sAliasQ) -> entrada_id)
+			if _GeraTran (_oEtiq:Produto, '', _nQtAUsar, _oEtiq:AlmApontOP, '01', '', '', 'GUARDA PALLET ' + alltrim ((_sAliasQ) -> codfor), alltrim ((_sAliasQ) -> codfor), _sChaveEx)
 				_AtuEntr ((_sAliasQ) -> entrada_id, '3')  // Atualiza a tabela do Fullsoft como 'executado'
 			else
 				_AtuEntr ((_sAliasQ) -> entrada_id, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
 			endif
 
-
-
-//		case (_sAliasQ) -> tpdoc == '6'  // Entrada de producao
-		// Entrada de producao com chave antiga (pelo SD3) a ser descontinuada, mas precido receber o que ainda consta em aberto.
-		// ELIMINAR ESTE CASE DAQUI A ALGUM TEMPO POIS PRETENDO MUDAR O ENTRADA_ID PARA SEMPRE INICIAR POR 'ZA1'
-		// ALTERACAO JAH FEITA NA VIEW v_wms_entrada NA BASE TESTE, FALTA TESTAR BEM E LEVAR PRA QUENTE. ROBERT, 29/10/18 
-		case (_sAliasQ) -> tpdoc == '6' .and. left ((_sAliasQ) -> entrada_id, 3) == 'SD3' .and. substr ((_sAliasQ) -> entrada_id, 4, 2) == cFilAnt
-			u_log2 ('info', 'Entrada de producao pelo SD3') 
-
-			if empty ((_sAliasQ) -> codfor)
-				u_help ('Tabela TB_WMS_ENTRADA: Campo CODFOR nao tem numero de etiqueta na ENTRADA_ID ' + (_sAliasQ) -> entrada_id,, .t.)
+		// Etiqueta gerada para atender a uma solicitacao de transferencia de outro almox.
+		elseif ! empty (_oEtiq:IdZAG)
+			
+			// Deixa objeto instanciado com a solicitacao original de transferencia
+			_oTrEstq := ClsTrEstq ():New (xfilial ("ZAG") + _oEtiq:IdZAG)
+			if empty (_oTrEstq:Docto)
+				u_help ("Nao foi possivel instanciar objeto _oTrEstq com base no ID '" + _oEtiq:IdZAG + "'",, .t.)
+				(_sAliasQ) -> (dbskip ())
+				loop
+			endif
+			if _oTrEstq:Executado == 'S'  // Se jah foi executado anteriormente...
+				u_log2 ('aviso', 'Transferencia consta como jah executada na tabela ZAG.')
+				_AtuEntr ((_sAliasQ) -> entrada_id, '3')  // Atualiza a tabela do Fullsoft como 'executado no ERP'
+				(_sAliasQ) -> (dbskip ())
+				loop
+			endif
+			
+			// Verifica se pode fazer a liberacao do almox.destino (01) cfe. retorno do FullWMS.
+			if ! _oTrEstq:AlmUsaFull (_oTrEstq:AlmDest)
+				u_log2 ('aviso', 'Alm.destino nao usa FullWMS e, portanto, nao tem tratamento aqui.')
+				_AtuEntr ((_sAliasQ) -> entrada_id, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado'
 				(_sAliasQ) -> (dbskip ())
 				loop
 			endif
 
-			/* Nunca entrou em producao
-			// Verifica se necessita de inspecao
-			_Inspe = _VerInsp((_sAliasQ) -> coditem, (_sAliasQ) -> codfor)
-			If "ERRO" $ _Inspe
-				u_help ('Erro web service do NaWeb: ' + _Inspe + " Etiqueta: " + (_sAliasQ) -> codfor)
-				(_sAliasQ) -> (dbskip ())
-				loop
-			elseIf _Inspe != 'INSPECAO NAO DEFINIDA'  // Indica que nao precisa inspecionar este item 
-				u_help ("Etiqueta " + (_sAliasQ) -> codfor + " aguardando inspecao no NaWeb")
-				(_sAliasQ) -> (dbskip ())
-				loop
-			EndIf
-*/
-			// Procura o apontamento de producao gerado por esta etiqueta no almox. de integracao
-			if ! U_TemNick ("SD3", "D3_VAETIQ")
-				_lRet = .F.
-				u_help ("Problema no indice 'D3_VAETIQ' do arquivo SD3. Acione suporte.",, .t.)
-//				u_AvisaTI (procname () + ": Problema no indice 'D3_VAETIQ' do arquivo SD3.")
-				_oAviso := ClsAviso ():New ()
-				_oAviso:Tipo       = 'E'
-				_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
-				_oAviso:Titulo     = "Nao encontrei indice de nickname D3_VAETIQ na tabela SD3"
-				_oAviso:Texto      = "Nao encontrei indice de nickname D3_VAETIQ na tabela SD3. O mesmo eh necessario para verificar a movimentacao da etiqueta."
-				_oAviso:Origem     = procname ()
-				_oAviso:InfoSessao = .T.  // Incluir informacoes adicionais de sessao na mensagem.
-				_oAviso:Grava ()
-			else
-				sd3 -> (dbOrderNickName ("D3_VAETIQ"))  // D3_FILIAL+D3_VAETIQ
-				if sd3 -> (dbseek (xfilial ("SD3") + alltrim ((_sAliasQ) -> codfor), .F.))
-					if sd3 -> d3_estorno == 'S'
-						_sMsg := ""
-						_sMsg += "Produto '" + alltrim (sd3 -> d3_cod) + "': problemas no recebimento da etiqueta '" + sd3 -> d3_vaetiq + "':" + chr (10) + chr (13)
-						_sMsg += "Movimento de producao estornado no Protheus" + chr (10) + chr (13)
-						_sMsg += "Quantidade recebida pelo FullWMS: " + cvaltochar ((_sAliasQ) -> qtde_exec) + chr (10) + chr (13)
-						_sMsg += "Impossivel fazer a transferencia no Protheus. Verifique!"
-						_AtuEntr ((_sAliasQ) -> entrada_id, '9')  // Atualiza a tabela do Fullsoft como 'cancelado no ERP'
-						_oBatch:Mensagens += _sMsg + '; '
-					else
-						// Verifica se a quantidade apontada com esta etiqueta precisa ser transferida para o almox. 01
-						if sd3 -> d3_estorno != 'S' .and. sd3 -> d3_vafullw != 'S' .and. sd3 -> d3_local == U_AlmFull (sd3 -> d3_cod, 'PR')
-							_nQtAUsar = 0
-							if fBuscaCpo ("SC2", 1, xfilial ("SC2") + sd3->d3_op, "C2_VAOPESP") == 'R'  // OP de retrabalho.
-								if sd3 -> d3_perda != (_sAliasQ) -> qtde_exec
-									_sMsg := ""
-									_sMsg += "Produto '" + alltrim (sd3 -> d3_cod) + "': problemas no recebimento da etiqueta '" + sd3 -> d3_vaetiq + "':" + chr (10) + chr (13)
-									_sMsg += "Quantidade apontada na etiqueta: " + cvaltochar (sd3 -> d3_perda) + chr (10) + chr (13)
-									_sMsg += "Quantidade recebida pelo FullWMS: " + cvaltochar ((_sAliasQ) -> qtde_exec) + chr (10) + chr (13)
-									_AtuEntr ((_sAliasQ) -> entrada_id, '4')  // Atualiza a tabela do Fullsoft como 'diferenca na quantidade'
-									_oBatch:Mensagens += _sMsg + '; '
-								else
-									_nQtAUsar = min (sd3 -> d3_perda, (_sAliasQ) -> qtde_exec)
-								endif
-							else							
-								if sd3 -> d3_quant != (_sAliasQ) -> qtde_exec
-									_sMsg := ""
-									_sMsg += "Produto '" + alltrim (sd3 -> d3_cod) + "': problemas no recebimento da etiqueta '" + sd3 -> d3_vaetiq + "':" + chr (10) + chr (13)
-									_sMsg += "Quantidade apontada na etiqueta: " + cvaltochar (sd3 -> d3_quant) + chr (10) + chr (13)
-									_sMsg += "Quantidade recebida pelo FullWMS: " + cvaltochar ((_sAliasQ) -> qtde_exec) + chr (10) + chr (13)
-									_AtuEntr ((_sAliasQ) -> entrada_id, '4')  // Atualiza a tabela do Fullsoft como 'diferenca na quantidade'
-									_oBatch:Mensagens += _sMsg + '; '
-								else
-									_nQtAUsar = min (sd3 -> d3_quant, (_sAliasQ) -> qtde_exec)
-								endif
-							endif
-							
-							_dData = dDatabase
-							sb2 -> (dbsetorder (1))  // B2_FILIAL+B2_COD+B2_LOCAL
-							if ! sb2 -> (dbseek (xfilial ("SB2") + sd3 -> d3_cod + sd3 -> d3_local, .F.)) .or. sb2 -> b2_qatu < _nQtAUsar
-								_AtuEntr ((_sAliasQ) -> entrada_id, '1')  // Atualiza a tabela do Fullsoft como 'falta estoque para fazer a transferencia'
-							else
-								if _GeraTran (sd3 -> d3_cod, '', _nQtAUsar, sd3 -> d3_local, '01', '', '', 'GUARDA PALLET ' + alltrim ((_sAliasQ) -> codfor), alltrim ((_sAliasQ) -> codfor), 'FullZA1' + cFilAnt + alltrim ((_sAliasQ) -> codfor))
-									_AtuEntr ((_sAliasQ) -> entrada_id, '3')  // Atualiza a tabela do Fullsoft como 'jah executado no ERP'
-								else
-									u_log2 ('erro', 'Nao transferiu etiq. ' + sd3 -> d3_vaetiq)
-									if ! empty (_sErroAuto)
-										u_log2 ('erro', _sErroAuto)
-									endif
-									_AtuEntr ((_sAliasQ) -> entrada_id, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
-								endif
-							endif
-						else
-							u_log2 ('aviso', 'Transf.da etiq. ' + alltrim ((_sAliasQ) -> codfor) + ' para alm 01 ja realizada ou desnecessaria.')
-						endif
-					endif
+			// Verifica se ha necessidade de fazer liberacao pelo lado do FullWMS.
+			if empty (_oTrEstq:UsrAutDst)
+				U_Log2 ('debug', '[' + procname () + ']Falta liberacao do almox.destino')
+				if (_sAliasQ) -> qtde_exec != _oTrEstq:QtdSOlic
+					u_log2 ('aviso', 'Quant.executada (no FullWMS) diferente da solicitada.')
+					_AtuEntr ((_sAliasQ) -> entrada_id, '4')  // 4 = diferenca na quantidade
+					(_sAliasQ) -> (dbskip ())
+					loop
 				else
-					_sMsg := ""
-					_sMsg += "Problema etiq.'" + alltrim ((_sAliasQ) -> codfor) + "' Produto (FullWMS): '" + alltrim ((_sAliasQ) -> coditem) + "' Movto producao desta etiq.nao encontrado no Protheus"
-					_oBatch:Mensagens += _sMsg + '; '
+					_oTrEstq:Libera (.T., 'FULLWMS')
+				endif
 
-					_oAviso := ClsAviso ():New ()
-					_oAviso:Tipo       = 'E'
-					_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
-					_oAviso:Titulo     = _sMsg
-					_oAviso:Texto      = _sMsg
-					_oAviso:Origem     = procname ()
-					_oAviso:InfoSessao = .T.  // Incluir informacoes adicionais de sessao na mensagem.
-					_oAviso:Grava ()
+				// Tenta executar a transferencia.
+				if ! _oTrEstq:Executa (.t.)
 				endif
 			endif
-
-		otherwise
-			u_help ("Sem tratamento para tpdoc / entrada_id '" + (_sAliasQ) -> tpdoc + (_sAliasQ) -> entrada_id + "' da tabela 'tb_wms_entradas'.",, .t.)
-//			u_avisaTI ("Sem tratamento para tpdoc / entrada_id '" + (_sAliasQ) -> tpdoc + (_sAliasQ) -> entrada_id + "' da tabela 'tb_wms_entradas'.")
-
-			_oAviso := ClsAviso ():New ()
-			_oAviso:Tipo       = 'E'
-			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
-			_oAviso:Titulo     = "Sem tratamento para tpdoc / entrada_id " + (_sAliasQ) -> tpdoc + '/' + (_sAliasQ) -> entrada_id
-			_oAviso:Texto      = "Nao sei como tratar os campos tpdoc/entrada_id [" + (_sAliasQ) -> tpdoc + '/' + (_sAliasQ) -> entrada_id + '] encontrados na tabela tb_wms_entradas."
-			_oAviso:Origem     = procname ()
-			_oAviso:InfoSessao = .T.  // Incluir informacoes adicionais de sessao na mensagem.
-			_oAviso:Grava ()
-		endcase
+		endif
 
 		(_sAliasQ) -> (dbskip ())
 	enddo
 	(_sAliasQ) -> (dbclosearea ())
-
 return _lRet
 
 
@@ -493,7 +304,7 @@ static function _GeraTran (_sProduto, _sLote, _nQuant, _sAlmOrig, _sAlmDest, _sE
 	local _aRegsSD3  := {}
 	private lMsErroAuto := .F.
 
-//	u_log2 ('debug', '[' + procname () + '] param recebidos: ' + cvaltochar ( _sProduto) + cvaltochar ( _sLote) + cvaltochar ( _nQuant) + cvaltochar ( _sAlmOrig) + cvaltochar ( _sAlmDest) + cvaltochar ( _sEndOrig) + cvaltochar ( _sEndDest) + cvaltochar ( _sMotivo) + cvaltochar ( _sEtiq) + cvaltochar ( _sChvEx))
+	u_log2 ('debug', '[' + procname () + '] param recebidos: ' + cvaltochar ( _sProduto) + cvaltochar ( _sLote) + cvaltochar ( _nQuant) + cvaltochar ( _sAlmOrig) + cvaltochar ( _sAlmDest) + cvaltochar ( _sEndOrig) + cvaltochar ( _sEndDest) + cvaltochar ( _sMotivo) + cvaltochar ( _sEtiq) + cvaltochar ( _sChvEx))
 
 	// Se o produto ainda nao existe no almoxarifado destino, cria-o, para nao bloquear a transferencia de estoque.
 	sb2 -> (dbsetorder (1))
@@ -533,7 +344,8 @@ static function _GeraTran (_sProduto, _sLote, _nQuant, _sAlmOrig, _sAlmDest, _sE
 	aadd(_aItens,'')                     // hr digit (vai ser gravado pelo SQL)
 	aadd(_aItens,_sEtiq)                 // D3_VAETIQ Etiqueta
 	aadd(_aItens,_sChvEx)                // Chave externa D3_VACHVEX
-	//u_log (_aItens)
+	U_Log2 ('debug', '[' + procname () + ']_aItens:')
+	U_Log2 ('debug', _aItens)
 	aadd(_aAuto261, aclone (_aItens))
 	
 	lMsErroAuto := .F.
@@ -559,7 +371,7 @@ static function _GeraTran (_sProduto, _sLote, _nQuant, _sAlmOrig, _sAlmDest, _sE
 		if ! empty (NomeAutoLog ())
 			_sErroAuto += U_LeErro (memoread (NomeAutoLog ()))
 		endif
-		u_help ('Problemas na transferencia de estoque: ' + _sErroAuto,, .t.)
+		u_help ('Problemas rot.aut.transf.estoque: ' + _sErroAuto,, .t.)
 		_lRet = .F.
 	else
 		U_LOG2 ('info', 'Transf. estq gerada. D3_VACHVEX: ' + _sChvEx + ' Prod.: ' + alltrim (_sProduto) + ' AX ' + _sAlmOrig + '->' + _sAlmDest + ' qt: ' + cvaltochar (_nQuant))
@@ -608,7 +420,7 @@ return _sRet
 
 // ------------------------------------------------------------------------------------
 // Processa saidas do FullWMS
-static function _Saidas ()
+static function _Saidas (_sSaidID)
 	local _lRet      := .T.
 	local _sMsg      := ""
 	local _oSQL      := NIL
@@ -639,12 +451,15 @@ static function _Saidas ()
 	_oSQL:_sQuery +=    " and status_protheus != '3'"  // 3 = executado
 	_oSQL:_sQuery +=    " and status_protheus != 'C'"  // C = cancelado: por que jah foi acertado manualmente, ou jah foi inventariado, etc.
 	_oSQL:_sQuery +=    " and status_protheus != '5'"  // 5 = estornado
+	if ! empty (_sSaidID)
+		_oSQL:_sQuery += " and saida_id = '" + _sSaidID + "'"
+	endif
 	_oSQL:_sQuery +=  " order by saida_id"
 	_oSQL:Log ()
 	_sAliasQ := _oSQL:Qry2Trb ()
 	(_sAliasQ) -> (dbgotop ())
 	do while ! (_sAliasQ) -> (eof ())
-		u_log2 ('info', 'Processando saida_id ' + (_sAliasQ) -> saida_id)
+		U_Log2 ('info', '[' + procname () + "]Verificando tb_wms_pedidos.saida_id = '" + (_sAliasQ) -> saida_id + "'")
 		do case
 		case left ((_sAliasQ) -> saida_id, 3) == 'ZAG'
 			_sChaveZAG = substr ((_sAliasQ) -> saida_id, 6, 10)  // Chave composta por ZAG + filial + chave_do_ZAG cfe. view v_wms_pedido
@@ -666,7 +481,7 @@ static function _Saidas ()
 
 			// Deixa objeto instanciado com a solicitacao original de transferencia
 			_oTrOrig := ClsTrEstq ():New (zag -> (recno ()))
-			if empty (_oTrEstq:Docto)
+			if empty (_oTrOrig:Docto)
 				u_help ("Nao foi possivel instanciar objeto _oTrEstq",, .t.)
 				loop
 			endif

@@ -33,6 +33,10 @@
 // 24/10/2022 - Robert - Criado atributo :FinalidOP
 // 31/10/2022 - Robert - Quando transf.p/ax01 via ZAG, busca zag_lotori (nao gera mais lote fajuto)
 // 09/12/2022 - Robert - Criados atributos B1_CodBar, B1_VAFullW, DescriProd, PesoBruto, UM.
+// 18/01/2023 - Robert - Criado atributo OPInvalida e testes para impedir impressao nesses casos.
+// 19/01/2023 - Robert - Criado atributo AlmApontOP (almox.onde foi apontada a OP)
+// 27/01/2023 - Robert - Metodo New passa a aceitar R_E_C_N_O_ ou chave de pesquisa.
+//                     - Criados mais atributos alimentados pela leitura do SD3.
 //
 
 #Include "Protheus.ch"
@@ -49,6 +53,7 @@ return
 CLASS ClsEtiq
 
 	// Declaracao das propriedades da Classe
+	public  data AlmApontOP   // Almox.onde foi feito o apontamento da OP (quando etiq. de epontamento de OP)
 	public  data AlmDest      // Almox.destino, quando transferencia (ZAG) ou apontamento de OP
 	public  data AlmOrig      // Almox.origem, quando transferencia (ZAG) ou gerada com base no SD5 (lotes iniciais).
 	public  data Apontada     // ZA1_APONT - Apontamento de producao ja executado (quando etiq. para OP)
@@ -73,12 +78,15 @@ CLASS ClsEtiq
 	public  data ImprCBProd   // Indica se deve obrigatoriamente imprimir o cod.barras do produto.
 	public  data LoteProduto
 	public  data OP           // ZA1_OP
+	public  data OPInvalida   // Jah tive casos de reimpressao de etiquetas de OPs excluidas!
 	public  data PesoBruto    // B1_PESBRU * qtid (peso bruto total da etiqueta)
 	public  data Produto      // ZA1_PROD
 	public  data QtApontada   // Quando relacionada a uma OP
+	public  data QtDE4        // Quantidade movimentada com D3_CF=DE4
 	public  data QtEstornada  // Quando relacionada a uma OP
 	public  data QtEtqGrupo   // C2_VAQTETQ - Quantidade de etiquetas do grupo (geralmente usada com OP)
 	public  data QtPerdida    // Quando relacionada a uma OP
+	public  data QtRE4        // Quantidade movimentada com D3_CF=RE4
 	public  data Quantidade   // ZA1_QUANT
 	private data RegZA1       // Numero registro (RECNO) no ZA1.
 	public  data SeqNoGrupo   // ZA1_SEQ - Sequencia dentro do grupo, geralmente de OP. Ex.: 1 de 10, 2 de 10, ...
@@ -183,6 +191,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 	local _nRegSD5  := 0
 
 	// Defaults
+	::AlmApontOP   = ''
 	::AlmDest      = ''
 	::AlmOrig      = ''
 	::Apontada     = 'N'
@@ -207,12 +216,15 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 	::ImprCBProd   = 'N'
 	::LoteProduto  = ''
 	::OP           = ''
+	::OPInvalida   = .F.  // Ateh prova em contrario...
 	::PesoBruto    = 0
 	::Produto      = ''
 	::QtApontada   = 0
+	::QtDE4        = 0
 	::QtEstornada  = 0
 	::QtEtqGrupo   = 0
 	::QtPerdida    = 0
+	::QtRE4        = 0
 	::Quantidade   = 0
 	::RegZA1       = 0
 	::SeqNoGrupo   = ''
@@ -287,7 +299,8 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 				::AlmDest = sb1 -> b1_locpad
 				sc2 -> (dbsetorder (1))
 				if ! sc2 -> (dbseek (xfilial ("SC2") + ::OP, .f.))
-					u_help ('[' + GetClassName (::Self) + '.' + procname () + "]Impossivel encontrar a OP '" + ::OP + "' relacionada `a etiqueta '" + ::Codigo + "'. Validade nao pode ser determinada.",, .t.)
+					::OPInvalida = .T.
+					u_help ('[' + GetClassName (::Self) + '.' + procname () + "]Impossivel encontrar a OP '" + ::OP + "' relacionada `a etiqueta '" + ::Codigo + "'.",, .t.)
 				else
 					::AlmOrig    = sc2 -> c2_local
 					::CBEmbCol   = sc2 -> c2_vaBarCx
@@ -321,6 +334,9 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 					_oSQL:_sQuery +=      ", ISNULL (SUM (CASE WHEN D3_ESTORNO != 'S' AND D3_CF LIKE 'PR%' THEN D3_PERDA   ELSE 0  END), 0) AS PERDA"
 					_oSQL:_sQuery +=      ", ISNULL (SUM (CASE WHEN D3_ESTORNO  = 'S' AND D3_CF LIKE 'ER%' THEN D3_QUANT   ELSE 0  END), 0) AS ESTORNO"
 					_oSQL:_sQuery +=      ", ISNULL (MIN (CASE WHEN D3_ESTORNO != 'S' AND D3_CF LIKE 'PR%' THEN D3_VADTPRD ELSE '' END), 0) AS DTFABRIC"
+					_oSQL:_sQuery +=      ", ISNULL (MAX (CASE WHEN D3_ESTORNO != 'S' AND D3_CF LIKE 'PR%' THEN D3_LOCAL   ELSE '' END), 0) AS ALMAPONT"
+					_oSQL:_sQuery +=      ", ISNULL (SUM (CASE WHEN D3_ESTORNO != 'S' AND D3_CF = 'RE4' THEN D3_QUANT ELSE 0 END), 0) AS QT_RE4"
+					_oSQL:_sQuery +=      ", ISNULL (SUM (CASE WHEN D3_ESTORNO != 'S' AND D3_CF = 'DE4' THEN D3_QUANT ELSE 0 END), 0) AS QT_DE4"
 					_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD3") + " SD3"
 					_oSQL:_sQuery += " WHERE SD3.D_E_L_E_T_ = ''"
 					_oSQL:_sQuery +=   " AND SD3.D3_FILIAL  = '" + xfilial ("SD3") + "'"
@@ -331,6 +347,9 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 					::QtPerdida   = _aRetSD3 [1 , 2]
 					::QtEstornada = _aRetSD3 [1 , 3]
 					::DtFabrLote  = stod (_aRetSD3 [1 , 4])
+					::AlmApontOP  = _aRetSD3 [1 , 5]
+					::QtRE4       = _aRetSD3 [1 , 6]
+					::QtDE4       = _aRetSD3 [1 , 7]
 				endif
 
 			case ! empty (::DocEntrNum)  // Etiqueta gerada por NF de entrada
@@ -697,6 +716,7 @@ METHOD PodeApont (_nQtApont, _nQtPerda) Class ClsEtiq
 return _lContinua
 
 
+
 // --------------------------------------------------------------------------
 // Verifica se a etiqueta pode ser enviada para o FullWMS (quando tratar-se de integracao)
 METHOD PodeEnvFul () Class ClsEtiq
@@ -891,14 +911,22 @@ return _lContinua
 METHOD Imprime (_sCodImpr) Class ClsEtiq
 	local _lContinua := .T.
 
-	// Ainda tenho algumas leituras do ZA1, enteo tenho que ter ele posicionado.
+	// Ainda tenho algumas leituras do ZA1, entao tenho que ter ele posicionado.
 	// A intencao eh pegar tudo do objeto oEtiq.
 	za1 -> (dbgoto (::RegZA1))
 	
-	if ::Inutilizada
+	if _lContinua .and. ::Inutilizada
 		u_help ("Etiquetas inutilizadas nao podem mais ser impressas.",, .t.)
 		_lContinua = .F.
-	else
+	endif
+	if _lContinua .and. ! empty (::OP) .and. ::OPInvalida
+		u_help ("Etiq. referenciando uma OP invalida (" + alltrim (::OP) + ").",, .t.)
+		_lContinua = .F.
+	endif
+	if _lContinua .and. ! empty (::OP) .and. (::QtApontada != 0 .or. ::QtPerdida != 0 .or. ::QtEstornada != 0)
+		_lContinua = U_MsgNoYes ("Etiq.ja tem movimentacao. Deseja imprimir mesmo assim?")
+	endif
+	if _lContinua
 		_lContinua = U_ImpZA1 (_sCodImpr, ::Self)
 	endif
 

@@ -1,21 +1,22 @@
 // Programa...: VA_XLS63
 // Autor......: Robert Koch
 // Data.......: 23/01/2023
-// Descricao..: Exporta planilha com dados da tabela SD2
+// Descricao..: Exporta planilha com dados das tabelas SD2 e SD1
 //
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #exporta_planilha
-// #Descricao         #Exporta planilha com dados da tabela SD2 para auxiliar na conciliacao contabil.
-// #PalavasChave      #NF_saida #esporta_dados
-// #TabelasPrincipais #SD2
-// #Modulos           #FAT
+// #Descricao         #Exporta planilha com dados das tabelas SD1 e SD2 para auxiliar na conciliacao contabil x impostos
+// #PalavasChave      #NF_saida #exporta_dados #conciliacao_impostos
+// #TabelasPrincipais #SD2 #SD1
+// #Modulos           #CTB
 //
 // Historico de alteracoes:
+// 27/01/2023 - Robert - Acrescentada tabela SD1
 //
 
 // --------------------------------------------------------------------------
 User Function VA_XLS63 (_lAutomat)
-	Local cCadastro := "Exporta planilha com dados da tabela SD2"
+	Local cCadastro := "Exporta planilha com dados das tabelas SD2 e SD1"
 	Local aSays     := {}
 	Local aButtons  := {}
 	Local nOpca     := 0
@@ -61,14 +62,29 @@ Static Function _Gera()
 	_oSQL:_sQuery += "SELECT D2_FILIAL, D2_DOC, D2_EMISSAO, D2_TES, D2_CF"
 	_oSQL:_sQuery +=      ", D2_TOTAL, D2_VALICM, D2_VALIPI, D2_VALIMP5"
 	_oSQL:_sQuery +=      ", D2_VALIMP6, D2_ICMSRET, D2_ICMSCOM, D2_TP"
-	_oSQL:_sQuery +=      ", D2_DIFAL, D2_VFCPDIF"
+	_oSQL:_sQuery +=      ", D2_DIFAL, D2_VFCPDIF, D2_VALFRE"
 	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD2") + " SD2"
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=   " AND D2_FILIAL       BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'"
-	_oSQL:_sQuery +=   " AND D2_EMISSAO      BETWEEN '" + dtos (mv_par03) + "' AND '" + dtos (mv_par04) + "'"
+	_oSQL:_sQuery +=   " AND D2_FILIAL  BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'"
+	_oSQL:_sQuery +=   " AND D2_EMISSAO BETWEEN '" + dtos (mv_par03) + "' AND '" + dtos (mv_par04) + "'"
 	_oSQL:_sQuery += " ORDER BY D2_FILIAL, D2_EMISSAO, D2_DOC, D2_SERIE, D2_ITEM"
 	_oSQL:Log ('[' + procname () + ']')
-	_oSQL:ArqDestXLS = 'VA_XLS63'
+	_oSQL:ArqDestXLS = 'VA_XLS63_SAID'
+	_oSQL:Qry2Xls (.T., .F., .F.)
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += "SELECT D1_FILIAL, D1_DOC, D1_EMISSAO, D1_TES, D1_CF"
+	_oSQL:_sQuery +=      ", D1_TOTAL, D1_VALICM, D1_VALIPI, D1_VALIMP5"
+	_oSQL:_sQuery +=      ", D1_VALIMP6, D1_ICMSRET, D1_ICMSCOM, D1_TP"
+	_oSQL:_sQuery +=      ", D1_DIFAL, D1_VFCPDIF, D1_VALFRE, D1_FORNECE"
+	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD1") + " SD1"
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=   " AND D1_FILIAL  BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'"
+	_oSQL:_sQuery +=   " AND D1_DTDIGIT BETWEEN '" + dtos (mv_par03) + "' AND '" + dtos (mv_par04) + "'"
+	_oSQL:_sQuery += " ORDER BY D1_FILIAL, D1_EMISSAO, D1_DOC, D1_SERIE, D1_ITEM"
+	_oSQL:Log ('[' + procname () + ']')
+	_oSQL:ArqDestXLS = 'VA_XLS63_ENTR'
 	_oSQL:Qry2Xls (.T., .F., .F.)
 return
 
@@ -82,7 +98,7 @@ Static Function _ValidPerg ()
 	//                 Ordem Descri                          tipo tam                      dec valid  F3    opcoes (combo)  help
 	aadd (_aRegsPerg, {01, "Filial inicial                ", "C", 2,                       0,  "",   "SM0", {},             ""})
 	aadd (_aRegsPerg, {02, "Filial final                  ", "C", 2,                       0,  "",   "SM0", {},             ""})
-	aadd (_aRegsPerg, {03, "Data emissao NF inicial       ", "D", 8,                       0,  "",   "   ", {},             ""})
-	aadd (_aRegsPerg, {04, "Data emissao NF final         ", "D", 8,                       0,  "",   "   ", {},             ""})
+	aadd (_aRegsPerg, {03, "Data movimentacao NF inicial  ", "D", 8,                       0,  "",   "   ", {},             ""})
+	aadd (_aRegsPerg, {04, "Data movimentacao NF final    ", "D", 8,                       0,  "",   "   ", {},             ""})
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 Return
