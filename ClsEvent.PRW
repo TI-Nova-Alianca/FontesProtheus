@@ -57,10 +57,11 @@
 // 20/07/2022 - Robert  - Criado tratamento para atributos ::DiasValid e ::ChaveNFe (GLPI 12336)
 // 01/08/2022 - Robert  - Criado atributo ::MotProrTit
 // 27/10/2022 - Robert  - ENvia notificacao ao gravar codigo de evento desconhecido.
+// 29/01/2023 - Robert  - Metodo GravaNovo passa a aceitar parametro de
+//                        precisao para teste de jah existencia do evento.
 //
 
 #include "protheus.ch"
-
 
 // Funcao declarada apenas para poder compilar este arquivo fonte.
 user function ClsEvent ()
@@ -212,9 +213,6 @@ METHOD Grava () Class ClsEvent
 	local _sTextoZN := ""
 	local _oAviso   := Nil
 
-	// Monitoramento de performance
-// Nem estou olhando, mesmo...	U_PerfMon ('I', 'GravarSZN')
-	
 	// Se tem quebras de linha no texto, gravo soh a primeira linha no SZN e deixo o restante para o campo memo.
 	if chr (13) $ ::Texto
 		_sTextoZN = left (::Texto, at (chr (13), ::Texto) - 1)
@@ -224,8 +222,8 @@ METHOD Grava () Class ClsEvent
 
 	if Empty(::Chave)
 		::Chave = ::CodAlias
-	EndIf	
-	
+	EndIf
+
 	u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Gravando evento ' + dtoc (::DtEvento) + ' ' + ::HrEvento + ' ' + ::Texto)
 	
 	reclock ("SZN", .T.)
@@ -263,13 +261,11 @@ METHOD Grava () Class ClsEvent
 	SZN -> zn_redesp  = ::TranspReds
 	szn -> zn_txt     = ::Texto
 	szn -> zn_ambient = ::Ambiente
-	SZN -> zn_origem  = _Origem ()
+	szn -> zn_origem  = iif (empty (::Origem), _Origem (), ::Origem)
 	szn -> zn_diasvld = ::DiasValid
 	szn -> zn_chvnfe  = ::ChaveNFe
 	szn -> zn_MotPror = ::MotProrTit
 	msunlock ("SZN")
-
-// Nem estou olhando, mesmo...	U_PerfMon ('F', 'GravarSZN')
 
 	// Envia aviso em caso de codigo de evento nao cadastrado.
 	if ! U_ExistZX5 ('54', ::CodEven, .f.)
@@ -291,17 +287,32 @@ return .t.
 
 // --------------------------------------------------------------------------
 // Gravacao de eventos somente quando ainda nao existirem (evitar duplicidade)
-METHOD GravaNovo () Class ClsEvent
+METHOD GravaNovo (_sPrecisao) Class ClsEvent
 	local _oSQL := ClsSQL ():New ()
 
+	// Nao quero considerar o metodo atual como parte da origem do evento
+	::Origem = iif (empty (::Origem), strtran (_Origem (), procname (), ''), ::Origem)
+//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Fiquei com origem = ' + ::Origem)
+
+	// A chamada pode especificar a precisao de tempo para que um exento seja
+	// considerado 'novo':
+	// DHMS - Nao deve existir evento com mesmos dados no ultimo segundo.
+	// DHM  - Nao deve existir evento com mesmos dados no ultimo minuto.
+	// DH   - Nao deve existir evento com mesmos dados na ultima hora.
+	// D    - Nao deve existir evento com mesmos dados nas ultimas 24 horas.
+	_sPrecisao = iif (_sPrecisao == NIL, 'DHMS', _sPrecisao)
+	if !_sPrecisao $ 'DHMS/DHM/DH/D'
+		U_Log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + "]Precisao invalida '" + _sPrecisao + "' recebida! Origem = " + ::Origem)
+		_sPrecisao = 'DHMS'
+	endif
+
+	// Nao vou testar o campo TEXTO por que considero pesado demais, e nao eh campo chave.
 	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += "SELECT COUNT (*)"
+	_oSQL:_sQuery += "select case WHEN exists (SELECT * "
 	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZN") + " SZN "
 	_oSQL:_sQuery += " WHERE SZN.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=   " AND SZN.ZN_FILIAL  = '" + ::Filial + "'"
 	_oSQL:_sQuery +=   " AND SZN.ZN_CODEVEN = '" + ::CodEven + "'"
-	_oSQL:_sQuery +=   " AND SZN.ZN_DATA    = '" + dtos (::DtEvento) + "'"
-	_oSQL:_sQuery +=   " AND SZN.ZN_HORA    = '" + ::HrEvento + "'"
 	_oSQL:_sQuery +=   " AND SZN.ZN_NFS     = '" + ::NFSaida + "'"
 	_oSQL:_sQuery +=   " AND SZN.ZN_SERIES  = '" + ::SerieSaid + "'"
 	_oSQL:_sQuery +=   " AND SZN.ZN_NFE     = '" + ::NFEntrada + "'"
@@ -321,16 +332,35 @@ METHOD GravaNovo () Class ClsEvent
 	_oSQL:_sQuery +=   " AND SZN.ZN_TRANSP  = '" + ::Transp + "'"
 	_oSQL:_sQuery +=   " AND SZN.ZN_REDESP  = '" + ::TranspReds + "'"
 	_oSQL:_sQuery +=   " AND SZN.ZN_CODPROC = '" + ::CodProceda + "'"
-	_oSQL:_sQuery +=   " AND SZN.ZN_ORIGEM  = '" + _Origem () + "'"
+	_oSQL:_sQuery +=   " AND SZN.ZN_ORIGEM  = '" + ::Origem + "'"
 	_oSQL:_sQuery +=   " AND SZN.ZN_DIASVLD = " + cvaltochar (::DiasValid)
 	_oSQL:_sQuery +=   " AND SZN.ZN_CHVNFE  = '" + ::ChaveNFe + "'"
 	_oSQL:_sQuery +=   " AND SZN.ZN_MOTPROR = '" + ::MotProrTit + "'"
-	//_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+
+	if _sPrecisao == 'DHMS'  // Consistir tudo. Nem farei calculo algum.
+		_oSQL:_sQuery += " AND SZN.ZN_DATA = '" + dtos (::DtEvento) + "'"
+		_oSQL:_sQuery += " AND SZN.ZN_HORA = '" + ::HrEvento + "'"
+	else
+		_oSQL:_sQuery += " AND DATEDIFF (second,"
+		_oSQL:_sQuery += " CAST (SZN.ZN_DATA + ' ' + SZN.ZN_HORA as datetime),"
+		_oSQL:_sQuery += " CAST ('" + dtos (::DtEvento) + " " + ::HrEvento + "' as datetime)"
+		_oSQL:_sQuery += ") < "
+		do case
+		case _sPrecisao == 'DHM'
+			_oSQL:_sQuery += "60"
+		case _sPrecisao == 'DH'
+			_oSQL:_sQuery += "3600"  // 60*60
+		case _sPrecisao == 'D'
+			_oSQL:_sQuery += "86400"  // 60*60*24
+		endcase
+	endif
+	_oSQL:_sQuery += ") then 1 else 0 end"
+//	_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 
 	if _oSQL:RetQry (1, .f.) == 0
 		::Grava ()
 	else
-		U_Log2 ('aviso', 'Evento nao vai ser gravado, pois jah existe registro com essa informacao no SZN.')
+		U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Evento nao vai ser gravado, pois jah existe registro com essa informacao no SZN, considerando uma precisao de ' + _sPrecisao)
 	endif
 return
 
