@@ -15,6 +15,7 @@
 // Historico de alteracoes:
 // 28/11/2022 - Claudia - Acrescentada a gravação do campo F1_VAFLAG. GLPI: 12841
 // 06/12/2022 - Robert  - Gravacao do campo D1_DESCRI
+// 30/01/2023 - Robert  - Melhoria gravacao eventos.
 //
 
 // -------------------------------------------------------------------------------------------------
@@ -84,7 +85,11 @@ static function _Logs (_aCabec, _lManut, _lEscrit)
 		_oEvento:Texto     = "Processando (a nivel de item) a chave NFE, com _lManut = " + cvaltochar (_lManut) + " e _lEscrit = " + cvaltochar (_lEscrit)  // Este P.E. eh executado para cada item da nota
 		_oEvento:ChaveNFe  = _sChvNFe
 		_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
-		_oEvento:GravaNovo ()
+	//	if empty (cUserName) .and. alltrim (getcomputername ()) == 'THIS'
+	//		_oEvento:Usuario = 'Servidor'  // Para facilitar a identificacao de importacao automatica (schedule)
+	//	endif
+		_oEvento:GravaNovo ('DHM')
+		u_logpcham ()
 	endif
 return
 

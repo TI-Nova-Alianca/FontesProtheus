@@ -76,16 +76,12 @@ user function va_rus1P (_lPortaria)
 		endif
 	endif
 
-	// Atualiza itens da carga (SZF) e status para medicao de grau (ZZA).
-	if _lContinua
-		U_Log2 ('debug', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Chamando AtuZZA')
-		// U_AtuZZA (sze -> ze_safra, sze -> ze_carga)
-		_oCarSaf:AtuZZA (.F.)
-	endif
-
 	if _lContinua
 		_oCarSaf:GeraAtrib ("SZE")  // Atualiza atributos com o que foi gravado nos arquivos.
 		_oCarSaf:AtuAgenda ()
+
+		// Atualiza itens da carga (SZF) e status para medicao de grau (ZZA).
+		_oCarSaf:AtuZZA (.F.)
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
