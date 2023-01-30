@@ -32,6 +32,7 @@
 // 10/08/2020 - Robert - Somente alimentava coluna 'ultima safra' junto com os dados de capital social.
 //                     - Inseridas tags para catalogacao de fontes.
 // 12/01/2021 - Robert - Atributo :SubNucleo passa a vir com a descricao por extenso e nao mais o codigo (pela no NaWeb).
+// 30/01/2023 - Robert - Passa a buscar digito verificador da agencia e conta bancaria.
 //
 
 #include "VA_INCLU.PRW"
@@ -142,7 +143,9 @@ Static Function _Gera()
 			aadd (_aCampos, 'A2_VANAVIS')
 			aadd (_aCampos, 'A2_BANCO')
 			aadd (_aCampos, 'A2_AGENCIA')
+			aadd (_aCampos, 'A2_DVAGE')
 			aadd (_aCampos, 'A2_NUMCON')
+			aadd (_aCampos, 'A2_DVCTA')
 		endif 
 
 		if mv_par08 == 1  // Listar dados referentes a DAP
@@ -262,7 +265,9 @@ Static Function _Gera()
 				GDFieldPut ('A2_VALAVIS', alltrim (_oAssoc:LojAvisad))
 				GDFieldPut ('A2_BANCO',   fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodBase + _oAssoc:LojaBase, "A2_BANCO"))
 				GDFieldPut ('A2_AGENCIA', fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodBase + _oAssoc:LojaBase, "A2_AGENCIA"))
+				GDFieldPut ('A2_DVAGE',   fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodBase + _oAssoc:LojaBase, "A2_DVAGE"))
 				GDFieldPut ('A2_NUMCON',  fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodBase + _oAssoc:LojaBase, "A2_NUMCON"))
+				GDFieldPut ('A2_DVCTA',   fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodBase + _oAssoc:LojaBase, "A2_DVCTA"))
 				if ! empty (_oAssoc:CodAvisad)
 					GDFieldPut ('A2_VANAVIS', alltrim (fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodAvisad + _oAssoc:LojAvisad, "A2_NOME")))
 					GDFieldPut ('TelAvisad',  alltrim (fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodAvisad + _oAssoc:LojAvisad, "A2_TEL")))

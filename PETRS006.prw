@@ -77,19 +77,19 @@ static function _Logs (_aCabec, _lManut, _lEscrit)
 
 	if _nPosChave > 0
 		_sChvNFe = _aCabec [_nPosChave, 2]
-		U_Log2 ('debug', '[' + procname () + ']chave: ' + _sChvNFe)
+//		U_Log2 ('debug', '[' + procname () + ']chave: ' + _sChvNFe)
 
 		// Grava evento temporario para rastreio de eventuais chaves perdidas
 		_oEvento := ClsEvent():new ()
 		_oEvento:CodEven   = "ZBE001"
 		_oEvento:Texto     = "Processando (a nivel de item) a chave NFE, com _lManut = " + cvaltochar (_lManut) + " e _lEscrit = " + cvaltochar (_lEscrit)  // Este P.E. eh executado para cada item da nota
+		_oEvento:Texto    += " pilha: " + u_logpcham (.f.)
 		_oEvento:ChaveNFe  = _sChvNFe
 		_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
-	//	if empty (cUserName) .and. alltrim (getcomputername ()) == 'THIS'
-	//		_oEvento:Usuario = 'Servidor'  // Para facilitar a identificacao de importacao automatica (schedule)
-	//	endif
+		if IsInCallStack("WFLAUNCHER")
+			_oEvento:Usuario = 'Schedule'  // Para facilitar a identificacao de importacao automatica (schedule)
+		endif
 		_oEvento:GravaNovo ('DHM')
-		u_logpcham ()
 	endif
 return
 
