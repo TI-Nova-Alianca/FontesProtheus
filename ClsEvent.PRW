@@ -57,8 +57,9 @@
 // 20/07/2022 - Robert  - Criado tratamento para atributos ::DiasValid e ::ChaveNFe (GLPI 12336)
 // 01/08/2022 - Robert  - Criado atributo ::MotProrTit
 // 27/10/2022 - Robert  - ENvia notificacao ao gravar codigo de evento desconhecido.
-// 29/01/2023 - Robert  - Metodo GravaNovo passa a aceitar parametro de
+// 30/01/2023 - Robert  - Metodo GravaNovo passa a aceitar parametro de
 //                        precisao para teste de jah existencia do evento.
+//                      - Criado atributo Usuario.
 //
 
 #include "protheus.ch"
@@ -111,6 +112,7 @@ CLASS ClsEvent
 	data DiasValid
 	data ChaveNFe
 	data MotProrTit
+	data Usuario
 
 	// Declaração dos Métodos da Classe
 	METHOD New ()
@@ -163,6 +165,7 @@ METHOD New (_nRegSZN) Class ClsEvent
 	::DiasValid  := 0
 	::ChaveNFe   := ''
 	::MotProrTit := ''
+	::Usuario    := cUserName
 
 	if _nRegSZN != NIL
 		szn -> (dbgoto (_nRegSZN))
@@ -202,6 +205,7 @@ METHOD New (_nRegSZN) Class ClsEvent
 		::DiasValid  = SZN -> zn_diasvls
 		::ChaveNFe   = SZN -> zn_chvnfe
 		::MotProrTit = szn -> zn_MotPror
+		::Usuario    = szn -> zn_usuario
 	endif
 Return Self
 
@@ -230,7 +234,7 @@ METHOD Grava () Class ClsEvent
 	SZN -> zn_filial  = ::Filial
 	SZN -> zn_data    = ::DtEvento
 	SZN -> zn_hora    = ::HrEvento
-	SZN -> zn_usuario = cUserName
+	SZN -> zn_usuario = ::Usuario
 	SZN -> zn_estacao = getcomputername ()
 	SZN -> zn_nfS     = ::NFSaida
 	SZN -> zn_serieS  = ::SerieSaid

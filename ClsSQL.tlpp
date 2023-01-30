@@ -55,7 +55,7 @@
 // 01/04/2022 - Robert - Programa fonte renomeado de .PRW para .TLPP (intencao usar posteriormente blocos try...catch)
 // 05/05/2022 - Robert - Implementado metodo GetRealName() - GLPI 11980
 // 19/05/2022 - Robert - Posiciona no inicio do arquivo ao final do metodo :Copy2Trb() - GLPI 12080
-// 29/01/2023 - Robert - Criados atributos TentaExcel e DirDestXLS
+// 30/01/2023 - Robert - Criados atributos TentaExcel e DirDestXLS
 //
 
 #include "protheus.ch"
