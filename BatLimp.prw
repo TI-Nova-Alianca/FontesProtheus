@@ -28,6 +28,7 @@
 //                     - Envia aviso para TI quando vai compactar uma tabela.
 // 13/10/2022 - Robert - Adicionadas tabelas SFT e CD2 para compactacao.
 // 14/11/2022 - Robert - Adicionada tabela SCHDTSK.
+// 30/01/2023 - Robert - Adicionadas tabelas SZE, SZF, ZX5, SDA, SDB para compactacao.
 //
 
 // ----------------------------------------------------------------
@@ -190,6 +191,11 @@ static function _Compact ()
 	aadd (_aArqComp, 'SX3010')  // Tabela bastante usada, quero ver se melhora performance.
 	aadd (_aArqComp, 'SFT010')  // Teste inicial reduziu 70% do tamanho, e considero uma tabela que tem muito mais leituras do que gravacoes.
 	aadd (_aArqComp, 'CD2010')  // Teste inicial reduziu 35% do tamanho, e considero uma tabela que tem muito mais leituras do que gravacoes.
+	aadd (_aArqComp, 'SZE010')  // Apesar de nao ser grande, tem pouca movimentacao e muitos campos vazios.
+	aadd (_aArqComp, 'SZF010')  // Apesar de nao ser grande, tem pouca movimentacao e muitos campos vazios.
+	aadd (_aArqComp, 'ZX5010')  // Apesar de nao ser grande, tem pouca movimentacao e muitos campos vazios.
+	aadd (_aArqComp, 'SDA010')  // Estimativa de reduzir 60% do tamanho. Tem muito poucas alteracoes e muitos campos vazios.
+	aadd (_aArqComp, 'SDB010')  // Estimativa de reduzir 80% do tamanho. Tem muito poucas alteracoes e muitos campos vazios.
 
 	for _nArqComp = 1 to len (_aArqComp)
 		_oSQL := ClsSQL ():New ()

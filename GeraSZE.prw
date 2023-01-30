@@ -81,8 +81,8 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		private m->ZE_locdesc := _sTombador
 		private m->ZE_amostra := IIF (_lAmostra, 'S', 'N')
 		private m->ze_senhade := _sSenhaOrd
-		private m->ze_cargac1 := _sCargaC1
-		private m->ze_cargac2 := _sCargaC2
+//		private m->ze_cargac1 := _sCargaC1
+//		private m->ze_cargac2 := _sCargaC2
 		private N             := 1
 		private _aCadVitic    := {}  // Variavel usada pelos outros programas.
 		private lMSErroAuto   := .F.  // Para mostrar erros das rotinas padrao.
@@ -92,8 +92,6 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 	endif
 
 	U_Log2 ('debug', '[' + procname () + ']M->ZE_CARGA   = ' + m->ze_carga)
-	U_Log2 ('debug', '[' + procname () + ']M->ZE_CARGAC1 = ' + m->ze_cargaC1)
-	U_Log2 ('debug', '[' + procname () + ']M->ZE_CARGAC2 = ' + m->ze_cargaC2)
 
 	// Define impressora de ticket
 	_oCarSaf:DefImprTk (cFilAnt, _sIdImpr)

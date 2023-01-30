@@ -127,6 +127,9 @@ METHOD New (_xChave) Class ClsTrEstq
 	if valtype (_xChave) == "N"
 		ZAG -> (dbgoto (_xChave))
 		::GeraAtrib ("ZAG")
+
+	// Se receber caracter, eh por que se trata de um codigo jah
+	// existente nas tabelas, e preciso atualizar o objeto.
 	elseif valtype (_xChave) == "C"
 		zag -> (dbsetorder (1))  // ZAG_FILIAL, ZAG_DOC, R_E_C_N_O_, D_E_L_E_T_
 		if ! zag -> (dbseek (_xChave, .F.))

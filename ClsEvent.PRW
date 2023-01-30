@@ -310,7 +310,7 @@ METHOD GravaNovo (_sPrecisao) Class ClsEvent
 		_sPrecisao = 'DHMS'
 	endif
 
-	// Nao vou testar o campo TEXTO por que considero pesado demais, e nao eh campo chave.
+	// Vou testar apenas os campos que considero mais importantes.
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += "select case WHEN exists (SELECT * "
 	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZN") + " SZN "
@@ -334,17 +334,24 @@ METHOD GravaNovo (_sPrecisao) Class ClsEvent
 	_oSQL:_sQuery +=   " AND SZN.ZN_OP      = '" + ::OP + "'"
 	_oSQL:_sQuery +=   " AND SZN.ZN_ETIQ    = '" + ::Etiqueta + "'"
 	_oSQL:_sQuery +=   " AND SZN.ZN_TRANSP  = '" + ::Transp + "'"
-	_oSQL:_sQuery +=   " AND SZN.ZN_REDESP  = '" + ::TranspReds + "'"
-	_oSQL:_sQuery +=   " AND SZN.ZN_CODPROC = '" + ::CodProceda + "'"
-	_oSQL:_sQuery +=   " AND SZN.ZN_ORIGEM  = '" + ::Origem + "'"
-	_oSQL:_sQuery +=   " AND SZN.ZN_DIASVLD = " + cvaltochar (::DiasValid)
 	_oSQL:_sQuery +=   " AND SZN.ZN_CHVNFE  = '" + ::ChaveNFe + "'"
-	_oSQL:_sQuery +=   " AND SZN.ZN_MOTPROR = '" + ::MotProrTit + "'"
+//	_oSQL:_sQuery +=   " AND SZN.ZN_REDESP  = '" + ::TranspReds + "'"
+//	_oSQL:_sQuery +=   " AND SZN.ZN_CODPROC = '" + ::CodProceda + "'"
+//	_oSQL:_sQuery +=   " AND SZN.ZN_ORIGEM  = '" + ::Origem + "'"
+//	_oSQL:_sQuery +=   " AND SZN.ZN_DIASVLD = " + cvaltochar (::DiasValid)
+//	_oSQL:_sQuery +=   " AND SZN.ZN_MOTPROR = '" + ::MotProrTit + "'"
 
 	if _sPrecisao == 'DHMS'  // Consistir tudo. Nem farei calculo algum.
 		_oSQL:_sQuery += " AND SZN.ZN_DATA = '" + dtos (::DtEvento) + "'"
 		_oSQL:_sQuery += " AND SZN.ZN_HORA = '" + ::HrEvento + "'"
 	else
+		
+		// Fiz o teste em segundos, caso encontre uma data muito antiga,
+		// ocorre erro de overflow na quantidade de segundos.
+		// Uma vez que nao pretendo testar precisao maior que 1 dia, creio
+		// que validar os ultimos 2 dias estaria mais que suficiente.
+		_oSQL:_sQuery += " AND SZN.ZN_DATA >= '" + dtos (::DtEvento - 2) + "'"
+
 		_oSQL:_sQuery += " AND DATEDIFF (second,"
 		_oSQL:_sQuery += " CAST (SZN.ZN_DATA + ' ' + SZN.ZN_HORA as datetime),"
 		_oSQL:_sQuery += " CAST ('" + dtos (::DtEvento) + " " + ::HrEvento + "' as datetime)"
