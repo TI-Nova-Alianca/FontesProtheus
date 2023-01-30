@@ -55,6 +55,7 @@
 // 01/04/2022 - Robert - Programa fonte renomeado de .PRW para .TLPP (intencao usar posteriormente blocos try...catch)
 // 05/05/2022 - Robert - Implementado metodo GetRealName() - GLPI 11980
 // 19/05/2022 - Robert - Posiciona no inicio do arquivo ao final do metodo :Copy2Trb() - GLPI 12080
+// 30/01/2023 - Robert - Criados atributos TentaExcel e DirDestXLS
 //
 
 #include "protheus.ch"
@@ -69,6 +70,8 @@ CLASS ClsSQL
 	public DATA _aSetField
 	public DATA _sAliasQry
 	public DATA ArqDestXLS
+	public DATA DirDestXLS
+	public DATA TentaExcel  // Se .T. tenta abrir planilha com Excel no metodo Qry2XLS. Senao, software associado
 	public DATA UltMsg
 	public DATA lGeraHead
 	public DATA aHeader
@@ -110,6 +113,8 @@ METHOD New () Class ClsSQL
 	::_aSetField := {}
 	::_sAliasQry := ""
 	::ArqDestXLS := ''
+	::DirDestXLS := ''
+	::TentaExcel := .T.
 	::UltMsg     := ""
 	::PerfMon    := .F.
 	::TmpTblRealName := ''
@@ -544,11 +549,9 @@ return ::_sAliasQry
 //             _lSemEspac: Executa 'alltrim()' nos campos.
 METHOD Qry2XLS (_lSetField, _lFixaChar, _lSemEspac) Class ClsSQL
 	local _aAreaAnt  := U_ML_SRArea ()
-//	local _sNomeArq  := CriaTrab ({}, .F.)
-//	local _sArq      := MsDocPath () + "\" + _sNomeArq
 	local _sNomeArq  := ''
 	local _sArq      := ''
-	local _sTmpPath  := AllTrim (GetTempPath ())
+	local _sTmpPath  := ''
 	local _oExcelApp := NIL
 	local _nCampo    := 0
 	local _nHdl      := 0
@@ -563,6 +566,9 @@ METHOD Qry2XLS (_lSetField, _lFixaChar, _lSemEspac) Class ClsSQL
 	_lFixaChar := iif (_lFixaChar == NIL, .F., _lFixaChar)
 	_lSemEspac := iif (_lSemEspac == NIL, .F., _lSemEspac)
 
+	// Definicao do diretorio de destino: se nao especificado na chamada, usa pasta temporaria
+	_sTmpPath = iif (empty (::DirDestXLS), AllTrim (GetTempPath ()), ::DirDestXLS)
+	
 	// Definicao do nome do arquivo de destino: se nao especificado na chamada, gera nome aleatorio
 	if empty (::ArqDestXLS)
 		_sNomeArq = CriaTrab ({}, .F.)
@@ -639,7 +645,8 @@ METHOD Qry2XLS (_lSetField, _lFixaChar, _lSemEspac) Class ClsSQL
 	delete file (_sArq)
 	
 	// Define o programa a ser chamado.
-	If ApOleClient ('MsExcel')
+//	If ApOleClient ('MsExcel')
+	if ::TentaExcel .and. ApOleClient ('MsExcel')
 		_oExcelApp := MsExcel():New()
 		_oExcelApp:WorkBooks:Open (_sTmpPath + _sNomeArq + ".CSV") // Abre uma planilha
 		_oExcelApp:SetVisible(.T.)
