@@ -19,7 +19,7 @@
 // 03/10/2022 - Robert - Impede encerramento OS se tiver pedido de compra aberto (GLPI 12678)
 // 17/10/2022 - Robert - Sai Joao Costa e entra Max Padilha (filtros de OS)
 // 25/01/2023 - Sandra - Filtro busca produtos alterado de tipo MM e MC para tipo MM, MC e II (GLPI 12003)
-//
+// 30/01/2023 - Sandra - Filtro busca produtos alterado de tipo MM, MC e II para MM, MC, II, CL (GLPI 12813)
 
 //  ---------------------------------------------------------------------------------------------------------------------
 
@@ -82,7 +82,7 @@ User Function MNTNG()
 		
 	ElseIf _sIDdLocal == "FILTER_PRODUCT" //adiciona filtro para busca de produtos
 		//_xRet = "AND B1_TIPO IN ('MM','MC')"
-		_xRet = "AND B1_TIPO IN ('MM','MC','II')"
+		_xRet = "AND B1_TIPO IN ('MM','MC','II','CL')"
 	
 	ElseIf _sIDdLocal == "FILTER_ORDER" // Filtro para ordens de servico
 		_xRet = ''
