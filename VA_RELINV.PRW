@@ -5,6 +5,7 @@
 //
 // Historico de alteracoes:
 // 27/01/2023 - Claudia - Incluido parametro de ordenação
+// 30/01/2023 - Claudia - Incluídos F3 nos parametros.
 //
 // ---------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -97,16 +98,16 @@ return
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT            TIPO TAM DEC VALID F3     Opcoes                      						Help
-    aadd (_aRegsPerg, {01, "Filial de       ", "C", 2, 0,  "",  "   ", {},                         								""})
-    aadd (_aRegsPerg, {02, "Filial até      ", "C", 2, 0,  "",  "   ", {},                         								""})
+    aadd (_aRegsPerg, {01, "Filial de       ", "C", 2, 0,  "",  "SM0", {},                         								""})
+    aadd (_aRegsPerg, {02, "Filial até      ", "C", 2, 0,  "",  "SM0", {},                         								""})
     aadd (_aRegsPerg, {03, "Documento de    ", "C", 9, 0,  "",  "   ", {},                         								""})
     aadd (_aRegsPerg, {04, "Documento até   ", "C", 9, 0,  "",  "   ", {},                         								""})
-    aadd (_aRegsPerg, {05, "Produto de      ", "C",15, 0,  "",  "   ", {},                         								""})
-    aadd (_aRegsPerg, {06, "Produto até     ", "C",15, 0,  "",  "   ", {},                         								""})
-    aadd (_aRegsPerg, {07, "Local de      	", "C", 2, 0,  "",  "   ", {},                         								""})
-    aadd (_aRegsPerg, {08, "Local até       ", "C", 2, 0,  "",  "   ", {},                         								""})
-    aadd (_aRegsPerg, {09, "Tipo de         ", "C", 2, 0,  "",  "   ", {},                         								""})
-    aadd (_aRegsPerg, {10, "Tipo até        ", "C", 2, 0,  "",  "   ", {},                         								""})
+    aadd (_aRegsPerg, {05, "Produto de      ", "C",15, 0,  "",  "SB1", {},                         								""})
+    aadd (_aRegsPerg, {06, "Produto até     ", "C",15, 0,  "",  "SB1", {},                         								""})
+    aadd (_aRegsPerg, {07, "Local de      	", "C", 2, 0,  "",  "NNR", {},                         								""})
+    aadd (_aRegsPerg, {08, "Local até       ", "C", 2, 0,  "",  "NNR", {},                         								""})
+    aadd (_aRegsPerg, {09, "Tipo de         ", "C", 2, 0,  "",  "02" , {},                         								""})
+    aadd (_aRegsPerg, {10, "Tipo até        ", "C", 2, 0,  "",  "02" , {},                         								""})
     aadd (_aRegsPerg, {11, "Dt. geração de  ", "D", 8, 0,  "",  "   ", {},                         								""})
     aadd (_aRegsPerg, {12, "Dt. geração até ", "D", 8, 0,  "",  "   ", {},                         								""})
     aadd (_aRegsPerg, {13, "Ordenação       ", "N", 1, 0,  "",  "   ", {"Almox+Item","Tipo+Endereço","Descrição","Tipo+Descrição"},   ""})

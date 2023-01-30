@@ -21,6 +21,7 @@
 // 23/06/2022 - Claudia - Retirada validação de local e lote. GLPI 12118
 // 13/07/2022 - Sandra  - Retirada validação da gravação do error, para variavel SMESAGEM. GLPI 12339.
 // 25/01/2023 - Claudia - Incluido parametro de endereço e verificação de saldos. GLPI: 13062
+// 30/01/2023 - Claudia - Incluídos F3 nos parametros.
 //
 // -------------------------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
@@ -330,17 +331,17 @@ Return
 Static Function _ValidPerg ()
 	local _aRegsPerg := {}
 	//                     PERGUNT                 TIPO TAM DEC VALID F3        Opcoes Help
-	aadd (_aRegsPerg, {01, "Data do inventário  ", "D", 10,  0,  "",   "      ", {},    ""})
-	aadd (_aRegsPerg, {02, "Grupo de         	", "C",  4,  0,  "",   "      ", {},    ""})
-	aadd (_aRegsPerg, {03, "Grupo até        	", "C",  4,  0,  "",   "      ", {},    ""})
-	aadd (_aRegsPerg, {04, "Tipo de          	", "C",  2,  0,  "",   "      ", {},    ""})
-	aadd (_aRegsPerg, {05, "Tipo até         	", "C",  2,  0,  "",   "      ", {},    ""})
-	aadd (_aRegsPerg, {06, "Almoxarifado de  	", "C",  2,  0,  "",   "      ", {},    ""})
-	aadd (_aRegsPerg, {07, "Almoxarifado até 	", "C",  2,  0,  "",   "      ", {},    ""})
-	aadd (_aRegsPerg, {08, "Produto de       	", "C", 15,  0,  "",   "      ", {},    ""})
-	aadd (_aRegsPerg, {09, "Produto até      	", "C", 15,  0,  "",   "      ", {},    ""})
-	aadd (_aRegsPerg, {10, "Endereço de      	", "C", 15,  0,  "",   "      ", {},    ""})
-	aadd (_aRegsPerg, {11, "Endereço até      	", "C", 15,  0,  "",   "      ", {},    ""})
+	aadd (_aRegsPerg, {01, "Data do inventário  ", "D", 10,  0,  "",   "   ", {},    ""})
+	aadd (_aRegsPerg, {02, "Grupo de         	", "C",  4,  0,  "",   "SBM", {},    ""})
+	aadd (_aRegsPerg, {03, "Grupo até        	", "C",  4,  0,  "",   "SBM", {},    ""})
+	aadd (_aRegsPerg, {04, "Tipo de          	", "C",  2,  0,  "",   "02" , {},    ""})
+	aadd (_aRegsPerg, {05, "Tipo até         	", "C",  2,  0,  "",   "02" , {},    ""})
+	aadd (_aRegsPerg, {06, "Almoxarifado de  	", "C",  2,  0,  "",   "NNR", {},    ""})
+	aadd (_aRegsPerg, {07, "Almoxarifado até 	", "C",  2,  0,  "",   "NNR", {},    ""})
+	aadd (_aRegsPerg, {08, "Produto de       	", "C", 15,  0,  "",   "SB1", {},    ""})
+	aadd (_aRegsPerg, {09, "Produto até      	", "C", 15,  0,  "",   "SB1", {},    ""})
+	aadd (_aRegsPerg, {10, "Endereço de      	", "C", 15,  0,  "",   "SBE", {},    ""})
+	aadd (_aRegsPerg, {11, "Endereço até      	", "C", 15,  0,  "",   "SBE", {},    ""})
 	
 	U_ValPerg (cPerg, _aRegsPerg)
 Return

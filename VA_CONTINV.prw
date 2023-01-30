@@ -1,12 +1,13 @@
-// Programa:  VA_CONTINV
-// Autor:     Cláudia Lionço
-// Data:      20/03/2020
+// Programa.: VA_CONTINV
+// Autor....: Cláudia Lionço
+// Data.....: 20/03/2020
 // Descricao: Formulário para contagem de inventário. GLPI:7695
 //
 // Historico de alteracoes:
 // 22/04/2020 - Cláudia - Alterado cabeçalho para padrão
 // 12/02/2021 - Cláudia - Incluida ordenação pela descrição
 // 02/06/2021 - Claudia - Alterada ordenação almox/ites. GLPI: 10146
+// 30/01/2023 - Claudia - Incluidos novos filtros. GLPI: 13101
 //
 // ---------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -57,7 +58,7 @@ Static Function PrintReport(oReport)
 
 	_oSQL := ClsSQL():New ()
 	_oSQL:_sQuery += " SELECT"
-	_oSQL:_sQuery += " 	SB7.B7_FILIAL AS FILIAL"
+	_oSQL:_sQuery += " 	   SB7.B7_FILIAL AS FILIAL"
 	_oSQL:_sQuery += "    ,SB7.B7_LOCAL AS ALMOX"
 	_oSQL:_sQuery += "    ,SB7.B7_TIPO AS TIPO"
 	_oSQL:_sQuery += "    ,SB7.B7_LOCALIZ AS ENDERECO"
@@ -67,7 +68,11 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " FROM SB7010 SB7"
 	_oSQL:_sQuery += " INNER JOIN SB1010 SB1"
 	_oSQL:_sQuery += " 	ON (SB1.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery += " 			AND SB1.B1_COD = SB7.B7_COD)"
+	_oSQL:_sQuery += " 		AND SB1.B1_COD = SB7.B7_COD "
+	If !empty(mv_par10)
+		_oSQL:_sQuery += " 	AND SB1.B1_GRUPO BETWEEN '" + mv_par10 + "' AND '" + mv_par11 + "' "
+	EndIf
+	_oSQL:_sQuery += ")"
 	_oSQL:_sQuery += " WHERE SB7.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery += " AND SB7.B7_CONTAGE = '1'"
 	_oSQL:_sQuery += " AND SB7.B7_FILIAL ='" + mv_par04 + "'"
@@ -75,6 +80,9 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " AND SB7.B7_DOC = '" + DTOS(mv_par03) + "' "
 	_oSQL:_sQuery += " AND SB7.B7_LOCAL BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
 	_oSQL:_sQuery += " AND SB7.B7_TIPO BETWEEN '" + mv_par07 + "' AND '" + mv_par08 + "'"
+	If !empty(mv_par12)
+		_oSQL:_sQuery += " AND SB7.B7_LOCALIZ BETWEEN '"+ mv_par12 +"' AND '"+ mv_par13 +"' ""
+	EndIf
 	Do Case
 		Case mv_par09 == 1
 			_oSQL:_sQuery += " ORDER BY FILIAL, ALMOX, ITEM"
@@ -128,15 +136,20 @@ Return
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT            TIPO TAM DEC VALID F3     Opcoes                      						Help
-    aadd (_aRegsPerg, {01, "Dt. geração de  ", "D", 8, 0,  "",  "   ", {},                         								""})
-    aadd (_aRegsPerg, {02, "Dt. geração até ", "D", 8, 0,  "",  "   ", {},                         								""})
-    aadd (_aRegsPerg, {03, "Data doc.       ", "D", 8, 0,  "",  "   ", {},                         								""})
-    aadd (_aRegsPerg, {04, "Filial          ", "C", 2, 0,  "",  "   ", {},                         								""})
-    aadd (_aRegsPerg, {05, "Local de      	", "C", 2, 0,  "",  "   ", {},                         								""})
-    aadd (_aRegsPerg, {06, "Local até       ", "C", 2, 0,  "",  "   ", {},                         								""})
-    aadd (_aRegsPerg, {07, "Tipo de         ", "C", 2, 0,  "",  "   ", {},                         								""})
-    aadd (_aRegsPerg, {08, "Tipo até        ", "C", 2, 0,  "",  "   ", {},                         								""})
-    aadd (_aRegsPerg, {09, "Ordenação       ", "N", 1, 0,  "",  "   ", {"Almox+Item","Tipo+Endereço","Descrição","Tipo+Descrição"},   ""})
-     U_ValPerg (cPerg, _aRegsPerg)
+    aadd (_aRegsPerg, {01, "Dt. geração de  ", "D", 8,  0,  "",  "   ", {},                         								""})
+    aadd (_aRegsPerg, {02, "Dt. geração até ", "D", 8,  0,  "",  "   ", {},                         								""})
+    aadd (_aRegsPerg, {03, "Data doc.       ", "D", 8,  0,  "",  "   ", {},                         								""})
+    aadd (_aRegsPerg, {04, "Filial          ", "C", 2,  0,  "",  "SM0", {},                         								""})
+    aadd (_aRegsPerg, {05, "Local de      	", "C", 2,  0,  "",  "NNR", {},                         								""})
+    aadd (_aRegsPerg, {06, "Local até       ", "C", 2,  0,  "",  "NNR", {},                         								""})
+    aadd (_aRegsPerg, {07, "Tipo de         ", "C", 2,  0,  "",  "02", {},                         								""})
+    aadd (_aRegsPerg, {08, "Tipo até        ", "C", 2,  0,  "",  "02", {},                         								""})
+    aadd (_aRegsPerg, {09, "Ordenação       ", "N", 1,  0,  "",  "   ", {"Almox+Item","Tipo+Endereço","Descrição","Tipo+Descrição"},   ""})
+	aadd (_aRegsPerg, {10, "Grupo de        ", "C", 4,  0,  "",  "SBM", {},    ""})
+	aadd (_aRegsPerg, {11, "Grupo até       ", "C", 4,  0,  "",  "SBM", {},    ""})
+	aadd (_aRegsPerg, {12, "Endereço de     ", "C", 15, 0,  "",  "SBE", {},    ""})
+	aadd (_aRegsPerg, {13, "Endereço até    ", "C", 15, 0,  "",  "SBE", {},    ""})
+
+    U_ValPerg (cPerg, _aRegsPerg)
 Return
 
