@@ -161,19 +161,20 @@ User Function va_rus ()
 
 		// Submenu para Outros.
 		_aMenuOut = {}
-		aadd (_aMenuOut, {"&Parametros",                "U_VA_RUSLP (.T.)", 0,4})
-		aadd (_aMenuOut, {"&Ticket 1a.pesag",           "U_VA_RUSOO ('Tk1Pes')",0,4})
-		aadd (_aMenuOut, {"&Ticket 2a.pesag",           "U_VA_RUSOO ('Tk2Pes')",0,4})
-		aadd (_aMenuOut, {"&Impr.Recibo",               "U_VA_RUSR ()", 0,4})
-		aadd (_aMenuOut, {"&Cons.Aglutinacoes",         "U_VA_RUSCA (1, .F.)",0,4})
-		aadd (_aMenuOut, {"&Reenviar p/grau",           "U_VA_RUSOO ('ReenviarParaGrau')",0,4})
-		aadd (_aMenuOut, {"&Rastrear estoque",          "U_VA_RUSRC ()", 0,4})
-		aadd (_aMenuOut, {"&NF remessa coop",           "U_VA_RUSNR ('A')", 0,4})
-		aadd (_aMenuOut, {"Controle Portaria",          "U_VA_CPORT ()", 0,4})
-		aadd (_aMenuOut, {"Exportar medicoes do grau",  "U_VA_XLS54 (sze -> ze_filial, sze -> ze_safra, sze -> ze_carga)", 0,4})
-		aadd (_aMenuOut, {"Enderecar uva no estoque",   "U_VA_RusOO ('EnderecarEstoque')", 0,4})
-		aadd (_aMenuOut, {"Estornar enderecamento uva", "U_VA_RusOO ('EstornarEnderecamento')", 0,4})
-		aadd (_aMenuOut, {"Consultar eventos",          "U_VA_SZNC  ('CARGASAFRA', sze -> ze_safra + sze -> ze_carga)", 0,4})
+		aadd (_aMenuOut, {"&Parametros",                     "U_VA_RUSLP (.T.)", 0,4})
+		aadd (_aMenuOut, {"&Ticket 1a.pesag",                "U_VA_RUSOO ('Tk1Pes')",0,4})
+		aadd (_aMenuOut, {"&Ticket 2a.pesag",                "U_VA_RUSOO ('Tk2Pes')",0,4})
+		aadd (_aMenuOut, {"&Impr.Recibo",                    "U_VA_RUSR ()", 0,4})
+		aadd (_aMenuOut, {"&Cons.Aglutinacoes",              "U_VA_RUSCA (1, .F.)",0,4})
+		aadd (_aMenuOut, {"&Reenviar p/grau",                "U_VA_RUSOO ('ReenviarParaGrau')",0,4})
+		aadd (_aMenuOut, {"&Rastrear estoque",               "U_VA_RUSRC ()", 0,4})
+		aadd (_aMenuOut, {"&NF remessa coop",                "U_VA_RUSNR ('A')", 0,4})
+		aadd (_aMenuOut, {"Controle Portaria",               "U_VA_CPORT ()", 0,4})
+		aadd (_aMenuOut, {"Exportar medicoes do grau",       "U_VA_XLS54 (sze -> ze_filial, sze -> ze_safra, sze -> ze_carga)", 0,4})
+		aadd (_aMenuOut, {"Enderecar uva no estoque",        "U_VA_RusOO ('EnderecarEstoque')", 0,4})
+		aadd (_aMenuOut, {"Estornar enderecamento uva",      "U_VA_RusOO ('EstornarEnderecamento')", 0,4})
+		aadd (_aMenuOut, {"Consultar eventos",               "U_VA_SZNC  ('CARGASAFRA', sze -> ze_safra + sze -> ze_carga)", 0,4})
+		aadd (_aMenuOut, {"Consultar cargas compartilhadas", "U_VA_RusOO ('ConsultarCompartilhamento')", 0,4})
 		if upper (alltrim (cUserName)) == 'ROBERT.KOCH'
 			aadd (_aMenuOut, {"Simular leitura inspecoes(Robert)", "U_VA_RusLI (iif (sze -> ze_status == '1', 1, 2), .t.)", 0,4})
 			aadd (_aMenuOut, {"Simular frete (Robert)",  "U_VA_RusCF (.F.)", 0,4})  // Apenas para ver nova simulacao no arquivo de log.
@@ -221,10 +222,12 @@ user function VA_RUSOO (_sQueFazer)
 		U_VA_RUSN (.F.)
 
 	case _sQueFazer == upper ('EnderecarEstoque')
-		_oCarSaf:EnderEstq ('I')
+	//	_oCarSaf:EnderEstq ('I')
+		MsgRun ("Aguarde, gerando enderecamento", "Enderecamento", {|| _oCarSaf:EnderEstq ('I')})
 
 	case _sQueFazer == upper ('EstornarEnderecamento')
-		_oCarSaf:EnderEstq ('E')
+		//_oCarSaf:EnderEstq ('E')
+		MsgRun ("Aguarde, estornando enderecamento", "Estorno enderecamento", {|| _oCarSaf:EnderEstq ('E')})
 
 	case _sQueFazer == upper ('SimularContranota')
 		U_VA_RUSN (.T.)
@@ -252,6 +255,9 @@ user function VA_RUSOO (_sQueFazer)
 
 	case _sQueFazer == upper ('ReenviarParaGrau')
 		_oCarSaf:AtuZZA (.T.)
+
+	case _sQueFazer == upper ('ConsultarCompartilhamento')
+		U_ShowMemo (_oCarSaf:ConsCompar ())
 
 	otherwise
 		u_help ("Acao desconhecida: " + cvaltochar (_sQueFazer),, .t.)

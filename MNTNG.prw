@@ -20,6 +20,7 @@
 // 17/10/2022 - Robert - Sai Joao Costa e entra Max Padilha (filtros de OS)
 // 25/01/2023 - Sandra - Filtro busca produtos alterado de tipo MM e MC para tipo MM, MC e II (GLPI 12003)
 // 30/01/2023 - Sandra - Filtro busca produtos alterado de tipo MM, MC e II para MM, MC, II, CL (GLPI 12813)
+// 01/02/2023 - Robert/Sandra - Filtro busca produtos passa a ler parametro VA_MNTNG.
 
 //  ---------------------------------------------------------------------------------------------------------------------
 
@@ -82,7 +83,8 @@ User Function MNTNG()
 		
 	ElseIf _sIDdLocal == "FILTER_PRODUCT" //adiciona filtro para busca de produtos
 		//_xRet = "AND B1_TIPO IN ('MM','MC')"
-		_xRet = "AND B1_TIPO IN ('MM','MC','II','CL')"
+		//_xRet = "AND B1_TIPO IN ('MM','MC','II','CL')"
+		_xRet = "AND B1_TIPO IN " + FormatIn (GetMv ("VA_MNTNG"), "/")
 	
 	ElseIf _sIDdLocal == "FILTER_ORDER" // Filtro para ordens de servico
 		_xRet = ''
@@ -144,7 +146,7 @@ static function _VerPdCom (_sOrdem)
 	_oSQL:_sQuery +=           " AND SC7.C7_QUANT   > SC7.C7_QUJE"
 	_oSQL:_sQuery +=           " AND SC7.C7_RESIDUO != 'S'"
 	_oSQL:_sQuery +=        ") AS SUB"  // Tive que fazer uma subquery para poder usar STRING_AGG
-	_oSQL:Log ('[' + procname () + ']')
+	//_oSQL:Log ('[' + procname () + ']')
 	_sPdCom = alltrim (_oSQL:RetQry (1, .f.))
 	if ! empty (_sPdCom)
 		_sRetPdCom = "Ped.compra vinculados: " + _sPdCom + ". Encerramento da OS nao permitido."
