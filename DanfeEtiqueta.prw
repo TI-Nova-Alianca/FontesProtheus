@@ -640,7 +640,7 @@ static function impZebra(aNFe, aEmit, aDest)
 
         MSCBBegin(1,6,150)         // Inicializa a impressão
 
-        MSCBBox(07,04,130,210)     // Criação do Box
+        MSCBBox(07,04,130,195)     // Criação do Box
 
         //Criação das linhas Horizontais - sentido: de cima para baixo
         MSCBLineH(07, 012, 130)
