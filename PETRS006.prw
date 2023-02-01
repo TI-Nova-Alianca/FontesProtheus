@@ -18,10 +18,10 @@
 // 30/01/2023 - Robert  - Melhoria gravacao eventos.
 //
 
-// -------------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
 #Include "RwMake.ch"
 
+// -------------------------------------------------------------------------------------------------
 User Function PETRS006()
 	Local _aTRS006   := PARAMIXB
 	Local _aCabec    := _aTRS006[3]
@@ -36,9 +36,6 @@ User Function PETRS006()
 	// Grava flag de identificação
 	AADD(_aCabec, {"F1_VAFLAG"	,'P',Nil})
 
-	//U_Log2 ('debug', '[' + procname () + ']_aLinha antes:')
-	//U_Log2 ('debug', _aLinha)
-
 	// Preenche descricao do produto
 	If aScan(_aLinha,{|x| x[1] == "D1_COD"}) > 0 
 		nPosProd := aScan(_aLinha,{|x| x[1] == "D1_COD"})
@@ -46,14 +43,11 @@ User Function PETRS006()
 		If SB1->(MsSeek(xFilial('SB1') + PadR(_aLinha[nPosProd, 2], TamSX3('B1_COD')[1])))
 			AADD(_aLinha, {"D1_DESCRI"	,sb1 -> b1_desc	,Nil})
 		else
-			//U_Log2 ('aviso', '[' + procname () + ']Nao achei o produto')
+			U_Log2 ('erro', '[' + procname () + ']Nao achei o produto!')
 		endif
 	else
-		//U_Log2 ('aviso', '[' + procname () + ']Nao encontrei D1_COD na array')
+		U_Log2 ('erro', '[' + procname () + ']Nao encontrei D1_COD na array!')
 	EndIf
-
-	//U_Log2 ('debug', '[' + procname () + ']_aLinha depois:')
-	//U_Log2 ('debug', _aLinha)
 
 	// Grava alguns eventos e logs.
 	_Logs (_aCabec, _lManut, _lEscrit)
@@ -64,7 +58,8 @@ User Function PETRS006()
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
 Return _aRet
-//
+
+
 // --------------------------------------------------------------------------
 // Gravação de logs
 static function _Logs (_aCabec, _lManut, _lEscrit)
@@ -77,18 +72,18 @@ static function _Logs (_aCabec, _lManut, _lEscrit)
 
 	if _nPosChave > 0
 		_sChvNFe = _aCabec [_nPosChave, 2]
-//		U_Log2 ('debug', '[' + procname () + ']chave: ' + _sChvNFe)
 
 		// Grava evento temporario para rastreio de eventuais chaves perdidas
 		_oEvento := ClsEvent():new ()
-		_oEvento:CodEven   = "ZBE001"
-		_oEvento:Texto     = "Processando (a nivel de item) a chave NFE, com _lManut = " + cvaltochar (_lManut) + " e _lEscrit = " + cvaltochar (_lEscrit)  // Este P.E. eh executado para cada item da nota
-		_oEvento:Texto    += " pilha: " + u_logpcham (.f.)
-		_oEvento:ChaveNFe  = _sChvNFe
-		_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
 		if IsInCallStack("WFLAUNCHER")
 			_oEvento:Usuario = 'Schedule'  // Para facilitar a identificacao de importacao automatica (schedule)
+			_oEvento:Texto   = "Processando XML apos importacao automatica"
+		else
+			_oEvento:Texto   = "Reprocessando XML via painel"
 		endif
+		_oEvento:CodEven   = "ZBE001"
+		_oEvento:ChaveNFe  = _sChvNFe
+		_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
 		_oEvento:GravaNovo ('DHM')
 	endif
 return

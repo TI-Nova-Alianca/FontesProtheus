@@ -125,8 +125,8 @@ METHOD New (_xChave) Class ClsEtiq
 		ZA1 -> (dbgoto (_xChave))
 		::GeraAtrib ("ZA1")
 
-	// Se receber caracter, eh por que se trata de um codigo de etiqueta jah
-	// existente no ZA1 e preciso atualizar o objeto.
+	// Se receber caracter, eh por que se trata de um codigo jah
+	// existente nas tabelas, e preciso atualizar o objeto.
 	elseif valtype (_xChave) == "C"
 		//U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + '] >>' + xfilial ("ZA1") + _xChave + '<<')
 		za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP

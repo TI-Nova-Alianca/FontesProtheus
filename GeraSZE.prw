@@ -19,7 +19,7 @@
 #include "VA_INCLU.prw"
 
 // --------------------------------------------------------------------------
-user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sIdImpr, _sCargaC1, _sCargaC2)
+user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sIdImpr, _sCompart) //_sCargaC1, _sCargaC2)
 	local _sCargaGer  := ''
 	local _nItemCar   := 0
 	local _nLock      := 0
@@ -81,8 +81,9 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 		private m->ZE_locdesc := _sTombador
 		private m->ZE_amostra := IIF (_lAmostra, 'S', 'N')
 		private m->ze_senhade := _sSenhaOrd
-		private m->ze_cargac1 := _sCargaC1
-		private m->ze_cargac2 := _sCargaC2
+//		private m->ze_cargac1 := _sCargaC1
+//		private m->ze_cargac2 := _sCargaC2
+		private m->ze_ccompar := _sCompart
 		private N             := 1
 		private _aCadVitic    := {}  // Variavel usada pelos outros programas.
 		private lMSErroAuto   := .F.  // Para mostrar erros das rotinas padrao.
@@ -92,8 +93,6 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 	endif
 
 	U_Log2 ('debug', '[' + procname () + ']M->ZE_CARGA   = ' + m->ze_carga)
-	U_Log2 ('debug', '[' + procname () + ']M->ZE_CARGAC1 = ' + m->ze_cargaC1)
-	U_Log2 ('debug', '[' + procname () + ']M->ZE_CARGAC2 = ' + m->ze_cargaC2)
 
 	// Define impressora de ticket
 	_oCarSaf:DefImprTk (cFilAnt, _sIdImpr)
@@ -141,7 +140,7 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 
 			// Se foi informado que eh uva para espumante, preciso converter do codigo base (uva para vinho) para o codigo 'para espumante'
 			if _aItensCar [_nItemCar, 6] == 'S'
-				u_log2 ('debug', 'Eh uva para espumante')
+	//			u_log2 ('debug', 'Eh uva para espumante')
 				_oSQL := ClsSQL():New ()
 				_oSQL:_sQuery := "SELECT COD_PARA_ESPUMANTE"
 				_oSQL:_sQuery +=  " FROM VA_VFAMILIAS_UVAS"
@@ -206,7 +205,6 @@ user function GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sP
 			else
 				u_log2 ('erro', 'U_VA_RUS2G() retornou erro.')
 			endif
-
 		endif
 	endif
 

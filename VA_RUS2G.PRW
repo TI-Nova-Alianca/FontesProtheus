@@ -11,6 +11,7 @@
 // 16/12/2021 - Robert - Novo formato de retorno da funcao U_GeraSZE()
 // 16/02/2022 - Robert - Tratamentos para cancelamento de cargas chamado via web service (GLPI 11634)
 // 11/03/2022 - Robert - Melhorados logs.
+// 31/01/2023 - Robert - Tratamentos para gravacao de cargas compartilhadas.
 //
 
 #include "totvs.ch"
@@ -29,6 +30,7 @@ user Function VA_RUS2G (_nOpc)
 	local _sMotCanc  := ""
 	local _nLinha    := 0
 	local _nAglut    := 0
+	local _nCompart  := 0
 
 	u_log2 ('info', 'Iniciando ' + procname ())
 	//U_PerfMon ('I', 'Interno_VA_Rus2G')
@@ -36,7 +38,7 @@ user Function VA_RUS2G (_nOpc)
 	// Confere se jah existe este numero de carga (caso haja problema com os sequenciais).
 	if _lContinua .and. inclui
 		sze -> (dbsetorder (1))  // ZE_FILIAL+ZE_SAFRA+ZE_CARGA
-		U_Log2 ('debug', 'Pesquisando SZE com >>' + xfilial ("SZE") + m->ze_safra + m->ze_carga + '<<')
+	//	U_Log2 ('debug', 'Pesquisando SZE com >>' + xfilial ("SZE") + m->ze_safra + m->ze_carga + '<<')
 		if sze -> (dbseek (xfilial ("SZE") + m->ze_safra + m->ze_carga, .F.))
 			u_help ("Nao sera possivel gravar esta carga. Carga '" + m->ze_carga + "' ja existe.",, .t.)
 			_lContinua = .F.
@@ -62,11 +64,42 @@ user Function VA_RUS2G (_nOpc)
 			sze -> ze_horsaid = time ()
 		endif
 
+		// Tratamento para cargas compartilhadas (que vieram no mesmo veiculo)
+		// A lista de cargas compartilhadas eh guardada num campo caracter, em
+		// formato de lista carga1/carga2/...
+		for _nCompart = 1 to len (_oCarSaf:CCompart)
+			if ! _oCarSaf:CCompart [_nCompart] $ sze -> ze_ccompar
+				sze -> ze_ccompar = alltrim (sze -> ze_ccompar) + iif (empty (alltrim (sze -> ze_ccompar)), '', '/') + _oCarSaf:CCompart [_nCompart]
+			endif
+		next
+
 		msunlock ("SZE")
-		_nRegSZE = sze -> (recno ())
-		
+
+		// Tratamento para cargas compartilhadas (que vieram no mesmo veiculo)
+		// Preciso manter amarracao entre elas (cada carga aponta para as demais)
+		// Para cada carga apontada pela atual, cria um vinculo reciproco.
+		if len (_oCarSaf:CCompart) > 0
+			_nRegSZE = sze -> (recno ())
+			for _nCompart = 1 to len (_oCarSaf:CCompart)
+				if ! sze -> (dbseek (_oCarSaf:Filial + _oCarSaf:Safra + _oCarSaf:CCompart [_nCompart], .F.))
+					u_help ("Nao localizei a carga '" + _oCarSaf:CCompart [_nCompart] + "' para marcar ela como compartilhada com a carga atual (" + _oCarSaf:Carga + ")",, .t.)
+				else
+					if ! _oCarSaf:Carga $ sze -> ze_ccompar
+						U_Log2 ('debug', '[' + procname () + ']Adicionando a carga atual (' + _oCarSaf:Carga + ') na lista de compartilhamento da carga ' + sze -> ze_carga)
+						reclock ("SZE", .F.)
+						sze -> ze_ccompar = alltrim (sze -> ze_ccompar) + iif (empty (alltrim (sze -> ze_ccompar)), '', '/') + _oCarSaf:Carga
+						msunlock ()
+					else
+						U_Log2 ('debug', '[' + procname () + ']Carga atual (' + _oCarSaf:Carga + ') jah constava na lista de compartilhamento da carga ' + sze -> ze_carga)
+					endif
+				endif
+			next
+			// Reposiciona SZE apos atualizacao das cargas compartilhadas.
+			sze -> (dbgoto (_nRegSZE))
+		endif
+
+
 		// Gravacao dos campos da getdados.
-		//
 		// Monta lista de campos que nao estao no browse, com seu devido conteudo, para posterior gravacao.
 		_aCposFora := {}
 		aadd (_aCposFora, {"ZF_FILIAL", xfilial ("SZF")})
@@ -107,14 +140,10 @@ user Function VA_RUS2G (_nOpc)
 			ConfirmSX8 ()
 		enddo
 
-		// Atualiza tabela de comunicacao com leitor de grau.
-	//	U_Log2 ('debug', '[' + procname () + '] Gravei SZE e SZF e vou chamar a atualizacao do ZZA.')
-		//U_PerfMon ('I', 'Interno_VA_Rus2G_AtuZZA')
-		U_AtuZZA (sze -> ze_safra, sze -> ze_carga)
-		//U_PerfMon ('L', 'Interno_VA_Rus2G_AtuZZA')
 
 		// Grava relacionamento entre cargas de origem e de destino, em caso de aglutinacao de cargas.
 		if m->ze_aglutin == "D"
+			_nRegSZE = sze -> (recno ())
 			for _nAglut = 1 to len (_aAglut)
 				reclock ("ZZD", .T.)
 				zzd -> zzd_filial = xfilial ("ZZD")
@@ -140,25 +169,25 @@ user Function VA_RUS2G (_nOpc)
 			sze -> (dbgoto (_nRegSZE))
 		endif
 
+
 		_oCarSaf:GeraAtrib ("SZE")  // Atualiza atributos com o que foi gravado nos arquivos.
+		_oCarSaf:Log ()
 
-//		// Verifica se deve imprimir ticket.
+		// Atualiza tabela de comunicacao com leitor de grau.
+		if _oCarSaf:PesoBruto > 0  // Sem 1a.pesagem, nem adianta enviar.
+			_oCarSaf:AtuZZA (.F.)
+		endif
+
 		// Imprime ticket
-//		if _lImpTick
-			if inclui
-				//U_PerfMon ('I', 'Impr_ticket1_safra')  // Para metricas de performance
-			//	U_VA_RUSTk (1, _sPortTick, _nQViasTk1, {}, 'Bematech', .t.)
-				_oCarSaf:ImprimeTk (1)
-				//U_PerfMon ('L', 'Impr_ticket1_safra')  // Para metricas de performance
-			elseif altera
-			//	U_VA_RUSTk (2, _sPortTick, _nQViasTk2, {}, 'Bematech', .t.)
-				_oCarSaf:ImprimeTk (2)
-			endif
-//		endif
+		if inclui
+			_oCarSaf:ImprimeTk (1)
+		elseif altera
+			_oCarSaf:ImprimeTk (2)
+		endif
 
-		// Verifica se deve gerar contranota agora.
+		// Verifica se jah pode gerar contranota.
 		if altera .or. (inclui .and. m->ze_aglutin == "D")   // 2a. pesagem ou 1a. pesagem aglutinada
-			if m->ze_coop $ "000021/001369" .or. m->ze_coop == '000026' .and. m->ze_safra == '2019'
+			if m->ze_coop $ "000021/001369" //.or. m->ze_coop == '000026' .and. m->ze_safra == '2019'
 				if empty (m->ze_nfger) .and. ! empty (m->ze_nfprod)
 					if U_msgyesno ("Deseja gerar a contranota agora?")
 						CursorWait ()
@@ -217,17 +246,45 @@ user Function VA_RUS2G (_nOpc)
 			sze -> ze_moVcanc = _sMotCanc
 			msunlock ()
 
+			// Desvincula esta carga de outras que sejam compartilhadas com ela.
+			u_help ("Falta ajustar exclusao de carga compartilhada")
+//			
+//			_oSQL := ClsSQL ():New ()
+//			_oSQL:_sQuery := "UPDATE " + RetSQLName ("SZE")
+//			_oSQL:_sQuery += " SET ZE_CARGAC1 = ''"
+//			_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+//			_oSQL:_sQuery +=   " AND ZE_FILIAL  = '" + _oCarSaf:Filial + "'"
+//			_oSQL:_sQuery +=   " AND ZE_SAFRA   = '" + _oCarSaf:Safra  + "'"
+//			_oSQL:_sQuery +=   " AND ZE_CARGAC1 = '" + _oCarSaf:Carga  + "'"
+//			_oSQL:Log ('[' + procname () + ']')
+//			if ! _oSQL:Exec ()
+//				u_help ("Erro desvinculando cargas compartilhadas.", _oSQL:_sQuery, .t.)
+//			endif
+//			_oSQL := ClsSQL ():New ()
+//			_oSQL:_sQuery := "UPDATE " + RetSQLName ("SZE")
+//			_oSQL:_sQuery += " SET ZE_CARGAC2 = ''"
+//			_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+//			_oSQL:_sQuery +=   " AND ZE_FILIAL  = '" + _oCarSaf:Filial + "'"
+//			_oSQL:_sQuery +=   " AND ZE_SAFRA   = '" + _oCarSaf:Safra  + "'"
+//			_oSQL:_sQuery +=   " AND ZE_CARGAC2 = '" + _oCarSaf:Carga  + "'"
+//			_oSQL:Log ('[' + procname () + ']')
+//			if ! _oSQL:Exec ()
+//				u_help ("Erro desvinculando cargas compartilhadas.", _oSQL:_sQuery, .t.)
+//			endif
+
+			_oCarSaf:GeraAtrib ("SZE")  // Atualiza atributos com o que foi gravado nos arquivos.
+
 			// Atualiza tabela de comunicacao com leitor de grau.
-			U_AtuZZA (sze -> ze_safra, sze -> ze_carga)
+			_oCarSaf:AtuZZA (.F.)
 
 			if type ('_sMsgRetWS') == 'C'  // Variavel publica que estah disponivel quando execucao via web service.
 				_sMsgRetWS += "Carga cancelada."
 			endif
+
 		else
 			u_help ('O cancelamento nao foi efetuado.',, .t.)
 		endif
 
 	endif
-	//U_PerfMon ('L', 'Interno_VA_Rus2G')
 	
 Return _lContinua

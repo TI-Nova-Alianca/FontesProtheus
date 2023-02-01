@@ -5,8 +5,7 @@
 //              Desmembrada do programa VA_RUS2.PRW
 //
 // Historico de alteracoes:
-// 25/01/2023 - Robert - Passa a chamar, tambem, o metodo ClsCarSaf.SegPesTOk()
-//                     - Melhorias validacao cargas compartilhadas.
+// 01/02/2023 - Robert - Passa a chamar, tambem, o metodo ClsCarSaf.SegPesTOk()
 //
 
 #include "totvs.ch"
@@ -172,13 +171,12 @@ user function VA_RUS2T (_nOpc)
 		endif
 	endif
 
-	// Em caso de carga compartilhada (mais de um fornecedor no mesmo caminhao), preciso validar as demais cargas.
-	if _lRet .and. ! empty (m->ze_cargaC1)
-		_lRet = _ValCompar (m->ze_cargaC1)
-	endif
-	if _lRet .and. ! empty (m->ze_cargaC2)
-		_lRet = _ValCompar (m->ze_cargaC2)
-	endif
+	// Em caso de carga compartilhada (mais de um fornecedor no mesmo veiculo),
+	// preciso validar as demais cargas.
+//	u_help ("falta validar compartilhamento")
+//	if _lRet .and. ! empty (m->ze_ccompar)
+//		_lRet = _ValCompar (m->ze_cargaC1)
+//	endif
 
 	N = _nBkpN
 return _lRet
@@ -191,7 +189,7 @@ return _lRet
 static function _ValCompar (_sCarComp)
 	local _aAreaSZE  := {}
 	local _lRet      := .T.
-	local _oSQL      := NIL
+//	local _oSQL      := NIL
 	//local _sCarUsada := ''
 
 	U_Log2 ('debug', '[' + procname () + ']Validando carga compartilhada1: ' + _sCarComp)
@@ -207,22 +205,6 @@ static function _ValCompar (_sCarComp)
 	endif
 	if _lRet .and. ! empty (sze -> ze_nfger)
 		_lRet = U_MsgNoYes ("Carga compartilhada '" + _sCarComp + "' ja gerou contranota. Quando compartilhadas, as cargas devem ser geradas em sequencia para poder, posteriormente, compartilhar informacoes como grau, precos, etc. Confirma assim mesmo?")
-	endif
-	if _lRet
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := "SELECT COUNT (*)"
-		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZE") + " SZE"
-		_oSQL:_sQuery += " WHERE SZE.D_E_L_E_T_  = ''"
-		_oSQL:_sQuery +=   " AND SZE.ZE_FILIAL   = '" + xfilial ("SZE") + "'"
-		_oSQL:_sQuery +=   " AND SZE.ZE_SAFRA    = '" + m->ze_safra + "'"
-		_oSQL:_sQuery +=   " AND SZE.ZE_CARGA   != '" + m->ze_carga + "'"
-		_oSQL:_sQuery +=   " AND SZE.ZE_STATUS  != 'C'"
-		_oSQL:_sQuery +=   " AND (SZE.ZE_CARGAC1 = '" + _sCarComp + "' OR SZE.ZE_CARGAC2 = '" + _sCarComp + "')"
-		_oSQL:Log ()
-		if _oSQL:RetQry (1, .f.) >= 2  // Para aumentar, preciso criar campos ZE_CARGAC3, ZE_CARGAC4,...
-			u_help ("Atualmente temos tratamento para uma carga ser compartilhada com, no maximo, outras duas.",, .t.)
-			_lRet = .F.
-		endif
 	endif
 	sze -> (restarea (_aAreaSZE))
 return _lRet

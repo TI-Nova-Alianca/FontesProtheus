@@ -37,8 +37,7 @@ CLASS ClsCarSaf
 	public  data Aglutin     // ZE_AGLUTIN - Situacao quanto a aglutinacao de cargas: O=Origem (aglutinada em outra carga);D=Destino (aglutinadora);N=Nenhuma(carga normal)
 	public  data Carga       // ZE_CARGA
 	public  data CXouGranel  // Indica se recebe em caixas ou a granel (tombador)
-	public  data CCompart1   // ZE_CargaC1 - Carga compartilhada com outro fornecedor
-	public  data CCompart2   // ZE_CargaC2 - Carga compartilhada com outro fornecedor (atualmente, no maximo 2)
+	public  data CCompart    // ZE_CCompar - array de cargas compartilhadas (mesmo veiculo)
 	public  data Contranota  // ZE_NFGER
 	public  data Filial      // ZE_FILIAL
 	public  data Fornece     // ze_assoc
@@ -64,6 +63,7 @@ CLASS ClsCarSaf
 	public METHOD AddItem ()    // Adiciona uma posicao nas arrays de itens
 	public METHOD AtuAgenda ()  // Envia atualizacao para o sistema de agendamento
 	public METHOD AtuZZA ()     // Envia atualizacao para o programa de medicao de grau
+	public METHOD ConsCompar () // Gera string bonitinha para consulta de compartilhamentos com outras cargas.
 	public METHOD DefImprTk ()  // Define porta para impressao do ticket
 	public METHOD GeraAtrib ()
 	public METHOD EnderEstq ()  // Enderecar (ou estornar) estoque
@@ -72,6 +72,8 @@ CLASS ClsCarSaf
 	public METHOD Log ()
 	public METHOD SegPesTOk ()  // Verifica se 'tudo ok' com a segunda pesagem.
 	public METHOD StatusZZA ()
+	public METHOD TodasComp ()  // Gera lista de todas as cargas compartilhadas com a atual.
+	public METHOD VarMenorVl () // Identifica a variedade de menor valor
 ENDCLASS
 
 
@@ -91,14 +93,14 @@ METHOD New (_xChvCar) Class ClsCarSaf
 
 	// Se receber valor numerico, eh por que se trata do numero de registro do SZE.
 	if valtype (_xChvCar) == "N" .and. _xChvCar > 0
-		SZE -> (dbgoto (_nNumReg))
+		SZE -> (dbgoto (_xChvCar))
 		::GeraAtrib ("SZE")
 
-	// Se receber caracter, eh por que se trata de um codigo de etiqueta jah
-	// existente no ZA1 e preciso atualizar o objeto.
+	// Se receber caracter, eh por que se trata de um codigo jah
+	// existente nas tabelas, e preciso atualizar o objeto.
 	elseif valtype (_xChvCar) == "C"
-		za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP
-		if za1 -> (dbseek (_xChvCar, .F.))
+		sze -> (dbsetorder (1))  // ZE_FILIAL, ZE_SAFRA, ZE_CARGA, R_E_C_N_O_, D_E_L_E_T_
+		if sze -> (dbseek (_xChvCar, .F.))
 			::GeraAtrib ("SZE")
 		else
 			::UltMsg += "Problema ao instanciar carga: Nao localizei chave '" + _xChvCar + "' na tabela SZE."
@@ -106,7 +108,7 @@ METHOD New (_xChvCar) Class ClsCarSaf
 		endif
 	endif
 
-	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Instanciada carga p/ Filial ' + ::Filial + ' Safra ' + ::Safra + ' Carga ' + ::Carga + ' de ' + ::Fornece + '/' + ::Loja)
+//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Instanciada carga p/ Filial ' + ::Filial + ' Safra ' + ::Safra + ' Carga ' + ::Carga + ' de ' + ::Fornece + '/' + ::Loja)
 	U_ML_SRArea (_aAreaAnt)
 Return ::self
 
@@ -207,6 +209,33 @@ return _lRetWSNA
 
 
 // --------------------------------------------------------------------------
+// Gera uma string formatada para mostrar em tela as cargas compartilhadas.
+METHOD ConsCompar () Class ClsCarSaf
+	local _sConsComp := ''
+	local _aComp := {}
+	local _nComp := 0
+	local _aAreaAnt := U_ML_SRArea ()
+
+
+	_aComp = aclone (U_SeparaCpo (::TodasComp (), '/'))
+	if len (_aComp) == 0
+		_sConsComp = "Carga nao compartilhada com nenhuma outra."
+	else
+		_sConsComp = "Carga compartilhada com:" + chr (13) + chr (10)
+	endif
+	for _nComp = 1 to len (_aComp)
+		if _aComp [_nComp] != ::Carga  // A carga atual tambem consta na lista, mas fica estranho listar ela aqui
+			_sConsComp += 'Carga ' + _aComp [_nComp]
+			_sConsComp += ' de ' + fBuscaCpo ("SZE", 1, ::Filial + ::Safra + _aComp [_nComp], "ZE_NOMASSO")
+			_sConsComp += chr (13) + chr (10)
+		endif
+	next
+
+	U_ML_SRArea (_aAreaAnt)
+return _sConsComp
+
+
+// --------------------------------------------------------------------------
 // Envia atualizacao para o sistema de medicao de grau.
 METHOD AtuZZA (_lReenvio) Class ClsCarSaf
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -221,11 +250,6 @@ METHOD AtuZZA (_lReenvio) Class ClsCarSaf
 	// 3 = usuario clicou botao 'Armazenar' no programa BL01 e jah gravou tambem o ZZA_GRAU.
 	// M = usuario (do Protheus) finalizou manualmente (ZZA_STATUS nao estava 3 por algum motivo).
 	// C = Carga cancelada no Protheus
-
-//	if ! empty (::CCompart1)  // .or.  ! empty (::CCompart2)  // Por enquanto, aceito no maximo 2 cargas compartilhadas
-//		u_help ("Esta carga consta como fisicamente compartilhada (mesmo caminhao) com a carga " + ::CCompart1 + ". Por isso, nao vai ser enviada para medicao de grau. Vai assumir o grau dessa carga compartilhada.")
-//		_lRetAtZZA = .F.
-//	endif
 
 	if _lRetAtZZA .and. ::PesoBruto <= 0
 		u_help ("Carga ainda nao tem peso bruto. Efetue, antes, a primeira pesagem.",, .t.)
@@ -323,10 +347,10 @@ METHOD DefImprTk (_sFilial, _sCamFixo) Class ClsCarSaf
 		// Se for base teste, evita enviar para a impressora padrao para nao causar confusao com a safra normal.
 		if U_AmbTeste()
 			::PortImpTk := '\\192.168.1.3\siga\ticket.txt'
-			U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Ambiente de TESTE. Vou redirecionar o ticket para ' + ::PortImpTk)
+	//		U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Ambiente de TESTE. Vou redirecionar o ticket para ' + ::PortImpTk)
 		else
 			::PortImpTk = GetMV ("VA_ITKSAFR")
-			U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']::PortImTk = ' + ::PortImpTk + ' (lido do parametro VA_ITKSAFR)')
+	//		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']::PortImTk = ' + ::PortImpTk + ' (lido do parametro VA_ITKSAFR)')
 		endif
 	endif
 return
@@ -343,20 +367,21 @@ METHOD EnderEstq (_sQueFazer) Class ClsCarSaf
 	local _aAutoSDA  := {}
 	local _aAutoSDB  := {}
 	local _aLinhaSDB := {}
-	local _sFiltrSDA := ''
+//	local _sFiltrSDA := ''
 	local _lContinua := .T.
+	local _sItemSDB  := ''
 
 	// Se for estorno, filtra a tabela e chama tela padrao do sistema.
 	// O usuario deverah clicar no botao 'estornar'.
 	if _sQueFazer == 'E'  // Estornar
 		U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Chamando tela estorno enderecamento docto ' + ::Contranota)
-		oGetD := NIL
-		nOpcA := 0
+/*
+		oGetD   := NIL
+		nOpcA   := 0
 		aHeader := NIL
-		aCols := NIL
-		N := 1
+		aCols   := NIL
+		N       := 1
 		aRotina := NIL
-	//	u_logobj (::Self)
 		_sFiltrSDA := "da_filial='"      + ::Filial     + "'"
 		_sFiltrSDA += ".and.da_doc='"    + ::Contranota + "'"
 		_sFiltrSDA += ".and.da_serie='"  + ::SerieCtrn  + "'"
@@ -368,7 +393,84 @@ METHOD EnderEstq (_sQueFazer) Class ClsCarSaf
 		MATA265 ()
 		dbselectarea ("SDA")
 		set filter to
+*/
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT SDA.R_E_C_N_O_ AS REGSDA, SDB.R_E_C_N_O_ AS REGSDB"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD1") + " SD1, "
+		_oSQL:_sQuery +=             RetSQLName ("SDA") + " SDA, "
+		_oSQL:_sQuery +=             RetSQLName ("SDB") + " SDB "
+		_oSQL:_sQuery += " WHERE SD1.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SD1.D1_FILIAL  = '" + ::Filial + "'"
+		_oSQL:_sQuery +=   " AND SD1.D1_DOC     = '" + ::Contranota + "'"
+		_oSQL:_sQuery +=   " AND SD1.D1_SERIE   = '" + ::SerieCtrn + "'"
+		_oSQL:_sQuery +=   " AND SD1.D1_FORNECE = '" + ::Fornece + "'"
+		_oSQL:_sQuery +=   " AND SD1.D1_LOJA    = '" + ::Loja + "'"
+		_oSQL:_sQuery +=   " AND SDA.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SDA.DA_FILIAL  = SD1.D1_FILIAL"
+		_oSQL:_sQuery +=   " AND SDA.DA_DOC     = SD1.D1_DOC"
+		_oSQL:_sQuery +=   " AND SDA.DA_SERIE   = SD1.D1_SERIE"
+		_oSQL:_sQuery +=   " AND SDA.DA_CLIFOR  = SD1.D1_FORNECE"
+		_oSQL:_sQuery +=   " AND SDA.DA_LOJA    = SD1.D1_LOJA"
+		_oSQL:_sQuery +=   " AND SDA.DA_ORIGEM  = 'SD1'"
+		_oSQL:_sQuery +=   " AND SDA.DA_NUMSEQ  = SD1.D1_NUMSEQ"
+		_oSQL:_sQuery +=   " AND SDA.DA_PRODUTO = SD1.D1_COD"
+		_oSQL:_sQuery +=   " AND SDA.DA_SALDO   < SDA.DA_QTDORI"
+		_oSQL:_sQuery +=   " AND SDB.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SDB.DB_FILIAL  = SDA.DA_FILIAL"
+		_oSQL:_sQuery +=   " AND SDB.DB_DOC     = SDA.DA_DOC"
+		_oSQL:_sQuery +=   " AND SDB.DB_SERIE   = SDA.DA_SERIE"
+		_oSQL:_sQuery +=   " AND SDB.DB_CLIFOR  = SDA.DA_CLIFOR"
+		_oSQL:_sQuery +=   " AND SDB.DB_LOJA    = SDA.DA_LOJA"
+		_oSQL:_sQuery +=   " AND SDB.DB_ORIGEM  = SDA.DA_ORIGEM"
+		_oSQL:_sQuery +=   " AND SDB.DB_NUMSEQ  = SDA.DA_NUMSEQ"
+		_oSQL:_sQuery +=   " AND SDB.DB_PRODUTO = SDA.DA_PRODUTO"
+		_oSQL:Log ()
+		_aRegSDA = _oSQL:Qry2Array (.F., .F.)
+	//	u_showarray (_aRegSDA)
+		if len (_aRegSDA) == 0
+			u_help ("Nao encontrei enderecamento para estornar.")
+		else
 
+			U_Log2 ('debug', _aRegSDA)
+			sda -> (dbgoto (_aRegSDA [1, 1]))  // SDA usa apenas 1 registro
+			_aAutoSDA = {}
+			aadd (_aAutoSDA, {"DA_PRODUTO", sda -> da_produto, nil})
+			aadd (_aAutoSDA, {"DA_LOCAL"  , SDA -> DA_LOCAL,   nil})
+			aadd (_aAutoSDA, {"DA_NUMSEQ" , SDA -> DA_NUMSEQ,  nil})
+			aadd (_aAutoSDA, {"DA_DOC"    , SDA -> DA_DOC,     nil})
+			aadd (_aAutoSDA, {"DA_SERIE"  , SDA -> DA_SERIE,   nil})
+			_aAutoSDB = {}
+			for _nRegSDA = 1 to len (_aRegSDA)  // SBD eh uma linha para cada registro (pensar que trata-se de um aCols)
+				U_Log2 ('debug', '[' + procname () + ']Linha:' + cvaltochar (_nRegSDA))
+				U_Log2 ('debug', _aRegSDA [_nRegSDA])
+			//	u_showarray (_aRegSDA [_nRegSDA])
+				sdb -> (dbgoto (_aRegSDA [_nRegSDA, 2]))
+				_aLinhaSDB = {}
+				aadd (_aLinhaSDB, {"DB_ITEM"   , sdb -> db_item,    nil})
+				aadd (_aLinhaSDB, {"DB_ESTORNO", 'S', nil})
+				aadd (_aLinhaSDB, {"DB_LOCALIZ", sdb -> db_localiz, nil})
+				aadd (_aLinhaSDB, {"DB_QUANT"  , sdb -> db_quant,   nil})
+				aadd (_aLinhaSDB, {"DB_DATA"   , sdb -> db_data,    nil})
+				_aLinhaSDB = aclone (U_OrdAuto (_aLinhaSDB))
+				U_Log2 ('debug', _aLinhaSDB)
+				aadd (_aAutoSDB, aclone (_aLinhaSDB))
+			next
+			lMsErroAuto := .F.
+			MSExecAuto({|x,y,z| mata265(x,y,z)}, _aAutoSDA, _aAutoSDB, 4)
+			If lMsErroAuto
+				u_log2 ('erro', 'lMsErroAuto')
+				if ! empty (NomeAutoLog ())
+					u_log2 ('erro', memoread (NomeAutoLog ()))
+					MostraErro()
+				else
+					u_help ("Nao foi possivel ler o arquivo de log de erros da rotina de enderecamento de uva no estoque.",, .t.)
+				endif
+			else
+				U_Log2 ('debug', '[' + procname () + ']MATA265 retornou OK')
+			endif
+
+		endif
 	elseif _sQueFazer == 'I'  // Incluir
 
 		U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Iniciando enderecamento docto ' + ::Contranota)
@@ -413,6 +515,7 @@ METHOD EnderEstq (_sQueFazer) Class ClsCarSaf
 		if len (_aRegSDA) == 0
 			u_help ("Nenhum produto com saldo a enderecar para esta carga/contranota.")
 		endif
+		_sItemSDB = Soma1 (_aRegSDA [1, 2])
 		for _nRegSDA = 1 to len (_aRegSDA)
 			sda -> (dbgoto (_aRegSDA [_nRegSDA, 1]))
 			_aAutoSDA = {}
@@ -425,7 +528,7 @@ METHOD EnderEstq (_sQueFazer) Class ClsCarSaf
 			_aAutoSDB = {}
 			_aLinhaSDB = {}
 		//	aadd (_aLinhaSDB, {"DB_ITEM", '0001', nil})
-			aadd (_aLinhaSDB, {"DB_ITEM", Soma1 (_aRegSDA [_nRegSDA, 2]), nil})
+			aadd (_aLinhaSDB, {"DB_ITEM", _sItemSDB, nil})
 			if ::Filial == '01'
 				aadd (_aLinhaSDB, {"DB_LOCALIZ", 'T01PCP03       ', nil})
 			elseif ::Filial == '03'
@@ -451,6 +554,7 @@ METHOD EnderEstq (_sQueFazer) Class ClsCarSaf
 					u_help ("Nao foi possivel ler o arquivo de log de erros da rotina de enderecamento de uva no estoque.",, .t.)
 				endif
 			endif
+			_sItemSDB = soma1 (_sItemSDB)
 		next
 	else
 		u_help ('Sem tratamento para acao ' + _sQueFazer,, .t.)
@@ -474,8 +578,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	::Aglutin    = ''
 	::Carga      = ''
 	::Contranota = ''
-	::CCompart1  = ''
-	::CCompart2  = ''
+	::CCompart   = {}
 	::CXouGranel = ''
 	::Filial     = ''
 	::Fornece    = ''
@@ -501,8 +604,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 		::Aglutin    = m->ze_aglutin
 		::Safra      = m->ze_safra
 		::Carga      = m->ze_carga
-		::CCompart1  = m->ze_cargaC1
-		::CCompart2  = m->ze_cargaC2
+		::CCompart   = aclone (U_SeparaCpo (alltrim (m->ze_ccompar), '/'))
 		::Contranota = m->ze_nfger
 		::Fornece    = m->ze_assoc
 		::Loja       = m->ze_lojasso
@@ -527,8 +629,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 		::Aglutin    = sze -> ze_aglutin
 		::Carga      = sze -> ze_carga
 		::Filial     = sze -> ze_filial
-		::CCompart1  = sze -> ze_cargaC1
-		::CCompart2  = sze -> ze_cargaC2
+		::CCompart   = aclone (U_SeparaCpo (alltrim (sze->ze_ccompar), '/'))
 		::Contranota = sze -> ze_nfger
 		::Fornece    = sze -> ze_assoc
 		::Loja       = sze -> ze_lojasso
@@ -638,6 +739,7 @@ return
 METHOD Log () Class ClsCarSaf
 	local _sLogCar  := ''
 	local _nItCarga := 0
+//	local _nCompart := 0
 
 	_sLogCar += '  Filial: ' + ::Filial + ' Safra: ' + ::Safra + ' Carga: ' + ::Carga + chr (13) + chr (10)
 	_sLogCar += '  Peso bruto: ' + cvaltochar (::PesoBruto) + ' Peso tara: ' + cvaltochar (::PesoTara) + chr (13) + chr (10)
@@ -645,11 +747,14 @@ METHOD Log () Class ClsCarSaf
 	for _nItCarga = 1 to len (::ItItem)
 		_sLogCar += '    It.' + ::ItItem [_nItCarga] + ': '
 		_sLogCar += alltrim (::ItProduto [_nItCarga])
-		_sLogCar += ' - '   + alltrim (::ItDescri  [_nItCarga])
+		_sLogCar += U_TamFixo (' - '   + alltrim (::ItDescri  [_nItCarga]), 25, ' ')
 		_sLogCar += ' Gr: ' + ::ItGrau [_nItCarga]
 		_sLogCar += ' Sist.cond: ' + ::ItConducao [_nItCarga]
 		_sLogCar += chr (13) + chr (10)
 	next
+	if len (::CCompart) > 0
+		_sLogCar += '  ' + ::ConsCompar ()
+	endif
 	U_Log2 ('info', '-----------------------------------------------')
 	U_Log2 ('info', _sLogCar)
 	U_Log2 ('info', '-----------------------------------------------')
@@ -659,16 +764,36 @@ return _sLogCar
 // --------------------------------------------------------------------------
 // Verifica se 'tudo ok' na segunda pesagem da carga.
 METHOD SegPesTOk () Class ClsCarSaf
+	local _aAreaAnt := U_ML_SRArea ()
 	local _l2PesTOK := .T.
 	local _sGrau    := ''
 	local _nItemCar := 0
 	local _sMsg     := ''
+	local _nCompart := 0
 
 	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']iniciando...')
+
+	// Para referenciar alguma outra carga como compartilhada, essa deve existir.
+	if _l2PesTOK
+		sze -> (dbsetorder (1))  // ZE_FILIAL+ZE_SAFRA+ZE_CARGA
+		for _nCompart = 1 to len (::CCompart)
+			if ! sze -> (dbseek (::Filial + ::Safra + ::CCompart [_nCompart], .F.))
+				u_help ("Carga compartilhada '" + ::CCompart [_nCompart] + "' nao foi localizada!",, .t.)
+				_l2PesTOK = .F.
+			else
+				// Se estou incluindo/gerando carga nova
+				if ::PesoBruto == 0 .and. sze -> ze_pesotar > 0
+					u_help ("A carga compartilhada '" + ::CCompart [_nCompart] + "' ja encontra-se com segunda pesagem. O normal seria gerar as cargas compartilhadas todas em sequencia, e somente depois disso, comecar as pesagens e o recebimento.",, .t.)
+					_l2PesTOK = .F.
+				endif
+			endif
+		next
+	endif
+
 	// Todas as variedades da carga devem ter mesmo grau (excecao para Livramento
 	// que, no momento em que estou fazendo esta validacao, recebe uva em caixas
 	// e, portanto, tem condicao de medir o grau separadamente.
-	if _l2PesTOK
+	if _l2PesTOK .and. ::PesoTara > 0
 		_sMsg = ''
 		_sGrau = ''
 		for _nItemCar = 1 to len (_oCarSaf:ItItem)
@@ -696,6 +821,7 @@ METHOD SegPesTOk () Class ClsCarSaf
 		endif
 	endif
 
+	U_ML_SRArea (_aAreaAnt)
 return _l2PesTOK
 
 
@@ -745,3 +871,135 @@ METHOD StatusZZA () Class ClsCarSaf
 
 	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Retornando statusZZA = ' + _sRetStZZA + ' para a carga ' + ::Carga)
 return _sRetStZZA
+
+
+// --------------------------------------------------------------------------
+// Uma vez que cargas podem ser compartilhadas (mais de um produtor rural
+// usando o mesmo veiculo, como se viesse de carona), preciso uma forma de
+// saber todas as cargas compartilhadas com a atual.
+METHOD TodasComp (_sLista) Class ClsCarSaf
+	local _nCompart := 0
+	local _oCarAux  := NIL
+
+	_sLista = iif (_sLista == NIL, '', _sLista)  // para o caso de ser chamada sem parametros.
+
+	U_Log2 ('debug', '[' + procname () + ']iniciando TodasComp para a carga ' + ::Carga + ' que tem ::CCompart = ' + _Arr2Str (::CCompart))
+//	U_Log2 ('debug', '[' + procname () + ']Recebi _sLista assim: ' + _sLista)
+
+	// Se esta propria carga ainda nao estiver na lista, adiciona-a.
+	if ! ::Carga $ _sLista
+//		U_Log2 ('debug', '[' + procname () + ']acrescentando eu mesma (' + ::Carga + ')')
+		_sLista += iif (empty (_sLista), '', '/') + ::Carga
+	endif
+
+	// Criterio de final de execucao: quando a carga nao apontar para nenhuma outra.
+	if len (::CCompart) == 0
+//		U_Log2 ('debug', '[' + procname () + ']fim de processo. Nao aponta para nenhuma.')
+	else
+		for _nCompart = 1 to len (::CCompart)
+			if ! ::CCompart [_nCompart] $ _sLista
+				//_sLista += iif (empty (_sLista), '', '/') + ::CCompart [_nCompart]
+				_oCarAux := ClsCarSaf ():New (::Filial + ::Safra + ::CCompart [_nCompart])
+//				U_Log2 ('debug', '[' + procname () + ']adicionando todas da carga ' + _oCarAux:Carga)
+				_sLista = _oCarAux:TodasComp (_sLista)
+//			else
+//				U_Log2 ('debug', '[' + procname () + ']Carga ' + ::CCompart [_nCompart] + ' jah estah na lista')
+			endif
+		next
+	endif
+//	U_Log2 ('debug', '[' + procname () + ']Devolvendo _sLista assim: ' + _sLista)
+return _sLista
+
+
+static function _Arr2Str (_a)
+	local _n := 0
+	local _sRet := ''
+	for _n = 1 to len (_a)
+		_sRet += cvaltochar (_a [_n]) + iif (_n < len (_a), '/', '')
+	next
+return _sRet
+
+
+// --------------------------------------------------------------------------
+// Identifica a variedade de menor valor
+METHOD VarMenorVl () class ClsCarSaf
+	local _aProdut   := {}
+	local _nProdut   := 0
+	local _aTodasCar := {}
+	local _nTodasCar := {}
+	local _oCarAux   := NIL
+	local _aAreaAnt  := U_ML_SRArea ()
+
+	// Faz uma lista de cargas compartilhadas (se houver) a verificar.
+	if len (::CCompart) > 0
+		_aTodasCar = U_SeparaCpo (::TodasComp (), '/')
+	else  // Se nao tiver compartilhamento, eh somente a propria carga.
+		_aTodasCar = {::Carga}
+	endif
+	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Lista de todas as cargas a verificar: ' + _Arr2Str (_aTodasCar))
+
+	// Monta lista de todas as variedades envolvidas.
+	for _nTodasCar = 1 to len (_aTodasCar)
+
+		// Se for a carga atual, leio seus atributos (pode ainda nao estar gravada)
+		if _aTodasCar [_nTodasCar] == ::Carga
+			for _nProdut = 1 to len (::ItItem)
+				if ascan (_aProdut, {|_aVal| _aVal [1] == ::ItProduto [_nProdut] ;
+						.and. _aVal [3] == ::ItConducao [_nProdut] ;
+						.and. _aVal [4] == ::Carga }) == 0
+					aadd (_aProdut, {::ItProduto [_nProdut], 0, ::ItConducao [_nProdut], ::Carga})
+				endif
+			next
+		else
+			_oCarAux := ClsCarSaf ():New (::Filial + ::Safra + _aTodasCar [_nTodasCar])
+			if empty (_oCarAux:Carga)
+				u_help ("Impossivel instanciar carga compartilhada '" + _aTodasCar [_nTodasCar] + "'. Verificacao de variedade de menor valor nao pode ser feita.",, .t.)
+			else
+				for _nProdut = 1 to len (_oCarAux:ItItem)
+					if ascan (_aProdut, {|_aVal| _aVal [1] == _oCarAux:ItProduto [_nProdut] ;
+						.and. _aVal [3] == _oCarAux:ItConducao [_nProdut] ;
+						.and. _aVal [4] == _oCarAux:Carga}) == 0
+						aadd (_aProdut, {_oCarAux:ItProduto [_nProdut], 0, _oCarAux:ItConducao [_nProdut], _oCarAux:Carga})
+					endif
+				next
+			endif
+		endif
+	next
+
+	// Busca precos para as variedades envolvidas.
+	// Manter aqui sempre a mesma politica do VA_RUSN !!!
+	for _nProdut = 1 to len (_aProdut)
+		if ::Safra == '2019'
+			_aProdut [_nProdut, 2] = U_PrcUva19 (::Filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3])[1]
+		elseif ::Safra == '2020'
+			_aProdut [_nProdut, 2] = U_PrcUva20 (::Filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F.)[5]  // pos.5=preco MOC
+		elseif ::Safra == '2021'
+			_aProdut [_nProdut, 2] = U_PrcUva21 (::Filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[2]  // pos.2=preco de compra
+		elseif ::Safra == '2022'
+			_aProdut [_nProdut, 2] = U_PrcUva22 (::Filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[2]  // pos.2 = preco de compra.
+		elseif ::Safra == '2023'
+			_aProdut [_nProdut, 2] = U_PrcUva23 (::Filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[5]  // pos.5 = preco MOC
+		else
+			u_help (procname (1) + '.' + procname () + ": Sem tratamento para verificar precificacao em caso de mistura de variedades nesta safra.",, .t.)
+		endif
+	next
+	
+	// Ordena por preco, de forma que basta pegar a primeira linha.
+	_aProdut = asort (_aProdut,,, {|_x, _y| _x[2] < _y [2]})
+	
+	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Variedade(s) de menor valor envolvidas:')
+	U_Log2 ('debug', _aProdut)
+
+	// Se alguma variedade ficou sem valor, eh melhor nao retornar nada, pois
+	// todas devem ter tratamento para buscar os precos.
+	if len (_aProdut) < 1
+		u_help ("Problemas na busca da variedade de menor valor: nenhuma variedade lida!",, .t.)
+		_aProdut = {}
+	endif
+	if _aProdut [1, 2] == 0
+		u_help ("Problemas na busca da variedade de menor valor: variedade '" + alltrim (_aProdut [1, 1]) + "' ficou sem valor!",, .t.)
+		_aProdut = {}
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
+return _aProdut

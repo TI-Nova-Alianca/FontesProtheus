@@ -111,6 +111,7 @@
 // 09/01/2023 - Robert  - Nao envia mais o cod.da impr. de ticket para a funcao U_GeraSZE.
 // 19/01/2023 - Robert  - ClsTrEstq:Libera() nao tenta mais executar a transferencia no final.
 // 27/01/2023 - Robert  - Criada acao TransfEstqInformarEndDest (GLPI 13097).
+// 31/01/2023 - Robert  - Geracao carga safra passa mandar cargas compartilhadas concatenadas para U_GeraSZE().
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -1352,17 +1353,17 @@ static function _IncCarSaf ()
 	local _sSenhaOrd := ''
 	local _sCPFCarg  := ''
 	local _sInscCarg := ''
-//	local _sImpTkCar := ''
 	local _oSQL      := NIL
 	local _aRegSA2   := {}
 	local _sSivibe   := ''
 	local _sEspumant := ''
 	local _sCargaC1  := ''
 	local _sCargaC2  := ''
+	local _sCompart  := ''
 	local _lAmostra  := .F.
 
 	u_log2 ('info', 'Iniciando web service de geracao de carga.')
-	U_PerfMon ('I', 'WSGerarCargaSafra')  // Para metricas de performance
+//	U_PerfMon ('I', 'WSGerarCargaSafra')  // Para metricas de performance
 
 	if empty (_sErroWS) ; _sSafra    = _ExtraiTag ("_oXML:_WSAlianca:_Safra",                  .T., .F.) ; endif
 	if empty (_sErroWS) ; _sBalanca  = _ExtraiTag ("_oXML:_WSAlianca:_Balanca",                .T., .F.) ; endif
@@ -1370,7 +1371,6 @@ static function _IncCarSaf ()
 	if empty (_sErroWS) ; _sLoja     = _ExtraiTag ("_oXML:_WSAlianca:_Loja",                   .F., .F.) ; endif
 	if empty (_sErroWS) ; _sCPFCarg  = _ExtraiTag ("_oXML:_WSAlianca:_CPF",                    .F., .F.) ; endif
 	if empty (_sErroWS) ; _sInscCarg = _ExtraiTag ("_oXML:_WSAlianca:_IE",                     .F., .F.) ; endif
-//	if empty (_sErroWS) ; _sImpTkCar = _ExtraiTag ("_oXML:_WSAlianca:_ImprTk",                 .F., .F.) ; endif
 	if empty (_sErroWS) ; _sSerieNF  = _ExtraiTag ("_oXML:_WSAlianca:_SerieNFProdutor",        .T., .F.) ; endif
 	if empty (_sErroWS) ; _sNumNF    = _ExtraiTag ("_oXML:_WSAlianca:_NumeroNFProdutor",       .T., .F.) ; endif
 	if empty (_sErroWS) ; _sChvNFPe  = _ExtraiTag ("_oXML:_WSAlianca:_ChaveNFPe",              .F., .F.) ; endif
@@ -1448,21 +1448,19 @@ static function _IncCarSaf ()
 	if empty (_sErroWS) .and. ! empty (_sVaried) .and. ! empty (_sCadVit)  // Pode nao ter 3 itens na carga
 		aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
 	endif
-	u_log2 ('info', 'Itens da carga:')
-	u_log2 ('info', _aItensCar)
+	//u_log2 ('info', 'Itens da carga:')
+	//u_log2 ('info', _aItensCar)
 	if empty (_sErroWS)
 		if len (_aItensCar) == 0
 			_SomaErro ("Nenhum item informado para gerar carga.")
 		else
-			// Estamos tentando implementar um retorno em XML com novas tags.
-			//_sMsgRetWS = U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sImpTkCar)
-			
-//			U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sImpTkCar, _sCargaC1, _sCargaC2)
-			U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, NIL, _sCargaC1, _sCargaC2)
+			_sCompart = _sCargaC1 + iif (! empty (_sCargaC2), '/', '') + _sCargaC2
+//			U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, NIL, _sCargaC1, _sCargaC2)
+			U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, NIL, _sCompart)
 		endif
 	endif
 
-	U_PerfMon ('F', 'WSGerarCargaSafra')  // Para metricas de performance
+//	U_PerfMon ('F', 'WSGerarCargaSafra')  // Para metricas de performance
 	u_log2 ('info', 'Finalizando web service de geracao de carga.')
 Return
 //
