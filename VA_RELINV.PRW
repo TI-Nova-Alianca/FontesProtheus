@@ -60,7 +60,7 @@ Static Function _Gera()
     _oSQL:_sQuery += "    ,SB7.B7_COD AS PRODUTO "
     _oSQL:_sQuery += "    ,SB1.B1_DESC AS DESCRICAO "
     _oSQL:_sQuery += "    ,SB7.B7_TIPO AS TP_MATERIAL"
-    _oSQL:_sQuery += "    ,SB7.B7_LOCALIZ AS LOCALIZACAO"
+    _oSQL:_sQuery += "    ,SB7.B7_LOCALIZ AS ENDERECO"
     _oSQL:_sQuery += "    ,SB7.B7_LOTECTL AS LOTE_CONTROL"
     _oSQL:_sQuery += "    ,SB7.B7_DTVALID AS DT_VALIDADE "
     _oSQL:_sQuery += "    ,SB7.B7_QUANT AS QUANTIDADE"
