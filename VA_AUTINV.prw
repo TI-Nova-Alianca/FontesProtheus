@@ -22,6 +22,7 @@
 // 13/07/2022 - Sandra  - Retirada validação da gravação do error, para variavel SMESAGEM. GLPI 12339.
 // 25/01/2023 - Claudia - Incluido parametro de endereço e verificação de saldos. GLPI: 13062
 // 30/01/2023 - Claudia - Incluídos F3 nos parametros.
+// 01/01/2023 - Claudia - Alterada consulta de inventário. GLPI: 13114
 //
 // -------------------------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
@@ -135,67 +136,41 @@ Static Function BuscaEstoque()
 	u_logsx1 ()
 	
 	_sQuery := ""
-	_sQuery += " WITH C AS "
-	_sQuery += " ("
-	_sQuery += " SELECT"
-	_sQuery += " 		SB2.B2_FILIAL AS FILIAL,"
-	_sQuery += " 		SB2.B2_LOCAL  AS ALMOX,"
-	_sQuery += " 		SB1.B1_TIPO   AS TPROD,"
-	_sQuery += " 		SB1.B1_GRUPO  AS GRUPO,"
-	_sQuery += " 		SB1.B1_COD    AS PRODUTO,"
-	_sQuery += " 		SB1.B1_DESC   AS DESCRICAO,"
-	_sQuery += " 		CASE WHEN SB1.B1_LOCALIZ = 'S' "
-	_sQuery += " 			THEN BF_LOTECTL "
-	_sQuery += " 			ELSE '' END AS LOTECTL,"
-	_sQuery += " 		CASE WHEN SB1.B1_LOCALIZ = 'S'"
-	_sQuery += " 			THEN BF_LOCALIZ "
-	_sQuery += " 			ELSE '' END AS LOCALIZ,"
-	_sQuery += " 		ISNULL(SBF.BF_QUANT, ISNULL(SB8.B8_SALDO, SB2.B2_QATU)) AS QTD,   "
-	_sQuery += " 		SB1.B1_LOCALIZ AS USALOC, "
-	_sQuery += " 		ISNULL(SB8.B8_DTVALID, '') AS VALID, "
-	_sQuery += " 		SB1.B1_LOCALIZ AS B1_LOCAL,"
-	_sQuery += " 		SB1.B1_RASTRO AS B1_RASTRO "
-	_sQuery += " 	FROM " + RetSQLName ("SB1") + " SB1 "
-	_sQuery += " 	LEFT JOIN " + RetSQLName ("SB2") + " SB2 "    
-	_sQuery += " 		ON (B1_COD = B2_COD"
-	_sQuery += " 		AND SB2.D_E_L_E_T_ = '')"
-	_sQuery += " 	LEFT JOIN " + RetSQLName ("SBF") + " SBF " 
-	_sQuery += " 		ON (RTRIM(B2_COD)      = RTRIM(BF_PRODUTO)"
-	_sQuery += " 		AND (RTRIM(SB1.B1_COD) = RTRIM(SBF.BF_PRODUTO)"
-	_sQuery += " 		AND RTRIM(B2_LOCAL)    = RTRIM(BF_LOCAL)"
-	_sQuery += " 		AND RTRIM(B2_FILIAL)   = RTRIM(BF_FILIAL)"
-	_sQuery += " 		AND SBF.D_E_L_E_T_     = ''))"
-	_sQuery += " 	LEFT JOIN " + RetSQLName ("SB8") + " SB8 " 
-	_sQuery += " 		ON (SB8.D_E_L_E_T_ = ''"
-	_sQuery += " 		AND B8_FILIAL  = BF_FILIAL"
-	_sQuery += " 		AND B8_PRODUTO = BF_PRODUTO"
-	_sQuery += " 		AND B8_LOCAL   = BF_LOCAL"
-	_sQuery += " 		AND B8_LOTECTL = BF_LOTECTL)"
-	_sQuery += " 	WHERE SB1.D_E_L_E_T_ = ''"
-	_sQuery += " 	AND SB2.B2_QATU <> 0"
-	_sQuery += "    AND SB1.B1_TIPO NOT IN ('MO')"
+	_sQuery += " WITH C "
+	_sQuery += " AS "
+	_sQuery += " (SELECT "
+	_sQuery += " 		FILIAL "
+	_sQuery += " 	   ,ALMOX "
+	_sQuery += " 	   ,TIPO "
+	_sQuery += " 	   ,GRUPO "
+	_sQuery += " 	   ,PRODUTO "
+	_sQuery += " 	   ,DESCRICAO "
+	_sQuery += " 	   ,LOTE "
+	_sQuery += " 	   ,ENDERECO "
+	_sQuery += " 	   ,CASE "
+	_sQuery += " 			WHEN QTD_ENDER <> 0 THEN QTD_ENDER "
+	_sQuery += " 			WHEN QTD_LOTE <> 0 THEN QTD_LOTE "
+	_sQuery += " 			ELSE QTD " 
+	_sQuery += " 		END QTD "
+	_sQuery += "       ,TEM_ENDERECO "
+	_sQuery += "       ,TEM_LOTE "
+	_sQuery += "       ,DT_VALIDADE "
+	_sQuery += " 	FROM VA_VBUSCA_QTD_ESTOQUE "
+	_sQuery += " 	WHERE TIPO NOT IN ('MO') "
+	_sQuery += " ) "
+	_sQuery += " SELECT "
+	_sQuery += " 	* "
+	_sQuery += " FROM C "
+	_sQuery += " WHERE QTD <> 0 "
 	If !empty(mv_par01) // filial
-		_sQuery += "  AND B2_FILIAL = '" + alltrim(cFilAnt) + "'"
+		_sQuery += " AND FILIAL = '" + alltrim(cFilAnt) + "'"
 	EndIf
-	If !empty(mv_par03) // grupo
-		_sQuery += "  AND SB1.B1_GRUPO BETWEEN '" + alltrim(mv_par02) + "' AND '" + alltrim(mv_par03)+ "'"
-	EndIf
-	If !empty(mv_par05) // tipo de produto
-		_sQuery += "  AND SB1.B1_TIPO BETWEEN '" + alltrim(mv_par04) + "' AND '" + alltrim(mv_par05) + "'"
-	EndIf
-	If !empty(mv_par07) // almoxarifado/local
-		_sQuery += "  AND B2_LOCAL BETWEEN '" + alltrim(mv_par06) + "' AND '" + alltrim(mv_par07) + "'"
-	EndIf
-	If !empty(mv_par09) // produto
-		_sQuery += "  AND SB1.B1_COD BETWEEN '" + alltrim(mv_par08) + "' AND '" + alltrim(mv_par09) + "'"
-	EndIf	
-	_sQuery += " )"
-	_sQuery += " SELECT * FROM C"
-	_sQuery += " WHERE QTD <> 0"
-	If !empty(mv_par10) // endereço
-		_sQuery += "  AND LOCALIZ BETWEEN '" + alltrim(mv_par10) + "' AND '" + alltrim(mv_par11) + "'"
-	EndIf
-	_sQuery += " ORDER BY FILIAL, ALMOX, TPROD, GRUPO, PRODUTO"
+	_sQuery += " AND GRUPO BETWEEN '" + alltrim(mv_par02) + "' AND '" + alltrim(mv_par03)+ "'"
+	_sQuery += " AND TIPO BETWEEN '" + alltrim(mv_par04) + "' AND '" + alltrim(mv_par05) + "'"
+	_sQuery += " AND ALMOX BETWEEN '" + alltrim(mv_par06) + "' AND '" + alltrim(mv_par07) + "'"
+	_sQuery += " AND PRODUTO BETWEEN '" + alltrim(mv_par08) + "' AND '" + alltrim(mv_par09) + "'"
+	_sQuery += " AND ENDERECO BETWEEN '" + alltrim(mv_par10) + "' AND '" + alltrim(mv_par11) + "'"
+	_sQuery += " ORDER BY FILIAL, ALMOX, TIPO, GRUPO, PRODUTO "
 
 	u_log(_sQuery)
 
@@ -218,9 +193,6 @@ Static Function BuscaEstoque()
 				dbUseArea(.T., "TOPCONN", TCGenQry(,,_sQuery), "_trb", .F., .T.)
 				_trb -> (dbgotop ())
 				Do while ! _trb -> (eof ())
-					IF alltrim(_trb -> USALOC) ='S'
-						dDtValid := Posicione("SB8",3,_trb -> FILIAL + _trb -> PRODUTO + _trb -> ALMOX +_trb -> LOTECTL, "B8_DTVALID")
-					EndIf
 					GravaSB7()
 					_trb -> (dbskip ())
 				EndDo
@@ -239,19 +211,19 @@ Static function GravaSB7()
 	Aadd(aAuto, {"B7_FILIAL" 	, _trb -> FILIAL		 , NIL})
 	Aadd(aAuto, {"B7_COD" 		, _trb -> PRODUTO 		 , NIL})
 	Aadd(aAuto, {"B7_LOCAL" 	, alltrim(_trb -> ALMOX) , NIL})
-	Aadd(aAuto, {"B7_TIPO" 		, alltrim(_trb -> TPROD) , NIL})
+	Aadd(aAuto, {"B7_TIPO" 		, alltrim(_trb -> TIPO)  , NIL})
 	Aadd(aAuto, {"B7_DOC" 		, alltrim(sDocumento)	 , NIL})
 	Aadd(aAuto, {"B7_QUANT" 	, _trb -> QTD	         , NIL})
 	Aadd(aAuto, {"B7_DATA" 		, date() 				 , NIL})
-	Aadd(aAuto, {"B7_LOTECTL" 	, _trb -> LOTECTL		 , NIL})
-	Aadd(aAuto, {"B7_LOCALIZ" 	, _trb -> LOCALIZ  		 , NIL})
-	Aadd(aAuto, {"B7_LOCALIZ" 	, _trb -> LOCALIZ  		 , NIL})
+	Aadd(aAuto, {"B7_LOTECTL" 	, _trb -> LOTE		 	 , NIL})
+	Aadd(aAuto, {"B7_LOCALIZ" 	, _trb -> ENDERECO  	 , NIL})
 	Aadd(aAuto, {"B7_CONTAGE" 	, '1' 					 , NIL})
 	Aadd(aAuto, {"B7_ORIGEM" 	, "VA_AUTINV" 			 , NIL})
 	Aadd(aAuto, {"B7_STATUS" 	, "1" 					 , NIL})
-	If alltrim(_trb -> USALOC) ='S'
-		Aadd(aAuto, {"B7_DTVALID" 	, dDtValid					 , NIL})
-	EndIf   
+	If alltrim(_trb -> LOTE) == 'L'
+		Aadd(aAuto, {"B7_DTVALID" 	, DT_VALIDADE		 , NIL})
+	EndIf
+
 	MsExecAuto({|a,b,c| MATA270(a,b,c)}, aAuto, .T.,3)
 
 	If lMsErroAuto
