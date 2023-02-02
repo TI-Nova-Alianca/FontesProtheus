@@ -8,6 +8,7 @@
 // 12/02/2021 - Cláudia - Incluida ordenação pela descrição
 // 02/06/2021 - Claudia - Alterada ordenação almox/ites. GLPI: 10146
 // 30/01/2023 - Claudia - Incluidos novos filtros. GLPI: 13101
+// 02/02/2023 - Claudia - Incluida ordenação por endereco. GLPI: 13136
 //
 // ---------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -92,6 +93,8 @@ Static Function PrintReport(oReport)
 			_oSQL:_sQuery += " ORDER BY FILIAL, DESCRICAO"
 		Case mv_par09 == 4
 			_oSQL:_sQuery += " ORDER BY FILIAL, ALMOX, TIPO, DESCRICAO"
+		Case mv_par09 == 5
+			_oSQL:_sQuery += " ORDER BY FILIAL, ENDERECO, TIPO"
 			
 	EndCase
 	_oSQL:Log ()
@@ -135,20 +138,20 @@ Return
 // Perguntas
 Static Function _ValidPerg ()
     local _aRegsPerg := {}
-    //                     PERGUNT            TIPO TAM DEC VALID F3     Opcoes                      						Help
-    aadd (_aRegsPerg, {01, "Dt. geração de  ", "D", 8,  0,  "",  "   ", {},                         								""})
-    aadd (_aRegsPerg, {02, "Dt. geração até ", "D", 8,  0,  "",  "   ", {},                         								""})
-    aadd (_aRegsPerg, {03, "Data doc.       ", "D", 8,  0,  "",  "   ", {},                         								""})
-    aadd (_aRegsPerg, {04, "Filial          ", "C", 2,  0,  "",  "SM0", {},                         								""})
-    aadd (_aRegsPerg, {05, "Local de      	", "C", 2,  0,  "",  "NNR", {},                         								""})
-    aadd (_aRegsPerg, {06, "Local até       ", "C", 2,  0,  "",  "NNR", {},                         								""})
-    aadd (_aRegsPerg, {07, "Tipo de         ", "C", 2,  0,  "",  "02", {},                         								""})
-    aadd (_aRegsPerg, {08, "Tipo até        ", "C", 2,  0,  "",  "02", {},                         								""})
-    aadd (_aRegsPerg, {09, "Ordenação       ", "N", 1,  0,  "",  "   ", {"Almox+Item","Tipo+Endereço","Descrição","Tipo+Descrição"},   ""})
-	aadd (_aRegsPerg, {10, "Grupo de        ", "C", 4,  0,  "",  "SBM", {},    ""})
-	aadd (_aRegsPerg, {11, "Grupo até       ", "C", 4,  0,  "",  "SBM", {},    ""})
-	aadd (_aRegsPerg, {12, "Endereço de     ", "C", 15, 0,  "",  "SBE", {},    ""})
-	aadd (_aRegsPerg, {13, "Endereço até    ", "C", 15, 0,  "",  "SBE", {},    ""})
+    //                     PERGUNT            TIPO TAM DEC VALID F3     Opcoes                      												Help
+    aadd (_aRegsPerg, {01, "Dt. geração de  ", "D", 8,  0,  "",  "   ", {},                         												""})
+    aadd (_aRegsPerg, {02, "Dt. geração até ", "D", 8,  0,  "",  "   ", {},                         												""})
+    aadd (_aRegsPerg, {03, "Data doc.       ", "D", 8,  0,  "",  "   ", {},                         												""})
+    aadd (_aRegsPerg, {04, "Filial          ", "C", 2,  0,  "",  "SM0", {},                         												""})
+    aadd (_aRegsPerg, {05, "Local de      	", "C", 2,  0,  "",  "NNR", {},                         												""})
+    aadd (_aRegsPerg, {06, "Local até       ", "C", 2,  0,  "",  "NNR", {},                         												""})
+    aadd (_aRegsPerg, {07, "Tipo de         ", "C", 2,  0,  "",  "02", {},                         													""})
+    aadd (_aRegsPerg, {08, "Tipo até        ", "C", 2,  0,  "",  "02", {},                         													""})
+    aadd (_aRegsPerg, {09, "Ordenação       ", "N", 1,  0,  "",  "   ", {"Almox+Item","Tipo+Endereço","Descrição","Tipo+Descrição","Endereco+Tipo"},""})
+	aadd (_aRegsPerg, {10, "Grupo de        ", "C", 4,  0,  "",  "SBM", {},    																		""})
+	aadd (_aRegsPerg, {11, "Grupo até       ", "C", 4,  0,  "",  "SBM", {},    																		""})
+	aadd (_aRegsPerg, {12, "Endereço de     ", "C", 15, 0,  "",  "SBE", {},   												 						""})
+	aadd (_aRegsPerg, {13, "Endereço até    ", "C", 15, 0,  "",  "SBE", {},    																		""})
 
     U_ValPerg (cPerg, _aRegsPerg)
 Return
