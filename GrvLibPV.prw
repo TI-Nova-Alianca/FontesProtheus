@@ -75,7 +75,7 @@
 // 03/01/2021 - Claudia - Ajustado para permitir desconto no cabeçalho da NF. GLPI: 11370
 // 04/01/2021 - Claudia - Incluida validação para ser obrigatorio informar NSU e Id Pagar-me em pedidos e-commerce.
 // 22/06/2022 - Claudia - Passada validações de NSU/Id pagarme e indenização e bonificações no p.e Mta410. GLPI: 11600
-//
+// 02/02/2023 - Claudia - Liberação e-mail nfe@novaalianca.coop.br campo A2_E-MAIL - GLPI 13137
 // --------------------------------------------------------------------------------------------------------------------
 user function GrvLibPV (_lLiberar)
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -148,10 +148,14 @@ user function GrvLibPV (_lLiberar)
 				_lLiberar = .F.
 			endif
 			if  _wEmailA2 != 'associados@novaalianca.coop.br' .and. 'novaalianca' $ _wEmailA2
-			   	_sErro += "E-mail para DANFE inválido. Por favor, verifique!"
-				_lLiberar = .F.
+				If alltrim(_wEmailA2) =='nfe@novaalianca.coop.br'
+					_lLiberar = .T.
+				else                                                          
+			   		_sErro += "E-mail para DANFE inválido. Por favor, verifique!"
+					_lLiberar = .F.
+				endif
 			endif
-			_wEmailA2 = fBuscaCpo ('SA2', 1, xfilial('SA2') + m->c5_cliente + m->c5_lojacli, "A2_EMAIL")
+    			_wEmailA2 = fBuscaCpo ('SA2', 1, xfilial('SA2') + m->c5_cliente + m->c5_lojacli, "A2_EMAIL")
 			if  'lixo' $ _wEmailA2
 			   	_sErro += "E-mail para DANFE inválido. Por favor, verifique!"
 				_lLiberar = .F.
