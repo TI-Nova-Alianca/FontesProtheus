@@ -70,6 +70,7 @@
 // 14/07/2022 - Robert  - Removidas linhas comentariadas.
 // 08/11/2022 - Robert  - Passa a usar a funcao U_AmbTeste().
 // 05/01/2023 - Robert  - Desabilitadas validacoes tabela ZZX (vamos comecar a usar o importador da TRS)
+// 03/02/2023 - Sandra  - Incluso para aceite de chave para tipo de nota NF3E - (GLPI 13143)
 //
 
 // -----------------------------------------------------------------------------------------------------------------------
@@ -313,7 +314,7 @@ static function _ValChvNFe ()
 
 	// Verifica se esta nota deve ou nao ter a chave informada.
 	if _lRet
-		if cFormul == "S" .or. ! alltrim (cEspecie) $ "SPED/CTE"
+		if cFormul == "S" .or. ! alltrim (cEspecie) $ "SPED/CTE/NF3E"
 			_lDeveTer = .F.
 		else
 			_lDeveTer = .T.
