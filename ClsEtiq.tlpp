@@ -402,15 +402,17 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 						endif
 					endif
 					
-					// Se quero enviar para o FullWMS, tenho que ter algum lote.
-					// Enquanto eu nao tiver (seja por que o produto nao controla
-					// lote no Protheus, ou por que ainda nao implementamos uma
-					// maneira de informar na solicitacao de transferencia), vou
-					// ter que gerar algum lote fajuto.
-					// OBS: Manter consistencia com a view v_wms_entrada !!!
+					// Se quero enviar para o FullWMS, tenho que ter algum lote
+					// e validade. Enquanto eu nao tiver isso (seja por que o
+					// produto nao controla lote no Protheus, ou por que ainda
+					// nao implementamos uma maneira de informar na solicitacao
+					// de transferencia), vou gerar uma validade fajuta.
+					// Essa validade e lote serao enviados ao Full atraves da
+					// tabela tb_wms_etiquetas (todas as entradas no Full devem
+					// ser acompanhadas de uma etiqueta).
 					if ::AlmDest == '01' .and. ! empty (::LoteProduto) .and. sb1 -> b1_rastro != 'L'
-						U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Gerando validade fajuta por que o Protheus nao controla rastro deste item, mas o Full vai exigir.')
 						::ValidLote   = date () + sb1 -> b1_prvalid
+						U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Gerando validade fajuta (' + dtoc (::ValidLote) + ') por que o Protheus nao controla rastro deste item, mas o Full vai exigir.')
 					endif
 				endif
 			case ! empty (::D5_NUMSEQ)

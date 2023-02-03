@@ -21,11 +21,13 @@
 // 25/01/2023 - Sandra - Filtro busca produtos alterado de tipo MM e MC para tipo MM, MC e II (GLPI 12003)
 // 30/01/2023 - Sandra - Filtro busca produtos alterado de tipo MM, MC e II para MM, MC, II, CL (GLPI 12813)
 // 01/02/2023 - Robert/Sandra - Filtro busca produtos passa a ler parametro VA_MNTNG.
+// 02/02/2023 - Robert - Acrescentado usuario vagner.lima no filtro de O.S.
+//
 
-//  ---------------------------------------------------------------------------------------------------------------------
+#include "PROTHEUS.ch"
 
 // https://tdn.engpro.totvs.com.br/pages/releaseview.action?pageId=347448878
-#include "PROTHEUS.ch"
+//  ---------------------------------------------------------------------------------------------------------------------
 User Function MNTNG()
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _xRet      := NIL
@@ -94,7 +96,7 @@ User Function MNTNG()
 		_sCodFunc = ''
 		do case
 	//	case alltrim (upper (cUserName)) $ 'EVALDO.AGNOLETTO/LEONARDO.BORGES/APP.MNTNG/ELSO.RODRIGUES/MARCOS.OLIVEIRA/JONATHAN.SANTOS/JUNIOR.MELGAREJO/JOAO.COSTA'
-		case alltrim (upper (cUserName)) $ 'EVALDO.AGNOLETTO/LEONARDO.BORGES/APP.MNTNG/ELSO.RODRIGUES/MARCOS.OLIVEIRA/JONATHAN.SANTOS/JUNIOR.MELGAREJO/MAX.PADILHA'
+		case alltrim (upper (cUserName)) $ 'EVALDO.AGNOLETTO/LEONARDO.BORGES/APP.MNTNG/ELSO.RODRIGUES/MARCOS.OLIVEIRA/JONATHAN.SANTOS/JUNIOR.MELGAREJO/MAX.PADILHA/VAGNER.LIMA'
 			_sCodFunc = ''  // Sem filtro para estes usuarios.
 		case alltrim (upper (cUserName)) = 'ALEXANDRE.ANDRADE'; _sCodFunc = '2065'
 		case alltrim (upper (cUserName)) = 'ELIEL.PEDRON'     ; _sCodFunc = '2119'

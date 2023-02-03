@@ -37,6 +37,7 @@
 // 19/01/2023 - Robert  - Metodo Libera() nao tenta mais executar a transferencia no final.
 // 27/01/2023 - Robert  - Metodo New passa a aceitar R_E_C_N_O_ ou chave de pesquisa.
 //                      - Mensagens, quando for o caso, passam a ser todas persistidas no campo ZAG_ULTMSG.
+// 02/02/2023 - Robert  - Quando alm.destino usa FullWMS, exige lote destino, pois o FullWMS vai exigir depois.
 //
 
 // ------------------------------------------------------------------------------------
@@ -513,26 +514,26 @@ METHOD GeraSD3 () class ClsTrEstq
 		aadd(_aItens,'')           //D3_UM					Unidade de Medida de Destino
 		aadd(_aItens,::AlmDest)    //Almox destino
 		aadd(_aItens,::EndDest)    //Endereco destino
-		aadd(_aItens,"")           //D3_NUMSERI			Numero de Serie
+		aadd(_aItens,"")           //D3_NUMSERI				Numero de Serie
 		aadd(_aItens,::LoteOrig)   //Lote origem
-		aadd(_aItens,"")           //D3_NUMLOTE			Numero do lote
-		aadd(_aItens,ctod(""))     //D3_DTVALID			Validade Origem
-		aadd(_aItens,0)            //D3_POTENCI			PotÍncia
+		aadd(_aItens,"")           //D3_NUMLOTE				Numero do lote
+		aadd(_aItens,ctod(""))     //D3_DTVALID				Validade Origem
+		aadd(_aItens,0)            //D3_POTENCI				PotÍncia
 		aadd(_aItens,::QtdSolic)   // Quantidade
-		aadd(_aItens,0)            //D3_QTSEGUM			Segunda Quantidade
-		aadd(_aItens,criavar("D3_ESTORNO"))  //D3_ESTORNO			Estorno
-		aadd(_aItens,criavar("D3_NUMSEQ"))   //D3_NUMSEQ 			Numero de Sequencia
+		aadd(_aItens,0)            //D3_QTSEGUM				Segunda Quantidade
+		aadd(_aItens,criavar("D3_ESTORNO"))  // D3_ESTORNO			Estorno
+		aadd(_aItens,criavar("D3_NUMSEQ"))   // D3_NUMSEQ 			Numero de Sequencia
 		aadd(_aItens,::LoteDest)             // Lote destino
 		aadd(_aItens,ctod(""))               // D3_DTVALID			Validade de Destino
 		aadd(_aItens,criavar("D3_ITEMGRD"))  // D3_ITEMGRD			Item Grade
-		//aadd(_aItens,0)                      // Per.Imp. D3_PERIMP
-		aadd(_aItens,::Motivo)                 // D3_OBSERVA
+		//aadd(_aItens,0)                    // Per.Imp. D3_PERIMP
+		aadd(_aItens,::Motivo)               // D3_OBSERVA
 		aadd(_aItens,::Motivo)               // motivo
 		aadd(_aItens,ctod (''))              // dt digit (vai ser gravado pelo SQL)
 		aadd(_aItens,'')                     // hr digit (vai ser gravado pelo SQL)
-		//aadd(_aItens,'')                     // laudo laboratorial (tabela ZAF)
+		//aadd(_aItens,'')                   // laudo laboratorial (tabela ZAF)
 		aadd(_aItens,::Etiqueta)             // D3_VAETIQ Etiqueta
-		aadd(_aItens,_sChaveEx)        // Chave externa D3_VACHVEX
+		aadd(_aItens,_sChaveEx)              // Chave externa D3_VACHVEX
 	//	u_log2 ('debug', _aItens)
 		aadd(_aAuto261, aclone (_aItens))
 
@@ -774,10 +775,14 @@ METHOD Grava () Class ClsTrEstq
 			_lContinua = .F.
 		endif
 		if ! empty (::LoteDest) .and. ! ::CtrLotDest
-			if ! (::FWProdDest .and. ::AlmUsaFull (::AlmDest))  // Se vai para FullWMS tenho que informar algm lote para ele.
+			if ! (::FWProdDest .and. ::AlmUsaFull (::AlmDest))  // Se vai para FullWMS, tenho que informar algm lote para ele.
 				::SomaMsg ("Lote destino nao deve ser informado pois o produto '" + alltrim (::ProdDest) + "' nao controla lote.")
 				_lContinua = .F.
 			endif
+		endif
+		if empty (::LoteDest) .and. ::AlmUsaFull (::AlmDest)  // Se vai para FullWMS, tenho que informar algm lote para ele.
+			::SomaMsg ("Deve ser informado um lote de destino por que o FullWMS vai exigir.")
+			_lContinua = .F.
 		endif
 		if ! empty (::EndDest) .and. ! ::CtrLocDest
 			::SomaMsg ("Endereco destino nao deve ser informado pois o produto '" + alltrim (::ProdDest) + "' nao controla localizacao.")
