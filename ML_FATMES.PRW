@@ -24,6 +24,7 @@
 // 28/10/2017 - Robert  - Passa a validar parametro VA_SERIECF para leitura de cupons.
 // 22/05/2019 - Catia   - Considerar D1_VALFRE no total das notas de devolucao
 // 03/05/2021 - Claudia - Retirado os TES '732','573', '891'. GLPI: 9926
+// 03/02/2022 - Claudia - Inclusao de coluna de faturamento. GLPI: 12857
 //
 // ----------------------------------------------------------------------------------------------
 #include "rwmake.ch"
@@ -73,7 +74,7 @@ Static Function RptDetail()
     nTipo := IIF(aReturn[4]==1,15,18)
     li    := 80
     m_pag := 1
-    cabec1 := "IND  DT.EMISSAO  NOTA           CLIENTE   RAZAO SOCIAL                                         UF             TOTAL PRODUTOS     (+) VALOR IPI  (+) VALOR ST (-)VLR DESCONTOS (=)TOTAL DA NOTA"
+    cabec1 := "IND  DT.EMISSAO  NOTA           CLIENTE   RAZAO SOCIAL                                         UF             TOTAL PRODUTOS     (+) VALOR IPI  (+) VALOR ST (-)VLR DESCONTOS (=)TOTAL DA NOTA  (=)TOTAL FATURAMENTO"
     cabec2 := ""
     
     _sQuery := " "
@@ -92,7 +93,6 @@ Static Function RptDetail()
   	_sQuery += " 	 , SUM(SD2.D2_ICMSRET) AS VLR_ST"
 	_sQuery += " 	 , 0 AS VLR_DESCONTO"
 	_sQuery += " 	 , SUM(SD2.D2_VALBRUT) AS VLR_BRT"
-	//_sQuery += " 	 , SD2.D2_FILIAL AS FILIAL"
   	_sQuery += "  FROM " + RetSQLName ("SD2") + " AS SD2 "
   	_sQuery += "	INNER JOIN " + RetSQLName ("SF2") + " AS SF2 "
   	_sQuery += "			ON (SF2.D_E_L_E_T_ = ''"
@@ -111,7 +111,6 @@ Static Function RptDetail()
     _sQuery += "   AND SD2.D2_EMISSAO   BETWEEN '" + dtos (mv_par01) + "' AND '" + dtos (mv_par02) + "'"
     _sQuery += "   AND SD2.D2_TIPO != 'D'" // AS DEVOLUÇÕES DE COMPRA SERAO CONSIDERADAS NO ANALISE DE ENTRADAS
     if mv_par14 = 2 // apenas CUPONS
-//    	_sQuery += "   AND SD2.D2_SERIE = '001'"
     	_sQuery += "   AND SD2.D2_SERIE IN " + FormatIn (GetMv ('VA_SERIECF'), '/')
     endif
 	_sQuery += "   AND SD2.D2_EST       BETWEEN '" + mv_par03 + "' AND '" + mv_par04 + "'"
@@ -143,7 +142,6 @@ Static Function RptDetail()
     //            ou foi a primeira vez que aconteceu, por isso o case na data     	 
     _sQuery += "      , CASE WHEN SD1.D1_DTDIGIT >= '20161201' THEN ROUND(SUM(SD1.D1_TOTAL+SD1.D1_VALIPI+SD1.D1_ICMSRET+SD1.D1_DESPESA+SD1.D1_VALFRE  - SD1.D1_VALDESC ),2)" 
     _sQuery += "        ELSE ROUND(SUM(SD1.D1_TOTAL+SD1.D1_VALIPI+SD1.D1_ICMSRET),2) END AS VLR_BRT"
-    //_sQuery += " 	  , SD1.D1_FILIAL AS FILIAL"
     _sQuery += "   FROM " + RetSQLName ("SD1") + " AS SD1 "
   	_sQuery += "	 INNER JOIN " + RetSQLName ("SF1") + " AS SF1 "
 	_sQuery += "   	    ON (SF1.D_E_L_E_T_ = ''"				
@@ -168,7 +166,6 @@ Static Function RptDetail()
 	_sQuery += "   AND SD1.D1_DTDIGIT   BETWEEN '" + dtos (mv_par01) + "' AND '" + dtos (mv_par02) + "'"
 	_sQuery += "   AND SD1.D1_TIPO = 'D'"
 	if mv_par14 = 2 // apenas CUPONS
-//    	_sQuery += "   AND SD1.D1_SERIORI = '001'"
     	_sQuery += "   AND SD1.D1_SERIORI IN " + FormatIn (GetMv ('VA_SERIECF'), '/')
     endif
 	_sQuery += "   AND SD1.D1_FORNECE   BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
@@ -207,162 +204,178 @@ Static Function RptDetail()
 	       cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 	    Endif
 	    
-	    IF mv_par11 = 1
-	           IF (_sAliasQ) -> MARGEM $ '1239'
-	           	   @ li, 002 PSAY (_sAliasQ) -> MARGEM
-			   ELSE           	   
-	           	   @ li, 002 PSAY 'X'
-	           ENDIF
-		       @ li, 005 PSAY stod((_sAliasQ) -> DT_EMISSAO)
-		       @ li, 017 PSAY (_sAliasQ) -> NOTA
-		       @ li, 033 PSAY (_sAliasQ) -> CLIENTE
-		       // busca nome do cliente
-		       IF (_sAliasQ) -> MARGEM = '2' .OR. (_sAliasQ) -> TIPO = 'N'
-		       		@ li, 042 PSAY fBuscaCpo ("SA1", 1, xfilial ("SA1") + (_sAliasQ) -> CLIENTE + (_sAliasQ) -> LOJA, "A1_NOME")
-		       ELSE
-			       	@ li, 042 PSAY fBuscaCpo ("SA2", 1, xfilial ("SA2") + (_sAliasQ) -> CLIENTE + (_sAliasQ) -> LOJA, "A2_NOME")
-		       ENDIF
-			   @ li, 095 PSAY (_sAliasQ) -> UF
-		   	   @ li, 108 PSAY (_sAliasQ) -> VLR_PROD     Picture "@E 9,999,999,999.99"
-		       @ li, 129 PSAY (_sAliasQ) -> VLR_IPI      Picture "@E 99,999,999.99"
-		       @ li, 143 PSAY (_sAliasQ) -> VLR_ST       Picture "@E 99,999,999.99"
-		       @ li, 160 PSAY (_sAliasQ) -> VLR_DESCONTO Picture "@E 99,999,999.99"
-		       @ li, 173 PSAY (_sAliasQ) -> VLR_BRT      Picture "@E 99,999,999,999.99"
-	           li ++
-     	ELSE
+	    If mv_par11 = 1
+			_nVlrNf := (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST // GLPI: 12857
+			If (_sAliasQ) -> MARGEM $ '1239'
+				@ li, 002 PSAY (_sAliasQ) -> MARGEM
+			Else           	   
+				@ li, 002 PSAY 'X'
+			EndIf
+			@ li, 005 PSAY stod((_sAliasQ) -> DT_EMISSAO)
+			@ li, 017 PSAY (_sAliasQ) -> NOTA
+			@ li, 033 PSAY (_sAliasQ) -> CLIENTE
+			// busca nome do cliente
+			If (_sAliasQ) -> MARGEM = '2' .OR. (_sAliasQ) -> TIPO = 'N'
+				@ li, 042 PSAY fBuscaCpo ("SA1", 1, xfilial ("SA1") + (_sAliasQ) -> CLIENTE + (_sAliasQ) -> LOJA, "A1_NOME")
+			Else
+				@ li, 042 PSAY fBuscaCpo ("SA2", 1, xfilial ("SA2") + (_sAliasQ) -> CLIENTE + (_sAliasQ) -> LOJA, "A2_NOME")
+			EndIf
+			@ li, 095 PSAY (_sAliasQ) -> UF
+			@ li, 108 PSAY (_sAliasQ) -> VLR_PROD     Picture "@E 9,999,999,999.99"
+			@ li, 129 PSAY (_sAliasQ) -> VLR_IPI      Picture "@E 99,999,999.99"
+			@ li, 143 PSAY (_sAliasQ) -> VLR_ST       Picture "@E 99,999,999.99"
+			@ li, 160 PSAY (_sAliasQ) -> VLR_DESCONTO Picture "@E 99,999,999.99"
+			@ li, 173 PSAY (_sAliasQ) -> VLR_BRT      Picture "@E 99,999,999,999.99"
+			@ li, 190 PSAY _nVlrNf                    Picture "@E 99,999,999,999.99"
+			li ++
+     	Else
 	 		// opcao sintetica
+			_nVlrNf := (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST // GLPI: 12857
+
 	 		// acumula totais na data e imprime o total da data
-	 			@ li, 005 PSAY stod((_sAliasQ) -> DT_EMISSAO)
-	 			DO CASE
-	 				CASE (_sAliasQ) -> MARGEM = '1' 
-	 					w_tipo= 'Venda'
-	 				CASE (_sAliasQ) -> MARGEM = '2' 
-	 					w_tipo= 'Devolução'
-	 				CASE (_sAliasQ) -> MARGEM = '3' 
-	 					w_tipo= 'Bonificação'
-	 				CASE (_sAliasQ) -> MARGEM = '9' 
-	 					w_tipo= 'Outras saidas'
-	 				OTHERWISE 
-	 					w_tipo= 'Erro'
-	 			ENDCASE
-	 			@ li, 017 PSAY w_tipo
-		       	@ li, 108 PSAY (_sAliasQ) -> VLR_PROD     Picture "@E 9,999,999,999.99"
-		       	@ li, 129 PSAY (_sAliasQ) -> VLR_IPI      Picture "@E 99,999,999.99"
-		       	@ li, 143 PSAY (_sAliasQ) -> VLR_ST       Picture "@E 99,999,999.99"
-		       	@ li, 160 PSAY (_sAliasQ) -> VLR_DESCONTO Picture "@E 99,999,999.99"
-		       	@ li, 173 PSAY (_sAliasQ) -> VLR_BRT      Picture "@E 99,999,999,999.99"
-	           
-		        li ++
-	 	ENDIF
-	 	// total por indicador de faturamento
-        DO CASE
-       		CASE (_sAliasQ) -> MARGEM = '1'
-       			_aTotVenda [1] += (_sAliasQ) -> VLR_PROD
-       			_aTotVenda [2] += (_sAliasQ) -> VLR_IPI
-       			_aTotVenda [3] += (_sAliasQ) -> VLR_ST
-       			_aTotVenda [4] += (_sAliasQ) -> VLR_DESCONTO
-       			_aTotVenda [5] += (_sAliasQ) -> VLR_BRT
-			CASE (_sAliasQ) -> MARGEM = '2'
-       			_aTotDev [1] += (_sAliasQ) -> VLR_PROD
-       			_aTotDev [2] += (_sAliasQ) -> VLR_IPI
-       			_aTotDev [3] += (_sAliasQ) -> VLR_ST
-       			_aTotDev [4] += (_sAliasQ) -> VLR_DESCONTO
-       			_aTotDev [5] += (_sAliasQ) -> VLR_BRT           			
-			CASE (_sAliasQ) -> MARGEM = '3'
-       			_aTotBonif [1] += (_sAliasQ) -> VLR_PROD
-       			_aTotBonif [2] += (_sAliasQ) -> VLR_IPI
-       			_aTotBonif [3] += (_sAliasQ) -> VLR_ST
-       			_aTotBonif [4] += (_sAliasQ) -> VLR_DESCONTO
-       			_aTotBonif [5] += (_sAliasQ) -> VLR_BRT
-			CASE (_sAliasQ) -> MARGEM = '9'
-       			_aTotOutras[1] += (_sAliasQ) -> VLR_PROD
-       			_aTotOutras[2] += (_sAliasQ) -> VLR_IPI
-       			_aTotOutras[3] += (_sAliasQ) -> VLR_ST
-       			_aTotOutras[4] += (_sAliasQ) -> VLR_DESCONTO
-       			_aTotOutras[5] += (_sAliasQ) -> VLR_BRT  
-			OTHERWISE 
+			@ li, 005 PSAY stod((_sAliasQ) -> DT_EMISSAO)
+			Do Case
+				Case (_sAliasQ) -> MARGEM = '1' 
+					w_tipo= 'Venda'
+				Case (_sAliasQ) -> MARGEM = '2' 
+					w_tipo= 'Devolução'
+				Case (_sAliasQ) -> MARGEM = '3' 
+					w_tipo= 'Bonificação'
+				Case (_sAliasQ) -> MARGEM = '9' 
+					w_tipo= 'Outras saidas'
+				Otherwise 
+					w_tipo= 'Erro'
+			EndCase
+			@ li, 017 PSAY w_tipo
+			@ li, 108 PSAY (_sAliasQ) -> VLR_PROD     Picture "@E 9,999,999,999.99"
+			@ li, 129 PSAY (_sAliasQ) -> VLR_IPI      Picture "@E 99,999,999.99"
+			@ li, 143 PSAY (_sAliasQ) -> VLR_ST       Picture "@E 99,999,999.99"
+			@ li, 160 PSAY (_sAliasQ) -> VLR_DESCONTO Picture "@E 99,999,999.99"
+			@ li, 173 PSAY (_sAliasQ) -> VLR_BRT      Picture "@E 99,999,999,999.99"
+			@ li, 190 PSAY _nVlrNf                    Picture "@E 99,999,999,999.99"
+			
+			li ++
+		EndIf
+		// total por indicador de faturamento
+		Do Case
+			Case (_sAliasQ) -> MARGEM = '1'
+				_aTotVenda [1] += (_sAliasQ) -> VLR_PROD
+				_aTotVenda [2] += (_sAliasQ) -> VLR_IPI
+				_aTotVenda [3] += (_sAliasQ) -> VLR_ST
+				_aTotVenda [4] += (_sAliasQ) -> VLR_DESCONTO
+				_aTotVenda [5] += (_sAliasQ) -> VLR_BRT
+				_aTotVenda [6] += (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST
+			Case (_sAliasQ) -> MARGEM = '2'
+				_aTotDev [1] += (_sAliasQ) -> VLR_PROD
+				_aTotDev [2] += (_sAliasQ) -> VLR_IPI
+				_aTotDev [3] += (_sAliasQ) -> VLR_ST
+				_aTotDev [4] += (_sAliasQ) -> VLR_DESCONTO
+				_aTotDev [5] += (_sAliasQ) -> VLR_BRT  
+				_aTotDev [6] += (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST        			
+			Case (_sAliasQ) -> MARGEM = '3'
+				_aTotBonif [1] += (_sAliasQ) -> VLR_PROD
+				_aTotBonif [2] += (_sAliasQ) -> VLR_IPI
+				_aTotBonif [3] += (_sAliasQ) -> VLR_ST
+				_aTotBonif [4] += (_sAliasQ) -> VLR_DESCONTO
+				_aTotBonif [5] += (_sAliasQ) -> VLR_BRT
+				_aTotBonif [6] += (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST  
+			Case (_sAliasQ) -> MARGEM = '9'
+				_aTotOutras[1] += (_sAliasQ) -> VLR_PROD
+				_aTotOutras[2] += (_sAliasQ) -> VLR_IPI
+				_aTotOutras[3] += (_sAliasQ) -> VLR_ST
+				_aTotOutras[4] += (_sAliasQ) -> VLR_DESCONTO
+				_aTotOutras[5] += (_sAliasQ) -> VLR_BRT  
+				_aTotOutras[6] += (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST  
+			Otherwise 
 				_aTotErro[1] += (_sAliasQ) -> VLR_PROD
-       			_aTotErro[2] += (_sAliasQ) -> VLR_IPI
-       			_aTotErro[3] += (_sAliasQ) -> VLR_ST
-       			_aTotErro[4] += (_sAliasQ) -> VLR_DESCONTO
-       			_aTotErro[5] += (_sAliasQ) -> VLR_BRT  
-	    ENDCASE
-	 	(_sAliasQ) -> (dbskip())
-     enddo
+				_aTotErro[2] += (_sAliasQ) -> VLR_IPI
+				_aTotErro[3] += (_sAliasQ) -> VLR_ST
+				_aTotErro[4] += (_sAliasQ) -> VLR_DESCONTO
+				_aTotErro[5] += (_sAliasQ) -> VLR_BRT  
+				_aTotErro[6] += (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST  
+		EndCase
+		(_sAliasQ) -> (dbskip())
+	EndDo
 	 
-	 li ++      
-     If li>58
-     	cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-     Endif  
-      // imprime totais por operacao
-     @ li, 005 PSAY "TOTAIS POR OPERACAO: "
-     li ++
-     li ++
-	 // imprime total da venda
-	 @ li, 005 PSAY "1 - VENDA:"
-	 @ li, 108 PSAY _aTotVenda[1] Picture "@E 9,999,999,999.99"
-	 @ li, 129 PSAY _aTotVenda[2] Picture "@E 99,999,999.99"
-	 @ li, 143 PSAY _aTotVenda[3] Picture "@E 99,999,999.99"
-	 @ li, 160 PSAY _aTotVenda[4] Picture "@E 99,999,999.99"
-	 @ li, 173 PSAY _aTotVenda[5] Picture "@E 99,999,999,999.99"
-     li ++
- 	 // imprime total da devolucoes
- 	 @ li, 005 PSAY "2 - DEVOLUÇÕES:"
-	 @ li, 108 PSAY _aTotDev[1] Picture "@E 9,999,999,999.99"
-	 @ li, 129 PSAY _aTotDev[2] Picture "@E 99,999,999.99"
-	 @ li, 143 PSAY _aTotDev[3] Picture "@E 99,999,999.99"
-	 @ li, 160 PSAY _aTotDev[4] Picture "@E 99,999,999.99"
-	 @ li, 173 PSAY _aTotDev[5] Picture "@E 99,999,999,999.99"
-	 li ++
-	 // imprime total de bonificacoes
- 	 @ li, 005 PSAY "3 - BONIFICAÇÕES:"
-	 @ li, 108 PSAY _aTotBonif[1] Picture "@E 9,999,999,999.99"
-	 @ li, 129 PSAY _aTotBonif[2] Picture "@E 99,999,999.99"
-	 @ li, 143 PSAY _aTotBonif[3] Picture "@E 99,999,999.99"
-	 @ li, 160 PSAY _aTotBonif[4] Picture "@E 99,999,999.99"
-	 @ li, 173 PSAY _aTotBonif[5] Picture "@E 99,999,999,999.99"
-	 li ++
-	 // imprime total de bonificacoes
-	 @ li, 005 PSAY "9 - OUTRAS SAIDAS:"
-	 @ li, 108 PSAY _aTotOutras[1] Picture "@E 9,999,999,999.99"
-	 @ li, 129 PSAY _aTotOutras[2] Picture "@E 99,999,999.99"
-	 @ li, 143 PSAY _aTotOutras[3] Picture "@E 99,999,999.99"
-	 @ li, 160 PSAY _aTotOutras[4] Picture "@E 99,999,999.99"
-	 @ li, 173 PSAY _aTotOutras[5] Picture "@E 99,999,999,999.99"
-	 li ++
-	 // imprime total de ERROS
-	 IF _aTotErro[1] > 0 
-		@ li, 005 PSAY "X - ERRO - VERIFIQUE CADASTRO TES:"
-		@ li, 108 PSAY _aTotErro[1] Picture "@E 9,999,999,999.99"
-		@ li, 129 PSAY _aTotErro[2] Picture "@E 99,999,999.99"
-		@ li, 143 PSAY _aTotErro[3] Picture "@E 99,999,999.99"
-		@ li, 160 PSAY _aTotErro[4] Picture "@E 99,999,999.99"
-		@ li, 173 PSAY _aTotErro[5] Picture "@E 99,999,999,999.99"
+		li ++      
+		If li>58
+			cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+		Endif  
+		// imprime totais por operacao
+		@ li, 005 PSAY "TOTAIS POR OPERACAO: "
 		li ++
-	 ENDIF
-	 li ++
-	 li ++
-	 @ li, 005 PSAY "*** VENDA LIQUIDA = VENDA(-)DEVOLUÇÕES :
-	 @ li, 108 PSAY _aTotVenda[1] - _aTotDev[1] Picture "@E 9,999,999,999.99"
-	 @ li, 129 PSAY _aTotVenda[2] - _aTotDev[2] Picture "@E 99,999,999.99"
-	 @ li, 143 PSAY _aTotVenda[3] - _aTotDev[3] Picture "@E 99,999,999.99"
-	 @ li, 160 PSAY _aTotVenda[4] - _aTotDev[4] Picture "@E 99,999,999.99"
-	 @ li, 173 PSAY _aTotVenda[5] - _aTotDev[5] Picture "@E 99,999,999,999.99"
-	 li ++
+		li ++
+		// imprime total da venda
+		@ li, 005 PSAY "1 - VENDA:"
+		@ li, 108 PSAY _aTotVenda[1] Picture "@E 9,999,999,999.99"
+		@ li, 129 PSAY _aTotVenda[2] Picture "@E 99,999,999.99"
+		@ li, 143 PSAY _aTotVenda[3] Picture "@E 99,999,999.99"
+		@ li, 160 PSAY _aTotVenda[4] Picture "@E 99,999,999.99"
+		@ li, 173 PSAY _aTotVenda[5] Picture "@E 99,999,999,999.99"
+		@ li, 190 PSAY _aTotVenda[6] Picture "@E 99,999,999,999.99"
+		li ++
+		// imprime total da devolucoes
+		@ li, 005 PSAY "2 - DEVOLUÇÕES:"
+		@ li, 108 PSAY _aTotDev[1] Picture "@E 9,999,999,999.99"
+		@ li, 129 PSAY _aTotDev[2] Picture "@E 99,999,999.99"
+		@ li, 143 PSAY _aTotDev[3] Picture "@E 99,999,999.99"
+		@ li, 160 PSAY _aTotDev[4] Picture "@E 99,999,999.99"
+		@ li, 173 PSAY _aTotDev[5] Picture "@E 99,999,999,999.99"
+		@ li, 190 PSAY _aTotDev[6] Picture "@E 99,999,999,999.99"
+		li ++
+		// imprime total de bonificacoes
+		@ li, 005 PSAY "3 - BONIFICAÇÕES:"
+		@ li, 108 PSAY _aTotBonif[1] Picture "@E 9,999,999,999.99"
+		@ li, 129 PSAY _aTotBonif[2] Picture "@E 99,999,999.99"
+		@ li, 143 PSAY _aTotBonif[3] Picture "@E 99,999,999.99"
+		@ li, 160 PSAY _aTotBonif[4] Picture "@E 99,999,999.99"
+		@ li, 173 PSAY _aTotBonif[5] Picture "@E 99,999,999,999.99"
+		@ li, 190 PSAY _aTotBonif[6] Picture "@E 99,999,999,999.99"
+		li ++
+		// imprime total de bonificacoes
+		@ li, 005 PSAY "9 - OUTRAS SAIDAS:"
+		@ li, 108 PSAY _aTotOutras[1] Picture "@E 9,999,999,999.99"
+		@ li, 129 PSAY _aTotOutras[2] Picture "@E 99,999,999.99"
+		@ li, 143 PSAY _aTotOutras[3] Picture "@E 99,999,999.99"
+		@ li, 160 PSAY _aTotOutras[4] Picture "@E 99,999,999.99"
+		@ li, 173 PSAY _aTotOutras[5] Picture "@E 99,999,999,999.99"
+		@ li, 190 PSAY _aTotOutras[6] Picture "@E 99,999,999,999.99"
+		li ++
+		// imprime total de ERROS
+		If _aTotErro[1] > 0 
+			@ li, 005 PSAY "X - ERRO - VERIFIQUE CADASTRO TES:"
+			@ li, 108 PSAY _aTotErro[1] Picture "@E 9,999,999,999.99"
+			@ li, 129 PSAY _aTotErro[2] Picture "@E 99,999,999.99"
+			@ li, 143 PSAY _aTotErro[3] Picture "@E 99,999,999.99"
+			@ li, 160 PSAY _aTotErro[4] Picture "@E 99,999,999.99"
+			@ li, 173 PSAY _aTotErro[5] Picture "@E 99,999,999,999.99"
+			@ li, 190 PSAY _aTotErro[6] Picture "@E 99,999,999,999.99"
+			li ++
+		EndIf
+		li ++
+		li ++
+		@ li, 005 PSAY "*** VENDA LIQUIDA = VENDA(-)DEVOLUÇÕES :
+		@ li, 108 PSAY _aTotVenda[1] - _aTotDev[1] Picture "@E 9,999,999,999.99"
+		@ li, 129 PSAY _aTotVenda[2] - _aTotDev[2] Picture "@E 99,999,999.99"
+		@ li, 143 PSAY _aTotVenda[3] - _aTotDev[3] Picture "@E 99,999,999.99"
+		@ li, 160 PSAY _aTotVenda[4] - _aTotDev[4] Picture "@E 99,999,999.99"
+		@ li, 173 PSAY _aTotVenda[5] - _aTotDev[5] Picture "@E 99,999,999,999.99"
+		@ li, 190 PSAY _aTotVenda[6] - _aTotDev[6] Picture "@E 99,999,999,999.99"
+		li ++
 	 
-	 U_ImpParam (58)
+	U_ImpParam (58)
 	      
-     Set Device To Screen
+    Set Device To Screen
 
-     If aReturn[5]==1
-	       Set Printer TO
-	       dbcommitAll()
-	       ourspool(wnrel)
-     Endif
+	If aReturn[5]==1
+		Set Printer TO
+		dbcommitAll()
+		ourspool(wnrel)
+	Endif
 
-     MS_FLUSH() // Libera fila de relatorios em spool (Tipo Rede Netware)
-
-return
+    MS_FLUSH() // Libera fila de relatorios em spool (Tipo Rede Netware)
+Return
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()

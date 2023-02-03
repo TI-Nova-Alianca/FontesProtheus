@@ -34,6 +34,7 @@
 // 18/02/2022 - Robert - Passa a dar 2 dias antes de transferir titulos para a matriz (para necessidades de cancelar alguma nota recente).
 // 28/02/2022 - Robert - Ajuste conferencia parcelamento (a coop. nao paga FUNRURAL para nao associados e PJ).
 // 08/11/2022 - Robert - Removidas algumas linhas comentariadas.
+// 02/03/2023 - Robert - Aviso de contranotas sem carga passa a usar ClsAviso.
 //
 
 // --------------------------------------------------------------------------
@@ -45,7 +46,8 @@ user function BatSafr (_sQueFazer, _lAjustar)
 	local _aSemNota  := {}
 	local _oSQL      := NIL
 	local _sArqLgOld := ''
-	local _sArqLog2  := ''
+//	local _sArqLog2  := ''
+	local _oAViso    := NIL
 
 	_sQueFazer = iif (_sQueFazer == NIL, '', _sQueFazer)
 	_lAjustar = iif (_lAjustar == NIL, .F., _lAjustar)
@@ -54,9 +56,10 @@ user function BatSafr (_sQueFazer, _lAjustar)
 
 	// Como esta funcao faz diversas tarefas, vou gerar log em arquivos separados.
 	_sArqLgOld = _sArqLog
-	_sArqLog2 = procname () + '_' + _sQueFazer + '_' + alltrim (cUserName) + ".log"
-	u_log2 ('info', 'Log da thread ' + cValToChar (ThreadID ()) + ' prossegue em outro arquivo: ' + _sArqLog2)
-	_sArqLog = _sArqLog2
+//	_sArqLog2 = procname () + '_' + _sQueFazer + '_' + alltrim (cUserName) + ".log"
+//	u_log2 ('info', 'Log da thread ' + cValToChar (ThreadID ()) + ' prossegue em outro arquivo: ' + _sArqLog2)
+//	_sArqLog = _sArqLog2
+	U_MudaLog (procname () + "_" + _sQueFazer + ".log")
 
 	// Procura cargas sem contranota.
 	if _sQueFazer == 'CargasSemContranota'  //'1'
@@ -114,7 +117,15 @@ user function BatSafr (_sQueFazer, _lAjustar)
 			_sMsg += "<BR>"
 			_sMsg += _oAUtil:ConvHTM ("", _aCols, 'width="80%" border="1" cellspacing="0" cellpadding="3" align="center"', .F.)
 			u_log (_smsg)
-			U_ZZUNU ({'999'}, "Contranotas sem carga", _sMsg)
+			//U_ZZUNU ({'999'}, "Contranotas sem carga", _sMsg)
+			_oAviso := ClsAviso():new ()
+			_oAviso:Tipo       = 'A'  // I=Info;A=Aviso;E=Erro
+			_oAviso:Titulo     = "Contranotas sem carga"
+			_oAviso:Texto      = _sMsg
+			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
+			_oAviso:Origem     = procname ()
+			_oAviso:Formato    = 'H'  // [T]exto ou [H]tml
+			_oAviso:Grava ()
 		else
 			U_Log2 ('info', 'Nenhuma inconsistencia encontrada.')
 		endif

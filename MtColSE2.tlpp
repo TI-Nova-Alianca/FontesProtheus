@@ -18,6 +18,7 @@
 // 08/10/2021 - Robert - Desabilitados alguns logs desnecessarios.
 // 07/03/2022 - Robert - Apos UPDDISTR este P.E. deixou de ser chamado de dentro do programa NFEFLDCHG (GLPI 11721)
 // 09/03/2022 - Robert - Nao tinha tratamento para variavel _aParPgSaf vazia (notas de prod.propria) - GLPI 11721
+// 03/02/2023 - Robert - Gravacao evento e aviso em caso de erro.
 //
 
 // --------------------------------------------------------------------------
@@ -31,10 +32,12 @@ user function MTColSE2 ()
 	local _nPosVcto := 0
 	local _nPosVlr  := 0
 	local _nPosINSS := 0
+	local _sMsgErro := ''
+	local _oAviso   := NIL
 
 	// suspeita de estar sendo executado 2 vezes!
-	U_Log2 ('info', 'Iniciando ' + procname ())
-	u_logpcham ()
+//	U_Log2 ('info', 'Iniciando ' + procname ())
+//	u_logpcham ()
 
 //	U_Log2 ('debug', _aColsE2)
 //	U_Log2 ('debug', _aColsE2[1])
@@ -54,14 +57,14 @@ user function MTColSE2 ()
 	if IsInCallStack ("U_VA_RUSN") .or. IsInCallStack ("U_VA_GNF2") //) .and. IsInCallStack ("NFEFLDCHG")
 		if cTipo $ "N/C" .and. cFormul == "S"
 			if type ('_aParPgSaf') != 'A'
-				u_help ("Nao tenho dados para distribuir as parcelas de pagamento da safra.",, .T.)
+				_sMsgErro += "Nao tenho dados para distribuir as parcelas de pagamento da safra!"
 			else
 				if len (_aParPgSaf) == 0
 					U_Log2 ('info', '[' + procname () + ']Variavel _aParPgSaf encontra-se vazia (provavelmente o TES usado nao gere duplicatas). Nao vou alterar a array de duplicatas recebida.')
 					_aRet := aclone (_aColsE2)  // Se nao alterar nada, retorna o original.
 				else
 					if type ('_aHeadSE2') != 'A'
-						U_help ('Este programa esperava encontrar a variavel _aHeadSE2 criada pelo P.E. MT103SE2',, .t.)
+						_sMsgErro += 'O programa ' + procname () + ' esperava encontrar a variavel _aHeadSE2 criada pelo P.E. MT103SE2'
 					else
 						_nPosParc  = ascan (_aHeadSE2, {|_aVal| upper (alltrim (_aVal [2])) == 'E2_PARCELA'})
 						_nPosVcto  = ascan (_aHeadSE2, {|_aVal| upper (alltrim (_aVal [2])) == 'E2_VENCTO'})
@@ -96,6 +99,23 @@ user function MTColSE2 ()
 	else
 		U_Log2 ('info', '[' + procname () + ']Nao vou mexer nas parcelas neste momento (nao eh nota de safra, ou nao eh o momento correto).')
 		_aRet := aclone (_aColsE2)  // Se nao alterar nada, retorna o original.
+	endif
+
+	if ! empty (_sMsgErro)
+		// Nao consigo abortar a geracao da nota de entrada neste momento, mas
+		// posso, pelo menos, gravar um evento / aviso.
+		if type ('_oCarSaf') == 'O'
+			_oCarSaf:GrvEvt ('SZE008', _sMsgErro)
+		endif
+		_oAviso := ClsAviso():new ()
+		_oAviso:Tipo       = 'E'  // I=Info;A=Aviso;E=Erro
+		_oAviso:Titulo     = 'Problema parcelamento safra'
+		_oAviso:Texto      = _sMsgErro
+		_oAviso:DestinZZU  = {'122'}  // Grupo 122 = TI
+		_oAviso:Origem     = procname ()  // Acrescentar aqui o que for interessante para rastrear posteriormente
+		_oAviso:InfoSessao = .T.  // se .T. inclui informacoes adicionais de sessao na mensagem.
+		_oAviso:Grava ()
+		u_help (_sMsgErro,, .t.)
 	endif
 
 	U_ML_SRArea (_aAreaAnt)

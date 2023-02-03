@@ -12,6 +12,7 @@
 
 // Historico de alteracoes:
 // 07/12/2022 - Robert - Replicada versao da safra 2022 para 2023.
+// 03/02/2023 - Robert - Removidos alguns logs.
 //
 
 // --------------------------------------------------------------------------
@@ -40,14 +41,14 @@ user function ClUva23 (_sVaried, _nGrau, _sConduc, _sBotrytis, _sGlomer, _sAsper
 	endif
 
 	if _lContinua
-		u_log2 ('info', '[' + procname () + ']Variedade............: ' + _sVaried + sb1 -> b1_desc)
-		u_log2 ('info', '[' + procname () + ']Grau.................: ' + cvaltochar (_nGrau))
-		u_log2 ('info', '[' + procname () + ']Sistema de conducao..: ' + _sConduc)
-		u_log2 ('info', '[' + procname () + ']Botrytis.............: ' + cvaltochar (_sBotrytis))
-		u_log2 ('info', '[' + procname () + ']Glomerella...........: ' + cvaltochar (_sGlomer))
-		u_log2 ('info', '[' + procname () + ']Aspergillus..........: ' + cvaltochar (_sAspergil))
-		u_log2 ('info', '[' + procname () + ']Podridoes............: ' + cvaltochar (_sPodrid))
-		u_log2 ('info', '[' + procname () + ']Acidez volatil.......: ' + cvaltochar (_sAcidVol))
+	//	u_log2 ('info', '[' + procname () + ']Variedade............: ' + _sVaried + sb1 -> b1_desc)
+	//	u_log2 ('info', '[' + procname () + ']Grau.................: ' + cvaltochar (_nGrau))
+	//	u_log2 ('info', '[' + procname () + ']Sistema de conducao..: ' + _sConduc)
+	//	u_log2 ('info', '[' + procname () + ']Botrytis.............: ' + cvaltochar (_sBotrytis))
+	//	u_log2 ('info', '[' + procname () + ']Glomerella...........: ' + cvaltochar (_sGlomer))
+	//	u_log2 ('info', '[' + procname () + ']Aspergillus..........: ' + cvaltochar (_sAspergil))
+	//	u_log2 ('info', '[' + procname () + ']Podridoes............: ' + cvaltochar (_sPodrid))
+	//	u_log2 ('info', '[' + procname () + ']Acidez volatil.......: ' + cvaltochar (_sAcidVol))
 //		u_log2 ('info', '[' + procname () + ']Soma das podridoes.....:' + cvaltochar (_sBotrytis + _sGlomer + _sAspergil + _sPodrid))
 		if empty (_sConduc)
 			u_help ("Sistema de conducao nao informado. Impossivel determinar a classificacao da uva.",, .t.)
@@ -154,12 +155,12 @@ user function ClUva23 (_sVaried, _nGrau, _sConduc, _sBotrytis, _sGlomer, _sAsper
 		_aRetClUva = {'', '', '', '', ''}
 	endif
 	
-	U_Log2 ('info', '[' + procname () + ']Resultado da classificacao da uva:')
-	u_log2 ('info', '[' + procname () + ']   Acucar......: ' + _aRetClUva [1])
-	u_log2 ('info', '[' + procname () + ']   Sanidade....: ' + _aRetClUva [2])
-	u_log2 ('info', '[' + procname () + ']   Maturacao...: ' + _aRetClUva [3])
-	u_log2 ('info', '[' + procname () + ']   Mat.estranho: ' + _aRetClUva [4])
-	u_log2 ('info', '[' + procname () + ']   Clas.final..: ' + _aRetClUva [5])
+	// U_Log2 ('info', '[' + procname () + ']Resultado da classificacao da uva:')
+	// u_log2 ('info', '[' + procname () + ']   Acucar......: ' + _aRetClUva [1])
+	// u_log2 ('info', '[' + procname () + ']   Sanidade....: ' + _aRetClUva [2])
+	// u_log2 ('info', '[' + procname () + ']   Maturacao...: ' + _aRetClUva [3])
+	// u_log2 ('info', '[' + procname () + ']   Mat.estranho: ' + _aRetClUva [4])
+	// u_log2 ('info', '[' + procname () + ']   Clas.final..: ' + _aRetClUva [5])
 
 	U_ML_SRArea (_aAreaAnt)
 return _aRetClUva

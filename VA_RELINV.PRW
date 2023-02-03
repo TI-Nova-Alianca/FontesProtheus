@@ -7,6 +7,7 @@
 // 27/01/2023 - Claudia - Incluido parametro de ordenação
 // 30/01/2023 - Claudia - Incluídos F3 nos parametros.
 // 02/02/2023 - Claudia - Incluida ordenação por endereco. GLPI: 13136
+// 03/02/2023 - Claudia - Incluida coluna de linha. GLPI: 13141
 //
 // ---------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -54,7 +55,19 @@ Static Function _Gera()
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
     _oSQL:_sQuery += " SELECT "
-    _oSQL:_sQuery += "     SB7.B7_DOC AS DOCUMENTO "
+    Do Case
+		Case mv_par13 == 1
+            _oSQL:_sQuery += " ROW_NUMBER() OVER(ORDER BY SB7.B7_FILIAL,SB7.B7_LOCAL,SB7.B7_COD) AS LINHA
+		Case mv_par13 == 2
+            _oSQL:_sQuery += " ROW_NUMBER() OVER(ORDER BY SB7.B7_FILIAL,SB7.B7_LOCAL,SB7.B7_TIPO,SB7.B7_LOCALIZ) AS LINHA
+		Case mv_par13 == 3
+            _oSQL:_sQuery += " ROW_NUMBER() OVER(ORDER BY SB7.B7_FILIAL,SB1.B1_DESC) AS LINHA
+		Case mv_par13 == 4
+            _oSQL:_sQuery += " ROW_NUMBER() OVER(ORDER BY SB7.B7_FILIAL,SB7.B7_LOCAL,SB7.B7_TIPO,SB1.B1_DESC) AS LINHA
+        Case mv_par13 == 5
+            _oSQL:_sQuery += " ROW_NUMBER() OVER(ORDER BY SB7.B7_FILIAL,SB7.B7_LOCALIZ,SB7.B7_TIPO) AS LINHA
+	EndCase
+    _oSQL:_sQuery += "    ,SB7.B7_DOC AS DOCUMENTO "
     _oSQL:_sQuery += "    ,SB7.B7_DATA AS DT_INVENTARIO"
     _oSQL:_sQuery += "    ,SB7.B7_FILIAL AS FILIAL "
     _oSQL:_sQuery += "    ,SB7.B7_LOCAL AS ALMOXARIFADO "
@@ -78,7 +91,10 @@ Static Function _Gera()
     _oSQL:_sQuery += " AND SB7.B7_LOCAL  BETWEEN '"+ mv_par07 +"' AND '"+ mv_par08 +"' "
     _oSQL:_sQuery += " AND SB7.B7_TIPO   BETWEEN '"+ mv_par09 +"' AND '"+ mv_par10 +"' "
     _oSQL:_sQuery += " AND SB7.B7_DATA   BETWEEN '"+ dtos(mv_par11) +"' AND '"+ dtos(mv_par12) +"' "
-    	Do Case
+    If !empty(mv_par14)
+		_oSQL:_sQuery += " AND SB7.B7_LOCALIZ BETWEEN '"+ mv_par14 +"' AND '"+ mv_par15 +"' ""
+	EndIf
+    Do Case
 		Case mv_par13 == 1
 			_oSQL:_sQuery += " ORDER BY FILIAL, ALMOXARIFADO, PRODUTO "
 		Case mv_par13 == 2
@@ -89,7 +105,6 @@ Static Function _Gera()
 			_oSQL:_sQuery += " ORDER BY FILIAL, ALMOXARIFADO, TP_MATERIAL, DESCRICAO "
         Case mv_par13 == 5
 			_oSQL:_sQuery += " ORDER BY FILIAL, ENDERECO, TP_MATERIAL "
-			
 	EndCase
 
 	_oSQL:Log ()
@@ -114,7 +129,9 @@ Static Function _ValidPerg ()
     aadd (_aRegsPerg, {11, "Dt. geração de  ", "D", 8, 0,  "",  "   ", {},                         								                    ""})
     aadd (_aRegsPerg, {12, "Dt. geração até ", "D", 8, 0,  "",  "   ", {},                         								                    ""})
     aadd (_aRegsPerg, {13, "Ordenação       ", "N", 1, 0,  "",  "   ", {"Almox+Item","Tipo+Endereço","Descrição","Tipo+Descrição","Endereço+Tipo"}, ""})
-    
+    aadd (_aRegsPerg, {14, "Endereço de     ", "C",15, 0,  "",  "SBE", {},                         								                    ""})
+    aadd (_aRegsPerg, {15, "Endereço até    ", "C",15, 0,  "",  "SBE", {},                         								                    ""})
+
     U_ValPerg (cPerg, _aRegsPerg)
 Return
 

@@ -2,14 +2,14 @@
 // Autor.....: Catia Cardoso
 // Data......: 02/07/2015
 // Nota......: Resumo Faturamento BRUTO
-
+//
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Relatorio
 // #Descricao         #Relatorio de resumo de faturamento, formatado para apresentacao em reunioes de conselho.
 // #PalavasChave      #resumo #faturamento #formatado #formato_grafico
 // #TabelasPrincipais #SD2 #SF3 #SF4
 // #Modulos           #FAT #CTB
-
+//
 // Historico de alteracoes:
 // 12/11/2019 - Robert - Alterados cargos (administrador / contador) para os nomes das pessoas (Alceu/Carlos)
 // 06/10/2020 - Sandra - Alterado nome do contador de Carlos para Liane
@@ -17,8 +17,9 @@
 //                     - Adicionadas tags para catalogo de fontes.
 // 09/11/2020 - Robert - Alterado nome do contador de Liane para Sara
 // 10/11/2020 - Robert - Faltou ajustar o numero do CRC.
+// 03/02/2022 - Claudia - Ajuste de valor de faturamento. GLPI: 12857
 //
- 
+// ------------------------------------------------------------------------------------------------------------------ 
 #include "rwmake.ch"
 #IFNDEF WINDOWS
 	#DEFINE PSAY SAY
@@ -73,8 +74,11 @@ User Function ML_RESFAT()
 
     RptStatus({|| RptDetail()})
 Return
-
+//
+// ----------------------------------------------------------------------------------------
+// Imprimir relatorio
 Static Function RptDetail()
+	Local _sQuery := " "
 
     SetRegua(LastRec())
     
@@ -83,6 +87,7 @@ Static Function RptDetail()
     _sQuery += " WITH C AS (SELECT SD2.D2_EMISSAO  AS DATA"
     _sQuery += "                 , ROUND(SUM(D2_PRCVEN*D2_QUANT),2)                               AS VLR_PROD"
   	_sQuery += " 	             , SUM(SD2.D2_VALBRUT)                                            AS VLR_BRT"
+	_sQuery += "                 ,SUM(SD2.D2_VALBRUT) - SUM(SD2.D2_VALIPI) - SUM(SD2.D2_ICMSRET)  AS VLR_TOTAL
   	_sQuery += "              FROM " + RetSQLName ("SD2") + " AS SD2 "
   	_sQuery += "	          		INNER JOIN " + RetSQLName ("SF2") + " AS SF2 "
   	_sQuery += "						ON (SF2.D_E_L_E_T_ = ''"
@@ -105,8 +110,9 @@ Static Function RptDetail()
  		_sQuery += " SELECT SUBSTRING(DATA,1,4) + SUBSTRING(DATA,5,2) AS DATA"
  	else
  		_sQuery += " SELECT DATA          AS DATA"
-	endif 		 
- 	_sQuery += "      , SUM(VLR_BRT)      AS TOTAL"
+	endif 	
+ 	_sQuery += "      ,SUM(VLR_BRT)       AS TOTAL"
+	_sQuery += "      ,SUM(VLR_TOTAL)     AS TOTAL_NF "
  	_sQuery += "   FROM C"
  	if mv_par05 = 1
  		_sQuery += "  GROUP BY SUBSTRING(DATA,1,4) + SUBSTRING(DATA,5,2)"
@@ -115,12 +121,11 @@ Static Function RptDetail()
 		_sQuery += "  GROUP BY DATA"
 		_sQuery += "  ORDER BY DATA"
 	endif		
- 		
-    //u_showmemo(_sQuery)
-    
     u_log (_sQuery)
+
     _sAliasQ = GetNextAlias ()
     DbUseArea(.t., 'TOPCONN', TcGenQry (,, _sQuery), _sAliasQ, .f., .t.)
+
     // gera excel
     if mv_par06 = 2
     	(_sAliasQ) -> (DBGoTop ())
@@ -136,14 +141,14 @@ Static Function RptDetail()
 	_oPrn:SetPortrait()     // ou SetLanscape()
 
 	::_oPrn      := _oPrn
-	::_nPagAtual := 1  // Contador de paginas
+	::_nPagAtual := 1  		// Contador de paginas
 	::_nLinAtual := 0
-	::_nAltLin   := 50  // Altura de cada linha em pontos (para trabalhar de forma semelhante a impressao caracter)
-	::_nMargSup  := 40  // Margem superior da pagina
-	::_nMargInf  := 50  // Margem inferior da pagina
-	::_nMargEsq  := 40   // Margem esquerda da pagina
-	::_nAltPag   := 3100  //3400  // Altura maxima da pagina
-	::_nLargPag  := 2350  // Largura maxima da pagina
+	::_nAltLin   := 50  	// Altura de cada linha em pontos (para trabalhar de forma semelhante a impressao caracter)
+	::_nMargSup  := 40  	// Margem superior da pagina
+	::_nMargInf  := 50  	// Margem inferior da pagina
+	::_nMargEsq  := 40   	// Margem esquerda da pagina
+	::_nAltPag   := 3100  	// Altura maxima da pagina
+	::_nLargPag  := 2350  	// Largura maxima da pagina
 	::_oTimes8  := TFont():New("Times New Roman",,8,,.T.,,,,,.F.)
 	::_oTimes16 := TFont():New("Times New Roman",,16,,.T.,,,,,.F.)
 
@@ -163,15 +168,15 @@ Static Function RptDetail()
 			_Cabec (.T., 0, .T.)
 			
 			::_nLinAtual += ::_nAltLin * 3
-			_sLinhaImp := "              RELAÇÃO FATURAMENTO BRUTO"
+			_sLinhaImp := "              RELAÇÃO DE FATURAMENTO "
 			::_oPrn:Say (::_nMargsup + ::_nLinAtual, ::_nMargEsq + 400, _sLinhaImp, _oCour12N, 100)
 			::_nLinAtual += ::_nAltLin * 1
 			::_nLinAtual += ::_nAltLin * 3					
 			
-			::_oPrn:Box(::_nMargsup + ::_nLinAtual, ;  // Linha sup
-	               ::_nMargEsq + 400, ;  // Coluna esq
-	               ::_nMargsup + ::_nLinAtual + ::_nAltLin * 2, ; // Linha inf
-	               ::_nMargEsq + 1800)  // Coluna dir
+			::_oPrn:Box(::_nMargsup + ::_nLinAtual				, ; // Linha sup
+	               ::_nMargEsq + 400							, ; // Coluna esq
+	               ::_nMargsup + ::_nLinAtual + ::_nAltLin * 2	, ; // Linha inf
+	               ::_nMargEsq + 1800							  ) // Coluna dir
 			
 			if mv_par05 = 1
 				_sLinhaImp := "MES/ANO                               VALOR"
@@ -188,59 +193,68 @@ Static Function RptDetail()
 			_sLinhaImp := SUBSTRING((_sAliasQ) -> DATA,7,2) + '/' + SUBSTRING((_sAliasQ) -> DATA,5,2) + '/' + SUBSTRING((_sAliasQ) -> DATA,1,4)  + "                 "
 		endif
 			
-		::_oPrn:Box(::_nMargsup + ::_nLinAtual, ;  // Linha sup
-	                ::_nMargEsq + 400, ;  // Coluna esq
-	                ::_nMargsup + ::_nLinAtual + ::_nAltLin * 2, ; // Linha inf
-	                ::_nMargEsq + 1800)  // Coluna dir
+		::_oPrn:Box(::_nMargsup + ::_nLinAtual					, ; // Linha sup
+	                ::_nMargEsq + 400							, ; // Coluna esq
+	                ::_nMargsup + ::_nLinAtual + ::_nAltLin * 2	, ; // Linha inf
+	                ::_nMargEsq + 1800							  ) // Coluna dir
 					
-		_sLinhaImp += transform ( (_sAliasQ) -> TOTAL , "@E 9,999,999,999.99") + " "
+		u_log((_sAliasQ) -> DATA)
+		If (_sAliasQ) -> DATA <= '20221231'
+			_sLinhaImp += transform ( (_sAliasQ) -> TOTAL    , "@E 9,999,999,999.99") + " "
+		else
+			_sLinhaImp += transform ( (_sAliasQ) -> TOTAL_NF , "@E 9,999,999,999.99") + " "
+		EndIf
 		::_oPrn:Say (::_nMargsup + ::_nLinAtual, ::_nMargEsq + 650, _sLinhaImp, _oCour10N, 100)
 		::_nLinAtual += ::_nAltLin * 1					
 		
 		// acumula total
-		_aTotal += (_sAliasQ) -> TOTAL 							
+		If (_sAliasQ) -> DATA <= '20221231'
+			_aTotal += (_sAliasQ) -> TOTAL 		
+		else
+			_aTotal += (_sAliasQ) -> TOTAL_NF 	
+		EndIf					
 	 	(_sAliasQ) -> (dbskip())
      enddo
      
-     // imprime total
-     _sLinhaImp := "     TOTAL"  + "                 "
-	 _sLinhaImp += transform ( _aTotal , "@E 9,999,999,999.99") + " "
-	 ::_oPrn:Say (::_nMargsup + ::_nLinAtual, ::_nMargEsq + 655, _sLinhaImp, _oCour10N, 100)
-	 ::_nLinAtual += ::_nAltLin * 1					
-		
-	 // imprime local e data
-	 ::_nLinAtual += ::_nAltLin * 5
-	 _sLinhaImp := alltrim (sm0 -> m0_CidCob) + ", " + SUBSTR(dtos(dDatabase),7,2) + " de " + MesExtenso( val(SUBStr(dtos(dDatabase),5,2) )) + " de " + SUBSTR(dtos(dDatabase),1,4)
-	 ::_oPrn:Say (::_nMargsup + ::_nLinAtual , ::_nMargEsq + 950, _sLinhaImp, _oCour10N, 100)
-	 ::_nLinAtual += ::_nAltLin * 1
-	 		
-	 // imprime assinaturas
-     ::_nLinAtual += ::_nAltLin * 4
-     _sLinhaImp := "_______________________________" + "    " + "_______________________________ "
-	 ::_oPrn:Say (::_nMargsup + ::_nLinAtual , ::_nMargEsq + 400, _sLinhaImp, _oCour10N, 100)
-	 ::_nLinAtual += ::_nAltLin * 1					
-	
-//     _sLinhaImp := "        ADMINISTRAÇÃO          " + "     " + "         CONTADOR"
-//     _sLinhaImp := "      ALCEU DALLE MOLLE                      LIANE RITA LENZI"
-       _sLinhaImp := "      ALCEU DALLE MOLLE                        SARA CETOLIN"
-	 ::_oPrn:Say (::_nMargsup + ::_nLinAtual, ::_nMargEsq + 400, _sLinhaImp, _oCour10N, 100)
-	 ::_nLinAtual += ::_nAltLin * 1					
-//     _sLinhaImp := "     CPF: 431.760.700-04                CRC: CRC-RS 0-96.279 - O"
-       _sLinhaImp := "     CPF: 431.760.700-04                     CRC: 76.578 / RS"
-	 ::_oPrn:Say (::_nMargsup + ::_nLinAtual, ::_nMargEsq + 400, _sLinhaImp, _oCour10N, 100)
-	 ::_nLinAtual += ::_nAltLin * 1					
+	// imprime total
+	_sLinhaImp := "     TOTAL"  + "                 "
+	_sLinhaImp += transform ( _aTotal , "@E 9,999,999,999.99") + " "
+	::_oPrn:Say (::_nMargsup + ::_nLinAtual, ::_nMargEsq + 655, _sLinhaImp, _oCour10N, 100)
+	::_nLinAtual += ::_nAltLin * 1					
+
+	// imprime local e data
+	::_nLinAtual += ::_nAltLin * 5
+	_sLinhaImp := alltrim (sm0 -> m0_CidCob) + ", " + SUBSTR(dtos(dDatabase),7,2) + " de " + MesExtenso( val(SUBStr(dtos(dDatabase),5,2) )) + " de " + SUBSTR(dtos(dDatabase),1,4)
+	::_oPrn:Say (::_nMargsup + ::_nLinAtual , ::_nMargEsq + 950, _sLinhaImp, _oCour10N, 100)
+	::_nLinAtual += ::_nAltLin * 1
+
+	// imprime assinaturas
+	::_nLinAtual += ::_nAltLin * 4
+	_sLinhaImp := "_______________________________" + "    " + "_______________________________ "
+	::_oPrn:Say (::_nMargsup + ::_nLinAtual , ::_nMargEsq + 400, _sLinhaImp, _oCour10N, 100)
+	::_nLinAtual += ::_nAltLin * 1					
+
+	_sLinhaImp := "      ALCEU DALLE MOLLE                        SARA CETOLIN"
+	::_oPrn:Say (::_nMargsup + ::_nLinAtual, ::_nMargEsq + 400, _sLinhaImp, _oCour10N, 100)
+	::_nLinAtual += ::_nAltLin * 1					
+
+	_sLinhaImp := "     CPF: 431.760.700-04                     CRC: 76.578 / RS"
+	::_oPrn:Say (::_nMargsup + ::_nLinAtual, ::_nMargEsq + 400, _sLinhaImp, _oCour10N, 100)
+	::_nLinAtual += ::_nAltLin * 1					
 			
-     // Visualiza antes de imprimir
-	 _oPrn:Preview()
-	 _oPrn:End()
-
+	// Visualiza antes de imprimir
+	_oPrn:Preview()
+	_oPrn:End()
 return
-
-// imprime cabeçalho
+//
+// ----------------------------------------------------------------------------------------
+// Imprime cabeçalho
 static function _Cabec(_lObrig, _nMinimo, _lZeraPag)
+
 	_sLinhaImp := ""
 	_nMinimo   := iif (_nMinimo == NIL, 0, _nMinimo)
 	_lZeraPag  := iif (_lZeraPag == NIL, .F., _lZeraPag)
+
 	if ::_nLinAtual >= ::_nAltPag - (::_nMargInf + _nMinimo) .or. _lObrig
 		if ::_nPagAtual > 1
 			::_oPrn:EndPage ()    // Encerra pagina
@@ -252,26 +266,26 @@ static function _Cabec(_lObrig, _nMinimo, _lZeraPag)
 		endif
 
 		// Moldura em torno da pagina
-		::_oPrn:Box(10, ;  // Linha sup
-	               10, ;  // Coluna esq
-	               ::_nAltPag - 10, ; // Linha inf
-	               ::_nLargPag - 10)  // Coluna dir
+		::_oPrn:Box(10				, ; // Linha sup
+	               10				, ; // Coluna esq
+	               ::_nAltPag - 10	, ; // Linha inf
+	               ::_nLargPag - 10   ) // Coluna dir
 
 		// Moldura em torno do cabecalho
-		::_oPrn:Box(30, ;  // Linha sup
-	               30, ;  // Coluna esq
-	               200, ; // Linha inf
-	               ::_nLargPag - 40)  // Coluna dir
+		::_oPrn:Box(30				, ; // Linha sup
+	               30				, ; // Coluna esq
+	               200				, ; // Linha inf
+	               ::_nLargPag - 40   ) // Coluna dir
 
 		// Monta cabecalho padrao
 		::_nLinAtual = ::_nMargSup
-		//_sLinhaImp := "Pag. " + cvaltochar (::_nPagAtual)
 		::_oPrn:Say (::_nLinAtual, ::_nLargPag - 200, _sLinhaImp, ::_oTimes8, 100)
-		::_oPrn:SayBitmap(::_nLinAtual, ;  // Linha
-		                  ::_nMargEsq, ;  // Coluna
-		                  "Logo9.jpg", ;  // Arquivo
-		                  400, ;  // Largura
-		                  107)  // Altura
+		::_oPrn:SayBitmap(::_nLinAtual	, ;  // Linha
+		                  ::_nMargEsq	, ;  // Coluna
+		                  "Logo9.jpg"	, ;  // Arquivo
+		                  400			, ;  // Largura
+		                  107			  )  // Altura
+
 		_sLinhaImp := alltrim (sm0 -> m0_nomecom)
 		::_oPrn:Say (::_nLinAtual, 500, _sLinhaImp, ::_oTimes16, 100)
 		::_nLinAtual += 60
@@ -293,18 +307,18 @@ static function _Cabec(_lObrig, _nMinimo, _lZeraPag)
 		::_nPagAtual ++
 	endif
 return
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
 	local _aRegsPerg := {}
 	//                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                      Help
-	aadd (_aRegsPerg, {01, "Emissao de                   ?", "D", 8,  0,  "",   "   ", {},                         ""})
-	aadd (_aRegsPerg, {02, "Emissao ate                  ?", "D", 8,  0,  "",   "   ", {},                         ""})
-	aadd (_aRegsPerg, {03, "Filial  de                   ?", "C", 2,  0,  "",   "SM0", {},                         ""})
-	aadd (_aRegsPerg, {04, "Filial até                   ?", "C", 2,  0,  "",   "SM0", {},                         ""})
-    aadd (_aRegsPerg, {05, "Gerar                        ?", "N", 1,  0,  "",   "   ", {"Mensal","Diario"},   ""})
-    aadd (_aRegsPerg, {06, "Listar                       ?", "N", 1,  0,  "",   "   ", {"Relatório","Planilia"},   ""})
+	aadd (_aRegsPerg, {01, "Emissao de                   ?", "D", 8,  0,  "",   "   ", {},                         	""})
+	aadd (_aRegsPerg, {02, "Emissao ate                  ?", "D", 8,  0,  "",   "   ", {},                         	""})
+	aadd (_aRegsPerg, {03, "Filial  de                   ?", "C", 2,  0,  "",   "SM0", {},                         	""})
+	aadd (_aRegsPerg, {04, "Filial até                   ?", "C", 2,  0,  "",   "SM0", {},                         	""})
+    aadd (_aRegsPerg, {05, "Gerar                        ?", "N", 1,  0,  "",   "   ", {"Mensal","Diario"},   		""})
+    aadd (_aRegsPerg, {06, "Listar                       ?", "N", 1,  0,  "",   "   ", {"Relatório","Planilia"},   	""})
     
    	U_ValPerg (cPerg, _aRegsPerg)
 Return

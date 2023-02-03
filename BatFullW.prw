@@ -44,6 +44,8 @@
 // 13/12/2022 - Robert - Habilitada liberacao de transf.estq gerada pelo ZAG.
 // 19/01/2023 - Robert - ClsTrEstq:Libera() nao tenta mais executar a transferencia no final.
 // 27/01/2023 - Robert - Reescrito tratamento para entradas, que passa a ser 100% com etiquetas.
+// 01/02/2023 - Robert - Chamada metodo ClsTrEstq:Libera() passava usuario errado no processamento de saidas.
+// 03/02/2023 - Robert - Nas saidas do Full, se o item  nao controla notes no Protheus, nem consulta tb_wms_lotes.
 //
 
 #Include "Protheus.ch"
@@ -511,59 +513,69 @@ static function _Saidas (_sSaidID)
 				loop
 			endif
 
-			// Verifica quais os lotes separado pelo Full. Se apenas um, atualiza na solicitacao original de transferencia;
-			// Se mais de um, replica a solicitacao (uma para cada lote) visando manter os lotes no Protheus iguais aos do Full.
-			_oSQL:_sQuery := ""
-			_oSQL:_sQuery += " select substring (lote, 1, 10), qtde"
-			_oSQL:_sQuery +=   " from tb_wms_lotes"
-			_oSQL:_sQuery +=  " where empresa = 1"
-			_oSQL:_sQuery +=    " and documento_id = '" + (_sAliasQ) -> saida_id + "'"
-			_oSQL:_sQuery +=  " order by lote"
-			_oSQL:Log ()
-			_aLotes = _oSQL:Qry2Array (.F., .F.)
-			u_log2 ('info', 'Lotes separados pelo Full:')
-			u_log2 ('info', _aLotes)
+			// Se o produto controla lotes no Protheus, quero manter
+			// consistencia com os lotes separados pelo Full.
+			//
+			// Futuramente pretendo ler sempre a tabela tb_wms_lotes,
+			// pois quando estah vazia indica que a forçaram o
+			// encerramento da separacao no Full.
+			if _oTrOrig:CtrLotOrig
+				// Verifica quais os lotes separado pelo Full. Se apenas um, atualiza na solicitacao original de transferencia;
+				// Se mais de um, replica a solicitacao (uma para cada lote) visando manter os lotes no Protheus iguais aos do Full.
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += " select substring (lote, 1, 10), qtde"
+				_oSQL:_sQuery +=   " from tb_wms_lotes"
+				_oSQL:_sQuery +=  " where empresa = 1"
+				_oSQL:_sQuery +=    " and documento_id = '" + (_sAliasQ) -> saida_id + "'"
+				_oSQL:_sQuery +=  " order by lote"
+				_oSQL:Log ()
+				_aLotes = _oSQL:Qry2Array (.F., .F.)
+				u_log2 ('info', 'Lotes separados pelo Full:')
+				u_log2 ('info', _aLotes)
 
-			// Faz algumas validacoes para saber se vai conseguir transferir todos os lotes.
-			_lLotesOK = .T.
-			_nSomaLote = 0
-			for _nLote = 1 to len (_aLotes)
-				_nSomaLote += _aLotes [_nLote, 2]
-			next
-			if _nSomaLote != (_sAliasQ) -> qtde_exec
-				_lLotesOK = .F.
-				_sMsg = "Inconsistencia no FulLWMS: Soma qt.separadas por lotes difere da qtde_exec"
-				_AtuSaid ((_sAliasQ) -> saida_id, '4')  // Atualiza a tabela do Fullsoft como 'diferenca na quantidade'
-				u_help (_sMsg,, .t.)
-				_oBatch:Mensagens += _sMsg + '; '
-				(_sAliasQ) -> (dbskip ())
-				loop
-			endif
-
-			// Se o produto controla lotes, confere saldos (no Protheus) dos lotes separados.
-			if _lLotesOK .and. _oTrOrig:CtrLotOrig
-				sb8 -> (dbsetorder (3)) // B8_FILIAL, B8_PRODUTO, B8_LOCAL, B8_LOTECTL, B8_NUMLOTE, B8_DTVALID, R_E_C_N_O_, D_E_L_E_T_
+				// Faz algumas validacoes para saber se vai conseguir transferir todos os lotes.
+				_lLotesOK = .T.
+				_nSomaLote = 0
 				for _nLote = 1 to len (_aLotes)
-					if ! sb8 -> (dbseek (_oTrOrig:FilOrig + _oTrOrig:ProdOrig + _oTrOrig:AlmOrig + _aLotes [_nLote, 1], .F.))
-						_sMsg = "Lote '" + _aLotes [_nLote, 1] + "' nao localizado para o produto '" + _oTrOrig:ProdOrig + "'"
-						_AtuSaid ((_sAliasQ) -> saida_id, '4')  // Atualiza a tabela do Fullsoft como 'diferenca na quantidade'
-						u_help (_sMsg,, .t.)
-						_oBatch:Mensagens += _sMsg + '; '
-						_lLotesOK = .F.
-						exit
-					endif
-					u_log2 ('debug', 'comparando b8_saldo = ' + cvaltochar (sb8 -> b8_saldo) + ' com _aLotes [_nLote, 2] = ' + cvaltochar (_aLotes [_nLote, 2]))
-					if sb8 -> b8_saldo < _aLotes [_nLote, 2]
-						_sMsg = "Saldo insuficiente lote " + _aLotes [_nLote, 1] + " do produto " + _oTrOrig:ProdOrig
-						_AtuSaid ((_sAliasQ) -> saida_id, '1')  // Atualiza a tabela do Fullsoft como 'falta estoque para fazer a transferencia'
-						u_help (_sMsg,, .t.)
-						_oBatch:Mensagens += _sMsg + '; '
-						_lLotesOK = .F.
-						exit
-					endif
+					_nSomaLote += _aLotes [_nLote, 2]
 				next
-			endif
+				if _nSomaLote != (_sAliasQ) -> qtde_exec
+					_lLotesOK = .F.
+					_sMsg = "Inconsistencia no FulLWMS: Soma qt.separadas por lotes difere da qtde_exec"
+					_AtuSaid ((_sAliasQ) -> saida_id, '4')  // Atualiza a tabela do Fullsoft como 'diferenca na quantidade'
+					u_help (_sMsg,, .t.)
+					_oBatch:Mensagens += _sMsg + '; '
+					(_sAliasQ) -> (dbskip ())
+					loop
+				endif
 
+				// Se o produto controla lotes, confere saldos (no Protheus) dos lotes separados.
+				if _lLotesOK .and. _oTrOrig:CtrLotOrig
+					sb8 -> (dbsetorder (3)) // B8_FILIAL, B8_PRODUTO, B8_LOCAL, B8_LOTECTL, B8_NUMLOTE, B8_DTVALID, R_E_C_N_O_, D_E_L_E_T_
+					for _nLote = 1 to len (_aLotes)
+						if ! sb8 -> (dbseek (_oTrOrig:FilOrig + _oTrOrig:ProdOrig + _oTrOrig:AlmOrig + _aLotes [_nLote, 1], .F.))
+							_sMsg = "Lote '" + _aLotes [_nLote, 1] + "' nao localizado para o produto '" + _oTrOrig:ProdOrig + "'"
+							_AtuSaid ((_sAliasQ) -> saida_id, '4')  // Atualiza a tabela do Fullsoft como 'diferenca na quantidade'
+							u_help (_sMsg,, .t.)
+							_oBatch:Mensagens += _sMsg + '; '
+							_lLotesOK = .F.
+							exit
+						endif
+						u_log2 ('debug', 'comparando b8_saldo = ' + cvaltochar (sb8 -> b8_saldo) + ' com _aLotes [_nLote, 2] = ' + cvaltochar (_aLotes [_nLote, 2]))
+						if sb8 -> b8_saldo < _aLotes [_nLote, 2]
+							_sMsg = "Saldo insuficiente lote " + _aLotes [_nLote, 1] + " do produto " + _oTrOrig:ProdOrig
+							_AtuSaid ((_sAliasQ) -> saida_id, '1')  // Atualiza a tabela do Fullsoft como 'falta estoque para fazer a transferencia'
+							u_help (_sMsg,, .t.)
+							_oBatch:Mensagens += _sMsg + '; '
+							_lLotesOK = .F.
+							exit
+						endif
+					next
+				endif
+			else
+				// Cria um lote de faz-de-conta para processar a transferencia.
+				_aLotes = {{'', _oTrOrig:QtdSOlic}}
+			endif
 			if ! _lLotesOK
 				(_sAliasQ) -> (dbskip ())
 				loop
@@ -599,7 +611,7 @@ static function _Saidas (_sSaidID)
 
 					// Chama a rotina de liberacao do docto. Se estiver em condicoes, a transferencia jah serah executada.
 					u_log2 ('info', 'Chamando liberacao do ZAG')
-					_oTrEstq:Libera (.F., 'FULLW')
+					_oTrEstq:Libera (.F., 'FULLWMS')
 					_oTrEstq:Executa ()  // Tenta executar, pois as liberacoes podem ter tido exito.
 					if _oTrEstq:Executado == 'S'
 						_AtuSaid ((_sAliasQ) -> saida_id, '3')  // Atualiza a tabela do Fullsoft como 'executado no ERP'

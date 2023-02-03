@@ -4,8 +4,9 @@
 // Descricao: Relatório de inventário
 //
 // Historico de alteracoes:
+// 03/02/2023 - Claudia - Ajustada importação devido a culna "LINHA" GLPI: 13141
 //
-// ---------------------------------------------------------------------------
+// -------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
 
@@ -72,17 +73,17 @@ Static Function _Importa()
 		dbSetOrder(5) // B7_FILIAL+B7_DOC+B7_COD+B7_LOCAL+B7_LOCALIZ+B7_LOTECTL                                                                                                                                                                                                                                       
 		dbGoTop()
 		
-		_sFilial := PADL(alltrim(aDados[_x,3]), 2, '0')
-		_sProd   := PADR(alltrim(aDados[_x,5]),15, ' ')
-		_sLocal  := PADL(alltrim(aDados[_x,4]), 2, '0')
-		_sDoc    := PADR(alltrim(aDados[_x,1]), 9, ' ')
-		_sEnder  := PADR(alltrim(aDados[_x,8]),15, ' ')
-		_sLote   := PADR(alltrim(aDados[_x,9]),10, ' ')
+		_sFilial := PADL(alltrim(aDados[_x,4]), 2, '0')
+		_sProd   := PADR(alltrim(aDados[_x,6]),15, ' ')
+		_sLocal  := PADL(alltrim(aDados[_x,5]), 2, '0')
+		_sDoc    := PADR(alltrim(aDados[_x,2]), 9, ' ')
+		_sEnder  := PADR(alltrim(aDados[_x,9]),15, ' ')
+		_sLote   := PADR(alltrim(aDados[_x,10]),10, ' ')
 		
 		If dbSeek(_sFilial + _sDoc + _sProd + _sLocal + _sEnder + _sLote)
 			Reclock("SB7",.F.)
-				SB7->B7_VAQTD := Val(StrTran(aDados[_x,12],",","."))   
-				SB7->B7_VAOBS := aDados[_x,13]
+				SB7->B7_VAQTD := Val(StrTran(aDados[_x,13],",","."))   
+				SB7->B7_VAOBS := aDados[_x,14]
 			SB7->(MsUnlock())
 		Else
 			u_help(" O produto: " + alltrim(_sProd) + " no local " + _sLocal + " no documento " + alltrim(_sDoc) + " não encontrado!" )
