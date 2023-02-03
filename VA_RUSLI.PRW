@@ -11,6 +11,7 @@
 // 11/03/2022 - Robert - Melhorados logs.
 //                     - Criada opcao de simular, para conferencias posteriores.
 //                     - Tratamento para dados lidos no NaWeb, que vem em formato caracter (GLPI 11745).
+// 03/02/2023 - Robert - Removidos alguns logs.
 //
 
 #include "VA_Inclu.prw"
@@ -131,18 +132,18 @@ user function va_rusLI (_nPesagem, _lSimular)
 //		u_log2 ('info', _aRusInsp)
 	endif
 
-	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Inspecoes:')
-	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Situacao da carga no APP........: ' + _aRusInsp [.InspecoesSafraSituacao])
-	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Varied.nao prevista no cad.vitic: ' + _aRusInsp [.InspecoesSafraVarNaoPrevCadVit])
-	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Entrega cad.campo...............: ' + _aRusInsp [.InspecoesSafraEntrCadCpo])
-	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Mistura variedades no tombador..: ' + _aRusInsp [.InspecoesSafraMisturaNoTombador])
-	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Chave agenda original...........: ' + cvaltochar (_aRusInsp [.InspecoesSafraAgendaOri]))
-	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Botrytis........................: ' + _sInspBotr)
-	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Glomerella......................: ' + _sInspGlom)
-	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Aspergyllus.....................: ' + _sInspAspe)
-	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Podridoes.......................: ' + _sInspPodr)
-	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Acidez volatil..................: ' + _sInspAcid)
-	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Mat.estranho....................: ' + _sInspMEst)
+//	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Inspecoes:')
+//	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Situacao da carga no APP........: ' + _aRusInsp [.InspecoesSafraSituacao])
+//	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Varied.nao prevista no cad.vitic: ' + _aRusInsp [.InspecoesSafraVarNaoPrevCadVit])
+//	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Entrega cad.campo...............: ' + _aRusInsp [.InspecoesSafraEntrCadCpo])
+//	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Mistura variedades no tombador..: ' + _aRusInsp [.InspecoesSafraMisturaNoTombador])
+//	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Chave agenda original...........: ' + cvaltochar (_aRusInsp [.InspecoesSafraAgendaOri]))
+//	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Botrytis........................: ' + _sInspBotr)
+//	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Glomerella......................: ' + _sInspGlom)
+//	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Aspergyllus.....................: ' + _sInspAspe)
+//	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Podridoes.......................: ' + _sInspPodr)
+//	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Acidez volatil..................: ' + _sInspAcid)
+//	u_log2 ('info', '[' + procname () + '][Carga:' + sze -> ze_carga + ']Mat.estranho....................: ' + _sInspMEst)
 
 	// Tratamento para dados retornados pelo sistema de inspecao
 	if _lContinua

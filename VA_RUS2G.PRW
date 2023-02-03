@@ -12,6 +12,7 @@
 // 16/02/2022 - Robert - Tratamentos para cancelamento de cargas chamado via web service (GLPI 11634)
 // 11/03/2022 - Robert - Melhorados logs.
 // 31/01/2023 - Robert - Tratamentos para gravacao de cargas compartilhadas.
+// 03/02/2023 - Robert - Gravacao de eventos cfe. campos ZE_AlManPB,ZE_AlManPT, ZF_AlManGR
 //
 
 #include "totvs.ch"
@@ -185,6 +186,19 @@ user Function VA_RUS2G (_nOpc)
 			_oCarSaf:ImprimeTk (2)
 		endif
 
+		// Verifica necessidade de gravar algum evento dedo-duro.
+		if ! empty (m->ze_AlManPB)
+			_oCarSaf:GrvEvt ('SZE006', alltrim (m->ze_AlManPB))
+		endif
+		if ! empty (m->ze_AlManPT)
+			_oCarSaf:GrvEvt ('SZE006', alltrim (m->ze_AlManPT))
+		endif
+		for _nLinha = 1 to len (aCols)
+			if ! GDDeleted (_nLinha) .and. ! empty (GDFieldGet ("ZF_ALMANGR", _nLinha))
+				_oCarSaf:GrvEvt ('SZE007', 'Variedade ' + alltrim (GDFieldGet ("ZF_PRODUTO", _nLinha)) + ' ' + alltrim (GDFieldGet ("ZF_ALMANGR", _nLinha)))
+			endif
+		next
+
 		// Verifica se jah pode gerar contranota.
 		if altera .or. (inclui .and. m->ze_aglutin == "D")   // 2a. pesagem ou 1a. pesagem aglutinada
 			if m->ze_coop $ "000021/001369" //.or. m->ze_coop == '000026' .and. m->ze_safra == '2019'
@@ -245,32 +259,6 @@ user Function VA_RUS2G (_nOpc)
 			sze -> ze_status = 'C'
 			sze -> ze_moVcanc = _sMotCanc
 			msunlock ()
-
-			// Desvincula esta carga de outras que sejam compartilhadas com ela.
-			u_help ("Falta ajustar exclusao de carga compartilhada")
-//			
-//			_oSQL := ClsSQL ():New ()
-//			_oSQL:_sQuery := "UPDATE " + RetSQLName ("SZE")
-//			_oSQL:_sQuery += " SET ZE_CARGAC1 = ''"
-//			_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-//			_oSQL:_sQuery +=   " AND ZE_FILIAL  = '" + _oCarSaf:Filial + "'"
-//			_oSQL:_sQuery +=   " AND ZE_SAFRA   = '" + _oCarSaf:Safra  + "'"
-//			_oSQL:_sQuery +=   " AND ZE_CARGAC1 = '" + _oCarSaf:Carga  + "'"
-//			_oSQL:Log ('[' + procname () + ']')
-//			if ! _oSQL:Exec ()
-//				u_help ("Erro desvinculando cargas compartilhadas.", _oSQL:_sQuery, .t.)
-//			endif
-//			_oSQL := ClsSQL ():New ()
-//			_oSQL:_sQuery := "UPDATE " + RetSQLName ("SZE")
-//			_oSQL:_sQuery += " SET ZE_CARGAC2 = ''"
-//			_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-//			_oSQL:_sQuery +=   " AND ZE_FILIAL  = '" + _oCarSaf:Filial + "'"
-//			_oSQL:_sQuery +=   " AND ZE_SAFRA   = '" + _oCarSaf:Safra  + "'"
-//			_oSQL:_sQuery +=   " AND ZE_CARGAC2 = '" + _oCarSaf:Carga  + "'"
-//			_oSQL:Log ('[' + procname () + ']')
-//			if ! _oSQL:Exec ()
-//				u_help ("Erro desvinculando cargas compartilhadas.", _oSQL:_sQuery, .t.)
-//			endif
 
 			_oCarSaf:GeraAtrib ("SZE")  // Atualiza atributos com o que foi gravado nos arquivos.
 

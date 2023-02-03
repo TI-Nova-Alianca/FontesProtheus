@@ -173,6 +173,7 @@ User Function va_rus ()
 		aadd (_aMenuOut, {"Exportar medicoes do grau",       "U_VA_XLS54 (sze -> ze_filial, sze -> ze_safra, sze -> ze_carga)", 0,4})
 		aadd (_aMenuOut, {"Enderecar uva no estoque",        "U_VA_RusOO ('EnderecarEstoque')", 0,4})
 		aadd (_aMenuOut, {"Estornar enderecamento uva",      "U_VA_RusOO ('EstornarEnderecamento')", 0,4})
+		aadd (_aMenuOut, {"Registrar evento/comentario",     "U_VA_RusOO ('EventoManual')", 0,4})
 		aadd (_aMenuOut, {"Consultar eventos",               "U_VA_SZNC  ('CARGASAFRA', sze -> ze_safra + sze -> ze_carga)", 0,4})
 		aadd (_aMenuOut, {"Consultar cargas compartilhadas", "U_VA_RusOO ('ConsultarCompartilhamento')", 0,4})
 		if upper (alltrim (cUserName)) == 'ROBERT.KOCH'
@@ -205,7 +206,9 @@ return
 
 
 // --------------------------------------------------------------------------
+// Tratamento para o que o usuario selecionou no menu de outras opcoes.
 user function VA_RUSOO (_sQueFazer)
+	local _sEvtManu := ''
 
 	// Deixa atributos alimentados no objeto, por que a maioria das rotinas vai precisar.
 	_oCarSaf:GeraAtrib ("SZE")
@@ -258,6 +261,12 @@ user function VA_RUSOO (_sQueFazer)
 
 	case _sQueFazer == upper ('ConsultarCompartilhamento')
 		U_ShowMemo (_oCarSaf:ConsCompar ())
+
+	case _sQueFazer == upper ('EventoManual')
+		_sEvtManu = U_ShowMemo (_sEvtManu, 'Descricao do evento ou comentario')
+		if ! empty (_sEvtManu)
+			_oCarSaf:GrvEvt ('SZE001', _sEvtManu)
+		endif
 
 	otherwise
 		u_help ("Acao desconhecida: " + cvaltochar (_sQueFazer),, .t.)
@@ -411,14 +420,14 @@ user function VA_RUSRC ()
 				exit
 			endif
 			processa ({|| _sRastUva = U_RastLT (sze -> ze_filial, _aLotes [_nLote, 1], _aLotes [_nLote, 3], 0, NIL, 1, 'A')})
-			_sArq := 'c:\temp\rast_carga_' + _aRast [_nRast, 4] + '.mm'
+			_sArq := 'c:\temp\rast_carga_' + _aLotes [_nLote, 3] + '.mm'
 			delete file (_sArq)
 			if file (_sArq)
 				_nHdl = fopen(_sArq, 1)
 			else
 				_nHdl = fcreate(_sArq, 0)
 			endif
-			fwrite (_nHdl, _sMapa)
+			fwrite (_nHdl, _sRastUva)
 			fclose (_nHdl)
 			ShellExecute ("Open", _sArq, "", "", 1)
 		enddo

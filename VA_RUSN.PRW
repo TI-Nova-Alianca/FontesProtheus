@@ -50,6 +50,8 @@
 // 11/01/2022 - Robert - Ajustes safra 2022
 // 17/01/2022 - Robert - Ajustes precos safra 2022
 // 22/01/2022 - Robert - Permitia seguir sem testar se a funcao VA_RusMV tinha dado erro.
+// 03/02/2023 - Robert - Leitura var.menor valor passa a usar ClsCarSaf:VarMenorLv
+//                     - Tratamentos diversos para cargas compartilhadas
 //
 
 // ------------------------------------------------------------------------------------
@@ -75,19 +77,13 @@ User Function va_rusN (_lSimulNF)
 	local _aLinha    := {}
 	local _sVitic    := ""
 	local _sSivibe   := ""
-//	local _sNaoConf  := ""
-//	local _nNaoConf  := 0
 	local _sAlmox    := ""
 	local _oSQL      := NIL
-//	local _sDescNC   := ""
 	local _sAglutin  := ""
 	local _sClasFina := ''
 	local _nVlUni    := 0
 	local _sLoteCtl  := ""
-	local _sMenorVlr := ''
-//	local _aProdut   := {}
-//	local _nProdut   := 0
-//	local _aAux      := {}
+	local _aMenorVlr := {}
 	local _aPrevia   := {}
 	local _aCols     := {}
 	local _nVlFrete  := 0
@@ -97,10 +93,15 @@ User Function va_rusN (_lSimulNF)
 	local _nVitic    := 0
 	local _sGrpPgSaf := ''
 	local _sCondPg   := ''
-//	private _oAssoc  := NIL
 	local _oAssocN   := NIL
 	local _nRetMem   := 0
 	local _lSemPadVi := .F.
+	local _sMsgComp  := ''
+	local _aCompart  := {}
+	local _nCompart  := 0
+	local _sGrauComp := ''
+	local _nRegSZE   := 0
+	local _nRegSZF   := 0
 	private _aParPgSaf := {}  // Parcelas pre calculadas. Deixar PRIVATE para ser lida pelo ponto de entrada MTCOLSE2().
 	private _sErroAuto := ''  // Deixar private para ser alimentada em subrotinas.
 
@@ -211,18 +212,6 @@ User Function va_rusN (_lSimulNF)
 			_lContinua = .F.
 		endif
 	endif
-//	u_log2 ('info', '_sTES:' + _sTES)
-
-
-	// Atualiza status no sistema de agendamento/inspecao
-//	U_VA_RusAI ('INS/AGE/LIB', 'CON')
-	if _lContinua
-		_oCarSaf:GeraAtrib ("SZE")  // Atualiza atributos com o que foi gravado nos arquivos.
-		if ! _lSimulNF
-			_oCarSaf:AtuAgenda ()
-		endif
-	endif
-
 
 	// A partir de 2016 teremos uma serie especifica para NF de safra.
 	// Fica fixo no programa para nem precisar abrir tela para o usuario.
@@ -257,44 +246,78 @@ User Function va_rusN (_lSimulNF)
 		FreeObj (_oSQL)
 	endif
 
-	// Se existe mistura de variedades, precifica pela de menor valor.
-	// Para isso, varre os itens, monta uma lista de codigos distintos e busca o preco de cada um
-	// considerando um grau medio e classificacoes medias. Neste momento nao interessa a classificacao
-	// por que quero saber apenas qual a de menor valor comercial.
-	if _lContinua
-		_sMenorVlr = U_VA_RusMV ()
-		if valtype (_sMenorVlr) == 'U'
-			u_help ('Erro na funcao de verificacao de variedade com menor valor.',, .t.)
+	// Verificacoes cargas compartilhadas por mais de um produtor.
+	if len (_oCarSaf:CCompart) > 0
+		_sMsgComp = ''
+		_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Veic.compart.cargas " + _oCarSaf:TodasComp ()
+
+		// Guarda o grau do primeiro item da carga atual para comparar com todos os demais.
+		_sGrauComp = _oCarSaf:ItGrau [1]
+		
+		// Antes de gerar contranota, quero algumas coisas prontas nas demais cargas.
+		_aCompart = aclone (U_SeparaCpo (_oCarSaf:TodasComp (), '/'))
+		_nRegSZE = sze -> (recno ())
+		_nRegSZF = szf -> (recno ())
+		sze -> (dbsetorder (1))  // filial + safra + carga
+		szf -> (dbsetorder (1))  // filial + safra + carga + item
+		for _nCompart = 1 to len (_aCompart)
+			if ! sze -> (dbseek (_oCarSaf:Filial + _oCarSaf:Safra + _aCompart [_nCompart], .F.))
+				_sMsgComp += "Nao localizei a carga compartilhada '" + _aCompart [_nCompart] + "' para fazer verificacoes adicionais."
+			else
+				if sze -> ze_status != 'C'  // Se cancelada, nao verifico mais nada.
+					if ! sze -> ze_status $ '2/R/N'
+						_sMsgComp += "Carga compartilhada '" + sze -> ze_carga + "' parece ainda nao ter a segunda pesagem. Todas as cargas compartilhadas devem estar com a segunda pesagem pronta antes de gerar contranota."
+					else
+						szf -> (dbseek (xfilial ("SZF") + sze -> ze_safra + sze -> ze_carga, .T.))
+						do while _lContinua ;
+							.and. ! szf -> (eof ()) ;
+							.and. szf -> zf_filial == xfilial ("SZF") ;
+							.and. szf -> zf_safra  == sze -> ze_safra ;
+							.and. szf -> zf_carga  == sze -> ze_carga
+							if szf -> zf_grau != _sGrauCOmp
+								_sMsgComp += "Carga compartilhada '" + sze -> ze_carga + "' tem grau '" + szf -> zf_grau + "'. Todas as cargas compartilhadas devem estar com mesmo grau."
+							endif
+							szf -> (dbskip ())
+						enddo
+					endif
+				endif
+			endif
+		next
+		// Reposiciona registros.
+		sze -> (dbgoto (_nRegSZE))
+		szf -> (dbgoto (_nRegSZF))
+
+		if ! empty (_sMsgComp)
+			u_help (_sMsgComp,, .t.)
 			_lContinua = .F.
 		endif
-		U_Log2 ('info', '[' + procname () + ']Variedade de menor valor: ' + _sMenorVlr)
 	endif
 
-	// Calcula valor do frete a ser incluido na nota. Roda em funcao separada por que eh comum precisar recalcular depois da safra.
+	// Se existe mistura de variedades, precifica pela de menor valor.
+	// Como a funcao jah retorna uma lista das variedades, fica mais facil
+	// identificar mistura de variedades.
+	if _lContinua
+		_aMenorVlr = aclone (_oCarSaf:VarMenorVl ())
+		if len (_aMenorVlr) == 0
+			u_help ('Erro na funcao de verificacao de variedade com menor valor.',, .t.)
+			_lContinua = .F.
+		else
+			U_Log2 ('info', '[' + procname () + ']Variedade de menor valor: ' + _aMenorVlr [1, 1] + ' sist.cond: ' + _aMenorVlr [1, 3] + ' R$ ' + cvaltochar (_aMenorVlr [1, 2]))
+		endif
+	endif
+
+	// Calcula valor do frete a ser incluido na nota. Roda em funcao separada
+	// por que eh comum precisar recalcular depois da safra.
 	if _lContinua
 		_lContinua = U_VA_RUSCF (.T.)
 		U_Log2 ('debug', '[' + procname () + ']Retorno de U_VA_RUSCF: ' + cvaltochar (_lContinua))
 	endif
 
 	// Define qual o grupo para pagamento ao qual esta nota deve ser vinculada.
-	// Posso definir isso agora por que, se tiver mistura de variedades, jah terei
-	// definicao de uma com menor valor, que vai ser o criterio de desempate.
+	// Usa a variedade de menor valor por que sempre vai estar populada,
+	// mesmo que tenha apenas uma variedade na carga.
 	if _lContinua
-		szf -> (dbsetorder (1))  // filial + safra + carga + item
-		szf -> (dbseek (xfilial ("SZF") + sze -> ze_safra + sze -> ze_carga, .T.))
-		do while ! szf -> (eof ()) ;
-			.and. szf -> zf_filial == xfilial ("SZF") ;
-			.and. szf -> zf_safra  == sze -> ze_safra ;
-			.and. szf -> zf_carga  == sze -> ze_carga
-			
-			// Se tem produto de menor valor definido, usa-o (carga com mistura). Senao, eh por que tem apenas 1 item na carga.
-			U_Log2 ('debug', '[' + procname () + ']ZF_PRODUTO: ' + szf -> zf_produto + '_sMenorVlr: ' + _sMenorVlr)
-			if szf -> zf_produto == _sMenorVlr .or. empty (_sMenorVlr)
-				_sGrpPgSaf = U_VA_RusGP (szf -> zf_safra, szf -> zf_produto, szf -> zf_conduc)
-				exit
-			endif
-			szf -> (dbskip ())
-		enddo
+		_sGrpPgSaf = U_VA_RusGP (_oCarSaf:Safra, _aMenorVlr [1, 1], _aMenorVlr [1, 3])
 		U_Log2 ('info', 'Grupo para pagamento: ' + _sGrpPgSaf)
 	endif
 	if _lContinua .and. empty (_sGrpPgSaf)
@@ -302,6 +325,7 @@ User Function va_rusN (_lSimulNF)
 		_lContinua = .F.
 	endif
 
+	// Na vdd pouco importa, pois redistribuirei as parcelas cfe. grupo para pagamento.
 	_sCondPg = "801"
 
 	// Gera array com cadastro viticola.
@@ -317,7 +341,6 @@ User Function va_rusN (_lSimulNF)
 
 	if _lContinua
 		_sVitic   = ""
-//		_sNaoConf = ""
 
 		// Prepara itens da nota
 		sb1 -> (dbsetorder (1))
@@ -371,7 +394,8 @@ User Function va_rusN (_lSimulNF)
 				_sClasFina = szf -> zf_prm99
 			endif
 
-			// Busca preco unitario.
+			// Busca preco unitario. IMPORTANTE manter consistencia com a busca
+			// de variedade de menor valor.
 			if szf -> zf_safra == '2019'
 				_nVlUni = U_PrcUva19 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc)[1]
 			elseif szf -> zf_safra == '2020'
@@ -382,7 +406,12 @@ User Function va_rusN (_lSimulNF)
 			// ateh 15/01/22 usamos erroneamente preco da MOC	_nVlUni = U_PrcUva22 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[5]  // pos.5 = preco MOC
 				_nVlUni = U_PrcUva22 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[2]  // pos.2 = preco de compra.
 			elseif szf -> zf_safra == '2023'
-				_nVlUni = U_PrcUva23 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[5]  // pos.5 = preco MOC
+			//	_nVlUni = U_PrcUva23 (szf -> zf_filial, iif (! empty (_sMenorVlr), _sMenorVlr, szf -> zf_produto), val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[5]  // pos.5 = preco MOC
+				
+				// Busca direto pela variedade de menor valor por que essa array
+				// vai estar sempre populada com, no minimo, uma variedade.
+				// Tambem jah vai estar ordenada por variedade de menor valor base.
+				_nVlUni = U_PrcUva23 (szf -> zf_filial, _aMenorVlr [1, 1], val (szf -> zf_grau), _sClasFina, szf -> zf_conduc, .F., .T.)[5]  // pos.5 = preco MOC
 			else
 				u_help ("Sem tratamento para leitura de precos para esta safra.")
 				_lContinua = .F.
@@ -452,20 +481,6 @@ User Function va_rusN (_lSimulNF)
 			if (sb1 -> b1_vacor $ 'B/R' .and. val (szf -> zf_grau) < GetMv ('VA_GMUVAB')) .or. (sb1 -> b1_vacor == 'T' .and. val (szf -> zf_grau) < GetMv ('VA_GMUVAT'))
 				_lSemPadVi = .T.
 			endif
-
-			/* Controle de nao conformidades passou para o NaWeb
-			// Lista cada nao conformidade uma unica vez, independente de quantos itens a tenham
-			for _nNaoConf = 1 to 2  //4  // Aumentar aqui se forem criados novos campos.
-				_sDescNC = alltrim (U_RetZX5 ('11', sze -> ze_safra + szf -> &('zf_nconf' + strzero (_nNaoConf, 2)), 'ZX5_11DESC'))
-				if ! empty (_sDescNC)
-					u_log ('nao conf', _nnaoconf, ':', szf -> &('zf_nconf' + strzero (_nNaoConf, 2)), _sDescNC)
-					if ! _sDescNC $ _sNaoConf
-						_sNaoConf += iif (empty (_sNaoConf), '', ',') + _sDescNC
-						u_log ('Acrescentei em _sNaoConf e ficou assim:', _sNaoConf)
-					endif
-				endif
-			next
-			*/
 
 			// Define lote a ser gerado. Se tiver nao conformidades, acrescenta 'NC' ao mesmo.
 			if sze -> ze_segreg == 'S'  // Carga segregada: deve gerar lote nao conforme
@@ -539,11 +554,10 @@ User Function va_rusN (_lSimulNF)
 		end
 	endif
 
-	// Prepara dados adicionais
+	// Prepara alguns dados adicionais
 	if _lContinua
-		_sMsgContr = ""
-		if ! empty (_sMenorVlr)
-			_sMsgContr += "Mist.varied:precificando por '" + alltrim (_sMenorVlr) + "';"
+		if len (_aMenorVlr) > 1
+			_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Mist.varied:precificando por '" + alltrim (_aMenorVlr [1, 1]) + "';"
 		endif
 		_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Peso tara:" + cvaltochar (sze -> ze_pesotar) + 'Kg'
 
@@ -559,9 +573,6 @@ User Function va_rusN (_lSimulNF)
 			_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Carga nao conforme"
 		endif
 
-//		if ! empty (_sNaoConf)
-//			_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "N.conform:" + _sNaoConf
-//		endif
 		if ! empty (sze -> ze_obs)
 			_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Obs:" + alltrim (sze -> ze_obs)
 		endif
@@ -585,6 +596,7 @@ User Function va_rusN (_lSimulNF)
 			_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Cargas:" + _sAglutin
 		endif
 		FreeObj (_oSQL)
+
 	endif
 	
 	// Mostra tela com valores previstos, para que a filial de Livramento possa saber qual valor vai ficar
@@ -612,6 +624,7 @@ User Function va_rusN (_lSimulNF)
 		endif
 	endif
 
+	U_Log2 ('info', '[' + procname () + ']Mensagem do contribuinte: ' + _sMsgContr)
 	if _lSimulNF
 		u_help ('A seguir serao mostrados alguns dados da simulacao de geracao de NF')
 		u_showarray (_aAutoSD1, 'Itens para a contranota')
@@ -621,7 +634,7 @@ User Function va_rusN (_lSimulNF)
 	endif
 
 	if _lContinua
-		// Apresenta Tela para7 Confirmar o Numero da Primeira NF a Ser Gerada
+		// Apresenta Tela para confirmar o Numero da Primeira NF a Ser Gerada
 		_lContinua = Sx5NumNota (@_sSerie)
 		if _lContinua
 			u_log2 ('info', '[' + procname () + ']Usr.confirmou proxima nota para a serie ' + _sSerie)
@@ -729,10 +742,13 @@ User Function va_rusN (_lSimulNF)
 			U_VA_RUSTX ()
 		endif
 
-		// Endereca (saldos a distribuir) o lote de uva recebido por esta contranota.
-		//if ! empty (sze -> ze_nfger)
+
+		// Endereca (saldos a distribuir) o lote de uva recebido por esta contranota
+		// e atualiza status no sistema de agendamento/inspecao.
 		if ! empty (_oCarSaf:Contranota)
+		//	U_VA_RusAI ('INS/AGE/LIB', 'CON')
 //			U_VA_RusEn (sze -> ze_nfger, sze -> ze_serie, sze -> ze_assoc, sze -> ze_Lojasso)
+			_oCarSaf:AtuAgenda ()
 			_oCarSaf:EnderEstq ('I')
 		endif
 

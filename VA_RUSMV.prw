@@ -5,8 +5,8 @@
 //              Desmembrado do VA_RUSN.PRW
 //
 // Historico de alteracoes:
-// 22/01/2022 - Robert - Retorna vazio em caso de erro, assim a funcao chamadora pode saber se executou normal.
-//
+// 22/01/2022 - Robert - Retorna vazio (NIL) em caso de erro, assim a funcao chamadora pode saber se executou normal.
+// 25/01/2023 - Robert - Retorna sempre um item, mesmo que seja o unico da carga.
 
 // --------------------------------------------------------------------------
 User Function VA_RusMV ()
@@ -51,7 +51,7 @@ User Function VA_RusMV ()
 		
 	// Se tem apenas um produto, nem perde tempo buscando precos.
 	if _lContinua
-		if len (_aProdut) > 1
+//		if len (_aProdut) > 1
 			for _nProdut = 1 to len (_aProdut)
 
 				// Manter aqui sempre a mesma politica do VA_RUSN !!!
@@ -89,7 +89,7 @@ User Function VA_RusMV ()
 					u_log2 ('info', 'produto de menor valor: ' + _sMenorVlr)
 				endif
 			endif
-		endif
+//		endif
 	endif
 	
 	U_ML_SRArea (_aAreaAnt)

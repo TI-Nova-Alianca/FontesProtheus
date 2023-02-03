@@ -12,6 +12,7 @@
 // 11/03/2022 - Robert - Novos parametros funcao U_VA_RusLI() - GLPI 11745.
 // 28/10/2022 - Robert - Removidos alguns parametros em desuso.
 // 25/01/2023 - Robert - Passa a usar classe ClsCarSaf para atualizar tabela ZZA.
+// 03/02/2023 - Robert - Gravar evento de informacao manual do peso bruto.
 //
 
 #include "VA_Inclu.prw"
@@ -58,6 +59,7 @@ user function va_rus1P (_lPortaria)
 				MsgRun ("Aguarde, lendo dados da balanca", "Leitura balanca", {|| _nPLidoBal := U_LeBalan (_sPortaBal, _sModelBal)})
 			else
 				_nPLidoBal = U_Get ("Sem comunic.c/balanca. Informe peso (Kg) manualmente", 'N', 6, '999999', '', sze -> ze_pesobru, .F., '.T.')
+				_oCarSaf:GrvEvt ('SZE006', 'Alterando manualmente peso bruto de ' + cvaltochar (sze->ze_pesoBru) + ' para ' + cvaltochar (_nPLidoBal) + ' (sem integracao com balanca)')
 			endif
 		endif
 	

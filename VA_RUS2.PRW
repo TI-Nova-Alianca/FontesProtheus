@@ -38,6 +38,7 @@
 // 20/02/2022 - Robert - Variavel _sErros (publica do web service) renomeada para _sErroWS
 // 11/03/2022 - Robert - Novos parametros funcao U_VA_RusLI() - GLPI 11745.
 // 28/10/2022 - Robert - Removidos alguns parametros em desuso.
+// 03/02/2023 - Robert - Alimentar campo virtual ZF_GRAUANT
 //
 
 #include "totvs.ch"
@@ -187,6 +188,8 @@ User Function va_rus2 (_nOpc, _lFechPort)
 			for _nLinha = 1 to len (aCols)
 				GDFieldPut ("ZF_DESCRI",  fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("ZF_PRODUTO", _nLinha), "B1_DESC"), _nLinha)
 				GDFieldPut ("ZF_DESCREA", fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("ZF_PRREAL", _nLinha),  "B1_DESC"), _nLinha)
+				GDFieldPut ("ZF_GRAUANT", fBuscaCpo ("SZF", 1, xfilial ("SZF") + sze -> ze_safra + sze -> ze_carga + GDFieldGet ("ZF_ITEM", _nLinha), "ZF_GRAU"), _nLinha)
+//				U_Log2 ('debug', '[' + procname () + ']busquei SZF com chave >>' + xfilial ("SZF") + sze -> ze_safra + sze -> ze_carga + GDFieldGet ("ZF_ITEM", _nLinha) + '<<')
 			next
 		else
 			aCols := {}
