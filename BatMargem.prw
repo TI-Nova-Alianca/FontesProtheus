@@ -19,6 +19,7 @@
 // 10/05/2022 - Claudia - Alterado campo de peso bruto para B1_PESBRU. GLPI: 11822
 // 19/06/2022 - Robert  - Criados campos NF_LITROS e NF_QTCAIXAS (GLPI 12223)
 // 20/07/2022 - Claudia - Ajustado o numero de dias de execução.
+// 07/02/2023 - Claudia - Alterada a regra do ICMSRET. GLPI: 13155
 //
 // -----------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -101,7 +102,11 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += "    ,SUM(SD2.D2_PRUNIT) AS NF_VLRUNIT "
 		_oSQL:_sQuery += "    ,SUM(SD2.D2_PRCVEN * D2_QUANT) AS NF_VLRPROD "
 		_oSQL:_sQuery += "    ,SUM(SD2.D2_VALIPI) AS NF_VALIPI "
-		_oSQL:_sQuery += "    ,SUM(SD2.D2_ICMSRET) AS NF_ICMSRET "
+		//_oSQL:_sQuery += "    ,SUM(SD2.D2_ICMSRET) AS NF_ICMSRET "
+ 		_oSQL:_sQuery += "    ,CASE "
+		_oSQL:_sQuery += "    		WHEN SF4.F4_CREDST = '4' THEN 0 "
+		_oSQL:_sQuery += "    		ELSE SUM(SD2.D2_ICMSRET) "
+		_oSQL:_sQuery += "     END AS NF_ICMSRET "
 		_oSQL:_sQuery += "    ,SUM(SD2.D2_VALBRUT) AS NF_VLR_BRT "
 		_oSQL:_sQuery += "    ,CASE SF4.F4_MARGEM WHEN '1' THEN SUM(SD2.D2_VALICM) END AS NF_ICMS "
 		_oSQL:_sQuery += "    ,SUM(SD2.D2_VALIMP5) AS NF_COFINS "
@@ -227,7 +232,11 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 	   ,ISNULL(SUM(SD1.D1_VUNIT) * -1, 0) AS NF_VLRUNIT "
 		_oSQL:_sQuery += " 	   ,ISNULL(SUM(SD1.D1_VUNIT * D1_QUANT) * -1, 0) AS NF_VLRPROD "
 		_oSQL:_sQuery += " 	   ,SUM(SD1.D1_VALIPI) * -1 AS NF_VALIPI "
-		_oSQL:_sQuery += " 	   ,SUM(SD1.D1_ICMSRET) * -1 AS NF_ICMSRET "
+		//_oSQL:_sQuery += " 	   ,SUM(SD1.D1_ICMSRET) * -1 AS NF_ICMSRET "
+		_oSQL:_sQuery += "    ,CASE "
+		_oSQL:_sQuery += "    		WHEN SF4.F4_CREDST = '4' THEN 0 "
+		_oSQL:_sQuery += "    		ELSE SUM(SD1.D1_ICMSRET) * -1 "
+		_oSQL:_sQuery += "      END AS NF_ICMSRET "
 		_oSQL:_sQuery += " 	   ,SUM(SD1.D1_TOTAL + SD1.D1_VALIPI + SD1.D1_ICMSRET) * -1 AS NF_VLR_BRT "
 		_oSQL:_sQuery += " 	   ,CASE SF4.F4_MARGEM WHEN '2' THEN SUM(SD1.D1_VALICM) * -1 END AS NF_ICMS "
 		_oSQL:_sQuery += " 	   ,SUM(SD1.D1_VALIMP5) * -1 AS NF_COFINS "
@@ -339,7 +348,11 @@ User Function BatMargem(_nTipo)
 		_oSQL:_sQuery += " 	   ,SUM(SD2.D2_PRUNIT) AS NF_VLRUNIT "
 		_oSQL:_sQuery += " 	   ,SUM(SD2.D2_PRCVEN * D2_QUANT) AS NF_VLRPROD "
 		_oSQL:_sQuery += " 	   ,SUM(SD2.D2_VALIPI) AS NF_VALIPI "
-		_oSQL:_sQuery += " 	   ,SUM(SD2.D2_ICMSRET) AS NF_ICMSRET "
+		//_oSQL:_sQuery += " 	   ,SUM(SD2.D2_ICMSRET) AS NF_ICMSRET "
+		_oSQL:_sQuery += "     ,CASE "
+		_oSQL:_sQuery += "    		WHEN SF4.F4_CREDST = '4' THEN 0 "
+		_oSQL:_sQuery += "    		ELSE SUM(SD2.D2_ICMSRET) "
+		_oSQL:_sQuery += "      END AS NF_ICMSRET "		
 		_oSQL:_sQuery += " 	   ,SUM(SD2.D2_VALBRUT) AS NF_VLR_BRT "
 		_oSQL:_sQuery += " 	   ,SUM(SD2.D2_VALICM) AS NF_ICMS "
 		_oSQL:_sQuery += " 	   ,SUM(SD2.D2_VALIMP5) AS NF_COFINS "
