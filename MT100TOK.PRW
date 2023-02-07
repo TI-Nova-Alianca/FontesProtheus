@@ -72,7 +72,6 @@
 // 05/01/2023 - Robert  - Desabilitadas validacoes tabela ZZX (vamos comecar a usar o importador da TRS)
 // 03/02/2023 - Sandra  - Incluso para aceite de chave para tipo de nota NF3E - (GLPI 13143)
 //
-
 // -----------------------------------------------------------------------------------------------------------------------
 User Function MT100TOK()
 	local _aAmbAnt   := U_SalvaAmb ()
@@ -314,8 +313,12 @@ static function _ValChvNFe ()
 
 	// Verifica se esta nota deve ou nao ter a chave informada.
 	if _lRet
-		if cFormul == "S" .or. ! alltrim (cEspecie) $ "SPED/CTE/NF3E"
-			_lDeveTer = .F.
+		if cFormul == "S" .or. ! alltrim (cEspecie) $ "SPED/CTE"
+			if alltrim (cEspecie) == 'NF3E' // incluida nova linha devido a'NF' estar contido no NF3E
+				_lDeveTer = .T.
+			else
+				_lDeveTer = .F.
+			endif
 		else
 			_lDeveTer = .T.
 		endif
