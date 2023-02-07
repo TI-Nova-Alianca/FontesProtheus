@@ -69,6 +69,7 @@ CLASS ClsCarSaf
 	public METHOD DefImprTk ()  // Define porta para impressao do ticket
 	public METHOD GeraAtrib ()
 	public METHOD EnderEstq ()  // Enderecar (ou estornar) estoque
+	public METHOD ExclDef ()    // Exclusao definitiva (inclusive tabelas relacionadas)
 	public METHOD GrvEvt ()
 	public METHOD ImprimeTk ()  // Gera impressao do ticket
 	public METHOD Log ()
@@ -261,7 +262,7 @@ METHOD AtuZZA (_lReenvio) Class ClsCarSaf
 	// M = usuario (do Protheus) finalizou manualmente (ZZA_STATUS nao estava 3 por algum motivo).
 	// C = Carga cancelada no Protheus
 
-	if _lRetAtZZA .and. ::PesoBruto <= 0
+	if _lRetAtZZA .and. ::PesoBruto <= 0 .and. ::StatusCar != 'C'
 		u_help ("Carga ainda nao tem peso bruto. Efetue, antes, a primeira pesagem.",, .t.)
 		_lRetAtZZA = .F.
 	endif
@@ -576,6 +577,113 @@ return _lContinua
 
 
 // --------------------------------------------------------------------------
+// Exclusao definitiva (inclusive tabelas relacionadas).
+// Antes da safra eh comum fazermos muitas cargas para simulacao e ajuste de
+// programas, e essas cargas ficam poluindo o sistema (muitas vezes, ateh,
+// seguindo a numeracao do ano anterior).
+METHOD ExclDef (_sOrigem) Class ClsCarSaf
+	local _lRetED   := .T.
+	local _aAreaAnt := U_ML_SRArea ()
+	local _sFrom    := ''
+	local _oSQL     := NIL
+
+	if _lRetED .and. sze -> ze_status != 'C'
+		::UltMsg += "Somente cargas com status C-cancelada podem ser definitivamente excluidas."
+		_lRetED = .F.
+	endif
+
+	// Se for carga gerada atraves da aglutinacao de outras, desmarca o flag
+	// de aglutinacao das cargas originais e deleta a tabela de cargas relacionadas.
+	if _lRetED .and. ::Aglutin == "D"
+		_sFrom := ""
+		_sFrom += " FROM " + RetSQLName ("SZE") + " SZE, "
+		_sFrom +=            RetSQLName ("ZZD") + " ZZD "
+		_sFrom += " WHERE SZE.D_E_L_E_T_ = ''"
+		_sFrom +=   " AND SZE.ZE_FILIAL  = '" + xfilial ("SZE") + "'"
+		_sFrom +=   " AND SZE.ZE_SAFRA   = '" + ::Safra + "'"
+		_sFrom +=   " AND ZZD.D_E_L_E_T_ = ''"
+		_sFrom +=   " AND ZZD.ZZD_FILIAL = '" + xfilial ("ZZD") + "'"
+		_sFrom +=   " AND ZZD.ZZD_SAFRA  = SZE.ZE_SAFRA"
+		_sFrom +=   " AND ZZD.ZZD_CARDES = '" + ::Carga + "'"
+		_sFrom +=   " AND ZZD.ZZD_CARORI = SZE.ZE_CARGA"
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery = "UPDATE SZE SET SZE.ZE_AGLUTIN = 'N' " + _sFrom
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		_lRetED = _oSQL:Exec ()
+		if _lRetED
+			_oSQL:_sQuery = "UPDATE ZZD SET ZZD.D_E_L_E_T_ = '*' " + _sFrom
+			_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+			_lRetED = _oSQL:Exec ()
+		endif
+	endif
+
+	// Exclui esta carga das listas de compartilhamento das demais
+	if _lRetED
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery := "UPDATE SZE SET SZE.ZE_CCOMPAR = replace (replace (SZE.ZE_CCOMPAR, '" + ::Carga + "', ''), '//', '/')"
+		_oSQL:_sQuery := "UPDATE SZE SET SZE.ZE_CCOMPAR = replace (replace (SZE.ZE_CCOMPAR, '" + ::Carga + "', ''), '//', '/')"
+		_oSQL:_sQuery += " FROM " + RetSQLName ("SZE") + " SZE "
+		_oSQL:_sQuery += " WHERE SZE.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SZE.ZE_FILIAL  = '" + xfilial ("SZE") + "'"
+		_oSQL:_sQuery +=   " AND SZE.ZE_SAFRA   = '" + ::Safra + "'"
+		_oSQL:_sQuery +=   " AND SZE.ZE_CCOMPAR LIKE '%" + ::Carga + "%'"
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		_lRetED = _oSQL:Exec ()
+	endif
+
+	// Exclui eventos relacionados a esta carga
+	if _lRetED
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery := "UPDATE " + RetSQLName ("SZN")
+		_oSQL:_sQuery +=   " SET D_E_L_E_T_ = '*'"
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND ZN_FILIAL  = '" + xfilial ("SZN") + "'"
+		_oSQL:_sQuery +=   " AND ZN_ALIAS   = 'SZE'"
+		_oSQL:_sQuery +=   " AND ZN_COD     = '" + ::Safra + ::Carga + "'"
+		_oSQL:_sQuery +=   " AND ZN_RECNO   = " + cvaltochar (::RegSZE)
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		_lRetED = _oSQL:Exec ()
+	endif
+
+	// Exclui itens da carga
+	if _lRetED
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery := "UPDATE " + RetSQLName ("SZF")
+		_oSQL:_sQuery +=   " SET D_E_L_E_T_ = '*'"
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND ZF_FILIAL  = '" + ::Filial + "'"
+		_oSQL:_sQuery +=   " AND ZF_SAFRA   = '" + ::Safra  + "'"
+		_oSQL:_sQuery +=   " AND ZF_CARGA   = '" + ::Carga  + "'"
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		_lRetED = _oSQL:Exec ()
+	endif
+
+	// Exclui itens enviados para o grau
+	if _lRetED
+		_oSQL := ClsSQL():New ()
+		_oSQL:_sQuery := "UPDATE " + RetSQLName ("ZZA")
+		_oSQL:_sQuery +=   " SET D_E_L_E_T_ = '*'"
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND ZZA_FILIAL  = '" + ::Filial + "'"
+		_oSQL:_sQuery +=   " AND ZZA_SAFRA   = '" + ::Safra  + "'"
+		_oSQL:_sQuery +=   " AND ZZA_CARGA   = '" + ::Carga  + "'"
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		_lRetED = _oSQL:Exec ()
+	endif
+
+	// Exclui cabecalho da carga
+	if _lRetED
+		sze -> (dbgoto (::RegSZE))
+		reclock ("SZE", .f.)
+		sze -> (dbdelete ())
+		msunlock ()
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
+return _lRetED
+
+
+// --------------------------------------------------------------------------
 // Alimenta os atributos da classe.
 METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -751,7 +859,7 @@ METHOD Log () Class ClsCarSaf
 	local _nItCarga := 0
 //	local _nCompart := 0
 
-	_sLogCar += '  Filial: ' + ::Filial + ' Safra: ' + ::Safra + ' Carga: ' + ::Carga + chr (13) + chr (10)
+	_sLogCar += '  Filial: ' + ::Filial + ' Safra: ' + ::Safra + ' Carga: ' + ::Carga + ' Status: ' + ::StatusCar + chr (13) + chr (10)
 	_sLogCar += '  Peso bruto: ' + cvaltochar (::PesoBruto) + ' Peso tara: ' + cvaltochar (::PesoTara) + chr (13) + chr (10)
 	_sLogCar += '  Fornecedor: ' + ::Fornece + '/' + ::Loja + ' - ' + ::NomeFornec + chr (13) + chr (10)
 	for _nItCarga = 1 to len (::ItItem)

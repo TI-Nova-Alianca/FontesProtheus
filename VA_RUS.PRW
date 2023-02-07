@@ -178,19 +178,20 @@ User Function va_rus ()
 		aadd (_aMenuOut, {"Consultar cargas compartilhadas", "U_VA_RusOO ('ConsultarCompartilhamento')", 0,4})
 		if upper (alltrim (cUserName)) == 'ROBERT.KOCH'
 			aadd (_aMenuOut, {"Simular leitura inspecoes(Robert)", "U_VA_RusLI (iif (sze -> ze_status == '1', 1, 2), .t.)", 0,4})
-			aadd (_aMenuOut, {"Simular frete (Robert)",  "U_VA_RusCF (.F.)", 0,4})  // Apenas para ver nova simulacao no arquivo de log.
+			aadd (_aMenuOut, {"Simular frete (Robert)",            "U_VA_RusCF (.F.)", 0,4})  // Apenas para ver nova simulacao no arquivo de log.
+			aadd (_aMenuOut, {"Eliminar carga definitivamente",    "U_VA_RusED (sze -> ze_safra, sze -> ze_carga)", 0,4})
 		endif
 
 		// Menu principal
-		aadd (aRotina, {"&Pesquisar"        , "AxPesqui",      0,1})
+		aadd (aRotina, {"&Pesquisar"        , "AxPesqui",           0,1})
 		aadd (aRotina, {"&Visualizar"       , "U_VA_RUS2 (2, .F.)", 0,2})
-		aadd (aRotina, {"Incluir"           , "U_VA_RUS1",     0,3})
-		aadd (aRotina, {"&1a pesagem"       , "U_VA_RUS1P ()", 0,4})
+		aadd (aRotina, {"Incluir"           , "U_VA_RUS1",          0,3})
+		aadd (aRotina, {"&1a pesagem"       , "U_VA_RUS1P ()",      0,4})
 		aadd (aRotina, {"&2a pesagem"       , "U_VA_RUS2 (4, .F.)", 0,4})
-		aadd (aRotina, {"&Contranota"       , _aMenuNFe,       0,4})
-		aadd (aRotina, {"&Outros"           , _aMenuOut,       0,4})
+		aadd (aRotina, {"&Contranota"       , _aMenuNFe,            0,4})
+		aadd (aRotina, {"&Outros"           , _aMenuOut,            0,4})
 		aadd (aRotina, {"&Cancelar/Excluir" , "U_VA_RUS2 (5, .F.)", 0,5})
-		aadd (aRotina, {"&Legenda"          , "U_VA_RUSLG(.F.)", 0,5})
+		aadd (aRotina, {"&Legenda"          , "U_VA_RUSLG(.F.)",    0,5})
 		private cString   := "SZE"
 		private cCadastro := "Recebimento de uva safra"
 		dbselectarea (cString)
