@@ -46,6 +46,7 @@
 // 07/10/2022 - Claudia - Atualização de rapel apenas para serie 10. GLPI: 8916
 // 28/10/2022 - Robert  - Cod. evento trocado de SA5010 para SA5001 ao gravar amarracao produto x fornecedor.
 // 23/11/2022 - Claudia - Incluido evento ao gravar amarracao produto x fornecedor. GLPI: 12821
+// 09/02/2023 - Claudia - Incluido log de gravação rapel.
 //
 // --------------------------------------------------------------------------------------------------------------
 user function M460Fim ()
@@ -393,5 +394,15 @@ Static Function _AtuZC0()
 			_oEvento:SerieSaid = sf2->f2_serie
 			_oEvento:Grava()
 		EndIf
+	else
+		_oEvento := ClsEvent():New ()
+		_oEvento:Alias     = 'ZC0'
+		_oEvento:Texto     = "ERRO inclusão rapel emissão NF. Config. Cli"
+		_oEvento:CodEven   = 'ZC0002'
+		_oEvento:Cliente   = sf2->f2_cliente
+		_oEvento:LojaCli   = sf2->f2_loja
+		_oEvento:NFSaida   = sf2->f2_doc
+		_oEvento:SerieSaid = sf2->f2_serie
+		_oEvento:Grava()
 	EndIf
 Return 
