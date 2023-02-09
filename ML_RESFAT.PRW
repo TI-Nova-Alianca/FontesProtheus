@@ -17,7 +17,8 @@
 //                     - Adicionadas tags para catalogo de fontes.
 // 09/11/2020 - Robert - Alterado nome do contador de Liane para Sara
 // 10/11/2020 - Robert - Faltou ajustar o numero do CRC.
-// 03/02/2022 - Claudia - Ajuste de valor de faturamento. GLPI: 12857
+// 03/02/2023 - Claudia - Ajuste de valor de faturamento. GLPI: 12857
+// 08/02/2023 - Claudia - Tratamento para icms st de guias MG. GLPI: 13161
 //
 // ------------------------------------------------------------------------------------------------------------------ 
 #include "rwmake.ch"
@@ -87,7 +88,7 @@ Static Function RptDetail()
     _sQuery += " WITH C AS (SELECT SD2.D2_EMISSAO  AS DATA"
     _sQuery += "                 , ROUND(SUM(D2_PRCVEN*D2_QUANT),2)                               AS VLR_PROD"
   	_sQuery += " 	             , SUM(SD2.D2_VALBRUT)                                            AS VLR_BRT"
-	_sQuery += "                 ,SUM(SD2.D2_VALBRUT) - SUM(SD2.D2_VALIPI) - SUM(SD2.D2_ICMSRET)  AS VLR_TOTAL
+	_sQuery += "                 ,SUM(SD2.D2_VALBRUT) - SUM(SD2.D2_VALIPI) - CASE WHEN SF4.F4_CREDST = '4' THEN 0 ELSE SUM(SD2.D2_ICMSRET) END AS VLR_TOTAL "
   	_sQuery += "              FROM " + RetSQLName ("SD2") + " AS SD2 "
   	_sQuery += "	          		INNER JOIN " + RetSQLName ("SF2") + " AS SF2 "
   	_sQuery += "						ON (SF2.D_E_L_E_T_ = ''"
@@ -104,7 +105,7 @@ Static Function RptDetail()
     _sQuery += " 			WHERE SD2.D_E_L_E_T_ = ''"
     _sQuery += "   			  AND SD2.D2_FILIAL    BETWEEN '" + mv_par03 + "' AND '" + mv_par04 + "'"
     _sQuery += "   			  AND SD2.D2_EMISSAO   BETWEEN '" + dtos (mv_par01) + "' AND '" + dtos (mv_par02) + "'"
-	_sQuery += " 			GROUP BY SD2.D2_EMISSAO"
+	_sQuery += " 			GROUP BY SD2.D2_EMISSAO,SF4.F4_CREDST "
  	_sQuery += " )"
  	if mv_par05 = 1
  		_sQuery += " SELECT SUBSTRING(DATA,1,4) + SUBSTRING(DATA,5,2) AS DATA"

@@ -24,7 +24,8 @@
 // 28/10/2017 - Robert  - Passa a validar parametro VA_SERIECF para leitura de cupons.
 // 22/05/2019 - Catia   - Considerar D1_VALFRE no total das notas de devolucao
 // 03/05/2021 - Claudia - Retirado os TES '732','573', '891'. GLPI: 9926
-// 03/02/2022 - Claudia - Inclusao de coluna de faturamento. GLPI: 12857
+// 03/02/2023 - Claudia - Inclusao de coluna de faturamento. GLPI: 12857
+// 08/02/2023 - Claudia - Tratamento para icms st de guias MG. GLPI: 13161
 //
 // ----------------------------------------------------------------------------------------------
 #include "rwmake.ch"
@@ -90,7 +91,11 @@ Static Function RptDetail()
 	endif  		
   	_sQuery += "     , ROUND(SUM(D2_PRCVEN*D2_QUANT),2) AS VLR_PROD"
   	_sQuery += "	 , SUM(SD2.D2_VALIPI)  AS VLR_IPI"
-  	_sQuery += " 	 , SUM(SD2.D2_ICMSRET) AS VLR_ST"
+  	//_sQuery += " 	 , SUM(SD2.D2_ICMSRET) AS VLR_ST"
+	_sQuery += "     ,CASE "
+	_sQuery += "    		WHEN SF4.F4_CREDST = '4' THEN 0 "
+	_sQuery +="    			ELSE SUM(SD2.D2_ICMSRET) "
+	_sQuery += "      END AS VLR_ST "
 	_sQuery += " 	 , 0 AS VLR_DESCONTO"
 	_sQuery += " 	 , SUM(SD2.D2_VALBRUT) AS VLR_BRT"
   	_sQuery += "  FROM " + RetSQLName ("SD2") + " AS SD2 "
@@ -118,7 +123,7 @@ Static Function RptDetail()
     _sQuery += "   AND SD2.D2_LOJA      BETWEEN '" + mv_par07 + "' AND '" + mv_par08 + "'"
 	_sQuery += "   AND SD2.D2_TES NOT IN ('732','573', '891')"
     if mv_par11 = 1 // opcao analitica 
-    	_sQuery += " GROUP BY SD2.D2_EMISSAO, SF4.F4_MARGEM, SD2.D2_DOC ,SD2.D2_SERIE, SD2.D2_TIPO, SD2.D2_CLIENTE , SD2.D2_LOJA, SD2.D2_EST"
+    	_sQuery += " GROUP BY SD2.D2_EMISSAO, SF4.F4_MARGEM, SD2.D2_DOC ,SD2.D2_SERIE, SD2.D2_TIPO, SD2.D2_CLIENTE , SD2.D2_LOJA, SD2.D2_EST, SF4.F4_CREDST"
  	else
  		_sQuery += " GROUP BY SD2.D2_EMISSAO, SF4.F4_MARGEM"
  	endif
@@ -135,7 +140,11 @@ Static Function RptDetail()
 	endif    		 
     _sQuery += "      , SUM(SD1.D1_TOTAL)    AS VLR_PROD" 
     _sQuery += "      , SUM(SD1.D1_VALIPI)   AS VLR_IPI" 	 
-    _sQuery += "      , SUM(SD1.D1_ICMSRET)  AS VLR_ST" 	 
+    //_sQuery += "      , SUM(SD1.D1_ICMSRET)  AS VLR_ST" 	
+	_sQuery += "      , CASE "
+	_sQuery += "    		WHEN SF4.F4_CREDST = '4' THEN 0 "
+	_sQuery +="    			ELSE SUM(SD1.D1_ICMSRET) "
+	_sQuery += "        END AS VLR_ST " 
     _sQuery += "      , SUM(SD1.D1_VALDESC)  AS VLR_DESCONTO" 
     // foi feito assim pra preservar integridade com os relatorios retroativos
     // das 2 uma: ou nao conciliavam direito e nunca viram a situacao dos valores digitados nas despesas
@@ -171,7 +180,7 @@ Static Function RptDetail()
 	_sQuery += "   AND SD1.D1_FORNECE   BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
     _sQuery += "   AND SD1.D1_LOJA      BETWEEN '" + mv_par07 + "' AND '" + mv_par08 + "'"
     if mv_par11 = 1 // opcao analitica
-    	_sQuery += " GROUP BY SD1.D1_DTDIGIT, SF4.F4_MARGEM, SD1.D1_DOC ,SD1.D1_SERIE, SD1.D1_TIPO, SD1.D1_FORNECE , SD1.D1_LOJA, SF1.F1_EST"
+    	_sQuery += " GROUP BY SD1.D1_DTDIGIT, SF4.F4_MARGEM, SD1.D1_DOC ,SD1.D1_SERIE, SD1.D1_TIPO, SD1.D1_FORNECE , SD1.D1_LOJA, SF1.F1_EST, SF4.F4_CREDST"
   	else
  		_sQuery += " GROUP BY SD1.D1_DTDIGIT, SF4.F4_MARGEM"
  	endif
