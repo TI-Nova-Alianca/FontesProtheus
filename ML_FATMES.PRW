@@ -214,7 +214,12 @@ Static Function RptDetail()
 	    Endif
 	    
 	    If mv_par11 = 1
-			_nVlrNf := (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST // GLPI: 12857
+			If (_sAliasQ) -> DT_EMISSAO >= '20230101' // GLPI: 12857
+				_nVlrNf := (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST 
+			else
+				_nVlrNf := (_sAliasQ) -> VLR_BRT 
+			EndIf
+
 			If (_sAliasQ) -> MARGEM $ '1239'
 				@ li, 002 PSAY (_sAliasQ) -> MARGEM
 			Else           	   
@@ -239,7 +244,11 @@ Static Function RptDetail()
 			li ++
      	Else
 	 		// opcao sintetica
-			_nVlrNf := (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST // GLPI: 12857
+			If (_sAliasQ) -> DT_EMISSAO >= '20230101' // GLPI: 12857
+				_nVlrNf := (_sAliasQ) -> VLR_BRT - (_sAliasQ) -> VLR_IPI - (_sAliasQ) -> VLR_ST 
+			else
+				_nVlrNf := (_sAliasQ) -> VLR_BRT
+			EndIf
 
 	 		// acumula totais na data e imprime o total da data
 			@ li, 005 PSAY stod((_sAliasQ) -> DT_EMISSAO)
