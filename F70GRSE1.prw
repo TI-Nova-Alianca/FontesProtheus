@@ -21,6 +21,7 @@
 // 24/05/2022 - Claudia - Incluido a gravação do rapel. GLPI: 8916
 // 28/09/2022 - Claudia - Incluida validação de saldo da verba na gravação da baixa ZA5. GLPI: 12654
 // 07/10/2022 - Claudia - Atualização de rapel apenas para serie 10. GLPI: 8916
+// 10/02/2023 - CLaudia - Ajustada a baixa de rapel. GLPI: 13176
 //
 // ---------------------------------------------------------------------------------------------------
 User Function F70GRSE1()
@@ -291,6 +292,7 @@ Static Function _AtuZC0()
 		_oSQL:_sQuery += " AND E5_TIPODOC  = 'DC'"
 		_oSQL:_sQuery += " AND E5_SITUACA  = '' "
 		_oSQL:_sQuery += " AND E5_VARAPEL  > 0 "
+		_oSQL:_sQuery += " AND E5_DATA     = '" + dtos(ddatabase)+"'"
 		_oSQL:Log ()
 		_aRapel := aclone (_oSQL:Qry2Array ())
 
