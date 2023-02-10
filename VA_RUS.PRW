@@ -29,6 +29,7 @@
 // 26/05/2022 - Robert - Novos parametros na chamada da funcao U_RastLt().
 // 28/10/2022 - Robert - Removidos alguns parametros em desuso.
 // 07/12/2022 - Robert - Removidos mais alguns parametros em desuso.
+// 08/02/2023 - Robert - Criada opcao de segregar carga.
 //
 
 // --------------------------------------------------------------------------
@@ -176,10 +177,13 @@ User Function va_rus ()
 		aadd (_aMenuOut, {"Registrar evento/comentario",     "U_VA_RusOO ('EventoManual')", 0,4})
 		aadd (_aMenuOut, {"Consultar eventos",               "U_VA_SZNC  ('CARGASAFRA', sze -> ze_safra + sze -> ze_carga)", 0,4})
 		aadd (_aMenuOut, {"Consultar cargas compartilhadas", "U_VA_RusOO ('ConsultarCompartilhamento')", 0,4})
+		if upper (alltrim (cUserName)) $ 'ROBERT.KOCH/DAIANA.RIBAS'
+			aadd (_aMenuOut, {"Simular leitura inspecoes",      "U_VA_RusLI (iif (sze -> ze_status == '1', 1, 2), .t.)", 0,4})
+			aadd (_aMenuOut, {"Simular frete",                  "U_VA_RusCF (.F.)", 0,4})  // Apenas para ver nova simulacao no arquivo de log.
+			aadd (_aMenuOut, {"Eliminar carga definitivamente", "U_VA_RusED (sze -> ze_safra, sze -> ze_carga)", 0,4})
+		endif
 		if upper (alltrim (cUserName)) == 'ROBERT.KOCH'
-			aadd (_aMenuOut, {"Simular leitura inspecoes(Robert)", "U_VA_RusLI (iif (sze -> ze_status == '1', 1, 2), .t.)", 0,4})
-			aadd (_aMenuOut, {"Simular frete (Robert)",            "U_VA_RusCF (.F.)", 0,4})  // Apenas para ver nova simulacao no arquivo de log.
-			aadd (_aMenuOut, {"Eliminar carga definitivamente",    "U_VA_RusED (sze -> ze_safra, sze -> ze_carga)", 0,4})
+			aadd (_aMenuOut, {"Segregar carga", "U_VA_RusOO ('SegregarCarga')", 0,4})
 		endif
 
 		// Menu principal
@@ -210,6 +214,7 @@ return
 // Tratamento para o que o usuario selecionou no menu de outras opcoes.
 user function VA_RUSOO (_sQueFazer)
 	local _sEvtManu := ''
+	local _sMotSeg  := ''
 
 	// Deixa atributos alimentados no objeto, por que a maioria das rotinas vai precisar.
 	_oCarSaf:GeraAtrib ("SZE")
@@ -267,6 +272,33 @@ user function VA_RUSOO (_sQueFazer)
 		_sEvtManu = U_ShowMemo (_sEvtManu, 'Descricao do evento ou comentario')
 		if ! empty (_sEvtManu)
 			_oCarSaf:GrvEvt ('SZE001', _sEvtManu)
+		endif
+
+	case _sQueFazer == upper ('SegregarCarga')
+		if _oCarSaf:Segregada
+			u_help ("Carga ja consta como segregada.")
+		else
+			if U_MsgNoYes ("Esta rotina permite alterar o status de uma carga para SEGREGADA. Deve ser usada com cautela, pois outros processos dependentes disso poderao ficar inconsistentes. Confirma assim mesmo?") 
+				_sMotSeg = space (250)
+				do while empty (_sMotSeg)
+					_sMotSeg = U_Get ('Informe motivo de segregar carga sem ser pelo sistema de inspecoes', 'C', 250, '', '', _sMotSeg, .F., '.t.')
+					if _sMotSeg == NIL  // Usuario cancelou com ESC
+						u_help ("Carga nao vai ser segregada sem informar um motivo.",, .t.)
+						exit
+					endif
+				enddo
+				if _sMotSeg != NIL .and. ! empty (_sMotSeg)
+					reclock ("SZE", .F.)
+					sze -> ze_segreg = 'S'
+					msunlock ()
+					_oCarSaf:Segregada = .t.
+					_oCarSaf:GrvEvt ("SZE009", "Segregando carga manualmente. Justificativa: " + _sMotSeg)
+					if ! _oCarSaf:SegregarLt ()
+						_oCarSaf:GrvEvt ("SZE009", "Nao foi possivel segregar o(s) lote(s) de estoque." + _oCarSaf:UltMsg)
+						u_help ("Nao foi possivel segregar o(s) lote(s) de estoque. Notifique setor de producao! " + _oCarSaf:UltMsg,, .t.)
+					endif
+				endif
+			endif
 		endif
 
 	otherwise

@@ -398,12 +398,6 @@ static function _LePeso ()
 		_nPLidoBal = round (_nPLidoBal / _nMultBal, 0)
 		_nPLidoBal *= _nMultBal
 	
-		// Pelo que lembro, aqui nao gera nada, pois a opcao '3' nao gera nada
-		// e o ticket em geral eh impresso apos gravacao na VA_RUS2G.
-		//if _lImpTick
-		//	U_VA_RUSTk (3, _sPortTick, 1, {}, 'Bematech', .t.)
-		//endif
-
 		if inclui  // Primeira pesagem: leitura do peso bruto
 			m->ze_pesoBru = _nPLidoBal
 			m->ze_PBruBal = m->ze_pesoBru  // Guarda um backup do peso fornecido pela balanca.

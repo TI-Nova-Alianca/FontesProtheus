@@ -261,7 +261,6 @@ user Function VA_RUS2G (_nOpc)
 			msunlock ()
 
 			_oCarSaf:GeraAtrib ("SZE")  // Atualiza atributos com o que foi gravado nos arquivos.
-			_oCarSaf:Log ()
 
 			// Atualiza tabela de comunicacao com leitor de grau.
 			_oCarSaf:AtuZZA (.F.)

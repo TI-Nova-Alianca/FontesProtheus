@@ -12,6 +12,7 @@
 //                     - Criada opcao de simular, para conferencias posteriores.
 //                     - Tratamento para dados lidos no NaWeb, que vem em formato caracter (GLPI 11745).
 // 03/02/2023 - Robert - Removidos alguns logs.
+// 08/02/2023 - Robert - Grava evento ao segregar carga.
 //
 
 #include "VA_Inclu.prw"
@@ -180,6 +181,7 @@ user function va_rusLI (_nPesagem, _lSimular)
 			reclock ("SZE", .F.)
 			sze->ze_segreg = iif (_aRusInsp [.InspecoesSafraSituacao] == "SEG", 'S', 'N')
 			msunlock ()
+			_oCarSaf:GrvEvt ("SZE009", "Segregando carga cfe. situacao lida nas inspecoes.")
 		endif
 	endif
 

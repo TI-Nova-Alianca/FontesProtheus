@@ -32,10 +32,8 @@ user Function VA_RUSED (_sSafra, _sCarga)
 		SetMVValue (cPerg, "MV_PAR01", _sSafra)
 		SetMVValue (cPerg, "MV_PAR02", _sCarga)
 		SetMVValue (cPerg, "MV_PAR03", _sCarga)
-	else
-		_lContinua = pergunte (cPerg, .t.)
 	endif
-
+	_lContinua = pergunte (cPerg, .t.)
 
 	sze -> (dbsetorder (1))  // ZE_FILIAL+ZE_SAFRA+ZE_CARGA
 	sze -> (dbseek (xfilial ("SZE") + mv_par01 + mv_par02, .t.))

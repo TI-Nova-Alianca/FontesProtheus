@@ -20,6 +20,7 @@
 //                     - Metodo SegPesTOk, melhorias gerais
 // 03/02/2023 - Robert - Tratamentos para cargas compartilhadas.
 //                     - Nao enviava cargas canceladas para o grau (nao alterava ZZA_STATUS para C).
+// 08/02/2023 - Robert - Implementado metodo SegregarLt().
 //
 
 #Include "Protheus.ch"
@@ -58,6 +59,7 @@ CLASS ClsCarSaf
 	public  data Segregada   // ZE_SEGREG
 	public  data SerieCtrn   // ze_serie
 	public  data StatusCar   // ze_status
+	public  data TqPulmao    // ze_tqpul - Tanque pulmao onde o mosto foi armazenado (pode ser diferente do tombador)
 	public  data UltMsg      // Ultima mensagem gerada
 
 	// Declaracao dos Metodos da classe
@@ -74,6 +76,7 @@ CLASS ClsCarSaf
 	public METHOD ImprimeTk ()  // Gera impressao do ticket
 	public METHOD Log ()
 	public METHOD SegPesTOk ()  // Verifica se 'tudo ok' com a segunda pesagem.
+	public METHOD SegregarLt () // Segregar lote de estoque (mudar para lote 'NC')
 	public METHOD StatusZZA ()
 	public METHOD TodasComp ()  // Gera lista de todas as cargas compartilhadas com a atual.
 	public METHOD VarMenorVl () // Identifica a variedade de menor valor
@@ -358,10 +361,8 @@ METHOD DefImprTk (_sFilial, _sCamFixo) Class ClsCarSaf
 		// Se for base teste, evita enviar para a impressora padrao para nao causar confusao com a safra normal.
 		if U_AmbTeste()
 			::PortImpTk := '\\192.168.1.3\siga\ticket.txt'
-	//		U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Ambiente de TESTE. Vou redirecionar o ticket para ' + ::PortImpTk)
 		else
 			::PortImpTk = GetMV ("VA_ITKSAFR")
-	//		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']::PortImTk = ' + ::PortImpTk + ' (lido do parametro VA_ITKSAFR)')
 		endif
 	endif
 return
@@ -378,7 +379,6 @@ METHOD EnderEstq (_sQueFazer) Class ClsCarSaf
 	local _aAutoSDA  := {}
 	local _aAutoSDB  := {}
 	local _aLinhaSDB := {}
-//	local _sFiltrSDA := ''
 	local _lContinua := .T.
 	local _sItemSDB  := ''
 
@@ -386,25 +386,6 @@ METHOD EnderEstq (_sQueFazer) Class ClsCarSaf
 	// O usuario deverah clicar no botao 'estornar'.
 	if _sQueFazer == 'E'  // Estornar
 		U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Chamando tela estorno enderecamento docto ' + ::Contranota)
-/*
-		oGetD   := NIL
-		nOpcA   := 0
-		aHeader := NIL
-		aCols   := NIL
-		N       := 1
-		aRotina := NIL
-		_sFiltrSDA := "da_filial='"      + ::Filial     + "'"
-		_sFiltrSDA += ".and.da_doc='"    + ::Contranota + "'"
-		_sFiltrSDA += ".and.da_serie='"  + ::SerieCtrn  + "'"
-		_sFiltrSDA += ".and.da_clifor='" + ::Fornece    + "'"
-		_sFiltrSDA += ".and.da_loja='"   + ::Loja       + "'"
-	//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']' + _sFiltrSDA)
- 		dbselectarea ("SDA")
-		set filter to &(_sFiltrSDA)
-		MATA265 ()
-		dbselectarea ("SDA")
-		set filter to
-*/
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += "SELECT SDA.R_E_C_N_O_ AS REGSDA, SDB.R_E_C_N_O_ AS REGSDB"
@@ -438,7 +419,6 @@ METHOD EnderEstq (_sQueFazer) Class ClsCarSaf
 		_oSQL:_sQuery +=   " AND SDB.DB_PRODUTO = SDA.DA_PRODUTO"
 		_oSQL:Log ()
 		_aRegSDA = _oSQL:Qry2Array (.F., .F.)
-	//	u_showarray (_aRegSDA)
 		if len (_aRegSDA) == 0
 			u_help ("Nao encontrei enderecamento para estornar.")
 		else
@@ -455,7 +435,6 @@ METHOD EnderEstq (_sQueFazer) Class ClsCarSaf
 			for _nRegSDA = 1 to len (_aRegSDA)  // SBD eh uma linha para cada registro (pensar que trata-se de um aCols)
 				U_Log2 ('debug', '[' + procname () + ']Linha:' + cvaltochar (_nRegSDA))
 				U_Log2 ('debug', _aRegSDA [_nRegSDA])
-			//	u_showarray (_aRegSDA [_nRegSDA])
 				sdb -> (dbgoto (_aRegSDA [_nRegSDA, 2]))
 				_aLinhaSDB = {}
 				aadd (_aLinhaSDB, {"DB_ITEM"   , sdb -> db_item,    nil})
@@ -470,6 +449,7 @@ METHOD EnderEstq (_sQueFazer) Class ClsCarSaf
 			lMsErroAuto := .F.
 			MSExecAuto({|x,y,z| mata265(x,y,z)}, _aAutoSDA, _aAutoSDB, 4)
 			If lMsErroAuto
+				_lContinua = .F.
 				u_log2 ('erro', 'lMsErroAuto')
 				if ! empty (NomeAutoLog ())
 					u_log2 ('erro', memoread (NomeAutoLog ()))
@@ -557,6 +537,7 @@ METHOD EnderEstq (_sQueFazer) Class ClsCarSaf
 			lMsErroAuto := .F.
 			MSExecAuto({|x,y,z| mata265(x,y,z)}, _aAutoSDA, _aAutoSDB, 3)
 			If lMsErroAuto
+				_lContinua = .F.
 				u_log2 ('erro', 'lMsErroAuto')
 				if ! empty (NomeAutoLog ())
 					u_log2 ('erro', memoread (NomeAutoLog ()))
@@ -714,6 +695,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	::Segregada  = .F.
 	::SerieCtrn  = ''
 	::StatusCar  = ''
+	::TqPulmao   = ''
 	::UltMsg     = ''
 
 	do case
@@ -732,6 +714,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 		::Segregada  = (m->ze_segreg == 'S')
 		::SerieCtrn  = m->ze_serie
 		::StatusCar  = m->ze_status
+		::TqPulmao   = m->ze_TqPul
 
 		// Alimenta array de itens
 		for _nItemGD = 1 to len (aCols)
@@ -759,6 +742,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 		::Segregada  = (sze -> ze_segreg == 'S')
 		::SerieCtrn  = sze -> ze_serie
 		::StatusCar  = sze -> ze_status
+		::TqPulmao   = sze -> ze_TqPul
 
 		// Alimenta array de itens
 		szf -> (dbsetorder (1))  // filial + safra + carga + item
@@ -889,19 +873,29 @@ METHOD SegPesTOk () Class ClsCarSaf
 	local _sMsg     := ''
 	local _nCompart := 0
 
-	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']iniciando...')
+//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']iniciando...')
+
+	// Na matriz pode ocorrer a troca de tanque pulmao, ou seja: descarrega no
+	// tombador 1, mas a mangueira estah conectada ao tanque pulmao 2.
+	if ::Filial == '01' .and. empty (::TqPulmao)
+		::UltMsg += "Nesta filial, o numero do tanque pulmao para onde foi direcionado o mosto deve ser informado."
+		_l2PesTOK = .F.
+	elseif ::Filial != '01' .and. !empty (::TqPulmao)
+		::UltMsg += "Nesta filial, o tanque pulmao NAO deve ser informado."
+		_l2PesTOK = .F.
+	endif
 
 	// Para referenciar alguma outra carga como compartilhada, essa deve existir.
 	if _l2PesTOK
 		sze -> (dbsetorder (1))  // ZE_FILIAL+ZE_SAFRA+ZE_CARGA
 		for _nCompart = 1 to len (::CCompart)
 			if ! sze -> (dbseek (::Filial + ::Safra + ::CCompart [_nCompart], .F.))
-				u_help ("Carga compartilhada '" + ::CCompart [_nCompart] + "' nao foi localizada!",, .t.)
+				::UltMsg += "Carga compartilhada '" + ::CCompart [_nCompart] + "' nao foi localizada!"
 				_l2PesTOK = .F.
 			else
 				// Se estou incluindo/gerando carga nova
 				if ::PesoBruto == 0 .and. sze -> ze_pesotar > 0
-					u_help ("A carga compartilhada '" + ::CCompart [_nCompart] + "' ja encontra-se com segunda pesagem. O normal seria gerar as cargas compartilhadas todas em sequencia, e somente depois disso, comecar as pesagens e o recebimento.",, .t.)
+					::UltMsg += "A carga compartilhada '" + ::CCompart [_nCompart] + "' ja encontra-se com segunda pesagem. O normal seria gerar as cargas compartilhadas todas em sequencia, e somente depois disso, comecar as pesagens e o recebimento."
 					_l2PesTOK = .F.
 				endif
 			endif
@@ -941,6 +935,206 @@ METHOD SegPesTOk () Class ClsCarSaf
 
 	U_ML_SRArea (_aAreaAnt)
 return _l2PesTOK
+
+
+// --------------------------------------------------------------------------
+// Altera o lote de estoque para 'NC' (nao conforme).
+// Tive tantos casos de 'esquecemos de segregar a carga' que resolvi automatizar um pouco.
+METHOD SegregarLt () Class ClsCarSaf
+	local _aAreaAnt  := U_ML_SRArea ()
+	local _oSQL      := NIL
+	local _lContinua := .t.
+	local _sWhereSD1 := ''
+	local _aLotesSD1 := {}
+	local _nLoteSD1  := 0
+	local _sWhereSB8 := ''
+	local _aLotesSB8 := {}
+	local _sWhereSBF := ''
+	local _aLotesSBF := {}
+	local _sLoteNovo := ''
+
+	if _lContinua .and. ! ::Segregada
+		::UltMsg += "Carga nao eh segregada"
+		_lContinua = .F.
+	endif
+	if _lContinua
+		_sWhereSD1 +=  " FROM " + RetSQLName ("SD1") + " SD1"
+		_sWhereSD1 += " WHERE SD1.D_E_L_E_T_ = ''"
+		_sWhereSD1 +=   " AND SD1.D1_FILIAL  = '" + xfilial ("SD1") + "'"
+		_sWhereSD1 +=   " AND SD1.D1_DOC     = '" + ::Contranota + "'"
+		_sWhereSD1 +=   " AND SD1.D1_SERIE   = '" + ::SerieCtrn + "'"
+		_sWhereSD1 +=   " AND SD1.D1_FORNECE = '" + ::Fornece + "'"
+		_sWhereSD1 +=   " AND SD1.D1_LOJA    = '" + ::Loja + "'"
+		_sWhereSD1 +=   " AND substring (SD1.D1_LOTECTL, 9, 2) != 'NC'"
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "SELECT D1_COD, D1_LOTECTL, D1_NUMSEQ"
+		_oSQL:_sQuery += _sWhereSD1
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		_aLotesSD1 = aclone (_oSQL:Qry2Array (.f., .f.))
+		U_Log2 ('debug', _aLotesSD1)
+		if len (_aLotesSD1) == 0
+			u_help ("Nao encontrei nenhum lote de estoque precisando ser alterado para 'NC'")
+		endif
+	endif
+
+	// Verifica se teve movimentacao e se pode alterar os lotes
+	if _lContinua
+		for _nLoteSD1 = 1 to len (_aLotesSD1)
+			_lContinua = .T.  // Para tentar os proximos lotes, caso de problema neste.
+			_sWhereSB8 :=  " FROM " + RetSQLName ("SB8") + " SB8"
+			_sWhereSB8 += " WHERE SB8.D_E_L_E_T_ = ''"
+			_sWhereSB8 +=   " AND SB8.B8_FILIAL  = '" + xfilial ("SB8") + "'"
+			_sWhereSB8 +=   " AND SB8.B8_PRODUTO = '" + _aLotesSD1 [_nLoteSD1, 1] + "'"
+			_sWhereSB8 +=   " AND SB8.B8_LOTECTL = '" + _aLotesSD1 [_nLoteSD1, 2] + "'"
+			_sWhereSB8 +=   " AND SB8.B8_DOC     = '" + ::Contranota + "'"
+			_sWhereSB8 +=   " AND SB8.B8_SERIE   = '" + ::SerieCtrn  + "'"
+			_sWhereSB8 +=   " AND SB8.B8_CLIFOR  = '" + ::Fornece    + "'"
+			_sWhereSB8 +=   " AND SB8.B8_LOJA    = '" + ::Loja       + "'"
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := "SELECT B8_QTDORI, B8_SALDO, B8_LOCAL"
+			_oSQL:_sQuery += _sWhereSB8
+			_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+			_aLotesSB8 = aclone (_oSQL:Qry2Array (.f., .f.))
+			if len (_aLotesSB8) != 1
+				::UltMsg += "Problema na leitura de lotes na tabela SB8. Nenhum (ou mais de um) registro encontrado!"
+				_lContinua = .F.
+			else
+				if _aLotesSB8 [1, 1] != _aLotesSB8 [1, 2]
+					::UltMsg += "Saldo do lote na tabela SB8 difere do original (ja teve movimentacao). Lote '" + _aLotesSD1 [_nLoteSD1, 2] + "' nao pode mais ser alterado."
+					_lContinua = .F.
+				else
+					// Verifica se jah foi enderecado.
+					_sWhereSBF :=  " FROM " + RetSQLName ("SBF") + " SBF"
+					_sWhereSBF += " WHERE SBF.D_E_L_E_T_ = ''"
+					_sWhereSBF +=   " AND SBF.BF_FILIAL  = '" + xfilial ("SBF") + "'"
+					_sWhereSBF +=   " AND SBF.BF_PRODUTO = '" + _aLotesSD1 [_nLoteSD1, 1] + "'"
+					_sWhereSBF +=   " AND SBF.BF_LOTECTL = '" + _aLotesSD1 [_nLoteSD1, 2] + "'"
+					_sWhereSBF +=   " AND SBF.BF_LOCAL   = '" + _aLotesSB8 [1, 3] + "'"
+					_oSQL := ClsSQL ():New ()
+					_oSQL:_sQuery := "SELECT BF_LOCALIZ, BF_QUANT, SUM (BF_QUANT) OVER ()"
+					_oSQL:_sQuery += _sWhereSBF
+					_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+					_aLotesSBF = aclone (_oSQL:Qry2Array (.f., .f.))
+					if len (_aLotesSBF) > 0 .and. _aLotesSBF [1, 3] != _aLotesSB8 [1, 2]
+						::UltMsg += "Quant.total enderecada diferente do saldo inicial do lote (ja teve movimentacao). Lote '" + _aLotesSD1 [_nLoteSD1, 2] + "' nao pode mais ser alterado."
+						_lContinua = .F.
+					endif
+				endif
+			endif
+			
+			// Se cheguei ateh aqui sem erros para este lote, posso alterar ele.
+			if _lContinua
+				U_Log2 ('debug', '[' + procname () + ']Testes iniciais ok... alterando lote ' + _aLotesSD1 [_nLoteSD1, 2])
+				_sLoteNovo = left (_aLotesSD1 [_nLoteSD1, 2], 8) + 'NC'
+				begin transaction
+
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := "UPDATE SD1 SET D1_LOTECTL = '" + _sLoteNovo + "'"
+				_oSQL:_sQuery += _sWhereSD1
+				_oSQL:_sQuery += " AND D1_LOTECTL = '" + _aLotesSD1 [_nLoteSD1, 2] + "'"  // Para o case de ter mais de um item na nota
+				_oSQL:_sQuery += " AND D1_NUMSEQ  = '" + _aLotesSD1 [_nLoteSD1, 3] + "'"
+				_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+				if ! _oSQL:Exec ()
+					DisarmTransaction ()
+					_lContinua = .F.
+				endif
+
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := "UPDATE SB8 SET B8_LOTECTL = '" + _sLoteNovo + "'"
+				_oSQL:_sQuery += _sWhereSB8
+				_oSQL:_sQuery += " AND B8_LOTECTL = '" + _aLotesSD1 [_nLoteSD1, 2] + "'"  // Para o case de ter mais de um item na nota
+				_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+				if ! _oSQL:Exec ()
+					DisarmTransaction ()
+					_lContinua = .F.
+				endif
+
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := "UPDATE SBF SET BF_LOTECTL = '" + _sLoteNovo + "'"
+				_oSQL:_sQuery += _sWhereSBF
+				_oSQL:_sQuery += " AND BF_LOTECTL = '" + _aLotesSD1 [_nLoteSD1, 2] + "'"  // Para o case de ter mais de um item na nota
+				_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+				if ! _oSQL:Exec ()
+					DisarmTransaction ()
+					_lContinua = .F.
+				endif
+
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := "UPDATE SDA SET DA_LOTECTL = '" + _sLoteNovo + "'"
+				_oSQL:_sQuery +=  " FROM " + RetSQLName ("SDA") + " SDA"
+				_oSQL:_sQuery += " WHERE SDA.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=   " AND SDA.DA_FILIAL  = '" + xfilial ("SDA") + "'"
+				_oSQL:_sQuery +=   " AND SDA.DA_DOC     = '" + ::Contranota + "'"
+				_oSQL:_sQuery +=   " AND SDA.DA_SERIE   = '" + ::SerieCtrn + "'"
+				_oSQL:_sQuery +=   " AND SDA.DA_CLIFOR  = '" + ::Fornece + "'"
+				_oSQL:_sQuery +=   " AND SDA.DA_LOJA    = '" + ::Loja + "'"
+				_oSQL:_sQuery +=   " AND SDA.DA_PRODUTO = '" + _aLotesSD1 [_nLoteSD1, 1] + "'"
+				_oSQL:_sQuery +=   " AND SDA.DA_LOTECTL = '" + _aLotesSD1 [_nLoteSD1, 2] + "'"  // Para o case de ter mais de um item na nota
+				_oSQL:_sQuery +=   " AND SDA.DA_NUMSEQ  = '" + _aLotesSD1 [_nLoteSD1, 3] + "'"
+				_oSQL:_sQuery +=   " AND SDA.DA_ORIGEM  = 'SD1'"
+				_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+				if ! _oSQL:Exec ()
+					DisarmTransaction ()
+					_lContinua = .F.
+				endif
+
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := "UPDATE SDB SET DB_LOTECTL = '" + _sLoteNovo + "'"
+				_oSQL:_sQuery +=  " FROM " + RetSQLName ("SDB") + " SDB"
+				_oSQL:_sQuery += " WHERE SDB.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=   " AND SDB.DB_FILIAL  = '" + xfilial ("SDB") + "'"
+				_oSQL:_sQuery +=   " AND SDB.DB_DOC     = '" + ::Contranota + "'"
+				_oSQL:_sQuery +=   " AND SDB.DB_SERIE   = '" + ::SerieCtrn + "'"
+				_oSQL:_sQuery +=   " AND SDB.DB_CLIFOR  = '" + ::Fornece + "'"
+				_oSQL:_sQuery +=   " AND SDB.DB_LOJA    = '" + ::Loja + "'"
+				_oSQL:_sQuery +=   " AND SDB.DB_PRODUTO = '" + _aLotesSD1 [_nLoteSD1, 1] + "'"
+				_oSQL:_sQuery +=   " AND SDB.DB_LOTECTL = '" + _aLotesSD1 [_nLoteSD1, 2] + "'"  // Para o case de ter mais de um item na nota
+				_oSQL:_sQuery +=   " AND SDB.DB_NUMSEQ  = '" + _aLotesSD1 [_nLoteSD1, 3] + "'"
+				_oSQL:_sQuery +=   " AND SDB.DB_ORIGEM  = 'SD1'"
+				_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+				if ! _oSQL:Exec ()
+					DisarmTransaction ()
+					_lContinua = .F.
+				endif
+
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := "UPDATE SD5 SET D5_LOTECTL = '" + _sLoteNovo + "'"
+				_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD5") + " SD5"
+				_oSQL:_sQuery += " WHERE SD5.D_E_L_E_T_ = ''"
+				_oSQL:_sQuery +=   " AND SD5.D5_FILIAL  = '" + xfilial ("SD5") + "'"
+				_oSQL:_sQuery +=   " AND SD5.D5_DOC     = '" + ::Contranota + "'"
+				_oSQL:_sQuery +=   " AND SD5.D5_SERIE   = '" + ::SerieCtrn + "'"
+				_oSQL:_sQuery +=   " AND SD5.D5_CLIFOR  = '" + ::Fornece + "'"
+				_oSQL:_sQuery +=   " AND SD5.D5_LOJA    = '" + ::Loja + "'"
+				_oSQL:_sQuery +=   " AND SD5.D5_PRODUTO = '" + _aLotesSD1 [_nLoteSD1, 1] + "'"
+				_oSQL:_sQuery +=   " AND SD5.D5_LOTECTL = '" + _aLotesSD1 [_nLoteSD1, 2] + "'"  // Para o case de ter mais de um item na nota
+				_oSQL:_sQuery +=   " AND SD5.D5_NUMSEQ  = '" + _aLotesSD1 [_nLoteSD1, 3] + "'"
+				_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+				if ! _oSQL:Exec ()
+					DisarmTransaction ()
+					_lContinua = .F.
+				endif
+
+				end transaction
+				
+				// Reprocessa saldo atual
+				if _lContinua
+					if ! U__Mata300 (_aLotesSD1 [_nLoteSD1, 1], _aLotesSD1 [_nLoteSD1, 1], _aLotesSD1 [_nLoteSD1, 2], _aLotesSD1 [_nLoteSD1, 2])
+						::UltMsg += "Erro no reprocessamento do saldo atual do produto " + _aLotesSD1 [_nLoteSD1, 1]
+						_lContinua = .F.
+					else
+						if ! U_ConsEstq (cFilAnt, _aLotesSD1 [_nLoteSD1, 1], _aLotesSD1 [_nLoteSD1, 2], '')
+							::UltMsg += "Estoques do produto " + _aLotesSD1 [_nLoteSD1, 1] + " ficaram inconsistentes depois de segregar o lote!"
+							_lContinua = .F.
+						endif
+					endif
+				endif
+			endif
+		next
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
+return
 
 
 // --------------------------------------------------------------------------

@@ -12,6 +12,7 @@
 // 15/01/2021 - Robert - Grava campo ze_imptk no final da impressao.
 // 11/03/2022 - Robert - Melhorados logs.
 // 06/01/2023 - Robert - Desabilitada impr. da senha de descarga.
+// 09/02/2023 - Robert - Impressao de 'tanque pulmao' no final, para filial 01.
 //
 
 // --------------------------------------------------------------------------
@@ -27,7 +28,7 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 	local _nHdl      := 0
 	local _sArq      := ""
 	local _nVia      := 0
-	local _nLinha    := 0
+//	local _nLinha    := 0
 	local _aAmost    := {}
 	local _sAvaliac  := ""
 	local _nAmost	 := 0
@@ -36,7 +37,7 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 	_nQtVias := iif (_nQtVias == NIL, 1, _nQtVias)
 	_sModelImp = upper (_sModelImp)
 	
-	U_Log2 ('debug', '[' + procname () + ']Qual ticket: ' + cvaltochar (_nQual) + "   Porta: " + cvaltochar (_sPorta) + ' Modelo impressora: ' + cvaltochar (_sModelImp))
+//	U_Log2 ('debug', '[' + procname () + ']Qual ticket: ' + cvaltochar (_nQual) + "   Porta: " + cvaltochar (_sPorta) + ' Modelo impressora: ' + cvaltochar (_sModelImp))
 
 	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
 	if type ("_oCarSaf") != 'O'
@@ -177,8 +178,18 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 		elseif _sModelImp == 'QUICKPRINTER'
 			_sTicket += '<DLINE>' + _Enter
 		endif
+		
 		if ! empty (sze -> ze_locdesc)
-			_sTicket += "  TOMBADOR" + iif (sze -> ze_filial != '01', " PREVISTO: " + sze -> ze_locdesc, "") + "   EFETIVO: ____" + _ýEnter
+			_sTicket += "  TOMBADOR" + iif (sze -> ze_filial != '01', " PREVISTO: " + sze -> ze_locdesc, "") + "   EFETIVO: ____" + _Enter
+			_sTicket += _Enter
+		endif
+
+		// Na matriz temos muitos casos de inverter tombador X tanque pulmao
+		if sze -> ze_filial == '01' .and. _nQual == 1
+			_sTicket += _Enter
+//			_sTicket += "TANQUE PULMAO:  1[   ]   2[   ]   3[   ]" + _Enter
+			_sTicket += padc ("Desvio processo:Se sim,linha efetiva:____", _nTamLin, ' ') + _Enter
+			_sTicket += padc ("(Questionar supervisorio)", _nTamLin, ' ') + _Enter
 			_sTicket += _Enter
 		endif
 
@@ -191,20 +202,21 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 		*/
 	endif
 
-	if _lContinua .and. (_nQual == 4)  // Fila de descarga
-		_sTicket := ""
-		if _sModelImp == 'BEMATECH'
-			_sTicket += chr(27) + '@' + _Enter
-		endif
-		_sTicket += padc (left (alltrim (sm0 -> m0_nomecom), _nTamLin), _nTamLin, ' ') + _Enter
-		_sTicket += padc (left ('Fila descarga em ' + dtoc (date ()) + ' ' + time (), _nTamLin), _nTamLin, ' ') + _Enter
-		_sTicket += _Enter
-		for _nLinha = 1 to len (_aFila)
-			_sTicket += left (_aFila [_nLinha, 6] + ' ' + alltrim (_aFila [_nLinha, 3]), _nTamLin) + _Enter
-			_sTicket += left (_aFila [_nLinha, 2] + ' ' + transform (_aFila [_nLinha, 10], "@E 99,999") + ' Kg ' + alltrim (_aFila [_nLinha, 5]), _nTamLin) + _Enter
-			_sTicket += _Enter
-		next
-	endif
+// Agora consulta-se pelo NaWeb
+//	if _lContinua .and. (_nQual == 4)  // Fila de descarga
+//		_sTicket := ""
+//		if _sModelImp == 'BEMATECH'
+//			_sTicket += chr(27) + '@' + _Enter
+//		endif
+//		_sTicket += padc (left (alltrim (sm0 -> m0_nomecom), _nTamLin), _nTamLin, ' ') + _Enter
+//		_sTicket += padc (left ('Fila descarga em ' + dtoc (date ()) + ' ' + time (), _nTamLin), _nTamLin, ' ') + _Enter
+//		_sTicket += _Enter
+//		for _nLinha = 1 to len (_aFila)
+//			_sTicket += left (_aFila [_nLinha, 6] + ' ' + alltrim (_aFila [_nLinha, 3]), _nTamLin) + _Enter
+//			_sTicket += left (_aFila [_nLinha, 2] + ' ' + transform (_aFila [_nLinha, 10], "@E 99,999") + ' Kg ' + alltrim (_aFila [_nLinha, 5]), _nTamLin) + _Enter
+//			_sTicket += _Enter
+//		next
+//	endif
 
 	// Deixa linhas em branco para avancar papel ateh poder rasgar o ticket.
 	if _lPicote
@@ -243,8 +255,9 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 		delete file (_sArq)
 	endif
 
-	// Marca a carga como 'primeiro ticket jah impresso' por que este web service eh chamado em loop
-	// por estacoes nas filiais, onde o servidor nao consegue enviar o ticket.
+	// Marca a carga como 'primeiro ticket jah impresso' por que este web
+	// service eh chamado em loop por estacoes nas filiais, onde o servidor
+	// nao consegue enviar o ticket.
 	if sze -> (fieldpos ("ZE_IMPTK")) > 0  // cpo ainda nao criado na base teste
 		reclock ("SZE", .F.)
 		sze -> ze_imptk = cvaltochar (_nQual)

@@ -26,8 +26,9 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	local _lContinua := .T.
+
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '01' modulo 'EST'
+		prepare environment empresa '01' filial '01' modulo 'FIN'
 		private cModulo   := 'FIN'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -68,10 +69,12 @@ user function robert ()
 		// _BatLimp ()
 		// _BatOcor ()
 		// _batFull ()
+		// _BatSafr ()
 		// _BatXML ()
 		// _batZBE ()
 		// _SimCtb ()
 		// _FechSafr ()
+		// _Etiq ()
 		// _TrEstq ()
 		// _Sisdevin ()
 		// _metaf ()
@@ -80,8 +83,6 @@ user function robert ()
 		// _elastic ()
 		// _evtXML ()
 		// _telnet ()
-		// _verif ()
-		// _Etiq ()
 		// _VA_XLS ()
 		// _aviso ()
 		// _reginv ()
@@ -89,19 +90,78 @@ user function robert ()
 		// _memoria ()
 		// _EstFul()
 		// _SF1()
-		// _CargSaf ()
-		_gerasze ()
+		// _gerasze ()
+		//_CargSaf ()
 		// _AtuSB1 ()
 		// _ctbanc ()
 		// _ST_MG ()
 		// _PreNF ()
-		//_SZI ()
+		// _SZI ()
+		// _verif ()
+		// _AjLoteEnd ()
 
 		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
 return
+
+
+// --------------------------------------------------------------------------
+// Ajusta saldo de lote / endereco
+static function _AjLoteEnd ()
+	local _sFilial   := '01'
+	local _sDocto    := 'GLPI13016'
+	local _sProduto  := '2525'
+	local _sAlmox    := '07'
+	local _nQuant    := 0.0004  // qt positiva=gerar entrada
+	local _sEndereco := ''
+	local _sLote     := '09517301'
+	local _oSQL      := NIL
+
+	if ! empty (_sLote)
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "SELECT min (B8_DTVALID)"  // uso MIN pra evitar possivel azar de ter mais de 1 registro.
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB8") + " SB8 "
+		_oSQL:_sQuery += " WHERE SB8.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SB8.B8_FILIAL  = '" + _sFilial + "'"
+		_oSQL:_sQuery +=   " AND SB8.B8_LOTECTL = '" + _sLote + "'"
+		_oSQL:_sQuery +=   " AND SB8.B8_PRODUTO = '" + _sProduto + "'"
+		_oSQL:_sQuery +=   " AND SB8.B8_LOCAL   = '" + _sAlmox + "'"
+//		reclock ("SD5", .t.)
+		sd5 -> d5_filial = _sFilial
+		sd5 -> d5_produto = _sProduto
+		sd5 -> d5_local   = _sAlmox
+		sd5 -> d5_doc     = _sDocto
+		sd5 -> d5_data    = date ()
+		sd5 -> d5_origlan = 'SD3'
+		sd5 -> d5_quant   = abs (_nQuant)
+		sd5 -> d5_lotectl = _sLote
+		sd5 -> d5_dtvalid = stod (_oSQL:RetQry (1, .f.))
+		msunlock ()
+		U_Log2 ('debug', '[' + procname () + ']Gravei SD5 com doc ' + _sDocto)
+	endif
+	if ! empty (_sEndereco)
+//		reclock ("SDB", .t.)
+		sdb -> db_filial  = _sFilial
+		sdb -> db_item    = '0001'
+		sdb -> db_produto = _sProduto
+		sdb -> db_localiz = _sEndereco
+		sdb -> db_doc     = _sDocto
+		sdb -> db_TM      = iif (_nQuant > 0, '999', '499')
+		sdb -> db_origem  = 'SD3'
+		sdb -> db_quant   = abs (_nQuant)
+		sdb -> db_data    = date ()
+		sdb -> db_lotectl = _sLote
+		sdb -> db_local   = _sAlmox
+		sdb -> db_atuest  = 'S'
+		sdb -> db_vauser  = cUserName
+		msunlock ()
+		U_Log2 ('debug', '[' + procname () + ']Gravei SDB com doc ' + _sDocto)
+	endif
+	U__MATA300 (_sProduto, _sProduto, _sAlmox, _sAlmox)
+return
+
 /*
 user function PEEXT006 ()
 	local _nItem := 0
@@ -182,7 +242,8 @@ static function _gerasze()
 	local _sPlacaVei := 'DODGE'
 	local _sObs      := 'TESTE ROBERT'
 	local _sCadVit   := '13386'
-	local _sVaried   := '9925'
+	local _sVaried   := '9901'
+	local _sVaried2  := '9924'
 	local _sEmbalag  := 'G'
 	local _sTombador := '1'
 	local _aItensCar := {}
@@ -195,120 +256,116 @@ static function _gerasze()
 //	local _aRegSA2   := {}
 	local _sSivibe   := 'RS-000.013.392'
 	local _sEspumant := ''
-	local _sCargaC1  := ''
-	local _sCargaC2  := ''
+	local _sCompart  := '5126'
 	local _lAmostra  := .F.
-	U_PerfMon ('I', procname ())
-	_oAssoc := ClsAssoc ():New ('000161', '01')
-	PRIVATE _sErroWS := ''
+	_oAssoc := ClsAssoc ():New ('000167', '01')
+	PRIVATE _sErroWS   := ''  // normalmente instanciada pelo programa WS_ALIANCA
+	private _sMsgRetWS := ''  // normalmente instanciada pelo programa WS_ALIANCA
 	aadd (_aItensCar, {_sCadVit, _sVaried, _sEmbalag, _sLote, _sSivibe, _sEspumant})
+	if ! empty (_sVaried2)
+		aadd (_aItensCar, {_sCadVit, _sVaried2, _sEmbalag, _sLote, _sSivibe, _sEspumant})
+	endif
 	u_log2 ('info', 'Itens da carga:')
 	u_log2 ('info', _aItensCar)
-	U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sImpTkCar, _sCargaC1, _sCargaC2)
-	U_PerfMon ('L', procname ())
+	U_GeraSZE (_oAssoc,_sSafra,_sBalanca,_sSerieNF,_sNumNF,_sChvNfPe,_sPlacaVei,_sTombador,_sObs,_aItensCar, _lAmostra, _sSenhaOrd, _sImpTkCar, _sCompart) //_sCargaC1, _sCargaC2)
 return
 
 // --------------------------------------------------------------------------
 static function _CargSaf ()
 	local _oCarSaf := NIL
-	
-	_oCarSaf = ClsCarSaf ():New (94776)
+//	local _nCompart := 0
+//	local _sCompart := ''
+//	local _sCComp   := 11
+//	_oCarSaf = ClsCarSaf ():New ('01'+'2023'+'5099')
+//	_oCarSaf:Log ()
+	_oCarSaf = ClsCarSaf ():New ('01'+'2023'+'5097')
 	_oCarSaf:Log ()
-/*
-	_oCarSaf:CXouGranel = 'C'
-	_oCarSaf:aIntegGrau = {{'01', ' ', 0}}
-	_oCarSaf:StatusZZA ()
-
-	_oCarSaf:aIntegGrau = {{'01', '0', 0}}
-	_oCarSaf:StatusZZA ()
-
-	_oCarSaf:aIntegGrau = {{'01', '1', 0}}
-	_oCarSaf:StatusZZA ()
-
-	_oCarSaf:aIntegGrau = {{'01', '2', 0}}
-	_oCarSaf:StatusZZA ()
-
-	_oCarSaf:aIntegGrau = {{'01', '3', 0}}
-	_oCarSaf:StatusZZA ()
-
-	_oCarSaf:aIntegGrau = {{'01', 'C', 0}}
-	_oCarSaf:StatusZZA ()
-
-
-	_oCarSaf:CXouGranel = 'G'
-	_oCarSaf:aIntegGrau = {{'01', ' ', 0}}
-	_oCarSaf:StatusZZA ()
-
-	_oCarSaf:aIntegGrau = {{'01', '0', 0}}
-	_oCarSaf:StatusZZA ()
-
-	_oCarSaf:aIntegGrau = {{'01', '1', 0}}
-	_oCarSaf:StatusZZA ()
-
-	_oCarSaf:aIntegGrau = {{'01', '2', 0}}
-	_oCarSaf:StatusZZA ()
-
-	_oCarSaf:aIntegGrau = {{'01', '3', 0}}
-	_oCarSaf:StatusZZA ()
-
-	_oCarSaf:aIntegGrau = {{'01', 'C', 0}}
-	_oCarSaf:StatusZZA ()
-
-
-	_oCarSaf:aIntegGrau [1, 2] = 'C'
-	_oCarSaf:aIntegGrau [2, 2] = '2'
-	_oCarSaf:StatusZZA ()
-
-	_oCarSaf:aIntegGrau [1, 2] = '1'
-	_oCarSaf:aIntegGrau [2, 2] = '2'
-	_oCarSaf:StatusZZA ()
-
-	_oCarSaf:aIntegGrau [1, 2] = '2'
-	_oCarSaf:aIntegGrau [2, 2] = '3'
-	_oCarSaf:StatusZZA ()
-
-	_oCarSaf:aIntegGrau [1, 2] = '2'
-	_oCarSaf:aIntegGrau [2, 2] = '1'
-	_oCarSaf:StatusZZA ()
-
-	_oCarSaf:aIntegGrau [1, 2] = '3'
-	_oCarSaf:aIntegGrau [2, 2] = '3'
-	_oCarSaf:StatusZZA ()
-
-	_oCarSaf:aIntegGrau [1, 2] = '1'
-	_oCarSaf:aIntegGrau [2, 2] = '1'
-	_oCarSaf:StatusZZA ()
-
-	_oCarSaf:aIntegGrau [1, 2] = '0'
-	_oCarSaf:aIntegGrau [2, 2] = '0'
-	_oCarSaf:StatusZZA ()
-
-	_oCarSaf:aIntegGrau [1, 2] = '1'
-	_oCarSaf:aIntegGrau [2, 2] = '3'
-	_oCarSaf:StatusZZA ()
-
-	_oCarSaf:aIntegGrau [1, 2] = '0'
-	_oCarSaf:aIntegGrau [2, 2] = '1'
-	_oCarSaf:StatusZZA ()
-*/
-	//_oCarSaf:Filial = '01'
-	//_oCarSaf:Safra  = '2023'
-	//_oCarSaf:Carga  = '4025'
-	//_oCarSaf:AtuAgenda ('LIB')
+	if ! _oCarSaf:SegregarLt ()
+		U_Log2 ('debug', '[' + procname () + ']' + _oCarSaf:UltMsg)
+	else
+		U_Log2 ('debug', '[' + procname () + ']Lote segregado com sucesso')
+	endif
 return
 
 // --------------------------------------------------------------------------
 static function _SF1 ()
-	local _nDado := 0
-	local _oSQL := ClsSQL():New()
-	_oSQL:_sQuery := "SELECT top 10 R_E_C_N_O_ FROM SD1010 WHERE D_E_L_E_T_ = '' and D1_FILIAL = '01' AND D1_DTDIGIT >= '20220901' AND D1_ORDEM != ''"
-	_aDados = aclone (_oSQL:Qry2Array (1, .f.))
-	for _nDado = 1 to len (_aDados)
-		sd1 -> (dbgoto (_aDados [_nDado, 1]))
-		sf1 -> (dbsetorder (1))  // F1_FILIAL, F1_DOC, F1_SERIE, F1_FORNECE, F1_LOJA, F1_TIPO, R_E_C_N_O_, D_E_L_E_T_
-		sf1 -> (dbseek (sd1->d1_filial + sd1->d1_doc + sd1->d1_serie + sd1->d1_fornece + sd1->d1_loja, .F.))
-		//_AvisaMnt ()
-	next
+	sa2 -> (dbsetorder (1))
+	sa2 -> (dbseek (xfilial ("SA2") + '00016101', .t.))
+	sb1 -> (dbsetorder (1))
+	sb1 -> (dbseek (xfilial ("SB1") + '9925', .t.))
+	_aLinha = {}
+	AADD(_aLinha , {"D1_COD"     , sb1 -> b1_cod    , Nil } )
+	AADD(_aLinha , {"D1_UM"      , sb1 -> B1_UM         , Nil } )
+//	AADD(_aLinha , {"D1_TP"      , sb1 -> B1_TIPO       , Nil } )
+	AADD(_aLinha , {"D1_LOCAL"   , sb1 -> B1_LOCPAD,      Nil } )
+	AADD(_aLinha , {"D1_GRAU"    , '13.0'       , Nil } )
+	//AADD(_aLinha , {"D1_PRM02"   , szf -> zf_prm02      , Nil } )
+	//AADD(_aLinha , {"D1_PRM03"   , szf -> zf_prm03      , Nil } )
+	//AADD(_aLinha , {"D1_PRM04"   , szf -> zf_prm04      , Nil } )
+	//AADD(_aLinha , {"D1_PRM05"   , szf -> zf_prm05      , Nil } )
+	//AADD(_aLinha , {"D1_PRM99"   , szf -> zf_prm99      , Nil } )
+	AADD(_aLinha , {"D1_VACLABD" , 'B'   , Nil } )
+	AADD(_aLinha , {"D1_QUANT"   , 1000       , Nil } )
+	AADD(_aLinha , {"D1_VUNIT"   , 0.5              , Nil } )
+	AADD(_aLinha , {"D1_TOTAL"   , 500              , Nil } )
+	AADD(_aLinha , {"D1_TES"     , '310'                , Nil } )
+	AADD(_aLinha , {"D1_DESCRI"  , 'teste robert'          , Nil } )
+	AADD(_aLinha , {"D1_VAVOLES" , 'granel'    , Nil } )
+	AADD(_aLinha , {"D1_VAVOLQT" , 1    , Nil } )
+	AADD(_aLinha , {"D1_PESBRT"  , 510, Nil } )
+	AADD(_aLinha , {"D1_TARA"    , 10          , Nil } )
+	AADD(_aLinha , {"D1_VAVITIC" , '12345'    , Nil } )
+	AADD(_aLinha , {"D1_LOTECTL", '001', Nil } )
+	AADD(_aLinha , {"D1_LOTEFOR", '001', Nil } )
+	AADD(_aLinha , {"D1_VACONDU" , 'L'  , Nil } )
+	AADD(_aLinha , {"D1_DESPESA" , 10 , Nil } )
+	u_log2 ('info', _aLinha)
+	_sErroAuto = ''  // A funcao OrdAuto tambem faz algumas validacoes
+	_aAutoSD1 := {}
+	AADD(_aAutoSD1, aClone (U_OrdAuto (_aLinha)))
+	_sSerie = '30 '
+	U_Log2 ('debug', '[' + procname () + '] antes do NxtSX5Nota')
+	_sNF = NxtSX5Nota (_sSerie)
+	U_Log2 ('debug', '[' + procname () + '] passou do NxtSX5Nota')
+	_aAutoSF1 := {}
+	AADD( _aAutoSF1, { "F1_DOC"      , _sNF,            Nil})
+	AADD( _aAutoSF1, { "F1_SERIE"    , _sSerie,         Nil})
+	AADD( _aAutoSF1, { "F1_TIPO"     , "N",             Nil})
+	AADD( _aAutoSF1, { "F1_FORMUL"   , "S",             Nil})
+	AADD( _aAutoSF1, { "F1_EMISSAO"  , dDataBase,       Nil})
+	AADD( _aAutoSF1, { "F1_FORNECE"  , sa2 -> a2_cod,   Nil})
+	AADD( _aAutoSF1, { "F1_LOJA"     , sa2 -> a2_loja,  Nil})
+	AADD( _aAutoSF1, { "F1_EST"      , sa2 -> a2_est,   Nil})
+	AADD( _aAutoSF1, { "F1_ESPECIE"  , "SPED",          Nil})
+	AADD( _aAutoSF1, { "F1_VANFPRO"  , strtran (time(), ':'),  Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
+	AADD( _aAutoSF1, { "F1_VASEPRO"  , '001', Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
+	AADD( _aAutoSF1, { "F1_VAPLVEI"  , 'fusca',   Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
+	AADD( _aAutoSF1, { "F1_VASAFRA"  , '2023',   Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
+	AADD( _aAutoSF1, { "F1_VAFLAG"   , 'G',             Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I. Indica 'nota ja gerada' para a rotina de manut. XML
+	AADD( _aAutoSF1, { "F1_VAGPSAF"  , 'z',      Nil})  // Campo customizado, serah tratado pelo P.E. SF1100I
+	AADD( _aAutoSF1, { "F1_COND"     , '020',        Nil})
+	_aAutoSF1 = aClone (U_OrdAuto (_aAutoSF1))
+//		PutMv ('MV_LIMPAG', max (_nVlFrete, 0.09)) // Valor original do parametro
+	_sErroAuto = ''
+	lMsHelpAuto := .F.  // se .t. direciona as mensagens de help
+	lMsErroAuto := .F.  // necessario a criacao
+	DbSelectArea ("SF1")
+	begin transaction
+	MsExecAuto({|x,y,z|MATA103(x,y,z)},_aAutoSF1,_aAutoSD1,3)
+	If lMsErroAuto
+		_lContinua = .F.
+		DisarmTransaction()
+		u_log2 ('erro', 'lMsErroAuto')
+		if ! empty (NomeAutoLog ())
+			u_log2 ('erro', memoread (NomeAutoLog ()))
+			MostraErro()
+		else
+			u_help ("Nao foi possivel ler o arquivo de log de erros.",, .t.)
+		endif
+	else
+		u_log2 ('info', '[' + procname () + ']gerou NF ' + sf1 -> f1_doc)
+	endif
+	end transaction
 return
 
 // --------------------------------------------------------------------------
@@ -634,11 +691,11 @@ static function _va_xls ()
 //	U_GravaSX1 (cPerg, '06', 'z')
 //	u_va_xls59 (.T.)
 
-	// Produtos para planilha GTIN (cadastro nacional de produtos - GS1)
-	Private cPerg   := "VAXLS61"
-	U_GravaSX1 (cPerg, '01', '')
-	U_GravaSX1 (cPerg, '02', 'z')
-	u_va_xls61 (.T.)
+//	// Produtos para planilha GTIN (cadastro nacional de produtos - GS1)
+//	Private cPerg   := "VAXLS61"
+//	U_GravaSX1 (cPerg, '01', '')
+//	U_GravaSX1 (cPerg, '02', 'z')
+//	u_va_xls61 (.T.)
 
 	// // exporta dados de OS
 	// Private cPerg   := "VAXLS62"
@@ -651,19 +708,40 @@ static function _va_xls ()
 	// U_GravaSX1 (cPerg, '07', date () - 60)  // dt prev ini
 	// U_GravaSX1 (cPerg, '08', date () - 30)
 	// u_va_xls62 (.T.)
+
+	Private cPerg   := "VAXLS63"
+	U_GravaSX1 (cPerg, '01', '')
+	U_GravaSX1 (cPerg, '02', 'z')
+	U_GravaSX1 (cPerg, '03', stod ('20221101'))
+	U_GravaSX1 (cPerg, '04', stod ('20221120'))
+	u_va_xls63 (.T.)
 return
 
 // --------------------------------------------------------------------------
 static function _batfull ()
 	//_sArqLog := 'U_BatFullW.log' ; 	U_BatFullW ('S')
 	U_MudaLog ('U_BatFullW.log')
-	U_BatFullW ('S')
+	U_BatFullW ('S', nil, 'ZAG  0000005193')
 return
 
 // --------------------------------------------------------------------------
 static function _batLimp ()
 	U_MudaLog ('U_BatLimp.log')
 	U_BatLimp ()
+return
+
+// --------------------------------------------------------------------------
+static function _BatSafr ()
+	U_MudaLog ("U_BatSafr.log")
+//	u_batsafr ('CargasSemContranota')  // cargas sem contranota
+//	u_batsafr ('ConferirParcelamento')  // conferencia geracao das parcelas financeiro
+	u_batsafr ('ContranotasSemCarga')  // contranotas sem carga
+//	u_batsafr ('ConferirFrete')  // conferencia fretes
+//	u_batsafr ('MailAcompanhamento')  // e-mail diario de acompanhamento de safra
+//	u_batsafr ('GerarSZI')  // gera SZI a partir das parcelas
+//	u_batsafr ('ConferirSZI')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
+//	u_batsafr ('TransfTitNaoAssocParaMatriz')  // Transfere (das filiais para a matriz) os titulos de nao associados.
+//	u_batsafr ('TransfSZIParaMatriz')  // Transfere SZI para a matriz (normalmente ao gerar o SZI jah faz isso, mas para garantir...)
 return
 
 // --------------------------------------------------------------------------
@@ -775,11 +853,36 @@ static function _Etiq ()
 	local _oEtiq := NIL
 //	_oEtiq := ClsEtiq ():New ('2000527843')  // Etiq apontamento de OP (item 0151)
 //	_oEtiq:Imprime ('01')
-//	_oEtiq := ClsEtiq ():New ('2000519769')  // Etiq gerada pelo ZAG
-//	_oEtiq:Imprime ('01')
-	_oEtiq := ClsEtiq ():New ('2000574686')
-	//_oEtiq:ImprCBProd = 'S'
-	_oEtiq:Imprime ('98')
+	_oEtiq := ClsEtiq ():New ('2000593146')
+	_oEtiq:EnviaFull (.f.)
+/*
+	za1 -> (dbsetorder (2))  // ZA1_FILIAL, ZA1_OP, R_E_C_N_O_, D_E_L_E_T_
+	za1 -> (dbseek (xfilial ("ZA1") + '0', .t.))
+	dbselectarea ("ZA1")
+	set filter to za1_data >= stod ('20220101') .and. za1_op != ''
+	_conta = 0
+	dbgotop ()
+	do while ! za1 -> (eof ())
+		//if za1 -> ZA1_DATA < stod ('20220101')
+		//	u_log ('skip ' + dtoc (za1 -> za1_data))
+		//	za1 -> (dbskip ())
+		//	loop
+		//endif
+		_sOP = za1 -> za1_op
+		U_Log2 ('debug', '[' + procname () + ']' + _sOP)
+		_oEtiq := ClsEtiq ():New (za1 -> za1_codigo)
+		if _oEtiq:QtApontada > 0 .and. _oEtiq:AlmApontOP != '11'
+			U_Log2 ('debug', '[' + procname () + ']' + _oEtiq:Codigo + '  OP: ' + _oEtiq:OP + ' alm.apont: ' + _oEtiq:AlmApontOP)
+			if _conta ++ > 100
+				exit
+			endif
+		endif
+		do while ! za1 -> (eof ()) .and. za1 -> za1_op == _sOP
+			za1 -> (dbskip ())
+		enddo
+	enddo
+*/	//_oEtiq:ImprCBProd = 'S'
+//	_oEtiq:Imprime ('98')
 //	_oEtiq:ApontaOP (date(), '1')
 
 //	sd5 -> (dbgoto (509183))
@@ -849,7 +952,7 @@ RETURN
 // --------------------------------------------------------------------------
 // Testes verificacoes genericas.
 static function _verif ()
-	/*
+
 	// _oVerif := ClsVerif():New (25)
 	// _oVerif:SetParam ('01', '2017')
 	// _oVerif:SetParam ('02', '')
@@ -863,9 +966,9 @@ static function _verif ()
 	// _oVerif:SetParam ('02', '09189201001  ')
 	// _oVerif:SetParam ('03', '')
 	// _oVerif:SetParam ('04', 'z')
-	_oVerif := ClsVerif():New (92)
-	//	_oVerif:SetParam ('01', date () - 10)
-	//	_oVerif:SetParam ('02', date ())
+	_oVerif := ClsVerif():New (93)
+		_oVerif:SetParam ('01', date () - 30)
+		_oVerif:SetParam ('02', date ())
 	//	_oVerif:SetParam ('03', '')
 	//	_oVerif:SetParam ('04', 'z')
 	//	//U_Log2 ('debug', '[' + procname () + ']ult ver:' + cvaltochar (_oVerif:UltVerif))
@@ -876,9 +979,9 @@ static function _verif ()
 	else
 		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
 	endif
-	*/
-	U_MudaLog ('U_BatVerif.log')
-	u_batverif ()
+	
+	//U_MudaLog ('U_BatVerif.log')
+	//u_batverif ()
 return
 
 /*
@@ -1144,24 +1247,22 @@ STATIC FUNCTION _TrEstq ()
 	private _sErroAuto := ''
 
 //	_sDocZAG := U_RetSQL ("SELECT MIN (ZAG_DOC) FROM ZAG010 WHERE D_E_L_E_T_ = '' AND ZAG_EMIS BETWEEN '20221104' AND '20221104' AND ZAG_USRINC = 'robert.koch'")
-	_sDocZAG = '0000004381'
-	zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
-	if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
-		u_help ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG",, .t.)
-	else
-		U_Log2 ('debug', '[' + procname () + ']Instanciando...')
-		_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
-		U_Log2 ('debug', '[' + procname () + ']Instanciou')
-		if empty (_oTrEstq:Docto)
-			u_help ("Nao foi possivel instanciar objeto _oTrEstq",, .t.)
-		else
-			_oTrEstq:Executa ()
-			U_Log2 ('debug', '[' + procname () + ']retorno:' + cvaltochar (_oTrEstq:UltMsg))
-		endif
-	endif
+//	_sDocZAG = '0000004418'
+//	zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
+//	if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
+//		u_help ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG",, .t.)
+//	else
+//		U_Log2 ('debug', '[' + procname () + ']Instanciando...')
+//		_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
+//		U_Log2 ('debug', '[' + procname () + ']Instanciou')
+//		if empty (_oTrEstq:Docto)
+//			u_help ("Nao foi possivel instanciar objeto _oTrEstq",, .t.)
+//		else
+//			_oTrEstq:Executa ()
+//			U_Log2 ('debug', '[' + procname () + ']retorno:' + cvaltochar (_oTrEstq:UltMsg))
+//		endif
+//	endif
 
-
-/*
 	_oTrEstq := ClsTrEstq ():New ()
 	_oTrEstq:FilOrig  = cFilAnt
 	_oTrEstq:FilDest  = cFilAnt
@@ -1176,10 +1277,10 @@ STATIC FUNCTION _TrEstq ()
 	_oTrEstq:EndOrig  = ''
 	_oTrEstq:EndDest  = ''
 	_oTrEstq:LoteOrig = ''
-	_oTrEstq:LoteDest = '001       '
+	_oTrEstq:LoteDest = ''
 	_oTrEstq:QtdSolic = 1
 	_oTrEstq:UsrIncl  = 'robert.koch'
-	_oTrEstq:ImprEtq  = '15' // 14=AX EMBALAGENS;15=logistica;16=Elgin TI;98=sato em disco
+	_oTrEstq:ImprEtq  = '98' // 14=AX EMBALAGENS;15=logistica;16=Elgin TI;98=sato em disco
 	if _oTrEstq:Grava ()
 		U_Log2 ('debug', '[' + procname () + ']Gravou! msg: ' + _oTrEstq:UltMsg)
 //		if _oTrEstq:Libera ()
@@ -1387,16 +1488,6 @@ return
 // Testes batches em geral
 //	_sArqLog := 'U_BatCompAssoc_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batCompAssoc ()
-//	_sArqLog := 'U_BatSafr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batsafr ('CargasSemContranota')  // cargas sem contranota
-	u_batsafr ('ConferirParcelamento')  // conferencia geracao das parcelas financeiro
-//	u_batsafr ('ContranotasSemCarga')  // contranotas sem carga
-	u_batsafr ('ConferirFrete')  // conferencia fretes
-//	u_batsafr ('MailAcompanhamento')  // e-mail diario de acompanhamento de safra
-	u_batsafr ('GerarSZI')  // gera SZI a partir das parcelas
-	u_batsafr ('ConferirSZI')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
-	u_batsafr ('TransfTitNaoAssocParaMatriz')  // Transfere (das filiais para a matriz) os titulos de nao associados.
-	u_batsafr ('TransfSZIParaMatriz')  // Transfere SZI para a matriz (normalmente ao gerar o SZI jah faz isso, mas para garantir...)
 //	_sArqLog := 'U_BatSZI_' + alltrim (cusername) + ".log"
 //	if cFilAnt == '01'
 //		u_batSZI (stod ('20200101'), stod ('20210228'))
