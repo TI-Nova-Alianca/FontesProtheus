@@ -12,7 +12,6 @@
 // 15/01/2021 - Robert - Grava campo ze_imptk no final da impressao.
 // 11/03/2022 - Robert - Melhorados logs.
 // 06/01/2023 - Robert - Desabilitada impr. da senha de descarga.
-// 09/02/2023 - Robert - Impressao de 'tanque pulmao' no final, para filial 01.
 //
 
 // --------------------------------------------------------------------------
@@ -184,14 +183,14 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 			_sTicket += _Enter
 		endif
 
-		// Na matriz temos muitos casos de inverter tombador X tanque pulmao
-		if sze -> ze_filial == '01' .and. _nQual == 1
-			_sTicket += _Enter
-//			_sTicket += "TANQUE PULMAO:  1[   ]   2[   ]   3[   ]" + _Enter
-			_sTicket += padc ("Desvio processo:Se sim,linha efetiva:____", _nTamLin, ' ') + _Enter
-			_sTicket += padc ("(Questionar supervisorio)", _nTamLin, ' ') + _Enter
-			_sTicket += _Enter
-		endif
+// Nem entrou em producao		// Na matriz temos muitos casos de inverter tombador X tanque pulmao
+// Nem entrou em producao		if sze -> ze_filial == '01' .and. _nQual == 1
+// Nem entrou em producao			_sTicket += _Enter
+// Nem entrou em producao//			_sTicket += "TANQUE PULMAO:  1[   ]   2[   ]   3[   ]" + _Enter
+// Nem entrou em producao			_sTicket += padc ("Desvio processo:Se sim,linha efetiva:____", _nTamLin, ' ') + _Enter
+// Nem entrou em producao			_sTicket += padc ("(Questionar supervisorio)", _nTamLin, ' ') + _Enter
+// Nem entrou em producao			_sTicket += _Enter
+// Nem entrou em producao		endif
 
 		/* Desabilitada impr. da senha de descarga por solicitacao do Leonardo em 06/01/2023.
 		if _nQual == 1 .and. ! empty (sze -> ze_senhade)
