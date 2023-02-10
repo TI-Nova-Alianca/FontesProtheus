@@ -12,8 +12,9 @@
 //
 // Historico de alteracoes:
 // 16/12/2022 - Cláudia - Incluida validação de NF na gravação. GLPI: 12943
+// 10/02/2023 - Claudia - Incluido o relatorio emissão/Devolução para validações. GLPI:13177
 //
-// ----------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
 #include 'parmtype.ch'
 #Include "totvs.ch"
@@ -27,6 +28,7 @@ User Function ZC0()
 	AADD(_aRotAdic, {"&Provisão Rapel"   , "U_ZC0PRO()"     							, 0, 6})
 	AADD(_aRotAdic, {"&Registros Rapel"  , "U_ZC0REL()"     							, 0, 6})
 	AADD(_aRotAdic, {"&Saldos Rapel"     , "U_ZC0SALDO()"     							, 0, 6})
+	AADD(_aRotAdic, {"&Emissao/Devolução", "U_ZC0VALID()"     							, 0, 6})
 	AADD(_aRotAdic, {"&Consulta Saldos"  , "U_ZC0SAL(ZC0->ZC0_CODRED, ZC0->ZC0_LOJRED)"	, 0, 6})
 
     AADD(aRotina, {"&Visualizar"       	, "AxVisual"       								, 0, 1})
