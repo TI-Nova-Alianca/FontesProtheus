@@ -4,11 +4,12 @@
 // Descricao..: Retorna o local (almox) onde o produto deve ser empenhado para a OP.
 //
 // Historico de alteracoes:
+// 10/02/2023 - Robert - Empenhos ax.envase alterados de ME para ME/UC/MA (GLPI 13151)
 //
 
 // --------------------------------------------------------------------------
 user function LocEmp (_sProduto)
-	//local _aAreaAnt := U_ML_SRArea ()
+	local _aAreaAnt := U_ML_SRArea ()
 	local _sRet     := ''
 	local _sAlmEnv  := ""
 	local _sAlmPrep := ""
@@ -21,7 +22,8 @@ user function LocEmp (_sProduto)
 
 		// Alguns materiais devem ser requisitados de almoxarifados especificos (de processo).
 		if cEmpAnt + cFilAnt == '0101'  // Somente na matriz
-			if sb1 -> b1_tipo == 'ME'
+//			if sb1 -> b1_tipo == 'ME'
+			if sb1 -> b1_tipo $ 'ME/UC/MA'
 				_sAlmEnv = GetMv ("AL_ALMENV",, '')  // Se o parametro nao existir, retorna vazio.
 				if ! empty (_sAlmEnv)
 					_sRet = _sAlmEnv
@@ -35,4 +37,5 @@ user function LocEmp (_sProduto)
 		endif
 	endif
 
+	U_ML_SRArea (_aAreaAnt)
 return _sRet

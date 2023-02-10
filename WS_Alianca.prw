@@ -2592,6 +2592,12 @@ static function _ImpEtiqZAG ()
 					if ! _oEtiq:Imprime (_sCodImpr)
 						_SomaErro ('Erro na rotina de impressao')
 					else
+						// Como tive casos de falta de algum cadastro, o pessoal
+						// apenas atualizou cadastro e tentou reimprimir a
+						// etiqueta, na esperanca de que jah fosse reenviada para
+						// o FullWMS. Nao custa nada dar uma maozinha...
+						_oEtiq:EnviaFull (.f.)
+
 						_sMsgRetWS += _oEtiq:UltMsg
 					endif
 				endif

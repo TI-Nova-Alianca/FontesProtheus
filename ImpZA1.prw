@@ -31,6 +31,7 @@
 // 21/10/2022 - Robert  - Validar parametro VA_ETQOCBP: nao impressao cod.barras produto (GLPI 12344)
 // 24/10/2022 - Robert  - Validar atributo :FinalidOP junto com parametro VA_ETQOCBP para nao impressao cod.barras produto (GLPI 12344)
 // 09/12/2022 - Robert  - Nao busca mais nada do SB1 e SC2. Dados jah chegam como atributos do objeto.
+// 08/02/2023 - Robert  - Eliminadas algumas linhas comentariadas.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -102,21 +103,15 @@ user function ImpZA1 (_sIdImpr, _oEtiq)
 		_sUMImp    = _oEtiq:UM  //sb1 -> b1_um
 		_sQtdImp   = alltrim (cvaltochar (_oEtiq:Quantidade))
 
-//		_sDProImp1 = substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 1, 25)
-//		_sDProImp2 = substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 26, 25)
-//		_sDProImp3 = substr (alltrim (sb1 -> b1_cod) + ' - ' + sb1 -> b1_desc, 51, 25)
 		_sDProImp1 = substr (alltrim (_oEtiq:Produto) + ' - ' + _oEtiq:DescriProd, 1, 25)
 		_sDProImp2 = substr (alltrim (_oEtiq:Produto) + ' - ' + _oEtiq:DescriProd, 26, 25)
 		_sDProImp3 = substr (alltrim (_oEtiq:Produto) + ' - ' + _oEtiq:DescriProd, 51, 25)
 
-	//	_sPesoBImp = alltrim (cvaltochar (sb1 -> B1_PESBRU * _oEtiq:Quantidade))
 		_sPesoBImp = alltrim (cvaltochar (_oEtiq:PesoBruto))
 		_sDImpImp  = iif (za1 -> za1_impres == 'S', 'Reimpr:', 'Dt.Impr:') + dtoc (date ()) + ' ' + time ()
 		_sVldLtImp = dtoc (_oEtiq:ValidLote)
 		_sDtFabImp = dtoc (_oEtiq:DtFabrLote)
-//		if sb1 -> b1_vafullw == 'S'
 		if _oEtiq:B1_VAFullW == 'S'
-//			if empty (sb1 -> b1_codbar)
 			if empty (_oEtiq:B1_CodBar)
 				u_help ("Produto '" + alltrim (_oEtiq:Produto) + "' nao tem codigo DUN14 informado no campo '" + alltrim (RetTitle ("B1_CODBAR")) + "'.",, .t.)
 				_lContinua = .F.
@@ -155,9 +150,7 @@ user function ImpZA1 (_sIdImpr, _oEtiq)
 				_sCBarProd = alltrim (_oEtiq:CBEmbCol)  //sc2 -> c2_vaBarCx)
 				
 				// Sequencial de etiquetas (1 e 3, 2 de 3, ...) para ver se nao ficou alguma esquecida.
-		//		if sc2 -> c2_vaqtetq != 0 .and. za1 -> za1_seq != 0
 				if _oEtiq:QtEtqGrupo != 0 .and. _oEtiq:SeqNoGrupo != 0
-		//			_sSeqImp = padc (alltrim (str (za1 -> za1_seq)) + '/' + alltrim (str (sc2 -> c2_vaqtetq)), 9, ' ')
 					_sSeqImp = padc (alltrim (str (_oEtiq:SeqNoGrupo)) + '/' + alltrim (str (_oEtiq:QtEtqGrupo)), 9, ' ')
 				else
 					_sSeqImp = ''

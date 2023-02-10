@@ -137,7 +137,7 @@ user function VA_RUS2T (_nOpc)
 	endif
 
 	// Estou migrando para dentro da classe.
-	if _lRet
+	if _lRet .and. altera
 		_lRet = _oCarSaf:SegPesTOk ()
 		if ! _lRet
 			u_help (_oCarSaf:UltMsg,, .t.)
