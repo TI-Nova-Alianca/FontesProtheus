@@ -875,15 +875,16 @@ METHOD SegPesTOk () Class ClsCarSaf
 
 //	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']iniciando...')
 
-	// Na matriz pode ocorrer a troca de tanque pulmao, ou seja: descarrega no
-	// tombador 1, mas a mangueira estah conectada ao tanque pulmao 2.
-	if ::Filial == '01' .and. empty (::TqPulmao)
-		::UltMsg += "Nesta filial, o numero do tanque pulmao para onde foi direcionado o mosto deve ser informado."
-		_l2PesTOK = .F.
-	elseif ::Filial != '01' .and. !empty (::TqPulmao)
-		::UltMsg += "Nesta filial, o tanque pulmao NAO deve ser informado."
-		_l2PesTOK = .F.
-	endif
+// Acho que faremos gravacao por powershell
+//	// Na matriz pode ocorrer a troca de tanque pulmao, ou seja: descarrega no
+//	// tombador 1, mas a mangueira estah conectada ao tanque pulmao 2.
+//	if ::Filial == '01' .and. empty (::TqPulmao)
+//		::UltMsg += "Nesta filial, o numero do tanque pulmao para onde foi direcionado o mosto deve ser informado."
+//		_l2PesTOK = .F.
+//	if ::Filial != '01' .and. !empty (::TqPulmao)
+//		::UltMsg += "Nesta filial, a 'linha efetiva' NAO deve ser informada."
+//		_l2PesTOK = .F.
+//	endif
 
 	// Para referenciar alguma outra carga como compartilhada, essa deve existir.
 	if _l2PesTOK

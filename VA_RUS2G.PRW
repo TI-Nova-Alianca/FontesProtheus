@@ -13,6 +13,7 @@
 // 11/03/2022 - Robert - Melhorados logs.
 // 31/01/2023 - Robert - Tratamentos para gravacao de cargas compartilhadas.
 // 03/02/2023 - Robert - Gravacao de eventos cfe. campos ZE_AlManPB,ZE_AlManPT, ZF_AlManGR
+// 10/02/2023 - Robert - Gravacao evento cancelamento carga.
 //
 
 #include "totvs.ch"
@@ -261,6 +262,7 @@ user Function VA_RUS2G (_nOpc)
 			msunlock ()
 
 			_oCarSaf:GeraAtrib ("SZE")  // Atualiza atributos com o que foi gravado nos arquivos.
+			_oCarSaf:GrvEvt ('SZE010', 'Cancelamento carga c/motivo: ' + _sMotCanc)
 
 			// Atualiza tabela de comunicacao com leitor de grau.
 			_oCarSaf:AtuZZA (.F.)

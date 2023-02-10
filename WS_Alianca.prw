@@ -112,6 +112,7 @@
 // 19/01/2023 - Robert  - ClsTrEstq:Libera() nao tenta mais executar a transferencia no final.
 // 27/01/2023 - Robert  - Criada acao TransfEstqInformarEndDest (GLPI 13097).
 // 31/01/2023 - Robert  - Geracao carga safra passa mandar cargas compartilhadas concatenadas para U_GeraSZE().
+// 10/02/2023 - Robert  - Passa a usar a funcao U__Mata300
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -518,7 +519,7 @@ static function _SaldoAtu ()
 	endif
 
 	if empty (_sErroWS)
-
+/*
 		// Guarda ultimo log deste processo para posteriormente verificar se gerou novo log.
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "SELECT MAX (CV8_DATA + CV8_HORA)"
@@ -557,6 +558,12 @@ static function _SaldoAtu ()
 			_SomaErro ("Erro no processo")
 		else
 			_sMsgRetWS = _sUltExec
+		endif
+*/
+		if ! U__Mata300 (_sProduto, _sProduto, '', 'zz')
+			_SomaErro ("Erro no processo")
+		else
+			_sMsgRetWS = 'Saldo reprocessado.'
 		endif
 	endif
 
