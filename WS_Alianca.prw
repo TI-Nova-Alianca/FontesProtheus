@@ -509,9 +509,9 @@ Return
 // Recalculo do saldo atual em estoque
 static function _SaldoAtu ()
 	local _sProduto  := ""
-	local _sPerg     := ""
-	local _oSQL      := NIL
-	local _sUltExec  := ""
+//	local _sPerg     := ""
+//	local _oSQL      := NIL
+//	local _sUltExec  := ""
 
 	//u_logIni ()
 	if empty (_sErroWS)

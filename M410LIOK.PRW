@@ -74,6 +74,7 @@
 // 24/03/2022 - Claudia - Validação se item controla ou não estoque. GLPI: 11802
 // 11/05/2022 - Robert  - Melhoradas valid.venda entr.fut: agora testa se o
 //                        pedido eh de faturamento ou remessa (GLPI 12036).
+// 10/02/2023 - Robert  - Validava lote e endereco mesmo quando a linha estava deletada na GetDados.
 //
 
 // --------------------------------------------------------------------------
@@ -237,7 +238,8 @@ User Function M410LIOK()
 	endif
 
 	// Quando item controla rastreabilidade, exigir lote e endereço 
-	If _lRet
+//	If _lRet
+	If _lRet .and. ! GDDeleted ()
 		_sProduto   := GDFieldGet("C6_PRODUTO")
 		_sLote      := GDFieldGet("C6_LOTECTL")
 		_sLocaliz   := GDFieldGet("C6_LOCALIZ")
