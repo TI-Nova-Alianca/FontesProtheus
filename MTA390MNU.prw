@@ -12,6 +12,7 @@
 // #Modulos           #EST
 
 // Historico de alteracoes:
+// 10/02/2023 - Robert - Passa a aceitar mais de uma etiqueta para o mesmo lote - GLPI 13134.
 //
 
 // --------------------------------------------------------------------------
@@ -19,8 +20,8 @@ user function Mta390Mnu ()
 	local _aRotAdic := {}
 	
 	// Cria submenu de rotinas especificas.
-	aadd (_aRotAdic, {"Gerar etiqueta"   , "U_ZA1SD5 ('G')", 0, 7, 0, nil})
-	aadd (_aRotAdic, {"Imprimir etiqueta", "U_ZA1SD5 ('I')", 0, 7, 0, nil})
+	aadd (_aRotAdic, {"Gerar etiquetas"   , "U_ZA1SD5 ('G')", 0, 7, 0, nil})
+	aadd (_aRotAdic, {"Imprimir etiquetas", "U_ZA1SD5 ('I')", 0, 7, 0, nil})
 
 	aadd (aRotina, {"Especificos" ,_aRotAdic, 0 , 7,0,nil})
 return
