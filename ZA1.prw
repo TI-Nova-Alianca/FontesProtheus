@@ -51,7 +51,6 @@ user function ZA1SD5 (_sQueFazer)
 			_sMsgMult += ' ' + fBuscaCpo ("SB1", 1, xfilial ("SB1") + sd5 -> d5_produto, "B1_UM")
 			_sMsgMult += ' do item ' + alltrim (sd5 -> d5_produto) + ' - ' + alltrim (fBuscaCpo ("SB1", 1, xfilial ("SB1") + sd5 -> d5_produto, "B1_DESC"))
 			_sMsgMult += '. Caso deseje dividir em mais de uma etiqueta, informe agora a quantidade por etiqueta.'
-			_sMsgMult += 'Estou avisando por que quem avisa amigo é. Vai por mim, que tu não te arrepende. Sim, estou escrevendo baboseira para testar se vai mostrar corretamente um texto longo.'
 			_nQtMult = U_Get (_sMsgMult, 'N', 12, '9999999.9999', '', _nQtMult, .f., '.t.')
 			if _nQtMult == NIL  // Usuario cancelou
 				u_help ("Geracao de etiquetas cancelada.",, .t.)
