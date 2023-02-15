@@ -125,7 +125,7 @@ Static Function RptDetail()
     if mv_par11 = 1 // opcao analitica 
     	_sQuery += " GROUP BY SD2.D2_EMISSAO, SF4.F4_MARGEM, SD2.D2_DOC ,SD2.D2_SERIE, SD2.D2_TIPO, SD2.D2_CLIENTE , SD2.D2_LOJA, SD2.D2_EST, SF4.F4_CREDST"
  	else
- 		_sQuery += " GROUP BY SD2.D2_EMISSAO, SF4.F4_MARGEM"
+ 		_sQuery += " GROUP BY SD2.D2_EMISSAO, SF4.F4_MARGEM, SF4.F4_CREDST"
  	endif
     _sQuery += " UNION ALL "
  	_sQuery += " SELECT SD1.D1_DTDIGIT      AS DT_EMISSAO"
@@ -182,7 +182,7 @@ Static Function RptDetail()
     if mv_par11 = 1 // opcao analitica
     	_sQuery += " GROUP BY SD1.D1_DTDIGIT, SF4.F4_MARGEM, SD1.D1_DOC ,SD1.D1_SERIE, SD1.D1_TIPO, SD1.D1_FORNECE , SD1.D1_LOJA, SF1.F1_EST, SF4.F4_CREDST"
   	else
- 		_sQuery += " GROUP BY SD1.D1_DTDIGIT, SF4.F4_MARGEM"
+ 		_sQuery += " GROUP BY SD1.D1_DTDIGIT, SF4.F4_MARGEM, SF4.F4_CREDST "
  	endif
     if mv_par11 = 1 // opcao analitica
     	_sQuery += " ORDER BY DT_EMISSAO, NOTA, SERIE"
