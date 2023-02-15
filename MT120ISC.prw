@@ -20,6 +20,7 @@
 // 15/01/2021 - Claudia - GLPI: 8286/8818. Acrescentados os campos C7_VADESTI|C7_VACCDES
 // 04/05/2021 - Claudia - Acrescentado o campo C7_SOLICIT. GLPI:9814
 // 15/10/2021 - Robert  - Acrescentado campo C7_vaNF.
+// 15/02/2023 - Robert  - Alimentar campo C7_CODPRF. 
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -36,6 +37,7 @@ User function MT120ISC ()
 		GDFieldPut ("C7_VACCDES", fbuscacpo('CTT',1,xfilial('CTT') + sc1 -> c1_cc ,'CTT_DESC01') )
 		GDFieldPut ("C7_SOLICIT", sc1 -> c1_solicit)
 		GDFieldPut ("C7_VANF"   , sc1 -> c1_vaNF)
+		GDFieldPut ("C7_CODPRF", fbuscacpo('SA5',1,XFILIAL("SA5")+CA120FORN+CA120LOJ+SC1->C1_PRODUTO,'A5_CODPRF') )
 
 	else  // Aut.entrega
 		GDFieldPut ("C7_DESCRI",  sc3 -> c3_vadescr)
@@ -46,6 +48,7 @@ User function MT120ISC ()
 		GDFieldPut ("C7_OPER1",   sc3 -> c3_oper1)
 		GDFieldPut ("C7_VAFCOBR", sc3 -> c3_vaFCObr)
 		GDFieldPut ("C7_VAMtInv", sc3 -> c3_vaMtInv)
+		GDFieldPut ("C7_CODPRF", fbuscacpo('SA5',1,XFILIAL("SA5")+CA120FORN+CA120LOJ+SC1->C1_PRODUTO,'A5_CODPRF') )
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
