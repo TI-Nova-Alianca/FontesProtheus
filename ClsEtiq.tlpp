@@ -37,6 +37,8 @@
 // 19/01/2023 - Robert - Criado atributo AlmApontOP (almox.onde foi apontada a OP)
 // 27/01/2023 - Robert - Metodo New passa a aceitar R_E_C_N_O_ ou chave de pesquisa.
 //                     - Criados mais atributos alimentados pela leitura do SD3.
+// 10/02/2023 - Robert - Tratamento para mais de uma etiqueta no metodo GeraPorSD5 - GLPI 13134.
+// 13/02/2023 - Robert - Criado campo ZA1_QTGRUP
 //
 
 #Include "Protheus.ch"
@@ -116,9 +118,6 @@ ENDCLASS
 // Construtor.
 METHOD New (_xChave) Class ClsEtiq
 
-	// Alimenta atributos com valores default de uma etiqueta nova.
-	::GeraAtrib ("")
-	
 	// Se receber numerico, eh por que se trata do numero de registro
 	// jah existente no ZA1 e preciso atualizar o objeto.
 	if valtype (_xChave) == "N"
@@ -136,6 +135,10 @@ METHOD New (_xChave) Class ClsEtiq
 			::UltMsg += "Problema ao instanciar etiqueta: Nao localizei codigo de etiqueta '" + _xChave + "' para a filial atual na tabela ZA1."
 			U_help (::UltMsg,, .t.)
 		endif
+
+	else
+		// Alimenta atributos com valores default de uma etiqueta nova.
+		::GeraAtrib ("")
 	endif
 Return ::self
 
@@ -206,7 +209,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 	::DocEntrLoja  = ''
 	::DocEntrNum   = ''
 	::DocEntrSerie = ''
-	::DtEmis       = ctod ('')
+	::DtEmis       = dDataBase //ctod ('')
 	::DtFabrLote   = ctod ('')
 	::Filial       = xfilial ("ZA1")
 	::FinalidOP    = ''
@@ -251,6 +254,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 		::OP           = m->ZA1_OP
 		::Produto      = m->ZA1_PROD
 		::Quantidade   = m->ZA1_QUANT
+		::QtEtqGrupo   = m->ZA1_QTGRUP
 		::SeqNoGrupo   = m->ZA1_SEQ
 		::UsrIncl      = m->ZA1_USRINC
 
@@ -272,6 +276,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 		::OP           = za1 -> ZA1_OP
 		::Produto      = za1 -> ZA1_PROD
 		::Quantidade   = za1 -> ZA1_QUANT
+		::QtEtqGrupo   = za1 -> ZA1_QTGRUP
 		::RegZA1       = za1 -> (recno ())
 		::SeqNoGrupo   = za1 -> ZA1_SEQ
 		::UsrIncl      = za1 -> ZA1_USRINC
@@ -305,7 +310,12 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 					::AlmOrig    = sc2 -> c2_local
 					::CBEmbCol   = sc2 -> c2_vaBarCx
 					::FinalidOP  = sc2 -> c2_vaOpEsp
-					::QtEtqGrupo = sc2 -> c2_vaqtetq
+					
+					// DEIXAR ISTO POR UM TEMPO ATEH O CAMPO ZA1_QTGRUP ESTAR BEM POPULADO.
+					// (OU FAZER UM UPDATE ZA1_QTGRUP = C2_VAQTETQ)
+					if ::QtEtqGrupo == 0
+						::QtEtqGrupo = sc2 -> c2_vaqtetq
+					endif
 					
 					// Jah peguei casos de excluirem uma OP e cadastrarem uma
 					// nova de mesmo numero, para outro produto!
@@ -520,6 +530,7 @@ METHOD Grava () Class ClsEtiq
 		za1 -> za1_usrinc = cUserName
 		za1 -> za1_idZAG  = ::IdZAG
 		za1 -> ZA1_D5NSEQ = ::D5_NUMSEQ
+		za1 -> ZA1_qtgrup = ::QtEtqGrupo
 		msunlock()
 		::Codigo     = za1 -> za1_codigo
 		::SeqNoGrupo = za1 -> za1_seq
@@ -551,58 +562,44 @@ return _lGravou
 
 
 // --------------------------------------------------------------------------
-// Gera etiqueta para lote jah existente no estoque. A intencao desta operacao
+// Gera etiquetas para lote jah existente no estoque. A intencao desta operacao
 // eh poder etiquetar lotes jah existentes no estoque quando a rastreabilidade
 // for habilitada para um produto, pois esses 'lotes iniciais' nao terao sua
 // origem a partir de um movimento de estoque (lotes posteriores serao criados
 // atraves de um apontamento de OP, ou uma nota de compra, etc.)
-METHOD NovaPorSD5 (_sProduto, _sLote, _sAlmox, _sNumSeq) Class ClsEtiq
+METHOD NovaPorSD5 (_sProduto, _sLote, _sAlmox, _sNumSeq, _nQtDesta, _nQtGrupo, _nSeqNoGrp) Class ClsEtiq
 	local _aAreaAnt := U_ML_SRArea ()
 	local _nRegSD5  := 0
-	local _oSQL     := NIL
+	local _lRetNSD5 := .T.
 
 	U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Tentando criar etiqueta para produto/lote/almox/numseq ' + _sProduto + '/' + _sLote + '/' + _sAlmox + '/' + _sNumSeq)
-	
-	// Nao vou permitir duas etiquetas para o mesmo lote.
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += "SELECT ZA1_CODIGO"
-	_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZA1") + " ZA1"
-	_oSQL:_sQuery += " WHERE ZA1.D_E_L_E_T_  = ''"
-	_oSQL:_sQuery +=   " AND ZA1.ZA1_FILIAL  = '" + xfilial ("ZA1") + "'"
-	_oSQL:_sQuery +=   " AND ZA1.ZA1_PROD    = '" + _sProduto + "'"
-	_oSQL:_sQuery +=   " AND ZA1.ZA1_D5NSEQ  = '" + _sNumSeq  + "'"
-	_oSQL:_sQuery +=   " AND ZA1.ZA1_APONT  != 'I'"  // Se estiver inutilizada, ok
-	_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
-	_sJahTem = _oSQL:RetQry (1, .f.)
-	if ! empty (_sJahTem)
-		::UltMsg += "Ja existe a etiqueta '" + _sJahTem + "' para este produto/lote. Inutilize-a antes de gerar uma nova."
+	_nRegSD5 = _AchaSD5 (_sProduto, _sNumSeq)
+	if _nRegSD5 == 0
+		::UltMsg += "Nao encontrei registro com origem MAN para o produto/lote/almox/NumSeq informados. Geracao de etiquetas cancelada."
 		u_help (::UltMsg,, .t.)
+		_lRetNSD5 = .F.
 	else
-		_nRegSD5 = _AchaSD5 (_sProduto, _sNumSeq)
-		if _nRegSD5 == 0
-			::UltMsg += "Nao encontrei registro com origem MAN para o produto/lote/almox/NumSeq informados. Geracao de etiquetas cancelada."
+		sd5 -> (dbgoto (_nRegSD5))
+		::AlmDest     = sd5 -> d5_local
+		::AlmOrig     = sd5 -> d5_local
+		::D5_NUMSEQ   = sd5 -> d5_numseq
+		::DtEmis      = date ()
+		::Filial      = xfilial ("ZA1")
+		::LoteProduto = sd5 -> d5_lotectl
+		::Produto     = sd5 -> d5_produto
+		::Quantidade  = _nQtDesta  //sd5 -> d5_quant
+		::QtEtqGrupo  = _nQtGrupo  // contagem total de etiq.gerada para este registro do SD5. Ex.: "eiqueta 1 de 5"
+		::SeqNoGrupo  = _nSeqNoGrp
+		::ValidLote   = sd5 -> d5_dtvalid
+		if ! ::Grava ()
+			::UltMsg += "Nao foi possivel gravar a etiqueta."
 			u_help (::UltMsg,, .t.)
-		else
-			sd5 -> (dbgoto (_nRegSD5))
-			::AlmDest     = sd5 -> d5_local
-			::AlmOrig     = sd5 -> d5_local
-			::D5_NUMSEQ   = sd5 -> d5_numseq
-			::DtEmis      = date ()
-			::Filial      = xfilial ("ZA1")
-			::LoteProduto = sd5 -> d5_lotectl
-			::Produto     = sd5 -> d5_produto
-			::Quantidade  = sd5 -> d5_quant
-			::ValidLote   = sd5 -> d5_dtvalid
-			if ! ::Grava ()
-				::UltMsg += "Nao foi possivel gravar a etiqueta."
-				u_help (::UltMsg,, .t.)
-			endif
+			_lRetNSD5 = .F.
 		endif
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-return
+return _lRetNSD5
 
 
 // --------------------------------------------------------------------------

@@ -59,6 +59,8 @@
 // 16/06/2022 - Robert - Melhorada interface com usuario na funcao EtqPllCT().
 // 28/09/2022 - Robert - Melhorada leitura da tb_wms_entrada na rotina de abortar guarda do pallet.
 // 05/10/2022 - Robert - Iniciada funcao U_ZA1SD5, para receber da MTA390MNU (GLPI 12651)
+// 12/02/2023 - Robert - Chamada da funcao U_IncEtqPll substituida por criacao
+//                       das etiquetas diretamente via metodo ClsEtiq:New() - GLPI 13134
 //
 
 #include "rwmake.ch"
@@ -261,14 +263,15 @@ User Function EtqPllGO (_sProduto, _sOP, _nQuant, _dData)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _lContinua := .T.
 	local _nQtPorPal := 0
-	local _i         := 0
+	local _nPal      := 0
+	local _oEtiq     := NIL
 
 	// Verifica se o usuario tem liberacao.
 	if ! U_ZZUVL ('073', __cUserID, .T.)
 		_lContinua = .F.
 	endif
 
-	if _lContinua .and. cEmpAnt + cFilAnt != '0101'
+	if _lContinua .and. cEmpAnt + cFilAnt != '0101'  // Nao temos FullWMS nas filiais
 		_lContinua = .F.
 	endif
 	if _lContinua
@@ -278,7 +281,6 @@ User Function EtqPllGO (_sProduto, _sOP, _nQuant, _dData)
 			_lContinua = .F.
 		endif
 	endif
-//	if _lContinua .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + _sProduto, "B1_TIPO") != 'PA'
 	if _lContinua
 		sb1 -> (dbsetorder (1))
 		if ! sb1 -> (dbseek (xfilial ("SB1") + _sProduto, .F.))
@@ -286,9 +288,6 @@ User Function EtqPllGO (_sProduto, _sOP, _nQuant, _dData)
 			_lContinua = .F.
 		endif
 	endif
-//	if _lContinua .and. sb1 -> b1_tipo != 'PA'
-//		_lContinua = U_MsgNoYes ("Produto '" + alltrim (_sProduto) + "' não é do tipo PA. Confirma a geração das etiquetas assim mesmo?")
-//	endif
 	if _lContinua .and. sb1 -> b1_vafullw != 'S'
 		u_help ("Produto '" + alltrim (_sProduto) + "' nao configurado para integracao com FullWMS. Etiquetas nao serao geradas.")
 		_lContinua = .F.
@@ -318,12 +317,22 @@ User Function EtqPllGO (_sProduto, _sOP, _nQuant, _dData)
 			_aPal := aclone (U_VA_QTDPAL (_sProduto, _nQuant, _nQtPorPal))
 		endif
 		
-		For _i=1 to len (_aPal)
-			U_IncEtqPll (_sProduto, _sOP, _aPal[_i, 2], '', '', '', '', _dData, '', '')
+		For _nPal=1 to len (_aPal)
+			//U_IncEtqPll (_sProduto, _sOP, _aPal[_i, 2], '', '', '', '', _dData, '', '')
+			_oEtiq := ClsEtiq ():New ()
+			_oEtiq:OP         = _sOP
+			_oEtiq:Produto    = _sProduto
+			_oEtiq:Quantidade = _aPal [_nPal, 2]
+			_oEtiq:QtEtqGrupo = len (_aPal)
+			_oEtiq:SeqNoGrupo = _nPal
+			if ! _oEtiq:Grava ()
+				u_help (_oEtiq:UltMsg += "Nao foi possivel gravar a etiqueta.",, .t.)
+				exit
+			endif
 		next
 		
 		reclock ("SC2", .F.)
-		sc2 -> c2_vaqtetq = len (_aPal)
+		sc2 -> c2_vaqtetq = len (_aPal)  // ELIMINAR ISTO QUANDO O CAMPO ZA1_QTGRUP JAH ESTIVER SENDO POPULADO.
 		msunlock ()
 	endif
 
@@ -591,65 +600,6 @@ User Function EtqPllCT (_sCodigo)
 		endif
 	endif
 return
-
-/* migrado para ZA1.prw
-// --------------------------------------------------------------------------
-// Recebe chamadas feitas pelos botoes do MTA390MNU.
-user function ZA1SD5 (_sQueFazer)
-	local _aAreaAnt := U_ML_SRArea ()
-	local _oEtiq    := CLsEtiq ():New ()
-	local _sImpr    := space (2)
-	local _oSQL     := NIL
-	local _sEtiq    := ''
-	local _xRet     := NIL
-
-	if _sQueFazer == 'G'  // Gerar nova
-		_xRet = ''
-		_sEtiq = U_ZA1SD5 ('B')
-		if ! empty (_sEtiq)
-			u_help ("Ja existe a etiqueta " + _sEtiq + " gerada para este registro.",, .t.)
-		else
-			_oEtiq:NovaPorSD5 (sd5 -> d5_produto, sd5 -> d5_LoteCtl, sd5 -> d5_local, sd5 -> d5_NumSeq)
-			if ! empty (_oEtiq:Codigo)
-				_xRet = _oEtiq:Codigo  // Retorna o codigo da etiqueta gerada
-				if u_msgyesno ("Etiqueta gerada: " + _oEtiq:Codigo + ". Deseja imprimi-la?")
-					U_ZA1SD5 ('I')
-				endif
-			endif
-		endif
-	elseif _sQueFazer == 'I'  // Imprimir
-		_xRet = ''
-		_sEtiq = U_ZA1SD5 ('B')
-		if empty (_sEtiq)
-			u_help ("Nao encontrei etiqueta gerada para este registro (ou ja foi inutilizada).",, .t.)
-		else
-			_oEtiq := ClsEtiq ():New (_sEtiq)
-			_sImpr = U_Get ("Selecione impressora", 'C', 2, '', 'ZX542', _sImpr, .f., '.t.')
-			if ! empty (_sImpr)
-				_xRet = _oEtiq:Imprime (_sImpr)
-			endif
-		endif
-	
-	elseif _sQueFazer == 'B'  // Buscar codigo da etiqueta gerada para este registro do SD5 (se existir)
-		_xRet = ''
-		if sd5 -> d5_origlan == 'MAN'  // Ateh o momento, geram-se etiquetas somente para origem=MAN
-			_oSQL := ClsSQL ():New ()
-			_oSQL:_sQuery := ""
-			_oSQL:_sQuery += "SELECT ZA1_CODIGO"
-			_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZA1") + " ZA1"
-			_oSQL:_sQuery += " WHERE ZA1.D_E_L_E_T_  = ''"
-			_oSQL:_sQuery +=   " AND ZA1.ZA1_FILIAL  = '" + xfilial ("ZA1")   + "'"
-			_oSQL:_sQuery +=   " AND ZA1.ZA1_PROD    = '" + sd5 -> d5_produto + "'"
-			_oSQL:_sQuery +=   " AND ZA1.ZA1_D5NSEQ  = '" + sd5 -> d5_numseq  + "'"
-			_oSQL:_sQuery +=   " AND ZA1.ZA1_APONT  != 'I'"  // Se estiver inutilizada, ok
-			_oSQL:Log ('[' + procname () + ']')
-			_xRet = _oSQL:RetQry (1, .f.)
-		endif
-	endif
-
-	U_ML_SRArea (_aAreaAnt)
-return _xRet
-*/
 
 
 // --------------------------------------------------------------------------

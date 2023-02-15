@@ -269,7 +269,9 @@ user function ImpZA1 (_sIdImpr, _oEtiq)
 		endif
 
 		if _lContinua
-//			U_Log2 ('debug', _sTxtEtiq)
+			if alltrim (cUserName) == 'robert.koch'
+				U_Log2 ('debug', '[' + procname () + ']' + _sTxtEtiq)
+			endif
 			_sArq = criatrab (NIL, .F.)
 			_nHdl = fcreate (_sArq, 0)
 			fwrite (_nHdl,_sTxtEtiq)

@@ -12,6 +12,7 @@
 // #Modulos           #EST
 
 // Historico de alteracoes:
+// 10/02/2023 - Robert - Passa a aceitar mais de uma etiqueta para o mesmo lote - GLPI 13134.
 //
 
 // --------------------------------------------------------------------------
@@ -21,7 +22,7 @@ user function MT390VlE ()
 
 	_sEtiq = U_ZA1SD5 ('B')
 	if ! empty (_sEtiq)
-		u_help ("Existe a etiqueta '" + _sEtiq + "' gerada para este produto/lote. Inutilize-a antes de excluir este lancamento.",, .t.)
+		u_help ("Existem as etiquetas " + _sEtiq + " geradas para este produto/lote. Inutilize-as antes de excluir este lancamento.",, .t.)
 		_lRet39VlE = .F.
 	endif
 return _lRet39VlE

@@ -11,6 +11,8 @@
 // #Modulos           #PCP #EST
 
 // Historico de alteracoes:
+// 10/02/2023 - Robert - Funcao ZA1SD5 passa a tratar a possibilidade de ter
+//                       mais de uma etiqueta para o mesmo lote - GLPI 13134.
 //
 
 // --------------------------------------------------------------------------
@@ -29,42 +31,83 @@ user function ZA1SD5 (_sQueFazer)
 	local _oEtiq    := CLsEtiq ():New ()
 	local _sImpr    := space (2)
 	local _oSQL     := NIL
-	local _sEtiq    := ''
 	local _xRet     := NIL
+	local _sEtiq    := ''
+	local _aEtiq    := {}
+	local _nEtiq    := 0
+	local _sMsgMult := ''
+	local _nQtMult  := 0
+	local _sEtiqIni := ''
+	local _sEtiqFim := ''
 
 	if _sQueFazer == 'G'  // Gerar nova
 		_xRet = ''
 		_sEtiq = U_ZA1SD5 ('B')
 		if ! empty (_sEtiq)
-			u_help ("Ja existe a etiqueta " + _sEtiq + " gerada para este registro.",, .t.)
+			u_help ("Ja existem etiquetas geradas para este registro.",, .t.)
 		else
-			_oEtiq:NovaPorSD5 (sd5 -> d5_produto, sd5 -> d5_LoteCtl, sd5 -> d5_local, sd5 -> d5_NumSeq)
-			if ! empty (_oEtiq:Codigo)
-				_xRet = _oEtiq:Codigo  // Retorna o codigo da etiqueta gerada
-				if u_msgyesno ("Etiqueta gerada: " + _oEtiq:Codigo + ". Deseja imprimi-la?")
-					U_ZA1SD5 ('I')
+			_sMsgMult := "Preciso gerar etiquetas para "
+			_sMsgMult += cvaltochar (sd5 -> d5_quant)
+			_sMsgMult += ' ' + fBuscaCpo ("SB1", 1, xfilial ("SB1") + sd5 -> d5_produto, "B1_UM")
+			_sMsgMult += ' do item ' + alltrim (sd5 -> d5_produto) + ' - ' + alltrim (fBuscaCpo ("SB1", 1, xfilial ("SB1") + sd5 -> d5_produto, "B1_DESC"))
+			_sMsgMult += '. Caso deseje dividir em mais de uma etiqueta, informe agora a quantidade por etiqueta.'
+			_nQtMult = U_Get (_sMsgMult, 'N', 12, '9999999.9999', '', _nQtMult, .f., '.t.')
+			if _nQtMult == NIL  // Usuario cancelou
+				u_help ("Geracao de etiquetas cancelada.",, .t.)
+			else
+				_nEtiq = 0
+				do while _nEtiq < sd5 -> d5_quant
+					aadd (_aEtiq, min (_nQtMult, sd5 -> d5_quant - _nEtiq))
+					_nEtiq += _aEtiq [len (_aEtiq)]
+					U_Log2 ('debug', _aEtiq)
+				enddo
+				if U_MsgYesNo ("Confirma a geracao de " + cvaltochar (len (_aEtiq)) + " etiquetas?")
+					for _nEtiq = 1 to len (_aEtiq)
+						if ! _oEtiq:NovaPorSD5 (sd5 -> d5_produto, sd5 -> d5_LoteCtl, sd5 -> d5_local, sd5 -> d5_NumSeq, _aEtiq [_nEtiq], len (_aEtiq), _nEtiq)
+							exit
+						else
+							_sEtiqIni = iif (empty (_sEtiqIni), _oEtiq:Codigo, _sEtiqIni)
+							_sEtiqFim = _oEtiq:Codigo
+						endif
+					//	if ! empty (_oEtiq:Codigo)
+					//		_xRet = _oEtiq:Codigo  // Retorna o codigo da etiqueta gerada
+					//		if u_msgyesno ("Etiqueta gerada: " + _oEtiq:Codigo + ". Deseja imprimi-la?")
+					//			U_ZA1SD5 ('I')
+					//		endif
+					//	endif
+					next
+					u_help ("Etiqueta(s) gerada (s): de '" + _sEtiqIni + "' a '" + _sEtiqFim + "'.")
 				endif
 			endif
 		endif
 	elseif _sQueFazer == 'I'  // Imprimir
-		_xRet = ''
+		_xRet = .t.
 		_sEtiq = U_ZA1SD5 ('B')
 		if empty (_sEtiq)
-			u_help ("Nao encontrei etiqueta gerada para este registro (ou ja foi inutilizada).",, .t.)
+			u_help ("Nao encontrei etiquetas geradas para este registro (ou ja foram inutilizadas).",, .t.)
 		else
-			_oEtiq := ClsEtiq ():New (_sEtiq)
-			_sImpr = U_Get ("Selecione impressora", 'C', 2, '', 'ZX549', _sImpr, .f., '.t.')
-			if ! empty (_sImpr)
-				_xRet = _oEtiq:Imprime (_sImpr)
+			_aEtiq = U_SeparaCpo (_sEtiq, ',')
+			if len (_aEtiq) > 0 .and. U_MsgYesNo ("Encontrei " + cvaltochar (len (_aEtiq)) + " etiquetas. Confirma impressao?")
+				_sImpr = U_Get ("Selecione impressora", 'C', 2, '', 'ZX549', _sImpr, .f., '.t.')
+				if ! empty (_sImpr)
+					for _nEtiq = 1 to len (_aEtiq)
+						_oEtiq := ClsEtiq ():New (_aEtiq [_nEtiq])
+						if ! _oEtiq:Imprime (_sImpr)
+							_xRet = .F.
+							u_help (_oEtiq:UltMsg,, .t.)
+							exit
+						endif
+					next
+				endif
 			endif
 		endif
 	
-	elseif _sQueFazer == 'B'  // Buscar codigo da etiqueta gerada para este registro do SD5 (se existir)
+	elseif _sQueFazer == 'B'  // Buscar codigo das etiquetas geradas para este registro do SD5 (se existirem)
 		_xRet = ''
 		if sd5 -> d5_origlan == 'MAN'  // Ateh o momento, geram-se etiquetas somente para origem=MAN
 			_oSQL := ClsSQL ():New ()
 			_oSQL:_sQuery := ""
-			_oSQL:_sQuery += "SELECT ZA1_CODIGO"
+			_oSQL:_sQuery += "SELECT STRING_AGG (ZA1_CODIGO, ',')"
 			_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZA1") + " ZA1"
 			_oSQL:_sQuery += " WHERE ZA1.D_E_L_E_T_  = ''"
 			_oSQL:_sQuery +=   " AND ZA1.ZA1_FILIAL  = '" + xfilial ("ZA1")   + "'"
@@ -72,7 +115,7 @@ user function ZA1SD5 (_sQueFazer)
 			_oSQL:_sQuery +=   " AND ZA1.ZA1_D5NSEQ  = '" + sd5 -> d5_numseq  + "'"
 			_oSQL:_sQuery +=   " AND ZA1.ZA1_APONT  != 'I'"  // Se estiver inutilizada, ok
 			_oSQL:Log ('[' + procname () + ']')
-			_xRet = _oSQL:RetQry (1, .f.)
+			_xRet = alltrim (_oSQL:RetQry (1, .f.))
 		endif
 	endif
 

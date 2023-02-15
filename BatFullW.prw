@@ -516,7 +516,7 @@ static function _Saidas (_sSaidID)
 			// Se o produto controla lotes no Protheus, quero manter
 			// consistencia com os lotes separados pelo Full.
 			//
-			// Futuramente pretendo ler sempre a tabela tb_wms_lotes,
+			// Futuramente pretendo ler SEMPRE a tabela tb_wms_lotes,
 			// pois quando estah vazia indica que a forçaram o
 			// encerramento da separacao no Full.
 			if _oTrOrig:CtrLotOrig
@@ -589,8 +589,9 @@ static function _Saidas (_sSaidID)
 						u_log2 ('debug', 'Transferindo pelo ZAG original')
 						_oTrEstq := _oTrOrig
 						_oTrEstq:LoteOrig = _aLotes [_nLote, 1]
-						_oTrEstq:QtdSOlic = _aLotes [_nLote, 2]
+						_oTrEstq:QtdSolic = _aLotes [_nLote, 2]
 					else
+						u_help ("AQUI DEVE SER ALIMENTADO O CAMPO DE SEQUENCIA PRA MANTER AMARRACAO COM SOLICITACAO ORIGINAL",, .T.)
 						u_log2 ('debug', 'Gerando novo ZAG')
 						_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
 						_oTrEstq:Filial    = _oTrOrig:Filial
