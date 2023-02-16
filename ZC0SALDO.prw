@@ -82,6 +82,7 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += " 		AND ZX5.ZX5_CHAVE  = ZC0_TM "
     _oSQL:_sQuery += " WHERE ZC0.D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " AND ZC0_RAPEL > 0 "
+    _oSQL:_sQuery += " AND ZC0_DATA <='"+ DTOS(mv_par02)+"'"
     _oSQL:_sQuery += " GROUP BY ZC0.ZC0_CODRED "
     _oSQL:_sQuery += " 		   ,SA1.A1_NOME "
     _oSQL:_sQuery += " ORDER BY ZC0.ZC0_CODRED, SA1.A1_NOME "
@@ -106,6 +107,7 @@ Static Function _ValidPerg ()
     local _aRegsPerg := {}
     //                     PERGUNT             TIPO TAM DEC VALID F3     Opcoes                      Help
     aadd (_aRegsPerg, {01, "Ordenação        ", "N", 1, 0,  "",   "   "     , {"Rede","Nome"},                   ""})
+    aadd (_aRegsPerg, {02, "Data até         ", "D", 8, 0,  "",   "   "     , {},                         		 ""})
 
     U_ValPerg (cPerg, _aRegsPerg)
 Return
