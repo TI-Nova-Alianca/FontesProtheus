@@ -12,32 +12,31 @@
 // 18/06/2012 - Robert  - Avisa usuario se estiver fazendo baixa com data diferente da data base do sistema.
 // 12/04/2013 - Leandro - verifica se o título a ser baixado possui alguma pendência na ZZN (controle de divergência de conhecimento de frete)
 // 18/08/2016 - Catia   - Não permite baixar titulos com data de debito diferente da data de digitacao
-
+// 16/02/2023 - Claudia - Retirada validações de datas. GLPI 12608
+//
 // --------------------------------------------------------------------------
 user function fa080tit ()
 	local _lRet     := .T.
 	local _lRet2    := .T.
 	local _aAreaAnt := U_ML_SRArea ()
 	local _aAmbAnt  := U_SalvaAmb ()
-	//local _oSQL     := ClsSQL():New ()
-	//local _sSeqSE5  := ""
 
 	u_logIni ()
 	
-	if _lRet .and. dBaixa != dDebito
-		u_help ('A data de baixa e data de debito devem ser iguais!')
-		_lRet := .F. // não permite a baixa a pagar se essas datas estiverem diferentes
-	endif
+	// if _lRet .and. dBaixa != dDebito
+	// 	u_help ('A data de baixa e data de debito devem ser iguais!')
+	// 	_lRet := .F. // não permite a baixa a pagar se essas datas estiverem diferentes
+	// endif
 	
-	if _lRet .and. dBaixa != dDataBase
-		_lRet = U_msgnoyes ("Lembrete:" + chr (13) + chr (10) + "Voce esta fazendo uma baixa com data diferente da data base do sistema. Confirma assim mesmo?")
-	endif
+	// if _lRet .and. dBaixa != dDataBase
+	// 	_lRet = U_msgnoyes ("Lembrete:" + chr (13) + chr (10) + "Voce esta fazendo uma baixa com data diferente da data base do sistema. Confirma assim mesmo?")
+	// endif
 		
-	if _lRet
-		if ! empty (cCheque) .and. U_msgyesno ("Deseja imprimir o cheque agora?")
-			U_ImpCheq (cCheque, cBenef, nValPgto, dBaixa, cBanco, alltrim (sm0 -> m0_cidcob), "1")
-		endif
-	endif
+	// if _lRet
+	// 	if ! empty (cCheque) .and. U_msgyesno ("Deseja imprimir o cheque agora?")
+	// 		U_ImpCheq (cCheque, cBenef, nValPgto, dBaixa, cBanco, alltrim (sm0 -> m0_cidcob), "1")
+	// 	endif
+	// endif
 
     // verifica se tem pendência na ZZN
 	dbselectarea('ZZN')
