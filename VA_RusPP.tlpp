@@ -39,7 +39,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 	local _lContinua  := .T.
 	private _oXMLFech := NIL  // Precisa ser do tipo PRIVATE senao a funcao XmlParser() nao funciona... vai entender.
 
-	U_Log2 ('info', '[' + procname () + ']Calculando parcelas para safra ' + _sSafPag + ' grp: ' + _sGrpPgSaf + ' vlr.uva: ' + cvaltochar (_nVlUva) + ' vlr.frt: ' + cvaltochar (_nVlFrete))
+//	U_Log2 ('info', '[' + procname () + ']Calculando parcelas para safra ' + _sSafPag + ' grp: ' + _sGrpPgSaf + ' vlr.uva: ' + cvaltochar (_nVlUva) + ' vlr.frt: ' + cvaltochar (_nVlFrete))
 
 	// Ateh o momento, a forma de pagamento mais longa tem 11 parcelas. Acrescenta uma para o frete.
 	if _lContinua
@@ -110,7 +110,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 			_lContinua = .F.
 		else
 			_nParcFrt = _nParcel
-			U_Log2 ('debug', 'Vou jogar o frete na ' + cvaltochar (_nParcFrt) + 'a. parcela.')
+			//U_Log2 ('debug', 'Vou jogar o frete na ' + cvaltochar (_nParcFrt) + 'a. parcela.')
 		endif
 	endif
 

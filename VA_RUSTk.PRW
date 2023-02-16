@@ -12,6 +12,7 @@
 // 15/01/2021 - Robert - Grava campo ze_imptk no final da impressao.
 // 11/03/2022 - Robert - Melhorados logs.
 // 06/01/2023 - Robert - Desabilitada impr. da senha de descarga.
+// 16/02/2023 - Robert - Impressao mensagem velociade maxima.
 //
 
 // --------------------------------------------------------------------------
@@ -183,39 +184,11 @@ User Function va_rusTk (_nQual, _sPorta, _nQtVias, _aFila, _sModelImp, _lPicote)
 			_sTicket += _Enter
 		endif
 
-// Nem entrou em producao		// Na matriz temos muitos casos de inverter tombador X tanque pulmao
-// Nem entrou em producao		if sze -> ze_filial == '01' .and. _nQual == 1
-// Nem entrou em producao			_sTicket += _Enter
-// Nem entrou em producao//			_sTicket += "TANQUE PULMAO:  1[   ]   2[   ]   3[   ]" + _Enter
-// Nem entrou em producao			_sTicket += padc ("Desvio processo:Se sim,linha efetiva:____", _nTamLin, ' ') + _Enter
-// Nem entrou em producao			_sTicket += padc ("(Questionar supervisorio)", _nTamLin, ' ') + _Enter
-// Nem entrou em producao			_sTicket += _Enter
-// Nem entrou em producao		endif
-
-		/* Desabilitada impr. da senha de descarga por solicitacao do Leonardo em 06/01/2023.
-		if _nQual == 1 .and. ! empty (sze -> ze_senhade)
-			_sTicket += _Enter
-			_sTicket += "***Senha descarga: " + sze -> ze_senhade
-			_sTicket += _Enter
-		endif
-		*/
 	endif
 
-// Agora consulta-se pelo NaWeb
-//	if _lContinua .and. (_nQual == 4)  // Fila de descarga
-//		_sTicket := ""
-//		if _sModelImp == 'BEMATECH'
-//			_sTicket += chr(27) + '@' + _Enter
-//		endif
-//		_sTicket += padc (left (alltrim (sm0 -> m0_nomecom), _nTamLin), _nTamLin, ' ') + _Enter
-//		_sTicket += padc (left ('Fila descarga em ' + dtoc (date ()) + ' ' + time (), _nTamLin), _nTamLin, ' ') + _Enter
-//		_sTicket += _Enter
-//		for _nLinha = 1 to len (_aFila)
-//			_sTicket += left (_aFila [_nLinha, 6] + ' ' + alltrim (_aFila [_nLinha, 3]), _nTamLin) + _Enter
-//			_sTicket += left (_aFila [_nLinha, 2] + ' ' + transform (_aFila [_nLinha, 10], "@E 99,999") + ' Kg ' + alltrim (_aFila [_nLinha, 5]), _nTamLin) + _Enter
-//			_sTicket += _Enter
-//		next
-//	endif
+	// Solicitado pela CIPA em 16/02/2023
+	_sTicket += padc ('ATENCAO: limite de velocidade nas', _nTamLin, ' ') + _Enter
+	_sTicket += padc ('dependencias da cooperativa: 20 Km/h', _nTamLin, ' ') + _Enter
 
 	// Deixa linhas em branco para avancar papel ateh poder rasgar o ticket.
 	if _lPicote

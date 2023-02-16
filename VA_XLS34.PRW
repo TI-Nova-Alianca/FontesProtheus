@@ -2,12 +2,20 @@
 // Autor......: Robert Koch
 // Data.......: 10/01/2018
 // Descricao..: Exporta planilha com sequencia de recebimento de uvas na safra.
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Exporta_planilha
+// #Descricao         #Exporta planilha com sequencia de recebimento de uvas na safra.
+// #PalavasChave      #safra #sequenciamento #dercarga #descarregamento
+// #TabelasPrincipais #SD1 #SZE
+// #Modulos           #COOP #PCP
+
 // Historico de alteracoes:
 // 23/02/2018 - Robert - Passa a usar a view VA_VNOTAS_SAFRA
 //                     - Criado parametro de safra
 //                     - Busca maior item da carga, para casos de mesmo produto (talhoes diferentes).
 // 28/03/2022 - Robert - Nao considerava contranotas de producao propria.
+// 10/02/2023 - Robert - Leitura campo ZZA_TQPULM
 //
 
 // --------------------------------------------------------------------------
@@ -81,10 +89,20 @@ Static Function _Gera()
 	_oSQL:_sQuery +=        " V.PESO_LIQ AS QUANT,"
 	_oSQL:_sQuery +=        " SD1.D1_UM AS UN_MED,"
 	_oSQL:_sQuery +=        " CARGAS.ZE_CARGA AS CARGA,"
-	_oSQL:_sQuery +=        " CASE WHEN CARGAS.ZZA_LINHA IS NULL OR CARGAS.ZZA_LINHA = ' ' THEN CARGAS.ZE_LOCDESC"
-	_oSQL:_sQuery +=           " ELSE CARGAS.ZZA_LINHA"  // O campo ZZA_LINHA eh gravado pelo softwsre da Mazeli, entao entendo-o como 'tombador efetivo'.
-	_oSQL:_sQuery +=        " END AS TOMBADOR,"
+//	_oSQL:_sQuery +=        " CASE WHEN CARGAS.ZZA_LINHA IS NULL OR CARGAS.ZZA_LINHA = ' ' THEN CARGAS.ZE_LOCDESC"
+//	_oSQL:_sQuery +=           " ELSE CARGAS.ZZA_LINHA"  // O campo ZZA_LINHA eh gravado pelo softwsre da Mazeli, entao entendo-o como 'tombador efetivo'.
+//	_oSQL:_sQuery +=        " END AS TOMBADOR,"
+	_oSQL:_sQuery +=        " CASE WHEN CARGAS.ZZA_TQPULM != 0 AND CARGAS.ZZA_TQPULM != CARGAS.ZZA_LINHA"
+	_oSQL:_sQuery +=           " THEN CARGAS.ZZA_TQPULM"
+	_oSQL:_sQuery +=           " ELSE CASE WHEN CARGAS.ZZA_LINHA IS NULL OR CARGAS.ZZA_LINHA = ' '"
+	_oSQL:_sQuery +=                   " THEN CARGAS.ZE_LOCDESC"
+	_oSQL:_sQuery +=                   " ELSE CARGAS.ZZA_LINHA"  // O campo ZZA_LINHA eh gravado pelo software da Mazeli, entao entendo-o como 'tombador efetivo'.
+	_oSQL:_sQuery +=           " END"
+	_oSQL:_sQuery +=        " END AS TANQUE_PULMAO,"
 	_oSQL:_sQuery +=        " V.DOC AS NF"
+	_oSQL:_sQuery +=        ",CASE WHEN CARGAS.ZZA_TQPULM != 0 AND CARGAS.ZZA_TQPULM != CARGAS.ZZA_LINHA"
+	_oSQL:_sQuery +=        " THEN 'Desviado do tombador ' + CARGAS.ZZA_LINHA"
+	_oSQL:_sQuery +=        " ELSE '' END AS DESVIO"
 	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SF1") + " SF1, "
 	_oSQL:_sQuery +=             RetSQLName ("SD1") + " SD1, "
 	_oSQL:_sQuery +=           " VA_VNOTAS_SAFRA V"
@@ -92,9 +110,13 @@ Static Function _Gera()
 	// Monta tabela de cargas agrupando por produto por que existem casos de cargas com mais de uma ocorrencia
 	// do mesmo produto, originado de diferentes talhoes (IDSZ9) e que, na pratica, descarregam de uma soh vez,
 	// ficando o grau gravado em apenas um dos itens do SZF.
-	_oSQL:_sQuery +=  " LEFT JOIN (SELECT SZE.ZE_FILIAL, SZE.ZE_SAFRA, SZE.ZE_CARGA, SZE.ZE_NFGER, SZE.ZE_SERIE, SZF.ZF_PRODUTO, SZF.ZF_GRAU,"
-	_oSQL:_sQuery +=                    " SZE.ZE_DATA, SZE.ZE_HORSAID, SZE.ZE_LOCDESC,"
-	_oSQL:_sQuery +=                    " MAX (ZZA.ZZA_INIST1) AS ZZA_INIST1, MAX (ZZA.ZZA_INIST2) AS ZZA_INIST2, MAX (ZZA.ZZA_INIST3) AS ZZA_INIST3, MAX (ZZA.ZZA_LINHA) AS ZZA_LINHA"
+	_oSQL:_sQuery +=  " LEFT JOIN (SELECT SZE.ZE_FILIAL, SZE.ZE_SAFRA, SZE.ZE_CARGA, SZE.ZE_NFGER, SZE.ZE_SERIE, SZF.ZF_PRODUTO, SZF.ZF_GRAU"
+	_oSQL:_sQuery +=                    " ,SZE.ZE_DATA, SZE.ZE_HORSAID, SZE.ZE_LOCDESC "
+	_oSQL:_sQuery +=                    " ,MAX (ZZA.ZZA_INIST1) AS ZZA_INIST1"
+	_oSQL:_sQuery +=                    " ,MAX (ZZA.ZZA_INIST2) AS ZZA_INIST2"
+	_oSQL:_sQuery +=                    " ,MAX (ZZA.ZZA_INIST3) AS ZZA_INIST3"
+	_oSQL:_sQuery +=                    " ,MAX (ZZA.ZZA_LINHA)  AS ZZA_LINHA"
+	_oSQL:_sQuery +=                    " ,MAX (ZZA.ZZA_TQPULM) AS ZZA_TQPULM"
 	_oSQL:_sQuery +=               " FROM " + RetSQLName ("SZE") + " SZE, "
 	_oSQL:_sQuery +=                          RetSQLName ("SZF") + " SZF "
 	_oSQL:_sQuery +=                        " LEFT JOIN " + RetSQLName ("ZZA") + " ZZA "
@@ -145,6 +167,7 @@ Static Function _Gera()
 		_oSQL:_sQuery +=                 " AND SB8.B8_SALDO > 0)"
 	endif
 	_oSQL:Log ()
+	_oSQL:ArqDestXLS = 'VA_XLS34'
 	_oSQL:Qry2XLS (.F., .F., .F.)
 return
 
