@@ -54,7 +54,7 @@
 // 20/10/2021 - Robert  - Variavel _sSerie passa a ser lida na array _aNComSono (GLPI 11112)
 //                      - Incluidas chamadas da funcao PerfMon para monitoramento de performance.
 // 04/05/2022 - Robert  - Eliminada leitura do parametro VA_USRENF (atualmente grupo 050 do ZZU).
-// 11/01/2023 - Claudia - Incluída a chamada de transmissão da GNRE. GLPI: 10469 - (comentado até finalização de testes)
+// 11/01/2023 - Claudia - Incluída a chamada de transmissão da GNRE. GLPI: 10469 
 //
 // --------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"  // Deixar este include para aparecerem os botoes da tela de acompanhamento do SPED
@@ -711,7 +711,7 @@ static function _VerifGNRE(_sFilial, _sSerie, _sDoc)
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT "
-	_oSQL:_sQuery += " 		COUNT(*) "
+	_oSQL:_sQuery += " 		* "
 	_oSQL:_sQuery += " FROM " + RetSQLName ("SF6") 
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " AND F6_FILIAL    = '" + _sFilial + "' "
@@ -721,7 +721,6 @@ static function _VerifGNRE(_sFilial, _sSerie, _sDoc)
 
 	If len(_aGNRE) > 0 // se tem GNRE
 		For _x:=1 to Len(_aAutoriz)
-
 			if  _aAutoriz[_x, 1] == '100'
 				FISA095()
 			else
