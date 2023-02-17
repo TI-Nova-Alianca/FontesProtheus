@@ -34,6 +34,7 @@
 // 02/06/2021 - Claudia - Ajuste de descontos de ST e IPI. GLPI: 10051
 // 22/07/2021 - Claudia - Incluida a divisão das parcelas para ST/IPI no "IPI distribuídos nas "N" parcelas".GLPI: 10539
 // 05/09/2022 - Claudia - Incluso variaveis _VLRSEG, _VLFRETE, _vlrDesp - GLPI: 12563
+// 16/02/2023 - Claudia - Descontado os juros da base liberada. GLPI: 13200
 //
 // -----------------------------------------------------------------------------------------------------------------------------------
 /*
@@ -488,7 +489,7 @@ User Function MSE3440 ()
 		// calculo da base de comissao liberada
 		
 		//_vlrComBaseLib := (_vlrRec - _vlrIpi - _vlrST)
-		_vlrComBaseLib := (_vlrRec - _vlrIpi - _vlrST - _vlFrete - _vlrSeg - _vlrDesp)
+		_vlrComBaseLib := (_vlrRec - _vlrIpi - _vlrST - _vlFrete - _vlrSeg - _vlrDesp -_vlrJuros)
 
 		_vlrComis      := _vlrComBaseLib * _npercSE3
 		
