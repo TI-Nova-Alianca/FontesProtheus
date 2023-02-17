@@ -37,7 +37,7 @@ User Function FA080Tit()
 	// Tranferencia entre filiais
 	//If xFilial("SE2") <> '01' // Transferencia de valores das filiais para Matriz
 	//	If msgyesno("Deseja realizar transferencia do valor para matriz?","Transferência entre filiais")
-	//		U_VA_750TRA()
+	//		U_VA_TRPGTO()
 	//	EndIf
 	//EndIf
 	
