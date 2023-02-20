@@ -37,6 +37,7 @@
 // 15/12/2022 - Claudia - Incluidas validações de rastro e lote. GLPI: 12933
 // 05/01/2023 - Robert  - Teste de desabilitacao de rastro e enderecamento
 //                        considerava se jah estava habilitado ou nao no SB1.
+// 20/02/2023 - Claudia - Transofrmado bloqueio em aviso. GLPI: 13193
 //
 //---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
@@ -206,8 +207,12 @@ static function _A010TOk ()
 		
 	if ! m->b1_tipo $ "PA/MR"
 		if alltrim (m->b1_tipo) != alltrim (m->b1_grtrib)
-			u_help ("Campo '" + alltrim (RetTitle ("B1_TIPO")) + "' nao pode ser diferente de '" + alltrim (RetTitle ("B1_GRTRIB")) + "' para que TES inteligente / excecoes fiscais funcionem.")
-			_lRet = .F.
+			_sMsg := "Campo '" + alltrim (RetTitle ("B1_TIPO")) + "' nao pode ser diferente de '" + alltrim (RetTitle ("B1_GRTRIB")) + "' para que TES inteligente / excecoes fiscais funcionem. Deseja continuar?"
+			If msgyesno(_sMsg,"Verificação Tipo")
+				_lRet = .T.
+			Else			
+				_lRet = .F.
+			EndIf
 		endif
 	endif
 		
