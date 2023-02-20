@@ -20,6 +20,7 @@
 // 06/03/2020 - Claudia - Criação de campo com nome de comprador e disponibilizado no browser. GLPI 7596
 // 15/01/2021 - Claudia - Incluido bloco de descrições do programa no cabeçalho.
 // 04/05/2021 - Claudia - Incluida a gravação do solicitante no pedido. GLPI: 9814
+// 20/02/2023 - Claudia - Retirada a ligação de  item na consulta. GLPI: 11691
 //
 // -------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
@@ -60,7 +61,7 @@ user function MT120GOk ()
 		_oSQL:_sQuery += " 	 ON SC1.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery += " 		AND SC1.C1_FILIAL = SC7.C7_FILIAL "
 		_oSQL:_sQuery += " 		AND SC1.C1_PEDIDO = SC7.C7_NUM "
-		_oSQL:_sQuery += " 		AND SC1.C1_ITEM   = SC7.C7_ITEM "
+		//_oSQL:_sQuery += " 		AND SC1.C1_ITEM   = SC7.C7_ITEM "
 		_oSQL:_sQuery += " WHERE SC7.D_E_L_E_T_ = '' "
 		_oSQL:_sQuery += " AND SC7.C7_FILIAL    = '" + cFilAnt           		+ "'"
 		_oSQL:_sQuery += " AND SC7.C7_NUM       = '" + sc7 -> c7_num     		+ "'"
