@@ -9,6 +9,7 @@
 // 14/02/2018 - Catia - Voltada a verificacao para 30 dias
 // 09/10/2018 - Catia - Verificação da tabela CLK - tabela IBPT - tributos aproximados cupom fiscal
 // 22/02/2019 - Catia - Incluida a coluna de estado no email dos documentos sem retorno da sefaz
+// 21/02/2023 - Sandra - Alterado envio de e-mail de 15 para 2 dias com antecedencia GLPI - 13196
 
 // ------------------------------------------------------------------------------------------------
 user function BatDocCanc (_sQueFazer, _nQtDias)
@@ -132,7 +133,8 @@ user function BatDocCanc (_sQueFazer, _nQtDias)
 	_aDados := U_Qry2Array(_sSQL)
 	if len(_aDados) > 0
 		_sMsg = ""
-		if dtos(ddatabase + 15) > _aDados[1,1] 
+		//if dtos(ddatabase + 15) > _aDados[1,1] 
+		  if dtos(ddatabase + 2) > _aDados[1,1] 
 			_sMsg = "A tabela de IBPT no sistema está para vencer providencie o dowload do arquivo CSV na receita e faça a atualização pelo modulo fiscal. Vencimento: " + _aDados[1,1]
 		endif
 		if dtos(ddatabase) > _aDados[1,1] 
