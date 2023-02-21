@@ -2,14 +2,14 @@
 // Autor.....: Jeferson Rech
 // Data......: Maio/2004
 // Descricao.: P.E. no final da geracao da NF de saida, mas ainda dentro da transacao.
-//
+
 // Tags de localização
 // #TipoDePrograma    #ponto_de_entrada
 // #Descricao         #P.E. no final da geracao da NF de saida, mas ainda dentro da transacao
 // #PalavasChave      #PE #NF #notadesaida 
 // #TabelasPrincipais #SF2 #SD2 
-// #Modulos 		  #faturamento #FAT
-//
+// #Modulos           #faturamento #FAT
+
 // Historico de alteracoes:
 // 15/02/2008 - Robert - Ajustes calculo subst.trib. estado de MG
 // 18/02/2008 - Robert - Criado tratamento generico para subst.trib. (independente da UF)
@@ -149,6 +149,7 @@
 // 11/11/2022 - Robert  - Gera títulos e msg adicional cobranca ST para MG (GLPI 12779)
 // 01/12/2022 - Robert  - Gravava E1_COMIS1...5 indevidamente na funcao _TitSTMG().
 // 18/01/2023 - Robert  - Gravar E1_TIPO=IMP  e nao mais DP na funcao _TitSTMG() - GLPI 12779
+// 20/02/2023 - Robert  - Gravar rotina FINA040 e FINA050 nos titulos de ST para MG (GLPI 12779)
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -860,7 +861,8 @@ static function _TitSTMG ()
 		aAdd(_aAutoSE1, {"E1_VALOR"    , _nST_MG               , Nil})
 		aAdd(_aAutoSE1, {"E1_VLCRUZ"   , _nST_MG               , Nil})
 		aAdd(_aAutoSE1, {"E1_MOEDA"    , 1                     , Nil})
-		aAdd(_aAutoSE1, {"E1_ORIGEM"   , 'MATA460'             , Nil})
+	//	aAdd(_aAutoSE1, {"E1_ORIGEM"   , 'MATA460'             , Nil})
+		aAdd(_aAutoSE1, {"E1_ORIGEM"   , 'FINA040'             , Nil})
 		aAdd(_aAutoSE1, {"E1_EMISSAO"  , sf2 -> f2_emissao     , Nil})
 		aAdd(_aAutoSE1, {"E1_VENCTO"   , sf2 -> f2_emissao + 15, Nil})
 		aAdd(_aAutoSE1, {"E1_COMIS1"   , 0                     , Nil})
@@ -925,7 +927,8 @@ static function _TitSTMG ()
 		aAdd(_aAutoSE2, {"E2_VALOR"    , _nST_MG               , Nil})
 		aAdd(_aAutoSE2, {"E2_VLCRUZ"   , _nST_MG               , Nil})
 		aAdd(_aAutoSE2, {"E2_MOEDA"    , 1                     , Nil})
-		aAdd(_aAutoSE2, {"E2_ORIGEM"   , 'MATA460'             , Nil})
+	//	aAdd(_aAutoSE2, {"E2_ORIGEM"   , 'MATA460'             , Nil})
+		aAdd(_aAutoSE2, {"E2_ORIGEM"   , 'FINA050'             , Nil})
 		aAdd(_aAutoSE2, {"E2_EMISSAO"  , sf2 -> f2_emissao     , Nil})
 		aAdd(_aAutoSE2, {"E2_VENCTO"   , sf2 -> f2_emissao     , Nil})
 		aAdd(_aAutoSE2, {"E2_VENCREA"  , DataValida (sf2 -> f2_emissao), Nil})

@@ -9,11 +9,15 @@
 // 28/07/2018 - Robert  - Gravacao do campo B1_VACUSTR.
 // 04/12/2018 - Robert  - Chama o U_CtbMedio() em lugar de static function para ajustar o campo CT2_ROTINA.
 // 26/08/2019 - Robert  - Atualizava o campo B2_VACUSTR apenas para a filial atual, desconsiderando as demais quando roda o calculo consolidado.
+// 20/02/2023 - Robert  - Desabilitada chamada do U_CtbMedio() por que vamos comecar
+//                        a contabilizar usando consumo/producao e nao mais consumo/ambos.
+//
+
 // --------------------------------------------------------------------------
 user function MA330FIM ()
 	local _aAreaAnt := U_ML_SRArea ()
 
-	Processa({|| U_CtbMedio (.T.)}, "Ajustando lctos contabeis")
+//	Processa({|| U_CtbMedio (.T.)}, "Ajustando lctos contabeis")
 
 	// Libera semaforo que deve ter sido criado no P.E. MA330OK
 	if type ("_nLock") == 'N' .and. _nLock > 0
@@ -32,7 +36,7 @@ return
 static function _AtuSB2 ()
 	local _oSQL   := NIL
 	
-  	_oSQL := ClsSQL ():New ()
+	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += "UPDATE " + RetSQLName ("SB2")
 	_oSQL:_sQuery +=       " SET B2_VACUSTR = ROUND (B2_VFIM1 / B2_QFIM, 4)"
