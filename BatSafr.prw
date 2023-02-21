@@ -255,7 +255,7 @@ static function _ConfParc (_lAjustar)
 	_oSQL:_sQuery +=    " AND FILIAL = '" + cFilAnt + "'"
 	_oSQL:_sQuery +=    " AND NOT (TIPO_NF = 'V' AND DATA = '20220309')"  // COMPLEMENTOS DE FRETE GLPI 11721
 
-	_oSQL:_sQuery +=    " AND DOC IN ('000032526', '000032528','000031939')"  // testes
+//	_oSQL:_sQuery +=    " AND DOC IN ('000032526', '000032528','000031939', '000031854')"  // testes
 
 	if _lAjustar  // Soh uso pra casos especiais
 		_oSQL:_sQuery +=    " and FILIAL = '01'"
@@ -412,11 +412,11 @@ static function _ConfParc (_lAjustar)
 					// Em caso de nao associado ou pessoa juridica, vou ter a diferenca do valor do FUNRURAL, que nao pagaremos.
 					if ! _lPagaFUNR
 						if round (_nSomaSE2, 2) != round (sf1 -> f1_valbrut - sf1 -> f1_valbrut * 1.5 / 100, 2)
-							_sMsg += "Soma dos titulos no SE2 (" + cvaltochar (round (_nSomaSE2, 2)) + ") diferente do F1_VALBRUT (" + cvaltochar (round (sf1 -> f1_valbrut - sf1 -> f1_valbrut * 1.5 / 100, 2)) + ") SEM FUNRURAL <br><br>" 
+							_sMsg += "Soma do E2_VALOR (" + cvaltochar (round (_nSomaSE2, 2)) + ") diferente do F1_VALBRUT (" + cvaltochar (round (sf1 -> f1_valbrut - sf1 -> f1_valbrut * 1.5 / 100, 2)) + ") SEM FUNRURAL <br><br>" 
 						endif
 					else
 						if _nSomaSE2 != sf1 -> f1_valbrut
-							_sMsg += "Soma dos titulos no SE2 (" + cvaltochar (_nSomaSE2) + ") diferente do F1_VALBRUT (" + cvaltochar (sf1 -> f1_valbrut) + ") <br><br>"
+							_sMsg += "Soma do E2_VALOR (" + cvaltochar (_nSomaSE2) + ") diferente do F1_VALBRUT (" + cvaltochar (sf1 -> f1_valbrut) + ") <br><br>"
 						endif
 					endif
 
