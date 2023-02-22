@@ -13,6 +13,9 @@
 // #Modulos           #COOP
 
 // Historico de alteracoes:
+// 22/02/2023 - Robert - Fazia a leitura correta das contranotas da segunda loja
+//                       do associado (quando era o caso), mas gerava SZI sempre
+//                       com o valor da primeira loja - GLPI 13225
 //
 
 // --------------------------------------------------------------------------
@@ -158,7 +161,8 @@ Static Function _GodSaveMe ()
 				_oCtaCorr:Serie      = _sSerie
 				_oCtaCorr:MesRef     = substr (dtos (_oCtaCorr:DtMovto), 5, 2) + substr (dtos (_oCtaCorr:DtMovto), 1, 4)
 				_oCtaCorr:Histor     = 'REST.FUNRURAL/FRETE/PREMIO SAFRA ' + _sSafraRef
-				_oCtaCorr:Valor      = _aAssoc [1, 5]
+			//	_oCtaCorr:Valor      = _aAssoc [1, 5]
+				_oCtaCorr:Valor      = _aAssoc [_nAssoc, 5]
 				_oCtaCorr:Safra      = _sSafraRef
 				_oCtaCorr:Obs        = "COBRANCA FUNRURAL SAFRA " + _sSafraRef + " REF.NF " + alltrim (_aAssoc [1, 6])
 				if _oCtaCorr:PodeIncl ()
