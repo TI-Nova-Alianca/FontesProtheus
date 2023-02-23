@@ -16,7 +16,7 @@
 #Include "Protheus.ch"
 #Include 'TBICONN.ch'
 
-User Function VA_TRPGTO()
+User Function VA_TRPGTO(_nValorBaixa, _sHist, _sBenef)
 	local _aBanco  := {}
 	local _aTitulo := {}
 
@@ -27,7 +27,9 @@ User Function VA_TRPGTO()
 					SE2 -> E2_PARCELA	,;
 					SE2 -> E2_FORNECE	,;
 					SE2 -> E2_LOJA		,;
-					SE2 -> E2_VALOR		})
+					_nValorBaixa		,;
+					_sHist	            ,;
+					_sBenef				})
 
 	If _aBanco[1,1] == .T. // Inclui o mesmo produto na empresa '02'
 		STARTJOB("U_VA_TRPG2",getenvserver(),.t.,_aBanco,_aTitulo)
@@ -44,21 +46,25 @@ User Function VA_TRPG2(_aBanco,_aTitulo)
 
     PREPARE ENVIRONMENT EMPRESA "01" FILIAL '01'
 
-		_sHist := _aTitulo[1,1] +" "+ _aTitulo[1,2] + " "+  _aTitulo[1,3] +" "+ _aTitulo[1,4]
+		_sBenef := _aTitulo[1,9] 
+		_sHist  := _aTitulo[1,8] 
+		If empty(_sHist)
+			_sHist := "PGTO.AUTO " + _aTitulo[1,1] +" "+ _aTitulo[1,2] + " "+  _aTitulo[1,3] +" "+ _aTitulo[1,4]
+		EndIf 
 		_sCred := _BuscaCC(_aBanco[1, 2])        
 
 		If !empty(_sCred)
-			_aFINA100 := { 	{"E5_DATA"  	, dDataBase 				, Nil},;
-							{"E5_MOEDA" 	, "M1" 					 	, Nil},;
-							{"E5_VALOR" 	, _aTitulo[1,7]				, Nil},;
-							{"E5_NATUREZ" 	, "120599" 				 	, Nil},;
-							{"E5_BANCO" 	, _aBanco[1, 2] 			, Nil},;
-							{"E5_AGENCIA" 	, _aBanco[1, 3] 			, Nil},;
-							{"E5_CONTA" 	, _aBanco[1, 4] 			, Nil},;
-							{"E5_DEBITO" 	, "101010201099" 			, Nil},;
-							{"E5_CREDITO" 	, _sCred 					, Nil},;
-							{"E5_BENEF" 	, "PGTO AUTO.VIA TRANSF." 	, Nil},;
-							{"E5_HISTOR" 	, "PGTO AUTO " + _sHist   	, Nil}}
+			_aFINA100 := { 	{"E5_DATA"  	, dDataBase 					, Nil},;
+							{"E5_MOEDA" 	, "M1" 					 		, Nil},;
+							{"E5_VALOR" 	, _aTitulo[1,7]					, Nil},;
+							{"E5_NATUREZ" 	, "120599" 				 		, Nil},;
+							{"E5_BANCO" 	, _aBanco[1, 2] 				, Nil},;
+							{"E5_AGENCIA" 	, _aBanco[1, 3] 				, Nil},;
+							{"E5_CONTA" 	, _aBanco[1, 4] 				, Nil},;
+							{"E5_DEBITO" 	, "101010201099" 				, Nil},;
+							{"E5_CREDITO" 	, _sCred 						, Nil},;
+							{"E5_BENEF" 	, _sBenef     					, Nil},;
+							{"E5_HISTOR" 	, alltrim(_sHist)				, Nil}}
 
 			cPerg := "FinA100"
 			U_GravaSXK (cPerg, "01", "1", 'G' )
@@ -158,7 +164,6 @@ Static Function _BuscaBanco ()
 			case _nQtdBanco > 1
 				u_help("Mais que um banco selecionado. Verifique")
 				_lContinua := .F.
-				
 		endcase
 	endif
 

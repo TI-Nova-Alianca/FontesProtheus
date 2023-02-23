@@ -35,11 +35,12 @@ User Function FA080Tit()
 	_lRet := VerificaZZN(SE2->E2_PREFIXO, SE2->E2_NUM, SE2->E2_FORNECE, SE2->E2_LOJA)
 
 	// Tranferencia entre filiais
-	//If xFilial("SE2") <> '01' // Transferencia de valores das filiais para Matriz
-	//	If msgyesno("Deseja realizar transferencia do valor para matriz?","Transferência entre filiais")
-	//		U_VA_TRPGTO()
-	//	EndIf
-	//EndIf
+	If xFilial("SE2") <> '01' // Transferencia de valores das filiais para Matriz
+		If msgyesno("Deseja realizar transferencia do valor para matriz?","Transferência entre filiais")
+
+			U_VA_TRPGTO(nValPgto, cHist070, cBenef)
+		EndIf
+	EndIf
 	
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
