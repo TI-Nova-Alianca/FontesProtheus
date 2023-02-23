@@ -21,6 +21,7 @@
 // 03/02/2023 - Robert - Tratamentos para cargas compartilhadas.
 //                     - Nao enviava cargas canceladas para o grau (nao alterava ZZA_STATUS para C).
 // 08/02/2023 - Robert - Implementado metodo SegregarLt().
+// 22/02/2023 - Robert - Gravacao evento passa a tratar novos atributos ClsEvent:Safra e ClsEvent:CargaSafra.
 //
 
 #Include "Protheus.ch"
@@ -59,7 +60,6 @@ CLASS ClsCarSaf
 	public  data Segregada   // ZE_SEGREG
 	public  data SerieCtrn   // ze_serie
 	public  data StatusCar   // ze_status
-	public  data TqPulmao    // ze_tqpul - Tanque pulmao onde o mosto foi armazenado (pode ser diferente do tombador)
 	public  data UltMsg      // Ultima mensagem gerada
 
 	// Declaracao dos Metodos da classe
@@ -209,7 +209,7 @@ METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
 			_lRetWSNA = .T.
 
 			// Grava evento para posterior rastreamento
-			::GrvEvt ('SZE004', "Enviado novo status (" + _sStatPara + ") para o NaWeb.")
+		//nao precisa mais... estah funcionando muito bem	::GrvEvt ('SZE004', "Enviado novo status (" + _sStatPara + ") para o NaWeb.")
 		else
 			::UltMsg += "Alteracao da carga '" + ::Carga + "' nao foi aceita pelo NaWeb: " + cvaltochar (_oWSNaWeb:cSaida)
 			u_help (::UltMsg,, .t.)
@@ -695,7 +695,6 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 	::Segregada  = .F.
 	::SerieCtrn  = ''
 	::StatusCar  = ''
-	::TqPulmao   = ''
 	::UltMsg     = ''
 
 	do case
@@ -714,7 +713,6 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 		::Segregada  = (m->ze_segreg == 'S')
 		::SerieCtrn  = m->ze_serie
 		::StatusCar  = m->ze_status
-		::TqPulmao   = m->ze_TqPul
 
 		// Alimenta array de itens
 		for _nItemGD = 1 to len (aCols)
@@ -742,7 +740,6 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 		::Segregada  = (sze -> ze_segreg == 'S')
 		::SerieCtrn  = sze -> ze_serie
 		::StatusCar  = sze -> ze_status
-		::TqPulmao   = sze -> ze_TqPul
 
 		// Alimenta array de itens
 		szf -> (dbsetorder (1))  // filial + safra + carga + item
@@ -802,15 +799,18 @@ METHOD GrvEvt (_sCodEvt, _sTxtEvt) Class ClsCarSaf
 	local _oEvento := NIL
 
 	_oEvento := ClsEvent():new ()
-	_oEvento:CodEven   = _sCodEvt
-	_oEvento:Texto    := 'Safra ' + ::Safra + ' Carga ' + ::Carga + ' ' + _sTxtEvt
-	_oEvento:Recno     = ::RegSZE
-	_oEvento:Alias     = 'SZE'
-	_oEvento:CodAlias  = ::Safra + ::Carga
-	_oEvento:NFEntrada = ::Contranota
-	_oEvento:SerieEntr = ::SerieCtrn
-	_oEvento:Fornece   = ::Fornece
-	_oEvento:LojaFor   = ::Loja
+	_oEvento:CodEven    = _sCodEvt
+//	_oEvento:Texto      = 'Safra ' + ::Safra + ' Carga ' + ::Carga + ' ' + _sTxtEvt
+	_oEvento:Texto      = _sTxtEvt
+//	_oEvento:Recno      = ::RegSZE
+	_oEvento:Safra      = ::Safra
+	_oEvento:CargaSafra = ::Carga
+	_oEvento:Alias      = 'SZE'
+	_oEvento:CodAlias   = ::Safra + ::Carga
+	_oEvento:NFEntrada  = ::Contranota
+	_oEvento:SerieEntr  = ::SerieCtrn
+	_oEvento:Fornece    = ::Fornece
+	_oEvento:LojaFor    = ::Loja
 	_oEvento:Grava ()
 return
 
@@ -874,17 +874,6 @@ METHOD SegPesTOk () Class ClsCarSaf
 	local _nCompart := 0
 
 //	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']iniciando...')
-
-// Acho que faremos gravacao por powershell
-//	// Na matriz pode ocorrer a troca de tanque pulmao, ou seja: descarrega no
-//	// tombador 1, mas a mangueira estah conectada ao tanque pulmao 2.
-//	if ::Filial == '01' .and. empty (::TqPulmao)
-//		::UltMsg += "Nesta filial, o numero do tanque pulmao para onde foi direcionado o mosto deve ser informado."
-//		_l2PesTOK = .F.
-//	if ::Filial != '01' .and. !empty (::TqPulmao)
-//		::UltMsg += "Nesta filial, a 'linha efetiva' NAO deve ser informada."
-//		_l2PesTOK = .F.
-//	endif
 
 	// Para referenciar alguma outra carga como compartilhada, essa deve existir.
 	if _l2PesTOK

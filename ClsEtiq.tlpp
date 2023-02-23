@@ -39,6 +39,7 @@
 //                     - Criados mais atributos alimentados pela leitura do SD3.
 // 10/02/2023 - Robert - Tratamento para mais de uma etiqueta no metodo GeraPorSD5 - GLPI 13134.
 // 13/02/2023 - Robert - Criado campo ZA1_QTGRUP
+// 22/02/2023 - Robert - Metodo PodeEnvFul() passa a receber variavel para mostrar ou nao msg de erro.
 //
 
 #Include "Protheus.ch"
@@ -718,25 +719,46 @@ return _lContinua
 
 // --------------------------------------------------------------------------
 // Verifica se a etiqueta pode ser enviada para o FullWMS (quando tratar-se de integracao)
-METHOD PodeEnvFul () Class ClsEtiq
+METHOD PodeEnvFul (_lMsg) Class ClsEtiq
 	local _lContinua := .T.
 	Local _aAreaAnt  := U_ML_SRArea ()
+	local _sMsg      := ''
 
 	if _lContinua .and. ::AlmDest != '01'
-		u_help ("Etiqueta '" + ::Codigo + "' nao deve ser enviada para o FullWMS, pois destina-se ao almox." + ::AlmDest,, .t.)
+		_sMsg = "Etiqueta '" + ::Codigo + "' nao deve ser enviada para o FullWMS, pois destina-se ao almox." + ::AlmDest
+		if _lMsg
+			u_help (_sMsg,, .t.)
+		else
+			U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']' + _sMsg)
+		endif
 		_lContinua = .f.
 	endif
 
 	if _lContinua .and. left (::Codigo, 1) == '0'
-		u_Help ("Impossivel enviar etiqueta '" + ::Codigo + "' para o FullWMS: Etiquetas iniciadas por '0' sao geradas diretamente pelo FullWMS.",, .t.)
+		_sMsg = "Impossivel enviar etiqueta '" + ::Codigo + "' para o FullWMS: Etiquetas iniciadas por '0' sao geradas diretamente pelo FullWMS."
+		if _lMsg
+			u_help (_sMsg,, .t.)
+		else
+			U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']' + _sMsg)
+		endif
 		_lContinua = .F.
 	endif
 	if _lContinua .and. ::Impressa != 'S'
-		u_help ("Etiqueta '" + ::Codigo + "' nao deve ser enviada para o FullWMS antes de estar impressa.",, .t.)
+		_sMsg = "Etiqueta '" + ::Codigo + "' nao deve ser enviada para o FullWMS antes de estar impressa."
+		if _lMsg
+			u_help (_sMsg,, .t.)
+		else
+			U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']' + _sMsg)
+		endif
 		_lContinua = .f.
 	endif
 	if _lContinua .and. empty (::LoteProduto)
-		u_help ("Etiqueta '" + ::Codigo + "' nao pode ser enviada para o FullWMS pois nao tem lote informado.",, .t.)
+		_sMsg = "Etiqueta '" + ::Codigo + "' nao pode ser enviada para o FullWMS pois nao tem lote informado."
+		if _lMsg
+			u_help (_sMsg,, .t.)
+		else
+			U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']' + _sMsg)
+		endif
 		_lContinua = .f.
 	endif
 
@@ -834,7 +856,7 @@ METHOD EnviaFull (_lMsg) Class ClsEtiq
 	_lMsg := iif (_lMsg == NIL, .T., _lMsg)
 
 	if _lContinua
-		_lContinua = ::PodeEnvFul ()
+		_lContinua = ::PodeEnvFul (_lMsg)
 	endif
 
 	if _lContinua

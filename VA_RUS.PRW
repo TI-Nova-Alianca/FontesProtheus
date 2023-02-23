@@ -30,6 +30,8 @@
 // 28/10/2022 - Robert - Removidos alguns parametros em desuso.
 // 07/12/2022 - Robert - Removidos mais alguns parametros em desuso.
 // 08/02/2023 - Robert - Criada opcao de segregar carga.
+// 22/02/2023 - Robert - Chamada simulacao frete nao tinha objeto ClsCarSaf() instanciado.
+//                     - Novo parametros chamada U_VA_SZNC()
 //
 
 // --------------------------------------------------------------------------
@@ -175,15 +177,17 @@ User Function va_rus ()
 		aadd (_aMenuOut, {"Enderecar uva no estoque",        "U_VA_RusOO ('EnderecarEstoque')", 0,4})
 		aadd (_aMenuOut, {"Estornar enderecamento uva",      "U_VA_RusOO ('EstornarEnderecamento')", 0,4})
 		aadd (_aMenuOut, {"Registrar evento/comentario",     "U_VA_RusOO ('EventoManual')", 0,4})
-		aadd (_aMenuOut, {"Consultar eventos",               "U_VA_SZNC  ('CARGASAFRA', sze -> ze_safra + sze -> ze_carga)", 0,4})
+//		aadd (_aMenuOut, {"Consultar eventos",               "U_VA_SZNC  ('CARGASAFRA', sze -> ze_safra + sze -> ze_carga)", 0,4})
+		aadd (_aMenuOut, {"Consultar eventos",               "U_VA_SZNC  ('CARGASAFRA', sze -> ze_safra, sze -> ze_carga)", 0,4})
 		aadd (_aMenuOut, {"Consultar cargas compartilhadas", "U_VA_RusOO ('ConsultarCompartilhamento')", 0,4})
+		aadd (_aMenuOut, {"Simular frete",                   "U_VA_RusOO ('SimularFrete')", 0,4})
 		if upper (alltrim (cUserName)) $ 'ROBERT.KOCH/DAIANA.RIBAS'
 			aadd (_aMenuOut, {"Simular leitura inspecoes",      "U_VA_RusLI (iif (sze -> ze_status == '1', 1, 2), .t.)", 0,4})
-			aadd (_aMenuOut, {"Simular frete",                  "U_VA_RusCF (.F.)", 0,4})  // Apenas para ver nova simulacao no arquivo de log.
 			aadd (_aMenuOut, {"Eliminar carga definitivamente", "U_VA_RusED (sze -> ze_safra, sze -> ze_carga)", 0,4})
+			aadd (_aMenuOut, {"Segregar carga",                 "U_VA_RusOO ('SegregarCarga')", 0,4})
 		endif
 		if upper (alltrim (cUserName)) == 'ROBERT.KOCH'
-			aadd (_aMenuOut, {"Segregar carga", "U_VA_RusOO ('SegregarCarga')", 0,4})
+			aadd (_aMenuOut, {"Recuperar carga cancelada (ainda nao pronto!)", "U_VA_RusOO ('RecuperarCargaCancelada')", 0,4})
 		endif
 
 		// Menu principal
@@ -300,6 +304,9 @@ user function VA_RUSOO (_sQueFazer)
 				endif
 			endif
 		endif
+
+	case _sQueFazer == upper ('SimularFrete')
+		U_VA_RusCF (.f.)
 
 	otherwise
 		u_help ("Acao desconhecida: " + cvaltochar (_sQueFazer),, .t.)
@@ -532,16 +539,5 @@ Static Function _ValidPerg ()
 //	aadd (_aRegsPerg, {15, "Integr. c/ controle portaria  ", "N", 1,  0,  "",   "",      {"Sim", "Nao"},                    ""})
 	aadd (_aRegsPerg, {15, "PARAMETRO EM DESUSO           ", "N", 1,  0,  "",   "",      {},                                ""})
 
-//	aadd (_aDefaults, {"02", 2})
-//	aadd (_aDefaults, {"03", 2})
-//	aadd (_aDefaults, {"06", 10})
-//	aadd (_aDefaults, {"07", 2})
-//	aadd (_aDefaults, {"08", 21})
-//	aadd (_aDefaults, {"09", 2})
-//	aadd (_aDefaults, {"11", 2})
-//	aadd (_aDefaults, {"12", 1})
-//	aadd (_aDefaults, {"13", 1})
-//	aadd (_aDefaults, {"14", 2})
-//	aadd (_aDefaults, {"15", 2})
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 Return

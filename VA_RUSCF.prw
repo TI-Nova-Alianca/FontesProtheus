@@ -8,18 +8,21 @@
 // 05/01/2022 - Robert - Tratamento para safra 2022, novo tipo de retorno da funcao de calculo do frete.
 //                     - Gravacao campo ZF_KMFRT.
 // 13/01/2021 - Robert - Inicializacao variavel _aFrtSaf.
-// 17/01/2023 - Robert - QUando prod.propria (sem frete), assumia que era erro no calculo.
+// 17/01/2023 - Robert - Quando prod.propria (sem frete), assumia que era erro no calculo.
+// 22/02/2023 - Robert - Grava memoria de calculo como um evento da carga - GLPI 13221.
+//                     - Passa a receber e popular a variavel _aHisFrSaf em caso de encontrar divergencia.
 //
 
 // ------------------------------------------------------------------------------------
-User Function va_rusCF (_lRegrav)
+User Function va_rusCF (_lRegrav, _aHisFrSaf)
 	local _lContinua := .T.
 	local _oSQL      := NIL
 	local _lDeveCalc := .F.
 	local _nFrtItem  := 0
 	local _lFrtSafOK := .T.
 	local _oAssoc    := NIL
-	local _aFrtSaf   := {0, 0, ''}
+	local _aFrtSaf   := {0, 0, '', ''}
+	local _sMemCalc  := ''
 
 	// A partir de 2023 estou comecando a migrar as cargas de safra para orientacao a objeto.
 	if type ("_oCarSaf") != 'O'
@@ -61,6 +64,7 @@ User Function va_rusCF (_lRegrav)
 //		if ! alltrim (_oSQL:RetQry (1, .F.)) $ 'ASSOCIADO/EX ASSOCIADO'
 		if ! left (_oSQL:RetQry (1, .F.), 1) $ '1/3'  // 1=ASSOCIADO; 3=EX ASSOCIADO
 			u_log2 ('info', 'Fornecedor ' + sze -> ze_assoc + '/' + sze -> ze_lojasso + ' nao eh associado nem ex associado nesta data. Nao deve calcular frete.')
+			_sMemCalc += 'Fornecedor ' + sze -> ze_assoc + '/' + sze -> ze_lojasso + ' nao eh associado nem ex associado nesta data. Nao deve calcular frete.' + chr (13) + chr (10)
 			_lDeveCalc = .F.
 		else
 			_lDeveCalc = .T.
@@ -94,7 +98,7 @@ User Function va_rusCF (_lRegrav)
 				elseif sze -> ze_safra == '2022'
 					_aFrtSaf = aclone (U_FrtSaf22 (_oAssoc:Nucleo, szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor))
 				elseif sze -> ze_safra == '2023'
-					_aFrtSaf = aclone (U_FrtSaf23 (_oAssoc:Nucleo, szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor))
+					_aFrtSaf = aclone (U_FrtSaf23 (_oAssoc:Nucleo, szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor, _oAssoc:GrpFam))
 					_nFrtItem = _aFrtSaf [1]
 				else
 					_nFrtItem = 0
@@ -102,13 +106,16 @@ User Function va_rusCF (_lRegrav)
 					_lContinua = .F.
 					_lFrtSafOK = .F.
 				endif
+
+				// Se jah tem dados, provavelmente seja por que a carga tem mais de 1 item.
+				if ! empty (_sMemCalc)
+					_sMemCalc += chr (13) + chr (10)
+				endif
+				_sMemCalc += _aFrtSaf [4]
+
 			else
 				_nFrtItem = 0
 			endif
-
-// teste jah estah no IF anterior.			if _nFrtItem == 0
-// teste jah estah no IF anterior.				_lFrtSafOK = .F.
-// teste jah estah no IF anterior.			endif
 
 			// Posso estar executando para regravar, ou apenas para simulacoes.
 			if _lRegrav
@@ -118,11 +125,33 @@ User Function va_rusCF (_lRegrav)
 					szf -> zf_frtKm   = _aFrtSaf [2]
 					szf -> zf_frtCrit = left (_aFrtSaf [3], 1)
 					msunlock ()
+
+					// Grava memoria de calculo do frete como um evento da carga
+					_oCarSaf:GrvEvt ('SZE011', 'Memoria de calculo do frete' + chr (13) + chr (10) + _sMemCalc)
 				endif
 			else
-				u_log2 (iif (szf -> zf_valfret == _nFrtItem, 'info', 'aviso'), 'Carga ' + szf -> zf_carga + ' Prod.' + alltrim (szf -> zf_produto) + ' Frete simulado: ' + transform (_nFrtItem, '@E 999,999.99') + '   Valor atual: ' + transform (szf -> zf_valfret, '@E 999,999.99'))
+//				if szf -> zf_valfret == _nFrtItem
+//					u_log2 ('info',  'Carga ' + szf -> zf_carga + ' Prod.' + alltrim (szf -> zf_produto) + ' Frete simulado: ' + transform (_nFrtItem, '@E 999,999.99') + '   Valor gravado na carga: ' + transform (szf -> zf_valfret, '@E 999,999.99'))
+//				else
+//					u_log2 ('aviso', 'Carga ' + szf -> zf_carga + ' Prod.' + alltrim (szf -> zf_produto) + ' Frete simulado: ' + transform (_nFrtItem, '@E 999,999.99') + '   Valor gravado na carga: ' + transform (szf -> zf_valfret, '@E 999,999.99'))
+//				endif
+
+				u_log2 (iif (szf -> zf_valfret == _nFrtItem, 'info', 'aviso'), 'Carga ' + szf -> zf_carga + ' Prod.' + alltrim (szf -> zf_produto) + ' Frete simulado: ' + transform (_nFrtItem, '@E 999,999.99') + '   Valor gravado na carga: ' + transform (szf -> zf_valfret, '@E 999,999.99'))
+
+				// Se tiver esta variavel, acrescenta o resultado a ela.
+				// Util para quando precisar reprocessar por algum motivo. Ex.: GLPI 13221.
+				if szf -> zf_valfret != _nFrtItem
+					if valtype (_aHisFrSaf) == 'A'
+						aadd (_aHistFrt, {szf -> zf_safra, szf -> zf_filial, sze -> ze_assoc, sze -> ze_lojasso, szf -> zf_carga, szf -> zf_produto, szf -> zf_valfret, _nFrtItem, strtran (_sMemCalc, chr (13) + chr (10), '; ')})
+					endif
+				endif
 			endif
 			szf -> (dbskip ())
 		enddo
+	endif
+
+	// Usuario pediu simulacao
+	if ! _lRegrav
+		u_showmemo (_sMemCalc)
 	endif
 return _lFrtSafOK
