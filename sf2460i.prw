@@ -2,14 +2,14 @@
 // Autor.....: Jeferson Rech
 // Data......: Maio/2004
 // Descricao.: P.E. no final da geracao da NF de saida, mas ainda dentro da transacao.
-
+//
 // Tags de localização
 // #TipoDePrograma    #ponto_de_entrada
 // #Descricao         #P.E. no final da geracao da NF de saida, mas ainda dentro da transacao
 // #PalavasChave      #PE #NF #notadesaida 
 // #TabelasPrincipais #SF2 #SD2 
 // #Modulos           #faturamento #FAT
-
+//
 // Historico de alteracoes:
 // 15/02/2008 - Robert - Ajustes calculo subst.trib. estado de MG
 // 18/02/2008 - Robert - Criado tratamento generico para subst.trib. (independente da UF)
@@ -150,8 +150,8 @@
 // 01/12/2022 - Robert  - Gravava E1_COMIS1...5 indevidamente na funcao _TitSTMG().
 // 18/01/2023 - Robert  - Gravar E1_TIPO=IMP  e nao mais DP na funcao _TitSTMG() - GLPI 12779
 // 20/02/2023 - Robert  - Gravar rotina FINA040 e FINA050 nos titulos de ST para MG (GLPI 12779)
+// 22/02/2023 - Cláudia - Retirada gravação de representante nas mensagens da NF. GLPI: 12951
 //
-
 // ---------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -408,9 +408,9 @@ static function _DadosAdic ()
     endif
 
 	// Vendedor, pedido, carga(OMS) e ordem de compra
-	if ! empty (sf2 -> f2_vend1) .and. sf2 -> f2_vend1 != '328'  // Este representante nao quer a mensagem.
-		_SomaMsg (@_sMsgContr, "Repr.: " + alltrim (sf2 -> f2_vend1) + "-" + alltrim (fBuscaCpo ("SA3", 1, xfilial ("SA3") + sf2 -> f2_vend1, "A3_NREDUZ")))
-	endif
+	//if ! empty (sf2 -> f2_vend1) .and. sf2 -> f2_vend1 != '328'  // Este representante nao quer a mensagem.
+	//	_SomaMsg (@_sMsgContr, "Repr.: " + alltrim (sf2 -> f2_vend1) + "-" + alltrim (fBuscaCpo ("SA3", 1, xfilial ("SA3") + sf2 -> f2_vend1, "A3_NREDUZ")))
+	//endif
 	_SomaMsg (@_sMsgContr, "Pedido: " + alltrim (sc5 -> c5_num))
 
 	if ! empty (sf2 -> f2_carga)
@@ -793,7 +793,7 @@ Static Function _HistNf()
 	_oEvento:Flag      = .T.
 	_oEvento:Grava ()
 Return
-
+//
 // --------------------------------------------------------------------------
 // Gera mensagem e titulos referente a cobranca 'em separado' da ST para MG (GLPI 12779)
 static function _TitSTMG ()
@@ -853,7 +853,6 @@ static function _TitSTMG ()
 		aAdd(_aAutoSE1, {"E1_PREFIXO"  , sf2 -> f2_serie       , Nil})
 		aAdd(_aAutoSE1, {"E1_NUM"      , sf2 -> f2_doc         , Nil})
 		aAdd(_aAutoSE1, {"E1_PARCELA"  , _sProxParc            , Nil})
-	//	aAdd(_aAutoSE1, {"E1_TIPO"     , 'DP'                  , Nil})
 		aAdd(_aAutoSE1, {"E1_TIPO"     , 'IMP'                 , Nil})
 		aAdd(_aAutoSE1, {"E1_NATUREZ"  , '110198'              , Nil})
 		aAdd(_aAutoSE1, {"E1_CLIENTE"  , sf2 -> f2_cliente     , Nil})
@@ -861,7 +860,6 @@ static function _TitSTMG ()
 		aAdd(_aAutoSE1, {"E1_VALOR"    , _nST_MG               , Nil})
 		aAdd(_aAutoSE1, {"E1_VLCRUZ"   , _nST_MG               , Nil})
 		aAdd(_aAutoSE1, {"E1_MOEDA"    , 1                     , Nil})
-	//	aAdd(_aAutoSE1, {"E1_ORIGEM"   , 'MATA460'             , Nil})
 		aAdd(_aAutoSE1, {"E1_ORIGEM"   , 'FINA040'             , Nil})
 		aAdd(_aAutoSE1, {"E1_EMISSAO"  , sf2 -> f2_emissao     , Nil})
 		aAdd(_aAutoSE1, {"E1_VENCTO"   , sf2 -> f2_emissao + 15, Nil})
@@ -896,7 +894,6 @@ static function _TitSTMG ()
 			_oEvento:Grava ()
 		endif
 
-
 		// Titulo a pagar que seria o controle de recolhimento da guia.
 		//
 		// Encontra a proxima parcela para esta nota
@@ -927,7 +924,6 @@ static function _TitSTMG ()
 		aAdd(_aAutoSE2, {"E2_VALOR"    , _nST_MG               , Nil})
 		aAdd(_aAutoSE2, {"E2_VLCRUZ"   , _nST_MG               , Nil})
 		aAdd(_aAutoSE2, {"E2_MOEDA"    , 1                     , Nil})
-	//	aAdd(_aAutoSE2, {"E2_ORIGEM"   , 'MATA460'             , Nil})
 		aAdd(_aAutoSE2, {"E2_ORIGEM"   , 'FINA050'             , Nil})
 		aAdd(_aAutoSE2, {"E2_EMISSAO"  , sf2 -> f2_emissao     , Nil})
 		aAdd(_aAutoSE2, {"E2_VENCTO"   , sf2 -> f2_emissao     , Nil})
@@ -958,6 +954,5 @@ static function _TitSTMG ()
 			_oEvento:LojaFor   = se2 -> e2_loja
 			_oEvento:Grava ()
 		endif
-
 	endif
 return
