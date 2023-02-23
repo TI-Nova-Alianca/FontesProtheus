@@ -11,6 +11,7 @@
 // #Modulos           #CTB
 
 // Historico de alteracoes:
+// 16/02/2023 - Robert - Liberacao de versao inicial contemplando a fase I.
 //
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -77,12 +78,25 @@ return _lRet
 // --------------------------------------------------------------------------
 // Geracao
 Static Function _Gera ()
-	local _aNFEntr  := {}
-	local _nNFeAC   := 0
-	local _nNFeANC  := 0
-	local _nPercCom := 0
-	local _oSQL     := NIL
+	local _aNFEntr   := {}
+	local _nNFeAC    := 0
+	local _nNFeANC   := 0
+	local _nPercCom  := 0
+	local _oSQL      := NIL
+//	local _aCtFase1  := {}
+//	local _nCtFase1  := 0
+//	local _aLctFase1 := {}
+//	local _nLctFase1 := 0
 //	local _sQrySld  := ''
+	local _aSldIni := {}
+	local _nAux1 := 0
+	local _nAux2 := 0
+	local _aSldGrup := {}
+	local _sGrupo := ''
+	local _sPerSldCt := "'" + left (dtos (mv_par01), 4) + "0101' AND '" + dtos (lastday (mv_par01)) + "'"
+	local _sLoteLcto := '009998'
+	local _sOrigLcto := 'U_CTBANC1'
+	local _dDataLcto := lastday (mv_par01)
 
 	procregua (10)
 	incproc ("Buscando dados de compras")
@@ -119,27 +133,11 @@ Static Function _Gera ()
 	U_Log2 ('debug', _aNFEntr)
 	_nNFeANC = _aNFEntr [1, 2]
 	_nNFeAC  = _aNFEntr [1, 1] - _nNFeANC
-	_nPercCom = _nNFeANC * 100 / (_nNFeANC + _nNFeAC)
+	_nPercCom = round (_nNFeANC * 100 / (_nNFeANC + _nNFeAC), 2)
 	U_Log2 ('info', '[' + procname () + ']Aquisicao de MP+VD de terceiros..: ' + transform (_nNFeANC,           "@E 999,999,999.99"))
 	U_Log2 ('info', '[' + procname () + ']Aquisicao de MP+VD total.........: ' + transform (_nNFeANC + _nNFeAC, "@E 999,999,999.99"))
 	U_Log2 ('info', '[' + procname () + ']Percentual de Ato Nao Cooperativo: ' + transform (_nPercCom,          "@E 999,999,999.99"))
 
-
-/*
-	// Deixa pronto um trecho de SQL que vai servir para buscar saldos
-	// contabeis para diferentes grupos de contas.
-	_sQrySld := "SELECT CT1_CONTA, CT1_DESC01, CONTAC, CONTAD"
-	_sQrySld +=      ", SUM (CQ3_DEBITO - CQ3_CREDIT) AS SALDO"
-	_sQrySld +=  " FROM CONTAS"
-	_sQrySld +=     ", " + RetSQLName ("CQ3") + " CQ3 "
-	_sQrySld += " WHERE CQ3.D_E_L_E_T_ = ''"
-	_sQrySld +=   " AND CQ3.CQ3_FILIAL = '" + xfilial ("CQ3") + "'"
-	_sQrySld +=   " AND CQ3.CQ3_CONTA  = CONTAS.CT1_CONTA"
-	_sQrySld +=   " AND CQ3.CQ3_TPSALD = '1'"  // Realizado
-	_sQrySld +=   " AND CQ3.CQ3_LP    != 'Z'"  // IGNORAR AS CONTAS DE ZERAMENTO (VIRADA DE EXERCICIO)
-	_sQrySld +=   " AND CQ3.CQ3_DATA   BETWEEN '" + left (dtos (mv_par01), 4) + "0101' AND '" + dtos (lastday (mv_par01)) + "'"
-	_sQrySld += " GROUP BY CT1_CONTA, CT1_DESC01, CONTAC, CONTAD"
-*/
 
 	// Preciso buscar saldo acumulado (do inicio do ano) de contas especificas
 	// para efetuar rateios em diferentes momentos. Cada grupo de contas deve
@@ -149,7 +147,7 @@ Static Function _Gera ()
 	_oSQL:_sQuery := "WITH CONTAS AS ("  // Cria uma CTE com a lista de contas
 	
 	// Receitas Mercado Interno Produtos
-	_oSQL:_sQuery += " SELECT 1 AS MOMENTO, CT1_CONTA, CT1_DESC01, '401010201001' AS CONTAC, '401010101099' AS CONTAD"
+	_oSQL:_sQuery += " SELECT 1 AS MOMENTO, '1-RECEITAS' AS GRUPO, CT1_CONTA, CT1_DESC01" //, '401010201001' AS CONTAC, '401010101099' AS CONTAD"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("CT1") + " CT1"
 	_oSQL:_sQuery +=  " WHERE CT1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND CT1.CT1_FILIAL = '" + xfilial ("CT1") + "'"
@@ -158,7 +156,7 @@ Static Function _Gera ()
 
 	// ICMS
 	_oSQL:_sQuery += " UNION ALL "
-	_oSQL:_sQuery += " SELECT 1 AS MOMENTO, CT1_CONTA, CT1_DESC01, '401010102094' AS CONTAC, '401010202001' AS CONTAD"
+	_oSQL:_sQuery += " SELECT 1 AS MOMENTO, '2-ICMS' AS GRUPO, CT1_CONTA, CT1_DESC01" //, '401010102094' AS CONTAC, '401010202001' AS CONTAD"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("CT1") + " CT1"
 	_oSQL:_sQuery +=  " WHERE CT1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND CT1.CT1_FILIAL = '" + xfilial ("CT1") + "'"
@@ -166,7 +164,7 @@ Static Function _Gera ()
 
 	// IPI
 	_oSQL:_sQuery += " UNION ALL "
-	_oSQL:_sQuery += " SELECT 1 AS MOMENTO, CT1_CONTA, CT1_DESC01, '401010102095' AS CONTAC, '401010202005' AS CONTAD"
+	_oSQL:_sQuery += " SELECT 1 AS MOMENTO, '3-IPI' AS GRUPO, CT1_CONTA, CT1_DESC01" //, '401010102095' AS CONTAC, '401010202005' AS CONTAD"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("CT1") + " CT1"
 	_oSQL:_sQuery +=  " WHERE CT1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND CT1.CT1_FILIAL = '" + xfilial ("CT1") + "'"
@@ -174,7 +172,7 @@ Static Function _Gera ()
 
 	// PIS
 	_oSQL:_sQuery += " UNION ALL "
-	_oSQL:_sQuery += " SELECT 1 AS MOMENTO, CT1_CONTA, CT1_DESC01, '401010102096' AS CONTAC, '401010202002' AS CONTAD"
+	_oSQL:_sQuery += " SELECT 1 AS MOMENTO, '4-PIS' AS GRUPO, CT1_CONTA, CT1_DESC01" //, '401010102096' AS CONTAC, '401010202002' AS CONTAD"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("CT1") + " CT1"
 	_oSQL:_sQuery +=  " WHERE CT1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND CT1.CT1_FILIAL = '" + xfilial ("CT1") + "'"
@@ -182,7 +180,7 @@ Static Function _Gera ()
 
 	// COFINS
 	_oSQL:_sQuery += " UNION ALL "
-	_oSQL:_sQuery += " SELECT 1 AS MOMENTO, CT1_CONTA, CT1_DESC01, '401010102097' AS CONTAC, '401010202003' AS CONTAD"
+	_oSQL:_sQuery += " SELECT 1 AS MOMENTO, '5-COFINS' AS GRUPO, CT1_CONTA, CT1_DESC01" //, '401010102097' AS CONTAC, '401010202003' AS CONTAD"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("CT1") + " CT1"
 	_oSQL:_sQuery +=  " WHERE CT1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND CT1.CT1_FILIAL = '" + xfilial ("CT1") + "'"
@@ -190,7 +188,7 @@ Static Function _Gera ()
 
 	// ICMSST
 	_oSQL:_sQuery += " UNION ALL "
-	_oSQL:_sQuery += " SELECT 1 AS MOMENTO, CT1_CONTA, CT1_DESC01, '401010102098' AS CONTAC, '401010202004' AS CONTAD"
+	_oSQL:_sQuery += " SELECT 1 AS MOMENTO, '6-ICMSST' AS GRUPO, CT1_CONTA, CT1_DESC01" //, '401010102098' AS CONTAC, '401010202004' AS CONTAD"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("CT1") + " CT1"
 	_oSQL:_sQuery +=  " WHERE CT1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND CT1.CT1_FILIAL = '" + xfilial ("CT1") + "'"
@@ -198,7 +196,7 @@ Static Function _Gera ()
 
 	// CPV terceiros
 	_oSQL:_sQuery += " UNION ALL "
-	_oSQL:_sQuery += " SELECT 1 AS MOMENTO, CT1_CONTA, CT1_DESC01, '402010101099' AS CONTAC, '401010202004' AS CONTAD"
+	_oSQL:_sQuery += " SELECT 1 AS MOMENTO, '7-CPV_TERCEIROS' AS GRUPO, CT1_CONTA, CT1_DESC01" //, '402010101099' AS CONTAC, '401010202004' AS CONTAD"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("CT1") + " CT1"
 	_oSQL:_sQuery +=  " WHERE CT1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND CT1.CT1_FILIAL = '" + xfilial ("CT1") + "'"
@@ -206,7 +204,7 @@ Static Function _Gera ()
 	
 	//
 	_oSQL:_sQuery += " UNION ALL "
-	_oSQL:_sQuery += " SELECT 2 AS MOMENTO, CT1_CONTA, CT1_DESC01, '403010199001' AS CONTAC, '403020101001' AS CONTAD"
+	_oSQL:_sQuery += " SELECT 2 AS MOMENTO, '' AS GRUPO, CT1_CONTA, CT1_DESC01" //, '403010199001' AS CONTAC" //, '403020101001' AS CONTAD"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("CT1") + " CT1"
 	_oSQL:_sQuery +=  " WHERE CT1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND CT1.CT1_FILIAL = '" + xfilial ("CT1") + "'"
@@ -214,7 +212,7 @@ Static Function _Gera ()
 
 	//
 	_oSQL:_sQuery += " UNION ALL "
-	_oSQL:_sQuery += " SELECT 2 AS MOMENTO, CT1_CONTA, CT1_DESC01, '403010299001' AS CONTAC, '403020101002' AS CONTAD"
+	_oSQL:_sQuery += " SELECT 2 AS MOMENTO, '' AS GRUPO, CT1_CONTA, CT1_DESC01" //, '403010299001' AS CONTAC" //, '403020101002' AS CONTAD"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("CT1") + " CT1"
 	_oSQL:_sQuery +=  " WHERE CT1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND CT1.CT1_FILIAL = '" + xfilial ("CT1") + "'"
@@ -222,7 +220,7 @@ Static Function _Gera ()
 
 	//
 	_oSQL:_sQuery += " UNION ALL "
-	_oSQL:_sQuery += " SELECT 2 AS MOMENTO, CT1_CONTA, CT1_DESC01, '403010399001' AS CONTAC, '403020101003' AS CONTAD"
+	_oSQL:_sQuery += " SELECT 2 AS MOMENTO, '' AS GRUPO, CT1_CONTA, CT1_DESC01" //, '403010399001' AS CONTAC" //, '403020101003' AS CONTAD"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("CT1") + " CT1"
 	_oSQL:_sQuery +=  " WHERE CT1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND CT1.CT1_FILIAL = '" + xfilial ("CT1") + "'"
@@ -230,7 +228,7 @@ Static Function _Gera ()
 
 	//
 	_oSQL:_sQuery += " UNION ALL "
-	_oSQL:_sQuery += " SELECT 2 AS MOMENTO, CT1_CONTA, CT1_DESC01, '403010499001' AS CONTAC, '403020101004' AS CONTAD"
+	_oSQL:_sQuery += " SELECT 2 AS MOMENTO, '' AS GRUPO, CT1_CONTA, CT1_DESC01" //, '403010499001' AS CONTAC" //, '403020101004' AS CONTAD"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("CT1") + " CT1"
 	_oSQL:_sQuery +=  " WHERE CT1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND CT1.CT1_FILIAL = '" + xfilial ("CT1") + "'"
@@ -238,7 +236,7 @@ Static Function _Gera ()
 
 	//
 	_oSQL:_sQuery += " UNION ALL "
-	_oSQL:_sQuery += " SELECT 2 AS MOMENTO, CT1_CONTA, CT1_DESC01, '405010102001' AS CONTAC, '405010101099' AS CONTAD"
+	_oSQL:_sQuery += " SELECT 2 AS MOMENTO, '' AS GRUPO, CT1_CONTA, CT1_DESC01" //, '405010102001' AS CONTAC" //, '405010101099' AS CONTAD"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("CT1") + " CT1"
 	_oSQL:_sQuery +=  " WHERE CT1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND CT1.CT1_FILIAL = '" + xfilial ("CT1") + "'"
@@ -246,7 +244,7 @@ Static Function _Gera ()
 
 	//
 	_oSQL:_sQuery += " UNION ALL "
-	_oSQL:_sQuery += " SELECT 2 AS MOMENTO, CT1_CONTA, CT1_DESC01, '405010201099' AS CONTAC, '405010202099' AS CONTAD"
+	_oSQL:_sQuery += " SELECT 2 AS MOMENTO, '' AS GRUPO, CT1_CONTA, CT1_DESC01" //, '405010201099' AS CONTAC" //, '405010202099' AS CONTAD"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("CT1") + " CT1"
 	_oSQL:_sQuery +=  " WHERE CT1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND CT1.CT1_FILIAL = '" + xfilial ("CT1") + "'"
@@ -254,7 +252,7 @@ Static Function _Gera ()
 
 	//
 	_oSQL:_sQuery += " UNION ALL "
-	_oSQL:_sQuery += " SELECT 2 AS MOMENTO, CT1_CONTA, CT1_DESC01, '406010201099' AS CONTAC, '406010101099' AS CONTAD"
+	_oSQL:_sQuery += " SELECT 2 AS MOMENTO, '' AS GRUPO, CT1_CONTA, CT1_DESC01" //, '406010201099' AS CONTAC" //, '406010101099' AS CONTAD"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("CT1") + " CT1"
 	_oSQL:_sQuery +=  " WHERE CT1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND CT1.CT1_FILIAL = '" + xfilial ("CT1") + "'"
@@ -262,50 +260,146 @@ Static Function _Gera ()
 
 	//
 	_oSQL:_sQuery += " UNION ALL "
-	_oSQL:_sQuery += " SELECT 2 AS MOMENTO, CT1_CONTA, CT1_DESC01, '406020101099' AS CONTAC, '406020201099' AS CONTAD"
+	_oSQL:_sQuery += " SELECT 2 AS MOMENTO, '' AS GRUPO, CT1_CONTA, CT1_DESC01" //, '406020101099' AS CONTAC" //, '406020201099' AS CONTAD"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("CT1") + " CT1"
 	_oSQL:_sQuery +=  " WHERE CT1.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND CT1.CT1_FILIAL = '" + xfilial ("CT1") + "'"
 	_oSQL:_sQuery +=   " AND (CT1.CT1_CONTA BETWEEN '406020101001' AND '406020101008' OR CT1.CT1_CONTA in ('406020101099'))"
 
 	_oSQL:_sQuery += ")"
-	_oSQL:_sQuery += "SELECT MOMENTO, CT1_CONTA, CT1_DESC01, CONTAC, CONTAD"
+	_oSQL:_sQuery += "SELECT MOMENTO, GRUPO, CT1_CONTA, CT1_DESC01" //, CONTAC, CONTAD"
 	_oSQL:_sQuery +=      ", SUM (CQ3_DEBITO - CQ3_CREDIT) AS SALDO"
+	_oSQL:_sQuery +=      ", ROUND (SUM (CQ3_DEBITO - CQ3_CREDIT) * " + cvaltochar (_nPercCom) + "/100, 2) AS VALOR_NC"
 	_oSQL:_sQuery +=  " FROM CONTAS"
 	_oSQL:_sQuery +=     ", " + RetSQLName ("CQ3") + " CQ3 "
 	_oSQL:_sQuery += " WHERE CQ3.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=   " AND CQ3.CQ3_FILIAL = '" + xfilial ("CQ3") + "'"
 	_oSQL:_sQuery +=   " AND CQ3.CQ3_CONTA  = CONTAS.CT1_CONTA"
 	_oSQL:_sQuery +=   " AND CQ3.CQ3_TPSALD = '1'"  // Realizado
 	_oSQL:_sQuery +=   " AND CQ3.CQ3_LP    != 'Z'"  // IGNORAR AS CONTAS DE ZERAMENTO (VIRADA DE EXERCICIO)
-	_oSQL:_sQuery +=   " AND CQ3.CQ3_DATA   BETWEEN '" + left (dtos (mv_par01), 4) + "0101' AND '" + dtos (lastday (mv_par01)) + "'"
-	_oSQL:_sQuery += " GROUP BY MOMENTO, CT1_CONTA, CT1_DESC01, CONTAC, CONTAD"
+//	_oSQL:_sQuery +=   " AND CQ3.CQ3_DATA   BETWEEN '" + left (dtos (mv_par01), 4) + "0101' AND '" + dtos (lastday (mv_par01)) + "'"
+	_oSQL:_sQuery +=   " AND CQ3.CQ3_DATA   BETWEEN " + _sPerSldCt
+	_oSQL:_sQuery +=   " AND MOMENTO = 1"  // POR ENQTO NAO TENHO TRATAMENTO PARA 2A.FASE
+	_oSQL:_sQuery += " GROUP BY MOMENTO, GRUPO, CT1_CONTA, CT1_DESC01" //, CONTAC, CONTAD"
 	_oSQL:Log ('[' + procname () + ']')
-	U_Log2 ('debug', _oSQL:Qry2Array (.f., .f.))
+	_aSldIni := _oSQL:Qry2Array (.f., .f.)
+	U_Log2 ('debug', '[' + procname () + ']saldos iniciais:')
+	U_Log (_aSldIni)
+	//u_showarray (_aSldGrup, 'saldos iniciais')
 
-/*
-	// Busca saldo acumulado (do inicio do ano) de contas especificas para
-	// aplicar o segundo passo da contabilizacao.
+	// Tendo as contas a considerar e seus saldos vinculadas aos grupos, posso
+	// compor uma nova array de grupos, com esses saldos acumulados e as contas
+	// onde deverao ser feitos os lancamentos.
+	_aSldGrup = {}
+	for _nAux1 = 1 to len (_aSldIni)
+		if _aSldIni [_nAux1, 1] == 1  // fase 1 por enquanto
+			
+			// Se o grupo nao consta na array, cria uma linha para ele
+			_sGrupo = alltrim (_aSldIni [_nAux1, 2])
+			_nAux2 = ascan (_aSldGrup, {| _aVal | _aVal [1] == _sGrupo})
+			if _nAux2 == 0
+				// Como sao poucos grupos e com pouca probabilidade de mudar,
+				// nem vou usar Super Bonder... vou usar Araldite, mesmo.
+				do case
+				case _sGrupo == '1-RECEITAS'      ; aadd (_aSldGrup, {_sGrupo, '401010101099', 'D', '401010201001', 'C', 0, 0, 0, 0})
+				case _sGrupo == '2-ICMS'          ; aadd (_aSldGrup, {_sGrupo, '401010102094', 'C', '401010202001', 'D', 0, 0, 0, 0})
+				case _sGrupo == '3-IPI'           ; aadd (_aSldGrup, {_sGrupo, '401010102095', 'C', '401010202005', 'D', 0, 0, 0, 0})
+				case _sGrupo == '4-PIS'           ; aadd (_aSldGrup, {_sGrupo, '401010102096', 'C', '401010202002', 'D', 0, 0, 0, 0})
+				case _sGrupo == '5-COFINS'        ; aadd (_aSldGrup, {_sGrupo, '401010102097', 'C', '401010202003', 'D', 0, 0, 0, 0})
+				case _sGrupo == '6-ICMSST'        ; aadd (_aSldGrup, {_sGrupo, '401010102098', 'C', '401010202004', 'D', 0, 0, 0, 0})
+				case _sGrupo == '7-CPV_TERCEIROS' ; aadd (_aSldGrup, {_sGrupo, '402010101099', 'C', '402010201001', 'D', 0, 0, 0, 0})
+				otherwise
+					u_help ("Grupo desconhecido: " + _sGrupo,, .t.)
+					_lContinua = .F.
+					exit
+				endcase
+				_nAux2 = len (_aSldGrup)
+			endif
+
+			// Agora que tenho a linha do grupo na array, posso acumular nela os valores.
+			_aSldGrup [_nAux2, 6] += _aSldIni [_nAux1, 5]
+			_aSldGrup [_nAux2, 7] += _aSldIni [_nAux1, 6]
+		endif
+	next
+	U_Log2 ('debug', '[' + procname () + ']grupo ainda sem saldo:')
+	U_Log (_aSldGrup)
+	//u_showarray (_aSldGrup, 'grupos ainda sem saldo')
+
+	for _nAux2 = 1 to len (_aSldGrup)
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT ISNULL (SUM (CQ3_DEBITO - CQ3_CREDIT), 0)"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("CQ3") + " CQ3 "
+		_oSQL:_sQuery += " WHERE CQ3.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND CQ3.CQ3_CONTA  = '" + _aSldGrup [_nAux2, 2] + "'"
+		_oSQL:_sQuery +=   " AND CQ3.CQ3_TPSALD = '1'"  // Realizado
+		_oSQL:_sQuery +=   " AND CQ3.CQ3_LP    != 'Z'"  // IGNORAR AS CONTAS DE ZERAMENTO (VIRADA DE EXERCICIO)
+		_oSQL:_sQuery +=   " AND CQ3.CQ3_DATA   BETWEEN " + _sPerSldCt
+		_oSQL:Log ('[' + procname () + ']')
+		_aSldGrup [_nAux2, 8] = _oSQL:RetQry (1, .f.)
+
+		// Tendo os saldos das contas destino, devo gerar lcto da diferenca do que
+		// jah tem contabilizado nesses contas.
+		_aSldGrup [_nAux2, 9] = _aSldGrup [_nAux2, 7] - _aSldGrup [_nAux2, 8]
+	next
+
+	U_Log2 ('debug', '[' + procname () + ']saldos por grupo:')
+	U_Log (_aSldGrup)
+	//u_showarray (_aSldGrup, 'saldos grupos')
+
+	// Geracao dos lctos contabeis
+	//
+	// Gera numero para documento.
 	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := "WITH CONTAS AS"  // Cria uma CTE com a lista de contas
-	_oSQL:_sQuery += "(SELECT CT1_CONTA, CT1_DESC01"
-	_oSQL:_sQuery +=   " FROM " + RetSQLName ("CT1") + " CT1"
-	_oSQL:_sQuery +=  " WHERE CT1.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=    " AND CT1.CT1_FILIAL = '" + xfilial ("CT1") + "'"
-	_oSQL:_sQuery +=    " AND (CT1.CT1_CONTA BETWEEN '403010101001' AND '403010104007' OR CT1.CT1_CONTA in ('403010199001')"
-	_oSQL:_sQuery +=      " OR CT1.CT1_CONTA BETWEEN '403010201001' AND '403010201059' OR CT1.CT1_CONTA in ('403010204001', '403010501001', '403010701001', '403010299001')"
-	_oSQL:_sQuery +=      " OR CT1.CT1_CONTA BETWEEN '403010301004' AND '403010301008' OR CT1.CT1_CONTA in ('403010399001')"
-	_oSQL:_sQuery +=      " OR CT1.CT1_CONTA BETWEEN '403010401001' AND '403010401052' OR CT1.CT1_CONTA in ('403010499001')"
-	_oSQL:_sQuery +=      " OR CT1.CT1_CONTA BETWEEN '405010101002' AND '405010101020' OR CT1.CT1_CONTA in ('405010101099')"
-	_oSQL:_sQuery +=      " OR CT1.CT1_CONTA BETWEEN '405010201002' AND '405010201004' OR CT1.CT1_CONTA in ('405010201099')"
-	_oSQL:_sQuery +=      " OR CT1.CT1_CONTA BETWEEN '406010101001' AND '406010101003' OR CT1.CT1_CONTA in ('406010101099')"
-	_oSQL:_sQuery +=      " OR CT1.CT1_CONTA BETWEEN '406020101001' AND '406020101008' OR CT1.CT1_CONTA in ('406020101099')"
-	_oSQL:_sQuery +=         ")"
-	_oSQL:_sQuery += ")"
-	_oSQL:_sQuery += _sQrySld
+	_oSQL:_sQuery := "select isnull ((select max (CT2_DOC)"
+	_oSQL:_sQuery +=                  " FROM " + RetSQLName ("CT2")
+	_oSQL:_sQuery +=                 " WHERE D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=                   " AND CT2_FILIAL = '" + xfilial ("CT2") + "'"
+	_oSQL:_sQuery +=                   " AND CT2_LOTE   = '" + _sLoteLcto + "'"
+	_oSQL:_sQuery +=                   " AND CT2_DATA   = '" + dtos (_dDataLcto) + "'), '000001')"
 	_oSQL:Log ('[' + procname () + ']')
-	U_Log2 ('debug', _oSQL:Qry2Array (.f., .f.))
-*/
+	_sDocCtb = soma1 (_oSQL:RetQry ())
+	_aAutoCT2C := {}
+	_aAutoCT2I := {}
+	aAdd (_aAutoCT2C, {'DDATALANC' , _dDataLcto , NIL})
+	aAdd (_aAutoCT2C, {'CLOTE'     , _sLoteLcto , NIL})
+	aAdd (_aAutoCT2C, {'CSUBLOTE'  , '001'      , NIL})
+	aAdd (_aAutoCT2C, {'CDOC'      , _sDocCtb   , NIL})
+	aAdd (_aAutoCT2C, {'CPADRAO'   , ''         , NIL})
+	aAdd (_aAutoCT2C, {'NTOTINF'   , 0          , NIL})
+	aAdd (_aAutoCT2C, {'NTOTINFLOT', 0          , NIL})
+
+	// Gera todas as linhas no mesmo documento.
+	for _nAux2 = 1 to len (_aSldGrup)
+		_aLinhaCT2 := {}
+		aAdd (_aLinhaCT2,  {'CT2_LINHA'     ,strzero (_nAux2, 3), NIL})
+		aAdd (_aLinhaCT2,  {'CT2_MOEDLC'    ,'01'               , NIL})
+		aAdd (_aLinhaCT2,  {'CT2_DC'        ,'3', NIL})  // 3=partida dobrada
+		if _aSldGrup [_nAux2, 3] == 'D' .and. _aSldGrup [_nAux2, 5] == 'C'
+			aAdd (_aLinhaCT2,  {'CT2_DEBITO', _aSldGrup [_nAux2, 2], NIL})
+			aAdd (_aLinhaCT2,  {'CT2_CREDIT', _aSldGrup [_nAux2, 4], NIL})
+		elseif _aSldGrup [_nAux2, 3] == 'C' .and. _aSldGrup [_nAux2, 5] == 'D'
+			aAdd (_aLinhaCT2,  {'CT2_CREDIT', _aSldGrup [_nAux2, 2], NIL})
+			aAdd (_aLinhaCT2,  {'CT2_DEBITO', _aSldGrup [_nAux2, 4], NIL})
+		endif
+		aAdd (_aLinhaCT2,  {'CT2_VALOR'     ,abs (_aSldGrup [_nAux2, 9]), NIL})
+		aAdd (_aLinhaCT2,  {'CT2_CCC'       ,'014001', NIL})
+		aAdd (_aLinhaCT2,  {'CT2_CCD'       ,'014001', NIL})
+		aAdd (_aLinhaCT2,  {'CT2_ORIGEM'    ,_sOrigLcto         , NIL})
+		aAdd (_aLinhaCT2,  {'CT2_HIST'      ,'VLR TRANSF.RESULTADO PROP.ANC MES', NIL})
+		U_Log2 ('debug', _aLinhaCT2)
+		aAdd (_aAutoCT2I, aclone (U_OrdAuto (_aLinhaCT2)))
+	next
+	dbselectarea ("CT2")
+	_sErroAuto  := ""
+	lMSErroAuto := .F.
+	MSExecAuto({|x, y,z| CTBA102(x,y,z)}, _aAutoCT2C ,_aAutoCT2I, 3)
+	if lMSErroAuto
+		_sErro := memoread (NomeAutoLog ()) + chr (13) + chr (10) + _sErroAuto
+		u_help (_sErro,, .t.)
+	else
+		u_help ('Contabilizacao concluida. Lote: ' + _sLoteLcto + '  Docto: ' + _sDocCtb)
+	endif
+
 return
 
 // --------------------------------------------------------------------------
