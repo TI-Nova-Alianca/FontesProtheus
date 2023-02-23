@@ -93,17 +93,48 @@ user function robert ()
 		// _gerasze ()
 		//_CargSaf ()
 		// _AtuSB1 ()
-		// _ctbanc ()
+		//_ctbANC ()
 		// _ST_MG ()
 		// _PreNF ()
 		// _SZI ()
 		// _verif ()
 		// _AjLoteEnd ()
+		// _GLPI13221 ()
 
 		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
+return
+
+
+// --------------------------------------------------------------------------
+// Recalcula frete safra e compara com conteudo jah gravado.
+static function _GLPI13221 ()
+	local _aCargas := {}
+	local _nCarga  := 0
+	private _aHistFrt := {}  // Para poder gerar, no final, uma planilha com todos os valores.
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "SELECT FILIAL, SAFRA, CARGA "
+	_oSQL:_sQuery +=  " FROM VA_VCARGAS_SAFRA"
+	_oSQL:_sQuery += " WHERE SAFRA = '2023'"
+	_oSQL:_sQuery +=   " and STATUS != 'C'"
+	_oSQL:_sQuery +=   " and CONTRANOTA != ''"
+	// _oSQL:_sQuery +=   " and ASSOCIADO in ('000248','001301','002083')
+	_oSQL:_sQuery += " ORDER BY ASSOCIADO, FILIAL, CARGA"
+	_oSQL:Log ()
+	_aCargas = _oSQL:Qry2Array ()
+	sze -> (dbsetorder (1))
+	for _nCarga = 1 to len (_aCargas)
+		u_log2 ('info', replicate ('-', 80))
+		if sze -> (dbseek (_aCargas [_nCarga, 1] + _aCargas [_nCarga, 2] + _aCargas [_nCarga, 3], .T.))
+			U_VA_RUSCF (.f., @_aHistFrt)
+		else
+			u_log2 ('erro', 'Carga nao encontrada com a seguinte chave: ' + _aCargas [_nCarga, 1] + _aCargas [_nCarga, 2] + _aCargas [_nCarga, 3])
+		endif
+	next
+	U_Log2 ('debug', _aHistFrt)
+	u_acolsXLS (_aHistFrt)
 return
 
 
@@ -225,8 +256,8 @@ return
 
 // --------------------------------------------------------------------------
 static function _ctbanc ()
-	U_GravaSX1 ("CTBANC", '01', stod ('20220701'))
-	U_CtbANC (.t.)
+	U_GravaSX1 ("CTBANC", '01', stod ('20220131'))
+	U_CtbANC1 (.t.)
 return
 
 // --------------------------------------------------------------------------
@@ -379,127 +410,6 @@ static function _EstFul ()
 	endif
 return
 
-
-// --------------------------------------------------------------------------
-// Valida estoques entre Protheus e FullWMS
-// A intencao eh nao enviar a carga se houver inconsistencias de saldos.
-static function _ValEstFul ()
-	local _lValEstq := .T.
-	local _oSQL     := NIL
-	local _aItemCar := {}
-	local _nItemCar := 0
-	local _sLinkSrv := ""
-	local _aDifEstq := {}
-	local _oDifEstq := NIL
-	local _sMsgHTM  := ''
-	local _aColsDif := {}
-	local _oAviso   := NIL
-
-	// Busca o caminho do banco de dados do FullWMS
-	_sLinkSrv = U_LkServer ('FULLWMS_AX01')
-
-	// Gera uma array com os itens da carga e saldo no Protheus
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += "WITH ITENS AS"
-	_oSQL:_sQuery += "("
-	_oSQL:_sQuery +=  "SELECT DISTINCT B1_COD, B1_DESC, B1_UM"
-	_oSQL:_sQuery +=   " FROM " + RetSQLName ("SC9") + " SC9, "
-	_oSQL:_sQuery +=              RetSQLName ("SB1") + " SB1, "
-	_oSQL:_sQuery +=              RetSQLName ("DAI") + " DAI "
-	_oSQL:_sQuery +=  " WHERE SC9.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=    " AND SC9.C9_FILIAL  = '" + xfilial ("SC9") + "'"
-	_oSQL:_sQuery +=    " AND SC9.C9_LOCAL   = '01'"
-	_oSQL:_sQuery +=    " AND SC9.C9_PEDIDO  = DAI.DAI_PEDIDO"
-	_oSQL:_sQuery +=    " AND SB1.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=    " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
-	_oSQL:_sQuery +=    " AND SB1.B1_COD     = SC9.C9_PRODUTO"
-	_oSQL:_sQuery +=    " AND SB1.B1_VAFULLW = 'S'"
-	_oSQL:_sQuery +=    " AND DAI.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=    " AND DAI.DAI_FILIAL = '" + xfilial ("DAI") + "'"
-	_oSQL:_sQuery +=    " AND DAI.DAI_COD    = '" + dak -> dak_cod + "'"
-	_oSQL:_sQuery += ")"
-	_oSQL:_sQuery += "SELECT ITENS.B1_COD, ITENS.B1_DESC, ITENS.B1_UM"
-	_oSQL:_sQuery +=      ", SUM (CASE WHEN B2_LOCAL = '01' THEN B2_QATU ELSE 0 END) AS ESTQ_01"
-	_oSQL:_sQuery +=      ", SUM (CASE WHEN B2_LOCAL = '90' THEN B2_QATU ELSE 0 END) AS ESTQ_90"
-	_oSQL:_sQuery +=      ", SUM (CASE WHEN B2_LOCAL = '91' THEN B2_QATU ELSE 0 END) AS ESTQ_91"
-	_oSQL:_sQuery +=      ", 0 as Full_Lib"
-	_oSQL:_sQuery +=      ", 0 as Full_Blq"
-	_oSQL:_sQuery +=  " FROM ITENS,"
-	_oSQL:_sQuery +=         RetSQLName ("SB2") + " SB2 "
-	_oSQL:_sQuery += " WHERE SB2.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery +=   " AND SB2.B2_FILIAL  = '" + xfilial ("SB2") + "'"
-	_oSQL:_sQuery +=   " AND SB2.B2_COD     = ITENS.B1_COD"
-	_oSQL:_sQuery += " GROUP BY ITENS.B1_COD, ITENS.B1_DESC, ITENS.B1_UM"
-	_oSQL:_sQuery += " ORDER BY ITENS.B1_COD"
-	_oSQL:Log ('[' + procname () + ']')
-	_aItemCar = aclone (_oSQL:Qry2Array (.f., .f.))
-	U_Log2 ('debug', _aItemCar)
-
-	// Varre a array de itens e preenche coluna com o saldo no FulLWMS.
-	_oSQL := ClsSQL ():New ()
-	for _nItemCar = 1 to len (_aItemCar)
-		_oSQL:_sQuery := "SELECT SALDO"
-		_oSQL:_sQuery += " FROM openquery (" + _sLinkSrv + ","
-		_oSQL:_sQuery +=                  "' select nvl (sum (qtd), 0) as SALDO"
-		_oSQL:_sQuery +=                   " from wms_estoques_cd"
-		_oSQL:_sQuery +=                   " where situacao = ''L''"
-		_oSQL:_sQuery +=                   " and item_cod_item_log = ''" + alltrim (_aItemCar [_nItemCar, 1]) + "''"
-		_oSQL:_sQuery +=                  "')"
-		_oSQL:Log ('[' + procname () + ']')
-		_aItemCar [_nItemCar, 7] = _oSQL:RetQry (1, .f.)
-	next
-	//U_Log2 ('debug', _aItemCar)
-
-	// Gera array so das diferencas, para envio de mensagem de monitoramento.
-	_aDifEstq = {}
-	for _nItemCar = 1 to len (_aItemCar)
-	//	por enqto vou mandar todos os itens ---> if _aItemCar [_nItemCar, 4] != _aItemCar [_nItemCar, 3]
-			// Ainda nao queremos bloquear ---> _lValEstq = .F.
-			aadd (_aDifEstq, aclone (_aItemCar [_nItemCar]))
-	//	endif
-	next
-	
-	// Por enquanto, apenas manda msg de aviso para conferencia.
-	if len (_aDifEstq) > 0
-		//U_Log2 ('aviso', '[' + procname () + ']Conferencia estoque Full x Protheus') //Encontrados itens com diferenca de saldos Protheus x FullWMS')
-		//U_Log2 ('aviso', _aDifEstq)
-
-		// Monta mensagem em HTML (soh pra dar trabalho...)
-		_aColsDif = {}
-		aadd (_aColsDif, {'Produto',        'left',  ''})
-		aadd (_aColsDif, {'Descricao',      'left',  ''})
-		aadd (_aColsDif, {'U.M.',           'left',  ''})
-		aadd (_aColsDif, {'Sld.AX01',       'right', '@E 999,999,999'})
-		aadd (_aColsDif, {'Sld.AX90',       'right', '@E 999,999,999'})
-		aadd (_aColsDif, {'Sld.AX91',       'right', '@E 999,999,999'})
-		aadd (_aColsDif, {'Sld.Full(lib)',  'right', '@E 999,999,999'})
-		aadd (_aColsDif, {'Sld.Full(bloq)', 'right', '@E 999,999,999'})
-		_oDifEstq := ClsAUtil ():New (_aDifEstq)
-		_sMsgHTM = _oDifEstq:ConvHTM ('Comparativo estoques (Protheus X FullWMS) na carga ' + dak -> dak_cod, ;
-									_aColsDif, ;
-									'', ;
-									.F., ;
-									100)
-	//	U_Log2 ('debug', '[' + procname () + ']' + _sMsgHTM)
-
-		_oAviso := ClsAviso ():New ()
-		_oAviso:Tipo       = 'A'
-		_oAviso:DestinAvis = 'liane.lenzi'
-		_oAviso:Titulo     = 'Diferenca estoque Protheus x FullWMS'
-		_oAviso:Texto      = _sMsgHTM
-		_oAviso:Formato    = 'H'
-		_oAviso:Origem     = procname () + ' - ' + procname (1)
-	//	_oAviso:Grava ()
-
-		// Recebo copia para testes
-		_oAviso:DestinAvis = 'robert.koch'
-		_oAviso:Grava ()
-	endif
-
-return _lValEstq
-
-
 // --------------------------------------------------------------------------
 // Tentativa de encher a memoria do servico
 static function _memoria ()
@@ -599,6 +509,16 @@ static function _va_xls ()
 //	U_GravaSX1 (cPerg, '17', 1)  // notas de compra [S/N]
 //	U_GravaSX1 (cPerg, '18', 1)  // notas de complemento valor [S/N]
 //	u_va_xls30 (.T.)
+
+	// Sequencia descarga safra
+	Private cPerg   := "VAXLS34"
+	U_GravaSX1 (cPerg, '01', '2023')
+	U_GravaSX1 (cPerg, '02', '01')
+	U_GravaSX1 (cPerg, '03', '01')
+	U_GravaSX1 (cPerg, '04', stod ('20230215'))
+	U_GravaSX1 (cPerg, '05', stod ('20230216'))
+	U_GravaSX1 (cPerg, '06', 2)
+	u_va_xls34 (.T.)
 
 //	Private cPerg   := "VAXLS35"
 //	U_GravaSX1 (cPerg, '01', '')  // assoc 
@@ -709,12 +629,12 @@ static function _va_xls ()
 	// U_GravaSX1 (cPerg, '08', date () - 30)
 	// u_va_xls62 (.T.)
 
-	Private cPerg   := "VAXLS63"
-	U_GravaSX1 (cPerg, '01', '')
-	U_GravaSX1 (cPerg, '02', 'z')
-	U_GravaSX1 (cPerg, '03', stod ('20221101'))
-	U_GravaSX1 (cPerg, '04', stod ('20221120'))
-	u_va_xls63 (.T.)
+	// Private cPerg   := "VAXLS63"
+	// U_GravaSX1 (cPerg, '01', '')
+	// U_GravaSX1 (cPerg, '02', 'z')
+	// U_GravaSX1 (cPerg, '03', stod ('20221101'))
+	// U_GravaSX1 (cPerg, '04', stod ('20221120'))
+	// u_va_xls63 (.T.)
 return
 
 // --------------------------------------------------------------------------
@@ -732,10 +652,86 @@ return
 
 // --------------------------------------------------------------------------
 static function _BatSafr ()
-	U_MudaLog ("U_BatSafr.log")
+/*	// Gera titulo FUNRURAL para notas de safra que faltou
+	local _oSQL := nil
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += "WITH C AS ("
+	_oSQL:_sQuery += " select F1_FILIAL, F1.F1_EMISSAO, F1_DOC, F1_SERIE"
+	_oSQL:_sQuery += " , F1_FORNECE, F1_LOJA, F1.F1_VALMERC, F1.F1_VALBRUT, F1.F1_DESPESA, F1.F1_CONTSOC"
+	_oSQL:_sQuery += " , (SELECT SUM (E2_VALOR)"
+	_oSQL:_sQuery += " FROM SE2010 SE2"
+	_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " AND SE2.E2_FILIAL = F1_FILIAL"
+	_oSQL:_sQuery += " AND SE2.E2_FORNECE = F1_FORNECE"
+	_oSQL:_sQuery += " AND E2_LOJA = F1_LOJA"
+	_oSQL:_sQuery += " AND SE2.E2_NUM = F1_DOC"
+	_oSQL:_sQuery += " AND SE2.E2_PREFIXO = F1_SERIE) AS SOMA_SE2"
+	_oSQL:_sQuery += " FROM SF1010 AS F1"
+	_oSQL:_sQuery += " WHERE F1.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " AND EXISTS (SELECT * FROM SD1010 AS D1"
+	_oSQL:_sQuery += " WHERE F1.F1_FILIAL = D1.D1_FILIAL"
+	_oSQL:_sQuery += " AND  F1.F1_DOC = D1.D1_DOC"
+	_oSQL:_sQuery += " AND F1.F1_SERIE = D1.D1_SERIE"
+	_oSQL:_sQuery += " AND F1.F1_FORNECE = D1.D1_FORNECE"
+	_oSQL:_sQuery += " AND F1.F1_LOJA = D1.D1_LOJA"
+	_oSQL:_sQuery += " AND D1.D1_TES = '310')"
+	_oSQL:_sQuery += " AND F1.F1_EMISSAO BETWEEN '20230101' AND '20230229'"
+	_oSQL:_sQuery += " AND F1.F1_VASAFRA = '2023'"
+	_oSQL:_sQuery += " AND F1.F1_CONTSOC > 0"
+	_oSQL:_sQuery += " AND F1.F1_FILIAL = '" + xfilial ("SF1") + "'"
+	_oSQL:_sQuery += " ) select * from C"
+	_oSQL:_sQuery += " WHERE NOT EXISTS (SELECT * FROM SE2010 SE2 WHERE SE2.D_E_L_E_T_ = ''
+	_oSQL:_sQuery += " 	AND SE2.E2_FILIAL = F1_FILIAL
+	_oSQL:_sQuery += " 	AND SE2.E2_NUM = F1_DOC
+	_oSQL:_sQuery += " 	AND SE2.E2_PREFIXO = F1_SERIE
+	_oSQL:_sQuery += " 	AND SE2.E2_FORNECE = '000119'
+	_oSQL:_sQuery += " 	AND SE2.E2_LOJA = '00'
+	_oSQL:_sQuery += " 	AND SE2.E2_TIPO = 'TX')
+	_oSQL:_sQuery += " AND EXISTS (SELECT * FROM SA2010 SA2 WHERE SA2.D_E_L_E_T_ = '' AND A2_TIPORUR = 'F' AND A2_TPESSOA = 'PF' AND A2_RECINSS = 'S')
+	_oSQL:Log ('[' + procname () + ']')
+	_sAliasQ = _oSQL:Qry2Trb (.t.)
+	(_sAliasQ) -> (dbgotop ())
+	do while ! (_sAliasQ) -> (eof ())
+		_aAutoSE2 := {}
+		aadd (_aAutoSE2, {"E2_PREFIXO", (_sAliasQ) -> f1_serie,           NIL})
+		aadd (_aAutoSE2, {"E2_NUM"    , (_sAliasQ) -> f1_doc,             Nil})
+		aadd (_aAutoSE2, {"E2_TIPO"   , 'TX',        Nil})
+		aadd (_aAutoSE2, {"E2_FORNECE", '000119',         Nil})
+		aadd (_aAutoSE2, {"E2_LOJA"   , '00',         Nil})
+		aadd (_aAutoSE2, {"E2_EMISSAO", (_sAliasQ) -> f1_emissao,         Nil})
+		aadd (_aAutoSE2, {"E2_VENCTO" , stod (substr (dtos (lastday ((_sAliasQ) -> f1_emissao)+1), 1, 6) + '20'), Nil})  // sempre no dia 20 do mes seguinte
+//		aadd (_aAutoSE2, {"E2_VENCREA", DataValida (_dDtVenc),    Nil})
+		aadd (_aAutoSE2, {"E2_VALOR"  , (_sAliasQ) -> f1_contsoc,           Nil})
+		aadd (_aAutoSE2, {"E2_HIST"   , 'GLPI 13130',      Nil})
+		aadd (_aAutoSE2, {"E2_PARCELA", '1',         Nil})
+		aadd (_aAutoSE2, {"E2_TITPAI" , (_sAliasQ) -> f1_serie + (_sAliasQ) -> f1_doc + 'A' + 'NF ' + (_sAliasQ) -> f1_fornece + (_sAliasQ) -> f1_loja, Nil})
+		aadd (_aAutoSE2, {"E2_ORIGEM" , "MATA100" ,        Nil})
+		aadd (_aAutoSE2, {"E2_NATUREZ", 'CSS',           Nil})
+		_aAutoSE2 := aclone (U_OrdAuto (_aAutoSE2))
+		u_log2 ('debug', _aAutoSE2)
+
+		// Ajusta parametros da rotina.
+		pergunte ('FIN050    ', .f.)
+
+		lMsErroAuto	:=	.f.
+		lMsHelpAuto	:=	.f.
+		dbselectarea ("SE2")
+		dbsetorder (1)
+		MsExecAuto({ | x,y,z | Fina050(x,y,z) }, _aAutoSE2,, 3)
+		if lMsErroAuto
+			mostraerro ()
+			exit
+		else
+			U_Log2 ('info', '[' + procname () + ']Titulo TX gerado!')
+		endif
+		(_sAliasQ) -> (dbskip ())
+	//	exit  // um por vez...
+	enddo
+*/
 //	u_batsafr ('CargasSemContranota')  // cargas sem contranota
-//	u_batsafr ('ConferirParcelamento')  // conferencia geracao das parcelas financeiro
-	u_batsafr ('ContranotasSemCarga')  // contranotas sem carga
+	u_batsafr ('ConferirParcelamento')  // conferencia geracao das parcelas financeiro
+//	u_batsafr ('ContranotasSemCarga')  // contranotas sem carga
 //	u_batsafr ('ConferirFrete')  // conferencia fretes
 //	u_batsafr ('MailAcompanhamento')  // e-mail diario de acompanhamento de safra
 //	u_batsafr ('GerarSZI')  // gera SZI a partir das parcelas
@@ -2154,33 +2150,6 @@ return
 		(_sAliasQ) -> (dbskip ())
 	enddo
 	u_acolsxls (_aprev)
-return
-*/
-/*
-	// Recalcula frete safra e compara com conteudo jah gravado.
-	private _aHisFrSaf := {}  // Para poder gerar, no final, uma planilha com todos os valores.
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := "SELECT FILIAL, SAFRA, CARGA "
-	_oSQL:_sQuery +=  " FROM VA_VCARGAS_SAFRA"
-	_oSQL:_sQuery += " WHERE SAFRA = '2021'"
-	_oSQL:_sQuery +=   " and STATUS != 'C'"
-	_oSQL:_sQuery +=   " and CONTRANOTA != ''"
-	//_oSQL:_sQuery +=   " and ASSOCIADO = '000167'"
-	//_oSQL:_sQuery +=   " and FILIAL = '09'"
-	_oSQL:_sQuery += " ORDER BY ASSOCIADO, FILIAL, CARGA"
-	_oSQL:Log ()
-	_aCargas = _oSQL:Qry2Array ()
-	for _nCarga = 1 to len (_aCargas)
-		u_log2 ('info', replicate ('-', 80))
-		sze -> (dbsetorder (1))
-		if sze -> (dbseek (_aCargas [_nCarga, 1] + _aCargas [_nCarga, 2] + _aCargas [_nCarga, 3], .T.))
-			U_VA_RUSCF (.f.)
-		else
-			u_log2 ('erro', 'Carga nao encontrada com a seguinte chave: ' + _aCargas [_nCarga, 1] + _aCargas [_nCarga, 2] + _aCargas [_nCarga, 3])
-		endif
-	next
-	//U_Log2 ('debug', _aHisFrSaf)
-	u_acolsXLS (_aHisFrSaf)
 return
 */
 
