@@ -12,22 +12,28 @@
 // #Modulos           #Coop
 
 // Historico de alteracoes:
+// 21/02/2023 - Robert - Devolve variavel adicional com memoria de calculo
+//                       (para conferencia ou gravacao de evento, etc)
+//                     - Tratamento para associados teimosos (000248/001301/002083) - GLPI 13221
 //
 
-// ------------------------------------------------------------------------------------
-User Function FrtSaf23 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor, _sFilCarg)
+// ----------------------------------------------------------------
+User Function FrtSaf23 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor, _sGrpFam)
 	local _nDist    := 0
 	local _nValFre  := 0
 	local _oAviso   := NIL
 	local _sLinkSrv := U_LkServer ('NAWEB')
 	local _aDistKM  := {}
 	local _sMetodo  := ''
+	local _sMemCalc := ''
+	local _nFator   := 0
 
-	u_log2 ('info', '[' + procname () + '] Nucleo........: ' + _sNucleo)
-	u_log2 ('info', '[' + procname () + '] Propr.rural...: ' + _sCadVit)
-	u_log2 ('info', '[' + procname () + '] Filial entrega: ' + _sFilDest)
-	u_log2 ('info', '[' + procname () + '] Peso..........: ' + cvaltochar (_nPesoFrt))
-	u_log2 ('info', '[' + procname () + '] Cor da uva....: ' + _sCor)
+	_sMemCalc += 'Nucleo.................: ' + _sNucleo + chr (13) + chr (10)
+	_sMemCalc += 'Grupo familiar.........: ' + _sGrpFam + chr (13) + chr (10)
+	_sMemCalc += 'Propriedade rural......: ' + _sCadVit + chr (13) + chr (10)
+	_sMemCalc += 'Filial de entrega......: ' + _sFilDest + chr (13) + chr (10)
+	_sMemCalc += 'Peso...................: ' + cvaltochar (_nPesoFrt) + ' Kg' + chr (13) + chr (10)
+	_sMemCalc += 'Cor da uva.............: ' + _sCor + chr (13) + chr (10)
 
 	// Busca as distancias da propriedade rural de onde vem a uva
 	_oSQL := ClsSQL ():New ()
@@ -41,6 +47,7 @@ User Function FrtSaf23 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor, _sFilCa
 		_oSQL:_sQuery += " SELECT distinct CCPropriedadeKMF01"  // Usa DISTINCT por que pode haver caso de propriedade explorada por mais de 1 grupo familiar
 	else
 		u_help ("Filial destino '" + _sFilDest + "' sem tratamento no programa " + procname (),, .T.)
+		_sMemCalc += "Filial destino '" + _sFilDest + "' sem tratamento no programa " + procname () + chr (13) + chr (10)
 		_oAviso := ClsAviso ():New ()
 		_oAviso:Tipo       = 'E'
 		_oAviso:DestinZZU  = {'143'}  // 143 = grupo da agronomia
@@ -55,11 +62,14 @@ User Function FrtSaf23 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor, _sFilCa
 	if len (_aDistKM) == 1
 		_nDist = _aDistKM [1, 1] * 2  // ida e volta
 	else
+		_sMemCalc += "Problemas ao consultar a distancia da propriedade rural '" + _sCadVit + "'. Verifique cadastro no NaWeb." + chr (13) + chr (10)
 		_lContinua = .F.
 	endif
+	_sMemCalc += 'Distancia (ida e volta): ' + cvaltochar (_nDist) + ' Km' + chr (13) + chr (10)
 
 	if _nDist <= 0
 		u_help ("Distancia nao informada entre a propriedade " + _sCadVit + " e a filial " + _sFilDest + ". Frete de safra nao pode ser calculado.",, .t.)
+		_sMemCalc += "Distancia nao informada entre a propriedade " + _sCadVit + " e a filial " + _sFilDest + ". Frete de safra nao pode ser calculado." + chr (13) + chr (10)
 		if IsInCallStack ("U_VA_RUSN")
 			_oAviso := ClsAviso ():New ()
 			_oAviso:Tipo       = 'E'
@@ -69,19 +79,33 @@ User Function FrtSaf23 (_sNucleo, _sCadVit, _sFilDest, _nPesoFrt, _sCor, _sFilCa
 			_oAviso:Grava ()
 		endif
 	endif
-	//u_log2 ('info', '[' + procname () + '] Distancia Km..: ' + cvaltochar (_nDist))
 	
-	if _sCor == 'T' .and. _sNucleo $ 'PB/JC' .and. _sFilDest $ '01/09'
-		_sMetodo = 'P-Tintas de Farroupilha entregues na matriz/F09'
-		_nValFre = 0.07 * _nPesoFrt
+	// Associados que deveriam entregar na F01, mas teimam em levar na F07 - GLPI 13221
+	if _sGrpFam $ '000248/001301/002083' .and. _sFilDest $ '07'
+		_sMemCalc += "Frete zerado (carga entregue em filial diferente da orientada pela Cooperativa). Permanece o auxilio combustivel." + chr (13) + chr (10)
+		_nFator  = 0.3
+		_sMetodo = 'D-Caso geral (' + GetMv ("MV_SIMB1") + ' ' + alltrim (transform (_nFator, "@E 999,999.99")) + ' X ton X distancia)'
+		_nValFre = _nFator * _nPesoFrt / 1000 * _nDist
+
+	elseif _sCor == 'T' .and. _sNucleo $ 'PB/JC' .and. _sFilDest $ '01/09'
+		_nFator  = 0.07
+		_sMetodo = 'P-Tintas de Farroupilha entregues na matriz/F09 (' + GetMv ("MV_SIMB1") + ' ' + alltrim (transform (_nFator, "@E 999,999.99")) + ' X peso Kg)'
+		_nValFre = _nFator * _nPesoFrt
+
 	elseif _sCor == 'T' .and. _sNucleo $ 'SV/SG/FC/NP' .and. _sFilDest $ '07'
-		_sMetodo = 'P-Tintas de Caxias/Flores entregues em Farroupilha'
-		_nValFre = 0.07 * _nPesoFrt
+		_nFator  = 0.07
+		_sMetodo = 'P-Tintas de Caxias/Flores entregues em Farroupilha (' + GetMv ("MV_SIMB1") + ' ' + alltrim (transform (_nFator, "@E 999,999.99")) + ' X peso Kg)'
+		_nValFre = _nFator * _nPesoFrt
+	
 	else
-		_sMetodo = 'D-Caso geral (valor X ton X distancia)'
-		_nValFre = 0.3 * _nPesoFrt / 1000 * _nDist
+		_nFator  = 0.3
+		_sMetodo = 'D-Caso geral (' + GetMv ("MV_SIMB1") + ' ' + alltrim (transform (_nFator, "@E 999,999.99")) + ' X ton X distancia)'
+		_nValFre = _nFator * _nPesoFrt / 1000 * _nDist
 	endif
+
 	_nValFre = round (_nValFre, 2)
+	_sMemCalc += "Metodo: " + _sMetodo + chr (13) + chr (10)
+	_sMemCalc += "Frete calculado: " + GetMv ("MV_SIMB1") + ' ' + alltrim (transform (_nValFre, "@E 999,999,999.99")) + chr (13) + chr (10)
 
 	u_log2 ('info', '[' + procname () + '] Distancia Km..: ' + cvaltochar (_nDist) + ' Metodo: ' + _sMetodo + ' Frt. calculado: ' + cvaltochar (_nValFre))
-return {_nValFre, _nDist, _sMetodo}
+return {_nValFre, _nDist, _sMetodo, _sMemCalc}

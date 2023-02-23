@@ -60,6 +60,7 @@
 // 30/01/2023 - Robert  - Metodo GravaNovo passa a aceitar parametro de
 //                        precisao para teste de jah existencia do evento.
 //                      - Criado atributo Usuario.
+// 22/02/2023 - Robert  - Criados atributos Safra e CargaSafra.
 //
 
 #include "protheus.ch"
@@ -113,6 +114,8 @@ CLASS ClsEvent
 	data ChaveNFe
 	data MotProrTit
 	data Usuario
+	data Safra
+	data CargaSafra
 
 	// Declaração dos Métodos da Classe
 	METHOD New ()
@@ -166,6 +169,8 @@ METHOD New (_nRegSZN) Class ClsEvent
 	::ChaveNFe   := ''
 	::MotProrTit := ''
 	::Usuario    := cUserName
+	::Safra      = ''
+	::CargaSafra = ''
 
 	if _nRegSZN != NIL
 		szn -> (dbgoto (_nRegSZN))
@@ -206,6 +211,8 @@ METHOD New (_nRegSZN) Class ClsEvent
 		::ChaveNFe   = SZN -> zn_chvnfe
 		::MotProrTit = szn -> zn_MotPror
 		::Usuario    = szn -> zn_usuario
+		::Safra      = szn -> zn_safra
+		::CargaSafra = szn -> zn_cargsaf
 	endif
 Return Self
 
@@ -269,6 +276,8 @@ METHOD Grava () Class ClsEvent
 	szn -> zn_diasvld = ::DiasValid
 	szn -> zn_chvnfe  = ::ChaveNFe
 	szn -> zn_MotPror = ::MotProrTit
+	szn -> zn_safra   = ::Safra
+	szn -> zn_cargsaf = ::CargaSafra
 	msunlock ("SZN")
 
 	// Envia aviso em caso de codigo de evento nao cadastrado.
