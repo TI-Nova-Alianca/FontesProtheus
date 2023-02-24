@@ -28,8 +28,9 @@
 // 09/12/2022 - Robert  - Soma ICMSRET somente quando F4_CREDST=2 nas opcoes '1' e '4' (GLPI 12883)
 // 06/01/2023 - Claudia - Aplicada regra conforme GLPI: 12854	
 // 25/01/2023 - Claudia - Voltada a versão do programa. GLPI: 13087
+// 24/02/2023 - Claudia - Ajustado o lançamento padrão 610 000 (parametro 1). GLPI: 13218
 //
-// --------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
 User Function ML_LVDA(_nEcomm)
@@ -94,7 +95,11 @@ User Function ML_LVDA(_nEcomm)
             If  SF4->F4_DUPLIC<>"S" .or. SD2->D2_TIPO=="D" .or. SD2->D2_TES$"518/510/603/727" .or. SD2->D2_SERIE $ GetMV ("VA_SERIECF") .or. SF4->F4_TOCON$('15/16') .or. alltrim(SD2->D2_COD) $ ('7209/7210')
                 _wVAL := 0
             Else
-                _wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + sd2->d2_icmsret + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) 
+                If SD2->D2_TES=="918" // ST MG
+                    _wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) 
+                Else
+                    _wVAL := SD2->D2_TOTAL + SD2->D2_VALIPI + sd2->d2_icmsret + SD2->D2_VALFRE - iif (_nEcomm == '1', sd2->d2_VALIRRF, 0) 
+                EndIf
             EndIf
         Else 
             If _nEcomm == '4' // 610 000 e 610 001
