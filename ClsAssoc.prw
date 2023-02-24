@@ -110,6 +110,8 @@
 // 15/06/2022 - Robert  - Leitura valores FUNRURAL no metodo FechSafr() (GLPI 11723)
 // 16/12/2022 - Robert  - Criados tratamentos para "fornecedores de uva" (GLPI 12501)
 // 10/01/2023 - Robert  - Criada (versao inicial) regra de pagamento para safra 2023.
+// 24/02/2023 - Robert  - Removidas algumas linhas comentariadas.
+//                      - Iniciado tratamento para operacoes com a tabela ZZU (grupos de usuarios)
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -287,20 +289,9 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 				::LojAvisad  := ''
 
 				_oSQL := ClsSQL ():New ()
-				// _oSQL:_sQuery += "SELECT CCAssociadoGrpFamCod       as grpfam "
-				// _oSQL:_sQuery +=      ", CCAssociadoGrpFamNucleo    as nucleo"
-				// _oSQL:_sQuery +=      ", CCAssociadoGrpFamSubNucleo as subnucleo"
-				// _oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".CCAssociadoGrpFam CCAGF,"
-				// _oSQL:_sQuery +=             _sLinkSrv + ".CCAssociadoInscricoes CCAI"
-				// _oSQL:_sQuery += " where CCAGF.CCAssociadoGrpFamCod = CCAI.CCAssocIEGrpFamCod
-				// _oSQL:_sQuery +=   " and CCAI.CCAssociadoCod        = '" + ::Codigo + "'"
-				// _oSQL:_sQuery +=   " and CCAI.CCAssociadoLoja       = '" + ::Loja + "'"
-				// //_oSQL:Log ()
-
 				_oSQL:_sQuery += "SELECT CCAssociadoGrpFamCod       as grpfam "
 				_oSQL:_sQuery +=      ", CCAssociadoGrpFamNucleo    as nucleo"
 				_oSQL:_sQuery +=      ", CCAssociadoGrpFamSubNucleo as subnucleo"
-			//	_oSQL:_sQuery +=  " FROM VA_VASSOC_GRP_FAM"
 				_oSQL:_sQuery +=  " FROM " + U_LkServer ('NAWEB') + ".VA_VASSOC_GRP_FAM"
 				_oSQL:_sQuery += " WHERE CCAssociadoCod  = '" + ::Codigo + "'"
 				_oSQL:_sQuery +=   " AND CCAssociadoLoja = '" + ::Loja + "'"
