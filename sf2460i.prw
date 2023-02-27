@@ -154,7 +154,7 @@
 // 27/02/2023 - Robert  - Gravar E1_TIPO=TRS e nao mais IMP na funcao _TitSTMG() - GLPI 12779
 //                      - Gravar E1_VACHVEX e E2_VACHVEX na funcao _TitSTMG() - GLPI 12779
 //                      - Melhorado E2_HIST na funcao _TitSTMG() - GLPI 12779
-//
+// 27/02/2023 - Sandra  - Gravar E2_TIPO=TRS e nao mais IMP na funcao _TitSTMG() - GLPI 12779
 
 // ---------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
@@ -929,7 +929,7 @@ static function _TitSTMG ()
 		aAdd(_aAutoSE2, {"E2_PREFIXO"  , sf2 -> f2_serie       , Nil})
 		aAdd(_aAutoSE2, {"E2_NUM"      , sf2 -> f2_doc         , Nil})
 		aAdd(_aAutoSE2, {"E2_PARCELA"  , _sProxParc            , Nil})
-		aAdd(_aAutoSE2, {"E2_TIPO"     , 'DP'                  , Nil})
+		aAdd(_aAutoSE2, {"E2_TIPO"     , 'TRS'                 , Nil})
 		aAdd(_aAutoSE2, {"E2_NATUREZ"  , '110198'              , Nil})
 		aAdd(_aAutoSE2, {"E2_FORNECE"  , _sFornRec             , Nil})
 		aAdd(_aAutoSE2, {"E2_LOJA"     , _sLojaRec             , Nil})
