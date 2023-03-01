@@ -47,10 +47,7 @@ User Function VA_TRPG2(_aBanco,_aTitulo)
     PREPARE ENVIRONMENT EMPRESA "01" FILIAL '01'
 
 		_sBenef := _aTitulo[1,9] 
-		_sHist  := _aTitulo[1,8] 
-		If empty(_sHist)
-			_sHist := "PGTO.AUTO " + _aTitulo[1,1] +" "+ _aTitulo[1,2] + " "+  _aTitulo[1,3] +" "+ _aTitulo[1,4]
-		EndIf 
+		_sHist := 'PG DUPL NR ' + _aTitulo[1,3] + Posicione("SA2",1,xFilial("SA2")+_aTitulo[1,5] + _aTitulo[1,6],"A2_NOME")
 		_sCred := _BuscaCC(_aBanco[1, 2])        
 
 		If !empty(_sCred)
