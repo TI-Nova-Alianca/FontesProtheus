@@ -22,6 +22,7 @@
 // 26/07/2021 - Sandra  - Incluso rodapé com nomenclatura 'Documento Sigiloso" GLPI 10139
 // 07/03/2022 - Robert  - Acrescentado CNPJ da fonte pagadora.
 // 28/03/2022 - Robert  - Eliminada funcionalidade de conversao para TXT (em alguns casos 'perdia' o relatorio).
+// 01/03/2023 - Robert  - Revisado para ano base 2022 (nao houve pagto.de premio para esse ano).
 //
 
 // -----------------------------------------------------------------------------------------------------------
@@ -338,7 +339,7 @@ static function _Imprime ()
 				_oSQL:_sQuery +=  " ORDER BY E2_VENCREA, E2_FILIAL, E2_NUM, E2_PARCELA"
 			endif
 
-		elseif mv_par03 $ '2020/2021'
+		elseif mv_par03 $ '2020/2021/2022'
 
 			_oSQL:_sQuery += " WITH C AS ("
 			_oSQL:_sQuery += " SELECT E2_FILIAL, E2_NUM, E2_PARCELA, E2_EMISSAO, E2_VENCREA, "
