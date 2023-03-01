@@ -37,7 +37,7 @@
 // 15/12/2022 - Claudia - Incluidas validações de rastro e lote. GLPI: 12933
 // 05/01/2023 - Robert  - Teste de desabilitacao de rastro e enderecamento
 //                        considerava se jah estava habilitado ou nao no SB1.
-// 20/02/2023 - Claudia - Transofrmado bloqueio em aviso. GLPI: 13193
+// 20/02/2023 - Claudia - Transformado bloqueio em aviso. GLPI: 13193
 //
 //---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
