@@ -271,6 +271,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 				_ImpEtiqZAG ()
 			case _sAcao == 'InutilizaEtiqueta'
 				_InutEtiq ()
+			case _sAcao == 'ZZUVincularUsuario'
+				_ZZU ('VincularUsuario')
 			case _sAcao == 'TesteRobert'
 				_TstRobert ()
 			otherwise
@@ -2637,6 +2639,32 @@ static function _InutEtiq ()
 return
 
 
+// --------------------------------------------------------------------------
+// Operacoes com a tabela ZZU (grupos de usuarios)
+static function _ZZU (_sQueFazer)
+	local _sCodZZU   := ''
+
+	if empty (_sErroWS) ; _sCodZZU = _ExtraiTag ("_oXML:_WSAlianca:_GrupoZZU", .T., .F.) ; endif
+	if empty (_sErroWS)
+// usar isto quando criar function para o ZX5		_oTabGen := ClsTabGen ():New (_sCodZZU)
+// usar isto quando criar function para o ZX5		if empty (_oTabGen:CodTabela)
+// usar isto quando criar function para o ZX5			_SomaErro (_oTabGen:UltMsg)
+// usar isto quando criar function para o ZX5		endif
+	endif
+	if empty (_sErroWS)
+		do case
+		case _sQueFazer == 'VincularUsuario'
+			_SomaErro ('Metodo ainda nao 100% implementado')
+			// _sMsgRetWS += _oTabGen:UltMsg
+		otherwise
+			_SomaErro ('Operacao ' + _sQueFazer + ' desconhecida na rotina ' + procname ())
+		endcase
+	endif
+return
+
+
+// --------------------------------------------------------------------------
+// Acrescenta na string de retorno de erros uma nova mensagem (se ainda nao contiver)
 static function _SomaErro (_sMsg)
 	local _sMsgAux := alltrim (cvaltochar (_sMsg))
 	if ! _sMsgAux $ _sErroWS

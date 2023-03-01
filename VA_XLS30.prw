@@ -20,6 +20,7 @@
 // 11/08/2021 - Robert - View VA_VASSOC_GRP_FAM migrada do database do Protheus para o NaWeb (GLPI 10673).
 // 08/09/2021 - Robert - Incluida coluna de FUNRURAL.
 // 23/02/2022 - Robert - Incluida coluna VALOR_FRETE (GLPI 11665)
+// 24/02/2023 - Robert - Removidas linhas comentariadas.
 //
 
 // --------------------------------------------------------------------------
@@ -175,16 +176,7 @@ Static Function _Gera()
 	_oSQL:_sQuery +=                          " AND ZX5_36.ZX5_TABELA = '36'"
 	_oSQL:_sQuery +=                          " AND ZX5_36.ZX5_36COD = SA2.A2_VASUBNU), '')) AS SUBNUCLEO, SA2.A2_MUN AS MUNICIPIO, SA2.A2_BAIRRO AS BAIRRO, "
 
-	// _oSQL:_sQuery +=        " RTRIM (ISNULL ((SELECT TOP 1 ZAN_COD + '-' + ZAN_DESCRI" // TOP 1 PARA EVITAR POSSIVEL CASO DO ASSOCIADO ESTAR LIGADO A MAIS DE UM GRUPO FAMILIAR"
-	// _oSQL:_sQuery +=                          " FROM " + RetSQLName ("ZAN") + " ZAN, " + RetSQLName ("ZAK") + " ZAK"
-	// _oSQL:_sQuery +=                         " WHERE ZAN.D_E_L_E_T_ = ''"
-	// _oSQL:_sQuery +=                           " AND ZAN.ZAN_FILIAL = '  '"
-	// _oSQL:_sQuery +=                           " AND ZAK.ZAK_IDZAN = ZAN.ZAN_COD"
-	// _oSQL:_sQuery +=                           " AND ZAK.ZAK_ASSOC = C.ASSOCIADO"
-	// _oSQL:_sQuery +=                           " AND ZAK.ZAK_LOJA = C.LOJA), '')) AS GRP_FAMILIAR, "
-
 	_oSQL:_sQuery +=        " RTRIM (ISNULL ((SELECT TOP 1 CCAssociadoGrpFamCod + '-' + CCAssociadoGrpFam" // TOP 1 PARA EVITAR POSSIVEL CASO DO ASSOCIADO ESTAR LIGADO A MAIS DE UM GRUPO FAMILIAR"
-//	_oSQL:_sQuery +=                          " FROM VA_VASSOC_GRP_FAM"
 	_oSQL:_sQuery +=                          " FROM " + U_LkServer ('NAWEB') + ".VA_VASSOC_GRP_FAM"
 	_oSQL:_sQuery +=                         " WHERE CCAssociadoCod  = C.ASSOCIADO"
 	_oSQL:_sQuery +=                           " AND CCAssociadoLoja = C.LOJA), '')) AS GRP_FAMILIAR, "

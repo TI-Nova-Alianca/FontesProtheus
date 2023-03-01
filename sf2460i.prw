@@ -148,10 +148,14 @@
 // 30/08/2022 - Claudia - Incluida a gravação das contas para titulos pagar-me. GLPI: 12280
 // 11/11/2022 - Robert  - Gera títulos e msg adicional cobranca ST para MG (GLPI 12779)
 // 01/12/2022 - Robert  - Gravava E1_COMIS1...5 indevidamente na funcao _TitSTMG().
-// 18/01/2023 - Robert  - Gravar E1_TIPO=IMP  e nao mais DP na funcao _TitSTMG() - GLPI 12779
+// 18/01/2023 - Robert  - Gravar E1_TIPO=IMP e nao mais DP na funcao _TitSTMG() - GLPI 12779
 // 20/02/2023 - Robert  - Gravar rotina FINA040 e FINA050 nos titulos de ST para MG (GLPI 12779)
 // 22/02/2023 - Cláudia - Retirada gravação de representante nas mensagens da NF. GLPI: 12951
-//
+// 27/02/2023 - Robert  - Gravar E1_TIPO=TRS e nao mais IMP na funcao _TitSTMG() - GLPI 12779
+//                      - Gravar E1_VACHVEX e E2_VACHVEX na funcao _TitSTMG() - GLPI 12779
+//                      - Melhorado E2_HIST na funcao _TitSTMG() - GLPI 12779
+// 27/02/2023 - Sandra  - Gravar E2_TIPO=TRS e nao mais IMP na funcao _TitSTMG() - GLPI 12779
+
 // ---------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -805,6 +809,8 @@ static function _TitSTMG ()
 	local _sFornRec  := '000092'  // Fornecedor 'ICMS'
 	local _sLojaRec  := '01'
 	local _oEvento   := NIL
+	local _sChvEx    := 'COBRANCA_ST'  // Manter consistencia com P.E. SF2520E, que faz a exclusao destes titulos (ainda a ser implementado)
+	local _sHistSE2  := ''
 
 	if ! empty (GetNewPar ("VA_COBSTMG", ''))
 		_oSQL := ClsSQL ():New ()
@@ -853,7 +859,8 @@ static function _TitSTMG ()
 		aAdd(_aAutoSE1, {"E1_PREFIXO"  , sf2 -> f2_serie       , Nil})
 		aAdd(_aAutoSE1, {"E1_NUM"      , sf2 -> f2_doc         , Nil})
 		aAdd(_aAutoSE1, {"E1_PARCELA"  , _sProxParc            , Nil})
-		aAdd(_aAutoSE1, {"E1_TIPO"     , 'IMP'                 , Nil})
+//		aAdd(_aAutoSE1, {"E1_TIPO"     , 'IMP'                 , Nil})
+		aAdd(_aAutoSE1, {"E1_TIPO"     , 'TRS'                 , Nil})  // tipo IMP parece dar pau no retorno de CNAB.
 		aAdd(_aAutoSE1, {"E1_NATUREZ"  , '110198'              , Nil})
 		aAdd(_aAutoSE1, {"E1_CLIENTE"  , sf2 -> f2_cliente     , Nil})
 		aAdd(_aAutoSE1, {"E1_LOJA"     , sf2 -> f2_loja        , Nil})
@@ -870,6 +877,7 @@ static function _TitSTMG ()
 		aAdd(_aAutoSE1, {"E1_COMIS5"   , 0                     , Nil})
 		aAdd(_aAutoSE1, {"E1_VENCREA"  , DataValida (sf2 -> f2_emissao + 15), Nil})
 		aAdd(_aAutoSE1, {"E1_HIST"     , 'Valor ST MG antecipacao'          , Nil})
+		aAdd(_aAutoSE1, {"E1_VACHVEX"  , _sChvEx               , Nil})
 		_aAutoSE1 := aclone (U_OrdAuto (_aAutoSE1))
 		lMsErroAuto := .F.
 		MSExecAuto({|x,y| FINA040(x,y)}, _aAutoSE1, 3)
@@ -913,11 +921,15 @@ static function _TitSTMG ()
 		else
 			_sProxParc = soma1 (_sProxParc)
 		endif
+		_sHistSE2 := 'Valor ST MG antecipacao'
+		_sHistSE2 += ' ref.NF ' + sf2 -> f2_doc
+		_sHistSE2 += ' de ' + alltrim (fBuscaCpo ("SA1", 1, xfilial ("SA1") + sf2 -> f2_cliente + sf2 -> f2_loja, "A1_NOME"))
+
 		_aAutoSE2 = {}
 		aAdd(_aAutoSE2, {"E2_PREFIXO"  , sf2 -> f2_serie       , Nil})
 		aAdd(_aAutoSE2, {"E2_NUM"      , sf2 -> f2_doc         , Nil})
 		aAdd(_aAutoSE2, {"E2_PARCELA"  , _sProxParc            , Nil})
-		aAdd(_aAutoSE2, {"E2_TIPO"     , 'DP'                  , Nil})
+		aAdd(_aAutoSE2, {"E2_TIPO"     , 'TRS'                 , Nil})
 		aAdd(_aAutoSE2, {"E2_NATUREZ"  , '110198'              , Nil})
 		aAdd(_aAutoSE2, {"E2_FORNECE"  , _sFornRec             , Nil})
 		aAdd(_aAutoSE2, {"E2_LOJA"     , _sLojaRec             , Nil})
@@ -928,7 +940,8 @@ static function _TitSTMG ()
 		aAdd(_aAutoSE2, {"E2_EMISSAO"  , sf2 -> f2_emissao     , Nil})
 		aAdd(_aAutoSE2, {"E2_VENCTO"   , sf2 -> f2_emissao     , Nil})
 		aAdd(_aAutoSE2, {"E2_VENCREA"  , DataValida (sf2 -> f2_emissao), Nil})
-		aAdd(_aAutoSE2, {"E2_HIST"     , 'Valor ST MG antecipacao'     , Nil})
+		aAdd(_aAutoSE2, {"E2_HIST"     , _sHistSE2             , Nil})
+		aAdd(_aAutoSE2, {"E2_VACHVEX"  , _sChvEx               , Nil})
 		_aAutoSE2 := aclone (U_OrdAuto (_aAutoSE2))
 		lMsErroAuto := .F.
 		MSExecAuto({|x,y| FINA050(x,y)}, _aAutoSE2, 3)
