@@ -90,6 +90,7 @@
 // 27/08/2021 - Cláudia - Incluida as colunas Id pagar-me e NSU pagarme e link cielo. GLPI 10830
 // 01/07/2022 - Claudia - Ajuste na opção mesoregiao. GLPI: 12297
 // 14/12/2022 - Claudia - Inclusão de tratamento notas de complemento no valor mercadoria. GLPI: 12852
+// 01/03/2023 - Claudia - Ajustado filtro de filial e amarração SC5 X FAT_DADOS. GLPI: 13216
 //
 // ---------------------------------------------------------------------------------------------------------------
 User Function VA_XLS5 (_lAutomat)
@@ -427,17 +428,17 @@ Static Function _Gera()
 	_sQuery +=            "		 AND SAFRA.SERIE = V.SERIE"
 	_sQuery +=            "		 AND SAFRA.ASSOCIADO = V.CLIENTE"
 	_sQuery +=            "		 AND SAFRA.LOJA_ASSOC = V.LOJA)"                       
-    if "C5_" $ upper (_sQuery) .or. "C6_" $ upper (_sQuery)
+    if "C5_" $ upper (_sQuery) //.or. "C6_" $ upper (_sQuery)
 		// Fazer teste se estes campos foram selecionados para efetivamente incluir o teste
 		_sQuery +=            " left join " + RetSQLName ("SC5") + " SC5 "
 		_sQuery +=                 " on (SC5.D_E_L_E_T_ != '*'"
-		_sQuery +=                 " and SC5.C5_FILIAL   = '" + xfilial ("SC5") + "'"
+		_sQuery +=                 " and SC5.C5_FILIAL   = V.FILIAL "
 		_sQuery +=                 " and SC5.C5_NUM      = V.PEDVENDA)"
-		_sQuery +=            " left join " + RetSQLName ("SC6") + " SC6 "
+		/*_sQuery +=            " left join " + RetSQLName ("SC6") + " SC6 "
 		_sQuery +=                 " on (SC6.D_E_L_E_T_ != '*'"
 		_sQuery +=                 " and SC6.C6_FILIAL   = '" + xfilial ("SC6") + "'"
 		_sQuery +=                 " and SC6.C6_NUM      = V.PEDVENDA "
-		_sQuery +=                 " and SC6.C6_ITEM     = V.ITEMPDVEND)"
+		_sQuery +=                 " and SC6.C6_ITEM     = V.ITEMPDVEND)"*/
     endif
 	_sQuery +=  " where SB1.D_E_L_E_T_    != '*'"
 	_sQuery +=    " and SB1.B1_FILIAL      = '" + xfilial ("SB1") + "'"
@@ -451,7 +452,7 @@ Static Function _Gera()
    	if mv_par23 == 1  // Apenas fatur.e bonif 
    	   	_sQuery +=" AND (V.F4_MARGEM = '2' AND V.ORIGEM='SD1' AND V.TIPONFENTR='D' OR (V.ORIGEM='SD2' AND V.F4_MARGEM IN ('1','3') ) )"
   	endif      
- 	_sQuery +=    " and V.EMPRESA         between '" + mv_par01 + "' and '" + mv_par02 + "'"
+ 	_sQuery +=    " and V.FILIAL          between '" + mv_par01 + "' and '" + mv_par02 + "'"
 	_sQuery +=    " and SA1.A1_REGIAO     between '" + mv_par03 + "' and '" + mv_par04 + "'"
 	_sQuery +=    " and V.EST             between '" + mv_par05 + "' and '" + mv_par06 + "'"
 	_sQuery +=    " and V.VEND1           between '" + mv_par07 + "' and '" + mv_par08 + "'"
@@ -480,8 +481,8 @@ Static Function _ValidPerg ()
 	local _aRegsPerg := {}
 	local _aDefaults := {}
 	//                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes            Help
-	aadd (_aRegsPerg, {01, "Empresa Inicial              ?", "C", 02, 0,  "",   "     ", {},             ""})
-	aadd (_aRegsPerg, {02, "Empresa Final                ?", "C", 02, 0,  "",   "     ", {},             ""})
+	aadd (_aRegsPerg, {01, "Filial Inicial               ?", "C", 02, 0,  "",   "     ", {},             ""})
+	aadd (_aRegsPerg, {02, "Filial Final                 ?", "C", 02, 0,  "",   "     ", {},             ""})
 	aadd (_aRegsPerg, {03, "Regiao Inicial               ?", "C", 03, 0,  "",   "82   ", {},             ""})
 	aadd (_aRegsPerg, {04, "Regiao Final                 ?", "C", 03, 0,  "",   "82   ", {},             ""})
 	aadd (_aRegsPerg, {05, "Estado Inicial               ?", "C", 02, 0,  "",   "12   ", {},             ""})
