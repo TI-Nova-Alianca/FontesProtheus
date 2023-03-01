@@ -452,7 +452,7 @@ Static Function _Gera()
    	if mv_par23 == 1  // Apenas fatur.e bonif 
    	   	_sQuery +=" AND (V.F4_MARGEM = '2' AND V.ORIGEM='SD1' AND V.TIPONFENTR='D' OR (V.ORIGEM='SD2' AND V.F4_MARGEM IN ('1','3') ) )"
   	endif      
- 	_sQuery +=    " and V.FILIAL          between '" + mv_par01 + "' and '" + mv_par02 + "'"
+ 	_sQuery +=    " and V.EMPRESA         between '" + mv_par01 + "' and '" + mv_par02 + "'"
 	_sQuery +=    " and SA1.A1_REGIAO     between '" + mv_par03 + "' and '" + mv_par04 + "'"
 	_sQuery +=    " and V.EST             between '" + mv_par05 + "' and '" + mv_par06 + "'"
 	_sQuery +=    " and V.VEND1           between '" + mv_par07 + "' and '" + mv_par08 + "'"
@@ -481,8 +481,8 @@ Static Function _ValidPerg ()
 	local _aRegsPerg := {}
 	local _aDefaults := {}
 	//                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes            Help
-	aadd (_aRegsPerg, {01, "Filial Inicial               ?", "C", 02, 0,  "",   "     ", {},             ""})
-	aadd (_aRegsPerg, {02, "Filial Final                 ?", "C", 02, 0,  "",   "     ", {},             ""})
+	aadd (_aRegsPerg, {01, "Empresa Inicial              ?", "C", 02, 0,  "",   "     ", {},             ""})
+	aadd (_aRegsPerg, {02, "Empresa Final                ?", "C", 02, 0,  "",   "     ", {},             ""})
 	aadd (_aRegsPerg, {03, "Regiao Inicial               ?", "C", 03, 0,  "",   "82   ", {},             ""})
 	aadd (_aRegsPerg, {04, "Regiao Final                 ?", "C", 03, 0,  "",   "82   ", {},             ""})
 	aadd (_aRegsPerg, {05, "Estado Inicial               ?", "C", 02, 0,  "",   "12   ", {},             ""})
