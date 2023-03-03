@@ -10,8 +10,9 @@
 // #Modulos 		  #FIN 
 //
 // Historico de alteracoes:
+// 03/03/2023 - Claudia - Alterado % de comissão para comissão emdia do SE1. GLPI: 8917
 //
-// -----------------------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------
 User Function VA_SALCOM ()
 	Private oReport
 	Private cPerg := "VA_SALCOM"
@@ -74,8 +75,7 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " 	   ,SD2.D2_SERIE AS SERIE "
 	_oSQL:_sQuery += " 	   ,SD2.D2_EMISSAO AS EMISSAO "
 	_oSQL:_sQuery += " 	   ,SUM(SD2.D2_TOTAL) AS BASE_PREVISTA "
-	_oSQL:_sQuery += " 	   ,SD2.D2_COMIS1 AS PERC_COMISSAO " 
-	_oSQL:_sQuery += " 	   ,SUM(ROUND(SD2.D2_TOTAL * SD2.D2_COMIS1 / 100, 2)) AS VALOR_COMISSAO "
+	_oSQL:_sQuery += "     ,SE1.E1_COMIS1 AS PERC_COMISSAO "
 	_oSQL:_sQuery += " 	FROM " +  RetSQLName ("SD2") + " AS SD2 "
 	_oSQL:_sQuery += " 	INNER JOIN " +  RetSQLName ("SF2") + " AS SF2 "
 	_oSQL:_sQuery += " 		ON SF2.D_E_L_E_T_  = '' "
@@ -94,6 +94,13 @@ Static Function PrintReport(oReport)
 		_oSQL:_sQuery += "      AND A3_ATIVO = 'N' "
 	EndIf
 	_oSQL:_sQuery += "      AND A3_COMIS > 0 "
+	_oSQL:_sQuery += "	LEFT JOIN " +  RetSQLName ("SE1") + " AS SE1 "
+	_oSQL:_sQuery += "		ON SE1.D_E_L_E_T_  = '' "
+	_oSQL:_sQuery += "		AND SE1.E1_FILIAL  = SD2.D2_FILIAL "
+	_oSQL:_sQuery += "		AND SE1.E1_NUM     = SD2.D2_DOC "
+	_oSQL:_sQuery += "		AND SE1.E1_PREFIXO = SD2.D2_SERIE "
+	_oSQL:_sQuery += "		AND SE1.E1_CLIENTE = SD2.D2_CLIENTE "
+	_oSQL:_sQuery += "		AND SE1.E1_LOJA    = SD2.D2_LOJA "
 	_oSQL:_sQuery += " 	WHERE SD2.D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " 	AND SD2.D2_COMIS1 > 0 "
 	_oSQL:_sQuery += " 	AND D2_FILIAL  BETWEEN '"+ mv_par01       +"' AND '"+ mv_par02       +"' "
@@ -104,21 +111,17 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " 			,SD2.D2_DOC "
 	_oSQL:_sQuery += " 			,SD2.D2_SERIE "
 	_oSQL:_sQuery += " 			,SD2.D2_EMISSAO "
-	_oSQL:_sQuery += " 			,SD2.D2_COMIS1) "
+	_oSQL:_sQuery += " 			,SE1.E1_COMIS1) "
 	_oSQL:_sQuery += " SELECT "
 	_oSQL:_sQuery += " 	   VENDEDOR "
 	_oSQL:_sQuery += "    ,FILIAL "
 	_oSQL:_sQuery += "    ,DOCUMENTO "
 	_oSQL:_sQuery += "    ,SERIE "
 	_oSQL:_sQuery += "    ,EMISSAO "
-	_oSQL:_sQuery += "    ,SUM(BASE_PREVISTA) AS BASE_PREV "
-	_oSQL:_sQuery += "    ,SUM(VALOR_COMISSAO) AS COMISSAO "
+	_oSQL:_sQuery += "    ,BASE_PREVISTA "
+	_oSQL:_sQuery += "    ,ROUND(BASE_PREVISTA * PERC_COMISSAO / 100, 2) AS COMISSAO "
 	_oSQL:_sQuery += " FROM C "
-	_oSQL:_sQuery += " GROUP BY VENDEDOR "
-	_oSQL:_sQuery += " 		,FILIAL "
-	_oSQL:_sQuery += " 		,DOCUMENTO "
-	_oSQL:_sQuery += " 		,SERIE "
-	_oSQL:_sQuery += " 		,EMISSAO "
+	_oSQL:_sQuery += " WHERE PERC_COMISSAO IS NOT NULL "
 	_oSQL:_sQuery += " ORDER BY VENDEDOR "
 	_oSQL:_sQuery += " 		,FILIAL "
 	_oSQL:_sQuery += " 		,EMISSAO "
