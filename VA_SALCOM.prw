@@ -1,4 +1,4 @@
-// Programa..: VA_PREVCOM
+// Programa..: VA_SALCOM
 // Autor.....: Claudia Lionço
 // Data......: 09/11/2022
 // Descricao.: Relatório de Provisão de Comissão
@@ -12,9 +12,9 @@
 // Historico de alteracoes:
 //
 // -----------------------------------------------------------------------------------------------------------------------------------
-User Function VA_PREVCOM ()
+User Function VA_SALCOM ()
 	Private oReport
-	Private cPerg := "VA_PREVCOM"
+	Private cPerg := "VA_SALCOM"
 	
 	_ValidPerg()
 	Pergunte(cPerg,.F.)
@@ -29,7 +29,7 @@ Static Function ReportDef()
 	Local oReport  := Nil
 	Local oSection1:= Nil
 
-	oReport := TReport():New("VA_PREVCOM","Provisão de Comissão",cPerg,{|oReport| PrintReport(oReport)},"Provisão de Comissão")
+	oReport := TReport():New("VA_SALCOM","Saldo de Comissão",cPerg,{|oReport| PrintReport(oReport)},"Saldo de Comissão")
 	
 	oReport:SetTotalInLine(.F.)
 	oReport:SetLandscape()
