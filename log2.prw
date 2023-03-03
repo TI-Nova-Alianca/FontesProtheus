@@ -167,6 +167,7 @@ return _aRet
 
 // --------------------------------------------------------------------------
 static function _DumpArray (_aMatriz)
+/*
 	local _nLin      := 0
 	local _nCol      := 0
 	local _sDado     := ""
@@ -322,6 +323,9 @@ static function _DumpArray (_aMatriz)
 		endif
 	endif
 return _aRet
+*/
+	// Ainda em teste...
+return ClsAUtil ():ConvTXT (_aMatriz, 'A')
 
 
 

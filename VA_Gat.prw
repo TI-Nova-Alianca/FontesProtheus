@@ -134,6 +134,7 @@
 // 02/09/2022 - Robert  - Nao desconsiderava registros deletados do SX7 na query.
 // 28/09/2022 - Robert  - Gatilho do C2_VABARCX passa a considerar apenas B1_VAFULLW.
 // 07/12/2022 - Robert  - Atualizada chamada funcao classif.uva para safra 2023 (linguagem passou a exigir formato caracter nos parametros)
+// 24/02/2023 - Robert  - Leitura da view VA_VFILA_DESCARGA_SAFRA trocada por VA_VCARGAS_SAFRA
 //
 
 // --------------------------------------------------------------------------
@@ -798,13 +799,22 @@ user function VA_Gat (_sParCpo, _sParSeq)
 		if m->zzt_motivo == '4'
 			_oSQL := ClsSQL():New ()
 			_oSQL:_sQuery := ""
-			_oSQL:_sQuery := ""
-			_oSQL:_sQuery += " select DISTINCT CARGA, PLACA, NOME_ASSOC, DESCRICAO "
-			_oSQL:_sQuery +=   " from dbo.VA_VFILA_DESCARGA_SAFRA V"
-			_oSQL:_sQuery +=  " where V.SAFRA  = '" + m->zzt_safra + "'"
-			_oSQL:_sQuery +=    " and V.FILIAL = '" + xfilial ("ZZT") + "'"
-			_oSQL:_sQuery +=    " and SUBSTRING (V.STATUS, 1, 1) = '1'"
-			_oSQL:_sQuery +=    " order by CARGA"
+	//		_oSQL:_sQuery += " select DISTINCT CARGA, PLACA, NOME_ASSOC, DESCRICAO "
+	//		_oSQL:_sQuery +=   " from dbo.VA_VFILA_DESCARGA_SAFRA V"
+	//		_oSQL:_sQuery +=  " where V.SAFRA  = '" + m->zzt_safra + "'"
+	//		_oSQL:_sQuery +=    " and V.FILIAL = '" + xfilial ("ZZT") + "'"
+	//		_oSQL:_sQuery +=    " and SUBSTRING (V.STATUS, 1, 1) = '1'"
+	//		_oSQL:_sQuery +=    " order by CARGA"
+			_oSQL:_sQuery += "SELECT CARGA, PLACA, NOME_ASSOC, STRING_AGG (RTRIM (DESCRICAO), ' e ') AS DESCRICAO"
+			_oSQL:_sQuery +=  " FROM VA_VCARGAS_SAFRA"
+			_oSQL:_sQuery += " WHERE SAFRA        = '" + m->zzt_safra + "'"
+			_oSQL:_sQuery +=   " AND FILIAL       = '" + xfilial ("ZZT") + "'"
+			_oSQL:_sQuery +=   " AND CONTRANOTA   = ''
+			_oSQL:_sQuery +=   " AND AGLUTINACAO != 'O'
+			_oSQL:_sQuery +=   " AND PESO_BRUTO   = 0
+			_oSQL:_sQuery +=   " AND STATUS      NOT IN ('C', 'D')
+			_oSQL:_sQuery += " GROUP BY CARGA, PLACA, NOME_ASSOC
+			_oSQL:_sQuery += " ORDER BY CARGA, PLACA, NOME_ASSOC
 			_aRetSQL := aclone (_oSQL:Qry2Array ())
 			if len (_aRetSQL) > 0
 				_xRet = _aRetSQL [_oSQL:F3Array (), 1]

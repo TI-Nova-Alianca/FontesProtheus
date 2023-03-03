@@ -162,6 +162,7 @@ static function _Notif (_oVerif, _aGrupos, _sMsg)
 	local _nGrupo  := 0
 	local _aDest   := {}
 
+	U_Log2 ('debug', '[' + procname () + ']Vou mandar notificacao pelo naweb')
 	// Monta lista de destinatarios.
 	for _nGrupo = 1 to len (_aGrupos)
 		
@@ -170,7 +171,7 @@ static function _Notif (_oVerif, _aGrupos, _sMsg)
 			aadd (_aDest, _aGrupos [_nGrupo])
 		endif
 	next
-		
+	U_Log2 ('debug', _aDest)
 	if len (_aDest) > 0
 		_oAviso := ClsAviso():new ()
 		_oAviso:Tipo       = 'A'  // I=Info;A=Aviso;E=Erro

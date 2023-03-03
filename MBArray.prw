@@ -125,8 +125,8 @@ user function MbArray (_aArray, _sTitulo, _aCols, _nColMarca, _nLarg, _nAltur, _
 			aadd (_aCabec, "Col." + alltrim (str (_nCol)))
 		next
 	endif
-	U_Log2 ('debug', '_aCabec:')
-	U_Log2 ('debug', _aCabec)
+//	U_Log2 ('debug', '_aCabec:')
+//	U_Log2 ('debug', _aCabec)
 	
 	define msdialog _oDlgMbA title _sTitulo from 0, 0 to _nAltur, _nLarg of oMainWnd pixel
 	_oLbx := TWBrowse ():New (15, ;  // Linha

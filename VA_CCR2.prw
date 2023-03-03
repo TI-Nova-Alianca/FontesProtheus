@@ -6,6 +6,7 @@
 //
 // Historico de alteracoes:
 // 06/05/2020 - Robert - Tamanho campo numero NF ajustado de 6 para 9 posicoes.
+// 03/03/2023 - Robert - Possibilidade de retornar em formato XML, para posterior uso pelo web service/NaWeb
 //
 
 /*
@@ -24,23 +25,25 @@
 
 - CM_ULT_01, CM_ULT_02, ... últimos custos médios do componente nesta filial.
 */
+
 // --------------------------------------------------------------------------
-user function VA_CCR2 (_lAutomat)
+user function VA_CCR2 (_lAutomat, _lGeraXML)
 	private _lAuto   := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
-	
+	private _sXMLCCR := ''  // Deixar PRIVATE para ser alimentado pela subrotina.
+
 	cPerg    := "VA_CCR2"
 	_ValidPerg ()
 	pergunte (cPerg, .F.)
 	if _lAuto .or. pergunte (cPerg, .T.)
-		processa ({|| _GeraPlan ()})
+		processa ({|| _GeraPlan (_lGeraXML)})
 	endif
-return
+return _sXMLCCR
 
 
 
 
 // --------------------------------------------------------------------------
-static function _GeraPlan ()
+static function _GeraPlan (_lGeraXML)
 	local _aCampos   := {}
 	local _nCampo    := 0
 	local _aArqtrb   := {}
@@ -136,13 +139,13 @@ static function _GeraPlan ()
 		aadd (_aPais, {sb1 -> b1_cod, sb1 -> b1_desc, sb1 -> b1_revatu})
 		sb1 -> (dbskip ())
 	enddo
-	u_log ('pais:', _aPais)
+	//u_log ('pais:', _aPais)
 
 	// Leitura de estruturas cujos componentes devem ser analisados.
 	for _nPai = 1 to len (_aPais)
-		u_logIni ('Pai ' + _aPais [_nPai, 1])
+	//	u_logIni ('Pai ' + _aPais [_nPai, 1])
 		_aEstr := aclone (U_ML_Comp2 (_aPais [_nPai, 1], 1, '.t.', dDataBase, .F., .F., .F., .F., .F., '', .F., '.f.', .f., .F., _aPais [_nPai, 3]))
-		u_log (_aEstr)
+	//	u_log (_aEstr)
 
 		// Varre estrutura do produto verificando se o componente deve ser considerado.
 		for _nComp = 1 to len (_aEstr)
@@ -169,12 +172,12 @@ static function _GeraPlan ()
 					endif
 
 					// Agora tenho o arquivo de trabalho _comp posicionado no componente atual
-					// da estrutura. Posso gravar o registro no arquivo de retorno par o usuario.
+					// da estrutura. Posso gravar o registro no arquivo de retorno para o usuario.
 					reclock ('_estrut', .T.)
 					_estrut -> codigo     = _aPais [_nPai, 1]
 					_estrut -> descricao  = _aPais [_nPai, 2]
 					_estrut -> seq_estrut = strzero (_nComp, 3)
-					_estrut -> nivel      = _aEstr [_nComp, 1] + 1
+					_estrut -> nivel      = _aEstr [_nComp, 1] // + 1
 					_estrut -> quant_estr = _aEstr [_nComp, 4]
 
 					// Copia todos os campos que contem nomes iguais.
@@ -186,17 +189,21 @@ static function _GeraPlan ()
 				endif
 			endif
 		next
-		u_logFim ('Pai ' + _aPais [_nPai, 1])
+	//	u_logFim ('Pai ' + _aPais [_nPai, 1])
 	next
 
 //	_comp -> (dbgotop ())
 //	u_logtrb ('_comp', .t.)
 
-//	_estrut -> (dbgotop ())
-//	u_logtrb ('_estrut', .t.)
+	_estrut -> (dbgotop ())
+	u_logtrb ('_estrut', .t.)
+	_estrut -> (dbgotop ())
 
-	// Exporta o arquivo de trabalho para planilha.
-	U_Trb2XLS ('_estrut')
+	if _lGeraXML
+		_GeraXML ()
+	else
+		U_Trb2XLS ('_estrut')
+	endif
 
 	U_ArqTrb ("FechaTodos",,,, @_aArqTrb)
 return
@@ -272,6 +279,80 @@ static function _AtuComp ()
 	(_sAliasQ) -> (dbclosearea ())
 return
 
+
+// --------------------------------------------------------------------------
+// Gera uma string XML a partir dos dados do arquivo de trabalho.
+static function _GeraXML ()
+	local _nHdl     := ''
+	local _nNivel   := 0
+	local _sItemPai := ''
+
+	U_Log2 ('debug', '[' + procname () + ']gerando XML')
+	_sXMLCCR = '<?xml version="1.0" encoding="UTF-8"?>'
+	_sXMLCCR = '<estrutura>'
+	_estrut -> (dbgotop ())
+	do while ! _estrut -> (eof ())
+		// Se mudou o item pai, fecha o nivel do anterior e inicia um novo
+		if _estrut -> codigo != _sItemPai
+			U_Log2 ('erro', '[' + procname () + ']Item pai mudou de ' + _sItemPai + ' para ' + _estrut -> codigo)
+			if _nNivel > 0  // Se jah tinha exportado alguma coisa
+				_sXMLCCR += '</nivel_' + alltrim (str (_nNivel)) + '>'
+				_sXMLCCR += '</nivel_0>'
+			endif
+			_sXMLCCR += '<nivel_0>'
+			_sXMLCCR += '<item>'
+			_sXMLCCR += '<cod>' + alltrim (_estrut -> codigo) + '</cod>'
+			_sXMLCCR += '<descr>' + alltrim (_estrut -> descricao) + '</descr>'
+			_sXMLCCR += '</item>'
+			_sItemPai = _estrut -> codigo
+			_nNivel = 0
+		endif
+		U_Log2 ('debug', '[' + procname () + ']Iniciando COMPON = ' + _estrut -> compon + ' com _nNivel = ' + cvaltochar (_nNivel))
+		do while _estrut -> nivel > _nNivel
+			_nNivel ++
+			U_Log2 ('aviso', '[' + procname () + ']abrindo nivel ' + cvaltochar (_nNivel))
+			_sXMLCCR += '<nivel_' + alltrim (str (_nNivel)) + '>'
+		enddo
+		do while _estrut -> nivel < _nNivel
+			U_Log2 ('aviso', '[' + procname () + ']fechando nivel ' + cvaltochar (_nNivel))
+			_sXMLCCR += '</nivel_' + alltrim (str (_nNivel)) + '>'
+			_nNivel --
+		enddo
+		U_Log2 ('debug', '[' + procname () + ']exportando COMPON ' + _estrut -> compon)
+		_sXMLCCR += '<item>'
+		_sXMLCCR += '<cod>' + alltrim (_estrut -> compon) + '</cod>'
+		_sXMLCCR += '<descr>' + alltrim (_estrut -> desc_comp) + '</descr>'
+		_sXMLCCR += '<tipo>' + alltrim (_estrut -> tp_comp) + '</tipo>'
+		_sXMLCCR += '<quant>' + cvaltochar (_estrut -> quant_estr) + '</quant>'
+		_sXMLCCR += '<um>' + alltrim (_estrut -> un_med_comp) + '</um>'
+		_sXMLCCR += '<custo_std>' + cvaltochar (_estrut -> custo_std) + '</custo_std>'
+		_sXMLCCR += '<uc01_prc>'  + cvaltochar (_estrut -> uc_cus_01) + '</uc01_prc>'
+		_sXMLCCR += '<uc01_data>' + cvaltochar (_estrut -> uc_dat_01) + '</uc01_data>'
+		_sXMLCCR += '<uc02_prc>'  + cvaltochar (_estrut -> uc_cus_02) + '</uc02_prc>'
+		_sXMLCCR += '<uc02_data>' + cvaltochar (_estrut -> uc_dat_02) + '</uc02_data>'
+		_sXMLCCR += '<uc03_prc>'  + cvaltochar (_estrut -> uc_cus_03) + '</uc03_prc>'
+		_sXMLCCR += '<uc03_data>' + cvaltochar (_estrut -> uc_dat_03) + '</uc03_data>'
+		_sXMLCCR += '<custo>0</custo>'
+		_sXMLCCR += '</item>'
+		_estrut -> (dbskip ())
+	enddo
+	_sXMLCCR += '</nivel_1>'
+	_sXMLCCR += '</nivel_0>'
+	_sXMLCCR += '</estrutura>'
+	
+	_sXMLCCR = U_NoAcento (_sXMLCCR)
+	
+	// Exporta para arquivo, durante a implementacao, para conferencia.
+	_sArqXML := 'c:\temp\va_ccr2.xml'
+	if file (_sArqXML)
+		delete file (_sArqXml)
+	endif
+	_nHdl = fcreate (_sArqXML, 0)
+	fwrite (_nHdl, _sXMLCCR)
+	fclose (_nHdl)
+return
+
+return
 
 
 // --------------------------------------------------------------------------
