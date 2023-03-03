@@ -133,9 +133,7 @@ return .T.
 // --------------------------------------------------------------------------
 // Consulta de eventos a partir de outros programas.
 user function VA_SZNC (_sOQue, _sChave1, _sChave2, _sChave3, _sChave4, _sChave5)
-	u_logIni ()
 	processa ({|| _LeDados (_sOQue, _sChave1, _sChave2, _sChave3, _sChave4, _sChave5)})
-	u_logFim ()
 return
 
 
@@ -146,16 +144,12 @@ static function _LeDados (_sOQue, _sChave1, _sChave2, _sChave3, _sChave4, _sChav
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _aAmbAnt   := U_SalvaAmb ()
 	local _oDlg      := NIL
-	//local _oBrw      := NIL
-	//local _aCpos     := {}
-	//local _aEstrut   := {}
 	local _nCampo    := 0
 	local _sQuery    := ""
 	local _aLinVazia := {}
 	local _lContinua := .T.
 	local _sOrdEmb   := ""
 	local _sMsgInf   := ""
-	//local _oDlgMemo  := NIL
 	local _aSize     := {}  // Para posicionamento de objetos em tela
 	local _aRecnos   := {}
 	local _nRecno    := 0
@@ -188,14 +182,18 @@ static function _LeDados (_sOQue, _sChave1, _sChave2, _sChave3, _sChave4, _sChav
 			_sQuery += "   and ZN_ALIAS   = 'SZ2'"
 			_sQuery += "   and ZN_COD     = '" + _sChave1 + "'"
 		case upper (_sOQue) == "CARGASAFRA"
-//			_sQuery += "   and ((ZN_ALIAS   = 'SZE' and ZN_COD     = '" + _sChave1 + "')"  // eliminar esta linha depois que tudo estiver gravado nos campos ZN_SAFRA e ZN_CARGA
 			_sQuery += "   and ZN_SAFRA   = '" + _sChave1 + "'"
 			_sQuery += "   and ZN_CARGSAF = '" + _sChave2 + "'"
+		case upper (_sOQue) == "ALIAS_CHAVE"
+			_sQuery += "   and ZN_ALIAS   = '" + _sChave1 + "'"
+			_sQuery += "   and ZN_CHAVE   = '" + _sChave2 + "'"
+		case upper (_sOQue) == "EVENTO"
+			_sQuery += "   and ZN_CODEVEN = '" + _sChave1 + "'"
 		otherwise
 			u_help ("Consulta desconhecida")
 			_lContinua = .F.
 		endcase
-			u_log (_sQuery)
+			U_Log2 ('debug', '[' + procname () + ']' +_sQuery)
 			_aRecnos := aclone (U_Qry2Array (_sQuery))
 	endif
 	
@@ -284,16 +282,3 @@ static function _LeDados (_sOQue, _sChave1, _sChave2, _sChave3, _sChave4, _sChav
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
 return
-
-
-
-// // --------------------------------------------------------------------------
-// // Faz exportacao da pilha de chamadas para uma string.
-// static function _PCham ()
-// 	local _i      := 2
-// 	local _sPilha := ""
-// 	do while procname (_i) != ""
-// 		_sPilha += procname (_i) + "=>"
-// 		_i++
-// 	enddo
-// return _sPilha

@@ -56,11 +56,12 @@
 // 02/05/2022 - Robert  - Incluidas chamadas de U_PerfMon() para acompanhar tempo de gravacao.
 // 20/07/2022 - Robert  - Criado tratamento para atributos ::DiasValid e ::ChaveNFe (GLPI 12336)
 // 01/08/2022 - Robert  - Criado atributo ::MotProrTit
-// 27/10/2022 - Robert  - ENvia notificacao ao gravar codigo de evento desconhecido.
+// 27/10/2022 - Robert  - Envia notificacao ao gravar codigo de evento desconhecido.
 // 30/01/2023 - Robert  - Metodo GravaNovo passa a aceitar parametro de
 //                        precisao para teste de jah existencia do evento.
 //                      - Criado atributo Usuario.
 // 22/02/2023 - Robert  - Criados atributos Safra e CargaSafra.
+// 24/02/2023 - Robert  - Gera aviso quando receber chave antiga para evento de carga/safra.
 //
 
 #include "protheus.ch"
@@ -287,6 +288,17 @@ METHOD Grava () Class ClsEvent
 		_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
 		_oAviso:Titulo     = "Gravado evento com codigo inexistente (" + ::CodEven + ") na tabela 54 do ZX5"
 		_oAviso:Texto      = _oAviso:Titulo
+		_oAviso:InfoSessao = .T.
+		_oAviso:Grava ()
+	endif
+
+	// Criei os atributos tarde demais, e tem muita coisa gravando pelo metodo antigo
+	if ::Alias == 'SZE' .and. (empty (::Safra) .or. empty (::CargaSafra))
+		_oAviso := ClsAviso ():New ()
+		_oAviso:Tipo       = 'A'
+		_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
+		_oAviso:Titulo     = "Gravado evento de carga safra sem usar atributos novos."
+		_oAviso:Texto      = _oAviso:Titulo + ' Texto do evento: ' + _sTextoZN
 		_oAviso:InfoSessao = .T.
 		_oAviso:Grava ()
 	endif
