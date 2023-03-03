@@ -27,6 +27,7 @@
 // 17/11/2017 - Robert - Metodo Conv2THM passa a receber parametro de numero maximo de linhas.
 // 26/06/2019 - Robert - Metodo 'Distinct' renomeado para 'Distinto' (passou a ser palavra reservada da linguagem).
 // 04/03/2020 - Robert - Criado metodo ReduzLin.
+// 01/03/2023 - Robert - Fonte renomeado de .prw para .tlpp
 //
 
 #include "protheus.ch"
@@ -42,31 +43,31 @@ return
 CLASS ClsAUtil
 
 	// Declaracao das propriedades da Classe
-	DATA _aArray
-	DATA _aChave
+	public DATA _aArray
+	public DATA _aChave
 
 	// Declaracao dos Metodos da Classe
-	METHOD New ()
-	METHOD Acumula ()
-	METHOD CombinaVlr ()
-	METHOD Compara ()
-	METHOD ConvHTM ()
-	METHOD ConvTXT ()
-	METHOD ConvXML ()
-	METHOD Del ()
-	METHOD Dist ()
-	METHOD Dist3 ()
-	METHOD Distinto ()
-	METHOD LinMaiorVl ()
-	METHOD MediaCol ()
-	METHOD MedPonder ()
-	METHOD QuebraCol ()
-	METHOD ReduzLin ()
-	METHOD Reset ()
-	METHOD SetArray ()
-	METHOD SetChave ()
-	METHOD TotCol ()
-	METHOD TotLin ()
+	public METHOD New ()
+	public METHOD Acumula ()
+	public METHOD CombinaVlr ()
+	public METHOD Compara ()
+	public METHOD ConvHTM ()
+	STATIC METHOD ConvTXT ()
+	public METHOD ConvXML ()
+	public METHOD Del ()
+	public METHOD Dist ()
+	public METHOD Dist3 ()
+	public METHOD Distinto ()
+	public METHOD LinMaiorVl ()
+	public METHOD MediaCol ()
+	public METHOD MedPonder ()
+	public METHOD QuebraCol ()
+	public METHOD ReduzLin ()
+	public METHOD Reset ()
+	public METHOD SetArray ()
+	public METHOD SetChave ()
+	public METHOD TotCol ()
+	public METHOD TotLin ()
 ENDCLASS
 
 
@@ -452,136 +453,174 @@ return _sRet
 
 // --------------------------------------------------------------------------
 // Converte array para texto
-METHOD ConvTXT () Class ClsAUtil
-	local _sEspacos  := ""  // Caso precise inserir espacos no inicio das linhas.
+STATIC METHOD ConvTXT (_aMatriz, _sFormato) Class ClsAUtil
 	local _nLin      := 0
 	local _nCol      := 0
 	local _sDado     := ""
-	local _sMensagem := ""
 	local _aNovaLin  := {}
 	local _aNovaMat  := {}
 	local _lPerfeita := .F.
 	local _nQtCol    := 0
 	local _nLargCol  := 0
-	local _lUniDim   := .T.
-	
-	if len (::_aArray) == 0
-		_sMensagem += _sEspacos + "*MATRIZ VAZIA*"
-	else
+	local _sLinha    := ''
+	local _aLinhas   := {}
+	local _xRet      := NIL
+	local _sLinFech  := ''
 
-		// Se recebi uma matriz unidimensional, 'converto-a' para uma bidimensional de uma
-		// unica linha, para melhorar a visualizacao no arquivo de log.
+	if len (_aMatriz) == 0
+		aadd (_aLinhas, "*MATRIZ VAZIA*")
+	else
 		_lUniDim = .T.
-		for _nLin = 1 to len (::_aArray)
-			if valtype (::_aArray[_nLin]) == "A"
+		for _nLin = 1 to len (_aMatriz)
+			if valtype (_aMatriz[_nLin]) == "A"
 				_lUniDim = .F.
 				exit
 			endif
 		next
-		if _lUniDim
-			_aNovaMat = {}
-			for _nLin = 1 to len (::_aArray)
-				aadd (_aNovaMat, ::_aArray[_nLin])
-			next
-			::_aArray := {aclone (_aNovaMat)}
-		endif
 
 		// Se recebi uma matriz "quadradinha" faco com que todas as linhas tenham a mesma largura.
-		if valtype (::_aArray) == "A" .and. len (::_aArray) > 0
+		//
+		// Se todos os elementos forem simples (nao array) entendo como perfeita.
+		if ! _lUniDim
+			if valtype (_aMatriz) == "A" .and. len (_aMatriz) > 0
+				_lPerfeita = .T.
+				for _nLin = 1 to len (_aMatriz)
+					if valtype (_aMatriz[_nLin]) != "A"
+						_lPerfeita = .F.
+						exit
+					endif
+				next
+			endif
+			if _lPerfeita
+				_nQtCol = len (_aMatriz [1])
+				for _nLin = 1 to len (_aMatriz)
+					if len (_aMatriz [_nLin]) != _nQtCol
+						_lPerfeita = .F.
+						exit
+					endif
+				next
+			endif
+			if _lPerfeita
+		//		u_log ("Eh perfeita (matriz MxN)")
+			else
+		//		u_log ("Nao eh perfeita (matriz MxN)")
+			endif
+		else
+			_nQtCol = 1
 			_lPerfeita = .T.
-			for _nLin = 1 to len (::_aArray)
-				if valtype (::_aArray[_nLin]) != "A"
-					_lPerfeita = .F.
-					exit
-				endif
-			next
+		//	u_log ("Eh perfeita (matriz unidimensional)")
 		endif
-		if _lPerfeita
-			_nQtCol = len (::_aArray [1])
-			for _nLin = 1 to len (::_aArray)
-				if len (::_aArray [_nLin]) != _nQtCol
-					_lPerfeita = .F.
-					exit
-				endif
-			next
-		endif
+
 		if _lPerfeita
 			_aNovaMat = {}
-			for _nLin = 1 to len (::_aArray)
-				// Passa dados para nova matriz, jah convertidos para caracter, para poder,
-				// depois, deixar todas as colunas com a mesma largura.
+			for _nLin = 1 to len (_aMatriz)
+				// Passa dados para nova matriz, jah convertidos para caracter, para poder, depois, deixar todas as colunas com a mesma largura.
 				_aNovaLin = {}
-				for _nCol = 1 to len (::_aArray [_nLin])
-					_sDado = _Arr2Char (::_aArray [_nLin, _nCol])
-					aadd (_aNovaLin, _sDado)
-				next
-				aadd (_aNovaMat, aclone (_aNovaLin))
+				if _lUniDim
+					_sDado = _Arr2Char (_aMatriz [_nLin])
+		//			u_log ('valtype (_sDado):', valtype (_sDado))
+					aadd (_aNovaMat, _sDado)
+				else
+					for _nCol = 1 to len (_aMatriz [_nLin])
+						_sDado = _Arr2Char (_aMatriz [_nLin, _nCol])
+						aadd (_aNovaLin, _sDado)
+					next
+					aadd (_aNovaMat, aclone (_aNovaLin))
+				endif
 			next
+		//	u_log ('_aNovaMat:', _aNovaMat)
+		//	u_log ('valtype (_aNovaMat[1]):', valtype (_aNovaMat[1]))
+			// Deixa todas as linhas do mesmo tamanho, para melhorar a visualizacao no log.
 			for _nCol = 1 to _nQtCol
-				_nLargCol = len (_aNovaMat [1, _nCol])
+				// Largura da primeira linha
+				if _lUniDim
+					_nLargCol = len (_aNovaMat [1])
+				else
+					_nLargCol = len (_aNovaMat [1, _nCol])
+				endif
+		//		u_log ('Largura da coluna 1:', _nLargCol)
+				// Verifica se tem alguma linha mais larga que a primeira
 				for _nLin = 1 to len (_aNovaMat)
-					_nLargCol = max (_nLargCol, len (_aNovaMat [_nLin, _nCol]))
+					if _lUniDim
+						_nLargCol = max (_nLargCol, len (_aNovaMat [_nLin]))
+					else
+						_nLargCol = max (_nLargCol, len (_aNovaMat [_nLin, _nCol]))
+					endif
 				next
+		//		u_log ('Maior Largura:', _nLargCol)
+				// Ajusta todas as linhas para a maior largura
 				for _nLin = 1 to len (_aNovaMat)
-					_aNovaMat [_nLin, _nCol] = padr (_aNovaMat [_nLin, _nCol], _nLargCol, " ")
+					if _lUniDim
+						_aNovaMat [_nLin] = padr (_aNovaMat [_nLin], _nLargCol, " ")
+					else
+						_aNovaMat [_nLin, _nCol] = padr (_aNovaMat [_nLin, _nCol], _nLargCol, " ")
+					endif
 				next
+		//		u_log ('_aNovaMat depois de ajustar larguras:', _aNovaMat)
 			next
-			
-			// Clona a nova matriz para a matriz a ser mostrada.
-			::_aArray = aclone (_aNovaMat)
+		else
+			_aNovaMat = aclone (_aMatriz)
 		endif
 		
-		if valtype (::_aArray) != "A"
-			_sMensagem += _sEspacos + procname () + ": nao recebi uma array"
-		else
-			
-			// Se for uma matriz perfeita, posso gerar uma linha acima com os numeros das colunas.
-			if _lPerfeita
-				_nLargTot = 0
-				_sMensagem += space (7)
-				for _nCol = 1 to len (::_aArray [1])
-					_nLargCol = len (_Arr2Char (::_aArray [1, _nCol])) + 3
-					_sMensagem += padr (cvaltochar (_nCol), _nLargCol, " ")
-					_nLargTot += _nLargCol
+		// Se for uma matriz perfeita, posso gerar uma linha acima com os numeros das colunas.
+		if _lPerfeita
+			_sLinha   = '      '
+			_sLinFech = '      '
+			if _lUniDim
+				_nLargCol = len (_Arr2Char (_aNovaMat [1])) + 3
+				_sLinha += padc (cvaltochar (_nCol), _nLargCol, "-")
+				_sLinFech += replicate ('-', _nLargCol)
+			else
+				for _nCol = 1 to len (_aNovaMat [1])
+					_nLargCol = len (_Arr2Char (_aNovaMat [1, _nCol])) + 3
+					_sLinha += padc (cvaltochar (_nCol), _nLargCol, "-")
+					_sLinFech += replicate ('-', _nLargCol)
 				next
-				_sMensagem += chr (13) + chr (10)
-				_sMensagem += _sEspacos + space (6) + replicate ("-", _nLargTot - 1) + chr (13) + chr (10)
 			endif
-			
-			// Tratamento original
-			for _nLin = 1 to len (::_aArray)
-				if len (_sMensagem) > 64000  // Antes que alcance o tamanho maximo de uma string, vou jogar para o log.
-					u_log (_sMensagem)
-					_sMensagem = "************ Exportando matriz por que alcancou tamanho maximo para uma string"
-					_sMensagem = ""
-				endif
-				_sMensagem += _sEspacos
-				if valtype (::_aArray [_nLin]) != "A"
-					_sMensagem += _sEspacos + "Linha " + cValToChar (_nLin) + " nao eh array. Contem o seguinte dado: " + cValToChar (::_aArray [_nLin])
+		//	u_log ('Gerei linha acima:', _sLinha)
+			aadd (_aLinhas, _sLinha)
+		endif
+		
+		// Tratamento original
+		for _nLin = 1 to len (_aNovaMat)
+			_sLinha   = ''
+			if valtype (_aNovaMat [_nLin]) != "A"
+//				_sLinha = "Linha " + cValToChar (_nLin) + " nao eh array. Contem o seguinte dado: " + cValToChar (_aNovaMat [_nLin])
+				_sLinha += '      | ' + cValToChar (_aNovaMat [_nLin]) + '|'
+			else
+				if len (_aNovaMat [_nLin]) == 0
+					_sLinha = "Linha " + cValToChar (_nLin) + " eh array, mas nao tem nenhum elemento."
 				else
-					if len (::_aArray [_nLin]) == 0
-						_sMensagem += _sEspacos + "Linha " + cValToChar (_nLin) + " eh array, mas nao tem nenhum elemento."
-					else
-						if _lPerfeita
-							_sMensagem += padr (cvaltochar (_nLin), 5, " ")
-						endif
-						_sMensagem += "| "
-						for _nCol = 1 to len (::_aArray [_nLin])
-							_sDado = _Arr2Char (::_aArray [_nLin, _nCol]) + " | "
-							_sMensagem += _sDado
-						next
+					if _lPerfeita
+						_sLinha = transform (_nLin, "99999")
 					endif
+					_sLinha += "| "
+					for _nCol = 1 to len (_aNovaMat [_nLin])
+						_sLinha += _Arr2Char (_aNovaMat [_nLin, _nCol]) + " | "
+					next
 				endif
-				_sMensagem += _sEspacos + chr (13) + chr (10) // + _sEspacos
-			next
-			
-			// 'Fecha' a matriz com uma linha na parte de baixo.
-			if _lPerfeita
-				_sMensagem += _sEspacos + space (6) + replicate ("-", _nLargTot - 1) + chr (13) + chr (10)
 			endif
+			aadd (_aLinhas, _sLinha)
+		next
+		
+		// 'Fecha' a matriz com uma linha na parte de baixo.
+		if _lPerfeita
+			aadd (_aLinhas, _sLinFech)
 		endif
 	endif
-return _sMensagem
+
+	// Internamente gravo cada linha de texto em uma posicao de uma array.
+	// Caso o formato de retorno desejado seja texto, converto para string.
+	if _sFormato == 'A'
+		_xRet = aclone (_aLinhas)
+	elseif _sFormato == 'T'
+		_xRet = ''
+		for _nLin = 1 to len (_aLinhas)
+			_xRet += _aLinhas [_nLin] + chr (13) + chr (10)
+		next
+	endif
+
+return _xRet
 
 
 
