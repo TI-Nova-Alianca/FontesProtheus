@@ -54,9 +54,8 @@ Return(oReport)
 // Impressão
 Static Function PrintReport(oReport)
 	local oSection1 := oReport:Section(1)
-    local _aNotas   := {}
+    local _aDados   := {}
     local _x        := 0
-	local _nQtdPar  := 1
 
     oSection1:Init()
 	oSection1:SetHeaderSection(.T.)
