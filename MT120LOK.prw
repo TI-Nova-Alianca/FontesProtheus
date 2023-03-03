@@ -19,8 +19,8 @@
 // 02/06/2022 - Claudia - Incluida validação de rateio. GLPI: 11937
 // 14/06/2022 - Claudia - Ajustada a validação para data de entrega não ser menor que data atual. GLPI: 12127
 // 28/09/2022 - Robert  - Validacao de data de entrega passa a desconsiderar linhas jah encerradas.
+// 02/03/2023 - Claudia - Validação de data de entrega apenas para itens abertos. GLPI: 13253
 //
-
 // ---------------------------------------------------------------------------------------------------------------
 User Function MT120LOk ()
 	local _lRet     := .T.
@@ -48,7 +48,7 @@ User Function MT120LOk ()
 		_lRet = .F.
 	endif
 
-	if _lRet .and. ! GDDeleted() .and. (GDFieldGet("C7_DATPRF") < DATE()) //.and. (GDFieldGet("C7_ENCER") = 'E' )
+	if _lRet .and. ! GDDeleted() .and. (GDFieldGet("C7_DATPRF") < DATE()) .and. (GDFieldGet("C7_ENCER") <> 'E' )
 		if GDFieldGet ("C7_QUJE") < GDFieldGet ("C7_QUANT") .and. empty (GDFieldGet ("C7_RESIDUO"))
 			U_Help ("Data de entrega não pode ser menor que data atual.",, .t.)
 			_lRet = .F.
