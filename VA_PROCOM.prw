@@ -10,9 +10,10 @@
 // #Modulos 		  #FIN 
 //
 // Historico de alteracoes:
+// 03/03/2023 - Claudia - Alterado % de comissão para comissão emdia do SE1. GLPI: 13229
 //
 // -----------------------------------------------------------------------------------------------------------------------------------
-User Function VA_PROCOM ()
+User Function VA_PROCOM()
 	Private oReport
 	Private cPerg := "VA_PROCOM"
 	
@@ -46,7 +47,7 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA7", 	"" ,"Valor Comissão", "@E 999,999,999.99"       ,25,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 
 	oBreak1 := TRBreak():New(oSection1,oSection1:Cell("COLUNA1"),"Total")
-    TRFunction():New(oSection1:Cell("COLUNA1")  ,,"SUM" ,oBreak1,""          , "@E 99,999,999.99", NIL, .F., .T.)
+    TRFunction():New(oSection1:Cell("COLUNA7")  ,,"SUM" ,oBreak1,""          , "@E 99,999,999.99", NIL, .F., .T.)
 
 Return(oReport)
 //
@@ -110,7 +111,7 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += " 			,SD2.D2_SERIE  "
     _oSQL:_sQuery += " 			,SE1.E1_COMIS1)  "
     _oSQL:_sQuery += " SELECT  "
-    _oSQL:_sQuery += "     VENDEDOR  "
+    _oSQL:_sQuery += "    ,VENDEDOR  "
     _oSQL:_sQuery += "    ,NOME_VENDEDOR  "
     _oSQL:_sQuery += "    ,DT_EMISSAO  "
     _oSQL:_sQuery += "    ,NOTA  "
@@ -120,20 +121,18 @@ Static Function PrintReport(oReport)
     _oSQL:_sQuery += "    ,ROUND(BASE_COM * PERC_COMIS / 100, 2) AS VLR_COM  "
     _oSQL:_sQuery += " FROM COMISSAO  "
     _oSQL:_sQuery += " ORDER BY VENDEDOR, DT_EMISSAO, NOTA  "
-    _oSQL:_sQuery += " ORDER BY DT_EMISSAO, VENDEDOR, NOTA, SERIE  "
-
 	_oSQL:Log()
     _aDados := aclone(_oSQL:Qry2Array())
 
 	For _x:=1 to Len(_aDados)
 
-        oSection1:Cell("COLUNA1")	:SetBlock   ({|| _aDados[_x, 1]         }) 	
-        oSection1:Cell("COLUNA2")	:SetBlock   ({|| _aDados[_x, 2]			}) 		
-        oSection1:Cell("COLUNA3")	:SetBlock   ({|| stod(_aDados[_x, 3])   }) 		
-        oSection1:Cell("COLUNA4")	:SetBlock   ({|| _aDados[_x, 4]			}) 		
-        oSection1:Cell("COLUNA5")	:SetBlock   ({|| _aDados[_x, 5]			}) 	
-        oSection1:Cell("COLUNA6")	:SetBlock   ({|| _aDados[_x, 6]			}) 
-        oSection1:Cell("COLUNA7")	:SetBlock   ({|| _aDados[_x, 7]			})   
+        oSection1:Cell("COLUNA1")	:SetBlock   ({|| _aDados[_x, 1]                         }) 	
+        oSection1:Cell("COLUNA2")	:SetBlock   ({|| _aDados[_x, 2]			                }) 		
+        oSection1:Cell("COLUNA3")	:SetBlock   ({|| stod(_aDados[_x, 3])                   }) 		
+        oSection1:Cell("COLUNA4")	:SetBlock   ({|| _aDados[_x, 4]	+ "/" +_aDados[_x, 5]   }) 		
+        oSection1:Cell("COLUNA5")	:SetBlock   ({|| _aDados[_x, 6]			                }) 	
+        oSection1:Cell("COLUNA6")	:SetBlock   ({|| _aDados[_x, 7]			                }) 
+        oSection1:Cell("COLUNA7")	:SetBlock   ({|| _aDados[_x, 8]			                })   
 
         oSection1:PrintLine()	
 	Next
@@ -152,7 +151,7 @@ Static Function _ValidPerg ()
     aadd (_aRegsPerg, {04, "Data de Emissao até          ", "D", 8, 0,  "",   "   ", {},                                        ""})
     aadd (_aRegsPerg, {05, "Representante de             ", "C", 3, 0,  "",   "SA3", {},                                        ""})
     aadd (_aRegsPerg, {06, "Representante ate            ", "C", 3, 0,  "",   "SA3", {},                                        ""})
-    aadd (_aRegsPerg, {07, "Ordenação                    ", "N", 1, 0,  "",   "      ", {"Vend.+ Data", "Data + Vend."},        ""})
+    //aadd (_aRegsPerg, {07, "Ordenação                    ", "N", 1, 0,  "",   "      ", {"Vend.+ Data", "Data + Vend."},        ""})
 
     U_ValPerg (cPerg, _aRegsPerg)
 Return
