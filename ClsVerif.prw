@@ -82,6 +82,7 @@
 // 26/11/2022 - Robert  - Criado atributo :ComTela
 // 15/12/2022 - Claudia - Incluido parametros na verificação 28. GLPI: 12938
 // 23/01/2023 - Robert  - Criada verificacao 93.
+// 03/03/2023 - Robert  - Campo VA_VNOTAS_SAFRA.TIPO_FORNEC passa a ter novo conteudo.
 //
 
 #include "protheus.ch"
@@ -439,7 +440,8 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=                   " AND NF_DEVOLUCAO  = ''"
 			::Query +=                   " AND AGLUTINACAO  != 'O'"
 			::Query +=                   " AND STATUS       != 'C'"
-			::Query +=                   " AND TIPO_FORNEC  != 'PROD_PROPRIA'"
+//			::Query +=                   " AND TIPO_FORNEC  != 'PROD_PROPRIA'"
+			::Query +=                   " AND TIPO_FORNEC  NOT LIKE '4%'"  // 4-PROD_PROPRIA
 			::Query +=                 " GROUP BY FILIAL"
 			::Query +=                "),"
 			::Query += " NF_ENTRADA AS (SELECT FILIAL, SUM (PESO_LIQ) AS QUANT"

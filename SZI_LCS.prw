@@ -27,6 +27,8 @@
 //                     - Nao chama mais impressao de recibos (em desuso, pois agora deposita-se em conta).
 // 05/05/2021 - Robert - Renomeado campo R_E_C_N_O_ para RegSZI na query por exigencia da classe FWTemporaryTable implementada na ClsAssoc (GLPI 9973).
 // 28/03/2022 - Robert - Melhorias diversas para tratar vencimento financeiro - GLPI 11850
+// 03/03/2023 - Robert - Data vcto nao ficava alinhada quando saldo a debito.
+//
 
 // --------------------------------------------------------------------------
 user function SZI_LCS (_lAutomat, _nOrdem)
@@ -133,6 +135,7 @@ static function _Imprime ()
 	private _nMaxLin := 66
 	li = _nMaxLin + 1
 
+	u_logsx1 (cPerg)
 	procregua (3)
 
 	// Nao aceita filtro por que precisaria inserir na query.
@@ -346,7 +349,7 @@ static function _Imprime ()
 			_sLinImp += transform ((_sArqTrb) -> valor, "@E 999,999,999.99")
 			_sLinImp += iif ((_sArqTrb) -> ZX5_10DC == 'D', '(-)', '   ') + '   '
 			_sLinImp += transform ((_sArqTrb) -> saldo, "@E 999,999,999.99")
-			_sLinImp += iif ((_sArqTrb) -> ZX5_10DC == 'D', '(-)', '    ')
+			_sLinImp += iif ((_sArqTrb) -> ZX5_10DC == 'D', '(-)  ', '     ')
 			_sLinImp += dtoc ((_sArqTrb) -> e2_vencrea)
 
 			if li > _nMaxLin - 2

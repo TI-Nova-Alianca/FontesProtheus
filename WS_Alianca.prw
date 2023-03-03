@@ -113,6 +113,7 @@
 // 27/01/2023 - Robert  - Criada acao TransfEstqInformarEndDest (GLPI 13097).
 // 31/01/2023 - Robert  - Geracao carga safra passa mandar cargas compartilhadas concatenadas para U_GeraSZE().
 // 10/02/2023 - Robert  - Passa a usar a funcao U__Mata300
+// 24/02/2023 - Robert  - Criado tratamento para tags <Safra> e <CargaSafra> na gravacao de eventos.
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -777,6 +778,8 @@ static function _IncEvt ()
 	if empty (_sErroWS) ; _oEvento:DiasValid  = val (_ExtraiTag ("_oXML:_WSAlianca:_DiasValid", .F., .F.)) ;  endif
 	if empty (_sErroWS) ; _oEvento:ChaveNFe   = _ExtraiTag ("_oXML:_WSAlianca:_ChaveNFe",       .F., .F.) ;   endif
 	if empty (_sErroWS) ; _oEvento:MotProrTit = _ExtraiTag ("_oXML:_WSAlianca:_MotProrrogTit",  .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:Safra      = _ExtraiTag ("_oXML:_WSAlianca:_Safra",          .F., .F.) ;   endif
+	if empty (_sErroWS) ; _oEvento:CargaSafra = _ExtraiTag ("_oXML:_WSAlianca:_CargaSafra",     .F., .F.) ;   endif
 	if empty (_sErroWS)
 		if ! _oEvento:Grava ()
 			_SomaErro ("Erro na gravacao do objeto evento")
@@ -784,9 +787,9 @@ static function _IncEvt ()
 			_sMsgRetWS = "Evento gravado com sucesso"
 		endif
 	endif
-//	U_Log2 ('info', 'Finalizando ' + procname ())
 Return
-//
+
+
 // --------------------------------------------------------------------------
 // Interface para deletar eventos genericos
 static function _DelEvt ()

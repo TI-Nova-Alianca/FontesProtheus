@@ -13,6 +13,8 @@
 // 24/01/2022 - Robert - Vamos usar etiquetas no AX02, mesmo sem integracao com FullWMS (GLPI 11515).
 //                     - Funcao EtqPllGN (interna) migrada para fonte externo ZA1GN.
 // 02/02/2022 - Robert - Melhoria mensagens e tela que possibilita alterar qt.por embalagem (GLPI 11557)
+// 24/02/2023 - Robert - Filtrar D1_TP='VD' em vez de B1_UM='LT' por que temos insumos recebidos em litros.
+//                     - Gera etiquetas pelo metodo ClsEtiq:Grava() e nao mais por U_IncEtqPll()
 //
 
 // Como tem muitas colunas na array, vou usar nomes mais amigaveis.
@@ -58,9 +60,16 @@ static function _AndaLogo (_sNF, _sSerie, _sFornece, _sLoja)
 	local _lContinua := .T.
 	local _nPal      := 0
 	local _dDataIni  := date () - 7
+	local _oEtiq     := NIL
 
 	if _lContinua
 		_dDataIni = U_Get ("Buscar notas a partir de", "D", 8, "", "", _dDataIni, .F., '.T.')
+		if valtype (_dDataIni) == 'U'
+			u_help ("Processo cancelado",, .t.)
+			_lContinua = .F.
+		endif
+	endif
+	if _lContinua
 		
 		procregua (10)
 		incproc ("Buscando notas sem etiqueta")
@@ -81,7 +90,6 @@ static function _AndaLogo (_sNF, _sSerie, _sFornece, _sLoja)
 		_oSQL:_sQuery +=       " A2_COD     as CodFornec,"
 		_oSQL:_sQuery +=       " A2_LOJA    as Loja,"
 		_oSQL:_sQuery +=       " D1_SERIE   as Serie,"
-	//	_oSQL:_sQuery +=       " dbo.VA_DTOC (D1_DFABRIC) as DtFabric,"
 		_oSQL:_sQuery +=       " dbo.VA_DTOC (B8_DFABRIC) as DtFabric,"
 		_oSQL:_sQuery +=       " dbo.VA_DTOC (B8_DTVALID) as DtValid,"
 		_oSQL:_sQuery +=       " ISNULL (SA5.A5_VAQTPAL, 0),"
@@ -110,13 +118,14 @@ static function _AndaLogo (_sNF, _sSerie, _sFornece, _sLoja)
 			_oSQL:_sQuery += " AND SD1.D1_SERIE   = '" + _sSerie   + "'"
 		endif
 		_oSQL:_sQuery +=   " AND SD1.D1_COD      = B1_COD"
+		_oSQL:_sQuery +=   " AND SD1.D1_TP != 'VD'"  // Nao queremos, ainda, etiquetar material a granel
 		_oSQL:_sQuery +=   " AND SA2.D_E_L_E_T_  = ''"
 		_oSQL:_sQuery +=   " AND SA2.A2_FILIAL   = '" + xfilial ("SA2") + "'"
 		_oSQL:_sQuery +=   " AND SA2.A2_LOJA     = D1_LOJA"
 		_oSQL:_sQuery +=   " AND SA2.A2_COD      = D1_FORNECE"
 		_oSQL:_sQuery +=   " AND SB1.D_E_L_E_T_  = ''"
 		_oSQL:_sQuery +=   " AND SB1.B1_FILIAL   = '" + xfilial ("SB1") + "'"
-		_oSQL:_sQuery +=   " AND SB1.B1_UM      != 'LT'"  // Granel nao interessa ainda (eventalmente optemos por etiquetas nos tanques ?)
+		// _oSQL:_sQuery +=   " AND SB1.B1_UM      != 'LT'"  // Granel nao interessa ainda (eventalmente optemos por etiquetas nos tanques ?)
 		_oSQL:_sQuery +=   " AND SB1.B1_GRUPO   != '0400'"  // Uvas
 		_oSQL:_sQuery +=   " AND SB1.B1_RASTRO   = 'L'"
 		_oSQL:_sQuery +=   " AND SF4.D_E_L_E_T_  = ''"
@@ -221,7 +230,27 @@ static function _AndaLogo (_sNF, _sSerie, _sFornece, _sLoja)
 					procregua (len (_aPal))
 					for _nPal = 1 to len (_aPal)
 						incproc ("Gerando etiqueta " + cvaltochar (_nPal) + " de " + cvaltochar (len (_aPal)))
-						U_IncEtqPll (_aEtiq [_nEtiq, .CodItem], '', _aPal[_nPal, .nf], _aEtiq [_nEtiq, .Fornece], _aEtiq [_nEtiq, .Loja], _aEtiq [_nEtiq, .nf], _aEtiq [_nEtiq, .Serie], date(), _aEtiq [_nEtiq, 5], '')
+			//			U_IncEtqPll (_aEtiq [_nEtiq, .CodItem], '', _aPal[_nPal, .nf], _aEtiq [_nEtiq, .Fornece], _aEtiq [_nEtiq, .Loja], _aEtiq [_nEtiq, .nf], _aEtiq [_nEtiq, .Serie], date(), _aEtiq [_nEtiq, 5], '')
+
+						_oEtiq := ClsEtiq ():New ()
+						_oEtiq:DtEmis       = date ()
+						_oEtiq:Produto      = _aEtiq [_nEtiq, .CodItem]
+						_oEtiq:Quantidade   = _aPal [_nPal, 2]
+						_oEtiq:DocEntrForn  = _aEtiq [_nEtiq, .Fornece]
+						_oEtiq:DocEntrLoja  = _aEtiq [_nEtiq, .Loja]
+						_oEtiq:DocEntrNum   = _aEtiq [_nEtiq, .nf]
+						_oEtiq:DocEntrSerie = _aEtiq [_nEtiq, .Serie]
+						_oEtiq:DocEntrItem  = _aEtiq [_nEtiq, 5]
+						_oEtiq:QtEtqGrupo   = len (_aPal)
+						_oEtiq:SeqNoGrupo   = _nPal
+						if ! _oEtiq:Grava ()
+							u_help (_oEtiq:UltMsg += "Nao foi possivel gravar a etiqueta.",, .t.)
+							exit
+						endif
+
+
+
+
 					next
 					u_log2 ('debug', 'etiq.geradas')
 					U_EtqPlltG ('', _aEtiq [_nEtiq, .nf], _aEtiq [_nEtiq, .Serie], _aEtiq [_nEtiq, .Fornece], _aEtiq [_nEtiq, .Loja], 'I')

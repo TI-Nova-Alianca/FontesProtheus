@@ -296,11 +296,19 @@ static function _LeDados ()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT MIN (D3_EMISSAO), MAX (D3_EMISSAO)"
 	_oSQL:_sQuery +=   " FROM " + RetSqlName( "SD3" ) + " SD3 "
+	
+	// Nao sei por que motivo o otimizador do SQL decidiu usar o indice 6,
+	// passando de 1 para 44 segundos o tempo desta query. Vou obrigar o
+	// uso do indice 1 ateh descobrir se talvez tenho estatisticas desatualizadas,
+	// sei lah. Robert, 28/02/2023.
+	_oSQL:_sQuery +=   " WITH (INDEX (SD30101)) "
+
 	_oSQL:_sQuery +=  " WHERE SD3.D_E_L_E_T_ <> '*' "
 	_oSQL:_sQuery +=    " AND SD3.D3_FILIAL   = '" + xFilial("SD3") + "' "
 	_oSQL:_sQuery +=    " AND SD3.D3_ESTORNO != 'S'"
 	_oSQL:_sQuery +=    " AND SD3.D3_OP       = '" + _sOP + "'"
-	_oSQL:Log ()
+	_oSQL:PerfMon = .T.  // Habilitar somente para tratar problemas de lentidao
+	//_oSQL:Log ()
 	_aRetQry  = aclone (_oSQL:Qry2Array ())
 	_dPrimMov = stod (_aRetQry [1, 1])
 	_dUltMov  = stod (_aRetQry [1, 2])
@@ -312,6 +320,7 @@ static function _LeDados ()
 	_oSQL:_sQuery +=  " WHERE SD1.D_E_L_E_T_ <> '*' "
 	_oSQL:_sQuery +=    " AND SD1.D1_FILIAL   = '" + xFilial("SD1") + "' "
 	_oSQL:_sQuery +=    " AND SD1.D1_OP       = '" + _sOP + "'"
+	_oSQL:PerfMon = .T.  // Habilitar somente para tratar problemas de lentidao
 	//_oSQL:Log ()
 	_aRetQry  = aclone (_oSQL:Qry2Array ())
 	_dPrimMov = iif (empty (_aRetQry [1, 1]), _dPrimMov, min (_dPrimMov, stod (_aRetQry [1, 1])))
@@ -354,6 +363,7 @@ static function _LeDados ()
 	_oSQL:_sQuery +=    " AND SB1.B1_FILIAL   = '" + xFilial("SB1") + "' "
 	_oSQL:_sQuery +=    " AND SB1.B1_COD      = MOVTOS.D3_COD"
 	_oSQL:_sQuery +=  " GROUP BY MOVTOS.D3_COD, B1_DESC, B1_UM"
+	_oSQL:PerfMon = .T.  // Habilitar somente para tratar problemas de lentidao
 	//_oSQL:Log ()
 	_sAliasQ = _oSQL:Qry2Trb ()
 	_aLinVazia := aclone (U_LinVazia (aHeader))
@@ -382,6 +392,7 @@ static function _LeDados ()
 	_oSQL:_sQuery +=    " AND SD3.D3_ESTORNO != 'S'"
 	_oSQL:_sQuery +=    " AND SD3.D3_OP       = '" + _sOP + "'"
 	_oSQL:_sQuery +=    " AND SD3.D3_CF      LIKE 'PR%'"
+	_oSQL:PerfMon = .T.  // Habilitar somente para tratar problemas de lentidao
 	//_oSQL:Log ()
 	_aRetQry := aclone (_oSQL:Qry2Array (.F., .F.))
 	_nQtGanho = _aRetQry [1, 1]
@@ -409,6 +420,7 @@ static function _LeDados ()
 	_oSQL:_sQuery +=    " AND SG1.G1_INI     <= '" + dtos (sc2 -> c2_datpri) + "' AND SG1.G1_FIM >= '" + dtos (sc2 -> c2_datpri) + "'"
 	_oSQL:_sQuery +=    " AND SG1.G1_REVINI  <= '" + _sRevEstru + "' AND SG1.G1_REVFIM >= '" + _sRevEstru + "'"
 	_oSQL:_sQuery +=  " GROUP BY G1_COMP, B1_DESC, B1_UM"
+	_oSQL:PerfMon = .T.  // Habilitar somente para tratar problemas de lentidao
 	//_oSQL:Log ()
 	_sAliasQ = _oSQL:Qry2Trb ()
 	(_sAliasQ) -> (dbgotop ())
