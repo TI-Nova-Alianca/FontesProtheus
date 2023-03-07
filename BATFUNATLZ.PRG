@@ -39,7 +39,8 @@
 // 03/09/2021 - Claudia - Incluido campos obrigatorios na gravação do cliente. GLPI: 10819
 // 13/09/2021 - Robert  - Limitados tamanhos de alguns campos do SA1 (acusava erro 
 //                        "String or binary data would be truncated" no SQL/DBAccess).
-// 03/05/2022 - Claudia - Incluida a gravação do campo a1_savblq.GLPI: 11922
+// 03/05/2022 - Claudia - Incluida a gravação do campo a1_savblq. GLPI: 11922
+// 07/03/2023 - Claudia - Incluido e-mail de verificação. GLPI: 11901
 //
 // -----------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
@@ -308,6 +309,10 @@ User function BATFUNATLZ()
 		_oBatch:Retorno = 'S'  // "Executou OK?" --> S=Sim;N=Nao;I=Iniciado;C=Cancelado;E=Encerrado automaticamente
 	endif
 
+
+	// verifica se funcionario gerou cliente e se este esta com e-mail
+	_EmailFunCli()
+
 	u_logFim()
 return .T.
 //
@@ -376,8 +381,8 @@ Static Function _Exe2Query()
 	_sQuery += "   FROM LKSRV_SIRH.SIRH.dbo.VA_VFUNCIONARIOS AS FUN"
 	_sQuery += " 		INNER JOIN CC2010 AS CC2"
 	_sQuery += " 			ON (CC2.D_E_L_E_T_  = ''"
-	_sQuery += " 				AND CC2.CC2_EST =  FUN.UF COLLATE DATABASE_DEFAULT"
-	_sQuery += " 	    		AND CC2.CC2_MUN =  UPPER(REPLACE(REPLACE(REPLACE(FUN.CIDADE,'ç','c'),'á','a'),'ã','a')) COLLATE DATABASE_DEFAULT )" 
+	_sQuery += " 				AND CC2.CC2_EST = FUN.UF COLLATE DATABASE_DEFAULT"
+	_sQuery += " 	    		AND CC2.CC2_MUN = UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(FUN.CIDADE,'ç','c'),'á','a'),'ã','a'),'õ','o'),'í','i'),'é','e'),'ú','u')) COLLATE DATABASE_DEFAULT ) "
 	_sQuery += " 		INNER JOIN SZB010 AS SZB"
 	_sQuery += " 			ON (SZB.D_E_L_E_T_  = ''"
 	_sQuery += " 				AND SZB.ZB_COD  = CC2.CC2_VA_SZB)"
@@ -418,3 +423,85 @@ Static Function  _BuscaDadosMun(_wcodmun, _west, _wTipo)
 		_wRet := "-"
 	EndIf
 Return _wRet
+//
+// --------------------------------------------------------------------------
+// E-mail de funcionario/cliente e email
+Static Function _EmailFunCli()
+	Local _aFunc     := {}	
+	Local _x         := 0
+	Local _i         := 0
+	Local _aEmail    := {}
+
+	_oSQL:= ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 	    CPF "
+	_oSQL:_sQuery += "     ,NOME "
+	_oSQL:_sQuery += "     ,EMAIL "
+	_oSQL:_sQuery += " FROM LKSRV_SIRH.SIRH.dbo.VA_VFUNCIONARIOS "
+	_oSQL:_sQuery += " WHERE SITUACAO = '1' "
+	_oSQL:_sQuery += " ORDER BY NOME "
+	_aFunc := aclone(_oSQL:Qry2Array())
+
+	For _x := 1 to Len(_aFunc)
+		_sCgc  := _aFunc[_x,1]
+		_sFunc := _aFunc[_x,2]
+		_sEmail:= _aFunc[_x,3]
+
+		_oSQL:= ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT "
+		_oSQL:_sQuery += "     A1_NOME "
+		_oSQL:_sQuery += "    ,A1_EMAIL "
+		_oSQL:_sQuery += "    ,A1_CGC "
+		_oSQL:_sQuery += " FROM " + RetSQLName ("SA1")
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " AND A1_CGC LIKE '%"+ _sCgc +"'"
+		_aCliente := aclone(_oSQL:Qry2Array())
+
+		If Len(_aCliente) > 0
+			// Funcionario é cliente, mas nao tem e-mail
+			For _i := 1 to Len(_aCliente)
+				If 'lixo' $ (_aCliente[_i,2])
+					AADD(_aEmail, { _aCliente[_i, 1]    ,;
+									_aCliente[_i, 3]    ,;
+									'SIM'				,;
+									'E-MAIL CADASTRADO COMO lixo@novaalianca.coop.br'}) 
+				EndIf
+			Next
+		else
+			// Funcionario que não é cliente
+			If empty(_sEmail)
+				_MsgEmail := "E-MAIL VAZIO NO CADASTRO"
+			else
+				_MsgEmail := "NÃO ENCONTRADO O MUNICIPIO"
+			EndIf
+			AADD(_aEmail, { _sFunc 		,;
+							_sCgc  		,;
+							'NÃO'       ,;
+							_MsgEmail 	}) 
+		EndIf
+	Next
+
+	_sMsg := "<html>"
+	_sMsg += "<h4> Verificação de Funcionários em: " + dtoc(date()) +"</h4>"
+	_sMsg += "<table border='2'>"
+	_sMsg += "    <tr>"
+	_sMsg += "        <td>Nome</td>"
+	_sMsg += "        <td>CPF</td>"
+	_sMsg += "        <td>Possui Cadastro de cliente?</td>"
+	_sMsg += "        <td>Erro</td>"
+	_sMsg += "    </tr>"
+	For _x :=1 to Len(_aEmail)
+		_sMsg += "    <tr>"
+		_sMsg += "        <td>"+ upper(_aEmail[_x, 1]) +"</td>"
+		_sMsg += "        <td>"+ _aEmail[_x, 2]        +"</td>"
+		_sMsg += "        <td>"+ _aEmail[_x, 3]        +"</td>"
+		_sMsg += "        <td>"+ _aEmail[_x, 4]        +"</td>"
+		_sMsg += "    </tr>"
+	Next
+	_sMsg += "</table>"
+	_sMsg += "</html>"
+	U_ZZUNU ({'110'}, "Verificação de Cliente-Funcionário", _sMsg, .F., cEmpAnt, cFilAnt, "") 
+
+Return 
