@@ -9,10 +9,30 @@ User Function claudia ()
 
 	u_help("Nada para executar")
 
-	//u_help("Atualiza GG")
-	//_GLPI12948()
+	//u_help("Atualiza clientes")
+	//_AtuClientes()
 
 Return
+//
+// ------------------------------------------------------------------------------------
+Static Function _AtuClientes()
+	Local _aDados 	:= {}
+	Local _i 		:=0
+
+	_aDados = U_LeCSV ('C:\Temp\clientes.csv', ';')
+
+	for _i := 1 to len (_aDados)
+		_sCod  := PADL(_aDados[_i, 1],6,'0')
+
+		DbSelectArea("SA1")
+		DbSetOrder(1)
+		if DbSeek(xFilial("SA1")+ _sCod,.F.)
+			U_AtuMerc ("SA1", sa1 -> (recno ())) // manda p mercanet
+		endif	
+	Next
+	u_help("Atualizado!")
+Return
+
 // // --------------------------------------------------------------------------
 // //
 // static function _GLPI12948 ()
