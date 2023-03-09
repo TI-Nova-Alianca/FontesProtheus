@@ -57,6 +57,8 @@ user function _MATA300 (_sProdIni, _sProdFim, _sAlmIni, _sAlmFim)
 	if empty (_sUltExec)
 		_lRet300 = .F.
 		U_help ('Erro na execucao automatica do programa MATA300',, .t.)
+	else
+		U_Log2 ('info', '[' + procname () + ']' + _sUltExec)
 	endif
 
 	U_ML_SRArea (_aAreaAnt)

@@ -16,6 +16,8 @@
 // 28/11/2022 - Claudia - Acrescentada a gravação do campo F1_VAFLAG. GLPI: 12841
 // 06/12/2022 - Robert  - Gravacao do campo D1_DESCRI
 // 30/01/2023 - Robert  - Melhoria gravacao eventos.
+// 08/03/2023 - Robert  - Melhorada extracao de campos e gravacao de evento.
+//                      - Acrescentado D1_CONTA = B1_CONTA
 //
 
 #Include "Protheus.ch"
@@ -23,34 +25,106 @@
 
 // -------------------------------------------------------------------------------------------------
 User Function PETRS006()
-	Local _aTRS006   := PARAMIXB
-	Local _aCabec    := _aTRS006[3]
-	Local _aLinha    := _aTRS006[4]
-	Local _lManut    := _aTRS006[5]
-	Local _lEscrit   := _aTRS006[6]
-	local _aRet      := {}
-	local _aAreaAnt  := U_ML_SRArea ()
-	local _aAmbAnt   := U_SalvaAmb ()
-	Local nPosProd 	:= 0
+	local _oEvento  := NIL
+	Local _aTRS006  := PARAMIXB
+	Local _aCabec   := _aTRS006[3]
+	Local _aLinha   := _aTRS006[4]
+//	Local _lManut   := _aTRS006[5]
+//	Local _lEscrit  := _aTRS006[6]
+	local _aRet     := {}
+	local _aAreaAnt := U_ML_SRArea ()
+	local _aAmbAnt  := U_SalvaAmb ()
+	local _nPosProd := 0
+	local _sProduto := ''
+	local _sDoc     := ''
+	local _sSerie   := ''
+	local _sFornece := ''
+	local _sLoja    := ''
+	local _sChvNFe  := ''
+	local _nPos     := 0
 
-	// Grava flag de identificação
-	AADD(_aCabec, {"F1_VAFLAG"	,'P',Nil})
+	U_Log2 ('debug', '[' + procname () + ']_aCabec na entrada:')
+	U_Log2 ('debug', _aCabec)
+	U_Log2 ('debug', '[' + procname () + ']_aLinha na entrada:')
+	U_Log2 ('debug', _aLinha)
 
-	// Preenche descricao do produto
-	If aScan(_aLinha,{|x| x[1] == "D1_COD"}) > 0 
-		nPosProd := aScan(_aLinha,{|x| x[1] == "D1_COD"})
+	// Acrescenta campos especificos na array do cabecalho. Como este P.E. eh
+	// chamado uma vez para cada item da nota, preciso evitar duplicidade
+	if ascan (_aCabec, {|_aVal| alltrim (upper (_aVal [1])) == 'F1_VAFLAG'}) == 0
+		AADD (_aCabec, {"F1_VAFLAG", 'P', Nil})  // P='nota importada pelo painel XML'
+	endif
+
+	// Extrai alguns dados das arrays recebidas.
+	_nPos = ascan (_aCabec, {|_aVal| alltrim (upper (_aVal [1])) == 'F1_CHVNFE'})
+	if _nPos > 0
+		_sChvNFe = _aCabec [_nPos, 2]
+	else
+		u_help ("Nao encontrei o campo F1_CHVNFE na array de dados para geracao da nota. Impossivel buscar dados adicionais.",, .t.)
+	endif
+	_nPos = ascan (_aCabec, {|_aVal| alltrim (upper (_aVal [1])) == 'F1_FORNECE'})
+	if _nPos > 0
+		_sFornece = _aCabec [_nPos, 2]
+	else
+		u_help ("Nao encontrei o campo F1_FORNECE na array de dados para geracao da nota. Impossivel buscar dados adicionais.",, .t.)
+	endif
+	_nPos = ascan (_aCabec, {|_aVal| alltrim (upper (_aVal [1])) == 'F1_LOJA'})
+	if _nPos > 0
+		_sLoja = _aCabec [_nPos, 2]
+	else
+		u_help ("Nao encontrei o campo F1_LOJA na array de dados para geracao da nota. Impossivel buscar dados adicionais.",, .t.)
+	endif
+	_nPos = ascan (_aCabec, {|_aVal| alltrim (upper (_aVal [1])) == 'F1_DOC'})
+	if _nPos > 0
+		_sDoc = _aCabec [_nPos, 2]
+	else
+		u_help ("Nao encontrei o campo F1_DOC na array de dados para geracao da nota. Impossivel buscar dados adicionais.",, .t.)
+	endif
+	_nPos = ascan (_aCabec, {|_aVal| alltrim (upper (_aVal [1])) == 'F1_SERIE'})
+	if _nPos > 0
+		_sSerie = _aCabec [_nPos, 2]
+	else
+		u_help ("Nao encontrei o campo F1_SERIE na array de dados para geracao da nota. Impossivel buscar dados adicionais.",, .t.)
+	endif
+
+	// Preenche dados adicionais do produto. Procurar manter consistencia com
+	// gatilhos que seriam usados na digitacao manual das notas.
+	_nPosProd = ascan (_aLinha, {|_aVal| alltrim (upper (_aVal [1])) == 'D1_COD'})
+	if _nPosProd > 0
+		_sProduto = PadR(_aLinha[_nPosProd, 2], TamSX3('B1_COD')[1])
 		SB1->(dbSetOrder(1))
-		If SB1->(MsSeek(xFilial('SB1') + PadR(_aLinha[nPosProd, 2], TamSX3('B1_COD')[1])))
-			AADD(_aLinha, {"D1_DESCRI"	,sb1 -> b1_desc	,Nil})
+		If SB1->(MsSeek(xFilial('SB1') + _sProduto))
+			AADD(_aLinha, {"D1_DESCRI", sb1 -> b1_desc,  Nil})
+			AADD(_aLinha, {"D1_CONTA",  sb1 -> b1_conta, Nil})
 		else
-			U_Log2 ('erro', '[' + procname () + ']Nao achei o produto!')
+			U_help ("Nao achei o produto '" + _sProduto + "' no cadastro. Impossivel buscar dados adicionais.",, .t.)
 		endif
 	else
-		U_Log2 ('erro', '[' + procname () + ']Nao encontrei D1_COD na array!')
+		U_help ("Nao encontrei o campo D1_COD na array de dados para geracao do item da nota. Impossivel buscar dados adicionais.",, .t.)
 	EndIf
 
-	// Grava alguns eventos e logs.
-	_Logs (_aCabec, _lManut, _lEscrit)
+
+	// Grava evento temporario para rastreio de eventuais chaves perdidas
+	_oEvento := ClsEvent():new ()
+	if IsInCallStack("WFLAUNCHER")
+		_oEvento:Usuario = 'Schedule'  // Para facilitar a identificacao de importacao automatica (schedule)
+		_oEvento:Texto   = "Processando XML apos importacao automatica"
+	else
+		_oEvento:Texto   = "Reprocessando XML via painel"
+	endif
+	_oEvento:CodEven   = "ZBE001"
+	_oEvento:ChaveNFe  = _sChvNFe
+	_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
+	_oEvento:NFEntrada = _sDoc
+	_oEvento:SerieEntr = _sSerie
+	_oEvento:Produto   = _sProduto
+	_oEvento:Fornece   = _sFornece
+	_oEvento:LojaFor   = _sLoja
+	_oEvento:GravaNovo ('DHM')
+
+	U_Log2 ('debug', '[' + procname () + ']_aCabec na saida:')
+	U_Log2 ('debug', _aCabec)
+	U_Log2 ('debug', '[' + procname () + ']_aLinha na saida:')
+	U_Log2 ('debug', _aLinha)
 
 	// Deve sempre retornar cabecalho e itens.
 	_aRet := {_aCabec,_aLinha}
@@ -60,33 +134,6 @@ User Function PETRS006()
 Return _aRet
 
 
-// --------------------------------------------------------------------------
-// Gravação de logs
-static function _Logs (_aCabec, _lManut, _lEscrit)
-	local _oEvento   := NIL
-	local _sChvNFe   := ''
-	local _nPosChave := 0
-
-	// Extrai a chave
-	_nPosChave := ascan (_aCabec, {|_aVal| alltrim (upper (_aVal [1])) == 'F1_CHVNFE'})
-
-	if _nPosChave > 0
-		_sChvNFe = _aCabec [_nPosChave, 2]
-
-		// Grava evento temporario para rastreio de eventuais chaves perdidas
-		_oEvento := ClsEvent():new ()
-		if IsInCallStack("WFLAUNCHER")
-			_oEvento:Usuario = 'Schedule'  // Para facilitar a identificacao de importacao automatica (schedule)
-			_oEvento:Texto   = "Processando XML apos importacao automatica"
-		else
-			_oEvento:Texto   = "Reprocessando XML via painel"
-		endif
-		_oEvento:CodEven   = "ZBE001"
-		_oEvento:ChaveNFe  = _sChvNFe
-		_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
-		_oEvento:GravaNovo ('DHM')
-	endif
-return
 
 /*	Abaixo codigo que recebi como exemplo. Robert, 20/07/2022
 User Function PETRS006()
@@ -99,7 +146,7 @@ User Function PETRS006()
 	Local lEscrit	:= _aTRS006[6]
 	Local nPosQtd	:= 0
 	Local nPosQtSeg := 0
-	Local nPosProd 	:= 0
+	Local _nPosProd 	:= 0
 	// 	Local cLog 		:= ''
 	Local nN 		:= 1
 	// Local nPosForn	:= aScan(_aCabec,{|x| x[1] == "F1_FORNECE"})
@@ -120,12 +167,12 @@ User Function PETRS006()
 	EndIf
 
 	If aScan(_aLinha,{|x| x[1] == "D1_COD"}) > 0 
-		nPosProd := aScan(_aLinha,{|x| x[1] == "D1_COD"})
+		_nPosProd := aScan(_aLinha,{|x| x[1] == "D1_COD"})
 	EndIf
 
-	// Alert(xFilial('SB1') + PadR(_aLinha[nPosProd, 2], TamSX3('B1_COD')[1]))
+	// Alert(xFilial('SB1') + PadR(_aLinha[_nPosProd, 2], TamSX3('B1_COD')[1]))
 	SB1->(dbSetOrder(1))
-	If SB1->(MsSeek(xFilial('SB1') + PadR(_aLinha[nPosProd, 2], TamSX3('B1_COD')[1])))
+	If SB1->(MsSeek(xFilial('SB1') + PadR(_aLinha[_nPosProd, 2], TamSX3('B1_COD')[1])))
 		// cLog := ''
 		// Alert('Found')
 		If nPosQtSeg > 0
@@ -172,7 +219,7 @@ User Function PETRS006()
 	EndIf
 
 //	SB6->(dbSetOrder(1))
-//	If (SB6->(MsSeek(xFilial('SB6') + PadR(_aLinha[nPosProd, 2], TamSX3('B1_COD')[1]) + PadR(_acabec[nPosForn, 2], TamSX3('B6_CLIFOR')[1]) + PadR(_acabec[nPosLoja, 2], TamSX3('B6_LOJA')[1]))))
+//	If (SB6->(MsSeek(xFilial('SB6') + PadR(_aLinha[_nPosProd, 2], TamSX3('B1_COD')[1]) + PadR(_acabec[nPosForn, 2], TamSX3('B6_CLIFOR')[1]) + PadR(_acabec[nPosLoja, 2], TamSX3('B6_LOJA')[1]))))
 //	SF4->(dbSetOrder(1))
 //	If SF4->(MsSeek(xFilial('SF4') + SB6->B6_TES))
 //	AADD(_aLinha, {"D1_TES", SF4->F4_TESDV, Nil})	 	

@@ -29,6 +29,7 @@
 // 20/04/2021 - Robert - Campo F2_DtEntr (padrao, mas atualmente vazio) substitui o campo customizado F2_vaDtEntr (GLPI 9884).
 //                     - Incluidas tags para catalogo de fontes.
 // 11/03/2022 - Robert - Consulta de logs de 'CARGASAFRA' passa a validar novos campos ZN_SAFRA e ZN_CARGSAF.
+// 09/03/2023 - Robert - Criada opcao de consulta por ChaveNFe
 //
 
 #include "rwmake.ch"
@@ -189,8 +190,10 @@ static function _LeDados (_sOQue, _sChave1, _sChave2, _sChave3, _sChave4, _sChav
 			_sQuery += "   and ZN_CHAVE   = '" + _sChave2 + "'"
 		case upper (_sOQue) == "EVENTO"
 			_sQuery += "   and ZN_CODEVEN = '" + _sChave1 + "'"
+		case upper (_sOQue) == "CHAVENFE"
+			_sQuery += "   and ZN_CHVNFE = '" + _sChave1 + "'"
 		otherwise
-			u_help ("Consulta desconhecida")
+			u_help ("Consulta desconhecida no programa " + procname (),, .t.)
 			_lContinua = .F.
 		endcase
 			U_Log2 ('debug', '[' + procname () + ']' +_sQuery)
