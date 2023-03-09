@@ -2238,7 +2238,8 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 	// aTitulos [6]:= cLoteFin    (Lote Financeiro da baixa)
 	// aTitulos [7]:= cNatureza (Natureza do movimento bancario)
 	// aTitulos [8]:= dBaixa     (Data da baixa)
-	// Caso a contabilizacao seja online e a tela de contabilizacao possa ser mostrada em caso de erro no lancamento (falta de conta, debito/credito nao batem, etc) a baixa automatica em lote nao podera ser utilizada.
+	// Caso a contabilizacao seja online e a tela de contabilizacao possa ser mostrada em caso de erro no lancamento
+	// (falta de conta, debito/credito nao batem, etc) a baixa automatica em lote nao podera ser utilizada.
 	// Somente sera processada se: 
 	// MV_PRELAN = S
 	// MV_CT105MS = N
@@ -2287,8 +2288,14 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 
 	//	_aTit [8] = dDataBase
 		_aTit [8] = iif (empty (_dDtBxTran), dDataBase, _dDtBxTran)
+		U_Log2 ('debug', _aTit)
 
 		// Ajusta parametros de contabilizacao para NAO, pois a rotina automatica nao aceita.
+		SetMVValue ("FIN090", "MV_PAR01", 2)  // Mostra lctos contabeis [S/N]
+		SetMVValue ("FIN090", "MV_PAR02", 2)  // Contabiliza online [S/N]
+		SetMVValue ("FIN090", "MV_PAR07", 2)  // Seleciona filiais [S/N]
+		SetMVValue ("FIN090", "MV_PAR08", 1)  // Contabiliza na filial atual [S/N]
+		SetMVValue ("FIN090", "MV_PAR09", 2)  // Permite usar banco do bordero [S/N]
 		pergunte ('FIN090    ', .f.)
 
 		lMsErroAuto = .F.
@@ -2297,7 +2304,10 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 		If lMsErroAuto
 			_lContinua = .F.
 			::UltMsg += u_LeErro (memoread (NomeAutoLog ()))
+			U_Log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + ']' + ::UltMsg)
 			MostraErro()
+		else
+			U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']FINA090 retornou OK')
 		endif
 	endif
 
@@ -2320,7 +2330,7 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 		_oSQL:_sQuery +=   " AND SE5.E5_PARCELA = '" + se2 -> e2_parcela + "'"
 		_oSQL:_sQuery +=   " AND SE5.E5_TIPO    = '" + se2 -> e2_tipo    + "'"
 		_oSQL:_sQuery +=   " AND SE5.E5_VACHVEX = ''"
-		//_oSQL:Log ()
+		_oSQL:Log ()
 		_nRegSE5 = _oSQL:RetQry ()
 		u_log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + '] recno se5 para atualizar: ' + cvaltochar (_nRegSE5))
 		if _nRegSE5 > 0
@@ -2332,6 +2342,7 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 			u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + '] Regravei historico do SE5 para: ' + se5 -> e5_histor)
 		else
 			u_log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + '] Nao encontrei SE5 para atualizar historico e chave externa.')
+			_lContinua = .F.
 		endif
 		
 		if fk2 -> fk2_valor == _nSaldo .and. fk2 -> fk2_motbx == 'NOR'  // Para ter mais certeza de que estah posicionado no registro correto.
@@ -2339,6 +2350,8 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 			fk2 -> fk2_histor = left (alltrim (fk2 -> fk2_histor) + ' TR.CC.FIL.' + ::FilDest + ' ' + ::Histor, tamsx3 ("FK2_HISTOR")[1])
 			msunlock ()
 			u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + '] Regravei historico do FK2 para: ' + fk2 -> fk2_histor)
+		else
+			U_Log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + '] Registro na tabela FK2 nao eh o que eu esperava!')
 		endif
 	endif
 

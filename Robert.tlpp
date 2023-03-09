@@ -28,7 +28,7 @@ user function robert ()
 	local _lContinua := .T.
 
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '01' modulo 'FIN'
+		prepare environment empresa '01' filial '07' modulo 'FIN'
 		private cModulo   := 'FIN'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -69,7 +69,8 @@ user function robert ()
 		// _BatLimp ()
 		// _BatOcor ()
 		// _batFull ()
-		// _BatSafr ()
+		//_BatSafr ()
+		//_BatTrSZI ()
 		// _BatXML ()
 		// _batZBE ()
 		// _SimCtb ()
@@ -93,18 +94,33 @@ user function robert ()
 		// _gerasze ()
 		//_CargSaf ()
 		// _AtuSB1 ()
-		//_ctbANC ()
+		// _ctbANC ()
 		// _ST_MG ()
 		// _PreNF ()
 		// _SZI ()
 		// _verif ()
 		// _AjLoteEnd ()
 		// _GLPI13221 ()
+		// _VACCR2 ()
 
 		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
+return
+
+
+// --------------------------------------------------------------------------
+static function _VACCR2 ()
+	cPerg := 'VA_CCR2'
+	U_GravaSX1 (cPerg, '01', '0328           ')  // prod pai ini
+	U_GravaSX1 (cPerg, '02', '0348           ')  // prod pai fim
+	U_GravaSX1 (cPerg, '03', 'PA')  // tipo pai ini
+	U_GravaSX1 (cPerg, '04', 'PA')  // tipo pai fim
+	U_GravaSX1 (cPerg, '05', 1)  // 1=apenas pais ativos; 2=todos
+	U_GravaSX1 (cPerg, '06', '')  // LINHA COML pai ini
+	U_GravaSX1 (cPerg, '07', 'Z')  // LINHA COML pai fim
+	u_va_ccr2 (.t., .t.)
 return
 
 
@@ -256,8 +272,8 @@ return
 
 // --------------------------------------------------------------------------
 static function _ctbanc ()
-	U_GravaSX1 ("CTBANC", '01', stod ('20220131'))
-	U_CtbANC1 (.t.)
+	U_GravaSX1 ("CTBANC", '01', stod ('20220331'))
+	U_CtbANC (.t.)
 return
 
 // --------------------------------------------------------------------------
@@ -652,92 +668,24 @@ return
 
 // --------------------------------------------------------------------------
 static function _BatSafr ()
-/*	// Gera titulo FUNRURAL para notas de safra que faltou
-	local _oSQL := nil
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += "WITH C AS ("
-	_oSQL:_sQuery += " select F1_FILIAL, F1.F1_EMISSAO, F1_DOC, F1_SERIE"
-	_oSQL:_sQuery += " , F1_FORNECE, F1_LOJA, F1.F1_VALMERC, F1.F1_VALBRUT, F1.F1_DESPESA, F1.F1_CONTSOC"
-	_oSQL:_sQuery += " , (SELECT SUM (E2_VALOR)"
-	_oSQL:_sQuery += " FROM SE2010 SE2"
-	_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery += " AND SE2.E2_FILIAL = F1_FILIAL"
-	_oSQL:_sQuery += " AND SE2.E2_FORNECE = F1_FORNECE"
-	_oSQL:_sQuery += " AND E2_LOJA = F1_LOJA"
-	_oSQL:_sQuery += " AND SE2.E2_NUM = F1_DOC"
-	_oSQL:_sQuery += " AND SE2.E2_PREFIXO = F1_SERIE) AS SOMA_SE2"
-	_oSQL:_sQuery += " FROM SF1010 AS F1"
-	_oSQL:_sQuery += " WHERE F1.D_E_L_E_T_ = ''"
-	_oSQL:_sQuery += " AND EXISTS (SELECT * FROM SD1010 AS D1"
-	_oSQL:_sQuery += " WHERE F1.F1_FILIAL = D1.D1_FILIAL"
-	_oSQL:_sQuery += " AND  F1.F1_DOC = D1.D1_DOC"
-	_oSQL:_sQuery += " AND F1.F1_SERIE = D1.D1_SERIE"
-	_oSQL:_sQuery += " AND F1.F1_FORNECE = D1.D1_FORNECE"
-	_oSQL:_sQuery += " AND F1.F1_LOJA = D1.D1_LOJA"
-	_oSQL:_sQuery += " AND D1.D1_TES = '310')"
-	_oSQL:_sQuery += " AND F1.F1_EMISSAO BETWEEN '20230101' AND '20230229'"
-	_oSQL:_sQuery += " AND F1.F1_VASAFRA = '2023'"
-	_oSQL:_sQuery += " AND F1.F1_CONTSOC > 0"
-	_oSQL:_sQuery += " AND F1.F1_FILIAL = '" + xfilial ("SF1") + "'"
-	_oSQL:_sQuery += " ) select * from C"
-	_oSQL:_sQuery += " WHERE NOT EXISTS (SELECT * FROM SE2010 SE2 WHERE SE2.D_E_L_E_T_ = ''
-	_oSQL:_sQuery += " 	AND SE2.E2_FILIAL = F1_FILIAL
-	_oSQL:_sQuery += " 	AND SE2.E2_NUM = F1_DOC
-	_oSQL:_sQuery += " 	AND SE2.E2_PREFIXO = F1_SERIE
-	_oSQL:_sQuery += " 	AND SE2.E2_FORNECE = '000119'
-	_oSQL:_sQuery += " 	AND SE2.E2_LOJA = '00'
-	_oSQL:_sQuery += " 	AND SE2.E2_TIPO = 'TX')
-	_oSQL:_sQuery += " AND EXISTS (SELECT * FROM SA2010 SA2 WHERE SA2.D_E_L_E_T_ = '' AND A2_TIPORUR = 'F' AND A2_TPESSOA = 'PF' AND A2_RECINSS = 'S')
-	_oSQL:Log ('[' + procname () + ']')
-	_sAliasQ = _oSQL:Qry2Trb (.t.)
-	(_sAliasQ) -> (dbgotop ())
-	do while ! (_sAliasQ) -> (eof ())
-		_aAutoSE2 := {}
-		aadd (_aAutoSE2, {"E2_PREFIXO", (_sAliasQ) -> f1_serie,           NIL})
-		aadd (_aAutoSE2, {"E2_NUM"    , (_sAliasQ) -> f1_doc,             Nil})
-		aadd (_aAutoSE2, {"E2_TIPO"   , 'TX',        Nil})
-		aadd (_aAutoSE2, {"E2_FORNECE", '000119',         Nil})
-		aadd (_aAutoSE2, {"E2_LOJA"   , '00',         Nil})
-		aadd (_aAutoSE2, {"E2_EMISSAO", (_sAliasQ) -> f1_emissao,         Nil})
-		aadd (_aAutoSE2, {"E2_VENCTO" , stod (substr (dtos (lastday ((_sAliasQ) -> f1_emissao)+1), 1, 6) + '20'), Nil})  // sempre no dia 20 do mes seguinte
-//		aadd (_aAutoSE2, {"E2_VENCREA", DataValida (_dDtVenc),    Nil})
-		aadd (_aAutoSE2, {"E2_VALOR"  , (_sAliasQ) -> f1_contsoc,           Nil})
-		aadd (_aAutoSE2, {"E2_HIST"   , 'GLPI 13130',      Nil})
-		aadd (_aAutoSE2, {"E2_PARCELA", '1',         Nil})
-		aadd (_aAutoSE2, {"E2_TITPAI" , (_sAliasQ) -> f1_serie + (_sAliasQ) -> f1_doc + 'A' + 'NF ' + (_sAliasQ) -> f1_fornece + (_sAliasQ) -> f1_loja, Nil})
-		aadd (_aAutoSE2, {"E2_ORIGEM" , "MATA100" ,        Nil})
-		aadd (_aAutoSE2, {"E2_NATUREZ", 'CSS',           Nil})
-		_aAutoSE2 := aclone (U_OrdAuto (_aAutoSE2))
-		u_log2 ('debug', _aAutoSE2)
-
-		// Ajusta parametros da rotina.
-		pergunte ('FIN050    ', .f.)
-
-		lMsErroAuto	:=	.f.
-		lMsHelpAuto	:=	.f.
-		dbselectarea ("SE2")
-		dbsetorder (1)
-		MsExecAuto({ | x,y,z | Fina050(x,y,z) }, _aAutoSE2,, 3)
-		if lMsErroAuto
-			mostraerro ()
-			exit
-		else
-			U_Log2 ('info', '[' + procname () + ']Titulo TX gerado!')
-		endif
-		(_sAliasQ) -> (dbskip ())
-	//	exit  // um por vez...
-	enddo
-*/
 //	u_batsafr ('CargasSemContranota')  // cargas sem contranota
-	u_batsafr ('ConferirParcelamento')  // conferencia geracao das parcelas financeiro
+//	u_batsafr ('ConferirParcelamento')  // conferencia geracao das parcelas financeiro
 //	u_batsafr ('ContranotasSemCarga')  // contranotas sem carga
 //	u_batsafr ('ConferirFrete')  // conferencia fretes
 //	u_batsafr ('MailAcompanhamento')  // e-mail diario de acompanhamento de safra
 //	u_batsafr ('GerarSZI')  // gera SZI a partir das parcelas
 //	u_batsafr ('ConferirSZI')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
 //	u_batsafr ('TransfTitNaoAssocParaMatriz')  // Transfere (das filiais para a matriz) os titulos de nao associados.
-//	u_batsafr ('TransfSZIParaMatriz')  // Transfere SZI para a matriz (normalmente ao gerar o SZI jah faz isso, mas para garantir...)
+	putmv ("MV_CT105MS", 'N')
+	putmv ("MV_ALTLCTO", 'N')
+	putmv ("MV_PRELAN", 'S')
+	u_batsafr ('TransfSZIParaMatriz')  // Transfere SZI para a matriz (normalmente ao gerar o SZI jah faz isso, mas para garantir...)
+return
+
+// --------------------------------------------------------------------------
+static function _BatTrSZI ()
+//	U_MudaLog ("U_BatTrSZI.log")
+	U_BatTrSZI('002486','01','001517','01','07','01','13','20230125',872.12)
 return
 
 // --------------------------------------------------------------------------
@@ -3980,18 +3928,6 @@ return
 	U_GravaSX1 (cPerg, '14', 'O')    // parcela final
 	U_GravaSX1 (cPerg, '15', 2)      // regrava se ja tiver preco {"Sim", "Nao"}
 	U_VA_ZZ9P (.t.)
-return
-*/
-/*
-	cPerg := 'VA_CCR2'
-	U_GravaSX1 (cPerg, '01', '0345           ')  // prod pai ini
-	U_GravaSX1 (cPerg, '02', '0348           ')  // prod pai fim
-	U_GravaSX1 (cPerg, '03', 'PA')  // tipo pai ini
-	U_GravaSX1 (cPerg, '04', 'PA')  // tipo pai fim
-	U_GravaSX1 (cPerg, '05', 1)  // 1=apenas pais ativos; 2=todos
-	U_GravaSX1 (cPerg, '06', '')  // LINHA COML pai ini
-	U_GravaSX1 (cPerg, '07', 'Z')  // LINHA COML pai fim
-	u_va_ccr2 (.t.)
 return
 */
 /*	// Gera adiantamento 2a. parcela safra 2020

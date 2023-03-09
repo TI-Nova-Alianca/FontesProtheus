@@ -99,6 +99,7 @@
 // 18/11/2022 - Claudia - Incluida gravação de parametros pela nova função SetMVValue. GLPI: 12801
 // 18/01/2023 - Robert  - Nao gera boleto tipo IMP quando em modo de impressao automatica (GLPI 12779).
 // 27/02/2023 - Robert  - Passa a validar E1_VACHVEX e nao mais E1_TIPO na impr.boletos de cobranca de ST (GLPI 12779)
+// 08/03/2023 - Robert  - Nao imprimia tipo TRS (necessario para cobranca de ST)
 //
 
 // --------------------------------------------------------------------------------------------------------------
@@ -348,7 +349,8 @@ Static Function MontaRel()
 			Loop
 		EndIf
 		
-		If SE1->E1_TIPO # "NF" .And. SE1->E1_TIPO # "DP"
+	//	If SE1->E1_TIPO # "NF" .And. SE1->E1_TIPO # "DP"
+		If SE1->E1_TIPO # "NF" .And. SE1->E1_TIPO # "DP" .And. SE1->E1_TIPO # "TRS"
 			u_log2 ('debug', "Titulo do tipo " + SE1->E1_TIPO + " nao gera boleto.")
 			DbSelectArea("SE1")
 			DbSkip()

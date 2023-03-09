@@ -35,6 +35,7 @@
 // 01/09/2020 - Robert - Inseridas tags para catalogo de fontes
 //                     - Revisao logs, remocao chamadas funcao de geracao de mensagens na console.
 // 29/03/2021 - Robert - Tratamento para campo ZZ6_JSON (GLPI 9592).
+// 06/03/2023 - Robert - Criado atributo Prioridade (antes gravava sempre 5)
 //
 
 #include "protheus.ch"
@@ -76,6 +77,7 @@ CLASS ClsBatch
 	data TempoLim
 	data AmbTeste
 	data ArqLog
+	data Prioridade
 
 	// Declaração dos Métodos da Classe
 	METHOD New ()
@@ -89,61 +91,63 @@ ENDCLASS
 METHOD New (_nRegZZ6) Class ClsBatch
 	local _aAreaZZ6 := 0
 
-	::Seq       := ""
-	::CodPro    := ""
-	::Dados     := ""
-	::EmpDes    := cEmpAnt  //""
-	::FilDes    := cFilAnt  //""
-	::JSON      := ""
-	::Comando   := ""
-	::DataBase  := ctod ('')
-	::AnoMes    := ""
-	::Modulo    := 0
-	::TmpRetent := 0
-	::MaxTent   := 0
-	::AguardaWF := ''
-	::Retorno   := ''  // "Executou OK?" --> S=Sim;N=Nao;I=Iniciado;C=Cancelado;E=Encerrado automaticamente
-	::Mensagens := ''
-	::HrIni     := time ()
-	::HrFim     := '24:00'
-	::DtIni     := date ()
-	::DiaSem    := '1234567'
-	::Period    := 'U'
-	::ACada     := 0
-	::ACadaU    := ''
-	::TempoLim  := 0
-	::AmbTeste  := 'N'  // Habilitado a executar em ambiente de testes [S/N]
-	::ArqLog    := ''
-	::Ativo     := 'S'  // Ativo por default
+	::Seq        := ""
+	::CodPro     := ""
+	::Dados      := ""
+	::EmpDes     := cEmpAnt  //""
+	::FilDes     := cFilAnt  //""
+	::JSON       := ""
+	::Comando    := ""
+	::DataBase   := ctod ('')
+	::AnoMes     := ""
+	::Modulo     := 0
+	::TmpRetent  := 0
+	::MaxTent    := 0
+	::AguardaWF  := ''
+	::Retorno    := ''  // "Executou OK?" --> S=Sim;N=Nao;I=Iniciado;C=Cancelado;E=Encerrado automaticamente
+	::Mensagens  := ''
+	::HrIni      := time ()
+	::HrFim      := '24:00'
+	::DtIni      := date ()
+	::DiaSem     := '1234567'
+	::Period     := 'U'
+	::ACada      := 0
+	::ACadaU     := ''
+	::TempoLim   := 0
+	::AmbTeste   := 'N'  // Habilitado a executar em ambiente de testes [S/N]
+	::ArqLog     := ''
+	::Ativo      := 'S'  // Ativo por default
+	::Prioridade := 5  // Prioridade: 0=mais prioritaroi;9=menor prioritario. Default = prioridade media
 	
 	// Se recebeu o numero do registro no ZZ6, preenche o objeto com dados do arquivo.
 	if valtype (_nRegZZ6) == 'N'
 		_aAreaZZ6 := zz6 -> (getarea ())
 		zz6 -> (dbgoto (_nRegZZ6))
-		::Seq       := zz6 -> zz6_seq
-		::CodPro    := zz6 -> zz6_codpro
-		::Dados     := zz6 -> zz6_dados
-		::EmpDes    := zz6 -> zz6_empdes
-		::FilDes    := zz6 -> zz6_fildes
-		::JSON      := zz6 -> zz6_json
-		::Comando   := alltrim (zz6 -> zz6_cmd)
-		::DataBase  := zz6 -> zz6_dtbase
-		::AnoMes    := zz6 -> zz6_anomes
-		::Modulo    := zz6 -> zz6_modulo
-		::TmpRetent := zz6 -> zz6_minret
-		::MaxTent   := zz6 -> zz6_maxten
-		::AguardaWF := zz6 -> zz6_agwf
-		::DtIni     := zz6 -> zz6_DtIni
-		::HrIni     := zz6 -> zz6_HrIni
-		::HrFim     := zz6 -> zz6_HrFim
-		::Period    := zz6 -> zz6_Period
-		::DiaSem    := zz6 -> zz6_DiaSem
-		::ACada     := zz6 -> zz6_ACada
-		::ACadaU    := zz6 -> zz6_ACadaU
-		::TempoLim  := zz6 -> zz6_TmpLim
-		::AmbTeste  := zz6 -> zz6_AmbTst
-		::ArqLog    := zz6 -> zz6_ArqLog
-		::Ativo     := zz6 -> zz6_Ativo
+		::Seq        := zz6 -> zz6_seq
+		::CodPro     := zz6 -> zz6_codpro
+		::Dados      := zz6 -> zz6_dados
+		::EmpDes     := zz6 -> zz6_empdes
+		::FilDes     := zz6 -> zz6_fildes
+		::JSON       := zz6 -> zz6_json
+		::Comando    := alltrim (zz6 -> zz6_cmd)
+		::DataBase   := zz6 -> zz6_dtbase
+		::AnoMes     := zz6 -> zz6_anomes
+		::Modulo     := zz6 -> zz6_modulo
+		::TmpRetent  := zz6 -> zz6_minret
+		::MaxTent    := zz6 -> zz6_maxten
+		::AguardaWF  := zz6 -> zz6_agwf
+		::DtIni      := zz6 -> zz6_DtIni
+		::HrIni      := zz6 -> zz6_HrIni
+		::HrFim      := zz6 -> zz6_HrFim
+		::Period     := zz6 -> zz6_Period
+		::DiaSem     := zz6 -> zz6_DiaSem
+		::ACada      := zz6 -> zz6_ACada
+		::ACadaU     := zz6 -> zz6_ACadaU
+		::TempoLim   := zz6 -> zz6_TmpLim
+		::AmbTeste   := zz6 -> zz6_AmbTst
+		::ArqLog     := zz6 -> zz6_ArqLog
+		::Ativo      := zz6 -> zz6_Ativo
+		::Prioridade := zz6 -> zz6_Prior
 		zz6 -> (restarea (_aAreaZZ6))
 	endif
 Return Self
@@ -207,7 +211,7 @@ METHOD Grava () Class ClsBatch
 		zz6 -> zz6_DtBase  = ::DataBase
 		zz6 -> zz6_AnoMes  = ::AnoMes
 		zz6 -> zz6_Modulo  = ::Modulo
-		zz6 -> zz6_Prior   = '5'
+		zz6 -> zz6_Prior   = ::Prioridade  // '5'
 		zz6 -> zz6_minret  = ::TmpRetent
 		zz6 -> zz6_agwf    = ::AguardaWF
 		zz6 -> zz6_TmpLim  = ::TempoLim

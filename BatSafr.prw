@@ -36,6 +36,8 @@
 // 08/11/2022 - Robert - Removidas algumas linhas comentariadas.
 // 02/03/2023 - Robert - Aviso de contranotas sem carga passa a usar ClsAviso.
 // 15/02/2023 - Robert - Passa a mandar avisos pelo NaWeb e nao mais por e-mail.
+// 03/03/2023 - Robert - Campo VA_VNOTAS_SAFRA.TIPO_FORNEC passa a ter novo conteudo.
+// 06/03/2023 - Robert - Batch agendado na matriz para receber transf.do SZI passa a ter menos prioridade.
 //
 
 // --------------------------------------------------------------------------
@@ -631,7 +633,8 @@ static function _GeraSZI ()
 	_oSQL:_sQuery +=    " AND V.SERIE        = SE2.E2_PREFIXO"
 	_oSQL:_sQuery +=    " AND V.DOC          = SE2.E2_NUM"
 	_oSQL:_sQuery +=    " AND V.TIPO_NF      IN ('C', 'V')"
-	_oSQL:_sQuery +=    " AND V.TIPO_FORNEC  = 'ASSOCIADO'"
+//	_oSQL:_sQuery +=    " AND V.TIPO_FORNEC  = 'ASSOCIADO'"
+	_oSQL:_sQuery +=    " AND V.TIPO_FORNEC  LIKE '1%'"  // 1-ASSOCIADO
 	_oSQL:_sQuery +=    " AND NOT EXISTS (SELECT *"  // Ainda nao deve existir na conta corrente
 	_oSQL:_sQuery +=                  " FROM " + RetSQLName ("SZI") + " SZI "
 	_oSQL:_sQuery +=                 " WHERE SZI.ZI_FILIAL  = SE2.E2_FILIAL"
@@ -726,7 +729,8 @@ static function _ConfSZI ()
 	_oSQL:_sQuery +=                   " AND V.SERIE       = SE2.E2_PREFIXO"
 	_oSQL:_sQuery +=                   " AND V.DOC         = SE2.E2_NUM"
 	_oSQL:_sQuery +=                   " AND V.TIPO_NF     IN ('C', 'V')"
-	_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC = 'ASSOCIADO')"
+//	_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC = 'ASSOCIADO')"
+	_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC LIKE '1%')"  // 1-ASSOCIADO
 	_oSQL:_sQuery +=  " ORDER BY SE2.E2_FORNECE, SE2.E2_LOJA, SE2.E2_NUM, SE2.E2_PREFIXO, SE2.E2_PARCELA"
 	_oSQL:Log ()
 	_sAliasQ = _oSQL:Qry2Trb (.T.)
@@ -910,7 +914,8 @@ static function _TransFil ()
 		_oSQL:_sQuery +=                   " AND V.SERIE       = SE2.E2_PREFIXO"
 		_oSQL:_sQuery +=                   " AND V.DOC         = SE2.E2_NUM"
 		_oSQL:_sQuery +=                   " AND V.TIPO_NF     IN ('C', 'V')"
-		_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC = 'NAO ASSOCIADO')"
+//		_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC = 'NAO ASSOCIADO')"
+		_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC LIKE '2%')"  // 2-NAO ASSOCIADO
 		_oSQL:_sQuery +=    " AND SE2.E2_SALDO = E2_VALOR"
 
 		// Nao quero pegar as de hoje para evitar transferir enquanto tem alguem gerando contranota, ou o outro batch gerando SZI.
@@ -1031,6 +1036,7 @@ static function _TransFil ()
 					_oBatch:Retorno = 'N'
 					_lContinua = .F.
 				endif
+				_oBatchDst:Prioridade = 8  // Nao tenho grande urgencia na execucao deste batch
 			endif
 			(_sAliasQ) -> (dbskip ())
 		enddo
@@ -1084,8 +1090,14 @@ static function _TrSZIMat ()
 		_oSQL:_sQuery +=                   " AND V.SERIE       = SE2.E2_PREFIXO"
 		_oSQL:_sQuery +=                   " AND V.DOC         = SE2.E2_NUM"
 		_oSQL:_sQuery +=                   " AND V.TIPO_NF     IN ('C', 'V')"
-		_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC = 'ASSOCIADO'"
-		_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC = 'ASSOCIADO')"
+//		_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC = 'ASSOCIADO'"
+		_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC LIKE '1%')"  // 1=ASSOCIADO
+
+
+		// TESTES
+		//_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC + ZI_LOJASSO + ZI_SEQ = '002486' + '01' + '001517'"
+
+
 		_oSQL:_sQuery +=  " ORDER BY SE2.E2_FORNECE, SE2.E2_LOJA, SE2.E2_NUM, SE2.E2_PREFIXO, SE2.E2_PARCELA"
 		_oSQL:Log ()
 		_aRegSZI = _oSQL:Qry2Array (.f., .f.)
