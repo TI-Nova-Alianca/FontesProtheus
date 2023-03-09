@@ -41,6 +41,7 @@
 //                        "String or binary data would be truncated" no SQL/DBAccess).
 // 03/05/2022 - Claudia - Incluida a gravação do campo a1_savblq. GLPI: 11922
 // 07/03/2023 - Claudia - Incluido e-mail de verificação. GLPI: 11901
+// 09/03/2023 - Claudia - Incluida regra para envio do e-mail apenas nas segundas-feiras.
 //
 // -----------------------------------------------------------------------------------------------------------------
 #include "colors.ch"
@@ -59,7 +60,7 @@ User function BATFUNATLZ()
 	private _sQuery  := ''
 	
 	u_logIni()
-	u_log("Iniciando BATFUNATLZ em", date (), time ())
+	u_log("Iniciando BATFUNATLZ em", date(), time ())
 
 	_sErroAuto := ''  		// Para a funcao u_help gravar mensagens.
 	_oBatch:Retorno = 'S'  	// "Executou OK?" --> S=Sim;N=Nao;I=Iniciado;C=Cancelado;E=Encerrado automaticamente
@@ -311,7 +312,9 @@ User function BATFUNATLZ()
 
 
 	// verifica se funcionario gerou cliente e se este esta com e-mail
-	_EmailFunCli()
+	If DOW(DATE()) == 2
+		_EmailFunCli()
+	EndIf
 
 	u_logFim()
 return .T.
@@ -483,25 +486,27 @@ Static Function _EmailFunCli()
 		EndIf
 	Next
 
-	_sMsg := "<html>"
-	_sMsg += "<h4> Verificação de Funcionários em: " + dtoc(date()) +"</h4>"
-	_sMsg += "<table border='2'>"
-	_sMsg += "    <tr>"
-	_sMsg += "        <td>Nome</td>"
-	_sMsg += "        <td>CPF</td>"
-	_sMsg += "        <td>Possui Cadastro de cliente?</td>"
-	_sMsg += "        <td>Erro</td>"
-	_sMsg += "    </tr>"
-	For _x :=1 to Len(_aEmail)
+	If Len(_aEmail) > 0
+		_sMsg := "<html>"
+		_sMsg += "<h4> Verificação de Funcionários em: " + dtoc(date()) +"</h4>"
+		_sMsg += "<table border='2'>"
 		_sMsg += "    <tr>"
-		_sMsg += "        <td>"+ upper(_aEmail[_x, 1]) +"</td>"
-		_sMsg += "        <td>"+ _aEmail[_x, 2]        +"</td>"
-		_sMsg += "        <td>"+ _aEmail[_x, 3]        +"</td>"
-		_sMsg += "        <td>"+ _aEmail[_x, 4]        +"</td>"
+		_sMsg += "        <td>Nome</td>"
+		_sMsg += "        <td>CPF</td>"
+		_sMsg += "        <td>Possui Cadastro de cliente?</td>"
+		_sMsg += "        <td>Erro</td>"
 		_sMsg += "    </tr>"
-	Next
-	_sMsg += "</table>"
-	_sMsg += "</html>"
-	U_ZZUNU ({'110'}, "Verificação de Cliente-Funcionário", _sMsg, .F., cEmpAnt, cFilAnt, "") 
+		For _x :=1 to Len(_aEmail)
+			_sMsg += "    <tr>"
+			_sMsg += "        <td>"+ upper(_aEmail[_x, 1]) +"</td>"
+			_sMsg += "        <td>"+ _aEmail[_x, 2]        +"</td>"
+			_sMsg += "        <td>"+ _aEmail[_x, 3]        +"</td>"
+			_sMsg += "        <td>"+ _aEmail[_x, 4]        +"</td>"
+			_sMsg += "    </tr>"
+		Next
+		_sMsg += "</table>"
+		_sMsg += "</html>"
+		U_ZZUNU ({'110'}, "Verificação de Cliente-Funcionário", _sMsg, .F., cEmpAnt, cFilAnt, "") 
+	EndIf
 
 Return 
