@@ -17,6 +17,7 @@ user function MA300OK ()
 	local _oVerif    := NIL
 
 	// Verifica se tem inconsistencias entre MV_ULMES e ultima data do SB9/SBJ/SBK
+	U_Log2 ('info', '[' + procname () + ']Nao quero rodar saldo atual se tiver inconsistencias entre MV_ULMES e ultima data do SB9/SBJ/SBK')
 	_oVerif := ClsVerif():New (45)
 	_oVerif:Executa ()
 	if len (_oVerif:Result) > 1
