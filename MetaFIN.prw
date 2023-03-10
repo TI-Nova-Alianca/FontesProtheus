@@ -34,19 +34,28 @@
 //                     - Envia e-mail de notificacao em caso de erro na importacao (GLPI 9273).
 // 09/08/2021 - Robert - Passa a usar a view VA_VTITULOS_CPAGAR (GLPI 10667)
 // 13/07/2022 - Robert - Melhoria fluxo execucao; teste cadastro fornecedor (GLPI 12337)
+// 10/03/2023 - Robert - Criado tratamento para comecar a importar titulos de IRF (GLPI 9047)
 //
 
-// ------------------------------------------------------------------------------------
 #include "colors.ch"
 #Include "Protheus.ch"
 #Include "RwMake.ch"
 #Include "TbiConn.ch"
 
+// ------------------------------------------------------------------------------------
 user function MetaFin (_lAuto)
 	private _nQtTitGer := 0
 	private _nQtTitDel := 0
 	private _nQtTitErr := 0
 	private _sErroAuto := ""  // Deixar private para ser usada pela funcao U_Help.
+	
+	// PRECISO ACESSAR METADADOS A PARTIR DA BASE TESTE ENQUANDO IMPLEMENTO ESTE CHAMADO
+	// REMOVER DEPOIS!
+//	PRIVATE _lGLPI9047 := IIF (CUSERNAME == 'robert.koch' .and. U_AmbTeste (), .T., .F.)  // REMOVER DEPOIS!
+	// REMOVER DEPOIS!
+	// REMOVER DEPOIS!
+
+
 	private _sLkSrvRH  := U_LkServer ("METADADOS")
 
 	if empty (_sLkSrvRH)
@@ -79,13 +88,12 @@ user function MetaFin (_lAuto)
 return
 
 
-
 // --------------------------------------------------------------------------
 static function _Incluir ()
 	local _lContinua   := .T.
 	local _oSQL        := NIL
 	local _sAliasQ     := ""
-	local _sMsgSE2     := ""
+//	local _sMsgSE2     := ""
 	local _dEmis       := ctod ('')
 	local _oDUtil      := NIL
 	local _sAnoMes     := ""
@@ -104,76 +112,10 @@ static function _Incluir ()
 		_aBkpSX1 = U_SalvaSX1 (cPerg)  // Salva parametros da rotina.
 		U_GravaSX1 (cPerg, "04", 2)  // Contabiliza online = nao
 
-/*
-		// Monta uma string com a query principal para ser usada em mais de um local.
-		_sCTE := ""
-		_sCTE += "WITH CTE AS ("
-		_sCTE += "SELECT CASE C.TIPOITEMCONTAPAGAR"
-		_sCTE +=           " WHEN '05' THEN SUBSTRING (DARF.UNIDADE, 3, 2) "  // Tipo 05 = DARF PIS: busca detalhamento em tabela especifica.
-		_sCTE +=           " WHEN '22' THEN SUBSTRING (DEP.ESTABELECIMENTO, 3, 2) "  // Tipo 22 = remessa p/ banco: busca detalhamento em tabela especifica.
-		_sCTE +=           " ELSE SUBSTRING (C.ESTABELECIMENTO, 3, 2)"
-		_sCTE +=       " END AS FILIAL,"
-		_sCTE +=       " C.NROSEQUENCIAL,"
-		_sCTE +=       " C.NROREMESSA,"
-		_sCTE +=       " dbo.VA_DatetimeToVarchar (C.DATAINCLUSAO) AS EMISSAO,"
-		_sCTE +=       " dbo.VA_DatetimeToVarchar (C.DATAVENCIMENTO) AS VENCTO, "
-		_sCTE +=       " CASE C.TIPOITEMCONTAPAGAR"
-		_sCTE +=           " WHEN '05' THEN DARF.VALOR "
-		_sCTE +=           " WHEN '22' THEN DEP.VALOR "
-		_sCTE +=           " ELSE C.VALOR"
-		_sCTE +=       " END AS VALOR,"
-		_sCTE +=       " SUBSTRING(C.DESCRICAO20, 1, 6) AS FORNECE,"
-		_sCTE +=       " RTRIM(C.DESCRICAO250) + CASE WHEN C.TIPOITEMCONTAPAGAR = '22' THEN ' (Rem.' + CAST (C.NROREMESSA AS VARCHAR) + ')' ELSE '' END AS HIST,"
-		_sCTE +=       " CASE C.TIPOITEMCONTAPAGAR"
-		_sCTE +=           " WHEN '22' THEN RTRIM (DEP.NUMERODOCUMENTO) "  // Tipo 22 = remessa p/ banco: busca detalhamento em tabela especifica.
-		_sCTE +=           " ELSE RTRIM (C.NUMERODOCUMENTO)"
-		_sCTE +=       " END AS NATUREZA,"
-		_sCTE +=       " C.TIPOITEMCONTAPAGAR AS TPITEMCP,"
-		_sCTE +=       " C.STATUSREGISTRO AS STATUSREG"
-//		_sCTE +=  " FROM LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST C "
-		_sCTE +=  " FROM " + _sLkSrvRH + ".RHCONTASPAGARHIST C "
-		
-		// Busca detalhamento de remessa para bancos.
-		_sCTE +=     " LEFT JOIN (SELECT EMPRESA, BANCO, NROREMESSA, ESTABELECIMENTO, NUMERODOCUMENTO, SUM (VALOR) AS VALOR"
-		// _sCTE +=                  " FROM LKSRV_SIRH.SIRH.dbo.RHDEPOSITOSANALITICO"
-		_sCTE +=                  " FROM " + _sLkSrvRH + ".RHDEPOSITOSANALITICO"
-		_sCTE +=                 " WHERE EMPRESA = '00' + '" + cEmpAnt + "'"
-		_sCTE +=                 " GROUP BY EMPRESA, BANCO, NROREMESSA, ESTABELECIMENTO, NUMERODOCUMENTO) AS DEP"
-		_sCTE +=          " ON (DEP.EMPRESA = C.EMPRESA"
-		_sCTE +=         " AND DEP.BANCO = C.BANCO"
-		_sCTE +=         " AND DEP.NROREMESSA = C.NROREMESSA"
-		_sCTE +=         " AND C.TIPOITEMCONTAPAGAR = '22')"
-
-		// Busca detalhamento de DARF para pagamento de PIS.
-		// Quando o RH gera os titulos de PIS antes do final do mes, a query abaixo nao os encontra (dataemissao > datainclusao). A solucao
-		// atual eh incluir manualmente no financeiro. Outra possibilidade seria desvincular os titulos de PIS desta rotina automatica
-		// e fazer a geracao atraves de um programa com parametrizacao manual do usuario, assim poderia gerar em qualquer data.
-		_sCTE +=     " LEFT JOIN (SELECT EMPRESA, UNIDADE, DATAEMISSAO, SUM (LIQUIDOCOMPETENCIA) AS VALOR"
-		// _sCTE +=                  " FROM LKSRV_SIRH.SIRH.dbo.RHDARFANALITICO"
-		_sCTE +=                  " FROM " + _sLkSrvRH + ".RHDARFANALITICO"
-		_sCTE +=                 " WHERE ESTABELECIMENTO = '00' + '" + cEmpAnt + "'"
-		_sCTE +=                   " AND TIPODARF = '3'" // 3=PIS
-		_sCTE +=                   " AND DATAEMISSAO = (SELECT MAX (DATAEMISSAO)"
-		// _sCTE +=                                        " FROM LKSRV_SIRH.SIRH.dbo.RHDARFANALITICO"
-		_sCTE +=                                        " FROM " + _sLkSrvRH + ".RHDARFANALITICO"
-		_sCTE +=                                       " WHERE ESTABELECIMENTO = '0001'"
-		_sCTE +=                                         " AND TIPODARF = '3')"
-		_sCTE +=                 " GROUP BY EMPRESA, UNIDADE, DATAEMISSAO"
-		_sCTE +=               " ) AS DARF"
-		_sCTE +=               " ON (DARF.EMPRESA = C.EMPRESA"
-		_sCTE +=              " AND DARF.DATAEMISSAO < C.DATAINCLUSAO"
-		_sCTE +=              " AND C.TIPOITEMCONTAPAGAR = '05')"
-
-		_sCTE += " WHERE C.EMPRESA             = '00' + '" + cEmpAnt + "'"
-		_sCTE +=   " AND C.STATUSREGISTRO     IN ('02', '10')"  // A processar e provisionado (para casos de multifilial).
-//		_sCTE +=   " AND C.TIPOITEMCONTAPAGAR != '04'"  // DARF IRF s/ salarios: queremos por filial.
-//		_sCTE +=   " AND C.TIPOITEMCONTAPAGAR != '10'"  // DARF IRF s/ autonomos: queremos por filial.
-		_sCTE += ")"
-*/
 		// Monta uma string com a query principal para ser usada em mais de um local.
 		_sCTE += "WITH CTE AS ("
 		_sCTE +=  " SELECT *"
-		_sCTE +=  " FROM " + _sLkSrvRH + ".VA_VTITULOS_CPAGAR"
+		_sCTE +=  " FROM " + _sLkSrvRH + ".VA_VTITULOS_CPAGAR2"
 		_sCTE += " )"
 
 		_oSQL := ClsSQL ():New ()
@@ -181,7 +123,12 @@ static function _Incluir ()
 		_oSQL:_sQuery += " SELECT CTE.*"
 		_oSQL:_sQuery +=   " FROM CTE"
 		_oSQL:_sQuery +=  " WHERE FILIAL = '" + cFilAnt + "'"
-		_oSQL:_sQuery +=    " AND STATUSREG IN ('02', '10')"  // A processar e provisionado (para casos de multifilial).
+//		if _lGLPI9047
+//			_oSQL:_sQuery += " AND TPITEMCP IN ('04', '10')"
+//			_oSQL:_sQuery += " AND EMISSAO = '20230310'"
+//		else
+			_oSQL:_sQuery +=    " AND STATUSREG IN ('02', '10')"  // A processar e provisionado (para casos de multifilial).
+//		endif
 
 		// Para os casos de titulos que o Metadados gera aglutinados por empresa, mas a Alianca deseja importar por filial,
 		// marco-os como '10' (provisionado) no Metadados, e vou controlando se jah foram gerados para cada filial
@@ -198,17 +145,19 @@ static function _Incluir ()
 		do while _lContinua .and. ! (_sAliasQ) -> (eof ())
 			u_log2 ('info', 'Iniciando inclusao seq.' + cvaltochar ((_sAliasQ) -> NroSequencial) + ' tipo ' + (_sAliasQ) -> TpItemCP + ' R$ ' + transform ((_sAliasQ) -> valor, "@E 999,999,999.99") + ' ' + (_sAliasQ) -> hist)
 
+/* agora vamos importar esses tambem!
 			if (_sAliasQ) -> TpItemCP $ '04/10'
 				_sMsgSE2 = "Numero sequencial " + cvaltochar ((_sAliasQ) -> NroSequencial) + ": Tipo de item 04 (DARF IRF salarios) e 10 (DARF IRF autonomos): nao vai ser importado, pois queremos separado por filial."
 				u_help (_sMsgSE2,, .t.)
 
-				_oSQL := ClsSQL ():New ()
-				// _oSQL:_sQuery := "UPDATE LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST"
-				_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
-				_oSQL:_sQuery +=   " SET STATUSREGISTRO = '08'"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
-				_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar ((_sAliasQ) -> NroSequencial)
-				_oSQL:Log ()
-				_lContinua = _oSQL:Exec ()
+				if ! _lGLPI9047
+					_oSQL := ClsSQL ():New ()
+					_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
+					_oSQL:_sQuery +=   " SET STATUSREGISTRO = '08'"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
+					_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar ((_sAliasQ) -> NroSequencial)
+					_oSQL:Log ()
+					_lContinua = _oSQL:Exec ()
+				endif
 
 				// Cria registro no log do Metadados com o motivo da rejeicao.
 				_lContinua = _LogMeta ((_sAliasQ) -> NroSequencial, AllTrim (EnCodeUtf8 (_sMsgSE2)))
@@ -216,7 +165,7 @@ static function _Incluir ()
 				(_sAliasQ) -> (dbskip ())
 				loop
 			endif
-
+*/
 			// Alguns movimentos devem ser gerados com data de emissao = ultimo dia do mes anterior.
 			if (_sAliasQ) -> TpItemCP $ '40/41/44/45' .OR. ;  // Folha avulsa/RPA # Ferias # Rescisao principal # Rescisao complementar
 				((_sAliasQ) -> TpItemCP $ '22/99' .and. (_sALiasQ) -> Fornece $ '001498/001853/001496')
@@ -246,7 +195,6 @@ static function _Incluir ()
 		u_help (cvaltochar (_nQtTitGer) + " titulos gerados; " + cvaltochar (_nQtTitDel) + " titulos excluidos; " + cvaltochar (_nQtTitErr) + " lctos com problemas. ")
 	endif
 return
-
 
 
 // --------------------------------------------------------------------------
@@ -326,7 +274,7 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 
 			// Se chegou com data de vencimento retroativa, nao adianta importar. Ajusto para data de hoje.
 			if _dVencSE2 < date ()
-				U_Log2 ('aviso', 'Alterando date de vencimento original (' + dtoc (_dVencSE2) + ') por que nao tem como pagar retroativo.')
+				U_Log2 ('aviso', 'Alterando data de vencimento original (' + dtoc (_dVencSE2) + ') por que nao tem como pagar retroativo.')
 				_dVencSE2 = date ()
 			endif
 
@@ -369,12 +317,14 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 					U_ZZUNU ({'023'}, 'Erro integracao Metadados x Protheus', _sMsgMail, .F.)
 				endif
 
-				_oSQL := ClsSQL ():New ()
-				_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
-				_oSQL:_sQuery +=   " SET STATUSREGISTRO = '08'"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
-				_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeqMeta)
-				_oSQL:Log ()
-				_lIncOK = _oSQL:Exec ()
+//				if ! _lGLPI9047
+					_oSQL := ClsSQL ():New ()
+					_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
+					_oSQL:_sQuery +=   " SET STATUSREGISTRO = '08'"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
+					_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeqMeta)
+					_oSQL:Log ()
+					_lIncOK = _oSQL:Exec ()
+//				endif
 
 				// Cria registro no log do Metadados com o motivo da rejeicao.
 				_lIncOK = _LogMeta (_nSeqMeta, AllTrim (EnCodeUtf8 (_sMsgSE2)))
@@ -422,20 +372,21 @@ static function _GeraSE2 (_nSeqMeta, _sFornece, _sNaturez, _dEmisSE2, _dVencSE2,
 				next
 
 				// Muda status da sequencia no Metadados.
-				_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
-				_oSQL:_sQuery +=   " SET STATUSREGISTRO          = '" + _sStatReg + "',"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
-				_oSQL:_sQuery +=       " DATAACEITACAOLIBERACAO  = cast ('" + dtos (date ()) + " " + time () + "' as datetime),"
-				_oSQL:_sQuery +=       " CHAVEOUTROSISTEMATITULO = " + se2 -> e2_num + ","
-				_oSQL:_sQuery +=       " NUMEROTITULO            = " + se2 -> e2_num + ","
-				_oSQL:_sQuery +=       " SERIEDOC                = '" + se2 -> e2_prefixo + se2 -> e2_parcela + "'"
-				_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeqMeta)
-				_oSQL:Log ()
-				_lIncOK = _oSQL:Exec ()
+//				if ! _lGLPI9047
+					_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
+					_oSQL:_sQuery +=   " SET STATUSREGISTRO          = '" + _sStatReg + "',"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
+					_oSQL:_sQuery +=       " DATAACEITACAOLIBERACAO  = cast ('" + dtos (date ()) + " " + time () + "' as datetime),"
+					_oSQL:_sQuery +=       " CHAVEOUTROSISTEMATITULO = " + se2 -> e2_num + ","
+					_oSQL:_sQuery +=       " NUMEROTITULO            = " + se2 -> e2_num + ","
+					_oSQL:_sQuery +=       " SERIEDOC                = '" + se2 -> e2_prefixo + se2 -> e2_parcela + "'"
+					_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar (_nSeqMeta)
+					_oSQL:Log ()
+					_lIncOK = _oSQL:Exec ()
+//				endif
 			endif
 		endif
 	endif
 return _lIncOK
-
 
 
 // --------------------------------------------------------------------------
@@ -499,13 +450,13 @@ static function _Excluir ()
 				_LogMeta ((_sAliasQ) -> NroSequencial, AllTrim (EnCodeUtf8 (_sMsgSE2)))
 
 				// Muda status da sequencia no Metadados.
-				// _oSQL:_sQuery := "UPDATE LKSRV_SIRH.SIRH.dbo.RHCONTASPAGARHIST"
-				_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
-				_oSQL:_sQuery +=   " SET STATUSREGISTRO          = '" + iif (lMsErroAuto, "05", "06") + "'"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
-				_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar ((_sAliasQ) -> NroSequencial)
-				_oSQL:Log ()
-				_oSQL:Exec ()
-
+//				if ! _lGLPI9047
+					_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
+					_oSQL:_sQuery +=   " SET STATUSREGISTRO          = '" + iif (lMsErroAuto, "05", "06") + "'"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
+					_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar ((_sAliasQ) -> NroSequencial)
+					_oSQL:Log ()
+					_oSQL:Exec ()
+//				endif
 			else
 				u_log2 ('info', "Titulo nao encontrado no SE2 (ja deve estar excluido): " + xfilial ("SE2") + substr ((_sAliasQ) -> SerieDoc, 1, 3) + U_TamFixo (cvaltochar ((_sAliasQ) -> num), 9, ' ') + substr ((_sAliasQ) -> SerieDoc, 4, 1))
 			endif
@@ -513,7 +464,6 @@ static function _Excluir ()
 		enddo
 	endif
 return _lExcOK
-
 
 
 // --------------------------------------------------------------------------
@@ -535,7 +485,7 @@ static function _LogMeta (_nSeq, _sMsg)
 	_oSQL:_sQuery +=        " (NROSEQUENCIAL, NROORDEM, DATAHORAALTERACAO, DESCRICAOMEMO)"
 	_oSQL:_sQuery += " VALUES (" + cvaltochar (_nSeq) + ", "
 	_oSQL:_sQuery +=         cvaltochar (_nNroOrdem + 1) + ","
-	_oSQL:_sQuery +=         " getdate (), " //cast ('" + dtos (date ()) + " " + time () +  "' as datetime),"
+	_oSQL:_sQuery +=         " getdate (), "
 	_oSQL:_sQuery +=         "'" + _sMsg + "'"
 	_oSQL:_sQuery +=         ")"
 	_oSQL:Log ()

@@ -77,8 +77,12 @@ user function LkServer (_sQualSrv)
 
 	case upper (alltrim (_sQualSrv)) == 'METADADOS'
 		if _lBaseTST
-			u_help ("Sem definicao de linked server do Metadados para ambiente de testes.",, .t.)
-			_sRetLk = ""
+//			if type ("_lGLPI9047") == 'L' .and. _lGLPI9047  // Preciso acessar enquando implemento este chamado
+//				_sRetLk = "LKSRV_SIRH.SIRH.dbo"
+//			else
+				u_help ("Sem definicao de linked server do Metadados para ambiente de testes.",, .t.)
+				_sRetLk = ""
+//			endif
 		else
 			_sRetLk = "LKSRV_SIRH.SIRH.dbo"
 		endif
