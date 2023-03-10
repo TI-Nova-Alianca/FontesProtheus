@@ -26,8 +26,12 @@ User Function OM200Qry ()
 	local _sRepCarg := ''
 	local _aFiltro  := {}
 	local _lCont    := .T.
+	local _sFiltro := ""
 
-	If _nTpQuery == 2 // segunda execução do P.E.
+	If _nTpQuery == 1 // segunda execução do P.E.
+		
+		_OM200Del(RetCodUsr())
+
 		_aFiltro := U_VAOMS200()
 
 		If Len(_aFiltro) > 0
@@ -41,19 +45,49 @@ User Function OM200Qry ()
 					_lCont := .F.
 				EndIf
 				If _lCont
-					_sRet += " AND SC5.C5_VEND1 = '" + _sRepCarg + "'"
+					_sRet    += " AND SC5.C5_VEND1 = '" + _sRepCarg + "'"
+					_sFiltro += " AND SC5.C5_VEND1 = '" + _sRepCarg + "'"
 				EndIf
 			EndIf
 			
 			If !empty(_sUFCarg)
-				_sRet += " AND SC5.C5_VAEST = '" + UPPER(_sUFCarg) + "'"
+				_sRet    += " AND SC5.C5_VAEST = '" + UPPER(_sUFCarg) + "'"
+				_sFiltro += " AND SC5.C5_VAEST = '" + UPPER(_sUFCarg) + "'"
 			EndIf
 		EndIf
-
 		// Acrescenta filtro a query padrao.
-		_sRet += " AND C9_PEDIDO IN (SELECT C9_PEDIDO FROM VA_VPEDIDOS_PARA_CARGA WHERE C9_FILIAL = '" + xfilial ("SC9") + "')" 
+		_sRet    += " AND C9_PEDIDO IN (SELECT C9_PEDIDO FROM VA_VPEDIDOS_PARA_CARGA WHERE C9_FILIAL = '" + xfilial ("SC9") + "')" 
+		_sFiltro += " AND C9_PEDIDO IN (SELECT C9_PEDIDO FROM VA_VPEDIDOS_PARA_CARGA WHERE C9_FILIAL = '" + xfilial ("SC9") + "')" 
+		
+		// Grava Evento
+		_oEvento    := NIL
+		_oEvento := ClsEvent():new ()
+		_oEvento:CodEven   = "OMS200"
+		_oEvento:DtEvento  = date()
+		_oEvento:Texto	   = _sFiltro
+		_oEvento:Usuario   = RetCodUsr()
+		_oEvento:Grava()
 	EndIf
-	
+
+	If 	_nTpQuery == 2
+		_oSQL:= ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT "
+		_oSQL:_sQuery += " 		DESCRITIVO "
+		_oSQL:_sQuery += " FROM VA_VEVENTOS "
+		_oSQL:_sQuery += " WHERE DATA    = '" + dtos(date()) +"' "
+		_oSQL:_sQuery += " AND USUARIO   = '" + RetCodUsr()  +"' "
+		_oSQL:_sQuery += " AND CODEVENTO = 'OMS200' "
+		_aDados := aclone (_oSQL:Qry2Array ())
+
+		If Len(_aDados) > 0
+			_sRet += _aDados[1,1]
+		EndIf
+
+		_OM200Del(RetCodUsr())
+
+	EndIf
+
 	RestArea(_aAreaAnt)
 return _sRet
 //
@@ -93,3 +127,17 @@ User Function VAOMS200()
 	U_ML_SRArea (_aAreaAnt)
 
 Return _aRet
+//
+// --------------------------------------------------------------------------
+// Deleta registros para filtros
+Static Function _OM200Del(_sUsuario)
+	Local _oSQL:= ClsSQL ():New ()
+
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " DELETE "
+	_oSQL:_sQuery += " FROM VA_VEVENTOS "
+	_oSQL:_sQuery += " WHERE USUARIO   = '" + _sUsuario +"' "
+	_oSQL:_sQuery += " AND CODEVENTO = 'OMS200' "
+	_oSQL:Exec()
+
+Return
