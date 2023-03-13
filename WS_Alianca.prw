@@ -839,7 +839,6 @@ static function _TrEstq (_sQueFazer)
 			_oTrEstq:DtEmis  = date ()
 			if _oTrEstq:Grava ()
 				u_log2 ('INFO', 'Gravou ZAG. ' + _oTrEstq:UltMsg)
-				//_sMsgRetWS = "Gravacao realizada." + _oTrEstq:UltMsg
 				_sMsgRetWS = _oTrEstq:UltMsg
 			else
 				u_log2 ('erro', 'Nao gravou ZAG. ' + _oTrEstq:UltMsg)
@@ -850,7 +849,7 @@ static function _TrEstq (_sQueFazer)
 	case _sQueFazer $ 'AUT/DEL/EXE/NEG'  // [A]utorizar;[D]eletar;[E]xecutar;[N]egar
 		if empty (_sErroWS) ; _sDocZAG = _ExtraiTag ("_oXML:_WSAlianca:_DocTransf", .T., .F.) ; endif
 		if empty (_sErroWS)
-			zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
+			zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC + ZAG_SEQ
 			if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
 				_SomaErro ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG")
 			else
@@ -2579,7 +2578,7 @@ static function _ImpEtiqZAG ()
 
 	// Validacao inicial do numero da etiqueta.
 	if empty (_sErroWS)
-		zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
+		zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC + ZAG_SEQ
 		if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
 			_SomaErro ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG")
 		else
