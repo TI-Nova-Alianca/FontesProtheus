@@ -22,6 +22,7 @@
 //                     - Nao enviava cargas canceladas para o grau (nao alterava ZZA_STATUS para C).
 // 08/02/2023 - Robert - Implementado metodo SegregarLt().
 // 22/02/2023 - Robert - Gravacao evento passa a tratar novos atributos ClsEvent:Safra e ClsEvent:CargaSafra.
+// 13/03/2023 - Robert - Eliminadas algumas linhas comentariadas; eventos deixam de gravar chave=safra+carga
 //
 
 #Include "Protheus.ch"
@@ -207,9 +208,6 @@ METHOD AtuAgenda (_sStatPara) Class ClsCarSaf
 		if cvaltochar (_oWSNaWeb:cSaida) == 'OK'
 			U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Alteracao da carga foi aceita pelo NaWeb')
 			_lRetWSNA = .T.
-
-			// Grava evento para posterior rastreamento
-		//nao precisa mais... estah funcionando muito bem	::GrvEvt ('SZE004', "Enviado novo status (" + _sStatPara + ") para o NaWeb.")
 		else
 			::UltMsg += "Alteracao da carga '" + ::Carga + "' nao foi aceita pelo NaWeb: " + cvaltochar (_oWSNaWeb:cSaida)
 			u_help (::UltMsg,, .t.)
@@ -800,13 +798,11 @@ METHOD GrvEvt (_sCodEvt, _sTxtEvt) Class ClsCarSaf
 
 	_oEvento := ClsEvent():new ()
 	_oEvento:CodEven    = _sCodEvt
-//	_oEvento:Texto      = 'Safra ' + ::Safra + ' Carga ' + ::Carga + ' ' + _sTxtEvt
 	_oEvento:Texto      = _sTxtEvt
-//	_oEvento:Recno      = ::RegSZE
 	_oEvento:Safra      = ::Safra
 	_oEvento:CargaSafra = ::Carga
-	_oEvento:Alias      = 'SZE'
-	_oEvento:CodAlias   = ::Safra + ::Carga
+//	_oEvento:Alias      = 'SZE'
+//	_oEvento:CodAlias   = ::Safra + ::Carga
 	_oEvento:NFEntrada  = ::Contranota
 	_oEvento:SerieEntr  = ::SerieCtrn
 	_oEvento:Fornece    = ::Fornece

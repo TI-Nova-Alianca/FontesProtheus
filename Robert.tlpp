@@ -28,7 +28,7 @@ user function robert ()
 	local _lContinua := .T.
 
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '07' modulo 'FIN'
+		prepare environment empresa '01' filial '01' modulo 'FIN'
 		private cModulo   := 'FIN'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -69,8 +69,8 @@ user function robert ()
 		// _BatLimp ()
 		// _BatOcor ()
 		// _batFull ()
-		//_BatSafr ()
-		//_BatTrSZI ()
+		// _BatSafr ()
+		// _BatTrSZI ()
 		// _BatXML ()
 		// _batZBE ()
 		// _SimCtb ()
@@ -102,7 +102,6 @@ user function robert ()
 		// _AjLoteEnd ()
 		// _GLPI13221 ()
 		// _VACCR2 ()
-
 		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
@@ -157,56 +156,60 @@ return
 // --------------------------------------------------------------------------
 // Ajusta saldo de lote / endereco
 static function _AjLoteEnd ()
-	local _sFilial   := '01'
-	local _sDocto    := 'GLPI13016'
-	local _sProduto  := '2525'
-	local _sAlmox    := '07'
-	local _nQuant    := 0.0004  // qt positiva=gerar entrada
-	local _sEndereco := ''
-	local _sLote     := '09517301'
+	// Deixo desabilitado pra me obrigar a revisar sempre ---> local _sFilial   := '01'
+	// Deixo desabilitado pra me obrigar a revisar sempre ---> local _sDocto    := 'GLPI13292'
+	// Deixo desabilitado pra me obrigar a revisar sempre ---> local _sProduto  := '2739'
+	// Deixo desabilitado pra me obrigar a revisar sempre ---> local _sAlmox    := '07'
+	// Deixo desabilitado pra me obrigar a revisar sempre ---> local _nQuant    := 0.0003  // qt positiva=gerar entrada
+	// Deixo desabilitado pra me obrigar a revisar sempre ---> local _sEndereco := ''
+	// Deixo desabilitado pra me obrigar a revisar sempre ---> local _sLote     := '09239801'
 	local _oSQL      := NIL
 
-	if ! empty (_sLote)
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := "SELECT min (B8_DTVALID)"  // uso MIN pra evitar possivel azar de ter mais de 1 registro.
-		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB8") + " SB8 "
-		_oSQL:_sQuery += " WHERE SB8.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND SB8.B8_FILIAL  = '" + _sFilial + "'"
-		_oSQL:_sQuery +=   " AND SB8.B8_LOTECTL = '" + _sLote + "'"
-		_oSQL:_sQuery +=   " AND SB8.B8_PRODUTO = '" + _sProduto + "'"
-		_oSQL:_sQuery +=   " AND SB8.B8_LOCAL   = '" + _sAlmox + "'"
-//		reclock ("SD5", .t.)
-		sd5 -> d5_filial = _sFilial
-		sd5 -> d5_produto = _sProduto
-		sd5 -> d5_local   = _sAlmox
-		sd5 -> d5_doc     = _sDocto
-		sd5 -> d5_data    = date ()
-		sd5 -> d5_origlan = 'SD3'
-		sd5 -> d5_quant   = abs (_nQuant)
-		sd5 -> d5_lotectl = _sLote
-		sd5 -> d5_dtvalid = stod (_oSQL:RetQry (1, .f.))
-		msunlock ()
-		U_Log2 ('debug', '[' + procname () + ']Gravei SD5 com doc ' + _sDocto)
+	if _sFilial != cFilAnt
+		u_help ("Estou na filial errada",, .t.)
+	else
+		if ! empty (_sLote)
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := "SELECT min (B8_DTVALID)"  // uso MIN pra evitar possivel azar de ter mais de 1 registro.
+			_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB8") + " SB8 "
+			_oSQL:_sQuery += " WHERE SB8.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND SB8.B8_FILIAL  = '" + _sFilial + "'"
+			_oSQL:_sQuery +=   " AND SB8.B8_LOTECTL = '" + _sLote + "'"
+			_oSQL:_sQuery +=   " AND SB8.B8_PRODUTO = '" + _sProduto + "'"
+			_oSQL:_sQuery +=   " AND SB8.B8_LOCAL   = '" + _sAlmox + "'"
+			reclock ("SD5", .t.)
+			sd5 -> d5_filial = _sFilial
+			sd5 -> d5_produto = _sProduto
+			sd5 -> d5_local   = _sAlmox
+			sd5 -> d5_doc     = _sDocto
+			sd5 -> d5_data    = date ()
+			sd5 -> d5_origlan = 'SD3'
+			sd5 -> d5_quant   = abs (_nQuant)
+			sd5 -> d5_lotectl = _sLote
+			sd5 -> d5_dtvalid = stod (_oSQL:RetQry (1, .f.))
+			msunlock ()
+			U_Log2 ('debug', '[' + procname () + ']Gravei SD5 com doc ' + _sDocto)
+		endif
+		if ! empty (_sEndereco)
+			reclock ("SDB", .t.)
+			sdb -> db_filial  = _sFilial
+			sdb -> db_item    = '0001'
+			sdb -> db_produto = _sProduto
+			sdb -> db_localiz = _sEndereco
+			sdb -> db_doc     = _sDocto
+			sdb -> db_TM      = iif (_nQuant > 0, '999', '499')
+			sdb -> db_origem  = 'SD3'
+			sdb -> db_quant   = abs (_nQuant)
+			sdb -> db_data    = date ()
+			sdb -> db_lotectl = _sLote
+			sdb -> db_local   = _sAlmox
+			sdb -> db_atuest  = 'S'
+			sdb -> db_vauser  = cUserName
+			msunlock ()
+			U_Log2 ('debug', '[' + procname () + ']Gravei SDB com doc ' + _sDocto)
+		endif
+		U__MATA300 (_sProduto, _sProduto, _sAlmox, _sAlmox)
 	endif
-	if ! empty (_sEndereco)
-//		reclock ("SDB", .t.)
-		sdb -> db_filial  = _sFilial
-		sdb -> db_item    = '0001'
-		sdb -> db_produto = _sProduto
-		sdb -> db_localiz = _sEndereco
-		sdb -> db_doc     = _sDocto
-		sdb -> db_TM      = iif (_nQuant > 0, '999', '499')
-		sdb -> db_origem  = 'SD3'
-		sdb -> db_quant   = abs (_nQuant)
-		sdb -> db_data    = date ()
-		sdb -> db_lotectl = _sLote
-		sdb -> db_local   = _sAlmox
-		sdb -> db_atuest  = 'S'
-		sdb -> db_vauser  = cUserName
-		msunlock ()
-		U_Log2 ('debug', '[' + procname () + ']Gravei SDB com doc ' + _sDocto)
-	endif
-	U__MATA300 (_sProduto, _sProduto, _sAlmox, _sAlmox)
 return
 
 /*
@@ -655,9 +658,8 @@ return
 
 // --------------------------------------------------------------------------
 static function _batfull ()
-	//_sArqLog := 'U_BatFullW.log' ; 	U_BatFullW ('S')
 	U_MudaLog ('U_BatFullW.log')
-	U_BatFullW ('S', nil, 'ZAG  0000005193')
+	U_BatFullW ('E') //'S', nil, 'ZAG  0000005193')
 return
 
 // --------------------------------------------------------------------------
@@ -674,12 +676,9 @@ static function _BatSafr ()
 //	u_batsafr ('ConferirFrete')  // conferencia fretes
 //	u_batsafr ('MailAcompanhamento')  // e-mail diario de acompanhamento de safra
 //	u_batsafr ('GerarSZI')  // gera SZI a partir das parcelas
-//	u_batsafr ('ConferirSZI')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
+	u_batsafr ('ConferirSZI')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
 //	u_batsafr ('TransfTitNaoAssocParaMatriz')  // Transfere (das filiais para a matriz) os titulos de nao associados.
-	putmv ("MV_CT105MS", 'N')
-	putmv ("MV_ALTLCTO", 'N')
-	putmv ("MV_PRELAN", 'S')
-	u_batsafr ('TransfSZIParaMatriz')  // Transfere SZI para a matriz (normalmente ao gerar o SZI jah faz isso, mas para garantir...)
+//	u_batsafr ('TransfSZIParaMatriz')  // Transfere SZI para a matriz (normalmente ao gerar o SZI jah faz isso, mas para garantir...)
 return
 
 // --------------------------------------------------------------------------
@@ -797,7 +796,8 @@ static function _Etiq ()
 	local _oEtiq := NIL
 //	_oEtiq := ClsEtiq ():New ('2000527843')  // Etiq apontamento de OP (item 0151)
 //	_oEtiq:Imprime ('01')
-	_oEtiq := ClsEtiq ():New ('2000593146')
+	_oEtiq := ClsEtiq ():New ('2000588284')
+	_oEtiq:Imprime ('98')
 	_oEtiq:EnviaFull (.f.)
 /*
 	za1 -> (dbsetorder (2))  // ZA1_FILIAL, ZA1_OP, R_E_C_N_O_, D_E_L_E_T_
@@ -1187,44 +1187,45 @@ return
 
 // --------------------------------------------------------------------------
 // Testes classe transf.estq.
-STATIC FUNCTION _TrEstq ()
+static function _TrEstq ()
 	private _sErroAuto := ''
 
-//	_sDocZAG := U_RetSQL ("SELECT MIN (ZAG_DOC) FROM ZAG010 WHERE D_E_L_E_T_ = '' AND ZAG_EMIS BETWEEN '20221104' AND '20221104' AND ZAG_USRINC = 'robert.koch'")
-//	_sDocZAG = '0000004418'
-//	zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
-//	if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
-//		u_help ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG",, .t.)
-//	else
-//		U_Log2 ('debug', '[' + procname () + ']Instanciando...')
-//		_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
-//		U_Log2 ('debug', '[' + procname () + ']Instanciou')
-//		if empty (_oTrEstq:Docto)
-//			u_help ("Nao foi possivel instanciar objeto _oTrEstq",, .t.)
-//		else
-//			_oTrEstq:Executa ()
-//			U_Log2 ('debug', '[' + procname () + ']retorno:' + cvaltochar (_oTrEstq:UltMsg))
-//		endif
-//	endif
-
+//	_sDocZAG := U_RetSQL ("SELECT MIN (ZAG_DOC+ZAG_SEQ) FROM ZAG010 WHERE D_E_L_E_T_ = '' AND ZAG_EMIS BETWEEN '20221104' AND '20221104' AND ZAG_USRINC = 'robert.koch'")
+	_sDocZAG = '0000004816' + '01'
+	zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC + zag_seq
+	if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
+		u_help ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG",, .t.)
+	else
+		U_Log2 ('debug', '[' + procname () + ']Instanciando...')
+		_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
+		U_Log2 ('debug', '[' + procname () + ']Instanciou')
+		if empty (_oTrEstq:Docto)
+			u_help ("Nao foi possivel instanciar objeto _oTrEstq",, .t.)
+		else
+			_oTrEstq:Exclui ()
+			U_Log2 ('debug', '[' + procname () + ']retorno:' + cvaltochar (_oTrEstq:UltMsg))
+		endif
+	endif
+return
 	_oTrEstq := ClsTrEstq ():New ()
 	_oTrEstq:FilOrig  = cFilAnt
 	_oTrEstq:FilDest  = cFilAnt
 	_oTrEstq:DtEmis   = date ()
 	//_oTrEstq:OP       = ''
 	_oTrEstq:Motivo   = 'teste robert'
-	_oTrEstq:ProdOrig = '0151           '
-	_oTrEstq:ProdDest = '0151           '
+	_oTrEstq:ProdOrig = '0508           '
+	_oTrEstq:ProdDest = '0508           '
 	//dataware barcode generator
 	_oTrEstq:AlmOrig  = '25'
 	_oTrEstq:AlmDest  = '01'
 	_oTrEstq:EndOrig  = ''
 	_oTrEstq:EndDest  = ''
 	_oTrEstq:LoteOrig = ''
-	_oTrEstq:LoteDest = ''
+	_oTrEstq:LoteDest = '001       '
 	_oTrEstq:QtdSolic = 1
 	_oTrEstq:UsrIncl  = 'robert.koch'
 	_oTrEstq:ImprEtq  = '98' // 14=AX EMBALAGENS;15=logistica;16=Elgin TI;98=sato em disco
+	U_Log2 ('debug', '[' + procname () + ']' + iif (_oTrEstq:PodeIncl (), '', 'Nao') + ' pode incluir')
 	if _oTrEstq:Grava ()
 		U_Log2 ('debug', '[' + procname () + ']Gravou! msg: ' + _oTrEstq:UltMsg)
 //		if _oTrEstq:Libera ()
@@ -1240,7 +1241,7 @@ STATIC FUNCTION _TrEstq ()
 	else
 		U_Log2 ('debug', '[' + procname () + ']Nao gravou. msg: ' + _oTrEstq:UltMsg)
 	endif
-*/
+
 return
 
 // --------------------------------------------------------------------------

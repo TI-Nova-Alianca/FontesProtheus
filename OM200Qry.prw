@@ -2,13 +2,13 @@
 // Autor:     Robert Koch
 // Data:      27/05/2014
 // Descricao: PE para filtro dos pedidos liberados a gerar carga no OMS
-//
+
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Ponto_de_entrada #filtro
 // #PalavasChave      #montagem_de_cargas
 // #TabelasPrincipais #SC5 #SC6 #SC9
 // #Modulos           #OMS
-//
+
 // Historico de alteracoes:
 // 14/07/2020 - Robert  - Permite filtrar por representante (GLPI 8161).
 //                      - Inseridas tags para catalogacao de fontes

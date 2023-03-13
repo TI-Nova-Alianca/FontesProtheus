@@ -38,6 +38,7 @@
 // 15/02/2023 - Robert - Passa a mandar avisos pelo NaWeb e nao mais por e-mail.
 // 03/03/2023 - Robert - Campo VA_VNOTAS_SAFRA.TIPO_FORNEC passa a ter novo conteudo.
 // 06/03/2023 - Robert - Batch agendado na matriz para receber transf.do SZI passa a ter menos prioridade.
+// 13/03/2023 - Robert - Novos parametros FINA090. EXecuta apenas 10 registros por vez (temporariamente).
 //
 
 // --------------------------------------------------------------------------
@@ -101,7 +102,6 @@ user function BatSafr (_sQueFazer, _lAjustar)
 	// Verifica composicao das parcelas das notas. Em 2021 jah estamos fazendo 'compra' durante a safra.
 	// Como as primeiras notas sairam erradas, optei por fazer esta rotina de novo para identifica-las
 	// e manter monitoramento.
-//	elseif _sQueFazer == '3' .and. year (date ()) >= 2021
 	elseif _sQueFazer == 'ConferirParcelamento' .and. year (date ()) >= 2021
 		_ConfParc (_lAjustar)
 
@@ -123,7 +123,6 @@ user function BatSafr (_sQueFazer, _lAjustar)
 			_sMsg += "<BR>"
 			_sMsg += _oAUtil:ConvHTM ("", _aCols, 'width="80%" border="1" cellspacing="0" cellpadding="3" align="center"', .F.)
 			U_Log2 ('aviso', _smsg)
-			//U_ZZUNU ({'999'}, "Contranotas sem carga", _sMsg)
 			_oAviso := ClsAviso():new ()
 			_oAviso:Tipo       = 'A'  // I=Info;A=Aviso;E=Erro
 			_oAviso:Titulo     = "Contranotas sem carga"
@@ -233,7 +232,6 @@ static function _ConfParc (_lAjustar)
 	local _oSQL      := NIL
 	local _aParcPrev := {}
 	local _sMsg      := ''
-//	local _sMsgMail  := ''
 	local _aParcReal := {}
 	local _nParc     := 0
 	local _nSomaPrev := 0
@@ -439,11 +437,6 @@ static function _ConfParc (_lAjustar)
 				U_Log2 ('aviso', 'como deveria estar no SE2:')
 				U_Log2 ('aviso', _aParcPrev)
 			endif
-	//		_sMsgMail += 'Filial ' + (_sAliasQ) -> filial + ' NF: ' + (_sAliasQ) -> doc + ' forn: ' + (_sAliasQ) -> associado + ': ' + _sMsg + '<br><br>'
-	//		if len (_sMsgMail) > 30000
-	//	//		u_zzunu ({'999'}, 'Inconsistencia parcelamento safra', _sMsgMail)
-	//			_sMsgMail = ''
-	//		endif
 			_oAviso := ClsAviso():new ()
 			_oAviso:Tipo       = 'E'  // I=Info;A=Aviso;E=Erro
 			_oAviso:Titulo     = 'Verif.parcelamento safra NF ' + (_sAliasQ) -> doc + ' forn ' + (_sAliasQ) -> associado
@@ -456,10 +449,6 @@ static function _ConfParc (_lAjustar)
 		endif
 		(_sAliasQ) -> (dbskip ())
 	enddo
-//	if ! empty (_sMsgMail)
-//		U_Log2 ('erro', 'falta enviar o e-mail')
-//	//	u_zzunu ({'999'}, 'Inconsistencia parcelamento safra', _sMsgMail)
-//	endif
 	U_Log2 ('info', 'Finalizando ' + procname ())
 return
 
@@ -468,7 +457,6 @@ return
 // --------------------------------------------------------------------------
 static function _MailAcomp ()
 	local _sMsg   := ""
-//	local _sDest  := ""
 	local _oSQL   := NIL
 	local _sSafra := U_IniSafra ()
 	local _aCols  := {}
@@ -539,67 +527,6 @@ static function _MailAcomp ()
 	if len (_oSQL:_xRetQry) > 1
 		u_log2 ('debug', _sMsg)
 
-/*		_sDest := ""
-
-		// Internos - direcao
-		_sDest += "alceu.dallemolle@novaalianca.coop.br;"
-		_sDest += "joel.panizzon@novaalianca.coop.br;"
-		_sDest += "jocemar.dalcorno@novaalianca.coop.br;"
-		_sDest += "rodrigo.colleoni@novaalianca.coop.br;"
-
-		// Conselho administracao titulares
-		_sDest += "boldrindarci@gmail.com;"
-		_sDest += "diegowaiss@hotmail.com;"  // reclamou
-		_sDest += "gilbertoverdi@gmail.com;"
-		_sDest += "joel.caldart@hotmail.com;"
-		_sDest += "marciogirelli.st@gmail.com;"
-		_sDest += "marcioferrar@gmail.com;"  // reclamou
-		_sDest += "rodrigovdebona@gmail.com;"  // reclamou tambem que nao recebe XML
-		_sDest += "romildowferrari@hotmail.com;"
-
-		// Conselho administracao suplentes
-		_sDest += "juninhosalton@outlook.com;"
-		_sDest += "marcosparisotto6@gmail.com;"
-		_sDest += "roberto.pagliarin@novaalianca.coop.br;"
-		_sDest += "drcioato@hotmail.com;"
-		_sDest += "ledacioato@hotmail.com;"
-
-		// Conselho fiscal titulares
-		_sDest += "daniederbof@hotmail.com;"
-		_sDest += "leandrochiarani@hotmail.com;"  // Gilmar Chiarani recebe no e-mail 'leandrochiarani@hotmail.com'
-		_sDest += "kleitonguareze@gmail.com;"
-
-		// Conselho fiscal suplentes
-		_sDest += "cesardegregori47@gmail.com;"
-		_sDest += "robertocbusetti@hotmail.com;"
-		_sDest += "leandrobassani@hotmail.com;"  // Vitorino Sganzerla recebe no e-mail 'leandrobassani@hotmail.com'
-
-		// Internos - gestores
-		_sDest += "rodimar.vizentin@novaalianca.coop.br;"
-
-		// Internos - tecnico / enologia / operacao
-		_sDest += "talison.brisotto@novaalianca.coop.br;"
-		_sDest += "eliane.lopes@novaalianca.coop.br;"
-		_sDest += "pedro.toniolo@novaalianca.coop.br;"
-		_sDest += "anderson.felten@novaalianca.coop.br;"
-		_sDest += "alex.cervinski@novaalianca.coop.br;"
-		_sDest += "eduardo.guarche@novaalianca.coop.br;"
-		_sDest += "renan.mascarello@novaalianca.coop.br;"
-		_sDest += "sergio.pereira@novaalianca.coop.br;"
-		_sDest += "deise.demori@novaalianca.coop.br;"
-
-		// Internos - agronomia
-		_sDest += "leonardo.reffatti@novaalianca.coop.br;"
-		_sDest += "monica.rodrigues@novaalianca.coop.br;"
-		_sDest += "waldir.schu@novaalianca.coop.br;"
-		_sDest += "odinei.cardoso@novaalianca.coop.br;"
-
-		// Internos - TI (monitoramento)
-		_sDest += "sandra.sugari@novaalianca.coop.br;"
-		_sDest += "robert.koch@novaalianca.coop.br;"
-*/
-//		U_SendMail (_sDest, "Acompanhamento cargas safra", _sMsg)
-
 		// Envia para o contato principal dos associados (atualmente a Cris) e os demais como copia oculta.
 		U_SendMail ("cristina.stringhi@novaalianca.coop.br", "Acompanhamento cargas safra", _sMsg, {}, NIL, NIL, 'acomp.safra@novaalianca.coop.br;informatica@novaalianca.coop.br')
 
@@ -633,7 +560,6 @@ static function _GeraSZI ()
 	_oSQL:_sQuery +=    " AND V.SERIE        = SE2.E2_PREFIXO"
 	_oSQL:_sQuery +=    " AND V.DOC          = SE2.E2_NUM"
 	_oSQL:_sQuery +=    " AND V.TIPO_NF      IN ('C', 'V')"
-//	_oSQL:_sQuery +=    " AND V.TIPO_FORNEC  = 'ASSOCIADO'"
 	_oSQL:_sQuery +=    " AND V.TIPO_FORNEC  LIKE '1%'"  // 1-ASSOCIADO
 	_oSQL:_sQuery +=    " AND NOT EXISTS (SELECT *"  // Ainda nao deve existir na conta corrente
 	_oSQL:_sQuery +=                  " FROM " + RetSQLName ("SZI") + " SZI "
@@ -703,7 +629,6 @@ static function _ConfSZI ()
 	local _sAliasQ   := ''
 	local _oSQL      := NIL
 	local _sMsg      := ''
-//	local _sMsgMail  := ''
 	local _aRegSZI   := {}
 	local _sSafrComp := strzero (year (dDataBase), 4)
 	local _oCtaCorr  := NIL
@@ -729,8 +654,14 @@ static function _ConfSZI ()
 	_oSQL:_sQuery +=                   " AND V.SERIE       = SE2.E2_PREFIXO"
 	_oSQL:_sQuery +=                   " AND V.DOC         = SE2.E2_NUM"
 	_oSQL:_sQuery +=                   " AND V.TIPO_NF     IN ('C', 'V')"
-//	_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC = 'ASSOCIADO')"
-	_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC LIKE '1%')"  // 1-ASSOCIADO
+	_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC LIKE '1%'"  // 1-ASSOCIADO
+	_oSQL:_sQuery +=                 ")"
+
+
+	// DURANTE TESTES
+	_oSQL:_sQuery +=    " AND SE2.E2_FORNECE = '000248'"
+
+
 	_oSQL:_sQuery +=  " ORDER BY SE2.E2_FORNECE, SE2.E2_LOJA, SE2.E2_NUM, SE2.E2_PREFIXO, SE2.E2_PARCELA"
 	_oSQL:Log ()
 	_sAliasQ = _oSQL:Qry2Trb (.T.)
@@ -809,7 +740,6 @@ static function _ConfSZI ()
 						if _nRegE2Mat == 0
 							_sMsg += "SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela + " transferencia nao apareceu no SE2 da matriz." + chr (13) + chr (10)
 						else
-				//			U_Log2 ('debug', '[' + procname () + ']Posicionando SE2 no reg. ' + cvaltochar (_nRegE2Mat))
 							se2 -> (dbgoto (_nRegE2Mat))
 							if se2 -> e2_valor != (_sAliasQ) -> e2_valor
 								_sMsg += "SZI: FILIAL/DOC/SERIE/PARC " + szi -> zi_filial + ' ' + szi -> zi_doc + '/' + szi -> zi_serie + '-' + szi -> zi_parcela + " transferencia apareceu no SE2 com valor diferente! Na filial: " + cvaltochar ((_sAliasQ) -> e2_valor) + ' na matriz: ' + cvaltochar (se2 -> e2_valor) + chr (13) + chr (10)
@@ -826,12 +756,6 @@ static function _ConfSZI ()
 		if ! empty (_sMsg)
 			_nQtErros ++
 			U_Log2 ('erro', _sMsg)
-			//	u_zzunu ({'999'}, 'Inconsistencia SZI x SE2 safra - filial: ' + (_sAliasQ) -> e2_filial + ' NF: ' + (_sAliasQ) -> e2_num + ' forn: ' + (_sAliasQ) -> e2_fornece, _sMsg)
-//			_sMsgMail += 'Filial ' + (_sAliasQ) -> e2_filial + ' NF: ' + (_sAliasQ) -> e2_num + ' forn: ' + (_sAliasQ) -> e2_fornece + ': ' + _sMsg + '<br><br>'
-//			if len (_sMsgMail) > 30000
-//				u_zzunu ({'999'}, 'Inconsistencia SZI x SE2 safra - filial: ' + (_sAliasQ) -> e2_filial, _sMsgMail)
-//				_sMsgMail = ''
-//			endif
 			_oAviso := ClsAviso():new ()
 			_oAviso:Tipo       = 'A'  // I=Info;A=Aviso;E=Erro
 			_oAviso:Titulo     = "Incons. SZI x SE2 safra"
@@ -843,9 +767,6 @@ static function _ConfSZI ()
 		endif
 		(_sAliasQ) -> (dbskip ())
 	enddo
-//	if ! empty (_sMsgMail)
-//		u_zzunu ({'999'}, 'Inconsistencia SZI x SE2 safra - filial: ' + (_sAliasQ) -> e2_filial, _sMsgMail)
-//	endif
 	U_Log2 ('info', 'Quantidade de inconsistencias encontradas: ' + cvaltochar (_nQtErros))
 	U_Log2 ('info', 'Finalizando ' + procname ())
 return
@@ -856,7 +777,7 @@ return
 // Transfere o titulo para a matriz (quando nao associado)
 static function _TransFil ()
 	local _lContinua := .T.
-	local _aTit      := afill (array (8), '')
+	local _aTit      := afill (array (19), '')
 	local _oSQL      := NIL
 	local _aBanco    := {}
 	local _sAliasQ   := ''
@@ -870,6 +791,10 @@ static function _TransFil ()
 	
 	u_log2 ('info', 'Iniciando ' + procname ())
 	
+	// A transferencia de saldo entre filiais eh feita atraves de conta financeira transitoria. Para isso,
+	// o saldo deve ser baixado na filial de origem atraves de conta transitoria e deve ser feita inclusao
+	// de novo movimento na filial destino.
+
 	if _lContinua .and. cFilAnt == '01'
 		U_Log2 ('erro', 'Transf.de titulos nao se aplica a matriz.')
 		_lContinua = .F.
@@ -885,7 +810,7 @@ static function _TransFil ()
 
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery +=" SELECT TOP 1 A6_COD, A6_AGENCIA, A6_NUMCON"
+		_oSQL:_sQuery +=" SELECT top 1 A6_COD, A6_AGENCIA, A6_NUMCON"
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SA6") + " SA6 "
 		_oSQL:_sQuery += " WHERE SA6.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND SA6.A6_FILIAL  = '" + xfilial ("SA6") + "'"
@@ -914,8 +839,8 @@ static function _TransFil ()
 		_oSQL:_sQuery +=                   " AND V.SERIE       = SE2.E2_PREFIXO"
 		_oSQL:_sQuery +=                   " AND V.DOC         = SE2.E2_NUM"
 		_oSQL:_sQuery +=                   " AND V.TIPO_NF     IN ('C', 'V')"
-//		_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC = 'NAO ASSOCIADO')"
-		_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC LIKE '2%')"  // 2-NAO ASSOCIADO
+		_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC LIKE '2%'"  // 2-NAO ASSOCIADO
+		_oSQL:_sQuery +=                ")"
 		_oSQL:_sQuery +=    " AND SE2.E2_SALDO = E2_VALOR"
 
 		// Nao quero pegar as de hoje para evitar transferir enquanto tem alguem gerando contranota, ou o outro batch gerando SZI.
@@ -939,31 +864,48 @@ static function _TransFil ()
 				loop
 			endif
 
-			// Documentacao cfe. TDN -->  http://tdn.totvs.com/pages/releaseview.action?pageId=6070725
-			// Deve ser passado um array (aTitulos), com oito posicoes, sendo que cada posicao devera conter a seguinte composicao:
-			// aTitulos [1]:= aRecnos   (array contendo os Recnos dos registros a serem baixados)
-			// aTitulos [2]:= cBanco     (Banco da baixa)
-			// aTitulos [3]:= cAgencia   (Agencia da baixa)
-			// aTitulos [4]:= cConta     (Conta da baixa)
-			// aTitulos [5]:= cCheque   (Cheque da Baixa)
-			// aTitulos [6]:= cLoteFin    (Lote Financeiro da baixa)
-			// aTitulos [7]:= cNatureza (Natureza do movimento bancario)
-			// aTitulos [8]:= dBaixa     (Data da baixa)
-			// Caso a contabilizacao seja online e a tela de contabilizacao possa ser mostrada em caso de erro no lancamento (falta de conta, debito/credito nao batem, etc) a baixa automatica em lote nao podera ser utilizada.
-			// Somente sera processada se: 
-			// MV_PRELAN = S
-			// MV_CT105MS = N
-			// MV_ALTLCTO = N
+			// Documentacao cfe. TDN -->  https://tdn.totvs.com/pages/releaseview.action?pageId=645486009
+			// aRetAuto [1] := aRecnos     (array contendo os Recnos dos registros a serem baixados)
+			// aRetAuto [2] := cBanco      (Banco da baixa)
+			// aRetAuto [3] := cAgencia    (Agencia da baixa)
+			// aRetAuto [4] := cConta      (Conta da baixa)
+			// aRetAuto [5] := cCheque     (Cheque da Baixa - apenas Contas a Pagar)
+			// aRetAuto [6] := cLoteFin    (Lote Financeiro da baixa)
+			// aRetAuto [7] := cNatureza   (Natureza do movimento bancario - apenas Contas a Pagar)
+			// aRetAuto [8] := dBaixa      (Data da baixa)
+			// aRetAuto [9] := nTipoBx     (1 = Baixa somente titulos que não estao em bordero ou nTipoBx -> 2 = Baixa somente titulos em bordero)
+			// aRetAuto [10]:= cBcoDe      (Portador de)
+			// aRetAuto [11]:= cBcoAte     (Portador Até)
+			// aRetAuto [12]:= dVencIni    (Vencimento Inicial)
+			// aRetAuto [13]:= dVencFim    (Vencimento Final)
+			// aRetAuto [14]:= cBord090I   (Borderô Inicial)
+			// aRetAuto [15]:= cBord090F   (Borderô  Final)
+			// aRetAuto [16]:= cBenef090   (Beneficiário do Cheque)
+			// aRetAuto [17]:= cHistor     (Historico do Cheque)
+			// aRetAuto [18]:= lMultNat    (Rateio Multiplas naturezas)
+			// aRetAuto [19]:= aVendor     (Array para a baixa de vendor)     
+			// Exemplo:    MSExecAuto({|x, y| FINA090(x, y)}, 3, aRetAuto)
+			// Para definir o Motivo de Baixa (caso não informado, o default é NORMAL): Private _cAutoMotBx := "DEBITO CC" 
 
 			_aTit [1] = {se2 -> (recno ())}  // Formato de array por que pode baixar mais de um titulo por vez.
 			_aTit [2] = _aBanco [1, 1]
 			_aTit [3] = _aBanco [1, 2]
 			_aTit [4] = _aBanco [1, 3]
-			
-			// A transferencia de saldo entre filiais eh feita atraves de conta financeira transitoria. Para isso,
-			// o saldo deve ser baixado na filial de origem atraves de conta transitoria e deve ser feita inclusao
-			// de novo movimento na filial destino.
+			_aTit [5] = ''
+			_aTit [6] = ''
+			_aTit [7] = ''
 			_aTit [8] = _dDtBxTran
+			_aTit [9] = 1
+			_aTit [10] = ''
+			_aTit [11] = 'z'
+			_aTit [12] = se2 -> e2_vencto
+			_aTit [13] = se2 -> e2_vencrea
+			_aTit [14] = ''
+			_aTit [15] = ''
+			_aTit [16] = ''
+			_aTit [17] = ''
+			_aTit [18] = .f.
+			_aTit [19] = {}
 			
 			_sHistSE5 = 'TR.SLD.P/FIL.' + _sFilDest + ' REF.' + se2 -> e2_hist
 
@@ -1062,7 +1004,7 @@ static function _TrSZIMat ()
 	else
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT SZI.R_E_C_N_O_"
+		_oSQL:_sQuery += " SELECT TOP 10 SZI.R_E_C_N_O_"  // USANDO top 10 POR QUE O PROCESSO ESTAH ATRASADO, MAS NAO QUERO MONOPOLIZAR OS BATCHES
 		_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2, "
 		_oSQL:_sQuery +=              RetSQLName ("SZI") + " SZI "
 		_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
@@ -1090,12 +1032,12 @@ static function _TrSZIMat ()
 		_oSQL:_sQuery +=                   " AND V.SERIE       = SE2.E2_PREFIXO"
 		_oSQL:_sQuery +=                   " AND V.DOC         = SE2.E2_NUM"
 		_oSQL:_sQuery +=                   " AND V.TIPO_NF     IN ('C', 'V')"
-//		_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC = 'ASSOCIADO'"
-		_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC LIKE '1%')"  // 1=ASSOCIADO
+		_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC LIKE '1%'"  // 1=ASSOCIADO
+		_oSQL:_sQuery +=                ")"
 
 
 		// TESTES
-		//_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC + ZI_LOJASSO + ZI_SEQ = '002486' + '01' + '001517'"
+		_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC = '000248'"
 
 
 		_oSQL:_sQuery +=  " ORDER BY SE2.E2_FORNECE, SE2.E2_LOJA, SE2.E2_NUM, SE2.E2_PREFIXO, SE2.E2_PARCELA"
@@ -1105,7 +1047,7 @@ static function _TrSZIMat ()
 		for _nRegSZI = 1 to len (_aRegSZI)
 			_oCtaCorr := ClsCtaCorr():New (_aRegSZI [_nRegSZI, 1])
 			_oCtaCorr:FilDest = '01'
-			U_Log2 ('info', 'Solicitando transferencia do saldo do docto ' + _oCtaCorr:Doc + '/' + _oCtaCorr:Parcela + ' para a matriz.')
+			U_Log2 ('info', '[' + procname () + '](' + cvaltochar (_nRegSZI) + ' de ' + cvaltochar (len (_aRegSZI)) + ')Solicitando transferencia do saldo do docto ' + _oCtaCorr:Doc + '/' + _oCtaCorr:Parcela + ' para a matriz.')
 			if ! _oCtaCorr:TransFil (_oCtaCorr:DtMovto)
 				u_help ("A transferencia para outra filial nao foi possivel. " + _oCtaCorr:UltMsg,, .T.)
 			endif
