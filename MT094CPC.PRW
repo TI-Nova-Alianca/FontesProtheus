@@ -13,6 +13,7 @@
 // 15/01/2021 - Cláudia - GLPI: 8286/8818. Acrescentados os campos C7_VADESTI|C7_VACCDES
 // 04/05/2021 - Claudia - Acrescentado o campo C7_SOLICIT. GLPI:9814
 // 20/02/2023 - Claudia - Acrescentado o campo C7_VAMSG. GLPI:13198.
+// 15/03/2023 - Claudia - Retirado campo  C7_VAMSG   
 // ------------------------------------------------------------------------------------------------------------------
 #Include 'Protheus.ch'
 
