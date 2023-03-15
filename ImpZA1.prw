@@ -32,6 +32,7 @@
 // 24/10/2022 - Robert  - Validar atributo :FinalidOP junto com parametro VA_ETQOCBP para nao impressao cod.barras produto (GLPI 12344)
 // 09/12/2022 - Robert  - Nao busca mais nada do SB1 e SC2. Dados jah chegam como atributos do objeto.
 // 08/02/2023 - Robert  - Eliminadas algumas linhas comentariadas.
+// 10/03/2023 - Robert  - Tratamentos para novo campo ZAG_SEQ (ZA1_IDZAG passa a concatenar ZAG_DOC + ZAG_SEQ).
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -121,14 +122,14 @@ user function ImpZA1 (_sIdImpr, _oEtiq)
 		endif
 
 		do case
-		case ! empty (ZA1 -> ZA1_IdZAG)
-			zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC
-			if ! zag -> (dbseek (xfilial ("ZAG") + za1 -> za1_idZAG, .F.))
-				u_help ("Documento de transferencia '" + za1 -> za1_idZAG + "' nao encontrado.",, .t.)
+		case ! empty (_oEtiq:IdZAG)
+			zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC + ZAG_SEQ
+			if ! zag -> (dbseek (xfilial ("ZAG") + _oEtiq:IdZAG, .F.))
+				u_help ("Documento de transferencia '" + _oEtiq:IdZAG + "' nao encontrado.",, .t.)
 				_lContinua = .F.
 			else
-				_sDocImp  = 'Solic.transf:' + alltrim (za1 -> za1_IdZAG)
-				_sLoteImp = _oEtiq:LoteProduto  // zag -> zag_lotori
+				_sDocImp  = 'Solic.transf:' + substr (_oEtiq:IdZAG, 1, 10) + '/' + substr (_oEtiq:IdZAG, 11, 2)
+				_sLoteImp = _oEtiq:LoteProduto
 				_sAlmOri  = zag -> zag_almori
 				_sObsImp1 = left ('Tr.alm.' + zag -> zag_almori + ' -> ' + zag -> zag_almdst + ' (' + alltrim (zag -> zag_usrinc) + ')', 31)
 				if zag -> zag_almdst != '01'  // Nao imprimir para nao aparecer 'devolucao', etc.
@@ -204,11 +205,11 @@ user function ImpZA1 (_sIdImpr, _oEtiq)
 			_sTxtEtiq += _Esc + '%1' + _Enter      // Rotacao
 
 			// Adiciona 'miolo' da etiqueta, formatado conforme o tipo de aplicacao da etiqueta
-			if ! empty (_oEtiq:OP)  //ZA1 -> ZA1_OP)
+			if ! empty (_oEtiq:OP)
 				_sTxtEtiq += _FmtOP (_oEtiq)
-			elseif ! empty (_oEtiq:IdZAG)  //ZA1 -> ZA1_IdZAG)
+			elseif ! empty (_oEtiq:IdZAG)
 				_sTxtEtiq += _FmtZAG (_oEtiq)
-			elseif ! empty (_oEtiq:DocEntrNum) .or. ! empty (_oEtiq:D5_NUMSEQ)  //ZA1 -> ZA1_DOCE)
+			elseif ! empty (_oEtiq:DocEntrNum) .or. ! empty (_oEtiq:D5_NUMSEQ)
 				_sTxtEtiq += _FmtNF (_oEtiq)
 			else
 				u_help ("Sem definicao de formatacao de etiqueta deste tipo na Sato.",, .t.)
@@ -229,11 +230,11 @@ user function ImpZA1 (_sIdImpr, _oEtiq)
 			_sTxtEtiq += 'PC'  + _Enter  // Velocidade
 			
 			// Adiciona 'miolo' da etiqueta, formatado conforme o tipo de aplicacao da etiqueta
-			if ! empty (_oEtiq:OP)  //ZA1 -> ZA1_OP)
+			if ! empty (_oEtiq:OP)
 				_sTxtEtiq += _FmtOP (_oEtiq)
-			elseif ! empty (_oEtiq:IdZAG)  //ZA1 -> ZA1_IdZAG)
+			elseif ! empty (_oEtiq:IdZAG)
 				_sTxtEtiq += _FmtZAG (_oEtiq)
-			elseif ! empty (_oEtiq:DocEntrNum) .or. ! empty (_oEtiq:D5_NUMSEQ)  //ZA1 -> ZA1_DOCE)
+			elseif ! empty (_oEtiq:DocEntrNum) .or. ! empty (_oEtiq:D5_NUMSEQ)
 				_sTxtEtiq += _FmtNF (_oEtiq)
 			else
 				u_help ("Sem definicao de formatacao de etiqueta deste tipo na Datamax.",, .t.)

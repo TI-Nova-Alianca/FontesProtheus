@@ -29,6 +29,7 @@
 // 13/10/2022 - Robert - Adicionadas tabelas SFT e CD2 para compactacao.
 // 14/11/2022 - Robert - Adicionada tabela SCHDTSK.
 // 30/01/2023 - Robert - Adicionadas tabelas SZE, SZF, ZX5, SDA, SDB para compactacao.
+// 13/03/2023 - Robert - Adicionada tabela SZN para pack apos 365 dias.
 //
 
 // ----------------------------------------------------------------
@@ -84,6 +85,7 @@ static function _Pack ()
 		aadd (_aPack, {"WF3", "WF3_DATA    < '" + dtos (date () - 180 * 1) + "'", '', 0, 0, 0, 0, ''})
 		aadd (_aPack, {"SBK", "BK_DATA     < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
 		aadd (_aPack, {"SCHDTSK", "TSK_DIA < '" + dtos (date () - 30  * 1) + "'", '', 0, 0, 0, 0, ''})
+		aadd (_aPack, {"SZN", "ZN_DATA     < '" + dtos (date () - 365 * 1) + "'", '', 0, 0, 0, 0, ''})
 
 		procregua (len (_aPack))
 	endif

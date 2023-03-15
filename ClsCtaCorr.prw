@@ -99,6 +99,7 @@
 // 22/08/2022 - Robert - Removidos alguns trechos comentariados.
 // 23/11/2022 - Robert - Bloquear somente mov.07 quando jah tiver corr.mon. (ver obs no local)
 // 16/12/2022 - Robert - Criados tratamentos para "fornecedores de uva" (GLPI 12501)
+// 13/03/2023 - Robert - Novos parametros FINA090.
 //
 
 // ------------------------------------------------------------------------------------
@@ -839,13 +840,10 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _sFornSE2, _sLojaSE2) class ClsCtaCorr
 	local _sSQL       := ""
 	local _aAreaAnt   := U_ML_SRArea ()
 	local _aAmbAnt    := U_SalvaAmb ()
-//	local _aBkpSX1    := {}
 	local _oSQL       := NIL
 	local _sChvEx     := ::ChaveExt ()
 	local _aRetParc   := {}
 	local _dDtVenc    := ctod ('')
-
-	//u_logIni (GetClassName (::Self) + '.' + procname ())
 
 	// Ha casos em que preciso gerar SE2 para outro fornecedor (nao o associado em questao)
 	_sFornSE2 = iif (empty (_sFornSE2), ::Assoc, _sFornSE2)
@@ -900,15 +898,12 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _sFornSE2, _sLojaSE2) class ClsCtaCorr
 		_oSQL:_sQuery +=   " from " + RetSQLName ("SE2") + " SE2 "
 		_oSQL:_sQuery +=  " where SE2.D_E_L_E_T_ != '*'"
 		_oSQL:_sQuery +=    " and SE2.E2_FILIAL   = '" + xfilial ("SE2")   + "'"
-//		_oSQL:_sQuery +=    " and SE2.E2_FORNECE  = '" + ::Assoc + "'"
-//		_oSQL:_sQuery +=    " and SE2.E2_LOJA     = '" + ::Loja  + "'"
 		_oSQL:_sQuery +=    " and SE2.E2_FORNECE  = '" + _sFornSE2 + "'"
 		_oSQL:_sQuery +=    " and SE2.E2_LOJA     = '" + _sLojaSE2  + "'"
 		_oSQL:_sQuery +=    " and SE2.E2_NUM      = '" + ::Doc   + "'"
 		_oSQL:_sQuery +=    " and SE2.E2_PREFIXO  = '" + ::Serie + "'"
 		_aRetParc = aclone (_oSQL:Qry2Array ())
 		if _aRetParc [1, 2] == 0  // Nao encontrou nenhuma ocorrencia da parcela desejada
-			//u_log ('Mantendo a parcela desejada:', ::Parcela)
 			_sParcela = ::Parcela
 		else
 			_sParcela = soma1 (_aRetParc [1, 1])
@@ -920,8 +915,6 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _sFornSE2, _sLojaSE2) class ClsCtaCorr
 		aadd (_aAutoSE2, {"E2_PREFIXO", ::Serie,           NIL})
 		aadd (_aAutoSE2, {"E2_NUM"    , ::Doc,             Nil})
 		aadd (_aAutoSE2, {"E2_TIPO"   , _sOQueGera,        Nil})
-//		aadd (_aAutoSE2, {"E2_FORNECE", ::Assoc,           Nil})
-//		aadd (_aAutoSE2, {"E2_LOJA"   , ::Loja,            Nil})
 		aadd (_aAutoSE2, {"E2_FORNECE", _sFornSE2,         Nil})
 		aadd (_aAutoSE2, {"E2_LOJA"   , _sLojaSE2,         Nil})
 		aadd (_aAutoSE2, {"E2_EMISSAO", _dEmissao,         Nil})
@@ -943,7 +936,7 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _sFornSE2, _sLojaSE2) class ClsCtaCorr
 			aadd (_aAutoSE2, {"AUTCONTA",   ::NumCon,      Nil})
 		endif
 		_aAutoSE2 := aclone (U_OrdAuto (_aAutoSE2))
-		u_log2 ('debug', _aAutoSE2)
+	//	u_log2 ('debug', _aAutoSE2)
 
 		// Ajusta parametros da rotina.
 		pergunte ('FIN050    ', .f.)
@@ -965,8 +958,6 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _sFornSE2, _sLojaSE2) class ClsCtaCorr
 			_oSQL:_sQuery +=    " AND E2_PREFIXO = '" + ::Serie   + "'"
 			_oSQL:_sQuery +=    " AND E2_NUM     = '" + ::Doc     + "'"
 			_oSQL:_sQuery +=    " AND E2_PARCELA = '" + _sParcela + "'"
-//			_oSQL:_sQuery +=    " AND E2_FORNECE = '" + ::Assoc   + "'"
-//			_oSQL:_sQuery +=    " AND E2_LOJA    = '" + ::Loja    + "'"
 			_oSQL:_sQuery +=    " AND E2_FORNECE = '" + _sFornSE2 + "'"
 			_oSQL:_sQuery +=    " AND E2_LOJA    = '" + _sLojaSE2 + "'"
 			_oSQL:_sQuery +=    " AND D_E_L_E_T_ = ''"
@@ -982,7 +973,6 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _sFornSE2, _sLojaSE2) class ClsCtaCorr
 		if _lContinua
 			_lContinua = ::AtuParcel (se2 -> e2_parcela)
 		endif
-//		U_SalvaSX1 (cPerg, _aBkpSX1)  // Restaura parametros da rotina.
 	endif
 	
 	// Verifica se a chave externa foi gravada.
@@ -1031,7 +1021,6 @@ METHOD GeraSE2 (_sOQueGera, _dEmissao, _sFornSE2, _sLojaSE2) class ClsCtaCorr
 
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
-	//u_logFim (GetClassName (::Self) + '.' + procname ())
 return _lContinua
 
 
@@ -2193,7 +2182,7 @@ return _nSaldo
 // Transfere saldo deste lancamento para outra filial.
 METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 	local _lContinua := .T.
-	local _aTit      := afill (array (8), '')
+	local _aTit      := afill (array (19), '')
 	local _oBatch    := NIL
 	local _nSaldo    := 0
 	local _oSQL      := NIL
@@ -2228,27 +2217,33 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 		sm0 -> (dbseek (cEmpAnt + cFilAnt, .F.))
 	endif
 
-	// Documentacao cfe. TDN -->  http://tdn.totvs.com/pages/releaseview.action?pageId=6070725
-	// Deve ser passado um array (aTitulos), com oito posicoes, sendo que cada posicao devera conter a seguinte composicao:
-	// aTitulos [1]:= aRecnos   (array contendo os Recnos dos registros a serem baixados)
-	// aTitulos [2]:= cBanco     (Banco da baixa)
-	// aTitulos [3]:= cAgencia   (Agencia da baixa)
-	// aTitulos [4]:= cConta     (Conta da baixa)
-	// aTitulos [5]:= cCheque   (Cheque da Baixa)
-	// aTitulos [6]:= cLoteFin    (Lote Financeiro da baixa)
-	// aTitulos [7]:= cNatureza (Natureza do movimento bancario)
-	// aTitulos [8]:= dBaixa     (Data da baixa)
-	// Caso a contabilizacao seja online e a tela de contabilizacao possa ser mostrada em caso de erro no lancamento
-	// (falta de conta, debito/credito nao batem, etc) a baixa automatica em lote nao podera ser utilizada.
-	// Somente sera processada se: 
-	// MV_PRELAN = S
-	// MV_CT105MS = N
-	// MV_ALTLCTO = N
+	// Documentacao cfe. TDN -->  https://tdn.totvs.com/pages/releaseview.action?pageId=645486009
+	// aRetAuto [1] := aRecnos     (array contendo os Recnos dos registros a serem baixados)
+	// aRetAuto [2] := cBanco      (Banco da baixa)
+	// aRetAuto [3] := cAgencia    (Agencia da baixa)
+	// aRetAuto [4] := cConta      (Conta da baixa)
+	// aRetAuto [5] := cCheque     (Cheque da Baixa - apenas Contas a Pagar)
+	// aRetAuto [6] := cLoteFin    (Lote Financeiro da baixa)
+	// aRetAuto [7] := cNatureza   (Natureza do movimento bancario - apenas Contas a Pagar)
+	// aRetAuto [8] := dBaixa      (Data da baixa)
+	// aRetAuto [9] := nTipoBx     (1 = Baixa somente titulos que não estao em bordero ou nTipoBx -> 2 = Baixa somente titulos em bordero)
+	// aRetAuto [10]:= cBcoDe      (Portador de)
+	// aRetAuto [11]:= cBcoAte     (Portador Até)
+	// aRetAuto [12]:= dVencIni    (Vencimento Inicial)
+	// aRetAuto [13]:= dVencFim    (Vencimento Final)
+	// aRetAuto [14]:= cBord090I   (Borderô Inicial)
+	// aRetAuto [15]:= cBord090F   (Borderô  Final)
+	// aRetAuto [16]:= cBenef090   (Beneficiário do Cheque)
+	// aRetAuto [17]:= cHistor     (Historico do Cheque)
+	// aRetAuto [18]:= lMultNat    (Rateio Multiplas naturezas)
+	// aRetAuto [19]:= aVendor     (Array para a baixa de vendor)     
+	// Exemplo:    MSExecAuto({|x, y| FINA090(x, y)}, 3, aRetAuto)
+	// Para definir o Motivo de Baixa (caso não informado, o default é NORMAL): Private _cAutoMotBx := "DEBITO CC" 
 
 	// Verifica se existe titulo correspondente no financeiro e guarda seu RECNO.
 	if _lContinua
 		_aTit [1] = {::RecnoSE2 ()}  // Formato de array por que pode baixar mais de um titulo por vez.
-		U_Log2 ('info', 'Registro do SE2 a ser baixado via conta transitoria: ' + cvaltochar (_aTit [1, 1]))
+	//	U_Log2 ('info', 'Registro do SE2 a ser baixado via conta transitoria: ' + cvaltochar (_aTit [1, 1]))
 		if _aTit [1, 1] == 0
 			::UltMsg += "Nao ha titulo correspondente no financeiro.
 			_lContinua = .F.
@@ -2285,10 +2280,22 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 	// o saldo deve ser baixado na filial de origem atraves de conta transitoria e deve ser feita inclusao
 	// de novo movimento na filial destino.
 	if _lContinua
-
-	//	_aTit [8] = dDataBase
+		_aTit [5] = ''
+		_aTit [6] = ''
+		_aTit [7] = ''
 		_aTit [8] = iif (empty (_dDtBxTran), dDataBase, _dDtBxTran)
-		U_Log2 ('debug', _aTit)
+		_aTit [9] = 1
+		_aTit [10] = ''
+		_aTit [11] = 'z'
+		_aTit [12] = se2 -> e2_vencto
+		_aTit [13] = se2 -> e2_vencrea
+		_aTit [14] = ''
+		_aTit [15] = ''
+		_aTit [16] = ''
+		_aTit [17] = ''
+		_aTit [18] = .f.
+		_aTit [19] = {}
+	//	U_Log2 ('debug', _aTit)
 
 		// Ajusta parametros de contabilizacao para NAO, pois a rotina automatica nao aceita.
 		SetMVValue ("FIN090", "MV_PAR01", 2)  // Mostra lctos contabeis [S/N]
@@ -2300,7 +2307,6 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 
 		lMsErroAuto = .F.
 		MSExecAuto({|x,y| Fina090(x,y)},3,_aTit)
-// Pelo que eu sei, apesar da 'tela' do FINA090 ter sido desativada, a rotina automatica permanece. GLPI10615 e chamado Totvs 13693442 ---> MSExecAuto({|x,y| Fina091(x,y)},3,_aTit)
 		If lMsErroAuto
 			_lContinua = .F.
 			::UltMsg += u_LeErro (memoread (NomeAutoLog ()))

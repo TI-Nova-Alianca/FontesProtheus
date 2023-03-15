@@ -40,6 +40,7 @@
 // 10/02/2023 - Robert - Tratamento para mais de uma etiqueta no metodo GeraPorSD5 - GLPI 13134.
 // 13/02/2023 - Robert - Criado campo ZA1_QTGRUP
 // 22/02/2023 - Robert - Metodo PodeEnvFul() passa a receber variavel para mostrar ou nao msg de erro.
+// 10/03/2023 - Robert - Tratamentos para novo campo ZAG_SEQ (ZA1_IDZAG passa a concatenar ZAG_DOC + ZAG_SEQ).
 //
 
 #Include "Protheus.ch"
@@ -75,7 +76,7 @@ CLASS ClsEtiq
 	public  data DtFabrLote   // Data de fabricacao do lote de produto
 	public  data Filial       // ZA1_FILIAL
 	public  data FinalidOP    // C2_vaOpEsp: N=Normal;R=Reprocesso;E=externa (em 3os);T=Terceirizacao (para 3os);F=Filtracao
-	public  data IdZAG        // ZA1_IDZAG - Identificador de registro da tabela ZAG
+	public  data IdZAG        // ZA1_IDZAG - Identificador de registro da tabela ZAG (ZAG_DOC+ZAG_SEQ)
 	public  data Impressa     // ZA1_IMPRES - Jah impressa
 	public  data Inutilizada  // ZA1_APONT='I' - Indica que foi inutilizada manualmente
 	public  data ImprCBProd   // Indica se deve obrigatoriamente imprimir o cod.barras do produto.
@@ -389,7 +390,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 				endif
 
 			case ! empty (::IdZAG)
-				zag -> (dbsetorder (1))  // ZAG_FILIAL, ZAG_DOC, R_E_C_N_O_, D_E_L_E_T_
+				zag -> (dbsetorder (1))  // ZAG_FILIAL, ZAG_DOC, ZAG_SEQ, R_E_C_N_O_, D_E_L_E_T_
 			//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Pesquisando ZAG com >>' + xfilial ("ZAG") + ::IdZAG + '<< para buscar lote e validade.')
 				if ! zag -> (dbseek (xfilial ("ZAG") + ::IdZAG, .F.))
 					u_help ("Solicitacao de transferencia '" + ::IdZAG + "' referenciada pela etiqueta '" + ::Codigo + "' nao foi localizada na tabela ZAG.",, .t.)
@@ -550,7 +551,7 @@ METHOD Grava () Class ClsEtiq
 		_sTxtLog := 'Etiqueta ' + za1 -> za1_codigo + ' gravada.'
 		_sTxtLog += ' Produto: ' + alltrim (za1 -> za1_prod)
 		_sTxtLog += iif (! empty (za1 -> za1_op),     ' OP: '     + alltrim (za1 -> za1_op),     '')
-		_sTxtLog += iif (! empty (za1 -> za1_idZAG),  ' ZAG: '    + alltrim (za1 -> za1_idZAG),  '')
+		_sTxtLog += iif (! empty (za1 -> za1_idZAG),  ' IdZAG: '  + alltrim (za1 -> za1_idZAG),  '')
 		_sTxtLog += iif (! empty (za1 -> za1_doce),   ' NF: '     + alltrim (za1 -> za1_doce),   '')
 		_sTxtLog += iif (! empty (za1 -> za1_d5nseq), ' D5NSEQ: ' + alltrim (za1 -> ZA1_D5NSEQ), '')
 		u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']' + _sTxtLog)
@@ -996,12 +997,12 @@ METHOD Inutiliza (_lMsg) Class ClsEtiq
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " select status, status_protheus"
 		_oSQL:_sQuery +=   " from tb_wms_entrada"
-		// _oSQL:_sQuery +=  " where entrada_id = 'ZA1" + ::Filial + ::Codigo + "'"
 		_oSQL:_sQuery +=  " where entrada_id = 'ZA1" + xfilial ("ZA1") + ::Codigo + "'"
 		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 		_aStatWMS = _oSQL:Qry2Array (.f., .f.)
 		U_Log2 ('debug', _aStatWMS)
-		if len (_aStatWMS) > 0 .and. ! empty (_aStatWMS [1, 1]) .and. _aStatWMS [1, 1] != '9'
+//		if len (_aStatWMS) > 0 .and. ! empty (_aStatWMS [1, 1]) .and. _aStatWMS [1, 1] != '9'
+		if len (_aStatWMS) > 0 .and. ! empty (_aStatWMS [1, 1]) .and. _aStatWMS [1, 1] != '9' .and. _aStatWMS [1, 2] != 'C'
 			::UltMsg += "A etiqueta '" + ::Codigo + "' ja foi vista pelo FullWMS"
 			::UltMsg += " e nao pode ser inutilizada por que encontra-se com status '" + _aStatWMS [1, 1] + "'"
 			::UltMsg += " no campo STATUS da tabela de integracao tb_wms_entrada."

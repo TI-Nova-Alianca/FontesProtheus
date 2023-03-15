@@ -38,6 +38,9 @@
 // 27/01/2023 - Robert  - Metodo New passa a aceitar R_E_C_N_O_ ou chave de pesquisa.
 //                      - Mensagens, quando for o caso, passam a ser todas persistidas no campo ZAG_ULTMSG.
 // 02/02/2023 - Robert  - Quando alm.destino usa FullWMS, exige lote destino, pois o FullWMS vai exigir depois.
+// 11/03/2023 - Robert  - Tratamentos para novo campo ZAG_SEQ
+//                      - Criado metodo PodeIncl().
+//                      - Eliminados campos ZAG_UAUTP e ZAG_UAUTQ (Autorizadores PCP e qualidade).
 //
 
 // ------------------------------------------------------------------------------------
@@ -60,6 +63,7 @@ CLASS ClsTrEstq
 	public data FilOrig    // Filial origem.
 	public data FilDest    // Filial destino.
 	public data Docto      // Numero docto na tabela ZAG.
+	public data Seq        // Sequencia dentro do documento.
 	public data DtEmis     // Data emissao (inclusao) do ZAG. Nao obrigatoriamente a mesma da geracao do movto.
 	public data RegZAG     // Numero registro (RECNO) no ZAG.
 	public data OP         // Numero da OP, quando a solic. for gerada por OP.
@@ -79,20 +83,17 @@ CLASS ClsTrEstq
 	public data FWProdOrig // Indica se o produto origem eh controlado pelo FullWMS
 	public data FWProdDest // Indica se o produto destino eh controlado pelo FullWMS
 	public data ImprEtq    // ID da immpressora (caso seja necessario gerar e imprimir etiqueta) 
-//	public data LLibDst    // Lista de nomes dos liberadores do almox.destino
-//	public data LLibOri    // Lista de nomes dos liberadores do almox.origem
 	public data LibNaIncl  // Indica se, no momento da inclusao do registro no ZAG, jah deve tentar fazer as liberacoes.
 	public data LoteOrig   // Lote origem (quando produto tiver controle de lote)
 	public data LoteDest   // Lote destino (quando produto tiver controle de lote)
-//	private data MsgErro   // Mensagens (persistidas na tabela ZAG) de erro, para ajudar a investigar posteriormente casos de problemas.
 	public data MotNac     // Motivo de nao aceite da solicitacao.
 	public data QtdSolic   // Quantidade solicitada (inicial a ser transferida) 
 	public data UltMsg     // Ultima mensagem gerada.
 	public data UsrIncl    // Usuario que fez a inclusao do registro
 	public data UsrAutOri  // Usuario que autorizou pelo almox origem
 	public data UsrAutDst  // Usuario que autorizou pelo almox destino
-	public data UsrAutPCP  // Usuario que autorizou pelo PCP
-	public data UsrAutQld  // Usuario que autorizou pela qualidade
+//	public data UsrAutPCP  // Usuario que autorizou pelo PCP
+//	public data UsrAutQld  // Usuario que autorizou pela qualidade
 
 	// Declaracao dos Metodos da classe
 	public  METHOD New ()
@@ -112,6 +113,7 @@ CLASS ClsTrEstq
 	public  METHOD Libera ()
 	public  METHOD Negar ()
 	public  METHOD NovoEndDst ()
+	public  METHOD PodeIncl ()
 	private METHOD SomaMsg ()
 ENDCLASS
 
@@ -132,7 +134,7 @@ METHOD New (_xChave) Class ClsTrEstq
 	// Se receber caracter, eh por que se trata de um codigo jah
 	// existente nas tabelas, e preciso atualizar o objeto.
 	elseif valtype (_xChave) == "C"
-		zag -> (dbsetorder (1))  // ZAG_FILIAL, ZAG_DOC, R_E_C_N_O_, D_E_L_E_T_
+		zag -> (dbsetorder (1))  // ZAG_FILIAL, ZAG_DOC, ZAG_SEQ, R_E_C_N_O_, D_E_L_E_T_
 		if ! zag -> (dbseek (_xChave, .F.))
 			u_help ("Erro ao instanciar solicitacao de transferencia. Nao foi possivel localizar registro na tabela ZAG com chave '" + _xChave + "'.",, .t.)
 		else
@@ -140,13 +142,15 @@ METHOD New (_xChave) Class ClsTrEstq
 		endif
 	endif
 
+	// Nao vejo necessidade de gerar log ao instanciar um objeto vazio.
+	if ! empty (_xChave)
 		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Instanciado ' + ;
-			' ZAG_DOC ' + ::Docto + ;
-			' ' + ::AlmOrig + '->' + ::AlmDest + ;
+			' ZAG_DOC ' + ::Docto + '/' + ::Seq + ;
+			' ax.' + ::AlmOrig + '->' + ::AlmDest + ;
 			' item ' + alltrim (::ProdOrig) + ;
 			' qt=' + cvaltochar (::QtdSolic) + ;
 			' recno=' + cvaltochar (zag -> (recno ())))
-
+	endif
 Return ::self
 
 
@@ -171,7 +175,6 @@ METHOD AtuZAG (_sCampo, _xValor) Class ClsTrEstq
 	local _lRet := .F.
 	local _aAreaAnt  := U_ML_SRArea ()
 
-	//u_log2 ('info', 'Atualizando campo ' + _sCampo + ' com ' + cvaltochar (_xValor))
 	if ::RegZAG > 0
 		zag -> (dbgoto (::RegZAG))
 		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Gravando campo ' + _sCampo + ' com conteudo ' + cvaltochar (_xValor))
@@ -180,7 +183,6 @@ METHOD AtuZAG (_sCampo, _xValor) Class ClsTrEstq
 		msunlock ()
 		_lRet = .T.
 	else
-	//	::UltMsg += "Registro ainda nao gravado na tabela ZAG. Atualizacao do campo '" + _sCampo + "' nao pode ser feita na funcao " + procname ()
 		::SomaMsg ("Registro ainda nao gravado na tabela ZAG. Atualizacao do campo '" + _sCampo + "' nao pode ser feita na funcao " + procname ())
 		_lRet = .F.
 	endif
@@ -191,7 +193,7 @@ return _lRet
 
 
 // --------------------------------------------------------------------------
-// Estorna movimento (transf. foi excluida pela tela padrao, preciso mudar o status.
+// Estorna movimento (transf. foi excluida pela tela padrao, preciso mudar o status).
 METHOD Estorna () Class ClsTrEstq
 	::Executado = 'X'
 	::AtuZAG ("zag_exec", ::Executado)
@@ -211,18 +213,17 @@ METHOD Exclui () Class ClsTrEstq
 	::UltMsg = ""
 
 	if _lContinua .and. ::Executado == 'S'
-	//	::UltMsg += "Este lancamento ja gerou movimentacao. Estorne, antes, o movimento gerado."
 		::SomaMsg ("Este lancamento ja gerou movimentacao. Estorne, antes, o movimento gerado.")
 		_lContinua = .F.
 	endif
 	if _lContinua
 		zag -> (dbgoto (::RegZAG))
 		if zag -> (recno ()) != ::RegZAG
-		//	::UltMsg += "Nao foi possivel localizar o registro correspondente no arquivo ZAG. Exclusao nao sera' efetuada."
 			::SomaMsg ("Nao foi possivel localizar o registro correspondente no arquivo ZAG. Exclusao nao sera' efetuada.")
 			_lContinua = .F.
 		else
 			::Docto = zag -> zag_doc
+			::Seq   = zag -> zag_seq
 		endif
 	endif
 	if _lContinua
@@ -231,7 +232,8 @@ METHOD Exclui () Class ClsTrEstq
 		_oSQL:_sQuery += " FROM " + RetSQLName ("ZA1")
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 		_oSQL:_sQuery += " AND ZA1_FILIAL  = '" + xfilial ("ZA1") + "'"
-		_oSQL:_sQuery += " AND ZA1_IDZAG   = '" + ::Docto + "'"
+	//	_oSQL:_sQuery += " AND ZA1_IDZAG   = '" + ::Docto + "'"
+		_oSQL:_sQuery += " AND ZA1_IDZAG   = '" + ::Docto + ::Seq + "'"
 		_oSQL:_sQuery += " AND ZA1_APONT  != 'I'"
 		_sEtiq = _oSQL:RetQry (1, .F.)
 		if ! empty (_sEtiq)
@@ -239,7 +241,6 @@ METHOD Exclui () Class ClsTrEstq
 			// Tenta inutilizar a etiqueta
 			_oEtiq := ClsEtiq():New(_sEtiq)
 			if ! _oEtiq:Inutiliza ()
-		//		::UltMsg += "Existe a etiqueta " + _sEtiq + " gerada para esta solicitacao. Inutilize, antes, a etiqueta."
 				::SomaMsg ("Existe a etiqueta " + _sEtiq + " gerada para esta solicitacao. Inutilize, antes, a etiqueta.")
 				_lContinua = .F.
 			endif
@@ -256,20 +257,19 @@ METHOD Exclui () Class ClsTrEstq
 		_oSQL:_sQuery +=   " and status  != '9'"
 		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 		if _oSQL:RetQry (1, .f.) > 0
-	//		::UltMsg += "Esta solic.gerou o pedido de separacao " + ::Docto + " para o FullWMS, que encontra-se ainda pendente. Esse pedido deve ser excluido do FullWMS antes de poder excluir esta solicitacao de transferencia."
 			::SomaMsg ("Esta solic.gerou o pedido de separacao " + ::Docto + " para o FullWMS, que encontra-se ainda pendente. Esse pedido deve ser excluido do FullWMS antes de poder excluir esta solicitacao de transferencia.")
 			_lContinua = .F.
 		endif
 	endif
 
-	// Esta solicitacao pode ter sido gerada a partir de uma 'avria' pelo FullWMS.
+	// Esta solicitacao pode ter sido gerada a partir de uma 'avaria' pelo FullWMS.
 	// Varre tabela de integracao e limpa o campo, caso encontre.
 	if _lContinua .and. ::FWProdOrig .and. ::AlmUsaFull (::AlmOrig)
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "update tb_wms_movimentacoes"
 		_oSQL:_sQuery +=   " set status_protheus = ' '"
-		_oSQL:_sQuery +=      ", ZAG_DOC = ''"
-		_oSQL:_sQuery += " where ZAG_DOC = '" + ::Docto + "'"
+		_oSQL:_sQuery +=      ", IdZAG = ''"
+		_oSQL:_sQuery += " where IdZAG = '" + ::Docto + ::Seq + "'"
 		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 		_lContinua = _oSQL:Exec ()
 	endif
@@ -278,8 +278,7 @@ METHOD Exclui () Class ClsTrEstq
 		reclock ("ZAG", .F.)
 		zag -> (dbdelete ())
 		msunlock ()
-//		::UltMsg += "Documento " + ::Docto + " excluido."
-		::SomaMsg ("Documento " + ::Docto + " excluido.")
+		::SomaMsg ("Solicitacao " + ::Docto + '/' + ::Seq + " excluida.")
 	endif
 
 	if ! _lContinua
@@ -321,17 +320,6 @@ METHOD Executa (_lMensagem) Class ClsTrEstq
 		_sMsgInt += "Esta transf.deve ser executada na filial '" + ::FilOrig + "'."
 		_lContinua = .F.
 	endif
-/*
-	// Tenho alguns casos em que o responsavel eh o FullWMS e este jah executou
-	// a tarefa, mas por algum motivo nao peguei o retorno e fiquei aguardando
-	// a liberacao. Entao tentarei novamente agora, para nao ficar travando o processo...
-	if _lContinua
-		if (empty (::UsrAutOri) .and. ::AlmOrig == '01') .or. (empty (::UsrAutDst) .and. ::AlmDest == '01')
-			U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Almox.envolvendo Full. Tentarei liberar novamente.')
-			::Libera (.F., 'FullWMS')
-		endif
-	endif
-*/
 	if _lContinua .and. empty (::UsrAutOri)
 		_sMsgInt += "Falta liberacao do responsavel pelo almox origem"
 		_lContinua = .F.
@@ -340,14 +328,14 @@ METHOD Executa (_lMensagem) Class ClsTrEstq
 		_sMsgInt += "Falta liberacao do responsavel pelo almox destino"
 		_lContinua = .F.
 	endif
-	if _lContinua .and. empty (::UsrAutPCP)
-		_sMsgInt += "Falta liberacao do responsavel pelo PCP"
-		_lContinua = .F.
-	endif
-	if _lContinua .and. empty (::UsrAutQld)
-		_sMsgInt += "Falta liberacao do responsavel pela qualidade"
-		_lContinua = .F.
-	endif
+//	if _lContinua .and. empty (::UsrAutPCP)
+//		_sMsgInt += "Falta liberacao do responsavel pelo PCP"
+//		_lContinua = .F.
+//	endif
+//	if _lContinua .and. empty (::UsrAutQld)
+//		_sMsgInt += "Falta liberacao do responsavel pela qualidade"
+//		_lContinua = .F.
+//	endif
 
 	if ! _lContinua
 		U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Ainda nao tem condicoes de executar. Msg.interna: ' + _sMsgInt)
@@ -390,6 +378,7 @@ METHOD GeraAtrib (_sOrigem) class ClsTrEstq
 	::FilOrig    = ''
 	::FilDest    = ''
 	::Docto      = ''
+	::Seq        = ''
 	::DtEmis     = ''
 	::RegZAG     = 0
 	::OP         = ''
@@ -410,19 +399,16 @@ METHOD GeraAtrib (_sOrigem) class ClsTrEstq
 	::FWProdDest = .F.
 	::ImprEtq    = ''
 	::LibNaIncl  = .T.
-//	::LLibDst    = ''
-//	::LLibOri    = ''
 	::LoteOrig   = ''
 	::LoteDest   = ''
-//	::MsgErro    = iif (valtype (::MsgErro) == 'U', '', ::MsgErro)  // Posso estar atualizando apos alguma operacao e nao quero perder o historico.
 	::MotNac     = ''
 	::QtdSolic   = 0
 	::UltMsg     = iif (valtype (::UltMsg) == 'U', '', ::UltMsg)  // Posso estar atualizando apos alguma operacao e nao quero perder o historico.
 	::UsrIncl    = ''
 	::UsrAutOri  = ''
 	::UsrAutDst  = ''
-	::UsrAutPCP  = ''
-	::UsrAutQld  = ''
+//	::UsrAutPCP  = ''
+//	::UsrAutQld  = ''
 
 	if _sOrigem == 'ZAG'
 		::Filial    = zag -> zag_filial
@@ -430,6 +416,7 @@ METHOD GeraAtrib (_sOrigem) class ClsTrEstq
 		::FilDest   = zag -> zag_FilDst
 		::RegZAG    = zag -> (recno ())
 		::Docto     = zag -> zag_doc
+		::Seq       = zag -> zag_seq
 		::DtEmis    = zag -> zag_emis
 		::UsrIncl   = zag -> zag_usrinc
 		::OP        = zag -> zag_op
@@ -443,13 +430,12 @@ METHOD GeraAtrib (_sOrigem) class ClsTrEstq
 		::Executado = zag -> zag_exec
 		::LoteOrig  = zag -> zag_LotOri
 		::LoteDest  = zag -> zag_LotDst
-//		::MsgErro   = alltrim (zag -> zag_MsgErr)
 		::MotNac    = alltrim (zag -> zag_MotNac)
 		::QtdSolic  = zag -> zag_QtdSol
 		::UsrAutOri = zag -> zag_UAutO
 		::UsrAutDst = zag -> zag_UAutD
-		::UsrAutPCP = zag -> zag_UAutP
-		::UsrAutQld = zag -> zag_UAutQ
+	//	::UsrAutPCP = zag -> zag_UAutP
+	//	::UsrAutQld = zag -> zag_UAutQ
 
 		// Busca dados adicionais dos produtos origem e destino (podem nao ser iguais)
 		::LeSB1 ()
@@ -462,7 +448,8 @@ METHOD GeraAtrib (_sOrigem) class ClsTrEstq
 			_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZA1") + " ZA1"
 			_oSQL:_sQuery += " WHERE ZA1.D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=   " AND ZA1.ZA1_FILIAL = '" + xfilial ("ZA1") + "'"
-			_oSQL:_sQuery +=   " AND ZA1.ZA1_IDZAG  = '" + zag -> zag_doc + "'"
+		//	_oSQL:_sQuery +=   " AND ZA1.ZA1_IDZAG  = '" + zag -> zag_doc + "'"
+			_oSQL:_sQuery +=   " AND ZA1.ZA1_IDZAG  = '" + ::Docto + ::Seq + "'"
 			_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 			::Etiqueta = _oSQL:RetQry (1, .f.)
 		endif
@@ -478,7 +465,7 @@ METHOD GeraSD3 () class ClsTrEstq
 	local _sDoc      := ""
 	local _aAuto261  := {}
 	local _aItens    := {}
-	local _sChaveEx  := 'ZAG' + ::Docto
+	local _sChaveEx  := 'ZAG' + ::Docto + ::Seq
 	local _aRegsSD3  := {}
 
 	u_log2 ('info', 'Iniciando ' + GetClassName (::Self) + '.' + procname ())
@@ -550,7 +537,6 @@ METHOD GeraSD3 () class ClsTrEstq
 			_oSQL:_sQuery +=    " AND D3_VACHVEX = '" + _sChaveEx + "'"
 			_aRegsSD3 := aclone (_oSQL:Qry2Array (.F., .F.))
 			if len (_aRegsSD3) != 2
-		//		::UltMsg += "Problemas na gravacao da transferencia. Nao encontrei os dois registros que deveriam ter sido gravados. Query para conferencia: " + _oSQL:_sQuery
 				::SomaMsg ("Problemas na gravacao da transferencia. Nao encontrei os dois registros que deveriam ter sido gravados. Query para conferencia: " + _oSQL:_sQuery)
 				lMsErroAuto = .T.
 			endif
@@ -558,15 +544,12 @@ METHOD GeraSD3 () class ClsTrEstq
 
 		If lMsErroAuto
 			if ! empty (_sErroAuto)
-		//		::UltMsg += _sErroAuto
 				::SomaMsg (_sErroAuto)
 			endif
 			if ! empty (NomeAutoLog ())
-		//		::UltMsg += U_LeErro (memoread (NomeAutoLog ()))
 				::SomaMsg (U_LeErro (memoread (NomeAutoLog ())))
 			endif
 			if empty (::UltMsg)
-		//		::UltMsg += '[Sem descricao do erro]'
 				::SomaMsg ('[Sem descricao do erro]')
 			endif
 			::UltMsg = "Erro interno na rotina de transferencia: " + ::UltMsg
@@ -577,7 +560,6 @@ METHOD GeraSD3 () class ClsTrEstq
 		else
 			::Executado = 'S'
 			::AtuZAG ("zag_exec", ::Executado)
-	//		::UltMsg += "Movto.gerado no Protheus com DOC=" + _sDoc
 			::SomaMsg ("Movto.gerado no Protheus com DOC=" + _sDoc)
 			u_log2 ('info', ::UltMsg)
 		endif
@@ -624,13 +606,13 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 		_oEtiq := ClsEtiq():New()
 		_oEtiq:Produto     = ::ProdDest
 		_oEtiq:DtEmis      = ::DtEmis
-		_oEtiq:IdZAG       = ::Docto
+	//	_oEtiq:IdZAG       = ::Docto
+		_oEtiq:IdZAG       = ::Docto + ::Seq
 		_oEtiq:Quantidade  = ::QtdSolic
 		_oEtiq:AlmDest     = ::AlmDest
 		_oEtiq:AlmOrig     = ::AlmOrig
 		_oEtiq:LoteProduto = alltrim (::LoteDest)
 		U_Log2 ('debug', '[' + procname () + ']LoteProduto:  >>' + _oEtiq:LoteProduto + "<<")
-	//	_oEtiq:ValidLote   = ?
 
 		if _oEtiq:Grava ()
 
@@ -668,14 +650,19 @@ METHOD Grava () Class ClsTrEstq
 	local _lContinua := .T.
 	local _lRet      := .F.
 	local _sMsgLog   := ''
+	local _nLock     := 0
+	local _nTenta    := 0
 
-//	u_logIni (GetClassName (::Self) + '.' + procname ())
 	if ::RegZAG != 0
-	//	::UltMsg += "Registro ja existe na tabela ZAG (recno " + cvaltochar (::RegZAG) + ") e nao vai ser regravado."
 		::SomaMsg ("Registro ja existe na tabela ZAG (recno " + cvaltochar (::RegZAG) + ") e nao vai ser regravado.")
 		_lContinua = .F.
 	endif
 
+	// Verifica se pode gravar
+	if _lContinua
+		_lContinua = ::PodeIncl ()
+	endif
+/*
 	// Verifica campos obrigatorios, nao aceitos, tamanhos, tipos, etc.
 	if _lContinua
 		if empty (::FilOrig) ; ::SomaMsg ("Filial de origem deve ser informada.")                   ; _lContinua = .F. ; endif
@@ -879,26 +866,51 @@ METHOD Grava () Class ClsTrEstq
 			endif
 		endif
 	endif
+*/
+
+	// Vou gravar usando semaforo, por que preciso ter numero de documento exclusivo, inclusive entre filiais.
+	if _lContinua
+		// Faz algumas tentativas antes de cuspir erro para o usuario.
+		_nTenta = 0
+		do while _nTenta++ <= 10
+			U_Log2 ('debug', '[' + GetClassName (::Self) + '_' + procname () + ']Tentativa ' + cvaltochar (_nTenta) + ' de criar semaforo')
+			_nLock := U_Semaforo (GetClassName (::Self) + '.' + procname ())
+			if _nLock != 0
+				exit
+			endif
+			sleep (1000)
+		enddo
+		if _nLock == 0
+			u_help ("Nao foi possivel obter acesso exclusivo para gravacao desta solicitacao.",, .t.)
+			_lContinua = .F.
+		endif
+	endif
 
 	if _lContinua
 		BEGIN TRANSACTION
-		//::Docto = GetSXENum ("ZAG", "ZAG_DOC")
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT MAX (ZAG_DOC)"
-		_oSQL:_sQuery +=   " FROM " + RetSQLName ("ZAG") + " ZAG "
-		// QUERO considerar os deletados tambem ---> _oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=  " WHERE ZAG_FILIAL = '" + xfilial ("ZAG") + "'"
-		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
-		::Docto = _oSQL:RetQry (1, .f.)
+
+		// Se ainda nao tenho numero de documento, procuro o proximo livre.
+		// Posso estar desmembrando uma solicitacao. Nesses casos, jah terei o
+		// numero de documento, seguido de um sequencial.
 		if empty (::Docto)
-			::Docto = strzero (0, tamsx3 ("ZAG_DOC")[1])
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " SELECT MAX (ZAG_DOC)"
+			_oSQL:_sQuery +=   " FROM " + RetSQLName ("ZAG") + " ZAG "
+			// QUERO considerar os deletados tambem ---> _oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=  " WHERE ZAG_FILIAL = '" + xfilial ("ZAG") + "'"
+		//	_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+			::Docto = _oSQL:RetQry (1, .f.)
+			if empty (::Docto)
+				::Docto = strzero (0, tamsx3 ("ZAG_DOC")[1])
+			endif
+			::Docto = soma1 (::Docto)
+			::Seq   = strzero (1, tamsx3 ("ZAG_SEQ")[1])
 		endif
-		::Docto = soma1 (::Docto)
 
 		// Prepara mensagem bem 'cuti-cuti' para arquivo de log.
 		_sMsgLog := ''
-		_sMsgLog += '[' + GetClassName (::Self) + '.' + procname () + "]Gravando ZAG_DOC:" + ::Docto
+		_sMsgLog += '[' + GetClassName (::Self) + '.' + procname () + "]Gravando ZAG_DOC/SEQ:" + ::Docto + '/' + ::Seq
 		_sMsgLog += " Prd:" + alltrim (::ProdOrig)
 		if ::ProdDest != ::ProdOrig
 			_sMsgLog += '->' + alltrim (::ProdDest)
@@ -918,6 +930,7 @@ METHOD Grava () Class ClsTrEstq
 		zag -> zag_FilOri = ::FilOrig
 		zag -> zag_filDst = ::FilDest
 		zag -> zag_doc    = ::Docto
+		zag -> zag_seq    = ::Seq
 		zag -> zag_emis   = ::DtEmis
 		zag -> zag_usrinc = ::UsrIncl
 		zag -> zag_op     = ::OP
@@ -931,18 +944,16 @@ METHOD Grava () Class ClsTrEstq
 		zag -> zag_LotOri = ::LoteOrig
 		zag -> zag_LotDst = ::LoteDest
 		zag -> zag_QtdSol = ::QtdSolic
-//		zag -> zag_UAutP  = 'Auto'  // Liberacao automatica sempre
-//		zag -> zag_UAutQ  = 'Auto'  // Liberacao automatica sempre
 		msunlock ()
-		//do while __lSX8
-		//	ConfirmSX8 ()
-		//enddo
 
 		::RegZAG = zag -> (recno ())
-		::SomaMsg ("Solic.de transf.gerada: " + ::Docto + '.')
+		::SomaMsg ("Solic.de transf.gravada: " + ::Docto + '/' + ::Seq + '.')
 		_lRet = .T.
 		END TRANSACTION
 	endif
+
+	// Libera semaforo
+	U_Semaforo (_nLock)
 
 	// Verifica necessidade de gerar etiqueta
 	if _lRet
@@ -1021,17 +1032,19 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 	_sUserName = iif (_sUserName == NIL, cUsername, _sUserName)
 
 	// Se ainda tem alguma liberacao pendente...
-	if empty (::UsrAutOri) .or. empty (::UsrAutDst) .or. empty (::UsrAutPCP) .or. empty (::UsrAutQld)
+//	if empty (::UsrAutOri) .or. empty (::UsrAutDst) .or. empty (::UsrAutPCP) .or. empty (::UsrAutQld)
+	if empty (::UsrAutOri) .or. empty (::UsrAutDst) //.or. empty (::UsrAutPCP) .or. empty (::UsrAutQld)
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "SELECT rtrim (LIBERADORES_ALMORI)    AS ORI,"
 		_oSQL:_sQuery +=       " rtrim (LIBERADORES_ALMDST)    AS DST"
 		_oSQL:_sQuery +=  " FROM VA_VSOL_TRANSF_ESTOQUE"
 		_oSQL:_sQuery += " WHERE ZAG_FILIAL = '" + xfilial ("ZAG") + "'"
 		_oSQL:_sQuery +=   " AND ZAG_DOC    = '" + ::Docto + "'"
+		_oSQL:_sQuery +=   " AND ZAG_SEQ    = '" + ::Seq + "'"
 		//_oSQL:Log ()
 		_aLib := aclone (_oSQL:Qry2Array (.F., .F.))
-		//u_log2 ('debug', 'Liberadores alm ' + ::AlmOrig + '(origem) :' + alltrim (_aLib [1, 1]))
-		//u_log2 ('debug', 'Liberadores alm ' + ::AlmDest + '(destino):' + alltrim (_aLib [1, 2]))
+		u_log2 ('debug', 'Liberadores alm ' + ::AlmOrig + '(origem) :' + alltrim (_aLib [1, 1]))
+		u_log2 ('debug', 'Liberadores alm ' + ::AlmDest + '(destino):' + alltrim (_aLib [1, 2]))
 		//u_log2 ('debug', 'Testando com usuario ' + _sUserName)
 		if empty (::UsrAutOri) .and. alltrim (upper (_sUserName)) $ _aLib [1, 1]
 			u_log2 ('info', 'Usuario ' + _sUserName + ' tem liberacao para o almox. origem')
@@ -1066,15 +1079,15 @@ METHOD Libera (_lMsg, _sUserName) Class ClsTrEstq
 			endif
 		endif
 		
-		// Inicialmente a liberacao de PCP e qualidade vai ser automatica
-		if empty (::UsrAutPCP) .and. ::AtuZAG ("zag_UAutP", 'Auto') // _sUserName)
-			::UsrAutPCP = 'Auto' //_sUserName
-			_lNenhuma = .F.
-		endif
-		if empty (::UsrAutQld) .and. ::AtuZAG ("zag_UAutQ", 'Auto') // _sUserName)
-			::UsrAutQld = 'Auto' //_sUserName
-			_lNenhuma = .F.
-		endif
+	//	// Inicialmente a liberacao de PCP e qualidade vai ser automatica
+	//	if empty (::UsrAutPCP) .and. ::AtuZAG ("zag_UAutP", 'Auto') // _sUserName)
+	//		::UsrAutPCP = 'Auto' //_sUserName
+	//		_lNenhuma = .F.
+	//	endif
+	//	if empty (::UsrAutQld) .and. ::AtuZAG ("zag_UAutQ", 'Auto') // _sUserName)
+	//		::UsrAutQld = 'Auto' //_sUserName
+	//		_lNenhuma = .F.
+	//	endif
 	endif
 
 	if _lNenhuma
@@ -1201,6 +1214,215 @@ METHOD NovoEndDst (_sNEndDst) Class ClsTrEstq
 		// Persiste ultimas mensagens na tabela ZAG, para ajudar pessoal de suporte.
 		::AtuZAG ("zag_UltMsg", ::UltMsg)
 	endif
+return _lContinua
+
+
+// --------------------------------------------------------------------------
+// Valida se a solicitacao pode ser incluida.
+METHOD PodeIncl () Class ClsTrEstq
+	local _lContinua := .T.
+//	local _lRet      := .F.
+//	local _sMsgLog   := ''
+
+	// Verifica campos obrigatorios, nao aceitos, tamanhos, tipos, etc.
+	if _lContinua
+		if empty (::FilOrig) ; ::SomaMsg ("Filial de origem deve ser informada.")                   ; _lContinua = .F. ; endif
+		if empty (::FilDest) ; ::SomaMsg ("Filial destino deve ser informada.")                     ; _lContinua = .F. ; endif
+		if empty (::AlmOrig) ; ::SomaMsg ("Almoxarifado de origem deve ser informado.")             ; _lContinua = .F. ; endif
+		if empty (::AlmDest) ; ::SomaMsg ("Almoxarifado destino deve ser informado.")               ; _lContinua = .F. ; endif
+		if empty (::DtEmis)  ; ::SomaMsg ("Data de emissao deve ser informada.")                    ; _lContinua = .F. ; endif
+		if empty (::UsrIncl) ; ::SomaMsg ("Nome solicitante deve ser informado.")                   ; _lContinua = .F. ; endif
+		if empty (::Motivo)  ; ::SomaMsg ("Motivo da transferencia deve ser informado.")            ; _lContinua = .F. ; endif
+		if empty (::ProdOrig); ::SomaMsg ("Produto deve ser informado.")                            ; _lContinua = .F. ; endif
+		if empty (::QtdSolic); ::SomaMsg ("Quantidade solicitada deve ser informada.")              ; _lContinua = .F. ; endif
+		if ! empty (::Docto) ; ::SomaMsg ("Documento NAO deve ser informado na inclusao.")          ; _lContinua = .F. ; endif
+		if ! empty (::RegZAG); ::SomaMsg ("RECNO da tabela ZAG NAO deve ser informado na inclusao."); _lContinua = .F. ; endif
+		if valtype (::QtdSolic) != 'N'
+			::SomaMsg ("Quantidade deve ser do tipo numerico.")
+			_lContinua = .F.
+		else
+			if ::QtdSolic <= 0
+				::SomaMsg ("Quantidade solicitada zerada ou negativa.")
+				_lContinua = .F.
+			endif
+		endif
+
+		// Por enquanto, nao vou aceitar transferencia entre filiais. Robert, 11/04/2019
+		if ::FilDest != ::FilOrig
+			::UltMsg += "Transferencias entre filiais ainda nao sao permitidas nesta rotina."
+			_lContinua = .F.
+		endif
+
+		// Verifica tamanhos de campos para evitar, por exemplo, uma chamada
+		// passando o produto com tamanho != 15
+		// Usa tamanhos fixos (nao busca no SX3) por questao de performance,
+		// jah que sao campos chave e dificilmente mudarao de tamanho.  
+		if _lContinua
+			if len (::FilOrig)  !=  2                           ; ::SomaMsg ("Filial origem deve ter tamanho 2.")    ; _lContinua = .F.; endif
+			if len (::FilDest)  !=  2                           ; ::SomaMsg ("Filial destino deve ter tamanho 2.")   ; _lContinua = .F.; endif
+			if len (::ProdOrig) != 15                           ; ::SomaMsg ("Produto origem deve ter tamanho 15.")  ; _lContinua = .F.; endif
+			if len (::ProdDest) != 15                           ; ::SomaMsg ("Produto destino deve ter tamanho 15.") ; _lContinua = .F.; endif
+			if len (::AlmOrig)  !=  2                           ; ::SomaMsg ("Alm.origem deve ter tamanho 2.")       ; _lContinua = .F.; endif
+			if len (::AlmDest)  !=  2                           ; ::SomaMsg ("Alm.destino deve ter tamanho 2.")      ; _lContinua = .F.; endif
+			if ! empty (::EndOrig)  .and. len (::EndOrig)  != 15; ::SomaMsg ("Endereco origem deve ter tamanho 15.") ; _lContinua = .F.; endif
+			if ! empty (::EndDest)  .and. len (::EndDest)  != 15; ::SomaMsg ("Endereco destino deve ter tamanho 15."); _lContinua = .F.; endif
+			if ! empty (::LoteOrig) .and. len (::LoteOrig) != 10; ::SomaMsg ("Lote origem deve ter tamanho 10.")     ; _lContinua = .F.; endif
+			if ! empty (::loteDest) .and. len (::LoteDest) != 10; ::SomaMsg ("Lote destino deve ter tamanho 10.")    ; _lContinua = .F.; endif
+		endif
+	endif
+
+	// Testa possibilidade do destino ser igual a origem.
+	if _lContinua
+		if ::FilOrig == ::FilDest ;
+		.and. ::ProdOrig == ::ProdDest ;
+		.and. ::AlmOrig  == ::AlmDest ;
+		.and. ::EndOrig  == ::EndDest ;
+		.and. ::LoteOrig == ::LoteDest
+			::SomaMsg ("Nao ha sentido em transferir quando origem e destino sao iguais.")
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
+		// Faz leitura de dados dos produtos a partir do SB1. Isso por que o
+		// objeto pode ter sido instanciado e modificado pelo programa chamador
+		// e agora eu estaria com dados de SB1 desatualizados.
+		::LeSB1 ()
+
+		if ::CtrLotOrig .and. empty (::LoteOrig) .and. ! ::AlmUsaFull (::AlmOrig)
+			::SomaMsg ("Produto origem controla lotes. Lote de origem deve ser informado.")
+			_lContinua = .F.
+		endif
+		if ::CtrLocOrig .and. empty (::EndOrig) .and. ! ::AlmUsaFull (::AlmOrig)
+			::SomaMsg ("Produto origem controla localizacao. Endereco de origem deve ser informado.")
+			_lContinua = .F.
+		endif
+		if ! empty (::LoteOrig) .and. ! ::CtrLotOrig
+			if ! (::FWProdOrig .and. ::AlmUsaFull (::AlmDest))  // Se vai para FullWMS tenho que informar algm lote para ele.
+				::SomaMsg ("Lote origem nao deve ser informado pois o produto '" + alltrim (::ProdOrig) + "' nao controla lote.")
+				_lContinua = .F.
+			else
+				U_Log2 ('debug', '[' + procname () + ']Vou aceitar lote origem por que preciso ter algum lote para informar ao FullWMS.')
+			endif
+		endif
+		if ! empty (::EndOrig) .and. ! ::CtrLocOrig
+			::SomaMsg ("Endereco origem nao deve ser informado pois o produto '" + alltrim (::ProdOrig) + "' nao controla localizacao.")
+			_lContinua = .F.
+		endif
+		if ::CtrLotDest .and. empty (::LoteDest)
+			::SomaMsg ("Produto destino controla lotes. Lote destino deve ser informado.")
+			_lContinua = .F.
+		endif
+		if ::CtrLocDest .and. empty (::EndDest)
+			::SomaMsg ("Produto destino controla localizacao. Endereco destino deve ser informado.")
+			_lContinua = .F.
+		endif
+		if ! empty (::LoteDest) .and. ! ::CtrLotDest
+			if ! (::FWProdDest .and. ::AlmUsaFull (::AlmDest))  // Se vai para FullWMS, tenho que informar algm lote para ele.
+				::SomaMsg ("Lote destino nao deve ser informado pois o produto '" + alltrim (::ProdDest) + "' nao controla lote.")
+				_lContinua = .F.
+			endif
+		endif
+		if empty (::LoteDest) .and. ::AlmUsaFull (::AlmDest)  // Se vai para FullWMS, tenho que informar algm lote para ele.
+			::SomaMsg ("Deve ser informado um lote de destino por que o FullWMS vai exigir.")
+			_lContinua = .F.
+		endif
+		if ! empty (::EndDest) .and. ! ::CtrLocDest
+			::SomaMsg ("Endereco destino nao deve ser informado pois o produto '" + alltrim (::ProdDest) + "' nao controla localizacao.")
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua .and. ! empty (::AlmOrig)
+		nnr -> (dbsetorder (1))  // NNR_FILIAL+NNR_CODIGO
+		if ! nnr -> (dbseek (xfilial ("NNR") + ::AlmOrig, .F.))  // Nao pesquisa pela filial origem por que o NNR eh compartilhado.
+			::SomaMsg ("Almoxarifado origem '" + ::AlmOrig + "' nao cadastrado.")
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua .and. ! empty (::AlmDest)
+		nnr -> (dbsetorder (1))
+		if ! nnr -> (dbseek (xfilial ("NNR") + ::AlmDest, .F.))  // Nao pesquisa pela filial origem por que o NNR eh compartilhado.
+			::SomaMsg ("Almoxarifado destino '" + ::AlmDest + "' nao cadastrado.")
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua .and. ::CtrLotOrig .and. ! empty (::LoteOrig)
+		sb8 -> (dbsetorder (5))  // B8_FILIAL+B8_PRODUTO+B8_LOTECTL+B8_NUMLOTE+DTOS(B8_DTVALID)
+		if ! sb8 -> (dbseek (::FilOrig + ::ProdOrig + ::LoteOrig, .F.))
+			::SomaMsg ("Lote origem '" + ::LoteOrig + "' nao encontrado para o produto '" + ::ProdOrig + "' na filial '" + ::FilOrig + "'.")
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua .and. ::CtrLotDest .and. ! empty (::LoteDest)
+		sb8 -> (dbsetorder (5))  // B8_FILIAL+B8_PRODUTO+B8_LOTECTL+B8_NUMLOTE+DTOS(B8_DTVALID)
+		if ! sb8 -> (dbseek (::FilDest + ::ProdDest + ::LoteDest, .F.))
+			::SomaMsg ("Lote destino '" + ::LoteDest + "' ja existe para o produto '" + ::ProdDest + "' na filial '" + ::FilDest + "'.")
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua .and. ! empty (::EndOrig)
+		sbe -> (dbsetorder (1))  // BE_FILIAL+BE_LOCAL+BE_LOCALIZ
+		if ! sbe -> (dbseek (::FilOrig + ::AlmOrig + ::EndOrig, .F.))
+			::SomaMsg ("Endereco origem '" + ::EndOrig + "' nao encontrado no almoxarifado '" + ::AlmOrig + "' da filial '" + ::FilOrig + "'.")
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua .and. ! empty (::EndDest)
+		sbe -> (dbsetorder (1))  // BE_FILIAL+BE_LOCAL+BE_LOCALIZ
+		if ! sbe -> (dbseek (::FilDest + ::AlmDest + ::EndDest, .F.))
+			::SomaMsg ("Endereco destino '" + ::EndDest + "' nao encontrado no almoxarifado '" + ::AlmDest + "' da filial '" + ::FilDest + "'.")
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua .and. ! empty (::OP)
+		sc2 -> (dbsetorder (1))
+		if ! sc2 -> (dbseek (::FilOrig + ::OP, .F.))
+			::SomaMsg ("OP '" + ::OP + "' nao encontrada na filial '" + ::FilOrig + "'.")
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua .and. ::AlmUsaFull (::AlmOrig)
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT MIN (A5_VAQSOLW)"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SA5") + " SA5 "
+		_oSQL:_sQuery +=  " WHERE SA5.D_E_L_E_T_  = ''"
+		_oSQL:_sQuery +=  " AND SA5.A5_FILIAL   = '" + xfilial ("SA5") + "'"
+		_oSQL:_sQuery +=  " AND SA5.A5_PRODUTO  = '" + ::ProdOrig + "'"
+		_oSQL:_sQuery +=  " AND SA5.A5_VAQSOLW != 0"
+		_oSQL:Log ()
+		_nTamLote = _oSQL:RetQry (1, .F.)
+		_nResto = ::QtdSolic % _nTamLote
+		if _nResto != 0
+			::SomaMsg ("Produto e almox. de origem operam com FullWMS, e o produto tem lote minimo de "+ alltrim(str(_nTamLote)) + ". Nao sera possivel gerar uma movimentacao.")
+			_lContinua = .F.
+		endif
+	endif
+	
+	// Usuario que estah gravando a solicitacao tem que ser dono de pelo menos um dos almoxarifados envolvidos.
+	if _lContinua
+		if ! U_ZZUVL ('A' + ::AlmOrig, __cUserId, .F.)
+			U_Log2 ('debug', '[' + procname () + ']Usr atual nao eh dono do ax.origem (' + ::AlmOrig + ')')
+			if ! U_ZZUVL ('A' + ::AlmDest, __cUserId, .F.)
+				U_Log2 ('debug', '[' + procname () + ']Usr atual nao eh dono do ax.destino (' + ::AlmDest + ')')
+				::SomaMsg ("Para gravar esta solicitacao, voce deve ser dono de pelo menos um dos almoxarifados envolvidos.")
+				_lContinua = .F.
+			endif
+		endif
+	endif
+
+	if ! _lContinua .and. ! empty (::UltMsg)
+		u_help (::UltMsg,, .t.)
+	endif
+
 return _lContinua
 
 

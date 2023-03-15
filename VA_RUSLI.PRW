@@ -23,7 +23,6 @@ user function va_rusLI (_nPesagem, _lSimular)
 	local _lContinua  := .T.
 	local _aAreaAnt   := U_ML_SRArea ()
 	local _oSQL       := NIL
-//	local _oEvento    := NIL
 	local _sAliasInsp := ""  // Deixar private para ser vista por outras rotinas.
 	local _sInspBotr  := ''
 	local _sInspGlom  := ''
@@ -101,15 +100,6 @@ user function va_rusLI (_nPesagem, _lSimular)
 				if ! _lSimular
 					_lContinua = U_MsgNoYes (_sMsg + " Deseja continuar assim mesmo?")
 					if _lContinua
-				//		_oEvento := ClsEvent ():New ()
-				//		_oEvento:Alias   = 'SZE'
-				//		_oEvento:Texto   = 'Recebimento da carga ' + sze -> ze_carga + ' sem leitura das inspecoes no NaWeb'
-				//		_oEvento:CodEven = 'SZE003'
-				//		_oEvento:Fornece = sze -> ze_assoc
-				//		_oEvento:LojaFor = sze -> ze_lojasso
-				//		_oEvento:Recno   = sze -> (recno ())
-				//		_oEvento:CodAlias = sze -> ze_safra + sze -> ze_carga
-				//		_oEvento:Grava ()
 						_oCarSaf:GrvEvt ('SZE003', 'Recebimento da carga sem leitura das inspecoes no NaWeb. Usuario confirmou: ' + _sMsg)
 					endif
 				endif
@@ -156,15 +146,6 @@ user function va_rusLI (_nPesagem, _lSimular)
 				if ! _lSimular
 					_lContinua = U_MsgNoYes (_sMsg + " Deseja continuar assim mesmo?")
 					if _lContinua
-				//		_oEvento := ClsEvent ():New ()
-				//		_oEvento:Alias   = 'SZE'
-				//		_oEvento:Texto   = 'Recebimento da carga ' + sze -> ze_carga + ' sem leitura do status no sistema de agendamento'
-				//		_oEvento:CodEven = 'SZE002'
-				//		_oEvento:Fornece = sze -> ze_assoc
-				//		_oEvento:LojaFor = sze -> ze_lojasso
-				//		_oEvento:Recno   = sze -> (recno ())
-				//		_oEvento:CodAlias = sze -> ze_safra + sze -> ze_carga
-				//		_oEvento:Grava ()
 						_oCarSaf:GrvEvt ('SZE002', "Recebimento da carga com status '" + _aRusInsp [.InspecoesSafraSituacao] + "' no sistema de agendamento.")
 					endif
 				endif

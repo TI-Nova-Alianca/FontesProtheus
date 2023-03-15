@@ -7,6 +7,7 @@
 // 05/03/2019 - Robert - Criado parametro para selecionar tipo de titulo.
 //                     - Regua de processamento.
 // 26/08/2019 - Robert - Nao verifica mais o tipo de titulo (temos FAT,ND, DP, ...)
+// 13/03/2023 - Robert - Melhoria nos logs e mensagens para usuario.
 //
 
 // ------------------------------------------------------------------------------------
@@ -23,32 +24,33 @@ static function _AndaLogo ()
 	local i	:= 0
 	
 	_sQuery := ""
-	_sQuery += "  SELECT SZI.R_E_C_N_O_ AS REC1" 
-	_sQuery += "       , SZI.ZI_SEQ"
-	_sQuery += "       , SE5.R_E_C_N_O_ AS REC2"
-	_sQuery += "       , SE5.E5_CLIFOR"
-	_sQuery += "       , SE5.E5_LOJA"
-	_sQuery += "    FROM SE5010 AS SE5"
-	_sQuery += "  		INNER JOIN SZI010 AS SZI"
-	_sQuery += "  			ON (SZI.D_E_L_E_T_ = ''"
-	_sQuery += "  				AND SZI.ZI_ASSOC   = SE5.E5_CLIFOR"
-	_sQuery += "  				AND SZI.ZI_LOJASSO = SE5.E5_LOJA"
-	_sQuery += "  				AND SZI.ZI_DOC     = SE5.E5_NUMERO"
-	_sQuery += "  				AND SZI.ZI_PARCELA = SE5.E5_PARCELA)"
-	_sQuery += "  WHERE SE5.D_E_L_E_T_ = ''"
-	_sQuery += "    AND SE5.E5_FILIAL  = '01'"
-	_sQuery += "    AND SE5.E5_DATA    = '" + dtos(mv_par01) + "'"
-	_sQuery += "    AND SE5.E5_RECPAG  = 'P'"
-	_sQuery += "    AND SE5.E5_ORIGEM  = 'FINA430'"
-	_sQuery += "    AND SE5.E5_NATUREZ = '120201'"
-	_sQuery += "    AND SE5.E5_BANCO   = '041'"
-	//u_showmemo (_sQuery)
-	
+	_sQuery += "SELECT SZI.R_E_C_N_O_ AS REC1" 
+	_sQuery +=      ", SZI.ZI_SEQ"
+	_sQuery +=      ", SE5.R_E_C_N_O_ AS REC2"
+	_sQuery +=      ", SE5.E5_CLIFOR"
+	_sQuery +=      ", SE5.E5_LOJA"
+	_sQuery +=  " FROM SE5010 AS SE5"
+	_sQuery +=    " INNER JOIN SZI010 AS SZI"
+	_sQuery +=       " ON (SZI.D_E_L_E_T_ = ''"
+	_sQuery +=       " AND SZI.ZI_ASSOC   = SE5.E5_CLIFOR"
+	_sQuery +=       " AND SZI.ZI_LOJASSO = SE5.E5_LOJA"
+	_sQuery +=       " AND SZI.ZI_DOC     = SE5.E5_NUMERO"
+	_sQuery +=       " AND SZI.ZI_PARCELA = SE5.E5_PARCELA)"
+	_sQuery += " WHERE SE5.D_E_L_E_T_ = ''"
+	_sQuery +=   " AND SE5.E5_FILIAL  = '01'"
+	_sQuery +=   " AND SE5.E5_DATA    = '" + dtos(mv_par01) + "'"
+	_sQuery +=   " AND SE5.E5_RECPAG  = 'P'"
+	_sQuery +=   " AND SE5.E5_ORIGEM  = 'FINA430'"
+	_sQuery +=   " AND SE5.E5_NATUREZ = '120201'"
+	_sQuery +=   " AND SE5.E5_BANCO   = '041'"
+	U_Log2 ('debug', '[' + procname () + ']' + _sQuery)
+
 	_aDados := U_Qry2Array(_sQuery)
 	procregua (len (_aDados))
 	if len (_aDados) > 0
 		for i=1 to len(_aDados)
-			incproc ()
+			incproc ('Processando ' + cvaltochar (i) + ' de ' + cvaltochar (len(_aDados)))
+			U_Log2 ('debug', '[' + procname () + ']Processando registro ' + cvaltochar (i) + ' de ' + cvaltochar (len(_aDados)))
 			_wszirecno = _aDados[i,1]
 			_wsziseq   = _aDados[i,2]
 			_wse5recno = _aDados[i,3]
@@ -59,16 +61,19 @@ static function _AndaLogo ()
 			dbgoto(_wszirecno)
 			_oCtaCorr := ClsCtaCorr ():New (szi -> ( recno() ))
 			_oCtaCorr:AtuSaldo ()
-			u_log (_oCtaCorr:UltMsg)
+			if ! empty (_oCtaCorr:UltMsg)
+				U_Log2 ('info', '[' + procname () + ']' + _oCtaCorr:UltMsg)
+			endif
+
 			// grava chave no SE5
 			_wchave = 'SZI' + _wfornece + _wloja + _wsziseq
-			// atualiza SE5
 			DbSelectArea("SE5")
 			dbgoto(_wse5recno)
 			reclock("SE5", .F.)
-			SE5-> E5_VACHVEX  = _wchave  
+			SE5-> E5_VACHVEX  = _wchave
 			MsUnLock()
 		next
+		u_help ("Processo finalizado.")
 	endif
 Return
 
@@ -79,7 +84,6 @@ Static Function _ValidPerg ()
 	local _aDefaults := {}
 	
 	aadd (_aRegsPerg, {01, "Data do Pagamento     ?", "D", 8,  0,  "",   "   ", {}  , ""})
-//	aadd (_aRegsPerg, {02, "Tipo de titulo        ?", "C", 3,  0,  "",   "   ", {}  , ""})
 
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 Return

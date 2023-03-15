@@ -46,6 +46,7 @@
 // 27/01/2023 - Robert - Reescrito tratamento para entradas, que passa a ser 100% com etiquetas.
 // 01/02/2023 - Robert - Chamada metodo ClsTrEstq:Libera() passava usuario errado no processamento de saidas.
 // 03/02/2023 - Robert - Nas saidas do Full, se o item  nao controla notes no Protheus, nem consulta tb_wms_lotes.
+// 11/03/2023 - Robert - Tabela ZAG passa a ter o campo ZAG_SEQ fazendo parte da chave primaria.
 //
 
 #Include "Protheus.ch"
@@ -98,12 +99,10 @@ static function _Entradas (_sEntrID)
 	local _oSQL      := NIL
 	local _sAliasQ   := ""
 	local _nQtAUsar  := 0
-//	local _dData     := ctod ('')
 	local _sEtiq     := ''
 	local _oTrEstq   := NIL
 	local _sChaveEx  := ""
 	local _lRet      := .T.
-//	local _oAviso    := NIL
 	local _oEtiq     := NIL
 	local _sAlmOrig  := ''
 
@@ -259,10 +258,10 @@ static function _Entradas (_sEntrID)
 				else
 					_oTrEstq:Libera (.T., 'FULLWMS')
 				endif
+			endif
 
-				// Tenta executar a transferencia.
-				if ! _oTrEstq:Executa (.t.)
-				endif
+			// Tenta executar a transferencia.
+			if ! _oTrEstq:Executa (.t.)
 			endif
 		endif
 
@@ -464,8 +463,9 @@ static function _Saidas (_sSaidID)
 		U_Log2 ('info', '[' + procname () + "]Verificando tb_wms_pedidos.saida_id = '" + (_sAliasQ) -> saida_id + "'")
 		do case
 		case left ((_sAliasQ) -> saida_id, 3) == 'ZAG'
-			_sChaveZAG = substr ((_sAliasQ) -> saida_id, 6, 10)  // Chave composta por ZAG + filial + chave_do_ZAG cfe. view v_wms_pedido
-			zag -> (dbsetorder (1))  // ZAG_FILIAL, ZAG_DOC
+//			_sChaveZAG = substr ((_sAliasQ) -> saida_id, 6, 10)  // Chave composta por ZAG + filial + chave_do_ZAG cfe. view v_wms_pedido
+			_sChaveZAG = substr ((_sAliasQ) -> saida_id, 6, 12)  // Chave composta por ZAG + filial + chave_do_ZAG cfe. view v_wms_pedido
+			zag -> (dbsetorder (1))  // ZAG_FILIAL, ZAG_DOC, ZAG_SEQ
 			if ! zag -> (dbseek (xfilial ("ZAG") + _sChaveZAG, .F.))
 				_sMsg = 'ZAG nao localizado com chave >>' + _sChaveZAG + '<<'
 				u_help (_sMsg,, .t.)

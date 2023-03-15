@@ -36,6 +36,7 @@
 //                     - Revisao logs, remocao chamadas funcao de geracao de mensagens na console.
 // 29/03/2021 - Robert - Tratamento para campo ZZ6_JSON (GLPI 9592).
 // 06/03/2023 - Robert - Criado atributo Prioridade (antes gravava sempre 5)
+// 13/03/2023 - Robert - Conversao parametro ::Prioridade para caracter.
 //
 
 #include "protheus.ch"
@@ -175,9 +176,9 @@ METHOD Grava () Class ClsBatch
 			if ValType(_sJSErro) == "C"
 				u_help ('Erro na validacao de dados JSON para agendamento de batch: ' + _sJSErro,, .t.)
 				_lContinua = .F.
-			else
-				U_Log2 ('debug', 'Dados JSON para agendamento de batch:')
-				U_Log2 ('debug', _oJSBatch)
+//			else
+//				U_Log2 ('debug', 'Dados JSON para agendamento de batch:')
+//				U_Log2 ('debug', _oJSBatch)
 			endif
 		endif
 	endif
@@ -211,7 +212,7 @@ METHOD Grava () Class ClsBatch
 		zz6 -> zz6_DtBase  = ::DataBase
 		zz6 -> zz6_AnoMes  = ::AnoMes
 		zz6 -> zz6_Modulo  = ::Modulo
-		zz6 -> zz6_Prior   = ::Prioridade  // '5'
+		zz6 -> zz6_Prior   = cvaltochar (::Prioridade)  // '5'
 		zz6 -> zz6_minret  = ::TmpRetent
 		zz6 -> zz6_agwf    = ::AguardaWF
 		zz6 -> zz6_TmpLim  = ::TempoLim
