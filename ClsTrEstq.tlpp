@@ -41,6 +41,7 @@
 // 11/03/2023 - Robert  - Tratamentos para novo campo ZAG_SEQ
 //                      - Criado metodo PodeIncl().
 //                      - Eliminados campos ZAG_UAUTP e ZAG_UAUTQ (Autorizadores PCP e qualidade).
+// 15/03/2023 - Robert  - Para considerar almox.controlado pelo FullWMS, deve estar na filial 01.
 //
 
 // ------------------------------------------------------------------------------------
@@ -165,7 +166,7 @@ return (_sAlm $ '01/02')
 // --------------------------------------------------------------------------
 // Verifica se o almoxarifado eh controlado via FullWMS.
 METHOD AlmUsaFull (_sAlm) Class ClsTrEstq
-return (_sAlm $ '01/')
+return (::FilDest == '01' .and. _sAlm $ '01/')
 
 
 
@@ -353,8 +354,8 @@ METHOD Executa (_lMensagem) Class ClsTrEstq
 		_lContinua = ::GeraSC5 ()
 	endif
 
-	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']_lContinua=' + cvaltochar (_lContinua))
-	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']::UltMsg=' + ::UltMsg)
+//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']_lContinua=' + cvaltochar (_lContinua))
+//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']::UltMsg=' + ::UltMsg)
 	if ! _lContinua .and. ! empty (::UltMsg)
 		u_help (::UltMsg)
 
@@ -612,8 +613,7 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 		_oEtiq:AlmDest     = ::AlmDest
 		_oEtiq:AlmOrig     = ::AlmOrig
 		_oEtiq:LoteProduto = alltrim (::LoteDest)
-		U_Log2 ('debug', '[' + procname () + ']LoteProduto:  >>' + _oEtiq:LoteProduto + "<<")
-
+		
 		if _oEtiq:Grava ()
 
 			// Faz uma releitura dos atributos da etiqueta para popular
@@ -621,6 +621,7 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 			_oEtiq:GeraAtrib ("ZA1")
 			::Etiqueta = _oEtiq:Codigo
 			::SomaMsg ('Etiqueta gerada:' + ::Etiqueta)
+			U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Etiqueta gerada:' + ::Etiqueta)
 
 			// Se tem impressora informada, jah faz a impressao da etiqueta.
 			if ! empty (::ImprEtq)
@@ -628,7 +629,7 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 			endif
 
 			if ::AlmUsaFull (::AlmDest)
-				U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Criei uma qtei. para alm.destino que usa Full. Vou enviar a etiq. para o Full.')
+				U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Criei uma etiq. para alm.destino que usa Full. Vou enviar a etiq. para o Full.')
 				_oEtiq:EnviaFull ()
 			endif
 		else
@@ -1221,8 +1222,6 @@ return _lContinua
 // Valida se a solicitacao pode ser incluida.
 METHOD PodeIncl () Class ClsTrEstq
 	local _lContinua := .T.
-//	local _lRet      := .F.
-//	local _sMsgLog   := ''
 
 	// Verifica campos obrigatorios, nao aceitos, tamanhos, tipos, etc.
 	if _lContinua
@@ -1249,7 +1248,11 @@ METHOD PodeIncl () Class ClsTrEstq
 
 		// Por enquanto, nao vou aceitar transferencia entre filiais. Robert, 11/04/2019
 		if ::FilDest != ::FilOrig
-			::UltMsg += "Transferencias entre filiais ainda nao sao permitidas nesta rotina."
+			::UltMsg += "Transferencias entre filiais ainda nao sao permitidas nesta rotina.Filial origem deve ser igual a filial destino."
+			_lContinua = .F.
+		endif
+		if ::FilOrig != cFilAnt .or. ::FilDest != cFilAnt
+			::UltMsg += "Transferencias entre filiais ainda nao sao permitidas nesta rotina. Portanto, nao tente incluir solicitacoes envolvendo outras filiais."
 			_lContinua = .F.
 		endif
 

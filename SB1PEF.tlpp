@@ -15,6 +15,7 @@
 // 10/08/2022 - Robert - Valida codigo de barras (inclusive duplicidade) do produto (GLPI 11994)
 // 12/08/2022 - Robert - Melhoria validacao com atributo :AlmDest da CLsEtiq (GLPI 12474)
 // 19/10/2022 - Robert - Teste de duplicidade de cod.barras dava retorno em variavel errada.
+// 15/03/2023 - Robert - Eliminados alguns logs.
 //
 
 // ------------------------------------------------------------------------------------
@@ -27,7 +28,7 @@ user function SB1PEF (_sProduto)
 	local _sDuplos   := ''
 	local _sMsgErr   := ''
 
-	U_Log2 ('debug', '[' + procname () + ']Verificando se o produto ' + alltrim (_sProduto) + ' pode ser enviado para o FullWMS.')
+//	U_Log2 ('debug', '[' + procname () + ']Verificando se o produto ' + alltrim (_sProduto) + ' pode ser enviado para o FullWMS.')
 
 	if _lContinua
 		zb1 -> (dbsetorder (1))

@@ -656,12 +656,6 @@ static function _ConfSZI ()
 	_oSQL:_sQuery +=                   " AND V.TIPO_NF     IN ('C', 'V')"
 	_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC LIKE '1%'"  // 1-ASSOCIADO
 	_oSQL:_sQuery +=                 ")"
-
-
-	// DURANTE TESTES
-	_oSQL:_sQuery +=    " AND SE2.E2_FORNECE = '000248'"
-
-
 	_oSQL:_sQuery +=  " ORDER BY SE2.E2_FORNECE, SE2.E2_LOJA, SE2.E2_NUM, SE2.E2_PREFIXO, SE2.E2_PARCELA"
 	_oSQL:Log ()
 	_sAliasQ = _oSQL:Qry2Trb (.T.)
@@ -1004,7 +998,11 @@ static function _TrSZIMat ()
 	else
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT TOP 10 SZI.R_E_C_N_O_"  // USANDO top 10 POR QUE O PROCESSO ESTAH ATRASADO, MAS NAO QUERO MONOPOLIZAR OS BATCHES
+		if left (time (), 2) >= '20' .or. dow (date ()) == 7
+			_oSQL:_sQuery += " SELECT TOP 100 SZI.R_E_C_N_O_"  // USANDO top 10 POR QUE O PROCESSO ESTAH ATRASADO, MAS NAO QUERO MONOPOLIZAR OS BATCHES
+		else
+			_oSQL:_sQuery += " SELECT TOP 10 SZI.R_E_C_N_O_"  // USANDO top 10 POR QUE O PROCESSO ESTAH ATRASADO, MAS NAO QUERO MONOPOLIZAR OS BATCHES
+		endif
 		_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2, "
 		_oSQL:_sQuery +=              RetSQLName ("SZI") + " SZI "
 		_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
@@ -1034,12 +1032,6 @@ static function _TrSZIMat ()
 		_oSQL:_sQuery +=                   " AND V.TIPO_NF     IN ('C', 'V')"
 		_oSQL:_sQuery +=                   " AND V.TIPO_FORNEC LIKE '1%'"  // 1=ASSOCIADO
 		_oSQL:_sQuery +=                ")"
-
-
-		// TESTES
-		_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC = '000248'"
-
-
 		_oSQL:_sQuery +=  " ORDER BY SE2.E2_FORNECE, SE2.E2_LOJA, SE2.E2_NUM, SE2.E2_PREFIXO, SE2.E2_PARCELA"
 		_oSQL:Log ()
 		_aRegSZI = _oSQL:Qry2Array (.f., .f.)
