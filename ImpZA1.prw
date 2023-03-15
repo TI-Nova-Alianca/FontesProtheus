@@ -33,6 +33,7 @@
 // 09/12/2022 - Robert  - Nao busca mais nada do SB1 e SC2. Dados jah chegam como atributos do objeto.
 // 08/02/2023 - Robert  - Eliminadas algumas linhas comentariadas.
 // 10/03/2023 - Robert  - Tratamentos para novo campo ZAG_SEQ (ZA1_IDZAG passa a concatenar ZAG_DOC + ZAG_SEQ).
+// 15/03/2023 - Robert  - Eliminados alguns logs.
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -270,9 +271,9 @@ user function ImpZA1 (_sIdImpr, _oEtiq)
 		endif
 
 		if _lContinua
-			if alltrim (cUserName) == 'robert.koch'
-				U_Log2 ('debug', '[' + procname () + ']' + _sTxtEtiq)
-			endif
+//			if alltrim (cUserName) == 'robert.koch'
+//				U_Log2 ('debug', '[' + procname () + ']' + _sTxtEtiq)
+//			endif
 			_sArq = criatrab (NIL, .F.)
 			_nHdl = fcreate (_sArq, 0)
 			fwrite (_nHdl,_sTxtEtiq)

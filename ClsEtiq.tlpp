@@ -41,6 +41,7 @@
 // 13/02/2023 - Robert - Criado campo ZA1_QTGRUP
 // 22/02/2023 - Robert - Metodo PodeEnvFul() passa a receber variavel para mostrar ou nao msg de erro.
 // 10/03/2023 - Robert - Tratamentos para novo campo ZAG_SEQ (ZA1_IDZAG passa a concatenar ZAG_DOC + ZAG_SEQ).
+// 15/03/2023 - Robert - Nao envia etiquetas para FullWMS quando diferente da filial 01.
 //
 
 #Include "Protheus.ch"
@@ -472,8 +473,6 @@ METHOD Grava () Class ClsEtiq
 	local _sTxtLog   := ''
 	local _lContinua := .T.
 
-	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Iniciando gravacao etiq')
-	//u_logObj (::Self)
 	if empty (::Produto)
 		::UltMsg += "Produto nao informado. Gravacao de etiqueta nao permitida."
 		_lContinua = .F.
@@ -724,6 +723,16 @@ METHOD PodeEnvFul (_lMsg) Class ClsEtiq
 	local _lContinua := .T.
 	Local _aAreaAnt  := U_ML_SRArea ()
 	local _sMsg      := ''
+
+	if _lContinua .and. ::Filial != '01'
+		_sMsg = "Etiqueta '" + ::Codigo + "' nao deve ser enviada para o FullWMS, pois esta filial nao usa FullWMS."
+		if _lMsg
+			u_help (_sMsg,, .t.)
+		else
+			U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']' + _sMsg)
+		endif
+		_lContinua = .f.
+	endif
 
 	if _lContinua .and. ::AlmDest != '01'
 		_sMsg = "Etiqueta '" + ::Codigo + "' nao deve ser enviada para o FullWMS, pois destina-se ao almox." + ::AlmDest

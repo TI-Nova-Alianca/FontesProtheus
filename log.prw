@@ -60,6 +60,7 @@
 // 30/03/2022 - Robert  - LogObj() passa a usar U_Log2() para gravar os dados.
 // 19/05/2022 - Robert  - LogTrb() nao fazia dbgotop() quando exportacao completa (GLPI 12080)
 // 20/07/2022 - Robert  - LogPCham() passa a receber parametro indicando se grava log ou apenas retorna a pilha.
+// 15/03/2023 - Robert  - Permite escolher se quer ou nao exportar atributos ou metodos de um objeto.
 //
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -721,7 +722,7 @@ return _aMatAux
 //
 // --------------------------------------------------------------------------
 // Gera listagem dos dados e metodos de um objeto.
-user function LogObj (_oObj)
+user function LogObj (_oObj, _lAtrib, _lMetod)
 	local _aMetodos := aclone (ClassMethArr(_oObj))
 	local _nMetodo  := 0
 	local _aDet     := {}
@@ -729,20 +730,23 @@ user function LogObj (_oObj)
 	local _sRet     := ''
 
 	u_log2 ('debug', '')
-	u_log2 ('debug', "Dados da classe " + GetClassName (_oObj) + ':')
-	u_log2 ('debug', ClassDataArr (_oObj))
-	u_log2 ('debug', "Metodos da classe " + GetClassName (_oObj) + ':')
-
-	for _nMetodo = 1 to len (_aMetodos)
-		_aDet = aclone (ClassMethArr(_oObj)[_nMetodo])
-		_sRet += strtran (_aDet[1], chr (13) + chr (10), '') + ' ('
-		for _nDet = 1 to len (_aDet [2])
-			_sRet += alltrim (_aDet [2, _nDet]) + iif (_nDet < len (_aDet [2]), ', ', ')')
+	if _lAtrib == NIL .or. _lAtrib
+		u_log2 ('debug', "Dados da classe " + GetClassName (_oObj) + ':')
+		u_log2 ('debug', ClassDataArr (_oObj))
+	endif
+	if _lMetod == NIL .or. _lMetod
+		u_log2 ('debug', "Metodos da classe " + GetClassName (_oObj) + ':')
+		for _nMetodo = 1 to len (_aMetodos)
+			_aDet = aclone (ClassMethArr(_oObj)[_nMetodo])
+			_sRet += strtran (_aDet[1], chr (13) + chr (10), '') + ' ('
+			for _nDet = 1 to len (_aDet [2])
+				_sRet += alltrim (_aDet [2, _nDet]) + iif (_nDet < len (_aDet [2]), ', ', ')')
+			next
+			_sRet += iif (len (_aDet [2]) == 0, ')', '')
+			u_log2 ('debug', _sRet)
+			_sRet = ''
 		next
-		_sRet += iif (len (_aDet [2]) == 0, ')', '')
-		u_log2 ('debug', _sRet)
-		_sRet = ''
-	next
+	endif
 return _sRet
 //
 // --------------------------------------------------------------------------
