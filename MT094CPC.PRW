@@ -17,6 +17,6 @@
 #Include 'Protheus.ch'
 
 User Function MT094CPC()
-    Local cCampos := "C7_VAMSG|C7_OBS|C7_SOLICIT|C7_COMNOM|C7_VADESTI|C7_VACCDES" //  A separação dos campos devem ser feitos com uma barra vertical ( | ), igual é demonstrado no exemplo. 
+    Local cCampos := "C7_OBS|C7_SOLICIT|C7_COMNOM|C7_VADESTI|C7_VACCDES" //  A separação dos campos devem ser feitos com uma barra vertical ( | ), igual é demonstrado no exemplo. 
 
 Return (cCampos)
