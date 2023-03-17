@@ -1,0 +1,103 @@
+// Programa:  ClsPilha
+// Autor:     Robert Koch
+// Data:      16/03/2023
+// Descricao: Declaracao de classe de representacao de uma pilha/stack.
+//            Poderia trabalhar como uma include, mas prefiro declarar uma funcao de usuario
+//            apenas para poder incluir no projeto e manter na pasta dos fontes.
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Classe
+// #Descricao         #Representa um objeto 'pilha' ou 'stack'
+// #PalavasChave      #pilha #stack
+// #TabelasPrincipais #
+// #Modulos           #
+
+// Historico de alteracoes:
+//
+
+#Include "Protheus.ch"
+
+// --------------------------------------------------------------------------
+// Funcao declarada apenas para poder compilar este arquivo fonte.
+user function ClsPilha ()
+return
+
+
+// ==========================================================================
+CLASS ClsPilha
+
+	// Declaracao das propriedades da Classe
+	private data PilhaInt
+	private data TopoPilha
+
+	// Declaracao dos Metodos da classe
+	public METHOD New ()
+	public METHOD Altura ()
+	public METHOD Empilha ()
+	public METHOD DesEmpilha ()
+	public METHOD RetPilha ()
+	public METHOD RetTopo ()
+ENDCLASS
+
+
+// --------------------------------------------------------------------------
+// Construtor.
+METHOD New () Class ClsPilha
+	::PilhaInt := {}
+	::TopoPilha = 0
+Return ::self
+
+
+// --------------------------------------------------------------------------
+METHOD Altura () Class ClsPilha
+return ::TopoPilha
+
+
+// --------------------------------------------------------------------------
+METHOD Empilha (_xObj) Class ClsPilha
+	::TopoPilha ++
+//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Empilhando (na posicao ' + cvaltochar (::TopoPilha) + '):')
+//	U_Log2 ('debug', _xObj)
+
+	if ::TopoPilha > len (::PilhaInt)
+		aadd (::PilhaInt, NIL)
+	endif
+	if valtype (_xObj) == 'A'
+		::PilhaInt [::TopoPilha] := aclone (_xObj)
+	else
+		::PilhaInt [::TopoPilha] := _xObj
+	endif
+return
+
+
+// --------------------------------------------------------------------------
+// Pensei em eliminar a ultima posicao da array, mas pra isso precisaria
+// praticamente copia-la para uma nova. Entao achei mais pratico apenas ter
+// uma variavel apontando para o topo da pilha.
+METHOD Desempilha () Class ClsPilha
+	local _xObj := NIL
+	if ::TopoPilha > 0  // Se pilha ainda vazia, retorna NIL.
+		_xObj := ::PilhaInt [::TopoPilha]
+		//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Desempilhando (da posicao ' + cvaltochar (::TopoPilha) + '):')
+		//	U_Log2 ('debug', _xObj)
+		::TopoPilha --
+	endif
+return _xObj
+
+
+// --------------------------------------------------------------------------
+// Retorna toda a pilha atual (para depuracao).
+METHOD RetPilha () Class ClsPilha
+return ::PilhaInt
+
+
+// --------------------------------------------------------------------------
+// Retorna o elemento do topo, sem desempilha-lo.
+METHOD RetTopo () Class ClsPilha
+	local _xObj := NIL
+	if ::TopoPilha > 0  // Se pilha ainda vazia, retorna NIL.
+		_xObj := ::PilhaInt [::TopoPilha]
+		//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Retornando (da posicao ' + cvaltochar (::TopoPilha) + '):')
+		//	U_Log2 ('debug', _xObj)
+	endif
+return _xObj

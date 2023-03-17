@@ -39,6 +39,7 @@
 // 03/03/2023 - Robert - Campo VA_VNOTAS_SAFRA.TIPO_FORNEC passa a ter novo conteudo.
 // 06/03/2023 - Robert - Batch agendado na matriz para receber transf.do SZI passa a ter menos prioridade.
 // 13/03/2023 - Robert - Novos parametros FINA090. EXecuta apenas 10 registros por vez (temporariamente).
+// 16/03/2023 - Robert - Criado controle de semaforo nas static functions.
 //
 
 // --------------------------------------------------------------------------
@@ -179,6 +180,12 @@ static function _ConfFrt ()
 	local _oSQL      := NIL
 	local _sAliasQ   := ''
 	local _sMsg      := ''
+	local _nLock     := 0
+
+	_nLock := U_Semaforo (procname ())
+	if _nLock == 0
+		return
+	endif
 
 	U_Log2 ('info', 'Iniciando ' + procname ())
 
@@ -220,6 +227,10 @@ static function _ConfFrt ()
 		endif
 		(_sAliasQ) -> (dbskip ())
 	enddo
+
+	// Libera semaforo
+	U_Semaforo (_nLock)
+
 	U_Log2 ('info', 'Finalizando ' + procname ())
 return
 
@@ -242,6 +253,12 @@ static function _ConfParc (_lAjustar)
 	local _nValorTX  := 0
 	local _lErrFunr  := .F.
 	local _lErrParc  := .F.
+	local _nLock     := 0
+
+	_nLock := U_Semaforo (procname ())
+	if _nLock == 0
+		return
+	endif
 
 	U_Log2 ('info', 'Iniciando ' + procname ())
 
@@ -449,6 +466,10 @@ static function _ConfParc (_lAjustar)
 		endif
 		(_sAliasQ) -> (dbskip ())
 	enddo
+
+	// Libera semaforo
+	U_Semaforo (_nLock)
+
 	U_Log2 ('info', 'Finalizando ' + procname ())
 return
 
@@ -460,6 +481,12 @@ static function _MailAcomp ()
 	local _oSQL   := NIL
 	local _sSafra := U_IniSafra ()
 	local _aCols  := {}
+	local _nLock     := 0
+
+	_nLock := U_Semaforo (procname ())
+	if _nLock == 0
+		return
+	endif
 
 	U_Log2 ('info', 'Iniciando ' + procname ())
 
@@ -531,6 +558,9 @@ static function _MailAcomp ()
 		U_SendMail ("cristina.stringhi@novaalianca.coop.br", "Acompanhamento cargas safra", _sMsg, {}, NIL, NIL, 'acomp.safra@novaalianca.coop.br;informatica@novaalianca.coop.br')
 
 	endif
+
+	// Libera semaforo
+	U_Semaforo (_nLock)
 return
 
 
@@ -541,6 +571,12 @@ static function _GeraSZI ()
 	local _sAliasQ   := ''
 	local _oCtaCorr  := NIL
 	local _sSafrComp := strzero (year (dDataBase), 4)
+	local _nLock     := 0
+
+	_nLock := U_Semaforo (procname ())
+	if _nLock == 0
+		return
+	endif
 
 	U_Log2 ('info', 'Iniciando ' + procname ())
 
@@ -619,6 +655,10 @@ static function _GeraSZI ()
 	enddo
 	(_sAliasQ) -> (dbclosearea ())
 	dbselectarea ("SZE")
+
+	// Libera semaforo
+	U_Semaforo (_nLock)
+
 	U_Log2 ('info', 'Finalizando ' + procname ())
 return
 
@@ -635,6 +675,13 @@ static function _ConfSZI ()
 	local _nQtErros  := 0
 	local _nRegE2Mat := 0
 	local _sFornece  := ''
+	local _nLock     := 0
+
+	_nLock := U_Semaforo (procname ())
+	if _nLock == 0
+		return
+	endif
+
 
 	U_Log2 ('info', 'Iniciando ' + procname ())
 
@@ -762,6 +809,10 @@ static function _ConfSZI ()
 		(_sAliasQ) -> (dbskip ())
 	enddo
 	U_Log2 ('info', 'Quantidade de inconsistencias encontradas: ' + cvaltochar (_nQtErros))
+
+	// Libera semaforo
+	U_Semaforo (_nLock)
+
 	U_Log2 ('info', 'Finalizando ' + procname ())
 return
 
@@ -781,7 +832,14 @@ static function _TransFil ()
 	local _sHistSE5  := ''
 	local _sTxtJSON  := ''
 	local _oBatchDst := NIL
+	local _nLock     := 0
 	Private lMsErroAuto := .F.
+
+	_nLock := U_Semaforo (procname ())
+	if _nLock == 0
+		_lContinua = .F.
+	endif
+
 	
 	u_log2 ('info', 'Iniciando ' + procname ())
 	
@@ -977,6 +1035,10 @@ static function _TransFil ()
 			(_sAliasQ) -> (dbskip ())
 		enddo
 	endif
+
+	// Libera semaforo
+	U_Semaforo (_nLock)
+
 	U_Log2 ('info', 'Finalizando ' + procname ())
 return
 
@@ -991,6 +1053,12 @@ static function _TrSZIMat ()
 	local _nRegSZI   := 0
 	local _sSafrComp := strzero (year (dDataBase), 4)
 	local _oCtaCorr  := NIL
+	local _nLock     := 0
+
+	_nLock := U_Semaforo (procname ())
+	if _nLock == 0
+		return
+	endif
 
 	U_Log2 ('info', 'Iniciando ' + procname ())
 	if cFilAnt == '01'
@@ -998,11 +1066,12 @@ static function _TrSZIMat ()
 	else
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
-		if left (time (), 2) >= '20' .or. dow (date ()) == 7
+		if left (time (), 2) >= '19' .or. left (time (), 2) <= '06' .or. dow (date ()) == 7
 			_oSQL:_sQuery += " SELECT TOP 100 SZI.R_E_C_N_O_"  // USANDO top 10 POR QUE O PROCESSO ESTAH ATRASADO, MAS NAO QUERO MONOPOLIZAR OS BATCHES
 		else
 			_oSQL:_sQuery += " SELECT TOP 10 SZI.R_E_C_N_O_"  // USANDO top 10 POR QUE O PROCESSO ESTAH ATRASADO, MAS NAO QUERO MONOPOLIZAR OS BATCHES
 		endif
+		//_oSQL:_sQuery += " SELECT SZI.R_E_C_N_O_"
 		_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2, "
 		_oSQL:_sQuery +=              RetSQLName ("SZI") + " SZI "
 		_oSQL:_sQuery +=  " WHERE SE2.D_E_L_E_T_ = ''"
@@ -1046,6 +1115,9 @@ static function _TrSZIMat ()
 			FreeObj (_oCtaCorr)
 		next
 	endif
+
+	// Libera semaforo
+	U_Semaforo (_nLock)
 
 	U_Log2 ('info', 'Finalizando ' + procname ())
 return

@@ -41,7 +41,8 @@
 // 13/02/2023 - Robert - Criado campo ZA1_QTGRUP
 // 22/02/2023 - Robert - Metodo PodeEnvFul() passa a receber variavel para mostrar ou nao msg de erro.
 // 10/03/2023 - Robert - Tratamentos para novo campo ZAG_SEQ (ZA1_IDZAG passa a concatenar ZAG_DOC + ZAG_SEQ).
-// 15/03/2023 - Robert - Nao envia etiquetas para FullWMS quando diferente da filial 01.
+// 15/03/2023 - Robert - Nao enviar etiquetas para FullWMS quando diferente da filial 01.
+//                     - Apos gravar, arquivo ZA1 nao ficava posicionado no registro recem gravado.
 //
 
 #Include "Protheus.ch"
@@ -559,6 +560,11 @@ METHOD Grava () Class ClsEtiq
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
+	
+	// Deixo ZA1 posicionado no registro que acabei de gravar
+	if _lGravou
+		za1 -> (dbgoto (::RegZA1))
+	endif
 return _lGravou
 
 
