@@ -21,6 +21,7 @@
 // 15/01/2021 - Claudia - Incluido bloco de descrições do programa no cabeçalho.
 // 04/05/2021 - Claudia - Incluida a gravação do solicitante no pedido. GLPI: 9814
 // 20/02/2023 - Claudia - Retirada a ligação de  item na consulta. GLPI: 11691
+// 17/03/2023 - Claudia - Gravação do nome do fornecedor. GLPI: 13308
 //
 // -------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
@@ -61,7 +62,6 @@ user function MT120GOk ()
 		_oSQL:_sQuery += " 	 ON SC1.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery += " 		AND SC1.C1_FILIAL = SC7.C7_FILIAL "
 		_oSQL:_sQuery += " 		AND SC1.C1_PEDIDO = SC7.C7_NUM "
-		//_oSQL:_sQuery += " 		AND SC1.C1_ITEM   = SC7.C7_ITEM "
 		_oSQL:_sQuery += " WHERE SC7.D_E_L_E_T_ = '' "
 		_oSQL:_sQuery += " AND SC7.C7_FILIAL    = '" + cFilAnt           		+ "'"
 		_oSQL:_sQuery += " AND SC7.C7_NUM       = '" + sc7 -> c7_num     		+ "'"
@@ -75,15 +75,19 @@ user function MT120GOk ()
 			_sSolicitante := "-"
 		endif
 
+		// Regrava o nome do fornecedor no campo C7_VAFNOME, devido a cópia do pedido sem ativação de gatilhos
+		_sNomeFor := Posicione("SA2",1,xfilial("SA2")+SC7->C7_FORNECE+SC7->C7_LOJA,"A2_NOME") 
+
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " UPDATE  " + RetSqlName("SC7")
 		_oSQL:_sQuery += " 		SET C7_COMNOM  = '" + UsrFullName(sc7 -> c7_user) +"'"
 		_oSQL:_sQuery += "         ,C7_SOLICIT = '" + _sSolicitante               +"'"
+		_oSQL:_sQuery += "         ,C7_VAFNOME = '" + _sNomeFor                   +"'"
 		_oSQL:_sQuery += " WHERE C7_FILIAL = '" +  cFilAnt + "'"
-		_oSQL:_sQuery += " AND C7_NUM = '"+ sc7 -> c7_num +"'" 
-		_oSQL:_sQuery += " AND C7_FORNECE = '"+ sc7 -> c7_fornece +"'" 
-		_oSQL:_sQuery += " AND C7_EMISSAO = '"+ DTOS(sc7 -> c7_emissao) +"'" 
+		_oSQL:_sQuery += " AND C7_NUM      = '"+ sc7 -> c7_num +"'" 
+		_oSQL:_sQuery += " AND C7_FORNECE  = '"+ sc7 -> c7_fornece +"'" 
+		_oSQL:_sQuery += " AND C7_EMISSAO  = '"+ DTOS(sc7 -> c7_emissao) +"'" 
 		_oSQL:Exec ()
 		
 	endif
@@ -100,6 +104,7 @@ user function MT120GOk ()
 		_oSQL:_sQuery += " WHERE CHAVE = 'SC7" + cEmpAnt + cFilAnt + sc7 -> c7_num + "'"
 		_oSQL:Exec ()
 	endif
+
 
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
