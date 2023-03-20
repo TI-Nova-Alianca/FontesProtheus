@@ -36,6 +36,7 @@
 // 21/03/2022 - Claudia - Ajustada a impressão duplicada das informações adicionais. GLPI: 11779
 // 14/06/2022 - Claudia - Ajustada a impressão das observações. GLPI: 12112
 // 26/06/2022 - Sandra  - Incluso novas moedas. GLPI: 12211
+// 20/03/2023 - Claudia - Incluida nova obs. GLPI: 13324
 //
 // ---------------------------------------------------------------------------------------------------------------------------
 #include 'topconn.ch'
@@ -524,6 +525,9 @@ Static Function xPrintRel()
 	oPrint:Say(nLinha,0060,'         Flores da Cunha/RS - CEP: 95.270-000 - Caixa Postal 21 - Telefone: + 55 54 3279 3400',oFont14n)
 	nLinha += 40
 	oPrint:Say(nLinha,0060,'       - E-mail: financeiro@novaalianca.coop.br ',oFont14n)
+	nLinha += 40
+	oPrint:Say(nLinha,0060,'       - Enviar NF para os emails: compras@novaalianca.coop.br e nfe@novaalianca.coop.br ',oFont14n)
+
     nLinha += 40
    
     xPulaPag() 
