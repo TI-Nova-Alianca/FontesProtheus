@@ -2312,8 +2312,8 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 			::UltMsg += u_LeErro (memoread (NomeAutoLog ()))
 			U_Log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + ']' + ::UltMsg)
 			MostraErro()
-		else
-			U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']FINA090 retornou OK')
+	//	else
+	//		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']FINA090 retornou OK')
 		endif
 	endif
 
@@ -2336,16 +2336,16 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 		_oSQL:_sQuery +=   " AND SE5.E5_PARCELA = '" + se2 -> e2_parcela + "'"
 		_oSQL:_sQuery +=   " AND SE5.E5_TIPO    = '" + se2 -> e2_tipo    + "'"
 		_oSQL:_sQuery +=   " AND SE5.E5_VACHVEX = ''"
-		_oSQL:Log ()
+	//	_oSQL:Log ()
 		_nRegSE5 = _oSQL:RetQry ()
-		u_log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + '] recno se5 para atualizar: ' + cvaltochar (_nRegSE5))
+	//	u_log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + '] recno se5 para atualizar: ' + cvaltochar (_nRegSE5))
 		if _nRegSE5 > 0
 			se5 -> (dbgoto (_nRegSE5))
 			reclock ('SE5', .F.)
 			se5 -> e5_vachvex = se2 -> e2_vachvex
 			se5 -> e5_histor  = left (_sHistSE5, tamsx3 ("E5_HISTOR")[1])
 			msunlock ()
-			u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + '] Regravei historico do SE5 para: ' + se5 -> e5_histor)
+	//		u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + '] Regravei historico do SE5 para: ' + se5 -> e5_histor)
 		else
 			u_log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + '] Nao encontrei SE5 para atualizar historico e chave externa.')
 			_lContinua = .F.
@@ -2355,7 +2355,7 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 			reclock ('FK2', .F.)
 			fk2 -> fk2_histor = left (alltrim (fk2 -> fk2_histor) + ' TR.CC.FIL.' + ::FilDest + ' ' + ::Histor, tamsx3 ("FK2_HISTOR")[1])
 			msunlock ()
-			u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + '] Regravei historico do FK2 para: ' + fk2 -> fk2_histor)
+	//		u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + '] Regravei historico do FK2 para: ' + fk2 -> fk2_histor)
 		else
 			U_Log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + '] Registro na tabela FK2 nao eh o que eu esperava!')
 		endif
@@ -2369,12 +2369,13 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 	// Se fez a baixa na filial de origem, agenda rotina batch para a inclusao na filial de destino.
 	if _lContinua
 		_oBatch := ClsBatch():new ()
-		_oBatch:Dados    = 'Transf.sld.SZI fil.' + ::Filial + ' p/' + ::FilDest + '-Assoc.' + ::Assoc + '/' + ::Loja
-		_oBatch:EmpDes   = cEmpAnt
-		_oBatch:FilDes   = ::FilDest
-		_oBatch:DataBase = iif (empty (_dDtBxTran), dDataBase, _dDtBxTran)
-		_oBatch:Modulo   = 6  // Campo E2_VACHVEX nao eh gravado em alguns modulos... vai saber...
-		_oBatch:Comando  = "U_BatTrSZI('" + ::Assoc + "','" + ::Loja + "','" + ::SeqSZI + "','" + cEmpAnt + "','" + ::Filial + "','" + ::FilDest + "','" + ::TM + "','" + dtos (iif (empty (_dDtBxTran), dDataBase, _dDtBxTran)) + "'," + cvaltochar (_nSaldo) + ")"
+		_oBatch:Dados      = 'Transf.sld.SZI fil.' + ::Filial + ' p/' + ::FilDest + '-Assoc.' + ::Assoc + '/' + ::Loja
+		_oBatch:EmpDes     = cEmpAnt
+		_oBatch:FilDes     = ::FilDest
+		_oBatch:DataBase   = iif (empty (_dDtBxTran), dDataBase, _dDtBxTran)
+		_oBatch:Modulo     = 6  // Campo E2_VACHVEX nao eh gravado em alguns modulos... vai saber...
+		_oBatch:Comando    = "U_BatTrSZI('" + ::Assoc + "','" + ::Loja + "','" + ::SeqSZI + "','" + cEmpAnt + "','" + ::Filial + "','" + ::FilDest + "','" + ::TM + "','" + dtos (iif (empty (_dDtBxTran), dDataBase, _dDtBxTran)) + "'," + cvaltochar (_nSaldo) + ")"
+		_oBatch:Prioridade = 8
 		_oBatch:Grava ()
 	endif
 
