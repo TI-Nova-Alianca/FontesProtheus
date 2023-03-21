@@ -118,7 +118,7 @@ METHOD New (_nRegZZ6) Class ClsBatch
 	::AmbTeste   := 'N'  // Habilitado a executar em ambiente de testes [S/N]
 	::ArqLog     := ''
 	::Ativo      := 'S'  // Ativo por default
-	::Prioridade := 5  // Prioridade: 0=mais prioritaroi;9=menor prioritario. Default = prioridade media
+	::Prioridade := 5  // Prioridade: 0=mais prioritaroi;9=menos prioritario. Default = prioridade media
 	
 	// Se recebeu o numero do registro no ZZ6, preenche o objeto com dados do arquivo.
 	if valtype (_nRegZZ6) == 'N'
@@ -237,7 +237,7 @@ return _lContinua
 
 // --------------------------------------------------------------------------
 // Tenta executar o processo.
-METHOD Executa () Class ClsBatch
+METHOD Executa (_sMsgLog) Class ClsBatch
 	local _lContinua := .T.
 //	local _nSegIni   := seconds ()
 
@@ -252,7 +252,7 @@ METHOD Executa () Class ClsBatch
 	endif
 
 	if _lContinua
-		processa ({|| U_VA_ZZ6Ex ()})
+		processa ({|| U_VA_ZZ6Ex (_sMsgLog)})
  	endif
 
 // 	if ! empty (::Mensagens)

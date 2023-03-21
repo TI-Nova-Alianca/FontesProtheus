@@ -51,6 +51,7 @@
 // 27/07/2020 - Robert - Verificacao de acesso para desabilitar batch custo médio: passa a validar acesso 113 e nao mais 069.
 //                     - Inseridas tags para catalogacao de fontes
 // 30/05/2022 - Robert - Removidos usuario e data do final do nome do arquivo de log.
+// 21/03/2023 - Robert - Passa a receber msg.adicional para log na funcao U_VA_ZZ6Ex().
 //
 
 // --------------------------------------------------------------------------
@@ -127,7 +128,7 @@ return
 // --------------------------------------------------------------------------
 // Chama execucao dos processos. Esta rotina tambem eh executada via schedule
 // e deve estar preparada para isso.
-user function VA_ZZ6Ex ()
+user function VA_ZZ6Ex (_sMsgLog)
 	local _lExecOK   := .F.
 	local _lContinua := .T.
 	local _nLock     := 0
@@ -137,8 +138,9 @@ user function VA_ZZ6Ex ()
 	local _sZZ6Msg   := ''
 	static _lAmbProd := (U_RetSQL ("SELECT CASE WHEN db_name() = 'protheus' THEN 1 ELSE 0 END") == 1)
 
+	_sMsgLog = iif (_sMsgLog == NIL, '', _sMsgLog)
 	procregua (10)
-	incproc (alltrim (zz6 -> zz6_cmd))
+	incproc (_sMsgLog + ' ' + alltrim (zz6 -> zz6_cmd))
 
 	if _lContinua .and. ! _lAmbProd
 		u_log2 ('aviso', 'Nao estou no ambiente de producao')
@@ -250,7 +252,7 @@ user function VA_ZZ6Ex ()
 
 		_lExecOK = .F.
 		//u_log ("[" + procname () + "]", time (), "Executando seq.", zz6 -> zz6_seq, zz6 -> zz6_cmd)
-		u_log2 ('info', "[" + procname () + "] Executando batch " + zz6 -> zz6_seq + ' ' + zz6 -> zz6_cmd)
+		u_log2 ('info', "[" + procname () + "]" + _sMsgLog + " Executando batch " + zz6 -> zz6_seq + ' ' + zz6 -> zz6_cmd)
 
 		// Define nome para o arquivo de log a ser gravado pela rotina.
 		if ! empty (zz6 -> zz6_cmd)
@@ -276,7 +278,10 @@ user function VA_ZZ6Ex ()
 			u_help ("Execucao do processo batch tipo '" + zz6 -> zz6_CodPro + "' ainda nao implementada.",, .t.)
 		endcase
 		_sArqLog := _sArqLog2  // Restaura nome do arquivo de log corrente
-		u_log2 ('info', "[" + procname () + "] Retorno do batch: [" + _oBatch:Retorno + '] ' + _oBatch:Mensagens)
+
+		if ! empty (_oBatch:Retorno) .or. ! empty (_oBatch:Mensagens)
+			u_log2 ('info', "[" + procname () + "] Retorno do batch: [" + _oBatch:Retorno + '] ' + _oBatch:Mensagens)
+		endif
 
 
 		if _lExecOK  // O processo foi executado ateh o final

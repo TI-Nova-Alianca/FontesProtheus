@@ -247,8 +247,7 @@ User Function RBatch (_sEmp, _sFil)
 				// Chama a execucao.
 				//U_VA_ZZ6Ex ()
 				_oBatch := ClsBatch ():New (zz6 -> (recno ()))
-				_oBatch:Executa ()
-				
+				_oBatch:Executa ('(' + cvaltochar (_nSeq) + ' de ' + cvaltochar (len (_aSeq)) + ')')
 				// Complementa log de uso de rotinas e performance
 				if ! empty (_sExprMnt)
 		//			if zz6 -> zz6_period == 'R'
