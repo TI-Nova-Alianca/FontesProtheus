@@ -114,6 +114,7 @@
 // 31/01/2023 - Robert  - Geracao carga safra passa mandar cargas compartilhadas concatenadas para U_GeraSZE().
 // 10/02/2023 - Robert  - Passa a usar a funcao U__Mata300
 // 24/02/2023 - Robert  - Criado tratamento para tags <Safra> e <CargaSafra> na gravacao de eventos.
+// 13/03/2023 - Robert  - Implementada acao EstruturaComCustos.
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -218,6 +219,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 				_TrEstq ('NEG')
 			case _sAcao == 'TransfEstqInformarEndDest'
 				_TrEstq ('IED')
+			case _sAcao == 'TransfEstqInsereGrid'
+				_TrEstGrid ()
 			case _sAcao == 'OndeSeUsa'
 				_OndeSeUsa ()
 			case _sAcao == 'IncluiCliente'
@@ -274,6 +277,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 				_InutEtiq ()
 			case _sAcao == 'ZZUVincularUsuario'
 				_ZZU ('VincularUsuario')
+			case _sAcao == 'ConsultaEstruturaComCustos'
+				_EstrCust ()
 			case _sAcao == 'TesteRobert'
 				_TstRobert ()
 			otherwise
@@ -808,7 +813,8 @@ static function _DelEvt ()
 		_oEvento:Exclui ()
 	endif
 Return
-//
+
+
 // --------------------------------------------------------------------------
 // Interface para a classe de transferencias de estoque.
 static function _TrEstq (_sQueFazer)
@@ -903,6 +909,143 @@ static function _TrEstq (_sQueFazer)
 		_SomaErro ("Acao desconhecida na rotina " + procname ())
 	endcase
 Return
+
+
+// --------------------------------------------------------------------------
+// Interface para inserir solic.transf.estq. com tela 'em grid' (varios itens)
+static function _TrEstGrid ()
+	local _sFilOrig  := ''
+	local _sFilDest  := ''
+	local _sOP       := ''
+	local _sImprEtq  := ''
+	local _nItem     := 0
+	local _lTodosOK  := .F.
+	local _sRetGrid  := ''
+	local _aIdGrid   := {}
+
+	// Algumas tags serao unicas, como se fosse um cabecalho de tela.
+	if empty (_sErroWS) ; _sFilOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialOrigem",    .t., .F.), 2)  ; endif
+	if empty (_sErroWS) ; _sFilDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialDestino",   .t., .F.), 2)  ; endif
+	if empty (_sErroWS) ; _sOP      = padr (_ExtraiTag ("_oXML:_WSAlianca:_OP",              .f., .F.), 14) ; endif
+	if empty (_sErroWS) ; _sImprEtq =       _ExtraiTag ("_oXML:_WSAlianca:_Impressora",      .f., .F.)      ; endif
+	if empty (_sErroWS) .and. type ("_oXML:_WSAlianca:_TransfEstqItens") != 'O'
+		_SomaErro ("Tag '_oXML:_WSAlianca:_TransfEstqItens' deve estar presente no XML.")
+	endif
+
+	// Se eu tiver recebido mais de um item (a tag <item> pode se repetir), o
+	// o tipo do objeto vai ser 'array'. Para trabalhar mais adiante com um
+	// soh trecho de programa, usarei nomes de objetos _oTrEstq1, _oTrEstq2, ...
+	// Tentei trabalhar com uma array e guardar objetos nela, mas comecei a ter
+	// problemas de misturar dados entre os objetos. Entao achei melhor criar
+	// um objeto para cada item do XML recebido. O acesso a cada objeto fica
+	// chato de fazer por que preciso do '&', mas posso criar quantos objetos
+	// forem necessarios.
+	if type ("_oXML:_WSAlianca:_TransfEstqItens:_Item") == 'A'  // Mais de um item no XML
+		if len (_oXML:_WSAlianca:_TransfEstqItens:_Item) > 99
+			_SomaErro ("Limite maximo de 99 itens.")  // Na verdade, espero ficar abaixo de 10
+		endif
+		_nItem = 1
+		do while empty (_sErroWS) .and. _nItem <= len (_oXML:_WSAlianca:_TransfEstqItens:_Item)
+			U_Log2 ('debug', '[' + procname () + ']Lendo item ' + cvaltochar (_nItem) + ' do XML')
+			&('_oTrEstq' + cvaltochar (_nItem)) := ClsTrEstq ():New ()
+			&('_oTrEstq' + cvaltochar (_nItem)):FilOrig  = _sFilOrig
+			&('_oTrEstq' + cvaltochar (_nItem)):FilDest  = _sFilDest
+			&('_oTrEstq' + cvaltochar (_nItem)):OP       = _sOP
+			&('_oTrEstq' + cvaltochar (_nItem)):ImprEtq  = _sImprEtq
+			&('_oTrEstq' + cvaltochar (_nItem)):UsrIncl  = cUserName
+			&('_oTrEstq' + cvaltochar (_nItem)):DtEmis   = date ()
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):IdGrid   =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ItemId",          .T., .F.)      ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):ProdOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ProdutoOrigem",   .T., .F.), 15) ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):ProdDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ProdutoDestino",  .T., .F.), 15) ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):AlmOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_AlmoxOrigem",     .T., .F.), 2)  ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):AlmDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_AlmoxDestino",    .T., .F.), 2)  ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):LoteOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_LoteOrigem",      .F., .F.), 10) ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):LoteDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_LoteDestino",     .F., .F.), 10) ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):EndOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_EnderecoOrigem",  .F., .F.), 15) ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):EndDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_EnderecoDestino", .F., .F.), 15) ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):QtdSolic = val  (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_QtdSolic",        .T., .F.))     ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):Motivo   =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_Motivo",          .T., .F.)      ; endif
+			_nItem ++
+		enddo
+	elseif type ("_oXML:_WSAlianca:_TransfEstqItens:_Item") == 'O'  // Um item apenas no XML
+		_oTrEstq1 := ClsTrEstq ():New ()
+		_oTrEstq1:FilOrig  = _sFilOrig
+		_oTrEstq1:FilDest  = _sFilDest
+		_oTrEstq1:OP       = _sOP
+		_oTrEstq1:ImprEtq  = _sImprEtq
+		_oTrEstq1:UsrIncl  = cUserName
+		_oTrEstq1:DtEmis   = date ()
+		if empty (_sErroWS) ; _oTrEstq1:IdGrid   =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ItemId",          .T., .F.)      ; endif
+		if empty (_sErroWS) ; _oTrEstq1:ProdOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ProdutoOrigem",   .T., .F.), 15) ; endif
+		if empty (_sErroWS) ; _oTrEstq1:ProdDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ProdutoDestino",  .T., .F.), 15) ; endif
+		if empty (_sErroWS) ; _oTrEstq1:AlmOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_AlmoxOrigem",     .T., .F.), 2)  ; endif
+		if empty (_sErroWS) ; _oTrEstq1:AlmDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_AlmoxDestino",    .T., .F.), 2)  ; endif
+		if empty (_sErroWS) ; _oTrEstq1:LoteOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_LoteOrigem",      .F., .F.), 10) ; endif
+		if empty (_sErroWS) ; _oTrEstq1:LoteDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_LoteDestino",     .F., .F.), 10) ; endif
+		if empty (_sErroWS) ; _oTrEstq1:EndOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_EnderecoOrigem",  .F., .F.), 15) ; endif
+		if empty (_sErroWS) ; _oTrEstq1:EndDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_EnderecoDestino", .F., .F.), 15) ; endif
+		if empty (_sErroWS) ; _oTrEstq1:QtdSolic = val  (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_QtdSolic",        .T., .F.))     ; endif
+		if empty (_sErroWS) ; _oTrEstq1:Motivo   =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_Motivo",          .T., .F.)      ; endif
+	endif
+
+	// Se nao consegui ler as tags do XML, nem adianta prosseguir.
+	if empty (_sErroWS)
+
+		// Antes de gravar qualquer coisa, preciso ver se todos os itens podem ser aceitos.
+		_lTodosOK = .T.
+		_nItem = 1
+		do while empty (_sErroWS) .and. type ('_oTrEstq' + cvaltochar (_nItem)) == 'O' //valtype (&('_oTrEstq' + cvaltochar (_nItem))) == 'O'
+			if ! &('_oTrEstq' + cvaltochar (_nItem)):PodeIncl ()
+				U_Log2 ('aviso', '[' + procname () + ']A solicitacao abaixo (item ' + cvaltochar (_nItem) + ' do XML) nao vai ser aceita:')
+				u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
+				_lTodosOK = .F.
+			endif
+			_nItem ++
+		enddo
+
+		// Prepara variavel para dar retorno de cada item. Como quero dar o retorno
+		// para todos os itens, limparei mensagens previas de erro.
+		_sErroWS = ''
+		_sRetGrid = '<RetornoSolicitacao>'
+		_nItem = 1
+		do while type ('_oTrEstq' + cvaltochar (_nItem)) == 'O' //valtype (&('_oTrEstq' + cvaltochar (_nItem))) == 'O'
+			_sRetGrid += '<Item' + strzero (_nItem, 3) + '>'
+			_sRetGrid += '<ItemId>' + &('_oTrEstq' + cvaltochar (_nItem)):IdGrid + '</ItemId>'
+			
+			// Situacao que nao deverah ocorrer.
+			if ascan (_aIdGrid, &('_oTrEstq' + cvaltochar (_nItem)):IdGrid) > 0
+				&('_oTrEstq' + cvaltochar (_nItem)):UltMsg = "Tag ItemID (" + &('_oTrEstq' + cvaltochar (_nItem)):IdGrid + ") ja informada anteriormente."
+				_lTodosOK = .F.
+			else
+				aadd (_aIdGrid, &('_oTrEstq' + cvaltochar (_nItem)):IdGrid)
+			endif
+
+			// Se todos estao ok (deverao ser aceitos), jah posso grava-los.
+			if _lTodosOK
+				if ! &('_oTrEstq' + cvaltochar (_nItem)):Grava ()
+					_sRetGrid += "ERRO:" + &('_oTrEstq' + cvaltochar (_nItem)):UltMsg
+					U_Log2 ('erro', '[' + procname () + ']Erro ao gravar a solicitacao abaixo (item ' + cvaltochar (_nItem) + ' do XML):')
+					u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
+				else
+					_sRetGrid += "OK:Gerada solicitacao " + &('_oTrEstq' + cvaltochar (_nItem)):Docto + '/' + &('_oTrEstq' + cvaltochar (_nItem)):Seq
+					U_Log2 ('debug', '[' + procname () + ']Gravei solicitacao ' + cvaltochar (_nItem) + ', que ficou assim:')
+					u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
+				endif
+			else  // Vou apenas retornar se os itens seriam ou nao aceitos
+				if ! empty (&('_oTrEstq' + cvaltochar (_nItem)):UltMsg)
+					_sRetGrid += "ERRO:" + &('_oTrEstq' + cvaltochar (_nItem)):UltMsg
+				else
+					_sRetGrid += "OK"
+				endif
+			endif
+			_sRetGrid += '</Item' + strzero (_nItem, 3) + '>'
+			_nItem ++
+		enddo
+		_sRetGrid += '</RetornoSolicitacao>'
+		_sMsgRetWS = _sRetGrid
+	endif
+	U_Log2 ('debug', '[' + procname () + ']' + _sMsgRetWS)
+return
 
 
 // --------------------------------------------------------------------------
@@ -2661,6 +2804,58 @@ static function _ZZU (_sQueFazer)
 		otherwise
 			_SomaErro ('Operacao ' + _sQueFazer + ' desconhecida na rotina ' + procname ())
 		endcase
+	endif
+return
+
+
+// --------------------------------------------------------------------------
+// Consulta estrutura com custos.
+static function _EstrCust ()
+	local _oSQL      := NIL
+	local _sProdIni  := ''
+	local _sProdFim  := ''
+	local _sTpPrdIni := ''
+	local _sTpPrdFim := ''
+	local _sLComIni  := ''
+	local _sLComFim  := ''
+
+	if empty (_sErroWS) ; _sProdIni  = _ExtraiTag ("_oXML:_WSAlianca:_ProdutoInicial",        .F., .F.) ; endif
+	if empty (_sErroWS) ; _sProdFim  = _ExtraiTag ("_oXML:_WSAlianca:_ProdutoFinal",          .F., .F.) ; endif
+	if empty (_sErroWS) ; _sTpPrdIni = _ExtraiTag ("_oXML:_WSAlianca:_TipoProdutoInicial",    .F., .F.) ; endif
+	if empty (_sErroWS) ; _sTpPrdFim = _ExtraiTag ("_oXML:_WSAlianca:_TipoProdutoFinal",      .F., .F.) ; endif
+	if empty (_sErroWS) ; _sLComIni  = _ExtraiTag ("_oXML:_WSAlianca:_LinhaComercialInicial", .F., .F.) ; endif
+	if empty (_sErroWS) ; _sLComFim  = _ExtraiTag ("_oXML:_WSAlianca:_LinhaComercialFinal",   .F., .F.) ; endif
+	
+	// Verifica se vai gerar muitos produtos
+	if empty (_sErroWS)
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT count (*)"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB1") + " SB1"
+		_oSQL:_sQuery += " WHERE SB1.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+		_oSQL:_sQuery +=   " AND SB1.B1_TIPO    BETWEEN '" + _sTpPrdIni + "' AND '" + _sTpPrdFim + "'"
+		_oSQL:_sQuery +=   " AND SB1.B1_COD     BETWEEN '" + _sProdIni  + "' AND '" + _sProdFim  + "'"
+		_oSQL:_sQuery +=   " AND SB1.B1_CODLIN  BETWEEN '" + _sLComIni  + "' AND '" + _sLComFim  + "'"
+		_oSQL:_sQuery +=   " AND EXISTS (SELECT *"  // Quero conat somente itens que tenham estrutura.
+		_oSQL:_sQuery +=                 " FROM " + RetSQLName ("SG1") + " SG1"
+		_oSQL:_sQuery +=                " WHERE SG1.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=                  " AND SG1.G1_FILIAL  = '" + xfilial ("SG1") + "'"
+		_oSQL:_sQuery +=                  " AND SG1.G1_COD     = SB1.B1_COD)"
+		_oSQL:Log ('[' + procname () + ']')
+		if _oSQL:RetQry (1, .f.) > 10
+			_SomaErro ("A selecao feita buscaria " + cvaltochar (_oSQL:_xRetQry) + " produtos, um processamento muito grande. Mude a selecao de modo a retornar menos produtos.")
+		endif
+	endif
+	if empty (_sErroWS)
+		U_GravaSX1 ('VA_CCR2', '01', U_TamFixo (_sProdIni,  tamsx3 ("B1_COD")[1]))
+		U_GravaSX1 ('VA_CCR2', '02', U_TamFixo (_sProdFim,  tamsx3 ("B1_COD")[1]))
+		U_GravaSX1 ('VA_CCR2', '03', U_TamFixo (_sTpPrdIni, tamsx3 ("B1_TIPO")[1]))
+		U_GravaSX1 ('VA_CCR2', '04', U_TamFixo (_sTpPrdFim, tamsx3 ("B1_TIPO")[1]))
+		U_GravaSX1 ('VA_CCR2', '05', 1)  // 1=apenas pais ativos; 2=todos
+		U_GravaSX1 ('VA_CCR2', '06', U_TamFixo (_sLComIni,  tamsx3 ("B1_CODLIN")[1]))
+		U_GravaSX1 ('VA_CCR2', '07', U_TamFixo (_sLComFim,  tamsx3 ("B1_CODLIN")[1]))
+		_sMsgRetWS += u_va_ccr2 (.t., .t.)
 	endif
 return
 

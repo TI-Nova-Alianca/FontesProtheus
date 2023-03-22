@@ -37,6 +37,8 @@
 // 29/03/2021 - Robert - Tratamento para campo ZZ6_JSON (GLPI 9592).
 // 06/03/2023 - Robert - Criado atributo Prioridade (antes gravava sempre 5)
 // 13/03/2023 - Robert - Conversao parametro ::Prioridade para caracter.
+// 21/03/2023 - Robert - Inicializa novo batch com HrIni=00:00 (criei um batch
+//                       as 23:59 e ele nunca tinha janela para executar).
 //
 
 #include "protheus.ch"
@@ -107,7 +109,7 @@ METHOD New (_nRegZZ6) Class ClsBatch
 	::AguardaWF  := ''
 	::Retorno    := ''  // "Executou OK?" --> S=Sim;N=Nao;I=Iniciado;C=Cancelado;E=Encerrado automaticamente
 	::Mensagens  := ''
-	::HrIni      := time ()
+	::HrIni      := '00:00' //time ()
 	::HrFim      := '24:00'
 	::DtIni      := date ()
 	::DiaSem     := '1234567'

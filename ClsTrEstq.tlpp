@@ -65,6 +65,7 @@ CLASS ClsTrEstq
 	public data FilDest    // Filial destino.
 	public data Docto      // Numero docto na tabela ZAG.
 	public data Seq        // Sequencia dentro do documento.
+	public data IdGrid     // ID da linha do grid (usado na chamada web service pelo NaWeb)
 	public data DtEmis     // Data emissao (inclusao) do ZAG. Nao obrigatoriamente a mesma da geracao do movto.
 	public data RegZAG     // Numero registro (RECNO) no ZAG.
 	public data OP         // Numero da OP, quando a solic. for gerada por OP.
@@ -93,8 +94,6 @@ CLASS ClsTrEstq
 	public data UsrIncl    // Usuario que fez a inclusao do registro
 	public data UsrAutOri  // Usuario que autorizou pelo almox origem
 	public data UsrAutDst  // Usuario que autorizou pelo almox destino
-//	public data UsrAutPCP  // Usuario que autorizou pelo PCP
-//	public data UsrAutQld  // Usuario que autorizou pela qualidade
 
 	// Declaracao dos Metodos da classe
 	public  METHOD New ()
@@ -380,6 +379,7 @@ METHOD GeraAtrib (_sOrigem) class ClsTrEstq
 	::FilDest    = ''
 	::Docto      = ''
 	::Seq        = ''
+	::IdGrid     = ''
 	::DtEmis     = ''
 	::RegZAG     = 0
 	::OP         = ''
@@ -408,8 +408,6 @@ METHOD GeraAtrib (_sOrigem) class ClsTrEstq
 	::UsrIncl    = ''
 	::UsrAutOri  = ''
 	::UsrAutDst  = ''
-//	::UsrAutPCP  = ''
-//	::UsrAutQld  = ''
 
 	if _sOrigem == 'ZAG'
 		::Filial    = zag -> zag_filial
@@ -435,8 +433,6 @@ METHOD GeraAtrib (_sOrigem) class ClsTrEstq
 		::QtdSolic  = zag -> zag_QtdSol
 		::UsrAutOri = zag -> zag_UAutO
 		::UsrAutDst = zag -> zag_UAutD
-	//	::UsrAutPCP = zag -> zag_UAutP
-	//	::UsrAutQld = zag -> zag_UAutQ
 
 		// Busca dados adicionais dos produtos origem e destino (podem nao ser iguais)
 		::LeSB1 ()
@@ -1294,6 +1290,9 @@ METHOD PodeIncl () Class ClsTrEstq
 		// objeto pode ter sido instanciado e modificado pelo programa chamador
 		// e agora eu estaria com dados de SB1 desatualizados.
 		::LeSB1 ()
+
+	//	U_Log2 ('debug', '[' + procname () + ']Situacao do objeto apos ::LeSB1')
+	//	u_logObj (::Self, .t., .f.)
 
 		if ::CtrLotOrig .and. empty (::LoteOrig) .and. ! ::AlmUsaFull (::AlmOrig)
 			::SomaMsg ("Produto origem controla lotes. Lote de origem deve ser informado.")
