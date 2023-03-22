@@ -144,8 +144,9 @@ static function _GeraPlan (_lGeraXML)
 	// Leitura de estruturas cujos componentes devem ser analisados.
 	for _nPai = 1 to len (_aPais)
 	//	u_logIni ('Pai ' + _aPais [_nPai, 1])
-		_aEstr := aclone (U_ML_Comp2 (_aPais [_nPai, 1], 1, '.t.', dDataBase, .F., .F., .F., .F., .F., '', .F., '.f.', .f., .F., _aPais [_nPai, 3]))
-	//	u_log (_aEstr)
+//		_aEstr := aclone (U_ML_Comp2 (_aPais [_nPai, 1], 1, '.t.', dDataBase, .F., .F., .F., .F., .F., '', .F., '.f.', .f., .F., _aPais [_nPai, 3]))
+		_aEstr := aclone (U_ML_Comp2 (_aPais [_nPai, 1], 1, '.t.', dDataBase, .F., .F., .F., .F., .F., '', .F., '.f.', .T., .F., _aPais [_nPai, 3]))
+//		u_log (_aEstr)
 
 		// Varre estrutura do produto verificando se o componente deve ser considerado.
 		for _nComp = 1 to len (_aEstr)
@@ -164,11 +165,27 @@ static function _GeraPlan (_lGeraXML)
 						_comp -> custo_std  = sb1 -> b1_custd
 						_comp -> dt_cus_std = sb1 -> b1_datref
 					
+
+
+
+
 						// Atualiza o restante dos dados do componente.
-						_AtuComp ()
+// DESABILITADO DURANTE TESTES, PARA GANHO DE PERFORMANCE						_AtuComp ()
+						// PREENCHE COM DADOS FICTICIOS
+						_comp -> UC_Cus_01  = 1.11
+						_comp -> UC_Dat_01  = DATE ()
+						_comp -> UC_Cus_02  = 2.22
+						_comp -> UC_Dat_02  = DATE () -1
+						_comp -> UC_Cus_03  = 3.33
+						_comp -> UC_Dat_03  = DATE ()-2
+
+
+
+
+
+
+
 						msunlock ()
-//					else
-//						u_log ('componente', _aEstr [_nComp, 2], 'jah estava em _compon')
 					endif
 
 					// Agora tenho o arquivo de trabalho _comp posicionado no componente atual
@@ -253,7 +270,7 @@ static function _AtuComp ()
 		_comp -> UC_cofins  = _oUltCom:_aArray [1, 13]
 		_comp -> UC_quant   = _oUltCom:_aArray [1, 14]
 	else
-		u_log ('Sem dados de ultimas compras')
+		U_Log2 ('info', '[' + procname () + ']Sem dados de ultimas compras para ' + _comp -> compon)
 	endif
 
 	// Busca ultimos custos medios
@@ -284,47 +301,69 @@ return
 // Gera uma string XML a partir dos dados do arquivo de trabalho.
 static function _GeraXML ()
 	local _nHdl     := ''
-	local _nNivel   := 0
+	local _nNivel   := -1
 	local _sItemPai := ''
+	local _oPilhaIte := NIL
+
+	// Cria 'pilhas' para controlar quantas tags de niveis e itens foram abertas.
+	_oPilhaIte := ClsPilha ():New ()
 
 	U_Log2 ('debug', '[' + procname () + ']gerando XML')
 	_sXMLCCR = '<?xml version="1.0" encoding="UTF-8"?>'
 	_sXMLCCR = '<estrutura>'
 	_estrut -> (dbgotop ())
+	_sItemPai = _estrut -> codigo
 	do while ! _estrut -> (eof ())
-		// Se mudou o item pai, fecha o nivel do anterior e inicia um novo
-		if _estrut -> codigo != _sItemPai
-			U_Log2 ('erro', '[' + procname () + ']Item pai mudou de ' + _sItemPai + ' para ' + _estrut -> codigo)
-			if _nNivel > 0  // Se jah tinha exportado alguma coisa
-				_sXMLCCR += '</nivel_' + alltrim (str (_nNivel)) + '>'
-				_sXMLCCR += '</nivel_0>'
-			endif
-			_sXMLCCR += '<nivel_0>'
-			_sXMLCCR += '<item>'
-			_sXMLCCR += '<cod>' + alltrim (_estrut -> codigo) + '</cod>'
-			_sXMLCCR += '<descr>' + alltrim (_estrut -> descricao) + '</descr>'
-			_sXMLCCR += '</item>'
-			_sItemPai = _estrut -> codigo
-			_nNivel = 0
-		endif
-		U_Log2 ('debug', '[' + procname () + ']Iniciando COMPON = ' + _estrut -> compon + ' com _nNivel = ' + cvaltochar (_nNivel))
+		U_Log2 ('debug', '[' + procname () + ']Li ' + alltrim (_estrut -> compon) + ' niv=' + cvaltochar (_estrut -> nivel) + '  _nNivel=' + cvaltochar (_nNivel) + '  topo=' + cvaltochar (_oPilhaIte:RetTopo ()))
+
+		// Se o nivel do arquivo aumentou, preciso aumentar as tags junto
 		do while _estrut -> nivel > _nNivel
 			_nNivel ++
-			U_Log2 ('aviso', '[' + procname () + ']abrindo nivel ' + cvaltochar (_nNivel))
-			_sXMLCCR += '<nivel_' + alltrim (str (_nNivel)) + '>'
+			_sXMLCCR += '<nivel_' + alltrim (str (_estrut -> nivel)) + '>'
+			U_Log2 ('aviso', '[' + procname () + ']abrindo nivel ' + cvaltochar (_estrut -> nivel) + ' para ' + _estrut -> compon)
 		enddo
-		do while _estrut -> nivel < _nNivel
-			U_Log2 ('aviso', '[' + procname () + ']fechando nivel ' + cvaltochar (_nNivel))
-			_sXMLCCR += '</nivel_' + alltrim (str (_nNivel)) + '>'
-			_nNivel --
-		enddo
-		U_Log2 ('debug', '[' + procname () + ']exportando COMPON ' + _estrut -> compon)
-		_sXMLCCR += '<item>'
+
+		// Informa no XML "nao tente ler proximo nivel, por que nao existe."
+		if _estrut -> nivel <= _nNivel .and. _oPilhaIte:Altura() > 0
+			if _oPilhaIte:RetTopo () == _nNivel
+				//TESTE
+				IF _NNIVEL != 4
+					_sXMLCCR += '<nivel_' + cvaltochar (_nNivel + 1) + '></nivel_' + cvaltochar (_nNivel + 1) + '>'
+				ENDIF
+			endif
+		endif
+
+		// Se tenho tag <item> aberta (do registro anterior) com mesmo nivel, devo fecha-la.
+		if _estrut -> nivel == _nNivel .and. _oPilhaIte:Altura() > 0
+			if _oPilhaIte:RetTopo () == _nNivel
+				_sXMLCCR += '</nivel_' + cvaltochar (_nNivel) + 'Item>'
+				_oPilhaIte:Desempilha ()
+				U_Log2 ('debug', '[' + procname () + ']Fechei <item> e desempilhei por que tinha um aberto do registro anterior.')
+			else
+				U_Log2 ('debug', '[' + procname () + ']Nao vou fechar item por que o topo da pilha tem ' + cvaltochar (_oPilhaIte:RetTopo ()))
+			endif
+		endif
+
+		// Se o nivel do arquivo diminuiu, preciso diminuir as tags junto
+		_ReduzNiv (_estrut -> nivel, @_nNivel, @_oPilhaIte)
+
+		// Se trocar de item pai, preciso identificar isso fechando o nivel 0 atual e abrindo um novo.
+		if _estrut -> codigo != _sItemPai
+			_sXMLCCR += '</nivel_0>'
+			_sXMLCCR += '<nivel_0>'
+			_sItemPai = _estrut -> codigo
+		endif
+
+		if _nNivel > 0  // SDT do NaWeb nao quer a tag <item> no nivel 0
+			_sXMLCCR += '<nivel_' + cvaltochar (_nNivel) + 'Item>'
+			_oPilhaIte:Empilha (_nNivel)
+			U_Log2 ('debug', '[' + procname () + ']Empilhei ' + cvaltochar (_oPilhaIte:RetTopo ()) + ' antes de exportar ' + alltrim (_estrut -> compon))
+		endif
 		_sXMLCCR += '<cod>' + alltrim (_estrut -> compon) + '</cod>'
 		_sXMLCCR += '<descr>' + alltrim (_estrut -> desc_comp) + '</descr>'
 		_sXMLCCR += '<tipo>' + alltrim (_estrut -> tp_comp) + '</tipo>'
 		_sXMLCCR += '<quant>' + cvaltochar (_estrut -> quant_estr) + '</quant>'
-		_sXMLCCR += '<um>' + alltrim (_estrut -> un_med_comp) + '</um>'
+		_sXMLCCR += '<um>' + alltrim (_estrut -> un_med_com) + '</um>'
 		_sXMLCCR += '<custo_std>' + cvaltochar (_estrut -> custo_std) + '</custo_std>'
 		_sXMLCCR += '<uc01_prc>'  + cvaltochar (_estrut -> uc_cus_01) + '</uc01_prc>'
 		_sXMLCCR += '<uc01_data>' + cvaltochar (_estrut -> uc_dat_01) + '</uc01_data>'
@@ -333,15 +372,24 @@ static function _GeraXML ()
 		_sXMLCCR += '<uc03_prc>'  + cvaltochar (_estrut -> uc_cus_03) + '</uc03_prc>'
 		_sXMLCCR += '<uc03_data>' + cvaltochar (_estrut -> uc_dat_03) + '</uc03_data>'
 		_sXMLCCR += '<custo>0</custo>'
-		_sXMLCCR += '</item>'
+
 		_estrut -> (dbskip ())
 	enddo
-	_sXMLCCR += '</nivel_1>'
+
+	// Verifica o que ficou por fechar (itens e niveis)
+	U_Log2 ('debug', '[' + procname () + ']Terminei de ler o arquivo')
+
+	// Informa no XML "nao tente ler proximo nivel, por que nao existe."
+	_sXMLCCR += '<nivel_' + cvaltochar (_nNivel + 1) + '></nivel_' + cvaltochar (_nNivel + 1) + '>'
+
+	_ReduzNiv (0, @_nNivel, @_oPilhaIte)
+
 	_sXMLCCR += '</nivel_0>'
 	_sXMLCCR += '</estrutura>'
 	
 	_sXMLCCR = U_NoAcento (_sXMLCCR)
-	
+	_sXMLCCR = EncodeUTF8 (_sXMLCCR)
+
 	// Exporta para arquivo, durante a implementacao, para conferencia.
 	_sArqXML := 'c:\temp\va_ccr2.xml'
 	if file (_sArqXML)
@@ -352,6 +400,26 @@ static function _GeraXML ()
 	fclose (_nHdl)
 return
 
+
+// --------------------------------------------------------------------------
+static function _ReduzNiv (_nParaQual, _nNivel, _oPilhaIte)
+	do while _nParaQual < _nNivel
+		U_Log2 ('debug', '[' + procname () + ']  Comparando topo da pilha (' + cvaltochar (_oPilhaIte:RetTopo ()) + ') com _nNivel (' + cvaltochar (_nNivel) + ') antes de reduzir o nivel')
+		if _oPilhaIte:RetTopo () == _nNivel
+			U_Log2 ('aviso', '[' + procname () + ']  Fechando item e desempilhando por que vou reduzir o nivel.')
+			_sXMLCCR += '</nivel_' + cvaltochar (_nNivel) + 'Item>'
+			_oPilhaIte:Desempilha ()
+		endif
+		U_Log2 ('aviso', '[' + procname () + ']  Fechando nivel ' + cvaltochar (_nNivel))
+		_sXMLCCR += '</nivel_' + alltrim (str (_nNivel)) + '>'
+		_nNivel --
+		U_Log2 ('debug', '[' + procname () + ']  Comparando topo da pilha (' + cvaltochar (_oPilhaIte:RetTopo ()) + ') com _nNivel (' + cvaltochar (_nNivel) + ') depois de reduzir o nivel')
+		if _oPilhaIte:RetTopo () == _nNivel
+			U_Log2 ('aviso', '[' + procname () + ']  Fechando item e desempilhando depois de reduzir o nivel.')
+			_sXMLCCR += '</nivel_' + cvaltochar (_nNivel) + 'Item>'
+			_oPilhaIte:Desempilha ()
+		endif
+	enddo
 return
 
 

@@ -26,6 +26,8 @@
 // 30/06/2021 - Robert - Passa a acessar modulo '06' como default.
 // 02/10/2022 - Robert - Removido atributo :DiasDeVida da classe ClsAviso.
 // 31/10/2022 - Robert - Nao validava zz6_hrini para saber se encontra-se fora do intervalo de execucao
+// 21/03/2023 - Robert - Removidas chamadas do U_PerfMon (eu nao acompanhava nada, mesmo...)
+//                     - Quando tem mais de um batch a executar, procura nao passar de 10 minutos no total.
 //
 
 #include "tbiconn.ch"
@@ -51,6 +53,7 @@ User Function RBatch (_sEmp, _sFil)
 	local _oSQL       := NIL
 	local _oAviso     := NIL 
 	local _sExprMnt   := ''
+	local _nSegunIni  := 0
 
 	set century on
 	
@@ -168,7 +171,21 @@ User Function RBatch (_sEmp, _sFil)
 		_oSQL:_sQuery += " ORDER BY ZZ6_PRIOR, PROX_EXEC"
 		//_oSQL:Log ()
 		_aSeq := aclone (_oSQL:Qry2Array ())
+		U_Log2 ('info', '[' + procname () + ']Encontrei ' + cvaltochar (len (_aSeq)) + ' batches a verificar.')
+		_nSegunIni = seconds ()
 		for _nSeq = 1 to len (_aSeq)
+
+			// Quando tiver muitos batches para executar (por exemplo, cada
+			// titulo transferido entre filiais na CC associados gera um
+			// batch), pode ocorrer de monopolizar o servico. Por isso,
+			// vou deixar rodar alguns minutos e cair fora, para dar chance
+			// aos demais.
+			//U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (seconds () - _nSegunIni) + ' segundos')
+			if seconds () - _nSegunIni > 60 * 10
+				U_Log2 ('aviso', '[' + procname () + ']Estou executando ha bastante tempo. Hora de dar vez para outra filial.')
+				exit
+			endif
+
 			zz6 -> (dbgoto (_aSeq [_nSeq, 1]))
 
 			// Verifica se o batch ainda encontra-se ativo (pode ter havido alteracao manual depois que gerei a array de batches pendentes)
@@ -222,21 +239,20 @@ User Function RBatch (_sEmp, _sFil)
 					U_UsoRot ('I', _sExprMnt, '')
 
 					// Se for um batch com repeticao, vou controlar seus tempos de execucao
-					if zz6 -> zz6_period == 'R'
-						U_PerfMon ('I', _sExprMnt)  // Deixa variavel pronta para posterior medicao de tempos de execucao
-					endif
+//					if zz6 -> zz6_period == 'R'
+//						U_PerfMon ('I', _sExprMnt)  // Deixa variavel pronta para posterior medicao de tempos de execucao
+//					endif
 				endif
 
 				// Chama a execucao.
 				//U_VA_ZZ6Ex ()
 				_oBatch := ClsBatch ():New (zz6 -> (recno ()))
-				_oBatch:Executa ()
-				
+				_oBatch:Executa ('(' + cvaltochar (_nSeq) + ' de ' + cvaltochar (len (_aSeq)) + ')')
 				// Complementa log de uso de rotinas e performance
 				if ! empty (_sExprMnt)
-					if zz6 -> zz6_period == 'R'
-						U_PerfMon ('F', _sExprMnt)  // Finaliza medicao de tempos de execucao
-					endif
+		//			if zz6 -> zz6_period == 'R'
+		//				U_PerfMon ('F', _sExprMnt)  // Finaliza medicao de tempos de execucao
+		//			endif
 					U_UsoRot ('F', _sExprMnt, '')
 				endif
 

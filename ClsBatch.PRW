@@ -37,6 +37,8 @@
 // 29/03/2021 - Robert - Tratamento para campo ZZ6_JSON (GLPI 9592).
 // 06/03/2023 - Robert - Criado atributo Prioridade (antes gravava sempre 5)
 // 13/03/2023 - Robert - Conversao parametro ::Prioridade para caracter.
+// 21/03/2023 - Robert - Inicializa novo batch com HrIni=00:00 (criei um batch
+//                       as 23:59 e ele nunca tinha janela para executar).
 //
 
 #include "protheus.ch"
@@ -107,7 +109,7 @@ METHOD New (_nRegZZ6) Class ClsBatch
 	::AguardaWF  := ''
 	::Retorno    := ''  // "Executou OK?" --> S=Sim;N=Nao;I=Iniciado;C=Cancelado;E=Encerrado automaticamente
 	::Mensagens  := ''
-	::HrIni      := time ()
+	::HrIni      := '00:00' //time ()
 	::HrFim      := '24:00'
 	::DtIni      := date ()
 	::DiaSem     := '1234567'
@@ -118,7 +120,7 @@ METHOD New (_nRegZZ6) Class ClsBatch
 	::AmbTeste   := 'N'  // Habilitado a executar em ambiente de testes [S/N]
 	::ArqLog     := ''
 	::Ativo      := 'S'  // Ativo por default
-	::Prioridade := 5  // Prioridade: 0=mais prioritaroi;9=menor prioritario. Default = prioridade media
+	::Prioridade := 5  // Prioridade: 0=mais prioritaroi;9=menos prioritario. Default = prioridade media
 	
 	// Se recebeu o numero do registro no ZZ6, preenche o objeto com dados do arquivo.
 	if valtype (_nRegZZ6) == 'N'
@@ -237,7 +239,7 @@ return _lContinua
 
 // --------------------------------------------------------------------------
 // Tenta executar o processo.
-METHOD Executa () Class ClsBatch
+METHOD Executa (_sMsgLog) Class ClsBatch
 	local _lContinua := .T.
 //	local _nSegIni   := seconds ()
 
@@ -252,7 +254,7 @@ METHOD Executa () Class ClsBatch
 	endif
 
 	if _lContinua
-		processa ({|| U_VA_ZZ6Ex ()})
+		processa ({|| U_VA_ZZ6Ex (_sMsgLog)})
  	endif
 
 // 	if ! empty (::Mensagens)

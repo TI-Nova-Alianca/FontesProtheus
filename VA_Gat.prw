@@ -135,6 +135,7 @@
 // 28/09/2022 - Robert  - Gatilho do C2_VABARCX passa a considerar apenas B1_VAFULLW.
 // 07/12/2022 - Robert  - Atualizada chamada funcao classif.uva para safra 2023 (linguagem passou a exigir formato caracter nos parametros)
 // 24/02/2023 - Robert  - Leitura da view VA_VFILA_DESCARGA_SAFRA trocada por VA_VCARGAS_SAFRA
+// 21/03/2023 - Robert  - Gatilho p/ alimentar C2_LOCAL a partir do C2_PRODUTO e C2_VAOPESP.
 //
 
 // --------------------------------------------------------------------------
@@ -197,6 +198,19 @@ user function VA_Gat (_sParCpo, _sParSeq)
 	endif
 
 	do case
+
+	case _sCampo $ "M->C2_PRODUTO/M->C2_VAOPESP" .and. _sCDomin == "C2_LOCAL"
+		_xRet = fBuscaCpo ("SB1", 1, xfilial ("SB1") + m->c2_produto, 'B1_LOCPAD')
+
+		// Se OP 'feita em terceiros', vamos apontar no ax. de materiais 'em terceiros'.
+		if m->c2_vaopesp == 'E'
+			_xRet = '31'
+		else
+			if sb1 -> b1_vafullw = 'S'
+				_xRet = GetMv("VA_ALMFULL")
+			endif
+		endif
+
 
 	case _sCampo $ "M->C2_PRODUTO" .and. _sCDomin == "C2_VABARCX"
 		// Por enquanto, somente me interessa se o produto da OP vai ser
