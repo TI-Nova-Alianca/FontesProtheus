@@ -20,7 +20,7 @@
 user function MA650TOk ()
 	local _lRet     := .T.
 	local _aAreaAnt := U_ML_SRArea ()
-   	local _aAmbAnt  := U_SalvaAmb ()
+	local _aAmbAnt  := U_SalvaAmb ()
 
 	if _lRet
 		_lRet = _VerRepr ()
@@ -45,13 +45,15 @@ user function MA650TOk ()
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
 return _lRet
-//
+
+
 // --------------------------------------------------------------------------
 // Verificacoes integracao com Fullsoft.
 static function _VerFull ()
-	local _lRet     := .T.
-   	local _sMsg     := ""
-	local _sAlmFull := GetMv ("VA_ALMFULP",, '')
+	local _lRet      := .T.
+	local _sMsg      := ""
+	local _sAlmFullP := '11'  // Alm. para apontamento de producao (interna)
+	local _sAlmFullE := '31'  // Alm. para apontamento de producao (em terceiros)
 
 	sb1 -> (dbsetorder (1))
 	if ! sb1 -> (dbseek (xfilial ("SB1") + m->c2_produto, .F.))
@@ -59,20 +61,24 @@ static function _VerFull ()
 		_lRet = .F.
 	endif
 
-	if _lRet .and. sb1 -> b1_vafullw == 'S' .and. ! empty(_sAlmFull) .and. m->c2_local != _sAlmFull
-
-		// Nao uso esta verificacao quando a OP estah sendo gerada pelo MRP, pois
-		// nao consegui criar um gatilho nem ponto de entrada que trocasse o C2_LOCAL
-		// para o almox. do Fullsoft. Tudo que consegui foi fazer a troca no ponto
-		// de entrada MTA650I, que eh executado depois desta validacao. Robert, 21/12/2014.
-		if empty (m->c2_seqmrp)
-			_sMsg = "Produto '" + alltrim (sb1 -> b1_cod) + "' controla armazenagem via Fullsoft. Producao deve ser apontada no almoxarifado '" + _sAlmFull + "'."
-			if u_zzuvl ('029', __cUserId, .F.)
-				_lRet = U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
-			else
-				u_help (_sMsg,, .t.)
-				_lret = .F.
-			endif
+	// Nao uso esta verificacao quando a OP estah sendo gerada pelo MRP, pois
+	// nao consegui criar um gatilho nem ponto de entrada que trocasse o C2_LOCAL
+	// para o almox. do Fullsoft. Tudo que consegui foi fazer a troca no ponto
+	// de entrada MTA650I, que eh executado depois desta validacao. Robert, 21/12/2014.
+	if _lRet .and. empty (m->c2_seqmrp) .and. sb1 -> b1_vafullw == 'S'
+		_sMsg = ''
+		// N=Normal;R=Reprocesso;E=Externa(em 3os);T=Terceirizacao(para 3os);F=Filtracao
+		if m->c2_vaOPEsp == 'E' .and. m->c2_local != _sAlmFullE
+			_sMsg := "Produto '" + alltrim (sb1 -> b1_cod) + "' controla armazenagem via Fullsoft."
+			_sMsg += " Producao a ser feita 'em terceiros' deve ser apontada no almoxarifado '" + _sAlmFullE + "'."
+		elseif m->c2_vaOPEsp == 'N' .and. m->c2_local != _sAlmFullP
+			_sMsg := "Produto '" + alltrim (sb1 -> b1_cod) + "' controla armazenagem via Fullsoft."
+			_sMsg += " Producao interna deve ser apontada no almoxarifado '" + _sAlmFullP + "'."
+		endif
+		if ! empty (_sMsg)
+		//	_lRet = U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
+			u_help (_sMsg)
+			_lRet = .F.
 		endif
 	endif
 
@@ -82,7 +88,8 @@ static function _VerFull ()
 	endif
 
 return _lRet
-//
+
+
 // --------------------------------------------------------------------------
 // Verificacoes revisoes estrutura.
 static function _VerRevis ()
@@ -170,13 +177,14 @@ static function _VerRevis ()
 		endif
 	endif
 return _lRet
-//
+
+
 // --------------------------------------------------------------------------
 // Verificacoes OP reprocesso.
 static function _VerRepr ()
 	local _lRet     := .T.
 	
-	if _lRet .and. m->c2_vaOPEsp != 'R'
+	if _lRet .and. m->c2_vaOPEsp != 'R'  // N=Normal;R=Reprocesso;E=Externa(em 3os);T=Terceirizacao(para 3os);F=Filtracao
 		if ! empty (m->c2_vaLtOri)
 			u_help ("O campo '" + alltrim (RetTitle ("C2_VALTORI")) + "' so deve ser informado quando para OP de reprocesso.")
 			_lRet = .F.

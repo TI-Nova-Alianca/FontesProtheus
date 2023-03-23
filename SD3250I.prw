@@ -26,6 +26,7 @@
 // 04/10/2021 - Claudia - Alterada a rotina _AtuReproc. GLPI: 9674
 // 01/04/2022 - Robert  - Passa a usar a classe ClsEtiq() para envio da etiqueta para o FullWMS - GLPI 11825.
 // 18/04/2022 - Robert  - Incluida chamada para funcao PerfMon().
+// 23/03/2023 - Robert  - Deixa de ler parametro VA_ALMFULP (agora fica fixo no programa).
 //
 
 // -----------------------------------------------------------------------------------------------------------------------------------
@@ -53,18 +54,15 @@ User Function SD3250I()
 	// Atualiza laudos/ensaios de laboratorio
 	processa ({|| _AtuLaudo ()})
 
-	// Desabilitado por que a demora nao era aqui.
-	// // Finaliza registro (criado pelo P.E. MT250TOk) para medicao de tempo de apontamento de producao.
-	// U_PerfMon ('F', 'GravacaoMATA250')
-
 	U_ML_SRArea (_aAreaAnt)
 Return
-//
+
+
 // ------------------------------------------------------------------------------------
 // Atualizacoes para OP de reprocessamento.
 Static Function _AtuReproc ()
 	local _sAlmRetr := GetMv ("VA_ALMREPR")
-	local _sAlmFull := GetMv ("VA_ALMFULP",, '')
+//	local _sAlmFull := GetMv ("VA_ALMFULP",, '')
 	
 	if fBuscaCpo ("SC2", 1, xfilial ("SC2") + m->d3_op, "C2_VAOPESP") == 'R'
 		_oTrEstq := ClsTrEstq ():New ()
@@ -73,19 +71,17 @@ Static Function _AtuReproc ()
 		_oTrEstq:ProdOrig := m->d3_cod
 		_oTrEstq:ProdDest := m->d3_cod
 		_oTrEstq:AlmOrig  := _sAlmRetr
-		_oTrEstq:AlmDest  := _sAlmFull
+		_oTrEstq:AlmDest  := '01'  //_sAlmFull
 		_oTrEstq:LoteOrig := ""
 		_oTrEstq:LoteDest := ""
 		_oTrEstq:EndOrig  := ""
 		_oTrEstq:EndDest  := ""
 		_oTrEstq:QtdSolic := m->d3_perda
-		_oTrEstq:Motivo   := "Disponibilizar pallet reprocessado p/ Full"     
-		_oTrEstq:ImprEtq  := ""   		 
+		_oTrEstq:Motivo   := "Disponibilizar pallet reprocessado p/ Full"
+		_oTrEstq:ImprEtq  := ""
 		_oTrEstq:UsrIncl  := cUserName
 		_oTrEstq:DtEmis   := m->d3_emissao
-		_oTrEstq:Etiqueta := alltrim(m->d3_vaetiq) 
-		//_oTrEstq:Docto    := alltrim(m->d3_doc) 
-
+		_oTrEstq:Etiqueta := alltrim(m->d3_vaetiq)
 		if _oTrEstq:Grava ()
 			u_log2 ('INFO', 'Gravou ZAG. ' + _oTrEstq:UltMsg)
 		else
@@ -93,36 +89,8 @@ Static Function _AtuReproc ()
 		endif
 	endif
 return
-//
-// // ------------------------------------------------------------------------------------
-// // Atualizacoes para OP de reprocessamento.
-// static function _AtuReproc ()
-// 	local _sAlmRetr := GetMv ("VA_ALMREPR")
-// 	local _sAlmFull := GetMv ("VA_ALMFULP",, '')
-// 	local _aRet260  := {}
-//
-// 	if fBuscaCpo ("SC2", 1, xfilial ("SC2") + m->d3_op, "C2_VAOPESP") == 'R'
-// 		u_log ('Eh op de reproc.')
-// 		begin transaction
-// 		                             //(_sProdOri, _sAlmOri, _nQuant,            _dData, _sProdDest, _sAlmDest, _aRecnEst, _sLoteOri, _sLoteDest, _sEndOri, _sEndDest, _sMotivo, _sChvEx)
-// 		_aRet260 := aclone (U_A260Proc (m->d3_cod, _sAlmRetr, m->d3_perda, m->d3_emissao, m->d3_cod, _sAlmFull, NIL, NIL, NIL, NIL, NIL))
-// 		u_log ('Recnos gerados:', _aRet260)
-// 		if len (_aRet260) == 2
-// 			_oSQL := ClsSQL ():New ()
-// 			_oSQL:_sQuery := " UPDATE " + RetSQLName ("SD3")
-// 			_oSQL:_sQuery += " SET D3_VAMOTIV = 'Disponibilizar pallet reprocessado p/ Full', "
-// 			_oSQL:_sQuery +=     " D3_VAETIQ  = '" + alltrim (m->d3_vaetiq) + "', "
-// 			_oSQL:_sQuery +=     " D3_VACHVEX = 'SD3" + alltrim (m->d3_doc) + "' "  // Util para caso de precisar estornar.
-// 			_oSQL:_sQuery += " WHERE R_E_C_N_O_ IN (" + cvaltochar (_aRet260 [1]) + " , " + cvaltochar (_aRet260 [2]) + ")"
-// 			u_log (_oSQL:_sQuery )
-// 			_oSQL:Exec ()
-// 		endif
-// 		end transaction
-// //	else
-// //		u_log ('Nao eh op de reproc.')
-// 	endif
-// return
-//
+
+
 // ------------------------------------------------------------------------------------
 // Atualiza laudos/ensaios de laboratorio
 static function _AtuLaudo ()

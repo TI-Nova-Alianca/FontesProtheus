@@ -41,6 +41,7 @@
 // 13/10/2022 - Robert  - Novos parametros funcao U_ConsEst().
 // 26/11/2022 - Robert  - Permite mov.com inconsistencia entre tabelas (U_ConsEst) somente para grupo 119 do ZZU.
 // 26/01/2023 - Robert  - Bloqueio do MV_ALMZAG impedia, inclusive, o U_BatFullW e U_BatFullM
+// 23/03/2023 - Robert  - Deixa de ler parametro VA_ALMFULP (testes passam a ser melhorados e fixados no programa).
 //
 
 // ------------------------------------------------------------------------------------
@@ -213,8 +214,9 @@ User Function MA261LIN ()
 	else
 		if _lRet .and. cEmpAnt == '01' .and. cFilAnt == '01' .and. ! IsInCallStack ("U_BATFULLW")
 			if fBuscaCpo ("SB1", 1, xfilial ("SB1") + _sProdDest, "B1_VAFULLW") == 'S'
-				_sAlmFull = GetMv ("VA_ALMFULP",, '') + '/' + GetMv ("VA_ALMFULD",, '') + '/' + GetMv ("VA_ALMFULT",, '')
-				if _sAlmOrig $ '01/' + _sAlmFull .or. _sAlmDest $ '01/' + _sAlmFull
+//				_sAlmFull = GetMv ("VA_ALMFULP",, '') + '/' + GetMv ("VA_ALMFULD",, '') + '/' + GetMv ("VA_ALMFULT",, '')
+				_sAlmFull = GetMv ("VA_ALMFULD",, '') + '/' + GetMv ("VA_ALMFULT",, '')
+				if _sAlmOrig $ '01/11' + _sAlmFull .or. _sAlmDest $ '01/11' + _sAlmFull
 					_sMsg = "Almoxarifados envolvidos na integracao com Fullsoft nao devem ser movimentados manualmente."
 					if U_ZZUVL ('029', __cUserId, .F.)
 						_lRet = U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
