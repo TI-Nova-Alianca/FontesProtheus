@@ -395,15 +395,23 @@ Return _sNextNum
 // --------------------------------------------------------------------------
 // Operações com grupo de etiquetas (por OP ou por NF).
 User Function EtqPlltG (_sOP, _sNF, _sSerie, _sFornece, _sLoja, _sQueFazer)
-	local _aAreaAnt := U_ML_SRArea ()
-	local _aEtiq    := {}
-	local _nEtiq    := 0
-	local _oSQL     := NIL
-	local _aCols    := {}
-	local _bSegue   := .F.
-	local _bInutil  := .F.
-	local _oEtiq    := NIL
-	
+	local _aAreaAnt   := U_ML_SRArea ()
+	local _aEtiq      := {}
+	local _aEtiq2     := {}
+	local _nEtiq      := 0
+	local _oSQL       := NIL
+	local _aCols      := {}
+	local _bSegue     := .F.
+	local _bInutil    := .F.
+	local _oEtiq      := NIL
+	local _sImpr      := '  '
+	local _sCmdImpT  := ''  // Comandos de impressao 'totais' (todas as etiq)
+	local _sCmdImp   := ''  // Comando de impressao de cada etiqueta
+	local _sArq       := ''
+	local _nHdl       := ''
+	static _sPortaImp := ""  // Tipo STATIC para que o programa abra as perguntas apenas na primeira execucao.
+	static _nModelImp := 0   // Tipo STATIC para que o programa abra as perguntas apenas na primeira execucao.
+
 	_oSQL := ClsSQl ():New ()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT ' ' AS OK, ZA1_CODIGO, ZA1_PROD, ZA1_QUANT, ZA1_IMPRES, ZA1_APONT, ZA1_DOCE"
@@ -431,20 +439,91 @@ User Function EtqPlltG (_sOP, _sNF, _sSerie, _sFornece, _sLoja, _sQueFazer)
 	aadd (_aCols, {6, 'Ja apontada', 30, ''})
 	U_MBArray (@_aEtiq, 'Selecione as etiquetas a ' + iif (_sQueFazer == 'I', 'imprimir', 'excluir'), _aCols, 1)
 	
-	if _sQueFazer == "I"
+	if _sQueFazer == "I"  // Imprimir
+
+		// Se jah definido na execucao anterior (por isso a variavel eh STATIC), nao pergunto mais.
+		if empty (_sPortaImp) .or. empty (_nModelImp)
+			_sImpr = U_Get ("Selecione impressora", 'C', 2, '', 'ZX549', _sImpr, .f., '.t.')
+			if ! empty (_sImpr)
+				_sPortaImp = U_RetZX5 ('49', _sImpr, 'ZX5_49CAM')
+				_nModelImp = val (U_RetZX5 ('49', _sImpr, 'ZX5_49LING'))
+//				U_Log2 ('debug', '[' + procname () + ']porta: ' + _sPortaImp)
+//				U_Log2 ('debug', '[' + procname () + ']modelo: ' + cvaltochar (_nModelImp))
+			else
+				u_help ("Impressao cancelada.")
+				_aEtiq = {}
+			endif
+		endif
+
+		// Passa todas as etiquetas selecionadas para uma nova lista, para que
+		// fique mais facil, posteriormente, saber informar para a funcao que
+		// gera comandos de impressao se vai ser a primeira ou a ultima.
+		_aEtiq2 = {}
 		for _nEtiq = 1 to len (_aEtiq)
 			if _aEtiq [_nEtiq, 1]
 				if _aEtiq [_nEtiq, 6] == 'S'
 					if U_MsgYesNo ("Etiqueta '" + _aEtiq [_nEtiq, 2] + "' ja gerou apontamento de producao. Deseja reimprimir mesmo assim?")
-						_oEtiq := ClsEtiq ():New (_aEtiq [_nEtiq, 2])
-						_oEtiq:Imprime (mv_par01)
+						//_oEtiq := ClsEtiq ():New (_aEtiq [_nEtiq, 2])
+						//_oEtiq:Imprime (mv_par01)
+						aadd (_aEtiq2, _aEtiq [_nEtiq, 2])
 					endif
 				else
-					_oEtiq := ClsEtiq ():New (_aEtiq [_nEtiq, 2])
-					_oEtiq:Imprime (mv_par01)
+					//_oEtiq := ClsEtiq ():New (_aEtiq [_nEtiq, 2])
+					//_oEtiq:Imprime (mv_par01)
+					aadd (_aEtiq2, _aEtiq [_nEtiq, 2])
 				endif
 			endif
 		next
+
+		// Gera string com os comandos de impressao para todas as etiquetas juntas.
+		_sCmdImpT = ''
+		for _nEtiq = 1 to len (_aEtiq2)
+			_oEtiq := ClsEtiq ():New (_aEtiq2 [_nEtiq])
+			if empty (_oEtiq:Codigo)
+				u_help ("Etiqueta '" + _aEtiq2 [_nEtiq] + "' invalida." + _oEtiq:UltMsg,, .t.)
+				_sCmdImpT = ''  // Aborta toda a impressao.
+				exit
+			else
+				_sCmdImp = _oEtiq:CmdImpr (_nModelImp, empty (_sCmdImpT))
+				U_Log2 ('debug', '[' + procname () + ']Comando retornado para esta etiq: ' + _sCmdImp)
+				if empty (_sCmdImp)
+					u_help ("Problema na impressao da etiqueta '" + _oEtiq:Codigo + "': " + _oEtiq:UltMsg)
+					_sCmdImpT = ''  // Aborta toda a impressao.
+					exit
+				else
+					_sCmdImpT += _sCmdImp
+				endif
+			endif
+		next
+		U_Log2 ('debug', '[' + procname () + ']Acumulado de comandos: ' + _sCmdImpT)
+
+		// Envia para a impressora (ou arquivo, caso porta = caminho de arquivo).
+		if ! empty (_sCmdImpT)
+			_sArq = criatrab (NIL, .F.)
+			_nHdl = fcreate (_sArq, 0)
+			fwrite (_nHdl,_sCmdImpT)
+			fclose (_nHdl)
+			copy file (_sArq) to (_sPortaImp)
+			delete file (_sArq)
+			u_log2 ('debug', '[' + procname () + ']Copiei comandos para ' + _sPortaImp)
+				
+			// Marca etiquetas como jah impressas.
+			za1 -> (dbsetorder (1))  // ZA1_FILIAL, ZA1_CODIGO, R_E_C_N_O_, D_E_L_E_T_
+			for _nEtiq = 1 to len (_aEtiq2)
+				if ! za1 -> (dbseek (xfilial ("ZA1") + _aEtiq2 [_nEtiq], .F.))
+					u_help ("Nao encontrei mais a etiqueta '" + _aEtiq2 [_nEtiq] + "' para marcar ela como jah impressa.",, .t.)
+				else
+					if za1 -> za1_impres != 'S'
+						reclock ("ZA1", .F.)
+						za1 -> za1_impres = 'S'
+						msunlock ()
+					endif
+				endif
+			next
+			if 'TXT' $ upper (_sPortaImp)
+				u_help ("Arquivo de comandos de impressao gerado em " + _sPortaImp)
+			endif
+		endif
 	endif
 
 	if _sQueFazer == "E"

@@ -17,7 +17,7 @@
 
 // --------------------------------------------------------------------------
 // Recebe chamada feita via botao 'imprime' do MBrowse do ZA1
-user function ZA1ImpAv ()
+user function ZA1ImpAv ()  // Imprime avulsa
 	// Instancia objeto para impressao.
 	_oEtiq := ClsEtiq ():New (ZA1->ZA1_CODIGO)
 	_oEtiq:Imprime ()
