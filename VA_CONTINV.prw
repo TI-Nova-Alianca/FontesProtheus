@@ -55,7 +55,8 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA4", 	"" ,"Endereço"	,						,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA5", 	"" ,"Item"		,						,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA6", 	"" ,"Descrição"	,						,70,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA7", 	"" ,"Contagem"	,						,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA7", 	"" ,"UM"		,						,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA8", 	"" ,"Contagem"	,						,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	
 Return(oReport)
 //
@@ -135,6 +136,7 @@ Static Function PrintReport(oReport)
 		oSection1:Cell("COLUNA5")	:SetBlock   ({|| _aDados[_i,5]		})
 		oSection1:Cell("COLUNA6")	:SetBlock   ({|| _aDados[_i,6]		})
 		oSection1:Cell("COLUNA7")	:SetBlock   ({|| _aDados[_i,7]		})
+		oSection1:Cell("COLUNA8")	:SetBlock   ({|| _aDados[_i,8]		})
 		
 		oSection1:PrintLine()
 		
