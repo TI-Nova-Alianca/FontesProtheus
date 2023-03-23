@@ -19,12 +19,8 @@
 // 08/04/2019 - Catia  - include TbiConn.ch 
 // 23/01/2023 - Robert - Migrado de MATA380 para MATA381 (GLPI 11997)
 //                     - Gera aviso em caso de erro na alteracao de empenhos.
+// 23/03/2023 - Robert - Passa a gravar evento e nao mais aviso em caso de erro nos empenhos.
 //
-
-//#include "colors.ch"
-//#Include "Protheus.ch"
-//#Include "RwMake.ch"
-//#Include "TbiConn.ch"
 
 // ------------------------------------------------------------------------------------
 User Function mtagrsd4()
@@ -60,7 +56,7 @@ static function _AltCC ()
 	Local _aLinha    := {}
 	Local _aItens    := {}
 	local _lContinua := .T.
-	local _oAviso    := NIL
+	local _oEvento   := NIL
 	private _sErroAuto := ''
 
 	if cEmpAnt == '01' .and. left (sd4 -> d4_cod, 3) == 'MMM' .and. substr (sd4 -> d4_cod, 4, 2) != cFilAnt
@@ -75,15 +71,15 @@ static function _AltCC ()
 		_aLinha := {}
 		//
 		// Preciso disponibilizar os campos que compoe a chave unica da tabela.
-		aadd (_aLinha, {"D4_FILIAL", sd4 -> d4_filial, NIL})
-		aadd (_aLinha, {"D4_OP", sd4 -> d4_op, NIL})
-		aadd (_aLinha, {"D4_COD", sd4 -> d4_cod, NIL})
-		aadd (_aLinha, {"D4_SEQ", sd4 -> d4_seq, NIL})
-		aadd (_aLinha, {"D4_TRT", sd4 -> d4_trt, NIL})
+		aadd (_aLinha, {"D4_FILIAL",  sd4 -> d4_filial,  NIL})
+		aadd (_aLinha, {"D4_OP",      sd4 -> d4_op,      NIL})
+		aadd (_aLinha, {"D4_COD",     sd4 -> d4_cod,     NIL})
+		aadd (_aLinha, {"D4_SEQ",     sd4 -> d4_seq,     NIL})
+		aadd (_aLinha, {"D4_TRT",     sd4 -> d4_trt,     NIL})
 		aadd (_aLinha, {"D4_LOTECTL", sd4 -> d4_lotectl, NIL})
 		aadd (_aLinha, {"D4_NUMLOTE", sd4 -> d4_numlote, NIL})
-		aadd (_aLinha, {"D4_OPORIG", sd4 -> d4_oporig, NIL})
-		aadd (_aLinha, {"D4_LOCAL", sd4 -> d4_local, NIL})
+		aadd (_aLinha, {"D4_OPORIG",  sd4 -> d4_oporig,  NIL})
+		aadd (_aLinha, {"D4_LOCAL",   sd4 -> d4_local,   NIL})
 		//
 		//Adiciona o identificador LINPOS para identificar que o registro já existe na SD4
 		// Pelo que entendi, devem permanecer aqui todos os campos da chave unica da tabela
@@ -131,12 +127,12 @@ static function _AltCC ()
 
 						// Insere uma nova linha com o novo CC.
 						_aLinha = {}
-						aadd (_aLinha, {"D4_FILIAL", sd4 -> d4_filial, NIL})
-						aadd (_aLinha, {"D4_OP", sd4 -> d4_op, NIL})
-						aadd (_aLinha, {"D4_COD", _sMMMNovo, NIL})
-						aadd (_aLinha, {"D4_LOCAL", _sLocal, NIL})
-						aadd (_aLinha, {"D4_DATA", FBuscaCpo ("SC2", 1, xfilial ("SC2") + sd4 -> d4_op, "C2_DATPRI"), NIL})
-						aadd (_aLinha, {"D4_QUANT", sd4 -> d4_quant, NIL})
+						aadd (_aLinha, {"D4_FILIAL",  sd4 -> d4_filial,  NIL})
+						aadd (_aLinha, {"D4_OP",      sd4 -> d4_op,      NIL})
+						aadd (_aLinha, {"D4_COD",     _sMMMNovo,         NIL})
+						aadd (_aLinha, {"D4_LOCAL",   _sLocal,           NIL})
+						aadd (_aLinha, {"D4_DATA",    FBuscaCpo ("SC2", 1, xfilial ("SC2") + sd4 -> d4_op, "C2_DATPRI"), NIL})
+						aadd (_aLinha, {"D4_QUANT",   sd4 -> d4_quant,   NIL})
 						aadd (_aLinha, {"D4_QTDEORI", sd4 -> d4_qtdeori, NIL})
 						U_Log2 ('debug', _aLinha)
 						aAdd(_aItens,_aLinha)
@@ -159,15 +155,14 @@ static function _AltCC ()
 			EndIf
 		endif
 
+		// Grava evento para posterior rastreamento
 		if ! empty (_sErroAuto)
-			_oAviso := ClsAviso ():New ()
-			_oAviso:Tipo       = 'E'
-			_oAviso:DestinZZU  = {'047', '122'}  // 047 = Grupo do PCP; 122 = grupo da TI
-			_oAviso:Titulo     = "Erro ajuste empenhos OP " + sd4 -> d4_op
-			_oAviso:Texto      = _sErroAuto
-			_oAviso:Origem     = procname (1) + '.' + procname (0)
-			_oAviso:InfoSessao = .T.  // Incluir informacoes adicionais de sessao na mensagem.
-			_oAviso:Grava ()
+			_oEvento := ClsEvent():new ()
+			_oEvento:CodEven    = 'SC2003'
+			_oEvento:Texto      = "Erro ajuste empenhos: " + _sErroAuto
+			_oEvento:OP         = _sOP
+			_oEvento:DiasValid  = 90
+			_oEvento:Grava ()
 		endif
 
 	endif

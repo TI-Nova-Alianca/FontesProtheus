@@ -20,28 +20,45 @@
 // 11/05/2017 - Robert - Funcao de ajuste de almox. dos empenhos passa a ser externa.
 // 24/08/2017 - Robert - Tratamento para diferenciar ordens de manutencao.
 // 17/01/2023 - Robert - Atualiza FullWMS e gera etiquetas somente na filial 01.
+// 23/03/2023 - Robert - Alteracao do C2_LOCAL desabilitada pois os gatilhos e
+//                       o P.E. MA650TOK jah devem garantir isso.
+//                     - Pede confirmacao antes de gerar etiquetas, quando OP 'em terceiros'.
+//                     - Chama rotina de impressao das etiquetas geradas.
 //
 
-// ------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------
 User Function MTA650I ()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _aAmbAnt  := U_SalvaAmb ()
+	local _lGeraEtq := .T.
 
 	// Verifica necessidade de alterar empenhos.
 	if sc2 -> c2_item != 'OS'
 		_AtuEmp ()
 	endif
 
-	// Integracao com Fullsoft (somente na filial 01)
-	if cFilAnt == '01' .and. sc2 -> c2_item != 'OS'
-		_AtuFull ()
-	endif
+//	// Integracao com Fullsoft (somente na filial 01)
+//	if cFilAnt == '01' .and. sc2 -> c2_item != 'OS'
+//		_AtuFull ()
+//	endif
 
 	// Gera etiquetas para pallets (somente na filial 01)
-	if cFilAnt == '01' .and. sc2 -> c2_item != 'OS'
-		_GeraEtq ()
+	if cFilAnt == '01' .and. sc2 -> c2_item != 'OS' .and. sc2 -> c2_tpop == 'F'
+		if sc2 -> c2_vaopesp == 'E'
+			_lGeraEtq = U_MsgYesNo ("OP para envase 'em terceiros': confirme se deseja gerar etiquetas neste momento.")
+		endif
+		if _lGeraEtq
+			processa ({||_GeraEtq ()},"Gerando etiquetas...")
+		endif
 	endif
 
+	// Se o produto ainda nao existe no almoxarifado destino, cria-o, para nao bloquear a transferencia de estoque.
+	sb2 -> (dbsetorder (1))
+	if ! sb2 -> (dbseek (xfilial ("SB2") + sc2 -> c2_Produto + sc2 -> c2_local))
+		u_log2 ('info', 'Criando SB9 para ' + sc2 -> c2_Produto + '/' + sc2 -> c2_local)
+		CriaSB2 (sc2 -> c2_Produto, sc2 -> c2_local)
+	endif
+	
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
 Return
@@ -79,7 +96,7 @@ static function _AtuEmp ()
 return
 
 
-
+/*
 // ----------------------------------------------------------------------
 // Integracao com Fullsoft
 static function _AtuFull ()
@@ -94,14 +111,17 @@ static function _AtuFull ()
 		endif
 	endif
 return
-
+*/
 
 
 // ------------------------------------------------------------------------------------
 // Gera etiquetas para pallets.
 static function _GeraEtq ()
-	if sc2 -> c2_tpop == 'F'
-		if U_EtqPllGO (sc2 -> c2_produto, sc2 -> c2_num + sc2 -> c2_item + sc2 -> c2_sequen + sc2 -> c2_itemgrd, sc2 -> c2_quant, sc2 -> c2_datprf) > 0
+	local _nQtEtqGer := 0
+	_nQtEtqGer = U_EtqPllGO (sc2 -> c2_produto, sc2 -> c2_num + sc2 -> c2_item + sc2 -> c2_sequen + sc2 -> c2_itemgrd, sc2 -> c2_quant, sc2 -> c2_datprf)
+	if _nQtEtqGer > 0
+		if U_MsgYesNo ("Deseja imprimir agora as " + cvaltochar (_nQtEtqGer) + " etiquetas geradas?")
+			U_EtqPlltG (sc2 -> c2_num + sc2 -> c2_item + sc2 -> c2_sequen + sc2 -> c2_itemgrd, '', '', '', '', 'I')
 		endif
 	endif
 return
