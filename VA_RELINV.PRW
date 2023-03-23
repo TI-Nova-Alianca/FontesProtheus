@@ -2,12 +2,20 @@
 // Autor....: Cláudia Lionço
 // Data.....: 21/01/2023
 // Descricao: Relatório de inventário
+// 
+// Tags para automatizar catalogo de customizacoes:
+// #Programa          #relatorio
+// #Descricao		  #Relatório de inventário
+// #PalavasChave      #inventario 
+// #TabelasPrincipais #SB7 
+// #Modulos 		  #CUS 
 //
 // Historico de alteracoes:
 // 27/01/2023 - Claudia - Incluido parametro de ordenação
 // 30/01/2023 - Claudia - Incluídos F3 nos parametros.
 // 02/02/2023 - Claudia - Incluida ordenação por endereco. GLPI: 13136
 // 03/02/2023 - Claudia - Incluida coluna de linha. GLPI: 13141
+// 23/03/2023 - Claudia - Incluida coluna de unidade de medida. GLPI: 13334
 //
 // ---------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -74,6 +82,7 @@ Static Function _Gera()
     _oSQL:_sQuery += "    ,SB7.B7_COD AS PRODUTO "
     _oSQL:_sQuery += "    ,SB1.B1_DESC AS DESCRICAO "
     _oSQL:_sQuery += "    ,SB7.B7_TIPO AS TP_MATERIAL"
+    _oSQL:_sQuery += "    ,SB1.B1_UM AS UM "
     _oSQL:_sQuery += "    ,SB7.B7_LOCALIZ AS ENDERECO"
     _oSQL:_sQuery += "    ,SB7.B7_LOTECTL AS LOTE_CONTROL"
     _oSQL:_sQuery += "    ,SB7.B7_DTVALID AS DT_VALIDADE "

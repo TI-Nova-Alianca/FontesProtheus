@@ -2,6 +2,13 @@
 // Autor....: Cláudia Lionço
 // Data.....: 22/03/2023
 // Descricao: Deleta documento de inventário
+// 
+// Tags para automatizar catalogo de customizacoes:
+// #Programa          #processo
+// #Descricao		  #Deleta documento de inventário
+// #PalavasChave      #inventario 
+// #TabelasPrincipais #SB7 
+// #Modulos 		  #CUS 
 //
 // Historico de alteracoes:
 //

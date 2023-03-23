@@ -1,7 +1,14 @@
 // Programa.: VA_CONTINV
 // Autor....: Cláudia Lionço
 // Data.....: 20/03/2020
-// Descricao: Formulário para contagem de inventário. GLPI:7695
+// Descricao: Formulário para contagem de inventário
+// 
+// Tags para automatizar catalogo de customizacoes:
+// #Programa          #relatorio
+// #Descricao		  #Formulário para contagem de inventário
+// #PalavasChave      #inventario 
+// #TabelasPrincipais #SB7 
+// #Modulos 		  #CUS 
 //
 // Historico de alteracoes:
 // 22/04/2020 - Cláudia - Alterado cabeçalho para padrão
@@ -9,6 +16,7 @@
 // 02/06/2021 - Claudia - Alterada ordenação almox/ites. GLPI: 10146
 // 30/01/2023 - Claudia - Incluidos novos filtros. GLPI: 13101
 // 02/02/2023 - Claudia - Incluida ordenação por endereco. GLPI: 13136
+// 23/03/2023 - Claudia - Incluida coluna de unidade de medida. GLPI: 13334
 //
 // ---------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -65,6 +73,7 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += "    ,SB7.B7_LOCALIZ AS ENDERECO"
 	_oSQL:_sQuery += "    ,SB7.B7_COD AS ITEM"
 	_oSQL:_sQuery += "    ,SB1.B1_DESC AS DESCRICAO"
+	_oSQL:_sQuery += "    ,SB1.B1_UM AS UM"
 	_oSQL:_sQuery += "    ,'' AS CONTAGEM"
 	_oSQL:_sQuery += " FROM SB7010 SB7"
 	_oSQL:_sQuery += " INNER JOIN SB1010 SB1"

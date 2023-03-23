@@ -5,6 +5,7 @@
 //
 // Historico de alteracoes:
 // 03/02/2023 - Claudia - Ajustada importação devido a culna "LINHA" GLPI: 13141
+// 23/03/2023 - Claudia - Incluida coluna de unidade de medida. GLPI: 13334
 //
 // -------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -77,13 +78,13 @@ Static Function _Importa()
 		_sProd   := PADR(alltrim(aDados[_x,6]),15, ' ')
 		_sLocal  := PADL(alltrim(aDados[_x,5]), 2, '0')
 		_sDoc    := PADR(alltrim(aDados[_x,2]), 9, ' ')
-		_sEnder  := PADR(alltrim(aDados[_x,9]),15, ' ')
-		_sLote   := PADR(alltrim(aDados[_x,10]),10, ' ')
+		_sEnder  := PADR(alltrim(aDados[_x,10]),15, ' ')
+		_sLote   := PADR(alltrim(aDados[_x,11]),10, ' ')
 		
 		If dbSeek(_sFilial + _sDoc + _sProd + _sLocal + _sEnder + _sLote)
 			Reclock("SB7",.F.)
-				SB7->B7_VAQTD := Val(StrTran(aDados[_x,13],",","."))   
-				SB7->B7_VAOBS := aDados[_x,14]
+				SB7->B7_VAQTD := Val(StrTran(aDados[_x,14],",","."))   
+				SB7->B7_VAOBS := aDados[_x,15]
 			SB7->(MsUnlock())
 		Else
 			u_help(" O produto: " + alltrim(_sProd) + " no local " + _sLocal + " no documento " + alltrim(_sDoc) + " não encontrado!" )
