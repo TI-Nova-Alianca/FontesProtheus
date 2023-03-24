@@ -136,6 +136,7 @@
 // 07/12/2022 - Robert  - Atualizada chamada funcao classif.uva para safra 2023 (linguagem passou a exigir formato caracter nos parametros)
 // 24/02/2023 - Robert  - Leitura da view VA_VFILA_DESCARGA_SAFRA trocada por VA_VCARGAS_SAFRA
 // 21/03/2023 - Robert  - Gatilho p/ alimentar C2_LOCAL a partir do C2_PRODUTO e C2_VAOPESP.
+// 24/03/2023 - Robert  - Chamadas da funcao U_AvisaTI() alteradas para objetos da classe ClsAviso().
 //
 
 // --------------------------------------------------------------------------
@@ -160,6 +161,7 @@ user function VA_Gat (_sParCpo, _sParSeq)
 	local _sEnderec := ""
 	local _aColsAlt := {}
 	local _x        := 0
+	local _oAviso   := NIL
 
 	if valtype (_sParCpo) != "C" .or. valtype (_sParSeq) != "C"
 		_sMsgErr = "Funcao " + procname () + " nao recebeu parametros de campo/sequencia. Gatilho nao vai ser executado. Caso ajude, o retorno da funcao READVAR eh '" + alltrim (ReadVar ()) + "'"
@@ -184,14 +186,34 @@ user function VA_Gat (_sParCpo, _sParSeq)
 				_sCDomin = alltrim (_aSX7[_x, 2])
 
 				if ! "VA_GAT" $ upper (_aSX7[_x, 3])
-					U_AvisaTI ("Gatilho do campo: '" + _sParCpo + "' seq.: '" + _sParSeq + "' nao contem 'VA_GAT' no campo x7_regra. Suspeito que isso seja um problema. Gatilho nao serah executado.")
+//					U_AvisaTI ("Gatilho do campo: '" + _sParCpo + "' seq.: '" + _sParSeq + "' nao contem 'VA_GAT' no campo x7_regra. Suspeito que isso seja um problema. Gatilho nao serah executado.")
+
+					_oAviso := ClsAviso():new ()
+					_oAviso:Tipo       = 'E'  // I=Info;A=Aviso;E=Erro
+					_oAviso:Titulo     = "Gatilho do campo: '" + _sParCpo + "' seq.: '" + _sParSeq + "' nao contem 'VA_GAT' no campo x7_regra."
+					_oAviso:Texto      = "Gatilho do campo: '" + _sParCpo + "' seq.: '" + _sParSeq + "' nao contem 'VA_GAT' no campo x7_regra. Suspeito que isso seja um problema. Gatilho nao serah executado."
+					_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
+					_oAviso:Origem     = procname ()  // Acrescentar aqui o que for interessante para rastrear posteriormente
+					_oAviso:InfoSessao = .T.  // se .T. inclui informacoes adicionais de sessao na mensagem.
+					_oAviso:Grava ()
+
 					_sCampo = ''
 					_sCDomin = ''
 				endif
 			next
 		else
 			U_help ("Gatilho nao encontrado no SX7. Campo: '" + _sParCpo + "' Seq.: '" + _sParSeq + "'. Gatilho nao serah executado.",, .T.)
-			U_AvisaTI ("Gatilho nao encontrado no SX7. Campo: '" + _sParCpo + "' Seq.: '" + _sParSeq + "'. Gatilho nao serah executado.")
+//			U_AvisaTI ("Gatilho nao encontrado no SX7. Campo: '" + _sParCpo + "' Seq.: '" + _sParSeq + "'. Gatilho nao serah executado.")
+
+			_oAviso := ClsAviso():new ()
+			_oAviso:Tipo       = 'E'  // I=Info;A=Aviso;E=Erro
+			_oAviso:Titulo     = "Gatilho nao encontrado no SX7. Campo: '" + _sParCpo + "' Seq.: '" + _sParSeq + "'."
+			_oAviso:Texto      = "Gatilho nao encontrado no SX7. Campo: '" + _sParCpo + "' Seq.: '" + _sParSeq + "'. Gatilho nao serah executado."
+			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
+			_oAviso:Origem     = procname ()  // Acrescentar aqui o que for interessante para rastrear posteriormente
+			_oAviso:InfoSessao = .T.  // se .T. inclui informacoes adicionais de sessao na mensagem.
+			_oAviso:Grava ()
+
 			_sCampo = ''
 			_sCDomin = ''
 		endif
@@ -869,7 +891,15 @@ user function VA_Gat (_sParCpo, _sParSeq)
 		// gatilho nao tivesse sido executado).
 		if ! empty (_sCampo)
 			U_Log2 ('aviso', "Campo '" + _sCampo + "' nao previsto na rotina " + procname () + " --> Contra dominio: '" + _sCDomin + "'  --> sequencia: " + _sParSeq)
-			// Incluir aqui a geracao de um aviso no ZAB
+
+			_oAviso := ClsAviso():new ()
+			_oAviso:Tipo       = 'E'  // I=Info;A=Aviso;E=Erro
+			_oAviso:Titulo     = "Campo '" + _sCampo + "' nao previsto na rotina " + procname ()
+			_oAviso:Texto      = "Campo '" + _sCampo + "' nao previsto na rotina " + procname () + " --> Contra dominio: '" + _sCDomin + "'  --> sequencia: " + _sParSeq
+			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
+			_oAviso:Origem     = procname ()  // Acrescentar aqui o que for interessante para rastrear posteriormente
+			_oAviso:InfoSessao = .T.  // se .T. inclui informacoes adicionais de sessao na mensagem.
+			_oAviso:Grava ()
 		endif
 		if type ("aHeader") == "A" .and. type ("aCols") == "A" .and. type ("N") == "N"
 			//if GDFieldPos (sx7 -> x7_cdomin) > 0

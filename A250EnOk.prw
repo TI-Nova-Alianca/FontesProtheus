@@ -14,15 +14,12 @@ user function A250EnOk ()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _lRet     := .T.
 
-//	u_logIni ()
-
 	// Verifica consistencia com etiquetas, quando usadas.
 	if _lRet
 		_lRet = _VerEtiq ()
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-//	u_logFim ()
 return _lRet
 
 
@@ -31,7 +28,6 @@ return _lRet
 // Consiste dados da etiqueta, quando informada.
 static function _VerEtiq ()
 	local _lRet     := .T.
-	//local _oSQL     := NIL
 	local _oVerif   := NIL
 	local _sMsgSup  := ""
 	local _oEtiq    := NIL

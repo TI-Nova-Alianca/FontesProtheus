@@ -83,6 +83,7 @@
 // 15/12/2022 - Claudia - Incluido parametros na verificação 28. GLPI: 12938
 // 23/01/2023 - Robert  - Criada verificacao 93.
 // 03/03/2023 - Robert  - Campo VA_VNOTAS_SAFRA.TIPO_FORNEC passa a ter novo conteudo.
+// 24/03/2023 - Robert  - Verif.24 passa a desconsiderar OPs para envase 'em terceiros' (seguem fluxo diferente para entrada no FullWMS)
 //
 
 #include "protheus.ch"
@@ -160,7 +161,7 @@ METHOD New (_nQual) Class ClsVerif
 
 	// Se recebi um numero de verificacao definido, nao preciso ficar testando a existencia de todas.
 	if valtype (_nQual) == 'N'
-		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Recebi um numero de verificacao definido: ' + cvaltochar (_nQual))
+//		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Recebi um numero de verificacao definido: ' + cvaltochar (_nQual))
 		::Numero = _nQual
 	else
 		// Para determinar qual a ultima verificacao, vou comecar por um numero
@@ -1272,7 +1273,8 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=          " WHEN 'C' THEN 'Cancelado manual'"
 			::Query +=          " ELSE ''"
 			::Query +=          " END AS STATUS_PROTHEUS"
-			::Query +=  " FROM " + RetSQLName ("SD3") + " APONT "
+			::Query +=  " FROM " + RetSQLName ("SC2") + " SC2, "
+			::Query +=             RetSQLName ("SD3") + " APONT "
 			::Query +=         " LEFT JOIN tb_wms_entrada t"
 			::Query +=                " on (t.entrada_id = 'ZA1' + APONT.D3_FILIAL + APONT.D3_VAETIQ),"
 			::Query +=             RetSQLName ("SB1") + " SB1 "
@@ -1282,10 +1284,17 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 			::Query +=   " AND APONT.D3_COD     between '" + ::Param03 + "' AND '" + ::Param04 + "'"
 			::Query +=   " AND APONT.D3_CF      like 'PR%'"
 			::Query +=   " AND APONT.D3_ESTORNO != 'S'"
+			::Query +=   " AND SC2.D_E_L_E_T_    = ''"
+			::Query +=   " AND SC2.C2_FILIAL     = APONT.D3_FILIAL"
+			::Query +=   " AND SC2.C2_NUM        = SUBSTRING (APONT.D3_OP, 1, 6)"
+			::Query +=   " AND SC2.C2_ITEM       = SUBSTRING (APONT.D3_OP, 7, 2)"
+			::Query +=   " AND SC2.C2_SEQUEN     = SUBSTRING (APONT.D3_OP, 9, 3)"
+			::Query +=   " AND SC2.C2_ITEMGRD    = SUBSTRING (APONT.D3_OP, 12, 2)"
+			::Query +=   " AND SC2.C2_VAOPESP   != 'E'"  // OPs para envase 'em terceiros' seguem fluxo diferente para entrada no FullWMS.
 			::Query +=   " AND NOT EXISTS (SELECT *"
 			::Query +=                     " FROM " + RetSQLName ("SD3") + " GUARDA "
 			::Query +=                    " WHERE GUARDA.D_E_L_E_T_  = ''"
-			::Query +=                      " AND GUARDA.D3_FILIAL   = '" + xfilial ("SD3") + "'"
+			::Query +=                      " AND GUARDA.D3_FILIAL   = APONT.D3_FILIAL"
 			::Query +=                      " AND GUARDA.D3_ESTORNO != 'S'"
 			::Query +=                      " AND GUARDA.D3_CF       = 'RE4'"
 			::Query +=                      " AND GUARDA.D3_LOCAL    = APONT.D3_LOCAL"
