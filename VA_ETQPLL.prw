@@ -61,6 +61,8 @@
 // 05/10/2022 - Robert - Iniciada funcao U_ZA1SD5, para receber da MTA390MNU (GLPI 12651)
 // 12/02/2023 - Robert - Chamada da funcao U_IncEtqPll substituida por criacao
 //                       das etiquetas diretamente via metodo ClsEtiq:New() - GLPI 13134
+// 22/03/2023 - Robert - Impressao de etiquetas passa a gerar todas num unico arquivo.
+// 23/03/2023 - Robert - Removidos alguns logs.
 //
 
 #include "rwmake.ch"
@@ -209,7 +211,7 @@ static function _AtuFull (_sQueFazer)
 	//endif
 return
 
-//
+// --------------------------------------------------------------------------
 // Regera grupo de etiquetas.
 User Function EtqPllRG ()
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -485,7 +487,7 @@ User Function EtqPlltG (_sOP, _sNF, _sSerie, _sFornece, _sLoja, _sQueFazer)
 				exit
 			else
 				_sCmdImp = _oEtiq:CmdImpr (_nModelImp, empty (_sCmdImpT))
-				U_Log2 ('debug', '[' + procname () + ']Comando retornado para esta etiq: ' + _sCmdImp)
+//				U_Log2 ('debug', '[' + procname () + ']Comando retornado para esta etiq: ' + _sCmdImp)
 				if empty (_sCmdImp)
 					u_help ("Problema na impressao da etiqueta '" + _oEtiq:Codigo + "': " + _oEtiq:UltMsg)
 					_sCmdImpT = ''  // Aborta toda a impressao.
@@ -495,7 +497,7 @@ User Function EtqPlltG (_sOP, _sNF, _sSerie, _sFornece, _sLoja, _sQueFazer)
 				endif
 			endif
 		next
-		U_Log2 ('debug', '[' + procname () + ']Acumulado de comandos: ' + _sCmdImpT)
+//		U_Log2 ('debug', '[' + procname () + ']Acumulado de comandos: ' + _sCmdImpT)
 
 		// Envia para a impressora (ou arquivo, caso porta = caminho de arquivo).
 		if ! empty (_sCmdImpT)

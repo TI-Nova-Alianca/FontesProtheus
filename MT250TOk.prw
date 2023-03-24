@@ -70,9 +70,7 @@ user function mt250tok ()
 		_lRet = .F.
 	endif
 	
-// NEM CHAGUEI A COMPILAR. VOU TRATAR TELNET NA FUNCAO U_MSGNOYES().	IF DATE () != STOD ('20230105')  // NESTE DIA ESTAMOS APONTANDO UMAS OPS DO ANO PASSADO...
 	if _lRet .and. (dDataBase != date () .or. m->d3_emissao != date ())
-	//	_sMsg = "Alteracao de data da movimentacao ou data base do sistema: bloqueada para esta rotina."
 		_sMsg = "Troca de data bloqueada nesta rotina."
 		if U_ZZUVL ('084', __cUserId, .F.)
 			_lRet = U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
@@ -81,7 +79,6 @@ user function mt250tok ()
 			_lRet = .F.
 		endif
 	endif
-//	ENDIF
 
 	if _lRet .and. (m->d3_qtganho > 0 .or. m->d3_qtmaior > 0) .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + m->d3_cod, "B1_TIPO") == 'PA'  
 		u_help ("Para produto acabado nao deve ser produzida quantidade acima do previsto na OP.",, .t.)
@@ -92,14 +89,23 @@ user function mt250tok ()
 		_lRet = _VerData ()
 	endif
 
+	if _lRet .and. m->d3_local != sc2 -> c2_local
+		u_help ("Apontamento deve ser feito no almox.indicado na OP (" + sc2 -> c2_local + ").",, .t.)
+		_lRet = .F.
+	endif
+
 	// Verifica consistencia com etiquetas, quando usadas.
 	if _lRet .and. ! empty (m->d3_vaetiq)
 		_lRet = _VerEtiq ()
 	endif
 	
-	// Integracao com Fullsoft
-	if _lRet
-		_lRet = _VerFull ()
+//	// Integracao com Fullsoft
+//	if _lRet
+//		_lRet = _VerFull ()
+//	endif
+	if _lRet .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + m->d3_cod, 'B1_VAFULLW') == 'S' .and. empty (m->d3_vaetiq)
+		u_help ("Produto controlado pelo Fullsoft: deve ser informado numero da etiqueta.",, .t.)
+		_lRet = .F.
 	endif
 
 	// Verifica empenhos.
@@ -176,6 +182,7 @@ return _lRet
 
 
 
+/*
 // --------------------------------------------------------------------------
 // Consiste integracao com Fullsoft.
 static function _VerFull ()
@@ -193,7 +200,7 @@ static function _VerFull ()
 		endif
 	endif
 return _lRet
-
+*/
 
 
 // --------------------------------------------------------------------------

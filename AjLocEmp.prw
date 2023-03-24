@@ -6,6 +6,7 @@
 // Historico de alteracoes:
 // 08/04/2019 - Catia  - include TbiConn.ch 
 // 16/01/2023 - Robert - Migrado de MATA380 para MATA381 (GLPI 11997)
+// 23/03/2023 - Robert - Grava evento em caso de erro no ajuste de empenhos.
 //
 
 #include "colors.ch"
@@ -17,11 +18,12 @@
 user function AjLocEmp (_sLocal)
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _lContinua := .T.
-//	local _aVetor := {}
-
 	Local _aCab      := {}
 	Local _aLinha    := {}
 	Local _aItens    := {}
+	local _sMsgErro  := ''
+	local _sOP       := sd4 -> d4_op
+	local _oEvento   := NIL
 
 	U_Log2 ('debug', '[' + procname () + ']D4_OP: ' + sd4 -> d4_op + '  empenho do item ' + sd4 -> d4_cod + ' vai ser mudado do alm ' + sd4 -> d4_local + ' para ' + _sLocal)
 	if _lContinua
@@ -106,32 +108,41 @@ user function AjLocEmp (_sLocal)
 		// Insere uma nova linha com o novo almox.
 		_aLinha = {}
 		aadd (_aLinha, {"D4_FILIAL", sd4 -> d4_filial, NIL})
-		aadd (_aLinha, {"D4_OP", sd4 -> d4_op, NIL})
-		aadd (_aLinha, {"D4_COD", sd4 -> d4_cod, NIL})
-		aadd (_aLinha, {"D4_SEQ", sd4 -> d4_seq, NIL})
-		aadd (_aLinha, {"D4_TRT", sd4 -> d4_trt, NIL})
+		aadd (_aLinha, {"D4_OP",     sd4 -> d4_op,     NIL})
+		aadd (_aLinha, {"D4_COD",    sd4 -> d4_cod,    NIL})
+		aadd (_aLinha, {"D4_SEQ",    sd4 -> d4_seq,    NIL})
+		aadd (_aLinha, {"D4_TRT",    sd4 -> d4_trt,    NIL})
 		if sb1 -> b1_rastro == 'L'
 			aadd (_aLinha, {"D4_LOTECTL", sd4 -> d4_lotectl, NIL})
 		endif
 		if sb1 -> b1_rastro == 'S'
 			aadd (_aLinha, {"D4_NUMLOTE", sd4 -> d4_numlote, NIL})
 		endif
-		aadd (_aLinha, {"D4_OPORIG", sd4 -> d4_oporig, NIL})
-		aadd (_aLinha, {"D4_QUANT", sd4 -> d4_quant, NIL})
+		aadd (_aLinha, {"D4_OPORIG",  sd4 -> d4_oporig,  NIL})
+		aadd (_aLinha, {"D4_QUANT",   sd4 -> d4_quant,   NIL})
 		aadd (_aLinha, {"D4_QTDEORI", sd4 -> d4_qtdeori, NIL})
-		aadd (_aLinha, {"D4_LOCAL", _sLocal, NIL})
+		aadd (_aLinha, {"D4_LOCAL",   _sLocal,           NIL})
 		U_Log2 ('debug', _aLinha)
 		aAdd(_aItens,_aLinha)
 
 		//Executa o MATA381, com a operação de Alteração.
 		MSExecAuto({|x,y,z| mata381(x,y,z)},_aCab,_aItens,4)
 		If lMsErroAuto
-			_lContinua = .F.
-			U_Log2 ('erro', '[' + procname () + ']' + U_LeErro (memoread (NomeAutoLog ())))
+			_sMsgErro = U_LeErro (memoread (NomeAutoLog ()))
+			U_Log2 ('erro', '[' + procname () + ']' + _sMsgErro)
+
+			// Grava evento para posterior rastreamento
+			_oEvento := ClsEvent():new ()
+			_oEvento:CodEven    = 'SC2003'
+			_oEvento:Texto      = "Erro no ajuste automatico de empenhos: " + _sMsgErro
+			_oEvento:OP         = _sOP
+			_oEvento:DiasValid  = 90
+			_oEvento:Grava ()
+
 			MostraErro()
+			_lContinua = .F.
 		EndIf
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
 return _lContinua
-
