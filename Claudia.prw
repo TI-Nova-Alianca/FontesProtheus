@@ -9,10 +9,88 @@ User Function claudia ()
 
 	u_help("Nada para executar")
 
-	//u_help("Atualiza clientes")
-	//_AtuClientes()
+	//u_help("teste manutenção")
+	//_IncManut()
 
 Return
+// //
+// // ------------------------------------------------------------------------------------
+// static function _IncManut()
+// 	local _sFilial   	:= ""
+// 	local _sCodBem   	:= ""
+// 	local _sNomeBem  	:= ""
+// 	local _sCC       	:= ""
+// 	local _sData     	:= ""
+// 	local _sHora     	:= ""
+// 	local _sUsuario  	:= ""
+// 	local _sRamal    	:= ""
+// 	local _sSituacao 	:= ""
+// 	local _sServico  	:= ""
+// 	local _sTpServ   	:= ""
+// 	local _sNomeServ 	:= ""
+// 	local _sCodSolic 	:= ""
+// 	local _sNomeSolic  	:= "" 
+// 	local _sEmailSolic 	:= ""
+// 	local _sBemParado  	:= ""
+// 	local _sOrigem      := ""
+// 	local _sErroWS      := ""
+// 	local _aSolic		:= {}
+
+// 	u_logIni ()
+
+// 	If empty(_sErroWS)
+// 		_sFilial   	:= '01'
+// 		_sCodBem   	:= 'ACC-058-27-0001'
+// 		_sNomeBem  	:= 'COFRE DE ACO IMCAL  0,60X0,60X1,40' 
+// 		_sCC       	:= '012006'
+// 		_sData     	:= date()
+// 		_sHora     	:= '10:36'
+// 		_sUsuario  	:= 'claudia.lionco' 
+// 		_sRamal    	:= '3466' 
+// 		_sSituacao 	:= 'A'
+// 		_sServico  	:= 'cc 012006'
+// 		_sTpServ   	:= '006'
+// 		_sNomeServ 	:= 'MANUTENCAO AUTONOMA'
+// 		_sCodSolic 	:= '000622'
+// 		_sNomeSolic := 'Cláudia Lionço'
+// 		_sEmailSolic:= 'claudia.lionco@novaalianca.coop.br'
+// 		_sBemParado := 'S'
+// 		_sOrigem    := 'NAWEB'
+// 	endif
+
+// 	If empty(_sErroWS)
+		 
+// 		_aSolic := {{"TQB_FILIAL", _sFilial		,Nil},;  
+// 					{"TQB_CODBEM", _sCodBem		,Nil},; 
+// 					{"TQB_CCUSTO", _sCC			,Nil},; 
+// 					{"TQB_DTABER", date()		,Nil},; 
+// 					{"TQB_HOABER", _sHora		,Nil},; 
+// 					{"TQB_USUARI", _sUsuario	,Nil},; 
+// 					{"TQB_RAMAL ", _sRamal		,Nil},; 
+// 					{"TQB_SOLUCA", _sSituacao	,Nil},; 
+// 					{"TQB_DESCSS", _sServico	,Nil},; 
+// 					{"TQB_CDSERV", _sTpServ		,Nil},; 
+// 					{"TQB_NMSERV", _sNomeServ	,Nil},; 
+// 					{"TQB_CDSOLI", _sCodSolic	,Nil},; 
+// 					{"TQB_EMSOLI", _sEmailSolic ,Nil},; 
+// 					{"TQB_ORIGEM", _sOrigem		,Nil},; 
+// 					{"TQB_PARADA", _sBemParado	,Nil} } 
+
+// 		Private lMSHelpAuto := .t. // Nao apresenta erro em tela
+// 		Private lMSErroAuto := .f. // Caso a variavel torne-se .T. apos MsExecAuto, apresenta erro em tela
+
+// 		MSExecAuto( {|x,z,y,w| MNTA280(x,z,y,w)}, , , _aSolic )
+
+// 		If lMsErroAuto
+// 			Mostraerro()
+// 		else
+// 			u_help("feito!")
+// 		Endif
+
+// 	endif
+
+// 	u_logFim ()
+// return
 //
 // ------------------------------------------------------------------------------------
 Static Function _AtuClientes()
