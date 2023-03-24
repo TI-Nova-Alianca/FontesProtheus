@@ -22,6 +22,7 @@
 // 18/08/2016 - Catia   - Não permite baixar titulos com data de debito diferente da data de digitacao
 // 16/02/2023 - Claudia - Retirada validações de datas. GLPI 12608
 // 17/02/2023 - Claudia - Incluida a transferencia de valores entre filiais. GLPI: 12671
+// 24/03/2023 - Claudia - Incluido parametro para habilitar/desabilitar a transf.filiais. GLPI: 13345
 //
 // ------------------------------------------------------------------------------------------------------
 User Function FA080Tit()
@@ -35,7 +36,7 @@ User Function FA080Tit()
 	_lRet := VerificaZZN(SE2->E2_PREFIXO, SE2->E2_NUM, SE2->E2_FORNECE, SE2->E2_LOJA)
 
 	// Tranferencia entre filiais
-	If xFilial("SE2") <> '01' // Transferencia de valores das filiais para Matriz
+	If xFilial("SE2") <> '01' .and. GETMV("VA_PAGTRAN") // Transferencia de valores das filiais para Matriz
 		If msgyesno("Deseja realizar transferencia do valor para matriz?","Transferência entre filiais")
 			U_VA_TRPGTO(nValPgto, cHist070, cBenef)
 		EndIf
