@@ -115,8 +115,9 @@
 // 10/02/2023 - Robert  - Passa a usar a funcao U__Mata300
 // 24/02/2023 - Robert  - Criado tratamento para tags <Safra> e <CargaSafra> na gravacao de eventos.
 // 13/03/2023 - Robert  - Implementada acao EstruturaComCustos.
+// 24/03/2023 - Claudia - Inclusão da gravação da solicitação de manutenção. GLPI: 12910
+// 27/03/2023 - Claudia - Incluida a ação 'InsereSolicManut'. GLPI: 12910
 //
-
 // ---------------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
 #INCLUDE "PROTHEUS.CH"
@@ -281,6 +282,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 				_EstrCust ()
 			case _sAcao == 'TesteRobert'
 				_TstRobert ()
+			case _sAcao == 'InsereSolicManut'
+				_IncManut()
 			otherwise
 				_SomaErro ("A acao especificada no XML eh invalida: " + _sAcao)
 		endcase
@@ -2878,6 +2881,87 @@ static function _TstRobert ()
 	U_Log2 ('debug', '[' + procname () + ']porta: ' + cvaltochar (GetServerPort ()) + ']Liberando')
 return
 
+
+// --------------------------------------------------------------------------
+// Inclui solicitação de manutenção
+static function _IncManut()
+	local _sFilial   	:= ""
+	local _sCodBem   	:= ""
+	local _sNomeBem  	:= ""
+	local _sCC       	:= ""
+	local _sData     	:= ""
+	local _sHora     	:= ""
+	local _sUsuario  	:= ""
+	local _sRamal    	:= ""
+	local _sSituacao 	:= ""
+	local _sServico  	:= ""
+	local _sTpServ   	:= ""
+	local _sNomeServ 	:= ""
+	local _sCodSolic 	:= ""
+	local _sNomeSolic  	:= "" 
+	local _sEmailSolic 	:= ""
+	local _sBemParado  	:= ""
+	local _sOrigem      := ""
+	local _sErroWS      := ""
+	local _aSolic		:= {}
+
+	u_logIni ()
+
+	If empty(_sErroWS)
+
+		_sFilial   	:= _ExtraiTag ("_oXML:_WSAlianca:_Filial"			, .T., .F.) 
+		_sCodBem   	:= _ExtraiTag ("_oXML:_WSAlianca:_CodBem"			, .T., .F.) 
+		_sNomeBem  	:= _ExtraiTag ("_oXML:_WSAlianca:_NomeBem"			, .T., .F.) 
+		_sCC       	:= _ExtraiTag ("_oXML:_WSAlianca:_CentroCusto"		, .T., .F.) 
+		_sData     	:= _ExtraiTag ("_oXML:_WSAlianca:_DataAbertura"		, .T., .F.) 
+		_sHora     	:= _ExtraiTag ("_oXML:_WSAlianca:_HoraAbertura"		, .T., .F.) 
+		_sUsuario  	:= _ExtraiTag ("_oXML:_WSAlianca:_Usuario"			, .T., .F.) 
+		_sRamal    	:= _ExtraiTag ("_oXML:_WSAlianca:_Ramal"			, .T., .F.) 
+		_sSituacao 	:= _ExtraiTag ("_oXML:_WSAlianca:_Situacao"			, .T., .F.) 
+		_sServico  	:= _ExtraiTag ("_oXML:_WSAlianca:_ServicoAExecutar"	, .T., .F.) 
+		_sTpServ   	:= _ExtraiTag ("_oXML:_WSAlianca:_TipoServico"		, .T., .F.) 
+		_sNomeServ 	:= _ExtraiTag ("_oXML:_WSAlianca:_NomeServico"		, .T., .F.) 
+		_sCodSolic 	:= _ExtraiTag ("_oXML:_WSAlianca:_CodSolicitante"	, .T., .F.) 
+		_sNomeSolic := _ExtraiTag ("_oXML:_WSAlianca:_NomeSolicitante"	, .T., .F.)  
+		_sEmailSolic:= _ExtraiTag ("_oXML:_WSAlianca:_EmailSolicitante"	, .T., .F.) 
+		_sBemParado := _ExtraiTag ("_oXML:_WSAlianca:_BemParado"		, .T., .F.) 
+		_sOrigem    := _ExtraiTag ("_oXML:_WSAlianca:_Origem"			, .T., .F.) 
+
+	endif
+
+	If empty(_sErroWS)
+		 
+		_aSolic := {{"TQB_FILIAL", _sFilial		,Nil},;  
+					{"TQB_CODBEM", _sCodBem		,Nil},; 
+					{"TQB_CCUSTO", _sCC			,Nil},; 
+					{"TQB_DTABER", date()		,Nil},; 
+					{"TQB_HOABER", _sHora		,Nil},; 
+					{"TQB_USUARI", _sUsuario	,Nil},; 
+					{"TQB_RAMAL ", _sRamal		,Nil},; 
+					{"TQB_SOLUCA", _sSituacao	,Nil},; 
+					{"TQB_DESCSS", _sServico	,Nil},; 
+					{"TQB_CDSERV", _sTpServ		,Nil},; 
+					{"TQB_NMSERV", _sNomeServ	,Nil},; 
+					{"TQB_CDSOLI", _sCodSolic	,Nil},; 
+					{"TQB_EMSOLI", _sEmailSolic ,Nil},; 
+					{"TQB_ORIGEM", _sOrigem		,Nil},; 
+					{"TQB_PARADA", _sBemParado	,Nil} } 
+
+		Private lMSHelpAuto := .t. // Nao apresenta erro em tela
+		Private lMSErroAuto := .f. // Caso a variavel torne-se .T. apos MsExecAuto, apresenta erro em tela
+
+		MSExecAuto( {|x,z,y,w| MNTA280(x,z,y,w)}, , , _aSolic )
+
+		If lMsErroAuto
+		 	_sMsgRetWS	+= memoread (NomeAutoLog())
+		else
+			_sMsgRetWS	+= 'Registro gravado com sucesso!'
+		Endif
+
+	endif
+
+	u_logFim ()
+return
 
 // --------------------------------------------------------------------------
 // Extrair tag do XML original
