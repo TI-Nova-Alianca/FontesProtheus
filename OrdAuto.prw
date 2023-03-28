@@ -19,6 +19,7 @@
 // 09/03/2022 - Robert - Verifica se o campo encontra-se usado pelo modulo atual
 // 11/03/2022 - Robert - Erro de 'campo nao usado' aparecia em tela. Mudado para log de erro (causava panico desnecessario entre os usuarios)
 // 24/08/2022 - Robert - Valida tipo do campo X tipo da variavel recebida.
+// 28/03/2023 - Robert - Criada excecao nos avisos para campos especificos como ATUEMP/AUTBANCO/AUTAGENCIA/AUTCONTA
 //
 
 // --------------------------------------------------------------------------
@@ -51,8 +52,10 @@ user function OrdAuto (_aMatriz)
 			endif
 
 			if cNivel < sx3 -> x3_nivel
-				U_Log2 ('erro', "[" + procname () + "]Campo '" + _aMatriz [_nLinha, 1] + "' possui nivel " + cvaltochar (sx3 -> x3_nivel) + ", mas o usuario atual possui nivel menor (" + cvaltochar (cNivel) + "). Campo pode nao ser considerado pela rotina automatica.")
-				u_logpcham ()
+				if ! upper (alltrim (_aMatriz [_nLinha, 1])) $ "ATUEMP/AUTBANCO/AUTAGENCIA/AUTCONTA"  // Alguns campos chave em determinadas telas.
+					U_Log2 ('erro', "[" + procname () + "]Campo '" + _aMatriz [_nLinha, 1] + "' possui nivel " + cvaltochar (sx3 -> x3_nivel) + ", mas o usuario atual possui nivel menor (" + cvaltochar (cNivel) + "). Campo pode nao ser considerado pela rotina automatica.")
+					u_logpcham ()
+				endif
 			endif
 
 			_sOrdem = sx3 -> x3_ordem
