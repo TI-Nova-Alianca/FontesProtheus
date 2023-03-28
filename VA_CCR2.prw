@@ -323,15 +323,15 @@ static function _GeraXML ()
 			U_Log2 ('aviso', '[' + procname () + ']abrindo nivel ' + cvaltochar (_estrut -> nivel) + ' para ' + _estrut -> compon)
 		enddo
 
-		// Informa no XML "nao tente ler proximo nivel, por que nao existe."
-		if _estrut -> nivel <= _nNivel .and. _oPilhaIte:Altura() > 0
-			if _oPilhaIte:RetTopo () == _nNivel
-				//TESTE
-				IF _NNIVEL != 4
-					_sXMLCCR += '<nivel_' + cvaltochar (_nNivel + 1) + '></nivel_' + cvaltochar (_nNivel + 1) + '>'
-				ENDIF
-			endif
-		endif
+//		// Informa no XML "nao tente ler proximo nivel, por que nao existe."
+//		if _estrut -> nivel <= _nNivel .and. _oPilhaIte:Altura() > 0
+//			if _oPilhaIte:RetTopo () == _nNivel
+//				//TESTE
+//				IF _NNIVEL != 4
+//					_sXMLCCR += '<nivel_' + cvaltochar (_nNivel + 1) + '></nivel_' + cvaltochar (_nNivel + 1) + '>'
+//				ENDIF
+//			endif
+//		endif
 
 		// Se tenho tag <item> aberta (do registro anterior) com mesmo nivel, devo fecha-la.
 		if _estrut -> nivel == _nNivel .and. _oPilhaIte:Altura() > 0
@@ -380,7 +380,7 @@ static function _GeraXML ()
 	U_Log2 ('debug', '[' + procname () + ']Terminei de ler o arquivo')
 
 	// Informa no XML "nao tente ler proximo nivel, por que nao existe."
-	_sXMLCCR += '<nivel_' + cvaltochar (_nNivel + 1) + '></nivel_' + cvaltochar (_nNivel + 1) + '>'
+//	_sXMLCCR += '<nivel_' + cvaltochar (_nNivel + 1) + '></nivel_' + cvaltochar (_nNivel + 1) + '>'
 
 	_ReduzNiv (0, @_nNivel, @_oPilhaIte)
 
