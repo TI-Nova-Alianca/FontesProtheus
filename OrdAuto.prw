@@ -52,16 +52,16 @@ user function OrdAuto (_aMatriz)
 			endif
 
 			if cNivel < sx3 -> x3_nivel
-				if ! upper (alltrim (_aMatriz [_nLinha, 1])) $ "ATUEMP/AUTBANCO/AUTAGENCIA/AUTCONTA"  // Alguns campos chave em determinadas telas.
-					U_Log2 ('erro', "[" + procname () + "]Campo '" + _aMatriz [_nLinha, 1] + "' possui nivel " + cvaltochar (sx3 -> x3_nivel) + ", mas o usuario atual possui nivel menor (" + cvaltochar (cNivel) + "). Campo pode nao ser considerado pela rotina automatica.")
-					u_logpcham ()
-				endif
+				U_Log2 ('erro', "[" + procname () + "]Campo '" + _aMatriz [_nLinha, 1] + "' possui nivel " + cvaltochar (sx3 -> x3_nivel) + ", mas o usuario atual possui nivel menor (" + cvaltochar (cNivel) + "). Campo pode nao ser considerado pela rotina automatica.")
+				u_logpcham ()
 			endif
 
 			_sOrdem = sx3 -> x3_ordem
 		else
 			_sOrdem = iif (_nLinha == 1, "  ", "ZZ")
-			U_Log2 ('aviso', '[' + procname () + "]Campo '" + _aMatriz [_nLinha, 1] + "' nao encontrado no SX3. Vai ficar ordenado na posicao '" + _sOrdem + "'")
+			if ! upper (alltrim (_aMatriz [_nLinha, 1])) $ "ATUEMP/AUTBANCO/AUTAGENCIA/AUTCONTA"  // Alguns campos chave em determinadas telas.
+				U_Log2 ('aviso', '[' + procname () + "]Campo '" + _aMatriz [_nLinha, 1] + "' nao encontrado no SX3. Vai ficar ordenado na posicao '" + _sOrdem + "'")
+			endif
 		endif
 		aadd (_aMat, {_aMatriz [_nLinha, 1], _aMatriz [_nLinha, 2], _aMatriz [_nLinha, 3], _sOrdem})
 	next

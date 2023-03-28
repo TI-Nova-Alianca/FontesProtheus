@@ -44,6 +44,7 @@
 // 15/03/2023 - Robert - Nao enviar etiquetas para FullWMS quando diferente da filial 01.
 //                     - Apos gravar, arquivo ZA1 nao ficava posicionado no registro recem gravado.
 // 19/03/2023 - Robert - Criado metodo CmdImpr() - intencao eliminar o prog ImpZA1.prw
+// 27/03/2023 - Robert - Implementado metodo Recebe3() e tratamento campo ZA1_FULLW
 //
 
 #Include "Protheus.ch"
@@ -83,6 +84,7 @@ CLASS ClsEtiq
 	public  data Impressa     // ZA1_IMPRES - Jah impressa
 	public  data Inutilizada  // ZA1_APONT='I' - Indica que foi inutilizada manualmente
 	public  data ImprCBProd   // Indica se deve obrigatoriamente imprimir o cod.barras do produto.
+	public  data IntegraFull  // ZA1_FULLW - Status integracao com FullWMS
 	public  data LoteProduto
 	public  data OP           // ZA1_OP
 	public  data OPInvalida   // Jah tive casos de reimpressao de etiquetas de OPs excluidas!
@@ -116,6 +118,8 @@ CLASS ClsEtiq
 	public METHOD PodeEnvFul ()
 	public METHOD PodeExcluir ()
 	public METHOD PodeApont ()
+	public METHOD Recebe3 ()
+	public METHOD SomaMsg ()  // Adiciona mensagem ao inicio da string ::UltMsg
 	public METHOD ValCBEmb ()
 ENDCLASS
 
@@ -163,7 +167,6 @@ METHOD ApontaOP (_dDtProd, _sTnoProd) Class ClsEtiq
 	if ! ::PodeApont (::Quantidade, 0)
 		_lRetAp = .F.
 	else
-//		U_PerfMon ("I", "ClsEtiqApontaOP")  // Medicao de tempos de execucao
 		aadd (_aAutoSD3, {"D3_OP",      ::OP,       NIL})
 		aadd (_aAutoSD3, {"D3_VAETIQ",  ::Codigo,   NIL})
 		aadd (_aAutoSD3, {"D3_VADTPRD", _dDtProd,   NIL})
@@ -179,18 +182,26 @@ METHOD ApontaOP (_dDtProd, _sTnoProd) Class ClsEtiq
 		dbselectarea ("SD3")
 		dbsetorder (1)
 		MATA250 (_aAutoSD3, 3)
-		If lMsErroAuto
+	//	U_Log2 ('debug', '[' + procname () + ']lMsErroAuto = ' + cvaltochar (lMsErroAuto))
+	//	U_Log2 ('debug', '[' + procname () + ']_sErroAuto = ' + _sErroAuto)
+	//	U_LogTrb ('SD3')
+		If lMsErroAuto .or. ! empty (_sErroAuto)
 			_lRetAp = .F.
-			if ! empty (_sErroAuto)
-				::UltMsg += _sErroAuto + '; '
-			elseif ! empty (NomeAutoLog ())
-				::UltMsg += U_LeErro (memoread (NomeAutoLog ())) + '; '
+			::SomaMsg (_sErroAuto)
+			if ! empty (NomeAutoLog ())
+				::SomaMsg (U_LeErro (memoread (NomeAutoLog ())))
 			endif
 			u_help ('Erro rot.aut:' + alltrim (::UltMsg),, .t.)
 		else
-			::UltMsg += "Etiq." + ::Codigo + " apontada com sucesso (d3_numseq = " + sd3 -> d3_numseq + ")"
+			// Jah tive casos do P.E. MT250TOK retornar .F. e a gravacao nao
+			// ser relizada, mas nao alimentou a variavel lMSErroAuto.
+			if sd3 -> d3_vaetiq == ::Codigo .and. sd3 -> d2_op == ::OP .and. substr (sd3->d3_cf,1, 2) == 'PR'
+				::SomaMsg ("Etiq." + ::Codigo + " apontada com sucesso (d3_numseq = " + sd3 -> d3_numseq + ")")
+			else
+				::SomaMsg ("Apontamento da etiq." + ::Codigo + " NAO REALIZADO.")
+				_lRetAp = .F.
+			endif
 		endif
-//		U_PerfMon ("F", "ClsEtiqApontaOP")  // Medicao de tempos de execucao
 	endif
 return _lRetAp
 
@@ -280,7 +291,7 @@ METHOD CmdImpr (_nModelImp, _lPrimeira) Class ClsEtiq
 			_sOPImp   = substr (::OP, 1, 6) + '.' + substr (::OP, 7, 2) + '.' + substr (::OP, 9)
 			_sLoteImp = iif (! empty (::OP), substr (::OP, 1, 8), '')
 			_sAlmOri = ::AlmOrig
-				
+
 			// O cod.barras da OP sobrepoe o do produto, pois vai ser usado no apontamento.
 			_sCBarProd = alltrim (::CBEmbCol)
 				
@@ -411,212 +422,105 @@ return iif (_lRetImpr, _sTxtEtiq, '')
 
 
 // --------------------------------------------------------------------------
-// Formatacao da etiqueta quando destina-se a OP
-static function _FmtOP (_nModelImp, _sMsgObj, _lBarProdu)
-	local _nMargEsq   := 0
-	local _nMargSup   := 0
-	local _sFmtOP     := ''
+// Disponibiliza ('envia') a etiqueta para o FullWMS.
+METHOD EnviaFull (_lMsg) Class ClsEtiq
+	Local _aAreaAnt  := U_ML_SRArea ()
+	local _oSQL      := NIL
+	local _lContinua := .T.
 
-//	U_Log2 ('debug', '[' + procname () + ']iniciando')
-	if _nModelImp == 1  // Impressora Sato
-		if _lBarProdu
-			_sFmtOP += _Esc + 'H0050' + _Esc + 'V0440'  // Coordenadas
-			_sFmtOP += _Esc + 'BG02070'  // Define codigo de barras (tipo, tamanho, altura) ou fonte (espacamento, largura, altura e tipo)
-			_sFmtOP += '>G' + _sCBarProd + _Enter  // Informacao a ser impressa no codigo de barras (estilo, dado)
-		endif
-		_sFmtOP += _Esc + 'H0130' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sDProImp1 + _Enter
-		_sFmtOP += _Esc + 'H0155' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sDProImp2 + _Enter
-		_sFmtOP += _Esc + 'H0180' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sDProImp3 + _Enter
-		_sFmtOP += _Esc + 'H0310' + _Esc + 'V0220' + _Esc + '$B,032,045,0' + _Esc + '$=' + '______' + _Enter
-		_sFmtOP += _Esc + 'H0350' + _Esc + 'V0180' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'OK' + _Enter
-		_sFmtOP += _Esc + 'H0310' + _Esc + 'V0440' + _Esc + '$A,035,055,0' + _Esc + '$=' + 'Qtd: ' + _sQtdImp + ' ' + _sUMImp + _Enter
-		_sFmtOP += _Esc + 'H0410' + _Esc + 'V0440' + _Esc + 'BG02110' + '>G' + _sEtqImp + _Enter
-		_sFmtOP += _Esc + 'H0520' + _Esc + 'V0440' + _Esc + '$A,035,055,0' + _Esc + '$=' + 'Etq: ' + _sEtqImp + _Enter
-		_sFmtOP += _Esc + 'H0540' + _Esc + 'V0170' + _Esc + '$A,025,028,0' + _Esc + '$=' + _sSeqImp + _Enter
-		if ! empty (_sLoteImp)
-			_sFmtOP += _Esc + 'H0600' + _Esc + 'V0440' + _Esc + 'BG02070' + '>G' + _sLoteImp + _Enter
-			_sFmtOP += _Esc + 'H0670' + _Esc + 'V0440' + _Esc + '$A,035,045,0' + _Esc + '$=' + 'Lote: ' + _sLoteImp + _Enter
-		endif
-		_sFmtOP += _Esc + 'H0740' + _Esc + 'V0440' + _Esc + '$A,030,042,0' + _Esc + '$=' + _sDImpImp + _Enter
-		_sFmtOP += _Esc + '%2' + _Enter // Rotacao (imprime numero da OP 'deitado' na margem direita)
-		_sFmtOP += _Esc + 'H0760' + _Esc + 'V00070' + _Esc + '$A,032,045,0' + _Esc + '$=' + 'OP: ' + _sOPImp + '  ' + 'P. Bruto: ' + _sPesoBImp + _Enter
-		_sFmtOP += _Esc + '%1' + _Enter // Rotacao (volta para rotacao normal)
-		
-	elseif _nModelImp == 2  // Impressora Datamax
+	_lMsg := iif (_lMsg == NIL, .T., _lMsg)
 
-		_nMargEsq = 15 //7
-		_nMargSup = 30
-		if _lBarProdu
-			_sFmtOP += '4e72' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup +  10, 4) + _sCBarProd + _Enter // código de barra do produto
-		endif
-		_sFmtOP += '4211' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup +  30, 4) + _sDProImp1    + _Enter 	// descrição 
-		_sFmtOP += '4211' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup +  45, 4) + _sDProImp2    + _Enter
-		_sFmtOP += '4211' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup +  50, 4) + _sDProImp3    + _Enter
-		_sFmtOP += '4311' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup + 120, 4) + 'QTD: ' + _sQtdImp + ' ' + _sUMImp + _Enter // quantidade
-		_sFmtOP += '4211' + '000' + strzero (_nMargEsq + 120, 4) + strzero (_nMargSup + 135, 4) + '--------'    + _Enter // pontilhado
-		_sFmtOP += '4211' + '000' + strzero (_nMargEsq + 120, 4) + strzero (_nMargSup + 145, 4) + '   OK'      + _Enter // OK
-		_sFmtOP += '4e52' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup + 200, 4) + _sEtqImp    + _Enter // Código de barra etiqueta
-		_sFmtOP += '4311' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup + 220, 4) + 'Etiq:' + _sEtqImp    + _Enter // Etiqueta
-		_sFmtOP += '4211' + '000' + strzero (_nMargEsq + 140, 4) + strzero (_nMargSup + 225, 4) + _sSeqImp    + _Enter // Sequencia da etiqueta
-		_sFmtOP += '4e52' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup + 280, 4) + _sLoteImp   + _Enter // Código de barras do lote
-		_sFmtOP += '4311' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup + 300, 4) + 'LOTE:' + _sLoteImp + _Enter // Lote
-		_sFmtOP += '4211' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup + 325, 4) + _sDImpImp + _Enter // Impressa em:
-		_sFmtOP += '3311' + '000' + strzero (_nMargEsq + 210, 4) + strzero (_nMargSup + 335, 4) + _sOPImp + '  ' + 'Peso Bruto: ' + _sPesoBImp + _Enter // OP
-
-	elseif _nModelImp == 4  // Impressora Elgin L42 (BPLA)
-
-		// Formatacao BPLA:
-		// A: rotacao (1 a 4)
-		// B: 0-9=fonte(letras); A-T=cod.barras com linha legivel;a-t=sem linha legivel; X=grafico; Y-imagem
-		// C: multiplicador de largura
-		// D: multiplicador de altura
-		// E: seletor de fonte / altura cod.barras
-		// F: posicionamento (eixo X ou 'colunas')
-		// G: posicionamento (eixo Y ou 'linhas')
-		// H: dados (texto ou numeros para cod. barra)
-		//           RBCDEEEFFFFGGGGH...
-		_sFmtOP += '421100000150005posicao 15,5' + _Enter
-		//_sFmtOP += '421100000150100posicao 15,100' + _Enter
-		_sFmtOP += '421100000150200posicao 15,200' + _Enter
-		_sFmtOP += '421100000150300posicao 15,300' + _Enter
-		_sFmtOP += '421100000150350posicao 15,350' + _Enter
-		_sFmtOP += '4E1204000150100' + _sEtqImp + _Enter // E=code128
-		_sFmtOP += '4e1204000150250' + _sEtqImp + _Enter  // 4=rotacao;E=code128;1=unavailable;2=narrow bar width
-		U_Log2 ('debug', _sFmtOP)
+	if _lContinua
+		_lContinua = ::PodeEnvFul (_lMsg)
 	endif
 
-	if empty (_sFmtOP)
-		U_Log2 ('debug', '[' + procname () + ']terminou vazio')
-		_sMsgObj += "Sem tratamento para formatacao de impressao para este tipo de etiqueta no programa " + procname ()
-		_lRetImpr = .F.
+	// O FullWMS somente aceita etiquetas cujos dados tenham sido previamente
+	// inseridos na tabela tb_wms_etiquetas.
+	if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "select count (*)"
+		_oSQL:_sQuery +=  " from tb_wms_etiquetas"
+		_oSQL:_sQuery += " where id = '" + cvaltochar (::Codigo) + "'"
+		//_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		if _oSQL:RetQry () > 0
+			if _lMsg
+				u_help ("Impossivel enviar etiqueta '" + ::Codigo + "' para o FullWMS: Etiqueta jah existe na tabela tb_wms_etiquetas.", _oSQL:_sQuery, .t.)
+			else
+				U_Log2 ('aviso', '[' + procname () + "]Impossivel enviar etiqueta '" + ::Codigo + "' para o FullWMS: Etiqueta jah existe na tabela tb_wms_etiquetas.")
+			endif
+			_lContinua = .F.
+		endif
 	endif
-	//U_Log2 ('debug', '[' + procname () + ']terminei com: ' + _sFmtOP)
-return _sFmtOP
+
+	if _lContinua
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " insert into tb_wms_etiquetas (id, coditem, lote, qtde, validade, empresa, cd, status)"
+		_oSQL:_sQuery += " values (" + cvaltochar (::Codigo) + ","
+		_oSQL:_sQuery +=          "'" + alltrim (::Produto) + "',"
+		_oSQL:_sQuery +=          "'" + alltrim (::LoteProduto) + "',"
+		_oSQL:_sQuery +=          cvaltochar (::Quantidade) + ","
+		_oSQL:_sQuery +=          "'" + dtos (::ValidLote) + "',"
+		_oSQL:_sQuery +=          "'01',"
+		_oSQL:_sQuery +=          "'" + ::Filial + "',"
+		_oSQL:_sQuery +=          "'N')"  // N=ainda nao lida pelo Full
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		if ! _oSQL:Exec ()
+			U_help ("Erro ao enviar etiqueta para FullWMS: " + _oSQL:_sQuery,, .t.)
+			_lRetEnv = .F.
+		endif
+	endif
+
+	// Conforme o almoxarifado onde foi feito o apontamento, quero disponilibizar
+	// para ser guardada imediatamente (produtos envasados em terceiros, apesar
+	// da OP estar apontada, somente deverao ser recebidos pelo FullWMS depois
+	// que chegarem fisicamente do terceiro).
+	if _lContinua .and. ! empty (::OP) .and. ::AlmOrig == '11'
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Disponibilizando etiq na view v_wms_entrada por que alm.orig.=' + ::AlmOrig)
+		if ::IntegraFull == '2'
+			::UltMsg += "Etiqueta ja recebida pelo FullWMS."
+			_lContinua = .F.
+		endif
+		if _lContinua
+			za1 -> (dbgoto (::RegZA1))
+			reclock ("ZA1", .f.)
+			za1 -> za1_fullw = '1'  // 1=disponibilizar na v_wms_entrada;2=jah recebido (nao precisa mais ficar na view)
+			msunlock ()
+			::IntegraFull = za1 -> za1_fullw
+		endif
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
+return _lContinua
 
 
 // --------------------------------------------------------------------------
-// Formatacao da etiqueta quando destina-se a uma transferencia da tabela ZAG
-static function _FmtZAG (_nModelImp, _sMsgObj)
-	local _nMargEsq   := 0
-	local _nMargSup   := 0
-	local _sFmtZAG    := ''
+// Exclusao da etiqueta.
+METHOD Exclui () Class ClsEtiq
+	Local _aAreaAnt  := U_ML_SRArea ()
+	local _lContinua := .T.
 
-	if _nModelImp == 1  // Impressora Sato
-		_sFmtZAG += _Esc + 'H0050' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sDProImp1 + _Enter
-		_sFmtZAG += _Esc + 'H0075' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sDProImp2 + _Enter
-		_sFmtZAG += _Esc + 'H0100' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sDProImp3 + _Enter
-		_sFmtZAG += _Esc + 'H0150' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + Alltrim(_sDocImp) + _Enter
-		_sFmtZAG += _Esc + 'H0200' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sObsImp1 + _Enter
-		_sFmtZAG += _Esc + 'H0225' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sObsImp2 + _Enter
-		_sFmtZAG += _Esc + 'H0300' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'Lote: ' + AllTrim(_sLoteImp) + _Enter
-		_sFmtZAG += _Esc + 'H0335' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'Qtd: ' + Alltrim(_sQtdImp) + ' ' + AllTrim(_sUMImp) + _Enter
-		_sFmtZAG += _Esc + 'H0400' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'Validade: ' + AllTrim(_sVldLtImp) + _Enter
-		_sFmtZAG += _Esc + 'H0455' + _Esc + 'V0440' + _Esc + 'BG02110' + '>G' + AllTrim(_sEtqImp) + _Enter
-		_sFmtZAG += _Esc + 'H0575' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'Etq: ' + AllTrim(_sEtqImp) + _Enter
-		_sFmtZAG += _Esc + 'H0650' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'DATA: ____________________' + _Enter
-		_sFmtZAG += _Esc + 'H0700' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'RESP: ____________________' + _Enter
-		_sFmtZAG += _Esc + 'H0750' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'ASS.: ____________________' + _Enter
+	if _lContinua
 
-	elseif _nModelImp == 2  // Impressora Argox/Datamax
-		_nMargEsq = 15 //7
-		_nMargSup = 0
-		_sFmtZAG += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup +  50, 4) + _sDProImp1 + _Enter
-		_sFmtZAG += '4211' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup +  65, 4) + _sDProImp2 + _Enter
-		_sFmtZAG += '4211' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup +  80, 4) + _sDProImp3 + _Enter
-		_sFmtZAG += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 105, 4) + _sDocImp   + _Enter
-		_sFmtZAG += '4211' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 120, 4) + _sObsImp1  + _Enter
-		_sFmtZAG += '4211' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 135, 4) + _sObsImp2  + _Enter
-		_sFmtZAG += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 160, 4) + 'Lote:' + _sLoteImp + _Enter
-		_sFmtZAG += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 185, 4) + 'Qtd:' + _sQtdImp + ' ' + _sUMImp + _Enter
-		_sFmtZAG += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 210, 4) + 'Validade:   ' + _sVldLtImp + _Enter
-		_sFmtZAG += '4e52' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 260, 4) + _sEtqImp + _Enter  // Cod.barras
-		_sFmtZAG += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 280, 4) + 'Etiqueta:   ' + _sEtqImp + _Enter
-		_sFmtZAG += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 310, 4) + 'DATA: _______________' + _Enter
-		_sFmtZAG += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 335, 4) + 'RESP: _______________' + _Enter
-		_sFmtZAG += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 360, 4) + 'ASS.: _______________' + _Enter
-
-	elseif _nModelImp == 4  // Impressora Elgin L42 (BPLA)
-//			_sTxtEtiq += '1A3104000200020' + ::Codigo + _Enter  // SOH - inicio de header
-
-		// Formatacao BPLA:
-		// R: rotacao (1 a 4)
-		// B: 0-9=fonte(letras); A-T=cod.barras com linha legivel;a-t=sem linga legivel; X=grafico; Y-imagem
-		// C: multiplicador de largura
-		// D: multiplicador de altura
-		// E: seletor de fonte / altura cod.barras
-		// F: posicionamento (eixo X ou 'colunas')
-		// G: posicionamento (eixo Y ou 'linhas')
-		// H: dados (texto ou numeros para cod. barra)
-		//           RBCDEEEFFFFGGGGH...
-		_sFmtZAG += '421100000150005posicao 15,5' + _Enter
-		_sFmtZAG += '421100000150200posicao 15,200' + _Enter
-		_sFmtZAG += '421100000150300posicao 15,300' + _Enter
-		_sFmtZAG += '421100000150350posicao 15,350' + _Enter
-		_sFmtZAG += '4E1204000150100' + _sEtqImp + _Enter // E=code128
-		_sFmtZAG += '4e1204000150250' + _sEtqImp + _Enter  // 4=rotacao;E=code128;1=unavailable;2=narrow bar width
-	endif
-
-	if empty (_sFmtZAG)
-		_sMsgObj += "Sem tratamento para formatacao de impressao para este tipo de etiqueta no programa " + procname ()
-		_lRetImpr = .F.
-	endif
-return _sFmtZAG
-
-
-// --------------------------------------------------------------------------
-// Formatacao da etiqueta quando originada por NF de entrada.
-static function _FmtNF (_nModelImp, _sMsgObj)
-	local _nMargEsq   := 0
-	local _nMargSup   := 0
-	local _sFmtNF     := ''
-
-	if _nModelImp == 1  // Impressora Sato
-		_sFmtNF += _Esc + 'H0050' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sDProImp1 + _Enter
-		_sFmtNF += _Esc + 'H0075' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sDProImp2 + _Enter
-		_sFmtNF += _Esc + 'H0100' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sDProImp3 + _Enter
-		_sFmtNF += _Esc + 'H0150' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + Alltrim(_sDocImp) + _Enter
-		_sFmtNF += _Esc + 'H0200' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sFornImp1 + _Enter
-		_sFmtNF += _Esc + 'H0225' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sFornImp2 + _Enter
-		if ! empty (_sLtForImp)
-			_sFmtNF += _Esc + 'H0275' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'LOTE FORN: ' + AllTrim(_sLtForImp) + _Enter
+		// Se a chamada for feita para um registro jah deletado, eh por que a
+		// exclusao deve estar sendo feita pela tela de manutencao (usuario)
+		// e o registro do SZI jah foi deletado pela funcao AxDeleta().
+		// Faltaria, no caso, fazer as exclusoes de dados relacionados.
+		if ! za1 -> (deleted ())
+			U_Log2 ('debug', '[' + procname () + ']Deletando registro no ZA1')
+			reclock ("ZA1", .F.)
+			za1 -> (dbdelete ())
+			msunlock ()
+		else
+			U_Log2 ('debug', '[' + procname () + ']Registro jah encontra-se deletado no ZA1')
 		endif
-		_sFmtNF += _Esc + 'H0300' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'LOTE INT: ' + AllTrim(_sLoteImp) + _Enter
-		_sFmtNF += _Esc + 'H0325' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'QTD: ' + Alltrim(_sQtdImp) + ' ' + AllTrim(_sUMImp) + _Enter
-		_sFmtNF += _Esc + 'H0375' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'FABRICACAO: ' + AllTrim(_sDtFabImp) + _Enter
-		_sFmtNF += _Esc + 'H0400' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'VALIDADE: ' + AllTrim(_sVldLtImp) + _Enter
-		_sFmtNF += _Esc + 'H0470' + _Esc + 'V0440' + _Esc + 'BG02110' + '>G' + AllTrim(_sEtqImp) + _Enter
-		_sFmtNF += _Esc + 'H0600' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'ETQ: ' + AllTrim(_sEtqImp) + _Enter
-		_sFmtNF += _Esc + 'H0650' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'DATA: ____________________' + _Enter
-		_sFmtNF += _Esc + 'H0700' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'RESP: ____________________' + _Enter
-		_sFmtNF += _Esc + 'H0750' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'ASS.: ____________________' + _Enter
 
-	elseif _nModelImp == 2  // Impressora Argox/Datamax
-		_nMargEsq = 15 //7
-		_nMargSup = 0
-		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup +  50, 4) + _sDProImp1 + _Enter
-		_sFmtNF += '4211' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup +  65, 4) + _sDProImp2 + _Enter
-		_sFmtNF += '4211' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup +  80, 4) + _sDProImp3 + _Enter
-		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 105, 4) + _sDocImp   + _Enter
-		_sFmtNF += '4211' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 120, 4) + _sFornImp1 + _Enter
-		_sFmtNF += '4211' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 135, 4) + _sFornImp2 + _Enter
-		if ! empty (_sLtForImp)
-			_sFmtNF += '4211' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 155, 4) + 'Lt.forn:' + _sLtForImp + _Enter
-		endif
-		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 175, 4) + 'Lt.int:' + _sLoteImp + _Enter
-		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 200, 4) + 'Qtd:' + _sQtdImp + ' ' + _sUMImp + _Enter
-		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 220, 4) + 'FABRICACAO: ' + _sDtFabImp + _Enter
-		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 240, 4) + 'VALIDADE:   ' + _sVldLtImp + _Enter
-		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 267, 4) + 'ETIQUETA:   ' + _sEtqImp + _Enter
-		_sFmtNF += '4e52' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 310, 4) + _sEtqImp + _Enter  // cod barras
-		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 330, 4) + 'DATA: _______________' + _Enter
-		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 350, 4) + 'RESP: _______________' + _Enter
-		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 370, 4) + 'ASS.: _______________' + _Enter
+		// Verifica necessidade de enviar algum dado para FullWMS.
+		_AtuFull (::Codigo, 'E')
 	endif
-	if empty (_sFmtNF)
-		_sMsgObj += "Sem tratamento para formatacao de impressao para este tipo de etiqueta no programa " + procname ()
-		_lRetImpr = .F.
-	endif
-return _sFmtNF
+
+	U_ML_SRArea (_aAreaAnt)
+return _lContinua
 
 
 // --------------------------------------------------------------------------
@@ -649,9 +553,10 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 	::Filial       = xfilial ("ZA1")
 	::FinalidOP    = ''
 	::IdZAG        = ''
+	::ImprCBProd   = 'N'
 	::Impressa     = 'N'
 	::Inutilizada  = .F.
-	::ImprCBProd   = 'N'
+	::IntegraFull  = ''
 	::LoteProduto  = ''
 	::OP           = ''
 	::OPInvalida   = .F.  // Ateh prova em contrario...
@@ -686,6 +591,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 		::IdZAG        = m->ZA1_IDZAG
 		::Impressa     = m->ZA1_IMPRES
 		::Inutilizada  = (m->za1_apont == 'I')
+		::IntegraFull  = m->za1_fullw
 		::OP           = m->ZA1_OP
 		::Produto      = m->ZA1_PROD
 		::Quantidade   = m->ZA1_QUANT
@@ -708,6 +614,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 		::IdZAG        = za1 -> ZA1_IDZAG
 		::Impressa     = za1 -> ZA1_IMPRES
 		::Inutilizada  = (za1 -> za1_apont == 'I')
+		::IntegraFull  = za1 -> za1_fullw
 		::OP           = za1 -> ZA1_OP
 		::Produto      = za1 -> ZA1_PROD
 		::Quantidade   = za1 -> ZA1_QUANT
@@ -1000,6 +907,137 @@ return _lGravou
 
 
 // --------------------------------------------------------------------------
+// Envia para impressora (ou porta relacionada a esta)
+METHOD Imprime (_sCodImpr) Class ClsEtiq
+	local _lContinua := .T.
+
+	// Ainda tenho algumas leituras do ZA1, entao tenho que ter ele posicionado.
+	// A intencao eh pegar tudo do objeto oEtiq.
+	za1 -> (dbgoto (::RegZA1))
+	
+	if _lContinua .and. ::Inutilizada
+		u_help ("Etiquetas inutilizadas nao podem mais ser impressas.",, .t.)
+		_lContinua = .F.
+	endif
+	if _lContinua .and. ! empty (::OP) .and. ::OPInvalida
+		u_help ("Etiq. referenciando uma OP invalida (" + alltrim (::OP) + ").",, .t.)
+		_lContinua = .F.
+	endif
+	if _lContinua .and. ! empty (::OP) .and. (::QtApontada != 0 .or. ::QtPerdida != 0 .or. ::QtEstornada != 0)
+		_lContinua = U_MsgNoYes ("Etiq.ja tem movimentacao. Deseja imprimir mesmo assim?")
+	endif
+	if _lContinua
+		_lContinua = U_ImpZA1 (_sCodImpr, ::Self)
+	endif
+
+return _lContinua
+
+
+// --------------------------------------------------------------------------
+// Inutiliza a etiqueta.
+METHOD Inutiliza (_lMsg) Class ClsEtiq
+	local _lContinua := .T.
+	local _oEvento   := NIL
+	local _oSQL      := NIL
+	local _aStatWMS  := {}
+	local _aAreaAnt  := U_ML_SRArea ()
+
+	_lMsg := iif (_lMsg == NIL, .F., _lMsg)
+	if _lContinua .and. (::Inutilizada)
+		::UltMsg += "A etiqueta '" + ::Codigo + "' ja encontra-se inutilizada."
+		_lContinua := .F.
+	endif
+
+	// Verifica se o usuario tem liberacao.
+	if ! empty (::OP) .and. ! U_ZZUVL ('073', __cUserID, .T.)
+		::UltMsg += "Usuario sem acesso para inutilizar etiquetas de OP."
+		_lContinua = .F.
+	endif
+	if ! empty (::DocEntrNum) .and. ! U_ZZUVL ('074', __cUserID, .T.)
+		::UltMsg += "Usuario sem acesso para inutilizar etiquetas de NF."
+		_lContinua = .F.
+	endif
+	if _lContinua .and. ! empty (::OP)
+		if ::QtApontada > 0
+			::UltMsg := "etiq." + ::Codigo + " jah apontada. Nao pode ser inutilizada."
+			_lContinua := .F.
+		endif
+		if ::QtPerdida > 0
+			::UltMsg := "etiq." + ::Codigo + " tem quantidade perdida. Nao pode ser inutilizada."
+			_lContinua := .F.
+		endif
+	endif
+
+
+	// Se foi gerada por solicitacao de transf.estoque, vou ver do que se trata.
+	if _lContinua .and. ! empty (::IdZAG) .and. ::AlmDest == '01'
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " select status, status_protheus"
+		_oSQL:_sQuery +=   " from tb_wms_entrada"
+		_oSQL:_sQuery +=  " where entrada_id = 'ZA1" + xfilial ("ZA1") + ::Codigo + "'"
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		_aStatWMS = _oSQL:Qry2Array (.f., .f.)
+		U_Log2 ('debug', _aStatWMS)
+//		if len (_aStatWMS) > 0 .and. ! empty (_aStatWMS [1, 1]) .and. _aStatWMS [1, 1] != '9'
+		if len (_aStatWMS) > 0 .and. ! empty (_aStatWMS [1, 1]) .and. _aStatWMS [1, 1] != '9' .and. _aStatWMS [1, 2] != 'C'
+			::UltMsg += "A etiqueta '" + ::Codigo + "' ja foi vista pelo FullWMS"
+			::UltMsg += " e nao pode ser inutilizada por que encontra-se com status '" + _aStatWMS [1, 1] + "'"
+			::UltMsg += " no campo STATUS da tabela de integracao tb_wms_entrada."
+			::UltMsg += "Essa entrada deve ser excluida, antes, na tela de recebimentos do FullWMS."
+			_lContinua = .F.
+		endif
+		if len (_aStatWMS) > 0 .and. ! empty (_aStatWMS [1, 2]) .and. _aStatWMS [1, 2] != 'C'
+			::UltMsg += "A etiqueta '" + ::Codigo + "' ja foi enviada para o FullWMS"
+			::UltMsg += " e nao pode ser inutilizada por que encontra-se com status '" + _aStatWMS [1, 2] + "'"
+			::UltMsg += " no campo STATUS_PROTHEUS da tabela de integracao tb_wms_entrada."
+			::UltMsg += "Essa operacao de 'guarda' deve ser abortada manualmente nesta tabela para poder inutilizar a etiqueta."
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua .and. _lMsg
+		_lContinua = U_MsgNoYes ("Confirma a inutilização da etiqueta?")
+	endif
+		
+	if _lContinua
+		za1 -> (dbgoto (::RegZA1))
+		begin transaction
+			reclock ("ZA1", .f.)
+			za1 -> za1_apont = 'I'
+			msunlock ()
+
+			// Grava evento para posterior rastreamento
+			_oEvento := ClsEvent():new ()
+			_oEvento:CodEven   = "ZA1002"
+			_oEvento:Texto     = "Inutilizacao etiqueta " + ::Codigo
+			_oEvento:Recno     = ::RegZA1
+			_oEvento:Alias     = 'ZA1'
+			_oEvento:CodAlias  = ::Codigo
+			_oEvento:Etiqueta  = ::Codigo
+			_oEvento:Produto   = ::Produto
+			_oEvento:OP        = ::OP
+			_oEvento:NFEntrada = ::DocEntrNum
+			_oEvento:SerieEntr = ::DocEntrSerie
+			_oEvento:Fornece   = ::DocEntrForn
+			_oEvento:LojaFor   = ::DocEntrLoja
+			_oEvento:Grava ()
+		end transaction
+		::Inutilizada = .T.
+
+		::UltMsg += "Etiqueta '" + ::Codigo + "' inutilizada (Remover do Recipiente)"
+		if _lMsg
+			u_help (::UltMsg)
+		endif
+	else
+		u_help (::UltMsg,, .t.)
+	endif
+
+	U_ML_SRArea (_aAreaAnt)
+return _lContinua
+
+
+// --------------------------------------------------------------------------
 // Gera etiquetas para lote jah existente no estoque. A intencao desta operacao
 // eh poder etiquetar lotes jah existentes no estoque quando a rastreabilidade
 // for habilitada para um produto, pois esses 'lotes iniciais' nao terao sua
@@ -1199,6 +1237,15 @@ METHOD PodeEnvFul (_lMsg) Class ClsEtiq
 		endif
 		_lContinua = .f.
 	endif
+	if _lContinua .and. ::Inutilizada
+		_sMsg = "Etiqueta '" + ::Codigo + "' inutilizada. Nao deve ser enviada para o FullWMS."
+		if _lMsg
+			u_help (_sMsg,, .t.)
+		else
+			U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']' + _sMsg)
+		endif
+		_lContinua = .f.
+	endif
 	if _lContinua .and. empty (::LoteProduto)
 		_sMsg = "Etiqueta '" + ::Codigo + "' nao pode ser enviada para o FullWMS pois nao tem lote informado."
 		if _lMsg
@@ -1209,7 +1256,7 @@ METHOD PodeEnvFul (_lMsg) Class ClsEtiq
 		_lContinua = .f.
 	endif
 
-	// Se o produto nao pode ser enviado para o FulLWMS, nem adianta enviar a etiqueta.
+	// Se o produto nao pode ser enviado para o FullWMS, nem adianta enviar a etiqueta.
 	if _lContinua
 		if ! empty (::OP)
 			if _lContinua .and. ::QtEstornada > 0
@@ -1294,215 +1341,49 @@ return _lContinua
 
 
 // --------------------------------------------------------------------------
-// Disponibiliza ('envia') a etiqueta para o FullWMS.
-METHOD EnviaFull (_lMsg) Class ClsEtiq
-	Local _aAreaAnt  := U_ML_SRArea ()
-	local _oSQL      := NIL
-	local _lContinua := .T.
+// Recebe etiquetas de terceiros (as etiq.sao nossas, mas o produto foi envasado em 3os).
+METHOD Recebe3 () Class ClsEtiq
+	local _lRetR3 := .T.
 
-	_lMsg := iif (_lMsg == NIL, .T., _lMsg)
-
-	if _lContinua
-		_lContinua = ::PodeEnvFul (_lMsg)
+	if _lRetR3 .and. ::AlmOrig != '31'
+		::UltMsg += "Recebimento de 3os destina-se a etiquetas apontadas no almoxarifado 31."
+		_lRetR3 = .F.
 	endif
-
-	if _lContinua
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := "select count (*)"
-		_oSQL:_sQuery +=  " from tb_wms_etiquetas"
-		_oSQL:_sQuery += " where id = '" + cvaltochar (::Codigo) + "'"
-		//_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
-		if _oSQL:RetQry () > 0
-			if _lMsg
-				u_help ("Impossivel enviar etiqueta '" + ::Codigo + "' para o FullWMS: Etiqueta jah existe na tabela tb_wms_etiquetas.", _oSQL:_sQuery, .t.)
-			else
-				U_Log2 ('aviso', '[' + procname () + "]Impossivel enviar etiqueta '" + ::Codigo + "' para o FullWMS: Etiqueta jah existe na tabela tb_wms_etiquetas.")
-			endif
-			_lContinua = .F.
-		endif
+	if _lRetR3 .and. ::Apontada != 'S'
+		::UltMsg += "Recebimento de 3os disponivel somente para etiquetas ja apontadas."
+		_lRetR3 = .F.
 	endif
-
-	if _lContinua
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " insert into tb_wms_etiquetas (id, coditem, lote, qtde, validade, empresa, cd, status)"
-		_oSQL:_sQuery += " values (" + cvaltochar (::Codigo) + ","
-		_oSQL:_sQuery +=          "'" + alltrim (::Produto) + "',"
-		_oSQL:_sQuery +=          "'" + alltrim (::LoteProduto) + "',"
-		_oSQL:_sQuery +=          cvaltochar (::Quantidade) + ","
-		_oSQL:_sQuery +=          "'" + dtos (::ValidLote) + "',"
-		_oSQL:_sQuery +=          "'01',"
-		_oSQL:_sQuery +=          "'" + ::Filial + "',"
-		_oSQL:_sQuery +=          "'N')"  // N=ainda nao lida pelo Full
-		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
-		if ! _oSQL:Exec ()
-			U_help ("Erro ao enviar etiqueta para FullWMS: " + _oSQL:_sQuery,, .t.)
-			_lRetEnv = .F.
-		endif
+	if _lRetR3 .and. ::IntegraFull == '1'
+		::UltMsg += "Etiqueta ja disponibilizada para o FullWMS."
+		_lRetR3 = .F.
 	endif
-
-	U_ML_SRArea (_aAreaAnt)
-return _lContinua
-
-
-// --------------------------------------------------------------------------
-// Exclusao da etiqueta.
-METHOD Exclui () Class ClsEtiq
-	Local _aAreaAnt  := U_ML_SRArea ()
-	local _lContinua := .T.
-
-	if _lContinua
-
-		// Se a chamada for feita para um registro jah deletado, eh por que a
-		// exclusao deve estar sendo feita pela tela de manutencao (usuario)
-		// e o registro do SZI jah foi deletado pela funcao AxDeleta().
-		// Faltaria, no caso, fazer as exclusoes de dados relacionados.
-		if ! za1 -> (deleted ())
-			U_Log2 ('debug', '[' + procname () + ']Deletando registro no ZA1')
-			reclock ("ZA1", .F.)
-			za1 -> (dbdelete ())
-			msunlock ()
-		else
-			U_Log2 ('debug', '[' + procname () + ']Registro jah encontra-se deletado no ZA1')
-		endif
-
-		// Verifica necessidade de enviar algum dado para FullWMS.
-		_AtuFull (::Codigo, 'E')
+	if _lRetR3 .and. ::IntegraFull == '2'
+		::UltMsg += "Etiqueta ja recebida pelo FullWMS."
+		_lRetR3 = .F.
 	endif
-
-	U_ML_SRArea (_aAreaAnt)
-return _lContinua
-
-
-// --------------------------------------------------------------------------
-// Envia para impressora (ou porta relacionada a esta)
-METHOD Imprime (_sCodImpr) Class ClsEtiq
-	local _lContinua := .T.
-
-	// Ainda tenho algumas leituras do ZA1, entao tenho que ter ele posicionado.
-	// A intencao eh pegar tudo do objeto oEtiq.
-	za1 -> (dbgoto (::RegZA1))
-	
-	if _lContinua .and. ::Inutilizada
-		u_help ("Etiquetas inutilizadas nao podem mais ser impressas.",, .t.)
-		_lContinua = .F.
+	if _lRetR3
+		_lRetR3 = ::PodeEnvFul (.t.)
 	endif
-	if _lContinua .and. ! empty (::OP) .and. ::OPInvalida
-		u_help ("Etiq. referenciando uma OP invalida (" + alltrim (::OP) + ").",, .t.)
-		_lContinua = .F.
-	endif
-	if _lContinua .and. ! empty (::OP) .and. (::QtApontada != 0 .or. ::QtPerdida != 0 .or. ::QtEstornada != 0)
-		_lContinua = U_MsgNoYes ("Etiq.ja tem movimentacao. Deseja imprimir mesmo assim?")
-	endif
-	if _lContinua
-		_lContinua = U_ImpZA1 (_sCodImpr, ::Self)
-	endif
-
-return _lContinua
-
-
-// --------------------------------------------------------------------------
-// Inutiliza a etiqueta.
-METHOD Inutiliza (_lMsg) Class ClsEtiq
-	local _lContinua := .T.
-	local _oEvento   := NIL
-	local _oSQL      := NIL
-	local _aStatWMS  := {}
-	local _aAreaAnt  := U_ML_SRArea ()
-
-	_lMsg := iif (_lMsg == NIL, .F., _lMsg)
-	if _lContinua .and. (::Inutilizada)
-		::UltMsg += "A etiqueta '" + ::Codigo + "' ja encontra-se inutilizada."
-		_lContinua := .F.
-	endif
-
-	// Verifica se o usuario tem liberacao.
-	if ! empty (::OP) .and. ! U_ZZUVL ('073', __cUserID, .T.)
-		::UltMsg += "Usuario sem acesso para inutilizar etiquetas de OP."
-		_lContinua = .F.
-	endif
-	if ! empty (::DocEntrNum) .and. ! U_ZZUVL ('074', __cUserID, .T.)
-		::UltMsg += "Usuario sem acesso para inutilizar etiquetas de NF."
-		_lContinua = .F.
-	endif
-	if _lContinua .and. ! empty (::OP)
-		if ::QtApontada > 0
-			::UltMsg := "etiq." + ::Codigo + " jah apontada. Nao pode ser inutilizada."
-			_lContinua := .F.
-		endif
-		if ::QtPerdida > 0
-			::UltMsg := "etiq." + ::Codigo + " tem quantidade perdida. Nao pode ser inutilizada."
-			_lContinua := .F.
-		endif
-	endif
-
-
-	// Se foi gerada por solicitacao de transf.estoque, vou ver do que se trata.
-	if _lContinua .and. ! empty (::IdZAG) .and. ::AlmDest == '01'
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " select status, status_protheus"
-		_oSQL:_sQuery +=   " from tb_wms_entrada"
-		_oSQL:_sQuery +=  " where entrada_id = 'ZA1" + xfilial ("ZA1") + ::Codigo + "'"
-		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
-		_aStatWMS = _oSQL:Qry2Array (.f., .f.)
-		U_Log2 ('debug', _aStatWMS)
-//		if len (_aStatWMS) > 0 .and. ! empty (_aStatWMS [1, 1]) .and. _aStatWMS [1, 1] != '9'
-		if len (_aStatWMS) > 0 .and. ! empty (_aStatWMS [1, 1]) .and. _aStatWMS [1, 1] != '9' .and. _aStatWMS [1, 2] != 'C'
-			::UltMsg += "A etiqueta '" + ::Codigo + "' ja foi vista pelo FullWMS"
-			::UltMsg += " e nao pode ser inutilizada por que encontra-se com status '" + _aStatWMS [1, 1] + "'"
-			::UltMsg += " no campo STATUS da tabela de integracao tb_wms_entrada."
-			::UltMsg += "Essa entrada deve ser excluida, antes, na tela de recebimentos do FullWMS."
-			_lContinua = .F.
-		endif
-		if len (_aStatWMS) > 0 .and. ! empty (_aStatWMS [1, 2]) .and. _aStatWMS [1, 2] != 'C'
-			::UltMsg += "A etiqueta '" + ::Codigo + "' ja foi enviada para o FullWMS"
-			::UltMsg += " e nao pode ser inutilizada por que encontra-se com status '" + _aStatWMS [1, 2] + "'"
-			::UltMsg += " no campo STATUS_PROTHEUS da tabela de integracao tb_wms_entrada."
-			::UltMsg += "Essa operacao de 'guarda' deve ser abortada manualmente nesta tabela para poder inutilizar a etiqueta."
-			_lContinua = .F.
-		endif
-	endif
-
-	if _lContinua .and. _lMsg
-		_lContinua = U_MsgNoYes ("Confirma a inutilização da etiqueta?")
-	endif
-		
-	if _lContinua
+	if _lRetR3
+		// Atualiza campo que vai ser lido pela view v_wms_entrada
+		U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Atualizando campo ZA1_FULLW=1 da etiqueta ' + ::Codigo)
 		za1 -> (dbgoto (::RegZA1))
-		begin transaction
-			reclock ("ZA1", .f.)
-			za1 -> za1_apont = 'I'
-			msunlock ()
-
-			// Grava evento para posterior rastreamento
-			_oEvento := ClsEvent():new ()
-			_oEvento:CodEven   = "ZA1002"
-			_oEvento:Texto     = "Inutilizacao etiqueta " + ::Codigo
-			_oEvento:Recno     = ::RegZA1
-			_oEvento:Alias     = 'ZA1'
-			_oEvento:CodAlias  = ::Codigo
-			_oEvento:Etiqueta  = ::Codigo
-			_oEvento:Produto   = ::Produto
-			_oEvento:OP        = ::OP
-			_oEvento:NFEntrada = ::DocEntrNum
-			_oEvento:SerieEntr = ::DocEntrSerie
-			_oEvento:Fornece   = ::DocEntrForn
-			_oEvento:LojaFor   = ::DocEntrLoja
-			_oEvento:Grava ()
-		end transaction
-		::Inutilizada = .T.
-
-		::UltMsg += "Etiqueta '" + ::Codigo + "' inutilizada (Remover do Recipiente)"
-		if _lMsg
-			u_help (::UltMsg)
-		endif
-	else
-		u_help (::UltMsg,, .t.)
+		reclock ("ZA1", .f.)
+		za1 -> za1_fullw = '1'  // 1=disponibilizar na v_wms_entrada;2=jah recebido (nao precisa mais ficar na view)
+		msunlock ()
+		::IntegraFull = za1 -> za1_fullw
 	endif
+return _lRetR3
 
-	U_ML_SRArea (_aAreaAnt)
-return _lContinua
+
+// --------------------------------------------------------------------------
+// Adiciona (sempre no inicio, para que a mensagem mais recente seja vusta
+// antes) uma mensagem na string ::UltMsg
+METHOD SomaMsg (_sMsg) Class ClsEtiq
+	if ! alltrim (_sMsg) $ ::UltMsg
+		::UltMsg = alltrim (_sMsg) + '; ' + ::UltMsg
+	endif
+return
 
 
 // --------------------------------------------------------------------------
@@ -1553,3 +1434,213 @@ static function _AchaSD5 (_sProduto, _sNumSeq)
 	//_oSQL:Log ('[' + procname () + ']')
 	_nRetSD5 = _oSQL:RetQry (1, .f.)
 return _nRetSD5
+
+
+// --------------------------------------------------------------------------
+// Formatacao da etiqueta quando destina-se a OP
+static function _FmtOP (_nModelImp, _sMsgObj, _lBarProdu)
+	local _nMargEsq   := 0
+	local _nMargSup   := 0
+	local _sFmtOP     := ''
+
+//	U_Log2 ('debug', '[' + procname () + ']iniciando')
+	if _nModelImp == 1  // Impressora Sato
+		if _lBarProdu
+			_sFmtOP += _Esc + 'H0050' + _Esc + 'V0440'  // Coordenadas
+			_sFmtOP += _Esc + 'BG02070'  // Define codigo de barras (tipo, tamanho, altura) ou fonte (espacamento, largura, altura e tipo)
+			_sFmtOP += '>G' + _sCBarProd + _Enter  // Informacao a ser impressa no codigo de barras (estilo, dado)
+		endif
+		_sFmtOP += _Esc + 'H0130' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sDProImp1 + _Enter
+		_sFmtOP += _Esc + 'H0155' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sDProImp2 + _Enter
+		_sFmtOP += _Esc + 'H0180' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sDProImp3 + _Enter
+		_sFmtOP += _Esc + 'H0310' + _Esc + 'V0220' + _Esc + '$B,032,045,0' + _Esc + '$=' + '______' + _Enter
+		_sFmtOP += _Esc + 'H0350' + _Esc + 'V0180' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'OK' + _Enter
+		_sFmtOP += _Esc + 'H0310' + _Esc + 'V0440' + _Esc + '$A,035,055,0' + _Esc + '$=' + 'Qtd: ' + _sQtdImp + ' ' + _sUMImp + _Enter
+		_sFmtOP += _Esc + 'H0410' + _Esc + 'V0440' + _Esc + 'BG02110' + '>G' + _sEtqImp + _Enter
+		_sFmtOP += _Esc + 'H0520' + _Esc + 'V0440' + _Esc + '$A,035,055,0' + _Esc + '$=' + 'Etq: ' + _sEtqImp + _Enter
+		_sFmtOP += _Esc + 'H0540' + _Esc + 'V0170' + _Esc + '$A,025,028,0' + _Esc + '$=' + _sSeqImp + _Enter
+		if ! empty (_sLoteImp)
+			_sFmtOP += _Esc + 'H0600' + _Esc + 'V0440' + _Esc + 'BG02070' + '>G' + _sLoteImp + _Enter
+			_sFmtOP += _Esc + 'H0670' + _Esc + 'V0440' + _Esc + '$A,035,045,0' + _Esc + '$=' + 'Lote: ' + _sLoteImp + _Enter
+		endif
+		_sFmtOP += _Esc + 'H0740' + _Esc + 'V0440' + _Esc + '$A,030,042,0' + _Esc + '$=' + _sDImpImp + _Enter
+		_sFmtOP += _Esc + '%2' + _Enter // Rotacao (imprime numero da OP 'deitado' na margem direita)
+		_sFmtOP += _Esc + 'H0760' + _Esc + 'V00070' + _Esc + '$A,032,045,0' + _Esc + '$=' + 'OP: ' + _sOPImp + '  ' + 'P. Bruto: ' + _sPesoBImp + _Enter
+		_sFmtOP += _Esc + '%1' + _Enter // Rotacao (volta para rotacao normal)
+		
+	elseif _nModelImp == 2  // Impressora Datamax
+
+		_nMargEsq = 15 //7
+		_nMargSup = 30
+		if _lBarProdu
+			_sFmtOP += '4e72' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup +  10, 4) + _sCBarProd + _Enter // código de barra do produto
+		endif
+		_sFmtOP += '4211' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup +  30, 4) + _sDProImp1    + _Enter 	// descrição 
+		_sFmtOP += '4211' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup +  45, 4) + _sDProImp2    + _Enter
+		_sFmtOP += '4211' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup +  50, 4) + _sDProImp3    + _Enter
+		_sFmtOP += '4311' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup + 120, 4) + 'QTD: ' + _sQtdImp + ' ' + _sUMImp + _Enter // quantidade
+		_sFmtOP += '4211' + '000' + strzero (_nMargEsq + 120, 4) + strzero (_nMargSup + 135, 4) + '--------'    + _Enter // pontilhado
+		_sFmtOP += '4211' + '000' + strzero (_nMargEsq + 120, 4) + strzero (_nMargSup + 145, 4) + '   OK'      + _Enter // OK
+		_sFmtOP += '4e52' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup + 200, 4) + _sEtqImp    + _Enter // Código de barra etiqueta
+		_sFmtOP += '4311' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup + 220, 4) + 'Etiq:' + _sEtqImp    + _Enter // Etiqueta
+		_sFmtOP += '4211' + '000' + strzero (_nMargEsq + 140, 4) + strzero (_nMargSup + 225, 4) + _sSeqImp    + _Enter // Sequencia da etiqueta
+		_sFmtOP += '4e52' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup + 280, 4) + _sLoteImp   + _Enter // Código de barras do lote
+		_sFmtOP += '4311' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup + 300, 4) + 'LOTE:' + _sLoteImp + _Enter // Lote
+		_sFmtOP += '4211' + '000' + strzero (_nMargEsq, 4)       + strzero (_nMargSup + 325, 4) + _sDImpImp + _Enter // Impressa em:
+		_sFmtOP += '3311' + '000' + strzero (_nMargEsq + 210, 4) + strzero (_nMargSup + 335, 4) + _sOPImp + '  ' + 'Peso Bruto: ' + _sPesoBImp + _Enter // OP
+
+	elseif _nModelImp == 4  // Impressora Elgin L42 (BPLA)
+
+		// Formatacao BPLA:
+		// A: rotacao (1 a 4)
+		// B: 0-9=fonte(letras); A-T=cod.barras com linha legivel;a-t=sem linha legivel; X=grafico; Y-imagem
+		// C: multiplicador de largura
+		// D: multiplicador de altura
+		// E: seletor de fonte / altura cod.barras
+		// F: posicionamento (eixo X ou 'colunas')
+		// G: posicionamento (eixo Y ou 'linhas')
+		// H: dados (texto ou numeros para cod. barra)
+		//           RBCDEEEFFFFGGGGH...
+		_sFmtOP += '421100000150005posicao 15,5' + _Enter
+		//_sFmtOP += '421100000150100posicao 15,100' + _Enter
+		_sFmtOP += '421100000150200posicao 15,200' + _Enter
+		_sFmtOP += '421100000150300posicao 15,300' + _Enter
+		_sFmtOP += '421100000150350posicao 15,350' + _Enter
+		_sFmtOP += '4E1204000150100' + _sEtqImp + _Enter // E=code128
+		_sFmtOP += '4e1204000150250' + _sEtqImp + _Enter  // 4=rotacao;E=code128;1=unavailable;2=narrow bar width
+		U_Log2 ('debug', _sFmtOP)
+	endif
+
+	if empty (_sFmtOP)
+		U_Log2 ('debug', '[' + procname () + ']terminou vazio')
+		_sMsgObj += "Sem tratamento para formatacao de impressao para este tipo de etiqueta no programa " + procname ()
+		_lRetImpr = .F.
+	endif
+	//U_Log2 ('debug', '[' + procname () + ']terminei com: ' + _sFmtOP)
+return _sFmtOP
+
+
+// --------------------------------------------------------------------------
+// Formatacao da etiqueta quando destina-se a uma transferencia da tabela ZAG
+static function _FmtZAG (_nModelImp, _sMsgObj)
+	local _nMargEsq   := 0
+	local _nMargSup   := 0
+	local _sFmtZAG    := ''
+
+	if _nModelImp == 1  // Impressora Sato
+		_sFmtZAG += _Esc + 'H0050' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sDProImp1 + _Enter
+		_sFmtZAG += _Esc + 'H0075' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sDProImp2 + _Enter
+		_sFmtZAG += _Esc + 'H0100' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sDProImp3 + _Enter
+		_sFmtZAG += _Esc + 'H0150' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + Alltrim(_sDocImp) + _Enter
+		_sFmtZAG += _Esc + 'H0200' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sObsImp1 + _Enter
+		_sFmtZAG += _Esc + 'H0225' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sObsImp2 + _Enter
+		_sFmtZAG += _Esc + 'H0300' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'Lote: ' + AllTrim(_sLoteImp) + _Enter
+		_sFmtZAG += _Esc + 'H0335' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'Qtd: ' + Alltrim(_sQtdImp) + ' ' + AllTrim(_sUMImp) + _Enter
+		_sFmtZAG += _Esc + 'H0400' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'Validade: ' + AllTrim(_sVldLtImp) + _Enter
+		_sFmtZAG += _Esc + 'H0455' + _Esc + 'V0440' + _Esc + 'BG02110' + '>G' + AllTrim(_sEtqImp) + _Enter
+		_sFmtZAG += _Esc + 'H0575' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'Etq: ' + AllTrim(_sEtqImp) + _Enter
+		_sFmtZAG += _Esc + 'H0650' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'DATA: ____________________' + _Enter
+		_sFmtZAG += _Esc + 'H0700' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'RESP: ____________________' + _Enter
+		_sFmtZAG += _Esc + 'H0750' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'ASS.: ____________________' + _Enter
+
+	elseif _nModelImp == 2  // Impressora Argox/Datamax
+		_nMargEsq = 15 //7
+		_nMargSup = 0
+		_sFmtZAG += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup +  50, 4) + _sDProImp1 + _Enter
+		_sFmtZAG += '4211' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup +  65, 4) + _sDProImp2 + _Enter
+		_sFmtZAG += '4211' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup +  80, 4) + _sDProImp3 + _Enter
+		_sFmtZAG += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 105, 4) + _sDocImp   + _Enter
+		_sFmtZAG += '4211' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 120, 4) + _sObsImp1  + _Enter
+		_sFmtZAG += '4211' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 135, 4) + _sObsImp2  + _Enter
+		_sFmtZAG += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 160, 4) + 'Lote:' + _sLoteImp + _Enter
+		_sFmtZAG += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 185, 4) + 'Qtd:' + _sQtdImp + ' ' + _sUMImp + _Enter
+		_sFmtZAG += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 210, 4) + 'Validade:   ' + _sVldLtImp + _Enter
+		_sFmtZAG += '4e52' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 260, 4) + _sEtqImp + _Enter  // Cod.barras
+		_sFmtZAG += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 280, 4) + 'Etiqueta:   ' + _sEtqImp + _Enter
+		_sFmtZAG += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 310, 4) + 'DATA: _______________' + _Enter
+		_sFmtZAG += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 335, 4) + 'RESP: _______________' + _Enter
+		_sFmtZAG += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 360, 4) + 'ASS.: _______________' + _Enter
+
+	elseif _nModelImp == 4  // Impressora Elgin L42 (BPLA)
+//			_sTxtEtiq += '1A3104000200020' + ::Codigo + _Enter  // SOH - inicio de header
+
+		// Formatacao BPLA:
+		// R: rotacao (1 a 4)
+		// B: 0-9=fonte(letras); A-T=cod.barras com linha legivel;a-t=sem linga legivel; X=grafico; Y-imagem
+		// C: multiplicador de largura
+		// D: multiplicador de altura
+		// E: seletor de fonte / altura cod.barras
+		// F: posicionamento (eixo X ou 'colunas')
+		// G: posicionamento (eixo Y ou 'linhas')
+		// H: dados (texto ou numeros para cod. barra)
+		//           RBCDEEEFFFFGGGGH...
+		_sFmtZAG += '421100000150005posicao 15,5' + _Enter
+		_sFmtZAG += '421100000150200posicao 15,200' + _Enter
+		_sFmtZAG += '421100000150300posicao 15,300' + _Enter
+		_sFmtZAG += '421100000150350posicao 15,350' + _Enter
+		_sFmtZAG += '4E1204000150100' + _sEtqImp + _Enter // E=code128
+		_sFmtZAG += '4e1204000150250' + _sEtqImp + _Enter  // 4=rotacao;E=code128;1=unavailable;2=narrow bar width
+	endif
+
+	if empty (_sFmtZAG)
+		_sMsgObj += "Sem tratamento para formatacao de impressao para este tipo de etiqueta no programa " + procname ()
+		_lRetImpr = .F.
+	endif
+return _sFmtZAG
+
+
+// --------------------------------------------------------------------------
+// Formatacao da etiqueta quando originada por NF de entrada.
+static function _FmtNF (_nModelImp, _sMsgObj)
+	local _nMargEsq   := 0
+	local _nMargSup   := 0
+	local _sFmtNF     := ''
+
+	if _nModelImp == 1  // Impressora Sato
+		_sFmtNF += _Esc + 'H0050' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sDProImp1 + _Enter
+		_sFmtNF += _Esc + 'H0075' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sDProImp2 + _Enter
+		_sFmtNF += _Esc + 'H0100' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sDProImp3 + _Enter
+		_sFmtNF += _Esc + 'H0150' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + Alltrim(_sDocImp) + _Enter
+		_sFmtNF += _Esc + 'H0200' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sFornImp1 + _Enter
+		_sFmtNF += _Esc + 'H0225' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + _sFornImp2 + _Enter
+		if ! empty (_sLtForImp)
+			_sFmtNF += _Esc + 'H0275' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'LOTE FORN: ' + AllTrim(_sLtForImp) + _Enter
+		endif
+		_sFmtNF += _Esc + 'H0300' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'LOTE INT: ' + AllTrim(_sLoteImp) + _Enter
+		_sFmtNF += _Esc + 'H0325' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'QTD: ' + Alltrim(_sQtdImp) + ' ' + AllTrim(_sUMImp) + _Enter
+		_sFmtNF += _Esc + 'H0375' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'FABRICACAO: ' + AllTrim(_sDtFabImp) + _Enter
+		_sFmtNF += _Esc + 'H0400' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'VALIDADE: ' + AllTrim(_sVldLtImp) + _Enter
+		_sFmtNF += _Esc + 'H0470' + _Esc + 'V0440' + _Esc + 'BG02110' + '>G' + AllTrim(_sEtqImp) + _Enter
+		_sFmtNF += _Esc + 'H0600' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'ETQ: ' + AllTrim(_sEtqImp) + _Enter
+		_sFmtNF += _Esc + 'H0650' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'DATA: ____________________' + _Enter
+		_sFmtNF += _Esc + 'H0700' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'RESP: ____________________' + _Enter
+		_sFmtNF += _Esc + 'H0750' + _Esc + 'V0440' + _Esc + '$B,025,028,0' + _Esc + '$=' + 'ASS.: ____________________' + _Enter
+
+	elseif _nModelImp == 2  // Impressora Argox/Datamax
+		_nMargEsq = 15 //7
+		_nMargSup = 0
+		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup +  50, 4) + _sDProImp1 + _Enter
+		_sFmtNF += '4211' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup +  65, 4) + _sDProImp2 + _Enter
+		_sFmtNF += '4211' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup +  80, 4) + _sDProImp3 + _Enter
+		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 105, 4) + _sDocImp   + _Enter
+		_sFmtNF += '4211' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 120, 4) + _sFornImp1 + _Enter
+		_sFmtNF += '4211' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 135, 4) + _sFornImp2 + _Enter
+		if ! empty (_sLtForImp)
+			_sFmtNF += '4211' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 155, 4) + 'Lt.forn:' + _sLtForImp + _Enter
+		endif
+		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 175, 4) + 'Lt.int:' + _sLoteImp + _Enter
+		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 200, 4) + 'Qtd:' + _sQtdImp + ' ' + _sUMImp + _Enter
+		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 220, 4) + 'FABRICACAO: ' + _sDtFabImp + _Enter
+		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 240, 4) + 'VALIDADE:   ' + _sVldLtImp + _Enter
+		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 267, 4) + 'ETIQUETA:   ' + _sEtqImp + _Enter
+		_sFmtNF += '4e52' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 310, 4) + _sEtqImp + _Enter  // cod barras
+		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 330, 4) + 'DATA: _______________' + _Enter
+		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 350, 4) + 'RESP: _______________' + _Enter
+		_sFmtNF += '4311' + '000' + strzero (_nMargEsq, 4) + strzero (_nMargSup + 370, 4) + 'ASS.: _______________' + _Enter
+	endif
+	if empty (_sFmtNF)
+		_sMsgObj += "Sem tratamento para formatacao de impressao para este tipo de etiqueta no programa " + procname ()
+		_lRetImpr = .F.
+	endif
+return _sFmtNF
+
