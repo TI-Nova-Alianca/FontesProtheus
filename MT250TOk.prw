@@ -118,6 +118,10 @@ user function mt250tok ()
 		_lRet = _VerRetr ()
 	endif
 
+
+//	U_Log2 ('debug', '[' + procname () + ']retornando F para testes')
+//	_lret = .f.
+
 	U_ML_SRArea (_aAreaAnt)
 return _lRet
 
