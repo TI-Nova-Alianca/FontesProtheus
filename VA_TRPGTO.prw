@@ -11,14 +11,16 @@
 // #Modulos           #FIN
 //
 // Historico de alteracoes:
+// 28/03/2023 - Claudia - Alterada a gravação da data base, passando por parametro. GLPI: 13355
 //
-// ---------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
 #Include 'TBICONN.ch'
 
 User Function VA_TRPGTO(_nValorBaixa, _sHist, _sBenef)
 	local _aBanco  := {}
 	local _aTitulo := {}
+	local _dDtBase := dDataBase
 
     _aBanco := _BuscaBanco()
 	aadd(_aTitulo,{ SE2 -> E2_FILIAL	,;
@@ -32,7 +34,7 @@ User Function VA_TRPGTO(_nValorBaixa, _sHist, _sBenef)
 					_sBenef				})
 
 	If _aBanco[1,1] == .T. // Inclui o mesmo produto na empresa '02'
-		STARTJOB("U_VA_TRPG2",getenvserver(),.t.,_aBanco,_aTitulo)
+		STARTJOB("U_VA_TRPG2",getenvserver(),.t.,_aBanco,_aTitulo,_dDtBase)
 	else
 		u_help(" Processo não executado!")
 	EndIf
@@ -40,7 +42,7 @@ Return
 // 
 // ---------------------------------------------------------------------------------------
 // Grava movimento bancário na matriz 
-User Function VA_TRPG2(_aBanco,_aTitulo)
+User Function VA_TRPG2(_aBanco,_aTitulo,_dDtBase)
 	local _aFINA100   := {}
 	local lMsErroAuto := .F.
 
@@ -51,7 +53,7 @@ User Function VA_TRPG2(_aBanco,_aTitulo)
 		_sCred := _BuscaCC(_aBanco[1, 2])        
 
 		If !empty(_sCred)
-			_aFINA100 := { 	{"E5_DATA"  	, dDataBase 					, Nil},;
+			_aFINA100 := { 	{"E5_DATA"  	, _dDtBase 					    , Nil},;
 							{"E5_MOEDA" 	, "M1" 					 		, Nil},;
 							{"E5_VALOR" 	, _aTitulo[1,7]					, Nil},;
 							{"E5_NATUREZ" 	, "120599" 				 		, Nil},;
