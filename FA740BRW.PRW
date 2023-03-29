@@ -28,6 +28,7 @@
 // 02/09/2022 - Robert  - Melhoradas algumas mensagens para o usuario (GLPI 12543)
 // 08/11/2022 - Claudia - Alterada a consulta quando o boleto ja esta impresso. GLPI: 12785
 // 16/01/2023 - Claudia - Ajustada a impressão de boletos. GLPI: 13025
+// 29/03/2023 - CLáudia - Ajustada a impressão da data de vencimento da carta de anuencia. GLPI: 13364
 //
 // ---------------------------------------------------------------------------------------------------------------------------------
 User Function FA740BRW()
@@ -609,7 +610,7 @@ Static Function RptDetail()
 	::_oPrn:Say (::_nMargsup + ::_nLinAtual, ::_nMargEsq + 200, _sLinhaImp, _oCour10N, 100)
 	::_nLinAtual += ::_nAltLin * 1
 	
-	_sLinhaImp := "Vencida em ......: " + dtoc(se1->e1_vencto)
+	_sLinhaImp := "Vencida em ......: " + dtoc(se1->e1_vencrea)
 	::_oPrn:Say (::_nMargsup + ::_nLinAtual, ::_nMargEsq + 200, _sLinhaImp, _oCour10N, 100)
 	::_nLinAtual += ::_nAltLin * 1
 		
