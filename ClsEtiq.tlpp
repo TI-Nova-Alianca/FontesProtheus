@@ -45,6 +45,8 @@
 //                     - Apos gravar, arquivo ZA1 nao ficava posicionado no registro recem gravado.
 // 19/03/2023 - Robert - Criado metodo CmdImpr() - intencao eliminar o prog ImpZA1.prw
 // 27/03/2023 - Robert - Implementado metodo Recebe3() e tratamento campo ZA1_FULLW
+// 28/03/2023 - Robert - Metodo Imprime() passa a usar metodo CmdImp() e nao mais a funcao U_ImpZA1().
+//                     - Criado metodo SomaMsg().
 //
 
 #Include "Protheus.ch"
@@ -182,9 +184,9 @@ METHOD ApontaOP (_dDtProd, _sTnoProd) Class ClsEtiq
 		dbselectarea ("SD3")
 		dbsetorder (1)
 		MATA250 (_aAutoSD3, 3)
-	//	U_Log2 ('debug', '[' + procname () + ']lMsErroAuto = ' + cvaltochar (lMsErroAuto))
-	//	U_Log2 ('debug', '[' + procname () + ']_sErroAuto = ' + _sErroAuto)
-	//	U_LogTrb ('SD3')
+//		U_Log2 ('debug', '[' + procname () + ']lMsErroAuto = ' + cvaltochar (lMsErroAuto))
+//		U_Log2 ('debug', '[' + procname () + ']_sErroAuto = ' + _sErroAuto)
+//		U_LogTrb ('SD3')
 		If lMsErroAuto .or. ! empty (_sErroAuto)
 			_lRetAp = .F.
 			::SomaMsg (_sErroAuto)
@@ -195,7 +197,7 @@ METHOD ApontaOP (_dDtProd, _sTnoProd) Class ClsEtiq
 		else
 			// Jah tive casos do P.E. MT250TOK retornar .F. e a gravacao nao
 			// ser relizada, mas nao alimentou a variavel lMSErroAuto.
-			if sd3 -> d3_vaetiq == ::Codigo .and. sd3 -> d2_op == ::OP .and. substr (sd3->d3_cf,1, 2) == 'PR'
+			if sd3 -> d3_vaetiq == ::Codigo .and. sd3 -> d3_op == ::OP .and. substr (sd3 -> d3_cf,1, 2) == 'PR'
 				::SomaMsg ("Etiq." + ::Codigo + " apontada com sucesso (d3_numseq = " + sd3 -> d3_numseq + ")")
 			else
 				::SomaMsg ("Apontamento da etiq." + ::Codigo + " NAO REALIZADO.")
@@ -203,6 +205,7 @@ METHOD ApontaOP (_dDtProd, _sTnoProd) Class ClsEtiq
 			endif
 		endif
 	endif
+//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Terminando metodo')
 return _lRetAp
 
 
@@ -341,7 +344,7 @@ METHOD CmdImpr (_nModelImp, _lPrimeira) Class ClsEtiq
 				_sTxtEtiq += _Esc + 'A'   + _Enter + _Esc + '#E1' + _Enter + _Esc + 'Z'   + _Enter  // Claridade
 				_sTxtEtiq += _Esc + 'PC03,0' + _Enter  // Velocidade
 				_sTxtEtiq += _Esc + 'PC09,2' + _Enter  // Darkness
-				U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']inseri comandos iniciais: ' + _sTxtEtiq)
+			//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']inseri comandos iniciais: ' + _sTxtEtiq)
 			endif
 			_sTxtEtiq += _Esc + 'A' + _Enter  	  // Inicializa etiqueta
 			_sTxtEtiq += _Esc + '%1' + _Enter      // Rotacao
@@ -910,11 +913,16 @@ return _lGravou
 // Envia para impressora (ou porta relacionada a esta)
 METHOD Imprime (_sCodImpr) Class ClsEtiq
 	local _lContinua := .T.
+	local _sCmdImp   := ''  // Comando de impressao de cada etiqueta
+	local _sArq      := ''
+	local _nHdl      := ''
+	local _sPortaImp := ''
+	local _nModelImp := 0
 
-	// Ainda tenho algumas leituras do ZA1, entao tenho que ter ele posicionado.
-	// A intencao eh pegar tudo do objeto oEtiq.
-	za1 -> (dbgoto (::RegZA1))
-	
+//nao mais!	// Ainda tenho algumas leituras do ZA1, entao tenho que ter ele posicionado.
+//nao mais!	// A intencao eh pegar tudo do objeto oEtiq.
+//nao mais!	za1 -> (dbgoto (::RegZA1))
+
 	if _lContinua .and. ::Inutilizada
 		u_help ("Etiquetas inutilizadas nao podem mais ser impressas.",, .t.)
 		_lContinua = .F.
@@ -927,7 +935,42 @@ METHOD Imprime (_sCodImpr) Class ClsEtiq
 		_lContinua = U_MsgNoYes ("Etiq.ja tem movimentacao. Deseja imprimir mesmo assim?")
 	endif
 	if _lContinua
-		_lContinua = U_ImpZA1 (_sCodImpr, ::Self)
+		//_lContinua = U_ImpZA1 (_sCodImpr, ::Self)
+		_sPortaImp = U_RetZX5 ('49', _sCodImpr, 'ZX5_49CAM')
+		_nModelImp = val (U_RetZX5 ('49', _sCodImpr, 'ZX5_49LING'))
+		if empty (_sPortaImp)
+			::SomaMsg ("Caminho/porta nao definido para impressora '" + _sCodImpr + "'. Verifique tabela 49 do arquivo ZX5.")
+			_lContinua = .F.
+		endif
+		if empty (_nModelImp)
+			::SomaMsg ("Modelo nao definido para impressora '" + _sCodImpr + "'. Verifique tabela 49 do arquivo ZX5.")
+			_lContinua = .F.
+		endif
+	endif
+	if _lContinua
+		_sCmdImp = ::CmdImpr (_nModelImp, .t.)
+		if empty (_sCmdImp)
+			_lContinua = .F.
+		else
+			// Envia para a impressora (ou arquivo, caso porta = caminho de arquivo).
+			if ! empty (_sCmdImp)
+				_sArq = criatrab (NIL, .F.)
+				_nHdl = fcreate (_sArq, 0)
+				fwrite (_nHdl, _sCmdImp)
+				fclose (_nHdl)
+				copy file (_sArq) to (_sPortaImp)
+				delete file (_sArq)
+				U_Log2 ('debug', '[' + procname () + ']' + _sCmdImp)
+				u_log2 ('debug', '[' + procname () + ']Copiei comandos para ' + _sPortaImp)
+					
+				// Marca etiqueta como jah impressa.
+				za1 -> (dbgoto (::RegZA1))
+				reclock ("ZA1", .f.)
+				za1 -> za1_impres = 'S'
+				msunlock ()
+				::Impressa = za1 -> za1_impres
+			endif
+		endif
 	endif
 
 return _lContinua
@@ -1343,22 +1386,23 @@ return _lContinua
 // --------------------------------------------------------------------------
 // Recebe etiquetas de terceiros (as etiq.sao nossas, mas o produto foi envasado em 3os).
 METHOD Recebe3 () Class ClsEtiq
-	local _lRetR3 := .T.
+	local _lRetR3  := .T.
+	local _oEvento := NIL
 
 	if _lRetR3 .and. ::AlmOrig != '31'
-		::UltMsg += "Recebimento de 3os destina-se a etiquetas apontadas no almoxarifado 31."
+		::UltMsg += "Recebto. 3os destina-se a etiq. apontadas no ax.31"
 		_lRetR3 = .F.
 	endif
 	if _lRetR3 .and. ::Apontada != 'S'
-		::UltMsg += "Recebimento de 3os disponivel somente para etiquetas ja apontadas."
+		::UltMsg += "Recebto. 3os disponivel apenas p/etiq.ja apontadas"
 		_lRetR3 = .F.
 	endif
 	if _lRetR3 .and. ::IntegraFull == '1'
-		::UltMsg += "Etiqueta ja disponibilizada para o FullWMS."
+		::UltMsg += "Etiq.ja disponibilizada para o FullWMS."
 		_lRetR3 = .F.
 	endif
 	if _lRetR3 .and. ::IntegraFull == '2'
-		::UltMsg += "Etiqueta ja recebida pelo FullWMS."
+		::UltMsg += "Etiq.ja recebida pelo FullWMS."
 		_lRetR3 = .F.
 	endif
 	if _lRetR3
@@ -1372,6 +1416,18 @@ METHOD Recebe3 () Class ClsEtiq
 		za1 -> za1_fullw = '1'  // 1=disponibilizar na v_wms_entrada;2=jah recebido (nao precisa mais ficar na view)
 		msunlock ()
 		::IntegraFull = za1 -> za1_fullw
+
+		// Atualmente nao tenho amarracao com nada (nem NF de remessa, nem de retorno...)
+		// entao vou gravar, pelo menos, um evento.
+		_oEvento := ClsEvent():new ()
+		_oEvento:CodEven    = 'ZA1003'
+		_oEvento:Texto      = 'Confirmacao recebimento etiqueta envasada em terceiros'
+		_oEvento:Recno      = ZA1 -> (recno ())
+		_oEvento:OP         = ::OP
+		_oEvento:Etiqueta   = ::Codigo
+		_oEvento:DiasValid  = 999
+		_oEvento:Grava ()
+
 	endif
 return _lRetR3
 
@@ -1380,8 +1436,12 @@ return _lRetR3
 // Adiciona (sempre no inicio, para que a mensagem mais recente seja vusta
 // antes) uma mensagem na string ::UltMsg
 METHOD SomaMsg (_sMsg) Class ClsEtiq
-	if ! alltrim (_sMsg) $ ::UltMsg
-		::UltMsg = alltrim (_sMsg) + '; ' + ::UltMsg
+//	if ! alltrim (_sMsg) $ ::UltMsg
+//		::UltMsg = alltrim (_sMsg) + '; ' + ::UltMsg
+//	endif
+	local _sMsgAux := alltrim (cvaltochar (_sMsg))
+	if ! alltrim (_sMsgAux) $ ::UltMsg
+		::UltMsg = alltrim (_sMsgAux) + '; ' + ::UltMsg
 	endif
 return
 

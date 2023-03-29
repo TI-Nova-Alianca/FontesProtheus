@@ -445,9 +445,8 @@ METHOD GeraAtrib (_sOrigem) class ClsTrEstq
 			_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZA1") + " ZA1"
 			_oSQL:_sQuery += " WHERE ZA1.D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=   " AND ZA1.ZA1_FILIAL = '" + xfilial ("ZA1") + "'"
-		//	_oSQL:_sQuery +=   " AND ZA1.ZA1_IDZAG  = '" + zag -> zag_doc + "'"
 			_oSQL:_sQuery +=   " AND ZA1.ZA1_IDZAG  = '" + ::Docto + ::Seq + "'"
-			_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		//	_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 			::Etiqueta = _oSQL:RetQry (1, .f.)
 		endif
 
@@ -1435,7 +1434,10 @@ return _lContinua
 // Concatena (sem repeticao) mensagens do objeto.
 METHOD SomaMsg (_sMsg) Class ClsTrEstq
 	local _sMsgAux := alltrim (cvaltochar (_sMsg))
-	if ! _sMsgAux $ ::UltMsg
-		::UltMsg += iif (empty (::UltMsg), '', '; ') + _sMsgAux
+//	if ! _sMsgAux $ ::UltMsg
+//		::UltMsg += iif (empty (::UltMsg), '', '; ') + _sMsgAux
+//	endif
+	if ! alltrim (_sMsgAux) $ ::UltMsg
+		::UltMsg = alltrim (_sMsgAux) + '; ' + ::UltMsg
 	endif
 return

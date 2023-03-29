@@ -47,6 +47,7 @@
 // 01/02/2023 - Robert - Chamada metodo ClsTrEstq:Libera() passava usuario errado no processamento de saidas.
 // 03/02/2023 - Robert - Nas saidas do Full, se o item  nao controla notes no Protheus, nem consulta tb_wms_lotes.
 // 11/03/2023 - Robert - Tabela ZAG passa a ter o campo ZAG_SEQ fazendo parte da chave primaria.
+// 28/03/2023 - Robert - Habilitadas transf. do ax.31 para 01 (etiq. envasadas em terceiros).
 //
 
 #Include "Protheus.ch"
@@ -71,16 +72,16 @@ User Function BatFullW (_sQueFazer, _sEntrID, _sSaidID)
 
 		// Verifica entradas (Protheus enviando para FullWMS)
 		if _sQueFazer $ 'EA'
-			u_log2 ('info', 'Iniciando processamento de entradas')
+			u_log2 ('info', 'Iniciando processamento de entradas (Protheus -> FullWMS)')
 			_Entradas (_sEntrID)
-			u_log2 ('info', 'Finalizou processamento de entradas')
+			u_log2 ('info', 'Finalizou processamento de entradas (Protheus -> FullWMS)')
 		endif
 
 		// Verifica saidas (FullWMS separando materiais para entregar ao Protheus)
 		if _sQueFazer $ 'SA'
-			u_log2 ('info', 'Iniciando processamento de saidas')
+			u_log2 ('info', 'Iniciando processamento de saidas (FullWMS -> Protheus)')
 			_Saidas (_sSaidID)
-			u_log2 ('info', 'Finalizou processamento de saidas')
+			u_log2 ('info', 'Finalizou processamento de saidas (FullWMS -> Protheus)')
 		endif
 	endif
 
@@ -89,7 +90,7 @@ User Function BatFullW (_sQueFazer, _sEntrID, _sSaidID)
 		U_Semaforo (_nLock)
 	endif
 
-	u_log2 ('info', '-----------Final de execucao-----------')
+	u_log2 ('info', '----------- Final de execucao do ' + procname () + ' -----------')
 return _lRet
 
 
@@ -104,7 +105,7 @@ static function _Entradas (_sEntrID)
 	local _sChaveEx  := ""
 	local _lRet      := .T.
 	local _oEtiq     := NIL
-	local _sAlmOrig  := ''
+//	local _sAlmOrig  := ''
 
 	// Variavel para erros de rotinas automaticas. Deixar tipo 'private'.
  	if type ("_sErroAuto") != 'C'
@@ -158,7 +159,7 @@ static function _Entradas (_sEntrID)
 		endif
 
 		_sEtiq = substr ((_sAliasQ) -> entrada_id, 6, 10)
-		u_log2 ('debug', 'Identifiquei codigo de etiqueta = ' + _sEtiq)
+	//	u_log2 ('debug', 'Identifiquei codigo de etiqueta = ' + _sEtiq)
 		_oEtiq = ClsEtiq ():New (_sEtiq)
 		if empty (_oEtiq:Codigo)
 			u_help ("Etiqueta '" + _sEtiq + "' invalida." + _oEtiq:UltMsg,, .t.)
@@ -183,13 +184,14 @@ static function _Entradas (_sEntrID)
 			endif
 
 			// Verifica se a quantidade apontada com esta etiqueta precisa ser transferida para o almox. 01
-			if _oEtiq:AlmApontOP != '11'
+		//	if _oEtiq:AlmApontOP != '11'
+			if ! _oEtiq:AlmApontOP $ '11/31'
 				u_help ("Apontamento de producao gerado pela etiqueta '" + _oEtiq:Codigo + "' foi feito no almox. '" + _oEtiq:AlmApontOP + "', para o qual nao tenho tratamento aqui.",, .t.)
 				_AtuEntr ((_sAliasQ) -> entrada_id, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
 				(_sAliasQ) -> (dbskip ())
 				loop
-			else
-				_sAlmOrig = _oEtiq:AlmApontOP
+//			else
+//				_sAlmOrig = _oEtiq:AlmApontOP
 			endif
 
 			// Quando for OP de reprocesso, considera o campo D3_PERDA.
@@ -305,7 +307,7 @@ static function _GeraTran (_sProduto, _sLote, _nQuant, _sAlmOrig, _sAlmDest, _sE
 	local _aRegsSD3  := {}
 	private lMsErroAuto := .F.
 
-	u_log2 ('debug', '[' + procname () + '] param recebidos: ' + cvaltochar ( _sProduto) + cvaltochar ( _sLote) + cvaltochar ( _nQuant) + cvaltochar ( _sAlmOrig) + cvaltochar ( _sAlmDest) + cvaltochar ( _sEndOrig) + cvaltochar ( _sEndDest) + cvaltochar ( _sMotivo) + cvaltochar ( _sEtiq) + cvaltochar ( _sChvEx))
+//	u_log2 ('debug', '[' + procname () + '] param recebidos: ' + cvaltochar ( _sProduto) + cvaltochar ( _sLote) + cvaltochar ( _nQuant) + cvaltochar ( _sAlmOrig) + cvaltochar ( _sAlmDest) + cvaltochar ( _sEndOrig) + cvaltochar ( _sEndDest) + cvaltochar ( _sMotivo) + cvaltochar ( _sEtiq) + cvaltochar ( _sChvEx))
 
 	// Se o produto ainda nao existe no almoxarifado destino, cria-o, para nao bloquear a transferencia de estoque.
 	sb2 -> (dbsetorder (1))
@@ -345,8 +347,8 @@ static function _GeraTran (_sProduto, _sLote, _nQuant, _sAlmOrig, _sAlmDest, _sE
 	aadd(_aItens,'')                     // hr digit (vai ser gravado pelo SQL)
 	aadd(_aItens,_sEtiq)                 // D3_VAETIQ Etiqueta
 	aadd(_aItens,_sChvEx)                // Chave externa D3_VACHVEX
-	U_Log2 ('debug', '[' + procname () + ']_aItens:')
-	U_Log2 ('debug', _aItens)
+//	U_Log2 ('debug', '[' + procname () + ']_aItens:')
+//	U_Log2 ('debug', _aItens)
 	aadd(_aAuto261, aclone (_aItens))
 	
 	lMsErroAuto := .F.

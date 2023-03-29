@@ -52,7 +52,9 @@ User Function SD3250I()
 	_AtuReproc ()
 	
 	// Atualiza laudos/ensaios de laboratorio
+//	U_Log2 ('debug', '[' + procname () + ']Vou chamar _AtuLaudo')
 	processa ({|| _AtuLaudo ()})
+//	U_Log2 ('debug', '[' + procname () + ']Retornou de _AtuLaudo')
 
 	U_ML_SRArea (_aAreaAnt)
 Return
