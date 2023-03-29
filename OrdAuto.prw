@@ -19,6 +19,7 @@
 // 09/03/2022 - Robert - Verifica se o campo encontra-se usado pelo modulo atual
 // 11/03/2022 - Robert - Erro de 'campo nao usado' aparecia em tela. Mudado para log de erro (causava panico desnecessario entre os usuarios)
 // 24/08/2022 - Robert - Valida tipo do campo X tipo da variavel recebida.
+// 28/03/2023 - Robert - Criada excecao nos avisos para campos especificos como ATUEMP/AUTBANCO/AUTAGENCIA/AUTCONTA
 //
 
 // --------------------------------------------------------------------------
@@ -58,7 +59,9 @@ user function OrdAuto (_aMatriz)
 			_sOrdem = sx3 -> x3_ordem
 		else
 			_sOrdem = iif (_nLinha == 1, "  ", "ZZ")
-			U_Log2 ('aviso', '[' + procname () + "]Campo '" + _aMatriz [_nLinha, 1] + "' nao encontrado no SX3. Vai ficar ordenado na posicao '" + _sOrdem + "'")
+			if ! upper (alltrim (_aMatriz [_nLinha, 1])) $ "ATUEMP/AUTBANCO/AUTAGENCIA/AUTCONTA"  // Alguns campos chave em determinadas telas.
+				U_Log2 ('aviso', '[' + procname () + "]Campo '" + _aMatriz [_nLinha, 1] + "' nao encontrado no SX3. Vai ficar ordenado na posicao '" + _sOrdem + "'")
+			endif
 		endif
 		aadd (_aMat, {_aMatriz [_nLinha, 1], _aMatriz [_nLinha, 2], _aMatriz [_nLinha, 3], _sOrdem})
 	next

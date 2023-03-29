@@ -1012,7 +1012,7 @@ static function _TrEstGrid ()
 		_sRetGrid = '<RetornoSolicitacao>'
 		_nItem = 1
 		do while type ('_oTrEstq' + cvaltochar (_nItem)) == 'O' //valtype (&('_oTrEstq' + cvaltochar (_nItem))) == 'O'
-			_sRetGrid += '<Item' + strzero (_nItem, 3) + '>'
+			_sRetGrid += '<Itens>'
 			_sRetGrid += '<ItemId>' + &('_oTrEstq' + cvaltochar (_nItem)):IdGrid + '</ItemId>'
 			
 			// Situacao que nao deverah ocorrer.
@@ -1026,22 +1026,22 @@ static function _TrEstGrid ()
 			// Se todos estao ok (deverao ser aceitos), jah posso grava-los.
 			if _lTodosOK
 				if ! &('_oTrEstq' + cvaltochar (_nItem)):Grava ()
-					_sRetGrid += "ERRO:" + &('_oTrEstq' + cvaltochar (_nItem)):UltMsg
+					_sRetGrid += "<Retorno>ERRO:" + &('_oTrEstq' + cvaltochar (_nItem)):UltMsg + "</Retorno>"
 					U_Log2 ('erro', '[' + procname () + ']Erro ao gravar a solicitacao abaixo (item ' + cvaltochar (_nItem) + ' do XML):')
 					u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
 				else
-					_sRetGrid += "OK:Gerada solicitacao " + &('_oTrEstq' + cvaltochar (_nItem)):Docto + '/' + &('_oTrEstq' + cvaltochar (_nItem)):Seq
+					_sRetGrid += "<Retorno>OK:Gerada solicitacao " + &('_oTrEstq' + cvaltochar (_nItem)):Docto + '/' + &('_oTrEstq' + cvaltochar (_nItem)):Seq + "</Retorno>"
 					U_Log2 ('debug', '[' + procname () + ']Gravei solicitacao ' + cvaltochar (_nItem) + ', que ficou assim:')
 					u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
 				endif
 			else  // Vou apenas retornar se os itens seriam ou nao aceitos
 				if ! empty (&('_oTrEstq' + cvaltochar (_nItem)):UltMsg)
-					_sRetGrid += "ERRO:" + &('_oTrEstq' + cvaltochar (_nItem)):UltMsg
+					_sRetGrid += "<Retorno>ERRO:" + &('_oTrEstq' + cvaltochar (_nItem)):UltMsg + "</Retorno>"
 				else
-					_sRetGrid += "OK"
+					_sRetGrid += "<Retorno>OK</Retorno>"
 				endif
 			endif
-			_sRetGrid += '</Item' + strzero (_nItem, 3) + '>'
+			_sRetGrid += '</Itens>'
 			_nItem ++
 		enddo
 		_sRetGrid += '</RetornoSolicitacao>'
