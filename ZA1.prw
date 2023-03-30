@@ -13,14 +13,23 @@
 // Historico de alteracoes:
 // 10/02/2023 - Robert - Funcao ZA1SD5 passa a tratar a possibilidade de ter
 //                       mais de uma etiqueta para o mesmo lote - GLPI 13134.
+// 30/03/2023 - Robert - Novos parametros chamada impressao etiq. avulsa.
 //
 
 // --------------------------------------------------------------------------
-// Recebe chamada feita via botao 'imprime' do MBrowse do ZA1
-user function ZA1ImpAv ()  // Imprime avulsa
-	// Instancia objeto para impressao.
-	_oEtiq := ClsEtiq ():New (ZA1->ZA1_CODIGO)
-	_oEtiq:Imprime ()
+// Recebe chamada feita via botao 'imprime avulsa' do MBrowse do ZA1
+user function ZA1ImpAv () 
+	static _sImpr := '  '  // Static para que lembre da selecao anterior.
+
+	_sImpr = U_Get ("Selecione impressora", 'C', 2, '', 'ZX549', _sImpr, .f., '.t.')
+	U_Log2 ('debug', '[' + procname () + ']_sImpr >>' + cvaltochar (_sImpr) + '<<')
+	if ! empty (_sImpr)
+		// Instancia objeto para impressao.
+		_oEtiq := ClsEtiq ():New (ZA1->ZA1_CODIGO)
+		_oEtiq:Imprime (_sImpr)
+	else
+		u_help ("Impressao cancelada.")
+	endif
 return
 
 
