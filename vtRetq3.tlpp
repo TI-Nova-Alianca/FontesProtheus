@@ -1,0 +1,110 @@
+// Programa:  vtREtq3
+// Autor:     Robert Koch
+// Data:      29/03/2023
+// Descricao: Confirmar retorno de etiquetas envasadas em terceiros (e disponibilizar para guardar no FullWMS)
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Processamento
+// #Descricao         #Confirmar retorno de etiquetas envasadas em terceiros (e disponibilizar para guardar no FullWMS)
+// #PalavasChave      #telnet #terminal #coletor #retorno_etiquetas #envase_terceiros
+// #TabelasPrincipais #ZA1
+// #Modulos           #EST
+
+// Historico de alteracoes:
+//
+
+#include "protheus.ch"
+
+// --------------------------------------------------------------------------
+user function vtREtq3 ()
+	local _lContinua   := .T.
+	private _sBarEtiq  := ''
+	private _sProdEtq  := ''
+	private _oEtiq     := NIL
+	private _nAltTela  := 10
+	private _nLargTela := 39
+	private _sArqLog := 'VtREtq3.log'  // Quero usar o mesmo arquivo de log para todos os usuarios.
+
+	U_Log2 ('debug', '[' + procname () + ']Entrou no programa.')
+
+	do while _lContinua
+		
+		// Limpa variaveis para ler nova etiqueta.
+		_sBarEtiq = space (10)
+		_sProdEtq = space (15)
+		_oEtiq    = NIL
+
+		vtSetSize (_nAltTela, _nLargTela)
+		terCls()
+
+		if _lContinua
+			terSay(0, 0, "Etiq.recebida:")
+		//	U_Log2 ('debug', '[' + procname () + ']Antes de ler etiq')
+			VTSetGet (@_sBarEtiq, "_sBarEtiq", 0, 19, {||_ValEtiq ()})
+			vtRead ()
+			_lContinua = (vtLastkey() != 27)
+			terCBuffer ()
+		endif
+		if _lContinua
+			terSay (6, 0, "Aguarde... gravando dados")
+			if _oEtiq:Recebe3 ()
+				u_help ("Etiq." + _oEtiq:Codigo + " liberada para FullWMS")
+			else
+				u_help ("ERRO." + _oEtiq:UltMsg,, .t.)
+			endif
+		endif
+	enddo
+return
+
+// --------------------------------------------------------------------------
+static function _ValEtiq ()
+	local _lRet      := .T.
+	local _sDescProd := ''
+
+	U_Log2 ('debug', '[' + procname () + ']etiqueta lida: >>' + _sBarEtiq + '<<')
+	
+	if _lRet .and. empty (_sBarEtiq)
+		vtBeep (2)
+		u_help ("Etiqueta nao cadastrada.",, .t.)
+		_sProdEtq = ''
+		_lRet = .F.
+	endif
+
+	// Farei algumas validacoes rapidinhas direto pelo ZA1 antes de instanciar uma etiqueta, para melhoria de performance.
+	if _lRet
+		za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP
+		if ! za1 -> (dbseek (xfilial ("ZA1") + _sBarEtiq, .F.))
+			vtBeep (2)
+			u_help ("Etiqueta nao cadastrada.",, .t.)
+			_sProdEtq = ''
+			_lRet = .F.
+		else
+			_sProdEtq = za1 -> za1_prod
+		endif
+	endif
+	if _lRet
+		_oEtiq := ClsEtiq ():New (_sBarEtiq)
+		if empty (_oEtiq:Codigo)
+			vtBeep (2)
+			u_help ("Etiqueta nao cadastrada.",, .t.)
+			_sProdEtq = ''
+			_lRet = .F.
+		endif
+	endif
+	if _lRet
+		sb1 -> (dbsetorder (1))
+		if ! sb1 -> (dbseek (xfilial ("SB1") + _oEtiq:Produto, .F.))
+			u_help ("Produto " + _oEtiq:Produto + " nao cadastrado!",, .t.)
+			_lRet = .F.
+		else
+			_sDescProd = alltrim (sb1 -> b1_cod) + ' - ' + alltrim (sb1 -> b1_desc)
+		//	terSay (2, 0, substr (_sDescProd, 1, _nLargTela))
+		//	terSay (3, 0, substr (_sDescProd, _nLargTela + 1, _nLargTela))
+		//	terSay (5, 0, 'Lote: ' + _oEtiq:LoteProduto)
+			_lRet = vtYesNo (_sDescProd + ' - lote ' + _oEtiq:LoteProduto + '. Confirma?')
+			if ! _lRet
+				U_Log2 ('debug', '[' + procname () + ']Usuario nao confirmou a etiqueta.')
+			endif
+		endif
+	endif
+return _lRet

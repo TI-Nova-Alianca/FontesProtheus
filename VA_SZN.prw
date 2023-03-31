@@ -30,6 +30,7 @@
 //                     - Incluidas tags para catalogo de fontes.
 // 11/03/2022 - Robert - Consulta de logs de 'CARGASAFRA' passa a validar novos campos ZN_SAFRA e ZN_CARGSAF.
 // 09/03/2023 - Robert - Criada opcao de consulta por ChaveNFe
+// 31/03/2023 - Robert - Consulta NFENTRADA passa a tratar tambem a cjave NFe.
 //
 
 #include "rwmake.ch"
@@ -173,10 +174,15 @@ static function _LeDados (_sOQue, _sChave1, _sChave2, _sChave3, _sChave4, _sChav
 			_sQuery += "   and ZN_NFS     = '" + _sChave1 + "'"
 			_sQuery += "   and ZN_SERIES  = '" + _sChave2 + "'"
 		case upper (_sOQue) == "NFENTRADA"
-			_sQuery += "   and ZN_NFE     = '" + _sChave1 + "'"
-			_sQuery += "   and ZN_SERIEE  = '" + _sChave2 + "'"
-			_sQuery += "   and ZN_FORNECE = '" + _sChave3 + "'"
-			_sQuery += "   and ZN_LOJAFOR = '" + _sChave4 + "'"
+			_sQuery += "   and ("
+			_sQuery += "       (ZN_NFE     = '" + _sChave1 + "'"
+			_sQuery += "    and ZN_SERIEE  = '" + _sChave2 + "'"
+			_sQuery += "    and ZN_FORNECE = '" + _sChave3 + "'"
+			_sQuery += "    and ZN_LOJAFOR = '" + _sChave4 + "')"
+			if ! empty (_sChave5)
+				_sQuery += " or ZN_CHVNFE  = '" + _sChave5 + "'"
+			endif
+			_sQuery += ")"
 		case upper (_sOQue) == "OP"
 			_sQuery += "   and ZN_OP      = '" + _sChave5 + "'"
 		case upper (_sOQue) == "CADASTROVITICOLA"
