@@ -75,7 +75,7 @@
 // 07/10/2022 - Robert  - Envia copia dos avisos de erro para grupo 144 (coord.contabil)
 // 07/10/2022 - Claudia - Criado LPAD 640 014 - devolução de rapel. GLPI: 11924
 // 11/11/2022 - Claudia - Ajustado LPAD 530 001. GLPI: 12794
-// 22/11/2022 - Claudia - Ajuste em LPAD 520 002/ 527 002. GLPI: 12812
+// 31/03/2023 - Claudia - Ajuste em LPAD 520 002/ 527 002. GLPI: 12812
 //
 // -----------------------------------------------------------------------------------------------------------------
 // Informar numero e sequencia do lancamento padrao, seguido do campo a ser retornado.
