@@ -15,13 +15,14 @@
 // 08/06/2021 - Cláudia - Incluido o botao para alterar a natureza. GLPI: 10083
 // 02/08/2022 - Robert  - Incluída chamada para manifesto da TRS (GLPI 12418)
 //                      - Incluída consulta de enderecamentos (GLPI 12421)
+// 31/03/2023 - Robert  - Novos parametros chamada U_VA_SZNC()
 //
 
 // ---------------------------------------------------------------------------------
 user function Mta103Mnu ()
 	local _aRotAdic := {}
 
-	aadd (_aRotAdic, {"Eventos Alianca" 	, "U_VA_SZNC  ('NFENTRADA', sf1 -> f1_doc, sf1 -> f1_serie, sf1 -> f1_fornece, sf1 -> f1_loja)", 0, 6, 0, NIL})
+	aadd (_aRotAdic, {"Eventos Alianca" 	, "U_VA_SZNC  ('NFENTRADA', sf1 -> f1_doc, sf1 -> f1_serie, sf1 -> f1_fornece, sf1 -> f1_loja, sf1 -> f1_chvnfe)", 0, 6, 0, NIL})
 	aadd (_aRotAdic, {"Eventos NF-e(SEFAZ)"	, "U_EvtNFe   ('E', sf1 -> f1_doc, sf1 -> f1_serie, sf1 -> f1_fornece, sf1 -> f1_loja)", 0, 6, 0, NIL})
 	aadd (_aRotAdic, {"Dados adicionais"	, "U_NFDAdicC ('E', sf1 -> f1_doc, sf1 -> f1_serie, sf1 -> f1_fornece, sf1 -> f1_loja)", 0, 6, 0, NIL})
 	aadd (_aRotAdic, {"NF Import.FLAG"  	, "U_NFImpFlag( sf1 -> f1_doc, sf1 -> f1_serie, sf1 -> f1_fornece, sf1 -> f1_loja)", 0, 6, 0, NIL})
