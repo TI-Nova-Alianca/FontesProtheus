@@ -1,12 +1,12 @@
-// Programa...: BatReserv
+// Programa...: BatREnd
 // Autor......: Cláudia Lionço
 // Data.......: 27/03/2023
-// Descricao..: Batch responsável por criar reservas indisponiveis e/ou lotes bloqueados
+// Descricao..: Batch responsável por criar endereços indisponiveis em reservas
 // Link.......: https://tdn.totvs.com/display/public/PROT/A430Reserv
 //
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Batch
-// #Descricao         #Batch responsável por criar reservas indisponiveis e/ou lotes bloqueados
+// #Descricao         #Batch responsável por criar endereços indisponiveis em reservas
 // #PalavasChave      #batch #reservas #rastro #lote #rastreabilidade #fullsoft
 // #TabelasPrincipais #V_ALIANCA_ESTOQUES
 // #Modulos           #EST
@@ -18,7 +18,7 @@
 #include 'parmtype.ch'
 #include 'totvs.ch'
 
-User Function BatReserv()
+User Function BatREnd()
     Local _sLinkSrv  := ""
 
     If "TESTE" $ upper(GetEnvServer())
@@ -27,17 +27,14 @@ User Function BatReserv()
         _sLinkSrv  := "LKSRV_FULLWMS_LOGISTICA"
     EndIf
 
-    
-    //_Incluir(_sLinkSrv) // Verifica full e inclui registros com endereço bloqueado no full
-    _Excluir(_sLinkSrv) // Verifica full e exclui registros com endereço liberado no full
-    //_Alterar(_sLinkSrv) // Verifica se as quantidades dos rgistros full e protheus sao iguais. 
-                        // Se forem diferentes, exclui o registro de reserva e inclui novo
+    _IncEnderecoBloq(_sLinkSrv)
+    _ExcEndDesbloq(_sLinkSrv)
 
 Return
 //
 // --------------------------------------------------------------------------
 // Inclui a reserva
-Static Function _Incluir(_sLinkSrv)
+Static Function _IncEnderecoBloq(_sLinkSrv)
     local _oSQL      := NIL
     Local _aDados    := {}
     Local _x         := ""
@@ -79,7 +76,7 @@ Static Function _Incluir(_sLinkSrv)
     _oSQL:_sQuery += "    ,NUM_RESERVA "
     _oSQL:_sQuery += " FROM FULLW "
     _oSQL:_sQuery += " WHERE C0_VATIPO IS NULL "
-    //_oSQL:_sQuery += " AND POSICAO LIKE 'A%' "
+    _oSQL:_sQuery += " AND POSICAO LIKE 'H%' "
     _oSQL:_sQuery += " ORDER BY ITEM_COD_ITEM_LOG, LOTE, POSICAO "
     u_log(_oSQL:_sQuery)
     _aDados := aclone (_oSQL:Qry2Array (.F., .F.))
@@ -87,7 +84,7 @@ Static Function _Incluir(_sLinkSrv)
     For _x:=1 to Len(_aDados)
         
         _sNumero := 'E' + PADL(alltrim(str(_nNumero)), 5, '0')
-        lReservOk := _IncluiReserva(_aDados, _x, _sNumero)
+        lReservOk := _IncluiReserva(_aDados, _x, _sNumero, 'E')
 
         If lReservOk
             _nNumero += 1
@@ -97,7 +94,7 @@ Return
 //
 // --------------------------------------------------------------------------
 // Inclui a reserva
-Static Function _IncluiReserva(_aDados, _x, _sNumero)
+Static Function _IncluiReserva(_aDados, _x, _sNumero, _sTipo)
     Local aOperacao := {}
     Local lReservOk := .T.
     Local cNumero   := _sNumero                             // C0_NUM
@@ -139,7 +136,7 @@ Static Function _IncluiReserva(_aDados, _x, _sNumero)
                     GetSx3Cache("C0_VATIPO", 'X3_CONTEXT'   ),;
                     GetSx3Cache("C0_VATIPO", 'X3_CBOX'      ),;
                     GetSx3Cache("C0_VATIPO", 'X3_RELACAO'   ) })
-    aadd(aCols, 'E')     
+    aadd(aCols, _sTipo)     
     aOperacao := {  nOpc            ,; //[1] -> [Operacao : 1 Inclui,2 Altera,3 Exclui]
                     "VD"            ,; //[2] -> [Tipo da Reserva]
                     ""              ,; //[3] -> [Documento que originou a Reserva]
@@ -149,32 +146,37 @@ Static Function _IncluiReserva(_aDados, _x, _sNumero)
     lReservOk := a430Reserv(aOperacao,cNumero,cProduto,cLocal,nQuant,aLote,aHeader,aCols)
 
     If lReservOk
-        u_log("Reserva cadastrada com Sucesso!")
+        u_log("Reserva "+ cNumero +" cadastrada com Sucesso!")
         lReservOk := .T.
     Else
-        //MOSTRAERRO()
-        u_log("Problemas ao cadastrar reserva")
+        MOSTRAERRO()
+        u_log("Problemas ao cadastrar reserva " + cNumero)
         lReservOk := .F.
     EndIf
 Return lReservOk
 //
 // --------------------------------------------------------------------------
 // Exclui reservas
-Static Function _Excluir(_sLinkSrv)
+Static Function _ExcEndDesbloq(_sLinkSrv)
     local _oSQL      := NIL
     Local _aDados    := {}
     Local _x         := ""
 
     _oSQL := ClsSQL ():New ()
     _oSQL:_sQuery := " SELECT "
-    _oSQL:_sQuery += " 	     C0_NUM "
-    _oSQL:_sQuery += " 	    ,C0_PRODUTO "
-    _oSQL:_sQuery += " 	    ,C0_LOCAL "
-    _oSQL:_sQuery += " 	    ,C0_QUANT "
-    _oSQL:_sQuery += " 	    ,C0_LOTECTL "
-    _oSQL:_sQuery += " FROM '" + xFilial("SC0") + "'"
-    _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
-    _oSQL:_sQuery += " AND C0_NUM LIKE 'E%' "
+    _oSQL:_sQuery += " 	   C0_NUM "
+    _oSQL:_sQuery += "    ,C0_PRODUTO "
+    _oSQL:_sQuery += "    ,C0_LOCAL "
+    _oSQL:_sQuery += "    ,C0_QUANT "
+    _oSQL:_sQuery += "    ,C0_LOTECTL "
+    _oSQL:_sQuery += " FROM OPENQUERY("+ _sLinkSrv +", 'SELECT * FROM V_ALIANCA_ESTOQUES WHERE SITUACAO_RUA NOT LIKE ''9%''')"
+    _oSQL:_sQuery += " INNER JOIN SC0010 "
+    _oSQL:_sQuery += "	 ON D_E_L_E_T_ = '' "
+    _oSQL:_sQuery += "		 AND ITEM_COD_ITEM_LOG = C0_PRODUTO "
+    _oSQL:_sQuery += "		 AND LOTE              = C0_LOTECTL "
+    _oSQL:_sQuery += "		 AND POSICAO           = C0_VAPOSI "
+    _oSQL:_sQuery += "		 AND C0_LOCAL          = '01' "
+    _oSQL:_sQuery += "		 AND C0_NUM LIKE 'E%' "
     _aDados := aclone (_oSQL:Qry2Array (.F., .F.))
 
     For _x:=1 to Len(_aDados)
@@ -216,9 +218,10 @@ Static Function _ExcluiReserva(_aDados, _x)
         lReservOk := a430Reserv(aOperacao,cNumero,cProduto,cLocal,nQuant,aLote,aHeader,aCols)
 
         If lReservOk
-            u_log('Reserva excluida com Sucesso!')
+            u_log('Reserva '+ cNumero +' excluida com Sucesso!')
         Else
-            u_log('Problemas ao excluir reserva')
+            //MOSTRAERRO()
+            u_log('Problemas ao excluir reserva ' + cNumero)
         EndIf
     EndIf
 Return
