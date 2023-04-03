@@ -59,6 +59,7 @@
 // 19/08/2021 - Robert  - (compilado em 25/08) Passa a validar tamanho da variável cNumTit para saber se precisa inserir o prefixo (GLPI 10697).
 // 02/12/2021 - Claudia - Incluido novo tipo Juros para realizar transferencia entre filiais. GLPI: 11149.
 // 09/08/2022 - Claudia - Incluida gravação de eventos de juros indevidos. GLPI: 12454
+// 03/04/2023 - claudia - Incluido variavel para banco Itau _aValores [14] opção 23, 35, 33, 12.  - GLPI 13311. 
 //
 // -------------------------------------------------------------------------------------------------------------------------------------------
 User Function F200VAR()
@@ -453,7 +454,19 @@ User Function F200VAR()
 		endif
 		
 		// PARA O ITAU - zera o valor de juros quando ocorrencia de confirmação de entrada
+		
 		if cBanco == "341"
+			if (alltrim (_aValores [14]) == "23" .or. alltrim (_aValores [14]) == "35" .or. alltrim (_aValores [14]) == "12" .or. alltrim (_aValores [14]) == "33")
+				if  _aValores [10] > 0
+					nDespes := nDespes + _aValores [10]
+				endif
+				if  _aValores [11] > 0
+					nDespes := nDespes + _aValores [11]
+				endif
+				if  _aValores [12] > 0
+					nDespes := nDespes + _aValores [12]
+				endif
+			endif    
 		
 			if alltrim (_aValores [14]) == "02" .and. nJuros > 0
 				nJuros = 0
