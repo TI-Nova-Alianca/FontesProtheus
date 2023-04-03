@@ -22,6 +22,7 @@
 // 07/03/2022 - Robert - Acumula em memoria o tamanho estimado do arquivo, para evitar repetidos acessos a disco.
 // 17/04/2022 - Robert - Fazia chamada recursiva indevidamente quando estava na hora de renomear o arquivo de log.
 // 24/10/2022 - Robert - Criada funcao MudaLog().
+// 03/04/2023 - Robert - Limite de tamanho de texto aumentado de 20000 para 40000 caracteres.
 //
 
 // --------------------------------------------------------------------------
@@ -136,7 +137,7 @@ static function _DumpTXT (_sDadoTXT)
 	local _aRet     := {}
 	local _nChar    := 1
 	local _lCortei  := .F.
-	local _nLimChar := 20000
+	local _nLimChar := 40000  // 20000
 
 	// Se for uma string muito grande, corta-a.
 	if len (_sDadoTXT) > _nLimChar
