@@ -1,12 +1,12 @@
-// Programa...: BatREnd
+// Programa...: BatReserva
 // Autor......: Cláudia Lionço
 // Data.......: 27/03/2023
-// Descricao..: Batch responsável por criar endereços indisponiveis em reservas
+// Descricao..: Batch de manunteção de reservas Protheus de endereços/lotes/reservas Fullsoft
 // Link.......: https://tdn.totvs.com/display/public/PROT/A430Reserv
 //
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Batch
-// #Descricao         #Batch responsável por criar endereços indisponiveis em reservas
+// #Descricao         #Batch de manunteção de reservas Protheus de endereços/lotes/reservas Fullsoft
 // #PalavasChave      #batch #reservas #rastro #lote #rastreabilidade #fullsoft
 // #TabelasPrincipais #V_ALIANCA_ESTOQUES
 // #Modulos           #EST
@@ -18,7 +18,7 @@
 #include 'parmtype.ch'
 #include 'totvs.ch'
 
-User Function BatREnd()
+User Function BatReserva()
     Local _sLinkSrv  := ""
 
     If "TESTE" $ upper(GetEnvServer())
@@ -76,7 +76,7 @@ Static Function _IncEnderecoBloq(_sLinkSrv)
     _oSQL:_sQuery += "    ,NUM_RESERVA "
     _oSQL:_sQuery += " FROM FULLW "
     _oSQL:_sQuery += " WHERE C0_VATIPO IS NULL "
-    _oSQL:_sQuery += " AND POSICAO LIKE 'H%' "
+    //_oSQL:_sQuery += " AND POSICAO LIKE 'H%' "
     _oSQL:_sQuery += " ORDER BY ITEM_COD_ITEM_LOG, LOTE, POSICAO "
     u_log(_oSQL:_sQuery)
     _aDados := aclone (_oSQL:Qry2Array (.F., .F.))
@@ -146,12 +146,28 @@ Static Function _IncluiReserva(_aDados, _x, _sNumero, _sTipo)
     lReservOk := a430Reserv(aOperacao,cNumero,cProduto,cLocal,nQuant,aLote,aHeader,aCols)
 
     If lReservOk
-        u_log("Reserva "+ cNumero +" cadastrada com Sucesso!")
+        _sMsg := "Reserva "+ cNumero +" cadastrada com Sucesso!"
+        u_log(_sMsg)
         lReservOk := .T.
+
+        _oEvento := ClsEvent():New ()
+        _oEvento:Alias     = 'SC0'
+        _oEvento:Texto     = _sMsg
+        _oEvento:CodEven   = "SC0001"
+        _oEvento:Produto   = cProduto
+
+    _oEvento:Grava()
+
     Else
-        MOSTRAERRO()
-        u_log("Problemas ao cadastrar reserva " + cNumero)
+        _sMsg := "Problemas ao cadastrar reserva " + cNumero
+        u_log(_sMsg)
         lReservOk := .F.
+
+        _oEvento := ClsEvent():New ()
+        _oEvento:Alias     = 'SC0'
+        _oEvento:Texto     = _sMsg
+        _oEvento:CodEven   = "SC0001"
+        _oEvento:Produto   = cProduto
     EndIf
 Return lReservOk
 //
@@ -218,10 +234,27 @@ Static Function _ExcluiReserva(_aDados, _x)
         lReservOk := a430Reserv(aOperacao,cNumero,cProduto,cLocal,nQuant,aLote,aHeader,aCols)
 
         If lReservOk
-            u_log('Reserva '+ cNumero +' excluida com Sucesso!')
+            _sMsg := "Reserva "+ cNumero +" excluida com Sucesso!"
+            u_log(_sMsg)
+            lReservOk := .T.
+
+            _oEvento := ClsEvent():New ()
+            _oEvento:Alias     = 'SC0'
+            _oEvento:Texto     = _sMsg
+            _oEvento:CodEven   = "SC0001"
+            _oEvento:Produto   = cProduto
+            
         Else
             //MOSTRAERRO()
-            u_log('Problemas ao excluir reserva ' + cNumero)
+            _sMsg := "Problemas ao excluir reserva " + cNumero
+            u_log(_sMsg)
+            lReservOk := .F.
+
+            _oEvento := ClsEvent():New ()
+            _oEvento:Alias     = 'SC0'
+            _oEvento:Texto     = _sMsg
+            _oEvento:CodEven   = "SC0001"
+            _oEvento:Produto   = cProduto
         EndIf
     EndIf
 Return
