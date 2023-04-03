@@ -117,7 +117,9 @@
 // 13/03/2023 - Robert  - Implementada acao EstruturaComCustos.
 // 24/03/2023 - Claudia - Inclusão da gravação da solicitação de manutenção. GLPI: 12910
 // 27/03/2023 - Claudia - Incluida a ação 'InsereSolicManut'. GLPI: 12910
+// 03/04/2023 - Robert  - Novos parametros chamada ClsAssoc:FechSafra().
 //
+
 // ---------------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
 #INCLUDE "PROTHEUS.CH"
@@ -2574,8 +2576,8 @@ static function _AsFecSaf ()
 		endif
 	endif
 	if empty (_sErroWS)
-		//                         _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC
-		_sRet = _oAssoc:FechSafra (_sSafra, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,        .t.,      .t.,      .t.)
+		//                         _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC, _lFSFunrur
+		_sRet = _oAssoc:FechSafra (_sSafra, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,        .t.,      .t.,      .t.,        .t.)
 		U_Log2 ('debug', '[' + procname () + ']' + _sRet)
 		if empty (_sRet)
 			_SomaErro ("Retorno invalido metodo FechSafra " + _oAssoc:UltMsg)
