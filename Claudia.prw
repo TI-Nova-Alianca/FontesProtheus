@@ -10,7 +10,7 @@ User Function claudia ()
 	//u_help("Nada para executar")
 
 	u_help("reservas")
-	U_BatREnd()
+	U_BatReserva()
 
 
 Return
