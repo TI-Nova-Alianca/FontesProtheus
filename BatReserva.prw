@@ -27,14 +27,16 @@ User Function BatReserva()
         _sLinkSrv  := "LKSRV_FULLWMS_LOGISTICA"
     EndIf
 
-    _IncEnderecoBloq(_sLinkSrv)
-    _ExcEndDesbloq(_sLinkSrv)
+    //_IncEndereco(_sLinkSrv)
+    //_ExcEndereco(_sLinkSrv)
+    _BloqLotes(_sLinkSrv)
+    //_ExcLotes(_sLinkSrv)
 
 Return
 //
 // --------------------------------------------------------------------------
-// Inclui a reserva
-Static Function _IncEnderecoBloq(_sLinkSrv)
+// Inclui a reserva de endereço
+Static Function _IncEndereco(_sLinkSrv)
     local _oSQL      := NIL
     Local _aDados    := {}
     Local _x         := ""
@@ -155,8 +157,7 @@ Static Function _IncluiReserva(_aDados, _x, _sNumero, _sTipo)
         _oEvento:Texto     = _sMsg
         _oEvento:CodEven   = "SC0001"
         _oEvento:Produto   = cProduto
-
-    _oEvento:Grava()
+        _oEvento:Grava()
 
     Else
         _sMsg := "Problemas ao cadastrar reserva " + cNumero
@@ -168,12 +169,13 @@ Static Function _IncluiReserva(_aDados, _x, _sNumero, _sTipo)
         _oEvento:Texto     = _sMsg
         _oEvento:CodEven   = "SC0001"
         _oEvento:Produto   = cProduto
+        _oEvento:Grava()
     EndIf
 Return lReservOk
 //
 // --------------------------------------------------------------------------
 // Exclui reservas
-Static Function _ExcEndDesbloq(_sLinkSrv)
+Static Function _ExcEndereco(_sLinkSrv)
     local _oSQL      := NIL
     Local _aDados    := {}
     Local _x         := ""
@@ -243,6 +245,7 @@ Static Function _ExcluiReserva(_aDados, _x)
             _oEvento:Texto     = _sMsg
             _oEvento:CodEven   = "SC0001"
             _oEvento:Produto   = cProduto
+            _oEvento:Grava()
             
         Else
             //MOSTRAERRO()
@@ -255,6 +258,102 @@ Static Function _ExcluiReserva(_aDados, _x)
             _oEvento:Texto     = _sMsg
             _oEvento:CodEven   = "SC0001"
             _oEvento:Produto   = cProduto
+            _oEvento:Grava()
         EndIf
     EndIf
+Return
+//
+// --------------------------------------------------------------------------
+// Realiza bloqueio de lotes
+Static Function _BloqLotes(_sLinkSrv)
+    local _oSQL      := NIL
+    Local _aDados    := {}
+    Local _x         := ""
+
+    _oSQL := ClsSQL ():New ()
+    _oSQL:_sQuery := " SELECT MAX(C0_NUM) FROM SDD010 "
+    _oSQL:_sQuery += " WHERE DD_FILIAL = '" + xFilial("SDD") + "'"
+    _oSQL:_sQuery += " AND DD_DOC LIKE 'F%' "
+    _aNumero := aclone (_oSQL:Qry2Array (.F., .F.))
+
+    If Len(_aNumero) > 0
+        For _x:=1 to Len(_aNumero)
+            _nNumero := val(SubStr(_aNumero[_x, 1],2,8))
+            _nNumero += 1
+        Next
+    else
+        _nNumero := 1
+    EndIf
+
+    _oSQL := ClsSQL ():New ()
+    _oSQL:_sQuery := " WITH FULLW "
+    _oSQL:_sQuery += " AS "
+    _oSQL:_sQuery += " (SELECT "
+    _oSQL:_sQuery += " 		* "
+    _oSQL:_sQuery += " 	FROM OPENQUERY("+ _sLinkSrv +", 'SELECT * FROM V_ALIANCA_ESTOQUES WHERE SITUACAO_LOTE LIKE ''B%''')"
+    _oSQL:_sQuery += " 	LEFT JOIN " + RetSQLName ("SC0") 
+	_oSQL:_sQuery += " 	ON D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " 		AND ITEM_COD_ITEM_LOG = C0_PRODUTO"
+	_oSQL:_sQuery += " 		AND LOTE              = C0_LOTECTL"
+	_oSQL:_sQuery += " 		AND POSICAO           = C0_VAPOSI"
+	_oSQL:_sQuery += " 		AND C0_LOCAL          = '01'"
+    _oSQL:_sQuery += " 	) "
+    _oSQL:_sQuery += " SELECT "
+    _oSQL:_sQuery += " 	   ITEM_COD_ITEM_LOG "
+    _oSQL:_sQuery += "    ,LOTE "
+    _oSQL:_sQuery += "    ,POSICAO "
+    _oSQL:_sQuery += "    ,QTD "
+    _oSQL:_sQuery += "    ,C0_VATIPO "
+    _oSQL:_sQuery += "    ,NUM_RESERVA "
+    _oSQL:_sQuery += " FROM FULLW "
+    _oSQL:_sQuery += " WHERE C0_VATIPO IS NULL "
+    _oSQL:_sQuery += " ORDER BY ITEM_COD_ITEM_LOG, LOTE, POSICAO "
+    u_log(_oSQL:_sQuery)
+    _aDados := aclone (_oSQL:Qry2Array (.F., .F.))
+
+    For _x:=1 to Len(_aDados)
+        _sNumero := 'F' + PADL(alltrim(str(_nNumero)), 8, '0')      
+        _BloqueiaLote(_aDados, _x, _sNumero)
+    Next
+Return
+//
+// --------------------------------------------------------------------------
+// Realiza bloqueio de lote
+Static Function _BloqueiaLote(_aDados, _x, _sNumero)
+    Local aVetor := {}  
+    Local _sProd := PADR(alltrim(_aDados[_x, 1]),15,' ')       
+    
+    lMsErroAuto  := .F.          
+
+	aVetor :=  {{"DD_DOC"		, _sNumero                              ,NIL},;
+			    {"DD_PRODUTO" 	, _sProd                                ,NIL},;
+			    {"DD_LOCAL" 	,"01"				                    ,NIL},;    
+			    {"DD_LOTECTL"	,_aDados[_x, 2]		                    ,NIL},;    
+			    {"DD_QUANT"		,_aDados[_x, 4]				            ,NIL},;
+			    {"DD_MOTIVO"	,"ND"				                    ,NIL}}                                               	
+			
+	MSExecAuto({|x, y| mata275(x, y)},aVetor, 3)       
+			
+    If lMsErroAuto    
+        Mostraerro()
+        _sMsg := "Problemas ao bloquear lote! Nº " + _sNumero + " Produto " + _sProd + " Lote " + _aDados[_x, 2]
+        u_log(_sMsg)
+
+        _oEvento := ClsEvent():New ()
+        _oEvento:Alias     = 'SDD'
+        _oEvento:Texto     = _sMsg
+        _oEvento:CodEven   = "SDD001"
+        _oEvento:Produto   = _sProd
+        _oEvento:Grava()
+    else    
+        _sMsg := "Lote Bloqueado! Nº " + _sNumero + " Produto " + _sProd + " Lote " + _aDados[_x, 2]
+        u_log(_sMsg)
+
+        _oEvento := ClsEvent():New ()
+        _oEvento:Alias     = 'SDD'
+        _oEvento:Texto     = _sMsg
+        _oEvento:CodEven   = "SDD001"
+        _oEvento:Produto   = _sProd
+        _oEvento:Grava()
+    Endif
 Return
