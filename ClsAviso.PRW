@@ -18,6 +18,7 @@
 // 21/09/2022 - Robert - Criado atributo :InfoSessao
 // 02/10/2022 - Robert - Removido atributo :DiasDeVida.
 // 08/11/2022 - Robert - Nao envia aviso para NaWeb quando estiver em ambiente de teste.
+// 05/04/2023 - Robert - Nao grava mais log ao enviar aviso para NaWeb.
 //
 
 #include "protheus.ch"
@@ -213,7 +214,7 @@ METHOD EnviaNAWeb () Class ClsAviso
 	_sXMLNotif +=    '</SdtNotificacoesItem>'
 	_sXMLNotif += '</SdtNotificacoes>'
 
-	U_Log2 ('debug', '[' + procname () + ']' + _sXMLNotif)
+//	U_Log2 ('debug', '[' + procname () + ']' + _sXMLNotif)
 	
 	_oWSNaWeb := WSPrcNotificacoesWS():New()
 	_oWSNaWeb:cEntrada := _sXMLNotif

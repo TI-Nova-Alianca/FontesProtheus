@@ -12,6 +12,8 @@
 // #Modulos           #COM #EST
 
 // Historico de alteracoes:
+// 05/04/2023 - Robert - Grava evento referenciando a chave da nota.
+//                     - Limpeza e envio de mensagem passa a ser dentro de controle de transacao.
 //
 
 // ----------------------------------------------------------------
@@ -23,11 +25,12 @@ user function BatZBE ()
 	local _oAviso    := NIL
 	local _oChvElim  := ClsAUtil():New()
 	local _aColsMsg  := {}
+	local _oEvento   := NIL
 
 	if _lContinua
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "SELECT R_E_C_N_O_"
+		_oSQL:_sQuery += "SELECT top 100 R_E_C_N_O_"  // Nao muitas para nao gerar msg de aviso muito grande
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZBE") + " ZBE"
 		_oSQL:_sQuery += " WHERE ZBE.D_E_L_E_T_  = ''"
 		// quero TODAS as filiais. _oSQL:_sQuery +=   " AND ZBE.ZBE_FILIAL  = '" + xfilial ("ZBE") + "'"
@@ -38,6 +41,8 @@ user function BatZBE ()
 		_oSQL:_sQuery +=                  " AND F1_CHVNFE  = ZBE_CHVNFE)"
 		_oSQL:Log ('[' + procname () + ']')
 		_aRegZBE = aclone (_oSQL:Qry2Array (.f., .f.))
+		
+		begin transaction
 		for _nRegZBE = 1 to len (_aRegZBE)
 			zbe -> (dbgoto (_aRegZBE [_nRegZBE, 1]))
 			U_Log2 ('info', '[' + procname () + ']Eliminando chave ' + zbe -> zbe_chvnfe + ' por que jah foi gerada no SF1 por outra rotina.')
@@ -45,6 +50,14 @@ user function BatZBE ()
 			reclock ("ZBE", .F.)
 			zbe -> (dbdelete ())
 			msunlock ()
+
+			_oEvento := ClsEvent():new ()
+			_oEvento:CodEven    = 'ZBE002'
+			_oEvento:Texto      = 'Eliminando chave da tabela ZBE por que jah foi gerada no SF1 por outra rotina.'
+			_oEvento:Recno      = ZBE -> (recno ())
+			_oEvento:Alias      = 'ZBE'
+			_oEvento:ChaveNFe   = zbe -> zbe_chvnfe
+			_oEvento:Grava ()
 		next
 
 		// Prepara mensagem bonitinha (HTML) de notificacao aos usuarios.
@@ -74,6 +87,7 @@ user function BatZBE ()
 		endif
 
 		_oBatch:Mensagens += 'Eliminados ' + cvaltochar (len (_aRegZBE)) + ' registros desnecessarios da tabela ZBE'
+		end transaction
 	endif
 
 	if _lContinua

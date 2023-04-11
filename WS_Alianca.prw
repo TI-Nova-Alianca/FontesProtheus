@@ -118,6 +118,7 @@
 // 24/03/2023 - Claudia - Inclusão da gravação da solicitação de manutenção. GLPI: 12910
 // 27/03/2023 - Claudia - Incluida a ação 'InsereSolicManut'. GLPI: 12910
 // 03/04/2023 - Robert  - Novos parametros chamada ClsAssoc:FechSafra().
+// 06/04/2023 - Robert  - Funcao _ImpEtiqZAG() nao retornava mensagens do objeto em caso de erro de impressao.
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -2748,8 +2749,9 @@ static function _ImpEtiqZAG ()
 				if _oEtiq:Codigo != _oTrEstq:Etiqueta
 					_SomaErro ("Numero de etiqueta invalido.")
 				else
+				//	U_Log2 ('debug', '[' + procname () + ']_sCodImpr = ' + _sCodImpr)
 					if ! _oEtiq:Imprime (_sCodImpr)
-						_SomaErro ('Erro na rotina de impressao')
+						_SomaErro ('Erro na impressao.' + _oEtiq:UltMsg)
 					else
 						// Como tive casos de falta de algum cadastro, o pessoal
 						// apenas atualizou cadastro e tentou reimprimir a
