@@ -33,7 +33,7 @@ User Function BatReserva()
     //_BloqLotes(_sLinkSrv)
     //_LibLotes(_sLinkSrv)
     //_IncReserva(_sLinkSrv)
-    _ExcReserva(_sLinkSrv)
+    //_ExcReserva(_sLinkSrv)
 
 Return
 //
