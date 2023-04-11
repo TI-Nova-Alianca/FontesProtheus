@@ -76,7 +76,9 @@
 // 07/10/2022 - Claudia - Criado LPAD 640 014 - devolução de rapel. GLPI: 11924
 // 11/11/2022 - Claudia - Ajustado LPAD 530 001. GLPI: 12794
 // 31/03/2023 - Claudia - Ajuste em LPAD 520 002/ 527 002. GLPI: 12812
+// 10/04/2023 - Robert  - Acrescentado tratamento para CC *1101 e *1102 no LPAD 666005.
 //
+
 // -----------------------------------------------------------------------------------------------------------------
 // Informar numero e sequencia do lancamento padrao, seguido do campo a ser retornado.
 User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
@@ -563,6 +565,8 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 		do case
 		case _sQueRet = "CRED"
 			do case
+			case substr (SD3->D3_COD, 4, 6) == cFilAnt + '1101' ; _xRet = "701011001032"
+			case substr (SD3->D3_COD, 4, 6) == cFilAnt + '1102' ; _xRet = "701011001033"
 			case substr (SD3->D3_COD, 4, 6) == cFilAnt + '1301' ; _xRet = "701011001036"
 			case substr (SD3->D3_COD, 4, 6) == cFilAnt + '1302' ; _xRet = "701011001037"
 			case substr (SD3->D3_COD, 4, 6) == cFilAnt + '1303' ; _xRet = "701011001045"
