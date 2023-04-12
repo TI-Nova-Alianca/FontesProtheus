@@ -47,6 +47,9 @@
 // 27/03/2023 - Robert - Implementado metodo Recebe3() e tratamento campo ZA1_FULLW
 // 28/03/2023 - Robert - Metodo Imprime() passa a usar metodo CmdImp() e nao mais a funcao U_ImpZA1().
 //                     - Criado metodo SomaMsg().
+// 06/04/2023 - Robert - Melhoradas mensagens de erro na geracao de comandos de impressao.
+// 10/04/2023 - Robert - Implementado metodo PodeIncl().
+// 12/04/2023 - Robert - Passa a controlar semaforo para gravacao.
 //
 
 #Include "Protheus.ch"
@@ -119,6 +122,7 @@ CLASS ClsEtiq
 	public METHOD NovaPorSD5 ()
 	public METHOD PodeEnvFul ()
 	public METHOD PodeExcluir ()
+	public METHOD PodeIncl ()
 	public METHOD PodeApont ()
 	public METHOD Recebe3 ()
 	public METHOD SomaMsg ()  // Adiciona mensagem ao inicio da string ::UltMsg
@@ -149,7 +153,7 @@ METHOD New (_xChave) Class ClsEtiq
 		else
 //			u_log (valtype (::UltMsg))
 //			u_log (cvaltochar (_xChave))
-			::UltMsg += "Problema ao instanciar etiqueta: Nao localizei codigo de etiqueta '" + cvaltochar (_xChave) + "' para a filial atual na tabela ZA1."
+			::SomaMsg ("Problema ao instanciar etiqueta: Nao localizei codigo de etiqueta '" + cvaltochar (_xChave) + "' para a filial atual na tabela ZA1.")
 			U_help (::UltMsg,, .t.)
 		endif
 
@@ -243,11 +247,11 @@ METHOD CmdImpr (_nModelImp, _lPrimeira) Class ClsEtiq
 	private _lRetImpr  := .T.  // Deixar PRIVATE para funcoes internas poderem gravar em caso de erro.
 
 	if _lContinua .and. ::Inutilizada
-		::UltMsg += "Etiquetas inutilizadas nao podem mais ser impressas."
+		::SomaMsg ("Etiquetas inutilizadas nao podem mais ser impressas.")
 		_lContinua = .F.
 	endif
 	if _lContinua .and. ! empty (::OP) .and. ::OPInvalida
-		::UltMsg += "Etiq. referenciando uma OP invalida (" + alltrim (::OP) + ")."
+		::SomaMsg ("Etiq. referenciando uma OP invalida (" + alltrim (::OP) + ").")
 		_lContinua = .F.
 	endif
 
@@ -267,7 +271,7 @@ METHOD CmdImpr (_nModelImp, _lPrimeira) Class ClsEtiq
 		_sDtFabImp = dtoc (::DtFabrLote)
 		if ::B1_VAFullW == 'S'
 			if empty (::B1_CodBar)
-				::UltMsg += "Produto '" + alltrim (::Produto) + "' nao tem codigo DUN14 informado no campo '" + alltrim (RetTitle ("B1_CODBAR")) + "'."
+				::SomaMsg ("Produto '" + alltrim (::Produto) + "' sem cod.DUN14 no campo '" + alltrim (RetTitle ("B1_CODBAR")) + "'.")
 				_lContinua = .F.
 			else
 				_sCBarProd = alltrim (::B1_CodBar)
@@ -278,7 +282,7 @@ METHOD CmdImpr (_nModelImp, _lPrimeira) Class ClsEtiq
 		case ! empty (::IdZAG)
 			zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC + ZAG_SEQ
 			if ! zag -> (dbseek (xfilial ("ZAG") + ::IdZAG, .F.))
-				::UltMsg += "Documento de transferencia '" + ::IdZAG + "' nao encontrado."
+				::SomaMsg ("Documento de transferencia '" + ::IdZAG + "' nao encontrado.")
 				_lContinua = .F.
 			else
 				_sDocImp  = 'Solic.transf:' + substr (::IdZAG, 1, 10) + '/' + substr (::IdZAG, 11, 2)
@@ -309,7 +313,7 @@ METHOD CmdImpr (_nModelImp, _lPrimeira) Class ClsEtiq
 			_sDocImp = 'NF.' + alltrim (::DocEntrNum) + '/' + alltrim (::DocEntrSerie)
 			sa2 -> (dbsetorder (1))
 			if ! sa2 -> (dbseek (xfilial ("SA2") + ::DocEntrForn + ::DocEntrLoja, .F.))
-				::UltMsg += "Fornecedor '" + ::DocEntrForn + '/' + ::DocEntrloja + "' referenciado na etiqueta '" + ::Codigo + "' nao localizado!"
+				::SomaMsg ("Fornecedor '" + ::DocEntrForn + '/' + ::DocEntrloja + "' referenciado na etiqueta '" + ::Codigo + "' nao localizado!")
 				_lContinua = .F.
 			else
 				_sFornImp1 := substr ('Forn:' + SA2 -> a2_cod + '/' + sa2 -> a2_loja + ' - ' + SA2 -> A2_nome, 1, 25)
@@ -321,7 +325,7 @@ METHOD CmdImpr (_nModelImp, _lPrimeira) Class ClsEtiq
 			_sAlmOri  = ::AlmOrig
 
 		otherwise
-			::UltMsg += "Tipo de etiqueta sem tratamento na leitura de dados iniciais para impressao no programa " + procname ()
+			::SomaMsg ("Tipo de etiqueta sem tratamento na leitura de dados iniciais para impressao no programa " + procname ())
 			_lContinua = .F.
 		endcase
 	endif
@@ -357,7 +361,7 @@ METHOD CmdImpr (_nModelImp, _lPrimeira) Class ClsEtiq
 			elseif ! empty (::DocEntrNum) .or. ! empty (::D5_NUMSEQ)
 				_sTxtEtiq += _FmtNF (_nModelImp, @::UltMsg)
 			else
-				::UltMsg += "Sem definicao de formatacao de etiqueta deste tipo na Sato."
+				::SomaMsg ("Sem definicao de formatacao de etiqueta deste tipo na Sato.")
 				_lRetImpr = .F.
 			endif
 			_sTxtEtiq += _Esc + 'Q1' + _Enter  // Quantidade
@@ -382,7 +386,7 @@ METHOD CmdImpr (_nModelImp, _lPrimeira) Class ClsEtiq
 			elseif ! empty (::DocEntrNum) .or. ! empty (::D5_NUMSEQ)
 				_sTxtEtiq += _FmtNF (_nModelImp, @::UltMsg)
 			else
-				::UltMsg += "Sem definicao de formatacao de etiqueta deste tipo na Datamax."
+				::SomaMsg ("Sem definicao de formatacao de etiqueta deste tipo na Datamax.")
 				_lRetImpr = .F.
 			endif
 			_sTxtEtiq += 'Q0001' + _Enter  // Quantidade
@@ -404,19 +408,19 @@ METHOD CmdImpr (_nModelImp, _lPrimeira) Class ClsEtiq
 			elseif ! empty (::DocEntrNum) .or. ! empty (::D5_NUMSEQ)
 				_sTxtEtiq += _FmtNF (_nModelImp, @::UltMsg)
 			else
-				::UltMsg += "Sem definicao de formatacao de etiqueta deste tipo na Elgin."
+				::SomaMsg ("Sem definicao de formatacao de etiqueta deste tipo na Elgin.")
 				_lRetImpr = .F.
 			endif
 			_sTxtEtiq += 'Q0001' + _Enter  // Quantidade
 			_sTxtEtiq += 'E' + _Enter  // Final de impressao
 		
 		else
-			::UltMsg += "Sem definicao de comandos iniciais para este modelo de impressora (" + cvaltochar (_nModelImp) + ').'
+			::SomaMsg ("Sem definicao de comandos iniciais para este modelo de impressora (" + cvaltochar (_nModelImp) + ').')
 			_lRetImpr = .F.
 		endif
 	endif
 	if ! _lContinua
-		::UltMsg += "Erro na geracao dos comandos de impressao.'
+		::SomaMsg ("Erro ao gerar impressao.")
 		_lRetImpr = .F.
 	endif
 //	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']_sTxtEtiq antes de retornar:' + _sTxtEtiq)
@@ -481,7 +485,7 @@ METHOD EnviaFull (_lMsg) Class ClsEtiq
 	if _lContinua .and. ! empty (::OP) .and. ::AlmOrig == '11'
 		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Disponibilizando etiq na view v_wms_entrada por que alm.orig.=' + ::AlmOrig)
 		if ::IntegraFull == '2'
-			::UltMsg += "Etiqueta ja recebida pelo FullWMS."
+			::SomaMsg ("Etiqueta ja recebida pelo FullWMS.")
 			_lContinua = .F.
 		endif
 		if _lContinua
@@ -502,6 +506,7 @@ return _lContinua
 METHOD Exclui () Class ClsEtiq
 	Local _aAreaAnt  := U_ML_SRArea ()
 	local _lContinua := .T.
+	local _oSQL      := NIL
 
 	if _lContinua
 
@@ -519,7 +524,12 @@ METHOD Exclui () Class ClsEtiq
 		endif
 
 		// Verifica necessidade de enviar algum dado para FullWMS.
-		_AtuFull (::Codigo, 'E')
+//		_AtuFull (::Codigo, 'E')
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := " delete tb_wms_etiquetas"
+		_oSQL:_sQuery += " where id = " + cvaltochar (::Codigo)
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		_lContinua = _oSQL:Exec ()
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
@@ -627,7 +637,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 		::UsrIncl      = za1 -> ZA1_USRINC
 	otherwise
 		if ! empty (_sOrigem)  // Se origem vazia, eh por que estou apenas instanciando um objeto vazio.
-			::UltMsg += "Impossivel gerar atributos. Origem '" + _sOrigem + "' desconhecida."
+			::SomaMsg ("Impossivel gerar atributos (parte 1). Origem '" + _sOrigem + "' desconhecida.")
 			u_help (::UltMsg,, .t.)
 		endif
 	endcase
@@ -794,7 +804,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 					endif
 				endif
 			otherwise
-				::UltMsg += "Impossivel determinar atributos adicionais. Origem de etiqueta desconhecida."
+				::SomaMsg ("Impossivel determinar atributos adicionais (parte 2). Origem de etiqueta desconhecida.")
 				u_help (::UltMsg,, .t.)
 			endcase
 		endif
@@ -807,35 +817,35 @@ return
 // --------------------------------------------------------------------------
 // Grava nova etiqueta na tabela ZA1.
 // Minha intencao eh migrar a funcao U_IncEtqPll para este metodo.
-METHOD Grava () Class ClsEtiq
+METHOD Grava (_lSemafExt) Class ClsEtiq
 	local _lGravou   := .F.
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _sNextNum  := ''
 	local _nSeqEtq   := 0
 	local _sTxtLog   := ''
 	local _lContinua := .T.
+	local _nLock     := 0
 
-	if empty (::Produto)
-		::UltMsg += "Produto nao informado. Gravacao de etiqueta nao permitida."
-		_lContinua = .F.
+	_lSemafExt := iif (_lSemafExt == NIL, .F., _lSemafExt)
+
+	_lContinua = ::PodeIncl ()
+	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + '] _lContinua = ' + cvaltochar (_lContinua))
+
+	// Controla semaforo de gravacao, por que a numeracao deve ser unica.
+	//
+	// Se a funcao chamadora jah implementou um semaforo de gravacao, nao
+	// preciso mais me preocupar aqui.
+	if ! _lSemafExt  // Semaforo nao foi criado externamente.
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Semaforo externo: ainda nao tem. Vou criar um agora.')
+		_nLock := U_Semaforo ('GeraNumeroZA1', .T.)  // Usar a mesma chave em todas as chamadas!
+		if _nLock == 0
+			::SomaMsg ("Bloqueio de semaforo")
+			_lContinua = .F.
+		endif
+	else
+		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Semaforo externo: jah tem.')
 	endif
-	if empty (::DtEmis)
-		::UltMsg += "Data emissao etiq.nao informada. Gravacao de etiqueta nao permitida."
-		_lContinua = .F.
-	endif
-	if empty (::OP) .and. empty (::DocEntrNum) .and. empty (::IdZAG) .and. empty (::D5_NUMSEQ)
-		::UltMsg += "Origem (OP, NF, sol.transf. ou D5_NUMSEQ) nao informada. Gravacao de etiqueta nao permitida."
-		_lContinua = .F.
-	endif
-	if ::Quantidade <= 0
-		::UltMsg += "Quantidade nao informada. Gravacao de etiqueta nao permitida."
-		_lContinua = .F.
-	endif
-	if ! empty (::DocEntrNum) .and. (empty (::DocEntrSerie) .or. empty (::DocEntrItem) .or. empty (::DocEntrForn) .or. empty (::DocEntrLoja))
-		::UltMsg += "Para NF entrada, devem ser informadas tambem serie, fornecedor, loja e item da nota. Gravacao de etiqueta nao permitida."
-		_lContinua = .F.
-	endif
-	
+
 	// Gera sequencial da etiqueta dentro do grupo (OP ou NF) a que pertence.
 	if _lContinua
 		if ! empty (::OP) .or. ! empty (::DocEntrNum)
@@ -855,8 +865,10 @@ METHOD Grava () Class ClsEtiq
 	endif
 
 	if _lContinua
+	//	U_Log2 ('debug', '[' + procname () + ']O que vou tentar gravar:')
+	//	u_logobj (::Self, .t., .f.)
 		begin transaction
-		_sNextNum = U_NxtZA1 (::Produto)
+		_sNextNum = U_NxtZA1 (::Produto, .t.)
 		reclock ("ZA1",.T.)
 		ZA1 -> ZA1_FILIAL = ::Filial
 		ZA1 -> ZA1_CODIGO = _sNextNum
@@ -886,6 +898,11 @@ METHOD Grava () Class ClsEtiq
 	do while __lSX8
 		ConfirmSX8 ()
 	enddo
+
+	// Libera semaforo.
+	if _nLock > 0
+		U_Semaforo (_nLock)
+	endif
 
 	// Monta um textinho bonitinho para log.
 	if _lGravou
@@ -919,10 +936,7 @@ METHOD Imprime (_sCodImpr) Class ClsEtiq
 	local _sPortaImp := ''
 	local _nModelImp := 0
 
-//nao mais!	// Ainda tenho algumas leituras do ZA1, entao tenho que ter ele posicionado.
-//nao mais!	// A intencao eh pegar tudo do objeto oEtiq.
-//nao mais!	za1 -> (dbgoto (::RegZA1))
-
+	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']_sCodImpr = ' + _sCodImpr)
 	if _lContinua .and. ::Inutilizada
 		u_help ("Etiquetas inutilizadas nao podem mais ser impressas.",, .t.)
 		_lContinua = .F.
@@ -946,10 +960,13 @@ METHOD Imprime (_sCodImpr) Class ClsEtiq
 			::SomaMsg ("Modelo nao definido para impressora '" + _sCodImpr + "'. Verifique tabela 49 do arquivo ZX5.")
 			_lContinua = .F.
 		endif
+	//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']_sPortaImp = ' + _sPortaImp)
+	//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']_nModelImp = ' + cvaltochar (_nModelImp))
 	endif
 	if _lContinua
 		_sCmdImp = ::CmdImpr (_nModelImp, .t.)
 		if empty (_sCmdImp)
+			::SomaMsg ("Cmd.impr.vazios.")
 			_lContinua = .F.
 		else
 			// Envia para a impressora (ou arquivo, caso porta = caminho de arquivo).
@@ -987,22 +1004,22 @@ METHOD Inutiliza (_lMsg) Class ClsEtiq
 
 	_lMsg := iif (_lMsg == NIL, .F., _lMsg)
 	if _lContinua .and. (::Inutilizada)
-		::UltMsg += "A etiqueta '" + ::Codigo + "' ja encontra-se inutilizada."
+		::SomaMsg ("A etiqueta '" + ::Codigo + "' ja encontra-se inutilizada.")
 		_lContinua := .F.
 	endif
 
 	// Verifica se o usuario tem liberacao.
 	if ! empty (::OP) .and. ! U_ZZUVL ('073', __cUserID, .T.)
-		::UltMsg += "Usuario sem acesso para inutilizar etiquetas de OP."
+		::SomaMsg ("Usuario sem acesso para inutilizar etiquetas de OP.")
 		_lContinua = .F.
 	endif
 	if ! empty (::DocEntrNum) .and. ! U_ZZUVL ('074', __cUserID, .T.)
-		::UltMsg += "Usuario sem acesso para inutilizar etiquetas de NF."
+		::SomaMsg ("Usuario sem acesso para inutilizar etiquetas de NF.")
 		_lContinua = .F.
 	endif
 	if _lContinua .and. ! empty (::OP)
 		if ::QtApontada > 0
-			::UltMsg := "etiq." + ::Codigo + " jah apontada. Nao pode ser inutilizada."
+			::SomaMsg ("etiq." + ::Codigo + " jah apontada. Nao pode ser inutilizada.")
 			_lContinua := .F.
 		endif
 		if ::QtPerdida > 0
@@ -1024,17 +1041,17 @@ METHOD Inutiliza (_lMsg) Class ClsEtiq
 		U_Log2 ('debug', _aStatWMS)
 //		if len (_aStatWMS) > 0 .and. ! empty (_aStatWMS [1, 1]) .and. _aStatWMS [1, 1] != '9'
 		if len (_aStatWMS) > 0 .and. ! empty (_aStatWMS [1, 1]) .and. _aStatWMS [1, 1] != '9' .and. _aStatWMS [1, 2] != 'C'
-			::UltMsg += "A etiqueta '" + ::Codigo + "' ja foi vista pelo FullWMS"
-			::UltMsg += " e nao pode ser inutilizada por que encontra-se com status '" + _aStatWMS [1, 1] + "'"
-			::UltMsg += " no campo STATUS da tabela de integracao tb_wms_entrada."
-			::UltMsg += "Essa entrada deve ser excluida, antes, na tela de recebimentos do FullWMS."
+			::SomaMsg ("A etiqueta '" + ::Codigo + "' ja foi vista pelo FullWMS" + ;
+			           " e nao pode ser inutilizada por que encontra-se com status '" + _aStatWMS [1, 1] + "'" + ;
+			           " no campo STATUS da tabela de integracao tb_wms_entrada." + ;
+			           "Essa entrada deve ser excluida, antes, na tela de recebimentos do FullWMS.")
 			_lContinua = .F.
 		endif
 		if len (_aStatWMS) > 0 .and. ! empty (_aStatWMS [1, 2]) .and. _aStatWMS [1, 2] != 'C'
-			::UltMsg += "A etiqueta '" + ::Codigo + "' ja foi enviada para o FullWMS"
-			::UltMsg += " e nao pode ser inutilizada por que encontra-se com status '" + _aStatWMS [1, 2] + "'"
-			::UltMsg += " no campo STATUS_PROTHEUS da tabela de integracao tb_wms_entrada."
-			::UltMsg += "Essa operacao de 'guarda' deve ser abortada manualmente nesta tabela para poder inutilizar a etiqueta."
+			::SomaMsg ("A etiqueta '" + ::Codigo + "' ja foi enviada para o FullWMS" + ;
+			           " e nao pode ser inutilizada por que encontra-se com status '" + _aStatWMS [1, 2] + "'" + ;
+			           " no campo STATUS_PROTHEUS da tabela de integracao tb_wms_entrada." + ;
+			           "Essa operacao de 'guarda' deve ser abortada manualmente nesta tabela para poder inutilizar a etiqueta.")
 			_lContinua = .F.
 		endif
 	endif
@@ -1068,7 +1085,7 @@ METHOD Inutiliza (_lMsg) Class ClsEtiq
 		end transaction
 		::Inutilizada = .T.
 
-		::UltMsg += "Etiqueta '" + ::Codigo + "' inutilizada (Remover do Recipiente)"
+		::SomaMsg ("Etiqueta '" + ::Codigo + "' inutilizada (Remover do Recipiente)")
 		if _lMsg
 			u_help (::UltMsg)
 		endif
@@ -1094,7 +1111,7 @@ METHOD NovaPorSD5 (_sProduto, _sLote, _sAlmox, _sNumSeq, _nQtDesta, _nQtGrupo, _
 //	U_Log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Tentando criar etiqueta para produto/lote/almox/numseq ' + _sProduto + '/' + _sLote + '/' + _sAlmox + '/' + _sNumSeq)
 	_nRegSD5 = _AchaSD5 (_sProduto, _sNumSeq)
 	if _nRegSD5 == 0
-		::UltMsg += "Nao encontrei registro com origem MAN para o produto/lote/almox/NumSeq informados. Geracao de etiquetas cancelada."
+		::SomaMsg ("Nao encontrei registro com origem MAN para o produto/lote/almox/NumSeq informados. Geracao de etiquetas cancelada.")
 		u_help (::UltMsg,, .t.)
 		_lRetNSD5 = .F.
 	else
@@ -1111,7 +1128,7 @@ METHOD NovaPorSD5 (_sProduto, _sLote, _sAlmox, _sNumSeq, _nQtDesta, _nQtGrupo, _
 		::SeqNoGrupo  = _nSeqNoGrp
 		::ValidLote   = sd5 -> d5_dtvalid
 		if ! ::Grava ()
-			::UltMsg += "Nao foi possivel gravar a etiqueta."
+			::SomaMsg ("Nao foi possivel gravar a etiqueta.")
 			u_help (::UltMsg,, .t.)
 			_lRetNSD5 = .F.
 		endif
@@ -1137,7 +1154,7 @@ METHOD PodeApont (_nQtApont, _nQtPerda) Class ClsEtiq
 		_lContinua = .f.
 	endif
 	if _lContinua .and. ::Inutilizada
-		::UltMsg += "Etiq.'" + ::Codigo + "' inutilizada."
+		::SomaMsg ("Etiq.'" + ::Codigo + "' inutilizada.")
 		_lContinua := .F.
 	endif
 	if _lContinua .and. ::Impressa != 'S'
@@ -1384,25 +1401,66 @@ return _lContinua
 
 
 // --------------------------------------------------------------------------
+// Verifica se pode incluir a etiqueta.
+METHOD PodeIncl () Class ClsEtiq
+	local _lContinua := .T.
+
+	if _lContinua .and. empty (::Produto)
+		::SomaMsg ("Produto nao informado. Gravacao de etiqueta nao permitida.")
+		_lContinua = .F.
+	endif
+	if _lContinua .and. empty (::DtEmis)
+		::SomaMsg ("Data emissao etiq.nao informada. Gravacao de etiqueta nao permitida.")
+		_lContinua = .F.
+	endif
+	if _lContinua .and. empty (::OP) .and. empty (::DocEntrNum) .and. empty (::IdZAG) .and. empty (::D5_NUMSEQ)
+		::SomaMsg ("Origem (OP, NF, sol.transf. ou D5_NUMSEQ) nao informada. Gravacao de etiqueta nao permitida.")
+		_lContinua = .F.
+	endif
+	if _lContinua .and. ::Quantidade <= 0
+		::SomaMsg ("Quantidade nao informada. Gravacao de etiqueta nao permitida.")
+		_lContinua = .F.
+	endif
+	if _lContinua .and. ! empty (::DocEntrNum) .and. (empty (::DocEntrSerie) .or. empty (::DocEntrItem) .or. empty (::DocEntrForn) .or. empty (::DocEntrLoja))
+		::SomaMsg ("Para NF entrada, devem ser informadas tambem serie, fornecedor, loja e item da nota. Gravacao de etiqueta nao permitida.")
+		_lContinua = .F.
+	endif
+	if _lContinua .and. ! empty (::OP)
+		sc2 -> (dbsetorder (1))
+		if ! sc2 -> (dbseek (xfilial ("SC2") + ::OP, .f.))
+			::SomaMsg ("OP '" + ::OP + "' nao encontrada.")
+			_lContinua = .F.
+		else
+			if sc2 -> c2_produto != ::Produto
+				::SomaMsg ("Prod.da etiq.(" + alltrim (::Produto) + ") deve ser o mesmo da OP (" + alltrim (sc2 -> c2_produto) + ").")
+				_lContinua = .F.
+			endif
+		endif
+	endif
+	//U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']retornando ' + cvaltochar (_lContinua))
+return _lContinua
+
+
+// --------------------------------------------------------------------------
 // Recebe etiquetas de terceiros (as etiq.sao nossas, mas o produto foi envasado em 3os).
 METHOD Recebe3 () Class ClsEtiq
 	local _lRetR3  := .T.
 	local _oEvento := NIL
 
 	if _lRetR3 .and. ::AlmOrig != '31'
-		::UltMsg += "Recebto. 3os destina-se a etiq. apontadas no ax.31"
+		::SomaMsg ("Recebto. 3os destina-se a etiq. apontadas no ax.31")
 		_lRetR3 = .F.
 	endif
 	if _lRetR3 .and. ::Apontada != 'S'
-		::UltMsg += "Recebto. 3os disponivel apenas p/etiq.ja apontadas"
+		::SomaMsg ("Recebto. 3os disponivel apenas p/etiq.ja apontadas.")
 		_lRetR3 = .F.
 	endif
 	if _lRetR3 .and. ::IntegraFull == '1'
-		::UltMsg += "Etiq.ja disponibilizada para o FullWMS."
+		::SomaMsg ("Etiq.ja disponibilizada para o FullWMS.")
 		_lRetR3 = .F.
 	endif
 	if _lRetR3 .and. ::IntegraFull == '2'
-		::UltMsg += "Etiq.ja recebida pelo FullWMS."
+		::SomaMsg ("Etiq.ja recebida pelo FullWMS.")
 		_lRetR3 = .F.
 	endif
 	if _lRetR3
@@ -1451,12 +1509,12 @@ METHOD ValCBEmb () Class ClsEtiq
 	local _lRetVCBE := .T.
 
 	if _sCBEmbCol != ::CBEmbCol
-		::UltMsg += "Barras embalagem coletiva nao conferem com campo C2_VABARCX da OP."
+		::SomaMsg ("Barras embalagem coletiva nao conferem com campo C2_VABARCX da OP.")
 		_lRetVCBE = .F.
 	endif
 return _lRetVCBE
 
-
+/*
 // --------------------------------------------------------------------------
 // Atualiza dados para integracao com Fullsoft.
 static function _AtuFull (_sEtiq, _sQueFazer)
@@ -1471,7 +1529,7 @@ static function _AtuFull (_sEtiq, _sQueFazer)
 		_oSQL:Exec ()
 	endif
 return
-
+*/
 
 // --------------------------------------------------------------------------
 // Localiza registro na tabela SD5, para alimentar dados de nova etiqueta.

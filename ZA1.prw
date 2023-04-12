@@ -14,6 +14,7 @@
 // 10/02/2023 - Robert - Funcao ZA1SD5 passa a tratar a possibilidade de ter
 //                       mais de uma etiqueta para o mesmo lote - GLPI 13134.
 // 30/03/2023 - Robert - Novos parametros chamada impressao etiq. avulsa.
+// 12/04/2023 - Robert - Criadas funcoes ZA1Inc() e ZA1ITOk() para inclusao manual.
 //
 
 // --------------------------------------------------------------------------
@@ -31,6 +32,59 @@ user function ZA1ImpAv ()
 		u_help ("Impressao cancelada.")
 	endif
 return
+
+
+// --------------------------------------------------------------------------
+// Inclusao manual (via tela) de uma etiqueta.
+user function ZA1Inc ()
+	local _nLock    := 0
+	local _lRetIncl := .F.
+	private altera  := .F.
+	private inclui  := .T.
+	private aGets   := {}
+	private aTela   := {}
+
+	// Verifica se o usuario tem liberacao.
+	if ! U_ZZUVL ('073', __cUserID, .T.)
+		return
+	endif
+	if ! U_ZZUVL ('074', __cUserID, .T.)
+		return
+	endif
+
+	// Controla semaforo, por que a numeracao deve ser unica.
+	_nLock := U_Semaforo ('GeraNumeroZA1', .T.)  // Usar a mesma chave em todas as chamadas!
+	if _nLock == 0
+		u_help ("Bloqueio de semaforo na geracao de numero de etiqueta.",, .t.)
+	else
+		// Cria variáveis 'M->' aqui para serem vistas depois da inclusão.
+		RegToMemory ("ZA1", inclui, inclui)
+
+		// Na validacao da inclusao do registro, faz os tratamentos necessarios.
+		axinclui ("ZA1", za1 -> (recno ()), 3, NIL, NIL, NIL, "U_ZA1ITOK ()")
+	endif
+
+	// Libera semaforo.
+	if _nLock > 0
+		U_Semaforo (_nLock)
+	endif
+return _lRetIncl
+
+
+// --------------------------------------------------------------------------
+// Valida a inclusao (via tela) de uma etiqueta e gera dados adicionais.
+user function ZA1ITOk ()
+	local _lRetIncl := .F.
+	local _oEtiq    := NIL
+	_oEtiq := ClsEtiq():New ()
+	_oEtiq:GeraAtrib ('M')  // Gerar a partir das variaveis M-> da tela.
+	//u_logobj (_oEtiq, .t., .f.)
+	_lRetIncl = _oEtiq:PodeIncl ()
+	if ! _lRetIncl
+		u_help ("Inclusao de etiq.nao permitida." + _oEtiq:UltMsg,, .t.)
+	endif
+	//U_Log2 ('debug', '[' + procname () + ']retornando ' + cvaltochar (_lRetIncl))
+return _lRetIncl
 
 
 // --------------------------------------------------------------------------

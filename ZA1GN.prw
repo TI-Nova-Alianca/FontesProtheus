@@ -15,6 +15,7 @@
 // 02/02/2022 - Robert - Melhoria mensagens e tela que possibilita alterar qt.por embalagem (GLPI 11557)
 // 24/02/2023 - Robert - Filtrar D1_TP='VD' em vez de B1_UM='LT' por que temos insumos recebidos em litros.
 //                     - Gera etiquetas pelo metodo ClsEtiq:Grava() e nao mais por U_IncEtqPll()
+// 12/04/2023 - Robert - Passa a gerar etiquetas com controle de semaforo.
 //
 
 // Como tem muitas colunas na array, vou usar nomes mais amigaveis.
@@ -61,6 +62,7 @@ static function _AndaLogo (_sNF, _sSerie, _sFornece, _sLoja)
 	local _nPal      := 0
 	local _dDataIni  := date () - 7
 	local _oEtiq     := NIL
+	local _nLock     := 0
 
 	if _lContinua
 		_dDataIni = U_Get ("Buscar notas a partir de", "D", 8, "", "", _dDataIni, .F., '.T.')
@@ -228,30 +230,39 @@ static function _AndaLogo (_sNF, _sSerie, _sFornece, _sLoja)
 
 				if len (_aPal) > 0
 					procregua (len (_aPal))
-					for _nPal = 1 to len (_aPal)
-						incproc ("Gerando etiqueta " + cvaltochar (_nPal) + " de " + cvaltochar (len (_aPal)))
-			//			U_IncEtqPll (_aEtiq [_nEtiq, .CodItem], '', _aPal[_nPal, .nf], _aEtiq [_nEtiq, .Fornece], _aEtiq [_nEtiq, .Loja], _aEtiq [_nEtiq, .nf], _aEtiq [_nEtiq, .Serie], date(), _aEtiq [_nEtiq, 5], '')
 
-						_oEtiq := ClsEtiq ():New ()
-						_oEtiq:DtEmis       = date ()
-						_oEtiq:Produto      = _aEtiq [_nEtiq, .CodItem]
-						_oEtiq:Quantidade   = _aPal [_nPal, 2]
-						_oEtiq:DocEntrForn  = _aEtiq [_nEtiq, .Fornece]
-						_oEtiq:DocEntrLoja  = _aEtiq [_nEtiq, .Loja]
-						_oEtiq:DocEntrNum   = _aEtiq [_nEtiq, .nf]
-						_oEtiq:DocEntrSerie = _aEtiq [_nEtiq, .Serie]
-						_oEtiq:DocEntrItem  = _aEtiq [_nEtiq, 5]
-						_oEtiq:QtEtqGrupo   = len (_aPal)
-						_oEtiq:SeqNoGrupo   = _nPal
-						if ! _oEtiq:Grava ()
-							u_help (_oEtiq:UltMsg += "Nao foi possivel gravar a etiqueta.",, .t.)
-							exit
-						endif
+					// Controla semaforo, por que a numeracao deve ser unica.
+					_nLock := U_Semaforo ('GeraNumeroZA1', .T.)  // Usar a mesma chave em todas as chamadas!
+					if _nLock == 0
+						u_help ("Bloqueio de semaforo na geracao de numero de etiqueta.",, .t.)
+					else
+						for _nPal = 1 to len (_aPal)
+							incproc ("Gerando etiqueta " + cvaltochar (_nPal) + " de " + cvaltochar (len (_aPal)))
 
+							_oEtiq := ClsEtiq ():New ()
+							_oEtiq:DtEmis       = date ()
+							_oEtiq:Produto      = _aEtiq [_nEtiq, .CodItem]
+							_oEtiq:Quantidade   = _aPal [_nPal, 2]
+							_oEtiq:DocEntrForn  = _aEtiq [_nEtiq, .Fornece]
+							_oEtiq:DocEntrLoja  = _aEtiq [_nEtiq, .Loja]
+							_oEtiq:DocEntrNum   = _aEtiq [_nEtiq, .nf]
+							_oEtiq:DocEntrSerie = _aEtiq [_nEtiq, .Serie]
+							_oEtiq:DocEntrItem  = _aEtiq [_nEtiq, 5]
+							_oEtiq:QtEtqGrupo   = len (_aPal)
+							_oEtiq:SeqNoGrupo   = _nPal
+							if ! _oEtiq:Grava ((_nLock != 0))
+								u_help (_oEtiq:UltMsg += "Nao foi possivel gravar a etiqueta.",, .t.)
+								exit
+							endif
 
+						next
+					endif
 
+					// Libera semaforo.
+					if _nLock > 0
+						U_Semaforo (_nLock)
+					endif
 
-					next
 					u_log2 ('debug', 'etiq.geradas')
 					U_EtqPlltG ('', _aEtiq [_nEtiq, .nf], _aEtiq [_nEtiq, .Serie], _aEtiq [_nEtiq, .Fornece], _aEtiq [_nEtiq, .Loja], 'I')
 					u_log2 ('debug', 'retornou do U_EtqPlltG')

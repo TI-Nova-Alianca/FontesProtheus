@@ -63,6 +63,8 @@
 //                       das etiquetas diretamente via metodo ClsEtiq:New() - GLPI 13134
 // 22/03/2023 - Robert - Impressao de etiquetas passa a gerar todas num unico arquivo.
 // 23/03/2023 - Robert - Removidos alguns logs.
+// 12/04/2023 - Robert - Inclusao manual (via tela) passada para funcao ZA1Inc() no fonte ZA1.PRW
+//                     - Passa a usar semaforo na geracao de etiquetas por grupo.
 //
 
 #include "rwmake.ch"
@@ -81,7 +83,8 @@ User Function VA_ETQPLL()
 	// A ordem em que os itens são adicionados ao vetor influencia na ordem de exibição.
 	aAdd(aRotina, {"Pesquisar"           , "AxPesqui"  , 0, 1})
 	aAdd(aRotina, {"Visualizar"          , "AxVisual"  , 0, 2})
-	aAdd(aRotina, {"Incluir"             , "U_EtqPlltI", 0, 3})
+//	aAdd(aRotina, {"Incluir"             , "U_EtqPlltI", 0, 3})
+	aAdd(aRotina, {"Incluir"             , "U_ZA1Inc", 0, 3})
 	aadd(aRotina, {"Imprimir - Avulso"   , "U_ZA1ImpAv ()", 0, 2})
 	aadd(aRotina, {"Imprimir - Grupo"    , "U_EtqPlltG(za1 -> za1_op, za1 -> za1_doce, za1 -> za1_seriee, za1 -> za1_fornec, za1 -> za1_lojaf, 'I')", 0, 2})
 	aadd(aRotina, {"Enviar para FullWMS" , "processa ({||U_EnvEtFul (za1 -> za1_codigo, .T.)})", 0, 4})
@@ -120,14 +123,16 @@ user function ZA1LG (_lRetCores)
 	endif
 return
 
-
+/*
 // --------------------------------------------------------------------------
 // Inclusão
 User Function EtqPlltI ()
-	private altera   := .F.
-	private inclui   := .T.
-	private aGets    := {}
-	private aTela    := {}
+	local _lRetIncl := .F.
+	local _oEtiq    := NIL
+	private altera  := .F.
+	private inclui  := .T.
+	private aGets   := {}
+	private aTela   := {}
 
 	// Verifica se o usuario tem liberacao.
 	if ! U_ZZUVL ('073', __cUserID, .T.)
@@ -139,10 +144,27 @@ User Function EtqPlltI ()
 
 	// Cria variáveis 'M->' aqui para serem vistas depois da inclusão.
 	RegToMemory ("ZA1", inclui, inclui)
+
+	// Apos a inclusao do registro, faz os tratamentos necessarios.
 	if axinclui ("ZA1", za1 -> (recno ()), 3, NIL, NIL, NIL, "allwaystrue ()") == 1
-		u_log2 ('aviso', 'Axinclui deu certo')
+		CursorWait ()
+		_oEtiq := ClsEtiq():New ()
+		_oEtiq:GeraAtrib ('M')  // Gerar a partir das variaveis M-> da tela.
+		u_logobj (_oEtiq, .t., .f.)
+		if _oEtiq:PodeIncl ()
+			_lRetIncl = _oEtiq:Grava ()
+		else
+			_lRetIncl = .F.
+		endif
+		CursorArrow ()
+		if ! _lRetIncl
+			u_help (_oEtiq:UltMsg,, .t.)
+		else
+			u_help ("Etiqueta '" + _oEtiq:Codigo + "' gerada.")
+		endif
 	endif
-return
+return _lRetIncl
+*/
 
 // --------------------------------------------------------------------------
 // Exclusão
@@ -258,7 +280,8 @@ User Function EtqPllRG ()
 	U_ML_SRArea (_aAreaAnt)
 return
 
-//
+
+// --------------------------------------------------------------------------
 // Gera etiquetas para a OP informada.
 User Function EtqPllGO (_sProduto, _sOP, _nQuant, _dData)
 	local _aPal      := {}
@@ -267,6 +290,7 @@ User Function EtqPllGO (_sProduto, _sOP, _nQuant, _dData)
 	local _nQtPorPal := 0
 	local _nPal      := 0
 	local _oEtiq     := NIL
+	local _nLock     := 0
 
 	// Verifica se o usuario tem liberacao.
 	if ! U_ZZUVL ('073', __cUserID, .T.)
@@ -318,21 +342,32 @@ User Function EtqPllGO (_sProduto, _sOP, _nQuant, _dData)
 		if len (_aPal) == 0 .or. _nQtPorPal != _aPal [1, 2]
 			_aPal := aclone (U_VA_QTDPAL (_sProduto, _nQuant, _nQtPorPal))
 		endif
-		
-		For _nPal=1 to len (_aPal)
-			//U_IncEtqPll (_sProduto, _sOP, _aPal[_i, 2], '', '', '', '', _dData, '', '')
-			_oEtiq := ClsEtiq ():New ()
-			_oEtiq:OP         = _sOP
-			_oEtiq:Produto    = _sProduto
-			_oEtiq:Quantidade = _aPal [_nPal, 2]
-			_oEtiq:QtEtqGrupo = len (_aPal)
-			_oEtiq:SeqNoGrupo = _nPal
-			if ! _oEtiq:Grava ()
-				u_help (_oEtiq:UltMsg += "Nao foi possivel gravar a etiqueta.",, .t.)
-				exit
-			endif
-		next
-		
+
+		// Controla semaforo de gravacao, por que a numeracao deve ser unica.
+		U_Log2 ('debug', '[' + procname () + ']Criando semaforo para numeracao de etiquetas.')
+		_nLock := U_Semaforo ('GeraNumeroZA1', .T.)  // Usar a mesma chave em todas as chamadas!
+		if _nLock == 0
+			u_help ("Bloqueio de semaforo na geracao de numeracao de etiquetas.",, .t.)
+		else
+			For _nPal=1 to len (_aPal)
+				_oEtiq := ClsEtiq ():New ()
+				_oEtiq:OP         = _sOP
+				_oEtiq:Produto    = _sProduto
+				_oEtiq:Quantidade = _aPal [_nPal, 2]
+				_oEtiq:QtEtqGrupo = len (_aPal)
+				_oEtiq:SeqNoGrupo = _nPal
+				if ! _oEtiq:Grava ((_nLock != 0))
+					u_help (_oEtiq:UltMsg += "Nao foi possivel gravar a etiqueta.",, .t.)
+					exit
+				endif
+			next
+		endif
+
+		// Libera semaforo.
+		if _nLock > 0
+			U_Semaforo (_nLock)
+		endif
+
 		reclock ("SC2", .F.)
 		sc2 -> c2_vaqtetq = len (_aPal)  // ELIMINAR ISTO QUANDO O CAMPO ZA1_QTGRUP JAH ESTIVER SENDO POPULADO.
 		msunlock ()
@@ -342,7 +377,7 @@ User Function EtqPllGO (_sProduto, _sOP, _nQuant, _dData)
 return len (_aPal)
 
 
-
+/*
 // --------------------------------------------------------------------------
 // Inclusão automática (para ser chamada de outra rotina).
 // Minha intencao eh migrar esta funcao para o metodo :Grava() da ClsEtiq.
@@ -392,6 +427,7 @@ User Function IncEtqPll(_sCodPro, _sNumOP, _nQtd, _sFornece, _sLoja, _sNF, _sSer
 
 	U_ML_SRArea (_aAreaAnt)
 Return _sNextNum
+*/
 
 
 // --------------------------------------------------------------------------
