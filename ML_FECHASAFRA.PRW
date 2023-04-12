@@ -37,6 +37,7 @@
 // 30/07/2021 - Robert  - Valores efetivos por variedade, na opcao resumido, nao tinha coluna de valor unitario (GLPI 10625)
 // 27/02/2022 - Robert  - Melhoria coluna historico nas previsoes de pagamento (GLPI 11678)
 // 15/06/2022 - Robert  - Impressao de descontos de FUNRURAL (GLPI 11723).
+// 11/04/2023 - Robert  - Passa a listar aux.combustivel/frete no modelo resumido, para facilitar fechto.valores.
 //
 
 #include "protheus.ch"
@@ -45,6 +46,8 @@
 
 // ----------------------------------------------------------------------------------------------------------------
 User Function ML_FECHASAFRA (_lAutomat)
+	local _sArqOrig := ''
+	local _sArqDest := ''
 	private _lAuto   := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)
 	cString := "SD2"
 	cDesc1  := "Fechamento Safra"
@@ -55,15 +58,15 @@ User Function ML_FECHASAFRA (_lAutomat)
 	aReturn := {"Zebrado", 1,"Administracao", 1, 2, 1, "",1}
 	aLinha  := {}
 	nLastKey:= 0
-	titulo  := "Fechamento Safra "
+	titulo  := "Fechamento Safra"
 	cPerg   := "ML_FECHASA"
 	wnrel   := "ML_FECHASAFRA"
 	nTipo   := 0
 
 	_ValidPerg()
 	Pergunte(cPerg, .f.)
-	wnrel   := "ML_FECHASAFRA_" + mv_par01 + '_' + mv_par02 + mv_par03
-	titulo := "Fechamento Safra " + mv_par01
+//	wnrel   := "ML_FECHASAFRA_" + mv_par01 + '_' + mv_par02 + mv_par03
+//	titulo := "Fechamento Safra " + mv_par01
 
 	if ! _lAuto
 		wnrel  := SetPrint(cString,wnrel,cPerg,titulo,cDesc1,cDesc2,cDesc3,.F.)
@@ -99,6 +102,8 @@ User Function ML_FECHASAFRA (_lAutomat)
 		Return
 	Endif
 
+	titulo := "Fechamento Safra " + mv_par01
+
 	// Deleta o arquivo do relatorio para evitar a pergunta se deseja sobrescrever.
 	delete file (__reldir + wnrel + ".##r")
 
@@ -132,6 +137,13 @@ User Function ML_FECHASAFRA (_lAutomat)
 		If aReturn [5] == 1
 			ourspool(wnrel)
 		Endif
+	else
+		// Copia para arquivo com nome diferente por que eh comum
+		// eu precisar gerar de varios associados para conferencia.
+		_sArqOrig := alltrim (wnrel) + '.##r'
+		_sArqDest := alltrim (wnrel) + "_" + alltrim (mv_par01) + '_' + alltrim (mv_par02) + alltrim (mv_par03) 
+		_sArqDest += '.##r'
+		copy file (__reldir + _sArqOrig) to (__reldir + _sArqDest)
 	endif
 Return
 //
@@ -1034,6 +1046,8 @@ static function _Modelo2 (_lSohCompr)
 	private _nMaxLin := 68
 	li = _nMaxLin + 1
 
+	U_Log2 ('debug', 'Usando a function ' + procname ())
+
 	_aTGerEnt := {0, 0}
 	_aTGerPro := {0, 0}
 	_aTGerCom := {0, 0}
@@ -1607,6 +1621,8 @@ static function _Modelo3 (_lSohCompr)
 	private _nMaxLin := 68
 	li = _nMaxLin + 1
 
+	U_Log2 ('debug', 'Usando a function ' + procname ())
+
 	// Gera lista de associados a imprimir.
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery += "SELECT DISTINCT ASSOCIADO, LOJA_ASSOC, NOME_ASSOC"
@@ -1668,7 +1684,7 @@ static function _Modelo3 (_lSohCompr)
 
 		// Verifica se tem este tipo de nota no XML
 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem')
-		u_log2 ('debug', _ValType)
+		//u_log2 ('debug', _ValType)
 		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 nota + 1 linha de totais)
 			@ li, 0 psay 'Producao:              Codigo          Variedade                       Grau  Clas     Kg total     Vlr.unit.        Vlr.total'
 			li ++
@@ -1697,6 +1713,50 @@ static function _Modelo3 (_lSohCompr)
 					li += 2
 				endif
 			next
+		endif
+
+
+		// Verifica se tem este tipo de tag no XML
+		_ValType := _RetType('_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem')
+		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 titulo + 1 linha de totais)
+			If li > _nMaxLin - 4
+			IF m_pag >1
+				_roda()
+			endif
+				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+			Endif
+			li ++
+		//	@li, 0 PSAY 'Auxilio combustivel:                  TITULO             VENCIMENTO              VALOR              SALDO  HISTORICO'
+			@li, 0 PSAY 'Auxilio combustivel:                           VALOR'
+			li ++
+//			for _nFatPag = 1 to len (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem)
+			_nFatPag = len (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem)
+				If li > _nMaxLin
+				IF m_pag >1
+					_roda()
+				endif
+					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+				Endif
+				_sLinImp := ''
+				// Apenas a linha de total; nao precisa listar nota a nota.
+			//	if _oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_doc:TEXT != 'TOTAIS'
+			//		_sLinImp += space (35)
+			//		_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_doc:TEXT, 15) + '       '
+			//		_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_vencto:TEXT, 10) + '   '
+			//		_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_valor:TEXT), _sMascVTot) + '   '
+			//		_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_saldo:TEXT), _sMascVTot) + '  '
+			//		_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_hist:TEXT, 110) + '  '
+			//	else
+//					@ li, 0 psay space (74) + '------------       ------------'
+//					li ++
+					_sLinImp += space (36) // (70)
+					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_valor:TEXT), _sMascVTot) + '   '
+//					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_saldo:TEXT), _sMascVTot) + '  '
+//				endif
+				@ li, 0 psay _sLinImp
+				li ++
+//			next
+			li ++
 		endif
 
 
@@ -1884,7 +1944,6 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {03, "Loja                          ", "C", 2,  0,  "",   "",    {},                        ""})
 	aadd (_aRegsPerg, {04, "Nucleo                        ", "C", 2,  0,  "",   "   ", {},                        ""})
 	aadd (_aRegsPerg, {05, "Lista Saldo C/C               ", "N", 1,  0,  "",   "   ", {"Sim", "Não"}           , ""})	
-//	aadd (_aRegsPerg, {06, "Detalhado ou resumido         ", "N", 1,  0,  "",   "   ", {"Det.COM prev.pg", "Det.SEM prev.pg", "Res.COM prev.pg", "Res.SEM prev.pg", "Apenas NF compra"}, ""})
 	aadd (_aRegsPerg, {06, "Detalhado ou resumido         ", "N", 1,  0,  "",   "   ", {"Detalhado", "Resumido", "Apenas NF compra"}, ""})
 	
 	U_ValPerg (cPerg, _aRegsPerg)

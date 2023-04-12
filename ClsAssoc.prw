@@ -112,6 +112,7 @@
 // 10/01/2023 - Robert  - Criada (versao inicial) regra de pagamento para safra 2023.
 // 24/02/2023 - Robert  - Removidas algumas linhas comentariadas.
 //                      - Iniciado tratamento para operacoes com a tabela ZZU (grupos de usuarios)
+// 11/04/2023 - Robert  - Filtrar E2_TIPO=NF/DP/FAT nas prev.pagto.fech.safra (estava deixando passar NDF por exemplo)
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -1286,11 +1287,12 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 		_oSQL:_sQuery +=   " AND E2_FORNECE = '" + ::Codigo + "'"
 		_oSQL:_sQuery +=   " AND E2_LOJA    = '" + ::Loja + "'"
 		_oSQL:_sQuery +=   " AND E2_EMISSAO >= '20190101'"  // Primeira safra em que este metodo foi implementado. Para safras anteriores o tratamento era diferente.
+		_oSQL:_sQuery +=   " AND E2_TIPO IN ('NF ', 'DP ', 'FAT')"  // NF quando compra original da matriz; DP quando saldo transferido de outra filial; FAT quando agrupados em uma fatura.
 		if _sSafra >= '2021'
 			_oSQL:_sQuery +=   " AND E2_VASAFRA = '" + _sSafra + "'"
 		else
 			_oSQL:_sQuery +=   " AND E2_PREFIXO in ('30 ', '31 ')"  // Serie usada para notas e faturas de safra
-			_oSQL:_sQuery +=   " AND E2_TIPO IN ('NF', 'DP', 'FAT')"  // NF quando compra original da matriz; DP quando saldo transferido de outra filial; FAT quando agrupados em uma fatura.
+//			_oSQL:_sQuery +=   " AND E2_TIPO IN ('NF', 'DP', 'FAT')"  // NF quando compra original da matriz; DP quando saldo transferido de outra filial; FAT quando agrupados em uma fatura.
 			_oSQL:_sQuery +=   " AND E2_EMISSAO >= '" + _sSafra + "0101'"
 			if _sSafra <= '2019'
 				_oSQL:_sQuery +=   " AND E2_EMISSAO <= '" + _sSafra + "1231'"
@@ -1672,18 +1674,11 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 		
 		// Existem casos em que nem todo o valor do titulo foi usado na geracao de uma parcela
 		// Devo descontar do valor do titulo somente a parte que foi consumida na geracao da fatura.
-//		_oSQL:_sQuery += " E2_VALOR - ISNULL ((SELECT SUM (FK2_VALOR)"
-//		_oSQL:_sQuery +=                       " FROM " + RetSQLName ("FK7") + " FK7, "
-//		_oSQL:_sQuery +=                                  RetSQLName ("FK2") + " FK2 "
-//		_oSQL:_sQuery +=                            " WHERE FK7.D_E_L_E_T_ = '' AND FK7.FK7_FILIAL = SE2.E2_FILIAL AND FK7.FK7_ALIAS = 'SE2' AND FK7.FK7_CHAVE = SE2.E2_FILIAL + '|' + SE2.E2_PREFIXO + '|' + SE2.E2_NUM + '|' + SE2.E2_PARCELA + '|' + SE2.E2_TIPO + '|' + SE2.E2_FORNECE + '|' + SE2.E2_LOJA"
-//		_oSQL:_sQuery +=                              " AND FK2.D_E_L_E_T_ = ''"
-//		_oSQL:_sQuery +=                              " AND FK2.FK2_FILIAL = FK7.FK7_FILIAL"
-//		_oSQL:_sQuery +=                              " AND FK2.FK2_IDDOC = FK7.FK7_IDDOC"
-//		_oSQL:_sQuery +=                              " AND FK2.FK2_MOTBX = 'FAT'"
-//		_oSQL:_sQuery +=                              " AND FK2.FK2_TPDOC != 'ES'"  // ES=Movimento de estorno
-//		_oSQL:_sQuery +=                              " AND dbo.VA_FESTORNADO_FK2 (FK2.FK2_FILIAL, FK2.FK2_IDFK2) = 0"
-//		_oSQL:_sQuery +=                        "), 0) AS E2_VALOR, "
-		_oSQL:_sQuery += " E2_VALOR - dbo.VA_FSE2_CONSUMIDO_EM_FATURA (SE2.R_E_C_N_O_, 'z') AS E2_VALOR,"
+	//	_oSQL:_sQuery += " E2_VALOR - dbo.VA_FSE2_CONSUMIDO_EM_FATURA (SE2.R_E_C_N_O_, 'z') AS E2_VALOR,"
+		
+		// Vou traser sempre o frete, independente de ter sido usado em fatura, por 
+		// que acho que ajuda na compreensoao do relatorio de fech.safra. Robert, 11/04/2023.
+		_oSQL:_sQuery += " E2_VALOR, "
 
 		_oSQL:_sQuery +=       " E2_SALDO, E2_HIST"
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE2") + " SE2 "

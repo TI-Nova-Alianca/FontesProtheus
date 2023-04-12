@@ -23,6 +23,7 @@
 // 07/03/2022 - Robert  - Acrescentado CNPJ da fonte pagadora.
 // 28/03/2022 - Robert  - Eliminada funcionalidade de conversao para TXT (em alguns casos 'perdia' o relatorio).
 // 01/03/2023 - Robert  - Revisado para ano base 2022 (nao houve pagto.de premio para esse ano).
+// 08/04/2023 - Robert  - Refeita query para ano base 2022, pois houve pagamentos parciais.
 //
 
 // -----------------------------------------------------------------------------------------------------------
@@ -30,6 +31,8 @@
 
 User function IRAssoc (_lAutomat)
 	local _aRet     := {}
+	local _sArqOrig := ''
+	local _sArqDest := ''
 	private _lAuto  := iif (valtype (_lAutomat) == "L", _lAutomat, .F.)  // Uso sem interface com o usuario.
 
 	// Verifica se o usuario tem acesso.
@@ -94,6 +97,7 @@ User function IRAssoc (_lAutomat)
 	If nLastKey == 27
 		Return
 	Endif
+
 	delete file (__reldir + wnrel + ".##r")
 	SetDefault (aReturn, cString)
 	If nLastKey == 27
@@ -107,6 +111,14 @@ User function IRAssoc (_lAutomat)
 		If aReturn [5] == 1
 			ourspool(wnrel)
 		Endif
+	else
+		// Copia para arquivo com nome diferente por que eh comum
+		// eu precisar gerar de varios associados para conferencia.
+		_sArqOrig := alltrim (wnrel) + '.##r'
+		_sArqDest := alltrim (wnrel) + "_" + alltrim (mv_par03) + '_' + alltrim (mv_par04) + alltrim (mv_par05) 
+		_sArqDest += iif (mv_par06 + mv_par07 != mv_par04 + mv_par05, '_a_' + alltrim (mv_par06) + alltrim (mv_par07), '')
+		_sArqDest += '.##r'
+		copy file (__reldir + _sArqOrig) to (__reldir + _sArqDest)
 	endif
 return _aRet
 
@@ -121,23 +133,21 @@ static function _Imprime ()
 	local _aExtrat   := {}
 	local _nExtrat   := 0
 	local _nTotDesp  := 0
-//	local _nTotSafra := 0
-	local _oCtaCOrr  := NIL //ClsCtaCorr():New ()
+	local _oCtaCOrr  := NIL
 	local _nVlrSaude := 0
 	local _nRendProd := 0
 	local _sAliasQ   := ''
 	local _sCodLoja  := ''
 	local _nCodLoja	 := 0
-	//local nCntImpr
 	
 
 	// Nao aceita filtro por que precisaria inserir na query.
 	If !Empty(aReturn[7])
-		u_help ("Este relatorio nao aceita filtro do usuario.")
+		u_help ("Este relatorio nao aceita filtro do usuario.",, .t.)
 		return
 	EndIf	
 
-	Titulo = "Relatorio para fins de IR - ano base " + mv_par03
+	titulo += ' - ano base ' + mv_par03
 	li = _nMaxLin + 1
 	procregua (3)
 
@@ -158,7 +168,7 @@ static function _Imprime ()
 	_oSQL:_sQuery +=                   " AND SZI.ZI_ASSOC   = SA2.A2_COD"
 	_oSQL:_sQuery +=                   " AND SZI.ZI_LOJASSO = SA2.A2_LOJA)"
 	_oSQL:_sQuery +=  " ORDER BY A2_NOME, A2_COD, A2_LOJA"
-	_oSQL:Log ()
+	//_oSQL:Log ()
 	_aAssoc = aclone (_oSQL:Qry2Array())
 
 	procregua (len (_aAssoc))
@@ -169,14 +179,16 @@ static function _Imprime ()
 		sa2 -> (dbseek (xfilial ("SA2") + _aAssoc [_nAssoc, 1] + _aAssoc [_nAssoc, 2], .F.))
 		_oAssoc := ClsAssoc():New (sa2 -> a2_cod, sa2 -> a2_loja)
 		if valtype (_oAssoc) != "O"
+			U_Log2 ('aviso', '[' + procname () + ']Erro ao instanciar associado ' + sa2 -> a2_cod + '/' + sa2 -> a2_loja)
 			sa2 -> (dbskip ())
 			loop
 		endif
 		
 		// se informou o Nucleo filtra por nucleo
-		if mv_par08 != '  '
+		if ! empty (mv_par08)
 			_oAssoc := ClsAssoc ():New (sa2 -> a2_cod, sa2 -> a2_loja)
 			if valtype (_oAssoc) != 'O' .or. _oAssoc:Nucleo != mv_par08
+				U_Log2 ('aviso', '[' + procname () + ']Associado ' + sa2 -> a2_cod + '/' + sa2 -> a2_loja + ' nao pertence ao nucleo ' + mv_par08)
 				sa2 -> (dbskip ())
 				loop
 			endif
@@ -189,11 +201,6 @@ static function _Imprime ()
 		endif
 
 		cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
-
-//		@ li, 0 psay 'Fonte pagadora: ' + alltrim (sm0 -> m0_nomecom) + ' - CNPJ: ' + transform (sm0 -> m0_cgc, "@R 99.999.999/9999-99")
-//		li ++
-//		@ li, 0 psay __PrtThinLine ()
-//		li += 2
 
 		// Lista dados cadastrais
 		@ li, 0 psay 'Codigo/loja.....: ' + _oAssoc:CodBase + '/' + _oAssoc:LojaBase + ' - ' + _oAssoc:Nome
@@ -339,7 +346,7 @@ static function _Imprime ()
 				_oSQL:_sQuery +=  " ORDER BY E2_VENCREA, E2_FILIAL, E2_NUM, E2_PARCELA"
 			endif
 
-		elseif mv_par03 $ '2020/2021/2022'
+		elseif mv_par03 $ '2020/2021'
 
 			_oSQL:_sQuery += " WITH C AS ("
 			_oSQL:_sQuery += " SELECT E2_FILIAL, E2_NUM, E2_PARCELA, E2_EMISSAO, E2_VENCREA, "
@@ -406,6 +413,71 @@ static function _Imprime ()
 
 			_oSQL:_sQuery +=  " ORDER BY E2_VENCREA, E2_FILIAL, E2_NUM, E2_PARCELA"
 
+		elseif mv_par03 >= '2022'
+
+			// O pagamento da safra 2022 foi previsto mes a mes, mas acabamos
+			// pagando algumas parcelas pela metade e alterando o vencimento
+			// para 2023, entao nao posso simplesmente olhar datas de vencimento.
+			// Terei que olhar pagamento efetivo.
+			// Vou ler o FK2 (movto bancario), achar qquer pagto.feito ao
+			// fornecedor, e depois conferir se eh referente a safra. Assim,
+			// pego ateh pagtos de safras bem atrasadas, caso ocorram.
+			_oSQL:_sQuery += " SELECT E2_FILIAL, E2_NUM, E2_PARCELA, E2_EMISSAO"
+			_oSQL:_sQuery +=       ", SUBSTRING (FK2_DATA, 5, 2) + '/' + SUBSTRING (FK2_DATA, 1, 4) as MES_ANO"
+			_oSQL:_sQuery +=       ", SUM (FK2_VALOR) as VALOR"
+			_oSQL:_sQuery +=  " FROM " + RETSQLNAME ("SZI") + " SZI, "
+			_oSQL:_sQuery +=             RETSQLNAME ("FK2") + " FK2, "
+			_oSQL:_sQuery +=             RETSQLNAME ("FK7") + " FK7, "
+			_oSQL:_sQuery +=             RETSQLNAME ("SE2") + " SE2, "
+			_oSQL:_sQuery +=             RETSQLNAME ("ZX5") + " ZX5 "
+			
+			_oSQL:_sQuery += " WHERE SZI.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND SZI.ZI_TM      IN ('13', '16')"  // QUERO SOMENTE O QUE SIGNIFICA 'COMPRA DA PRODUCAO' DO ASSOCIADO
+
+			// Amarracao SZI com ZX5
+			_oSQL:_sQuery +=   " AND ZX5.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND ZX5.ZX5_FILIAL = (SELECT CASE ZX5_MODO WHEN 'C' THEN '  ' ELSE '" + cFilAnt + "' END"
+			_oSQL:_sQuery +=                           " FROM " + RetSQLName ("ZX5")
+			_oSQL:_sQuery +=                          " WHERE D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=                            " AND ZX5_FILIAL = '  '"
+			_oSQL:_sQuery +=                            " AND ZX5_TABELA = '00'"
+			_oSQL:_sQuery +=                            " AND ZX5_CHAVE  = '10')"
+			_oSQL:_sQuery +=   " AND ZX5.ZX5_TABELA = '10'"
+			_oSQL:_sQuery +=   " AND ZX5.ZX5_10COD  = SZI.ZI_TM"
+
+			// Nao quero movimentos estornados no FK2
+			_oSQL:_sQuery += " and dbo.VA_FESTORNADO_FK2 (FK2.FK2_FILIAL, FK2.FK2_IDFK2) != 1"
+
+			// AMARRACAO ENTRE FK2 E FK7
+			_oSQL:_sQuery += " AND FK2.D_E_L_E_T_ = ''"
+			// nao posso validar filial aqui, pois pode compensar titulos de outra filial. _oSQL:_sQuery += " AND FK2.FK2_FILIAL = FK7.FK7_FILIAL"
+			_oSQL:_sQuery += " AND FK2.FK2_IDDOC  = FK7.FK7_IDDOC"
+
+			// AMARRACAO ENTRE SE2 E FK7 (FK7 CONTROLA OS 'IDDOC' PARA RELACIONAMENTO COM FK2)
+			_oSQL:_sQuery += " AND FK7.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery += " AND FK7.FK7_FILIAL = SE2.E2_FILIAL"
+			_oSQL:_sQuery += " AND FK7.FK7_ALIAS  = 'SE2'"
+			_oSQL:_sQuery += " AND FK7.FK7_CHAVE  = SE2.E2_FILIAL + '|' + SE2.E2_PREFIXO + '|' + SE2.E2_NUM + '|' + SE2.E2_PARCELA + '|' + SE2.E2_TIPO + '|' + SE2.E2_FORNECE + '|' + SE2.E2_LOJA"
+
+			// AMARRACAO ENTRE SE2 E SZI
+			_oSQL:_sQuery += " AND SE2.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery += " AND SE2.E2_FILIAL  = SZI.ZI_FILIAL"
+			_oSQL:_sQuery += " AND SE2.E2_PREFIXO = SZI.ZI_SERIE"
+			_oSQL:_sQuery += " AND SE2.E2_NUM     = SZI.ZI_DOC"
+			_oSQL:_sQuery += " AND SE2.E2_PARCELA = SZI.ZI_PARCELA"
+			_oSQL:_sQuery += " AND SE2.E2_FORNECE = SZI.ZI_ASSOC"
+			_oSQL:_sQuery += " AND SE2.E2_LOJA    = SZI.ZI_LOJASSO"
+
+			_oSQL:_sQuery += " AND FK2.FK2_TPDOC != 'ES'"   // NAO QUERO ESTORNOS
+			_oSQL:_sQuery += " AND FK2.FK2_MOTBX != 'FAT'"  // VALOR BAIXADO EM FATURA NAO DEVE SER CONSIDERADO COMO 'PAGAMENTO EFETUADO AO FORNECEDOR'
+			_oSQL:_sQuery += " AND FK2.FK2_TPDOC != 'BA'"   // BAIXAS CONTA TRANSITORIA QUANDO TRANSFERE TITULO ENTRE FILIAIS
+			// pode estar compensando titulo noutra filial. _oSQL:_sQuery += " AND FK2.FK2_FILIAL = '01'"   // PAGAMENTOS DE SAFRA SAO TODOS FEITOS PALA MATRIZ
+			_oSQL:_sQuery += " AND FK2.FK2_DATA between '" + mv_par03 + "0101' AND '" + mv_par03 + "1231'"
+			_oSQL:_sQuery += " AND SE2.E2_FORNECE + E2_LOJA IN " + FormatIn (_sCodLoja, '/')
+			_oSQL:_sQuery += " GROUP BY E2_FILIAL, E2_NUM, E2_PARCELA, E2_EMISSAO, SUBSTRING (FK2_DATA, 5, 2) + '/' + SUBSTRING (FK2_DATA, 1, 4)"
+			_oSQL:_sQuery += " ORDER BY SUBSTRING (FK2_DATA, 5, 2) + '/' + SUBSTRING (FK2_DATA, 1, 4), E2_NUM, E2_PARCELA"
+			_oSQL:Log ('[' + procname () + ']')
+
 		else
 			u_help ("Sem definicao de tratamento para leitura dos rendimentos de producao para a safra '" + mv_par03 + "'. Solicite manutencao do programa.",, .t.)
 			_oSQL:_sQuery = " SELECT '' as E2_FILIAL, '' as E2_NUM, '' as E2_PARCELA, '' as E2_EMISSAO, '' as E2_VENCREA, 0 as E2_VALOR"
@@ -416,7 +488,11 @@ static function _Imprime ()
 		if mv_par03 >= '2018'
 			_sAliasQ = _oSQL:Qry2Trb (.T.)
 			(_sAliasQ) -> (dbgotop ())
-			@ li, 16 psay 'Filial   Titulo       Emissao     Vencto             Valor'
+			if mv_par03 >= '2022'
+				@ li, 16 psay 'Filial   Titulo       Emissao     Pagamento          Valor'
+			else
+				@ li, 16 psay 'Filial   Titulo       Emissao     Vencto             Valor'
+			endif
 			li ++
 			do while ! (_sAliasQ) -> (eof ())
 				if li > _nMaxLin - 1
@@ -425,9 +501,15 @@ static function _Imprime ()
 					endif
 					cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
 				endif
-				@ li, 16 psay (_sAliasQ) -> e2_filial + '       ' + (_sAliasQ) -> e2_num + '-' + (_sAliasQ) -> e2_parcela + '  ' + dtoc ((_sAliasQ) -> e2_emissao) + '  ' + dtoc ((_sAliasQ) -> e2_vencrea) + transform ((_sAliasQ) -> e2_valor, "@E 999,999,999.99")
-				li ++
-				_nRendProd += (_sAliasQ) -> e2_valor
+				if mv_par03 >= '2022'
+					@ li, 16 psay (_sAliasQ) -> e2_filial + '       ' + (_sAliasQ) -> e2_num + '-' + (_sAliasQ) -> e2_parcela + '  ' + dtoc ((_sAliasQ) -> e2_emissao) + '   ' + (_sAliasQ) -> mes_ano + '  ' + transform ((_sAliasQ) -> valor, "@E 999,999,999.99")
+					li ++
+					_nRendProd += (_sAliasQ) -> valor
+				else
+					@ li, 16 psay (_sAliasQ) -> e2_filial + '       ' + (_sAliasQ) -> e2_num + '-' + (_sAliasQ) -> e2_parcela + '  ' + dtoc ((_sAliasQ) -> e2_emissao) + '  ' + dtoc ((_sAliasQ) -> e2_vencrea) + transform ((_sAliasQ) -> e2_valor, "@E 999,999,999.99")
+					li ++
+					_nRendProd += (_sAliasQ) -> e2_valor
+				endif
 				(_sAliasQ) -> (dbskip ())
 			enddo
 		endif
@@ -450,7 +532,6 @@ static function _Imprime ()
 		cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
 	endif
 	U_ImpParam (_nMaxLin)
-	
 
 	IF m_pag >1
 		_roda()
