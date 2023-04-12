@@ -63,45 +63,47 @@ user function robert ()
 		_lContinua = .F.
 	endif
 	if _lContinua
+		FWMonitorMsg (procname ())  // Substitui a funcao PTInternal()
 		U_Log2 ('info', '[' + procname () + ']Iniciando execucao.')
 		U_UsoRot ('I', procname (), '')
 
+		// _AjLoteEnd ()
+		// _AtuSB1 ()
+		// _aviso ()
+		// _batFull ()
 		// _BatLimp ()
 		// _BatOcor ()
-		// _batFull ()
 		// _BatSafr ()
 		// _BatTrSZI ()
 		// _BatXML ()
 		// _batZBE ()
-		// _SimCtb ()
-		// _FechSafr ()
-		// _Etiq ()
-		// _TrEstq ()
-		// _Sisdevin ()
-		// _metaf ()
-		// _exml ()
-		// _RevCH ()
+		// _CargSaf ()
+		// _ctbANC ()
 		// _elastic ()
+		// _EstFul()
+		// _Etiq ()
 		// _evtXML ()
-		// _telnet ()
-		// _VA_XLS ()
-		// _aviso ()
-		// _reginv ()
+		// _exml ()
+		// _FechSafr ()
+		// _gerasze ()
+		// _GLPI13221 ()
 		// _ImpGPC ()
 		// _memoria ()
-		// _EstFul()
-		// _SF1()
-		// _gerasze ()
-		//_CargSaf ()
-		// _AtuSB1 ()
-		// _ctbANC ()
-		// _ST_MG ()
+		// _metaf ()
 		// _PreNF ()
+		// _reginv ()
+		// _RevCH ()
+		// _RelAssoc ()
+		// _SF1()
+		// _SimCtb ()
+		// _Sisdevin ()
+		// _ST_MG ()
 		// _SZI ()
-		// _verif ()
-		// _AjLoteEnd ()
-		// _GLPI13221 ()
+		// _telnet ()
+		// _TrEstq ()
 		// _VACCR2 ()
+		// _VA_XLS ()
+		// _verif ()
 		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
@@ -112,7 +114,7 @@ return
 // --------------------------------------------------------------------------
 static function _VACCR2 ()
 	cPerg := 'VA_CCR2'
-	U_GravaSX1 (cPerg, '01', '0328           ')  // prod pai ini
+	U_GravaSX1 (cPerg, '01', '0345           ')  // prod pai ini
 	U_GravaSX1 (cPerg, '02', '0348           ')  // prod pai fim
 	U_GravaSX1 (cPerg, '03', 'PA')  // tipo pai ini
 	U_GravaSX1 (cPerg, '04', 'PA')  // tipo pai fim
@@ -156,14 +158,15 @@ return
 // --------------------------------------------------------------------------
 // Ajusta saldo de lote / endereco
 static function _AjLoteEnd ()
-	// Deixo desabilitado pra me obrigar a revisar sempre ---> local _sFilial   := '01'
-	// Deixo desabilitado pra me obrigar a revisar sempre ---> local _sDocto    := 'GLPI13292'
-	// Deixo desabilitado pra me obrigar a revisar sempre ---> local _sProduto  := '2739'
-	// Deixo desabilitado pra me obrigar a revisar sempre ---> local _sAlmox    := '07'
-	// Deixo desabilitado pra me obrigar a revisar sempre ---> local _nQuant    := 0.0003  // qt positiva=gerar entrada
-	// Deixo desabilitado pra me obrigar a revisar sempre ---> local _sEndereco := ''
-	// Deixo desabilitado pra me obrigar a revisar sempre ---> local _sLote     := '09239801'
-	local _oSQL      := NIL
+	// Deixo desabilitado pra me obrigar a revisar sempre --->
+	// Deixo desabilitado pra me obrigar a revisar sempre --->	local _sFilial   := '01'
+	// Deixo desabilitado pra me obrigar a revisar sempre --->	local _sDocto    := 'robert'
+	// Deixo desabilitado pra me obrigar a revisar sempre --->	local _sProduto  := '2525'
+	// Deixo desabilitado pra me obrigar a revisar sempre --->	local _sAlmox    := '07'
+	// Deixo desabilitado pra me obrigar a revisar sempre --->	local _nQuant    := 0.0004  // qt positiva=gerar entrada
+	// Deixo desabilitado pra me obrigar a revisar sempre --->	local _sEndereco := ''
+	// Deixo desabilitado pra me obrigar a revisar sempre --->	local _sLote     := '09517301'
+	// Deixo desabilitado pra me obrigar a revisar sempre --->	local _oSQL      := NIL
 
 	if _sFilial != cFilAnt
 		u_help ("Estou na filial errada",, .t.)
@@ -659,7 +662,7 @@ return
 // --------------------------------------------------------------------------
 static function _batfull ()
 	U_MudaLog ('U_BatFullW.log')
-	U_BatFullW ('E') //'S', nil, 'ZAG  0000005193')
+	U_BatFullW ('E') //, 'ZA1012000603360', nil)
 return
 
 // --------------------------------------------------------------------------
@@ -671,12 +674,12 @@ return
 // --------------------------------------------------------------------------
 static function _BatSafr ()
 //	u_batsafr ('CargasSemContranota')  // cargas sem contranota
-//	u_batsafr ('ConferirParcelamento')  // conferencia geracao das parcelas financeiro
+	u_batsafr ('ConferirParcelamento')  // conferencia geracao das parcelas financeiro
 //	u_batsafr ('ContranotasSemCarga')  // contranotas sem carga
 //	u_batsafr ('ConferirFrete')  // conferencia fretes
 //	u_batsafr ('MailAcompanhamento')  // e-mail diario de acompanhamento de safra
 //	u_batsafr ('GerarSZI')  // gera SZI a partir das parcelas
-	u_batsafr ('ConferirSZI')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
+//	u_batsafr ('ConferirSZI')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
 //	u_batsafr ('TransfTitNaoAssocParaMatriz')  // Transfere (das filiais para a matriz) os titulos de nao associados.
 //	u_batsafr ('TransfSZIParaMatriz')  // Transfere SZI para a matriz (normalmente ao gerar o SZI jah faz isso, mas para garantir...)
 return
@@ -778,11 +781,229 @@ return
 
 // --------------------------------------------------------------------------
 static function _exml ()
-	_oNFe := ClsNFe ():New ()
-	_oNFe:IdNFe050 = 'concatenar_aqui_serie_e_NF'
-	_sRet2 = _oNFe:GetXML ()
-	U_Log2 ('debug', '[' + procname () + ']' + _sRet2)
+	local _sFilOrig  := ''
+	local _sFilDest  := ''
+	local _sOP       := ''
+	local _sImprEtq  := ''
+	local _nItem     := 0
+	local _lTodosOK  := .F.
+	local _sRetGrid  := ''
+	private _sError := _sWarning := _sXmlRcv := _sErroWS := _sWS_Empr := _sWS_Filia := _sAcao := _sMsgRetWS := ''
+	private _oXML := NIL
+	_sXmlRcv +=    '<WSAlianca><User>robert.koch</User><IDAplicacao>gg2gj256y5f2c5b89</IDAplicacao><Empresa>01</Empresa><Filial>01</Filial>'
+	_sXmlRcv +=    '<Acao>TransfEstqInsereGrid</Acao>'
+	_sXmlRcv +=    '<FilialOrigem>01</FilialOrigem>'
+	_sXmlRcv +=    '<FilialDestino>01</FilialDestino>'
+	_sXmlRcv +=    '<OP></OP>'
+	_sXmlRcv +=    '<Impressora>98</Impressora>'
+	_sXmlRcv +=    '<TransfEstqItens>'
+	_sXmlRcv +=       '<Item>'
+	_sXmlRcv +=          '<ProdutoOrigem>0348</ProdutoOrigem>'
+	_sXmlRcv +=          '<ProdutoDestino>0348</ProdutoDestino>'
+	_sXmlRcv +=          '<AlmoxOrigem>25</AlmoxOrigem>'
+	_sXmlRcv +=          '<AlmoxDestino>01</AlmoxDestino>'
+	_sXmlRcv +=          '<LoteOrigem></LoteOrigem>'
+	_sXmlRcv +=          '<LoteDestino>001</LoteDestino>'
+	_sXmlRcv +=          '<EnderecoOrigem></EnderecoOrigem>'
+	_sXmlRcv +=          '<EnderecoDestino></EnderecoDestino>'
+	_sXmlRcv +=          '<QtdSolic>1</QtdSolic>'
+	_sXmlRcv +=          '<Motivo>teste robert grid item 1</Motivo>'
+	_sXmlRcv +=       '</Item>'
+	_sXmlRcv +=       '<Item>'
+	_sXmlRcv +=          '<ProdutoOrigem>0327</ProdutoOrigem>'
+	_sXmlRcv +=          '<ProdutoDestino>0327</ProdutoDestino>'
+	_sXmlRcv +=          '<AlmoxOrigem>25</AlmoxOrigem>'
+	_sXmlRcv +=          '<AlmoxDestino>01</AlmoxDestino>'
+	_sXmlRcv +=          '<LoteOrigem></LoteOrigem>'
+	_sXmlRcv +=          '<LoteDestino>001</LoteDestino>'
+	_sXmlRcv +=          '<EnderecoOrigem></EnderecoOrigem>'
+	_sXmlRcv +=          '<EnderecoDestino></EnderecoDestino>'
+	_sXmlRcv +=          '<QtdSolic>1</QtdSolic>'
+	_sXmlRcv +=          '<Motivo>teste robert grid item 2</Motivo>'
+	_sXmlRcv +=       '</Item>'
+	_sXmlRcv +=       '<Item>'
+	_sXmlRcv +=          '<ProdutoOrigem>0345</ProdutoOrigem>'
+	_sXmlRcv +=          '<ProdutoDestino>0345</ProdutoDestino>'
+	_sXmlRcv +=          '<AlmoxOrigem>25</AlmoxOrigem>'
+	_sXmlRcv +=          '<AlmoxDestino>01</AlmoxDestino>'
+	_sXmlRcv +=          '<LoteOrigem></LoteOrigem>'
+	_sXmlRcv +=          '<LoteDestino>001</LoteDestino>'
+	_sXmlRcv +=          '<EnderecoOrigem></EnderecoOrigem>'
+	_sXmlRcv +=          '<EnderecoDestino></EnderecoDestino>'
+	_sXmlRcv +=          '<QtdSolic>1</QtdSolic>'
+	_sXmlRcv +=          '<Motivo>teste robert grid item 3</Motivo>'
+	_sXmlRcv +=       '</Item>'
+	_sXmlRcv +=       '<Item>'
+	_sXmlRcv +=          '<ProdutoOrigem>0345</ProdutoOrigem>'
+	_sXmlRcv +=          '<ProdutoDestino>0345</ProdutoDestino>'
+	_sXmlRcv +=          '<AlmoxOrigem>25</AlmoxOrigem>'
+	_sXmlRcv +=          '<AlmoxDestino>01</AlmoxDestino>'
+	_sXmlRcv +=          '<LoteOrigem>001</LoteOrigem>'
+	_sXmlRcv +=          '<LoteDestino>001</LoteDestino>'
+	_sXmlRcv +=          '<EnderecoOrigem></EnderecoOrigem>'
+	_sXmlRcv +=          '<EnderecoDestino></EnderecoDestino>'
+	_sXmlRcv +=          '<QtdSolic>1</QtdSolic>'
+	_sXmlRcv +=          '<Motivo>teste robert grid item 4</Motivo>'
+	_sXmlRcv +=       '</Item>'
+	_sXmlRcv +=    '</TransfEstqItens>'
+	_sXmlRcv +=    '</WSAlianca>'
+	U_Log2 ('debug', '[' + procname () + ']' + _sXmlRcv)
+	U_ValReqWS ('WS_ALIANCA', _sXmlRcv, @_sErroWS, @_sWS_Empr, @_sWS_Filia, @_sAcao)
+	
+	// Algumas tags serao unicas, como se fosse um cabecalho de tela.
+	if empty (_sErroWS) ; _sFilOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialOrigem",    .t., .F.), 2)  ; endif
+	if empty (_sErroWS) ; _sFilDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_FilialDestino",   .t., .F.), 2)  ; endif
+	if empty (_sErroWS) ; _sOP      = padr (_ExtraiTag ("_oXML:_WSAlianca:_OP",              .f., .F.), 14) ; endif
+	if empty (_sErroWS) ; _sImprEtq =       _ExtraiTag ("_oXML:_WSAlianca:_Impressora",      .f., .F.)      ; endif
+	if empty (_sErroWS) .and. type ("_oXML:_WSAlianca:_TransfEstqItens") != 'O'
+		_SomaErro ("Tag '_oXML:_WSAlianca:_TransfEstqItens' deve estar presente no XML.")
+	endif
+
+	// Se eu tiver recebido mais de um item (a tag <item> pode se repetir), o
+	// o tipo do objeto vai ser 'array'. Para trabalhar mais adiante com um
+	// soh trecho de programa, usarei nomes de objetos _oTrEstq1, _oTrEstq2, ...
+	// Tentei trabalhar com uma array e guardar objetos nela, mas comecei a ter
+	// problemas de misturar dados entre os objetos. Entao achei melhor criar
+	// um objeto para cada item do XML recebido. O acesso a cada objeto fica
+	// chato de fazer por que preciso do '&', mas posso criar quantos objetos
+	// forem necessarios.
+	if type ("_oXML:_WSAlianca:_TransfEstqItens:_Item") == 'A'  // Mais de um item no XML
+		if len (_oXML:_WSAlianca:_TransfEstqItens:_Item) > 99
+			_SomaErro ("Limite maximo de 99 itens.")  // Na verdade, espero ficar abaixo de 10
+		endif
+		_nItem = 1
+		do while empty (_sErroWS) .and. _nItem <= len (_oXML:_WSAlianca:_TransfEstqItens:_Item)
+			U_Log2 ('debug', '[' + procname () + ']Lendo item ' + cvaltochar (_nItem) + ' do XML')
+			&('_oTrEstq' + cvaltochar (_nItem)) := ClsTrEstq ():New ()
+			&('_oTrEstq' + cvaltochar (_nItem)):FilOrig  = _sFilOrig
+			&('_oTrEstq' + cvaltochar (_nItem)):FilDest  = _sFilDest
+			&('_oTrEstq' + cvaltochar (_nItem)):OP       = _sOP
+			&('_oTrEstq' + cvaltochar (_nItem)):ImprEtq  = _sImprEtq
+			&('_oTrEstq' + cvaltochar (_nItem)):UsrIncl  = cUserName
+			&('_oTrEstq' + cvaltochar (_nItem)):DtEmis   = date ()
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):ProdOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ProdutoOrigem",   .T., .F.), 15) ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):ProdDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_ProdutoDestino",  .T., .F.), 15) ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):AlmOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_AlmoxOrigem",     .T., .F.), 2) ;  endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):AlmDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_AlmoxDestino",    .T., .F.), 2) ;  endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):LoteOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_LoteOrigem",      .F., .F.), 10) ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):LoteDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_LoteDestino",     .F., .F.), 10) ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):EndOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_EnderecoOrigem",  .F., .F.), 15) ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):EndDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_EnderecoDestino", .F., .F.), 15) ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):QtdSolic = val  (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_QtdSolic",        .T., .F.)) ;     endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):Motivo   =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_Motivo",          .T., .F.) ;      endif
+			_nItem ++
+		enddo
+	elseif type ("_oXML:_WSAlianca:_TransfEstqItens:_Item") == 'O'  // Um item apenas no XML
+		_oTrEstq1 := ClsTrEstq ():New ()
+		_oTrEstq1:FilOrig  = _sFilOrig
+		_oTrEstq1:FilDest  = _sFilDest
+		_oTrEstq1:OP       = _sOP
+		_oTrEstq1:ImprEtq  = _sImprEtq
+		_oTrEstq1:UsrIncl  = cUserName
+		_oTrEstq1:DtEmis   = date ()
+		if empty (_sErroWS) ; _oTrEstq1:ProdOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ProdutoOrigem",   .T., .F.), 15) ; endif
+		if empty (_sErroWS) ; _oTrEstq1:ProdDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_ProdutoDestino",  .T., .F.), 15) ; endif
+		if empty (_sErroWS) ; _oTrEstq1:AlmOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_AlmoxOrigem",     .T., .F.), 2) ;  endif
+		if empty (_sErroWS) ; _oTrEstq1:AlmDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_AlmoxDestino",    .T., .F.), 2) ;  endif
+		if empty (_sErroWS) ; _oTrEstq1:LoteOrig = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_LoteOrigem",      .F., .F.), 10) ; endif
+		if empty (_sErroWS) ; _oTrEstq1:LoteDest = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_LoteDestino",     .F., .F.), 10) ; endif
+		if empty (_sErroWS) ; _oTrEstq1:EndOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_EnderecoOrigem",  .F., .F.), 15) ; endif
+		if empty (_sErroWS) ; _oTrEstq1:EndDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_EnderecoDestino", .F., .F.), 15) ; endif
+		if empty (_sErroWS) ; _oTrEstq1:QtdSolic = val  (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_QtdSolic",        .T., .F.)) ;     endif
+		if empty (_sErroWS) ; _oTrEstq1:Motivo   =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_Motivo",          .T., .F.) ;      endif
+	endif
+
+	// Antes de gravar qualquer coisa, preciso ver se todos os itens podem ser aceitos.
+	_lTodosOK = .T.
+	_nItem = 1
+	do while empty (_sErroWS) .and. type ('_oTrEstq' + cvaltochar (_nItem)) == 'O' //valtype (&('_oTrEstq' + cvaltochar (_nItem))) == 'O'
+		U_Log2 ('debug', '[' + procname () + ']vOU VER SE PODE INCLUIR O SEGUINTE OBJETO:')
+		u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
+		if ! &('_oTrEstq' + cvaltochar (_nItem)):PodeIncl ()
+			_lTodosOK = .F.
+		endif
+		_nItem ++
+	enddo
+
+	// Prepara variavel para dar retorno de cada item.
+	_sRetGrid = '<RetornoSolicitacao>'
+	_nItem = 1
+	do while type ('_oTrEstq' + cvaltochar (_nItem)) == 'O' //valtype (&('_oTrEstq' + cvaltochar (_nItem))) == 'O'
+		_sRetGrid += '<Item' + strzero (_nItem, 3) + '>'
+		
+		// Se todos estao ok (deverao ser aceitos), jah posso grava-los.
+		if _lTodosOK
+			if ! &('_oTrEstq' + cvaltochar (_nItem)):Grava ()
+				_sRetGrid += "ERRO:" + &('_oTrEstq' + cvaltochar (_nItem)):UltMsg
+				U_Log2 ('debug', '[' + procname () + ']Nao gravou: ' + &('_oTrEstq' + cvaltochar (_nItem)):UltMsg)
+			else
+				_sRetGrid += "OK:Gerada solicitacao " + &('_oTrEstq' + cvaltochar (_nItem)):Docto + '/' + &('_oTrEstq' + cvaltochar (_nItem)):Seq
+				U_Log2 ('debug', '[' + procname () + ']Gravei solicitacao ' + cvaltochar (_nItem) + ', que ficou assim:')
+				u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
+			endif
+		else  // Vou apenas retornar se os itens seriam ou nao aceitos
+			if ! empty (&('_oTrEstq' + cvaltochar (_nItem)):UltMsg)
+				_sRetGrid += "ERRO:" + &('_oTrEstq' + cvaltochar (_nItem)):UltMsg
+			else
+				_sRetGrid += "OK"
+			endif
+		endif
+		_sRetGrid += '</Item' + strzero (_nItem, 3) + '>'
+		_nItem ++
+	enddo
+
+	_sRetGrid += '</RetornoSolicitacao>'
+	_sMsgRetWS = _sRetGrid
+	U_Log2 ('debug', '[' + procname () + ']' + _sMsgRetWS)
 return
+// --------------------------------------------------------------------------
+// Extrair tag do XML original
+static function _ExtraiTag (_sTag, _lObrig, _lValData)
+	local _sRet    := ""
+	local _lDataOK := .T.
+	local _nPos    := 0
+
+//	U_Log2 ('debug', '[' + procname () + ']Tentando ler a tag ' + _sTag)
+//	U_Log2 ('debug', '[' + procname () + ']Type:' + type (_sTag))
+	if type (_sTag) != "O"
+		if _lObrig
+			_SomaErro ("XML invalido: Tag '" + _sTag + "' nao encontrada.")
+		endif
+	else
+		_sRet = &(_sTag + ":TEXT")
+//		U_Log2 ('debug', '[' + procname () + ']Li a tag ' + _sTag + ' e obtive: ' + _sRet)
+		if empty (_sRet) .and. _lObrig
+			_SomaErro ("XML invalido: valor da tag '" + _sTag + "' deve ser informado.")
+		endif
+		if _lValData  // Preciso validar formato da data
+			if ! empty (_sRet)
+				if len (_sRet) != 8
+					_lDataOK = .F.
+				else
+					for _nPos = 1 to len (_sRet)
+						if ! IsDigit (substr (_sRet, _nPos, 1))
+							_lDataOK = .F.
+							exit
+						endif
+					next
+				endif
+				if ! _lDataOK
+					_SomaErro ("Data deve ser informada no formato AAAAMMDD")
+				endif
+			endif
+		endif
+	endif
+return _sRet
+// --------------------------------------------------------------------------
+// Acrescenta na string de retorno de erros uma nova mensagem (se ainda nao contiver)
+static function _SomaErro (_sMsg)
+	local _sMsgAux := alltrim (cvaltochar (_sMsg))
+	if ! _sMsgAux $ _sErroWS
+		_sErroWS += iif (empty (_sErroWS), '', '; ') + _sMsgAux
+	endif
+return
+
+
 
 // --------------------------------------------------------------------------
 static function _metaf ()
@@ -791,14 +1012,27 @@ static function _metaf ()
 	u_batmetaf ()
 return
 
+
 // --------------------------------------------------------------------------
 static function _Etiq ()
-	local _oEtiq := NIL
-//	_oEtiq := ClsEtiq ():New ('2000527843')  // Etiq apontamento de OP (item 0151)
-//	_oEtiq:Imprime ('01')
-	_oEtiq := ClsEtiq ():New ('2000588284')
-	_oEtiq:Imprime ('98')
-	_oEtiq:EnviaFull (.f.)
+//	local _oEtiq := NIL
+//	local _nConta := 0
+/*
+	local _nEtiq := 0
+	local _aEtiq := {}
+	aadd (_aEtiq, '2000610026')
+	for _nEtiq = 1 to len (_aEtiq)
+		_oEtiq := ClsEtiq ():New (_aEtiq [_nEtiq])
+	//	_oEtiq:Imprime ('01')
+	//	_oEtiq:EnviaFull (.f.)
+	//	if ! _oEtiq:ApontaOP (date(), '1')
+	//	if ! _oEtiq:Recebe3 ()
+		if ! _oEtiq:Inutiliza ()
+			U_Log2 ('debug', '[' + procname () + ']' + _oEtiq:UltMsg)
+		endif
+	next
+RETURN
+*/
 /*
 	za1 -> (dbsetorder (2))  // ZA1_FILIAL, ZA1_OP, R_E_C_N_O_, D_E_L_E_T_
 	za1 -> (dbseek (xfilial ("ZA1") + '0', .t.))
@@ -833,6 +1067,38 @@ static function _Etiq ()
 //	_oEtiq := CLsEtiq ():New ()
 //	_oEtiq:NovaPorSD5 (sd5 -> d5_produto, sd5 -> d5_LoteCtl, sd5 -> d5_local, sd5 -> d5_NumSeq)
 //	U_Log2 ('debug', _oEtiq:UltMsg)
+
+/*	_nLock := U_Semaforo ('GeraNumeroZA1', .T.)  // Usar a mesma chave em todas as chamadas!
+	u_log (_nLock)
+	if _nLock == 0
+		u_help ("Bloqueio de semaforo")
+	else
+		_nConta = 30
+		do while _nConta-- > 0
+			U_Log2 ('debug', '[' + procname () + ']segurando semaforo... ' + cvaltochar (_nConta))
+			sleep (1000)
+		enddo
+	endif
+	if _nLock > 0
+		U_Semaforo (_nLock)
+	endif
+*/
+/*
+	RegToMemory ("ZA1", .t., .t.)
+	m->za1_op   = '13216701002'
+	m->za1_data = date ()
+	m->za1_prod = '0345           '
+	M->ZA1_QUANT = 41
+	M->ZA1_USRINC = CUSERNAME
+	_oEtiq := ClsEtiq ():New ()
+	_oEtiq:GeraAtrib ('M')  // Gerar a partir das variaveis M-> da tela.
+	if _oEtiq:PodeIncl ()
+		if _oEtiq:Grava ()
+			_oEtiq:GeraAtrib ("ZA1")  // Atualiza demais atributos, que soh existirao depois da gravacao.
+			//_oEtiq:Imprime ('98')
+		endif
+	endif
+*/
 return
 
 // --------------------------------------------------------------------------
@@ -896,7 +1162,7 @@ RETURN
 // --------------------------------------------------------------------------
 // Testes verificacoes genericas.
 static function _verif ()
-
+	local _sHtmHlp := ''
 	// _oVerif := ClsVerif():New (25)
 	// _oVerif:SetParam ('01', '2017')
 	// _oVerif:SetParam ('02', '')
@@ -910,20 +1176,33 @@ static function _verif ()
 	// _oVerif:SetParam ('02', '09189201001  ')
 	// _oVerif:SetParam ('03', '')
 	// _oVerif:SetParam ('04', 'z')
-	_oVerif := ClsVerif():New (93)
-		_oVerif:SetParam ('01', date () - 30)
-		_oVerif:SetParam ('02', date ())
+	//_oVerif := ClsVerif():New (93)
+	//_oVerif:SetParam ('01', date () - 30)
+	//_oVerif:SetParam ('02', date ())
 	//	_oVerif:SetParam ('03', '')
 	//	_oVerif:SetParam ('04', 'z')
 	//	//U_Log2 ('debug', '[' + procname () + ']ult ver:' + cvaltochar (_oVerif:UltVerif))
-	if _oVerif:Executa ()
-		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
-		u_log2 ('debug', _oVerif:Result)
-		//u_acolsxls (_oVerif:Result)
-	else
-		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
-	endif
+	//	if _oVerif:Executa ()
+	//		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
+	//		u_log2 ('debug', _oVerif:Result)
+	//		//u_acolsxls (_oVerif:Result)
+	//	else
+	//		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
+	//	endif
 	
+	_oVerif := ClsVerif():New ()
+	_sHtmHlp = _oVerif:GeraHelp ()
+
+	// Exporta para arquivo, durante a implementacao, para conferencia.
+	_sArq := 'c:\temp\verif.htm'
+	if file (_sArq)
+		delete file (_sArq)
+	endif
+	_nHdl = fcreate (_sArq, 0)
+	fwrite (_nHdl, _sHtmHlp)
+	fclose (_nHdl)
+
+
 	//U_MudaLog ('U_BatVerif.log')
 	//u_batverif ()
 return
@@ -1336,50 +1615,64 @@ return
 	endtry
 return
 */
-/*
-	// Testes relatorios associados que devem trazer totais consistentes entre si
-	_aAssoc = {}
+
+// --------------------------------------------------------------------------
+// Testes relatorios associados que devem trazer totais consistentes entre si
+static function _RelAssoc ()
+	local _aAssoc := {}
+	local _nAssoc := 0
+
 	// aadd (_aAssoc, '003577')  // bastante movimento
 	// aadd (_aAssoc, '005128')  // apenas 1 entrada e 1 compra
-	// aadd (_aAssoc, '001369')  // so 14 complementos
-	// aadd (_aAssoc, '004826')  // 9+6+0
-	// aadd (_aAssoc, '003241')  // 16+15+2 Idalino Pan - tem complemento
+	// aadd (_aAssoc, '001369')  // "apenas" 14 complementos
 	// aadd (_aAssoc, '000643')  // UM ASSOCIADO QUE TEVE REPARCELAMENTO em 2020
 	// aadd (_aAssoc, '012791')  // lUIS eSCOSTEGUY (nao associado de Livramento)
-	// aadd (_aAssoc, '002380')  // Elmar Busetti
-	// aadd (_aAssoc, '002859')  // Celso Chiarani
+	// DIF aadd (_aAssoc, '002380')  // Elmar Busetti
+	// FECHOU aadd (_aAssoc, '002859')  // Celso Chiarani
 	// aadd (_aAssoc, '000289')  // Rui Bertuol - UNIMED em aberto.
 	// aadd (_aAssoc, '003024')  // Vilson Da Campo - NF de compra devolvida em 2020.
 	// aadd (_aAssoc, '002660')  // Cledinei Da Campo - NF trocada com Vilson em 2020.
-	// aadd (_aAssoc, '002932')  // Joel Panizzon
-	// aadd (_aAssoc, '000184')  // Arside Piton
-	// aadd (_aAssoc, '004341')  // Fernando Fagundes
-	// aadd (_aAssoc, '002637')  // Aldir Marini (aparecem pagtos 2020 junto com 2021)
 	// aadd (_aAssoc, '005567')  // Fazenda Passo da Cria
-	//aadd (_aAssoc, '002486')  // Fernando Valentin Busetti
-	//aadd (_aAssoc, '002517')  // Santo Jose Busetti (diversas variedades de uva)
-	//aadd (_aAssoc, '003621')  // Dejair Betlinski
-	//aadd (_aAssoc, '010637')  // Cristiano Adilio de Souza - premio 2022 duplicado
-	aadd (_aAssoc, '002911')  // Honorino - premio 2022 duplicado
+	// FECHOU aadd (_aAssoc, '002932')  // Joel Panizzon
+	// FECHOU aadd (_aAssoc, '002486')  // Fernando Valentin Busetti
+	// FECHOU aadd (_aAssoc, '002517')  // Santo Jose Busetti (diversas variedades de uva)
+	// AGORA FECHOU aadd (_aAssoc, '003621')  // Dejair Betlinski
+	// DIF aadd (_aAssoc, '010637')  // Cristiano Adilio de Souza - premio 2022 duplicado
+	// DIF aadd (_aAssoc, '002911')  // Honorino - premio 2022 duplicado - saiu em 2022
+	// CONTINUA FECHANDO aadd (_aAssoc, '005212')  // Heleno Facchin - estaria faltando matade dos valores no demonatrativo de IR ano base 2022
+	// FECHOU aadd (_aAssoc, '010601')  // Joel Salton - conferencia IR 2022
+	// FECHOU aadd (_aAssoc, '010602')  // Jorge Salton - conferencia IR 2022
+	// FECHOU aadd (_aAssoc, '010599')  // Joemir Salton - conferencia IR 2022
+	// aadd (_aAssoc, '004369')  // Gustavo De Toni - conferencia IR 2022
+	// DIF aadd (_aAssoc, '003003')  // Tania zanata Boz - conferencia IR 2022
+	// CONTINUA FECHANDO aadd (_aAssoc, '033490')  // Grasiela Parisotto - conferencia IR 2022
+	aadd (_aAssoc, '003026')  // Marcos Parisotto  - conferencia IR 2022
+	// AGORA FECHOU aadd (_aAssoc, '018409')  // Marcelo Avelino Parisotto  - conferencia IR 2022
+	// CONTINUA FECHANDO aadd (_aAssoc, '002653')  // Balduino Parisotto - conferencia IR 2022
+	// Patricia Turella e o Edgar Schiavenin
+	// aadd (_aAssoc, '002924')  // Ivo Boldrin - fech.safra 2022 parece trazer R$ 79,79 a mais (deve ser funrural)
+	//aadd (_aAssoc, '002832')  // Alex Boldrin - fech.safra 2022 resumo pagto nao bate com notas de safra
 	for _nAssoc = 1 to len (_aAssoc)
 		U_Log2 ('info', 'Iniciando associado ' + _aAssoc [_nAssoc])
-		U_GravaSX1 ("ML_FECHASA", '01', '2021')  // safra
+		U_GravaSX1 ("ML_FECHASA", '01', '2022')  // safra
 		U_GravaSX1 ("ML_FECHASA", '02', _aAssoc [_nAssoc])
 		U_GravaSX1 ("ML_FECHASA", '03', '01')  // loja
 		U_GravaSX1 ("ML_FECHASA", '04', '  ')  // nucleo
-		U_GravaSX1 ("ML_FECHASA", '05', 1)  // lista saldo CC 1=sim;2=nao
+		U_GravaSX1 ("ML_FECHASA", '05', 2)  // lista saldo CC 1=sim;2=nao
 		U_GravaSX1 ("ML_FECHASA", '06', 2 )  // 1=detalhado;2=resumido;3=apenas NF compra
 		U_ml_fechasafra (.T.)
 		//
-		//U_GravaSX1 ("IRASSOC", '01', '')  // CPF ini
-		//U_GravaSX1 ("IRASSOC", '02', 'z')  // CPF fim
-		//U_GravaSX1 ("IRASSOC", '03', '2021')  // ano base
-		//U_GravaSX1 ("IRASSOC", '04', _aAssoc [_nAssoc])  // assoc ini
-		//U_GravaSX1 ("IRASSOC", '05', '')  // loja ini
-		//U_GravaSX1 ("IRASSOC", '06', _aAssoc [_nAssoc]) //002932')  // assoc fim
-		//U_GravaSX1 ("IRASSOC", '07', 'z')  // loja fim
-		//U_GravaSX1 ("IRASSOC", '08', '')  // nucleo
-		//u_IRAssoc (.T.)
+		// U_GravaSX1 ("IRASSOC", '01', '')  // CPF ini
+		// U_GravaSX1 ("IRASSOC", '02', 'z')  // CPF fim
+		// U_GravaSX1 ("IRASSOC", '03', '2022')  // ano base
+		// U_GravaSX1 ("IRASSOC", '04', _aAssoc [_nAssoc])  // assoc ini
+		// U_GravaSX1 ("IRASSOC", '05', '  ')  // loja ini
+		// U_GravaSX1 ("IRASSOC", '06', _aAssoc [_nAssoc]) //002932')  // assoc fim
+		// U_GravaSX1 ("IRASSOC", '07', 'zz')  // loja fim
+		// U_GravaSX1 ("IRASSOC", '08', '  ')  // nucleo
+		// u_IRAssoc (.T.)
+		// U_GravaSX1 ("IRASSOC", '03', '2023')  // ano base
+		// u_IRAssoc (.T.)
 		//
 		//U_GravaSX1 ("SZI_REL2", "01", _aAssoc [_nAssoc])
 		//U_GravaSX1 ('SZI_REL2', "02", '')
@@ -1428,7 +1721,7 @@ return
 		//u_szi_lcs (.t., 4)
 	next
 return
-*/
+
 /*
 // Testes batches em geral
 //	_sArqLog := 'U_BatCompAssoc_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
