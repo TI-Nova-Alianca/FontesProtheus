@@ -368,9 +368,9 @@ User Function EtqPllGO (_sProduto, _sOP, _nQuant, _dData)
 			U_Semaforo (_nLock)
 		endif
 
-		reclock ("SC2", .F.)
-		sc2 -> c2_vaqtetq = len (_aPal)  // ELIMINAR ISTO QUANDO O CAMPO ZA1_QTGRUP JAH ESTIVER SENDO POPULADO.
-		msunlock ()
+//		reclock ("SC2", .F.)
+//		sc2 -> c2_vaqtetq = len (_aPal)  // ELIMINAR ISTO QUANDO O CAMPO ZA1_QTGRUP JAH ESTIVER SENDO POPULADO.
+//		msunlock ()
 	endif
 
 	U_ML_SRArea (_aAreaAnt)

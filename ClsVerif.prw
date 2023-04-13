@@ -3562,6 +3562,43 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query +=  " WHERE D3_CUSTO1 != D1_CUSTO OR D1_CUSTO IS NULL"
 		::Query +=  " ORDER BY D3_FILIAL, D3_EMISSAO, D3_DOC, D3_COD"
 
+
+/* migrar esta de VerInv:
+	_sProblema = 'O.P. em aberto'
+	_sQuery := "SELECT '" + _sProblema + "' AS PROBLEMA,"
+	_sQuery +=       " SC2.C2_NUM + SC2.C2_ITEM + SC2.C2_SEQUEN + SC2.C2_ITEMGRD AS OP,"
+	_sQuery +=       " SC2.C2_PRODUTO AS PRODUTO, SB1.B1_TIPO AS TIPO, SB1.B1_DESC AS DESCRICAO,"
+	_sQuery +=       " dbo.VA_DTOC (SC2.C2_EMISSAO) AS EMISSAO, dbo.VA_DTOC (SC2.C2_DATPRF) AS DT_PREVISTA,"
+	_sQuery +=       " SC2.C2_QUANT AS QT_PREVISTA, SC2.C2_QUJE AS QT_PRODUZIDA, SC2.C2_LOCAL AS ALMOX, SC2.C2_VAUSER AS USUARIO"
+	_sQuery +=  " FROM " + RETSQLNAME ("SC2") + " SC2, "
+	_sQuery +=             RETSQLNAME ("SB1") + " SB1 "
+	_sQuery += " WHERE SC2.D_E_L_E_T_ = ''"
+	_sQuery +=   " AND SC2.C2_FILIAL  = '" + xfilial ("SC2") + "'"
+	_sQuery +=   " AND SC2.C2_TPOP != 'P'"
+	_sQuery +=   " AND SB1.D_E_L_E_T_ = ''"
+	_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+	_sQuery +=   " AND SB1.B1_COD = SC2.C2_PRODUTO"
+	_sQuery +=   " AND SC2.C2_QUJE != 0"
+	_sQuery +=   " AND SC2.C2_DATRF = ''"
+	_sQuery += " ORDER BY C2_NUM, C2_ITEM, C2_SEQUEN, C2_ITEMGRD"
+*/
+/* migrar esta de VerInv:
+	_sProblema = 'Empenho com saldo para OP encerrada'
+	_sQuery := "SELECT '" + _sProblema + "' AS PROBLEMA,"
+	_sQuery +=       " D4_OP AS OP, D4_COD AS PRODUTO, D4_LOCAL AS ALMOX, D4_QUANT AS QT_EMPENHO"
+	_sQuery +=  " FROM " + RETSQLNAME ("SD4") + " SD4 "
+	_sQuery += " WHERE SD4.D_E_L_E_T_ = ''"
+	_sQuery +=   " AND SD4.D4_FILIAL  = '" + xfilial ("SD4") + "'"
+	_sQuery +=   " AND SD4.D4_QUANT   > 0"
+	_sQuery +=   " AND NOT EXISTS (SELECT *"
+	_sQuery +=                     " FROM " + RETSQLNAME ("SC2") + " SC2 "
+	_sQuery +=                    " WHERE SC2.D_E_L_E_T_ = ''"
+	_sQuery +=                      " AND SC2.C2_FILIAL  = SD4.D4_FILIAL"
+	_sQuery +=                      " AND SC2.C2_DATRF   = ''"
+	_sQuery +=                      " AND SC2.C2_NUM + C2_ITEM + C2_SEQUEN + C2_ITEMGRD = D4_OP)"
+	_sQuery += " ORDER BY D4_OP, D4_COD"
+*/
+
 	otherwise
 		::UltMsg = "Verificacao numero " + cvaltochar (::Numero) + " nao definida."
 

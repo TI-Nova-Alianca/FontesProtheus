@@ -98,7 +98,7 @@ CLASS ClsEtiq
 	public  data QtApontada   // Quando relacionada a uma OP
 	public  data QtDE4        // Quantidade movimentada com D3_CF=DE4
 	public  data QtEstornada  // Quando relacionada a uma OP
-	public  data QtEtqGrupo   // C2_VAQTETQ - Quantidade de etiquetas do grupo (geralmente usada com OP)
+	public  data QtEtqGrupo   // za1_qtgrup (antigo C2_VAQTETQ) - Quantidade de etiquetas do grupo (geralmente usada com OP)
 	public  data QtPerdida    // Quando relacionada a uma OP
 	public  data QtRE4        // Quantidade movimentada com D3_CF=RE4
 	public  data Quantidade   // ZA1_QUANT
@@ -666,11 +666,11 @@ METHOD GeraAtrib (_sOrigem) Class ClsEtiq
 					::CBEmbCol   = sc2 -> c2_vaBarCx
 					::FinalidOP  = sc2 -> c2_vaOpEsp
 					
-					// DEIXAR ISTO POR UM TEMPO ATEH O CAMPO ZA1_QTGRUP ESTAR BEM POPULADO.
-					// (OU FAZER UM UPDATE ZA1_QTGRUP = C2_VAQTETQ)
-					if ::QtEtqGrupo == 0
-						::QtEtqGrupo = sc2 -> c2_vaqtetq
-					endif
+			//		// DEIXAR ISTO POR UM TEMPO ATEH O CAMPO ZA1_QTGRUP ESTAR BEM POPULADO.
+			//		// (OU FAZER UM UPDATE ZA1_QTGRUP = C2_VAQTETQ)
+			//		if ::QtEtqGrupo == 0
+			//			::QtEtqGrupo = sc2 -> c2_vaqtetq
+			//		endif
 					
 					// Jah peguei casos de excluirem uma OP e cadastrarem uma
 					// nova de mesmo numero, para outro produto!
