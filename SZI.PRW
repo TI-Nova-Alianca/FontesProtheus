@@ -63,6 +63,7 @@
 // 27/02/2022 - Robert  - Adicionada coluna HIST na consulta de titulos agrupados numa fatura (GLPI 11678)
 // 05/04/2022 - Robert  - Verifica valor do SE2 antes do recalculo manual de saldos.
 // 22/08/2022 - Robert  - Consulta de movtos.vinculados passa a usar o metodo :RegRelac().
+// 14/04/2023 - Robert  - Geracao manual do SE2 passa a perguntar data de vencimento.
 //
 
 #include "colors.ch"
@@ -205,6 +206,7 @@ User Function SZIR (_nQual)
 	local _aColsRel  := {}
 	local _aRegRel   := {}
 	local _nRegRel   := 0
+	local _dDVctoSE2 := ctod ('')
 
 	do case
 	case _nQual == 1
@@ -445,12 +447,18 @@ User Function SZIR (_nQual)
 			if dDataBase != szi -> zi_data
 				u_help ("Use data base igual a data do SZI.")
 			else
-				_oCtaCorr := ClsCtaCorr ():New (szi -> (recno ()))
-				//u_log2 ('debug', _oCtaCorr)
-				if ! _oCtaCorr:GeraSE2 (_oCtaCorr:OQueGera (), _oCtaCorr:DtMovto, .F.)
-					u_help (_oCtaCorr:UltMsg,, .t.)
+				_dDVctoSE2 = U_Get ('Data de vencimento do titulo a gerar', 'D', 8, '', '', dDataBase, .f., '.t.')
+				if _dDVctoSE2 == NIL .or. _dDVctoSE2 < dDataBase
+					u_help ("Data vcto invalida. Processo cancelado.")
 				else
-					u_help ('SE2 gerado.' + _oCtaCorr:UltMsg)
+					_oCtaCorr := ClsCtaCorr ():New (szi -> (recno ()))
+					_oCtaCorr:VctoSE2 = _dDVctoSE2
+					u_logObj (_oCtaCorr, .t., .f.)
+					if ! _oCtaCorr:GeraSE2 (_oCtaCorr:OQueGera (), _oCtaCorr:DtMovto, .F.)
+						u_help (_oCtaCorr:UltMsg,, .t.)
+					else
+						u_help ('SE2 gerado.' + _oCtaCorr:UltMsg)
+					endif
 				endif
 			endif
 		endif

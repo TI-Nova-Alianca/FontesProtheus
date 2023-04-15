@@ -38,6 +38,7 @@
 // 27/02/2022 - Robert  - Melhoria coluna historico nas previsoes de pagamento (GLPI 11678)
 // 15/06/2022 - Robert  - Impressao de descontos de FUNRURAL (GLPI 11723).
 // 11/04/2023 - Robert  - Passa a listar aux.combustivel/frete no modelo resumido, para facilitar fechto.valores.
+// 14/04/2023 - Robert  - EM versoes anteriores a 2020, listava titulos futuros na previsao de pagamento.
 //
 
 #include "protheus.ch"
@@ -65,8 +66,6 @@ User Function ML_FECHASAFRA (_lAutomat)
 
 	_ValidPerg()
 	Pergunte(cPerg, .f.)
-//	wnrel   := "ML_FECHASAFRA_" + mv_par01 + '_' + mv_par02 + mv_par03
-//	titulo := "Fechamento Safra " + mv_par01
 
 	if ! _lAuto
 		wnrel  := SetPrint(cString,wnrel,cPerg,titulo,cDesc1,cDesc2,cDesc3,.F.)
@@ -112,7 +111,7 @@ User Function ML_FECHASAFRA (_lAutomat)
 		Return
 	Endif
 
-	// u_logSX1 (cPerg)
+	u_logSX1 (cPerg)
 
 	if mv_par01 < '2020'  // Metodo original
 		processa ({|| RptDetail ()})
@@ -154,6 +153,8 @@ Static Function RptDetail()
 	local _oSQL   := NIL
 	local FAT	  := 0
 	local i		  := 0
+
+	U_Log2 ('debug', 'Gerando rel.fechto.safra pela funcao ' + procname ())
 
 	procRegua(800)
 	nTipo := IIF(aReturn[4]==1,15,18)
@@ -207,7 +208,7 @@ Static Function RptDetail()
 		_sQuery += "   AND LOJA_ASSOC = '" + mv_par03 + "'"
 	endif			
 	_sQuery += " ORDER BY NOME_ASSOC, ASSOCIADO, LOJA_ASSOC, TIPO_NF DESC, DATA"
-	//u_showmemo(_sQuery)
+	U_Log2 ('debug', '[' + procname () + ']' + _sQuery)
 
 	// imprime relatorio
 	_sAliasQ = GetNextAlias ()
@@ -353,8 +354,13 @@ Static Function RptDetail()
 						_sQuery += "   AND E2_EMISSAO > '20180301'"
 					endif
 					_sQuery += "   AND E2_EMISSAO >= '" + mv_par01 + "0101'"
+
+					// Robert, 14/04/2023
+					// Fatura para pagamento pode ainda ser gerada em janeiro do ano seguinte (GLPI 9558).
+					_sQuery +=   " AND (E2_EMISSAO <= '" + mv_par01 + "1231' OR (E2_EMISSAO <= '" + Soma1 (mv_par01) + "0131' AND E2_TIPO = 'FAT'))"
+
 					_sQuery += " ORDER BY E2_VENCTO, E2_NUM"
-					u_log (_sQuery)
+					U_Log2 ('debug', '[' + procname () + ']' + _sQuery)
 					
 					_aDados := U_Qry2Array(_sQuery)
 					if len(_aDados) > 0
@@ -503,7 +509,7 @@ Static Function RptDetail()
 								_wsaldo += _wvalor
 							else
 								_wsaldo -= _wvalor
-							endif																																																		
+							endif
 						next
 						@li,  60 PSAY "SALDO"
 						@li, 155 PSAY _wsaldo Picture "@E 9,999,999,999.99"
@@ -823,6 +829,11 @@ Static Function RptDetail()
 		_sQuery += "   AND E2_PREFIXO = '30'"
 		_sQuery += "   AND ((E2_TIPO = 'FAT' AND E2_NUM like '" + mv_par01 + "%') OR (E2_TIPO IN ('NF', 'DP') AND E2_FATURA = ''))"
 		_sQuery += "   AND E2_EMISSAO > '" + mv_par01 + "0301'"
+
+		// Robert, 14/04/2023
+		// Fatura para pagamento pode ainda ser gerada em janeiro do ano seguinte (GLPI 9558).
+		_sQuery +=   " AND (E2_EMISSAO <= '" + mv_par01 + "1231' OR (E2_EMISSAO <= '" + Soma1 (mv_par01) + "0131' AND E2_TIPO = 'FAT'))"
+
 		_sQuery += " ORDER BY E2_VENCTO, E2_NUM"
 		//u_log (_sQuery)
 		
@@ -970,7 +981,7 @@ Static Function RptDetail()
 					_wsaldo += _wvalor
 				else
 					_wsaldo -= _wvalor
-				endif																																																		
+				endif
 			next
 			@li,  60 PSAY "SALDO"
 			@li, 155 PSAY _wsaldo Picture "@E 9,999,999,999.99"
@@ -982,17 +993,12 @@ Static Function RptDetail()
 			
 			li ++
 		endif
-	endif	
-
+	endif
 
 	IF m_pag >1
 		_roda()
 	endif
 return
-
-return	
-return
-
 
 
 // --------------------------------------------------------------------------
@@ -1046,7 +1052,7 @@ static function _Modelo2 (_lSohCompr)
 	private _nMaxLin := 68
 	li = _nMaxLin + 1
 
-	U_Log2 ('debug', 'Usando a function ' + procname ())
+	U_Log2 ('debug', 'Gerando rel.fechto.safra pela funcao ' + procname ())
 
 	_aTGerEnt := {0, 0}
 	_aTGerPro := {0, 0}
@@ -1621,7 +1627,7 @@ static function _Modelo3 (_lSohCompr)
 	private _nMaxLin := 68
 	li = _nMaxLin + 1
 
-	U_Log2 ('debug', 'Usando a function ' + procname ())
+	U_Log2 ('debug', 'Gerando rel.fechto.safra pela funcao ' + procname ())
 
 	// Gera lista de associados a imprimir.
 	_oSQL := ClsSQL ():New ()

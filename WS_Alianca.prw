@@ -119,6 +119,7 @@
 // 27/03/2023 - Claudia - Incluida a ação 'InsereSolicManut'. GLPI: 12910
 // 03/04/2023 - Robert  - Novos parametros chamada ClsAssoc:FechSafra().
 // 06/04/2023 - Robert  - Funcao _ImpEtiqZAG() nao retornava mensagens do objeto em caso de erro de impressao.
+// 14/04/2023 - Robert  - Nao inclui retorno de algumas acoes no log, devido ao tamanho do retorno.
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -309,7 +310,12 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	RPCClearEnv ()
 
 	u_log2 ('info', 'Mensagens WS: ' + ::Retorno:Mensagens)
-	u_log2 ('info', 'Retorno   WS: ' + ::Retorno:Resultado + ' (' + cvaltochar (seconds () - _nSegIni) + 's.)')
+	// Como algumas opcoes retornam bastante coisa, vou economizar um pouco o log
+	if _sAcao $ 'ConsultaKardex/'
+		u_log2 ('info', 'Retorno   WS: [nao gravarei log para esta acao] (' + cvaltochar (seconds () - _nSegIni) + 's.)')
+	else
+		u_log2 ('info', 'Retorno   WS: ' + ::Retorno:Resultado + ' (' + cvaltochar (seconds () - _nSegIni) + 's.)')
+	endif
 	u_log2 ('info', '')  // Apenas para gerar uma linha vazia
 Return .T.
 //

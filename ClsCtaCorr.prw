@@ -1217,7 +1217,7 @@ METHOD Grava (_lSZIGrav, _lMemoGrav) Class ClsCtaCorr
 							exit
 						endif
 					enddo
-					U_Log2 ('debug', ::VctoSE2For)
+				//	U_Log2 ('debug', ::VctoSE2For)
 
 					_lContinua = ::GeraSE2 ('NDF', szi -> zi_data)
 					if _lContinua
