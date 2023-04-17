@@ -38,6 +38,7 @@
 // 13/10/2022 - Robert - Novos parametros funcao U_ConsEst. Liberacao para grupo 155.
 // 25/10/2022 - Robert - Quando tem empenho negativo nao bloqueia mais. Apenas notifica o PCP.
 // 05/01/2023 - Robert - Abreviadas algumas mensagens, para mostrar via telnet.
+// 17/04/2023 - Robert - Mostrar ultima mensagem da etiqueta, quando nao puder apontar.
 //
 
 // --------------------------------------------------------------------------
@@ -149,6 +150,9 @@ static function _VerEtiq ()
 			endif
 			if _lRet
 				_lRet = _oEtiq:PodeApont (m->d3_quant, m->d3_perda)
+				if ! _lRet
+					u_help (_oEtiq:UltMsg)
+				endif
 			endif
 		endif
 	endif

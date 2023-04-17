@@ -31,7 +31,7 @@ static function _AtuZA1 ()
 	if ! empty (sd3 -> d3_vaetiq)
 		za1 -> (dbsetorder (1))  // ZA1_FILIAL+ZA1_CODIGO+ZA1_DATA+ZA1_OP
 		if za1 -> (dbseek (xfilial ("ZA1") + sd3 -> d3_vaetiq, .F.))
-			U_Log2 ('info', '[' + procname () + ']Estornando etiqueta ' + sd3 -> d3_vaetiq)
+			U_Log2 ('info', '[' + procname (1) + '.' + procname () + ']Estornando campo ZA1_APONT da etiqueta ' + sd3 -> d3_vaetiq)
 			reclock ("ZA1", .F.)
 			za1 -> za1_apont = 'E'
 			msunlock ()

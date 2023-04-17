@@ -442,9 +442,10 @@ User Function EtqPlltG (_sOP, _sNF, _sSerie, _sFornece, _sLoja, _sQueFazer)
 	local _bSegue     := .F.
 	local _bInutil    := .F.
 	local _oEtiq      := NIL
+	local _dDtApont   := ctod ('')
 	local _sImpr      := '  '
-	local _sCmdImpT  := ''  // Comandos de impressao 'totais' (todas as etiq)
-	local _sCmdImp   := ''  // Comando de impressao de cada etiqueta
+	local _sCmdImpT   := ''  // Comandos de impressao 'totais' (todas as etiq)
+	local _sCmdImp    := ''  // Comando de impressao de cada etiqueta
 	local _sArq       := ''
 	local _nHdl       := ''
 	static _sPortaImp := ""  // Tipo STATIC para que o programa abra as perguntas apenas na primeira execucao.
@@ -452,7 +453,7 @@ User Function EtqPlltG (_sOP, _sNF, _sSerie, _sFornece, _sLoja, _sQueFazer)
 
 	_oSQL := ClsSQl ():New ()
 	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT ' ' AS OK, ZA1_CODIGO, ZA1_PROD, ZA1_QUANT, ZA1_IMPRES, ZA1_APONT, ZA1_DOCE"
+	_oSQL:_sQuery += " SELECT ' ' AS OK, ZA1_CODIGO, ZA1_PROD, ZA1_QUANT, ZA1_IMPRES, ZA1_APONT, ZA1_DOCE, '' AS MSG"
 	_oSQL:_sQuery +=   " FROM " + RetSQLName ("ZA1")
 	_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=    " AND ZA1_OP     = '" + _sOP + "'"
@@ -470,14 +471,16 @@ User Function EtqPlltG (_sOP, _sNF, _sSerie, _sFornece, _sLoja, _sQueFazer)
 	next
 
 	_aCols = {}
-	aadd (_aCols, {2, 'Etiqueta',    60, ''})
-	aadd (_aCols, {3, 'Produto',     60, ''})
-	aadd (_aCols, {4, 'Quant',       30, ''})
-	aadd (_aCols, {5, 'Ja impressa', 30, ''})
-	aadd (_aCols, {6, 'Ja apontada', 30, ''})
-	U_MBArray (@_aEtiq, 'Selecione as etiquetas a ' + iif (_sQueFazer == 'I', 'imprimir', 'excluir'), _aCols, 1)
+	aadd (_aCols, {2, 'Etiqueta',         60, ''})
+	aadd (_aCols, {3, 'Produto',          60, ''})
+	aadd (_aCols, {4, 'Quant',            30, ''})
+	aadd (_aCols, {5, 'Ja impressa',      30, ''})
+	aadd (_aCols, {6, 'Ja apontada',      30, ''})
+	aadd (_aCols, {8, 'Mensagens/erros', 250, ''})
+	U_MBArray (@_aEtiq, 'Selecione as etiquetas a ' + iif (_sQueFazer == 'I', 'imprimir', iif (_sQueFazer == 'E', 'excluir', iif (_sQueFazer == 'A', 'apontar producao', '...Ah, nao sei o que voce quer fazer.'))), _aCols, 1)
 	
-	if _sQueFazer == "I"  // Imprimir
+	do case
+	case _sQueFazer == "I"  // Imprimir
 
 		// Se jah definido na execucao anterior (por isso a variavel eh STATIC), nao pergunto mais.
 		if empty (_sPortaImp) .or. empty (_nModelImp)
@@ -558,9 +561,8 @@ User Function EtqPlltG (_sOP, _sNF, _sSerie, _sFornece, _sLoja, _sQueFazer)
 				u_help ("Arquivo de comandos de impressao gerado em " + _sPortaImp)
 			endif
 		endif
-	endif
 
-	if _sQueFazer == "E"
+	case _sQueFazer == "E"  // Excluir
 		//Testa se algum item foi selecionado
 		_bSegue = .F.
 		_bInutil = .F.
@@ -606,7 +608,71 @@ User Function EtqPlltG (_sOP, _sNF, _sSerie, _sFornece, _sLoja, _sQueFazer)
 				next
 			endif
 		endif
-	endif
+
+	case _sQueFazer == "A"  // Apontar producao
+
+		// Confere se as etiquetas selecionadas podem ser apontadas.
+		procregua (len (_aEtiq))
+		for _nEtiq = 1 to len (_aEtiq)
+			incproc ("Verificando etiqueta " + _aEtiq [_nEtiq, 2])
+			if _aEtiq [_nEtiq, 1]
+				if _aEtiq [_nEtiq, 5] != 'S'
+					_aEtiq [_nEtiq, 8] += 'Etiqueta ainda nao impressa.'
+				endif
+				if _aEtiq [_nEtiq, 6] == 'S'
+					_aEtiq [_nEtiq, 8] += 'Etiqueta ja gerou apontamento de producao.'
+				endif
+				if _aEtiq [_nEtiq, 6] == 'I'
+					_aEtiq [_nEtiq, 8] += 'Etiqueta inutilizada.'
+				endif
+
+				// Se chegou ateh aqui sem mensagens, instancia objeto para testes mais efetivos.
+				if empty (_aEtiq [_nEtiq, 8])
+					_oEtiq := ClsEtiq ():New (_aEtiq [_nEtiq, 2])
+					if ! _oEtiq:PodeApont (_aEtiq [_nEtiq, 4], 0)
+						_aEtiq [_nEtiq, 8] += _oEtiq:UltMsg
+					endif
+				endif
+			endif
+		next
+		if ascan (_aEtiq, {|_aVal| _aVal [1] == .T. .and. ! empty (_aVal [8])}) > 0
+			u_help ("Ha etiqueta(s) seleciona(s) que nao pode(m) gerar apontamento de producao. Processo nao vai ser executado.",, .t.)
+//			u_F3Array (_aEtiq, "Problemas", _aCols,,, "Problemas", '', .t., 'C', nil)
+//			u_help ("Apontamento cancelado.",, .t.)
+		else
+			_dDtApont = U_Get ('Data da producao', 'D', 8, '@D', '', dDataBase, .f., '.t.')
+			if empty (_dDtApont)
+				u_help ("Data nao informada. Apontamento cancelado.",, .t.)
+			else
+				procregua (len (_aEtiq))
+				for _nEtiq = 1 to len (_aEtiq)
+					incproc ("Apontando etiqueta " + _aEtiq [_nEtiq, 2])
+					if _aEtiq [_nEtiq, 1] .and. empty (_aEtiq [_nEtiq, 8])
+						_oEtiq := ClsEtiq ():New (_aEtiq [_nEtiq, 2])
+						if ! _oEtiq:ApontaOP (dDataBase, '1')  // Aqui poderia, na proxima melhoria, perguntar o turno de producao
+							_aEtiq [_nEtiq, 8] += _oEtiq:UltMsg
+						else
+							_aEtiq [_nEtiq, 8] += 'Apontamento OK'
+						endif
+					endif
+				next
+//				if ascan (_aEtiq, {|_aVal| _aVal [1] == .T. .and. ! empty (_aVal [8]) .and. alltrim (_aVal [8]) != 'Apontamento OK'}) > 0
+//					u_help ("Houve problema no apontamento de alguma etiqueta. Verifique!",, .t.)
+//					_aCols = {}
+//					aadd (_aCols, {2, 'Etiqueta',         60, ''})
+//					aadd (_aCols, {8, 'Mensagens/erros', 250, ''})
+//					u_F3Array (_aEtiq, "Houve problema no apontamento de alguma etiqueta.", _aCols,,, "Problemas", '', .t., 'C', nil)
+//				else
+//					u_F3Array (_aEtiq, "Resultado", _aCols,,, "Resultado", '', .t., 'C', nil)
+//					u_help ("Apontamento concluido.")
+//				endif
+			endif
+		endif
+		u_F3Array (_aEtiq, "Resultado do apontamento", _aCols,,, "Resultado do apontamento", '', .t., 'C', nil)
+
+	otherwise
+		u_help ("Sem tratamento para opcao '" + _sQueFazer + "' na funcao " + procname (),, .t.)
+	endcase
 
 	U_ML_SRArea (_aAreaAnt)
 return

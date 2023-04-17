@@ -54,6 +54,8 @@
 // 20/04/2022 - Robert  - Removidos logs desnecessarios.
 // 04/05/2022 - Robert  - Desabilitado botao 'ajuste empenhos formulacao' (ninguem mais usa e nunca funcionou bem) - GLPI 11997
 // 29/11/2022 - Robert  - Botao 'imprime OP' passa a ser liberado para todos os usuarios.
+// 17/04/2023 - Robert  - Ordena os botoes de 'outras acoes' alfabeticamente.
+//                      - Criada opcao de apontar diversas etiquetas da OP atomaticamente (util para terceirizacoes)
 //
 
 #include "rwmake.ch"
@@ -242,7 +244,10 @@ static function _Tela (_lAltera)
 			aadd (_aBotAdic, {"", {|| U_AdmOPAE ()},         "&Empenhos"})
 			aadd (_aBotAdic, {"", {|| U_AdmOPAP ()},         "&Perdas"})
 			aadd (_aBotAdic, {"", {|| U_AdmOPIM ()},         "&Req/devol"})
-			aadd (_aBotAdic, {"", {|| U_AdmOPEn ()},         "&Apont/Encer"})
+			aadd (_aBotAdic, {"", {|| U_AdmOPEn ()},         "&Apont/Encer.OP"})
+			if U_ZZUVL ('140', __cUserId, .T.)
+				aadd (_aBotAdic, {"", {|| processa ({|| U_EtqPlltG (_sOP, '', '', '', '', 'A')})}, "Apontar multiplas etiquetas"})
+			endif
 			aadd (_aBotAdic, {"", {|| U_AdmOPEt ()},         "E&tiquetas"})
 			if u_ZZUVL ('099', __cUserId, .f.)
 				aadd (_aBotAdic, {"", {|| U_AdmOPRe ()},     "Reabre OP"})
@@ -258,6 +263,10 @@ static function _Tela (_lAltera)
 		aadd (_aBotAdic, {"", {|| aHeader := aclone (_oGetD1:aHeader), aCols := aclone (_oGetD1:aCols), U_aColsXLS ()}, "Exp.planilha"})
 		aadd (_aBotAdic, {"", {|| MATA226 ()},              "Saldos atuais por endereco"})
 		aadd (_aBotAdic, {"", {|| U_AdmOPEM (_sOP)},        "Lotes/ender.consumidos"})
+
+		// Ordena os botoes alfabeticamente
+		_aBotAdic = asort (_aBotAdic,,,{|_x, _y| upper (strtran (_x [3], '&', '')) < upper (strtran (_y [3], '&', ''))})
+
 		activate dialog _oDlg on init (EnchoiceBar (_oDlg, _bBotaoOK, _bBotaoCan,, _aBotAdic), U_AdmOPAt (.F.))
 	endif
 return

@@ -50,6 +50,7 @@
 // 06/04/2023 - Robert - Melhoradas mensagens de erro na geracao de comandos de impressao.
 // 10/04/2023 - Robert - Implementado metodo PodeIncl().
 // 12/04/2023 - Robert - Passa a controlar semaforo para gravacao.
+// 17/04/2023 - Robert - Metodo PodeApont() passa a usar metodo SomaMsg() em ves de u_help() para mostrar os erros.
 //
 
 #Include "Protheus.ch"
@@ -829,21 +830,21 @@ METHOD Grava (_lSemafExt) Class ClsEtiq
 	_lSemafExt := iif (_lSemafExt == NIL, .F., _lSemafExt)
 
 	_lContinua = ::PodeIncl ()
-	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + '] _lContinua = ' + cvaltochar (_lContinua))
+//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + '] _lContinua = ' + cvaltochar (_lContinua))
 
 	// Controla semaforo de gravacao, por que a numeracao deve ser unica.
 	//
 	// Se a funcao chamadora jah implementou um semaforo de gravacao, nao
 	// preciso mais me preocupar aqui.
 	if ! _lSemafExt  // Semaforo nao foi criado externamente.
-		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Semaforo externo: ainda nao tem. Vou criar um agora.')
+//		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Semaforo externo: ainda nao tem. Vou criar um agora.')
 		_nLock := U_Semaforo ('GeraNumeroZA1', .T.)  // Usar a mesma chave em todas as chamadas!
 		if _nLock == 0
 			::SomaMsg ("Bloqueio de semaforo")
 			_lContinua = .F.
 		endif
-	else
-		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Semaforo externo: jah tem.')
+//	else
+//		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Semaforo externo: jah tem.')
 	endif
 
 	// Gera sequencial da etiqueta dentro do grupo (OP ou NF) a que pertence.
@@ -1019,11 +1020,11 @@ METHOD Inutiliza (_lMsg) Class ClsEtiq
 	endif
 	if _lContinua .and. ! empty (::OP)
 		if ::QtApontada > 0
-			::SomaMsg ("etiq." + ::Codigo + " jah apontada. Nao pode ser inutilizada.")
+			::SomaMsg ("Etiq." + ::Codigo + " jah apontada. Nao pode ser inutilizada.")
 			_lContinua := .F.
 		endif
 		if ::QtPerdida > 0
-			::UltMsg := "etiq." + ::Codigo + " tem quantidade perdida. Nao pode ser inutilizada."
+			::SomaMsg ("Etiq." + ::Codigo + " tem quantidade perdida. Nao pode ser inutilizada.")
 			_lContinua := .F.
 		endif
 	endif
@@ -1150,7 +1151,7 @@ METHOD PodeApont (_nQtApont, _nQtPerda) Class ClsEtiq
 	local _sMsgSaldo := ''
 
 	if _lContinua .and. empty (::OP)
-		u_help ("Etiq.'" + ::Codigo + "' nao vinculada a nenhuma OP.",, .t.)
+		::SomaMsg ("Etiq.'" + ::Codigo + "' nao vinculada a nenhuma OP.")
 		_lContinua = .f.
 	endif
 	if _lContinua .and. ::Inutilizada
@@ -1158,25 +1159,25 @@ METHOD PodeApont (_nQtApont, _nQtPerda) Class ClsEtiq
 		_lContinua := .F.
 	endif
 	if _lContinua .and. ::Impressa != 'S'
-		u_help ("Etiq.'" + ::Codigo + "' ainda nao impressa.",, .t.)
+		::SomaMsg ("Etiq.'" + ::Codigo + "' ainda nao impressa.")
 		_lContinua = .f.
 	endif
 	if _lContinua .and. (::QtApontada + ::QtPerdida) > 0
-		u_help ("Etiq.'" + ::Codigo + "' ja gerou apontamento de producao.",, .t.)
+		::SomaMsg ("Etiq.'" + ::Codigo + "' ja gerou apontamento de producao.")
 		_lContinua = .f.
 	endif
 	if _lContinua .and. ::QtEstornada > 0
-		U_help ("Etiq.'" + ::Codigo + "' ja foi apontada e ESTORNADA. Gere nova etiqueta.",, .t.)
+		::SomaMsg ("Etiq.'" + ::Codigo + "' ja foi apontada e ESTORNADA. Gere nova etiqueta.")
 		_lContinua = .F.
 	endif
 	if _lContinua .and. empty (::CBEmbCol)
-		U_help ("Cod.barras p/embalagem coletiva nao informado na OP.",, .t.)
+		::SomaMsg ("Cod.barras p/embalagem coletiva nao informado na OP.")
 		_lContinua = .F.
 	endif
 	if _lContinua
 		_nQtTot = ::QtApontada + ::QtPerdida + _nQtApont + _nQtPerda
 		if _nQtTot != ::Quantidade
-			u_help ("Erro etiq.'" + ::Codigo + "':Qt.produzida+perdida (" + cvaltochar (_nQtTot) + ") nao pode ser diferente da quantidade prevista da etiqueta (" + cvaltochar (::Quantidade) + ").",, .t.)
+			::SomaMsg ("Erro etiq.'" + ::Codigo + "':Qt.produzida+perdida (" + cvaltochar (_nQtTot) + ") nao pode ser diferente da quantidade prevista da etiqueta (" + cvaltochar (::Quantidade) + ").")
 			_lContinua = .F.
 		endif
 	endif
@@ -1188,7 +1189,6 @@ METHOD PodeApont (_nQtApont, _nQtPerda) Class ClsEtiq
 		_oSQL:_sQuery += " WITH C AS ("
 		_oSQL:_sQuery += " SELECT D4_COD"
 		_oSQL:_sQuery +=        ",B1_DESC"
-	//	_oSQL:_sQuery +=        ",(SUM (D4_QTDEORI) * " + cvaltochar (_nQtApont + _nQtPerda) + ") / C2_QUANT AS QT_A_REQ"
 		_oSQL:_sQuery +=        ",CASE WHEN SUM (D4_QUANT) = 0"
 		_oSQL:_sQuery +=             " THEN 0"
 		_oSQL:_sQuery +=             " ELSE (SUM(D4_QTDEORI) * " + cvaltochar (_nQtApont + _nQtPerda) + ") / C2_QUANT"
@@ -1242,7 +1242,7 @@ METHOD PodeApont (_nQtApont, _nQtPerda) Class ClsEtiq
 					_sMsgSaldo += '; '
 				endif
 			next
-			u_help (_sMsgSaldo,, .t.)
+			::SomaMsg (_sMsgSaldo)
 			_lContinua = .F.
 		endif
 	endif
