@@ -91,6 +91,7 @@
 // 01/07/2022 - Claudia - Ajuste na opção mesoregiao. GLPI: 12297
 // 14/12/2022 - Claudia - Inclusão de tratamento notas de complemento no valor mercadoria. GLPI: 12852
 // 01/03/2023 - Claudia - Ajustado filtro de filial e amarração SC5 X FAT_DADOS. GLPI: 13216
+// 18/04/2023 - Claudia - Ajustado campo conforme GLPI: 13458
 //
 // ---------------------------------------------------------------------------------------------------------------
 User Function VA_XLS5 (_lAutomat)
@@ -273,7 +274,8 @@ Static Function _Opcoes (_sTipo)
 	//	aadd (_aOpcoes, {.F., "Valor total NF",           "(" + _sSelVlMer + " - V.PVCOND + V.VALIPI + V.ICMSRET) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VL_TOT_NF"})
 		aadd (_aOpcoes, {.F., "Valor total NF",           "(" + _sSelVlMer + " - V.PVCOND + V.VALIPI + V.ICMSRET + D2_VALFRE) * CASE V.ORIGEM WHEN 'SD1' THEN -1 ELSE 1 END AS VL_TOT_NF"})
 		aadd (_aOpcoes, {.F., "Msg Adicionais",           "RTRIM(C5_MENNOTA) AS MSGADIC"})
-		aadd (_aOpcoes, {.F., "Numero de Serie",          "RTRIM(C6_VANSER) AS NUMSER"})
+	//	aadd (_aOpcoes, {.F., "Numero de Serie",          "RTRIM(C6_VANSER) AS NUMSER"})
+	    aadd (_aOpcoes, {.F., "Numero de Serie",          "'' AS NUMSER"})
 		aadd (_aOpcoes, {.F., "Obs do Pedido",            "REPLACE(ISNULL(REPLACE (REPLACE ( REPLACE ( CAST(RTRIM (CAST (C5_OBS AS VARBINARY (8000))) AS VARCHAR (8000)) , char(13), ''), char(10), ''), char(14), ''),''),char(34),' ') AS OBSPED"})
 		aadd (_aOpcoes, {.F., "Mix comercial do produto", "CASE SB1.B1_VAMIX WHEN 'F' THEN 'FOCO' WHEN 'T' THEN 'TRANSICAO' WHEN 'A' THEN 'EM ANALISE' ELSE SB1.B1_VAMIX END AS MIX_COML"})
 		aadd (_aOpcoes, {.F., "Ano emissao",              "SUBSTRING (V.EMISSAO, 1, 4) AS ANO_EMIS"})
