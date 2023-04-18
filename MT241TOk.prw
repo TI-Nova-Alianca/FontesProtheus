@@ -21,6 +21,7 @@
 // 15/06/2021 - Claudia - Incluida novas validações C.custo X C.contabil. GLPI: 10224
 // 15/10/2021 - Claudia - Validação MC ao movimento 573. GLPI: 10765
 // 25/07/2022 - Robert  - Liberados TMs 008/510/573 para itens tipo MC
+// 18/04/2023 - Robert  - Liberados TMs 005/512 para itens tipo MC (ajustes valores infimos que estao no SB9)
 //
 
 // ------------------------------------------------------------------------------------------
@@ -30,7 +31,7 @@ user function MT241TOk ()
 	local _sMsg     := ""
 	local _x        := 0
 	local _nPos     := 0
-	local _sTM_MC   := '008/510/573'
+	local _sTM_MC   := '008/510/573/005/512'
 
 	if empty (cCC)
 		sf5 -> (dbsetorder (1))  // F5_FILIAL+F5_CODIGO

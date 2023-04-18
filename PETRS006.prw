@@ -43,10 +43,10 @@ User Function PETRS006()
 	local _sChvNFe  := ''
 	local _nPos     := 0
 
-	U_Log2 ('debug', '[' + procname () + ']_aCabec na entrada:')
-	U_Log2 ('debug', _aCabec)
-	U_Log2 ('debug', '[' + procname () + ']_aLinha na entrada:')
-	U_Log2 ('debug', _aLinha)
+//	U_Log2 ('debug', '[' + procname () + ']_aCabec na entrada:')
+//	U_Log2 ('debug', _aCabec)
+//	U_Log2 ('debug', '[' + procname () + ']_aLinha na entrada:')
+//	U_Log2 ('debug', _aLinha)
 
 	// Acrescenta campos especificos na array do cabecalho. Como este P.E. eh
 	// chamado uma vez para cada item da nota, preciso evitar duplicidade
@@ -121,10 +121,10 @@ User Function PETRS006()
 	_oEvento:LojaFor   = _sLoja
 	_oEvento:GravaNovo ('DHM')
 
-	U_Log2 ('debug', '[' + procname () + ']_aCabec na saida:')
-	U_Log2 ('debug', _aCabec)
-	U_Log2 ('debug', '[' + procname () + ']_aLinha na saida:')
-	U_Log2 ('debug', _aLinha)
+//	U_Log2 ('debug', '[' + procname () + ']_aCabec na saida:')
+//	U_Log2 ('debug', _aCabec)
+//	U_Log2 ('debug', '[' + procname () + ']_aLinha na saida:')
+//	U_Log2 ('debug', _aLinha)
 
 	// Deve sempre retornar cabecalho e itens.
 	_aRet := {_aCabec,_aLinha}
