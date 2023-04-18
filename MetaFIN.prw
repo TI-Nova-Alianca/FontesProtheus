@@ -35,6 +35,7 @@
 // 09/08/2021 - Robert - Passa a usar a view VA_VTITULOS_CPAGAR (GLPI 10667)
 // 13/07/2022 - Robert - Melhoria fluxo execucao; teste cadastro fornecedor (GLPI 12337)
 // 10/03/2023 - Robert - Criado tratamento para comecar a importar titulos de IRF (GLPI 9047)
+// 17/04/2023 - Robert - Busca valores em separado para IRF 'do mes' e 'do mes futuro'.
 //
 
 #include "colors.ch"
@@ -48,14 +49,6 @@ user function MetaFin (_lAuto)
 	private _nQtTitDel := 0
 	private _nQtTitErr := 0
 	private _sErroAuto := ""  // Deixar private para ser usada pela funcao U_Help.
-	
-	// PRECISO ACESSAR METADADOS A PARTIR DA BASE TESTE ENQUANDO IMPLEMENTO ESTE CHAMADO
-	// REMOVER DEPOIS!
-//	PRIVATE _lGLPI9047 := IIF (CUSERNAME == 'robert.koch' .and. U_AmbTeste (), .T., .F.)  // REMOVER DEPOIS!
-	// REMOVER DEPOIS!
-	// REMOVER DEPOIS!
-
-
 	private _sLkSrvRH  := U_LkServer ("METADADOS")
 
 	if empty (_sLkSrvRH)
@@ -115,6 +108,8 @@ static function _Incluir ()
 		// Monta uma string com a query principal para ser usada em mais de um local.
 		_sCTE += "WITH CTE AS ("
 		_sCTE +=  " SELECT *"
+		_sCTE +=        ", MIN (VENCTO) OVER (PARTITION BY EMISSAO) AS MINVCTO"  // Menor VENCTO agrupado por EMISSAO
+		_sCTE +=        ", MAX (VENCTO) OVER (PARTITION BY EMISSAO) AS MAXVCTO"  // Maior VENCTO agrupado por EMISSAO
 		_sCTE +=  " FROM " + _sLkSrvRH + ".VA_VTITULOS_CPAGAR2"
 		_sCTE += " )"
 
@@ -123,12 +118,7 @@ static function _Incluir ()
 		_oSQL:_sQuery += " SELECT CTE.*"
 		_oSQL:_sQuery +=   " FROM CTE"
 		_oSQL:_sQuery +=  " WHERE FILIAL = '" + cFilAnt + "'"
-//		if _lGLPI9047
-//			_oSQL:_sQuery += " AND TPITEMCP IN ('04', '10')"
-//			_oSQL:_sQuery += " AND EMISSAO = '20230310'"
-//		else
-			_oSQL:_sQuery +=    " AND STATUSREG IN ('02', '10')"  // A processar e provisionado (para casos de multifilial).
-//		endif
+		_oSQL:_sQuery +=    " AND STATUSREG IN ('02', '10')"  // A processar e provisionado (para casos de multifilial).
 
 		// Para os casos de titulos que o Metadados gera aglutinados por empresa, mas a Alianca deseja importar por filial,
 		// marco-os como '10' (provisionado) no Metadados, e vou controlando se jah foram gerados para cada filial
@@ -145,30 +135,9 @@ static function _Incluir ()
 		do while _lContinua .and. ! (_sAliasQ) -> (eof ())
 			u_log2 ('info', 'Iniciando inclusao seq.' + cvaltochar ((_sAliasQ) -> NroSequencial) + ' tipo ' + (_sAliasQ) -> TpItemCP + ' R$ ' + transform ((_sAliasQ) -> valor, "@E 999,999,999.99") + ' ' + (_sAliasQ) -> hist)
 
-/* agora vamos importar esses tambem!
-			if (_sAliasQ) -> TpItemCP $ '04/10'
-				_sMsgSE2 = "Numero sequencial " + cvaltochar ((_sAliasQ) -> NroSequencial) + ": Tipo de item 04 (DARF IRF salarios) e 10 (DARF IRF autonomos): nao vai ser importado, pois queremos separado por filial."
-				u_help (_sMsgSE2,, .t.)
-
-				if ! _lGLPI9047
-					_oSQL := ClsSQL ():New ()
-					_oSQL:_sQuery := "UPDATE " + _sLkSrvRH + ".RHCONTASPAGARHIST"
-					_oSQL:_sQuery +=   " SET STATUSREGISTRO = '08'"  // Manter compatibilidade com a view VA_VTITULOS_CPAGAR que estah no database do Metadados.
-					_oSQL:_sQuery += " WHERE NROSEQUENCIAL = " + cvaltochar ((_sAliasQ) -> NroSequencial)
-					_oSQL:Log ()
-					_lContinua = _oSQL:Exec ()
-				endif
-
-				// Cria registro no log do Metadados com o motivo da rejeicao.
-				_lContinua = _LogMeta ((_sAliasQ) -> NroSequencial, AllTrim (EnCodeUtf8 (_sMsgSE2)))
-
-				(_sAliasQ) -> (dbskip ())
-				loop
-			endif
-*/
 			// Alguns movimentos devem ser gerados com data de emissao = ultimo dia do mes anterior.
 			if (_sAliasQ) -> TpItemCP $ '40/41/44/45' .OR. ;  // Folha avulsa/RPA # Ferias # Rescisao principal # Rescisao complementar
-				((_sAliasQ) -> TpItemCP $ '22/99' .and. (_sALiasQ) -> Fornece $ '001498/001853/001496')
+				((_sAliasQ) -> TpItemCP $ '22/99' .and. (_sAliasQ) -> Fornece $ '001498/001853/001496')
 				_dEmis = stod ((_sAliasQ) -> emissao)
 			else
 				//U_LOG ('Alterando data de emissao para o ultimo dia do mes anterior.')
@@ -178,6 +147,22 @@ static function _Incluir ()
 				_dEmis = lastday (_dEmis)  
 			endif
 			
+			// Se for titulo de IRF, pode ser gerado no Metadados em dois 'momentos' distintos.
+			// Preciso ler os campos VALOR_DARF_IRF_MES e VALOR_DARF_IRF_FUTURA e gerar 2 titulos.
+			// A bronca eh saber quando ler de um campo, e quando ler do outro outro.
+			// Farei um acoxambramento do tipo "antes de usar um deles, confiro se ja usei antes".
+			if (_sAliasQ) -> TpItemCP == '04'
+				if (_sAliasQ) -> vencto == (_sAliasQ) -> MinVcto  // Eh o valor de IRF 'deste mes'
+					U_Log2 ('debug', '[' + procname () + "]Encontrei titulo de IRF 'do mes'")
+					_nVlrTit = (_sAliasQ) -> DarfIrfMes
+				elseif (_sAliasQ) -> vencto == (_sAliasQ) -> MaxVcto  // Eh o valor de IRF 'do proximo mes'
+					U_Log2 ('debug', '[' + procname () + "]Encontrei titulo de IRF 'do mes futuro'")
+					_nVlrTit = (_sAliasQ) -> DarfIrfFut
+				endif
+			else
+				_nVlrTit = (_sAliasQ) -> valor
+			endif
+
 			_lContinua = _GeraSE2 ((_sAliasQ) -> nrosequencial, (_sAliasQ) -> Fornece, (_sAliasQ) -> Natureza, _dEmis, stod ((_sAliasQ) -> vencto), (_sAliasQ) -> valor, (_sAliasQ) -> hist)
 
 			(_sAliasQ) -> (dbskip ())

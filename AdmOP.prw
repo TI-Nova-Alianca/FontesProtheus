@@ -245,7 +245,7 @@ static function _Tela (_lAltera)
 			aadd (_aBotAdic, {"", {|| U_AdmOPAP ()},         "&Perdas"})
 			aadd (_aBotAdic, {"", {|| U_AdmOPIM ()},         "&Req/devol"})
 			aadd (_aBotAdic, {"", {|| U_AdmOPEn ()},         "&Apont/Encer.OP"})
-			if U_ZZUVL ('140', __cUserId, .T.)
+			if U_ZZUVL ('140', __cUserId, .F.)
 				aadd (_aBotAdic, {"", {|| processa ({|| U_EtqPlltG (_sOP, '', '', '', '', 'A')})}, "Apontar multiplas etiquetas"})
 			endif
 			aadd (_aBotAdic, {"", {|| U_AdmOPEt ()},         "E&tiquetas"})
