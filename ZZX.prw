@@ -111,6 +111,7 @@
 // 14/04/2022 - Claudia - Criado novo menu para exporta dados. GLPI: 11889
 // 20/07/2022 - Robert  - Gravacao de eventos temporarios para rastreio de movimentacao do XML (GLPI 12336)
 // 21/09/2022 - Robert  - Log de impressao de romaneio.
+// 17/04/2023 - Robert  - Melhorado texto do evento de (re)gravacao do ZZX.
 //
 
 // ----------------------------------------------------------------------------------------------------------------------------------
@@ -1702,7 +1703,7 @@ user function ZZXI (_sArqImp, _sXML)
 
 	// Se conseguiu interpretar o XML sem gerar erros, pode gravar.
 	if _lContinua
-		if _GravaZZX ("I", _oXMLSEF, _ZZXXML, _worigem)
+		if _GravaZZX ("I", _oXMLSEF, _ZZXXML, _worigem, _sArqOrig)
 			u_help ("XML importado com sucesso" + iif (zzx -> zzx_filial != cFilAnt, " (na filial '" + zzx -> zzx_filial + "').", '.') + " Chave: " + zzx -> zzx_chave)
 		else
 			_lContinua = .F.
@@ -1759,7 +1760,7 @@ return "Arq.copiado de " + _sDrvRmt + _sDirRmt + _sArqRmt + _sExtRmt + ' para ' 
 
 // ------------------------------------------------------------------------------------------------------
 // Grava dados no arquivo ZZX.
-static function _GravaZZX (_sQueFazer, _oXMLSEF, _sXML, _worigem)
+static function _GravaZZX (_sQueFazer, _oXMLSEF, _sXML, _worigem, _sArqOrg)
 	local _lContinua := .T.
 	local _sFilAnt   := ""
 	local _sMemo1    := ""
@@ -1817,7 +1818,6 @@ static function _GravaZZX (_sQueFazer, _oXMLSEF, _sXML, _worigem)
 		zzx -> zzx_vlNF  = 0 
 		zzx -> zzx_vlIPI = 0
 		zzx -> zzx_vlICM = 0
-		
 		zzx -> zzx_arqXML = _worigem
 		
 		// Grava, se ocorreu, o primeiro erro/aviso do XML
@@ -1885,7 +1885,7 @@ static function _GravaZZX (_sQueFazer, _oXMLSEF, _sXML, _worigem)
 			
 			// Se consultar posteriormente pela chave, recebe-se apenas a autorizacao da NFe, e nao o retorno 'Evento vinculado a NFe'. Por isso gravo agora.
 			//zzx -> zzx_retsef = _oXMLSEF:EventoNFe:RetSEFAZ
-            
+
 		elseif valtype (_oXMLSEF:NFSe) == 'O'
 			zzx -> zzx_TipoNF = _oXMLSEF:NFSe:TipoNF
 			zzx -> zzx_doc    = _oXMLSEF:NFSe:doc
@@ -1941,7 +1941,9 @@ static function _GravaZZX (_sQueFazer, _oXMLSEF, _sXML, _worigem)
 		// Grava evento temporario
 		_oEvento := ClsEvent():new ()
 		_oEvento:CodEven   = "ZZX002"
-		_oEvento:Texto     = "Finalizada " + iif (_sQueFazer == 'I', '', 're') + "gravacao na tabela ZZX. Pilha: " + U_LogPCham ()
+		_oEvento:Texto     = "Finalizada " + iif (_sQueFazer == 'I', '', 're') + "gravacao na tabela ZZX."
+		_oEvento:Texto    += " Nome arq: " + alltrim (_sArqOrg) + " Origem: " + _worigem
+		_oEvento:Texto    += ". Pilha: " + U_LogPCham ()
 		_oEvento:Alias     = "ZZX"
 		_oEvento:Recno     = zzx -> (recno ())
 		_oEvento:ChaveNFe  = cvaltochar (_oXMLSEF:Chave)

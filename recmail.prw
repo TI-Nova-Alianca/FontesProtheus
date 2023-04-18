@@ -16,10 +16,11 @@
 // 10/07/2022 - Robert  - Melhoria nos logs.
 // 01/09/2022 - Robert  - Melhorias ClsAviso.
 // 03/10/2022 - Robert  - Trocado grpTI por grupo 122 no envio de avisos.
+// 17/04/2023 - Robert  - Grava evento, quando conseguir identificar a chave da NFe/CTe.
 //
 
 // --------------------------------------------------------------------------
-User Function RECMAIL(_lAuto)
+User Function RECMAIL () //(_lAuto)
 	Local oMessage   := NIL
 	Local oPopServer := NIL
 	Local aAttInfo   := {}
@@ -39,11 +40,7 @@ User Function RECMAIL(_lAuto)
 	Local _cRemet    := ""
 	Local _cTam      := 0
 	Local _cConta    := 0
-	//local _oXml      := NIL
-	//local _cError    := ""
-	//local _cWarning  := ""
 	local _nMaxMsg   := 100
-	//local _sAvisos   := ""
 	local _lRet      := .T.
 	local _oAviso    := NIL
 
@@ -121,9 +118,13 @@ User Function RECMAIL(_lAuto)
 						_nDirArq = fcreate('\XML_NFE\CT-E\' + _cNomeArq , 0)
 						
 						_cConta := _cConta + 1
-					    
-					    fwrite (_nDirArq, _cAnexo)
-					    fclose (_nDirArq)
+						fwrite (_nDirArq, _cAnexo)
+						fclose (_nDirArq)
+						
+						// Grava evento para rastreio das chaves de NF-e. Estamos com muitos questionamentos
+						// sobre chaves que nao aparecem no importador da TRS (e nem no nosso) e queremos
+						// rastrear o download de arquivos, etc.
+						_EvtGravX (_cNomeArq, _cAnexo, alltrim (oMessage:cFrom))
 
 					elseif upper(_cExt) == "TXT"
 							_cAnexo := oMessage:getAttach(nAtach)
@@ -183,9 +184,55 @@ User Function RECMAIL(_lAuto)
 	EndIf
 	
 Return _lRet
-//
+
+
 // --------------------------------------------------------------------------
 // Retorno do type - type em looling nao é permitido da R25 
 Static Function _RetType(_var)
 	_type := type(_var)
 Return _type
+
+
+// --------------------------------------------------------------------------
+// Grava evento para rastreio das chaves de NF-e. Estamos com muitos questionamentos
+// sobre chaves que nao aparecem no importador da TRS (e nem no nosso) e queremos
+// rastrear o download de arquivos, etc.
+static function _EvtGravX (_sNomeArq, _sAnexo, _sFrom)
+	local _oRegex   := NIL
+	local _aTokens  := {}
+	local _sChvDFe  := ''
+	local _sPattern := ''
+	local _oEvento  := NIL
+
+	// Cria objeto da classe 'expressao regular' para procurar a chave da NFe/CTe dentro do texto do anexo.
+	_oRegex := tlpp.regex.Regex():new ('')
+	_oRegex:setCaseSensitive (.F.)
+
+	// Monta pattern (padrao) de pesquisa usando a sintaxe das expressoes regulares.
+	_sPattern := '<inf'  // A tag precisa iniciar por '<inf'
+	_sPattern += '(NF|CT)e '  // Pode conter NF ou CT seguido de 'e'
+	_sPattern += '(versao="[0-9]+\.[0-9]+" )?'  // Pode ter 0 ou mais ocorrencias do atributo 'versao'
+	_sPattern += 'Id="(NF|CT)e'  // O atributo 'Id' deve estar presente, seguido de NF ou CT + 'e'
+	_sPattern += '[0-9]{44}'  // 44 digitos numericos (a preciosa chave!)
+
+	_oRegex:SetPattern (_sPattern)
+	if (_oRegex:PartialMatch (_sAnexo))
+		_oRegex:Tokenizer (_sAnexo, @_aTokens, {})
+	//	u_log (_aTokens)
+		if len (_aTokens) == 1
+			_sChvDFe = right (_aTokens [1], 44)
+		endif
+	endif
+//	U_Log2 ('debug', '[' + procname () + ']Chave DF-e: ' + _sChvDFe)
+
+	if ! empty (_sChvDFe)
+		_oEvento := ClsEvent():new ()
+		_oEvento:CodEven   = "ZZX002"
+		_oEvento:Texto     = 'Baixado e-mail de ' + _sFrom + ' e salvo no arquivo ' + _sNomeArq
+		_oEvento:Alias     = "ZZX"
+		_oEvento:ChaveNFe  = cvaltochar (_sChvDFe)
+		_oEvento:DiasValid = 60  // Manter o evento por alguns dias, depois disso vai ser deletado.
+		_oEvento:Grava ()
+	endif
+return
+
