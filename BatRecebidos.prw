@@ -27,6 +27,7 @@
 //                         de produtos do Almox 02. GLPI 8153.
 // 27/01/2023 - Claudia -  Incluidas colunas de lote e endereço. GLPI: 13088
 // 12/04/2023 - Claudia -  Incluidas novas colunas de Usr.Autorização Origem' e Usr.Autorização Destino'. GLPI: 13316
+// 19/04/2023 - Claudia -  Incluido no tipo a definicção se é o mov. é pelo NAWEB ou OS. GLPI 1316
 //
 // ---------------------------------------------------------------------------------------------------------------------
 user function BatRecebidos (_sQueFazer)
@@ -107,7 +108,7 @@ user function BatRecebidos (_sQueFazer)
 				_sMsg = _oSQL:Qry2HTM ("Itens recebidos em: " + dtoc(date()-1), _aCols, "", .F.)
 				u_log (_sMsg)
 
-				//U_SendMail ('compras@novaalianca.coop.br', "Itens recebidos no dia anterior", _sMsg, {})
+				//U_SendMail ('claudia.lionco@novaalianca.coop.br', "Itens recebidos no dia anterior", _sMsg, {})
 				U_ZZUNU ({'022'}, "Itens recebidos no dia anterior", _sMsg, .F., cEmpAnt, cFilAnt, "") // PCP/QUALIDADE/ALMOX
 			 
 	      	endif
@@ -252,14 +253,22 @@ user function BatRecebidos (_sQueFazer)
 
 			_oSQL:_sQuery += " SELECT "
 			_oSQL:_sQuery += " 		 SD3.D3_EMISSAO AS DT "
-			_oSQL:_sQuery += " 		,'MOV./TRANSF.' AS TP "
+			//_oSQL:_sQuery += " 		,'MOV./TRANSF.' AS TP "
+			_oSQL:_sQuery += "		,CASE "
+			_oSQL:_sQuery += "			WHEN ZAG.ZAG_UAUTD IS NOT NULL THEN 'MOV/TRANSF NAWEB' "
+			_oSQL:_sQuery += "			WHEN SUBSTRING(SD3.D3_OP, 7, 2) = 'OS' THEN 'MOV/TRANSF OS' "
+			_oSQL:_sQuery += "		END AS TP "
 			_oSQL:_sQuery += " 		,CASE "
             _oSQL:_sQuery += "   		WHEN D3_CF = 'DE4' THEN 'ENTRADA' "
             _oSQL:_sQuery += " 			ELSE 'SAIDA' "
             _oSQL:_sQuery += " 		END AS ENTSAI " 
 			_oSQL:_sQuery += " 		,'-' AS CLIFOR "
 			_oSQL:_sQuery += " 		,'-' AS NOME "
-			_oSQL:_sQuery += " 		,SD3.D3_DOC AS DOCUMENTO "
+			//_oSQL:_sQuery += " 		,SD3.D3_DOC AS DOCUMENTO "
+			_oSQL:_sQuery += "		,CASE "
+			_oSQL:_sQuery += "			WHEN ZAG.ZAG_UAUTD IS NOT NULL THEN ZAG.ZAG_DOC "
+			_oSQL:_sQuery += "			WHEN SUBSTRING(SD3.D3_OP, 7, 2) = 'OS' THEN SD3.D3_OP "
+			_oSQL:_sQuery += "		END AS DOCUMENTO "
 			_oSQL:_sQuery += " 		,SD3.D3_COD AS PRODUTO "
 			_oSQL:_sQuery += " 		,SB1.B1_DESC AS DESCRICAO "
 			_oSQL:_sQuery += " 		,SB1.B1_TIPO AS TIPOPROD "
@@ -297,6 +306,8 @@ user function BatRecebidos (_sQueFazer)
 
 				_sMsg = _oSQL:Qry2HTM ("Itens recebidos em: " + dtoc(date()-1), _aCols, "", .F.)
 				u_log (_sMsg)
+				
+				//U_SendMail ('claudia.lionco@novaalianca.coop.br', "Itens da manutencao recebidos no dia anterior", _sMsg, {})
 				U_ZZUNU ({'042'}, "Itens da manutencao recebidos no dia anterior", _sMsg, .F., cEmpAnt, cFilAnt, "") // MANUTENCAO
 			endif
        	endif
@@ -440,14 +451,22 @@ user function BatRecebidos (_sQueFazer)
 
 			_oSQL:_sQuery += " SELECT "
 			_oSQL:_sQuery += " 		SD3.D3_EMISSAO AS DT "
-			_oSQL:_sQuery += " 		,'MOV./TRANSF.' AS TP "
+			_oSQL:_sQuery += "		,CASE "
+			_oSQL:_sQuery += "			WHEN ZAG.ZAG_UAUTD IS NOT NULL THEN 'MOV/TRANSF NAWEB' "
+			_oSQL:_sQuery += "			WHEN SUBSTRING(SD3.D3_OP, 7, 2) = 'OS' THEN 'MOV/TRANSF OS' "
+			_oSQL:_sQuery += "		END AS TP "
+			//_oSQL:_sQuery += " 		,'MOV./TRANSF.' AS TP "
 			_oSQL:_sQuery += " 		,CASE "
             _oSQL:_sQuery += "   		WHEN D3_CF = 'DE4' THEN 'ENTRADA' "
             _oSQL:_sQuery += " 			ELSE 'SAIDA' "
             _oSQL:_sQuery += " 		END AS ENTSAI " 
 			_oSQL:_sQuery += " 		,'-' AS CLIFOR "
 			_oSQL:_sQuery += " 		,'-' AS NOME "
-			_oSQL:_sQuery += " 		,SD3.D3_DOC AS DOCUMENTO "
+			//_oSQL:_sQuery += " 		,SD3.D3_DOC AS DOCUMENTO "
+			_oSQL:_sQuery += "		,CASE "
+			_oSQL:_sQuery += "			WHEN ZAG.ZAG_UAUTD IS NOT NULL THEN ZAG.ZAG_DOC "
+			_oSQL:_sQuery += "			WHEN SUBSTRING(SD3.D3_OP, 7, 2) = 'OS' THEN SD3.D3_OP "
+			_oSQL:_sQuery += "		END AS DOCUMENTO "
 			_oSQL:_sQuery += " 		,SD3.D3_COD AS PRODUTO "
 			_oSQL:_sQuery += " 		,SB1.B1_DESC AS DESCRICAO "
 			_oSQL:_sQuery += " 		,SB1.B1_TIPO AS TIPOPROD "
@@ -486,6 +505,8 @@ user function BatRecebidos (_sQueFazer)
 
 				_sMsg = _oSQL:Qry2HTM ("Itens recebidos em: " + dtoc(date()-1), _aCols, "", .F.)
 				u_log (_sMsg)
+				
+				//U_SendMail ('claudia.lionco@novaalianca.coop.br', "Itens recebidos no dia anterior - ALMOX.02", _sMsg, {})
 				U_ZZUNU ({'A09'}, "Itens recebidos no dia anterior - ALMOX.02", _sMsg, .F., cEmpAnt, cFilAnt, "") 
 			endif
        	endif
