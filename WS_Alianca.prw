@@ -120,6 +120,7 @@
 // 03/04/2023 - Robert  - Novos parametros chamada ClsAssoc:FechSafra().
 // 06/04/2023 - Robert  - Funcao _ImpEtiqZAG() nao retornava mensagens do objeto em caso de erro de impressao.
 // 14/04/2023 - Robert  - Nao inclui retorno de algumas acoes no log, devido ao tamanho do retorno.
+// 19/04/2023 - Robert  - Solic.transf.em grid: valida todas as linhas antes de dar retorno.
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -1006,7 +1007,8 @@ static function _TrEstGrid ()
 		// Antes de gravar qualquer coisa, preciso ver se todos os itens podem ser aceitos.
 		_lTodosOK = .T.
 		_nItem = 1
-		do while empty (_sErroWS) .and. type ('_oTrEstq' + cvaltochar (_nItem)) == 'O' //valtype (&('_oTrEstq' + cvaltochar (_nItem))) == 'O'
+	//	do while empty (_sErroWS) .and. type ('_oTrEstq' + cvaltochar (_nItem)) == 'O' //valtype (&('_oTrEstq' + cvaltochar (_nItem))) == 'O'
+		do while type ('_oTrEstq' + cvaltochar (_nItem)) == 'O'
 			if ! &('_oTrEstq' + cvaltochar (_nItem)):PodeIncl ()
 				U_Log2 ('aviso', '[' + procname () + ']A solicitacao abaixo (item ' + cvaltochar (_nItem) + ' do XML) nao vai ser aceita:')
 				u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
