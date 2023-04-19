@@ -27,7 +27,7 @@
 //                         de produtos do Almox 02. GLPI 8153.
 // 27/01/2023 - Claudia -  Incluidas colunas de lote e endereço. GLPI: 13088
 // 12/04/2023 - Claudia -  Incluidas novas colunas de Usr.Autorização Origem' e Usr.Autorização Destino'. GLPI: 13316
-// 19/04/2023 - Claudia -  Incluido no tipo a definicção se é o mov. é pelo NAWEB ou OS. GLPI 1316
+// 19/04/2023 - Claudia -  Incluido no tipo a definicção se é o mov. é pelo NAWEB ou OS. GLPI 13316
 //
 // ---------------------------------------------------------------------------------------------------------------------
 user function BatRecebidos (_sQueFazer)
