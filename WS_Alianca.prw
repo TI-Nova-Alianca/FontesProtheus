@@ -121,6 +121,7 @@
 // 06/04/2023 - Robert  - Funcao _ImpEtiqZAG() nao retornava mensagens do objeto em caso de erro de impressao.
 // 14/04/2023 - Robert  - Nao inclui retorno de algumas acoes no log, devido ao tamanho do retorno.
 // 19/04/2023 - Robert  - Solic.transf.em grid: valida todas as linhas antes de dar retorno.
+// 20/04/2023 - Robert  - Tratamento para o atributo ClsTrEstq:CodMot na transf.estq.por grid.
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -977,7 +978,8 @@ static function _TrEstGrid ()
 			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):EndOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_EnderecoOrigem",  .F., .F.), 15) ; endif
 			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):EndDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_EnderecoDestino", .F., .F.), 15) ; endif
 			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):QtdSolic = val  (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_QtdSolic",        .T., .F.))     ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):Motivo   =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_Motivo",          .T., .F.)      ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):CodMot   =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_Motivo",          .T., .F.)      ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):Motivo   =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_Obs",             .F., .F.)      ; endif
 			_nItem ++
 		enddo
 	elseif type ("_oXML:_WSAlianca:_TransfEstqItens:_Item") == 'O'  // Um item apenas no XML
@@ -998,7 +1000,8 @@ static function _TrEstGrid ()
 		if empty (_sErroWS) ; _oTrEstq1:EndOrig  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_EnderecoOrigem",  .F., .F.), 15) ; endif
 		if empty (_sErroWS) ; _oTrEstq1:EndDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_EnderecoDestino", .F., .F.), 15) ; endif
 		if empty (_sErroWS) ; _oTrEstq1:QtdSolic = val  (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_QtdSolic",        .T., .F.))     ; endif
-		if empty (_sErroWS) ; _oTrEstq1:Motivo   =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_Motivo",          .T., .F.)      ; endif
+		if empty (_sErroWS) ; _oTrEstq1:CodMot   =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_Motivo",          .T., .F.)      ; endif
+		if empty (_sErroWS) ; _oTrEstq1:Motivo   =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_Obs",             .F., .F.)      ; endif
 	endif
 
 	// Se nao consegui ler as tags do XML, nem adianta prosseguir.
@@ -1041,7 +1044,8 @@ static function _TrEstGrid ()
 					U_Log2 ('erro', '[' + procname () + ']Erro ao gravar a solicitacao abaixo (item ' + cvaltochar (_nItem) + ' do XML):')
 					u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
 				else
-					_sRetGrid += "<Retorno>OK:Gerada solicitacao " + &('_oTrEstq' + cvaltochar (_nItem)):Docto + '/' + &('_oTrEstq' + cvaltochar (_nItem)):Seq + "</Retorno>"
+			//		_sRetGrid += "<Retorno>OK:Gerada solicitacao " + &('_oTrEstq' + cvaltochar (_nItem)):Docto + '/' + &('_oTrEstq' + cvaltochar (_nItem)):Seq + "</Retorno>"
+					_sRetGrid += "<Retorno>OK</Retorno>"
 					U_Log2 ('debug', '[' + procname () + ']Gravei solicitacao ' + cvaltochar (_nItem) + ', que ficou assim:')
 					u_logObj (&('_oTrEstq' + cvaltochar (_nItem)), .t., .f.)
 				endif

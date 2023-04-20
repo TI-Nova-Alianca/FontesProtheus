@@ -42,6 +42,8 @@
 //                      - Criado metodo PodeIncl().
 //                      - Eliminados campos ZAG_UAUTP e ZAG_UAUTQ (Autorizadores PCP e qualidade).
 // 15/03/2023 - Robert  - Para considerar almox.controlado pelo FullWMS, deve estar na filial 01.
+// 15/03/2023 - Robert  - Para considerar almox.controlado pelo FullWMS, deve estar na filial 01.
+// 20/04/2023 - Robert  - Criado atributo CodMotivo
 //
 
 // ------------------------------------------------------------------------------------
@@ -78,6 +80,7 @@ CLASS ClsTrEstq
 	public data CtrLocDest // Indica se o produto destino controla enderecamento (campo B1_LOCALIZ)
 	public data CtrLotOrig // Indica se o produto de origem controla lote (campo B1_RASTRO)
 	public data CtrLotDest // Indica se o produto destino controla lote (campo B1_RASTRO)
+	public data CodMotivo  // Codigo do motivo da transferencia.
 	public data EndOrig    // Endereco origem (quando produto tiver controle de localizacao)
 	public data EndDest    // Endereco destino  (quando produto tiver controle de localizacao)
 	public data Etiqueta   // Numero da etiqueta (tabela ZA1), quando existir
@@ -183,7 +186,8 @@ METHOD AtuZAG (_sCampo, _xValor) Class ClsTrEstq
 		msunlock ()
 		_lRet = .T.
 	else
-		::SomaMsg ("Registro ainda nao gravado na tabela ZAG. Atualizacao do campo '" + _sCampo + "' nao pode ser feita na funcao " + procname ())
+		//::SomaMsg ("Registro ainda nao gravado na tabela ZAG. Atualizacao do campo '" + _sCampo + "' nao pode ser feita na funcao " + procname ())
+		U_Log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + "]Registro ainda nao gravado na tabela ZAG. Atualizacao do campo '" + _sCampo + "' nao pode ser feita.")
 		_lRet = .F.
 	endif
 
@@ -232,7 +236,6 @@ METHOD Exclui () Class ClsTrEstq
 		_oSQL:_sQuery += " FROM " + RetSQLName ("ZA1")
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 		_oSQL:_sQuery += " AND ZA1_FILIAL  = '" + xfilial ("ZA1") + "'"
-	//	_oSQL:_sQuery += " AND ZA1_IDZAG   = '" + ::Docto + "'"
 		_oSQL:_sQuery += " AND ZA1_IDZAG   = '" + ::Docto + ::Seq + "'"
 		_oSQL:_sQuery += " AND ZA1_APONT  != 'I'"
 		_sEtiq = _oSQL:RetQry (1, .F.)
@@ -392,6 +395,7 @@ METHOD GeraAtrib (_sOrigem) class ClsTrEstq
 	::CtrLocDest = .f.
 	::CtrLotOrig = .f.
 	::CtrLotDest = .f.
+	::CodMotivo  = ''
 	::EndOrig    = ''
 	::EndDest    = ''
 	::Etiqueta   = ''
@@ -419,6 +423,7 @@ METHOD GeraAtrib (_sOrigem) class ClsTrEstq
 		::DtEmis    = zag -> zag_emis
 		::UsrIncl   = zag -> zag_usrinc
 		::OP        = zag -> zag_op
+		::CodMotivo = zag -> zag_codmot
 		::Motivo    = alltrim (zag -> zag_Motivo)
 		::ProdOrig  = zag -> zag_PrdOri
 		::ProdDest  = zag -> zag_PrdDst
@@ -602,7 +607,6 @@ METHOD GeraEtiq (_lMsg) Class ClsTrEstq
 		_oEtiq := ClsEtiq():New()
 		_oEtiq:Produto     = ::ProdDest
 		_oEtiq:DtEmis      = ::DtEmis
-	//	_oEtiq:IdZAG       = ::Docto
 		_oEtiq:IdZAG       = ::Docto + ::Seq
 		_oEtiq:Quantidade  = ::QtdSolic
 		_oEtiq:AlmDest     = ::AlmDest
@@ -661,211 +665,6 @@ METHOD Grava () Class ClsTrEstq
 	if _lContinua
 		_lContinua = ::PodeIncl ()
 	endif
-/*
-	// Verifica campos obrigatorios, nao aceitos, tamanhos, tipos, etc.
-	if _lContinua
-		if empty (::FilOrig) ; ::SomaMsg ("Filial de origem deve ser informada.")                   ; _lContinua = .F. ; endif
-		if empty (::FilDest) ; ::SomaMsg ("Filial destino deve ser informada.")                     ; _lContinua = .F. ; endif
-		if empty (::AlmOrig) ; ::SomaMsg ("Almoxarifado de origem deve ser informado.")             ; _lContinua = .F. ; endif
-		if empty (::AlmDest) ; ::SomaMsg ("Almoxarifado destino deve ser informado.")               ; _lContinua = .F. ; endif
-		if empty (::DtEmis)  ; ::SomaMsg ("Data de emissao deve ser informada.")                    ; _lContinua = .F. ; endif
-		if empty (::UsrIncl) ; ::SomaMsg ("Nome solicitante deve ser informado.")                   ; _lContinua = .F. ; endif
-		if empty (::Motivo)  ; ::SomaMsg ("Motivo da transferencia deve ser informado.")            ; _lContinua = .F. ; endif
-		if empty (::ProdOrig); ::SomaMsg ("Produto deve ser informado.")                            ; _lContinua = .F. ; endif
-		if empty (::QtdSolic); ::SomaMsg ("Quantidade solicitada deve ser informada.")              ; _lContinua = .F. ; endif
-		if ! empty (::Docto) ; ::SomaMsg ("Documento NAO deve ser informado na inclusao.")          ; _lContinua = .F. ; endif
-		if ! empty (::RegZAG); ::SomaMsg ("RECNO da tabela ZAG NAO deve ser informado na inclusao."); _lContinua = .F. ; endif
-		if valtype (::QtdSolic) != 'N'
-	//		::UltMsg += "Quantidade deve ser do tipo numerico."
-			::SomaMsg ("Quantidade deve ser do tipo numerico.")
-			_lContinua = .F.
-		else
-			if ::QtdSolic <= 0
-		//		::UltMsg += "Quantidade solicitada zerada ou negativa."
-				::SomaMsg ("Quantidade solicitada zerada ou negativa.")
-				_lContinua = .F.
-			endif
-		endif
-
-		// Por enquanto, nao vou aceitar transferencia entre filiais. Robert, 11/04/2019
-		if ::FilDest != ::FilOrig
-			::UltMsg += "Transferencias entre filiais ainda nao sao permitidas nesta rotina."
-			_lContinua = .F.
-		endif
-
-		// Verifica tamanhos de campos para evitar, por exemplo, uma chamada
-		// passando o produto com tamanho != 15
-		// Usa tamanhos fixos (nao busca no SX3) por questao de performance,
-		// jah que sao campos chave e dificilmente mudarao de tamanho.  
-		if _lContinua
-			if len (::FilOrig)  !=  2                           ; ::SomaMsg ("Filial origem deve ter tamanho 2.")    ; _lContinua = .F.; endif
-			if len (::FilDest)  !=  2                           ; ::SomaMsg ("Filial destino deve ter tamanho 2.")   ; _lContinua = .F.; endif
-			if len (::ProdOrig) != 15                           ; ::SomaMsg ("Produto origem deve ter tamanho 15.")  ; _lContinua = .F.; endif
-			if len (::ProdDest) != 15                           ; ::SomaMsg ("Produto destino deve ter tamanho 15.") ; _lContinua = .F.; endif
-			if len (::AlmOrig)  !=  2                           ; ::SomaMsg ("Alm.origem deve ter tamanho 2.")       ; _lContinua = .F.; endif
-			if len (::AlmDest)  !=  2                           ; ::SomaMsg ("Alm.destino deve ter tamanho 2.")      ; _lContinua = .F.; endif
-			if ! empty (::EndOrig)  .and. len (::EndOrig)  != 15; ::SomaMsg ("Endereco origem deve ter tamanho 15.") ; _lContinua = .F.; endif
-			if ! empty (::EndDest)  .and. len (::EndDest)  != 15; ::SomaMsg ("Endereco destino deve ter tamanho 15."); _lContinua = .F.; endif
-			if ! empty (::LoteOrig) .and. len (::LoteOrig) != 10; ::SomaMsg ("Lote origem deve ter tamanho 10.")     ; _lContinua = .F.; endif
-			if ! empty (::loteDest) .and. len (::LoteDest) != 10; ::SomaMsg ("Lote destino deve ter tamanho 10.")    ; _lContinua = .F.; endif
-		endif
-	endif
-
-	// Testa possibilidade do destino ser igual a origem.
-	if _lContinua
-		if ::FilOrig == ::FilDest ;
-		.and. ::ProdOrig == ::ProdDest ;
-		.and. ::AlmOrig  == ::AlmDest ;
-		.and. ::EndOrig  == ::EndDest ;
-		.and. ::LoteOrig == ::LoteDest
-	//		::UltMsg += "Nao ha sentido em transferir quando origem e destino sao iguais."
-			::SomaMsg ("Nao ha sentido em transferir quando origem e destino sao iguais.")
-			_lContinua = .F.
-		endif
-	endif
-
-	if _lContinua
-		// Faz leitura de dados dos produtos a partir do SB1. Isso por que o
-		// objeto pode ter sido instanciado e modificado pelo programa chamador
-		// e agora eu estaria com dados de SB1 desatualizados.
-		::LeSB1 ()
-
-		if ::CtrLotOrig .and. empty (::LoteOrig) .and. ! ::AlmUsaFull (::AlmOrig)  // Alm 02 gera solicitacoes ao FullWMS
-	//		::UltMsg += "Produto origem controla lotes. Lote de origem deve ser informado."
-			::SomaMsg ("Produto origem controla lotes. Lote de origem deve ser informado.")
-			_lContinua = .F.
-		endif
-		if sb1 -> b1_localiz == 'S' .and. empty (::EndOrig) .and. ! ::AlmUsaFull (::AlmOrig)  // Alm 02 gera solicitacoes ao FullWMS
-	//		::UltMsg += "Produto origem controla localizacao. Endereco de origem deve ser informado."
-			::SomaMsg ("Produto origem controla localizacao. Endereco de origem deve ser informado.")
-			_lContinua = .F.
-		endif
-		if ! empty (::LoteOrig) .and. ! ::CtrLotOrig
-			if ! (::FWProdOrig .and. ::AlmUsaFull (::AlmDest))  // Se vai para FullWMS tenho que informar algm lote para ele.
-				::SomaMsg ("Lote origem nao deve ser informado pois o produto '" + alltrim (::ProdOrig) + "' nao controla lote.")
-				_lContinua = .F.
-			else
-				U_Log2 ('debug', '[' + procname () + ']Vou aceitar lote origem por que preciso ter algum lote para informar ao FullWMS.')
-			endif
-		endif
-		if ! empty (::EndOrig) .and. ! ::CtrLocOrig
-			::SomaMsg ("Endereco origem nao deve ser informado pois o produto '" + alltrim (::ProdOrig) + "' nao controla localizacao.")
-			_lContinua = .F.
-		endif
-		if ::CtrLotDest .and. empty (::LoteDest)
-			::SomaMsg ("Produto destino controla lotes. Lote destino deve ser informado.")
-			_lContinua = .F.
-		endif
-		if ::CtrLocDest .and. empty (::EndDest)
-			::SomaMsg ("Produto destino controla localizacao. Endereco destino deve ser informado.")
-			_lContinua = .F.
-		endif
-		if ! empty (::LoteDest) .and. ! ::CtrLotDest
-			if ! (::FWProdDest .and. ::AlmUsaFull (::AlmDest))  // Se vai para FullWMS, tenho que informar algm lote para ele.
-				::SomaMsg ("Lote destino nao deve ser informado pois o produto '" + alltrim (::ProdDest) + "' nao controla lote.")
-				_lContinua = .F.
-			endif
-		endif
-		if empty (::LoteDest) .and. ::AlmUsaFull (::AlmDest)  // Se vai para FullWMS, tenho que informar algm lote para ele.
-			::SomaMsg ("Deve ser informado um lote de destino por que o FullWMS vai exigir.")
-			_lContinua = .F.
-		endif
-		if ! empty (::EndDest) .and. ! ::CtrLocDest
-			::SomaMsg ("Endereco destino nao deve ser informado pois o produto '" + alltrim (::ProdDest) + "' nao controla localizacao.")
-			_lContinua = .F.
-		endif
-	endif
-
-	if _lContinua .and. ! empty (::AlmOrig)
-		nnr -> (dbsetorder (1))  // NNR_FILIAL+NNR_CODIGO
-		if ! nnr -> (dbseek (xfilial ("NNR") + ::AlmOrig, .F.))  // Nao pesquisa pela filial origem por que o NNR eh compartilhado.
-			::SomaMsg ("Almoxarifado origem '" + ::AlmOrig + "' nao cadastrado.")
-			_lContinua = .F.
-		endif
-	endif
-
-	if _lContinua .and. ! empty (::AlmDest)
-		nnr -> (dbsetorder (1))
-		if ! nnr -> (dbseek (xfilial ("NNR") + ::AlmDest, .F.))  // Nao pesquisa pela filial origem por que o NNR eh compartilhado.
-			::SomaMsg ("Almoxarifado destino '" + ::AlmDest + "' nao cadastrado.")
-			_lContinua = .F.
-		endif
-	endif
-
-	if _lContinua .and. ::CtrLotOrig .and. ! empty (::LoteOrig)
-		sb8 -> (dbsetorder (5))  // B8_FILIAL+B8_PRODUTO+B8_LOTECTL+B8_NUMLOTE+DTOS(B8_DTVALID)
-		if ! sb8 -> (dbseek (::FilOrig + ::ProdOrig + ::LoteOrig, .F.))
-			::SomaMsg ("Lote origem '" + ::LoteOrig + "' nao encontrado para o produto '" + ::ProdOrig + "' na filial '" + ::FilOrig + "'.")
-			_lContinua = .F.
-		endif
-	endif
-
-	if _lContinua .and. ::CtrLotDest .and. ! empty (::LoteDest)
-		sb8 -> (dbsetorder (5))  // B8_FILIAL+B8_PRODUTO+B8_LOTECTL+B8_NUMLOTE+DTOS(B8_DTVALID)
-		if ! sb8 -> (dbseek (::FilDest + ::ProdDest + ::LoteDest, .F.))
-			::SomaMsg ("Lote destino '" + ::LoteDest + "' ja existe para o produto '" + ::ProdDest + "' na filial '" + ::FilDest + "'.")
-			_lContinua = .F.
-		endif
-	endif
-
-	if _lContinua .and. ! empty (::EndOrig)
-		sbe -> (dbsetorder (1))  // BE_FILIAL+BE_LOCAL+BE_LOCALIZ
-		if ! sbe -> (dbseek (::FilOrig + ::AlmOrig + ::EndOrig, .F.))
-			::SomaMsg ("Endereco origem '" + ::EndOrig + "' nao encontrado no almoxarifado '" + ::AlmOrig + "' da filial '" + ::FilOrig + "'.")
-			_lContinua = .F.
-		endif
-	endif
-
-	if _lContinua .and. ! empty (::EndDest)
-		sbe -> (dbsetorder (1))  // BE_FILIAL+BE_LOCAL+BE_LOCALIZ
-		if ! sbe -> (dbseek (::FilDest + ::AlmDest + ::EndDest, .F.))
-			::SomaMsg ("Endereco destino '" + ::EndDest + "' nao encontrado no almoxarifado '" + ::AlmDest + "' da filial '" + ::FilDest + "'.")
-			_lContinua = .F.
-		endif
-	endif
-
-	if _lContinua .and. ! empty (::OP)
-		sc2 -> (dbsetorder (1))
-		if ! sc2 -> (dbseek (::FilOrig + ::OP, .F.))
-			::SomaMsg ("OP '" + ::OP + "' nao encontrada na filial '" + ::FilOrig + "'.")
-			_lContinua = .F.
-		endif
-	endif
-
-	//U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + '] ::AlmOrig = >>' + cvaltochar (::AlmOrig) + '<<')
-	//U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + '] ::AlmUsaFull = >>' + cvaltochar (::AlmUsaFull (::AlmOrig)) + '<<')
-
-	if _lContinua .and. ::AlmUsaFull (::AlmOrig)
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "SELECT MIN (A5_VAQSOLW)"
-		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SA5") + " SA5 "
-		_oSQL:_sQuery +=  " WHERE SA5.D_E_L_E_T_  = ''"
-		_oSQL:_sQuery +=  " AND SA5.A5_FILIAL   = '" + xfilial ("SA5") + "'"
-		_oSQL:_sQuery +=  " AND SA5.A5_PRODUTO  = '" + ::ProdOrig + "'"
-		_oSQL:_sQuery +=  " AND SA5.A5_VAQSOLW != 0"
-		_oSQL:Log ()
-		_nTamLote = _oSQL:RetQry (1, .F.)
-		//
-		_nResto = ::QtdSolic % _nTamLote
-		if _nResto != 0
-			_lContinua = .F.
-			::SomaMsg ("Produto e almox. de origem operam com FullWMS, e o produto tem lote minimo de "+ alltrim(str(_nTamLote)) + ". Nao sera possivel gerar uma movimentacao.")
-		endif
-	endif
-	
-	// Usuario que estah gravando a solicitacao tem que ser dono de pelo menos um dos almoxarifados envolvidos.
-	if _lContinua
-		if ! U_ZZUVL ('A' + ::AlmOrig, __cUserId, .F.)
-			U_Log2 ('debug', '[' + procname () + ']Usr atual nao eh dono do ax.origem (' + ::AlmOrig + ')')
-			if ! U_ZZUVL ('A' + ::AlmDest, __cUserId, .F.)
-				U_Log2 ('debug', '[' + procname () + ']Usr atual nao eh dono do ax.destino (' + ::AlmDest + ')')
-				::SomaMsg ("Para gravar esta solicitacao, voce deve ser dono de pelo menos um dos almoxarifados envolvidos.")
-				_lContinua = .F.
-			endif
-		endif
-	endif
-*/
 
 	// Vou gravar usando semaforo, por que preciso ter numero de documento exclusivo, inclusive entre filiais.
 	if _lContinua
@@ -943,6 +742,7 @@ METHOD Grava () Class ClsTrEstq
 		zag -> zag_LotOri = ::LoteOrig
 		zag -> zag_LotDst = ::LoteDest
 		zag -> zag_QtdSol = ::QtdSolic
+		zag -> zag_CodMot = ::CodMotivo
 		msunlock ()
 
 		::RegZAG = zag -> (recno ())
@@ -1280,6 +1080,15 @@ METHOD PodeIncl () Class ClsTrEstq
 		.and. ::EndOrig  == ::EndDest ;
 		.and. ::LoteOrig == ::LoteDest
 			::SomaMsg ("Nao ha sentido em transferir quando origem e destino sao iguais.")
+			_lContinua = .F.
+		endif
+	endif
+
+	// Codigo do motivo ainda nao eh obrigatorio por que nao tem em todas as telas.
+	// Mas, se informado, deve existir.
+	if _lContinua .and. ! empty (::CodMotivo)
+		if ! U_ExistZX5 ('56', ::CodMotivo, .F.)
+			::SomaMsg ("Codigo motivo transf '" + ::CodMotivo + "' nao cadastrado.")
 			_lContinua = .F.
 		endif
 	endif

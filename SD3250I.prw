@@ -27,6 +27,8 @@
 // 01/04/2022 - Robert  - Passa a usar a classe ClsEtiq() para envio da etiqueta para o FullWMS - GLPI 11825.
 // 18/04/2022 - Robert  - Incluida chamada para funcao PerfMon().
 // 23/03/2023 - Robert  - Deixa de ler parametro VA_ALMFULP (agora fica fixo no programa).
+// 20/04/2023 - Robert  - Gravar codigo de motivo de transferencia do ax de reprocesso para 11 (disponibilizar pallet para FullMS)
+//                      - Grava evento quando nao conseguir gerar transf.estq.do ax de reprocesso.
 //
 
 // -----------------------------------------------------------------------------------------------------------------------------------
@@ -64,30 +66,43 @@ Return
 // Atualizacoes para OP de reprocessamento.
 Static Function _AtuReproc ()
 	local _sAlmRetr := GetMv ("VA_ALMREPR")
-//	local _sAlmFull := GetMv ("VA_ALMFULP",, '')
+	local _oEvento  := NIL
 	
 	if fBuscaCpo ("SC2", 1, xfilial ("SC2") + m->d3_op, "C2_VAOPESP") == 'R'
+		U_Log2 ('info', '[' + procname () + ']Criando transf.estq. para disponibilizar pallet reprocessado p/ Full')
 		_oTrEstq := ClsTrEstq ():New ()
-		_oTrEstq:FilOrig  := cFilAnt
-		_oTrEstq:FilDest  := cFilAnt
-		_oTrEstq:ProdOrig := m->d3_cod
-		_oTrEstq:ProdDest := m->d3_cod
-		_oTrEstq:AlmOrig  := _sAlmRetr
-		_oTrEstq:AlmDest  := '01'  //_sAlmFull
-		_oTrEstq:LoteOrig := ""
-		_oTrEstq:LoteDest := ""
-		_oTrEstq:EndOrig  := ""
-		_oTrEstq:EndDest  := ""
-		_oTrEstq:QtdSolic := m->d3_perda
-		_oTrEstq:Motivo   := "Disponibilizar pallet reprocessado p/ Full"
-		_oTrEstq:ImprEtq  := ""
-		_oTrEstq:UsrIncl  := cUserName
-		_oTrEstq:DtEmis   := m->d3_emissao
-		_oTrEstq:Etiqueta := alltrim(m->d3_vaetiq)
+		_oTrEstq:FilOrig   := cFilAnt
+		_oTrEstq:FilDest   := cFilAnt
+		_oTrEstq:ProdOrig  := m->d3_cod
+		_oTrEstq:ProdDest  := m->d3_cod
+		_oTrEstq:AlmOrig   := _sAlmRetr
+		_oTrEstq:AlmDest   := '01'  //_sAlmFull
+		_oTrEstq:LoteOrig  := ""
+		_oTrEstq:LoteDest  := ""
+		_oTrEstq:EndOrig   := ""
+		_oTrEstq:EndDest   := ""
+		_oTrEstq:OP        := m->d3_op
+		_oTrEstq:QtdSolic  := m->d3_perda
+		_oTrEstq:CodMotivo := '04'
+		// _oTrEstq:Motivo    := "Disponibilizar pallet reprocessado p/ Full"
+		_oTrEstq:ImprEtq   := ""
+		_oTrEstq:UsrIncl   := cUserName
+		_oTrEstq:DtEmis    := m->d3_emissao
+		_oTrEstq:Etiqueta  := alltrim(m->d3_vaetiq)
 		if _oTrEstq:Grava ()
 			u_log2 ('INFO', 'Gravou ZAG. ' + _oTrEstq:UltMsg)
 		else
 			u_log2 ('erro', 'Nao gravou ZAG. ' + _oTrEstq:UltMsg)
+
+			// Grava evento para posterior rastreamento.
+			_oEvento := ClsEvent():new ()
+			_oEvento:CodEven    = 'ZAG001'
+			_oEvento:Texto      = _oTrEstq:UltMsg
+			_oEvento:Produto    = m->d3_cod
+			_oEvento:OP         = m->d3_op
+			_oEvento:Etiqueta   = m->d3_vaetiq
+			_oEvento:DiasValid  = 180
+			_oEvento:Grava ()
 		endif
 	endif
 return
