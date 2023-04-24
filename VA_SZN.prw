@@ -161,6 +161,11 @@ static function _LeDados (_sOQue, _sChave1, _sChave2, _sChave3, _sChave4, _sChav
 	{"BlaBlaBla", "allwaystrue ()", 0, 3}, ;
 	{"BlaBlaBla", "allwaystrue ()", 0, 4}}  // aRotina eh exigido pela MSGetDados!!!
 
+	// Muitas vezes a rotina chamadora nao tem esta variavel definida.
+	if type ("inclui") == 'U'
+		private inclui := .F.
+	endif
+
 	// Monta query conforme parametros recebidos
 	if _lContinua
 		_sQuery := ""

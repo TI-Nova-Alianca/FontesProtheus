@@ -122,6 +122,7 @@
 //                      - Testa se estah gerando contranota de safra antes de
 //                        chamar algumas rotinas que nao se aplicam a safras.
 // 16/01/2023 - Robert  - Criado parametro VA_RFRSAFR para reembolsar (ou nao) FUNRURAL nas contranotas de safra.
+// 22/04/2023 - Robert  - Gravacao campo E2_VAFRSAF.
 //
 
 // ------------------------------------------------------------------------------------------------------------------------------
@@ -577,6 +578,7 @@ static function _AjSE2 ()
 				se2 -> e2_vencto  = _dVctSafra
 				se2 -> e2_vencrea = _dVctSafra
 				se2 -> e2_vasafra = sf1 -> f1_vasafra
+				se2 -> e2_vafrsaf = iif ('AUX.COMB' $ se2 -> e2_hist, 'S', 'N')
 				msunlock ()
 				se2 -> (dbskip ())
 			enddo
@@ -590,8 +592,9 @@ static function _AjSE2 ()
 						U_Log2 ('aviso', 'Nao encontrei a parcela ' + chr (64 + _nParc) + ' para ajustar historico de safra.')
 					else
 						reclock ("SE2", .F.)
-						se2 -> e2_hist = alltrim (se2 -> e2_hist) + alltrim (_aParPgSaf [_nParc, 5])
+						se2 -> e2_hist    = alltrim (se2 -> e2_hist) + alltrim (_aParPgSaf [_nParc, 5])
 						se2 -> e2_vasafra = sf1 -> f1_vasafra
+						se2 -> e2_vafrsaf = iif ('AUX.COMB' $ se2 -> e2_hist, 'S', 'N')
 						msunlock ()
 					endif
 				next

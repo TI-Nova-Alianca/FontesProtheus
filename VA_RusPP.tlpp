@@ -149,7 +149,7 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 		// Parte 1: monta coluna de valor de cada parcela (por percentual o sistema arredonda na ultima parcela, distorcendo o frete)
 		// Frete sempre valor cheio na sua parcela (mesmo que zerado).
 		_aParcel [_nParcFrt, 4] = _nVlFrete
-		_aParcel [_nParcFrt, 5] = 'AUX.COMB.' + _sSafPag
+		_aParcel [_nParcFrt, 5] = 'AUX.COMB.' + _sSafPag  // NAO ALTERAR a string "AUX.COMB" por que uso-a pra identificar frete de safra no SF1100I !!!
 		//
 		// Distribui o valor da uva conforme percentuais definidos nas regras de pagamento.
 		_nParcel = 1
