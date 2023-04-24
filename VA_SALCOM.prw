@@ -12,6 +12,7 @@
 // Historico de alteracoes:
 // 03/03/2023 - Claudia - Alterado % de comissão para comissão emdia do SE1. GLPI: 8917
 // 14/03/2023 - Cláudia - Alterada a ligação com tabela de titulos. 
+// 24/04/2023 - Claudia - Ajuste na regra de comissão, conforme data final. GLPI: 8917
 //
 // --------------------------------------------------------------------------------------
 User Function VA_SALCOM ()
@@ -62,6 +63,10 @@ Static Function PrintReport(oReport)
     local _x        := 0
 	local _nQtdPar  := 1
 
+	_nLinha :=  oReport:Row()
+	oReport:PrintText(" *** DATA BASE:" + DTOC(mv_par04),_nLinha, 50)
+	oReport:SkipLine(1) 
+
     oSection1:Init()
 	oSection1:SetHeaderSection(.T.)
 
@@ -105,6 +110,7 @@ Static Function PrintReport(oReport)
 	_oSQL:_sQuery += " 	AND SD2.D2_COMIS1 > 0 "
 	_oSQL:_sQuery += " 	AND D2_FILIAL  BETWEEN '"+ mv_par01       +"' AND '"+ mv_par02       +"' "
 	_oSQL:_sQuery += " 	AND D2_EMISSAO BETWEEN '"+ dtos(mv_par03) +"' AND '"+ dtos(mv_par04) +"' "
+	//_oSQL:_sQuery += "  AND D2_DOC ='000001346' " // TIRAR DEPOIS
 	_oSQL:_sQuery += " 	) "
 	_oSQL:_sQuery += " SELECT "
 	_oSQL:_sQuery += " 	   VENDEDOR "
@@ -135,15 +141,16 @@ Static Function PrintReport(oReport)
 		_sSerie  := _aNotas[_x, 4]
 		_nTotCom := _aNotas[_x, 7]
 
-		_nQtdPar := BuscaQtdParcela(_sFilial, _sNumero, _sSerie) 				// Quantidade de parcelas
-		_nComPar := _nTotCom/_nQtdPar   										// Comissão de cada parcela
-		_nVlrCom := BuscaQtdSaldo(_sFilial, _sNumero, _sSerie,_nComPar)      	// valor de comissão de parcelas sem baixas parciais
+		_nQtdPar   := BuscaQtdParcela(_sFilial, _sNumero, _sSerie) 				// Quantidade de parcelas
+		_nComPar   := _nTotCom/_nQtdPar   										// Comissão de cada parcela
+		_nVlrSaldo := BuscaQtdSaldo(_sFilial, _sNumero, _sSerie,_nComPar)      	// Valor de comissão de parcelas sem baixas (E1_BAIXA VAZIO)
+		_nVlrBaixa := BuscaVlrBaixado(_sFilial, _sNumero, _sSerie, _nComPar)	// valor baixado após a data final da posição
+		_nVlrCP    := BuscaVlrParcial(_sFilial, _sNumero, _sSerie, _nComPar)	// valor de comissão de parcela parcial		
 
-		_nVlrCP     := BuscaVlrParcial(_sFilial, _sNumero, _sSerie, _nComPar)	// valor de comissão de parcela parcial		
-		_nVlrBaixa  := BuscaVlrBaixado(_sFilial, _sNumero, _sSerie, _nComPar)	// valor baixado após a data final da posição
-		_nVlrParBai := BuscaBaixaParcial(_sFilial, _sNumero, _sSerie, _nComPar) // valor baixado após a data final da posição - valor parcial
-		_nValor     := _nVlrCom + _nVlrCP + _nVlrBaixa + _nVlrParBai			// valor comissao sem baixa parcial + valor comissao parcial + valor ja baixado (apos data da posição)	
+		//_nVlrParBai := BuscaBaixaParcial(_sFilial, _sNumero, _sSerie, _nComPar) // valor baixado após a data final da posição - valor parcial
+		_nValor     := _nVlrSaldo + _nVlrBaixa  + _nVlrCP// + _nVlrParBai			// valor comissao sem baixa parcial + valor comissao parcial + valor ja baixado (apos data da posição)	
 
+		//u_help ("saldo " + str(_nVlrSaldo) + " baixado " + str(_nVlrBaixa) + " baixa parcial " + str(_nVlrCP))
 		If _nValor <> 0
 			oSection1:Cell("COLUNA1")	:SetBlock   ({|| _aNotas[_x,1] 						}) 	
 			oSection1:Cell("COLUNA2")	:SetBlock   ({|| _aNotas[_x,2] 						}) 		
@@ -157,8 +164,8 @@ Static Function PrintReport(oReport)
 			oSection1:PrintLine()	
 		EndIf
 	Next
-
 	oSection1:Finish()
+	
 Return
 //
 // -------------------------------------------------------------------------
@@ -185,16 +192,15 @@ Static Function BuscaQtdParcela(_sFilial, _sNumero, _sSerie)
 Return _nRet
 //
 // -------------------------------------------------------------------------
-// Busca quantidade de parcela com saldo
+// Busca valor de parcela em aberto
 Static Function BuscaQtdSaldo(_sFilial, _sNumero, _sSerie, _nComPar)
 	Local _aParcela := {}
-	Local _x        := 0
-	Local _nRet     := 1
+	Local _nRet     := 0
 
 	_oSQL:= ClsSQL ():New ()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT "
-	_oSQL:_sQuery += " 		COUNT(*) "
+	_oSQL:_sQuery += " 		E1_SALDO, E1_BAIXA, E1_VALOR "
 	_oSQL:_sQuery += " FROM " +  RetSQLName ("SE1") 
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
 	_oSQL:_sQuery += " AND E1_FILIAL  = '"+ _sFilial +"'"
@@ -203,10 +209,38 @@ Static Function BuscaQtdSaldo(_sFilial, _sNumero, _sSerie, _nComPar)
 	_oSQL:_sQuery += " AND E1_SALDO = E1_VALOR "
 	_aParcela := aclone(_oSQL:Qry2Array())
 
-	For _x:=1 to Len(_aParcela)
-		_nRet := _aParcela[_x,1]
-	Next
-	_nRet := _nRet * _nComPar
+	If Len(_aParcela) > 0
+		_nRet := _nComPar * Len(_aParcela)
+	else
+		_nRet := 0
+	EndIf
+	
+Return _nRet
+//
+// -------------------------------------------------------------------------
+// Busca baixas efetuadas após a data final da pesquisa
+Static Function BuscaVlrBaixado(_sFilial, _sNumero, _sSerie, _nComPar)
+	Local _aParcela := {}
+	Local _nRet     := 0
+
+	_oSQL:= ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 		 E1_SALDO, E1_BAIXA, E1_VALOR " 
+	_oSQL:_sQuery += " FROM " +  RetSQLName ("SE1") 
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+	_oSQL:_sQuery += " AND E1_FILIAL  = '"+ _sFilial +"'"
+	_oSQL:_sQuery += " AND E1_NUM     = '"+ _sNumero +"'"
+	_oSQL:_sQuery += " AND E1_PREFIXO = '"+ _sSerie  +"'"
+	_oSQL:_sQuery += " AND E1_BAIXA <> ''"
+	_oSQL:_sQuery += " AND E1_BAIXA > '"+dtos(mv_par04) +"'"
+	_aParcela := aclone(_oSQL:Qry2Array())
+
+	If Len(_aParcela) > 0
+		_nRet := _nComPar * Len(_aParcela)
+	else
+		_nRet := 0
+	EndIf
 Return _nRet
 //
 // -------------------------------------------------------------------------
@@ -215,6 +249,8 @@ Static Function BuscaVlrParcial(_sFilial, _sNumero, _sSerie, _nComPar)
 	Local _aParcela := {}
 	Local _x        := 0
 	Local _nRet     := 0
+	Local _nVlr     := 0
+	Local _nVlr2    := 0
 
 	_oSQL:= ClsSQL ():New ()
 	_oSQL:_sQuery := ""
@@ -228,71 +264,44 @@ Static Function BuscaVlrParcial(_sFilial, _sNumero, _sSerie, _nComPar)
 	_oSQL:_sQuery += " AND E1_PREFIXO = '"+ _sSerie  +"'"
 	_oSQL:_sQuery += " AND E1_SALDO <> E1_VALOR "
 	_oSQL:_sQuery += " AND E1_SALDO <> 0 "
+	_oSQL:_sQuery += " AND E1_BAIXA <= '"+ dtos(mv_par04) +"'"
 	_aParcela := aclone(_oSQL:Qry2Array())
 
 	For _x:=1 to Len(_aParcela)
-		_nVlr      := _aParcela[_x, 1]
-		_nVlrBaixa := _aParcela[_x, 2]
-		_nRet += _nVlrBaixa * _nComPar / _nVlr
+		_nVlr  := _aParcela[_x, 1]
+		_nVlr2 := _aParcela[_x, 2]
+		_nRet += _nComPar - (_nVlr2 * _nComPar / _nVlr)
 	Next
 Return _nRet
-//
-// -------------------------------------------------------------------------
-// Busca baixas efetuadas após a data final da pesquisa
-Static Function BuscaVlrBaixado(_sFilial, _sNumero, _sSerie, _nComPar)
-	Local _aParcela := {}
-	Local _x        := 0
-	Local _nRet     := 0
-	Local _nCont    := 0
+// //
+// // -------------------------------------------------------------------------
+// // Busca baixas efetuadas após a data final da pesquisa - parcial
+// Static Function BuscaBaixaParcial(_sFilial, _sNumero, _sSerie, _nComPar)
+// 	Local _aParcela := {}
+// 	Local _x        := 0
+// 	Local _nRet     := 0
 
-	_oSQL:= ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT "
-	_oSQL:_sQuery += " 		 COUNT(*) " 
-	_oSQL:_sQuery += " FROM " +  RetSQLName ("SE1") 
-	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-	_oSQL:_sQuery += " AND E1_FILIAL  = '"+ _sFilial +"'"
-	_oSQL:_sQuery += " AND E1_NUM     = '"+ _sNumero +"'"
-	_oSQL:_sQuery += " AND E1_PREFIXO = '"+ _sSerie  +"'"
-	_oSQL:_sQuery += " AND E1_BAIXA <> ''"
-	_oSQL:_sQuery += " AND E1_BAIXA > '"+dtos(mv_par04) +"'"
-	_oSQL:_sQuery += " AND E1_SALDO = 0"
-	_aParcela := aclone(_oSQL:Qry2Array())
+// 	_oSQL:= ClsSQL ():New ()
+// 	_oSQL:_sQuery := ""
+// 	_oSQL:_sQuery += " SELECT "
+// 	_oSQL:_sQuery += "        E1_VALOR 
+// 	_oSQL:_sQuery += " 		 ,E1_VALOR - E1_SALDO AS VLR_BAIXA "
+// 	_oSQL:_sQuery += " FROM " +  RetSQLName ("SE1") 
+// 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+// 	_oSQL:_sQuery += " AND E1_FILIAL  = '"+ _sFilial +"'"
+// 	_oSQL:_sQuery += " AND E1_NUM     = '"+ _sNumero +"'"
+// 	_oSQL:_sQuery += " AND E1_PREFIXO = '"+ _sSerie  +"'"
+// 	_oSQL:_sQuery += " AND E1_BAIXA > '"+dtos(mv_par04) +"'"
+// 	_oSQL:_sQuery += " AND E1_SALDO <> E1_VALOR "
+// 	_oSQL:_sQuery += " AND E1_SALDO <> 0 "
+// 	_aParcela := aclone(_oSQL:Qry2Array())
 
-	For _x:=1 to Len(_aParcela)
-		_nCont := _aParcela[_x,1]
-	Next
-	_nRet := _nComPar * _nCont
-Return _nRet
-//
-// -------------------------------------------------------------------------
-// Busca baixas efetuadas após a data final da pesquisa - parcial
-Static Function BuscaBaixaParcial(_sFilial, _sNumero, _sSerie, _nComPar)
-	Local _aParcela := {}
-	Local _x        := 0
-	Local _nRet     := 0
-
-	_oSQL:= ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT "
-	_oSQL:_sQuery += "        E1_VALOR 
-	_oSQL:_sQuery += " 		 ,E1_VALOR - E1_SALDO AS VLR_BAIXA "
-	_oSQL:_sQuery += " FROM " +  RetSQLName ("SE1") 
-	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-	_oSQL:_sQuery += " AND E1_FILIAL  = '"+ _sFilial +"'"
-	_oSQL:_sQuery += " AND E1_NUM     = '"+ _sNumero +"'"
-	_oSQL:_sQuery += " AND E1_PREFIXO = '"+ _sSerie  +"'"
-	_oSQL:_sQuery += " AND E1_BAIXA > '"+dtos(mv_par04) +"'"
-	_oSQL:_sQuery += " AND E1_SALDO <> E1_VALOR "
-	_oSQL:_sQuery += " AND E1_SALDO <> 0 "
-	_aParcela := aclone(_oSQL:Qry2Array())
-
-	For _x:=1 to Len(_aParcela)
-		_nVlr      := _aParcela[_x, 1]
-		_nVlrBaixa := _aParcela[_x, 2]
-		_nRet += _nVlrBaixa * _nComPar / _nVlr
-	Next
-Return _nRet
+// 	For _x:=1 to Len(_aParcela)
+// 		_nVlr      := _aParcela[_x, 1]
+// 		_nVlrBaixa := _aParcela[_x, 2]
+// 		_nRet += _nVlrBaixa * _nComPar / _nVlr
+// 	Next
+// Return _nRet
 //
 // -------------------------------------------------------------------------
 // Cria Perguntas no SX1
