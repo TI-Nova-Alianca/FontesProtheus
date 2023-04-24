@@ -969,6 +969,7 @@ static function _TransFil ()
 			
 			_sHistSE5 = 'TR.SLD.P/FIL.' + _sFilDest + ' REF.' + se2 -> e2_hist
 
+			begin transaction
 			lMsErroAuto = .F.
 			MSExecAuto({|x,y| Fina090(x,y)},3,_aTit)
 			If lMsErroAuto
@@ -1033,13 +1034,14 @@ static function _TransFil ()
 				_oBatchDst:Modulo   = 6  // Campo E2_VACHVEX nao eh gravado em alguns modulos... vai saber...
 				_oBatchDst:Comando  = "U_BatTrSE2()"
 				_oBatchDst:JSON     = _sTxtJSON
+				_oBatchDst:Prioridade = 8  // Nao tenho grande urgencia na execucao deste batch
 				if ! _oBatchDst:Grava ()
 					_oBatch:Mensagens += "Erro gravacao batch filial destino"
 					_oBatch:Retorno = 'N'
 					_lContinua = .F.
 				endif
-				_oBatchDst:Prioridade = 8  // Nao tenho grande urgencia na execucao deste batch
 			endif
+			end transaction
 			(_sAliasQ) -> (dbskip ())
 		enddo
 	endif

@@ -35,11 +35,15 @@
 // 25/08/2022 - Robert  - Criado tratamento para o campo ZZU_SITUAC.
 // 09/09/2022 - Robert  - Funcao ZZULD() passa a retornar tambem uma lista de
 //                        usernames para uso nas notificacoes do NaWeb.
+// 20/04/2023 - Robert  - Implementada alteracao de validade por usuario (em todos os grupos)
+//                      - Melhorada gravacao de eventos (gravar ALIAS e CHAVE, para posterior consulta)
+//                      - Criada consulta de eventos relacionados ao grupo.
 //
 
 // --------------------------------------------------------------------------
 User Function ZZU ()
-	local _sFiltrTop := ""
+	local _sFiltrTop  := ""
+	local _aRotUser   := {}
 	private aRotina   := {}  // Opcoes do menu
 	private cCadastro := "Grupos x usuarios"
 
@@ -48,11 +52,16 @@ User Function ZZU ()
 		return
 	endif
 
+	// Submenu de rotinas 'por usuario'
+	aadd (_aRotUser, {"Alterar validade", "processa ({||U_ZZUAU ('AV')})", 0, 4})
+
 	aAdd(aRotina, {"Pesquisar",  "AxPesqui" , 0, 1})
 	aAdd(aRotina, {"Visualizar", "U_ZZUA", 0, 2})
 	aAdd(aRotina, {"Incluir"  ,  "U_ZZUA", 0, 3})
 	aAdd(aRotina, {"Alterar"  ,  "U_ZZUA", 0, 4})
 	aAdd(aRotina, {"Excluir"  ,  "U_ZZUE", 0, 5})
+	aAdd(aRotina, {"Eventos"  ,  "U_VA_SZNC ('ALIAS_CHAVE', 'ZZU', zzu -> zzu_grupo)", 0, 5})
+	aadd(aRotina, {"Operacoes por usuario", _aRotUser, 0,4})
 	dbSelectArea ("ZZU")
 	dbSetOrder (1)
 	mBrowse(,,,,"ZZU",,,,,,,,,,,,,,_sFiltrTop)
@@ -163,6 +172,9 @@ user function ZZUA ()
 					_oEvento := ClsEvent ():New ()
 					_oEvento:CodEven = 'ZZU003'
 					_oEvento:Texto = "Removendo usuario '" + zzu -> zzu_user + "' (" + alltrim (GDFieldGet ("ZZU_NOME", _nLinACols)) + ") do grupo '" + zzu -> zzu_grupo + "' (" + alltrim (_sDescrZZU) + ")"
+					_oEvento:Alias  = 'ZZU'
+					_oEvento:Recno  = zzu -> (recno ())
+					_oEvento:Chave  = zzu -> zzu_grupo
 					_oEvento:Grava ()
 
 					reclock ("ZZU", .F.)
@@ -180,6 +192,9 @@ user function ZZUA ()
 						_oEvento:Texto = "Alterando amarracao usuario '" + zzu -> zzu_user + "' (" + alltrim (GDFieldGet ("ZZU_NOME", _nLinACols)) + ") X grupo '" + zzu -> zzu_grupo + "' (" + alltrim (_sDescrZZU) + ")" + chr (13) + chr (10)
 						_oEvento:Texto += "Situacao anterior: filial: " + zzu -> ZZU_FIL + "; Tipo de acesso: " + alltrim (x3combo ('ZZU_TIPO', zzu -> ZZU_TIPO)) + "; Historico: " + alltrim (zzu -> ZZU_HIST) + chr (13) + chr (10)
 						_oEvento:Texto += "Nova situacao: filial: " + GDFieldGet ("ZZU_FIL", _nLinACols) + "; Tipo de acesso: " + alltrim (x3combo ('ZZU_TIPO', GDFieldGet ("ZZU_TIPO", _nLinACols))) + "; Historico: " + alltrim (GDFieldGet ("ZZU_HIST", _nLinACols)) + chr (13) + chr (10)
+						_oEvento:Alias  = 'ZZU'
+						_oEvento:Recno  = zzu -> (recno ())
+						_oEvento:Chave  = zzu -> zzu_grupo
 						_oEvento:Grava ()
 					endif
 
@@ -192,16 +207,21 @@ user function ZZUA ()
 				if GDDeleted (_nLinACols)
 					loop
 				else
+					begin transaction
+					reclock ("ZZU", .T.)
+					U_GrvACols ("ZZU", _nLinACols, _aCposFora)
+					msunlock ("ZZU")
+
 					_oEvento := ClsEvent ():New ()
 					_oEvento:CodEven = 'ZZU001'
 					_oEvento:Texto = "Incluindo usuario '" + GDFieldGet ("ZZU_USER", _nLinACols) + "' (" + alltrim (GDFieldGet ("ZZU_NOME", _nLinACols)) + ") no grupo '" + _sGrupoZZU + "' (" + alltrim (_sDescrZZU) + ")" + chr (13) + chr (10)
 					_oEvento:Texto += "Filial: " + GDFieldGet ("ZZU_FIL", _nLinACols) + " Tipo de acesso: " + alltrim (x3combo ('ZZU_TIPO', GDFieldGet ("ZZU_TIPO", _nLinACols))) + chr (13) + chr (10)
 					_oEvento:Texto += "Historico: " + alltrim (GDFieldGet ("ZZU_HIST", _nLinACols))
+					_oEvento:Alias  = 'ZZU'
+					_oEvento:Recno  = zzu -> (recno ())
+					_oEvento:Chave  = zzu -> zzu_grupo
 					_oEvento:Grava ()
-
-					reclock ("ZZU", .T.)
-					U_GrvACols ("ZZU", _nLinACols, _aCposFora)
-					msunlock ("ZZU")
+					end transaction
 				endif
 			endif
 		next
@@ -209,6 +229,81 @@ user function ZZUA ()
 	endif
 return
 
+
+
+// --------------------------------------------------------------------------
+// Executar operacoes 'por usuario'
+user function ZZUAU (_sQueFazer)
+	local _sUser   := space (6)
+	local _aReg    := {}
+	local _nReg    := 0
+	local _oSQL    := NIL
+	local _dValid  := ctod ('')
+	local _oEvento := NIL
+
+	_sUser = U_Get ("Codigo do usuario", 'C', 6, '', 'USR', _sUser, .f., '.t.')
+	if empty (_sUser)
+		u_help ("Usuario nao informado. Processo cancelado.",, .t.)
+	else
+		// Leitura dos grupos onde o usuario aparece e montagem de markbrowse para selecao do usuario
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "SELECT '' AS OK, R_E_C_N_O_, ZZU_USER, ZZU_NOME, ZZU_GRUPO, ZZU_DESCRI, dbo.VA_DTOC (ZZU_VALID), ZZU_HIST"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZU") + " ZZU"
+		_oSQL:_sQuery += " WHERE ZZU.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND ZZU.ZZU_FILIAL = '" + xfilial ("ZZU") + "'"
+		_oSQL:_sQuery +=   " AND ZZU.ZZU_USER   = '" + _sUser + "'"
+		_oSQL:_sQuery += " ORDER BY ZZU.ZZU_GRUPO"
+		_aReg := aclone (_osql:Qry2Array (.f., .f.))
+
+		// Inicializa coluna de selecao com .F. ('nao selecionada').
+		for _nReg = 1 to len (_aReg)
+			_aReg [_nReg, 1] = .F.
+		next
+
+		_aCols = {}
+		aadd (_aCols, {3, 'Usuario',          30, ''})
+		aadd (_aCols, {4, 'Nome',             60, ''})
+		aadd (_aCols, {5, 'Grupo',            30, ''})
+		aadd (_aCols, {6, 'Descr.grupo',      60, ''})
+		aadd (_aCols, {7, 'Validade',         40, ''})
+		aadd (_aCols, {8, 'Historico',       250, ''})
+		U_MBArray (@_aReg, 'Selecione registros a alterar', _aCols, 1)
+
+		do case
+		case _sQueFazer == 'AV'  // Alterar validade dos registros
+			_dValid = U_Get ("Nova data de validade", 'D', 8, '@D', '', date (), .f., '.t.')
+			if empty (_dValid)
+				u_help ("Nova data de validade deve ser informada. Processo cancelado.",, .t.)
+			else
+				procregua (len (_aReg))
+				for _nReg = 1 to len (_aReg)
+					incproc ()
+					if _aReg [_nReg, 1]
+						zzu -> (dbgoto (_aReg [_nReg, 2]))
+						
+						begin transaction
+						_oEvento := ClsEvent ():New ()
+						_oEvento:CodEven = 'ZZU002'
+						_oEvento:Texto := "Alterando validade de " + dtoc (zzu -> zzu_valid) + " para " + dtoc (_dValid)
+						_oEvento:Texto += " na amarracao usuario " + zzu -> zzu_user + " (" + alltrim (_aReg [_nReg, 4]) + ")"
+						_oEvento:Texto += " X grupo " + zzu -> zzu_grupo + " (" + alltrim (_aReg [_nReg, 6]) + ")"
+						_oEvento:Alias  = 'ZZU'
+						_oEvento:Recno  = zzu -> (recno ())
+						_oEvento:Chave  = zzu -> zzu_grupo
+						_oEvento:Grava ()
+
+						reclock ('ZZU', .F.)
+						zzu -> zzu_valid = _dValid
+						msunlock ()
+						end transaction
+					endif
+				next
+			endif
+		otherwise
+			u_help ("Opcao '" + _sQueFazer + "' sem tratamento!",, .t.)
+		endcase
+	endif
+return
 
 
 // --------------------------------------------------------------------------
@@ -220,6 +315,7 @@ user function ZZUE ()
 
 	if _lContinua .and. u_msgyesno ("Confirma a exclusao do grupo e seus relacionamentos com usuarios?")
 
+		begin transaction
 		_oEvento := ClsEvent ():New ()
 		_oEvento:CodEven = 'ZZU004'
 		_oEvento:Texto = "Excluindo grupo '" + zzu -> zzu_grupo + "' (" + alltrim (ZZU -> ZZU_DESCRI) + ")" + chr (13) + chr (10)
@@ -228,13 +324,15 @@ user function ZZUE ()
 		zzu -> (dbseek (xfilial ("zzu") + _sGrupoZZU, .T.))
 		do while ! zzu -> (eof ()) .and. zzu -> zzu_filial == xfilial ("zzu") .and. zzu -> ZZU_GRUPO == _sGrupoZZU
 			_oEvento:Texto += "Removendo usuario " + zzu -> zzu_user + " - " + alltrim (zzu -> zzu_nome) + chr (13) + chr (10)
+			_oEvento:Alias  = 'ZZU'
+			_oEvento:Chave  = zzu -> zzu_grupo
 			reclock ("zzu", .F.)
 			zzu -> (dbdelete ())
 			msunlock ()
 			zzu -> (dbskip ())
 		enddo
-
 		_oEvento:Grava ()
+		end transaction
 		u_help ("Dados excluidos.")
 	endif
 return

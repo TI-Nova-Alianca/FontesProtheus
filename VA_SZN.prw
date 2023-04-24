@@ -30,7 +30,8 @@
 //                     - Incluidas tags para catalogo de fontes.
 // 11/03/2022 - Robert - Consulta de logs de 'CARGASAFRA' passa a validar novos campos ZN_SAFRA e ZN_CARGSAF.
 // 09/03/2023 - Robert - Criada opcao de consulta por ChaveNFe
-// 31/03/2023 - Robert - Consulta NFENTRADA passa a tratar tambem a cjave NFe.
+// 31/03/2023 - Robert - Consulta NFENTRADA passa a tratar tambem a chave NFe.
+// 20/04/2023 - Robert - Nao mostra mais dados adicionais de NF na parte de baixo da tela.
 //
 
 #include "rwmake.ch"
@@ -150,8 +151,8 @@ static function _LeDados (_sOQue, _sChave1, _sChave2, _sChave3, _sChave4, _sChav
 	local _sQuery    := ""
 	local _aLinVazia := {}
 	local _lContinua := .T.
-	local _sOrdEmb   := ""
-	local _sMsgInf   := ""
+//	local _sOrdEmb   := ""
+//	local _sMsgInf   := ""
 	local _aSize     := {}  // Para posicionamento de objetos em tela
 	local _aRecnos   := {}
 	local _nRecno    := 0
@@ -159,6 +160,11 @@ static function _LeDados (_sOQue, _sChave1, _sChave2, _sChave3, _sChave4, _sChav
 	{"BlaBlaBla", "allwaystrue ()", 0, 2}, ;
 	{"BlaBlaBla", "allwaystrue ()", 0, 3}, ;
 	{"BlaBlaBla", "allwaystrue ()", 0, 4}}  // aRotina eh exigido pela MSGetDados!!!
+
+	// Muitas vezes a rotina chamadora nao tem esta variavel definida.
+	if type ("inclui") == 'U'
+		private inclui := .F.
+	endif
 
 	// Monta query conforme parametros recebidos
 	if _lContinua
@@ -168,6 +174,9 @@ static function _LeDados (_sOQue, _sChave1, _sChave2, _sChave3, _sChave4, _sChav
 		_sQuery += " where D_E_L_E_T_ !=      '*'"
 		_sQuery += "   and ZN_FILIAL  =       '" + xfilial ("SZN")  + "'"
 		do case
+		case upper (_sOQue) == "ALIAS_CHAVE"  // Seria o "caso generico"
+			_sQuery += "   and ZN_ALIAS   = '" + _sChave1 + "'"
+			_sQuery += "   and ZN_CHAVE   = '" + _sChave2 + "'"
 		case upper (_sOQue) == "PEDVENDA"
 			_sQuery += "   and ZN_PEDVEND = '" + _sChave1 + "'"
 		case upper (_sOQue) == "NFSAIDA"
@@ -191,9 +200,6 @@ static function _LeDados (_sOQue, _sChave1, _sChave2, _sChave3, _sChave4, _sChav
 		case upper (_sOQue) == "CARGASAFRA"
 			_sQuery += "   and ZN_SAFRA   = '" + _sChave1 + "'"
 			_sQuery += "   and ZN_CARGSAF = '" + _sChave2 + "'"
-		case upper (_sOQue) == "ALIAS_CHAVE"
-			_sQuery += "   and ZN_ALIAS   = '" + _sChave1 + "'"
-			_sQuery += "   and ZN_CHAVE   = '" + _sChave2 + "'"
 		case upper (_sOQue) == "EVENTO"
 			_sQuery += "   and ZN_CODEVEN = '" + _sChave1 + "'"
 		case upper (_sOQue) == "CHAVENFE"
@@ -206,35 +212,36 @@ static function _LeDados (_sOQue, _sChave1, _sChave2, _sChave3, _sChave4, _sChav
 			_aRecnos := aclone (U_Qry2Array (_sQuery))
 	endif
 	
-	// Busca dados adicionais para a parte inferior da tela.
-	if _lContinua
-		do case
-		case upper (_sOQue) == "NFSAIDA"
+	// vou tentar usar a parte de baixo para detalhar os eventos // Busca dados adicionais para a parte inferior da tela.
+	// vou tentar usar a parte de baixo para detalhar os eventos if _lContinua
+	// vou tentar usar a parte de baixo para detalhar os eventos 	do case
+	// vou tentar usar a parte de baixo para detalhar os eventos 	case upper (_sOQue) == "NFSAIDA"
+	// vou tentar usar a parte de baixo para detalhar os eventos 
+	// vou tentar usar a parte de baixo para detalhar os eventos 		// Busca embarque(s) da nota
+	// vou tentar usar a parte de baixo para detalhar os eventos 		sf2 -> (dbsetorder (1))
+	// vou tentar usar a parte de baixo para detalhar os eventos 		if sf2 -> (dbseek (xfilial ("SF2") + _sChave1 + _sChave2, .F.))
+	// vou tentar usar a parte de baixo para detalhar os eventos 			_sOrdEmb = sf2 -> F2_ORDEMB
+	// vou tentar usar a parte de baixo para detalhar os eventos 			if ! empty (_sOrdEmb)
+	// vou tentar usar a parte de baixo para detalhar os eventos 				szo -> (dbsetorder (1))  // ZO_FILIAL+ZO_NUMERO
+	// vou tentar usar a parte de baixo para detalhar os eventos 				if szo -> (dbseek (xfilial ("SZO") + _sOrdEmb, .F.))
+	// vou tentar usar a parte de baixo para detalhar os eventos 					_sMsgInf += "Ordem de embarque '" + _sOrdEmb + "' emitida por " + alltrim (szo -> zo_usuario) + " em " + dtoc (szo -> zo_emissao) + " - transp. " + alltrim (szo -> zo_transp) + " (" + alltrim (fBuscaCpo ("SA4", 1, xfilial ("SF4") + szo -> zo_transp, "A4_NOME")) + ")" + chr (13) + chr (10)
+	// vou tentar usar a parte de baixo para detalhar os eventos 					_sMsgInf += "Embarque feito por " + alltrim (szo -> zo_respemb) + " em " + dtoc (szo -> zo_dataemb) + " - Placa veiculo: " + alltrim (szo -> zo_placa) + " - Motorista: " + alltrim (szo -> zo_motoris) + chr (13) + chr (10)
+	// vou tentar usar a parte de baixo para detalhar os eventos 				endif
+	// vou tentar usar a parte de baixo para detalhar os eventos 			endif
+	// vou tentar usar a parte de baixo para detalhar os eventos 		
+	// vou tentar usar a parte de baixo para detalhar os eventos 			// Busca data real de entrega (informada pela transportadora)
+	// vou tentar usar a parte de baixo para detalhar os eventos 			// if ! empty (sf2 -> f2_vaDtEnt)
+	// vou tentar usar a parte de baixo para detalhar os eventos 			if ! empty (sf2 -> f2_DtEntr)
+	// vou tentar usar a parte de baixo para detalhar os eventos 				// _sMsgInf += "Entrega ao cliente realizada em " + dtoc (sf2 -> f2_vaDtEnt) + chr (13) + chr (10)
+	// vou tentar usar a parte de baixo para detalhar os eventos 				_sMsgInf += "Entrega ao cliente realizada em " + dtoc (sf2 -> f2_DtEntr) + chr (13) + chr (10)
+	// vou tentar usar a parte de baixo para detalhar os eventos 			endif
+	// vou tentar usar a parte de baixo para detalhar os eventos 		endif
+	// vou tentar usar a parte de baixo para detalhar os eventos 	endcase
+	// vou tentar usar a parte de baixo para detalhar os eventos endif
 
-			// Busca embarque(s) da nota
-			sf2 -> (dbsetorder (1))
-			if sf2 -> (dbseek (xfilial ("SF2") + _sChave1 + _sChave2, .F.))
-				_sOrdEmb = sf2 -> F2_ORDEMB
-				if ! empty (_sOrdEmb)
-					szo -> (dbsetorder (1))  // ZO_FILIAL+ZO_NUMERO
-					if szo -> (dbseek (xfilial ("SZO") + _sOrdEmb, .F.))
-						_sMsgInf += "Ordem de embarque '" + _sOrdEmb + "' emitida por " + alltrim (szo -> zo_usuario) + " em " + dtoc (szo -> zo_emissao) + " - transp. " + alltrim (szo -> zo_transp) + " (" + alltrim (fBuscaCpo ("SA4", 1, xfilial ("SF4") + szo -> zo_transp, "A4_NOME")) + ")" + chr (13) + chr (10)
-						_sMsgInf += "Embarque feito por " + alltrim (szo -> zo_respemb) + " em " + dtoc (szo -> zo_dataemb) + " - Placa veiculo: " + alltrim (szo -> zo_placa) + " - Motorista: " + alltrim (szo -> zo_motoris) + chr (13) + chr (10)
-					endif
-				endif
-			
-				// Busca data real de entrega (informada pela transportadora)
-				// if ! empty (sf2 -> f2_vaDtEnt)
-				if ! empty (sf2 -> f2_DtEntr)
-					// _sMsgInf += "Entrega ao cliente realizada em " + dtoc (sf2 -> f2_vaDtEnt) + chr (13) + chr (10)
-					_sMsgInf += "Entrega ao cliente realizada em " + dtoc (sf2 -> f2_DtEntr) + chr (13) + chr (10)
-				endif
-			endif
-		endcase
-	endif
-
-	if len (_aRecnos) == 0 .and. empty (_sMsgInf)
-		u_help ("Nao ha' eventos ou dados adicionais a mostrar.")
+	if len (_aRecnos) == 0 //.and. empty (_sMsgInf)
+	//	u_help ("Nao ha' eventos ou dados adicionais a mostrar.")
+		u_help ("Nao ha' eventos a mostrar.")
 		_lContinua = .F.
 	endif
 	
@@ -283,8 +290,8 @@ static function _LeDados (_sOQue, _sChave1, _sChave2, _sChave3, _sChave4, _sChav
 			_oDlg)                           // Objeto no qual a MsGetDados serah criada.
 
 			// Memo para informacoes em texto
-			@ _oDlg:nClientHeight / 4, 15 get _sMsgInf MEMO size (_oDlg:nClientWidth / 2 - 30), (_oDlg:nClientHeight / 4 - 50) when .T. object _oGetMemo // Se colocar when .F., nao tem barra de rolagem
-			_oGetMemo:oFont := TFont():New ("Courier New", 7, 16)
+//			@ _oDlg:nClientHeight / 4, 15 get _sMsgInf MEMO size (_oDlg:nClientWidth / 2 - 30), (_oDlg:nClientHeight / 4 - 50) when .T. object _oGetMemo // Se colocar when .F., nao tem barra de rolagem
+//			_oGetMemo:oFont := TFont():New ("Courier New", 7, 16)
 		activate msdialog _oDlg centered
 	endif
 	
