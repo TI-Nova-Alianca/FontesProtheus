@@ -45,8 +45,8 @@
 // 16/12/2022 - Robert  - Comentariado trecho sem efeito que faria leituras do Mercanet.
 //                      - Ajustadas algumas chamadas de log e acrescentado parametro .T. em chamadas de u_help.
 // 12/01/2023 - Robert  - Grava na carga de safra um evento de cancelamento de contranota.
+// 24/04/2023 - Claudia - Retiradas as notas de formulario próprio e serie 99. GLPI: 13474
 //
-
 // -----------------------------------------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"  
 #Include "TbiConn.ch"          
@@ -476,7 +476,9 @@ Static Function _AtuZC0()
 	Local _x := 0
 	Local _i := 0
 
-	//If alltrim(sf1 -> f1_serie) == '10'
+	If alltrim(sf1 -> f1_serie) == '99' .and. alltrim(sf1 -> f1_formul) == 'S'
+		// Notas de acerto de estoque
+	Else
 		_oSQL:= ClsSQL():New()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery +=   " SELECT "
@@ -563,10 +565,9 @@ Static Function _AtuZC0()
 						_oEvento:SerieSaid = sf1 -> f1_serie
 						_oEvento:Grava()
 					EndIf
-
 				EndIf
 			Next
 		Next
-	//EndIf
+	EndIf
 Return
 
