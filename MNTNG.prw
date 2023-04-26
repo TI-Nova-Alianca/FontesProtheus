@@ -23,6 +23,7 @@
 // 01/02/2023 - Robert/Sandra - Filtro busca produtos passa a ler parametro VA_MNTNG.
 // 02/02/2023 - Robert - Acrescentado usuario vagner.lima no filtro de O.S.
 // 05/04/2023 - Robert - Acrescentado usuario jonathan.brito no filtro de O.S.
+// 26/04/2023 - Robert - Implementados filtros de terceiros e solicitacoes de manut.
 //
 
 #include "PROTHEUS.ch"
@@ -38,10 +39,36 @@ User Function MNTNG()
 	local _oAviso    := NIL
 	private _sArqLog := 'U_MNTNG.log'  // Quero usar o mesmo arquivo de log para todos os usuarios.
 
-	_sIDdLocal := PARAMIXB[1] //Indica o momento da chamada do PE
+	// Define o codigo de funcionario (campo T1_CODFUNC) para que o usuario receba somente as OS designadas para ele.
+	// Siiiim, eu sei que chumbar os nomes no fonte é deselegante, mas ainda nao tenho uma forma melhor de descobrir o codigo do funcionario.
+	_sCodFunc = ''
+	do case
+	case alltrim (upper (cUserName)) $ 'EVALDO.AGNOLETTO/LEONARDO.BORGES/APP.MNTNG/ELSO.RODRIGUES/MARCOS.OLIVEIRA/JONATHAN.SANTOS/JUNIOR.MELGAREJO/MAX.PADILHA/VAGNER.LIMA/JONATHAN.BRITO'
+		_sCodFunc = ''  // Sem filtro para estes usuarios.
+	case alltrim (upper (cUserName)) = 'ALEXANDRE.ANDRADE'; _sCodFunc = '2065'
+	case alltrim (upper (cUserName)) = 'ELIEL.PEDRON'     ; _sCodFunc = '2119'
+	case alltrim (upper (cUserName)) = 'FABRICIO.GOMES'   ; _sCodFunc = '2010'
+	case alltrim (upper (cUserName)) = 'FLAVIO.ALVES'     ; _sCodFunc = '2202'
+	case alltrim (upper (cUserName)) = 'MARCOS.CORSO'     ; _sCodFunc = '1648'
+	case alltrim (upper (cUserName)) = 'TAILOR.BACCA'     ; _sCodFunc = '2369'
+	case alltrim (upper (cUserName)) = 'FELIPE.ESTEVES'   ; _sCodFunc = '2487'
+	otherwise
+		_oAviso := ClsAviso ():New ()
+		_oAviso:Tipo       = 'E'
+		_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
+		_oAviso:Titulo     = 'Usuario sem tratamento para filtrar OS'
+		_oAviso:Texto      = "Usuario '" + cUserName + "' sem tratamento para filtrar OS no ponto de entrada " + procname () + ". Mais detalhes em " + _sArqLog
+		_oAviso:InfoSessao = .T.
+		_oAviso:Grava ()
+	endcase
+
+	// Verifica em que momento estah sendo chamado este P.E.
+	_sIDdLocal := PARAMIXB[1]
 //	U_Log2 ('debug', '[' + procname () + ']_sIDdLocal:' + cvaltochar (_sIDdLocal))
 
-	If _sIDdLocal == "CANCEL_VALID" //valida cancelamento da ordem
+
+	// Valida cancelamento da ordem
+	If _sIDdLocal == "CANCEL_VALID"
 		If FWJsonDeserialize(PARAMIXB[2]:GetContent(),@_oObjMnt) //Parse da string no formato Json
 			If Empty(_oObjMnt:message )//verifica campo observação foi passado vazio
 				_xRet = "A observação do cancelamento é obrigatória."
@@ -56,6 +83,73 @@ User Function MNTNG()
 			_oAviso:InfoSessao = .T.
 			_oAviso:Grava ()
 		EndIf
+
+
+	// Filtro para ordens de servico
+	ElseIf _sIDdLocal == "FILTER_ORDER"
+		_xRet = ''
+
+	// 	// Define o codigo de funcionario (campo T1_CODFUNC) para que o usuario receba somente as OS designadas para ele.
+	// 	// Siiiim, eu sei que chumbar os nomes no fonte é deselegante, mas ainda nao tenho uma forma melhor de descobrir o codigo do funcionario.
+	// 	_sCodFunc = ''
+	// 	do case
+	// //	case alltrim (upper (cUserName)) $ 'EVALDO.AGNOLETTO/LEONARDO.BORGES/APP.MNTNG/ELSO.RODRIGUES/MARCOS.OLIVEIRA/JONATHAN.SANTOS/JUNIOR.MELGAREJO/JOAO.COSTA'
+	// 	case alltrim (upper (cUserName)) $ 'EVALDO.AGNOLETTO/LEONARDO.BORGES/APP.MNTNG/ELSO.RODRIGUES/MARCOS.OLIVEIRA/JONATHAN.SANTOS/JUNIOR.MELGAREJO/MAX.PADILHA/VAGNER.LIMA/JONATHAN.BRITO'
+	// 		_sCodFunc = ''  // Sem filtro para estes usuarios.
+	// 	case alltrim (upper (cUserName)) = 'ALEXANDRE.ANDRADE'; _sCodFunc = '2065'
+	// 	case alltrim (upper (cUserName)) = 'ELIEL.PEDRON'     ; _sCodFunc = '2119'
+	// 	case alltrim (upper (cUserName)) = 'FABRICIO.GOMES'   ; _sCodFunc = '2010'
+	// 	case alltrim (upper (cUserName)) = 'FLAVIO.ALVES'     ; _sCodFunc = '2202'
+	// 	case alltrim (upper (cUserName)) = 'MARCOS.CORSO'     ; _sCodFunc = '1648'
+	// 	case alltrim (upper (cUserName)) = 'MARLON.SENE'      ; _sCodFunc = '2322'
+	// 	case alltrim (upper (cUserName)) = 'TAILOR.BACCA'     ; _sCodFunc = '2369'
+	// 	case alltrim (upper (cUserName)) = 'FELIPE.ESTEVES'   ; _sCodFunc = '2487'
+	// 	otherwise
+	// 		_oAviso := ClsAviso ():New ()
+	// 		_oAviso:Tipo       = 'E'
+	// 		_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
+	// 		_oAviso:Titulo     = 'Usuario sem tratamento para filtrar OS'
+	// 		_oAviso:Texto      = "Usuario '" + cUserName + "' sem tratamento para filtrar OS no ponto de entrada " + procname () + ". Mais detalhes em " + _sArqLog
+	// 		_oAviso:InfoSessao = .T.
+	// 		_oAviso:Grava ()
+	// 	endcase
+
+		// Mandar somente as OS direcionadas ao manutentor atual (desde que nao seja um manutentor 'power')
+		if ! empty (_sCodFunc)
+			_xRet := ""
+			_xRet += "AND EXISTS ("
+			_xRet +=     "SELECT * FROM " + RetSQLName ("STL")
+			_xRet +=     " WHERE D_E_L_E_T_ = ''"
+			_xRet +=       " AND TL_FILIAL  = TJ_FILIAL"
+			_xRet +=       " AND TL_ORDEM   = TJ_ORDEM"
+			_xRet +=       " AND TL_CODIGO  = '" + _sCodFunc + "')"
+		endif
+		U_Log2 ('debug', '[' + procname () + ']Filtrando OS: _xRet = ' + _xRet)
+
+
+	// Filtro para busca de produtos
+	elseif _sIDdLocal == "FILTER_PRODUCT"
+		_xRet = "AND B1_TIPO IN " + FormatIn (GetMv ("VA_MNTNG"), "/")
+		U_Log2 ('debug', '[' + procname () + ']Filtrando produtos: _xRet = ' + _xRet)
+
+
+	// Filtro para solicitacoes de manutencao.
+	elseif _sIDdLocal == "FILTER_REQUEST"
+		_xRet = ''
+		_xRet += "AND TQB_SOLUCA NOT IN ('E', 'C')"  // Encerradas e Canceladas nao pretendo enviar nunca
+		
+		// Mandar somente as SC distribuidas (desde que nao seja um manutentor 'power')
+		if ! empty (_sCodFunc)
+			_xRet += "AND TQB_SOLUCA = 'D'"
+		endif
+		U_Log2 ('debug', '[' + procname () + ']Filtrando sol.manut: _xRet = ' + _xRet)
+
+
+	// Filtro para terceiros
+	ElseIf _sIDdLocal == "FILTER_THIRDPART"
+		_xRet = "AND A2_TIPO = 'J'
+		U_Log2 ('debug', '[' + procname () + ']Filtrando terceiros: _xRet = ' + _xRet)
+
 
 	ElseIf _sIDdLocal == "FINISH_VALID_ORDER"
 		If FWJsonDeserialize(PARAMIXB[2]:GetContent(), @_oObjMnt)
@@ -84,48 +178,6 @@ User Function MNTNG()
 			_oAviso:Grava ()
 		EndIf
 		
-	ElseIf _sIDdLocal == "FILTER_PRODUCT" //adiciona filtro para busca de produtos
-		//_xRet = "AND B1_TIPO IN ('MM','MC')"
-		//_xRet = "AND B1_TIPO IN ('MM','MC','II','CL')"
-		_xRet = "AND B1_TIPO IN " + FormatIn (GetMv ("VA_MNTNG"), "/")
-	
-	ElseIf _sIDdLocal == "FILTER_ORDER" // Filtro para ordens de servico
-		_xRet = ''
-
-		// Define o codigo de funcionario (campo T1_CODFUNC) para que o usuario receba somente as OS designadas para ele.
-		// Siiiim, eu sei que chumbar os nomes no fonte é deselegante, mas ainda nao tenho uma forma melhor de descobrir o codigo do funcionario.
-		_sCodFunc = ''
-		do case
-	//	case alltrim (upper (cUserName)) $ 'EVALDO.AGNOLETTO/LEONARDO.BORGES/APP.MNTNG/ELSO.RODRIGUES/MARCOS.OLIVEIRA/JONATHAN.SANTOS/JUNIOR.MELGAREJO/JOAO.COSTA'
-		case alltrim (upper (cUserName)) $ 'EVALDO.AGNOLETTO/LEONARDO.BORGES/APP.MNTNG/ELSO.RODRIGUES/MARCOS.OLIVEIRA/JONATHAN.SANTOS/JUNIOR.MELGAREJO/MAX.PADILHA/VAGNER.LIMA/JONATHAN.BRITO'
-			_sCodFunc = ''  // Sem filtro para estes usuarios.
-		case alltrim (upper (cUserName)) = 'ALEXANDRE.ANDRADE'; _sCodFunc = '2065'
-		case alltrim (upper (cUserName)) = 'ELIEL.PEDRON'     ; _sCodFunc = '2119'
-		case alltrim (upper (cUserName)) = 'FABRICIO.GOMES'   ; _sCodFunc = '2010'
-		case alltrim (upper (cUserName)) = 'FLAVIO.ALVES'     ; _sCodFunc = '2202'
-		case alltrim (upper (cUserName)) = 'MARCOS.CORSO'     ; _sCodFunc = '1648'
-		case alltrim (upper (cUserName)) = 'MARLON.SENE'      ; _sCodFunc = '2322'
-		case alltrim (upper (cUserName)) = 'TAILOR.BACCA'     ; _sCodFunc = '2369'
-		case alltrim (upper (cUserName)) = 'FELIPE.ESTEVES'   ; _sCodFunc = '2487'
-		otherwise
-			_oAviso := ClsAviso ():New ()
-			_oAviso:Tipo       = 'E'
-			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
-			_oAviso:Titulo     = 'Usuario sem tratamento para filtrar OS'
-			_oAviso:Texto      = "Usuario '" + cUserName + "' sem tratamento para filtrar OS no ponto de entrada " + procname () + ". Mais detalhes em " + _sArqLog
-			_oAviso:InfoSessao = .T.
-			_oAviso:Grava ()
-		endcase
-		if ! empty (_sCodFunc)
-			_xRet := ""
-			_xRet += "AND EXISTS ("
-			_xRet +=     "SELECT * FROM " + RetSQLName ("STL")
-			_xRet +=     " WHERE D_E_L_E_T_ = ''"
-			_xRet +=       " AND TL_FILIAL  = TJ_FILIAL"
-			_xRet +=       " AND TL_ORDEM   = TJ_ORDEM"
-			_xRet +=       " AND TL_CODIGO  = '" + _sCodFunc + "')"
-		endif
-		U_Log2 ('debug', '[' + procname () + ']Filtrando OS. _xRet = ' + _xRet)
 	EndIf
 
 	U_ML_SRArea (_aAreaAnt)
