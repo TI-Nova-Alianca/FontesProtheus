@@ -11,6 +11,7 @@
 // #Modulos   		  #LOJA
 //
 // Historico de alteracoes:
+// 26/04/2023 - Incluido o tipo "PAGAMENTO'. GLPI: 13181
 //
 // -----------------------------------------------------------------------------------------------
 
@@ -165,8 +166,8 @@ Static Function RetArray(_nTp)
     _oSQL:_sQuery += " 		'-' AS DOC "
     _oSQL:_sQuery += " 	   ,'-' AS SERIE "
     _oSQL:_sQuery += " 	   ,E5_DATA AS EMISSAO "
-    _oSQL:_sQuery += " 	   ,'DEPOSITO' AS TIPO "
-    _oSQL:_sQuery += " 	   ,'DEPOSITO' AS FORMA "
+    _oSQL:_sQuery += " 	   ,'PAGAMENTO' AS TIPO "
+    _oSQL:_sQuery += " 	   ,'PAGAMENTO' AS FORMA "
     _oSQL:_sQuery += " 	   ,'-' AS ADM "
     _oSQL:_sQuery += " 	   ,'-' AS NSU "
     _oSQL:_sQuery += " 	   ,E5_HISTOR AS HISTORICO "
