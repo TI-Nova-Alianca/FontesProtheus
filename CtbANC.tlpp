@@ -14,9 +14,25 @@
 // 16/02/2023 - Robert - Liberacao de versao inicial contemplando a fase I.
 // 03/03/2023 - Robert - Contabilizacao fase 2
 //                     - Grava memoria de calculo em log de eventos
+// 24/04/2023 - Robert - Inversao de lctos quando ocorrer caso em que houve
+//                       apropriacao a maior no mes anterior, e agora preciso
+//                       estornar a diferenca.
+//                     - Passa a usar nomes de colunas na array de grupos (para facilitar entendimento)
+//                     - Melhorados logs
 //
 
-// ----------------------------------------------------------------------------------------------------------------------------
+// Definicao de colunas para a array de saldos por grupos
+#XTranslate .SldGrupoGrupo           => 1
+#XTranslate .SldGrupoConta1          => 2
+#XTranslate .SldGrupoNatConta1       => 3
+#XTranslate .SldGrupoConta2          => 4
+#XTranslate .SldGrupoSaldoOrig       => 5
+#XTranslate .SldGrupoANCdoAno        => 6
+#XTranslate .SldGrupoSaldoAcum       => 7
+#XTranslate .SldGrupoVlAComplementar => 8
+#XTranslate .SldGrupoQtColunas       => 8
+
+// --------------------------------------------------------------------------
 User Function CtbANC (_lAutomat)
 	Local cCadastro := "Contabilizacao do % de ato nao cooperativo (compra uva e derivados de nao associados)"
 	Local aSays     := {}
@@ -64,7 +80,7 @@ return
 
 // --------------------------------------------------------------------------
 // 'Tudo OK' do FormBatch.
-Static Function _TudoOk()
+Static Function _TudoOk ()
 	local _lRet := .T.
 	local _oSQL := NIL
 
@@ -163,6 +179,7 @@ static function _Parte1 ()
 	local _sGrupo    := ''
 	local _sSubLote  := ''
 	local _nQtLctGer := 0
+	local _lInvLanc  := .F.
 
 	U_Log2 ('info', '[' + procname () + ']############### Iniciando parte I do processo')
 	_sMemCalc += 'Iniciando fase I' + chr (13) + chr (10)
@@ -281,8 +298,7 @@ static function _Parte1 ()
 	_sMemCalc += 'Buscando saldos dos grupos com a seguinte query:' + chr (13) + chr (10)
 	_sMemCalc += _oSQL:_sQuery + chr (13) + chr (10)
 	U_Log2 ('debug', '[' + procname () + ']saldos iniciais:')
-	U_Log (_aSldIni)
-	u_log (ClsAUtil ():ConvTXT (_aSldIni))
+	U_Log2 ('debug', _aSldIni)
 
 //	_sMemCalc += 'Grupos / contas / saldos / proporcoes de origem:' + chr (13) + chr (10)
 //	_sMemCalc += ClsAUtil ():ConvTXT (_aSldIni, 'T') + chr (13) + chr (10)
@@ -302,16 +318,50 @@ static function _Parte1 ()
 		_sGrupo = alltrim (_aSldIni [_nAux1, 1])
 		_nAux2 = ascan (_aSldGrup, {| _aVal | _aVal [1] == _sGrupo})
 		if _nAux2 == 0
+
+			// Se ainda nao tem este grupo na array, insere uma nova linha.
+			// Como a maioria dos campos eh numerica, jah vou preencher com zeros.
+			aadd (_aSldGrup, afill (array (.SldGrupoQtColunas), 0))
+			_aSldGrup [len (_aSldGrup), .SldGrupoGrupo] = _sGrupo
+			
 			// Como sao poucos grupos e com pouca probabilidade de mudar,
 			// nem vou usar parafusos... vou usar Pregos Garcia, mesmo.
 			do case
-			case _sGrupo == '1-RECEITAS'      ; aadd (_aSldGrup, {_sGrupo, '401010101099', 'D', '401010201001', 'C', 0, 0, 0, 0})
-			case _sGrupo == '2-ICMS'          ; aadd (_aSldGrup, {_sGrupo, '401010102094', 'C', '401010202001', 'D', 0, 0, 0, 0})
-			case _sGrupo == '3-IPI'           ; aadd (_aSldGrup, {_sGrupo, '401010102095', 'C', '401010202005', 'D', 0, 0, 0, 0})
-			case _sGrupo == '4-PIS'           ; aadd (_aSldGrup, {_sGrupo, '401010102096', 'C', '401010202002', 'D', 0, 0, 0, 0})
-			case _sGrupo == '5-COFINS'        ; aadd (_aSldGrup, {_sGrupo, '401010102097', 'C', '401010202003', 'D', 0, 0, 0, 0})
-			case _sGrupo == '6-ICMSST'        ; aadd (_aSldGrup, {_sGrupo, '401010102098', 'C', '401010202004', 'D', 0, 0, 0, 0})
-			case _sGrupo == '7-CPV_TERCEIROS' ; aadd (_aSldGrup, {_sGrupo, '402010101099', 'C', '402010201001', 'D', 0, 0, 0, 0})
+			//case _sGrupo == '1-RECEITAS'      ; aadd (_aSldGrup, {_sGrupo, '401010101099', 'D', '401010201001', 'C', 0, 0, 0, 0})
+			//case _sGrupo == '2-ICMS'          ; aadd (_aSldGrup, {_sGrupo, '401010102094', 'C', '401010202001', 'D', 0, 0, 0, 0})
+			//case _sGrupo == '3-IPI'           ; aadd (_aSldGrup, {_sGrupo, '401010102095', 'C', '401010202005', 'D', 0, 0, 0, 0})
+			//case _sGrupo == '4-PIS'           ; aadd (_aSldGrup, {_sGrupo, '401010102096', 'C', '401010202002', 'D', 0, 0, 0, 0})
+			//case _sGrupo == '5-COFINS'        ; aadd (_aSldGrup, {_sGrupo, '401010102097', 'C', '401010202003', 'D', 0, 0, 0, 0})
+			//case _sGrupo == '6-ICMSST'        ; aadd (_aSldGrup, {_sGrupo, '401010102098', 'C', '401010202004', 'D', 0, 0, 0, 0})
+			//case _sGrupo == '7-CPV_TERCEIROS' ; aadd (_aSldGrup, {_sGrupo, '402010101099', 'C', '402010201001', 'D', 0, 0, 0, 0})
+			case _sGrupo == '1-RECEITAS'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta1]          = '401010101099'
+				_aSldGrup [len (_aSldGrup), .SldGrupoNatConta1]       = 'D'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta2]          = '401010201001'
+			case _sGrupo == '2-ICMS'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta1]          = '401010102094'
+				_aSldGrup [len (_aSldGrup), .SldGrupoNatConta1]       = 'C'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta2]          = '401010202001'
+			case _sGrupo == '3-IPI'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta1]          = '401010102095'
+				_aSldGrup [len (_aSldGrup), .SldGrupoNatConta1]       = 'C'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta2]          = '401010202005'
+			case _sGrupo == '4-PIS'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta1]          = '401010102096'
+				_aSldGrup [len (_aSldGrup), .SldGrupoNatConta1]       = 'C'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta2]          = '401010202002'
+			case _sGrupo == '5-COFINS'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta1]          = '401010102097'
+				_aSldGrup [len (_aSldGrup), .SldGrupoNatConta1]       = 'C'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta2]          = '401010202003'
+			case _sGrupo == '6-ICMSST'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta1]          = '401010102098'
+				_aSldGrup [len (_aSldGrup), .SldGrupoNatConta1]       = 'C'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta2]          = '401010202004'
+			case _sGrupo == '7-CPV_TERCEIROS'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta1]          = '402010101099'
+				_aSldGrup [len (_aSldGrup), .SldGrupoNatConta1]       = 'C'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta2]          = '402010201001'
 			otherwise
 				u_help ("Grupo desconhecido: " + _sGrupo,, .t.)
 				_lContinua = .F.
@@ -321,8 +371,8 @@ static function _Parte1 ()
 		endif
 
 		// Agora que tenho a linha do grupo na array, posso acumular nela os valores.
-		_aSldGrup [_nAux2, 6] += _aSldIni [_nAux1, 4]
-		_aSldGrup [_nAux2, 7] += _aSldIni [_nAux1, 5]
+		_aSldGrup [_nAux2, .SldGrupoSaldoOrig] += _aSldIni [_nAux1, 4]
+		_aSldGrup [_nAux2, .SldGrupoANCdoAno]  += _aSldIni [_nAux1, 5]
 	next
 	_sMemCalc += chr (13) + chr (10)
 
@@ -334,26 +384,27 @@ static function _Parte1 ()
 		_oSQL:_sQuery += "SELECT ISNULL (SUM (CQ3_DEBITO - CQ3_CREDIT), 0)"
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("CQ3") + " CQ3 "
 		_oSQL:_sQuery += " WHERE CQ3.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND CQ3.CQ3_CONTA  = '" + _aSldGrup [_nAux2, 2] + "'"
+		_oSQL:_sQuery +=   " AND CQ3.CQ3_CONTA  = '" + _aSldGrup [_nAux2, .SldGrupoConta1] + "'"
 		_oSQL:_sQuery +=   " AND CQ3.CQ3_TPSALD = '1'"  // Realizado
 		_oSQL:_sQuery +=   " AND CQ3.CQ3_LP    != 'Z'"  // IGNORAR AS CONTAS DE ZERAMENTO (VIRADA DE EXERCICIO)
 		_oSQL:_sQuery +=   " AND CQ3.CQ3_DATA   BETWEEN " + _sPerSldCt
 		_oSQL:Log ('[' + procname () + ']')
-		_aSldGrup [_nAux2, 8] = _oSQL:RetQry (1, .f.)
-		if _aSldGrup [_nAux2, 3] == 'D'
-			_aSldGrup [_nAux2, 9] = _aSldGrup [_nAux2, 7] + abs (_aSldGrup [_nAux2, 8])
+		_aSldGrup [_nAux2, .SldGrupoSaldoAcum] = _oSQL:RetQry (1, .f.)
+		if _aSldGrup [_nAux2, .SldGrupoNatConta1] == 'D'
+			_aSldGrup [_nAux2, .SldGrupoVlAComplementar] = _aSldGrup [_nAux2, .SldGrupoANCdoAno] + abs (_aSldGrup [_nAux2, .SldGrupoSaldoAcum])
 		else
-			_aSldGrup [_nAux2, 9] = _aSldGrup [_nAux2, 7] - abs (_aSldGrup [_nAux2, 8])
+			_aSldGrup [_nAux2, .SldGrupoVlAComplementar] = _aSldGrup [_nAux2, .SldGrupoANCdoAno] - abs (_aSldGrup [_nAux2, .SldGrupoSaldoAcum])
 		endif
-		_sMemCalc += 'Conta ' + _aSldGrup [_nAux2, 2]
-		_sMemCalc += ' ANC do ano: '             + transform (abs (_aSldGrup [_nAux2, 7]), "@E 999,999,999,999.99")
-		_sMemCalc += '   Saldo acumulado: '      + transform (abs (_aSldGrup [_nAux2, 8]), "@E 999,999,999,999.99")
-		_sMemCalc += '   Valor a complementar: ' + transform (abs (_aSldGrup [_nAux2, 9]), "@E 999,999,999,999.99")
-		_sMemCalc += ' ' + _aSldGrup [_nAux2, 3] + chr (13) + chr (10)
+		_sMemCalc += 'Conta ' + _aSldGrup [_nAux2, .SldGrupoConta1]
+		_sMemCalc += ' ANC do ano: '             + transform (abs (_aSldGrup [_nAux2, .SldGrupoANCdoAno]), "@E 999,999,999,999.99")
+		_sMemCalc += ' (Nat:' + _aSldGrup [_nAux2, .SldGrupoNatConta1] + ')'
+		_sMemCalc += '  Sld.acum.: '      + transform (abs (_aSldGrup [_nAux2, .SldGrupoSaldoAcum]), "@E 999,999,999,999.99")
+		_sMemCalc += '   Vl.a complementar: ' + transform (abs (_aSldGrup [_nAux2, .SldGrupoVlAComplementar]), "@E 999,999,999,999.99")
+		_sMemCalc += ' ' + _aSldGrup [_nAux2, .SldGrupoNatConta1] + chr (13) + chr (10)
 	next
 
 	U_Log2 ('debug', '[' + procname () + ']saldos por grupo:')
-	U_Log (_aSldGrup)
+	U_Log2 ('debug', _aSldGrup)
 	//u_showarray (_aSldGrup, 'saldos grupos')
 //	_sMemCalc += 'Grupos x contas para rateio:' + chr (13) + chr (10)
 //	_sMemCalc += ClsAUtil ():ConvTXT (_aSldGrup, 'T') + chr (13) + chr (10)
@@ -385,19 +436,49 @@ static function _Parte1 ()
 	// Gera todas as linhas no mesmo documento.
 	_nQtLctGer = 0
 	for _nAux2 = 1 to len (_aSldGrup)
-		if round (_aSldGrup [_nAux2, 9], 2) != 0
+		if round (_aSldGrup [_nAux2, .SldGrupoVlAComplementar], 2) != 0
 			_aLinhaCT2 := {}
 			aAdd (_aLinhaCT2,  {'CT2_LINHA'     ,strzero (_nAux2, 3), NIL})
 			aAdd (_aLinhaCT2,  {'CT2_MOEDLC'    ,'01'               , NIL})
 			aAdd (_aLinhaCT2,  {'CT2_DC'        ,'3', NIL})  // 3=partida dobrada
-			if _aSldGrup [_nAux2, 3] == 'D' .and. _aSldGrup [_nAux2, 5] == 'C'
-				aAdd (_aLinhaCT2,  {'CT2_DEBITO', _aSldGrup [_nAux2, 2], NIL})
-				aAdd (_aLinhaCT2,  {'CT2_CREDIT', _aSldGrup [_nAux2, 4], NIL})
-			elseif _aSldGrup [_nAux2, 3] == 'C' .and. _aSldGrup [_nAux2, 5] == 'D'
-				aAdd (_aLinhaCT2,  {'CT2_CREDIT', _aSldGrup [_nAux2, 2], NIL})
-				aAdd (_aLinhaCT2,  {'CT2_DEBITO', _aSldGrup [_nAux2, 4], NIL})
+//			if _aSldGrup [_nAux2, 3] == 'D' .and. _aSldGrup [_nAux2, 5] == 'C'
+//				aAdd (_aLinhaCT2,  {'CT2_DEBITO', _aSldGrup [_nAux2, 2], NIL})
+//				aAdd (_aLinhaCT2,  {'CT2_CREDIT', _aSldGrup [_nAux2, 4], NIL})
+//			elseif _aSldGrup [_nAux2, 3] == 'C' .and. _aSldGrup [_nAux2, 5] == 'D'
+//				aAdd (_aLinhaCT2,  {'CT2_CREDIT', _aSldGrup [_nAux2, 2], NIL})
+//				aAdd (_aLinhaCT2,  {'CT2_DEBITO', _aSldGrup [_nAux2, 4], NIL})
+//			endif
+
+			// Pode haver casos em que houve apropriacao a maior no mes anterior, e agora preciso estornar.
+			_lInvLanc = .F.
+			if _aSldGrup [_nAux2, .SldGrupoNatConta1] == 'D' .and. _aSldGrup [_nAux2, .SldGrupoVlAComplementar] > 0
+				_lInvLanc = .T.
+				U_Log2 ('debug', '[' + procname () + ']Devo inverter lancamentos para a linha ' + cvaltochar (_nAux2))
+			elseif _aSldGrup [_nAux2, .SldGrupoNatConta1] == 'C' .and. _aSldGrup [_nAux2, .SldGrupoVlAComplementar] < 0
+				_lInvLanc = .T.
+				U_Log2 ('debug', '[' + procname () + ']Devo inverter lancamentos para a linha ' + cvaltochar (_nAux2))
 			endif
-			aAdd (_aLinhaCT2,  {'CT2_VALOR'     ,abs (_aSldGrup [_nAux2, 9]), NIL})
+
+			if _aSldGrup [_nAux2, .SldGrupoNatConta1] == 'D'
+				if _lInvLanc
+					aAdd (_aLinhaCT2,  {'CT2_CREDIT', _aSldGrup [_nAux2, .SldGrupoConta1], NIL})
+					aAdd (_aLinhaCT2,  {'CT2_DEBITO', _aSldGrup [_nAux2, .SldGrupoConta2], NIL})
+				else
+					aAdd (_aLinhaCT2,  {'CT2_DEBITO', _aSldGrup [_nAux2, .SldGrupoConta1], NIL})
+					aAdd (_aLinhaCT2,  {'CT2_CREDIT', _aSldGrup [_nAux2, .SldGrupoConta2], NIL})
+				endif
+			endif
+			if _aSldGrup [_nAux2, .SldGrupoNatConta1] == 'C'
+				if _lInvLanc
+					aAdd (_aLinhaCT2,  {'CT2_DEBITO', _aSldGrup [_nAux2, .SldGrupoConta1], NIL})
+					aAdd (_aLinhaCT2,  {'CT2_CREDIT', _aSldGrup [_nAux2, .SldGrupoConta2], NIL})
+				else
+					aAdd (_aLinhaCT2,  {'CT2_CREDIT', _aSldGrup [_nAux2, .SldGrupoConta1], NIL})
+					aAdd (_aLinhaCT2,  {'CT2_DEBITO', _aSldGrup [_nAux2, .SldGrupoConta2], NIL})
+				endif
+			endif
+
+			aAdd (_aLinhaCT2,  {'CT2_VALOR'     ,abs (_aSldGrup [_nAux2, .SldGrupoVlAComplementar]), NIL})
 			aAdd (_aLinhaCT2,  {'CT2_CCC'       ,'014001', NIL})
 			aAdd (_aLinhaCT2,  {'CT2_CCD'       ,'014001', NIL})
 			aAdd (_aLinhaCT2,  {'CT2_ORIGEM'    ,_sOrigLcto         , NIL})
@@ -443,6 +524,7 @@ static function _Parte2 ()
 	local _nSldTerc  := 0
 	local _sSubLote  := ''
 	local _nQtLctGer := 0
+	local _lInvLanc  := .F.
 
 	U_Log2 ('info', '[' + procname () + ']############### Iniciando parte II do processo')
 	_sMemCalc += chr (13) + chr (10)
@@ -563,7 +645,7 @@ static function _Parte2 ()
 	_sMemCalc += 'Buscando saldos dos grupos com a seguinte query:' + chr (13) + chr (10)
 	_sMemCalc += _oSQL:_sQuery + chr (13) + chr (10)
 	U_Log2 ('debug', '[' + procname () + ']saldos iniciais:')
-	U_Log (_aSldIni)
+	U_Log2 ('debug', _aSldIni)
 	//u_showarray (_aSldGrup, 'saldos iniciais')
 
 	// Tendo as contas a considerar e seus saldos vinculadas aos grupos, posso
@@ -581,17 +663,56 @@ static function _Parte2 ()
 		_sGrupo = alltrim (_aSldIni [_nAux1, 1])
 		_nAux2 = ascan (_aSldGrup, {| _aVal | _aVal [1] == _sGrupo})
 		if _nAux2 == 0
+
+			// Se ainda nao tem este grupo na array, insere uma nova linha.
+			// Como a maioria dos campos eh numerica, jah vou preencher com zeros.
+			aadd (_aSldGrup, afill (array (.SldGrupoQtColunas), 0))
+			_aSldGrup [len (_aSldGrup), .SldGrupoGrupo] = _sGrupo
+
 			// Como sao poucos grupos e com pouca probabilidade de mudar,
 			// nem vou usar parafusos... vou usar Pregos Garcia, mesmo.
 			do case
-			case _sGrupo == '1-Despesas gerais pessoal'  ; aadd (_aSldGrup, {_sGrupo, '403010199001', 'C', '403020101001', 'D', 0, 0, 0, 0})
-			case _sGrupo == '2-Despesas administrativas' ; aadd (_aSldGrup, {_sGrupo, '403010299001', 'C', '403020101002', 'D', 0, 0, 0, 0})
-			case _sGrupo == '3-Despesas tributarias'     ; aadd (_aSldGrup, {_sGrupo, '403010399001', 'C', '403020101003', 'D', 0, 0, 0, 0})
-			case _sGrupo == '4-Despesas com vendas'      ; aadd (_aSldGrup, {_sGrupo, '403010499001', 'C', '403020101004', 'D', 0, 0, 0, 0})
-			case _sGrupo == '5-Outras receitas'          ; aadd (_aSldGrup, {_sGrupo, '405010101099', 'D', '405010102099', 'C', 0, 0, 0, 0})
-			case _sGrupo == '6-Outras despesas'          ; aadd (_aSldGrup, {_sGrupo, '405010201099', 'C', '405010202099', 'D', 0, 0, 0, 0})
-			case _sGrupo == '7-Receitas financeiras'     ; aadd (_aSldGrup, {_sGrupo, '406010101099', 'D', '406010201099', 'C', 0, 0, 0, 0})
-			case _sGrupo == '8-Despesas financeiras'     ; aadd (_aSldGrup, {_sGrupo, '406020101099', 'C', '406020201099', 'D', 0, 0, 0, 0})
+	//		case _sGrupo == '1-Despesas gerais pessoal'  ; aadd (_aSldGrup, {_sGrupo, '403010199001', 'C', '403020101001', 'D', 0, 0, 0, 0})
+	//		case _sGrupo == '2-Despesas administrativas' ; aadd (_aSldGrup, {_sGrupo, '403010299001', 'C', '403020101002', 'D', 0, 0, 0, 0})
+	//		case _sGrupo == '3-Despesas tributarias'     ; aadd (_aSldGrup, {_sGrupo, '403010399001', 'C', '403020101003', 'D', 0, 0, 0, 0})
+	//		case _sGrupo == '4-Despesas com vendas'      ; aadd (_aSldGrup, {_sGrupo, '403010499001', 'C', '403020101004', 'D', 0, 0, 0, 0})
+	//		case _sGrupo == '5-Outras receitas'          ; aadd (_aSldGrup, {_sGrupo, '405010101099', 'D', '405010102099', 'C', 0, 0, 0, 0})
+	//		case _sGrupo == '6-Outras despesas'          ; aadd (_aSldGrup, {_sGrupo, '405010201099', 'C', '405010202099', 'D', 0, 0, 0, 0})
+	//		case _sGrupo == '7-Receitas financeiras'     ; aadd (_aSldGrup, {_sGrupo, '406010101099', 'D', '406010201099', 'C', 0, 0, 0, 0})
+	//		case _sGrupo == '8-Despesas financeiras'     ; aadd (_aSldGrup, {_sGrupo, '406020101099', 'C', '406020201099', 'D', 0, 0, 0, 0})
+
+			case _sGrupo == '1-Despesas gerais pessoal'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta1]          = '403010199001'
+				_aSldGrup [len (_aSldGrup), .SldGrupoNatConta1]       = 'C'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta2]          = '403020101001'
+			case _sGrupo == '2-Despesas administrativas'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta1]          = '403010299001'
+				_aSldGrup [len (_aSldGrup), .SldGrupoNatConta1]       = 'C'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta2]          = '403020101002'
+			case _sGrupo == '3-Despesas tributarias'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta1]          = '403010399001'
+				_aSldGrup [len (_aSldGrup), .SldGrupoNatConta1]       = 'C'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta2]          = '403020101003'
+			case _sGrupo == '4-Despesas com vendas'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta1]          = '403010499001'
+				_aSldGrup [len (_aSldGrup), .SldGrupoNatConta1]       = 'C'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta2]          = '403020101004'
+			case _sGrupo == '5-Outras receitas'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta1]          = '405010101099'
+				_aSldGrup [len (_aSldGrup), .SldGrupoNatConta1]       = 'D'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta2]          = '405010102099'
+			case _sGrupo == '6-Outras despesas'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta1]          = '405010201099'
+				_aSldGrup [len (_aSldGrup), .SldGrupoNatConta1]       = 'C'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta2]          = '405010202099'
+			case _sGrupo == '7-Receitas financeiras'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta1]          = '406010101099'
+				_aSldGrup [len (_aSldGrup), .SldGrupoNatConta1]       = 'D'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta2]          = '406010201099'
+			case _sGrupo == '8-Despesas financeiras'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta1]          = '406020101099'
+				_aSldGrup [len (_aSldGrup), .SldGrupoNatConta1]       = 'C'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta2]          = '406020201099'
 			otherwise
 				u_help ("Grupo desconhecido: " + _sGrupo,, .t.)
 				_lContinua = .F.
@@ -601,8 +722,8 @@ static function _Parte2 ()
 		endif
 
 		// Agora que tenho a linha do grupo na array, posso acumular nela os valores.
-		_aSldGrup [_nAux2, 6] += _aSldIni [_nAux1, 4]
-		_aSldGrup [_nAux2, 7] += _aSldIni [_nAux1, 5]
+		_aSldGrup [_nAux2, .SldGrupoSaldoOrig] += _aSldIni [_nAux1, 4]
+		_aSldGrup [_nAux2, .SldGrupoANCdoAno]  += _aSldIni [_nAux1, 5]
 	next
 
 	// Tendo os saldos das contas destino, devo gerar lcto da diferenca do que
@@ -613,27 +734,28 @@ static function _Parte2 ()
 		_oSQL:_sQuery += "SELECT ISNULL (SUM (CQ3_DEBITO - CQ3_CREDIT), 0)"
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("CQ3") + " CQ3 "
 		_oSQL:_sQuery += " WHERE CQ3.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND CQ3.CQ3_CONTA  = '" + _aSldGrup [_nAux2, 2] + "'"
+		_oSQL:_sQuery +=   " AND CQ3.CQ3_CONTA  = '" + _aSldGrup [_nAux2, .SldGrupoConta1] + "'"
 		_oSQL:_sQuery +=   " AND CQ3.CQ3_TPSALD = '1'"  // Realizado
 		_oSQL:_sQuery +=   " AND CQ3.CQ3_LP    != 'Z'"  // IGNORAR AS CONTAS DE ZERAMENTO (VIRADA DE EXERCICIO)
 		_oSQL:_sQuery +=   " AND CQ3.CQ3_DATA   BETWEEN " + _sPerSldCt
 		_oSQL:Log ('[' + procname () + ']')
-		_aSldGrup [_nAux2, 8] = _oSQL:RetQry (1, .f.)
-		if _aSldGrup [_nAux2, 3] == 'D'
-			_aSldGrup [_nAux2, 9] = _aSldGrup [_nAux2, 7] + abs (_aSldGrup [_nAux2, 8])
+		_aSldGrup [_nAux2, .SldGrupoSaldoAcum] = _oSQL:RetQry (1, .f.)
+		if _aSldGrup [_nAux2, .SldGrupoNatConta1] == 'D'
+			_aSldGrup [_nAux2, .SldGrupoVlAComplementar] = _aSldGrup [_nAux2, .SldGrupoANCdoAno] + abs (_aSldGrup [_nAux2, .SldGrupoSaldoAcum])
 		else
-			_aSldGrup [_nAux2, 9] = _aSldGrup [_nAux2, 7] - abs (_aSldGrup [_nAux2, 8])
+			_aSldGrup [_nAux2, .SldGrupoVlAComplementar] = _aSldGrup [_nAux2, .SldGrupoANCdoAno] - abs (_aSldGrup [_nAux2, .SldGrupoSaldoAcum])
 		endif
-		_sMemCalc += 'Conta ' + _aSldGrup [_nAux2, 2]
-		_sMemCalc += ' ANC do ano: '             + transform (abs (_aSldGrup [_nAux2, 7]), "@E 999,999,999,999.99")
-		_sMemCalc += '   Saldo acumulado: '      + transform (abs (_aSldGrup [_nAux2, 8]), "@E 999,999,999,999.99")
-		_sMemCalc += '   Valor a complementar: ' + transform (abs (_aSldGrup [_nAux2, 9]), "@E 999,999,999,999.99")
-		_sMemCalc += ' ' + _aSldGrup [_nAux2, 3] + chr (13) + chr (10)
+		_sMemCalc += 'Conta ' + _aSldGrup [_nAux2, .SldGrupoConta1]
+		_sMemCalc += ' ANC do ano: '             + transform (abs (_aSldGrup [_nAux2, .SldGrupoANCdoAno]), "@E 999,999,999,999.99")
+		_sMemCalc += ' (Nat:' + _aSldGrup [_nAux2, .SldGrupoNatConta1] + ')'
+		_sMemCalc += '  Sld.acum.: '      + transform (abs (_aSldGrup [_nAux2, .SldGrupoSaldoAcum]), "@E 999,999,999,999.99")
+		_sMemCalc += '   Valor a complementar: ' + transform (abs (_aSldGrup [_nAux2, .SldGrupoVlAComplementar]), "@E 999,999,999,999.99")
+		_sMemCalc += ' ' + _aSldGrup [_nAux2, .SldGrupoNatConta1] + chr (13) + chr (10)
 	next
 	_sMemCalc += chr (13) + chr (10)
 
 	U_Log2 ('debug', '[' + procname () + ']saldos por grupo:')
-	U_Log (_aSldGrup)
+	U_Log2 ('debug', _aSldGrup)
 
 	// Geracao dos lctos contabeis 2a.fase
 	//
@@ -662,19 +784,49 @@ static function _Parte2 ()
 	// Gera todas as linhas no mesmo documento.
 	_nQtLctGer = 0
 	for _nAux2 = 1 to len (_aSldGrup)
-		if round (_aSldGrup [_nAux2, 9], 2) != 0
+		if round (_aSldGrup [_nAux2, .SldGrupoVlAComplementar], 2) != 0
 			_aLinhaCT2 := {}
 			aAdd (_aLinhaCT2,  {'CT2_LINHA'     ,strzero (_nAux2, 3), NIL})
 			aAdd (_aLinhaCT2,  {'CT2_MOEDLC'    ,'01'               , NIL})
 			aAdd (_aLinhaCT2,  {'CT2_DC'        ,'3', NIL})  // 3=partida dobrada
-			if _aSldGrup [_nAux2, 3] == 'D' .and. _aSldGrup [_nAux2, 5] == 'C'
-				aAdd (_aLinhaCT2,  {'CT2_DEBITO', _aSldGrup [_nAux2, 2], NIL})
-				aAdd (_aLinhaCT2,  {'CT2_CREDIT', _aSldGrup [_nAux2, 4], NIL})
-			elseif _aSldGrup [_nAux2, 3] == 'C' .and. _aSldGrup [_nAux2, 5] == 'D'
-				aAdd (_aLinhaCT2,  {'CT2_CREDIT', _aSldGrup [_nAux2, 2], NIL})
-				aAdd (_aLinhaCT2,  {'CT2_DEBITO', _aSldGrup [_nAux2, 4], NIL})
+//			if _aSldGrup [_nAux2, 3] == 'D' .and. _aSldGrup [_nAux2, 5] == 'C'
+//				aAdd (_aLinhaCT2,  {'CT2_DEBITO', _aSldGrup [_nAux2, 2], NIL})
+//				aAdd (_aLinhaCT2,  {'CT2_CREDIT', _aSldGrup [_nAux2, 4], NIL})
+//			elseif _aSldGrup [_nAux2, 3] == 'C' .and. _aSldGrup [_nAux2, 5] == 'D'
+//				aAdd (_aLinhaCT2,  {'CT2_CREDIT', _aSldGrup [_nAux2, 2], NIL})
+//				aAdd (_aLinhaCT2,  {'CT2_DEBITO', _aSldGrup [_nAux2, 4], NIL})
+//			endif
+
+			// Pode haver casos em que houve apropriacao a maior no mes anterior, e agora preciso estornar.
+			_lInvLanc = .F.
+			if _aSldGrup [_nAux2, .SldGrupoNatConta1] == 'D' .and. _aSldGrup [_nAux2, .SldGrupoVlAComplementar] > 0
+				_lInvLanc = .T.
+				U_Log2 ('debug', '[' + procname () + ']Devo inverter lancamentos para a linha ' + cvaltochar (_nAux2))
+			elseif _aSldGrup [_nAux2, .SldGrupoNatConta1] == 'C' .and. _aSldGrup [_nAux2, .SldGrupoVlAComplementar] < 0
+				_lInvLanc = .T.
+				U_Log2 ('debug', '[' + procname () + ']Devo inverter lancamentos para a linha ' + cvaltochar (_nAux2))
 			endif
-			aAdd (_aLinhaCT2,  {'CT2_VALOR'     ,abs (_aSldGrup [_nAux2, 9]), NIL})
+
+			if _aSldGrup [_nAux2, .SldGrupoNatConta1] == 'D'
+				if _lInvLanc
+					aAdd (_aLinhaCT2,  {'CT2_CREDIT', _aSldGrup [_nAux2, .SldGrupoConta1], NIL})
+					aAdd (_aLinhaCT2,  {'CT2_DEBITO', _aSldGrup [_nAux2, .SldGrupoConta2], NIL})
+				else
+					aAdd (_aLinhaCT2,  {'CT2_DEBITO', _aSldGrup [_nAux2, .SldGrupoConta1], NIL})
+					aAdd (_aLinhaCT2,  {'CT2_CREDIT', _aSldGrup [_nAux2, .SldGrupoConta2], NIL})
+				endif
+			endif
+			if _aSldGrup [_nAux2, .SldGrupoNatConta1] == 'C'
+				if _lInvLanc
+					aAdd (_aLinhaCT2,  {'CT2_DEBITO', _aSldGrup [_nAux2, .SldGrupoConta1], NIL})
+					aAdd (_aLinhaCT2,  {'CT2_CREDIT', _aSldGrup [_nAux2, .SldGrupoConta2], NIL})
+				else
+					aAdd (_aLinhaCT2,  {'CT2_CREDIT', _aSldGrup [_nAux2, .SldGrupoConta1], NIL})
+					aAdd (_aLinhaCT2,  {'CT2_DEBITO', _aSldGrup [_nAux2, .SldGrupoConta2], NIL})
+				endif
+			endif
+
+			aAdd (_aLinhaCT2,  {'CT2_VALOR'     ,abs (_aSldGrup [_nAux2, .SldGrupoVlAComplementar]), NIL})
 			aAdd (_aLinhaCT2,  {'CT2_CCC'       ,'014001', NIL})
 			aAdd (_aLinhaCT2,  {'CT2_CCD'       ,'014001', NIL})
 			aAdd (_aLinhaCT2,  {'CT2_ORIGEM'    ,_sOrigLcto         , NIL})

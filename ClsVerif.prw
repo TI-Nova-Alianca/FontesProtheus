@@ -84,6 +84,7 @@
 // 23/01/2023 - Robert  - Criada verificacao 93.
 // 03/03/2023 - Robert  - Campo VA_VNOTAS_SAFRA.TIPO_FORNEC passa a ter novo conteudo.
 // 24/03/2023 - Robert  - Verif.24 passa a desconsiderar OPs para envase 'em terceiros' (seguem fluxo diferente para entrada no FullWMS)
+// 26/04/2023 - Robert  - Implementadas verificacoes 94 e 95.
 //
 
 #include "protheus.ch"
@@ -3534,7 +3535,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query +=    " AND G.GR__TIMEOUT > 0"
 
 	case ::Numero == 93
-		::Setores   = 'CUS/CTB/INF'
+		::Setores   = 'CUS/CTB'
 		::Descricao = "Nao levou custo correto da NF para a OP"
 		::Sugestao  = "Custo dos movimentos RE5 na tabela SD3 deve ser igual ao custo da NF que os gerou. Tente refazer custo das entradas."
 		::GrupoPerg = "U_VALID028"
@@ -3562,42 +3563,48 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query +=  " WHERE D3_CUSTO1 != D1_CUSTO OR D1_CUSTO IS NULL"
 		::Query +=  " ORDER BY D3_FILIAL, D3_EMISSAO, D3_DOC, D3_COD"
 
+	case ::Numero == 94
+		::Setores   = 'PCP'
+		::Descricao = "O.P. em aberto"
+		::Sugestao  = "Verificar se as OPs encontram-se realmente em producao. Caso ainda nao iniciadas, avaliar a opcao de exclui-las."
+		::QuandoUsar = "Antes de fazer contagem de inventario de estoques."
+		::Query := ""
+		::Query += "SELECT SC2.C2_NUM + SC2.C2_ITEM + SC2.C2_SEQUEN + SC2.C2_ITEMGRD AS OP,"
+		::Query +=       " SC2.C2_PRODUTO AS PRODUTO, SB1.B1_TIPO AS TIPO, SB1.B1_DESC AS DESCRICAO,"
+		::Query +=       " dbo.VA_DTOC (SC2.C2_EMISSAO) AS EMISSAO, dbo.VA_DTOC (SC2.C2_DATPRF) AS DT_PREVISTA,"
+		::Query +=       " SC2.C2_QUANT AS QT_PREVISTA, SC2.C2_QUJE AS QT_PRODUZIDA, SC2.C2_LOCAL AS ALMOX, SC2.C2_VAUSER AS USUARIO"
+		::Query +=  " FROM " + RETSQLNAME ("SC2") + " SC2, "
+		::Query +=             RETSQLNAME ("SB1") + " SB1 "
+		::Query += " WHERE SC2.D_E_L_E_T_ = ''"
+		::Query +=   " AND SC2.C2_FILIAL  = '" + xfilial ("SC2") + "'"
+		::Query +=   " AND SC2.C2_TPOP != 'P'"
+		::Query +=   " AND SB1.D_E_L_E_T_ = ''"
+		::Query +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+		::Query +=   " AND SB1.B1_COD = SC2.C2_PRODUTO"
+		::Query +=   " AND SC2.C2_QUJE != 0"
+		::Query +=   " AND SC2.C2_DATRF = ''"
+		::Query += " ORDER BY C2_NUM, C2_ITEM, C2_SEQUEN, C2_ITEMGRD"
 
-/* migrar esta de VerInv:
-	_sProblema = 'O.P. em aberto'
-	_sQuery := "SELECT '" + _sProblema + "' AS PROBLEMA,"
-	_sQuery +=       " SC2.C2_NUM + SC2.C2_ITEM + SC2.C2_SEQUEN + SC2.C2_ITEMGRD AS OP,"
-	_sQuery +=       " SC2.C2_PRODUTO AS PRODUTO, SB1.B1_TIPO AS TIPO, SB1.B1_DESC AS DESCRICAO,"
-	_sQuery +=       " dbo.VA_DTOC (SC2.C2_EMISSAO) AS EMISSAO, dbo.VA_DTOC (SC2.C2_DATPRF) AS DT_PREVISTA,"
-	_sQuery +=       " SC2.C2_QUANT AS QT_PREVISTA, SC2.C2_QUJE AS QT_PRODUZIDA, SC2.C2_LOCAL AS ALMOX, SC2.C2_VAUSER AS USUARIO"
-	_sQuery +=  " FROM " + RETSQLNAME ("SC2") + " SC2, "
-	_sQuery +=             RETSQLNAME ("SB1") + " SB1 "
-	_sQuery += " WHERE SC2.D_E_L_E_T_ = ''"
-	_sQuery +=   " AND SC2.C2_FILIAL  = '" + xfilial ("SC2") + "'"
-	_sQuery +=   " AND SC2.C2_TPOP != 'P'"
-	_sQuery +=   " AND SB1.D_E_L_E_T_ = ''"
-	_sQuery +=   " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
-	_sQuery +=   " AND SB1.B1_COD = SC2.C2_PRODUTO"
-	_sQuery +=   " AND SC2.C2_QUJE != 0"
-	_sQuery +=   " AND SC2.C2_DATRF = ''"
-	_sQuery += " ORDER BY C2_NUM, C2_ITEM, C2_SEQUEN, C2_ITEMGRD"
-*/
-/* migrar esta de VerInv:
-	_sProblema = 'Empenho com saldo para OP encerrada'
-	_sQuery := "SELECT '" + _sProblema + "' AS PROBLEMA,"
-	_sQuery +=       " D4_OP AS OP, D4_COD AS PRODUTO, D4_LOCAL AS ALMOX, D4_QUANT AS QT_EMPENHO"
-	_sQuery +=  " FROM " + RETSQLNAME ("SD4") + " SD4 "
-	_sQuery += " WHERE SD4.D_E_L_E_T_ = ''"
-	_sQuery +=   " AND SD4.D4_FILIAL  = '" + xfilial ("SD4") + "'"
-	_sQuery +=   " AND SD4.D4_QUANT   > 0"
-	_sQuery +=   " AND NOT EXISTS (SELECT *"
-	_sQuery +=                     " FROM " + RETSQLNAME ("SC2") + " SC2 "
-	_sQuery +=                    " WHERE SC2.D_E_L_E_T_ = ''"
-	_sQuery +=                      " AND SC2.C2_FILIAL  = SD4.D4_FILIAL"
-	_sQuery +=                      " AND SC2.C2_DATRF   = ''"
-	_sQuery +=                      " AND SC2.C2_NUM + C2_ITEM + C2_SEQUEN + C2_ITEMGRD = D4_OP)"
-	_sQuery += " ORDER BY D4_OP, D4_COD"
-*/
+
+	case ::Numero == 95
+		::Setores   = 'PCP'
+		::Descricao = "OP encerrada com empenhos em aberto"
+		::Sugestao  = "Verificar se as OPs encontram-se realmente em producao."
+		::QuandoUsar = "A qualquer momento."
+		::Query := ""
+		::Query := "SELECT D4_OP AS OP, D4_COD AS PRODUTO, D4_LOCAL AS ALMOX, D4_QUANT AS QT_EMPENHO"
+		::Query +=  " FROM " + RetSQLName ("SD4") + " SD4 "
+		::Query += " WHERE SD4.D_E_L_E_T_ = ''"
+		::Query +=   " AND SD4.D4_FILIAL  = '" + xfilial ("SD4") + "'"
+		::Query +=   " AND SD4.D4_QUANT   > 0"
+		::Query +=   " AND NOT EXISTS (SELECT *"
+		::Query +=                     " FROM " + RetSQLName ("SC2") + " SC2 "
+		::Query +=                    " WHERE SC2.D_E_L_E_T_ = ''"
+		::Query +=                      " AND SC2.C2_FILIAL  = SD4.D4_FILIAL"
+		::Query +=                      " AND SC2.C2_DATRF   = ''"
+		::Query +=                      " AND SC2.C2_NUM + C2_ITEM + C2_SEQUEN + C2_ITEMGRD = D4_OP)"
+		::Query += " ORDER BY D4_OP, D4_COD"
+
 
 	otherwise
 		::UltMsg = "Verificacao numero " + cvaltochar (::Numero) + " nao definida."

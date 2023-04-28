@@ -1023,6 +1023,9 @@ METHOD PodeIncl () Class ClsTrEstq
 
 	// Verifica campos obrigatorios, nao aceitos, tamanhos, tipos, etc.
 	if _lContinua
+		if empty (::Motivo) .and. ! empty (::CodMotivo)
+			::Motivo = alltrim (U_RetZX5 ('56', ::CodMotivo, "ZX5_56DESC"))
+		endif
 		if empty (::FilOrig) ; ::SomaMsg ("Filial de origem deve ser informada.")                   ; _lContinua = .F. ; endif
 		if empty (::FilDest) ; ::SomaMsg ("Filial destino deve ser informada.")                     ; _lContinua = .F. ; endif
 		if empty (::AlmOrig) ; ::SomaMsg ("Almoxarifado de origem deve ser informado.")             ; _lContinua = .F. ; endif

@@ -38,6 +38,7 @@
 // 20/04/2023 - Robert  - Implementada alteracao de validade por usuario (em todos os grupos)
 //                      - Melhorada gravacao de eventos (gravar ALIAS e CHAVE, para posterior consulta)
 //                      - Criada consulta de eventos relacionados ao grupo.
+// 26/04/2023 - Robert  - Implementaca copia de acessos de um usuario para outro.
 //
 
 // --------------------------------------------------------------------------
@@ -53,7 +54,8 @@ User Function ZZU ()
 	endif
 
 	// Submenu de rotinas 'por usuario'
-	aadd (_aRotUser, {"Alterar validade", "processa ({||U_ZZUAU ('AV')})", 0, 4})
+	aadd (_aRotUser, {"Alterar validade",       "processa ({||U_ZZUAU ('AV')})", 0, 4})
+	aadd (_aRotUser, {"Copiar acessos para...", "processa ({||U_ZZUAU ('CAP')})", 0, 4})
 
 	aAdd(aRotina, {"Pesquisar",  "AxPesqui" , 0, 1})
 	aAdd(aRotina, {"Visualizar", "U_ZZUA", 0, 2})
@@ -162,9 +164,9 @@ user function ZZUA ()
 		for _nLinACols = 1 to len (aCols)
 
 			// Procura esta linha no arquivo por que posso ter situacoes de exclusao ou alteracao.
-			u_log2 ('debug', 'pesquisando com chave >>' + xfilial ("ZZU") + _sGrupoZZU + GDFieldGet ("ZZU_FIL", _nLinACols) + GDFieldGet ("ZZU_USER", _nLinACols) + '<<')
+		//	u_log2 ('debug', 'pesquisando com chave >>' + xfilial ("ZZU") + _sGrupoZZU + GDFieldGet ("ZZU_FIL", _nLinACols) + GDFieldGet ("ZZU_USER", _nLinACols) + '<<')
 			if ZZU -> (dbseek (xfilial ("ZZU") + _sGrupoZZU + GDFieldGet ("ZZU_FIL", _nLinACols) + GDFieldGet ("ZZU_USER", _nLinACols) , .F.))
-				u_log2 ('debug', 'encontrei ZZU')
+		//		u_log2 ('debug', 'encontrei ZZU')
 
 				// Se estah deletado em aCols, preciso excluir do arquivo tambem.
 				if GDDeleted (_nLinACols)
@@ -234,17 +236,35 @@ return
 // --------------------------------------------------------------------------
 // Executar operacoes 'por usuario'
 user function ZZUAU (_sQueFazer)
-	local _sUser   := space (6)
-	local _aReg    := {}
-	local _nReg    := 0
-	local _oSQL    := NIL
-	local _dValid  := ctod ('')
-	local _oEvento := NIL
+	local _sUser     := zzu -> zzu_user
+	local _sUserDst  := space (6)
+	local _sNomeDst  := ''
+	local _aReg      := {}
+	local _nReg      := 0
+	local _aRegDst   := {}
+	local _oSQL      := NIL
+	local _dValid    := ctod ('')
+	local _oEvento   := NIL
+	local _lContinua := .T.
+	local _sDescOper := ''
+	local _sMsgCopia := ''
 
-	_sUser = U_Get ("Codigo do usuario", 'C', 6, '', 'USR', _sUser, .f., '.t.')
-	if empty (_sUser)
-		u_help ("Usuario nao informado. Processo cancelado.",, .t.)
-	else
+	if _lContinua
+		do case
+		case _sQueFazer == 'AV'  ; _sDescOper = 'alterar vencimento'
+		case _sQueFazer == 'CAP' ; _sDescOper = 'copiar acesso para outra pessoa'
+		endcase
+	endif
+
+	if _lContinua
+		_sUser = U_Get ("Codigo do usuario para " + _sDescOper, 'C', 6, '', 'USR', _sUser, .f., '.t.')
+		if empty (_sUser)
+			u_help ("Usuario nao informado. Processo cancelado.",, .t.)
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
 		// Leitura dos grupos onde o usuario aparece e montagem de markbrowse para selecao do usuario
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "SELECT '' AS OK, R_E_C_N_O_, ZZU_USER, ZZU_NOME, ZZU_GRUPO, ZZU_DESCRI, dbo.VA_DTOC (ZZU_VALID), ZZU_HIST"
@@ -267,13 +287,14 @@ user function ZZUAU (_sQueFazer)
 		aadd (_aCols, {6, 'Descr.grupo',      60, ''})
 		aadd (_aCols, {7, 'Validade',         40, ''})
 		aadd (_aCols, {8, 'Historico',       250, ''})
-		U_MBArray (@_aReg, 'Selecione registros a alterar', _aCols, 1)
+		U_MBArray (@_aReg, 'Selecione registros para ' + _sDescOper, _aCols, 1)
 
 		do case
 		case _sQueFazer == 'AV'  // Alterar validade dos registros
 			_dValid = U_Get ("Nova data de validade", 'D', 8, '@D', '', date (), .f., '.t.')
 			if empty (_dValid)
 				u_help ("Nova data de validade deve ser informada. Processo cancelado.",, .t.)
+				_lContinua = .F.
 			else
 				procregua (len (_aReg))
 				for _nReg = 1 to len (_aReg)
@@ -299,6 +320,93 @@ user function ZZUAU (_sQueFazer)
 					endif
 				next
 			endif
+
+		case _sQueFazer == 'CAP'  // Copiar Acessos Para...
+			_sUserDst = U_Get ("Codigo do usuario destino", 'C', 6, '', 'USR', _sUserDst, .f., '.t.')
+			if empty (_sUserDst)
+				u_help ("Usuario destino nao informado. Processo cancelado.",, .t.)
+				_lContinua = .F.
+			endif
+			if _lContinua
+				PswOrder (1)  // 1 - ID do usuário/grupo; 2 - Nome do usuário/grupo; 3 - Senha do usuário; 4 - E-mail do usuário
+				if PswSeek (_sUserDst, .T.)
+					_sNomeDst = alltrim (PswRet () [1, 2])
+				else
+					u_help ("Usuario destino '" + _sUserDst + "' nao localizado. Processo cancelado.",, .t.)
+					_lContinua = .F.
+				endif
+			endif
+			
+			// Desmarca grupos onde o usuario destino jah consta
+			if _lContinua
+				_sMsgCopia = ''
+			//	u_log2 ('debug', '_aReg antes:')
+			//	U_Log2 ('debug', _aReg)
+				for _nReg = 1 to len (_aReg)
+					if _aReg [_nReg, 1] .and. U_ZZUVL (_aReg [_nReg, 5], _sUserDst, .F.)
+						_sMsgCopia += "Usuario destino jah se encontra no grupo " + _aReg [_nReg, 5] + chr (13) + chr (10)
+						_aReg [_nReg, 1] = .f.
+					endif
+				next
+			//	u_log2 ('debug', '_aReg depois:')
+			//	U_Log2 ('debug', _aReg)
+			endif
+			if _lContinua
+				_lContinua = U_MsgNoYes (_sMsgCopia + "Confirma a replicacao dos demais acessos selecionados para o usuario " + _sUserDst + ' - ' + _sNomeDst + "' ?")
+			endif
+			if _lContinua
+				procregua (len (_aReg))
+				_aRegDst = {}
+				for _nReg = 1 to len (_aReg)
+					incproc ('Preparando dados')
+					if _aReg [_nReg, 1]
+						zzu -> (dbgoto (_aReg [_nReg, 2]))
+						aadd (_aRegDst , {zzu -> zzu_grupo, ;
+						                  zzu -> zzu_descri, ;
+						                  zzu -> zzu_modul, ;
+						                  zzu -> zzu_rotin, ;
+						                  zzu -> zzu_fil, ;
+						                  zzu -> zzu_tipo, ;
+						                  zzu -> zzu_valid, ;
+						                  zzu -> zzu_nome})
+						U_Log2 ('debug', _aRegDst)
+					endif
+				next
+			//	u_log2 ('debug', '_aRegDst:')
+			//	U_Log2 ('debug', _aRegDst)
+
+				begin transaction
+				procregua (len (_aRegDst))
+				for _nReg = 1 to len (_aRegDst)
+					incproc ('Gravando dados')
+					U_Log2 ('debug', '[' + procname () + ']gravando linha ' + cvaltochar (_nReg))
+					_oEvento := ClsEvent ():New ()
+					_oEvento:CodEven = 'ZZU005'
+					_oEvento:Texto := "Copiando grupo " + zzu -> zzu_grupo + " do usr " + _sUser + " para " + _sUserDst
+					_oEvento:Alias  = 'ZZU'
+					_oEvento:Recno  = zzu -> (recno ())
+					_oEvento:Chave  = zzu -> zzu_grupo
+					_oEvento:Grava ()
+
+					reclock ('ZZU', .T.)
+					zzu -> zzu_filial = xfilial ("ZZU")
+					zzu -> zzu_user   = _sUserDst
+					zzu -> zzu_nome   = _sNomeDst
+					zzu -> zzu_grupo  = _aRegDst [_nReg, 1]
+					zzu -> zzu_descri = _aRegDst [_nReg, 2]
+					zzu -> zzu_modul  = _aRegDst [_nReg, 3]
+					zzu -> zzu_rotin  = _aRegDst [_nReg, 4]
+					zzu -> zzu_fil    = _aRegDst [_nReg, 5]
+					zzu -> zzu_tipo   = _aRegDst [_nReg, 6]
+					zzu -> zzu_valid  = _aRegDst [_nReg, 7]
+					zzu -> zzu_hist   = 'Copiado de ' + _sUser + ' ' + alltrim (_aRegDst [_nReg, 8])
+					msunlock ()
+					_sMsgCopia += "Copiado grupo " + zzu -> zzu_grupo + chr (13) + chr (10)
+				next
+				end transaction
+				u_help ("Processo concluido." + chr (13) + chr (10) + _sMsgCopia)
+			endif
+
 		otherwise
 			u_help ("Opcao '" + _sQueFazer + "' sem tratamento!",, .t.)
 		endcase

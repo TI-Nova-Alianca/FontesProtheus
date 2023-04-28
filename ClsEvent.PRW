@@ -62,6 +62,7 @@
 //                      - Criado atributo Usuario.
 // 22/02/2023 - Robert  - Criados atributos Safra e CargaSafra.
 // 24/02/2023 - Robert  - Gera aviso quando receber chave antiga para evento de carga/safra.
+// 28/04/2023 - Robert  - Erro na leitura do campo ZN_DIASVLD
 //
 
 #include "protheus.ch"
@@ -208,7 +209,7 @@ METHOD New (_nRegSZN) Class ClsEvent
 		::HrEvento   = SZN -> zn_hora
 		::Ambiente   = SZN -> zn_ambient
 		::Origem     = SZN -> zn_origem
-		::DiasValid  = SZN -> zn_diasvls
+		::DiasValid  = SZN -> zn_diasvld
 		::ChaveNFe   = SZN -> zn_chvnfe
 		::MotProrTit = szn -> zn_MotPror
 		::Usuario    = szn -> zn_usuario

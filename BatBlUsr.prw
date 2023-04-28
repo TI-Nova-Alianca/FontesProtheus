@@ -132,17 +132,17 @@ user function BatBlUsr ()
 							if _sOp05 == '1'
 								if _sSitFol != '1' .or. _sEmFerias == 'S'  // .and. ! _lUsaAD  // Se usa AD, jah foi bloqueado lah.
 									_sQueFazer = 'B'
-									_sMotAlter = 'Cfe.situacao Metadados - em ferias'
+									_sMotAlter = 'Cfe.sit.folha-em ferias'
 								else
 									_sQueFazer = 'L'
-									_sMotAlter = 'Cfe.situacao Metadados - nao esta em ferias'
+									_sMotAlter = 'Cfe.sit.folha-nao esta em ferias'
 								endif
 							elseif _sOp05 == '2'
 								_sQueFazer = 'B'
-								_sMotAlter = 'Informado 2(bloquear) no Metadados'
+								_sMotAlter = 'Opcao 2(bloquear) no Metadados'
 							elseif _sOp05 == '3'
 								_sQueFazer = 'L'
-								_sMotAlter = 'Informado 3(nunca bloquear) no Metadados'
+								_sMotAlter = 'Opcao 3(nunca bloquear) no Metadados'
 							endif
 
 							if _sSitFol $ '3/4'
@@ -158,13 +158,13 @@ user function BatBlUsr ()
 
 							if _sQueFazer == 'B'
 								if ! _aPswRet [1, 17]
-									u_log2 ('aviso', 'Bloqueando usuario ' + _sIdUser + ' ' + _aUsers [_nUser, 3] + ' por motivo ' + _sMotAlter)
+									u_log2 ('aviso', 'Bloqueando ' + _sIdUser + '-' + _aUsers [_nUser, 3] + ': ' + _sMotAlter)
 									PswBlock (_sIdUser)
 
 									_oAviso := ClsAviso ():New ()
 									_oAviso:Tipo       = 'I'
 									_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
-									_oAviso:Texto      = 'Bloqueando usuario ' + _sIdUser + ' ' + _aUsers [_nUser, 3] + ' (Pessoa ' + alltrim (_aPessoa [_nPessoa, 1]) + ') no Protheus por motivo ' + _sMotAlter
+									_oAviso:Texto      = 'Bloqueando ' + _sIdUser + '-' + _aUsers [_nUser, 3] + ' no Protheus: ' + _sMotAlter
 									_oAviso:Origem     = procname ()
 									_oAviso:Grava ()
 								endif
@@ -174,7 +174,7 @@ user function BatBlUsr ()
 									_oAviso := ClsAviso ():New ()
 									_oAviso:Tipo       = 'A'
 									_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
-									_oAviso:Texto      = 'Usuario ' + _sIdUser + ' ' + _aUsers [_nUser, 3] + ' - Pessoa ' + alltrim (_aPessoa [_nPessoa, 1]) + ' - ' + alltrim (_aPessoa [_nPessoa, 4]) + ': deveria ser desbloqueado no Protheus, por motivo ' + _sMotAlter
+									_oAviso:Texto      = 'Usuario ' + _sIdUser + '-' + _aUsers [_nUser, 3] + ' deveria ser desbloqueado no Protheus: ' + _sMotAlter
 									_oAviso:Origem     = procname ()
 									_oAviso:Grava ()
 								endif

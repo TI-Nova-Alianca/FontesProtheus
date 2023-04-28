@@ -182,7 +182,8 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _s
 			_sID = soma1 (_sID)
 			_sDescri := 'O.P. ' + alltrim (_aOP [_nOP, 1]) + _sQuebra
 			_sDescri += dtoc (stod (_aOP [_nOP, 4])) + _sQuebra
-			_sDescri += _FmtQt (_aOP [_nOP, 2], _aOP [_nOP, 3], _nQtProp2) + _sQuebra
+			// _sDescri += _FmtQt (_aOP [_nOP, 2], _aOP [_nOP, 3], _nQtProp2) + _sQuebra
+			_sDescri += _FmtQt (_aOP [_nOP, 2], _aOP [_nOP, 3], _nQtProp2)
 			_sRet += '<node BACKGROUND_COLOR="#cccc00" CREATED="1493031071766" ' + iif (abs (_nNivel) >= _nNivFold, 'FOLDED="true" ', '') + 'ID="' + _sID + '" POSITION="left" TEXT="' + _sDescri + '">'
 		
 			// Busca requisicoes desta OP.
@@ -358,7 +359,8 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _s
 				_sDescri := 'NF entr.' + alltrim (_aSD1 [_nSD1, 1]) + ' de ' + alltrim (_aSD1 [_nSD1, 5]) + _sQuebra
 				_sDescri += 'Lote forn:' + alltrim (_aSD1 [_nSD1, 2]) + _sQuebra
 			endif
-			_sDescri += _FmtQt (_aSD1 [_nSD1, 3], _aSD1 [_nSD1, 4], _nQtProp2) + _sQuebra
+			// _sDescri += _FmtQt (_aSD1 [_nSD1, 3], _aSD1 [_nSD1, 4], _nQtProp2) + _sQuebra
+			_sDescri += _FmtQt (_aSD1 [_nSD1, 3], _aSD1 [_nSD1, 4], _nQtProp2)
 			// nao estah buscando laudo (falta passar a data) ---> if ! empty (_sLote)
 			// nao estah buscando laudo (falta passar a data) ---> 	_sLaudo = U_LaudoEm (_sProduto, _sLote, stod (_aSD1 [_nSD1, 5]))
 			// nao estah buscando laudo (falta passar a data) ---> 	if ! empty (_sLaudo)
@@ -472,7 +474,8 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _s
 
 			_sID = soma1 (_sID)
 			_sDescri := 'Consumo na OP ' + alltrim (_aReqOP [_nReqOP, 1]) + _sQuebra
-			_sDescri += _FmtQt (_aReqOP [_nReqOP, 2], _aReqOP [_nReqOP, 3], _nQtProp2) + _sQuebra
+			// _sDescri += _FmtQt (_aReqOP [_nReqOP, 2], _aReqOP [_nReqOP, 3], _nQtProp2) + _sQuebra
+			_sDescri += _FmtQt (_aReqOP [_nReqOP, 2], _aReqOP [_nReqOP, 3], _nQtProp2)
 			_sDescri += 'Prod.final: ' + alltrim (_aReqOP [_nReqOP, 4]) + '-' + alltrim (left (_aReqOP [_nReqOP, 5], 40)) + _sQuebra
 			_sDescri += 'Podia incluir aqui o lote gerado pela OP...'
 			_sRet += '<node BACKGROUND_COLOR="#cccc00" CREATED="1493031071766" ' + iif (abs (_nNivel) >= _nNivFold, 'FOLDED="true" ', '') + 'ID="' + _sID + '" POSITION="right" TEXT="' + _sDescri + '">'
@@ -521,7 +524,8 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _s
 			_sID = soma1 (_sID)
 			if ! empty (_aSD2 [_nSD2, 6])  // Filial destino
 				_sDescri := 'Transf. para filial ' + _aSD2 [_nSD2, 6] + ' - NF ' + alltrim (_aSD2 [_nSD2, 1]) + _sQuebra
-				_sDescri += _FmtQt (_aSD2 [_nSD2, 2], sb1 -> b1_um, _nQtProp2) + _sQuebra
+				// _sDescri += _FmtQt (_aSD2 [_nSD2, 2], sb1 -> b1_um, _nQtProp2) + _sQuebra
+				_sDescri += _FmtQt (_aSD2 [_nSD2, 2], sb1 -> b1_um, _nQtProp2)
 				_sDescri += 'Lote gerado na filial:' + alltrim (_aSD2 [_nSD2, 7]) + _sQuebra
 				_sRet += '<node BACKGROUND_COLOR="#009999" CREATED="1493031071766" ' + iif (abs (_nNivel) >= _nNivFold, 'FOLDED="true" ', '') + 'ID="' + _sID + '" POSITION="right" TEXT="' + _sDescri + '">'
 
@@ -533,7 +537,8 @@ user function RastLT (_sFilial, _sProduto, _sLote, _nNivel, _aHist, _nQtProp, _s
 				endif
 			else
 				_sDescri := 'NF saida ' + alltrim (_aSD2 [_nSD2, 1]) + ' p/ ' + _aSD2 [_nSD2, 5] + '-' + alltrim (left (_aSD2 [_nSD2, 4], 30)) + _sQuebra
-				_sDescri += _FmtQt (_aSD2 [_nSD2, 2], _aSD2 [_nSD2, 3], _nQtProp2) + _sQuebra
+				// _sDescri += _FmtQt (_aSD2 [_nSD2, 2], _aSD2 [_nSD2, 3], _nQtProp2) + _sQuebra
+				_sDescri += _FmtQt (_aSD2 [_nSD2, 2], _aSD2 [_nSD2, 3], _nQtProp2)
 				_sRet += '<node BACKGROUND_COLOR="#ccffff" CREATED="1493031071766" ' + iif (abs (_nNivel) >= _nNivFold, 'FOLDED="true" ', '') + 'ID="' + _sID + '" POSITION="right" TEXT="' + _sDescri + '">'
 			endif
 			// nao estah buscando laudo (falta passar a data) ---> if ! empty (_sLote)
@@ -626,4 +631,5 @@ return _sRet
 // --------------------------------------------------------------------------
 // Formata quantidades
 static function _FmtQt (_nValor, _sUM, _nQtProp)
-return 'Qt: ' + alltrim (transform (_nValor, '@E 999,999,999,999.99')) + ' ' + _sUM + iif (empty (_nQtProp), '', ' (qt.proporcional: ' + alltrim (transform (_nQtProp, '@E 999,999,999,999.9999')) + ')')
+return 'Qt: ' + alltrim (transform (_nValor, '@E 999,999,999,999.99')) + ' ' + _sUM + iif (empty (_nQtProp), '', ' (qt.proporcional: ' + alltrim (transform (_nQtProp, '@E 999,999,999,999.9999')) + ')') + "&#xa;"
+//return ''  // excepcionalmente quero gerar SEM mostrar as quantidades.
