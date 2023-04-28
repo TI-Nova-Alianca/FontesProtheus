@@ -17,9 +17,9 @@
 // 11/04/2022 - Claudia - Retirado o CNPJ 18694748000105 da consulta. GLPI: 11899
 // 08/11/2022 - Robert  - Passa a usar funcao U_LkServer() para apontar para o banco do Mercanet.
 // 16/12/2022 - Robert  - Manutencao porca na vez anterior. Nao tinha ajustado o linked server nas queries!
+// 28/04/2023 - Claudia - Alterada a consulta de clientes ativos/inativos. GLPI: 13494
 //
-
-// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'totvs.ch'
 
@@ -74,6 +74,7 @@ Static Function ClientesInativos(_sLinkSrv)
 	_oSQL:_sQuery += " 	FROM SA1010 SA1 "
 	_oSQL:_sQuery += " 	LEFT JOIN " + _sLinkSrv + ".DB_CLIENTE CLI "
 	_oSQL:_sQuery += " 		ON CLI.DB_CLI_CGCMF COLLATE Latin1_General_CI_AI = A1_CGC COLLATE Latin1_General_CI_AI "
+	_oSQL:_sQuery += "      AND DB_CLI_CODIGO = CAST(LTRIM(RTRIM(A1_COD)) AS NUMERIC(6, 0)) "
 	_oSQL:_sQuery += " 	WHERE SA1.D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " 	AND A1_MSBLQL = '1' "
 	_oSQL:_sQuery += " 	AND DB_CLI_SITUACAO = 0 "
@@ -91,6 +92,7 @@ Static Function ClientesInativos(_sLinkSrv)
 	_oSQL:_sQuery += " 	FROM SA1010 SA1 "
 	_oSQL:_sQuery += " 	LEFT JOIN " + _sLinkSrv + ".DB_CLIENTE CLI "
 	_oSQL:_sQuery += " 		ON CLI.DB_CLI_CGCMF COLLATE Latin1_General_CI_AI = A1_CGC COLLATE Latin1_General_CI_AI "
+	_oSQL:_sQuery += "      AND DB_CLI_CODIGO = CAST(LTRIM(RTRIM(A1_COD)) AS NUMERIC(6, 0)) "
 	_oSQL:_sQuery += " 	WHERE SA1.D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " 	AND A1_MSBLQL = '2' "
 	_oSQL:_sQuery += " 	AND DB_CLI_SITUACAO = 3) "
@@ -110,7 +112,7 @@ Static Function ClientesInativos(_sLinkSrv)
 	_oSQL:_sQuery += " 		ELSE 'ATIVO' "
 	_oSQL:_sQuery += "    END AS STATUS_MERCANET "
 	_oSQL:_sQuery += " FROM C "
-	_oSQL:_sQuery += " WHERE CGC_PROTHEUS NOT IN ('92685460000119', '97944823587', '00213985000133','18694748000105') "
+	_oSQL:_sQuery += " WHERE CGC_PROTHEUS NOT IN ('01850273006') "
 	_oSQL:Log ('[' + procname () + ']')
 	if len (_oSQL:Qry2Array (.T., .F.)) > 0
 
