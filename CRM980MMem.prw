@@ -12,6 +12,7 @@
 //
 // Historico de alteracoes:
 // 15/03/2022 - Claudia - Criação de rotina para gravação de codigo matriz. GLPI: 11635
+// 28/04/2023 - Claudia - Incluida rotina de envio do cliente para o Mercanet. GLPI: 13495
 //
 // ------------------------------------------------------------------------------------------------------------
 #INCLUDE "PROTHEUS.CH"
@@ -19,6 +20,7 @@
 
 User Function CRM980MDef()
     Local aRotina := {}
+
     //----------------------------------------------------------------------------------------------------------
     // [n][1] - Nome da Funcionalidade
     // [n][2] - Função de Usuário
@@ -26,6 +28,8 @@ User Function CRM980MDef()
     // [n][4] - Acesso relacionado a rotina, se esta posição não for informada nenhum acesso será validado
     //----------------------------------------------------------------------------------------------------------
     aAdd(aRotina,{"Incluir Cod. Matriz","u_VA_CODMAT()",4,0})
+    aAdd(aRotina,{"Envia p/ Mercanet"  ,"u_VA_ATUCLI()",4,0})
+
 Return( aRotina )
 //
 // -------------------------------------------------------------------------
@@ -59,7 +63,6 @@ User Function VA_CODMAT()
         @ 040, 050 MSGET oGet1 VAR _sCodMat SIZE 060, 010 OF oDlg COLORS 0, 16777215 PIXEL
         @ 052, 050 MSGET oGet2 VAR _sLojMat SIZE 060, 010 OF oDlg COLORS 0, 16777215 PIXEL
         @ 066, 072 BUTTON oButton1 PROMPT "Gravar" SIZE 037, 012 OF oDlg ACTION  (_lRet := .T., oDlg:End ()) PIXEL  
-
 
     ACTIVATE MSDIALOG oDlg CENTERED
 
@@ -106,7 +109,6 @@ Static Function VerifCliente(_sCodMat, _sLojMat)
     _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " AND A1_COD  = '" + _sCodMat + "' "
     _oSQL:_sQuery += " AND A1_LOJA = '" + _sLojMat + "' "
-    //_oSQL:_sQuery += " AND A1_MSBLQL = '2' "
     _oSQL:Log ()
     _aDados := aclone (_oSQL:Qry2Array ())
 
@@ -117,3 +119,11 @@ Static Function VerifCliente(_sCodMat, _sLojMat)
     EndIf
 
 Return _lRet
+//
+// -------------------------------------------------------------------------
+// Envia o cliente para o Mercanet (atualização)
+User Function VA_ATUCLI()
+    U_AtuMerc ("SA1", sa1 -> (recno ())) // manda p mercanet
+
+    u_help(" Cliente " + alltrim(sa1->a1_nome) + " enviado para Mercanet!")
+Return
