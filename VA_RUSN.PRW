@@ -52,6 +52,7 @@
 // 22/01/2022 - Robert - Permitia seguir sem testar se a funcao VA_RusMV tinha dado erro.
 // 03/02/2023 - Robert - Leitura var.menor valor passa a usar ClsCarSaf:VarMenorLv
 //                     - Tratamentos diversos para cargas compartilhadas
+// 29/04/2023 - Robert - Chamada da busca de variedade de menor valor passa a ser diferenciada por safra.
 //
 
 // ------------------------------------------------------------------------------------
@@ -297,7 +298,29 @@ User Function va_rusN (_lSimulNF)
 	// Como a funcao jah retorna uma lista das variedades, fica mais facil
 	// identificar mistura de variedades.
 	if _lContinua
-		_aMenorVlr = aclone (_oCarSaf:VarMenorVl ())
+	//	_aMenorVlr = aclone (_oCarSaf:VarMenorVl ())
+		
+		// Como uso o metodo VarMenorVl() noutros locais (por exemplo, na
+		// geracao de notas de complemento de valor posteriormente), achei
+		// melhor passar um parametro indicando qual preco verificar.
+		// Para isso, eh bom manter compatibilidade entre as funcoes de
+		// geracao de preco das diferentes safras.
+		do case
+		case _oCarSaf:Safra == '2019'
+			_aMenorVlr = aclone (_oCarSaf:VarMenorVl (1))
+		case _oCarSaf:Safra == '2020'
+			_aMenorVlr = aclone (_oCarSaf:VarMenorVl (5))  // pos.5=preco MOC
+		case _oCarSaf:Safra == '2021'
+			_aMenorVlr = aclone (_oCarSaf:VarMenorVl (2))  // pos.2=preco de compra
+		case _oCarSaf:Safra == '2022'
+			_aMenorVlr = aclone (_oCarSaf:VarMenorVl (2))  // pos.2=preco de compra
+		case _oCarSaf:Safra == '2023'
+			_aMenorVlr = aclone (_oCarSaf:VarMenorVl (5))  // pos.5=preco MOC
+		otherwise
+			u_help ("Sem tratamento para esta safra no momento de verificar variedade de menor valor.",, .t.)
+			_lContinua = .F.
+		endcase
+
 		if len (_aMenorVlr) == 0
 			u_help ('Erro na funcao de verificacao de variedade com menor valor.',, .t.)
 			_lContinua = .F.

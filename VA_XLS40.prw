@@ -18,6 +18,7 @@
 // 04/01/2021 - Robert  - Tratamentos para safra 2021.
 // 14/01/2022 - Robert  - Tratamento para safra 2022.
 //                      - Criada opcao de exportar com descricao resumida.
+// 26/04/2023 - Robert  - Tratamento para safra 2023.
 //
 
 #include "VA_INCLU.prw"
@@ -135,6 +136,12 @@ Static Function _Gera()
 	_oSQL:_sQuery +=            " AND ZX5_14.ZX5_14PROD = F.COD_BASE)"
 	_oSQL:_sQuery += " WHERE FINA_COMUM = '" + iif (mv_par02 == 1, 'C', 'F') + "'"
 	_oSQL:_sQuery +=   " AND COD_BASE NOT IN ('2684','9869','9930')"  // Desconsidera 'uva moida' e uvas de terceiros
+
+
+	// testes especificos
+//	_oSQL:_sQuery +=   " AND COD_BASE IN ('9933','9926','99916','9966')"  // grupo da Lorena
+
+
 	_oSQL:_sQuery += " ORDER BY ZX5_14.ZX5_14GRUP, F.COD_BASE, F.DESCR_BASE, DESCR_BORDADURA, DESCR_EM_CONVERSAO, DESCR_ORGANICA"
 	_oSQL:Log ()
 	_sAliasQ = _oSQL:Qry2Trb ()
@@ -225,6 +232,16 @@ Static Function _Gera()
 				_aPrecos  = aclone (U_PrcUva22 ('03', _sProduto, 15, 'B', 'L', .T., .F.)[4])
 			elseif mv_par02 == 4
 				_aPrecos  = aclone (U_PrcUva22 ('07', _sProduto, 15, 'B', 'L', .T., .F.)[4])
+			endif
+		elseif mv_par01 == '2023'
+			if mv_par02 == 1
+				_aPrecos  = aclone (U_PrcUva23 ('01', _sProduto, 15, 'B', 'L', .T., .F.)[4])
+			elseif mv_par02 == 2
+				_aPrecos  = aclone (U_PrcUva23 ('03', _sProduto, 15, 'B', 'E', .T., .F.)[4])
+			elseif mv_par02 == 3
+				_aPrecos  = aclone (U_PrcUva23 ('03', _sProduto, 15, 'B', 'L', .T., .F.)[4])
+			elseif mv_par02 == 4
+				_aPrecos  = aclone (U_PrcUva23 ('07', _sProduto, 15, 'B', 'L', .T., .F.)[4])
 			endif
 		else
 			u_help ('Sem tratamento de calculo para a safra informada.')
@@ -340,7 +357,7 @@ Static Function _Gera()
 
 			// Procura algum grupo de precos que contenha todos os produtos desta coluna.
 			// Basicamente eh a mesma query do programa de calculo de precos.
-			if mv_par01 = '2022'  // Espero poder apenas acrescentar aqui " .or. mv_par01 == '2023' ..."
+			if mv_par01 $ '2022/2023'  // Espero poder apenas acrescentar aqui as proximas safras
 				_oSQL := ClsSQL ():New ()
 				_oSQL:_sQuery := "SELECT DISTINCT ZX5_13.ZX5_13GRUP, ZX5_13.ZX5_13DESC, ZX5_13.ZX5_13GBAS"
 				_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZX5") + " ZX5_13, "
@@ -394,7 +411,7 @@ Static Function _Gera()
 	next
 	//u_log (_aResult)
 	if ! empty (_sSemPreco)
-		u_help ('Itens sem preco definido: ' + _sSemPreco)
+		u_help ('Itens sem preco definido: ' + _sSemPreco,, .t.)
 	endif
 	u_aColsXLS (_aResult)
 return
