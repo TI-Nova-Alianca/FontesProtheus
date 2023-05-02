@@ -7,13 +7,48 @@ User Function claudia ()
 		return
 	endif
 
-	//u_help("Nada para executar")
+	u_help("Nada para executar")
 
-	u_help("reservas")
-	U_BatReserva()
+	//u_help("reservas")
+	//U_BatReserva()
 
+	//u_help("Atualiza fornecedor")
+	//_AtualizaSA2()
 
 Return
+//
+//
+//
+// Static function _AtualizaSA2()
+
+// 	sa2 -> (dbsetorder (1))
+// 	sa2 -> (dbgotop ())
+// 	//
+// 	do while ! sa2 -> (eof ())
+// 		u_log ('Ajustando item', sa2 -> a2_cod)
+// 			// Cria variaveis para uso na gravacao do evento de alteracao
+// 			regtomemory ("SA2", .F., .F.)
+			
+// 			// Grava evento de alteracao
+// 			_oEvento := ClsEvent():new ()
+// 			_oEvento:Alias   = 'SA2'
+//             _oEvento:Texto   = "Alteracao no campo <A2_DEDBSPC> de " + sa2->A2_DEDBSPC + " para 3"
+// 			_oEvento:CodEven = "SA2001"
+// 			_oEvento:Fornece = sa2->a2_cod
+//             _oEvento:LojaFor = sa2->a2_loja
+// 			_oEvento:Grava()
+		
+// 			reclock ("SA2", .f.)
+// 				SA2 -> A2_DEDBSPC  := '3'
+// 			msunlock ()
+			
+// 			u_log ('alterado')
+			
+// 		sa2 -> (dbskip ())
+// 	enddo
+// Return
+
+
 // //
 // // ------------------------------------------------------------------------------------
 // static function _IncManut()
