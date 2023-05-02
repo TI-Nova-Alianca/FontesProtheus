@@ -23,6 +23,8 @@
 // 08/02/2023 - Robert - Implementado metodo SegregarLt().
 // 22/02/2023 - Robert - Gravacao evento passa a tratar novos atributos ClsEvent:Safra e ClsEvent:CargaSafra.
 // 13/03/2023 - Robert - Eliminadas algumas linhas comentariadas; eventos deixam de gravar chave=safra+carga
+// 29/04/2023 - Robert - Metodo VarMenorVl() passa a receber parametro indicando qual preco deve verificar.
+//                     - Trocadas diversas chamadas de xfilial() por ::Filial.
 //
 
 #Include "Protheus.ch"
@@ -578,10 +580,10 @@ METHOD ExclDef (_sOrigem) Class ClsCarSaf
 		_sFrom += " FROM " + RetSQLName ("SZE") + " SZE, "
 		_sFrom +=            RetSQLName ("ZZD") + " ZZD "
 		_sFrom += " WHERE SZE.D_E_L_E_T_ = ''"
-		_sFrom +=   " AND SZE.ZE_FILIAL  = '" + xfilial ("SZE") + "'"
+		_sFrom +=   " AND SZE.ZE_FILIAL  = '" + ::Filial + "'"
 		_sFrom +=   " AND SZE.ZE_SAFRA   = '" + ::Safra + "'"
 		_sFrom +=   " AND ZZD.D_E_L_E_T_ = ''"
-		_sFrom +=   " AND ZZD.ZZD_FILIAL = '" + xfilial ("ZZD") + "'"
+		_sFrom +=   " AND ZZD.ZZD_FILIAL = '" + ::Filial + "'"
 		_sFrom +=   " AND ZZD.ZZD_SAFRA  = SZE.ZE_SAFRA"
 		_sFrom +=   " AND ZZD.ZZD_CARDES = '" + ::Carga + "'"
 		_sFrom +=   " AND ZZD.ZZD_CARORI = SZE.ZE_CARGA"
@@ -603,7 +605,7 @@ METHOD ExclDef (_sOrigem) Class ClsCarSaf
 		_oSQL:_sQuery := "UPDATE SZE SET SZE.ZE_CCOMPAR = replace (replace (SZE.ZE_CCOMPAR, '" + ::Carga + "', ''), '//', '/')"
 		_oSQL:_sQuery += " FROM " + RetSQLName ("SZE") + " SZE "
 		_oSQL:_sQuery += " WHERE SZE.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND SZE.ZE_FILIAL  = '" + xfilial ("SZE") + "'"
+		_oSQL:_sQuery +=   " AND SZE.ZE_FILIAL  = '" + ::Filial + "'"
 		_oSQL:_sQuery +=   " AND SZE.ZE_SAFRA   = '" + ::Safra + "'"
 		_oSQL:_sQuery +=   " AND SZE.ZE_CCOMPAR LIKE '%" + ::Carga + "%'"
 		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
@@ -616,7 +618,7 @@ METHOD ExclDef (_sOrigem) Class ClsCarSaf
 		_oSQL:_sQuery := "UPDATE " + RetSQLName ("SZN")
 		_oSQL:_sQuery +=   " SET D_E_L_E_T_ = '*'"
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND ZN_FILIAL  = '" + xfilial ("SZN") + "'"
+		_oSQL:_sQuery +=   " AND ZN_FILIAL  = '" + ::Filial + "'"
 		_oSQL:_sQuery +=   " AND ZN_ALIAS   = 'SZE'"
 		_oSQL:_sQuery +=   " AND ZN_COD     = '" + ::Safra + ::Carga + "'"
 		_oSQL:_sQuery +=   " AND ZN_RECNO   = " + cvaltochar (::RegSZE)
@@ -741,11 +743,11 @@ METHOD GeraAtrib (_sOrigem) Class ClsCarSaf
 
 		// Alimenta array de itens
 		szf -> (dbsetorder (1))  // filial + safra + carga + item
-		szf -> (dbseek (xfilial ("SZF") + sze -> ze_safra + sze -> ze_carga, .T.))
+		szf -> (dbseek (::Filial + ::Safra + ::Carga, .T.))
 		do while ! szf -> (eof ()) ;
-			.and. szf -> zf_filial == xfilial ("SZF") ;
-			.and. szf -> zf_safra  == sze -> ze_safra ;
-			.and. szf -> zf_carga  == sze -> ze_carga
+			.and. szf -> zf_filial == ::Filial ;
+			.and. szf -> zf_safra  == ::Safra ;
+			.and. szf -> zf_carga  == ::Carga
 
 			::AddItem ()
 			atail (::ItConducao) = szf -> zf_conduc
@@ -946,7 +948,7 @@ METHOD SegregarLt () Class ClsCarSaf
 	if _lContinua
 		_sWhereSD1 +=  " FROM " + RetSQLName ("SD1") + " SD1"
 		_sWhereSD1 += " WHERE SD1.D_E_L_E_T_ = ''"
-		_sWhereSD1 +=   " AND SD1.D1_FILIAL  = '" + xfilial ("SD1") + "'"
+		_sWhereSD1 +=   " AND SD1.D1_FILIAL  = '" + ::Filial + "'"
 		_sWhereSD1 +=   " AND SD1.D1_DOC     = '" + ::Contranota + "'"
 		_sWhereSD1 +=   " AND SD1.D1_SERIE   = '" + ::SerieCtrn + "'"
 		_sWhereSD1 +=   " AND SD1.D1_FORNECE = '" + ::Fornece + "'"
@@ -969,7 +971,7 @@ METHOD SegregarLt () Class ClsCarSaf
 			_lContinua = .T.  // Para tentar os proximos lotes, caso de problema neste.
 			_sWhereSB8 :=  " FROM " + RetSQLName ("SB8") + " SB8"
 			_sWhereSB8 += " WHERE SB8.D_E_L_E_T_ = ''"
-			_sWhereSB8 +=   " AND SB8.B8_FILIAL  = '" + xfilial ("SB8") + "'"
+			_sWhereSB8 +=   " AND SB8.B8_FILIAL  = '" + ::Filial + "'"
 			_sWhereSB8 +=   " AND SB8.B8_PRODUTO = '" + _aLotesSD1 [_nLoteSD1, 1] + "'"
 			_sWhereSB8 +=   " AND SB8.B8_LOTECTL = '" + _aLotesSD1 [_nLoteSD1, 2] + "'"
 			_sWhereSB8 +=   " AND SB8.B8_DOC     = '" + ::Contranota + "'"
@@ -992,7 +994,7 @@ METHOD SegregarLt () Class ClsCarSaf
 					// Verifica se jah foi enderecado.
 					_sWhereSBF :=  " FROM " + RetSQLName ("SBF") + " SBF"
 					_sWhereSBF += " WHERE SBF.D_E_L_E_T_ = ''"
-					_sWhereSBF +=   " AND SBF.BF_FILIAL  = '" + xfilial ("SBF") + "'"
+					_sWhereSBF +=   " AND SBF.BF_FILIAL  = '" + ::Filial + "'"
 					_sWhereSBF +=   " AND SBF.BF_PRODUTO = '" + _aLotesSD1 [_nLoteSD1, 1] + "'"
 					_sWhereSBF +=   " AND SBF.BF_LOTECTL = '" + _aLotesSD1 [_nLoteSD1, 2] + "'"
 					_sWhereSBF +=   " AND SBF.BF_LOCAL   = '" + _aLotesSB8 [1, 3] + "'"
@@ -1049,7 +1051,7 @@ METHOD SegregarLt () Class ClsCarSaf
 				_oSQL:_sQuery := "UPDATE SDA SET DA_LOTECTL = '" + _sLoteNovo + "'"
 				_oSQL:_sQuery +=  " FROM " + RetSQLName ("SDA") + " SDA"
 				_oSQL:_sQuery += " WHERE SDA.D_E_L_E_T_ = ''"
-				_oSQL:_sQuery +=   " AND SDA.DA_FILIAL  = '" + xfilial ("SDA") + "'"
+				_oSQL:_sQuery +=   " AND SDA.DA_FILIAL  = '" + ::Filial + "'"
 				_oSQL:_sQuery +=   " AND SDA.DA_DOC     = '" + ::Contranota + "'"
 				_oSQL:_sQuery +=   " AND SDA.DA_SERIE   = '" + ::SerieCtrn + "'"
 				_oSQL:_sQuery +=   " AND SDA.DA_CLIFOR  = '" + ::Fornece + "'"
@@ -1068,7 +1070,7 @@ METHOD SegregarLt () Class ClsCarSaf
 				_oSQL:_sQuery := "UPDATE SDB SET DB_LOTECTL = '" + _sLoteNovo + "'"
 				_oSQL:_sQuery +=  " FROM " + RetSQLName ("SDB") + " SDB"
 				_oSQL:_sQuery += " WHERE SDB.D_E_L_E_T_ = ''"
-				_oSQL:_sQuery +=   " AND SDB.DB_FILIAL  = '" + xfilial ("SDB") + "'"
+				_oSQL:_sQuery +=   " AND SDB.DB_FILIAL  = '" + ::Filial + "'"
 				_oSQL:_sQuery +=   " AND SDB.DB_DOC     = '" + ::Contranota + "'"
 				_oSQL:_sQuery +=   " AND SDB.DB_SERIE   = '" + ::SerieCtrn + "'"
 				_oSQL:_sQuery +=   " AND SDB.DB_CLIFOR  = '" + ::Fornece + "'"
@@ -1087,7 +1089,7 @@ METHOD SegregarLt () Class ClsCarSaf
 				_oSQL:_sQuery := "UPDATE SD5 SET D5_LOTECTL = '" + _sLoteNovo + "'"
 				_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD5") + " SD5"
 				_oSQL:_sQuery += " WHERE SD5.D_E_L_E_T_ = ''"
-				_oSQL:_sQuery +=   " AND SD5.D5_FILIAL  = '" + xfilial ("SD5") + "'"
+				_oSQL:_sQuery +=   " AND SD5.D5_FILIAL  = '" + ::Filial + "'"
 				_oSQL:_sQuery +=   " AND SD5.D5_DOC     = '" + ::Contranota + "'"
 				_oSQL:_sQuery +=   " AND SD5.D5_SERIE   = '" + ::SerieCtrn + "'"
 				_oSQL:_sQuery +=   " AND SD5.D5_CLIFOR  = '" + ::Fornece + "'"
@@ -1201,6 +1203,7 @@ METHOD TodasComp (_sLista) Class ClsCarSaf
 return _sLista
 
 
+// --------------------------------------------------------------------------
 static function _Arr2Str (_a)
 	local _n := 0
 	local _sRet := ''
@@ -1211,8 +1214,11 @@ return _sRet
 
 
 // --------------------------------------------------------------------------
-// Identifica a variedade de menor valor
-METHOD VarMenorVl () class ClsCarSaf
+// Identifica a variedade de menor valor entre todas envolvidas nesta carga.
+// A lista de 'variedades envolvidas' considera, tambem, cargas compartilhadas.
+// O parametro 'qual preco' deve manter compatibilidade com a funcao de calculo
+// de precos da safra em questao.
+METHOD VarMenorVl (_nQualPrc) class ClsCarSaf
 	local _aProdut   := {}
 	local _nProdut   := 0
 	local _aTodasCar := {}
@@ -1227,7 +1233,7 @@ METHOD VarMenorVl () class ClsCarSaf
 	else  // Se nao tiver compartilhamento, eh somente a propria carga.
 		_aTodasCar = {::Carga}
 	endif
-	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Lista de todas as cargas a verificar: ' + _Arr2Str (_aTodasCar))
+//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Lista de todas as cargas a verificar: ' + _Arr2Str (_aTodasCar))
 
 	// Monta lista de todas as variedades envolvidas.
 	for _nTodasCar = 1 to len (_aTodasCar)
@@ -1254,18 +1260,18 @@ METHOD VarMenorVl () class ClsCarSaf
 	next
 
 	// Busca precos para as variedades envolvidas.
-	// Manter aqui sempre a mesma politica do VA_RUSN !!!
+	// Manter aqui sempre a mesma politica do VA_RUSN e demais programas envolvidos!!!
 	for _nProdut = 1 to len (_aProdut)
 		if ::Safra == '2019'
-			_aProdut [_nProdut, 2] = U_PrcUva19 (::Filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3])[1]
+			_aProdut [_nProdut, 2] = U_PrcUva19 (::Filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3])[_nQualPrc]
 		elseif ::Safra == '2020'
-			_aProdut [_nProdut, 2] = U_PrcUva20 (::Filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F.)[5]  // pos.5=preco MOC
+			_aProdut [_nProdut, 2] = U_PrcUva20 (::Filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F.)[_nQualPrc]  // pos.5=preco MOC
 		elseif ::Safra == '2021'
-			_aProdut [_nProdut, 2] = U_PrcUva21 (::Filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[2]  // pos.2=preco de compra
+			_aProdut [_nProdut, 2] = U_PrcUva21 (::Filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[_nQualPrc]  // pos.2=preco de compra
 		elseif ::Safra == '2022'
-			_aProdut [_nProdut, 2] = U_PrcUva22 (::Filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[2]  // pos.2 = preco de compra.
+			_aProdut [_nProdut, 2] = U_PrcUva22 (::Filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[_nQualPrc]  // pos.2 = preco de compra.
 		elseif ::Safra == '2023'
-			_aProdut [_nProdut, 2] = U_PrcUva23 (::Filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[5]  // pos.5 = preco MOC
+			_aProdut [_nProdut, 2] = U_PrcUva23 (::Filial, _aProdut [_nProdut, 1], 15.0, 'B', _aProdut [_nProdut, 3], .F., .T.)[_nQualPrc]  // pos.5 = preco MOC
 		else
 			u_help (procname (1) + '.' + procname () + ": Sem tratamento para verificar precificacao em caso de mistura de variedades nesta safra.",, .t.)
 		endif
@@ -1282,8 +1288,8 @@ METHOD VarMenorVl () class ClsCarSaf
 	// Ordena por preco, de forma que, depois, baste pegar a primeira linha.
 	_aProdut = asort (_aProdut,,, {|_x, _y| _x[2] < _y [2]})
 	
-	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Variedade(s) de menor valor envolvidas:')
-	U_Log2 ('debug', _aProdut)
+//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Variedade(s) de menor valor envolvidas:')
+//	U_Log2 ('debug', _aProdut)
 
 	// Se alguma variedade ficou sem valor, eh melhor nao retornar nada, pois
 	// eh importante que eu consiga, sempre, buscar os precos de todas.
@@ -1291,7 +1297,7 @@ METHOD VarMenorVl () class ClsCarSaf
 		u_help ("Problemas na busca da variedade de menor valor: nenhuma variedade lida!",, .t.)
 		_aProdut = {}
 	endif
-	if _aProdut [1, 2] == 0
+	if len (_aProdut) >= 1 .and. _aProdut [1, 2] == 0
 		u_help ("Problemas na busca da variedade de menor valor: variedade '" + alltrim (_aProdut [1, 1]) + "' ficou sem valor!",, .t.)
 		_aProdut = {}
 	endif

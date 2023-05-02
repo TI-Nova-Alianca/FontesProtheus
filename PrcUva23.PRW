@@ -12,6 +12,11 @@
 
 // Historico de alteracoes:
 // 07/12/2022 - Robert - Copiada versao de 2022, pois estah definido que manteremos os precos do ano passado.
+// 28/04/2023 - Robert - Passamos a safra chamando a funcao de calculo de
+//                       precos pela MOC de 2022. Passada a safra, posso
+//                       voltar a calcular precos normalmente.
+//                     - Refeita parte de agios, conferencia com planilhas.
+//                     - Criado tratamento para campos ZX5_13GMAG e ZX5_13PMIN
 //
 
 #include "VA_INCLU.prw"
@@ -33,14 +38,8 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	local _nPBasComp := 0
 	local _nPBasAgiE := 0
 	local _nPBasAgiC := 0
-	local _nPerAgAli := 0
-	local _nPerAgMOC := 0
-	local _nVlrAgioE := 0
-	local _nVlrAgioC := 0
-	local _nVlrAgioM := 0
 	local _aGraus    := {}
 	local _nAux      := 0
-	local _nPosGBase := 0
 	local _nPosGrau  := 0
 	local _nArredEnt := 4  // Arredondar o preco para no maximo X decimais.
 	local _nArredCom := 4  // Arredondar o preco para no maximo X decimais.
@@ -51,21 +50,15 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	local _sGrpZX513 := ""
 	local _sGrpZX5MO := ""
 	local _nPBaseMOC := 0
-	local _nVlrMenor := 0
-	local _nVlrMaior := 0
-	local _nContador := 0
+	local _nGMinAgio := 0
+	local _nPrMinimo := 0
 	local _sSafraPrc := '2023'  // Ajustar caso seja copiado para o proximo ano!
-	local _lUsaMoc22 := .F.
-
-
-
-	// Durante o recebimento da safra 2023, faremos compra a preco de tabela MOC2022 cfe.e-mail Colleoni 12/12/2022.
-	// Restante do valor vai ser decidido posteriormente.
-	U_Log2 ('aviso', '[' + procname () + ']Durante o recebimento da safra 2023, faremos compra a preco de tabela MOC2022')
-	_lUsaMoc22 = .T.
-	_sSafraPrc = '2022'
-
-
+	local _nAgAliAnt := 0
+	local _nAgMOCAnt := 0
+	local _nAgAliPos := 0
+	local _nAgMOCPos := 0
+	local _nGrIniTab := 6   // Grau inicial a ser gerado
+	local _nGrFimTab := 26  // Grau final a ser gerado
 
 	if _lContinua
 		_nGrau = round (_nGrau, 1)  // Por enquanto trabalhamos apenas com 1 decimal.
@@ -82,7 +75,7 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	// Viniferas tem tratamento diferenciado conforme a filial onde sao recebidas, podendo inclusive
 	// ser precificadas como outra variedade.
 	if _lContinua
-		u_log2 ('info', '[' + procname () + '] Calculando preco uva ' + alltrim (_sProduto) + '-' + alltrim (sb1 -> b1_desc) + ' gr: ' + cvaltochar (_nGrau) + ' entregue na filial ' + _sFilial)
+//		u_log2 ('info', '[' + procname () + '] Calculando preco uva ' + alltrim (_sProduto) + '-' + alltrim (sb1 -> b1_desc) + ' gr: ' + cvaltochar (_nGrau) + ' entregue na filial ' + _sFilial)
 		if sb1 -> b1_varuva == 'F'
 			if _sFilial $ '01/09'
 				_lIsabel = .T.
@@ -137,15 +130,13 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 			// Define o % a ser aplicado sobre o preco do produto base
 			if sb1 -> b1_vaorgan $ 'BEO'  // [B]ordadura, [E]m conversao ou [O]rganica
 				_nAgioOrg = 0
-				if ! _lUsaMoc22
-					if sb1 -> b1_vaorgan == 'E'
-						_nAgioOrg = 15
-					elseif sb1 -> b1_vaorgan == 'O'
-						if sb1 -> b1_vacor == 'T' .and. sb1 -> b1_vattr == 'S'  // Tintorias
-							_nAgioOrg = 55
-						else
-							_nAgioOrg = 70
-						endif
+				if sb1 -> b1_vaorgan == 'E'
+					_nAgioOrg = 15
+				elseif sb1 -> b1_vaorgan == 'O'
+					if sb1 -> b1_vacor == 'T' .and. sb1 -> b1_vattr == 'S'  // Tintorias
+						_nAgioOrg = 55
+					else
+						_nAgioOrg = 70
 					endif
 				endif
 				
@@ -175,7 +166,9 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 
 		// Busca precos base (de entrada e de compra) desta variedade.
 		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := "SELECT ZX5_13.ZX5_13GBAS, ZX5_13.ZX5_13PBEN, ZX5_13.ZX5_13PBCO, ZX5_13.ZX5_13BAGE, ZX5_13.ZX5_13GRUP, ZX5_13.ZX5_13BAGC"
+		_oSQL:_sQuery := "SELECT ZX5_13.ZX5_13GBAS, ZX5_13.ZX5_13PBEN, ZX5_13.ZX5_13PBCO"
+		_oSQL:_sQuery +=      " ,ZX5_13.ZX5_13BAGE, ZX5_13.ZX5_13GRUP, ZX5_13.ZX5_13BAGC"
+		_oSQL:_sQuery +=      " ,ZX5_13.ZX5_13GMAG, ZX5_13.ZX5_13PMIN"
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZX5") + " ZX5_13, "
 		_oSQL:_sQuery +=             RetSQLName ("ZX5") + " ZX5_14 "
 		_oSQL:_sQuery += " WHERE ZX5_13.D_E_L_E_T_ = ''"
@@ -214,6 +207,9 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 			_nPBasAgiE = _aGrupo [1, 4]  // ZX5_13BAGE
 			_sGrpZX513 = _aGrupo [1, 5]  // ZX5_13GRUP
 			_nPBasAgiC = _aGrupo [1, 6]  // ZX5_13BAGC
+			_nGMinAgio = _aGrupo [1, 7]  // ZX5_13GMAG
+			_nPrMinimo = _aGrupo [1, 8]  // ZX5_13PMIN
+
 			if _nGBaseAli <= 0
 				_sComent += "Grau base vazio ou invalido para o produto '" + alltrim (sb1 -> b1_cod) + ' - ' + alltrim (sb1 -> b1_desc) + "' na tabela 13 (grupos de uvas) do arquivo ZX5 para esta safra."
 				_lContinua = .F.
@@ -270,214 +266,174 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 
 	endif
 
-	// Gera lista com todos os graus e agios a aplicar, para facilitar o calculo.
-	// Gera sempre uma tabela com todos os graus e, no final, 'pesca' dela apenas o grau solicitado.
-	if _lContinua
 	//	u_log2 ('debug', 'Grau: ' + cvaltochar (_nGrau) + '  grau base alianca: ' + cvaltochar (_nGBaseAli) + '  Prc.grau base: ' + cvaltochar (_nPBasEntr) + ' (entr)   ' + cvaltochar (_nPBasComp) + ' (compra)   ' + cvaltochar (_nPBasAgiE) + ' (base p/agio)   grupo ZX513: ' + cvaltochar (_sGrpZX513))
 	//	u_log2 ('debug', 'Grau base MOC: ' + cvaltochar (_nGBaseMOC) + '  Prc.grau base MOC: ' + cvaltochar (_nPBaseMOC) + '   grupo ZX5_MOC: ' + cvaltochar (_sGrpZX5MO))
 
-		// A cada mudanca (valores inteiros) de grau, o percentual de agio pode mudar.
+	// Gera lista com todos os graus possiveis (no final, 'pesca' dela apenas o grau solicitado).
+	if _lContinua
 		_aGraus = {}
-		_nAux = 6  // Caso precise um grau menor, pode-se alterar aqui
-		do while _nAux <= 26  // Caso precise um grau maior, pode-se alterar aqui
-			
-			// Define o agio da Alianca (costuma ser diferente da MOC)
-			if _nAux == _nGBaseAli
-				_nPerAgAli = 0
-			elseif _nAux < _nGBaseAli  // Verifica quantos graus encontra-se abaixo do grau base
-				if int (_nGBaseAli) - int (_nAux) <= 1
-					_nPerAgAli = 5
-				elseif int (_nGBaseAli) - int (_nAux) <= 2
-					_nPerAgAli = 10
-				else
-					_nPerAgAli = 15
-				endif
-			elseif _nAux > _nGBaseAli  // Verifica quantos graus encontra-se acima do grau base
-				if _nAux - _nGBaseAli <= 1
-					_nPerAgAli = 5
-				elseif _nAux - _nGBaseAli <= 2
-					_nPerAgAli = 10
-				else
-					_nPerAgAli = 15
-				endif
-			//	u_log2 ('debug', 'para grau ' + cvaltochar (_nAux) +  ' definiu _nPerAgAli=' + cvaltochar (_nPerAgAli))
-			endif
-
-
-			// Define o agio da MOC (costuma ser diferente da Alianca)
-			if _nAux == _nGBaseMOC
-				_nPerAgMOC = 0
-			elseif _nAux < _nGBaseMOC  // Verifica quantos graus encontra-se abaixo do grau base
-				if int (_nGBaseMOC) - _nAux <= 1
-					_nPerAgMOC = 5
-				elseif int (_nGBaseMOC) - _nAux <= 2
-					_nPerAgMOC = 15
-				elseif int (_nGBaseMOC) - _nAux <= 3
-					_nPerAgMOC = 30
-
-				// Os percentuais a seguir nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao,
-				// mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
-				elseif int (_nGBaseMOC) - _nAux <= 4
-					_nPerAgMOC = 50
-				elseif int (_nGBaseMOC) - _nAux <= 5
-					_nPerAgMOC = 55
-				elseif int (_nGBaseMOC) - _nAux <= 6
-					_nPerAgMOC = 60
-				elseif int (_nGBaseMOC) - _nAux <= 7
-					_nPerAgMOC = 70
-				elseif int (_nGBaseMOC) - _nAux <= 8
-					_nPerAgMOC = 80
-				elseif int (_nGBaseMOC) - _nAux <= 9
-					_nPerAgMOC = 85
-				elseif int (_nGBaseMOC) - _nAux <= 10
-					_nPerAgMOC = 90
-				elseif int (_nGBaseMOC) - _nAux <= 11
-					_nPerAgMOC = 95
-				endif
-			elseif _nAux > _nGBaseMOC  // Verifica quantos graus encontra-se acima do grau base
-				if _nAux - _nGBaseMOC <= 1
-					_nPerAgMOC = 5
-				elseif _nAux - _nGBaseMOC <= 2
-					_nPerAgMOC = 15
-				elseif _nAux - _nGBaseMOC <= 3
-					_nPerAgMOC = 25
-				elseif _nAux - _nGBaseMOC <= 4
-					_nPerAgMOC = 35
-				elseif _nAux - _nGBaseMOC <= 5
-					_nPerAgMOC = 45
-				elseif _nAux - _nGBaseMOC <= 6
-					_nPerAgMOC = 55
-				elseif _nAux - _nGBaseMOC <= 7
-					_nPerAgMOC = 65
-				elseif _nAux - _nGBaseMOC <= 8
-					_nPerAgMOC = 75
-				elseif _nAux - _nGBaseMOC <= 9
-					_nPerAgMOC = 85
-				elseif _nAux - _nGBaseMOC <= 10
-					_nPerAgMOC = 95
-
-				// Os percentuais a seguir nao constam no MOC por que a CONAB nao especificou,
-				// mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
-				elseif _nAux - _nGBaseMOC <= 11
-					_nPerAgMOC = 105
-				elseif _nAux - _nGBaseMOC <= 12
-					_nPerAgMOC = 115
-
-				endif
-			endif
-//			u_log2 ('debug', 'para grau ' + cvaltochar (_nAux) +  ' definiu _nPerAgMOC = ' + cvaltochar (_nPerAgMOC))
-
+		_nAux = _nGrIniTab // 6  // Caso precise um grau menor, pode-se alterar aqui
+		do while _nAux <= _nGrFimTab // 26  // Caso precise um grau maior, pode-se alterar aqui
 			aadd (_aGraus, afill (array (.PrcUvaQtColunas), 0))
-			_aGraus [len (_aGraus), .PrcUvaColGrau]            = _nAux
-			_aGraus [len (_aGraus), .PrcUvaColPercAgioAlianca] = _nPerAgAli
-			_aGraus [len (_aGraus), .PrcUvaColPercAgioMOC]     = _nPerAgMOC
+			_aGraus [len (_aGraus), .PrcUvaColGrau] = _nAux
 			_nAux += 0.1
 		enddo
-//		u_log2 ('debug', 'tabela de graus com os percentuais de agio:')
+	//	u_log2 ('debug', 'tabela de graus inicial:')
+	//	u_log2 ('debug', _aGraus)
+	endif
+
+	// Define percentuais de agio (% acrescido ou diminuido cf. muda o grau) para os graus inteiros.
+	if _lContinua
+		for _nAux = 1 to len (_aGraus)
+			if _aGraus [_nAux, .PrcUvaColGrau] = int (_aGraus [_nAux, .PrcUvaColGrau])
+			
+				// Define o agio da Alianca (costuma ser diferente da MOC)
+				do case
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli - 12 ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = -165
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli - 11 ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = -150
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli - 10 ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = -135
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli - 9  ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = -120
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli - 8  ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = -105
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli - 7  ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = -90
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli - 6  ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = -75
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli - 5  ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = -60
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli - 4  ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = -45
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli - 3  ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = -30
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli - 2  ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = -15
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli - 1  ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = -5
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli - 0  ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = 0
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli + 1  ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = 5
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli + 2  ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = 15
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli + 3  ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = 25
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli + 4  ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = 35
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli + 5  ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = 45
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli + 6  ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = 55
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli + 7  ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = 65
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli + 8  ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = 75
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli + 9  ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = 85
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli + 10 ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = 95
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli + 11 ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = 105
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli + 12 ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = 115
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli + 13 ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = 125
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli + 14 ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = 135
+				otherwise
+					u_help ("Sem definicao de percentual de AGIO ALIANCA para grau " + cvaltochar (_aGraus [_nAux, .PrcUvaColGrau]),, .t.)
+					_lContinua = .F.
+				endcase
+
+				// Define o agio da MOC (costuma ser diferente da Alianca)
+				do case
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 12 ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 100  // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 11 ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 95   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 10 ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 90   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 9  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 85   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 8  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 80   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 7  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 70   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 6  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 60   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 5  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 55   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 4  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 50   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 3  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 30
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 2  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 15
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 1  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 5
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 0  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 0
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC + 1  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 5
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC + 2  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 15
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC + 3  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 25
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC + 4  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 35
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC + 5  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 45
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC + 6  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 55
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC + 7  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 65
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC + 8  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 75
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC + 9  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 85
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC + 10 ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 95
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC + 11 ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 105  // Este % nao constam no MOC, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC + 12 ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 115  // Este % nao constam no MOC, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC + 13 ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 125  // Este % nao constam no MOC, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC + 14 ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 135  // Este % nao constam no MOC, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				otherwise
+					u_help ("Sem definicao de percentual de AGIO CONAB para grau " + cvaltochar (_aGraus [_nAux, .PrcUvaColGrau]),, .t.)
+					_lContinua = .F.
+				endcase
+			endif
+		next
+//		u_log2 ('debug', 'tabela de graus com agios dos graus inteiros:')
+//		u_log2 ('debug', _aGraus)
+	endif
+
+	// Como preciso gerar os graus com decimais e os agios sao definidos apenas
+	// para os graus inteiros, tenho que calcular eles para os decimais.
+	if _lContinua
+		for _nAux = 1 to len (_aGraus)
+
+			// Para os inteiros, jah ficou fixo anteriormente.
+			if _aGraus [_nAux, .PrcUvaColGrau] != int (_aGraus [_nAux, .PrcUvaColGrau])
+
+				// Encontra o agio do 'grau inteiro' anterior
+				_nPosGrInt = _nAux
+				do while _nPosGrInt > 0 .and. _aGraus [_nPosGrInt, .PrcUvaColGrau] != int (_aGraus [_nPosGrInt, .PrcUvaColGrau])
+					_nPosGrInt --
+				enddo
+				if _nPosGrInt > 0
+					_nAgAliAnt = _aGraus [_nPosGrInt, .PrcUvaColPercAgioAlianca]  // Agora tenho o % de agio do grau inteiro
+					_nAgMOCAnt = _aGraus [_nPosGrInt, .PrcUvaColPercAgioMOC]  // Agora tenho o % de agio do grau inteiro
+				else
+					u_help ("Nao consegui encontrar grau inteiro (menor que " + cvaltochar (_aGraus [_nAux, .PrcUvaColGrau]) + ") para ler agio e calcular decimais.",, .t.)
+					_lContinua = .F.
+				endif
+
+				// Encontra o agio do 'grau inteiro' posterior
+				_nPosGrInt = _nAux
+				do while _nPosGrInt <= len (_aGraus) .and. _aGraus [_nPosGrInt, .PrcUvaColGrau] != int (_aGraus [_nPosGrInt, .PrcUvaColGrau])
+					_nPosGrInt ++
+				enddo
+				if _nPosGrInt <= len (_aGraus)
+					_nAgAliPos = _aGraus [_nPosGrInt, .PrcUvaColPercAgioAlianca]  // Agora tenho o % de agio do grau inteiro
+					_nAgMOCPos = _aGraus [_nPosGrInt, .PrcUvaColPercAgioMOC]  // Agora tenho o % de agio do grau inteiro
+				else
+					u_help ("Nao consegui encontrar grau inteiro (maior que " + cvaltochar (_aGraus [_nAux, .PrcUvaColGrau]) + ") para ler agio e calcular decimais.",, .t.)
+					_lContinua = .F.
+				endif
+
+		//		U_Log2 ('debug', 'Gr ' + transform (_aGraus [_nAux, .PrcUvaColGrau], '@E 99.9') + ' _nAgAliAnt=' + cvaltochar (_nAgAliAnt) + ' _nAgAliPos=' + cvaltochar (_nAgAliPos))
+				_aGraus [_nAux, .PrcUvaColPercAgioAlianca] = _nAgAliAnt - (_nAgAliAnt - _nAgAliPos) * (_aGraus [_nAux, .PrcUvaColGrau] - int (_aGraus [_nAux, .PrcUvaColGrau]))
+				_aGraus [_nAux, .PrcUvaColPercAgioMOC]     = _nAgMOCAnt - (_nAgMOCAnt - _nAgMOCPos) * (_aGraus [_nAux, .PrcUvaColGrau] - int (_aGraus [_nAux, .PrcUvaColGrau]))
+			endif
+		next
+	//	u_log2 ('debug', 'tabela de graus com agios dos graus decimais:')
+	//	u_log2 ('debug', _aGraus)
+	endif
+
+
+	// Gera precos a partir de aplicacao de agio / desagio sobre o preco do grau base.
+	if _lContinua
+		for _nAux = 1 to len (_aGraus)
+			_aGraus [_nAux, .PrcUvaColPrcEntrada] = _nPBasEntr + _nPBasEntr * _aGraus [_nAux, .PrcUvaColPercAgioAlianca] / 100
+			_aGraus [_nAux, .PrcUvaColPrcCompra]  = _nPBasComp + _nPBasComp * _aGraus [_nAux, .PrcUvaColPercAgioAlianca] / 100
+			_aGraus [_nAux, .PrcUvaColPrcMOC]     = _nPBaseMOC + _nPBaseMOC * _aGraus [_nAux, .PrcUvaColPercAgioMOC] / 100
+
+			// Abaixo de determinado grau, usa preco minimo.
+			if _aGraus [_nAux, .PrcUvaColGrau] < _nGMinAgio
+				_aGraus [_nAux, .PrcUvaColPrcEntrada] = _nPrMinimo
+				_aGraus [_nAux, .PrcUvaColPrcCompra]  = _nPrMinimo
+			endif
+		next
+//		u_log2 ('debug', 'tabela de graus com os precos calculados:')
 //		u_log2 ('debug', _aGraus)
 	endif
 
 
-	// Calcula tabela de precos a partir de aplicacao de agio / desagio sobre o preco do grau base.
+	// PARTE III: aplica % de agio das organicas, se for o caso.
+	// Estamos fazendo as entradas a valor de CONAB neste ano, mas jah vamos aplicar o agio nas organicas. 
 	if _lContinua
-
-		// PARTE I: gera valores de 'entrada' e 'compra' usando criterios de
-		// agio da Alianca (variacao entre graus geralmente eh diferente da CONAB)
-		// Encontra a linha e atualiza preco do grau base Alianca na lista de graus.
-		_nPosGBase = ascan (_aGraus, {|_x| _x [.PrcUvaColGrau] == _nGBaseAli})
-		if _nPosGBase == 0
-			_sComent += "Grau base Alianca " + cvaltochar (_nGBaseAli) + " nao se encontra na array de graus. Revise o programa " + procname ()
-			_lContinua = .F.
-		else
-			_aGraus [_nPosGBase, .PrcUvaColPrcEntrada] = _nPBasEntr
-			_aGraus [_nPosGBase, .PrcUvaColPrcCompra]  = _nPBasComp
-
-			// Aplica percentual de agio 'do grau base para os graus menores'
-			for _nAux = _nPosGBase - 1 to 1 step -1
-//				u_log2 ('debug', 'Aplicando agio abaixo para o grau ' + cvaltochar (_aGraus [_nAux, .PrcUvaColGrau]))
-				_nVlrAgioE = round (_nPBasAgiE * _aGraus [_nAux, .PrcUvaColPercAgioAlianca] / 100 / 10, 5)
-				_nVlrAgioC = round (_nPBasAgiC * _aGraus [_nAux, .PrcUvaColPercAgioAlianca] / 100 / 10, 5)
-//				u_log2 ('debug', '_nVlrAgioC = ' + cvaltochar (_nVlrAgioC))
-				_aGraus [_nAux, .PrcUvaColVlrAgioEntrada] = _nVlrAgioE  // Guarda apenas para auxiliar nas conferencias
-				_aGraus [_nAux, .PrcUvaColVlrAgioCompra]  = _nVlrAgioC  // Guarda apenas para auxiliar nas conferencias
-				_aGraus [_nAux, .PrcUvaColPrcEntrada]     = _aGraus [_nAux + 1, .PrcUvaColPrcEntrada] - _nVlrAgioE
-				_aGraus [_nAux, .PrcUvaColPrcCompra]      = _aGraus [_nAux + 1, .PrcUvaColPrcCompra]  - _nVlrAgioC
-			next
-
-			// Aplica percentual de agio 'do grau base para os maiores'
-			for _nAux = _nPosGBase + 1 to len (_aGraus)
-				_nVlrAgioE = round (_nPBasAgiE * _aGraus [_nAux, .PrcUvaColPercAgioAlianca] / 100 / 10, 5)
-				_nVlrAgioC = round (_nPBasAgiC * _aGraus [_nAux, .PrcUvaColPercAgioAlianca] / 100 / 10, 5)
-				_aGraus [_nAux, .PrcUvaColVlrAgioEntrada] = _nVlrAgioE  // Guarda apenas para auxiliar nas conferencias
-				_aGraus [_nAux, .PrcUvaColVlrAgioCompra]  = _nVlrAgioC  // Guarda apenas para auxiliar nas conferencias
-				_aGraus [_nAux, .PrcUvaColPrcEntrada]     = _aGraus [_nAux - 1, .PrcUvaColPrcEntrada] + _nVlrAgioE
-				_aGraus [_nAux, .PrcUvaColPrcCompra]      = _aGraus [_nAux - 1, .PrcUvaColPrcCompra]  + _nVlrAgioC
-			next
-		endif
-
-
-		// PARTE II: gera valores da MOC usando criterios de agio da CONAB
-		// (variacao entre graus geralmente eh diferente da nossa)
-		// Atualiza preco do grau base MOC na lista de graus.
-		_nPosGBase = ascan (_aGraus, {|_x| _x [.PrcUvaColGrau] == _nGBaseMOC})
-		if _nPosGBase == 0
-			_sComent += "Grau base MOC " + cvaltochar (_nGBaseMOC) + " nao se encontra na array de graus. Revise o programa " + procname ()
-			_lContinua = .F.
-		else
-			_aGraus [_nPosGBase, .PrcUvaColPrcMOC] = _nPBaseMOC
-
-			// Apenas para os graus inteiros
-			// Aplica percentual de agio 'do grau base para os graus menores'
-			for _nAux = _nPosGBase - 10 to 1 step -10
-				_nVlrAgioM = round (_nPBaseMOC * _aGraus [_nAux, .PrcUvaColPercAgioMOC] / 100, 5)
-				_aGraus [_nAux, .PrcUvaColPrcMOC] = _nPBaseMOC - _nVlrAgioM  // Aplicado ao preco do grau base e nao do grau anterior/posterior.
-				//u_log ('calculando grau', _aGraus [_nAux, .PrcUvaColGrau], 'perc.agio:', _aGraus [_nAux, .PrcUvaColPercAgioMOC], 'vlg.agio:', _nVlrAgioM, 'prc.base:', _nPBaseMOC, 'resultou:', _aGraus [_nAux, .PrcUvaColPrcMOC])
-			next
-			//
-			// Aplica percentual de agio 'do grau base para os maiores'
-			for _nAux = _nPosGBase + 10 to len (_aGraus) step 10
-				_nVlrAgioM = round (_nPBaseMOC * _aGraus [_nAux, .PrcUvaColPercAgioMOC] / 100, 5)
-				_aGraus [_nAux, .PrcUvaColPrcMOC] = _nPBaseMOC + _nVlrAgioM  // Aplicado ao preco do grau base e nao do grau anterior/posterior.
-			next
-
-			// Calcula valores dos graus decimais pela diferenca entre o grau anterior e posterior (inteiros)
-			// Calcula 'do grau base para os graus menores'
-			for _nAux = _nPosGBase to 10 step -10
-				_nVlrMaior = _aGraus [_nAux, .PrcUvaColPrcMOC]
-				_nVlrMenor = _aGraus [_nAux - 10, .PrcUvaColPrcMOC]
-				//u_log ('Valores entre', _nVlrMenor, 'e', _nVlrMaior)
-				for _nContador = 1 to 9
-					_aGraus [_nAux - _nContador, .PrcUvaColPrcMOC] = _nVlrMaior - (_nVlrMaior - _nVlrMenor) / 10 * _nContador
-				next
-			next
-			//
-			// Calcula 'do grau base para os graus maiores'
-			for _nAux = _nPosGBase to len (_aGraus) - 10 step 10
-				_nVlrMaior = _aGraus [_nAux + 10, .PrcUvaColPrcMOC]
-				_nVlrMenor = _aGraus [_nAux, .PrcUvaColPrcMOC]
-				//u_log ('Valores entre', _nVlrMenor, 'e', _nVlrMaior)
-				for _nContador = 1 to 9
-					_aGraus [_nAux + _nContador, .PrcUvaColPrcMOC] = _nVlrMenor + (_nVlrMaior - _nVlrMenor) / 10 * _nContador
-				next
-			next
-			
-		endif
-
-		// Se for uva desclassificada, usa valor fixo em qualquer grau.
-		if _lUsaMoc22 .and. _lIsabel
-			for _nAux = 1 to len (_aGraus)
-				_aGraus [_nAux, .PrcUvaColPrcMOC] = 0.5
-			next
-		endif
-
-		// PARTE III: aplica % de agio das organicas, se for o caso.
-		// Estamos fazendo as entradas a valor de CONAB neste ano, mas jah vamos aplicar o agio nas organicas. 
 		if _nAgioOrg > 0
 		//	u_log2 ('debug', 'Aplicando agio (organica/em conversao) de ' + cvaltochar (_nAgioOrg))
 			for _nAux = 1 to len (_aGraus)
-				_aGraus [_nAux, .PrcUvaColPrcEntrada] = _aGraus [_nAux, .PrcUvaColPrcEntrada] + _aGraus [_nAux, .PrcUvaColPrcEntrada] * _nAgioOrg / 100
-				_aGraus [_nAux, .PrcUvaColPrcCompra]  = _aGraus [_nAux, .PrcUvaColPrcCompra]  + _aGraus [_nAux, .PrcUvaColPrcCompra]  * _nAgioOrg / 100
-				_aGraus [_nAux, .PrcUvaColPrcMOC]     = _aGraus [_nAux, .PrcUvaColPrcMOC]     + _aGraus [_nAux, .PrcUvaColPrcMOC]     * _nAgioOrg / 100
+				// Somente para os graus que estiverem acima do minimo (abaixo disso, eh preco minimo pra tudo)
+				if _aGraus [_nAux, .PrcUvaColGrau] >= _nGMinAgio
+					_aGraus [_nAux, .PrcUvaColPrcEntrada] = _aGraus [_nAux, .PrcUvaColPrcEntrada] + _aGraus [_nAux, .PrcUvaColPrcEntrada] * _nAgioOrg / 100
+					_aGraus [_nAux, .PrcUvaColPrcCompra]  = _aGraus [_nAux, .PrcUvaColPrcCompra]  + _aGraus [_nAux, .PrcUvaColPrcCompra]  * _nAgioOrg / 100
+					_aGraus [_nAux, .PrcUvaColPrcMOC]     = _aGraus [_nAux, .PrcUvaColPrcMOC]     + _aGraus [_nAux, .PrcUvaColPrcMOC]     * _nAgioOrg / 100
+				endif
 			next
 		endif
 
@@ -494,6 +450,9 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 			_nPrcRec = iif (_nPBasEntr > 0, _aGraus [_nPosGrau, .PrcUvaColPrcEntrada], 0)  // Para nao devolver sujeira caso falte o preco do grau base.
 			_nPrcCom = iif (_nPBasComp > 0, _aGraus [_nPosGrau, .PrcUvaColPrcCompra], 0)   // Para nao devolver sujeira caso falte o preco do grau base.
 			_nPrcMOC = iif (_nPBaseMOC > 0, _aGraus [_nPosGrau, .PrcUvaColPrcMOC], 0)      // Para nao devolver sujeira caso falte o preco do grau base.
+			if _nGrau < _nGMinAgio
+				_sComent += "Abaixo gr.min.(" + cvaltochar (_nGMinAgio) + "): preco minimo ($" + cvaltochar (_nPrMinimo) + ")"
+			endif
 		endif
 	endif
 
@@ -510,7 +469,7 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	endif
 
 	// Aplica acrescimos ou decrescimos conforme a classificacao da uva.
-	if _lContinua .and. ! _lUsaMoc22
+	if _lContinua
 	
 		// O preco varia conforme a sua classificacao final. Nao se aplica ao preco da tabela MOC.
 		if sb1 -> B1_VARUVA == "F" .and. sb1 -> B1_VAFCUVA == "F" .and. ! _lIsabel
