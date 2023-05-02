@@ -19,6 +19,7 @@
 // 10/11/2020 - Robert - Faltou ajustar o numero do CRC.
 // 03/02/2023 - Claudia - Ajuste de valor de faturamento. GLPI: 12857
 // 08/02/2023 - Claudia - Tratamento para icms st de guias MG. GLPI: 13161
+// 02/05/2023 - Cláudia - Alterado o diretor predidente. GLPI: 13505
 //
 // ------------------------------------------------------------------------------------------------------------------ 
 #include "rwmake.ch"
@@ -235,11 +236,13 @@ Static Function RptDetail()
 	::_oPrn:Say (::_nMargsup + ::_nLinAtual , ::_nMargEsq + 400, _sLinhaImp, _oCour10N, 100)
 	::_nLinAtual += ::_nAltLin * 1					
 
-	_sLinhaImp := "      ALCEU DALLE MOLLE                        SARA CETOLIN"
+	//_sLinhaImp := "      ALCEU DALLE MOLLE                        SARA CETOLIN"
+	_sLinhaImp := "      "+ alltrim(getmv("VA_PRESIDE"))+"                        SARA CETOLIN"
 	::_oPrn:Say (::_nMargsup + ::_nLinAtual, ::_nMargEsq + 400, _sLinhaImp, _oCour10N, 100)
 	::_nLinAtual += ::_nAltLin * 1					
 
-	_sLinhaImp := "     CPF: 431.760.700-04                     CRC: 76.578 / RS"
+	//_sLinhaImp := "     CPF: 431.760.700-04                     CRC: 76.578 / RS"
+	_sLinhaImp := "     CPF: "+ alltrim(getmv("VA_PRESCPF"))+"                     CRC: 76.578 / RS"
 	::_oPrn:Say (::_nMargsup + ::_nLinAtual, ::_nMargEsq + 400, _sLinhaImp, _oCour10N, 100)
 	::_nLinAtual += ::_nAltLin * 1					
 			

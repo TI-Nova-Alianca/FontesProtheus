@@ -29,6 +29,7 @@
 // 08/11/2022 - Claudia - Alterada a consulta quando o boleto ja esta impresso. GLPI: 12785
 // 16/01/2023 - Claudia - Ajustada a impressão de boletos. GLPI: 13025
 // 29/03/2023 - CLáudia - Ajustada a impressão da data de vencimento da carta de anuencia. GLPI: 13364
+// 02/05/2023 - Cláudia - Alterado o diretor predidente. GLPI: 13505
 //
 // ---------------------------------------------------------------------------------------------------------------------------------
 User Function FA740BRW()
@@ -644,7 +645,7 @@ Static Function RptDetail()
 	::_nLinAtual += ::_nAltLin * 1
 		
 	::_nLinAtual += ::_nAltLin * 4
-	_sLinhaImp := "Alceu Dalle Molle"  
+	_sLinhaImp := ALLTRIM(Getmv("VA_PRESIDE"))  //"Alceu Dalle Molle"  
 	::_oPrn:Say (::_nMargsup + ::_nLinAtual, ::_nMargEsq + 1000, _sLinhaImp, _oCour10N, 100)
 	::_nLinAtual += ::_nAltLin * 1
 		
