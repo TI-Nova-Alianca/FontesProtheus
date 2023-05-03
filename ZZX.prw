@@ -1937,12 +1937,12 @@ static function _GravaZZX (_sQueFazer, _oXMLSEF, _sXML, _worigem, _sArqOrg)
 			msmm (,,, _sMemo2, 1,,, "ZZX", "ZZX_CODM2")
 			cFilAnt = _sFilAnt
 		endif
-	
+
 		// Grava evento temporario
 		_oEvento := ClsEvent():new ()
 		_oEvento:CodEven   = "ZZX002"
 		_oEvento:Texto     = "Finalizada " + iif (_sQueFazer == 'I', '', 're') + "gravacao na tabela ZZX."
-		_oEvento:Texto    += " Nome arq: " + alltrim (_sArqOrg) + " Origem: " + _worigem
+		_oEvento:Texto    += " Nome arq: " + alltrim (cvaltochar (_sArqOrg)) + " Origem: " + cvaltochar (_worigem)
 		_oEvento:Texto    += ". Pilha: " + U_LogPCham ()
 		_oEvento:Alias     = "ZZX"
 		_oEvento:Recno     = zzx -> (recno ())

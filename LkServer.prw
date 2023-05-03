@@ -21,6 +21,7 @@
 // 25/03/2022 - Robert - Adicionado ambiente R33 (homologacao release33 do Protheus)
 // 11/10/2020 - Robert - Criado linked server FullWMS TESTE (almox.01 logistica).
 // 08/11/2022 - Robert - Passa a usar a funcao U_AmbTeste().
+// 03/05/2023 - Robert - Ajustado BI_ALIANCA base teste.
 //
 
 // --------------------------------------------------------------------------
@@ -41,11 +42,11 @@ user function LkServer (_sQualSrv)
 	case upper (alltrim (_sQualSrv)) == 'BI_ALIANCA'
 		if _lBaseTST
 		//	_sRetLk = "BI_ALIANCA_teste.dbo"
-			if upper (alltrim (getenvserver ())) == 'TESTEMEDIO'
+//			if upper (alltrim (getenvserver ())) == 'TESTEMEDIO'
 				_sRetLk = "BI_ALIANCA_testeMedio.dbo"
-			else
-				_sRetLk = "BI_ALIANCA_teste.dbo"
-			endif
+//			else
+//				_sRetLk = "BI_ALIANCA_teste.dbo"
+//			endif
 		else
 			_sRetLk = "BI_ALIANCA.dbo"
 		endif

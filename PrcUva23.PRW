@@ -12,11 +12,12 @@
 
 // Historico de alteracoes:
 // 07/12/2022 - Robert - Copiada versao de 2022, pois estah definido que manteremos os precos do ano passado.
-// 28/04/2023 - Robert - Passamos a safra chamando a funcao de calculo de
+// 02/05/2023 - Robert - Passamos a safra chamando a funcao de calculo de
 //                       precos pela MOC de 2022. Passada a safra, posso
 //                       voltar a calcular precos normalmente.
 //                     - Refeita parte de agios, conferencia com planilhas.
 //                     - Criado tratamento para campos ZX5_13GMAG e ZX5_13PMIN
+//                     - Desabilitada 'colher de chá' para o Alicante ($ de isabel abaixo de 14 graus)
 //
 
 #include "VA_INCLU.prw"
@@ -75,7 +76,7 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	// Viniferas tem tratamento diferenciado conforme a filial onde sao recebidas, podendo inclusive
 	// ser precificadas como outra variedade.
 	if _lContinua
-//		u_log2 ('info', '[' + procname () + '] Calculando preco uva ' + alltrim (_sProduto) + '-' + alltrim (sb1 -> b1_desc) + ' gr: ' + cvaltochar (_nGrau) + ' entregue na filial ' + _sFilial)
+//		u_log2 ('debug', '[' + procname () + '] Calculando preco uva ' + alltrim (_sProduto) + '-' + alltrim (sb1 -> b1_desc) + ' gr: ' + cvaltochar (_nGrau) + ' entregue na filial ' + _sFilial)
 		if sb1 -> b1_varuva == 'F'
 			if _sFilial $ '01/09'
 				_lIsabel = .T.
@@ -85,11 +86,13 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 					_lIsabel = .T.
 					_sComent += "Viniferas SC na F07: precifica como isabel(ttas) ou niagara(bcas)."
 				else
-					if sb1 -> b1_vacor == 'T' .and. _nGrau < 14 .and. ! alltrim (sb1 -> b1_cod) $ '9969/9969A' // Alicante nao deve ser tratada como Isabel.
+			//		if sb1 -> b1_vacor == 'T' .and. _nGrau < 14 .and. ! alltrim (sb1 -> b1_cod) $ '9969/9969A' // Alicante nao deve ser tratada como Isabel.
+					if sb1 -> b1_vacor == 'T' .and. _nGrau < 14
 						_lIsabel = .T.
 						_sComent += "Viniferas ttas na F07 abaixo 14 graus: precifica como isabel."
 					endif
-					if (sb1 -> b1_vacor != 'T' .or. alltrim (sb1 -> b1_cod) $ '9969/9969A') .and. _nGrau < 11  // Alicante abaixo de 11 trata como Niagara.
+			//		if (sb1 -> b1_vacor != 'T' .or. alltrim (sb1 -> b1_cod) $ '9969/9969A') .and. _nGrau < 11  // Alicante abaixo de 11 trata como Niagara.
+					if sb1 -> b1_vacor != 'T' .and. _nGrau < 11  // Alicante abaixo de 11 trata como Niagara.
 						_lIsabel = .T.
 						_sComent += "Viniferas bcas na F07 abaixo 11 graus: precifica como niagara."
 					endif
@@ -111,7 +114,7 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 					_sComent += "Produto '" + _sProduto + "' nao encontrado no cadastro."
 					_lContinua = .F.
 				else
-					u_log2 ('info', 'Variedade considerada: ' + _sProduto + ' ' + alltrim (sb1 -> b1_desc) + '(' + _sComent + ')')
+//					u_log2 ('debug', 'Variedade considerada: ' + _sProduto + ' ' + alltrim (sb1 -> b1_desc) + '(' + _sComent + ')')
 				endif
 			endif
 		endif
@@ -191,7 +194,7 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 				_oSQL:_sQuery += " AND ZX5_13.ZX5_13GRUP like '2%'"
 			endif
 		endif
-//		_oSQL:Log ()
+		//_oSQL:Log ('[' + procname () + ']')
 		_aGrupo := aclone (_oSQL:Qry2Array (.F., .F.))
 	//	U_log2 ('debug', _aGrupo)
 		if len (_aGrupo) == 0
@@ -241,7 +244,7 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 		_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14SAFR = ZX5_13.ZX5_13SAFR"
 		_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14GRUP = ZX5_13.ZX5_13GRUP"
 		_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14PROD = '" + sb1 -> b1_cod + "'"
-	//	_oSQL:Log ()
+		//_oSQL:Log ('[' + procname () + ']')
 		_aGrupo := aclone (_oSQL:Qry2Array (.F., .F.))
 		//U_log (_aGrupo)
 		if len (_aGrupo) == 0
@@ -266,8 +269,8 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 
 	endif
 
-	//	u_log2 ('debug', 'Grau: ' + cvaltochar (_nGrau) + '  grau base alianca: ' + cvaltochar (_nGBaseAli) + '  Prc.grau base: ' + cvaltochar (_nPBasEntr) + ' (entr)   ' + cvaltochar (_nPBasComp) + ' (compra)   ' + cvaltochar (_nPBasAgiE) + ' (base p/agio)   grupo ZX513: ' + cvaltochar (_sGrpZX513))
-	//	u_log2 ('debug', 'Grau base MOC: ' + cvaltochar (_nGBaseMOC) + '  Prc.grau base MOC: ' + cvaltochar (_nPBaseMOC) + '   grupo ZX5_MOC: ' + cvaltochar (_sGrpZX5MO))
+//	u_log2 ('debug', 'Grau: ' + cvaltochar (_nGrau) + '  grau base alianca: ' + cvaltochar (_nGBaseAli) + '  Prc.grau base: ' + cvaltochar (_nPBasEntr) + ' (entr)   ' + cvaltochar (_nPBasComp) + ' (compra)   ' + cvaltochar (_nPBasAgiE) + ' (base p/agio)   grupo ZX513: ' + cvaltochar (_sGrpZX513))
+//	u_log2 ('debug', 'Grau base MOC: ' + cvaltochar (_nGBaseMOC) + '  Prc.grau base MOC: ' + cvaltochar (_nPBaseMOC) + '   grupo ZX5_MOC: ' + cvaltochar (_sGrpZX5MO))
 
 	// Gera lista com todos os graus possiveis (no final, 'pesca' dela apenas o grau solicitado).
 	if _lContinua
@@ -278,8 +281,6 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 			_aGraus [len (_aGraus), .PrcUvaColGrau] = _nAux
 			_nAux += 0.1
 		enddo
-	//	u_log2 ('debug', 'tabela de graus inicial:')
-	//	u_log2 ('debug', _aGraus)
 	endif
 
 	// Define percentuais de agio (% acrescido ou diminuido cf. muda o grau) para os graus inteiros.
@@ -323,18 +324,18 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 
 				// Define o agio da MOC (costuma ser diferente da Alianca)
 				do case
-				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 12 ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 100  // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
-				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 11 ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 95   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
-				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 10 ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 90   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
-				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 9  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 85   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
-				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 8  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 80   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
-				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 7  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 70   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
-				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 6  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 60   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
-				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 5  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 55   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
-				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 4  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 50   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
-				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 3  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 30
-				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 2  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 15
-				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 1  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 5
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 12 ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = -100  // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 11 ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = -95   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 10 ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = -90   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 9  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = -85   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 8  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = -80   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 7  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = -70   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 6  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = -60   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 5  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = -55   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 4  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = -50   // Este % nao constam no MOC por que a CONAB nao considera graus aceitaveis para vinificacao, mas eu preciso ter tratamento para receber uva fora dessa faixa de graus. Robert, 22/01/2020.
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 3  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = -30
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 2  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = -15
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 1  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = -5
 				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC - 0  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 0
 				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC + 1  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 5
 				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseMOC + 2  ; _aGraus [_nAux, .PrcUvaColPercAgioMOC] = 15
@@ -356,8 +357,6 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 				endcase
 			endif
 		next
-//		u_log2 ('debug', 'tabela de graus com agios dos graus inteiros:')
-//		u_log2 ('debug', _aGraus)
 	endif
 
 	// Como preciso gerar os graus com decimais e os agios sao definidos apenas
@@ -426,7 +425,7 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	// Estamos fazendo as entradas a valor de CONAB neste ano, mas jah vamos aplicar o agio nas organicas. 
 	if _lContinua
 		if _nAgioOrg > 0
-		//	u_log2 ('debug', 'Aplicando agio (organica/em conversao) de ' + cvaltochar (_nAgioOrg))
+//			u_log2 ('debug', 'Aplicando agio (organica/em conversao) de ' + cvaltochar (_nAgioOrg) + "% (tintorea=" + sb1 -> b1_vattr + ")")
 			for _nAux = 1 to len (_aGraus)
 				// Somente para os graus que estiverem acima do minimo (abaixo disso, eh preco minimo pra tudo)
 				if _aGraus [_nAux, .PrcUvaColGrau] >= _nGMinAgio
@@ -473,8 +472,8 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	
 		// O preco varia conforme a sua classificacao final. Nao se aplica ao preco da tabela MOC.
 		if sb1 -> B1_VARUVA == "F" .and. sb1 -> B1_VAFCUVA == "F" .and. ! _lIsabel
-//			u_log2 ('info', 'Forma de conducao....: ' + _sConducao)
-//			u_log2 ('info', 'Classificacao........: ' + _sClassif)
+	//		u_log2 ('debug', 'Forma de conducao....: ' + _sConducao)
+	//		u_log2 ('debug', 'Classificacao........: ' + _sClassif)
 			if _sConducao == 'E'  // Espaldeira
 				do case
 				case alltrim (_sClassif) == "PR" .or. alltrim (_sClassif) == "AA"// Nao testar alltrim (_sClassif) $ "PR/AA" por que vai abocanhar a classe 'A' junto!
@@ -501,7 +500,6 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 
 				if _sGrpZX513 == '302'  // Este ano nao pagaremos agio para cabernet e outras com clas.A latada
 					do case
-				//	case alltrim (_sClassif) $ "A/B/DS"  // A=nao tem agio; B=jah era 0%; DS=jah caiu na regra de pagar como isabel
 					case alltrim (_sClassif) $ "A/B/C/DS"  // A=nao tem agio; B=jah era 0%; DS=jah caiu na regra de pagar como isabel
 						_nPrcRec *= 1.0
 						_nPrcCom *= 1.0
@@ -510,7 +508,8 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 						_lContinua = .F.
 					endcase
 
-				elseif _sGrpZX513 == '304'  // Este ano pagaremos agio de apenas 5% para malvasias e outras com clas.A latada
+	//			elseif _sGrpZX513 == '304'  // Este ano pagaremos agio de apenas 5% para malvasias e outras com clas.A latada
+				elseif _sGrpZX513 $ '304/308'  // Grupo 304 foi aberto em 304 e 308 - Este ano pagaremos agio de apenas 5% para malvasias e outras com clas.A latada
 
 					do case
 					case alltrim (_sClassif) == "A"
@@ -524,7 +523,6 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 						_lContinua = .F.
 					endcase
 
-			//	elseif _sGrpZX513 == '305'  // Este ano pagaremos agio de 10% para moscato e alicante com clas.A latada
 				elseif _sGrpZX513 $ '305/306'  // Este ano pagaremos agio de 10% para moscato e alicante com clas.A latada + trebiano (GLPI 9891)
 
 					do case
