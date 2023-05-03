@@ -24,6 +24,8 @@
 // 02/02/2023 - Robert - Acrescentado usuario vagner.lima no filtro de O.S.
 // 05/04/2023 - Robert - Acrescentado usuario jonathan.brito no filtro de O.S.
 // 26/04/2023 - Robert - Implementados filtros de terceiros e solicitacoes de manut.
+// 03/05/2023 - Robert - Implementados filtros para sandra.sugari e claudia.lionco
+//                     - Passa a usar metodo ClsAviso:IntegNaWeb=.f. 
 //
 
 #include "PROTHEUS.ch"
@@ -43,7 +45,7 @@ User Function MNTNG()
 	// Siiiim, eu sei que chumbar os nomes no fonte é deselegante, mas ainda nao tenho uma forma melhor de descobrir o codigo do funcionario.
 	_sCodFunc = ''
 	do case
-	case alltrim (upper (cUserName)) $ 'EVALDO.AGNOLETTO/LEONARDO.BORGES/APP.MNTNG/ELSO.RODRIGUES/MARCOS.OLIVEIRA/JONATHAN.SANTOS/JUNIOR.MELGAREJO/MAX.PADILHA/VAGNER.LIMA/JONATHAN.BRITO'
+	case alltrim (upper (cUserName)) $ 'EVALDO.AGNOLETTO/LEONARDO.BORGES/APP.MNTNG/ELSO.RODRIGUES/MARCOS.OLIVEIRA/JONATHAN.SANTOS/JUNIOR.MELGAREJO/MAX.PADILHA/VAGNER.LIMA/JONATHAN.BRITO/SANDRA.SUGARI/CLAUDIA.LIONCO'
 		_sCodFunc = ''  // Sem filtro para estes usuarios.
 	case alltrim (upper (cUserName)) = 'ALEXANDRE.ANDRADE'; _sCodFunc = '2065'
 	case alltrim (upper (cUserName)) = 'ELIEL.PEDRON'     ; _sCodFunc = '2119'
@@ -59,6 +61,7 @@ User Function MNTNG()
 		_oAviso:Titulo     = 'Usuario sem tratamento para filtrar OS'
 		_oAviso:Texto      = "Usuario '" + cUserName + "' sem tratamento para filtrar OS no ponto de entrada " + procname () + ". Mais detalhes em " + _sArqLog
 		_oAviso:InfoSessao = .T.
+		_oAviso:IntegNaWeb = .F.  // Nao tenta integrar neste momento (nao ha urgencia)
 		_oAviso:Grava ()
 	endcase
 

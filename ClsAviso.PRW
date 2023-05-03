@@ -19,6 +19,7 @@
 // 02/10/2022 - Robert - Removido atributo :DiasDeVida.
 // 08/11/2022 - Robert - Nao envia aviso para NaWeb quando estiver em ambiente de teste.
 // 05/04/2023 - Robert - Nao grava mais log ao enviar aviso para NaWeb.
+// 03/05/2023 - Robert - Criado atributo IntegNaWeb (default = .T.)
 //
 
 #include "protheus.ch"
@@ -45,8 +46,9 @@ CLASS ClsAviso
 	data Formato     // [T]exto ou [H]tml
 	data Origem
 	data DiasDeVida
-	data CodAviso  // a ser descontinuado
+	data CodAviso    // a ser descontinuado
 	data InfoSessao  // se .T. inclui informacoes adicionais de sessao na mensagem.
+	data IntegNaWeb  // Indica se deve tentar integrar com NaWeb neste momento
 
 	// Declaração dos Métodos da Classe
 	METHOD New ()
@@ -83,6 +85,7 @@ METHOD GeraAtrib (_sOrigem) Class ClsAviso
 	::Titulo     = ""
 	::Origem     = ""
 	::InfoSessao = .F.
+	::IntegNaWeb = .T.  // Por default, procura integrar imediatamente.
 	if _sOrigem == 'ZAB'
 		::Tipo       = zab -> zab_tipo
 		::DtAviso    = zab -> zab_dtemis
@@ -164,7 +167,8 @@ METHOD Grava () Class ClsAviso
 	msunlock ()
 
 	// Tenta fazer o envio para web service do NaWeb
-	if _lEnvNAW  // Se nao tinha algum problema anterior...
+//	if _lEnvNAW  // Se nao tinha algum problema anterior...
+	if ::IntegNaWeb .and. _lEnvNAW  // Se nao tinha algum problema anterior...
 		if U_AmbTeste ()
 			U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + ']Nao vou enviar aviso para o NaWeb por que estou em ambiente de testes.')
 		else
