@@ -100,6 +100,7 @@
 // 24/06/2022 - Claudia - Incluida validação para vendedor incluir/não incluir pedido dereto no Protheus. GLPI: 12249
 // 28/06/2022 - Claudia - Incluida validação para numero de pedido bonificação não ser igual ao pedido de venda. GLPI: 12274
 // 23/09/2022 - Claudia - Incluida validação para fazer bloqueio por vendedor apenas na inclusao de pedidos. GLPI: 12623
+// 03/05/2023 - Claudia - Incluida obrigatoriedade de adm em pix,cc e cd. GLPI: 13507
 //
 // ---------------------------------------------------------------------------------------------------------------------------
 User Function MTA410 ()
@@ -357,6 +358,13 @@ User Function MTA410 ()
 
 		If alltrim(_sCliEst) <> 'EX' .and. !Empty(m->c5_descont)
 			u_help("Desconto <indenização> só pode ser usado para clientes de exportação!")
+			_lRet := .F.
+		EndIf
+	EndIf
+
+	If _lRet
+		If alltrim(M->C5_VATIPO) $ ("CC/CD/PX/PIX") .and. empty(M->C5_VAADMIN)
+			u_help("Para formas de pagamento CC, CD ou PIX é obrigatório informar a administradora!")
 			_lRet := .F.
 		EndIf
 	EndIf
