@@ -7,6 +7,7 @@
 // Historico de alteracoes:
 // 06/05/2020 - Robert - Tamanho campo numero NF ajustado de 6 para 9 posicoes.
 // 03/03/2023 - Robert - Possibilidade de retornar em formato XML, para posterior uso pelo web service/NaWeb
+// 26/04/2023 - Robert - Ajustes retorno em XML
 //
 
 /*
@@ -172,12 +173,15 @@ static function _GeraPlan (_lGeraXML)
 						// Atualiza o restante dos dados do componente.
 // DESABILITADO DURANTE TESTES, PARA GANHO DE PERFORMANCE						_AtuComp ()
 						// PREENCHE COM DADOS FICTICIOS
-						_comp -> UC_Cus_01  = 1.11
-						_comp -> UC_Dat_01  = DATE ()
-						_comp -> UC_Cus_02  = 2.22
-						_comp -> UC_Dat_02  = DATE () -1
-						_comp -> UC_Cus_03  = 3.33
-						_comp -> UC_Dat_03  = DATE ()-2
+						_comp -> UN_MED_com = 'CX'
+						_comp -> tp_comp    = 'PA'
+						//_comp -> custo_std  = 36
+						_comp -> UC_Cus_01  = 1
+						_comp -> UC_Dat_01  = stod ('20230327')
+						_comp -> UC_Cus_02  = 2
+						_comp -> UC_Dat_02  = stod ('20230327')
+						_comp -> UC_Cus_03  = 3
+						_comp -> UC_Dat_03  = stod ('20230327')
 
 
 
@@ -212,8 +216,8 @@ static function _GeraPlan (_lGeraXML)
 //	_comp -> (dbgotop ())
 //	u_logtrb ('_comp', .t.)
 
-	_estrut -> (dbgotop ())
-	u_logtrb ('_estrut', .t.)
+//	_estrut -> (dbgotop ())
+//	u_logtrb ('_estrut', .t.)
 	_estrut -> (dbgotop ())
 
 	if _lGeraXML
@@ -319,7 +323,9 @@ static function _GeraXML ()
 		// Se o nivel do arquivo aumentou, preciso aumentar as tags junto
 		do while _estrut -> nivel > _nNivel
 			_nNivel ++
-			_sXMLCCR += '<nivel_' + alltrim (str (_estrut -> nivel)) + '>'
+			if _nNivel == 0  // O GX quer somente quando nivel = 0
+				_sXMLCCR += '<nivel_' + alltrim (str (_estrut -> nivel)) + '>'
+			endif
 			U_Log2 ('aviso', '[' + procname () + ']abrindo nivel ' + cvaltochar (_estrut -> nivel) + ' para ' + _estrut -> compon)
 		enddo
 
@@ -411,8 +417,10 @@ static function _ReduzNiv (_nParaQual, _nNivel, _oPilhaIte)
 			_oPilhaIte:Desempilha ()
 		endif
 		U_Log2 ('aviso', '[' + procname () + ']  Fechando nivel ' + cvaltochar (_nNivel))
-		_sXMLCCR += '</nivel_' + alltrim (str (_nNivel)) + '>'
 		_nNivel --
+	//	if _nNivel == 0  // O GX quer somente quando nivel = 0
+	//		_sXMLCCR += '</nivel_' + alltrim (str (_nNivel)) + '>'
+	//	endif
 		U_Log2 ('debug', '[' + procname () + ']  Comparando topo da pilha (' + cvaltochar (_oPilhaIte:RetTopo ()) + ') com _nNivel (' + cvaltochar (_nNivel) + ') depois de reduzir o nivel')
 		if _oPilhaIte:RetTopo () == _nNivel
 			U_Log2 ('aviso', '[' + procname () + ']  Fechando item e desempilhando depois de reduzir o nivel.')

@@ -328,8 +328,8 @@ static function _Gera (_lAuto)
 			else
 				_nQtFat ++
 				
-				// Zera os saldos da conta corrente para os titulos aglutinados na fatura.
-				_ZeraSZI (_wFornece, _wLoja, aTitulos)
+//				// Zera os saldos da conta corrente para os titulos aglutinados na fatura.
+//				_ZeraSZI (_wFornece, _wLoja, aTitulos)
 
 				// altera o historio e deixa posicionado o E2 para cria conta corrente referente a este titulo.
 				_nQtFatAlt = 0
@@ -352,7 +352,11 @@ static function _Gera (_lAuto)
 						endif
 						MsUnLock()
 						_nTotGer += se2 -> e2_valor
+
+						// Zera os saldos da conta corrente para os titulos aglutinados na fatura e cria um novo para a fatura gerada.
+						_ZeraSZI (_wFornece, _wLoja, aTitulos)
 						_CriaSZI (_sSafra)
+						
 						_nQtFatAlt ++
 					endif
 					se2 -> (dbskip ())
@@ -410,6 +414,8 @@ static function _ZeraSZI (_sFornece, _sLoja, _aTit)
 		_nRegSZI = _oSQL:RetQry ()
 		if _nRegSZI > 0
 			szi -> (dbgoto (_nRegSZI))
+
+			// Aqui seria melhor (apesar de mais lento) atualizar pela ClsCtaCorr()
 			reclock ("SZI", .F.)
 			szi -> zi_saldo = 0
 			msunlock ()
