@@ -18,6 +18,7 @@
 // 27/06/2017 - Robert  - Gera evento se duplicar C5_PEDCLI (GLPI 2728).
 // 24/11/2019 - Robert  - Campo C5_VABLOQ passa a ter mais de uma posicao (GLPI 7000).
 // 11/01/2022 - Claudia - Incluida validação para liberação de credito p/ ped.ecommerce. GLPI: 11270
+// 04/05/2023 - Claudia - Incluida a validação para liberação de credito para loja. GLPI: 13521
 //
 // --------------------------------------------------------------------------------------------------
 User Function M410STTS()
@@ -35,8 +36,8 @@ User Function M410STTS()
 	_VerOC ()
 
 	// Libera pedidos de ecommerce
-	if !empty(m->c5_pedecom)
-		_LibCredEcommerce()
+	if !empty(m->c5_pedecom) .or. (alltrim(m->c5_vatipo) $('CC/CD/PIX/PX'))
+		_LibCred()
 	endif
 
 	U_SalvaAmb (_aAmbAnt)
@@ -128,8 +129,8 @@ static function _VerOC ()
 return
 //
 // --------------------------------------------------------------------------
-// Libera pedidos de ecommerce
-static function _LibCredEcommerce()
+// Libera pedidos de ecommerce/loja
+static function _LibCred()
 	Local _oSQL := ClsSQL ():New ()
 
 	_oSQL:_sQuery := " UPDATE  SC9010 SET C9_BLCRED = '' "
