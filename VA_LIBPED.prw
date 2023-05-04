@@ -12,16 +12,17 @@
 //
 // Historico de alteracoes:
 // 14/04/2016 - criado novo indice por banco
-// 03/05/2016 - ao liberar o pedido nao estava "sumindo" da tela de seleÃ§Ã£o
-// 03/05/2016 - a funÃ§Ã£o de totais por banco nao esta apurando corretamente os valores
+// 03/05/2016 - ao liberar o pedido nao estava "sumindo" da tela de seleção
+// 03/05/2016 - a função de totais por banco nao esta apurando corretamente os valores
 // 06/06/2016 - estava dando mensagem de que o pedido nao estava bloqueado - quando clicava no liberar
 // 10/06/2016 - estava tendo problemas para liberar alguns pedidos dava mensagem de que o pedido nao estava bloqueado
-// 15/06/2016 - nÃ£o estava excluindo o pedido do browse apos a liberacao
+// 15/06/2016 - não estava excluindo o pedido do browse apos a liberacao
 // 04/04/2018 - recuperado o programa que estava corrompido 
 // 15/10/2019 - Sandra/Claudia - criado novo indice por Nome
 // 19/12/2019 - Cláudia - Criação de tela de dados do cliente e gravação do campo OBS
 // 13/01/2020 - Claudia - Inclusão da função <ArqTrb> (exigencia release 12.1.25 do Protheus)
 // 07/12/2020 - Claudia - Inclusão de botao para visualização de observações de clientes. GLPI: 8971
+// 03/05/2023 - Claudia - Alterado o grupo de 055 para 149. GLPI: 13519
 //
 // ----------------------------------------------------------------------------------------------
 #include 'totvs.ch'
@@ -39,7 +40,7 @@ User Function VA_LIBPED()
 	cPerg   := "VA_LIBPED"
 	
 	if ! u_zzuvl ('036', __cUserId, .F.)
-		if ! u_zzuvl ('055', __cUserId, .T.)
+		if ! u_zzuvl ('149', __cUserId, .T.)
 			msgalert ("Usuario sem permissao para usar estar rotina.")
 			return
 		endif			
