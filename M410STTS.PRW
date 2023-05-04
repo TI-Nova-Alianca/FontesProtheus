@@ -36,7 +36,7 @@ User Function M410STTS()
 	_VerOC ()
 
 	// Libera pedidos de ecommerce
-	if !empty(m->c5_pedecom) .or. (alltrim(m->c5_vatipo) $('CC/CD/PIX/PX'))
+	if !empty(m->c5_pedecom) //.or. (alltrim(m->c5_vatipo) $('CC/CD/PIX/PX'))
 		_LibCred()
 	endif
 
