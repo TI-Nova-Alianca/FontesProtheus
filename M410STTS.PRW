@@ -19,6 +19,7 @@
 // 24/11/2019 - Robert  - Campo C5_VABLOQ passa a ter mais de uma posicao (GLPI 7000).
 // 11/01/2022 - Claudia - Incluida validação para liberação de credito p/ ped.ecommerce. GLPI: 11270
 // 04/05/2023 - Claudia - Incluida a validação para liberação de credito para loja. GLPI: 13521
+// 05/05/2023 - Claudia - Alterada validação de lojas, incluindo a verificação das filiais. GLPI: 13533
 //
 // --------------------------------------------------------------------------------------------------
 User Function M410STTS()
@@ -36,7 +37,11 @@ User Function M410STTS()
 	_VerOC ()
 
 	// Libera pedidos de ecommerce
-	if !empty(m->c5_pedecom) //.or. (alltrim(m->c5_vatipo) $('CC/CD/PIX/PX'))
+	if !empty(m->c5_pedecom) 
+		_LibCred()
+	endif
+	// Libera pedidos da filial
+	if alltrim(m->c5_vatipo) $('CC/CD/PIX/PX') .and. alltrim(m->c5_filial) $ ('13/08')
 		_LibCred()
 	endif
 
