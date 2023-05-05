@@ -23,7 +23,7 @@
 // 07/03/2022 - Robert  - Acrescentado CNPJ da fonte pagadora.
 // 28/03/2022 - Robert  - Eliminada funcionalidade de conversao para TXT (em alguns casos 'perdia' o relatorio).
 // 01/03/2023 - Robert  - Revisado para ano base 2022 (nao houve pagto.de premio para esse ano).
-// 08/04/2023 - Robert  - Refeita query para ano base 2022, pois houve pagamentos parciais.
+// 08/04/2023 - Robert  - Refeita query para ano base 2022, pois houve pagamentos parciais (GLPI 13404)
 //
 
 // -----------------------------------------------------------------------------------------------------------
