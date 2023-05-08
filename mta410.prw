@@ -101,6 +101,7 @@
 // 28/06/2022 - Claudia - Incluida validação para numero de pedido bonificação não ser igual ao pedido de venda. GLPI: 12274
 // 23/09/2022 - Claudia - Incluida validação para fazer bloqueio por vendedor apenas na inclusao de pedidos. GLPI: 12623
 // 03/05/2023 - Claudia - Incluida obrigatoriedade de adm em pix,cc e cd. GLPI: 13507
+// 05/05/2023 - Claudia - Incluida validação para vendedor2/comissão 2. GLPI: 13527
 //
 // ---------------------------------------------------------------------------------------------------------------------------
 User Function MTA410 ()
@@ -367,6 +368,14 @@ User Function MTA410 ()
 			u_help("Para formas de pagamento CC, CD ou PIX é obrigatório informar a administradora!")
 			_lRet := .F.
 		EndIf
+	EndIf
+
+	// Obriga a incluir vendedor 2, conforme vendedor 1
+	If _lRet
+		if alltrim(m->c5_vend1) $ alltrim(getmv("VA_COMVEN2")) .and. (empty(m->c5_vend2) .or. empty(m->c5_comis2))
+			u_help("Obrigatório informar Vendedor 2/Comissão 2 neste pedido de venda!")
+			_lRet := .F.
+		endif
 	EndIf
 
 	U_SalvaAmb (_aAmbAnt)
