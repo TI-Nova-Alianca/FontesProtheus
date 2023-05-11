@@ -20,6 +20,7 @@
 // 23/01/2023 - Robert - Migrado de MATA380 para MATA381 (GLPI 11997)
 //                     - Gera aviso em caso de erro na alteracao de empenhos.
 // 23/03/2023 - Robert - Passa a gravar evento e nao mais aviso em caso de erro nos empenhos.
+// 10/05/2023 - Robert - Variavel _sOP nao inicializada na gravacao de evento de erro.
 //
 
 // ------------------------------------------------------------------------------------
@@ -57,6 +58,7 @@ static function _AltCC ()
 	Local _aItens    := {}
 	local _lContinua := .T.
 	local _oEvento   := NIL
+	local _sOP       := sd4 -> d4_op
 	private _sErroAuto := ''
 
 	if cEmpAnt == '01' .and. left (sd4 -> d4_cod, 3) == 'MMM' .and. substr (sd4 -> d4_cod, 4, 2) != cFilAnt
