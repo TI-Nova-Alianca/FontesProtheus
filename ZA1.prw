@@ -15,11 +15,12 @@
 //                       mais de uma etiqueta para o mesmo lote - GLPI 13134.
 // 30/03/2023 - Robert - Novos parametros chamada impressao etiq. avulsa.
 // 12/04/2023 - Robert - Criadas funcoes ZA1Inc() e ZA1ITOk() para inclusao manual.
+// 12/05/2023 - Robert - Permite impressao avulsa obrigando a imprimir cod.barra produto (GLPI 13561)
 //
 
 // --------------------------------------------------------------------------
 // Recebe chamada feita via botao 'imprime avulsa' do MBrowse do ZA1
-user function ZA1ImpAv () 
+user function ZA1ImpAv (_lBarras)
 	static _sImpr := '  '  // Static para que lembre da selecao anterior.
 
 	_sImpr = U_Get ("Selecione impressora", 'C', 2, '', 'ZX549', _sImpr, .f., '.t.')
@@ -27,7 +28,15 @@ user function ZA1ImpAv ()
 	if ! empty (_sImpr)
 		// Instancia objeto para impressao.
 		_oEtiq := ClsEtiq ():New (ZA1->ZA1_CODIGO)
-		_oEtiq:Imprime (_sImpr)
+
+		// Eventualmente posso obrigar a listar as barras do produto.
+		if _lBarras != NIL .and. _lBarras
+			_oEtiq:ImprCBProd = 'S'
+		endif
+
+		if ! _oEtiq:Imprime (_sImpr)
+			u_help (_oEtiq:UltMsg,, .t.)
+		endif
 	else
 		u_help ("Impressao cancelada.")
 	endif

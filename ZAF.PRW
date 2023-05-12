@@ -21,6 +21,7 @@
 // 06/12/2021 - Robert  - Pequena melhoria nos logs de laudos para fazer merge.
 // 19/01/2022 - Claudia - Incluido novos campos de brix e solidos. GLPI: 11490
 // 09/02/2022 - Robert  - Passa a validar acessos de alteracao cfe. grupo 133 do ZZU.
+// 12/05/2023 - Robert  - Alterados alguns logs de INFO para DEBUG
 //
 
 // ----------------------------------------------------------------------------------------------------------
@@ -242,10 +243,10 @@ User Function ZAFM (_aLaudos, _sProduto, _sOP, _sLote, _sAlmox, _sObs)
 	// Pega antes os laudos de maior volume.
 	asort (_aLaudos,,, {|_x, _y| _x [2] > _y [2]})
 	if len (_aLaudos) == 0
-		u_log2 ('info', '[' + procname () + '] Nao ha laudos para fazer merge')
+		u_log2 ('debug', '[' + procname () + '] Nao ha laudos para fazer merge')
 	else
-		u_log2 ('info', '[' + procname () + '] Laudos para fazer merge:')
-		u_log2 ('info', _aLaudos)
+		u_log2 ('debug', '[' + procname () + '] Laudos para fazer merge:')
+		u_log2 ('debug', _aLaudos)
 	endif
 
 	_aEnsOri = {}
