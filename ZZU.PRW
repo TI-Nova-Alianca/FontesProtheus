@@ -39,6 +39,7 @@
 //                      - Melhorada gravacao de eventos (gravar ALIAS e CHAVE, para posterior consulta)
 //                      - Criada consulta de eventos relacionados ao grupo.
 // 26/04/2023 - Robert  - Implementaca copia de acessos de um usuario para outro.
+// 11/05/2023 - Robert  - Nao copiava o campo zzu_email ao copiar grupos para outro usuario.
 //
 
 // --------------------------------------------------------------------------
@@ -368,7 +369,8 @@ user function ZZUAU (_sQueFazer)
 						                  zzu -> zzu_fil, ;
 						                  zzu -> zzu_tipo, ;
 						                  zzu -> zzu_valid, ;
-						                  zzu -> zzu_nome})
+						                  zzu -> zzu_nome, ;
+						                  zzu -> zzu_email})
 						U_Log2 ('debug', _aRegDst)
 					endif
 				next
@@ -399,6 +401,7 @@ user function ZZUAU (_sQueFazer)
 					zzu -> zzu_fil    = _aRegDst [_nReg, 5]
 					zzu -> zzu_tipo   = _aRegDst [_nReg, 6]
 					zzu -> zzu_valid  = _aRegDst [_nReg, 7]
+					zzu -> zzu_email  = _aRegDst [_nReg, 9]
 					zzu -> zzu_hist   = 'Copiado de ' + _sUser + ' ' + alltrim (_aRegDst [_nReg, 8])
 					msunlock ()
 					_sMsgCopia += "Copiado grupo " + zzu -> zzu_grupo + chr (13) + chr (10)

@@ -20,6 +20,7 @@
 // 08/11/2022 - Robert - Nao envia aviso para NaWeb quando estiver em ambiente de teste.
 // 05/04/2023 - Robert - Nao grava mais log ao enviar aviso para NaWeb.
 // 03/05/2023 - Robert - Criado atributo IntegNaWeb (default = .T.)
+// 10/05/2023 - Robert - Melhoria pequena nos logs.
 //
 
 #include "protheus.ch"
@@ -137,7 +138,7 @@ METHOD Grava () Class ClsAviso
 		_lEnvNAW = .F.
 	endif
 
-	u_log2 (iif (::Tipo == 'E', 'erro', iif (::Tipo == 'A', 'aviso', 'info')), '[' + GetClassName (::Self) + '.' + procname () + ']Notificacao para ' + ::DestinAvis + ': ' + ::Texto)
+	u_log2 (iif (::Tipo == 'E', 'erro', iif (::Tipo == 'A', 'aviso', 'info')), '[' + GetClassName (::Self) + '.' + procname () + ']' + alltrim (::Texto) + ' [a ser enviada para: ' + ::DestinAvis + ']')
 
 	// Caso solicitado na criacao do objeto, gera dados adicionais de sessao na mensagem.
 	if ::InfoSessao

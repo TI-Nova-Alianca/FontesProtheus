@@ -51,6 +51,7 @@
 // 10/04/2023 - Robert - Implementado metodo PodeIncl().
 // 12/04/2023 - Robert - Passa a controlar semaforo para gravacao.
 // 17/04/2023 - Robert - Metodo PodeApont() passa a usar metodo SomaMsg() em ves de u_help() para mostrar os erros.
+// 12/05/2023 - Robert - Gera msg ao tentar imprimir etiq.de OP e campo C2_VABARCX estiver vazio  (GLPI 13561).
 //
 
 #Include "Protheus.ch"
@@ -256,6 +257,12 @@ METHOD CmdImpr (_nModelImp, _lPrimeira) Class ClsEtiq
 		_lContinua = .F.
 	endif
 
+	// Ateh este momento, o procedimento para OPs feitas em terceiros eh apontar 'de mentirinha'
+	// como se tivesse sido produzida aqui, e enviar para a logistica. Robert, 24/10/2022
+	if ! empty (::OP) .and. (::FinalidOP == 'E' .or. GetMv ("VA_ETQOCBP") == 'S' .or. ::ImprCBProd == 'S')
+		_lBarProdu = .T.
+	endif
+
 	// Deixa o maximo de variaveis prontas para impressao, buscando manter
 	// integridade entre as diferentes funcoes de impressao.
 	if _lContinua
@@ -301,8 +308,15 @@ METHOD CmdImpr (_nModelImp, _lPrimeira) Class ClsEtiq
 			_sAlmOri = ::AlmOrig
 
 			// O cod.barras da OP sobrepoe o do produto, pois vai ser usado no apontamento.
-			_sCBarProd = alltrim (::CBEmbCol)
-				
+			if _lBarProdu  // Se vou precisar imprimir as barras do produto...
+				if empty (::CBEmbCol)  // ... mas nao estao definidas na OP...
+					::SomaMsg ("Cod.barras p/embalagem coletiva nao informado na OP.")
+					_lContinua = .F.
+				else
+					_sCBarProd = alltrim (::CBEmbCol)
+				endif
+			endif
+
 			// Sequencial de etiquetas (1 e 3, 2 de 3, ...) para ver se nao ficou alguma esquecida.
 			if ::QtEtqGrupo != 0 .and. ::SeqNoGrupo != 0
 				_sSeqImp = padc (alltrim (str (::SeqNoGrupo)) + '/' + alltrim (str (::QtEtqGrupo)), 9, ' ')
@@ -334,12 +348,6 @@ METHOD CmdImpr (_nModelImp, _lPrimeira) Class ClsEtiq
 	// Se chegou aqui com todos os dados prontos, gera etiqueta em arquivo
 	// temporario e copia-o para a porta selecionada.
 	if _lContinua
-
-		// Ateh este momento, o procedimento para OPs feitas em terceiros eh apontar 'de mentirinha'
-		// como se tivesse sido produzida aqui, e enviar para a logistica. Robert, 24/10/2022
-		if ::FinalidOP == 'E' .or. GetMv ("VA_ETQOCBP") == 'S' .or. ::ImprCBProd == 'S'
-			_lBarProdu = .T.
-		endif
 
 		// Comandos iniciais e finais sao os mesmos, independente do tipo de etiqueta
 		_sTxtEtiq = ''
@@ -947,7 +955,7 @@ METHOD Imprime (_sCodImpr) Class ClsEtiq
 		_lContinua = .F.
 	endif
 	if _lContinua .and. ! empty (::OP) .and. (::QtApontada != 0 .or. ::QtPerdida != 0 .or. ::QtEstornada != 0)
-		_lContinua = U_MsgNoYes ("Etiq.ja tem movimentacao. Deseja imprimir mesmo assim?")
+		_lContinua = U_MsgNoYes ("Etiq.ja movimentada (apont/perda/estorno). Deseja imprimir mesmo assim?")
 	endif
 	if _lContinua
 		//_lContinua = U_ImpZA1 (_sCodImpr, ::Self)
@@ -990,7 +998,6 @@ METHOD Imprime (_sCodImpr) Class ClsEtiq
 			endif
 		endif
 	endif
-
 return _lContinua
 
 

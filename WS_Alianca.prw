@@ -314,7 +314,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 	u_log2 ('info', 'Mensagens WS: ' + ::Retorno:Mensagens)
 	// Como algumas opcoes retornam bastante coisa, vou economizar um pouco o log
 	if _sAcao $ 'ConsultaKardex/'
-		u_log2 ('info', 'Retorno   WS: [nao gravarei log para esta acao] (' + cvaltochar (seconds () - _nSegIni) + 's.)')
+		u_log2 ('info', 'Retorno   WS: [nao gravarei log para esta acao por eh muito longo] (' + cvaltochar (seconds () - _nSegIni) + 's.)')
 	else
 		u_log2 ('info', 'Retorno   WS: ' + ::Retorno:Resultado + ' (' + cvaltochar (seconds () - _nSegIni) + 's.)')
 	endif

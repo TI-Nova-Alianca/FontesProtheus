@@ -15,6 +15,7 @@
 // 22/09/2022 - Robert - Validacao das barras do produto paas a ser pelo atributo _oEtiq:CodBarCx (GLPI 11994)
 // 05/01/2023 - Robert - Pede confirmacao para data muito antiga.
 // 17/04/2023 - Robert - Mostrar ultima mensagem da etiqueta, quando nao puder apontar.
+// 12/05/2023 - Robert  - Alterados alguns logs de INFO para DEBUG
 //
 
 #include "protheus.ch"
@@ -50,14 +51,12 @@ user function vtEtqAp ()
 
 		if _lContinua
 			terSay(0, 0, "Apontar etiqueta:")
-//			U_Log2 ('debug', '[' + procname () + ']Antes de ler etiq')
 			VTSetGet (@_sBarEtiq, "_sBarEtiq", 0, 19, {||_ValEtiq ()})
 			vtRead ()
 			_lContinua = (vtLastkey() != 27)
 			terCBuffer ()
 		endif
 		if _lContinua
-//			U_Log2 ('debug', '[' + procname () + ']Antes de ler barras produto')
 			terSay (1, 0, "Cod.barras produto:")
 			VTSetGet (@_sCBEmbCol, "_sCBEmbCol", 1, 19, {||_ValCBProd ()})
 			vtRead ()
@@ -79,14 +78,13 @@ user function vtEtqAp ()
 			terCBuffer ()
 		endif
 		if _lContinua
-			U_Log2 ('info', '[' + procname () + ']Campos lidos. Vou gerar apontamento')
+			U_Log2 ('debug', '[' + procname () + ']Campos lidos. Vou gerar apontamento')
 			terSay (6, 0, "Aguarde... gerando apontamento")
 			if _oEtiq:ApontaOP (_dDatProd, _sTnoProd)
 				u_help ("Etiq." + _oEtiq:Codigo + " apontada com sucesso!")
 			else
 				u_help ("ERRO no apontamento.",, .t.)
 			endif
-	//		U_Log2 ('debug', '[' + procname () + ']Retornou do :ApontaOP()')
 		endif
 	enddo
 return
@@ -144,13 +142,11 @@ static function _ValCBProd ()
 			terSay (3, 0, substr (_sDescProd, _nLargTela + 1, _nLargTela))
 		endif
 	endif
-//	U_Log2 ('info', 'Finalizando ' + procname ())
 return _lRet
 
 // --------------------------------------------------------------------------
 static function _ValDtProd ()
 	local _lRet := .T.
-//	U_Log2 ('debug', '[' + procname () + ']' + dtoc (_dDatProd))
 	if _lRet .and. _dDatProd > date ()
 		u_help ("Nao pode ser informada data futura",, .t.)
 		_lRet = .F.
@@ -163,7 +159,6 @@ return _lRet
 // --------------------------------------------------------------------------
 static function _ValTurno ()
 	local _lRet := .T.
-//	U_Log2 ('debug', '[' + procname () + ']' + _sTnoProd)
 	if _lRet .and. ! _sTnoProd $ '12'
 		u_help ("Turno deve ser 1 ou 2",, .t.)
 		_lRet = .F.

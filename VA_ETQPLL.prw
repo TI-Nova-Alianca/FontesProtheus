@@ -65,6 +65,7 @@
 // 23/03/2023 - Robert - Removidos alguns logs.
 // 12/04/2023 - Robert - Inclusao manual (via tela) passada para funcao ZA1Inc() no fonte ZA1.PRW
 //                     - Passa a usar semaforo na geracao de etiquetas por grupo.
+// 12/05/2023 - Robert - Criado botao p/impr.avulsa com cod.barras (GLPI 13561).
 //
 
 #include "rwmake.ch"
@@ -79,13 +80,17 @@ User Function VA_ETQPLL()
 	private aImprim   := {}
 	private aOutros   := {}
 
-	//===Montagem do Menu===//
 	// A ordem em que os itens são adicionados ao vetor influencia na ordem de exibição.
 	aAdd(aRotina, {"Pesquisar"           , "AxPesqui"  , 0, 1})
 	aAdd(aRotina, {"Visualizar"          , "AxVisual"  , 0, 2})
-//	aAdd(aRotina, {"Incluir"             , "U_EtqPlltI", 0, 3})
 	aAdd(aRotina, {"Incluir"             , "U_ZA1Inc", 0, 3})
-	aadd(aRotina, {"Imprimir - Avulso"   , "U_ZA1ImpAv ()", 0, 2})
+	aadd(aRotina, {"Imprimir - Avulso"   , "U_ZA1ImpAv (.f.)", 0, 2})
+
+	// Botao de uso mais restrito.
+	if U_ZZUVL ('047', __cUserID, .f.) .OR. U_ZZUVL ('122', __cUserID, .f.)
+		aadd(aRotina, {"Imprimir c/cod.barra", "U_ZA1ImpAv (.t.)", 0, 2})
+	endif
+
 	aadd(aRotina, {"Imprimir - Grupo"    , "U_EtqPlltG(za1 -> za1_op, za1 -> za1_doce, za1 -> za1_seriee, za1 -> za1_fornec, za1 -> za1_lojaf, 'I')", 0, 2})
 	aadd(aRotina, {"Enviar para FullWMS" , "processa ({||U_EnvEtFul (za1 -> za1_codigo, .T.)})", 0, 4})
 	aadd(aRotina, {"Gera Etq NF entrada" , "U_ZA1GN ()", 0, 3})

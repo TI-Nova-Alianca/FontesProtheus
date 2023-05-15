@@ -7,6 +7,7 @@
 // 03/02/2022 - Robert - Variavel _sErros era local nesta funcao e, portanto, nao visivel na funcao _ExtraiTag().
 //                     - Estava permitindo continuar mesmo com a tag <User> vazia.
 // 20/02/2022 - Robert - Funcao _ExtraiTag() migrada para U_ExTagXML().
+// 12/05/2023 - Robert - Alterados alguns logs de INFO para DEBUG e vice-versa.
 //
 
 // --------------------------------------------------------------------------
@@ -21,7 +22,7 @@ user function ValReqWS (_sOrigem, _sXmlOri, _sErros, _sWS_Empr, _sWS_Filia, _sAc
 	local _aPswRet     := {}
 //	private _sErroWS := ''
 
-	u_log2 ('debug', '[porta ' + cvaltochar (GetServerPort ()) + ']XML recebido: ' + _sXmlOri)
+	u_log2 ('info', '[porta ' + cvaltochar (GetServerPort ()) + ']XML recebido: ' + _sXmlOri)
 
 	if empty (_sErroWS) .and. empty (_sOrigem)
 		_sErroWS += "Origem da conexao nao identificada"
