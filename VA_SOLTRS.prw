@@ -1,4 +1,3 @@
-
 // Programa...: VA_SOLTRS
 // Autor......: Claudia Lionço
 // Data.......: 28/03/2023
