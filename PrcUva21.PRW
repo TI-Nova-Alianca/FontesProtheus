@@ -15,6 +15,7 @@
 // 04/01/2020 - Robert - Criado parametro para nao mostrar mensagem em tela.
 // 01/02/2021 - Robert - Nao tinha tratamento de desagio para classif. D e DS em espaldeira.
 // 09/02/2021 - Robert - Sem definicao de agio para class.C grupo 302 (viniferas latadas). GLPI 9359
+// 12/05/2023 - Robert - Alterados alguns logs de INFO para DEBUG e vice-versa.
 //
 
 #include "VA_INCLU.prw"
@@ -73,7 +74,7 @@ user function PrcUva21 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	// Viniferas tem tratamento diferenciado conforme a filial onde sao recebidas, podendo inclusive
 	// ser precificadas como outra variedade.
 	if _lContinua
-		u_log2 ('info', 'Varied: ' + alltrim (_sProduto) + '-' + alltrim (sb1 -> b1_desc) + ' gr: ' + cvaltochar (_nGrau))
+		u_log2 ('DEBUG', 'Varied: ' + alltrim (_sProduto) + '-' + alltrim (sb1 -> b1_desc) + ' gr: ' + cvaltochar (_nGrau))
 		if sb1 -> b1_varuva == 'F'
 			if _sFilial $ '01/09'
 				_lIsabel = .T.
@@ -117,7 +118,7 @@ user function PrcUva21 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 					_sComent += "Produto '" + _sProduto + "' nao encontrado no cadastro."
 					_lContinua = .F.
 				else
-					u_log2 ('info', 'Variedade considerada: ' + _sProduto + ' ' + alltrim (sb1 -> b1_desc) + '(' + _sComent + ')')
+					u_log2 ('debug', 'Variedade considerada: ' + _sProduto + ' ' + alltrim (sb1 -> b1_desc) + '(' + _sComent + ')')
 				endif
 			endif
 		endif
@@ -607,6 +608,6 @@ user function PrcUva21 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 //	u_log ('Preco entrada:', _aRet [1])
 //	u_log ('Preco compra :', _aRet [2])
 //	u_log ('Preco MOC    :', _aRet [5])
-	u_log2 ('info', _aRet [3])
+	u_log2 ('debug', _aRet [3])
 	U_ML_SRArea (_aAreaAnt)
 return _aRet
