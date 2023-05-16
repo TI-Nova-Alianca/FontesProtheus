@@ -173,7 +173,7 @@ return
 // --------------------------------------------------------------------------
 // Gera as notas com 'vazios' entre elas para poder inserir alguma pre-nf manualmente depois, se precisar.
 Static Function _IncPreNF (_sPreNF)
-return soma1 (soma1 (soma1 (soma1 (soma1 (_sPreNF)))))
+return soma1 (soma1 (_sPreNF))  // Deixo uma em branco para caso de 'vai saber...'
 
 
 
@@ -1085,29 +1085,13 @@ static function _Gera2023 ()
 	local _oCarSaf   := NIL
 	local _nCpoZZ9   := 0
 
-/*
-			// Como a leitura correta de cargas compartilhadas (mais de um produtor
-			// entregando uva no mesmo caminhao) eh pesada (preciso instanciar uma
-			// carga de safra), optei por montar, antes, uma lista de cargas suspeitas
-			// e verificar somente elas mais a fundo.
-			_oSQL := ClsSQL ():New ()
-			_oSQL:_sQuery := ""
-			_oSQL:_sQuery += "SELECT STRING_AGG (ZE_FILIAL + ZE_CARGA, '/')"
-			_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZE") + " SZE"
-			_oSQL:_sQuery += " WHERE SZE.D_E_L_E_T_  = ''"
-			_oSQL:_sQuery +=   " AND SZE.ZE_SAFRA    = '" + mv_par05 + "'"
-			_oSQL:_sQuery +=   " AND SZE.ZE_CCOMPAR != ''"
-			_oSQL:_sQuery +=   " AND SZE.ZE_NFGER   != ''"
-			_oSQL:_sQuery +=   " AND SZE.ZE_STATUS  != 'C'"
-			_oSQL:Log ('[' + procname () + ']')
-			_sSuspComp = _oSQL:RetQry (1, .f.)
-			U_Log2 ('debug', '[' + procname () + ']Filial/carga suspeitas de serem compartilhadas:' + _sSuspComp)
-*/
-
 	// Busca valores efetivos recebidos pelo produtor, para depois verificar
 	// necessidade de complementar.
 	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := "SELECT *"
+	_oSQL:_sQuery := "SELECT FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, ITEM_NOTA"
+	_oSQL:_sQuery +=      ", PRODUTO, DESCRICAO, PESO_LIQ"
+	_oSQL:_sQuery +=      ", rtrim (cast (ROUND (GRAU, 0) as varchar (4))) + '.0' AS GRAU"  // Simulando graus sem decimal
+	_oSQL:_sQuery +=      ", SIST_CONDUCAO, CLAS_ABD, CLAS_FINAL, VUNIT_EFETIVO, GRUPO_PAGTO"
 	_oSQL:_sQuery +=      ", COUNT (*) OVER (PARTITION BY FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE) AS QTITENS"
 	_oSQL:_sQuery +=  " FROM VA_VPRECO_EFETIVO_SAFRA P"
 	_oSQL:_sQuery += " WHERE P.SAFRA  = '" + mv_par05 + "'"
@@ -1133,28 +1117,12 @@ static function _Gera2023 ()
 		incproc ()
 		u_log2 ('info', '[' + cvaltochar (++_nRecAtu) + ' de ' + cvaltochar (_nRecCount) + ']NF orig: ' + (_sAliasQ) -> doc + ' Produto ' + alltrim ((_sAliasQ) -> produto) + '-' + alltrim ((_sAliasQ) -> descricao) + ' gr.' + (_sAliasQ) -> grau + ' ' + _sClasFina)
 		_sMsgNF = ''
-/*
-		// Verifica se houve mistura de variedades nesta carga.
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT DISTINCT PRODUTO, DESCRICAO, CARGA"
-		_oSQL:_sQuery +=   " FROM VA_VCARGAS_SAFRA"
-		_oSQL:_sQuery +=  " WHERE SAFRA            = '" + mv_par05   + "'"
-		_oSQL:_sQuery +=    " AND FILIAL           = '" + (_sAliasQ) -> filial     + "'"
-		_oSQL:_sQuery +=    " AND CONTRANOTA       = '" + (_sAliasQ) -> doc        + "'"
-		_oSQL:_sQuery +=    " AND SERIE_CONTRANOTA = '" + (_sAliasQ) -> serie      + "'"
-		_oSQL:_sQuery +=    " AND ASSOCIADO        = '" + (_sAliasQ) -> associado  + "'"
-		_oSQL:_sQuery +=    " AND LOJA_ASSOC       = '" + (_sAliasQ) -> loja_assoc + "'"
-		_oSQL:_sQuery +=    " AND PRODUTO         != '" + (_sAliasQ) -> produto    + "'"
-		_oSQL:Log ('[' + procname () + ']')
-		_aMenorVl = aclone (_oSQL:Qry2Array ())
-		for _nAux = 1 to len (_aMenorVl)
-*/
+
 		// Encontra a carga de origem, pois pode ter sido compartilhada com
 		// outro produtor.
 		sze -> (dbsetorder (3))  // ZE_FILIAL, ZE_NFGER, ZE_SERIE, R_E_C_N_O_, D_E_L_E_T_
 		if ! sze -> (dbseek ((_sAliasQ) -> filial + (_sAliasQ) -> doc + (_sAliasQ) -> serie, .F.))
-			u_help ("Nao encontrei nenhuma carga referenciando a contranota '" + (_sAliasQ) -> doc + "' da filial '" + (_sAliasQ) -> filial + "'",, .t.)
+			u_help ("Nnao encotrei nenhuma carga referenciando a contranota '" + (_sAliasQ) -> doc + "' da filial '" + (_sAliasQ) -> filial + "'",, .t.)
 			exit
 		endif
 
@@ -1216,67 +1184,64 @@ static function _Gera2023 ()
 		endif
 
 		// A funcao retorna diferentes valores, mas aqui quero apenas o valor de compra e as observacoes.
-		_aRetPrc = {_aRetPrc[2], _aRetPrc [3]}
+		_aRetPrc = {_aRetPrc[2], _aRetPrc [3], _aRetPrc [5]}
 	//	u_log2 ('info', 'Preco unit gerado           : ' + cvaltochar (_aRetPrc [1]) + '  ' + _aRetPrc [2])
 	//	u_log2 ('info', 'Preco total gerado          : ' + cvaltochar ((_sAliasQ) -> peso_liq * _aRetPrc [1]))
 	//	u_log2 ('info', 'Preco total efetivo ateh o momento: ' + cvaltochar ((_sAliasQ) -> peso_liq * (_sAliasQ) -> VUnit_efetivo))
 		_nVCompl = ((_sAliasQ) -> peso_liq * _aRetPrc [1]) - ((_sAliasQ) -> peso_liq * (_sAliasQ) -> VUnit_efetivo)
 	//	u_log2 ('info', 'Valor total complemento     : ' + cvaltochar (_nVCompl))
-//		if _nVCompl > 0
 
-			// Gera proxima pre-nf livre
-			_sQuery := " select max (ZZ9_PRE_NF)"
-			_sQuery +=  " from " + RETSQLNAME ("ZZ9") + " ZZ9  "
-			_sQuery += " where ZZ9.D_E_L_E_T_ != '*'"
-			_sQuery +=   " and ZZ9.ZZ9_FILIAL = '" + (_sAliasQ) -> FILIAL + "'"
-			_sQuery +=   " and ZZ9.ZZ9_SAFRA  = '" + mv_par05 + "'"
-			_sPreNF = _IncPreNF (U_RetSQL (_sQuery))
+		// Gera proxima pre-nf livre
+		_sQuery := " select max (ZZ9_PRE_NF)"
+		_sQuery +=  " from " + RETSQLNAME ("ZZ9") + " ZZ9  "
+		_sQuery += " where ZZ9.D_E_L_E_T_ != '*'"
+		_sQuery +=   " and ZZ9.ZZ9_FILIAL = '" + (_sAliasQ) -> FILIAL + "'"
+		_sQuery +=   " and ZZ9.ZZ9_SAFRA  = '" + mv_par05 + "'"
+		_sPreNF = _IncPreNF (U_RetSQL (_sQuery))
 
-			reclock ("ZZ9", .T.)
-			zz9 -> zz9_filial = (_sAliasQ) -> FILIAL
-			zz9 -> zz9_safra  = mv_par05
-			zz9 -> zz9_grupo  = (_sAliasQ) -> grupo_PAGTO
-			zz9 -> zz9_parcel = mv_par06
-			zz9 -> zz9_fornec = (_sAliasQ) -> associado
-			zz9 -> zz9_loja   = (_sAliasQ) -> loja_assoc
-			zz9 -> zz9_pre_nf = _sPreNF
-			zz9 -> zz9_tiponf = "V"  // C=Compra;V=[complemento de]Valor
-			zz9 -> zz9_produt = (_sAliasQ) -> produto
-			zz9 -> zz9_grau   = (_sAliasQ) -> grau
-			zz9 -> zz9_classe = (_sAliasQ) -> clas_final
-			zz9 -> zz9_clabd  = (_sAliasQ) -> clas_abd
-			zz9 -> zz9_conduc = (_sAliasQ) -> sist_conducao
-			zz9 -> zz9_vunOld = (_sAliasQ) -> VUnit_efetivo
-			zz9 -> zz9_quant  = 0
-			zz9 -> zz9_qtOri  = (_sAliasQ) -> peso_liq  // Campo util para relatorios posteriores
-			zz9 -> zz9_vunit  = _nVCompl   // Valor total a complementar
-			zz9 -> zz9_vunit2 = _aRetPrc [1]  // Preco unitario que foi usado para calcular o complemento
-			zz9 -> zz9_obs    = _aRetPrc [2]  // Observacoes geradas pelo prog. de calculo do preco
-			zz9 -> zz9_nfori  = (_sAliasQ) -> doc
-			zz9 -> zz9_serior = (_sAliasQ) -> serie
-			zz9 -> zz9_itemor = (_sAliasQ) -> item_nota
-			zz9 -> zz9_msgNF  = 'COMPL PRECO;' + _sMsgNF
-			zz9 -> zz9_TES    = iif (_nVCompl <= 0, '', U_TESSafra (mv_par05, (_sAliasQ) -> associado, (_sAliasQ) -> loja_assoc, 'V'))
-			zz9 -> zz9_dco    = ''
-			if valtype (_oCarSaf) == 'O' .and. len (_oCarSaf:CCompart) > 0
-				zz9 -> zz9_ccomp  = _oCarSaf:TodasComp ()
+		reclock ("ZZ9", .T.)
+		zz9 -> zz9_filial = (_sAliasQ) -> FILIAL
+		zz9 -> zz9_safra  = mv_par05
+		zz9 -> zz9_grupo  = (_sAliasQ) -> grupo_PAGTO
+		zz9 -> zz9_parcel = mv_par06
+		zz9 -> zz9_fornec = (_sAliasQ) -> associado
+		zz9 -> zz9_loja   = (_sAliasQ) -> loja_assoc
+		zz9 -> zz9_pre_nf = _sPreNF
+		zz9 -> zz9_tiponf = "V"  // C=Compra;V=[complemento de]Valor
+		zz9 -> zz9_produt = (_sAliasQ) -> produto
+		zz9 -> zz9_grau   = (_sAliasQ) -> grau
+		zz9 -> zz9_classe = (_sAliasQ) -> clas_final
+		zz9 -> zz9_clabd  = (_sAliasQ) -> clas_abd
+		zz9 -> zz9_conduc = (_sAliasQ) -> sist_conducao
+		zz9 -> zz9_vunOld = (_sAliasQ) -> VUnit_efetivo
+		zz9 -> zz9_quant  = 0
+		zz9 -> zz9_qtOri  = (_sAliasQ) -> peso_liq  // Campo util para relatorios posteriores
+		zz9 -> zz9_vunit  = _nVCompl   // Valor total a complementar
+		zz9 -> zz9_vunit2 = _aRetPrc [1]  // Preco unitario que foi usado para calcular o complemento
+		zz9 -> zz9_obs    = _aRetPrc [2]  // Observacoes geradas pelo prog. de calculo do preco
+		zz9 -> zz9_vunit3 = _aRetPrc [3]  // Preco unitario da tabela CONAB
+		zz9 -> zz9_nfori  = (_sAliasQ) -> doc
+		zz9 -> zz9_serior = (_sAliasQ) -> serie
+		zz9 -> zz9_itemor = (_sAliasQ) -> item_nota
+		zz9 -> zz9_msgNF  = 'COMPL PRECO;' + _sMsgNF
+		zz9 -> zz9_TES    = iif (_nVCompl <= 0, '', U_TESSafra (mv_par05, (_sAliasQ) -> associado, (_sAliasQ) -> loja_assoc, 'V'))
+		zz9 -> zz9_dco    = ''
+		if valtype (_oCarSaf) == 'O' .and. len (_oCarSaf:CCompart) > 0
+			zz9 -> zz9_ccomp  = _oCarSaf:TodasComp ()
+		endif
+
+		// Grava as possibilidades de misturas de variedades.
+		_nCpoZZ9 = 1
+		for _nAux = 1 to len (_aMenorVl)
+			// Geralmente a 'variedade de menor valor' eh a propria variedade
+			// da contranota original, entao nem preciso gravar.
+			if _aMenorVl [_nAux, 1] != (_sAliasQ) -> produto
+				zz9 -> &('zz9_mistu' + cvaltochar (_nCpoZZ9)) = _aMenorVl [_nAux, 1]
+				_nCpoZZ9 ++
 			endif
-
-			// Grava as possibilidades de misturas de variedades.
-			_nCpoZZ9 = 1
-			for _nAux = 1 to len (_aMenorVl)
-				// Geralmente a 'variedade de menor valor' eh a propria variedade
-				// da contranota original, entao nem preciso gravar.
-				if _aMenorVl [_nAux, 1] != (_sAliasQ) -> produto
-					zz9 -> &('zz9_mistu' + cvaltochar (_nCpoZZ9)) = _aMenorVl [_nAux, 1]
-					_nCpoZZ9 ++
-				endif
-			next
-			
-			msunlock ()
-//		else
-//			u_log2 ('aviso', 'Complemento negativo ou zerado.')
-//		endif
+		next
+		
+		msunlock ()
 		(_sAliasQ) -> (dbskip ())
 	enddo
 

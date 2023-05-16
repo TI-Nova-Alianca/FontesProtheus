@@ -14,10 +14,11 @@
 // 07/12/2022 - Robert - Copiada versao de 2022, pois estah definido que manteremos os precos do ano passado.
 // 02/05/2023 - Robert - Passamos a safra chamando a funcao de calculo de
 //                       precos pela MOC de 2022. Passada a safra, posso
-//                       voltar a calcular precos normalmente.
-//                     - Refeita parte de agios, conferencia com planilhas.
-//                     - Criado tratamento para campos ZX5_13GMAG e ZX5_13PMIN
-//                     - Desabilitada 'colher de chá' para o Alicante ($ de isabel abaixo de 14 graus)
+//                       voltar a calcular precos normalmente (GLPI 13532).
+//                     - Refeita parte de agios, conferencia com planilhas (GLPI 13532).
+//                     - Criado tratamento para campos ZX5_13GMAG e ZX5_13PMIN (GLPI 13532).
+//                     - Desabilitada 'colher de chá' para o Alicante ($ de isabel abaixo de 14 graus) (GLPI 13532).
+// 12/05/2023 - Robert - Alterados alguns logs de INFO para DEBUG e vice-versa.
 //
 
 #include "VA_INCLU.prw"
@@ -76,7 +77,7 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	// Viniferas tem tratamento diferenciado conforme a filial onde sao recebidas, podendo inclusive
 	// ser precificadas como outra variedade.
 	if _lContinua
-//		u_log2 ('debug', '[' + procname () + '] Calculando preco uva ' + alltrim (_sProduto) + '-' + alltrim (sb1 -> b1_desc) + ' gr: ' + cvaltochar (_nGrau) + ' entregue na filial ' + _sFilial)
+		u_log2 ('debug', '[' + procname () + '] Calculando preco uva ' + alltrim (_sProduto) + '-' + alltrim (sb1 -> b1_desc) + ' gr: ' + cvaltochar (_nGrau) + ' entregue na filial ' + _sFilial)
 		if sb1 -> b1_varuva == 'F'
 			if _sFilial $ '01/09'
 				_lIsabel = .T.

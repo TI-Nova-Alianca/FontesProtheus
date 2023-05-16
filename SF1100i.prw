@@ -123,6 +123,7 @@
 //                        chamar algumas rotinas que nao se aplicam a safras.
 // 16/01/2023 - Robert  - Criado parametro VA_RFRSAFR para reembolsar (ou nao) FUNRURAL nas contranotas de safra.
 // 22/04/2023 - Robert  - Gravacao campo E2_VAFRSAF.
+// 15/05/2023 - Robert - Alterados alguns logs de INFO para DEBUG e vice-versa.
 //
 
 // ------------------------------------------------------------------------------------------------------------------------------
@@ -392,6 +393,7 @@ static function _GrvCpAdic ()
 			sx3 -> (dbsetorder (2))
 			for _nLinha = 1 to len (aAutoCab)
 				if sx3 -> (dbseek (aAutoCab [_nLinha, 1], .F.)) .and. sx3 -> x3_propri == "U"
+			//		U_Log2 ('debug', '[' + procname () + "]Gravando campo customizado '" + aAutoCab [_nLinha, 1] + "' pois estah presente na array aAutoCab.")
 					reclock ("SF1", .F.)
 					sf1 -> &(aAutoCab [_nLinha, 1]) = aAutoCab [_nLinha, 2]
 					msunlock ()
@@ -571,7 +573,7 @@ static function _AjSE2 ()
 					_dVctSafra -= 1
 				enddo
 				if se2 -> e2_vencrea != _dVctSafra
-					U_Log2 ('info', '[' + procname () + '] e2_parcela ' + se2 -> e2_parcela + ': alterando e2_vencrea de ' + dtoc (se2 -> e2_vencrea) + ' para ' + dtoc (_dVctSafra))
+					U_Log2 ('debug', '[' + procname () + '] e2_parcela ' + se2 -> e2_parcela + ': alterando e2_vencrea de ' + dtoc (se2 -> e2_vencrea) + ' para ' + dtoc (_dVctSafra))
 				endif
 				reclock ("SE2", .F.)
 				se2 -> e2_hist    = alltrim (se2 -> e2_hist) + 'SAFRA ' + sf1 -> f1_vasafra + ' GRP.' + sf1 -> F1_VAGPSAF
@@ -666,7 +668,7 @@ static function _AjSE2 ()
 				endif
 			endif
 		else
-			U_Log2 ('info', '[' + procname () + ']Nao vou ajustandr parcelas ref.FUNRURAL cfe. parametro VA_RFRSAFR')
+			U_Log2 ('debug', '[' + procname () + ']Nao vou ajustandr parcelas ref.FUNRURAL cfe. parametro VA_RFRSAFR')
 		endif
 	endif
 return

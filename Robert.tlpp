@@ -16,6 +16,10 @@
 // local varJson := { "teste" : { "var1" : "oioi", "var2": "oioi2", "var3": "oioi3" }}  https://tdn.totvs.com/display/tec/Json
 // Compilacao por linha de comando  https://tdn.totvs.com/pages/viewpage.action?pageId=528461210
 
+// Campos a serem eliminados quando der no jeito:
+// ZZU_EMP
+// Campos de DAP no SA2 (conferir os programas antes)
+
 #include "protheus.ch"
 #include "rwmake.ch"
 #include "VA_INCLU.prw"
@@ -27,6 +31,9 @@
 user function robert ()
 	local _lContinua := .T.
 
+	// REMOVER DEPOIS DOS TESTES DE PERFORMANCE
+//	u_perfmon ('I', 'Prep_env_' + cValToChar (GetServerPort ()))
+
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
 		prepare environment empresa '01' filial '01' modulo 'FIN'
 		private cModulo   := 'FIN'
@@ -35,6 +42,10 @@ user function robert ()
 		private __RelDir  := "c:\temp\spool_protheus\"
 		set century on
 	endif
+
+	// REMOVER DEPOIS DOS TESTES DE PERFORMANCE
+//	u_perfmon ('F', 'Prep_env_' + cValToChar (GetServerPort ()))
+
 	if ! alltrim(upper(cusername)) $ 'ROBERT.KOCH/ADMINISTRADOR'
 		msgalert ('Nao te conheco, nao gosto de ti e nao vou te deixar continuar. Vai pra casa.', procname ())
 		_lContinua = .F.
@@ -70,6 +81,7 @@ user function robert ()
 		// _AjLoteEnd ()
 		// _AtuSB1 ()
 		// _aviso ()
+		// _batBlUsr ()
 		// _batFull ()
 		// _BatLimp ()
 		// _BatOcor ()
@@ -78,6 +90,7 @@ user function robert ()
 		// _BatXML ()
 		// _batZBE ()
 		// _CargSaf ()
+		// _CplSaf23 ()
 		// _ctbANC ()
 		// _elastic ()
 		// _EstFul()
@@ -85,17 +98,22 @@ user function robert ()
 		// _evtXML ()
 		// _exml ()
 		// _FechSafr ()
+		// _FtSafra ()
 		// _gerasze ()
 		// _GLPI13221 ()
 		// _ImpGPC ()
 		// _memoria ()
 		// _metaf ()
+		// _PerfMon ()
 		// _PreNF ()
+		// _Rast ()
 		// _reginv ()
+		// _recmail ()
 		// _RevCH ()
 		// _RelAssoc ()
 		// _SF1()
 		// _SimCtb ()
+		_SimSafrGI ()
 		// _Sisdevin ()
 		// _ST_MG ()
 		// _SZI ()
@@ -104,6 +122,7 @@ user function robert ()
 		// _VACCR2 ()
 		// _VA_XLS ()
 		// _verif ()
+
 		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
@@ -277,6 +296,814 @@ static function _ST_MG ()
 return
 
 // --------------------------------------------------------------------------
+// Gera pre-notas compra safra 2016
+static function _CprSaf16 ()
+	// Simulacao: Violeta + bordo + assoc. da JC que entregaram na 01 + organicas.
+	// Bordo e violeta: paga 100%
+	// 9822 BORDO DE BORDADURA                                          
+	// 9925 BORDO (IVES)                                                
+	// 9959 BORDO ORGANICO                                              
+	// 9948 BORDO EM CONVERSAO P/ ORGANICA
+	// 9976 BRS VIOLETA                                                                               
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2016') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', 6)      // Maximo itens por NF produtor
+	U_GravaSX1 (cPerg, '10', 2)      // Geracao p/ DCO (so safra 2009) [S/N]
+	U_GravaSX1 (cPerg, '11', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
+	U_GravaSX1 (cPerg, '13', 'A')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '14', 3)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '15', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '16', '9822/9925/9948/9976')  // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '17', '')     // Exceto estas variedades.
+	U_GravaSX1 (cPerg, '18', '')     // Coop. origem.
+	U_GravaSX1 (cPerg, '19', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '20', 'CEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_VA_GNF1 (.T.)
+
+	// Associados da L. Jacinto que entregaram na matriz: paga 100%
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2016') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', 6)      // Maximo itens por NF produtor
+	U_GravaSX1 (cPerg, '10', 2)      // Geracao p/ DCO (so safra 2009) [S/N]
+	U_GravaSX1 (cPerg, '11', '01')   // Filial inicial
+	U_GravaSX1 (cPerg, '12', '01')   // Filial final
+	U_GravaSX1 (cPerg, '13', 'B')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '14', 3)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '15', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '16', '')     // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '17', '9822/9925/9948/9976')    // Exceto estas variedades (bordo e violeta - ja pagas na primeira parcela)
+	U_GravaSX1 (cPerg, '18', 'JC')   // Coop. origem.
+	U_GravaSX1 (cPerg, '19', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '20', 'OCEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_VA_GNF1 (.T.)
+
+	// Demais uvas organicas parte 1 (assoc. da Jacinto exceto os que entregaram na F.01)
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2016') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', 6)      // Maximo itens por NF produtor
+	U_GravaSX1 (cPerg, '10', 2)      // Geracao p/ DCO (so safra 2009) [S/N]
+	U_GravaSX1 (cPerg, '11', '02')   // Filial inicial
+	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
+	U_GravaSX1 (cPerg, '13', 'C')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '14', 3)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '15', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '16', '')     // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '17', '9822/9925/9948/9976')    // Exceto estas variedades (bordo e violeta - ja pagas na primeira parcela)
+	U_GravaSX1 (cPerg, '18', 'JC')   // Coop. origem.
+	U_GravaSX1 (cPerg, '19', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '20', 'O')    // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_VA_GNF1 (.T.)
+
+	// Demais uvas organicas parte 2 (exceto assoc. da Jacinto, pois jï¿½ entraram no lote anterior)
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2016') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', 6)      // Maximo itens por NF produtor
+	U_GravaSX1 (cPerg, '10', 2)      // Geracao p/ DCO (so safra 2009) [S/N]
+	U_GravaSX1 (cPerg, '11', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
+	U_GravaSX1 (cPerg, '13', 'D')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '14', 3)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '15', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '16', '')     // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '17', '9822/9925/9948/9976')    // Exceto estas variedades (bordo e violeta - ja pagas na primeira parcela)
+	U_GravaSX1 (cPerg, '18', 'AL/PO/SA/SP/SV')  // Coop. origem.
+	U_GravaSX1 (cPerg, '19', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '20', 'O')    // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_VA_GNF1 (.T.)
+
+	// Demais uvas tintoreas parte 1 (assoc. da Jacinto exceto os que entregaram na F.01)
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2016') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', 6)      // Maximo itens por NF produtor
+	U_GravaSX1 (cPerg, '10', 2)      // Geracao p/ DCO (so safra 2009) [S/N]
+	U_GravaSX1 (cPerg, '11', '02')   // Filial inicial
+	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
+	U_GravaSX1 (cPerg, '13', 'E')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '14', 3)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '15', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '16', '')     // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '17', '9822/9925/9948/9976')    // Exceto estas variedades (bordo e violeta - ja pagas na primeira parcela)
+	U_GravaSX1 (cPerg, '18', 'JC')   // Coop. origem.
+	U_GravaSX1 (cPerg, '19', 1)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '20', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_VA_GNF1 (.T.)
+
+	// Demais uvas tintoreas parte 2 (exceto assoc. da Jacinto, pois jï¿½ entraram no lote anterior)
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2016') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', 6)      // Maximo itens por NF produtor
+	U_GravaSX1 (cPerg, '10', 2)      // Geracao p/ DCO (so safra 2009) [S/N]
+	U_GravaSX1 (cPerg, '11', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
+	U_GravaSX1 (cPerg, '13', 'F')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '14', 3)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '15', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '16', '')     // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '17', '9822/9925/9948/9976')    // Exceto estas variedades (bordo e violeta - ja pagas na primeira parcela)
+	U_GravaSX1 (cPerg, '18', 'AL/PO/SA/SP/SV')  // Coop. origem.
+	U_GravaSX1 (cPerg, '19', 1)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '20', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_VA_GNF1 (.T.)
+
+	// O que sobrou vai ateh chegar a 50% do valor total da safra: parte 1 - o resto do pessoal da Jacinto.
+	// Por enquanto vou apenas separar numa parcela para conferir quantidades.
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2016') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', 6)      // Maximo itens por NF produtor
+	U_GravaSX1 (cPerg, '10', 2)      // Geracao p/ DCO (so safra 2009) [S/N]
+	U_GravaSX1 (cPerg, '11', '02')   // Filial inicial
+	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
+	U_GravaSX1 (cPerg, '13', 'G')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '14', 3)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '15', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '16', '')     // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '17', '9822/9925/9948/9976')    // Exceto estas variedades (bordo e violeta - ja pagas na primeira parcela)
+	U_GravaSX1 (cPerg, '18', 'JC')   // Coop. origem.
+	U_GravaSX1 (cPerg, '19', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '20', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_VA_GNF1 (.T.)
+
+	// O que sobrou vai ateh chegar a 50% do valor total da safra: parte 2 - exceto o pessoal da Jacinto, pois jï¿½ entraram no lote anterior
+	// Por enquanto vou apenas separar numa parcela para conferir quantidades.
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2016') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', 6)      // Maximo itens por NF produtor
+	U_GravaSX1 (cPerg, '10', 2)      // Geracao p/ DCO (so safra 2009) [S/N]
+	U_GravaSX1 (cPerg, '11', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
+	U_GravaSX1 (cPerg, '13', 'H')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '14', 3)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '15', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '16', '')     // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '17', '9822/9925/9948/9976')    // Exceto estas variedades (bordo e violeta - ja pagas na primeira parcela)
+	U_GravaSX1 (cPerg, '18', 'AL/PO/SA/SP/SV')  // Coop. origem.
+	U_GravaSX1 (cPerg, '19', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '20', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_VA_GNF1 (.T.)
+return
+
+// --------------------------------------------------------------------------
+// Gera pre-notas compra safra 2018
+static function _CprSaf18 ()
+	// Geracao pre-notas compra safra 2018 - parcela A - bordo
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2018') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '10', 'zz')   // Filial final
+	U_GravaSX1 (cPerg, '11', 'A')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '14', '9925/9822/9948/9959') // Apenas estas variedades (bordo, bordo de bordadura/em conversao/organico)
+	U_GravaSX1 (cPerg, '15', '')     // Exceto estas variedades.
+	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
+	U_GravaSX1 (cPerg, '17', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '18', 'OCEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_VA_GNF1 (.T.)
+	// Geracao pre-notas compra safra 2018 - parcela A - organicas (exceto bordo, jah gerado anteriormente)
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2018') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '10', 'zz')   // Filial final
+	U_GravaSX1 (cPerg, '11', 'A')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
+	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
+	U_GravaSX1 (cPerg, '17', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '18', 'O')    // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_VA_GNF1 (.T.)
+	// Geracao pre-notas compra safra 2018 - parcela B - tintoreas (exceto bordo e organicas, jah geradas anteriormente)
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2018') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '10', 'zz')   // Filial final
+	U_GravaSX1 (cPerg, '11', 'B')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
+	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
+	U_GravaSX1 (cPerg, '17', 1)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_VA_GNF1 (.T.)
+	// Geracao pre-notas compra safra 2018 - parcela B - viniferas Livr. (exceto tintoreas, bordo e organicas, jah geradas anteriormente)
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2018') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', '03')   // Filial inicial
+	U_GravaSX1 (cPerg, '10', '03')   // Filial final
+	U_GravaSX1 (cPerg, '11', 'B')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '12', 2)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
+	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
+	U_GravaSX1 (cPerg, '17', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_VA_GNF1 (.T.)
+	// Geracao pre-notas compra safra 2018 - parcela C F.01 - demais (exceto viniferas Livr, tintoreas, bordo e organicas, jah geradas anteriormente)
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2018') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', '01')   // Filial inicial
+	U_GravaSX1 (cPerg, '10', '01')   // Filial final
+	U_GravaSX1 (cPerg, '11', 'C')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
+	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
+	U_GravaSX1 (cPerg, '17', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_VA_GNF1 (.T.)
+	// Geracao pre-notas compra safra 2018 - parcela C F.07 e 09 - demais (exceto viniferas Livr, tintoreas, bordo e organicas, jah geradas anteriormente)
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2018') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', '07')   // Filial inicial
+	U_GravaSX1 (cPerg, '10', '09')   // Filial final
+	U_GravaSX1 (cPerg, '11', 'C')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
+	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
+	U_GravaSX1 (cPerg, '17', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_VA_GNF1 (.T.)
+return
+
+// --------------------------------------------------------------------------
+// Geracao pre-notas compra safra 2019
+static function _CprSaf19 ()
+	// grupo A - bordo
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2019') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '10', 'zz')   // Filial final
+	U_GravaSX1 (cPerg, '11', 'G')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '14', '9925/9822/9948/9959') // Apenas estas variedades (bordo, bordo de bordadura/em conversao/organico)
+	U_GravaSX1 (cPerg, '15', '')     // Exceto estas variedades.
+	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
+	U_GravaSX1 (cPerg, '17', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '18', 'OCEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_GravaSX1 (cPerg, '19', 'A')    // Grupo para pagamento
+	U_GravaSX1 (cPerg, '20', '3')    // 1=Latadas; 2=Espaldeira; 3=Todas
+	U_VA_GNF1 (.T.)
+	// 
+	// grupo A - organicas
+	// exceto bordo, jah gerado anteriormente
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2019') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '10', 'zz')   // Filial final
+	U_GravaSX1 (cPerg, '11', 'H')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
+	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
+	U_GravaSX1 (cPerg, '17', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '18', 'O')    // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_GravaSX1 (cPerg, '19', 'A')    // Grupo para pagamento
+	U_GravaSX1 (cPerg, '20', '3')    // 1=Latadas; 2=Espaldeira; 3=Todas
+	U_VA_GNF1 (.T.)
+	// 
+	// grupo B - tintoreas
+	// exceto bordo e organicas, jah geradas anteriormente
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2019') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '10', 'zz')   // Filial final
+	U_GravaSX1 (cPerg, '11', 'I')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
+	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
+	U_GravaSX1 (cPerg, '17', 1)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_GravaSX1 (cPerg, '19', 'B')    // Grupo para pagamento
+	U_GravaSX1 (cPerg, '20', '3')    // 1=Latadas; 2=Espaldeira; 3=Todas
+	U_VA_GNF1 (.T.)
+	// 
+	// grupo B - viniferas espaldeira
+	// exceto tintoreas, bordo e organicas, jah geradas anteriormente
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2019') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '10', 'z')    // Filial final
+	U_GravaSX1 (cPerg, '11', 'J')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '12', 2)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
+	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
+	U_GravaSX1 (cPerg, '17', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_GravaSX1 (cPerg, '19', 'B')    // Grupo para pagamento
+	U_GravaSX1 (cPerg, '20', '2')    // 1=Latadas; 2=Espaldeira; 3=Todas
+	U_VA_GNF1 (.T.)
+	// 
+	// grupo C - viniferas latadas
+	// exceto tintoreas, bordo e organicas, jah geradas anteriormente
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2019') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '10', 'z')    // Filial final
+	U_GravaSX1 (cPerg, '11', 'K')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '12', 2)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
+	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
+	U_GravaSX1 (cPerg, '17', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_GravaSX1 (cPerg, '19', 'C')    // Grupo para pagamento
+	U_GravaSX1 (cPerg, '20', '1')    // 1=Latadas; 2=Espaldeira; 3=Todas
+	U_VA_GNF1 (.T.)
+	//
+	// grupo C - demais
+	// exceto tintoreas, bordo e organicas, viniferas jah geradas anteriormente
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2019') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '10', 'z')    // Filial final
+	U_GravaSX1 (cPerg, '11', 'L')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '12', 1)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
+	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
+	U_GravaSX1 (cPerg, '17', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_GravaSX1 (cPerg, '19', 'C')    // Grupo para pagamento
+	U_GravaSX1 (cPerg, '20', '3')    // 1=Latadas; 2=Espaldeira; 3=Todas
+	U_VA_GNF1 (.T.)
+return
+
+// --------------------------------------------------------------------------
+// Geracao pre-notas compra safra 2020
+static function _CprSaf20 ()
+	// grupo A - bordo
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '10', 'zz')   // Filial final
+	U_GravaSX1 (cPerg, '11', 'A')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '14', '9925/9822/9948/9959') // Apenas estas variedades (bordo, bordo de bordadura/em conversao/organico)
+	U_GravaSX1 (cPerg, '15', '')     // Exceto estas variedades.
+	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
+	U_GravaSX1 (cPerg, '17', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '18', 'OCEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_GravaSX1 (cPerg, '19', 'A')    // Grupo para pagamento
+	U_GravaSX1 (cPerg, '20', '3')    // 1=Latadas; 2=Espaldeira; 3=Todas
+	U_GravaSX1 (cPerg, '21', '107')  // TES compra de associados
+	U_GravaSX1 (cPerg, '22', '077')  // TES compra de nao associados
+	U_VA_GNF1 (.T.)
+	// 
+	// grupo A - organicas
+	// exceto bordo, jah gerado anteriormente
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '10', 'zz')   // Filial final
+	U_GravaSX1 (cPerg, '11', 'B')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
+	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
+	U_GravaSX1 (cPerg, '17', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '18', 'O')    // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_GravaSX1 (cPerg, '19', 'A')    // Grupo para pagamento
+	U_GravaSX1 (cPerg, '20', '3')    // 1=Latadas; 2=Espaldeira; 3=Todas
+	U_GravaSX1 (cPerg, '21', '107')  // TES compra de associados
+	U_GravaSX1 (cPerg, '22', '077')  // TES compra de nao associados
+	U_VA_GNF1 (.T.)
+	// 
+	// grupo B - tintorias
+	// exceto bordo e organicas, jah geradas anteriormente
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '10', 'zz')   // Filial final
+	U_GravaSX1 (cPerg, '11', 'C')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
+	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
+	U_GravaSX1 (cPerg, '17', 1)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_GravaSX1 (cPerg, '19', 'B')    // Grupo para pagamento
+	U_GravaSX1 (cPerg, '20', '3')    // 1=Latadas; 2=Espaldeira; 3=Todas
+	U_GravaSX1 (cPerg, '21', '107')  // TES compra de associados
+	U_GravaSX1 (cPerg, '22', '077')  // TES compra de nao associados
+	U_VA_GNF1 (.T.)
+	// 
+	// grupo B - viniferas espaldeira
+	// exceto tintoreas, bordo e organicas, jah geradas anteriormente
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '10', 'z')    // Filial final
+	U_GravaSX1 (cPerg, '11', 'D')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '12', 2)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
+	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
+	U_GravaSX1 (cPerg, '17', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_GravaSX1 (cPerg, '19', 'B')    // Grupo para pagamento
+	U_GravaSX1 (cPerg, '20', '2')    // 1=Latadas; 2=Espaldeira; 3=Todas
+	U_GravaSX1 (cPerg, '21', '107')  // TES compra de associados
+	U_GravaSX1 (cPerg, '22', '077')  // TES compra de nao associados
+	U_VA_GNF1 (.T.)
+	// 
+	// grupo C - viniferas latadas
+	// exceto tintoreas, bordo e organicas, jah geradas anteriormente
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '10', 'z')    // Filial final
+	U_GravaSX1 (cPerg, '11', 'E')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '12', 2)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
+	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
+	U_GravaSX1 (cPerg, '17', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_GravaSX1 (cPerg, '19', 'C')    // Grupo para pagamento
+	U_GravaSX1 (cPerg, '20', '1')    // 1=Latadas; 2=Espaldeira; 3=Todas
+	U_GravaSX1 (cPerg, '21', '107')  // TES compra de associados
+	U_GravaSX1 (cPerg, '22', '077')  // TES compra de nao associados
+	U_VA_GNF1 (.T.)
+	//
+	// grupo C - demais
+	// exceto tintoreas, bordo e organicas, viniferas jah geradas anteriormente
+	cPerg = "VAGNF1"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
+	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
+	U_GravaSX1 (cPerg, '10', 'z')    // Filial final
+	U_GravaSX1 (cPerg, '11', 'F')    // Gerar com qual parcela
+	U_GravaSX1 (cPerg, '12', 1)      // Variedade de uva [Comum/Fina/Todas]
+	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
+	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
+	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
+	U_GravaSX1 (cPerg, '17', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	U_GravaSX1 (cPerg, '19', 'C')    // Grupo para pagamento
+	U_GravaSX1 (cPerg, '20', '3')    // 1=Latadas; 2=Espaldeira; 3=Todas
+	U_GravaSX1 (cPerg, '21', '107')  // TES compra de associados
+	U_GravaSX1 (cPerg, '22', '077')  // TES compra de nao associados
+	U_VA_GNF1 (.T.)
+return
+
+// --------------------------------------------------------------------------
+// Gera pre-notas complemento 2021
+static function _CplSaf21 ()
+	// Simulacoes precos para 2021
+	// cPerg = "VAGNF1"
+	// U_GravaSX1 (cPerg, '01', '012373')     // Produtor inicial
+	// U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	// U_GravaSX1 (cPerg, '03', '012373')    // Produtor final
+	// U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	// U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
+	// U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
+	// U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
+	// U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
+	// U_GravaSX1 (cPerg, '09', '03')     // Filial inicial
+	// U_GravaSX1 (cPerg, '10', '03')   // Filial final
+	// U_GravaSX1 (cPerg, '11', 'Z')    // Gerar com qual parcela
+	// U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
+	// U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
+	// U_GravaSX1 (cPerg, '14', '') // Apenas estas variedades (bordo, bordo de bordadura/em conversao/organico)
+	// U_GravaSX1 (cPerg, '15', '')     // Exceto estas variedades.
+	// U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
+	// U_GravaSX1 (cPerg, '17', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
+	// U_GravaSX1 (cPerg, '18', 'OCEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
+	// U_GravaSX1 (cPerg, '19', 'Z')    // Grupo para pagamento
+	// U_GravaSX1 (cPerg, '20', '3')    // 1=Latadas; 2=Espaldeira; 3=Todas
+	// U_GravaSX1 (cPerg, '21', '107')  // TES compra de associados
+	// U_GravaSX1 (cPerg, '22', '077')  // TES compra de nao associados
+	// U_VA_GNF1 (.T.)
+
+	_sArqLog := 'U_VA_GNF3_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
+	if cFilAnt == '07'
+		cPerg = "VAGNF3"
+		U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+		U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+		U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+		U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+		U_GravaSX1 (cPerg, '05', '2021') // Safra referencia
+		U_GravaSX1 (cPerg, '06', 'B')    // gerar qual Parcela
+		U_GravaSX1 (cPerg, '07', '')     // DCO inicial
+		U_GravaSX1 (cPerg, '08', 'z')    // DCO final
+		U_GravaSX1 (cPerg, '09', '')     // Prod ini
+		U_GravaSX1 (cPerg, '10', 'z')    // Prod final
+		U_GravaSX1 (cPerg, '11', 0)    // Preco 2016
+		U_GravaSX1 (cPerg, '12', '9845/9854/9911/9932/9920/9928/9912') // Apenas estas variedades (moscatos, riesling e procecco), trebiano
+		U_GravaSX1 (cPerg, '13', '')  // Exceto estas variedades
+		U_GravaSX1 (cPerg, '14', '07')   // Filial inicial
+		U_GravaSX1 (cPerg, '15', '07')   // Filial final
+		U_VA_GNF3 (.T.)
+	endif
+	if cFilAnt == '03'
+		cPerg = "VAGNF3"
+		U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+		U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+		U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+		U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+		U_GravaSX1 (cPerg, '05', '2021') // Safra referencia
+		U_GravaSX1 (cPerg, '06', 'B')    // gerar qual Parcela
+		U_GravaSX1 (cPerg, '07', '')     // DCO inicial
+		U_GravaSX1 (cPerg, '08', 'z')    // DCO final
+		U_GravaSX1 (cPerg, '09', '')     // Prod ini
+		U_GravaSX1 (cPerg, '10', 'z')    // Prod final
+		U_GravaSX1 (cPerg, '11', 0)      // Preco (especifico safra 2016)
+		U_GravaSX1 (cPerg, '12', '')     // Apenas estas variedades
+		U_GravaSX1 (cPerg, '13', '')     // Exceto estas variedades
+		U_GravaSX1 (cPerg, '14', '03')   // Filial inicial
+		U_GravaSX1 (cPerg, '15', '03')   // Filial final
+		U_VA_GNF3 (.T.)
+	endif
+return
+
+// --------------------------------------------------------------------------
+// Gera pre-notas complemento 2023
+static function _CplSaf23 ()
+	local _sSafraCpl := '2023'
+	U_MudaLog ('CplSaf23.log')
+	cPerg = "VAGNF3"
+	// assoc 000156 a 000196 --> ha cargas compartilhadas em 2023
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', _sSafraCpl) // Safra referencia
+	U_GravaSX1 (cPerg, '06', 'L')    // gerar qual Parcela
+	U_GravaSX1 (cPerg, '07', '')     // DCO inicial
+	U_GravaSX1 (cPerg, '08', 'z')    // DCO final
+	U_GravaSX1 (cPerg, '09', '')     // Prod ini
+	U_GravaSX1 (cPerg, '10', 'z')    // Prod final
+	U_GravaSX1 (cPerg, '11', 0)      // Preco total (especifico safra 2016)
+	U_GravaSX1 (cPerg, '12', '')     // Apenas estas variedades (separadas por /)
+	U_GravaSX1 (cPerg, '13', '')     // Exceto estas variedades (separadas por /)
+	U_GravaSX1 (cPerg, '14', '')   // Filial inicial
+	U_GravaSX1 (cPerg, '15', 'z')   // Filial final
+	U_VA_GNF3 (.T.)
+/*
+	dbselectarea ("ZZ9")
+	set filter to zz9_safra = '2023' .and. zz9_parcel = 'K'
+	zz9 -> (dbgotop ())
+	do while ! zz9 -> (eof ())
+		if zz9 -> zz9_safra == _sSafraCpl .and. zz9 -> zz9_parcel == 'K'
+			U_Log2 ('debug', '[' + procname () + ']F' + zz9 -> zz9_filial + ' ' + zz9 -> zz9_safra + ' ' + zz9 -> zz9_parcel + ' ' + zz9 -> zz9_pre_nf)
+			_sClasFina = ''
+			if zz9 -> zz9_conduc == 'L'
+				_sClasFina = zz9 -> zz9_clabd
+			else
+				_sClasFina = zz9 -> zz9_classe
+			endif
+			reclock ("ZZ9", .F.)
+			zz9 -> zz9_vunit3 = U_PrcUva23 (zz9 -> zz9_filial, zz9 -> zz9_produt, val (zz9 -> zz9_grau), _sClasFina, zz9 -> zz9_conduc, .F., .F.) [5]
+			msunlock ()
+	// nem terminei de fazer		if len (alltrim (zz9 -> zz9_mistu1) + alltrim (zz9 -> zz9_mistu2) + alltrim (zz9 -> zz9_mistu3)) > 0
+	// nem terminei de fazer			_aMenorVl = {}
+	// nem terminei de fazer			_oCarSaf  = NIL
+	// nem terminei de fazer			_oCarSaf := ClsCarSaf ():New ()
+	// nem terminei de fazer			_oCarSaf:Safra = zz9 -> zz9_safra
+	// nem terminei de fazer			_oCarSaf:AddItem ()
+	// nem terminei de fazer			_oCarSaf:ItItem     [len (_oCarSaf:ItItem)] = strzero (len (_oCarSaf:ItItem), 2)
+	// nem terminei de fazer			_oCarSaf:ItProduto  [len (_oCarSaf:ItItem)] = zz9 -> zz9_produt
+	// nem terminei de fazer			_oCarSaf:ItGrau     [len (_oCarSaf:ItItem)] = zz9 -> zz9_grau
+	// nem terminei de fazer			_oCarSaf:ItConducao [len (_oCarSaf:ItItem)] = zz9 -> zz9_conduc
+	// nem terminei de fazer			if ! empty (zz9 -> zz9_mistu1)
+	// nem terminei de fazer				_oCarSaf:AddItem ()
+	// nem terminei de fazer				_oCarSaf:ItItem     [len (_oCarSaf:ItItem)] = strzero (len (_oCarSaf:ItItem), 2)
+	// nem terminei de fazer				_oCarSaf:ItProduto  [len (_oCarSaf:ItItem)] = zz9 -> zz9_mistu1
+	// nem terminei de fazer				_oCarSaf:ItGrau     [len (_oCarSaf:ItItem)] = zz9 -> zz9_grau
+	// nem terminei de fazer				_oCarSaf:ItConducao [len (_oCarSaf:ItItem)] = zz9 -> zz9_conduc
+	// nem terminei de fazer			endif
+	// nem terminei de fazer			if ! empty (zz9 -> zz9_mistu2)
+	// nem terminei de fazer				_oCarSaf:AddItem ()
+	// nem terminei de fazer				_oCarSaf:ItItem     [len (_oCarSaf:ItItem)] = strzero (len (_oCarSaf:ItItem), 2)
+	// nem terminei de fazer				_oCarSaf:ItProduto  [len (_oCarSaf:ItItem)] = zz9 -> zz9_mistu2
+	// nem terminei de fazer				_oCarSaf:ItGrau     [len (_oCarSaf:ItItem)] = zz9 -> zz9_grau
+	// nem terminei de fazer				_oCarSaf:ItConducao [len (_oCarSaf:ItItem)] = zz9 -> zz9_conduc
+	// nem terminei de fazer			endif
+	// nem terminei de fazer			if ! empty (zz9 -> zz9_mistu3)
+	// nem terminei de fazer				_oCarSaf:AddItem ()
+	// nem terminei de fazer				_oCarSaf:ItItem     [len (_oCarSaf:ItItem)] = strzero (len (_oCarSaf:ItItem), 2)
+	// nem terminei de fazer				_oCarSaf:ItProduto  [len (_oCarSaf:ItItem)] = zz9 -> zz9_mistu3
+	// nem terminei de fazer				_oCarSaf:ItGrau     [len (_oCarSaf:ItItem)] = zz9 -> zz9_grau
+	// nem terminei de fazer				_oCarSaf:ItConducao [len (_oCarSaf:ItItem)] = zz9 -> zz9_conduc
+	// nem terminei de fazer			endif
+	// nem terminei de fazer			_aMenorVl = aclone (_oCarSaf:VarMenorVl (5))  // pos.2=preco de compra
+	// nem terminei de fazer			U_Log2 ('debug', _aMenorVl)
+	// nem terminei de fazer			reclock ("ZZ9", .F.)
+	// nem terminei de fazer			zz9 -> zz9_vunit3 = U_PrcUva23 (zz9 -> zz9_filial, _aMenorVl [1, 1], val (zz9 -> zz9_grau), _sClasFina, _aMenorVl [1, 3], .F., .F.)[5]
+	// nem terminei de fazer			msunlock ()
+	// nem terminei de fazer	//		exit
+	// nem terminei de fazer		endif
+
+		endif
+		zz9 -> (dbskip ())
+	enddo
+	*/
+return
+
+
+// --------------------------------------------------------------------------
 static function _ctbanc ()
 	U_GravaSX1 ("CTBANC", '01', stod ('20220331'))
 	U_CtbANC (.t.)
@@ -433,6 +1260,24 @@ static function _EstFul ()
 return
 
 // --------------------------------------------------------------------------
+static function _FtSafra ()
+	cPerg := 'FTSAFRA'
+	U_GravaSX1 (cPerg, '01', '')           // fornec ini
+	U_GravaSX1 (cPerg, '02', '')               // loja forn ini
+	U_GravaSX1 (cPerg, '03', '000160')           // forn ate
+	U_GravaSX1 (cPerg, '04', '01')               // loja fint ate
+	U_GravaSX1 (cPerg, '05', stod ('20230401'))  // vcto ini
+	U_GravaSX1 (cPerg, '06', stod ('20230430'))  // vcto ate
+	U_GravaSX1 (cPerg, '07', '2023')             // safra
+	U_GravaSX1 (cPerg, '08', '801')              // cond pagto
+	U_GravaSX1 (cPerg, '09', stod ('20230101'))  // emissao ini
+	U_GravaSX1 (cPerg, '10', stod ('20230430'))  // emissao ate
+	U_GravaSX1 (cPerg, '11', 'NF/DP/FAT')        // tipos titulo
+	U_GravaSX1 (cPerg, '12', 2)                  // Buscar fretes [S/N]
+	u_FtSafra (.t.)
+return
+
+// --------------------------------------------------------------------------
 // Tentativa de encher a memoria do servico
 static function _memoria ()
 	_oSQL := ClsSQL ():New ()
@@ -482,6 +1327,7 @@ static function _aviso ()
 	_oAviso:Texto      = 'Teste envio notificacao'
 	_oAviso:Origem     = procname ()
 	_oAviso:InfoSessao = .T.
+	_oAviso:IntegNaWeb = .F.  // Nao tenta integrar neste momento (nao ha urgencia)
 	_oAviso:Grava ()
 return
 
@@ -532,15 +1378,15 @@ static function _va_xls ()
 //	U_GravaSX1 (cPerg, '18', 1)  // notas de complemento valor [S/N]
 //	u_va_xls30 (.T.)
 
-	// Sequencia descarga safra
-	Private cPerg   := "VAXLS34"
-	U_GravaSX1 (cPerg, '01', '2023')
-	U_GravaSX1 (cPerg, '02', '01')
-	U_GravaSX1 (cPerg, '03', '01')
-	U_GravaSX1 (cPerg, '04', stod ('20230215'))
-	U_GravaSX1 (cPerg, '05', stod ('20230216'))
-	U_GravaSX1 (cPerg, '06', 2)
-	u_va_xls34 (.T.)
+//	// Sequencia descarga safra
+//	Private cPerg   := "VAXLS34"
+//	U_GravaSX1 (cPerg, '01', '2023')
+//	U_GravaSX1 (cPerg, '02', '01')
+//	U_GravaSX1 (cPerg, '03', '01')
+//	U_GravaSX1 (cPerg, '04', stod ('20230215'))
+//	U_GravaSX1 (cPerg, '05', stod ('20230216'))
+//	U_GravaSX1 (cPerg, '06', 2)
+//	u_va_xls34 (.T.)
 
 //	Private cPerg   := "VAXLS35"
 //	U_GravaSX1 (cPerg, '01', '')  // assoc 
@@ -573,13 +1419,21 @@ static function _va_xls ()
 //	U_GravaSX1 (cPerg, '03', 'RS-866/2020')  // codigo CR
 //	u_va_xls38 (.T.)
 
-//	Private cPerg   := "VAXLS40"
-//	U_GravaSX1 (cPerg, '01', '2022')  // safra
-//	U_GravaSX1 (cPerg, '02', 1)  // 'Comuns', 'Finas espaldeira', 'Finas latadas', 'Finas SC'
-//	U_GravaSX1 (cPerg, '03', 2)  // Entrada/Compra/MOC
-//	U_GravaSX1 (cPerg, '04', 1)  // Todos(decimais) / Apenas inteiros
-//	U_GravaSX1 (cPerg, '05', 2)  // Descricao completa/resumida
-//	u_va_xls40 (.T.)
+// Precos calculados de uva safra
+_aRetPrc = aclone (U_PrcUva23 ('01', '9936           ', 15, 'B', 'L', .F., .F.))
+u_log (_aRetPrc)
+_aRetPrc = aclone (U_PrcUva23 ('01', '9812           ', 15, 'B', 'L', .F., .F.))
+u_log (_aRetPrc)
+//return
+
+
+Private cPerg   := "VAXLS40"
+U_GravaSX1 (cPerg, '01', '2023')  // safra
+U_GravaSX1 (cPerg, '02', 1)  // 'Comuns', 'Finas espaldeira', 'Finas latadas', 'Finas SC'
+U_GravaSX1 (cPerg, '03', 3)  // Entrada/Compra/MOC
+U_GravaSX1 (cPerg, '04', 1)  // Todos(decimais) / Apenas inteiros
+U_GravaSX1 (cPerg, '05', 2)  // Descricao completa/resumida
+u_va_xls40 (.T.)
 
 //	Private cPerg   := "VAXLS41"
 //	U_GravaSX1 (cPerg, '01', '')  // assoc 
@@ -660,6 +1514,12 @@ static function _va_xls ()
 return
 
 // --------------------------------------------------------------------------
+static function _batBlUsr ()
+	U_MudaLog ('U_BatBlUsr.log')
+	u_batBlUsr ()
+return
+
+// --------------------------------------------------------------------------
 static function _batfull ()
 	U_MudaLog ('U_BatFullW.log')
 	U_BatFullW ('E') //, 'ZA1012000603360', nil)
@@ -673,14 +1533,14 @@ return
 
 // --------------------------------------------------------------------------
 static function _BatSafr ()
-//	u_batsafr ('CargasSemContranota')  // cargas sem contranota
-	u_batsafr ('ConferirParcelamento')  // conferencia geracao das parcelas financeiro
-//	u_batsafr ('ContranotasSemCarga')  // contranotas sem carga
-//	u_batsafr ('ConferirFrete')  // conferencia fretes
+// ok 2023	u_batsafr ('CargasSemContranota')  // cargas sem contranota
+// ok 2023	u_batsafr ('ContranotasSemCarga')  // contranotas sem carga
+// ok 2023	u_batsafr ('ConferirFrete')  // conferencia fretes
+//	u_batsafr ('ConferirParcelamento')  // conferencia geracao das parcelas financeiro
 //	u_batsafr ('MailAcompanhamento')  // e-mail diario de acompanhamento de safra
 //	u_batsafr ('GerarSZI')  // gera SZI a partir das parcelas
 //	u_batsafr ('ConferirSZI')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
-//	u_batsafr ('TransfTitNaoAssocParaMatriz')  // Transfere (das filiais para a matriz) os titulos de nao associados.
+	u_batsafr ('TransfTitNaoAssocParaMatriz')  // Transfere (das filiais para a matriz) os titulos de nao associados.
 //	u_batsafr ('TransfSZIParaMatriz')  // Transfere SZI para a matriz (normalmente ao gerar o SZI jah faz isso, mas para garantir...)
 return
 
@@ -693,7 +1553,7 @@ return
 // --------------------------------------------------------------------------
 static function _BatXML ()
 	U_MudaLog ("U_BatXML.log")
-	U_BatXML("\\192.168.1.3\Siga\Protheus12\protheus_data\xml_NFe\", 10, .F.)
+	U_BatXML("\\192.168.1.3\Siga\Protheus12\protheus_data\xml_NFe\", 1, .F.)
 //	U_BatXML("\\192.168.1.2\Siga\Protheus11\protheus_data\xml_NFe\", 200, .F.)
 //	U_BatXML("\\192.168.1.2\Siga\Protheus11\protheus_data\xml_NFe\CT-e\", 100, .F.)
 return
@@ -994,16 +1854,6 @@ static function _ExtraiTag (_sTag, _lObrig, _lValData)
 		endif
 	endif
 return _sRet
-// --------------------------------------------------------------------------
-// Acrescenta na string de retorno de erros uma nova mensagem (se ainda nao contiver)
-static function _SomaErro (_sMsg)
-	local _sMsgAux := alltrim (cvaltochar (_sMsg))
-	if ! _sMsgAux $ _sErroWS
-		_sErroWS += iif (empty (_sErroWS), '', '; ') + _sMsgAux
-	endif
-return
-
-
 
 // --------------------------------------------------------------------------
 static function _metaf ()
@@ -1011,7 +1861,6 @@ static function _metaf ()
 	U_MudaLog ('U_BatMetaF.log')
 	u_batmetaf ()
 return
-
 
 // --------------------------------------------------------------------------
 static function _Etiq ()
@@ -1102,6 +1951,12 @@ RETURN
 return
 
 // --------------------------------------------------------------------------
+static function _recmail ()
+	U_MudaLog ('U_RecMail.log')
+	U_RecMail ()
+return
+
+// --------------------------------------------------------------------------
 static function _RevCH()
 	// U_BatRevCh ("AC", "CTE", 90)
 	// U_BatRevCh ("AC", "NFE", 90)
@@ -1160,6 +2015,209 @@ static function _RevCH()
 RETURN
 
 // --------------------------------------------------------------------------
+// Simulacao de pagamento safras antigas com graus inteiros, apenas para comparativos
+static function _SimSafrGI ()
+	local _oSQL      := NIL
+	local _sAliasQ   := ""
+	local _nVCompl   := 0
+	local _sClasFina := ''
+	local _aRetPrc   := 0
+	local _sMsgNF    := ''
+	local _nRecAtu   := 0
+	local _nRecCount := 0
+	local _lVerMist  := .F.
+	local _aMenorVl  := {}
+	local _nAux      := 0
+	local _oCarSaf   := NIL
+	local _nCpoZZ9   := 0
+	local _sGrau     := ''
+
+	// Como fiz uma copia do VA_GNF3, vou usar mesmas variaveis de parametros.
+	mv_par01 = ''     // Produtor inicial
+	mv_par02 = ''     // Loja produtor inicial
+	mv_par03 = 'z'    // Produtor final
+	mv_par04 = 'z'    // Loja produtor final
+	mv_par05 = '2022' // Safra referencia
+	mv_par06 = 'F'    // gerar qual Parcela
+	mv_par07 = ''     // DCO inicial
+	mv_par08 = 'z'    // DCO final
+	mv_par09 = ''     // Prod ini
+	mv_par10 = 'z'    // Prod final
+	mv_par11 = 0      // Preco total (especifico safra 2016)
+	mv_par12 = ''     // Apenas estas variedades (separadas por /)
+	mv_par13 = ''     // Exceto estas variedades (separadas por /)
+	mv_par14 = ''     // Filial inicial
+	mv_par15 = 'z'    // Filial final
+
+	// Busca valores efetivos recebidos pelo produtor, para depois verificar
+	// necessidade de complementar.
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "SELECT FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, ITEM_NOTA"
+	_oSQL:_sQuery +=      ", PRODUTO, DESCRICAO, PESO_LIQ"
+	_oSQL:_sQuery +=      ", GRAU"
+//	_oSQL:_sQuery +=      ", rtrim (cast (ROUND (GRAU, 0) as varchar (4))) + '.0' AS GRAU"  // Simulando graus sem decimal
+	_oSQL:_sQuery +=      ", SIST_CONDUCAO, CLAS_ABD, CLAS_FINAL, VUNIT_EFETIVO, GRUPO_PAGTO"
+	_oSQL:_sQuery +=      ", COUNT (*) OVER (PARTITION BY FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE) AS QTITENS"
+	_oSQL:_sQuery +=  " FROM VA_VPRECO_EFETIVO_SAFRA P"
+	_oSQL:_sQuery += " WHERE P.SAFRA  = '" + mv_par05 + "'"
+	_oSQL:_sQuery +=   " AND P.ASSOCIADO + P.LOJA_ASSOC BETWEEN '" + mv_par01 + mv_par02 + "' AND '" + mv_par03 + mv_par04 + "'"
+	_oSQL:_sQuery +=   " AND P.FILIAL  BETWEEN '" + mv_par14 + "' AND '" + mv_par15 + "'"
+	_oSQL:_sQuery +=   " AND P.PRODUTO BETWEEN '" + mv_par09 + "' AND '" + mv_par10 + "'"
+	if ! empty (mv_par12)
+		_oSQL:_sQuery +=    " AND P.PRODUTO IN " + FormatIn (alltrim (mv_par12), "/")
+	endif
+	if ! empty (mv_par13)
+		_oSQL:_sQuery +=    " AND P.PRODUTO NOT IN " + FormatIn (alltrim (mv_par13), "/")
+	endif
+	_oSQL:_sQuery += " ORDER BY FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, PRODUTO, GRAU, CLAS_FINAL, CLAS_ABD"
+	_oSQL:Log ('[' + procname () + ']')
+	_sAliasQ = _oSQL:Qry2Trb ()
+	dbselectarea (_sAliasQ)
+	count to _nRecCount
+	dbselectarea ("ZZ9")
+	(_sAliasQ) -> (dbgotop ())
+	procregua (_nRecCount)
+	_nRecAtu = 0
+	do while ! (_sAliasQ) -> (eof ())
+		incproc ()
+		u_log2 ('info', '[' + cvaltochar (++_nRecAtu) + ' de ' + cvaltochar (_nRecCount) + ']NF orig: ' + (_sAliasQ) -> doc + ' Produto ' + alltrim ((_sAliasQ) -> produto) + '-' + alltrim ((_sAliasQ) -> descricao) + ' gr.' + (_sAliasQ) -> grau + ' ' + _sClasFina)
+		_sMsgNF = ''
+		
+		// Simulando graus sem decimal
+		_sGrau = strzero (round (val ((_sAliasQ) -> grau), 0), 2) + '.0'
+
+		// Encontra a carga de origem, pois pode ter sido compartilhada com
+		// outro produtor.
+		sze -> (dbsetorder (3))  // ZE_FILIAL, ZE_NFGER, ZE_SERIE, R_E_C_N_O_, D_E_L_E_T_
+		if ! sze -> (dbseek ((_sAliasQ) -> filial + (_sAliasQ) -> doc + (_sAliasQ) -> serie, .F.))
+			u_help ("Nnao encotrei nenhuma carga referenciando a contranota '" + (_sAliasQ) -> doc + "' da filial '" + (_sAliasQ) -> filial + "'",, .t.)
+			exit
+		endif
+
+		// Se a contranota original tem mais de um item, eh suspeita de ter
+		// mistura de variedades. Se a carga for compartilhada, eh mais suspeita ainda
+		_aMenorVl = {}
+		_lVerMist = .f.
+		_oCarSaf  = NIL
+		if (_sAliasQ) -> qtItens > 1
+			U_Log2 ('info', '[' + procname () + ']Vou verificar mistura por que a contranota tem mais de um item')
+			_lVerMist = .t.
+		endif
+		if ! empty (sze -> ze_ccompar)
+			U_Log2 ('info', '[' + procname () + ']Vou verificar mistura por que a carga ' + sze -> ze_carga + ' foi compartilhada com a(s) carga(s) ' + sze -> ze_ccompar)
+			_lVerMist = .t.
+		endif
+		if _lVerMist
+			// Instancia a carga para poder verificar mais a fundo.
+			_oCarSaf := ClsCarSaf ():New (sze -> (recno ())) //(_sAliasQ) -> filial + mv_par05 + _aMenorVl [_nAux, 3])
+			if empty (_oCarSaf:Carga)
+				u_help ("Impossivel instanciar carga (ou carga invalida).",, .t.)
+				exit
+			endif
+			//U_Log2 ('debug', '[' + procname () + ']' + _oCarSaf:ConsCompar ())
+			_aMenorVl = aclone (_oCarSaf:VarMenorVl (2))  // pos.2=preco de compra
+		endif
+		if len (_aMenorVl) > 3
+			u_help ("Este programa nao tem tratamento para cargas com mistura de mais de 3 variedades. Faltariam campos na tabela ZZ9 !!!")
+			exit
+		else
+			if len (_aMenorVl) > 1
+				_sMsgNF += "Mistura:"
+			endif
+			for _nAux = 1 to len (_aMenorVl)
+				if ! alltrim (_aMenorVl [_nAux, 1]) $ _sMsgNF
+					_sMsgNF += alltrim (_aMenorVl [_nAux, 1]) + '-' + alltrim (fBuscaCpo ("SB5", 1, xfilial ("SB5") + _aMenorVl [_nAux, 1], "B5_CEME")) + ';'
+				endif
+			next
+		endif
+
+		// Se teve mistura, preciso assumir a variedade de menor valor.
+		// Mas geralmente a 'variedade de menor valor' eh a propria variedade
+		// da contranota original, entao nem preciso ficar gravando mensagem
+		// sobre misturas.
+		if len (_aMenorVl) >= 1 .and. _aMenorVl [1, 1] != (_sAliasQ) -> produto
+			_sMsgNF += 'Usar preco de ' + alltrim (_aMenorVl [1, 1]) + ';'
+//			_aRetPrc = aclone (U_PrcUva21 ((_sAliasQ) -> filial, _aMenorVl [1, 1], val (_sGrau), _sClasFina, _aMenorVl [1, 3], .F., .F.))
+			_aRetPrc = aclone (U_PrcUva22 ((_sAliasQ) -> filial, _aMenorVl [1, 1], val (_sGrau), _sClasFina, _aMenorVl [1, 3], .F., .F.))
+		else
+			// Assume a classificacao da uva vinifera conforme o sistema de conducao.
+			_sClasFina = ''
+			if (_sAliasQ) -> sist_conducao == 'L'
+				_sClasFina = (_sAliasQ) -> clas_abd
+			elseif (_sAliasQ) -> sist_conducao == 'E'
+				_sClasFina = (_sAliasQ) -> clas_final
+			else
+				u_help ("Sistema de conducao '" + (_sAliasQ) -> sist_conducao + "' sem tratamento (NF compra " + (_sAliasQ) -> doc + ")",, .t.)
+			endif
+//			_aRetPrc = aclone (U_PrcUva21 ((_sAliasQ) -> filial, (_sAliasQ) -> produto, val (_sGrau), _sClasFina, (_sAliasQ) -> sist_conducao, .F., .F.))
+			_aRetPrc = aclone (U_PrcUva22 ((_sAliasQ) -> filial, (_sAliasQ) -> produto, val (_sGrau), _sClasFina, (_sAliasQ) -> sist_conducao, .F., .F.))
+		endif
+
+		// A funcao retorna diferentes valores, mas aqui quero apenas o valor de compra e as observacoes.
+		_aRetPrc = {_aRetPrc[2], _aRetPrc [3], _aRetPrc [5]}
+	//	u_log2 ('info', 'Preco unit gerado           : ' + cvaltochar (_aRetPrc [1]) + '  ' + _aRetPrc [2])
+	//	u_log2 ('info', 'Preco total gerado          : ' + cvaltochar ((_sAliasQ) -> peso_liq * _aRetPrc [1]))
+	//	u_log2 ('info', 'Preco total efetivo ateh o momento: ' + cvaltochar ((_sAliasQ) -> peso_liq * (_sAliasQ) -> VUnit_efetivo))
+		_nVCompl = ((_sAliasQ) -> peso_liq * _aRetPrc [1]) - ((_sAliasQ) -> peso_liq * (_sAliasQ) -> VUnit_efetivo)
+	//	u_log2 ('info', 'Valor total complemento     : ' + cvaltochar (_nVCompl))
+
+		// Gera proxima pre-nf livre
+		_sQuery := " select max (ZZ9_PRE_NF)"
+		_sQuery +=  " from " + RETSQLNAME ("ZZ9") + " ZZ9  "
+		_sQuery += " where ZZ9.D_E_L_E_T_ != '*'"
+		_sQuery +=   " and ZZ9.ZZ9_FILIAL = '" + (_sAliasQ) -> FILIAL + "'"
+		_sQuery +=   " and ZZ9.ZZ9_SAFRA  = '" + mv_par05 + "'"
+		_sPreNF = soma1 (U_RetSQL (_sQuery))
+
+		reclock ("ZZ9", .T.)
+		zz9 -> zz9_filial = (_sAliasQ) -> FILIAL
+		zz9 -> zz9_safra  = mv_par05
+		zz9 -> zz9_grupo  = (_sAliasQ) -> grupo_PAGTO
+		zz9 -> zz9_parcel = mv_par06
+		zz9 -> zz9_fornec = (_sAliasQ) -> associado
+		zz9 -> zz9_loja   = (_sAliasQ) -> loja_assoc
+		zz9 -> zz9_pre_nf = _sPreNF
+		zz9 -> zz9_tiponf = "V"  // C=Compra;V=[complemento de]Valor
+		zz9 -> zz9_produt = (_sAliasQ) -> produto
+		zz9 -> zz9_grau   = _sGrau
+		zz9 -> zz9_grau2  = (_sAliasQ) -> grau  // grau original
+		zz9 -> zz9_classe = (_sAliasQ) -> clas_final
+		zz9 -> zz9_clabd  = (_sAliasQ) -> clas_abd
+		zz9 -> zz9_conduc = (_sAliasQ) -> sist_conducao
+		zz9 -> zz9_vunOld = (_sAliasQ) -> VUnit_efetivo
+		zz9 -> zz9_quant  = 0
+		zz9 -> zz9_qtOri  = (_sAliasQ) -> peso_liq  // Campo util para relatorios posteriores
+		zz9 -> zz9_vunit  = _nVCompl   // Valor total a complementar
+		zz9 -> zz9_vunit2 = _aRetPrc [1]  // Preco unitario que foi usado para calcular o complemento
+		zz9 -> zz9_obs    = _aRetPrc [2]  // Observacoes geradas pelo prog. de calculo do preco
+		//zz9 -> zz9_vunit3 = _aRetPrc [3]  // Preco unitario da tabela CONAB
+		zz9 -> zz9_nfori  = (_sAliasQ) -> doc
+		zz9 -> zz9_serior = (_sAliasQ) -> serie
+		zz9 -> zz9_itemor = (_sAliasQ) -> item_nota
+		zz9 -> zz9_msgNF  = 'TESTE GRAU INTEIRO;' + _sMsgNF
+		zz9 -> zz9_TES    = iif (_nVCompl <= 0, '', U_TESSafra (mv_par05, (_sAliasQ) -> associado, (_sAliasQ) -> loja_assoc, 'V'))
+		zz9 -> zz9_dco    = ''
+		if valtype (_oCarSaf) == 'O' .and. len (_oCarSaf:CCompart) > 0
+			zz9 -> zz9_ccomp  = _oCarSaf:TodasComp ()
+		endif
+
+		// Grava as possibilidades de misturas de variedades.
+		_nCpoZZ9 = 1
+		for _nAux = 1 to len (_aMenorVl)
+			// Geralmente a 'variedade de menor valor' eh a propria variedade
+			// da contranota original, entao nem preciso gravar.
+			if _aMenorVl [_nAux, 1] != (_sAliasQ) -> produto
+				zz9 -> &('zz9_mistu' + cvaltochar (_nCpoZZ9)) = _aMenorVl [_nAux, 1]
+				_nCpoZZ9 ++
+			endif
+		next
+		
+		msunlock ()
+		(_sAliasQ) -> (dbskip ())
+	enddo
+return
+
+// --------------------------------------------------------------------------
 // Testes verificacoes genericas.
 static function _verif ()
 	local _sHtmHlp := ''
@@ -1176,22 +2234,22 @@ static function _verif ()
 	// _oVerif:SetParam ('02', '09189201001  ')
 	// _oVerif:SetParam ('03', '')
 	// _oVerif:SetParam ('04', 'z')
-	//_oVerif := ClsVerif():New (93)
+	_oVerif := ClsVerif():New (95)
 	//_oVerif:SetParam ('01', date () - 30)
 	//_oVerif:SetParam ('02', date ())
-	//	_oVerif:SetParam ('03', '')
-	//	_oVerif:SetParam ('04', 'z')
+	//_oVerif:SetParam ('03', '')
+	//_oVerif:SetParam ('04', 'z')
 	//	//U_Log2 ('debug', '[' + procname () + ']ult ver:' + cvaltochar (_oVerif:UltVerif))
-	//	if _oVerif:Executa ()
-	//		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
-	//		u_log2 ('debug', _oVerif:Result)
+		if _oVerif:Executa ()
+			u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
+			u_log2 ('debug', _oVerif:Result)
 	//		//u_acolsxls (_oVerif:Result)
-	//	else
-	//		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
-	//	endif
+		else
+			u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
+		endif
 	
-	_oVerif := ClsVerif():New ()
-	_sHtmHlp = _oVerif:GeraHelp ()
+//	_oVerif := ClsVerif():New ()
+//	_sHtmHlp = _oVerif:GeraHelp ()
 
 	// Exporta para arquivo, durante a implementacao, para conferencia.
 	_sArq := 'c:\temp\verif.htm'
@@ -1322,14 +2380,25 @@ static function _FechSafr ()
 	U_Log2 ('debug', _aAssoc)
 return
 
+// --------------------------------------------------------------------------
+// Testes especificos para problemas de performance
+Static Function _PerfMon ()
+	_oEvento := NIL
+	u_perfmon ('I', 'Gravar_evento_' + cValToChar (GetServerPort ()))
+	_oEvento := ClsEvent():new ()
+	_oEvento:CodEven    = '000001'
+	_oEvento:Texto      = 'TESTE PERFORMANCE - APAGAR DEPOIS!'
+	_oEvento:CodAlias   = PROCNAME ()
+	_oEvento:DiasValid  = 1
+	_oEvento:Grava ()
+	u_perfmon ('F', 'Gravar_evento_' + cValToChar (GetServerPort ()))
+Return
 
 // --------------------------------------------------------------------------
 // Retorno do type - type em looling nao é permitido da R25 
 Static Function _RetType(_var)
 	_type := type(_var)
-Return _type
-
-
+return _type
 
 // Testes arvore de rastreabilidade
 static function _Rast()
@@ -1345,9 +2414,10 @@ static function _Rast()
 	//aadd (_aLotes, {'01', U_TamFixo ('2776', 15, ' '), '11310701'  , 0, 1})      // gera mais de 15 niveis de rastro.
 	//aadd (_aLotes, {'01', U_TamFixo ('3630', 15, ' '), '12107401A ', 0, 30000})  // NF 000202304 que foi para CENECOOP
 	//aadd (_aLotes, {'09', U_TamFixo ('2445', 15, ' '), 'AUTO009869', 0, 1})      // Recebeu transf. da filial 01
-	aadd (_aLotes, {'09', U_TamFixo ('1181', 15, ' '), '009159', 0, 1})      // Transferido da F09 para para F01 (origem bem grande, diversas transf. entre filiais)
+	//aadd (_aLotes, {'09', U_TamFixo ('1181', 15, ' '), '009159', 0, 1})      // Transferido da F09 para para F01 (origem bem grande, diversas transf. entre filiais)
 	//aadd (_aLotes, {'07', U_TamFixo ('1180', 15, ' '), '001970001x', 0, 1})      // Transferido da F07 para para F01 (origem muito grande, 16 niveis, nem esperei terminar)
 	//aadd (_aLotes, {'03', U_TamFixo ('3779', 15, ' '), '00229201  ', 0, 1})      // 
+	aadd (_aLotes, {'01', U_TamFixo ('3084', 15, ' '), '13171401  ', 0, 1})      // 
 	for _nLote = 1 to len (_aLotes)
 		u_perfmon ('I', 'RastLt')
 		_sMapa := U_RastLT (_aLotes [_nLote, 1], _aLotes [_nLote, 2], _aLotes [_nLote, 3], _aLotes [_nLote, 4], NIL, _aLotes [_nLote, 5], 'A')
@@ -1646,12 +2716,13 @@ static function _RelAssoc ()
 	// aadd (_aAssoc, '004369')  // Gustavo De Toni - conferencia IR 2022
 	// DIF aadd (_aAssoc, '003003')  // Tania zanata Boz - conferencia IR 2022
 	// CONTINUA FECHANDO aadd (_aAssoc, '033490')  // Grasiela Parisotto - conferencia IR 2022
-	aadd (_aAssoc, '003026')  // Marcos Parisotto  - conferencia IR 2022
+	// aadd (_aAssoc, '003026')  // Marcos Parisotto  - conferencia IR 2022
 	// AGORA FECHOU aadd (_aAssoc, '018409')  // Marcelo Avelino Parisotto  - conferencia IR 2022
 	// CONTINUA FECHANDO aadd (_aAssoc, '002653')  // Balduino Parisotto - conferencia IR 2022
 	// Patricia Turella e o Edgar Schiavenin
 	// aadd (_aAssoc, '002924')  // Ivo Boldrin - fech.safra 2022 parece trazer R$ 79,79 a mais (deve ser funrural)
 	//aadd (_aAssoc, '002832')  // Alex Boldrin - fech.safra 2022 resumo pagto nao bate com notas de safra
+	aadd (_aAssoc, '003587')  // Marisa Guisso Possa - safra 2018 aparecem movtos de 2023 !!!
 	for _nAssoc = 1 to len (_aAssoc)
 		U_Log2 ('info', 'Iniciando associado ' + _aAssoc [_nAssoc])
 		U_GravaSX1 ("ML_FECHASA", '01', '2022')  // safra
@@ -1732,8 +2803,6 @@ return
 //	endif
 //	_sArqLog := 'U_BatFunAtlz_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batfunatlz ()
-//	_sArqLog := 'U_BatBlUsr_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-//	u_batBlUsr ()
 //	_sArqLog := 'U_BatMercP_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
 //	u_batmercp ()
 //	_sArqLog := 'U_BatEDIM_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
@@ -1928,39 +2997,6 @@ return
 		_sPreNF = soma1 (soma1 (soma1 (soma1 (soma1 (_sPreNF)))))
 		(_sAliasQ) -> (dbskip ())
 	enddo
-return
-*/
-/*
-	// Testes arvore de rastreabilidade
-	private _aLtXLS58 := {}  // Deixar PRIVATE para ser alimentada pelo U_RastLT().
-	_aLotes := {}
-	aadd (_aLotes, {'01', U_TamFixo ('3630', 15, ' '), '12101401'  , 0, 14660})  // item 2580 lote 12101401 transformado em 3630 (mesmo lote) em 28/01/2022 na filial 01
-	aadd (_aLotes, {'01', U_TamFixo ('1274', 15, ' '), 'AUTO009215', 0, 1})      // enzima (arvore grande)
-	aadd (_aLotes, {'01', U_TamFixo ('2444', 15, ' '), 'AUTO009238', 0, 24200})  // lado 1 do par
-	aadd (_aLotes, {'09', U_TamFixo ('2444', 15, ' '), '4123'      , 0, 24200})  // lado 2 do par
-	aadd (_aLotes, {'01', U_TamFixo ('9959', 15, ' '), '2201028401', 0, 1})      // enzima (arvore grande)
-	aadd (_aLotes, {'01', U_TamFixo ('2776', 15, ' '), '11310701'  , 0, 1})      // gera mais de 15 niveis de rastro.
-	aadd (_aLotes, {'01', U_TamFixo ('3630', 15, ' '), '12107401A ', 0, 30000})  // NF 000202304 que foi para CENECOOP
-	aadd (_aLotes, {'09', U_TamFixo ('2445', 15, ' '), 'AUTO009869', 0, 1})      // Recebeu transf. da filial 01
-	for _nLote = 1 to len (_aLotes)
-		u_perfmon ('I', 'RastLt')
-		_sMapa := U_RastLT (_aLotes [_nLote, 1], _aLotes [_nLote, 2], _aLotes [_nLote, 3], _aLotes [_nLote, 4], NIL, _aLotes [_nLote, 5])
-		_nTmpExec = u_perfmon ('L', 'RastLt')
-		_sArq := 'c:\temp\rast_F' + _aLotes [_nLote, 1] + '_' + alltrim (_aLotes [_nLote, 2]) + '_' + alltrim (_aLotes [_nLote, 3]) + '_tempo' + cvaltochar (round (_nTmpExec, 0)) + 's.mm'
-		delete file (_sArq)
-		if file (_sArq)
-			_nHdl = fopen(_sArq, 1)
-		else
-			_nHdl = fcreate(_sArq, 0)
-		endif
-		fwrite (_nHdl, _sMapa)
-		fclose (_nHdl)
-		ShellExecute ("Open", _sArq, "", "", 1)
-		u_log (_aLtXLS58)
-		_oLtXLS58 := CLsAUtil ():New ()
-		_oLtXLS58:_aArray := aclone (_aLtXLS58)
-		U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (_oLtXLS58:TotCol (7)))
-	next
 return
 */
 /*
@@ -2766,49 +3802,8 @@ return
 	next
 return
 */
-/*
-	// Gera pre-notas complemento 2021
-	_sArqLog := 'U_VA_GNF3_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-	if cFilAnt == '07'
-		cPerg = "VAGNF3"
-		U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-		U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-		U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-		U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-		U_GravaSX1 (cPerg, '05', '2021') // Safra referencia
-		U_GravaSX1 (cPerg, '06', 'B')    // gerar qual Parcela
-		U_GravaSX1 (cPerg, '07', '')     // DCO inicial
-		U_GravaSX1 (cPerg, '08', 'z')    // DCO final
-		U_GravaSX1 (cPerg, '09', '')     // Prod ini
-		U_GravaSX1 (cPerg, '10', 'z')    // Prod final
-		U_GravaSX1 (cPerg, '11', 0)    // Preco 2016
-		U_GravaSX1 (cPerg, '12', '9845/9854/9911/9932/9920/9928/9912') // Apenas estas variedades (moscatos, riesling e procecco), trebiano
-		U_GravaSX1 (cPerg, '13', '')  // Exceto estas variedades
-		U_GravaSX1 (cPerg, '14', '07')   // Filial inicial
-		U_GravaSX1 (cPerg, '15', '07')   // Filial final
-		U_VA_GNF3 (.T.)
-	endif
-	if cFilAnt == '03'
-		cPerg = "VAGNF3"
-		U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-		U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-		U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-		U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-		U_GravaSX1 (cPerg, '05', '2021') // Safra referencia
-		U_GravaSX1 (cPerg, '06', 'B')    // gerar qual Parcela
-		U_GravaSX1 (cPerg, '07', '')     // DCO inicial
-		U_GravaSX1 (cPerg, '08', 'z')    // DCO final
-		U_GravaSX1 (cPerg, '09', '')     // Prod ini
-		U_GravaSX1 (cPerg, '10', 'z')    // Prod final
-		U_GravaSX1 (cPerg, '11', 0)      // Preco (especifico safra 2016)
-		U_GravaSX1 (cPerg, '12', '')     // Apenas estas variedades
-		U_GravaSX1 (cPerg, '13', '')     // Exceto estas variedades
-		U_GravaSX1 (cPerg, '14', '03')   // Filial inicial
-		U_GravaSX1 (cPerg, '15', '03')   // Filial final
-		U_VA_GNF3 (.T.)
-	endif
-return
-*/
+
+
 /*
 	// Testes metodos associados.
 	_oSQL := ClsSQL ():New ()
@@ -3412,34 +4407,7 @@ return
 	U_VA_ZZ9P (.t.)
 return
 */
-/*
-	// Simulacoes precos para 2021
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '012373')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', '012373')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', '03')     // Filial inicial
-	U_GravaSX1 (cPerg, '10', '03')   // Filial final
-	U_GravaSX1 (cPerg, '11', 'Z')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '14', '') // Apenas estas variedades (bordo, bordo de bordadura/em conversao/organico)
-	U_GravaSX1 (cPerg, '15', '')     // Exceto estas variedades.
-	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
-	U_GravaSX1 (cPerg, '17', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '18', 'OCEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_GravaSX1 (cPerg, '19', 'Z')    // Grupo para pagamento
-	U_GravaSX1 (cPerg, '20', '3')    // 1=Latadas; 2=Espaldeira; 3=Todas
-	U_GravaSX1 (cPerg, '21', '107')  // TES compra de associados
-	U_GravaSX1 (cPerg, '22', '077')  // TES compra de nao associados
-	U_VA_GNF1 (.T.)
-RETURN
-*/
+
 /*
 	U_HELP ('VOU GRAVAR')
 	_oEvento := ClsEvent ():New ()
@@ -4263,170 +5231,7 @@ return
 	U_VA_ZZ9P (.t.)
 return
 */
-/*
-	// Geracao pre-notas compra safra 2020
-	// grupo A - bordo
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '10', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '11', 'A')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '14', '9925/9822/9948/9959') // Apenas estas variedades (bordo, bordo de bordadura/em conversao/organico)
-	U_GravaSX1 (cPerg, '15', '')     // Exceto estas variedades.
-	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
-	U_GravaSX1 (cPerg, '17', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '18', 'OCEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_GravaSX1 (cPerg, '19', 'A')    // Grupo para pagamento
-	U_GravaSX1 (cPerg, '20', '3')    // 1=Latadas; 2=Espaldeira; 3=Todas
-	U_GravaSX1 (cPerg, '21', '107')  // TES compra de associados
-	U_GravaSX1 (cPerg, '22', '077')  // TES compra de nao associados
-	U_VA_GNF1 (.T.)
-	// 
-	// grupo A - organicas
-	// exceto bordo, jah gerado anteriormente
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '10', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '11', 'B')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
-	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
-	U_GravaSX1 (cPerg, '17', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '18', 'O')    // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_GravaSX1 (cPerg, '19', 'A')    // Grupo para pagamento
-	U_GravaSX1 (cPerg, '20', '3')    // 1=Latadas; 2=Espaldeira; 3=Todas
-	U_GravaSX1 (cPerg, '21', '107')  // TES compra de associados
-	U_GravaSX1 (cPerg, '22', '077')  // TES compra de nao associados
-	U_VA_GNF1 (.T.)
-	// 
-	// grupo B - tintorias
-	// exceto bordo e organicas, jah geradas anteriormente
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '10', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '11', 'C')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
-	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
-	U_GravaSX1 (cPerg, '17', 1)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_GravaSX1 (cPerg, '19', 'B')    // Grupo para pagamento
-	U_GravaSX1 (cPerg, '20', '3')    // 1=Latadas; 2=Espaldeira; 3=Todas
-	U_GravaSX1 (cPerg, '21', '107')  // TES compra de associados
-	U_GravaSX1 (cPerg, '22', '077')  // TES compra de nao associados
-	U_VA_GNF1 (.T.)
-	// 
-	// grupo B - viniferas espaldeira
-	// exceto tintoreas, bordo e organicas, jah geradas anteriormente
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '10', 'z')    // Filial final
-	U_GravaSX1 (cPerg, '11', 'D')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '12', 2)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
-	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
-	U_GravaSX1 (cPerg, '17', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_GravaSX1 (cPerg, '19', 'B')    // Grupo para pagamento
-	U_GravaSX1 (cPerg, '20', '2')    // 1=Latadas; 2=Espaldeira; 3=Todas
-	U_GravaSX1 (cPerg, '21', '107')  // TES compra de associados
-	U_GravaSX1 (cPerg, '22', '077')  // TES compra de nao associados
-	U_VA_GNF1 (.T.)
-	// 
-	// grupo C - viniferas latadas
-	// exceto tintoreas, bordo e organicas, jah geradas anteriormente
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '10', 'z')    // Filial final
-	U_GravaSX1 (cPerg, '11', 'E')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '12', 2)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
-	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
-	U_GravaSX1 (cPerg, '17', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_GravaSX1 (cPerg, '19', 'C')    // Grupo para pagamento
-	U_GravaSX1 (cPerg, '20', '1')    // 1=Latadas; 2=Espaldeira; 3=Todas
-	U_GravaSX1 (cPerg, '21', '107')  // TES compra de associados
-	U_GravaSX1 (cPerg, '22', '077')  // TES compra de nao associados
-	U_VA_GNF1 (.T.)
-	//
-	// grupo C - demais
-	// exceto tintoreas, bordo e organicas, viniferas jah geradas anteriormente
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2020') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '10', 'z')    // Filial final
-	U_GravaSX1 (cPerg, '11', 'F')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '12', 1)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
-	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
-	U_GravaSX1 (cPerg, '17', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_GravaSX1 (cPerg, '19', 'C')    // Grupo para pagamento
-	U_GravaSX1 (cPerg, '20', '3')    // 1=Latadas; 2=Espaldeira; 3=Todas
-	U_GravaSX1 (cPerg, '21', '107')  // TES compra de associados
-	U_GravaSX1 (cPerg, '22', '077')  // TES compra de nao associados
-	U_VA_GNF1 (.T.)
-return
-*/
+
 /*
 	Private cPerg   := "VA_ADSAF"
 	U_GravaSX1 (cPerg, '01', '012000')
@@ -5173,158 +5978,8 @@ return
 	enddo
 return
 */
-/*
-	// Geracao pre-notas compra safra 2019
-	// grupo A - bordo
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2019') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '10', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '11', 'G')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '14', '9925/9822/9948/9959') // Apenas estas variedades (bordo, bordo de bordadura/em conversao/organico)
-	U_GravaSX1 (cPerg, '15', '')     // Exceto estas variedades.
-	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
-	U_GravaSX1 (cPerg, '17', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '18', 'OCEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_GravaSX1 (cPerg, '19', 'A')    // Grupo para pagamento
-	U_GravaSX1 (cPerg, '20', '3')    // 1=Latadas; 2=Espaldeira; 3=Todas
-	U_VA_GNF1 (.T.)
-	// 
-	// grupo A - organicas
-	// exceto bordo, jah gerado anteriormente
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2019') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '10', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '11', 'H')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
-	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
-	U_GravaSX1 (cPerg, '17', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '18', 'O')    // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_GravaSX1 (cPerg, '19', 'A')    // Grupo para pagamento
-	U_GravaSX1 (cPerg, '20', '3')    // 1=Latadas; 2=Espaldeira; 3=Todas
-	U_VA_GNF1 (.T.)
-	// 
-	// grupo B - tintoreas
-	// exceto bordo e organicas, jah geradas anteriormente
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2019') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '10', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '11', 'I')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
-	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
-	U_GravaSX1 (cPerg, '17', 1)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_GravaSX1 (cPerg, '19', 'B')    // Grupo para pagamento
-	U_GravaSX1 (cPerg, '20', '3')    // 1=Latadas; 2=Espaldeira; 3=Todas
-	U_VA_GNF1 (.T.)
-	// 
-	// grupo B - viniferas espaldeira
-	// exceto tintoreas, bordo e organicas, jah geradas anteriormente
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2019') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '10', 'z')    // Filial final
-	U_GravaSX1 (cPerg, '11', 'J')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '12', 2)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
-	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
-	U_GravaSX1 (cPerg, '17', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_GravaSX1 (cPerg, '19', 'B')    // Grupo para pagamento
-	U_GravaSX1 (cPerg, '20', '2')    // 1=Latadas; 2=Espaldeira; 3=Todas
-	U_VA_GNF1 (.T.)
-	// 
-	// grupo C - viniferas latadas
-	// exceto tintoreas, bordo e organicas, jah geradas anteriormente
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2019') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '10', 'z')    // Filial final
-	U_GravaSX1 (cPerg, '11', 'K')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '12', 2)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
-	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
-	U_GravaSX1 (cPerg, '17', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_GravaSX1 (cPerg, '19', 'C')    // Grupo para pagamento
-	U_GravaSX1 (cPerg, '20', '1')    // 1=Latadas; 2=Espaldeira; 3=Todas
-	U_VA_GNF1 (.T.)
-	//
-	// grupo C - demais
-	// exceto tintoreas, bordo e organicas, viniferas jah geradas anteriormente
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2019') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '10', 'z')    // Filial final
-	U_GravaSX1 (cPerg, '11', 'L')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '12', 1)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
-	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
-	U_GravaSX1 (cPerg, '17', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_GravaSX1 (cPerg, '19', 'C')    // Grupo para pagamento
-	U_GravaSX1 (cPerg, '20', '3')    // 1=Latadas; 2=Espaldeira; 3=Todas
-	U_VA_GNF1 (.T.)
-return
-*/
+
+
 
 /*
 	Private cPerg   := "VA_EID"
@@ -6259,136 +6914,6 @@ return
 return
 */
 /*
-	// Geracao pre-notas compra safra 2018 - parcela A - bordo
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2018') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '10', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '11', 'A')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '14', '9925/9822/9948/9959') // Apenas estas variedades (bordo, bordo de bordadura/em conversao/organico)
-	U_GravaSX1 (cPerg, '15', '')     // Exceto estas variedades.
-	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
-	U_GravaSX1 (cPerg, '17', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '18', 'OCEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_VA_GNF1 (.T.)
-	// Geracao pre-notas compra safra 2018 - parcela A - organicas (exceto bordo, jah gerado anteriormente)
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2018') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '10', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '11', 'A')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
-	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
-	U_GravaSX1 (cPerg, '17', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '18', 'O')    // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_VA_GNF1 (.T.)
-	// Geracao pre-notas compra safra 2018 - parcela B - tintoreas (exceto bordo e organicas, jah geradas anteriormente)
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2018') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '10', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '11', 'B')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
-	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
-	U_GravaSX1 (cPerg, '17', 1)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_VA_GNF1 (.T.)
-	// Geracao pre-notas compra safra 2018 - parcela B - viniferas Livr. (exceto tintoreas, bordo e organicas, jah geradas anteriormente)
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2018') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', '03')   // Filial inicial
-	U_GravaSX1 (cPerg, '10', '03')   // Filial final
-	U_GravaSX1 (cPerg, '11', 'B')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '12', 2)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
-	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
-	U_GravaSX1 (cPerg, '17', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_VA_GNF1 (.T.)
-	// Geracao pre-notas compra safra 2018 - parcela C F.01 - demais (exceto viniferas Livr, tintoreas, bordo e organicas, jah geradas anteriormente)
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2018') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', '01')   // Filial inicial
-	U_GravaSX1 (cPerg, '10', '01')   // Filial final
-	U_GravaSX1 (cPerg, '11', 'C')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
-	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
-	U_GravaSX1 (cPerg, '17', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_VA_GNF1 (.T.)
-	// Geracao pre-notas compra safra 2018 - parcela C F.07 e 09 - demais (exceto viniferas Livr, tintoreas, bordo e organicas, jah geradas anteriormente)
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2018') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', '07')   // Filial inicial
-	U_GravaSX1 (cPerg, '10', '09')   // Filial final
-	U_GravaSX1 (cPerg, '11', 'C')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '12', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '13', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '14', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '15', '9925/9822/9948/9959') // Exceto estas variedades.
-	U_GravaSX1 (cPerg, '16', '')     // Coop. origem.
-	U_GravaSX1 (cPerg, '17', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '18', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_VA_GNF1 (.T.)
-return
-*/
-
-/*
 	// Varre grupos familiares (atual cadastro viticola) e cria um talhao para cada variedade encontrada.
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := " SELECT DISTINCT CAD_VITICOLA, PRODUTO, DESCRICAO, SIST_CONDUCAO"
@@ -7013,208 +7538,8 @@ PutSX1(cPerg,"01","Data de?","Data de?","Data de?","MV_CH1","D",8,0,0,"G"," "," 
 
 Return	
 */
-/*
-	// Simulacao: Violeta + bordo + assoc. da JC que entregaram na 01 + organicas.
-	// Bordo e violeta: paga 100%
-	// 9822 BORDO DE BORDADURA                                          
-	// 9925 BORDO (IVES)                                                
-	// 9959 BORDO ORGANICO                                              
-	// 9948 BORDO EM CONVERSAO P/ ORGANICA
-	// 9976 BRS VIOLETA                                                                               
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2016') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', 6)      // Maximo itens por NF produtor
-	U_GravaSX1 (cPerg, '10', 2)      // Geracao p/ DCO (so safra 2009) [S/N]
-	U_GravaSX1 (cPerg, '11', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '13', 'A')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '14', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '15', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '16', '9822/9925/9948/9976')  // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '17', '')     // Exceto estas variedades.
-	U_GravaSX1 (cPerg, '18', '')     // Coop. origem.
-	U_GravaSX1 (cPerg, '19', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '20', 'CEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_VA_GNF1 (.T.)
 
-	// Associados da L. Jacinto que entregaram na matriz: paga 100%
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2016') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', 6)      // Maximo itens por NF produtor
-	U_GravaSX1 (cPerg, '10', 2)      // Geracao p/ DCO (so safra 2009) [S/N]
-	U_GravaSX1 (cPerg, '11', '01')   // Filial inicial
-	U_GravaSX1 (cPerg, '12', '01')   // Filial final
-	U_GravaSX1 (cPerg, '13', 'B')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '14', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '15', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '16', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '17', '9822/9925/9948/9976')    // Exceto estas variedades (bordo e violeta - ja pagas na primeira parcela)
-	U_GravaSX1 (cPerg, '18', 'JC')   // Coop. origem.
-	U_GravaSX1 (cPerg, '19', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '20', 'OCEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_VA_GNF1 (.T.)
 
-	// Demais uvas organicas parte 1 (assoc. da Jacinto exceto os que entregaram na F.01)
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2016') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', 6)      // Maximo itens por NF produtor
-	U_GravaSX1 (cPerg, '10', 2)      // Geracao p/ DCO (so safra 2009) [S/N]
-	U_GravaSX1 (cPerg, '11', '02')   // Filial inicial
-	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '13', 'C')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '14', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '15', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '16', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '17', '9822/9925/9948/9976')    // Exceto estas variedades (bordo e violeta - ja pagas na primeira parcela)
-	U_GravaSX1 (cPerg, '18', 'JC')   // Coop. origem.
-	U_GravaSX1 (cPerg, '19', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '20', 'O')    // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_VA_GNF1 (.T.)
-
-	// Demais uvas organicas parte 2 (exceto assoc. da Jacinto, pois jï¿½ entraram no lote anterior)
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2016') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', 6)      // Maximo itens por NF produtor
-	U_GravaSX1 (cPerg, '10', 2)      // Geracao p/ DCO (so safra 2009) [S/N]
-	U_GravaSX1 (cPerg, '11', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '13', 'D')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '14', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '15', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '16', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '17', '9822/9925/9948/9976')    // Exceto estas variedades (bordo e violeta - ja pagas na primeira parcela)
-	U_GravaSX1 (cPerg, '18', 'AL/PO/SA/SP/SV')  // Coop. origem.
-	U_GravaSX1 (cPerg, '19', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '20', 'O')    // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_VA_GNF1 (.T.)
-
-	// Demais uvas tintoreas parte 1 (assoc. da Jacinto exceto os que entregaram na F.01)
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2016') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', 6)      // Maximo itens por NF produtor
-	U_GravaSX1 (cPerg, '10', 2)      // Geracao p/ DCO (so safra 2009) [S/N]
-	U_GravaSX1 (cPerg, '11', '02')   // Filial inicial
-	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '13', 'E')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '14', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '15', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '16', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '17', '9822/9925/9948/9976')    // Exceto estas variedades (bordo e violeta - ja pagas na primeira parcela)
-	U_GravaSX1 (cPerg, '18', 'JC')   // Coop. origem.
-	U_GravaSX1 (cPerg, '19', 1)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '20', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_VA_GNF1 (.T.)
-
-	// Demais uvas tintoreas parte 2 (exceto assoc. da Jacinto, pois jï¿½ entraram no lote anterior)
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2016') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', 6)      // Maximo itens por NF produtor
-	U_GravaSX1 (cPerg, '10', 2)      // Geracao p/ DCO (so safra 2009) [S/N]
-	U_GravaSX1 (cPerg, '11', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '13', 'F')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '14', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '15', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '16', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '17', '9822/9925/9948/9976')    // Exceto estas variedades (bordo e violeta - ja pagas na primeira parcela)
-	U_GravaSX1 (cPerg, '18', 'AL/PO/SA/SP/SV')  // Coop. origem.
-	U_GravaSX1 (cPerg, '19', 1)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '20', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_VA_GNF1 (.T.)
-
-	// O que sobrou vai ateh chegar a 50% do valor total da safra: parte 1 - o resto do pessoal da Jacinto.
-	// Por enquanto vou apenas separar numa parcela para conferir quantidades.
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2016') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', 6)      // Maximo itens por NF produtor
-	U_GravaSX1 (cPerg, '10', 2)      // Geracao p/ DCO (so safra 2009) [S/N]
-	U_GravaSX1 (cPerg, '11', '02')   // Filial inicial
-	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '13', 'G')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '14', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '15', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '16', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '17', '9822/9925/9948/9976')    // Exceto estas variedades (bordo e violeta - ja pagas na primeira parcela)
-	U_GravaSX1 (cPerg, '18', 'JC')   // Coop. origem.
-	U_GravaSX1 (cPerg, '19', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '20', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_VA_GNF1 (.T.)
-
-	// O que sobrou vai ateh chegar a 50% do valor total da safra: parte 2 - exceto o pessoal da Jacinto, pois jï¿½ entraram no lote anterior
-	// Por enquanto vou apenas separar numa parcela para conferir quantidades.
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2016') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', 6)      // Maximo itens por NF produtor
-	U_GravaSX1 (cPerg, '10', 2)      // Geracao p/ DCO (so safra 2009) [S/N]
-	U_GravaSX1 (cPerg, '11', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '13', 'H')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '14', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '15', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '16', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '17', '9822/9925/9948/9976')    // Exceto estas variedades (bordo e violeta - ja pagas na primeira parcela)
-	U_GravaSX1 (cPerg, '18', 'AL/PO/SA/SP/SV')  // Coop. origem.
-	U_GravaSX1 (cPerg, '19', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '20', 'CEB')  // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_VA_GNF1 (.T.)
-return
-*/
 
 /*
 	// Ajusta OPs safra 2016
@@ -7331,165 +7656,6 @@ return
 	next
 return
 */
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/*
-	// Gera pre-notas de pagamento de safra 2016, pois teremos umas politicas bem divertidas...
-	//
-	// Bordo e violeta: paga 100%
-	// 9822 BORDO DE BORDADURA                                          
-	// 9925 BORDO (IVES)                                                
-	// 9959 BORDO ORGANICO                                              
-	// 9948 BORDO EM CONVERSAO P/ ORGANICA
-	// 9976 BRS VIOLETA                                                                               
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2016') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', 6)      // Maximo itens por NF produtor
-	U_GravaSX1 (cPerg, '10', 2)      // Geracao p/ DCO (so safra 2009) [S/N]
-	U_GravaSX1 (cPerg, '11', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '13', '1')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '14', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '15', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '16', '9822/9925/9959/9948/9976')  // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '17', '')     // Exceto estas variedades.
-	U_GravaSX1 (cPerg, '18', '')     // Coop. origem.
-	U_GravaSX1 (cPerg, '19', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '20', 'OCEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_VA_GNF1 (.T.)
-
-	// Associados da L. Jacinto que entregaram na matriz: paga 100%
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2016') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', 6)      // Maximo itens por NF produtor
-	U_GravaSX1 (cPerg, '10', 2)      // Geracao p/ DCO (so safra 2009) [S/N]
-	U_GravaSX1 (cPerg, '11', '01')   // Filial inicial
-	U_GravaSX1 (cPerg, '12', '01')   // Filial final
-	U_GravaSX1 (cPerg, '13', '2')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '14', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '15', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '16', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '17', '9822/9925/9959/9948/9976')    // Exceto estas variedades (bordo e violeta - ja pagas na primeira parcela)
-	U_GravaSX1 (cPerg, '18', 'JC')   // Coop. origem.
-	U_GravaSX1 (cPerg, '19', 3)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '20', 'OCEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_VA_GNF1 (.T.)
-
-	// Demais uvas tintoreas: paga 50% + 50%: parte 1 (assoc. da Jacinto exceto os que entregaram na F.01)
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2016') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', 6)      // Maximo itens por NF produtor
-	U_GravaSX1 (cPerg, '10', 2)      // Geracao p/ DCO (so safra 2009) [S/N]
-	U_GravaSX1 (cPerg, '11', '02')   // Filial inicial
-	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '13', '3')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '14', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '15', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '16', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '17', '9822/9925/9959/9948/9976')    // Exceto estas variedades (bordo e violeta - ja pagas na primeira parcela)
-	U_GravaSX1 (cPerg, '18', 'JC')   // Coop. origem.
-	U_GravaSX1 (cPerg, '19', 1)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '20', 'OCEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_VA_GNF1 (.T.)
-
-	// Demais uvas tintoreas: paga 50% + 50%: parte 2 (exceto assoc. da Jacinto, pois jï¿½ entraram no lote 3)
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2016') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', 6)      // Maximo itens por NF produtor
-	U_GravaSX1 (cPerg, '10', 2)      // Geracao p/ DCO (so safra 2009) [S/N]
-	U_GravaSX1 (cPerg, '11', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '13', '4')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '14', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '15', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '16', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '17', '9822/9925/9959/9948/9976')    // Exceto estas variedades (bordo e violeta - ja pagas na primeira parcela)
-	U_GravaSX1 (cPerg, '18', 'AL/PO/SA/SP/SV')  // Coop. origem.
-	U_GravaSX1 (cPerg, '19', 1)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '20', 'OCEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_VA_GNF1 (.T.)
-
-	// O que sobrou vai ateh chegar a 50% do valor total da safra: parte 1 - o resto do pessoal da Jacinto.
-	// Por enquanto vou apenas separar numa parcela para conferir quantidades.
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2016') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', 6)      // Maximo itens por NF produtor
-	U_GravaSX1 (cPerg, '10', 2)      // Geracao p/ DCO (so safra 2009) [S/N]
-	U_GravaSX1 (cPerg, '11', '02')   // Filial inicial
-	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '13', '5')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '14', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '15', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '16', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '17', '9822/9925/9959/9948/9976')    // Exceto estas variedades (bordo e violeta - ja pagas na primeira parcela)
-	U_GravaSX1 (cPerg, '18', 'JC')   // Coop. origem.
-	U_GravaSX1 (cPerg, '19', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '20', 'OCEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_VA_GNF1 (.T.)
-
-	// O que sobrou vai ateh chegar a 50% do valor total da safra: parte 2 - exceto o pessoal da Jacinto, pois jï¿½ entraram no lote 5
-	// Por enquanto vou apenas separar numa parcela para conferir quantidades.
-	cPerg = "VAGNF1"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2016') // Safra referencia
-	U_GravaSX1 (cPerg, '06', '')     // Contranota entrada uva inicial
-	U_GravaSX1 (cPerg, '07', 'z')    // Contranota entrada uva final
-	U_GravaSX1 (cPerg, '08', '30 ')  // Serie das NF de entrada de uva
-	U_GravaSX1 (cPerg, '09', 6)      // Maximo itens por NF produtor
-	U_GravaSX1 (cPerg, '10', 2)      // Geracao p/ DCO (so safra 2009) [S/N]
-	U_GravaSX1 (cPerg, '11', '')     // Filial inicial
-	U_GravaSX1 (cPerg, '12', 'zz')   // Filial final
-	U_GravaSX1 (cPerg, '13', '6')    // Gerar com qual parcela
-	U_GravaSX1 (cPerg, '14', 3)      // Variedade de uva [Comum/Fina/Todas]
-	U_GravaSX1 (cPerg, '15', 3)      // Cor da uva [Tinta/Bca+rose/Todas]
-	U_GravaSX1 (cPerg, '16', '')     // Apenas estas variedades.
-	U_GravaSX1 (cPerg, '17', '9822/9925/9959/9948/9976')    // Exceto estas variedades (bordo e violeta - ja pagas na primeira parcela)
-	U_GravaSX1 (cPerg, '18', 'AL/PO/SA/SP/SV')  // Coop. origem.
-	U_GravaSX1 (cPerg, '19', 2)      // Tintoreas [So tintoreas/Exceto tintoreas/Todas]
-	U_GravaSX1 (cPerg, '20', 'OCEB') // [O]rganicas / [C]onvencionais / [E]m coversao / [B]ordadura.
-	U_VA_GNF1 (.T.)
-return
-*/	
 /*
 Beleza Robert, 
 tentei tambï¿½m com a SoftLock, mas me parece que ele bloqueava o registro tambï¿½m.
