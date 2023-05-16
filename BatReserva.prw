@@ -22,19 +22,27 @@
 User Function BatReserva()
     Local _sLinkSrv  := ""
 
-    If "TESTE" $ upper(GetEnvServer())
-        _sLinkSrv  := "LKSRV_FULLWMS_LOGISTICATESTE"
-    else
-        _sLinkSrv  := "LKSRV_FULLWMS_LOGISTICA"
-    EndIf
+    u_logIni()
+    _sLinkSrv = U_LkServer('FULLWMS_AX01')
 
-    //_IncEndereco(_sLinkSrv)
-    //_ExcEndereco(_sLinkSrv)
-    //_BloqLotes(_sLinkSrv)
-    //_LibLotes(_sLinkSrv)
-    //_IncReserva(_sLinkSrv)
-    //_ExcReserva(_sLinkSrv)
+    u_log("LKServer:"+_sLinkSrv)
 
+    u_log("Endereço")
+    // Endereço
+    _IncEndereco(_sLinkSrv)
+    _ExcEndereco(_sLinkSrv)
+
+    u_log("Lotes")
+    // Lotes
+    _BloqLotes(_sLinkSrv)
+    _LibLotes(_sLinkSrv)
+
+    u_log("Reservas")
+    // Reservas
+    _IncReserva(_sLinkSrv)
+    _ExcReserva(_sLinkSrv)
+
+    u_logFim()
 Return
 //
 // --------------------------------------------------------------------------
@@ -213,6 +221,7 @@ Static Function _ExcEndereco(_sLinkSrv)
     _oSQL:_sQuery += "		 AND POSICAO           = C0_VAPOSI "
     _oSQL:_sQuery += "		 AND C0_LOCAL          = '01' "
     _oSQL:_sQuery += "		 AND C0_NUM LIKE 'E%' "
+    u_log(_oSQL:_sQuery)
     _aDados := aclone (_oSQL:Qry2Array (.F., .F.))
 
     For _x:=1 to Len(_aDados)
@@ -427,6 +436,7 @@ Static Function _LibLotes(_sLinkSrv)
     _oSQL:_sQuery += " 		AND SDD.DD_DOC LIKE 'F%' "
     _oSQL:_sQuery += " 		AND SDD.DD_QUANT > 0 "
     _oSQL:_sQuery += " 		AND SDD.DD_SALDO > 0 "
+    u_log(_oSQL:_sQuery)
     _aDados := aclone (_oSQL:Qry2Array (.F., .F.))
 
     For _x:=1 to Len(_aDados)
@@ -548,6 +558,7 @@ Static Function _ExcReserva(_sLinkSrv)
     _oSQL:_sQuery += " 		AND C0_LOCAL          = '01' "
     _oSQL:_sQuery += " 		AND C0_VATIPO         = 'R' "
     _oSQL:_sQuery += " 		AND C0_VANRES         <> '' "
+    u_log(_oSQL:_sQuery)
     _aDados := aclone (_oSQL:Qry2Array (.F., .F.))
 
     For _x:=1 to Len(_aDados)
