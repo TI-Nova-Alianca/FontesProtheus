@@ -18,6 +18,7 @@
 // 23/11/2021 - Claudia - Gerar manifesto apenas para SPED. GLPI: 11183
 // 14/12/2021 - Robert  - Nao grava o campo FT_ITEM quando executa MATA103 via rotina automatica (GLPI 11360)
 // 09/01/2022 - Robert  - Contranotas de safra estavam chamando tela do manifesto.
+// 15/05/2023 - Robert - Alterados alguns logs de INFO para DEBUG e vice-versa.
 //
 
 // ------------------------------------------------------------------------------------
@@ -27,7 +28,7 @@ User Function MT103FIM()
 
 	// Ajusta tabela SFT quando necessario.
 	if alltrim (cEspecie) == 'CTE' .and. _lConf  // Usuario confirmou a tela
-		U_Log2 ('debug', 'vou ajustar sft')
+		U_Log2 ('debug', '[' + procname () + ']Vou ajustar sft')
 		_AjSFT ()
 	endif
 

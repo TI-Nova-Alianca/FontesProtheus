@@ -289,7 +289,7 @@ user function LogPCham (_lGeraLog)
 
 	// Em alguns casos, a rotina chamadora quer a pilha para outras coisas.
 	if _lGeraLog == NIL .or. _lGeraLog
-		U_Log2 ('info', 'Pilha de chamadas: ' + _sPilha)
+		U_Log2 ('debug', 'Pilha de chamadas: ' + _sPilha)
 	endif
 
 return _sPilha
