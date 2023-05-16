@@ -55,32 +55,6 @@ User Function MNTNG()
 
 //	U_Log2 ('debug', '[' + procname () + ']' + __cUserId + "(" + alltrim (cUserName) + ")")
 
-/*
-	// Siiiim, eu sei que chumbar os nomes no fonte é deselegante, mas ainda nao tenho uma forma melhor de descobrir o codigo do funcionario.
-	_sCodFunc = ''
-	do case
-		//case alltrim (upper (cUserName)) $ 'EVALDO.AGNOLETTO/LEONARDO.BORGES/APP.MNTNG/ELSO.RODRIGUES/MARCOS.OLIVEIRA/JONATHAN.SANTOS/JUNIOR.MELGAREJO/MAX.PADILHA/VAGNER.LIMA/JONATHAN.BRITO/SANDRA.SUGARI/CLAUDIA.LIONCO/'
-		case alltrim(upper(cUserName)) $ alltrim(getmv("VA_MNTUSR"))
-			_sCodFunc = ''  // Sem filtro para estes usuarios.
-		case alltrim(upper(cUserName)) = 'ALEXANDRE.ANDRADE'; _sCodFunc = '2065'
-		case alltrim(upper(cUserName)) = 'ELIEL.PEDRON'     ; _sCodFunc = '2119'
-		case alltrim(upper(cUserName)) = 'FABRICIO.GOMES'   ; _sCodFunc = '2010'
-		case alltrim(upper(cUserName)) = 'FLAVIO.ALVES'     ; _sCodFunc = '2202'
-		case alltrim(upper(cUserName)) = 'MARCOS.CORSO'     ; _sCodFunc = '1648'
-		case alltrim(upper(cUserName)) = 'TAILOR.BACCA'     ; _sCodFunc = '2369'
-		case alltrim(upper(cUserName)) = 'FELIPE.ESTEVES'   ; _sCodFunc = '2487'
-		case alltrim(upper(cUserName)) = 'JULIANO.KOSVOSKI' ; _sCodFunc = '4402'
-		otherwise
-			_oAviso := ClsAviso ():New ()
-			_oAviso:Tipo       = 'E'
-			_oAviso:DestinZZU  = {'122'}  // 122 = grupo da TI
-			_oAviso:Titulo     = 'Usuario sem tratamento para filtrar OS'
-			_oAviso:Texto      = "Usuario '" + cUserName + "' sem tratamento para filtrar OS no ponto de entrada " + procname () + ". Mais detalhes em " + _sArqLog
-			_oAviso:InfoSessao = .T.
-			_oAviso:IntegNaWeb = .F.  // Nao tenta integrar neste momento (nao ha urgencia)
-			_oAviso:Grava ()
-	endcase
-*/
 	// Verifica em que momento estah sendo chamado este P.E.
 	_sIDdLocal := PARAMIXB[1]
 
@@ -107,7 +81,6 @@ User Function MNTNG()
 		_xRet = ''
 
 		// Mandar somente as OS direcionadas ao manutentor atual (desde que nao seja um manutentor 'power')
-	//	if ! empty (_sCodFunc)
 		_LeFuncion (@_sCodFunc, @_sFiltrar)
 		if _sFiltrar == 'S'
 			_xRet := ""
@@ -118,12 +91,22 @@ User Function MNTNG()
 			_xRet +=       " AND TL_ORDEM   = TJ_ORDEM"
 			_xRet +=       " AND TL_CODIGO  = '" + _sCodFunc + "')"
 		endif
+
+		// TESTES PARA TENTAR DEIXAR A SINCRONIZACAO MAIS LEVE
+		//_xRet += " AND TJ_DTPRFIM = ''"  // SOMENTE OS EM ABERTO
+		//_xRet += " AND TJ_ORDEM <= '001000'
+
+
 		U_Log2 ('info', '[' + procname () + ']Filtrando OS: _xRet = ' + _xRet)
 
 
 	// Filtro para busca de produtos
 	elseif _sIDdLocal == "FILTER_PRODUCT"
 		_xRet = "AND B1_TIPO IN " + FormatIn (GetMv ("VA_MNTNG"), "/")
+
+		// TESTES PARA TENTAR DEIXAR A SINCRONIZACAO MAIS LEVE
+		//_xRet += " AND B1_TIPO = 'CL'"
+
 		U_Log2 ('info', '[' + procname () + ']Filtrando produtos: _xRet = ' + _xRet)
 
 
@@ -133,7 +116,6 @@ User Function MNTNG()
 		_xRet += "AND TQB_SOLUCA NOT IN ('E', 'C')"  // Encerradas e Canceladas nao pretendo enviar nunca
 		
 		// Mandar somente as SC distribuidas (desde que nao seja um manutentor 'power')
-	//	if ! empty (_sCodFunc)
 		_LeFuncion (@_sCodFunc, @_sFiltrar)
 		if _sFiltrar == 'S'
 			_xRet += "AND TQB_SOLUCA = 'D'"
@@ -143,7 +125,11 @@ User Function MNTNG()
 
 	// Filtro para terceiros
 	ElseIf _sIDdLocal == "FILTER_THIRDPART"
-		_xRet = "AND A2_TIPO = 'J'
+		_xRet = " AND A2_TIPO = 'J'
+
+		// TESTES PARA TENTAR DEIXAR A SINCRONIZACAO MAIS LEVE
+		//_xRet += " A2_COD <= '000020'"
+		
 		U_Log2 ('info', '[' + procname () + ']Filtrando terceiros: _xRet = ' + _xRet)
 
 
