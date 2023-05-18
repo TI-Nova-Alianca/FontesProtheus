@@ -85,7 +85,7 @@ user function GEmailPreNF (_sFornece, _sLoja, _sNF, _sSerie, _lSoTela)
          _sMsg += _oSQL:Qry2HTM ("Itens OC x Doc Entrada", _aCols, "", .F.)
 //         u_log (_sMsg)
          if _lSoTela
-         	u_ShowHTM (_sMsg)
+         	u_ShowHTM (_sMsg, 'I')
          else
          	U_ZZUNU ({'080'}, "Doc. de Entrada com DIVERGENCIA de Preço/Quantidade/Data Entrega - Necessita Tomada de Decisão", _sMsg, .F., cEmpAnt, cFilAnt, "")
          endif

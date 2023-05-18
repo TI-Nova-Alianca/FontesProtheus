@@ -85,6 +85,7 @@
 // 03/03/2023 - Robert  - Campo VA_VNOTAS_SAFRA.TIPO_FORNEC passa a ter novo conteudo.
 // 24/03/2023 - Robert  - Verif.24 passa a desconsiderar OPs para envase 'em terceiros' (seguem fluxo diferente para entrada no FullWMS)
 // 26/04/2023 - Robert  - Implementadas verificacoes 94 e 95.
+// 18/05/2023 - Robert  - Criado metodo GeraHelp() e iniciadas melhorias nas documentacoes.
 //
 
 #include "protheus.ch"
@@ -258,32 +259,54 @@ return _lContinua
 // --------------------------------------------------------------------------
 // Gera HTML de ajuda/documentacao para usuarios, procurando explicar do
 // que trata cada verificacao e trazendo dicas para corrigir os problemas.
-METHOD GeraHelp (_nQualVer) Class ClsVerif
+METHOD GeraHelp (_nQualVer, _lGeraCab) Class ClsVerif
 	local _sHTM    := ''
-	local _nNumBkp := ::Numero
+	local _nVerif  := 0
+	local _oVerif2 := NIL
 
-	_sHTM += alltrim (sm0 -> m0_nomecom) + '<br>'
-	_sHTM += 'Documentação explicativa das diversas Validações Aliança' + '<br>'
-	_sHTM += '<br>'
+	// Pode ser que a rotina chamadora jah tenha o cabecalho do HTML
+	if _lGeraCab == NIL .or. _lGeraCab
+		_sHTM += '<!DOCTYPE html>'
+		_sHTM += '<html>'
+		_sHTM += '<head>'
+		_sHTM += '<meta charset="1252"/>'
+		_sHTM += '<title>Verificações Aliança</title>'
+		_sHTM += '</head>'
+		_sHTM += '<body>' + chr (13) + chr (10)
+		_sHTM += '<h1>Documentação explicativa das <i>Verificações Aliança</i>' + '</h1>' + chr (13) + chr (10)
+		_sHTM += '<h3>' + alltrim (sm0 -> m0_nomecom) + '<h3>' + chr (13) + chr (10)
+		_sHTM += '<hr>' + chr (13) + chr (10)
+	endif
 
 	// Chama a geracao de query para cada verificacao, para que sejam alimentados
 	// os atributos que vou usar aqui. Poderia alimentar esses atributos noutro
 	// momento, mas acho que, se jah eh dificil mante-los atualizados estando
 	// junto da query, imagine se estiverem longe...
-	for ::Numero = iif (_nQualVer == NIL, 1, _nQualVer) to iif (_nQualVer == NIL, ::UltVerif, _nQualVer)
-		::GeraQry (.t.)
-		if ::Ativa
-			_sHTM += 'Verificação ' + cvaltochar (::Numero) + ' - ' + alltrim (::Descricao) + '<br>'
-			_sHTM += 'Areas de interesse: ' + ::Setores + '<br>'
-			_sHTM += 'Quando usar: ' + alltrim (::QuandoUsar) + '<br>'
-			_sHTM += 'Dicas adicionais: ' + alltrim (::Dica) + '<br>'
-			_sHTM += 'Sugestões para solução: ' + alltrim (::Sugestao) + '<br>'
-			_sHTM += 'Filial(is) em que se aplica: ' + ::Filiais + '<br>'
-			_sHTM += '<br>'
+	for _nVerif = iif (_nQualVer == NIL, 1, _nQualVer) to iif (_nQualVer == NIL, ::UltVerif, _nQualVer)
+		U_Log2 ('debug', '[' + procname () + ']Vou gerar dos para verif numero ' + cvaltochar (_nVerif))
+		_oVerif2 := ClsVerif ():New (_nVerif)
+		_oVerif2:GeraQry (.t.)
+		if _oVerif2:Ativa
+			_sHTM += '<h4>Verificação ' + cvaltochar (_oVerif2:Numero) + ' - ' + alltrim (_oVerif2:Descricao) + '</h4>' + chr (13) + chr (10)
+			
+			// Cria um paragrafo recuado para a direita
+			_sHTM += '<p style="padding-left: 40px;">' + chr (13) + chr (10)
+			_sHTM +=    '<ul>' + chr (13) + chr (10)
+			_sHTM +=       '<li><b>Áreas de interesse:</b> ' + _oVerif2:Setores + '</li>' + chr (13) + chr (10)
+			_sHTM +=       '<li><b>Quando usar:</b> ' + alltrim (_oVerif2:QuandoUsar) + '</li>' + chr (13) + chr (10)
+			_sHTM +=       '<li><b>Dicas adicionais:</b> ' + strtran (alltrim (_oVerif2:Dica), chr (13) + chr (10), '<br>') + '</li>' + chr (13) + chr (10)
+			_sHTM +=       '<li><b>Sugestões para solução:</b> ' + strtran (alltrim (_oVerif2:Sugestao), chr (13) + chr (10), '<br>') + '</li>' + chr (13) + chr (10)
+//			_sHTM +=       '<li><b>Filiais em que se aplica:</b> ' + iif (_oVerif2:Filiais == '*', 'todas', _oVerif2:Filiais) + '</li>' + chr (13) + chr (10)
+			_sHTM +=    '</ul>' + chr (13) + chr (10)
+			_sHTM += '</p>' + chr (13) + chr (10)
+			_sHTM += '<hr>' + chr (13) + chr (10)  // Linha horizontal
+		else
+			_sHTM += '<h4><del>(inativa)Verificação ' + cvaltochar (_oVerif2:Numero) + ' - ' + alltrim (_oVerif2:Descricao) + '</del></h4>' + chr (13) + chr (10)
 		endif
+		// U_Log2 ('debug', '[' + procname () + ']' + _sHTM)
 	next
-	::Numero = _nNumBkp
-	::GeraQry (.f.)
+	_sHTM += '</body>
+	_sHTM += '</html>
 return _sHTM
 
 
@@ -293,10 +316,12 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 	//u_logIni (GetClassName (::Self) + '.' + procname ())
 	do case
 	case ::Numero == 1
-		::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
-		::Setores   = 'PCP'
-		::Descricao = 'Produto deveria ter revisao padrao no cadastro'
-		::Sugestao  = "Revise o campo '" + alltrim (RetTitle ("B1_REVATU")) + "' cadastro do produto"
+		::Filiais    = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+		::Setores    = 'PCP/ENG'
+		::Descricao  = 'Produto deveria ter revisao padrao no cadastro'
+		::QuandoUsar = 'A qualquer momento'
+		::Dica       = 'Encontrei (na tabela SG1) estruturas com diferentes revisões para o produto, mas no seu cadastro não está indicado qual delas é a padrão."
+		::Sugestao   = "Revise o campo '" + alltrim (RetTitle ("B1_REVATU")) + "' no cadastro do produto, pois deveria estar sendo indicada uma das revisões existentes na estrutura do produto."
 		::Query := ""
 		::Query += "WITH REVISOES AS (SELECT DISTINCT G1_COD, G1_REVINI, G1_REVFIM"
 		::Query +=                     " FROM " + RetSQLName ("SG1") + " SG1 "
@@ -320,11 +345,14 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query +=                   ")" 
 		::Query +=  " ORDER BY G1_COD"
 
+
 	case ::Numero == 2
-		::Filiais   = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
-		::Setores   = 'ENG'
-		::Descricao = 'Produto tem revisao padrao informada no seu cadastro, mas o cadastro da propria revisao nao existe'
-		::Sugestao  = "Cadastre a revisao"
+		::Filiais    = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 
+		::Setores    = 'ENG'
+		::Descricao  = 'Produto tem revisao padrao informada no seu cadastro, mas o cadastro da propria revisao nao existe'
+		::Sugestao   = "Cadastre a revisão na tabela SG5 (revisões)"
+		::QuandoUsar = 'A qualquer momento'
+		::Dica       = ''
 		::Query := ""
 		::Query += "SELECT B1_COD AS PRODUTO, B1_DESC AS DESCRICAO, B1_REVATU AS REVISAO"
 		::Query +=  " FROM " + RetSQLName ("SB1") + " SB1 "
@@ -339,10 +367,14 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query +=                    ")"
 		::Query += " ORDER BY B1_COD"
 
+
 	case ::Numero == 3
-		::Setores   = 'CUS'
-		::Descricao = 'Movimentacao com data futura'
-		::Sugestao  = 'Revise a movimentacao.' 
+		::Setores    = 'CUS/CTB'
+		::Descricao  = 'Movimentacao com data futura'
+		::Sugestao   = 'Revisar a movimentação e avaliar a possibilidade de apagar essa movimentação do banco de dados.'
+		::QuandoUsar = 'A qualquer momento'
+		::Dica       = 'Foi encontrada, em alguma das tabelas verificadas, movimentação com data posterior à atual.' + chr (13) + chr (10)
+		::Dica      += 'Isso poderá gerar confusão quando essa data chegar, pois o sistema passará a considerar esses movimentos na composição dos saldos em estoque."
 		::Query := "SELECT ORIGEM, EMISSAO, DOC, OP "
 		::Query +=  " FROM (SELECT 'Mov.internos' AS ORIGEM, D3_EMISSAO AS EMISSAO, D3_DOC AS DOC, D3_OP AS OP, D3_USUARIO AS USUARIO"
 		::Query +=          " FROM " + RetSQLName ("SD3")
@@ -368,10 +400,12 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Setores   = 'CUS/CTB'
 		::GrupoPerg = "U_VALID004"
 		::ValidPerg (_lDefault)
-		::Descricao = 'Fech.estq. diferente fech.ant + kardex'
-		::Sugestao  = 'Revise a movimentacao. Se o problema persistir, verifique a necessidade de reabrir o periodo e refazer a virada de saldos.'
-		::Dica      = "Esta verificacao deve ser executada para meses ja fechados, informando sempre as datas do ultimo dia de cada mes."
-		::QuandoUsar = "Apos a virada de saldos do estoque."
+		::Descricao = 'Fech.estq.diferente fech.ant + kardex'
+		::Sugestao  = 'Revise a movimentação. Se o problema persistir, provavelmente seja o caso de reabrir o período, recalcular o custo médio e refazer a virada de saldos.'
+		::Dica      = "Esta verificação deve ser executada para meses já fechados, contemplando sempre o mês completo." + chr (13) + chr (10)
+		::Dica     += "Saldos finais são usados como iniciais para o mês seguinte. Se forem gravados errados, todo o 'saldo atual' subsequente estará comprometido." + chr (13) + chr (10)
+		::Dica     += "O processo usado para encontrar as diferenças é, basicamente, o seguinte: partindo da tabela SB9 (saldo final de determinado mês), acrescentar entradas e saídas do período (kardex) e comparar esse resultado com a tabela SB9 do mês seguinte." + chr (13) + chr (10)
+		::QuandoUsar = "Após a virada de saldos do estoque, para conferir se a quantidade que foi gravada na tabela SB9 como 'saldo final' de cada item condiz com a movimentação do mês."
 		::Query := ""
 		::Query += "WITH C AS ("
 		::Query += " SELECT B2_FILIAL AS FILIAL,"
@@ -1444,7 +1478,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query +=    " FROM C"
 		::Query +=   " WHERE ROUND (CUSTO_RE_MO + CUSTO_RE_OUTROS, 2) != ROUND (CUSTO_PR, 2)"
 		::Query += " ORDER BY FILIAL, OP"
-		u_log(::Query)
+
 
 	case ::Numero == 29
 		::Filiais    = '01'  // O cadastro eh compartilhado, nao tem por que rodar em todas as filiais. 

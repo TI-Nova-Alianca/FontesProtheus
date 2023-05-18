@@ -20,6 +20,7 @@
 // 29/11/2010 - Robert  - Nao usa mais a tela cheia por default.
 // 22/10/2021 - Robert  - Criado botao de exportacao para planilha (melhoria para GLPI 11084)
 // 25/10/2021 - Claudia - AJuste de posição e tamanho dos botões da tela. GLPI: 11140
+// 18/05/2023 - Robert  - Criada opcao para incluir alguns botoes adicionais.
 //
 
 #include "rwmake.ch"
@@ -44,7 +45,8 @@
 //             composta por: [1] = Array com um clone da array original.
 //                           [2] = Linha em que o usuario estah posicionado.
 //                           [3] = Conteudo (.F. ou .T.) atual desta linha (antes de permitir a inversao).
-user function MbArray (_aArray, _sTitulo, _aCols, _nColMarca, _nLarg, _nAltur, _sLinhaOK)
+//         8 - Array contendo definicoes de botoes adicionais, no formato {label, largura (em pixels), action}
+user function MbArray (_aArray, _sTitulo, _aCols, _nColMarca, _nLarg, _nAltur, _sLinhaOK, _aBotAdic)
 	local _oDlgMbA   := NIL
 	local _oLbx      := NIL
 	local _aOpcoes   := {}
@@ -59,6 +61,11 @@ user function MbArray (_aArray, _sTitulo, _aCols, _nColMarca, _nLarg, _nAltur, _
 	local _lBotaoOK  := .F.
 	local _aSize     := {}
 	private _aMBArrayV := {NIL, NIL, NIL}  // Deixar private para ser vista pela funcao de validacao.
+
+	// A rotina chamadora pode, opcionalmente, me passar botoes adicionais.
+	if valtype (_aBotAdic) != "A"
+		_aBotAdic = {}
+	endif
 
 	// Se nao foi informada funcao para validacao, assume .T.
 	_sLinhaOK := iif (_sLinhaOK == NIL, "AllwaysTrue()", _sLinhaOK)
@@ -130,24 +137,32 @@ user function MbArray (_aArray, _sTitulo, _aCols, _nColMarca, _nLarg, _nAltur, _
 	
 	define msdialog _oDlgMbA title _sTitulo from 0, 0 to _nAltur, _nLarg of oMainWnd pixel
 	_oLbx := TWBrowse ():New (15, ;  // Linha
-	10, ;  // Coluna
-	_oDlgMbA:nClientWidth / 2 - 20, ;   // Largura
-	_oDlgMbA:nClientHeight / 2 - 60, ;  // Altura
-	NIL, ;                     // Campos
-	_aCabec, ;  // Cabecalhos colunas
-	_aTamanhos, ;          // Larguras colunas
-	_oDlgMbA,,,,,,,,,,,,.F.,,.T.,,.F.,,,)             // Etc. Veja pasta IXBPAD
-	_oLbx:SetArray (_aOpcoes)
-	_oLbx:bLine := {|| _aOpcoes [_oLbx:nAt]}
-	//_oLbx:bLDblClick := {|| _aMBArrayV [1] := aclone (_aArray), _aMBArrayV [2] := _oLbx:nAt, _aMBArrayV [3] := (_aOpcoes [_oLbx:nAt, 1] == _oBmpOk), iif (&(_sLinhaOK), (_aOpcoes [_oLbx:nAt, 1] := iif (_aOpcoes [_oLbx:nAt, 1] == _oBmpOk, _oBmpNo, _oBmpOk), _oLbx:Refresh()), NIL)}
-	_oLbx:bLDblClick := {|| _aMBArrayV [2] := _oLbx:nAt, _aMBArrayV [3] := (_aOpcoes [_oLbx:nAt, 1] == _oBmpOk), iif (&(_sLinhaOK), (_aOpcoes [_oLbx:nAt, 1] := iif (_aOpcoes [_oLbx:nAt, 1] == _oBmpOk, _oBmpNo, _oBmpOk), _oLbx:Refresh()), NIL)}
-	@ _oDlgMbA:nClientHeight / 2 - 40, _oDlgMbA:nClientWidth / 2 - 90 bmpbutton type 1 action (_lBotaoOK  := .T., _oDlgMbA:End ())
-	@ _oDlgMbA:nClientHeight / 2 - 40, _oDlgMbA:nClientWidth / 2 - 40 bmpbutton type 2 action (_oDlgMbA:End ())
-	//@ _oDlgMbA:nClientHeight / 2 - 40,  10 button "Inverte selecao" action (_aMBArrayV [1] := aclone (_aArray), _Inverte (@_aOpcoes, _oBmpOk, _oBmpNo, _sLinhaOK), _oLbx:Refresh())
-	//@ _oDlgMbA:nClientHeight / 2 - 40, 150 button "Export.planilha" action (_ExpPlan (_aOpcoes, _oBmpOK, _aCabec))
-	@ _oDlgMbA:nClientHeight / 2 - 40,  10 button "Inverte selecao" SIZE 080, 010 action (_aMBArrayV [1] := aclone (_aArray), _Inverte (@_aOpcoes, _oBmpOk, _oBmpNo, _sLinhaOK), _oLbx:Refresh())
-	@ _oDlgMbA:nClientHeight / 2 - 40,  100 button "Planilha" SIZE 050, 010 action (_ExpPlan (_aOpcoes, _oBmpOK, _aCabec))
-	activate dialog _oDlgMbA centered
+	                          10, ;  // Coluna
+	                          _oDlgMbA:nClientWidth / 2 - 20, ;   // Largura
+	                          _oDlgMbA:nClientHeight / 2 - 60, ;  // Altura
+	                          NIL, ;                     // Campos
+	                          _aCabec, ;  // Cabecalhos colunas
+	                          _aTamanhos, ;          // Larguras colunas
+	                          _oDlgMbA,,,,,,,,,,,,.F.,,.T.,,.F.,,,)             // Etc. Veja pasta IXBPAD
+	                          _oLbx:SetArray (_aOpcoes)
+	                          _oLbx:bLine := {|| _aOpcoes [_oLbx:nAt]}
+	                          _oLbx:bLDblClick := {|| _aMBArrayV [2] := _oLbx:nAt, _aMBArrayV [3] := (_aOpcoes [_oLbx:nAt, 1] == _oBmpOk), iif (&(_sLinhaOK), (_aOpcoes [_oLbx:nAt, 1] := iif (_aOpcoes [_oLbx:nAt, 1] == _oBmpOk, _oBmpNo, _oBmpOk), _oLbx:Refresh()), NIL)}
+	                          @ _oDlgMbA:nClientHeight / 2 - 40, _oDlgMbA:nClientWidth / 2 - 90 bmpbutton type 1 action (_lBotaoOK  := .T., _oDlgMbA:End ())
+	                          @ _oDlgMbA:nClientHeight / 2 - 40, _oDlgMbA:nClientWidth / 2 - 40 bmpbutton type 2 action (_oDlgMbA:End ())
+	                          @ _oDlgMbA:nClientHeight / 2 - 40,  10 button "Inverte selecao" SIZE 080, 010 action (_aMBArrayV [1] := aclone (_aArray), _Inverte (@_aOpcoes, _oBmpOk, _oBmpNo, _sLinhaOK), _oLbx:Refresh())
+	                          @ _oDlgMbA:nClientHeight / 2 - 40,  100 button "Planilha" SIZE 050, 010 action (_ExpPlan (_aOpcoes, _oBmpOK, _aCabec))
+	                          
+	                          // Permite alguns botoes adicionais.
+	                          if len (_aBotAdic) >= 1
+	                          	@ _oDlgMbA:nClientHeight / 2 - 40,  160 button _aBotAdic [1, 1] SIZE 050, 010 action (&(_aBotAdic [1, 2]))
+	                          endif
+	                          if len (_aBotAdic) >= 2
+	                          	@ _oDlgMbA:nClientHeight / 2 - 40,  220 button _aBotAdic [2, 1] SIZE 050, 010 action (&(_aBotAdic [2, 2]))
+	                          endif
+	                          if len (_aBotAdic) >= 3
+	                          	@ _oDlgMbA:nClientHeight / 2 - 40,  220 button _aBotAdic [3, 1] SIZE 050, 010 action (&(_aBotAdic [3, 2]))
+	                          endif
+	                          activate dialog _oDlgMbA centered
 
 	if _lBotaoOK
 		// Verifica opcoes selecionadas conforme parametro

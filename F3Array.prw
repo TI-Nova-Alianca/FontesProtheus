@@ -24,6 +24,7 @@
 // 25/11/2019 - Robert - Mensagem de aviso quando tenta-se exportar planilha sem ter a variavel _aCols.
 // 24/11/2020 - Robert - Comentariados logs desnecessarios.
 //                     - Inseridas tags para catalogo de fontes.
+// 17/05/2023 - Robert - Mostra msg de erro quando nao receber a array de definicao de colunas.
 //
 
 #include "rwmake.ch"
@@ -63,6 +64,10 @@ user function F3Array (_aArray, _sTitulo, _aCols, _nLarg, _nAltur, _sMsgSup, _sM
 	endif
 	if _lContinua .and. len (_aArray) == 0
 		u_help ("Funcao " + procname () + " recebeu lista vazia")
+		_lContinua = .F.
+	endif
+	if _lContinua .and. valtype (_aCols) != 'A' .or. len (_aCols) == 0
+		U_help ('Funcao ' + procname () + ' nao recebeu array de definicao de colunas.')
 		_lContinua = .F.
 	endif
 

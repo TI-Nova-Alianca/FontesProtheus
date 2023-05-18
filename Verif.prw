@@ -7,6 +7,7 @@
 // 24/11/2016 - Robert - Tratamento para consultas que precisam ler parametros de usuario.
 // 28/03/2017 - Robert - Possibilita receber array com os parametros para execucao.
 // 01/06/2022 - Robert - Busca qt.validacoes via atributo :UltVerif.
+// 18/05/2023 - Robert - Criado botao para consulta de documentacao das verificacoes.
 //
 
 // --------------------------------------------------------------------------
@@ -17,6 +18,7 @@ User Function Verif (_nQual, _aParam)
 	local _nVerif    := 0
 	local _nParam    := 0
 	local _nUltVerif := 0
+	local _aBotAdic  := {}
 
 	_nQual     := iif (_nQual == NIL, 0, _nQual)
 
@@ -74,7 +76,8 @@ User Function Verif (_nQual, _aParam)
 			aadd (_aCols, {2, "Tipo",            20, ""})
 			aadd (_aCols, {3, "Areas interesse", 70, ""})
 			aadd (_aCols, {4, "Descricao",      150, ""})
-			U_MBArray (@_aVerif, "Selecione verificacoes a fazer", _aCols, 1)
+			_aBotAdic = {{"Documentacao", "processa ({|| U_VerifHlp ()})"}}
+			U_MBArray (@_aVerif, "Selecione verificacoes a fazer", _aCols, 1, nil, nil, '.t.', _aBotAdic)
 			u_log2 ('info', _aVerif)
 			for _nVerif = 1 to len (_aVerif)
 				if _aVerif [_nVerif, 1]
@@ -128,3 +131,31 @@ static function _PodeVer (_oVerif)
 		next
 	endif
 return _lRet
+
+
+// --------------------------------------------------------------------------
+// Abre documentacao das verificacoes.
+user function VerifHlp ()
+//	local _nVerif   := 0
+	local _oVerif   := NIL
+	local _sHTML    := ''
+
+	procregua (10)
+	incproc ("Gerando documentacao...")
+
+	/* A funcao U_MBArray(), no momento da chamada do botao, nao tem a array atualizada ainda...
+	for _nVerif = 1 to len (_aVerif)
+		if _aVerif [_nVerif, 1]
+			_oVerif = _aVerif [_nVerif, 5]
+			_sHTML += _oVerif:GeraHelp (_oVerif:Numero, (empty (_sHTML)))
+			U_Log2 ('debug', '[' + procname () + ']' + _sHTML)
+		endif
+	next
+	*/
+
+	_oVerif := ClsVerif ():New ()
+	_sHTML += _oVerif:GeraHelp ()
+	_sHTML = strtran (_sHTML, chr (13) + chr (10), '')  // A funcao U_ShowHTM substitui as quebras de linha
+
+	U_ShowHTM (_sHTML, 'N')
+return
