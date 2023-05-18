@@ -85,7 +85,7 @@ Static Function _Seleciona()
                 U_VA_FINA630(xFilial("SE6"),_aDados[_x, .Solicit] )
 			endif			
 		next
-        u_help("Solicitações liberadas!")
+        u_help("Operação Finalizada!")
 	else
 		u_help("Sem registros selecionados!")
 	endif
