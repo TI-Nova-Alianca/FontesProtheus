@@ -113,7 +113,8 @@ user function robert ()
 		// _RelAssoc ()
 		// _SF1()
 		// _SimCtb ()
-		_SimSafrGI ()
+		// _SimSafr23 ()
+		// _SimSafrGI ()
 		// _Sisdevin ()
 		// _ST_MG ()
 		// _SZI ()
@@ -121,7 +122,7 @@ user function robert ()
 		// _TrEstq ()
 		// _VACCR2 ()
 		// _VA_XLS ()
-		// _verif ()
+		_verif ()
 
 		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
@@ -178,18 +179,19 @@ return
 // Ajusta saldo de lote / endereco
 static function _AjLoteEnd ()
 	// Deixo desabilitado pra me obrigar a revisar sempre --->
-	// Deixo desabilitado pra me obrigar a revisar sempre --->	local _sFilial   := '01'
-	// Deixo desabilitado pra me obrigar a revisar sempre --->	local _sDocto    := 'robert'
-	// Deixo desabilitado pra me obrigar a revisar sempre --->	local _sProduto  := '2525'
-	// Deixo desabilitado pra me obrigar a revisar sempre --->	local _sAlmox    := '07'
-	// Deixo desabilitado pra me obrigar a revisar sempre --->	local _nQuant    := 0.0004  // qt positiva=gerar entrada
-	// Deixo desabilitado pra me obrigar a revisar sempre --->	local _sEndereco := ''
-	// Deixo desabilitado pra me obrigar a revisar sempre --->	local _sLote     := '09517301'
-	// Deixo desabilitado pra me obrigar a revisar sempre --->	local _oSQL      := NIL
+	local _sFilial   := '01'
+	local _sDocto    := 'GLPI13592'
+	local _sProduto  := '3419'
+	local _sAlmox    := '02'
+	local _nQuant    := 8  // qt positiva=gerar entrada
+	local _sEndereco := ''
+	local _sLote     := '2220503   '
+	local _oSQL      := NIL
 
 	if _sFilial != cFilAnt
 		u_help ("Estou na filial errada",, .t.)
 	else
+		begin transaction
 		if ! empty (_sLote)
 			_oSQL := ClsSQL ():New ()
 			_oSQL:_sQuery := "SELECT min (B8_DTVALID)"  // uso MIN pra evitar possivel azar de ter mais de 1 registro.
@@ -200,17 +202,24 @@ static function _AjLoteEnd ()
 			_oSQL:_sQuery +=   " AND SB8.B8_PRODUTO = '" + _sProduto + "'"
 			_oSQL:_sQuery +=   " AND SB8.B8_LOCAL   = '" + _sAlmox + "'"
 			reclock ("SD5", .t.)
-			sd5 -> d5_filial = _sFilial
+			sd5 -> d5_filial  = _sFilial
 			sd5 -> d5_produto = _sProduto
 			sd5 -> d5_local   = _sAlmox
 			sd5 -> d5_doc     = _sDocto
 			sd5 -> d5_data    = date ()
-			sd5 -> d5_origlan = 'SD3'
+			sd5 -> d5_origlan = iif (_nQuant > 0, '499', '999')
 			sd5 -> d5_quant   = abs (_nQuant)
 			sd5 -> d5_lotectl = _sLote
 			sd5 -> d5_dtvalid = stod (_oSQL:RetQry (1, .f.))
 			msunlock ()
-			U_Log2 ('debug', '[' + procname () + ']Gravei SD5 com doc ' + _sDocto)
+			U_Log2 ('debug', '[' + procname () + ']Movimento gravado na tabela SD5:')
+			U_Log2 ('debug', '[' + procname () + ']D5_FILIAL  = ' + sd5 -> d5_filial)
+			U_Log2 ('debug', '[' + procname () + ']D5_DOC     = ' + sd5 -> d5_doc)
+			U_Log2 ('debug', '[' + procname () + ']D5_PRODUTO = ' + sd5 -> d5_produto)
+			U_Log2 ('debug', '[' + procname () + ']D5_LOTECTL = ' + sd5 -> d5_lotectl)
+			U_Log2 ('debug', '[' + procname () + ']D5_LOCAL   = ' + sd5 -> d5_local)
+			U_Log2 ('debug', '[' + procname () + ']D5_DATA    = ' + dtoc (sd5 -> d5_data))
+			U_Log2 ('debug', '[' + procname () + ']D5_QUANT   = ' + cvaltochar (sd5 -> d5_quant))
 		endif
 		if ! empty (_sEndereco)
 			reclock ("SDB", .t.)
@@ -228,8 +237,18 @@ static function _AjLoteEnd ()
 			sdb -> db_atuest  = 'S'
 			sdb -> db_vauser  = cUserName
 			msunlock ()
-			U_Log2 ('debug', '[' + procname () + ']Gravei SDB com doc ' + _sDocto)
+			U_Log2 ('debug', '[' + procname () + ']Movimento gravado na tabela SDB:')
+			U_Log2 ('debug', '[' + procname () + ']DB_FILIAL  = ' + sdb -> db_filial)
+			U_Log2 ('debug', '[' + procname () + ']DB_DOC     = ' + sdb -> db_doc)
+			U_Log2 ('debug', '[' + procname () + ']DB_PRODUTO = ' + sdb -> db_produto)
+			U_Log2 ('debug', '[' + procname () + ']DB_LOTECTL = ' + sdb -> db_lotectl)
+			U_Log2 ('debug', '[' + procname () + ']DB_LOCAL   = ' + sdb -> db_local)
+			U_Log2 ('debug', '[' + procname () + ']DB_LOCALIZ = ' + sdb -> db_localiz)
+			U_Log2 ('debug', '[' + procname () + ']DB_DATA    = ' + dtoc (sdb -> db_data))
+			U_Log2 ('debug', '[' + procname () + ']DB_QUANT   = ' + cvaltochar (sdb -> db_quant))
+			U_Log2 ('debug', '[' + procname () + ']DB_TM      = ' + sdb -> db_tm)
 		endif
+		end transaction
 		U__MATA300 (_sProduto, _sProduto, _sAlmox, _sAlmox)
 	endif
 return
@@ -2015,6 +2034,38 @@ static function _RevCH()
 RETURN
 
 // --------------------------------------------------------------------------
+// Simulacoes safra 2023 durante reuniao.
+static function _SimSafr23 ()
+	local _sParcel   := 'M'
+	local _nRecCount := 0
+	local _nRecAtu   := 0
+	dbselectarea ("ZZ9")
+	set filter to zz9_safra = '2023' .and. zz9_parcel = _sParcel
+	count to _nRecCount
+	zz9 -> (dbgotop ())
+	_nRecAtu = 0
+	do while ! zz9 -> (eof ())
+		incproc ()
+		if zz9 -> zz9_safra == '2023' .and. zz9 -> zz9_parcel == _sParcel
+			_sClasFina = ''
+			if zz9 -> zz9_conduc == 'L'
+				_sClasFina = zz9 -> zz9_clabd
+			else
+				_sClasFina = zz9 -> zz9_classe
+			endif
+			//u_log2 ('info', '[' + cvaltochar (++_nRecAtu) + ' de ' + cvaltochar (_nRecCount) + ']Produto ' + alltrim (zz9 -> zz9_produt) + ' gr.' + zz9 -> zz9_grau + ' ' + _sClasFina)
+			if ++_nRecAtu % 100 == 0
+				u_log2 ('info', '[' + cvaltochar (_nRecAtu) + ' de ' + cvaltochar (_nRecCount) + ']Produto ' + alltrim (zz9 -> zz9_produt) + ' gr.' + zz9 -> zz9_grau + ' ' + _sClasFina)
+			endif
+			reclock ("ZZ9", .F.)
+			zz9 -> zz9_vunit = U_PrcUva23 (zz9 -> zz9_filial, zz9 -> zz9_produt, val (zz9 -> zz9_grau), _sClasFina, zz9 -> zz9_conduc, .F., .F.) [2]
+			msunlock ()
+		endif
+		zz9 -> (dbskip ())
+	enddo
+return
+
+// --------------------------------------------------------------------------
 // Simulacao de pagamento safras antigas com graus inteiros, apenas para comparativos
 static function _SimSafrGI ()
 	local _oSQL      := NIL
@@ -2234,6 +2285,7 @@ static function _verif ()
 	// _oVerif:SetParam ('02', '09189201001  ')
 	// _oVerif:SetParam ('03', '')
 	// _oVerif:SetParam ('04', 'z')
+	/*
 	_oVerif := ClsVerif():New (95)
 	//_oVerif:SetParam ('01', date () - 30)
 	//_oVerif:SetParam ('02', date ())
@@ -2247,9 +2299,9 @@ static function _verif ()
 		else
 			u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
 		endif
-	
-//	_oVerif := ClsVerif():New ()
-//	_sHtmHlp = _oVerif:GeraHelp ()
+	*/
+	_oVerif := ClsVerif():New ()
+	_sHtmHlp = _oVerif:GeraHelp ()
 
 	// Exporta para arquivo, durante a implementacao, para conferencia.
 	_sArq := 'c:\temp\verif.htm'

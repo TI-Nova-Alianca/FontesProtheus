@@ -37,12 +37,12 @@ user function Log2 (_sTipo, _xDadoOri, _xExtra)
 	local _sSeqNome   := ''
 	local _nLimTamLg  := 5000000  //2000000  // 1000000
 	static _nAcumLog  := 0
-	static _sLogDebug := GetSrvProfString ("VA_LogDebug", "0")
+//	static _sLogDebug := GetSrvProfString ("VA_LogDebug", "0")
 
-	// Caso nao esteja definida a chave especifica no appserver.ini, ignora a gravacao de logs de debug.
-	 if _sLogDebug != '1' .and. alltrim (upper (cvaltochar (_sTipo))) == 'DEBUG'
-		return
-	endif
+//	// Caso nao esteja definida a chave especifica no appserver.ini, ignora a gravacao de logs de debug.
+//	 if _sLogDebug != '1' .and. alltrim (upper (cvaltochar (_sTipo))) == 'DEBUG'
+//		return
+//	endif
 
 	// Prepara 'tags' para o inicio de linha
 	_sTipo = cvaltochar (_sTipo)

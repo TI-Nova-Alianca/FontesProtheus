@@ -77,7 +77,7 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	// Viniferas tem tratamento diferenciado conforme a filial onde sao recebidas, podendo inclusive
 	// ser precificadas como outra variedade.
 	if _lContinua
-		u_log2 ('debug', '[' + procname () + '] Calculando preco uva ' + alltrim (_sProduto) + '-' + alltrim (sb1 -> b1_desc) + ' gr: ' + cvaltochar (_nGrau) + ' entregue na filial ' + _sFilial)
+	//	u_log2 ('debug', '[' + procname () + '] Calculando preco uva ' + alltrim (_sProduto) + '-' + alltrim (sb1 -> b1_desc) + ' gr: ' + cvaltochar (_nGrau) + ' entregue na filial ' + _sFilial)
 		if sb1 -> b1_varuva == 'F'
 			if _sFilial $ '01/09'
 				_lIsabel = .T.
@@ -195,7 +195,8 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 				_oSQL:_sQuery += " AND ZX5_13.ZX5_13GRUP like '2%'"
 			endif
 		endif
-		//_oSQL:Log ('[' + procname () + ']')
+		// _oSQL:Log ('[' + procname () + ']')
+
 		_aGrupo := aclone (_oSQL:Qry2Array (.F., .F.))
 	//	U_log2 ('debug', _aGrupo)
 		if len (_aGrupo) == 0

@@ -2,14 +2,14 @@
 // Autor......: Robert Koch
 // Data.......: 19/05/2009
 // Descricao..: Tela de manutencao do arquivo ZX5 - tabelas genericas (especificas Alianca)
-//
+
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Cadastro
 // #Descricao         #Tela de manutencao do arquivo ZX5 - tabelas genericas (especificas Alianca)
 // #PalavasChave      #auxiliar #uso_generico
 // #TabelasPrincipais #ZX5
 // #Modulos           #todos_modulos
-//
+
 // Historico de alteracoes:
 // 12/05/2010 - Robert  - Incluida validacao de 'linha OK' da tabela 06.
 // 07/12/2010 - Robert  - Incluida validacao de 'linha OK' da tabela 08 e 09.
@@ -18,8 +18,8 @@
 // 05/05/2013 - Robert  - Passa a controlar gravacao com o campo ZZZ_RECNO para possibilitar filtros.
 // 08/12/2016 - Robert  - Tratamento para envio de dados para o Mercanet.
 // 14/01/2017 - Robert  - Passa a usar classe ClsTabGen para ler lista de campos chave no 'linha ok'.
-// 14/03/2017 - Júlio   - Habilita a edição da descrição se a função chamada for ZX5, nas demais chamadas 
-//                        não permite alterar a descrição.
+// 14/03/2017 - Julio   - Habilita a edicao da descricao se a funcao chamada for ZX5, nas demais chamadas 
+//                        nao permite alterar a descricao.
 // 07/12/2017 - Robert  - Chama metodo PodeExcl() da classe ClsTabGen na validacao de linha deletada.
 // 24/12/2018 - Robert  - Criado parametro para receber filtro inicial na funcao ZX5A().
 // 08/01/2019 - Robert  - Criado parametro para receber nomes de campos a serem usados para ordenar o aCols.
@@ -28,11 +28,12 @@
 // 11/05/2021 - Claudia - Ajustada a chamada para tabela SX3 devido a R27. GLPI: 8825
 // 13/12/2021 - Robert  - Ao ler SX3 para montar aCols, nao estava fazendo ordenacao.
 // 24/01/2022 - Robert  - Pequena melhoria ordenacao aCols.
+// 16/05/2023 - Robert  - Permite passar botoes adicionais na rotina ZX5A().
 //
 
-// ------------------------------------------------------------------------------------------------------------
 #include "rwmake.ch"
 
+// ------------------------------------------------------------------------------------------------------------
 User Function ZX5 ()
 	private aRotina := {}
 
@@ -81,12 +82,13 @@ return
 //
 // --------------------------------------------------------------------------
 // Visualizacao, Alteracao, Exclusao
-User Function ZX5A (_nOpcao, _sCodTab, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr, _aCposOrd)
+User Function ZX5A (_nOpcao, _sCodTab, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr, _aCposOrd, _aBotAdic)
 	local _lContinua  := .T.
 	local _sFilial    := ""
 	local _sFiltro    := ""
 	local _nLinha     := 0
 	local _aButtons   := {}
+	local _nBotAdic   := 0
 	private _sModo    := ""
 	private _sTabela  := ""
 	private _sNomeTab := ""
@@ -97,6 +99,11 @@ User Function ZX5A (_nOpcao, _sCodTab, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr
 	private altera    := (_nOpcao == 4)
 	private nOpc      := _nOpcao
 	private _oTab     := NIL
+
+	// A rotina chamadora pode, opcionalmente, me passar botoes adicionais.
+	if valtype (_aBotAdic) != "A"
+		_aBotAdic = {}
+	endif
 
 	zx5 -> (dbsetorder (1))
 	if ! zx5 -> (dbseek (xfilial ("ZX5") + '00' + _sCodTab, .F.))
@@ -134,7 +141,10 @@ User Function ZX5A (_nOpcao, _sCodTab, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr
 		MsgRun ("Lendo dados", "Aguarde", {|| _LeDados (_sFiltro, _aCposOrd)})
 
 		// Define botoes adicionais
-		aadd (_aButtons, {"Export.planilha", {|| U_AColsXLS ()}, "Export.planilha", "Export.planilha" , {|| .T.}} ) 
+		aadd (_aButtons, {"Export.planilha", {|| U_AColsXLS ()}, "Export.planilha", "Export.planilha" , {|| .T.}})
+		for _nBotAdic = 1 to len (_aBotAdic)
+			aadd (_aButtons, aclone (_aBotAdic [_nBotAdic]))
+		next
 
 		// Variaveis para o Modelo2
 		aC   := {}
@@ -237,15 +247,16 @@ User Function ZX5A (_nOpcao, _sCodTab, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr
 	endif
 	zx5 -> (dbgotop ())
 return
-//
+
+
 // --------------------------------------------------------------------------
 // Valida 'Linha OK' da getdados
 User Function ZX5LK (_sTabela)
 	local _lRet := .T.
 
 	if _lRet .and. ! GDDeleted ()
-		u_log2 ('debug', 'Verificando campos duplicados:')
-		u_log2 ('debug', _oTab:CposChave)
+//		u_log2 ('debug', 'Verificando campos duplicados:')
+//		u_log2 ('debug', _oTab:CposChave)
 		_lRet = GDCheckKey (_oTab:CposChave, 4, {}, "Campos repetidos", .t.)
 	endif
 	
