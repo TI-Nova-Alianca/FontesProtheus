@@ -22,6 +22,7 @@
 // 28/09/2022 - Claudia - Incluida validação de saldo da verba na gravação da baixa ZA5. GLPI: 12654
 // 07/10/2022 - Claudia - Atualização de rapel apenas para serie 10. GLPI: 8916
 // 10/02/2023 - CLaudia - Ajustada a baixa de rapel. GLPI: 13176
+// 22/05/2023 - Claudia - Ajustada duplicação da baixa de rapel. GLPI: 13613
 //
 // ---------------------------------------------------------------------------------------------------
 User Function F70GRSE1()
@@ -275,9 +276,10 @@ Return
 // Grava Rapel
 Static Function _AtuZC0()
 	local _oSQL    := ClsSQL():New ()
+	Local _lCont   := .T.
 
 	If alltrim(se1 -> e1_prefixo) == '10'
-		_oSQL:_sQuery  = ""
+		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += " SELECT "
 		_oSQL:_sQuery += " 		E5_VARAPEL "
 		_oSQL:_sQuery += " FROM "+ RetSQLName ("SE5")
@@ -297,36 +299,68 @@ Static Function _AtuZC0()
 		_aRapel := aclone (_oSQL:Qry2Array ())
 
 		If Len(_aRapel) > 0
-			_oCtaRapel := ClsCtaRap():New ()
-			_sRede := _oCtaRapel:RetCodRede(se1->e1_cliente, se1->e1_loja)
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " SELECT "
+			_oSQL:_sQuery += " 		ZC0_RAPEL "
+			_oSQL:_sQuery += " FROM "+ RetSQLName ("ZC0")
+			_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+			_oSQL:_sQuery += " AND ZC0_FILIAL = '" + xfilial ("SE5")   + "'"
+			_oSQL:_sQuery += " AND ZC0_DOC    = '" + se1 -> e1_num     + "'"
+			_oSQL:_sQuery += " AND ZC0_SERIE  = '" + se1 -> e1_prefixo + "'"
+			_oSQL:_sQuery += " AND ZC0_PARCEL = '" + se1 -> e1_parcela + "'"
+			_oSQL:_sQuery += " AND ZC0_CODCLI = '" + se1 -> e1_cliente + "'"
+			_oSQL:_sQuery += " AND ZC0_LOJCLI = '" + se1 -> e1_loja    + "'"
+			_oSQL:_sQuery += " AND ZC0_TM     = '04' "
+			_aBaixa := aclone (_oSQL:Qry2Array ())
 
-			_oCtaRapel:Filial  	 = se1->e1_filial
-			_oCtaRapel:Rede      = _sRede	
-			_oCtaRapel:LojaRed   = se1->e1_loja
-			_oCtaRapel:Cliente 	 = se1->e1_cliente
-			_oCtaRapel:LojaCli	 = se1->e1_loja
-			_oCtaRapel:TM      	 = '04' 	
-			_oCtaRapel:Data    	 = ddatabase// date()
-			_oCtaRapel:Hora    	 = time()
-			_oCtaRapel:Usuario 	 = cusername 
-			_oCtaRapel:Histor  	 = 'Rapel por baixa de titulo' 
-			_oCtaRapel:Documento = se1->e1_num
-			_oCtaRapel:Serie 	 = se1->e1_prefixo
-			_oCtaRapel:Parcela	 = se1->e1_parcela
-			_oCtaRapel:Rapel	 = _aRapel[1,1]
-			_oCtaRapel:Origem	 = 'F70GRSE1'
-			_oCtaRapel:NfEmissao = se1->e1_emissao
+			If len(_aBaixa) > 0
+				If _aBaixa[1,1] == _aRapel[1,1]
+					_lCont := .F.
 
-			If _oCtaRapel:Grava (.F.)
-				_oEvento := ClsEvent():New ()
-				_oEvento:Alias     = 'ZC0'
-				_oEvento:Texto     = "Baixa rapel "+ se1->e1_parcela + se1->e1_num + "/" + se1->e1_prefixo
-				_oEvento:CodEven   = 'ZC0001'
-				_oEvento:Cliente   = se1->e1_cliente
-				_oEvento:LojaCli   = se1->e1_loja
-				_oEvento:NFSaida   = se1->e1_num
-				_oEvento:SerieSaid = se1->e1_prefixo
-				_oEvento:Grava()
+					_oEvento := ClsEvent():New ()
+					_oEvento:Alias     = 'ZC0'
+					_oEvento:Texto     = "Rapel duplicado "+ se1->e1_parcela + se1->e1_num + "/" + se1->e1_prefixo
+					_oEvento:CodEven   = 'ZC0001'
+					_oEvento:Cliente   = se1->e1_cliente
+					_oEvento:LojaCli   = se1->e1_loja
+					_oEvento:NFSaida   = se1->e1_num
+					_oEvento:SerieSaid = se1->e1_prefixo
+					_oEvento:Grava()
+				EndIf
+			EndIf
+
+			If _lCont
+				_oCtaRapel := ClsCtaRap():New ()
+				_sRede := _oCtaRapel:RetCodRede(se1->e1_cliente, se1->e1_loja)
+
+				_oCtaRapel:Filial  	 = se1->e1_filial
+				_oCtaRapel:Rede      = _sRede	
+				_oCtaRapel:LojaRed   = se1->e1_loja
+				_oCtaRapel:Cliente 	 = se1->e1_cliente
+				_oCtaRapel:LojaCli	 = se1->e1_loja
+				_oCtaRapel:TM      	 = '04' 	
+				_oCtaRapel:Data    	 = ddatabase// date()
+				_oCtaRapel:Hora    	 = time()
+				_oCtaRapel:Usuario 	 = cusername 
+				_oCtaRapel:Histor  	 = 'Rapel por baixa de titulo' 
+				_oCtaRapel:Documento = se1->e1_num
+				_oCtaRapel:Serie 	 = se1->e1_prefixo
+				_oCtaRapel:Parcela	 = se1->e1_parcela
+				_oCtaRapel:Rapel	 = _aRapel[1,1]
+				_oCtaRapel:Origem	 = 'F70GRSE1'
+				_oCtaRapel:NfEmissao = se1->e1_emissao
+
+				If _oCtaRapel:Grava (.F.)
+					_oEvento := ClsEvent():New ()
+					_oEvento:Alias     = 'ZC0'
+					_oEvento:Texto     = "Baixa rapel "+ se1->e1_parcela + se1->e1_num + "/" + se1->e1_prefixo
+					_oEvento:CodEven   = 'ZC0001'
+					_oEvento:Cliente   = se1->e1_cliente
+					_oEvento:LojaCli   = se1->e1_loja
+					_oEvento:NFSaida   = se1->e1_num
+					_oEvento:SerieSaid = se1->e1_prefixo
+					_oEvento:Grava()
+				EndIf
 			EndIf
 		EndIf
 	EndIf
