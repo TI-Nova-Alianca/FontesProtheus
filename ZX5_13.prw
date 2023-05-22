@@ -69,7 +69,7 @@ User Function ZX5_13LV (_lComTela)
 	_oSQL:_sQuery += " ORDER BY B1_DESC"
 	_oSQL:Log ('[' + procname () + ']')
 	if _lComTela
-		_oSQL:F3Array ('Variedades ligadas a este grupo', .t.)
+		_oSQL:F3Array ('Variedades ligadas ao grupo ' + GDFieldGet ("ZX5_13GRUP"), .t.)
 	else
 		_oSQL:Qry2Array (.f., .f.)
 	endif
@@ -85,6 +85,7 @@ User Function ZX5_13SP ()
 	local _aAmbAnt    := U_SalvaAmb ()
 	local _aVaried    := {}
 	local _sVaried    := ''
+	local _aRetPrc    := {}
 	local _aRetTbl    := {}
 	local _nRetTbl    := 0
 	local _aPrecos    := {}
@@ -94,6 +95,7 @@ User Function ZX5_13SP ()
 	static _sConduc   := 'L'
 	static _sIntOuDec := 'I'
 
+	u_help ("MELHORAR ESTA CONSULTA, POIS LEVA EM CONTA A FILIAL ATUAL (VINIFERAS, NA F01 E F09, ENTRAM COMO ISABEL)")
 	u_help ("Lembrando: Para ter efeito, voce deve, antes, salvar os dados desta tela.")
 	_aVaried = aclone (U_ZX5_13LV (.f.))
 	if len (_aVaried) > 0
@@ -114,8 +116,12 @@ User Function ZX5_13SP ()
 
 		do case
 		case _sSafra == '2023'
-			_aRetTbl = aclone (U_PrcUva23 (cFilAnt, _sVaried, 15, 'B', _sConduc, .T., .T.) [4])
+			_aRetPrc = aclone (U_PrcUva23 (cFilAnt, _sVaried, 15, 'B', _sConduc, .T., .T.))
+			_aRetTbl = aclone (_aRetPrc [4])
 			U_Log2 ('debug', _aRetTbl)
+			if ! empty (_aRetPrc [3])  // Possiveis mensagens do programa de calculo do preco
+				U_Log2 ('debug', '[' + procname () + ']' + _aRetPrc [3])
+			endif
 			_aPrecos = {}
 			for _nRetTbl = 1 to len (_aRetTbl)
 				if _sIntOuDec == 'D' .or. _aRetTbl [_nRetTbl, .PrcUvaColGrau] == int (_aRetTbl [_nRetTbl, .PrcUvaColGrau])
@@ -131,7 +137,7 @@ User Function ZX5_13SP ()
 			U_Log2 ('debug', '[' + procname () + ']_aPrecos:')
 			U_Log2 ('debug', _aPrecos)
 			_sMsgSup = 'Simulando variedade ' + alltrim (_sVaried) + ' - ' + alltrim (fBuscaCpo ("SB1", 1, xfilial ("SB1") + _sVaried, "B1_DESC")) + ' (conducao = ' + _sConduc + ')'
-			U_F3Array (_aPrecos, 'Precos simulados', _aCols, NIL, NIL, _sMsgSup, '', .t., 'C', TFont():New ("Courier New", 6, 14))
+			U_F3Array (_aPrecos, 'Precos simulados', _aCols, NIL, NIL, _sMsgSup, _aRetPrc [3], .t., 'C', TFont():New ("Courier New", 6, 14))
 		otherwise
 			u_help ("Sem tratamento para esta safra.",, .t.)
 		endcase

@@ -118,11 +118,12 @@ user function robert ()
 		// _Sisdevin ()
 		// _ST_MG ()
 		// _SZI ()
+		_TbUva ()
 		// _telnet ()
 		// _TrEstq ()
 		// _VACCR2 ()
 		// _VA_XLS ()
-		_verif ()
+		// _verif ()
 
 		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
@@ -1439,18 +1440,14 @@ static function _va_xls ()
 //	u_va_xls38 (.T.)
 
 // Precos calculados de uva safra
-_aRetPrc = aclone (U_PrcUva23 ('01', '9936           ', 15, 'B', 'L', .F., .F.))
-u_log (_aRetPrc)
-_aRetPrc = aclone (U_PrcUva23 ('01', '9812           ', 15, 'B', 'L', .F., .F.))
-u_log (_aRetPrc)
+//_aRetPrc = aclone (U_PrcUva23 ('03', '9955           ', 15, 'B', 'E', .F., .F.))
+//u_log (_aRetPrc)
 //return
-
-
 Private cPerg   := "VAXLS40"
 U_GravaSX1 (cPerg, '01', '2023')  // safra
-U_GravaSX1 (cPerg, '02', 1)  // 'Comuns', 'Finas espaldeira', 'Finas latadas', 'Finas SC'
-U_GravaSX1 (cPerg, '03', 3)  // Entrada/Compra/MOC
-U_GravaSX1 (cPerg, '04', 1)  // Todos(decimais) / Apenas inteiros
+U_GravaSX1 (cPerg, '02', 2)  // 'Comuns', 'Finas espaldeira', 'Finas latadas', 'Finas SC'
+U_GravaSX1 (cPerg, '03', 2)  // Entrada/Compra/MOC
+U_GravaSX1 (cPerg, '04', 2)  // Todos(decimais) / Apenas inteiros
 U_GravaSX1 (cPerg, '05', 2)  // Descricao completa/resumida
 u_va_xls40 (.T.)
 
@@ -2266,6 +2263,28 @@ static function _SimSafrGI ()
 		msunlock ()
 		(_sAliasQ) -> (dbskip ())
 	enddo
+return
+
+// --------------------------------------------------------------------------
+// Testes classe tabela preco uva safra
+static function _TbUva ()
+	local _sHTML  := ''
+	local _oTbUva := ClsTbUva ():New ()
+	_oTbUva:Conducao  = 'L'
+	_oTbUva:Safra     = '2023'
+	_oTbUva:TipoUva   = 'C'
+	_oTbUva:TipoPreco = 'C'
+	_oTbUva:GeraAtrib ()
+
+	// Exporta para arquivo, durante a implementacao, para conferencia.
+	_sHTML = _oTbUva:GeraHTM ()
+	_sArq := 'c:\temp\TabUva.htm'
+	if file (_sArq)
+		delete file (_sArq)
+	endif
+	_nHdl = fcreate (_sArq, 0)
+	fwrite (_nHdl, _sHtml)
+	fclose (_nHdl)
 return
 
 // --------------------------------------------------------------------------
