@@ -122,6 +122,7 @@
 // 14/04/2023 - Robert  - Nao inclui retorno de algumas acoes no log, devido ao tamanho do retorno.
 // 19/04/2023 - Robert  - Solic.transf.em grid: valida todas as linhas antes de dar retorno.
 // 20/04/2023 - Robert  - Tratamento para o atributo ClsTrEstq:CodMotivo na transf.estq.por grid.
+// 22/05/2023 - Robert  - Passa a permitir exclusao de eventos com origens WPNMARCARPRESENCAS/WPNFOLLOWUPNOTASFISCAIS
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -819,7 +820,8 @@ static function _DelEvt ()
 		_oEvento := ClsEvent ():New (_nRegSZN)
 
 		// Permitirei exclusao somente de algumas origens de eventos (GLPI 9161).
-		if ! alltrim (upper (_oEvento:Origem)) $ upper ('WPNFATSOLICITACAOPRORROGACAO/WPNFATEVENTOSNOTASMOV/TRNVA_VEVENTOS/WPNFATAGENDARENTREGA')
+	//	if ! alltrim (upper (_oEvento:Origem)) $ upper ('WPNFATSOLICITACAOPRORROGACAO/WPNFATEVENTOSNOTASMOV/TRNVA_VEVENTOS/WPNFATAGENDARENTREGA')
+		if ! alltrim (upper (_oEvento:Origem)) $ upper ('WPNFATSOLICITACAOPRORROGACAO/WPNFATEVENTOSNOTASMOV/TRNVA_VEVENTOS/WPNFATAGENDARENTREGA/WPNMARCARPRESENCAS/WPNFOLLOWUPNOTASFISCAIS')
 			_SomaErro ("Eventos com esta origem nao podem ser excluidos manualmente.")
 		endif
 	endif

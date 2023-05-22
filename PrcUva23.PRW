@@ -77,7 +77,7 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	// Viniferas tem tratamento diferenciado conforme a filial onde sao recebidas, podendo inclusive
 	// ser precificadas como outra variedade.
 	if _lContinua
-	//	u_log2 ('debug', '[' + procname () + '] Calculando preco uva ' + alltrim (_sProduto) + '-' + alltrim (sb1 -> b1_desc) + ' gr: ' + cvaltochar (_nGrau) + ' entregue na filial ' + _sFilial)
+		u_log2 ('debug', '[' + procname () + '] Calculando preco uva ' + alltrim (_sProduto) + '-' + alltrim (sb1 -> b1_desc) + ' gr: ' + cvaltochar (_nGrau) + ' entregue na filial ' + _sFilial)
 		if sb1 -> b1_varuva == 'F'
 			if _sFilial $ '01/09'
 				_lIsabel = .T.
@@ -115,7 +115,7 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 					_sComent += "Produto '" + _sProduto + "' nao encontrado no cadastro."
 					_lContinua = .F.
 				else
-//					u_log2 ('debug', 'Variedade considerada: ' + _sProduto + ' ' + alltrim (sb1 -> b1_desc) + '(' + _sComent + ')')
+			//		u_log2 ('debug', 'Variedade considerada: ' + _sProduto + ' ' + alltrim (sb1 -> b1_desc) + '(' + _sComent + ')')
 				endif
 			endif
 		endif
@@ -248,7 +248,7 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 		_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14PROD = '" + sb1 -> b1_cod + "'"
 		//_oSQL:Log ('[' + procname () + ']')
 		_aGrupo := aclone (_oSQL:Qry2Array (.F., .F.))
-		//U_log (_aGrupo)
+	//	U_log (_aGrupo)
 		if len (_aGrupo) == 0
 			_sComent += "Produto '" + alltrim (sb1 -> b1_cod) + ' - ' + alltrim (sb1 -> b1_desc) + "' nao encontrado nos grupos 'M' (MOC) na tabela 14 (uvas X grupos) do arquivo ZX5, ou respectivo grupo nao cadastrado na tabela 13 do arquivo ZX5 para esta safra."
 			_lContinua = .F.
@@ -319,6 +319,8 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli + 12 ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = 115
 				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli + 13 ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = 125
 				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli + 14 ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = 135
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli + 15 ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = 145
+				case _aGraus [_nAux, .PrcUvaColGrau] == _nGBaseAli + 16 ; _aGraus [_nAux, .PrcUvaColPercAgioAlianca] = 155
 				otherwise
 					u_help ("Sem definicao de percentual de AGIO ALIANCA para grau " + cvaltochar (_aGraus [_nAux, .PrcUvaColGrau]),, .t.)
 					_lContinua = .F.
