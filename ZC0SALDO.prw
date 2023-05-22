@@ -12,6 +12,7 @@
 // Historico de alteracoes:
 // 07/12/2022 - Claudia - Retirado quebras/somatorios por filial. GLPI 12885 
 // 15/05/2023 - Claudia - Incluido parametro de data até. GLPI: 13580
+// 22/05/2023 - Claudia - Incluida a coluna de filial para soma de total.
 //
 // --------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -42,7 +43,7 @@ Static Function ReportDef()
 	
 	oSection1 := TRSection():New(oReport,,{}, , , , , ,.T.,.F.,.F.) 
 	
-	//TRCell():New(oSection1,"COLUNA1", 	"" ,"Filial"			,	    					, 10,/*lPixel*/,{||     },"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA1", 	"" ,""			        ,	    					, 10,/*lPixel*/,{||     },"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA2", 	"" ,"Rede"				,       					, 15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA3", 	"" ,"Nome"				,       					, 60,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA4", 	"" ,"Vlr.Rapel"			, "@E 999,999,999.99"   	, 20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
