@@ -71,7 +71,9 @@
 // 08/11/2022 - Robert  - Passa a usar a funcao U_AmbTeste().
 // 05/01/2023 - Robert  - Desabilitadas validacoes tabela ZZX (vamos comecar a usar o importador da TRS)
 // 03/02/2023 - Sandra  - Incluso para aceite de chave para tipo de nota NF3E - (GLPI 13143)
+// 25/05/2023 - Robert  - Nao bloqueia duas NF origem diferentes quando chamado pelo U_VA_GNF2.
 //
+
 // -----------------------------------------------------------------------------------------------------------------------
 User Function MT100TOK()
 	local _aAmbAnt   := U_SalvaAmb ()
@@ -742,9 +744,11 @@ static function _ValNfOri ()
 		for _nLinha = 1 to len (aCols)
 			if ! GDDeleted (_nLinha) .And. ! empty (GDFieldGet ("D1_NFORI", _nLinha))
 				if ! empty (_sNfOri) .and. GDFieldGet ("D1_NFORI", _nLinha) != _sNfOri
-					u_help ("SEFAZ nao autoriza mais de uma NF-e referenciada para NF-e complementar. Informe apenas uma NF de origem.")
-					_lRet = .F.
-					exit
+					if ! IsInCallStack ("U_VA_GNF2")  // Para notas de complemento de safra temos tratamento via tabela CCD + nfesefaz.prw
+						u_help ("SEFAZ nao autoriza mais de uma NF-e referenciada para NF-e complementar. Informe apenas uma NF de origem.")
+						_lRet = .F.
+						exit
+					endif
 				endif
 				_sNfOri = GDFieldGet ("D1_NFORI", _nLinha)
 			endif

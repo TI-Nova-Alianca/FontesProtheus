@@ -8,7 +8,7 @@
 // #TipoDePrograma    #Ponto_de_entrada
 // #Descricao         #Alteracoes / ajustes complementos de documentos de entrada/saida
 // #PalavasChave      #complementos #NF
-// #TabelasPrincipais #SF1, SF2, CD5, CDL, CDE, CF8, CDB
+// #TabelasPrincipais #SF1, SF2, CD5, CDL, CF8, CDB
 // #Modulos           #FAT #COM #EST
 
 // Historico de alteracoes:
@@ -32,6 +32,12 @@ User Function MATUCOMP()
 	local _aAreaAnt := U_ML_SRArea ()
 	//Local x		   := 0
 	
+	// teste robert 25/05/23 - to com erro na tabela CDD
+	If cEntSai = 'E' .and. IsInCallStack ("MATA103")
+		U_Log2 ('debug', '[' + procname () + ']Iniciando P.E.')
+		u_logtrb ("CDE", .f.)
+	endif
+
 	// Entradas
 //	If (IsInCallStack ("MATA910") .or. IsInCallStack ("MATA103")) .and. cEntSai = 'E' // Entradas ou aquisições de serviços do exterior
 	If cEntSai = 'E' .or. (IsInCallStack ("MATA910") .or. IsInCallStack ("MATA103")) // Entradas ou aquisições de serviços do exterior

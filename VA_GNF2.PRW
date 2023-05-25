@@ -45,7 +45,7 @@
 // 07/03/2022 - Robert - Permite (mediante confirmacao) TES que atualiza estoque nos complementos (GLPI 11721)
 // 08/11/2022 - Robert - Passa a usar a funcao U_AmbTeste().
 // 04/01/2023 - Robert - Novos codigos de retorno da funcao VA_FTIPO_FORNECEDOR_UVA
-//
+// 25/05/2023 - Robert - Versao complemento safra 2023 - GLPI 
 
 #XTranslate .ItensProduto    => 1
 #XTranslate .ItensDescricao  => 2
@@ -227,11 +227,6 @@ Static Function _Gera03 ()
 		if ! empty (_sParcelas)
 			_oSQL:_sQuery +=    " AND ZZ9_PARCEL     IN " + FormatIn (_sParcelas, '/')
 		endif
-//		if _sTipoNF == 'N'
-//			_oSQL:_sQuery +=    " AND ZZ9_TIPONF     = 'N'"
-//		elseif _sTipoNF == 'C'
-//			_oSQL:_sQuery +=    " AND ZZ9_TIPONF     = 'V'"
-//		endif
 		_oSQL:_sQuery +=    " AND ZZ9_TIPONF     = '" + _sTipoNF + "'"
 		_oSQL:_sQuery +=    " AND ZZ9_GRUPO      = '" + _sGrpZZ9 + "'"
 		_oSQL:_sQuery +=    " AND ZZ9_FORNEC + ZZ9_LOJA BETWEEN '" + _sFornIni + _sLojaIni + "' AND '" + _sFornFim + _sLojaFim + "'"
@@ -300,7 +295,6 @@ Static Function _Gera03 ()
 				_lPreNFOk  = .T.
 				_sMsgNfZZ9 = ''
 				_aPreNF    = {}
-				FALTA GERAR REGISTRO NA TABELA CDD
 				do while _lContinua .and. !zz9 -> (eof ()) ;
 					.and.  zz9 -> zz9_filial == xfilial ("ZZ9") ;
 					.and.  zz9 -> zz9_fornec == _sFornece ;
@@ -617,7 +611,7 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 	local _sAliasQ   := ""
 	local _lContinua := .T.
 	local _oCtaCorr  := NIL
-	local _sNFPRur   := ""
+	local _aNFPRur   := {}
 	local _oSQL      := NIL
 	local _sMemoAnt  := ""
 	local _nPreNF    := 0
@@ -628,19 +622,54 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 	// A partir de 2012 preciso informar uma NF de produtor rural referenciada. Como aqui sao misturadas
 	// diversas notas, pegarei a primeira nota deste associado na safra em questao.
 	if _lContinua
-		_oSQL := ClsSQL():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += " SELECT TOP 1 NF_PRODUTOR"
-		_oSQL:_sQuery +=   " FROM dbo.VA_VNOTAS_SAFRA V"
-		_oSQL:_sQuery +=  " WHERE V.SAFRA      = '" + _sSafra + "'"
-		_oSQL:_sQuery +=    " AND V.FILIAL     = '" + cFilAnt + "'"
-		_oSQL:_sQuery +=    " AND V.ASSOCIADO  = '" + _sFornece + "'"
-		_oSQL:_sQuery +=    " AND V.LOJA_ASSOC = '" + _sLoja + "'"
-		//_oSQL:_sQuery +=    " AND V.TIPO_NF    = 'E'"
-		_oSQL:_sQuery +=    " AND V.TIPO_NF    in ('E', 'C')"
-		_oSQL:_sQuery +=    " AND V.PRODUTO    = '" + _aItens [1, .ItensProduto] + "'"
-		_sNFPRur = _oSQL:RetQry (1, .F.)
-		if empty (_sNFPRur)
+		if _sTipoNota == 'N'
+			_oSQL := ClsSQL():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " SELECT TOP 1 NF_PRODUTOR, SERIE_NF_PRODUTOR"
+			_oSQL:_sQuery +=   " FROM dbo.VA_VNOTAS_SAFRA V"
+			_oSQL:_sQuery +=  " WHERE V.SAFRA      = '" + _sSafra + "'"
+			_oSQL:_sQuery +=    " AND V.FILIAL     = '" + cFilAnt + "'"
+			_oSQL:_sQuery +=    " AND V.ASSOCIADO  = '" + _sFornece + "'"
+			_oSQL:_sQuery +=    " AND V.LOJA_ASSOC = '" + _sLoja + "'"
+			_oSQL:_sQuery +=    " AND V.TIPO_NF    in ('E', 'C')"
+			_oSQL:_sQuery +=    " AND V.PRODUTO    = '" + _aItens [1, .ItensProduto] + "'"
+			_aNFPRur = aclone (_oSQL:Qry2Array (.f., .f.))
+		elseif _sTipoNota == 'C'
+			// Precisarei gravar a tabela CDD ("NF referenciadas" para geracao do XML) e vou
+			// aproveitar para usar NF de produtor referenciada pela mesma contranota de origem.
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += "SELECT top 1 ZZ9_NFORI, ZZ9_SERIOR, NF_PRODUTOR, SERIE_NF_PRODUTOR, F1_CHVNFE"
+			_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZ9") + " ZZ9"
+			_oSQL:_sQuery +=      ", dbo.VA_VNOTAS_SAFRA V"
+			_oSQL:_sQuery +=      ", " + RetSQLName ("SF1") + " SF1"
+			_oSQL:_sQuery += " WHERE ZZ9.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND ZZ9.R_E_C_N_O_ = " + cvaltochar (_aPreNF [1])  // Vou pegar sempre a primeira pre-nota.
+			_oSQL:_sQuery +=   " AND ZZ9.ZZ9_FILIAL = '" + xfilial ("ZZ9") + "'"    // Vou validar uns campos a mais soh pra garantir
+			_oSQL:_sQuery +=   " AND ZZ9.ZZ9_SAFRA  = '" + _sSafra    + "'"          // Vou validar uns campos a mais soh pra garantir
+			_oSQL:_sQuery +=   " AND ZZ9.ZZ9_FORNEC = '" + _sFornece  + "'"          // Vou validar uns campos a mais soh pra garantir
+			_oSQL:_sQuery +=   " AND ZZ9.ZZ9_LOJA   = '" + _sLoja     + "'"          // Vou validar uns campos a mais soh pra garantir
+			_oSQL:_sQuery +=   " AND ZZ9.ZZ9_PARCEL = '" + _sParcela  + "'"          // Vou validar uns campos a mais soh pra garantir
+			_oSQL:_sQuery +=   " AND ZZ9.ZZ9_GRUPO  = '" + _sGrpPagto + "'"          // Vou validar uns campos a mais soh pra garantir
+			_oSQL:_sQuery +=   " AND ZZ9.ZZ9_NFCOMP = ''"
+			_oSQL:_sQuery +=   " AND V.SAFRA        = ZZ9_SAFRA"
+			_oSQL:_sQuery +=   " AND V.FILIAL       = ZZ9_FILIAL"
+			_oSQL:_sQuery +=   " AND V.ASSOCIADO    = ZZ9_FORNEC"
+			_oSQL:_sQuery +=   " AND V.LOJA_ASSOC   = ZZ9_LOJA"
+			_oSQL:_sQuery +=   " AND V.DOC          = ZZ9_NFORI"
+			_oSQL:_sQuery +=   " AND V.SERIE        = ZZ9_SERIOR"
+			_oSQL:_sQuery +=   " AND V.ITEM_NOTA    = ZZ9_ITEMOR"
+			_oSQL:_sQuery +=   " AND SF1.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND SF1.F1_FILIAL  = ZZ9.ZZ9_FILIAL"
+			_oSQL:_sQuery +=   " AND SF1.F1_VASAFRA = ZZ9.ZZ9_SAFRA"
+			_oSQL:_sQuery +=   " AND SF1.F1_FORNECE = ZZ9.ZZ9_FORNEC"
+			_oSQL:_sQuery +=   " AND SF1.F1_LOJA    = ZZ9.ZZ9_LOJA"
+			_oSQL:_sQuery +=   " AND SF1.F1_DOC     = ZZ9.ZZ9_NFORI"
+			_oSQL:_sQuery +=   " AND SF1.F1_SERIE   = ZZ9.ZZ9_SERIOR"
+			_oSQL:Log ('[' + procname () + ']')
+			_aNFPRur = aclone (_oSQL:Qry2Array (.f., .f.))
+		endif
+		if len (_aNFPRur) == 0
 			u_help ("Nao encontrei nenhuma NF de produtor para referenciar.", _oSQL:_sQuery, .T.)
 			_lContinua = .F.
 		endif
@@ -667,9 +696,8 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 		AADD( _aAutoSF1, { "F1_COND"     , _sCondPag,      Nil } )
 		AADD( _aAutoSF1, { "F1_STATUS"   , 'A',            Nil } )
 		AADD( _aAutoSF1, { "F1_VADCO"    , _sDCO,          Nil } )  // Cpo customizado: serah tratado no P.E. SF1100I
-		if _sTipoNota == 'N'
-			AADD( _aAutoSF1, { "F1_VANFPRO"  , _sNFPRur,       Nil } )  // Campo customizado, serah tratado pelo P.E. SF1100I
-		endif
+		AADD( _aAutoSF1, { "F1_VANFPRO"  , _aNFPRur [1, 1], Nil } )  // Campo customizado, serah tratado pelo P.E. SF1100I
+		AADD( _aAutoSF1, { "F1_VASEPRO"  , _aNFPRur [1, 2], Nil } )  // Campo customizado, serah tratado pelo P.E. SF1100I
 		AADD( _aAutoSF1, { "F1_VASAFRA"  , _sSafra,        Nil } )  // Campo customizado, serah tratado pelo P.E. SF1100I
 		AADD( _aAutoSF1, { "F1_VAGPSAF"  , _sGrpPagto,     Nil } )  // Campo customizado, serah tratado pelo P.E. SF1100I
 		AADD( _aAutoSF1, { "F1_VAFLAG"   , 'G',            Nil } )  // Campo customizado, serah tratado pelo P.E. SF1100I. Indica 'nota ja gerada' para a rotina de manut. XML
@@ -775,6 +803,9 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 		_lContinua = .F.
 	endif
 
+	// Abre uma transacao para garantir a gravacao de todas as tabelas adicionais.
+	begin transaction
+
 	// Gera a NF de Compra
 	if _lContinua
 		_sErroAuto = ""
@@ -832,6 +863,31 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 			RestArea (_aAreaZZ9)
 	//		u_log ('ZZ9 atualizado')
 
+			// Gera um registro na tabela CDD ("NF referenciadas") que vai ser
+			// usado pelo programa NFESEFAZ para geracao do XML para enviar para
+			// a SEFAZ. Isso por que a SEFAZ nao aceita NF complementar fazendo
+			// referencia a mais de uma NF origem, o que me obrigaria a gerar
+			// uma nota de complemento para cada contranota/carga de safra.
+			// Entao vou deixar apenas a primeira NF de origem na tabela CDD
+			// para que o programa que gera o XML monte a tag <NFRef> a partir
+			// dessa tabela, e nao pelos campos D1_NFORI,D1_SERIORI e D1_ITEMORI
+			U_Log2 ('debug', '[' + procname () + ']Dados para gravar tabela CDD:')
+			U_Log2 ('debug', _aNFPRur)
+			if len (_aNFPRur) != 1
+				u_help ("Problemas nos dados para gravar tabela CDD: eu deveria ter apenas 1 linha na array. Verifique log do programa.",, .t.)
+				_lContinua = .F.
+			else
+				reclock ("CDD", .t.)
+				cdd -> cdd_filial = xfilial ("CDD")
+				cdd -> cdd_tpmov  = 'E'
+				cdd -> cdd_doc    = sf1 -> f1_doc
+				cdd -> cdd_serie  = sf1 -> f1_serie
+				cdd -> cdd_clifor = sf1 -> f1_fornece
+				cdd -> cdd_loja   = sf1 -> f1_loja
+				cdd -> cdd_chvnfe = _aNFPRur [1, 5]
+				msunlock ()
+			endif
+
 			// Guarda intervalo de numeracao para mostrar em mensagem no final do processo.
 			if empty (_sNFIni)
 				_sNFIni = sf1 -> f1_doc
@@ -850,9 +906,9 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 		_sQuery +=  " WHERE D_E_L_E_T_ = ''"
 		_sQuery +=    " AND E2_TIPO    = 'NF'"
 		_sQuery +=    " AND E2_FORNECE = '" + sf1 -> f1_fornece + "'"
-		_sQuery +=    " AND E2_LOJA    = '" + sf1 -> f1_loja + "'"
-		_sQuery +=    " AND E2_PREFIXO = '" + sf1 -> f1_serie + "'"
-		_sQuery +=    " AND E2_NUM     = '" + sf1 -> f1_doc + "'"
+		_sQuery +=    " AND E2_LOJA    = '" + sf1 -> f1_loja    + "'"
+		_sQuery +=    " AND E2_PREFIXO = '" + sf1 -> f1_serie   + "'"
+		_sQuery +=    " AND E2_NUM     = '" + sf1 -> f1_doc     + "'"
 		_sQuery +=    " AND E2_VACHVEX = ''"
 		_sQuery +=    " AND E2_FILIAL  = '" + xfilial ("SE2") + "'"
 //		_sQuery +=    " AND dbo.VA_FTIPO_FORNECEDOR_UVA ('" + sF1 -> F1_FORNECE + "', '" + sF1 -> F1_LOJA + "', '" + dtos (sF1-> F1_EMISSAO) + "') IN ('ASSOCIADO', 'EX ASSOCIADO')"
@@ -902,7 +958,8 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 		(_sAliasQ) -> (dbclosearea ())
 	endif
 
-//	u_logFim ()
+	end transaction
+
 return _lContinua
 
 
@@ -931,6 +988,8 @@ Static Function _ParCpl23A (_aPreNF, _sSafra, _sFornece, _sLoja, _sParcel, _sGrp
 	aadd (_aParcel, {0, stod ('20231228'), 0, 0, '', 'H'})
 	aadd (_aParcel, {0, stod ('20240130'), 0, 0, '', 'I'})
 	aadd (_aParcel, {0, stod ('20240228'), 0, 0, '', 'J'})
+	// mar/24 eh aux.comb.; nao vou gerar parcela de uva nesse mes. aadd (_aParcel, {0, stod ('20240328'), 0, 0, '', '?'})
+	aadd (_aParcel, {0, stod ('20240429'), 0, 0, '', 'K'})
 
 
 /*
@@ -948,10 +1007,10 @@ Static Function _ParCpl23A (_aPreNF, _sSafra, _sFornece, _sLoja, _sParcel, _sGrp
 	// ajustar as parcelas do complemento e pagar 10% do total da safra
 	// na primeira parcela (original + complemento).
 	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += "SELECT COUNT (ZZ9.ZZ9_PRE_NF)"
-	_oSQL:_sQuery +=      ", SUM (ZZ9_QTORI * ZZ9_VUNIT) AS TOT_NOVO"
-	_oSQL:_sQuery +=      ", SUM (ZZ9_QTORI * ZZ9_VUNOLD) AS TOT_ORIG"
+	_oSQL:_sQuery := "WITH C AS ("
+	_oSQL:_sQuery += "SELECT COUNT (ZZ9.ZZ9_PRE_NF) AS QT_PRE_NF"
+	_oSQL:_sQuery +=      ", round (SUM (ZZ9_QTORI * ZZ9_VUNIT), 2) AS TOT_NOVO"
+	_oSQL:_sQuery +=      ", round (SUM (ZZ9_QTORI * ZZ9_VUNOLD), 2) AS TOT_ORIG"
 	_oSQL:_sQuery +=      ", (SELECT SUM (E2_VALOR)"
 	_oSQL:_sQuery += " FROM " + RetSQLName ("SE2") + " SE2"
 	_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
@@ -990,6 +1049,9 @@ Static Function _ParCpl23A (_aPreNF, _sSafra, _sFornece, _sLoja, _sParcel, _sGrp
 	_oSQL:_sQuery += ")"
 
 	_oSQL:_sQuery += " GROUP BY ZZ9_SAFRA, ZZ9_FORNEC, ZZ9_LOJA, ZZ9_NFORI, ZZ9_SERIOR"
+	_oSQL:_sQuery += ")"
+	_oSQL:_sQuery += " select SUM (QT_PRE_NF), SUM (TOT_NOVO) AS TOT_NOVO, SUM (TOT_ORIG) AS TOT_ORIG, SUM (PARCELA_ORIG) AS PARCELA_ORIG"
+	_oSQL:_sQuery += " FROM C"
 	_oSQL:Log ('[' + procname () + ']')
 	_aTotForn := aclone (_oSQL:Qry2Array (.f., .f.))
 	U_Log2 ('debug', _aTotForn)
@@ -1002,14 +1064,14 @@ Static Function _ParCpl23A (_aPreNF, _sSafra, _sFornece, _sLoja, _sParcel, _sGrp
 		// Esse total a pagar em maio deve representar 10% do total da safra de cada fornecedor.
 		//
 		// Valor 1a.parc vai ser o total da safra * 10% - o que jah tem (1a.parc.orig)
-		_aParcel [1, 4] = _aTotForn [1, 2] * 0.1 - _aTotForn [1, 4]
+		_aParcel [1, 4] = round (_aTotForn [1, 2] * 0.1, 2) - _aTotForn [1, 4]
 		//
 		// O restante do valor desta NF de complemento, vou distribuir nas demais parcelas.
 		_nTotCompl = _aTotForn [1, 2] - _aTotForn [1, 3]
 		_nTotCompl -= _aParcel [1, 4]
 		_nTotDist = 0
 		for _nParcel = 2 to len (_aParcel)
-			_aParcel [_nParcel, 4] = round (_nTotCompl / 9, 2)
+			_aParcel [_nParcel, 4] = round (_nTotCompl / (len (_aParcel)-1), 2)
 			_nTotDist += _aParcel [_nParcel, 4]
 		next
 		// Ajusta diferencas na ultima parcela.

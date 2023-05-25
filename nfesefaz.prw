@@ -150,7 +150,7 @@ static lSpedCodOnu := nil
 // 09/06/2022 - Sandra  - Ajustes na versao do pacote GLPI 11842 (Nota Técnica 2021.004_V_1.10) - Compilado por Robert em 09/06/22 21:45h
 // 11/07/2022 - Robert  - Quando houver "informacoes adicionais do produto", concatena-as com a descricao (GLPI 12334)
 // 13/10/2022 - Robert  - Pequena melhoria nos logs quando ambiente de teste.
-//
+// 25/05/2023 - Robert  - Obriga uso da tabela CDD para NF referenciadas, quando complemento de safra (GLPI 
 
 // --------------------------------------------------------------------------
 User Function XmlNfeSef(cTipo,cSerie,cNota,cClieFor,cLoja,cNotaOri,cSerieOri)
