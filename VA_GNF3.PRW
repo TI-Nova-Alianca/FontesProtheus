@@ -1207,7 +1207,7 @@ static function _Gera2023 ()
 		zz9 -> zz9_fornec = (_sAliasQ) -> associado
 		zz9 -> zz9_loja   = (_sAliasQ) -> loja_assoc
 		zz9 -> zz9_pre_nf = _sPreNF
-		zz9 -> zz9_tiponf = "V"  // C=Compra;V=[complemento de]Valor
+		zz9 -> zz9_tiponf = "C"  // N=Normal;C=Complemento
 		zz9 -> zz9_produt = (_sAliasQ) -> produto
 		zz9 -> zz9_grau   = (_sAliasQ) -> grau
 		zz9 -> zz9_classe = (_sAliasQ) -> clas_final

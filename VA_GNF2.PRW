@@ -156,6 +156,10 @@ Static Function _Gera03 ()
 	local _sZZ9NFOri := ""
 	local _sVariSim  := ''
 	local _sVariNao  := ''
+	private _nTamDesc  := tamsx3 ("D1_DESCRI")[1]
+	private _nTamItem  := tamsx3 ("D1_ITEM")[1]
+	private _nTamItOr := tamsx3 ("D1_ITEMORI")[1]
+	private _nTamD1Qt := tamsx3 ("D1_QUANT")[1]
 	private _sGrpZZ9 := ''
 	private _sNFIni  := ""
 	private _sNFFim  := ""
@@ -185,14 +189,6 @@ Static Function _Gera03 ()
 	endif
 
 	if _lContinua
-		_lOK := Sx5NumNota (@_sSerie)   // Apresenta Tela para Confirmar o Numero da Primeira NF a Ser Gerada
-		if ! _lOK .or. empty (_sSerie)  // Usuario cancelou ou nao confirmou em tempo habil
-			U_Log2 ('info', "Usuario nao confirmou a numeracao da primeira nota.")
-			_lContinua = .F.
-		endif
-	endif
-
-	if _lContinua
 	
 		// Guarda parametros em variaveis especificas por que as chamadas de rotinas automaticas vai sobregrava-los.
 		_sFornIni = mv_par01
@@ -210,9 +206,9 @@ Static Function _Gera03 ()
 		_sVariNao = alltrim (mv_par13)
 		_nTamDesc = tamsx3 ("D1_DESCRI")[1]
 		_nTamItem = tamsx3 ("D1_ITEM")[1]
+		_nTamItOr = tamsx3 ("D1_ITEMORI")[1]
 	endif
 
-//	if _lContinua .and. _sTipoNF == "N"  // Notas normais
 	if _lContinua
 
 		// Monta array com os fornecedores ordenados por nome, para facilitar a posterior separacao das notas,
@@ -231,6 +227,11 @@ Static Function _Gera03 ()
 		if ! empty (_sParcelas)
 			_oSQL:_sQuery +=    " AND ZZ9_PARCEL     IN " + FormatIn (_sParcelas, '/')
 		endif
+//		if _sTipoNF == 'N'
+//			_oSQL:_sQuery +=    " AND ZZ9_TIPONF     = 'N'"
+//		elseif _sTipoNF == 'C'
+//			_oSQL:_sQuery +=    " AND ZZ9_TIPONF     = 'V'"
+//		endif
 		_oSQL:_sQuery +=    " AND ZZ9_TIPONF     = '" + _sTipoNF + "'"
 		_oSQL:_sQuery +=    " AND ZZ9_GRUPO      = '" + _sGrpZZ9 + "'"
 		_oSQL:_sQuery +=    " AND ZZ9_FORNEC + ZZ9_LOJA BETWEEN '" + _sFornIni + _sLojaIni + "' AND '" + _sFornFim + _sLojaFim + "'"
@@ -241,17 +242,38 @@ Static Function _Gera03 ()
 		if ! empty (_sVariNao)
 			_oSQL:_sQuery +=" AND RTRIM (ZZ9_PRODUT) NOT IN " + FormatIn (_sVariNao, '/')
 		endif
+		if mv_par14 == 1
+			// Testa a situacao do fornecedor no final de marco (a safra jah deve ter finalizado nessa data)
+			_oSQL:_sQuery +=" AND SUBSTRING (dbo.VA_FTIPO_FORNECEDOR_UVA (ZZ9_FORNEC, ZZ9_LOJA, '" + _sSafra + "0331'), 1, 1) IN ('1', '3')"
+		elseif mv_par14 == 2
+			// Testa a situacao do fornecedor no final de marco (a safra jah deve ter finalizado nessa data)
+			_oSQL:_sQuery +=" AND dbo.VA_FTIPO_FORNECEDOR_UVA (ZZ9_FORNEC, ZZ9_LOJA, '" + _sSafra + "0331') LIKE '2%'"
+		endif
 		_oSQL:_sQuery +=  " ORDER BY A2_VACORIG, A2_NOME, ZZ9_FORNEC, ZZ9_LOJA"
 		_oSQL:Log ()
 		_aFornec = aclone (_oSQL:Qry2Array (.F., .F.))
-		
+		if len (_aFornec) == 0
+			u_help ("Nenhuma pre-nota encontrada.", _oSQL:_sQuery, .t.)
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
+		_lOK := Sx5NumNota (@_sSerie)   // Apresenta Tela para Confirmar o Numero da Primeira NF a Ser Gerada
+		if ! _lOK .or. empty (_sSerie)  // Usuario cancelou ou nao confirmou em tempo habil
+			U_Log2 ('info', "Usuario nao confirmou a numeracao da primeira nota.")
+			_lContinua = .F.
+		endif
+	endif
+
+	if _lContinua
 		procregua (len (_aFornec))
 		for _nFornec = 1 to len (_aFornec)
 			_sFornIni := _sFornFim := _aFornec [_nFornec, 1]
 			_sLojaIni := _sLojaFim := _aFornec [_nFornec, 2]
 
-			u_log2 ('info', 'Iniciando fornecedor ' + _sFornIni + ' ' + _aFornec [_nFornec, 3])
-			incproc ('Associado ' + _sFornIni + '/' + _sLojaIni + '(' + cvaltochar (_nFornec) + ' de ' + cvaltochar (len (_aFornec)) + ')')
+			u_log2 ('info', '[' + cvaltochar (_nFornec) + ' de ' + cvaltochar (len (_aFornec)) + ']Iniciando fornecedor ' + _sFornIni + ' ' + _aFornec [_nFornec, 3])
+			incproc ('Fornecedor ' + _sFornIni + '/' + _sLojaIni + '(' + cvaltochar (_nFornec) + ' de ' + cvaltochar (len (_aFornec)) + ')')
 
 			// Busca pre-notas para geracao das nf de compra da uva.
 			zz9 -> (dbsetorder (3))  // ZZ9_FILIAL+ZZ9_FORNEC+ZZ9_LOJA+ZZ9_SAFRA+ZZ9_PARCEL+ZZ9_PRE_NF
@@ -278,13 +300,14 @@ Static Function _Gera03 ()
 				_lPreNFOk  = .T.
 				_sMsgNfZZ9 = ''
 				_aPreNF    = {}
+				FALTA GERAR REGISTRO NA TABELA CDD
 				do while _lContinua .and. !zz9 -> (eof ()) ;
 					.and.  zz9 -> zz9_filial == xfilial ("ZZ9") ;
 					.and.  zz9 -> zz9_fornec == _sFornece ;
 					.and.  zz9 -> zz9_loja   == _sLoja ;
 					.and.  zz9 -> zz9_safra  == _sSafra ;
-					.and.  zz9 -> zz9_parcel == _sParcela ;
-					.and.  zz9 -> zz9_nfori  == _sZZ9NFOri  // Em 25/05/18 a SEFAZ jah nao aceitou mais notas referenciando mais de uma NF origem
+					.and.  zz9 -> zz9_parcel == _sParcela //;
+		//			.and.  zz9 -> zz9_nfori  == _sZZ9NFOri  // Em 25/05/18 a SEFAZ jah nao aceitou mais notas referenciando mais de uma NF origem (Rejeicao 255)
 
 					// Primeira leva de notas de 2020 a preco de CONAB para comprovacao em busca de financiamento: filtro especifico.
 					if _sSafra == '2020' .and. date () <= stod ('20200520')
@@ -325,7 +348,7 @@ Static Function _Gera03 ()
 						loop
 					endif
 					if zz9 -> zz9_vunit <= 0
-						u_log2 ('aviso', "Pre-nf '" + zz9 -> zz9_pre_nf + "' sem valor unitario. A mesma vai ser ignorada.")
+						u_log2 ('aviso', "Pre-nf '" + zz9 -> zz9_pre_nf + "' sem valor unitario (ou negativo). A mesma vai ser ignorada.")
 						zz9 -> (dbskip ())
 						loop
 					endif
@@ -485,7 +508,11 @@ Static Function _Gera03 ()
 					if zz9 -> zz9_tipoNF == 'N'  // Nota normal de compra
 						_aItens [_nItem, .ItensValorTotal] += zz9 -> zz9_quant * zz9 -> zz9_vunit
 					elseif zz9 -> zz9_tipoNF == 'C'  // Nota de complemento
-						_aItens [_nItem, .ItensValorTotal] += zz9 -> zz9_vunit
+						if zz9 -> zz9_safra == '2023'
+							_aItens [_nItem, .ItensValorTotal] += (zz9 -> zz9_qtori * zz9 -> zz9_vunit) - (zz9 -> zz9_qtori * zz9 -> zz9_vunold)
+						else
+							_aItens [_nItem, .ItensValorTotal] += zz9 -> zz9_vunit
+						endif
 					endif
 
 					// Alimenta lista das notas de entrada
@@ -542,7 +569,6 @@ Static Function _Gera03 ()
 				if ! empty (_sNfProd)
 					_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Ref.NF produtor " + alltrim (_sNfProd) + " de " + dtoc (dDataBase)
 				endif
-
 				if ! empty (_sNfEntr)
 					_sMsgContr += iif (! empty (_sMsgContr), "; ", "") + "Ref.NNF entrada " + substr (_sNfEntr, 1, len (_sNfEntr) - 1)
 				endif
@@ -562,9 +588,7 @@ Static Function _Gera03 ()
 		//	exit
 		next
 
-
 	endif
-
 
 	if ! _lContinua
 		u_help ("PROCESSO CANCELADO. Notas ja' geradas: de '" + _sNFIni + "' a '" + _sNFFim + "'")
@@ -631,6 +655,9 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 		AADD( _aAutoSF1, { "F1_DOC"      , _sNF,           Nil } )
 		AADD( _aAutoSF1, { "F1_SERIE"    , _sSerie,        Nil } )
 		AADD( _aAutoSF1, { "F1_TIPO"     , _sTipoNota,     Nil } )
+		if _sTipoNota == 'C'
+			AADD( _aAutoSF1, { "F1_TPCOMPL"  , '1',     Nil } )
+		endif
 		AADD( _aAutoSF1, { "F1_FORMUL"   , "S",            Nil } )
 		AADD( _aAutoSF1, { "F1_EMISSAO"  , dDataBase,      Nil } )
 		AADD( _aAutoSF1, { "F1_FORNECE"  , _sFornece,      Nil } )
@@ -638,20 +665,20 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 		AADD( _aAutoSF1, { "F1_EST"      , _sUF,           Nil } )
 		AADD( _aAutoSF1, { "F1_ESPECIE"  , "SPED",         Nil } )
 		AADD( _aAutoSF1, { "F1_COND"     , _sCondPag,      Nil } )
+		AADD( _aAutoSF1, { "F1_STATUS"   , 'A',            Nil } )
 		AADD( _aAutoSF1, { "F1_VADCO"    , _sDCO,          Nil } )  // Cpo customizado: serah tratado no P.E. SF1100I
-		AADD( _aAutoSF1, { "F1_VANFPRO"  , _sNFPRur,       Nil } )  // Campo customizado, serah tratado pelo P.E. SF1100I
+		if _sTipoNota == 'N'
+			AADD( _aAutoSF1, { "F1_VANFPRO"  , _sNFPRur,       Nil } )  // Campo customizado, serah tratado pelo P.E. SF1100I
+		endif
 		AADD( _aAutoSF1, { "F1_VASAFRA"  , _sSafra,        Nil } )  // Campo customizado, serah tratado pelo P.E. SF1100I
 		AADD( _aAutoSF1, { "F1_VAGPSAF"  , _sGrpPagto,     Nil } )  // Campo customizado, serah tratado pelo P.E. SF1100I
 		AADD( _aAutoSF1, { "F1_VAFLAG"   , 'G',            Nil } )  // Campo customizado, serah tratado pelo P.E. SF1100I. Indica 'nota ja gerada' para a rotina de manut. XML
 
-
 	//	u_log ("Fornecedor:", _sFornece, _sLoja)
 	//	u_log ("Msg.:", _sMsgContr)
-	//	u_log ("Pre-notas:", _aPreNF)
-	//	u_log ("Cabecalho:", _aAutoSF1)
-	//	if _sTipoNota == "C"
-	//	u_log2 ('DEBUG', _aitens)
-	//	endif
+		u_log ("Pre-notas:", _aPreNF)
+		u_log2 ("debug", _aAutoSF1)
+		u_log2 ('DEBUG', _aitens)
 
 		// Prepara itens da nota
 		_nVlrUvas = 0
@@ -672,7 +699,7 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 
 			// Arredonda valor total p/ 2 casas p/ compatibilizar com SFT, SF3, SE2, contabilizacao, SPED, etc...
 			if _sTipoNota == "N"
-				_nQuant = round (_aItens [_nItem, .ItensQuantidade], TamSX3 ("D1_QUANT")[2])
+				_nQuant = round (_aItens [_nItem, .ItensQuantidade], _nTamD1Qt)
 				_nVlUni = _aItens [_nItem, .ItensValorTotal] / _nQuant
 				_nVlTot = round (_nQuant * _nVlUni, 2)
 			else
@@ -713,14 +740,9 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 				AADD(_aLinha , {"D1_VAVOLQT", 1                    , Nil } )
 				AADD(_aLinha , {"D1_NFORI",   _aItens [_nItem, .ItensNFOri]  , Nil } )
 				AADD(_aLinha , {"D1_SERIORI", _aItens [_nItem, .ItensSerieOri]  , Nil } )
-				// Essa RONHA desse sistema nao aceita por que precisa 4 digitos, mas a mascara do campo tem 2... o jeito foi passar por cima da validacao padrao. -->  AADD(_aLinha , {"D1_ITEMORI", right (_aItens [_nItem, 9], tamsx3 ("D1_ITEMORI")[1]) , Nil } )
-				AADD(_aLinha , {"D1_ITEMORI", right (_aItens [_nItem, .ItensItemOri], tamsx3 ("D1_ITEMORI")[1]) , '.t.' } )
+			//	AADD(_aLinha , {"D1_ITEMORI", right (_aItens [_nItem, .ItensItemOri], _nTamItOr) , nil} )
+				AADD(_aLinha , {"D1_ITEMORI", _aItens [_nItem, .ItensItemOri], nil} )
 			endif
-
-// nao ficou bom			// remover este teste depois de encerrar o chamado!
-// nao ficou bom			if alltrim (_sDCO) == 'GLPI11721'
-// nao ficou bom				AADD(_aLinha , {"D1_DESPESA", _nVlTot, NIL } )
-// nao ficou bom			endif
 
 			_aLinha = aClone (U_OrdAuto (_aLinha))
 			U_Log2 ('debug', _aLinha)
@@ -731,14 +753,26 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 	endif
 
 	// Prepara valores e datas das parcelas do financeiro, para ser lida pelo P.E. MTColSE2
+	// Eh importante manter a integridade do formato dessa array.
 	if _lContinua
-		_aParPgSaf := aclone (U_VA_RusPP (_sSafra, _sGrpPagto, _nVlrUvas, 0, dDataBase))
-		if len (_aParPgSaf) == 0
-			u_help ("Sem definicao de parcelamento para pagamento.",, .T.)
-			_lContinua = .F.
+		
+		// Estamos gerando complemento de valor neste momento, com condicoes de pagamento especificas.
+		if left (dtos (date ()), 6) == '202305'
+			_aParPgSaf = _ParCpl23A (_aPreNF, _sSafra, _sFornece, _sLoja, _sParcela, _sGrpPagto)
+		else
+			_aParPgSaf := aclone (U_VA_RusPP (_sSafra, _sGrpPagto, _nVlrUvas, 0, dDataBase))
+			if len (_aParPgSaf) == 0
+				u_help ("Sem definicao de parcelamento para pagamento.",, .T.)
+				_lContinua = .F.
+			endif
+			//U_Log2 ('debug', '_aParPgSaf dentro do VA_GNF2:')
+			//U_Log2 ('debug', _aParPgSaf)
 		endif
-		//U_Log2 ('debug', '_aParPgSaf dentro do VA_GNF2:')
-		//U_Log2 ('debug', _aParPgSaf)
+	endif
+
+	if _lContinua .and. len (_aParPgSaf) == 0
+		u_help ("Problema na definicao das parcelas.",, .t.)
+		_lContinua = .F.
 	endif
 
 	// Gera a NF de Compra
@@ -754,6 +788,17 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 			u_help (_sErroAuto, iif (!empty (NomeAutoLog ()), U_LeErro (memoread (NomeAutoLog ())), ''), .t.)
 			_lContinua = .F.
 		else
+			U_LOG2 ('info', "MATA103 retornou OK.")
+
+			// Apos atualizacao de versao para 22.10 em maio/23 o SF1 deixou de vir posicionado.
+			sf1 -> (dbsetorder (1))  // F1_FILIAL, F1_DOC, F1_SERIE, F1_FORNECE, F1_LOJA, F1_TIPO, R_E_C_N_O_, D_E_L_E_T_
+			if ! sf1 -> (dbseek (xfilial ("SF1") + _sNF + _sSerie + _sFornece + _sLoja + _sTipoNota, .f.))
+				u_help ("Parece que a nota '" + _sNF + "' nao foi gerada para o fornecedor '" + _sFornece + "'",, .t.)
+				_lContinua = .F.
+			endif
+		endif
+
+		if _lContinua
 			U_LOG2 ('info', "NF " + sf1 -> f1_doc + " gerada")
 
 			// Grava dados adicionais na nota.
@@ -862,24 +907,146 @@ return _lContinua
 
 
 // --------------------------------------------------------------------------
+// Gera array de parcelamento especifico para complemento em maio/2023
+Static Function _ParCpl23A (_aPreNF, _sSafra, _sFornece, _sLoja, _sParcel, _sGrpPag)
+	local _aParcel   := {}
+	local _nParcel   := 0
+	local _oSQL      := NIL
+	local _aTotForn  := {}
+	local _nTotCompl := 0
+	local _nPreNF    := 0
+	
+	// Monta array no mesmo formato gerado pelo VA_RusPP() e que vai ser lido
+	// posteriormente pelo P.E. MTColSE2.
+	// Eh importante manter a integridade do formato dessa array.
+	// As datas jah foram definidas no SE2 durante a safra.
+	// Vou gerar os complementos com vencimento um dia antes.
+	aadd (_aParcel, {0, stod ('20230530'), 0, 0, '', 'A'})
+	aadd (_aParcel, {0, stod ('20230630'), 0, 0, '', 'B'})
+	aadd (_aParcel, {0, stod ('20230728'), 0, 0, '', 'C'})
+	aadd (_aParcel, {0, stod ('20230830'), 0, 0, '', 'D'})
+	aadd (_aParcel, {0, stod ('20230928'), 0, 0, '', 'E'})
+	aadd (_aParcel, {0, stod ('20231030'), 0, 0, '', 'F'})
+	aadd (_aParcel, {0, stod ('20231129'), 0, 0, '', 'G'})
+	aadd (_aParcel, {0, stod ('20231228'), 0, 0, '', 'H'})
+	aadd (_aParcel, {0, stod ('20240130'), 0, 0, '', 'I'})
+	aadd (_aParcel, {0, stod ('20240228'), 0, 0, '', 'J'})
+
+
+/*
+	// ateh ajustar outros problemas piores...
+	for _nParcel = 1 to len (_aParcel)
+		_aParcel [_nParcel, 4] = 10
+	next
+	return _aParcel
+*/
+
+
+
+	// Busca o total da safra deste fornecedor (nesta filial) e o valor da
+	// parcela jah existente para este mes, de forma que possa, depois,
+	// ajustar as parcelas do complemento e pagar 10% do total da safra
+	// na primeira parcela (original + complemento).
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += "SELECT COUNT (ZZ9.ZZ9_PRE_NF)"
+	_oSQL:_sQuery +=      ", SUM (ZZ9_QTORI * ZZ9_VUNIT) AS TOT_NOVO"
+	_oSQL:_sQuery +=      ", SUM (ZZ9_QTORI * ZZ9_VUNOLD) AS TOT_ORIG"
+	_oSQL:_sQuery +=      ", (SELECT SUM (E2_VALOR)"
+	_oSQL:_sQuery += " FROM " + RetSQLName ("SE2") + " SE2"
+	_oSQL:_sQuery += " WHERE SE2.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=   " AND SE2.E2_VASAFRA = ZZ9_SAFRA"
+	_oSQL:_sQuery +=   " AND SE2.E2_FORNECE = ZZ9_FORNEC"
+	_oSQL:_sQuery +=   " AND SE2.E2_LOJA    = ZZ9_LOJA"
+	_oSQL:_sQuery +=   " AND SE2.E2_NUM     = ZZ9_NFORI"
+	_oSQL:_sQuery +=   " AND SE2.E2_PREFIXO = ZZ9_SERIOR"
+	_oSQL:_sQuery +=   " AND SE2.E2_TIPO   != 'TX'"  // Evitar algum titulo de FUNRURAL
+	_oSQL:_sQuery +=   " AND SE2.E2_VENCTO  = '20230428'"
+	_oSQL:_sQuery +=   " AND EXISTS (SELECT * " // VERIFICA VIEW DE NOTAS PARA NAO LER FATURAS, ETC.
+	_oSQL:_sQuery +=                 " FROM VA_VNOTAS_SAFRA V"
+	_oSQL:_sQuery +=                " WHERE V.SAFRA      = E2_VASAFRA"
+	_oSQL:_sQuery +=                  " AND V.FILIAL     = E2_FILIAL"
+	_oSQL:_sQuery +=                  " AND V.ASSOCIADO  = E2_FORNECE"
+	_oSQL:_sQuery +=                  " AND V.LOJA_ASSOC = E2_LOJA"
+	_oSQL:_sQuery +=                  " AND V.DOC        = E2_NUM"
+	_oSQL:_sQuery +=                  " AND V.SERIE      = E2_PREFIXO"
+	_oSQL:_sQuery +=                  " AND V.TIPO_NF    = 'C')"
+	_oSQL:_sQuery += ") AS PARCELA_ORIG"
+	_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZZ9") + " ZZ9"
+	_oSQL:_sQuery += " WHERE ZZ9.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=   " AND ZZ9.ZZ9_FILIAL = '" + xfilial ("ZZ9") + "'"
+	_oSQL:_sQuery +=   " AND ZZ9.ZZ9_SAFRA  = '" + _sSafra + "'"
+	_oSQL:_sQuery +=   " AND ZZ9.ZZ9_FORNEC = '" + _sFornece + "'"
+	_oSQL:_sQuery +=   " AND ZZ9.ZZ9_LOJA   = '" + _sLoja + "'"
+	_oSQL:_sQuery +=   " AND ZZ9.ZZ9_PARCEL = '" + _sParcel + "'"
+	_oSQL:_sQuery +=   " AND ZZ9.ZZ9_GRUPO  = '" + _sGrpPag + "'"
+	_oSQL:_sQuery +=   " AND ZZ9.ZZ9_NFCOMP = ''"
+	
+	// Soh quero considerar aqui as mesmas pre-notas que estarei complementando.
+	_oSQL:_sQuery +=   " AND ZZ9.R_E_C_N_O_ in ("
+	for _nPreNF = 1 to len (_aPreNF)
+		_oSQL:_sQuery += cvaltochar (_aPreNF [_nPreNF]) + iif (_nPreNF < len (_aPreNF), ",", "")
+	next
+	_oSQL:_sQuery += ")"
+
+	_oSQL:_sQuery += " GROUP BY ZZ9_SAFRA, ZZ9_FORNEC, ZZ9_LOJA, ZZ9_NFORI, ZZ9_SERIOR"
+	_oSQL:Log ('[' + procname () + ']')
+	_aTotForn := aclone (_oSQL:Qry2Array (.f., .f.))
+	U_Log2 ('debug', _aTotForn)
+
+	if _aTotForn [1, 1] != len (_aPreNF)
+		u_help ("Nao li a mesma quantidade de pre-notas! Para fechar os 10% do total da safra, tenho que considerar os mesmos registros do ZZ9.",, .t.)
+		_aParcel = {}
+	else
+		// Tot.a pagar em maio = [1a.parc.das NF orig. de safra] + [1a.parc.da NF que estou gerando agora]
+		// Esse total a pagar em maio deve representar 10% do total da safra de cada fornecedor.
+		//
+		// Valor 1a.parc vai ser o total da safra * 10% - o que jah tem (1a.parc.orig)
+		_aParcel [1, 4] = _aTotForn [1, 2] * 0.1 - _aTotForn [1, 4]
+		//
+		// O restante do valor desta NF de complemento, vou distribuir nas demais parcelas.
+		_nTotCompl = _aTotForn [1, 2] - _aTotForn [1, 3]
+		_nTotCompl -= _aParcel [1, 4]
+		_nTotDist = 0
+		for _nParcel = 2 to len (_aParcel)
+			_aParcel [_nParcel, 4] = round (_nTotCompl / 9, 2)
+			_nTotDist += _aParcel [_nParcel, 4]
+		next
+		// Ajusta diferencas na ultima parcela.
+		_aParcel [len (_aParcel), 4] += _nTotCompl - _nTotDist
+		U_Log2 ('debug', '[' + procname () + ']Como ficaram as parcelas:')
+		U_Log2 ('debug', _aParcel)
+	endif
+	for _nParcel = 1 to len (_aParcel)
+		if _aParcel [_nParcel, 4] <= 0
+			u_help ("Parcela negativa ou zerada!",, .t.)
+			_aParcel = {}
+			exit
+		endif
+	next
+return _aParcel
+
+
+// --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
 	local _aRegsPerg := {}
 
-	//                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                               Help
-	aadd (_aRegsPerg, {01, "Produtor inicial              ", "C", 6,  0,  "",   "SA2", {},                                  "Codigo do produtor (fornecedor) inicial para geracao das notas."})
-	aadd (_aRegsPerg, {02, "Loja produtor inicial         ", "C", 2,  0,  "",   "SA2", {},                                  "Loja do produtor (fornecedor) inicial para geracao das notas."})
-	aadd (_aRegsPerg, {03, "Produtor final                ", "C", 6,  0,  "",   "SA2", {},                                  "Codigo do produtor (fornecedor) final para geracao das notas."})
-	aadd (_aRegsPerg, {04, "Loja produtor final           ", "C", 2,  0,  "",   "SA2", {},                                  "Loja do produtor (fornecedor) final para geracao das notas."})
-	aadd (_aRegsPerg, {05, "Safra referencia              ", "C", 4,  0,  "",   "   ", {},                                  "Safra (ano) para a qual serao geradas as notas de compra."})
-	aadd (_aRegsPerg, {06, "Parcelas sep.barras(bco=todas)", "C", 30, 0,  "",   "   ", {},                                  "Parcelas. Geralmente para separar tintorias, organicas, etc. Ex.: A/B/F"})
-	aadd (_aRegsPerg, {07, "Grupo pagamento               ", "C", 1,  0,  "",   "   ", {},                                  "Grupo de produtos (geralmente para gerar parcelamento)"})
-	aadd (_aRegsPerg, {08, "Geracao por DCO               ", "C", 1,  0,  "",   "   ", {"Com DCO", "Sem DCO", "Todos"},     "Permite gerar separadamente as notas envolvidas em leilao da CONAB."})
-	aadd (_aRegsPerg, {09, "Variedade de uva              ", "N", 1,  0,  "",   "   ", {"Comum", "Fina", "Todas"},          "Permite gerar separadamente as notas por tipo de uva."})
-	aadd (_aRegsPerg, {10, "Tipo de nota a gerar          ", "N", 1,  0,  "",   "   ", {"Normais", "Compl.preco"},          "Compl.preco eh sobre as compras feitas a preco minimo do governo."})
-	aadd (_aRegsPerg, {11, "Cond.pagto a usar             ", "C", 3,  0,  "",   "SE4", {},                                  ""})
-	aadd (_aRegsPerg, {12, "Apenas as varied (separ.por /)", "C", 60, 0,  "",   "   ", {},                                  ""})
-	aadd (_aRegsPerg, {13, "Exceto as varied (separ.por /)", "C", 60, 0,  "",   "   ", {},                                  ""})
+	//                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                                    Help
+	aadd (_aRegsPerg, {01, "Produtor inicial              ", "C", 6,  0,  "",   "SA2", {},                                       "Codigo do produtor (fornecedor) inicial para geracao das notas."})
+	aadd (_aRegsPerg, {02, "Loja produtor inicial         ", "C", 2,  0,  "",   "SA2", {},                                       "Loja do produtor (fornecedor) inicial para geracao das notas."})
+	aadd (_aRegsPerg, {03, "Produtor final                ", "C", 6,  0,  "",   "SA2", {},                                       "Codigo do produtor (fornecedor) final para geracao das notas."})
+	aadd (_aRegsPerg, {04, "Loja produtor final           ", "C", 2,  0,  "",   "SA2", {},                                       "Loja do produtor (fornecedor) final para geracao das notas."})
+	aadd (_aRegsPerg, {05, "Safra referencia              ", "C", 4,  0,  "",   "   ", {},                                       "Safra (ano) para a qual serao geradas as notas de compra."})
+	aadd (_aRegsPerg, {06, "Parcelas sep.barras(bco=todas)", "C", 30, 0,  "",   "   ", {},                                       "Parcelas. Geralmente para separar tintorias, organicas, etc. Ex.: A/B/F"})
+	aadd (_aRegsPerg, {07, "Grupo pagamento               ", "C", 1,  0,  "",   "   ", {},                                       "Grupo de produtos (geralmente para gerar parcelamento)"})
+	aadd (_aRegsPerg, {08, "Geracao por DCO               ", "C", 1,  0,  "",   "   ", {"Com DCO", "Sem DCO", "Todos"},          "Permite gerar separadamente as notas envolvidas em leilao da CONAB."})
+	aadd (_aRegsPerg, {09, "Variedade de uva              ", "N", 1,  0,  "",   "   ", {"Comum", "Fina", "Todas"},               "Permite gerar separadamente as notas por tipo de uva."})
+	aadd (_aRegsPerg, {10, "Tipo de nota a gerar          ", "N", 1,  0,  "",   "   ", {"Normais", "Compl.preco"},               "Compl.preco eh sobre as compras feitas a preco minimo do governo."})
+	aadd (_aRegsPerg, {11, "Cond.pagto a usar             ", "C", 3,  0,  "",   "SE4", {},                                       ""})
+	aadd (_aRegsPerg, {12, "Apenas as varied (separ.por /)", "C", 60, 0,  "",   "   ", {},                                       ""})
+	aadd (_aRegsPerg, {13, "Exceto as varied (separ.por /)", "C", 60, 0,  "",   "   ", {},                                       ""})
+	aadd (_aRegsPerg, {14, "Tipo de fornecedor            ", "N", 1,  0,  "",   "   ", {"Assoc/ex assoc", "Terceiros", "Todos"}, ""})
 
 	U_ValPerg (cPerg, _aRegsPerg)
 return

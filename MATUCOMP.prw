@@ -1,15 +1,27 @@
 // Programa...: MATUCOMP
 // Autor......: Cláudia Lionço
 // Data.......: 17/03/2020
-// Descricao..:  P.E. utilizado para alterações automáticas nos complementos dos documentos fiscais 
-//				 após a emissão das Notas Fiscais.
-//
+// Descricao..: P.E. utilizado para alterações automáticas nos complementos dos documentos fiscais 
+//              após a emissão das Notas Fiscais.
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Ponto_de_entrada
+// #Descricao         #Alteracoes / ajustes complementos de documentos de entrada/saida
+// #PalavasChave      #complementos #NF
+// #TabelasPrincipais #SF1, SF2, CD5, CDL, CDE, CF8, CDB
+// #Modulos           #FAT #COM #EST
+
 // Historico de alteracoes:
+// 24/05/2023 - Robert - Salvar e restaurar area de trabalho na entrada e saida do programa
+//                     - Adicionadas tags para documentacao de fontes
+//                     - Selecionar indices do SF1 e SF2 antes da pesquisa
+//                     - Deixa de verificar tabela VA_SM0 e passa a verificar SYS_COMPANY.
 //
-// -----------------------------------------------------------------------------------------------------------
+
 #include 'protheus.ch'
 #include 'parmtype.ch'
 
+// -----------------------------------------------------------------------------------------------------------
 User Function MATUCOMP()
 	Local cEntSai  := ParamIXB[1]
 	Local cSerie   := ParamIXB[2]
@@ -17,13 +29,18 @@ User Function MATUCOMP()
 	Local cCliefor := ParamIXB[4]
 	Local cLoja    := ParamIXB[5]	
 	Local cQuery   := ""
+	local _aAreaAnt := U_ML_SRArea ()
 	//Local x		   := 0
 	
 	// Entradas
-	If (IsInCallStack ("MATA910") .or. IsInCallStack ("MATA103")) .and. cEntSai = 'E' // Entradas ou aquisições de serviços do exterior
-		SF1->(dbSeek(xFilial("SF1") + cDoc + cSerie + cCliefor + cLoja))
+//	If (IsInCallStack ("MATA910") .or. IsInCallStack ("MATA103")) .and. cEntSai = 'E' // Entradas ou aquisições de serviços do exterior
+	If cEntSai = 'E' .or. (IsInCallStack ("MATA910") .or. IsInCallStack ("MATA103")) // Entradas ou aquisições de serviços do exterior
 		
-		If ALLTRIM(SF1 -> F1_EST) == 'EX' 		
+//		SF1->(dbSeek(xFilial("SF1") + cDoc + cSerie + cCliefor + cLoja))
+//		If ALLTRIM(SF1 -> F1_EST) == 'EX' 		
+
+		sf1 -> (dbsetorder (1))  // F1_FILIAL, F1_DOC, F1_SERIE, F1_FORNECE, F1_LOJA, F1_TIPO, R_E_C_N_O_, D_E_L_E_T_
+		if SF1->(dbSeek(xFilial("SF1") + cDoc + cSerie + cCliefor + cLoja), .f.) .and. ALLTRIM(SF1 -> F1_EST) == 'EX'
 			cQuery := " SELECT"
 			cQuery += " 	D1_FILIAL"
 			cQuery += "    ,D1_SERIE"
@@ -41,7 +58,8 @@ User Function MATUCOMP()
 			cQuery += "    ,M0_CGC"
 			cQuery += "    ,M0_ESTCOB"
 			cQuery += " FROM " + RetSqlName("SD1") + " SD1"
-			cQuery += " LEFT JOIN VA_SM0 SM0"
+//			cQuery += " LEFT JOIN VA_SM0 SM0"
+			cQuery += " LEFT JOIN SYS_COMPANY SM0"
 			cQuery += " 	ON (SM0.D_E_L_E_T_ = ''"
 			cQuery += " 			AND SM0.M0_CODIGO = '" + cEmpAnt + "'"
 			cQuery += " 			AND SM0.M0_CODFIL = '" + SF1 -> F1_FILIAL + "')"
@@ -95,11 +113,13 @@ User Function MATUCOMP()
 	EndIf
 	
 	// Saídas
-	//If IsInCallStack ("_MATA460") .and. cEntSai = 'S' // Saídas ou serviços para o exterior
 	If cEntSai = 'S' // Saídas ou serviços para o exterior
-		SF2->(dbSeek(xFilial("SF2") + cDoc + cSerie + cCliefor + cLoja))
-		
-		If ALLTRIM(SF2 -> F2_EST) == 'EX' 
+
+//		SF2->(dbSeek(xFilial("SF2") + cDoc + cSerie + cCliefor + cLoja))
+//		If ALLTRIM(SF2 -> F2_EST) == 'EX' 
+
+		sf2 -> (dbsetorder (1))  // F2_FILIAL, F2_DOC, F2_SERIE, F2_CLIENTE, F2_LOJA, F2_FORMUL, F2_TIPO, R_E_C_N_O_, D_E_L_E_T_
+		if SF2->(dbSeek(xFilial("SF2") + cDoc + cSerie + cCliefor + cLoja), .f.) .and. ALLTRIM(SF2 -> F2_EST) == 'EX'
 			cQuery := " SELECT"
 			cQuery += "		D2_ITEM"
 			cQuery += "	   ,D2_COD"
@@ -107,7 +127,8 @@ User Function MATUCOMP()
 			cQuery += "	   ,M0_CGC"
 			cQuery += "	   ,M0_ESTCOB"
 			cQuery += "	FROM " + RetSqlName("SD2") + " SD2"
-			cQuery += "	LEFT JOIN VA_SM0 SM0"
+	//		cQuery += "	LEFT JOIN VA_SM0 SM0"
+			cQuery += "	LEFT JOIN SYS_COMPANY SM0"
 			cQuery += "		ON (SM0.D_E_L_E_T_ = ''"
 			cQuery += "				AND SM0.M0_CODIGO = '" + cEmpAnt + "'"
 			cQuery += "				AND SM0.M0_CODFIL = '" + SF1 -> F1_FILIAL + "')"
@@ -116,13 +137,12 @@ User Function MATUCOMP()
 			cQuery += "	AND SD2.D2_SERIE 	= '" + SF2 -> F2_SERIE 	 + "'"
 			cQuery += "	AND SD2.D2_CLIENTE 	= '" + SF2 -> F2_CLIENTE + "'"
 			cQuery += "	AND SD2.D2_LOJA 	= '" + SF2 -> F2_LOJA	 + "'"
-			
+
 			dbUseArea(.T., "TOPCONN", TCGenQry(,,cQuery), "TRA", .F., .T.)
 			TRA->(DbGotop())
 
-			While TRA->(!Eof())	
-				RecLock("CDL",.T.)	
-				
+			While TRA->(!Eof())
+				RecLock("CDL",.T.)
 				CDL -> CDL_FILIAL	:= SF2 -> F2_FILIAL
 				CDL -> CDL_DOC 		:= SF2 -> F2_DOC
 				CDL -> CDL_SERIE 	:= SF2 -> F2_SERIE
@@ -142,13 +162,13 @@ User Function MATUCOMP()
 				CDL -> CDL_SERORI 	:= SF2 -> F2_SERIE
 				CDL -> CDL_ITEMNF 	:= TRA -> D2_ITEM
 				CDL -> CDL_PRODNF   := TRA -> D2_COD
-
 				MsUnLock()
-				
 				DBSelectArea("TRA")
 				dbskip()
 			Enddo
 			TRA->(DbCloseArea())
 		EndIf
 	EndIf
+
+	U_ML_SRArea (_aAreaAnt)
 Return
