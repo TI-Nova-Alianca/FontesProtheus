@@ -50,13 +50,13 @@ static function _VerEtiq ()
 			// A primeira linha contem nomes de colunas, mas quero usar a funcao F3Array, que nao vai gostar disso.
 			_oEtiq:Del (1)
 
-			// Ignora etiquetas cuja transferencia tenha sido canelada manualmente.
+			// Ignora etiquetas cuja transferencia tenha sido cancelada manualmente.
 			for _nEtiq = len (_oEtiq:_aArray) to 1 step -1
 				if 'CANCELADO' $ upper (_oEtiq:_aArray [_nEtiq, 11])
 					_oEtiq:Del (_nEtiq)
 				endif
 			next
-			u_log (_oEtiq:_aArray)
+		//	u_log (_oEtiq:_aArray)
 			if len (_oEtiq:_aArray) > 1  // Primeira linha contem os cabecalhos de colunas.
 				_lRet = .F.
 				_sMsgSup = "As seguintes etiquetas geraram apontamentos para esta OP, mas ainda nao foram guardadas (transferidas do almoxarifado " + sd3 -> d3_local + "):"

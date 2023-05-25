@@ -88,6 +88,7 @@
 // 18/05/2023 - Robert  - Criado metodo GeraHelp() e iniciadas melhorias nas documentacoes.
 // 22/05/2023 - Robert  - Criado atributo AColsF3 para quando a funcao chamadora quiser mostrar os dados via U_F3Array() - GLPI 13616
 //                      - Melhorias documentacao.
+// 24/05/2023 - Robert  - Metodo Executa() recebe parametro indicando se retorna nomes das colunas no inicio.
 //
 
 #include "protheus.ch"
@@ -215,10 +216,12 @@ Return _sRet
 
 // --------------------------------------------------------------------------
 // Executa a verificacao.
-METHOD Executa () Class ClsVerif
+METHOD Executa (_lRetNomes) Class ClsVerif
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _lContinua := .T.
 	local _oSQL      := NIL
+
+	_lRetNomes = iif (_lRetNomes == NIL, .t., _lRetNomes)
 
 	if _lContinua .and. empty (::Query)
 		::UltMsg += "Query nao definida para esta verificacao."
@@ -247,7 +250,7 @@ METHOD Executa () Class ClsVerif
 		_oSQL:_sQuery = ::Query
 		_oSQL:lGeraHead = .T.  // Para gerar array 'aHeader' ao final da execucao da query
 		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
-		::Result = aclone (_oSQL:Qry2Array (.F., .T.))
+		::Result = aclone (_oSQL:Qry2Array (.F., _lRetNomes))
 		::QtErros = len (::Result) - 1  // Primeira linha tem os nomes de campos
 		::ExecutouOK = .T.
 
@@ -3470,10 +3473,15 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 
 	case ::Numero == 88
-		::Filiais   = '01'  // Gero todas as filiais juntas.
-		::Setores   = 'INF'
-		::Descricao = 'Gatilhos'
-		::Sugestao  = 'Verificar configuracao do gatilho'
+		::Filiais    = '01'  // Gero todas as filiais juntas.
+		::Setores    = 'INF'
+		::Descricao  = 'Gatilhos fazendo referência a uma sequência errada'
+		::QuandoUsar = 'A qualquer momento'
+		::Sugestao   = 'Ajustar configurações dos gatilhos no configurador.'
+		::Dica       = 'Usamos em muitos gatilhos uma função customizada chamada VA_GAT()."
+		::Dica      += 'Essa função recebe por parâmetro o sequencial do gatilho onde se encontra."
+		::Dica      += 'Para operar corretamente, esse parâmetro deve estar igual ao campo X7_SEQUENC."
+		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: SX7'
 		::Query := ""
 		::Query += "SELECT X7_CAMPO, X7_SEQUENC, X7_CDOMIN, X7_REGRA"
 		::Query +=  " FROM SX7" + cEmpAnt + "0"  // Pelo que vi, a funcao RetSQLName() nao funciona para o SX7.
