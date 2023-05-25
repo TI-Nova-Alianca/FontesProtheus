@@ -179,6 +179,8 @@
 // 26/10/2022 - Robert  - Valida duplicidade de do B1_CODBAR somente "se nao for tudo zero".
 // 05/01/2022 - Robert  - Desabilitada validacao D3_TM x ROTINA, pois agora o
 //                        sistema controla acessos por TM x usuario.
+// 25/05/2023 - Robert  - Validacao TL_DTINICI e TL_DTFIM aberta para o mes
+//                        atual do estoque (desde que tipo insumo = mao de obra)
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -366,17 +368,39 @@ user function VA_VCpo (_sCampo)
 
 
 		case _sCampo == "M->TL_DTINICI"
-			if _lRet .and. (M->TL_DTINICI < Date() -3 .or. dDataBase > date ())
-				U_Help ("Data inicial nao pode ser menor do que 3 dias da data de hoje.")
-				_lRet = .F.
+			if _lRet
+				if M->TL_TIPOREG == 'M'  // Mao de obra
+					if M->TL_DTINICI < getmv ("MV_ULMES") .or. dDataBase > date ()
+						U_Help ("Para mao de obra, a data inicial nao pode ser menor do que o ultimo mes fechado, e nem futura.")
+						_lRet = .F.
+					endif
+				else
+					if M->TL_DTINICI < Date() -3 .or. dDataBase > date ()
+						U_Help ("Data inicial nao pode ser menor do que 3 dias da data de hoje.")
+						_lRet = .F.
+					endif
+				endif
 			endif
 
 		case _sCampo == "M->TL_DTFIM"
-			if _lRet .and. (M->TL_DTFIM < Date() -3 .or. dDataBase > date ())
-				U_Help ("Data final nao pode ser menor do que 3 dias da data de hoje.")
-				_lRet = .F.
+//			if _lRet .and. (M->TL_DTFIM < Date() -3 .or. dDataBase > date ())
+//				U_Help ("Data final nao pode ser menor do que 3 dias da data de hoje.")
+//				_lRet = .F.
+//			endif
+			if _lRet
+				if M->TL_TIPOREG == 'M'  // Mao de obra
+					if M->TL_DTFIM < getmv ("MV_ULMES") .or. dDataBase > date ()
+						U_Help ("Para mao de obra, a data final nao pode ser menor do que o ultimo mes fechado, e nem futura.")
+						_lRet = .F.
+					endif
+				else
+					if M->TL_DTFIM < Date() -3 .or. dDataBase > date ()
+						U_Help ("Data final nao pode ser menor do que 3 dias da data de hoje.")
+						_lRet = .F.
+					endif
+				endif
 			endif
-		
+
 		case _sCampo == "M->ACL_CODPRO" .and. ! GDDeleted ()
 			for _i = 1 to len (aCols)
 				if ! GDDeleted (_i) .and. ! empty (GDFieldGet ("ACL_VALIPR", _i))
