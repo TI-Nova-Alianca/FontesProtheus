@@ -137,6 +137,9 @@
 // 24/02/2023 - Robert  - Leitura da view VA_VFILA_DESCARGA_SAFRA trocada por VA_VCARGAS_SAFRA
 // 21/03/2023 - Robert  - Gatilho p/ alimentar C2_LOCAL a partir do C2_PRODUTO e C2_VAOPESP.
 // 24/03/2023 - Robert  - Chamadas da funcao U_AvisaTI() alteradas para objetos da classe ClsAviso().
+// 29/05/2023 - Robert  - Gatilho do C2_PRODUTO para C2_LOCAL passa a usar
+//                        SuperGetMv("VA_ALMFULL") para atender filiais onde
+//                        o parametro nao existe (GLPI 13640)
 //
 
 // --------------------------------------------------------------------------
@@ -229,7 +232,8 @@ user function VA_Gat (_sParCpo, _sParSeq)
 			_xRet = '31'
 		else
 			if sb1 -> b1_vafullw = 'S'
-				_xRet = GetMv("VA_ALMFULL")
+			//	_xRet = GetMv("VA_ALMFULL")
+				_xRet = SuperGetMv("VA_ALMFULL", .f., _xRet)
 			endif
 		endif
 
