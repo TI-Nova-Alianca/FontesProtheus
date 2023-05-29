@@ -100,7 +100,7 @@
 // 23/11/2022 - Robert - Bloquear somente mov.07 quando jah tiver corr.mon. (ver obs no local)
 // 16/12/2022 - Robert - Criados tratamentos para "fornecedores de uva" (GLPI 12501)
 // 13/03/2023 - Robert - Novos parametros FINA090.
-// 29/05/2023 - Robert - Metodos Grava() e TransFil() passam a usar controle de transacao.
+// 29/05/2023 - Robert - Metodos Grava() e TransFil() passam a usar controle de transacao (GLPI 13532).
 //
 
 // ------------------------------------------------------------------------------------
