@@ -181,10 +181,10 @@ User Function RBatch (_sEmp, _sFil)
 			// vou deixar rodar alguns minutos e cair fora, para dar chance
 			// aos demais.
 			//U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (seconds () - _nSegunIni) + ' segundos')
-			if seconds () - _nSegunIni > 60 * 10
-				U_Log2 ('aviso', '[' + procname () + ']Estou executando ha bastante tempo. Hora de dar vez para outra filial.')
-				exit
-			endif
+//			if seconds () - _nSegunIni > 60 * 10
+//				U_Log2 ('aviso', '[' + procname () + ']Estou executando ha bastante tempo. Hora de dar vez para outra filial.')
+//				exit
+//			endif
 
 			zz6 -> (dbgoto (_aSeq [_nSeq, 1]))
 

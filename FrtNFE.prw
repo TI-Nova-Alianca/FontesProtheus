@@ -297,7 +297,7 @@ User Function FrtNFE (_sIncExc)
 
 
 	elseif _sIncExc == "V"  // Validacao (Tudo OK) da nota de entrada
-		U_LOG2 ('debug', '[' + procname () + '] Validacao')
+//		U_LOG2 ('debug', '[' + procname () + '] Validacao')
 
 		if alltrim (GDFieldGet ("D1_COD")) $ GetMv('VA_PRODCIF')  // Item especifico para frete sobre vendas.
 			if type ("_oClsFrtFr") != "O"

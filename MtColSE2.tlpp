@@ -86,7 +86,7 @@ user function MTColSE2 ()
 
 							// A partir da segunda parcela nao deve restar nada de FUNRURAL
 							if _nParc > 1
-								U_Log2 ('debug', '[' + procname () + ']Zerando E2_INSS (FUNRURAL) da parcela ' + cvaltochar (_nParc) + ' pois deve constar apenas na primeira.')
+						//		U_Log2 ('debug', '[' + procname () + ']Zerando E2_INSS (FUNRURAL) da parcela ' + cvaltochar (_nParc) + ' pois deve constar apenas na primeira.')
 								_aRet [_nParc, _nPosINSS]  = 0
 							endif
 

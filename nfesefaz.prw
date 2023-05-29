@@ -150,7 +150,7 @@ static lSpedCodOnu := nil
 // 09/06/2022 - Sandra  - Ajustes na versao do pacote GLPI 11842 (Nota Técnica 2021.004_V_1.10) - Compilado por Robert em 09/06/22 21:45h
 // 11/07/2022 - Robert  - Quando houver "informacoes adicionais do produto", concatena-as com a descricao (GLPI 12334)
 // 13/10/2022 - Robert  - Pequena melhoria nos logs quando ambiente de teste.
-// 25/05/2023 - Robert  - Obriga uso da tabela CDD para NF referenciadas, quando complemento de safra (GLPI 
+// 25/05/2023 - Robert  - Obriga uso da tabela CDD para NF referenciadas, quando complemento de safra (GLPI 13532)
 
 // --------------------------------------------------------------------------
 User Function XmlNfeSef(cTipo,cSerie,cNota,cClieFor,cLoja,cNotaOri,cSerieOri)
@@ -5487,13 +5487,10 @@ D1_NUMLOTE,D1_CUSTO,D1_ORIGLAN,D1_DESCICM,D1_II,D1_FORMUL,D1_VALPS3,D1_ORIGLAN,D
 				EndIf
 
 				//CDD
-				U_Log2 ('debug', '[' + procname () + ']vou testar CDD')
 				If AliasIndic("CDD")			
-					U_Log2 ('debug', '[' + procname () + ']AliasIndic')
 					dbSelectArea("CDD")
 					dbSetOrder(1)
 					if MsSeek(xFilial("CDD") + cChvCdd ) //CDD_FILIAL + CDD_TPMOV + CDD_DOC + CDD_SERIE + CDD_CLIFOR + CDD_LOJA
-						U_Log2 ('debug', '[' + procname () + ']seek CDD')
 							While !Eof() .And. xFilial("CDD") == (cAliasSD1)->D1_FILIAL .And.;
 								CDD->CDD_TPMOV == "E" .And.;
 								CDD->CDD_SERIE == (cAliasSD1)->D1_SERIE .And.;
@@ -5504,9 +5501,8 @@ D1_NUMLOTE,D1_CUSTO,D1_ORIGLAN,D1_DESCICM,D1_II,D1_FORMUL,D1_VALPS3,D1_ORIGLAN,D
 
 								If !Empty(CDD->CDD_CHVNFE)
 
-									// Alianca: Inicio teste CDD: Nao vou adicionar a chave novamente, se ja estiver na array, pois a SEFAZ vai recusar.
+									// Alianca: Inicio tratamento CDD: Nao vou adicionar a chave novamente, se ja estiver na array, pois a SEFAZ vai recusar.
 									if ascan (aNfVCdd, {|_aVal| _aVal [7] == CDD->CDD_CHVNFE}) > 0
-										U_Log2 ('debug', '[' + procname () + ']ChvNFe ' + CDD->CDD_CHVNFE + ' jah consta na array aNfVCdd. Vou pular para a proxima.')
 										CDD->(dbSkip())
 										loop
 									endif
@@ -5516,7 +5512,6 @@ D1_NUMLOTE,D1_CUSTO,D1_ORIGLAN,D1_DESCICM,D1_II,D1_FORMUL,D1_VALPS3,D1_ORIGLAN,D
 								EndIf
 								CDD->(dbSkip())
 							EndDo
-							U_Log2 ('debug', aNfVCdd)
 					ENDIF
 				EndIf
 				

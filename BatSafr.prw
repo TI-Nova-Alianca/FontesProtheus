@@ -1076,11 +1076,6 @@ static function _TrSZIMat ()
 	else
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
-	//	if left (time (), 2) >= '19' .or. left (time (), 2) <= '06' .or. dow (date ()) == 7
-	//		_oSQL:_sQuery += " SELECT TOP 100 SZI.R_E_C_N_O_"  // USANDO top 10 POR QUE O PROCESSO ESTAH ATRASADO, MAS NAO QUERO MONOPOLIZAR OS BATCHES
-	//	else
-	//		_oSQL:_sQuery += " SELECT TOP 10 SZI.R_E_C_N_O_"  // USANDO top 10 POR QUE O PROCESSO ESTAH ATRASADO, MAS NAO QUERO MONOPOLIZAR OS BATCHES
-	//	endif
 		_oSQL:_sQuery += " SELECT SZI.R_E_C_N_O_"
 		_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2, "
 		_oSQL:_sQuery +=              RetSQLName ("SZI") + " SZI "
