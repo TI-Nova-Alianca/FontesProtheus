@@ -56,6 +56,7 @@
 // 29/11/2022 - Robert  - Botao 'imprime OP' passa a ser liberado para todos os usuarios.
 // 17/04/2023 - Robert  - Ordena os botoes de 'outras acoes' alfabeticamente.
 //                      - Criada opcao de apontar diversas etiquetas da OP atomaticamente (util para terceirizacoes)
+// 24/05/2023 - Robert  - Ajuste tratamento verificacao Alianca 24 na consulta de etiquetas nao guardadas.
 //
 
 #include "rwmake.ch"
@@ -535,15 +536,22 @@ return
 // Etiquetas com problemas.
 user function AdmOPEP ()
 	local _oVerif   := NIL
+//	local _oEtqNG   := NIL
+
 	_oVerif := ClsVerif():New (24)
 	_oVerif:SetParam ('01', _sOP)
 	_oVerif:SetParam ('02', _sOP)
 	_oVerif:SetParam ('03', '')
 	_oVerif:SetParam ('04', 'zzzzzzzzzzzzzzz')
-	_oVerif:Executa ()
+	_oVerif:Executa (.f.)
 	if len (_oVerif:Result) > 0
+
+//		// A primeira linha contem nomes de colunas, mas quero usar a funcao F3Array, que nao vai gostar disso.
+//		_oEtqNG := ClsAUtil ():New (_oVerif:Result)
+//		_oEtqNG:Del (1)
+
 		_sMsgSup = "As seguintes etiquetas geraram apontamentos para esta OP, mas ainda nao foram guardadas"
-		U_F3Array (_oVerif:Result, "Etiquetas nao guardadas", , , , _sMsgSup, '', .T., 'C')
+		U_F3Array (_oVerif:Result, "Etiquetas nao guardadas", _oVerif:aColsF3, , , _sMsgSup, '', .T., 'C')
 	else
 		u_help ("Nao foram encontradas etiquetas pendentes para esta OP")
 	endif

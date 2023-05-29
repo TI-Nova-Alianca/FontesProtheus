@@ -86,6 +86,9 @@
 // 24/03/2023 - Robert  - Verif.24 passa a desconsiderar OPs para envase 'em terceiros' (seguem fluxo diferente para entrada no FullWMS)
 // 26/04/2023 - Robert  - Implementadas verificacoes 94 e 95.
 // 18/05/2023 - Robert  - Criado metodo GeraHelp() e iniciadas melhorias nas documentacoes.
+// 22/05/2023 - Robert  - Criado atributo AColsF3 para quando a funcao chamadora quiser mostrar os dados via U_F3Array() - GLPI 13616
+//                      - Melhorias documentacao.
+// 24/05/2023 - Robert  - Metodo Executa() recebe parametro indicando se retorna nomes das colunas no inicio.
 //
 
 #include "protheus.ch"
@@ -97,6 +100,7 @@ CLASS ClsVerif
 	// Declaracao das propriedades da Classe
 	data aHeader     // Para o caso de exportar no formato aHeader/aCols
 	data Ativa       // Se encontra-se ativa (.T. / .F.)
+	data aColsF3     // Definicao de colunas para mostrar na funcao F3Array, caso necessario.
 	data ComTela     // Indica se mostra (.T.) mensagens em tela (posso estar usando em batch)
 	data Descricao   // Descricao da verificacao
 	data Dica        // Dica para o usuario.
@@ -143,6 +147,7 @@ ENDCLASS
 METHOD New (_nQual) Class ClsVerif
 	::Numero     = 0
 	::Ativa      = .T.
+	::aColsF3    = {}
 	::ComTela    = .T.
 	::Filiais    = '*'
 	::Query      = ""
@@ -211,10 +216,12 @@ Return _sRet
 
 // --------------------------------------------------------------------------
 // Executa a verificacao.
-METHOD Executa () Class ClsVerif
+METHOD Executa (_lRetNomes) Class ClsVerif
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _lContinua := .T.
 	local _oSQL      := NIL
+
+	_lRetNomes = iif (_lRetNomes == NIL, .t., _lRetNomes)
 
 	if _lContinua .and. empty (::Query)
 		::UltMsg += "Query nao definida para esta verificacao."
@@ -243,7 +250,7 @@ METHOD Executa () Class ClsVerif
 		_oSQL:_sQuery = ::Query
 		_oSQL:lGeraHead = .T.  // Para gerar array 'aHeader' ao final da execucao da query
 		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
-		::Result = aclone (_oSQL:Qry2Array (.F., .T.))
+		::Result = aclone (_oSQL:Qry2Array (.F., _lRetNomes))
 		::QtErros = len (::Result) - 1  // Primeira linha tem os nomes de campos
 		::ExecutouOK = .T.
 
@@ -294,8 +301,8 @@ METHOD GeraHelp (_nQualVer, _lGeraCab) Class ClsVerif
 			_sHTM +=    '<ul>' + chr (13) + chr (10)
 			_sHTM +=       '<li><b>Áreas de interesse:</b> ' + _oVerif2:Setores + '</li>' + chr (13) + chr (10)
 			_sHTM +=       '<li><b>Quando usar:</b> ' + alltrim (_oVerif2:QuandoUsar) + '</li>' + chr (13) + chr (10)
-			_sHTM +=       '<li><b>Dicas adicionais:</b> ' + strtran (alltrim (_oVerif2:Dica), chr (13) + chr (10), '<br>') + '</li>' + chr (13) + chr (10)
 			_sHTM +=       '<li><b>Sugestões para solução:</b> ' + strtran (alltrim (_oVerif2:Sugestao), chr (13) + chr (10), '<br>') + '</li>' + chr (13) + chr (10)
+			_sHTM +=       '<li><b>Dicas adicionais:</b> ' + strtran (alltrim (_oVerif2:Dica), chr (13) + chr (10), '<br>') + '</li>' + chr (13) + chr (10)
 //			_sHTM +=       '<li><b>Filiais em que se aplica:</b> ' + iif (_oVerif2:Filiais == '*', 'todas', _oVerif2:Filiais) + '</li>' + chr (13) + chr (10)
 			_sHTM +=    '</ul>' + chr (13) + chr (10)
 			_sHTM += '</p>' + chr (13) + chr (10)
@@ -321,6 +328,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Descricao  = 'Produto deveria ter revisao padrao no cadastro'
 		::QuandoUsar = 'A qualquer momento'
 		::Dica       = 'Encontrei (na tabela SG1) estruturas com diferentes revisões para o produto, mas no seu cadastro não está indicado qual delas é a padrão."
+		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: SG1, SB1'
 		::Sugestao   = "Revise o campo '" + alltrim (RetTitle ("B1_REVATU")) + "' no cadastro do produto, pois deveria estar sendo indicada uma das revisões existentes na estrutura do produto."
 		::Query := ""
 		::Query += "WITH REVISOES AS (SELECT DISTINCT G1_COD, G1_REVINI, G1_REVFIM"
@@ -352,7 +360,9 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Descricao  = 'Produto tem revisao padrao informada no seu cadastro, mas o cadastro da propria revisao nao existe'
 		::Sugestao   = "Cadastre a revisão na tabela SG5 (revisões)"
 		::QuandoUsar = 'A qualquer momento'
-		::Dica       = ''
+		::Dica       = 'Existe, na estrutura do produto (campo B1_REVATU), referência a uma determinada revisão, mas o cadastro dessa revisão, em si, não existe.'
+		::Dica      += 'Até o momento, esse cadastro não é obrigatório no Protheus, mas usamos esse cadastro no momento da abertura de OP, no caso de itens formulados.'
+		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: SG1, SB1'
 		::Query := ""
 		::Query += "SELECT B1_COD AS PRODUTO, B1_DESC AS DESCRICAO, B1_REVATU AS REVISAO"
 		::Query +=  " FROM " + RetSQLName ("SB1") + " SB1 "
@@ -375,6 +385,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::QuandoUsar = 'A qualquer momento'
 		::Dica       = 'Foi encontrada, em alguma das tabelas verificadas, movimentação com data posterior à atual.' + chr (13) + chr (10)
 		::Dica      += 'Isso poderá gerar confusão quando essa data chegar, pois o sistema passará a considerar esses movimentos na composição dos saldos em estoque."
+		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: SD1, SD2, SD3'
 		::Query := "SELECT ORIGEM, EMISSAO, DOC, OP "
 		::Query +=  " FROM (SELECT 'Mov.internos' AS ORIGEM, D3_EMISSAO AS EMISSAO, D3_DOC AS DOC, D3_OP AS OP, D3_USUARIO AS USUARIO"
 		::Query +=          " FROM " + RetSQLName ("SD3")
@@ -402,10 +413,11 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::ValidPerg (_lDefault)
 		::Descricao = 'Fech.estq.diferente fech.ant + kardex'
 		::Sugestao  = 'Revise a movimentação. Se o problema persistir, provavelmente seja o caso de reabrir o período, recalcular o custo médio e refazer a virada de saldos.'
-		::Dica      = "Esta verificação deve ser executada para meses já fechados, contemplando sempre o mês completo." + chr (13) + chr (10)
-		::Dica     += "Saldos finais são usados como iniciais para o mês seguinte. Se forem gravados errados, todo o 'saldo atual' subsequente estará comprometido." + chr (13) + chr (10)
-		::Dica     += "O processo usado para encontrar as diferenças é, basicamente, o seguinte: partindo da tabela SB9 (saldo final de determinado mês), acrescentar entradas e saídas do período (kardex) e comparar esse resultado com a tabela SB9 do mês seguinte." + chr (13) + chr (10)
 		::QuandoUsar = "Após a virada de saldos do estoque, para conferir se a quantidade que foi gravada na tabela SB9 como 'saldo final' de cada item condiz com a movimentação do mês."
+		::Dica      = "Esta verificação deve ser executada para meses já fechados, contemplando sempre o mês completo."
+		::Dica     += "Saldos finais são usados como iniciais para o mês seguinte. Se forem gravados errados, todo o 'saldo atual' subsequente estará comprometido."
+		::Dica     += chr (13) + chr (10) + "O processo usado para encontrar as diferenças é, basicamente, o seguinte: partindo da tabela SB9 (saldo final de determinado mês), acrescentar entradas e saídas do período (kardex) e comparar esse resultado com a tabela SB9 do mês seguinte." + chr (13) + chr (10)
+		::Dica     += chr (13) + chr (10) + 'Tabelas envolvidas: SB2, SB9, SD1, SD2, SD3'
 		::Query := ""
 		::Query += "WITH C AS ("
 		::Query += " SELECT B2_FILIAL AS FILIAL,"
@@ -579,7 +591,11 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::GrupoPerg = "U_VALID005"
 		::ValidPerg (_lDefault)
 		::Descricao = 'Cadastro de uva incompleto / inconsistente'
-		::Sugestao  = 'Revise cadastro produtos (cor, tintorea, fina/comum, espumante, ...' 
+		::Sugestao  = 'Revise cadastro produtos (cor, tintorea, fina/comum, espumante, ...)'
+		::Dica      = 'Diversas validações e customizações envolvendo safra, tabelas de preço, etc. dependem de campos específicos do cadastro de cada variedade de uva (tabeloa SB1).'
+		::Dica      += chr (13) + chr (10) + 'A principal forma de identificar um item como UVA é através do campo B1_GRUPO=0400'
+		::Dica      += chr (13) + chr (10) + 'É importante que a amarração seja feita entre variedades para espumante, orgânicas, bordadura... com a variedade base através do campo B1_CODPAI'
+		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: SB1, view VA_VFAMILIAS_UVAS'
 		::Query := ""
 		::Query += " SELECT SB1.B1_COD, SB1.B1_DESC, SB1.B1_VARUVA, SB1.B1_VACOR, SB1.B1_VAORGAN, SB1.B1_VAFCUVA, SB1.B1_VAUVAES"
 		::Query +=   " FROM " + RetSQLName ("SB1") + " SB1"
@@ -1317,8 +1333,26 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::GrupoPerg  = "U_VALID001"
 		::ValidPerg (_lDefault)
 		::Descricao  = 'OP tem etiquetas nao guardadas'
-		::Sugestao   = 'Revise movimentacao das etiquetas e integracao com FullWMS'
+		::Sugestao   = 'Revise movimentação das etiquetas e batches de integração com FullWMS'
 		::ViaBatch   = .F.
+		::QuandoUsar = 'A qualquer momento, principalmente antes de encerrar alguma OP'
+		::Dica       = 'Devido à integração entre o Protheus e o FullWMS, foi criado o conceito de apontamentos de produção com etiquetas, onde cada etiqueta representa um pallet.'
+		::Dica      += 'Os apontamentos de produção (dos produtos que operam com FullWMS) são feitos em almoxarifado específico (11) onde ficam aguardando integração com o FullWMS.'
+		::Dica      += chr (13) + chr (10) + 'No FullWMS, serão geradas tarefas de recebimento de cada pallet."
+		::Dica      += 'O FullWMS retorna um OK para o Protheus quando essas tarefas estiver prontas, e o Protheus faz a transferência desse saldo para o almoxarifado 01 (logística).'
+		::Dica      += chr (13) + chr (10) + 'Somente depois disso será permitido encerrar a OP.'
+		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: SD3, SC2, ZA1, tb_wms_entrada, tb_wms_etiquetas'
+		aadd (::AColsF3, {1,  'Dt.apont.',        50, ''})
+		aadd (::AColsF3, {2,  'OP',               60, ''})
+		aadd (::AColsF3, {3,  'Produto',          40, ''})
+		aadd (::AColsF3, {4,  'Descricao',       160, ''})
+		aadd (::AColsF3, {5,  'Etiqueta',         60, ''})
+		aadd (::AColsF3, {6,  'Qt.produzida',     60, '@E 999,999,999.99'})
+		aadd (::AColsF3, {7,  'Qt.perda',         60, '@E 999,999,999.99'})
+		aadd (::AColsF3, {8,  'U.M.',             20, ''})
+		aadd (::AColsF3, {9,  'Almox',            20, ''})
+		aadd (::AColsF3, {10, 'Status FullWMS',   60, ''})
+		aadd (::AColsF3, {11, 'Status Protheus',  60, ''})
 		::Query := ""
 		::Query += "SELECT dbo.VA_DTOC (D3_EMISSAO) AS APONTAMENTO,"
 		::Query +=       " D3_OP AS OP,"
@@ -1407,6 +1441,13 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Setores   = 'PCP/CUS/CTB'
 		::Descricao = 'Diferenca saldo estq do produto X lotes X enderecos'
 		::Sugestao  = 'Reprocesse saldo atual; possivelmente nao tenha sido gerado lote inicial (telas MATA805 ou MATA390); verifique fechamento (SB9 x SBJ x SBK); verifique movimentacao.'
+		::Dica      = 'Produtos que controlam rastro (B1_RASTRO=L) e localização (B1_LOCALIZ=S) obrigam o controle de saldos em 3 tabelas distintas:'
+		::Dica      += chr (13) + chr (10) + 'SB2 - saldos por almoxarifado (existe para todos os itens)'
+		::Dica      += chr (13) + chr (10) + 'SB8 - saldos por lote (somente itens que controlam rastro)'
+		::Dica      += chr (13) + chr (10) + 'SBF - saldos por endereço (somente itens que controlam localização)'
+		::Dica      += chr (13) + chr (10) + 'Eventualmente pode ocorrer desbalanceamento entre as tabelas, de forma que contenham saldos inconsistentes.'
+		::Dica      += 'Quando o processo de recálculo de saldos não resolver, é necessário abrir chamado para a TI proceder ajuste manual das tabelas.'
+		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: saldos: SB2, SB8, SBF. Fechamentos: SB9, SBJ, SBK'
 		::Query := ""
 		::Query += "exec VA_SP_VERIFICA_ESTOQUES '" + cFilAnt + "', null, null"
 
@@ -3432,10 +3473,15 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 
 	case ::Numero == 88
-		::Filiais   = '01'  // Gero todas as filiais juntas.
-		::Setores   = 'INF'
-		::Descricao = 'Gatilhos'
-		::Sugestao  = 'Verificar configuracao do gatilho'
+		::Filiais    = '01'  // Gero todas as filiais juntas.
+		::Setores    = 'INF'
+		::Descricao  = 'Gatilhos fazendo referência a uma sequência errada'
+		::QuandoUsar = 'A qualquer momento'
+		::Sugestao   = 'Ajustar configurações dos gatilhos no configurador.'
+		::Dica       = 'Usamos em muitos gatilhos uma função customizada chamada VA_GAT()."
+		::Dica      += 'Essa função recebe por parâmetro o sequencial do gatilho onde se encontra."
+		::Dica      += 'Para operar corretamente, esse parâmetro deve estar igual ao campo X7_SEQUENC."
+		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: SX7'
 		::Query := ""
 		::Query += "SELECT X7_CAMPO, X7_SEQUENC, X7_CDOMIN, X7_REGRA"
 		::Query +=  " FROM SX7" + cEmpAnt + "0"  // Pelo que vi, a funcao RetSQLName() nao funciona para o SX7.

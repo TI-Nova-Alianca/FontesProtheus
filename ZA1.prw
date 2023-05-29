@@ -30,7 +30,7 @@ user function ZA1ImpAv (_lBarras)
 		_oEtiq := ClsEtiq ():New (ZA1->ZA1_CODIGO)
 
 		// Eventualmente posso obrigar a listar as barras do produto.
-		if _lBarras != NIL .and. _lBarras
+		if _lBarras //!= NIL .and. _lBarras
 			_oEtiq:ImprCBProd = 'S'
 		endif
 

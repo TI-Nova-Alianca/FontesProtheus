@@ -7,6 +7,7 @@
 // 28/04/2017 - Robert - Passa a verificar etiquetas pendentes usando a classe ClsVerif.
 // 15/05/2017 - Robert - Passa a verificar etiquetas pendentes somente para filial 01 e a partir de 01/05/2017.
 // 05/01/2021 - Robert - Desabilitados logs desnecessarios.
+// 22/05/2023 - Robert - Funcao F3Array passou a exigir array de definicao de colunas - GLPI 13616
 //
 
 // --------------------------------------------------------------------------
@@ -46,7 +47,10 @@ static function _VerEtiq ()
 			_oEtiq := ClsAUtil ():New (_oVerif:Result)
 		//	u_log (_oEtiq:_aArray)
 			
-			// Ignora etiquetas cuja transferencia tenha sido canelada manualmente.
+			// A primeira linha contem nomes de colunas, mas quero usar a funcao F3Array, que nao vai gostar disso.
+			_oEtiq:Del (1)
+
+			// Ignora etiquetas cuja transferencia tenha sido cancelada manualmente.
 			for _nEtiq = len (_oEtiq:_aArray) to 1 step -1
 				if 'CANCELADO' $ upper (_oEtiq:_aArray [_nEtiq, 11])
 					_oEtiq:Del (_nEtiq)
@@ -56,7 +60,7 @@ static function _VerEtiq ()
 			if len (_oEtiq:_aArray) > 1  // Primeira linha contem os cabecalhos de colunas.
 				_lRet = .F.
 				_sMsgSup = "As seguintes etiquetas geraram apontamentos para esta OP, mas ainda nao foram guardadas (transferidas do almoxarifado " + sd3 -> d3_local + "):"
-				U_F3Array (_oEtiq:_aArray, "Etiquetas nao guardadas", , , , _sMsgSup, '', .T., 'C')
+				U_F3Array (_oEtiq:_aArray, "Etiquetas nao guardadas", _oVerif:aColsF3, , , _sMsgSup, '', .T., 'C')
 			endif
 		endif
 	endif
