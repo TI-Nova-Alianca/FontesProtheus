@@ -19,7 +19,7 @@
 #include 'parmtype.ch'
 #include 'totvs.ch'
 
-User Function BatReserva()
+User Function BatLotes()
     Local _sLinkSrv  := ""
 
     u_logIni()
@@ -62,7 +62,7 @@ Static Function _BloqLotes(_sLinkSrv)
     _oSQL:_sQuery += " AS "
     _oSQL:_sQuery += " (SELECT "
     _oSQL:_sQuery += " 		* "
-    _oSQL:_sQuery += " 	FROM OPENQUERY(LKSRV_FULLWMS_LOGISTICATESTE, 'SELECT * FROM V_ALIANCA_ESTOQUES WHERE SITUACAO_LOTE LIKE ''B%''') "
+    _oSQL:_sQuery += " 	FROM OPENQUERY("+ _sLinkSrv +", 'SELECT * FROM V_ALIANCA_ESTOQUES WHERE SITUACAO_LOTE LIKE ''B%''') "
     _oSQL:_sQuery += " 		) "
     _oSQL:_sQuery += " SELECT "
     _oSQL:_sQuery += " 	   ITEM_COD_ITEM_LOG "
@@ -171,7 +171,7 @@ Static Function _LibLotes(_sLinkSrv)
     _oSQL:_sQuery += " 	    DD_DOC "
     _oSQL:_sQuery += "     ,DD_PRODUTO "
     _oSQL:_sQuery += "     ,DD_LOTECTL "
-    _oSQL:_sQuery += " FROM OPENQUERY(LKSRV_FULLWMS_LOGISTICATESTE, 'SELECT * FROM V_ALIANCA_ESTOQUES WHERE SITUACAO_LOTE NOT LIKE ''B%''') "
+    _oSQL:_sQuery += " FROM OPENQUERY("+ _sLinkSrv +", 'SELECT * FROM V_ALIANCA_ESTOQUES WHERE SITUACAO_LOTE NOT LIKE ''B%''') "
     _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SDD") + " SDD "
     _oSQL:_sQuery += " 	ON SDD.D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " 		AND SDD.DD_PRODUTO = ITEM_COD_ITEM_LOG "

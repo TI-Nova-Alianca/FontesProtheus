@@ -100,12 +100,12 @@ Return
 Static Function _IncluiReserva(_aDados, _x, _sNumero, _sTipo)
     Local aOperacao := {}
     Local lReservOk := .T.
-    Local cNumero   := _sNumero                             // C0_NUM
-    Local cProduto  := PADR(alltrim(_aDados[_x,1]),15,' ')  // C0_PRODUTO
-    Local cLocal    := '01'                                 // C0_LOCAL
-    Local nQuant    := _aDados[_x,4]                        // C0_QUANT
-    Local aLote     := {"",_aDados[_x,2],"",""}             // [1] -> [Numero do Lote] [2] -> [Lote de Controle] [3] -> [Localizacao] [4] -> [Numero de Serie]
-    Local nOpc      := 1                                    // 1 - Inclui, 2 - Altera, 3 - Exclui
+    Local cNumero   := _sNumero                                         // C0_NUM
+    Local cProduto  := PADR(alltrim(_aDados[_x,1]),15,' ')              // C0_PRODUTO
+    Local cLocal    := '01'                                             // C0_LOCAL
+    Local nQuant    := _aDados[_x,4]                                    // C0_QUANT
+    Local aLote     := {"", PADR(ALLTRIM(_aDados[_x,2]),10,' '),"",""}  // [1] -> [Numero do Lote] [2] -> [Lote de Controle] [3] -> [Localizacao] [4] -> [Numero de Serie]
+    Local nOpc      := 1                                                // 1 - Inclui, 2 - Altera, 3 - Exclui
    
     Private aHeader := {}
     Private aCols   := {}

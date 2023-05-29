@@ -65,7 +65,7 @@ Static Function _IncReserva(_sLinkSrv)
     _oSQL:_sQuery += "    ,QTD "
     _oSQL:_sQuery += "    ,C0_VATIPO "
     _oSQL:_sQuery += "    ,NUM_RESERVA "
-    _oSQL:_sQuery += " FROM OPENQUERY(LKSRV_FULLWMS_LOGISTICATESTE, 'SELECT * FROM V_ALIANCA_ESTOQUES WHERE NUM_RESERVA IS NOT NULL') "
+    _oSQL:_sQuery += " FROM OPENQUERY("+ _sLinkSrv +", 'SELECT * FROM V_ALIANCA_ESTOQUES WHERE NUM_RESERVA IS NOT NULL') "
     _oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SC0") 
     _oSQL:_sQuery += " 	ON D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " 		AND ITEM_COD_ITEM_LOG = C0_PRODUTO "
@@ -78,12 +78,13 @@ Static Function _IncReserva(_sLinkSrv)
     _aDados := aclone (_oSQL:Qry2Array (.F., .F.))
 
     For _x:=1 to Len(_aDados)
-        
-        _sNumero := 'R' + PADL(alltrim(str(_nNumero)), 5, '0')
-        lReservOk := _IncluiReserva(_aDados, _x, _sNumero, 'R')
+        If empty(_aDados [_x, 5]) // se nao existe o registro nas reservas protheus
+            _sNumero := 'R' + PADL(alltrim(str(_nNumero)), 5, '0')
+            lReservOk := _IncluiReserva(_aDados, _x, _sNumero, 'R')
 
-        If lReservOk
-            _nNumero += 1
+            If lReservOk
+                _nNumero += 1
+            EndIf
         EndIf
     Next
 Return
@@ -97,7 +98,7 @@ Static Function _IncluiReserva(_aDados, _x, _sNumero, _sTipo)
     Local cProduto  := PADR(alltrim(_aDados[_x,1]),15,' ')  // C0_PRODUTO
     Local cLocal    := '01'                                 // C0_LOCAL
     Local nQuant    := _aDados[_x,4]                        // C0_QUANT
-    Local aLote     := {"",_aDados[_x,2],"",""}             // [1] -> [Numero do Lote] [2] -> [Lote de Controle] [3] -> [Localizacao] [4] -> [Numero de Serie]
+    Local aLote     := {"", PADR(ALLTRIM(_aDados[_x,2]),10,' '),"",""}             // [1] -> [Numero do Lote] [2] -> [Lote de Controle] [3] -> [Localizacao] [4] -> [Numero de Serie]
     Local nOpc      := 1                                    // 1 - Inclui, 2 - Altera, 3 - Exclui
    
     Private aHeader := {}
@@ -157,7 +158,7 @@ Static Function _IncluiReserva(_aDados, _x, _sNumero, _sTipo)
     lReservOk := a430Reserv(aOperacao,cNumero,cProduto,cLocal,nQuant,aLote,aHeader,aCols)
 
     If lReservOk
-        _sMsg := "Reserva "+ cNumero +" cadastrada com Sucesso! Prod. " + cProduto + " Posição " + _aDados[_x,3] + " Reserva " + _aDados[_x,6]
+        _sMsg := "Reserva "+ cNumero +" cadastrada com Sucesso! Prod. " + cProduto + " Posição " + _aDados[_x,3] + " Reserva " + _aDados[_x,6] + " Lote " +_aDados[_x,2]
         u_log(_sMsg)
         lReservOk := .T.
 
@@ -169,7 +170,7 @@ Static Function _IncluiReserva(_aDados, _x, _sNumero, _sTipo)
         _oEvento:Grava()
 
     Else
-        _sMsg := "Problemas ao cadastrar reserva " + cNumero + " Prod. " + cProduto + " Posição " + _aDados[_x,3] + " Reserva " + _aDados[_x,6]
+        _sMsg := "Problemas ao cadastrar reserva " + cNumero + " Prod. " + cProduto + " Posição " + _aDados[_x,3] + " Reserva " + _aDados[_x,6] + " Lote " +_aDados[_x,2]
         u_log(_sMsg)
         lReservOk := .F.
 
@@ -196,7 +197,7 @@ Static Function _ExcReserva(_sLinkSrv)
     _oSQL:_sQuery += "    ,C0_LOCAL "
     _oSQL:_sQuery += "    ,C0_QUANT "
     _oSQL:_sQuery += "    ,C0_LOTECTL "
-    _oSQL:_sQuery += " FROM OPENQUERY(LKSRV_FULLWMS_LOGISTICATESTE, 'SELECT * FROM V_ALIANCA_ESTOQUES WHERE NUM_RESERVA IS NULL') "
+    _oSQL:_sQuery += " FROM OPENQUERY("+ _sLinkSrv +", 'SELECT * FROM V_ALIANCA_ESTOQUES WHERE NUM_RESERVA IS NULL') "
     _oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SC0") 
     _oSQL:_sQuery += " 	ON D_E_L_E_T_ = '' "
     _oSQL:_sQuery += " 		AND ITEM_COD_ITEM_LOG = C0_PRODUTO "
