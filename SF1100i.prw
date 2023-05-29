@@ -586,7 +586,7 @@ static function _AjSE2 ()
 			enddo
 		else
 			if type ('_aParPgSaf') == 'A'  // Variavel criada no programa VA_RUSN().
-				U_Log2 ('info', '[' + procname () + '] Ajustando historicos dos titulos de nota de compra de safra (valores e datas jah devem ter sido gerados via ponto de entrada MTCOLSE2).')
+				U_Log2 ('info', '[' + procname () + ']Ajustando historicos dos titulos de nota de compra de safra (valores e datas jah devem ter sido gerados via ponto de entrada MTCOLSE2).')
 				se2 -> (dbsetorder (6))  // E2_FILIAL+E2_FORNECE+E2_LOJA+E2_PREFIXO+E2_NUM+E2_PARCELA+E2_TIPO
 				for _nParc = 1 to len (_aParPgSaf)
 					// Localiza a parcela somando 64 ao _nParc, pois as parcelas iniciam na letra 'A'.
@@ -626,10 +626,10 @@ static function _AjSE2 ()
 					_oSQL:_sQuery +=   " AND SA2.A2_FILIAL   = '" + xfilial ("SA2") + "'"
 					_oSQL:_sQuery +=   " AND SA2.A2_COD      = '" + se2 -> e2_fornece + "'"
 					_oSQL:_sQuery +=   " AND SA2.A2_LOJA     = '" + se2 -> e2_loja + "'
-					_oSQL:Log ()
+				//	_oSQL:Log ('[' + procname () + ']')
 					_aRetFUNRU = aclone (_oSQL:Qry2Array (.f., .f.))
 					if len (_aRetFUNRU) > 0 .and. _aRetFUNRU [1, 1] >= 0
-						U_Log2 ('debug', '[' + procname () + ']Achei tit.funrural')
+				//		U_Log2 ('debug', '[' + procname () + ']Achei tit.funrural')
 
 						// Se for associado, nao quero descontar dele o FUNRURAL.
 	//					if alltrim (upper (_aRetFUNRU [1, 3])) == 'ASSOCIADO' .or. alltrim (upper (_aRetFUNRU [1, 3])) == 'EX ASSOCIADO'

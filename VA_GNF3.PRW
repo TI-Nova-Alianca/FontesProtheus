@@ -1207,7 +1207,7 @@ static function _Gera2023 ()
 		zz9 -> zz9_fornec = (_sAliasQ) -> associado
 		zz9 -> zz9_loja   = (_sAliasQ) -> loja_assoc
 		zz9 -> zz9_pre_nf = _sPreNF
-		zz9 -> zz9_tiponf = "V"  // C=Compra;V=[complemento de]Valor
+		zz9 -> zz9_tiponf = "C"  // N=Normal;C=Complemento
 		zz9 -> zz9_produt = (_sAliasQ) -> produto
 		zz9 -> zz9_grau   = (_sAliasQ) -> grau
 		zz9 -> zz9_classe = (_sAliasQ) -> clas_final
@@ -1217,6 +1217,7 @@ static function _Gera2023 ()
 		zz9 -> zz9_quant  = 0
 		zz9 -> zz9_qtOri  = (_sAliasQ) -> peso_liq  // Campo util para relatorios posteriores
 		zz9 -> zz9_vunit  = _nVCompl   // Valor total a complementar
+		zz9 -> zz9_nfcomp = iif (zz9 -> zz9_vunit <= 0, 'VLR_MENOR', '')  // Para evitar que posteriormente o programa VA_GNF2 tente gerar nota para este registro.
 		zz9 -> zz9_vunit2 = _aRetPrc [1]  // Preco unitario que foi usado para calcular o complemento
 		zz9 -> zz9_obs    = _aRetPrc [2]  // Observacoes geradas pelo prog. de calculo do preco
 		zz9 -> zz9_vunit3 = _aRetPrc [3]  // Preco unitario da tabela CONAB
@@ -1224,7 +1225,8 @@ static function _Gera2023 ()
 		zz9 -> zz9_serior = (_sAliasQ) -> serie
 		zz9 -> zz9_itemor = (_sAliasQ) -> item_nota
 		zz9 -> zz9_msgNF  = 'COMPL PRECO;' + _sMsgNF
-		zz9 -> zz9_TES    = iif (_nVCompl <= 0, '', U_TESSafra (mv_par05, (_sAliasQ) -> associado, (_sAliasQ) -> loja_assoc, 'V'))
+	//	zz9 -> zz9_TES    = iif (_nVCompl <= 0, '', U_TESSafra (mv_par05, (_sAliasQ) -> associado, (_sAliasQ) -> loja_assoc, 'V'))
+		zz9 -> zz9_TES    = U_TESSafra (mv_par05, (_sAliasQ) -> associado, (_sAliasQ) -> loja_assoc, 'V')
 		zz9 -> zz9_dco    = ''
 		if valtype (_oCarSaf) == 'O' .and. len (_oCarSaf:CCompart) > 0
 			zz9 -> zz9_ccomp  = _oCarSaf:TodasComp ()

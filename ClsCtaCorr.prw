@@ -100,6 +100,7 @@
 // 23/11/2022 - Robert - Bloquear somente mov.07 quando jah tiver corr.mon. (ver obs no local)
 // 16/12/2022 - Robert - Criados tratamentos para "fornecedores de uva" (GLPI 12501)
 // 13/03/2023 - Robert - Novos parametros FINA090.
+// 29/05/2023 - Robert - Metodos Grava() e TransFil() passam a usar controle de transacao.
 //
 
 // ------------------------------------------------------------------------------------
@@ -1117,15 +1118,17 @@ return _lRet
 
 // --------------------------------------------------------------------------
 // Grava novo registro.
-METHOD Grava (_lSZIGrav, _lMemoGrav) Class ClsCtaCorr
+METHOD Grava (_lSZIGrav, _lMemoGrav, _lAtuSldAs) Class ClsCtaCorr
 	local _lContinua := .T.
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _oAssoc    := NIL
 	local _dEmiSE2   := ctod ('')
 
-	_lSZIGrav  := iif (_lSZIGrav  == NIL, .F., _lSZIGrav)  // Indica registro jah gravado no SZI. Falta soh complementar dados.
+	_lSZIGrav  := iif (_lSZIGrav  == NIL, .F., _lSZIGrav)   // Indica registro jah gravado no SZI. Falta soh complementar dados.
 	_lMemoGrav := iif (_lMemoGrav == NIL, .F., _lMemoGrav)  // Indica memo jah gravado.
+	_lAtuSldAs := iif (_lAtuSldAs == NIL, .T., _lAtuSldAs)  // Indica se deve atualizar saldo do associado pos a gravacao.
 
+//	U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']_lAtuSldAs = ' + cvaltochar (_lAtuSldAs))
 	// Deve sempre se referir a um associado (ou futuro associado, em caso de movimento 'associar'). Deve pelo menos existir no SA2.
 	_oAssoc := ClsAssoc():New (::Assoc, ::Loja)
 	if valtype (_oAssoc) != "O"
@@ -1142,6 +1145,7 @@ METHOD Grava (_lSZIGrav, _lMemoGrav) Class ClsCtaCorr
 	endif
 
 	if _lContinua
+		begin transaction
 		if ! _lSZIGrav
 			_cFilial := szi -> zi_filial
 			_dDtAtu := szi -> zi_data
@@ -1181,7 +1185,7 @@ METHOD Grava (_lSZIGrav, _lMemoGrav) Class ClsCtaCorr
 			endif
 
 			// Gera demais dados.
-			U_Log2 ('debug', 'OQueGera: ' = ::OQueGera ())
+		//	U_Log2 ('debug', 'OQueGera: ' + ::OQueGera ())
 			if ! empty (::OQueGera ())
 				do case
 				case ::OQueGera () $ "DP/NDF/PA/PR"
@@ -1237,38 +1241,44 @@ METHOD Grava (_lSZIGrav, _lMemoGrav) Class ClsCtaCorr
 				endcase
 			endif
 		endif
-		CursorArrow ()
-	endif
 
-	// Gera movimentos adicionais.
-	if _lContinua .and. ::TM == '08'
-		_lContinua = ::Associar ()
-	endif
-	if _lContinua .and. ::TM == '09'
-		_lContinua = ::Desassoc ()
-	endif
-
-	// Se o registro jah foi gavado no SZI mas houve problemas nas validacoes
-	// ou na geracao de sequencial, por exemplo, o mesmo deve ser excluido.
-	if ! _lContinua .and. _lSZIGrav
-		::UltMsg += "Erro na gravacao do arquivo SZI. Gravacao cancelada."
-		if _lMemoGrav .and. ! empty (szi -> zi_CodMemo)
-			u_log ("Deletando memo")
-			msmm (szi -> zi_CodMemo,,,, 2,,, "SZI", "ZI_CODMEMO")
+		// Gera movimentos adicionais.
+		if _lContinua .and. ::TM == '08'
+			_lContinua = ::Associar ()
 		endif
-//		u_log ("Deletando registro no SZI")
-		U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + '] Deletando registro no SZI devido a algum erro nas gravacoes adicionais.')
-		
-		reclock ("SZI", .F.)
-		szi -> (dbdelete ())
-		msunlock ()
+		if _lContinua .and. ::TM == '09'
+			_lContinua = ::Desassoc ()
+		endif
 
-	endif
+		// Se o registro jah foi gavado no SZI mas houve problemas nas validacoes
+		// ou na geracao de sequencial, por exemplo, o mesmo deve ser excluido.
+		if ! _lContinua .and. _lSZIGrav
+			::UltMsg += "Erro na gravacao do arquivo SZI. Gravacao cancelada."
+			if _lMemoGrav .and. ! empty (szi -> zi_CodMemo)
+				u_log ("Deletando memo")
+				msmm (szi -> zi_CodMemo,,,, 2,,, "SZI", "ZI_CODMEMO")
+			endif
+	//		u_log ("Deletando registro no SZI")
+			U_Log2 ('aviso', '[' + GetClassName (::Self) + '.' + procname () + '] Deletando registro no SZI devido a algum erro nas gravacoes adicionais.')
+			
+			reclock ("SZI", .F.)
+			szi -> (dbdelete ())
+			msunlock ()
 
-	// Atualiza saldo do Associado
-	if _lContinua
-		//U_Log2 ('debug', 'vou chamar AtuSldAsso')
-		::AtuSldAsso ()
+		endif
+
+		// Atualiza saldo do Associado. Opcionalmente, a rotina chamadora pode nao
+		// querer que o saldo 'geral' do associado seja atualizado neste momento.
+		// Isso eh util, por exemplo, na geracao dos movtos. referentes a parcelas
+		// de pagamento de notas de safra (geralmente 11 ou 12 parcelas) em que eh
+		// suficiente atualizar o saldo geral do associado apenas depois de gravar
+		// a ultima parcela.
+		if _lContinua .and. _lAtuSldAs
+			//U_Log2 ('debug', 'vou chamar AtuSldAsso')
+			::AtuSldAsso ()
+		endif
+
+		end transaction
 	endif
 
 	if ! _lContinua .and. ! empty (::UltMsg)
@@ -2275,111 +2285,114 @@ METHOD TransFil (_dDtBxTran) Class ClsCtaCorr
 			_aTit [4] = _aBanco [1, 3]
 		endif
 	endif
+
+	// Como preciso atualizar mais coisas depois da baixa, vou usar uma transacao.
+	if _lContinua
+		begin transaction
+
+		// A transferencia de saldo entre filiais eh feita atraves de conta financeira transitoria. Para isso,
+		// o saldo deve ser baixado na filial de origem atraves de conta transitoria e deve ser feita inclusao
+		// de novo movimento na filial destino.
+		if _lContinua
+			_aTit [5] = ''
+			_aTit [6] = ''
+			_aTit [7] = ''
+			_aTit [8] = iif (empty (_dDtBxTran), dDataBase, _dDtBxTran)
+			_aTit [9] = 1
+			_aTit [10] = ''
+			_aTit [11] = 'z'
+			_aTit [12] = se2 -> e2_vencto
+			_aTit [13] = se2 -> e2_vencrea
+			_aTit [14] = ''
+			_aTit [15] = ''
+			_aTit [16] = ''
+			_aTit [17] = ''
+			_aTit [18] = .f.
+			_aTit [19] = {}
+		//	U_Log2 ('debug', _aTit)
+
+			// Ajusta parametros de contabilizacao para NAO, pois a rotina automatica nao aceita.
+			SetMVValue ("FIN090", "MV_PAR01", 2)  // Mostra lctos contabeis [S/N]
+			SetMVValue ("FIN090", "MV_PAR02", 2)  // Contabiliza online [S/N]
+			SetMVValue ("FIN090", "MV_PAR07", 2)  // Seleciona filiais [S/N]
+			SetMVValue ("FIN090", "MV_PAR08", 1)  // Contabiliza na filial atual [S/N]
+			SetMVValue ("FIN090", "MV_PAR09", 2)  // Permite usar banco do bordero [S/N]
+			pergunte ('FIN090    ', .f.)
+
+			lMsErroAuto = .F.
+			MSExecAuto({|x,y| Fina090(x,y)},3,_aTit)
+			If lMsErroAuto
+				_lContinua = .F.
+				::UltMsg += u_LeErro (memoread (NomeAutoLog ()))
+				U_Log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + ']' + ::UltMsg)
+				MostraErro()
+			endif
+		endif
+
+		// Se fez a baixa, ajusta historico do movimento bancario.
+		if _lContinua
+			_sHistSE5 = 'TR.SLD.CC.P/FIL.' + ::FilDest + ' REF.' + ::Histor
+
+			// Arquivo SE5 vem, algumas vezes, desposicionado. Robert, 20/12/2016.
+			se2 -> (dbgoto (_aTit [1, 1]))
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += "SELECT MAX (R_E_C_N_O_)"
+			_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE5") + " SE5 "
+			_oSQL:_sQuery += " WHERE SE5.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND E5_FILIAL      = '" + se2 -> e2_filial  + "'"
+			_oSQL:_sQuery +=   " AND SE5.E5_CLIFOR  = '" + se2 -> e2_fornece + "'"
+			_oSQL:_sQuery +=   " AND SE5.E5_LOJA    = '" + se2 -> e2_loja    + "'"
+			_oSQL:_sQuery +=   " AND SE5.E5_PREFIXO = '" + se2 -> e2_prefixo + "'"
+			_oSQL:_sQuery +=   " AND SE5.E5_NUMERO  = '" + se2 -> e2_num     + "'"
+			_oSQL:_sQuery +=   " AND SE5.E5_PARCELA = '" + se2 -> e2_parcela + "'"
+			_oSQL:_sQuery +=   " AND SE5.E5_TIPO    = '" + se2 -> e2_tipo    + "'"
+			_oSQL:_sQuery +=   " AND SE5.E5_VACHVEX = ''"
+		//	_oSQL:Log ()
+			_nRegSE5 = _oSQL:RetQry ()
+		//	u_log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + '] recno se5 para atualizar: ' + cvaltochar (_nRegSE5))
+			if _nRegSE5 > 0
+				se5 -> (dbgoto (_nRegSE5))
+				reclock ('SE5', .F.)
+				se5 -> e5_vachvex = se2 -> e2_vachvex
+				se5 -> e5_histor  = left (_sHistSE5, tamsx3 ("E5_HISTOR")[1])
+				msunlock ()
+		//		u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + '] Regravei historico do SE5 para: ' + se5 -> e5_histor)
+			else
+				u_log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + '] Nao encontrei SE5 para atualizar historico e chave externa.')
+				_lContinua = .F.
+			endif
 			
-	// A transferencia de saldo entre filiais eh feita atraves de conta financeira transitoria. Para isso,
-	// o saldo deve ser baixado na filial de origem atraves de conta transitoria e deve ser feita inclusao
-	// de novo movimento na filial destino.
-	if _lContinua
-		_aTit [5] = ''
-		_aTit [6] = ''
-		_aTit [7] = ''
-		_aTit [8] = iif (empty (_dDtBxTran), dDataBase, _dDtBxTran)
-		_aTit [9] = 1
-		_aTit [10] = ''
-		_aTit [11] = 'z'
-		_aTit [12] = se2 -> e2_vencto
-		_aTit [13] = se2 -> e2_vencrea
-		_aTit [14] = ''
-		_aTit [15] = ''
-		_aTit [16] = ''
-		_aTit [17] = ''
-		_aTit [18] = .f.
-		_aTit [19] = {}
-	//	U_Log2 ('debug', _aTit)
-
-		// Ajusta parametros de contabilizacao para NAO, pois a rotina automatica nao aceita.
-		SetMVValue ("FIN090", "MV_PAR01", 2)  // Mostra lctos contabeis [S/N]
-		SetMVValue ("FIN090", "MV_PAR02", 2)  // Contabiliza online [S/N]
-		SetMVValue ("FIN090", "MV_PAR07", 2)  // Seleciona filiais [S/N]
-		SetMVValue ("FIN090", "MV_PAR08", 1)  // Contabiliza na filial atual [S/N]
-		SetMVValue ("FIN090", "MV_PAR09", 2)  // Permite usar banco do bordero [S/N]
-		pergunte ('FIN090    ', .f.)
-
-		lMsErroAuto = .F.
-		MSExecAuto({|x,y| Fina090(x,y)},3,_aTit)
-		If lMsErroAuto
-			_lContinua = .F.
-			::UltMsg += u_LeErro (memoread (NomeAutoLog ()))
-			U_Log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + ']' + ::UltMsg)
-			MostraErro()
-	//	else
-	//		U_Log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']FINA090 retornou OK')
+			if fk2 -> fk2_valor == _nSaldo .and. fk2 -> fk2_motbx == 'NOR'  // Para ter mais certeza de que estah posicionado no registro correto.
+				reclock ('FK2', .F.)
+				fk2 -> fk2_histor = left (alltrim (fk2 -> fk2_histor) + ' TR.CC.FIL.' + ::FilDest + ' ' + ::Histor, tamsx3 ("FK2_HISTOR")[1])
+				msunlock ()
+		//		u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + '] Regravei historico do FK2 para: ' + fk2 -> fk2_histor)
+			else
+				U_Log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + '] Registro na tabela FK2 nao eh o que eu esperava!')
+			endif
 		endif
-	endif
 
-	// Se fez a baixa, ajusta historico do movimento bancario.
-	if _lContinua
-		_sHistSE5 = 'TR.SLD.CC.P/FIL.' + ::FilDest + ' REF.' + ::Histor
-
-		// Arquivo SE5 vem, algumas vezes, desposicionado. Robert, 20/12/2016.
-		se2 -> (dbgoto (_aTit [1, 1]))
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := ""
-		_oSQL:_sQuery += "SELECT MAX (R_E_C_N_O_)"
-		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SE5") + " SE5 "
-		_oSQL:_sQuery += " WHERE SE5.D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=   " AND E5_FILIAL      = '" + se2 -> e2_filial  + "'"
-		_oSQL:_sQuery +=   " AND SE5.E5_CLIFOR  = '" + se2 -> e2_fornece + "'"
-		_oSQL:_sQuery +=   " AND SE5.E5_LOJA    = '" + se2 -> e2_loja    + "'"
-		_oSQL:_sQuery +=   " AND SE5.E5_PREFIXO = '" + se2 -> e2_prefixo + "'"
-		_oSQL:_sQuery +=   " AND SE5.E5_NUMERO  = '" + se2 -> e2_num     + "'"
-		_oSQL:_sQuery +=   " AND SE5.E5_PARCELA = '" + se2 -> e2_parcela + "'"
-		_oSQL:_sQuery +=   " AND SE5.E5_TIPO    = '" + se2 -> e2_tipo    + "'"
-		_oSQL:_sQuery +=   " AND SE5.E5_VACHVEX = ''"
-	//	_oSQL:Log ()
-		_nRegSE5 = _oSQL:RetQry ()
-	//	u_log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + '] recno se5 para atualizar: ' + cvaltochar (_nRegSE5))
-		if _nRegSE5 > 0
-			se5 -> (dbgoto (_nRegSE5))
-			reclock ('SE5', .F.)
-			se5 -> e5_vachvex = se2 -> e2_vachvex
-			se5 -> e5_histor  = left (_sHistSE5, tamsx3 ("E5_HISTOR")[1])
-			msunlock ()
-	//		u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + '] Regravei historico do SE5 para: ' + se5 -> e5_histor)
-		else
-			u_log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + '] Nao encontrei SE5 para atualizar historico e chave externa.')
-			_lContinua = .F.
+		// Se fez a baixa na filial de origem, recalcula saldo do lcto.
+		if _lContinua
+			::AtuSaldo ()
 		endif
-		
-		if fk2 -> fk2_valor == _nSaldo .and. fk2 -> fk2_motbx == 'NOR'  // Para ter mais certeza de que estah posicionado no registro correto.
-			reclock ('FK2', .F.)
-			fk2 -> fk2_histor = left (alltrim (fk2 -> fk2_histor) + ' TR.CC.FIL.' + ::FilDest + ' ' + ::Histor, tamsx3 ("FK2_HISTOR")[1])
-			msunlock ()
-	//		u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + '] Regravei historico do FK2 para: ' + fk2 -> fk2_histor)
-		else
-			U_Log2 ('erro', '[' + GetClassName (::Self) + '.' + procname () + '] Registro na tabela FK2 nao eh o que eu esperava!')
+
+		// Se fez a baixa na filial de origem, agenda rotina batch para a inclusao na filial de destino.
+		if _lContinua
+			_oBatch := ClsBatch():new ()
+			_oBatch:Dados      = 'Transf.sld.SZI fil.' + ::Filial + ' p/' + ::FilDest + '-Assoc.' + ::Assoc + '/' + ::Loja
+			_oBatch:EmpDes     = cEmpAnt
+			_oBatch:FilDes     = ::FilDest
+			_oBatch:DataBase   = iif (empty (_dDtBxTran), dDataBase, _dDtBxTran)
+			_oBatch:Modulo     = 6  // Campo E2_VACHVEX nao eh gravado em alguns modulos... vai saber...
+			_oBatch:Comando    = "U_BatTrSZI('" + ::Assoc + "','" + ::Loja + "','" + ::SeqSZI + "','" + cEmpAnt + "','" + ::Filial + "','" + ::FilDest + "','" + ::TM + "','" + dtos (iif (empty (_dDtBxTran), dDataBase, _dDtBxTran)) + "'," + cvaltochar (_nSaldo) + ")"
+			_oBatch:Prioridade = 8
+			_oBatch:Grava ()
 		endif
-	endif
 
-	// Se fez a baixa na filial de origem, recalcula saldo do lcto.
-	if _lContinua
-		::AtuSaldo ()
+		end transaction
 	endif
-
-	// Se fez a baixa na filial de origem, agenda rotina batch para a inclusao na filial de destino.
-	if _lContinua
-		_oBatch := ClsBatch():new ()
-		_oBatch:Dados      = 'Transf.sld.SZI fil.' + ::Filial + ' p/' + ::FilDest + '-Assoc.' + ::Assoc + '/' + ::Loja
-		_oBatch:EmpDes     = cEmpAnt
-		_oBatch:FilDes     = ::FilDest
-		_oBatch:DataBase   = iif (empty (_dDtBxTran), dDataBase, _dDtBxTran)
-		_oBatch:Modulo     = 6  // Campo E2_VACHVEX nao eh gravado em alguns modulos... vai saber...
-		_oBatch:Comando    = "U_BatTrSZI('" + ::Assoc + "','" + ::Loja + "','" + ::SeqSZI + "','" + cEmpAnt + "','" + ::Filial + "','" + ::FilDest + "','" + ::TM + "','" + dtos (iif (empty (_dDtBxTran), dDataBase, _dDtBxTran)) + "'," + cvaltochar (_nSaldo) + ")"
-		_oBatch:Prioridade = 8
-		_oBatch:Grava ()
-	endif
-
-//	u_logFim (GetClassName (::Self) + '.' + procname ())
 return _lContinua
 
 

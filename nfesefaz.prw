@@ -150,7 +150,7 @@ static lSpedCodOnu := nil
 // 09/06/2022 - Sandra  - Ajustes na versao do pacote GLPI 11842 (Nota Técnica 2021.004_V_1.10) - Compilado por Robert em 09/06/22 21:45h
 // 11/07/2022 - Robert  - Quando houver "informacoes adicionais do produto", concatena-as com a descricao (GLPI 12334)
 // 13/10/2022 - Robert  - Pequena melhoria nos logs quando ambiente de teste.
-//
+// 25/05/2023 - Robert  - Obriga uso da tabela CDD para NF referenciadas, quando complemento de safra (GLPI 13532)
 
 // --------------------------------------------------------------------------
 User Function XmlNfeSef(cTipo,cSerie,cNota,cClieFor,cLoja,cNotaOri,cSerieOri)
@@ -5500,6 +5500,14 @@ D1_NUMLOTE,D1_CUSTO,D1_ORIGLAN,D1_DESCICM,D1_II,D1_FORMUL,D1_VALPS3,D1_ORIGLAN,D
 								
 
 								If !Empty(CDD->CDD_CHVNFE)
+
+									// Alianca: Inicio tratamento CDD: Nao vou adicionar a chave novamente, se ja estiver na array, pois a SEFAZ vai recusar.
+									if ascan (aNfVCdd, {|_aVal| _aVal [7] == CDD->CDD_CHVNFE}) > 0
+										CDD->(dbSkip())
+										loop
+									endif
+									// Alianca: Fim teste CDD
+
 									AADD(aNfVCdd,{SF1->F1_EMISSAO,SF1->F1_SERIE,SF1->F1_DOC,SM0->M0_CGC,SM0->M0_ESTCOB,SF1->F1_ESPECIE,CDD->CDD_CHVNFE,0,"","",0,"",""})
 								EndIf
 								CDD->(dbSkip())
@@ -5756,6 +5764,15 @@ D1_NUMLOTE,D1_CUSTO,D1_ORIGLAN,D1_DESCICM,D1_II,D1_FORMUL,D1_VALPS3,D1_ORIGLAN,D
 				if (AllTrim((cAliasSD1)->D1_CF) == "1603" .or. AllTrim((cAliasSD1)->D1_CF) == "2603")  .and. cTPNota == "3" .and. len(aNfVCdd) > 0 
 					lChvCdd := .T. //variavel de controle da CDD
 				endif
+
+				// Alianca: Inicio bloco uso CDD: transmissao notas complemento preco safra
+			//	U_Log2 ('debug', '[' + procname () + ']lChvCdd antes: ' + cvaltochar (lChvCdd))
+				if !lChvCdd .and. sf1 -> f1_vasafra != '' .and. ! empty ((cAliasSD1)->d1_nfori) .and. (cAliasSD1)->d1_tipo = 'C'
+					U_Log2 ('aviso', '[' + procname () + ']Alterando variavel lChvCdd para .T. com objetivo de usar lista de NF referenciadas a partir da tabela CDD (notas de complemento de safra)')
+					lChvCdd := .T. //variavel de controle da CDD
+				endif
+			//	U_Log2 ('debug', '[' + procname () + ']lChvCdd depois: ' + cvaltochar (lChvCdd))
+				// Alianca: Fim bloco uso CDD
 				
 				If((cAliasSD1)->D1_TIPO <> "D") .Or. (Alltrim((cAliasSD1)->D1_CF) $ cMVCFOPREM)
 					lEIPIOutro := .F.
@@ -6992,6 +7009,7 @@ EndIf
 
 If(!Empty(aNfVinc)	.And. Empty(aExp[1])) .or.(!Empty(aNfVinc).And. !Empty(aExp[1]) .and. lEECFAT)
 	if !lChvCdd  //preenchimento da tag usando a tabela CDD
+		U_Log2 ('debug', '[' + procname () + ']nao vai usar CDD')
 		cString += '<NFRef>'
 		For nX := 1 To Len(aNfVinc)
 			lNfVincRur := aScan(aNfVincRur,{|aX| aX[4]==aNfVinc[nX][6] .And. aX[2]==aNfVinc[nX][2] .And. aX[3]==aNfVinc[nX][3] .And. aX[5]==aNfVinc[nX][4]}) == 0
@@ -7044,6 +7062,7 @@ If(!Empty(aNfVinc)	.And. Empty(aExp[1])) .or.(!Empty(aNfVinc).And. !Empty(aExp[1
 		Next nX                  
 		cString += '</NFRef>'
 	else
+		U_Log2 ('debug', '[' + procname () + ']Vai usar CDD')
 		cString += '<NFRef>'
 		For nX := 1 To Len(aNfVCdd)
 			cString += '<refNFe>'+aNfVCdd[Nx][7]+'</refNFe>'   		

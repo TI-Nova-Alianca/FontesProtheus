@@ -735,6 +735,18 @@ User Function va_rusN (_lSimulNF)
 				u_help ("Nao foi possivel ler o arquivo de log de erros.",, .t.)
 			endif
 		else
+
+			u_help ("Apos atualizacao de versao para 22.10 em maio/23 o SF1 deixou de vir posicionado.",, .t.)
+			return
+			/* Ver se o trecho abaixo ajuda (peguei do VA_GNF2)...
+			u_help // Apos atualizacao de versao para 22.10 em maio/23 o SF1 deixou de vir posicionado.
+			sf1 -> (dbsetorder (1))  // F1_FILIAL, F1_DOC, F1_SERIE, F1_FORNECE, F1_LOJA, F1_TIPO, R_E_C_N_O_, D_E_L_E_T_
+			if ! sf1 -> (dbseek (xfilial ("SF1") + _sNF + _sSerie + _sFornece + _sLoja + _sTipoNota, .f.))
+				u_help ("Parece que a nota '" + _sNF + "' nao foi gerada para o fornecedor '" + _sFornece + "'",, .t.)
+				_lContinua = .F.
+			endif
+			*/
+
 			u_log2 ('info', '[' + procname () + ']Carga ' + sze -> ze_carga + ' gerou NF ' + sf1 -> f1_doc)
 
 			// Grava dados adicionais na nota.

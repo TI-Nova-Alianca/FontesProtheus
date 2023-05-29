@@ -17,8 +17,9 @@
 // Compilacao por linha de comando  https://tdn.totvs.com/pages/viewpage.action?pageId=528461210
 
 // Campos a serem eliminados quando der no jeito:
-// ZZU_EMP
+// ZZU_EMP, d1_fim, f1_fim (?)
 // Campos de DAP no SA2 (conferir os programas antes)
+
 
 #include "protheus.ch"
 #include "rwmake.ch"
@@ -35,7 +36,7 @@ user function robert ()
 //	u_perfmon ('I', 'Prep_env_' + cValToChar (GetServerPort ()))
 
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '01' modulo 'FIN'
+		prepare environment empresa '01' filial '03' modulo 'FIN'
 		private cModulo   := 'FIN'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -118,19 +119,17 @@ user function robert ()
 		// _Sisdevin ()
 		// _ST_MG ()
 		// _SZI ()
-		_TbUva ()
+		// _TbUva ()
 		// _telnet ()
 		// _TrEstq ()
 		// _VACCR2 ()
 		// _VA_XLS ()
 		// _verif ()
-
 		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
 return
-
 
 // --------------------------------------------------------------------------
 static function _VACCR2 ()
@@ -181,12 +180,12 @@ return
 static function _AjLoteEnd ()
 	// Deixo desabilitado pra me obrigar a revisar sempre --->
 	local _sFilial   := '01'
-	local _sDocto    := 'GLPI13592'
-	local _sProduto  := '3419'
-	local _sAlmox    := '02'
-	local _nQuant    := 8  // qt positiva=gerar entrada
+	local _sDocto    := 'GLPI13621'
+	local _sProduto  := '2739'
+	local _sAlmox    := '07'
+	local _nQuant    := 0.0003  // qt positiva=gerar entrada
 	local _sEndereco := ''
-	local _sLote     := '2220503   '
+	local _sLote     := '09239801  '
 	local _oSQL      := NIL
 
 	if _sFilial != cFilAnt
@@ -1043,6 +1042,7 @@ return
 static function _CplSaf23 ()
 	local _sSafraCpl := '2023'
 	U_MudaLog ('CplSaf23.log')
+/*
 	cPerg = "VAGNF3"
 	// assoc 000156 a 000196 --> ha cargas compartilhadas em 2023
 	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
@@ -1061,6 +1061,7 @@ static function _CplSaf23 ()
 	U_GravaSX1 (cPerg, '14', '')   // Filial inicial
 	U_GravaSX1 (cPerg, '15', 'z')   // Filial final
 	U_VA_GNF3 (.T.)
+*/
 /*
 	dbselectarea ("ZZ9")
 	set filter to zz9_safra = '2023' .and. zz9_parcel = 'K'
@@ -1120,6 +1121,25 @@ static function _CplSaf23 ()
 		zz9 -> (dbskip ())
 	enddo
 	*/
+//	_aParPgSaf := aclone (U_VA_RusPP (_sSafraCpl, 'C', 300, 0, dDataBase))
+//	U_Log2 ('debug', _aParPgSaf)
+
+	Private cPerg   := "VAGNF2"
+	U_GravaSX1 (cPerg, '01', '005567')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', '005567')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', _sSafraCpl) // Safra referencia
+	U_GravaSX1 (cPerg, '06', 'M')    // Parcelas sep.barras (bco=todas)
+	U_GravaSX1 (cPerg, '07', 'A')    // Grupo pagto
+	U_GravaSX1 (cPerg, '08', 3)      // Geracao por DCO: {"Com DCO", "Sem DCO", "Todos"}
+	U_GravaSX1 (cPerg, '09', 3)      // fina/comum: {"Comum", "Fina", "Todas"}
+	U_GravaSX1 (cPerg, '10', 2)      // tipo NF: {"Normais", "Compl.preco"}
+	U_GravaSX1 (cPerg, '11', '801')     // Cond pagto
+	U_GravaSX1 (cPerg, '12', '')     // Apenas estas variedades
+	U_GravaSX1 (cPerg, '13', '')     // Exceto estas variedades
+	U_GravaSX1 (cPerg, '14', 1)      // 1=Assoc+ex assoc;2=Terceiros;3=Todos
+	u_va_gnf2 (.t.)
 return
 
 
@@ -1549,15 +1569,15 @@ return
 
 // --------------------------------------------------------------------------
 static function _BatSafr ()
-// ok 2023	u_batsafr ('CargasSemContranota')  // cargas sem contranota
-// ok 2023	u_batsafr ('ContranotasSemCarga')  // contranotas sem carga
-// ok 2023	u_batsafr ('ConferirFrete')  // conferencia fretes
+//	u_batsafr ('CargasSemContranota')  // cargas sem contranota
+//	u_batsafr ('ContranotasSemCarga')  // contranotas sem carga
+//	u_batsafr ('ConferirFrete')  // conferencia fretes
 //	u_batsafr ('ConferirParcelamento')  // conferencia geracao das parcelas financeiro
 //	u_batsafr ('MailAcompanhamento')  // e-mail diario de acompanhamento de safra
 //	u_batsafr ('GerarSZI')  // gera SZI a partir das parcelas
 //	u_batsafr ('ConferirSZI')  // conferencia conta corrente (SZI) x titulos referentes as notas de compra
-	u_batsafr ('TransfTitNaoAssocParaMatriz')  // Transfere (das filiais para a matriz) os titulos de nao associados.
-//	u_batsafr ('TransfSZIParaMatriz')  // Transfere SZI para a matriz (normalmente ao gerar o SZI jah faz isso, mas para garantir...)
+//	u_batsafr ('TransfTitNaoAssocParaMatriz')  // Transfere (das filiais para a matriz) os titulos de nao associados.
+	u_batsafr ('TransfSZIParaMatriz')  // Transfere SZI para a matriz (normalmente ao gerar o SZI jah faz isso, mas para garantir...)
 return
 
 // --------------------------------------------------------------------------
@@ -2055,7 +2075,8 @@ static function _SimSafr23 ()
 				u_log2 ('info', '[' + cvaltochar (_nRecAtu) + ' de ' + cvaltochar (_nRecCount) + ']Produto ' + alltrim (zz9 -> zz9_produt) + ' gr.' + zz9 -> zz9_grau + ' ' + _sClasFina)
 			endif
 			reclock ("ZZ9", .F.)
-			zz9 -> zz9_vunit = U_PrcUva23 (zz9 -> zz9_filial, zz9 -> zz9_produt, val (zz9 -> zz9_grau), _sClasFina, zz9 -> zz9_conduc, .F., .F.) [2]
+			zz9 -> zz9_vunit  = U_PrcUva23 (zz9 -> zz9_filial, zz9 -> zz9_produt, val (zz9 -> zz9_grau), _sClasFina, zz9 -> zz9_conduc, .F., .F.) [2]
+			zz9 -> zz9_nfcomp = iif (zz9 -> zz9_vunit <= 0, 'VLR_MENOR', '')  // Para evitar que posteriormente o programa VA_GNF2 tente gerar nota para este registro.
 			msunlock ()
 		endif
 		zz9 -> (dbskip ())
@@ -3240,25 +3261,6 @@ return
 		endif
 		sa3 -> (dbskip ())
 	enddo
-return
-*/
-/*
-	_sArqLog := 'VA_GNF2_' + alltrim (cusername) + '_' + dtos (date ()) + ".log"
-	Private cPerg   := "VAGNF2"
-	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
-	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
-	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
-	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
-	U_GravaSX1 (cPerg, '05', '2022') // Safra referencia
-	U_GravaSX1 (cPerg, '06', 'A')    // Parcelas sep.barras (bco=todas)
-	U_GravaSX1 (cPerg, '07', 'A')    // Grupo pagto
-	U_GravaSX1 (cPerg, '08', 3)      // Geracao por DCO: {"Com DCO", "Sem DCO", "Todos"}
-	U_GravaSX1 (cPerg, '09', 3)      // fina/comum: {"Comum", "Fina", "Todas"}
-	U_GravaSX1 (cPerg, '10', 2)      // tipo NF: {"Normais", "Compl.preco"}
-	U_GravaSX1 (cPerg, '11', '801')     // Cond pagto
-	U_GravaSX1 (cPerg, '12', '')     // Apenas estas variedades
-	U_GravaSX1 (cPerg, '13', '')     // Exceto estas variedades
-	u_va_gnf2 (.t.)
 return
 */
 /*
