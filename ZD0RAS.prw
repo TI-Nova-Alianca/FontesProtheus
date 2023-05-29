@@ -16,28 +16,33 @@
 #include "protheus.ch"
 #include "tbiconn.ch"
 
-User Function ZD0RAS(dDataIni, dDataFin)
+User Function ZD0RAS(_sTipo, _sFilial, _sTID)
+    Local   _aZD0 := {}
     Private cPerg := "ZD0RAS"
 	
     u_logIni()
     
-    _ValidPerg()
-    If Pergunte(cPerg,.T.)  
-        dDataIni := mv_par01
-        dDataFin := mv_par02
-
-        MsAguarde({|| _GeraTitulos(dDataIni, dDataFin)}, "Aguarde...", "Gerando Títulos RA's...")
+    If _sTipo == 'L' // Registros em lote
+        _ValidPerg()
+        If Pergunte(cPerg,.T.)  
+            _aZD0 := _RegistrosLote(mv_par01, mv_par02)
+        EndIf
+    else            // registro individual
+        _aZD0 := _RegistroUnico(_sFilial, _sTID)
     EndIf
+
+    If Len(_aZD0) > 0
+        MsAguarde({|| _GeraTitulos(_aZD0)}, "Aguarde...", "Gerando Títulos RA's...")
+    else
+        u_help("Sem registros para executar!")
+    EndIf
+    
 Return
 //
 // -----------------------------------------------------------------------------------
-// Gera titulos RA's para compensação
-Static Function _GeraTitulos(dDataIni, dDataFin)
-    Local _aZD0     := {}
-    Local _aAutoSE1 := {}
-    Local _x        := 0
-    Local _y        := 0
-    Local _i        := 0
+// Dados em Lote
+Static Function _RegistrosLote(dDataIni, dDataFin)
+    Local _aDados := {}
 
     _oSQL:= ClsSQL ():New ()
     _oSQL:_sQuery := ""
@@ -72,7 +77,61 @@ Static Function _GeraTitulos(dDataIni, dDataFin)
     _oSQL:_sQuery += "	AND ZD0_DTAPGT BETWEEN '" + dtos(dDataIni) + "' AND '" + dtos(dDataFin) + "' "
     _oSQL:_sQuery += "	AND ZD0_STABAI IN ('A','E')"
     _oSQL:_sQuery += "	ORDER BY FILIAL, VALOR_PARCELA  DESC "
-    _aZD0 := _oSQL:Qry2Array ()
+    u_log(_oSQL:_sQuery)
+    _aDados := _oSQL:Qry2Array()
+
+Return _aDados
+//
+// -----------------------------------------------------------------------------------
+// Dados do registro individual
+Static Function _RegistroUnico(_sFilial, _sTID)
+    Local _aDados := {}
+
+    _oSQL:= ClsSQL ():New ()
+    _oSQL:_sQuery := ""
+    _oSQL:_sQuery += "	SELECT "
+    _oSQL:_sQuery += "		ZD0_FILIAL AS FILIAL "          // 1
+    _oSQL:_sQuery += "	   ,ZD0_TID AS ID_TRANSACAO "       // 2
+    _oSQL:_sQuery += "	   ,ZD0_RID AS ID_RECEBIVEL "       // 3
+    _oSQL:_sQuery += "	   ,ZD0_DTAPGT AS DATA_PGTO "       // 4
+    _oSQL:_sQuery += "	   ,ZD0_PARCEL AS PARCELA "         // 5
+    _oSQL:_sQuery += "	   ,ZD0_VLRPAR AS VALOR_PARCELA "   // 6
+    _oSQL:_sQuery += "	   ,ZD0_TAXTOT AS TAXAS "           // 7
+    _oSQL:_sQuery += "     ,ZD0_VLRLIQ AS VALOR_LIQ "       // 8
+    _oSQL:_sQuery += "	   ,ZD0_PGTMET AS METODO_PGTO "     // 9
+    _oSQL:_sQuery += "	   ,ZD0_PGTTIP AS TIPO "            // 10
+    _oSQL:_sQuery += "	   ,ZD0_CLIENT AS CLIENTE "         // 11
+    _oSQL:_sQuery += "	   ,ZD0_LOJA AS LOJA "              // 12
+    _oSQL:_sQuery += "	   ,ZD0_STABAI AS STATUS "          // 13
+    _oSQL:_sQuery += "     ,CASE "
+	_oSQL:_sQuery += "	        WHEN SE1.E1_SALDO = 0 THEN 'B' "
+	_oSQL:_sQuery += "	    ELSE 'A' "
+	_oSQL:_sQuery += "  END STATUS_BAIXA "                  // 14
+    _oSQL:_sQuery += "	FROM " + RetSQLName ("ZD0") + " ZD0 "
+    _oSQL:_sQuery += "	LEFT JOIN " + RetSQLName ("SE1") + " SE1 "
+	_oSQL:_sQuery += "	ON SE1.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += "		AND SE1.E1_FILIAL  = ZD0.ZD0_FILIAL "
+	_oSQL:_sQuery += "		AND SE1.E1_VAIDT   = ZD0.ZD0_TID "
+	_oSQL:_sQuery += "		AND SE1.E1_PARCELA = ZD0.ZD0_PARCEL "
+	_oSQL:_sQuery += "		AND SE1.E1_TIPO    <> 'RA' "
+	_oSQL:_sQuery += "		AND SE1.E1_PREFIXO <> 'PGM' "
+    _oSQL:_sQuery += "	WHERE ZD0.D_E_L_E_T_ = '' "
+    _oSQL:_sQuery += "	AND ZD0.ZD0_FILIAL   = '" + xFilial('ZD0') + "' "
+    _oSQL:_sQuery += "	AND ZD0_TID          = '" + _sTID + "'"
+    _oSQL:_sQuery += "	AND ZD0_STABAI IN ('A','E')"
+    _oSQL:_sQuery += "	ORDER BY FILIAL, VALOR_PARCELA  DESC "
+    u_log(_oSQL:_sQuery)
+    _aDados := _oSQL:Qry2Array()
+
+Return _aDados
+//
+// -----------------------------------------------------------------------------------
+// Gera titulos RA's para compensação
+Static Function _GeraTitulos(_aZD0)
+    Local _aAutoSE1 := {}
+    Local _x        := 0
+    Local _y        := 0
+    Local _i        := 0
 
     For _x:=1 to Len(_aZD0)
         If _aZD0[_x, 14] == 'B' // titulos ja baixados
@@ -282,8 +341,6 @@ Static Function _GeraTitulos(dDataIni, dDataFin)
             EndIf
         EndIf
     Next
-    // chama relatorio de baixas
-    //U_ZD0RCMP(dDataIni, dDataFin)
 Return
 //
 // -----------------------------------------------------------------------------------
