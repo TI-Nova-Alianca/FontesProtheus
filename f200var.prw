@@ -60,7 +60,8 @@
 // 02/12/2021 - Claudia - Incluido novo tipo Juros para realizar transferencia entre filiais. GLPI: 11149.
 // 09/08/2022 - Claudia - Incluida gravação de eventos de juros indevidos. GLPI: 12454
 // 03/04/2023 - Claudia - Incluido variavel para banco Itau _aValores [14] opção 23, 35, 33, 12.  - GLPI 13311. 
-// 11/05/2023 - Claudia - Incluido tratamento de Rapel para bco Santander - GLPI 11643.
+// 11/05/2023 - Claudia - Incluido tratamento de Rapel para bco Santander desconto - GLPI 11643.
+// 30/05/2023 - Claudia - Incluido tratamento de Rapel para bco Santander abatimento - GLPI 11643.
 //
 // -------------------------------------------------------------------------------------------------------------------------------------------
 User Function F200VAR()
@@ -422,7 +423,7 @@ User Function F200VAR()
 					nMulta  = 0
 				endif
 			endif
-			if alltrim (_aValores [14]) == "06" .and. nDescont > 0
+			if alltrim (_aValores [14]) == "06" .and.(nDescont > 0 .or. aValores[07] > 0)
 				// Zera 'descontos' quando baixa normal - controle de R A P E L
 				nDescont = 0
 				// não eh relatorio - eh processamento do retorno
