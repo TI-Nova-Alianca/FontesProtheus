@@ -1,29 +1,30 @@
-// Programa:  VA_ETAF
-// Autor:     Robert Koch
-// Data:      27/07/2017
+// Programa.: VA_ETAF
+// Autor....: Robert Koch
+// Data.....: 27/07/2017
 // Descricao: Exporta alguns dados para o modulo TAF para evitar digitacao.
-
+//
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Processamento
 // #Descricao         #Gera arquivo TXT para importacao no modulo TAF
 // #PalavasChave      #exportacao #TXT #TAF
 // #TabelasPrincipais #SZI
 // #Modulos           #CTB #TAF
-
-// Historico de alteracoes:
-// 24/09/2021 - Revisao de layout/novos campos do tipo 111 para exercicio 2021 (GLPI 10463).
 //
+// Historico de alteracoes:
+// 24/09/2021 - Robert  - Revisao de layout/novos campos do tipo 111 para exercicio 2021 (GLPI 10463).
+// 01/06/2023 - Claudia - Alterada a formatação das datas. GLPI: 13663
+//
+// -------------------------------------------------------------------------------------------------
 
 #include "VA_INCLU.prw"
 
-// --------------------------------------------------------------------------
 User Function VA_ETAF (_lAuto)
 	Local cCadastro   := "Arquivo p/ Declaracao Vinicola"
 	Local aSays       := {}
 	Local aButtons    := {}
 	Local nOpca       := 0
 	Local lPerg       := .F.
-	private cPerg    := "VA_ETAF"
+	private cPerg     := "VA_ETAF"
 
 	_ValidPerg ()
 	Pergunte(cPerg,.F.)      // Pergunta no SX1
@@ -45,15 +46,14 @@ User Function VA_ETAF (_lAuto)
 		Endif
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
+// Função Tudo OK
 static function _TudoOK ()
 return .T.
-
-
+//
 // --------------------------------------------------------------------------
+// Gera arquivo TXT
 Static Function _GeraTxt()
 	private _sErrETAF  := ""
 	private _sAvisos   := ""
@@ -68,8 +68,6 @@ Static Function _GeraTxt()
 
 	ProcRegua(10)
 
-	// Uma funcao para gerar cada tipo de registro.
-//	_T001 ()
 	_T111 ()
 	fClose(_nHdl)
 
@@ -84,23 +82,9 @@ Static Function _GeraTxt()
 		endif
 	endif
 return
-
-
-
-// // -------------------------------------------------------------------------
-// static function _T001 ()
-// 	local _sLinha := ""
-// 	_sLinha += "|T001|0101"
-// 	_sLinha += "|alianca@novaalianca.coop.br"
-// 	_sLinha += "||1|T"
-// 	_sLinha += "|" + alltrim (sm0 -> m0_nomecom)
-// 	_sLinha += "|||"
-// 	fwrite (_nHdl, _sLinha + chr (13) + chr (10))
-// return
-
-
-
+//
 // -------------------------------------------------------------------------
+//
 static function _T111 ()
 	local _sLinha   := ""
 	local _sAliasQ  := ""
@@ -121,11 +105,7 @@ static function _T111 ()
 	_oSQL:_sQuery += " WHERE SA2.D_E_L_E_T_ = ''"
 	_oSQL:_sQuery +=   " AND SA2.A2_FILIAL  = '" + xfilial ("SA2") + "'"
 	_oSQL:_sQuery +=   " AND SA2.A2_COD     = SA2.A2_VACBASE"  // PEGA APENAS O CODIGO E LOJA BASE PARA NAO REPETIR O MESMO ASSOCIADO.
-	_oSQL:_sQuery +=   " AND SA2.A2_LOJA    = SA2.A2_VALBASE"
-	
-	// Testes:
-	//_oSQL:_sQuery += " AND SA2.A2_COD <= '000161'"
-	
+	_oSQL:_sQuery +=   " AND SA2.A2_LOJA    = SA2.A2_VALBASE"	
 	_oSQL:_sQuery += " AND EXISTS (SELECT *"
 	_oSQL:_sQuery +=               " FROM " + RetSQLName ("SZI") + " SZI"
 	_oSQL:_sQuery +=               " WHERE SZI.D_E_L_E_T_ = ''"
@@ -137,6 +117,7 @@ static function _T111 ()
 	_nTotCap = 0
 	procregua ((_sAliasQ) -> (reccount ()))
 	(_sAliasQ) -> (dbgotop ())
+
 	do while ! (_sAliasQ) -> (eof ())
 		_oAssoc := ClsAssoc ():New ((_sAliasQ) -> a2_vacbase, (_sAliasQ) -> a2_valbase)
 		incproc (_oAssoc:Nome)
@@ -165,33 +146,32 @@ static function _T111 ()
 	
 	// Exporta para TXT no layout do TAF.
 	for _nAssoc = 1 to len (_aAssoc)
-		_sLinha := "|T111"  // Tipo registro
-		_sLinha += "|" + dtos (mv_par02)  // Periodo
-		_sLinha += "|" + dtos (_aAssoc [_nAssoc, 5])  // Data associacao
-		_sLinha += "|" + dtos (_aAssoc [_nAssoc, 6])  // Data desassociacao
-		_sLinha += "|105"  // Codigo pais cfe tabela do SPED
+		_sLinha := "|T111"  														// Tipo registro
+		_sLinha += "|" + dtoc (mv_par02)  											// Periodo
+		_sLinha += "|" + dtoc (_aAssoc [_nAssoc, 5])  								// Data associacao
+		_sLinha += "|" + dtoc (_aAssoc [_nAssoc, 6])  								// Data desassociacao
+		_sLinha += "|105"  															// Codigo pais cfe tabela do SPED
 		_sLinha += "|" + iif (len (alltrim (_aAssoc [_nAssoc, 4])) > 11, "2", "1")  // Qualificacao: 1=PF;2=PJ;3=Fundo de investimento
-		_sLinha += "|" + _aAssoc [_nAssoc, 4]  // CPF ou CNPJ
-		_sLinha += "|" + alltrim (_aAssoc [_nAssoc, 3])  // Nome
-		_sLinha += "|" + iif (len (alltrim (_aAssoc [_nAssoc, 4])) > 11, "03", "02")  // Qualificacao
-		_sLinha += "|" + cvaltochar (_aAssoc [_nAssoc, 8])  // Percentual sobre o total de capital
-		_sLinha += "|" + cvaltochar (_aAssoc [_nAssoc, 8])  // Percentual sobre o total votante
-		_sLinha += "|"  // CPF do representante legal
-		_sLinha += "|"  // Qualificacao do representante legal (6=outros)
-		_sLinha += "|"  // Valor da Remuneração do Trabalho
-		_sLinha += "|"  // Valor dos Lucros e Dividendos
-		_sLinha += "|"  // Juros Sobre Capital Próprio
-		_sLinha += "|"  // Demais Rendimentos
-		_sLinha += "|"  // IR Retido na Fonte
-		_sLinha += "|"  // Final de registro
+		_sLinha += "|" + _aAssoc [_nAssoc, 4]  										// CPF ou CNPJ
+		_sLinha += "|" + alltrim (_aAssoc [_nAssoc, 3])  							// Nome
+		_sLinha += "|" + iif (len (alltrim (_aAssoc [_nAssoc, 4])) > 11, "03", "02")// Qualificacao
+		_sLinha += "|" + cvaltochar (_aAssoc [_nAssoc, 8])  						// Percentual sobre o total de capital
+		_sLinha += "|" + cvaltochar (_aAssoc [_nAssoc, 8])  						// Percentual sobre o total votante
+		_sLinha += "|"  															// CPF do representante legal
+		_sLinha += "|"  															// Qualificacao do representante legal (6=outros)
+		_sLinha += "|"  															// Valor da Remuneração do Trabalho
+		_sLinha += "|"  															// Valor dos Lucros e Dividendos
+		_sLinha += "|"  															// Juros Sobre Capital Próprio
+		_sLinha += "|"  															// Demais Rendimentos
+		_sLinha += "|"  															// IR Retido na Fonte
+		_sLinha += "|"  															// Final de registro
 
 		fwrite (_nHdl, _sLinha + chr (13) + chr (10))
 	next
 Return
-
-
-
+//
 // -------------------------------------------------------------------------
+// Perguntas
 Static Function _ValidPerg ()
 	local _aRegsPerg := {}
 	
