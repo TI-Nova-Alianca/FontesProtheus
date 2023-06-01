@@ -3686,6 +3686,65 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query += " ORDER BY D4_OP, D4_COD"
 
 
+	case ::Numero == 96
+		::Setores   = 'CUS/CTB'
+		::Descricao = "Saldo negativo tabela fechamentos por lote/endereco"
+		::Sugestao  = "Verificar a movimentação, emitir kardex por lote, conferir se os movimentos foram gravados corretamente em todas as tabelas (SD5 quando usa lotes, e SDB quando usa endereçamento). Ajustar manualmente nas tabelas SBJ / SBK ou reabrir o mês e fechar novamente."
+		::QuandoUsar = "A qualquer momento."
+		::Dica       = "Verificado, na atualização da release 22.10, que saldos negativos no último fechamento de lotes/endereços (tabelas SBJ e SBK) impede que o processo de recálculo do saldo atual funcione corretamente. O sistema parece deixar de atualizar os saldos."
+		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: SBJ e SBK (Fechamentos), SD1, SD2, SD3, SDA, SBD, SD5 (movimentos)'
+		::Query := ""
+		::Query += " WITH ULT_FECH AS"
+		::Query += " ("
+		::Query +=    " SELECT B9_FILIAL, MAX (B9_DATA) AS B9_DATA"
+		::Query +=      " FROM " + RetSQLName ("SB9") + " SB9"
+		::Query +=     " WHERE SB9.D_E_L_E_T_ = ''"
+		::Query +=     " GROUP BY SB9.B9_FILIAL"
+		::Query += " )"
+		::Query += " SELECT 'SBJ' AS TABELA, SBJ.BJ_FILIAL AS FILIAL, SBJ.BJ_DATA AS DATA_FECHTO, SBJ.BJ_LOCAL AS ALMOX, SBJ.BJ_COD AS PRODUTO, SBJ.BJ_LOTECTL AS LOTE, '' AS ENDERECO, SBJ.BJ_QINI AS QUANTIDADE"
+		::Query +=   " FROM " + RetSQLName ("SBJ") + " SBJ"
+		::Query +=       ", ULT_FECH"
+		::Query += " WHERE SBJ.D_E_L_E_T_ = ''"
+		::Query +=   " AND SBJ.BJ_FILIAL  = ULT_FECH.B9_FILIAL"
+		::Query +=   " AND SBJ.BJ_DATA    = ULT_FECH.B9_DATA"
+		::Query +=   " AND SBJ.BJ_QINI    < 0"
+		::Query += " UNION ALL"
+		::Query += " SELECT 'SBK' AS TABELA, SBK.BK_FILIAL, SBK.BK_DATA, SBK.BK_LOCAL, SBK.BK_COD, SBK.BK_LOTECTL, SBK.BK_LOCALIZ, SBK.BK_QINI"
+		::Query +=   " FROM " + RetSQLName ("SBK") + " SBK"
+		::Query +=       ", ULT_FECH"
+		::Query += " WHERE SBK.D_E_L_E_T_ = ''"
+		::Query += "   AND SBK.BK_FILIAL  = ULT_FECH.B9_FILIAL"
+		::Query += "   AND SBK.BK_DATA    = ULT_FECH.B9_DATA"
+		::Query += "   AND SBK.BK_QINI    < 0"
+		::Query += " ORDER BY TABELA, FILIAL, PRODUTO, ALMOX, LOTE, ENDERECO"
+
+
+	case ::Numero == 97
+		::Setores    = 'CTB'
+		::Descricao  = "Pre-lancamentos contabeis aguardando efetivacao"
+		::Sugestao   = "Encontrados pré-lançamentos contábeis (CT2_TPSALD=9). Verificar se devem ser conferidos/efetivados, ou excluídos definitivamente. Verificar se há necessidade de corrigir o lançamento padrão que originou eles."
+		::QuandoUsar = "A qualquer momento."
+		::Dica       = "Na tabela CT2 (lançamentos contábeis), quando o campo CT2_TPSALD=9, indica que trata-se de um pré-lançamento, que ainda não foi considerado nas tabelas de saldos. Geralmente esse tipo de lançamento é gerado por rotinas automáticas como a de custo médio que, ao encontrar problema na contabilização, gera tipo de saldo 9 em vez de 1, para não travar o processamento."
+		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: CT2'
+		::GrupoPerg = "U_VALID028"
+		::ValidPerg (_lDefault)
+		::Query := ""
+		::Query += " SELECT GX0041_LCTO_CONTABIL_FILIAL AS FILIAL
+		::Query +=       ", GX0041_LCTO_CONTABIL_DATA AS DATA_LCTO
+		::Query +=       ", GX0041_LCTO_CONTABIL_DEBITO AS CTA_DEBITO
+		::Query +=       ", GX0041_LCTO_CONTABIL_DESCR_CTA_DEB AS DESCR_CTA_DEBITO
+		::Query +=       ", GX0041_LCTO_CONTABIL_CREDITO AS CTA_CREDITO
+		::Query +=       ", GX0041_LCTO_CONTABIL_DESCR_CTA_CRED AS DESCR_CTA_CREDITO
+		::Query +=       ", GX0041_LCTO_CONTABIL_VALOR_DEBITO AS VLR_DEBITO
+		::Query +=       ", GX0041_LCTO_CONTABIL_VALOR_CREDITO AS VLR_CREDITO
+		::Query +=       ", GX0041_LCTO_CONTABIL_CT2_HIST AS HISTORICO
+		::Query +=       ", GX0041_LCTO_CONTABIL_ORIGEM AS ORIGEM
+		::Query +=  " FROM GX0041_LCTO_CONTABIL
+		::Query += " WHERE GX0041_LCTO_CONTABIL_DATA BETWEEN '" + dtos (::Param01) + "' AND '" + dtos (::Param02) + "'"
+		::Query +=   " AND GX0041_LCTO_CONTABIL_TIPO_SALDO = '9'"
+		::Query += " ORDER BY GX0041_LCTO_CONTABIL_FILIAL, GX0041_LCTO_CONTABIL_DATA, GX0041_LCTO_CONTABIL_DEBITO, GX0041_LCTO_CONTABIL_CREDITO"
+
+
 	otherwise
 		::UltMsg = "Verificacao numero " + cvaltochar (::Numero) + " nao definida."
 

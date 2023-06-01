@@ -14,6 +14,7 @@
 // 15/10/2019 - Cláudia - Incluída validações no C2_VAEVENT - _VerEvent() GLPI: 6793
 // 22/09/2022 - Robert  - Validacao do campo C2_VABARCX - GLPI 11994
 // 17/10/2022 - Robert  - Validacao do campo B1_PRVALID quando usa rastro.
+// 29/05/2023 - Robert  - Verificacoes para FullWMS eram executadas em todas as filiais (GLPI 13640)
 //
 
 // ----------------------------------------------------------------
@@ -26,7 +27,7 @@ user function MA650TOk ()
 		_lRet = _VerRepr ()
 	endif
 
-	if _lRet
+	if _lRet .and. cFilAnt == '01'
 		_lRet = _VerFull ()
 	endif
 

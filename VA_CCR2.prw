@@ -166,26 +166,20 @@ static function _GeraPlan (_lGeraXML)
 						_comp -> custo_std  = sb1 -> b1_custd
 						_comp -> dt_cus_std = sb1 -> b1_datref
 					
-
-
-
-
 						// Atualiza o restante dos dados do componente.
-// DESABILITADO DURANTE TESTES, PARA GANHO DE PERFORMANCE						_AtuComp ()
-						// PREENCHE COM DADOS FICTICIOS
-						_comp -> UN_MED_com = 'CX'
-						_comp -> tp_comp    = 'PA'
-						//_comp -> custo_std  = 36
-						_comp -> UC_Cus_01  = 1
-						_comp -> UC_Dat_01  = stod ('20230327')
-						_comp -> UC_Cus_02  = 2
-						_comp -> UC_Dat_02  = stod ('20230327')
-						_comp -> UC_Cus_03  = 3
-						_comp -> UC_Dat_03  = stod ('20230327')
+						_AtuComp ()
 
 
-
-
+		//				// PREENCHE COM DADOS FICTICIOS (DURANTE TESTES, PARA EXECUTAR MAIS RAPIDO)
+		//				_comp -> UN_MED_com = 'CX'
+		//				_comp -> tp_comp    = 'PA'
+		//				//_comp -> custo_std  = 36
+		//				_comp -> UC_Cus_01  = 1
+		//				_comp -> UC_Dat_01  = stod ('20230327')
+		//				_comp -> UC_Cus_02  = 2
+		//				_comp -> UC_Dat_02  = stod ('20230327')
+		//				_comp -> UC_Cus_03  = 3
+		//				_comp -> UC_Dat_03  = stod ('20230327')
 
 
 
