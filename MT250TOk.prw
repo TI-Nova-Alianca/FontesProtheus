@@ -39,6 +39,7 @@
 // 25/10/2022 - Robert - Quando tem empenho negativo nao bloqueia mais. Apenas notifica o PCP.
 // 05/01/2023 - Robert - Abreviadas algumas mensagens, para mostrar via telnet.
 // 17/04/2023 - Robert - Mostrar ultima mensagem da etiqueta, quando nao puder apontar.
+// 31/05/2023 - Robert - Obrigava uso de etiquetas em todas as filiais (mas usamos FullWMS apenas na F01).
 //
 
 // --------------------------------------------------------------------------
@@ -101,10 +102,8 @@ user function mt250tok ()
 	endif
 	
 //	// Integracao com Fullsoft
-//	if _lRet
-//		_lRet = _VerFull ()
-//	endif
-	if _lRet .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + m->d3_cod, 'B1_VAFULLW') == 'S' .and. empty (m->d3_vaetiq)
+//	if _lRet .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + m->d3_cod, 'B1_VAFULLW') == 'S' .and. empty (m->d3_vaetiq)
+	if _lRet .and. cFilAnt == '01' .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + m->d3_cod, 'B1_VAFULLW') == 'S' .and. empty (m->d3_vaetiq)
 		u_help ("Produto controlado pelo Fullsoft: deve ser informado numero da etiqueta.",, .t.)
 		_lRet = .F.
 	endif
@@ -118,10 +117,6 @@ user function mt250tok ()
 	if _lRet
 		_lRet = _VerRetr ()
 	endif
-
-
-//	U_Log2 ('debug', '[' + procname () + ']retornando F para testes')
-//	_lret = .f.
 
 	U_ML_SRArea (_aAreaAnt)
 return _lRet

@@ -89,6 +89,7 @@
 // 22/05/2023 - Robert  - Criado atributo AColsF3 para quando a funcao chamadora quiser mostrar os dados via U_F3Array() - GLPI 13616
 //                      - Melhorias documentacao.
 // 24/05/2023 - Robert  - Metodo Executa() recebe parametro indicando se retorna nomes das colunas no inicio.
+// 30/05/2023 - Robert  - Criadas verificacoes 96 e 97.
 //
 
 #include "protheus.ch"
@@ -2856,8 +2857,12 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query += " END) > 5  "
 		
 	case ::Numero == 65
-		::Setores    = 'CUS'
-		::Descricao  = 'Confere lançamentos padronizados'
+		::Setores    = 'CTB'
+		::Descricao  = 'Confere cadastro de lancamentos padronizados'
+		::Sugestao   = "Revisar o cadastro de lançamentos padrão. Conferir se, no campo ORIGEM, estão informados o mesmo código e sequência do próprio lançamento."
+		::QuandoUsar = "A qualquer momento."
+		::Dica       = "Não se trata de um problema sério, mas é importante que, quando for gerado um lançamento contábil, fique indicado o LPAD correto no seu campo ORIGEM, para facilitar futuras manutenções."
+		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: CT5'
 		::Query := ""
 		::Query += " WITH C" // CTE inicial para isolar os lpad que contenham chamadas para a funcao 
 		::Query += " AS"
