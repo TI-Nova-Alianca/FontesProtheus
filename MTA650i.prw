@@ -24,6 +24,7 @@
 //                       o P.E. MA650TOK jah devem garantir isso.
 //                     - Pede confirmacao antes de gerar etiquetas, quando OP 'em terceiros'.
 //                     - Chama rotina de impressao das etiquetas geradas.
+// 31/05/2023 - Robert - Removidas linhas comentariadas.
 //
 
 // --------------------------------------------------------------------------
@@ -36,11 +37,6 @@ User Function MTA650I ()
 	if sc2 -> c2_item != 'OS'
 		_AtuEmp ()
 	endif
-
-//	// Integracao com Fullsoft (somente na filial 01)
-//	if cFilAnt == '01' .and. sc2 -> c2_item != 'OS'
-//		_AtuFull ()
-//	endif
 
 	// Gera etiquetas para pallets (somente na filial 01)
 	if cFilAnt == '01' .and. sc2 -> c2_item != 'OS' .and. sc2 -> c2_tpop == 'F'
@@ -62,7 +58,6 @@ User Function MTA650I ()
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
 Return
-
 
 
 // ----------------------------------------------------------------------
@@ -94,24 +89,6 @@ static function _AtuEmp ()
 	trb -> (dbclosearea())
 	dbselectarea ("SC2")
 return
-
-
-/*
-// ----------------------------------------------------------------------
-// Integracao com Fullsoft
-static function _AtuFull ()
-	local _sAlmFull := GetMv("VA_ALMFULP",,'')
-	if ! empty (sc2 -> c2_seqmrp) .and. ! empty(_sAlmFull) .and. sc2 -> c2_local != _sAlmFull
-		sb1 -> (dbsetorder (1))
-		if sb1 -> (dbseek (xfilial ("SB1") + m->c2_produto, .F.)) .and. sb1 -> b1_vafullw == 'S'
-			u_log (sb1 -> b1_cod, 'usa full. vou trocar')
-			reclock ("SC2", .F.)
-			sc2 -> c2_local = _sAlmFull
-			msunlock ()
-		endif
-	endif
-return
-*/
 
 
 // ------------------------------------------------------------------------------------
