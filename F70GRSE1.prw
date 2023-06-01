@@ -364,27 +364,6 @@ Static Function _AtuZC0()
 			EndIf
 		EndIf
 	EndIf
-
-	/*
-	PARA AS NCC COM RAPEL
-	 SELECT 
-		 		E5_VARAPEL 
-		 FROM SE5010
-		 WHERE D_E_L_E_T_ = '' 
-		 AND E5_FILIAL   = '01'
-		 AND E5_NUMERO   = '001048080'
-		 AND E5_PREFIXO  = '99'
-		 AND E5_PARCELA  = 'A'
-		 AND E5_CLIFOR   = '016077'
-		 AND E5_LOJA     = '01'
-		 AND E5_RECPAG   = 'P' 
-		 AND E5_TIPODOC  = 'DC'
-		 AND E5_SITUACA  = '' 
-		 AND E5_VARAPEL  > 0 
-		 AND E5_DATA     = '20230216'
-
-		 FAZER O CREDITO DO VALOR DO RAPEL
-	*/
 Return
 //
 // -------------------------------------------------

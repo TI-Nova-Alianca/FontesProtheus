@@ -20,6 +20,7 @@
 // 11/11/2019 - Robert  - Tratamento campo ZA5_FILIAL (tabela passar de compartilhada para exclusiva). GLPI 6987.
 // 23/05/2022 - Claudia - Incluido o estorno do rapel. GLPI: 8916
 // 07/10/2022 - Claudia - Atualização de rapel apenas para serie 10. GLPI: 8916
+// 01/06/2023 - Claudia - Tratamento de rapel por NCC. GLPI: 13643
 //
 // -----------------------------------------------------------------------------------------------------------------
 user function FA070Can ()
@@ -147,6 +148,59 @@ Static Function _AtuZC0()
 				_oEvento := ClsEvent():New ()
 				_oEvento:Alias     = 'ZC0'
 				_oEvento:Texto     = "Estorno rapel "+ se1->e1_parcela + se1->e1_num + "/" + se1->e1_prefixo
+				_oEvento:CodEven   = 'ZC0001'
+				_oEvento:Cliente   = se1->e1_cliente
+				_oEvento:LojaCli   = se1->e1_loja
+				_oEvento:NFSaida   = se1->e1_num
+				_oEvento:SerieSaid = se1->e1_prefixo
+				_oEvento:Grava()
+			EndIf
+		EndIf
+	EndIf
+	If se1->e1_tipo == 'NCC'
+		_oSQL:= ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT "
+		_oSQL:_sQuery += " 		E5_VALOR "
+		_oSQL:_sQuery += " FROM  " + RetSQLName ("SE5")
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " AND E5_FILIAL    = '" + xfilial ("SE5")   + "'"
+		_oSQL:_sQuery += " AND E5_NUMERO    = '" + se1 -> e1_num     + "'"
+		_oSQL:_sQuery += " AND E5_PREFIXO   = '" + se1 -> e1_prefixo + "'"
+		_oSQL:_sQuery += " AND E5_PARCELA   = '" + se1 -> e1_parcela + "'"
+		_oSQL:_sQuery += " AND E5_CLIFOR    = '" + se1 -> e1_cliente + "'"
+		_oSQL:_sQuery += " AND E5_LOJA      = '" + se1 -> e1_loja    + "'"
+		_oSQL:_sQuery += " AND E5_SITUACA  <> 'C' "
+		_oSQL:_sQuery += " AND E5_MOTBX     = 'RAP' "
+		_oSQL:Log ()
+		_aRapel := aclone (_oSQL:Qry2Array ())
+
+		If Len(_aRapel) > 0
+
+			_oCtaRapel := ClsCtaRap():New ()
+			_sRede := _oCtaRapel:RetCodRede(se1->e1_cliente, se1->e1_loja)
+
+			_oCtaRapel:Filial  	 = se1->e1_filial
+			_oCtaRapel:Rede      = _sRede	
+			_oCtaRapel:LojaRed   = se1->e1_loja
+			_oCtaRapel:Cliente 	 = se1->e1_cliente
+			_oCtaRapel:LojaCli	 = se1->e1_loja
+			_oCtaRapel:TM      	 = '12' 	
+			_oCtaRapel:Data    	 = ddatabase// date()
+			_oCtaRapel:Hora    	 = time()
+			_oCtaRapel:Usuario 	 = cusername 
+			_oCtaRapel:Histor  	 = 'Rapel por cancelamento de NCC' 
+			_oCtaRapel:Documento = se1->e1_num
+			_oCtaRapel:Serie 	 = se1->e1_prefixo
+			_oCtaRapel:Parcela	 = se1->e1_parcela
+			_oCtaRapel:Rapel	 = _aRapel[1,1]
+			_oCtaRapel:Origem	 = 'F70GRSE1'
+			_oCtaRapel:NfEmissao = se1->e1_emissao
+
+			If _oCtaRapel:Grava (.F.)
+				_oEvento := ClsEvent():New ()
+				_oEvento:Alias     = 'ZC0'
+				_oEvento:Texto     = "Rapel por cancelamento de NCC "+ se1->e1_parcela + se1->e1_num + "/" + se1->e1_prefixo
 				_oEvento:CodEven   = 'ZC0001'
 				_oEvento:Cliente   = se1->e1_cliente
 				_oEvento:LojaCli   = se1->e1_loja
