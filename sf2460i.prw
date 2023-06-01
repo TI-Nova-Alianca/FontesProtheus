@@ -155,7 +155,8 @@
 //                      - Gravar E1_VACHVEX e E2_VACHVEX na funcao _TitSTMG() - GLPI 12779
 //                      - Melhorado E2_HIST na funcao _TitSTMG() - GLPI 12779
 // 27/02/2023 - Sandra  - Gravar E2_TIPO=TRS e nao mais IMP na funcao _TitSTMG() - GLPI 12779
-
+// 01/06/2023 - Claudia - Alterada data de vencimento para titulos a pagar ST. GLPI: 13653
+//
 // ---------------------------------------------------------------------------------------------------------------
 User Function sf2460i ()
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -855,32 +856,53 @@ static function _TitSTMG ()
 			_sProxParc = soma1 (_sProxParc)
 		endif
 
+		// Busca vencimento do titulo
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT"
+		_oSQL:_sQuery += " 		SE1.E1_VENCREA"
+		_oSQL:_sQuery += " FROM " + RetSQLName ("SE1") + " SE1 "
+		_oSQL:_sQuery += " WHERE SE1.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery += " AND SE1.E1_FILIAL    = '" + xfilial ("SE1")   + "'"
+		_oSQL:_sQuery += " AND SE1.E1_CLIENTE   = '" + sf2 -> f2_cliente + "'"
+		_oSQL:_sQuery += " AND SE1.E1_LOJA      = '" + sf2 -> f2_loja    + "'"
+		_oSQL:_sQuery += " AND SE1.E1_NUM       = '" + sf2 -> f2_doc     + "'"
+		_oSQL:_sQuery += " AND SE1.E1_PREFIXO   = '" + sf2 -> f2_serie   + "'"
+		_oSQL:_sQuery += " AND SE1.E1_TIPO     <> 'TRS' "
+		_sDtVencReal := _oSQL:RetQry (1, .f.)
+		if empty(_sDtVencReal)
+			_dDataReal := sf2 -> f2_emissao + 15
+		else
+			_dDataReal := stod(_sDtVencReal)
+		endif
+
 		_aAutoSE1 = {}
-		aAdd(_aAutoSE1, {"E1_PREFIXO"  , sf2 -> f2_serie       , Nil})
-		aAdd(_aAutoSE1, {"E1_NUM"      , sf2 -> f2_doc         , Nil})
-		aAdd(_aAutoSE1, {"E1_PARCELA"  , _sProxParc            , Nil})
-//		aAdd(_aAutoSE1, {"E1_TIPO"     , 'IMP'                 , Nil})
-		aAdd(_aAutoSE1, {"E1_TIPO"     , 'TRS'                 , Nil})  // tipo IMP parece dar pau no retorno de CNAB.
-		aAdd(_aAutoSE1, {"E1_NATUREZ"  , '110198'              , Nil})
-		aAdd(_aAutoSE1, {"E1_CLIENTE"  , sf2 -> f2_cliente     , Nil})
-		aAdd(_aAutoSE1, {"E1_LOJA"     , sf2 -> f2_loja        , Nil})
-		aAdd(_aAutoSE1, {"E1_VALOR"    , _nST_MG               , Nil})
-		aAdd(_aAutoSE1, {"E1_VLCRUZ"   , _nST_MG               , Nil})
-		aAdd(_aAutoSE1, {"E1_MOEDA"    , 1                     , Nil})
-		aAdd(_aAutoSE1, {"E1_ORIGEM"   , 'FINA040'             , Nil})
-		aAdd(_aAutoSE1, {"E1_EMISSAO"  , sf2 -> f2_emissao     , Nil})
-		aAdd(_aAutoSE1, {"E1_VENCTO"   , sf2 -> f2_emissao + 15, Nil})
-		aAdd(_aAutoSE1, {"E1_COMIS1"   , 0                     , Nil})
-		aAdd(_aAutoSE1, {"E1_COMIS2"   , 0                     , Nil})
-		aAdd(_aAutoSE1, {"E1_COMIS3"   , 0                     , Nil})
-		aAdd(_aAutoSE1, {"E1_COMIS4"   , 0                     , Nil})
-		aAdd(_aAutoSE1, {"E1_COMIS5"   , 0                     , Nil})
-		aAdd(_aAutoSE1, {"E1_VENCREA"  , DataValida (sf2 -> f2_emissao + 15), Nil})
-		aAdd(_aAutoSE1, {"E1_HIST"     , 'Valor ST MG antecipacao'          , Nil})
-		aAdd(_aAutoSE1, {"E1_VACHVEX"  , _sChvEx               , Nil})
+		aAdd(_aAutoSE1, {"E1_PREFIXO"  , sf2 -> f2_serie       		, Nil})
+		aAdd(_aAutoSE1, {"E1_NUM"      , sf2 -> f2_doc         		, Nil})
+		aAdd(_aAutoSE1, {"E1_PARCELA"  , _sProxParc            		, Nil})
+		aAdd(_aAutoSE1, {"E1_TIPO"     , 'TRS'                 		, Nil})  // tipo IMP parece dar pau no retorno de CNAB.
+		aAdd(_aAutoSE1, {"E1_NATUREZ"  , '110198'              		, Nil})
+		aAdd(_aAutoSE1, {"E1_CLIENTE"  , sf2 -> f2_cliente     		, Nil})
+		aAdd(_aAutoSE1, {"E1_LOJA"     , sf2 -> f2_loja        		, Nil})
+		aAdd(_aAutoSE1, {"E1_VALOR"    , _nST_MG               		, Nil})
+		aAdd(_aAutoSE1, {"E1_VLCRUZ"   , _nST_MG               		, Nil})
+		aAdd(_aAutoSE1, {"E1_MOEDA"    , 1                     		, Nil})
+		aAdd(_aAutoSE1, {"E1_ORIGEM"   , 'FINA040'             		, Nil})
+		aAdd(_aAutoSE1, {"E1_EMISSAO"  , sf2 -> f2_emissao     		, Nil})
+		aAdd(_aAutoSE1, {"E1_VENCTO"   , _dDataReal					, Nil})
+		aAdd(_aAutoSE1, {"E1_COMIS1"   , 0                     		, Nil})
+		aAdd(_aAutoSE1, {"E1_COMIS2"   , 0                     		, Nil})
+		aAdd(_aAutoSE1, {"E1_COMIS3"   , 0                     		, Nil})
+		aAdd(_aAutoSE1, {"E1_COMIS4"   , 0                     		, Nil})
+		aAdd(_aAutoSE1, {"E1_COMIS5"   , 0                     		, Nil})
+		aAdd(_aAutoSE1, {"E1_VENCREA"  , DataValida(_dDataReal)		, Nil})
+		aAdd(_aAutoSE1, {"E1_HIST"     , 'Valor ST MG antecipacao' 	, Nil})
+		aAdd(_aAutoSE1, {"E1_VACHVEX"  , _sChvEx               		, Nil})
 		_aAutoSE1 := aclone (U_OrdAuto (_aAutoSE1))
 		lMsErroAuto := .F.
+		
 		MSExecAuto({|x,y| FINA040(x,y)}, _aAutoSE1, 3)
+		
 		if lMsErroAuto
 			MostraErro()
 			U_Log2 ('erro', GetAutoGRLog())
