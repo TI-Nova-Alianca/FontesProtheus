@@ -15,7 +15,71 @@ User Function claudia ()
 	//u_help("Atualiza fornecedor")
 	//_AtualizaSA2()
 
+	//u_help("Atualiza nome prod")
+	//_AtuProd()
+	//_AtuSemiAcab()
+
 Return
+// //
+// // ----------------------------------------------------------------------------
+// //Atualiza nome de produtos
+// static function _AtuProd()
+// 	Local _aDados 	:= {}
+// 	Local _i 		:=0
+
+// 	u_help("Atualiza acabados")
+// 	_aDados = U_LeCSV ('C:\Temp\produtos.csv', ';')
+
+// 	for _i := 1 to len(_aDados)
+// 		_sCod  := _aDados[_i, 1]
+// 		DbSelectArea("SB1")
+// 		DbSetOrder(1)
+// 		if DbSeek(xFilial("SB1")+ alltrim(_sCod),.F.)
+// 			reclock ("SB1", .f.)
+// 				sb1 -> b1_desc  := alltrim(_aDados[_i, 3])
+// 			msunlock ()
+
+// 			// Grava evento de alteracao
+// 			_oEvento := ClsEvent():new ()
+// 			_oEvento:Alias    = 'SB1'
+// 			_oEvento:Texto    = 'GLPI: 13467 - Ajusta nome de produto'
+// 			_oEvento:CodEven  = "SB1001"
+// 			_oEvento:Produto  = sb1 -> b1_cod
+// 			_oEvento:Grava() 
+// 		endif	
+// 	Next
+// 	u_help("Atualizado!")
+// return
+// //
+// // ----------------------------------------------------------------------------
+// //Atualiza nome de produtos
+// static function _AtuSemiAcab()
+// 	Local _aDados 	:= {}
+// 	Local _i 		:=0
+
+// 	u_help("Atualiza semi acabados")
+// 	_aDados = U_LeCSV ('C:\Temp\SEMIACABADO.csv', ';')
+
+// 	for _i := 1 to len(_aDados)
+// 		_sCod  := _aDados[_i, 1]
+// 		DbSelectArea("SB1")
+// 		DbSetOrder(1)
+// 		if DbSeek(xFilial("SB1")+ alltrim(_sCod),.F.)
+// 			reclock ("SB1", .f.)
+// 				sb1 -> b1_desc  := alltrim(_aDados[_i, 3])
+// 			msunlock ()
+
+// 			// Grava evento de alteracao
+// 			_oEvento := ClsEvent():new ()
+// 			_oEvento:Alias    = 'SB1'
+// 			_oEvento:Texto    = 'GLPI: 13467 - Ajusta nome de produto'
+// 			_oEvento:CodEven  = "SB1001"
+// 			_oEvento:Produto  = sb1 -> b1_cod
+// 			_oEvento:Grava() 
+// 		endif	
+// 	Next
+// 	u_help("Atualizado!")
+// return
 //
 //
 //
