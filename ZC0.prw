@@ -13,6 +13,7 @@
 // Historico de alteracoes:
 // 16/12/2022 - Cláudia - Incluida validação de NF na gravação. GLPI: 12943
 // 10/02/2023 - Claudia - Incluido o relatorio emissão/Devolução para validações. GLPI:13177
+// 01/06/2023 - Claudia - Incluidas novas legendas. GLPI: 13643
 //
 // --------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -40,11 +41,11 @@ User Function ZC0()
 	//AADD(aRotina, {"&Fechamento"       , "U_ZC0FEC()"     							, 0, 6})
 	//AADD(aRotina, {"&Abertura  "       , "U_ZC0ABE()"     							, 0, 6})
 
-    AADD(_aCores,{ "ZC0_TM == '01'         .AND. ZC0_STATUS='A' " , 'BR_AMARELO'   }) // Inclusão de saldo manual
-    AADD(_aCores,{ "ZC0_TM $ '02/05/06/08' .AND. ZC0_STATUS='A' " , 'BR_VERDE'     }) // Crédito
-    AADD(_aCores,{ "ZC0_TM $ '03/04/07'    .AND. ZC0_STATUS='A' " , 'BR_VERMELHO'  }) // Débito
-	AADD(_aCores,{ "ZC0_TM $ '09'          .AND. ZC0_STATUS='A' " , 'BR_PINK'      }) // saldo de fechamento
-	AADD(_aCores,{ "ZC0_STATUS ='F'                             " , 'BR_PRETO'     }) // Fechados
+    AADD(_aCores,{ "ZC0_TM == '01'            .AND. ZC0_STATUS='A' " , 'BR_AMARELO'   }) // Inclusão de saldo manual
+    AADD(_aCores,{ "ZC0_TM $ '02/05/06/08/11' .AND. ZC0_STATUS='A' " , 'BR_VERDE'     }) // Crédito
+    AADD(_aCores,{ "ZC0_TM $ '03/04/07/12'    .AND. ZC0_STATUS='A' " , 'BR_VERMELHO'  }) // Débito
+	AADD(_aCores,{ "ZC0_TM $ '09'             .AND. ZC0_STATUS='A' " , 'BR_PINK'      }) // saldo de fechamento
+	AADD(_aCores,{ "ZC0_STATUS ='F'                                " , 'BR_PRETO'     }) // Fechados
 
     dbSelectArea("ZC0")
     dbSetOrder(2)
@@ -59,11 +60,11 @@ User function ZC0LGD (_lRetCores)
 	local aCores2 := {}
 	local _i       := 0
 	
-    aadd (aCores, {"ZC0->ZC0_TM == '01'         .AND. ZC0_STATUS='A' " , 'BR_AMARELO' 	, 'Inclusão de saldo inicial/manual'})
-    aadd (aCores, {"ZC0->ZC0_TM $ '02/05/06/08' .AND. ZC0_STATUS='A' " , 'BR_VERDE'   	, 'Crédito'							})
-    aadd (aCores, {"ZC0->ZC0_TM $ '03/04/07'    .AND. ZC0_STATUS='A' " , 'BR_VERMELHO'	, 'Débito'							})
-	aadd (aCores, {"ZC0->ZC0_TM $ '09'          .AND. ZC0_STATUS='A' " , 'BR_PINK'      , 'Saldo de fechamento '	        }) 
-	aadd (aCores, {"ZC0_STATUS ='F'                                  " , 'BR_PRETO'     , 'Reg.Fechados'					}) 
+    aadd (aCores, {"ZC0->ZC0_TM == '01'            .AND. ZC0_STATUS='A' " , 'BR_AMARELO' 	, 'Inclusão de saldo inicial/manual'})
+    aadd (aCores, {"ZC0->ZC0_TM $ '02/05/06/08/11' .AND. ZC0_STATUS='A' " , 'BR_VERDE'   	, 'Crédito'							})
+    aadd (aCores, {"ZC0->ZC0_TM $ '03/04/07/12'    .AND. ZC0_STATUS='A' " , 'BR_VERMELHO'	, 'Débito'							})
+	aadd (aCores, {"ZC0->ZC0_TM $ '09'             .AND. ZC0_STATUS='A' " , 'BR_PINK'      , 'Saldo de fechamento '	        	}) 
+	aadd (aCores, {"ZC0_STATUS ='F'                                     " , 'BR_PRETO'     , 'Reg.Fechados'						}) 
 
 	if ! _lRetCores
 		for _i = 1 to len (aCores)
