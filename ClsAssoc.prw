@@ -113,6 +113,7 @@
 // 24/02/2023 - Robert  - Removidas algumas linhas comentariadas.
 //                      - Iniciado tratamento para operacoes com a tabela ZZU (grupos de usuarios)
 // 11/04/2023 - Robert  - Filtrar E2_TIPO=NF/DP/FAT nas prev.pagto.fech.safra (estava deixando passar NDF por exemplo)
+// 02/06/2023 - Robert  - Melhoria tags <valoresEfetivos> do metodo FechSafra() - GLPI 13532
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -1138,6 +1139,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 	local _aMedVar   := {}
 	local _nMedVar   := 0
 	local _nTotFunru := 0
+	local _aTotVlEf  := {}
 
 	if empty (_sSafra)
 		::UltMsg += "Safra nao informada"
@@ -1520,15 +1522,25 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 	// Valores efetivos por variedade/grau
 	if _lFSVlEf
 		_aMedVar = {}
+		_aTotVlEf = {0, 0, 0, 0, 0}
 		_sRetFechS += '<valoresEfetivos>'
 			_oSQL := ClsSQL():New ()
 			_oSQL:_sQuery := ""
-			_oSQL:_sQuery += "SELECT DISTINCT PRODUTO, DESCRICAO, GRAU, CLAS_ABD, CLAS_FINAL, PESO_LIQ, VUNIT_EFETIVO, VALOR_COMPRA + VALOR_COMPLEMENTO AS VALOR_TOTAL"
+			_oSQL:_sQuery += "SELECT PRODUTO, DESCRICAO, GRAU, CLAS_ABD, CLAS_FINAL"
+			_oSQL:_sQuery +=      ", case SIST_CONDUCAO when 'L' then 'LATADA' when 'E' then 'ESPALDEIRA' else '' end as SIST_CONDUCAO"
+			_oSQL:_sQuery +=      ", sum (PESO_LIQ) as PESO_LIQ"
+			_oSQL:_sQuery +=      ", sum (VALOR_COMPRA) as VALOR_CPR"
+			_oSQL:_sQuery +=      ", sum (VALOR_COMPLEMENTO) as VALOR_CPL"
+			_oSQL:_sQuery +=      ", sum (VALOR_PREMIO) as VALOR_PRM"
+			_oSQL:_sQuery +=      ", sum (VALOR_COMPRA + VALOR_COMPLEMENTO + VALOR_PREMIO) AS VALOR_TOT"
+			_oSQL:_sQuery +=      ", sum (VALOR_COMPRA + VALOR_COMPLEMENTO + VALOR_PREMIO) / sum (PESO_LIQ) as VUNIT_EFE"
 			_oSQL:_sQuery +=  " FROM VA_VPRECO_EFETIVO_SAFRA"
 			_oSQL:_sQuery += " WHERE ASSOCIADO  = '" + ::Codigo + "'"
 			_oSQL:_sQuery +=   " AND LOJA_ASSOC = '" + ::Loja + "'"
 			_oSQL:_sQuery +=   " AND SAFRA      = '" + _sSafra + "'"
-			_oSQL:_sQuery += " ORDER BY DESCRICAO, GRAU"
+			_oSQL:_sQuery += " GROUP BY PRODUTO, DESCRICAO, GRAU, GRAU, CLAS_ABD, CLAS_FINAL, SIST_CONDUCAO"
+			_oSQL:_sQuery += " ORDER BY DESCRICAO, GRAU, CLAS_ABD, CLAS_FINAL "
+			_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
 			_sAliasQ := _oSQL:Qry2Trb (.F.)
 			(_sAliasQ) -> (dbgotop ())
 			do while ! (_sAliasQ) -> (eof ())
@@ -1538,10 +1550,21 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 				_sRetFechS += '<grau>'           + (_sAliasQ) -> grau + '</grau>'
 				_sRetFechS += '<clasLatada>'     + alltrim ((_sAliasQ) -> clas_abd) + '</clasLatada>'
 				_sRetFechS += '<clasEspaldeira>' + alltrim ((_sAliasQ) -> clas_final) + '</clasEspaldeira>'
+				_sRetFechS += '<conducao>'       + (_sAliasQ) -> sist_conducao + '</conducao>'
 				_sRetFechS += '<peso>'           + cvaltochar ((_sAliasQ) -> peso_liq) + '</peso>'
-				_sRetFechS += '<valunit>'        + cvaltochar (round ((_sAliasQ) -> vunit_efetivo, 4)) + '</valunit>'
-				_sRetFechS += '<valtot>'         + cvaltochar (round ((_sAliasQ) -> valor_total, 2)) + '</valtot>'
+				_sRetFechS += '<vcompra>'        + cvaltochar (round ((_sAliasQ) -> valor_cpr, 2)) + '</vcompra>'
+				_sRetFechS += '<vcomplem>'       + cvaltochar (round ((_sAliasQ) -> valor_cpl, 2)) + '</vcomplem>'
+				_sRetFechS += '<vpremio>'        + cvaltochar (round ((_sAliasQ) -> valor_prm, 2)) + '</vpremio>'
+				_sRetFechS += '<valtot>'         + cvaltochar (round ((_sAliasQ) -> valor_tot, 2)) + '</valtot>'
+				_sRetFechS += '<valunit>'        + cvaltochar (round ((_sAliasQ) -> vunit_efe, 4)) + '</valunit>'
 				_sRetFechS += '</valorEfetivoItem>'
+
+				// Acumula dados para gerar linha de totais no final.
+				_aTotVlEf [1] += (_sAliasQ) -> peso_liq
+				_aTotVlEf [2] += (_sAliasQ) -> valor_cpr
+				_aTotVlEf [3] += (_sAliasQ) -> valor_cpl
+				_aTotVlEf [4] += (_sAliasQ) -> valor_prm
+				_aTotVlEf [5] += (_sAliasQ) -> valor_tot
 
 				// Aproveita a leitura destes dados para preparar array para calculo do grau medio por variedade.
 				_nMedVar = ascan (_aMedVar, {|_aVal| _aVal [1] == (_sAliasQ) -> produto .and. _aVal [2] == (_sAliasQ) -> descricao})
@@ -1551,11 +1574,24 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 				endif
 				_aMedVar [_nMedVar, 3] += (_sAliasQ) -> peso_liq
 				_aMedVar [_nMedVar, 4] += (_sAliasQ) -> peso_liq * val ((_sAliasQ) -> grau)  // Para posterior calculo de media ponderada do grau medio
-				_aMedVar [_nMedVar, 6] += (_sAliasQ) -> valor_total
+				_aMedVar [_nMedVar, 6] += (_sAliasQ) -> valor_tot
 
 				(_sAliasQ) -> (dbskip ())
 			enddo
 			(_sAliasQ) -> (dbclosearea ())
+
+			// Adiciona tags de totais.
+			_sRetFechS += '<valorEfetivoItem>'
+			_sRetFechS += '<filial/>'
+			_sRetFechS += '<varied>TOTAIS</varied>'
+			_sRetFechS += '<desc>TOTAIS</desc>'
+			_sRetFechS += '<peso>'     + cvaltochar (_aTotVlEf [1]) + '</peso>'
+			_sRetFechS += '<vcompra>'  + cvaltochar (_aTotVlEf [2]) + '</vcompra>'
+			_sRetFechS += '<vcomplem>' + cvaltochar (_aTotVlEf [3]) + '</vcomplem>'
+			_sRetFechS += '<vpremio>'  + cvaltochar (_aTotVlEf [4]) + '</vpremio>'
+			_sRetFechS += '<valtot>'   + cvaltochar (_aTotVlEf [5]) + '</valtot>'
+			_sRetFechS += '</valorEfetivoItem>'
+
 		_sRetFechS += '</valoresEfetivos>'
 	endif
 

@@ -39,6 +39,7 @@
 // 15/06/2022 - Robert  - Impressao de descontos de FUNRURAL (GLPI 11723).
 // 11/04/2023 - Robert  - Passa a listar aux.combustivel/frete no modelo resumido, para facilitar fechto.valores.
 // 14/04/2023 - Robert  - EM versoes anteriores a 2020, listava titulos futuros na previsao de pagamento.
+// 02/06/2023 - Robert  - Modelo resumido passa a listar tags do <valoresEfetivos> em vez de <resumoVarGrauClas> - GLPI 13532
 //
 
 #include "protheus.ch"
@@ -1601,11 +1602,10 @@ static function _Modelo3 (_lSohCompr)
 	local _sError    := ''
 	local _sWarning  := ''
 	local _sLinImp   := ''
-	local _nVaried   := 0
+//	local _nVaried   := 0
 	local _aResPag   := {}
 	local _nResPag   := 0
 	local _nFatPag   := 0
-//	local _aTotResV  := {}
 	local _aTotResP  := {}
 	local _nRegraPag := 0
 	local _nLctoCC   := 0
@@ -1613,6 +1613,7 @@ static function _Modelo3 (_lSohCompr)
 	local _nTotDesc  := 0
 	local _sFtPgHist := ''
 	local _nItFunr   := 0
+	local _nVlEfetiv := 0
 	private _sMascPeso := "@E 9,999,999,999"
 	private _sMascVUni := "@E 9,999.9999"
 	private _sMascVTot := "@E 9,999,999,999.99"
@@ -1688,39 +1689,90 @@ static function _Modelo3 (_lSohCompr)
 		@ li, 00 PSAY "Associado: " + _oAssoc:Codigo + '-' + _oAssoc:Loja + ' ' + _oAssoc:Nome
 		li += 2
 
-		// Verifica se tem este tipo de nota no XML
-		_ValType := _RetType('_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem')
-		//u_log2 ('debug', _ValType)
-		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 nota + 1 linha de totais)
-			@ li, 0 psay 'Producao:              Codigo          Variedade                       Grau  Clas     Kg total     Vlr.unit.        Vlr.total'
-			li ++
-			for _nVaried = 1 to len (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem)
-				If li > _nMaxLin - 4
-				IF m_pag >1
+		// Vou deixar de listar este resumo, para incluir os valores efetivos. Robert, 02/06/2023
+		// // Verifica se tem este tipo de nota no XML
+		// _ValType := _RetType('_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem')
+		// //u_log2 ('debug', _ValType)
+		// if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 nota + 1 linha de totais)
+		// 	@ li, 0 psay 'Producao:              Codigo          Variedade                       Grau  Clas     Kg total     Vlr.unit.        Vlr.total'
+		// 	li ++
+		// 	for _nVaried = 1 to len (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem)
+		// 		If li > _nMaxLin - 4
+		// 		IF m_pag >1
+		// 			_roda()
+		// 		endif
+		// 			cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+		// 		endif
+		// 		if _oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_varied:TEXT != 'TOTAIS'
+		// 			_sLinImp = space (23)
+		// 			_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_varied:TEXT, 15) + ' '
+		// 			_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_desc:TEXT, 30) + ' '
+		// 			_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_grau:TEXT), '@E 999.9') + '  '
+		// 			_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_clas:TEXT, 2) + '  '
+		// 			_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_peso:TEXT), _sMascPeso) + '    '
+		// 			_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_valTotal:TEXT) / val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_peso:TEXT), _sMascVUni) + ' '
+		// 			_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_valTotal:TEXT), _sMascVTot)
+		// 			@ li, 0 psay _sLinImp
+		// 			li ++
+		// 		else
+		// 			@ li, 0 psay '                                                                                --------------                  -------------'
+		// 			li ++
+		// 			@ li, 0 psay '                                                                                 ' + transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_peso:TEXT), _sMascPeso) + '               ' + transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_valTotal:TEXT), _sMascVTot)
+		// 			li += 2
+		// 		endif
+		// 	next
+		// endif
+
+		// Verifica se tem este tipo de tag no XML
+		_ValType := _RetType('_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem')
+		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 lcto + 1 linha de totais)
+			if li > _nMaxLin - 4
+				if m_pag >1
 					_roda()
 				endif
-					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-				endif
-				if _oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_varied:TEXT != 'TOTAIS'
-					_sLinImp = space (23)
-					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_varied:TEXT, 15) + ' '
-					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_desc:TEXT, 30) + ' '
-					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_grau:TEXT), '@E 999.9') + '  '
-					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_clas:TEXT, 2) + '  '
-					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_peso:TEXT), _sMascPeso) + '    '
-					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_valTotal:TEXT) / val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_peso:TEXT), _sMascVUni) + ' '
-					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_valTotal:TEXT), _sMascVTot)
+				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+			Endif
+			@li, 0 PSAY 'Valores efetivos:                                GRAU/CLAS     CONDUCAO             PESO        VLR.COMPRA       VLR.COMPLEM        VLR.PREMIO         VLR.TOTAL    UNIT.EFETIVO'
+			li ++
+			for _nVlEfetiv = 1 to len (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem)
+				_sLinImp := space (7)
+				if _oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_varied:TEXT != 'TOTAIS'
+					If li > _nMaxLin
+						IF m_pag >1
+							_roda()
+						endif
+						cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+					Endif
+					_sLinImp += U_TamFixo (ALLTRIM(_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_varied:TEXT) + ' - ' + alltrim (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_desc:TEXT), 40, ' ') + '  '
+					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_grau:TEXT, 4) + '  '
+					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_clasLatada:TEXT, 2) + '  '
+					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_clasEspaldeira:TEXT, 2) + '  '
+					_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_conducao:TEXT, 10) + '  '
+					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_peso:TEXT), _sMascPeso) + '  '
+					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_vCompra:TEXT), _sMascVTot) + '  '
+					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_vComplem:TEXT), _sMascVTot) + '  '
+					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_vPremio:TEXT), _sMascVTot) + '  '
+					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_valtot:TEXT), _sMascVTot) + '      '
+					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_valunit:TEXT), _sMascVUni) + '  '
 					@ li, 0 psay _sLinImp
 					li ++
 				else
-					@ li, 0 psay '                                                                                --------------                  -------------'
+					@ li, 0 psay space (76) + '------------     -------------     -------------     -------------     -------------'
 					li ++
-					@ li, 0 psay '                                                                                 ' + transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_peso:TEXT), _sMascPeso) + '               ' + transform (val (_oXMLFech:_assocFechSafra:_resumoVarGrauClas:_resumoVarGrauClasItem[_nVaried]:_valTotal:TEXT), _sMascVTot)
-					li += 2
+					_sLinImp += space (68)
+					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_peso:TEXT), _sMascPeso) + '  '
+					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_vCompra:TEXT), _sMascVTot) + '  '
+					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_vComplem:TEXT), _sMascVTot) + '  '
+					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_vPremio:TEXT), _sMascVTot) + '  '
+					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_valoresEfetivos:_valorEfetivoItem[_nVlEfetiv]:_valtot:TEXT), _sMascVTot) + '  '
+					@ li, 0 psay _sLinImp
+					li ++
 				endif
 			next
+			li ++
+		else
+			u_help ("Tag <_valoresEfetivos> nao foi gerada no formato esperado.",, .t.)
 		endif
-
 
 		// Verifica se tem este tipo de tag no XML
 		_ValType := _RetType('_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem')
@@ -1732,36 +1784,22 @@ static function _Modelo3 (_lSohCompr)
 				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
 			Endif
 			li ++
-		//	@li, 0 PSAY 'Auxilio combustivel:                  TITULO             VENCIMENTO              VALOR              SALDO  HISTORICO'
 			@li, 0 PSAY 'Auxilio combustivel:                           VALOR'
 			li ++
-//			for _nFatPag = 1 to len (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem)
 			_nFatPag = len (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem)
-				If li > _nMaxLin
-				IF m_pag >1
-					_roda()
-				endif
-					cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
-				Endif
-				_sLinImp := ''
-				// Apenas a linha de total; nao precisa listar nota a nota.
-			//	if _oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_doc:TEXT != 'TOTAIS'
-			//		_sLinImp += space (35)
-			//		_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_doc:TEXT, 15) + '       '
-			//		_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_vencto:TEXT, 10) + '   '
-			//		_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_valor:TEXT), _sMascVTot) + '   '
-			//		_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_saldo:TEXT), _sMascVTot) + '  '
-			//		_sLinImp += U_TamFixo (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_hist:TEXT, 110) + '  '
-			//	else
-//					@ li, 0 psay space (74) + '------------       ------------'
-//					li ++
-					_sLinImp += space (36) // (70)
-					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_valor:TEXT), _sMascVTot) + '   '
-//					_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_saldo:TEXT), _sMascVTot) + '  '
-//				endif
-				@ li, 0 psay _sLinImp
-				li ++
-//			next
+			If li > _nMaxLin
+			IF m_pag >1
+				_roda()
+			endif
+				cabec(titulo,cabec1,cabec2,wnrel,tamanho,nTipo)
+			Endif
+			_sLinImp := ''
+
+			// Apenas a linha de total; nao precisa listar nota a nota.
+			_sLinImp += space (36) // (70)
+			_sLinImp += transform (val (_oXMLFech:_assocFechSafra:_freteSafra:_freteSafraItem[_nFatPag]:_valor:TEXT), _sMascVTot) + '   '
+			@ li, 0 psay _sLinImp
+			li ++
 			li ++
 		endif
 

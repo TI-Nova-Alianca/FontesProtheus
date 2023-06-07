@@ -77,7 +77,7 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	// Viniferas tem tratamento diferenciado conforme a filial onde sao recebidas, podendo inclusive
 	// ser precificadas como outra variedade.
 	if _lContinua
-		u_log2 ('debug', '[' + procname () + '] Calculando preco uva ' + alltrim (_sProduto) + '-' + alltrim (sb1 -> b1_desc) + ' gr: ' + cvaltochar (_nGrau) + ' entregue na filial ' + _sFilial)
+	//	u_log2 ('debug', '[' + procname () + '] Calculando preco uva ' + alltrim (_sProduto) + '-' + alltrim (sb1 -> b1_desc) + ' gr: ' + cvaltochar (_nGrau) + ' entregue na filial ' + _sFilial)
 		if sb1 -> b1_varuva == 'F'
 			if _sFilial $ '01/09'
 				_lIsabel = .T.
@@ -158,7 +158,7 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 					_lContinua = .F.
 				else
 					_sComent += 'Calculando prc.uva pelo prod.base (' + alltrim (_sProdBase) + ' ' + ALLTRIM (sb1 -> b1_desc) + ') + agio ' + cvaltochar (_nAgioOrg) + '%'
-					//u_log2 ('info', _sComent)
+			//		u_log2 ('info', _sComent)
 					_sProduto = _sProdBase
 				endif
 			endif
@@ -195,7 +195,7 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 				_oSQL:_sQuery += " AND ZX5_13.ZX5_13GRUP like '2%'"
 			endif
 		endif
-		// _oSQL:Log ('[' + procname () + ']')
+	//	_oSQL:Log ('[' + procname () + ']')
 
 		_aGrupo := aclone (_oSQL:Qry2Array (.F., .F.))
 	//	U_log2 ('debug', _aGrupo)
@@ -246,7 +246,7 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 		_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14SAFR = ZX5_13.ZX5_13SAFR"
 		_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14GRUP = ZX5_13.ZX5_13GRUP"
 		_oSQL:_sQuery +=   " AND ZX5_14.ZX5_14PROD = '" + sb1 -> b1_cod + "'"
-		//_oSQL:Log ('[' + procname () + ']')
+	//	_oSQL:Log ('[' + procname () + ']')
 		_aGrupo := aclone (_oSQL:Qry2Array (.F., .F.))
 	//	U_log (_aGrupo)
 		if len (_aGrupo) == 0
@@ -268,7 +268,6 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 				_lContinua = .F.
 			endif
 		endif
-
 	endif
 
 //	u_log2 ('debug', 'Grau: ' + cvaltochar (_nGrau) + '  grau base alianca: ' + cvaltochar (_nGBaseAli) + '  Prc.grau base: ' + cvaltochar (_nPBasEntr) + ' (entr)   ' + cvaltochar (_nPBasComp) + ' (compra)   ' + cvaltochar (_nPBasAgiE) + ' (base p/agio)   grupo ZX513: ' + cvaltochar (_sGrpZX513))
@@ -420,8 +419,8 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 				_aGraus [_nAux, .PrcUvaColPrcCompra]  = _nPrMinimo
 			endif
 		next
-//		u_log2 ('debug', 'tabela de graus com os precos calculados:')
-//		u_log2 ('debug', _aGraus)
+	//	u_log2 ('debug', 'tabela de graus com os agios aplicados sobre o grau base:')
+	//	u_log2 ('debug', _aGraus)
 	endif
 
 
@@ -429,17 +428,18 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 	// Estamos fazendo as entradas a valor de CONAB neste ano, mas jah vamos aplicar o agio nas organicas. 
 	if _lContinua
 		if _nAgioOrg > 0
-//			u_log2 ('debug', 'Aplicando agio (organica/em conversao) de ' + cvaltochar (_nAgioOrg) + "% (tintorea=" + sb1 -> b1_vattr + ")")
+		//	u_log2 ('debug', 'Aplicando agio (organica/em conversao) de ' + cvaltochar (_nAgioOrg) + "% (tintorea=" + sb1 -> b1_vattr + ")")
 			for _nAux = 1 to len (_aGraus)
 				// Somente para os graus que estiverem acima do minimo (abaixo disso, eh preco minimo pra tudo)
 				if _aGraus [_nAux, .PrcUvaColGrau] >= _nGMinAgio
+			//		U_Log2 ('debug', '[' + procname () + ']Grau ' + cvaltochar (_aGraus [_nAux, .PrcUvaColGrau]) + ': Vou aplicar ' + cvaltochar (_nAgioOrg) + '% sobre ' + cvaltochar (_aGraus [_nAux, .PrcUvaColPrcCompra]))
 					_aGraus [_nAux, .PrcUvaColPrcEntrada] = _aGraus [_nAux, .PrcUvaColPrcEntrada] + _aGraus [_nAux, .PrcUvaColPrcEntrada] * _nAgioOrg / 100
 					_aGraus [_nAux, .PrcUvaColPrcCompra]  = _aGraus [_nAux, .PrcUvaColPrcCompra]  + _aGraus [_nAux, .PrcUvaColPrcCompra]  * _nAgioOrg / 100
 					_aGraus [_nAux, .PrcUvaColPrcMOC]     = _aGraus [_nAux, .PrcUvaColPrcMOC]     + _aGraus [_nAux, .PrcUvaColPrcMOC]     * _nAgioOrg / 100
+			//		U_Log2 ('debug', '[' + procname () + ']Grau ' + cvaltochar (_aGraus [_nAux, .PrcUvaColGrau]) + ': Fiquei com valor = ' + cvaltochar (_aGraus [_nAux, .PrcUvaColPrcCompra]))
 				endif
 			next
 		endif
-
 	endif
 
 
@@ -561,9 +561,9 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 		_aRet = {0, 0, _sComent, _aGrausInt, 0}
 	endif
 
-//	u_log ('Preco entrada:', _aRet [1])
-//	u_log ('Preco compra :', _aRet [2])
-//	u_log ('Preco MOC    :', _aRet [5])
+//	u_log2 ('debug', 'Preco entrada: ' + cvaltochar (_aRet [1]))
+//	u_log2 ('debug', 'Preco compra : ' + cvaltochar (_aRet [2]))
+//	u_log2 ('debug', 'Preco MOC    : ' + cvaltochar (_aRet [5]))
 // comentarios -->	u_log2 ('info', _aRet [3])
 	U_ML_SRArea (_aAreaAnt)
 return _aRet
