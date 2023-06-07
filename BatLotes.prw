@@ -45,7 +45,7 @@ Static Function _BloqLotes(_sLinkSrv)
     _oSQL := ClsSQL ():New ()
     _oSQL:_sQuery := " SELECT MAX(DD_DOC) FROM " + RetSQLName ("SDD") 
     _oSQL:_sQuery += " WHERE DD_FILIAL = '" + xFilial("SDD") + "'"
-    _oSQL:_sQuery += " AND DD_DOC LIKE 'F%' "
+    _oSQL:_sQuery += " AND DD_DOC LIKE 'L%' "
     _aNumero := aclone (_oSQL:Qry2Array (.F., .F.))
 
     If Len(_aNumero) > 0
@@ -78,6 +78,7 @@ Static Function _BloqLotes(_sLinkSrv)
     _oSQL:_sQuery += " 		AND B8_PRODUTO   = ITEM_COD_ITEM_LOG "
     _oSQL:_sQuery += " 		AND B8_LOTECTL   = LOTE "
     _oSQL:_sQuery += " 		AND B8_DTVALID   = VALIDADE "
+    _oSQL:_sQuery += " WHERE ITEM_COD_ITEM_LOG='0150' ""
     _oSQL:_sQuery += " ORDER BY ITEM_COD_ITEM_LOG, LOTE, POSICAO "
     u_log(_oSQL:_sQuery)
     _aDados := aclone (_oSQL:Qry2Array (.F., .F.))
@@ -87,7 +88,7 @@ Static Function _BloqLotes(_sLinkSrv)
 
         If _aDados[_x, 6] >= _aDados[_x, 5]
 
-            _sNumero := 'F' + PADL(alltrim(str(_nNumero)), 8, '0')      
+            _sNumero := 'L' + PADL(alltrim(str(_nNumero)), 8, '0')      
             _BloqueiaLote(_aDados, _x, _sNumero)
             _nNumero +=1
         else
@@ -102,7 +103,7 @@ Static Function _BloqLotes(_sLinkSrv)
                 _oEvento:Produto   = _sProd
                 _oEvento:Grava()
             else
-                 _sMsg := "Não encontrado lote no Protheus! Produto " + _sProd + " Lote " + _aDados[_x, 2]
+                _sMsg := "Não encontrado lote no Protheus! Verif. Lote e Data Validade. Produto " + _sProd + " Lote " + _aDados[_x, 2] + " Dt. Valid. " + _aDados[_x, 3]
                 u_log(_sMsg)
 
                 _oEvento := ClsEvent():New ()
@@ -130,8 +131,9 @@ Static Function _BloqueiaLote(_aDados, _x, _sNumero)
 			    {"DD_LOCAL" 	,"01"			        ,NIL},;    
 			    {"DD_LOTECTL"	,_sLote		            ,NIL},;    
 			    {"DD_QUANT"		,_aDados[_x, 5]	        ,NIL},;
-                {"DD_VAFRUA"	,alltrim(_aDados[_x, 4]),NIL},;
-			    {"DD_MOTIVO"	,"ND"			        ,NIL}}                                               	
+			    {"DD_MOTIVO"	,"ND"			        ,NIL}}     
+
+                                //{"DD_VAFRUA"	,alltrim(_aDados[_x, 4]),NIL},;                                          	
 			
 	MSExecAuto({|x, y| mata275(x, y)},aVetor, 3)       
 			
@@ -178,7 +180,7 @@ Static Function _LibLotes(_sLinkSrv)
     _oSQL:_sQuery += " 		AND SDD.DD_LOCAL = '01' "
     _oSQL:_sQuery += " 		AND SDD.DD_LOTECTL = LOTE "
     _oSQL:_sQuery += " 		AND TRIM(SDD.DD_VAFRUA) = TRIM(POSICAO) "
-    _oSQL:_sQuery += " 		AND SDD.DD_DOC LIKE 'F%' "
+    _oSQL:_sQuery += " 		AND SDD.DD_DOC LIKE 'L%' "
     _oSQL:_sQuery += " 		AND SDD.DD_QUANT > 0 "
     _oSQL:_sQuery += " 		AND SDD.DD_SALDO > 0 "
     u_log(_oSQL:_sQuery)
