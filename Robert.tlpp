@@ -93,12 +93,12 @@ user function robert ()
 		// _CargSaf ()
 		// _CplSaf23 ()
 		// _ctbANC ()
+		// _DesabRast ()
 		// _elastic ()
 		// _EstFul()
 		// _Etiq ()
 		// _evtXML ()
 		// _exml ()
-		// _FechSafr ()
 		// _FtSafra ()
 		// _gerasze ()
 		// _GLPI13221 ()
@@ -111,7 +111,7 @@ user function robert ()
 		// _reginv ()
 		// _recmail ()
 		// _RevCH ()
-		// _RelAssoc ()
+		_RelAssoc ()
 		// _SF1()
 		// _SimCtb ()
 		// _SimSafr23 ()
@@ -125,7 +125,7 @@ user function robert ()
 		// _VACCR2 ()
 		// _VA_XLS ()
 		// _verif ()
-		u_help ('Nada definido.')
+		// u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
@@ -1108,6 +1108,165 @@ static function _ctbanc ()
 return
 
 // --------------------------------------------------------------------------
+// Desabilitar rastreabilidade (lote e/ou enderecamento) de algum item.
+// AINDA EM CONSTRUCAO!!!
+static function _DesabRast ()
+	local _aItens := {}
+	local _nItem  := 0
+	local _oSQL   := NIL
+	local _aDados := {}
+	local _nDado  := 0
+	local _aErros := {}
+	local _sUlMes := ''
+
+	// Menor mes corrente entre todas as filiais
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += "SELECT MIN (B9_DATA)"
+	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB9") + " SB9"
+	_oSQL:_sQuery += " WHERE SB9.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=   " AND SB9.B9_FILIAL  NOT IN ('02','04','05','06','12','14')"  // INATIVAS
+	_oSQL:_sQuery +=   " AND SB9.B9_DATA != ''"
+	_sUlMes = _oSQL:RetQry (1, .f.)
+	U_Log2 ('debug', '[' + procname () + ']_sUlMes = ' + _sUlMes)
+
+	// Lista de itens a analisar
+	aadd (_aItens, U_TamFixo ('609939', TamSX3 ("B1_COD")[1], ' '))
+
+	for _nItem = 1 to len (_aItens)
+		_aErros = {}
+//		_lDesabOK = .T.
+
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+	//	_oSQL:_sQuery += "SELECT 'Item tem lote(s) com saldo em: ' + string_agg ('Filial ' + B8_FILIAL + '/ ax ' + B8_LOCAL, '; ')"
+		_oSQL:_sQuery += "SELECT B8_FILIAL, B8_LOCAL"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SB8") + " SB8"
+		_oSQL:_sQuery += " WHERE SB8.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SB8.B8_PRODUTO = '" + _aItens [_nItem] + "'"
+		_oSQL:_sQuery +=   " AND SB8.B8_SALDO  != 0"
+		_oSQL:Log ('[' + procname () + ']')
+		_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
+		for _nDado = 1 to len (_aDados)
+			aadd (_aErros, {_aItens [_nItem], _aDados [_nDado, 1], _aDados [_nDado, 2], 'Lote(s) com saldo'})
+		next
+
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT BF_FILIAL, BF_LOCAL"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SBF") + " SBF"
+		_oSQL:_sQuery += " WHERE SBF.D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND SBF.BF_PRODUTO = '" + _aItens [_nItem] + "'"
+		_oSQL:_sQuery +=   " AND SBF.BF_QUANT  != 0"
+		_oSQL:Log ('[' + procname () + ']')
+		_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
+		for _nDado = 1 to len (_aDados)
+			aadd (_aErros, {_aItens [_nItem], _aDados [_nDado, 1], _aDados [_nDado, 2], 'Endereco(s) com saldo'})
+		next
+
+		// Se tiver movimentacao no mes corrente, nao adianta limpar SBJ e SBK, pois ele vai gerar novamente
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT D1_FILIAL, D1_LOCAL"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD1")
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND D1_COD     = '" + _aItens [_nItem] + "'"
+		_oSQL:_sQuery +=   " AND D1_DTDIGIT > '" + _sUlMes + "'"
+		_oSQL:_sQuery +=   " AND D1_LOTECTL != ''"
+		_oSQL:Log ('[' + procname () + ']')
+		_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
+		for _nDado = 1 to len (_aDados)
+			aadd (_aErros, {_aItens [_nItem], _aDados [_nDado, 1], _aDados [_nDado, 2], 'NF (tabela SD1) referenciando lote no mes corrente'})
+		next
+
+		_oSQL:_sQuery := ""
+//		_oSQL:_sQuery += "SELECT 'Item tem movimentos referenciando lote e/ou endereco na tabela SD2 no mes corrente: ' + string_agg ('Filial ' + D2_FILIAL + '/ ax ' + D2_LOCAL, '; ')"
+		_oSQL:_sQuery += "SELECT D2_FILIAL, D2_LOCAL"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD2")
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND D2_COD     = '" + _aItens [_nItem] + "'"
+		_oSQL:_sQuery +=   " AND D2_EMISSAO > '" + _sUlMes + "'"
+		_oSQL:_sQuery +=   " AND (D2_LOTECTL != '' OR D2_LOCALIZ != '')"
+		_oSQL:Log ('[' + procname () + ']')
+		_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
+		for _nDado = 1 to len (_aDados)
+			aadd (_aErros, {_aItens [_nItem], _aDados [_nDado, 1], _aDados [_nDado, 2], 'NF (tabela SD2) referenciando lote ou endereco no mes corrente'})
+		next
+
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT D3_FILIAL, D3_LOCAL"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD3")
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND D3_COD     = '" + _aItens [_nItem] + "'"
+		_oSQL:_sQuery +=   " AND D3_EMISSAO > '" + _sUlMes + "'"
+		_oSQL:_sQuery +=   " AND (D3_LOTECTL != '' OR D3_LOCALIZ != '')"
+		_oSQL:Log ('[' + procname () + ']')
+		_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
+		for _nDado = 1 to len (_aDados)
+			aadd (_aErros, {_aItens [_nItem], _aDados [_nDado, 1], _aDados [_nDado, 2], 'Movimento (tabela SD3) referenciando lote ou endereco no mes corrente'})
+		next
+
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT D5_FILIAL, D5_LOCAL"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SD5")
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND D5_PRODUTO = '" + _aItens [_nItem] + "'"
+		_oSQL:_sQuery +=   " AND D5_DATA    > '" + _sUlMes + "'"
+		_oSQL:Log ('[' + procname () + ']')
+		_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
+		for _nDado = 1 to len (_aDados)
+			aadd (_aErros, {_aItens [_nItem], _aDados [_nDado, 1], _aDados [_nDado, 2], 'Movimento (tabela SD5) no mes corrente'})
+		next
+
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT DA_FILIAL, DA_LOCAL"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SDA")
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND DA_PRODUTO = '" + _aItens [_nItem] + "'"
+		_oSQL:_sQuery +=   " AND DA_DATA    > '" + _sUlMes + "'"
+		_oSQL:Log ('[' + procname () + ']')
+		_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
+		for _nDado = 1 to len (_aDados)
+			aadd (_aErros, {_aItens [_nItem], _aDados [_nDado, 1], _aDados [_nDado, 2], 'Movimento (tabela SDA) no mes corrente'})
+		next
+
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT DB_FILIAL, DB_LOCAL"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SDB")
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND DB_PRODUTO = '" + _aItens [_nItem] + "'"
+		_oSQL:_sQuery +=   " AND DB_DATA    > '" + _sUlMes + "'"
+		_oSQL:Log ('[' + procname () + ']')
+		_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
+		for _nDado = 1 to len (_aDados)
+			aadd (_aErros, {_aItens [_nItem], _aDados [_nDado, 1], _aDados [_nDado, 2], 'Movimento (tabela SDB) no mes corrente'})
+		next
+
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += "SELECT DD_FILIAL, DD_LOCAL"
+		_oSQL:_sQuery +=  " FROM " + RetSQLName ("SDD")
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=   " AND DD_PRODUTO = '" + _aItens [_nItem] + "'"
+		_oSQL:_sQuery +=   " AND DD_SALDO  != 0"
+		_oSQL:Log ('[' + procname () + ']')
+		_aDados := aclone (_oSQL:Qry2Array (.f., .f.))
+		for _nDado = 1 to len (_aDados)
+			aadd (_aErros, {_aItens [_nItem], _aDados [_nDado, 1], _aDados [_nDado, 2], 'Bloqueio (com saldo) de lotes (tabela SDD)'})
+		next
+
+	next
+
+	if len (_aErros) > 0
+		//u_showarray (_aErros)
+		//help ("Impossivel desabilitar rastro / enderecamento do item '" + _aItens [_nItem] + "' pelo(s) seguinte(s) motivo(s):" + chr (13) + chr (10) + _sMsg,, .t.)
+		U_Log2 ('debug', _aErros)
+	endif
+return
+
+// --------------------------------------------------------------------------
 static function _gerasze()
 	local _oAssoc    := NIL
 	local _sSafra    := '2023'
@@ -1448,9 +1607,10 @@ static function _va_xls ()
 //	u_va_xls38 (.T.)
 
 // Precos calculados de uva safra
-//_aRetPrc = aclone (U_PrcUva23 ('03', '9955           ', 15, 'B', 'E', .F., .F.))
-//u_log (_aRetPrc)
-//return
+_aRetPrc = aclone (U_PrcUva23 ('01', '9959           ', 14, 'B', 'L', .F., .F.))
+u_log (_aRetPrc)
+return
+
 Private cPerg   := "VAXLS40"
 U_GravaSX1 (cPerg, '01', '2023')  // safra
 U_GravaSX1 (cPerg, '02', 2)  // 'Comuns', 'Finas espaldeira', 'Finas latadas', 'Finas SC'
@@ -2038,10 +2198,11 @@ static function _RevCH()
 	// U_BatRevCh ("TO", "NFE", 90)
 RETURN
 
+
 // --------------------------------------------------------------------------
 // Simulacoes safra 2023 durante reuniao.
 static function _SimSafr23 ()
-	local _sParcel   := 'M'
+	local _sParcel   := 'N'
 	local _nRecCount := 0
 	local _nRecAtu   := 0
 	dbselectarea ("ZZ9")
@@ -2051,7 +2212,7 @@ static function _SimSafr23 ()
 	_nRecAtu = 0
 	do while ! zz9 -> (eof ())
 		incproc ()
-		if zz9 -> zz9_safra == '2023' .and. zz9 -> zz9_parcel == _sParcel
+		if zz9 -> zz9_safra == '2023' .and. zz9 -> zz9_parcel == _sParcel .and. empty (zz9 -> zz9_nfcomp) .and. empty (zz9 -> zz9_sercom)
 			_sClasFina = ''
 			if zz9 -> zz9_conduc == 'L'
 				_sClasFina = zz9 -> zz9_clabd
@@ -2403,77 +2564,6 @@ return
 return
 */
 
-// Testes fechamento safra associados
-static function _FechSafr ()
-	local _oSQL      := NIL
-	local _aAssoc    := {}
-	local _nAssoc    := 0
-	local _sXmlFech  := ''
-	local _nItemXML  := 0
-	local _sError    := ''
-	local _sWarning  := ''
-	local _ValType   := ''
-	private _oXmlFech  := NIL  // Deixar PROVATE, senao a funcao xmlparser() nao reconhece.
-
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += "SELECT ASSOCIADO, LOJA_ASSOC, SUM (VALOR_TOTAL), 0 as VL_CALC, SUM (VLR_FUNRURAL), 0 as FUNR_CALC"
-	_oSQL:_sQuery +=  " FROM VA_VNOTAS_SAFRA N"
-	_oSQL:_sQuery += " WHERE SAFRA = '2022'"
-	_oSQL:_sQuery += " and ASSOCIADO IN ('000161','012791')" //,'012792','016774','016775','016777', '005567')"
-	_oSQL:_sQuery += " GROUP BY ASSOCIADO, LOJA_ASSOC"
-	_oSQL:_sQuery += " ORDER BY ASSOCIADO, LOJA_ASSOC"
-	_oSQL:Log ()
-	_aAssoc := _oSQL:Qry2Array (.f., .f.)
-	U_Log2 ('debug', _aAssoc)
-	for _nAssoc := 1 to len (_aAssoc)
-		_oAssoc := ClsAssoc ():New (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
-		//                        _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC, _lFSFunrur
-		//	u_log (_oAssoc:FechSafra ('2021',  .t.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,        .F.,      .F.,      .F.,        .F.))
-		//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .t.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,        .F.,      .F.,      .F.,        .F.))
-		//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .t.,     .F.,     .F.,      .F.,      .F.,      .F.,        .F.,      .F.,      .F.,        .F.))
-		//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .t.,     .F.,      .F.,      .F.,      .F.,        .F.,      .F.,      .F.,        .F.))
-		//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .t.,      .F.,      .F.,      .F.,        .F.,      .F.,      .F.,        .F.))
-		//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .t.,      .F.,      .F.,        .F.,      .F.,      .F.,        .F.))
-		//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .t.,      .F.,        .F.,      .F.,      .F.,        .F.))
-		//	u_log (_oAssoc:FechSafra ('2020',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .t.,        .F.,      .F.,      .F.,        .F.))
-		//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .t.,        .F.,      .F.,      .F.,        .F.))
-		//	u_log (_oAssoc:FechSafra ('2020',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,        .t.,      .F.,      .F.,        .F.))
-		//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,        .t.,      .F.,      .F.,        .F.))
-		//	u_log (_oAssoc:FechSafra ('2021',  .f.,     .F.,     .F.,     .F.,     .F.,      .F.,      .F.,      .F.,        .F.,      .t.,      .F.,        .F.))
-		//	u_log (_oAssoc:FechSafra ('2021',  .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,        .t.,      .t.,      .F.,        .T.))
-
-		_sXmlFech = _oAssoc:FechSafra ('2022',  .F.,     .f.,     .F.,     .F.,     .f.,      .f.,      .F.,      .F.,        .F.,      .F.,      .F.,        .T.)
-		U_Log2 ('debug', '[' + procname () + ']' + _sxmlfech)
-
-		_oXMLFech := XmlParser (_sXmlFech, "_", @_sError, @_sWarning)
-		if ! empty (_sError) .or. ! empty (_sWarning)
-			u_help ("Erro ao decodificar retorno: " + _sError + _sWarning,, .t.)
-			loop
-		endif
-
-		_ValType := _RetType('_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem') 
-		if _ValType == 'A'  // Sempre eh uma array com mais de um registro (pelo menos 1 nota + 1 linha de totais)
-			_nItemXML = len (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem)
-			_aAssoc [_nAssoc, 4] = val (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItemXML]:_vlTitulo:TEXT)
-			_aAssoc [_nAssoc, 6] = val (_oXMLFech:_assocFechSafra:_descontoFUNRURAL:_descontoFUNRURALItem[_nItemXML]:_vlFunru:TEXT)
-			if _aAssoc [_nAssoc, 6] != _aAssoc [_nAssoc, 5]
-				U_Log2 ('erro', '[' + procname () + ']Diferenca no associado')
-			endif
-		endif
-
-		U_Log2 ('info', 'Iniciando associado ' + _aAssoc [_nAssoc, 1])
-		U_GravaSX1 ("ML_FECHASA", '01', '2022')  // safra
-		U_GravaSX1 ("ML_FECHASA", '02', _aAssoc [_nAssoc, 1])  // assoc
-		U_GravaSX1 ("ML_FECHASA", '03', _aAssoc [_nAssoc, 2])  // loja
-		U_GravaSX1 ("ML_FECHASA", '04', '  ')  // nucleo
-		U_GravaSX1 ("ML_FECHASA", '05', 1)  // lista saldo CC 1=sim;2=nao
-		U_GravaSX1 ("ML_FECHASA", '06', 2)  // 1=detalhado;2=resumido;3=apenas NF compra
-		U_ml_fechasafra (.T.)
-	next
-	U_Log2 ('debug', _aAssoc)
-return
-
 // --------------------------------------------------------------------------
 // Testes especificos para problemas de performance
 Static Function _PerfMon ()
@@ -2803,7 +2893,7 @@ static function _RelAssoc ()
 	// AGORA FECHOU aadd (_aAssoc, '003621')  // Dejair Betlinski
 	// DIF aadd (_aAssoc, '010637')  // Cristiano Adilio de Souza - premio 2022 duplicado
 	// DIF aadd (_aAssoc, '002911')  // Honorino - premio 2022 duplicado - saiu em 2022
-	// CONTINUA FECHANDO aadd (_aAssoc, '005212')  // Heleno Facchin - estaria faltando matade dos valores no demonatrativo de IR ano base 2022
+	// aadd (_aAssoc, '005212')  // Heleno Facchin - estaria faltando matade dos valores no demonatrativo de IR ano base 2022
 	// FECHOU aadd (_aAssoc, '010601')  // Joel Salton - conferencia IR 2022
 	// FECHOU aadd (_aAssoc, '010602')  // Jorge Salton - conferencia IR 2022
 	// FECHOU aadd (_aAssoc, '010599')  // Joemir Salton - conferencia IR 2022
@@ -2816,10 +2906,12 @@ static function _RelAssoc ()
 	// Patricia Turella e o Edgar Schiavenin
 	// aadd (_aAssoc, '002924')  // Ivo Boldrin - fech.safra 2022 parece trazer R$ 79,79 a mais (deve ser funrural)
 	//aadd (_aAssoc, '002832')  // Alex Boldrin - fech.safra 2022 resumo pagto nao bate com notas de safra
-	aadd (_aAssoc, '003587')  // Marisa Guisso Possa - safra 2018 aparecem movtos de 2023 !!!
+	//aadd (_aAssoc, '003587')  // Marisa Guisso Possa - safra 2018 aparecem movtos de 2023 !!!
+	aadd (_aAssoc, '023824')  // EMA SOSTER BOFF
+	// aadd (_aAssoc, '023827')  // MERCELO BOFF
 	for _nAssoc = 1 to len (_aAssoc)
 		U_Log2 ('info', 'Iniciando associado ' + _aAssoc [_nAssoc])
-		U_GravaSX1 ("ML_FECHASA", '01', '2022')  // safra
+		U_GravaSX1 ("ML_FECHASA", '01', '2023')  // safra
 		U_GravaSX1 ("ML_FECHASA", '02', _aAssoc [_nAssoc])
 		U_GravaSX1 ("ML_FECHASA", '03', '01')  // loja
 		U_GravaSX1 ("ML_FECHASA", '04', '  ')  // nucleo

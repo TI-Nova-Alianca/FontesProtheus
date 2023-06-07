@@ -778,8 +778,8 @@ Static Function _GeraNota (_sTipoNota, _sFornece, _sLoja, _aItens, _sMsgContr, _
 				AADD(_aLinha , {"D1_VAVOLQT", 1                    , Nil } )
 				AADD(_aLinha , {"D1_NFORI",   _aItens [_nItem, .ItensNFOri]  , Nil } )
 				AADD(_aLinha , {"D1_SERIORI", _aItens [_nItem, .ItensSerieOri]  , Nil } )
-			//	AADD(_aLinha , {"D1_ITEMORI", right (_aItens [_nItem, .ItensItemOri], _nTamItOr) , nil} )
-				AADD(_aLinha , {"D1_ITEMORI", _aItens [_nItem, .ItensItemOri], nil} )
+				AADD(_aLinha , {"D1_ITEMORI", right (_aItens [_nItem, .ItensItemOri], _nTamItOr) , nil} )
+			// GRAVOU '00' EM 2023!!!	AADD(_aLinha , {"D1_ITEMORI", _aItens [_nItem, .ItensItemOri], nil} )
 			endif
 
 			_aLinha = aClone (U_OrdAuto (_aLinha))

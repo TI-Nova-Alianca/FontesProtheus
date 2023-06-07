@@ -29,6 +29,8 @@
 // 22/01/2021 - Robert - Restaurada linha que pegava retorno das filiais, na opcao de rateio filial a filial.
 // 12/04/2021 - Robert - Acrescentadas colunas CPV, VERBDAS e OUTRAS DESP COML no layout 'por cliente para tab.dinamica'  (GLPI 9802).
 // 12/06/2022 - Robert - Limitado nome de usuario a 15 caracteres (erro "String or binary data would be truncated").
+// 05/06/2023 - Robert - Funcao F3Array() passa a exigir definicao de colunas (GLPI 13670).
+//                     - Leitura da VA_SM0 substituida pela SYS_COMPANY.
 //
 
 // --------------------------------------------------------------------------
@@ -286,7 +288,7 @@ user function DREIndlC ()
 		aadd (_aOpcoes, "Grandes clientes")
 		aadd (_aOpcoes, "Aberto (para gerar tabela dinamica)")
 		aadd (_aOpcoes, "Cancelar")
-		_nLayout = U_F3Array (_aOpcoes, "Selecione layout",, 400, 300)
+		_nLayout = U_F3Array (_aOpcoes, "Selecione layout", {{1,"Opcoes",200,""}}, 400, 300)
 
 		do case
 		case _nLayout == 1
@@ -309,7 +311,8 @@ user function DREIndlC ()
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "SELECT DISTINCT FILIAL, SM0.M0_FILIAL"
 		_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".DRE_INDL_ITENS"
-		_oSQL:_sQuery +=       ",VA_SM0 SM0"
+	//	_oSQL:_sQuery +=       ",VA_SM0 SM0"
+		_oSQL:_sQuery +=       ",SYS_COMPANY SM0"
 		_oSQL:_sQuery += " WHERE ID_ANALISE = " + cvaltochar (_trbDRE->IdAnalise)
 		_oSQL:_sQuery +=   " AND SM0.D_E_L_E_T_ = ''"
 		_oSQL:_sQuery +=   " AND SM0.M0_CODIGO  = '" + cEmpAnt + "'"
@@ -323,7 +326,7 @@ user function DREIndlC ()
 			aadd (_aOpcoes, "Lin.coml.")
 			aadd (_aOpcoes, "Tabela preco lojas")
 			aadd (_aOpcoes, "Cancelar")
-			_nLayout = U_F3Array (_aOpcoes, "Selecione layout",, 400, 300)
+			_nLayout = U_F3Array (_aOpcoes, "Selecione layout", {{1,"Opcoes",200,""}}, 400, 300)
 			do case
 			case _nLayout == 1
 				processa ({|| _Cons2 ('LC', _sFilial, _sFilial)})
