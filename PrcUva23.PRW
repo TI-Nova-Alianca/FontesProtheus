@@ -19,6 +19,9 @@
 //                     - Criado tratamento para campos ZX5_13GMAG e ZX5_13PMIN (GLPI 13532).
 //                     - Desabilitada 'colher de chá' para o Alicante ($ de isabel abaixo de 14 graus) (GLPI 13532).
 // 12/05/2023 - Robert - Alterados alguns logs de INFO para DEBUG e vice-versa.
+// 11/06/2023 - Robert - GLPI 13699 - Uva 9911 (moscato bco) passa a ser isento das seguintes regras:
+//                       "Viniferas bcas na F07 abaixo 11 graus: precifica como niagara."
+//                       "Viniferas latadas clas. DS precifica como niagara/isabel."
 //
 
 #include "VA_INCLU.prw"
@@ -87,17 +90,17 @@ user function PrcUva23 (_sFilial, _sProduto, _nGrau, _sClassif, _sConducao, _lRe
 					_lIsabel = .T.
 					_sComent += "Viniferas SC na F07: precifica como isabel(ttas) ou niagara(bcas)."
 				else
-			//		if sb1 -> b1_vacor == 'T' .and. _nGrau < 14 .and. ! alltrim (sb1 -> b1_cod) $ '9969/9969A' // Alicante nao deve ser tratada como Isabel.
 					if sb1 -> b1_vacor == 'T' .and. _nGrau < 14
 						_lIsabel = .T.
 						_sComent += "Viniferas ttas na F07 abaixo 14 graus: precifica como isabel."
 					endif
-			//		if (sb1 -> b1_vacor != 'T' .or. alltrim (sb1 -> b1_cod) $ '9969/9969A') .and. _nGrau < 11  // Alicante abaixo de 11 trata como Niagara.
-					if sb1 -> b1_vacor != 'T' .and. _nGrau < 11  // Alicante abaixo de 11 trata como Niagara.
+				//	if sb1 -> b1_vacor != 'T' .and. _nGrau < 11
+					if sb1 -> b1_vacor != 'T' .and. _nGrau < 11 .and. alltrim (sb1 -> b1_cod) != '9911'  // Nao se aplica ao moscato branco
 						_lIsabel = .T.
 						_sComent += "Viniferas bcas na F07 abaixo 11 graus: precifica como niagara."
 					endif
-					if _sConducao == 'L' .and. alltrim (_sClassif) == 'DS'  //'D'
+//					if _sConducao == 'L' .and. alltrim (_sClassif) == 'DS'  //'D'
+					if _sConducao == 'L' .and. alltrim (_sClassif) == 'DS' .and. alltrim (sb1 -> b1_cod) != '9911'  // Nao se aplica ao moscato branco
 						_lIsabel = .T.
 						_sComent += "Viniferas latadas clas. " + _sClassif + ": precifica como niagara/isabel."
 					endif
