@@ -48,6 +48,7 @@
 // 03/02/2023 - Robert - Nas saidas do Full, se o item  nao controla notes no Protheus, nem consulta tb_wms_lotes.
 // 11/03/2023 - Robert - Tabela ZAG passa a ter o campo ZAG_SEQ fazendo parte da chave primaria.
 // 28/03/2023 - Robert - Habilitadas transf. do ax.31 para 01 (etiq. envasadas em terceiros).
+// 12/06/2023 - Robert - Melhorias logs - GLPI 13677
 //
 
 #Include "Protheus.ch"
@@ -588,7 +589,7 @@ static function _Saidas (_sSaidID)
 
 					// Se tiver mais de um lote, preciso gerar novo(s) registro(s) no ZAG (um para cada lote).
 					if _nLote == 1  // Jah estou posicionado na solicitacao original gerada pelo Protheus
-						u_log2 ('debug', 'Transferindo pelo ZAG original')
+						U_Log2 ('debug', '[' + procname () + ']Transferindo pelo ZAG original')
 						_oTrEstq := _oTrOrig
 						_oTrEstq:LoteOrig = _aLotes [_nLote, 1]
 						_oTrEstq:QtdSolic = _aLotes [_nLote, 2]
@@ -613,9 +614,10 @@ static function _Saidas (_sSaidID)
 					endif
 
 					// Chama a rotina de liberacao do docto. Se estiver em condicoes, a transferencia jah serah executada.
-					u_log2 ('info', 'Chamando liberacao do ZAG')
+					U_Log2 ('debug', '[' + procname () + ']Chamando liberacao do ZAG')
 					_oTrEstq:Libera (.F., 'FULLWMS')
 					_oTrEstq:Executa ()  // Tenta executar, pois as liberacoes podem ter tido exito.
+					U_Log2 ('debug', '[' + procname () + ']Transf.retornou com :EXECUTADO = ' + _oTrEstq:Executado)
 					if _oTrEstq:Executado == 'S'
 						_AtuSaid ((_sAliasQ) -> saida_id, '3')  // Atualiza a tabela do Fullsoft como 'executado no ERP'
 					elseif _oTrEstq:Executado == 'E'
