@@ -17,21 +17,18 @@
 // 08/03/2021 - Cláudia - GLPI: 9427 - Preço unitário VLR_UNIT
 // 27/08/2021 - Robert  - Inserido aviso de que a tela vai ser descontinuada (GLPI 9297).
 // 31/10/2022 - Robert  - Habilitado novamente (agora o pessoal jah se acostumou a usar pelo NaWeb).
+// 18/06/2023 - Robert  - Criada coluna ULTIMO_CUSTO_MEDIO (GLPI 13735)
 //
 
 // --------------------------------------------------------------------------------------------------
 User Function SldTerc ()
 	local _aAreaAnt   := U_ML_SRArea ()
 	local _aAmbAnt    := U_SalvaAmb ()
-//	local _dDeadLine  := stod ('20210930')
 	private cPerg     := "SLDTERC"
 
-//	u_help ("ATENCAO: A partir de " + dtoc (_dDeadLine) + " esta consulta vai estar disponivel somente no sistema NaWeb.")
-//	if date () < _dDeadLine
-		_ValidPerg ()
-		Pergunte (cPerg, .T.)
-		Processa ({|| _Tela ()})
-//	endif
+	_ValidPerg ()
+	Pergunte (cPerg, .T.)
+	Processa ({|| _Tela ()})
 
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
@@ -53,6 +50,7 @@ static function _Tela ()
 	_oSQL:_sQuery += "        B6_QUANT AS QT_ORIG,"
 	_oSQL:_sQuery += "        B6_SALDO AS SALDO,"
 	_oSQL:_sQuery += "        B6_PRUNIT AS VLR_UNIT,"
+	_oSQL:_sQuery += "        round (ULTIMO_CUSTO_MEDIO, 4) AS ULT_CMED,"
 	_oSQL:_sQuery += "        B6_CLIFOR AS CLI_FORN,"
 	_oSQL:_sQuery += "        B6_LOJA AS LOJA,"
 	_oSQL:_sQuery += "        NOME,"
