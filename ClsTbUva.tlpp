@@ -31,16 +31,20 @@ CLASS ClsTbUva
 	// Declaracao das propriedades da Classe
 //	public  data UltMsg       // Ultima mensagem gerada.
 	public data Conducao   // [E]spaldeira, [L]atada
-	public data Grupos13   // Grupos de uvas cfe. tabela 13 do ZX5
+	public data Grupos     // Grupos de uvas cfe. tabela 13 do ZX5
+	public data SubGrupos  // Subgrupos de uvas cfe. tabela 13 do ZX5
 	public data Safra
 	public data TipoPreco  // [E]ntrada, [C]ompra, [M]oc(CONAB)
 	public data TipoUva    // [C]omum, [F]ina
+	public data UltMsg     // Mensagens (geralmente de erro)
+//	public data UvasGrupo  // Array de variedades em cada grupo
 
 
 	// Declaracao dos Metodos da classe
 	public METHOD New ()
 	public METHOD GeraAtrib ()
 	public METHOD GeraHTM ()
+	private METHOD SomaMsg ()
 ENDCLASS
 
 
@@ -56,8 +60,10 @@ Return ::self
 // --------------------------------------------------------------------------
 // Alimenta os atributos da classe.
 METHOD GeraAtrib () Class ClsTbUva
-	local _aAreaAnt := U_ML_SRArea ()
-	local _oSQL     := NIL
+	local _lContinua := .T.
+	local _aAreaAnt  := U_ML_SRArea ()
+	local _oSQL      := NIL
+	local _nGrupo    := 0
 
 	// Defaults
 //	::UltMsg       = ''
@@ -65,10 +71,16 @@ METHOD GeraAtrib () Class ClsTbUva
 	::Safra     = ''
 	::TipoUva   = ''
 	::TipoPreco = ''
-	::Grupos13  = {}
+	::Grupos    = {}
+	::SubGrupos = {}
+
+	if empty (::Safra)     ; ::SomaMsg ("Safra nao definida.")               ; _lContinua = .F. ; endif
+	if empty (::TipoPreco) ; ::SomaMsg ("Tipo de preco nao definido.")       ; _lContinua = .F. ; endif
+	if empty (::TipoUva)   ; ::SomaMsg ("Tipo de uva nao definido.")         ; _lContinua = .F. ; endif
+	if empty (::Conducao)  ; ::SomaMsg ("Sistema de conducao nao definido.") ; _lContinua = .F. ; endif
 
 	// Gera uma lista de grupos relacionados ao tipo de uvas solicitado.
-	if ! empty (::Safra) .and. ! empty (::TipoPreco) .and. ! empty (::TipoUva) .and. ! empty (::Conducao)
+	if _lContinua
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := "SELECT ZX5_13GRUP, ZX5_13DESC, ZX5_13GBAS"
 		_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZX5") + " ZX5_13 "
@@ -86,7 +98,13 @@ METHOD GeraAtrib () Class ClsTbUva
 		endif
 		_oSQL:_sQuery += " ORDER BY ZX5_13GRUP"
 		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
-		::Grupos13 := aclone (_oSQL:Qry2Array (.f., .f.))
+		::Grupos := aclone (_oSQL:Qry2Array (.f., .f.))
+	endif
+
+	// Gera listas de variedades ligadas a cada grupo.
+	if _lContinua
+		for _nGrupo = 1 to len (::Grupos)
+		next
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
@@ -116,7 +134,7 @@ METHOD GeraHTM () Class ClsTbUva
 		elseif ::TipoPreco == 'C'
 			_sHTM += 'MOC'
 		else
-				_sHTM += '(OUTRAS NAO DEFINIDAS)'
+			_sHTM += '(OUTRAS NAO DEFINIDAS)'
 		endif
 		_sHTM += ' - uvas ' + iif (::TipoUva == 'C', 'comuns', iif (::TipoUva == 'F', 'viniferas', '(SEM DEFINICAO)'))
 		_sHTM += ' ' + iif (::Conducao == 'L', 'latadas', iif (::Conducao == 'E', 'espaldeira', '(SEM DEFINICAO)'))
@@ -129,14 +147,17 @@ METHOD GeraHTM () Class ClsTbUva
 	// Linhas de titulos das colunas (nomes dos grupos, grau base, etc)
 	_sHTM += '<tr>'
 	_sHTM +=    '<th align=left>Grau</th>'
-	for _nGrp13 = 1 to len (::Grupos13)
-		_sHTM += '<th colspan=3 align=center>Grp ' + alltrim (::Grupos13 [_nGrp13, 1])
-		_sHTM +=    '-' + alltrim (::Grupos13 [_nGrp13, 2])
-		_sHTM +=    '(gb ' + cvaltochar (::Grupos13 [_nGrp13, 3]) + ')'
+	for _nGrp13 = 1 to len (::Grupos)
+		_sHTM += '<th colspan=3 align=center>Grp ' + alltrim (::Grupos [_nGrp13, 1])
+		_sHTM +=    '-' + alltrim (::Grupos [_nGrp13, 2])
+		_sHTM +=    '(gb ' + cvaltochar (::Grupos [_nGrp13, 3]) + ')'
 		_sHTM += '</th>'
 	next
 	_sHTM += '</tr>'
-	_sHTM += '<tr>'
+
+	// Adiciona cada grau
+	_sHTM += '<tr style="font-family:tahoma;font-size:12px">'
+	
 	_sHTM +=    '<th align=center>13.0</th>'
 	_sHTM +=    '<th align=left>Bordo</th>'
 	_sHTM +=    '<th align=left>Bordo cnv</th>'
@@ -164,7 +185,7 @@ METHOD GeraHTM () Class ClsTbUva
 	_sHTM +=    '<th align=left>Niagara ord</th>'
 	_sHTM += '</tr>'
 	_sHTM += '<tr>'
-	_sHTM +=    '<th align=center>13.0</th>'
+	_sHTM +=    '<th/>'
 	_sHTM +=    '<th align=left>Rubea</th>'
 	_sHTM +=    '<th align=left>Rubea cnv</th>'
 	_sHTM +=    '<th align=left>Rubea ord</th>'
@@ -220,3 +241,14 @@ METHOD GeraHTM () Class ClsTbUva
 	_sHTM += '</table>'
 	_sHTM += '</body></html>'
 return _sHTM
+
+
+// --------------------------------------------------------------------------
+// Adiciona (sempre no inicio, para que a mensagem mais recente seja vista
+// antes) uma mensagem na string ::UltMsg
+METHOD SomaMsg (_sMsg) Class ClsTbUva
+	local _sMsgAux := alltrim (cvaltochar (_sMsg))
+	if ! alltrim (_sMsgAux) $ ::UltMsg
+		::UltMsg = alltrim (_sMsgAux) + '; ' + ::UltMsg
+	endif
+return

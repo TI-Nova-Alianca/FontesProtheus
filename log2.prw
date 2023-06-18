@@ -23,6 +23,7 @@
 // 17/04/2022 - Robert - Fazia chamada recursiva indevidamente quando estava na hora de renomear o arquivo de log.
 // 24/10/2022 - Robert - Criada funcao MudaLog().
 // 03/04/2023 - Robert - Limite de tamanho de texto aumentado de 20000 para 40000 caracteres.
+// 13/06/2023 - Robert - Criado tratamento para variavel _sPrefLog.
 //
 
 // --------------------------------------------------------------------------
@@ -37,23 +38,31 @@ user function Log2 (_sTipo, _xDadoOri, _xExtra)
 	local _sSeqNome   := ''
 	local _nLimTamLg  := 5000000  //2000000  // 1000000
 	static _nAcumLog  := 0
-//	static _sLogDebug := GetSrvProfString ("VA_LogDebug", "0")
-
-//	// Caso nao esteja definida a chave especifica no appserver.ini, ignora a gravacao de logs de debug.
-//	 if _sLogDebug != '1' .and. alltrim (upper (cvaltochar (_sTipo))) == 'DEBUG'
-//		return
-//	endif
 
 	// Prepara 'tags' para o inicio de linha
 	_sTipo = cvaltochar (_sTipo)
 	_sTipo = Capital (_sTipo)
-	_sTagsLog += '[' + padc (_sTipo, 5, ' ') + ']'
-//	_sTagsLog += '[' + cvaltochar (ThreadId ()) + ']'
+	if alltrim (_sTipo) == 'Debug'
+		_sTipo = 'Dbg'
+	elseif alltrim (_sTipo) == 'Aviso'
+		_sTipo = 'Avs'
+	elseif alltrim (_sTipo) == 'Erro'
+		_sTipo = 'Err'
+	elseif alltrim (_sTipo) == 'Info'
+		_sTipo = 'Inf'
+	endif
+	_sTagsLog += '[' + padc (_sTipo, 3, ' ') + ']'
 	_sTagsLog += '[' + left (padl (cvaltochar (ThreadId ()), 6, ' '), 6) + ']'  // Jah vi casos de ThreadID() retornar menos que 6 caracteres.
 	_sTagsLog += '[' + substr (_sDataLog, 1, 4) + '' + substr (_sDataLog, 5, 2) + '' + substr (_sDataLog, 7, 2) + ' ' + strtran (TimeFull (), '.', ',') + ']'
 	_sTagsLog += '[' + GetEnvServer () + ']'
 	_sTagsLog += '[F' + iif (type ('cFilAnt') == 'C', cFilAnt, '  ') + ']'
-	_sTagsLog += '[' + padr (iif (type ("cUserName") == "C", cUserName, ''), 10) + ']'
+	_sTagsLog += '[' + padr (iif (type ("cUserName") == "C", cUserName, ''), 8) + ']'
+
+	// Se esta variavel estiver definida, ah por que o programa chamador
+	// deseja que apareca na frente de todas as linhas de log
+	if type ("_sPrefLog") == 'C'
+		_sTagsLog += '[' + _sPrefLog + ']'
+	endif
 
 	// Transforma o dado de origem em array, sendo cada elemento da array uma linha a ser gravada no log.
 	if valtype (_xDadoOri) == 'A'

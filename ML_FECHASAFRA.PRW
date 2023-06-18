@@ -38,7 +38,7 @@
 // 27/02/2022 - Robert  - Melhoria coluna historico nas previsoes de pagamento (GLPI 11678)
 // 15/06/2022 - Robert  - Impressao de descontos de FUNRURAL (GLPI 11723).
 // 11/04/2023 - Robert  - Passa a listar aux.combustivel/frete no modelo resumido, para facilitar fechto.valores.
-// 14/04/2023 - Robert  - EM versoes anteriores a 2020, listava titulos futuros na previsao de pagamento.
+// 14/04/2023 - Robert  - Em versoes anteriores a 2020, listava titulos futuros na previsao de pagamento.
 // 02/06/2023 - Robert  - Modelo resumido passa a listar tags do <valoresEfetivos> em vez de <resumoVarGrauClas> - GLPI 13532
 //
 

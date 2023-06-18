@@ -19,6 +19,7 @@
 // Campos a serem eliminados quando der no jeito:
 // ZZU_EMP, d1_fim, f1_fim (?)
 // Campos de DAP no SA2 (conferir os programas antes)
+// Adicionar CT2 para compactacao no BATLIMP
 
 
 #include "protheus.ch"
@@ -36,7 +37,7 @@ user function robert ()
 //	u_perfmon ('I', 'Prep_env_' + cValToChar (GetServerPort ()))
 
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '01' modulo 'FIN'
+		prepare environment empresa '01' filial '07' modulo 'FIN'
 		private cModulo   := 'FIN'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -91,7 +92,8 @@ user function robert ()
 		// _BatXML ()
 		// _batZBE ()
 		// _CargSaf ()
-		// _CplSaf23 ()
+		// _CplSaf23A ()
+		// _CplSaf23B ()
 		// _ctbANC ()
 		// _DesabRast ()
 		// _elastic ()
@@ -102,6 +104,7 @@ user function robert ()
 		// _FtSafra ()
 		// _gerasze ()
 		// _GLPI13221 ()
+		// _GLPI13674 ()
 		// _ImpGPC ()
 		// _memoria ()
 		// _metaf ()
@@ -111,7 +114,7 @@ user function robert ()
 		// _reginv ()
 		// _recmail ()
 		// _RevCH ()
-		_RelAssoc ()
+		// _RelAssoc ()
 		// _SF1()
 		// _SimCtb ()
 		// _SimSafr23 ()
@@ -125,7 +128,7 @@ user function robert ()
 		// _VACCR2 ()
 		// _VA_XLS ()
 		// _verif ()
-		// u_help ('Nada definido.')
+		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
@@ -136,12 +139,12 @@ return
 static function _AjLoteEnd ()
 	// Deixo desabilitado pra me obrigar a revisar sempre --->
 	local _sFilial   := '01'
-	//local _sDocto    := 'GLPI13644'
-	local _sProduto  := '1540'
-	local _sAlmox    := '31'
-	local _nQuant    := 1  // qt positiva=gerar entrada
-	local _sEndereco := 'T01 PCP AX 31  '
-	local _sLote     := 'AUTO011443'
+	// local _sDocto    := 'GLPI13727'
+	local _sProduto  := '2739'
+	local _sAlmox    := '07'
+	local _nQuant    := 0.0003  // qt positiva=gerar entrada
+	local _sEndereco := ''
+	local _sLote     := '09239801  '
 	local _oSQL      := NIL
 
 	if _sFilial != cFilAnt
@@ -157,7 +160,6 @@ static function _AjLoteEnd ()
 			_oSQL:_sQuery +=   " AND SB8.B8_LOTECTL = '" + _sLote + "'"
 			_oSQL:_sQuery +=   " AND SB8.B8_PRODUTO = '" + _sProduto + "'"
 			_oSQL:_sQuery +=   " AND SB8.B8_LOCAL   = '" + _sAlmox + "'"
-			/*
 			reclock ("SD5", .t.)
 			sd5 -> d5_filial  = _sFilial
 			sd5 -> d5_produto = _sProduto
@@ -177,7 +179,6 @@ static function _AjLoteEnd ()
 			U_Log2 ('debug', '[' + procname () + ']D5_LOCAL   = ' + sd5 -> d5_local)
 			U_Log2 ('debug', '[' + procname () + ']D5_DATA    = ' + dtoc (sd5 -> d5_data))
 			U_Log2 ('debug', '[' + procname () + ']D5_QUANT   = ' + cvaltochar (sd5 -> d5_quant))
-			*/
 		endif
 		if ! empty (_sEndereco)
 			reclock ("SDB", .t.)
@@ -996,8 +997,8 @@ static function _CplSaf21 ()
 return
 
 // --------------------------------------------------------------------------
-// Gera pre-notas complemento 2023
-static function _CplSaf23 ()
+// Gera pre-notas complemento 2023 (em maio)
+static function _CplSaf23A ()
 	local _sSafraCpl := '2023'
 	U_MudaLog ('CplSaf23.log')
 /*
@@ -1095,6 +1096,31 @@ static function _CplSaf23 ()
 	U_GravaSX1 (cPerg, '10', 2)      // tipo NF: {"Normais", "Compl.preco"}
 	U_GravaSX1 (cPerg, '11', '801')     // Cond pagto
 	U_GravaSX1 (cPerg, '12', '')     // Apenas estas variedades
+	U_GravaSX1 (cPerg, '13', '')     // Exceto estas variedades
+	U_GravaSX1 (cPerg, '14', 1)      // 1=Assoc+ex assoc;2=Terceiros;3=Todos
+	u_va_gnf2 (.t.)
+return
+
+
+// --------------------------------------------------------------------------
+// Gera pre-notas complemento 2023 (em junho)
+static function _CplSaf23B ()
+	local _sSafraCpl := '2023'
+	U_MudaLog ('CplSaf23.log')
+
+	Private cPerg   := "VAGNF2"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', _sSafraCpl) // Safra referencia
+	U_GravaSX1 (cPerg, '06', 'N')    // Parcelas sep.barras (bco=todas)
+	U_GravaSX1 (cPerg, '07', 'C')    // Grupo pagto
+	U_GravaSX1 (cPerg, '08', 3)      // Geracao por DCO: {"Com DCO", "Sem DCO", "Todos"}
+	U_GravaSX1 (cPerg, '09', 3)      // fina/comum: {"Comum", "Fina", "Todas"}
+	U_GravaSX1 (cPerg, '10', 2)      // tipo NF: {"Normais", "Compl.preco"}
+	U_GravaSX1 (cPerg, '11', '801')     // Cond pagto
+	U_GravaSX1 (cPerg, '12', '9911')     // Apenas estas variedades (neste momento, apenas o moscato branco)
 	U_GravaSX1 (cPerg, '13', '')     // Exceto estas variedades
 	U_GravaSX1 (cPerg, '14', 1)      // 1=Assoc+ex assoc;2=Terceiros;3=Todos
 	u_va_gnf2 (.t.)
@@ -1336,6 +1362,215 @@ static function _GLPI13221 ()
 	u_acolsXLS (_aHistFrt)
 return
 
+// --------------------------------------------------------------------------
+// Como as NF complemento safra maio/2023 foram acumuladas por produto+grau
+// (devido à grande quantidade de talões que precisaríamos preencher), perdi
+// a referencia à NF origem de pelo menos um dos itens, e isso inviabiliza
+// o uso da view VA_VPRECO_EFETIVO_SAFRA. Vou tentar usar o SZH para isso.
+static function _GLPI13674 ()
+	local _aNFCpl   := {}
+	local _sAliasQ  := ''
+	local _nVlUsado := 0
+
+	// Primeira passagem: somente as pre-notas que nao foram acumuladas em contranotas.
+	dbselectarea ("ZZ9")
+	set filter to zz9_safra = '2023' .and. zz9_parcel = 'M'
+	zz9 -> (dbgotop ())
+	do while ! zz9 -> (eof ())
+		if zz9 -> zz9_safra == '2023' .and. zz9 -> zz9_parcel == 'M' .AND. zz9_nfComp != 'VLR_MENOR'  .AND. zz9_nfComp != '' .and. empty (zz9_dco)
+			U_Log2 ('debug', '[' + procname () + ']1p F' + zz9 -> zz9_filial + ' ' + zz9 -> zz9_safra + ' ' + zz9 -> zz9_parcel + ' prenf:' + zz9 -> zz9_pre_nf + ' forn:' + zz9 -> zz9_fornec + ' ori:' + zz9 -> zz9_nfori + ' comp:' + zz9 -> zz9_nfComp)
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery += " SELECT COUNT (*)"
+			_oSQL:_sQuery += " FROM " + RetSQLName ("ZZ9") + " ZZ9"
+			_oSQL:_sQuery += " WHERE ZZ9.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery += " AND ZZ9.ZZ9_FILIAL = '" + zz9 -> zz9_FILIAL + "'"
+			_oSQL:_sQuery += " AND ZZ9.ZZ9_SAFRA  = '" + zz9 -> zz9_SAFRA  + "'"
+			_oSQL:_sQuery += " AND ZZ9.ZZ9_FORNEC = '" + zz9 -> zz9_FORNEC + "'"
+			_oSQL:_sQuery += " AND ZZ9.ZZ9_LOJA   = '" + zz9 -> zz9_LOJA   + "'"
+			_oSQL:_sQuery += " AND ZZ9.ZZ9_PARCEL = '" + zz9 -> zz9_PARCEL + "'"
+			_oSQL:_sQuery += " AND ZZ9.ZZ9_PRODUT = '" + zz9 -> zz9_PRODUT + "'"
+			_oSQL:_sQuery += " AND ZZ9.ZZ9_GRAU   = '" + zz9 -> zz9_GRAU   + "'"
+			_oSQL:_sQuery += " AND ZZ9.ZZ9_NFORI + ZZ9.ZZ9_ITEMOR != '" + zz9 -> zz9_NFORI + zz9 -> zz9_ITEMOR + "'"
+			
+			// Por enquanto, apenas notas 'de 1 para 1'
+			if _oSQL:RetQry (1, .f.) == 0
+
+				// Posiciona a tabela SD1 na nota ORIGINAL para garantir um pouco mais.
+				sd1 -> (dbsetorder (1))  // D1_FILIAL, D1_DOC, D1_SERIE, D1_FORNECE, D1_LOJA, D1_COD, D1_ITEM, R_E_C_N_O_, D_E_L_E_T_
+				if sd1 -> (dbseek (zz9 -> zz9_filial + zz9 -> zz9_nfori + zz9 -> zz9_serior + zz9 -> zz9_fornec + zz9 -> zz9_loja + zz9 -> zz9_produt + zz9 -> zz9_itemor, .F.))
+
+					// Quero encontrar, tambem, a nota de complemento.
+					_oSQL := ClsSQL ():New ()
+					_oSQL:_sQuery := ""
+					_oSQL:_sQuery += "SELECT DATA, ITEM_NOTA, VALOR_TOTAL"
+					_oSQL:_sQuery +=  " FROM VA_VNOTAS_SAFRA V"
+					_oSQL:_sQuery += " WHERE V.SAFRA         = '" + zz9 -> zz9_safra  + "'"
+					_oSQL:_sQuery +=   " AND V.TIPO_NF       = 'V'"
+					_oSQL:_sQuery +=   " AND V.FILIAL        = '" + zz9 -> zz9_filial + "'"
+					_oSQL:_sQuery +=   " AND V.ASSOCIADO     = '" + zz9 -> zz9_fornec + "'"
+					_oSQL:_sQuery +=   " AND V.LOJA_ASSOC    = '" + zz9 -> zz9_loja   + "'"
+					_oSQL:_sQuery +=   " AND V.DOC           = '" + zz9 -> zz9_nfcomp + "'"
+					_oSQL:_sQuery +=   " AND V.SERIE         = '" + zz9 -> zz9_sercom + "'"
+					_oSQL:_sQuery +=   " AND V.PRODUTO       = '" + zz9 -> zz9_produt + "'"
+					_oSQL:_sQuery +=   " AND V.GRAU          = '" + zz9 -> zz9_grau   + "'"
+					_oSQL:_sQuery +=   " AND V.CLAS_FINAL    = '" + zz9 -> zz9_classe + "'"
+					_oSQL:_sQuery +=   " AND V.CLAS_ABD      = '" + zz9 -> zz9_clabd  + "'"
+					_oSQL:_sQuery +=   " AND V.SIST_CONDUCAO = '" + zz9 -> zz9_conduc + "'"
+					_aNFCpl := aclone (_oSQL:RetFixo (1, 'ao procurar NF complemento', .f.))
+					if len (_aNFCpl) == 1
+						reclock ("SZH", .T.)
+						szh -> zh_filial  = zz9 -> zz9_filial
+						szh -> zh_NFSAIDA = 'SAFRA2023'
+						szh -> zh_fornece = zz9 -> zz9_fornec
+						szh -> zh_loja    = zz9 -> zz9_loja
+						szh -> zh_Data    = stod (_aNFCpl [1, 1])
+						szh -> zh_NFFrete = zz9 -> zz9_nfcomp
+						szh -> zh_SerFret = zz9 -> zz9_sercom
+						szh -> zh_ItNFs   = substr (_aNFCpl [1, 2], 3, 2)  // Siiiim, eh um aproveitamento de campos muito descarado!
+						szh -> zh_TpFre   = 'E'
+						szh -> zh_NFentr  = sd1 -> d1_doc
+						szh -> zh_Srnfent = sd1 -> d1_serie
+						szh -> zh_ItNFE   = sd1 -> d1_item
+						szh -> zh_TpNFEnt = 'N'
+						szh -> zh_CliFor  = sd1 -> d1_fornece
+						szh -> zh_LjCliFo = sd1 -> d1_loja
+						szh -> zh_SeqEntr = "1"  // DIFERENCIAR PARTE 1 E PARTE 2 DESTE PROCESSO
+						szh -> zh_Rateio  = _aNFCpl [1, 3]
+						szh -> zh_TpDesp  = 'S'
+						MsUnLock()
+						reclock ("ZZ9", .f.)
+						zz9 -> zz9_dco = 'GLPI13674 ok1'
+						msunlock ()
+					else
+						U_Log2 ('erro', '[' + procname () + ']Era pra ter achado apenas 1 NF complemento: ' + _oSQL:_sQuery)
+					endif
+				else
+					U_Log2 ('erro', '[' + procname () + ']Nao encontrei SD1: ' + zz9 -> zz9_filial + zz9 -> zz9_nfori + zz9 -> zz9_serior + zz9 -> zz9_fornec + zz9 -> zz9_loja + zz9 -> zz9_produt + zz9 -> zz9_itemor)
+				endif
+			else
+				U_Log2 ('aviso', '[' + procname () + ']Teve outra nota de origem com mesma combinacao de produto/grau/classe/...')
+			endif
+		endif
+		zz9 -> (dbskip ())
+	enddo
+
+	// Segunda passagem: procura notas originais que foram acumuladas num mesmo complemento
+	// Calcula coluna com o acumulado do complemento que deveria ter sido gerado para
+	// aquela combinacao de filial/forn;produto/grau (com base no ZZ9)
+	// E busca a nota de complemento para ver se tem o mesmo valor.
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery += " SELECT SUM (ROUND ((ZZ9_QTORI * ZZ9_VUNIT) - (ZZ9_QTORI * ZZ9_VUNOLD), 2)) OVER (PARTITION BY ZZ9_FILIAL, ZZ9_FORNEC, ZZ9_LOJA, ZZ9_PRODUT, ZZ9_GRAU, ZZ9_CLASSE, ZZ9_CLABD, ZZ9.ZZ9_NFCOMP) as TOTCOMP"
+	_oSQL:_sQuery +=       ", count (*) OVER (PARTITION BY ZZ9_FILIAL, ZZ9_FORNEC, ZZ9_LOJA, ZZ9_PRODUT, ZZ9_GRAU, ZZ9_CLASSE, ZZ9_CLABD, ZZ9.ZZ9_NFCOMP) AS QTCOMP"
+	_oSQL:_sQuery +=       ", ROUND ((ZZ9_QTORI * ZZ9_VUNIT) - (ZZ9_QTORI * ZZ9_VUNOLD), 2) as COMPL_PREV"
+	_oSQL:_sQuery +=       ", ZZ9.*"
+	_oSQL:_sQuery +=       ", (SELECT VALOR_TOTAL
+	_oSQL:_sQuery +=           " FROM VA_VNOTAS_SAFRA V
+	_oSQL:_sQuery +=          " WHERE V.SAFRA = ZZ9_SAFRA
+	_oSQL:_sQuery +=            " AND V.FILIAL = ZZ9_FILIAL
+	_oSQL:_sQuery +=            " AND V.ASSOCIADO = ZZ9_FORNEC
+	_oSQL:_sQuery +=            " AND V.LOJA_ASSOC = ZZ9_LOJA
+	_oSQL:_sQuery +=            " AND V.DOC = ZZ9.ZZ9_NFCOMP
+	_oSQL:_sQuery +=            " AND V.SERIE = ZZ9.ZZ9_SERCOM
+	_oSQL:_sQuery +=            " AND V.TIPO_NF = 'V'
+	_oSQL:_sQuery +=            " AND V.PRODUTO = ZZ9.ZZ9_PRODUT
+	_oSQL:_sQuery +=            " AND V.GRAU = ZZ9.ZZ9_GRAU
+	_oSQL:_sQuery +=         " ) AS VL_NF"
+	_oSQL:_sQuery +=   " FROM " + RetSQLName ("ZZ9") + " ZZ9"
+	_oSQL:_sQuery +=  " WHERE ZZ9.D_E_L_E_T_  = ''"
+	_oSQL:_sQuery +=    " AND ZZ9.ZZ9_SAFRA   = '2023'"
+	_oSQL:_sQuery +=    " AND ZZ9.ZZ9_PARCEL  = 'M'"
+	_oSQL:_sQuery +=    " AND ZZ9.ZZ9_NFCOMP != ''"
+	_oSQL:_sQuery +=    " AND ZZ9.ZZ9_NFCOMP != 'VLR_MENOR'"
+	_oSQL:_sQuery +=    " AND ZZ9.ZZ9_DCO     = ''"
+	_oSQL:_sQuery +=  " ORDER BY ZZ9_FILIAL, ZZ9_FORNEC, ZZ9_LOJA, ZZ9_PRODUT, ZZ9_GRAU, ZZ9_CLASSE, ZZ9_CLABD, COMPL_PREV"
+	_oSQL:Log ('[' + procname () + ']')
+	_sAliasQ = _oSQL:Qry2Trb (.F.)
+	(_sAliasQ) -> (dbgotop ())
+	do while ! (_sAliasQ) -> (eof ())
+		
+		// Vou aceitar diferenca nos centavos. Ajustarei na ultima (maior valor).
+		if abs ((_sAliasQ) -> totcomp - (_sAliasQ) -> vl_nf) <= 1
+			U_Log2 ('debug', '[' + procname () + ']2p  F' + (_sAliasQ) -> zz9_filial + ' ' + (_sAliasQ) -> zz9_safra + ' ' + (_sAliasQ) -> zz9_parcel + ' prenf:' + (_sAliasQ) -> zz9_pre_nf + ' forn:' + (_sAliasQ) -> zz9_fornec + ' ori:' + (_sAliasQ) -> zz9_nfori + ' comp:' + (_sAliasQ) -> zz9_nfComp)
+			_nVlUsado = 0
+			_nQual    = 1
+			_sChave := (_sAliasQ) -> ZZ9_FILIAL + (_sAliasQ) -> ZZ9_FORNEC + (_sAliasQ) -> ZZ9_LOJA + (_sAliasQ) -> ZZ9_PRODUT + (_sAliasQ) -> ZZ9_GRAU + (_sAliasQ) -> ZZ9_CLASSE + (_sAliasQ) -> ZZ9_CLABD
+			do while ! (_sAliasQ) -> (eof ()) .and. (_sAliasQ) -> ZZ9_FILIAL + (_sAliasQ) -> ZZ9_FORNEC + (_sAliasQ) -> ZZ9_LOJA + (_sAliasQ) -> ZZ9_PRODUT + (_sAliasQ) -> ZZ9_GRAU + (_sAliasQ) -> ZZ9_CLASSE + (_sAliasQ) -> ZZ9_CLABD == _sChave
+
+				// Quero encontrar a nota de complemento.
+				_oSQL := ClsSQL ():New ()
+				_oSQL:_sQuery := ""
+				_oSQL:_sQuery += "SELECT DATA, ITEM_NOTA, VALOR_TOTAL" //, sum (VALOR_TOTAL) over () as TOTGER"
+				_oSQL:_sQuery +=  " FROM VA_VNOTAS_SAFRA V"
+				_oSQL:_sQuery += " WHERE V.SAFRA         = '" + (_sAliasQ) -> zz9_safra  + "'"
+				_oSQL:_sQuery +=   " AND V.TIPO_NF       = 'V'"
+				_oSQL:_sQuery +=   " AND V.FILIAL        = '" + (_sAliasQ) -> zz9_filial + "'"
+				_oSQL:_sQuery +=   " AND V.ASSOCIADO     = '" + (_sAliasQ) -> zz9_fornec + "'"
+				_oSQL:_sQuery +=   " AND V.LOJA_ASSOC    = '" + (_sAliasQ) -> zz9_loja   + "'"
+				_oSQL:_sQuery +=   " AND V.DOC           = '" + (_sAliasQ) -> zz9_nfcomp + "'"
+				_oSQL:_sQuery +=   " AND V.SERIE         = '" + (_sAliasQ) -> zz9_sercom + "'"
+				_oSQL:_sQuery +=   " AND V.PRODUTO       = '" + (_sAliasQ) -> zz9_produt + "'"
+				_oSQL:_sQuery +=   " AND V.GRAU          = '" + (_sAliasQ) -> zz9_grau   + "'"
+				_oSQL:_sQuery +=   " AND V.CLAS_FINAL    = '" + (_sAliasQ) -> zz9_classe + "'"
+				_oSQL:_sQuery +=   " AND V.CLAS_ABD      = '" + (_sAliasQ) -> zz9_clabd  + "'"
+				_oSQL:_sQuery +=   " AND V.SIST_CONDUCAO = '" + (_sAliasQ) -> zz9_conduc + "'"
+			//	_oSQL:Log ('[' + procname () + ']')
+				_aNFCpl := aclone (_oSQL:Qry2Array (.f., .f.)) // :RetFixo (1, 'na leitura de NF complemento', .f.))
+				if len (_aNFCpl) != 1
+					U_Log2 ('erro', '[' + procname () + ']Era pra ter achado 1 NF complemento, mas achei ' + cvaltochar (len (_aNFCpl)) + '  ' + _oSQL:_sQuery)
+				else
+					if abs ((_sAliasQ) -> totcomp - _aNFCpl [1, 3]) > 1  // Vou aceitar 1 real de fiferenca nos arredondementos e somas.
+						U_Log2 ('erro', '[' + procname () + ']Eu esperava total de complemento ' + cvaltochar ((_sAliasQ) -> totcomp) + ' e achei ' + cvaltochar (_aNFCpl [1, 3]))
+					else
+						// No ultimo item farei o ajuste de algum centavo de diferenca.
+						if _nQual == (_sAliasQ) -> qtcomp
+							U_Log2 ('debug', '[' + procname () + ']Hora de ajustar diferenca. TotCompl = ' + cvaltochar ((_sAliasQ) -> totcomp) + ' Jah usado = ' + cvaltochar (_nVlUsado) + ' vl deste item = ' + cvaltochar ((_sAliasQ) -> compl_prev))
+							_nZHRat = (_sAliasQ) -> totcomp - _nVlUsado
+						else
+							_nZHRat = (_sAliasQ) -> compl_prev
+						endif
+						reclock ("SZH", .T.)
+						szh -> zh_filial  = (_sAliasQ) -> zz9_filial
+						szh -> zh_NFSAIDA = 'SAFRA2023'
+						szh -> zh_fornece = (_sAliasQ) -> zz9_fornec
+						szh -> zh_loja    = (_sAliasQ) -> zz9_loja
+						szh -> zh_Data    = stod (_aNFCpl [1, 1])
+						szh -> zh_NFFrete = (_sAliasQ) -> zz9_nfcomp
+						szh -> zh_SerFret = (_sAliasQ) -> zz9_sercom
+						szh -> zh_ItNFs   = substr (_aNFCpl [1, 2], 3, 2)  // Siiiim, eh um aproveitamento de campos muito descarado!
+						szh -> zh_TpFre   = 'E'
+						szh -> zh_NFentr  = (_sAliasQ) -> zz9_nfori
+						szh -> zh_Srnfent = (_sAliasQ) -> zz9_serior
+						szh -> zh_ItNFE   = (_sAliasQ) -> zz9_itemor
+						szh -> zh_TpNFEnt = 'N'
+						szh -> zh_CliFor  = (_sAliasQ) -> zz9_fornec
+						szh -> zh_LjCliFo = (_sAliasQ) -> zz9_loja
+						szh -> zh_SeqEntr = "2"  // DIFERENCIAR PARTE 1 E PARTE 2 DESTE PROCESSO
+						szh -> zh_Rateio  = _nZHRat
+						szh -> zh_TpDesp  = 'S'
+						MsUnLock ()
+						ZZ9 -> (DBGOTO ((_sAliasQ) -> R_E_C_N_O_))
+						if ! empty (zz9 -> zz9_dco)
+							U_Log2 ('erro', '[' + procname () + ']ZZ9_DCO deveria estar vazio!')
+							exit
+						endif
+						reclock ("ZZ9", .f.)
+						zz9 -> zz9_dco = 'GLPI13674 ok2'
+						msunlock ()
+						_nVlUsado += _nZHRat
+						_nQual ++
+						U_Log2 ('debug', '[' + procname () + ']agr F' + (_sAliasQ) -> zz9_filial + ' ' + (_sAliasQ) -> zz9_safra + ' ' + (_sAliasQ) -> zz9_parcel + ' prenf:' + (_sAliasQ) -> zz9_pre_nf + ' forn:' + (_sAliasQ) -> zz9_fornec + ' ori:' + (_sAliasQ) -> zz9_nfori + ' comp:' + (_sAliasQ) -> zz9_nfComp + ' ' + cvaltochar (_nVlUsado))
+					endif
+				endif
+				(_sAliasQ) -> (dbskip ())
+			enddo
+		else
+			U_Log2 ('erro', '[' + procname () + ']2p F' + (_sAliasQ) -> zz9_filial + ' ' + (_sAliasQ) -> zz9_safra + ' ' + (_sAliasQ) -> zz9_parcel + ' prenf:' + (_sAliasQ) -> zz9_pre_nf + ' forn:' + (_sAliasQ) -> zz9_fornec + ' ori:' + (_sAliasQ) -> zz9_nfori + ' comp:' + (_sAliasQ) -> zz9_nfComp + 'totais nao batem:' + cvaltochar ((_sAliasQ) -> totcomp) + ' e ' + cvaltochar ((_sAliasQ) -> vl_nf))
+			(_sAliasQ) -> (dbskip ())
+		endif
+	enddo
+	(_sAliasQ) -> (dbclosearea ())
+	dbselectarea ("ZZ9")
+return
 
 // --------------------------------------------------------------------------
 static function _CargSaf ()
@@ -1706,7 +1941,7 @@ return
 // --------------------------------------------------------------------------
 static function _batfull ()
 	U_MudaLog ('U_BatFullW.log')
-	U_BatFullW ('E') //, 'ZA1012000603360', nil)
+	U_BatFullW ('S') //, nil, 'ZAG  000000947601')  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
 return
 
 // --------------------------------------------------------------------------
@@ -2205,6 +2440,8 @@ static function _SimSafr23 ()
 	local _sParcel   := 'N'
 	local _nRecCount := 0
 	local _nRecAtu   := 0
+	local _aRetPrc   := {}
+
 	dbselectarea ("ZZ9")
 	set filter to zz9_safra = '2023' .and. zz9_parcel = _sParcel
 	count to _nRecCount
@@ -2212,7 +2449,7 @@ static function _SimSafr23 ()
 	_nRecAtu = 0
 	do while ! zz9 -> (eof ())
 		incproc ()
-		if zz9 -> zz9_safra == '2023' .and. zz9 -> zz9_parcel == _sParcel .and. empty (zz9 -> zz9_nfcomp) .and. empty (zz9 -> zz9_sercom)
+		if zz9 -> zz9_safra == '2023' .and. zz9 -> zz9_parcel == _sParcel
 			_sClasFina = ''
 			if zz9 -> zz9_conduc == 'L'
 				_sClasFina = zz9 -> zz9_clabd
@@ -2223,10 +2460,31 @@ static function _SimSafr23 ()
 			if ++_nRecAtu % 100 == 0
 				u_log2 ('info', '[' + cvaltochar (_nRecAtu) + ' de ' + cvaltochar (_nRecCount) + ']Produto ' + alltrim (zz9 -> zz9_produt) + ' gr.' + zz9 -> zz9_grau + ' ' + _sClasFina)
 			endif
+//			IF alltrim (zz9 -> zz9_produt) == '9911' //.and. zz9 -> zz9_grau <= '09.9'  // TESTES
+//				u_log2 ('info', 'Produto ' + alltrim (zz9 -> zz9_produt) + ' gr.' + zz9 -> zz9_grau + ' ' + _sClasFina)
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := "SELECT VUNIT_EFETIVO"
+			_oSQL:_sQuery +=  " FROM VA_VPRECO_EFETIVO_SAFRA2 P"
+			_oSQL:_sQuery += " WHERE P.SAFRA      = '" + zz9 -> zz9_safra + "'"
+			_oSQL:_sQuery +=   " AND P.FILIAL     = '" + zz9 -> zz9_filial + "'"
+			_oSQL:_sQuery +=   " AND P.ASSOCIADO  = '" + zz9 -> zz9_fornec + "'"
+			_oSQL:_sQuery +=   " AND P.LOJA_ASSOC = '" + zz9 -> zz9_loja + "'"
+			_oSQL:_sQuery +=   " AND P.DOC        = '" + zz9 -> zz9_nfori + "'"
+			_oSQL:_sQuery +=   " AND P.SERIE      = '" + zz9 -> zz9_serior + "'"
+			_oSQL:_sQuery +=   " AND P.ITEM_NOTA  = '" + zz9 -> zz9_itemor + "'"
+		//	_oSQL:Log ('[' + procname () + ']')
+			_nVUnOld = _oSQL:RetQry (1, .f.)
+
+			_aRetPrc = aclone (U_PrcUva23 (zz9 -> zz9_filial, zz9 -> zz9_produt, val (zz9 -> zz9_grau), _sClasFina, zz9 -> zz9_conduc, .F., .F.))
+
 			reclock ("ZZ9", .F.)
-			zz9 -> zz9_vunit  = U_PrcUva23 (zz9 -> zz9_filial, zz9 -> zz9_produt, val (zz9 -> zz9_grau), _sClasFina, zz9 -> zz9_conduc, .F., .F.) [2]
-			zz9 -> zz9_nfcomp = iif (zz9 -> zz9_vunit <= 0, 'VLR_MENOR', '')  // Para evitar que posteriormente o programa VA_GNF2 tente gerar nota para este registro.
+			zz9 -> zz9_vunold = _nVUnOld
+			zz9 -> zz9_vunit  = _aRetPrc [2]
+			zz9 -> zz9_obs    = _aRetPrc [3]  // Observacoes geradas pelo prog. de calculo do preco
+			zz9 -> zz9_nfcomp = iif (zz9 -> zz9_vunit <= zz9 -> zz9_vunold, 'VLR_MENOR', '')  // Para evitar que posteriormente o programa VA_GNF2 tente gerar nota para este registro.
+			zz9 -> zz9_sercom = ''
 			msunlock ()
+//			ENDIF
 		endif
 		zz9 -> (dbskip ())
 	enddo
