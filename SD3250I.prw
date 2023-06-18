@@ -76,7 +76,7 @@ Static Function _AtuReproc ()
 		_oTrEstq:ProdOrig  := m->d3_cod
 		_oTrEstq:ProdDest  := m->d3_cod
 		_oTrEstq:AlmOrig   := _sAlmRetr
-		_oTrEstq:AlmDest   := '01'  //_sAlmFull
+		_oTrEstq:AlmDest   := '11'  //'01'  //_sAlmFull
 		_oTrEstq:LoteOrig  := ""
 		_oTrEstq:LoteDest  := ""
 		_oTrEstq:EndOrig   := ""

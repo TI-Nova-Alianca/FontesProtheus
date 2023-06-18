@@ -30,6 +30,7 @@
 // 14/11/2022 - Robert - Adicionada tabela SCHDTSK.
 // 30/01/2023 - Robert - Adicionadas tabelas SZE, SZF, ZX5, SDA, SDB para compactacao.
 // 13/03/2023 - Robert - Adicionada tabela SZN para pack apos 365 dias.
+// 15/06/2023 - Robert - Adicionada tabela CT2 para compactacao.
 //
 
 // ----------------------------------------------------------------
@@ -198,6 +199,7 @@ static function _Compact ()
 	aadd (_aArqComp, 'ZX5010')  // Apesar de nao ser grande, tem pouca movimentacao e muitos campos vazios.
 	aadd (_aArqComp, 'SDA010')  // Estimativa de reduzir 60% do tamanho. Tem muito poucas alteracoes e muitos campos vazios.
 	aadd (_aArqComp, 'SDB010')  // Estimativa de reduzir 80% do tamanho. Tem muito poucas alteracoes e muitos campos vazios.
+	aadd (_aArqComp, 'CT2010')  // Ultimos UPDDISTR criaram varios campos vazios.
 
 	for _nArqComp = 1 to len (_aArqComp)
 		_oSQL := ClsSQL ():New ()
