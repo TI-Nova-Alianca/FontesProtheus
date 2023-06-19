@@ -19,7 +19,9 @@
 // 13/04/2022 - Robert  - Nao desconsiderava registros deletados da tabela SD1.
 //                      - Definido nome para o arquivo de destino.
 // 27/04/2022 - Claudia - Retirada validação de grupo de usuario. GLPI: 11915
+// 12/06/2023 - Robert  - Melhorado filtro de cfops: 1116,2116,1949 (F.03)
 //
+
 // ----------------------------------------------------------------------------------------------------------------------------
 User Function VA_XLS50 (_lAutomat)
 	Local cCadastro := "Exporta com entradas de MP/VD para classificacao entre ato cooperativo e nao cooperativo."
@@ -114,8 +116,9 @@ Static Function _Gera()
 	_oSQL:_sQuery += " AND SD1.D1_DTDIGIT BETWEEN '" + dtos (mv_par01) + "' AND '" + dtos (mv_par02) + "'"
 	_oSQL:_sQuery += " AND SD1.D1_TP IN ('MP', 'VD') "
 	_oSQL:_sQuery += " AND SD1.D1_TIPO NOT IN ('B', 'D') "
-	_oSQL:_sQuery += " AND SD1.D1_CF NOT IN ('1902', '1925', '1151', '2151', '1352', '1903', '2903', '2352','1352' ) "
-    _oSQL:_sQuery += " AND (SD1.D1_CF <> '1949' OR (SD1.D1_CF = '1949' AND SD1.D1_FILIAL='03' AND SD1.D1_FORNECE='001369')) "
+	_oSQL:_sQuery += " AND SD1.D1_CF NOT IN ('1902', '1925', '1151', '2151', '1352', '1903', '2903', '2352','1352','1116','2116') "
+//	_oSQL:_sQuery += " AND (SD1.D1_CF <> '1949' OR (SD1.D1_CF = '1949' AND SD1.D1_FILIAL='03' AND SD1.D1_FORNECE='001369')) "
+	_oSQL:_sQuery += " AND (SD1.D1_CF NOT IN ('1949', '2949') OR (SD1.D1_CF = '1949' AND SD1.D1_FILIAL='03' AND SD1.D1_FORNECE='001369')) "
 	_oSQL:Log ()
 	_oSQL:ArqDestXLS = 'VA_XLS50'
 	_oSQL:Qry2Xls ()

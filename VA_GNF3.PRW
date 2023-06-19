@@ -13,6 +13,8 @@
 // 23/06/2020 - Robert - Implementacoes para safra 2020
 // 06/07/2020 - Robert - Criados parametros de variedades a considerar e a desconsiderar.
 // 22/04/2021 - Robert - Criado tratamento para safra 2020 (GLPI 9891).
+//    05/2023 - Robert - Tratamentos para complemento 2023 (maio) - GLPI 13532.
+// 16/06/2023 - Robert - Gravacao campo zz9_TpForn - GLPI 13699
 //
 
 // --------------------------------------------------------------------------
@@ -1084,6 +1086,7 @@ static function _Gera2023 ()
 	local _nAux      := 0
 	local _oCarSaf   := NIL
 	local _nCpoZZ9   := 0
+	local _sTpForn   := ''
 
 	// Busca valores efetivos recebidos pelo produtor, para depois verificar
 	// necessidade de complementar.
@@ -1122,7 +1125,7 @@ static function _Gera2023 ()
 		// outro produtor.
 		sze -> (dbsetorder (3))  // ZE_FILIAL, ZE_NFGER, ZE_SERIE, R_E_C_N_O_, D_E_L_E_T_
 		if ! sze -> (dbseek ((_sAliasQ) -> filial + (_sAliasQ) -> doc + (_sAliasQ) -> serie, .F.))
-			u_help ("Nnao encotrei nenhuma carga referenciando a contranota '" + (_sAliasQ) -> doc + "' da filial '" + (_sAliasQ) -> filial + "'",, .t.)
+			u_help ("Nao encotrei nenhuma carga referenciando a contranota '" + (_sAliasQ) -> doc + "' da filial '" + (_sAliasQ) -> filial + "'",, .t.)
 			exit
 		endif
 
@@ -1191,6 +1194,14 @@ static function _Gera2023 ()
 		_nVCompl = ((_sAliasQ) -> peso_liq * _aRetPrc [1]) - ((_sAliasQ) -> peso_liq * (_sAliasQ) -> VUnit_efetivo)
 	//	u_log2 ('info', 'Valor total complemento     : ' + cvaltochar (_nVCompl))
 
+		// Implementei este paragrafo em 16/06/23, mas nao cheguei a testar
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery = "SELECT dbo.VA_FTIPO_FORNECEDOR_UVA ('" + (_sAliasQ) -> associado + "', '" + (_sAliasQ) -> loja_assoc + "', '" + mv_par05 + "0331')" // situacao ao final da safra	
+		_sTpForn = alltrim (left (_oSQL:RetQry (1, .f.), 1))
+		if empty (_sTpForn)
+			u_help ("Tipo fornecedor de uva indefinido (forn/loja " + (_sAliasQ) -> associado + "/" + (_sAliasQ) -> loja_assoc,, .t.)
+		endif
+
 		// Gera proxima pre-nf livre
 		_sQuery := " select max (ZZ9_PRE_NF)"
 		_sQuery +=  " from " + RETSQLNAME ("ZZ9") + " ZZ9  "
@@ -1231,6 +1242,7 @@ static function _Gera2023 ()
 		if valtype (_oCarSaf) == 'O' .and. len (_oCarSaf:CCompart) > 0
 			zz9 -> zz9_ccomp  = _oCarSaf:TodasComp ()
 		endif
+		zz9 -> zz9_TpForn = _sTpForn
 
 		// Grava as possibilidades de misturas de variedades.
 		_nCpoZZ9 = 1

@@ -52,6 +52,7 @@
 // 12/04/2023 - Robert - Passa a controlar semaforo para gravacao.
 // 17/04/2023 - Robert - Metodo PodeApont() passa a usar metodo SomaMsg() em ves de u_help() para mostrar os erros.
 // 12/05/2023 - Robert - Gera msg ao tentar imprimir etiq.de OP e campo C2_VABARCX estiver vazio  (GLPI 13561).
+// 07/06/2023 - Robert - Melhorada msg cod barras da OP (GLPI 13695).
 //
 
 #Include "Protheus.ch"
@@ -1178,7 +1179,7 @@ METHOD PodeApont (_nQtApont, _nQtPerda) Class ClsEtiq
 		_lContinua = .F.
 	endif
 	if _lContinua .and. empty (::CBEmbCol)
-		::SomaMsg ("Cod.barras p/embalagem coletiva nao informado na OP.")
+		::SomaMsg ("Cod.barras p/embalagem coletiva nao informado na OP. Verifique campo C2_VABARCX ('" + alltrim (RetTitle ("C2_VABARCX")) + "')")
 		_lContinua = .F.
 	endif
 	if _lContinua
@@ -1512,7 +1513,7 @@ return
 
 
 // --------------------------------------------------------------------------
-METHOD ValCBEmb () Class ClsEtiq
+METHOD ValCBEmb (_sCBEmbCol) Class ClsEtiq
 	local _lRetVCBE := .T.
 
 	if _sCBEmbCol != ::CBEmbCol

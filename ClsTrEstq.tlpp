@@ -44,6 +44,7 @@
 // 15/03/2023 - Robert  - Para considerar almox.controlado pelo FullWMS, deve estar na filial 01.
 // 15/03/2023 - Robert  - Para considerar almox.controlado pelo FullWMS, deve estar na filial 01.
 // 20/04/2023 - Robert  - Criado atributo CodMotivo
+// 12/06/2023 - Robert  - Melhorado teste de gravacao do SD3 no metodo GeraSD3() - GLPI 13677
 //
 
 // ------------------------------------------------------------------------------------
@@ -109,7 +110,7 @@ CLASS ClsTrEstq
 	public  METHOD Inclui ()
 	public  METHOD GeraAtrib ()
 	public  METHOD GeraEtiq ()
-	public  METHOD GeraSD3 ()
+	private METHOD GeraSD3 ()
 	public  METHOD Grava ()
 	private METHOD GravaErro ()
 	private METHOD LeSB1 ()
@@ -529,19 +530,25 @@ METHOD GeraSD3 () class ClsTrEstq
 		MSExecAuto({|x,y| mata261(x,y)},_aAuto261,3) //INCLUSAO
 
 		// Ja tive casos de nao gravar e tambem nao setar a variavel lMsErroAuto. Por isso vou conferir a gravacao.
-		if ! lMsErroAuto
+//		if ! lMsErroAuto
+		// Nao estou mais confiando muito no retorno da variavel lMsErroAuto.
+		// Peguei alguns casos inconsistentes. Vou conferir por minha conta. Robert, 12/06/2023.
 			_oSQL := ClsSQL ():New ()
 			_oSQL:_sQuery := " SELECT R_E_C_N_O_"
 			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD3")
 			_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
 			_oSQL:_sQuery +=    " AND D3_FILIAL  = '" + xfilial ("SD3") + "'"
 			_oSQL:_sQuery +=    " AND D3_VACHVEX = '" + _sChaveEx + "'"
-			_aRegsSD3 := aclone (_oSQL:Qry2Array (.F., .F.))
+//			_aRegsSD3 := aclone (_oSQL:Qry2Array (.F., .F.))
+			_aRegsSD3 := aclone (_oSQL:RetFixo (2, "ao procurar os 2 registros que deveriam ter sido gravados na tabela SD3.", .F.))
 			if len (_aRegsSD3) != 2
+				U_Log2 ('erro', '[' + procname () + ']Setando lMsErroAuto para .T. por que nao achei os 2 registros esperados no SD3. Query para conferencia: ' + _oSQL:_sQuery)
 				::SomaMsg ("Problemas na gravacao da transferencia. Nao encontrei os dois registros que deveriam ter sido gravados. Query para conferencia: " + _oSQL:_sQuery)
 				lMsErroAuto = .T.
+			else
+				lMsErroAuto = .F.
 			endif
-		endif
+//		endif
 
 		If lMsErroAuto
 			if ! empty (_sErroAuto)
