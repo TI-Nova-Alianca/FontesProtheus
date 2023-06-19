@@ -14,6 +14,8 @@
 // 16/12/2022 - Cláudia - Incluida validação de NF na gravação. GLPI: 12943
 // 10/02/2023 - Claudia - Incluido o relatorio emissão/Devolução para validações. GLPI:13177
 // 01/06/2023 - Claudia - Incluidas novas legendas. GLPI: 13643
+// 15/06/2023 - Claudia - Incluida validação para TM 11. GLPI: 13728
+// 19/06/2023 - Claudia - Consulta de logs. GLPI: 13741
 //
 // --------------------------------------------------------------------------------------------
 #Include "Protheus.ch"
@@ -31,6 +33,7 @@ User Function ZC0()
 	AADD(_aRotAdic, {"&Saldos Rapel"     , "U_ZC0SALDO()"     							, 0, 6})
 	AADD(_aRotAdic, {"&Emissao/Devolução", "U_ZC0VALID()"     							, 0, 6})
 	AADD(_aRotAdic, {"&Consulta Saldos"  , "U_ZC0SAL(ZC0->ZC0_CODRED, ZC0->ZC0_LOJRED)"	, 0, 6})
+	AADD(_aRotAdic, {"&Consulta Logs"    , "U_ZC0LOG()"									, 0, 6})
 
     AADD(aRotina, {"&Visualizar"       	, "AxVisual"       								, 0, 1})
 	AADD(aRotina, {"Incluir"    		, "U_ZC0INC()"  	  							, 0, 3})
@@ -145,7 +148,7 @@ User Function ZC0FEC()
 		_lContinua =  U_msgnoyes(_sMsg + " Deseja continuar?")
 
 		If _lContinua
-			_ValidPerg1()
+			_ValidPerg()
 			If Pergunte(cPerg,.T.)
 				_oCtaRapel:= ClsCtaRap():New ()
 				_oCtaRapel:FecharPeriodo(mv_par01, mv_par02)
@@ -185,30 +188,111 @@ User Function ZC0TDOK()
 	Local _oSQL := ClsSQL ():New ()
 	Local _lRet := .T.
 
-    _oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT * FROM SF2010 "
-	_oSQL:_sQuery += " WHERE D_E_L_E_T_='' "
-	_oSQL:_sQuery += " AND F2_FILIAL   ='"+ xfilial("ZC0") +"'"
-	_oSQL:_sQuery += " AND F2_DOC      ='"+ M->ZC0_DOC    +"'"
-	_oSQL:_sQuery += " AND F2_SERIE    ='"+ M->ZC0_SERIE  +"'"
-	_aNFe := aclone (_oSQL:Qry2Array ())
+	If M->ZC0_TM <> '11' // NF DE ENTRADA
+		_oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT * FROM SF2010 "
+		_oSQL:_sQuery += " WHERE D_E_L_E_T_='' "
+		_oSQL:_sQuery += " AND F2_FILIAL   ='"+ xfilial("ZC0") +"'"
+		_oSQL:_sQuery += " AND F2_DOC      ='"+ M->ZC0_DOC    +"'"
+		_oSQL:_sQuery += " AND F2_SERIE    ='"+ M->ZC0_SERIE  +"'"
+		_aNFe := aclone (_oSQL:Qry2Array ())
 
-	If Len(_aNFe) > 0
-		_lRet := .T.
-	else
-		u_help(" Nota fiscal não encontrada!")
-		_lRet := .F.
+		If Len(_aNFe) > 0
+			_lRet := .T.
+		else
+			u_help(" Nota fiscal não encontrada!")
+			_lRet := .F.
+		EndIf
 	EndIf
 	
 Return _lRet
 //
+// --------------------------------------------------------------------------
+// Consulta de logs     
+User Function ZC0LOG()
+
+	cPerg   := "ZC0LOG"
+	_ValidPerg()
+
+	if Pergunte(cPerg,.T.)
+		_oSQL := ClsSQL():New ()  
+		_oSQL:_sQuery := "" 		
+		_oSQL:_sQuery += " SELECT "
+		_oSQL:_sQuery += " 	   DATA "
+		_oSQL:_sQuery += "    ,HORA "
+		_oSQL:_sQuery += "    ,SUBSTRING(DESCRITIVO,1,50) "
+		_oSQL:_sQuery += "    ,CLIENTE "
+		_oSQL:_sQuery += "    ,LOJA_CLIENTE "
+		_oSQL:_sQuery += "    ,SA1.A1_NOME AS NOME_CLIENTE "
+		_oSQL:_sQuery += "    ,SA1.A1_VACBASE AS CODIGO_MATRIZ "
+		_oSQL:_sQuery += "    ,NF_SAIDA "
+		_oSQL:_sQuery += "    ,SERIE_NF_SAIDA "
+		_oSQL:_sQuery += "    ,USUARIO "
+		_oSQL:_sQuery += " FROM VA_VEVENTOS "
+		_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SA1") + " SA1 "
+		_oSQL:_sQuery += " 	ON SA1.D_E_L_E_T_ = '' "
+		_oSQL:_sQuery += " 		AND CLIENTE      = SA1.A1_COD "
+		_oSQL:_sQuery += " 		AND LOJA_CLIENTE = SA1.A1_LOJA "
+		_oSQL:_sQuery += " WHERE DATA BETWEEN '" + dtos(mv_par01) +"' AND '"+ dtos(mv_par02) +"'"
+		if mv_par03 == 1
+			_oSQL:_sQuery += " AND CODEVENTO = 'ZC0001'  "
+		elseif mv_par03 == 2
+			_oSQL:_sQuery += " AND CODEVENTO = 'ZC0002'  "
+		else
+			_oSQL:_sQuery += " AND CODEVENTO  IN ('ZC0001','ZC0002')  "
+		endif
+		if !empty(mv_par04)
+			_oSQL:_sQuery += " AND SA1.A1_VACBASE = ' "+ mv_par04 +"' "
+		endif
+		if !empty(mv_par05)
+			_oSQL:_sQuery += " AND NF_SAIDA       ='"+ mv_par05 +"' "
+			_oSQL:_sQuery += " AND SERIE_NF_SAIDA ='"+ mv_par06 +"' "
+		endif
+		_aDados := _oSQL:Qry2Array ()
+
+		if len(_aDados) > 0 
+
+			_aCols = {}
+			aadd (_aCols, {01, "Data"   	,  20,  "@D"})
+			aadd (_aCols, {02, "Hora"       ,  10,  "@!"})
+			aadd (_aCols, {03, "Descritivo" ,  30,  "@!"})
+			aadd (_aCols, {04, "Cliente"    ,  15,  "@!"})
+			aadd (_aCols, {05, "Loja"       ,  10,  "@!"})
+			aadd (_aCols, {06, "Nome"       ,  40,  "@!"})
+			aadd (_aCols, {07, "Cód.Rede"   ,  10,  "@!"})
+			aadd (_aCols, {08, "Nota" 	    ,  20,  "@!"})
+			aadd (_aCols, {09, "Série"      ,  10,  "@!"})
+			aadd (_aCols, {10, "Usuário"    ,  20,  "@!"})
+
+			U_F3Array (_aDados, "Consulta de Logs ", _aCols, oMainWnd:nClientWidth - 50, oMainWnd:nClientHeight - 40 , "", "", .T., 'C' )
+		else
+			u_help ("Não foram encontrados dados para consulta")
+		endif    		
+
+    	if len(_aDados) > 0 
+		endif
+	endif
+Return
+//
 // -------------------------------------------------------------------------
 // Cria Perguntas no SX1
-Static Function _ValidPerg1 ()
+Static Function _ValidPerg()
     local _aRegsPerg := {}
-    //                     PERGUNT             TIPO TAM DEC VALID F3     Opcoes                      Help
-    aadd (_aRegsPerg, {01, "Data de          ", "D", 8, 0,  "",   "   "     , {},                         		 ""})
-    aadd (_aRegsPerg, {02, "Data até         ", "D", 8, 0,  "",   "   "     , {},                         		 ""})
+
+	if cPerg=="ZC0FEC"
+    	//                     PERGUNT             TIPO TAM DEC VALID F3     Opcoes                      Help
+    	aadd (_aRegsPerg, {01, "Data de          ", "D", 8, 0,  "",   "   "     , {},                         		 ""})
+    	aadd (_aRegsPerg, {02, "Data até         ", "D", 8, 0,  "",   "   "     , {},                         		 ""})
+	endif
+
+	if cPerg=="ZC0LOG"
+		aadd (_aRegsPerg, {01, "Data de          ", "D", 8, 0,  "",   "   "     , {},                         			""})
+		aadd (_aRegsPerg, {02, "Data até         ", "D", 8, 0,  "",   "   "     , {},                         			""})
+		aadd (_aRegsPerg, {03, "Evento           ", "N", 1, 0,  "",   "   "     , {'Inclusões','Erros','Ambos'},     	""})
+		aadd (_aRegsPerg, {04, "Cod.Rede         ", "C", 6, 0,  "",   "SA1"     , {},     								""})
+		aadd (_aRegsPerg, {05, "NF Saída         ", "C", 9, 0,  "",   "   "     , {},     								""})
+		aadd (_aRegsPerg, {06, "Série            ", "C", 3, 0,  "",   "   "     , {},     								""})	
+	endif
 
     U_ValPerg (cPerg, _aRegsPerg)
 Return
