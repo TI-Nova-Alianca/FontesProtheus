@@ -434,6 +434,17 @@ user function VA_Gat (_sParCpo, _sParSeq)
 			_aColsAlt = aclone (aCols)
 		endif
 
+    
+	case _sCampo == "M->D1_VAOPER" .and. _sCDomin == "D1_VAOPER"
+		_xRet = GDFieldGet ("D1_VAOPER")
+		if ExistTrigger('D1_OPER')
+			RunTrigger (2, N,,, 'D1_OPER')	
+
+        // Marca variavel que indica que o aCols deve ser mantido assim,pois foi alterado.
+			_aColsAlt = aclone (aCols)
+		endif
+
+
 	case _sCampo == "M->D1_COD" .and. _sCDomin == "D1_CLASFIS"
 		// Se nao encontrar nada, deixa o valor pronto para retorno.
 		_xRet = GDFieldGet ("D1_CLASFIS")
