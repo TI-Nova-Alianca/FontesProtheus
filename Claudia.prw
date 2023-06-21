@@ -19,7 +19,53 @@ User Function claudia ()
 	//_AtuProd()
 	//_AtuSemiAcab()
 
+	//u_help("PROD X FORNECE DUPLICADOS")
+	//_ProdForDupl()
+
 Return
+// //
+// // ----------------------------------------------------------------------------
+// // verifica duplicidade de fornecedor em Prod x fornece
+// Static Function _ProdForDupl()
+// 	Local _x := 0
+// 	Local _y := 0
+
+// 	nHandle := FCreate("c:\temp\log.csv")
+// 	_sLinha := " PRODUTO;FORNECEDOR;QTD DUPLICIDADE"
+// 	FWrite(nHandle, _sLinha)
+
+// 	_oSQL:= ClsSQL ():New ()
+// 	_oSQL:_sQuery := ""
+// 	_oSQL:_sQuery += " SELECT "
+// 	_oSQL:_sQuery += " 	DISTINCT "
+// 	_oSQL:_sQuery += " 		A5_PRODUTO "
+// 	_oSQL:_sQuery += " FROM SA5010 "
+// 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+// 	_oSQL:_sQuery += " ORDER BY A5_PRODUTO "
+// 	_aSA5 := aclone(_oSQL:Qry2Array())
+
+// 	For _x:=1 to Len(_aSA5)
+// 		_oSQL:= ClsSQL ():New ()
+// 		_oSQL:_sQuery := ""
+// 		_oSQL:_sQuery += " SELECT "
+// 		_oSQL:_sQuery += "       A5_PRODUTO "
+// 		_oSQL:_sQuery += " 		,A5_FORNECE "
+// 		_oSQL:_sQuery += "    	,COUNT(*) "
+// 		_oSQL:_sQuery += " FROM SA5010 "
+// 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+// 		_oSQL:_sQuery += " AND A5_PRODUTO = '"+_aSA5[_x, 1] +"' "
+// 		_oSQL:_sQuery += " GROUP BY A5_FORNECE, A5_PRODUTO "
+// 		_oSQL:_sQuery += " HAVING COUNT(*) > 1 "
+// 		_aDados := aclone(_oSQL:Qry2Array())
+
+// 		For _y:=1 to Len(_aDados)
+// 			_sLinha := _aDados[_y, 1] + ";"+_aDados[_y, 2] + ";"+alltrim(str(_aDados[_y, 3])) + CHR(13)+CHR(10)
+// 			FWrite(nHandle, _sLinha)
+// 		Next
+// 	Next
+// 	FClose(nHandle)
+
+// Return 
 // //
 // // ----------------------------------------------------------------------------
 // //Atualiza nome de produtos
