@@ -1,11 +1,19 @@
-// Programa:  VA_FATLOJ
-// Autor:     Cláudia Lionço / Sandra Sugari
-// Data:      27/12/2019
+// Programa.: VA_FATLOJ
+// Autor....: Cláudia Lionço / Sandra Sugari
+// Data.....: 27/12/2019
 // Descricao: Relatorio de faturamento das lojas/vendas black friday - CUPONS
+//
+// #TipoDePrograma    #relatorio
+// #Descricao         #Relatorio de faturamento das lojas/vendas black friday - CUPONS
+// #PalavasChave      #faturamento #lojas  #black_friday
+// #TabelasPrincipais #SL1 
+// #Modulos 		  #LOJA
 //
 // Historico de alteracoes:
 // 04/02/2020 - Claudia - Incluído parametro de série/PDV
+// 21/06/2023 - Claudia - Incluido PIX. GLPI: 13750
 //
+// ------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
 #include "totvs.ch"
@@ -44,12 +52,14 @@ Static Function ReportDef()
 	oSection1:SetTotalInLine(.F.)
 	TRCell():New(oSection1,"COLUNA1", 	"" ,"Qnt.Cupons"		,               	    ,20,/*lPixel*/,{||  },"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA2", 	"" ,"Vlr.Total"			, "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA2_1", "" ,"Vlr.PIX"		    , "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA3", 	"" ,"Vlr.Vales"			, "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA4", 	"" ,"Vlr.Cheques"		, "@E 999,999,999.99"	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA5", 	"" ,"Vlr.Dinheiro"		, "@E 999,999,999.99"	,20,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA6", 	"" ,"Vlr.Convênio"		, "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA7", 	"" ,"Vlr.Cartão CC"		, "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA8", 	"" ,"Vlr.Cartão DB"		, "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	
 	//TRCell():New(oSection1,"COLUNA9", 	"" ,"Vlr.Médio Cupons"	, 	                 	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	
 	 oSection2 := TRSection():New(oReport,,{}, , , , , ,.F.,.F.,.F.) 
@@ -58,12 +68,14 @@ Static Function ReportDef()
 	TRCell():New(oSection2,"COLUNA1", 	"" ,"Filial"    		,               	    ,20,/*lPixel*/,{||  },"RIGHT",,"RIGHT",,,,,,.F.) 
 	TRCell():New(oSection2,"COLUNA2", 	"" ,"Qnt.Cupons"		,               	    ,20,/*lPixel*/,{||  },"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection2,"COLUNA3", 	"" ,"Vlr.Total"			, "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	TRCell():New(oSection2,"COLUNA3_1", "" ,"Vlr.PIX"			, "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection2,"COLUNA4", 	"" ,"Vlr.Vales"			, "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection2,"COLUNA5", 	"" ,"Vlr.Cheques"		, "@E 999,999,999.99"	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection2,"COLUNA6", 	"" ,"Vlr.Dinheiro"		, "@E 999,999,999.99"	,20,/*lPixel*/,{||	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection2,"COLUNA7", 	"" ,"Vlr.Convênio"		, "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection2,"COLUNA8", 	"" ,"Vlr.Cartão CC"		, "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	TRCell():New(oSection2,"COLUNA9", 	"" ,"Vlr.Cartão DB"		, "@E 999,999,999.99"   ,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
+	
 	//TRCell():New(oSection2,"COLUNA10", 	"" ,"Qnt.Média Cupons"	, 	                 	,20,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,,,,,.F.)
 	 
 	 oSection3 := TRSection():New(oReport,,{}, , , , , ,.F.,.F.,.F.) 
@@ -149,7 +161,8 @@ Static Function PrintReport(oReport)
 	cQuery1 += "    ,ROUND(SUM(SL1.L1_CONVENI), 2) AS VLR_CONVENIO "
 	cQuery1 += "    ,ROUND(SUM(SL1.L1_CARTAO), 2) AS VLR_CC "
 	cQuery1 += "    ,ROUND(SUM(SL1.L1_VLRDEBI), 2) AS VLR_DB "
-	cQuery1 += "    ,ROUND(SUM(SL1.L1_VALBRUT) / COUNT(*), 0) AS MEDIA_P_CUPOM "
+	cQuery1 += "    ,ROUND(SUM(SL1.L1_OUTROS), 2) AS VLR_PIX "
+	//cQuery1 += "    ,ROUND(SUM(SL1.L1_VALBRUT) / COUNT(*), 0) AS MEDIA_P_CUPOM "
 	cQuery1 += " FROM " + RetSQLName ("SL1") + " SL1 "  
 	cQuery1 += " WHERE SL1.D_E_L_E_T_ = '' "
 	cQuery1 += " AND SL1.L1_FILIAL BETWEEN '"+ mv_par03 +"' AND '"+ mv_par04 +"'"
@@ -172,13 +185,14 @@ Static Function PrintReport(oReport)
 	While TRA->(!Eof())	
 		oSection1:Cell("COLUNA1")	:SetBlock   ({|| TRA->EMITIDOS  	})
 		oSection1:Cell("COLUNA2")	:SetBlock   ({|| TRA->VENDA_TOTAL 	})
+		oSection1:Cell("COLUNA2_1")	:SetBlock   ({|| TRA->VLR_PIX 		})
 		oSection1:Cell("COLUNA3")	:SetBlock   ({|| TRA->VLR_VALES		})
 		oSection1:Cell("COLUNA4")	:SetBlock   ({|| TRA->VLR_CHEQUES   })
 		oSection1:Cell("COLUNA5")	:SetBlock   ({|| TRA->VLR_DINHEIRO	})
 		oSection1:Cell("COLUNA6")	:SetBlock   ({|| TRA->VLR_CONVENIO 	})
-		oSection1:Cell("COLUNA7")	:SetBlock   ({|| TRA->VLR_CC })
-		oSection1:Cell("COLUNA8")	:SetBlock   ({|| TRA->VLR_DB })
-		//oSection1:Cell("COLUNA9")	:SetBlock   ({|| TRA->MEDIA_P_CUPOM })
+		oSection1:Cell("COLUNA7")	:SetBlock   ({|| TRA->VLR_CC 		})
+		oSection1:Cell("COLUNA8")	:SetBlock   ({|| TRA->VLR_DB 		})
+		
 
 		oSection1:PrintLine()
 		
@@ -203,7 +217,8 @@ Static Function PrintReport(oReport)
 	cQuery2 += "    ,ROUND(SUM(SL1.L1_CONVENI), 2) AS VLR_CONVENIO "
 	cQuery2 += "    ,ROUND(SUM(SL1.L1_CARTAO), 2) AS VLR_CC "
 	cQuery2 += "    ,ROUND(SUM(SL1.L1_VLRDEBI), 2) AS VLR_DB "
-    cQuery2 += " ,ROUND(SUM(SL1.L1_VALBRUT) / COUNT(*), 0) AS MEDIA_P_CUPOM "
+	cQuery2 += "    ,ROUND(SUM(SL1.L1_OUTROS), 2) AS VLR_PIX "
+    //cQuery2 += " ,ROUND(SUM(SL1.L1_VALBRUT) / COUNT(*), 0) AS MEDIA_P_CUPOM "
     cQuery2 += " FROM " + RetSQLName ("SL1") + " SL1 "
     cQuery2 += " WHERE SL1.D_E_L_E_T_ = '' "
     cQuery2 += " AND SL1.L1_FILIAL BETWEEN '"+ mv_par03 +"' AND '"+ mv_par04 +"' "
@@ -231,12 +246,14 @@ Static Function PrintReport(oReport)
 	    oSection2:Cell("COLUNA1")	:SetBlock   ({|| TRB->FILIAL    	})
 		oSection2:Cell("COLUNA2")	:SetBlock   ({|| TRB->EMITIDOS  	})
 		oSection2:Cell("COLUNA3")	:SetBlock   ({|| TRB->VENDA_FILIAL 	})
+		oSection2:Cell("COLUNA3_1")	:SetBlock   ({|| TRB->VLR_PIX 		})
 		oSection2:Cell("COLUNA4")	:SetBlock   ({|| TRB->VLR_VALES		})
 		oSection2:Cell("COLUNA5")	:SetBlock   ({|| TRB->VLR_CHEQUES   })
 		oSection2:Cell("COLUNA6")	:SetBlock   ({|| TRB->VLR_DINHEIRO	})
 		oSection2:Cell("COLUNA7")	:SetBlock   ({|| TRB->VLR_CONVENIO 	})
-		oSection2:Cell("COLUNA8")	:SetBlock   ({|| TRB->VLR_CC })
-		oSection2:Cell("COLUNA9")	:SetBlock   ({|| TRB->VLR_DB })
+		oSection2:Cell("COLUNA8")	:SetBlock   ({|| TRB->VLR_CC 		})
+		oSection2:Cell("COLUNA9")	:SetBlock   ({|| TRB->VLR_DB 		})
+		
 		//oSection2:Cell("COLUNA10")	:SetBlock   ({|| TRB->MEDIA_P_CUPOM })
 		oSection2:PrintLine()
 		
