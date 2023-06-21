@@ -37,7 +37,7 @@ user function robert ()
 //	u_perfmon ('I', 'Prep_env_' + cValToChar (GetServerPort ()))
 
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '07' modulo 'FIN'
+		prepare environment empresa '01' filial '01' modulo 'FIN'
 		private cModulo   := 'FIN'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -126,6 +126,7 @@ user function robert ()
 		// _telnet ()
 		// _TrEstq ()
 		// _VACCR2 ()
+		// _VA_VEF ()
 		// _VA_XLS ()
 		// _verif ()
 		u_help ('Nada definido.')
@@ -1941,7 +1942,8 @@ return
 // --------------------------------------------------------------------------
 static function _batfull ()
 	U_MudaLog ('U_BatFullW.log')
-	U_BatFullW ('S') //, nil, 'ZAG  000000947601')  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
+//	U_BatFullW ('E') //, 'ZA1012000609254', NIL)  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
+	U_BatFullW ('S') //, nil, 'ZAG  0000005551')  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
 return
 
 // --------------------------------------------------------------------------
@@ -2726,6 +2728,24 @@ static function _VACCR2 ()
 	U_GravaSX1 (cPerg, '06', '')  // LINHA COML pai ini
 	U_GravaSX1 (cPerg, '07', 'Z')  // LINHA COML pai fim
 	u_va_ccr2 (.t., .t.)
+return
+
+
+// --------------------------------------------------------------------------
+static function _VA_VEF ()
+	// https://centraldeatendimento.totvs.com/hc/pt-br/articles/360049503954-MP-ADVPL-Salvar-relat%C3%B3rio-Treport-PDF-em-diret%C3%B3rio
+	cPerg := 'VA_VEF'
+	U_GravaSX1 (cPerg, '01', STOD ('20221231'))  //stod ('20110613'))  // data ref (uma data qquer em que tenho alguns saldos)
+	U_GravaSX1 (cPerg, '02', 3)   // [aberto/encerrados/todos]
+	U_GravaSX1 (cPerg, '03', '07')  // filial ini
+	U_GravaSX1 (cPerg, '04', '07')  // filial fim
+	U_GravaSX1 (cPerg, '05', '')  // cliente ini
+	U_GravaSX1 (cPerg, '06', '')  // loja cliente ini
+	U_GravaSX1 (cPerg, '07', 'z')  // cliente fim
+	U_GravaSX1 (cPerg, '08', 'z')  // loja cliente fim
+	U_GravaSX1 (cPerg, '09', '4682')  // produto ini
+	U_GravaSX1 (cPerg, '10', '4682')  // produto fim
+	u_va_vef (.t.)
 return
 
 

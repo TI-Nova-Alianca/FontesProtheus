@@ -49,6 +49,7 @@
 // 11/03/2023 - Robert - Tabela ZAG passa a ter o campo ZAG_SEQ fazendo parte da chave primaria.
 // 28/03/2023 - Robert - Habilitadas transf. do ax.31 para 01 (etiq. envasadas em terceiros).
 // 12/06/2023 - Robert - Melhorias logs - GLPI 13677
+// 21/06/2023 - Robert - Passa a ter array de status e gravar descritivo junto no campo status_protheus.
 //
 
 #Include "Protheus.ch"
@@ -58,6 +59,16 @@
 User Function BatFullW (_sQueFazer, _sEntrID, _sSaidID)
 	local _lRet      := .T.
 	local _nLock     := 0
+	private _aStatProt := {}  // Deixar PRIVATE para ser vista pelas funcoes de entradas e saidas.
+
+	// Define os possiveis valores para os campos 'status_protheus'
+	// que constam nas tabelas tb_wms_entrada e tb_wms_pedidos.
+	aadd (_aStatProt, {'1', 'Falta estq ERP'})
+	aadd (_aStatProt, {'2', 'Outros erros'})
+	aadd (_aStatProt, {'3', 'Executado no ERP'})
+	aadd (_aStatProt, {'4', 'Qt Full # qt ERP'})
+	aadd (_aStatProt, {'5', 'qtde_mov < qtde_exec'})  // (no caso de recebimento de producao)
+	aadd (_aStatProt, {'C', 'Cancelado no ERP'})
 
 	// Define o que deve fazer: [E]ntradas, [S]aidas ou [A]mbas.
 	_sQueFazer = iif (_sQueFazer == NIL, 'A', upper (_sQueFazer))
@@ -121,9 +132,12 @@ static function _Entradas (_sEntrID)
 	_oSQL:_sQuery += " select tpdoc, codfor, entrada_id, coditem, qtde_exec, qtde_mov, dbo.VA_DatetimeToVarchar (dthr) as dthr, status"
 	_oSQL:_sQuery +=   " from tb_wms_entrada"
 	_oSQL:_sQuery +=  " where status = '3'"
-	_oSQL:_sQuery +=    " and status_protheus != '3'"  // 3 = executado
-	_oSQL:_sQuery +=    " and status_protheus != 'C'"  // C = cancelado: por que jah foi acertado manualmente, ou jah foi inventariado, etc.
-	_oSQL:_sQuery +=    " and status_protheus != '5'"  // 5 = qtd.movimentada diferente qt.executada
+//	_oSQL:_sQuery +=    " and status_protheus != '3'"  // 3 = executado
+//	_oSQL:_sQuery +=    " and status_protheus != 'C'"  // C = cancelado: por que jah foi acertado manualmente, ou jah foi inventariado, etc.
+//	_oSQL:_sQuery +=    " and status_protheus != '5'"  // 5 = qtd.movimentada diferente qt.executada
+	_oSQL:_sQuery +=    " and status_protheus not like '3%'"  // 3 = executado
+	_oSQL:_sQuery +=    " and status_protheus not like 'C%'"  // C = cancelado: por que jah foi acertado manualmente, ou jah foi inventariado, etc.
+	_oSQL:_sQuery +=    " and status_protheus not like '5%'"  // 5 = qtd.movimentada diferente qt.executada
 	if ! empty (_sEntrID)
 		_oSQL:_sQuery += " and entrada_id = '" + _sEntrID + "'"
 	endif
@@ -133,6 +147,9 @@ static function _Entradas (_sEntrID)
 	(_sAliasQ) -> (dbgotop ())
 	do while ! (_sAliasQ) -> (eof ())
 		U_Log2 ('info', '[' + procname () + "]Verificando tb_wms_entrada.entrada_id = '" + (_sAliasQ) -> entrada_id + "'")
+
+		// Alimenta variavel auxiliar para geracao de alquivo de log
+		_sPrefLog = 'EntradaID ' + alltrim ((_sAliasQ) -> entrada_id)
 
 		if (_sAliasQ) -> tpdoc != '6'
 			u_help ("Sem tratamento para tpdoc = " + (_sAliasQ) -> tpdoc,, .t.)
@@ -265,161 +282,19 @@ static function _Entradas (_sEntrID)
 
 			// Tenta executar a transferencia.
 			if ! _oTrEstq:Executa (.t.)
+				_AtuEntr ((_sAliasQ) -> entrada_id, '2')  // 2 = outros erros
 			endif
 		endif
+
+		// Limpa variavel auxiliar para geracao de alquivo de log
+		_sPrefLog = ''
 
 		(_sAliasQ) -> (dbskip ())
 	enddo
 	(_sAliasQ) -> (dbclosearea ())
+
+
 return _lRet
-
-
-
-// --------------------------------------------------------------------------------------------
-// Atualiza status no FullWMS.
-// Procurar manter, aqui, os mesmos codigos de status em todos os programas BatFull*, apesar de serem tabelas diferentes:
-// 1 = 'falta estoque para fazer a transferencia'
-// 2 = 'outro erro nao tratado na transferancia'
-// 3 = 'executado no ERP'
-// 4 = 'diferenca na quantidade'
-// 5 = 'qtde movimentada menor que executada' (no caso de recebimento de producao)
-// 9 = 'cancelado no ERP'
-static function _AtuEntr (_sEntrada, _sStatus)
-	local _oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := " update tb_wms_entrada"
-	_oSQL:_sQuery +=    " set status_protheus = '" + _sStatus + "'"
-	_oSQL:_sQuery +=  " where entrada_id = '" + _sEntrada + "'"
-	_oSQL:Exec ()
-	if _sStatus != '3'  // 3=executado ok
-		_oSQL:Log ()
-	endif
-return
-
-
-
-// --------------------------------------------------------------------------------------------
-// Gera transferencia de estoque.
-static function _GeraTran (_sProduto, _sLote, _nQuant, _sAlmOrig, _sAlmDest, _sEndOrig, _sEndDest, _sMotivo, _sEtiq, _sChvEx)
-	local _lRet      := .T.
-	local _sDocTrans := ''
-	local _aAuto261  := {}
-	local _aItens    := {}
-	local _oSQL      := NIL
-	local _aRegsSD3  := {}
-	private lMsErroAuto := .F.
-
-//	u_log2 ('debug', '[' + procname () + '] param recebidos: ' + cvaltochar ( _sProduto) + cvaltochar ( _sLote) + cvaltochar ( _nQuant) + cvaltochar ( _sAlmOrig) + cvaltochar ( _sAlmDest) + cvaltochar ( _sEndOrig) + cvaltochar ( _sEndDest) + cvaltochar ( _sMotivo) + cvaltochar ( _sEtiq) + cvaltochar ( _sChvEx))
-
-	// Se o produto ainda nao existe no almoxarifado destino, cria-o, para nao bloquear a transferencia de estoque.
-	sb2 -> (dbsetorder (1))
-	if ! sb2 -> (dbseek (xfilial ("SB2") + _sProduto + _sAlmDest))
-		u_log2 ('info', 'Criando saldos iniciais')
-		CriaSB2 (_sProduto, _sAlmDest)
-	endif
-
-	_sErroAuto := ""  // Variavel para erros de rotinas automaticas. Deixar tipo 'private'.
-	_sDocTrans := CriaVar ("D3_DOC")
-	aadd(_aAuto261,{_sDocTrans,dDataBase})
-	aadd(_aItens, _sProduto)   // Produto origem
-	aadd(_aItens,'')           //D3_DESCRI			Descricao do Produto Origem
-	aadd(_aItens,'')           //D3_UM				Unidade de Medida Origem
-	aadd(_aItens,_sAlmOrig)    //Almox origem
-	aadd(_aItens,_sEndOrig)    //Endereco origem
-	aadd(_aItens,_sProduto)    //Codigo do produto destino (inicilmente a ideia eh sempre transferir para o mesmo produto)
-	aadd(_aItens,'')           //D3_DESCRI			Descricao do Produto de Destino
-	aadd(_aItens,'')           //D3_UM				Unidade de Medida de Destino
-	aadd(_aItens,_sAlmDest)    //Almox destino
-	aadd(_aItens,_sEndDest)    //Endereco destino
-	aadd(_aItens,"")           //D3_NUMSERI			Numero de Serie
-	aadd(_aItens,_sLote)       //Lote origem
-	aadd(_aItens,"")           //D3_NUMLOTE			Numero do lote
-	aadd(_aItens,ctod(""))     //D3_DTVALID			Validade Origem
-	aadd(_aItens,0)            //D3_POTENCI			PotÍncia
-	aadd(_aItens,_nQuant)      // Quantidade
-	aadd(_aItens,0)            //D3_QTSEGUM			Segunda Quantidade
-	aadd(_aItens,criavar("D3_ESTORNO"))  //D3_ESTORNO			Estorno
-	aadd(_aItens,criavar("D3_NUMSEQ"))   //D3_NUMSEQ 			Numero de Sequencia
-	aadd(_aItens,_sLote)                 // Lote destino
-	aadd(_aItens,ctod(""))               // D3_DTVALID			Validade de Destino
-	aadd(_aItens,criavar("D3_ITEMGRD"))  // D3_ITEMGRD			Item Grade
-	aadd(_aItens,'')                     // D3_OBSERVA
-	aadd(_aItens,_sMotivo)               // motivo
-	aadd(_aItens,ctod (''))              // dt digit (vai ser gravado pelo SQL)
-	aadd(_aItens,'')                     // hr digit (vai ser gravado pelo SQL)
-	aadd(_aItens,_sEtiq)                 // D3_VAETIQ Etiqueta
-	aadd(_aItens,_sChvEx)                // Chave externa D3_VACHVEX
-//	U_Log2 ('debug', '[' + procname () + ']_aItens:')
-//	U_Log2 ('debug', _aItens)
-	aadd(_aAuto261, aclone (_aItens))
-	
-	lMsErroAuto := .F.
-	MSExecAuto({|x,y| mata261(x,y)},_aAuto261,3) //INCLUSAO
-
-	// Ja tive casos de nao gravar e tambem nao setar a variavel lMsErroAuto. Por isso vou conferir a gravacao.
-	if ! lMsErroAuto
-		_oSQL := ClsSQL ():New ()
-		_oSQL:_sQuery := " SELECT R_E_C_N_O_"
-		_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD3")
-		_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
-		_oSQL:_sQuery +=    " AND D3_FILIAL  = '" + xfilial ("SD3") + "'"
-		_oSQL:_sQuery +=    " AND D3_VAETIQ  = '" + _sEtiq + "'"
-		_oSQL:_sQuery +=    " AND D3_VACHVEX = '" + _sChvEx + "'"
-		_aRegsSD3 := aclone (_oSQL:Qry2Array (.F., .F.))
-		if len (_aRegsSD3) != 2
-			u_help ("Problemas na gravacao da transferencia. Nao encontrei os dois registros que deveriam ter sido gravados. Query para conferencia: " + _oSQL:_sQuery,, .t.)
-			lMsErroAuto = .T.
-		endif
-	endif
-
-	if lMsErroAuto
-		if ! empty (NomeAutoLog ())
-			_sErroAuto += U_LeErro (memoread (NomeAutoLog ()))
-		endif
-		u_help ('Problemas rot.aut.transf.estoque: ' + _sErroAuto,, .t.)
-		_lRet = .F.
-	else
-		U_LOG2 ('info', 'Transf. estq gerada. D3_VACHVEX: ' + _sChvEx + ' Prod.: ' + alltrim (_sProduto) + ' AX ' + _sAlmOrig + '->' + _sAlmDest + ' qt: ' + cvaltochar (_nQuant))
-	endif
-return _lRet
-
-
-/* Por enquanto nem estamos usando
-// --------------------------------------------------------------------------------------------
-// Consulta NaWeb para ver se tem (ou necessita) inspecao.
-static function _VerInsp(_sProduto, _sEtiqueta)
-	Local _sXML := ""
-	Local _sRet := ""
-
-	_sXML += '<SdtNucParametro xmlns="NAWeb">'
-	_sXML += '    <SdtNucParametroItem>'
-	_sXML += '        <SdtNucParametroNome>Funcionalidade</SdtNucParametroNome>'
-	_sXML += '        <SdtNucParametroValor>VERIFICA_INSPECAO</SdtNucParametroValor>'
-	_sXML += '    </SdtNucParametroItem>'
-	_sXML += '    <SdtNucParametroItem>'
-	_sXML += '        <SdtNucParametroNome>TrnPcpInspProdProCod</SdtNucParametroNome>'
-	_sXML += '        <SdtNucParametroValor>' + _sProduto + '</SdtNucParametroValor>'
-	_sXML += '    </SdtNucParametroItem>'
-	_sXML += '    <SdtNucParametroItem>'
-	_sXML += '        <SdtNucParametroNome>TrnPcpInspTipoMom</SdtNucParametroNome>'
-	_sXML += '        <SdtNucParametroValor>ATL</SdtNucParametroValor>'
-	_sXML += '    </SdtNucParametroItem>'
-	_sXML += '    <SdtNucParametroItem>'
-	_sXML += '        <SdtNucParametroNome>TrnPcpInspProdChaTip</SdtNucParametroNome>'
-	_sXML += '        <SdtNucParametroValor>ETQ</SdtNucParametroValor>'
-	_sXML += '    </SdtNucParametroItem>'
-	_sXML += '    <SdtNucParametroItem>'
-	_sXML += '        <SdtNucParametroNome>TrnPcpInspProdCha</SdtNucParametroNome>'
-	_sXML += '        <SdtNucParametroValor>' + _sEtiqueta + '</SdtNucParametroValor>'
-	_sXML += '    </SdtNucParametroItem>'
-	_sXML += '</SdtNucParametro>'		
-
-	oAnexo := WSPrcNucWebService():New()
-	oAnexo:cEntrada := _sXML
-	oAnexo:Execute()
-	_sRet = oAnexo:cSaida
-	
-return _sRet
-*/
 
 
 // ------------------------------------------------------------------------------------
@@ -452,9 +327,12 @@ static function _Saidas (_sSaidID)
 	_oSQL:_sQuery +=    " and saida_id like 'ZAG%'"
 	_oSQL:_sQuery +=    " and status  = '6'"
 	_oSQL:_sQuery +=    " and tpdoc   = '1'"
-	_oSQL:_sQuery +=    " and status_protheus != '3'"  // 3 = executado
-	_oSQL:_sQuery +=    " and status_protheus != 'C'"  // C = cancelado: por que jah foi acertado manualmente, ou jah foi inventariado, etc.
-	_oSQL:_sQuery +=    " and status_protheus != '5'"  // 5 = estornado
+//	_oSQL:_sQuery +=    " and status_protheus != '3'"  // 3 = executado
+//	_oSQL:_sQuery +=    " and status_protheus != 'C'"  // C = cancelado: por que jah foi acertado manualmente, ou jah foi inventariado, etc.
+//	_oSQL:_sQuery +=    " and status_protheus != '5'"  // 5 = estornado
+	_oSQL:_sQuery +=    " and status_protheus not like '3%'"  // 3 = executado
+	_oSQL:_sQuery +=    " and status_protheus not like 'C%'"  // C = cancelado: por que jah foi acertado manualmente, ou jah foi inventariado, etc.
+	_oSQL:_sQuery +=    " and status_protheus not like '5%'"  // 5 = estornado
 	if ! empty (_sSaidID)
 		_oSQL:_sQuery += " and saida_id = '" + _sSaidID + "'"
 	endif
@@ -466,7 +344,10 @@ static function _Saidas (_sSaidID)
 		U_Log2 ('info', '[' + procname () + "]Verificando tb_wms_pedidos.saida_id = '" + (_sAliasQ) -> saida_id + "'")
 		do case
 		case left ((_sAliasQ) -> saida_id, 3) == 'ZAG'
-//			_sChaveZAG = substr ((_sAliasQ) -> saida_id, 6, 10)  // Chave composta por ZAG + filial + chave_do_ZAG cfe. view v_wms_pedido
+
+			// Alimenta variavel auxiliar para geracao de alquivo de log
+			_sPrefLog = 'SaidaID ' + alltrim ((_sAliasQ) -> saida_id)
+
 			_sChaveZAG = substr ((_sAliasQ) -> saida_id, 6, 12)  // Chave composta por ZAG + filial + chave_do_ZAG cfe. view v_wms_pedido
 			zag -> (dbsetorder (1))  // ZAG_FILIAL, ZAG_DOC, ZAG_SEQ
 			if ! zag -> (dbseek (xfilial ("ZAG") + _sChaveZAG, .F.))
@@ -626,6 +507,9 @@ static function _Saidas (_sSaidID)
 				next
 			endif
 
+			// Limpa variavel auxiliar para geracao de alquivo de log
+			_sPrefLog = ''
+
 		otherwise
 			u_help ("Sem tratamento para tpdoc / saida_id '" + (_sAliasQ) -> tpdoc + (_sAliasQ) -> saida_id + "' da tabela 'tb_wms_pedidos'.",, .t.)
 		endcase
@@ -638,9 +522,45 @@ static function _Saidas (_sSaidID)
 return _lRet
 
 
+// --------------------------------------------------------------------------------------------
+// Atualiza status (entradas) no FullWMS.
+// Procurar manter, aqui, os mesmos codigos de status em todos os programas BatFull*, apesar de serem tabelas diferentes:
+// 1 = 'falta estoque para fazer a transferencia'
+// 2 = 'outro erro nao tratado na transferancia'
+// 3 = 'executado no ERP'
+// 4 = 'diferenca na quantidade'
+// 5 = 'qtde movimentada menor que executada' (no caso de recebimento de producao)
+// 9 = 'cancelado no ERP'
+static function _AtuEntr (_sEntrada, _sStatus)
+	local _oSQL  := NIL
+	local _nStat := 0
+	local _lRet  := .F.
+
+	_nStat = ascan (_aStatProt, {|_aVal| _aVal [1] == _sStatus})
+	if _nStat == 0
+		u_help ("Tentativa de gravar um status desconhecido ('" + cvaltochar (_sStatus) + "') na tabela tb_wms_entrada",, .t.)
+		_lRet = .F.
+	else
+		// Concatena o descritivo do status, por que eh sempre uma complicacao
+		// na hora de consultar essa tabela, sem saber o significado de cada um.
+		// Vou habilitar compactacao da tabela no SQL, entao a existencia de
+		// muitos registros com dados semelhantes vai reduzir o tamanho.
+		_sStatus += '-' + _aStatProt [_nStat, 2]
+
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := " update tb_wms_entrada"
+		_oSQL:_sQuery +=    " set status_protheus = '" + _sStatus + "'"
+		_oSQL:_sQuery +=  " where entrada_id = '" + _sEntrada + "'"
+		_lRet = _oSQL:Exec ()
+		if _sStatus != '3'  // 3=executado ok
+			_oSQL:Log ()
+		endif
+	endif
+return _lRet
+
 
 // --------------------------------------------------------------------------------------------
-// Atualiza status no FullWMS.
+// Atualiza status (saidas) no FullWMS.
 // Procurar manter, aqui, os mesmos codigos de status em todos os programas BatFull*, apesar de serem tabelas diferentes:
 // 1 = 'falta estoque para fazer a transferencia'
 // 2 = 'outro erro nao tratado na transferancia'
@@ -649,13 +569,153 @@ return _lRet
 // 5 = 'qtde movimentada menor que executada' (no caso de recebimento de producao)
 // 9 = 'cancelado no ERP'
 static function _AtuSaid (_sSaida, _sStatus)
-	local _oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := " update tb_wms_pedidos"
-	_oSQL:_sQuery +=    " set status_protheus = '" + _sStatus + "'"
-	_oSQL:_sQuery +=  " where saida_id = '" + _sSaida + "'"
-	_oSQL:Exec ()
-	if _sStatus != '3'  // 3=executado ok
-		_oSQL:Log ()
-	endif
-return
+	local _oSQL  := NIL
+	local _nStat := 0
+	local _lRet  := .F.
 
+	_nStat = ascan (_aStatProt, {|_aVal| _aVal [1] == _sStatus})
+	if _nStat == 0
+		u_help ("Tentativa de gravar um status desconhecido ('" + cvaltochar (_sStatus) + "') na tabela tb_wms_pedidos",, .t.)
+		_lRet = .F.
+	else
+		// Concatena o descritivo do status, por que eh sempre uma complicacao
+		// na hora de consultar essa tabela, sem saber o significado de cada um.
+		// Vou habilitar compactacao da tabela no SQL, entao a existencia de
+		// muitos registros com dados semelhantes vai reduzir o tamanho.
+		_sStatus += '-' + _aStatProt [_nStat, 2]
+
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := " update tb_wms_pedidos"
+		_oSQL:_sQuery +=    " set status_protheus = '" + _sStatus + "'"
+		_oSQL:_sQuery +=  " where saida_id = '" + _sSaida + "'"
+		_lRet = _oSQL:Exec ()
+		if _sStatus != '3'  // 3=executado ok
+			_oSQL:Log ()
+		endif
+	endif
+return _lRet
+
+
+// --------------------------------------------------------------------------------------------
+// Gera transferencia de estoque.
+static function _GeraTran (_sProduto, _sLote, _nQuant, _sAlmOrig, _sAlmDest, _sEndOrig, _sEndDest, _sMotivo, _sEtiq, _sChvEx)
+	local _lRet      := .T.
+	local _sDocTrans := ''
+	local _aAuto261  := {}
+	local _aItens    := {}
+	local _oSQL      := NIL
+	local _aRegsSD3  := {}
+	private lMsErroAuto := .F.
+
+//	u_log2 ('debug', '[' + procname () + '] param recebidos: ' + cvaltochar ( _sProduto) + cvaltochar ( _sLote) + cvaltochar ( _nQuant) + cvaltochar ( _sAlmOrig) + cvaltochar ( _sAlmDest) + cvaltochar ( _sEndOrig) + cvaltochar ( _sEndDest) + cvaltochar ( _sMotivo) + cvaltochar ( _sEtiq) + cvaltochar ( _sChvEx))
+
+	// Se o produto ainda nao existe no almoxarifado destino, cria-o, para nao bloquear a transferencia de estoque.
+	sb2 -> (dbsetorder (1))
+	if ! sb2 -> (dbseek (xfilial ("SB2") + _sProduto + _sAlmDest))
+		u_log2 ('info', 'Criando saldos iniciais')
+		CriaSB2 (_sProduto, _sAlmDest)
+	endif
+
+	_sErroAuto := ""  // Variavel para erros de rotinas automaticas. Deixar tipo 'private'.
+	_sDocTrans := CriaVar ("D3_DOC")
+	aadd(_aAuto261,{_sDocTrans,dDataBase})
+	aadd(_aItens, _sProduto)   // Produto origem
+	aadd(_aItens,'')           //D3_DESCRI			Descricao do Produto Origem
+	aadd(_aItens,'')           //D3_UM				Unidade de Medida Origem
+	aadd(_aItens,_sAlmOrig)    //Almox origem
+	aadd(_aItens,_sEndOrig)    //Endereco origem
+	aadd(_aItens,_sProduto)    //Codigo do produto destino (inicilmente a ideia eh sempre transferir para o mesmo produto)
+	aadd(_aItens,'')           //D3_DESCRI			Descricao do Produto de Destino
+	aadd(_aItens,'')           //D3_UM				Unidade de Medida de Destino
+	aadd(_aItens,_sAlmDest)    //Almox destino
+	aadd(_aItens,_sEndDest)    //Endereco destino
+	aadd(_aItens,"")           //D3_NUMSERI			Numero de Serie
+	aadd(_aItens,_sLote)       //Lote origem
+	aadd(_aItens,"")           //D3_NUMLOTE			Numero do lote
+	aadd(_aItens,ctod(""))     //D3_DTVALID			Validade Origem
+	aadd(_aItens,0)            //D3_POTENCI			PotÍncia
+	aadd(_aItens,_nQuant)      // Quantidade
+	aadd(_aItens,0)            //D3_QTSEGUM			Segunda Quantidade
+	aadd(_aItens,criavar("D3_ESTORNO"))  //D3_ESTORNO			Estorno
+	aadd(_aItens,criavar("D3_NUMSEQ"))   //D3_NUMSEQ 			Numero de Sequencia
+	aadd(_aItens,_sLote)                 // Lote destino
+	aadd(_aItens,ctod(""))               // D3_DTVALID			Validade de Destino
+	aadd(_aItens,criavar("D3_ITEMGRD"))  // D3_ITEMGRD			Item Grade
+	aadd(_aItens,'')                     // D3_OBSERVA
+	aadd(_aItens,_sMotivo)               // motivo
+	aadd(_aItens,ctod (''))              // dt digit (vai ser gravado pelo SQL)
+	aadd(_aItens,'')                     // hr digit (vai ser gravado pelo SQL)
+	aadd(_aItens,_sEtiq)                 // D3_VAETIQ Etiqueta
+	aadd(_aItens,_sChvEx)                // Chave externa D3_VACHVEX
+//	U_Log2 ('debug', '[' + procname () + ']_aItens:')
+//	U_Log2 ('debug', _aItens)
+	aadd(_aAuto261, aclone (_aItens))
+	
+	lMsErroAuto := .F.
+	MSExecAuto({|x,y| mata261(x,y)},_aAuto261,3) //INCLUSAO
+
+	// Ja tive casos de nao gravar e tambem nao setar a variavel lMsErroAuto. Por isso vou conferir a gravacao.
+	if ! lMsErroAuto
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := " SELECT R_E_C_N_O_"
+		_oSQL:_sQuery +=   " FROM " + RetSQLName ("SD3")
+		_oSQL:_sQuery +=  " WHERE D_E_L_E_T_ = ''"
+		_oSQL:_sQuery +=    " AND D3_FILIAL  = '" + xfilial ("SD3") + "'"
+		_oSQL:_sQuery +=    " AND D3_VAETIQ  = '" + _sEtiq + "'"
+		_oSQL:_sQuery +=    " AND D3_VACHVEX = '" + _sChvEx + "'"
+		_aRegsSD3 := aclone (_oSQL:Qry2Array (.F., .F.))
+		if len (_aRegsSD3) != 2
+			u_help ("Problemas na gravacao da transferencia. Nao encontrei os dois registros que deveriam ter sido gravados. Query para conferencia: " + _oSQL:_sQuery,, .t.)
+			lMsErroAuto = .T.
+		endif
+	endif
+
+	if lMsErroAuto
+		if ! empty (NomeAutoLog ())
+			_sErroAuto += U_LeErro (memoread (NomeAutoLog ()))
+		endif
+		u_help ('Problemas rot.aut.transf.estoque: ' + _sErroAuto,, .t.)
+		_lRet = .F.
+	else
+		U_LOG2 ('info', 'Transf. estq gerada. D3_VACHVEX: ' + _sChvEx + ' Prod.: ' + alltrim (_sProduto) + ' AX ' + _sAlmOrig + '->' + _sAlmDest + ' qt: ' + cvaltochar (_nQuant))
+	endif
+return _lRet
+
+
+/* Por enquanto nem estamos usando
+// --------------------------------------------------------------------------------------------
+// Consulta NaWeb para ver se tem (ou necessita) inspecao.
+static function _VerInsp(_sProduto, _sEtiqueta)
+	Local _sXML := ""
+	Local _sRet := ""
+
+	_sXML += '<SdtNucParametro xmlns="NAWeb">'
+	_sXML += '    <SdtNucParametroItem>'
+	_sXML += '        <SdtNucParametroNome>Funcionalidade</SdtNucParametroNome>'
+	_sXML += '        <SdtNucParametroValor>VERIFICA_INSPECAO</SdtNucParametroValor>'
+	_sXML += '    </SdtNucParametroItem>'
+	_sXML += '    <SdtNucParametroItem>'
+	_sXML += '        <SdtNucParametroNome>TrnPcpInspProdProCod</SdtNucParametroNome>'
+	_sXML += '        <SdtNucParametroValor>' + _sProduto + '</SdtNucParametroValor>'
+	_sXML += '    </SdtNucParametroItem>'
+	_sXML += '    <SdtNucParametroItem>'
+	_sXML += '        <SdtNucParametroNome>TrnPcpInspTipoMom</SdtNucParametroNome>'
+	_sXML += '        <SdtNucParametroValor>ATL</SdtNucParametroValor>'
+	_sXML += '    </SdtNucParametroItem>'
+	_sXML += '    <SdtNucParametroItem>'
+	_sXML += '        <SdtNucParametroNome>TrnPcpInspProdChaTip</SdtNucParametroNome>'
+	_sXML += '        <SdtNucParametroValor>ETQ</SdtNucParametroValor>'
+	_sXML += '    </SdtNucParametroItem>'
+	_sXML += '    <SdtNucParametroItem>'
+	_sXML += '        <SdtNucParametroNome>TrnPcpInspProdCha</SdtNucParametroNome>'
+	_sXML += '        <SdtNucParametroValor>' + _sEtiqueta + '</SdtNucParametroValor>'
+	_sXML += '    </SdtNucParametroItem>'
+	_sXML += '</SdtNucParametro>'		
+
+	oAnexo := WSPrcNucWebService():New()
+	oAnexo:cEntrada := _sXML
+	oAnexo:Execute()
+	_sRet = oAnexo:cSaida
+	
+return _sRet
+*/

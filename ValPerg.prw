@@ -36,7 +36,7 @@ user function ValPerg (_cPerg, _aRegsOri, _aHelps, _aRespDef)
 		_sSeq := "1"
 		for _i = 1 to len (_aRegsOri)
 			if _aRegsOri [_i, 1] != _i
-				u_help ("Funcao " + procname () + ": Recebi perguntas fora de ordem. Chamado pela funcao " + funname ())
+				u_help ("Funcao " + procname () + ": Recebi perguntas fora de ordem. Chamado pela funcao " + funname (),, .t.)
 				return
 			endif
 			aadd (_aRegs, {_cPerg, ;
