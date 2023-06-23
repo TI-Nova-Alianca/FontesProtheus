@@ -10,6 +10,7 @@
 // #Modulos 		  #todos
 //
 // Historico de alteracoes:
+// 23/06/2023 - Claudia - Validação p/nao duplicar fornecedor para mesmo produto protheus. GLPI: 13777/13690
 //
 //---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
@@ -23,6 +24,7 @@ User Function MATA061()
     Local cIdPonto   := ""
     Local cIdModel   := ""
     Local lIsGrid    := .F.
+    Local _oSQL := ClsSQL ():New ()
 
     If aParam <> NIL
         oObj := aParam[1]
@@ -46,7 +48,23 @@ User Function MATA061()
                 cCod     := oObj:GetValue('A5_CODPRF')
                 cProd    := A5_PRODUTO
                 cFornece := oObj:GetValue('A5_FORNECE')
-                xRet := _MA061TOK(cCod)
+                cLoja    := oObj:GetValue('A5_LOJA')
+
+                _oSQL:_sQuery := ""
+                _oSQL:_sQuery += " SELECT
+                _oSQL:_sQuery += " 	    count(*) "
+                _oSQL:_sQuery += " FROM " + RetSQLName ("SA5") 
+                _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+                _oSQL:_sQuery += " AND A5_PRODUTO = '"+ cProd +"' "
+                _aSA5 := aclone (_oSQL:Qry2Array ())
+
+                _nQtdBanco := _aSA5[1,1]
+                _nQtdLinha := oObj:Length()
+
+                If _nQtdBanco <  _nQtdLinha
+                    xRet := _MA061TOK(cCod,cProd,cFornece,cLoja)
+                EndIf
+
                 If xRet
                     _oEvento := ClsEvent():New ()
                     _oEvento:Alias     = 'SA5'
@@ -78,13 +96,33 @@ Return xRet
 //
 //----------------------------------------------------------------------------------
 // Tudo OK
-Static Function _MA061TOK(cCod)
+Static Function _MA061TOK(cCod,cProd,cFornece,cLoja)
+    Local _oSQL := ClsSQL ():New ()
     Local lRet  := .T.
 
     sCod := LimpaEsp(cCod)
     If empty(alltrim(sCod))
         u_help(" O codigo do produto no fornecedor nao pode estar vazio. Verifique!")
         lRet := .F.
+    EndIf
+
+    If lRet
+        _oSQL:_sQuery := ""
+		_oSQL:_sQuery += " SELECT
+        _oSQL:_sQuery += " 	    count(*) "
+        _oSQL:_sQuery += " FROM " + RetSQLName ("SA5") 
+        _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+        _oSQL:_sQuery += " AND A5_PRODUTO = '"+ cProd    +"' "
+        _oSQL:_sQuery += " AND A5_FORNECE = '"+ cFornece +"' "
+        _oSQL:_sQuery += " AND A5_LOJA    = '"+ cLoja    +"' "
+        _aSA5 := aclone (_oSQL:Qry2Array ())
+
+        If Len(_aSA5) > 0
+            If _aSA5[1,1] > 0
+                u_help("Código de fornecedor duplicado para mesmo produto. Verifique!")
+                lRet := .F.
+            EndIf
+        EndIf
     EndIf
 Return lRet
 //
