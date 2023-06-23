@@ -20,8 +20,9 @@
 // 10/05/2019 - Catia   - alterado a forma de buscar a subconta, filial 09 nao estava imprimindo boletos
 // 14/05/2019 - Catia   - na caixa tem que ser usada a conta 003 - teste para fazer fixo por aqui
 // 01/07/2020 - Claudia - Incluidas as filiais para subconta de banco do brasil. GLPI: 8103
+// 21/06/2023 - Claudia - Incluida validação para filial 08. GLPI 13751
 //
-// --------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------
 user function BolAuto (_sSerie, _sNotaIni, _sNotaFim)
 	local _aAreaAnt := U_ML_SRArea ()
 	local _aAmbAnt  := U_SalvaAmb ()
@@ -98,12 +99,14 @@ user function BolAuto (_sSerie, _sNotaIni, _sNotaFim)
 		do while ! (_sAliasQ2) -> (eof ())
 			
 			do case 
-			   case (_sAliasQ2) -> A6_COD = '748' // força subconta 1
+			    case (_sAliasQ2) -> A6_COD = '748' // força subconta 1
 			    	_wsubconta = '1'
-			   case (_sAliasQ2) -> A6_COD = '001' .and. (cfilant = '01' .or. cfilant = '03' .or. cfilant = '07' .or. cfilant = '09' .or. cfilant = '16')  ///força subconta 1 convenio NOVO a partir de 05/2019 
+			    case (_sAliasQ2) -> A6_COD = '001' .and. (cfilant = '01' .or. cfilant = '03' .or. cfilant = '07' .or. cfilant = '09' .or. cfilant = '16')  ///força subconta 1 convenio NOVO a partir de 05/2019 
 			   		_wsubconta = '1'
-			   case (_sAliasQ2) -> A6_COD = '104' .and. cfilant = '01' 
-			   		_wsubconta = '003'		   	
+			    case (_sAliasQ2) -> A6_COD = '104' .and. cfilant = '01' 
+			   		_wsubconta = '003'	
+				case (_sAliasQ2) -> A6_COD = '041' .and. cfilant = '08' 
+			   		_wsubconta = '1'		   	
 			   OTHERWISE		
 			   		_wsubconta = '0' // outros bancos usa subconta zero
 			endcase
