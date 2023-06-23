@@ -28,7 +28,9 @@
 // 17/03/2022 - Claudia - Validação de cadastro de prospect apenas para inclusão de novos clientes. GLPI: 11774
 // 03/05/2022 - Claudia - Incluida validação para o campo a1_savblq. GLPI: 11922
 // 22/11/2022 - Claudia - Incluido envio de aviso por e-mail para troca de vendedores. GLPI: 12756
+// 19/06/2023 - Robert  - Melhorada mensagem campo A1_SAVBLQ (GLPI 13739)
 //
+
 // --------------------------------------------------------------------------------------------------------------------
 #include "protheus.ch"
 #include "parmtype.ch"
@@ -254,7 +256,7 @@ static Function _ma030tok(nOper)
 
 	if _lRet
 		if m->a1_savblq == 'N'
-			u_help("Este cliente não pode ser ativado devido a duplicidade de códigos! Entre em contato com o administrador do sistema.")
+			u_help("Este cliente não pode ser ativado devido a duplicidade de códigos com sistema Mercanet! Entre em contato com o administrador do sistema (Sugestao: cadastrar um cliente novo).",, .t.)
 			_lRet = .F.
 		endif
 	endif

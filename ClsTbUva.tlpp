@@ -118,6 +118,8 @@ METHOD GeraHTM () Class ClsTbUva
 	local _nTotCols := 25
 	local _nGrp13   := 0
 
+	// dicas em https://www.w3schools.com/css/css_text_align.asp
+
 	_sHTM := '<!DOCTYPE html><html><head><meta charset="1252"/><title>Tabela uva safra</title></head><body>'
 	_sHTM += '<table width="80%" border="1" cellspacing="0" cellpadding="0" align="center">'
 	
