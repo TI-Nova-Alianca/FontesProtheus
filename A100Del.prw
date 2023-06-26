@@ -9,7 +9,6 @@
 // 10/03/2017 - Júlio  - Incluída validação para impedir a exclusão de notas com etiquetas impressas.
 // 03/05/2018 - Robert - Desabilitados tratamentos do ZAB (devolucoes de clientes).
 //
-// sandra
 // ----------------------------------------------------------------
 user function A100Del ()
 	local _lRet     := .T.
