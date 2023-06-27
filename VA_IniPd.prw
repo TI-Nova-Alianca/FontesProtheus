@@ -51,8 +51,8 @@
 // 10/12/2019 - Robert  - Desabilitado tratamento para o D3_CC
 // 29/09/2020 - Cláudia - Incluido o novo usuário do alexandre na validação de liberação de doc. GLPI: 8369
 // 22/08/2022 - Robert  - Criado inicializador de browse para o campo ZI_VENCTO (GLPI 12503)
+// 27/06/2023 - Claudia - Incluido o usuario Franciele. GLPI 13786
 //
-
 // -------------------------------------------------------------------------------------------------------
 user function VA_IniPd (_sCampo, _lBrowse)
 	local _xRet     := NIL
@@ -238,6 +238,8 @@ user function VA_IniPd (_sCampo, _lBrowse)
 							_xRet = 'Joel'
 						case _sUser == '000456'
 							_xRet = 'Marcos'
+						case _sUser == '000822'
+							_xRet = 'Franciele'
 						otherwise
 							_xRet = '' //_sUser + "(ajustar prog." + procname () + ")"
 					endcase
