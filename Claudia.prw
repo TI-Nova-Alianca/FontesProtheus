@@ -268,7 +268,7 @@ Return
 // 	_oSQL:_sQuery += " SELECT "
 // 	_oSQL:_sQuery += " 	A5_PRODUTO, A5_FORNECE, A5_LOJA "
 // 	_oSQL:_sQuery += " FROM SA5010 SA5 "
-// 	_oSQL:_sQuery += " INNER JOIN SB1010 SB1 "
+// 	_oSQL:_sQuery += " INNER JOIN SB1010 SB1 
 // 	_oSQL:_sQuery += " 	ON SA5.A5_PRODUTO = SB1.B1_COD "
 // 	_oSQL:_sQuery += " 		AND B1_TIPO = 'GG' "
 // 	_aDados := aclone(_oSQL:Qry2Array())
