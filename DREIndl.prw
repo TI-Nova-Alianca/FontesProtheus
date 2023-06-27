@@ -31,6 +31,8 @@
 // 12/06/2022 - Robert - Limitado nome de usuario a 15 caracteres (erro "String or binary data would be truncated").
 // 05/06/2023 - Robert - Funcao F3Array() passa a exigir definicao de colunas (GLPI 13670).
 //                     - Leitura da VA_SM0 substituida pela SYS_COMPANY.
+// 26/06/2023 - Robert - Criado tratamento para linha comercial FRISANTE (GLPI 13724)
+//                     - Criado tratamento para linha de envase CAXIAS (GLPI 13724)
 //
 
 // --------------------------------------------------------------------------
@@ -371,7 +373,8 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 //		_oSQL:_sQuery := "SELECT DESCRITIVO AS [DESCRITIVOS_Analise_" + cvaltochar (_trbDRE -> idanalise) + ']'
 		_oSQL:_sQuery := "SELECT GRUPO"
 		_oSQL:_sQuery +=      ", DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
-		_oSQL:_sQuery +=      " ,VIDRO,ISOBARICA,EM_3OS,PET,TETRA_200,TETRA_1000,BAG,FILIAL_09,GRANEL,OUTRAS"
+//		_oSQL:_sQuery +=      " ,VIDRO,ISOBARICA,EM_3OS,PET,TETRA_200,TETRA_1000,BAG,FILIAL_09,GRANEL,OUTRAS"
+		_oSQL:_sQuery +=      " ,VIDRO,ISOBARICA,EM_3OS,PET,TETRA_200,TETRA_1000,BAG,CAXIAS,FILIAL_09,GRANEL,OUTRAS"
 		_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".FDRE_INDL_LINENV (" + cvaltochar (_trbDRE -> idanalise) + ","
 		_oSQL:_sQuery +=         "'" + _sFilIni + "', '" + _sFilFim + "'"
 		_oSQL:_sQuery += " ) ORDER BY GRUPO"
@@ -385,7 +388,8 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 //		_oSQL:_sQuery := "SELECT *"
 		_oSQL:_sQuery := "SELECT GRUPO"
 		_oSQL:_sQuery +=      ", DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
-		_oSQL:_sQuery +=      ", SUCO_INTEGRAL,ORGANICO,SUCO_100,NECT_BEBID,PREPARADOS,VINHO_FINO,ESPUMANTE,VINHO_MESA,FILTRADO,SAGU_QUENTAO,INDUSTRIALIZ,REVENDA,GRANEL,OUTRAS"
+	//	_oSQL:_sQuery +=      ", SUCO_INTEGRAL,ORGANICO,SUCO_100,NECT_BEBID,PREPARADOS,VINHO_FINO,ESPUMANTE,VINHO_MESA,FILTRADO,SAGU_QUENTAO,INDUSTRIALIZ,REVENDA,GRANEL,OUTRAS"
+		_oSQL:_sQuery +=      ", SUCO_INTEGRAL,ORGANICO,SUCO_100,NECT_BEBID,PREPARADOS,VINHO_FINO,ESPUMANTE,VINHO_MESA,FRISANTE,FILTRADO,SAGU_QUENTAO,INDUSTRIALIZ,REVENDA,GRANEL,OUTRAS"
 		_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".FDRE_INDL_LINCOM ("
 		_oSQL:_sQuery +=         "'" + cvaltochar (_trbDRE -> idanalise) + "'"
 		_oSQL:_sQuery +=         ",'" + _sFilIni + "', '" + _sFilFim + "'"
@@ -420,10 +424,10 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 			_sLojBIni = _oSQL:_xRetQry [_nOpcao + 1, 3]
 			_sCliBFim = _sCliBIni
 			_sLojBFim = _sLojBIni
-//			_oSQL:_sQuery := "SELECT * FROM " + _sLinkSrv + ".FDRE_INDL_LINCOM ('" + cvaltochar (_trbDRE -> idanalise) + "', '', 'zz', '" + _sCliBIni + "', '" + _sLojBIni + "', '" + _sCliBFim + "', '" + _sLojBFim + "') ORDER BY GRUPO"
 			_oSQL:_sQuery := "SELECT GRUPO"
 			_oSQL:_sQuery +=      ", DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
-			_oSQL:_sQuery +=      ", SUCO_INTEGRAL,ORGANICO,SUCO_100,NECT_BEBID,PREPARADOS,VINHO_FINO,ESPUMANTE,VINHO_MESA,FILTRADO,SAGU_QUENTAO,INDUSTRIALIZ,REVENDA,GRANEL,OUTRAS"
+		//	_oSQL:_sQuery +=      ", SUCO_INTEGRAL,ORGANICO,SUCO_100,NECT_BEBID,PREPARADOS,VINHO_FINO,ESPUMANTE,VINHO_MESA,FILTRADO,SAGU_QUENTAO,INDUSTRIALIZ,REVENDA,GRANEL,OUTRAS"
+			_oSQL:_sQuery +=      ", SUCO_INTEGRAL,ORGANICO,SUCO_100,NECT_BEBID,PREPARADOS,VINHO_FINO,ESPUMANTE,VINHO_MESA,FRISANTE,FILTRADO,SAGU_QUENTAO,INDUSTRIALIZ,REVENDA,GRANEL,OUTRAS"
 			_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".FDRE_INDL_LINCOM ("
 			_oSQL:_sQuery +=         "'" + cvaltochar (_trbDRE -> idanalise) + "'"
 			_oSQL:_sQuery +=         ",'" + _sFilIni  + "', '" + _sFilFim  + "'"
