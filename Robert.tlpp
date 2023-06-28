@@ -20,7 +20,8 @@
 // ZZU_EMP, d1_fim, f1_fim (?)
 // Campos de DAP no SA2 (conferir os programas antes)
 // Adicionar CT2 para compactacao no BATLIMP
-
+// adicionar tabelas DRE INDL para compactacao
+//
 
 #include "protheus.ch"
 #include "rwmake.ch"
@@ -37,7 +38,7 @@ user function robert ()
 //	u_perfmon ('I', 'Prep_env_' + cValToChar (GetServerPort ()))
 
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '01' modulo 'FIN'
+		prepare environment empresa '01' filial '07' modulo 'FIN'
 		private cModulo   := 'FIN'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -94,6 +95,7 @@ user function robert ()
 		// _CargSaf ()
 		// _CplSaf23A ()
 		// _CplSaf23B ()
+		// _CplSaf23C ()
 		// _ctbANC ()
 		// _DesabRast ()
 		// _elastic ()
@@ -105,6 +107,7 @@ user function robert ()
 		// _gerasze ()
 		// _GLPI13221 ()
 		// _GLPI13674 ()
+		// _GLPI13773 ()
 		// _ImpGPC ()
 		// _memoria ()
 		// _metaf ()
@@ -129,7 +132,7 @@ user function robert ()
 		// _VA_VEF ()
 		// _VA_XLS ()
 		// _verif ()
-		u_help ('Nada definido.')
+	//	u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
@@ -1038,45 +1041,6 @@ static function _CplSaf23A ()
 			reclock ("ZZ9", .F.)
 			zz9 -> zz9_vunit3 = U_PrcUva23 (zz9 -> zz9_filial, zz9 -> zz9_produt, val (zz9 -> zz9_grau), _sClasFina, zz9 -> zz9_conduc, .F., .F.) [5]
 			msunlock ()
-	// nem terminei de fazer		if len (alltrim (zz9 -> zz9_mistu1) + alltrim (zz9 -> zz9_mistu2) + alltrim (zz9 -> zz9_mistu3)) > 0
-	// nem terminei de fazer			_aMenorVl = {}
-	// nem terminei de fazer			_oCarSaf  = NIL
-	// nem terminei de fazer			_oCarSaf := ClsCarSaf ():New ()
-	// nem terminei de fazer			_oCarSaf:Safra = zz9 -> zz9_safra
-	// nem terminei de fazer			_oCarSaf:AddItem ()
-	// nem terminei de fazer			_oCarSaf:ItItem     [len (_oCarSaf:ItItem)] = strzero (len (_oCarSaf:ItItem), 2)
-	// nem terminei de fazer			_oCarSaf:ItProduto  [len (_oCarSaf:ItItem)] = zz9 -> zz9_produt
-	// nem terminei de fazer			_oCarSaf:ItGrau     [len (_oCarSaf:ItItem)] = zz9 -> zz9_grau
-	// nem terminei de fazer			_oCarSaf:ItConducao [len (_oCarSaf:ItItem)] = zz9 -> zz9_conduc
-	// nem terminei de fazer			if ! empty (zz9 -> zz9_mistu1)
-	// nem terminei de fazer				_oCarSaf:AddItem ()
-	// nem terminei de fazer				_oCarSaf:ItItem     [len (_oCarSaf:ItItem)] = strzero (len (_oCarSaf:ItItem), 2)
-	// nem terminei de fazer				_oCarSaf:ItProduto  [len (_oCarSaf:ItItem)] = zz9 -> zz9_mistu1
-	// nem terminei de fazer				_oCarSaf:ItGrau     [len (_oCarSaf:ItItem)] = zz9 -> zz9_grau
-	// nem terminei de fazer				_oCarSaf:ItConducao [len (_oCarSaf:ItItem)] = zz9 -> zz9_conduc
-	// nem terminei de fazer			endif
-	// nem terminei de fazer			if ! empty (zz9 -> zz9_mistu2)
-	// nem terminei de fazer				_oCarSaf:AddItem ()
-	// nem terminei de fazer				_oCarSaf:ItItem     [len (_oCarSaf:ItItem)] = strzero (len (_oCarSaf:ItItem), 2)
-	// nem terminei de fazer				_oCarSaf:ItProduto  [len (_oCarSaf:ItItem)] = zz9 -> zz9_mistu2
-	// nem terminei de fazer				_oCarSaf:ItGrau     [len (_oCarSaf:ItItem)] = zz9 -> zz9_grau
-	// nem terminei de fazer				_oCarSaf:ItConducao [len (_oCarSaf:ItItem)] = zz9 -> zz9_conduc
-	// nem terminei de fazer			endif
-	// nem terminei de fazer			if ! empty (zz9 -> zz9_mistu3)
-	// nem terminei de fazer				_oCarSaf:AddItem ()
-	// nem terminei de fazer				_oCarSaf:ItItem     [len (_oCarSaf:ItItem)] = strzero (len (_oCarSaf:ItItem), 2)
-	// nem terminei de fazer				_oCarSaf:ItProduto  [len (_oCarSaf:ItItem)] = zz9 -> zz9_mistu3
-	// nem terminei de fazer				_oCarSaf:ItGrau     [len (_oCarSaf:ItItem)] = zz9 -> zz9_grau
-	// nem terminei de fazer				_oCarSaf:ItConducao [len (_oCarSaf:ItItem)] = zz9 -> zz9_conduc
-	// nem terminei de fazer			endif
-	// nem terminei de fazer			_aMenorVl = aclone (_oCarSaf:VarMenorVl (5))  // pos.2=preco de compra
-	// nem terminei de fazer			U_Log2 ('debug', _aMenorVl)
-	// nem terminei de fazer			reclock ("ZZ9", .F.)
-	// nem terminei de fazer			zz9 -> zz9_vunit3 = U_PrcUva23 (zz9 -> zz9_filial, _aMenorVl [1, 1], val (zz9 -> zz9_grau), _sClasFina, _aMenorVl [1, 3], .F., .F.)[5]
-	// nem terminei de fazer			msunlock ()
-	// nem terminei de fazer	//		exit
-	// nem terminei de fazer		endif
-
 		endif
 		zz9 -> (dbskip ())
 	enddo
@@ -1125,6 +1089,50 @@ static function _CplSaf23B ()
 	U_GravaSX1 (cPerg, '13', '')     // Exceto estas variedades
 	U_GravaSX1 (cPerg, '14', 1)      // 1=Assoc+ex assoc;2=Terceiros;3=Todos
 	u_va_gnf2 (.t.)
+return
+
+
+// --------------------------------------------------------------------------
+// Gera pre-notas complemento 2023 (em junho - uva alicante)
+static function _CplSaf23C ()
+	local _sSafraCpl := '2023'
+	U_MudaLog ('CplSaf23.log')
+/*
+	cPerg = "VAGNF3"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', _sSafraCpl) // Safra referencia
+	U_GravaSX1 (cPerg, '06', 'O')    // gerar qual Parcela
+	U_GravaSX1 (cPerg, '07', '')     // DCO inicial
+	U_GravaSX1 (cPerg, '08', 'z')    // DCO final
+	U_GravaSX1 (cPerg, '09', '')     // Prod ini
+	U_GravaSX1 (cPerg, '10', 'z')    // Prod final
+	U_GravaSX1 (cPerg, '11', 0)      // Preco total (especifico safra 2016)
+	U_GravaSX1 (cPerg, '12', '9969')     // Apenas estas variedades (separadas por /)
+	U_GravaSX1 (cPerg, '13', '')     // Exceto estas variedades (separadas por /)
+	U_GravaSX1 (cPerg, '14', '')   // Filial inicial
+	U_GravaSX1 (cPerg, '15', 'z')   // Filial final
+	U_VA_GNF3 (.T.)
+*/
+	Private cPerg   := "VAGNF2"
+	U_GravaSX1 (cPerg, '01', '')     // Produtor inicial
+	U_GravaSX1 (cPerg, '02', '')     // Loja produtor inicial
+	U_GravaSX1 (cPerg, '03', 'z')    // Produtor final
+	U_GravaSX1 (cPerg, '04', 'z')    // Loja produtor final
+	U_GravaSX1 (cPerg, '05', _sSafraCpl) // Safra referencia
+	U_GravaSX1 (cPerg, '06', 'O')    // Parcelas sep.barras (bco=todas)
+	U_GravaSX1 (cPerg, '07', 'B')    // Grupo pagto
+	U_GravaSX1 (cPerg, '08', 3)      // Geracao por DCO: {"Com DCO", "Sem DCO", "Todos"}
+	U_GravaSX1 (cPerg, '09', 3)      // fina/comum: {"Comum", "Fina", "Todas"}
+	U_GravaSX1 (cPerg, '10', 2)      // tipo NF: {"Normais", "Compl.preco"}
+	U_GravaSX1 (cPerg, '11', '801')     // Cond pagto
+	U_GravaSX1 (cPerg, '12', '9969')     // Apenas estas variedades
+	U_GravaSX1 (cPerg, '13', '')     // Exceto estas variedades
+	U_GravaSX1 (cPerg, '14', 1)      // 1=Assoc+ex assoc;2=Terceiros;3=Todos
+	u_va_gnf2 (.t.)
+
 return
 
 
@@ -1571,6 +1579,78 @@ static function _GLPI13674 ()
 	enddo
 	(_sAliasQ) -> (dbclosearea ())
 	dbselectarea ("ZZ9")
+return
+
+// --------------------------------------------------------------------------
+// Ajusta parcelamento de notas de complremento de safra 2023 (moscato)
+// Geracao original GLPI 13699. Foram geradas com vcto a partir do mês 06/2023,
+// mas o direito do associado é desde maio, então a parcela de junho deve 
+// contemplar junho + [o que ele devia ter recebido em maio]
+static function _GLPI13773 ()
+	local _aNF := {}
+	local _nNF := 0
+	local _aParc := {}
+	local _nParc := 0
+
+	_oSQL := ClsSQL():New ()
+	_oSQL:_sQuery := "SELECT FILIAL, ASSOCIADO, LOJA_ASSOC, SERIE, DOC, SUM (VALOR_TOTAL)"
+	_oSQL:_sQuery +=  " FROM VA_VNOTAS_SAFRA V"
+	_oSQL:_sQuery += " WHERE SAFRA = '2023'"
+	_oSQL:_sQuery +=   " AND FILIAL = '" + cFilAnt + "'"
+	_oSQL:_sQuery +=   " AND DATA = '20230616'"
+	_oSQL:_sQuery += " GROUP BY FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE"
+	_oSQL:_sQuery += " ORDER BY FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE"
+	_aNF = _oSQL:Qry2Array (.f., .f.)
+	U_Log2 ('debug', _aNF)
+	for _nNF = 1 to len (_aNF)
+		_sPrefLog = 'NF ' + _aNF [_nNF, 5]
+		_aParc = {}
+		se2 -> (dbsetorder (6))  // E2_FILIAL, E2_FORNECE, E2_LOJA, E2_PREFIXO, E2_NUM, E2_PARCELA, E2_TIPO, R_E_C_N_O_, D_E_L_E_T_
+		se2 -> (dbseek (_aNF [_nNf, 1] + _aNF [_nNf, 2] + _aNF [_nNf, 3] + _aNF [_nNf, 4] + _aNF [_nNf, 5], .t.))
+		do while ! se2 -> (eof ()) ;
+			.and. se2 -> e2_filial  == _aNF [_nNf, 1] ;
+			.and. se2 -> e2_fornece == _aNF [_nNf, 2] ;
+			.and. se2 -> e2_loja    == _aNF [_nNf, 3] ;
+			.and. se2 -> e2_prefixo == _aNF [_nNf, 4] ;
+			.and. se2 -> e2_num     == _aNF [_nNf, 5]
+			aadd (_aParc, {se2 -> (recno ()), se2 -> e2_valor, se2 -> e2_vencto, 0})
+			se2 -> (dbskip ())
+		enddo
+
+		// Verifica o valor total, divide-o em 11 (deveriam ter sido 11 parcelas)
+		// depois grava a 1a. e 2a.parcelas (das 11) somadas na posicao 1 da array
+		// e distribui o restante do valor.
+		_o10p := ClsAUtil ():New (_aParc)
+		_o11p := ClsAUtil ():New (afill (array (11), {0}))
+		
+		// Redistribui as parcelas
+		U_Log2 ('debug', '[' + procname () + ']distribuindo ' + cvaltochar (_o10p:TotCol (2)))
+		_o11p:Dist (1, _o10p:TotCol (2), 2, 'U')
+	//	U_Log2 ('debug', _o11p:_aArray)
+
+		for _nParc = 1 to 10
+			_aParc [_nParc, 2] = _o11p:_aArray [_nParc + 1, 1]
+		next
+		_aParc [1, 2] += _o11p:_aArray [1, 1]
+		U_Log2 ('debug', _aParc)
+
+		// soh pra conferir
+		_oConf := ClsAUtil ():New (_aParc)
+		if _oConf:TotCol (2) != _o10p:TotCol (2)
+			U_Log2 ('erro', '[' + procname () + ']distribuiu diferente!')
+		endif
+
+		// Regrava os valores
+		for _nParc = 1 to len (_aParc)
+			se2 -> (dbgoto (_aParc [_nParc, 1]))
+			reclock ("SE2", .f.)
+			se2 -> e2_valor  = _aParc [_nParc, 2]
+			se2 -> e2_saldo  = _aParc [_nParc, 2]
+			se2 -> e2_vlcruz = _aParc [_nParc, 2]
+			msunlock ()
+		next
+
+	next
 return
 
 // --------------------------------------------------------------------------

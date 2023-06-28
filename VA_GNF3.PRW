@@ -1093,7 +1093,8 @@ static function _Gera2023 ()
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := "SELECT FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE, ITEM_NOTA"
 	_oSQL:_sQuery +=      ", PRODUTO, DESCRICAO, PESO_LIQ"
-	_oSQL:_sQuery +=      ", rtrim (cast (ROUND (GRAU, 0) as varchar (4))) + '.0' AS GRAU"  // Simulando graus sem decimal
+//	_oSQL:_sQuery +=      ", rtrim (cast (ROUND (GRAU, 0) as varchar (4))) + '.0' AS GRAU"  // Simulando graus sem decimal
+	_oSQL:_sQuery +=      ", GRAU"
 	_oSQL:_sQuery +=      ", SIST_CONDUCAO, CLAS_ABD, CLAS_FINAL, VUNIT_EFETIVO, GRUPO_PAGTO"
 	_oSQL:_sQuery +=      ", COUNT (*) OVER (PARTITION BY FILIAL, ASSOCIADO, LOJA_ASSOC, DOC, SERIE) AS QTITENS"
 	_oSQL:_sQuery +=  " FROM VA_VPRECO_EFETIVO_SAFRA P"
@@ -1227,7 +1228,7 @@ static function _Gera2023 ()
 		zz9 -> zz9_vunOld = (_sAliasQ) -> VUnit_efetivo
 		zz9 -> zz9_quant  = 0
 		zz9 -> zz9_qtOri  = (_sAliasQ) -> peso_liq  // Campo util para relatorios posteriores
-		zz9 -> zz9_vunit  = _nVCompl   // Valor total a complementar
+		zz9 -> zz9_vunit  = _aRetPrc [1]  // _nVCompl   // Valor total a complementar
 		zz9 -> zz9_nfcomp = iif (zz9 -> zz9_vunit <= 0, 'VLR_MENOR', '')  // Para evitar que posteriormente o programa VA_GNF2 tente gerar nota para este registro.
 		zz9 -> zz9_vunit2 = _aRetPrc [1]  // Preco unitario que foi usado para calcular o complemento
 		zz9 -> zz9_obs    = _aRetPrc [2]  // Observacoes geradas pelo prog. de calculo do preco
