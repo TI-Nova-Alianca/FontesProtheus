@@ -132,7 +132,7 @@ user function robert ()
 		// _VA_VEF ()
 		// _VA_XLS ()
 		// _verif ()
-	//	u_help ('Nada definido.')
+		u_help ('Nada definido.')
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif

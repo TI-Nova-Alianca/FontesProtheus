@@ -33,7 +33,8 @@
 //                     - Leitura da VA_SM0 substituida pela SYS_COMPANY.
 // 26/06/2023 - Robert - Criado tratamento para linha comercial FRISANTE (GLPI 13724)
 //                     - Criado tratamento para linha de envase CAXIAS (GLPI 13724)
-//
+// 28/06/2023 - Robert - Ajuste exportacao lista dos itens participantes (GLPI 13724).
+// 
 
 // --------------------------------------------------------------------------
 user function DREindl ()
@@ -614,12 +615,13 @@ Static Function _ListaPrd (_nIdAn, _sQualTipo)
 		_oSQL:_sQuery +=                " ,CASE WHEN GRP_LIN_COML = 'F' THEN PRODUTO ELSE '' END AS COL06"
 		_oSQL:_sQuery +=                " ,CASE WHEN GRP_LIN_COML = 'G' THEN PRODUTO ELSE '' END AS COL07"
 		_oSQL:_sQuery +=                " ,CASE WHEN GRP_LIN_COML = 'H' THEN PRODUTO ELSE '' END AS COL08"
-		_oSQL:_sQuery +=                " ,CASE WHEN GRP_LIN_COML = 'I' THEN PRODUTO ELSE '' END AS COL09"
-		_oSQL:_sQuery +=                " ,CASE WHEN GRP_LIN_COML = 'J' THEN PRODUTO ELSE '' END AS COL10"
-		_oSQL:_sQuery +=                " ,CASE WHEN GRP_LIN_COML = 'K' THEN PRODUTO ELSE '' END AS COL11"
-		_oSQL:_sQuery +=                " ,CASE WHEN GRP_LIN_COML = 'L' THEN PRODUTO ELSE '' END AS COL12"
-		_oSQL:_sQuery +=                " ,CASE WHEN GRP_LIN_COML = 'M' THEN PRODUTO ELSE '' END AS COL13"
-		_oSQL:_sQuery +=                " ,CASE WHEN GRP_LIN_COML = 'Z' THEN PRODUTO ELSE '' END AS COL14"
+		_oSQL:_sQuery +=                " ,CASE WHEN GRP_LIN_COML = 'N' THEN PRODUTO ELSE '' END AS COL09"
+		_oSQL:_sQuery +=                " ,CASE WHEN GRP_LIN_COML = 'I' THEN PRODUTO ELSE '' END AS COL10"
+		_oSQL:_sQuery +=                " ,CASE WHEN GRP_LIN_COML = 'J' THEN PRODUTO ELSE '' END AS COL11"
+		_oSQL:_sQuery +=                " ,CASE WHEN GRP_LIN_COML = 'K' THEN PRODUTO ELSE '' END AS COL12"
+		_oSQL:_sQuery +=                " ,CASE WHEN GRP_LIN_COML = 'L' THEN PRODUTO ELSE '' END AS COL13"
+		_oSQL:_sQuery +=                " ,CASE WHEN GRP_LIN_COML = 'M' THEN PRODUTO ELSE '' END AS COL14"
+		_oSQL:_sQuery +=                " ,CASE WHEN GRP_LIN_COML = 'Z' THEN PRODUTO ELSE '' END AS COL15"
 		_oSQL:_sQuery += " FROM " + _sLinkSrv + ".DRE_INDL_ITENS "
 		_oSQL:_sQuery += " WHERE ID_ANALISE = " + cvaltochar (_nIdAn)
 		_oSQL:_sQuery += " )"
@@ -638,6 +640,7 @@ Static Function _ListaPrd (_nIdAn, _sQualTipo)
 		_oSQL:_sQuery += " ,ISNULL (RTRIM (C.COL12) + '-' + (SELECT RTRIM (B1_DESC) FROM protheus.dbo.SB1010 WHERE D_E_L_E_T_ = '' AND B1_FILIAL = '  ' AND B1_COD = C.COL12), '')"
 		_oSQL:_sQuery += " ,ISNULL (RTRIM (C.COL13) + '-' + (SELECT RTRIM (B1_DESC) FROM protheus.dbo.SB1010 WHERE D_E_L_E_T_ = '' AND B1_FILIAL = '  ' AND B1_COD = C.COL13), '')"
 		_oSQL:_sQuery += " ,ISNULL (RTRIM (C.COL14) + '-' + (SELECT RTRIM (B1_DESC) FROM protheus.dbo.SB1010 WHERE D_E_L_E_T_ = '' AND B1_FILIAL = '  ' AND B1_COD = C.COL14), '')"
+		_oSQL:_sQuery += " ,ISNULL (RTRIM (C.COL15) + '-' + (SELECT RTRIM (B1_DESC) FROM protheus.dbo.SB1010 WHERE D_E_L_E_T_ = '' AND B1_FILIAL = '  ' AND B1_COD = C.COL15), '')"
 		_oSQL:_sQuery += " FROM C "
 	elseif _sQualTipo == 'LE'
 		_oSQL:_sQuery := "WITH C AS ("
@@ -648,9 +651,10 @@ Static Function _ListaPrd (_nIdAn, _sQualTipo)
 		_oSQL:_sQuery +=                " ,CASE WHEN CC = '011404' THEN PRODUTO ELSE '' END AS COL05"
 		_oSQL:_sQuery +=                " ,CASE WHEN CC = '011405' THEN PRODUTO ELSE '' END AS COL06"
 		_oSQL:_sQuery +=                " ,CASE WHEN CC = '011406' THEN PRODUTO ELSE '' END AS COL07"
-		_oSQL:_sQuery +=                " ,CASE WHEN CC = 'F09'    THEN PRODUTO ELSE '' END AS COL08"
-		_oSQL:_sQuery +=                " ,CASE WHEN CC = 'GRANEL' THEN PRODUTO ELSE '' END AS COL09"
-		_oSQL:_sQuery +=                " ,CASE WHEN CC = 'OUTRAS' THEN PRODUTO ELSE '' END AS COL10"
+		_oSQL:_sQuery +=                " ,CASE WHEN CC = '011409' THEN PRODUTO ELSE '' END AS COL08"
+		_oSQL:_sQuery +=                " ,CASE WHEN CC = 'F09'    THEN PRODUTO ELSE '' END AS COL09"
+		_oSQL:_sQuery +=                " ,CASE WHEN CC = 'GRANEL' THEN PRODUTO ELSE '' END AS COL10"
+		_oSQL:_sQuery +=                " ,CASE WHEN CC = 'OUTRAS' THEN PRODUTO ELSE '' END AS COL11"
 		_oSQL:_sQuery += " FROM " + _sLinkSrv + ".DRE_INDL_ITENS "
 		_oSQL:_sQuery += " WHERE ID_ANALISE = " + cvaltochar (_nIdAn)
 		_oSQL:_sQuery += " )"
@@ -665,6 +669,7 @@ Static Function _ListaPrd (_nIdAn, _sQualTipo)
 		_oSQL:_sQuery += " ,ISNULL (RTRIM (C.COL08) + '-' + (SELECT RTRIM (B1_DESC) FROM protheus.dbo.SB1010 WHERE D_E_L_E_T_ = '' AND B1_FILIAL = '  ' AND B1_COD = C.COL08), '')"
 		_oSQL:_sQuery += " ,ISNULL (RTRIM (C.COL09) + '-' + (SELECT RTRIM (B1_DESC) FROM protheus.dbo.SB1010 WHERE D_E_L_E_T_ = '' AND B1_FILIAL = '  ' AND B1_COD = C.COL09), '')"
 		_oSQL:_sQuery += " ,ISNULL (RTRIM (C.COL10) + '-' + (SELECT RTRIM (B1_DESC) FROM protheus.dbo.SB1010 WHERE D_E_L_E_T_ = '' AND B1_FILIAL = '  ' AND B1_COD = C.COL10), '')"
+		_oSQL:_sQuery += " ,ISNULL (RTRIM (C.COL11) + '-' + (SELECT RTRIM (B1_DESC) FROM protheus.dbo.SB1010 WHERE D_E_L_E_T_ = '' AND B1_FILIAL = '  ' AND B1_COD = C.COL11), '')"
 		_oSQL:_sQuery += " FROM C "
 	endif
 	_oSQL:Log ()

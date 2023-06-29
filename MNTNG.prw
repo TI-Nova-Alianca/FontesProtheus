@@ -38,11 +38,19 @@
 // 04/05/2023 - Claudia - Criado parametro para filtro de usuarios. GLPI: 13504
 // 10/05/2023 - Robert  - Passa a validar usuarios pelo campo T1_CODFUNC = __cUserID
 //                      - Criado tratamento para o campo T1_VATPFIL
+// 28/06/2023 - Robert  - Nao manda mais terceiros para ninguem
 //
 
-// ----------------------------------------------------------------------------------------------------------------------------------
 #include "PROTHEUS.ch"
 
+// Gera uma linha adicional de log no console.log com as queries usadas
+// para leitura dos dados e seus tempos.
+// ----------------------------------------------------------------------------------------------------------------------------------
+USER FUNCTION mntnglog ()
+return .t.
+
+
+// ----------------------------------------------------------------------------------------------------------------------------------
 User Function MNTNG()
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _xRet      := NIL
@@ -91,22 +99,12 @@ User Function MNTNG()
 			_xRet +=       " AND TL_ORDEM   = TJ_ORDEM"
 			_xRet +=       " AND TL_CODIGO  = '" + _sCodFunc + "')"
 		endif
-
-		// TESTES PARA TENTAR DEIXAR A SINCRONIZACAO MAIS LEVE
-		//_xRet += " AND TJ_DTPRFIM = ''"  // SOMENTE OS EM ABERTO
-		//_xRet += " AND TJ_ORDEM <= '001000'
-
-
 		U_Log2 ('info', '[' + procname () + ']Filtrando OS: _xRet = ' + _xRet)
 
 
 	// Filtro para busca de produtos
 	elseif _sIDdLocal == "FILTER_PRODUCT"
 		_xRet = "AND B1_TIPO IN " + FormatIn (GetMv ("VA_MNTNG"), "/")
-
-		// TESTES PARA TENTAR DEIXAR A SINCRONIZACAO MAIS LEVE
-		//_xRet += " AND B1_TIPO = 'CL'"
-
 		U_Log2 ('info', '[' + procname () + ']Filtrando produtos: _xRet = ' + _xRet)
 
 
@@ -125,11 +123,8 @@ User Function MNTNG()
 
 	// Filtro para terceiros
 	ElseIf _sIDdLocal == "FILTER_THIRDPART"
-		_xRet = " AND A2_TIPO = 'J'
-
-		// TESTES PARA TENTAR DEIXAR A SINCRONIZACAO MAIS LEVE
-		//_xRet += " A2_COD <= '000020'"
-		
+	//	_xRet = " AND A2_TIPO = 'J'
+		_xRet = " AND 0=1"  // Nao queremos enviar nenhum fornecedor, poisnao usamos pelo app.
 		U_Log2 ('info', '[' + procname () + ']Filtrando terceiros: _xRet = ' + _xRet)
 
 
