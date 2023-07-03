@@ -22,7 +22,100 @@ User Function claudia ()
 	//u_help("PROD X FORNECE DUPLICADOS")
 	//_ProdForDupl()
 
+	//u_help("sisdeclara")
+	//_impSisDeclara()
+
+	//u_help("importa PA VD")
+	//_impVAVD()
+
+	//u_help("importa PESO")
+	//_impPESO()
 Return
+
+// Static Function _impVAVD()
+// 	Local _aDados 	:= {}
+// 	Local _i 		:=0
+
+// 	u_help("Atualiza va vd")
+// 	_aDados = U_LeCSV ('C:\Temp\impPAVD.csv', ';')
+
+// 	for _i := 1 to len(_aDados)
+// 		_sCod   := alltrim(_aDados[_i, 1])
+
+// 		DbSelectArea("SB1")
+// 		DbSetOrder(1)
+// 		if DbSeek(xFilial("SB1")+ alltrim(_sCod),.F.)
+// 			reclock ("SB1", .f.)
+// 				SB1 -> B1_VALINEN   := alltrim(_aDados[_i, 2])
+// 				SB1 -> B1_CC        := alltrim(_aDados[_i, 3])
+// 			msunlock ()
+
+// 			// Grava evento de alteracao
+// 			_oEvento := ClsEvent():new ()
+// 			_oEvento:Alias    = 'SB1'
+// 			_oEvento:Texto    = 'GLPI:13788 e 13789 - Ajusta linha e centro de custo'
+// 			_oEvento:CodEven  = "SB1001"
+// 			_oEvento:Produto  = sb1 -> b1_cod
+// 			_oEvento:Grava() 
+// 		endif	
+// 	Next
+// 	u_help("Atualizado!")
+
+// Return
+
+
+// Static Function _impPESO()
+// 	Local _aDados 	:= {}
+// 	Local _i 		:=0
+
+// 	u_help("Atualiza peso")
+// 	_aDados = U_LeCSV ('C:\Temp\impPeso.csv', ';')
+
+// 	for _i := 1 to len(_aDados)
+// 		_sCod  := alltrim(_aDados[_i, 1])
+// 		_nPeso := val(_aDados[_i, 2])
+
+// 		DbSelectArea("SB1")
+// 		DbSetOrder(1)
+// 		if DbSeek(xFilial("SB1")+ alltrim(_sCod),.F.)
+// 			reclock ("SB1", .f.)
+// 				SB1 -> B1_PESBRU   := _nPeso
+// 			msunlock ()
+
+// 			// Grava evento de alteracao
+// 			_oEvento := ClsEvent():new ()
+// 			_oEvento:Alias    = 'SB1'
+// 			_oEvento:Texto    = 'GLPI:13816 - Ajusta PESO'
+// 			_oEvento:CodEven  = "SB1001"
+// 			_oEvento:Produto  = sb1 -> b1_cod
+// 			_oEvento:Grava() 
+// 		endif	
+// 	Next
+// 	u_help("Atualizado!")
+
+// Return
+// //
+// Static Function _impSisDeclara()
+// 	Local _aDados 	:= {}
+// 	Local _i 		:=0
+
+// 	_aDados = U_LeCSV ('C:\Temp\TO.csv', ';')
+
+// 	for _i := 1 to len(_aDados)
+// 		_sCod   := PADL(ALLTRIM(_aDados[_i, 1]),2,'0')
+// 		_sDesc  := alltrim(_aDados[_i, 2])
+
+// 			reclock("ZX5", .t.)
+// 				zx5->zx5_tabela := '57'
+// 				zx5->zx5_chave  := _sCod
+// 				zx5->zx5_57cod  := _sCod
+// 				zx5->zx5_57desc := _sDesc
+				
+// 				msunlock()
+
+// 	Next
+// 	u_help("Atualizado!")
+// Return
 // //
 // // ----------------------------------------------------------------------------
 // // verifica duplicidade de fornecedor em Prod x fornece
