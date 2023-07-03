@@ -1085,7 +1085,7 @@ static function _TrSZIMat ()
 		
 		// Nao quero pegar as de hoje para evitar transferir enquanto tem alguem gerando contranota, ou o outro batch gerando SZI.
 		// Alem disso, deixo um tempo para o pessoal cancelar alguma nota recente se precisarem.
-		_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO < '" + dtos (date () - 2) + "'"
+		_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO <= '" + dtos (date () - 3) + "'"
 		
 		_oSQL:_sQuery +=    " AND SZI.ZI_FILIAL  = SE2.E2_FILIAL"
 		_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC   = SE2.E2_FORNECE"
