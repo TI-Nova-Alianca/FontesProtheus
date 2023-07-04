@@ -56,7 +56,7 @@ user function Log2 (_sTipo, _xDadoOri, _xExtra)
 	_sTagsLog += '[' + substr (_sDataLog, 1, 4) + '' + substr (_sDataLog, 5, 2) + '' + substr (_sDataLog, 7, 2) + ' ' + strtran (TimeFull (), '.', ',') + ']'
 	_sTagsLog += '[' + GetEnvServer () + ']'
 	_sTagsLog += '[F' + iif (type ('cFilAnt') == 'C', cFilAnt, '  ') + ']'
-	_sTagsLog += '[' + padr (iif (type ("cUserName") == "C", cUserName, ''), 8) + ']'
+	_sTagsLog += '[' + padr (iif (type ("cUserName") == "C", cUserName, 'user?'), 9) + ']'
 
 	// Se esta variavel estiver definida, ah por que o programa chamador
 	// deseja que apareca na frente de todas as linhas de log

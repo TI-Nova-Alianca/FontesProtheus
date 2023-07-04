@@ -90,6 +90,7 @@
 //                      - Melhorias documentacao.
 // 24/05/2023 - Robert  - Metodo Executa() recebe parametro indicando se retorna nomes das colunas no inicio.
 // 30/05/2023 - Robert  - Criadas verificacoes 96 e 97.
+// 30/06/2023 - Robert  - Melhoria geral verificacao 4 (permite mais de 1 mes; filtro por produto)
 //
 
 #include "protheus.ch"
@@ -250,7 +251,7 @@ METHOD Executa (_lRetNomes) Class ClsVerif
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery = ::Query
 		_oSQL:lGeraHead = .T.  // Para gerar array 'aHeader' ao final da execucao da query
-		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
+		_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + '][verif.' + cvaltochar (::Numero) + '-' + alltrim (::Descricao) + ']')
 		::Result = aclone (_oSQL:Qry2Array (.F., _lRetNomes))
 		::QtErros = len (::Result) - 1  // Primeira linha tem os nomes de campos
 		::ExecutouOK = .T.
@@ -291,7 +292,7 @@ METHOD GeraHelp (_nQualVer, _lGeraCab) Class ClsVerif
 	// momento, mas acho que, se jah eh dificil mante-los atualizados estando
 	// junto da query, imagine se estiverem longe...
 	for _nVerif = iif (_nQualVer == NIL, 1, _nQualVer) to iif (_nQualVer == NIL, ::UltVerif, _nQualVer)
-		U_Log2 ('debug', '[' + procname () + ']Vou gerar dos para verif numero ' + cvaltochar (_nVerif))
+		U_Log2 ('debug', '[' + procname () + ']Vou gerar documentacao para verif numero ' + cvaltochar (_nVerif))
 		_oVerif2 := ClsVerif ():New (_nVerif)
 		_oVerif2:GeraQry (.t.)
 		if _oVerif2:Ativa
@@ -410,16 +411,18 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 
 	case ::Numero == 4
 		::Setores   = 'CUS/CTB'
-		::GrupoPerg = "U_VALID004"
+	//	::GrupoPerg = "U_VALID004"
+		::GrupoPerg = "U_VALID002"
 		::ValidPerg (_lDefault)
 		::Descricao = 'Fech.estq.diferente fech.ant + kardex'
 		::Sugestao  = 'Revise a movimentação. Se o problema persistir, provavelmente seja o caso de reabrir o período, recalcular o custo médio e refazer a virada de saldos.'
 		::QuandoUsar = "Após a virada de saldos do estoque, para conferir se a quantidade que foi gravada na tabela SB9 como 'saldo final' de cada item condiz com a movimentação do mês."
 		::Dica      = "Esta verificação deve ser executada para meses já fechados, contemplando sempre o mês completo."
 		::Dica     += "Saldos finais são usados como iniciais para o mês seguinte. Se forem gravados errados, todo o 'saldo atual' subsequente estará comprometido."
-		::Dica     += chr (13) + chr (10) + "O processo usado para encontrar as diferenças é, basicamente, o seguinte: partindo da tabela SB9 (saldo final de determinado mês), acrescentar entradas e saídas do período (kardex) e comparar esse resultado com a tabela SB9 do mês seguinte." + chr (13) + chr (10)
-		::Dica     += chr (13) + chr (10) + 'Tabelas envolvidas: SB2, SB9, SD1, SD2, SD3'
+		::Dica     += chr (13) + chr (10) + "O processo usado para encontrar as diferenças é, basicamente, o seguinte: partindo da tabela SB9 (saldo final de determinado mês), acrescentar entradas e saídas do período (kardex) e comparar esse resultado com a tabela SB9 do final do período." + chr (13) + chr (10)
+		::Dica     += chr (13) + chr (10) + 'Tabelas envolvidas: SB9, SD1, SD2, SD3'
 		::Query := ""
+/*
 		::Query += "WITH C AS ("
 		::Query += " SELECT B2_FILIAL AS FILIAL,"
 		::Query +=        " B2_LOCAL AS ALMOX,"
@@ -502,6 +505,137 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query += " FROM C"
 		::Query += " WHERE ABS (QT_ANT_SB9 + ENT_SD1 + ENT_SD3 - SAI_SD2 - SAI_SD3 - QT_FIM_SB9) > 0.01"
 		::Query += " ORDER BY FILIAL, PRODUTO, ALMOX"
+*/
+		// Monta uma CTE de parametros para poder criar colunas, depois, com as datas do SB9
+		::Query += " WITH PARAMETROS AS"
+		::Query += " ("
+		::Query +=    " SELECT '" + dtos (::Param01) + "' AS PARAM_DATAINI"
+		::Query +=          ", '" + dtos (::Param02) + "' AS PARAM_DATAFIM"
+		::Query += " )"
+		
+		// Monta lista das filiais existentes.
+		// Ficou mais rapido usar CTEs separadas do que tudo na mesma.
+		::Query += " , FILIAIS AS"
+		::Query += " ("
+		::Query +=    " SELECT DISTINCT B9_FILIAL AS FILIAL"
+		::Query +=      " FROM " + RetSQLName ("SB9") + " SB9"
+		::Query +=     " WHERE SB9.D_E_L_E_T_ = ''"
+		::Query +=       " AND SB9.B9_DATA != ''"
+		::Query += " )"
+
+		// Monta lista das filiais e datas de fechamento existentes.
+		// Ficou mais rapido usar CTEs separadas do que tudo na mesma.
+		::Query += " , FILIAIS_E_DATAS AS"
+		::Query += " ("
+		::Query += "    SELECT FILIAIS.FILIAL"
+		::Query += "    , ISNULL ((SELECT MAX (B9_DATA)"
+		::Query += "       FROM " + RetSQLName ("SB9") + " ULTIMO_SB9"
+		::Query += "       WHERE ULTIMO_SB9.D_E_L_E_T_ = ''"
+		::Query += "       AND ULTIMO_SB9.B9_FILIAL = FILIAIS.FILIAL"
+		::Query += "       AND ULTIMO_SB9.B9_DATA <= (SELECT PARAM_DATAINI FROM PARAMETROS)"
+		::Query += "       ), '') AS B9_DATA_INI"
+		::Query += "    , ISNULL ((SELECT MAX (B9_DATA)"
+		::Query += "       FROM " + RetSQLName ("SB9") + " ULTIMO_SB9"
+		::Query += "       WHERE ULTIMO_SB9.D_E_L_E_T_ = ''"
+		::Query += "       AND ULTIMO_SB9.B9_FILIAL = FILIAIS.FILIAL"
+		::Query += "       AND ULTIMO_SB9.B9_DATA <= (SELECT PARAM_DATAFIM FROM PARAMETROS)"
+		::Query += "       ), '') AS B9_DATA_FIM"
+		::Query += "    FROM FILIAIS"
+		::Query += " )"
+
+		// Monta lista de filiais, itens e locais a verificar.
+		::Query += " , ITENS AS ("
+		::Query += " SELECT DISTINCT FILIAIS_E_DATAS.*"
+		::Query += "    , SB9.B9_COD AS PRODUTO, SB9.B9_LOCAL AS ALMOX"
+		::Query += " FROM FILIAIS_E_DATAS"
+		::Query += "    ," + RetSQLName ("SB9") + " SB9"
+		::Query += "    WHERE SB9.D_E_L_E_T_ = ''"
+		::Query += "    AND SB9.B9_FILIAL = FILIAIS_E_DATAS.FILIAL"
+		::Query += "    AND SB9.B9_DATA BETWEEN FILIAIS_E_DATAS.B9_DATA_INI AND FILIAIS_E_DATAS.B9_DATA_FIM"
+		::Query += " )"
+
+		// Monta CTE juntando os itens e seus saldos (SB9) + movimentos.
+		::Query += " , MOVTOS AS ("
+		::Query += " SELECT ITENS.*"
+		::Query += "       ,ISNULL((SELECT"
+		::Query += "             B9_QINI"
+		::Query += "          FROM " + RetSQLName ("SB9") + " SB9"
+		::Query += "          WHERE SB9.D_E_L_E_T_ = ''"
+		::Query += "          AND SB9.B9_FILIAL = ITENS.FILIAL"
+		::Query += "          AND SB9.B9_COD = ITENS.PRODUTO"
+		::Query += "          AND SB9.B9_LOCAL = ITENS.ALMOX"
+		::Query += "          AND SB9.B9_DATA = ITENS.B9_DATA_INI)"
+		::Query += "       , 0) AS QT_ANT_SB9"
+		::Query += "       ,ISNULL ((SELECT SUM(D1_QUANT)"
+		::Query += "           FROM " + RetSQLName ("SD1") + " SD1"
+		::Query += "              ," + RetSQLName ("SF4") + " SF4"
+		::Query += "           WHERE SD1.D_E_L_E_T_ != '*'"
+		::Query += "           AND SF4.D_E_L_E_T_ != '*'"
+		::Query += "           AND SF4.F4_FILIAL = '  '"
+		::Query += "           AND SF4.F4_CODIGO = SD1.D1_TES"
+		::Query += "           AND SF4.F4_ESTOQUE = 'S'"
+		::Query += "           AND SD1.D1_FILIAL = ITENS.FILIAL"
+		::Query += "           AND SD1.D1_COD = ITENS.PRODUTO"
+		::Query += "           AND SD1.D1_LOCAL = ITENS.ALMOX"
+		::Query += "           AND SD1.D1_DTDIGIT > ITENS.B9_DATA_INI"
+		::Query += "           AND SD1.D1_DTDIGIT <= ITENS.B9_DATA_FIM"
+		::Query += "       ), 0) AS NF_ENTRADA"
+		::Query += "       ,ISNULL ((SELECT SUM(SD3.D3_QUANT * CASE"
+		::Query += "                 WHEN SD3.D3_TM < '5' THEN 1"
+		::Query += "                 ELSE -1"
+		::Query += "              END)"
+		::Query += "           FROM " + RetSQLName ("SD3") + " SD3"
+		::Query += "           WHERE SD3.D_E_L_E_T_ != '*'"
+		::Query += "           AND SD3.D3_ESTORNO != 'S'"
+		::Query += "           AND SD3.D3_FILIAL = ITENS.FILIAL"
+		::Query += "           AND SD3.D3_COD = ITENS.PRODUTO"
+		::Query += "           AND SD3.D3_LOCAL = ITENS.ALMOX"
+		::Query += "           AND SD3.D3_EMISSAO > ITENS.B9_DATA_INI"
+		::Query += "           AND SD3.D3_EMISSAO <= ITENS.B9_DATA_FIM"
+		::Query += "       ), 0) AS MOVTOS_INTERNOS"
+		::Query += "       ,ISNULL ((SELECT SUM(D2_QUANT * -1)"
+		::Query += "           FROM " + RetSQLName ("SD2") + " SD2"
+		::Query += "              ," + RetSQLName ("SF4") + " SF4"
+		::Query += "           WHERE SD2.D_E_L_E_T_ != '*'"
+		::Query += "           AND SD2.D2_FILIAL = ITENS.FILIAL"
+		::Query += "           AND SD2.D2_COD = ITENS.PRODUTO"
+		::Query += "           AND SD2.D2_LOCAL = ITENS.ALMOX"
+		::Query += "           AND SD2.D2_EMISSAO > ITENS.B9_DATA_INI"
+		::Query += "           AND SD2.D2_EMISSAO <= ITENS.B9_DATA_FIM"
+		::Query += "           AND SF4.D_E_L_E_T_ != '*'"
+		::Query += "           AND SF4.F4_FILIAL = '  '"
+		::Query += "           AND SF4.F4_CODIGO = SD2.D2_TES"
+		::Query += "           AND SF4.F4_ESTOQUE = 'S'"
+		::Query += "       ), 0) AS NF_SAIDA"
+		::Query += "       ,ISNULL((SELECT"
+		::Query += "             B9_QINI"
+		::Query += "          FROM " + RetSQLName ("SB9") + " SB9"
+		::Query += "          WHERE SB9.D_E_L_E_T_ = ''"
+		::Query += "          AND SB9.B9_FILIAL = ITENS.FILIAL"
+		::Query += "          AND SB9.B9_COD = ITENS.PRODUTO"
+		::Query += "          AND SB9.B9_LOCAL = ITENS.ALMOX"
+		::Query += "          AND SB9.B9_DATA = ITENS.B9_DATA_FIM)"
+		::Query += "       , 0) AS QT_FIM_SB9"
+		::Query += "  FROM ITENS"
+		::Query += " )"
+
+		// Junta CTE de saldos e movimentos com SB1 e uma coluna calculada de diferencas.
+		::Query += " , FINAL AS ("
+		::Query += " SELECT MOVTOS.FILIAL, B9_DATA_INI, B9_DATA_FIM, PRODUTO, SB1.B1_DESC, ALMOX, QT_ANT_SB9, NF_ENTRADA, MOVTOS_INTERNOS, NF_SAIDA, QT_FIM_SB9"
+		::Query += "    , QT_ANT_SB9 + NF_ENTRADA + MOVTOS_INTERNOS + NF_SAIDA - QT_FIM_SB9 AS DIFERENCA"
+		::Query += "    , SB1.B1_UM AS UN_MED"
+		::Query += " FROM MOVTOS"
+		::Query += " , " + RetSQLName ("SB1") + " SB1"
+		::Query += " WHERE SB1.D_E_L_E_T_ = ''"
+		::Query += " AND SB1.B1_FILIAL = '  '"
+		::Query += " AND SB1.B1_COD = PRODUTO"
+		::Query += " )"
+		::Query += " SELECT *"
+		::Query += " FROM FINAL"
+		::Query += " WHERE ABS (DIFERENCA) > 0.0001"
+		::Query +=   " AND PRODUTO BETWEEN '" + ::Param03 + "' AND '" + ::Param04 + "'"
+		::Query += " ORDER BY FILIAL, PRODUTO, ALMOX"
+
 
 	case ::Numero == 5
 		::Ativa     = .F.  // A consulta de totais de safra aplicava-se na época em que fazíamos notas de entrada, depois pré-notas e, finalmente, notas de compra. Robert, 29/03/2023.
@@ -3848,14 +3982,14 @@ METHOD ValidPerg (_lDefault) Class ClsVerif
 				::Param04 = 'z'      // Deixa um valor default para poder gerar a query inicial.
 			endif
 
-		case ::GrupoPerg == "U_VALID004"
-			//                     PERGUNT                           TIPO TAM DEC VALID F3        Opcoes                               Help
-			aadd (_aRegsPerg, {01, "Data fechamento inicial estq  ", "D", 8,  0,  "",   "      ", {},                                  ""})
-			aadd (_aRegsPerg, {02, "Data fechamento final estoque ", "D", 8,  0,  "",   "      ", {},                                  ""})
-			if _lDefault
-				::Param01 = stod (::MesAntEstq + '01') - 1  // Deixa um valor default para poder gerar a query inicial.
-				::Param02 = lastday (stod (::MesAntEstq + '01'))  // Deixa um valor default para poder gerar a query inicial.
-			endif
+	//	case ::GrupoPerg == "U_VALID004"
+	//		//                     PERGUNT                           TIPO TAM DEC VALID F3        Opcoes                               Help
+	//		aadd (_aRegsPerg, {01, "Data fechamento inicial estq  ", "D", 8,  0,  "",   "      ", {},                                  ""})
+	//		aadd (_aRegsPerg, {02, "Data fechamento final estoque ", "D", 8,  0,  "",   "      ", {},                                  ""})
+	//		if _lDefault
+	//			::Param01 = stod (::MesAntEstq + '01') - 1  // Deixa um valor default para poder gerar a query inicial.
+	//			::Param02 = lastday (stod (::MesAntEstq + '01'))  // Deixa um valor default para poder gerar a query inicial.
+	//		endif
 
 		case ::GrupoPerg == "U_VALID005"
 			//                     PERGUNT                           TIPO TAM DEC VALID F3        Opcoes                               Help
@@ -3970,10 +4104,10 @@ METHOD VerifParam () Class ClsVerif
 				::UltMsg = "Data inicial deve ser menor que data final."
 				_lRet = .F.
 			endif
-			if ::Param01 != lastday (::Param01) .or. ::Param02 != lastday (::Param02)
-				::UltMsg = "Datas devem ser os ultimos dias de cada mes (corresponde as datas de gravacao do arquivo SB9)."
-				_lRet = .F.
-			endif
+	//		if ::Param01 != lastday (::Param01) .or. ::Param02 != lastday (::Param02)
+	//			::UltMsg = "Datas devem ser os ultimos dias de cada mes (corresponde as datas de gravacao do arquivo SB9)."
+	//			_lRet = .F.
+	//		endif
 
 		case ::Numero == 85
 			if empty (::Param03) .or. empty (::Param04)

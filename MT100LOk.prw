@@ -434,7 +434,8 @@ static function _VerOPBN ()
 	endif
 
 	if _lRet .and. alltrim (GDFieldGet ("D1_CF")) $ '1124/2124'
-		_sTpPrdInd = "BN/ME/PS/MP/VD"  // GLPI 12509
+//		_sTpPrdInd = "BN/ME/PS/MP/VD"  // GLPI 12509
+		_sTpPrdInd = "BN/ME/PS/MP/VD/PP"  // GLPI 12509
 		if ! fBuscaCpo ("SB1", 1, xfilial ("SB1") + GDFieldGet ("D1_COD"), "B1_TIPO") $ _sTpPrdInd
 			u_help ("CFOP de industrializacao: o produto deve ser do tipo " + _sTpPrdInd,, .t.)
 			_lRet = .F.
