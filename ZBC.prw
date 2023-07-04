@@ -63,7 +63,7 @@ static function _LibRotina ()
 	local _lRet      := .T.
 	
 	if ! U_ZZUVL ('093', __cUserId, .F.) 
-		u_help ("Usuário sem permissão para utilização da rotina!")
+		u_help ("Usuário sem permissão para utilização da rotina 093!")
 		_lRet = .F.
 	endif
 return _lRet
