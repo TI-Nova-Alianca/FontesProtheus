@@ -21,6 +21,7 @@
 // 22/03/2022 - Claudia - Ajuste da data invertida (AAAAMMDD) na exportação para planilha. GLPI: 11754
 // 22/03/2022 - Claudia - Ordenado por data a exportacao da planilha. GLPI: 11755
 // 22/03/2022 - Claudia - Validação de produto em linha. GLPI: 11767/11786
+// 04/07/2023 - Claudia - Ajustada a exportação/importação. GLPI 13763
 //
 // -------------------------------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -100,6 +101,7 @@ User Function VA_PLJPRD(_sZBCFilial, _sZBCCod, _sZBCAno)
 	aadd (aCabTela,{ "Grupo Opc."	,"HC_GRPOPC" })
 	aadd (aCabTela,{ "Opcional"		,"HC_OPCITEM"})
 	aadd (aCabTela,{ "Paradas"		,"HC_TPOPRD" })
+	aadd (aCabTela,{ "Linha Envase"	,"HC_VALINEN"})
 			
 	mBrowse(,,,,"SHC",aCabTela,,,,,,,,,,,,,_sPreFiltr)
 Return
@@ -302,7 +304,7 @@ User Function PLJA (_nOpcao, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr, _sCodEve
 		                 aButtons  		 )  // Array com botoes
 		If _lContinua
 			If nOpc == 5 
-				// caso necessite de 
+				// caso necessite
 			Else		
 				// Grava dados do aCols.
 				SHC -> (dbsetorder (5))
@@ -319,6 +321,9 @@ User Function PLJA (_nOpcao, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr, _sCodEve
 					_sData 		:= GDFieldGet ("HC_DATA")
 					_nQuant 	:= GDFieldGet ("HC_QUANT")
 					_SRevisao	:= GDFieldGet ("HC_REVISAO")	
+
+					_sLinEnv := Posicione("SB1",1 ,xFilial("SB1") + _sProduto,"B1_VALINEN")
+					GDFieldPut ("HC_VALINEN", _sLinEnv, N)
 
 					If GDFieldGet ("ZZZ_RECNO") <= 0					
 						_sItem := U_BuscaSequencial(_sFilial,_sDocumento,_sAnoEve)
@@ -384,6 +389,7 @@ User Function PLMCpos()
 	aadd (_aCampos, "HC_OPCITEM")
 	aadd (_aCampos, "HC_TPOPRD")
 	aadd (_aCampos, "HC_TPPRDE")
+	aadd (_aCampos, "HC_VALINEN")
 	aadd (_aCampos, "ZZZ_RECNO") 	// Adiciona sempre o campo RECNO para posterior uso em gravacoes.
 
 Return _aCampos   
@@ -1173,6 +1179,7 @@ User Function PLJEXP(_sZBCFilial, _sZBCCod, _sZBCAno)
 	_oSQL:_sQuery += "    ,HC_OPCITEM "
 	_oSQL:_sQuery += "    ,HC_TPOPRD "
 	_oSQL:_sQuery += "    ,ZX5_45DESC "
+	_oSQL:_sQuery += "    ,B1_LITROS * HC_QUANT "
 	_oSQL:_sQuery += " FROM " + RetSQLName ("SHC") + " SHC "
 	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SB1") + " SB1 "
 	_oSQL:_sQuery += " 		ON (SB1.D_E_L_E_T_ = '' "
@@ -1194,25 +1201,28 @@ User Function PLJEXP(_sZBCFilial, _sZBCCod, _sZBCAno)
 
 	If Len(_aSHC) > 0
 		nHandle := FCreate(cLocalDir)
+		
+		cTexto := "FILIAL|DOCUMENTO|EVENTO|ANO|ITEM|PRODUTO|DESCRICAO|DATA|QUANTIDADE|REVISAO|OBS|GRUPO OPC.|ITEM OPC.|TP.PROD.|DESCRICAO|LITRAGEM" + CHR(13)+CHR(10) 
+		FWrite(nHandle, cTexto)
 
 		For _i:= 1 to Len(_aSHC)
 			cTexto := ""
-			cTexto += _aSHC[_i, 1] + "|"
-			cTexto += _aSHC[_i, 2] + "|"
-			cTexto += _aSHC[_i, 3] + "|"
-			cTexto += _aSHC[_i, 4] + "|"
-			cTexto += _aSHC[_i, 5] + "|"
-			cTexto += _aSHC[_i, 6] + "|"
-			cTexto += _aSHC[_i, 7] + "|"
-			//cTexto += DTOS(_aSHC[_i, 8])         + "|"
-			cTexto += DTOC(_aSHC[_i, 8])         + "|"
-			cTexto += alltrim(str(_aSHC[_i, 9])) + "|"
-			cTexto += _aSHC[_i,10] + "|"
-			cTexto += _aSHC[_i,11] + "|"
-			cTexto += _aSHC[_i,12] + "|"
-			cTexto += _aSHC[_i,13] + "|"
-			cTexto += _aSHC[_i,14] + "|"
-			cTexto += _aSHC[_i,15] + CHR(13)+CHR(10) 
+			cTexto += '"' + alltrim(_aSHC[_i, 1]) + '"|'
+			cTexto += '"' + alltrim(_aSHC[_i, 2]) + '"|'
+			cTexto += '"' + alltrim(_aSHC[_i, 3]) + '"|'
+			cTexto += '"' + alltrim(_aSHC[_i, 4]) + '"|'
+			cTexto += '"' + alltrim(_aSHC[_i, 5]) + '"|'
+			cTexto += '"' + alltrim(_aSHC[_i, 6]) + '"|'
+			cTexto += '"' + alltrim(_aSHC[_i, 7]) + '"|'
+			cTexto += dtoc(_aSHC[_i, 8])          +  '|'
+			cTexto += alltrim(str(_aSHC[_i, 9]))  +  '|'
+			cTexto += '"' + alltrim(_aSHC[_i,10]) + '"|'
+			cTexto += '"' + alltrim(_aSHC[_i,11]) + '"|'
+			cTexto += '"' + alltrim(_aSHC[_i,12]) + '"|'
+			cTexto += '"' + alltrim(_aSHC[_i,13]) + '"|'
+			cTexto += '"' + alltrim(_aSHC[_i,14]) + '"|'
+			cTexto += '"' + alltrim(_aSHC[_i,15]) + '"|'
+			cTexto += alltrim(str(_aSHC[_i, 16])) + CHR(13)+CHR(10) 
 			
 			FWrite(nHandle, cTexto)
 		Next
@@ -1283,21 +1293,32 @@ User Function PLJIMP(_sZBCFilial, _sZBCCod, _sZBCAno)
 		_oSQL:_sQuery += " AND ZBD_ANO      = '" + _sZBCAno    + "'"
 		_oSQL:Exec ()
 		
-		For _x:= 1 to Len(aDados)
+		For _x:= 2 to Len(aDados)
+
+			_sFilial 	:= StrTran(aDados[_x, 1], '"', '')
+			_sDoc 		:= StrTran(aDados[_x, 2], '"', '')
+			_sEvento 	:= StrTran(aDados[_x, 3], '"', '')
+			_sAno 		:= StrTran(aDados[_x, 4], '"', '')
+			_sItem 		:= StrTran(aDados[_x, 5], '"', '')
+			_sProd 		:= StrTran(aDados[_x, 6], '"', '')
+			_sRevisao 	:= StrTran(aDados[_x,10], '"', '')
+			_sGrpOpc 	:= StrTran(aDados[_x,12], '"', '')
+			_sOpcItem 	:= StrTran(aDados[_x,13], '"', '')
+			_sTpPrd   	:= StrTran(aDados[_x,14], '"', '')
 
 			RecLock("SHC", .T.)
-				SHC -> HC_FILIAL 	:= iif(!empty(aDados[_x, 1]),PADL(aDados[_x, 1],2,'0'),"01")
-				SHC -> HC_DOC 		:= iif(!empty(aDados[_x, 2]),upper(aDados[_x, 2]), upper(_sZBCCod))
-				SHC -> HC_VAEVENT 	:= iif(!empty(aDados[_x, 3]),upper(aDados[_x, 3]), upper(_sZBCCod))
-				SHC -> HC_ANO 		:= iif(!empty(aDados[_x, 4]),aDados[_x, 4],_sZBCAno)
-				SHC -> HC_ITEM 		:= iif(!empty(aDados[_x, 5]),PADL(aDados[_x, 5],2,'0')," ")
-				SHC -> HC_PRODUTO 	:= iif(!empty(aDados[_x, 6]),aDados[_x, 6]," ")
-				SHC -> HC_DATA 		:= iif(!empty(aDados[_x, 8]),CTOD(aDados[_x, 8]),date())   
-				SHC -> HC_QUANT 	:= iif(!empty(aDados[_x, 8]), val(aDados[_x, 9]),0)     
-				SHC -> HC_REVISAO 	:= iif(!empty(aDados[_x,10]),PADL(aDados[_x,10],3,'0')," ")
-				SHC -> HC_GRPOPC 	:= iif(!empty(aDados[_x,12]),PADL(aDados[_x,12],3,'0')," ")
-				SHC -> HC_OPCITEM 	:= iif(!empty(aDados[_x,13]),aDados[_x,13]," ")
-				SHC -> HC_TPOPRD 	:= iif(!empty(aDados[_x,14]),aDados[_x,14]," ")
+				SHC -> HC_FILIAL 	:= iif(!empty(_sFilial)		, padl(_sFilial,2,'0')	,"01")
+				SHC -> HC_DOC 		:= iif(!empty(_sDoc)		, upper(_sDoc)			, upper(_sZBCCod))
+				SHC -> HC_VAEVENT 	:= iif(!empty(_sEvento)		, upper(_sEvento)		, upper(_sZBCCod))
+				SHC -> HC_ANO 		:= iif(!empty(_sAno)		, _sAno 				,_sZBCAno)
+				SHC -> HC_ITEM 		:= iif(!empty(_sItem)		, padl(_sItem ,2,'0')	," ")
+				SHC -> HC_PRODUTO 	:= iif(!empty(_sProd)		, _sProd 				," ")
+				SHC -> HC_DATA 		:= iif(!empty(aDados[_x, 8]), ctod(aDados[_x, 8])	,date())   
+				SHC -> HC_QUANT 	:= iif(!empty(aDados[_x, 9]), val(aDados[_x, 9])	,0)     
+				SHC -> HC_REVISAO 	:= iif(!empty(_sRevisao)	, padl(_sRevisao ,3,'0')," ")
+				SHC -> HC_GRPOPC 	:= iif(!empty(_sGrpOpc)		, padl(_sGrpOpc ,3,'0') ," ")
+				SHC -> HC_OPCITEM 	:= iif(!empty(_sOpcItem)	, _sOpcItem				," ")
+				SHC -> HC_TPOPRD 	:= iif(!empty(_sTpPrd)		, _sTpPrd 				," ")
 			MsUnlock("SHC")	
 
 			// separa opcionais
