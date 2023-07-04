@@ -102,6 +102,7 @@ User Function VA_PLJPRD(_sZBCFilial, _sZBCCod, _sZBCAno)
 	aadd (aCabTela,{ "Opcional"		,"HC_OPCITEM"})
 	aadd (aCabTela,{ "Paradas"		,"HC_TPOPRD" })
 	aadd (aCabTela,{ "Linha Envase"	,"HC_VALINEN"})
+	aadd (aCabTela,{ "Descrição"	,"HC_DESCLIN"})
 			
 	mBrowse(,,,,"SHC",aCabTela,,,,,,,,,,,,,_sPreFiltr)
 Return
@@ -322,8 +323,8 @@ User Function PLJA (_nOpcao, _sLinhaOK, _sTudoOK, _lFiltro, _sPreFiltr, _sCodEve
 					_nQuant 	:= GDFieldGet ("HC_QUANT")
 					_SRevisao	:= GDFieldGet ("HC_REVISAO")	
 
-					_sLinEnv := Posicione("SB1",1 ,xFilial("SB1") + _sProduto,"B1_VALINEN")
-					GDFieldPut ("HC_VALINEN", _sLinEnv, N)
+					//_sLinEnv := Posicione("SB1",1 ,xFilial("SB1") + _sProduto,"B1_VALINEN")
+					//GDFieldPut ("HC_VALINEN", _sLinEnv, N)
 
 					If GDFieldGet ("ZZZ_RECNO") <= 0					
 						_sItem := U_BuscaSequencial(_sFilial,_sDocumento,_sAnoEve)
@@ -390,6 +391,7 @@ User Function PLMCpos()
 	aadd (_aCampos, "HC_TPOPRD")
 	aadd (_aCampos, "HC_TPPRDE")
 	aadd (_aCampos, "HC_VALINEN")
+	aadd (_aCampos, "HC_DESCLIN")
 	aadd (_aCampos, "ZZZ_RECNO") 	// Adiciona sempre o campo RECNO para posterior uso em gravacoes.
 
 Return _aCampos   
@@ -1164,34 +1166,39 @@ User Function PLJEXP(_sZBCFilial, _sZBCCod, _sZBCAno)
 
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT "
-	_oSQL:_sQuery += " 	   HC_FILIAL "
-	_oSQL:_sQuery += "    ,HC_DOC "
-	_oSQL:_sQuery += "    ,HC_VAEVENT "
-	_oSQL:_sQuery += "    ,HC_ANO "
-	_oSQL:_sQuery += "    ,HC_ITEM "
-	_oSQL:_sQuery += "    ,HC_PRODUTO "
-	_oSQL:_sQuery += "    ,B1_DESC "
-	_oSQL:_sQuery += "    ,HC_DATA "
-	_oSQL:_sQuery += "    ,HC_QUANT "
-	_oSQL:_sQuery += "    ,HC_REVISAO "
-	_oSQL:_sQuery += "    ,G5_OBS AS DESCREV "
-	_oSQL:_sQuery += "    ,HC_GRPOPC "
-	_oSQL:_sQuery += "    ,HC_OPCITEM "
-	_oSQL:_sQuery += "    ,HC_TPOPRD "
-	_oSQL:_sQuery += "    ,ZX5_45DESC "
-	_oSQL:_sQuery += "    ,B1_LITROS * HC_QUANT "
-	_oSQL:_sQuery += " FROM " + RetSQLName ("SHC") + " SHC "
-	_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SB1") + " SB1 "
+	_oSQL:_sQuery += " 	   HC_FILIAL "			// 01
+	_oSQL:_sQuery += "    ,HC_DOC "				// 02
+	_oSQL:_sQuery += "    ,HC_VAEVENT "			// 03
+	_oSQL:_sQuery += "    ,HC_ANO "				// 04
+	_oSQL:_sQuery += "    ,HC_ITEM "			// 05
+	_oSQL:_sQuery += "    ,HC_PRODUTO "			// 06
+	_oSQL:_sQuery += "    ,B1_DESC "			// 07
+	_oSQL:_sQuery += "    ,HC_DATA "			// 08
+	_oSQL:_sQuery += "    ,HC_QUANT "			// 09
+	_oSQL:_sQuery += "    ,HC_REVISAO "			// 10
+	_oSQL:_sQuery += "    ,G5_OBS AS DESCREV "	// 11
+	_oSQL:_sQuery += "    ,HC_GRPOPC "			// 12
+	_oSQL:_sQuery += "    ,HC_OPCITEM " 		// 13
+	_oSQL:_sQuery += "    ,HC_TPOPRD "			// 14
+	_oSQL:_sQuery += "    ,ZX5_45DESC "			// 15
+	_oSQL:_sQuery += "    ,B1_LITROS * HC_QUANT"// 16
+	_oSQL:_sQuery += "    ,HC_VALINEN "			// 17
+	_oSQL:_sQuery += "    ,SH1.H1_DESCRI "		// 18
+	_oSQL:_sQuery += " FROM " + RetSQLName("SHC") + " SHC "
+	_oSQL:_sQuery += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
 	_oSQL:_sQuery += " 		ON (SB1.D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " 			AND SB1.B1_COD = SHC.HC_PRODUTO) "
-	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("SG5") + " SG5 "
+	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName("SG5") + " SG5 "
 	_oSQL:_sQuery += " 		ON (SG5.D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " 			AND SG5.G5_PRODUTO = SHC.HC_PRODUTO "
 	_oSQL:_sQuery += " 			AND SG5.G5_REVISAO = SHC.HC_REVISAO) "
-	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName ("ZX5") + " ZX5 "
+	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName("ZX5") + " ZX5 "
 	_oSQL:_sQuery += "  	ON (ZX5.D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += "  		AND ZX5_TABELA = '45' "
 	_oSQL:_sQuery += "  		AND ZX5_45COD = HC_TPOPRD) "
+	_oSQL:_sQuery += " LEFT JOIN " + RetSQLName("SH1") + " SH1 "
+	_oSQL:_sQuery += " 		ON (SH1.D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += "		AND SH1.H1_CODIGO = HC_VALINEN ) "
 	_oSQL:_sQuery += " WHERE SHC.D_E_L_E_T_ = '' "
 	_oSQL:_sQuery += " AND HC_FILIAL    = '" + _sZBCFilial + "'"
 	_oSQL:_sQuery += " AND HC_VAEVENT   = '" + _sZBCCod   + "'"
@@ -1202,7 +1209,7 @@ User Function PLJEXP(_sZBCFilial, _sZBCCod, _sZBCAno)
 	If Len(_aSHC) > 0
 		nHandle := FCreate(cLocalDir)
 		
-		cTexto := "FILIAL|DOCUMENTO|EVENTO|ANO|ITEM|PRODUTO|DESCRICAO|DATA|QUANTIDADE|REVISAO|OBS|GRUPO OPC.|ITEM OPC.|TP.PROD.|DESCRICAO|LITRAGEM" + CHR(13)+CHR(10) 
+		cTexto := "FILIAL|DOCUMENTO|EVENTO|ANO|ITEM|PRODUTO|DESCRICAO|DATA|QUANTIDADE|REVISAO|OBS|GRUPO OPC.|ITEM OPC.|PARADA PROD.|DESCRICAO|LITRAGEM|LINHA ENVASE|DESCRICAO" + CHR(13)+CHR(10) 
 		FWrite(nHandle, cTexto)
 
 		For _i:= 1 to Len(_aSHC)
@@ -1222,7 +1229,9 @@ User Function PLJEXP(_sZBCFilial, _sZBCCod, _sZBCAno)
 			cTexto += '"' + alltrim(_aSHC[_i,13]) + '"|'
 			cTexto += '"' + alltrim(_aSHC[_i,14]) + '"|'
 			cTexto += '"' + alltrim(_aSHC[_i,15]) + '"|'
-			cTexto += alltrim(str(_aSHC[_i, 16])) + CHR(13)+CHR(10) 
+			cTexto += alltrim(str(_aSHC[_i, 16])) +  '|'  
+			cTexto += '"' + alltrim(_aSHC[_i,17]) + '"|'
+			cTexto += '"' + alltrim(_aSHC[_i,18]) + '"' + CHR(13)+CHR(10) 
 			
 			FWrite(nHandle, cTexto)
 		Next
@@ -1278,7 +1287,7 @@ User Function PLJIMP(_sZBCFilial, _sZBCCod, _sZBCAno)
 	If U_MsgYesNo ("Deseja reimportar os arquivos?")
 
 		// Limpa os registros eventos
-		_oSQL:_sQuery += " DELETE FROM SHC010 "
+		_oSQL:_sQuery += " UPDATE SHC010 SET D_E_L_E_T_='*' "
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
 		_oSQL:_sQuery += " AND HC_FILIAL    = '" + _sZBCFilial + "'"
 		_oSQL:_sQuery += " AND HC_VAEVENT   = '" + _sZBCCod    + "'"
@@ -1286,7 +1295,7 @@ User Function PLJIMP(_sZBCFilial, _sZBCCod, _sZBCAno)
 		_oSQL:Exec ()
 
 		// Limpa registros opcionais
-		_oSQL:_sQuery += " DELETE FROM ZBD010 "
+		_oSQL:_sQuery += " UPDATE ZBD010 SET D_E_L_E_T_='*' "
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
 		_oSQL:_sQuery += " AND ZBD_FILIAL   = '" + _sZBCFilial + "'"
 		_oSQL:_sQuery += " AND ZBD_VAEVE    = '" + _sZBCCod    + "'"
@@ -1305,6 +1314,7 @@ User Function PLJIMP(_sZBCFilial, _sZBCCod, _sZBCAno)
 			_sGrpOpc 	:= StrTran(aDados[_x,12], '"', '')
 			_sOpcItem 	:= StrTran(aDados[_x,13], '"', '')
 			_sTpPrd   	:= StrTran(aDados[_x,14], '"', '')
+			_sLinha   	:= StrTran(aDados[_x,17], '"', '')
 
 			RecLock("SHC", .T.)
 				SHC -> HC_FILIAL 	:= iif(!empty(_sFilial)		, padl(_sFilial,2,'0')	,"01")
@@ -1319,6 +1329,7 @@ User Function PLJIMP(_sZBCFilial, _sZBCCod, _sZBCAno)
 				SHC -> HC_GRPOPC 	:= iif(!empty(_sGrpOpc)		, padl(_sGrpOpc ,3,'0') ," ")
 				SHC -> HC_OPCITEM 	:= iif(!empty(_sOpcItem)	, _sOpcItem				," ")
 				SHC -> HC_TPOPRD 	:= iif(!empty(_sTpPrd)		, _sTpPrd 				," ")
+				SHC -> HC_VALINEN 	:= iif(!empty(_sLinha)		, _sLinha 				," ")
 			MsUnlock("SHC")	
 
 			// separa opcionais
