@@ -1164,6 +1164,7 @@ User Function PLJEXP(_sZBCFilial, _sZBCCod, _sZBCAno)
 	
 	cLocalDir := cGetFile( cMascara, cTitulo, nMascpad, cDirIni, lSalvar, nOpcoes, lArvore)
 
+//"FILIAL|DOCUMENTO|EVENTO|ANO|ITEM|PRODUTO|DESCRICAO|DATA|	QTD_CAIXAS|QTD_LITROS|REVISAO|OBS_REVISAO|GRUPO OPC.|ITEM OPC.|LINHA ENVASE|DESCRICAO_ENVASE" 
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += " SELECT "
 	_oSQL:_sQuery += " 	   HC_FILIAL "			// 01
@@ -1175,15 +1176,13 @@ User Function PLJEXP(_sZBCFilial, _sZBCCod, _sZBCAno)
 	_oSQL:_sQuery += "    ,B1_DESC "			// 07
 	_oSQL:_sQuery += "    ,HC_DATA "			// 08
 	_oSQL:_sQuery += "    ,HC_QUANT "			// 09
-	_oSQL:_sQuery += "    ,HC_REVISAO "			// 10
-	_oSQL:_sQuery += "    ,G5_OBS AS DESCREV "	// 11
-	_oSQL:_sQuery += "    ,HC_GRPOPC "			// 12
-	_oSQL:_sQuery += "    ,HC_OPCITEM " 		// 13
-	_oSQL:_sQuery += "    ,HC_TPOPRD "			// 14
-	_oSQL:_sQuery += "    ,ZX5_45DESC "			// 15
-	_oSQL:_sQuery += "    ,B1_LITROS * HC_QUANT"// 16
-	_oSQL:_sQuery += "    ,HC_VALINEN "			// 17
-	_oSQL:_sQuery += "    ,SH1.H1_DESCRI "		// 18
+	_oSQL:_sQuery += "    ,B1_LITROS * HC_QUANT"// 10
+	_oSQL:_sQuery += "    ,HC_REVISAO "			// 11
+	_oSQL:_sQuery += "    ,G5_OBS  "			// 12
+	_oSQL:_sQuery += "    ,HC_GRPOPC "			// 13
+	_oSQL:_sQuery += "    ,HC_OPCITEM " 		// 14
+	_oSQL:_sQuery += "    ,HC_VALINEN "			// 15
+	_oSQL:_sQuery += "    ,SH1.H1_DESCRI "		// 16
 	_oSQL:_sQuery += " FROM " + RetSQLName("SHC") + " SHC "
 	_oSQL:_sQuery += " INNER JOIN " + RetSQLName("SB1") + " SB1 "
 	_oSQL:_sQuery += " 		ON (SB1.D_E_L_E_T_ = '' "
@@ -1209,7 +1208,7 @@ User Function PLJEXP(_sZBCFilial, _sZBCCod, _sZBCAno)
 	If Len(_aSHC) > 0
 		nHandle := FCreate(cLocalDir)
 		
-		cTexto := "FILIAL|DOCUMENTO|EVENTO|ANO|ITEM|PRODUTO|DESCRICAO|DATA|QUANTIDADE|REVISAO|OBS|GRUPO OPC.|ITEM OPC.|PARADA PROD.|DESCRICAO|LITRAGEM|LINHA ENVASE|DESCRICAO" + CHR(13)+CHR(10) 
+		cTexto := "FILIAL|DOCUMENTO|EVENTO|ANO|ITEM|PRODUTO|DESCRICAO|DATA|	QTD_CAIXAS|QTD_LITROS|REVISAO|OBS_REVISAO|GRUPO OPC.|ITEM OPC.|LINHA ENVASE|DESCRICAO_ENVASE" + CHR(13)+CHR(10) 
 		FWrite(nHandle, cTexto)
 
 		For _i:= 1 to Len(_aSHC)
@@ -1223,15 +1222,13 @@ User Function PLJEXP(_sZBCFilial, _sZBCCod, _sZBCAno)
 			cTexto += '"' + alltrim(_aSHC[_i, 7]) + '"|'
 			cTexto += dtoc(_aSHC[_i, 8])          +  '|'
 			cTexto += alltrim(str(_aSHC[_i, 9]))  +  '|'
-			cTexto += '"' + alltrim(_aSHC[_i,10]) + '"|'
+			cTexto += alltrim(str(_aSHC[_i, 10])) +  '|'  
 			cTexto += '"' + alltrim(_aSHC[_i,11]) + '"|'
 			cTexto += '"' + alltrim(_aSHC[_i,12]) + '"|'
 			cTexto += '"' + alltrim(_aSHC[_i,13]) + '"|'
 			cTexto += '"' + alltrim(_aSHC[_i,14]) + '"|'
 			cTexto += '"' + alltrim(_aSHC[_i,15]) + '"|'
-			cTexto += alltrim(str(_aSHC[_i, 16])) +  '|'  
-			cTexto += '"' + alltrim(_aSHC[_i,17]) + '"|'
-			cTexto += '"' + alltrim(_aSHC[_i,18]) + '"' + CHR(13)+CHR(10) 
+			cTexto += '"' + alltrim(_aSHC[_i,16]) + '"' + CHR(13)+CHR(10) 
 			
 			FWrite(nHandle, cTexto)
 		Next
@@ -1310,26 +1307,26 @@ User Function PLJIMP(_sZBCFilial, _sZBCCod, _sZBCAno)
 			_sAno 		:= StrTran(aDados[_x, 4], '"', '')
 			_sItem 		:= StrTran(aDados[_x, 5], '"', '')
 			_sProd 		:= StrTran(aDados[_x, 6], '"', '')
-			_sRevisao 	:= StrTran(aDados[_x,10], '"', '')
-			_sGrpOpc 	:= StrTran(aDados[_x,12], '"', '')
-			_sOpcItem 	:= StrTran(aDados[_x,13], '"', '')
-			_sTpPrd   	:= StrTran(aDados[_x,14], '"', '')
-			_sLinha   	:= StrTran(aDados[_x,17], '"', '')
+			_sData      := aDados[_x, 8]
+			_nQtd       := aDados[_x, 9]
+			_sRevisao 	:= StrTran(aDados[_x,11], '"', '')
+			_sGrpOpc 	:= StrTran(aDados[_x,13], '"', '')
+			_sOpcItem 	:= StrTran(aDados[_x,14], '"', '')
+			_sLinha   	:= StrTran(aDados[_x,15], '"', '')
 
 			RecLock("SHC", .T.)
-				SHC -> HC_FILIAL 	:= iif(!empty(_sFilial)		, padl(_sFilial,2,'0')	,"01")
-				SHC -> HC_DOC 		:= iif(!empty(_sDoc)		, upper(_sDoc)			, upper(_sZBCCod))
-				SHC -> HC_VAEVENT 	:= iif(!empty(_sEvento)		, upper(_sEvento)		, upper(_sZBCCod))
-				SHC -> HC_ANO 		:= iif(!empty(_sAno)		, _sAno 				,_sZBCAno)
-				SHC -> HC_ITEM 		:= iif(!empty(_sItem)		, padl(_sItem ,2,'0')	," ")
-				SHC -> HC_PRODUTO 	:= iif(!empty(_sProd)		, _sProd 				," ")
-				SHC -> HC_DATA 		:= iif(!empty(aDados[_x, 8]), ctod(aDados[_x, 8])	,date())   
-				SHC -> HC_QUANT 	:= iif(!empty(aDados[_x, 9]), val(aDados[_x, 9])	,0)     
-				SHC -> HC_REVISAO 	:= iif(!empty(_sRevisao)	, padl(_sRevisao ,3,'0')," ")
-				SHC -> HC_GRPOPC 	:= iif(!empty(_sGrpOpc)		, padl(_sGrpOpc ,3,'0') ," ")
-				SHC -> HC_OPCITEM 	:= iif(!empty(_sOpcItem)	, _sOpcItem				," ")
-				SHC -> HC_TPOPRD 	:= iif(!empty(_sTpPrd)		, _sTpPrd 				," ")
-				SHC -> HC_VALINEN 	:= iif(!empty(_sLinha)		, _sLinha 				," ")
+				SHC -> HC_FILIAL 	:= iif(!empty(_sFilial)		, padl(_sFilial,2,'0')	,"01"				)
+				SHC -> HC_DOC 		:= iif(!empty(_sDoc)		, upper(_sDoc)			, upper(_sZBCCod)	)
+				SHC -> HC_VAEVENT 	:= iif(!empty(_sEvento)		, upper(_sEvento)		, upper(_sZBCCod)	)
+				SHC -> HC_ANO 		:= iif(!empty(_sAno)		, _sAno 				,_sZBCAno			)
+				SHC -> HC_ITEM 		:= iif(!empty(_sItem)		, padl(_sItem ,2,'0')	," "				)
+				SHC -> HC_PRODUTO 	:= iif(!empty(_sProd)		, _sProd 				," "				)
+				SHC -> HC_DATA 		:= iif(!empty(_sData)		, ctod(_sData)			,date()				)   
+				SHC -> HC_QUANT 	:= iif(!empty(_nQtd)		, val(_nQtd)			,0					)     
+				SHC -> HC_REVISAO 	:= iif(!empty(_sRevisao)	, padl(_sRevisao ,3,'0')," "				)
+				SHC -> HC_GRPOPC 	:= iif(!empty(_sGrpOpc)		, padl(_sGrpOpc ,3,'0') ," "				)
+				SHC -> HC_OPCITEM 	:= iif(!empty(_sOpcItem)	, _sOpcItem				," "				)
+				SHC -> HC_VALINEN 	:= iif(!empty(_sLinha)		, _sLinha 				," "				)
 			MsUnlock("SHC")	
 
 			// separa opcionais
