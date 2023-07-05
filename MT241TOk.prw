@@ -23,6 +23,7 @@
 // 25/07/2022 - Robert  - Liberados TMs 008/510/573 para itens tipo MC
 // 18/04/2023 - Robert  - Liberados TMs 005/512 para itens tipo MC (ajustes valores infimos que estao no SB9)
 // 05/05/2023 - Robert  - Nao mostrar msg. de data retroativa, quando executado a partir do programa U_ESXEST01 (GLPI 12158)
+// 05/07/2023 - Robert  - Nao mostrar msg. de data retroativa, quando executado a partir do programa U_ESXEST02
 //
 
 // ------------------------------------------------------------------------------------------
@@ -52,7 +53,8 @@ user function MT241TOk ()
 		_nPos := aScan(aHeader,{|x| Alltrim(x[2]) == "D3_COD"})
 		for _x:=1 to len(aCols)
 //			If ! GDDeleted (_x) .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + aCols[_x,_nPos], 'B1_TIPO') != 'MO'  // Para nao de obra pode movimentar retroativo.
-			If ! GDDeleted (_x) .and. ! IsInCallStack ('U_ESXEST01') .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + aCols[_x,_nPos], 'B1_TIPO') != 'MO'  // Para nao de obra pode movimentar retroativo.
+//			If ! GDDeleted (_x) .and. ! IsInCallStack ('U_ESXEST01') .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + aCols[_x,_nPos], 'B1_TIPO') != 'MO'  // Para nao de obra pode movimentar retroativo.
+			If ! GDDeleted (_x) .and. ! IsInCallStack ('U_ESXEST01') .and. ! IsInCallStack ('U_ESXEST02') .and. fBuscaCpo ("SB1", 1, xfilial ("SB1") + aCols[_x,_nPos], 'B1_TIPO') != 'MO'  // Para nao de obra pode movimentar retroativo.
 				_sMsg = "Linha " + cvaltochar (_x) + ": Alteracao de data da movimentacao ou data base do sistema: bloqueado para esta rotina x tipo de produto."
 				_lRet = .F.
 				exit
