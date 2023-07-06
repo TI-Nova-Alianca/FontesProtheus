@@ -11,6 +11,7 @@
 // #Modulos           #FIN
 //
 // Historico de alteracoes:
+// 05/07/2023 - Claudia - Ajustada a busca de filiais dos títulos. GLPI 13849
 //
 // --------------------------------------------------------------------------------
 #XTranslate .OK       => 1
@@ -64,7 +65,7 @@ Static Function _Seleciona()
 	_oSQL:_sQuery += " 		AND SA1.A1_COD  = E1_CLIENTE "
 	_oSQL:_sQuery += " 		AND SA1.A1_LOJA = E1_LOJA "
 	_oSQL:_sQuery += " WHERE SE1.D_E_L_E_T_ = '' "
-	_oSQL:_sQuery += " AND E1_FILIAL  = '01' "
+	_oSQL:_sQuery += " AND E1_FILIAL  = '" + xFilial("SE1") + "' "
 	_oSQL:_sQuery += " AND E1_SALDO   = E1_VALOR "
 	_oSQL:_sQuery += " AND E1_SITUACA = '0' "
 	_oSQL:_sQuery += " AND E1_BAIXA   = '' "
