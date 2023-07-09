@@ -6,6 +6,12 @@
 // Autor:     TOTVS Serra Gaúcha
 // Data:      19/07/2019
 // Descricao: Relatório de Depreciação por Conta e Centro de Custo
+//
+// Historico de alteracoes:
+// 07/07/2023 - Robert - Na leitura do SN4, filtrar campo N4_CODBAIX para
+//                       desconsiderar situacao de 'aquisicao por transferencia' (GLPI 13856)
+//
+
 
 User Function FB601CTB()
 	Local oReport
@@ -200,7 +206,11 @@ Static Function ReportPrint(oReport)
 			//cQuery += " AND N4_CCUSTO <> '' " //Considerar també os Centros de Custo em Branco
 			cQuery += " AND N4_CONTA BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'" //Conta Contábil de - Conta Contábil Até
 			cQuery += " AND N4_CCUSTO BETWEEN '" + mv_par03 + "' AND '" + mv_par04 + "'" //Centro de Custo de = Centro de Custo Até
-			cQuery += " AND N4_OCORR  IN ('01','03','04','06','20')"			
+			cQuery += " AND N4_OCORR  IN ('01','03','04','06','20')"
+			
+			// Desconsiderar situacao de 'aquisicao por transferencia' (divide ou aglutina bens)
+			cQuery += " AND N4_CODBAIX = ''"
+			
 			cQuery += "  AND ( "
 			For nX := 1 to Len(aTpGer)
 				If nX == Len(aTpGer)
