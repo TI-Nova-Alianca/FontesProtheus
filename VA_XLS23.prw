@@ -3,6 +3,13 @@
 // Data.......: 15/02/2013
 // Descricao..: Exportacao de dados de preenchimento do Sisdeclara
 //
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #consulta
+// #Descricao         #Exportacao de dados de preenchimento do Sisdeclara
+// #PalavasChave      #sisdevin
+// #TabelasPrincipais #SF1 #SF2 #SB1 #SF4
+// #Modulos           
+//
 // Historico de alteracoes:
 // 28/02/2013 - Elaine  - Alteracao para incluir o número da guia, código e descrição da operação no arquivo
 // 08/04/2016 - Robert  - Programa desabilitado (ver adiante).
@@ -15,8 +22,9 @@
 // 05/08/2019 - Andre   - Alterada tabela SZB para CC2.
 // 07/11/2019 - Andre   - Removido CC2 da Query.
 // 25/02/2020 - Claudia - Alterado o uso da view VA_VFAT para a tabela BI_ALIANCA.dbo.VA_FATDADOS
+// 28/06/2023 - Claudia - Acrescentado novo campo de tipo de operação sisdevin F4_VASITO. GLPI: 13814
 //
-// --------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------
 User Function VA_XLS23 (_lAutomat)
 	Local cCadastro  := "Dados de Preenchimento do Sisdeclara"
 	Local aSays      := {}
@@ -55,14 +63,7 @@ Return _lRet
 // --------------------------------------------------------------------------
 Static Function _Gera()
 	local _oSQL      := NIL
-	//local _oAssoc    := NIL
-	//local _aLinVazia := {}
 	local _sAliasQ   := ""
-    //local cSit	  	 := ""	//Situacao
-    //local cCat	  	 := ""	//Categoria
-    //local cSit2	  	 := ""	//Situacao
-    //local cCat2	  	 := ""	//Categoria
-    //local _sTmpPath  := AllTrim (GetTempPath ())
 	private aHeader  := {}  // Para simular a exportacao de um GetDados.
 	private aCols    := {}  // Para simular a exportacao de um GetDados.
 	private N        := 0
@@ -90,13 +91,13 @@ Static Function _Gera()
     _oSQL:_sQuery += "                      V.QTLITROS AS LITRAGEM,            "
     _oSQL:_sQuery += "                      A1_EST AS ESTADO,                  "
     _oSQL:_sQuery += "                      F2_VAGUIA GUIA,                    "
-    _oSQL:_sQuery += "                      CASE F4_VASISDE                    "
+    _oSQL:_sQuery += "                      CASE F4_VASITO                     "
     _oSQL:_sQuery += "                          WHEN ' ' THEN '99'             "
-    _oSQL:_sQuery += "                          ELSE F4_VASISDE                "
+    _oSQL:_sQuery += "                          ELSE F4_VASITO                 "
     _oSQL:_sQuery += "                      END AS COD_OPERACAO,               "
-    _oSQL:_sQuery += "                      CASE F4_VASISDE                    "
+    _oSQL:_sQuery += "                      CASE F4_VASITO                     "
     _oSQL:_sQuery += "                          WHEN ' ' THEN 'SEM DESCRICAO'  "
-    _oSQL:_sQuery += "                          ELSE SX5_Z8.X5_DESCRI          "
+    _oSQL:_sQuery += "                          ELSE ZX557.ZX5_57DESC          "
     _oSQL:_sQuery += "                      END AS DESCR_OPER                  "
     _oSQL:_sQuery += "               FROM " +  RetSQLName ("SB5") + " SB5, "
     _oSQL:_sQuery += "                    " +  RetSQLName ("SB1") + " SB1 "
@@ -109,14 +110,6 @@ Static Function _Gera()
     _oSQL:_sQuery += "                                   AND ZX5_39.ZX5_39COD = SB1.B1_CODLIN   "
     _oSQL:_sQuery += "                               )                                         "
     
-//    _oSQL:_sQuery += "                      LEFT JOIN " + RetSQLName ("SX5") + " SX5_88 "
-//    _oSQL:_sQuery += "                           ON  (                                         "
-//    _oSQL:_sQuery += "                                   SX5_88.D_E_L_E_T_ = ''                "
-//    _oSQL:_sQuery += "                                   AND SX5_88.X5_FILIAL = '  '           "
-//    _oSQL:_sQuery += "                                   AND SX5_88.X5_TABELA = '88'           "
-//    _oSQL:_sQuery += "                                   AND SX5_88.X5_CHAVE = SB1.B1_CODLIN   "
-//    _oSQL:_sQuery += "                               )                                         "
-
     _oSQL:_sQuery += "                      LEFT JOIN " + RetSQLName ("ZX5") + " ZX5_50 "
     _oSQL:_sQuery += "                           ON  (                                         "
     _oSQL:_sQuery += "                                   ZX5_50.D_E_L_E_T_ = ''                "
@@ -125,17 +118,16 @@ Static Function _Gera()
     _oSQL:_sQuery += "                                   AND ZX5_50.ZX5_50COD  = SB1.B1_GRPEMB   "
     _oSQL:_sQuery += "                               ),                                        "
     _oSQL:_sQuery +=                        RetSQLName ("SA1") + " SA1, "
-    //_oSQL:_sQuery +=                        RetSQLName ("SZB") + " SZB, "
-    //_oSQL:_sQuery +=                        RetSQLName ("CC2") + " CC2, "
     _oSQL:_sQuery +=                        RetSQLName ("SF2") + " SF2, "
     _oSQL:_sQuery +=                        RetSQLName ("SF4") + " SF4  "
-    _oSQL:_sQuery += "                   LEFT JOIN " + RetSQLName("SX5") + " SX5_Z8    "
-    _oSQL:_sQuery += "                          ON  (                                    "
-    _oSQL:_sQuery += "                                SX5_Z8.D_E_L_E_T_ = ''             "
-    _oSQL:_sQuery += "                            AND SX5_Z8.X5_FILIAL  = '" + xfilial ("SX5") + "'"
-    _oSQL:_sQuery += "                            AND SX5_Z8.X5_TABELA = 'Z8'            "
-    _oSQL:_sQuery += "                            AND SX5_Z8.X5_CHAVE = SF4.F4_VASISDE   "
-    _oSQL:_sQuery += "                                 ),                                "
+
+    _oSQL:_sQuery += "                   LEFT JOIN " + RetSQLName("ZX5") + " ZX557      "
+    _oSQL:_sQuery += "                          ON  (                                   "
+    _oSQL:_sQuery += "                                ZX557.D_E_L_E_T_ = ''             "
+    _oSQL:_sQuery += "                            AND ZX557.ZX5_FILIAL  = '" + xfilial ("ZX5") + "'"
+    _oSQL:_sQuery += "                            AND ZX557.ZX5_TABELA = '57'            "
+    _oSQL:_sQuery += "                            AND ZX557.ZX5_CHAVE = SF4.F4_VASITO    "
+    _oSQL:_sQuery += "                                 ),                               "
     _oSQL:_sQuery +=                        RetSQLName ("ZX5") + " ZX5_32, "
     _oSQL:_sQuery += "                      BI_ALIANCA.dbo.VA_FATDADOS AS V "
     _oSQL:_sQuery += "                      LEFT JOIN " + RetSQLName ("SA3") + " SA3 "
@@ -165,10 +157,6 @@ Static Function _Gera()
     _oSQL:_sQuery += "                      AND SF2.F2_FILIAL = V.FILIAL                     "
     _oSQL:_sQuery += "                      AND SF2.F2_DOC = V.DOC                           "
     _oSQL:_sQuery += "                      AND SF2.F2_SERIE = V.SERIE                       "
-    //_oSQL:_sQuery += "                      AND SZB.ZB_FILIAL = '  '                         "
-    //_oSQL:_sQuery += "                      AND SZB.ZB_COD = SA1.A1_COD_MUN                  "
-    //_oSQL:_sQuery += "                      AND CC2.CC2_FILIAL = '  '                        "
-    //_oSQL:_sQuery += "                      AND CC2.CC2_CODMUN = SA1.A1_COD_MUN               "
     _oSQL:_sQuery += "                      AND V.ORIGEM = 'SD2'                             "
     _oSQL:_sQuery += "                      AND V.TIPONFSAID != 'B'                          "
     _oSQL:_sQuery += "                      AND V.TIPONFSAID != 'D'                          "
