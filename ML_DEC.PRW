@@ -1,92 +1,108 @@
-// Programa:   ML_DEC
-// Autor:      Jeferson Rech
-// Data:       dez/2001
-// Descricao:  Gera Arq. TXT p/ Declaracao de Vinicolas (SisDeclara).
+// Programa.: ML_DEC
+// Autor....: Jeferson Rech
+// Data.....: dez/2001
+// Descricao: Gera Arq. TXT p/ Declaracao de Vinicolas (SisDeclara)
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #consulta
+// #Descricao         #Gera Arq. TXT p/ Declaracao de Vinicolas (SisDeclara)
+// #PalavasChave      #sisdevin
+// #TabelasPrincipais #SF1 #SF2 #SB1 #SF4
+// #Modulos           
 //
 // Historico de alteracoes:
-// 04/07/2008 - Robert - Ajustes na formatacao da serie e numero da NF (registro tipo 20)
-// 04/08/2008 - Robert - Aumentado tamanho do campo M0_INSC, que removia a posicao 4.
-//                     - Alterado e-mail de contato (de alianca@alianca... para geyce@alianca...)
-// 02/12/2008 - Robert - Criado tratamento para serie '10 ' (NF-e)
-//                     - E-mail de contato passa a ficar em letras minusculas.
-// 25/02/2009 - Robert - Inclusao de serie no tipo 20.
-//                     - Passa a usar o parametro VA_INSCMA.
-// 01/12/2009 - Robert - Alterado e-mail de contato
-// 09/04/2010 - Robert - Ajustes na soma de litragem total (registro tipo 90)
-// 03/05/2010 - Robert - Mostra aviso em caso de litragem zerada.
-// 05/06/2010 - Robert - Ajustes nas perguntas para versao 10
-// 30/09/2010 - Robert - Campo B1_SAFRA vai ser excluido.
-// 09/11/2010 - Robert - Passa a desconsiderar notas de remessa e retorno de deposito fechado.
-// 03/01/2011 - Robert - Ajustes para aumento do tamanho do campo B1_MARPR.
-// 27/01/2011 - Robert - Desabilitada exportacao de dados para filiais.
-// 11/05/2011 - Robert - Busca marcas comerciais no ZX5.
-// 13/06/2011 - Robert - Unificada exportacao de notas de entrada de uva
-//                     - Melhoria nos parametros.
-//                     - Criada exportacao de transferencias entre filiais.
-// 08/07/2011 - Robert - Campo B1_MARPR separado por filial (B1_VARMAAL, B1_VARMASP, ...)
-//                     - Criada exportacao de guias de livre transito
-// 13/07/2011 - Robert - Buscava descricao dos produtos sempre da tabela 90 do SX5. Agora busca cfe. a filial.
-// 08/09/2011 - Robert - Considerava todo o CGC em vez da raiz, entao nao identificava transf. entre filiais.
-// 30/10/2011 - Robert - Passa a usar metodos da classe ClsSisd.
-// 30/03/2012 - Robert - Leitura de notas da uva passa a usar a view VA_VNOTAS_SAFRA.
-// 15/05/2012 - Robert - Unificacao dos campos B1_MARPR, B1_VARMAAL e B1_VARMASP.
-// 06/06/2012 - Robert - Passa a buscar codigo do Sisdeclara na tabela 12 do ZX5.
-// 10/09/2012 - Elaine - Tratamento NF com 9 posicoes
-// 08/11/2012 - Robert - Mais tratamentos para NF com 9 posicoes.
-// 13/02/2013 - Robert - Campo B1_TPPROD passa a ser padrao no Protheus 11. Criado B1_VACOR em seu lugar.
-//                     - Melhoradas mensagens de erros e avisos.
-// 19/02/2013 - Elaine - Passar a tratar o campo F4_VASISDE para separar a operacao dos engarrafados e dos produtos a granel,faz selecao
-//                       dos parâmetros por query e nao mais por dbselectarea (tipos 20N e 20D)
-// 26/02/2013 - Elaine - Passar a exportar/tratar notas de entrada a granel (registro 30 e 31) pois o campo F1_VAGUIA foi criado para este tratamento
-// 07/03/2013 - Elaine - No registro 60, nao estava declarado na query o B1_COD e estava considerando número da nota com 9 digitos, sendo que
-//                       no layout do sisdeclara aceita somente 6, deslocando todos campos que vinham posterior.
-// 07/03/2013 - Elaine - Considerar notas de saidas/entradas cujo tipo seja diferente de C, I, P.
-// 12/03/2013 - Elaine - Tratamento campo F4_VASISEN - Operacao Sisdeclara produtos engarrafados e avisar as TES que estão com este e o F4_VASISDE em branco ***
-// 10/04/2013 - Robert - Ajustes para filial 10
-// 13/05/2013 - Robert - Passa a ler campo A2_VAREGMA para notas de entrada de uva, quando pessoa juridica.
-// 15/05/2013 - Robert - Acrescentadas validacoes diversas no cadastro de produtos.
-//                     - Nao buscava dados de fornecedor X cliente cfe. tipo da nota nas guias de granel.
-// 11/07/2013 - Robert - Tratamento para buscar cod.pais de fornecedores.
-//                     - Tratamento para buscar cod.pais de notas tipo B/D.
-// 20/03/2015 - Robert - Avisa quando campo B1_LITROS estiver vazio nas guias a granel.
-// 23/03/2015 - Robert - Troca codigo de Pinto Bandeira por Bento Goncalves.
-// 06/04/2015 - Robert - Deixa de usar os campos ZQ_NF01, ZQ_NF02, ... e faz toda a leitura do SF2.
-// 18/06/2015 - Robert - View VA_NOTAS_SAFRA renomeada para VA_VNOTAS_SAFRA
-// 15/12/2015 - Robert - Melhorada geracao de logs e validacao entre tipo e classe de produto no cadastro.
-// 13/01/2016 - Robert - Verifica tipo de operacao das guias de saida.
-// 18/02/2016 - Robert - Validacoes de produtos comecam a ser passadas para o metodo ValProd da classe ClsSisd.
-// 07/03/2016 - Robert - Parece que o Sisdeclara finalmente reconheceu a emancipacao de Pinto Bandeira...
-// 14/03/2016 - Robert - Tipo 60 (notas de uva) passa a considerar transf. entre filiais.
-// 29/03/2016 - Robert - Campos do Sisdeclara migrados do SB1 para SB5.
-//                     - Melhorias classe ClsSisd.
-// 06/04/2016 - Robert - Verifica se a descricao estah vazia (provavelmente cod.produto inexistente no cadastro).
-// 17/05/2016 - Robert - Campos do Sisdeclara migrados da tabela SB1 para SB5.
-// 01/09/2016 - Robert - Verifica campo ZX5_08ATIV (registro inativo no M.A.).
-// 10/10/2016 - Robert - Tratamento para nova estrutura de codificacao de registros no M.A.
-// 29/03/2017 - Robert - Ignota NF entrada uva antigo condominio (esta ano virou CNPJ) pois ainda nao tem inscr. no Minist.Agric.
-//                     - Valida e busca dados do responsavel pela tabela 20 do ZX5.
-// 18/04/2017 - Robert - Avisa caso nao consiga definir o 'destino' de uma NF.
-// 15/09/2017 - Robert - Melhorada mensagem quando falta destino/UF nas notas.
-// 06/11/2017 - Robert - Desconsidera notas de transferencia simbolicas feitas em out/2017 para equalizacao de custos entre filiais.
-// 23/11/2017 - Robert - Passa a trabalhar pelos campos D1_DTDIGIT e F1_DTDIGIT e nao mais pelos campos F1_EMISSAO e F1_EMISSAO.
-// 11/01/2018 - Robert -
-// 08/06/2018 - Robert - Ignora quantidades muito pequenas no tipo 20N
-// 14/09/2018 - Robert - Validacoes do produto passadas do A010TOK para ca.
-// 11/12/2018 - Robert - Opcao de gerar planilha de conferencia
-//                     - Opcao de exportar ou nao as guias de livre transito (tipo 30)
-// 22/03/2019 - Andre  - Trocado erro por aviso na validação A2_VAREGMA.
-// 10/01/2020 - Robert - Ignora algunas NF de saida de suco em dez/2019 que jah foram digitadas manualmente no site do Sisdevin.
-// 19/03/2021 - Robert - Tratamento para exportar NF de safra tipo C na safra 2021 (GLPI 9660).
-// 05/04/2021 - Robert - Melhorada msg de aviso quando fornecedor nao tem registro no MA informado.
-// 06/05/2021 - Robert - Inserida mensagem de aviso quando codigo CR zerado no reg. tipo 21 (GLPI 9987)
-// 07/07/2021 - Robert - Desconsidera entradas de produtos oriundos de outros paises (GLPI 10436).
-// 26/07/2021 - Robert - Criado parametro para informar lotes (PA) a desconsiderar (GLPI 10436).
-// 05/08/2021 - Robert - Campo LT_IGNORAR (GLPI 10436) nao havia sido criado para as filiais (GLPI 10653).
-// 05/07/2022 - Robert - Ajustes novo layout 1.3 (GLPI 12307)
-//                     - Criada opcao de exportar apenas um movimento de cada tipo (para testes de layout)
+// 04/07/2008 - Robert  - Ajustes na formatacao da serie e numero da NF (registro tipo 20)
+// 04/08/2008 - Robert  - Aumentado tamanho do campo M0_INSC, que removia a posicao 4.
+//                      - Alterado e-mail de contato (de alianca@alianca... para geyce@alianca...)
+// 02/12/2008 - Robert  - Criado tratamento para serie '10 ' (NF-e)
+//                      - E-mail de contato passa a ficar em letras minusculas.
+// 25/02/2009 - Robert  - Inclusao de serie no tipo 20.
+//                      - Passa a usar o parametro VA_INSCMA.
+// 01/12/2009 - Robert  - Alterado e-mail de contato
+// 09/04/2010 - Robert  - Ajustes na soma de litragem total (registro tipo 90)
+// 03/05/2010 - Robert  - Mostra aviso em caso de litragem zerada.
+// 05/06/2010 - Robert  - Ajustes nas perguntas para versao 10
+// 30/09/2010 - Robert  - Campo B1_SAFRA vai ser excluido.
+// 09/11/2010 - Robert  - Passa a desconsiderar notas de remessa e retorno de deposito fechado.
+// 03/01/2011 - Robert  - Ajustes para aumento do tamanho do campo B1_MARPR.
+// 27/01/2011 - Robert  - Desabilitada exportacao de dados para filiais.
+// 11/05/2011 - Robert  - Busca marcas comerciais no ZX5.
+// 13/06/2011 - Robert  - Unificada exportacao de notas de entrada de uva
+//                      - Melhoria nos parametros.
+//                      - Criada exportacao de transferencias entre filiais.
+// 08/07/2011 - Robert  - Campo B1_MARPR separado por filial (B1_VARMAAL, B1_VARMASP, ...)
+//                      - Criada exportacao de guias de livre transito
+// 13/07/2011 - Robert  - Buscava descricao dos produtos sempre da tabela 90 do SX5. Agora busca cfe. a filial.
+// 08/09/2011 - Robert  - Considerava todo o CGC em vez da raiz, entao nao identificava transf. entre filiais.
+// 30/10/2011 - Robert  - Passa a usar metodos da classe ClsSisd.
+// 30/03/2012 - Robert  - Leitura de notas da uva passa a usar a view VA_VNOTAS_SAFRA.
+// 15/05/2012 - Robert  - Unificacao dos campos B1_MARPR, B1_VARMAAL e B1_VARMASP.
+// 06/06/2012 - Robert  - Passa a buscar codigo do Sisdeclara na tabela 12 do ZX5.
+// 10/09/2012 - Elaine  - Tratamento NF com 9 posicoes
+// 08/11/2012 - Robert  - Mais tratamentos para NF com 9 posicoes.
+// 13/02/2013 - Robert  - Campo B1_TPPROD passa a ser padrao no Protheus 11. Criado B1_VACOR em seu lugar.
+//                      - Melhoradas mensagens de erros e avisos.
+// 19/02/2013 - Elaine  - Passar a tratar o campo F4_VASISDE para separar a operacao dos engarrafados 
+//                        e dos produtos a granel,faz selecao
+//                        dos parâmetros por query e nao mais por dbselectarea (tipos 20N e 20D)
+// 26/02/2013 - Elaine  - Passar a exportar/tratar notas de entrada a granel (registro 30 e 31) 
+//                        pois o campo F1_VAGUIA foi criado para este tratamento
+// 07/03/2013 - Elaine  - No registro 60, nao estava declarado na query o B1_COD 
+//                        e estava considerando número da nota com 9 digitos, sendo que
+//                        no layout do sisdeclara aceita somente 6, deslocando todos campos que vinham posterior.
+// 07/03/2013 - Elaine  - Considerar notas de saidas/entradas cujo tipo seja diferente de C, I, P.
+// 12/03/2013 - Elaine  - Tratamento campo F4_VASISEN - Operacao Sisdeclara produtos engarrafados e avisar as TES 
+//                        que estão com este e o F4_VASISDE em branco ***
+// 10/04/2013 - Robert  - Ajustes para filial 10
+// 13/05/2013 - Robert  - Passa a ler campo A2_VAREGMA para notas de entrada de uva, quando pessoa juridica.
+// 15/05/2013 - Robert  - Acrescentadas validacoes diversas no cadastro de produtos.
+//                      - Nao buscava dados de fornecedor X cliente cfe. tipo da nota nas guias de granel.
+// 11/07/2013 - Robert  - Tratamento para buscar cod.pais de fornecedores.
+//                      - Tratamento para buscar cod.pais de notas tipo B/D.
+// 20/03/2015 - Robert  - Avisa quando campo B1_LITROS estiver vazio nas guias a granel.
+// 23/03/2015 - Robert  - Troca codigo de Pinto Bandeira por Bento Goncalves.
+// 06/04/2015 - Robert  - Deixa de usar os campos ZQ_NF01, ZQ_NF02, ... e faz toda a leitura do SF2.
+// 18/06/2015 - Robert  - View VA_NOTAS_SAFRA renomeada para VA_VNOTAS_SAFRA
+// 15/12/2015 - Robert  - Melhorada geracao de logs e validacao entre tipo e classe de produto no cadastro.
+// 13/01/2016 - Robert  - Verifica tipo de operacao das guias de saida.
+// 18/02/2016 - Robert  - Validacoes de produtos comecam a ser passadas para o metodo ValProd da classe ClsSisd.
+// 07/03/2016 - Robert  - Parece que o Sisdeclara finalmente reconheceu a emancipacao de Pinto Bandeira...
+// 14/03/2016 - Robert  - Tipo 60 (notas de uva) passa a considerar transf. entre filiais.
+// 29/03/2016 - Robert  - Campos do Sisdeclara migrados do SB1 para SB5.
+//                      - Melhorias classe ClsSisd.
+// 06/04/2016 - Robert  - Verifica se a descricao estah vazia (provavelmente cod.produto inexistente no cadastro).
+// 17/05/2016 - Robert  - Campos do Sisdeclara migrados da tabela SB1 para SB5.
+// 01/09/2016 - Robert  - Verifica campo ZX5_08ATIV (registro inativo no M.A.).
+// 10/10/2016 - Robert  - Tratamento para nova estrutura de codificacao de registros no M.A.
+// 29/03/2017 - Robert  - Ignota NF entrada uva antigo condominio (esta ano virou CNPJ) 
+//                        pois ainda nao tem inscr. no Minist.Agric.
+//                      - Valida e busca dados do responsavel pela tabela 20 do ZX5.
+// 18/04/2017 - Robert  - Avisa caso nao consiga definir o 'destino' de uma NF.
+// 15/09/2017 - Robert  - Melhorada mensagem quando falta destino/UF nas notas.
+// 06/11/2017 - Robert  - Desconsidera notas de transferencia simbolicas feitas em out/2017 
+//                        para equalizacao de custos entre filiais.
+// 23/11/2017 - Robert  - Passa a trabalhar pelos campos D1_DTDIGIT e F1_DTDIGIT e nao mais pelos 
+//                        campos F1_EMISSAO e F1_EMISSAO.
+// 11/01/2018 - Robert  -
+// 08/06/2018 - Robert  - Ignora quantidades muito pequenas no tipo 20N
+// 14/09/2018 - Robert  - Validacoes do produto passadas do A010TOK para ca.
+// 11/12/2018 - Robert  - Opcao de gerar planilha de conferencia
+//                      - Opcao de exportar ou nao as guias de livre transito (tipo 30)
+// 22/03/2019 - Andre   - Trocado erro por aviso na validação A2_VAREGMA.
+// 10/01/2020 - Robert  - Ignora algunas NF de saida de suco em dez/2019 que jah foram digitadas 
+//                        manualmente no site do Sisdevin.
+// 19/03/2021 - Robert  - Tratamento para exportar NF de safra tipo C na safra 2021 (GLPI 9660).
+// 05/04/2021 - Robert  - Melhorada msg de aviso quando fornecedor nao tem registro no MA informado.
+// 06/05/2021 - Robert  - Inserida mensagem de aviso quando codigo CR zerado no reg. tipo 21 (GLPI 9987)
+// 07/07/2021 - Robert  - Desconsidera entradas de produtos oriundos de outros paises (GLPI 10436).
+// 26/07/2021 - Robert  - Criado parametro para informar lotes (PA) a desconsiderar (GLPI 10436).
+// 05/08/2021 - Robert  - Campo LT_IGNORAR (GLPI 10436) nao havia sido criado para as filiais (GLPI 10653).
+// 05/07/2022 - Robert  - Ajustes novo layout 1.3 (GLPI 12307)
+//                      - Criada opcao de exportar apenas um movimento de cada tipo (para testes de layout)
+// 29/06/2023 - Claudia - Ajustado para novo campo de tipo de operaçao sisdevin F4_VASITO. GLPI: 13815
 //
-
-// --------------------------------------------------------------------------
+//
+// ------------------------------------------------------------------------------------------------------------
 User Function ml_dec (_lAutomat)
 	Local cCadastro   := "Arquivo p/ Declaracao Vinicola"
 	Local aSays       := {}
@@ -117,10 +133,9 @@ User Function ml_dec (_lAutomat)
 		Endif
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
+// Gera TXT
 Static Function GeraTxt()
 	local _aArqTrb  := {}
 	local _aTipos   := {}
@@ -139,9 +154,9 @@ Static Function GeraTxt()
 	private _lSoh1Reg  := .F.
 
 	// Tenho muita manutencao neste programa, entao uso esta opcao para gerar menos registros para teste.
-//	if cUserName == 'robert.koch' .and. dtos (date()) == '20220705'  // Estou em testes
-//		_lSoh1Reg = .T.
-//	endif
+	//	if cUserName == 'robert.koch' .and. dtos (date()) == '20220705'  // Estou em testes
+	//		_lSoh1Reg = .T.
+	//	endif
 
 	delete file (alltrim (mv_par06))
 	_nHdl = fCreate (alltrim (mv_par06))
@@ -208,19 +223,19 @@ Static Function GeraTxt()
 	_nTotNF61 := 0
 
 	// Uma funcao para gerar cada tipo de registro.
-	_Tipo10 ()  // Identificacao da empresa remetente
-	_Tipo11 ()  // Dados complementares da empresa
-	if mv_par03 == 1  // Movto. mensal
-		_Tipo20N ()  // Notas de venda de engarrafados
-		_Tipo20D ()  // Notas de devolucao de engarrafados
+	_Tipo10 ()  			// Identificacao da empresa remetente
+	_Tipo11 ()  			// Dados complementares da empresa
+	if mv_par03 == 1  		// Movto. mensal
+		_Tipo20N ()  		// Notas de venda de engarrafados
+		_Tipo20D ()  		// Notas de devolucao de engarrafados
 		if mv_par09 == 1
-			_Tipo30S  ()  // Movimentacao a granel Saidas.
-			_Tipo30E  ()  // Movimentacao a granel Entradas.
+			_Tipo30S  ()  	// Movimentacao a granel Saidas.
+			_Tipo30E  ()  	// Movimentacao a granel Entradas.
 		endif
-	elseif mv_par03 == 2  // Entradas de uvas
-		_Tipo60 ()  // Identificacao de notas de uvas
+	elseif mv_par03 == 2  	// Entradas de uvas
+		_Tipo60 ()  		// Identificacao de notas de uvas
 	endif
-	_Tipo90 ()  // Totalizadores
+	_Tipo90 ()  			// Totalizadores
 
 	// Validacoes cadastro produtos. Era feito no _tipo15(), mas esse tipo de registro nao eh mais gerado.
 	for _nProduto = 1 to len (_aProdutos)
@@ -290,10 +305,9 @@ Static Function GeraTxt()
 		endif
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
+// Identificacao da empresa remetente
 Static Function _Tipo10()
 	local _sInscMA := U_TamFixo (GetMv("VA_INSCMA", .F., ""), 8, ' ')
 
@@ -302,14 +316,12 @@ Static Function _Tipo10()
 		_Erro ("Parametro VA_INSCMA (Nossa inscricao no Ministerio da Agricultura) vazio ou inexistente.")
 	endif
 	cLin:=""
-//	cLin := cLin+"10"+left(SM0->M0_CGC,14)+_sInscMA+left(SM0->M0_NOMECOM+space(40),40)+left(SM0->M0_ENDCOB+space(40),40)+"04305108"+SM0->M0_CEPCOB+SPACE(10)+SPACE(30)
 	cLin := cLin+"10"+left(SM0->M0_CGC,14)+_sInscMA+left(SM0->M0_NOMECOM+space(40),40)+left(SM0->M0_ENDCOB+space(40),40)+"04305108"+SM0->M0_CEPCOB+'SDA1.3    '
 	_GravaLin ('10', cLin)
 Return
-
-
-
+//
 // --------------------------------------------------------------------------
+// Dados complementares da empresa
 Static Function _Tipo11()
 	local cLin := ""
 	incproc ('Registro(s) ' + procname ())
@@ -322,20 +334,17 @@ Static Function _Tipo11()
 	cLin += ' '
 	_GravaLin ('11', cLin)
 Return
-
-
-
+//
 // --------------------------------------------------------------------------
+// Notas de venda de engarrafados
 Static Function _Tipo20N ()
 	local _sTipoDocF := ''
-//	local _sQry20    := ''
 	local _sPos      := ''
 	local _vTotLit   := 0
 	local _lContinua := .T.
 	local _sDestino  := ""
 	local _nQtTotNF  := 0
 	local _nReg20S   := 0
-	//local _sNF20S    := NIL
 	local _oSQL      := NIL
 
 	incproc ('Registro(s) ' + procname ())
@@ -347,7 +356,7 @@ Static Function _Tipo20N ()
 		if _lSoh1Reg
 			_oSQL:_sQuery += " TOP 1 "
 		endif
-		_oSQL:_sQuery +=        " D2_DOC, D2_SERIE, D2_EMISSAO, F4_VASISEN, F2_EST, B1_COD, D2_UM, D2_QUANT, B1_LITROS, F2_DOC, D2_TIPO, "
+		_oSQL:_sQuery +=        " D2_DOC, D2_SERIE, D2_EMISSAO, F4_VASITO, F2_EST, B1_COD, D2_UM, D2_QUANT, B1_LITROS, F2_DOC, D2_TIPO, "
 		_oSQL:_sQuery +=        " D2_COD, D2_TES, F2_CLIENTE, F2_LOJA, B1_DESC, ISNULL(B8_VACRSIS, '') AS CODCRSIS, D2_LOTECTL "
 
 		// Alguns lotes de produtos envasados devem ser desconsiderados, por exemplo produtos com origem internacional (GLPI 10436)
@@ -392,7 +401,7 @@ Static Function _Tipo20N ()
 		_oSQL:_sQuery +=    " AND SD2.D2_DOC     = SF2.F2_DOC "
 		_oSQL:_sQuery +=    " AND SD2.D2_SERIE   = SF2.F2_SERIE "
 		_oSQL:_sQuery +=    " AND SD2.D2_TES     = SF4.F4_CODIGO "
-		_oSQL:_sQuery +=    " AND SF4.F4_VASISEN <> '99' "
+		_oSQL:_sQuery +=    " AND SF4.F4_VASITO <> '99' "
 
 		// Notas de dez/2019 que continham apenas suco e cujas guias foram digitadas diretamente no site do Sisdevin
 		if cFilAnt == '01' .and. month (mv_par01) == 12 .and. year (mv_par01) == 2019 .and. month (mv_par02) == 12 .and. year (mv_par02) == 2019
@@ -420,7 +429,6 @@ Static Function _Tipo20N ()
 
 		_oSQL:_sQuery += " ORDER BY SF2.F2_DOC, SF2.F2_SERIE, SD2.D2_COD"
 		_oSQL:Log ()
-//		_sNF20S = _oSQL:Qry2Trb (.F.)
 		_oSQL:Copy2Trb (.F., NIL, '_trb20S')
 
 		dbSelectArea ('_trb20S')
@@ -433,7 +441,6 @@ Static Function _Tipo20N ()
 			// Varre todos os itens desta nota abatendo possiveis lotes a desconsiderar, e verifica se ainda sobrou alguma quantidade a exportar.
 			_nQtTotNF = 0
 			_nReg20S = _trb20S -> (recno ())
-//			U_Log2 ('debug', 'guardando recno ' + cvaltochar (_nReg20S))
 			do while (! _trb20S -> (eof ()) .AND. _sNF  == _sNF .AND. _sSerie == _sSerie)
 				_nQtTotNF += _trb20S->D2_QUANT - _trb20S->LT_IGNORAR
 				_trb20S -> (dbskip ())
@@ -445,20 +452,18 @@ Static Function _Tipo20N ()
 			if _nQtTotNF <= 0
 				U_Log2 ('aviso', 'A quantidade total da NF ' + _sNF + ' ficou ' + cvaltochar (_nQtTotNF) + ' e, portanto, essa nota vai ser desconsiderada.')
 			else
-//				U_Log2 ('debug', 'voltando para recno ' + cvaltochar (_nReg20S))
 				_trb20S -> (dbgoto (_nReg20S))
-//				U_Log2 ('debug', 'posicionei no recno ' + cvaltochar (_trb20S -> (recno ())))
 			endif
 
 			dbSelectArea ('_trb20S')
 
 			_sNF    := _trb20S -> D2_DOC
 			_sSerie := _trb20S -> D2_SERIE
-			_sOper  := _trb20S -> F4_VASISEN
+			_sOper  := _trb20S -> F4_VASITO
 			_sTipoDocF  = _TipoDocF (_trb20S -> D2_SERIE)
 			_sDestino := _trb20S -> F2_EST
 
-			// Outro pais.
+			// Outro pais
 			if _sDestino == "EX" .or. empty (_sDestino)
 				u_log2 ('info', 'vou buscar pais para nf ' + _trb20S -> D2_DOC)
 				if _trb20S -> D2_TIPO $ "B/D"
@@ -478,9 +483,7 @@ Static Function _Tipo20N ()
 				_Erro ("Nao foi possivel definir o 'destino' (UF) na NF de saida " + _trb20S -> D2_DOC)
 			endif
 
-			// -------------------------------
 			// Imprime tipo 20 da nota fiscal
-			// -------------------------------
 			cLin:=""
 
 			cLin := cLin + "20" + left(SM0->M0_CGC,14)
@@ -490,7 +493,7 @@ Static Function _Tipo20N ()
 
 			cLin += _sMes
 			cLin += _sAno
-			cLin +=  _trb20S -> F4_VASISEN
+			cLin +=  _trb20S -> F4_VASITO
 			cLin +=  strzero(val(_trb20S -> D2_DOC),10)
 			cLin +=  _sDestino
 			cLin +=  _sTipoDocF
@@ -501,7 +504,7 @@ Static Function _Tipo20N ()
 			
 			_sNFI    := _trb20S -> D2_DOC
 			_sSerieI := _trb20S -> D2_SERIE
-			_sOperI  := _trb20S -> F4_VASISEN
+			_sOperI  := _trb20S -> F4_VASITO
 			_sCodCR	 :=	_trb20S -> CODCRSIS
 			
 			do while (! _trb20S -> (eof ()) .AND. _sNF  == _sNFI .AND. _sSerie == _sSerieI .AND. _sOper == _sOperI)
@@ -528,12 +531,11 @@ Static Function _Tipo20N ()
 				if _trb20S->B1_LITROS == 0
 					_Erro ("Produto '" + alltrim (_trb20S -> D2_COD) + "' (cod. sisdeclara '" + x_CODPRD + "') nao tem litragem informada no cadastro.")
 				endif
-		//		x_LITROS := STRZERO((_trb20S->D2_QUANT * _trb20S->B1_LITROS)*100,10)
 				x_LITROS := STRZERO(((_trb20S->D2_QUANT - _trb20S->LT_IGNORAR) * _trb20S->B1_LITROS)*100,10)
 				
 				x_UNID   := _trb20S -> D2_UM
-				if empty (_trb20S -> F4_VASISEN)
-					_Erro ("Campo '" + alltrim (RetTitle ("F4_VASISEN")) + "' nao informado no TES " + _trb20S -> D2_TES + ". Entre em contato com o setor fiscal.")
+				if empty (_trb20S -> F4_VASITO)
+					_Erro ("Campo '" + alltrim (RetTitle ("F4_VASITO")) + "' nao informado no TES " + _trb20S -> D2_TES + ". Entre em contato com o setor fiscal.")
 				endif
 				
 				_xTotLit += val (x_LITROS)
@@ -545,14 +547,9 @@ Static Function _Tipo20N ()
 					_aTotOper [_sPos, 4] += _vTotLit
 				endif
 
-
-
-				// -------------------------------
 				// Imprime tipo 21 da nota fiscal
-				// -------------------------------
 				cLin:=""
 				cLin:= cLin + "21" + SM0->M0_CGC + x_CODPRD + _oSisDec:Embalagem + x_LITROS +SPACE(117)
-//				_GravaLin ('20', cLin, x_CODPRD)
 				reclock ("_trb", .T.)
 				_trb -> grupo = '20'
 				_trb -> dados = cLin
@@ -582,7 +579,7 @@ Static Function _Tipo20N ()
 				_trb20S -> (dbskip ())
 				_sNFi    := _trb20S -> D2_DOC
 				_sSeriei := _trb20S -> D2_SERIE
-				_sOperI  := _trb20S -> F4_VASISEN
+				_sOperI  := _trb20S -> F4_VASITO
 
 			Enddo
 		Enddo
@@ -591,14 +588,12 @@ Static Function _Tipo20N ()
 
 	endif
 Return
-
-
-
+//
 // --------------------------------------------------------------------------
+// Notas de devolucao de engarrafados
 Static Function _Tipo20D ()
 	local _sTipoDocF := ''
 	local _sQry20    := ''
-	//local _sQry20T   := ''
 	local _sPos      := ''
 	local _vTotLit   := 0
 	local _lContinua := .T.
@@ -612,7 +607,7 @@ Static Function _Tipo20D ()
 		if _lSoh1Reg
 			_sQry20 += " TOP 1 "
 		endif
-		_sQry20 +=        " D1_DOC, D1_SERIE, D1_DTDIGIT, F4_VASISEN, F1_EST, B1_COD, D1_UM, D1_QUANT, B1_LITROS, "
+		_sQry20 +=        " D1_DOC, D1_SERIE, D1_DTDIGIT, F4_VASITO, F1_EST, B1_COD, D1_UM, D1_QUANT, B1_LITROS, "
 		_sQry20 +=        " D1_COD, D1_TES, F1_FORNECE, F1_LOJA, B1_DESC, D1_TIPO, ISNULL(B8_VACRSIS, '') AS CODCRSIS, D1_LOTECTL "
 		_sQry20 +=   " FROM " + RetSQLName ("SD1") + " SD1 "
 		_sQry20 +=   "	LEFT JOIN " + RetSQLName ("SB8") + " SB8 "
@@ -645,7 +640,7 @@ Static Function _Tipo20D ()
 		_sQry20 +=    " AND SD1.D1_FORNECE = SF1.F1_FORNECE "
 		_sQry20 +=    " AND SD1.D1_LOJA    = SF1.F1_LOJA "
 		_sQry20 +=    " AND SD1.D1_TES     = SF4.F4_CODIGO "
-		_sQry20 +=    " AND SF4.F4_VASISEN <> '99'"
+		_sQry20 +=    " AND SF4.F4_VASITO <> '99'"
 		_sQry20 += " ORDER BY SF1.F1_DOC, SF1.F1_SERIE, SD1.D1_COD"
 		u_log2 ('debug', _sQry20)
 		_sNF20E = GetNextAlias ()
@@ -662,7 +657,7 @@ Static Function _Tipo20D ()
 
 			_sNF    := (_sNF20E) -> D1_DOC
 			_sSerie := (_sNF20E) -> D1_SERIE
-			_sOper  := (_sNF20E) -> F4_VASISEN
+			_sOper  := (_sNF20E) -> F4_VASITO
 			_sTipoDocF  = _TipoDocF ((_sNF20E) -> D1_SERIE)
 			_sDestino = (_sNF20E) -> f1_est
 
@@ -695,9 +690,7 @@ Static Function _Tipo20D ()
 				_Erro ("Nao foi possivel definir o 'destino' (UF) na NF de entrada " + (_sNF20E) -> D1_DOC)
 			endif
 
-			// -------------------------------
 			// Imprime tipo 20 da nota fiscal
-			// -------------------------------
 			cLin:=""
 
 			cLin := cLin + "20" + left(SM0->M0_CGC,14)
@@ -707,7 +700,7 @@ Static Function _Tipo20D ()
 
 			cLin += _sMes
 			cLin += _sAno
-			cLin += (_sNF20E) -> F4_VASISEN
+			cLin += (_sNF20E) -> F4_VASITO
 			cLin += strzero(val((_sNF20E) -> D1_DOC),10)
 			cLin += _sDestino
 			cLin += _sTipoDocF
@@ -718,7 +711,7 @@ Static Function _Tipo20D ()
 
 			_sNFI    := (_sNF20E) -> D1_DOC
 			_sSerieI := (_sNF20E) -> D1_SERIE
-			_sOperI  := (_sNF20E) -> F4_VASISEN
+			_sOperI  := (_sNF20E) -> F4_VASITO
 			_sCodCR  := (_sNF20E) -> CODCRSIS
 			
 			do while (! (_sNF20E) -> (eof ()) .AND. _sNF  == _sNFI .AND. _sSerie == _sSerieI .AND. _sOper == _sOperI)
@@ -737,8 +730,8 @@ Static Function _Tipo20D ()
 				if val (x_Litros) == 0
 					_Erro ("Produto '" + alltrim ((_sNF20E) -> D1_COD) + "' (cod. sisdeclara '" + alltrim (x_CODPRD) + "') nao tem litragem informada no cadastro, ou a NF de Compra '" + (_sNF20E) -> D1_DOC + "' esta' com quantidade zerada.")
 				endif
-				if empty ((_sNF20E) -> F4_VASISEN)
-					_Erro ("Campo '" + alltrim (RetTitle ("F4_VASISEN")) + "' nao informado no TES " + (_sNF20E) -> D1_TES + ". Contate setor fiscal.")
+				if empty ((_sNF20E) -> F4_VASITO)
+					_Erro ("Campo '" + alltrim (RetTitle ("F4_VASITO")) + "' nao informado no TES " + (_sNF20E) -> D1_TES + ". Contate setor fiscal.")
 				endif
 
 				// Somatorio para mostrar no final total por operação
@@ -750,9 +743,7 @@ Static Function _Tipo20D ()
 
 				_xTotLit += val (x_LITROS)
 
-				// -------------------------------
 				// Imprime tipo 21 da nota fiscal
-				// -------------------------------
 				cLin:=""
 				cLin:= cLin + "21" + SM0->M0_CGC + x_CODPRD + _oSisdec:Embalagem + x_LITROS +SPACE(117)
 				reclock ("_trb", .T.)
@@ -784,16 +775,15 @@ Static Function _Tipo20D ()
 				(_sNF20E) -> (dbskip ())
 				_sNFI    := (_sNF20E) -> D1_DOC
 				_sSerieI := (_sNF20E) -> D1_SERIE
-				_sOperI  := (_sNF20E) -> F4_VASISEN
+				_sOperI  := (_sNF20E) -> F4_VASITO
 
 			Enddo
 		Enddo
 	endif
 Return
-
-
+//
 // --------------------------------------------------------------------------
-// Movimentacao a granel Saidas.
+// Movimentacao a granel Saidas
 Static Function _Tipo30S ()
 	local _sTipoDocF := ''
 	local _sQuery    := ""
@@ -907,7 +897,7 @@ Static Function _Tipo30S ()
 			_Erro ("Saidas a granel: Registro no M.A. nao informado no cadastro do cliente/fornecedor '" + alltrim ((_sAliasQ) -> nome) + "' (CNPJ " + (_sAliasQ) -> CNPJ + "). Contate setor comercial.")
 		endif
 		if empty ((_sAliasQ) -> ZQ_TPOPER) .or. (_sAliasQ) -> ZQ_TPOPER == '99'
-			_Erro ("NF " + (_sAliasQ) -> f2_doc + ": Tipo de operacao (" + (_sAliasQ) -> zq_tpoper + ") nao informada ou invalida. Verifique guia '" + (_sAliasQ) -> zq_numero + "' e, possivelmente, o TES '" + (_sAliasQ) -> D2_TES + "' (campos '" + alltrim (RetTitle ("F4_VASISDE")) + "' e '" + alltrim (RetTitle ("F4_VASISEN")) + "')")
+			_Erro ("NF " + (_sAliasQ) -> f2_doc + ": Tipo de operacao (" + (_sAliasQ) -> zq_tpoper + ") nao informada ou invalida. Verifique guia '" + (_sAliasQ) -> zq_numero + "' e, possivelmente, o TES '" + (_sAliasQ) -> D2_TES + "' (Campo '" + alltrim (RetTitle ("F4_VASITO")) + "')")
 		endif
   
 		if empty ((_sAliasQ) -> ZQ_NUMLAB)
@@ -919,11 +909,6 @@ Static Function _Tipo30S ()
 		// Gera linha com o cabecalho da nota
 		cLin := ""
 		cLin += "30" + U_TamFixo (SM0->M0_CGC, 14)
-		//if empty ((_sAliasQ) -> ZQ_NUMLAB)
-		//	cLin += '0000' + (_sAliasQ) -> ZQ_NUMERO
-		//else
-		//	cLin += strzero (val ((_sAliasQ) -> ZQ_NUMLAB), 10)
-		//endif
 		cLin += _sGuia
 		cLin += strzero (val ((_sAliasQ) -> F2_DOC), 10)
 		cLin += _sDestino
@@ -955,15 +940,14 @@ Static Function _Tipo30S ()
 			x_LITROS = (_sAliasQ) -> Litros
 			cLin := ""
 			cLin += "31" + U_TamFixo (SM0->M0_CGC, 14)
-			//cLin += U_TamFixo (_oSisdec:CodSisd, 15)
 			cLin += U_TamFixo (x_CODPRD, 15)
 			cLin += iif ((_sAliasQ) -> ZR_EMBALAG == "T", "04", iif ((_sAliasQ) -> ZR_EMBALAG == "B", "03", "??"))
-			//cLin += strzero (round ((_sAliasQ) -> Litros * 100, 0), 10)
 			cLin += strzero (round (x_LITROS * 100, 0), 10)
 			cLin += space (117)
 			reclock ("_trb", .T.)
 			_trb -> grupo = '30'
 			_trb -> dados = cLin
+
 			if mv_par08 == 1
 				_trb -> origem    = 'GUIA_SAIDA'
 				_trb -> dtmovto   = stod ((_sAliasQ)-> F2_EMISSAO)
@@ -979,6 +963,7 @@ Static Function _Tipo30S ()
 				_trb -> CR        = x_CODPRD
 				_trb -> litros    = x_LITROS
 			endif
+
 			msunlock ()
 			_xTotLin ++
 
@@ -998,13 +983,10 @@ Static Function _Tipo30S ()
 			(_sAliasQ) -> (dbskip ())
 		enddo
 	enddo
-
 return
-
-
-
+//
 // --------------------------------------------------------------------------
-// Movimentacao a granel Entradas.
+// Movimentacao a granel Entradas
 Static Function _Tipo30E ()
 	local _sTipoDocF := ''
 	local _sQuery    := ""
@@ -1024,7 +1006,7 @@ Static Function _Tipo30E ()
 	if _lSoh1Reg
 		_sQuery += " TOP 1 "
 	endif
-	_sQuery +=        " F1_DOC, F1_EST, D1_COD, F1_SERIE, F1_VAGUIA, F4_VASISDE, F1_FORNECE, F1_LOJA, F1_DTDIGIT, D1_DOC, D1_TIPO, "
+	_sQuery +=        " F1_DOC, F1_EST, D1_COD, F1_SERIE, F1_VAGUIA, F4_VASITO, F1_FORNECE, F1_LOJA, F1_DTDIGIT, D1_DOC, D1_TIPO, "
 	_sQuery +=        " CASE WHEN SD1.D1_TIPO IN ('B', 'D') THEN A1_VAREGMA ELSE A2_VAREGMA END AS REG_MA,"
 	_sQuery +=        " CASE WHEN SD1.D1_TIPO IN ('B', 'D') THEN A1_CGC     ELSE A2_CGC     END AS CNPJ, "
 	_sQuery +=        " CASE WHEN SD1.D1_TIPO IN ('B', 'D') THEN A1_NOME    ELSE A2_NOME    END AS NOME, "
@@ -1047,7 +1029,7 @@ Static Function _Tipo30E ()
 	_sQuery +=  " WHERE SF1.D_E_L_E_T_ = ''"
 	_sQuery +=    " AND SF4.D_E_L_E_T_ = '' "
 	_sQuery +=    " AND SD1.D1_TES     = SF4.F4_CODIGO "
-	_sQuery +=    " AND SF4.F4_VASISDE <> '99' "
+	_sQuery +=    " AND SF4.F4_VASITO <> '99' "
 	_sQuery +=    " AND SD1.D_E_L_E_T_ = ''"
 	_sQuery +=    " AND SB1.D_E_L_E_T_ = '' "
 	_sQuery +=    " AND SB5.D_E_L_E_T_ = '' "
@@ -1134,12 +1116,11 @@ Static Function _Tipo30E ()
 		// Gera linha com o cabecalho da nota
 		cLin := ""
 		cLin += "30" + U_TamFixo (SM0->M0_CGC, 14)
-		//cLin += '0000' + (_sAliasQ) -> F1_VAGUIA
 		cLin += _sGuia
 		cLin += strzero (val ((_sAliasQ) -> F1_DOC), 10)
 		cLin += _sDestino
 		cLin += substr ((_sAliasQ) -> F1_DTDIGIT, 5, 2) + substr ((_sAliasQ) -> F1_DTDIGIT, 1, 4)
-		cLin += (_sAliasQ) -> F4_VASISDE
+		cLin += (_sAliasQ) -> F4_VASITO
 		cLin += U_TamFixo ((_sAliasQ) -> NOME, 40)
 		cLin += U_TamFixo ((_sAliasQ) -> REG_MA, 8)
 		cLin += U_TamFixo ((_sAliasQ) -> CNPJ, 14)
@@ -1160,8 +1141,8 @@ Static Function _Tipo30E ()
 				_Erro ("Litragem zerada para o produto '" + alltrim ((_sAliasQ) -> d1_cod) + "'. Verifique se o campo '" + alltrim (RetTitle ("B1_LITROS")) + "' esta informado em seu cadastro.")
 			endif
 
-			if empty ((_sAliasQ) -> F4_VASISDE)
-				_Erro ("Campo '" + alltrim (RetTitle ("F4_VASISDE")) + "' nao informado no TES " + (_sAliasQ) -> D1_TES + ". Contate setor fiscal.")
+			if empty ((_sAliasQ) -> F4_VASITO)
+				_Erro ("Campo '" + alltrim (RetTitle ("F4_VASITO")) + "' nao informado no TES " + (_sAliasQ) -> D1_TES + ". Contate setor fiscal.")
 			endif
 
 			_oSisdec := ClsSisd ():New ((_sAliasQ) -> d1_cod, 'SB5', (_sAliasQ) -> d1_filial)
@@ -1173,15 +1154,14 @@ Static Function _Tipo30E ()
 			x_LITROS = (_sAliasQ) -> Litros
 			cLin := ""
 			cLin += "31" + U_TamFixo (SM0->M0_CGC, 14)
-			//cLin += U_TamFixo (_oSisdec:CodSisd, 15)
 			cLin += U_TamFixo (x_CODPRD, 15)
 			cLin += "04"
-			//cLin += strzero (round ((_sAliasQ) -> Litros * 100, 0), 10)
 			cLin += strzero (round (x_LITROS * 100, 0), 10)
 			cLin += space (117)
 			reclock ("_trb", .T.)
 			_trb -> grupo = '30'
 			_trb -> dados = cLin
+
 			if mv_par08 == 1
 				_trb -> origem    = 'GUIA_ENTRADA'
 				_trb -> dtmovto   = stod ((_sAliasQ)-> f1_dtdigit)
@@ -1197,13 +1177,14 @@ Static Function _Tipo30E ()
 				_trb -> CR        = x_CODPRD
 				_trb -> litros    = x_LITROS
 			endif
+
 			msunlock ()
 			_xTotLin ++
 
 			_xTotLit += round ((_sAliasQ) -> Litros * 100, 0)
 
 			// Somatorio para mostrar no final total por operação
-			_sPos = ascan (_aTotOper, {|_aVal| _aVal [1] == "30" .AND. _aVal [2] == (_sAliasQ) -> F4_VASISDE })
+			_sPos = ascan (_aTotOper, {|_aVal| _aVal [1] == "30" .AND. _aVal [2] == (_sAliasQ) -> F4_VASITO })
 			if _sPos > 0
 				_aTotOper [_sPos, 4] += round ((_sAliasQ) -> Litros, 0)
 			endif
@@ -1212,17 +1193,13 @@ Static Function _Tipo30E ()
 			if ascan (_aProdutos, (_sAliasQ) -> D1_COD) == 0
 				aadd (_aProdutos, (_sAliasQ) -> D1_COD)
 			endif
-
 			(_sAliasQ) -> (dbskip ())
 		enddo
 	enddo
-
 return
-
-
-
+//
 // --------------------------------------------------------------------------
-// Notas de movimentacao de uva.
+// Notas de movimentacao de uva
 Static Function _Tipo60 ()
 	local _sCNPJ     := ""
 	local _sEmpresa  := ""
@@ -1243,9 +1220,9 @@ Static Function _Tipo60 ()
 	incproc ('Registro(s) ' + procname ())
 	cLin:=""
 
-	_sCposV   = " 'VIEW' AS ORIGEM,                               V.SAFRA,                 V.DATA,                 V.ASSOCIADO,              V.LOJA_ASSOC,             V.DOC,               V.SERIE,     V.CAD_VITIC,               V.PESO_LIQ,              V.GRAU,                V.VALOR_UNIT,             V.PRODUTO, SA2.A2_TIPO AS TIPO_CF, SA2.A2_CGC AS CGC, SA2.A2_INSCR AS INSCR, SA2.A2_COD_MUN AS COD_MUN, SA2.A2_NOME AS NOME_CF, SA2.A2_COD AS CLIFOR, SA2.A2_LOJA AS LOJA, SA2.A2_VAREGMA AS REGMA, B5_VATPSIS, SB1.B1_VACOR, B5_VAVPSIS, SB1.B1_COD, SB1.B1_DESC, '' AS F4_VASISDE "
-	_sCposSD1 = " 'SD1'  AS ORIGEM, SUBSTRING (D1_DTDIGIT, 1, 4) AS SAFRA, SD1.D1_DTDIGIT AS DATA, SD1.D1_FORNECE AS ASSOCIADO, SD1.D1_LOJA AS LOJA_ASSOC, SD1.D1_DOC AS DOC, SD1.D1_SERIE AS SERIE, '' AS CAD_VITIC, SD1.D1_QUANT AS PESO_LIQ, SD1.D1_GRAU AS GRAU, SD1.D1_VUNIT  AS VALOR_UNIT, SD1.D1_COD AS PRODUTO, SA2.A2_TIPO AS TIPO_CF, SD1.D1_DOC AS DOC, SA2.A2_INSCR AS INSCR, SA2.A2_COD_MUN AS COD_MUN, SA2.A2_NOME AS NOME_CF, SA2.A2_COD AS CLIFOR, SA2.A2_LOJA AS LOJA, SA2.A2_VAREGMA AS REGMA, B5_VATPSIS, SB1.B1_VACOR, B5_VAVPSIS, SB1.B1_COD, SB1.B1_DESC, F4_VASISDE "
-	_sCposSD2 = " 'SD2'  AS ORIGEM, SUBSTRING (D2_EMISSAO, 1, 4) AS SAFRA, SD2.D2_EMISSAO AS DATA, SD2.D2_CLIENTE AS ASSOCIADO, SD2.D2_LOJA AS LOJA_ASSOC, SD2.D2_DOC AS DOC, SD2.D2_SERIE AS SERIE, '' AS CAD_VITIC, SD2.D2_QUANT AS PESO_LIQ, '14.0'      AS GRAU, SD2.D2_PRCVEN AS VALOR_UNIT, SD2.D2_COD AS PRODUTO, SA1.A1_TIPO AS TIPO_CF, SD2.D2_DOC AS DOC, SA1.A1_INSCR AS INSCR, SA1.A1_COD_MUN AS COD_MUN, SA1.A1_NOME AS NOME_CF, SA1.A1_COD AS CLIFOR, SA1.A1_LOJA AS LOJA, SA1.A1_VAREGMA AS REGMA, B5_VATPSIS, SB1.B1_VACOR, B5_VAVPSIS, SB1.B1_COD, SB1.B1_DESC, F4_VASISDE "
+	_sCposV   = " 'VIEW' AS ORIGEM,                               V.SAFRA,                 V.DATA,                 V.ASSOCIADO,              V.LOJA_ASSOC,             V.DOC,               V.SERIE,     V.CAD_VITIC,               V.PESO_LIQ,              V.GRAU,                V.VALOR_UNIT,             V.PRODUTO, SA2.A2_TIPO AS TIPO_CF, SA2.A2_CGC AS CGC, SA2.A2_INSCR AS INSCR, SA2.A2_COD_MUN AS COD_MUN, SA2.A2_NOME AS NOME_CF, SA2.A2_COD AS CLIFOR, SA2.A2_LOJA AS LOJA, SA2.A2_VAREGMA AS REGMA, B5_VATPSIS, SB1.B1_VACOR, B5_VAVPSIS, SB1.B1_COD, SB1.B1_DESC, '' AS F4_VASITO "
+	_sCposSD1 = " 'SD1'  AS ORIGEM, SUBSTRING (D1_DTDIGIT, 1, 4) AS SAFRA, SD1.D1_DTDIGIT AS DATA, SD1.D1_FORNECE AS ASSOCIADO, SD1.D1_LOJA AS LOJA_ASSOC, SD1.D1_DOC AS DOC, SD1.D1_SERIE AS SERIE, '' AS CAD_VITIC, SD1.D1_QUANT AS PESO_LIQ, SD1.D1_GRAU AS GRAU, SD1.D1_VUNIT  AS VALOR_UNIT, SD1.D1_COD AS PRODUTO, SA2.A2_TIPO AS TIPO_CF, SD1.D1_DOC AS DOC, SA2.A2_INSCR AS INSCR, SA2.A2_COD_MUN AS COD_MUN, SA2.A2_NOME AS NOME_CF, SA2.A2_COD AS CLIFOR, SA2.A2_LOJA AS LOJA, SA2.A2_VAREGMA AS REGMA, B5_VATPSIS, SB1.B1_VACOR, B5_VAVPSIS, SB1.B1_COD, SB1.B1_DESC, F4_VASITO "
+	_sCposSD2 = " 'SD2'  AS ORIGEM, SUBSTRING (D2_EMISSAO, 1, 4) AS SAFRA, SD2.D2_EMISSAO AS DATA, SD2.D2_CLIENTE AS ASSOCIADO, SD2.D2_LOJA AS LOJA_ASSOC, SD2.D2_DOC AS DOC, SD2.D2_SERIE AS SERIE, '' AS CAD_VITIC, SD2.D2_QUANT AS PESO_LIQ, '14.0'      AS GRAU, SD2.D2_PRCVEN AS VALOR_UNIT, SD2.D2_COD AS PRODUTO, SA1.A1_TIPO AS TIPO_CF, SD2.D2_DOC AS DOC, SA1.A1_INSCR AS INSCR, SA1.A1_COD_MUN AS COD_MUN, SA1.A1_NOME AS NOME_CF, SA1.A1_COD AS CLIFOR, SA1.A1_LOJA AS LOJA, SA1.A1_VAREGMA AS REGMA, B5_VATPSIS, SB1.B1_VACOR, B5_VAVPSIS, SB1.B1_COD, SB1.B1_DESC, F4_VASITO "
 
 	_oSQL := ClsSQL():New ()
 	_oSQL:_sQuery := ""
@@ -1262,7 +1239,6 @@ Static Function _Tipo60 ()
 	_oSQL:_sQuery +=  " WHERE V.DATA         BETWEEN '" + dtos (mv_par01) + "' AND '" + dtos (mv_par02) + "'"
 	_oSQL:_sQuery +=    " AND V.FILIAL       = '" + cFilAnt + "'"
 
-//	_oSQL:_sQuery +=    " AND V.TIPO_NF      IN ('E', 'P')"
 	if mv_par01 >= stod ('20210101')  // A partir desta safra geramos as notas como 'compra'.
 		_oSQL:_sQuery +=    " AND V.TIPO_NF      IN ('C', 'P')"
 	else
@@ -1349,6 +1325,7 @@ Static Function _Tipo60 ()
 	_sAliasQ = _oSQL:Qry2Trb ()
 	procregua ((_sAliasQ) -> (reccount ()))
 	(_sAliasQ) -> (dbgotop ())
+
 	do while ! (_sAliasQ) -> (eof ())
 
 		// Controla quebra por NF
@@ -1368,7 +1345,6 @@ Static Function _Tipo60 ()
 			_sInscMA  := U_TamFixo ((_sAliasQ) -> regma, 8, " ")
 			if empty (_sInscMA)
 				_Aviso ("Fornecedor/Fornecedor " + alltrim ((_sAliasQ) -> clifor) + " e' do tipo Juridico. O campo '" + alltrim (RetTitle ("A2_VAREGMA")) + "' deve ser informado. Contate setor responsavel.")
-//				_Erro ("Fornecedor " + alltrim ((_sAliasQ) -> clifor) + " e' do tipo Juridico. O campo '" + alltrim (RetTitle ("A2_VAREGMA")) + "' deve ser informado. Contate setor comercial.")
 			endif
 		elseif alltrim ((_sAliasQ) -> origem) == 'VIEW' .and. (_sAliasQ) -> tipo_cf == "F"
 			_xOPER    := "05"
@@ -1386,7 +1362,6 @@ Static Function _Tipo60 ()
 			_sInscMA  := U_TamFixo ((_sAliasQ) -> regma, 8, " ")
 			if empty (_sInscMA)
 				_Aviso ("Fornecedor/Fornecedor " + alltrim ((_sAliasQ) -> clifor) + " e' do tipo Juridico. O campo '" + alltrim (RetTitle ("A2_VAREGMA")) + "' deve ser informado. Contate setor responsavel.")
-//				_Erro ("Fornecedor " + alltrim ((_sAliasQ) -> clifor) + " e' do tipo Juridico. O campo '" + alltrim (RetTitle ("A2_VAREGMA")) + "' deve ser informado. Contate setor comercial.")
 			endif
 		elseif alltrim ((_sAliasQ) -> origem) == 'SD2'
 			_xOPER    := "17"  // SAÍDA P/ INDUSTRIALIZAÇÃO
@@ -1397,20 +1372,17 @@ Static Function _Tipo60 ()
 			_sInscMA  := U_TamFixo ((_sAliasQ) -> regma, 8, " ")
 			if empty (_sInscMA)
 				_Aviso ("Fornecedor/Fornecedor " + alltrim ((_sAliasQ) -> clifor) + " e' do tipo Juridico. O campo '" + alltrim (RetTitle ("A2_VAREGMA")) + "' deve ser informado. Contate setor responsavel.")
-//				_Erro ("Fornecedor " + alltrim ((_sAliasQ) -> clifor) + " e' do tipo Juridico. O campo '" + alltrim (RetTitle ("A2_VAREGMA")) + "' deve ser informado. Contate setor comercial.")
 			endif
 		endif
 
 		if (_sAliasQ) -> tipo_cf == "J" .and. Empty(_sInscMA)
 			_Aviso ("Fornecedor/Lj "+(_sAliasQ) -> clifor+"/"+(_sAliasQ) -> loja+" Nao possui inscricao no MA (campo '" + alltrim (RetTitle ("A2_VAREGMA")) + "'). Atualize cadastro e repita a rotina.")
-//			_Erro ("Fornecedor/Lj  "+(_sAliasQ) -> clifor+"/"+(_sAliasQ) -> loja+" Nao possui inscricao no MA (campo '" + alltrim (RetTitle ("A2_VAREGMA")) + "'). Atualize cadastro e repita a rotina.")
 			lValida:=.F.
 		endif
 
 		_xMUNPRO  := "043" + (_sAliasQ) -> cod_mun
 		If Empty(_xMUNPRO)
 			_Aviso ("Fornecedor/Lj "+(_sAliasQ) -> clifor+"/"+(_sAliasQ) -> loja+" Nao possui o Codigo do Municipio. Atualize cadastro e repita a rotina.")
-//			_Erro ("Fornecedor/Lj  "+(_sAliasQ) -> clifor+"/"+(_sAliasQ) -> loja+" Nao possui o Codigo do Municipio. Atualize cadastro e repita a rotina.")
 			lValida:=.F.
 		Endif
 
@@ -1431,7 +1403,6 @@ Static Function _Tipo60 ()
 		_GravaLin ('60', cLin)
 
 		// Itens da nota
-//		do while ! (_sAliasQ) -> (eof ()) .and. (_sAliasQ) -> doc == _sDoc .and. (_sAliasQ) -> serie == _sSerie
 		do while ! (_sAliasQ) -> (eof ()) ;
 			.and. (_sAliasQ) -> origem == _sOrigem ;
 			.and. (_sAliasQ) -> data == _dData ;
@@ -1475,7 +1446,6 @@ Static Function _Tipo60 ()
 			_nTotLit61 := _nTotLit61 + xLITROS
 
 			//Somatorio para mostrar no final total por operação
-//			_sPos = ascan (_aTotOper, {|_aVal| _aVal [1] == "60" })
 			_sPos = ascan (_aTotOper, {|_aVal| _aVal [1] == "60" .and. _aVal [2] == _xOPER})
 			if _sPos > 0
 				_aTotOper [_sPos, 4] += round (xLITROS, 0)
@@ -1486,18 +1456,15 @@ Static Function _Tipo60 ()
 	Enddo
 	(_sAliasQ) -> (dbclosearea ())
 Return
-
-
-
+//
 // --------------------------------------------------------------------------
+// Totalizadores
 Static Function _Tipo90()
 	incproc ('Registro(s) ' + procname ())
 	cLin := "90" + StrZero(_xTotLit,20) + StrZero((_nTotLit61)*100, 20)+ StrZero((_nTotNF61*10000), 20) + StrZero(_xTotLin + 1, 10) + Space(88)
 	_GravaLin ('90', cLin)
 Return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Valida o TudoOk do Processamento
 Static Function _TudoOk()
@@ -1505,42 +1472,38 @@ Static Function _TudoOk()
 	Local _lRet     := .T.
 	RestArea(_aArea)
 Return (_lRet)
-
-
-
+//
 // --------------------------------------------------------------------------
 // Verifica se eh cupom fiscal
 Static Function _TipoDocF (_sSerie)
 	local _sRet := space (1)
+
 	if _sSerie $ GetMV ("VA_SERIECF")
 		_sRet = "3"  // Cupom fiscal
 	else
 		_sRet = "1"  // NF
 	endif
-	return _sRet
 
-
-
+return _sRet
+//
 // --------------------------------------------------------------------------
+// Msg de aviso
 static function _Aviso (_sMsg)
 	if ! _sMsg $ _sAvisos
 		u_log2 ('aviso', _sMsg)
 		_sAvisos += _sMsg + chr (13) + chr (10)
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
+// Msg de erro
 static function _Erro (_sMsg)
 	if ! _sMsg $ _sErros
 		u_log2 ('erro', _sMsg)
 		_sErros += _sMsg + chr (13) + chr (10)
 	endif
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Busca codigo do pais de destino/origem
 static function _DestOri (_sOnde, _sCod, _sLoja, _sNF, _sTipoNF)
@@ -1558,6 +1521,7 @@ static function _DestOri (_sOnde, _sCod, _sLoja, _sNF, _sTipoNF)
 			_Erro ("Fornecedor '" + _sCod + '/' + _sLoja + "' (exterior) nao tem codigo de pais informado no campo '" + alltrim (RetTitle ("A2_CODPAIS")) + "' - NF '" + _sNF + "' (tipo '" + _sTipoNF + "')")
 		endif
 	endif
+
 	if ! empty (_sPais)
 		cch -> (dbsetorder (1))  // CCH_FILIAL+CCH_CODIGO
 		if ! cch -> (dbseek (xfilial ("CCH") + _sPais, .F.))
@@ -1571,25 +1535,22 @@ static function _DestOri (_sOnde, _sCod, _sLoja, _sNF, _sTipoNF)
 		endif
 	endif
 return _sRet
-
-
-
+//
 // --------------------------------------------------------------------------
+// Grava linha
 Static Function _GravaLin (_sGrupo, _sLinha, x_CODPRD)
 	reclock ("_trb", .T.)
 	_trb -> grupo = _sGrupo
 	_trb -> dados = _sLinha
 	_xTotLin ++
 return
-
-
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
 	local _aRegsPerg := {}
 
-//                         PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                                  Help
+    //                     PERGUNT                           TIPO TAM DEC VALID F3     Opcoes                                  Help
 	aadd (_aRegsPerg, {01, "Emissao NF de                 ", "D", 8,  0,  "",   "     ", {},             ""})
 	aadd (_aRegsPerg, {02, "Emissao NF ate                ", "D", 8,  0,  "",   "     ", {},             ""})
 	aadd (_aRegsPerg, {03, "O que exportar                ", "N", 1,  0,  "",   "     ", {"Movto.mensal", "Entradas de uva"},    ""})
