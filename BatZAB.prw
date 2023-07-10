@@ -14,7 +14,7 @@
 //
 
 // ------------------------------------------------------------------------------------------------------------------------
-user function BatZAB ()
+user function BatZAB (_lSoh1)
 	local _oSQL    := NIL
 	local _nLock   := 0
 	local _aDados  := {}

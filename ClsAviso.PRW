@@ -193,7 +193,8 @@ METHOD EnviaNAWeb () Class ClsAviso
 	::Titulo = _Limpa (::Titulo)
 	::Texto  = _Limpa (::Texto)
 
-	//U_Log2 ('debug', '[' + procname () + ']Enviando para NaWeb: ' + ::Titulo)
+	// U_Log2 ('debug', '[' + procname () + ']Titulo: ' + ::Titulo)
+	// U_Log2 ('debug', '[' + procname () + ']Texto : ' + ::Texto)
 
 	_sXMLNotif := '<?xml version="1.0" encoding="utf-8"?>'
 	_sXMLNotif += '<SdtNotificacoes>'
@@ -219,7 +220,7 @@ METHOD EnviaNAWeb () Class ClsAviso
 	_sXMLNotif +=    '</SdtNotificacoesItem>'
 	_sXMLNotif += '</SdtNotificacoes>'
 
-//	U_Log2 ('debug', '[' + procname () + ']' + _sXMLNotif)
+	// U_Log2 ('debug', '[' + procname () + ']' + _sXMLNotif)
 	
 	_oWSNaWeb := WSPrcNotificacoesWS():New()
 	_oWSNaWeb:cEntrada := _sXMLNotif

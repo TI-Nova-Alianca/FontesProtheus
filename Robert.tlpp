@@ -21,6 +21,8 @@
 // Campos de DAP no SA2 (conferir os programas antes)
 // Adicionar CT2 para compactacao no BATLIMP
 // adicionar tabelas DRE INDL para compactacao
+// Criar verificacao de campos que devem estar 'usados': 
+//    D1_VALIRR, D1_VALPIS, D1_VALCOF, D1_VALCSL, D1_BASEIRR, D1_BASEPIS, D1_BASECOF, D1_BASECSL para evitar erro no MATA103REINF
 //
 
 #include "protheus.ch"
@@ -38,7 +40,7 @@ user function robert ()
 //	u_perfmon ('I', 'Prep_env_' + cValToChar (GetServerPort ()))
 
 	if type ('__cUserId') == 'U' .or. type ('cUserName') == 'U'
-		prepare environment empresa '01' filial '07' modulo 'FIN'
+		prepare environment empresa '01' filial '01' modulo 'FIN'
 		private cModulo   := 'FIN'
 		private __cUserId := "000210"
 		private cUserName := "robert.koch"
@@ -1821,7 +1823,8 @@ return
 
 // --------------------------------------------------------------------------
 static function _aviso ()
-	// u_batzab ()
+	u_batzab ()
+	/*
 	_oAviso := ClsAviso ():New ()
 	_oAviso:Tipo       = 'I'
 	_oAviso:DestinAvis = 'robert.koch'
@@ -1832,10 +1835,27 @@ static function _aviso ()
 	_oAviso:InfoSessao = .T.
 	_oAviso:IntegNaWeb = .F.  // Nao tenta integrar neste momento (nao ha urgencia)
 	_oAviso:Grava ()
+	*/
 return
 
 // --------------------------------------------------------------------------
 static function _va_xls ()
+//	// Producao em litros
+//	Private cPerg   := "VAXLS4"
+//	U_GravaSX1 (cPerg, '01', '')
+//	U_GravaSX1 (cPerg, '02', 'z')
+//	U_GravaSX1 (cPerg, '03', '')
+//	U_GravaSX1 (cPerg, '04', 'z')
+//	U_GravaSX1 (cPerg, '05', '')
+//	U_GravaSX1 (cPerg, '06', 'z')
+//	U_GravaSX1 (cPerg, '07', date () - 10)
+//	U_GravaSX1 (cPerg, '08', date ())
+//	U_GravaSX1 (cPerg, '09', '')
+//	U_GravaSX1 (cPerg, '10', 'z')
+//	U_GravaSX1 (cPerg, '11', '')
+//	U_GravaSX1 (cPerg, '12', 'z')
+//	u_va_xls4 (.T.)
+
 //	// Estoque com codigo de Sisdevin
 //	Private cPerg   := "VAXLS15"
 //	U_GravaSX1 (cPerg, '01', '2445')
@@ -1859,6 +1879,20 @@ static function _va_xls ()
 //	U_GravaSX1 (cPerg, '10', 2)  // lista ultima safra
 //	U_GravaSX1 (cPerg, '11', stod ('20190311'))
 //	U_VA_XLS19 (.t.)
+
+	Private cPerg   := "VAXLS26"
+	U_GravaSX1 (cPerg, '01', cfilant)      // Filial inicial
+	U_GravaSX1 (cPerg, '02', cfilant)      // Filial final
+	U_GravaSX1 (cPerg, '03', date() - 10)  // Data inicial
+	U_GravaSX1 (cPerg, '04', date ())      // Data final
+	U_GravaSX1 (cPerg, '05', '')           // Produto (produzido) inicial
+	U_GravaSX1 (cPerg, '06', 'z')          // Produto (produzido) final
+	U_GravaSX1 (cPerg, '07', '')           // Componente (consumido) inicial
+	U_GravaSX1 (cPerg, '08', 'z')          // Componente (consumido) final
+	U_GravaSX1 (cPerg, '09', '')           // Numero OP inicial
+	U_GravaSX1 (cPerg, '10', 'z')          // Numero OP final
+	U_GravaSX1 (cPerg, '11', 3)            // Tipos de movimentos a exportar {"Producao", "Consumo/devol", "Todos"}
+	U_VA_XLS26 (.t.)
 
 //	Private cPerg   := "VAXLS30"
 //	U_GravaSX1 (cPerg, '01', '000161')  // assoc 
@@ -1922,18 +1956,13 @@ static function _va_xls ()
 //	U_GravaSX1 (cPerg, '03', 'RS-866/2020')  // codigo CR
 //	u_va_xls38 (.T.)
 
-// Precos calculados de uva safra
-_aRetPrc = aclone (U_PrcUva23 ('01', '9959           ', 14, 'B', 'L', .F., .F.))
-u_log (_aRetPrc)
-return
-
-Private cPerg   := "VAXLS40"
-U_GravaSX1 (cPerg, '01', '2023')  // safra
-U_GravaSX1 (cPerg, '02', 2)  // 'Comuns', 'Finas espaldeira', 'Finas latadas', 'Finas SC'
-U_GravaSX1 (cPerg, '03', 2)  // Entrada/Compra/MOC
-U_GravaSX1 (cPerg, '04', 2)  // Todos(decimais) / Apenas inteiros
-U_GravaSX1 (cPerg, '05', 2)  // Descricao completa/resumida
-u_va_xls40 (.T.)
+// Private cPerg   := "VAXLS40"
+// U_GravaSX1 (cPerg, '01', '2023')  // safra
+// U_GravaSX1 (cPerg, '02', 2)  // 'Comuns', 'Finas espaldeira', 'Finas latadas', 'Finas SC'
+// U_GravaSX1 (cPerg, '03', 2)  // Entrada/Compra/MOC
+// U_GravaSX1 (cPerg, '04', 2)  // Todos(decimais) / Apenas inteiros
+// U_GravaSX1 (cPerg, '05', 2)  // Descricao completa/resumida
+// u_va_xls40 (.T.)
 
 //	Private cPerg   := "VAXLS41"
 //	U_GravaSX1 (cPerg, '01', '')  // assoc 
@@ -1989,8 +2018,8 @@ u_va_xls40 (.T.)
 
 //	// Produtos para planilha GTIN (cadastro nacional de produtos - GS1)
 //	Private cPerg   := "VAXLS61"
-//	U_GravaSX1 (cPerg, '01', '')
-//	U_GravaSX1 (cPerg, '02', 'z')
+//	U_GravaSX1 (cPerg, '01', '30744')
+//	U_GravaSX1 (cPerg, '02', '30744')
 //	u_va_xls61 (.T.)
 
 	// // exporta dados de OS
@@ -2833,6 +2862,16 @@ return
 // Testes verificacoes genericas.
 static function _verif ()
 	local _sHtmHlp := ''
+	// _oVerif := ClsVerif():New (4)
+	// _oVerif:SetParam ('01', stod ('20230401'))
+	// _oVerif:SetParam ('02', stod ('20230630'))
+	// _oVerif:SetParam ('03', '')
+	// _oVerif:SetParam ('04', 'z')
+	// _oVerif := ClsVerif():New (24)
+	// _oVerif:SetParam ('01', '09189201001  ')
+	// _oVerif:SetParam ('02', '09189201001  ')
+	// _oVerif:SetParam ('03', '')
+	// _oVerif:SetParam ('04', 'z')
 	// _oVerif := ClsVerif():New (25)
 	// _oVerif:SetParam ('01', '2017')
 	// _oVerif:SetParam ('02', '')
@@ -2841,28 +2880,23 @@ static function _verif ()
 	// _oVerif:SetParam ('05', '028')
 	// _oVerif:SetParam ('06', '077')
 	// _oVerif:SetParam ('07', '000017')
-	// _oVerif := ClsVerif():New (24)
-	// _oVerif:SetParam ('01', '09189201001  ')
-	// _oVerif:SetParam ('02', '09189201001  ')
-	// _oVerif:SetParam ('03', '')
-	// _oVerif:SetParam ('04', 'z')
-	/*
-	_oVerif := ClsVerif():New (95)
+	_oVerif := ClsVerif():New (26)
+
+	//_oVerif := ClsVerif():New (95)
 	//_oVerif:SetParam ('01', date () - 30)
 	//_oVerif:SetParam ('02', date ())
 	//_oVerif:SetParam ('03', '')
 	//_oVerif:SetParam ('04', 'z')
-	//	//U_Log2 ('debug', '[' + procname () + ']ult ver:' + cvaltochar (_oVerif:UltVerif))
-		if _oVerif:Executa ()
-			u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
-			u_log2 ('debug', _oVerif:Result)
-	//		//u_acolsxls (_oVerif:Result)
-		else
-			u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
-		endif
-	*/
-	_oVerif := ClsVerif():New ()
-	_sHtmHlp = _oVerif:GeraHelp ()
+	if _oVerif:Executa ()
+		u_log2 ('debug', 'Pendencias do tipo ' + _oVerif:Descricao)
+		u_log2 ('debug', _oVerif:Result)
+//		//u_acolsxls (_oVerif:Result)
+	else
+		u_log2 ('erro', 'Erro na verificacao: ' + _oVerif:UltMsg)
+	endif
+
+	//_oVerif := ClsVerif():New ()
+	//_sHtmHlp = _oVerif:GeraHelp ()
 
 	// Exporta para arquivo, durante a implementacao, para conferencia.
 	_sArq := 'c:\temp\verif.htm'
@@ -2872,7 +2906,6 @@ static function _verif ()
 	_nHdl = fcreate (_sArq, 0)
 	fwrite (_nHdl, _sHtmHlp)
 	fclose (_nHdl)
-
 
 	//U_MudaLog ('U_BatVerif.log')
 	//u_batverif ()

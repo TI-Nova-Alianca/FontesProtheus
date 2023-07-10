@@ -50,14 +50,14 @@ WSMETHOD Execute WSSEND cEntrada WSRECEIVE cSaida WSCLIENT WSPrcNotificacoesWS
 	BEGIN WSMETHOD
 
 	// Tenho enderecos diferentes para a base de testes e a de producao.
-//	if "TESTE" $ upper (GetEnvServer()) .or. "R22" $ upper (GetEnvServer()) .or. "R23" $ upper (GetEnvServer())
-	if U_AmbTeste ()
-		U_Log2 ('debug', '[' + procname () + ']Estou definindo web service para base teste')
-		_sURI = "http://naweb17.novaalianca.coop.br/prcnotificacoesws.aspx"
-	else
-		_sURI = "http://naweb.novaalianca.coop.br/prcnotificacoesws.aspx"
-		//U_Log2 ('aviso', '[' + procname () + ']Ainda estou usando naweb17 seria bom ir para naweb oficial.')
-	endif
+	// ESTAMOS COM PROBLEMA NO WS OFICIAL --> if U_AmbTeste ()
+	// ESTAMOS COM PROBLEMA NO WS OFICIAL --> 	U_Log2 ('debug', '[' + procname () + ']Estou definindo web service para base teste')
+//		_sURI = "http://naweb17.novaalianca.coop.br/prcnotificacoesws.aspx"
+		_sURI = "https://naweb17.novaalianca.coop.br/prcnotificacoesws.aspx"
+	// ESTAMOS COM PROBLEMA NO WS OFICIAL --> else
+	// ESTAMOS COM PROBLEMA NO WS OFICIAL --> 	_sURI = "http://naweb.novaalianca.coop.br/prcnotificacoesws.aspx"
+	// ESTAMOS COM PROBLEMA NO WS OFICIAL --> 	//U_Log2 ('aviso', '[' + procname () + ']Ainda estou usando naweb17 seria bom ir para naweb oficial.')
+	// ESTAMOS COM PROBLEMA NO WS OFICIAL --> endif
 
 	cSoap += '<PrcNotificacoesWS.Execute xmlns="NAWeb">'
 	cSoap += WSSoapValue("Entrada", ::cEntrada, cEntrada , "string", .T. , .F., 0 , NIL, .F.,.F.) 
