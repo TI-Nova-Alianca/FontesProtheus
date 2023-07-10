@@ -2,7 +2,14 @@
 //  Autor......: Catia Cardoso
 //  Data.......: 12/02/2019
 //  Descricao..: Consulta Notas - SISDEVIN 
-// 
+//
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #consulta
+// #Descricao         #Consulta Notas - SISDEVIN 
+// #PalavasChave      #sisdevin
+// #TabelasPrincipais #SD2 #SB1 #SD1
+// #Modulos           
+//
 //  Historico de alterações
 //  04/03/2019  - Alteracao para que possa consulta a notas de entrada ou de saida atraves dessa tela
 //  04/03/2019  - Alterado o parametro das OPS p/Lista OPs SIM OU NAO - antes listava sempre e ficava muito lento
@@ -10,7 +17,9 @@
 //  04/03/2019  - incluida a coluna de litragem
 //  04/03/2019  - incluida a coluna de data de inclusao da nota
 //  29/06/2020  - Cláudia - Incluida mensagem de processamento do relatorio
-// -----------------------------------------------------------------------------------------
+//  29/06/2023  - Claudia - Alterado o impressão de tipo operação sisdevin para novo campo. GLPI:13813
+//
+// ------------------------------------------------------------------------------------------------------------------------
 
 #include "rwmake.ch"
 #include "VA_INCLU.prw"
@@ -61,10 +70,8 @@ static function _ExecQuery()
     _sQuery += "		, ROUND(SD2.D2_QUANT * B1_LITROS,2) AS LITRAGEM"
     _sQuery += "		, SD2.D2_TES    AS TES"
     _sQuery += "		, SF4.F4_TEXTO  AS TIPO_OPERACAO"
-    _sQuery += "		, SF4.F4_VASISDE  AS SIS_GRANEL"
-    _sQuery += "		, SX5Z8.X5_DESCRI AS GRAVEL_DESCR"
-    _sQuery += "		, SF4.F4_VASISEN  AS SIS_ENVASE"
-    _sQuery += "		, SX5ZE.X5_DESCRI AS ENVASE_DESCR"
+	_sQuery += "        , SF4.F4_VASITO AS SIS_TIPO_OPER "
+	_sQuery += "        , ZX557.ZX5_57DESC TIPO_OPER_DESCR "
     _sQuery += "		, SD2.D2_NFORI   AS NF_ORIG"
     _sQuery += "		, SD2.D2_SERIORI AS SERIE_ORIG"
     _sQuery += "		, ''      AS OP"
@@ -78,14 +85,13 @@ static function _ExecQuery()
 	_sQuery += "		INNER JOIN SF4010 AS SF4"
 	_sQuery += "			ON (SF4.D_E_L_E_T_ = ''"
 	_sQuery += "				AND SF4.F4_CODIGO = SD2.D2_TES)"
-	_sQuery += "		LEFT JOIN SX5010 AS SX5ZE"
-	_sQuery += "			ON (SX5ZE.D_E_L_E_T_    = ''"
-	_sQuery += "	    		AND SX5ZE.X5_TABELA = 'ZE'"
-	_sQuery += "				AND SX5ZE.X5_CHAVE  =  SF4.F4_VASISEN)"
-	_sQuery += "		LEFT JOIN SX5010 AS SX5Z8"
-	_sQuery += "			ON (SX5Z8.D_E_L_E_T_    = ''"
-	_sQuery += "	    		AND SX5Z8.X5_TABELA = 'Z8'" 
-	_sQuery += "				AND SX5Z8.X5_CHAVE  =  SF4.F4_VASISDE)" 
+	_sQuery += "		LEFT JOIN ZX5010 ZX557 "
+	_sQuery += "			ON ( "
+	_sQuery += "			ZX557.D_E_L_E_T_ = '' "
+	_sQuery += "			AND ZX557.ZX5_FILIAL = '" + xFilial("ZX5") + "'"
+	_sQuery += "			AND ZX557.ZX5_TABELA = '57' "
+	_sQuery += "			AND ZX557.ZX5_CHAVE  = SF4.F4_VASITO "
+	_sQuery += "			) "
 	_sQuery += "		LEFT JOIN SA1010 AS SA1"
 	_sQuery += "			ON (SA1.D_E_L_E_T_ = ''"
 	_sQuery += "				AND SA1.A1_COD = SD2.D2_CLIENTE"
@@ -134,10 +140,8 @@ static function _ExecQuery()
     _sQuery += "	 , ROUND(SD1.D1_QUANT * B1_LITROS,2) AS LITRAGEM"
     _sQuery += "	 , SD1.D1_TES      AS TES"
     _sQuery += "	 , SF4.F4_TEXTO    AS TIPO_OPERACAO"
-    _sQuery += "	 , SF4.F4_VASISDE  AS SIS_GRANEL"
-    _sQuery += "	 , SX5Z8.X5_DESCRI AS GRANEL_DESCR"
-    _sQuery += "	 , SF4.F4_VASISEN  AS SIS_ENVASE"
-    _sQuery += "	 , SX5ZE.X5_DESCRI AS ENVASE_DESCR"
+	_sQuery += "     , SF4.F4_VASITO AS SIS_TIPO_OPER "
+	_sQuery += "     , ZX557.ZX5_57DESC TIPO_OPER_DESCR "
     _sQuery += "	 , SD1.D1_NFORI    AS NF_ORIG"
     _sQuery += "	 , SD1.D1_SERIORI  AS SERIE_ORIG"
     _sQuery += "	 , SD1.D1_OP       AS OP"
@@ -151,14 +155,13 @@ static function _ExecQuery()
 	_sQuery += "	LEFT JOIN SF4010 AS SF4"
 	_sQuery += "		ON (SF4.D_E_L_E_T_ = ''"
 	_sQuery += "			AND SF4.F4_CODIGO = SD1.D1_TES)"
-	_sQuery += "	LEFT JOIN SX5010 AS SX5ZE"
-	_sQuery += "		ON (SX5ZE.D_E_L_E_T_    = ''"
-	_sQuery += "	    	AND SX5ZE.X5_TABELA = 'ZE'" 
-	_sQuery += "		AND SX5ZE.X5_CHAVE  =  SF4.F4_VASISEN)"
-	_sQuery += "	LEFT JOIN SX5010 AS SX5Z8"
-	_sQuery += "		ON (SX5Z8.D_E_L_E_T_    = ''"
-	_sQuery += "	    	AND SX5Z8.X5_TABELA = 'Z8'" 
-	_sQuery += "			AND SX5Z8.X5_CHAVE  =  SF4.F4_VASISDE)"
+	_sQuery += "	LEFT JOIN ZX5010 ZX557 "
+	_sQuery += "		ON ( "
+	_sQuery += "		ZX557.D_E_L_E_T_ = '' "
+	_sQuery += "		AND ZX557.ZX5_FILIAL = '" + xFilial("ZX5") + "'"
+	_sQuery += "		AND ZX557.ZX5_TABELA = '57' "
+	_sQuery += "		AND ZX557.ZX5_CHAVE  = SF4.F4_VASITO "
+	_sQuery += "		) "
 	_sQuery += "	LEFT JOIN SA1010 AS SA1"
 	_sQuery += "		ON (SA1.D_E_L_E_T_ = ''"
 	_sQuery += "			AND SA1.A1_COD = SD1.D1_FORNECE"
@@ -203,10 +206,8 @@ static function _ExecQuery()
 		_sQuery += "	    , ROUND(SD3.D3_QUANT * B1_LITROS,2) AS LITRAGEM"
 		_sQuery += "    	, '' AS TES"
 		_sQuery += "    	, 'PRODUCAO ESTABELECIMENTO' AS TIPO_OPERACAO"
-		_sQuery += "    	, '' AS SIS_GRANEL"
-		_sQuery += "    	, '' AS GRANEL_DESCR"
-		_sQuery += "    	, '' AS SIS_ENVASE"
-		_sQuery += "    	, '' AS ENVASE_DESCR"
+		_sQuery += "        , '' AS SIS_TIPO_OPER "
+		_sQuery += "        , '' AS TIPO_OPER_DESCR "
 		_sQuery += "    	, '' AS NF_ORIG"
 		_sQuery += "    	, '' AS SERIE_ORIG"
 		_sQuery += "    	, SD3.D3_OP AS OP"
@@ -230,6 +231,7 @@ static function _ExecQuery()
 		_sQuery += " WHERE C.SISDEVIN = 'S'"
 	ENDIF
 	_sQuery += " ORDER BY C.FILIAL, C.DATA, C.NOTA, C.SERIE"
+	u_log (_sQuery)
 	
 	_aDados := U_Qry2Array(_sQuery)
 	if len(_aDados) > 0 
@@ -256,13 +258,11 @@ static function _ExecQuery()
 			aadd (_aCols, {17, "Litragem"           ,  50,  "@E 9,999,999.9999"})
 			aadd (_aCols, {18, "TES"           	    ,  30,  "@!"})
 			aadd (_aCols, {19, "Descricao TES" 	    ,  30,  "@!"})
-	        aadd (_aCols, {20, "SIS-Granel"         ,  30,  "@!"})
+			aadd (_aCols, {20, "Tipo Oper. SISDEVIN",  30,  "@!"})
 	        aadd (_aCols, {21, "Descricao"          ,  30,  "@!"})
-	    	aadd (_aCols, {22, "SIS-Envasado"       ,  30,  "@!"})
-	    	aadd (_aCols, {23, "Descricao"          ,  30,  "@!"})
-	    	aadd (_aCols, {24, "NF Origem"          ,  30,  "@!"})
-	    	aadd (_aCols, {25, "Serie Origem"       ,  30,  "@!"})
-	    	aadd (_aCols, {26, "OP Associada a NF"  ,  30,  "@!"})
+	    	aadd (_aCols, {22, "NF Origem"          ,  30,  "@!"})
+	    	aadd (_aCols, {23, "Serie Origem"       ,  30,  "@!"})
+	    	aadd (_aCols, {24, "OP Associada a NF"  ,  30,  "@!"})
 	    	
 	    	_wlinha = U_F3Array (_aDados, "Consulta Notas por cliente/fornecedor - SISDEVIN", _aCols, oMainWnd:nClientWidth - 50, oMainWnd:nClientHeight -15 , "", "", .T., 'C' )
 				
@@ -276,6 +276,7 @@ static function _ExecQuery()
 		u_help("Não foram encontrados dados para consulta")
 	endif    		
 return
+//
 // --------------------------------------------------------------------------
 // Consulta detalhes da movimentacao.
 static function _ConsNotas (_wtpNF, _wDoc, _wSerie, _wClifor)
@@ -302,7 +303,7 @@ static function _ConsNotas (_wtpNF, _wDoc, _wSerie, _wClifor)
 			endif
 	endcase
 return
-
+//
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
