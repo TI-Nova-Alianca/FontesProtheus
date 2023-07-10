@@ -182,8 +182,8 @@
 // 25/05/2023 - Robert  - Validacao TL_DTINICI e TL_DTFIM aberta para o mes
 //                        atual do estoque (desde que tipo insumo = mao de obra)
 // 06/07/2023 - Robert  - Validar linhas de envase (campos *_VALINEN) - GLPI 13850
+// 10/07/2023 - Claudia - Acrescentado novo campo de tipo de operação sisdevin F4_VASITO. GLPI: 13778
 //
-
 // -------------------------------------------------------------------------------------------------------------------
 user function VA_VCpo (_sCampo)
 	local _lRet      := .T.
@@ -1179,21 +1179,12 @@ user function VA_VCpo (_sCampo)
 				_lRet = .F.
 			endif
 
-		case _sCampo $ "M->F4_VASISDE"
-			if M->F4_TIPO == "E" .AND. !M->F4_VASISDE $ "05/10/11/14/18/23/99"
-				U_Help ("Para TES de Entrada, somente pode ser informada as seguintes operacoes: 05, 10, 11, 14, 18, 23 ou 99.")
+		case _sCampo $ "M->F4_VASITO"
+			if M->F4_TIPO == "E" .AND. !M->F4_VASITO $ getmv("VA_TOSISEN")
+				U_Help ("Para TES de Entrada, somente pode ser informada as seguintes operacoes: " + getmv("VA_TOSISEN"))
 				_lRet = .F.
-			elseif M->F4_TIPO == "S" .AND. !M->F4_VASISDE $ "01/02/04/12/13/17/22/99"
-				U_Help ("Para TES de Saida, somente pode ser informada as seguintes operacoes: 01, 02, 04, 12, 13, 17, 22 ou 99.")
-				_lRet = .F.
-			endif
-
-		case _sCampo $ "M->F4_VASISEN"
-			if M->F4_TIPO == "E" .AND. !M->F4_VASISEN $ "05/10/11/14/18/23/99"
-				U_Help ("Para TES de Entrada, somente pode ser informada as seguintes operacoes: 05, 11, 14, 23 ou 99.")
-				_lRet = .F.
-			elseif M->F4_TIPO == "S" .AND. !M->F4_VASISEN $ "01/02/04/12/13/17/22/99"
-				U_Help ("Para TES de Saida, somente pode ser informada as seguintes operacoes: 01, 13, 22 ou 99.")
+			elseif M->F4_TIPO == "S" .AND. !M->F4_VASITO $ getmv("VA_TOSISSA")
+				U_Help ("Para TES de Saida, somente pode ser informada as seguintes operacoes: " + getmv("VA_TOSISSA"))
 				_lRet = .F.
 			endif
 
