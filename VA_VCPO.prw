@@ -181,10 +181,10 @@
 //                        sistema controla acessos por TM x usuario.
 // 25/05/2023 - Robert  - Validacao TL_DTINICI e TL_DTFIM aberta para o mes
 //                        atual do estoque (desde que tipo insumo = mao de obra)
+// 06/07/2023 - Robert  - Validar linhas de envase (campos *_VALINEN) - GLPI 13850
 //
 
 // -------------------------------------------------------------------------------------------------------------------
-
 user function VA_VCpo (_sCampo)
 	local _lRet      := .T.
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -465,6 +465,7 @@ user function VA_VCpo (_sCampo)
 				endif
 			endif
 
+/* Campos nao existem mais
 		case _sCampo $ "M->B1_VACSDAL/M->B1_VACSDLV/M->B1_VACSDJC/M->B1_VACSDSP/M->B1_VACSDSA"
 			_sQuery := ""
 			_sQuery += " select count (ZX5_FILIAL)"
@@ -483,6 +484,20 @@ user function VA_VCpo (_sCampo)
 				U_Help ("Codigo do Sisdeclara nao cadastrado para esta filial. Verifique tabela 12 das tabelas genericas.")
 				_lRet = .F.
 			endif
+*/
+
+		case _sCampo $ "M->B1_VALINEN/M->C2_VALINEN/M->C4_VALINEN/M->G5_VALINEN/M->HC_VALINEN"
+			sh1 -> (dbsetorder (1))
+			if ! sh1 -> (dbseek (xfilial ("SH1") + &(_sCampo), .F.))
+				u_help ("Recurso nao cadastrado na tabela SH1.",, .t.)
+				_lRet = .F.
+			else
+				if sh1 -> h1_valinen != 'S'
+					u_help ("Este recurso nao trata-se de uma linha de envase.",, .t.)
+					_lRet = .F.
+				endif
+			endif
+
 
 		case _sCampo $ "M->B1_VARMAAL"
 			_oSQL := ClsSQL ():New ()
@@ -1028,45 +1043,6 @@ user function VA_VCpo (_sCampo)
 					CriaSB2 (_aSB1[_x, 1], '02')
 				Next
 			endif
-			
-			/* Passado para MT242LOk.prw
-			If _lRet .and. IsInCallStack ("MATA242") // Validação desmontagem 
-				_lRet = .F.
-				If fbuscacpo("SB1",1,xfilial("SB1")+M->D3_Cod,"B1_CODPAI") == CProduto
-					_lRet = .T.
-				endif
-				if ! _lRet
-					_sRevisao = fbuscacpo("SB1",1,xfilial("SB1") + CProduto,"B1_REVATU") //sb1 -> b1_revatu
-					_aArray := aclone (U_ML_Comp2 (CProduto, 1, ".T.", dDataBase, .F., .F., .F., .F., .T., '', .F., '.t.', .T., .F., _sRevisao))
-					For _x := 1 to len(_aArray)
-						If _aArray[_x,2] == M->D3_Cod
-							_lRet = .t.
-							exit
-						EndIf
-					Next
-				endif
-				if ! _lRet
-					if fbuscacpo("SB1",1,xfilial("SB1") + CProduto,"B1_TIPO") == 'PA' .and. fbuscacpo("SB1",1,xfilial("SB1") + m->d3_cod, "B1_TIPO") == 'PA'
-						_sMsg = "Produto "+alltrim(CProduto)+" não é pai do "+ alltrim(M->D3_Cod)
-						if U_ZZUVL ('098', __cUserId, .F.)
-							_lRet = U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
-						else
-							u_help (_sMsg)
-							_lRet = .F.
-						endif
-					else
-						_sMsg = "O item digitado não é componente do produto origem, nem consta relacionamento do tipo 'caixa x unidade'."
-						if U_ZZUVL ('098', __cUserId, .F.)
-							_lRet = U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
-						else
-							u_help (_sMsg)
-							_lRet = .F.
-						endif
-					endif
-				EndIf
-			Endif
-			*/
-
 
 
 		case _sCampo $ "M->D3_EMISSAO"
@@ -1085,15 +1061,6 @@ user function VA_VCpo (_sCampo)
 				endif
 			endif
 
-
-	//	case _sCampo $ "M->D3_TM/CTM"  // cTM eh usado no MATA241 (mod.2)
-/* Em desuso, pois agora o sistema controla acessos por TM/usuario
-		case _sCampo $ "M->D3_TM/M->CTM"  // Variavel "cTM" eh usada no MATA241 (mod.2)
-			if ! alltrim (upper (funname ())) $ upper (fBuscaCpo ("SF5", 1, xfilial ("SF5") + &(_sCampo), "F5_VAROTIN"))
-				U_Help ("Tipo de movimento nao liberado para esta rotina.")
-				_lRet = .F.
-			endif
-*/
 
 		case _sCampo == "M->D3_VAETIQ"
 				//u_logpcham ()
