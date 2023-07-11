@@ -1,5 +1,5 @@
 // Programa...: PE_MATA061
-// Autor......: ClÃ¡udia LionÃ§o
+// Autor......: Claudia Lionço
 // Data.......: 09/02/2022
 // Descricao..: Ponto entrada produto x fornecedor
 //
@@ -11,6 +11,7 @@
 //
 // Historico de alteracoes:
 // 23/06/2023 - Claudia - Validação p/nao duplicar fornecedor para mesmo produto protheus. GLPI: 13777/13690
+// 11/07/2023 - Claudia - Chamada a função de limpeza de caracteres especiais. GLPI: 13865
 //
 //---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
@@ -100,7 +101,9 @@ Static Function _MA061TOK(cCod,cProd,cFornece,cLoja)
     Local _oSQL := ClsSQL ():New ()
     Local lRet  := .T.
 
-    sCod := LimpaEsp(cCod)
+    sCod := U_LimpaEsp(cCod)
+    sCod := _AjustaCod(sCod)
+
     If empty(alltrim(sCod))
         u_help(" O codigo do produto no fornecedor nao pode estar vazio. Verifique!")
         lRet := .F.
@@ -127,43 +130,14 @@ Static Function _MA061TOK(cCod,cProd,cFornece,cLoja)
 Return lRet
 //
 //----------------------------------------------------------------------------------
-// Retira caracteres especiais do campo 
-Static Function LimpaEsp(cConteudo)
+// Retira demais caracteres especiais do campo 
+Static Function _AjustaCod(cConteudo)
      
-    //Retirando caracteres
-    cConteudo := StrTran(cConteudo, "'", "")
-    cConteudo := StrTran(cConteudo, "#", "")
-    cConteudo := StrTran(cConteudo, "%", "")
-    cConteudo := StrTran(cConteudo, "*", "")
-    cConteudo := StrTran(cConteudo, "&", "E")
-    cConteudo := StrTran(cConteudo, ">", "")
-    cConteudo := StrTran(cConteudo, "<", "")
-    cConteudo := StrTran(cConteudo, "!", "")
-    cConteudo := StrTran(cConteudo, "@", "")
-    cConteudo := StrTran(cConteudo, "$", "")
-    cConteudo := StrTran(cConteudo, "(", "")
-    cConteudo := StrTran(cConteudo, ")", "")
-    cConteudo := StrTran(cConteudo, "_", "")
-    cConteudo := StrTran(cConteudo, "=", "")
-    cConteudo := StrTran(cConteudo, "+", "")
-    cConteudo := StrTran(cConteudo, "{", "")
-    cConteudo := StrTran(cConteudo, "}", "")
-    cConteudo := StrTran(cConteudo, "[", "")
-    cConteudo := StrTran(cConteudo, "]", "")
-    cConteudo := StrTran(cConteudo, "/", "")
-    cConteudo := StrTran(cConteudo, "?", "")
-    cConteudo := StrTran(cConteudo, ".", "")
-    cConteudo := StrTran(cConteudo, "\", "")
-    cConteudo := StrTran(cConteudo, "|", "")
-    cConteudo := StrTran(cConteudo, ":", "")
-    cConteudo := StrTran(cConteudo, ";", "")
-    cConteudo := StrTran(cConteudo, '"', '')
-    cConteudo := StrTran(cConteudo, 'Â°', '')
-    cConteudo := StrTran(cConteudo, 'Âª', '')
+    //Retirando virgulas e traços
     cConteudo := StrTran(cConteudo, ",", "")
     cConteudo := StrTran(cConteudo, "-", "")
      
-    //Adicionando os espaÃ§os a direita
+    //Adicionando os espaços a direita
     cConteudo := Alltrim(cConteudo)
 
 Return cConteudo

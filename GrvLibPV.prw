@@ -76,6 +76,8 @@
 // 04/01/2021 - Claudia - Incluida validação para ser obrigatorio informar NSU e Id Pagar-me em pedidos e-commerce.
 // 22/06/2022 - Claudia - Passada validações de NSU/Id pagarme e indenização e bonificações no p.e Mta410. GLPI: 11600
 // 02/02/2023 - Claudia - Liberação e-mail nfe@novaalianca.coop.br campo A2_E-MAIL - GLPI 13137
+// 11/07/2023 - Claudia - Chamada a função de limpeza de caracteres especiais. GLPI: 13865
+//
 // --------------------------------------------------------------------------------------------------------------------
 user function GrvLibPV (_lLiberar)
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -155,7 +157,7 @@ user function GrvLibPV (_lLiberar)
 					_lLiberar = .F.
 				endif
 			endif
-    			_wEmailA2 = fBuscaCpo ('SA2', 1, xfilial('SA2') + m->c5_cliente + m->c5_lojacli, "A2_EMAIL")
+    		_wEmailA2 = fBuscaCpo ('SA2', 1, xfilial('SA2') + m->c5_cliente + m->c5_lojacli, "A2_EMAIL")
 			if  'lixo' $ _wEmailA2
 			   	_sErro += "E-mail para DANFE inválido. Por favor, verifique!"
 				_lLiberar = .F.
@@ -400,11 +402,7 @@ user function GrvLibPV (_lLiberar)
 		if _lLiberar 
 			N = _n
 			if _lFaturado .and. ! _lSoGranel  // Ignora bloqueio de margem para pedidos de granel
-
 				processa ({|| U_VA_McPed (.F., .T.), "Calculando margem de contribuicao"})
-				//_nMargMin = 21  // alterado de 27 para 21 em 31/08/2016.  --> 27
-				// desabilitado o bloqueio gerencia - solicitado fernando - 19/05/2017 - deixado margem = 1%
-				//_nMargMin = 1
 				_nMargMin = GetMv ("VA_MCPED1")
 				if m->c5_vaMCont < _nMargMin
 					_nOpcao = aviso ("Margem de contribuicao muito baixa", ;
@@ -508,44 +506,15 @@ user function GrvLibPV (_lLiberar)
 			endif
 		next
 		CursorArrow ()
-
 	endif
-
-	// // Verifica se é pedido exportação e se pode dar desconto no cabeçalho 
-	// If _lLiberar
-	// 	_sCliEst  := fBuscaCpo('SA1', 1, xfilial('SA1') + M->C5_CLIENTE + M->C5_LOJACLI, "A1_EST")
-
-	// 	If alltrim(_sCliEst) <> 'EX' .and. !Empty(m->c5_descont)
-	// 		u_help("Desconto <indenização> só pode ser usado para clientes de exportação!")
-	// 		_lLiberar := .F.
-	// 	EndIf
-	// EndIf
-
-	// // Obriga a informar NSU e Id Pagar-me em pedidos e-commerce
-	// If _lLiberar
-	// 	If !Empty(M->C5_PEDECOM)
-	// 		If Empty(M->C5_VANSU)
-	// 			u_help("Para pedidos e-commerce, informar NSU!")
-	// 			_lLiberar := .F.
-	// 		EndIf
-	// 		If Empty(M->C5_VAIDT)
-	// 			u_help("Para pedidos e-commerce, informar Id Pagar-me!")
-	// 			_lLiberar := .F.
-	// 		EndIf
-	// 	EndIf
-	// EndIf
 
 	N := _n
 	if type ("oGetDad") == "O"
 		oGetDad:oBrowse:Refresh ()
 	endif
 
-	// retira caracteres " e ' das OBS
-	_sObs := m -> c5_obs
-	_sObs := StrTran( _sObs, "'", " " )
-	_sObs := StrTran( _sObs, '"', ' ' )
-	_sObs := StrTran( _sObs, '--', ' ' )
-	m -> c5_obs := _sObs
+	// retira caracteres especiais do campo de OBS
+	m->c5_obs := U_LimpaEsp(m->c5_obs)
 
 	U_ML_SRArea (_aAreaAnt)
 return

@@ -14,35 +14,30 @@
 // Historico de alteracoes:
 //
 // 12/03/2021 - Claudia - Retirado caracteres especiais " e ' da gravação da OBS. GLPI: 9634
+// 11/07/2023 - Claudia - Chamada a função de limpeza de caracteres especiais. GLPI: 13865
 //
 // ------------------------------------------------------------------------------------------------------
-
 user function VA_ATOPV ()
 	local _lContinua := .T.
 	local _aAreaAnt  := U_ML_SRArea ()
 	local _sObs      := ""
 	local _sObsOld   := ""
-
-//	u_logIni ()
 	
 	if ! empty (sc5 -> c5_nota)
 		u_help ("Pedido ja faturado.")
 		_lContinua = .F.
 	endif
+
 	if _lContinua .and. ! softlock ("SC5")
 		u_help ('Pedido em uso por outra estacao. Tente novamente mais tarde.')
 		_lContinua = .F.
 	endif
 
 	if _lContinua
-		_sObs = sc5 -> c5_obs
-		_sObsOld = _sObs
-		_sObs = u_showmemo (_sObs)
-
-		// retira caracteres " e '
-		_sObs = StrTran( _sObs, "'", " " )
-		_sObs = StrTran( _sObs, '"', ' ' )
-		_sObs = StrTran( _sObs, '--', ' ' )
+		_sObs    := sc5->c5_obs
+		_sObsOld := _sObs
+		_sObs    := u_showmemo(_sObs)
+		_sObs    := U_LimpaEsp(_sObs)
 
 		if alltrim (_sObs) != alltrim (_sObsOld)
 			reclock ("SC5", .F.)
@@ -63,5 +58,5 @@ user function VA_ATOPV ()
 	endif
 
 	U_ML_SRArea (_aAreaAnt)
-//	u_logFim ()
 return
+
