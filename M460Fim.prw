@@ -48,6 +48,7 @@
 // 23/11/2022 - Claudia - Incluido evento ao gravar amarracao produto x fornecedor. GLPI: 12821
 // 09/02/2023 - Claudia - Incluido log de gravação rapel.
 // 26/04/2023 - Claudia - Ajustado a gravação de log de erro rapel. GLPI: 13741
+// 11/07/2023 - Claudia - Incluida a gravação do produto fornecedor com dados do produto protheus. GLPI: 13859
 //
 // --------------------------------------------------------------------------------------------------------------
 user function M460Fim ()
@@ -316,6 +317,7 @@ Static Function _GravaProdXFornc(_sFilial,_sDoc,_sSerie,_sCliente,_sLoja,_sCodFo
 				SA5->A5_NOMEFOR := _sNomForn
 				SA5->A5_PRODUTO := _sProduto
 				SA5->A5_NOMPROD := _sProdDesc
+				SA5->A5_CODPRF  := _sProduto
 			SA5->(MsUnlock())
 
 			_oEvento := ClsEvent():New ()
