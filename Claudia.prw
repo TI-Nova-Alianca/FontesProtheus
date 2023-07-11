@@ -7,36 +7,58 @@ User Function claudia ()
 		return
 	endif
 
-	//u_help("Nada para executar")
+	u_help("Nada para executar")
 
 	//u_help("reservas")
 	//U_BatReserva()
 
-	//u_help("Atualiza fornecedor")
-	//_AtualizaSA2()
-
-	//u_help("Atualiza nome prod")
-	//_AtuProd()
-	//_AtuSemiAcab()
-
-	//u_help("PROD X FORNECE DUPLICADOS")
-	//_ProdForDupl()
-
-	//u_help("sisdeclara")
-	//_impSisDeclara()
-
-	u_help("Limpar PA VD")
-	_impVAVD()
-
-	//u_help("importa PESO")
-	//_impPESO()
-
-	//u_help("Verifica planilha")
-	//_verifProd()
+	//u_help("Ajusta prod fornece")
+	//_ajustaSA5()
 
 Return
+// //
+// // -----------------------------------------------------------------------------------
+// Static Function _ajustaSA5()
+// 	local _aDados    := {}
+// 	local _x         := 0
 
+// 	_oSQL:= ClsSQL ():New ()
+// 	_oSQL:_sQuery := ""
+// 	_oSQL:_sQuery += " SELECT "
+// 	_oSQL:_sQuery += " 		A5_PRODUTO, A5_FORNECE, A5_LOJA "
+// 	_oSQL:_sQuery += " FROM SA5010 "
+// 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+// 	_oSQL:_sQuery += " AND A5_CODPRF = '' "
+// 	_oSQL:_sQuery += " AND A5_FORNECE IN ('003114','000021','001369','003108','003111','003150','003195','003209', "
+// 	_oSQL:_sQuery += " '003266','003402','004565','004734','012774','001369') "
+// 	_aDados := aclone(_oSQL:Qry2Array())
 
+// 	for _x := 1 to len (_aDados)
+// 		//Posiciona
+// 		DbSelectArea("SA5")
+// 		DbSetOrder(2)
+
+// 		If SA5->(DbSeek(xFilial("SA5") + _aDados[_x,1] + _aDados[_x,2] + _aDados[_x,3])) // A5_FILIAL+A5_PRODUTO+A5_FORNECE+A5_LOJA
+// 			reclock("SA5", .F.)
+// 				sa5 -> A5_CODPRF := _aDados[_x,1] 
+// 			msunlock()
+
+// 			_oEvento := ClsEvent():New ()
+// 			_oEvento:Alias     = 'SA5'
+// 			_oEvento:Texto     = "Produto fornecedor Transf. GLPI 13859 " + chr (13) + chr (10) + " "
+// 			_oEvento:CodEven   = 'SA5001'  //"SA5010"
+// 			_oEvento:Produto   = alltrim(_aDados[_x,1])
+// 			_oEvento:Fornece   = alltrim(_aDados[_x,2])
+// 			_oEvento:LojaFor   = alltrim(_aDados[_x,3])
+// 			_oEvento:Grava()	 
+// 		endif
+//  		sa5 -> (dbskip ())
+//  	Next
+
+// 	u_help("Finalizado!")
+// Return
+//
+// -----------------------------------------------------------------------------------
 // Static Function _verifProd()
 // 	Local _aDados 	:= {}
 // 	Local _i 		:=0
@@ -62,40 +84,39 @@ Return
 // 	u_help("Atualizado!")
 
 // Return
+//
+// -----------------------------------------------------------------------------------
+// Static Function _impVAVD()
+// 	Local _aDados 	:= {}
+// 	Local _i 		:=0
 
+// 	u_help("Limpar va vd")
+// 	_aDados = U_LeCSV ('C:\Temp\impPAVD.csv', ';')
 
+// 	for _i := 1 to len(_aDados)
+// 		_sCod   := alltrim(_aDados[_i, 1])
 
-Static Function _impVAVD()
-	Local _aDados 	:= {}
-	Local _i 		:=0
+// 		DbSelectArea("SB1")
+// 		DbSetOrder(1)
+// 		if DbSeek(xFilial("SB1")+ alltrim(_sCod),.F.)
+// 			reclock ("SB1", .f.)
+// 				SB1 -> B1_CC := ''
+// 			msunlock ()
 
-	u_help("Limpar va vd")
-	_aDados = U_LeCSV ('C:\Temp\impPAVD.csv', ';')
+// 			// Grava evento de alteracao
+// 			_oEvento := ClsEvent():new ()
+// 			_oEvento:Alias    = 'SB1'
+// 			_oEvento:Texto    = 'GLPI:13788 e 13789 - Limpar CC'
+// 			_oEvento:CodEven  = "SB1001"
+// 			_oEvento:Produto  = sb1 -> b1_cod
+// 			_oEvento:Grava() 
+// 		endif	
+// 	Next
+// 	u_help("Atualizado!")
 
-	for _i := 1 to len(_aDados)
-		_sCod   := alltrim(_aDados[_i, 1])
-
-		DbSelectArea("SB1")
-		DbSetOrder(1)
-		if DbSeek(xFilial("SB1")+ alltrim(_sCod),.F.)
-			reclock ("SB1", .f.)
-				SB1 -> B1_CC := ''
-			msunlock ()
-
-			// Grava evento de alteracao
-			_oEvento := ClsEvent():new ()
-			_oEvento:Alias    = 'SB1'
-			_oEvento:Texto    = 'GLPI:13788 e 13789 - Limpar CC'
-			_oEvento:CodEven  = "SB1001"
-			_oEvento:Produto  = sb1 -> b1_cod
-			_oEvento:Grava() 
-		endif	
-	Next
-	u_help("Atualizado!")
-
-Return
-
-
+// Return
+//
+// -----------------------------------------------------------------------------------
 // Static Function _impPESO()
 // 	Local _aDados 	:= {}
 // 	Local _i 		:=0
@@ -124,9 +145,9 @@ Return
 // 		endif	
 // 	Next
 // 	u_help("Atualizado!")
-
 // Return
-// //
+//
+// -----------------------------------------------------------------------------------
 // Static Function _impSisDeclara()
 // 	Local _aDados 	:= {}
 // 	Local _i 		:=0
@@ -144,7 +165,6 @@ Return
 // 				zx5->zx5_57desc := _sDesc
 				
 // 				msunlock()
-
 // 	Next
 // 	u_help("Atualizado!")
 // Return
@@ -189,7 +209,6 @@ Return
 // 		Next
 // 	Next
 // 	FClose(nHandle)
-
 // Return 
 // //
 // // ----------------------------------------------------------------------------
