@@ -23,6 +23,7 @@
 // 22/03/2022 - Claudia - Validação de produto em linha. GLPI: 11767/11786
 // 04/07/2023 - Claudia - Ajustada a exportação/importação. GLPI 13763
 // 05/07/2023 - Claudia - Realizadas melhorias na importação/exportação. GLPI: 13848
+// 12/07/2023 - Claudia - Alterada colunas conforme GLPI: 13854
 //
 // -------------------------------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -1205,23 +1206,24 @@ User Function PLJEXP(_sZBCFilial, _sZBCCod, _sZBCAno)
 	If Len(_aSHC) > 0
 		nHandle := FCreate(cLocalDir)
 		
-		cTexto := 'ITEM|PRODUTO|DESCRICAO|DATA|	QTD_CAIXAS|QTD_LITROS|REVISAO|OBS_REVISAO|GRUPO OPC.|ITEM OPC.|LINHA ENVASE|DESCRICAO_ENVASE' + CHR(13)+CHR(10) 
+		//cTexto := 'ITEM|PRODUTO|DESCRICAO|DATA|	QTD_CAIXAS|QTD_LITROS|REVISAO|OBS_REVISAO|GRUPO OPC.|ITEM OPC.|LINHA ENVASE|DESCRICAO_ENVASE' + CHR(13)+CHR(10) 
+		cTexto := 'ITEM|DATA|PRODUTO|DESCRICAO|QTD_CAIXAS|QTD_LITROS|LINHA ENVASE|DESCRICAO_ENVASE|REVISAO|OBS_REVISAO|GRUPO OPC.|ITEM OPC.' + CHR(13)+CHR(10)
 		FWrite(nHandle, cTexto)
 
 		For _i:= 1 to Len(_aSHC)
 			cTexto := ""
 			cTexto += '"' + alltrim(_aSHC[_i, 1]) + '"|'
+			cTexto +=          dtoc(_aSHC[_i, 4]) +  '|'
 			cTexto += '"' + alltrim(_aSHC[_i, 2]) + '"|'
 			cTexto += '"' + alltrim(_aSHC[_i, 3]) + '"|'
-			cTexto +=          dtoc(_aSHC[_i, 4]) +  '|'
 			cTexto += alltrim(str(_aSHC[_i, 5]))  +  '|'
-			cTexto += alltrim(str(_aSHC[_i, 6])) +  '|'  
+			cTexto += alltrim(str(_aSHC[_i, 6]))  +  '|'  
+			cTexto += '"' + alltrim(_aSHC[_i,11]) + '"|'
+			cTexto += '"' + alltrim(_aSHC[_i,12]) + '"|'
 			cTexto += '"' + alltrim(_aSHC[_i, 7]) + '"|'
 			cTexto += '"' + alltrim(_aSHC[_i, 8]) + '"|'
 			cTexto += '"' + alltrim(_aSHC[_i, 9]) + '"|'
-			cTexto += '"' + alltrim(_aSHC[_i,10]) + '"|'
-			cTexto += '"' + alltrim(_aSHC[_i,11]) + '"|'
-			cTexto += '"' + alltrim(_aSHC[_i,12]) + '"' + CHR(13)+CHR(10) 
+			cTexto += '"' + alltrim(_aSHC[_i,10]) + '"|' + CHR(13)+CHR(10) 
 			
 			FWrite(nHandle, cTexto)
 		Next
@@ -1277,8 +1279,8 @@ User Function PLJIMP(_sZBCFilial, _sZBCCod, _sZBCAno)
 	If U_MsgYesNo ("Deseja reimportar os arquivos?")
 
 		// Limpa os registros eventos
-		//_oSQL:_sQuery += " UPDATE SHC010 SET D_E_L_E_T_='*' "
-		_oSQL:_sQuery += " DELETE FROM SHC010 "
+		_oSQL:_sQuery += " UPDATE SHC010 SET D_E_L_E_T_='*' "
+		//_oSQL:_sQuery += " DELETE FROM SHC010 "
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
 		_oSQL:_sQuery += " AND HC_FILIAL    = '" + _sZBCFilial + "'"
 		_oSQL:_sQuery += " AND HC_VAEVENT   = '" + _sZBCCod    + "'"
@@ -1286,8 +1288,8 @@ User Function PLJIMP(_sZBCFilial, _sZBCCod, _sZBCAno)
 		_oSQL:Exec ()
 
 		// Limpa registros opcionais
-		//_oSQL:_sQuery += " UPDATE ZBD010 SET D_E_L_E_T_='*' "
-		_oSQL:_sQuery += " DELETE FROM ZBD010 "
+		_oSQL:_sQuery += " UPDATE ZBD010 SET D_E_L_E_T_='*' "
+		//_oSQL:_sQuery += " DELETE FROM ZBD010 "
 		_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
 		_oSQL:_sQuery += " AND ZBD_FILIAL   = '" + _sZBCFilial + "'"
 		_oSQL:_sQuery += " AND ZBD_VAEVE    = '" + _sZBCCod    + "'"
@@ -1296,14 +1298,14 @@ User Function PLJIMP(_sZBCFilial, _sZBCCod, _sZBCAno)
 		
 		For _x:= 2 to Len(aDados)
 			_sItem 		:= StrTran(aDados[_x, 1], '"', '')
-			_sProd 		:= StrTran(aDados[_x, 2], '"', '')
-			_sData      := aDados[_x, 4]
+			_sData      := aDados[_x, 2]
+			_sProd 		:= StrTran(aDados[_x, 3], '"', '')
 			_nQtd       := aDados[_x, 5]
-			_sRevisao 	:= StrTran(aDados[_x, 7], '"', '')
-			_sGrpOpc 	:= StrTran(aDados[_x, 9], '"', '')
-			_sOpcItem 	:= StrTran(aDados[_x,10], '"', '')
-			_sLinha   	:= StrTran(aDados[_x,11], '"', '')
-
+			_sLinha   	:= StrTran(aDados[_x, 7], '"', '')
+			_sRevisao 	:= StrTran(aDados[_x, 9], '"', '')
+			_sGrpOpc 	:= StrTran(aDados[_x,11], '"', '')
+			_sOpcItem 	:= StrTran(aDados[_x,12], '"', '')
+			
 			RecLock("SHC", .T.)
 				SHC -> HC_FILIAL 	:= _sZBCFilial 
 				SHC -> HC_DOC 		:= _sZBCCod 	
