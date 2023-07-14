@@ -7,7 +7,7 @@ User Function claudia ()
 		return
 	endif
 
-	u_help("Nada para executar")
+	//u_help("Nada para executar")
 
 	//u_help("reservas")
 	//U_BatReserva()
@@ -15,7 +15,43 @@ User Function claudia ()
 	//u_help("Ajusta prod fornece")
 	//_ajustaSA5()
 
+	//u_help("Ajusta SF4")
+	//_ajustaSF4()
+
 Return
+// //
+// // -----------------------------------------------------------------------------------
+// Static Function _ajustaSF4()
+// 	Local _aDados 	:= {}
+// 	Local _i 		:=0
+
+// 	u_help("SF4")
+// 	_aDados = U_LeCSV ('C:\Temp\impSF4.csv', ';')
+
+// 	DbSelectArea("SF4")
+// 	DbSetOrder(1)
+
+// 	for _i := 1 to len(_aDados)
+// 		_sTES   := PADL(alltrim(_aDados[_i, 1]),3,'0')
+// 		_sCod   := PADL(alltrim(_aDados[_i, 2]),2,'0')
+
+// 		If DbSeek(xFilial("SF4") + _sTES)
+// 			_sCodOld := sf4->f4_vasito
+// 			RecLock("SF4",.F.)
+// 				sf4->f4_vasito := _sCod
+// 			msunlock()
+
+// 			_oEvento := ClsEvent():new ()
+// 			_oEvento:Alias    = "SF4"
+// 			_oEvento:Texto    = "TES: " + _sTES + " Campo f4_vasito de: " + _sCodOld + " para " + _sCod
+// 			_oEvento:CodEven  = "SF4001"
+// 			_oEvento:Grava() 
+// 		Endif
+// 		sf4 -> (dbskip ())
+// 	Next
+// 	u_help("Atualizado!")
+
+// Return
 // //
 // // -----------------------------------------------------------------------------------
 // Static Function _ajustaSA5()
