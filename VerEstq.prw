@@ -2,18 +2,18 @@
 // Autor......: Robert Koch
 // Data.......: 25/10/2010
 // Descricao..: Chamado por outros programas para verificacoes diversas de estoques.
-//
+
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Atualizacao
 // #Descricao         #Chamado por outros programas para verificacoes diversas de estoques.
 // #PalavasChave      #liberacao #estoque
 // #TabelasPrincipais #SBF #SB8 #SC9
 // #Modulos           #FAT
-//
+
 // Historico de alteracoes:
 // 16/12/2011 - Robert  - Passa a verificar estoque por localizacao.
 // 10/07/2013 - Leandro - Alteração para que a filial de depósito não seja fixo '04', 
-//				          pegando da tebala ZS da SX5
+//                        pegando da tebala ZS da SX5
 // 11/12/2013 - Robert  - Quando embarque na propria filial, somava as reservas ao saldo disponivel.
 // 01/02/2014 - Robert  - Passa a mostrar (mas nao usar no calculo) o B2_QTNP.
 // 03/04/2014 - Marcelo - Verifica produtos não enderecados na filial 13.
@@ -34,23 +34,20 @@
 // 11/01/2016 - Robert  - Ajustes nos testes de estoque por localizacao.
 // 16/02/2017 - Robert  - Desconsidera B2_QEMP.
 // 05/04/2021 - Claudia - Declaração da variável _nMyReserv e inclusão de tags de pesquisa.
+// 14/07/2023 - Robert  - Melhorado tratamento para situacoes que nao tem TES (nao eh ped.venda) - GLPI 13047)
 //
+
 // -----------------------------------------------------------------------------------------------------------
 user function VerEstq (_sOnde, _sProduto, _sFilEmb, _sLocal, _nQtdVen, _sTES, _sLocaliz, _sLote, _sPedido)
-	local _sQuery    := ""
 	local _aAreaAnt  := U_ML_SRArea ()
+	local _sQuery    := ""
 	local _sRet      := ""
 	local _lContinua := .T.
 	local _nSldDisp  := 0
 	local _oSQL      := NIL
 	local _nMyReserv := 0
-	//local _nSaldo    := 0
-	//local _nReserva  := 0
-	//local _nEnder    := 0
-	//local _aSldEnder := {}
-	
-	//u_logIni ()
-	//U_LOG (_sOnde, _sProduto, _sFilEmb, _sLocal, _nQtdVen, _sTES, _sLocaliz, _sLote, _sPedido)
+
+//	U_Log2 ('debug', '[' + procname () + ']' + cvaltochar (_sOnde) + ', ' + cvaltochar (_sProduto) + ', ' + cvaltochar (_sFilEmb) + ', ' + cvaltochar (_sLocal) + ', ' + cvaltochar (_nQtdVen) + ', ' + cvaltochar (_sTES) + ', ' + cvaltochar (_sLocaliz) + ', ' + cvaltochar (_sLote) + ', ' + cvaltochar (_sPedido))
 
 	if _lContinua
 		sb1 -> (dbsetorder (1))
@@ -62,15 +59,6 @@ user function VerEstq (_sOnde, _sProduto, _sFilEmb, _sLocal, _nQtdVen, _sTES, _s
 	endif
 
 	if _lContinua
-		sf4 -> (dbsetorder (1))  // F4_FILIAL+F4_CODIGO
-		if ! sf4 -> (dbseek (xfilial ("SF4") + _sTES, .F.))
-			_sRet := "TES '" + _sTES + "' nao cadastrado!"
-			u_help (_sRet)
-			_lContinua = .F.
-		endif
-	endif
-	
-	if _lContinua
 		sb2 -> (dbsetorder (1))  // B2_FILIAL+B2_COD+B2_LOCAL
 		if ! sb2 -> (dbseek (xfilial ("SB2") + _sProduto + _sLocal, .F.))
 			_sRet := "Produto '" + alltrim (_sProduto) + "' nao encontrado no almox. '" + _sLocal + "'!"
@@ -79,7 +67,21 @@ user function VerEstq (_sOnde, _sProduto, _sFilEmb, _sLocal, _nQtdVen, _sTES, _s
 		endif
 	endif
 
-	if _lContinua .and. sf4 -> f4_estoque == "S"
+	if _lContinua .and. ! empty (_sTES)
+		sf4 -> (dbsetorder (1))  // F4_FILIAL+F4_CODIGO
+		if ! sf4 -> (dbseek (xfilial ("SF4") + _sTES, .F.))
+			_sRet := "TES '" + _sTES + "' nao cadastrado!"
+			u_help (_sRet)
+			_lContinua = .F.
+		else
+			if sf4 -> f4_estoque != 'S'  // Se o TES nao movimenta estoque, nao preciso validar saldos.
+		//		U_Log2 ('debug', '[' + procname () + ']TES nao movimenta estoque. Nao preciso validar nada.')
+				_lContinua = .F.
+			endif
+		endif
+	endif
+
+	if _lContinua  // .and. sf4 -> f4_estoque == "S"
 		
 		// Verifica quanto da reserva refere-se a este mesmo pedido de venda.
 		if sb2 -> b2_reserva > 0 .and. ! empty (_sPedido)
@@ -116,7 +118,7 @@ user function VerEstq (_sOnde, _sProduto, _sFilEmb, _sLocal, _nQtdVen, _sTES, _s
 			        "Empenhado em OP: " + cvaltochar (sb2 -> b2_qemp) //"Bloqueado: " + cvaltochar (_aRetQry [1, 5])
 		endif
 
-		// Se tem estoque pelo total, mas foi informado endereco, verifica saldo por localizacao
+		// Se ainda nao tem msg de erro, mas foi informado endereco, verifica seu saldo.
 		if empty (_sRet) .and. ! empty (_sLocaliz)
 			_sQuery := ""
 			_sQuery += " select sum (BF_QUANT) AS BF_QUANT, SUM (BF_EMPENHO) AS BF_EMPENHO "
@@ -135,13 +137,14 @@ user function VerEstq (_sOnde, _sProduto, _sFilEmb, _sLocal, _nQtdVen, _sTES, _s
 			_aRetQry := aclone (U_Qry2Array (_sQuery))
 			if len (_aRetQry) > 0
 				if _nQtdVen > (_aRetQry [1, 1] - (_aRetQry [1, 2] - _nQtdVen))
-					_sRet = "Saldo insuficiente produto '" + alltrim (_sProduto) + "' no endereco '" + _sLocaliz + "'. Saldo Atual: " + cvaltochar (_aRetQry [1, 1]) + "  Reservado: " + cvaltochar (_aRetQry [1, 2])
+					_sRet = "Sld.insuf.prod. '" + alltrim (_sProduto) + "' endereco '" + _sLocaliz + "'. Sld.atual: " + cvaltochar (_aRetQry [1, 1]) + "  Reservado: " + cvaltochar (_aRetQry [1, 2])
 				endif
 			else
 				_sRet = "Produto '" + alltrim (_sProduto) + "' nao existe no endereco '" + _sLocaliz + "'."
 			endif
 		endif
 
+		// Se ainda nao tem msg de erro, mas foi informado lote, verifica seu saldo.
 		if empty (_sRet) .and. ! empty (_sLote)
 			_sQuery := ""
 			_sQuery += " select B8_SALDO, B8_EMPENHO"
@@ -157,12 +160,12 @@ user function VerEstq (_sOnde, _sProduto, _sFilEmb, _sLocal, _nQtdVen, _sTES, _s
 				_sRet = "Lote '" + _sLote + "' nao encontrado para o produto/almox solicitado."
 			else
 				if _nQtdVen > (_aRetQry [1, 1] - (_aRetQry [1, 2] - _nQtdVen))
-					_sRet = "Saldo insuficiente no lote '" + _sLote + "' do produto '" + alltrim (_sProduto)
+					_sRet = "Sld.insuf.lote '" + _sLote + "' produto '" + alltrim (_sProduto)
 				endif
 			endif
 		endif
-	endif      
+	endif
 
 	U_ML_SRArea (_aAreaAnt)
-	//u_logFim ()
+//	U_Log2 ('debug', '[' + procname () + ']Retornando: ' + cvaltochar (_sRet))
 return _sRet

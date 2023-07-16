@@ -34,7 +34,8 @@
 // 26/06/2023 - Robert - Criado tratamento para linha comercial FRISANTE (GLPI 13724)
 //                     - Criado tratamento para linha de envase CAXIAS (GLPI 13724)
 // 28/06/2023 - Robert - Ajuste exportacao lista dos itens participantes (GLPI 13724).
-// 
+// 15/07/2023 - Robert - Valida se usr inseriu data final menor que data inicial.
+//
 
 // --------------------------------------------------------------------------
 user function DREindl ()
@@ -170,7 +171,11 @@ user function DREIndlN ()
 	private cPerg := "DRE_INDL"
 	_ValidPerg ()
 	if pergunte (cPerg, .T.)
-		processa ({|| _Gera (mv_par01, mv_par02, mv_par03, iif (mv_par04 == 1, 'C', 'F'), iif (mv_par05 == 1, 'V', 'L'))})
+		if mv_par03 < mv_par02
+			u_help ("Data final nao pode ser menor que data inicial.",, .t.)
+		else
+			processa ({|| _Gera (mv_par01, mv_par02, mv_par03, iif (mv_par04 == 1, 'C', 'F'), iif (mv_par05 == 1, 'V', 'L'))})
+		endif
 	endif
 return
 

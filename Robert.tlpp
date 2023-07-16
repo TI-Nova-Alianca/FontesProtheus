@@ -145,7 +145,7 @@ return
 static function _AjLoteEnd ()
 	// Deixo desabilitado pra me obrigar a revisar sempre --->
 	local _sFilial   := '01'
-	// local _sDocto    := 'GLPI13727'
+	//local _sDocto    := 'GLPI13872'
 	local _sProduto  := '2739'
 	local _sAlmox    := '07'
 	local _nQuant    := 0.0003  // qt positiva=gerar entrada
