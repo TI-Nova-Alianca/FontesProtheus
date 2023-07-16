@@ -19,14 +19,14 @@
 //                      - MsgAlert() trocada por u_help()
 //                      - Valida consistencias de estoque (GLPI 12133).
 // 13/10/2022 - Robert  - Novos parametros funcao U_ConsEst().
+// 14/07/2023 - Robert  - Valida data retroativa/futura (GLPI 13047)
+//                      - Passa a chamar tambem a funcao U_VerEStq()
 //
-
-//  ---------------------------------------------------------------------------------------------------------------------
 
 #include 'protheus.ch'
 
+//  ---------------------------------------------------------------------------------------------------------------------
 User Function MNTA435N()
-//	Local aArea     := GetArea()
 	local _aAreaAnt := U_ML_SRArea ()
 	local _aAmbAnt  := U_SalvaAmb ()
 	Local cId       := PARAMIXB[1] //Indica o momento da chamada do PE
@@ -39,14 +39,19 @@ User Function MNTA435N()
 	Local nPosSeqD3  := aScan(aHoBrw2,{|x| Trim(Upper(x[2])) == "TL_NUMSEQ"})
 	Local nPosProd   := aScan(aHoBrw2,{|x| Trim(Upper(x[2])) == "TL_CODIGO"})
 	Local _nPosAlm   := aScan(aHoBrw2,{|x| Trim(Upper(x[2])) == "TL_LOCAL"})
+	Local _nPosEnder := aScan(aHoBrw2,{|x| Trim(Upper(x[2])) == "TL_LOCALIZ"})
+	Local _nPosLote  := aScan(aHoBrw2,{|x| Trim(Upper(x[2])) == "TL_LOTECTL"})
+	Local _nPosQtd   := aScan(aHoBrw2,{|x| Trim(Upper(x[2])) == "TL_QUANTID"})
 	Local nCodBem    := ''
 	Local nOS        := ''
 	local nCC        := ''
 	local _sCC_MC    := '011404/011405/011304'
 	local _lRetMN435 := .T.
 	local _sAlmox    := ''
+	local _sMsg      := ''
+	local _sProduto  := ''
 
-	U_Log2 ('debug', '[' + procname () + ']ID de chamada: ' + cID)
+//	U_Log2 ('debug', '[' + procname () + ']ID de chamada: ' + cID)
 
 	If cId == "VALID_CONFIRM"
 
@@ -90,8 +95,8 @@ User Function MNTA435N()
 								_lRetMN435 = .F.
 							endif 
 
-							sProduto := aInsumos[ nInsumo, nPosProd]
-							sTipo    := fbuscacpo("SB1",1,xfilial("SB1") + sProduto,"B1_TIPO")
+							_sProduto := aInsumos[ nInsumo, nPosProd]
+							sTipo    := fbuscacpo("SB1",1,xfilial("SB1") + _sProduto,"B1_TIPO")
 							nOs      := aDadosOS[ nOrdem, 1 ]
 							nCodBem  := fbuscacpo("STJ",1,xFilial("STJ") + nOs, "TJ_CODBEM")
 							nCC      := fbuscacpo("ST9",1,xFilial("ST9") + nCodBem, "T9_CCUSTO")
@@ -104,8 +109,32 @@ User Function MNTA435N()
 							// Verifica se ha inconsistencias entre as tabelas de estoque.
 							if _lRetMN435
 								_sAlmox = aInsumos[ nInsumo, _nPosAlm]
-								_lRetMN435 = U_ConsEstq (xfilial ("SD3"), sProduto, _sAlmox, '*')
+							//	_lRetMN435 = U_ConsEstq (xfilial ("SD3"), _sProduto, _sAlmox, '*')
+								_lRetMN435 = U_ConsEstq (xfilial ("SD3"), _sProduto, _sAlmox, '')
 							endif
+
+							// Bloqueia data retroativa e futura
+							if _lRetMN435
+								if aInsumos[ nInsumo, nPosDtInic ] != date () .or. dDataBase != date ()
+									_sMsg = "Alteracao de data da movimentacao ou data base do sistema: bloqueada para esta rotina."
+									if U_ZZUVL ('084', __cUserId, .F.)  // Se for do grupo dos ricos, bonitos e famosos, pode movimentar.
+										_lRetMN435 = U_MsgNoYes (_sMsg + " Confirma assim mesmo?")
+									else
+										u_help (_sMsg,, .t.)
+										_lRetMN435 = .F.
+									endif
+								endif
+							endif
+
+							// Verifica disponibilidade de estoque.
+							if _lRetMN435
+								_sMsg = U_VerEstq ("4", _sProduto, '', _sAlmox, aInsumos [nInsumo, _nPosQtd], '', aInsumos [nInsumo, _nPosEnder], aInsumos [nInsumo, _nPosLote], '')
+								if ! empty (_sMsg)
+									u_help (_sMsg,, .t.)
+									_lRetMN435 = .F.
+								endif
+							endif
+
 						endif
 					endif
 					nInsumo ++
@@ -117,3 +146,4 @@ User Function MNTA435N()
 	U_ML_SRArea (_aAreaAnt)
 	U_SalvaAmb (_aAmbAnt)
 Return _lRetMN435
+ 

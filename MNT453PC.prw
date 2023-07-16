@@ -12,11 +12,16 @@
 // #TabelasPrincipais #STJ #SC7
 // #Modulos           #MNT
 
+// Historico de alteracoes:
+// 14/07/2023 - Robert - Alimentar atributo ClsSQL:MsgF3Vazio
+//
+
 // --------------------------------------------------------------------------
 user function MNT453PC ()
 	local _oSQL      := NIL
 	local _aAreaAnt := U_ML_SRArea ()
 
+	// Aqui seria bom manter consistencia com a procedure [VA_SP_VISUALIZA_OS]
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
 	_oSQL:_sQuery += "SELECT SC7.C7_NUM AS PEDIDO"
@@ -39,7 +44,8 @@ user function MNT453PC ()
 	_oSQL:_sQuery +=   " AND SA2.A2_COD     = SC7.C7_FORNECE"
 	_oSQL:_sQuery +=   " AND SA2.A2_LOJA    = SC7.C7_LOJA"
 	_oSQL:_sQuery += " ORDER BY C7_NUM, C7_PRODUTO"
-	_oSQL:Log ('[' + procname () + ']')
+//	_oSQL:Log ('[' + procname () + ']')
+	_oSQL:MsgF3Vazio = "Nao encontrei nenhum pedido de compra relacionado a esta O.S."
 	_oSQL:F3Array ("Pedidos de compra relacionados com a OS " + STJ->TJ_ORDEM, .t.)
 
 	U_ML_SRArea (_aAreaAnt)

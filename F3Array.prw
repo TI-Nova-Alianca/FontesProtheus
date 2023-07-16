@@ -25,6 +25,7 @@
 // 24/11/2020 - Robert - Comentariados logs desnecessarios.
 //                     - Inseridas tags para catalogo de fontes.
 // 17/05/2023 - Robert - Mostra msg de erro quando nao receber a array de definicao de colunas.
+// 14/07/2023 - Robert - Criado parametro para informar mensagem a mostrar quando a lista estiver vazia.
 //
 
 #include "rwmake.ch"
@@ -42,7 +43,8 @@
 //         7 - Linha de texto a ser mostrada abaixo do browse (opcional)
 //         8 - Valor logico indicando se mostra botao de exportacao para Excel. Default = .F.
 //         9 - Tipo de pesquisa (C=caracter, N=numerico)
-user function F3Array (_aArray, _sTitulo, _aCols, _nLarg, _nAltur, _sMsgSup, _sMsgInf, _lExcel, _sTipoPesq, _oFonte)
+//        10 - Msg a mostrar quando a array estiver vazia
+user function F3Array (_aArray, _sTitulo, _aCols, _nLarg, _nAltur, _sMsgSup, _sMsgInf, _lExcel, _sTipoPesq, _oFonte, _sMsgVazio)
 	local _oDlg      := NIL
 	local _aOpcoes   := {}
 	local _nLinha    := 0
@@ -63,7 +65,11 @@ user function F3Array (_aArray, _sTitulo, _aCols, _nLarg, _nAltur, _sMsgSup, _sM
 		_lContinua = .F.
 	endif
 	if _lContinua .and. len (_aArray) == 0
-		u_help ("Funcao " + procname () + " recebeu lista vazia")
+		if valtype (_sMsgVazio) == 'C' .and. ! empty (_sMsgVazio)
+			u_help (_sMsgVazio)
+		else
+			u_help ("Funcao " + procname () + " recebeu lista vazia")
+		endif
 		_lContinua = .F.
 	endif
 	if _lContinua .and. valtype (_aCols) != 'A' .or. len (_aCols) == 0

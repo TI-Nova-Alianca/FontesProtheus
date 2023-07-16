@@ -56,6 +56,7 @@
 // 05/05/2022 - Robert - Implementado metodo GetRealName() - GLPI 11980
 // 19/05/2022 - Robert - Posiciona no inicio do arquivo ao final do metodo :Copy2Trb() - GLPI 12080
 // 30/01/2023 - Robert - Criados atributos TentaExcel e DirDestXLS
+// 14/07/2023 - Robert - Criado atributo MsgF3Vazio
 //
 
 #include "protheus.ch"
@@ -65,19 +66,20 @@
 CLASS ClsSQL
 
 	// Declaracao das propriedades da Classe
-	public DATA _sQuery
-	public DATA _xRetQry
-	public DATA _aSetField
-	public DATA _sAliasQry
-	public DATA ArqDestXLS
-	public DATA DirDestXLS
-	public DATA TentaExcel  // Se .T. tenta abrir planilha com Excel no metodo Qry2XLS. Senao, software associado
-	public DATA UltMsg
-	public DATA lGeraHead
-	public DATA aHeader
-	public DATA QtLinRet
-	public DATA PerfMon
+	public  DATA aHeader
+	public  DATA ArqDestXLS
+	public  DATA _aSetField
+	public  DATA DirDestXLS
+	public  DATA lGeraHead
+	public  data MsgF3Vazio  // Mensagem a mostrar quando array vazia para F3Array
+	public  DATA PerfMon
+	public  DATA QtLinRet
+	public  DATA _sAliasQry
+	public  DATA _sQuery
+	public  DATA TentaExcel  // Se .T. tenta abrir planilha com Excel no metodo Qry2XLS. Senao, software associado
 	private DATA TmpTblRealName
+	public  DATA UltMsg
+	public  DATA _xRetQry
 
 	// Declaracao dos Metodos da Classe
 	public  METHOD New ()
@@ -310,7 +312,7 @@ METHOD F3Array (_sMsgTit, _lSempre) Class ClsSQL
 
 	// Mostra a array em tela.
 	if _lSempre .or. len (_oResult:_aArray) > 0
-		_nRet = U_F3Array (_oResult:_aArray, '', _aCols, NIL, NIL, _sMsgTit, '', .T., 'C')
+		_nRet = U_F3Array (_oResult:_aArray, '', _aCols, NIL, NIL, _sMsgTit, '', .T., 'C', NIL, ::MsgF3Vazio)
 	else
 		_nRet = 0
 	endif
