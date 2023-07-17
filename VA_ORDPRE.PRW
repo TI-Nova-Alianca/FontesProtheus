@@ -11,6 +11,9 @@
 // #Modulos   		  #MANUTENÇÃO ATIVOS
 //
 // Historico de alteracoes:
+// 28/06/2023 - Sandra - Alterado campo TJ_DTMPFIM para campo TJ_DTMRFIM GLPI 13804
+// 28/06/2023 - Sandra - Incluso filtro para buscar somente manutentor realizado GLPI 13805
+// 10/07/2023 - Sandra - Incluso parametro para buscar ordens abertas / fechadas. GLPI 13806
 // 
 //
 // ------------------------------------------------------------------------------------------------------------------------
@@ -37,7 +40,9 @@ Static Function ReportDef()
 	Local oReport  := Nil
 	Local oSection1:= Nil
 
-	oReport := TReport():New("VA_ORDPRE","Relatorio Ordens de Manutenção Preventivas",cPerg,{|oReport| PrintReport(oReport)},"Relatorio Ordens de Manutenção Preventivas")
+
+
+	oReport := TReport():New("VA_ORDPRE","Relatorio Ordens de Manutenção Preventivas",cPerg,{|oReport| PrintReport (oReport)},"Relatorio Ordens de Manutenção Preventivas")
 	
 	oReport:SetTotalInLine(.F.)
 	oReport:SetPortrait()
@@ -52,8 +57,8 @@ Static Function ReportDef()
 	TRCell():New(oSection1,"COLUNA5", 	"" ,"Nome do Bem"	   ,                    ,40,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA6", 	"" ,"Serviço"		   ,       				,10,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
     TRCell():New(oSection1,"COLUNA7", 	"" ,"Nome do Serviço"  ,       				,30,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-	TRCell():New(oSection1,"COLUNA8", 	"" ,"Data Inicio"	   ,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
-    TRCell():New(oSection1,"COLUNA9", 	"" ,"Data Fim"         ,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+	TRCell():New(oSection1,"COLUNA8", 	"" ,"Dt Prev Inic"     ,       				,15,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
+    TRCell():New(oSection1,"COLUNA9", 	"" ,"Dt Real Fim"      ,       				,17,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA10", 	"" ,"Executante"	   ,                    ,25,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	TRCell():New(oSection1,"COLUNA11", 	"" ,"Observação"	   ,        			,20,/*lPixel*/,{|| 	},"LEFT",,,,,,,,.F.)
 	
@@ -64,9 +69,11 @@ Return(oReport)
 Static Function PrintReport(oReport)
 	Local oSection1 := oReport:Section(1)
 	Local _oSQL      := ClsSQL ():New ()
+	cPerg2  := "VA_ACMPFUN"
 
+// GERAÇÃO ORDENS MANUTENÇÃO COM DATA FIM (FECHADAS)
 _oSQL:_sQuery := ""
-_oSQL:_sQuery += " SELECT "
+_oSQL:_sQuery += " SELECT DISTINCT "
 _oSQL:_sQuery += "  	STJ.TJ_FILIAL AS FILIAL "
 _oSQL:_sQuery += "     ,STJ.TJ_ORDEM AS ORDEM "
 _oSQL:_sQuery += "     ,STJ.TJ_PLANO AS PLANO "
@@ -75,7 +82,8 @@ _oSQL:_sQuery += "     ,ST9.T9_NOME AS NOME_BEM "
 _oSQL:_sQuery += "     ,STJ.TJ_SERVICO AS SERVI "
 _oSQL:_sQuery += "     ,ST4.T4_NOME AS NOME_SERVICO "
 _oSQL:_sQuery += "     ,STJ.TJ_DTMPINI AS DT_INICIO "
-_oSQL:_sQuery += "     ,STJ.TJ_DTMPFIM AS DT_FIM "
+//_oSQL:_sQuery += "     ,STJ.TJ_DTMPFIM AS DT_FIM "
+_oSQL:_sQuery += "     ,STJ.TJ_DTMRFIM AS DT_FIM "
 _oSQL:_sQuery += "     ,ST1.T1_NOME AS EXECUTANTE "
 _oSQL:_sQuery += "     ,ISNULL(CAST(CAST (STJ.TJ_OBSERVA AS VARBINARY (8000)) AS VARCHAR (8000)), '') AS OBSERV "
 _oSQL:_sQuery += " FROM " + RETSQLName ("STJ") + " STJ "
@@ -83,15 +91,18 @@ _oSQL:_sQuery += "       INNER JOIN " + RETSQLName ("ST9") + " ST9 " // LIGAÇÃO 
 _oSQL:_sQuery += "	     ON (ST9.D_E_L_E_T_ = '' "
 _oSQL:_sQuery += "			AND ST9.T9_FILIAL = STJ.TJ_FILIAL "
 _oSQL:_sQuery += "	        AND ST9.T9_CODBEM = STJ.TJ_CODBEM) "
-
 _oSQL:_sQuery += "		 INNER JOIN  " + RETSQLName ("ST4") + " ST4 " // LIGAÇÃO DA TAB PRINCIPAL 
 _oSQL:_sQuery += "		 ON (ST4.D_E_L_E_T_ = '' "
 _oSQL:_sQuery += "			AND ST4.T4_SERVICO = STJ.TJ_SERVICO) "
-
 _oSQL:_sQuery += "		 INNER JOIN  " + RETSQLName ("STL") + " STL " // LIGAÇÃO DA TAB PRINCIPAL 
 _oSQL:_sQuery += "				LEFT JOIN  " + RETSQLName ("ST1") + " ST1 " // LIGAÇÃO DA TAB STL COM OUTRA TAB "
 _oSQL:_sQuery += "					ON (ST1.D_E_L_E_T_ = '' "
-_oSQL:_sQuery += "						AND STL.TL_CODIGO = ST1.T1_CODFUNC) "
+if mv_par07 == 1							
+_oSQL:_sQuery += "						AND STL.TL_REPFIM <> 'S' "
+elseif mv_par07 == 2
+_oSQL:_sQuery += "						AND STL.TL_REPFIM = 'S' "
+endif
+_oSQL:_sQuery += "						AND STL.TL_CODIGO = ST1.T1_CODFUNC ) "
 _oSQL:_sQuery += " 		 ON (STL.D_E_L_E_T_ = '' "
 _oSQL:_sQuery += "			AND STL.TL_ORDEM = STJ.TJ_ORDEM "
 _oSQL:_sQuery += "			AND STL.TL_FILIAL = STJ.TJ_FILIAL "
@@ -99,18 +110,98 @@ _oSQL:_sQuery += "			AND STL.TL_PLANO = STJ.TJ_PLANO) "
 _oSQL:_sQuery += " WHERE STJ.TJ_TIPO = 'PRE' "
 _oSQL:_sQuery += " AND STJ.D_E_L_E_T_ = '' "
 _oSQL:_sQuery += " AND STJ.TJ_DTMPINI >= '" + dtos (MV_PAR01) + "'"
-_oSQL:_sQuery += " AND STJ.TJ_DTMPFIM <= '" + dtos (MV_PAR02) + "'"
+_oSQL:_sQuery += " AND STJ.TJ_DTMRFIM <= '" + dtos (MV_PAR02) + "'"
 _oSQL:_sQuery += " AND STJ.TJ_CODBEM BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
 _oSQL:_sQuery += " AND ST1.T1_CODFUNC BETWEEN '" + mv_par03 + "' AND '" + mv_par04 + "'"
+_oSQL:_sQuery += " AND ST1.T1_CODFUNC BETWEEN '" + mv_par03 + "' AND '" + mv_par04 + "'"
+if mv_par07 == 1
+	_oSQL:_sQuery += " AND STJ.TJ_TERMINO != 'S' "
+elseif mv_par07 == 2
+	_oSQL:_sQuery += " AND STJ.TJ_TERMINO = 'S' "
+endif
 _oSQL:_sQuery += " ORDER BY STJ.TJ_DTMPINI "
+
+
+
 
 	// nHandle := FCreate("c:\temp\log.txt")
 	// FWrite(nHandle, _oSQL:_sQuery )
 	// FClose(nHandle)
 
+
+//--------------------------------------------------------------------------------------------------------------------------------
+
+//Static Function PrintReport(oReport)
+	//Local oSection1 := oReport:Section(1)
+	//Local _oSQL      := ClsSQL ():New ()
+	cPerg2  := "VA_ACMPFUN"
+
+/*
+// GERAÇÃO ORDENS MANUTENÇÃO SEM DATA FIM (ABERTAS)
+_oSQL:_sQuery := ""
+_oSQL:_sQuery += " SELECT DISTINCT "
+_oSQL:_sQuery += "  	STJ.TJ_FILIAL AS FILIAL "
+_oSQL:_sQuery += "     ,STJ.TJ_ORDEM AS ORDEM "
+_oSQL:_sQuery += "     ,STJ.TJ_PLANO AS PLANO "
+_oSQL:_sQuery += "     ,STJ.TJ_CODBEM AS CODBEM "
+_oSQL:_sQuery += "     ,ST9.T9_NOME AS NOME_BEM "
+_oSQL:_sQuery += "     ,STJ.TJ_SERVICO AS SERVI "
+_oSQL:_sQuery += "     ,ST4.T4_NOME AS NOME_SERVICO "
+_oSQL:_sQuery += "     ,STJ.TJ_DTMPINI AS DT_INICIO "
+_oSQL:_sQuery += "     ,STJ.TJ_DTMRFIM AS DT_FIM "
+_oSQL:_sQuery += "     ,ST1.T1_NOME AS EXECUTANTE "
+_oSQL:_sQuery += "     ,ISNULL(CAST(CAST (STJ.TJ_OBSERVA AS VARBINARY (8000)) AS VARCHAR (8000)), '') AS OBSERV "
+_oSQL:_sQuery += " FROM " + RETSQLName ("STJ") + " STJ "
+_oSQL:_sQuery += "       INNER JOIN " + RETSQLName ("ST9") + " ST9 " // LIGAÇÃO DA TAB PRINCIPAL 
+_oSQL:_sQuery += "	     ON (ST9.D_E_L_E_T_ = '' "
+_oSQL:_sQuery += "			AND ST9.T9_FILIAL = STJ.TJ_FILIAL "
+_oSQL:_sQuery += "	        AND ST9.T9_CODBEM = STJ.TJ_CODBEM) "
+_oSQL:_sQuery += "		 INNER JOIN  " + RETSQLName ("ST4") + " ST4 " // LIGAÇÃO DA TAB PRINCIPAL 
+_oSQL:_sQuery += "		 ON (ST4.D_E_L_E_T_ = '' "
+_oSQL:_sQuery += "			AND ST4.T4_SERVICO = STJ.TJ_SERVICO) "
+_oSQL:_sQuery += "		 INNER JOIN  " + RETSQLName ("STL") + " STL " // LIGAÇÃO DA TAB PRINCIPAL 
+_oSQL:_sQuery += "				LEFT JOIN  " + RETSQLName ("ST1") + " ST1 " // LIGAÇÃO DA TAB STL COM OUTRA TAB "
+_oSQL:_sQuery += "					ON (ST1.D_E_L_E_T_ = '' "
+_oSQL:_sQuery += "						AND STL.TL_CODIGO = ST1.T1_CODFUNC ) "
+_oSQL:_sQuery += " 		 ON (STL.D_E_L_E_T_ = '' "
+_oSQL:_sQuery += "			AND STL.TL_ORDEM = STJ.TJ_ORDEM "
+_oSQL:_sQuery += "			AND STL.TL_FILIAL = STJ.TJ_FILIAL "
+_oSQL:_sQuery += "			AND STL.TL_PLANO = STJ.TJ_PLANO) "
+_oSQL:_sQuery += " WHERE STJ.TJ_TIPO = 'PRE' "
+_oSQL:_sQuery += " AND STJ.D_E_L_E_T_ = '' "
+_oSQL:_sQuery += " AND STJ.TJ_DTMRFIM = '' "
+_oSQL:_sQuery += " AND STJ.TJ_DTMPINI >= '" + dtos (MV_PAR01) + "'"
+_oSQL:_sQuery += " AND STJ.TJ_DTMRFIM <= '" + dtos (MV_PAR02) + "'"
+_oSQL:_sQuery += " AND STJ.TJ_CODBEM BETWEEN '" + mv_par05 + "' AND '" + mv_par06 + "'"
+_oSQL:_sQuery += " AND STJ.TJ_TERMINO = 'S' "
+if mv_par07 == 1
+		_oSQL:_sQuery += " AND STJ.TJ_TERMINO != 'N' "
+	elseif mv_par07 == 1
+		_oSQL:_sQuery += " AND STJ.TJ_TERMINO = 'N' "
+endif
+_oSQL:_sQuery += " ORDER BY STJ.TJ_DTMPINI "
+
+*/
+
+	// nHandle := FCreate("c:\temp\log.txt")
+	// FWrite(nHandle, _oSQL:_sQuery )
+	// FClose(nHandle)
+
+
 	_sAliasQ := _oSQL:Qry2Trb (.f.)
 	(_sAliasQ) -> (dbgotop ())
-	
+
+
+
+// -------------------------------------------------------------------------
+// Impressão
+//Static Function PrintReport(oReport)
+	//Local oSection1  := oReport:Section(1)
+	//Local i          := 0
+
+
+
+
 	oSection1:Init()
 	oSection1:SetHeaderSection(.T.)
 			
@@ -149,7 +240,7 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {04, "Executante até             ?", "C",11, 0,  "",  "ST1", {},                         						"Executante Final"})
     aadd (_aRegsPerg, {05, "Cod Bem de                 ?", "C",18, 0,  "",  "ST9", {},                         						""})
     aadd (_aRegsPerg, {06, "Cod Bem Até                ?", "C",18, 0,  "",  "ST9", {},                         						""})
-	
+	aadd (_aRegsPerg, {07, "Status                     ?", "N", 1, 0,  "",   "   ", {"Aberta","Fechada"},   ""})
 
      U_ValPerg (cPerg, _aRegsPerg)
 Return
