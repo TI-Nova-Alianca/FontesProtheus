@@ -13,13 +13,16 @@
 // Historico de alteracoes:
 // 24/09/2021 - Robert  - Revisao de layout/novos campos do tipo 111 para exercicio 2021 (GLPI 10463).
 // 01/06/2023 - Claudia - Alterada a formatação das datas. GLPI: 13663
+// 18/07/2023 - Robert  - Alterado formato de datas de volta para AAAAMMDD (GLPI 13923)
+//                      - Melhorada inicializacao da regua de processamento
 //
-// -------------------------------------------------------------------------------------------------
+
 
 #include "VA_INCLU.prw"
 
+// -------------------------------------------------------------------------------------------------
 User Function VA_ETAF (_lAuto)
-	Local cCadastro   := "Arquivo p/ Declaracao Vinicola"
+	Local cCadastro   := "Arquivo para alimentar lista de socios (reg.T111 / Y600 do TAF)"
 	Local aSays       := {}
 	Local aButtons    := {}
 	Local nOpca       := 0
@@ -82,19 +85,20 @@ Static Function _GeraTxt()
 		endif
 	endif
 return
-//
-// -------------------------------------------------------------------------
-//
-static function _T111 ()
-	local _sLinha   := ""
-	local _sAliasQ  := ""
-	local _nSldCap  := 0
-	local _nTotCap  := 0
-	local _aAssoc   := {}
-	local _nAssoc   := 0
-	local _oAssoc   := NIL
-	local _dDataRef := mv_par02
 
+
+// -------------------------------------------------------------------------
+static function _T111 ()
+	local _sLinha    := ""
+	local _sAliasQ   := ""
+	local _nSldCap   := 0
+	local _nTotCap   := 0
+	local _aAssoc    := {}
+	local _nAssoc    := 0
+	local _oAssoc    := NIL
+	local _dDataRef  := mv_par02
+	local _nRecCount := 0
+	local _nQtProc   := 0
 	procregua (10)
 	incproc ()
 
@@ -115,12 +119,14 @@ static function _T111 ()
 	_oSQL:Log ()
 	_sAliasQ := _oSQL:Qry2Trb ()
 	_nTotCap = 0
-	procregua ((_sAliasQ) -> (reccount ()))
+	count to _nRecCount
+	procregua (_nRecCount)
 	(_sAliasQ) -> (dbgotop ())
-
+	_nQtProc = 0
 	do while ! (_sAliasQ) -> (eof ())
 		_oAssoc := ClsAssoc ():New ((_sAliasQ) -> a2_vacbase, (_sAliasQ) -> a2_valbase)
-		incproc (_oAssoc:Nome)
+		incproc ('[' + cvaltochar (_nQtProc) + ' de ' + cvaltochar (_nRecCount) + '] ' + cvaltochar (_oAssoc:Nome))
+		U_Log2 ('info', '[' + procname () + '][' + cvaltochar (_nQtProc) + ' de ' + cvaltochar (_nRecCount) + '] ' + cvaltochar (_oAssoc:Nome))
 		_nSldCap = _oAssoc:SldQuotCap (_dDataRef) [.QtCapSaldoNaData]
 		if _nSldCap > 0
 			aadd (_aAssoc, {_oAssoc:CodBase, ;
@@ -133,6 +139,7 @@ static function _T111 ()
 			                0})
 			_nTotCap += _nSldCap
 		endif
+		_nQtProc ++
 		(_sAliasQ) -> (dbskip ())
  	enddo
 
@@ -147,9 +154,12 @@ static function _T111 ()
 	// Exporta para TXT no layout do TAF.
 	for _nAssoc = 1 to len (_aAssoc)
 		_sLinha := "|T111"  														// Tipo registro
-		_sLinha += "|" + dtoc (mv_par02)  											// Periodo
-		_sLinha += "|" + dtoc (_aAssoc [_nAssoc, 5])  								// Data associacao
-		_sLinha += "|" + dtoc (_aAssoc [_nAssoc, 6])  								// Data desassociacao
+//		_sLinha += "|" + dtoc (mv_par02)  											// Periodo
+//		_sLinha += "|" + dtoc (_aAssoc [_nAssoc, 5])  								// Data associacao
+//		_sLinha += "|" + dtoc (_aAssoc [_nAssoc, 6])  								// Data desassociacao
+		_sLinha += "|" + dtos (mv_par02)  											// Periodo
+		_sLinha += "|" + dtos (_aAssoc [_nAssoc, 5])  								// Data associacao
+		_sLinha += "|" + dtos (_aAssoc [_nAssoc, 6])  								// Data desassociacao
 		_sLinha += "|105"  															// Codigo pais cfe tabela do SPED
 		_sLinha += "|" + iif (len (alltrim (_aAssoc [_nAssoc, 4])) > 11, "2", "1")  // Qualificacao: 1=PF;2=PJ;3=Fundo de investimento
 		_sLinha += "|" + _aAssoc [_nAssoc, 4]  										// CPF ou CNPJ
@@ -169,7 +179,8 @@ static function _T111 ()
 		fwrite (_nHdl, _sLinha + chr (13) + chr (10))
 	next
 Return
-//
+
+
 // -------------------------------------------------------------------------
 // Perguntas
 Static Function _ValidPerg ()
