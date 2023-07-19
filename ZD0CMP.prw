@@ -159,6 +159,14 @@ User Function ZD0CMP(_sTipo, _sFilial, _sTrans)
                     EndIf
                     _BaixaTaxa(aTaxa)
                     End Transaction
+                else
+                    If len(_aSE1) <= 0
+                        u_help(" Não encontrado título original para a compensação! ID:" + _aZD0[_x, 3])
+                    EndIf
+                    If len(_aRA) <= 0
+                        u_help(" Não encontrado título RA para a compensação! ID:" + _aZD0[_x, 3])
+                    EndIf
+                    
                 EndIf
             EndIf
         Next
