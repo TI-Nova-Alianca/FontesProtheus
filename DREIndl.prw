@@ -35,6 +35,10 @@
 //                     - Criado tratamento para linha de envase CAXIAS (GLPI 13724)
 // 28/06/2023 - Robert - Ajuste exportacao lista dos itens participantes (GLPI 13724).
 // 15/07/2023 - Robert - Valida se usr inseriu data final menor que data inicial.
+// 18/07/2023 - Robert - Gera nomes melhores nos arquivos exportados
+//                     - Deleta tabela DRE_INDL_CONTAB quando exclui uma
+//                       analise (tabela passou a ter campo ID_ANALISE) - GLPI 13929
+//                     - Exportacao da tabela DRE_INDL_CONTAB para conferencias
 //
 
 // --------------------------------------------------------------------------
@@ -295,6 +299,7 @@ user function DREIndlC ()
 		aadd (_aOpcoes, "Lin.Tetra (por marca de terceiro)")
 		aadd (_aOpcoes, "Grandes clientes")
 		aadd (_aOpcoes, "Aberto (para gerar tabela dinamica)")
+		aadd (_aOpcoes, "Tabela auxiliar valores contabeis para rateio")
 		aadd (_aOpcoes, "Cancelar")
 		_nLayout = U_F3Array (_aOpcoes, "Selecione layout", {{1,"Opcoes",200,""}}, 400, 300)
 
@@ -311,6 +316,8 @@ user function DREIndlC ()
 			processa ({|| _Cons2 ('GC', '', 'zz')})
 		case _nLayout == 6
 			processa ({|| _Cons2 ('AC', '', 'zz')})
+		case _nLayout == 7
+			processa ({|| _Cons2 ('CTB', '', 'zz')})
 		endcase
 
 	elseif left (_trbDRE->agrup, 1) == 'F'  // Rateio filial a filial
@@ -376,25 +383,22 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 	_oSQL := ClsSQL ():New ()
 	do case
 	case _sLayout == 'LE'  // por linha de envase
-//		_oSQL:_sQuery := "SELECT DESCRITIVO AS [DESCRITIVOS_Analise_" + cvaltochar (_trbDRE -> idanalise) + ']'
 		_oSQL:_sQuery := "SELECT GRUPO"
 		_oSQL:_sQuery +=      ", DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
-//		_oSQL:_sQuery +=      " ,VIDRO,ISOBARICA,EM_3OS,PET,TETRA_200,TETRA_1000,BAG,FILIAL_09,GRANEL,OUTRAS"
 		_oSQL:_sQuery +=      " ,VIDRO,ISOBARICA,EM_3OS,PET,TETRA_200,TETRA_1000,BAG,CAXIAS,FILIAL_09,GRANEL,OUTRAS"
 		_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".FDRE_INDL_LINENV (" + cvaltochar (_trbDRE -> idanalise) + ","
 		_oSQL:_sQuery +=         "'" + _sFilIni + "', '" + _sFilFim + "'"
 		_oSQL:_sQuery += " ) ORDER BY GRUPO"
 		_oSQL:Log ()
+		_oSQL:ArqDestXLS = 'DRE_INDL_' + cvaltochar (_trbDRE -> idanalise) + '_LE'
 		_oSQL:Qry2XLS(.F.,.F.,.F.)
 		if U_MsgNoYes ("Deseja exportar lista dos produtos considerados em cada linha de envase? Será exportada uma tabela adicional com uma coluna correspondendo a cada linha de envase.")
 			_ListaPrd(_trbDRE -> idanalise, 'LE')
 		endif
 
 	case _sLayout == 'LC'  // por linha comercial
-//		_oSQL:_sQuery := "SELECT *"
 		_oSQL:_sQuery := "SELECT GRUPO"
 		_oSQL:_sQuery +=      ", DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
-	//	_oSQL:_sQuery +=      ", SUCO_INTEGRAL,ORGANICO,SUCO_100,NECT_BEBID,PREPARADOS,VINHO_FINO,ESPUMANTE,VINHO_MESA,FILTRADO,SAGU_QUENTAO,INDUSTRIALIZ,REVENDA,GRANEL,OUTRAS"
 		_oSQL:_sQuery +=      ", SUCO_INTEGRAL,ORGANICO,SUCO_100,NECT_BEBID,PREPARADOS,VINHO_FINO,ESPUMANTE,VINHO_MESA,FRISANTE,FILTRADO,SAGU_QUENTAO,INDUSTRIALIZ,REVENDA,GRANEL,OUTRAS"
 		_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".FDRE_INDL_LINCOM ("
 		_oSQL:_sQuery +=         "'" + cvaltochar (_trbDRE -> idanalise) + "'"
@@ -403,6 +407,7 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 		_oSQL:_sQuery +=         ",'Z', 'Z'"  // Cliente/loja base final
 		_oSQL:_sQuery +=  ") ORDER BY GRUPO"
 		_oSQL:Log ()
+		_oSQL:ArqDestXLS = 'DRE_INDL_' + cvaltochar (_trbDRE -> idanalise) + '_LC'
 		_oSQL:Qry2XLS(.F.,.F.,.F.)
 		if U_MsgNoYes ("Deseja exportar lista dos produtos considerados em cada linha comercial? Será exportada uma tabela adicional com uma coluna correspondendo a cada linha comercial.")
 			_ListaPrd (_trbDRE -> idanalise, 'LC')
@@ -432,7 +437,6 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 			_sLojBFim = _sLojBIni
 			_oSQL:_sQuery := "SELECT GRUPO"
 			_oSQL:_sQuery +=      ", DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
-		//	_oSQL:_sQuery +=      ", SUCO_INTEGRAL,ORGANICO,SUCO_100,NECT_BEBID,PREPARADOS,VINHO_FINO,ESPUMANTE,VINHO_MESA,FILTRADO,SAGU_QUENTAO,INDUSTRIALIZ,REVENDA,GRANEL,OUTRAS"
 			_oSQL:_sQuery +=      ", SUCO_INTEGRAL,ORGANICO,SUCO_100,NECT_BEBID,PREPARADOS,VINHO_FINO,ESPUMANTE,VINHO_MESA,FRISANTE,FILTRADO,SAGU_QUENTAO,INDUSTRIALIZ,REVENDA,GRANEL,OUTRAS"
 			_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".FDRE_INDL_LINCOM ("
 			_oSQL:_sQuery +=         "'" + cvaltochar (_trbDRE -> idanalise) + "'"
@@ -440,6 +444,7 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 			_oSQL:_sQuery +=         ",'" + _sCliBIni + "', '" + _sLojBIni + "'"  // Cliente/loja base inical
 			_oSQL:_sQuery +=         ",'" + _sCliBFim + "', '" + _sLojBFim + "'"  // Cliente/loja base final
 			_oSQL:_sQuery +=  ") ORDER BY GRUPO"
+			_oSQL:ArqDestXLS = 'DRE_INDL_' + cvaltochar (_trbDRE -> idanalise) + '_' + strtran (_oSQL:_xRetQry [_nOpcao + 1, 1], ' ', '')
 			_oSQL:Log ()
 			_oSQL:Qry2XLS(.F.,.F.,.F.)
 			if U_MsgNoYes ("Deseja exportar lista dos produtos considerados em cada linha comercial? Será exportada uma tabela adicional com uma coluna correspondendo a cada linha comercial.")
@@ -448,7 +453,6 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 		endif
 
 	case _sLayout == 'TT'  // por linha de envase Tetrapak
-//		_oSQL:_sQuery := "SELECT * FROM " + _sLinkSrv + ".FDRE_INDL_TETRAS ('" + cvaltochar (_trbDRE -> idanalise) + "', '', 'zz', '', 'z') ORDER BY GRUPO"
 		_oSQL:_sQuery := "SELECT GRUPO"
 		_oSQL:_sQuery +=      ", DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
 		_oSQL:_sQuery +=      ", TT200_UVA_NOSSO, TT200_UVA_3OS, TT200_OUTROS_NOSSO, TT200_OUTROS_3OS, TT1000_UVA_NOSSO, TT1000_UVA_3OS, TT1000_OUTROS_NOSSO, TT1000_OUTROS_3OS"
@@ -457,6 +461,7 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 		_oSQL:_sQuery +=         ",'', 'ZZ'"
 		_oSQL:_sQuery +=  ") ORDER BY GRUPO"
 		_oSQL:Log ()
+		_oSQL:ArqDestXLS = 'DRE_INDL_' + cvaltochar (_trbDRE -> idanalise) + '_TT'
 		_oSQL:Qry2XLS(.F.,.F.,.F.)
 
 	case _sLayout == 'TT3'  // por linha de envase Tetrapak, com 'marca propria' (marcas de terceiros)
@@ -471,7 +476,6 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 		u_log2 ('info', 'opcao selecionada: ' + cvaltochar (_nOpcao))
 		if _nOpcao > 0
 			_sMarca3 = _oSQL:_xRetQry [_nOpcao + 1, 1]
-//			_oSQL:_sQuery := "SELECT * FROM " + _sLinkSrv + ".FDRE_INDL_TETRAS ('" + cvaltochar (_trbDRE -> idanalise) + "', '', 'zz', '" + _sMarca3 + "', '" + _sMarca3 + "') ORDER BY GRUPO"
 			_oSQL:_sQuery := "SELECT GRUPO"
 			_oSQL:_sQuery +=      ", DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
 			_oSQL:_sQuery +=      ", TT200_UVA_NOSSO, TT200_UVA_3OS, TT200_OUTROS_NOSSO, TT200_OUTROS_3OS, TT1000_UVA_NOSSO, TT1000_UVA_3OS, TT1000_OUTROS_NOSSO, TT1000_OUTROS_3OS"
@@ -479,26 +483,21 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 			_oSQL:_sQuery +=         ",'" + _sFilIni + "', '" + _sFilFim + "'"
 			_oSQL:_sQuery +=         ",'" + _sMarca3 + "', '" + _sMarca3 + "'"
 			_oSQL:_sQuery +=  ") ORDER BY GRUPO"
+			_oSQL:ArqDestXLS = 'DRE_INDL_' + cvaltochar (_trbDRE -> idanalise) + '_TT3'
 			_oSQL:Log ()
 			_oSQL:Qry2XLS(.F.,.F.,.F.)
 		endif
 
 	case _sLayout == 'TL'  // por Tabela de precos das Lojas
-	//	_oSQL:_sQuery := "SELECT * FROM " + _sLinkSrv + ".FDRE_INDL_TABLOJ ('" + cvaltochar (_trbDRE -> idanalise) + "', '08', '08') ORDER BY GRUPO"
 		_oSQL:_sQuery := "SELECT GRUPO"
 		_oSQL:_sQuery +=      ", DESCRITIVO AS [" + alltrim (iif (empty (_sDescDRE), 'DESCRITIVO', _sDescDRE)) + "]"
 		_oSQL:_sQuery +=      ", GONDOLA, CX_FECHADA, ASSOC_FUNC, PARCEIR_REVD, FEIRINH_COMUNID, COML_EXT, COML_EXT2, TUMELERO, PROMOCOES, OUTROS"
 		_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".FDRE_INDL_TABLOJ ('" + cvaltochar (_trbDRE -> idanalise) + "'"
 		_oSQL:_sQuery +=         ",'" + _sFilIni + "', '" + _sFilFim + "'"
 		_oSQL:_sQuery +=  ") ORDER BY GRUPO"
+		_oSQL:ArqDestXLS = 'DRE_INDL_' + cvaltochar (_trbDRE -> idanalise) + '_LJ'
 		_oSQL:Log ()
 		_oSQL:Qry2XLS(.F.,.F.,.F.)
-	//	_oSQL:_sQuery := "SELECT * FROM " + _sLinkSrv + ".FDRE_INDL_TABLOJ ('" + cvaltochar (_trbDRE -> idanalise) + "', '10', '10') ORDER BY GRUPO"
-	//	_oSQL:Log ()
-	//	_oSQL:Qry2XLS(.F.,.F.,.F.)
-	//	_oSQL:_sQuery := "SELECT * FROM " + _sLinkSrv + ".FDRE_INDL_TABLOJ ('" + cvaltochar (_trbDRE -> idanalise) + "', '13', '13') ORDER BY GRUPO"
-	//	_oSQL:Log ()
-	//	_oSQL:Qry2XLS(.F.,.F.,.F.)
 
 	case _sLayout == 'AC'  // Aberto por Cliente
 		_oSQL:_sQuery := " WITH DADOS AS "
@@ -564,8 +563,19 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 		_oSQL:_sQuery +=    " AND ZX5_39.ZX5_FILIAL = '  '"
 		_oSQL:_sQuery +=    " AND ZX5_39.ZX5_39COD  = LIN_COML"
 		_oSQL:_sQuery +=  " GROUP BY CLIENTE, LOJA, A1_NOME, CLIBASE, LOJABASE, ZX5_39.ZX5_39DESC, CC"
+		_oSQL:ArqDestXLS = 'DRE_INDL_' + cvaltochar (_trbDRE -> idanalise) + '_CLI'
 		_oSQL:Log ()
 		_oSQL:Qry2XLS(.F.,.F.,.F.)
+
+	case _sLayout == 'CTB'  // Tabela auxiliar de valores contabeis
+		_oSQL:_sQuery := "SELECT *"
+		_oSQL:_sQuery +=  " FROM " + _sLinkSrv + ".DRE_INDL_CONTAB"
+		_oSQL:_sQuery += " WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
+		_oSQL:_sQuery += " order by GRUPO, FILIAL"
+		_oSQL:ArqDestXLS = 'DRE_INDL_' + cvaltochar (_trbDRE -> idanalise) + '_CTB'
+		_oSQL:Log ()
+		_oSQL:Qry2XLS(.F.,.F.,.F.)
+
 	endcase
 return
 
@@ -587,16 +597,23 @@ static function _Excl ()
 	local _oSQL := NIL
 	procregua (10)
 	incproc ('Excluindo...')
+	begin transaction
 	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := "DELETE " + _sLinkSrv + ".DRE_INDL_ITENS WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
+	_oSQL:_sQuery := "DELETE " + _sLinkSrv + ".DRE_INDL_CONTAB WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
 	_oSQL:Log ()
 	if _oSQL:Exec ()
-		_oSQL:_sQuery := "DELETE " + _sLinkSrv + ".DRE_INDL WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
+		_oSQL := ClsSQL ():New ()
+		_oSQL:_sQuery := "DELETE " + _sLinkSrv + ".DRE_INDL_ITENS WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
 		_oSQL:Log ()
 		if _oSQL:Exec ()
-			_AtuTrb ()
+			_oSQL:_sQuery := "DELETE " + _sLinkSrv + ".DRE_INDL WHERE ID_ANALISE = " + cvaltochar (_trbDRE -> idanalise)
+			_oSQL:Log ()
+			if _oSQL:Exec ()
+				_AtuTrb ()
+			endif
 		endif
 	endif
+	end transaction
 return
 
 
