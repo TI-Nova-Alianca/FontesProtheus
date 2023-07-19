@@ -172,15 +172,26 @@ return
 // --------------------------------------------------------------------------
 // Menu para geracao de nova analise
 user function DREIndlN ()
+	local _nLock := 0
 	private cPerg := "DRE_INDL"
-	_ValidPerg ()
-	if pergunte (cPerg, .T.)
-		if mv_par03 < mv_par02
-			u_help ("Data final nao pode ser menor que data inicial.",, .t.)
-		else
-			processa ({|| _Gera (mv_par01, mv_par02, mv_par03, iif (mv_par04 == 1, 'C', 'F'), iif (mv_par05 == 1, 'V', 'L'))})
+
+	// Controle de semaforo.
+	_nLock := U_Semaforo ('DRE_INDL')
+	if _nLock == 0
+		u_help ("Nao foi possivel obter acesso exclusivo a esta rotina.",, .t.)
+	else
+		_ValidPerg ()
+		if pergunte (cPerg, .T.)
+			if mv_par03 < mv_par02
+				u_help ("Data final nao pode ser menor que data inicial.",, .t.)
+			else
+				processa ({|| _Gera (mv_par01, mv_par02, mv_par03, iif (mv_par04 == 1, 'C', 'F'), iif (mv_par05 == 1, 'V', 'L'))})
+			endif
 		endif
 	endif
+
+	// Libera semaforo
+	U_Semaforo (_nLock)
 return
 
 

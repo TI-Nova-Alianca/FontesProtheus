@@ -53,7 +53,7 @@ Static Function _Gera()
 	_oSQL:_sQuery += " 	   ,CT2_LINHA"
 	_oSQL:_sQuery += " 	FROM " + RetSQLName ("CT2") + " CT2 "
 	_oSQL:_sQuery += " 	WHERE D_E_L_E_T_ = ''"
-	_oSQL:_sQuery += " 	AND CT2_DATA <= '20190831'"  		 // ULTIMO MES EM QUE USAMOS RATEIO ONLINE, NAO ADIANTA BUSCAR PERIODO POSTERIOR.							
+	_oSQL:_sQuery += " 	AND CT2_DATA <= '20190831'" 		 // ULTIMO MES EM QUE USAMOS RATEIO ONLINE, NAO ADIANTA BUSCAR PERIODO POSTERIOR.							
 	_oSQL:_sQuery += " 	AND ((CT2_CREDIT = ''"
 	_oSQL:_sQuery += " 	AND CT2_DEBITO LIKE '701011001%')"
 	_oSQL:_sQuery += " 	OR (CT2_DEBITO = ''"
