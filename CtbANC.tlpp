@@ -19,6 +19,7 @@
 //                       estornar a diferenca.
 //                     - Passa a usar nomes de colunas na array de grupos (para facilitar entendimento)
 //                     - Melhorados logs
+// 20/07/2023 - Robert - Desconsiderar CFOP 1116 na leitura das NF entrada (GLPI 13946)
 //
 
 // Definicao de colunas para a array de saldos por grupos
@@ -210,7 +211,8 @@ static function _Parte1 ()
 	_oSQL:_sQuery += " AND SD1.D1_DTDIGIT BETWEEN '" + left (dtos (mv_par01), 4) + "0101' AND '" + dtos (lastday (mv_par01)) + "'"
 	_oSQL:_sQuery += " AND SD1.D1_TP IN ('MP', 'VD') "
 	_oSQL:_sQuery += " AND SD1.D1_TIPO NOT IN ('B', 'D') "
-	_oSQL:_sQuery += " AND SD1.D1_CF NOT IN ('1902', '1925', '1151', '2151', '1352', '1903', '2903', '2352','1352' ) "
+//	_oSQL:_sQuery += " AND SD1.D1_CF NOT IN ('1902', '1925', '1151', '2151', '1352', '1903', '2903', '2352','1352' ) "
+	_oSQL:_sQuery += " AND SD1.D1_CF NOT IN ('1902', '1925', '1151', '2151', '1352', '1903', '2903', '2352','1352','1116') "
 	_oSQL:_sQuery += " AND (SD1.D1_CF <> '1949' OR (SD1.D1_CF = '1949' AND SD1.D1_FILIAL='03' AND SD1.D1_FORNECE='001369')) "
 	_oSQL:_sQuery += " )"
 	_oSQL:_sQuery += " SELECT SUM (D1_CUSTO) AS TOT_GER"
