@@ -1152,6 +1152,9 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 	_sRetFechS += '<safra>' + _sSafra + '</safra>'
 
 	// Busca notas do associado
+
+	if ::FSNFEntrada .or. ::FSNFCompra .or. ::FSNFComplem .or. _lFSNFP
+
 	if _lFSNFE .or. _lFSNFC .or. _lFSNFV .or. _lFSNFP
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
