@@ -11,6 +11,7 @@
 // #Modulos   		  #FIN 
 //
 // Historico de alteracoes:
+// 20/07/2023 - Claudia - Ajustado calculo de taxa. GLPI: 12280
 //
 // --------------------------------------------------------------------------
 User Function ZD0CMP(_sTipo, _sFilial, _sTrans)
@@ -94,6 +95,7 @@ User Function ZD0CMP(_sTipo, _sFilial, _sTrans)
                 _oSQL:_sQuery += "    ,E1_CLIENTE "
                 _oSQL:_sQuery += "    ,E1_LOJA "
                 _oSQL:_sQuery += "    ,E1_TIPO "
+                _oSQL:_sQuery += "    ,E1_VALOR "
                 _oSQL:_sQuery += " FROM " + RetSQLName ("SE1") 
                 _oSQL:_sQuery += " WHERE D_E_L_E_T_= '' "
                 _oSQL:_sQuery += " AND E1_FILIAL   = '" + _aZD0[_x, 2] + "' "
@@ -143,21 +145,24 @@ User Function ZD0CMP(_sTipo, _sFilial, _sTrans)
 
                     else
                         u_log2('aviso', 'Compensação realizada com sucesso! RECNOs: NF:' + alltrim(str(_aSE1[ 1, 1])) + " RA:" + alltrim(str(_aRA[ 1, 1])) )
-                        aadd(aTaxa,{    _aSE1[ 1, 2],; // filial
-                                        _aSE1[ 1, 3],; // prefixo
-                                        _aSE1[ 1, 4],; // número
-                                        _aSE1[ 1, 5],; // parcela
-                                        _aSE1[ 1, 6],; // cliente
-                                        _aSE1[ 1, 7],; // loja
-                                        _aSE1[ 1, 8],; // tipo
-                                        _aZD0[_x, 6],; // desconto
-                                        _aSE1[ 1, 1],; // recno titulo
-                                        _aRA[ 1, 1] ,; // recno RA
-                                        _aZD0[_x, 3],; // TID
-                                        _aZD0[_x, 7]}) // RID
+                        aadd(aTaxa,{    _aSE1[ 1, 2],; // 01 filial
+                                        _aSE1[ 1, 3],; // 02 prefixo
+                                        _aSE1[ 1, 4],; // 03 número
+                                        _aSE1[ 1, 5],; // 04 parcela
+                                        _aSE1[ 1, 6],; // 05 cliente
+                                        _aSE1[ 1, 7],; // 06 loja
+                                        _aSE1[ 1, 8],; // 07 tipo
+                                        _aZD0[_x, 6],; // 08 desconto - TAXA
+                                        _aSE1[ 1, 1],; // 09 recno titulo
+                                        _aRA[ 1, 1] ,; // 10 recno RA
+                                        _aZD0[_x, 3],; // 11 TID
+                                        _aZD0[_x, 7],; // 12 RID
+                                        _aSE1[ 1, 9],; // 13 Valor título
+                                        _aZD0[_x, 5]}) // 14 Valor liquido pagar.me
 
+                        _BaixaTaxa(aTaxa)
                     EndIf
-                    _BaixaTaxa(aTaxa)
+                    
                     End Transaction
                 else
                     If len(_aSE1) <= 0
@@ -205,6 +210,16 @@ Static Function _BaixaTaxa(aTaxa)
         // executar a rotina de baixa automatica do SE1 gerando o SE5 - DO VALOR LÍQUIDO
         _aAutoSE1 := {}
 
+        _nTaxa := aTaxa[_x,13] - aTaxa[_x,14]  
+        _nVlrMaior := aTaxa[_x,8] + 0.5
+        _nVlrMenor := aTaxa[_x,8] - 0.5
+
+        If _nTaxa <= _nVlrMaior .and. _nTaxa >= _nVlrMenor  // taxa com diferença de arredondamento
+            _nTaxa := aTaxa[_x,13] - aTaxa[_x,14]  
+        else                                                // se a diferença for maior de 0.5, usa a taxa pagar.me e titulo ficará aberto
+            _nTaxa := aTaxa[_x,8] 
+        EndIf
+
         aAdd(_aAutoSE1, {"E1_FILIAL" 	, aTaxa[_x,1]       , Nil})
         aAdd(_aAutoSE1, {"E1_PREFIXO" 	, aTaxa[_x,2]       , Nil})
         aAdd(_aAutoSE1, {"E1_NUM"     	, aTaxa[_x,3]       , Nil})
@@ -219,7 +234,7 @@ Static Function _BaixaTaxa(aTaxa)
         aAdd(_aAutoSE1, {"AUTDTBAIXA"	, dDataBase		    , Nil})
         aAdd(_aAutoSE1, {"AUTDTCREDITO"	, dDataBase		    , Nil})
         aAdd(_aAutoSE1, {"AUTHIST"   	, _sHist    	    , Nil})
-        aAdd(_aAutoSE1, {"AUTDESCONT"	, aTaxa[_x,8]       , Nil})
+        aAdd(_aAutoSE1, {"AUTDESCONT"	, _nTaxa            , Nil})
         aAdd(_aAutoSE1, {"AUTMULTA"  	, 0         	    , Nil})
         aAdd(_aAutoSE1, {"AUTJUROS"  	, 0         	    , Nil})
         aAdd(_aAutoSE1, {"AUTVALREC"  	, 0				    , Nil})
