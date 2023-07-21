@@ -2584,7 +2584,7 @@ static function _AsFecSaf ()
 	private _sErroAuto := ""  // Variavel alimentada pela funcao U_Help
 
 	if empty (_sErroWS) ; _sAssoc = U_ExTagXML ("_oXML:_WSAlianca:_Assoc", .T., .F.) ; endif
-	if empty (_sErroWS) ; _sLoja  = U_ExTagXML ("_oXML:_WSAlianca:_Loja", .T., .F.)  ; endif
+	if empty (_sErroWS) ; _sLoja  = U_ExTagXML ("_oXML:_WSAlianca:_Loja",  .T., .F.) ; endif
 	if empty (_sErroWS) ; _sSafra = U_ExTagXML ("_oXML:_WSAlianca:_Safra", .T., .F.) ; endif
 	if empty (_sErroWS)
 		_oAssoc := ClsAssoc ():New (_sAssoc, _sLoja)
