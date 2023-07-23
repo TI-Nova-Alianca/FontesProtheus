@@ -16,6 +16,7 @@
 // 10/01/2023 - RObert - Ajustes para safra 2023.
 // 25/01/2023 - Robert - Removidos alguns logs
 // 03/02/2023 - Robert - Removidos alguns logs
+// 21/07/2023 - Robert - Nova forma de parametrizacao (via atributos) do metodo ClsAssoc:FechSafra().
 //
 
 // ------------------------------------------------------------------------------------
@@ -59,8 +60,13 @@ User Function VA_RusPP (_sSafPag, _sGrpPgSaf, _nVlUva, _nVlFrete, _dEmissao)
 
 		// Aqui nao preciso de um associado especifico... preciso apenas ler as regras de pagamento.
 		_oAssocCP = ClsAssoc():New ('000161', '01')
-		//                                _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC
-		_sXmlFech = _oAssocCP:FechSafra (_sSafPag, .f.,     .f.,     .f.,     .f.,     .f.,      .t.,      .f.,      .f.,        .f.,      .f.,      .f.)
+	//	//                                _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC
+	//	_sXmlFech = _oAssocCP:FechSafra (_sSafPag, .f.,     .f.,     .f.,     .f.,     .f.,      .t.,      .f.,      .f.,        .f.,      .f.,      .f.)
+		u_help ("Robert: Implementei em 21/07/2023 nova chamada para ler regras de pagamento e nunca testei.", , .t.)
+		_oAssocCP:FSSafra      = _sSafPag
+		_oAssocCP:FSRegraPagto = .t.
+		_sXmlFech = _oAssocCP:FechSafra ()
+
 	//	U_Log2 ('debug', _sXMLFech)
 
 		// Converte de texto para XML

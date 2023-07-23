@@ -21,6 +21,9 @@ User Function VA_AdSaf (_lAuto)
 	Local nOpca      := 0
 	Local lPerg      := .F.
 
+	u_help ("Este programa nao deve ser usado sem que seja revisado, pois tivemos muitas alteracoes nas politicas de safra.",, .t.)
+	return
+
 	u_logID ()
 	Private cPerg   := "VA_ADSAF"
 

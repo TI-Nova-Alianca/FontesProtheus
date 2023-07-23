@@ -124,6 +124,7 @@
 // 20/04/2023 - Robert  - Tratamento para o atributo ClsTrEstq:CodMotivo na transf.estq.por grid.
 // 22/05/2023 - Robert  - Passa a permitir exclusao de eventos com origens WPNMARCARPRESENCAS/WPNFOLLOWUPNOTASFISCAIS
 // 02/06/2023 - Robert  - Passa a permitir exclusao de eventos com origem WpnAdicionarEventosAssociado
+// 21/07/2023 - Robert  - Nova forma de parametrizacao (via atributos) do metodo ClsAssoc:FechSafra() - GLPI 13956
 //
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -315,7 +316,7 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 
 	u_log2 ('info', 'Mensagens WS: ' + ::Retorno:Mensagens)
 	// Como algumas opcoes retornam bastante coisa, vou economizar um pouco o log
-	if _sAcao $ 'ConsultaKardex/'
+	if _sAcao $ 'ConsultaKardex/ConsultaDeOrcamentos'
 		u_log2 ('info', 'Retorno   WS: [nao gravarei log para esta acao por eh muito longo] (' + cvaltochar (seconds () - _nSegIni) + 's.)')
 	else
 		u_log2 ('info', 'Retorno   WS: ' + ::Retorno:Resultado + ' (' + cvaltochar (seconds () - _nSegIni) + 's.)')
@@ -2583,6 +2584,7 @@ static function _AsFecSaf ()
 	local   _sRet      := ''
 	private _sErroAuto := ""  // Variavel alimentada pela funcao U_Help
 
+	U_Log2 ('debug', '[' + procname () + ']iniciando...')
 	if empty (_sErroWS) ; _sAssoc = U_ExTagXML ("_oXML:_WSAlianca:_Assoc", .T., .F.) ; endif
 	if empty (_sErroWS) ; _sLoja  = U_ExTagXML ("_oXML:_WSAlianca:_Loja",  .T., .F.) ; endif
 	if empty (_sErroWS) ; _sSafra = U_ExTagXML ("_oXML:_WSAlianca:_Safra", .T., .F.) ; endif
@@ -2593,8 +2595,23 @@ static function _AsFecSaf ()
 		endif
 	endif
 	if empty (_sErroWS)
-		//                         _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC, _lFSFunrur
-		_sRet = _oAssoc:FechSafra (_sSafra, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,        .t.,      .t.,      .t.,        .t.)
+		U_Log2 ('debug', '[' + procname () + ']parametrizando...')
+		if empty (_sErroWS) ; _oAssoc:FSDFunrur    = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_descontoFUNRURAL",  .F., .F.) == 'S') ; endif
+		if empty (_sErroWS) ; _oAssoc:FSFrete      = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_freteSafra",        .F., .F.) == 'S') ; endif
+		if empty (_sErroWS) ; _oAssoc:FSLctosCC    = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_lctoCC",            .F., .F.) == 'S') ; endif
+		if empty (_sErroWS) ; _oAssoc:FSNFEntrada  = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_nfEntrada",         .F., .F.) == 'S') ; endif
+		if empty (_sErroWS) ; _oAssoc:FSNFCompra   = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_nfCompra",          .F., .F.) == 'S') ; endif
+		if empty (_sErroWS) ; _oAssoc:FSNFComplem  = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_nfComplemento",     .F., .F.) == 'S') ; endif
+		if empty (_sErroWS) ; _oAssoc:FSNFPrdProp  = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_nfProdPropria",     .F., .F.) == 'S') ; endif
+		if empty (_sErroWS) ; _oAssoc:FSPrevPagto  = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_faturaPagamento",   .F., .F.) == 'S') ; endif
+		if empty (_sErroWS) ; _oAssoc:FSRegraPagto = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_regraPagamento",    .F., .F.) == 'S') ; endif
+		if empty (_sErroWS) ; _oAssoc:FSResVaried  = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_resumoVariedade",   .F., .F.) == 'S') ; endif
+		if empty (_sErroWS) ; _oAssoc:FSResVarGC   = .t. ;endif // Habilitar resto da linha quando o NaWeb estiver mandando as tags ---> (U_ExTagXML ("_oXML:_WSAlianca:_resumoVarGrauClas", .F., .F.) == 'S') ; endif
+		_oAssoc:FSSafra      = _sSafra
+
+	//	//                         _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC, _lFSFunrur
+	//	_sRet = _oAssoc:FechSafra (_sSafra, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,        .t.,      .t.,      .t.,        .t.)
+		_sRet = _oAssoc:FechSafra ()
 		U_Log2 ('debug', '[' + procname () + ']' + _sRet)
 		if empty (_sRet)
 			_SomaErro ("Retorno invalido metodo FechSafra " + _oAssoc:UltMsg)

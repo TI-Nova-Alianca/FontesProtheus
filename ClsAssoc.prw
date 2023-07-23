@@ -114,6 +114,7 @@
 //                      - Iniciado tratamento para operacoes com a tabela ZZU (grupos de usuarios)
 // 11/04/2023 - Robert  - Filtrar E2_TIPO=NF/DP/FAT nas prev.pagto.fech.safra (estava deixando passar NDF por exemplo)
 // 02/06/2023 - Robert  - Melhoria tags <valoresEfetivos> do metodo FechSafra() - GLPI 13532
+// 21/07/2023 - Robert  - Criados atributos especificos para parametrizacao das chamadas do metodo FechSafra() - GLPI 13956
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -154,9 +155,22 @@ CLASS ClsAssoc
 	data DtNascim
 	data EMail
 	data Endereco
-	data GrpFam      // Codigo do grupo familiar
-	data InscrEst    // Inscricao estadual.
-	data LojAvisad   // A2_VALAVIS - Loja do associado avisador (aquele que eh responsavel por avisar/chamar este associado)
+	data FSDFunrur    // Fechamento de safra: Indica se deve buscar descontos de FUNRURAL
+	data FSFrete      // Fechamento de safra: Indica se deve buscar dados de frete / auxilio combustivel
+	data FSLctosCC    // Fechamento de safra: Indica se deve buscar lancamentos com saldo na conta corrente
+	data FSNFEntrada  // Fechamento de safra: Indica se deve buscar as NF de entrada (antigamente a safra dividia-se em 'recebimento' e 'compra')
+	data FSNFCompra   // Fechamento de safra: Indica se deve buscar as NF de compra
+	data FSNFComplem  // Fechamento de safra: Indica se deve buscar as NF de complemento de valor
+	data FSNFPrdProp  // Fechamento de safra: Indica se deve buscar as NF de producao propria
+	data FSPrevPagto  // Fechamento de safra: Indica se deve buscar as previsoes de pagamento
+	data FSRegraPagto // Fechamento de safra: Indica se deve buscar regras para pagamento
+	data FSResValEfet // Fechamento de safra: Indica se deve buscar resumo com valores efetivos por variedade
+	data FSResVaried  // Fechamento de safra: Indica se deve buscar resumo por variedade
+	data FSResVarGC   // Fechamento de safra: Indica se deve buscar resumo por variedade / grau / classificacao
+	data FSSafra      // Fechamento de safra: Indica qual safra deve ser considerada
+	data GrpFam       // Codigo do grupo familiar
+	data InscrEst     // Inscricao estadual.
+	data LojAvisad    // A2_VALAVIS - Loja do associado avisador (aquele que eh responsavel por avisar/chamar este associado)
 	data Loja
 	data LojaBase
 	data MotInativ   // Motivo de ser considerado inativo
@@ -207,8 +221,21 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 	local _nCodigo   := 0
 	local _aGrpFam   := {}
 
-	::UltMsg    = ""
-	::MotInativ = ""
+	::FSDFunrur    = .F.
+	::FSFrete      = .F.
+	::FSLctosCC    = .F.
+	::FSNFEntrada  = .F.
+	::FSNFCompra   = .F.
+	::FSNFComplem  = .F.
+	::FSNFPrdProp  = .F.
+	::FSPrevPagto  = .F.
+	::FSRegraPagto = .F.
+	::FSResValEfet = .F.
+	::FSResVaried  = .F.
+	::FSResVarGC   = .F.
+	::FSSafra      = ''
+	::UltMsg       = ""
+	::MotInativ    = ""
 
 	if _sCodigo == NIL .or. _sLoja == NIL
 		_oRet = Self
@@ -1127,7 +1154,7 @@ return _aRet
 
 // --------------------------------------------------------------------------
 // Gera string para posteriormente montar demonstrativo de fechamento de safra em formato XML.
-METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lFSResVGC, _lFSFunrur) Class ClsAssoc
+METHOD FechSafra () Class ClsAssoc
 	local _sRetFechS      := ''
 	local _oSQL      := NIL
 	local _sAliasQ   := ""
@@ -1141,7 +1168,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 	local _nTotFunru := 0
 	local _aTotVlEf  := {}
 
-	if empty (_sSafra)
+	if empty (::FSSafra)
 		::UltMsg += "Safra nao informada"
 	endif
 
@@ -1149,13 +1176,11 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 	_sRetFechS += '<assocFechSafra>'
 	_sRetFechS += '<associado>' + ::Codigo + '</associado>'
 	_sRetFechS += '<loja>' + ::Loja + '</loja>'
-	_sRetFechS += '<safra>' + _sSafra + '</safra>'
+	_sRetFechS += '<safra>' + ::FSSafra + '</safra>'
 
 	// Busca notas do associado
 
-	if ::FSNFEntrada .or. ::FSNFCompra .or. ::FSNFComplem .or. _lFSNFP
-
-	if _lFSNFE .or. _lFSNFC .or. _lFSNFV .or. _lFSNFP
+	if ::FSNFEntrada .or. ::FSNFCompra .or. ::FSNFComplem .or. ::FSNFPrdProp
 		_oSQL := ClsSQL ():New ()
 		_oSQL:_sQuery := ""
 		_oSQL:_sQuery += "SELECT TIPO_NF, FILIAL, DATA, DOC, SERIE, PRODUTO, DESCRICAO, GRAU, PESO_LIQ, VALOR_UNIT, VALOR_TOTAL, "
@@ -1183,11 +1208,11 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 		_oSQL:_sQuery +=            " END"
 		_oSQL:_sQuery +=   	       " AS OBS"
 		_oSQL:_sQuery +=  " FROM VA_VNOTAS_SAFRA V"
-		_oSQL:_sQuery += " WHERE SAFRA      = '" + _sSafra  + "'"
+		_oSQL:_sQuery += " WHERE SAFRA      = '" + ::FSSafra  + "'"
 		_oSQL:_sQuery +=   " AND SAFRA     >= '2019'"  // Primeira safra em que este metodo foi implementado.
 		_oSQL:_sQuery +=   " AND ASSOCIADO  = '" + ::Codigo + "'"
 		_oSQL:_sQuery +=   " AND LOJA_ASSOC = '" + ::Loja   + "'"
-		_oSQL:_sQuery +=   " AND TIPO_NF    IN ('" + iif (_lFSNFE, 'E', '') + "', '" + iif (_lFSNFC, 'C', '') + "', '" + iif (_lFSNFV, 'V', '') + "', '" + iif (_lFSNFP, 'P', '') + "')"
+		_oSQL:_sQuery +=   " AND TIPO_NF    IN ('" + iif (::FSNFEntrada, 'E', '') + "', '" + iif (::FSNFCompra, 'C', '') + "', '" + iif (::FSNFComplem, 'V', '') + "', '" + iif (::FSNFPrdProp, 'P', '') + "')"
 		_oSQL:_sQuery += " ORDER BY CASE TIPO_NF WHEN 'E' THEN '1' WHEN 'C' THEN '2' WHEN 'V' THEN '3' END, DATA, DESCRICAO, GRAU"
 		_oSQL:Log ()
 		_sAliasQ := _oSQL:Qry2Trb (.F.)
@@ -1195,10 +1220,10 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 		// Gera grupos de tags diferentes conforme o tipo de nota.
 		for _nTipoNF = 1 to len (_aTipoNF)
 
-			if (_aTipoNF [_nTipoNF, 1] == 'E' .and. !_lFSNFE) .or. ;
-			   (_aTipoNF [_nTipoNF, 1] == 'C' .and. !_lFSNFC) .or. ;
-			   (_aTipoNF [_nTipoNF, 1] == 'V' .and. !_lFSNFV) .or. ;
-			   (_aTipoNF [_nTipoNF, 1] == 'P' .and. !_lFSNFP)
+			if (_aTipoNF [_nTipoNF, 1] == 'E' .and. !::FSNFEntrada) .or. ;
+			   (_aTipoNF [_nTipoNF, 1] == 'C' .and. !::FSNFCompra)  .or. ;
+			   (_aTipoNF [_nTipoNF, 1] == 'V' .and. !::FSNFComplem) .or. ;
+			   (_aTipoNF [_nTipoNF, 1] == 'P' .and. !::FSNFPrdProp)
 			   loop
 			endif
 
@@ -1258,7 +1283,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 
 
 	// Busca previsoes de pagamento (faturas e notas em aberto no contas a pagar).
-	if _lFSPrPg
+	if ::FSPrevPagto
 		U_Log2 ('debug', 'Buscando previsao de pagamento')
 		_sRetFechS += '<faturaPagamento>'
 		_oSQL := ClsSQL ():New ()
@@ -1293,30 +1318,30 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 		_oSQL:_sQuery +=   " AND E2_LOJA    = '" + ::Loja + "'"
 		_oSQL:_sQuery +=   " AND E2_EMISSAO >= '20190101'"  // Primeira safra em que este metodo foi implementado. Para safras anteriores o tratamento era diferente.
 		_oSQL:_sQuery +=   " AND E2_TIPO IN ('NF ', 'DP ', 'FAT')"  // NF quando compra original da matriz; DP quando saldo transferido de outra filial; FAT quando agrupados em uma fatura.
-		if _sSafra >= '2021'
-			_oSQL:_sQuery +=   " AND E2_VASAFRA = '" + _sSafra + "'"
+		if ::FSSafra >= '2021'
+			_oSQL:_sQuery +=   " AND E2_VASAFRA = '" + ::FSSafra + "'"
 		else
 			_oSQL:_sQuery +=   " AND E2_PREFIXO in ('30 ', '31 ')"  // Serie usada para notas e faturas de safra
 //			_oSQL:_sQuery +=   " AND E2_TIPO IN ('NF', 'DP', 'FAT')"  // NF quando compra original da matriz; DP quando saldo transferido de outra filial; FAT quando agrupados em uma fatura.
-			_oSQL:_sQuery +=   " AND E2_EMISSAO >= '" + _sSafra + "0101'"
-			if _sSafra <= '2019'
-				_oSQL:_sQuery +=   " AND E2_EMISSAO <= '" + _sSafra + "1231'"
+			_oSQL:_sQuery +=   " AND E2_EMISSAO >= '" + ::FSSafra + "0101'"
+			if ::FSSafra <= '2019'
+				_oSQL:_sQuery +=   " AND E2_EMISSAO <= '" + ::FSSafra + "1231'"
 			else  // Fatura para pagamento pode ainda ser gerada em janeiro do ano seguinte (GLPI 9558).
-				_oSQL:_sQuery +=   " AND (E2_EMISSAO <= '" + _sSafra + "1231' OR (E2_EMISSAO <= '" + Soma1 (_sSafra) + "0131' AND E2_TIPO = 'FAT'))"
+				_oSQL:_sQuery +=   " AND (E2_EMISSAO <= '" + ::FSSafra + "1231' OR (E2_EMISSAO <= '" + Soma1 (::FSSafra) + "0131' AND E2_TIPO = 'FAT'))"
 			endif
 		endif
 		_oSQL:_sQuery +=   ")"
 		_oSQL:_sQuery += " SELECT *"
 		_oSQL:_sQuery +=   " FROM C"
 		_oSQL:_sQuery +=  " WHERE E2_VALOR != 0"  // Os que estao zerados eh por que foram totalmente consumidos em uma fatura.
-		if _sSafra == '2021'
+		if ::FSSafra == '2021'
 			_oSQL:_sQuery +=   " AND E2_VENCTO >= '20210301'"  // Estou achando que devo criar um campo E2_VASAFRA para melhorar estes filtros.
 		endif
 
 		// Somar o premios de qualidade que foram gerados e pagos noas anos seguintes
 		// Safra 2020: GLPI 9530 e 9415
 		// Safra 2021: GLPI 11661
-		if _sSafra == '2020' //.or. _sSafra == '2021'
+		if ::FSSafra == '2020' //.or. ::FSSafra == '2021'
 			_oSQL:_sQuery += " UNION ALL"
 			_oSQL:_sQuery += " SELECT E2_NUM, E2_PREFIXO, E2_PARCELA, E2_VENCTO, E2_VALOR, E2_SALDO, E2_HIST"
 			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SE2") + " SE2 "
@@ -1324,10 +1349,10 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 			_oSQL:_sQuery +=    " AND SE2.E2_FILIAL  = '01'"
 			_oSQL:_sQuery +=    " AND SE2.E2_TIPO    = 'DP'"
 			_oSQL:_sQuery +=    " AND SE2.E2_PREFIXO = 'OUT'"
-			if _sSafra == '2020'
+			if ::FSSafra == '2020'
 				_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO like '202102%'"
 				_oSQL:_sQuery +=    " AND SE2.E2_VENCREA like '202102%'"
-			//elseif _sSafra == '2021'
+			//elseif ::FSSafra == '2021'
 			//	_oSQL:_sQuery +=    " AND SE2.E2_EMISSAO = '20220223'"
 			//	_oSQL:_sQuery +=    " AND SE2.E2_VENCREA like '202202%'"
 			endif
@@ -1377,11 +1402,11 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 
 
 	// Busca valores de FUNRURAL que tenham sido descontados do fornecedor.
-	if _lFSFunrur
+	if ::FSDFunrur
 		U_Log2 ('debug', 'Buscando descontos de FUNRURAL')
 		_sRetFechS += '<descontoFUNRURAL>'
 
-		if _sSafra >= '2022'  // Antes de 2022 nao faziamos esse desconto.
+		if ::FSSafra >= '2022'  // Antes de 2022 nao faziamos esse desconto.
 			_oSQL := ClsSQL ():New ()
 			_oSQL:_sQuery := ""
 			_oSQL:_sQuery += "WITH C AS ("
@@ -1406,7 +1431,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 			_oSQL:_sQuery +=   " AND E2_TIPO     = 'NF'"
 			_oSQL:_sQuery +=   " AND E2_FORNECE  = '" + ::Codigo + "'"
 			_oSQL:_sQuery +=   " AND E2_LOJA     = '" + ::Loja + "'"
-			_oSQL:_sQuery +=   " AND E2_VASAFRA  = '" + _sSafra + "'"
+			_oSQL:_sQuery +=   " AND E2_VASAFRA  = '" + ::FSSafra + "'"
 			_oSQL:_sQuery +=   " AND NOT EXISTS (SELECT *"  // SE JAH TEM OUTRA PARCELA DESTE TITULO MARCADA, NAO PRECISO MAIS VERIFICAR O TITULO.
 			_oSQL:_sQuery +=                     " FROM " + RetSQLName ("SE2") + " OUTRA_PARCELA "
 			_oSQL:_sQuery +=                    " WHERE OUTRA_PARCELA.D_E_L_E_T_ = ''"
@@ -1453,9 +1478,9 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 
 
 	// Regras de pagamento (informativo)
-	if _lFSRgPg
+	if ::FSRegraPagto
 		_sRetFechS += '<regraPagamento>'
-		if _sSafra == '2019' .or. _sSafra == '2020'
+		if ::FSSafra == '2019' .or. ::FSSafra == '2020'
 			_sRetFechS += '<regraPagamentoItem>'
 			_sRetFechS += '<grupo>A</grupo>'
 			_sRetFechS += '<descricao>Bordo e organicas                - 5 vezes</descricao>'
@@ -1474,7 +1499,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 			_sRetFechS += '<perc01>10</perc01><perc02>4</perc02><perc03>4</perc03><perc04>4</perc04><perc05>4</perc05><perc06>11.4</perc06><perc07>11.4</perc07><perc08>11.4</perc08><perc09>11.4</perc09><perc10>14.2</perc10><perc11>14.2</perc11>'
 			_sRetFechS += '<descComParc>C-Demais variedades.....: 10+4+4+4+4+11.4+11.4+11.4+11.4+14.2+14.2</descComParc>'
 			_sRetFechS += '</regraPagamentoItem>'
-		elseif _sSafra == '2021' .or. _sSafra == '2022'
+		elseif ::FSSafra == '2021' .or. ::FSSafra == '2022'
 			_sRetFechS += '<regraPagamentoItem>'
 			_sRetFechS += '<grupo>A</grupo>'
 			_sRetFechS += '<descricao>Bordo,niagara,concord e organicas - 6 vezes</descricao>'
@@ -1493,7 +1518,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 			_sRetFechS += '<perc01>10</perc01><perc02>5.5</perc02><perc03>5.5</perc03><perc04>5.5</perc04><perc05>5.5</perc05><perc06>6.5</perc06><perc07>11.5</perc07><perc08>11.5</perc08><perc09>11.5</perc09><perc10>13.5</perc10><perc11>13.5</perc11>'
 			_sRetFechS += '<descComParc>C-Demais variedades: 10+5.5+5.5+5.5+5.5+6.5+11.5+11.5+11.5+13.5+13.5</descComParc>'
 			_sRetFechS += '</regraPagamentoItem>'
-		elseif _sSafra == '2023'
+		elseif ::FSSafra == '2023'
 			_sRetFechS += '<regraPagamentoItem>'
 			_sRetFechS += '<grupo>A</grupo>'
 			_sRetFechS += '<descricao>Bordo,niagara,concord e organicas - 11 vezes</descricao>'
@@ -1521,9 +1546,8 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 		_sRetFechS += '</regraPagamento>'
 	endif
 
-
 	// Valores efetivos por variedade/grau
-	if _lFSVlEf
+	if ::FSResValEfet
 		_aMedVar = {}
 		_aTotVlEf = {0, 0, 0, 0, 0}
 		_sRetFechS += '<valoresEfetivos>'
@@ -1540,7 +1564,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 			_oSQL:_sQuery +=  " FROM VA_VPRECO_EFETIVO_SAFRA"
 			_oSQL:_sQuery += " WHERE ASSOCIADO  = '" + ::Codigo + "'"
 			_oSQL:_sQuery +=   " AND LOJA_ASSOC = '" + ::Loja + "'"
-			_oSQL:_sQuery +=   " AND SAFRA      = '" + _sSafra + "'"
+			_oSQL:_sQuery +=   " AND SAFRA      = '" + ::FSSafra + "'"
 			_oSQL:_sQuery += " GROUP BY PRODUTO, DESCRICAO, GRAU, GRAU, CLAS_ABD, CLAS_FINAL, SIST_CONDUCAO"
 			_oSQL:_sQuery += " ORDER BY DESCRICAO, GRAU, CLAS_ABD, CLAS_FINAL "
 			_oSQL:Log ('[' + GetClassName (::Self) + '.' + procname () + ']')
@@ -1598,9 +1622,10 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 		_sRetFechS += '</valoresEfetivos>'
 	endif
 
+
 	// Resumo grau medio por variedade
 	// Termina de calcular as medias por variedade e insere nos dados para retorno da funcao.
-	if _lFSResVGM
+	if ::FSResVaried
 		_sRetFechS += '<resumoVariedade>'
 		_aMedVar = {}
 		_nTotValor = 0
@@ -1611,7 +1636,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 		_oSQL:_sQuery +=  " FROM VA_VPRECO_EFETIVO_SAFRA"
 		_oSQL:_sQuery += " WHERE ASSOCIADO  = '" + ::Codigo + "'"
 		_oSQL:_sQuery +=   " AND LOJA_ASSOC = '" + ::Loja + "'"
-		_oSQL:_sQuery +=   " AND SAFRA      = '" + _sSafra + "'"
+		_oSQL:_sQuery +=   " AND SAFRA      = '" + ::FSSafra + "'"
 		_oSQL:_sQuery += " ORDER BY DESCRICAO, GRAU"
 		_sAliasQ := _oSQL:Qry2Trb (.F.)
 		(_sAliasQ) -> (dbgotop ())
@@ -1654,7 +1679,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 
 	// Resumo de grau e classificacao por variedade
 	// Termina de calcular as medias por variedade e insere nos dados para retorno da funcao.
-	if _lFSResVGC
+	if ::FSResVarGC
 		U_Log2 ('debug', 'Buscando resumo por variedade / grau / classif')
 		_sRetFechS += '<resumoVarGrauClas>'
 		_nTotPeso  = 0
@@ -1666,7 +1691,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 		_oSQL:_sQuery +=  " FROM VA_VPRECO_EFETIVO_SAFRA"
 		_oSQL:_sQuery += " WHERE ASSOCIADO  = '" + ::Codigo + "'"
 		_oSQL:_sQuery +=   " AND LOJA_ASSOC = '" + ::Loja + "'"
-		_oSQL:_sQuery +=   " AND SAFRA      = '" + _sSafra + "'"
+		_oSQL:_sQuery +=   " AND SAFRA      = '" + ::FSSafra + "'"
 		_oSQL:_sQuery += " GROUP BY PRODUTO, DESCRICAO, GRAU, CLAS_ABD, CLAS_FINAL, SIST_CONDUCAO"
 		_oSQL:_sQuery += " ORDER BY DESCRICAO, GRAU, CLAS_ABD, CLAS_FINAL"
 		_sAliasQ := _oSQL:Qry2Trb (.F.)
@@ -1703,7 +1728,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 
 
 	// Auxilio combustivel / frete
-	if _lFSFrtS
+	if ::FSFrete
 		U_Log2 ('debug', 'Buscando fretes de safra')
 		_sRetFechS += '<freteSafra>'
 		_oSQL := ClsSQL ():New ()
@@ -1725,18 +1750,18 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 		_oSQL:_sQuery +=   " AND E2_FORNECE = '" + ::Codigo + "'"
 		_oSQL:_sQuery +=   " AND E2_LOJA    = '" + ::Loja + "'"
 		_oSQL:_sQuery +=   " AND E2_EMISSAO >= '20200101'"  // Primeira safra em que este metodo foi implementado. Para safras anteriores o tratamento era diferente.
-		_oSQL:_sQuery +=   " AND E2_EMISSAO >= '" + _sSafra + "0101'"
-		_oSQL:_sQuery +=   " AND E2_EMISSAO <= '" + _sSafra + "1231'"
-		if _sSafra <= '2020'
+		_oSQL:_sQuery +=   " AND E2_EMISSAO >= '" + ::FSSafra + "0101'"
+		_oSQL:_sQuery +=   " AND E2_EMISSAO <= '" + ::FSSafra + "1231'"
+		if ::FSSafra <= '2020'
 			_oSQL:_sQuery +=   " AND E2_FILIAL  = '01'"  // Pagamentos de frete sao feitos sempre pela matriz.
-			_oSQL:_sQuery +=   " AND E2_VACHVEX = 'FRTSAFRA" + _sSafra + "'"
+			_oSQL:_sQuery +=   " AND E2_VACHVEX = 'FRTSAFRA" + ::FSSafra + "'"
 		else
 			// O frete eh uma parcela da propria nota de compra gerada por ocasiao da recepcao da carga de uva.
 			// Fretes ajustados ou faltantes podem ser lancados como tipo DP, mas seria bom manter pelo menos o mesmo numero da contranota.
-			_oSQL:_sQuery +=   " AND E2_HIST    = 'AUX.COMB." + _sSafra + "'"
+			_oSQL:_sQuery +=   " AND E2_HIST    = 'AUX.COMB." + ::FSSafra + "'"
 			_oSQL:_sQuery +=   " AND EXISTS (SELECT * "
 			_oSQL:_sQuery +=                 " FROM VA_VNOTAS_SAFRA V"
-			_oSQL:_sQuery +=                " WHERE SAFRA      = '" + _sSafra  + "'"
+			_oSQL:_sQuery +=                " WHERE SAFRA      = '" + ::FSSafra  + "'"
 			_oSQL:_sQuery +=                  " AND ASSOCIADO  = '" + ::Codigo + "'"
 			_oSQL:_sQuery +=                  " AND LOJA_ASSOC = '" + ::Loja   + "'"
 			_oSQL:_sQuery +=                  " AND DOC        = SE2.E2_NUM"
@@ -1779,7 +1804,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 
 	// Lancamentos com saldo na conta corrente
 //	if ! _lSohRegra
-	if _lFSLcCC
+	if ::FSLctosCC
 		_sRetFechS += '<lctoCC>'
 		_oSQL := ClsSQL():New ()
 		_oSQL:_sQuery := ""
@@ -1795,7 +1820,7 @@ METHOD FechSafra (_sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgP
 		_oSQL:_sQuery +=   " AND SZI.ZI_ASSOC    = '" + ::Codigo + "'"
 		_oSQL:_sQuery +=   " AND SZI.ZI_LOJASSO  = '" + ::Loja + "'"
 		_oSQL:_sQuery +=   " AND SZI.ZI_TM       NOT IN ('10','17','18','19')"
-//		_oSQL:_sQuery +=   " AND SZI.ZI_DATA     like '" + _sSafra + "%'"
+//		_oSQL:_sQuery +=   " AND SZI.ZI_DATA     like '" + ::FSSafra + "%'"
 		_oSQL:_sQuery +=   " AND SZI.ZI_SALDO    > 0"
 		_oSQL:_sQuery += " ORDER BY ZI_DATA, ZI_TM, ZI_FILIAL, ZI_HISTOR, ZI_SERIE, ZI_DOC, ZI_PARCELA"
 		_sAliasQ := _oSQL:Qry2Trb (.F.)
