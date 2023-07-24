@@ -29,6 +29,7 @@
 // 03/05/2022 - Claudia - Incluida validação para o campo a1_savblq. GLPI: 11922
 // 22/11/2022 - Claudia - Incluido envio de aviso por e-mail para troca de vendedores. GLPI: 12756
 // 19/06/2023 - Robert  - Melhorada mensagem campo A1_SAVBLQ (GLPI 13739)
+// 24/07/2023 - Claudia - Integração de cliente Protheus com CRM Simples. GLPI: 13963
 //
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -56,6 +57,7 @@ User Function CRMA980()
 			if nOper == 4 // operação alteração
 				_GeraLog ()
 				U_AtuMerc ('SA1', sa1 -> (recno ()))
+				AtuCRM() // atualiza cliente no CRM Simples
 
 				//GLPI: 12756
 				if alltrim(sa1->a1_vend) <> alltrim(m->a1_vend) 
@@ -92,6 +94,7 @@ User Function CRMA980()
 			//Se for inclusão
 			If nOper == 3
 				_M030INC()
+				AtuCRM()   // atualiza cliente no CRM Simples
 			EndIf
 
 		ElseIf cIdPonto == "FORMCOMMITTTSPRE"
@@ -330,4 +333,40 @@ Static Function _EnvAvisoRep(_sCliente, _sNome, _sVendOld, _sVendNew)
 
 	_sTitulo := "Alteração de vendedor no cliente " + alltrim(_sNome)
     U_ZZUNU ({'146'}, _sTitulo, _sMsg, .F., cEmpAnt, cFilAnt, "")
+Return
+//
+//----------------------------------------------------------------------------------
+// Atualiza cliente no CRM Simples
+Static Function AtuCRM()
+	Local _aCRM := {}
+
+	_sTpPessoa := IIF(sa1->a1_pessoa=='F','Física','Jurídica')
+	_sVendedor := Posicione("SA1",1, xFilial("SA1") + sa1->a1_cod + sa1->a1_loja, "A1_VEND")
+	_sResp     := Posicione("ZCA",2, xFilial("ZCA") + _sVendedor, "ZCA_CODRES")
+	_sResp     := IIF(!empty(_sResp),_sResp,"")
+	_sPais     := IIF(alltrim(sa1->a1_pais)=='105','Brasil','Ex')
+
+	aadd(_aCRM,{	sa1->a1_cod 			,; // idExterno
+					sa1->a1_nome			,; // nome
+					_sTpPessoa				,; // tipoPessoa
+					"ERP Protheus"  		,; // fonteContato
+					"Cliente"				,; // statusContato
+					"Trabalho"				,; // selectTipoEndereco
+					alltrim(sa1->a1_end)	,; // endereco
+					alltrim(sa1->a1_bairro)	,; // bairro
+					alltrim(sa1->a1_mun)	,; // cidade
+					sa1->a1_est  			,; // uf
+					sa1->a1_cep				,; // cep
+					alltrim(sa1->a1_tel)	,; // descricao (telefone)
+					"Trabalho"				,; // selectTipo
+					alltrim(sa1->a1_email)	,; // descricao (email)
+					"Trabalho"				,; // selectTipo
+					"IE"					,; // listCampoUsuario - nomeCampo
+					alltrim(sa1->a1_inscr)	,; // valor
+					_sResp	 				,; // listIdResponsaveis
+					sa1->a1_cgc             ,; // CPF/CNPJ
+					_sPais					}) // Pais
+
+	U_VA_CRM(_aCRM,'C')
+
 Return
