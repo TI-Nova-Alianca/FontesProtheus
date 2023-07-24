@@ -40,7 +40,8 @@
 // 11/04/2023 - Robert  - Passa a listar aux.combustivel/frete no modelo resumido, para facilitar fechto.valores.
 // 14/04/2023 - Robert  - Em versoes anteriores a 2020, listava titulos futuros na previsao de pagamento.
 // 02/06/2023 - Robert  - Modelo resumido passa a listar tags do <valoresEfetivos> em vez de <resumoVarGrauClas> - GLPI 13532
-//
+// 21/07/2023 - Robert  - Nova forma de parametrizacao (via atributos) do metodo ClsAssoc:FechSafra() - GLPI 13956
+// 
 
 #include "protheus.ch"
 #include "tbiconn.ch"
@@ -1095,9 +1096,37 @@ static function _Modelo2 (_lSohCompr)
 		// Busca dados do fechamento de safra. Usa mesmo o metodo do APP associados.
 		//                                  _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lResVGC, _lFSFunrur
 		if _lSohCompr
-			_sXmlFech = _oAssoc:FechSafra (mv_par01, .f.,     .t.,     .f.,     .f.,     .f.,      .f.,      .f.,      .f.,        .f.,      .f.,      .F.,      .f.)
+		//	_sXmlFech = _oAssoc:FechSafra (mv_par01, .f.,     .t.,     .f.,     .f.,     .f.,      .f.,      .f.,      .f.,        .f.,      .f.,      .F.,      .f.)
+			_oAssoc:FSSafra      = mv_par01
+			_oAssoc:FSNFEntrada  = .f.
+			_oAssoc:FSNFCompra   = .t.
+			_oAssoc:FSNFComplem  = .f.
+			_oAssoc:FSNFPrdProp  = .f.
+			_oAssoc:FSPrevPagto  = .f.
+			_oAssoc:FSRegraPagto = .f.
+			_oAssoc:FSResValEfet = .f.
+			_oAssoc:FSResVaried  = .f.
+			_oAssoc:FSFrete      = .f.
+			_oAssoc:FSLctosCC    = .f.
+			_oAssoc:FSResVarGC   = .f.
+			_oAssoc:FSDFunrur    = .f.
+			_sXmlFech = _oAssoc:FechSafra ()
 		else
-			_sXmlFech = _oAssoc:FechSafra (mv_par01, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,        .t.,      .t.,      .f.,      .t.)
+		//	_sXmlFech = _oAssoc:FechSafra (mv_par01, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .t.,        .t.,      .t.,      .f.,      .t.)
+			_oAssoc:FSSafra      = mv_par01
+			_oAssoc:FSNFEntrada  = .t.
+			_oAssoc:FSNFCompra   = .t.
+			_oAssoc:FSNFComplem  = .t.
+			_oAssoc:FSNFPrdProp  = .t.
+			_oAssoc:FSPrevPagto  = .t.
+			_oAssoc:FSRegraPagto = .t.
+			_oAssoc:FSResValEfet = .t.
+			_oAssoc:FSResVaried  = .t.
+			_oAssoc:FSFrete      = .t.
+			_oAssoc:FSLctosCC    = .t.
+			_oAssoc:FSResVarGC   = .f.
+			_oAssoc:FSDFunrur    = .t.
+			_sXmlFech = _oAssoc:FechSafra ()
 		endif
 		//	u_log2 ('debug', _sXmlFech)
 		if empty (_sXmlFech)
@@ -1665,9 +1694,37 @@ static function _Modelo3 (_lSohCompr)
 		// Busca dados do fechamento de safra. Usa mesmo o metodo do APP associados.
 		//                                  _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lResVGC, _lFSFunrur
 		if _lSohCompr
-			_sXmlFech = _oAssoc:FechSafra (mv_par01, .f.,     .t.,     .f.,     .f.,     .f.,      .t.,      .f.,      .f.,        .f.,      .f.,      .f.,      .t.)
+		//	_sXmlFech = _oAssoc:FechSafra (mv_par01, .f.,     .t.,     .f.,     .f.,     .f.,      .t.,      .f.,      .f.,        .f.,      .f.,      .f.,      .t.)
+			_oAssoc:FSSafra      = mv_par01
+			_oAssoc:FSNFEntrada  = .f.
+			_oAssoc:FSNFCompra   = .t.
+			_oAssoc:FSNFComplem  = .f.
+			_oAssoc:FSNFPrdProp  = .f.
+			_oAssoc:FSPrevPagto  = .f.
+			_oAssoc:FSRegraPagto = .t.
+			_oAssoc:FSResValEfet = .f.
+			_oAssoc:FSResVaried  = .f.
+			_oAssoc:FSFrete      = .f.
+			_oAssoc:FSLctosCC    = .f.
+			_oAssoc:FSResVarGC   = .f.
+			_oAssoc:FSDFunrur    = .t.
+			_sXmlFech = _oAssoc:FechSafra ()
 		else
-			_sXmlFech = _oAssoc:FechSafra (mv_par01, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .f.,        .t.,      .t.,      .t.,      .t.)
+		//	_sXmlFech = _oAssoc:FechSafra (mv_par01, .t.,     .t.,     .t.,     .t.,     .t.,      .t.,      .t.,      .f.,        .t.,      .t.,      .t.,      .t.)
+			_oAssoc:FSSafra      = mv_par01
+			_oAssoc:FSNFEntrada  = .t.
+			_oAssoc:FSNFCompra   = .t.
+			_oAssoc:FSNFComplem  = .t.
+			_oAssoc:FSNFPrdProp  = .t.
+			_oAssoc:FSPrevPagto  = .t.
+			_oAssoc:FSRegraPagto = .t.
+			_oAssoc:FSResValEfet = .t.
+			_oAssoc:FSResVaried  = .f.
+			_oAssoc:FSFrete      = .t.
+			_oAssoc:FSLctosCC    = .t.
+			_oAssoc:FSResVarGC   = .t.
+			_oAssoc:FSDFunrur    = .t.
+			_sXmlFech = _oAssoc:FechSafra ()
 		endif
 		//u_log2 ('debug', _sXmlFech)
 		if empty (_sXmlFech)
