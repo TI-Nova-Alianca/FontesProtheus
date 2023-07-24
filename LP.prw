@@ -77,8 +77,8 @@
 // 11/11/2022 - Claudia - Ajustado LPAD 530 001. GLPI: 12794
 // 31/03/2023 - Claudia - Ajuste em LPAD 520 002/ 527 002. GLPI: 12812
 // 10/04/2023 - Robert  - Acrescentado tratamento para CC *1101 e *1102 no LPAD 666005.
+// 24/07/2023 - Claudia - Incluído LPAD's para pagar.me. GLPI: 12280
 //
-
 // -----------------------------------------------------------------------------------------------------------------
 // Informar numero e sequencia do lancamento padrao, seguido do campo a ser retornado.
 User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
@@ -182,7 +182,7 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 					endif
 				else
 					// pagar-me
-					if alltrim(SE5->E5_ORIGEM) == 'ZB3'
+					if alltrim(SE5->E5_ORIGEM) == 'ZD0'
 						Do Case
 							Case !empty(SE1->E1_ADM) // cartão
 								do case
@@ -299,7 +299,7 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 //	case _sLPad + _sSeq $ '520021/521021/524021' .and. _sQueRet == 'VL' .and. !alltrim(SE5->E5_ORIGEM) $ 'ZB1/ZB3'// descontos - estorna provisao de comissao
 	case _sLPad + _sSeq $ '520021/521021/524021' .and. _sQueRet == 'VL'
 		_xRet = 0
-		if !alltrim(SE5->E5_ORIGEM) $ 'ZB1/ZB3'// descontos - estorna provisao de comissao
+		if !alltrim(SE5->E5_ORIGEM) $ 'ZB1/ZB3/ZD0'// descontos - estorna provisao de comissao
 			if SE1->E1_TIPO<>"NCC" .AND. SE5->E5_VLDESCO > 0 .and. SE1->E1_COMIS1>0 .AND. ! alltrim(SE1->E1_VEND1) $ GETMV("MV_VENDDIR")
 				// acha a base de comissao do titulo - não da pra considerar a do SE1, por conta do recalculo
 				_xbaseComTit = _BComis (SE1->E1_NUM, SE1->E1_PREFIXO, SE1->E1_CLIENTE,SE1->E1_LOJA, SE1->E1_VALOR)
@@ -438,10 +438,25 @@ User Function LP (_sLPad, _sSeq, _sQueRet, _sDoc, _sSerie)
 						_xbase = _xbaseComTit * SE5->E5_VALOR / SE1->E1_VALOR 
 						// valor do estorno de comissao = valor base de comissao ref ao desconto * percentual de comissao do vendedor
 						_xRet = round(_xbase * SE1->E1_COMIS1/100,2)
-					endif						
+					endif	
+
 				case _sSeq='003' .and. _sQueRet == 'VL'
 					_wrapelPREV = SE1->E1_VARAPEL
 					_xret = _Rapel (SE1->E1_NUM, SE1->E1_PARCELA, SE1->E1_CLIENTE, SE1->E1_LOJA, SE5->E5_VALOR, _wrapelPREV )
+
+				case _sSeq == '004' .AND. alltrim(SE5->E5_ORIGEM) == 'ZD0' .AND. _sQueRet == 'CRED'
+					do case
+						case alltrim(SE5->E5_CLIENTE) == "100" .or. alltrim(SE5->E5_CLIENTE) =="101"
+							_xRet:= "101021101002"
+						case alltrim(SE5->E5_CLIENTE) == "200" .or. alltrim(SE5->E5_CLIENTE) =="201"
+							_xRet:= "101021101001"
+						case alltrim(SE5->E5_CLIENTE) == "300" .or. alltrim(SE5->E5_CLIENTE) =="301"
+							_xRet:= "101021101003"
+						case alltrim(SE5->E5_CLIENTE) == "400" .or. alltrim(SE5->E5_CLIENTE) =="401"
+							_xRet:= "101021101004"
+						otherwise
+							_xRet:= "101021101005"
+					endcase
 			endcase
 		endif		
 		
