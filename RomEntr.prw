@@ -19,6 +19,7 @@
 // 26/02/2020 - Cláudia - Incluida coluna de lote interno
 // 22/03/2022 - Sandra  - Inclusão campos ordem manutenção, solicitação compra - GLPI 11763
 // 07/12/2022 - Sandra  - Alterado campo OP de C7_OP  para D1_OP - GLPI 12877
+// 25/07/2023 - Sandra  - Alterada a mascara do campo quantidade para que imprima com 4 decimais - GLPI 13974
 // -------------------------------------------------------------------------------------------------------------------------
 
 #include 'protheus.ch'
@@ -73,17 +74,17 @@ Static Function ReportDef()
 	//SESSÃO 1 CUPONS
 	oSection1 := TRSection():New(oReport,,{}, , , , , ,.T.,.F.,.F.) 
 
-	TRCell():New(oSection1,"COLUNA1", 	"" ,"Produto"	  ,	    				,18,/*lPixel*/,{||  },"LEFT",.t.,,,0,.f.,,,.f.)
-	TRCell():New(oSection1,"COLUNA2", 	"" ,"Descrição"	  ,	    				,35,/*lPixel*/,{||	},"LEFT",.t.,,,0,.f.,,,.f.)
-	TRCell():New(oSection1,"COLUNA3", 	"" ,"Quant."      ,"@E 999,999,999.99"   ,15,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,0,.f.,,,.f.)
-	TRCell():New(oSection1,"COLUNA4", 	"" ,"UM"		  ,    					, 4,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,0,.f.,,,.f.)
-	TRCell():New(oSection1,"COLUNA5", 	"" ,"Solicitante" ,       				,22,/*lPixel*/,{|| 	},"LEFT",.t.,,,0,.f.,,,.f.)
-	TRCell():New(oSection1,"COLUNA6", 	"" ,"Pedido" 	  ,						,22,/*lPixel*/,{|| 	},"LEFT",.t.,,,0,.f.,,,.f.)
-	TRCell():New(oSection1,"COLUNA7", 	"" ,"Lote M."	  ,						,10,/*lPixel*/,{|| 	},"RIGHT",.t.,"RIGHT",,0,.f.,,,.f.)
-	TRCell():New(oSection1,"COLUNA8", 	"" ,"Almox"		  ,						 ,6,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,0,.f.,,,.f.)
-	TRCell():New(oSection1,"COLUNA9", 	"" ,"Lote Int."	  ,						,10,/*lPixel*/,{|| 	},"RIGHT",.t.,"RIGHT",,0,.f.,,,.f.)
-    TRCell():New(oSection1,"COLUNA10", 	"" ,"Or. Serviço" ,						,10,/*lPixel*/,{|| 	},"RIGHT",.t.,"RIGHT",,0,.f.,,,.f.)
-    TRCell():New(oSection1,"COLUNA11", 	"" ,"Nº Solic"    ,						,10,/*lPixel*/,{|| 	},"RIGHT",.t.,"RIGHT",,0,.f.,,,.f.)
+	TRCell():New(oSection1,"COLUNA1", 	"" ,"Produto"	  ,	    				   ,18,/*lPixel*/,{||  },"LEFT",.t.,,,0,.f.,,,.f.)
+	TRCell():New(oSection1,"COLUNA2", 	"" ,"Descrição"	  ,	    				   ,35,/*lPixel*/,{||	},"LEFT",.t.,,,0,.f.,,,.f.)
+	TRCell():New(oSection1,"COLUNA3", 	"" ,"Quant."      ,"@E 999,999,999.9999"   ,15,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,0,.f.,,,.f.)
+	TRCell():New(oSection1,"COLUNA4", 	"" ,"UM"		  ,    					   , 4,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,0,.f.,,,.f.)
+	TRCell():New(oSection1,"COLUNA5", 	"" ,"Solicitante" ,       				   ,22,/*lPixel*/,{|| 	},"LEFT",.t.,,,0,.f.,,,.f.)
+	TRCell():New(oSection1,"COLUNA6", 	"" ,"Pedido" 	  ,						   ,22,/*lPixel*/,{|| 	},"LEFT",.t.,,,0,.f.,,,.f.)
+	TRCell():New(oSection1,"COLUNA7", 	"" ,"Lote M."	  ,						   ,10,/*lPixel*/,{|| 	},"RIGHT",.t.,"RIGHT",,0,.f.,,,.f.)
+	TRCell():New(oSection1,"COLUNA8", 	"" ,"Almox"		  ,						   ,6,/*lPixel*/,{|| 	},"RIGHT",,"RIGHT",,0,.f.,,,.f.)
+	TRCell():New(oSection1,"COLUNA9", 	"" ,"Lote Int."	  ,						   ,10,/*lPixel*/,{|| 	},"RIGHT",.t.,"RIGHT",,0,.f.,,,.f.)
+    TRCell():New(oSection1,"COLUNA10", 	"" ,"Or. Serviço" ,						   ,10,/*lPixel*/,{|| 	},"RIGHT",.t.,"RIGHT",,0,.f.,,,.f.)
+    TRCell():New(oSection1,"COLUNA11", 	"" ,"Nº Solic"    ,						   ,10,/*lPixel*/,{|| 	},"RIGHT",.t.,"RIGHT",,0,.f.,,,.f.)
 
 Return(oReport)
 
