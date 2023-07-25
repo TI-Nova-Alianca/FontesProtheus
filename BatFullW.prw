@@ -50,6 +50,8 @@
 // 28/03/2023 - Robert - Habilitadas transf. do ax.31 para 01 (etiq. envasadas em terceiros).
 // 12/06/2023 - Robert - Melhorias logs - GLPI 13677
 // 21/06/2023 - Robert - Passa a ter array de status e gravar descritivo junto no campo status_protheus.
+// 24/07/2023 - Robert - Criado status 6 (entradas por sol.transf. que tenha 'aceite negado').
+//                     - Valida saldo alm.orig.antes de tentar transferir solic.manuais.
 //
 
 #Include "Protheus.ch"
@@ -68,6 +70,7 @@ User Function BatFullW (_sQueFazer, _sEntrID, _sSaidID)
 	aadd (_aStatProt, {'3', 'Executado no ERP'})
 	aadd (_aStatProt, {'4', 'Qt Full # qt ERP'})
 	aadd (_aStatProt, {'5', 'qtde_mov < qtde_exec'})  // (no caso de recebimento de producao)
+	aadd (_aStatProt, {'6', 'solic.c/nao aceite'})
 	aadd (_aStatProt, {'C', 'Cancelado no ERP'})
 
 	// Define o que deve fazer: [E]ntradas, [S]aidas ou [A]mbas.
@@ -138,6 +141,7 @@ static function _Entradas (_sEntrID)
 	_oSQL:_sQuery +=    " and status_protheus not like '3%'"  // 3 = executado
 	_oSQL:_sQuery +=    " and status_protheus not like 'C%'"  // C = cancelado: por que jah foi acertado manualmente, ou jah foi inventariado, etc.
 	_oSQL:_sQuery +=    " and status_protheus not like '5%'"  // 5 = qtd.movimentada diferente qt.executada
+	_oSQL:_sQuery +=    " and status_protheus not like '6%'"  // 6 = solicitacao de transferencia com nao aceite.
 	if ! empty (_sEntrID)
 		_oSQL:_sQuery += " and entrada_id = '" + _sEntrID + "'"
 	endif
@@ -184,6 +188,7 @@ static function _Entradas (_sEntrID)
 			(_sAliasQ) -> (dbskip ())
 			loop
 		endif
+	//	U_Log2 ('debug', '[' + procname () + '] etiqueta instanciada.')
 
 		// Se for uma etiqueta de apontamento de producao
 		if ! empty (_oEtiq:OP)
@@ -202,14 +207,11 @@ static function _Entradas (_sEntrID)
 			endif
 
 			// Verifica se a quantidade apontada com esta etiqueta precisa ser transferida para o almox. 01
-		//	if _oEtiq:AlmApontOP != '11'
 			if ! _oEtiq:AlmApontOP $ '11/31'
 				u_help ("Apontamento de producao gerado pela etiqueta '" + _oEtiq:Codigo + "' foi feito no almox. '" + _oEtiq:AlmApontOP + "', para o qual nao tenho tratamento aqui.",, .t.)
 				_AtuEntr ((_sAliasQ) -> entrada_id, '2')  // Atualiza a tabela do Fullsoft como 'outro erro nao tratado na transferancia'
 				(_sAliasQ) -> (dbskip ())
 				loop
-//			else
-//				_sAlmOrig = _oEtiq:AlmApontOP
 			endif
 
 			// Quando for OP de reprocesso, considera o campo D3_PERDA.
@@ -227,8 +229,11 @@ static function _Entradas (_sEntrID)
 		
 			// Verifica se vai ter estoque suficiente para transferir.
 			sb2 -> (dbsetorder (1))  // B2_FILIAL+B2_COD+B2_LOCAL
+			U_Log2 ('debug', '[' + procname () + ']produto = ' + _oEtiq:Produto)
+			U_Log2 ('debug', '[' + procname () + '] alm.apont.op = ' + _oEtiq:AlmApontOP)
+			U_Log2 ('debug', '[' + procname () + '] _nQtAUsar = ' + cvaltochar (_nQtAUsar))
 			if ! sb2 -> (dbseek (xfilial ("SB2") + _oEtiq:Produto + _oEtiq:AlmApontOP, .F.)) .or. sb2 -> b2_qatu < _nQtAUsar
-				u_help ("Apont.prod.etiq. '" + _oEtiq:Codigo + "': sem saldo estoque produto '" + alltrim (sb2 -> b2_cod) + "' no ax. '" + sb2 -> b2_local + "' para transferir.",, .t.)
+				u_help ("Apont.prod.etiq. '" + _oEtiq:Codigo + "': sem saldo estoque produto '" + alltrim (_oEtiq:Produto) + "' no ax. '" + _oEtiq:AlmApontOP + "' para transferir.",, .t.)
 				_AtuEntr ((_sAliasQ) -> entrada_id, '1')  // Atualiza a tabela do Fullsoft como 'falta estoque para fazer a transferencia'
 				(_sAliasQ) -> (dbskip ())
 				loop
@@ -252,6 +257,10 @@ static function _Entradas (_sEntrID)
 				(_sAliasQ) -> (dbskip ())
 				loop
 			endif
+			
+	//		U_Log2 ('debug', '[' + procname () + ']sol.transf.instanciada')
+	//		u_logObj (_oTrEstq)
+
 			if _oTrEstq:Executado == 'S'  // Se jah foi executado anteriormente...
 				u_log2 ('aviso', 'Transferencia consta como jah executada na tabela ZAG.')
 				_AtuEntr ((_sAliasQ) -> entrada_id, '3')  // Atualiza a tabela do Fullsoft como 'executado no ERP'
@@ -259,6 +268,13 @@ static function _Entradas (_sEntrID)
 				loop
 			endif
 			
+			if ! empty (_oTrEstq:MotNAc)
+				U_Log2 ('debug', '[' + procname () + ']Solicitacao de transferencia com NAO ACEITE (motivo = ' + cvaltochar (_oTrEstq:MotNAc))
+				_AtuEntr ((_sAliasQ) -> entrada_id, '6')  // Atualiza a tabela do Fullsoft como 'nao aceite'
+				(_sAliasQ) -> (dbskip ())
+				loop
+			endif
+	
 			// Verifica se pode fazer a liberacao do almox.destino (01) cfe. retorno do FullWMS.
 			if ! _oTrEstq:AlmUsaFull (_oTrEstq:AlmDest)
 				u_log2 ('aviso', 'Alm.destino nao usa FullWMS e, portanto, nao tem tratamento aqui.')
@@ -267,10 +283,22 @@ static function _Entradas (_sEntrID)
 				loop
 			endif
 
+			// Verifica se tem estoque disponivel no almox origem.
+	//		U_Log2 ('debug', '[' + procname () + ']produto = ' + _oTrEstq:ProdOrig)
+	//		U_Log2 ('debug', '[' + procname () + '] alm.orig = ' + _oTrEstq:AlmOrig)
+	//		U_Log2 ('debug', '[' + procname () + '] QtdSolic = ' + cvaltochar (_oTrEstq:QtdSolic))
+			sb2 -> (dbsetorder (1))  // B2_FILIAL+B2_COD+B2_LOCAL
+			if ! sb2 -> (dbseek (xfilial ("SB2") + _oTrEstq:ProdOrig + _oTrEstq:AlmOrig, .F.)) .or. sb2 -> b2_qatu < _oTrEstq:QtdSolic
+				u_help ("Solic.transf. '" + _oTrEstq:Docto + "': sem saldo estoque produto '" + alltrim (_oTrEstq:ProdOrig) + "' no ax. '" + _oTrEstq:AlmOrig + "' para transferir.",, .t.)
+				_AtuEntr ((_sAliasQ) -> entrada_id, '1')  // Atualiza a tabela do Fullsoft como 'falta estoque para fazer a transferencia'
+				(_sAliasQ) -> (dbskip ())
+				loop
+			endif
+
 			// Verifica se ha necessidade de fazer liberacao pelo lado do FullWMS.
 			if empty (_oTrEstq:UsrAutDst)
 				U_Log2 ('debug', '[' + procname () + ']Falta liberacao do almox.destino')
-				if (_sAliasQ) -> qtde_exec != _oTrEstq:QtdSOlic
+				if (_sAliasQ) -> qtde_exec != _oTrEstq:QtdSolic
 					u_log2 ('aviso', 'Quant.executada (no FullWMS) diferente da solicitada.')
 					_AtuEntr ((_sAliasQ) -> entrada_id, '4')  // 4 = diferenca na quantidade
 					(_sAliasQ) -> (dbskip ())
@@ -282,6 +310,7 @@ static function _Entradas (_sEntrID)
 
 			// Tenta executar a transferencia.
 			if ! _oTrEstq:Executa (.t.)
+				U_Log2 ('debug', '[' + procname () + ']Ultima mensagem do objeto _oTrEstq = ' + cvaltochar (_oTrEstq:UltMsg))
 				_AtuEntr ((_sAliasQ) -> entrada_id, '2')  // 2 = outros erros
 			endif
 		endif
@@ -524,13 +553,7 @@ return _lRet
 
 // --------------------------------------------------------------------------------------------
 // Atualiza status (entradas) no FullWMS.
-// Procurar manter, aqui, os mesmos codigos de status em todos os programas BatFull*, apesar de serem tabelas diferentes:
-// 1 = 'falta estoque para fazer a transferencia'
-// 2 = 'outro erro nao tratado na transferancia'
-// 3 = 'executado no ERP'
-// 4 = 'diferenca na quantidade'
-// 5 = 'qtde movimentada menor que executada' (no caso de recebimento de producao)
-// 9 = 'cancelado no ERP'
+// Procurar manter, aqui, os mesmos codigos de status em todos os programas BatFull*, apesar de serem tabelas diferentes
 static function _AtuEntr (_sEntrada, _sStatus)
 	local _oSQL  := NIL
 	local _nStat := 0
@@ -561,13 +584,7 @@ return _lRet
 
 // --------------------------------------------------------------------------------------------
 // Atualiza status (saidas) no FullWMS.
-// Procurar manter, aqui, os mesmos codigos de status em todos os programas BatFull*, apesar de serem tabelas diferentes:
-// 1 = 'falta estoque para fazer a transferencia'
-// 2 = 'outro erro nao tratado na transferancia'
-// 3 = 'executado no ERP'
-// 4 = 'diferenca na quantidade'
-// 5 = 'qtde movimentada menor que executada' (no caso de recebimento de producao)
-// 9 = 'cancelado no ERP'
+// Procurar manter, aqui, os mesmos codigos de status em todos os programas BatFull*, apesar de serem tabelas diferentes
 static function _AtuSaid (_sSaida, _sStatus)
 	local _oSQL  := NIL
 	local _nStat := 0
