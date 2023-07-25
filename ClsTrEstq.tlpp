@@ -45,6 +45,7 @@
 // 15/03/2023 - Robert  - Para considerar almox.controlado pelo FullWMS, deve estar na filial 01.
 // 20/04/2023 - Robert  - Criado atributo CodMotivo
 // 12/06/2023 - Robert  - Melhorado teste de gravacao do SD3 no metodo GeraSD3() - GLPI 13677
+// 25/07/2023 - Robert  - Verifica se tem saldo e se tem inconsistencia entre tabelas antes de gravar a solicitacao.
 //
 
 // ------------------------------------------------------------------------------------
@@ -1027,6 +1028,7 @@ return _lContinua
 // Valida se a solicitacao pode ser incluida.
 METHOD PodeIncl () Class ClsTrEstq
 	local _lContinua := .T.
+	local _sMsgEstq  := ''
 
 	// Verifica campos obrigatorios, nao aceitos, tamanhos, tipos, etc.
 	if _lContinua
@@ -1238,6 +1240,31 @@ METHOD PodeIncl () Class ClsTrEstq
 				U_Log2 ('debug', '[' + procname () + ']Usr atual nao eh dono do ax.destino (' + ::AlmDest + ')')
 				::SomaMsg ("Para gravar esta solicitacao, voce deve ser dono de pelo menos um dos almoxarifados envolvidos.")
 				_lContinua = .F.
+			endif
+		endif
+	endif
+
+	// Verifica possiveis inconsistencias entre tabelas e disponibilidade de saldos 
+	if _lContinua
+		_sMsgEstq = U_VerEstq ("5", ::ProdOrig, '', ::AlmOrig, ::QtdSolic, '', ::EndOrig, ::LoteOrig, '')
+		if ! empty (_sMsgEstq)
+			::SomaMsg (_sMsgEstq)
+			_lContinua = .F.
+		else
+			// Procura inconsistencias entre tabelas do estoque
+			if ! U_ConsEstq (::FilOrig, ::ProdOrig, ::AlmOrig, '')
+				::SomaMsg ("Inconsistencia entre tabelas de estoque do produto " + ::ProdOrig)
+				_lContinua = .F.
+			endif
+			if _lContinua
+				// Se nao for uma simples transferencia entre enderecos (mesmo
+				// produto/lote/almox), precisarei verificar tambem o destino.
+				if ::FilDest != ::FilOrig .or. ::ProdDest != ::ProdOrig .or. ::AlmDest != ::AlmOrig
+					if ! U_ConsEstq (::FilDest, ::ProdDest, ::AlmDest, '')
+						::SomaMsg ("Inconsistencia entre tabelas de estoque do produto " + ::ProdOrig)
+						_lContinua = .F.
+					endif
+				endif
 			endif
 		endif
 	endif
