@@ -677,7 +677,7 @@ static function _Parte2 ()
 	//		case _sGrupo == '1-Despesas gerais pessoal'  ; aadd (_aSldGrup, {_sGrupo, '403010199001', 'C', '403020101001', 'D', 0, 0, 0, 0})
 	//		case _sGrupo == '2-Despesas administrativas' ; aadd (_aSldGrup, {_sGrupo, '403010299001', 'C', '403020101002', 'D', 0, 0, 0, 0})
 	//		case _sGrupo == '3-Despesas tributarias'     ; aadd (_aSldGrup, {_sGrupo, '403010399001', 'C', '403020101003', 'D', 0, 0, 0, 0})
-	//		case _sGrupo == '4-Despesas com vendas'      ; aadd (_aSldGrup, {_sGrupo, '403010499001', 'C', '403020101004', 'D', 0, 0, 0, 0})
+	//		case _sGrupo == '4-Despesas com vendas'      ; aadd (_aSldGrup, {_sGrupo, '403010499001', 'C', '403020101005', 'D', 0, 0, 0, 0})
 	//		case _sGrupo == '5-Outras receitas'          ; aadd (_aSldGrup, {_sGrupo, '405010101099', 'D', '405010102099', 'C', 0, 0, 0, 0})
 	//		case _sGrupo == '6-Outras despesas'          ; aadd (_aSldGrup, {_sGrupo, '405010201099', 'C', '405010202099', 'D', 0, 0, 0, 0})
 	//		case _sGrupo == '7-Receitas financeiras'     ; aadd (_aSldGrup, {_sGrupo, '406010101099', 'D', '406010201099', 'C', 0, 0, 0, 0})
@@ -698,7 +698,7 @@ static function _Parte2 ()
 			case _sGrupo == '4-Despesas com vendas'
 				_aSldGrup [len (_aSldGrup), .SldGrupoConta1]          = '403010499001'
 				_aSldGrup [len (_aSldGrup), .SldGrupoNatConta1]       = 'C'
-				_aSldGrup [len (_aSldGrup), .SldGrupoConta2]          = '403020101004'
+				_aSldGrup [len (_aSldGrup), .SldGrupoConta2]          = '403020101005'
 			case _sGrupo == '5-Outras receitas'
 				_aSldGrup [len (_aSldGrup), .SldGrupoConta1]          = '405010101099'
 				_aSldGrup [len (_aSldGrup), .SldGrupoNatConta1]       = 'D'
