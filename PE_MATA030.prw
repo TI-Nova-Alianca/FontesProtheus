@@ -342,31 +342,45 @@ Static Function AtuCRM()
 
 	_sTpPessoa := IIF(sa1->a1_pessoa=='F','Física','Jurídica')
 	_sVendedor := Posicione("SA1",1, xFilial("SA1") + sa1->a1_cod + sa1->a1_loja, "A1_VEND")
-	_sResp     := Posicione("ZCA",2, xFilial("ZCA") + _sVendedor, "ZCA_CODRES")
-	_sResp     := IIF(!empty(_sResp),_sResp,"")
-	_sPais     := IIF(alltrim(sa1->a1_pais)=='105','Brasil','Ex')
 
-	aadd(_aCRM,{	sa1->a1_cod 			,; // idExterno
-					sa1->a1_nome			,; // nome
-					_sTpPessoa				,; // tipoPessoa
-					"ERP Protheus"  		,; // fonteContato
-					"Cliente"				,; // statusContato
-					"Trabalho"				,; // selectTipoEndereco
-					alltrim(sa1->a1_end)	,; // endereco
-					alltrim(sa1->a1_bairro)	,; // bairro
-					alltrim(sa1->a1_mun)	,; // cidade
-					sa1->a1_est  			,; // uf
-					sa1->a1_cep				,; // cep
-					alltrim(sa1->a1_tel)	,; // descricao (telefone)
-					"Trabalho"				,; // selectTipo
-					alltrim(sa1->a1_email)	,; // descricao (email)
-					"Trabalho"				,; // selectTipo
-					"IE"					,; // listCampoUsuario - nomeCampo
-					alltrim(sa1->a1_inscr)	,; // valor
-					_sResp	 				,; // listIdResponsaveis
-					sa1->a1_cgc             ,; // CPF/CNPJ
-					_sPais					}) // Pais
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 		 ZCA_CODRES "
+	_oSQL:_sQuery += " FROM " + RetSQLName ("ZCA")
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " AND ZCA_CODREP   = '" + sf2->f2_vend1  + "' "
+	_aResp := aclone (_oSQL:Qry2Array ())
 
-	U_VA_CRM(_aCRM,'C')
+	If len(_aResp) > 0
+		_sResp     := _aResp[1,1]
+
+		If !empty(_sResp)
+			_sPais     := IIF(alltrim(sa1->a1_pais)=='105','Brasil','Ex')
+
+			aadd(_aCRM,{	sa1->a1_cod 			,; // idExterno
+							sa1->a1_nome			,; // nome
+							_sTpPessoa				,; // tipoPessoa
+							"ERP Protheus"  		,; // fonteContato
+							"Cliente"				,; // statusContato
+							"Trabalho"				,; // selectTipoEndereco
+							alltrim(sa1->a1_end)	,; // endereco
+							alltrim(sa1->a1_bairro)	,; // bairro
+							alltrim(sa1->a1_mun)	,; // cidade
+							sa1->a1_est  			,; // uf
+							sa1->a1_cep				,; // cep
+							alltrim(sa1->a1_tel)	,; // descricao (telefone)
+							"Trabalho"				,; // selectTipo
+							alltrim(sa1->a1_email)	,; // descricao (email)
+							"Trabalho"				,; // selectTipo
+							"IE"					,; // listCampoUsuario - nomeCampo
+							alltrim(sa1->a1_inscr)	,; // valor
+							_sResp	 				,; // listIdResponsaveis
+							sa1->a1_cgc             ,; // CPF/CNPJ
+							_sPais					}) // Pais
+
+				U_VA_CRM(_aCRM,'C')
+		EndIf
+	EndIf
 
 Return

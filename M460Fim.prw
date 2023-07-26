@@ -49,6 +49,7 @@
 // 09/02/2023 - Claudia - Incluido log de gravação rapel.
 // 26/04/2023 - Claudia - Ajustado a gravação de log de erro rapel. GLPI: 13741
 // 11/07/2023 - Claudia - Incluida a gravação do produto fornecedor com dados do produto protheus. GLPI: 13859
+// 25/07/2023 - Claudia - Integração de notas fiscais Protheus com CRM Simples. GLPI: 13963
 //
 // --------------------------------------------------------------------------------------------------------------
 user function M460Fim ()
@@ -93,6 +94,8 @@ user function M460Fim ()
 	If GetMV('VA_RAPEL')
 		_AtuZC0()
 	EndIf
+
+	_GravaCRM()
 
 	U_ML_SRArea (_aAreaAnt)
 return
@@ -411,3 +414,79 @@ Static Function _AtuZC0()
 		EndIf
 	EndIf
 Return 
+//
+// --------------------------------------------------------------------------
+// Grava CRM
+Static Function _GravaCRM()
+	Local _aCrmNF := {}
+	Local _x      := 0
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT "
+	_oSQL:_sQuery += " 		 ZCA_CODRES "
+	_oSQL:_sQuery += " FROM " + RetSQLName ("ZCA")
+	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+	_oSQL:_sQuery += " AND ZCA_CODREP   = '" + sf2->f2_vend1  + "' "
+	_aResp := aclone (_oSQL:Qry2Array ())
+
+	If Len(_aResp) > 0//  se existir responsavel, grava a NF no CRM
+			_nResp      := _aResp[1,1]
+			_sNF        := "NF " + sf2->f2_doc + " " + sf2->f2_serie
+			_sDtEmissao := _DtToJson(sf2->f2_emissao)
+			_sDtFat     := _DtToJson(date())
+
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += " SELECT "
+			_oSQL:_sQuery += " 		 D2_COD "
+			_oSQL:_sQuery += "    	,SB1.B1_DESC "
+			_oSQL:_sQuery += "    	,SD2.D2_PRCVEN "
+			_oSQL:_sQuery += "    	,SD2.D2_QUANT "
+			_oSQL:_sQuery += "    	,D2_UM "
+			_oSQL:_sQuery += "    	,D2_TOTAL "
+			_oSQL:_sQuery += " FROM " + RetSQLName ("SD2") + " SD2 "
+			_oSQL:_sQuery += " INNER JOIN " + RetSQLName ("SB1") + " SB1 "
+			_oSQL:_sQuery += " 	ON SB1.D_E_L_E_T_ = '' "
+			_oSQL:_sQuery += " 		AND SB1.B1_COD = SD2.D2_COD "
+			_oSQL:_sQuery += " WHERE SD2.D_E_L_E_T_ = '' "
+			_oSQL:_sQuery += " AND D2_FILIAL    = '" + sf2->f2_filial  + "' "
+			_oSQL:_sQuery += " AND D2_DOC       = '" + sf2->f2_doc     + "' "
+			_oSQL:_sQuery += " AND D2_SERIE     = '" + sf2->f2_serie   + "' "
+			_oSQL:_sQuery += " AND D2_CLIENTE   = '" + sf2->f2_cliente + "' "
+			_oSQL:_sQuery += " AND D2_LOJA      = '" + sf2->f2_loja    + "' "
+			_aProd := aclone (_oSQL:Qry2Array ())
+
+			For _x := 1 to len(_aProd)
+				aadd(_aCrmNF,{	sf2->f2_cliente 	,; // idExterno
+								_sNF				,; // nome
+								_sNF + " faturada"	,; // descricao
+								_nResp 				,; // usuario
+								_sDtFat				,; // concluidaEm
+								sf2->f2_valmerc		,; // valor
+								_sDtEmissao			,; // criadaEm
+								_aProd[_x, 1]		,; // produto - idExterno
+								_aProd[_x, 2]		,; // produto - descricao
+								_aProd[_x, 3]		,; // produto - valorUnitario
+								_aProd[_x, 4]		,; // produto - quantidade
+								_aProd[_x, 5]		,; // produto - unidade
+								_aProd[_x, 6]		,; // produto - valorTotal
+													}) 
+			Next
+
+			U_VA_CRM(_aCrmNF, 'N')
+	EndIf
+Return
+//
+// --------------------------------------------------------------------------
+// Transforma data no formato JSON
+Static Function _DtToJson(_dDt)
+	_sDt   := dtos(_dDt)
+	_sAno  := substr(_sDt,1,4)
+	_sMes  := substr(_sDt,5,2)
+	_sDia  := substr(_sDt,7,2)
+	_sHora := time()
+	
+	_jDt := _sAno + "-" + _sMes + "-" + _sDia + "T" + _sHora + ".000Z"
+	
+Return _jDt
