@@ -29,8 +29,8 @@
 // 30/08/2022 - Robert  - Ajuste destinatario(s) da classe ClsAviso().
 // 01/09/2022 - Robert  - Melhorias ClsAviso.
 // 02/10/2022 - Robert  - Removido atributo :DiasDeVida da classe ClsAviso.
+// 24/07/2023 - Claudia - Liberação momentanea de funcionario afastado. GLPI: 13985
 //
-
 // ---------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
@@ -72,7 +72,8 @@ Static Function _VerFunc(_sCGC,_sTabela,_lRet)
 	_sQuery2 += "    ,CPF "
 	_sQuery2 += " FROM LKSRV_SIRH.SIRH.dbo.VA_VFUNCIONARIOS "
 	_sQuery2 += " WHERE CPF = '"+ alltrim(_sCGC) +"'"
-	_sQuery2 += " AND SITUACAO = '1' " // ATIVOS
+	//_sQuery2 += " AND SITUACAO IN ('1','2') " // ATIVOS
+	_sQuery2 += " AND SITUACAO IN ('1') " // ATIVOS
 	_aFun 	 := U_Qry2Array(_sQuery2)  
 
 	If len(_aFun) <= 0 // verifica se eh socio jah que não eh funcionario
