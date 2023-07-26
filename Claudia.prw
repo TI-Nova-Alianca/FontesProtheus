@@ -7,7 +7,7 @@ User Function claudia ()
 		return
 	endif
 
-	//u_help("Nada para executar")
+	u_help("Nada para executar")
 
 	//u_help("reservas")
 	//U_BatReserva()
@@ -18,12 +18,30 @@ User Function claudia ()
 	//u_help("Ajusta SF4")
 	//_ajustaSF4()
 
-	//u_help("CRM")
-	//U_VA_CRM()
+	//u_help("CRM delete")
+	//_aCRM := {}
+	//_deletaContatos()
 
 	//u_help("TELA CRM")
 	//U_ZCA()
+	
+	//u_help("IMPORTACAO CRM")
+	//u_va_crmimp()
 Return
+
+// Static Function _deletaContatos()
+//  	Local _aDados 	:= {}
+//  	Local _i 		:=0
+
+// 	_aDados = U_LeCSV ('C:\Temp\deleta.csv', ';')
+// 	for _i := 1 to len(_aDados)
+// 		_sIdExt := _aDados[_i,1]
+// 		_sIdErp := ''//iif(empty(_aDados[_i,2]),'',_aDados[_i,2])
+
+// 		U_VA_CRM(_aCRM, 'D', _sIdExt, _sIdErp)
+
+// 	next
+// Return
 // //
 // // -----------------------------------------------------------------------------------
 // Static Function _ajustaSF4()

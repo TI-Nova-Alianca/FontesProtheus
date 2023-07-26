@@ -341,7 +341,7 @@ Static Function AtuCRM()
 	Local _aCRM := {}
 
 	_sTpPessoa := IIF(sa1->a1_pessoa=='F','Física','Jurídica')
-	_sVendedor := Posicione("SA1",1, xFilial("SA1") + sa1->a1_cod + sa1->a1_loja, "A1_VEND")
+	//_sVendedor := Posicione("SA1",1, xFilial("SA1") + sa1->a1_cod + sa1->a1_loja, "A1_VEND")
 
 	_oSQL := ClsSQL ():New ()
 	_oSQL:_sQuery := ""
@@ -349,14 +349,15 @@ Static Function AtuCRM()
 	_oSQL:_sQuery += " 		 ZCA_CODRES "
 	_oSQL:_sQuery += " FROM " + RetSQLName ("ZCA")
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
-	_oSQL:_sQuery += " AND ZCA_CODREP   = '" + sf2->f2_vend1  + "' "
+	_oSQL:_sQuery += " AND ZCA_CODREP   = '" + sa1->a1_vend  + "' "
 	_aResp := aclone (_oSQL:Qry2Array ())
 
 	If len(_aResp) > 0
 		_sResp     := _aResp[1,1]
 
 		If !empty(_sResp)
-			_sPais     := IIF(alltrim(sa1->a1_pais)=='105','Brasil','Ex')
+			_sPais  := IIF(alltrim(sa1->a1_pais)=='105','Brasil','Ex')
+			_sAtivo := IIF(alltrim(sa1->a1_msblql)=='2','Ativo','Inativo')
 
 			aadd(_aCRM,{	sa1->a1_cod 			,; // idExterno
 							sa1->a1_nome			,; // nome
@@ -377,7 +378,9 @@ Static Function AtuCRM()
 							alltrim(sa1->a1_inscr)	,; // valor
 							_sResp	 				,; // listIdResponsaveis
 							sa1->a1_cgc             ,; // CPF/CNPJ
-							_sPais					}) // Pais
+							_sPais					,; // Pais
+							'Ativo/Inativo'         ,; // Ativo/Inativo
+							_sAtivo                 }) // Ativo/Inativo
 
 				U_VA_CRM(_aCRM,'C')
 		EndIf
