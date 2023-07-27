@@ -77,7 +77,7 @@ Static Function ModelDef()
 	//Fazendo o relacionamento
 	aAdd(aRelation, {"ZCA_FILIAL", "FWxFilial('ZCA')"} )
 	aAdd(aRelation, {"ZCA_CODRES", "ZCA_CODRES"})
-	aAdd(aRelation, {"ZCA_NOMRES", "ZCA_NOMRES"})
+	//aAdd(aRelation, {"ZCA_NOMRES", "ZCA_NOMRES"})
 	oModel:SetRelation("ZCADETAIL", aRelation, ZCA->(IndexKey(1)))
 	
 	//Definindo campos unicos da linha
