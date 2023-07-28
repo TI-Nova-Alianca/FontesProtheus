@@ -353,37 +353,39 @@ Static Function AtuCRM()
 	_aResp := aclone (_oSQL:Qry2Array ())
 
 	If len(_aResp) > 0
-		_sResp     := _aResp[1,1]
+		_sResp := _aResp[1,1]
+	else
+		_sResp := "7382"
+	EndIf
 
-		If !empty(_sResp)
-			_sPais  := IIF(alltrim(sa1->a1_pais)=='105','Brasil','Ex')
-			_sAtivo := IIF(alltrim(sa1->a1_msblql)=='2','Ativo','Inativo')
+	If !empty(_sResp)
+		_sPais  := IIF(alltrim(sa1->a1_pais)=='105','Brasil','Ex')
+		_sAtivo := IIF(alltrim(sa1->a1_msblql)=='2','Ativo','Inativo')
 
-			aadd(_aCRM,{	sa1->a1_cod 			,; // idExterno
-							sa1->a1_nome			,; // nome
-							_sTpPessoa				,; // tipoPessoa
-							"ERP Protheus"  		,; // fonteContato
-							"Cliente"				,; // statusContato
-							"Trabalho"				,; // selectTipoEndereco
-							alltrim(sa1->a1_end)	,; // endereco
-							alltrim(sa1->a1_bairro)	,; // bairro
-							alltrim(sa1->a1_mun)	,; // cidade
-							sa1->a1_est  			,; // uf
-							sa1->a1_cep				,; // cep
-							alltrim(sa1->a1_tel)	,; // descricao (telefone)
-							"Trabalho"				,; // selectTipo
-							alltrim(sa1->a1_email)	,; // descricao (email)
-							"Trabalho"				,; // selectTipo
-							"IE"					,; // listCampoUsuario - nomeCampo
-							alltrim(sa1->a1_inscr)	,; // valor
-							_sResp	 				,; // listIdResponsaveis
-							sa1->a1_cgc             ,; // CPF/CNPJ
-							_sPais					,; // Pais
-							'Ativo/Inativo'         ,; // Ativo/Inativo
-							_sAtivo                 }) // Ativo/Inativo
+		aadd(_aCRM,{	sa1->a1_cod 			,; // idExterno
+						sa1->a1_nome			,; // nome
+						_sTpPessoa				,; // tipoPessoa
+						"ERP Protheus"  		,; // fonteContato
+						"Cliente"				,; // statusContato
+						"Trabalho"				,; // selectTipoEndereco
+						alltrim(sa1->a1_end)	,; // endereco
+						alltrim(sa1->a1_bairro)	,; // bairro
+						alltrim(sa1->a1_mun)	,; // cidade
+						sa1->a1_est  			,; // uf
+						sa1->a1_cep				,; // cep
+						alltrim(sa1->a1_tel)	,; // descricao (telefone)
+						"Trabalho"				,; // selectTipo
+						alltrim(sa1->a1_email)	,; // descricao (email)
+						"Trabalho"				,; // selectTipo
+						"IE"					,; // listCampoUsuario - nomeCampo
+						alltrim(sa1->a1_inscr)	,; // valor
+						_sResp	 				,; // listIdResponsaveis
+						sa1->a1_cgc             ,; // CPF/CNPJ
+						_sPais					,; // Pais
+						'Ativo/Inativo'         ,; // Ativo/Inativo
+						_sAtivo                 }) // Ativo/Inativo
 
-				U_VA_CRM(_aCRM,'C')
-		EndIf
+			U_VA_CRM(_aCRM,'C')
 	EndIf
 
 Return

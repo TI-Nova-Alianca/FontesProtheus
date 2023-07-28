@@ -65,6 +65,7 @@ User Function VA_CRMIMP()
     _oSQL:_sQuery += " WHERE D_E_L_E_T_='' "
     _oSQL:_sQuery += " AND A1_VEND ='"+ mv_par01 +"'" 
     _oSQL:_sQuery += " ORDER BY A1_NOME"
+    _oSQL:Log ()
 
     _aDados := aclone (_oSQL:Qry2Array ())
 
@@ -81,34 +82,36 @@ User Function VA_CRMIMP()
         _aResp := aclone (_oSQL:Qry2Array ())
 
         If len(_aResp) > 0
-            _sResp     := _aResp[1,1]
+            _sResp := _aResp[1,1]
+        else
+            _sResp := "7382"
+        EndIf
 
-            If !empty(_sResp)
+        If !empty(_sResp)
 
-                aadd(_aCRM,{	_aDados[_x, 1] 			,; // idExterno
-                                _aDados[_x, 2]			,; // nome
-                                _aDados[_x, 3]			,; // tipoPessoa
-                                _aDados[_x, 4]  		,; // fonteContato
-                                _aDados[_x, 5]			,; // statusContato
-                                _aDados[_x, 6]			,; // selectTipoEndereco
-                                alltrim(_aDados[_x, 7])	,; // endereco
-                                alltrim(_aDados[_x, 8])	,; // bairro
-                                alltrim(_aDados[_x, 9])	,; // cidade
-                                _aDados[_x,10]  		,; // uf
-                                _aDados[_x,11]			,; // cep
-                                alltrim(_aDados[_x,12])	,; // descricao (telefone)
-                                _aDados[_x,13]			,; // selectTipo
-                                alltrim(_aDados[_x,14])	,; // descricao (email)
-                                _aDados[_x,15]			,; // selectTipo
-                                _aDados[_x,16]			,; // listCampoUsuario - nomeCampo
-                                alltrim(_aDados[_x,17])	,; // valor
-                                _sResp	 				,; // listIdResponsaveis
-                                _aDados[_x,18]          ,; // CPF/CNPJ
-                                _aDados[_x,19]			,; // Pais
-                                _aDados[_x,20]          ,; // Ativo/Inativo
-                                _aDados[_x,21]          }) // Ativo/Inativo
+            aadd(_aCRM,{	_aDados[_x, 1] 			,; // idExterno
+                            _aDados[_x, 2]			,; // nome
+                            _aDados[_x, 3]			,; // tipoPessoa
+                            _aDados[_x, 4]  		,; // fonteContato
+                            _aDados[_x, 5]			,; // statusContato
+                            _aDados[_x, 6]			,; // selectTipoEndereco
+                            alltrim(_aDados[_x, 7])	,; // endereco
+                            alltrim(_aDados[_x, 8])	,; // bairro
+                            alltrim(_aDados[_x, 9])	,; // cidade
+                            _aDados[_x,10]  		,; // uf
+                            _aDados[_x,11]			,; // cep
+                            alltrim(_aDados[_x,12])	,; // descricao (telefone)
+                            _aDados[_x,13]			,; // selectTipo
+                            alltrim(_aDados[_x,14])	,; // descricao (email)
+                            _aDados[_x,15]			,; // selectTipo
+                            _aDados[_x,16]			,; // listCampoUsuario - nomeCampo
+                            alltrim(_aDados[_x,17])	,; // valor
+                            _sResp	 				,; // listIdResponsaveis
+                            _aDados[_x,18]          ,; // CPF/CNPJ
+                            _aDados[_x,19]			,; // Pais
+                            _aDados[_x,20]          ,; // Ativo/Inativo
+                            _aDados[_x,21]          }) // Ativo/Inativo
 
-            EndIf
         EndIf
     Next
     U_VA_CRM(_aCRM,'L')

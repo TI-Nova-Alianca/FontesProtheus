@@ -29,6 +29,7 @@ User Function VA_CRM(_aCRM, _sTipo)
     nTimeOut := 120  
     
     Do Case 
+
     // Importação de clientes
     Case _sTipo == 'C'
         If Len(_aCRM) > 0
@@ -82,6 +83,71 @@ User Function VA_CRM(_aCRM, _sTipo)
                 U_Log2 ('info', sPostRet)
             Next
             //ALERT(sPostRet)
+        EndIf
+
+
+    // Importação de clientes em Lote
+    Case _sTipo == 'L'
+        If Len(_aCRM) > 0
+            U_Log2 ('info', '*** QTD. REGISTROS: ' + alltrim(str(Len(_aCRM))))
+
+            aadd(aHeadOut,"Content-Type: application/json")
+            aadd(aHeadOut,"token:145493691c04-670f-4cd6-976d-04e4eb9e534d")
+
+            cUrl1 := ("https://api.crmsimples.com.br/API?method=saveContatoLote")
+
+            cJson := '['
+
+            For _x:=1 to Len(_aCRM)
+
+                cJson += '{"idExterno":    "' + _aCRM[_x, 1] + '",'
+                cJson += '"nome":          "' + _aCRM[_x, 2] + '",' 
+                cJson += '"idDivisao":     null                ,'    
+                cJson += '"tipoPessoa":    "' + _aCRM[_x, 3] + '",'  
+                cJson += '"cnpjCpf":       "' + _aCRM[_x,19] + '",'  
+                cJson += '"fonteContato":  "' + _aCRM[_x, 4] + '",'
+                cJson += '"statusContato": "' + _aCRM[_x, 5] + '",'
+                cJson += '"listEndereco": [{'
+                cJson += '      "selectTipoEndereco":"' + _aCRM[_x, 6] + '",'
+                cJson += '      "endereco":          "' + _aCRM[_x, 7] + '",'
+                cJson += '      "bairro":            "' + _aCRM[_x, 8] + '",'
+                cJson += '      "cidade":            "' + _aCRM[_x, 9] + '",'
+                cJson += '      "uf":                "' + _aCRM[_x,10] + '",'
+                cJson += '      "cep":               "' + _aCRM[_x,11] + '",'
+                cJson += '      "pais":              "' + _aCRM[_x,20] + '"'
+                cJson += '}],'
+                cJson += '"listFone": [{'
+                cJson += '      "descricao": "' + _aCRM[_x,12] + '",'
+                cJson += '      "selectTipo":"' + _aCRM[_x,13] + '"'
+                cJson += '}],'
+                cJson += '"listEmail": [{'
+                cJson += '"descricao":  "' + _aCRM[_x,14] + '",'
+                cJson += '"selectTipo": "' + _aCRM[_x,15] + '"'
+                cJson += '}],'
+                cJson += '"listCampoUsuario": ['
+                cJson += '    {'
+                cJson += '      "nomeCampo": "' + _aCRM[_x,16] + '",'
+                cJson += '      "valor":     "' + _aCRM[_x,17] + '"'
+                cJson += '    },'
+                cJson += '    {'
+                cJson += '      "nomeCampo": "' + _aCRM[_x,21] + '",'
+                cJson += '      "valor":     "' + _aCRM[_x,22] + '"'
+                cJson += '    }'
+                cJson += '                     ],'
+                cJson += '"listIdResponsaveis": ['+ _aCRM[_x,18] +'],'
+                cJson += '"listIdRepresentantes": []}'
+
+                If _x != Len(_aCRM)
+                    cJson += ','
+                EndIf
+            Next
+
+            cJson += ']'
+
+            U_Log2 ('info', cJson)
+            sPostRet := HttpPost(cUrl1,,cJson,nTimeOut,aHeadOut,@cHeadRet)
+            U_Log2 ('info', sPostRet)
+            
         EndIf
 
 
@@ -150,70 +216,5 @@ User Function VA_CRM(_aCRM, _sTipo)
             sPostRet := HttpPost(cUrl1,,cJson,nTimeOut,aHeadOut,@cHeadRet)
         EndIf
 
-
-    // Importação de clientes em Lote
-    Case _sTipo == 'L'
-        If Len(_aCRM) > 0
-            U_Log2 ('info', '*** QTD. REGISTROS: ' + alltrim(str(Len(_aCRM))))
-
-            aadd(aHeadOut,"Content-Type: application/json")
-            aadd(aHeadOut,"token:145493691c04-670f-4cd6-976d-04e4eb9e534d")
-
-            cUrl1 := ("https://api.crmsimples.com.br/API?method=saveContatoLote")
-
-            cJson := '['
-
-            For _x:=1 to Len(_aCRM)
-
-                cJson += '{"idExterno":    "' + _aCRM[_x, 1] + '",'
-                cJson += '"nome":          "' + _aCRM[_x, 2] + '",' 
-                cJson += '"idDivisao":     null                ,'    
-                cJson += '"tipoPessoa":    "' + _aCRM[_x, 3] + '",'  
-                cJson += '"cnpjCpf":       "' + _aCRM[_x,19] + '",'  
-                cJson += '"fonteContato":  "' + _aCRM[_x, 4] + '",'
-                cJson += '"statusContato": "' + _aCRM[_x, 5] + '",'
-                cJson += '"listEndereco": [{'
-                cJson += '      "selectTipoEndereco":"' + _aCRM[_x, 6] + '",'
-                cJson += '      "endereco":          "' + _aCRM[_x, 7] + '",'
-                cJson += '      "bairro":            "' + _aCRM[_x, 8] + '",'
-                cJson += '      "cidade":            "' + _aCRM[_x, 9] + '",'
-                cJson += '      "uf":                "' + _aCRM[_x,10] + '",'
-                cJson += '      "cep":               "' + _aCRM[_x,11] + '",'
-                cJson += '      "pais":              "' + _aCRM[_x,20] + '"'
-                cJson += '}],'
-                cJson += '"listFone": [{'
-                cJson += '      "descricao": "' + _aCRM[_x,12] + '",'
-                cJson += '      "selectTipo":"' + _aCRM[_x,13] + '"'
-                cJson += '}],'
-                cJson += '"listEmail": [{'
-                cJson += '"descricao":  "' + _aCRM[_x,14] + '",'
-                cJson += '"selectTipo": "' + _aCRM[_x,15] + '"'
-                cJson += '}],'
-                cJson += '"listCampoUsuario": ['
-                cJson += '    {'
-                cJson += '      "nomeCampo": "' + _aCRM[_x,16] + '",'
-                cJson += '      "valor":     "' + _aCRM[_x,17] + '"'
-                cJson += '    },'
-                cJson += '    {'
-                cJson += '      "nomeCampo": "' + _aCRM[_x,21] + '",'
-                cJson += '      "valor":     "' + _aCRM[_x,22] + '"'
-                cJson += '    }'
-                cJson += '                     ],'
-                cJson += '"listIdResponsaveis": ['+ _aCRM[_x,18] +'],'
-                cJson += '"listIdRepresentantes": []}'
-
-                If _x != Len(_aCRM)
-                    cJson += ','
-                EndIf
-            Next
-
-            cJson += ']'
-
-            U_Log2 ('info', cJson)
-            sPostRet := HttpPost(cUrl1,,cJson,nTimeOut,aHeadOut,@cHeadRet)
-            U_Log2 ('info', sPostRet)
-            
-        EndIf
     EndCase
-
 Return
