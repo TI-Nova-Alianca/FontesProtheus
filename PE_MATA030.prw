@@ -57,7 +57,6 @@ User Function CRMA980()
 			if nOper == 4 // operação alteração
 				_GeraLog ()
 				U_AtuMerc ('SA1', sa1 -> (recno ()))
-				AtuCRM() // atualiza cliente no CRM Simples
 
 				//GLPI: 12756
 				if alltrim(sa1->a1_vend) <> alltrim(m->a1_vend) 
@@ -94,8 +93,9 @@ User Function CRMA980()
 			//Se for inclusão
 			If nOper == 3
 				_M030INC()
-				AtuCRM()   // atualiza cliente no CRM Simples
 			EndIf
+
+			AtuCRM()   // atualiza cliente no CRM Simples
 
 		ElseIf cIdPonto == "FORMCOMMITTTSPRE"
 			xRet := .T.
@@ -349,7 +349,8 @@ Static Function AtuCRM()
 	_oSQL:_sQuery += " 		 ZCA_CODRES "
 	_oSQL:_sQuery += " FROM " + RetSQLName ("ZCA")
 	_oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
-	_oSQL:_sQuery += " AND ZCA_CODREP   = '" + sa1->a1_vend  + "' "
+	_oSQL:_sQuery += " AND ZCA_CODREP   = '" + alltrim(sa1->a1_vend)  + "' "
+	_oSQL:Log ()
 	_aResp := aclone (_oSQL:Qry2Array ())
 
 	If len(_aResp) > 0
