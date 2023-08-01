@@ -13,6 +13,7 @@
 // 30/10/2020 - Cláudia - Repassado para novo modelo de relatorio e acrescentada 
 //                        coluna de status. GLPI: 8724
 // 02/05/2022 - Claudia - Incluída validação para o campo L1_IndCtb.
+// 01/08/2023 - Claudia - Incluido distinct na consulta. GLPI: 14028
 //
 // ------------------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
@@ -73,7 +74,7 @@ Static Function PrintReport(oReport)
 	
     _oSQL  := ClsSQL ():New ()
     _oSQL:_sQuery := ""
-    _oSQL:_sQuery += "	SELECT"
+    _oSQL:_sQuery += "	SELECT DISTINCT "
 	_oSQL:_sQuery += "	SL1.L1_FILIAL"
 	_oSQL:_sQuery += "   ,CASE"
 	_oSQL:_sQuery += "		WHEN SL1.L1_FILIAL = '13' THEN 'CAXIAS'"
