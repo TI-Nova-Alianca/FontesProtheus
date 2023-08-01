@@ -12,6 +12,9 @@
 
 // Historico de alteracoes:
 // 15/07/2022 - Robert - Impede exclusao se tiver movimentacao na conta corrente de associados.
+// 01/08/2023 - Robert - Guardar motivo de alt.dados banc.assoc - GLPI 14026
+//                     - Validacao 'tudo OK' passada do MODELPOS para FORMPOS (executava 2 vezes)
+//                     - Botao consulta eventos do fornecedor
 //
 
 #include "protheus.ch"
@@ -19,50 +22,60 @@
 
 // --------------------------------------------------------------------------
 user Function CUSTOMERVENDOR()
-	Local aParam := PARAMIXB
-	Local _xRet := .T.
-	Local oObj := ""
+	Local aParam   := PARAMIXB
+	Local _xRet    := .T.
+	Local oObj     := ""
 	Local cIdPonto := ""
 	Local cIdModel := ""
-	Local lIsGrid := .F.
+	Local _lIsGrid := .F.
+	local _nOper   := 0
+	private _sMotAltBc := space (200)
 
 	If aParam <> NIL
+		// Habilitar somente para debug --> U_Log2 ('debug', '[' + procname () + ']cIdPonto: ' + cIdPonto + '  cIdModel: ' + cIdModel)
 		oObj := aParam[1]
 		cIdPonto := aParam[2]
-		cIdModel := aParam[3]
-		lIsGrid := (Len(aParam) > 3)
-	//	U_Log2 ('debug', '[' + procname () + ']cIdPonto: ' + cIdPonto)
+		cIdModel := aParam[3]  // SA2MASTER = tela principal; SA2KDE = complemento fornecedor
+		_lIsGrid := (Len(aParam) > 3)
 		
-		If cIdPonto == "MODELPOS"
-			nOper := oObj:nOperation
-	//		U_Log2 ('debug', '[' + procname () + ']nOper: ' + cvaltochar (nOper))
-			if _xRet .and. nOper == 5  // Exclusao
+		If cIdPonto == "MODELPOS"  // Chamada na validação total do modelo (tela inteira)
+			U_Log2 ('debug', '[' + procname () + ']cIdPonto: ' + cIdPonto + '  cIdModel: ' + cIdModel)
+			_nOper := oObj:nOperation
+			U_Log2 ('debug', '[' + procname () + ']_nOper: ' + cvaltochar (_nOper))
+			if _xRet .and. _nOper == 5  // Exclusao
 				_xRet = _PodeExcl ()
 			endif
-			if _xRet .and. nOper == 4  // Alteracao
-				_GeraLog ()
-			endif
-			if _xRet
+//			if _xRet .and. _nOper == 4  // Alteracao
+//				_xRet := MA020TDOK ()
+//				if _xRet .and. _nOper == 4  // Alteracao
+//					_GeraLog ()
+//				endif
+//			endif
+		ElseIf cIdPonto == "FORMPOS"  // Chamada na validação total do formulário
+			U_Log2 ('debug', '[' + procname () + ']cIdPonto: ' + cIdPonto + '  cIdModel: ' + cIdModel)
+			if cIdModel == 'SA2MASTER'
 				_xRet := MA020TDOK ()
+				if _xRet
+					_GeraLog ()
+				endif
 			endif
-		ElseIf cIdPonto == "FORMPOS"
-			_xRet := NIL
-		ElseIf cIdPonto == "FORMLINEPRE"
+		ElseIf cIdPonto == "FORMLINEPRE"  // Chamada na pré validação da linha do formulário
 			_xRet := .T.
-		ElseIf cIdPonto == "FORMLINEPOS"
+		ElseIf cIdPonto == "FORMLINEPOS"  // Chamada na validação da linha do formulário
 			_xRet := .T.
-		ElseIf cIdPonto == "MODELCOMMITTTS"
+		ElseIf cIdPonto == "MODELCOMMITTTS"  // Chamada após a gravação total do modelo e dentro da transação
 			_xRet = NIL
-		ElseIf cIdPonto == "MODELCOMMITNTTS"
+		ElseIf cIdPonto == "MODELCOMMITNTTS"  // Chamada após a gravação total do modelo e fora da transação
 			_xRet = NIL
-		ElseIf cIdPonto == "FORMCOMMITTTSPRE"
+		ElseIf cIdPonto == "FORMCOMMITTTSPRE"  // Chamada após a gravação da tabela do formulário
 			_xRet = NIL
-		ElseIf cIdPonto == "FORMCOMMITTTSPOS"
+		ElseIf cIdPonto == "FORMCOMMITTTSPOS"  // Chamada após a gravação da tabela do formulário
 			_xRet = NIL
-		ElseIf cIdPonto == "MODELCANCEL"
+		ElseIf cIdPonto == "MODELCANCEL"  // "Deseja realmente sair?"
 			_xRet := .T.
-		ElseIf cIdPonto == "BUTTONBAR"
-			_xRet := {}
+		ElseIf cIdPonto == "BUTTONBAR"  // Adicionar botoes
+			U_Log2 ('debug', '[' + procname () + ']cIdPonto: ' + cIdPonto + '  cIdModel: ' + cIdModel)
+			_xRet := {{"Alianca-Eventos", "EVENTOS", {||U_VA_SZNC ('ALIAS_CHAVE', 'SA2', sa2 -> a2_cod + sa2 -> a2_loja)}}}
 		EndIf
 	EndIf
 Return _xRet
@@ -72,10 +85,12 @@ Return _xRet
 static function _GeraLog ()
 	local _oEvento  := NIL
 
-//	 Grava log de evento em case de alteracao de cadastro.
+	u_logpcham ()
+
+//	 Grava log de evento em caso de alteracao de cadastro.
 	if altera
 		_oEvento := ClsEvent():new ()
-		_oEvento:AltCadast ("SA2", m->a2_cod + m->a2_loja, sa2 -> (recno ()))
+		_oEvento:AltCadast ("SA2", m->a2_cod + m->a2_loja, sa2 -> (recno ()), iif (! empty (_sMotAltBc), 'Motivo alt.dados banc.:' + _sMotAltBc, ''))
 	endif
 return
 
@@ -143,7 +158,19 @@ Static Function MA020TDOK ()
 		u_help ("Os campos '" + alltrim (RetTitle ("A2_VACBASE")) + "' e '" + alltrim (RetTitle ("A2_VALBASE")) + "' devem ser ambos informados ou deixados em branco.")
 		_lRet = .F.
 	endif
-	
+
+	if _lRet .and. (m->a2_banco != sa2 -> a2_banco .or. m->a2_agencia != sa2 -> a2_agencia .or. m->a2_numcon != sa2 -> a2_numcon)
+		do while .t.
+			_sMotAltBc = U_Get ("Motivo alteracao dados bancarios", 'C', len (_sMotAltBc), '@!', '', _sMotAltBc, .f., '.t.')
+			if ! empty (_sMotAltBc)
+				exit
+			endif
+			if valtype (_sMotAltBc) == 'U'  // Usuario pressionou ESC
+				_sMotAltBc = space (200)
+			endif
+		enddo
+	endif
+
 	RestArea(_aAreaSA2)
 	RestArea(_aArea)
 	
