@@ -17,7 +17,9 @@
 // 06/11/2015 - Robert - Funcao VA_DISPONESTQ do SQL renomeada para VA_FDISPONESTQ.
 // 14/08/2018 - Robert - Desabilitada leitura das filiais 04/05/06/12/14.
 // 08/07/2020 - Robert - Habilitada Sandra como destinataria para conferencias.
+// 31/07/2023 - Robert - Incluido Heleno Facchin como destinatario.
 //
+
 // --------------------------------------------------------------------------
 user function BatDEstq ()
 	local _aAreaAnt  := U_ML_SRArea ()
@@ -30,10 +32,10 @@ user function BatDEstq ()
 	local _nLinha    := 0
 	local _nLinAux   := 0
 	local _sDestin   := ""
-	local _sArqLog2  := iif (type ("_sArqLog") == "C", _sArqLog, "")
-	_sArqLog := U_NomeLog (.t., .f.)
-	u_logIni ()
-	u_log ("Iniciando as", time ())
+//	local _sArqLog2  := iif (type ("_sArqLog") == "C", _sArqLog, "")
+//	_sArqLog := U_NomeLog (.t., .f.)
+//	u_logIni ()
+//	u_log ("Iniciando as", time ())
 
 	// Busca dados por filial e por acondicionamento em uma mesma query devido
 	// a ser muito demorada. Depois faz os acumulados usando arrays.
@@ -151,12 +153,13 @@ user function BatDEstq ()
 		_sDestin += ";rodrigo.colleoni@novaalianca.coop.br"
 		_sDestin += ";fernando.matana@novaalianca.coop.br"
 		_sDestin += ";jocemar.dalcorno@novaalianca.coop.br"
+		_sDestin += ";heleno.facchin@novaalianca.coop.br"
 		U_SendMail (_sDestin, "Disponibilidade de estoques em litros", _sMsg, {})
 	endif
 
 	U_SalvaAmb (_aAmbAnt)
 	U_ML_SRArea (_aAreaAnt)
-	u_logFim ()
-	_sArqLog = _sArqLog2
+	//u_logFim ()
+	//_sArqLog = _sArqLog2
 return .T.
 

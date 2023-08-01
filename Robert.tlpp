@@ -35,6 +35,7 @@
 // --------------------------------------------------------------------------
 user function robert ()
 	local _lContinua := .T.
+	local _sFuncao   := ''
 
 	// REMOVER DEPOIS DOS TESTES DE PERFORMANCE
 //	u_perfmon ('I', 'Prep_env_' + cValToChar (GetServerPort ()))
@@ -83,58 +84,64 @@ user function robert ()
 		U_Log2 ('info', '[' + procname () + ']Iniciando execucao.')
 		U_UsoRot ('I', procname (), '')
 
-		// _AjLoteEnd ()
-		// _AtuSB1 ()
-		// _aviso ()
-		// _batBlUsr ()
-		// _batFull ()
-		// _BatLimp ()
-		// _BatOcor ()
-		// _BatSafr ()
-		// _BatTrSZI ()
-		// _BatXML ()
-		// _batZBE ()
-		// _CargSaf ()
-		// _CplSaf23A ()
-		// _CplSaf23B ()
-		// _CplSaf23C ()
-		// _ctbANC ()
-		// _DesabRast ()
-		// _elastic ()
-		// _EstFul()
-		// _Etiq ()
-		// _evtXML ()
-		// _exml ()
-		// _FtSafra ()
-		// _gerasze ()
-		// _GLPI13221 ()
-		// _GLPI13674 ()
-		// _GLPI13773 ()
-		// _ImpGPC ()
-		// _memoria ()
-		// _metaf ()
-		// _PerfMon ()
-		// _PreNF ()
-		// _Rast ()
-		// _reginv ()
-		// _recmail ()
-		// _RevCH ()
-		// _RelAssoc ()
-		// _SF1()
-		// _SimCtb ()
-		// _SimSafr23 ()
-		// _SimSafrGI ()
-		// _Sisdevin ()
-		// _ST_MG ()
-		// _SZI ()
-		// _TbUva ()
-		// _telnet ()
-		// _TrEstq ()
-		// _VACCR2 ()
-		// _VA_VEF ()
-		// _VA_XLS ()
-		// _verif ()
-		u_help ('Nada definido.')
+		_sFuncao := ''
+		// _sFuncao = '_AjLoteEnd ()'
+		// _sFuncao = '_AtuSB1 ()'
+		// _sFuncao = '_aviso ()'
+		// _sFuncao = '_batBlUsr ()'
+		// _sFuncao = '_batFull ()'
+		// _sFuncao = '_BatLimp ()'
+		// _sFuncao = '_BatOcor ()'
+		// _sFuncao = '_BatSafr ()'
+		// _sFuncao = '_BatTrSZI ()'
+		// _sFuncao = '_BatXML ()'
+		// _sFuncao = '_batZBE ()'
+		// _sFuncao = '_CargSaf ()'
+		// _sFuncao = '_CplSaf23A ()'
+		// _sFuncao = '_CplSaf23B ()'
+		// _sFuncao = '_CplSaf23C ()'
+		// _sFuncao = '_ctbANC ()'
+		// _sFuncao = '_DesabRast ()'
+		// _sFuncao = '_elastic ()'
+		// _sFuncao = '_EstFul()'
+		// _sFuncao = '_Etiq ()'
+		// _sFuncao = '_evtXML ()'
+		// _sFuncao = '_exml ()'
+		// _sFuncao = '_FtSafra ()'
+		// _sFuncao = '_gerasze ()'
+		// _sFuncao = '_GLPI13221 ()'
+		// _sFuncao = '_GLPI13674 ()'
+		// _sFuncao = '_GLPI13773 ()'
+		// _sFuncao = '_GLPI14020 ()'
+		// _sFuncao = '_ImpGPC ()'
+		// _sFuncao = '_memoria ()'
+		// _sFuncao = '_metaf ()'
+		// _sFuncao = '_PerfMon ()'
+		// _sFuncao = '_PreNF ()'
+		// _sFuncao = '_Rast ()'
+		// _sFuncao = '_reginv ()'
+		// _sFuncao = '_recmail ()'
+		// _sFuncao = '_RevCH ()'
+		// _sFuncao = '_RelAssoc ()'
+		// _sFuncao = '_SF1()'
+		// _sFuncao = '_SimCtb ()'
+		// _sFuncao = '_SimSafr23 ()'
+		// _sFuncao = '_SimSafrGI ()'
+		// _sFuncao = '_Sisdevin ()'
+		// _sFuncao = '_ST_MG ()'
+		// _sFuncao = '_SZI ()'
+		// _sFuncao = '_TbUva ()'
+		// _sFuncao = '_telnet ()'
+		// _sFuncao = '_TrEstq ()'
+		// _sFuncao = '_VACCR2 ()'
+		// _sFuncao = '_VA_VEF ()'
+		// _sFuncao = '_VA_XLS ()'
+		// _sFuncao = '_verif ()'
+		if ! empty (_sFuncao)
+			&(_sFuncao)
+		else
+			u_help ('Nada definido.')
+		endif
 		u_log2 ('info', 'Processo finalizado')
 		U_UsoRot ('F', procname (), '')
 	endif
@@ -1656,6 +1663,61 @@ static function _GLPI13773 ()
 return
 
 // --------------------------------------------------------------------------
+// Atualiza B1_CUSTD cfe planilha
+static function _GLPI14020 ()
+	local _aDados    := {}
+	local _nDado     := 0
+	local _nCustD    := 0
+
+	_aDados = U_LeCSV ('\GLPI_14020.csv', ';')
+	u_log (_aDados)
+	U_MudaLog ('GLPI14020_B1_CUSTD.log')
+	sb1 -> (dbsetorder (1))
+	sb5 -> (dbsetorder (1))
+	for _nDado = 1 to len (_aDados)
+		if len (_aDados [_nDado]) < 3
+			U_Log2 ('erro', '[' + procname () + ']Sem custo para ' + _aDados [_nDado, 1] + ' ' + _aDados [_nDado, 2])
+		else
+			if ! sb1 -> (dbseek (xfilial ("SB1") + U_TamFixo (_aDados [_nDado, 1], 15, ' '), .F.))
+				U_Log2 ('erro', '[' + procname () + ']Nao encontrado no SB1: ' + _aDados [_nDado, 1])
+			else
+				if ! sb5 -> (dbseek (xfilial ("SB5") + sb1 -> b1_cod, .F.))
+					u_log2 ('ERRO', 'Nao encontrei SB5 para o produto ' + sb1 -> b1_cod)
+				else
+					u_log2 ('info', 'Verificando item ' + sb1 -> b1_cod + SB1 -> B1_DESC)
+
+					_nCustD = val (strtran (_aDados [_nDado, 3], ',', '.'))
+				//	U_Log2 ('debug', '[' + procname () + '] >>' + _aDados [_nDado, 3] + '<< para >>' + cvaltochar (_nCustD) + '<<')
+
+					if sb1 -> b1_custd != _nCustD
+
+						u_log2 ('info', 'Alterando custo ' + sb1 -> b1_cod + SB1 -> B1_DESC + ' de ' + transform (sb1 -> b1_custd, '@E 999,999.9999') + ' para ' + transform (_nCustD, '@E 999,999.9999'))
+
+						// Cria variaveis para uso na gravacao do evento de alteracao
+						regtomemory ("SB1", .F., .F.)
+						//regtomemory ("SB5", .F., .F.)
+						//m->b5_vasisde = 'S'
+						m->b1_custd = _nCustD
+
+						// Grava evento de alteracao
+						_oEvento := ClsEvent():new ()
+						_oEvento:AltCadast ("SB1", m->b1_cod, sb1 -> (recno ()), 'GLPI 14020 - ajustar B1_CUSTD', .F.)
+						reclock ("SB1", .f.)
+						sb1 -> B1_custd = m->b1_custd
+						msunlock ()
+						U_AtuMerc ("SB1", sb1 -> (recno ()))
+
+						// Cai fora no primeiro, para testes.
+						// exit
+					endif
+				endif
+			endif
+		endif
+	next
+return
+
+
+// --------------------------------------------------------------------------
 static function _CargSaf ()
 	local _oCarSaf := NIL
 //	local _nCompart := 0
@@ -2051,8 +2113,8 @@ return
 // --------------------------------------------------------------------------
 static function _batfull ()
 	U_MudaLog ('U_BatFullW.log')
-//	U_BatFullW ('E') //, 'ZA1012000609254', NIL)  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
-	U_BatFullW ('S') //, nil, 'ZAG  0000005551')  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
+	U_BatFullW ('E') //, 'ZA1012000617078', NIL)  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
+//	U_BatFullW ('S') //, nil, 'ZAG  0000005551')  // E=entradas;S=Saidas, ENTRADA_ID, SAIDA_ID
 return
 
 // --------------------------------------------------------------------------
@@ -3115,43 +3177,42 @@ static function _TrEstq ()
 	private _sErroAuto := ''
 
 //	_sDocZAG := U_RetSQL ("SELECT MIN (ZAG_DOC+ZAG_SEQ) FROM ZAG010 WHERE D_E_L_E_T_ = '' AND ZAG_EMIS BETWEEN '20221104' AND '20221104' AND ZAG_USRINC = 'robert.koch'")
-	_sDocZAG = '0000004816' + '01'
-	zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC + zag_seq
-	if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
-		u_help ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG",, .t.)
-	else
-		U_Log2 ('debug', '[' + procname () + ']Instanciando...')
-		_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
-		U_Log2 ('debug', '[' + procname () + ']Instanciou')
-		if empty (_oTrEstq:Docto)
-			u_help ("Nao foi possivel instanciar objeto _oTrEstq",, .t.)
-		else
-			_oTrEstq:Exclui ()
-			U_Log2 ('debug', '[' + procname () + ']retorno:' + cvaltochar (_oTrEstq:UltMsg))
-		endif
-	endif
-return
+//	_sDocZAG = '0000004816' + '01'
+//	zag -> (dbsetorder (1))  // ZAG_FILIAL+ ZAG_DOC + zag_seq
+//	if ! zag -> (dbseek (xfilial ("ZAG") + _sDocZAG, .F.))
+//		u_help ("Documento '" + _sDocZAG + "' nao localizado na tabela ZAG",, .t.)
+//	else
+//		U_Log2 ('debug', '[' + procname () + ']Instanciando...')
+//		_oTrEstq := ClsTrEstq ():New (zag -> (recno ()))
+//		U_Log2 ('debug', '[' + procname () + ']Instanciou')
+//		if empty (_oTrEstq:Docto)
+//			u_help ("Nao foi possivel instanciar objeto _oTrEstq",, .t.)
+//		else
+//			_oTrEstq:Exclui ()
+//			U_Log2 ('debug', '[' + procname () + ']retorno:' + cvaltochar (_oTrEstq:UltMsg))
+//		endif
+//	endif
+//return
 	_oTrEstq := ClsTrEstq ():New ()
 	_oTrEstq:FilOrig  = cFilAnt
 	_oTrEstq:FilDest  = cFilAnt
 	_oTrEstq:DtEmis   = date ()
 	//_oTrEstq:OP       = ''
 	_oTrEstq:Motivo   = 'teste robert'
-	_oTrEstq:ProdOrig = '0508           '
-	_oTrEstq:ProdDest = '0508           '
-	//dataware barcode generator
-	_oTrEstq:AlmOrig  = '25'
+	_oTrEstq:ProdOrig = '1127           '
+	_oTrEstq:ProdDest = '1127           '
+	_oTrEstq:AlmOrig  = '02'
 	_oTrEstq:AlmDest  = '01'
-	_oTrEstq:EndOrig  = ''
-	_oTrEstq:EndDest  = ''
-	_oTrEstq:LoteOrig = ''
-	_oTrEstq:LoteDest = '001       '
+	_oTrEstq:EndOrig  = 'T01PCP02       '
+	_oTrEstq:EndDest  = '03-01-008      '
+	_oTrEstq:LoteOrig = 'AUTO009126'
+	_oTrEstq:LoteDest = 'AUTO009126'
 	_oTrEstq:QtdSolic = 1
 	_oTrEstq:UsrIncl  = 'robert.koch'
 	_oTrEstq:ImprEtq  = '98' // 14=AX EMBALAGENS;15=logistica;16=Elgin TI;98=sato em disco
 	U_Log2 ('debug', '[' + procname () + ']' + iif (_oTrEstq:PodeIncl (), '', 'Nao') + ' pode incluir')
-	if _oTrEstq:Grava ()
-		U_Log2 ('debug', '[' + procname () + ']Gravou! msg: ' + _oTrEstq:UltMsg)
+//	if _oTrEstq:Grava ()
+//		U_Log2 ('debug', '[' + procname () + ']Gravou! msg: ' + _oTrEstq:UltMsg)
 //		if _oTrEstq:Libera ()
 //			u_log ('Liberou!', _oTrEstq:UltMsg)
 //		else
@@ -3162,9 +3223,9 @@ return
 //		else
 //			u_help (_oTrEstq:UltMsg)
 //		endif
-	else
-		U_Log2 ('debug', '[' + procname () + ']Nao gravou. msg: ' + _oTrEstq:UltMsg)
-	endif
+//	else
+//		U_Log2 ('debug', '[' + procname () + ']Nao gravou. msg: ' + _oTrEstq:UltMsg)
+//	endif
 
 return
 
@@ -3267,6 +3328,21 @@ static function _RelAssoc ()
 	local _aAssoc := {}
 	local _nAssoc := 0
 
+	// Testes metodos associados.
+	//_oSQL := ClsSQL ():New ()
+	//_oSQL:_sQuery := ""
+	//_oSQL:_sQuery += " SELECT DISTINCT ZI_ASSOC, ZI_LOJASSO"
+	//_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
+	//_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
+//	//_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC between '000161' and '000167'" //'012351' and '012360'"
+	//_oSQL:_sQuery +=  " ORDER BY ZI_ASSOC, ZI_LOJASSO"
+	//_aAssoc = _oSQL:Qry2Array ()
+	//_sResult = ''
+	//for _nAssoc = 1 to len (_aAssoc)
+	//	_oAssoc := ClsAssoc():New (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
+	//	u_log (_oAssoc:Codigo, _oAssoc:Loja, _oAssoc:Nome, _oAssoc:GrpFam, _oAssoc:Nucleo, _oAssoc:Subnucleo)
+	//next
+
 	// aadd (_aAssoc, '003577')  // bastante movimento
 	// aadd (_aAssoc, '005128')  // apenas 1 entrada e 1 compra
 	// aadd (_aAssoc, '001369')  // "apenas" 14 complementos
@@ -3281,10 +3357,10 @@ static function _RelAssoc ()
 	// FECHOU aadd (_aAssoc, '002932')  // Joel Panizzon
 	// FECHOU aadd (_aAssoc, '002486')  // Fernando Valentin Busetti
 	// FECHOU aadd (_aAssoc, '002517')  // Santo Jose Busetti (diversas variedades de uva)
-	// AGORA FECHOU aadd (_aAssoc, '003621')  // Dejair Betlinski
+	 aadd (_aAssoc, '003621')  // Dejair Betlinski
 	// DIF aadd (_aAssoc, '010637')  // Cristiano Adilio de Souza - premio 2022 duplicado
 	// DIF aadd (_aAssoc, '002911')  // Honorino - premio 2022 duplicado - saiu em 2022
-	// aadd (_aAssoc, '005212')  // Heleno Facchin - estaria faltando matade dos valores no demonatrativo de IR ano base 2022
+	 aadd (_aAssoc, '005212')  // Heleno Facchin - estaria faltando matade dos valores no demonatrativo de IR ano base 2022
 	// FECHOU aadd (_aAssoc, '010601')  // Joel Salton - conferencia IR 2022
 	// FECHOU aadd (_aAssoc, '010602')  // Jorge Salton - conferencia IR 2022
 	// FECHOU aadd (_aAssoc, '010599')  // Joemir Salton - conferencia IR 2022
@@ -3293,16 +3369,17 @@ static function _RelAssoc ()
 	// CONTINUA FECHANDO aadd (_aAssoc, '033490')  // Grasiela Parisotto - conferencia IR 2022
 	// aadd (_aAssoc, '003026')  // Marcos Parisotto  - conferencia IR 2022
 	// AGORA FECHOU aadd (_aAssoc, '018409')  // Marcelo Avelino Parisotto  - conferencia IR 2022
-	// CONTINUA FECHANDO aadd (_aAssoc, '002653')  // Balduino Parisotto - conferencia IR 2022
+	 aadd (_aAssoc, '002653')  // Balduino Parisotto - conferencia IR 2022
 	// Patricia Turella e o Edgar Schiavenin
 	// aadd (_aAssoc, '002924')  // Ivo Boldrin - fech.safra 2022 parece trazer R$ 79,79 a mais (deve ser funrural)
-	//aadd (_aAssoc, '002832')  // Alex Boldrin - fech.safra 2022 resumo pagto nao bate com notas de safra
-	//aadd (_aAssoc, '003587')  // Marisa Guisso Possa - safra 2018 aparecem movtos de 2023 !!!
-	aadd (_aAssoc, '023824')  // EMA SOSTER BOFF
-	// aadd (_aAssoc, '023827')  // MERCELO BOFF
+	// aadd (_aAssoc, '002832')  // Alex Boldrin - fech.safra 2022 resumo pagto nao bate com notas de safra
+	// aadd (_aAssoc, '003587')  // Marisa Guisso Possa - safra 2018 aparecem movtos de 2023 !!!
+	 aadd (_aAssoc, '023824')  // EMA SOSTER BOFF
+	 aadd (_aAssoc, '023827')  // MERCELO BOFF
+	aadd (_aAssoc, '002480')  // DANIEL SGANZERLA
 	for _nAssoc = 1 to len (_aAssoc)
 		U_Log2 ('info', 'Iniciando associado ' + _aAssoc [_nAssoc])
-		U_GravaSX1 ("ML_FECHASA", '01', '2023')  // safra
+		U_GravaSX1 ("ML_FECHASA", '01', '2022')  // safra
 		U_GravaSX1 ("ML_FECHASA", '02', _aAssoc [_nAssoc])
 		U_GravaSX1 ("ML_FECHASA", '03', '01')  // loja
 		U_GravaSX1 ("ML_FECHASA", '04', '  ')  // nucleo
@@ -4357,25 +4434,6 @@ return
 		_oExtr:FormaResult = 'A'
 		_oExtr:Gera ()
 		u_log (_oExtr:Resultado)
-	next
-return
-*/
-
-
-/*
-	// Testes metodos associados.
-	_oSQL := ClsSQL ():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += " SELECT DISTINCT ZI_ASSOC, ZI_LOJASSO"
-	_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
-	_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
-//	_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC between '000161' and '000167'" //'012351' and '012360'"
-	_oSQL:_sQuery +=  " ORDER BY ZI_ASSOC, ZI_LOJASSO"
-	_aAssoc = _oSQL:Qry2Array ()
-	_sResult = ''
-	for _nAssoc = 1 to len (_aAssoc)
-		_oAssoc := ClsAssoc():New (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
-		u_log (_oAssoc:Codigo, _oAssoc:Loja, _oAssoc:Nome, _oAssoc:GrpFam, _oAssoc:Nucleo, _oAssoc:Subnucleo)
 	next
 return
 */
@@ -6521,23 +6579,6 @@ return
 	next
 return
 */
-/*
-	_oSQL := ClsSQL ():New ()
-	use \robert\sld_ZZM VIA 'DBFCDXADS' shared new alias _sld
-	//u_logtrb ("_sld", .t.)
-	_sld -> (dbgotop ())
-	do while ! _sld -> (eof ())
-		_oSQL:_sQuery := "UPDATE ZZM010 SET ZZM_ERRSAL = 'S'"
-		_oSQL:_sQuery += " WHERE ZZM_ASSOC = '" + strzero (val (_sld -> assoc), 6) + "'"
-		_oSQL:_sQuery +=   " AND ZZM_DATA  = '" + strzero (_sld -> ano, 4) + "1231'"
-		_oSQL:Log ()
-		_oSQL:Exec ()
-		_sld -> (dbskip ())
-	enddo
-return
-*/
-
-
 
 /*
 	Private cPerg   := "VA_EID"
