@@ -237,7 +237,7 @@ METHOD Grava () Class ClsEvent
 		::Chave = ::CodAlias
 	EndIf
 
-	u_log2 ('info', '[' + GetClassName (::Self) + '.' + procname () + ']Gravando evento ' + dtoc (::DtEvento) + ' ' + ::HrEvento + ' ' + ::Texto)
+	u_log2 ('debug', '[' + GetClassName (::Self) + '.' + procname () + ']Gravando evento ' + dtoc (::DtEvento) + ' ' + ::HrEvento + ' ' + ::Texto)
 	
 	reclock ("SZN", .T.)
 	SZN -> zn_filial  = ::Filial

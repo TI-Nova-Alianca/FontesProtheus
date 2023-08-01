@@ -2,7 +2,14 @@
 // Autor......: DWT
 // Data.......: 22/11/2013
 // Descricao..: Função para mostrar somente os Associados do cadastro de fornecedores, além de só permitir alteração nos campos da aba Associados
-//
+
+// Tags para automatizar catalogo de customizacoes:
+// #TipoDePrograma    #Cadastro
+// #Descricao         #Cadastro simplicicado de associados
+// #PalavasChave      #cadastro #associados
+// #TabelasPrincipais #SA2
+// #Modulos           #COOP
+
 // Historico de alteracoes:
 // 02/12/2013 - Robert - Habilitados campos adicionais.
 //                     - Criada consulta de capital social.
@@ -12,32 +19,37 @@
 // 20/12/2019 - Robert - Passa a permitir tambem a alteracao do A2_NOME.
 // 09/03/2020 - Claudia - Ajuste de fonte conforme solicitação de versão 12.1.25 -  SX3 e SXA
 // 01/12/2020 - Robert - Passa a buscar dados de cadastro viticola na view GX0001_AGENDA_SAFRA e nao mais na VA_VASSOC_CAD_VITIC2
+// 01/08/2023 - Robert - Criado botao de consulta de eventos (GLPI 14026)
 //
-// --------------------------------------------------------------------------------------------------
+
 #include "VA_Inclu.prw"
 
+// --------------------------------------------------------------------------------------------------
 User Function VA_ASSOCIA()
 	Private cCadastro 	:= "Cadastro de Associados"
 	Private cDelFunc 	:= ".F."
 	Private cString 	:= "SA2"
 	private aRotina 	:= {}
 	
-	aadd (aRotina, {"Pesquisar"				,  "AxPesqui"		, 0, 1})
-	aadd (aRotina, {"Visualizar"			, "AxVisual"		, 0, 2})
-	aadd (aRotina, {"Visualizar"			, "AxVisual"		, 0, 3})
-	aadd (aRotina, {"Alterar"   			, "U_ASSOCALT ()"	, 0, 4})
-	aadd (aRotina, {"Capital social"		, "U_ASSOCOut (1)"	, 0, 4})
-	aadd (aRotina, {"Cad.viticolas"			, "U_ASSOCOut (2)"	, 0, 4})
-	aadd (aRotina, {"Grupos familiares"		, "U_ASSOCOut (3)"	, 0, 4})
-	aadd (aRotina, {"Variedades x safra"	, "U_ASSOCOut (4)"	, 0, 4})
-		                       
+	aadd (aRotina, {"Pesquisar"			,  "AxPesqui"		, 0, 1})
+	aadd (aRotina, {"Visualizar"		, "AxVisual"		, 0, 2})
+	aadd (aRotina, {"Visualizar"		, "AxVisual"		, 0, 3})
+	aadd (aRotina, {"Alterar"   		, "U_ASSOCALT ()"	, 0, 4})
+	aadd (aRotina, {"Capital social"	, "U_ASSOCOut (1)"	, 0, 4})
+	// deve ter coisa melhor no NaWeb ---> aadd (aRotina, {"Cad.viticolas"		, "U_ASSOCOut (2)"	, 0, 4})
+	// deve ter coisa melhor no NaWeb ---> aadd (aRotina, {"Grupos familiares"	, "U_ASSOCOut (3)"	, 0, 4})
+	aadd (aRotina, {"Variedades x safra", "U_ASSOCOut (4)"	, 0, 4})
+	aadd (aRotina, {"Eventos"			, "U_VA_SZNC ('ALIAS_CHAVE', 'SA2', sa2 -> a2_cod + sa2 -> a2_loja)", 0, 4})
+
 	dbSelectArea("SA2")
 	dbSetOrder(1)	 
-	                                
+
 	cExprFilTop := " EXISTS (SELECT * FROM " + RetSQLName ("SZI") + " WHERE D_E_L_E_T_ = '' AND ZI_ASSOC = A2_COD AND ZI_LOJASSO = A2_LOJA)"
 	
 	mBrowse(6,1,22,75,"SA2",,,,,,,,,,,,,,cExprFilTop)
 Return
+
+
 // --------------------------------------------------------------------------
 // Função para alteração do cadastro de associados
 User Function ASSOCALT() 
@@ -62,27 +74,6 @@ User Function ASSOCALT()
 	aadd (_aCampos, "A2_COMPLEM")
 	aadd (_aCampos, "A2_NOME")
 
-//	sxa -> (dbseek ('SA2', .T.))
-//	do while ! sxa -> (eof ()) .and. sxa -> xa_alias == 'SA2'
-//		if upper (alltrim (sxa -> xa_descric)) == upper ('Especificos')
-//			_sFolder = sxa -> xa_ordem
-//			exit
-//		endif
-//		sxa -> (dbskip ())
-//	enddo
-//	
-//	DbSelectArea("SX3")
-//	DbSetOrder(1)
-//	DbSeek("SA2")
-//	While !Eof() .and. SX3->X3_ARQUIVO == "SA2"
-//		If X3Uso(SX3->X3_USADO) .and. (ascan (_aCampos, alltrim (sx3 -> x3_campo)) > 0 .or. SX3->X3_FOLDER == _sFolder) // para ver se está na Aba com informações dos associados
-//			if ! alltrim (upper (sx3 -> x3_campo)) $ 'A2_VACBASE/A2_VALBASE'  // Estes nao quero deixar alterar
-//				aadd(aCpos,alltrim(SX3->X3_CAMPO))
-//			endif
-//		EndIf
-//		DbSkip()
-//	End 
-	
 	_sFolder := '9' // Adicionado valor SXA fixo pois não será mais permitida a leitura do SXA na release 25, apenas em telas MVC possuímos funções
 	_aCpoSX3 := FwSX3Util():GetAllFields('SA2')
 		
@@ -94,13 +85,15 @@ User Function ASSOCALT()
 	
 	AxAltera ("SA2",SA2->(recno()),4,NIL,aCpos)
 Return
+
+
 // --------------------------------------------------------------------------
 // Chama consultas, relatorios e outras rotinas associadas (devem estar preparados para isso).
 User Function AssocOut (_nQual)
 	local _aAreaAnt := U_ML_SRArea ()
 	local _aAmbAnt  := U_SalvaAmb ()
 	local _oAssoc   := NIL
-	local _aCadVit  := {}
+//	local _aCadVit  := {}
 	local _oSQL     := NIL
 	local _sCapSoc  := ""
 
@@ -117,6 +110,7 @@ User Function AssocOut (_nQual)
 			u_log ('**************************************************')
 			U_ShowMemo (_sCapSoc, "DADOS DE CAPITAL")
 
+/* revisar, pois deve ter coisa melhor no NaWeb
 		case _nQual == 2  // Cadastros viticolas
 			_aCadVit = aclone (_oAssoc:CadVitic ())
 			aadd (_aCadVit, {})
@@ -137,7 +131,7 @@ User Function AssocOut (_nQual)
 
 		case _nQual == 3  // Grupos familiares 
 			U_ShowArray (_oAssoc:GrpFam ())
-
+*/
 		case _nQual == 4  // Variedades esperadas / liberadas para recebimento na safra
 			_oSQL := ClsSQL ():New ()
 			_oSQL:_sQuery += "SELECT *"
