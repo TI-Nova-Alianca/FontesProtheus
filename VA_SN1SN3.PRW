@@ -2,23 +2,24 @@
 // Autor......: Catia Cardoso
 // Data.......: 25/11/2016
 // Descricao..: Itens Imobilizado
-
+//
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Relatorio
 // #Descricao         #Relatorio simplificado de ativos e seus valores principais
 // #PalavasChave      #relatorio #ativos #planilha
 // #TabelasPrincipais #SN3 #SN1
 // #Modulos           #ATF
-
+//
 // Historico de alteracoes:
 // 13/02/2018 - Alteração para que nao traga itens baixados
-// 15/02/2019 - Andre  - Adicionado coluna Depreciacao Acumulada (N3_VRDACM1) e valor residual (SN3.N3_VORIG1 - SN3.N3_VRDACM1)
-// 15/05/2019 - Catia  - alterar para que considere itens tipo 13 e 03 tambem
-// 10/05/2021 - Robert - Incluido N3_TIPO = 12 nas filtragens (GLPI 10000)
-//                     - Query estava com os nomes de tabelas fixos. Passa a usar RetSQLName().
+// 15/02/2019 - Andre   - Adicionado coluna Depreciacao Acumulada (N3_VRDACM1) 
+//                        e valor residual (SN3.N3_VORIG1 - SN3.N3_VRDACM1)
+// 15/05/2019 - Catia   - alterar para que considere itens tipo 13 e 03 tambem
+// 10/05/2021 - Robert  - Incluido N3_TIPO = 12 nas filtragens (GLPI 10000)
+//                      - Query estava com os nomes de tabelas fixos. Passa a usar RetSQLName().
+// 01/08/2023 - Claudia - Cast da data para realizar a impressão correta no arquivo excel. GLPI: 14027
 //
-
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------
 User Function VA_SN1SN3()
     Private cPerg    := "VA_SN1SN3"
    
@@ -37,39 +38,30 @@ User Function VA_SN1SN3()
 		_sQuery += " 	  , SN1.N1_GRUPO    AS GRU_COD"
 		_sQuery += " 	  , SNG.NG_DESCRIC  AS GRU_DESCRICAO"
 		_sQuery += " 	  , SN3.N3_CCONTAB  AS CTA"
-//		_sQuery += " 	  , CT1.CT1_DESC01  AS CTA_DESCRICAO"
 		_sQuery += " 	  , SN3.N3_CUSTBEM  AS CCUSTO"
 		_sQuery += " 	  , CTT.CTT_DESC01  AS CCUS_DESCRICAO"
 	  	_sQuery += " 	  , SN1.N1_NFISCAL  AS NF_NUM"
-//		_sQuery += " 	  , SN1.N1_NSERIE   AS NF_SERIE"
 		_sQuery += " 	  , SN1.N1_FORNEC	AS FORN_COD"
-//		_sQuery += " 	  , SA2.A2_NOME  	AS FORN_NOME"
 		_sQuery += " 	  , SN1.N1_QUANTD   AS QUANTIDADE"
-		_sQuery += " 	  , SN1.N1_AQUISIC  AS DT_AQUI"
+		_sQuery += "	  ,CONVERT(VARCHAR(30), convert(datetime,convert(varchar,SN1.N1_AQUISIC),103), 103) AS DT_AQUI "
 		_sQuery += " 	  , SN3.N3_VORIG1   AS VLR_AQUI"
-		_sQuery += "      , ISNULL ((SELECT TOP 1 N3_VRDACM1" // FROM SN3010 N1"
+		_sQuery += "      , ISNULL ((SELECT TOP 1 N3_VRDACM1" 
 		_sQuery += "      FROM " + RetSQLName ("SN3") + " N1"
 		_sQuery += "     		WHERE N1.D_E_L_E_T_ = ''"
 		_sQuery += " 				AND N1.N3_FILIAL = SN1.N1_FILIAL"
 		_sQuery += " 				AND N1.N3_CBASE  = SN1.N1_CBASE"
 		_sQuery += " 				AND N1.N3_ITEM   = SN1.N1_ITEM"
 		_sQuery += " 				AND N1.N3_CCONTAB = SN3.N3_CCONTAB"
-		// _sQuery += " 				AND N3_TIPO   IN ('10','13')) ,0) AS DPR_ACU"
 		_sQuery += " 				AND N1.N3_TIPO   IN ('10','13','12')) ,0) AS DPR_ACU"
-		_sQuery += "      , ISNULL ((SELECT TOP 1 N3_VORIG1 -  N3_VRDACM1" // FROM SN3010 N1"
+		_sQuery += "      , ISNULL ((SELECT TOP 1 N3_VORIG1 -  N3_VRDACM1" 
 		_sQuery += "      FROM " + RetSQLName ("SN3") + " N1"
 		_sQuery += "     		WHERE N1.D_E_L_E_T_ = ''"
 		_sQuery += " 				AND N1.N3_FILIAL = SN1.N1_FILIAL"
 		_sQuery += " 				AND N1.N3_CBASE  = SN1.N1_CBASE"
 		_sQuery += " 				AND N1.N3_ITEM   = SN1.N1_ITEM"
 		_sQuery += " 				AND N1.N3_CCONTAB = SN3.N3_CCONTAB"
-		// _sQuery += " 				AND N3_TIPO   IN('10','13')) ,0) AS VLR_RES"
 		_sQuery += " 				AND N1.N3_TIPO   IN('10','13','12')) ,0) AS VLR_RES"
-		 
-		//_sQuery += "      ,(SN3.N3_VORIG1 - SN3.N3_VRDACM1) AS VLR_RES"
-//		_sQuery += "   FROM SN1010 AS SN1"
 		_sQuery += "   FROM " + RetSQLName ("SN1") + " SN1"
-	//	_sQuery += " 		INNER JOIN SN3010 AS SN3"
 		_sQuery += " 		INNER JOIN " + RetSQLName ("SN3") + " SN3"
 		_sQuery += " 			ON (SN3.D_E_L_E_T_ = ''"
 		_sQuery += " 				AND SN3.N3_FILIAL = SN1.N1_FILIAL"
@@ -78,21 +70,16 @@ User Function VA_SN1SN3()
 		_sQuery += " 				AND SN3.N3_DTBAIXA = ''"
 		_sQuery += "                AND SN3.N3_CCONTAB BETWEEN '" + mv_par07 + "' AND '" + mv_par08 + "'"
 		_sQuery += "                AND SN3.N3_CUSTBEM BETWEEN '" + mv_par09 + "' AND '" + mv_par10 + "'"
-		// _sQuery += " 				AND SN3.N3_TIPO   IN ('01','03') )"
 		_sQuery += " 				AND SN3.N3_TIPO   IN ('01','03','12') )"
-//		_sQuery += " 		LEFT JOIN SNG010 AS SNG"
 		_sQuery += " 		LEFT JOIN " + RetSQLName ("SNG") + " AS SNG"
 		_sQuery += " 			ON (SNG.D_E_L_E_T_ = ''"
 		_sQuery += " 				AND SNG.NG_GRUPO = SN1.N1_GRUPO)"
-//		_sQuery += " 		LEFT JOIN CT1010 AS CT1"
 		_sQuery += " 		LEFT JOIN " + RetSQLName ("CT1") + " AS CT1"
 		_sQuery += " 			ON (CT1.D_E_L_E_T_ = ''"
 		_sQuery += " 				AND CT1.CT1_CONTA = SN3.N3_CCONTAB)"
-//		_sQuery += " 		LEFT JOIN CTT010 AS CTT"
 		_sQuery += " 		LEFT JOIN " + RetSQLName ("CTT") + " AS CTT"
 		_sQuery += " 			ON (CTT.D_E_L_E_T_ = ''"
 		_sQuery += " 				AND CTT.CTT_CUSTO = SN3.N3_CUSTBEM)"
-//		_sQuery += " 		LEFT JOIN SA2010 AS SA2"
 		_sQuery += " 		LEFT JOIN " + RetSQLName ("SA2") + " AS SA2"
 		_sQuery += " 			ON (SA2.D_E_L_E_T_ = ''"
 		_sQuery += " 				AND SA2.A2_COD = SN1.N1_FORNEC)"
@@ -165,20 +152,18 @@ User Function VA_SN1SN3()
 	        	@ li, 105 PSAY ALLTRIM((_sAliasQ) -> CCUSTO)  + '-' + SUBSTR((_sAliasQ) -> CCUS_DESCRICAO,1,13)
 			endif	        	
 	        @ li, 127 PSAY (_sAliasQ) -> NF_NUM
-//	        @ li, 146 PSAY (_sAliasQ) -> NF_SERIE
 	        if ! empty((_sAliasQ) -> FORN_COD)
 	        	@ li, 140 PSAY ALLTRIM((_sAliasQ) -> FORN_COD)// + '-' + SUBSTR((_sAliasQ) -> FORN_NOME,1,15)
 			endif	        	
 	        @ li, 150 PSAY (_sAliasQ) -> QUANTIDADE Picture "@E 999,999.99"
-	        @ li, 164 PSAY stod((_sAliasQ) -> DT_AQUI)
+	        @ li, 164 PSAY (_sAliasQ) -> DT_AQUI
 	        @ li, 180 PSAY (_sAliasQ) -> VLR_AQUI   Picture "@E 9,999,999.99"
 	        @ li, 193 PSAY (_sAliasQ) -> DPR_ACU    Picture "@E 9,999,999.99"
 	        @ li, 207 PSAY (_sAliasQ) -> VLR_RES    Picture "@E 9,999,999.99"
 	        
 	        li ++
 	        
-	        (_sAliasQ) -> (dbskip())
-	            
+	        (_sAliasQ) -> (dbskip())      
 	     enddo
 	     
 	     U_ImpParam(62)
@@ -195,7 +180,7 @@ User Function VA_SN1SN3()
 	     
      endif
 return
-     
+//     
 // --------------------------------------------------------------------------
 // Cria Perguntas no SX1
 Static Function _ValidPerg ()
