@@ -32,6 +32,7 @@
 //                     - Melhoradas mensagens, passa a usar FormBatch, semaforo e gravar/visualizar eventos.
 //                     - Nao tratava faturas com mais de uma parcela (ateh entao, nunca foi o caso)
 //                     - Gravacao com controle de transacao (dados adicionais e atualizacao do SZI)
+// 03/08/2023 - Robert - Nao tenta gravar cta corrente se nao for um associado ou ex-associado.
 //
 
 #include "rwmake.ch"
@@ -215,7 +216,7 @@ static function _Gera (_lAuto)
 		_aNotFat = aclone (_oSQL:Qry2Array ())
 		if _aNotFat [1, 1] > 0
 			_lContinua = .F.
-			if U_MsgNoYes ("ATENCAO: A parametrizacao informada pretende abranger " + cvaltochar (_aNotFat [1, 1]) + " titulos, somando R$ " + cvaltochar (_aNotFat [1, 2]) + " que ja sao faturas e, portanto, NAO PODEM MAIS ser agrupadas. A contagem no final do processo nao vai ficar exeta. Confirma assim mesmo?")
+			if U_MsgNoYes ("ATENCAO: A parametrizacao informada pretende abranger " + cvaltochar (_aNotFat [1, 1]) + " titulos, somando R$ " + cvaltochar (_aNotFat [1, 2]) + " que ja sao faturas e, portanto, NAO PODEM MAIS ser agrupadas. A contagem no final do processo nao vai ficar exata. Confirma assim mesmo?")
 				_lContinua = .t.
 				_sTxtEvt += "Usuario confirmou parametrizacao envolvendo faturas (que nao poderao mais ser usadas em nova fatura)" + chr (13) + chr (10)
 			endif
@@ -270,6 +271,7 @@ static function _Gera (_lAuto)
 		for i=1 to len(aDados)
 			_wfornece = aDados [i,1]
 			_wloja    = aDados [i,2]
+			_sPrefLog = _wFornece + '/' + _wLoja
 			_wnumero  = soma1 (_wnumero)
 			aFatPag     := {}
 			aTit        := {}
@@ -328,9 +330,6 @@ static function _Gera (_lAuto)
 			else
 				_nQtFat ++
 				
-//				// Zera os saldos da conta corrente para os titulos aglutinados na fatura.
-//				_ZeraSZI (_wFornece, _wLoja, aTitulos)
-
 				// altera o historio e deixa posicionado o E2 para cria conta corrente referente a este titulo.
 				_nQtFatAlt = 0
 				se2 -> (dbsetorder (1))  // E2_FILIAL, E2_PREFIXO, E2_NUM, E2_PARCELA, E2_TIPO, E2_FORNECE, E2_LOJA, R_E_C_N_O_, D_E_L_E_T_
@@ -378,6 +377,7 @@ static function _Gera (_lAuto)
 		_oEvento:Safra      = _sSafra
 		_oEvento:Grava ()
 	endif
+	_sPrefLog = ''
 
 	u_help ("Processo concluido. Foram geradas " + cvaltochar (_nQtFat) + " faturas, no valor de $ " + cvaltochar (_nTotGer))
 return
@@ -427,34 +427,53 @@ return
 // Cria registro na conta corrente referenciando a fatura criada.
 static function _CriaSZI (_sSafra)
 	local _oCtaCorr := NIL
+	local _oSQL     := NIL
 
-	_oCtaCorr := ClsCtaCorr():New ()
-	_oCtaCorr:Assoc    = se2 -> e2_fornece
-	_oCtaCorr:Loja     = se2 -> e2_loja
-	_oCtaCorr:TM       = '13'
-	_oCtaCorr:DtMovto  = se2 -> e2_EMISSAO
-	_oCtaCorr:Valor    = se2 -> e2_valor
-	_oCtaCorr:SaldoAtu = se2 -> e2_saldo
-	_oCtaCorr:Usuario  = cUserName
-	_oCtaCorr:Histor   = 'FAT.PAG.SAFRA ' + _sSafra  // + ' (' + se2 -> e2_parcela + ')'
-	_oCtaCorr:MesRef   = strzero(month(_oCtaCorr:DtMovto),2)+strzero(year(_oCtaCorr:DtMovto),4)
-	_oCtaCorr:Doc      = se2 -> e2_num
-	_oCtaCorr:Serie    = se2 -> e2_prefixo
-	_oCtaCorr:Origem   = "FTSAFRA"
-	_oCtaCorr:Parcela  = se2 -> e2_parcela
-	_oCtaCorr:Safra    = _sSafra
-	if _oCtaCorr:PodeIncl ()
-		if ! _oCtaCorr:Grava (.F., .F.)
-			U_help ("Erro na atualizacao da conta corrente para o associado '" + se2 -> e2_fornece + '/' + se2 -> e2_loja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg,, .t.)
-		else
-			if empty (se2 -> e2_vachvex)
-				reclock ("SE2", .F.)
-				se2 -> e2_vachvex = _oCtaCorr:ChaveExt ()
-				msunlock ()
-			endif
-		endif
+	// Verifica antes se trata-se de associado (ou ex-associado) por que esta
+	// rotina eh usada, tambem, para gerar faturas de fornecedores de uva que
+	// nao sao associados e, portanto, nao possuem conta corrente.
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += "select (case when exists (select * "  // Nao preciso contar todos. Um EXISTS jah me basta.
+	_oSQL:_sQuery +=  " FROM " + RetSQLName ("SZI") + " SZI"
+	_oSQL:_sQuery += " WHERE SZI.D_E_L_E_T_ = ''"
+	_oSQL:_sQuery +=   " AND SZI.ZI_FILIAL  = '" + xfilial ("SZI")   + "'"
+	_oSQL:_sQuery +=   " AND SZI.ZI_ASSOC   = '" + se2 -> e2_fornece + "'"
+	_oSQL:_sQuery +=   " AND SZI.ZI_LOJASSO = '" + se2 -> e2_loja    + "'"
+	_oSQL:_sQuery +=   " AND SZI.ZI_TM     != '39'"  // 39-entrada como 'fornecedor de uva' nao me interessa aqui.
+	_oSQL:_sQuery += ") then 1 else 0 end)"
+	_oSQL:Log ('[' + procname () + ']')
+	if _oSQL:RetQry (1, .t.) == 0
+		U_Log2 ('aviso', '[' + procname () + ']Fornecedor ' + se2 -> e2_fornece + '/' + se2 -> e2_loja + ' ' + alltrim (se2 -> e2_nomfor) + ' nao consta no SZI. Deve ser apenas fornecedor de uva. Nao preciso gerar conta corrente.')
 	else
-		U_help ("Gravacao do SZI nao permitida na atualizacao da conta corrente para o associado '" + se2 -> e2_fornece + '/' + se2 -> e2_loja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg,, .t.)
+		_oCtaCorr := ClsCtaCorr():New ()
+		_oCtaCorr:Assoc    = se2 -> e2_fornece
+		_oCtaCorr:Loja     = se2 -> e2_loja
+		_oCtaCorr:TM       = '13'
+		_oCtaCorr:DtMovto  = se2 -> e2_EMISSAO
+		_oCtaCorr:Valor    = se2 -> e2_valor
+		_oCtaCorr:SaldoAtu = se2 -> e2_saldo
+		_oCtaCorr:Usuario  = cUserName
+		_oCtaCorr:Histor   = 'FAT.PAG.SAFRA ' + _sSafra  // + ' (' + se2 -> e2_parcela + ')'
+		_oCtaCorr:MesRef   = strzero(month(_oCtaCorr:DtMovto),2)+strzero(year(_oCtaCorr:DtMovto),4)
+		_oCtaCorr:Doc      = se2 -> e2_num
+		_oCtaCorr:Serie    = se2 -> e2_prefixo
+		_oCtaCorr:Origem   = "FTSAFRA"
+		_oCtaCorr:Parcela  = se2 -> e2_parcela
+		_oCtaCorr:Safra    = _sSafra
+		if _oCtaCorr:PodeIncl ()
+			if ! _oCtaCorr:Grava (.F., .F.)
+				U_help ("Erro na atualizacao da conta corrente para o associado '" + se2 -> e2_fornece + '/' + se2 -> e2_loja + "'. Ultima mensagem do objeto:" + _oCtaCorr:UltMsg,, .t.)
+			else
+				if empty (se2 -> e2_vachvex)
+					reclock ("SE2", .F.)
+					se2 -> e2_vachvex = _oCtaCorr:ChaveExt ()
+					msunlock ()
+				endif
+			endif
+		else
+			U_help ("Gravacao do SZI nao permitida na atualizacao da conta corrente para o fornecedor '" + se2 -> e2_fornece + '/' + se2 -> e2_loja + "' " + alltrim (se2 -> e2_nomfor) + ". Ultima mensagem do objeto:" + _oCtaCorr:UltMsg,, .t.)
+		endif
 	endif
 return
 
