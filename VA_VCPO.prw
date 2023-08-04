@@ -183,7 +183,9 @@
 //                        atual do estoque (desde que tipo insumo = mao de obra)
 // 06/07/2023 - Robert  - Validar linhas de envase (campos *_VALINEN) - GLPI 13850
 // 10/07/2023 - Claudia - Acrescentado novo campo de tipo de operação sisdevin F4_VASITO. GLPI: 13778
+// 04/08/2023 - Robert  - Revovidas (estavam em desuso) validacos dos campos M->ZZK_ASSOC/M->ZZK_LOJA
 //
+
 // -------------------------------------------------------------------------------------------------------------------
 user function VA_VCpo (_sCampo)
 	local _lRet      := .T.
@@ -1599,13 +1601,13 @@ user function VA_VCpo (_sCampo)
 				endif
 			endif
 
-		case _sCampo $ "M->ZZK_ASSOC/M->ZZK_LOJA"
-			if m->zzk_ano == '2012'
-				if ! empty (m->zzk_assoc) .and. ! empty (m->zzk_loja) .and. fBuscaCpo ("SA2", 1, xfilial ("SA2") + m->zzk_assoc + m->zzk_loja, "A2_VASTDAP") != "C"
-					u_help ("Associado deve ter DAP para este ano.")
-					_lRet = .F.
-				endif
-			endif
+	//Controle migrado para o NaWeb --->	case _sCampo $ "M->ZZK_ASSOC/M->ZZK_LOJA"
+	//Controle migrado para o NaWeb --->		if m->zzk_ano == '2012'
+	//Controle migrado para o NaWeb --->			if ! empty (m->zzk_assoc) .and. ! empty (m->zzk_loja) .and. fBuscaCpo ("SA2", 1, xfilial ("SA2") + m->zzk_assoc + m->zzk_loja, "A2_VASTDAP") != "C"
+	//Controle migrado para o NaWeb --->				u_help ("Associado deve ter DAP para este ano.")
+	//Controle migrado para o NaWeb --->				_lRet = .F.
+	//Controle migrado para o NaWeb --->			endif
+	//Controle migrado para o NaWeb --->		endif
 
 		case _sCampo $ "M->ZZT_PESENT/M->ZZT_PESSAI"
 			if ! empty (m->zzt_safra) .and. ! empty (m->zzt_carga)

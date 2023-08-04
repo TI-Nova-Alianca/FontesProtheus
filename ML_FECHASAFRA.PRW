@@ -41,7 +41,8 @@
 // 14/04/2023 - Robert  - Em versoes anteriores a 2020, listava titulos futuros na previsao de pagamento.
 // 02/06/2023 - Robert  - Modelo resumido passa a listar tags do <valoresEfetivos> em vez de <resumoVarGrauClas> - GLPI 13532
 // 21/07/2023 - Robert  - Nova forma de parametrizacao (via atributos) do metodo ClsAssoc:FechSafra() - GLPI 13956
-// 
+// 03/08/2023 - Robert  - Removido parametro de filtragem por 'nucleo' do associado.
+//
 
 #include "protheus.ch"
 #include "tbiconn.ch"
@@ -238,14 +239,13 @@ Static Function RptDetail()
 	Do While ! (_sAliasQ) -> (Eof ())
 			
 		// se informou o Nucleo filtra por nucleo
-		if mv_par04 != '  '
-			_oAssoc := ClsAssoc ():New ((_sAliasQ) -> ASSOCIADO, (_sAliasQ) -> LOJA_ASSOC)
-			if valtype (_oAssoc) != 'O' .or. _oAssoc:Nucleo != mv_par04
-				//u_log ('nucleo', _oAssoc:Nucleo)
-				(_sAliasQ) -> (dbskip ())
-				loop
-			endif
-		endif
+	//	if mv_par04 != '  '
+	//		_oAssoc := ClsAssoc ():New ((_sAliasQ) -> ASSOCIADO, (_sAliasQ) -> LOJA_ASSOC)
+	//		if valtype (_oAssoc) != 'O' .or. _oAssoc:Nucleo != mv_par04
+	//			(_sAliasQ) -> (dbskip ())
+	//			loop
+	//		endif
+	//	endif
 
 		IF _vAnt + _VAntLj  != (_sAliasQ) -> ASSOCIADO + (_sAliasQ) -> LOJA_ASSOC
 			IF _aTotTp[2] = 0
@@ -1088,10 +1088,10 @@ static function _Modelo2 (_lSohCompr)
 		endif
 
 		// Filtra por nucleo do associado
-		if ! empty (mv_par04) .and. _oAssoc:Nucleo != mv_par04
-			u_log ('outro nucleo', _oAssoc:Nucleo)
-			loop
-		endif
+	//	if ! empty (mv_par04) .and. _oAssoc:Nucleo != mv_par04
+	//		u_log ('outro nucleo')
+	//		loop
+	//	endif
 
 		// Busca dados do fechamento de safra. Usa mesmo o metodo do APP associados.
 		//                                  _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lResVGC, _lFSFunrur
@@ -1686,10 +1686,10 @@ static function _Modelo3 (_lSohCompr)
 		endif
 
 		// Filtra por nucleo do associado
-		if ! empty (mv_par04) .and. _oAssoc:Nucleo != mv_par04
-			u_log ('outro nucleo', _oAssoc:Nucleo)
-			loop
-		endif
+	//	if ! empty (mv_par04) .and. _oAssoc:Nucleo != mv_par04
+	//		u_log ('outro nucleo')
+	//		loop
+	//	endif
 
 		// Busca dados do fechamento de safra. Usa mesmo o metodo do APP associados.
 		//                                  _sSafra, _lFSNFE, _lFSNFC, _lFSNFV, _lFSNFP, _lFSPrPg, _lFSRgPg, _lFSVlEf, _lFSResVGM, _lFSFrtS, _lFSLcCC, _lResVGC, _lFSFunrur
@@ -2043,7 +2043,7 @@ Static Function _ValidPerg ()
 	aadd (_aRegsPerg, {01, "Safra                         ", "C", 4,  0,  "",   "   ", {},                        ""})
 	aadd (_aRegsPerg, {02, "Associado                     ", "C", 6,  0,  "",   "SA2", {},                        ""})
 	aadd (_aRegsPerg, {03, "Loja                          ", "C", 2,  0,  "",   "",    {},                        ""})
-	aadd (_aRegsPerg, {04, "Nucleo                        ", "C", 2,  0,  "",   "   ", {},                        ""})
+	aadd (_aRegsPerg, {04, "PARAMETRO EM DESUSO           ", "C", 2,  0,  "",   "   ", {},                        ""})
 	aadd (_aRegsPerg, {05, "Lista Saldo C/C               ", "N", 1,  0,  "",   "   ", {"Sim", "Não"}           , ""})	
 	aadd (_aRegsPerg, {06, "Detalhado ou resumido         ", "N", 1,  0,  "",   "   ", {"Detalhado", "Resumido", "Apenas NF compra"}, ""})
 	

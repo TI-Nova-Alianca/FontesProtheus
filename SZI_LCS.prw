@@ -28,6 +28,7 @@
 // 05/05/2021 - Robert - Renomeado campo R_E_C_N_O_ para RegSZI na query por exigencia da classe FWTemporaryTable implementada na ClsAssoc (GLPI 9973).
 // 28/03/2022 - Robert - Melhorias diversas para tratar vencimento financeiro - GLPI 11850
 // 03/03/2023 - Robert - Data vcto nao ficava alinhada quando saldo a debito.
+// 03/08/2023 - Robert - Comentariado filtro por nucleo (mv_par20 jah nem existia mais)
 //
 
 // --------------------------------------------------------------------------
@@ -131,7 +132,7 @@ static function _Imprime ()
 	local _nSubTotV   := 0
 	local _nSubTotS   := 0
 	local _sNomAsso  := ""
-	local _oAssoc    := NIL
+//	local _oAssoc    := NIL
 	private _nMaxLin := 66
 	li = _nMaxLin + 1
 
@@ -231,22 +232,22 @@ static function _Imprime ()
 	_sArqTrb = _oSQL:Copy2Trb ()
 
 
-	// Filtra nucleos.
-	if ! empty (mv_par20)
-		procregua ((_sArqTrb) -> (reccount ()))
-		(_sArqTrb) -> (dbgotop ())
-		do while ! (_sArqTrb) -> (eof ())
-			incproc ('Filtrando nucleos')
-			_oAssoc := ClsAssoc ():New ((_sArqTrb) -> zi_assoc, (_sArqTrb) -> zi_lojasso, .T.)
-			if ! _oAssoc:Nucleo $ mv_par20
-				//u_log ('Assoc', (_sArqTrb) -> zi_assoc + "/" + (_sArqTrb) -> zi_lojasso, 'pertence ao nucleo', _oAssoc:Nucleo)
-				reclock ((_sArqTrb), .F.)
-				(_sArqTrb) -> (dbdelete ())
-				msunlock ()
-			endif
-			(_sArqTrb) -> (dbskip ())
-		enddo
-	endif
+// PAR20 nem existe mais	// Filtra nucleos.
+// PAR20 nem existe mais	if ! empty (mv_par20)
+// PAR20 nem existe mais		procregua ((_sArqTrb) -> (reccount ()))
+// PAR20 nem existe mais		(_sArqTrb) -> (dbgotop ())
+// PAR20 nem existe mais		do while ! (_sArqTrb) -> (eof ())
+// PAR20 nem existe mais			incproc ('Filtrando nucleos')
+// PAR20 nem existe mais			_oAssoc := ClsAssoc ():New ((_sArqTrb) -> zi_assoc, (_sArqTrb) -> zi_lojasso, .T.)
+// PAR20 nem existe mais			if ! _oAssoc:Nucleo $ mv_par20
+// PAR20 nem existe mais				//u_log ('Assoc', (_sArqTrb) -> zi_assoc + "/" + (_sArqTrb) -> zi_lojasso, 'pertence ao nucleo', _oAssoc:Nucleo)
+// PAR20 nem existe mais				reclock ((_sArqTrb), .F.)
+// PAR20 nem existe mais				(_sArqTrb) -> (dbdelete ())
+// PAR20 nem existe mais				msunlock ()
+// PAR20 nem existe mais			endif
+// PAR20 nem existe mais			(_sArqTrb) -> (dbskip ())
+// PAR20 nem existe mais		enddo
+// PAR20 nem existe mais	endif
 
 
 	// Verifica o saldo dos lancamentos e monta arquivo apenas com os que interessam.

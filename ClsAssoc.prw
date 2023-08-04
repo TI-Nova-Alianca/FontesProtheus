@@ -115,6 +115,9 @@
 // 11/04/2023 - Robert  - Filtrar E2_TIPO=NF/DP/FAT nas prev.pagto.fech.safra (estava deixando passar NDF por exemplo)
 // 02/06/2023 - Robert  - Melhoria tags <valoresEfetivos> do metodo FechSafra() - GLPI 13532
 // 21/07/2023 - Robert  - Criados atributos especificos para parametrizacao das chamadas do metodo FechSafra() - GLPI 13956
+// 04/08/2023 - Robert  - Nucleo,SubNucleo e GrpFam deixam de ser atributos e passam a ser
+//                        metodos, por questao de performance (raramente sao usados, e
+//                        exigiam leitura no NaWeb a cada vez que instanciava a classe).
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -136,7 +139,7 @@ CLASS ClsAssoc
 	data CPF         // CPF do associado
 	data CPFConju    // CPF do conjuge
 	data Celular
-	data CodAvisad   // A2_VACAVIS - Codigo do associado avisador (aquele que eh responsavel por avisar/chamar este associado)
+// Removido --->	data CodAvisad   // A2_VACAVIS - Codigo do associado avisador (aquele que eh responsavel por avisar/chamar este associado)
 	data CodBase
 	data Codigo
 	data aCodigos    // Array com todos os codigos (A2_COD). Util quando o associado tiver mais de um codigo/loja. 
@@ -168,23 +171,26 @@ CLASS ClsAssoc
 	data FSResVaried  // Fechamento de safra: Indica se deve buscar resumo por variedade
 	data FSResVarGC   // Fechamento de safra: Indica se deve buscar resumo por variedade / grau / classificacao
 	data FSSafra      // Fechamento de safra: Indica qual safra deve ser considerada
-	data GrpFam       // Codigo do grupo familiar
+// Passa a ser um metodo --->	data GrpFam       // Codigo do grupo familiar
 	data InscrEst     // Inscricao estadual.
-	data LojAvisad    // A2_VALAVIS - Loja do associado avisador (aquele que eh responsavel por avisar/chamar este associado)
+// Removido --->	data LojAvisad    // A2_VALAVIS - Loja do associado avisador (aquele que eh responsavel por avisar/chamar este associado)
 	data Loja
 	data LojaBase
 	data MotInativ   // Motivo de ser considerado inativo
 	data Municipio
 	data Nome
 	data NomeConju   // Nome do conjuge
-	data Nucleo
+// Passa a ser um metodo --->	data Nucleo
 	data Posse       // Posse da terra: AR=Arrendatario;CO=Comodatario;OU=Outra;PA=Parceiro;PO=Posseiro;PR=Proprietario;PP=Propriet. Parceiro;PE=Propriet. Arrendatario 
 	data RG
 	data FUNCAO
-	data Subnucleo
+// Passa a ser um metodo --->	data Subnucleo
 	data Telefone
 	data UF
 	data UltMsg     // Ultima(s) mensagem(s) do objeto, geralmente mensagens de erro.
+
+
+
 
 	// Declaracao dos Metodos da classe
 	METHOD New ()
@@ -202,9 +208,11 @@ CLASS ClsAssoc
 	METHOD FechSafra ()
 	METHOD GrpFam ()
 	METHOD IdadeEm ()
+	METHOD Nucleo ()
 	METHOD LctComSald ()
 	METHOD SaldoEm ()
 	METHOD SldQuotCap ()
+	METHOD Subnucleo ()
 	METHOD TmpAssoc ()
 	METHOD UltSafra ()
 ENDCLASS
@@ -219,7 +227,7 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 	local _oSQL      := NIL
 	local _aCodigos  := {}
 	local _nCodigo   := 0
-	local _aGrpFam   := {}
+//	local _aGrpFam   := {}
 
 	::FSDFunrur    = .F.
 	::FSFrete      = .F.
@@ -309,13 +317,14 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 				::DAPBenef   := sa2 -> A2_VAQBDAP
 			endif
 
+/* Migrados para serem metodos
 			// Alguns dados sao buscados do grupo familiar
 			if _lContinua
-				::GrpFam     := ''
-				::Nucleo     := ''
-				::Subnucleo  := ''
-				::CodAvisad  := ''
-				::LojAvisad  := ''
+transformar em metodo				::GrpFam     := ''
+transformar em metodo				::Nucleo     := ''
+transformar em metodo				::Subnucleo  := ''
+//				::CodAvisad  := ''
+//				::LojAvisad  := ''
 
 				_oSQL := ClsSQL ():New ()
 				_oSQL:_sQuery += "SELECT CCAssociadoGrpFamCod       as grpfam "
@@ -341,7 +350,7 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 				endif
 
 			endif
-
+*/
 			// Dados que podem ter mais de uma ocorrencia, quando o associado tiver mais de uma loja, sao armazenados em arrays.
 			if _lContinua
 				_oSQL := ClsSQL():New ()
@@ -756,28 +765,6 @@ METHOD CalcCM (_sMesRef, _nTaxaVl1, _nTaxaVl2, _nLimVl1, _lGerarD, _lGerarC) Cla
 //	u_logFim (GetClassName (::Self) + '.' + procname ())
 	U_ML_SRArea (_aAreaAnt)
 return _lRet
-
-
-
-// --------------------------------------------------------------------------
-// Busca os grupos familiares aos quais o associado encontra-se ligado.
-METHOD GrpFam () Class ClsAssoc
-	local _oSQL    := NIL
-	_oSQL := ClsSQL():New ()
-	_oSQL:_sQuery := ""
-	_oSQL:_sQuery += "SELECT ZAN_COD, ZAN_DESCRI, "
-	_oSQL:_sQuery +=         _oSQL:CaseX3CBox ("ZAK_TIPORE")
-	_oSQL:_sQuery +=  " FROM " + RetSQLName ("ZAN") + " ZAN, "
-	_oSQL:_sQuery +=             RetSQLName ("ZAK") + " ZAK "
-	_oSQL:_sQuery += " WHERE ZAN.D_E_L_E_T_ = ''
-	_oSQL:_sQuery +=   " AND ZAN_FILIAL = '" + xfilial ("ZAN") + "'"
-	_oSQL:_sQuery +=   " AND ZAK_FILIAL = '" + xfilial ("ZAK") + "'"
-	_oSQL:_sQuery +=   " AND ZAK_IDZAN  = ZAN.ZAN_COD"
-	_oSQL:_sQuery +=   " AND ZAK_ASSOC  = '" + ::Codigo + "'"
-	_oSQL:_sQuery +=   " AND ZAK_LOJA   = '" + ::Loja   + "'"
-	_oSQL:_sQuery += " ORDER BY ZAN_COD"
-	_oSQL:Log ()
-return aclone (_oSQL:Qry2Array ())
 
 
 
@@ -1856,6 +1843,13 @@ return _sRetFechS
 
 
 // --------------------------------------------------------------------------
+// Busca o grupo familiar ao qual o associado encontra-se ligado.
+METHOD GrpFam () Class ClsAssoc
+return _NaWebGrF (::Codigo, ::Loja) [1]
+
+
+
+// --------------------------------------------------------------------------
 // Busca a idade (em anos) do associado em determinada data.
 METHOD IdadeEm (_dDataRef) Class ClsAssoc
 	local _nRet    := 0
@@ -1937,6 +1931,13 @@ METHOD LctComSald (_sFilIni, _sFilFim, _dDataRef, _sTMIni, _sTMFim, _sTMNao) Cla
 	enddo
 //	u_logFim (GetClassName (::Self) + '.' + procname ())
 return _aRet
+
+
+
+// --------------------------------------------------------------------------
+// Busca o grupo familiar ao qual o associado encontra-se ligado.
+METHOD Nucleo () Class ClsAssoc
+return _NaWebGrF (::Codigo, ::Loja) [2]
 
 
 
@@ -2365,6 +2366,13 @@ return _aRet
 
 
 // --------------------------------------------------------------------------
+// Busca o grupo familiar ao qual o associado encontra-se ligado.
+METHOD SubNucleo () Class ClsAssoc
+return _NaWebGrF (::Codigo, ::Loja) [3]
+
+
+
+// --------------------------------------------------------------------------
 // Retorna o tempo (em anos) de associacao em determinada data.
 METHOD TmpAssoc (_dDataRef) Class ClsAssoc
 	local _nRet    := 0
@@ -2398,3 +2406,31 @@ METHOD UltSafra (_dDataRef) Class ClsAssoc
 	endif
 	U_ML_SRArea (_aAreaAnt)
 return _sRet
+
+
+
+// --------------------------------------------------------------------------
+// Leitura de dados de grupos familiares do NaWeb
+static function _NaWebGrF (_sCodigo, _sLoja)
+	local _oSQL    := NIL
+	local _aGrpFam := {}
+	local _aRet    := {'','',''}
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery += "SELECT CCAssociadoGrpFamCod       as grpfam "
+	_oSQL:_sQuery +=      ", CCAssociadoGrpFamNucleo    as nucleo"
+	_oSQL:_sQuery +=      ", CCAssociadoGrpFamSubNucleo as subnucleo"
+	_oSQL:_sQuery +=  " FROM " + U_LkServer ('NAWEB') + ".VA_VASSOC_GRP_FAM"
+	_oSQL:_sQuery += " WHERE CCAssociadoCod  = '" + _sCodigo + "'"
+	_oSQL:_sQuery +=   " AND CCAssociadoLoja = '" + _sLoja + "'"
+
+	_aGrpFam := aclone (_oSQL:RetFixo (1, "ao consultar grupo familiar do associado '" + _sCodigo + '/' + _sLoja + "' no sistema NaWeb.", .F.))
+	if len (_aGrpFam) == 1
+		_aRet = {_aGrpFam [1, 1], _aGrpFam [1, 2], _aGrpFam [1, 3]}
+	else
+		u_log2 ('aviso', 'Problemas para determinar o grupo familiar do associado ' + _sCodigo + '/' + _sLoja + '.')
+		if type ("_sErroWS") == 'C'
+			_sErroWS += 'Problemas para determinar o grupo familiar do associado ' + _sCodigo + '/' + _sLoja + '.'
+		endif
+	endif
+return _aRet

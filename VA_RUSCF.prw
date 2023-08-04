@@ -11,6 +11,7 @@
 // 17/01/2023 - Robert - Quando prod.propria (sem frete), assumia que era erro no calculo.
 // 22/02/2023 - Robert - Grava memoria de calculo como um evento da carga - GLPI 13221.
 //                     - Passa a receber e popular a variavel _aHisFrSaf em caso de encontrar divergencia.
+// 03/08/2023 - Robert - Atrituto ClsAssoc:Nucleo passa a ser um metodo ClsAssoc:Nucelo()
 //
 
 // ------------------------------------------------------------------------------------
@@ -92,13 +93,13 @@ User Function va_rusCF (_lRegrav, _aHisFrSaf)
 			if _lDeveCalc
 				U_Log2 ('debug', '[' + procname () + ']Filial: ' + sze -> ze_filial + ' Safra:' + sze -> ze_safra + ' Carga:' + sze -> ze_carga + ' Variedade: ' + alltrim (fbuscacpo ('SB1', 1, xfilial ("SB1") + szf -> zf_produto, 'B1_DESC')) + ' Associado: ' + sze -> ze_assoc + '-' + alltrim (fbuscacpo ('SA2', 1, xfilial ("SA2") + sze -> ze_assoc + sze -> ze_lojasso, 'A2_NOME')))
 				if sze -> ze_safra == '2020'
-					_nFrtItem = U_FrtSaf20 (_oAssoc:Nucleo, szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor)
+					_nFrtItem = U_FrtSaf20 (_oAssoc:Nucleo (), szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor)
 				elseif sze -> ze_safra == '2021'
-					_nFrtItem = U_FrtSaf21 (_oAssoc:Nucleo, szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor)
+					_nFrtItem = U_FrtSaf21 (_oAssoc:Nucleo (), szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor)
 				elseif sze -> ze_safra == '2022'
-					_aFrtSaf = aclone (U_FrtSaf22 (_oAssoc:Nucleo, szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor))
+					_aFrtSaf = aclone (U_FrtSaf22 (_oAssoc:Nucleo (), szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor))
 				elseif sze -> ze_safra == '2023'
-					_aFrtSaf = aclone (U_FrtSaf23 (_oAssoc:Nucleo, szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor, _oAssoc:GrpFam))
+					_aFrtSaf = aclone (U_FrtSaf23 (_oAssoc:Nucleo (), szf -> zf_cadviti, sze -> ze_filial, szf -> zf_peso, sb1 -> b1_vacor, _oAssoc:GrpFam ()))
 					_nFrtItem = _aFrtSaf [1]
 				else
 					_nFrtItem = 0

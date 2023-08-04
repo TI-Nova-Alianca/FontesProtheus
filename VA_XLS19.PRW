@@ -33,6 +33,8 @@
 //                     - Inseridas tags para catalogacao de fontes.
 // 12/01/2021 - Robert - Atributo :SubNucleo passa a vir com a descricao por extenso e nao mais o codigo (pela no NaWeb).
 // 30/01/2023 - Robert - Passa a buscar digito verificador da agencia e conta bancaria.
+// 04/08/2023 - Robert - Atributos GrpFam,Nucleo,Subnucleo passam a ser metodos da ClsAssoc.
+//                     - Atributos CodAvisad,LojAvisad removidos da classe ClsAssoc.
 //
 
 #include "VA_INCLU.PRW"
@@ -138,9 +140,9 @@ Static Function _Gera()
 			aadd (_aCampos, 'A2_CEP')
 			aadd (_aCampos, 'A2_VACONJU')
 			aadd (_aCampos, 'A2_VACPFCO')
-			aadd (_aCampos, 'A2_VACAVIS')
-			aadd (_aCampos, 'A2_VALAVIS')
-			aadd (_aCampos, 'A2_VANAVIS')
+			//aadd (_aCampos, 'A2_VACAVIS')
+			//aadd (_aCampos, 'A2_VALAVIS')
+			//aadd (_aCampos, 'A2_VANAVIS')
 			aadd (_aCampos, 'A2_BANCO')
 			aadd (_aCampos, 'A2_AGENCIA')
 			aadd (_aCampos, 'A2_DVAGE')
@@ -232,9 +234,9 @@ Static Function _Gera()
 			GDFieldPut ('A2_VARG',    _oAssoc:RG)
 			GDFieldPut ('A2_VAFUNC',  _oAssoc:FUNCAO)
 			//GDFieldPut ('A2_VAOBS',   _oAssoc:OBSERVACAO)
-			GDFieldPut ('ZAN_NUCLEO', _oAssoc:Nucleo + ' - ' + alltrim (X3Combo ("ZAN_NUCLEO", _oAssoc:Nucleo)))
+			GDFieldPut ('ZAN_NUCLEO', _oAssoc:Nucleo ()) // + ' - ' + alltrim (X3Combo ("ZAN_NUCLEO", _oAssoc:Nucleo)))
 		//	GDFieldPut ('ZAN_SUBNUC', _oAssoc:SubNucleo + ' - ' + alltrim (U_RetZX5("36", _oAssoc:SubNucleo, 'ZX5_36DESC')))
-			GDFieldPut ('ZAN_SUBNUC', _oAssoc:SubNucleo)
+			GDFieldPut ('ZAN_SUBNUC', _oAssoc:SubNucleo ())
 			GDFieldPut ('Ativo',      iif (_oAssoc:Ativo (mv_par11), 'Ativo', 'Inativo'))
 			GDFieldPut ('MotInativ',  _oAssoc:MotInativ)
 
@@ -261,17 +263,17 @@ Static Function _Gera()
 				GDFieldPut ('A2_CEP',     alltrim (_oAssoc:CEP))
 				GDFieldPut ('A2_VACONJU', alltrim (_oAssoc:NomeConju))
 				GDFieldPut ('A2_VACPFCO', alltrim (_oAssoc:CPFConju))
-				GDFieldPut ('A2_VACAVIS', alltrim (_oAssoc:CodAvisad))
+//Atributo nao existe mais na ClsAssoc				GDFieldPut ('A2_VACAVIS', alltrim (_oAssoc:CodAvisad))
 				GDFieldPut ('A2_VALAVIS', alltrim (_oAssoc:LojAvisad))
 				GDFieldPut ('A2_BANCO',   fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodBase + _oAssoc:LojaBase, "A2_BANCO"))
 				GDFieldPut ('A2_AGENCIA', fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodBase + _oAssoc:LojaBase, "A2_AGENCIA"))
 				GDFieldPut ('A2_DVAGE',   fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodBase + _oAssoc:LojaBase, "A2_DVAGE"))
 				GDFieldPut ('A2_NUMCON',  fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodBase + _oAssoc:LojaBase, "A2_NUMCON"))
 				GDFieldPut ('A2_DVCTA',   fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodBase + _oAssoc:LojaBase, "A2_DVCTA"))
-				if ! empty (_oAssoc:CodAvisad)
-					GDFieldPut ('A2_VANAVIS', alltrim (fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodAvisad + _oAssoc:LojAvisad, "A2_NOME")))
-					GDFieldPut ('TelAvisad',  alltrim (fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodAvisad + _oAssoc:LojAvisad, "A2_TEL")))
-				endif
+//Atributo nao existe mais na ClsAssoc				if ! empty (_oAssoc:CodAvisad)
+//Atributo nao existe mais na ClsAssoc					GDFieldPut ('A2_VANAVIS', alltrim (fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodAvisad + _oAssoc:LojAvisad, "A2_NOME")))
+//Atributo nao existe mais na ClsAssoc					GDFieldPut ('TelAvisad',  alltrim (fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodAvisad + _oAssoc:LojAvisad, "A2_TEL")))
+//				endif
 			endif
 
 			if mv_par08 == 1  // Listar dados referentes a DAP
@@ -287,10 +289,10 @@ Static Function _Gera()
 			endif
 
 			if mv_par09 == 1  // Listar dados do patriarca/grupo familiar
-				GDFieldPut ('ZAN_COD', _oAssoc:GrpFam)
-				if ! empty (_oAssoc:GrpFam)
-					GDFieldPut ('ZAN_DESCRI', alltrim (fBuscaCpo ("ZAN", 1, xfilial ("ZAN") + _oAssoc:GrpFam, "ZAN_DESCRI")))
-				endif
+				GDFieldPut ('ZAN_COD', _oAssoc:GrpFam ())
+// Tabela ZAN nao existe mais				if ! empty (_oAssoc:GrpFam)
+// Tabela ZAN nao existe mais					GDFieldPut ('ZAN_DESCRI', alltrim (fBuscaCpo ("ZAN", 1, xfilial ("ZAN") + _oAssoc:GrpFam, "ZAN_DESCRI")))
+// Tabela ZAN nao existe mais				endif
 			endif
 
 			// Dados que podem ter mais que uma ocorrencia.

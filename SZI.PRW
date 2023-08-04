@@ -64,6 +64,7 @@
 // 05/04/2022 - Robert  - Verifica valor do SE2 antes do recalculo manual de saldos.
 // 22/08/2022 - Robert  - Consulta de movtos.vinculados passa a usar o metodo :RegRelac().
 // 14/04/2023 - Robert  - Geracao manual do SE2 passa a perguntar data de vencimento.
+// 03/08/2023 - Robert  - Rel. de IR nao tem mais o parametro de 'nucleo'.
 //
 
 #include "colors.ch"
@@ -347,7 +348,7 @@ User Function SZIR (_nQual)
 			U_GravaSX1 (cPerg, "05", _oAssocRel:Loja)
 			U_GravaSX1 (cPerg, "06", _oAssocRel:Codigo)
 			U_GravaSX1 (cPerg, "07", _oAssocRel:Loja)
-			U_GravaSX1 (cPerg, "08", _oAssocRel:Nucleo)
+		//	U_GravaSX1 (cPerg, "08", _oAssocRel:Nucleo)
 
 			U_IRAssoc ()
 		endif

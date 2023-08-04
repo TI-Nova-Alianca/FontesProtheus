@@ -24,6 +24,7 @@
 // 28/03/2022 - Robert  - Eliminada funcionalidade de conversao para TXT (em alguns casos 'perdia' o relatorio).
 // 01/03/2023 - Robert  - Revisado para ano base 2022 (nao houve pagto.de premio para esse ano).
 // 08/04/2023 - Robert  - Refeita query para ano base 2022, pois houve pagamentos parciais (GLPI 13404)
+// 03/08/2023 - Robert  - Removido param. 'nucleo' (inutil, uma vez que jah tem filtro por associado)
 //
 
 // -----------------------------------------------------------------------------------------------------------
@@ -184,15 +185,15 @@ static function _Imprime ()
 			loop
 		endif
 		
-		// se informou o Nucleo filtra por nucleo
-		if ! empty (mv_par08)
-			_oAssoc := ClsAssoc ():New (sa2 -> a2_cod, sa2 -> a2_loja)
-			if valtype (_oAssoc) != 'O' .or. _oAssoc:Nucleo != mv_par08
-				U_Log2 ('aviso', '[' + procname () + ']Associado ' + sa2 -> a2_cod + '/' + sa2 -> a2_loja + ' nao pertence ao nucleo ' + mv_par08)
-				sa2 -> (dbskip ())
-				loop
-			endif
-		endif
+//		// se informou o Nucleo filtra por nucleo
+//		if ! empty (mv_par08)
+//			_oAssoc := ClsAssoc ():New (sa2 -> a2_cod, sa2 -> a2_loja)
+//			if valtype (_oAssoc) != 'O' .or. _oAssoc:Nucleo != mv_par08
+//				U_Log2 ('aviso', '[' + procname () + ']Associado ' + sa2 -> a2_cod + '/' + sa2 -> a2_loja + ' nao pertence ao nucleo ' + mv_par08)
+//				sa2 -> (dbskip ())
+//				loop
+//			endif
+//		endif
 		incproc (sa2 -> a2_nome)
 		
 		// Quebra pagina por associado.
@@ -581,7 +582,7 @@ static function _ValidPerg ()
 	aadd (_aRegsPerg, {05, "Loja associado inicial        ", "C", 2,  0,  "",   "      ", {},   ""})
 	aadd (_aRegsPerg, {06, "Associado final               ", "C", 6,  0,  "",   "SA2_AS", {},   ""})
 	aadd (_aRegsPerg, {07, "Loja associado final          ", "C", 2,  0,  "",   "      ", {},   ""})
-	aadd (_aRegsPerg, {08, "Nucleo                        ", "C", 2,  0,  "",   "   "   , {},   ""})
+//	aadd (_aRegsPerg, {08, "Nucleo                        ", "C", 2,  0,  "",   "   "   , {},   ""})
 
 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
 Return

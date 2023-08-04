@@ -2,14 +2,6 @@
 // Autor:      Elaine Ballico - DWT
 // Data:       15/05/2013
 // Descricao:  Relatorio conta corrente associados buscando informacoes da tabela de saldos.
-//
-// Historico de alteracoes:
-// 21/03/2016 - Robert - Valida se o usuario pertence ao grupo 059.
-// 01/05/2019 - Robert - Passa a buscar dados na classe ClsExtrCC.
-// 03/05/2019 - Robert - Nao mostrava totais gerais.
-// 24/09/2019 - Robert - ClsExtrCC passa a ter novo atributo :FormaResult.
-// 28/03/2022 - Robert - Eliminada funcionalidade de conversao para TXT (em alguns casos 'perdia' o relatorio).
-//
 
 // Tags para automatizar catalogo de customizacoes:
 // #TipoDePrograma    #Relatorio
@@ -17,6 +9,15 @@
 // #PalavasChave      #extrato #conta_corrente #associado #modelo #novo
 // #TabelasPrincipais #SZI #SA2 #SE2 #SE5 #FK7 #FKA #FK2 #ZZM #ZX5
 // #Modulos           #COOP
+
+// Historico de alteracoes:
+// 21/03/2016 - Robert - Valida se o usuario pertence ao grupo 059.
+// 01/05/2019 - Robert - Passa a buscar dados na classe ClsExtrCC.
+// 03/05/2019 - Robert - Nao mostrava totais gerais.
+// 24/09/2019 - Robert - ClsExtrCC passa a ter novo atributo :FormaResult.
+// 28/03/2022 - Robert - Eliminada funcionalidade de conversao para TXT (em alguns casos 'perdia' o relatorio).
+// 04/08/2023 - Robert - Nao imprime mais o nucleo (tornou-se um metodo da classe e eu nao to a fim de alterar aqui)
+//
 
 #Include "va_inclu.prw"
 
@@ -204,7 +205,7 @@ static function _Imprime ()
 		// Uma nova pagina para cada associado.
 		if len (_oExtr:Resultado) > 0
 			cabec(titulo,cCabec1,cCabec2,nomeprog,tamanho,nTipo)
-			@ li, 0 psay "Associado: " + _aAssoc [_nAssoc, 1] + "/" + _aAssoc [_nAssoc, 2] + ' - ' + _aAssoc [_nAssoc, 3] + '    Nucleo: ' + _oAssoc:Nucleo
+			@ li, 0 psay "Associado: " + _aAssoc [_nAssoc, 1] + "/" + _aAssoc [_nAssoc, 2] + ' - ' + _aAssoc [_nAssoc, 3] // + '    Nucleo: ' + _oAssoc:Nucleo
 			li ++
 		endif
 
