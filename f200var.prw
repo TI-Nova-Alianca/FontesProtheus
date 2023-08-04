@@ -62,6 +62,10 @@
 // 03/04/2023 - Claudia - Incluido variavel para banco Itau _aValores [14] opção 23, 35, 33, 12.  - GLPI 13311. 
 // 11/05/2023 - Claudia - Incluido tratamento de Rapel para bco Santander desconto - GLPI 11643.
 // 01/06/2023 - Claudia - Incluido tratamento de Rapel para bco Santander abatimento - GLPI 13662.
+// 04/08/2023 - Robert  - Recebimento: Busca prefixo pelo arquivo de borderos, por
+//                        que agora estamos tendo variedade de prefixos (antes era apenas '10 ') - GLPI 14044
+//
+
 //
 // -------------------------------------------------------------------------------------------------------------------------------------------
 User Function F200VAR()
@@ -77,13 +81,17 @@ User Function F200VAR()
 	local _sTitulo  := ""
 	local _sTit2    := ""
 	local _x        := 0
+	local _oSQL     := NIL
+	local _sPrefixo := ''
 
 	// Verifica se foi chamado a partir do P.E. F650Var (FINR650 - relatorio do CNAB)
 	if len (_aValores) == 14
 		_l650 = .T.
 		
 		// Ajusta dados para que fiquem com o mesmo formato enviado pelo FINA200.
-		cBanco = mv_par03
+		cBanco    = mv_par03
+		cAgencia  = mv_par04
+		cConta    = mv_par05
 		nOutrDesp = 0
 		_aAux = array (16)
 		_aAux [1]  = _aValores  [1]
@@ -125,8 +133,10 @@ User Function F200VAR()
 
 	// Logs para depuracao
 	u_log2 ('debug', "cNumTit  : "+ cNumTit)
-	u_log2 ('debug', "cBanco   : "+ cbanco)
-	u_log2 ('debug', "nValRec  : "+ cvaltochar (nValRec))
+//	u_log2 ('debug', "cBanco   : "+ cbanco)
+//	u_log2 ('debug', "cAgencia : "+ cAgencia)  // par07 ?
+//	u_log2 ('debug', "cConta   : "+ cConta)  // par08 ?
+//	u_log2 ('debug', "nValRec  : "+ cvaltochar (nValRec))
 
 	// Verifica qual banco estah sendo processado. Verifica diferentes variaveis por que este
 	// ponto de entrada eh executado na impressao de relatorio e na importacao do arquivo de retorno.
@@ -237,14 +247,47 @@ User Function F200VAR()
 	endif
 	//
 	// TRATAMENTO DO CNAB A RECEBER
-	if IsInCallStack ("FINA200") .or. (IsInCallStack ("FINR650") .and. mv_par07= 1) 
+	if IsInCallStack ("FINA200") .or. (IsInCallStack ("FINR650") .and. mv_par07= 1)  // Par07 [1=receber;2=pagar]
 		if len (cNumTit) > 10  // Se vier com mais de 10 posicoes, eh por que jah tem o prefixo junto.
 			_sTitulo = cNumTit
 		else
-			if substr(cNumTit,1,3) == '000'
-				_sTitulo = '10 ' + cNumTit
+
+			// Temos um problema com a heranca do tempo em que os titulos possuiam
+			// apenas 6 posicoes e nao existia IDCNAB. Penso que a melhor solucao
+			// seria migrar para IDCNAB, mas o problema eh a transicao entre o
+			// formato velho e novo, em que estariamos recebendo titulos nos 2
+			// formatos. Por fim, achamos que o melhor eh ir remendando o modelo1
+			// como estah, e jah partir para o IDCNAB quando comecarmos a migrar
+			// para modelo2. Robert, 14/08/2023
+			//
+			// Tenta identificar o prefixo do titulo verificando se tem bordero
+			// para o banco atual que contenha este titulo. Siiiim, eu sei que
+			// estou indo de Flores da Cunha a Farroupilha passando por Nova Roma
+			// e usando a balsa pra atravessar o rio...  GLPI 14044
+			_oSQL := ClsSQL ():New ()
+			_oSQL:_sQuery := ""
+			_oSQL:_sQuery += "SELECT TOP 1 EA_PREFIXO"
+			_oSQL:_sQuery +=  " FROM " + RetSQLName ("SEA") + " SEA"
+			_oSQL:_sQuery += " WHERE SEA.D_E_L_E_T_ = ''"
+			_oSQL:_sQuery +=   " AND SEA.EA_FILIAL  = '" + xfilial ("SEA") + "'"
+			_oSQL:_sQuery +=   " AND SEA.EA_CART    = 'R'"
+			_oSQL:_sQuery +=   " AND SEA.EA_PORTADO = '" + cBanco + "'"
+			_oSQL:_sQuery +=   " AND SEA.EA_AGEDEP  = '" + cAgencia + "'"
+			_oSQL:_sQuery +=   " AND SEA.EA_NUMCON  = '" + cConta + "'"
+			_oSQL:_sQuery +=   " AND SEA.EA_NUM     = '" + substring (cNumTit, 1, 9) + "'"
+			_oSQL:_sQuery +=   " AND SEA.EA_PARCELA = '" + substring (cNumTit, 10, 1) + "'"
+			_oSQL:_sQuery += " ORDER BY EA_DATABOR DESC"
+		//	_oSQL:Log ('[' + procname () + ']')
+			_sPrefixo = _oSQL:RetQry (1, .f.)
+			if ! empty (_sPrefixo)
+				_sTitulo = _sPrefixo + cNumTit
 			else
-				_sTitulo = 'FAT' + cNumTit
+				U_Log2 ('debug', '[' + procname () + ']Nao achei o prefixo pelos borderos. Segue pelo metodo tradicional.')
+				if substr(cNumTit,1,3) == '000'
+					_sTitulo = '10 ' + cNumTit
+				else
+					_sTitulo = 'FAT' + cNumTit
+				endif
 			endif
 		endif
 		U_Log2 ('debug', 'Saindo do 2o teste com _sTitulo >>' + _sTitulo + '<<')
