@@ -39,6 +39,8 @@
 //                     - Deleta tabela DRE_INDL_CONTAB quando exclui uma
 //                       analise (tabela passou a ter campo ID_ANALISE) - GLPI 13929
 //                     - Exportacao da tabela DRE_INDL_CONTAB para conferencias
+// 01/08/2023 - Robert - Adicionado CC 011409 (linha Caxias) na exportacao de
+//                       dados abertos para gerar planilha dinamica.
 //
 
 // --------------------------------------------------------------------------
@@ -546,6 +548,7 @@ static function _Cons2 (_sLayout, _sFilIni, _sFilFim)
 		_oSQL:_sQuery +=                " WHEN '011404' THEN 'TETRA_200'"
 		_oSQL:_sQuery +=                " WHEN '011405' THEN 'TETRA_1000'"
 		_oSQL:_sQuery +=                " WHEN '011406' THEN 'BAG'"
+		_oSQL:_sQuery +=                " WHEN '011409' THEN 'CAXIAS'"
 		_oSQL:_sQuery +=                " WHEN 'F09'    THEN 'FILIAL_09'"
 		_oSQL:_sQuery +=                " WHEN 'GRANEL' THEN 'GRANEL'"
 		_oSQL:_sQuery +=                " WHEN 'OUTRAS' THEN 'OUTRAS'"

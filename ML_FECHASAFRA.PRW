@@ -152,7 +152,7 @@ Return
 // --------------------------------------------------------------------------
 // Modelo original
 Static Function RptDetail()
-	local _oAssoc := NIL
+//	local _oAssoc := NIL
 	local _oSQL   := NIL
 	local FAT	  := 0
 	local i		  := 0

@@ -39,20 +39,11 @@ user Function CUSTOMERVENDOR()
 		_lIsGrid := (Len(aParam) > 3)
 		
 		If cIdPonto == "MODELPOS"  // Chamada na validação total do modelo (tela inteira)
-			U_Log2 ('debug', '[' + procname () + ']cIdPonto: ' + cIdPonto + '  cIdModel: ' + cIdModel)
 			_nOper := oObj:nOperation
-			U_Log2 ('debug', '[' + procname () + ']_nOper: ' + cvaltochar (_nOper))
 			if _xRet .and. _nOper == 5  // Exclusao
 				_xRet = _PodeExcl ()
 			endif
-//			if _xRet .and. _nOper == 4  // Alteracao
-//				_xRet := MA020TDOK ()
-//				if _xRet .and. _nOper == 4  // Alteracao
-//					_GeraLog ()
-//				endif
-//			endif
 		ElseIf cIdPonto == "FORMPOS"  // Chamada na validação total do formulário
-			U_Log2 ('debug', '[' + procname () + ']cIdPonto: ' + cIdPonto + '  cIdModel: ' + cIdModel)
 			if cIdModel == 'SA2MASTER'
 				_xRet := MA020TDOK ()
 				if _xRet
@@ -74,7 +65,6 @@ user Function CUSTOMERVENDOR()
 		ElseIf cIdPonto == "MODELCANCEL"  // "Deseja realmente sair?"
 			_xRet := .T.
 		ElseIf cIdPonto == "BUTTONBAR"  // Adicionar botoes
-			U_Log2 ('debug', '[' + procname () + ']cIdPonto: ' + cIdPonto + '  cIdModel: ' + cIdModel)
 			_xRet := {{"Alianca-Eventos", "EVENTOS", {||U_VA_SZNC ('ALIAS_CHAVE', 'SA2', sa2 -> a2_cod + sa2 -> a2_loja)}}}
 		EndIf
 	EndIf
@@ -85,9 +75,7 @@ Return _xRet
 static function _GeraLog ()
 	local _oEvento  := NIL
 
-	u_logpcham ()
-
-//	 Grava log de evento em caso de alteracao de cadastro.
+	//	 Grava log de evento em caso de alteracao de cadastro.
 	if altera
 		_oEvento := ClsEvent():new ()
 		_oEvento:AltCadast ("SA2", m->a2_cod + m->a2_loja, sa2 -> (recno ()), iif (! empty (_sMotAltBc), 'Motivo alt.dados banc.:' + _sMotAltBc, ''))

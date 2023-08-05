@@ -139,21 +139,15 @@ CLASS ClsAssoc
 	data CPF         // CPF do associado
 	data CPFConju    // CPF do conjuge
 	data Celular
-// Removido --->	data CodAvisad   // A2_VACAVIS - Codigo do associado avisador (aquele que eh responsavel por avisar/chamar este associado)
 	data CodBase
 	data Codigo
 	data aCodigos    // Array com todos os codigos (A2_COD). Util quando o associado tiver mais de um codigo/loja. 
 	data aInscrEst   // Array com todas as inscr.est. (A2_INSCR). Util quando o associado tiver mais de um codigo/loja.
 	data aLojas      // Array com todas as lojas (A2_LOJA). Util quando o associado tiver mais de um codigo/loja.
 	data CoopOrigem
-	data DAPAptidao  // A2_VAAPDAP - Apto a fazer DAP [S=Sim;N=Nao] - para cobrar do associado que providencie a DAP. 
-	data DAPBenef    // A2_VAQBDAP - Qual eh o beneficiario [1=Primeiro;2=Segundo;3=Terceiro]
-	data DAPEmissao  // A2_VAEMDAP - Data de emissao
-	data DAPEnquadr  // A2_VAENDAP - Enquadramento
 	data DAPMotivo   // A2_VAMNDAP - Motivo de nao ter DAP
 	data DAPNumero   // A2_VANRDAP - Numero da DAP
 	data DAPValidad  // A2_VAVLDAP - Data de validade
-	data DAPnoMDA    // A2_VASTDAP - Status junto ao Minist.Agricult [C=No MDA com DAP;S=No MDA sem DAP;D=Desconsiderar]
 	data DtFalecim
 	data DtNascim
 	data EMail
@@ -171,32 +165,26 @@ CLASS ClsAssoc
 	data FSResVaried  // Fechamento de safra: Indica se deve buscar resumo por variedade
 	data FSResVarGC   // Fechamento de safra: Indica se deve buscar resumo por variedade / grau / classificacao
 	data FSSafra      // Fechamento de safra: Indica qual safra deve ser considerada
-// Passa a ser um metodo --->	data GrpFam       // Codigo do grupo familiar
 	data InscrEst     // Inscricao estadual.
-// Removido --->	data LojAvisad    // A2_VALAVIS - Loja do associado avisador (aquele que eh responsavel por avisar/chamar este associado)
 	data Loja
 	data LojaBase
 	data MotInativ   // Motivo de ser considerado inativo
 	data Municipio
 	data Nome
 	data NomeConju   // Nome do conjuge
-// Passa a ser um metodo --->	data Nucleo
 	data Posse       // Posse da terra: AR=Arrendatario;CO=Comodatario;OU=Outra;PA=Parceiro;PO=Posseiro;PR=Proprietario;PP=Propriet. Parceiro;PE=Propriet. Arrendatario 
 	data RG
 	data FUNCAO
-// Passa a ser um metodo --->	data Subnucleo
 	data Telefone
 	data UF
 	data UltMsg     // Ultima(s) mensagem(s) do objeto, geralmente mensagens de erro.
-
-
-
 
 	// Declaracao dos Metodos da classe
 	METHOD New ()
 	METHOD AgeBanc ()
 	METHOD Ativo ()  // Verifica se o associado encontra-se ativo (com direito a voto, etc) na data de referencia.
 	METHOD AtuSaldo ()
+	METHOD BuscarDAP ()  // Buscar as informacoes sobre DAP no NaWeb
 	METHOD CadVitic ()
 	METHOD CalcCM ()
 	METHOD DtEntForUva ()
@@ -229,6 +217,9 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 	local _nCodigo   := 0
 //	local _aGrpFam   := {}
 
+	::DAPNumero    = ''
+	::DAPMotivo    = ''
+	::DAPValidad   = ctod ('')
 	::FSDFunrur    = .F.
 	::FSFrete      = .F.
 	::FSLctosCC    = .F.
@@ -307,50 +298,8 @@ METHOD New (_sCodigo, _sLoja, _lSemTela) Class ClsAssoc
 				::EMail      := sa2 -> a2_email
 				::NomeConju  := sa2 -> a2_vaconju
 				::CPFConju   := sa2 -> a2_vacpfco
-				::DAPAptidao := sa2 -> A2_VAAPDAP 
-				::DAPNumero  := sa2 -> A2_VANRDAP
-				::DAPMotivo  := sa2 -> A2_VAMNDAP
-				::DAPnoMDA   := sa2 -> A2_VASTDAP
-				::DAPEnquadr := sa2 -> A2_VAENDAP
-				::DAPEmissao := sa2 -> A2_VAEMDAP
-				::DAPValidad := sa2 -> A2_VAVLDAP
-				::DAPBenef   := sa2 -> A2_VAQBDAP
 			endif
 
-/* Migrados para serem metodos
-			// Alguns dados sao buscados do grupo familiar
-			if _lContinua
-transformar em metodo				::GrpFam     := ''
-transformar em metodo				::Nucleo     := ''
-transformar em metodo				::Subnucleo  := ''
-//				::CodAvisad  := ''
-//				::LojAvisad  := ''
-
-				_oSQL := ClsSQL ():New ()
-				_oSQL:_sQuery += "SELECT CCAssociadoGrpFamCod       as grpfam "
-				_oSQL:_sQuery +=      ", CCAssociadoGrpFamNucleo    as nucleo"
-				_oSQL:_sQuery +=      ", CCAssociadoGrpFamSubNucleo as subnucleo"
-				_oSQL:_sQuery +=  " FROM " + U_LkServer ('NAWEB') + ".VA_VASSOC_GRP_FAM"
-				_oSQL:_sQuery += " WHERE CCAssociadoCod  = '" + ::Codigo + "'"
-				_oSQL:_sQuery +=   " AND CCAssociadoLoja = '" + ::Loja + "'"
-
-				_aGrpFam := aclone (_oSQL:RetFixo (1, "ao consultar grupo familiar do associado '" + ::Codigo + '/' + ::Loja + "' no sistema NaWeb.", .F.))
-				if len (_aGrpFam) == 1
-					::GrpFam    = _aGrpFam [1, 1]
-					::Nucleo    = _aGrpFam [1, 2]
-					::SubNucleo = _aGrpFam [1, 3]
-				else
-					::GrpFam    = ''
-					::Nucleo    = ''
-					::SubNucleo = ''
-					u_log2 ('aviso', 'Problemas para determinar o grupo familiar do associado ' + ::Codigo + '/' + ::Loja + '.')
-					if type ("_sErroWS") == 'C'
-						_sErroWS += 'Problemas para determinar o grupo familiar do associado ' + ::Codigo + '/' + ::Loja + '.'
-					endif
-				endif
-
-			endif
-*/
 			// Dados que podem ter mais de uma ocorrencia, quando o associado tiver mais de uma loja, sao armazenados em arrays.
 			if _lContinua
 				_oSQL := ClsSQL():New ()
@@ -518,6 +467,32 @@ METHOD AtuSaldo (_dDataRec) Class ClsAssoc
 	U_ML_SRArea (_aAreaAnt)
 //	u_logFim (GetClassName (::Self) + '.' + procname ())
 Return 
+
+
+
+// --------------------------------------------------------------------------
+// Busca os dados de DAP no NaWeb
+METHOD BuscarDAP () Class ClsAssoc
+	local _oSQL      := NIL
+	local _aDadosDAP := {}
+
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := "select CCAssociadoNrDap"
+	_oSQL:_sQuery +=      ", format (CCAssociadoDapVcto, 'yyyyMMdd')"
+	_oSQL:_sQuery +=      ", CCAssociadoMotDapDesc"
+	_oSQL:_sQuery +=  " FROM " + U_LkServer ('NAWEB') + ".CCAssociadoDAP"
+	_oSQL:_sQuery += " WHERE CCAssociadoCPF  = '" + ::CPF + "'"
+	_aDadosDAP = _oSQL:Qry2Array (.f., .f.)
+	if len (_aDadosDAP) == 0
+		::UltMsg += "Nao localizei dados de DAP no NaWeb para o CPF " + ::CPF + "."
+	elseif len (_aDadosDAP) > 1
+		::UltMsg += "Localizei MAIS DE UM registro de DAP no NaWeb para o CPF " + ::CPF + "."
+	else
+		::DAPNumero  := _aDadosDAP [1, 1]
+		::DAPValidad := stod (_aDadosDAP [1, 2])
+		::DAPMotivo  := _aDadosDAP [1, 3]
+	endif
+return
 
 
 

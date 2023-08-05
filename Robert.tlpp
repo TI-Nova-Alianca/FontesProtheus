@@ -17,7 +17,7 @@
 // Compilacao por linha de comando  https://tdn.totvs.com/pages/viewpage.action?pageId=528461210
 
 // Campos a serem eliminados quando der no jeito:
-// ZZU_EMP, d1_fim, f1_fim (?)
+// ZZU_EMP, d1_fim, f1_fim (?), A2_VACAVIS, A2_VALAVIS, A2_VANAVIS, 'A2_VA%DAP'
 // Campos de DAP no SA2 (conferir os programas antes)
 // Adicionar CT2 para compactacao no BATLIMP
 // adicionar tabelas DRE INDL para compactacao
@@ -113,6 +113,7 @@ user function robert ()
 		// _sFuncao = '_GLPI13674 ()'
 		// _sFuncao = '_GLPI13773 ()'
 		// _sFuncao = '_GLPI14020 ()'
+		//_sFuncao = '_GLPI14034 ()'
 		// _sFuncao = '_ImpGPC ()'
 		// _sFuncao = '_memoria ()'
 		// _sFuncao = '_metaf ()'
@@ -122,7 +123,7 @@ user function robert ()
 		// _sFuncao = '_reginv ()'
 		// _sFuncao = '_recmail ()'
 		// _sFuncao = '_RevCH ()'
-		// _sFuncao = '_RelAssoc ()'
+		_sFuncao = '_RelAssoc ()'
 		// _sFuncao = '_SF1()'
 		// _sFuncao = '_SimCtb ()'
 		// _sFuncao = '_SimSafr23 ()'
@@ -1716,6 +1717,151 @@ static function _GLPI14020 ()
 	next
 return
 
+// --------------------------------------------------------------------------
+// Atualiza taxa depreciacao imobilizado cfe planilha
+static function _GLPI14034 ()
+	local _aDados    := {}
+	local _nDado     := 0
+	local _nQtNotF   := 0
+	local _nQtAlter  := 0
+	local _nQtNAlter := 0
+	local _nQtMulti  := 0
+	local _nQtJaOk   := 0
+
+	_aDados = U_LeCSV ('c:\temp\GLPI_14034_F05.csv', ';')
+	for _nDado = 1 to len (_aDados)
+		_aDados [_nDado, 1] = strzero (val (_aDados [_nDado, 1]), 2)
+		_aDados [_nDado, 2] = strzero (val (_aDados [_nDado, 2]), 10)
+		_aDados [_nDado, 4] = strzero (val (_aDados [_nDado, 4]), 2)
+		_aDados [_nDado, 5] = val (_aDados [_nDado, 5])
+	next
+	//u_log (_aDados)
+	pergunte ('AFA230', .F.)
+	MV_PAR03 = ''  // Do Grupo ?                   
+	MV_PAR04 = 'z'  // Ate o Grupo ?                
+	MV_PAR06 = 1  // Alterar Tx na Moeda ?        
+	MV_PAR07 = ''  // Do Centro de Custo ?         
+	MV_PAR08 = 'z'  // Ate o Centro Custo ?         
+	MV_PAR09 = ''  // Da Conta ?                   
+	MV_PAR10 = 'z'  // Ate a Conta ?                
+	MV_PAR11 = 1  // Moedas: Todas/Especifica
+	MV_PAR12 = ''  // Do Item Contabil ?           
+	MV_PAR13 = 'z'  // Ate Item Contabil ?          
+	MV_PAR14 = ''  // Da Classe de Valor ?         
+	MV_PAR15 = 'z'  // Ate Classe de Valor ?        
+	MV_PAR18 = 2  // Seleciona Filiais ?          
+	MV_PAR19 = ''  // Filial De ?                  
+	MV_PAR20 = ''  // Filial Até ?                 
+	_oSQL := ClsSQL ():New ()
+	for _nDado = 1 to len (_aDados)
+		if _aDados [_nDado, 1] != cFilAnt
+			U_Log2 ('aviso', '[' + procname () + ']Filial errada (' + _aDados [_nDado, 1] + ')')
+		else
+			U_Log2 ('debug', '[' + procname () + '](' + cvaltochar (_nDado) + ' de ' + cvaltochar (len (_aDados)) + ')' + _aDados [_nDado, 2] + '-' + _aDados [_nDado, 3] + '-' + _aDados [_nDado, 4])
+
+			// Como temos casos de N3_ITEM com zeros e com espacos na frente,
+			// achei melhor testar se existe mais de um, por que na planilha que
+			// recebi, consta apenas "1" e nao sei se eh '0001' ou '   1'.
+			_sItOpcao1 = U_TamFixo (alltrim (_aDados [_nDado, 3]), 4, ' ')
+			_sItOpcao2 = replicate (' ', 4-len (alltrim (_aDados [_nDado, 3]))) + alltrim (_aDados [_nDado, 3])
+			_sItOpcao3 = replicate ('0', 4-len (alltrim (_aDados [_nDado, 3]))) + alltrim (_aDados [_nDado, 3])
+			_sItOpcao4 = iif (len (alltrim (_aDados [_nDado, 3])) == 1, '  '  + alltrim (_aDados [_nDado, 3]) + ' ', '####')  // Soh achei essa situacao em um item.
+			_lTemOp1 = .F.
+			_lTemOp2 = .F.
+			_lTemOp3 = .F.
+			_lTemOp4 = .F.
+			_sQry1   = ''
+			_sQry2   = ''
+			_sQry3   = ''
+			_sQry4   = ''
+			_sN3Item = ''
+			_sWhere := "select count (*)"
+			_sWhere +=  " FROM " + RetSQLName ("SN3") + " SN3"
+			_sWhere += " WHERE SN3.D_E_L_E_T_ = ''"
+			_sWhere +=   " AND SN3.N3_FILIAL  = '" + _aDados [_nDado, 1] + "'"
+			_sWhere +=   " AND SN3.N3_CBASE   = '" + _aDados [_nDado, 2] + "'"
+			_sWhere +=   " AND SN3.N3_TIPO    = '" + _aDados [_nDado, 4] + "'"
+			_sWhere +=   " AND SN3.N3_BAIXA   = '0'"
+
+			_oSQL:_sQuery = _sWhere + " AND SN3.N3_ITEM = '" + _sItOpcao1 + "'"
+			if _oSQL:RetQry (1, .t.) == 1
+				_lTemOp1 = .T.
+				_sN3Item = _sItOpcao1
+				_sQry1   = _oSQL:_sQuery
+			endif
+
+			_oSQL:_sQuery = _sWhere + " AND SN3.N3_ITEM = '" + _sItOpcao2 + "'"
+			if _oSQL:RetQry (1, .t.) == 1
+				_lTemOp2 = .T.
+				_sN3Item = _sItOpcao2
+				_sQry2   = _oSQL:_sQuery
+			endif
+
+			_oSQL:_sQuery = _sWhere + " AND SN3.N3_ITEM = '" + _sItOpcao3 + "'"
+			if _oSQL:RetQry (1, .t.) == 1
+				_lTemOp3 = .T.
+				_sN3Item = _sItOpcao3
+				_sQry3   = _oSQL:_sQuery
+			endif
+
+			_oSQL:_sQuery = _sWhere + " AND SN3.N3_ITEM = '" + _sItOpcao4 + "'"
+			if _oSQL:RetQry (1, .t.) == 1
+				_lTemOp4 = .T.
+				_sN3Item = _sItOpcao4
+				_sQry4   = _oSQL:_sQuery
+			endif
+
+			if   (_lTemOp1 .and. _lTemOp2) ;
+			.or. (_lTemOp1 .and. _lTemOp3) ;
+			.or. (_lTemOp1 .and. _lTemOp4) ;
+			.or. (_lTemOp2 .and. _lTemOp3) ;
+			.or. (_lTemOp2 .and. _lTemOp4) ;
+			.or. (_lTemOp3 .and. _lTemOp4)
+				U_Log2 ('aviso', '[' + procname () + ']CBASE/ITEM tem mais de 1 possibilidade: ' + _aDados [_nDado, 1] + _aDados [_nDado, 2] + _aDados [_nDado, 3])
+				U_Log2 ('debug', '[' + procname () + ']' + _sQry1)
+				U_Log2 ('debug', '[' + procname () + ']' + _sQry2)
+				U_Log2 ('debug', '[' + procname () + ']' + _sQry3)
+				U_Log2 ('debug', '[' + procname () + ']' + _sQry4)
+				_nQtMulti ++
+			else
+				sn3 -> (dbsetorder (1))  // N3_FILIAL, N3_CBASE, N3_ITEM, N3_TIPO, N3_BAIXA, N3_SEQ, R_E_C_N_O_, D_E_L_E_T_
+				_sChaveSD3 = _aDados [_nDado, 1] + _aDados [_nDado, 2] + _sN3Item + _aDados [_nDado, 4]
+				if ! sn3 -> (dbseek (_sChaveSD3, .F.))
+					U_Log2 ('erro', '[' + procname () + ']Nao localizado no SN3. bem: ' + _aDados [_nDado, 2] + ' item: ' + _aDados [_nDado, 3] + ' tipo: ' + _aDados [_nDado, 4])
+					_nQtNotF ++
+				else
+					if   sn3 -> N3_TXDEPR1 != _aDados [_nDado, 5] ;
+					.or. sn3 -> N3_TXDEPR2 != _aDados [_nDado, 5] ;
+					.or. sn3 -> N3_TXDEPR3 != _aDados [_nDado, 5] ;
+					.or. sn3 -> N3_TXDEPR4 != _aDados [_nDado, 5] ;
+					.or. sn3 -> N3_TXDEPR5 != _aDados [_nDado, 5]
+						MV_PAR01 = sn3 -> n3_cbase  // Do Codigo ?                  
+						MV_PAR02 = sn3 -> n3_cbase  // Ate o Codigo ?               
+						MV_PAR05 = _aDados [_nDado, 5]  // Nova taxa de depreciacao
+						MV_PAR16 = sn3 -> n3_item  // Do Código do Item do bem ?   
+						MV_PAR17 = sn3 -> n3_item  // Até o Código do Item do bem ?
+						MV_PAR21 = sn3 -> n3_tipo  // Do Tipo do Ativo ?           
+						MV_PAR22 = sn3 -> n3_tipo  // Ate o Tipo do Ativo ?        
+						AFA230Proc ()
+						if sn3 -> n3_txdepr1 != _aDados [_nDado, 5]
+							U_Log2 ('erro', '[' + procname () + ']Nao alterou')
+							_nQtNAlter ++
+						else
+							_nQtAlter ++
+						endif
+					else
+						_nQtJaOk ++
+					endif
+				endif
+			endif
+		endif
+	next
+	U_Log2 ('info', '[' + procname () + ']Qt.reg. nao encontrados...: ' + cvaltochar (_nQtNotF))
+	U_Log2 ('info', '[' + procname () + ']Qt.reg. alterados.........: ' + cvaltochar (_nQtAlter))
+	U_Log2 ('info', '[' + procname () + ']Qt.reg. nao alterados.....: ' + cvaltochar (_nQtNAlter))
+	U_Log2 ('info', '[' + procname () + ']Qt.reg. ja estavam ok.....: ' + cvaltochar (_nQtJaOk))
+	U_Log2 ('info', '[' + procname () + ']Qt.reg. multiplicidade....: ' + cvaltochar (_nQtMulti))
+return
 
 // --------------------------------------------------------------------------
 static function _CargSaf ()
@@ -3329,19 +3475,22 @@ static function _RelAssoc ()
 	local _nAssoc := 0
 
 	// Testes metodos associados.
-	//_oSQL := ClsSQL ():New ()
-	//_oSQL:_sQuery := ""
-	//_oSQL:_sQuery += " SELECT DISTINCT ZI_ASSOC, ZI_LOJASSO"
-	//_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
-	//_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
-//	//_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC between '000161' and '000167'" //'012351' and '012360'"
-	//_oSQL:_sQuery +=  " ORDER BY ZI_ASSOC, ZI_LOJASSO"
-	//_aAssoc = _oSQL:Qry2Array ()
-	//_sResult = ''
-	//for _nAssoc = 1 to len (_aAssoc)
-	//	_oAssoc := ClsAssoc():New (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
-	//	u_log (_oAssoc:Codigo, _oAssoc:Loja, _oAssoc:Nome, _oAssoc:GrpFam, _oAssoc:Nucleo, _oAssoc:Subnucleo)
-	//next
+	_oSQL := ClsSQL ():New ()
+	_oSQL:_sQuery := ""
+	_oSQL:_sQuery += " SELECT DISTINCT ZI_ASSOC, ZI_LOJASSO"
+	_oSQL:_sQuery +=   " FROM " + RetSqlName ("SZI") + " SZI "
+	_oSQL:_sQuery +=  " WHERE SZI.D_E_L_E_T_ != '*'"
+	_oSQL:_sQuery +=    " AND SZI.ZI_ASSOC between '000161' and '003000'" //'012351' and '012360'"
+	_oSQL:_sQuery +=  " ORDER BY ZI_ASSOC, ZI_LOJASSO"
+	_aAssoc = _oSQL:Qry2Array ()
+	_sResult = ''
+	for _nAssoc = 1 to len (_aAssoc)
+		_oAssoc := ClsAssoc():New (_aAssoc [_nAssoc, 1], _aAssoc [_nAssoc, 2])
+		_oAssoc:BuscarDAP ()
+	//	u_log (_oAssoc:Codigo, _oAssoc:Loja, _oAssoc:Nome, _oAssoc:GrpFam(), _oAssoc:Nucleo(), _oAssoc:Subnucleo())
+		u_log (_oAssoc:Codigo, _oAssoc:Loja, _oAssoc:Nome, _oAssoc:DAPNumero + ' ' + dtoc (_oAssoc:DAPValidad) + ' ' + _oAssoc:DAPMotivo)
+	next
+return
 
 	// aadd (_aAssoc, '003577')  // bastante movimento
 	// aadd (_aAssoc, '005128')  // apenas 1 entrada e 1 compra

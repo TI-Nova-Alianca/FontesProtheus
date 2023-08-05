@@ -152,14 +152,9 @@ Static Function _Gera()
 
 		if mv_par08 == 1  // Listar dados referentes a DAP
 			aadd (_aCampos, 'A2_VAPOSSE')
-			aadd (_aCampos, 'A2_VAAPDAP')
 			aadd (_aCampos, 'A2_VANRDAP')
 			aadd (_aCampos, 'A2_VAMNDAP')
-			aadd (_aCampos, 'A2_VASTDAP')
-			aadd (_aCampos, 'A2_VAENDAP')
-			aadd (_aCampos, 'A2_VAEMDAP')
 			aadd (_aCampos, 'A2_VAVLDAP')
-			aadd (_aCampos, 'A2_VAQBDAP') 
 		endif
 
 		// Gera aHeader para posterior organizacao e exportacao dos dados.
@@ -169,9 +164,6 @@ Static Function _Gera()
 		aadd (aHeader, {'Subnucleo', 'ZAN_SUBNUC', '', 20, 0, '', '', 'C'})
 
 		// Campos gerados.
-		if mv_par07 == 1  // Listar dados de contato
-			aadd (aHeader, {'Tel.avisador',       'TelAvisad',  '', 14, 0, '', '', 'C'})
-		endif
 		aadd (aHeader, {'Inscr.est.',         'Inscr',      '', 20, 0, '', '', 'C'})
 		aadd (aHeader, {'Data filiacao',      'DtAssoc',    '', 10, 0, '', '', 'D'})
 		aadd (aHeader, {'Data saida',         'DtDemis',    '', 10, 0, '', '', 'D'})
@@ -263,36 +255,22 @@ Static Function _Gera()
 				GDFieldPut ('A2_CEP',     alltrim (_oAssoc:CEP))
 				GDFieldPut ('A2_VACONJU', alltrim (_oAssoc:NomeConju))
 				GDFieldPut ('A2_VACPFCO', alltrim (_oAssoc:CPFConju))
-//Atributo nao existe mais na ClsAssoc				GDFieldPut ('A2_VACAVIS', alltrim (_oAssoc:CodAvisad))
-				GDFieldPut ('A2_VALAVIS', alltrim (_oAssoc:LojAvisad))
 				GDFieldPut ('A2_BANCO',   fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodBase + _oAssoc:LojaBase, "A2_BANCO"))
 				GDFieldPut ('A2_AGENCIA', fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodBase + _oAssoc:LojaBase, "A2_AGENCIA"))
 				GDFieldPut ('A2_DVAGE',   fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodBase + _oAssoc:LojaBase, "A2_DVAGE"))
 				GDFieldPut ('A2_NUMCON',  fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodBase + _oAssoc:LojaBase, "A2_NUMCON"))
 				GDFieldPut ('A2_DVCTA',   fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodBase + _oAssoc:LojaBase, "A2_DVCTA"))
-//Atributo nao existe mais na ClsAssoc				if ! empty (_oAssoc:CodAvisad)
-//Atributo nao existe mais na ClsAssoc					GDFieldPut ('A2_VANAVIS', alltrim (fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodAvisad + _oAssoc:LojAvisad, "A2_NOME")))
-//Atributo nao existe mais na ClsAssoc					GDFieldPut ('TelAvisad',  alltrim (fBuscaCpo ("SA2", 1, xfilial ("SA2") + _oAssoc:CodAvisad + _oAssoc:LojAvisad, "A2_TEL")))
-//				endif
 			endif
 
 			if mv_par08 == 1  // Listar dados referentes a DAP
-				GDFieldPut ('A2_VAAPDAP', alltrim (x3combo ('A2_VAAPDAP', _oAssoc:DAPAptidao)))
 				GDFieldPut ('A2_VANRDAP', alltrim (_oAssoc:DAPNumero))
 				GDFieldPut ('A2_VAMNDAP', alltrim (_oAssoc:DAPMotivo))
-				GDFieldPut ('A2_VASTDAP', alltrim (x3combo ('A2_VASTDAP', _oAssoc:DAPnoMDA)))
-				GDFieldPut ('A2_VAENDAP', alltrim (_oAssoc:DAPEnquadr))
-				GDFieldPut ('A2_VAEMDAP', _oAssoc:DAPEmissao)
 				GDFieldPut ('A2_VAVLDAP', _oAssoc:DAPValidad)
-				GDFieldPut ('A2_VAQBDAP', alltrim (x3combo ('A2_VAQBDAP', _oAssoc:DAPBenef)))
 				GDFieldPut ('A2_VAPOSSE', alltrim (x3combo ('A2_VAPOSSE', _oAssoc:Posse)))
 			endif
 
 			if mv_par09 == 1  // Listar dados do patriarca/grupo familiar
 				GDFieldPut ('ZAN_COD', _oAssoc:GrpFam ())
-// Tabela ZAN nao existe mais				if ! empty (_oAssoc:GrpFam)
-// Tabela ZAN nao existe mais					GDFieldPut ('ZAN_DESCRI', alltrim (fBuscaCpo ("ZAN", 1, xfilial ("ZAN") + _oAssoc:GrpFam, "ZAN_DESCRI")))
-// Tabela ZAN nao existe mais				endif
 			endif
 
 			// Dados que podem ter mais que uma ocorrencia.
