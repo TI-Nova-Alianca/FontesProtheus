@@ -100,7 +100,8 @@
 // 05/07/2022 - Robert  - Ajustes novo layout 1.3 (GLPI 12307)
 //                      - Criada opcao de exportar apenas um movimento de cada tipo (para testes de layout)
 // 29/06/2023 - Claudia - Ajustado para novo campo de tipo de operaçao sisdevin F4_VASITO. GLPI: 13815
-//
+// 07/08/2023 - Robert  - Voltados campos F4_VASISDE e F4_VASISEN em lugar do F4_VASITO
+//                        por que interpretei mal a situacao (ver reabertura chamado 13815)
 //
 // ------------------------------------------------------------------------------------------------------------
 User Function ml_dec (_lAutomat)
@@ -356,7 +357,7 @@ Static Function _Tipo20N ()
 		if _lSoh1Reg
 			_oSQL:_sQuery += " TOP 1 "
 		endif
-		_oSQL:_sQuery +=        " D2_DOC, D2_SERIE, D2_EMISSAO, F4_VASITO, F2_EST, B1_COD, D2_UM, D2_QUANT, B1_LITROS, F2_DOC, D2_TIPO, "
+		_oSQL:_sQuery +=        " D2_DOC, D2_SERIE, D2_EMISSAO, F4_VASISEN, F2_EST, B1_COD, D2_UM, D2_QUANT, B1_LITROS, F2_DOC, D2_TIPO, "
 		_oSQL:_sQuery +=        " D2_COD, D2_TES, F2_CLIENTE, F2_LOJA, B1_DESC, ISNULL(B8_VACRSIS, '') AS CODCRSIS, D2_LOTECTL "
 
 		// Alguns lotes de produtos envasados devem ser desconsiderados, por exemplo produtos com origem internacional (GLPI 10436)
@@ -401,7 +402,7 @@ Static Function _Tipo20N ()
 		_oSQL:_sQuery +=    " AND SD2.D2_DOC     = SF2.F2_DOC "
 		_oSQL:_sQuery +=    " AND SD2.D2_SERIE   = SF2.F2_SERIE "
 		_oSQL:_sQuery +=    " AND SD2.D2_TES     = SF4.F4_CODIGO "
-		_oSQL:_sQuery +=    " AND SF4.F4_VASITO <> '99' "
+		_oSQL:_sQuery +=    " AND SF4.F4_VASISEN <> '99' "
 
 		// Notas de dez/2019 que continham apenas suco e cujas guias foram digitadas diretamente no site do Sisdevin
 		if cFilAnt == '01' .and. month (mv_par01) == 12 .and. year (mv_par01) == 2019 .and. month (mv_par02) == 12 .and. year (mv_par02) == 2019
@@ -459,7 +460,7 @@ Static Function _Tipo20N ()
 
 			_sNF    := _trb20S -> D2_DOC
 			_sSerie := _trb20S -> D2_SERIE
-			_sOper  := _trb20S -> F4_VASITO
+			_sOper  := _trb20S -> F4_VASISEN
 			_sTipoDocF  = _TipoDocF (_trb20S -> D2_SERIE)
 			_sDestino := _trb20S -> F2_EST
 
@@ -493,7 +494,7 @@ Static Function _Tipo20N ()
 
 			cLin += _sMes
 			cLin += _sAno
-			cLin +=  _trb20S -> F4_VASITO
+			cLin +=  _trb20S -> F4_VASISEN
 			cLin +=  strzero(val(_trb20S -> D2_DOC),10)
 			cLin +=  _sDestino
 			cLin +=  _sTipoDocF
@@ -504,7 +505,7 @@ Static Function _Tipo20N ()
 			
 			_sNFI    := _trb20S -> D2_DOC
 			_sSerieI := _trb20S -> D2_SERIE
-			_sOperI  := _trb20S -> F4_VASITO
+			_sOperI  := _trb20S -> F4_VASISEN
 			_sCodCR	 :=	_trb20S -> CODCRSIS
 			
 			do while (! _trb20S -> (eof ()) .AND. _sNF  == _sNFI .AND. _sSerie == _sSerieI .AND. _sOper == _sOperI)
@@ -534,8 +535,8 @@ Static Function _Tipo20N ()
 				x_LITROS := STRZERO(((_trb20S->D2_QUANT - _trb20S->LT_IGNORAR) * _trb20S->B1_LITROS)*100,10)
 				
 				x_UNID   := _trb20S -> D2_UM
-				if empty (_trb20S -> F4_VASITO)
-					_Erro ("Campo '" + alltrim (RetTitle ("F4_VASITO")) + "' nao informado no TES " + _trb20S -> D2_TES + ". Entre em contato com o setor fiscal.")
+				if empty (_trb20S -> F4_VASISEN)
+					_Erro ("Campo '" + alltrim (RetTitle ("F4_VASISEN")) + "' nao informado no TES " + _trb20S -> D2_TES + ". Entre em contato com o setor fiscal.")
 				endif
 				
 				_xTotLit += val (x_LITROS)
@@ -579,7 +580,7 @@ Static Function _Tipo20N ()
 				_trb20S -> (dbskip ())
 				_sNFi    := _trb20S -> D2_DOC
 				_sSeriei := _trb20S -> D2_SERIE
-				_sOperI  := _trb20S -> F4_VASITO
+				_sOperI  := _trb20S -> F4_VASISEN
 
 			Enddo
 		Enddo
@@ -607,7 +608,7 @@ Static Function _Tipo20D ()
 		if _lSoh1Reg
 			_sQry20 += " TOP 1 "
 		endif
-		_sQry20 +=        " D1_DOC, D1_SERIE, D1_DTDIGIT, F4_VASITO, F1_EST, B1_COD, D1_UM, D1_QUANT, B1_LITROS, "
+		_sQry20 +=        " D1_DOC, D1_SERIE, D1_DTDIGIT, F4_VASISEN, F1_EST, B1_COD, D1_UM, D1_QUANT, B1_LITROS, "
 		_sQry20 +=        " D1_COD, D1_TES, F1_FORNECE, F1_LOJA, B1_DESC, D1_TIPO, ISNULL(B8_VACRSIS, '') AS CODCRSIS, D1_LOTECTL "
 		_sQry20 +=   " FROM " + RetSQLName ("SD1") + " SD1 "
 		_sQry20 +=   "	LEFT JOIN " + RetSQLName ("SB8") + " SB8 "
@@ -640,7 +641,7 @@ Static Function _Tipo20D ()
 		_sQry20 +=    " AND SD1.D1_FORNECE = SF1.F1_FORNECE "
 		_sQry20 +=    " AND SD1.D1_LOJA    = SF1.F1_LOJA "
 		_sQry20 +=    " AND SD1.D1_TES     = SF4.F4_CODIGO "
-		_sQry20 +=    " AND SF4.F4_VASITO <> '99'"
+		_sQry20 +=    " AND SF4.F4_VASISEN <> '99'"
 		_sQry20 += " ORDER BY SF1.F1_DOC, SF1.F1_SERIE, SD1.D1_COD"
 		u_log2 ('debug', _sQry20)
 		_sNF20E = GetNextAlias ()
@@ -657,7 +658,7 @@ Static Function _Tipo20D ()
 
 			_sNF    := (_sNF20E) -> D1_DOC
 			_sSerie := (_sNF20E) -> D1_SERIE
-			_sOper  := (_sNF20E) -> F4_VASITO
+			_sOper  := (_sNF20E) -> F4_VASISEN
 			_sTipoDocF  = _TipoDocF ((_sNF20E) -> D1_SERIE)
 			_sDestino = (_sNF20E) -> f1_est
 
@@ -700,7 +701,7 @@ Static Function _Tipo20D ()
 
 			cLin += _sMes
 			cLin += _sAno
-			cLin += (_sNF20E) -> F4_VASITO
+			cLin += (_sNF20E) -> F4_VASISEN
 			cLin += strzero(val((_sNF20E) -> D1_DOC),10)
 			cLin += _sDestino
 			cLin += _sTipoDocF
@@ -711,7 +712,7 @@ Static Function _Tipo20D ()
 
 			_sNFI    := (_sNF20E) -> D1_DOC
 			_sSerieI := (_sNF20E) -> D1_SERIE
-			_sOperI  := (_sNF20E) -> F4_VASITO
+			_sOperI  := (_sNF20E) -> F4_VASISEN
 			_sCodCR  := (_sNF20E) -> CODCRSIS
 			
 			do while (! (_sNF20E) -> (eof ()) .AND. _sNF  == _sNFI .AND. _sSerie == _sSerieI .AND. _sOper == _sOperI)
@@ -730,8 +731,8 @@ Static Function _Tipo20D ()
 				if val (x_Litros) == 0
 					_Erro ("Produto '" + alltrim ((_sNF20E) -> D1_COD) + "' (cod. sisdeclara '" + alltrim (x_CODPRD) + "') nao tem litragem informada no cadastro, ou a NF de Compra '" + (_sNF20E) -> D1_DOC + "' esta' com quantidade zerada.")
 				endif
-				if empty ((_sNF20E) -> F4_VASITO)
-					_Erro ("Campo '" + alltrim (RetTitle ("F4_VASITO")) + "' nao informado no TES " + (_sNF20E) -> D1_TES + ". Contate setor fiscal.")
+				if empty ((_sNF20E) -> F4_VASISEN)
+					_Erro ("Campo '" + alltrim (RetTitle ("F4_VASISEN")) + "' nao informado no TES " + (_sNF20E) -> D1_TES + ". Contate setor fiscal.")
 				endif
 
 				// Somatorio para mostrar no final total por operação
@@ -775,7 +776,7 @@ Static Function _Tipo20D ()
 				(_sNF20E) -> (dbskip ())
 				_sNFI    := (_sNF20E) -> D1_DOC
 				_sSerieI := (_sNF20E) -> D1_SERIE
-				_sOperI  := (_sNF20E) -> F4_VASITO
+				_sOperI  := (_sNF20E) -> F4_VASISEN
 
 			Enddo
 		Enddo
@@ -897,7 +898,7 @@ Static Function _Tipo30S ()
 			_Erro ("Saidas a granel: Registro no M.A. nao informado no cadastro do cliente/fornecedor '" + alltrim ((_sAliasQ) -> nome) + "' (CNPJ " + (_sAliasQ) -> CNPJ + "). Contate setor comercial.")
 		endif
 		if empty ((_sAliasQ) -> ZQ_TPOPER) .or. (_sAliasQ) -> ZQ_TPOPER == '99'
-			_Erro ("NF " + (_sAliasQ) -> f2_doc + ": Tipo de operacao (" + (_sAliasQ) -> zq_tpoper + ") nao informada ou invalida. Verifique guia '" + (_sAliasQ) -> zq_numero + "' e, possivelmente, o TES '" + (_sAliasQ) -> D2_TES + "' (Campo '" + alltrim (RetTitle ("F4_VASITO")) + "')")
+			_Erro ("NF " + (_sAliasQ) -> f2_doc + ": Tipo de operacao (" + (_sAliasQ) -> zq_tpoper + ") nao informada ou invalida. Verifique guia '" + (_sAliasQ) -> zq_numero + "' e, possivelmente, o TES '" + (_sAliasQ) -> D2_TES + "' (Campo '" + alltrim (RetTitle ("F4_VASISEN")) + "')")
 		endif
   
 		if empty ((_sAliasQ) -> ZQ_NUMLAB)
@@ -1006,7 +1007,7 @@ Static Function _Tipo30E ()
 	if _lSoh1Reg
 		_sQuery += " TOP 1 "
 	endif
-	_sQuery +=        " F1_DOC, F1_EST, D1_COD, F1_SERIE, F1_VAGUIA, F4_VASITO, F1_FORNECE, F1_LOJA, F1_DTDIGIT, D1_DOC, D1_TIPO, "
+	_sQuery +=        " F1_DOC, F1_EST, D1_COD, F1_SERIE, F1_VAGUIA, F4_VASISDE, F1_FORNECE, F1_LOJA, F1_DTDIGIT, D1_DOC, D1_TIPO, "
 	_sQuery +=        " CASE WHEN SD1.D1_TIPO IN ('B', 'D') THEN A1_VAREGMA ELSE A2_VAREGMA END AS REG_MA,"
 	_sQuery +=        " CASE WHEN SD1.D1_TIPO IN ('B', 'D') THEN A1_CGC     ELSE A2_CGC     END AS CNPJ, "
 	_sQuery +=        " CASE WHEN SD1.D1_TIPO IN ('B', 'D') THEN A1_NOME    ELSE A2_NOME    END AS NOME, "
@@ -1029,7 +1030,7 @@ Static Function _Tipo30E ()
 	_sQuery +=  " WHERE SF1.D_E_L_E_T_ = ''"
 	_sQuery +=    " AND SF4.D_E_L_E_T_ = '' "
 	_sQuery +=    " AND SD1.D1_TES     = SF4.F4_CODIGO "
-	_sQuery +=    " AND SF4.F4_VASITO <> '99' "
+	_sQuery +=    " AND SF4.F4_VASISDE <> '99' "
 	_sQuery +=    " AND SD1.D_E_L_E_T_ = ''"
 	_sQuery +=    " AND SB1.D_E_L_E_T_ = '' "
 	_sQuery +=    " AND SB5.D_E_L_E_T_ = '' "
@@ -1120,7 +1121,7 @@ Static Function _Tipo30E ()
 		cLin += strzero (val ((_sAliasQ) -> F1_DOC), 10)
 		cLin += _sDestino
 		cLin += substr ((_sAliasQ) -> F1_DTDIGIT, 5, 2) + substr ((_sAliasQ) -> F1_DTDIGIT, 1, 4)
-		cLin += (_sAliasQ) -> F4_VASITO
+		cLin += (_sAliasQ) -> F4_VASISDE
 		cLin += U_TamFixo ((_sAliasQ) -> NOME, 40)
 		cLin += U_TamFixo ((_sAliasQ) -> REG_MA, 8)
 		cLin += U_TamFixo ((_sAliasQ) -> CNPJ, 14)
@@ -1141,8 +1142,8 @@ Static Function _Tipo30E ()
 				_Erro ("Litragem zerada para o produto '" + alltrim ((_sAliasQ) -> d1_cod) + "'. Verifique se o campo '" + alltrim (RetTitle ("B1_LITROS")) + "' esta informado em seu cadastro.")
 			endif
 
-			if empty ((_sAliasQ) -> F4_VASITO)
-				_Erro ("Campo '" + alltrim (RetTitle ("F4_VASITO")) + "' nao informado no TES " + (_sAliasQ) -> D1_TES + ". Contate setor fiscal.")
+			if empty ((_sAliasQ) -> F4_VASISDE)
+				_Erro ("Campo '" + alltrim (RetTitle ("F4_VASISDE")) + "' nao informado no TES " + (_sAliasQ) -> D1_TES + ". Contate setor fiscal.")
 			endif
 
 			_oSisdec := ClsSisd ():New ((_sAliasQ) -> d1_cod, 'SB5', (_sAliasQ) -> d1_filial)
@@ -1184,7 +1185,7 @@ Static Function _Tipo30E ()
 			_xTotLit += round ((_sAliasQ) -> Litros * 100, 0)
 
 			// Somatorio para mostrar no final total por operação
-			_sPos = ascan (_aTotOper, {|_aVal| _aVal [1] == "30" .AND. _aVal [2] == (_sAliasQ) -> F4_VASITO })
+			_sPos = ascan (_aTotOper, {|_aVal| _aVal [1] == "30" .AND. _aVal [2] == (_sAliasQ) -> F4_VASISDE })
 			if _sPos > 0
 				_aTotOper [_sPos, 4] += round ((_sAliasQ) -> Litros, 0)
 			endif
@@ -1220,9 +1221,9 @@ Static Function _Tipo60 ()
 	incproc ('Registro(s) ' + procname ())
 	cLin:=""
 
-	_sCposV   = " 'VIEW' AS ORIGEM,                               V.SAFRA,                 V.DATA,                 V.ASSOCIADO,              V.LOJA_ASSOC,             V.DOC,               V.SERIE,     V.CAD_VITIC,               V.PESO_LIQ,              V.GRAU,                V.VALOR_UNIT,             V.PRODUTO, SA2.A2_TIPO AS TIPO_CF, SA2.A2_CGC AS CGC, SA2.A2_INSCR AS INSCR, SA2.A2_COD_MUN AS COD_MUN, SA2.A2_NOME AS NOME_CF, SA2.A2_COD AS CLIFOR, SA2.A2_LOJA AS LOJA, SA2.A2_VAREGMA AS REGMA, B5_VATPSIS, SB1.B1_VACOR, B5_VAVPSIS, SB1.B1_COD, SB1.B1_DESC, '' AS F4_VASITO "
-	_sCposSD1 = " 'SD1'  AS ORIGEM, SUBSTRING (D1_DTDIGIT, 1, 4) AS SAFRA, SD1.D1_DTDIGIT AS DATA, SD1.D1_FORNECE AS ASSOCIADO, SD1.D1_LOJA AS LOJA_ASSOC, SD1.D1_DOC AS DOC, SD1.D1_SERIE AS SERIE, '' AS CAD_VITIC, SD1.D1_QUANT AS PESO_LIQ, SD1.D1_GRAU AS GRAU, SD1.D1_VUNIT  AS VALOR_UNIT, SD1.D1_COD AS PRODUTO, SA2.A2_TIPO AS TIPO_CF, SD1.D1_DOC AS DOC, SA2.A2_INSCR AS INSCR, SA2.A2_COD_MUN AS COD_MUN, SA2.A2_NOME AS NOME_CF, SA2.A2_COD AS CLIFOR, SA2.A2_LOJA AS LOJA, SA2.A2_VAREGMA AS REGMA, B5_VATPSIS, SB1.B1_VACOR, B5_VAVPSIS, SB1.B1_COD, SB1.B1_DESC, F4_VASITO "
-	_sCposSD2 = " 'SD2'  AS ORIGEM, SUBSTRING (D2_EMISSAO, 1, 4) AS SAFRA, SD2.D2_EMISSAO AS DATA, SD2.D2_CLIENTE AS ASSOCIADO, SD2.D2_LOJA AS LOJA_ASSOC, SD2.D2_DOC AS DOC, SD2.D2_SERIE AS SERIE, '' AS CAD_VITIC, SD2.D2_QUANT AS PESO_LIQ, '14.0'      AS GRAU, SD2.D2_PRCVEN AS VALOR_UNIT, SD2.D2_COD AS PRODUTO, SA1.A1_TIPO AS TIPO_CF, SD2.D2_DOC AS DOC, SA1.A1_INSCR AS INSCR, SA1.A1_COD_MUN AS COD_MUN, SA1.A1_NOME AS NOME_CF, SA1.A1_COD AS CLIFOR, SA1.A1_LOJA AS LOJA, SA1.A1_VAREGMA AS REGMA, B5_VATPSIS, SB1.B1_VACOR, B5_VAVPSIS, SB1.B1_COD, SB1.B1_DESC, F4_VASITO "
+	_sCposV   = " 'VIEW' AS ORIGEM,                               V.SAFRA,                 V.DATA,                 V.ASSOCIADO,              V.LOJA_ASSOC,             V.DOC,               V.SERIE,     V.CAD_VITIC,               V.PESO_LIQ,              V.GRAU,                V.VALOR_UNIT,             V.PRODUTO, SA2.A2_TIPO AS TIPO_CF, SA2.A2_CGC AS CGC, SA2.A2_INSCR AS INSCR, SA2.A2_COD_MUN AS COD_MUN, SA2.A2_NOME AS NOME_CF, SA2.A2_COD AS CLIFOR, SA2.A2_LOJA AS LOJA, SA2.A2_VAREGMA AS REGMA, B5_VATPSIS, SB1.B1_VACOR, B5_VAVPSIS, SB1.B1_COD, SB1.B1_DESC, '' AS F4_VASISDE "
+	_sCposSD1 = " 'SD1'  AS ORIGEM, SUBSTRING (D1_DTDIGIT, 1, 4) AS SAFRA, SD1.D1_DTDIGIT AS DATA, SD1.D1_FORNECE AS ASSOCIADO, SD1.D1_LOJA AS LOJA_ASSOC, SD1.D1_DOC AS DOC, SD1.D1_SERIE AS SERIE, '' AS CAD_VITIC, SD1.D1_QUANT AS PESO_LIQ, SD1.D1_GRAU AS GRAU, SD1.D1_VUNIT  AS VALOR_UNIT, SD1.D1_COD AS PRODUTO, SA2.A2_TIPO AS TIPO_CF, SD1.D1_DOC AS DOC, SA2.A2_INSCR AS INSCR, SA2.A2_COD_MUN AS COD_MUN, SA2.A2_NOME AS NOME_CF, SA2.A2_COD AS CLIFOR, SA2.A2_LOJA AS LOJA, SA2.A2_VAREGMA AS REGMA, B5_VATPSIS, SB1.B1_VACOR, B5_VAVPSIS, SB1.B1_COD, SB1.B1_DESC, F4_VASISDE "
+	_sCposSD2 = " 'SD2'  AS ORIGEM, SUBSTRING (D2_EMISSAO, 1, 4) AS SAFRA, SD2.D2_EMISSAO AS DATA, SD2.D2_CLIENTE AS ASSOCIADO, SD2.D2_LOJA AS LOJA_ASSOC, SD2.D2_DOC AS DOC, SD2.D2_SERIE AS SERIE, '' AS CAD_VITIC, SD2.D2_QUANT AS PESO_LIQ, '14.0'      AS GRAU, SD2.D2_PRCVEN AS VALOR_UNIT, SD2.D2_COD AS PRODUTO, SA1.A1_TIPO AS TIPO_CF, SD2.D2_DOC AS DOC, SA1.A1_INSCR AS INSCR, SA1.A1_COD_MUN AS COD_MUN, SA1.A1_NOME AS NOME_CF, SA1.A1_COD AS CLIFOR, SA1.A1_LOJA AS LOJA, SA1.A1_VAREGMA AS REGMA, B5_VATPSIS, SB1.B1_VACOR, B5_VAVPSIS, SB1.B1_COD, SB1.B1_DESC, F4_VASISDE "
 
 	_oSQL := ClsSQL():New ()
 	_oSQL:_sQuery := ""
