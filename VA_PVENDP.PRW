@@ -13,6 +13,7 @@
 //  Historico de alteracoes:
 //  11/07/2022 - Sandra/Rbert - Ajuste nos totais quando a divisão por "0".
 //  29/11/2022 - Criado relatorio analítico. GLPI: 12846
+//  09/08/2023 - Sandra/Rbert - Ajuste nos totais quando a divisão por "0" NA QUANTIDADE CUSTO_UN. GLPI 14065
 //
 // --------------------------------------------------------------------------
 User Function VA_PVENDP (_lAutomat)
@@ -81,7 +82,7 @@ Static Function _Gera()
         _oSQL:_sQuery += "   ,ROUND(SUM(TOTAL) / SUM(case when QUANTIDADE = 0 then 1 else QUANTIDADE end), 2) AS VRL_FATURADO_UN "  
         _oSQL:_sQuery += "   ,ROUND(SUM(TOTAL), 2) AS VRL_TOTAL "
         _oSQL:_sQuery += "   ,ROUND(SUM(CUSTOMEDIO), 2) AS CUSTO_TOTAL "
-        _oSQL:_sQuery += "   ,ROUND(AVG(NULLIF(CUSTOMEDIO,0) / QUANTIDADE), 2) AS CUSTO_UN
+        _oSQL:_sQuery += "   ,ROUND(AVG(NULLIF(CUSTOMEDIO,0) / case when QUANTIDADE = 0 then 1 else QUANTIDADE end), 2) AS CUSTO_UN
         _oSQL:_sQuery += "   ,SB1.B1_CUSTD AS CUSTO_STANDER"
         _oSQL:_sQuery += "   ,ROUND((SUM(TOTAL) - SUM(CUSTOMEDIO)) / SUM(case when TOTAL = 0 then 1 else TOTAL end) * 100, 1) AS 'MARGEM' "
         _oSQL:_sQuery += "   ,ROUND(SUM(CUSTOMEDIO) / SUM(case when TOTAL = 0 then 1 else TOTAL end) * 100, 0) AS 'CPV' "
@@ -132,7 +133,7 @@ Static Function _Gera()
         _oSQL:_sQuery += " 		END), 2) AS VRL_FATURADO_UN "
         _oSQL:_sQuery += " 	   ,ROUND(SUM(TOTAL), 2) AS VRL_TOTAL "
         _oSQL:_sQuery += " 	   ,ROUND(SUM(CUSTOMEDIO), 2) AS CUSTO_TOTAL "
-        _oSQL:_sQuery += " 	   ,ROUND(AVG(NULLIF(CUSTOMEDIO, 0) / QUANTIDADE), 2) AS CUSTO_UN "
+        _oSQL:_sQuery += " 	   ,ROUND(AVG(NULLIF(CUSTOMEDIO, 0) / case when QUANTIDADE = 0 then 1 else QUANTIDADE end), 2) AS CUSTO_UN "
         _oSQL:_sQuery += " 	   ,SB1.B1_CUSTD AS CUSTO_STANDER "
         _oSQL:_sQuery += " 	   ,ROUND((SUM(TOTAL) - SUM(CUSTOMEDIO)) / SUM(CASE "
         _oSQL:_sQuery += " 			WHEN TOTAL = 0 THEN 1 "
