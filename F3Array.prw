@@ -60,6 +60,9 @@ user function F3Array (_aArray, _sTitulo, _aCols, _nLarg, _nAltur, _sMsgSup, _sM
 	private _oLbx    := NIL
 	private _nRet    := 0  // Deixar private para ser visto no bloco de codigo.
 	
+//	U_Log2 ('debug', '[' + procname () + ']Recebi _aCols assim:')
+//	U_Log2 ('debug', _aCols)
+
 	if _lContinua .and. valtype (_aArray) != 'A'
 		u_help ("Funcao " + procname () + " recebeu array invalida. Conteudo: " + cvaltochar (_aArray))
 		_lContinua = .F.

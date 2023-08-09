@@ -91,7 +91,7 @@
 // 24/05/2023 - Robert  - Metodo Executa() recebe parametro indicando se retorna nomes das colunas no inicio.
 // 30/05/2023 - Robert  - Criadas verificacoes 96 e 97.
 // 30/06/2023 - Robert  - Melhoria geral verificacao 4 (permite mais de 1 mes; filtro por produto)
-//
+// 08/08/2023 - Robert  - Nao limpava array 
 
 #include "protheus.ch"
 
@@ -1477,6 +1477,7 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Dica      += 'O FullWMS retorna um OK para o Protheus quando essas tarefas estiver prontas, e o Protheus faz a transferência desse saldo para o almoxarifado 01 (logística).'
 		::Dica      += chr (13) + chr (10) + 'Somente depois disso será permitido encerrar a OP.'
 		::Dica      += chr (13) + chr (10) + 'Tabelas envolvidas: SD3, SC2, ZA1, tb_wms_entrada, tb_wms_etiquetas'
+		::AColsF3 = {}
 		aadd (::AColsF3, {1,  'Dt.apont.',        50, ''})
 		aadd (::AColsF3, {2,  'OP',               60, ''})
 		aadd (::AColsF3, {3,  'Produto',          40, ''})
@@ -1505,15 +1506,16 @@ METHOD GeraQry (_lDefault) Class ClsVerif
 		::Query +=          " WHEN '9' THEN 'Recebto.excluido'"
 		::Query +=          " ELSE ''"
 		::Query +=          " END AS STATUS_FULL,"
-		::Query +=       " CASE ISNULL (t.status_protheus, '')"
-		::Query +=          " WHEN '1' THEN 'Falta estq.p/transf'"
-		::Query +=          " WHEN '2' THEN 'Erro ao transferir'"
-		::Query +=          " WHEN '3' THEN 'Transferido OK'"
-		::Query +=          " WHEN '4' THEN 'Qt.Full # Qt.ERP'"
-		::Query +=          " WHEN '9' THEN 'Cancelado autom.'"
-		::Query +=          " WHEN 'C' THEN 'Cancelado manual'"
-		::Query +=          " ELSE ''"
-		::Query +=          " END AS STATUS_PROTHEUS"
+	//	::Query +=       " CASE ISNULL (t.status_protheus, '')"
+	//	::Query +=          " WHEN '1' THEN 'Falta estq.p/transf'"
+	//	::Query +=          " WHEN '2' THEN 'Erro ao transferir'"
+	//	::Query +=          " WHEN '3' THEN 'Transferido OK'"
+	//	::Query +=          " WHEN '4' THEN 'Qt.Full # Qt.ERP'"
+	//	::Query +=          " WHEN '9' THEN 'Cancelado autom.'"
+	//	::Query +=          " WHEN 'C' THEN 'Cancelado manual'"
+	//	::Query +=          " ELSE ''"
+	//	::Query +=          " END AS STATUS_PROTHEUS"
+		::Query +=       " ISNULL (t.status_protheus, '') as STATUS_PROTHEUS"
 		::Query +=  " FROM " + RetSQLName ("SC2") + " SC2, "
 		::Query +=             RetSQLName ("SD3") + " APONT "
 		::Query +=         " LEFT JOIN tb_wms_entrada t"
