@@ -33,6 +33,7 @@
 //                     - Nao tratava faturas com mais de uma parcela (ateh entao, nunca foi o caso)
 //                     - Gravacao com controle de transacao (dados adicionais e atualizacao do SZI)
 // 03/08/2023 - Robert - Nao tenta gravar cta corrente se nao for um associado ou ex-associado.
+// 09/08/2023 - Robert - Busca natureza direto no SA2
 //
 
 #include "rwmake.ch"
@@ -293,7 +294,8 @@ static function _Gera (_lAuto)
 			Aadd(aFatPag, _sPrefFat)         //-- Prefixo
 			Aadd(aFatPag, "FAT")             //-- Tipo
 			Aadd(aFatPag, _wnumero)          //-- Numero da Fatura (se o numero estiver em branco obtem pelo FINA290)
-			Aadd(aFatPag, "120201    ")      //-- Natureza
+		//	Aadd(aFatPag, "120201    ")      //-- Natureza
+			Aadd(aFatPag, fBuscaCpo ("SA2", 1, xfilial ("SA2") + _wfornece + _wloja, "A2_NATUREZ"))
 			Aadd(aFatPag, _dEmisIni)         //-- Data emissao inicial
 			Aadd(aFatPag, _dEmisFim)         //-- Data emissao final
 			Aadd(aFatPag, _wfornece)         //-- Fornecedor

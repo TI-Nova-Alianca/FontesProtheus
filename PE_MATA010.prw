@@ -38,7 +38,9 @@
 // 05/01/2023 - Robert  - Teste de desabilitacao de rastro e enderecamento
 //                        considerava se jah estava habilitado ou nao no SB1.
 // 20/02/2023 - Claudia - Transformado bloqueio em aviso. GLPI: 13193
-//
+// 09/08/2023 - Robert  - Valid.dupliciadade B1_CODBAR passa a permitir itens 'irmaos'.
+//                        e tratamento especifico para itens 8146/8302/8531.
+
 //---------------------------------------------------------------------------------------------------------------
 #Include "Protheus.ch" 
 #Include "TOTVS.ch"
@@ -266,7 +268,24 @@ static function _A010TOk ()
 		_oSQL:_sQuery +=    " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
 		_oSQL:_sQuery +=    " AND SB1.B1_CODBAR  = '" + m->b1_codbar + "'"
 		_oSQL:_sQuery +=    " AND SB1.B1_COD    != '" + m->b1_cod + "'"
-		_oSQL:Log ()
+
+		// Se for um item 'irmao' (mesmo pai) vou aceitar EAN igual, por que
+		// trata-se de mesmo produto fisico, mas com codigo diferente para ser
+		// usado em exportacoes ou licitacoes.
+		_oSQL:_sQuery +=    " AND SB1.B1_CODPAI != '" + m->b1_codpai + "'"
+	//	_oSQL:_sQuery +=    " AND SB1.B1_CODPAI != (SELECT B1_CODPAI"
+	//	_oSQL:_sQuery +=                            " FROM " + RetSQLName ("SB1") + " EU_MESMO"
+	//	_oSQL:_sQuery +=                           " WHERE EU_MESMO.D_E_L_E_T_ = ''"
+	//	_oSQL:_sQuery +=                             " AND EU_MESMO.B1_FILIAL = SB1.B1_FILIAL"
+	//	_oSQL:_sQuery +=                             " AND EU_MESMO.B1_COD = '" + m->b1_cod + "')"
+
+		// Especificamente o item 8531 vai ser exportado em caixas de 6 unidades
+		// em vez da tradicional caixa de 12 unidades. Robert, 09/08/2023
+		if alltrim (m->b1_cod) $ '8146/8302/8531'
+			_oSQL:_sQuery += " and not SB1.B1_COD in ('8146', '8302', '8531')"
+		endif
+
+		_oSQL:Log ('[' + procname () + ']')
 		_sMsg = _oSQL:RetQry (1, .f.)
 		if ! empty (_sMsg)
 			U_Help ("Codigo de barras ja informado para o(s) seguinte(s) produto (s): " + _sMsg,, .t.)

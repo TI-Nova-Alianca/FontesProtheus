@@ -183,7 +183,8 @@
 //                        atual do estoque (desde que tipo insumo = mao de obra)
 // 06/07/2023 - Robert  - Validar linhas de envase (campos *_VALINEN) - GLPI 13850
 // 10/07/2023 - Claudia - Acrescentado novo campo de tipo de operação sisdevin F4_VASITO. GLPI: 13778
-// 04/08/2023 - Robert  - Revovidas (estavam em desuso) validacos dos campos M->ZZK_ASSOC/M->ZZK_LOJA
+// 04/08/2023 - Robert  - Removidas (estavam em desuso) validacos dos campos M->ZZK_ASSOC/M->ZZK_LOJA
+// 09/08/2023 - Robert  - Removida validacao B1_CODBAR (Migrada para PE_MATA010)
 //
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -433,23 +434,23 @@ user function VA_VCpo (_sCampo)
 				_lRet = .F.
 			endif
 
-		case _sCampo == "M->B1_CODBAR"
-			if ! empty (m->b1_codbar) .and. ! _SohZeros (m->b1_codbar)
-				_oSQL := ClsSQL():New ()
-				_oSQL:_sQuery := ""
-				_oSQL:_sQuery += " SELECT RTRIM (STRING_AGG (RTRIM (B1_COD) + '-' + RTRIM (B1_DESC), '; '))"
-				_oSQL:_sQuery +=   " FROM " + RetSQLName ("SB1") + " SB1 "
-				_oSQL:_sQuery +=  " WHERE SB1.D_E_L_E_T_ = ''"
-				_oSQL:_sQuery +=    " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
-				_oSQL:_sQuery +=    " AND SB1.B1_CODBAR  = '" + m->b1_codbar + "'"
-				_oSQL:_sQuery +=    " AND SB1.B1_COD    != '" + m->b1_cod + "'"
-				_oSQL:Log ()
-				_sMsg = _oSQL:RetQry (1, .f.)
-				if ! empty (_sMsg)
-					U_Help ("Codigo de barras ja informado para o(s) seguinte(s) produto (s): " + _sMsg,, .t.)
-					_lRet = .F.
-				endif
-			endif
+	// mIGRADO PARA PE_MATA010	case _sCampo == "M->B1_CODBAR"
+	// mIGRADO PARA PE_MATA010		if ! empty (m->b1_codbar) .and. ! _SohZeros (m->b1_codbar)
+	// mIGRADO PARA PE_MATA010			_oSQL := ClsSQL():New ()
+	// mIGRADO PARA PE_MATA010			_oSQL:_sQuery := ""
+	// mIGRADO PARA PE_MATA010			_oSQL:_sQuery += " SELECT RTRIM (STRING_AGG (RTRIM (B1_COD) + '-' + RTRIM (B1_DESC), '; '))"
+	// mIGRADO PARA PE_MATA010			_oSQL:_sQuery +=   " FROM " + RetSQLName ("SB1") + " SB1 "
+	// mIGRADO PARA PE_MATA010			_oSQL:_sQuery +=  " WHERE SB1.D_E_L_E_T_ = ''"
+	// mIGRADO PARA PE_MATA010			_oSQL:_sQuery +=    " AND SB1.B1_FILIAL  = '" + xfilial ("SB1") + "'"
+	// mIGRADO PARA PE_MATA010			_oSQL:_sQuery +=    " AND SB1.B1_CODBAR  = '" + m->b1_codbar + "'"
+	// mIGRADO PARA PE_MATA010			_oSQL:_sQuery +=    " AND SB1.B1_COD    != '" + m->b1_cod + "'"
+	// mIGRADO PARA PE_MATA010			_oSQL:Log ()
+	// mIGRADO PARA PE_MATA010			_sMsg = _oSQL:RetQry (1, .f.)
+	// mIGRADO PARA PE_MATA010			if ! empty (_sMsg)
+	// mIGRADO PARA PE_MATA010				U_Help ("Codigo de barras ja informado para o(s) seguinte(s) produto (s): " + _sMsg,, .t.)
+	// mIGRADO PARA PE_MATA010				_lRet = .F.
+	// mIGRADO PARA PE_MATA010			endif
+	// mIGRADO PARA PE_MATA010		endif
 
 
 		case _sCampo == "M->B1_CODPAI"
