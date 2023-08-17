@@ -12,6 +12,8 @@
 // Historico de alteracoes:
 // 29/06/2020 - Cláudia - Incluido parametro para alterar apenas os representantes, sem comissões. GLPI: 8124
 // 16/07/2020 - Cláudia - Retirada a obrigatoriedade de incluir comissão. GLPI: 8178
+// 16/08/2023 - Claudia - Incluido codigo de evento. GLPI: 14090
+//
 // ---------------------------------------------------------------------------------------------------------------
 #include 'protheus.ch'
 #include 'parmtype.ch'
@@ -74,10 +76,6 @@ Static Function _TudoOk()
 		_lRet := .F.
 	Endif
 	
-//	If empty(mv_par03) .and. mv_par04 == 1// comissão
-//		u_help(" Comissão é obrigatório!")
-//		_lRet := .F.
-//	Endif
 Return _lRet
 
 // --------------------------------------------------------------------------
@@ -96,33 +94,20 @@ Static Function _AtualizaRep()
 				
 				// Cria variaveis para uso na gravacao do evento de alteracao
 				regtomemory ("SA1", .F., .F.)
-//				If  mv_par04 == 1
-					sNewVend  := alltrim(mv_par02)
-					sNewComis := mv_par03
-	
-					// Grava evento de alteracao
-					_oEvento := ClsEvent():new ()
-					_oEvento:AltCadast ("SA1", sNewComis, sa1 -> (recno ()), '', .F.)
-					_oEvento:Texto     = "Vend. de " + alltrim(sa1 -> a1_vend) + " para " + alltrim(sNewVend) + ". Comissão:"+ str(sNewComis)
-					_oEvento:Grava()
-					
-					Reclock ("SA1", .f.)
-						sa1 -> a1_vend  = sNewVend
-						sa1 -> a1_comis = sNewComis
-					Msunlock ()
-//				Else
-//					sNewVend  := alltrim(mv_par02)
-//	
-//					// Grava evento de alteracao
-//					_oEvento := ClsEvent():new ()
-//					_oEvento:AltCadast ("SA1", sNewVend, sa1 -> (recno ()), '', .F.)
-//					_oEvento:Texto     = "Vend. de " + alltrim(sa1 -> a1_vend) + " para " + alltrim(sNewVend) 
-//					_oEvento:Grava()
-//					
-//					Reclock ("SA1", .f.)
-//						sa1 -> a1_vend  = sNewVend
-//					Msunlock ()
-//				EndIf
+				sNewVend  := alltrim(mv_par02)
+				sNewComis := mv_par03
+
+				// Grava evento de alteracao
+				_oEvento := ClsEvent():new ()
+				_oEvento:AltCadast ("SA1", sNewComis, sa1 -> (recno ()), '', .F.)
+				_oEvento:CodEven   = "SA1001"
+				_oEvento:Texto     = "Vend. de " + alltrim(sa1 -> a1_vend) + " para " + alltrim(sNewVend) + ". Comissão:"+ str(sNewComis)
+				_oEvento:Grava()
+				
+				Reclock ("SA1", .f.)
+					sa1 -> a1_vend  = sNewVend
+					sa1 -> a1_comis = sNewComis
+				Msunlock ()
 				
 				U_AtuMerc ("SA1", sa1 -> (recno ()))
 				
