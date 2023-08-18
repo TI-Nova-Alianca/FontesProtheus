@@ -125,8 +125,9 @@
 // 22/05/2023 - Robert  - Passa a permitir exclusao de eventos com origens WPNMARCARPRESENCAS/WPNFOLLOWUPNOTASFISCAIS
 // 02/06/2023 - Robert  - Passa a permitir exclusao de eventos com origem WpnAdicionarEventosAssociado
 // 21/07/2023 - Robert  - Nova forma de parametrizacao (via atributos) do metodo ClsAssoc:FechSafra() - GLPI 13956
+// 18/08/2023 - Claudia - Casting  da quantidade na rotina _TrEstGrid . GLPI 13656
 //
-
+//
 // ---------------------------------------------------------------------------------------------------------------
 #INCLUDE "APWEBSRV.CH"
 #INCLUDE "PROTHEUS.CH"
@@ -293,6 +294,8 @@ WSMETHOD IntegraWS WSRECEIVE XmlRcv WSSEND Retorno WSSERVICE WS_Alianca
 				_TstRobert ()
 			case _sAcao == 'InsereSolicManut'
 				_IncManut()
+			//case _sAcao == 'GravaTituloPgUnimed'
+			//	_GrvTituloUnimed ()
 			otherwise
 				_SomaErro ("A acao especificada no XML eh invalida: " + _sAcao)
 		endcase
@@ -982,7 +985,10 @@ static function _TrEstGrid ()
 			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):LoteDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_LoteDestino",     .F., .F.), 10) ; endif
 			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):EndOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_EnderecoOrigem",  .F., .F.), 15) ; endif
 			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):EndDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_EnderecoDestino", .F., .F.), 15) ; endif
-			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):QtdSolic  = val  (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_QtdSolic",        .T., .F.))     ; endif
+			//if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):QtdSolic  = val  (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_QtdSolic",        .T., .F.))     ; endif
+			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):QtdSolic  = Val(StrTran(_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_QtdSolic",  .T., .F.),",","."))      ; endif
+
+			
 			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):CodMotivo =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_Motivo",          .T., .F.)      ; endif
 			if empty (_sErroWS) ; &('_oTrEstq' + cvaltochar (_nItem)):Motivo    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item[" + cvaltochar (_nItem) + "]:_Obs",             .F., .F.)      ; endif
 			_nItem ++
@@ -1004,7 +1010,8 @@ static function _TrEstGrid ()
 		if empty (_sErroWS) ; _oTrEstq1:LoteDest  = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_LoteDestino",     .F., .F.), 10) ; endif
 		if empty (_sErroWS) ; _oTrEstq1:EndOrig   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_EnderecoOrigem",  .F., .F.), 15) ; endif
 		if empty (_sErroWS) ; _oTrEstq1:EndDest   = padr (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_EnderecoDestino", .F., .F.), 15) ; endif
-		if empty (_sErroWS) ; _oTrEstq1:QtdSolic  = val  (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_QtdSolic",        .T., .F.))     ; endif
+		//if empty (_sErroWS) ; _oTrEstq1:QtdSolic  = val  (_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_QtdSolic",        .T., .F.))     ; endif
+		if empty (_sErroWS) ; _oTrEstq1:QtdSolic  = Val(StrTran(_ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_QtdSolic",        .T., .F.),",","."))    ; endif
 		if empty (_sErroWS) ; _oTrEstq1:CodMotivo =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_Motivo",          .T., .F.)      ; endif
 		if empty (_sErroWS) ; _oTrEstq1:Motivo    =       _ExtraiTag ("_oXML:_WSAlianca:_TransfEstqItens:_Item:_Obs",             .F., .F.)      ; endif
 	endif
