@@ -29,6 +29,15 @@ User Function claudia ()
 	
 	//u_help("IMPORTACAO CRM")
 	//u_va_crmimp()
+
+	//u_help("RAPEL")
+	//U_VA_RAPCAD()
+
+	//u_help("SAFRA")
+	//_SimulaSafra23()
+
+	//u_help("ajustes katia")
+	//U_AjFiscal()
 Return
 
 // Static Function _deletaContatos()
@@ -2101,3 +2110,245 @@ Return
 // 	enddo
 // Return
 //-----------------------------------------------------------------------------------
+
+
+// // --------------------------------------------------------------------------
+// // Simulacoes safra 2023 durante reuniao.
+// static function _SimulaSafra23 ()
+// 	local _sParcel   := 'M'
+// 	local _nRecCount := 0
+// 	local _nRecAtu   := 0
+// 	local _aRetPrc   := {}
+
+// 	dbselectarea ("ZZ9")
+// 	set filter to zz9_safra = '2023' .and. zz9_parcel = _sParcel
+// 	count to _nRecCount
+// 	zz9 -> (dbgotop ())
+// 	_nRecAtu = 0
+// 	do while ! zz9 -> (eof ())
+// 		incproc ()
+// 		if zz9 -> zz9_safra == '2023' .and. zz9 -> zz9_parcel == _sParcel
+// 			_sClasFina = ''
+// 			if zz9 -> zz9_conduc == 'L'
+// 				_sClasFina = zz9 -> zz9_clabd
+// 			else
+// 				_sClasFina = zz9 -> zz9_classe
+// 			endif
+// 			if ++_nRecAtu % 100 == 0
+// 				u_log2 ('info', '[' + cvaltochar (_nRecAtu) + ' de ' + cvaltochar (_nRecCount) + ']Produto ' + alltrim (zz9 -> zz9_produt) + ' gr.' + zz9 -> zz9_grau + ' ' + _sClasFina)
+// 			endif
+// 			_oSQL := ClsSQL ():New ()
+// 			_oSQL:_sQuery := "SELECT VUNIT_EFETIVO"
+// 			_oSQL:_sQuery +=  " FROM VA_VPRECO_EFETIVO_SAFRA P"
+// 			_oSQL:_sQuery += " WHERE P.SAFRA      = '" + zz9 -> zz9_safra + "'"
+// 			_oSQL:_sQuery +=   " AND P.FILIAL     = '" + zz9 -> zz9_filial + "'"
+// 			_oSQL:_sQuery +=   " AND P.ASSOCIADO  = '" + zz9 -> zz9_fornec + "'"
+// 			_oSQL:_sQuery +=   " AND P.LOJA_ASSOC = '" + zz9 -> zz9_loja + "'"
+// 			_oSQL:_sQuery +=   " AND P.DOC        = '" + zz9 -> zz9_nfori + "'"
+// 			_oSQL:_sQuery +=   " AND P.SERIE      = '" + zz9 -> zz9_serior + "'"
+// 			_oSQL:_sQuery +=   " AND P.ITEM_NOTA  = '" + zz9 -> zz9_itemor + "'"
+// 			_nVUnOld = _oSQL:RetQry (1, .f.)
+
+// 			_aRetPrc = aclone (U_PrcUva23 (zz9 -> zz9_filial, zz9 -> zz9_produt, val (zz9 -> zz9_grau), _sClasFina, zz9 -> zz9_conduc, .F., .F.))
+
+// 			reclock ("ZZ9", .F.)
+// 			zz9 -> zz9_vunold = _nVUnOld
+// 			zz9 -> zz9_vunit  = _aRetPrc [2]
+// 			zz9 -> zz9_obs    = _aRetPrc [3]  // Observacoes geradas pelo prog. de calculo do preco
+// 			zz9 -> zz9_nfcomp = iif (zz9 -> zz9_vunit <= zz9 -> zz9_vunold, 'VLR_MENOR', '')  // Para evitar que posteriormente o programa VA_GNF2 tente gerar nota para este registro.
+// 			zz9 -> zz9_sercom = ''
+// 			msunlock ()
+// 		endif
+// 		zz9 -> (dbskip ())
+// 	enddo
+// return
+
+
+// User Function AjFiscal()
+//     Local _oSQL := ClsSQL ():New ()
+//     Local _x    := 0
+//     Private cPerg   := "AjFiscal"
+    
+// 	_ValidPerg()
+// 	If Pergunte(cPerg,.T.)
+
+//         // NOTAS 50 PARA 56
+//         _oSQL:_sQuery := ""
+//         _oSQL:_sQuery += " SELECT " 
+//         _oSQL:_sQuery += " 	   D1_FILIAL "  // 1
+//         _oSQL:_sQuery += "    ,D1_SERIE "   // 2
+//         _oSQL:_sQuery += "    ,D1_DOC "     // 3
+//         _oSQL:_sQuery += "    ,D1_FORNECE " // 4
+//         _oSQL:_sQuery += "    ,D1_LOJA "    // 5
+//         _oSQL:_sQuery += "    ,D1_ITEM "    // 6
+//         _oSQL:_sQuery += "    ,D1_COD "     // 7
+//         _oSQL:_sQuery += "    ,D1_TES "     // 8
+//         _oSQL:_sQuery += "    ,F4_CSTPIS "  // 9
+//         _oSQL:_sQuery += "    ,F4_CSTCOF "  // 10
+//         _oSQL:_sQuery += " FROM SD1010 SD1 "
+//         _oSQL:_sQuery += " INNER JOIN SF4010 SF4 "
+//         _oSQL:_sQuery += " 	ON SF4.F4_CODIGO = D1_TES "
+//         _oSQL:_sQuery += " 		AND SF4.F4_CSTPIS = '56' "
+//         _oSQL:_sQuery += " 		AND SF4.F4_CSTCOF = '56' "
+//         _oSQL:_sQuery += " WHERE SD1.D_E_L_E_T_ = '' "
+//         _oSQL:_sQuery += " AND D1_DTDIGIT BETWEEN '"+ dtos(mv_par01) +"' AND '"+ dtos(mv_par02) +"' "
+//         _aSD1 := aclone(_oSQL:Qry2Array (.F., .F.))
+
+//         For _x:=1 to Len(_aSD1)
+//             DbSelectArea("SFT")
+//             DbSetOrder(1)
+//             If SFT->(DbSeek(_aSD1[_x,1] + 'E' + _aSD1[_x,2] + _aSD1[_x,3] + _aSD1[_x,4] + _aSD1[_x,5] + _aSD1[_x,6] + _aSD1[_x,7]))  // FT_FILIAL+FT_TIPOMOV+FT_SERIE+FT_NFISCAL+FT_CLIEFOR+FT_LOJA+FT_ITEM+FT_PRODUTO
+//                 RecLock("SFT",.F.)
+//                     SFT->FT_CSTPIS := _aSD1[_x, 9]
+//                     SFT->FT_CSTCOF := _aSD1[_x,10]
+//                 MsUnLock()
+//                 _sChave := _aSD1[_x,1] + 'E' + _aSD1[_x,2] + _aSD1[_x,3] + _aSD1[_x,4] + _aSD1[_x,5] + _aSD1[_x,6] + _aSD1[_x,7]
+
+//                 // grava log de alteração
+//                 _oEvento:= ClsEvent():new ()
+//                 _oEvento:CodEven   = "ALT001"
+//                 _oEvento:Texto	   = "Alterado CST PIS/COFINS de 50 para 56. CHAVE:" + _sChave
+//                 _oEvento:Alias     = "SFT"
+//                 _oEvento:ChaveNFe  = _sChave
+//                 _oEvento:Grava ()
+//             EndIf
+//         Next
+
+
+//         //  // NOTAS 64 PARA 98
+//         // _oSQL:_sQuery := ""
+//         // _oSQL:_sQuery += " SELECT " 
+//         // _oSQL:_sQuery += " 	   D1_FILIAL "  // 1
+//         // _oSQL:_sQuery += "    ,D1_SERIE "   // 2
+//         // _oSQL:_sQuery += "    ,D1_DOC "     // 3
+//         // _oSQL:_sQuery += "    ,D1_FORNECE " // 4
+//         // _oSQL:_sQuery += "    ,D1_LOJA "    // 5
+//         // _oSQL:_sQuery += "    ,D1_ITEM "    // 6
+//         // _oSQL:_sQuery += "    ,D1_COD "     // 7
+//         // _oSQL:_sQuery += "    ,D1_TES "     // 8
+//         // _oSQL:_sQuery += "    ,F4_CSTPIS "  // 9
+//         // _oSQL:_sQuery += "    ,F4_CSTCOF "  // 10
+//         // _oSQL:_sQuery += " FROM SD1010 SD1 "
+//         // _oSQL:_sQuery += " INNER JOIN SF4010 SF4 "
+//         // _oSQL:_sQuery += " 	ON SF4.F4_CODIGO = D1_TES "
+//         // _oSQL:_sQuery += " 		AND SF4.F4_CSTPIS = '98' "
+//         // _oSQL:_sQuery += " 		AND SF4.F4_CSTCOF = '98' "
+//         // _oSQL:_sQuery += " WHERE SD1.D_E_L_E_T_ = '' "
+//         // _oSQL:_sQuery += " AND D1_DTDIGIT BETWEEN '"+ dtos(mv_par01) +"' AND '"+ dtos(mv_par02) +"' "
+//         // _aSD1 := aclone(_oSQL:Qry2Array (.F., .F.))
+
+//         // For _x:=1 to Len(_aSD1)
+//         //     DbSelectArea("SFT")
+//         //     DbSetOrder(1)
+//         //     If SFT->(DbSeek(_aSD1[_x,1] + 'E' + _aSD1[_x,2] + _aSD1[_x,3] + _aSD1[_x,4] + _aSD1[_x,5] + _aSD1[_x,6] + _aSD1[_x,7]))  // FT_FILIAL+FT_TIPOMOV+FT_SERIE+FT_NFISCAL+FT_CLIEFOR+FT_LOJA+FT_ITEM+FT_PRODUTO
+//         //         RecLock("SFT",.F.)
+//         //             SFT->FT_CSTPIS := _aSD1[_x, 9]
+//         //             SFT->FT_CSTCOF := _aSD1[_x,10]
+//         //         MsUnLock()
+//         //         _sChave := _aSD1[_x,1] + 'E' + _aSD1[_x,2] + _aSD1[_x,3] + _aSD1[_x,4] + _aSD1[_x,5] + _aSD1[_x,6] + _aSD1[_x,7]
+
+//         //         // grava log de alteração
+//         //         _oEvento:= ClsEvent():new ()
+//         //         _oEvento:CodEven   = "ALT001"
+//         //         _oEvento:Texto	   = "Alterado CST PIS/COFINS de 64 para 98. CHAVE:" + _sChave
+//         //         _oEvento:Alias     = "SFT"
+//         //         _oEvento:ChaveNFe  = _sChave
+//         //         _oEvento:Grava ()
+//         //     EndIf
+//         // Next
+
+//         // CD2
+//         For _x:=1 to Len(_aSD1)
+//             DbSelectArea("CD2")
+//             DbSetOrder(1)
+//             If CD2->(DbSeek(_aSD1[_x,1] + 'E' + _aSD1[_x,2] + _aSD1[_x,3] + _aSD1[_x,4] + _aSD1[_x,5] + _aSD1[_x,6]+ _aSD1[_x,7]))  // CD2_FILIAL+CD2_TPMOV+CD2_SERIE+CD2_DOC+CD2_CODCLI+CD2_LOJCLI+CD2_ITEM+CD2_CODPRO+CD2_IMP
+//                 RecLock("CD2",.F.)
+//                     CD2->CD2_CST := _aSD1[_x, 9]
+//                 MsUnLock()
+
+//                 _sChave := _aSD1[_x,1] + 'E' + _aSD1[_x,3] + _aSD1[_x,2] 
+//                 // grava log de alteração
+//                 _oEvento:= ClsEvent():new ()
+//                 _oEvento:CodEven   = "ALT001"
+//                 _oEvento:Texto	   = "Alterado CST PIS/COFINS de 50 para 56. CHAVE:" + _sChave
+//                 _oEvento:Alias     = "CD2"
+//                 _oEvento:ChaveNFe  = _sChave
+//                 _oEvento:Grava ()
+//             EndIf
+//         Next
+
+
+//         // ATIVO
+//         _oSQL:_sQuery := ""
+//         _oSQL:_sQuery += " SELECT N1_FILIAL, N1_CBASE, N1_ITEM  FROM SN1010 "
+//         _oSQL:_sQuery += " WHERE D_E_L_E_T_= '' "
+//         _oSQL:_sQuery += " AND N1_CSTPIS   = '50'"
+//         _oSQL:_sQuery += " AND N1_CSTCOFI  = '50'"
+//         _oSQL:_sQuery += " AND N1_AQUISIC BETWEEN '"+ dtos(mv_par01) +"' AND '"+ dtos(mv_par02) +"' "
+//         _aSN1 := aclone(_oSQL:Qry2Array (.F., .F.))
+
+//         For _x:=1 to Len(_aSN1)
+//             DbSelectArea("SN1")
+//             DbSetOrder(1)
+//             If SN1->(DbSeek(_aSN1[_x, 1] + _aSN1[_x, 2] + _aSN1[_x, 3]))  // N1_FILIAL+N1_CBASE+N1_ITEM
+//                 RecLock("SN1",.F.)
+//                     SN1->N1_CSTPIS  := '56'
+//                     SN1->N1_CSTCOFI := '56'
+//                 MsUnLock()
+
+//                 _sChave := _aSN1[_x, 1] + _aSN1[_x, 2] + _aSN1[_x, 3]
+//                 // grava log de alteração
+//                 _oEvento:= ClsEvent():new ()
+//                 _oEvento:CodEven   = "ALT001"
+//                 _oEvento:Texto	   = "Alterado CST PIS/COFINS de 50 para 56. CHAVE:" + _sChave
+//                 _oEvento:Alias     = "SN1"
+//                 _oEvento:ChaveNFe  = _sChave
+//                 _oEvento:Grava ()
+//             EndIf
+//         Next
+
+//         _oSQL:_sQuery := ""
+//         _oSQL:_sQuery += " SELECT "
+//         _oSQL:_sQuery += " 	   CF8_FILIAL "
+//         _oSQL:_sQuery += "    ,CF8_CODIGO "
+//         _oSQL:_sQuery += " FROM CF8010 "
+//         _oSQL:_sQuery += " WHERE D_E_L_E_T_ = '' "
+//         _oSQL:_sQuery += " AND CF8_DTOPER BETWEEN '"+ dtos(mv_par01) +"' AND '"+ dtos(mv_par02) +"' "
+//         _oSQL:_sQuery += " AND CF8_CSTPIS = '50' "
+//         _oSQL:_sQuery += " AND CF8_CSTCOF = '50' "
+//         _aCF8 := aclone(_oSQL:Qry2Array (.F., .F.))
+
+//         For _x:=1 to Len(_aCF8)
+//             DbSelectArea("CF8")
+//             DbSetOrder(1)
+//             If CF8->(DbSeek(_aCF8[_x, 1] + _aCF8[_x, 2] ))  // CF8_FILIAL+CF8_CODIGO
+//                 RecLock("CF8",.F.)
+//                     CF8->CF8_CSTPIS := '56'
+//                     CF8->CF8_CSTCOF := '56'
+//                 MsUnLock()
+
+//                 _sChave := _aCF8[_x, 1] + _aCF8[_x, 2]
+//                 // grava log de alteração
+//                 _oEvento:= ClsEvent():new ()
+//                 _oEvento:CodEven   = "ALT001"
+//                 _oEvento:Texto	   = "Alterado CST PIS/COFINS de 50 para 56. CHAVE:" + _sChave
+//                 _oEvento:Alias     = "CF8"
+//                 _oEvento:ChaveNFe  = _sChave
+//                 _oEvento:Grava ()
+//             EndIf
+//         Next
+//     EndIf
+// Return
+
+// //
+// // --------------------------------------------------------------------------
+// // Cria Perguntas no SX1
+// Static Function _ValidPerg ()
+// 	local _aRegsPerg := {}
+// 	local _aDefaults := {}
+
+// 	//                 Ordem Descri                          tipo tam           dec          valid    F3     opcoes (combo)                                 help
+// 	aadd (_aRegsPerg, {01, "Data Inicial ", "D", 8,  0,  "",   "   ", {},                   	""})
+// 	aadd (_aRegsPerg, {02, "Data Final   ", "D", 8,  0,  "",   "   ", {},                   	""})
+// 	U_ValPerg (cPerg, _aRegsPerg, {}, _aDefaults)
+// Return
