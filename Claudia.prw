@@ -32,6 +32,7 @@ User Function claudia ()
 
 	//u_help("RAPEL")
 	//U_VA_RAPCAD()
+	//AxCadastro("ZBG","% de Contrato Rapel",,)
 
 	//u_help("SAFRA")
 	//_SimulaSafra23()
